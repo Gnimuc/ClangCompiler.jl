@@ -14,6 +14,8 @@ push!(args, "-I$include_dir")
 
 headers = detect_headers(include_dir, args)
 
+@add_def time_t
+
 ctx = create_context(headers, args, options)
 
 build!(ctx)

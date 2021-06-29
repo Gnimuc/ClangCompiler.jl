@@ -2,9 +2,8 @@ module LibClangEx
 
 using ..ClangCompiler: libclangex
 
-const __darwin_time_t = Clong
+const time_t = Clong
 
-const time_t = __darwin_time_t
 
 struct CXString
     data::Ptr{Cvoid}
@@ -18,6 +17,10 @@ const CXTranslationUnit = Ptr{CXTranslationUnitImpl}
 mutable struct LLVMOpaqueContext end
 
 const LLVMContextRef = Ptr{LLVMOpaqueContext}
+
+mutable struct LLVMOpaqueModule end
+
+const LLVMModuleRef = Ptr{LLVMOpaqueModule}
 
 const CXIntrusiveRefCntPtr = Ptr{Cvoid}
 
@@ -99,6 +102,10 @@ end
 
 function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
     ccall((:clang_CreateLLVMCodeGen, libclangex), CXCodeGenerator, (CXCompilerInstance, LLVMContextRef, Ptr{Cchar}), CI, LLVMCtx, ModuleName)
+end
+
+function clang_CodeGenerator_getLLVMModule(CG)
+    ccall((:clang_CodeGenerator_getLLVMModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
 end
 
 @enum CXInit_Error::UInt32 begin
@@ -188,6 +195,10 @@ end
 
 function clang_CompilerInstance_setTarget(CI)
     ccall((:clang_CompilerInstance_setTarget, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getSema(CI)
+    ccall((:clang_CompilerInstance_getSema, libclangex), CXSema, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInstance_setSema(CI, S)
@@ -312,6 +323,10 @@ end
 
 function clang_SourceManager_dispose(SM)
     ccall((:clang_SourceManager_dispose, libclangex), Cvoid, (CXSourceManager,), SM)
+end
+
+function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
+    ccall((:clang_ParseAST, libclangex), Cvoid, (CXSema, Bool, Bool), Sema, PrintStats, SkipFunctionBodies)
 end
 
 # exports
