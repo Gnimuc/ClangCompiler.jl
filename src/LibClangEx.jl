@@ -5,11 +5,6 @@ using ..ClangCompiler: libclangex
 const time_t = Clong
 
 
-struct CXString
-    data::Ptr{Cvoid}
-    private_flags::Cuint
-end
-
 mutable struct CXTranslationUnitImpl end
 
 const CXTranslationUnit = Ptr{CXTranslationUnitImpl}
@@ -51,6 +46,8 @@ const CXCompilerInvocation = Ptr{Cvoid}
 const CXDirectoryEntry = Ptr{Cvoid}
 
 const CXFileEntry = Ptr{Cvoid}
+
+const CXFileEntryRef = Ptr{Cvoid}
 
 const CXFileManager = Ptr{Cvoid}
 
@@ -197,6 +194,10 @@ function clang_CompilerInstance_setTarget(CI)
     ccall((:clang_CompilerInstance_setTarget, libclangex), Cvoid, (CXCompilerInstance,), CI)
 end
 
+function clang_CompilerInstance_createSema(CI)
+    ccall((:clang_CompilerInstance_createSema, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
 function clang_CompilerInstance_getSema(CI)
     ccall((:clang_CompilerInstance_getSema, libclangex), CXSema, (CXCompilerInstance,), CI)
 end
@@ -205,8 +206,16 @@ function clang_CompilerInstance_setSema(CI, S)
     ccall((:clang_CompilerInstance_setSema, libclangex), Cvoid, (CXCompilerInstance, CXSema), CI, S)
 end
 
+function clang_CompilerInstance_createPreprocessor(CI)
+    ccall((:clang_CompilerInstance_createPreprocessor, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
 function clang_CompilerInstance_setPreprocessor(CI, PP)
     ccall((:clang_CompilerInstance_setPreprocessor, libclangex), Cvoid, (CXCompilerInstance, CXPreprocessor), CI, PP)
+end
+
+function clang_CompilerInstance_createASTContext(CI)
+    ccall((:clang_CompilerInstance_createASTContext, libclangex), Cvoid, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInstance_setASTContext(CI, Ctx)
@@ -265,8 +274,32 @@ function clang_FileManager_dispose(FM)
     ccall((:clang_FileManager_dispose, libclangex), Cvoid, (CXFileManager,), FM)
 end
 
+function clang_FileManager_getBufferForFile(FM, FE, isVolatile, RequiresNullTerminator)
+    ccall((:clang_FileManager_getBufferForFile, libclangex), CXMemoryBuffer, (CXFileManager, CXFileEntry, Bool, Bool), FM, FE, isVolatile, RequiresNullTerminator)
+end
+
+function clang_FileManager_PrintStats(FM)
+    ccall((:clang_FileManager_PrintStats, libclangex), Cvoid, (CXFileManager,), FM)
+end
+
 function clang_FileManager_getDirectory(FM, DirName, CacheFailure)
     ccall((:clang_FileManager_getDirectory, libclangex), CXDirectoryEntry, (CXFileManager, Ptr{Cchar}, Bool), FM, DirName, CacheFailure)
+end
+
+function clang_DirectoryEntry_getName(DE)
+    ccall((:clang_DirectoryEntry_getName, libclangex), Ptr{Cchar}, (CXDirectoryEntry,), DE)
+end
+
+function clang_FileManager_getFileRef(FM, Filename, OpenFile, CacheFailure)
+    ccall((:clang_FileManager_getFileRef, libclangex), CXFileEntryRef, (CXFileManager, Ptr{Cchar}, Bool, Bool), FM, Filename, OpenFile, CacheFailure)
+end
+
+function clang_FileEntryRef_dispose(FER)
+    ccall((:clang_FileEntryRef_dispose, libclangex), Cvoid, (CXFileEntryRef,), FER)
+end
+
+function clang_FileEntryRef_getFileEntry(FER)
+    ccall((:clang_FileEntryRef_getFileEntry, libclangex), CXFileEntry, (CXFileEntryRef,), FER)
 end
 
 function clang_FileManager_getFile(FM, Filename, OpenFile, CacheFailure)
@@ -277,16 +310,12 @@ function clang_FileManager_getVirtualFile(FM, Filename, Size, ModificationTime)
     ccall((:clang_FileManager_getVirtualFile, libclangex), CXFileEntry, (CXFileManager, Ptr{Cchar}, Cuint, time_t), FM, Filename, Size, ModificationTime)
 end
 
-function clang_DirectoryEntry_getName(DE)
-    ccall((:clang_DirectoryEntry_getName, libclangex), CXString, (CXDirectoryEntry,), DE)
-end
-
 function clang_FileEntry_getName(FE)
-    ccall((:clang_FileEntry_getName, libclangex), CXString, (CXFileEntry,), FE)
+    ccall((:clang_FileEntry_getName, libclangex), Ptr{Cchar}, (CXFileEntry,), FE)
 end
 
 function clang_FileEntry_tryGetRealPathName(FE)
-    ccall((:clang_FileEntry_tryGetRealPathName, libclangex), CXString, (CXFileEntry,), FE)
+    ccall((:clang_FileEntry_tryGetRealPathName, libclangex), Ptr{Cchar}, (CXFileEntry,), FE)
 end
 
 function clang_FileEntry_isValid(FE)
@@ -323,6 +352,18 @@ end
 
 function clang_SourceManager_dispose(SM)
     ccall((:clang_SourceManager_dispose, libclangex), Cvoid, (CXSourceManager,), SM)
+end
+
+function clang_SourceManager_overrideFileContents(SM, FE, MB)
+    ccall((:clang_SourceManager_overrideFileContents, libclangex), Cvoid, (CXSourceManager, CXFileEntry, CXMemoryBuffer), SM, FE, MB)
+end
+
+function clang_SourceManager_createAndSetMainFileID(SM, FE)
+    ccall((:clang_SourceManager_createAndSetMainFileID, libclangex), Cvoid, (CXSourceManager, CXFileEntry), SM, FE)
+end
+
+function clang_SourceManager_getMainFileID_HashValue(SM)
+    ccall((:clang_SourceManager_getMainFileID_HashValue, libclangex), Cint, (CXSourceManager,), SM)
 end
 
 function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
