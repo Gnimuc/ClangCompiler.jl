@@ -9,6 +9,7 @@ LibClang = "673b39ed-8657-431a-8e65-2365c8cec7d5"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [compat]
+LLVM = "3"
 LibClang = "~0.60"
 julia = "~1.6"
 
