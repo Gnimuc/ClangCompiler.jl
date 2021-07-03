@@ -53,6 +53,8 @@ const CXFileManager = Ptr{Cvoid}
 
 const CXSourceManager = Ptr{Cvoid}
 
+const CXDiagnosticIDs = Ptr{Cvoid}
+
 const CXDiagnosticOptions = Ptr{Cvoid}
 
 const CXDiagnosticConsumer = Ptr{Cvoid}
@@ -60,6 +62,14 @@ const CXDiagnosticConsumer = Ptr{Cvoid}
 const CXDiagnosticsEngine = Ptr{Cvoid}
 
 const CXCodeGenerator = Ptr{Cvoid}
+
+function clang_Driver_GetResourcesPathLength(BinaryPath)
+    ccall((:clang_Driver_GetResourcesPathLength, libclangex), Csize_t, (Ptr{Cchar},), BinaryPath)
+end
+
+function clang_Driver_GetResourcesPath(BinaryPath, ResourcesPath, N)
+    ccall((:clang_Driver_GetResourcesPath, libclangex), Cvoid, (Ptr{Cchar}, Ptr{Cchar}, Csize_t), BinaryPath, ResourcesPath, N)
+end
 
 function clang_TranslationUnit_getASTUnit(TU)
     ccall((:clang_TranslationUnit_getASTUnit, libclangex), CXASTUnit, (CXTranslationUnit,), TU)
@@ -97,17 +107,17 @@ function clang_ASTUnit_getPreprocessor(ASTU)
     ccall((:clang_ASTUnit_getPreprocessor, libclangex), CXPreprocessor, (CXASTUnit,), ASTU)
 end
 
+@enum CXInit_Error::UInt32 begin
+    CXInit_NoError = 0
+    CXInit_CanNotCreate = 1
+end
+
 function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
     ccall((:clang_CreateLLVMCodeGen, libclangex), CXCodeGenerator, (CXCompilerInstance, LLVMContextRef, Ptr{Cchar}), CI, LLVMCtx, ModuleName)
 end
 
 function clang_CodeGenerator_getLLVMModule(CG)
     ccall((:clang_CodeGenerator_getLLVMModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
-end
-
-@enum CXInit_Error::UInt32 begin
-    CXInit_NoError = 0
-    CXInit_CanNotCreate = 1
 end
 
 function clang_CodeGenOptions_create(ErrorCode)
@@ -186,8 +196,16 @@ function clang_CompilerInstance_createSourceManager(CI, FileMgr)
     ccall((:clang_CompilerInstance_createSourceManager, libclangex), Cvoid, (CXCompilerInstance, CXFileManager), CI, FileMgr)
 end
 
+function clang_CompilerInstance_hasInvocation(CI)
+    ccall((:clang_CompilerInstance_hasInvocation, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
 function clang_CompilerInstance_setInvocation(CI, CInv)
     ccall((:clang_CompilerInstance_setInvocation, libclangex), Cvoid, (CXCompilerInstance, CXCompilerInvocation), CI, CInv)
+end
+
+function clang_CompilerInstance_getInvocation(CI)
+    ccall((:clang_CompilerInstance_getInvocation, libclangex), CXCompilerInvocation, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInstance_setTarget(CI)
@@ -234,12 +252,40 @@ function clang_CompilerInvocation_dispose(CI)
     ccall((:clang_CompilerInvocation_dispose, libclangex), Cvoid, (CXCompilerInvocation,), CI)
 end
 
+function clang_CompilerInvocation_createFromCommandLine(command_line_args_with_src, num_command_line_args, Diags, ErrorCode)
+    ccall((:clang_CompilerInvocation_createFromCommandLine, libclangex), CXCompilerInvocation, (Ptr{Ptr{Cchar}}, Cint, CXDiagnosticsEngine, Ptr{CXInit_Error}), command_line_args_with_src, num_command_line_args, Diags, ErrorCode)
+end
+
 function clang_CompilerInvocation_getTargetOpts(CI)
     ccall((:clang_CompilerInvocation_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInvocation,), CI)
 end
 
-function clang_CompilerInvocation_createFromCommandLine(source_filename, command_line_args, num_command_line_args, Diags, ErrorCode)
-    ccall((:clang_CompilerInvocation_createFromCommandLine, libclangex), CXCompilerInvocation, (Ptr{Cchar}, Ptr{Ptr{Cchar}}, Cint, CXDiagnosticsEngine, Ptr{CXInit_Error}), source_filename, command_line_args, num_command_line_args, Diags, ErrorCode)
+function clang_CompilerInvocation_getCodeGenOpts(CI)
+    ccall((:clang_CompilerInvocation_getCodeGenOpts, libclangex), CXCodeGenOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getPreprocessorOpts(CI)
+    ccall((:clang_CompilerInvocation_getPreprocessorOpts, libclangex), CXPreprocessorOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getHeaderSearchOpts(CI)
+    ccall((:clang_CompilerInvocation_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_DiagnosticIDs_create(ErrorCode)
+    ccall((:clang_DiagnosticIDs_create, libclangex), CXDiagnosticIDs, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_DiagnosticIDs_dispose(ID)
+    ccall((:clang_DiagnosticIDs_dispose, libclangex), Cvoid, (CXDiagnosticIDs,), ID)
+end
+
+function clang_DiagnosticOptions_create(ErrorCode)
+    ccall((:clang_DiagnosticOptions_create, libclangex), CXDiagnosticOptions, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_DiagnosticOptions_dispose(DO)
+    ccall((:clang_DiagnosticOptions_dispose, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
 end
 
 function clang_DiagnosticConsumer_create(ErrorCode)
@@ -250,20 +296,12 @@ function clang_DiagnosticConsumer_dispose(DC)
     ccall((:clang_DiagnosticConsumer_dispose, libclangex), Cvoid, (CXDiagnosticConsumer,), DC)
 end
 
-function clang_DiagnosticsEngineIntrusiveRefCntPtr_get(ptr)
-    ccall((:clang_DiagnosticsEngineIntrusiveRefCntPtr_get, libclangex), CXDiagnosticsEngine, (CXIntrusiveRefCntPtr,), ptr)
+function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient, ErrorCode)
+    ccall((:clang_DiagnosticsEngine_create, libclangex), CXDiagnosticsEngine, (CXDiagnosticIDs, CXDiagnosticOptions, CXDiagnosticConsumer, Bool, Ptr{CXInit_Error}), ID, DO, DC, ShouldOwnClient, ErrorCode)
 end
 
-function clang_DiagnosticsEngineIntrusiveRefCntPtr_dispose(ptr)
-    ccall((:clang_DiagnosticsEngineIntrusiveRefCntPtr_dispose, libclangex), Cvoid, (CXIntrusiveRefCntPtr,), ptr)
-end
-
-function clang_DiagnosticOptions_create(ErrorCode)
-    ccall((:clang_DiagnosticOptions_create, libclangex), CXDiagnosticOptions, (Ptr{CXInit_Error},), ErrorCode)
-end
-
-function clang_DiagnosticOptions_dispose(DO)
-    ccall((:clang_DiagnosticOptions_dispose, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
+function clang_DiagnosticsEngine_dispose(DE)
+    ccall((:clang_DiagnosticsEngine_dispose, libclangex), Cvoid, (CXDiagnosticsEngine,), DE)
 end
 
 function clang_FileManager_create(ErrorCode)
@@ -300,10 +338,6 @@ end
 
 function clang_FileEntryRef_getFileEntry(FER)
     ccall((:clang_FileEntryRef_getFileEntry, libclangex), CXFileEntry, (CXFileEntryRef,), FER)
-end
-
-function clang_FileManager_getFile(FM, Filename, OpenFile, CacheFailure)
-    ccall((:clang_FileManager_getFile, libclangex), CXFileEntry, (CXFileManager, Ptr{Cchar}, Bool, Bool), FM, Filename, OpenFile, CacheFailure)
 end
 
 function clang_FileManager_getVirtualFile(FM, Filename, Size, ModificationTime)
@@ -344,6 +378,54 @@ end
 
 function clang_MemoryBuffer_getMemBufferCopy(InputData, InputDataSize, BufferName, BufferNameSize)
     ccall((:clang_MemoryBuffer_getMemBufferCopy, libclangex), CXMemoryBuffer, (Ptr{Cchar}, Cuint, Ptr{Cchar}, Cuint), InputData, InputDataSize, BufferName, BufferNameSize)
+end
+
+function clang_CodeGenOptions_getArgv0(CGO)
+    ccall((:clang_CodeGenOptions_getArgv0, libclangex), Ptr{Cchar}, (CXCodeGenOptions,), CGO)
+end
+
+function clang_CodeGenOptions_getCommandLineArgsNum(CGO)
+    ccall((:clang_CodeGenOptions_getCommandLineArgsNum, libclangex), Csize_t, (CXCodeGenOptions,), CGO)
+end
+
+function clang_CodeGenOptions_getCommandLineArgs(CGO, ArgsOut, Num)
+    ccall((:clang_CodeGenOptions_getCommandLineArgs, libclangex), Cvoid, (CXCodeGenOptions, Ptr{Ptr{Cchar}}, Csize_t), CGO, ArgsOut, Num)
+end
+
+function clang_HeaderSearchOptions_GetResourceDirLength(HSO)
+    ccall((:clang_HeaderSearchOptions_GetResourceDirLength, libclangex), Csize_t, (CXHeaderSearchOptions,), HSO)
+end
+
+function clang_HeaderSearchOptions_GetResourceDir(HSO, ResourcesDir, N)
+    ccall((:clang_HeaderSearchOptions_GetResourceDir, libclangex), Cvoid, (CXHeaderSearchOptions, Ptr{Cchar}, Csize_t), HSO, ResourcesDir, N)
+end
+
+function clang_HeaderSearchOptions_SetResourceDir(HSO, ResourcesDir, N)
+    ccall((:clang_HeaderSearchOptions_SetResourceDir, libclangex), Cvoid, (CXHeaderSearchOptions, Ptr{Cchar}, Csize_t), HSO, ResourcesDir, N)
+end
+
+function clang_PreprocessorOptions_getChainedIncludesNum(PPO)
+    ccall((:clang_PreprocessorOptions_getChainedIncludesNum, libclangex), Csize_t, (CXPreprocessorOptions,), PPO)
+end
+
+function clang_PreprocessorOptions_getChainedIncludes(PPO, IncsOut, Num)
+    ccall((:clang_PreprocessorOptions_getChainedIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
+end
+
+function clang_PreprocessorOptions_getIncludesNum(PPO)
+    ccall((:clang_PreprocessorOptions_getIncludesNum, libclangex), Csize_t, (CXPreprocessorOptions,), PPO)
+end
+
+function clang_PreprocessorOptions_getIncludes(PPO, IncsOut, Num)
+    ccall((:clang_PreprocessorOptions_getIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
+end
+
+function clang_PreprocessorOptions_getMacroIncludesNum(PPO)
+    ccall((:clang_PreprocessorOptions_getMacroIncludesNum, libclangex), Csize_t, (CXPreprocessorOptions,), PPO)
+end
+
+function clang_PreprocessorOptions_getMacroIncludes(PPO, IncsOut, Num)
+    ccall((:clang_PreprocessorOptions_getMacroIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
 end
 
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
