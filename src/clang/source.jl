@@ -1,6 +1,6 @@
 """
     mutable struct FileManager <: Any
-Holds a pointer to a `Clang::FileManager` object.
+Holds a pointer to a `clang::FileManager` object.
 """
 mutable struct FileManager
     ptr::CXFileManager
@@ -33,12 +33,12 @@ end
 
 function status(mgr::FileManager)
     @assert mgr.ptr != C_NULL "file manager has a NULL pointer."
-    clang_FileManager_PrintStats(mgr.ptr)
+    return clang_FileManager_PrintStats(mgr.ptr)
 end
 
 """
     mutable struct FileEntry <: Any
-Holds both a pointer to a `Clang::FileEntry` object.
+Holds both a pointer to a `clang::FileEntry` object.
 """
 mutable struct FileEntry
     ptr::CXFileEntry
@@ -51,7 +51,8 @@ Get a file entry from the file manager.
 If `open_file` is true, the file will be opened.
 If `cache_failure` is true, the failure that this file does not exist will be cached.
 """
-function get_file(filemgr::FileManager, filename::AbstractString; open_file::Bool=false, cache_failure::Bool=true)
+function get_file(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
+                  cache_failure::Bool=true)
     @assert filemgr.ptr != C_NULL "file manager has a NULL pointer."
     ref = clang_FileManager_getFileRef(filemgr.ptr, filename, open_file, cache_failure)
     entry = clang_FileEntryRef_getFileEntry(ref)

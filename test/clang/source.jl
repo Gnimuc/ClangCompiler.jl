@@ -1,8 +1,8 @@
 using ClangCompiler
-using Test
 using ClangCompiler: FileManager
 using ClangCompiler: create_file_manager, status, destroy
 using ClangCompiler: get_file, get_UID, name, real_path_name, is_valid, is_named_pipe
+using Test
 
 @testset "FileManager" begin
     fm = FileManager()

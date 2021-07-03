@@ -1,8 +1,8 @@
 using ClangCompiler
-using Test
 using ClangCompiler: DiagnosticIDs, DiagnosticOptions
 using ClangCompiler: DiagnosticConsumer, IgnoringDiagConsumer, DiagnosticsEngine
 using ClangCompiler: destroy
+using Test
 
 @testset "Diagnostic" begin
     @testset "Engine" begin
