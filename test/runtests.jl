@@ -1,6 +1,5 @@
 using ClangCompiler
 using Test
 
-@testset "ClangCompiler.jl" begin
-    # Write your tests here.
-end
+include("clang/diagnostic.jl")
+include("clang/source.jl")
