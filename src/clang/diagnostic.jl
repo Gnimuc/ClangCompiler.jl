@@ -39,10 +39,16 @@ function create_diagnostic_opts()
 end
 
 """
-    mutable struct DiagnosticConsumer <: Any
+    AbstractDiagnosticConsumer <: Any
+Supretype for DiagnosticConsumers.
+"""
+abstract type AbstractDiagnosticConsumer end
+
+"""
+    mutable struct DiagnosticConsumer <: AbstractDiagnosticConsumer
 Holds a pointer to a `Clang::DiagnosticConsumer` object.
 """
-mutable struct DiagnosticConsumer
+mutable struct DiagnosticConsumer <: AbstractDiagnosticConsumer
     ptr::CXDiagnosticConsumer
 end
 DiagnosticConsumer() = DiagnosticConsumer(create_diagnostic_consumer())
@@ -66,6 +72,33 @@ function destroy(x::DiagnosticConsumer)
     return x
 end
 
+"""
+    mutable struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
+Holds a pointer to a `Clang::IgnoringDiagConsumer` object.
+"""
+mutable struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
+    ptr::CXIgnoringDiagConsumer
+end
+IgnoringDiagConsumer() = IgnoringDiagConsumer(create_ignoring_diagnostic_consumer())
+
+"""
+    create_ignoring_diagnostic_consumer() -> CXIgnoringDiagConsumer
+Return a pointer to a `clang::IgnoringDiagConsumer` object.
+"""
+function create_ignoring_diagnostic_consumer()
+    status = Ref{CXInit_Error}(CXInit_NoError)
+    consumer = clang_IgnoringDiagConsumer_create(status)
+    @assert status[] == CXInit_NoError
+    return consumer
+end
+
+function destroy(x::IgnoringDiagConsumer)
+    if x.ptr != C_NULL
+        clang_IgnoringDiagConsumer_dispose(x.ptr)
+        x.ptr = C_NULL
+    end
+    return x
+end
 
 """
     mutable struct DiagnosticsEngine <: Any
@@ -76,7 +109,7 @@ mutable struct DiagnosticsEngine
 end
 DiagnosticsEngine() = DiagnosticsEngine(create_diagnostics_engine())
 
-function DiagnosticsEngine(opts::DiagnosticOptions, client::DiagnosticConsumer=DiagnosticConsumer(), should_own_client=true)
+function DiagnosticsEngine(opts::DiagnosticOptions, client::AbstractDiagnosticConsumer=DiagnosticConsumer(), should_own_client=true)
     status = Ref{CXInit_Error}(CXInit_NoError)
     ids = create_diagnostic_ids()
     engine = clang_DiagnosticsEngine_create(ids, opts.ptr, client.ptr, should_own_client, status)
@@ -84,7 +117,7 @@ function DiagnosticsEngine(opts::DiagnosticOptions, client::DiagnosticConsumer=D
     return DiagnosticsEngine(engine)
 end
 
-function DiagnosticsEngine(ids::DiagnosticIDs, opts::DiagnosticOptions, client::DiagnosticConsumer=DiagnosticConsumer(), should_own_client=true)
+function DiagnosticsEngine(ids::DiagnosticIDs, opts::DiagnosticOptions, client::AbstractDiagnosticConsumer=DiagnosticConsumer(), should_own_client=true)
     status = Ref{CXInit_Error}(CXInit_NoError)
     engine = clang_DiagnosticsEngine_create(ids.ptr, opts.ptr, client.ptr, should_own_client, status)
     @assert status[] == CXInit_NoError

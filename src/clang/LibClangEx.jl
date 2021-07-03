@@ -59,6 +59,8 @@ const CXDiagnosticOptions = Ptr{Cvoid}
 
 const CXDiagnosticConsumer = Ptr{Cvoid}
 
+const CXIgnoringDiagConsumer = Ptr{Cvoid}
+
 const CXDiagnosticsEngine = Ptr{Cvoid}
 
 const CXCodeGenerator = Ptr{Cvoid}
@@ -294,6 +296,14 @@ end
 
 function clang_DiagnosticConsumer_dispose(DC)
     ccall((:clang_DiagnosticConsumer_dispose, libclangex), Cvoid, (CXDiagnosticConsumer,), DC)
+end
+
+function clang_IgnoringDiagConsumer_create(ErrorCode)
+    ccall((:clang_IgnoringDiagConsumer_create, libclangex), CXIgnoringDiagConsumer, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_IgnoringDiagConsumer_dispose(DC)
+    ccall((:clang_IgnoringDiagConsumer_dispose, libclangex), Cvoid, (CXIgnoringDiagConsumer,), DC)
 end
 
 function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient, ErrorCode)
