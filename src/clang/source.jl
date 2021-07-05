@@ -137,6 +137,8 @@ Create a file ID from a memory buffer.
 This function takes ownership of the memory buffer.
 """
 function FileID(src_mgr::SourceManager, buffer::MemoryBuffer)
+    @assert src_mgr.ptr != C_NULL "source manager has a NULL pointer."
+    @assert buffer.ptr != C_NULL "memory buffer has a NULL pointer."
     return FileID(clang_SourceManager_createFileIDFromMemoryBuffer(src_mgr.ptr, buffer.ptr))
 end
 
@@ -147,6 +149,8 @@ Create a file ID from a file entry.
 See also [`get_file`](@ref).
 """
 function FileID(src_mgr::SourceManager, file_entry::FileEntry)
+    @assert src_mgr.ptr != C_NULL "source manager has a NULL pointer."
+    @assert file_entry.ptr != C_NULL "file entry has a NULL pointer."
     return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr.ptr,
                                                                 file_entry.ptr))
 end
@@ -166,6 +170,7 @@ Return the main file ID.
 This function allocates and one should call `destroy` to release the resources.
 """
 function get_main_file_id(src_mgr::SourceManager)
+    @assert src_mgr.ptr != C_NULL "source manager has a NULL pointer."
     return FileID(clang_SourceManager_getMainFileID(src_mgr.ptr))
 end
 
@@ -174,5 +179,7 @@ end
 Set the main file ID of the source manager to `id`.
 """
 function set_main_file_id(src_mgr::SourceManager, id::FileID)
+    @assert src_mgr.ptr != C_NULL "source manager has a NULL pointer."
+    @assert id.ptr != C_NULL "file id has a NULL pointer."
     return clang_SourceManager_setMainFileID(src_mgr.ptr, id.ptr)
 end

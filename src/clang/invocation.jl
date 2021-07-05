@@ -48,25 +48,31 @@ end
 
 # Options
 function get_codegen_options(ci::CompilerInvocation)
+    @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
     return CodeGenOptions(clang_CompilerInstance_getCodeGenOpts(ci.ptr))
 end
 
 function get_diagnostic_options(ci::CompilerInvocation)
+    @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
     return DiagnosticOptions(clang_CompilerInstance_getDiagnosticOpts(ci.ptr))
 end
 
 function get_frontend_options(ci::CompilerInvocation)
+    @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
     return FrontendOptions(clang_CompilerInstance_getFrontendOpts(ci.ptr))
 end
 
 function get_header_search_options(ci::CompilerInvocation)
+    @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
     return HeaderSearchOptions(clang_CompilerInstance_getHeaderSearchOpts(ci.ptr))
 end
 
 function get_preprocessor_options(ci::CompilerInvocation)
+    @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
     return PreprocessorOptions(clang_CompilerInstance_getPreprocessorOpts(ci.ptr))
 end
 
 function get_target_options(ci::CompilerInvocation)
+    @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
     return TargetOptions(clang_CompilerInvocation_getTargetOpts(ci.ptr))
 end
