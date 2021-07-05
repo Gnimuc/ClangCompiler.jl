@@ -9,6 +9,6 @@ using Test
     """
     buffer = MemoryBuffer(code)
     @test buffer.ptr != C_NULL
-
-    # TODO: fix memory leak
+    # FIXME: memory leak here
+    # NOTE: The `destroy` method for `MemoryBuffer` is intentionally not implemented.
 end

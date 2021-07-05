@@ -23,6 +23,8 @@ const CXMemoryBuffer = Ptr{Cvoid}
 
 const CXTargetOptions = Ptr{Cvoid}
 
+const CXTargetInfo = Ptr{Cvoid}
+
 const CXCodeGenOptions = Ptr{Cvoid}
 
 const CXHeaderSearchOptions = Ptr{Cvoid}
@@ -45,6 +47,8 @@ const CXCompilerInvocation = Ptr{Cvoid}
 
 const CXDirectoryEntry = Ptr{Cvoid}
 
+const CXFileID = Ptr{Cvoid}
+
 const CXFileEntry = Ptr{Cvoid}
 
 const CXFileEntryRef = Ptr{Cvoid}
@@ -64,14 +68,6 @@ const CXIgnoringDiagConsumer = Ptr{Cvoid}
 const CXDiagnosticsEngine = Ptr{Cvoid}
 
 const CXCodeGenerator = Ptr{Cvoid}
-
-function clang_Driver_GetResourcesPathLength(BinaryPath)
-    ccall((:clang_Driver_GetResourcesPathLength, libclangex), Csize_t, (Ptr{Cchar},), BinaryPath)
-end
-
-function clang_Driver_GetResourcesPath(BinaryPath, ResourcesPath, N)
-    ccall((:clang_Driver_GetResourcesPath, libclangex), Cvoid, (Ptr{Cchar}, Ptr{Cchar}, Csize_t), BinaryPath, ResourcesPath, N)
-end
 
 function clang_TranslationUnit_getASTUnit(TU)
     ccall((:clang_TranslationUnit_getASTUnit, libclangex), CXASTUnit, (CXTranslationUnit,), TU)
@@ -314,6 +310,14 @@ function clang_DiagnosticsEngine_dispose(DE)
     ccall((:clang_DiagnosticsEngine_dispose, libclangex), Cvoid, (CXDiagnosticsEngine,), DE)
 end
 
+function clang_Driver_GetResourcesPathLength(BinaryPath)
+    ccall((:clang_Driver_GetResourcesPathLength, libclangex), Csize_t, (Ptr{Cchar},), BinaryPath)
+end
+
+function clang_Driver_GetResourcesPath(BinaryPath, ResourcesPath, N)
+    ccall((:clang_Driver_GetResourcesPath, libclangex), Cvoid, (Ptr{Cchar}, Ptr{Cchar}, Csize_t), BinaryPath, ResourcesPath, N)
+end
+
 function clang_FileManager_create(ErrorCode)
     ccall((:clang_FileManager_create, libclangex), CXFileManager, (Ptr{CXInit_Error},), ErrorCode)
 end
@@ -390,6 +394,22 @@ function clang_MemoryBuffer_getMemBufferCopy(InputData, InputDataSize, BufferNam
     ccall((:clang_MemoryBuffer_getMemBufferCopy, libclangex), CXMemoryBuffer, (Ptr{Cchar}, Cuint, Ptr{Cchar}, Cuint), InputData, InputDataSize, BufferName, BufferNameSize)
 end
 
+function clang_MemoryBuffer_getBufferSize(MB)
+    ccall((:clang_MemoryBuffer_getBufferSize, libclangex), Csize_t, (CXMemoryBuffer,), MB)
+end
+
+function clang_TargetOptions_create(ErrorCode)
+    ccall((:clang_TargetOptions_create, libclangex), CXTargetOptions, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_TargetOptions_dispose(TO)
+    ccall((:clang_TargetOptions_dispose, libclangex), Cvoid, (CXTargetOptions,), TO)
+end
+
+function clang_TargetInfo_CreateTargetInfo(DE, Opts)
+    ccall((:clang_TargetInfo_CreateTargetInfo, libclangex), CXTargetInfo, (CXDiagnosticsEngine, CXTargetOptions), DE, Opts)
+end
+
 function clang_CodeGenOptions_getArgv0(CGO)
     ccall((:clang_CodeGenOptions_getArgv0, libclangex), Ptr{Cchar}, (CXCodeGenOptions,), CGO)
 end
@@ -400,6 +420,10 @@ end
 
 function clang_CodeGenOptions_getCommandLineArgs(CGO, ArgsOut, Num)
     ccall((:clang_CodeGenOptions_getCommandLineArgs, libclangex), Cvoid, (CXCodeGenOptions, Ptr{Ptr{Cchar}}, Csize_t), CGO, ArgsOut, Num)
+end
+
+function clang_TargetOptions_setTriple(TO, TripleStr, Num)
+    ccall((:clang_TargetOptions_setTriple, libclangex), Cvoid, (CXTargetOptions, Ptr{Cchar}, Csize_t), TO, TripleStr, Num)
 end
 
 function clang_HeaderSearchOptions_GetResourceDirLength(HSO)
@@ -446,16 +470,32 @@ function clang_SourceManager_dispose(SM)
     ccall((:clang_SourceManager_dispose, libclangex), Cvoid, (CXSourceManager,), SM)
 end
 
+function clang_FileID_getHashValue(FID)
+    ccall((:clang_FileID_getHashValue, libclangex), Cuint, (CXFileID,), FID)
+end
+
+function clang_FileID_dispose(FID)
+    ccall((:clang_FileID_dispose, libclangex), Cvoid, (CXFileID,), FID)
+end
+
+function clang_SourceManager_createFileIDFromMemoryBuffer(SM, MB)
+    ccall((:clang_SourceManager_createFileIDFromMemoryBuffer, libclangex), CXFileID, (CXSourceManager, CXMemoryBuffer), SM, MB)
+end
+
+function clang_SourceManager_createFileIDFromFileEntry(SM, FE)
+    ccall((:clang_SourceManager_createFileIDFromFileEntry, libclangex), CXFileID, (CXSourceManager, CXFileEntry), SM, FE)
+end
+
+function clang_SourceManager_getMainFileID(SM)
+    ccall((:clang_SourceManager_getMainFileID, libclangex), CXFileID, (CXSourceManager,), SM)
+end
+
+function clang_SourceManager_setMainFileID(SM, ID)
+    ccall((:clang_SourceManager_setMainFileID, libclangex), Cvoid, (CXSourceManager, CXFileID), SM, ID)
+end
+
 function clang_SourceManager_overrideFileContents(SM, FE, MB)
     ccall((:clang_SourceManager_overrideFileContents, libclangex), Cvoid, (CXSourceManager, CXFileEntry, CXMemoryBuffer), SM, FE, MB)
-end
-
-function clang_SourceManager_createAndSetMainFileID(SM, FE)
-    ccall((:clang_SourceManager_createAndSetMainFileID, libclangex), Cvoid, (CXSourceManager, CXFileEntry), SM, FE)
-end
-
-function clang_SourceManager_getMainFileID_HashValue(SM)
-    ccall((:clang_SourceManager_getMainFileID_HashValue, libclangex), Cint, (CXSourceManager,), SM)
 end
 
 function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)

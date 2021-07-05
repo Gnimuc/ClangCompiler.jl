@@ -31,3 +31,5 @@ function create_memory_buffer_and_copy(input::String, buffer_name::String="")
     return clang_MemoryBuffer_getMemBufferCopy(input, length(input), buffer_name,
                                                length(buffer_name))
 end
+
+Base.size(buffer::MemoryBuffer) = clang_MemoryBuffer_getBufferSize(buffer.ptr)
