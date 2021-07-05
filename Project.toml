@@ -5,12 +5,10 @@ version = "0.1.0"
 [deps]
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 LLVM = "929cbde3-209d-540e-8aea-75f648917ca0"
-LibClang = "673b39ed-8657-431a-8e65-2365c8cec7d5"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [compat]
 LLVM = "3"
-LibClang = "~0.60"
 julia = "~1.6"
 
 [extras]

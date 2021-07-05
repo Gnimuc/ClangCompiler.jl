@@ -5,10 +5,6 @@ using ..ClangCompiler: libclangex
 const time_t = Clong
 
 
-mutable struct CXTranslationUnitImpl end
-
-const CXTranslationUnit = Ptr{CXTranslationUnitImpl}
-
 mutable struct LLVMOpaqueContext end
 
 const LLVMContextRef = Ptr{LLVMOpaqueContext}
@@ -16,6 +12,11 @@ const LLVMContextRef = Ptr{LLVMOpaqueContext}
 mutable struct LLVMOpaqueModule end
 
 const LLVMModuleRef = Ptr{LLVMOpaqueModule}
+
+@enum CXInit_Error::UInt32 begin
+    CXInit_NoError = 0
+    CXInit_CanNotCreate = 1
+end
 
 const CXIntrusiveRefCntPtr = Ptr{Cvoid}
 
@@ -72,47 +73,6 @@ const CXIgnoringDiagConsumer = Ptr{Cvoid}
 const CXDiagnosticsEngine = Ptr{Cvoid}
 
 const CXCodeGenerator = Ptr{Cvoid}
-
-function clang_TranslationUnit_getASTUnit(TU)
-    ccall((:clang_TranslationUnit_getASTUnit, libclangex), CXASTUnit, (CXTranslationUnit,), TU)
-end
-
-function clang_ASTUnit_getASTContext(ASTU)
-    ccall((:clang_ASTUnit_getASTContext, libclangex), CXASTContext, (CXASTUnit,), ASTU)
-end
-
-function clang_ASTUnit_getHeaderSearchOpts(ASTU)
-    ccall((:clang_ASTUnit_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXASTUnit,), ASTU)
-end
-
-function clang_ASTUnit_getPreprocessorOpts(ASTU)
-    ccall((:clang_ASTUnit_getPreprocessorOpts, libclangex), CXPreprocessorOptions, (CXASTUnit,), ASTU)
-end
-
-function clang_ASTUnit_getDiagnostics(ASTU)
-    ccall((:clang_ASTUnit_getDiagnostics, libclangex), CXDiagnosticsEngine, (CXASTUnit,), ASTU)
-end
-
-function clang_ASTUnit_getSema(ASTU)
-    ccall((:clang_ASTUnit_getSema, libclangex), CXSema, (CXASTUnit,), ASTU)
-end
-
-function clang_ASTUnit_getFileManager(ASTU)
-    ccall((:clang_ASTUnit_getFileManager, libclangex), CXFileManager, (CXASTUnit,), ASTU)
-end
-
-function clang_ASTUnit_getSourceManager(ASTU)
-    ccall((:clang_ASTUnit_getSourceManager, libclangex), CXSourceManager, (CXASTUnit,), ASTU)
-end
-
-function clang_ASTUnit_getPreprocessor(ASTU)
-    ccall((:clang_ASTUnit_getPreprocessor, libclangex), CXPreprocessor, (CXASTUnit,), ASTU)
-end
-
-@enum CXInit_Error::UInt32 begin
-    CXInit_NoError = 0
-    CXInit_CanNotCreate = 1
-end
 
 function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
     ccall((:clang_CreateLLVMCodeGen, libclangex), CXCodeGenerator, (CXCompilerInstance, LLVMContextRef, Ptr{Cchar}), CI, LLVMCtx, ModuleName)
