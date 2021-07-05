@@ -31,9 +31,13 @@ const CXHeaderSearchOptions = Ptr{Cvoid}
 
 const CXPreprocessorOptions = Ptr{Cvoid}
 
+const CXFrontendOptions = Ptr{Cvoid}
+
 const CXSema = Ptr{Cvoid}
 
 const CXPreprocessor = Ptr{Cvoid}
+
+const CXHeaderSearch = Ptr{Cvoid}
 
 const CXASTUnit = Ptr{Cvoid}
 
@@ -198,20 +202,40 @@ function clang_CompilerInstance_hasInvocation(CI)
     ccall((:clang_CompilerInstance_hasInvocation, libclangex), Bool, (CXCompilerInstance,), CI)
 end
 
-function clang_CompilerInstance_setInvocation(CI, CInv)
-    ccall((:clang_CompilerInstance_setInvocation, libclangex), Cvoid, (CXCompilerInstance, CXCompilerInvocation), CI, CInv)
-end
-
 function clang_CompilerInstance_getInvocation(CI)
     ccall((:clang_CompilerInstance_getInvocation, libclangex), CXCompilerInvocation, (CXCompilerInstance,), CI)
 end
 
-function clang_CompilerInstance_setTarget(CI)
-    ccall((:clang_CompilerInstance_setTarget, libclangex), Cvoid, (CXCompilerInstance,), CI)
+function clang_CompilerInstance_setInvocation(CI, CInv)
+    ccall((:clang_CompilerInstance_setInvocation, libclangex), Cvoid, (CXCompilerInstance, CXCompilerInvocation), CI, CInv)
 end
 
-function clang_CompilerInstance_createSema(CI)
-    ccall((:clang_CompilerInstance_createSema, libclangex), Cvoid, (CXCompilerInstance,), CI)
+function clang_CompilerInstance_setTarget(CI, Info)
+    ccall((:clang_CompilerInstance_setTarget, libclangex), Cvoid, (CXCompilerInstance, CXTargetInfo), CI, Info)
+end
+
+function clang_CompilerInstance_setTargetAndLangOpts(CI)
+    ccall((:clang_CompilerInstance_setTargetAndLangOpts, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_hasPreprocessor(CI)
+    ccall((:clang_CompilerInstance_hasPreprocessor, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getPreprocessor(CI)
+    ccall((:clang_CompilerInstance_getPreprocessor, libclangex), CXPreprocessor, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setPreprocessor(CI, PP)
+    ccall((:clang_CompilerInstance_setPreprocessor, libclangex), Cvoid, (CXCompilerInstance, CXPreprocessor), CI, PP)
+end
+
+function clang_CompilerInstance_createPreprocessor(CI)
+    ccall((:clang_CompilerInstance_createPreprocessor, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_hasSema(CI)
+    ccall((:clang_CompilerInstance_hasSema, libclangex), Bool, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInstance_getSema(CI)
@@ -222,24 +246,56 @@ function clang_CompilerInstance_setSema(CI, S)
     ccall((:clang_CompilerInstance_setSema, libclangex), Cvoid, (CXCompilerInstance, CXSema), CI, S)
 end
 
-function clang_CompilerInstance_createPreprocessor(CI)
-    ccall((:clang_CompilerInstance_createPreprocessor, libclangex), Cvoid, (CXCompilerInstance,), CI)
+function clang_CompilerInstance_createSema(CI)
+    ccall((:clang_CompilerInstance_createSema, libclangex), Cvoid, (CXCompilerInstance,), CI)
 end
 
-function clang_CompilerInstance_setPreprocessor(CI, PP)
-    ccall((:clang_CompilerInstance_setPreprocessor, libclangex), Cvoid, (CXCompilerInstance, CXPreprocessor), CI, PP)
+function clang_CompilerInstance_hasASTContext(CI)
+    ccall((:clang_CompilerInstance_hasASTContext, libclangex), Bool, (CXCompilerInstance,), CI)
 end
 
-function clang_CompilerInstance_createASTContext(CI)
-    ccall((:clang_CompilerInstance_createASTContext, libclangex), Cvoid, (CXCompilerInstance,), CI)
+function clang_CompilerInstance_getASTContext(CI)
+    ccall((:clang_CompilerInstance_getASTContext, libclangex), CXASTContext, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInstance_setASTContext(CI, Ctx)
     ccall((:clang_CompilerInstance_setASTContext, libclangex), Cvoid, (CXCompilerInstance, CXASTContext), CI, Ctx)
 end
 
+function clang_CompilerInstance_createASTContext(CI)
+    ccall((:clang_CompilerInstance_createASTContext, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_hasASTConsumer(CI)
+    ccall((:clang_CompilerInstance_hasASTConsumer, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
 function clang_CompilerInstance_setCodeGenerator(CI, CG)
     ccall((:clang_CompilerInstance_setCodeGenerator, libclangex), Cvoid, (CXCompilerInstance, CXCodeGenerator), CI, CG)
+end
+
+function clang_CompilerInstance_getCodeGenOpts(CI)
+    ccall((:clang_CompilerInstance_getCodeGenOpts, libclangex), CXCodeGenOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getDiagnosticOpts(CI)
+    ccall((:clang_CompilerInstance_getDiagnosticOpts, libclangex), CXDiagnosticOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getFrontendOpts(CI)
+    ccall((:clang_CompilerInstance_getFrontendOpts, libclangex), CXFrontendOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getHeaderSearchOpts(CI)
+    ccall((:clang_CompilerInstance_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getPreprocessorOpts(CI)
+    ccall((:clang_CompilerInstance_getPreprocessorOpts, libclangex), CXPreprocessorOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getTargetOpts(CI)
+    ccall((:clang_CompilerInstance_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInvocation_create(ErrorCode)
@@ -254,20 +310,28 @@ function clang_CompilerInvocation_createFromCommandLine(command_line_args_with_s
     ccall((:clang_CompilerInvocation_createFromCommandLine, libclangex), CXCompilerInvocation, (Ptr{Ptr{Cchar}}, Cint, CXDiagnosticsEngine, Ptr{CXInit_Error}), command_line_args_with_src, num_command_line_args, Diags, ErrorCode)
 end
 
-function clang_CompilerInvocation_getTargetOpts(CI)
-    ccall((:clang_CompilerInvocation_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInvocation,), CI)
-end
-
 function clang_CompilerInvocation_getCodeGenOpts(CI)
     ccall((:clang_CompilerInvocation_getCodeGenOpts, libclangex), CXCodeGenOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getDiagnosticOpts(CI)
+    ccall((:clang_CompilerInvocation_getDiagnosticOpts, libclangex), CXDiagnosticOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getFrontendOpts(CI)
+    ccall((:clang_CompilerInvocation_getFrontendOpts, libclangex), CXFrontendOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getHeaderSearchOpts(CI)
+    ccall((:clang_CompilerInvocation_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXCompilerInvocation,), CI)
 end
 
 function clang_CompilerInvocation_getPreprocessorOpts(CI)
     ccall((:clang_CompilerInvocation_getPreprocessorOpts, libclangex), CXPreprocessorOptions, (CXCompilerInvocation,), CI)
 end
 
-function clang_CompilerInvocation_getHeaderSearchOpts(CI)
-    ccall((:clang_CompilerInvocation_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXCompilerInvocation,), CI)
+function clang_CompilerInvocation_getTargetOpts(CI)
+    ccall((:clang_CompilerInvocation_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInvocation,), CI)
 end
 
 function clang_DiagnosticIDs_create(ErrorCode)
@@ -460,6 +524,15 @@ end
 
 function clang_PreprocessorOptions_getMacroIncludes(PPO, IncsOut, Num)
     ccall((:clang_PreprocessorOptions_getMacroIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
+end
+
+function clang_Preprocessor_getHeaderSearchInfo(PP)
+    ccall((:clang_Preprocessor_getHeaderSearchInfo, libclangex), CXHeaderSearch, (CXPreprocessor,), PP)
+end
+
+# no prototype is found for this function at CXPreprocessor.h:14:21, please use with caution
+function clang_HeaderSearch_PrintStats()
+    ccall((:clang_HeaderSearch_PrintStats, libclangex), Cvoid, ())
 end
 
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)

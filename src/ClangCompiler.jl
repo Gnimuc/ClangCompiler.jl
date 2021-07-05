@@ -11,6 +11,14 @@ using .LibClangEx
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
+include("clang/option.jl")
+include("clang/target.jl")
+include("clang/buffer.jl")
 include("clang/diagnostic.jl")
 include("clang/source.jl")
+include("clang/preprocessor.jl")
+include("clang/ast.jl")
+include("clang/sema.jl")
+include("clang/invocation.jl")
+include("clang/instance.jl")
 end
