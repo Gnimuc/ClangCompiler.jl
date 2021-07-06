@@ -6,6 +6,20 @@ mutable struct HeaderSearchOptions
     ptr::CXHeaderSearchOptions
 end
 
+function get_resource_dir(x::HeaderSearchOptions)
+    @assert x.ptr != C_NULL "header search options has a NULL pointer."
+    n = clang_HeaderSearchOptions_GetResourceDirLength(x.ptr)
+    dir = Vector{Cuchar}(undef, n)
+    clang_HeaderSearchOptions_GetResourceDir(x.ptr, dir, n)
+    return String(dir)
+end
+
+function set_resource_dir(x::HeaderSearchOptions, dir::String)
+    @assert x.ptr != C_NULL "header search options has a NULL pointer."
+    clang_HeaderSearchOptions_GetResourceDir(x.ptr, dir, length(dir))
+    return nothing
+end
+
 """
     mutable struct PreprocessorOptions <: Any
 Holds a pointer to a `clang::PreprocessorOptions` object.

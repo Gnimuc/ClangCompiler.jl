@@ -27,10 +27,14 @@ function destroy(x::CompilerInstance)
 end
 
 # Diagnostics
-has_diagnostics(ci::CompilerInstance) = clang_CompilerInstance_hasDiagnostics(ci.ptr)
+function has_diagnostics(ci::CompilerInstance)
+    @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    return clang_CompilerInstance_hasDiagnostics(ci.ptr)
+end
 
 function get_diagnostics(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    @assert has_diagnostics(ci) "compiler instance has no diagnostics engine."
     return DiagnosticsEngine(clang_CompilerInstance_getDiagnostics(ci.ptr))
 end
 
@@ -61,6 +65,7 @@ end
 
 function get_file_manager(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    @assert has_file_manager(ci) "compiler instance has no file manager."
     return FileManager(clang_CompilerInstance_getFileManager(ci.ptr))
 end
 
@@ -83,6 +88,7 @@ end
 
 function get_source_manager(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    @assert has_source_manager(ci) "compiler instance has no source manager."
     return SourceManager(clang_CompilerInstance_getSourceManager(ci.ptr))
 end
 
@@ -106,6 +112,7 @@ end
 
 function get_invocation(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    @assert has_invocation(ci) "compiler instance has no invocation"
     return CompilerInvocation(clang_CompilerInstance_getInvocation(ci.ptr))
 end
 
@@ -118,7 +125,7 @@ end
 # Target
 function set_target(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
-    clang_CompilerInstance_setTargetAndLangOpts()
+    clang_CompilerInstance_setTargetAndLangOpts(ci.ptr)
 end
 
 function set_target(ci::CompilerInstance, t::TargetInfo)
@@ -135,6 +142,7 @@ end
 
 function get_preprocessor(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    @assert has_preprocessor(ci) "compiler instance has no preprocessor"
     return Preprocessor(clang_CompilerInstance_getPreprocessor(ci.ptr))
 end
 
@@ -144,16 +152,20 @@ function set_preprocessor(ci::CompilerInstance, pp::Preprocessor)
     return clang_CompilerInstance_setPreprocessor(ci.ptr, pp.ptr)
 end
 
-function create_preprocessor(ci::CompilerInstance)
+function create_preprocessor(ci::CompilerInstance, kind=CXTU_Complete)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
-    return clang_CompilerInstance_createPreprocessor(ci.ptr)
+    return clang_CompilerInstance_createPreprocessor(ci.ptr, kind)
 end
 
 # Sema
-has_sema(ci::CompilerInstance) = clang_CompilerInstance_hasSema(ci.ptr)
+function has_sema(ci::CompilerInstance)
+    @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    return clang_CompilerInstance_hasSema(ci.ptr)
+end
 
 function get_sema(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    @assert has_sema(ci) "compiler instance has no sema."
     return Sema(clang_CompilerInstance_getSema(ci.ptr))
 end
 
@@ -163,16 +175,20 @@ function set_sema(ci::CompilerInstance, sema::Sema)
     return clang_CompilerInstance_setSema(ci.ptr, sema.ptr)
 end
 
-function create_sema(ci::CompilerInstance)
+function create_sema(ci::CompilerInstance, kind=CXTU_Complete)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
-    return clang_CompilerInstance_createSema(ci.ptr)
+    return clang_CompilerInstance_createSema(ci.ptr, kind)
 end
 
 # ASTContext
-has_ast_context(ci::CompilerInstance) = clang_CompilerInstance_hasASTContext(ci.ptr)
+function has_ast_context(ci::CompilerInstance)
+    @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    return clang_CompilerInstance_hasASTContext(ci.ptr)
+end
 
 function get_ast_context(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
+    @assert has_ast_context "compiler instance has no AST context."
     return ASTContext(clang_CompilerInstance_getASTContext(ci.ptr))
 end
 

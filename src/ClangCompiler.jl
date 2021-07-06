@@ -10,10 +10,10 @@ using .LibClangEx
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
+include("clang/diagnostic.jl")
 include("clang/option.jl")
 include("clang/target.jl")
 include("clang/buffer.jl")
-include("clang/diagnostic.jl")
 include("clang/source.jl")
 include("clang/preprocessor.jl")
 include("clang/ast.jl")

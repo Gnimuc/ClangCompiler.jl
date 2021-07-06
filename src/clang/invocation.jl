@@ -40,7 +40,7 @@ function create_compiler_invocation_from_cmd(src::String, args::Vector{String}=S
     push!(args_with_src, src)
     __CC_CMD_ARGS_CACHE[__new_id()] = args_with_src
     invocation = clang_CompilerInvocation_createFromCommandLine(args_with_src,
-                                                                langth(args_with_src), diag,
+                                                                length(args_with_src), diag.ptr,
                                                                 status)
     @assert status[] == CXInit_NoError
     return CompilerInvocation(invocation)
@@ -49,27 +49,27 @@ end
 # Options
 function get_codegen_options(ci::CompilerInvocation)
     @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
-    return CodeGenOptions(clang_CompilerInstance_getCodeGenOpts(ci.ptr))
+    return CodeGenOptions(clang_CompilerInvocation_getCodeGenOpts(ci.ptr))
 end
 
 function get_diagnostic_options(ci::CompilerInvocation)
     @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
-    return DiagnosticOptions(clang_CompilerInstance_getDiagnosticOpts(ci.ptr))
+    return DiagnosticOptions(clang_CompilerInvocation_getDiagnosticOpts(ci.ptr))
 end
 
 function get_frontend_options(ci::CompilerInvocation)
     @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
-    return FrontendOptions(clang_CompilerInstance_getFrontendOpts(ci.ptr))
+    return FrontendOptions(clang_CompilerInvocation_getFrontendOpts(ci.ptr))
 end
 
 function get_header_search_options(ci::CompilerInvocation)
     @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
-    return HeaderSearchOptions(clang_CompilerInstance_getHeaderSearchOpts(ci.ptr))
+    return HeaderSearchOptions(clang_CompilerInvocation_getHeaderSearchOpts(ci.ptr))
 end
 
 function get_preprocessor_options(ci::CompilerInvocation)
     @assert ci.ptr != C_NULL "compiler invocation has a NULL pointer."
-    return PreprocessorOptions(clang_CompilerInstance_getPreprocessorOpts(ci.ptr))
+    return PreprocessorOptions(clang_CompilerInvocation_getPreprocessorOpts(ci.ptr))
 end
 
 function get_target_options(ci::CompilerInvocation)
