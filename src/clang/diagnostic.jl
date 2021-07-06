@@ -38,6 +38,11 @@ function create_diagnostic_opts()
     return opts
 end
 
+function status(x::DiagnosticOptions)
+    @assert x.ptr != C_NULL "diagnostic options has a NULL pointer."
+    return clang_DiagnosticOptions_PrintStats(x.ptr)
+end
+
 """
     AbstractDiagnosticConsumer <: Any
 Supretype for DiagnosticConsumers.

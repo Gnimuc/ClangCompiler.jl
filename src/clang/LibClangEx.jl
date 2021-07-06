@@ -308,6 +308,10 @@ function clang_DiagnosticOptions_dispose(DO)
     ccall((:clang_DiagnosticOptions_dispose, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
 end
 
+function clang_DiagnosticOptions_PrintStats(DO)
+    ccall((:clang_DiagnosticOptions_PrintStats, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
+end
+
 function clang_DiagnosticConsumer_create(ErrorCode)
     ccall((:clang_DiagnosticConsumer_create, libclangex), CXDiagnosticConsumer, (Ptr{CXInit_Error},), ErrorCode)
 end
@@ -428,6 +432,10 @@ function clang_TargetOptions_dispose(TO)
     ccall((:clang_TargetOptions_dispose, libclangex), Cvoid, (CXTargetOptions,), TO)
 end
 
+function clang_TargetOptions_setTriple(TO, TripleStr, Num)
+    ccall((:clang_TargetOptions_setTriple, libclangex), Cvoid, (CXTargetOptions, Ptr{Cchar}, Csize_t), TO, TripleStr, Num)
+end
+
 function clang_TargetInfo_CreateTargetInfo(DE, Opts)
     ccall((:clang_TargetInfo_CreateTargetInfo, libclangex), CXTargetInfo, (CXDiagnosticsEngine, CXTargetOptions), DE, Opts)
 end
@@ -452,8 +460,8 @@ function clang_CodeGenOptions_getCommandLineArgs(CGO, ArgsOut, Num)
     ccall((:clang_CodeGenOptions_getCommandLineArgs, libclangex), Cvoid, (CXCodeGenOptions, Ptr{Ptr{Cchar}}, Csize_t), CGO, ArgsOut, Num)
 end
 
-function clang_TargetOptions_setTriple(TO, TripleStr, Num)
-    ccall((:clang_TargetOptions_setTriple, libclangex), Cvoid, (CXTargetOptions, Ptr{Cchar}, Csize_t), TO, TripleStr, Num)
+function clang_CodeGenOptions_PrintStats(CGO)
+    ccall((:clang_CodeGenOptions_PrintStats, libclangex), Cvoid, (CXCodeGenOptions,), CGO)
 end
 
 function clang_HeaderSearchOptions_GetResourceDirLength(HSO)
@@ -466,6 +474,10 @@ end
 
 function clang_HeaderSearchOptions_SetResourceDir(HSO, ResourcesDir, N)
     ccall((:clang_HeaderSearchOptions_SetResourceDir, libclangex), Cvoid, (CXHeaderSearchOptions, Ptr{Cchar}, Csize_t), HSO, ResourcesDir, N)
+end
+
+function clang_HeaderSearchOptions_PrintStats(HSO)
+    ccall((:clang_HeaderSearchOptions_PrintStats, libclangex), Cvoid, (CXHeaderSearchOptions,), HSO)
 end
 
 function clang_PreprocessorOptions_getChainedIncludesNum(PPO)
@@ -496,8 +508,12 @@ function clang_FrontendOptions_getModulesEmbedFilesNum(Opts)
     ccall((:clang_FrontendOptions_getModulesEmbedFilesNum, libclangex), Csize_t, (CXFrontendOptions,), Opts)
 end
 
-function clang_FrontendOptions_getModulesEmbedFiles(Opts, FileNamess, Num)
-    ccall((:clang_FrontendOptions_getModulesEmbedFiles, libclangex), Cvoid, (CXFrontendOptions, Ptr{Ptr{Cchar}}, Csize_t), Opts, FileNamess, Num)
+function clang_FrontendOptions_getModulesEmbedFiles(Opts, FileNames, Num)
+    ccall((:clang_FrontendOptions_getModulesEmbedFiles, libclangex), Cvoid, (CXFrontendOptions, Ptr{Ptr{Cchar}}, Csize_t), Opts, FileNames, Num)
+end
+
+function clang_FrontendOptions_PrintStats(FEO)
+    ccall((:clang_FrontendOptions_PrintStats, libclangex), Cvoid, (CXFrontendOptions,), FEO)
 end
 
 function clang_Preprocessor_getHeaderSearchInfo(PP)

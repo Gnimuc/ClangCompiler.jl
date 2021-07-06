@@ -20,6 +20,11 @@ function set_resource_dir(x::HeaderSearchOptions, dir::String)
     return nothing
 end
 
+function status(x::HeaderSearchOptions)
+    @assert x.ptr != C_NULL "header search options has a NULL pointer."
+    return clang_HeaderSearchOptions_PrintStats(x.ptr)
+end
+
 """
     mutable struct PreprocessorOptions <: Any
 Holds a pointer to a `clang::PreprocessorOptions` object.

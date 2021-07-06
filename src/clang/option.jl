@@ -21,6 +21,10 @@ function get_command_line_args(x::CodeGenOptions)
     return unsafe_string.(files)
 end
 
+function status(x::CodeGenOptions)
+    @assert x.ptr != C_NULL "codegen options has a NULL pointer."
+    return clang_CodeGenOptions_PrintStats(x.ptr)
+end
 
 """
     mutable struct FrontendOptions <: Any
@@ -36,4 +40,9 @@ function get_modules_embed_files(x::FrontendOptions)
     files = Vector{Ptr{Cuchar}}(undef, n)
     clang_FrontendOptions_getModulesEmbedFiles(x.ptr, files, n)
     return unsafe_string.(files)
+end
+
+function status(x::FrontendOptions)
+    @assert x.ptr != C_NULL "frontend options has a NULL pointer."
+    return clang_FrontendOptions_PrintStats(x.ptr)
 end

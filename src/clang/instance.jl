@@ -233,3 +233,34 @@ function get_target_options(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "compiler instance has a NULL pointer."
     return TargetOptions(clang_CompilerInstance_getTargetOpts(ci.ptr))
 end
+
+# status
+function status(ci::CompilerInstance, ::Type{CodeGenOptions})
+    opts = get_codegen_options(ci)
+    return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{DiagnosticOptions})
+    opts = get_diagnostic_options(ci)
+    return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{FrontendOptions})
+    opts = get_frontend_options(ci)
+    return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{HeaderSearchOptions})
+    opts = get_header_search_options(ci)
+    return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{PreprocessorOptions})
+    opts = get_preprocessor_options(ci)
+    return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{TargetOptions})
+    opts = get_target_options(ci)
+    return status(opts)
+end
