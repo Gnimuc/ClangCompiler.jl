@@ -19,9 +19,14 @@ function create_target_options()
 end
 
 function set_triple(x::TargetOptions, triple::String)
-    @assert x.ptr != C_NULL "file manager has a NULL pointer."
+    @assert x.ptr != C_NULL "TargetOptions has a NULL pointer."
     clang_TargetOptions_setTriple(x.ptr, triple, length(triple))
     return nothing
+end
+
+function status(x::TargetOptions)
+    @assert x.ptr != C_NULL "TargetOptions has a NULL pointer."
+    return clang_TargetOptions_PrintStats(x.ptr)
 end
 
 """
@@ -33,8 +38,8 @@ mutable struct TargetInfo
 end
 
 function TargetInfo(opts::TargetOptions, diag::DiagnosticsEngine=DiagnosticsEngine())
-    @assert opts.ptr != C_NULL "target options has a NULL pointer."
-    @assert diag.ptr != C_NULL "diagnostics engine has a NULL pointer."
+    @assert opts.ptr != C_NULL "TargetOptions has a NULL pointer."
+    @assert diag.ptr != C_NULL "DiagnosticsEngine has a NULL pointer."
     info = clang_TargetInfo_CreateTargetInfo(diag.ptr, opts.ptr)
     return TargetInfo(info)
 end

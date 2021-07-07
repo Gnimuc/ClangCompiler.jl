@@ -39,7 +39,7 @@ function create_diagnostic_opts()
 end
 
 function status(x::DiagnosticOptions)
-    @assert x.ptr != C_NULL "diagnostic options has a NULL pointer."
+    @assert x.ptr != C_NULL "DiagnosticOptions has a NULL pointer."
     return clang_DiagnosticOptions_PrintStats(x.ptr)
 end
 

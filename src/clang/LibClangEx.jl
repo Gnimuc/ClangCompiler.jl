@@ -436,6 +436,10 @@ function clang_TargetOptions_setTriple(TO, TripleStr, Num)
     ccall((:clang_TargetOptions_setTriple, libclangex), Cvoid, (CXTargetOptions, Ptr{Cchar}, Csize_t), TO, TripleStr, Num)
 end
 
+function clang_TargetOptions_PrintStats(TO)
+    ccall((:clang_TargetOptions_PrintStats, libclangex), Cvoid, (CXTargetOptions,), TO)
+end
+
 function clang_TargetInfo_CreateTargetInfo(DE, Opts)
     ccall((:clang_TargetInfo_CreateTargetInfo, libclangex), CXTargetInfo, (CXDiagnosticsEngine, CXTargetOptions), DE, Opts)
 end
@@ -502,6 +506,10 @@ end
 
 function clang_PreprocessorOptions_getMacroIncludes(PPO, IncsOut, Num)
     ccall((:clang_PreprocessorOptions_getMacroIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
+end
+
+function clang_PreprocessorOptions_PrintStats(PPO)
+    ccall((:clang_PreprocessorOptions_PrintStats, libclangex), Cvoid, (CXPreprocessorOptions,), PPO)
 end
 
 function clang_FrontendOptions_getModulesEmbedFilesNum(Opts)
