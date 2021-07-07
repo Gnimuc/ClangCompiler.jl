@@ -9,7 +9,6 @@ using Test
     fm = FileManager()
     @test fm.ptr != C_NULL
 
-    status(fm)
     @testset "FileEntry" begin
         p = joinpath(@__DIR__, "..", "code", "main.cpp") |> normpath
         f = get_file(fm, p)
@@ -18,7 +17,6 @@ using Test
         @test is_valid(f)
         @test !is_named_pipe(f)
     end
-    status(fm)
 
     destroy(fm)
 end
@@ -26,7 +24,6 @@ end
 @testset "SourceManager" begin
     fm = FileManager()
     @test fm.ptr != C_NULL
-    status(fm)
 
     sm = SourceManager(fm)
     @test sm.ptr != C_NULL
@@ -41,8 +38,6 @@ end
     @test fid.ptr != C_NULL
 
     set_main_file_id(sm, fid)
-
-    status(fm)
 
     fid2 = get_main_file_id(sm)
     @test fid2.ptr != C_NULL

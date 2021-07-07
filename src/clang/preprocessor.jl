@@ -59,7 +59,12 @@ mutable struct Preprocessor
     ptr::CXPreprocessor
 end
 
-function get_header_search(pp::Preprocessor)
+function enter_main_file(x::Preprocessor)
     @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
-    return HeaderSearch(clang_Preprocessor_getHeaderSearchInfo(pp.ptr))
+    return clang_Preprocessor_EnterMainSourceFile(x.ptr)
+end
+
+function get_header_search(x::Preprocessor)
+    @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
+    return HeaderSearch(clang_Preprocessor_getHeaderSearchInfo(x.ptr))
 end

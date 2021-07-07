@@ -13,11 +13,6 @@ mutable struct LLVMOpaqueModule end
 
 const LLVMModuleRef = Ptr{LLVMOpaqueModule}
 
-@enum CXInit_Error::UInt32 begin
-    CXInit_NoError = 0
-    CXInit_CanNotCreate = 1
-end
-
 const CXIntrusiveRefCntPtr = Ptr{Cvoid}
 
 const CXMemoryBuffer = Ptr{Cvoid}
@@ -79,6 +74,15 @@ const CXIgnoringDiagConsumer = Ptr{Cvoid}
 const CXDiagnosticsEngine = Ptr{Cvoid}
 
 const CXCodeGenerator = Ptr{Cvoid}
+
+function clang_ASTContext_PrintStats(Ctx)
+    ccall((:clang_ASTContext_PrintStats, libclangex), Cvoid, (CXASTContext,), Ctx)
+end
+
+@enum CXInit_Error::UInt32 begin
+    CXInit_NoError = 0
+    CXInit_CanNotCreate = 1
+end
 
 function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
     ccall((:clang_CreateLLVMCodeGen, libclangex), CXCodeGenerator, (CXCompilerInstance, LLVMContextRef, Ptr{Cchar}), CI, LLVMCtx, ModuleName)
@@ -166,6 +170,14 @@ end
 
 function clang_CompilerInstance_setInvocation(CI, CInv)
     ccall((:clang_CompilerInstance_setInvocation, libclangex), Cvoid, (CXCompilerInstance, CXCompilerInvocation), CI, CInv)
+end
+
+function clang_CompilerInstance_hasTarget(CI)
+    ccall((:clang_CompilerInstance_hasTarget, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getTarget(CI)
+    ccall((:clang_CompilerInstance_getTarget, libclangex), CXTargetInfo, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInstance_setTarget(CI, Info)
@@ -524,12 +536,16 @@ function clang_FrontendOptions_PrintStats(FEO)
     ccall((:clang_FrontendOptions_PrintStats, libclangex), Cvoid, (CXFrontendOptions,), FEO)
 end
 
+function clang_Preprocessor_EnterMainSourceFile(PP)
+    ccall((:clang_Preprocessor_EnterMainSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
 function clang_Preprocessor_getHeaderSearchInfo(PP)
     ccall((:clang_Preprocessor_getHeaderSearchInfo, libclangex), CXHeaderSearch, (CXPreprocessor,), PP)
 end
 
-function clang_HeaderSearch_PrintStats()
-    ccall((:clang_HeaderSearch_PrintStats, libclangex), Cvoid, ())
+function clang_HeaderSearch_PrintStats(HS)
+    ccall((:clang_HeaderSearch_PrintStats, libclangex), Cvoid, (CXHeaderSearch,), HS)
 end
 
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)

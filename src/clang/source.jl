@@ -54,9 +54,12 @@ If `cache_failure` is true, the failure that this file does not exist will be ca
 function get_file(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
                   cache_failure::Bool=true)
     @assert filemgr.ptr != C_NULL "FileManager has a NULL pointer."
-    ref = clang_FileManager_getFileRef(filemgr.ptr, filename, open_file, cache_failure)
-    entry = clang_FileEntryRef_getFileEntry(ref)
-    clang_FileEntryRef_dispose(ref)
+    GC.@preserve filename begin
+        ref = clang_FileManager_getFileRef(filemgr.ptr, filename, open_file, cache_failure)
+        @assert ref != C_NULL "failed to create a FileRef to $filename."
+        entry = clang_FileEntryRef_getFileEntry(ref)
+        clang_FileEntryRef_dispose(ref)
+    end
     return FileEntry(entry)
 end
 
@@ -167,7 +170,7 @@ end
     get_main_file_id(src_mgr::SourceManager) -> FileID
 Return the main file ID.
 
-This function allocates and one should call `destroy` to release the resources.
+This function allocates and one should call `destroy` to release the resources after using this object.
 """
 function get_main_file_id(src_mgr::SourceManager)
     @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
@@ -182,4 +185,18 @@ function set_main_file_id(src_mgr::SourceManager, id::FileID)
     @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
     @assert id.ptr != C_NULL "FileID has a NULL pointer."
     return clang_SourceManager_setMainFileID(src_mgr.ptr, id.ptr)
+end
+
+function set_main_file(src_mgr::SourceManager, file_entry::FileEntry)
+    id = FileID(src_mgr, file_entry)
+    set_main_file_id(src_mgr, id)
+    destroy(id)
+    return nothing
+end
+
+function set_main_file(src_mgr::SourceManager, buffer::MemoryBuffer)
+    id = FileID(src_mgr, buffer)
+    set_main_file_id(src_mgr, id)
+    destroy(id)
+    return nothing
 end

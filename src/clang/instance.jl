@@ -80,6 +80,28 @@ function create_file_manager(ci::CompilerInstance)
     return clang_CompilerInstance_createFileManager(ci.ptr)
 end
 
+function get_file(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
+    file_mgr = get_file_manager(ci)
+    return get_file(file_mgr, filename; open_file)
+end
+
+function set_main_file(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
+    file_entry = get_file(ci, filename, open_file)
+    src_mgr = get_source_manager(ci)
+    return set_main_file(src_mgr, file_entry)
+end
+
+"""
+    get_main_file_id(ci::CompilerInstance) -> FileID
+Return the main file ID.
+
+This function allocates and one should call `destroy` to release the resources after using this object.
+"""
+function get_main_file_id(ci::CompilerInstance)
+    src_mgr = get_source_manager(ci)
+    return get_main_file_id(src_mgr)
+end
+
 # SourceManager
 function has_source_manager(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
@@ -101,7 +123,13 @@ end
 function create_source_manager(ci::CompilerInstance, src_mgr::FileManager)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
     @assert src_mgr.ptr != C_NULL "FileManager has a NULL pointer."
+    @assert has_diagnostics(ci) "CompilerInstance has no diagnostics."
     return clang_CompilerInstance_createSourceManager(ci.ptr, src_mgr.ptr)
+end
+
+function create_source_manager(ci::CompilerInstance)
+    file_mgr = get_file_manager(ci)
+    return create_source_manager(ci, file_mgr)
 end
 
 # Invocation
@@ -123,6 +151,17 @@ function set_invocation(ci::CompilerInstance, cinv::CompilerInvocation)
 end
 
 # Target
+function has_target(ci::CompilerInstance)
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    return clang_CompilerInstance_hasTarget(ci.ptr)
+end
+
+function get_target(ci::CompilerInstance)
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert has_target(ci) "CompilerInstance has no target"
+    return TargetInfo(clang_CompilerInstance_getTarget(ci.ptr))
+end
+
 function set_target(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
     clang_CompilerInstance_setTargetAndLangOpts(ci.ptr)
@@ -154,7 +193,16 @@ end
 
 function create_preprocessor(ci::CompilerInstance, kind=CXTU_Complete)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert has_target(ci) "CompilerInstance has no target."
     return clang_CompilerInstance_createPreprocessor(ci.ptr, kind)
+end
+
+function enter_main_file(ci::CompilerInstance)
+    return enter_main_file(get_preprocessor(ci))
+end
+
+function get_header_search(ci::CompilerInstance)
+    return get_header_search(get_preprocessor(ci))
 end
 
 # Sema
@@ -177,6 +225,8 @@ end
 
 function create_sema(ci::CompilerInstance, kind=CXTU_Complete)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert has_ast_context(ci) "CompilerInstance has no ASTContext."
+    @assert has_ast_consumer(ci) "CompilerInstance has no ASTConsumer."
     return clang_CompilerInstance_createSema(ci.ptr, kind)
 end
 
@@ -188,7 +238,7 @@ end
 
 function get_ast_context(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
-    @assert has_ast_context "CompilerInstance has no AST context."
+    @assert has_ast_context(ci) "CompilerInstance has no AST context."
     return ASTContext(clang_CompilerInstance_getASTContext(ci.ptr))
 end
 
@@ -200,7 +250,26 @@ end
 
 function create_ast_context(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert has_preprocessor(ci) "CompilerInstance has no preprocessor."
     return clang_CompilerInstance_createASTContext(ci.ptr)
+end
+
+# ASTConsumer
+function has_ast_consumer(ci::CompilerInstance)
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    return clang_CompilerInstance_hasASTConsumer(ci.ptr)
+end
+
+function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef, mod_name::String="JuliaCC")
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert llvm_ctx != C_NULL "LLVMContextRef has a NULL pointer."
+    return CodeGenerator(clang_CreateLLVMCodeGen(ci.ptr, llvm_ctx, mod_name))
+end
+
+function set_code_generator(ci::CompilerInstance, cg::CodeGenerator)
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert cg.ptr != C_NULL "CodeGenerator has a NULL pointer."
+    return clang_CompilerInstance_setCodeGenerator(ci.ptr, cg.ptr)
 end
 
 # Options
@@ -263,4 +332,27 @@ end
 function status(ci::CompilerInstance, ::Type{TargetOptions})
     opts = get_target_options(ci)
     return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{HeaderSearch})
+    pp = get_preprocessor(ci)
+    opts = get_header_search(pp)
+    return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{ASTContext})
+    ctx = get_ast_context(ci)
+    return status(ctx)
+end
+
+function status_all(ci::CompilerInstance)
+    status(ci, CodeGenOptions)
+    status(ci, DiagnosticOptions)
+    status(ci, FrontendOptions)
+    status(ci, HeaderSearchOptions)
+    status(ci, PreprocessorOptions)
+    status(ci, TargetOptions)
+    status(ci, HeaderSearch)
+    status(ci, ASTContext)
+    return nothing
 end

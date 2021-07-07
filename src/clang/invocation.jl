@@ -18,16 +18,17 @@ function create_compiler_invocation()
     return invocation
 end
 
-const __CC_CMD_ARGS_CACHE = Dict{Int,Vector{String}}()
-const __CC_CMD_ARGS_CACHE_COUNTER = Threads.Atomic{Int}(0)
+# failed to workaround https://llvm.discourse.group/t/confused-about-the-usage-of-arrayref-in-clang/3807
+# const __CC_CMD_ARGS_CACHE = Dict{Int,Vector{String}}()
+# const __CC_CMD_ARGS_CACHE_COUNTER = Threads.Atomic{Int}(0)
 
-function __reset_counter()
-    return Threads.atomic_sub!(__CC_CMD_ARGS_CACHE_COUNTER, __CC_CMD_ARGS_CACHE_COUNTER[])
-end
-__add_counter() = Threads.atomic_add!(__CC_CMD_ARGS_CACHE_COUNTER, 1)
-__get_counter() = __CC_CMD_ARGS_CACHE_COUNTER[]
-__new_id() = (__add_counter(); __get_counter())
-__clear_cache() = empty!(__CC_CMD_ARGS_CACHE)
+# function __reset_counter()
+#     return Threads.atomic_sub!(__CC_CMD_ARGS_CACHE_COUNTER, __CC_CMD_ARGS_CACHE_COUNTER[])
+# end
+# __add_counter() = Threads.atomic_add!(__CC_CMD_ARGS_CACHE_COUNTER, 1)
+# __get_counter() = __CC_CMD_ARGS_CACHE_COUNTER[]
+# __new_id() = (__add_counter(); __get_counter())
+# __clear_cache() = empty!(__CC_CMD_ARGS_CACHE)
 
 """
     create_compiler_invocation_from_cmd(src::String, args::Vector{String}=String[], diag::DiagnosticsEngine=DiagnosticsEngine()) -> CompilerInvocation
@@ -38,7 +39,7 @@ function create_compiler_invocation_from_cmd(src::String, args::Vector{String}=S
     status = Ref{CXInit_Error}(CXInit_NoError)
     args_with_src = copy(args)
     push!(args_with_src, src)
-    __CC_CMD_ARGS_CACHE[__new_id()] = args_with_src
+    # __CC_CMD_ARGS_CACHE[__new_id()] = args_with_src
     invocation = clang_CompilerInvocation_createFromCommandLine(args_with_src,
                                                                 length(args_with_src), diag.ptr,
                                                                 status)

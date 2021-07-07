@@ -1,8 +1,11 @@
 module ClangCompiler
 
+using Core: Compiler
 const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "..", "libclangex.dylib") |> normpath
 
 using LLVM
+using LLVM.API: LLVMContextRef, LLVMGetGlobalContext, LLVMGetLastFunction
+using LLVM.Interop: call_function
 
 include("clang/LibClangEx.jl")
 using .LibClangEx
@@ -16,6 +19,7 @@ include("clang/target.jl")
 include("clang/buffer.jl")
 include("clang/source.jl")
 include("clang/preprocessor.jl")
+include("clang/codegen.jl")
 include("clang/ast.jl")
 include("clang/sema.jl")
 include("clang/invocation.jl")
