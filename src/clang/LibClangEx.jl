@@ -29,6 +29,8 @@ const CXPreprocessorOptions = Ptr{Cvoid}
 
 const CXFrontendOptions = Ptr{Cvoid}
 
+const CXLangOptions = Ptr{Cvoid}
+
 const CXSema = Ptr{Cvoid}
 
 const CXPreprocessor = Ptr{Cvoid}
@@ -266,6 +268,10 @@ end
 
 function clang_CompilerInstance_getTargetOpts(CI)
     ccall((:clang_CompilerInstance_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getLangOpts(CI)
+    ccall((:clang_CompilerInstance_getLangOpts, libclangex), CXLangOptions, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInvocation_create(ErrorCode)
@@ -546,6 +552,10 @@ end
 
 function clang_FrontendOptions_PrintStats(FEO)
     ccall((:clang_FrontendOptions_PrintStats, libclangex), Cvoid, (CXFrontendOptions,), FEO)
+end
+
+function clang_LangOptions_PrintStats(LO)
+    ccall((:clang_LangOptions_PrintStats, libclangex), Cvoid, (CXLangOptions,), LO)
 end
 
 function clang_Preprocessor_EnterMainSourceFile(PP)

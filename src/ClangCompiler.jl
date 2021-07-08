@@ -3,9 +3,15 @@ module ClangCompiler
 using Core: Compiler
 const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "..", "libclangex.dylib") |> normpath
 
-using LLVM
-using LLVM.API: LLVMContextRef, LLVMGetGlobalContext, LLVMGetLastFunction
-using LLVM.Interop: call_function
+# using LLVM
+# using LLVM.API: LLVMContextRef, LLVMGetGlobalContext, LLVMGetLastFunction
+# using LLVM.Interop: call_function
+
+mutable struct LLVMOpaqueContext end
+const LLVMContextRef = Ptr{LLVMOpaqueContext}
+function LLVMGetGlobalContext()
+    ccall((:LLVMGetGlobalContext, Base.libllvm_path()), LLVMContextRef, ())
+end
 
 include("clang/LibClangEx.jl")
 using .LibClangEx

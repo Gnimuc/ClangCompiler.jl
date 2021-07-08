@@ -302,6 +302,11 @@ function get_target_options(ci::CompilerInstance)
     return TargetOptions(clang_CompilerInstance_getTargetOpts(ci.ptr))
 end
 
+function get_lang_options(ci::CompilerInstance)
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    return LangOptions(clang_CompilerInstance_getLangOpts(ci.ptr))
+end
+
 function set_opt_show_presumed_loc(ci::CompilerInstance, should_show::Bool=true)
     opt = get_diagnostic_options(ci)
     return set_show_presumed_loc(opt, should_show)
@@ -340,6 +345,11 @@ end
 
 function status(ci::CompilerInstance, ::Type{TargetOptions})
     opts = get_target_options(ci)
+    return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{LangOptions})
+    opts = get_lang_options(ci)
     return status(opts)
 end
 
