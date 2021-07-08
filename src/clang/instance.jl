@@ -50,10 +50,9 @@ function get_diagnostic_client(ci::CompilerInstance)
 end
 
 function create_diagnostics(ci::CompilerInstance,
-                            client::DiagnosticConsumer=DiagnosticConsumer(),
+                            client::DiagnosticConsumer=DiagnosticConsumer(C_NULL),
                             should_own_client=true)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
-    @assert client.ptr != C_NULL "DiagnosticConsumer has a NULL pointer."
     return clang_CompilerInstance_createDiagnostics(ci.ptr, client.ptr, should_own_client)
 end
 
@@ -301,6 +300,16 @@ end
 function get_target_options(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
     return TargetOptions(clang_CompilerInstance_getTargetOpts(ci.ptr))
+end
+
+function set_opt_show_presumed_loc(ci::CompilerInstance, should_show::Bool=true)
+    opt = get_diagnostic_options(ci)
+    return set_show_presumed_loc(opt, should_show)
+end
+
+function set_opt_show_colors(ci::CompilerInstance, should_show::Bool=true)
+    opt = get_diagnostic_options(ci)
+    return set_show_colors(opt, should_show)
 end
 
 # status

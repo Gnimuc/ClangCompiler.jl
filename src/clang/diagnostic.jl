@@ -43,6 +43,16 @@ function status(x::DiagnosticOptions)
     return clang_DiagnosticOptions_PrintStats(x.ptr)
 end
 
+function set_show_colors(x::DiagnosticOptions, should_show::Bool)
+    @assert x.ptr != C_NULL "DiagnosticOptions has a NULL pointer."
+    return clang_DiagnosticOptions_setShowColors(x.ptr, should_show)
+end
+
+function set_show_presumed_loc(x::DiagnosticOptions, should_show::Bool)
+    @assert x.ptr != C_NULL "DiagnosticOptions has a NULL pointer."
+    return clang_DiagnosticOptions_setShowPresumedLoc(x.ptr, should_show)
+end
+
 """
     AbstractDiagnosticConsumer <: Any
 Supretype for DiagnosticConsumers.
@@ -156,4 +166,9 @@ function destroy(x::DiagnosticsEngine)
         x.ptr = C_NULL
     end
     return x
+end
+
+function set_show_colors(x::DiagnosticsEngine, should_show::Bool)
+    @assert x.ptr != C_NULL "DiagnosticsEngine has a NULL pointer."
+    return clang_DiagnosticsEngine_setShowColors(x.ptr, should_show)
 end

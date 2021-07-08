@@ -324,6 +324,14 @@ function clang_DiagnosticOptions_PrintStats(DO)
     ccall((:clang_DiagnosticOptions_PrintStats, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
 end
 
+function clang_DiagnosticOptions_setShowColors(DO, ShowColors)
+    ccall((:clang_DiagnosticOptions_setShowColors, libclangex), Cvoid, (CXDiagnosticOptions, Bool), DO, ShowColors)
+end
+
+function clang_DiagnosticOptions_setShowPresumedLoc(DO, ShowPresumedLoc)
+    ccall((:clang_DiagnosticOptions_setShowPresumedLoc, libclangex), Cvoid, (CXDiagnosticOptions, Bool), DO, ShowPresumedLoc)
+end
+
 function clang_DiagnosticConsumer_create(ErrorCode)
     ccall((:clang_DiagnosticConsumer_create, libclangex), CXDiagnosticConsumer, (Ptr{CXInit_Error},), ErrorCode)
 end
@@ -346,6 +354,10 @@ end
 
 function clang_DiagnosticsEngine_dispose(DE)
     ccall((:clang_DiagnosticsEngine_dispose, libclangex), Cvoid, (CXDiagnosticsEngine,), DE)
+end
+
+function clang_DiagnosticsEngine_setShowColors(DE, ShowColors)
+    ccall((:clang_DiagnosticsEngine_setShowColors, libclangex), Cvoid, (CXDiagnosticsEngine, Bool), DE, ShowColors)
 end
 
 function clang_Driver_GetResourcesPathLength(BinaryPath)
