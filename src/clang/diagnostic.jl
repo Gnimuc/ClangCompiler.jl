@@ -107,12 +107,50 @@ function create_ignoring_diagnostic_consumer()
     return consumer
 end
 
-function destroy(x::IgnoringDiagConsumer)
-    if x.ptr != C_NULL
-        clang_IgnoringDiagConsumer_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
+# function destroy(x::IgnoringDiagConsumer)
+#     if x.ptr != C_NULL
+#         clang_IgnoringDiagConsumer_dispose(x.ptr)
+#         x.ptr = C_NULL
+#     end
+#     return x
+# end
+
+"""
+    mutable struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
+Holds a pointer to a `clang::TextDiagnosticPrinter` object.
+"""
+mutable struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
+    ptr::CXTextDiagnosticPrinter
+end
+
+function TextDiagnosticPrinter(opts::DiagnosticOptions)
+    @assert opts.ptr != C_NULL "DiagnosticOptions has a NULL pointer."
+    status = Ref{CXInit_Error}(CXInit_NoError)
+    consumer = clang_TextDiagnosticPrinter_create(opts.ptr, status)
+    @assert status[] == CXInit_NoError
+    return TextDiagnosticPrinter(consumer)
+end
+
+# function destroy(x::TextDiagnosticPrinter)
+#     if x.ptr != C_NULL
+#         clang_TextDiagnosticPrinter_dispose(x.ptr)
+#         x.ptr = C_NULL
+#     end
+#     return x
+# end
+
+function begin_source_file(printer::TextDiagnosticPrinter, lang::LangOptions,
+                           pp::Preprocessor)
+    @assert printer.ptr != C_NULL "TextDiagnosticPrinter has a NULL pointer."
+    @assert lang.ptr != C_NULL "LangOptions has a NULL pointer."
+    clang_TextDiagnosticPrinter_BeginSourceFile(printer.ptr, lang.ptr, pp.ptr)
+    return nothing
+end
+
+function end_source_file(printer::TextDiagnosticPrinter)
+    @assert printer.ptr != C_NULL "TextDiagnosticPrinter has a NULL pointer."
+    clang_TextDiagnosticPrinter_EndSourceFile(printer.ptr)
+    return nothing
 end
 
 """

@@ -13,6 +13,11 @@ mutable struct LLVMOpaqueModule end
 
 const LLVMModuleRef = Ptr{LLVMOpaqueModule}
 
+@enum CXInit_Error::UInt32 begin
+    CXInit_NoError = 0
+    CXInit_CanNotCreate = 1
+end
+
 const CXIntrusiveRefCntPtr = Ptr{Cvoid}
 
 const CXMemoryBuffer = Ptr{Cvoid}
@@ -32,6 +37,8 @@ const CXFrontendOptions = Ptr{Cvoid}
 const CXLangOptions = Ptr{Cvoid}
 
 const CXSema = Ptr{Cvoid}
+
+const CXParser = Ptr{Cvoid}
 
 const CXPreprocessor = Ptr{Cvoid}
 
@@ -73,17 +80,26 @@ const CXDiagnosticConsumer = Ptr{Cvoid}
 
 const CXIgnoringDiagConsumer = Ptr{Cvoid}
 
+const CXTextDiagnosticPrinter = Ptr{Cvoid}
+
 const CXDiagnosticsEngine = Ptr{Cvoid}
 
 const CXCodeGenerator = Ptr{Cvoid}
 
-function clang_ASTContext_PrintStats(Ctx)
-    ccall((:clang_ASTContext_PrintStats, libclangex), Cvoid, (CXASTContext,), Ctx)
+function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
+    ccall((:clang_Parser_create, libclangex), CXParser, (CXPreprocessor, CXSema, Bool, Ptr{CXInit_Error}), PP, Actions, SkipFunctionBodies, ErrorCode)
 end
 
-@enum CXInit_Error::UInt32 begin
-    CXInit_NoError = 0
-    CXInit_CanNotCreate = 1
+function clang_Parser_dispose(P)
+    ccall((:clang_Parser_dispose, libclangex), Cvoid, (CXParser,), P)
+end
+
+function clang_Parser_tryParseAndSkipInvalidOrParsedDecl(Parser, CodeGen)
+    ccall((:clang_Parser_tryParseAndSkipInvalidOrParsedDecl, libclangex), Bool, (CXParser, CXCodeGenerator), Parser, CodeGen)
+end
+
+function clang_ASTContext_PrintStats(Ctx)
+    ccall((:clang_ASTContext_PrintStats, libclangex), Cvoid, (CXASTContext,), Ctx)
 end
 
 function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
@@ -92,6 +108,10 @@ end
 
 function clang_CodeGenerator_getLLVMModule(CG)
     ccall((:clang_CodeGenerator_getLLVMModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
+end
+
+function clang_CodeGenerator_HandleTranslationUnit(CG, Ctx)
+    ccall((:clang_CodeGenerator_HandleTranslationUnit, libclangex), Cvoid, (CXCodeGenerator, CXASTContext), CG, Ctx)
 end
 
 function clang_CompilerInstance_create(ErrorCode)
@@ -354,6 +374,22 @@ function clang_IgnoringDiagConsumer_dispose(DC)
     ccall((:clang_IgnoringDiagConsumer_dispose, libclangex), Cvoid, (CXIgnoringDiagConsumer,), DC)
 end
 
+function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
+    ccall((:clang_TextDiagnosticPrinter_create, libclangex), CXTextDiagnosticPrinter, (CXDiagnosticOptions, Ptr{CXInit_Error}), Opts, ErrorCode)
+end
+
+function clang_TextDiagnosticPrinter_dispose(DC)
+    ccall((:clang_TextDiagnosticPrinter_dispose, libclangex), Cvoid, (CXTextDiagnosticPrinter,), DC)
+end
+
+function clang_TextDiagnosticPrinter_BeginSourceFile(DC, LangOpts, PP)
+    ccall((:clang_TextDiagnosticPrinter_BeginSourceFile, libclangex), Cvoid, (CXTextDiagnosticPrinter, CXLangOptions, CXPreprocessor), DC, LangOpts, PP)
+end
+
+function clang_TextDiagnosticPrinter_EndSourceFile(DC)
+    ccall((:clang_TextDiagnosticPrinter_EndSourceFile, libclangex), Cvoid, (CXTextDiagnosticPrinter,), DC)
+end
+
 function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient, ErrorCode)
     ccall((:clang_DiagnosticsEngine_create, libclangex), CXDiagnosticsEngine, (CXDiagnosticIDs, CXDiagnosticOptions, CXDiagnosticConsumer, Bool, Ptr{CXInit_Error}), ID, DO, DC, ShouldOwnClient, ErrorCode)
 end
@@ -558,6 +594,14 @@ function clang_LangOptions_PrintStats(LO)
     ccall((:clang_LangOptions_PrintStats, libclangex), Cvoid, (CXLangOptions,), LO)
 end
 
+function clang_Decl_EnableStatistics()
+    ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
+end
+
+function clang_Stmt_EnableStatistics()
+    ccall((:clang_Stmt_EnableStatistics, libclangex), Cvoid, ())
+end
+
 function clang_Preprocessor_EnterMainSourceFile(PP)
     ccall((:clang_Preprocessor_EnterMainSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
 end
@@ -568,6 +612,14 @@ end
 
 function clang_HeaderSearch_PrintStats(HS)
     ccall((:clang_HeaderSearch_PrintStats, libclangex), Cvoid, (CXHeaderSearch,), HS)
+end
+
+function clang_Sema_setCollectStats(S, ShouldCollect)
+    ccall((:clang_Sema_setCollectStats, libclangex), Cvoid, (CXSema, Bool), S, ShouldCollect)
+end
+
+function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)
+    ccall((:clang_Sema_processWeakTopLevelDecls, libclangex), Cvoid, (CXSema, CXCodeGenerator), Sema, CodeGen)
 end
 
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)

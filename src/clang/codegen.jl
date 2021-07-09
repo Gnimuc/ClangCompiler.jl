@@ -12,6 +12,12 @@ mutable struct CodeGenerator <: AbstractCodeGenerator
     ptr::CXCodeGenerator
 end
 
+function handle_translation_unit(cg::CodeGenerator, ctx::ASTContext)
+    @assert cg.ptr != C_NULL "CodeGenerator has a NULL pointer."
+    @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
+    clang_CodeGenerator_HandleTranslationUnit(cg.ptr, ctx.ptr)
+end
+
 function get_llvm_module(cg::CodeGenerator)
     @assert cg.ptr != C_NULL "CodeGenerator has a NULL pointer."
     return clang_CodeGenerator_getLLVMModule(cg.ptr)
