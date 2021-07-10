@@ -353,10 +353,30 @@ function status(ci::CompilerInstance, ::Type{LangOptions})
     return status(opts)
 end
 
+function status(ci::CompilerInstance, ::Type{FileManager})
+    fm = get_file_manager(ci)
+    return status(fm)
+end
+
+function status(ci::CompilerInstance, ::Type{SourceManager})
+    sm = get_source_manager(ci)
+    return status(sm)
+end
+
 function status(ci::CompilerInstance, ::Type{HeaderSearch})
     pp = get_preprocessor(ci)
     opts = get_header_search(pp)
     return status(opts)
+end
+
+function status(ci::CompilerInstance, ::Type{Preprocessor})
+    pp = get_preprocessor(ci)
+    return status(pp)
+end
+
+function status(ci::CompilerInstance, ::Type{Sema})
+    s = get_sema(ci)
+    return status(s)
 end
 
 function status(ci::CompilerInstance, ::Type{ASTContext})
@@ -364,14 +384,25 @@ function status(ci::CompilerInstance, ::Type{ASTContext})
     return status(ctx)
 end
 
-function status_all(ci::CompilerInstance)
+function status_options(ci::CompilerInstance)
     status(ci, CodeGenOptions)
     status(ci, DiagnosticOptions)
     status(ci, FrontendOptions)
     status(ci, HeaderSearchOptions)
     status(ci, PreprocessorOptions)
     status(ci, TargetOptions)
+end
+
+function status_modules(ci::CompilerInstance)
+    status(ci, FileManager)
+    status(ci, SourceManager)
     status(ci, HeaderSearch)
+    status(ci, Preprocessor)
+    status(ci, Sema)
     status(ci, ASTContext)
-    return nothing
+end
+
+function status_all(ci::CompilerInstance)
+    status_options(ci)
+    status_modules(ci)
 end

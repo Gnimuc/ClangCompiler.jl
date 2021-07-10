@@ -117,6 +117,11 @@ function destroy(x::SourceManager)
     return x
 end
 
+function status(mgr::SourceManager)
+    @assert mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    return clang_SourceManager_PrintStats(mgr.ptr)
+end
+
 """
     mutable struct FileID <: Any
 Holds a pointer to a `clang::FileID` object.

@@ -602,16 +602,20 @@ function clang_Stmt_EnableStatistics()
     ccall((:clang_Stmt_EnableStatistics, libclangex), Cvoid, ())
 end
 
-function clang_Preprocessor_EnterMainSourceFile(PP)
-    ccall((:clang_Preprocessor_EnterMainSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
-end
-
 function clang_Preprocessor_getHeaderSearchInfo(PP)
     ccall((:clang_Preprocessor_getHeaderSearchInfo, libclangex), CXHeaderSearch, (CXPreprocessor,), PP)
 end
 
 function clang_HeaderSearch_PrintStats(HS)
     ccall((:clang_HeaderSearch_PrintStats, libclangex), Cvoid, (CXHeaderSearch,), HS)
+end
+
+function clang_Preprocessor_EnterMainSourceFile(PP)
+    ccall((:clang_Preprocessor_EnterMainSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_PrintStats(PP)
+    ccall((:clang_Preprocessor_PrintStats, libclangex), Cvoid, (CXPreprocessor,), PP)
 end
 
 function clang_Sema_setCollectStats(S, ShouldCollect)
@@ -622,12 +626,20 @@ function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)
     ccall((:clang_Sema_processWeakTopLevelDecls, libclangex), Cvoid, (CXSema, CXCodeGenerator), Sema, CodeGen)
 end
 
+function clang_Sema_PrintStats(S)
+    ccall((:clang_Sema_PrintStats, libclangex), Cvoid, (CXSema,), S)
+end
+
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
     ccall((:clang_SourceManager_create, libclangex), CXSourceManager, (CXDiagnosticsEngine, CXFileManager, Bool, Ptr{CXInit_Error}), Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
 end
 
 function clang_SourceManager_dispose(SM)
     ccall((:clang_SourceManager_dispose, libclangex), Cvoid, (CXSourceManager,), SM)
+end
+
+function clang_SourceManager_PrintStats(SM)
+    ccall((:clang_SourceManager_PrintStats, libclangex), Cvoid, (CXSourceManager,), SM)
 end
 
 function clang_FileID_getHashValue(FID)
