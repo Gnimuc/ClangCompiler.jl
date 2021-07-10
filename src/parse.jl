@@ -9,6 +9,8 @@ function parse(instance::CompilerInstance, codegen::CodeGenerator)
 
     enter_main_file(preprocessor)
 
+    initialize_builtins(preprocessor)
+
     initialize(parser)
 
     begin_source_file(diag_printer, get_lang_options(instance), preprocessor)

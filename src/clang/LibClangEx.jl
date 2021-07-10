@@ -622,6 +622,10 @@ function clang_Preprocessor_PrintStats(PP)
     ccall((:clang_Preprocessor_PrintStats, libclangex), Cvoid, (CXPreprocessor,), PP)
 end
 
+function clang_Preprocessor_InitializeBuiltins(PP)
+    ccall((:clang_Preprocessor_InitializeBuiltins, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
 function clang_Sema_setCollectStats(S, ShouldCollect)
     ccall((:clang_Sema_setCollectStats, libclangex), Cvoid, (CXSema, Bool), S, ShouldCollect)
 end

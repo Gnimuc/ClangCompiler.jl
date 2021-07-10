@@ -73,3 +73,8 @@ function status(x::Preprocessor)
     @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
     return clang_Preprocessor_PrintStats(x.ptr)
 end
+
+function initialize_builtins(x::Preprocessor)
+    @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
+    return clang_Preprocessor_InitializeBuiltins(x.ptr)
+end
