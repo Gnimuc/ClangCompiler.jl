@@ -94,6 +94,10 @@ function clang_Parser_dispose(P)
     ccall((:clang_Parser_dispose, libclangex), Cvoid, (CXParser,), P)
 end
 
+function clang_Parser_Initialize(P)
+    ccall((:clang_Parser_Initialize, libclangex), Cvoid, (CXParser,), P)
+end
+
 function clang_Parser_tryParseAndSkipInvalidOrParsedDecl(Parser, CodeGen)
     ccall((:clang_Parser_tryParseAndSkipInvalidOrParsedDecl, libclangex), Bool, (CXParser, CXCodeGenerator), Parser, CodeGen)
 end

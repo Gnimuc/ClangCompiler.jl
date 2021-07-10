@@ -22,3 +22,8 @@ function destroy(x::Parser)
     end
     return x
 end
+
+function initialize(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return clang_Parser_Initialize(x.ptr)
+end

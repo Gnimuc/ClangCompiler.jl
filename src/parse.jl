@@ -9,15 +9,17 @@ function parse(instance::CompilerInstance, codegen::CodeGenerator)
 
     enter_main_file(preprocessor)
 
+    initialize(parser)
+
     begin_source_file(diag_printer, get_lang_options(instance), preprocessor)
 
     if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
         process_weak_toplevel_decls(sema, codegen)
         handle_translation_unit(codegen, ast_ctx)
-        # end_source_file(diag_printer)
+        end_source_file(diag_printer)
         return true
     else
-        # end_source_file(diag_printer)
+        end_source_file(diag_printer)
         return false
     end
 end
