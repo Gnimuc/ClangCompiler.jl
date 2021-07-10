@@ -1,6 +1,5 @@
 module ClangCompiler
 
-using Core: Compiler
 const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "..", "libclangex.dylib") |> normpath
 
 using LLVM
@@ -13,6 +12,7 @@ using .LibClangEx
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
+# internal
 include("clang/option.jl")
 include("clang/preprocessor.jl")
 include("clang/diagnostic.jl")
@@ -26,6 +26,10 @@ include("clang/parser.jl")
 include("clang/invocation.jl")
 include("clang/instance.jl")
 
+# interface
 include("parse.jl")
+include("compile.jl")
+export CLCompiler
+export create_compiler, destroy, compile
 
 end
