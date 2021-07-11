@@ -64,7 +64,7 @@ const JLL_ENV_CLANG_TARGETS_MAPPING = Dict(
 
 triple2target(triple::String) = get(JLL_ENV_CLANG_TARGETS_MAPPING, triple, "unknown")
 
-function get_gcc_shard_key(triple::String, version::VersionNumber=v"4.8.5")
+function get_gcc_shard_key(triple::String, version::VersionNumber=v"9.1.0")
     @assert version ∈ JLL_ENV_GCC_VERSIONS "Wrong JLL gcc version: $version. Please choose a version listed in `JLL_ENV_GCC_VERSIONS`."
     @assert triple ∈ JLL_ENV_TRIPLES "Wrong JLL target triple: $triple. Please choose a triple listed in `JLL_ENV_TRIPLES`."
     # ignore gcc version for Apple Silicon
@@ -84,7 +84,7 @@ function get_system_shard_key(triple::String)
     return platform_keys[]
 end
 
-function get_environment_info(triple::String, version::VersionNumber=v"4.8.5")
+function get_environment_info(triple::String, version::VersionNumber=v"9.1.0")
     @assert triple ∈ JLL_ENV_TRIPLES "Wrong JLL target triple: $triple. Please choose a triple listed in `JLL_ENV_TRIPLES`."
     gcc = JLL_ENV_SHARDS[get_gcc_shard_key(triple, version)][]
     sys = JLL_ENV_SHARDS[get_system_shard_key(triple)][]
@@ -97,7 +97,7 @@ function get_environment_info(triple::String, version::VersionNumber=v"4.8.5")
     return info
 end
 
-function get_system_dirs(triple::String, version::VersionNumber=v"4.8.5")
+function get_system_dirs(triple::String, version::VersionNumber=v"9.1.0")
     info = get_environment_info(triple, version)
     gcc_info = info[1]
     sys_info = info[2]
