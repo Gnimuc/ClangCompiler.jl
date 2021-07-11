@@ -5,12 +5,13 @@ function parse(instance::CompilerInstance, codegen::CodeGenerator, parser::Parse
     enter_main_file(preprocessor)
     initialize_builtins(preprocessor)
 
+    begin_source_file(diag_printer, get_lang_options(instance), preprocessor)
+
     initialize(parser)
 
     sema = get_sema(instance)
     ast_ctx = get_ast_context(instance)
 
-    begin_source_file(diag_printer, get_lang_options(instance), preprocessor)
     if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
         process_weak_toplevel_decls(sema, codegen)
         handle_translation_unit(codegen, ast_ctx)
