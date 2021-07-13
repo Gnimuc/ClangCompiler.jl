@@ -1,17 +1,10 @@
 module LibClangEx
 
 using ..ClangCompiler: libclangex
+using LLVM.API: LLVMModuleRef, LLVMOpaqueModule, LLVMOpaqueContext, LLVMContextRef
 
 const time_t = Clong
 
-
-mutable struct LLVMOpaqueContext end
-
-const LLVMContextRef = Ptr{LLVMOpaqueContext}
-
-mutable struct LLVMOpaqueModule end
-
-const LLVMModuleRef = Ptr{LLVMOpaqueModule}
 
 @enum CXInit_Error::UInt32 begin
     CXInit_NoError = 0
@@ -448,10 +441,6 @@ end
 
 function clang_FileEntryRef_getFileEntry(FER)
     ccall((:clang_FileEntryRef_getFileEntry, libclangex), CXFileEntry, (CXFileEntryRef,), FER)
-end
-
-function clang_FileManager_getVirtualFile(FM, Filename, Size, ModificationTime)
-    ccall((:clang_FileManager_getVirtualFile, libclangex), CXFileEntry, (CXFileManager, Ptr{Cchar}, Cuint, time_t), FM, Filename, Size, ModificationTime)
 end
 
 function clang_FileEntry_getName(FE)
