@@ -4,6 +4,8 @@ const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "..", "libclangex.
 
 using LLVM_full_jll
 
+const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "tools", "clang")
+
 using LLVM
 using LLVM.API: LLVMContextRef, LLVMGetGlobalContext, LLVMGetLastFunction
 using LLVM.Interop: call_function
@@ -15,11 +17,10 @@ include("platform/JLLEnvs.jl")
 using .JLLEnvs
 export get_default_args
 
-function get_default_args(verbose=false)
-    args = JLLEnvs.get_default_args()
-    push!(args, "-nostdinc", "-nostdinc++", "-std=c++17")
-    pushfirst!(args, "clang")  # Argv0
-    verbose && push!(args, "-v")
+function get_default_args(;is_cxx=true, version=v"7.1.0")
+    args = JLLEnvs.get_default_args(is_cxx, version)
+    is_cxx ? push!(args, "-nostdinc++", "-nostdlib++") : push!(args, "-nostdinc", "-nostdlib")
+    pushfirst!(args, CLANG_BIN)  # Argv0
     return args
 end
 export get_default_args
