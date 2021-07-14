@@ -7,15 +7,15 @@ using LLVM_full_jll
 const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "tools", "clang")
 
 using LLVM
-using LLVM.API: LLVMContextRef, LLVMGetGlobalContext, LLVMGetLastFunction
+using LLVM.API: LLVMContextRef
 using LLVM.Interop: call_function
+export call_function
 
 include("clang/LibClangEx.jl")
 using .LibClangEx
 
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
-export get_default_args
 
 function get_default_args(;is_cxx=true, version=v"7.1.0")
     args = JLLEnvs.get_default_args(is_cxx, version)
@@ -45,6 +45,7 @@ include("compile.jl")
 export CXXCompiler
 export create_compiler, destroy, compile
 
-
+include("llvm.jl")
+export lookup_function, link, link_crt
 
 end

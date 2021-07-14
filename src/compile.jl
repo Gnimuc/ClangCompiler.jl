@@ -5,12 +5,14 @@ Supertype for Clang compilers.
 abstract type AbstractCompiler end
 
 struct CXXCompiler <: AbstractCompiler
+    ctx::Context
     instance::CompilerInstance
     codegen::CodeGenerator
     parser::Parser
 end
 
 function create_compiler(src::String, args::Vector{String}; diag_show_colors=true)
+    ctx = Context()
     instance = CompilerInstance()
     # diagnostics
     set_opt_show_presumed_loc(instance, true)
@@ -30,27 +32,25 @@ function create_compiler(src::String, args::Vector{String}; diag_show_colors=tru
     # preprocessor & AST & sema
     create_preprocessor(instance)
     create_ast_context(instance)
-    codegen = create_llvm_codegen(instance, LLVMGetGlobalContext())
+    codegen = create_llvm_codegen(instance, ctx)
     set_code_generator(instance, codegen)
     create_sema(instance)
     # parser
     preprocessor = get_preprocessor(instance)
     sema = get_sema(instance)
     parser = Parser(preprocessor, sema)
-    return CXXCompiler(instance, codegen, parser)
+    return CXXCompiler(ctx, instance, codegen, parser)
 end
 
 function destroy(x::CXXCompiler)
-    destroy(x.instance)
     destroy(x.parser)
+    destroy(x.instance)
+    dispose(x.ctx)
 end
 
 function compile(x::CXXCompiler)
-    parse(x.instance, x.codegen, x.parser) && "failed to compile!"
+    parse(x.instance, x.codegen, x.parser) || error("failed to parse the source code.")
     m = get_llvm_module(x.codegen)
-    mod = LLVM.Module(convert(Ptr{LLVM.API.LLVMOpaqueModule}, m))
-end
-
-function lookup_function(mod::Module, func_name::String)
-    LLVM.Function(LLVM.API.LLVMGetNamedFunction(mod, func_name))
+    m == C_NULL && error("failed to generate IR.")
+    return LLVM.Module(m)
 end

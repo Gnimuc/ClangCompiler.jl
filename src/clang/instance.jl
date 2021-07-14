@@ -259,11 +259,12 @@ function has_ast_consumer(ci::CompilerInstance)
     return clang_CompilerInstance_hasASTConsumer(ci.ptr)
 end
 
-function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef, mod_name::String="JuliaCC")
+function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef, mod_name::String="JLCC")
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
     @assert llvm_ctx != C_NULL "LLVMContextRef has a NULL pointer."
     return CodeGenerator(clang_CreateLLVMCodeGen(ci.ptr, llvm_ctx, mod_name))
 end
+create_llvm_codegen(ci::CompilerInstance, ctx::Context, mod_name::String="JLCC") = create_llvm_codegen(ci, ctx.ref, mod_name)
 
 function set_code_generator(ci::CompilerInstance, cg::CodeGenerator)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
