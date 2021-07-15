@@ -1,14 +1,8 @@
 module ClangCompiler
 
-# const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "..", "libclangex.dylib") |> normpath
-
 using LLVM_full_jll
-using Clang_jll
-using Libdl
-
-Libdl.dlopen(joinpath(LLVM_full_jll.artifact_dir, "lib", "libclang-cpp"))
-
 using libclangex_jll
+# const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "lib", "libclangex.dylib") |> normpath
 
 const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "tools", "clang")
 
@@ -53,5 +47,8 @@ export create_compiler, destroy, compile
 
 include("llvm.jl")
 export lookup_function, link, link_crt
+
+include("utils.jl")
+export jlty2llvmty
 
 end
