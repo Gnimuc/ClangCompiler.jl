@@ -2,7 +2,7 @@ using ClangCompiler
 using ClangCompiler.LLVM
 using Test
 
-@testset "function call" begin
+@testset "JIT call" begin
     src = joinpath(@__DIR__, "code", "main.cpp")
     args = get_default_args()
     haskey(ENV, "CI") && push!(args, "-v")
