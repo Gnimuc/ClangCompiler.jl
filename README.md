@@ -4,14 +4,10 @@
 
 ## Installation
 
-1. Print the directory path to `libclang-cpp`.
-```
-julia -e "using LLVM_full_jll; println(joinpath(LLVM_full_jll.artifact_dir, \"lib\"))"
-```
+For now, this package only targets Julia 1.7 on macOS, it's not hard to edit a few lines to support other platforms though.
 
-2. Add the output above to your `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH`/`PATH`.
-
-3. Install the package
+1. Build [libclangex](https://github.com/Gnimuc/libclangex) and setup `ENV["LIBCLANGEX_INSTALL_PREFIX"]`.
+2. Install and test the package by running:
 ```
 pkg> dev https://github.com/Gnimuc/ClangComplier.jl.git
 

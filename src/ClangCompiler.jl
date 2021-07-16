@@ -1,8 +1,8 @@
 module ClangCompiler
 
 using LLVM_full_jll
-using libclangex_jll
-# const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "lib", "libclangex.dylib") |> normpath
+# using libclangex_jll
+const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "lib", "libclangex.dylib") |> normpath
 
 const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "tools", "clang")
 

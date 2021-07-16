@@ -30,7 +30,7 @@ local_machine_env_compiler_args = [
     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++",
     "-isysroot/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk",
     "-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1",
-    "-I$(joinpath(llvm_lib_dir, "clang", "11.0.1", "include"))",
+    "-I$(joinpath(llvm_lib_dir, "clang", "12.0.0", "include"))",
     "-mmacosx-version-min=10.15",
     "-std=gnu++14",
     joinpath(@__DIR__, "Test.cxx"),

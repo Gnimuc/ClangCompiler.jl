@@ -11,11 +11,11 @@ args = get_default_args()
 cpr = create_compiler(src, args)
 
 # generate IR
-mod = compile(cpr)
+m = compile(cpr)
 
 # create JIT and call function
-ee = JIT(mod)
-ret = run(ee, lookup_function(mod, "main"))
+ee = JIT(m)
+ret = run(ee, lookup_function(m, "main"))
 
 # clean up
 destroy(cpr)
