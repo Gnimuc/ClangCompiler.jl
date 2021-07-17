@@ -543,14 +543,6 @@ function clang_HeaderSearchOptions_PrintStats(HSO)
     ccall((:clang_HeaderSearchOptions_PrintStats, libclangex), Cvoid, (CXHeaderSearchOptions,), HSO)
 end
 
-function clang_PreprocessorOptions_getChainedIncludesNum(PPO)
-    ccall((:clang_PreprocessorOptions_getChainedIncludesNum, libclangex), Csize_t, (CXPreprocessorOptions,), PPO)
-end
-
-function clang_PreprocessorOptions_getChainedIncludes(PPO, IncsOut, Num)
-    ccall((:clang_PreprocessorOptions_getChainedIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
-end
-
 function clang_PreprocessorOptions_getIncludesNum(PPO)
     ccall((:clang_PreprocessorOptions_getIncludesNum, libclangex), Csize_t, (CXPreprocessorOptions,), PPO)
 end
@@ -559,24 +551,8 @@ function clang_PreprocessorOptions_getIncludes(PPO, IncsOut, Num)
     ccall((:clang_PreprocessorOptions_getIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
 end
 
-function clang_PreprocessorOptions_getMacroIncludesNum(PPO)
-    ccall((:clang_PreprocessorOptions_getMacroIncludesNum, libclangex), Csize_t, (CXPreprocessorOptions,), PPO)
-end
-
-function clang_PreprocessorOptions_getMacroIncludes(PPO, IncsOut, Num)
-    ccall((:clang_PreprocessorOptions_getMacroIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
-end
-
 function clang_PreprocessorOptions_PrintStats(PPO)
     ccall((:clang_PreprocessorOptions_PrintStats, libclangex), Cvoid, (CXPreprocessorOptions,), PPO)
-end
-
-function clang_FrontendOptions_getModulesEmbedFilesNum(Opts)
-    ccall((:clang_FrontendOptions_getModulesEmbedFilesNum, libclangex), Csize_t, (CXFrontendOptions,), Opts)
-end
-
-function clang_FrontendOptions_getModulesEmbedFiles(Opts, FileNames, Num)
-    ccall((:clang_FrontendOptions_getModulesEmbedFiles, libclangex), Cvoid, (CXFrontendOptions, Ptr{Ptr{Cchar}}, Csize_t), Opts, FileNames, Num)
 end
 
 function clang_FrontendOptions_PrintStats(FEO)
@@ -585,14 +561,6 @@ end
 
 function clang_LangOptions_PrintStats(LO)
     ccall((:clang_LangOptions_PrintStats, libclangex), Cvoid, (CXLangOptions,), LO)
-end
-
-function clang_Decl_EnableStatistics()
-    ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
-end
-
-function clang_Stmt_EnableStatistics()
-    ccall((:clang_Stmt_EnableStatistics, libclangex), Cvoid, ())
 end
 
 function clang_Preprocessor_getHeaderSearchInfo(PP)
@@ -669,6 +637,22 @@ end
 
 function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
     ccall((:clang_ParseAST, libclangex), Cvoid, (CXSema, Bool, Bool), Sema, PrintStats, SkipFunctionBodies)
+end
+
+function clang_Decl_EnableStatistics()
+    ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
+end
+
+function clang_Stmt_EnableStatistics()
+    ccall((:clang_Stmt_EnableStatistics, libclangex), Cvoid, ())
+end
+
+function clang_Decl_PrintStats()
+    ccall((:clang_Decl_PrintStats, libclangex), Cvoid, ())
+end
+
+function clang_Stmt_PrintStats()
+    ccall((:clang_Stmt_PrintStats, libclangex), Cvoid, ())
 end
 
 # exports
