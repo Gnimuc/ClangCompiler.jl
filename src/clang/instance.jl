@@ -279,6 +279,12 @@ function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef, mod
 end
 create_llvm_codegen(ci::CompilerInstance, ctx::Context, mod_name::String="JLCC") = create_llvm_codegen(ci, ctx.ref, mod_name)
 
+# Actions
+function execute_action(ci::CompilerInstance, action::T) where {T<:AbstractFrontendAction}
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert action.ptr != C_NULL "$T has a NULL pointer."
+    return clang_CompilerInstance_ExecuteAction(ci.ptr, action.ptr)
+end
 
 # Options
 function get_codegen_options(ci::CompilerInstance)

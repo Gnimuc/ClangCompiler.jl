@@ -26,6 +26,7 @@ end
 export get_compiler_args
 
 # internal
+include("clang/frontend.jl")
 include("clang/option.jl")
 include("clang/preprocessor.jl")
 include("clang/diagnostic.jl")
@@ -44,6 +45,8 @@ include("parse.jl")
 include("compile.jl")
 export SimpleCompiler
 export create_compiler, destroy, compile
+export IRGenerator
+export generate_llvmir, get_module
 
 include("llvm.jl")
 export lookup_function, link, link_crt

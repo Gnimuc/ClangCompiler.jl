@@ -143,6 +143,10 @@ function clang_CodeGenAction_dispose(CA)
     ccall((:clang_CodeGenAction_dispose, libclangex), Cvoid, (CXCodeGenAction,), CA)
 end
 
+function clang_CodeGenAction_takeModule(CA)
+    ccall((:clang_CodeGenAction_takeModule, libclangex), LLVMModuleRef, (CXCodeGenAction,), CA)
+end
+
 function clang_CompilerInstance_create(ErrorCode)
     ccall((:clang_CompilerInstance_create, libclangex), CXCompilerInstance, (Ptr{CXInit_Error},), ErrorCode)
 end
