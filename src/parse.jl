@@ -1,3 +1,24 @@
+function parse_ast(sema::Sema, PrintStats::Bool=false, SkipFunctionBodies::Bool=false)
+    @assert sema.ptr != C_NULL "Sema has a NULL pointer."
+    clang_ParseAST(sema.ptr, PrintStats, SkipFunctionBodies)
+    return nothing
+end
+
+function parse(instance::CompilerInstance)
+    diag_printer = TextDiagnosticPrinter(get_diagnostic_client(instance).ptr)
+
+    preprocessor = get_preprocessor(instance)
+    initialize_builtins(preprocessor)
+
+    begin_source_file(diag_printer, get_lang_options(instance), preprocessor)
+
+    parse_ast(get_sema(instance))
+
+    end_source_file(diag_printer)
+
+    return true
+end
+
 function parse(instance::CompilerInstance, codegen::CodeGenerator, parser::Parser)
     diag_printer = TextDiagnosticPrinter(get_diagnostic_client(instance).ptr)
 

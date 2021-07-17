@@ -8,7 +8,6 @@ struct SimpleCompiler <: AbstractCompiler
     ctx::Context
     instance::CompilerInstance
     codegen::CodeGenerator
-    parser::Parser
 end
 
 function create_compiler(src::String, args::Vector{String}; diag_show_colors=true)
@@ -38,18 +37,16 @@ function create_compiler(src::String, args::Vector{String}; diag_show_colors=tru
     # parser
     preprocessor = get_preprocessor(instance)
     sema = get_sema(instance)
-    parser = Parser(preprocessor, sema)
-    return SimpleCompiler(ctx, instance, codegen, parser)
+    return SimpleCompiler(ctx, instance, codegen)
 end
 
 function destroy(x::SimpleCompiler)
-    destroy(x.parser)
     destroy(x.instance)
     dispose(x.ctx)
 end
 
 function compile(x::SimpleCompiler)
-    parse(x.instance, x.codegen, x.parser) || error("failed to parse the source code.")
+    parse(x.instance) || error("failed to parse the source code.")
     m = get_llvm_module(x.codegen)
     m == C_NULL && error("failed to generate IR.")
     return LLVM.Module(m)
