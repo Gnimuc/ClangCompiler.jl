@@ -4,7 +4,7 @@ Supertype for Clang compilers.
 """
 abstract type AbstractCompiler end
 
-struct CXXCompiler <: AbstractCompiler
+struct SimpleCompiler <: AbstractCompiler
     ctx::Context
     instance::CompilerInstance
     codegen::CodeGenerator
@@ -39,16 +39,16 @@ function create_compiler(src::String, args::Vector{String}; diag_show_colors=tru
     preprocessor = get_preprocessor(instance)
     sema = get_sema(instance)
     parser = Parser(preprocessor, sema)
-    return CXXCompiler(ctx, instance, codegen, parser)
+    return SimpleCompiler(ctx, instance, codegen, parser)
 end
 
-function destroy(x::CXXCompiler)
+function destroy(x::SimpleCompiler)
     destroy(x.parser)
     destroy(x.instance)
     dispose(x.ctx)
 end
 
-function compile(x::CXXCompiler)
+function compile(x::SimpleCompiler)
     parse(x.instance, x.codegen, x.parser) || error("failed to parse the source code.")
     m = get_llvm_module(x.codegen)
     m == C_NULL && error("failed to generate IR.")
