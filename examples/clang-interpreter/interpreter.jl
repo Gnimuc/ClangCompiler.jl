@@ -10,7 +10,7 @@ llvm_lib_dir = joinpath(LLVM_full_jll.artifact_dir, "lib") |> normpath
 libclangcpp = joinpath(llvm_lib_dir, "libclang-cpp.$(Libdl.dlext)") |> normpath
 @assert isfile(libclangcpp)
 
-link(libclangcpp)
+# link(libclangcpp)
 
 src = joinpath(@__DIR__, "main.cpp")
 
