@@ -10,8 +10,9 @@ push!(args, "-std=c++14")
 Sys.isapple() && push!(args, "-stdlib=libc++")
 push!(args, "-I$julia_include_dir")
 
-cpr = create_compiler(src, args)
-m = compile(cpr);
+irgen = generate_llvmir(src, args)
+
+m = get_module(irgen)
 
 f = lookup_function(m, "main")
 

@@ -19,8 +19,9 @@ push!(args, "-std=c++14")
 Sys.isapple() && push!(args, "-stdlib=libc++")
 push!(args, "-I$llvm_include_dir")
 
-cpr = create_compiler(src, args)
-m = compile(cpr);
+irgen = generate_llvmir(src, args)
+
+m = get_module(irgen)
 
 ee = JIT(m);
 
@@ -42,6 +43,6 @@ argv = pointer.(local_machine_env_compiler_args)
 argv = Base.unsafe_convert(Ptr{Ptr{UInt8}}, argv)
 
 run(ee, f, [
-    GenericValue(LLVM.Int32Type(cpr.ctx), argc),
+    GenericValue(LLVM.Int32Type(irgen.ctx), argc),
     GenericValue(argv)
 ])

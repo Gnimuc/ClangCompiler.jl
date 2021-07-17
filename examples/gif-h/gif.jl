@@ -8,15 +8,12 @@ src = joinpath(@__DIR__, "gif-h-demo.cpp")
 args = get_compiler_args()
 push!(args, "-I$(@__DIR__)")
 
-# create compiler
-cpr = create_compiler(src, args)
-
-# generate IR
-mod = compile(cpr)
+# generate LLVM IR
+irgen = generate_llvmir(src, args)
 
 # create JIT and call function
-ee = JIT(mod)
-ret = run(ee, lookup_function(mod, "main"))
+ee = JIT(get_module(irgen))
+ret = run(ee, lookup_function(ee, "main"))
 
 # clean up
-destroy(cpr)
+destroy(irgen)
