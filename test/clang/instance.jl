@@ -1,10 +1,9 @@
 using ClangCompiler
-using ClangCompiler.JLLEnvs
 using Test
 
 const CC = ClangCompiler
 
-@testset "CompilerInstance | init" begin
+@testset "CompilerInstance | Module" begin
     instance = CC.CompilerInstance()
     @test CC.has_diagnostics(instance) == false
     @test CC.has_invocation(instance) == true
@@ -51,26 +50,31 @@ const CC = ClangCompiler
     @test CC.has_preprocessor(instance) == true
     @test CC.has_sema(instance) == false
 
-    # CC.create_ast_context(instance)
-    # CC.create_ast_consumer ?
+    @test CC.has_ast_context(instance) == false
+    CC.create_ast_context(instance)
+    @test CC.has_ast_context(instance) == true
 
-    # CC.create_sema(instance)
-    # @test CC.has_diagnostics(instance) == true
-    # @test CC.has_invocation(instance) == true
-    # @test CC.has_file_manager(instance) == true
-    # @test CC.has_source_manager(instance) == true
-    # @test CC.has_preprocessor(instance) == true
-    # @test CC.has_sema(instance) == true
+    @test CC.has_ast_consumer(instance) == false
+    llvm_ctx = CC.LLVM.Context()
+    codegen = CC.create_llvm_codegen(instance, llvm_ctx)
+    CC.set_code_generator(instance, codegen)
+    @test CC.has_ast_consumer(instance) == true
+
+    CC.create_sema(instance)
+    @test CC.has_diagnostics(instance) == true
+    @test CC.has_invocation(instance) == true
+    @test CC.has_file_manager(instance) == true
+    @test CC.has_source_manager(instance) == true
+    @test CC.has_preprocessor(instance) == true
+    @test CC.has_sema(instance) == true
 
     CC.destroy(instance)
+    CC.LLVM.dispose(llvm_ctx)
 end
 
 @testset "CompilerInstance | SetMainFile" begin
     src = joinpath(@__DIR__, "..", "code", "main.cpp")
-    args = JLLEnvs.get_default_args()
-    push!(args, "-nostdinc")
-    push!(args, "-nostdinc++")
-    push!(args, "-nostdlib")
+    args = get_compiler_args()
     push!(args, "-std=c++11")
     pushfirst!(args, "clang")
     push!(args, "-I$(@__DIR__)")
