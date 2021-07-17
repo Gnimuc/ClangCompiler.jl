@@ -5,7 +5,7 @@ using ClangCompiler.LLVM
 src = joinpath(@__DIR__, "pdfgen.cpp")
 
 # compilation flags
-args = get_default_args()
+args = get_compiler_args()
 push!(args, "-I$(@__DIR__)")
 
 # create compiler

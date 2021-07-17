@@ -9,7 +9,7 @@ common_incdir = joinpath(@__DIR__, "common")
 incdir = joinpath(@__DIR__, "InOneWeekend")
 
 # compilation flags
-args = get_default_args()
+args = get_compiler_args()
 push!(args, "-I$common_incdir")
 push!(args, "-I$incdir")
 

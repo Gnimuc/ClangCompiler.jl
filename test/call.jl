@@ -3,7 +3,7 @@ using Test
 
 @testset "function call" begin
     src = joinpath(@__DIR__, "code", "main.cpp")
-    args = get_default_args()
+    args = get_compiler_args()
     haskey(ENV, "CI") && push!(args, "-v")
     cpr = create_compiler(src, args)
     mod = compile(cpr)

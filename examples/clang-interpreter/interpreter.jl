@@ -14,7 +14,7 @@ link(libclangcpp)
 
 src = joinpath(@__DIR__, "main.cpp")
 
-args = get_default_args(; version=v"7.1.0")
+args = get_compiler_args(; version=v"7.1.0")
 push!(args, "-std=c++14")
 Sys.isapple() && push!(args, "-stdlib=libc++")
 push!(args, "-I$llvm_include_dir")

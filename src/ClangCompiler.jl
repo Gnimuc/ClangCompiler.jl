@@ -17,13 +17,13 @@ using .LibClangEx
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
-function get_default_args(;is_cxx=true, version=v"7.1.0")
+function get_compiler_args(;is_cxx=true, version=v"7.1.0")
     args = JLLEnvs.get_default_args(is_cxx, version)
     is_cxx ? push!(args, "-nostdinc++", "-nostdlib++") : push!(args, "-nostdinc", "-nostdlib")
     pushfirst!(args, CLANG_BIN)  # Argv0
     return args
 end
-export get_default_args
+export get_compiler_args
 
 # internal
 include("clang/option.jl")
@@ -42,7 +42,7 @@ include("clang/instance.jl")
 # interface
 include("parse.jl")
 include("compile.jl")
-export CXXCompiler
+export SimpleCompiler
 export create_compiler, destroy, compile
 
 include("llvm.jl")

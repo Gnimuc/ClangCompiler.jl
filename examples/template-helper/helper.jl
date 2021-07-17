@@ -5,7 +5,7 @@ using ClangCompiler.LLVM
 src = joinpath(@__DIR__, "template.cpp")
 
 # compilation flags
-args = get_default_args()
+args = get_compiler_args()
 
 # create compiler
 cpr = create_compiler(src, args)

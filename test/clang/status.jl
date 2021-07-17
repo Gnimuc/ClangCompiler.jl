@@ -1,14 +1,10 @@
 using ClangCompiler
-using ClangCompiler.JLLEnvs
 
 const CC = ClangCompiler
 
 @testset "Status" begin
     src = joinpath(@__DIR__, "..", "code", "main.cpp")
-    args = JLLEnvs.get_default_args()
-    push!(args, "-nostdinc")
-    push!(args, "-nostdinc++")
-    push!(args, "-nostdlib")
+    args = get_compiler_args()
     push!(args, "-std=c++11")
     pushfirst!(args, "clang")
     push!(args, "-I$(@__DIR__)")
