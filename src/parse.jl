@@ -5,28 +5,28 @@ function parse_ast(sema::Sema, PrintStats::Bool=false, SkipFunctionBodies::Bool=
 end
 
 function parse(instance::CompilerInstance)
-    diag_printer = TextDiagnosticPrinter(get_diagnostic_client(instance).ptr)
+    diag_csr = get_diagnostic_client(instance)
 
     preprocessor = get_preprocessor(instance)
     initialize_builtins(preprocessor)
 
-    begin_source_file(diag_printer, get_lang_options(instance), preprocessor)
+    begin_source_file(diag_csr, get_lang_options(instance), preprocessor)
 
     parse_ast(get_sema(instance))
 
-    end_source_file(diag_printer)
+    end_source_file(diag_csr)
 
     return true
 end
 
 function parse(instance::CompilerInstance, codegen::CodeGenerator, parser::Parser)
-    diag_printer = TextDiagnosticPrinter(get_diagnostic_client(instance).ptr)
+    diag_csr = get_diagnostic_client(instance)
 
     preprocessor = get_preprocessor(instance)
     enter_main_file(preprocessor)
     initialize_builtins(preprocessor)
 
-    begin_source_file(diag_printer, get_lang_options(instance), preprocessor)
+    begin_source_file(diag_csr, get_lang_options(instance), preprocessor)
 
     initialize(parser)
 
@@ -36,10 +36,10 @@ function parse(instance::CompilerInstance, codegen::CodeGenerator, parser::Parse
     if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
         process_weak_toplevel_decls(sema, codegen)
         handle_translation_unit(codegen, ast_ctx)
-        end_source_file(diag_printer)
+        end_source_file(diag_csr)
         return true
     else
-        end_source_file(diag_printer)
+        end_source_file(diag_csr)
         return false
     end
 end

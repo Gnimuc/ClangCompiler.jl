@@ -57,7 +57,7 @@ const CC = ClangCompiler
     @test CC.has_ast_consumer(instance) == false
     llvm_ctx = CC.LLVM.Context()
     codegen = CC.create_llvm_codegen(instance, llvm_ctx)
-    CC.set_code_generator(instance, codegen)
+    CC.set_ast_consumer(instance, codegen)
     @test CC.has_ast_consumer(instance) == true
 
     CC.create_sema(instance)

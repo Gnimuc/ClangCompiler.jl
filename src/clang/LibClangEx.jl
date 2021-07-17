@@ -11,13 +11,11 @@ const time_t = Clong
     CXInit_CanNotCreate = 1
 end
 
-const CXIntrusiveRefCntPtr = Ptr{Cvoid}
-
-const CXMemoryBuffer = Ptr{Cvoid}
+const CXCompilerInstance = Ptr{Cvoid}
 
 const CXTargetOptions = Ptr{Cvoid}
 
-const CXTargetInfo = Ptr{Cvoid}
+const CXTargetInfo_ = Ptr{Cvoid}
 
 const CXCodeGenOptions = Ptr{Cvoid}
 
@@ -29,27 +27,13 @@ const CXFrontendOptions = Ptr{Cvoid}
 
 const CXLangOptions = Ptr{Cvoid}
 
-const CXSema = Ptr{Cvoid}
+const CXDiagnosticIDs = Ptr{Cvoid}
 
-const CXParser = Ptr{Cvoid}
+const CXDiagnosticOptions = Ptr{Cvoid}
 
-const CXPreprocessor = Ptr{Cvoid}
+const CXDiagnosticConsumer = Ptr{Cvoid}
 
-const CXHeaderSearch = Ptr{Cvoid}
-
-@enum CXTranslationUnitKind::UInt32 begin
-    CXTU_Complete = 0
-    CXTU_Prefix = 1
-    CXTU_Module = 2
-end
-
-const CXASTUnit = Ptr{Cvoid}
-
-const CXASTContext = Ptr{Cvoid}
-
-const CXASTConsumer = Ptr{Cvoid}
-
-const CXCompilerInstance = Ptr{Cvoid}
+const CXDiagnosticsEngine = Ptr{Cvoid}
 
 const CXCompilerInvocation = Ptr{Cvoid}
 
@@ -63,21 +47,33 @@ const CXFileEntryRef = Ptr{Cvoid}
 
 const CXFileManager = Ptr{Cvoid}
 
+const CXMemoryBuffer = Ptr{Cvoid}
+
 const CXSourceManager = Ptr{Cvoid}
 
-const CXDiagnosticIDs = Ptr{Cvoid}
+const CXPreprocessor = Ptr{Cvoid}
 
-const CXDiagnosticOptions = Ptr{Cvoid}
+const CXHeaderSearch = Ptr{Cvoid}
 
-const CXDiagnosticConsumer = Ptr{Cvoid}
+@enum CXTranslationUnitKind::UInt32 begin
+    CXTU_Complete = 0
+    CXTU_Prefix = 1
+    CXTU_Module = 2
+end
 
-const CXIgnoringDiagConsumer = Ptr{Cvoid}
+const CXASTContext = Ptr{Cvoid}
 
-const CXTextDiagnosticPrinter = Ptr{Cvoid}
-
-const CXDiagnosticsEngine = Ptr{Cvoid}
+const CXASTConsumer = Ptr{Cvoid}
 
 const CXCodeGenerator = Ptr{Cvoid}
+
+const CXSema = Ptr{Cvoid}
+
+const CXParser = Ptr{Cvoid}
+
+const CXFrontendAction = Ptr{Cvoid}
+
+const CXCodeGenAction = Ptr{Cvoid}
 
 function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
     ccall((:clang_Parser_create, libclangex), CXParser, (CXPreprocessor, CXSema, Bool, Ptr{CXInit_Error}), PP, Actions, SkipFunctionBodies, ErrorCode)
@@ -95,6 +91,18 @@ function clang_Parser_tryParseAndSkipInvalidOrParsedDecl(Parser, CodeGen)
     ccall((:clang_Parser_tryParseAndSkipInvalidOrParsedDecl, libclangex), Bool, (CXParser, CXCodeGenerator), Parser, CodeGen)
 end
 
+function clang_ASTConsumer_Initialize(Csr, Ctx)
+    ccall((:clang_ASTConsumer_Initialize, libclangex), Cvoid, (CXASTConsumer, CXASTContext), Csr, Ctx)
+end
+
+function clang_ASTConsumer_HandleTranslationUnit(Csr, Ctx)
+    ccall((:clang_ASTConsumer_HandleTranslationUnit, libclangex), Cvoid, (CXASTConsumer, CXASTContext), Csr, Ctx)
+end
+
+function clang_ASTConsumer_PrintStats(Csr)
+    ccall((:clang_ASTConsumer_PrintStats, libclangex), Cvoid, (CXASTConsumer,), Csr)
+end
+
 function clang_ASTContext_PrintStats(Ctx)
     ccall((:clang_ASTContext_PrintStats, libclangex), Cvoid, (CXASTContext,), Ctx)
 end
@@ -107,8 +115,32 @@ function clang_CodeGenerator_getLLVMModule(CG)
     ccall((:clang_CodeGenerator_getLLVMModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
 end
 
-function clang_CodeGenerator_HandleTranslationUnit(CG, Ctx)
-    ccall((:clang_CodeGenerator_HandleTranslationUnit, libclangex), Cvoid, (CXCodeGenerator, CXASTContext), CG, Ctx)
+function clang_EmitAssemblyAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitAssemblyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitBCAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitBCAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitLLVMAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitLLVMAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitLLVMOnlyAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitLLVMOnlyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitCodeGenOnlyAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitCodeGenOnlyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitObjAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitObjAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_CodeGenAction_dispose(CA)
+    ccall((:clang_CodeGenAction_dispose, libclangex), Cvoid, (CXCodeGenAction,), CA)
 end
 
 function clang_CompilerInstance_create(ErrorCode)
@@ -137,10 +169,6 @@ end
 
 function clang_CompilerInstance_createDiagnostics(CI, DC, ShouldOwnClient)
     ccall((:clang_CompilerInstance_createDiagnostics, libclangex), Cvoid, (CXCompilerInstance, CXDiagnosticConsumer, Bool), CI, DC, ShouldOwnClient)
-end
-
-function clang_CompilerInstance_createDiagnosticsEngine(DO, DC, ShouldOwnClient, CGO)
-    ccall((:clang_CompilerInstance_createDiagnosticsEngine, libclangex), CXIntrusiveRefCntPtr, (CXDiagnosticOptions, CXDiagnosticConsumer, Bool, CXCodeGenOptions), DO, DC, ShouldOwnClient, CGO)
 end
 
 function clang_CompilerInstance_hasFileManager(CI)
@@ -196,11 +224,11 @@ function clang_CompilerInstance_hasTarget(CI)
 end
 
 function clang_CompilerInstance_getTarget(CI)
-    ccall((:clang_CompilerInstance_getTarget, libclangex), CXTargetInfo, (CXCompilerInstance,), CI)
+    ccall((:clang_CompilerInstance_getTarget, libclangex), CXTargetInfo_, (CXCompilerInstance,), CI)
 end
 
 function clang_CompilerInstance_setTarget(CI, Info)
-    ccall((:clang_CompilerInstance_setTarget, libclangex), Cvoid, (CXCompilerInstance, CXTargetInfo), CI, Info)
+    ccall((:clang_CompilerInstance_setTarget, libclangex), Cvoid, (CXCompilerInstance, CXTargetInfo_), CI, Info)
 end
 
 function clang_CompilerInstance_setTargetAndLangOpts(CI)
@@ -259,8 +287,12 @@ function clang_CompilerInstance_hasASTConsumer(CI)
     ccall((:clang_CompilerInstance_hasASTConsumer, libclangex), Bool, (CXCompilerInstance,), CI)
 end
 
-function clang_CompilerInstance_setCodeGenerator(CI, CG)
-    ccall((:clang_CompilerInstance_setCodeGenerator, libclangex), Cvoid, (CXCompilerInstance, CXCodeGenerator), CI, CG)
+function clang_CompilerInstance_getASTConsumer(CI)
+    ccall((:clang_CompilerInstance_getASTConsumer, libclangex), CXASTConsumer, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setASTConsumer(CI, CG)
+    ccall((:clang_CompilerInstance_setASTConsumer, libclangex), Cvoid, (CXCompilerInstance, CXASTConsumer), CI, CG)
 end
 
 function clang_CompilerInstance_getCodeGenOpts(CI)
@@ -289,6 +321,10 @@ end
 
 function clang_CompilerInstance_getLangOpts(CI)
     ccall((:clang_CompilerInstance_getLangOpts, libclangex), CXLangOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_ExecuteAction(CI, Act)
+    ccall((:clang_CompilerInstance_ExecuteAction, libclangex), Bool, (CXCompilerInstance, CXFrontendAction), CI, Act)
 end
 
 function clang_CompilerInvocation_create(ErrorCode)
@@ -355,36 +391,24 @@ function clang_DiagnosticOptions_setShowPresumedLoc(DO, ShowPresumedLoc)
     ccall((:clang_DiagnosticOptions_setShowPresumedLoc, libclangex), Cvoid, (CXDiagnosticOptions, Bool), DO, ShowPresumedLoc)
 end
 
-function clang_DiagnosticConsumer_create(ErrorCode)
-    ccall((:clang_DiagnosticConsumer_create, libclangex), CXDiagnosticConsumer, (Ptr{CXInit_Error},), ErrorCode)
+function clang_IgnoringDiagConsumer_create(ErrorCode)
+    ccall((:clang_IgnoringDiagConsumer_create, libclangex), CXDiagnosticConsumer, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
+    ccall((:clang_TextDiagnosticPrinter_create, libclangex), CXDiagnosticConsumer, (CXDiagnosticOptions, Ptr{CXInit_Error}), Opts, ErrorCode)
 end
 
 function clang_DiagnosticConsumer_dispose(DC)
     ccall((:clang_DiagnosticConsumer_dispose, libclangex), Cvoid, (CXDiagnosticConsumer,), DC)
 end
 
-function clang_IgnoringDiagConsumer_create(ErrorCode)
-    ccall((:clang_IgnoringDiagConsumer_create, libclangex), CXIgnoringDiagConsumer, (Ptr{CXInit_Error},), ErrorCode)
+function clang_DiagnosticConsumer_BeginSourceFile(DC, LangOpts, PP)
+    ccall((:clang_DiagnosticConsumer_BeginSourceFile, libclangex), Cvoid, (CXDiagnosticConsumer, CXLangOptions, CXPreprocessor), DC, LangOpts, PP)
 end
 
-function clang_IgnoringDiagConsumer_dispose(DC)
-    ccall((:clang_IgnoringDiagConsumer_dispose, libclangex), Cvoid, (CXIgnoringDiagConsumer,), DC)
-end
-
-function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
-    ccall((:clang_TextDiagnosticPrinter_create, libclangex), CXTextDiagnosticPrinter, (CXDiagnosticOptions, Ptr{CXInit_Error}), Opts, ErrorCode)
-end
-
-function clang_TextDiagnosticPrinter_dispose(DC)
-    ccall((:clang_TextDiagnosticPrinter_dispose, libclangex), Cvoid, (CXTextDiagnosticPrinter,), DC)
-end
-
-function clang_TextDiagnosticPrinter_BeginSourceFile(DC, LangOpts, PP)
-    ccall((:clang_TextDiagnosticPrinter_BeginSourceFile, libclangex), Cvoid, (CXTextDiagnosticPrinter, CXLangOptions, CXPreprocessor), DC, LangOpts, PP)
-end
-
-function clang_TextDiagnosticPrinter_EndSourceFile(DC)
-    ccall((:clang_TextDiagnosticPrinter_EndSourceFile, libclangex), Cvoid, (CXTextDiagnosticPrinter,), DC)
+function clang_DiagnosticConsumer_EndSourceFile(DC)
+    ccall((:clang_DiagnosticConsumer_EndSourceFile, libclangex), Cvoid, (CXDiagnosticConsumer,), DC)
 end
 
 function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient, ErrorCode)
@@ -500,7 +524,7 @@ function clang_TargetOptions_PrintStats(TO)
 end
 
 function clang_TargetInfo_CreateTargetInfo(DE, Opts)
-    ccall((:clang_TargetInfo_CreateTargetInfo, libclangex), CXTargetInfo, (CXDiagnosticsEngine, CXTargetOptions), DE, Opts)
+    ccall((:clang_TargetInfo_CreateTargetInfo, libclangex), CXTargetInfo_, (CXDiagnosticsEngine, CXTargetOptions), DE, Opts)
 end
 
 function clang_CodeGenOptions_create(ErrorCode)

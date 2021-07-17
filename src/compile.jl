@@ -32,7 +32,7 @@ function create_compiler(src::String, args::Vector{String}; diag_show_colors=tru
     create_preprocessor(instance)
     create_ast_context(instance)
     codegen = create_llvm_codegen(instance, ctx)
-    set_code_generator(instance, codegen)
+    set_ast_consumer(instance, codegen)
     create_sema(instance)
     # parser
     preprocessor = get_preprocessor(instance)

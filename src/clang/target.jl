@@ -34,7 +34,7 @@ end
 Holds a pointer to a `clang::TargetInfo` object.
 """
 mutable struct TargetInfo
-    ptr::CXTargetInfo
+    ptr::CXTargetInfo_
 end
 
 function TargetInfo(opts::TargetOptions, diag::DiagnosticsEngine=DiagnosticsEngine())

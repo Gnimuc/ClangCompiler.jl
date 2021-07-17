@@ -1,6 +1,6 @@
 using ClangCompiler
 using ClangCompiler: DiagnosticIDs, DiagnosticOptions
-using ClangCompiler: DiagnosticConsumer, IgnoringDiagConsumer, DiagnosticsEngine
+using ClangCompiler: IgnoringDiagConsumer, DiagnosticsEngine
 using ClangCompiler: destroy
 using Test
 
@@ -18,18 +18,6 @@ using Test
     end
 
     @testset "Consumer" begin
-        opts = DiagnosticOptions()
-        @test opts.ptr != C_NULL
-
-        client = DiagnosticConsumer()
-        @test client.ptr != C_NULL
-
-        diag = DiagnosticsEngine(opts, client)
-        @test diag.ptr != C_NULL
-        destroy(diag)
-    end
-
-    @testset "Ignoring Consumer" begin
         opts = DiagnosticOptions()
         @test opts.ptr != C_NULL
 

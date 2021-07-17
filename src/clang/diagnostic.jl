@@ -20,7 +20,7 @@ end
 
 """
     mutable struct DiagnosticOptions <: Any
-Holds a pointer to a `clang::DiagnosticIDs` object.
+Holds a pointer to a `clang::DiagnosticOptions` object.
 """
 mutable struct DiagnosticOptions
     ptr::CXDiagnosticOptions
@@ -59,27 +59,21 @@ Supretype for DiagnosticConsumers.
 """
 abstract type AbstractDiagnosticConsumer end
 
-"""
-    mutable struct DiagnosticConsumer <: AbstractDiagnosticConsumer
-Holds a pointer to a `clang::DiagnosticConsumer` object.
-"""
-mutable struct DiagnosticConsumer <: AbstractDiagnosticConsumer
-    ptr::CXDiagnosticConsumer
-end
-DiagnosticConsumer() = DiagnosticConsumer(create_diagnostic_consumer())
-
-"""
-    create_diagnostic_consumer() -> CXDiagnosticConsumer
-Return a pointer to a `clang::DiagnosticConsumer` object.
-"""
-function create_diagnostic_consumer()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    consumer = clang_DiagnosticConsumer_create(status)
-    @assert status[] == CXInit_NoError
-    return consumer
+function begin_source_file(consumer::T, lang::LangOptions,
+                           pp::Preprocessor) where {T<:AbstractDiagnosticConsumer}
+    @assert consumer.ptr != C_NULL "$T has a NULL pointer."
+    @assert lang.ptr != C_NULL "LangOptions has a NULL pointer."
+    clang_DiagnosticConsumer_BeginSourceFile(consumer.ptr, lang.ptr, pp.ptr)
+    return nothing
 end
 
-function destroy(x::DiagnosticConsumer)
+function end_source_file(consumer::T) where {T<:AbstractDiagnosticConsumer}
+    @assert consumer.ptr != C_NULL "$T has a NULL pointer."
+    clang_DiagnosticConsumer_EndSourceFile(consumer.ptr)
+    return nothing
+end
+
+function destroy(x::AbstractDiagnosticConsumer)
     if x.ptr != C_NULL
         clang_DiagnosticConsumer_dispose(x.ptr)
         x.ptr = C_NULL
@@ -88,16 +82,23 @@ function destroy(x::DiagnosticConsumer)
 end
 
 """
+    mutable struct DiagnosticConsumer <: AbstractDiagnosticConsumer
+"""
+mutable struct DiagnosticConsumer <: AbstractDiagnosticConsumer
+    ptr::CXDiagnosticConsumer
+end
+
+"""
     mutable struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
 Holds a pointer to a `clang::IgnoringDiagConsumer` object.
 """
 mutable struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
-    ptr::CXIgnoringDiagConsumer
+    ptr::CXDiagnosticConsumer
 end
 IgnoringDiagConsumer() = IgnoringDiagConsumer(create_ignoring_diagnostic_consumer())
 
 """
-    create_ignoring_diagnostic_consumer() -> CXIgnoringDiagConsumer
+    create_ignoring_diagnostic_consumer() -> CXDiagnosticConsumer
 Return a pointer to a `clang::IgnoringDiagConsumer` object.
 """
 function create_ignoring_diagnostic_consumer()
@@ -107,20 +108,12 @@ function create_ignoring_diagnostic_consumer()
     return consumer
 end
 
-# function destroy(x::IgnoringDiagConsumer)
-#     if x.ptr != C_NULL
-#         clang_IgnoringDiagConsumer_dispose(x.ptr)
-#         x.ptr = C_NULL
-#     end
-#     return x
-# end
-
 """
     mutable struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
 Holds a pointer to a `clang::TextDiagnosticPrinter` object.
 """
 mutable struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
-    ptr::CXTextDiagnosticPrinter
+    ptr::CXDiagnosticConsumer
 end
 
 function TextDiagnosticPrinter(opts::DiagnosticOptions)
@@ -129,28 +122,6 @@ function TextDiagnosticPrinter(opts::DiagnosticOptions)
     consumer = clang_TextDiagnosticPrinter_create(opts.ptr, status)
     @assert status[] == CXInit_NoError
     return TextDiagnosticPrinter(consumer)
-end
-
-# function destroy(x::TextDiagnosticPrinter)
-#     if x.ptr != C_NULL
-#         clang_TextDiagnosticPrinter_dispose(x.ptr)
-#         x.ptr = C_NULL
-#     end
-#     return x
-# end
-
-function begin_source_file(printer::TextDiagnosticPrinter, lang::LangOptions,
-                           pp::Preprocessor)
-    @assert printer.ptr != C_NULL "TextDiagnosticPrinter has a NULL pointer."
-    @assert lang.ptr != C_NULL "LangOptions has a NULL pointer."
-    clang_TextDiagnosticPrinter_BeginSourceFile(printer.ptr, lang.ptr, pp.ptr)
-    return nothing
-end
-
-function end_source_file(printer::TextDiagnosticPrinter)
-    @assert printer.ptr != C_NULL "TextDiagnosticPrinter has a NULL pointer."
-    clang_TextDiagnosticPrinter_EndSourceFile(printer.ptr)
-    return nothing
 end
 
 """
@@ -163,7 +134,7 @@ end
 DiagnosticsEngine() = DiagnosticsEngine(create_diagnostics_engine())
 
 function DiagnosticsEngine(opts::DiagnosticOptions,
-                           client::AbstractDiagnosticConsumer=DiagnosticConsumer(),
+                           client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts),
                            should_own_client=true)
     status = Ref{CXInit_Error}(CXInit_NoError)
     ids = create_diagnostic_ids()
@@ -174,7 +145,7 @@ function DiagnosticsEngine(opts::DiagnosticOptions,
 end
 
 function DiagnosticsEngine(ids::DiagnosticIDs, opts::DiagnosticOptions,
-                           client::AbstractDiagnosticConsumer=DiagnosticConsumer(),
+                           client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts),
                            should_own_client=true)
     status = Ref{CXInit_Error}(CXInit_NoError)
     engine = clang_DiagnosticsEngine_create(ids.ptr, opts.ptr, client.ptr,
@@ -190,10 +161,10 @@ Return a pointer to a `clang::DiagnosticsEngine` object.
 function create_diagnostics_engine()
     status = Ref{CXInit_Error}(CXInit_NoError)
     ids = create_diagnostic_ids()
-    opts = create_diagnostic_opts()
-    client = create_diagnostic_consumer()
+    opts = DiagnosticOptions()
+    client = TextDiagnosticPrinter(opts)
     should_own_client = true
-    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client, status)
+    engine = clang_DiagnosticsEngine_create(ids, opts.ptr, client.ptr, should_own_client, status)
     @assert status[] == CXInit_NoError
     return engine
 end

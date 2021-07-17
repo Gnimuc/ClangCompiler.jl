@@ -259,6 +259,19 @@ function has_ast_consumer(ci::CompilerInstance)
     return clang_CompilerInstance_hasASTConsumer(ci.ptr)
 end
 
+function get_ast_consumer(ci::CompilerInstance)
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert has_ast_consumer(ci) "CompilerInstance has no AST consumer."
+    return ASTConsumer(clang_CompilerInstance_getASTConsumer(ci.ptr))
+end
+
+function set_ast_consumer(ci::CompilerInstance, csr::AbstractASTConsumer)
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    @assert csr.ptr != C_NULL "ASTConsumer has a NULL pointer."
+    return clang_CompilerInstance_setASTConsumer(ci.ptr, csr.ptr)
+end
+
+# CodeGenerator
 function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef, mod_name::String="JLCC")
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
     @assert llvm_ctx != C_NULL "LLVMContextRef has a NULL pointer."
@@ -266,11 +279,6 @@ function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef, mod
 end
 create_llvm_codegen(ci::CompilerInstance, ctx::Context, mod_name::String="JLCC") = create_llvm_codegen(ci, ctx.ref, mod_name)
 
-function set_code_generator(ci::CompilerInstance, cg::CodeGenerator)
-    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
-    @assert cg.ptr != C_NULL "CodeGenerator has a NULL pointer."
-    return clang_CompilerInstance_setCodeGenerator(ci.ptr, cg.ptr)
-end
 
 # Options
 function get_codegen_options(ci::CompilerInstance)
@@ -385,6 +393,11 @@ function status(ci::CompilerInstance, ::Type{ASTContext})
     return status(ctx)
 end
 
+function status(ci::CompilerInstance, ::Type{ASTConsumer})
+    ctx = get_ast_consumer(ci)
+    return status(ctx)
+end
+
 function status_options(ci::CompilerInstance)
     status(ci, CodeGenOptions)
     status(ci, DiagnosticOptions)
@@ -401,6 +414,7 @@ function status_modules(ci::CompilerInstance)
     status(ci, Preprocessor)
     status(ci, Sema)
     status(ci, ASTContext)
+    status(ci, ASTConsumer)
 end
 
 function status_all(ci::CompilerInstance)
