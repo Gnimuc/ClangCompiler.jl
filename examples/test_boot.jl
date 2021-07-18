@@ -1,5 +1,4 @@
 using ClangCompiler
-using ClangCompiler.LLVM
 
 const CC = ClangCompiler
 
@@ -11,3 +10,4 @@ irgen = generate_llvmir(src, args)
 instance = irgen.instance
 pp = CC.get_preprocessor(instance)
 CC.clang_Preprocessor_enableIncrementalProcessing(pp.ptr)
+@show CC.clang_Preprocessor_isIncrementalProcessingEnabled(pp.ptr)

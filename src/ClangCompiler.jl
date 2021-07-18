@@ -7,7 +7,7 @@ using LLVM_full_jll
 # using libclangex_jll
 const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], __ARTIFACT_BINDIR, "libclangex.$__DLEXT") |> normpath
 const libclangex_include = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "include") |> normpath
-
+const julia_include_dir = joinpath(Sys.BINDIR, "..", "include", "julia") |> normpath
 const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "tools", "clang")
 
 using LLVM
@@ -78,6 +78,7 @@ function __init__()
     Sys.isapple() && push!(args, "-stdlib=libc++")
     push!(args, "-I$llvm_include_dir")
     push!(args, "-I$libclangex_include")
+    push!(args, "-I$julia_include_dir")
     push!(args, "-I$boot_include_dir")
 
     BOOT_COMPILER_REF[] = generate_llvmir(boot_src, args)
