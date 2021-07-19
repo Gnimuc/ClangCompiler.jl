@@ -8,7 +8,7 @@ using LLVM_full_jll
 const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], __ARTIFACT_BINDIR, "libclangex.$__DLEXT") |> normpath
 const libclangex_include = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "include") |> normpath
 const julia_include_dir = joinpath(Sys.BINDIR, "..", "include", "julia") |> normpath
-const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "tools", "clang")
+const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "bin", "clang")
 
 using LLVM
 using LLVM.API: LLVMContextRef
