@@ -17,9 +17,21 @@ push!(args, "-I$incdir")
 irgen = generate_llvmir(src, args)
 
 # create JIT and call function
-ee = JIT(get_module(irgen))
+lljit = LLJIT(;tm=JITTargetMachine())
+ts_mod = ThreadSafeModule(get_module(irgen); ctx=ThreadSafeContext())
+jd = JITDylib(lljit)
+add!(lljit, jd, ts_mod)
 
-ret = run(ee, lookup_function(ee, "main"))
+prefix = LLVM.get_prefix(lljit)
+dg = LLVM.CreateDynamicLibrarySearchGeneratorForProcess(prefix)
+add!(jd, dg)
+
+addr = lookup(lljit, "main")
+
+@eval main() = ccall($(pointer(addr)), Cint, ())
+
+main()
 
 # clean up
+dispose(lljit)
 destroy(irgen)

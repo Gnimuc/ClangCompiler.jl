@@ -81,6 +81,5 @@ get_module(x::IRGenerator) = x.mod
 function destroy(x::IRGenerator)
     destroy(x.instance)
     destroy(x.act)
-    dispose(x.mod)
     dispose(x.ctx)
 end

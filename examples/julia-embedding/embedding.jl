@@ -12,10 +12,22 @@ push!(args, "-I$julia_include_dir")
 
 irgen = generate_llvmir(src, args)
 
-m = get_module(irgen)
+# create JIT and call function
+lljit = LLJIT(;tm=JITTargetMachine())
+ts_mod = ThreadSafeModule(get_module(irgen); ctx=ThreadSafeContext())
+jd = JITDylib(lljit)
+add!(lljit, jd, ts_mod)
 
-f = lookup_function(m, "main")
+prefix = LLVM.get_prefix(lljit)
+dg = LLVM.CreateDynamicLibrarySearchGeneratorForProcess(prefix)
+add!(jd, dg)
 
-@eval main() = $(call_function(f, Cint))
+addr = lookup(lljit, "main")
+
+@eval main() = ccall($(pointer(addr)), Cint, ())
 
 main()
+
+# clean up
+dispose(lljit)
+destroy(irgen)
