@@ -26,16 +26,23 @@ src = joinpath(dirname(pathof(ClangCompiler)), "..", "examples", "sample.cpp")
 # compilation flags
 args = get_compiler_args()
 
-# create compiler
-cpr = create_compiler(src, args)
+# create JIT
+jit = LLJIT(;tm=JITTargetMachine())
 
-# generate IR
-m = compile(cpr)
+# generate LLVM IR
+irgen = generate_llvmir(src, args)
 
-# create JIT and call function
-ee = JIT(m)
-ret = run(ee, lookup_function(m, "main"))
+# compile and link
+cc = CxxCompiler(irgen, jit)
+link_process_symbols(cc)
+compile(cc)
+
+# lookup and call the main function 
+addr = lookup(jit, "main")
+@eval main() = ccall($(pointer(addr)), Cint, ())
+
+main()
 
 # clean up
-destroy(cpr)
+destroy(cc)
 ```
