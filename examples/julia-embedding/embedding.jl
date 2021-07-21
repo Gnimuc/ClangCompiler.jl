@@ -10,24 +10,17 @@ push!(args, "-std=c++14")
 Sys.isapple() && push!(args, "-stdlib=libc++")
 push!(args, "-I$julia_include_dir")
 
+# create JIT, generate LLVM IR, and call function
+jit = LLJIT(;tm=JITTargetMachine())
 irgen = generate_llvmir(src, args)
+cc = CxxCompiler(irgen, jit)
+link_process_symbols(cc)
+compile(cc)
 
-# create JIT and call function
-lljit = LLJIT(;tm=JITTargetMachine())
-ts_mod = ThreadSafeModule(get_module(irgen); ctx=ThreadSafeContext())
-jd = JITDylib(lljit)
-add!(lljit, jd, ts_mod)
-
-prefix = LLVM.get_prefix(lljit)
-dg = LLVM.CreateDynamicLibrarySearchGeneratorForProcess(prefix)
-add!(jd, dg)
-
-addr = lookup(lljit, "main")
-
+addr = lookup(jit, "main")
 @eval main() = ccall($(pointer(addr)), Cint, ())
 
 main()
 
 # clean up
-dispose(lljit)
-destroy(irgen)
+destroy(cc)

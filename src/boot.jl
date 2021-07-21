@@ -1,12 +1,11 @@
-@generated function clang_Preprocessor_enableIncrementalProcessing(pp)
-    m = get_module(BOOT_COMPILER_REF[])
-    f = lookup_function(m, "clang_Preprocessor_enableIncrementalProcessing")
-    call_function(f, Cvoid, Tuple{Core.LLVMPtr{Int8,0}}, :(reinterpret(Core.LLVMPtr{Int8,0}, pp)))
+function clang_Preprocessor_enableIncrementalProcessing(pp)
+    jit = get_jit(BOOT_COMPILER_REF[])
+    addr = lookup(jit, "clang_Preprocessor_enableIncrementalProcessing")
+    return ccall(pointer(addr), Cvoid, (CXPreprocessor,), pp)
 end
 
-@generated function clang_Preprocessor_isIncrementalProcessingEnabled(pp)
-    m = get_module(BOOT_COMPILER_REF[])
-    f = lookup_function(m, "clang_Preprocessor_isIncrementalProcessingEnabled")
-    @show f
-    call_function(f, LLVM.Int1Type(BOOT_COMPILER_REF[].ctx), Tuple{Core.LLVMPtr{Int8,0}}, :(reinterpret(Core.LLVMPtr{Int8,0}, pp)))
+function clang_Preprocessor_isIncrementalProcessingEnabled(pp)
+    jit = get_jit(BOOT_COMPILER_REF[])
+    addr = lookup(jit, "clang_Preprocessor_isIncrementalProcessingEnabled")
+    return ccall(pointer(addr), Bool, (CXPreprocessor,), pp)
 end

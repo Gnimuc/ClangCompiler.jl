@@ -47,10 +47,11 @@ include("clang/instance.jl")
 # interface
 include("parse.jl")
 include("compile.jl")
-export SimpleCompiler
-export create_compiler, destroy, compile
-export IRGenerator
-export generate_llvmir, get_module
+export CxxCompiler
+export get_module, get_context, get_jit, get_codegen, get_dylib
+export compile, destroy
+export IRGenerator, generate_llvmir
+export link_process_symbols
 
 include("llvm.jl")
 export lookup_function, link, link_crt
@@ -59,16 +60,11 @@ include("utils.jl")
 export jlty2llvmty
 
 # boot
-const BOOT_COMPILER_REF = Ref{IRGenerator}()
+const BOOT_COMPILER_REF = Ref{CxxCompiler}()
 
 function __init__()
     llvm_include_dir = joinpath(LLVM_full_jll.artifact_dir, "include") |> normpath
     @assert isdir(llvm_include_dir) "failed to find LLVM include dir."
-
-    libclangcpp = joinpath(LLVM_full_jll.artifact_dir, __ARTIFACT_BINDIR, "libclang-cpp.$__DLEXT") |> normpath
-    @assert isfile(libclangcpp) "failed to find libclang-cpp."
-
-    # link(libclangcpp)
 
     boot_include_dir = joinpath(@__DIR__, "..", "boot") |> normpath
     boot_src = joinpath(boot_include_dir, "boot.cpp")
@@ -81,7 +77,12 @@ function __init__()
     push!(args, "-I$julia_include_dir")
     push!(args, "-I$boot_include_dir")
 
-    BOOT_COMPILER_REF[] = generate_llvmir(boot_src, args)
+    jit = LLJIT(;tm=JITTargetMachine())
+    irgen = generate_llvmir(boot_src, args)
+    BOOT_COMPILER_REF[] = CxxCompiler(irgen, jit)
+
+    link_process_symbols(BOOT_COMPILER_REF[])
+    compile(BOOT_COMPILER_REF[])
 end
 
 include("boot.jl")
