@@ -9,7 +9,7 @@ For now, this package only targets Julia 1.7 on macOS, it's not hard to edit a f
 1. Build [libclangex](https://github.com/Gnimuc/libclangex) and setup `ENV["LIBCLANGEX_INSTALL_PREFIX"]`.
 2. Install and test the package by running:
 ```
-pkg> dev https://github.com/Gnimuc/ClangComplier.jl.git
+pkg> dev https://github.com/Gnimuc/ClangCompiler.jl.git
 
 pkg> test ClangCompiler
 ```
