@@ -253,6 +253,11 @@ function create_ast_context(ci::CompilerInstance)
     return clang_CompilerInstance_createASTContext(ci.ptr)
 end
 
+function get_builtin_clang_type(ci::CompilerInstance, ty)
+    @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
+    return get_builtin_clang_type(get_ast_context(ci), ty)
+end
+
 # ASTConsumer
 function has_ast_consumer(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."

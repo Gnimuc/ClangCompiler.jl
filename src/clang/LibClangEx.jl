@@ -65,6 +65,8 @@ const CXASTContext = Ptr{Cvoid}
 
 const CXASTConsumer = Ptr{Cvoid}
 
+const CXType_ = Ptr{Cvoid}
+
 const CXCodeGenerator = Ptr{Cvoid}
 
 const CXSema = Ptr{Cvoid}
@@ -105,6 +107,142 @@ end
 
 function clang_ASTContext_PrintStats(Ctx)
     ccall((:clang_ASTContext_PrintStats, libclangex), Cvoid, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_VoidTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_VoidTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_BoolTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_BoolTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_CharTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_CharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_WCharTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_WCharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_WideCharTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_WideCharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_WIntTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_WIntTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Char8Ty_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_Char8Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Char16Ty_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_Char16Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Char32Ty_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_Char32Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_SignedCharTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_SignedCharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_ShortTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_ShortTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_IntTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_IntTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_LongTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_LongTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_LongLongTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_LongLongTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Int128Ty_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_Int128Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedCharTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_UnsignedCharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedShortTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_UnsignedShortTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedIntTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_UnsignedIntTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedLongTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_UnsignedLongTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedLongLongTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_UnsignedLongLongTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedInt128Ty_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_UnsignedInt128Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_FloatTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_FloatTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_DoubleTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_DoubleTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_LongDoubleTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_LongDoubleTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Float128Ty_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_Float128Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_HalfTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_HalfTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_BFloat16Ty_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_BFloat16Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Float16Ty_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_Float16Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_FloatComplexTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_FloatComplexTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_DoubleComplexTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_DoubleComplexTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_LongDoubleComplexTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_LongDoubleComplexTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Float128ComplexTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_Float128ComplexTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_VoidPtrTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_VoidPtrTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_NullPtrTy_getTypePtrOrNull(Ctx)
+    ccall((:clang_ASTContext_NullPtrTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
 end
 
 function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
