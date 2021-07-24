@@ -78,3 +78,13 @@ function initialize_builtins(x::Preprocessor)
     @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
     return clang_Preprocessor_InitializeBuiltins(x.ptr)
 end
+
+function is_incremental(x::Preprocessor)
+    @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
+    return clang_Preprocessor_isIncrementalProcessingEnabled(x.ptr)
+end
+
+function enable_incremental(x::Preprocessor)
+    @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
+    return clang_Preprocessor_enableIncrementalProcessing(x.ptr)
+end

@@ -67,6 +67,8 @@ const CXASTConsumer = Ptr{Cvoid}
 
 const CXType_ = Ptr{Cvoid}
 
+const CXQualType = Ptr{Cvoid}
+
 const CXCodeGenerator = Ptr{Cvoid}
 
 const CXSema = Ptr{Cvoid}
@@ -103,6 +105,46 @@ end
 
 function clang_ASTConsumer_PrintStats(Csr)
     ccall((:clang_ASTConsumer_PrintStats, libclangex), Cvoid, (CXASTConsumer,), Csr)
+end
+
+function clang_QualType_getTypePtr(OpaquePtr)
+    ccall((:clang_QualType_getTypePtr, libclangex), CXType_, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_getTypePtrOrNull(OpaquePtr)
+    ccall((:clang_QualType_getTypePtrOrNull, libclangex), CXType_, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isCanonical(OpaquePtr)
+    ccall((:clang_QualType_isCanonical, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isNull(OpaquePtr)
+    ccall((:clang_QualType_isNull, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isConstQualified(OpaquePtr)
+    ccall((:clang_QualType_isConstQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isRestrictQualified(OpaquePtr)
+    ccall((:clang_QualType_isRestrictQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isVolatileQualified(OpaquePtr)
+    ccall((:clang_QualType_isVolatileQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_addConst(OpaquePtr)
+    ccall((:clang_QualType_addConst, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_addVolatile(OpaquePtr)
+    ccall((:clang_QualType_addVolatile, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_addRestrict(OpaquePtr)
+    ccall((:clang_QualType_addRestrict, libclangex), Cvoid, (CXQualType,), OpaquePtr)
 end
 
 function clang_ASTContext_PrintStats(Ctx)

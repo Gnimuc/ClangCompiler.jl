@@ -30,6 +30,7 @@ end
 export get_compiler_args
 
 # internal
+include("clang/type.jl")
 include("clang/frontend.jl")
 include("clang/option.jl")
 include("clang/preprocessor.jl")
