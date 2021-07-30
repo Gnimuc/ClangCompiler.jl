@@ -5,10 +5,9 @@ using Test
     src = joinpath(@__DIR__, "code", "main.cpp")
     args = get_compiler_args()
     haskey(ENV, "CI") && push!(args, "-v")
-    cpr = create_compiler(src, args)
-    mod = compile(cpr)
-    f = lookup_function(mod, "main")
+    irgen = generate_llvmir(src, args)
+    f = lookup_function(get_module(irgen), "main")
     @eval main() = $(call_function(f, Cint))
     @test main() == 42
-    destroy(cpr)
+    destroy(irgen)
 end
