@@ -5,6 +5,12 @@ Supertype for `clang::Type`s.
 abstract type AbstractClangType end
 
 """
+    abstract type AbstractBuiltinType <: AbstractClangType
+Supertype for `clang::BuiltinType`s.
+"""
+abstract type AbstractBuiltinType <: AbstractClangType end
+
+"""
     QualType <: Any
 Represent a qualified type.
 """
@@ -36,12 +42,6 @@ struct CanQualType
     ty::QualType
 end
 CanQualType(x::CXType_) = CanQualType(QualType(x))
-
-"""
-    abstract type AbstractBuiltinType <: AbstractClangType
-Supertype for `clang::BuiltinType`s.
-"""
-abstract type AbstractBuiltinType <: AbstractClangType end
 
 struct VoidTy <: AbstractBuiltinType
     ptr::CXType_
