@@ -60,10 +60,11 @@ Supretype for DiagnosticConsumers.
 abstract type AbstractDiagnosticConsumer end
 
 function begin_source_file(consumer::T, lang::LangOptions,
-                           pp::Preprocessor) where {T<:AbstractDiagnosticConsumer}
+                           pp::CXPreprocessor) where {T<:AbstractDiagnosticConsumer}
     @assert consumer.ptr != C_NULL "$T has a NULL pointer."
     @assert lang.ptr != C_NULL "LangOptions has a NULL pointer."
-    clang_DiagnosticConsumer_BeginSourceFile(consumer.ptr, lang.ptr, pp.ptr)
+    @assert pp != C_NULL
+    clang_DiagnosticConsumer_BeginSourceFile(consumer.ptr, lang.ptr, pp)
     return nothing
 end
 

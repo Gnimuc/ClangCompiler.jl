@@ -11,10 +11,10 @@ Supertype for `clang::BuiltinType`s.
 abstract type AbstractBuiltinType <: AbstractClangType end
 
 """
-    QualType <: Any
+    QualType <: AbstractClangType
 Represent a qualified type.
 """
-struct QualType
+struct QualType <: AbstractClangType
     ptr::CXType_
 end
 QualType(x::T) where {T<:AbstractBuiltinType} = QualType(x.ptr)
@@ -34,11 +34,18 @@ add_const(x::QualType) = QualType(clang_QualType_addConst(x.ptr))
 add_restrict(x::QualType) = QualType(clang_QualType_addRestrict(x.ptr))
 add_volatile(x::QualType) = QualType(clang_QualType_addVolatile(x.ptr))
 
+function get_string(x::QualType)
+    str = clang_QualType_getAsString(x.ptr)
+    s = unsafe_string(str)
+    clang_QualType_disposeString(str)
+    return s
+end
+
 """
-    CanQualType <: Any
+    CanQualType <: AbstractClangType
 Represent a canonical, qualified type.
 """
-struct CanQualType
+struct CanQualType <: AbstractClangType
     ty::QualType
 end
 CanQualType(x::CXType_) = CanQualType(QualType(x))
@@ -176,9 +183,5 @@ struct VoidPtrTy <: AbstractBuiltinType
 end
 
 struct NullPtrTy <: AbstractBuiltinType
-    ptr::CXType_
-end
-
-struct LongTy <: AbstractBuiltinType
     ptr::CXType_
 end

@@ -56,6 +56,14 @@ function create_diagnostics(ci::CompilerInstance,
     return clang_CompilerInstance_createDiagnostics(ci.ptr, client.ptr, should_own_client)
 end
 
+function begin_diag(ci::CompilerInstance)
+    diag_csr = get_diagnostic_client(ci)
+    preprocessor = get_preprocessor(ci)
+    begin_source_file(diag_csr, get_lang_options(ci), preprocessor)
+end
+
+end_diag(ci::CompilerInstance) = end_source_file(get_diagnostic_client(ci))
+
 # FileManager
 function has_file_manager(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
@@ -283,6 +291,10 @@ function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef, mod
     return CodeGenerator(clang_CreateLLVMCodeGen(ci.ptr, llvm_ctx, mod_name))
 end
 create_llvm_codegen(ci::CompilerInstance, ctx::Context, mod_name::String="JLCC") = create_llvm_codegen(ci, ctx.ref, mod_name)
+
+function get_codegen(ci::CompilerInstance)
+    return CodeGenerator(get_ast_consumer(ci).ptr)
+end
 
 # Actions
 function execute_action(ci::CompilerInstance, action::T) where {T<:AbstractFrontendAction}

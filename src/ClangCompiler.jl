@@ -33,11 +33,11 @@ export get_compiler_args
 include("clang/type.jl")
 include("clang/frontend.jl")
 include("clang/option.jl")
-include("clang/preprocessor.jl")
 include("clang/diagnostic.jl")
 include("clang/target.jl")
 include("clang/buffer.jl")
 include("clang/source.jl")
+include("clang/preprocessor.jl")
 include("clang/ast.jl")
 include("clang/codegen.jl")
 include("clang/sema.jl")
@@ -53,6 +53,9 @@ export get_module, get_context, get_jit, get_codegen, get_dylib
 export compile, destroy
 export IRGenerator, generate_llvmir
 export link_process_symbols
+export IncrementalCompiler
+export create_incremental_compiler
+
 
 include("llvm.jl")
 export lookup_function, link, link_crt

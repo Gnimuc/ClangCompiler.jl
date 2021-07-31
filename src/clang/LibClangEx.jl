@@ -55,6 +55,8 @@ const CXPreprocessor = Ptr{Cvoid}
 
 const CXHeaderSearch = Ptr{Cvoid}
 
+const CXLexer = Ptr{Cvoid}
+
 @enum CXTranslationUnitKind::UInt32 begin
     CXTU_Complete = 0
     CXTU_Prefix = 1
@@ -69,7 +71,15 @@ const CXType_ = Ptr{Cvoid}
 
 const CXQualType = Ptr{Cvoid}
 
+const CXTranslationUnitDecl = Ptr{Cvoid}
+
+const CXDeclGroupRef = Ptr{Cvoid}
+
+const CXDecl = Ptr{Cvoid}
+
 const CXCodeGenerator = Ptr{Cvoid}
+
+const CXCodeGenModule = Ptr{Cvoid}
 
 const CXSema = Ptr{Cvoid}
 
@@ -78,6 +88,10 @@ const CXParser = Ptr{Cvoid}
 const CXFrontendAction = Ptr{Cvoid}
 
 const CXCodeGenAction = Ptr{Cvoid}
+
+const CXXScopeSpec = Ptr{Cvoid}
+
+const CXNestedNameSpecifier = Ptr{Cvoid}
 
 function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
     ccall((:clang_Parser_create, libclangex), CXParser, (CXPreprocessor, CXSema, Bool, Ptr{CXInit_Error}), PP, Actions, SkipFunctionBodies, ErrorCode)
@@ -93,6 +107,30 @@ end
 
 function clang_Parser_tryParseAndSkipInvalidOrParsedDecl(Parser, CodeGen)
     ccall((:clang_Parser_tryParseAndSkipInvalidOrParsedDecl, libclangex), Bool, (CXParser, CXCodeGenerator), Parser, CodeGen)
+end
+
+function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)
+    ccall((:clang_Parser_parseOneTopLevelDecl, libclangex), CXDeclGroupRef, (CXParser, Bool), Parser, IsFirstDecl)
+end
+
+function clang_DeclGroupRef_fromeDecl(D)
+    ccall((:clang_DeclGroupRef_fromeDecl, libclangex), CXDeclGroupRef, (CXDecl,), D)
+end
+
+function clang_DeclGroupRef_isNull(DG)
+    ccall((:clang_DeclGroupRef_isNull, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_isSingleDecl(DG)
+    ccall((:clang_DeclGroupRef_isSingleDecl, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_isDeclGroup(DG)
+    ccall((:clang_DeclGroupRef_isDeclGroup, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_getSingleDecl(DG)
+    ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
 end
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
@@ -147,8 +185,24 @@ function clang_QualType_addRestrict(OpaquePtr)
     ccall((:clang_QualType_addRestrict, libclangex), Cvoid, (CXQualType,), OpaquePtr)
 end
 
+function clang_QualType_getAsString(OpaquePtr)
+    ccall((:clang_QualType_getAsString, libclangex), Ptr{Cchar}, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_disposeString(Str)
+    ccall((:clang_QualType_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
+end
+
 function clang_ASTContext_PrintStats(Ctx)
     ccall((:clang_ASTContext_PrintStats, libclangex), Cvoid, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getPointerType(Ctx, OpaquePtr)
+    ccall((:clang_ASTContext_getPointerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, OpaquePtr)
+end
+
+function clang_ASTContext_getTranslationUnitDecl(Ctx)
+    ccall((:clang_ASTContext_getTranslationUnitDecl, libclangex), CXTranslationUnitDecl, (CXASTContext,), Ctx)
 end
 
 function clang_ASTContext_VoidTy_getTypePtrOrNull(Ctx)
@@ -291,8 +345,24 @@ function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
     ccall((:clang_CreateLLVMCodeGen, libclangex), CXCodeGenerator, (CXCompilerInstance, LLVMContextRef, Ptr{Cchar}), CI, LLVMCtx, ModuleName)
 end
 
-function clang_CodeGenerator_getLLVMModule(CG)
-    ccall((:clang_CodeGenerator_getLLVMModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
+function clang_CodeGenerator_CGM(CG)
+    ccall((:clang_CodeGenerator_CGM, libclangex), CXCodeGenModule, (CXCodeGenerator,), CG)
+end
+
+function clang_CodeGenerator_GetModule(CG)
+    ccall((:clang_CodeGenerator_GetModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
+end
+
+function clang_CodeGenerator_ReleaseModule(CG)
+    ccall((:clang_CodeGenerator_ReleaseModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
+end
+
+function clang_CodeGenerator_GetDeclForMangledName(CG, MangledName)
+    ccall((:clang_CodeGenerator_GetDeclForMangledName, libclangex), CXDecl, (CXCodeGenerator, Ptr{Cchar}), CG, MangledName)
+end
+
+function clang_CodeGenerator_StartModule(CG, LLVMCtx, ModuleName)
+    ccall((:clang_CodeGenerator_StartModule, libclangex), LLVMModuleRef, (CXCodeGenerator, LLVMContextRef, Ptr{Cchar}), CG, LLVMCtx, ModuleName)
 end
 
 function clang_EmitAssemblyAction_create(ErrorCode, LLVMCtx)
@@ -771,6 +841,14 @@ function clang_LangOptions_PrintStats(LO)
     ccall((:clang_LangOptions_PrintStats, libclangex), Cvoid, (CXLangOptions,), LO)
 end
 
+function clang_Lexer_create(FID, FromFile, SM, langOpts, ErrorCode)
+    ccall((:clang_Lexer_create, libclangex), CXLexer, (CXFileID, CXMemoryBuffer, CXSourceManager, CXLangOptions, Ptr{CXInit_Error}), FID, FromFile, SM, langOpts, ErrorCode)
+end
+
+function clang_Lexer_dispose(Lex)
+    ccall((:clang_Lexer_dispose, libclangex), Cvoid, (CXLexer,), Lex)
+end
+
 function clang_Preprocessor_getHeaderSearchInfo(PP)
     ccall((:clang_Preprocessor_getHeaderSearchInfo, libclangex), CXHeaderSearch, (CXPreprocessor,), PP)
 end
@@ -781,6 +859,14 @@ end
 
 function clang_Preprocessor_EnterMainSourceFile(PP)
     ccall((:clang_Preprocessor_EnterMainSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_EnterSourceFile(PP, FID)
+    ccall((:clang_Preprocessor_EnterSourceFile, libclangex), Bool, (CXPreprocessor, CXFileID), PP, FID)
+end
+
+function clang_Preprocessor_EndSourceFile(PP)
+    ccall((:clang_Preprocessor_EndSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
 end
 
 function clang_Preprocessor_PrintStats(PP)
@@ -861,6 +947,10 @@ end
 
 function clang_Stmt_PrintStats()
     ccall((:clang_Stmt_PrintStats, libclangex), Cvoid, ())
+end
+
+function clang_Decl_dumpColor(DC)
+    ccall((:clang_Decl_dumpColor, libclangex), Cvoid, (CXDecl,), DC)
 end
 
 # exports

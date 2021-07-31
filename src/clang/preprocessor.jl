@@ -64,6 +64,17 @@ function enter_main_file(x::Preprocessor)
     return clang_Preprocessor_EnterMainSourceFile(x.ptr)
 end
 
+function enter_file(x::Preprocessor, id::FileID)
+    @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
+    @assert id.ptr != C_NULL "FileID has a NULL pointer."
+    return clang_Preprocessor_EnterSourceFile(x.ptr, id.ptr)
+end
+
+function end_file(x::Preprocessor)
+    @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
+    return clang_Preprocessor_EndSourceFile(x.ptr)
+end
+
 function get_header_search(x::Preprocessor)
     @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
     return HeaderSearch(clang_Preprocessor_getHeaderSearchInfo(x.ptr))
@@ -87,4 +98,10 @@ end
 function enable_incremental(x::Preprocessor)
     @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
     return clang_Preprocessor_enableIncrementalProcessing(x.ptr)
+end
+
+function begin_source_file(consumer::T, lang::LangOptions,
+                           pp::Preprocessor) where {T<:AbstractDiagnosticConsumer}
+    @assert pp.ptr != C_NULL "Preprocessor has a NULL pointer."
+    return begin_source_file(consumer, lang, pp.ptr)
 end

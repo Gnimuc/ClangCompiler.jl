@@ -41,7 +41,7 @@ end
 
 function compile(x::SimpleCompiler)
     CC.parse(x.instance) || error("failed to parse the source code.")
-    m = CC.get_llvm_module(CC.CodeGenerator(CC.get_ast_consumer(x.instance).ptr))
-    m == C_NULL && error("failed to generate IR.")
-    return CC.LLVM.Module(m)
+    m = CC.get_llvm_module(CC.get_codegen(x.instance).ptr)
+    m.ref == C_NULL && error("failed to generate IR.")
+    return m
 end
