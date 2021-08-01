@@ -51,11 +51,15 @@ const CXFileManager = Ptr{Cvoid}
 
 const CXSourceManager = Ptr{Cvoid}
 
+const CXSourceLocation_ = Ptr{Cvoid}
+
 const CXPreprocessor = Ptr{Cvoid}
 
 const CXHeaderSearch = Ptr{Cvoid}
 
 const CXLexer = Ptr{Cvoid}
+
+const CXToken_ = Ptr{Cvoid}
 
 @enum CXTranslationUnitKind::UInt32 begin
     CXTU_Complete = 0
@@ -111,26 +115,6 @@ end
 
 function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)
     ccall((:clang_Parser_parseOneTopLevelDecl, libclangex), CXDeclGroupRef, (CXParser, Bool), Parser, IsFirstDecl)
-end
-
-function clang_DeclGroupRef_fromeDecl(D)
-    ccall((:clang_DeclGroupRef_fromeDecl, libclangex), CXDeclGroupRef, (CXDecl,), D)
-end
-
-function clang_DeclGroupRef_isNull(DG)
-    ccall((:clang_DeclGroupRef_isNull, libclangex), Bool, (CXDeclGroupRef,), DG)
-end
-
-function clang_DeclGroupRef_isSingleDecl(DG)
-    ccall((:clang_DeclGroupRef_isSingleDecl, libclangex), Bool, (CXDeclGroupRef,), DG)
-end
-
-function clang_DeclGroupRef_isDeclGroup(DG)
-    ccall((:clang_DeclGroupRef_isDeclGroup, libclangex), Bool, (CXDeclGroupRef,), DG)
-end
-
-function clang_DeclGroupRef_getSingleDecl(DG)
-    ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
 end
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
@@ -203,6 +187,26 @@ end
 
 function clang_ASTContext_getTranslationUnitDecl(Ctx)
     ccall((:clang_ASTContext_getTranslationUnitDecl, libclangex), CXTranslationUnitDecl, (CXASTContext,), Ctx)
+end
+
+function clang_DeclGroupRef_fromeDecl(D)
+    ccall((:clang_DeclGroupRef_fromeDecl, libclangex), CXDeclGroupRef, (CXDecl,), D)
+end
+
+function clang_DeclGroupRef_isNull(DG)
+    ccall((:clang_DeclGroupRef_isNull, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_isSingleDecl(DG)
+    ccall((:clang_DeclGroupRef_isSingleDecl, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_isDeclGroup(DG)
+    ccall((:clang_DeclGroupRef_isDeclGroup, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_getSingleDecl(DG)
+    ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
 end
 
 function clang_ASTContext_VoidTy_getTypePtrOrNull(Ctx)
@@ -849,8 +853,8 @@ function clang_Preprocessor_EnterMainSourceFile(PP)
     ccall((:clang_Preprocessor_EnterMainSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
 end
 
-function clang_Preprocessor_EnterSourceFile(PP, FID)
-    ccall((:clang_Preprocessor_EnterSourceFile, libclangex), Bool, (CXPreprocessor, CXFileID), PP, FID)
+function clang_Preprocessor_EnterSourceFile(PP, FID, Loc)
+    ccall((:clang_Preprocessor_EnterSourceFile, libclangex), Bool, (CXPreprocessor, CXFileID, CXSourceLocation_), PP, FID, Loc)
 end
 
 function clang_Preprocessor_EndSourceFile(PP)
@@ -901,8 +905,8 @@ function clang_SourceManager_createFileIDFromMemoryBuffer(SM, MB)
     ccall((:clang_SourceManager_createFileIDFromMemoryBuffer, libclangex), CXFileID, (CXSourceManager, LLVMMemoryBufferRef), SM, MB)
 end
 
-function clang_SourceManager_createFileIDFromFileEntry(SM, FE)
-    ccall((:clang_SourceManager_createFileIDFromFileEntry, libclangex), CXFileID, (CXSourceManager, CXFileEntry), SM, FE)
+function clang_SourceManager_createFileIDFromFileEntry(SM, FE, Loc)
+    ccall((:clang_SourceManager_createFileIDFromFileEntry, libclangex), CXFileID, (CXSourceManager, CXFileEntry, CXSourceLocation_), SM, FE, Loc)
 end
 
 function clang_SourceManager_getMainFileID(SM)
@@ -915,6 +919,46 @@ end
 
 function clang_SourceManager_overrideFileContents(SM, FE, MB)
     ccall((:clang_SourceManager_overrideFileContents, libclangex), Cvoid, (CXSourceManager, CXFileEntry, LLVMMemoryBufferRef), SM, FE, MB)
+end
+
+function clang_SourceLocation_createInvalid()
+    ccall((:clang_SourceLocation_createInvalid, libclangex), CXSourceLocation_, ())
+end
+
+function clang_SourceLocation_isFileID(Loc)
+    ccall((:clang_SourceLocation_isFileID, libclangex), Bool, (CXSourceLocation_,), Loc)
+end
+
+function clang_SourceLocation_isMacroID(Loc)
+    ccall((:clang_SourceLocation_isMacroID, libclangex), Bool, (CXSourceLocation_,), Loc)
+end
+
+function clang_SourceLocation_isValid(Loc)
+    ccall((:clang_SourceLocation_isValid, libclangex), Bool, (CXSourceLocation_,), Loc)
+end
+
+function clang_SourceLocation_isInvalid(Loc)
+    ccall((:clang_SourceLocation_isInvalid, libclangex), Bool, (CXSourceLocation_,), Loc)
+end
+
+function clang_SourceLocation_isPairOfFileLocations(Start, End)
+    ccall((:clang_SourceLocation_isPairOfFileLocations, libclangex), Bool, (CXSourceLocation_, CXSourceLocation_), Start, End)
+end
+
+function clang_SourceLocation_getHashValue(Loc)
+    ccall((:clang_SourceLocation_getHashValue, libclangex), Cuint, (CXSourceLocation_,), Loc)
+end
+
+function clang_SourceLocation_dump(Loc, SM)
+    ccall((:clang_SourceLocation_dump, libclangex), Cvoid, (CXSourceLocation_, CXSourceManager), Loc, SM)
+end
+
+function clang_SourceLocation_printToString(Loc, SM)
+    ccall((:clang_SourceLocation_printToString, libclangex), Ptr{Cchar}, (CXSourceLocation_, CXSourceManager), Loc, SM)
+end
+
+function clang_SourceLocation_disposeString(Str)
+    ccall((:clang_SourceLocation_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
 end
 
 function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)

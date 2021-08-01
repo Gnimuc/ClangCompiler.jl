@@ -11,10 +11,10 @@ function enter_main_file(x::Preprocessor)
     return clang_Preprocessor_EnterMainSourceFile(x.ptr)
 end
 
-function enter_file(x::Preprocessor, id::FileID)
+function enter_file(x::Preprocessor, id::FileID, loc::SourceLocation=SourceLocation())
     @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
     @assert id.ptr != C_NULL "FileID has a NULL pointer."
-    return clang_Preprocessor_EnterSourceFile(x.ptr, id.ptr)
+    return clang_Preprocessor_EnterSourceFile(x.ptr, id.ptr, loc.ptr)
 end
 
 function end_file(x::Preprocessor)

@@ -3,7 +3,7 @@ using ClangCompiler
 
 const CC = ClangCompiler
 
-struct SimpleCompiler <: CC.AbstractCompiler
+struct SimpleCompiler
     ctx::CC.Context
     instance::CC.CompilerInstance
 end
@@ -41,7 +41,7 @@ end
 
 function compile(x::SimpleCompiler)
     CC.parse(x.instance) || error("failed to parse the source code.")
-    m = CC.get_llvm_module(CC.get_codegen(x.instance).ptr)
+    m = CC.get_llvm_module(x.instance)
     m.ref == C_NULL && error("failed to generate IR.")
     return m
 end

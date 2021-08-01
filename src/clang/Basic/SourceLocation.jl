@@ -21,3 +21,22 @@ function destroy(x::FileID)
     end
     return x
 end
+
+"""
+    mutable struct SourceLocation <: Any
+Holds a `clang::SourceLocation` opaque pointer.
+"""
+mutable struct SourceLocation
+    ptr::CXSourceLocation_
+end
+SourceLocation() = SourceLocation(clang_SourceLocation_createInvalid())
+
+is_file_id(x::SourceLocation) = clang_SourceLocation_isFileID(x.ptr)
+is_macro_id(x::SourceLocation) = clang_SourceLocation_isMacroID(x.ptr)
+is_valid(x::SourceLocation) = clang_SourceLocation_isValid(x.ptr)
+is_invalid(x::SourceLocation) = clang_SourceLocation_isInvalid(x.ptr)
+value(x::SourceLocation) = clang_SourceLocation_getHashValue(x.ptr)
+
+function is_pair_of_file_loc(begin_::SourceLocation, end_::SourceLocation)
+    return clang_SourceLocation_isPairOfFileLocations(begin_.ptr, end_.ptr)
+end

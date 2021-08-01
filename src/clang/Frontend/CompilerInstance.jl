@@ -295,6 +295,10 @@ function get_codegen(ci::CompilerInstance)
     return CodeGenerator(get_ast_consumer(ci).ptr)
 end
 
+function get_llvm_module(ci::CompilerInstance)
+    return get_llvm_module(get_codegen(ci))
+end
+
 # Actions
 function execute_action(ci::CompilerInstance, action::T) where {T<:AbstractFrontendAction}
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."

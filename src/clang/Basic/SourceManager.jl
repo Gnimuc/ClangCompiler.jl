@@ -27,7 +27,7 @@ function status(mgr::SourceManager)
 end
 
 """
-FileID(src_mgr::SourceManager, buffer::MemoryBuffer)
+    FileID(src_mgr::SourceManager, buffer::MemoryBuffer)
 Create a file ID from a memory buffer.
 
 This function takes ownership of the memory buffer.
@@ -38,16 +38,17 @@ function FileID(src_mgr::SourceManager, buffer::MemoryBuffer)
 end
 
 """
-FileID(src_mgr::SourceManager, file_entry::FileEntry)
+    FileID(src_mgr::SourceManager, file_entry::FileEntry)
 Create a file ID from a file entry.
 
 See also [`get_file`](@ref).
 """
-function FileID(src_mgr::SourceManager, file_entry::FileEntry)
+function FileID(src_mgr::SourceManager, file_entry::FileEntry, loc::SourceLocation=SourceLocation())
     @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
     @assert file_entry.ptr != C_NULL "FileEntry has a NULL pointer."
     return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr.ptr,
-                                                                file_entry.ptr))
+                                                                file_entry.ptr,
+                                                                loc.ptr))
 end
 
 """
@@ -83,4 +84,17 @@ function set_main_file(src_mgr::SourceManager, buffer::MemoryBuffer)
     set_main_file_id(src_mgr, id)
     destroy(id)
     return nothing
+end
+
+function dump(x::SourceLocation, src_mgr::SourceManager)
+    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    return clang_SourceLocation_dump(x.ptr, src_mgr.ptr)
+end
+
+function get_string(x::SourceLocation, src_mgr::SourceManager)
+    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    str = clang_SourceLocation_printToString(x.ptr, src_mgr.ptr)
+    s = unsafe_string(str)
+    clang_SourceLocation_disposeString(str)
+    return s
 end
