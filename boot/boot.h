@@ -1,7 +1,7 @@
 #ifndef CLANG_COMPILER_BOOT_H
 #define CLANG_COMPILER_BOOT_H
 
-#include "CXTypes.h"
+#include "clang-ex/CXTypes.h"
 #include "julia.h"
 #include "clang-c/Platform.h"
 

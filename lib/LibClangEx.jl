@@ -8,11 +8,6 @@ using LLVM.API: LLVMMemoryBufferRef
 const time_t = Clong
 
 
-@enum CXInit_Error::UInt32 begin
-    CXInit_NoError = 0
-    CXInit_CanNotCreate = 1
-end
-
 const CXCompilerInstance = Ptr{Cvoid}
 
 const CXTargetOptions = Ptr{Cvoid}
@@ -97,26 +92,6 @@ const CXXScopeSpec = Ptr{Cvoid}
 
 const CXNestedNameSpecifier = Ptr{Cvoid}
 
-function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
-    ccall((:clang_Parser_create, libclangex), CXParser, (CXPreprocessor, CXSema, Bool, Ptr{CXInit_Error}), PP, Actions, SkipFunctionBodies, ErrorCode)
-end
-
-function clang_Parser_dispose(P)
-    ccall((:clang_Parser_dispose, libclangex), Cvoid, (CXParser,), P)
-end
-
-function clang_Parser_Initialize(P)
-    ccall((:clang_Parser_Initialize, libclangex), Cvoid, (CXParser,), P)
-end
-
-function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)
-    ccall((:clang_Parser_parseOneTopLevelDecl, libclangex), CXDeclGroupRef, (CXParser, Bool), Parser, IsFirstDecl)
-end
-
-function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
-    ccall((:clang_ParseAST, libclangex), Cvoid, (CXSema, Bool, Bool), Sema, PrintStats, SkipFunctionBodies)
-end
-
 function clang_ASTConsumer_Initialize(Csr, Ctx)
     ccall((:clang_ASTConsumer_Initialize, libclangex), Cvoid, (CXASTConsumer, CXASTContext), Csr, Ctx)
 end
@@ -127,54 +102,6 @@ end
 
 function clang_ASTConsumer_PrintStats(Csr)
     ccall((:clang_ASTConsumer_PrintStats, libclangex), Cvoid, (CXASTConsumer,), Csr)
-end
-
-function clang_QualType_getTypePtr(OpaquePtr)
-    ccall((:clang_QualType_getTypePtr, libclangex), CXType_, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_getTypePtrOrNull(OpaquePtr)
-    ccall((:clang_QualType_getTypePtrOrNull, libclangex), CXType_, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_isCanonical(OpaquePtr)
-    ccall((:clang_QualType_isCanonical, libclangex), Bool, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_isNull(OpaquePtr)
-    ccall((:clang_QualType_isNull, libclangex), Bool, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_isConstQualified(OpaquePtr)
-    ccall((:clang_QualType_isConstQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_isRestrictQualified(OpaquePtr)
-    ccall((:clang_QualType_isRestrictQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_isVolatileQualified(OpaquePtr)
-    ccall((:clang_QualType_isVolatileQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_addConst(OpaquePtr)
-    ccall((:clang_QualType_addConst, libclangex), Cvoid, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_addVolatile(OpaquePtr)
-    ccall((:clang_QualType_addVolatile, libclangex), Cvoid, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_addRestrict(OpaquePtr)
-    ccall((:clang_QualType_addRestrict, libclangex), Cvoid, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_getAsString(OpaquePtr)
-    ccall((:clang_QualType_getAsString, libclangex), Ptr{Cchar}, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_disposeString(Str)
-    ccall((:clang_QualType_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
 end
 
 function clang_ASTContext_PrintStats(Ctx)
@@ -363,6 +290,11 @@ end
 
 function clang_ASTContext_NullPtrTy_getTypePtrOrNull(Ctx)
     ccall((:clang_ASTContext_NullPtrTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+end
+
+@enum CXInit_Error::UInt32 begin
+    CXInit_NoError = 0
+    CXInit_CanNotCreate = 1
 end
 
 function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
@@ -983,6 +915,74 @@ end
 
 function clang_SourceLocation_disposeString(Str)
     ccall((:clang_SourceLocation_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
+end
+
+function clang_QualType_getTypePtr(OpaquePtr)
+    ccall((:clang_QualType_getTypePtr, libclangex), CXType_, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_getTypePtrOrNull(OpaquePtr)
+    ccall((:clang_QualType_getTypePtrOrNull, libclangex), CXType_, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isCanonical(OpaquePtr)
+    ccall((:clang_QualType_isCanonical, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isNull(OpaquePtr)
+    ccall((:clang_QualType_isNull, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isConstQualified(OpaquePtr)
+    ccall((:clang_QualType_isConstQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isRestrictQualified(OpaquePtr)
+    ccall((:clang_QualType_isRestrictQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isVolatileQualified(OpaquePtr)
+    ccall((:clang_QualType_isVolatileQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_addConst(OpaquePtr)
+    ccall((:clang_QualType_addConst, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_addVolatile(OpaquePtr)
+    ccall((:clang_QualType_addVolatile, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_addRestrict(OpaquePtr)
+    ccall((:clang_QualType_addRestrict, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_getAsString(OpaquePtr)
+    ccall((:clang_QualType_getAsString, libclangex), Ptr{Cchar}, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_disposeString(Str)
+    ccall((:clang_QualType_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
+end
+
+function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
+    ccall((:clang_Parser_create, libclangex), CXParser, (CXPreprocessor, CXSema, Bool, Ptr{CXInit_Error}), PP, Actions, SkipFunctionBodies, ErrorCode)
+end
+
+function clang_Parser_dispose(P)
+    ccall((:clang_Parser_dispose, libclangex), Cvoid, (CXParser,), P)
+end
+
+function clang_Parser_Initialize(P)
+    ccall((:clang_Parser_Initialize, libclangex), Cvoid, (CXParser,), P)
+end
+
+function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)
+    ccall((:clang_Parser_parseOneTopLevelDecl, libclangex), CXDeclGroupRef, (CXParser, Bool), Parser, IsFirstDecl)
+end
+
+function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
+    ccall((:clang_ParseAST, libclangex), Cvoid, (CXSema, Bool, Bool), Sema, PrintStats, SkipFunctionBodies)
 end
 
 # exports
