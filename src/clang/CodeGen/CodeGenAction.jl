@@ -24,10 +24,9 @@ mutable struct LLVMOnlyAction <: AbstractCodeGenAction
 end
 LLVMOnlyAction(ctx::Context) = LLVMOnlyAction(create_emit_llvm_only_action(ctx))
 
-function create_emit_llvm_only_action(llvm_ctx::LLVMContextRef)
+function create_emit_llvm_only_action(ctx::Context)
     status = Ref{CXInit_Error}(CXInit_NoError)
-    act = clang_EmitLLVMOnlyAction_create(status, llvm_ctx)
+    act = clang_EmitLLVMOnlyAction_create(status, ctx.ref)
     @assert status[] == CXInit_NoError
     return act
 end
-create_emit_llvm_only_action(ctx::Context) = create_emit_llvm_only_action(ctx.ref)

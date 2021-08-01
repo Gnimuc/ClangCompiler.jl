@@ -32,7 +32,7 @@ end
     int x;
     int y;
     """
-    buffer = MemoryBuffer(code)
+    buffer = get_buffer(code)
 
     fid = FileID(sm, buffer)
     @test fid.ptr != C_NULL

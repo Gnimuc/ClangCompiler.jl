@@ -7,3 +7,8 @@ lookup_function(ee::ExecutionEngine, func_name::String) = functions(ee)[func_nam
 link(lib::AbstractString) = LLVM.load_library_permantly(lib)
 
 link_crt(ee::ExecutionEngine) = LLVM.API.LLVMRunStaticConstructors(ee.ref)
+
+function get_buffer(x::String, name="", copy=true)
+    data = unsafe_wrap(Vector{UInt8}, x)
+    return MemoryBuffer(data, name, copy)
+end

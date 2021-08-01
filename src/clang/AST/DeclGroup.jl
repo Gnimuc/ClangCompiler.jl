@@ -11,11 +11,6 @@ function DeclGroupRef(x::Decl)
     return DeclGroupRef(clang_DeclGroupRef_fromeDecl(x.ptr))
 end
 
-function parse_decl(x::Parser, is_first_decl::Bool=false)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
-    return DeclGroupRef(clang_Parser_parseOneTopLevelDecl(x.ptr, is_first_decl))
-end
-
 function is_null(x::DeclGroupRef)
     @assert x.ptr != C_NULL "DeclGroupRef has a NULL pointer."
     return clang_DeclGroupRef_isNull(x.ptr)

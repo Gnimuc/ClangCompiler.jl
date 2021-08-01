@@ -27,3 +27,8 @@ function initialize(x::Parser)
     @assert x.ptr != C_NULL "Parser has a NULL pointer."
     return clang_Parser_Initialize(x.ptr)
 end
+
+function parse_decl(x::Parser, is_first_decl::Bool=false)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return DeclGroupRef(clang_Parser_parseOneTopLevelDecl(x.ptr, is_first_decl))
+end

@@ -33,10 +33,10 @@ export get_compiler_args
 include("clang/Basic/LangOptions.jl")
 include("clang/Basic/CodeGenOptions.jl")
 include("clang/Basic/TargetOptions.jl")
-include("clang/Basic/TargetInfo.jl")
 include("clang/Basic/DiagnosticIDs.jl")
 include("clang/Basic/DiagnosticOptions.jl")
 include("clang/Basic/Diagnostic.jl")
+include("clang/Basic/TargetInfo.jl")
 include("clang/Basic/FileEntry.jl")
 include("clang/Basic/FileManager.jl")
 include("clang/Basic/SourceLocation.jl")
@@ -48,8 +48,8 @@ include("clang/Lex/Preprocessor.jl")
 include("clang/AST/Type.jl")
 include("clang/AST/Decl.jl")
 include("clang/AST/DeclGroup.jl")
-include("clang/AST/ASTConsumer.jl")
 include("clang/AST/ASTContext.jl")
+include("clang/AST/ASTConsumer.jl")
 include("clang/Sema/Sema.jl")
 include("clang/Parse/Parser.jl")
 include("clang/Parse/ParseAST.jl")
@@ -75,6 +75,7 @@ export create_incremental_compiler
 
 include("llvm.jl")
 export lookup_function, link, link_crt
+export get_buffer
 
 include("utils.jl")
 export jlty2llvmty
