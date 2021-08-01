@@ -19,6 +19,7 @@ headers = detect_headers(include_dir, args)
 @add_def LLVMOpaqueModule
 @add_def LLVMOpaqueContext
 @add_def LLVMContextRef
+@add_def LLVMMemoryBufferRef
 
 ctx = create_context(headers, args, options)
 

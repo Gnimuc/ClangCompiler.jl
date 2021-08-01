@@ -1,7 +1,9 @@
 module LibClangEx
 
 using ..ClangCompiler: libclangex
-using LLVM.API: LLVMModuleRef, LLVMOpaqueModule, LLVMOpaqueContext, LLVMContextRef
+using LLVM.API: LLVMModuleRef, LLVMOpaqueModule
+using LLVM.API: LLVMOpaqueContext, LLVMContextRef
+using LLVM.API: LLVMMemoryBufferRef
 
 const time_t = Clong
 
@@ -46,8 +48,6 @@ const CXFileEntry = Ptr{Cvoid}
 const CXFileEntryRef = Ptr{Cvoid}
 
 const CXFileManager = Ptr{Cvoid}
-
-const CXMemoryBuffer = Ptr{Cvoid}
 
 const CXSourceManager = Ptr{Cvoid}
 
@@ -442,7 +442,7 @@ function clang_CompilerInstance_createFileManager(CI)
 end
 
 function clang_CompilerInstance_createFileManagerWithVOFS4PCH(CI, Path, ModificationTime, PCHBuffer)
-    ccall((:clang_CompilerInstance_createFileManagerWithVOFS4PCH, libclangex), CXFileManager, (CXCompilerInstance, Ptr{Cchar}, time_t, CXMemoryBuffer), CI, Path, ModificationTime, PCHBuffer)
+    ccall((:clang_CompilerInstance_createFileManagerWithVOFS4PCH, libclangex), CXFileManager, (CXCompilerInstance, Ptr{Cchar}, time_t, LLVMMemoryBufferRef), CI, Path, ModificationTime, PCHBuffer)
 end
 
 function clang_CompilerInstance_hasSourceManager(CI)
@@ -694,7 +694,7 @@ function clang_FileManager_dispose(FM)
 end
 
 function clang_FileManager_getBufferForFile(FM, FE, isVolatile, RequiresNullTerminator)
-    ccall((:clang_FileManager_getBufferForFile, libclangex), CXMemoryBuffer, (CXFileManager, CXFileEntry, Bool, Bool), FM, FE, isVolatile, RequiresNullTerminator)
+    ccall((:clang_FileManager_getBufferForFile, libclangex), LLVMMemoryBufferRef, (CXFileManager, CXFileEntry, Bool, Bool), FM, FE, isVolatile, RequiresNullTerminator)
 end
 
 function clang_FileManager_PrintStats(FM)
@@ -747,18 +747,6 @@ end
 
 function clang_FileEntry_isNamedPipe(FE)
     ccall((:clang_FileEntry_isNamedPipe, libclangex), Bool, (CXFileEntry,), FE)
-end
-
-function clang_MemoryBuffer_getMemBuffer(InputData, InputDataSize, BufferName, BufferNameSize, RequiresNullTerminator)
-    ccall((:clang_MemoryBuffer_getMemBuffer, libclangex), CXMemoryBuffer, (Ptr{Cchar}, Cuint, Ptr{Cchar}, Cuint, Bool), InputData, InputDataSize, BufferName, BufferNameSize, RequiresNullTerminator)
-end
-
-function clang_MemoryBuffer_getMemBufferCopy(InputData, InputDataSize, BufferName, BufferNameSize)
-    ccall((:clang_MemoryBuffer_getMemBufferCopy, libclangex), CXMemoryBuffer, (Ptr{Cchar}, Cuint, Ptr{Cchar}, Cuint), InputData, InputDataSize, BufferName, BufferNameSize)
-end
-
-function clang_MemoryBuffer_getBufferSize(MB)
-    ccall((:clang_MemoryBuffer_getBufferSize, libclangex), Csize_t, (CXMemoryBuffer,), MB)
 end
 
 function clang_TargetOptions_create(ErrorCode)
@@ -842,7 +830,7 @@ function clang_LangOptions_PrintStats(LO)
 end
 
 function clang_Lexer_create(FID, FromFile, SM, langOpts, ErrorCode)
-    ccall((:clang_Lexer_create, libclangex), CXLexer, (CXFileID, CXMemoryBuffer, CXSourceManager, CXLangOptions, Ptr{CXInit_Error}), FID, FromFile, SM, langOpts, ErrorCode)
+    ccall((:clang_Lexer_create, libclangex), CXLexer, (CXFileID, LLVMMemoryBufferRef, CXSourceManager, CXLangOptions, Ptr{CXInit_Error}), FID, FromFile, SM, langOpts, ErrorCode)
 end
 
 function clang_Lexer_dispose(Lex)
@@ -910,7 +898,7 @@ function clang_FileID_dispose(FID)
 end
 
 function clang_SourceManager_createFileIDFromMemoryBuffer(SM, MB)
-    ccall((:clang_SourceManager_createFileIDFromMemoryBuffer, libclangex), CXFileID, (CXSourceManager, CXMemoryBuffer), SM, MB)
+    ccall((:clang_SourceManager_createFileIDFromMemoryBuffer, libclangex), CXFileID, (CXSourceManager, LLVMMemoryBufferRef), SM, MB)
 end
 
 function clang_SourceManager_createFileIDFromFileEntry(SM, FE)
@@ -926,7 +914,7 @@ function clang_SourceManager_setMainFileID(SM, ID)
 end
 
 function clang_SourceManager_overrideFileContents(SM, FE, MB)
-    ccall((:clang_SourceManager_overrideFileContents, libclangex), Cvoid, (CXSourceManager, CXFileEntry, CXMemoryBuffer), SM, FE, MB)
+    ccall((:clang_SourceManager_overrideFileContents, libclangex), Cvoid, (CXSourceManager, CXFileEntry, LLVMMemoryBufferRef), SM, FE, MB)
 end
 
 function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)

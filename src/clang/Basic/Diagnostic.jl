@@ -94,7 +94,8 @@ function create_diagnostics_engine()
     opts = DiagnosticOptions()
     client = TextDiagnosticPrinter(opts)
     should_own_client = true
-    engine = clang_DiagnosticsEngine_create(ids, opts.ptr, client.ptr, should_own_client, status)
+    engine = clang_DiagnosticsEngine_create(ids, opts.ptr, client.ptr, should_own_client,
+                                            status)
     @assert status[] == CXInit_NoError
     return engine
 end

@@ -11,7 +11,6 @@ const julia_include_dir = joinpath(Sys.BINDIR, "..", "include", "julia") |> norm
 const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "bin", "clang")
 
 using LLVM
-using LLVM.API: LLVMContextRef
 using LLVM.Interop: call_function
 export call_function
 
@@ -30,7 +29,7 @@ end
 export get_compiler_args
 
 # internal
-# the file heirarchy is exactly the same as Clang, please refer to Clang's src for docs.
+# the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
 include("clang/Basic/LangOptions.jl")
 include("clang/Basic/CodeGenOptions.jl")
 include("clang/Basic/TargetOptions.jl")

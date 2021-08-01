@@ -28,8 +28,8 @@ function create_compiler_invocation_from_cmd(src::String, args::Vector{String}=S
     args_with_src = copy(args)
     push!(args_with_src, src)
     invocation = clang_CompilerInvocation_createFromCommandLine(args_with_src,
-                                                                length(args_with_src), diag.ptr,
-                                                                status)
+                                                                length(args_with_src),
+                                                                diag.ptr, status)
     @assert status[] == CXInit_NoError
     return CompilerInvocation(invocation)
 end

@@ -59,7 +59,7 @@ end
 function begin_diag(ci::CompilerInstance)
     diag_csr = get_diagnostic_client(ci)
     preprocessor = get_preprocessor(ci)
-    begin_source_file(diag_csr, get_lang_options(ci), preprocessor)
+    return begin_source_file(diag_csr, get_lang_options(ci), preprocessor)
 end
 
 end_diag(ci::CompilerInstance) = end_source_file(get_diagnostic_client(ci))
@@ -171,7 +171,7 @@ end
 
 function set_target(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
-    clang_CompilerInstance_setTargetAndLangOpts(ci.ptr)
+    return clang_CompilerInstance_setTargetAndLangOpts(ci.ptr)
 end
 
 function set_target(ci::CompilerInstance, t::TargetInfo)
@@ -183,7 +183,7 @@ end
 # Preprocessor
 function has_preprocessor(ci::CompilerInstance)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
-    clang_CompilerInstance_hasPreprocessor(ci.ptr)
+    return clang_CompilerInstance_hasPreprocessor(ci.ptr)
 end
 
 function get_preprocessor(ci::CompilerInstance)
@@ -285,12 +285,15 @@ function set_ast_consumer(ci::CompilerInstance, csr::AbstractASTConsumer)
 end
 
 # CodeGenerator
-function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef, mod_name::String="JLCC")
+function create_llvm_codegen(ci::CompilerInstance, llvm_ctx::LLVMContextRef,
+                             mod_name::String="JLCC")
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
     @assert llvm_ctx != C_NULL "LLVMContextRef has a NULL pointer."
     return CodeGenerator(clang_CreateLLVMCodeGen(ci.ptr, llvm_ctx, mod_name))
 end
-create_llvm_codegen(ci::CompilerInstance, ctx::Context, mod_name::String="JLCC") = create_llvm_codegen(ci, ctx.ref, mod_name)
+function create_llvm_codegen(ci::CompilerInstance, ctx::Context, mod_name::String="JLCC")
+    return create_llvm_codegen(ci, ctx.ref, mod_name)
+end
 
 function get_codegen(ci::CompilerInstance)
     return CodeGenerator(get_ast_consumer(ci).ptr)
@@ -427,7 +430,7 @@ function status_options(ci::CompilerInstance)
     status(ci, FrontendOptions)
     status(ci, HeaderSearchOptions)
     status(ci, PreprocessorOptions)
-    status(ci, TargetOptions)
+    return status(ci, TargetOptions)
 end
 
 function status_modules(ci::CompilerInstance)
@@ -437,10 +440,10 @@ function status_modules(ci::CompilerInstance)
     status(ci, Preprocessor)
     status(ci, Sema)
     status(ci, ASTContext)
-    status(ci, ASTConsumer)
+    return status(ci, ASTConsumer)
 end
 
 function status_all(ci::CompilerInstance)
     status_options(ci)
-    status_modules(ci)
+    return status_modules(ci)
 end

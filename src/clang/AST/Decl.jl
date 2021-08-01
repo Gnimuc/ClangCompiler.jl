@@ -8,5 +8,5 @@ end
 
 function dump(x::Decl)
     @assert x.ptr != C_NULL "Decl has a NULL pointer."
-    clang_Decl_dumpColor(x.ptr)
+    return clang_Decl_dumpColor(x.ptr)
 end

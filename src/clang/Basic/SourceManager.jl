@@ -33,9 +33,8 @@ Create a file ID from a memory buffer.
 This function takes ownership of the memory buffer.
 """
 function FileID(src_mgr::SourceManager, buffer::MemoryBuffer)
-@assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
-@assert buffer.ptr != C_NULL "MemoryBuffer has a NULL pointer."
-return FileID(clang_SourceManager_createFileIDFromMemoryBuffer(src_mgr.ptr, buffer.ptr))
+    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    return FileID(clang_SourceManager_createFileIDFromMemoryBuffer(src_mgr.ptr, buffer.ref))
 end
 
 """
@@ -45,10 +44,10 @@ Create a file ID from a file entry.
 See also [`get_file`](@ref).
 """
 function FileID(src_mgr::SourceManager, file_entry::FileEntry)
-@assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
-@assert file_entry.ptr != C_NULL "FileEntry has a NULL pointer."
-return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr.ptr,
-                                                            file_entry.ptr))
+    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    @assert file_entry.ptr != C_NULL "FileEntry has a NULL pointer."
+    return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr.ptr,
+                                                                file_entry.ptr))
 end
 
 """

@@ -2,7 +2,7 @@
     abstract type AbstractCodeGenAction <: AbstractFrontendAction
 Supertype for `CodeGenAction`s.
 """
-abstract type AbstractCodeGenAction <:AbstractFrontendAction end
+abstract type AbstractCodeGenAction <: AbstractFrontendAction end
 
 function take_module(x::T) where {T<:AbstractCodeGenAction}
     @assert x.ptr != C_NULL "$T has a NULL pointer."
