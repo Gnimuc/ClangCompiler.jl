@@ -45,3 +45,10 @@ function compile(x::SimpleCompiler)
     m.ref == C_NULL && error("failed to generate IR.")
     return m
 end
+
+# run
+src = joinpath(@__DIR__, "..", "sample.cpp")
+args = get_compiler_args()
+cc = create_simple_compiler(src, args)
+m = compile(cc)
+destroy(cc)

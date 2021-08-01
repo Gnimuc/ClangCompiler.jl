@@ -9,11 +9,12 @@
 extern "C" {
 #endif
 
-CINDEX_LINKAGE void
-clang_Preprocessor_enableIncrementalProcessing(CXPreprocessor PP);
-
 CINDEX_LINKAGE bool
-clang_Preprocessor_isIncrementalProcessingEnabled(CXPreprocessor PP);
+clang_Parser_tryParseAndSkipInvalidOrParsedDecl(CXParser Parser,
+                                                CXCodeGenerator CodeGen);
+
+CINDEX_LINKAGE void
+clang_Sema_processWeakTopLevelDecls(CXSema Sema, CXCodeGenerator CodeGen);
 
 #ifdef __cplusplus
 }

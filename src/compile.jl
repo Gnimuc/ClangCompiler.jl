@@ -120,24 +120,23 @@ function create_incremental_compiler(src::String, args::Vector{String}; diag_sho
     sema = get_sema(instance)
     parser = Parser(preprocessor, sema)
     # parse
-    diag_csr = get_diagnostic_client(instance)
-    begin_source_file(diag_csr, get_lang_options(instance), preprocessor)
+    begin_diag(instance)
+    try
+        initialize_builtins(preprocessor)
+        enter_main_file(preprocessor)
+        initialize(parser)
 
-    initialize_builtins(preprocessor)
-    enter_main_file(preprocessor)
+        sema = get_sema(instance)
+        ast_ctx = get_ast_context(instance)
 
-    initialize(parser)
-
-    sema = get_sema(instance)
-    ast_ctx = get_ast_context(instance)
-
-    if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
-        process_weak_toplevel_decls(sema, codegen)
-        handle_translation_unit(codegen, ast_ctx)
+        if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
+            process_weak_toplevel_decls(sema, codegen)
+            handle_translation_unit(codegen, ast_ctx)
+        end
+    finally
+        end_diag(instance)
     end
-
-    end_source_file(diag_csr)
-
+    # generate llvm modules
     m_cur = release_llvm_module(codegen)
     m_cur.ref == C_NULL && error("failed to generate IR.")
 

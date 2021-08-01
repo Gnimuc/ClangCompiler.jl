@@ -1,15 +1,11 @@
 function parse(instance::CompilerInstance)
-    diag_csr = get_diagnostic_client(instance)
-
-    preprocessor = get_preprocessor(instance)
-    initialize_builtins(preprocessor)
-
-    begin_source_file(diag_csr, get_lang_options(instance), preprocessor)
-
-    parse_ast(get_sema(instance))
-
-    end_source_file(diag_csr)
-
+    begin_diag(instance)
+    try
+        initialize_builtins(get_preprocessor(instance))
+        parse_ast(get_sema(instance))
+    finally
+        end_diag(instance)
+    end
     return true
 end
 
@@ -37,7 +33,6 @@ function parse(instance::CompilerInstance, codegen::CodeGenerator, parser::Parse
         return false
     end
 end
-
 
 function try_parse_and_skip_invalid_or_parsed_decl(p::Parser, cg::CodeGenerator)
     @assert p.ptr != C_NULL "Parser has a NULL pointer."

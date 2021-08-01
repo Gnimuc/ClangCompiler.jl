@@ -109,12 +109,12 @@ function clang_Parser_Initialize(P)
     ccall((:clang_Parser_Initialize, libclangex), Cvoid, (CXParser,), P)
 end
 
-function clang_Parser_tryParseAndSkipInvalidOrParsedDecl(Parser, CodeGen)
-    ccall((:clang_Parser_tryParseAndSkipInvalidOrParsedDecl, libclangex), Bool, (CXParser, CXCodeGenerator), Parser, CodeGen)
-end
-
 function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)
     ccall((:clang_Parser_parseOneTopLevelDecl, libclangex), CXDeclGroupRef, (CXParser, Bool), Parser, IsFirstDecl)
+end
+
+function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
+    ccall((:clang_ParseAST, libclangex), Cvoid, (CXSema, Bool, Bool), Sema, PrintStats, SkipFunctionBodies)
 end
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
@@ -207,6 +207,26 @@ end
 
 function clang_DeclGroupRef_getSingleDecl(DG)
     ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
+end
+
+function clang_Decl_EnableStatistics()
+    ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
+end
+
+function clang_Stmt_EnableStatistics()
+    ccall((:clang_Stmt_EnableStatistics, libclangex), Cvoid, ())
+end
+
+function clang_Decl_PrintStats()
+    ccall((:clang_Decl_PrintStats, libclangex), Cvoid, ())
+end
+
+function clang_Stmt_PrintStats()
+    ccall((:clang_Stmt_PrintStats, libclangex), Cvoid, ())
+end
+
+function clang_Decl_dumpColor(DC)
+    ccall((:clang_Decl_dumpColor, libclangex), Cvoid, (CXDecl,), DC)
 end
 
 function clang_ASTContext_VoidTy_getTypePtrOrNull(Ctx)
@@ -869,12 +889,16 @@ function clang_Preprocessor_InitializeBuiltins(PP)
     ccall((:clang_Preprocessor_InitializeBuiltins, libclangex), Cvoid, (CXPreprocessor,), PP)
 end
 
-function clang_Sema_setCollectStats(S, ShouldCollect)
-    ccall((:clang_Sema_setCollectStats, libclangex), Cvoid, (CXSema, Bool), S, ShouldCollect)
+function clang_Preprocessor_enableIncrementalProcessing(PP)
+    ccall((:clang_Preprocessor_enableIncrementalProcessing, libclangex), Cvoid, (CXPreprocessor,), PP)
 end
 
-function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)
-    ccall((:clang_Sema_processWeakTopLevelDecls, libclangex), Cvoid, (CXSema, CXCodeGenerator), Sema, CodeGen)
+function clang_Preprocessor_isIncrementalProcessingEnabled(PP)
+    ccall((:clang_Preprocessor_isIncrementalProcessingEnabled, libclangex), Bool, (CXPreprocessor,), PP)
+end
+
+function clang_Sema_setCollectStats(S, ShouldCollect)
+    ccall((:clang_Sema_setCollectStats, libclangex), Cvoid, (CXSema, Bool), S, ShouldCollect)
 end
 
 function clang_Sema_PrintStats(S)
@@ -959,30 +983,6 @@ end
 
 function clang_SourceLocation_disposeString(Str)
     ccall((:clang_SourceLocation_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
-end
-
-function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
-    ccall((:clang_ParseAST, libclangex), Cvoid, (CXSema, Bool, Bool), Sema, PrintStats, SkipFunctionBodies)
-end
-
-function clang_Decl_EnableStatistics()
-    ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
-end
-
-function clang_Stmt_EnableStatistics()
-    ccall((:clang_Stmt_EnableStatistics, libclangex), Cvoid, ())
-end
-
-function clang_Decl_PrintStats()
-    ccall((:clang_Decl_PrintStats, libclangex), Cvoid, ())
-end
-
-function clang_Stmt_PrintStats()
-    ccall((:clang_Stmt_PrintStats, libclangex), Cvoid, ())
-end
-
-function clang_Decl_dumpColor(DC)
-    ccall((:clang_Decl_dumpColor, libclangex), Cvoid, (CXDecl,), DC)
 end
 
 # exports
