@@ -15,7 +15,7 @@ using LLVM.API: LLVMContextRef
 using LLVM.Interop: call_function
 export call_function
 
-include("clang/LibClangEx.jl")
+include("../lib/LibClangEx.jl")
 using .LibClangEx
 
 include("platform/JLLEnvs.jl")
@@ -30,20 +30,37 @@ end
 export get_compiler_args
 
 # internal
-include("clang/type.jl")
-include("clang/frontend.jl")
-include("clang/option.jl")
-include("clang/diagnostic.jl")
-include("clang/target.jl")
-include("clang/buffer.jl")
-include("clang/source.jl")
-include("clang/preprocessor.jl")
-include("clang/ast.jl")
-include("clang/codegen.jl")
-include("clang/sema.jl")
-include("clang/parser.jl")
-include("clang/invocation.jl")
-include("clang/instance.jl")
+# the file heirarchy is exactly the same as Clang, please refer to Clang's src for docs.
+include("clang/Basic/LangOptions.jl")
+include("clang/Basic/CodeGenOptions.jl")
+include("clang/Basic/TargetOptions.jl")
+include("clang/Basic/TargetInfo.jl")
+include("clang/Basic/DiagnosticIDs.jl")
+include("clang/Basic/DiagnosticOptions.jl")
+include("clang/Basic/Diagnostic.jl")
+include("clang/Basic/FileEntry.jl")
+include("clang/Basic/FileManager.jl")
+include("clang/Basic/SourceLocation.jl")
+include("clang/Basic/SourceManager.jl")
+include("clang/Lex/HeaderSearchOptions.jl")
+include("clang/Lex/HeaderSearch.jl")
+include("clang/Lex/PreprocessorOptions.jl")
+include("clang/Lex/Preprocessor.jl")
+include("clang/AST/Type.jl")
+include("clang/AST/Decl.jl")
+include("clang/AST/DeclGroup.jl")
+include("clang/AST/ASTConsumer.jl")
+include("clang/AST/ASTContext.jl")
+include("clang/Sema/Sema.jl")
+include("clang/Parse/Parser.jl")
+include("clang/Parse/ParseAST.jl")
+include("clang/Frontend/Frontend.jl")
+include("clang/Frontend/FrontendOptions.jl")
+include("clang/Frontend/TextDiagnosticPrinter.jl")
+include("clang/Frontend/CompilerInvocation.jl")
+include("clang/Frontend/CompilerInstance.jl")
+include("clang/CodeGen/ModuleBuilder.jl")
+include("clang/CodeGen/CodeGenAction.jl")
 
 # interface
 include("parse.jl")

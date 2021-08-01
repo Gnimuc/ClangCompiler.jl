@@ -1,9 +1,3 @@
-function parse_ast(sema::Sema, PrintStats::Bool=false, SkipFunctionBodies::Bool=false)
-    @assert sema.ptr != C_NULL "Sema has a NULL pointer."
-    clang_ParseAST(sema.ptr, PrintStats, SkipFunctionBodies)
-    return nothing
-end
-
 function parse(instance::CompilerInstance)
     diag_csr = get_diagnostic_client(instance)
 
