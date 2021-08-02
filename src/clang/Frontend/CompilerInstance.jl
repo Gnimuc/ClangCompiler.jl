@@ -198,7 +198,7 @@ function set_preprocessor(ci::CompilerInstance, pp::Preprocessor)
     return clang_CompilerInstance_setPreprocessor(ci.ptr, pp.ptr)
 end
 
-function create_preprocessor(ci::CompilerInstance, kind=CXTU_Complete)
+function create_preprocessor(ci::CompilerInstance, kind=CXTranslationUnitKind_TU_Complete)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
     @assert has_target(ci) "CompilerInstance has no target."
     return clang_CompilerInstance_createPreprocessor(ci.ptr, kind)
@@ -230,7 +230,7 @@ function set_sema(ci::CompilerInstance, sema::Sema)
     return clang_CompilerInstance_setSema(ci.ptr, sema.ptr)
 end
 
-function create_sema(ci::CompilerInstance, kind=CXTU_Complete)
+function create_sema(ci::CompilerInstance, kind=CXTranslationUnitKind_TU_Complete)
     @assert ci.ptr != C_NULL "CompilerInstance has a NULL pointer."
     @assert has_ast_context(ci) "CompilerInstance has no ASTContext."
     @assert has_ast_consumer(ci) "CompilerInstance has no ASTConsumer."

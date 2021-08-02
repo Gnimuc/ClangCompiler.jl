@@ -57,9 +57,9 @@ const CXLexer = Ptr{Cvoid}
 const CXToken_ = Ptr{Cvoid}
 
 @enum CXTranslationUnitKind::UInt32 begin
-    CXTU_Complete = 0
-    CXTU_Prefix = 1
-    CXTU_Module = 2
+    CXTranslationUnitKind_TU_Complete = 0
+    CXTranslationUnitKind_TU_Prefix = 1
+    CXTranslationUnitKind_TU_Module = 2
 end
 
 const CXASTContext = Ptr{Cvoid}
@@ -85,6 +85,36 @@ const CXCodeGenerator = Ptr{Cvoid}
 const CXCodeGenModule = Ptr{Cvoid}
 
 const CXSema = Ptr{Cvoid}
+
+@enum CXDeclaratorContext::UInt32 begin
+    CXDeclaratorContext_File = 0
+    CXDeclaratorContext_Prototype = 1
+    CXDeclaratorContext_ObjCResult = 2
+    CXDeclaratorContext_ObjCParameter = 3
+    CXDeclaratorContext_KNRTypeList = 4
+    CXDeclaratorContext_TypeName = 5
+    CXDeclaratorContext_FunctionalCast = 6
+    CXDeclaratorContext_Member = 7
+    CXDeclaratorContext_Block = 8
+    CXDeclaratorContext_ForInit = 9
+    CXDeclaratorContext_SelectionInit = 10
+    CXDeclaratorContext_Condition = 11
+    CXDeclaratorContext_TemplateParam = 12
+    CXDeclaratorContext_CXXNew = 13
+    CXDeclaratorContext_CXXCatch = 14
+    CXDeclaratorContext_ObjCCatch = 15
+    CXDeclaratorContext_BlockLiteral = 16
+    CXDeclaratorContext_LambdaExpr = 17
+    CXDeclaratorContext_LambdaExprParameter = 18
+    CXDeclaratorContext_ConversionId = 19
+    CXDeclaratorContext_TrailingReturn = 20
+    CXDeclaratorContext_TrailingReturnVar = 21
+    CXDeclaratorContext_TemplateArg = 22
+    CXDeclaratorContext_TemplateTypeArg = 23
+    CXDeclaratorContext_AliasDecl = 24
+    CXDeclaratorContext_AliasTemplate = 25
+    CXDeclaratorContext_RequiresExpr = 26
+end
 
 const CXParser = Ptr{Cvoid}
 

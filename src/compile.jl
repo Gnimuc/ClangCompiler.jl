@@ -109,11 +109,11 @@ function create_incremental_compiler(src::String, args::Vector{String}; diag_sho
     create_source_manager(instance)
     set_main_file(instance, src)
     # preprocessor & AST & sema
-    create_preprocessor(instance, CXTU_Prefix)
+    create_preprocessor(instance, CXTranslationUnitKind_TU_Prefix)
     create_ast_context(instance)
     codegen = create_llvm_codegen(instance, ctx, "JLCC_Incremental_1")
     set_ast_consumer(instance, codegen)
-    create_sema(instance, CXTU_Prefix)
+    create_sema(instance, CXTranslationUnitKind_TU_Prefix)
     # parser
     preprocessor = get_preprocessor(instance)
     enable_incremental(preprocessor)
