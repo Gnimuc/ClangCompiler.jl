@@ -40,3 +40,15 @@ value(x::SourceLocation) = clang_SourceLocation_getHashValue(x.ptr)
 function is_pair_of_file_loc(begin_::SourceLocation, end_::SourceLocation)
     return clang_SourceLocation_isPairOfFileLocations(begin_.ptr, end_.ptr)
 end
+
+"""
+    mutable struct SourceRange <: Any
+Holds two `SourceLocation`s.
+"""
+mutable struct SourceRange
+    begin_loc::SourceLocation
+    end_loc::SourceLocation
+end
+
+get_begin_loc(x::SourceRange) = x.begin_loc
+get_end_loc(x::SourceRange) = x.end_loc

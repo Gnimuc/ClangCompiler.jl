@@ -76,6 +76,10 @@ const CXDeclGroupRef = Ptr{Cvoid}
 
 const CXDecl = Ptr{Cvoid}
 
+const CXNestedNameSpecifier = Ptr{Cvoid}
+
+const CXCXXScopeSpec = Ptr{Cvoid}
+
 const CXCodeGenerator = Ptr{Cvoid}
 
 const CXCodeGenModule = Ptr{Cvoid}
@@ -89,8 +93,6 @@ const CXFrontendAction = Ptr{Cvoid}
 const CXCodeGenAction = Ptr{Cvoid}
 
 const CXXScopeSpec = Ptr{Cvoid}
-
-const CXNestedNameSpecifier = Ptr{Cvoid}
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
     ccall((:clang_ASTConsumer_Initialize, libclangex), Cvoid, (CXASTConsumer, CXASTContext), Csr, Ctx)
@@ -110,6 +112,18 @@ end
 
 function clang_ASTContext_getPointerType(Ctx, OpaquePtr)
     ccall((:clang_ASTContext_getPointerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, OpaquePtr)
+end
+
+function clang_NestedNameSpecifier_getPrefix(NNS)
+    ccall((:clang_NestedNameSpecifier_getPrefix, libclangex), CXNestedNameSpecifier, (CXNestedNameSpecifier,), NNS)
+end
+
+function clang_NestedNameSpecifier_containsErrors(NNS)
+    ccall((:clang_NestedNameSpecifier_containsErrors, libclangex), Bool, (CXNestedNameSpecifier,), NNS)
+end
+
+function clang_NestedNameSpecifier_dump(NNS)
+    ccall((:clang_NestedNameSpecifier_dump, libclangex), Cvoid, (CXNestedNameSpecifier,), NNS)
 end
 
 function clang_ASTContext_getTranslationUnitDecl(Ctx)
@@ -835,6 +849,50 @@ end
 
 function clang_Sema_PrintStats(S)
     ccall((:clang_Sema_PrintStats, libclangex), Cvoid, (CXSema,), S)
+end
+
+function clang_CXXScopeSpec_create(ErrorCode)
+    ccall((:clang_CXXScopeSpec_create, libclangex), CXCXXScopeSpec, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_CXXScopeSpec_dispose(SS)
+    ccall((:clang_CXXScopeSpec_dispose, libclangex), Cvoid, (CXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_getScopeRep(SS)
+    ccall((:clang_CXXScopeSpec_getScopeRep, libclangex), CXNestedNameSpecifier, (CXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_getBeginLoc(SS)
+    ccall((:clang_CXXScopeSpec_getBeginLoc, libclangex), CXSourceLocation_, (CXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_getEndLoc(SS)
+    ccall((:clang_CXXScopeSpec_getEndLoc, libclangex), CXSourceLocation_, (CXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_setBeginLoc(SS, Loc)
+    ccall((:clang_CXXScopeSpec_setBeginLoc, libclangex), Cvoid, (CXXScopeSpec, CXSourceLocation_), SS, Loc)
+end
+
+function clang_CXXScopeSpec_setEndLoc(SS, Loc)
+    ccall((:clang_CXXScopeSpec_setEndLoc, libclangex), Cvoid, (CXXScopeSpec, CXSourceLocation_), SS, Loc)
+end
+
+function clang_CXXScopeSpec_isEmpty(SS)
+    ccall((:clang_CXXScopeSpec_isEmpty, libclangex), Bool, (CXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_isNotEmpty(SS)
+    ccall((:clang_CXXScopeSpec_isNotEmpty, libclangex), Bool, (CXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_isInvalid(SS)
+    ccall((:clang_CXXScopeSpec_isInvalid, libclangex), Bool, (CXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_isValid(SS)
+    ccall((:clang_CXXScopeSpec_isValid, libclangex), Bool, (CXXScopeSpec,), SS)
 end
 
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
