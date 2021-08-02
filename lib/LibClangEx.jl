@@ -56,6 +56,8 @@ const CXLexer = Ptr{Cvoid}
 
 const CXToken_ = Ptr{Cvoid}
 
+const CXAnnotationValue = Ptr{Cvoid}
+
 @enum CXTranslationUnitKind::UInt32 begin
     CXTranslationUnitKind_TU_Complete = 0
     CXTranslationUnitKind_TU_Prefix = 1
@@ -116,13 +118,24 @@ const CXSema = Ptr{Cvoid}
     CXDeclaratorContext_RequiresExpr = 26
 end
 
+@enum CXDeclSpecContext::UInt32 begin
+    CXDeclSpecContext_DSC_normal = 0
+    CXDeclSpecContext_DSC_class = 1
+    CXDeclSpecContext_DSC_type_specifier = 2
+    CXDeclSpecContext_DSC_trailing = 3
+    CXDeclSpecContext_DSC_alias_declaration = 4
+    CXDeclSpecContext_DSC_top_level = 5
+    CXDeclSpecContext_DSC_template_param = 6
+    CXDeclSpecContext_DSC_template_type_arg = 7
+    CXDeclSpecContext_DSC_objc_method_result = 8
+    CXDeclSpecContext_DSC_condition = 9
+end
+
 const CXParser = Ptr{Cvoid}
 
 const CXFrontendAction = Ptr{Cvoid}
 
 const CXCodeGenAction = Ptr{Cvoid}
-
-const CXXScopeSpec = Ptr{Cvoid}
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
     ccall((:clang_ASTConsumer_Initialize, libclangex), Cvoid, (CXASTConsumer, CXASTContext), Csr, Ctx)
@@ -873,6 +886,50 @@ function clang_Preprocessor_isIncrementalProcessingEnabled(PP)
     ccall((:clang_Preprocessor_isIncrementalProcessingEnabled, libclangex), Bool, (CXPreprocessor,), PP)
 end
 
+function clang_Token_getAnnotationValue(Tok)
+    ccall((:clang_Token_getAnnotationValue, libclangex), CXAnnotationValue, (CXToken_,), Tok)
+end
+
+function clang_Token_getLocation(Tok)
+    ccall((:clang_Token_getLocation, libclangex), CXSourceLocation_, (CXToken_,), Tok)
+end
+
+function clang_Token_getAnnotationEndLoc(Tok)
+    ccall((:clang_Token_getAnnotationEndLoc, libclangex), CXSourceLocation_, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_eof(Tok)
+    ccall((:clang_Token_isKind_eof, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_identifier(Tok)
+    ccall((:clang_Token_isKind_identifier, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_coloncolon(Tok)
+    ccall((:clang_Token_isKind_coloncolon, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_annot_cxxscope(Tok)
+    ccall((:clang_Token_isKind_annot_cxxscope, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_annot_typename(Tok)
+    ccall((:clang_Token_isKind_annot_typename, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_annot_template_id(Tok)
+    ccall((:clang_Token_isKind_annot_template_id, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_kw_enum(Tok)
+    ccall((:clang_Token_isKind_kw_enum, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_kw_typename(Tok)
+    ccall((:clang_Token_isKind_kw_typename, libclangex), Bool, (CXToken_,), Tok)
+end
+
 function clang_Sema_setCollectStats(S, ShouldCollect)
     ccall((:clang_Sema_setCollectStats, libclangex), Cvoid, (CXSema, Bool), S, ShouldCollect)
 end
@@ -881,48 +938,52 @@ function clang_Sema_PrintStats(S)
     ccall((:clang_Sema_PrintStats, libclangex), Cvoid, (CXSema,), S)
 end
 
+function clang_Sema_RestoreNestedNameSpecifierAnnotation(S, Annotation, AnnotationRange_begin, AnnotationRange_end, SS)
+    ccall((:clang_Sema_RestoreNestedNameSpecifierAnnotation, libclangex), Cvoid, (CXSema, Ptr{Cvoid}, CXSourceLocation_, CXSourceLocation_, CXCXXScopeSpec), S, Annotation, AnnotationRange_begin, AnnotationRange_end, SS)
+end
+
 function clang_CXXScopeSpec_create(ErrorCode)
     ccall((:clang_CXXScopeSpec_create, libclangex), CXCXXScopeSpec, (Ptr{CXInit_Error},), ErrorCode)
 end
 
 function clang_CXXScopeSpec_dispose(SS)
-    ccall((:clang_CXXScopeSpec_dispose, libclangex), Cvoid, (CXXScopeSpec,), SS)
+    ccall((:clang_CXXScopeSpec_dispose, libclangex), Cvoid, (CXCXXScopeSpec,), SS)
 end
 
 function clang_CXXScopeSpec_getScopeRep(SS)
-    ccall((:clang_CXXScopeSpec_getScopeRep, libclangex), CXNestedNameSpecifier, (CXXScopeSpec,), SS)
+    ccall((:clang_CXXScopeSpec_getScopeRep, libclangex), CXNestedNameSpecifier, (CXCXXScopeSpec,), SS)
 end
 
 function clang_CXXScopeSpec_getBeginLoc(SS)
-    ccall((:clang_CXXScopeSpec_getBeginLoc, libclangex), CXSourceLocation_, (CXXScopeSpec,), SS)
+    ccall((:clang_CXXScopeSpec_getBeginLoc, libclangex), CXSourceLocation_, (CXCXXScopeSpec,), SS)
 end
 
 function clang_CXXScopeSpec_getEndLoc(SS)
-    ccall((:clang_CXXScopeSpec_getEndLoc, libclangex), CXSourceLocation_, (CXXScopeSpec,), SS)
+    ccall((:clang_CXXScopeSpec_getEndLoc, libclangex), CXSourceLocation_, (CXCXXScopeSpec,), SS)
 end
 
 function clang_CXXScopeSpec_setBeginLoc(SS, Loc)
-    ccall((:clang_CXXScopeSpec_setBeginLoc, libclangex), Cvoid, (CXXScopeSpec, CXSourceLocation_), SS, Loc)
+    ccall((:clang_CXXScopeSpec_setBeginLoc, libclangex), Cvoid, (CXCXXScopeSpec, CXSourceLocation_), SS, Loc)
 end
 
 function clang_CXXScopeSpec_setEndLoc(SS, Loc)
-    ccall((:clang_CXXScopeSpec_setEndLoc, libclangex), Cvoid, (CXXScopeSpec, CXSourceLocation_), SS, Loc)
+    ccall((:clang_CXXScopeSpec_setEndLoc, libclangex), Cvoid, (CXCXXScopeSpec, CXSourceLocation_), SS, Loc)
 end
 
 function clang_CXXScopeSpec_isEmpty(SS)
-    ccall((:clang_CXXScopeSpec_isEmpty, libclangex), Bool, (CXXScopeSpec,), SS)
+    ccall((:clang_CXXScopeSpec_isEmpty, libclangex), Bool, (CXCXXScopeSpec,), SS)
 end
 
 function clang_CXXScopeSpec_isNotEmpty(SS)
-    ccall((:clang_CXXScopeSpec_isNotEmpty, libclangex), Bool, (CXXScopeSpec,), SS)
+    ccall((:clang_CXXScopeSpec_isNotEmpty, libclangex), Bool, (CXCXXScopeSpec,), SS)
 end
 
 function clang_CXXScopeSpec_isInvalid(SS)
-    ccall((:clang_CXXScopeSpec_isInvalid, libclangex), Bool, (CXXScopeSpec,), SS)
+    ccall((:clang_CXXScopeSpec_isInvalid, libclangex), Bool, (CXCXXScopeSpec,), SS)
 end
 
 function clang_CXXScopeSpec_isValid(SS)
-    ccall((:clang_CXXScopeSpec_isValid, libclangex), Bool, (CXXScopeSpec,), SS)
+    ccall((:clang_CXXScopeSpec_isValid, libclangex), Bool, (CXCXXScopeSpec,), SS)
 end
 
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
@@ -1063,6 +1124,18 @@ end
 
 function clang_Parser_Initialize(P)
     ccall((:clang_Parser_Initialize, libclangex), Cvoid, (CXParser,), P)
+end
+
+function clang_Parser_getCurToken(P)
+    ccall((:clang_Parser_getCurToken, libclangex), CXToken_, (CXParser,), P)
+end
+
+function clang_Parser_ConsumeToken(P)
+    ccall((:clang_Parser_ConsumeToken, libclangex), CXSourceLocation_, (CXParser,), P)
+end
+
+function clang_Parser_TryAnnotateCXXScopeToken(P, EnteringContext)
+    ccall((:clang_Parser_TryAnnotateCXXScopeToken, libclangex), Bool, (CXParser, Bool), P, EnteringContext)
 end
 
 function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)

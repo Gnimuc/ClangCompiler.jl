@@ -32,3 +32,56 @@ function parse_decl(x::Parser, is_first_decl::Bool=false)
     @assert x.ptr != C_NULL "Parser has a NULL pointer."
     return DeclGroupRef(clang_Parser_parseOneTopLevelDecl(x.ptr, is_first_decl))
 end
+
+function get_current_token(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return Token(clang_Parser_getCurToken(x.ptr))
+end
+
+function consume_token(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return SourceLocation(clang_Parser_ConsumeToken(x.ptr))
+end
+
+# should be sync to Clang's implementation
+function get_decl_spec_context_from_declarator_context(ctx::CXDeclaratorContext)
+    if ctx == CXDeclaratorContext_Member
+        return CXDeclSpecContext_DSC_class
+    elseif ctx == CXDeclaratorContext_File
+        return CXDeclSpecContext_DSC_top_level
+    elseif ctx == CXDeclaratorContext_TemplateParam
+        return CXDeclSpecContext_DSC_template_param
+    elseif ctx == CXDeclaratorContext_TemplateArg || ctx == CXDeclaratorContext_TemplateTypeArg
+        return CXDeclSpecContext_DSC_template_type_arg
+    elseif ctx == CXDeclaratorContext_TrailingReturn || ctx == CXDeclaratorContext_TrailingReturnVar
+        return CXDeclSpecContext_DSC_trailing
+    elseif ctx == CXDeclaratorContext_AliasDecl || ctx == CXDeclaratorContext_AliasTemplate
+        return CXDeclSpecContext_DSC_alias_declaration
+    else
+        return CXDeclSpecContext_DSC_normal
+    end
+end
+
+function should_enter_context(ctx::CXDeclSpecContext)
+    ctx == CXDeclSpecContext_DSC_top_level || ctx == CXDeclSpecContext_DSC_class
+end
+
+"""
+    try_annotate_cxx_scope_token(x::Parser, entering_context)
+Return true if there was an error.
+"""
+function try_annotate_cxx_scope_token(x::Parser, entering_context::Bool)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return clang_Parser_TryAnnotateCXXScopeToken(x.ptr, entering_context)
+end
+
+function try_annotate_cxx_scope_token(x::Parser, ctx::CXDeclSpecContext)
+    return try_annotate_cxx_scope_token(x, should_enter_context(ctx))
+end
+
+function try_annotate_cxx_scope_token(x::Parser, dlctx::CXDeclaratorContext)
+    ctx = get_decl_spec_context_from_declarator_context(dlctx)
+    return try_annotate_cxx_scope_token(x, ctx)
+end
+
+try_annotate_cxx_scope_token(x::Parser) = try_annotate_cxx_scope_token(x, CXDeclSpecContext_DSC_top_level)
