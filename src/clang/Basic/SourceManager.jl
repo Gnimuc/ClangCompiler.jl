@@ -86,6 +86,32 @@ function set_main_file(src_mgr::SourceManager, buffer::MemoryBuffer)
     return nothing
 end
 
+function get_loc_for_start_of_file(src_mgr::SourceManager, id::FileID)
+    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    @assert id.ptr != C_NULL "FileID has a NULL pointer."
+    return SourceLocation(clang_SourceManager_getLocForStartOfFile(src_mgr.ptr, id.ptr))
+end
+
+function get_loc_for_start_of_main_file(src_mgr::SourceManager)
+    id = get_main_file_id(src_mgr)
+    loc = get_loc_for_start_of_file(src_mgr, id)
+    destroy(id)
+    return loc
+end
+
+function get_loc_for_end_of_file(src_mgr::SourceManager, id::FileID)
+    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    @assert id.ptr != C_NULL "FileID has a NULL pointer."
+    return SourceLocation(clang_SourceManager_getLocForEndOfFile(src_mgr.ptr, id.ptr))
+end
+
+function get_loc_for_end_of_main_file(src_mgr::SourceManager)
+    id = get_main_file_id(src_mgr)
+    loc = get_loc_for_end_of_file(src_mgr, id)
+    destroy(id)
+    return loc
+end
+
 function dump(x::SourceLocation, src_mgr::SourceManager)
     @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
     return clang_SourceLocation_dump(x.ptr, src_mgr.ptr)

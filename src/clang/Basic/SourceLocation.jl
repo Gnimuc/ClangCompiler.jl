@@ -41,6 +41,10 @@ function is_pair_of_file_loc(begin_::SourceLocation, end_::SourceLocation)
     return clang_SourceLocation_isPairOfFileLocations(begin_.ptr, end_.ptr)
 end
 
+function get_loc_with_offset(x::SourceLocation, offset::Integer)
+    return SourceLocation(clang_SourceLocation_getLocWithOffset(x.ptr, offset))
+end
+
 """
     mutable struct SourceRange <: Any
 Holds two `SourceLocation`s.

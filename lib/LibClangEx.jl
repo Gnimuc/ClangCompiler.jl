@@ -88,6 +88,8 @@ const CXCodeGenModule = Ptr{Cvoid}
 
 const CXSema = Ptr{Cvoid}
 
+const CXScope = Ptr{Cvoid}
+
 @enum CXDeclaratorContext::UInt32 begin
     CXDeclaratorContext_File = 0
     CXDeclaratorContext_Prototype = 1
@@ -886,6 +888,14 @@ function clang_Preprocessor_isIncrementalProcessingEnabled(PP)
     ccall((:clang_Preprocessor_isIncrementalProcessingEnabled, libclangex), Bool, (CXPreprocessor,), PP)
 end
 
+function clang_Preprocessor_DumpToken(PP, Tok, DumpFlags)
+    ccall((:clang_Preprocessor_DumpToken, libclangex), Cvoid, (CXPreprocessor, CXToken_, Bool), PP, Tok, DumpFlags)
+end
+
+function clang_Preprocessor_DumpLocation(PP, Loc)
+    ccall((:clang_Preprocessor_DumpLocation, libclangex), Cvoid, (CXPreprocessor, CXSourceLocation_), PP, Loc)
+end
+
 function clang_Token_getAnnotationValue(Tok)
     ccall((:clang_Token_getAnnotationValue, libclangex), CXAnnotationValue, (CXToken_,), Tok)
 end
@@ -1026,6 +1036,14 @@ function clang_SourceManager_overrideFileContents(SM, FE, MB)
     ccall((:clang_SourceManager_overrideFileContents, libclangex), Cvoid, (CXSourceManager, CXFileEntry, LLVMMemoryBufferRef), SM, FE, MB)
 end
 
+function clang_SourceManager_getLocForStartOfFile(SM, FID)
+    ccall((:clang_SourceManager_getLocForStartOfFile, libclangex), CXSourceLocation_, (CXSourceManager, CXFileID), SM, FID)
+end
+
+function clang_SourceManager_getLocForEndOfFile(SM, FID)
+    ccall((:clang_SourceManager_getLocForEndOfFile, libclangex), CXSourceLocation_, (CXSourceManager, CXFileID), SM, FID)
+end
+
 function clang_SourceLocation_createInvalid()
     ccall((:clang_SourceLocation_createInvalid, libclangex), CXSourceLocation_, ())
 end
@@ -1064,6 +1082,10 @@ end
 
 function clang_SourceLocation_disposeString(Str)
     ccall((:clang_SourceLocation_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
+end
+
+function clang_SourceLocation_getLocWithOffset(Loc, Offset)
+    ccall((:clang_SourceLocation_getLocWithOffset, libclangex), CXSourceLocation_, (CXSourceLocation_, Cint), Loc, Offset)
 end
 
 function clang_QualType_getTypePtr(OpaquePtr)
@@ -1126,12 +1148,36 @@ function clang_Parser_Initialize(P)
     ccall((:clang_Parser_Initialize, libclangex), Cvoid, (CXParser,), P)
 end
 
+function clang_Parser_getLangOpts(P)
+    ccall((:clang_Parser_getLangOpts, libclangex), CXLangOptions, (CXParser,), P)
+end
+
+function clang_Parser_getTargetInfo(P)
+    ccall((:clang_Parser_getTargetInfo, libclangex), CXTargetInfo_, (CXParser,), P)
+end
+
+function clang_Parser_getPreprocessor(P)
+    ccall((:clang_Parser_getPreprocessor, libclangex), CXPreprocessor, (CXParser,), P)
+end
+
+function clang_Parser_getActions(P)
+    ccall((:clang_Parser_getActions, libclangex), CXSema, (CXParser,), P)
+end
+
 function clang_Parser_getCurToken(P)
     ccall((:clang_Parser_getCurToken, libclangex), CXToken_, (CXParser,), P)
 end
 
+function clang_Parser_getCurScope(P)
+    ccall((:clang_Parser_getCurScope, libclangex), CXScope, (CXParser,), P)
+end
+
 function clang_Parser_ConsumeToken(P)
     ccall((:clang_Parser_ConsumeToken, libclangex), CXSourceLocation_, (CXParser,), P)
+end
+
+function clang_Parser_ConsumeAnyToken(P)
+    ccall((:clang_Parser_ConsumeAnyToken, libclangex), CXSourceLocation_, (CXParser,), P)
 end
 
 function clang_Parser_TryAnnotateCXXScopeToken(P, EnteringContext)

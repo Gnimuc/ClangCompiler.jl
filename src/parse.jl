@@ -46,3 +46,27 @@ function process_weak_toplevel_decls(sema::Sema, cg::CodeGenerator)
     clang_Sema_processWeakTopLevelDecls(sema.ptr, cg.ptr)
     return nothing
 end
+
+function parse_cxx_scope_spec(p::Parser, spec::CXXScopeSpec)
+    sema = get_sema(p)
+    pp = get_preprocessor(p)
+    tok = get_current_token(p)
+    is_incremental(pp) && is_eof(tok) && consume_token(p)
+    while !is_eof(tok)
+        if is_coloncolon(tok)  # `::foo::bar::baz`
+            try_annotate_cxx_scope_token(p) && error("failed to annotate token.")
+        elseif is_identifier(tok)  # `foo::bar::baz`
+            try_annotate_cxx_scope_token(p) && error("failed to annotate token.")
+        elseif is_annot_cxxscope(tok) || is_annot_typename(tok) || is_annot_template_id(tok)
+            restore_nns_annotation(sema, tok, spec)
+            break
+        else  # skip other cases which we may add support in the future
+            consume_any_token(p)
+        end
+    end
+    # parse to the end of file, ignore everything
+    while !is_eof(tok)
+        consume_any_token(p)
+    end
+    return nothing
+end

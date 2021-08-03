@@ -52,3 +52,13 @@ function begin_source_file(consumer::T, lang::LangOptions,
     @assert pp.ptr != C_NULL "Preprocessor has a NULL pointer."
     return begin_source_file(consumer, lang, pp.ptr)
 end
+
+function dump(x::Preprocessor, tok::Token, flag=false)
+    @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
+    return clang_Preprocessor_DumpToken(x.ptr, tok.ptr, flag)
+end
+
+function dump(x::Preprocessor, loc::SourceLocation)
+    @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
+    return clang_Preprocessor_DumpLocation(x.ptr, loc.ptr)
+end

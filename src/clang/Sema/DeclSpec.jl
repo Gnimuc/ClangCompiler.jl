@@ -31,6 +31,8 @@ function get_scope_representation(x::CXXScopeSpec)
     return NestedNameSpecifier(clang_CXXScopeSpec_getScopeRep(x.ptr))
 end
 
+dump(x::CXXScopeSpec) = dump(get_scope_representation(x))
+
 function get_begin_loc(x::CXXScopeSpec)
     @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
     return SourceLocation(clang_CXXScopeSpec_getBeginLoc(x.ptr))

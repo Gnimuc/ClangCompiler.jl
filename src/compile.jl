@@ -79,14 +79,15 @@ function destroy(x::CxxCompiler)
 end
 
 """
-    struct IncrementalCompiler <: AbstractCompiler
+    mutable struct IncrementalCompiler <: AbstractCompiler
 """
-struct IncrementalCompiler <: AbstractCompiler
+mutable struct IncrementalCompiler <: AbstractCompiler
     ts_ctx::ThreadSafeContext
     instance::CompilerInstance
     parser::Parser
     modules::Vector{LLVM.Module}
     current_module::Int
+    src_counter::Int
 end
 
 function create_incremental_compiler(src::String, args::Vector{String}; diag_show_colors=true)
@@ -142,7 +143,7 @@ function create_incremental_compiler(src::String, args::Vector{String}; diag_sho
 
     m_next = start_llvm_module(codegen, context(m_cur), "JLCC_Incremental_2")
 
-    return IncrementalCompiler(ts_ctx, instance, parser, [m_cur, m_next], 2)
+    return IncrementalCompiler(ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
 end
 
 function destroy(x::IncrementalCompiler)
@@ -151,4 +152,26 @@ function destroy(x::IncrementalCompiler)
     pop!(x.modules)  # we don't have the ownership of the latest module
     dispose.(x.modules)
     dispose(x.ts_ctx)
+end
+
+function parse_cxx_scope_spec(cc::IncrementalCompiler, str::String, spec::CXXScopeSpec)
+    ci = cc.instance
+    p = cc.parser
+    pp = get_preprocessor(p)
+    src_mgr = get_source_manager(ci)
+    begin_diag(ci)
+    buffer = get_buffer(str)
+    fid = FileID(src_mgr, buffer)
+    @show value(fid)
+    loc = get_loc_with_offset(get_loc_for_start_of_main_file(src_mgr), cc.src_counter)
+    enter_file(pp, fid, loc)
+    try
+        parse_cxx_scope_spec(p, spec)
+    finally
+        destroy(fid)
+        end_file(pp)
+        end_diag(ci)
+        cc.src_counter += 1
+    end
+    return nothing
 end

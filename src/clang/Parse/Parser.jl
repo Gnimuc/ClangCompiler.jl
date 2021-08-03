@@ -28,6 +28,30 @@ function initialize(x::Parser)
     return clang_Parser_Initialize(x.ptr)
 end
 
+function get_lang_options(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return clang_Parser_getLangOpts(x.ptr)
+end
+
+function get_target_info(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return TargetInfo(clang_Parser_getTargetInfo(x.ptr))
+end
+
+get_target(x::Parser) = get_target_info(x)
+
+function get_preprocessor(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return Preprocessor(clang_Parser_getPreprocessor(x.ptr))
+end
+
+function get_actions(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return Sema(clang_Parser_getActions(x.ptr))
+end
+
+get_sema(x::Parser) = get_actions(x)
+
 function parse_decl(x::Parser, is_first_decl::Bool=false)
     @assert x.ptr != C_NULL "Parser has a NULL pointer."
     return DeclGroupRef(clang_Parser_parseOneTopLevelDecl(x.ptr, is_first_decl))
@@ -41,6 +65,11 @@ end
 function consume_token(x::Parser)
     @assert x.ptr != C_NULL "Parser has a NULL pointer."
     return SourceLocation(clang_Parser_ConsumeToken(x.ptr))
+end
+
+function consume_any_token(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return SourceLocation(clang_Parser_ConsumeAnyToken(x.ptr))
 end
 
 # should be sync to Clang's implementation
