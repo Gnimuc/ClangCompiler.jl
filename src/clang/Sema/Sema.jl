@@ -23,3 +23,19 @@ function restore_nns_annotation(x::Sema, tok::Token, spec::CXXScopeSpec)
     rng = get_annotation_range(tok)
     restore_nns_annotation(x, val, rng, spec)
 end
+
+function LookupResult(sema::Sema, name::DeclarationName, loc::SourceLocation, kind::CXLookupNameKind)
+    @assert sema.ptr != C_NULL "Sema has a NULL pointer."
+    status = Ref{CXInit_Error}(CXInit_NoError)
+    result = clang_LookupResult_create(sema.ptr, name.ptr, loc.ptr, kind, status)
+    @assert status[] == CXInit_NoError
+    return LookupResult(result)
+end
+
+function lookup_parsed_name(x::Sema, r::LookupResult, sp::Scope, ss::CXXScopeSpec, allow_builtin_creation=false, entering_context=false)
+    @assert x.ptr != C_NULL "Sema has a NULL pointer."
+    @assert r.ptr != C_NULL "LookupResult has a NULL pointer."
+    @assert sp.ptr != C_NULL "Scope has a NULL pointer."
+    @assert ss.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    clang_Sema_LookupParsedName(x.ptr, r.ptr, sp.ptr, ss.ptr, allow_builtin_creation, entering_context)
+end

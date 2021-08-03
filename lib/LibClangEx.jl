@@ -78,6 +78,8 @@ const CXDeclGroupRef = Ptr{Cvoid}
 
 const CXDecl = Ptr{Cvoid}
 
+const CXNamedDecl = Ptr{Cvoid}
+
 const CXNestedNameSpecifier = Ptr{Cvoid}
 
 const CXCXXScopeSpec = Ptr{Cvoid}
@@ -146,6 +148,25 @@ const CXParser = Ptr{Cvoid}
 const CXFrontendAction = Ptr{Cvoid}
 
 const CXCodeGenAction = Ptr{Cvoid}
+
+@enum CXLookupNameKind::UInt32 begin
+    CXLookupNameKind_LookupOrdinaryName = 0
+    CXLookupNameKind_LookupTagName = 1
+    CXLookupNameKind_LookupLabel = 2
+    CXLookupNameKind_LookupMemberName = 3
+    CXLookupNameKind_LookupOperatorName = 4
+    CXLookupNameKind_LookupDestructorName = 5
+    CXLookupNameKind_LookupNestedNameSpecifierName = 6
+    CXLookupNameKind_LookupNamespaceName = 7
+    CXLookupNameKind_LookupUsingDeclName = 8
+    CXLookupNameKind_LookupRedeclarationWithLinkage = 9
+    CXLookupNameKind_LookupLocalFriendName = 10
+    CXLookupNameKind_LookupObjCProtocolName = 11
+    CXLookupNameKind_LookupObjCImplicitSelfParam = 12
+    CXLookupNameKind_LookupOMPReductionName = 13
+    CXLookupNameKind_LookupOMPMapperName = 14
+    CXLookupNameKind_LookupAnyName = 15
+end
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
     ccall((:clang_ASTConsumer_Initialize, libclangex), Cvoid, (CXASTConsumer, CXASTContext), Csr, Ctx)
@@ -992,6 +1013,10 @@ function clang_Sema_RestoreNestedNameSpecifierAnnotation(S, Annotation, Annotati
     ccall((:clang_Sema_RestoreNestedNameSpecifierAnnotation, libclangex), Cvoid, (CXSema, Ptr{Cvoid}, CXSourceLocation_, CXSourceLocation_, CXCXXScopeSpec), S, Annotation, AnnotationRange_begin, AnnotationRange_end, SS)
 end
 
+function clang_Sema_LookupParsedName(S, R, Sp, SS, AllowBuiltinCreation, EnteringContext)
+    ccall((:clang_Sema_LookupParsedName, libclangex), Bool, (CXSema, CXLookupResult, CXScope, CXCXXScopeSpec, Bool, Bool), S, R, Sp, SS, AllowBuiltinCreation, EnteringContext)
+end
+
 function clang_CXXScopeSpec_create(ErrorCode)
     ccall((:clang_CXXScopeSpec_create, libclangex), CXCXXScopeSpec, (Ptr{CXInit_Error},), ErrorCode)
 end
@@ -1036,8 +1061,36 @@ function clang_CXXScopeSpec_isValid(SS)
     ccall((:clang_CXXScopeSpec_isValid, libclangex), Bool, (CXCXXScopeSpec,), SS)
 end
 
+function clang_Scope_dump(S)
+    ccall((:clang_Scope_dump, libclangex), Cvoid, (CXScope,), S)
+end
+
+function clang_Scope_getParent(S)
+    ccall((:clang_Scope_getParent, libclangex), CXScope, (CXScope,), S)
+end
+
+function clang_Scope_getDepth(S)
+    ccall((:clang_Scope_getDepth, libclangex), Cuint, (CXScope,), S)
+end
+
+function clang_LookupResult_create(S, Name, NameLoc, LookupKind, ErrorCode)
+    ccall((:clang_LookupResult_create, libclangex), CXLookupResult, (CXSema, CXDeclarationName, CXSourceLocation_, CXLookupNameKind, Ptr{CXInit_Error}), S, Name, NameLoc, LookupKind, ErrorCode)
+end
+
 function clang_LookupResult_dispose(LR)
     ccall((:clang_LookupResult_dispose, libclangex), Cvoid, (CXLookupResult,), LR)
+end
+
+function clang_LookupResult_dump(LR)
+    ccall((:clang_LookupResult_dump, libclangex), Cvoid, (CXLookupResult,), LR)
+end
+
+function clang_LookupResult_empty(LR)
+    ccall((:clang_LookupResult_empty, libclangex), Bool, (CXLookupResult,), LR)
+end
+
+function clang_LookupResult_getRepresentativeDecl(LR)
+    ccall((:clang_LookupResult_getRepresentativeDecl, libclangex), CXNamedDecl, (CXLookupResult,), LR)
 end
 
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)

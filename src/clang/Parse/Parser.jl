@@ -77,6 +77,11 @@ function consume_any_token(x::Parser)
     return SourceLocation(clang_Parser_ConsumeAnyToken(x.ptr))
 end
 
+function get_current_scope(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return Scope(clang_Parser_getCurScope(x.ptr))
+end
+
 # should be sync to Clang's implementation
 function get_decl_spec_context_from_declarator_context(ctx::CXDeclaratorContext)
     if ctx == CXDeclaratorContext_Member
