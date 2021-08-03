@@ -24,7 +24,7 @@ function set_triple(x::TargetOptions, triple::String)
     return nothing
 end
 
-function status(x::TargetOptions)
+function print_stats(x::TargetOptions)
     @assert x.ptr != C_NULL "TargetOptions has a NULL pointer."
     return clang_TargetOptions_PrintStats(x.ptr)
 end

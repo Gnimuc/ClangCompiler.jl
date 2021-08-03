@@ -27,7 +27,7 @@ function get_header_search(x::Preprocessor)
     return HeaderSearch(clang_Preprocessor_getHeaderSearchInfo(x.ptr))
 end
 
-function status(x::Preprocessor)
+function print_stats(x::Preprocessor)
     @assert x.ptr != C_NULL "Preprocessor has a NULL pointer."
     return clang_Preprocessor_PrintStats(x.ptr)
 end

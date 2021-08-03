@@ -1,5 +1,5 @@
 """
-mutable struct TargetInfo <: Any
+    mutable struct TargetInfo <: Any
 Holds a pointer to a `clang::TargetInfo` object.
 """
 mutable struct TargetInfo

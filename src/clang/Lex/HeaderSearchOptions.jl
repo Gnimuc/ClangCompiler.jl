@@ -20,7 +20,7 @@ function set_resource_dir(x::HeaderSearchOptions, dir::String)
     return nothing
 end
 
-function status(x::HeaderSearchOptions)
+function print_stats(x::HeaderSearchOptions)
     @assert x.ptr != C_NULL "HeaderSearchOptions has a NULL pointer."
     return clang_HeaderSearchOptions_PrintStats(x.ptr)
 end

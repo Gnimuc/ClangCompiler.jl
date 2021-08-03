@@ -14,7 +14,7 @@ function get_modules_embed_files(x::FrontendOptions)
     return unsafe_string.(files)
 end
 
-function status(x::FrontendOptions)
+function print_stats(x::FrontendOptions)
     @assert x.ptr != C_NULL "FrontendOptions has a NULL pointer."
     return clang_FrontendOptions_PrintStats(x.ptr)
 end

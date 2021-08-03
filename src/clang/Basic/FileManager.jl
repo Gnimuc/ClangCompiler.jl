@@ -31,7 +31,7 @@ function destroy(x::FileManager)
     return x
 end
 
-function status(mgr::FileManager)
+function print_stats(mgr::FileManager)
     @assert mgr.ptr != C_NULL "FileManager has a NULL pointer."
     return clang_FileManager_PrintStats(mgr.ptr)
 end

@@ -6,7 +6,7 @@ mutable struct HeaderSearch
     ptr::CXHeaderSearch
 end
 
-function status(x::HeaderSearch)
+function print_stats(x::HeaderSearch)
     @assert x.ptr != C_NULL "HeaderSearch has a NULL pointer."
     return clang_HeaderSearch_PrintStats(x.ptr)
 end

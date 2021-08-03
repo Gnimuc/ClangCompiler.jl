@@ -19,7 +19,7 @@ function get_command_line_args(x::CodeGenOptions)
     return unsafe_string.(files)
 end
 
-function status(x::CodeGenOptions)
+function print_stats(x::CodeGenOptions)
     @assert x.ptr != C_NULL "CodeGenOptions has a NULL pointer."
     return clang_CodeGenOptions_PrintStats(x.ptr)
 end

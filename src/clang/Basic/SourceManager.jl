@@ -21,7 +21,7 @@ function destroy(x::SourceManager)
     return x
 end
 
-function status(mgr::SourceManager)
+function print_stats(mgr::SourceManager)
     @assert mgr.ptr != C_NULL "SourceManager has a NULL pointer."
     return clang_SourceManager_PrintStats(mgr.ptr)
 end

@@ -17,12 +17,12 @@ const CC = ClangCompiler
     CC.set_invocation(instance, invok)
     CC.set_target(instance)
 
-    CC.status(instance, CC.HeaderSearchOptions)
-    CC.status(instance, CC.DiagnosticOptions)
-    CC.status(instance, CC.FrontendOptions)
-    CC.status(instance, CC.CodeGenOptions)
-    CC.status(instance, CC.PreprocessorOptions)
-    CC.status(instance, CC.TargetOptions)
+    CC.print_stats(instance, CC.HeaderSearchOptions)
+    CC.print_stats(instance, CC.DiagnosticOptions)
+    CC.print_stats(instance, CC.FrontendOptions)
+    CC.print_stats(instance, CC.CodeGenOptions)
+    CC.print_stats(instance, CC.PreprocessorOptions)
+    CC.print_stats(instance, CC.TargetOptions)
 
     CC.create_file_manager(instance)
     CC.create_source_manager(instance)
@@ -31,7 +31,7 @@ const CC = ClangCompiler
 
     CC.create_preprocessor(instance)
 
-    CC.status(instance, CC.HeaderSearch)
+    CC.print_stats(instance, CC.HeaderSearch)
 
     CC.destroy(instance)
 end

@@ -3,7 +3,7 @@ using Test
 
 const CC = ClangCompiler
 
-@testset "CompilerInstance | Module" begin
+@testset "CompilerInstance | SubModule" begin
     instance = CC.CompilerInstance()
     @test CC.has_diagnostics(instance) == false
     @test CC.has_invocation(instance) == true

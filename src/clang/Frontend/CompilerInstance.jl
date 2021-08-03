@@ -352,98 +352,98 @@ function set_opt_show_colors(ci::CompilerInstance, should_show::Bool=true)
     return set_show_colors(opt, should_show)
 end
 
-# status
-function status(ci::CompilerInstance, ::Type{CodeGenOptions})
+# print_stats
+function print_stats(ci::CompilerInstance, ::Type{CodeGenOptions})
     opts = get_codegen_options(ci)
-    return status(opts)
+    return print_stats(opts)
 end
 
-function status(ci::CompilerInstance, ::Type{DiagnosticOptions})
+function print_stats(ci::CompilerInstance, ::Type{DiagnosticOptions})
     opts = get_diagnostic_options(ci)
-    return status(opts)
+    return print_stats(opts)
 end
 
-function status(ci::CompilerInstance, ::Type{FrontendOptions})
+function print_stats(ci::CompilerInstance, ::Type{FrontendOptions})
     opts = get_frontend_options(ci)
-    return status(opts)
+    return print_stats(opts)
 end
 
-function status(ci::CompilerInstance, ::Type{HeaderSearchOptions})
+function print_stats(ci::CompilerInstance, ::Type{HeaderSearchOptions})
     opts = get_header_search_options(ci)
-    return status(opts)
+    return print_stats(opts)
 end
 
-function status(ci::CompilerInstance, ::Type{PreprocessorOptions})
+function print_stats(ci::CompilerInstance, ::Type{PreprocessorOptions})
     opts = get_preprocessor_options(ci)
-    return status(opts)
+    return print_stats(opts)
 end
 
-function status(ci::CompilerInstance, ::Type{TargetOptions})
+function print_stats(ci::CompilerInstance, ::Type{TargetOptions})
     opts = get_target_options(ci)
-    return status(opts)
+    return print_stats(opts)
 end
 
-function status(ci::CompilerInstance, ::Type{LangOptions})
+function print_stats(ci::CompilerInstance, ::Type{LangOptions})
     opts = get_lang_options(ci)
-    return status(opts)
+    return print_stats(opts)
 end
 
-function status(ci::CompilerInstance, ::Type{FileManager})
+function print_stats(ci::CompilerInstance, ::Type{FileManager})
     fm = get_file_manager(ci)
-    return status(fm)
+    return print_stats(fm)
 end
 
-function status(ci::CompilerInstance, ::Type{SourceManager})
+function print_stats(ci::CompilerInstance, ::Type{SourceManager})
     sm = get_source_manager(ci)
-    return status(sm)
+    return print_stats(sm)
 end
 
-function status(ci::CompilerInstance, ::Type{HeaderSearch})
+function print_stats(ci::CompilerInstance, ::Type{HeaderSearch})
     pp = get_preprocessor(ci)
     opts = get_header_search(pp)
-    return status(opts)
+    return print_stats(opts)
 end
 
-function status(ci::CompilerInstance, ::Type{Preprocessor})
+function print_stats(ci::CompilerInstance, ::Type{Preprocessor})
     pp = get_preprocessor(ci)
-    return status(pp)
+    return print_stats(pp)
 end
 
-function status(ci::CompilerInstance, ::Type{Sema})
+function print_stats(ci::CompilerInstance, ::Type{Sema})
     s = get_sema(ci)
-    return status(s)
+    return print_stats(s)
 end
 
-function status(ci::CompilerInstance, ::Type{ASTContext})
+function print_stats(ci::CompilerInstance, ::Type{ASTContext})
     ctx = get_ast_context(ci)
-    return status(ctx)
+    return print_stats(ctx)
 end
 
-function status(ci::CompilerInstance, ::Type{ASTConsumer})
+function print_stats(ci::CompilerInstance, ::Type{ASTConsumer})
     ctx = get_ast_consumer(ci)
-    return status(ctx)
+    return print_stats(ctx)
 end
 
-function status_options(ci::CompilerInstance)
-    status(ci, CodeGenOptions)
-    status(ci, DiagnosticOptions)
-    status(ci, FrontendOptions)
-    status(ci, HeaderSearchOptions)
-    status(ci, PreprocessorOptions)
-    return status(ci, TargetOptions)
+function print_stats_options(ci::CompilerInstance)
+    print_stats(ci, CodeGenOptions)
+    print_stats(ci, DiagnosticOptions)
+    print_stats(ci, FrontendOptions)
+    print_stats(ci, HeaderSearchOptions)
+    print_stats(ci, PreprocessorOptions)
+    return print_stats(ci, TargetOptions)
 end
 
-function status_modules(ci::CompilerInstance)
-    status(ci, FileManager)
-    status(ci, SourceManager)
-    status(ci, HeaderSearch)
-    status(ci, Preprocessor)
-    status(ci, Sema)
-    status(ci, ASTContext)
-    return status(ci, ASTConsumer)
+function print_stats_modules(ci::CompilerInstance)
+    print_stats(ci, FileManager)
+    print_stats(ci, SourceManager)
+    print_stats(ci, HeaderSearch)
+    print_stats(ci, Preprocessor)
+    print_stats(ci, Sema)
+    print_stats(ci, ASTContext)
+    return print_stats(ci, ASTConsumer)
 end
 
-function status_all(ci::CompilerInstance)
-    status_options(ci)
-    return status_modules(ci)
+function print_stats_all(ci::CompilerInstance)
+    print_stats_options(ci)
+    return print_stats_modules(ci)
 end
