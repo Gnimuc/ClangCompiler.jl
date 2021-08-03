@@ -82,6 +82,10 @@ const CXNestedNameSpecifier = Ptr{Cvoid}
 
 const CXCXXScopeSpec = Ptr{Cvoid}
 
+const CXIdentifierTable = Ptr{Cvoid}
+
+const CXIdentifierInfo = Ptr{Cvoid}
+
 const CXCodeGenerator = Ptr{Cvoid}
 
 const CXCodeGenModule = Ptr{Cvoid}
@@ -89,6 +93,8 @@ const CXCodeGenModule = Ptr{Cvoid}
 const CXSema = Ptr{Cvoid}
 
 const CXScope = Ptr{Cvoid}
+
+const CXLookupResult = Ptr{Cvoid}
 
 @enum CXDeclaratorContext::UInt32 begin
     CXDeclaratorContext_File = 0
@@ -157,6 +163,18 @@ end
 
 function clang_ASTContext_getPointerType(Ctx, OpaquePtr)
     ccall((:clang_ASTContext_getPointerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, OpaquePtr)
+end
+
+function clang_ASTContext_getIdents(Ctx)
+    ccall((:clang_ASTContext_getIdents, libclangex), CXIdentifierTable, (CXASTContext,), Ctx)
+end
+
+function clang_IdentifierTable_PrintStats(IT)
+    ccall((:clang_IdentifierTable_PrintStats, libclangex), Cvoid, (CXIdentifierTable,), IT)
+end
+
+function clang_IdentifierTable_get(Idents, Name)
+    ccall((:clang_IdentifierTable_get, libclangex), CXIdentifierInfo, (CXIdentifierTable, Ptr{Cchar}), Idents, Name)
 end
 
 function clang_NestedNameSpecifier_getPrefix(NNS)
@@ -996,6 +1014,10 @@ function clang_CXXScopeSpec_isValid(SS)
     ccall((:clang_CXXScopeSpec_isValid, libclangex), Bool, (CXCXXScopeSpec,), SS)
 end
 
+function clang_LookupResult_dispose(LR)
+    ccall((:clang_LookupResult_dispose, libclangex), Cvoid, (CXLookupResult,), LR)
+end
+
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
     ccall((:clang_SourceManager_create, libclangex), CXSourceManager, (CXDiagnosticsEngine, CXFileManager, Bool, Ptr{CXInit_Error}), Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
 end
@@ -1166,6 +1188,10 @@ end
 
 function clang_Parser_getCurToken(P)
     ccall((:clang_Parser_getCurToken, libclangex), CXToken_, (CXParser,), P)
+end
+
+function clang_Parser_NextToken(P)
+    ccall((:clang_Parser_NextToken, libclangex), CXToken_, (CXParser,), P)
 end
 
 function clang_Parser_getCurScope(P)

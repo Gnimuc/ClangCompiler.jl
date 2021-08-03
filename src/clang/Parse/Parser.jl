@@ -62,6 +62,11 @@ function get_current_token(x::Parser)
     return Token(clang_Parser_getCurToken(x.ptr))
 end
 
+function get_next_token(x::Parser)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    return Token(clang_Parser_NextToken(x.ptr))
+end
+
 function consume_token(x::Parser)
     @assert x.ptr != C_NULL "Parser has a NULL pointer."
     return SourceLocation(clang_Parser_ConsumeToken(x.ptr))

@@ -11,6 +11,14 @@ function print_stats(x::ASTContext)
     return clang_ASTContext_PrintStats(x.ptr)
 end
 
+function get_Idents(x::ASTContext)
+    @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
+    return IdentifierTable(clang_ASTContext_getIdents(x.ptr))
+end
+
+get_name(x::ASTContext, s::String) = get_name(get_Idents(x), s)
+
+
 VoidTy(ctx::ASTContext) = VoidTy(clang_ASTContext_VoidTy_getTypePtrOrNull(ctx.ptr))
 BoolTy(ctx::ASTContext) = BoolTy(clang_ASTContext_BoolTy_getTypePtrOrNull(ctx.ptr))
 CharTy(ctx::ASTContext) = CharTy(clang_ASTContext_CharTy_getTypePtrOrNull(ctx.ptr))
