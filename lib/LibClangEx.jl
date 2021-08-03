@@ -86,6 +86,8 @@ const CXIdentifierTable = Ptr{Cvoid}
 
 const CXIdentifierInfo = Ptr{Cvoid}
 
+const CXDeclarationName = Ptr{Cvoid}
+
 const CXCodeGenerator = Ptr{Cvoid}
 
 const CXCodeGenModule = Ptr{Cvoid}
@@ -175,6 +177,26 @@ end
 
 function clang_IdentifierTable_get(Idents, Name)
     ccall((:clang_IdentifierTable_get, libclangex), CXIdentifierInfo, (CXIdentifierTable, Ptr{Cchar}), Idents, Name)
+end
+
+function clang_DeclarationName_createFromIdentifierInfo(IDInfo)
+    ccall((:clang_DeclarationName_createFromIdentifierInfo, libclangex), CXDeclarationName, (CXIdentifierInfo,), IDInfo)
+end
+
+function clang_DeclarationName_dump(DN)
+    ccall((:clang_DeclarationName_dump, libclangex), Cvoid, (CXDeclarationName,), DN)
+end
+
+function clang_DeclarationName_isEmpty(DN)
+    ccall((:clang_DeclarationName_isEmpty, libclangex), Bool, (CXDeclarationName,), DN)
+end
+
+function clang_DeclarationName_getAsString(DN)
+    ccall((:clang_DeclarationName_getAsString, libclangex), Ptr{Cchar}, (CXDeclarationName,), DN)
+end
+
+function clang_DeclarationName_disposeString(Str)
+    ccall((:clang_DeclarationName_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
 end
 
 function clang_NestedNameSpecifier_getPrefix(NNS)
