@@ -1,8 +1,8 @@
 """
-    mutable struct Parser <: Any
+    struct Parser <: Any
 Holds a pointer to a `clang::Parser` object.
 """
-mutable struct Parser
+struct Parser
     ptr::CXParser
 end
 

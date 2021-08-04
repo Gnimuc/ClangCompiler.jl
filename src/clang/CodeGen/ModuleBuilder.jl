@@ -1,8 +1,8 @@
 """
-    mutable struct CodeGenerator <: AbstractASTConsumer
+    struct CodeGenerator <: AbstractASTConsumer
 Holds a pointer to a `clang::CodeGenerator` object.
 """
-mutable struct CodeGenerator <: AbstractASTConsumer
+struct CodeGenerator <: AbstractASTConsumer
     ptr::CXCodeGenerator
 end
 

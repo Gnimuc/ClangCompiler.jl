@@ -1,8 +1,8 @@
 """
-    mutable struct CXXScopeSpec <: Any
+    struct CXXScopeSpec <: Any
 Holds a pointer to a `clang::CXXScopeSpec` object.
 """
-mutable struct CXXScopeSpec
+struct CXXScopeSpec
     ptr::CXCXXScopeSpec
 end
 CXXScopeSpec() = CXXScopeSpec(create_cxx_scope_spec())

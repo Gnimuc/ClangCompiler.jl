@@ -1,8 +1,8 @@
 """
-    mutable struct Sema <: Any
+    struct Sema <: Any
 Holds a pointer to a `clang::Sema` object.
 """
-mutable struct Sema
+struct Sema
     ptr::CXSema
 end
 

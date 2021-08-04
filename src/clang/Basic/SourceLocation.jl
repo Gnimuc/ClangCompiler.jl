@@ -1,10 +1,10 @@
 """
-    mutable struct FileID <: Any
+    struct FileID <: Any
 Holds a pointer to a `clang::FileID` object.
 
 Note that, this ID is managed by source manager and should not be manually created.
 """
-mutable struct FileID
+struct FileID
     ptr::CXFileID
 end
 
@@ -23,10 +23,10 @@ function destroy(x::FileID)
 end
 
 """
-    mutable struct SourceLocation <: Any
+    struct SourceLocation <: Any
 Holds a `clang::SourceLocation` opaque pointer.
 """
-mutable struct SourceLocation
+struct SourceLocation
     ptr::CXSourceLocation_
 end
 SourceLocation() = SourceLocation(clang_SourceLocation_createInvalid())
@@ -53,10 +53,10 @@ function get_string(x::SourceLocation)
 end
 
 """
-    mutable struct SourceRange <: Any
+    struct SourceRange <: Any
 Holds two `SourceLocation`s.
 """
-mutable struct SourceRange
+struct SourceRange
     begin_loc::SourceLocation
     end_loc::SourceLocation
 end

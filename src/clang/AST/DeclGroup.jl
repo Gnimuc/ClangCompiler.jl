@@ -1,8 +1,8 @@
 """
-    mutable struct DeclGroupRef <: Any
+    struct DeclGroupRef <: Any
 Holds a `clang::DeclGroupRef` opaque pointer.
 """
-mutable struct DeclGroupRef
+struct DeclGroupRef
     ptr::CXDeclGroupRef
 end
 

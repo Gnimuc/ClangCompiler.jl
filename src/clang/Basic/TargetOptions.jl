@@ -1,8 +1,8 @@
 """
-    mutable struct TargetOptions <: Any
+    struct TargetOptions <: Any
 Holds a pointer to a `clang::TargetOptions` object.
 """
-mutable struct TargetOptions
+struct TargetOptions
     ptr::CXTargetOptions
 end
 TargetOptions() = TargetOptions(create_target_options())

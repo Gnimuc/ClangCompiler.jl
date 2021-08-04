@@ -1,8 +1,8 @@
 """
-    mutable struct HeaderSearch <: Any
+    struct HeaderSearch <: Any
 Holds a pointer to a `clang::HeaderSearch` object.
 """
-mutable struct HeaderSearch
+struct HeaderSearch
     ptr::CXHeaderSearch
 end
 

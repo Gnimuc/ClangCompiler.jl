@@ -1,8 +1,8 @@
 """
-    mutable struct FrontendOptions <: Any
+    struct FrontendOptions <: Any
 Holds a pointer to a `clang::FrontendOptions` object.
 """
-mutable struct FrontendOptions
+struct FrontendOptions
     ptr::CXFrontendOptions
 end
 

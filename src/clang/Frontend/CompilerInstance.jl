@@ -1,8 +1,8 @@
 """
-    mutable struct CompilerInstance <: Any
+    struct CompilerInstance <: Any
 Holds a pointer to a `clang::CompilerInstance` object.
 """
-mutable struct CompilerInstance
+struct CompilerInstance
     ptr::CXCompilerInstance
 end
 CompilerInstance() = CompilerInstance(create_compiler_instance())

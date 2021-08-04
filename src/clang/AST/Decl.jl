@@ -5,10 +5,10 @@ Supertype for `Decl`s.
 abstract type AbstractDecl end
 
 """
-    mutable struct Decl <: AbstractDecl
+    struct Decl <: AbstractDecl
 Holds a pointer to a `clang::Decl` object.
 """
-mutable struct Decl <: AbstractDecl
+struct Decl <: AbstractDecl
     ptr::CXDecl
 end
 
@@ -18,9 +18,9 @@ function dump(x::AbstractDecl)
 end
 
 """
-    mutable struct NamedDecl <: AbstractDecl
+    struct NamedDecl <: AbstractDecl
 Holds a pointer to a `clang::NamedDecl` object.
 """
-mutable struct NamedDecl <: AbstractDecl
+struct NamedDecl <: AbstractDecl
     ptr::CXNamedDecl
 end

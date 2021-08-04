@@ -1,8 +1,8 @@
 """
-    mutable struct DiagnosticOptions <: Any
+    struct DiagnosticOptions <: Any
 Holds a pointer to a `clang::DiagnosticOptions` object.
 """
-mutable struct DiagnosticOptions
+struct DiagnosticOptions
     ptr::CXDiagnosticOptions
 end
 DiagnosticOptions() = DiagnosticOptions(create_diagnostic_opts())

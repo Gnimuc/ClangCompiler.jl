@@ -1,8 +1,8 @@
 """
-    mutable struct FileEntry <: Any
+    struct FileEntry <: Any
 Holds both a pointer to a `clang::FileEntry` object.
 """
-mutable struct FileEntry
+struct FileEntry
     ptr::CXFileEntry
 end
 

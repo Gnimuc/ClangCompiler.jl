@@ -28,17 +28,17 @@ function destroy(x::AbstractDiagnosticConsumer)
 end
 
 """
-    mutable struct DiagnosticConsumer <: AbstractDiagnosticConsumer
+    struct DiagnosticConsumer <: AbstractDiagnosticConsumer
 """
-mutable struct DiagnosticConsumer <: AbstractDiagnosticConsumer
+struct DiagnosticConsumer <: AbstractDiagnosticConsumer
     ptr::CXDiagnosticConsumer
 end
 
 """
-    mutable struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
+    struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
 Holds a pointer to a `clang::IgnoringDiagConsumer` object.
 """
-mutable struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
+struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
     ptr::CXDiagnosticConsumer
 end
 IgnoringDiagConsumer() = IgnoringDiagConsumer(create_ignoring_diagnostic_consumer())
@@ -55,10 +55,10 @@ function create_ignoring_diagnostic_consumer()
 end
 
 """
-    mutable struct DiagnosticsEngine <: Any
+    struct DiagnosticsEngine <: Any
 Holds a pointer to a `clang::DiagnosticsEngine` object.
 """
-mutable struct DiagnosticsEngine
+struct DiagnosticsEngine
     ptr::CXDiagnosticsEngine
 end
 DiagnosticsEngine() = DiagnosticsEngine(create_diagnostics_engine())

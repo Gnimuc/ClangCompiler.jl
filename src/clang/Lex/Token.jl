@@ -1,8 +1,8 @@
 """
-    mutable struct Token <: Any
+    struct Token <: Any
 Holds a pointer to a `clang::Token` object.
 """
-mutable struct Token
+struct Token
     ptr::CXToken_
 end
 
@@ -22,10 +22,10 @@ is_kw_enum(Tok) = clang_Token_isKind_kw_enum(Tok.ptr)
 is_kw_typename(Tok) = clang_Token_isKind_kw_typename(Tok.ptr)
 
 """
-    mutable struct AnnotationValue <: Any
+    struct AnnotationValue <: Any
 Holds a pointer to an "AnnotationValue".
 """
-mutable struct AnnotationValue
+struct AnnotationValue
     ptr::CXAnnotationValue
 end
 

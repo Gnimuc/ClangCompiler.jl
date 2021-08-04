@@ -1,8 +1,8 @@
 """
-    mutable struct LangOptions <: Any
+    struct LangOptions <: Any
 Holds a pointer to a `clang::LangOptions` object.
 """
-mutable struct LangOptions
+struct LangOptions
     ptr::CXLangOptions
 end
 

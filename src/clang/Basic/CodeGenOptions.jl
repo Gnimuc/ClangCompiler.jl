@@ -1,8 +1,8 @@
 """
-    mutable struct CodeGenOptions <: Any
+    struct CodeGenOptions <: Any
 Holds a pointer to a `clang::CodeGenOptions` object.
 """
-mutable struct CodeGenOptions
+struct CodeGenOptions
     ptr::CXCodeGenOptions
 end
 

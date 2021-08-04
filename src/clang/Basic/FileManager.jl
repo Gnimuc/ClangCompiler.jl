@@ -1,8 +1,8 @@
 """
-    mutable struct FileManager <: Any
+    struct FileManager <: Any
 Holds a pointer to a `clang::FileManager` object.
 """
-mutable struct FileManager
+struct FileManager
     ptr::CXFileManager
 end
 FileManager() = FileManager(create_file_manager())

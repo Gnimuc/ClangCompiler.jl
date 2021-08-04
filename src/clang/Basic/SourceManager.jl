@@ -1,8 +1,8 @@
 """
-    mutable struct SourceManager <: Any
+    struct SourceManager <: Any
 Holds a pointer to a `clang::SourceManager` object.
 """
-mutable struct SourceManager
+struct SourceManager
     ptr::CXSourceManager
 end
 function SourceManager(file_mgr::FileManager, diag::DiagnosticsEngine=DiagnosticsEngine(),

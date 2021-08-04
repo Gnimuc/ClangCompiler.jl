@@ -1,8 +1,8 @@
 """
-    mutable struct IdentifierTable <: Any
+    struct IdentifierTable <: Any
 Holds a pointer to a `clang::IdentifierTable` object.
 """
-mutable struct IdentifierTable
+struct IdentifierTable
     ptr::CXIdentifierTable
 end
 
@@ -17,9 +17,9 @@ function get_name(x::IdentifierTable, s::String)
 end
 
 """
-    mutable struct IdentifierInfo <: Any
+    struct IdentifierInfo <: Any
 Holds a pointer to a `clang::IdentifierInfo` object.
 """
-mutable struct IdentifierInfo
+struct IdentifierInfo
     ptr::CXIdentifierInfo
 end

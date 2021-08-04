@@ -5,9 +5,9 @@ Supertype for ASTConsumers.
 abstract type AbstractASTConsumer end
 
 """
-    mutable struct ASTConsumer <: Any
+    struct ASTConsumer <: Any
 """
-mutable struct ASTConsumer
+struct ASTConsumer
     ptr::CXASTConsumer
 end
 

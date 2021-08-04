@@ -1,8 +1,8 @@
 """
-    mutable struct CompilerInvocation <: Any
+    struct CompilerInvocation <: Any
 Holds a pointer to a `clang::CompilerInvocation` object.
 """
-mutable struct CompilerInvocation
+struct CompilerInvocation
     ptr::CXCompilerInvocation
 end
 CompilerInvocation() = CompilerInvocation(create_compiler_invocation())

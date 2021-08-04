@@ -19,7 +19,7 @@ function destroy(x::AbstractCodeGenAction)
     return x
 end
 
-mutable struct LLVMOnlyAction <: AbstractCodeGenAction
+struct LLVMOnlyAction <: AbstractCodeGenAction
     ptr::CXCodeGenAction
 end
 LLVMOnlyAction(ctx::Context) = LLVMOnlyAction(create_emit_llvm_only_action(ctx))

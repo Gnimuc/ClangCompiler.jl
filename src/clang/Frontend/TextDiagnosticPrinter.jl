@@ -1,8 +1,8 @@
 """
-    mutable struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
+    struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
 Holds a pointer to a `clang::TextDiagnosticPrinter` object.
 """
-mutable struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
+struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
     ptr::CXDiagnosticConsumer
 end
 

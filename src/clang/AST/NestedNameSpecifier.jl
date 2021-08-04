@@ -1,8 +1,8 @@
 """
-    mutable struct NestedNameSpecifier <: Any
+    struct NestedNameSpecifier <: Any
 Holds a `clang::NestedNameSpecifier` opaque pointer.
 """
-mutable struct NestedNameSpecifier
+struct NestedNameSpecifier
     ptr::CXNestedNameSpecifier
 end
 

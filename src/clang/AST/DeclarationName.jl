@@ -1,8 +1,8 @@
 """
-    mutable struct DeclarationName <: Any
+    struct DeclarationName <: Any
 Holds a `clang::DeclarationName` opaque pointer.
 """
-mutable struct DeclarationName
+struct DeclarationName
     ptr::CXDeclarationName
 end
 

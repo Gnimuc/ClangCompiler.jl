@@ -1,8 +1,8 @@
 """
-    mutable struct LookupResult <: Any
+    struct LookupResult <: Any
 Holds a pointer to a `clang::LookupResult` object.
 """
-mutable struct LookupResult
+struct LookupResult
     ptr::CXLookupResult
 end
 

@@ -1,8 +1,8 @@
 """
-    mutable struct DiagnosticIDs <: Any
+    struct DiagnosticIDs <: Any
 Holds a pointer to a `clang::DiagnosticIDs` object.
 """
-mutable struct DiagnosticIDs
+struct DiagnosticIDs
     ptr::CXDiagnosticIDs
 end
 DiagnosticIDs() = DiagnosticIDs(create_diagnostic_ids())

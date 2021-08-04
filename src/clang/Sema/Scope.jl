@@ -1,8 +1,8 @@
 """
-    mutable struct Scope <: Any
+    struct Scope <: Any
 Holds a pointer to a `clang::Scope` object.
 """
-mutable struct Scope
+struct Scope
     ptr::CXScope
 end
 

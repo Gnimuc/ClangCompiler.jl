@@ -1,8 +1,8 @@
 """
-mutable struct PreprocessorOptions <: Any
+struct PreprocessorOptions <: Any
 Holds a pointer to a `clang::PreprocessorOptions` object.
 """
-mutable struct PreprocessorOptions
+struct PreprocessorOptions
     ptr::CXPreprocessorOptions
 end
 

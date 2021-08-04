@@ -1,8 +1,8 @@
 """
-    mutable struct ASTContext <: Any
+    struct ASTContext <: Any
 Holds a pointer to a `clang::ASTContext` object.
 """
-mutable struct ASTContext
+struct ASTContext
     ptr::CXASTContext
 end
 
