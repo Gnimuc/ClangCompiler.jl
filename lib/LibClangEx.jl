@@ -200,8 +200,20 @@ function clang_IdentifierTable_get(Idents, Name)
     ccall((:clang_IdentifierTable_get, libclangex), CXIdentifierInfo, (CXIdentifierTable, Ptr{Cchar}), Idents, Name)
 end
 
+function clang_DeclarationName_create()
+    ccall((:clang_DeclarationName_create, libclangex), CXDeclarationName, ())
+end
+
 function clang_DeclarationName_createFromIdentifierInfo(IDInfo)
     ccall((:clang_DeclarationName_createFromIdentifierInfo, libclangex), CXDeclarationName, (CXIdentifierInfo,), IDInfo)
+end
+
+function clang_LookupResult_setLookupName(LR, DN)
+    ccall((:clang_LookupResult_setLookupName, libclangex), Cvoid, (CXLookupResult, CXDeclarationName), LR, DN)
+end
+
+function clang_LookupResult_getLookupName(LR)
+    ccall((:clang_LookupResult_getLookupName, libclangex), CXDeclarationName, (CXLookupResult,), LR)
 end
 
 function clang_DeclarationName_dump(DN)
@@ -1025,6 +1037,10 @@ function clang_CXXScopeSpec_dispose(SS)
     ccall((:clang_CXXScopeSpec_dispose, libclangex), Cvoid, (CXCXXScopeSpec,), SS)
 end
 
+function clang_CXXScopeSpec_clear(SS)
+    ccall((:clang_CXXScopeSpec_clear, libclangex), Cvoid, (CXCXXScopeSpec,), SS)
+end
+
 function clang_CXXScopeSpec_getScopeRep(SS)
     ccall((:clang_CXXScopeSpec_getScopeRep, libclangex), CXNestedNameSpecifier, (CXCXXScopeSpec,), SS)
 end
@@ -1079,6 +1095,10 @@ end
 
 function clang_LookupResult_dispose(LR)
     ccall((:clang_LookupResult_dispose, libclangex), Cvoid, (CXLookupResult,), LR)
+end
+
+function clang_LookupResult_clear(LR, LookupKind)
+    ccall((:clang_LookupResult_clear, libclangex), Cvoid, (CXLookupResult, CXLookupNameKind), LR, LookupKind)
 end
 
 function clang_LookupResult_dump(LR)

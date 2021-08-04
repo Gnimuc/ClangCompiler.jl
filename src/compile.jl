@@ -162,7 +162,6 @@ function parse_cxx_scope_spec(cc::IncrementalCompiler, str::String, spec::CXXSco
     begin_diag(ci)
     buffer = get_buffer(str)
     fid = FileID(src_mgr, buffer)
-    @show value(fid)
     loc = get_loc_with_offset(get_loc_for_start_of_main_file(src_mgr), cc.src_counter)
     enter_file(pp, fid, loc)
     try
@@ -174,4 +173,13 @@ function parse_cxx_scope_spec(cc::IncrementalCompiler, str::String, spec::CXXSco
         cc.src_counter += 1
     end
     return nothing
+end
+
+function (x::DeclFinder)(cc::IncrementalCompiler, decl::String, scope::String="")
+    reset(x)
+    parse_cxx_scope_spec(cc, scope, x.spec)
+    set_name(x.result, DeclarationName(get_name(get_ast_context(cc.instance), decl)))
+    sema = get_sema(cc.instance)
+    lookup_parsed_name(sema, x.result, get_current_scope(cc.parser), x.spec)
+    return !is_empty(x.result)
 end

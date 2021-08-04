@@ -20,6 +20,11 @@ end
 
 dispose(x::CXXScopeSpec) = clang_CXXScopeSpec_dispose(x.ptr)
 
+function clear(x::CXXScopeSpec)
+    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    return clang_CXXScopeSpec_clear(x.ptr)
+end
+
 function get_scope_representation(x::CXXScopeSpec)
     @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
     return NestedNameSpecifier(clang_CXXScopeSpec_getScopeRep(x.ptr))

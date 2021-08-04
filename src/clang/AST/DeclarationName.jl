@@ -5,6 +5,7 @@ Holds a `clang::DeclarationName` opaque pointer.
 struct DeclarationName
     ptr::CXDeclarationName
 end
+DeclarationName() = DeclarationName(clang_DeclarationName_create())
 
 function DeclarationName(x::IdentifierInfo)
     @assert x.ptr != C_NULL "IdentifierInfo has a NULL pointer."

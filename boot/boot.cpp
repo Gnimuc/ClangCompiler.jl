@@ -2,6 +2,14 @@
 #include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Parse/Parser.h"
 #include "clang/Sema/Sema.h"
+#include <iostream>
+
+// this function is for sanity check only
+void print_julia_version(void) {
+  const char *ptr = jl_ver_string();
+  std::string s(ptr);
+  std::cout << s << std::endl;
+}
 
 bool clang_Parser_tryParseAndSkipInvalidOrParsedDecl(CXParser Parser,
                                                      CXCodeGenerator CodeGen) {

@@ -9,7 +9,7 @@ function parse(instance::CompilerInstance)
     return true
 end
 
-function parse(instance::CompilerInstance, codegen::CodeGenerator, parser::Parser)
+function parse(instance::CompilerInstance, parser::Parser, codegen::CodeGenerator)
     diag_csr = get_diagnostic_client(instance)
 
     preprocessor = get_preprocessor(instance)

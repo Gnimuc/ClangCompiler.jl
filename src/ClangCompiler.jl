@@ -71,6 +71,9 @@ include("clang/CodeGen/CodeGenAction.jl")
 
 # interface
 include("parse.jl")
+include("lookup.jl")
+export DeclFinder, get_decl
+
 include("compile.jl")
 export CxxCompiler
 export get_module, get_context, get_jit, get_codegen, get_dylib
