@@ -34,8 +34,8 @@ function create_simple_compiler(src::String, args::Vector{String}; diag_show_col
     return SimpleCompiler(ctx, instance)
 end
 
-function destroy(x::SimpleCompiler)
-    CC.destroy(x.instance)
+function dispose(x::SimpleCompiler)
+    CC.dispose(x.instance)
     CC.dispose(x.ctx)
 end
 
@@ -51,4 +51,4 @@ src = joinpath(@__DIR__, "..", "sample.cpp")
 args = get_compiler_args()
 cc = create_simple_compiler(src, args)
 m = compile(cc)
-destroy(cc)
+dispose(cc)

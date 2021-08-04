@@ -13,13 +13,7 @@ function SourceManager(file_mgr::FileManager, diag::DiagnosticsEngine=Diagnostic
     return SourceManager(mgr)
 end
 
-function destroy(x::SourceManager)
-    if x.ptr != C_NULL
-        clang_SourceManager_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
-end
+dispose(x::SourceManager) = clang_SourceManager_dispose(x.ptr)
 
 function print_stats(mgr::SourceManager)
     @assert mgr.ptr != C_NULL "SourceManager has a NULL pointer."
@@ -55,7 +49,7 @@ end
     get_main_file_id(src_mgr::SourceManager) -> FileID
 Return the main file ID.
 
-This function allocates and one should call `destroy` to release the resources after using this object.
+This function allocates and one should call `dispose` to release the resources after using this object.
 """
 function get_main_file_id(src_mgr::SourceManager)
     @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
@@ -75,14 +69,14 @@ end
 function set_main_file(src_mgr::SourceManager, file_entry::FileEntry)
     id = FileID(src_mgr, file_entry)
     set_main_file_id(src_mgr, id)
-    destroy(id)
+    dispose(id)
     return nothing
 end
 
 function set_main_file(src_mgr::SourceManager, buffer::MemoryBuffer)
     id = FileID(src_mgr, buffer)
     set_main_file_id(src_mgr, id)
-    destroy(id)
+    dispose(id)
     return nothing
 end
 
@@ -95,7 +89,7 @@ end
 function get_loc_for_start_of_main_file(src_mgr::SourceManager)
     id = get_main_file_id(src_mgr)
     loc = get_loc_for_start_of_file(src_mgr, id)
-    destroy(id)
+    dispose(id)
     return loc
 end
 
@@ -108,7 +102,7 @@ end
 function get_loc_for_end_of_main_file(src_mgr::SourceManager)
     id = get_main_file_id(src_mgr)
     loc = get_loc_for_end_of_file(src_mgr, id)
-    destroy(id)
+    dispose(id)
     return loc
 end
 

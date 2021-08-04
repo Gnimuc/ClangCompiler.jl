@@ -15,13 +15,7 @@ function Parser(pp::Preprocessor, sema::Sema, skip_func_body::Bool=false)
     return Parser(p)
 end
 
-function destroy(x::Parser)
-    if x.ptr != C_NULL
-        clang_Parser_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
-end
+dispose(x::Parser) = clang_Parser_dispose(x.ptr)
 
 function initialize(x::Parser)
     @assert x.ptr != C_NULL "Parser has a NULL pointer."

@@ -18,13 +18,7 @@ function create_cxx_scope_spec()
     return ss
 end
 
-function destroy(x::CXXScopeSpec)
-    if x.ptr != C_NULL
-        clang_CXXScopeSpec_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
-end
+dispose(x::CXXScopeSpec) = clang_CXXScopeSpec_dispose(x.ptr)
 
 function get_scope_representation(x::CXXScopeSpec)
     @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."

@@ -11,13 +11,7 @@ function take_module(x::T) where {T<:AbstractCodeGenAction}
     return LLVM.Module(m)
 end
 
-function destroy(x::AbstractCodeGenAction)
-    if x.ptr != C_NULL
-        clang_CodeGenAction_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
-end
+dispose(x::AbstractCodeGenAction) = clang_CodeGenAction_dispose(x.ptr)
 
 struct LLVMOnlyAction <: AbstractCodeGenAction
     ptr::CXCodeGenAction

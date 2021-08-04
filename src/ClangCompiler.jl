@@ -13,6 +13,7 @@ const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "bin", "clang")
 using LLVM
 using LLVM.Interop: call_function
 export call_function
+import LLVM: dispose, name, value
 
 include("../lib/LibClangEx.jl")
 using .LibClangEx
@@ -73,7 +74,7 @@ include("parse.jl")
 include("compile.jl")
 export CxxCompiler
 export get_module, get_context, get_jit, get_codegen, get_dylib
-export compile, destroy
+export compile, dispose
 export IRGenerator, generate_llvmir
 export link_process_symbols
 export IncrementalCompiler

@@ -19,13 +19,7 @@ function end_source_file(consumer::T) where {T<:AbstractDiagnosticConsumer}
     return nothing
 end
 
-function destroy(x::AbstractDiagnosticConsumer)
-    if x.ptr != C_NULL
-        clang_DiagnosticConsumer_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
-end
+dispose(x::AbstractDiagnosticConsumer) = clang_DiagnosticConsumer_dispose(x.ptr)
 
 """
     struct DiagnosticConsumer <: AbstractDiagnosticConsumer
@@ -100,13 +94,7 @@ function create_diagnostics_engine()
     return engine
 end
 
-function destroy(x::DiagnosticsEngine)
-    if x.ptr != C_NULL
-        clang_DiagnosticsEngine_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
-end
+dispose(x::DiagnosticsEngine) = clang_DiagnosticsEngine_dispose(x.ptr)
 
 function set_show_colors(x::DiagnosticsEngine, should_show::Bool)
     @assert x.ptr != C_NULL "DiagnosticsEngine has a NULL pointer."

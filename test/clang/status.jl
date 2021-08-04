@@ -33,5 +33,5 @@ const CC = ClangCompiler
 
     CC.print_stats(instance, CC.HeaderSearch)
 
-    CC.destroy(instance)
+    CC.dispose(instance)
 end

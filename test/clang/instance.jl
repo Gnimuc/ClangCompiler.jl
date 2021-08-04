@@ -68,7 +68,7 @@ const CC = ClangCompiler
     @test CC.has_preprocessor(instance) == true
     @test CC.has_sema(instance) == true
 
-    CC.destroy(instance)
+    CC.dispose(instance)
     CC.LLVM.dispose(llvm_ctx)
 end
 
@@ -93,7 +93,7 @@ end
     CC.set_main_file(instance, src)
     id = CC.get_main_file_id(instance)
     @test CC.value(id) == 1
-    CC.destroy(id)
+    CC.dispose(id)
 
-    CC.destroy(instance)
+    CC.dispose(instance)
 end

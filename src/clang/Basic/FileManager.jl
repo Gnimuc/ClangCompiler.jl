@@ -23,13 +23,7 @@ function create_file_manager()
     return mgr
 end
 
-function destroy(x::FileManager)
-    if x.ptr != C_NULL
-        clang_FileManager_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
-end
+dispose(x::FileManager) = clang_FileManager_dispose(x.ptr)
 
 function print_stats(mgr::FileManager)
     @assert mgr.ptr != C_NULL "FileManager has a NULL pointer."

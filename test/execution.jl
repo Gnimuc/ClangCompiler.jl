@@ -11,7 +11,7 @@ using Test
     f = lookup_function(ee, "main")
     ret = convert(Cint, run(ee, f))
     @test ret == 42
-    destroy(irgen)
+    dispose(irgen)
 end
 
 @testset "IR Generator" begin
@@ -23,5 +23,5 @@ end
     f = lookup_function(ee, "main")
     ret = convert(Cint, run(ee, f))
     @test ret == 42
-    destroy(irgen)
+    dispose(irgen)
 end

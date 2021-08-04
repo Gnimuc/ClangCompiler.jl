@@ -9,5 +9,5 @@ using Test
     f = lookup_function(get_module(irgen), "main")
     @eval main() = $(call_function(f, Cint))
     @test main() == 42
-    destroy(irgen)
+    dispose(irgen)
 end

@@ -37,9 +37,9 @@ end
 get_module(x::IRGenerator) = take_module(x.act)
 get_context(x::IRGenerator) = x.ts_ctx
 
-function destroy(x::IRGenerator)
-    destroy(x.instance)
-    destroy(x.act)
+function dispose(x::IRGenerator)
+    dispose(x.instance)
+    dispose(x.act)
     dispose(x.ts_ctx)
 end
 
@@ -73,8 +73,8 @@ function compile(cc::CxxCompiler)
     add!(jit, jd, ts_mod)
 end
 
-function destroy(x::CxxCompiler)
-    destroy(x.irgen)
+function dispose(x::CxxCompiler)
+    dispose(x.irgen)
     dispose(x.jit)
 end
 
@@ -146,9 +146,9 @@ function create_incremental_compiler(src::String, args::Vector{String}; diag_sho
     return IncrementalCompiler(ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
 end
 
-function destroy(x::IncrementalCompiler)
-    destroy(x.parser)
-    destroy(x.instance)
+function dispose(x::IncrementalCompiler)
+    dispose(x.parser)
+    dispose(x.instance)
     pop!(x.modules)  # we don't have the ownership of the latest module
     dispose.(x.modules)
     dispose(x.ts_ctx)
@@ -168,7 +168,7 @@ function parse_cxx_scope_spec(cc::IncrementalCompiler, str::String, spec::CXXSco
     try
         parse_cxx_scope_spec(p, spec)
     finally
-        destroy(fid)
+        dispose(fid)
         end_file(pp)
         end_diag(ci)
         cc.src_counter += 1

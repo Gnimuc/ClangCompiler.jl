@@ -29,4 +29,4 @@ addr = lookup(jit, "lljit_main")
 main()
 
 # clean up
-destroy(cc)
+dispose(cc)

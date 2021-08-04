@@ -18,13 +18,7 @@ function create_compiler_instance()
     return instance
 end
 
-function destroy(x::CompilerInstance)
-    if x.ptr != C_NULL
-        clang_CompilerInstance_dispose(x.ptr)
-        x.ptr = C_NULL
-    end
-    return x
-end
+dispose(x::CompilerInstance) = clang_CompilerInstance_dispose(x.ptr)
 
 # Diagnostics
 function has_diagnostics(ci::CompilerInstance)
@@ -102,7 +96,7 @@ end
     get_main_file_id(ci::CompilerInstance) -> FileID
 Return the main file ID.
 
-This function allocates and one should call `destroy` to release the resources after using this object.
+This function allocates and one should call `dispose` to release the resources after using this object.
 """
 function get_main_file_id(ci::CompilerInstance)
     src_mgr = get_source_manager(ci)

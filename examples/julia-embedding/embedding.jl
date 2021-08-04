@@ -23,4 +23,4 @@ addr = lookup(jit, "main")
 main()
 
 # clean up
-destroy(cc)
+dispose(cc)
