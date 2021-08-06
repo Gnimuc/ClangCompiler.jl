@@ -80,6 +80,12 @@ const CXDecl = Ptr{Cvoid}
 
 const CXNamedDecl = Ptr{Cvoid}
 
+const CXTypeDecl = Ptr{Cvoid}
+
+const CXTagDecl = Ptr{Cvoid}
+
+const CXTemplateParameterList = Ptr{Cvoid}
+
 const CXNestedNameSpecifier = Ptr{Cvoid}
 
 const CXCXXScopeSpec = Ptr{Cvoid}
@@ -268,6 +274,10 @@ function clang_DeclGroupRef_getSingleDecl(DG)
     ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
 end
 
+function clang_Decl_getLocation(DC)
+    ccall((:clang_Decl_getLocation, libclangex), CXSourceLocation_, (CXDecl,), DC)
+end
+
 function clang_Decl_EnableStatistics()
     ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
 end
@@ -286,6 +296,142 @@ end
 
 function clang_Decl_dumpColor(DC)
     ccall((:clang_Decl_dumpColor, libclangex), Cvoid, (CXDecl,), DC)
+end
+
+function clang_NamedDecl_getIdentifier(ND)
+    ccall((:clang_NamedDecl_getIdentifier, libclangex), CXIdentifierInfo, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_getName(ND)
+    ccall((:clang_NamedDecl_getName, libclangex), Ptr{Cchar}, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_setDeclName(ND, DN)
+    ccall((:clang_NamedDecl_setDeclName, libclangex), Cvoid, (CXNamedDecl, CXDeclarationName), ND, DN)
+end
+
+function clang_NamedDecl_hasLinkage(ND)
+    ccall((:clang_NamedDecl_hasLinkage, libclangex), Bool, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_isCXXClassMember(ND)
+    ccall((:clang_NamedDecl_isCXXClassMember, libclangex), Bool, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_isCXXInstanceMember(ND)
+    ccall((:clang_NamedDecl_isCXXInstanceMember, libclangex), Bool, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_hasExternalFormalLinkage(ND)
+    ccall((:clang_NamedDecl_hasExternalFormalLinkage, libclangex), Bool, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_isExternallyVisible(ND)
+    ccall((:clang_NamedDecl_isExternallyVisible, libclangex), Bool, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_isExternallyDeclarable(ND)
+    ccall((:clang_NamedDecl_isExternallyDeclarable, libclangex), Bool, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_getUnderlyingDecl(ND)
+    ccall((:clang_NamedDecl_getUnderlyingDecl, libclangex), CXNamedDecl, (CXNamedDecl,), ND)
+end
+
+function clang_NamedDecl_getMostRecentDecl(ND)
+    ccall((:clang_NamedDecl_getMostRecentDecl, libclangex), CXNamedDecl, (CXNamedDecl,), ND)
+end
+
+function clang_TypeDecl_getTypeForDecl(TD)
+    ccall((:clang_TypeDecl_getTypeForDecl, libclangex), CXType_, (CXTypeDecl,), TD)
+end
+
+function clang_TypeDecl_setTypeForDecl(TD, Ty)
+    ccall((:clang_TypeDecl_setTypeForDecl, libclangex), Cvoid, (CXTypeDecl, CXType_), TD, Ty)
+end
+
+function clang_TypeDecl_getBeginLoc(TD)
+    ccall((:clang_TypeDecl_getBeginLoc, libclangex), CXSourceLocation_, (CXTypeDecl,), TD)
+end
+
+function clang_TypeDecl_setLocStart(TD, Loc)
+    ccall((:clang_TypeDecl_setLocStart, libclangex), Cvoid, (CXTypeDecl, CXSourceLocation_), TD, Loc)
+end
+
+function clang_TypeDecl_getCanonicalDecl(TD)
+    ccall((:clang_TypeDecl_getCanonicalDecl, libclangex), CXTagDecl, (CXTypeDecl,), TD)
+end
+
+function clang_TypeDecl_isThisDeclarationADefinition(TD)
+    ccall((:clang_TypeDecl_isThisDeclarationADefinition, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_isCompleteDefinition(TD)
+    ccall((:clang_TypeDecl_isCompleteDefinition, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_setCompleteDefinition(TD, V)
+    ccall((:clang_TypeDecl_setCompleteDefinition, libclangex), Cvoid, (CXTagDecl, Bool), TD, V)
+end
+
+function clang_TypeDecl_isBeingDefined(TD)
+    ccall((:clang_TypeDecl_isBeingDefined, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_isFreeStanding(TD)
+    ccall((:clang_TypeDecl_isFreeStanding, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_startDefinition(TD)
+    ccall((:clang_TypeDecl_startDefinition, libclangex), Cvoid, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_getDefinition(TD)
+    ccall((:clang_TypeDecl_getDefinition, libclangex), CXTagDecl, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_getKindName(TD)
+    ccall((:clang_TypeDecl_getKindName, libclangex), Ptr{Cchar}, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_isStruct(TD)
+    ccall((:clang_TypeDecl_isStruct, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_isInterface(TD)
+    ccall((:clang_TypeDecl_isInterface, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_isClass(TD)
+    ccall((:clang_TypeDecl_isClass, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_isUnion(TD)
+    ccall((:clang_TypeDecl_isUnion, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_isEnum(TD)
+    ccall((:clang_TypeDecl_isEnum, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_hasNameForLinkage(TD)
+    ccall((:clang_TypeDecl_hasNameForLinkage, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_getQualifier(TD)
+    ccall((:clang_TypeDecl_getQualifier, libclangex), CXNestedNameSpecifier, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_getNumTemplateParameterLists(TD)
+    ccall((:clang_TypeDecl_getNumTemplateParameterLists, libclangex), Cuint, (CXTagDecl,), TD)
+end
+
+function clang_TypeDecl_getTemplateParameterList(TD, i)
+    ccall((:clang_TypeDecl_getTemplateParameterList, libclangex), CXTemplateParameterList, (CXTagDecl, Cuint), TD, i)
+end
+
+function clang_TemplateParameterList_getParam(TPL, Idx)
+    ccall((:clang_TemplateParameterList_getParam, libclangex), CXNamedDecl, (CXTagDecl, Cuint), TPL, Idx)
 end
 
 function clang_ASTContext_VoidTy_getTypePtrOrNull(Ctx)
