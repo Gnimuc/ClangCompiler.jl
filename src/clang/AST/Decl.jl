@@ -29,7 +29,7 @@ Supertype for `NamedDecl`s.
 abstract type AbstractNamedDecl <: AbstractDecl end
 
 """
-    struct NamedDecl <: AbstractDecl
+    struct NamedDecl <: AbstractNamedDecl
 Holds a pointer to a `clang::NamedDecl` object.
 """
 struct NamedDecl <: AbstractNamedDecl
@@ -98,10 +98,10 @@ Supertype for `TagDecl`s.
 abstract type AbstractTagDecl <: AbstractNamedDecl end
 
 """
-    struct TagDecl <: AbstractNamedDecl
+    struct TagDecl <: AbstractTagDecl
 Holds a pointer to a `clang::TagDecl` object.
 """
-struct TagDecl <: AbstractNamedDecl
+struct TagDecl <: AbstractTagDecl
     ptr::CXTagDecl
 end
 
@@ -205,17 +205,61 @@ function get_qualifier(x::AbstractTagDecl)
     return NestedNameSpecifier(clang_TypeDecl_getQualifier(x.ptr))
 end
 
-function get_num_template_parameter_lists(x::AbstractTagDecl)
-    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_getNumTemplateParameterLists(x.ptr)
+"""
+    abstract type AbstractRecordDecl <: AbstractTagDecl
+Supertype for `RecordDecl`s.
+"""
+abstract type AbstractRecordDecl <: AbstractTagDecl end
+
+"""
+    struct RecordDecl <: AbstractRecordDecl
+Holds a pointer to a `clang::RecordDecl` object.
+"""
+struct RecordDecl <: AbstractRecordDecl
+    ptr::CXRecordDecl
 end
 
-function get_template_parameter_list(x::AbstractTagDecl, i::Integer)
-    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return TemplateParameterList(clang_TypeDecl_getTemplateParameterList(x.ptr, i))
+function get_previous_decl(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return RecordDecl(clang_RecordDecl_getPreviousDecl(x.ptr))
 end
 
-function get_param(x::TemplateParameterList, i::Integer)
-    @assert x.ptr != C_NULL "TemplateParameterList has a NULL pointer."
-    return NamedDecl(clang_TemplateParameterList_getParam(x.ptr, i))
+function get_most_recent_decl(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return RecordDecl(clang_RecordDecl_getMostRecentDecl(x.ptr))
+end
+
+function has_flexible_array_member(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return clang_RecordDecl_hasFlexibleArrayMember(x.ptr)
+end
+
+function is_anonymous_struct_or_union(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return clang_RecordDecl_isAnonymousStructOrUnion(x.ptr)
+end
+
+function is_injected_class_name(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return clang_RecordDecl_isInjectedClassName(x.ptr)
+end
+
+function is_lambda(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return clang_RecordDecl_isLambda(x.ptr)
+end
+
+function is_captured_record(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return clang_RecordDecl_isCapturedRecord(x.ptr)
+end
+
+function get_definition(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return RecordDecl(clang_RecordDecl_getDefinition(x.ptr))
+end
+
+function is_or_contains_union(x::AbstractRecordDecl)
+    @assert x.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return clang_RecordDecl_isOrContainsUnion(x.ptr)
 end

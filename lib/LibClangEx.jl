@@ -86,6 +86,10 @@ const CXTagDecl = Ptr{Cvoid}
 
 const CXTemplateParameterList = Ptr{Cvoid}
 
+const CXRecordDecl = Ptr{Cvoid}
+
+const CXCXXRecordDecl = Ptr{Cvoid}
+
 const CXNestedNameSpecifier = Ptr{Cvoid}
 
 const CXCXXScopeSpec = Ptr{Cvoid}
@@ -432,6 +436,94 @@ end
 
 function clang_TemplateParameterList_getParam(TPL, Idx)
     ccall((:clang_TemplateParameterList_getParam, libclangex), CXNamedDecl, (CXTagDecl, Cuint), TPL, Idx)
+end
+
+function clang_RecordDecl_getPreviousDecl(RD)
+    ccall((:clang_RecordDecl_getPreviousDecl, libclangex), CXRecordDecl, (CXRecordDecl,), RD)
+end
+
+function clang_RecordDecl_getMostRecentDecl(RD)
+    ccall((:clang_RecordDecl_getMostRecentDecl, libclangex), CXRecordDecl, (CXRecordDecl,), RD)
+end
+
+function clang_RecordDecl_hasFlexibleArrayMember(RD)
+    ccall((:clang_RecordDecl_hasFlexibleArrayMember, libclangex), Bool, (CXRecordDecl,), RD)
+end
+
+function clang_RecordDecl_isAnonymousStructOrUnion(RD)
+    ccall((:clang_RecordDecl_isAnonymousStructOrUnion, libclangex), Bool, (CXRecordDecl,), RD)
+end
+
+function clang_RecordDecl_isInjectedClassName(RD)
+    ccall((:clang_RecordDecl_isInjectedClassName, libclangex), Bool, (CXRecordDecl,), RD)
+end
+
+function clang_RecordDecl_isLambda(RD)
+    ccall((:clang_RecordDecl_isLambda, libclangex), Bool, (CXRecordDecl,), RD)
+end
+
+function clang_RecordDecl_isCapturedRecord(RD)
+    ccall((:clang_RecordDecl_isCapturedRecord, libclangex), Bool, (CXRecordDecl,), RD)
+end
+
+function clang_RecordDecl_getDefinition(RD)
+    ccall((:clang_RecordDecl_getDefinition, libclangex), CXRecordDecl, (CXRecordDecl,), RD)
+end
+
+function clang_RecordDecl_isOrContainsUnion(RD)
+    ccall((:clang_RecordDecl_isOrContainsUnion, libclangex), Bool, (CXRecordDecl,), RD)
+end
+
+function clang_CXXRecordDecl_getCanonicalDecl(CXXRD)
+    ccall((:clang_CXXRecordDecl_getCanonicalDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getPreviousDecl(CXXRD)
+    ccall((:clang_CXXRecordDecl_getPreviousDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getMostRecentDecl(CXXRD)
+    ccall((:clang_CXXRecordDecl_getMostRecentDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getMostRecentNonInjectedDecl(CXXRD)
+    ccall((:clang_CXXRecordDecl_getMostRecentNonInjectedDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getDefinition(CXXRD)
+    ccall((:clang_CXXRecordDecl_getDefinition, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_hasDefinition(CXXRD)
+    ccall((:clang_CXXRecordDecl_hasDefinition, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isLambda(CXXRD)
+    ccall((:clang_CXXRecordDecl_isLambda, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isGenericLambda(CXXRD)
+    ccall((:clang_CXXRecordDecl_isGenericLambda, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getGenericLambdaTemplateParameterList(CXXRD)
+    ccall((:clang_CXXRecordDecl_getGenericLambdaTemplateParameterList, libclangex), CXTemplateParameterList, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isAggregate(CXXRD)
+    ccall((:clang_CXXRecordDecl_isAggregate, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isPOD(CXXRD)
+    ccall((:clang_CXXRecordDecl_isPOD, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isCLike(CXXRD)
+    ccall((:clang_CXXRecordDecl_isCLike, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isEmpty(CXXRD)
+    ccall((:clang_CXXRecordDecl_isEmpty, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
 end
 
 function clang_ASTContext_VoidTy_getTypePtrOrNull(Ctx)
