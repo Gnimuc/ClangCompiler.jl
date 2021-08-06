@@ -93,9 +93,43 @@ end
 
 """
     abstract type AbstractTagDecl <: AbstractNamedDecl
+Supertype for `TypeDecl`s.
+"""
+abstract type AbstractTypeDecl <: AbstractNamedDecl end
+
+"""
+    struct TypeDecl <: AbstractTypeDecl
+Holds a pointer to a `clang::TypeDecl` object.
+"""
+struct TypeDecl <: AbstractTypeDecl
+    ptr::CXTypeDecl
+end
+
+function get_type_for_decl(x::AbstractTypeDecl)
+    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
+    return QualType(clang_TypeDecl_getTypeForDecl(x.ptr))
+end
+
+function set_type_for_decl(x::AbstractTypeDecl, ty::QualType)
+    @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
+    return clang_TypeDecl_setTypeForDecl(x.ptr, ty.ptr)
+end
+
+function get_begin_loc(x::AbstractTypeDecl)
+    @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
+    return SourceLocation(clang_TypeDecl_getBeginLoc(x.ptr))
+end
+
+function set_loc_start(x::AbstractTypeDecl, loc::SourceLocation)
+    @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
+    return clang_TypeDecl_setLocStart(x.ptr, loc.ptr)
+end
+
+"""
+    abstract type AbstractTagDecl <: AbstractTypeDecl
 Supertype for `TagDecl`s.
 """
-abstract type AbstractTagDecl <: AbstractNamedDecl end
+abstract type AbstractTagDecl <: AbstractTypeDecl end
 
 """
     struct TagDecl <: AbstractTagDecl
@@ -105,104 +139,84 @@ struct TagDecl <: AbstractTagDecl
     ptr::CXTagDecl
 end
 
-function get_type_for_decl(x::AbstractTagDecl)
-    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return QualType(clang_TypeDecl_getTypeForDecl(x.ptr))
-end
-
-function set_type_for_decl(x::AbstractTagDecl, ty::QualType)
-    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_setTypeForDecl(x.ptr, ty.ptr)
-end
-
-function get_begin_loc(x::AbstractTagDecl)
-    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return SourceLocation(clang_TypeDecl_getBeginLoc(x.ptr))
-end
-
-function set_loc_start(x::AbstractTagDecl, loc::SourceLocation)
-    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_setLocStart(x.ptr, loc.ptr)
-end
-
 function get_canonical_decl(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return TagDecl(clang_TypeDecl_getCanonicalDecl(x.ptr))
+    return TagDecl(clang_TagDecl_getCanonicalDecl(x.ptr))
 end
 
 function is_definition(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isThisDeclarationADefinition(x.ptr)
+    return clang_TagDecl_isThisDeclarationADefinition(x.ptr)
 end
 
 function is_complete_definition(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isCompleteDefinition(x.ptr)
+    return clang_TagDecl_isCompleteDefinition(x.ptr)
 end
 
 function set_complete_definition(x::AbstractTagDecl, v::Bool)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_setCompleteDefinition(x.ptr, v)
+    return clang_TagDecl_setCompleteDefinition(x.ptr, v)
 end
 
 function is_being_defined(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isBeingDefined(x.ptr)
+    return clang_TagDecl_isBeingDefined(x.ptr)
 end
 
 function is_free_standing(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isFreeStanding(x.ptr)
+    return clang_TagDecl_isFreeStanding(x.ptr)
 end
 
 function start_definition(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_startDefinition(x.ptr)
+    return clang_TagDecl_startDefinition(x.ptr)
 end
 
 function get_definition(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return TagDecl(clang_TypeDecl_getDefinition(x.ptr))
+    return TagDecl(clang_TagDecl_getDefinition(x.ptr))
 end
 
 function get_kind_name(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return unsafe_string(clang_TypeDecl_getKindName(x.ptr))
+    return unsafe_string(clang_TagDecl_getKindName(x.ptr))
 end
 
 function is_struct(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isStruct(x.ptr)
+    return clang_TagDecl_isStruct(x.ptr)
 end
 
 function is_interface(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isInterface(x.ptr)
+    return clang_TagDecl_isInterface(x.ptr)
 end
 
 function is_class(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isClass(x.ptr)
+    return clang_TagDecl_isClass(x.ptr)
 end
 
 function is_union(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isUnion(x.ptr)
+    return clang_TagDecl_isUnion(x.ptr)
 end
 
 function is_enum(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_isEnum(x.ptr)
+    return clang_TagDecl_isEnum(x.ptr)
 end
 
 function has_name_for_linkage(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return clang_TypeDecl_hasNameForLinkage(x.ptr)
+    return clang_TagDecl_hasNameForLinkage(x.ptr)
 end
 
 function get_qualifier(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
-    return NestedNameSpecifier(clang_TypeDecl_getQualifier(x.ptr))
+    return NestedNameSpecifier(clang_TagDecl_getQualifier(x.ptr))
 end
 
 """
