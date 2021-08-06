@@ -82,7 +82,11 @@ const CXDeclContext = Ptr{Cvoid}
 
 const CXNamedDecl = Ptr{Cvoid}
 
+const CXValueDecl = Ptr{Cvoid}
+
 const CXTypeDecl = Ptr{Cvoid}
+
+const CXTypedefNameDecl = Ptr{Cvoid}
 
 const CXTagDecl = Ptr{Cvoid}
 
@@ -542,6 +546,18 @@ function clang_NamedDecl_getMostRecentDecl(ND)
     ccall((:clang_NamedDecl_getMostRecentDecl, libclangex), CXNamedDecl, (CXNamedDecl,), ND)
 end
 
+function clang_ValueDecl_getType(VD)
+    ccall((:clang_ValueDecl_getType, libclangex), CXQualType, (CXValueDecl,), VD)
+end
+
+function clang_ValueDecl_setType(VD, OpaquePtr)
+    ccall((:clang_ValueDecl_setType, libclangex), Cvoid, (CXValueDecl, CXQualType), VD, OpaquePtr)
+end
+
+function clang_ValueDecl_isWeak(VD)
+    ccall((:clang_ValueDecl_isWeak, libclangex), Bool, (CXValueDecl,), VD)
+end
+
 function clang_TypeDecl_getTypeForDecl(TD)
     ccall((:clang_TypeDecl_getTypeForDecl, libclangex), CXType_, (CXTypeDecl,), TD)
 end
@@ -556,6 +572,22 @@ end
 
 function clang_TypeDecl_setLocStart(TD, Loc)
     ccall((:clang_TypeDecl_setLocStart, libclangex), Cvoid, (CXTypeDecl, CXSourceLocation_), TD, Loc)
+end
+
+function clang_TypedefNameDecl_getUnderlyingType(TND)
+    ccall((:clang_TypedefNameDecl_getUnderlyingType, libclangex), CXQualType, (CXTypedefNameDecl,), TND)
+end
+
+function clang_TypedefNameDecl_getCanonicalDecl(TND)
+    ccall((:clang_TypedefNameDecl_getCanonicalDecl, libclangex), CXTypedefNameDecl, (CXTypedefNameDecl,), TND)
+end
+
+function clang_TypedefNameDecl_getAnonDeclWithTypedefName(TND, AnyRedecl)
+    ccall((:clang_TypedefNameDecl_getAnonDeclWithTypedefName, libclangex), CXTagDecl, (CXTypedefNameDecl, Bool), TND, AnyRedecl)
+end
+
+function clang_TypedefNameDecl_isTransparentTag(TND)
+    ccall((:clang_TypedefNameDecl_isTransparentTag, libclangex), Bool, (CXTypedefNameDecl,), TND)
 end
 
 function clang_TagDecl_getCanonicalDecl(TD)
@@ -616,6 +648,10 @@ end
 
 function clang_TagDecl_hasNameForLinkage(TD)
     ccall((:clang_TagDecl_hasNameForLinkage, libclangex), Bool, (CXTagDecl,), TD)
+end
+
+function clang_TagDecl_getTypedefNameForAnonDecl(TD)
+    ccall((:clang_TagDecl_getTypedefNameForAnonDecl, libclangex), CXTypedefNameDecl, (CXTagDecl,), TD)
 end
 
 function clang_TagDecl_getQualifier(TD)

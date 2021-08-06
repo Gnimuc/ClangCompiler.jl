@@ -212,6 +212,35 @@ function get_most_recent_decl(x::AbstractNamedDecl)
 end
 
 """
+    abstract type AbstractValueDecl <: AbstractNamedDecl
+Supertype for `ValueDecl`s.
+"""
+abstract type AbstractValueDecl <: AbstractNamedDecl end
+
+"""
+    struct ValueDecl <: AbstractValueDecl
+Holds a pointer to a `clang::ValueDecl` object.
+"""
+struct ValueDecl <: AbstractValueDecl
+    ptr::CXValueDecl
+end
+
+function get_type(x::AbstractValueDecl)
+    @assert x.ptr != C_NULL "ValueDecl has a NULL pointer."
+    return QualType(clang_ValueDecl_getType(x.ptr))
+end
+
+function set_type(x::AbstractValueDecl, ty::QualType)
+    @assert x.ptr != C_NULL "ValueDecl has a NULL pointer."
+    return clang_ValueDecl_getType(x.ptr, ty.ptr)
+end
+
+function is_weak(x::AbstractValueDecl)
+    @assert x.ptr != C_NULL "ValueDecl has a NULL pointer."
+    return clang_ValueDecl_isWeak(x.ptr)
+end
+
+"""
     abstract type AbstractTagDecl <: AbstractNamedDecl
 Supertype for `TypeDecl`s.
 """
@@ -243,6 +272,40 @@ end
 function set_loc_start(x::AbstractTypeDecl, loc::SourceLocation)
     @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
     return clang_TypeDecl_setLocStart(x.ptr, loc.ptr)
+end
+
+"""
+    abstract type AbstractTypedefNameDecl <: AbstractTypeDecl
+Supertype for `TypedefNameDecl`s.
+"""
+abstract type AbstractTypedefNameDecl <: AbstractTypeDecl end
+
+"""
+    struct TypedefNameDecl <: AbstractTypedefNameDecl
+Holds a pointer to a `clang::TypedefNameDecl` object.
+"""
+struct TypedefNameDecl <: AbstractTypedefNameDecl
+    ptr::CXTypedefNameDecl
+end
+
+function get_underlying_type(x::AbstractTypedefNameDecl)
+    @assert x.ptr != C_NULL "TypedefNameDecl has a NULL pointer."
+    return QualType(clang_TypedefNameDecl_getUnderlyingType(x.ptr))
+end
+
+function get_canonical_decl(x::AbstractTypedefNameDecl)
+    @assert x.ptr != C_NULL "TypedefNameDecl has a NULL pointer."
+    return TypedefNameDecl(clang_TypedefNameDecl_getCanonicalDecl(x.ptr))
+end
+
+function get_anonymous_decl_with_typedef_name(x::AbstractTypedefNameDecl, any_redecl::Bool=false)
+    @assert x.ptr != C_NULL "TypedefNameDecl has a NULL pointer."
+    return TagDecl(clang_TypedefNameDecl_getAnonDeclWithTypedefName(x.ptr, any_redecl))
+end
+
+function is_transparent_tag(x::AbstractTypedefNameDecl, any_redecl::Bool=false)
+    @assert x.ptr != C_NULL "TypedefNameDecl has a NULL pointer."
+    return clang_TypedefNameDecl_isTransparentTag(x.ptr)
 end
 
 """
@@ -332,6 +395,11 @@ end
 function has_name_for_linkage(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
     return clang_TagDecl_hasNameForLinkage(x.ptr)
+end
+
+function get_typedef_name_for_anonymous_decl(x::AbstractTagDecl)
+    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
+    return TypedefNameDecl(clang_TagDecl_getTypedefNameForAnonDecl(x.ptr))
 end
 
 function get_qualifier(x::AbstractTagDecl)
