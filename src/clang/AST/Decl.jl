@@ -22,6 +22,96 @@ function get_location(x::AbstractDecl)
     return SourceLocation(clang_Decl_getLocation(x.ptr))
 end
 
+function get_begin_loc(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return SourceLocation(clang_Decl_getBeginLoc(x.ptr))
+end
+
+function get_end_loc(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return SourceLocation(clang_Decl_getEndLoc(x.ptr))
+end
+
+function get_decl_kind_name(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return unsafe_string(clang_Decl_getDeclKindName(x.ptr))
+end
+
+function get_next_decl_in_context(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return Decl(clang_Decl_getNextDeclInContext(x.ptr))
+end
+
+function get_decl_context(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return DeclContext(clang_Decl_getDeclContext(x.ptr))
+end
+
+function get_non_closure_context(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return Decl(clang_Decl_getNonClosureContext(x.ptr))
+end
+
+function is_in_anonymous_namespace(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_Decl_isInAnonymousNamespace(x.ptr)
+end
+
+function is_in_std_namespace(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_Decl_isInStdNamespace(x.ptr)
+end
+
+function get_lang_options(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return LangOptions(clang_Decl_getLangOpts(x.ptr))
+end
+
+function get_lexical_decl_context(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return DeclContext(clang_Decl_getLexicalDeclContext(x.ptr))
+end
+
+function is_templated(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_Decl_isTemplated(x.ptr)
+end
+
+function is_canonical(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_Decl_isCanonicalDecl(x.ptr)
+end
+
+function get_previous_decl(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return Decl(clang_Decl_getPreviousDecl(x.ptr))
+end
+
+function is_first_decl(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_Decl_isFirstDecl(x.ptr)
+end
+
+function get_most_recent_decl(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return Decl(clang_Decl_getMostRecentDecl(x.ptr))
+end
+
+function is_template_parameter(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_Decl_isTemplateParameter(x.ptr)
+end
+
+function is_template_decl(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_Decl_isTemplateDecl(x.ptr)
+end
+
+function get_described_template(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return TemplateDecl(clang_Decl_getDescribedTemplate(x.ptr))
+end
+
 """
     abstract type AbstractNamedDecl <: AbstractDecl
 Supertype for `NamedDecl`s.

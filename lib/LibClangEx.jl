@@ -78,11 +78,15 @@ const CXDeclGroupRef = Ptr{Cvoid}
 
 const CXDecl = Ptr{Cvoid}
 
+const CXDeclContext = Ptr{Cvoid}
+
 const CXNamedDecl = Ptr{Cvoid}
 
 const CXTypeDecl = Ptr{Cvoid}
 
 const CXTagDecl = Ptr{Cvoid}
+
+const CXTemplateDecl = Ptr{Cvoid}
 
 const CXTemplateParameterList = Ptr{Cvoid}
 
@@ -282,6 +286,90 @@ function clang_Decl_getLocation(DC)
     ccall((:clang_Decl_getLocation, libclangex), CXSourceLocation_, (CXDecl,), DC)
 end
 
+function clang_Decl_getBeginLoc(DC)
+    ccall((:clang_Decl_getBeginLoc, libclangex), CXSourceLocation_, (CXDecl,), DC)
+end
+
+function clang_Decl_getEndLoc(DC)
+    ccall((:clang_Decl_getEndLoc, libclangex), CXSourceLocation_, (CXDecl,), DC)
+end
+
+function clang_Decl_getDeclKindName(DC)
+    ccall((:clang_Decl_getDeclKindName, libclangex), Ptr{Cchar}, (CXDecl,), DC)
+end
+
+function clang_Decl_getNextDeclInContext(DC)
+    ccall((:clang_Decl_getNextDeclInContext, libclangex), CXDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_getDeclContext(DC)
+    ccall((:clang_Decl_getDeclContext, libclangex), CXDeclContext, (CXDecl,), DC)
+end
+
+function clang_Decl_getNonClosureContext(DC)
+    ccall((:clang_Decl_getNonClosureContext, libclangex), CXDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_getTranslationUnitDecl(DC)
+    ccall((:clang_Decl_getTranslationUnitDecl, libclangex), CXTranslationUnitDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_isInAnonymousNamespace(DC)
+    ccall((:clang_Decl_isInAnonymousNamespace, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_isInStdNamespace(DC)
+    ccall((:clang_Decl_isInStdNamespace, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_getASTContext(DC)
+    ccall((:clang_Decl_getASTContext, libclangex), CXASTContext, (CXDecl,), DC)
+end
+
+function clang_Decl_getLangOpts(DC)
+    ccall((:clang_Decl_getLangOpts, libclangex), CXLangOptions, (CXDecl,), DC)
+end
+
+function clang_Decl_getLexicalDeclContext(DC)
+    ccall((:clang_Decl_getLexicalDeclContext, libclangex), CXDeclContext, (CXDecl,), DC)
+end
+
+function clang_Decl_isTemplated(DC)
+    ccall((:clang_Decl_isTemplated, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_isCanonicalDecl(DC)
+    ccall((:clang_Decl_isCanonicalDecl, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_getPreviousDecl(DC)
+    ccall((:clang_Decl_getPreviousDecl, libclangex), CXDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_isFirstDecl(DC)
+    ccall((:clang_Decl_isFirstDecl, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_getMostRecentDecl(DC)
+    ccall((:clang_Decl_getMostRecentDecl, libclangex), CXDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_isTemplateParameter(DC)
+    ccall((:clang_Decl_isTemplateParameter, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_isTemplateDecl(DC)
+    ccall((:clang_Decl_isTemplateDecl, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_getDescribedTemplate(DC)
+    ccall((:clang_Decl_getDescribedTemplate, libclangex), CXTemplateDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_getDescribedTemplateParams(DC)
+    ccall((:clang_Decl_getDescribedTemplateParams, libclangex), CXTemplateParameterList, (CXDecl,), DC)
+end
+
 function clang_Decl_EnableStatistics()
     ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
 end
@@ -435,7 +523,15 @@ function clang_TagDecl_getTemplateParameterList(TD, i)
 end
 
 function clang_TemplateParameterList_getParam(TPL, Idx)
-    ccall((:clang_TemplateParameterList_getParam, libclangex), CXNamedDecl, (CXTagDecl, Cuint), TPL, Idx)
+    ccall((:clang_TemplateParameterList_getParam, libclangex), CXNamedDecl, (CXTemplateParameterList, Cuint), TPL, Idx)
+end
+
+function clang_TemplateParameterList_size(TPL)
+    ccall((:clang_TemplateParameterList_size, libclangex), Cuint, (CXTemplateParameterList,), TPL)
+end
+
+function clang_TemplateDecl_init(TD, ND, TP)
+    ccall((:clang_TemplateDecl_init, libclangex), Cvoid, (CXTemplateDecl, CXNamedDecl, CXTemplateParameterList), TD, ND, TP)
 end
 
 function clang_RecordDecl_getPreviousDecl(RD)
