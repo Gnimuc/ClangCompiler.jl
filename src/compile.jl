@@ -58,7 +58,7 @@ get_dylib(x::CxxCompiler) = JITDylib(x.jit)
 get_jit(x::CxxCompiler) = x.jit
 get_codegen(x::CxxCompiler) = x.irgen
 
-function link_process_symbols(cc::CxxCompiler)
+function link_process_symbols(cc::AbstractCompiler)
     jd = get_dylib(cc)
     jit = get_jit(cc)
     prefix = LLVM.get_prefix(jit)
@@ -82,6 +82,7 @@ end
     mutable struct IncrementalCompiler <: AbstractCompiler
 """
 mutable struct IncrementalCompiler <: AbstractCompiler
+    jit::LLJIT
     ts_ctx::ThreadSafeContext
     instance::CompilerInstance
     parser::Parser
@@ -89,6 +90,12 @@ mutable struct IncrementalCompiler <: AbstractCompiler
     current_module::Int
     src_counter::Int
 end
+
+get_modules(x::IncrementalCompiler) = x.modules
+get_current_module(x::IncrementalCompiler) = x.modules[x.current_module]
+get_context(x::IncrementalCompiler) = x.ts_ctx
+get_dylib(x::IncrementalCompiler) = JITDylib(x.jit)
+get_jit(x::IncrementalCompiler) = x.jit
 
 function create_incremental_compiler(src::String, args::Vector{String}; diag_show_colors=true)
     ts_ctx = ThreadSafeContext()
@@ -143,7 +150,26 @@ function create_incremental_compiler(src::String, args::Vector{String}; diag_sho
 
     m_next = start_llvm_module(codegen, context(m_cur), "JLCC_Incremental_2")
 
-    return IncrementalCompiler(ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
+    # compile
+    jit = LLJIT(;tm=JITTargetMachine())
+    jd = JITDylib(jit)
+    prefix = LLVM.get_prefix(jit)
+    dg = LLVM.CreateDynamicLibrarySearchGeneratorForProcess(prefix)
+    add!(jd, dg)
+
+    ts_mod = ThreadSafeModule(m_cur; ctx=ts_ctx)
+    add!(jit, jd, ts_mod)
+
+    return IncrementalCompiler(jit, ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
+end
+
+function incremental_parse end
+
+function incremental_compile(cc::IncrementalCompiler)
+    ts_mod = ThreadSafeModule(get_current_module(cc); ctx=get_context(cc))
+    jd = get_dylib(cc)
+    jit = get_jit(cc)
+    add!(jit, jd, ts_mod)
 end
 
 function dispose(x::IncrementalCompiler)
