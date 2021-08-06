@@ -64,3 +64,8 @@ function get_ast_context(x::AbstractDecl)
     @assert x.ptr != C_NULL "Decl has a NULL pointer."
     return ASTContext(clang_Decl_getASTContext(x.ptr))
 end
+
+function get_ast_context(x::DeclContext)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    return ASTContext(clang_DeclContext_getParentASTContext(x.ptr))
+end

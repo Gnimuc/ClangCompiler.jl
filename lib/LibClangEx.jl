@@ -282,6 +282,114 @@ function clang_DeclGroupRef_getSingleDecl(DG)
     ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
 end
 
+function clang_DeclContext_getDeclKindName(DC)
+    ccall((:clang_DeclContext_getDeclKindName, libclangex), Ptr{Cchar}, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getParent(DC)
+    ccall((:clang_DeclContext_getParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getLexicalParent(DC)
+    ccall((:clang_DeclContext_getLexicalParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getLookupParent(DC)
+    ccall((:clang_DeclContext_getLookupParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getParentASTContext(DC)
+    ccall((:clang_DeclContext_getParentASTContext, libclangex), CXASTContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isClosure(DC)
+    ccall((:clang_DeclContext_isClosure, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isFunctionOrMethod(DC)
+    ccall((:clang_DeclContext_isFunctionOrMethod, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isLookupContext(DC)
+    ccall((:clang_DeclContext_isLookupContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isFileContext(DC)
+    ccall((:clang_DeclContext_isFileContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isTranslationUnit(DC)
+    ccall((:clang_DeclContext_isTranslationUnit, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isRecord(DC)
+    ccall((:clang_DeclContext_isRecord, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isNamespace(DC)
+    ccall((:clang_DeclContext_isNamespace, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isStdNamespace(DC)
+    ccall((:clang_DeclContext_isStdNamespace, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isInlineNamespace(DC)
+    ccall((:clang_DeclContext_isInlineNamespace, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isDependentContext(DC)
+    ccall((:clang_DeclContext_isDependentContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isTransparentContext(DC)
+    ccall((:clang_DeclContext_isTransparentContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isExternCContext(DC)
+    ccall((:clang_DeclContext_isExternCContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isExternCXXContext(DC)
+    ccall((:clang_DeclContext_isExternCXXContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_Equals(DC, DC2)
+    ccall((:clang_DeclContext_Equals, libclangex), Bool, (CXDeclContext, CXDeclContext), DC, DC2)
+end
+
+function clang_DeclContext_getPrimaryContext(DC)
+    ccall((:clang_DeclContext_getPrimaryContext, libclangex), CXDeclContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_addDecl(DC, D)
+    ccall((:clang_DeclContext_addDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_addDeclInternal(DC, D)
+    ccall((:clang_DeclContext_addDeclInternal, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_addHiddenDecl(DC, D)
+    ccall((:clang_DeclContext_addHiddenDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_removeDecl(DC, D)
+    ccall((:clang_DeclContext_removeDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_containsDecl(DC, D)
+    ccall((:clang_DeclContext_containsDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_dumpDeclContext(DC)
+    ccall((:clang_DeclContext_dumpDeclContext, libclangex), Cvoid, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_dumpLookups(DC)
+    ccall((:clang_DeclContext_dumpLookups, libclangex), Cvoid, (CXDeclContext,), DC)
+end
+
 function clang_Decl_getLocation(DC)
     ccall((:clang_Decl_getLocation, libclangex), CXSourceLocation_, (CXDecl,), DC)
 end

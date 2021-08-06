@@ -112,6 +112,36 @@ function get_described_template(x::AbstractDecl)
     return TemplateDecl(clang_Decl_getDescribedTemplate(x.ptr))
 end
 
+function add_decl(x::DeclContext, decl::AbstractDecl)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    @assert decl.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_DeclContext_addDecl(x.ptr, decl.ptr)
+end
+
+function add_decl_internal(x::DeclContext, decl::AbstractDecl)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    @assert decl.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_DeclContext_addDeclInternal(x.ptr, decl.ptr)
+end
+
+function add_hidden_decl(x::DeclContext, decl::AbstractDecl)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    @assert decl.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_DeclContext_addHiddenDecl(x.ptr, decl.ptr)
+end
+
+function remove_decl(x::DeclContext, decl::AbstractDecl)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    @assert decl.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_DeclContext_removeDecl(x.ptr, decl.ptr)
+end
+
+function contains_decl(x::DeclContext, decl::AbstractDecl)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    @assert decl.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_DeclContext_containsDecl(x.ptr, decl.ptr)
+end
+
 """
     abstract type AbstractNamedDecl <: AbstractDecl
 Supertype for `NamedDecl`s.
