@@ -114,15 +114,10 @@ function is_definition(x::AbstractRedeclarableTemplateDecl)
     return clang_ClassTemplateDecl_isThisDeclarationADefinition(x.ptr)
 end
 
-function find_specialization(x::AbstractRedeclarableTemplateDecl, args::TemplateArgumentList, insert_pos=C_NULL)
+function find_specialization(x::AbstractRedeclarableTemplateDecl, list::TemplateArgumentList, insert_pos=C_NULL)
     @assert x.ptr != C_NULL "RedeclarableTemplateDecl has a NULL pointer."
-    @assert args.ptr != C_NULL "TemplateArgumentList has a NULL pointer."
-    return clang_ClassTemplateDecl_findSpecialization(x.ptr, data(args), size(args), insert_pos)
-end
-
-function find_specialization(x::AbstractRedeclarableTemplateDecl, ctsd::ClassTemplateSpecializationDecl, insert_pos=C_NULL)
-    @assert x.ptr != C_NULL "RedeclarableTemplateDecl has a NULL pointer."
-    return clang_ClassTemplateDecl_AddSpecialization(x.ptr, ctsd.ptr, insert_pos)
+    @assert list.ptr != C_NULL "TemplateArgumentList has a NULL pointer."
+    return clang_ClassTemplateDecl_findSpecialization(x.ptr, list.ptr, insert_pos)
 end
 
 """
@@ -153,4 +148,18 @@ function set_template_args(x::AbstractClassTemplateDecl, list::TemplateArgumentL
     @assert x.ptr != C_NULL "ClassTemplateDecl has a NULL pointer."
     @assert list.ptr != C_NULL "TemplateArgumentList has a NULL pointer."
     return clang_ClassTemplateSpecializationDecl_setTemplateArgs(x.ptr, list.ptr)
+end
+
+"""
+    struct ClassTemplateSpecializationDecl <: AbstractCXXRecordDecl
+Holds a pointer to a `clang::ClassTemplateSpecializationDecl` object.
+"""
+struct ClassTemplateSpecializationDecl <: AbstractCXXRecordDecl
+    ptr::CXClassTemplateSpecializationDecl
+end
+
+function add_specialization(x::AbstractRedeclarableTemplateDecl, ctsd::ClassTemplateSpecializationDecl, insert_pos=C_NULL)
+    @assert x.ptr != C_NULL "RedeclarableTemplateDecl has a NULL pointer."
+    @assert ctsd.ptr != C_NULL "ClassTemplateSpecializationDecl has a NULL pointer."
+    return clang_ClassTemplateDecl_AddSpecialization(x.ptr, ctsd.ptr, insert_pos)
 end

@@ -69,3 +69,17 @@ function get_ast_context(x::DeclContext)
     @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
     return ASTContext(clang_DeclContext_getParentASTContext(x.ptr))
 end
+
+function TemplateArgument(ctx::ASTContext, v::GenericValue, ty::QualType)
+    @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
+    return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx.ptr), v.ref, ty.ptr)
+end
+
+function TemplateArgumentList(ctx::ASTContext, args::Vector{CXTemplateArgument})
+    @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
+    return TemplateArgumentList(clang_TemplateArgumentList_CreateCopy(ctx.ptr, args, length(args)))
+end
+
+function TemplateArgumentList(ctx::ASTContext, args::Vector{TemplateArgument})
+    return TemplateArgumentList(ctx, [arg.ptr for arg in args])
+end

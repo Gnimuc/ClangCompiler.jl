@@ -3,7 +3,7 @@ module LibClangEx
 using ..ClangCompiler: libclangex
 using LLVM.API: LLVMModuleRef, LLVMOpaqueModule
 using LLVM.API: LLVMOpaqueContext, LLVMContextRef
-using LLVM.API: LLVMMemoryBufferRef
+using LLVM.API: LLVMMemoryBufferRef, LLVMGenericValueRef
 
 const time_t = Clong
 
@@ -694,6 +694,10 @@ function clang_TemplateParameterList_size(TPL)
     ccall((:clang_TemplateParameterList_size, libclangex), Cuint, (CXTemplateParameterList,), TPL)
 end
 
+function clang_TemplateArgumentList_CreateCopy(Context, Args, ArgNum)
+    ccall((:clang_TemplateArgumentList_CreateCopy, libclangex), CXTemplateArgumentList, (CXASTContext, CXTemplateArgument, Csize_t), Context, Args, ArgNum)
+end
+
 function clang_TemplateArgumentList_size(TAL)
     ccall((:clang_TemplateArgumentList_size, libclangex), Cuint, (CXTemplateArgumentList,), TAL)
 end
@@ -704,6 +708,70 @@ end
 
 function clang_TemplateArgumentList_get(TAL, Idx)
     ccall((:clang_TemplateArgumentList_get, libclangex), CXTemplateArgument, (CXTemplateArgumentList, Cuint), TAL, Idx)
+end
+
+function clang_TemplateArgument_constructFromQualType(OpaquePtr, isNullPtr)
+    ccall((:clang_TemplateArgument_constructFromQualType, libclangex), CXTemplateArgument, (CXQualType, Bool), OpaquePtr, isNullPtr)
+end
+
+function clang_TemplateArgument_constructFromValueDecl(VD, OpaquePtr)
+    ccall((:clang_TemplateArgument_constructFromValueDecl, libclangex), CXTemplateArgument, (CXValueDecl, CXQualType), VD, OpaquePtr)
+end
+
+function clang_TemplateArgument_constructFromIntegral(Ctx, Val, OpaquePtr)
+    ccall((:clang_TemplateArgument_constructFromIntegral, libclangex), CXTemplateArgument, (CXASTContext, LLVMGenericValueRef, CXQualType), Ctx, Val, OpaquePtr)
+end
+
+function clang_TemplateArgument_dispose(TA)
+    ccall((:clang_TemplateArgument_dispose, libclangex), Cvoid, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_isNull(TA)
+    ccall((:clang_TemplateArgument_isNull, libclangex), Bool, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_isDependent(TA)
+    ccall((:clang_TemplateArgument_isDependent, libclangex), Bool, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_isInstantiationDependent(TA)
+    ccall((:clang_TemplateArgument_isInstantiationDependent, libclangex), Bool, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsType(TA)
+    ccall((:clang_TemplateArgument_getAsType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsDecl(TA)
+    ccall((:clang_TemplateArgument_getAsDecl, libclangex), CXValueDecl, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getParamTypeForDecl(TA)
+    ccall((:clang_TemplateArgument_getParamTypeForDecl, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getNullPtrType(TA)
+    ccall((:clang_TemplateArgument_getNullPtrType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsIntegral(TA)
+    ccall((:clang_TemplateArgument_getAsIntegral, libclangex), LLVMGenericValueRef, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getIntegralType(TA)
+    ccall((:clang_TemplateArgument_getIntegralType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_setIntegralType(TA, OpaquePtr)
+    ccall((:clang_TemplateArgument_setIntegralType, libclangex), Cvoid, (CXTemplateArgument, CXQualType), TA, OpaquePtr)
+end
+
+function clang_TemplateArgument_getNonTypeTemplateArgumentType(TA)
+    ccall((:clang_TemplateArgument_getNonTypeTemplateArgumentType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_dump(TA)
+    ccall((:clang_TemplateArgument_dump, libclangex), Cvoid, (CXTemplateArgument,), TA)
 end
 
 function clang_TemplateDecl_init(TD, ND, TP)
@@ -730,8 +798,8 @@ function clang_ClassTemplateDecl_isThisDeclarationADefinition(CTD)
     ccall((:clang_ClassTemplateDecl_isThisDeclarationADefinition, libclangex), Bool, (CXClassTemplateDecl,), CTD)
 end
 
-function clang_ClassTemplateDecl_findSpecialization(CTD, Args, ArgNum, InsertPos)
-    ccall((:clang_ClassTemplateDecl_findSpecialization, libclangex), CXClassTemplateSpecializationDecl, (CXClassTemplateDecl, CXTemplateArgument, Csize_t, Ptr{Cvoid}), CTD, Args, ArgNum, InsertPos)
+function clang_ClassTemplateDecl_findSpecialization(CTD, TAL, InsertPos)
+    ccall((:clang_ClassTemplateDecl_findSpecialization, libclangex), CXClassTemplateSpecializationDecl, (CXClassTemplateDecl, CXTemplateArgumentList, Ptr{Cvoid}), CTD, TAL, InsertPos)
 end
 
 function clang_ClassTemplateDecl_AddSpecialization(CTD, CTSD, InsertPos)

@@ -5,7 +5,7 @@ Supertype for `CXXRecordDecl`s.
 abstract type AbstractCXXRecordDecl <: AbstractRecordDecl end
 
 """
-    struct RecordDecl <: AbstractCXXRecordDecl
+    struct CXXRecordDecl <: AbstractCXXRecordDecl
 Holds a pointer to a `clang::CXXRecordDecl` object.
 """
 struct CXXRecordDecl <: AbstractCXXRecordDecl

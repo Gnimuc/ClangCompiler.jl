@@ -240,6 +240,16 @@ function is_weak(x::AbstractValueDecl)
     return clang_ValueDecl_isWeak(x.ptr)
 end
 
+function TemplateArgument(decl::ValueDecl, ty::QualType)
+    @assert decl.ptr != C_NULL "ValueDecl has a NULL pointer."
+    return TemplateArgument(clang_TemplateArgument_constructFromValueDecl(decl.ptr, ty.ptr))
+end
+
+function get_as_decl(x::TemplateArgument)
+    @assert x.ptr != C_NULL "TemplateArgument has a NULL pointer."
+    return ValueDecl(clang_TemplateArgument_getAsDecl(x.ptr))
+end
+
 """
     abstract type AbstractTagDecl <: AbstractNamedDecl
 Supertype for `TypeDecl`s.
