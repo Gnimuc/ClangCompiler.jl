@@ -92,11 +92,19 @@ const CXTagDecl = Ptr{Cvoid}
 
 const CXTemplateDecl = Ptr{Cvoid}
 
+const CXRedeclarableTemplateDecl = Ptr{Cvoid}
+
+const CXClassTemplateDecl = Ptr{Cvoid}
+
 const CXTemplateParameterList = Ptr{Cvoid}
+
+const CXTemplateArgumentList = Ptr{Cvoid}
 
 const CXRecordDecl = Ptr{Cvoid}
 
 const CXCXXRecordDecl = Ptr{Cvoid}
+
+const CXClassTemplateSpecializationDecl = Ptr{Cvoid}
 
 const CXNestedNameSpecifier = Ptr{Cvoid}
 
@@ -107,6 +115,18 @@ const CXIdentifierTable = Ptr{Cvoid}
 const CXIdentifierInfo = Ptr{Cvoid}
 
 const CXDeclarationName = Ptr{Cvoid}
+
+const CXTemplateName = Ptr{Cvoid}
+
+const CXTemplateArgument = Ptr{Cvoid}
+
+@enum CXTagTypeKind::UInt32 begin
+    CXTagTypeKind_TTK_Struct = 0
+    CXTagTypeKind_TTK_Interface = 1
+    CXTagTypeKind_TTK_Union = 2
+    CXTagTypeKind_TTK_Class = 3
+    CXTagTypeKind_TTK_Enum = 4
+end
 
 const CXCodeGenerator = Ptr{Cvoid}
 
@@ -674,8 +694,52 @@ function clang_TemplateParameterList_size(TPL)
     ccall((:clang_TemplateParameterList_size, libclangex), Cuint, (CXTemplateParameterList,), TPL)
 end
 
+function clang_TemplateArgumentList_size(TAL)
+    ccall((:clang_TemplateArgumentList_size, libclangex), Cuint, (CXTemplateArgumentList,), TAL)
+end
+
+function clang_TemplateArgumentList_data(TAL)
+    ccall((:clang_TemplateArgumentList_data, libclangex), CXTemplateArgument, (CXTemplateArgumentList,), TAL)
+end
+
+function clang_TemplateArgumentList_get(TAL, Idx)
+    ccall((:clang_TemplateArgumentList_get, libclangex), CXTemplateArgument, (CXTemplateArgumentList, Cuint), TAL, Idx)
+end
+
 function clang_TemplateDecl_init(TD, ND, TP)
     ccall((:clang_TemplateDecl_init, libclangex), Cvoid, (CXTemplateDecl, CXNamedDecl, CXTemplateParameterList), TD, ND, TP)
+end
+
+function clang_RedeclarableTemplateDecl_getCanonicalDecl(RTD)
+    ccall((:clang_RedeclarableTemplateDecl_getCanonicalDecl, libclangex), CXRedeclarableTemplateDecl, (CXRedeclarableTemplateDecl,), RTD)
+end
+
+function clang_RedeclarableTemplateDecl_isMemberSpecialization(RTD)
+    ccall((:clang_RedeclarableTemplateDecl_isMemberSpecialization, libclangex), Bool, (CXRedeclarableTemplateDecl,), RTD)
+end
+
+function clang_RedeclarableTemplateDecl_setMemberSpecialization(RTD)
+    ccall((:clang_RedeclarableTemplateDecl_setMemberSpecialization, libclangex), Cvoid, (CXRedeclarableTemplateDecl,), RTD)
+end
+
+function clang_ClassTemplateDecl_getTemplatedDecl(CTD)
+    ccall((:clang_ClassTemplateDecl_getTemplatedDecl, libclangex), CXCXXRecordDecl, (CXClassTemplateDecl,), CTD)
+end
+
+function clang_ClassTemplateDecl_isThisDeclarationADefinition(CTD)
+    ccall((:clang_ClassTemplateDecl_isThisDeclarationADefinition, libclangex), Bool, (CXClassTemplateDecl,), CTD)
+end
+
+function clang_ClassTemplateDecl_findSpecialization(CTD, Args, ArgNum, InsertPos)
+    ccall((:clang_ClassTemplateDecl_findSpecialization, libclangex), CXClassTemplateSpecializationDecl, (CXClassTemplateDecl, CXTemplateArgument, Csize_t, Ptr{Cvoid}), CTD, Args, ArgNum, InsertPos)
+end
+
+function clang_ClassTemplateDecl_AddSpecialization(CTD, CTSD, InsertPos)
+    ccall((:clang_ClassTemplateDecl_AddSpecialization, libclangex), Cvoid, (CXClassTemplateDecl, CXClassTemplateSpecializationDecl, Ptr{Cvoid}), CTD, CTSD, InsertPos)
+end
+
+function clang_ClassTemplateDecl_getCanonicalDecl(CTD)
+    ccall((:clang_ClassTemplateDecl_getCanonicalDecl, libclangex), CXClassTemplateDecl, (CXClassTemplateDecl,), CTD)
 end
 
 function clang_RecordDecl_getPreviousDecl(RD)
@@ -764,6 +828,14 @@ end
 
 function clang_CXXRecordDecl_isEmpty(CXXRD)
     ccall((:clang_CXXRecordDecl_isEmpty, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_ClassTemplateSpecializationDecl_getTemplateArgs(CTSD)
+    ccall((:clang_ClassTemplateSpecializationDecl_getTemplateArgs, libclangex), CXTemplateArgumentList, (CXClassTemplateSpecializationDecl,), CTSD)
+end
+
+function clang_ClassTemplateSpecializationDecl_setTemplateArgs(CTSD, TAL)
+    ccall((:clang_ClassTemplateSpecializationDecl_setTemplateArgs, libclangex), Cvoid, (CXClassTemplateSpecializationDecl, CXTemplateArgumentList), CTSD, TAL)
 end
 
 function clang_ASTContext_VoidTy_getTypePtrOrNull(Ctx)
