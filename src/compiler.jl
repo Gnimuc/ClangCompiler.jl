@@ -62,10 +62,10 @@ struct CxxCompiler <: AbstractCompiler
 end
 
 get_instance(x::CxxCompiler) = get_instance(irgen)
-get_module(x::CxxCompiler) = get_module(x.irgen)
 get_context(x::CxxCompiler) = get_context(x.irgen)
-get_dylib(x::CxxCompiler) = JITDylib(x.jit)
+get_module(x::CxxCompiler) = get_module(x.irgen)
 get_jit(x::CxxCompiler) = x.jit
+get_dylib(x::CxxCompiler) = JITDylib(x.jit)
 get_codegen(x::CxxCompiler) = x.irgen
 
 function link_process_symbols(cc::CxxCompiler)
@@ -103,7 +103,6 @@ end
 
 get_modules(x::IncrementalIRGenerator) = x.modules
 get_current_module(x::IncrementalIRGenerator) = x.modules[x.current_module]
-get_context(x::IncrementalIRGenerator) = x.ts_ctx
 
 function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     ts_ctx = ThreadSafeContext()
