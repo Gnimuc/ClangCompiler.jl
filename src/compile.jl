@@ -5,16 +5,28 @@ Supertype for Clang compilers.
 abstract type AbstractCompiler end
 
 """
-    struct IRGenerator <: Any
+    abstract type AbstractIRGenerator <: AbstractCompiler
+Supertype for LLVM IR generators.
+"""
+abstract type AbstractIRGenerator <: AbstractCompiler end
+
+# interface
+get_instance(x::AbstractIRGenerator) = x.instance
+get_context(x::AbstractIRGenerator) = x.ts_ctx
+
+"""
+    struct IRGenerator <: AbstractIRGenerator
 LLVM IR Generator via Clang's `LLVMOnlyAction`.
 """
-struct IRGenerator
+struct IRGenerator <: AbstractIRGenerator
     ts_ctx::ThreadSafeContext
     instance::CompilerInstance
     act::LLVMOnlyAction
 end
 
-function generate_llvmir(src::String, args::Vector{String}; diag_show_colors=true)
+get_module(x::IRGenerator) = take_module(x.act)
+
+function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     ts_ctx = ThreadSafeContext()
     ctx = context(ts_ctx)
     instance = CompilerInstance()
@@ -34,9 +46,6 @@ function generate_llvmir(src::String, args::Vector{String}; diag_show_colors=tru
     return IRGenerator(ts_ctx, instance, act)
 end
 
-get_module(x::IRGenerator) = take_module(x.act)
-get_context(x::IRGenerator) = x.ts_ctx
-
 function dispose(x::IRGenerator)
     dispose(x.instance)
     dispose(x.act)
@@ -52,13 +61,14 @@ struct CxxCompiler <: AbstractCompiler
     jit::LLJIT
 end
 
+get_instance(x::CxxCompiler) = get_instance(irgen)
 get_module(x::CxxCompiler) = get_module(x.irgen)
 get_context(x::CxxCompiler) = get_context(x.irgen)
 get_dylib(x::CxxCompiler) = JITDylib(x.jit)
 get_jit(x::CxxCompiler) = x.jit
 get_codegen(x::CxxCompiler) = x.irgen
 
-function link_process_symbols(cc::AbstractCompiler)
+function link_process_symbols(cc::CxxCompiler)
     jd = get_dylib(cc)
     jit = get_jit(cc)
     prefix = LLVM.get_prefix(jit)
@@ -79,10 +89,10 @@ function dispose(x::CxxCompiler)
 end
 
 """
-    mutable struct IncrementalCompiler <: AbstractCompiler
+    mutable struct IncrementalIRGenerator <: Any
+Incremental LLVM IR Generator.
 """
-mutable struct IncrementalCompiler <: AbstractCompiler
-    jit::LLJIT
+mutable struct IncrementalIRGenerator
     ts_ctx::ThreadSafeContext
     instance::CompilerInstance
     parser::Parser
@@ -91,13 +101,11 @@ mutable struct IncrementalCompiler <: AbstractCompiler
     src_counter::Int
 end
 
-get_modules(x::IncrementalCompiler) = x.modules
-get_current_module(x::IncrementalCompiler) = x.modules[x.current_module]
-get_context(x::IncrementalCompiler) = x.ts_ctx
-get_dylib(x::IncrementalCompiler) = JITDylib(x.jit)
-get_jit(x::IncrementalCompiler) = x.jit
+get_modules(x::IncrementalIRGenerator) = x.modules
+get_current_module(x::IncrementalIRGenerator) = x.modules[x.current_module]
+get_context(x::IncrementalIRGenerator) = x.ts_ctx
 
-function create_incremental_compiler(src::String, args::Vector{String}; diag_show_colors=true)
+function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     ts_ctx = ThreadSafeContext()
     ctx = context(ts_ctx)
     instance = CompilerInstance()
@@ -127,14 +135,12 @@ function create_incremental_compiler(src::String, args::Vector{String}; diag_sho
     enable_incremental(preprocessor)
     sema = get_sema(instance)
     parser = Parser(preprocessor, sema)
-    # parse
     begin_diag(instance)
     try
         initialize_builtins(preprocessor)
         enter_main_file(preprocessor)
         initialize(parser)
 
-        sema = get_sema(instance)
         ast_ctx = get_ast_context(instance)
 
         if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
@@ -144,35 +150,20 @@ function create_incremental_compiler(src::String, args::Vector{String}; diag_sho
     finally
         end_diag(instance)
     end
+
     # generate llvm modules
     m_cur = release_llvm_module(codegen)
     m_cur.ref == C_NULL && error("failed to generate IR.")
 
     m_next = start_llvm_module(codegen, context(m_cur), "JLCC_Incremental_2")
 
-    # compile
-    jit = LLJIT(;tm=JITTargetMachine())
-    jd = JITDylib(jit)
-    prefix = LLVM.get_prefix(jit)
-    dg = LLVM.CreateDynamicLibrarySearchGeneratorForProcess(prefix)
-    add!(jd, dg)
-
-    ts_mod = ThreadSafeModule(m_cur; ctx=ts_ctx)
-    add!(jit, jd, ts_mod)
-
-    return IncrementalCompiler(jit, ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
+    return IncrementalCompiler(ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
 end
 
 function incremental_parse end
 
-function incremental_compile(cc::IncrementalCompiler)
-    ts_mod = ThreadSafeModule(get_current_module(cc); ctx=get_context(cc))
-    jd = get_dylib(cc)
-    jit = get_jit(cc)
-    add!(jit, jd, ts_mod)
-end
 
-function dispose(x::IncrementalCompiler)
+function dispose(x::IncrementalIRGenerator)
     dispose(x.parser)
     dispose(x.instance)
     pop!(x.modules)  # we don't have the ownership of the latest module
@@ -180,7 +171,7 @@ function dispose(x::IncrementalCompiler)
     dispose(x.ts_ctx)
 end
 
-function parse_cxx_scope_spec(cc::IncrementalCompiler, str::String, spec::CXXScopeSpec)
+function parse_cxx_scope_spec(irgen::IncrementalIRGenerator, str::String, spec::CXXScopeSpec)
     ci = cc.instance
     p = cc.parser
     pp = get_preprocessor(p)

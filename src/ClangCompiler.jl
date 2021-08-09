@@ -79,10 +79,11 @@ include("lookup.jl")
 export DeclFinder, get_decl
 
 include("compile.jl")
+export AbstractCompiler
 export CxxCompiler
 export get_module, get_context, get_jit, get_codegen, get_dylib
 export compile, dispose
-export IRGenerator, generate_llvmir
+export IRGenerator, IRGenerator
 export link_process_symbols
 export IncrementalCompiler
 export create_incremental_compiler
@@ -114,7 +115,7 @@ function __init__()
     push!(args, "-I$boot_include_dir")
 
     jit = LLJIT(;tm=JITTargetMachine())
-    irgen = generate_llvmir(boot_src, args)
+    irgen = IRGenerator(boot_src, args)
     BOOT_COMPILER_REF[] = CxxCompiler(irgen, jit)
 
     link_process_symbols(BOOT_COMPILER_REF[])

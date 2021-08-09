@@ -30,7 +30,7 @@ args = get_compiler_args()
 jit = LLJIT(;tm=JITTargetMachine())
 
 # generate LLVM IR
-irgen = generate_llvmir(src, args)
+irgen = IRGenerator(src, args)
 
 # compile and link
 cc = CxxCompiler(irgen, jit)

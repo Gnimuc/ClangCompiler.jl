@@ -18,7 +18,7 @@ push!(args, "-I$julia_include_dir")
 
 # create JIT, generate LLVM IR, and call function
 jit = LLJIT(;tm=JITTargetMachine())
-irgen = generate_llvmir(src, args)
+irgen = IRGenerator(src, args)
 cc = CxxCompiler(irgen, jit)
 link_process_symbols(cc)
 compile(cc)

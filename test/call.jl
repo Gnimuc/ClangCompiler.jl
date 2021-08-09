@@ -5,7 +5,7 @@ using Test
     src = joinpath(@__DIR__, "code", "main.cpp")
     args = get_compiler_args()
     haskey(ENV, "CI") && push!(args, "-v")
-    irgen = generate_llvmir(src, args)
+    irgen = IRGenerator(src, args)
     f = lookup_function(get_module(irgen), "main")
     @eval main() = $(call_function(f, Cint))
     @test main() == 42

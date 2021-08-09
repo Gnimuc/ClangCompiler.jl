@@ -19,7 +19,7 @@ push!(args, "-std=c++14")
 Sys.isapple() && push!(args, "-stdlib=libc++")
 push!(args, "-I$llvm_include_dir")
 
-irgen = generate_llvmir(src, args)
+irgen = IRGenerator(src, args)
 
 m = get_module(irgen)
 
