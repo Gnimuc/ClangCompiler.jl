@@ -11,13 +11,6 @@ extern "C" {
 
 JL_DLLEXPORT void print_julia_version(void);
 
-CINDEX_LINKAGE bool
-clang_Parser_tryParseAndSkipInvalidOrParsedDecl(CXParser Parser,
-                                                CXCodeGenerator CodeGen);
-
-CINDEX_LINKAGE void
-clang_Sema_processWeakTopLevelDecls(CXSema Sema, CXCodeGenerator CodeGen);
-
 #ifdef __cplusplus
 }
 #endif

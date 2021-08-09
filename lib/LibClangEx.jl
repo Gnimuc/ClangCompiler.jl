@@ -1823,6 +1823,14 @@ function clang_SourceLocation_getLocWithOffset(Loc, Offset)
     ccall((:clang_SourceLocation_getLocWithOffset, libclangex), CXSourceLocation_, (CXSourceLocation_, Cint), Loc, Offset)
 end
 
+function clang_Parser_tryParseAndSkipInvalidOrParsedDecl(Parser, CodeGen)
+    ccall((:clang_Parser_tryParseAndSkipInvalidOrParsedDecl, libclangex), Bool, (CXParser, CXCodeGenerator), Parser, CodeGen)
+end
+
+function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)
+    ccall((:clang_Sema_processWeakTopLevelDecls, libclangex), Cvoid, (CXSema, CXCodeGenerator), Sema, CodeGen)
+end
+
 function clang_QualType_getTypePtr(OpaquePtr)
     ccall((:clang_QualType_getTypePtr, libclangex), CXType_, (CXQualType,), OpaquePtr)
 end
