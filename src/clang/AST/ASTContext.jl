@@ -83,3 +83,34 @@ end
 function TemplateArgumentList(ctx::ASTContext, args::Vector{TemplateArgument})
     return TemplateArgumentList(ctx, [arg.ptr for arg in args])
 end
+
+# cast
+function DeclContext(x::AbstractTagDecl)
+    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
+    return DeclContext(clang_TagDecl_castToDeclContext(x.ptr))
+end
+
+function TagDecl(x::DeclContext)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    return TagDecl(clang_DeclContext_castToTagDecl(x.ptr))
+end
+
+function RecordDecl(x::DeclContext)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    return RecordDecl(clang_DeclContext_castToRecordDecl(x.ptr))
+end
+
+function CXXRecordDecl(x::DeclContext)
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    return CXXRecordDecl(clang_DeclContext_castToCXXRecordDecl(x.ptr))
+end
+
+function ClassTemplateDecl(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return ClassTemplateDecl(clang_Decl_castToClassTemplateDecl(x.ptr))
+end
+
+function ValueDecl(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return ValueDecl(clang_Decl_castToValueDecl(x.ptr))
+end

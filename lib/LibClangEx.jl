@@ -306,6 +306,18 @@ function clang_DeclGroupRef_getSingleDecl(DG)
     ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
 end
 
+function clang_DeclContext_castToTagDecl(DC)
+    ccall((:clang_DeclContext_castToTagDecl, libclangex), CXTagDecl, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_castToRecordDecl(DC)
+    ccall((:clang_DeclContext_castToRecordDecl, libclangex), CXRecordDecl, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_castToCXXRecordDecl(DC)
+    ccall((:clang_DeclContext_castToCXXRecordDecl, libclangex), CXCXXRecordDecl, (CXDeclContext,), DC)
+end
+
 function clang_DeclContext_getDeclKindName(DC)
     ccall((:clang_DeclContext_getDeclKindName, libclangex), Ptr{Cchar}, (CXDeclContext,), DC)
 end
@@ -522,6 +534,14 @@ function clang_Decl_dumpColor(DC)
     ccall((:clang_Decl_dumpColor, libclangex), Cvoid, (CXDecl,), DC)
 end
 
+function clang_Decl_castToClassTemplateDecl(DC)
+    ccall((:clang_Decl_castToClassTemplateDecl, libclangex), CXClassTemplateDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_castToValueDecl(DC)
+    ccall((:clang_Decl_castToValueDecl, libclangex), CXValueDecl, (CXDecl,), DC)
+end
+
 function clang_NamedDecl_getIdentifier(ND)
     ccall((:clang_NamedDecl_getIdentifier, libclangex), CXIdentifierInfo, (CXNamedDecl,), ND)
 end
@@ -608,6 +628,10 @@ end
 
 function clang_TypedefNameDecl_isTransparentTag(TND)
     ccall((:clang_TypedefNameDecl_isTransparentTag, libclangex), Bool, (CXTypedefNameDecl,), TND)
+end
+
+function clang_TagDecl_castToDeclContext(TD)
+    ccall((:clang_TagDecl_castToDeclContext, libclangex), CXDeclContext, (CXTagDecl,), TD)
 end
 
 function clang_TagDecl_getCanonicalDecl(TD)

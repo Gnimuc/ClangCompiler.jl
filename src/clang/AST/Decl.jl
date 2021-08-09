@@ -161,10 +161,12 @@ function get_identifier(x::AbstractNamedDecl)
     return IdentifierInfo(clang_NamedDecl_getIdentifier(x.ptr))
 end
 
-function name(x::AbstractNamedDecl)
+function get_name(x::AbstractNamedDecl)
     @assert x.ptr != C_NULL "NamedDecl has a NULL pointer."
     return unsafe_string(clang_NamedDecl_getName(x.ptr))
 end
+
+name(x::AbstractNamedDecl) = get_name(x)
 
 function set_name(x::AbstractNamedDecl, name::DeclarationName)
     @assert x.ptr != C_NULL "NamedDecl has a NULL pointer."
