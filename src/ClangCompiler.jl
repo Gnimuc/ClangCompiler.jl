@@ -84,7 +84,7 @@ export DeclFinder, get_decl
 include("compiler.jl")
 export AbstractCompiler, AbstractIRGenerator
 export IRGenerator, IncrementalIRGenerator
-export CxxCompiler
+export CXCompiler
 export get_instance, get_context
 export get_module, get_jit, get_dylib, get_codegen
 export compile, dispose
@@ -100,7 +100,7 @@ include("utils.jl")
 export jlty2llvmty
 
 # boot
-const BOOT_COMPILER_REF = Ref{CxxCompiler}()
+const BOOT_COMPILER_REF = Ref{CXCompiler}()
 
 function __init__()
 @static if Base.get(ENV, "CLANGCOMPILER_ENABLE_BOOT", false)
@@ -120,7 +120,7 @@ function __init__()
 
     jit = LLJIT(;tm=JITTargetMachine())
     irgen = IRGenerator(boot_src, args)
-    BOOT_COMPILER_REF[] = CxxCompiler(irgen, jit)
+    BOOT_COMPILER_REF[] = CXCompiler(irgen, jit)
 
     link_process_symbols(BOOT_COMPILER_REF[])
     compile(BOOT_COMPILER_REF[])

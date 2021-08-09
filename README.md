@@ -33,7 +33,7 @@ jit = LLJIT(;tm=JITTargetMachine())
 irgen = IRGenerator(src, args)
 
 # compile and link
-cc = CxxCompiler(irgen, jit)
+cc = CXCompiler(irgen, jit)
 link_process_symbols(cc)
 compile(cc)
 

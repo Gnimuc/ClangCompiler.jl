@@ -53,22 +53,22 @@ function dispose(x::IRGenerator)
 end
 
 """
-    struct CxxCompiler <: AbstractCompiler
+    struct CXCompiler <: AbstractCompiler
 [`IRGenerator`](@ref) + [`LLJIT`](@ref).
 """
-struct CxxCompiler <: AbstractCompiler
+struct CXCompiler <: AbstractCompiler
     irgen::IRGenerator
     jit::LLJIT
 end
 
-get_instance(x::CxxCompiler) = get_instance(irgen)
-get_context(x::CxxCompiler) = get_context(x.irgen)
-get_module(x::CxxCompiler) = get_module(x.irgen)
-get_jit(x::CxxCompiler) = x.jit
-get_dylib(x::CxxCompiler) = JITDylib(x.jit)
-get_codegen(x::CxxCompiler) = x.irgen
+get_instance(x::CXCompiler) = get_instance(irgen)
+get_context(x::CXCompiler) = get_context(x.irgen)
+get_module(x::CXCompiler) = get_module(x.irgen)
+get_jit(x::CXCompiler) = x.jit
+get_dylib(x::CXCompiler) = JITDylib(x.jit)
+get_codegen(x::CXCompiler) = x.irgen
 
-function link_process_symbols(cc::CxxCompiler)
+function link_process_symbols(cc::CXCompiler)
     jd = get_dylib(cc)
     jit = get_jit(cc)
     prefix = LLVM.get_prefix(jit)
@@ -76,14 +76,14 @@ function link_process_symbols(cc::CxxCompiler)
     add!(jd, dg)
 end
 
-function compile(cc::CxxCompiler)
+function compile(cc::CXCompiler)
     ts_mod = ThreadSafeModule(get_module(cc); ctx=get_context(cc))
     jd = get_dylib(cc)
     jit = get_jit(cc)
     add!(jit, jd, ts_mod)
 end
 
-function dispose(x::CxxCompiler)
+function dispose(x::CXCompiler)
     dispose(x.irgen)
     dispose(x.jit)
 end
