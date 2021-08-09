@@ -70,3 +70,27 @@ function parse_cxx_scope_spec(p::Parser, spec::CXXScopeSpec)
     end
     return nothing
 end
+
+function parse_cxx_scope_spec(p::Parser, fid::FileID, spec::CXXScopeSpec)
+    pp = get_preprocessor(p)
+    enter_file(pp, fid)
+    try
+        parse_cxx_scope_spec(p, spec)
+    finally
+        end_file(pp)
+    end
+    return nothing
+end
+
+function parse_cxx_scope_spec(ci::CompilerInstance, p::Parser, str::String, spec::CXXScopeSpec)
+    src_mgr = get_source_manager(ci)
+    begin_diag(ci)
+    fid = FileID(src_mgr, get_buffer(str))
+    try
+        parse_cxx_scope_spec(p, fid, spec)
+    finally
+        dispose(fid)
+        end_diag(ci)
+    end
+    return nothing
+end

@@ -36,3 +36,11 @@ function get_decl(x::DeclFinder)
     is_empty(x.result) && error("no lookup result.")
     return get_representative_decl(x.result)
 end
+
+function (x::DeclFinder)(ci::CompilerInstance, parser::Parser, decl::String, scope::String="")
+    reset(x)
+    parse_cxx_scope_spec(ci, parser, scope, x.spec)
+    set_name(x.result, DeclarationName(get_name(get_ast_context(ci), decl)))
+    lookup_parsed_name(get_sema(ci), x.result, get_current_scope(parser), x.spec)
+    return !is_empty(x.result)
+end

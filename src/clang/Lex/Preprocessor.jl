@@ -1,8 +1,8 @@
 """
-    mutable struct Preprocessor <: Any
+    struct Preprocessor <: Any
 Holds a pointer to a `clang::Preprocessor` object.
 """
-mutable struct Preprocessor
+struct Preprocessor
     ptr::CXPreprocessor
 end
 

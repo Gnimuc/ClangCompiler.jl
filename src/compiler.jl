@@ -89,10 +89,10 @@ function dispose(x::CxxCompiler)
 end
 
 """
-    mutable struct IncrementalIRGenerator <: Any
+    mutable struct IncrementalIRGenerator <: AbstractIRGenerator
 Incremental LLVM IR Generator.
 """
-mutable struct IncrementalIRGenerator
+mutable struct IncrementalIRGenerator <: AbstractIRGenerator
     ts_ctx::ThreadSafeContext
     instance::CompilerInstance
     parser::Parser
@@ -101,6 +101,7 @@ mutable struct IncrementalIRGenerator
     src_counter::Int
 end
 
+get_parser(x::IncrementalIRGenerator) = x.parser
 get_modules(x::IncrementalIRGenerator) = x.modules
 get_current_module(x::IncrementalIRGenerator) = x.modules[x.current_module]
 
@@ -156,11 +157,40 @@ function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_col
 
     m_next = start_llvm_module(codegen, context(m_cur), "JLCC_Incremental_2")
 
-    return IncrementalCompiler(ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
+    return IncrementalIRGenerator(ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
 end
 
-function incremental_parse end
+function incremental_parse(irgen::IncrementalIRGenerator, code::String)
+    ci = get_instance(irgen)
+    parser = get_parser(irgen)
+    pp = get_preprocessor(ci)
+    src_mgr = get_source_manager(ci)
+    codegen = get_ast_consumer(ci)
+    buffer = get_buffer(code)
+    fid = FileID(src_mgr, buffer)
+    begin_diag(ci)
+    loc = get_loc_with_offset(get_loc_for_start_of_main_file(src_mgr), irgen.src_counter)
+    enter_file(pp, fid, loc)
+    try
+        if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
+            process_weak_toplevel_decls(get_sema(ci), codegen)
+            handle_translation_unit(codegen, get_ast_context(ci))
+        end
+    finally
+        dispose(fid)
+        end_file(pp)
+        end_diag(ci)
+        irgen.src_counter += 1
+    end
+    # generate llvm modules
+    m_cur = release_llvm_module(codegen)
+    m_cur.ref == C_NULL && error("failed to generate IR.")
+    irgen.current_module += 1
+    m_next = start_llvm_module(codegen, context(m_cur), "JLCC_Incremental_$(irgen.current_module)")
+    push!(irgen.modules, m_next)
 
+    return m_cur
+end
 
 function dispose(x::IncrementalIRGenerator)
     dispose(x.parser)
@@ -171,31 +201,13 @@ function dispose(x::IncrementalIRGenerator)
 end
 
 function parse_cxx_scope_spec(irgen::IncrementalIRGenerator, str::String, spec::CXXScopeSpec)
-    ci = cc.instance
-    p = cc.parser
-    pp = get_preprocessor(p)
-    src_mgr = get_source_manager(ci)
-    begin_diag(ci)
-    buffer = get_buffer(str)
-    fid = FileID(src_mgr, buffer)
-    loc = get_loc_with_offset(get_loc_for_start_of_main_file(src_mgr), cc.src_counter)
-    enter_file(pp, fid, loc)
-    try
-        parse_cxx_scope_spec(p, spec)
-    finally
-        dispose(fid)
-        end_file(pp)
-        end_diag(ci)
-        cc.src_counter += 1
-    end
-    return nothing
+    ci = get_instance(irgen)
+    parser = get_parser(irgen)
+    parse_cxx_scope_spec(ci, parser, str, spec)
 end
 
-function (x::DeclFinder)(cc::IncrementalCompiler, decl::String, scope::String="")
-    reset(x)
-    parse_cxx_scope_spec(cc, scope, x.spec)
-    set_name(x.result, DeclarationName(get_name(get_ast_context(cc.instance), decl)))
-    sema = get_sema(cc.instance)
-    lookup_parsed_name(sema, x.result, get_current_scope(cc.parser), x.spec)
-    return !is_empty(x.result)
+function (x::DeclFinder)(irgen::IncrementalIRGenerator, decl::String, scope::String="")
+    ci = get_instance(irgen)
+    parser = get_parser(irgen)
+    return x(ci, parser, decl, scope)
 end

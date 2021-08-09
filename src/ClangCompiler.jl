@@ -81,16 +81,16 @@ include("parse.jl")
 include("lookup.jl")
 export DeclFinder, get_decl
 
-include("compile.jl")
-export AbstractCompiler
+include("compiler.jl")
+export AbstractCompiler, AbstractIRGenerator
+export IRGenerator, IncrementalIRGenerator
 export CxxCompiler
-export get_module, get_context, get_jit, get_codegen, get_dylib
+export get_instance, get_context
+export get_module, get_jit, get_dylib, get_codegen
 export compile, dispose
-export IRGenerator, IRGenerator
 export link_process_symbols
-export IncrementalCompiler
-export create_incremental_compiler
-
+export get_modules, get_current_module
+export incremental_parse
 
 include("llvm.jl")
 export lookup_function, link, link_crt
