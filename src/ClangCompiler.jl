@@ -74,6 +74,9 @@ include("clang/CodeGen/ModuleBuilder.jl")
 include("clang/CodeGen/CodeGenAction.jl")
 
 # interface
+include("types.jl")
+export jlty_to_clty, clty_to_jlty
+
 include("parse.jl")
 include("lookup.jl")
 export DeclFinder, get_decl

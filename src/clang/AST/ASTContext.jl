@@ -54,11 +54,11 @@ Float128ComplexTy(ctx::ASTContext) = Float128ComplexTy(clang_ASTContext_Float128
 VoidPtrTy(ctx::ASTContext) = VoidPtrTy(clang_ASTContext_VoidPtrTy_getTypePtrOrNull(ctx.ptr))
 NullPtrTy(ctx::ASTContext) = NullPtrTy(clang_ASTContext_NullPtrTy_getTypePtrOrNull(ctx.ptr))  # C++11 nullptr
 
-function get_builtin_type(ctx::ASTContext, ::Type{T}) where {T<:AbstractBuiltinType}
+function get_builtin_type(::Type{T}, ctx::ASTContext) where {T<:AbstractBuiltinType}
     @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
     return T(ctx)
 end
-get_builtin_qualified_type(ctx::ASTContext, ty) = QualType(get_builtin_type(ctx, ty))
+get_builtin_qualified_type(ty, ctx::ASTContext) = QualType(get_builtin_type(ty, ctx))
 
 function get_ast_context(x::AbstractDecl)
     @assert x.ptr != C_NULL "Decl has a NULL pointer."
