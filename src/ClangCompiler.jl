@@ -103,6 +103,7 @@ export jlty2llvmty
 const BOOT_COMPILER_REF = Ref{CxxCompiler}()
 
 function __init__()
+@static if Base.get(ENV, "CLANGCOMPILER_ENABLE_BOOT", false)
     llvm_include_dir = joinpath(LLVM_full_jll.artifact_dir, "include") |> normpath
     @assert isdir(llvm_include_dir) "failed to find LLVM include dir."
 
@@ -123,8 +124,9 @@ function __init__()
 
     link_process_symbols(BOOT_COMPILER_REF[])
     compile(BOOT_COMPILER_REF[])
-end
 
-include("boot.jl")
+    include("boot.jl")
+end # @static
+end
 
 end
