@@ -18,6 +18,25 @@ end
 
 get_name(x::ASTContext, s::String) = get_name(get_Idents(x), s)
 
+function get_pointer_type(x::ASTContext, ty::QualType)
+    @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
+    return QualType(clang_ASTContext_getPointerType(x.ptr, ty.ptr))
+end
+
+function get_lvalue_reference_type(x::ASTContext, ty::QualType)
+    @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
+    return QualType(clang_ASTContext_getLValueReferenceType(x.ptr, ty.ptr))
+end
+
+function get_rvalue_reference_type(x::ASTContext, ty::QualType)
+    @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
+    return QualType(clang_ASTContext_getRValueReferenceType(x.ptr, ty.ptr))
+end
+
+function get_member_pointer_type(x::ASTContext, ty::QualType, cls::AbstractClangType)
+    @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
+    return QualType(clang_ASTContext_getMemberPointerType(x.ptr, ty.ptr, cls.ptr))
+end
 
 VoidTy(ctx::ASTContext) = VoidTy(clang_ASTContext_VoidTy_getTypePtrOrNull(ctx.ptr))
 BoolTy(ctx::ASTContext) = BoolTy(clang_ASTContext_BoolTy_getTypePtrOrNull(ctx.ptr))

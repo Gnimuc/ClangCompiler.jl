@@ -226,8 +226,24 @@ function clang_ASTContext_getPointerType(Ctx, OpaquePtr)
     ccall((:clang_ASTContext_getPointerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, OpaquePtr)
 end
 
+function clang_ASTContext_getLValueReferenceType(Ctx, OpaquePtr)
+    ccall((:clang_ASTContext_getLValueReferenceType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, OpaquePtr)
+end
+
+function clang_ASTContext_getRValueReferenceType(Ctx, OpaquePtr)
+    ccall((:clang_ASTContext_getRValueReferenceType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, OpaquePtr)
+end
+
+function clang_ASTContext_getMemberPointerType(Ctx, OpaquePtr, Cls)
+    ccall((:clang_ASTContext_getMemberPointerType, libclangex), CXQualType, (CXASTContext, CXQualType, CXType_), Ctx, OpaquePtr, Cls)
+end
+
 function clang_ASTContext_getIdents(Ctx)
     ccall((:clang_ASTContext_getIdents, libclangex), CXIdentifierTable, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getTypeSize(Ctx, OpaquePtr)
+    ccall((:clang_ASTContext_getTypeSize, libclangex), UInt64, (CXASTContext, CXQualType), Ctx, OpaquePtr)
 end
 
 function clang_IdentifierTable_PrintStats(IT)
