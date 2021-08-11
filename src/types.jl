@@ -53,3 +53,34 @@ clty_to_jlty(clty::FloatTy) = Cfloat
 clty_to_jlty(clty::DoubleTy) = Cdouble
 clty_to_jlty(clty::Float16Ty) = Cfloat16
 clty_to_jlty(clty::VoidPtrTy) = Ptr{Cvoid}
+
+"""
+    jlty_to_llvmty(::Type{T}, ctx::LLVM.Context) where {T}
+Interface for mapping a Julia type to the corresponding LLVM type representation.
+"""
+jlty_to_llvmty(::Type{T}, ctx::LLVM.Context) where {T} = error("no mapping found for $T")
+
+# Julia type to IntegerType <: LLVMType
+# LLVM does not make a distinction between signed and unsigned integer type
+jlty_to_llvmty(::Type{Bool}, ctx::LLVM.Context) = LLVM.Int1Type(ctx)
+jlty_to_llvmty(::Type{Int8}, ctx::LLVM.Context) = LLVM.Int8Type(ctx)
+jlty_to_llvmty(::Type{Int16}, ctx::LLVM.Context) = LLVM.Int16Type(ctx)
+jlty_to_llvmty(::Type{Int32}, ctx::LLVM.Context) = LLVM.Int32Type(ctx)
+jlty_to_llvmty(::Type{Int64}, ctx::LLVM.Context) = LLVM.Int64Type(ctx)
+jlty_to_llvmty(::Type{Int128}, ctx::LLVM.Context) = LLVM.Int128Type(ctx)
+jlty_to_llvmty(::Type{UInt8}, ctx::LLVM.Context) = LLVM.Int8Type(ctx)
+jlty_to_llvmty(::Type{UInt16}, ctx::LLVM.Context) = LLVM.Int16Type(ctx)
+jlty_to_llvmty(::Type{UInt32}, ctx::LLVM.Context) = LLVM.Int32Type(ctx)
+jlty_to_llvmty(::Type{UInt64}, ctx::LLVM.Context) = LLVM.Int64Type(ctx)
+jlty_to_llvmty(::Type{UInt128}, ctx::LLVM.Context) = LLVM.Int128Type(ctx)
+
+# Julia type to FloatingPointType <: LLVMType
+jlty_to_llvmty(::Type{Float16}, ctx::LLVM.Context) = LLVM.HalfType(ctx)
+jlty_to_llvmty(::Type{Float32}, ctx::LLVM.Context) = LLVM.FloatType(ctx)
+jlty_to_llvmty(::Type{Float64}, ctx::LLVM.Context) = LLVM.DoubleType(ctx)
+
+# Julia type to VoidType <: LLVMType
+jlty_to_llvmty(::Type{Nothing}, ctx::LLVM.Context) = LLVM.VoidType(ctx)
+
+# Julia type to PointerType <: SequentialType <: CompositeType <: LLVMType
+jlty_to_llvmty(::Type{Ptr{Cvoid}}, ctx::LLVM.Context) = LLVM.PointerType(LLVM.VoidType(ctx))

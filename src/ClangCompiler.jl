@@ -75,11 +75,14 @@ include("clang/CodeGen/CodeGenAction.jl")
 
 # interface
 include("types.jl")
-export jlty_to_clty, clty_to_jlty
+export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
 
 include("parse.jl")
 include("lookup.jl")
 export DeclFinder, get_decl
+
+include("template.jl")
+export specialize
 
 include("compiler.jl")
 export AbstractCompiler, AbstractIRGenerator
