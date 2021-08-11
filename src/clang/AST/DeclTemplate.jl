@@ -114,10 +114,13 @@ function is_definition(x::AbstractRedeclarableTemplateDecl)
     return clang_ClassTemplateDecl_isThisDeclarationADefinition(x.ptr)
 end
 
-function find_specialization(x::AbstractRedeclarableTemplateDecl, list::TemplateArgumentList, insert_pos=C_NULL)
+function find_specialization(x::AbstractRedeclarableTemplateDecl,
+                             list::TemplateArgumentList, insert_pos=C_NULL)
     @assert x.ptr != C_NULL "RedeclarableTemplateDecl has a NULL pointer."
     @assert list.ptr != C_NULL "TemplateArgumentList has a NULL pointer."
-    return clang_ClassTemplateDecl_findSpecialization(x.ptr, list.ptr, insert_pos)
+    return ClassTemplateSpecializationDecl(clang_ClassTemplateDecl_findSpecialization(x.ptr,
+                                                                                      list.ptr,
+                                                                                      insert_pos))
 end
 
 """
@@ -158,7 +161,8 @@ struct ClassTemplateSpecializationDecl <: AbstractCXXRecordDecl
     ptr::CXClassTemplateSpecializationDecl
 end
 
-function add_specialization(x::AbstractRedeclarableTemplateDecl, ctsd::ClassTemplateSpecializationDecl, insert_pos=C_NULL)
+function add_specialization(x::AbstractRedeclarableTemplateDecl,
+                            ctsd::ClassTemplateSpecializationDecl, insert_pos=C_NULL)
     @assert x.ptr != C_NULL "RedeclarableTemplateDecl has a NULL pointer."
     @assert ctsd.ptr != C_NULL "ClassTemplateSpecializationDecl has a NULL pointer."
     return clang_ClassTemplateDecl_AddSpecialization(x.ptr, ctsd.ptr, insert_pos)

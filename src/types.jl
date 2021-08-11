@@ -7,22 +7,22 @@ See also, [`clty_to_jlty`](@ref). Note that, the mapping is not injective.
 jlty_to_clty(::Type{T}, ctx::ASTContext) where {T} = error("no mapping found for $T")
 
 # builtin types
-jlty_to_clty(::Type{Nothing}, ctx::ASTContext) = get_builtin_type(ctx, VoidTy)
-jlty_to_clty(::Type{Bool}, ctx::ASTContext) = get_builtin_type(ctx, BoolTy)
-jlty_to_clty(::Type{Int8}, ctx::ASTContext) = get_builtin_type(ctx, SignedCharTy)
-jlty_to_clty(::Type{Int16}, ctx::ASTContext) = get_builtin_type(ctx, ShortTy)
-jlty_to_clty(::Type{Int32}, ctx::ASTContext) = get_builtin_type(ctx, IntTy)
-jlty_to_clty(::Type{Int64}, ctx::ASTContext) = get_builtin_type(ctx, LongLongTy)
-jlty_to_clty(::Type{Int128}, ctx::ASTContext) = get_builtin_type(ctx, Int128Ty)
-jlty_to_clty(::Type{UInt8}, ctx::ASTContext) = get_builtin_type(ctx, UnsignedCharTy)
-jlty_to_clty(::Type{UInt16}, ctx::ASTContext) = get_builtin_type(ctx, UnsignedShortTy)
-jlty_to_clty(::Type{UInt32}, ctx::ASTContext) = get_builtin_type(ctx, UnsignedIntTy)
-jlty_to_clty(::Type{UInt64}, ctx::ASTContext) = get_builtin_type(ctx, UnsignedLongLongTy)
-jlty_to_clty(::Type{UInt128}, ctx::ASTContext) = get_builtin_type(ctx, UnsignedInt128Ty)
-jlty_to_clty(::Type{Float16}, ctx::ASTContext) = get_builtin_type(ctx, Float16Ty)
-jlty_to_clty(::Type{Float32}, ctx::ASTContext) = get_builtin_type(ctx, FloatTy)
-jlty_to_clty(::Type{Float64}, ctx::ASTContext) = get_builtin_type(ctx, DoubleTy)
-jlty_to_clty(::Type{Ptr{Cvoid}}, ctx::ASTContext) = get_builtin_type(ctx, VoidPtr)
+jlty_to_clty(::Type{Nothing}, ctx::ASTContext) = get_builtin_qualified_type(ctx, VoidTy)
+jlty_to_clty(::Type{Bool}, ctx::ASTContext) = get_builtin_qualified_type(ctx, BoolTy)
+jlty_to_clty(::Type{Int8}, ctx::ASTContext) = get_builtin_qualified_type(ctx, SignedCharTy)
+jlty_to_clty(::Type{Int16}, ctx::ASTContext) = get_builtin_qualified_type(ctx, ShortTy)
+jlty_to_clty(::Type{Int32}, ctx::ASTContext) = get_builtin_qualified_type(ctx, IntTy)
+jlty_to_clty(::Type{Int64}, ctx::ASTContext) = get_builtin_qualified_type(ctx, LongLongTy)
+jlty_to_clty(::Type{Int128}, ctx::ASTContext) = get_builtin_qualified_type(ctx, Int128Ty)
+jlty_to_clty(::Type{UInt8}, ctx::ASTContext) = get_builtin_qualified_type(ctx, UnsignedCharTy)
+jlty_to_clty(::Type{UInt16}, ctx::ASTContext) = get_builtin_qualified_type(ctx, UnsignedShortTy)
+jlty_to_clty(::Type{UInt32}, ctx::ASTContext) = get_builtin_qualified_type(ctx, UnsignedIntTy)
+jlty_to_clty(::Type{UInt64}, ctx::ASTContext) = get_builtin_qualified_type(ctx, UnsignedLongLongTy)
+jlty_to_clty(::Type{UInt128}, ctx::ASTContext) = get_builtin_qualified_type(ctx, UnsignedInt128Ty)
+jlty_to_clty(::Type{Float16}, ctx::ASTContext) = get_builtin_qualified_type(ctx, Float16Ty)
+jlty_to_clty(::Type{Float32}, ctx::ASTContext) = get_builtin_qualified_type(ctx, FloatTy)
+jlty_to_clty(::Type{Float64}, ctx::ASTContext) = get_builtin_qualified_type(ctx, DoubleTy)
+jlty_to_clty(::Type{Ptr{Cvoid}}, ctx::ASTContext) = get_builtin_qualified_type(ctx, VoidPtr)
 
 """
     clty_to_jlty(::Type{T}, ctx::ASTContext) where {T}
@@ -61,8 +61,8 @@ Interface for mapping a Julia type to the corresponding LLVM type representation
 jlty_to_llvmty(::Type{T}, ctx::LLVM.Context) where {T} = error("no mapping found for $T")
 
 # Julia type to IntegerType <: LLVMType
-# LLVM does not make a distinction between signed and unsigned integer type
-jlty_to_llvmty(::Type{Bool}, ctx::LLVM.Context) = LLVM.Int1Type(ctx)
+# LLVM does not make a distinction between signed and unsigned integer type.
+jlty_to_llvmty(::Type{Bool}, ctx::LLVM.Context) = LLVM.Int8Type(ctx)
 jlty_to_llvmty(::Type{Int8}, ctx::LLVM.Context) = LLVM.Int8Type(ctx)
 jlty_to_llvmty(::Type{Int16}, ctx::LLVM.Context) = LLVM.Int16Type(ctx)
 jlty_to_llvmty(::Type{Int32}, ctx::LLVM.Context) = LLVM.Int32Type(ctx)

@@ -84,9 +84,11 @@ function get_decl_spec_context_from_declarator_context(ctx::CXDeclaratorContext)
         return CXDeclSpecContext_DSC_top_level
     elseif ctx == CXDeclaratorContext_TemplateParam
         return CXDeclSpecContext_DSC_template_param
-    elseif ctx == CXDeclaratorContext_TemplateArg || ctx == CXDeclaratorContext_TemplateTypeArg
+    elseif ctx == CXDeclaratorContext_TemplateArg ||
+           ctx == CXDeclaratorContext_TemplateTypeArg
         return CXDeclSpecContext_DSC_template_type_arg
-    elseif ctx == CXDeclaratorContext_TrailingReturn || ctx == CXDeclaratorContext_TrailingReturnVar
+    elseif ctx == CXDeclaratorContext_TrailingReturn ||
+           ctx == CXDeclaratorContext_TrailingReturnVar
         return CXDeclSpecContext_DSC_trailing
     elseif ctx == CXDeclaratorContext_AliasDecl || ctx == CXDeclaratorContext_AliasTemplate
         return CXDeclSpecContext_DSC_alias_declaration
@@ -96,7 +98,7 @@ function get_decl_spec_context_from_declarator_context(ctx::CXDeclaratorContext)
 end
 
 function should_enter_context(ctx::CXDeclSpecContext)
-    ctx == CXDeclSpecContext_DSC_top_level || ctx == CXDeclSpecContext_DSC_class
+    return ctx == CXDeclSpecContext_DSC_top_level || ctx == CXDeclSpecContext_DSC_class
 end
 
 """
@@ -117,4 +119,18 @@ function try_annotate_cxx_scope_token(x::Parser, dlctx::CXDeclaratorContext)
     return try_annotate_cxx_scope_token(x, ctx)
 end
 
-try_annotate_cxx_scope_token(x::Parser) = try_annotate_cxx_scope_token(x, CXDeclSpecContext_DSC_top_level)
+function try_annotate_cxx_scope_token(x::Parser)
+    return try_annotate_cxx_scope_token(x, CXDeclSpecContext_DSC_top_level)
+end
+
+"""
+    try_annotate_type_or_scope_token_after_scope_spec(x::Parser, ss::CXXScopeSpec, is_new_scope::Bool=false)
+Return true if there was an error.
+"""
+function try_annotate_type_or_scope_token_after_scope_spec(x::Parser, ss::CXXScopeSpec,
+                                                           is_new_scope::Bool=false)
+    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @assert ss.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    return clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(x.ptr, ss.ptr,
+                                                                  is_new_scope)
+end

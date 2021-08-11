@@ -6,8 +6,8 @@ struct TemplateArgument
     ptr::CXTemplateArgument
 end
 
-function TemplateArgument(x::QualType)
-    return TemplateArgument(clang_TemplateArgument_constructFromQualType(x.ptr))
+function TemplateArgument(x::QualType, is_null::Bool=false)
+    return TemplateArgument(clang_TemplateArgument_constructFromQualType(x.ptr, is_null))
 end
 
 dispose(x::TemplateArgument) = clang_TemplateArgument_dispose(x.ptr)

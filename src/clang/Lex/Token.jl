@@ -7,8 +7,12 @@ struct Token
 end
 
 get_location(x::Token) = SourceLocation(clang_Token_getLocation(x.ptr))
-get_annotation_end_location(x::Token) = SourceLocation(clang_Token_getAnnotationEndLoc(x.ptr))
-get_annotation_range(x::Token) = SourceRange(get_location(x), get_annotation_end_location(x))
+function get_annotation_end_location(x::Token)
+    return SourceLocation(clang_Token_getAnnotationEndLoc(x.ptr))
+end
+function get_annotation_range(x::Token)
+    return SourceRange(get_location(x), get_annotation_end_location(x))
+end
 
 is_eof(Tok) = clang_Token_isKind_eof(Tok.ptr)
 is_identifier(Tok) = clang_Token_isKind_identifier(Tok.ptr)

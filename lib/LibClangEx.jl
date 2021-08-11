@@ -494,6 +494,18 @@ function clang_Decl_getLexicalDeclContext(DC)
     ccall((:clang_Decl_getLexicalDeclContext, libclangex), CXDeclContext, (CXDecl,), DC)
 end
 
+function clang_Decl_isOutOfLine(DC)
+    ccall((:clang_Decl_isOutOfLine, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_setDeclContext(DC, Ctx)
+    ccall((:clang_Decl_setDeclContext, libclangex), Cvoid, (CXDecl, CXDeclContext), DC, Ctx)
+end
+
+function clang_Decl_setLexicalDeclContext(DC, Ctx)
+    ccall((:clang_Decl_setLexicalDeclContext, libclangex), Cvoid, (CXDecl, CXDeclContext), DC, Ctx)
+end
+
 function clang_Decl_isTemplated(DC)
     ccall((:clang_Decl_isTemplated, libclangex), Bool, (CXDecl,), DC)
 end
@@ -602,6 +614,10 @@ function clang_NamedDecl_getMostRecentDecl(ND)
     ccall((:clang_NamedDecl_getMostRecentDecl, libclangex), CXNamedDecl, (CXNamedDecl,), ND)
 end
 
+function clang_NamedDecl_isOutOfLine(ND)
+    ccall((:clang_NamedDecl_isOutOfLine, libclangex), Bool, (CXNamedDecl,), ND)
+end
+
 function clang_ValueDecl_getType(VD)
     ccall((:clang_ValueDecl_getType, libclangex), CXQualType, (CXValueDecl,), VD)
 end
@@ -684,6 +700,10 @@ end
 
 function clang_TagDecl_getKindName(TD)
     ccall((:clang_TagDecl_getKindName, libclangex), Ptr{Cchar}, (CXTagDecl,), TD)
+end
+
+function clang_TagDecl_getTagKind(TD)
+    ccall((:clang_TagDecl_getTagKind, libclangex), CXTagTypeKind, (CXTagDecl,), TD)
 end
 
 function clang_TagDecl_isStruct(TD)
@@ -936,6 +956,10 @@ end
 
 function clang_CXXRecordDecl_isEmpty(CXXRD)
     ccall((:clang_CXXRecordDecl_isEmpty, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_ClassTemplateSpecializationDecl_Create(Context, TK, DC, StartLoc, IdLoc, SpecializedTemplate, Args, PrevDecl)
+    ccall((:clang_ClassTemplateSpecializationDecl_Create, libclangex), CXClassTemplateSpecializationDecl, (CXASTContext, CXTagTypeKind, CXDeclContext, CXSourceLocation_, CXSourceLocation_, CXClassTemplateDecl, CXTemplateArgumentList, CXClassTemplateSpecializationDecl), Context, TK, DC, StartLoc, IdLoc, SpecializedTemplate, Args, PrevDecl)
 end
 
 function clang_ClassTemplateSpecializationDecl_getTemplateArgs(CTSD)
@@ -1969,6 +1993,10 @@ end
 
 function clang_Parser_TryAnnotateCXXScopeToken(P, EnteringContext)
     ccall((:clang_Parser_TryAnnotateCXXScopeToken, libclangex), Bool, (CXParser, Bool), P, EnteringContext)
+end
+
+function clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(P, SS, IsNewScope)
+    ccall((:clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec, libclangex), Bool, (CXParser, CXCXXScopeSpec, Bool), P, SS, IsNewScope)
 end
 
 function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)

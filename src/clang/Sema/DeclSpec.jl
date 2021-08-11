@@ -74,7 +74,7 @@ end
 
 function set_range(x::CXXScopeSpec, r::SourceRange)
     set_begin_loc(x, get_begin_loc(r))
-    set_end_loc(x, get_end_loc(r))
+    return set_end_loc(x, get_end_loc(r))
 end
 
 get_range(x::CXXScopeSpec, r::SourceRange) = SourceRange(get_begin_loc(x), get_end_loc(x))

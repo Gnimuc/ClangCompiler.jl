@@ -16,6 +16,11 @@ function get_Idents(x::ASTContext)
     return IdentifierTable(clang_ASTContext_getIdents(x.ptr))
 end
 
+function get_type_size(x::ASTContext, ty::QualType)
+    @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
+    return clang_ASTContext_getTypeSize(x.ptr, ty.ptr)
+end
+
 get_name(x::ASTContext, s::String) = get_name(get_Idents(x), s)
 
 function get_pointer_type(x::ASTContext, ty::QualType)
@@ -33,7 +38,7 @@ function get_rvalue_reference_type(x::ASTContext, ty::QualType)
     return QualType(clang_ASTContext_getRValueReferenceType(x.ptr, ty.ptr))
 end
 
-function get_member_pointer_type(x::ASTContext, ty::QualType, cls::AbstractClangType)
+function get_member_pointer_type(x::ASTContext, ty::QualType, cls::QualType)
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
     return QualType(clang_ASTContext_getMemberPointerType(x.ptr, ty.ptr, cls.ptr))
 end
@@ -73,11 +78,11 @@ Float128ComplexTy(ctx::ASTContext) = Float128ComplexTy(clang_ASTContext_Float128
 VoidPtrTy(ctx::ASTContext) = VoidPtrTy(clang_ASTContext_VoidPtrTy_getTypePtrOrNull(ctx.ptr))
 NullPtrTy(ctx::ASTContext) = NullPtrTy(clang_ASTContext_NullPtrTy_getTypePtrOrNull(ctx.ptr))  # C++11 nullptr
 
-function get_builtin_type(::Type{T}, ctx::ASTContext) where {T<:AbstractBuiltinType}
+function get_builtin_type(ctx::ASTContext, ::Type{T}) where {T<:AbstractBuiltinType}
     @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
     return T(ctx)
 end
-get_builtin_qualified_type(ty, ctx::ASTContext) = QualType(get_builtin_type(ty, ctx))
+get_builtin_qualified_type(ctx::ASTContext, ty) = QualType(get_builtin_type(ctx, ty))
 
 function get_ast_context(x::AbstractDecl)
     @assert x.ptr != C_NULL "Decl has a NULL pointer."
@@ -91,16 +96,50 @@ end
 
 function TemplateArgument(ctx::ASTContext, v::GenericValue, ty::QualType)
     @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
-    return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx.ptr), v.ref, ty.ptr)
+    return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx.ptr, v.ref,
+                                                                         ty.ptr))
 end
 
 function TemplateArgumentList(ctx::ASTContext, args::Vector{CXTemplateArgument})
     @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
-    return TemplateArgumentList(clang_TemplateArgumentList_CreateCopy(ctx.ptr, args, length(args)))
+    return TemplateArgumentList(clang_TemplateArgumentList_CreateCopy(ctx.ptr, args,
+                                                                      length(args)))
 end
 
 function TemplateArgumentList(ctx::ASTContext, args::Vector{TemplateArgument})
     return TemplateArgumentList(ctx, [arg.ptr for arg in args])
+end
+
+function ClassTemplateSpecializationDecl(ctx::ASTContext, tk::CXTagTypeKind,
+                                         dc::DeclContext, start_loc::SourceLocation,
+                                         id_loc::SourceLocation,
+                                         template::ClassTemplateDecl,
+                                         args::TemplateArgumentList,
+                                         prev_decl::ClassTemplateSpecializationDecl)
+    @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
+    @assert dc.ptr != C_NULL "DeclContext has a NULL pointer."
+    @assert template.ptr != C_NULL "ClassTemplateDecl has a NULL pointer."
+    @assert args.ptr != C_NULL "TemplateArgumentList has a NULL pointer."
+    return ClassTemplateSpecializationDecl(clang_ClassTemplateSpecializationDecl_Create(ctx.ptr,
+                                                                                        tk,
+                                                                                        dc.ptr,
+                                                                                        start_loc.ptr,
+                                                                                        id_loc.ptr,
+                                                                                        template.ptr,
+                                                                                        args.ptr,
+                                                                                        prev_decl.ptr))
+end
+
+function ClassTemplateSpecializationDecl(ctx::ASTContext, template::ClassTemplateDecl,
+                                         args::TemplateArgumentList,
+                                         prev_decl::ClassTemplateSpecializationDecl=ClassTemplateSpecializationDecl(C_NULL))
+    tdecl = get_template_decl(template)
+    tk = get_tag_kind(tdecl)
+    dc_ctx = get_decl_context(template)
+    start_loc = get_begin_loc(tdecl)
+    id_loc = get_location(template)
+    return ClassTemplateSpecializationDecl(ctx, tk, dc_ctx, start_loc, id_loc, template,
+                                           args, prev_decl)
 end
 
 # cast

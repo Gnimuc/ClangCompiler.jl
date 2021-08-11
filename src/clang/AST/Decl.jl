@@ -17,6 +17,11 @@ function dump(x::AbstractDecl)
     return clang_Decl_dumpColor(x.ptr)
 end
 
+function is_out_of_line(x::AbstractDecl)
+    @assert x.ptr != C_NULL "Decl has a NULL pointer."
+    return clang_Decl_isOutOfLine(x.ptr)
+end
+
 function get_location(x::AbstractDecl)
     @assert x.ptr != C_NULL "Decl has a NULL pointer."
     return SourceLocation(clang_Decl_getLocation(x.ptr))
@@ -112,6 +117,18 @@ function get_described_template(x::AbstractDecl)
     return TemplateDecl(clang_Decl_getDescribedTemplate(x.ptr))
 end
 
+function set_decl_context(decl::AbstractDecl, x::DeclContext)
+    @assert decl.ptr != C_NULL "Decl has a NULL pointer."
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    return clang_Decl_setDeclContext(decl.ptr, x.ptr)
+end
+
+function set_lexcial_decl_context(decl::AbstractDecl, x::DeclContext)
+    @assert decl.ptr != C_NULL "Decl has a NULL pointer."
+    @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
+    return clang_Decl_setLexicalDeclContext(decl.ptr, x.ptr)
+end
+
 function add_decl(x::DeclContext, decl::AbstractDecl)
     @assert x.ptr != C_NULL "DeclContext has a NULL pointer."
     @assert decl.ptr != C_NULL "Decl has a NULL pointer."
@@ -154,6 +171,11 @@ Holds a pointer to a `clang::NamedDecl` object.
 """
 struct NamedDecl <: AbstractNamedDecl
     ptr::CXNamedDecl
+end
+
+function is_out_of_line(x::AbstractNamedDecl)
+    @assert x.ptr != C_NULL "NamedDecl has a NULL pointer."
+    return clang_NamedDecl_isOutOfLine(x.ptr)
 end
 
 function get_identifier(x::AbstractNamedDecl)
@@ -310,7 +332,8 @@ function get_canonical_decl(x::AbstractTypedefNameDecl)
     return TypedefNameDecl(clang_TypedefNameDecl_getCanonicalDecl(x.ptr))
 end
 
-function get_anonymous_decl_with_typedef_name(x::AbstractTypedefNameDecl, any_redecl::Bool=false)
+function get_anonymous_decl_with_typedef_name(x::AbstractTypedefNameDecl,
+                                              any_redecl::Bool=false)
     @assert x.ptr != C_NULL "TypedefNameDecl has a NULL pointer."
     return TagDecl(clang_TypedefNameDecl_getAnonDeclWithTypedefName(x.ptr, any_redecl))
 end
@@ -377,6 +400,11 @@ end
 function get_kind_name(x::AbstractTagDecl)
     @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
     return unsafe_string(clang_TagDecl_getKindName(x.ptr))
+end
+
+function get_tag_kind(x::AbstractTagDecl)
+    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
+    return clang_TagDecl_getTagKind(x.ptr)
 end
 
 function is_struct(x::AbstractTagDecl)
