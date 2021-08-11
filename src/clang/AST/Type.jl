@@ -22,17 +22,25 @@ QualType(x::T) where {T<:AbstractBuiltinType} = QualType(x.ptr)
 get_type_ptr(x::QualType) = QualType(clang_QualType_getTypePtr(x.ptr))
 get_type_ptr_or_null(x::QualType) = QualType(clang_QualType_getTypePtrOrNull(x.ptr))
 
-is_canonical(x::QualType) = QualType(clang_QualType_isCanonical(x.ptr))
+is_canonical(x::QualType) = clang_QualType_isCanonical(x.ptr)
 
-is_null(x::QualType) = QualType(clang_QualType_isNull(x.ptr))
+is_null(x::QualType) = clang_QualType_isNull(x.ptr)
 
-is_const(x::QualType) = QualType(clang_QualType_isConstQualified(x.ptr))
-is_restrict(x::QualType) = QualType(clang_QualType_isRestrictQualified(x.ptr))
-is_volatile_qualified(x::QualType) = QualType(clang_QualType_isVolatileQualified(x.ptr))
+is_const_qualified(x::QualType) = clang_QualType_isConstQualified(x.ptr)
+is_restrict_qualified(x::QualType) = clang_QualType_isRestrictQualified(x.ptr)
+is_volatile_qualified(x::QualType) = clang_QualType_isVolatileQualified(x.ptr)
 
-add_const(x::QualType) = QualType(clang_QualType_addConst(x.ptr))
-add_restrict(x::QualType) = QualType(clang_QualType_addRestrict(x.ptr))
-add_volatile(x::QualType) = QualType(clang_QualType_addVolatile(x.ptr))
+is_const(x::QualType) = is_const_qualified(x)
+is_restrict(x::QualType) = is_restrict_qualified(x)
+is_volatile(x::QualType) = is_volatile_qualified(x)
+
+with_const(x::QualType) = QualType(clang_QualType_withConst(x.ptr))
+with_restrict(x::QualType) = QualType(clang_QualType_withRestrict(x.ptr))
+with_volatile(x::QualType) = QualType(clang_QualType_withVolatile(x.ptr))
+
+add_const(x::QualType) = clang_QualType_addConst(x.ptr)
+add_restrict(x::QualType) = clang_QualType_addRestrict(x.ptr)
+add_volatile(x::QualType) = clang_QualType_addVolatile(x.ptr)
 
 function get_string(x::QualType)
     str = clang_QualType_getAsString(x.ptr)
@@ -40,6 +48,8 @@ function get_string(x::QualType)
     clang_QualType_disposeString(str)
     return s
 end
+
+dump(x::QualType) = clang_QualType_dump(x.ptr)
 
 """
     CanQualType <: AbstractClangType

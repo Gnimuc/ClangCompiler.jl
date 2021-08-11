@@ -618,6 +618,10 @@ function clang_NamedDecl_isOutOfLine(ND)
     ccall((:clang_NamedDecl_isOutOfLine, libclangex), Bool, (CXNamedDecl,), ND)
 end
 
+function clang_NamedDecl_castToTypeDecl(ND)
+    ccall((:clang_NamedDecl_castToTypeDecl, libclangex), CXTypeDecl, (CXNamedDecl,), ND)
+end
+
 function clang_ValueDecl_getType(VD)
     ccall((:clang_ValueDecl_getType, libclangex), CXQualType, (CXValueDecl,), VD)
 end
@@ -1711,6 +1715,10 @@ function clang_Sema_LookupParsedName(S, R, Sp, SS, AllowBuiltinCreation, Enterin
     ccall((:clang_Sema_LookupParsedName, libclangex), Bool, (CXSema, CXLookupResult, CXScope, CXCXXScopeSpec, Bool, Bool), S, R, Sp, SS, AllowBuiltinCreation, EnteringContext)
 end
 
+function clang_Sema_LookupName(S, R, Sp, AllowBuiltinCreation)
+    ccall((:clang_Sema_LookupName, libclangex), Bool, (CXSema, CXLookupResult, CXScope, Bool), S, R, Sp, AllowBuiltinCreation)
+end
+
 function clang_CXXScopeSpec_create(ErrorCode)
     ccall((:clang_CXXScopeSpec_create, libclangex), CXCXXScopeSpec, (Ptr{CXInit_Error},), ErrorCode)
 end
@@ -1923,6 +1931,18 @@ function clang_QualType_isVolatileQualified(OpaquePtr)
     ccall((:clang_QualType_isVolatileQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
 end
 
+function clang_QualType_withConst(OpaquePtr)
+    ccall((:clang_QualType_withConst, libclangex), CXQualType, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_withVolatile(OpaquePtr)
+    ccall((:clang_QualType_withVolatile, libclangex), CXQualType, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_withRestrict(OpaquePtr)
+    ccall((:clang_QualType_withRestrict, libclangex), CXQualType, (CXQualType,), OpaquePtr)
+end
+
 function clang_QualType_addConst(OpaquePtr)
     ccall((:clang_QualType_addConst, libclangex), Cvoid, (CXQualType,), OpaquePtr)
 end
@@ -1941,6 +1961,10 @@ end
 
 function clang_QualType_disposeString(Str)
     ccall((:clang_QualType_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
+end
+
+function clang_QualType_dump(OpaquePtr)
+    ccall((:clang_QualType_dump, libclangex), Cvoid, (CXQualType,), OpaquePtr)
 end
 
 function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)

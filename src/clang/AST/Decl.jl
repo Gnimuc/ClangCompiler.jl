@@ -289,9 +289,11 @@ struct TypeDecl <: AbstractTypeDecl
 end
 
 function get_type_for_decl(x::AbstractTypeDecl)
-    @assert x.ptr != C_NULL "TagDecl has a NULL pointer."
+    @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
     return QualType(clang_TypeDecl_getTypeForDecl(x.ptr))
 end
+
+get_type_for_decl(x::NamedDecl) = get_type_for_decl(TypeDecl(x))
 
 function set_type_for_decl(x::AbstractTypeDecl, ty::QualType)
     @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."

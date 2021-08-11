@@ -41,6 +41,12 @@ function (x::DeclFinder)(ci::CompilerInstance, parser::Parser, decl::String, sco
     reset(x)
     parse_cxx_scope_spec(ci, parser, scope, x.spec)
     set_name(x.result, DeclarationName(get_name(get_ast_context(ci), decl)))
-    lookup_parsed_name(get_sema(ci), x.result, get_current_scope(parser), x.spec)
+    if is_valid(x.spec)
+        is_found = lookup_parsed_name(get_sema(ci), x.result, get_current_scope(parser), x.spec)
+        !is_found && error("failed to find decl(`$decl`) in the CXXScopeSpec.")
+    else
+        is_found = lookup_name(get_sema(ci), x.result, get_current_scope(parser))
+        !is_found && error("failed to find decl(`$decl`) in the current scope.")
+    end
     return !is_empty(x.result)
 end

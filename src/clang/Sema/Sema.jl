@@ -44,3 +44,10 @@ function lookup_parsed_name(x::Sema, r::LookupResult, sp::Scope, ss::CXXScopeSpe
     return clang_Sema_LookupParsedName(x.ptr, r.ptr, sp.ptr, ss.ptr, allow_builtin_creation,
                                        entering_context)
 end
+
+function lookup_name(x::Sema, r::LookupResult, sp::Scope, allow_builtin_creation=false)
+    @assert x.ptr != C_NULL "Sema has a NULL pointer."
+    @assert r.ptr != C_NULL "LookupResult has a NULL pointer."
+    @assert sp.ptr != C_NULL "Scope has a NULL pointer."
+    return clang_Sema_LookupName(x.ptr, r.ptr, sp.ptr, allow_builtin_creation)
+end

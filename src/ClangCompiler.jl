@@ -10,6 +10,8 @@ const libclangex_include = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "include")
 const julia_include_dir = joinpath(Sys.BINDIR, "..", "include", "julia") |> normpath
 const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "bin", "clang")
 
+import Base: dump
+
 using LLVM
 using LLVM.Interop: call_function
 export call_function

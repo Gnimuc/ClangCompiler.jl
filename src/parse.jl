@@ -57,6 +57,11 @@ function parse_cxx_scope_spec(p::Parser, spec::CXXScopeSpec)
             try_annotate_cxx_scope_token(p) && error("failed to annotate token.")
         elseif is_identifier(tok)  # `foo::bar::baz`
             try_annotate_cxx_scope_token(p) && error("failed to annotate token.")
+            if !is_identifier(tok)
+                continue
+            else
+                consume_token(p)
+            end
         elseif is_annot_cxxscope(tok) || is_annot_typename(tok)
             restore_nns_annotation(sema, tok, spec)
             break

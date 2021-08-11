@@ -172,3 +172,8 @@ function ValueDecl(x::AbstractDecl)
     @assert x.ptr != C_NULL "Decl has a NULL pointer."
     return ValueDecl(clang_Decl_castToValueDecl(x.ptr))
 end
+
+function TypeDecl(x::NamedDecl)
+    @assert x.ptr != C_NULL "NamedDecl has a NULL pointer."
+    return TypeDecl(clang_NamedDecl_castToTypeDecl(x.ptr))
+end
