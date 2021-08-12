@@ -242,8 +242,16 @@ function clang_ASTContext_getIdents(Ctx)
     ccall((:clang_ASTContext_getIdents, libclangex), CXIdentifierTable, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_getTypeSize(Ctx, OpaquePtr)
-    ccall((:clang_ASTContext_getTypeSize, libclangex), UInt64, (CXASTContext, CXQualType), Ctx, OpaquePtr)
+function clang_ASTContext_getTypeSize(Ctx, T)
+    ccall((:clang_ASTContext_getTypeSize, libclangex), UInt64, (CXASTContext, CXType_), Ctx, T)
+end
+
+function clang_ASTContext_getTypeDeclType(Ctx, Decl, PrevDecl)
+    ccall((:clang_ASTContext_getTypeDeclType, libclangex), CXQualType, (CXASTContext, CXTypeDecl, CXTypeDecl), Ctx, Decl, PrevDecl)
+end
+
+function clang_ASTContext_getRecordType(Ctx, Decl)
+    ccall((:clang_ASTContext_getRecordType, libclangex), CXQualType, (CXASTContext, CXRecordDecl), Ctx, Decl)
 end
 
 function clang_IdentifierTable_PrintStats(IT)
@@ -1931,6 +1939,10 @@ function clang_QualType_isVolatileQualified(OpaquePtr)
     ccall((:clang_QualType_isVolatileQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
 end
 
+function clang_QualType_hasQualifiers(OpaquePtr)
+    ccall((:clang_QualType_hasQualifiers, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
 function clang_QualType_withConst(OpaquePtr)
     ccall((:clang_QualType_withConst, libclangex), CXQualType, (CXQualType,), OpaquePtr)
 end
@@ -1955,6 +1967,22 @@ function clang_QualType_addRestrict(OpaquePtr)
     ccall((:clang_QualType_addRestrict, libclangex), Cvoid, (CXQualType,), OpaquePtr)
 end
 
+function clang_QualType_isLocalConstQualified(OpaquePtr)
+    ccall((:clang_QualType_isLocalConstQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isLocalRestrictQualified(OpaquePtr)
+    ccall((:clang_QualType_isLocalRestrictQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_isLocalVolatileQualified(OpaquePtr)
+    ccall((:clang_QualType_isLocalVolatileQualified, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_hasLocalQualifiers(OpaquePtr)
+    ccall((:clang_QualType_hasLocalQualifiers, libclangex), Bool, (CXQualType,), OpaquePtr)
+end
+
 function clang_QualType_getAsString(OpaquePtr)
     ccall((:clang_QualType_getAsString, libclangex), Ptr{Cchar}, (CXQualType,), OpaquePtr)
 end
@@ -1965,6 +1993,18 @@ end
 
 function clang_QualType_dump(OpaquePtr)
     ccall((:clang_QualType_dump, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_getCanonicalType(OpaquePtr)
+    ccall((:clang_QualType_getCanonicalType, libclangex), CXQualType, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_getLocalUnqualifiedType(OpaquePtr)
+    ccall((:clang_QualType_getLocalUnqualifiedType, libclangex), CXQualType, (CXQualType,), OpaquePtr)
+end
+
+function clang_QualType_getUnqualifiedType(OpaquePtr)
+    ccall((:clang_QualType_getUnqualifiedType, libclangex), CXQualType, (CXQualType,), OpaquePtr)
 end
 
 function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)

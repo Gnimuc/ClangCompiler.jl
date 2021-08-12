@@ -16,10 +16,27 @@ function get_Idents(x::ASTContext)
     return IdentifierTable(clang_ASTContext_getIdents(x.ptr))
 end
 
-function get_type_size(x::ASTContext, ty::QualType)
+function get_type_size(x::ASTContext, ty_ptr::CXType_)
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
-    return clang_ASTContext_getTypeSize(x.ptr, ty.ptr)
+    return clang_ASTContext_getTypeSize(x.ptr, ty_ptr)
 end
+get_type_size(x::ASTContext, ty::QualType) = get_type_size(x, get_type_ptr(ty))
+
+function get_typedecl_type(x::ASTContext, decl::TypeDecl, prev::TypeDecl=TypeDecl(C_NULL))
+    @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
+    @assert decl.ptr != C_NULL "TypeDecl has a NULL pointer."
+    return QualType(clang_ASTContext_getTypeDeclType(x.ptr, decl.ptr, prev.ptr))
+end
+
+function get_record_type(x::ASTContext, decl::RecordDecl)
+    @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
+    @assert decl.ptr != C_NULL "RecordDecl has a NULL pointer."
+    return QualType(clang_ASTContext_getRecordType(x.ptr, decl.ptr))
+end
+
+get_decl_type(x::ASTContext, decl::NamedDecl) = get_typedecl_type(x, TypeDecl(decl))
+get_decl_type(x::ASTContext, decl::AbstractTypeDecl) = get_typedecl_type(x, TypeDecl(decl.ptr))
+get_decl_type(x::ASTContext, decl::AbstractRecordDecl) = get_record_type(x, RecordDecl(decl.ptr))
 
 get_name(x::ASTContext, s::String) = get_name(get_Idents(x), s)
 
@@ -38,10 +55,11 @@ function get_rvalue_reference_type(x::ASTContext, ty::QualType)
     return QualType(clang_ASTContext_getRValueReferenceType(x.ptr, ty.ptr))
 end
 
-function get_member_pointer_type(x::ASTContext, ty::QualType, cls::QualType)
+function get_member_pointer_type(x::ASTContext, ty::QualType, class_ptr::CXType_)
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
-    return QualType(clang_ASTContext_getMemberPointerType(x.ptr, ty.ptr, cls.ptr))
+    return QualType(clang_ASTContext_getMemberPointerType(x.ptr, ty.ptr, class_ptr))
 end
+get_member_pointer_type(x::ASTContext, ty::QualType, class::QualType) = get_member_pointer_type(x, ty, get_type_ptr(class))
 
 VoidTy(ctx::ASTContext) = VoidTy(clang_ASTContext_VoidTy_getTypePtrOrNull(ctx.ptr))
 BoolTy(ctx::ASTContext) = BoolTy(clang_ASTContext_BoolTy_getTypePtrOrNull(ctx.ptr))

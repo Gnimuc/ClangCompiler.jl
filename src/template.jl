@@ -5,7 +5,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
             jlty = typeof(arg)
             clty = jlty_to_clty(jlty, ctx)
             bitwidth_clty = get_type_size(ctx, clty)
-            # this assumes Bool is lowered to int1
+            # this assumes Bool is lowered to int8
             @assert bitwidth_clty == 8
             v = LLVM.GenericValue(jlty_to_llvmty(jlty, llvm_ctx), Int(arg))
             @assert LLVM.intwidth(v) == bitwidth_clty

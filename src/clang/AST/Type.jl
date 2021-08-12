@@ -15,12 +15,12 @@ abstract type AbstractBuiltinType <: AbstractClangType end
 Represent a qualified type.
 """
 struct QualType <: AbstractClangType
-    ptr::CXType_
+    ptr::CXQualType
 end
 QualType(x::T) where {T<:AbstractBuiltinType} = QualType(x.ptr)
 
-get_type_ptr(x::QualType) = QualType(clang_QualType_getTypePtr(x.ptr))
-get_type_ptr_or_null(x::QualType) = QualType(clang_QualType_getTypePtrOrNull(x.ptr))
+get_type_ptr(x::QualType)::CXType_ = clang_QualType_getTypePtr(x.ptr)
+get_type_ptr_or_null(x::QualType)::CXType_ = clang_QualType_getTypePtrOrNull(x.ptr)
 
 is_canonical(x::QualType) = clang_QualType_isCanonical(x.ptr)
 
@@ -34,6 +34,18 @@ is_const(x::QualType) = is_const_qualified(x)
 is_restrict(x::QualType) = is_restrict_qualified(x)
 is_volatile(x::QualType) = is_volatile_qualified(x)
 
+has_qualifiers(x::QualType) = clang_QualType_hasQualifiers(x.ptr)
+
+is_local_const_qualified(x::QualType) = clang_QualType_isLocalConstQualified(x.ptr)
+is_local_restrict_qualified(x::QualType) = clang_QualType_isLocalRestrictQualified(x.ptr)
+is_local_volatile_qualified(x::QualType) = clang_QualType_isLocalVolatileQualified(x.ptr)
+
+is_local_const(x::QualType) = is_local_const_qualified(x)
+is_local_restrict(x::QualType) = is_local_restrict_qualified(x)
+is_local_volatile(x::QualType) = is_local_volatile_qualified(x)
+
+has_local_qualifiers(x::QualType) = clang_QualType_hasLocalQualifiers(x.ptr)
+
 with_const(x::QualType) = QualType(clang_QualType_withConst(x.ptr))
 with_restrict(x::QualType) = QualType(clang_QualType_withRestrict(x.ptr))
 with_volatile(x::QualType) = QualType(clang_QualType_withVolatile(x.ptr))
@@ -41,6 +53,10 @@ with_volatile(x::QualType) = QualType(clang_QualType_withVolatile(x.ptr))
 add_const(x::QualType) = clang_QualType_addConst(x.ptr)
 add_restrict(x::QualType) = clang_QualType_addRestrict(x.ptr)
 add_volatile(x::QualType) = clang_QualType_addVolatile(x.ptr)
+
+get_canonical_type(x::QualType) = QualType(clang_QualType_getCanonicalType(x.ptr))
+get_canonical_unqualified_type(x::QualType) = QualType(clang_QualType_getLocalUnqualifiedType(x.ptr))
+get_unqualified_type(x::QualType) = QualType(clang_QualType_getUnqualifiedType(x.ptr))
 
 function get_string(x::QualType)
     str = clang_QualType_getAsString(x.ptr)
@@ -58,140 +74,140 @@ Represent a canonical, qualified type.
 struct CanQualType <: AbstractClangType
     ty::QualType
 end
-CanQualType(x::CXType_) = CanQualType(QualType(x))
+CanQualType(x::CXQualType) = CanQualType(QualType(x))
 
 struct VoidTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct BoolTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct CharTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct WCharTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct WideCharTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct WIntTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct Char8Ty <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct Char16Ty <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct Char32Ty <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct SignedCharTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct ShortTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct IntTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct LongTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct LongLongTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct Int128Ty <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct UnsignedCharTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct UnsignedShortTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct UnsignedIntTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct UnsignedLongTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct UnsignedLongLongTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct UnsignedInt128Ty <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct FloatTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct DoubleTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct LongDoubleTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct Float128Ty <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct HalfTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct BFloat16Ty <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct Float16Ty <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct FloatComplexTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct DoubleComplexTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct LongDoubleComplexTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct Float128ComplexTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct VoidPtrTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end
 
 struct NullPtrTy <: AbstractBuiltinType
-    ptr::CXType_
+    ptr::CXQualType
 end

@@ -288,17 +288,17 @@ struct TypeDecl <: AbstractTypeDecl
     ptr::CXTypeDecl
 end
 
-function get_type_for_decl(x::AbstractTypeDecl)
+function get_type_for_decl(x::AbstractTypeDecl)::CXType_
     @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
-    return QualType(clang_TypeDecl_getTypeForDecl(x.ptr))
+    return clang_TypeDecl_getTypeForDecl(x.ptr)
 end
-
 get_type_for_decl(x::NamedDecl) = get_type_for_decl(TypeDecl(x))
 
-function set_type_for_decl(x::AbstractTypeDecl, ty::QualType)
+function set_type_for_decl(x::AbstractTypeDecl, ty_ptr::CXType_)
     @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
-    return clang_TypeDecl_setTypeForDecl(x.ptr, ty.ptr)
+    return clang_TypeDecl_setTypeForDecl(x.ptr, ty_ptr)
 end
+set_type_for_decl(x::AbstractTypeDecl, ty::QualType) = set_type_for_decl(x, get_type_ptr(ty))
 
 function get_begin_loc(x::AbstractTypeDecl)
     @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
