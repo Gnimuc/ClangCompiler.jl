@@ -1,6 +1,6 @@
 """
     struct Preprocessor <: Any
-Holds a pointer to a `clang::Preprocessor` object.
+Hold a pointer to a `clang::Preprocessor` object.
 """
 struct Preprocessor
     ptr::CXPreprocessor

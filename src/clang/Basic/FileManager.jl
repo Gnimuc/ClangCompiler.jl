@@ -1,6 +1,6 @@
 """
     struct FileManager <: Any
-Holds a pointer to a `clang::FileManager` object.
+Hold a pointer to a `clang::FileManager` object.
 """
 struct FileManager
     ptr::CXFileManager

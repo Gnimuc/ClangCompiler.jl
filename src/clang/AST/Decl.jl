@@ -6,7 +6,7 @@ abstract type AbstractDecl end
 
 """
     struct Decl <: AbstractDecl
-Holds a pointer to a `clang::Decl` object.
+Hold a pointer to a `clang::Decl` object.
 """
 struct Decl <: AbstractDecl
     ptr::CXDecl
@@ -167,7 +167,7 @@ abstract type AbstractNamedDecl <: AbstractDecl end
 
 """
     struct NamedDecl <: AbstractNamedDecl
-Holds a pointer to a `clang::NamedDecl` object.
+Hold a pointer to a `clang::NamedDecl` object.
 """
 struct NamedDecl <: AbstractNamedDecl
     ptr::CXNamedDecl
@@ -243,7 +243,7 @@ abstract type AbstractValueDecl <: AbstractNamedDecl end
 
 """
     struct ValueDecl <: AbstractValueDecl
-Holds a pointer to a `clang::ValueDecl` object.
+Hold a pointer to a `clang::ValueDecl` object.
 """
 struct ValueDecl <: AbstractValueDecl
     ptr::CXValueDecl
@@ -254,7 +254,7 @@ function get_type(x::AbstractValueDecl)
     return QualType(clang_ValueDecl_getType(x.ptr))
 end
 
-function set_type(x::AbstractValueDecl, ty::QualType)
+function set_type(x::AbstractValueDecl, ty::AbstractQualType)
     @assert x.ptr != C_NULL "ValueDecl has a NULL pointer."
     return clang_ValueDecl_getType(x.ptr, ty.ptr)
 end
@@ -264,7 +264,7 @@ function is_weak(x::AbstractValueDecl)
     return clang_ValueDecl_isWeak(x.ptr)
 end
 
-function TemplateArgument(decl::ValueDecl, ty::QualType)
+function TemplateArgument(decl::ValueDecl, ty::AbstractQualType)
     @assert decl.ptr != C_NULL "ValueDecl has a NULL pointer."
     return TemplateArgument(clang_TemplateArgument_constructFromValueDecl(decl.ptr, ty.ptr))
 end
@@ -282,7 +282,7 @@ abstract type AbstractTypeDecl <: AbstractNamedDecl end
 
 """
     struct TypeDecl <: AbstractTypeDecl
-Holds a pointer to a `clang::TypeDecl` object.
+Hold a pointer to a `clang::TypeDecl` object.
 """
 struct TypeDecl <: AbstractTypeDecl
     ptr::CXTypeDecl
@@ -298,7 +298,7 @@ function set_type_for_decl(x::AbstractTypeDecl, ty_ptr::CXType_)
     @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
     return clang_TypeDecl_setTypeForDecl(x.ptr, ty_ptr)
 end
-set_type_for_decl(x::AbstractTypeDecl, ty::QualType) = set_type_for_decl(x, get_type_ptr(ty))
+set_type_for_decl(x::AbstractTypeDecl, ty::AbstractQualType) = set_type_for_decl(x, get_type_ptr(ty))
 
 function get_begin_loc(x::AbstractTypeDecl)
     @assert x.ptr != C_NULL "TypeDecl has a NULL pointer."
@@ -318,7 +318,7 @@ abstract type AbstractTypedefNameDecl <: AbstractTypeDecl end
 
 """
     struct TypedefNameDecl <: AbstractTypedefNameDecl
-Holds a pointer to a `clang::TypedefNameDecl` object.
+Hold a pointer to a `clang::TypedefNameDecl` object.
 """
 struct TypedefNameDecl <: AbstractTypedefNameDecl
     ptr::CXTypedefNameDecl
@@ -353,7 +353,7 @@ abstract type AbstractTagDecl <: AbstractTypeDecl end
 
 """
     struct TagDecl <: AbstractTagDecl
-Holds a pointer to a `clang::TagDecl` object.
+Hold a pointer to a `clang::TagDecl` object.
 """
 struct TagDecl <: AbstractTagDecl
     ptr::CXTagDecl
@@ -457,7 +457,7 @@ abstract type AbstractRecordDecl <: AbstractTagDecl end
 
 """
     struct RecordDecl <: AbstractRecordDecl
-Holds a pointer to a `clang::RecordDecl` object.
+Hold a pointer to a `clang::RecordDecl` object.
 """
 struct RecordDecl <: AbstractRecordDecl
     ptr::CXRecordDecl

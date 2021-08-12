@@ -1,6 +1,9 @@
 """
     struct DeclarationName <: Any
-Holds a `clang::DeclarationName` opaque pointer.
+Represent a declaration name.
+
+Note that, the underlying pointer is NOT a *pointer* to a `clang::DeclarationName` object.
+Instead, it's the opaque pointer representation of the `clang::DeclarationName` itself.
 """
 struct DeclarationName
     ptr::CXDeclarationName

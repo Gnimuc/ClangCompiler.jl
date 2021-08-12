@@ -1,6 +1,6 @@
 """
     struct TemplateParameterList <: Any
-Holds a pointer to a `clang::TemplateParameterList` object.
+Hold a pointer to a `clang::TemplateParameterList` object.
 """
 struct TemplateParameterList
     ptr::CXTemplateParameterList
@@ -33,7 +33,7 @@ end
 
 """
     struct TemplateArgumentList <: Any
-Holds a pointer to a `clang::TemplateArgumentList` object.
+Hold a pointer to a `clang::TemplateArgumentList` object.
 """
 struct TemplateArgumentList
     ptr::CXTemplateArgumentList
@@ -62,7 +62,7 @@ abstract type AbstractTemplateDecl <: AbstractNamedDecl end
 
 """
     struct TemplateDecl <: AbstractTemplateDecl
-Holds a pointer to a `clang::TemplateDecl` object.
+Hold a pointer to a `clang::TemplateDecl` object.
 """
 struct TemplateDecl <: AbstractTemplateDecl
     ptr::CXTemplateDecl
@@ -83,7 +83,7 @@ abstract type AbstractRedeclarableTemplateDecl <: AbstractTemplateDecl end
 
 """
     struct RedeclarableTemplateDecl <: AbstractRedeclarableTemplateDecl
-Holds a pointer to a `clang::RedeclarableTemplateDecl` object.
+Hold a pointer to a `clang::RedeclarableTemplateDecl` object.
 """
 struct RedeclarableTemplateDecl <: AbstractRedeclarableTemplateDecl
     ptr::CXRedeclarableTemplateDecl
@@ -131,7 +131,7 @@ abstract type AbstractClassTemplateDecl <: AbstractRedeclarableTemplateDecl end
 
 """
     struct ClassTemplateDecl <: AbstractClassTemplateDecl
-Holds a pointer to a `clang::ClassTemplateDecl` object.
+Hold a pointer to a `clang::ClassTemplateDecl` object.
 """
 struct ClassTemplateDecl <: AbstractClassTemplateDecl
     ptr::CXClassTemplateDecl
@@ -155,7 +155,7 @@ end
 
 """
     struct ClassTemplateSpecializationDecl <: AbstractCXXRecordDecl
-Holds a pointer to a `clang::ClassTemplateSpecializationDecl` object.
+Hold a pointer to a `clang::ClassTemplateSpecializationDecl` object.
 """
 struct ClassTemplateSpecializationDecl <: AbstractCXXRecordDecl
     ptr::CXClassTemplateSpecializationDecl

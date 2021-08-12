@@ -1,12 +1,12 @@
 """
     struct TemplateArgument <: Any
-Holds a pointer to a `clang::TemplateArgument` object.
+Hold a pointer to a `clang::TemplateArgument` object.
 """
 struct TemplateArgument
     ptr::CXTemplateArgument
 end
 
-function TemplateArgument(x::QualType, is_null::Bool=false)
+function TemplateArgument(x::AbstractQualType, is_null::Bool=false)
     return TemplateArgument(clang_TemplateArgument_constructFromQualType(x.ptr, is_null))
 end
 
@@ -52,7 +52,7 @@ function get_integral_type(x::TemplateArgument)
     return QualType(clang_TemplateArgument_getIntegralType(x.ptr))
 end
 
-function set_integral_type(x::TemplateArgument, ty::QualType)
+function set_integral_type(x::TemplateArgument, ty::AbstractQualType)
     @assert x.ptr != C_NULL "TemplateArgument has a NULL pointer."
     return clang_TemplateArgument_setIntegralType(x.ptr, ty.ptr)
 end

@@ -1,6 +1,6 @@
 """
     struct Sema <: Any
-Holds a pointer to a `clang::Sema` object.
+Hold a pointer to a `clang::Sema` object.
 """
 struct Sema
     ptr::CXSema

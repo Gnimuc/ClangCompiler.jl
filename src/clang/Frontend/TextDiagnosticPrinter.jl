@@ -1,6 +1,6 @@
 """
     struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
-Holds a pointer to a `clang::TextDiagnosticPrinter` object.
+Hold a pointer to a `clang::TextDiagnosticPrinter` object.
 """
 struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
     ptr::CXDiagnosticConsumer

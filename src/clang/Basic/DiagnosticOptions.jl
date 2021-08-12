@@ -1,6 +1,6 @@
 """
     struct DiagnosticOptions <: Any
-Holds a pointer to a `clang::DiagnosticOptions` object.
+Hold a pointer to a `clang::DiagnosticOptions` object.
 """
 struct DiagnosticOptions
     ptr::CXDiagnosticOptions

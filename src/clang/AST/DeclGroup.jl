@@ -1,6 +1,6 @@
 """
     struct DeclGroupRef <: Any
-Holds a `clang::DeclGroupRef` opaque pointer.
+Hold a `clang::DeclGroupRef` opaque pointer.
 """
 struct DeclGroupRef
     ptr::CXDeclGroupRef

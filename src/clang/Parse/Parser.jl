@@ -1,6 +1,6 @@
 """
     struct Parser <: Any
-Holds a pointer to a `clang::Parser` object.
+Hold a pointer to a `clang::Parser` object.
 """
 struct Parser
     ptr::CXParser

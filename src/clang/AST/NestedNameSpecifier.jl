@@ -1,6 +1,6 @@
 """
     struct NestedNameSpecifier <: Any
-Holds a `clang::NestedNameSpecifier` opaque pointer.
+Hold a `clang::NestedNameSpecifier` opaque pointer.
 """
 struct NestedNameSpecifier
     ptr::CXNestedNameSpecifier

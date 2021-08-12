@@ -1,6 +1,6 @@
 """
     struct HeaderSearch <: Any
-Holds a pointer to a `clang::HeaderSearch` object.
+Hold a pointer to a `clang::HeaderSearch` object.
 """
 struct HeaderSearch
     ptr::CXHeaderSearch

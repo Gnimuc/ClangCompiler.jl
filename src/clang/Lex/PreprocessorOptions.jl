@@ -1,6 +1,6 @@
 """
 struct PreprocessorOptions <: Any
-Holds a pointer to a `clang::PreprocessorOptions` object.
+Hold a pointer to a `clang::PreprocessorOptions` object.
 """
 struct PreprocessorOptions
     ptr::CXPreprocessorOptions

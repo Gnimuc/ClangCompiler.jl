@@ -1,6 +1,6 @@
 """
     struct ASTContext <: Any
-Holds a pointer to a `clang::ASTContext` object.
+Hold a pointer to a `clang::ASTContext` object.
 """
 struct ASTContext
     ptr::CXASTContext
@@ -20,7 +20,7 @@ function get_type_size(x::ASTContext, ty_ptr::CXType_)
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
     return clang_ASTContext_getTypeSize(x.ptr, ty_ptr)
 end
-get_type_size(x::ASTContext, ty::QualType) = get_type_size(x, get_type_ptr(ty))
+get_type_size(x::ASTContext, ty::AbstractQualType) = get_type_size(x, get_type_ptr(ty))
 
 function get_typedecl_type(x::ASTContext, decl::TypeDecl, prev::TypeDecl=TypeDecl(C_NULL))
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
@@ -40,61 +40,61 @@ get_decl_type(x::ASTContext, decl::AbstractRecordDecl) = get_record_type(x, Reco
 
 get_name(x::ASTContext, s::String) = get_name(get_Idents(x), s)
 
-function get_pointer_type(x::ASTContext, ty::QualType)
+function get_pointer_type(x::ASTContext, ty::AbstractQualType)
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
     return QualType(clang_ASTContext_getPointerType(x.ptr, ty.ptr))
 end
 
-function get_lvalue_reference_type(x::ASTContext, ty::QualType)
+function get_lvalue_reference_type(x::ASTContext, ty::AbstractQualType)
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
     return QualType(clang_ASTContext_getLValueReferenceType(x.ptr, ty.ptr))
 end
 
-function get_rvalue_reference_type(x::ASTContext, ty::QualType)
+function get_rvalue_reference_type(x::ASTContext, ty::AbstractQualType)
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
     return QualType(clang_ASTContext_getRValueReferenceType(x.ptr, ty.ptr))
 end
 
-function get_member_pointer_type(x::ASTContext, ty::QualType, class_ptr::CXType_)
+function get_member_pointer_type(x::ASTContext, ty::AbstractQualType, class_ptr::CXType_)
     @assert x.ptr != C_NULL "ASTContext has a NULL pointer."
     return QualType(clang_ASTContext_getMemberPointerType(x.ptr, ty.ptr, class_ptr))
 end
-get_member_pointer_type(x::ASTContext, ty::QualType, class::QualType) = get_member_pointer_type(x, ty, get_type_ptr(class))
+get_member_pointer_type(x::ASTContext, ty::AbstractQualType, class::AbstractQualType) = get_member_pointer_type(x, ty, get_type_ptr(class))
 
-VoidTy(ctx::ASTContext) = VoidTy(clang_ASTContext_VoidTy_getTypePtrOrNull(ctx.ptr))
-BoolTy(ctx::ASTContext) = BoolTy(clang_ASTContext_BoolTy_getTypePtrOrNull(ctx.ptr))
-CharTy(ctx::ASTContext) = CharTy(clang_ASTContext_CharTy_getTypePtrOrNull(ctx.ptr))
-WCharTy(ctx::ASTContext) = WCharTy(clang_ASTContext_WCharTy_getTypePtrOrNull(ctx.ptr))  # [C++ 3.9.1p5].
-WideCharTy(ctx::ASTContext) = WideCharTy(clang_ASTContext_WideCharTy_getTypePtrOrNull(ctx.ptr))
-WIntTy(ctx::ASTContext) = WIntTy(clang_ASTContext_WIntTy_getTypePtrOrNull(ctx.ptr))  # [C99 7.24.1], integer type unchanged by default promotions.
-Char8Ty(ctx::ASTContext) = Char8Ty(clang_ASTContext_Char8Ty_getTypePtrOrNull(ctx.ptr))  # [C++20 proposal]
-Char16Ty(ctx::ASTContext) = Char16Ty(clang_ASTContext_Char16Ty_getTypePtrOrNull(ctx.ptr))  # [C++0x 3.9.1p5], integer type in C99.
-Char32Ty(ctx::ASTContext) = Char32Ty(clang_ASTContext_Char32Ty_getTypePtrOrNull(ctx.ptr))  # [C++0x 3.9.1p5], integer type in C99.
-SignedCharTy(ctx::ASTContext) = SignedCharTy(clang_ASTContext_SignedCharTy_getTypePtrOrNull(ctx.ptr))
-ShortTy(ctx::ASTContext) = ShortTy(clang_ASTContext_ShortTy_getTypePtrOrNull(ctx.ptr))
-IntTy(ctx::ASTContext) = IntTy(clang_ASTContext_IntTy_getTypePtrOrNull(ctx.ptr))
-LongTy(ctx::ASTContext) = LongTy(clang_ASTContext_LongTy_getTypePtrOrNull(ctx.ptr))
-LongLongTy(ctx::ASTContext) = LongLongTy(clang_ASTContext_LongLongTy_getTypePtrOrNull(ctx.ptr))
-Int128Ty(ctx::ASTContext) = Int128Ty(clang_ASTContext_Int128Ty_getTypePtrOrNull(ctx.ptr))
-UnsignedCharTy(ctx::ASTContext) = UnsignedCharTy(clang_ASTContext_UnsignedCharTy_getTypePtrOrNull(ctx.ptr))
-UnsignedShortTy(ctx::ASTContext) = UnsignedShortTy(clang_ASTContext_UnsignedShortTy_getTypePtrOrNull(ctx.ptr))
-UnsignedIntTy(ctx::ASTContext) = UnsignedIntTy(clang_ASTContext_UnsignedIntTy_getTypePtrOrNull(ctx.ptr))
-UnsignedLongTy(ctx::ASTContext) = UnsignedLongTy(clang_ASTContext_UnsignedLongTy_getTypePtrOrNull(ctx.ptr))
-UnsignedLongLongTy(ctx::ASTContext) = UnsignedLongLongTy(clang_ASTContext_UnsignedLongLongTy_getTypePtrOrNull(ctx.ptr))
-UnsignedInt128Ty(ctx::ASTContext) = UnsignedInt128Ty(clang_ASTContext_UnsignedInt128Ty_getTypePtrOrNull(ctx.ptr))
-FloatTy(ctx::ASTContext) = FloatTy(clang_ASTContext_FloatTy_getTypePtrOrNull(ctx.ptr))
-DoubleTy(ctx::ASTContext) = DoubleTy(clang_ASTContext_DoubleTy_getTypePtrOrNull(ctx.ptr))
-LongDoubleTy(ctx::ASTContext) = LongDoubleTy(clang_ASTContext_LongDoubleTy_getTypePtrOrNull(ctx.ptr))
-Float128Ty(ctx::ASTContext) = Float128Ty(clang_ASTContext_Float128Ty_getTypePtrOrNull(ctx.ptr))
-HalfTy(ctx::ASTContext) = HalfTy(clang_ASTContext_HalfTy_getTypePtrOrNull(ctx.ptr))  # [OpenCL 6.1.1.1], ARM NEON
-BFloat16Ty(ctx::ASTContext) = BFloat16Ty(clang_ASTContext_BFloat16Ty_getTypePtrOrNull(ctx.ptr))
-Float16Ty(ctx::ASTContext) = Float16Ty(clang_ASTContext_Float16Ty_getTypePtrOrNull(ctx.ptr))  # C11 extension ISO/IEC TS 18661-3
-FloatComplexTy(ctx::ASTContext) = FloatComplexTy(clang_ASTContext_FloatComplexTy_getTypePtrOrNull(ctx.ptr))
-DoubleComplexTy(ctx::ASTContext) = DoubleComplexTy(clang_ASTContext_DoubleComplexTy_getTypePtrOrNull(ctx.ptr))
-LongDoubleComplexTy(ctx::ASTContext) = LongDoubleComplexTy(clang_ASTContext_LongDoubleComplexTy_getTypePtrOrNull(ctx.ptr))
-Float128ComplexTy(ctx::ASTContext) = Float128ComplexTy(clang_ASTContext_Float128ComplexTy_getTypePtrOrNull(ctx.ptr))
-VoidPtrTy(ctx::ASTContext) = VoidPtrTy(clang_ASTContext_VoidPtrTy_getTypePtrOrNull(ctx.ptr))
-NullPtrTy(ctx::ASTContext) = NullPtrTy(clang_ASTContext_NullPtrTy_getTypePtrOrNull(ctx.ptr))  # C++11 nullptr
+VoidTy(ctx::ASTContext) = VoidTy(clang_ASTContext_VoidTy_getAsQualType(ctx.ptr))
+BoolTy(ctx::ASTContext) = BoolTy(clang_ASTContext_BoolTy_getAsQualType(ctx.ptr))
+CharTy(ctx::ASTContext) = CharTy(clang_ASTContext_CharTy_getAsQualType(ctx.ptr))
+WCharTy(ctx::ASTContext) = WCharTy(clang_ASTContext_WCharTy_getAsQualType(ctx.ptr))  # [C++ 3.9.1p5].
+WideCharTy(ctx::ASTContext) = WideCharTy(clang_ASTContext_WideCharTy_getAsQualType(ctx.ptr))
+WIntTy(ctx::ASTContext) = WIntTy(clang_ASTContext_WIntTy_getAsQualType(ctx.ptr))  # [C99 7.24.1], integer type unchanged by default promotions.
+Char8Ty(ctx::ASTContext) = Char8Ty(clang_ASTContext_Char8Ty_getAsQualType(ctx.ptr))  # [C++20 proposal]
+Char16Ty(ctx::ASTContext) = Char16Ty(clang_ASTContext_Char16Ty_getAsQualType(ctx.ptr))  # [C++0x 3.9.1p5], integer type in C99.
+Char32Ty(ctx::ASTContext) = Char32Ty(clang_ASTContext_Char32Ty_getAsQualType(ctx.ptr))  # [C++0x 3.9.1p5], integer type in C99.
+SignedCharTy(ctx::ASTContext) = SignedCharTy(clang_ASTContext_SignedCharTy_getAsQualType(ctx.ptr))
+ShortTy(ctx::ASTContext) = ShortTy(clang_ASTContext_ShortTy_getAsQualType(ctx.ptr))
+IntTy(ctx::ASTContext) = IntTy(clang_ASTContext_IntTy_getAsQualType(ctx.ptr))
+LongTy(ctx::ASTContext) = LongTy(clang_ASTContext_LongTy_getAsQualType(ctx.ptr))
+LongLongTy(ctx::ASTContext) = LongLongTy(clang_ASTContext_LongLongTy_getAsQualType(ctx.ptr))
+Int128Ty(ctx::ASTContext) = Int128Ty(clang_ASTContext_Int128Ty_getAsQualType(ctx.ptr))
+UnsignedCharTy(ctx::ASTContext) = UnsignedCharTy(clang_ASTContext_UnsignedCharTy_getAsQualType(ctx.ptr))
+UnsignedShortTy(ctx::ASTContext) = UnsignedShortTy(clang_ASTContext_UnsignedShortTy_getAsQualType(ctx.ptr))
+UnsignedIntTy(ctx::ASTContext) = UnsignedIntTy(clang_ASTContext_UnsignedIntTy_getAsQualType(ctx.ptr))
+UnsignedLongTy(ctx::ASTContext) = UnsignedLongTy(clang_ASTContext_UnsignedLongTy_getAsQualType(ctx.ptr))
+UnsignedLongLongTy(ctx::ASTContext) = UnsignedLongLongTy(clang_ASTContext_UnsignedLongLongTy_getAsQualType(ctx.ptr))
+UnsignedInt128Ty(ctx::ASTContext) = UnsignedInt128Ty(clang_ASTContext_UnsignedInt128Ty_getAsQualType(ctx.ptr))
+FloatTy(ctx::ASTContext) = FloatTy(clang_ASTContext_FloatTy_getAsQualType(ctx.ptr))
+DoubleTy(ctx::ASTContext) = DoubleTy(clang_ASTContext_DoubleTy_getAsQualType(ctx.ptr))
+LongDoubleTy(ctx::ASTContext) = LongDoubleTy(clang_ASTContext_LongDoubleTy_getAsQualType(ctx.ptr))
+Float128Ty(ctx::ASTContext) = Float128Ty(clang_ASTContext_Float128Ty_getAsQualType(ctx.ptr))
+HalfTy(ctx::ASTContext) = HalfTy(clang_ASTContext_HalfTy_getAsQualType(ctx.ptr))  # [OpenCL 6.1.1.1], ARM NEON
+BFloat16Ty(ctx::ASTContext) = BFloat16Ty(clang_ASTContext_BFloat16Ty_getAsQualType(ctx.ptr))
+Float16Ty(ctx::ASTContext) = Float16Ty(clang_ASTContext_Float16Ty_getAsQualType(ctx.ptr))  # C11 extension ISO/IEC TS 18661-3
+FloatComplexTy(ctx::ASTContext) = FloatComplexTy(clang_ASTContext_FloatComplexTy_getAsQualType(ctx.ptr))
+DoubleComplexTy(ctx::ASTContext) = DoubleComplexTy(clang_ASTContext_DoubleComplexTy_getAsQualType(ctx.ptr))
+LongDoubleComplexTy(ctx::ASTContext) = LongDoubleComplexTy(clang_ASTContext_LongDoubleComplexTy_getAsQualType(ctx.ptr))
+Float128ComplexTy(ctx::ASTContext) = Float128ComplexTy(clang_ASTContext_Float128ComplexTy_getAsQualType(ctx.ptr))
+VoidPtrTy(ctx::ASTContext) = VoidPtrTy(clang_ASTContext_VoidPtrTy_getAsQualType(ctx.ptr))
+NullPtrTy(ctx::ASTContext) = NullPtrTy(clang_ASTContext_NullPtrTy_getAsQualType(ctx.ptr))  # C++11 nullptr
 
 function get_builtin_type(ctx::ASTContext, ::Type{T}) where {T<:AbstractBuiltinType}
     @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
@@ -112,7 +112,7 @@ function get_ast_context(x::DeclContext)
     return ASTContext(clang_DeclContext_getParentASTContext(x.ptr))
 end
 
-function TemplateArgument(ctx::ASTContext, v::GenericValue, ty::QualType)
+function TemplateArgument(ctx::ASTContext, v::GenericValue, ty::AbstractQualType)
     @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
     return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx.ptr, v.ref,
                                                                          ty.ptr))

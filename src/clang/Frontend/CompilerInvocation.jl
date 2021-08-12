@@ -1,6 +1,6 @@
 """
     struct CompilerInvocation <: Any
-Holds a pointer to a `clang::CompilerInvocation` object.
+Hold a pointer to a `clang::CompilerInvocation` object.
 """
 struct CompilerInvocation
     ptr::CXCompilerInvocation

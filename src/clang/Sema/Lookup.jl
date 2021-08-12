@@ -1,6 +1,6 @@
 """
     struct LookupResult <: Any
-Holds a pointer to a `clang::LookupResult` object.
+Hold a pointer to a `clang::LookupResult` object.
 """
 struct LookupResult
     ptr::CXLookupResult

@@ -1,6 +1,6 @@
 """
     struct CompilerInstance <: Any
-Holds a pointer to a `clang::CompilerInstance` object.
+Hold a pointer to a `clang::CompilerInstance` object.
 """
 struct CompilerInstance
     ptr::CXCompilerInstance

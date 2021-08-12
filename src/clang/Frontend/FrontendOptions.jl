@@ -1,6 +1,6 @@
 """
     struct FrontendOptions <: Any
-Holds a pointer to a `clang::FrontendOptions` object.
+Hold a pointer to a `clang::FrontendOptions` object.
 """
 struct FrontendOptions
     ptr::CXFrontendOptions

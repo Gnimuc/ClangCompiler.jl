@@ -1,6 +1,6 @@
 """
     struct LangOptions <: Any
-Holds a pointer to a `clang::LangOptions` object.
+Hold a pointer to a `clang::LangOptions` object.
 """
 struct LangOptions
     ptr::CXLangOptions

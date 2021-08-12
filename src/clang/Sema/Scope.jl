@@ -1,6 +1,6 @@
 """
     struct Scope <: Any
-Holds a pointer to a `clang::Scope` object.
+Hold a pointer to a `clang::Scope` object.
 """
 struct Scope
     ptr::CXScope

@@ -1,6 +1,6 @@
 """
     struct CXXScopeSpec <: Any
-Holds a pointer to a `clang::CXXScopeSpec` object.
+Hold a pointer to a `clang::CXXScopeSpec` object.
 """
 struct CXXScopeSpec
     ptr::CXCXXScopeSpec

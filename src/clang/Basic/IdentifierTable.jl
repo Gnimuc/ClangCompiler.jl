@@ -1,6 +1,6 @@
 """
     struct IdentifierTable <: Any
-Holds a pointer to a `clang::IdentifierTable` object.
+Hold a pointer to a `clang::IdentifierTable` object.
 """
 struct IdentifierTable
     ptr::CXIdentifierTable
@@ -18,7 +18,7 @@ end
 
 """
     struct IdentifierInfo <: Any
-Holds a pointer to a `clang::IdentifierInfo` object.
+Hold a pointer to a `clang::IdentifierInfo` object.
 """
 struct IdentifierInfo
     ptr::CXIdentifierInfo

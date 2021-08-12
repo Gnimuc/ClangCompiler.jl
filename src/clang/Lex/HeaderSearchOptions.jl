@@ -1,6 +1,6 @@
 """
     struct HeaderSearchOptions <: Any
-Holds a pointer to a `clang::HeaderSearchOptions` object.
+Hold a pointer to a `clang::HeaderSearchOptions` object.
 """
 struct HeaderSearchOptions
     ptr::CXHeaderSearchOptions

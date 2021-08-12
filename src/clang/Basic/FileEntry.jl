@@ -1,6 +1,6 @@
 """
     struct FileEntry <: Any
-Holds both a pointer to a `clang::FileEntry` object.
+Hold both a pointer to a `clang::FileEntry` object.
 """
 struct FileEntry
     ptr::CXFileEntry

@@ -1,6 +1,6 @@
 """
     struct CodeGenOptions <: Any
-Holds a pointer to a `clang::CodeGenOptions` object.
+Hold a pointer to a `clang::CodeGenOptions` object.
 """
 struct CodeGenOptions
     ptr::CXCodeGenOptions

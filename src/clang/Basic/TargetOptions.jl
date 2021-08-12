@@ -1,6 +1,6 @@
 """
     struct TargetOptions <: Any
-Holds a pointer to a `clang::TargetOptions` object.
+Hold a pointer to a `clang::TargetOptions` object.
 """
 struct TargetOptions
     ptr::CXTargetOptions

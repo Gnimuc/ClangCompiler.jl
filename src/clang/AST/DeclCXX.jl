@@ -6,7 +6,7 @@ abstract type AbstractCXXRecordDecl <: AbstractRecordDecl end
 
 """
     struct CXXRecordDecl <: AbstractCXXRecordDecl
-Holds a pointer to a `clang::CXXRecordDecl` object.
+Hold a pointer to a `clang::CXXRecordDecl` object.
 """
 struct CXXRecordDecl <: AbstractCXXRecordDecl
     ptr::CXCXXRecordDecl

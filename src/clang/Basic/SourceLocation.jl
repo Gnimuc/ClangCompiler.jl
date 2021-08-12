@@ -1,6 +1,6 @@
 """
     struct FileID <: Any
-Holds a pointer to a `clang::FileID` object.
+Hold a pointer to a `clang::FileID` object.
 
 Note that, this ID is managed by source manager and should not be manually created.
 """
@@ -18,7 +18,10 @@ dispose(x::FileID) = clang_FileID_dispose(x.ptr)
 
 """
     struct SourceLocation <: Any
-Holds a `clang::SourceLocation` opaque pointer.
+Represent a Clang source location.
+
+Note that, the underlying pointer is NOT a *pointer* to a `clang::SourceLocation` object.
+Instead, it's the opaque pointer representation of the `clang::SourceLocation` itself.
 """
 struct SourceLocation
     ptr::CXSourceLocation_
@@ -48,7 +51,7 @@ end
 
 """
     struct SourceRange <: Any
-Holds two `SourceLocation`s.
+Hold two `SourceLocation`s.
 """
 struct SourceRange
     begin_loc::SourceLocation

@@ -30,7 +30,7 @@ end
 
 """
     struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
-Holds a pointer to a `clang::IgnoringDiagConsumer` object.
+Hold a pointer to a `clang::IgnoringDiagConsumer` object.
 """
 struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
     ptr::CXDiagnosticConsumer
@@ -50,7 +50,7 @@ end
 
 """
     struct DiagnosticsEngine <: Any
-Holds a pointer to a `clang::DiagnosticsEngine` object.
+Hold a pointer to a `clang::DiagnosticsEngine` object.
 """
 struct DiagnosticsEngine
     ptr::CXDiagnosticsEngine

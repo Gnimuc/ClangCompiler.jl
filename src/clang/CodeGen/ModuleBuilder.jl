@@ -1,6 +1,6 @@
 """
     struct CodeGenerator <: AbstractASTConsumer
-Holds a pointer to a `clang::CodeGenerator` object.
+Hold a pointer to a `clang::CodeGenerator` object.
 """
 struct CodeGenerator <: AbstractASTConsumer
     ptr::CXCodeGenerator

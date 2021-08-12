@@ -1,6 +1,6 @@
 """
     struct DiagnosticIDs <: Any
-Holds a pointer to a `clang::DiagnosticIDs` object.
+Hold a pointer to a `clang::DiagnosticIDs` object.
 """
 struct DiagnosticIDs
     ptr::CXDiagnosticIDs

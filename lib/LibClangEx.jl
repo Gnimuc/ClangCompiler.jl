@@ -68,10 +68,6 @@ const CXASTContext = Ptr{Cvoid}
 
 const CXASTConsumer = Ptr{Cvoid}
 
-const CXType_ = Ptr{Cvoid}
-
-const CXQualType = Ptr{Cvoid}
-
 const CXTranslationUnitDecl = Ptr{Cvoid}
 
 const CXDeclGroupRef = Ptr{Cvoid}
@@ -127,6 +123,64 @@ const CXTemplateArgument = Ptr{Cvoid}
     CXTagTypeKind_TTK_Class = 3
     CXTagTypeKind_TTK_Enum = 4
 end
+
+const CXType_ = Ptr{Cvoid}
+
+const CXQualType = Ptr{Cvoid}
+
+const CXComplexType = Ptr{Cvoid}
+
+const CXPointerType = Ptr{Cvoid}
+
+const CXReferenceType = Ptr{Cvoid}
+
+const CXLValueReferenceType = Ptr{Cvoid}
+
+const CXRValueReferenceType = Ptr{Cvoid}
+
+const CXMemberPointerType = Ptr{Cvoid}
+
+const CXArrayType = Ptr{Cvoid}
+
+const CXConstantArrayType = Ptr{Cvoid}
+
+const CXIncompleteArrayType = Ptr{Cvoid}
+
+const CXVariableArrayType = Ptr{Cvoid}
+
+const CXDependentSizedArrayType = Ptr{Cvoid}
+
+const CXFunctionType = Ptr{Cvoid}
+
+const CXFunctionNoProtoType = Ptr{Cvoid}
+
+const CXFunctionProtoType = Ptr{Cvoid}
+
+const CXTypedefType = Ptr{Cvoid}
+
+const CXTagType = Ptr{Cvoid}
+
+const CXRecordType = Ptr{Cvoid}
+
+const CXEnumType = Ptr{Cvoid}
+
+const CXTemplateTypeParmType = Ptr{Cvoid}
+
+const CXSubstTemplateTypeParmType = Ptr{Cvoid}
+
+const CXSubstTemplateTypeParmPackType = Ptr{Cvoid}
+
+const CXTemplateSpecializationType = Ptr{Cvoid}
+
+const CXTypeWithKeyword = Ptr{Cvoid}
+
+const CXElaboratedType = Ptr{Cvoid}
+
+const CXDependentNameType = Ptr{Cvoid}
+
+const CXDependentTemplateSpecializationType = Ptr{Cvoid}
+
+const CXDeducedType = Ptr{Cvoid}
 
 const CXCodeGenerator = Ptr{Cvoid}
 
@@ -982,140 +1036,140 @@ function clang_ClassTemplateSpecializationDecl_setTemplateArgs(CTSD, TAL)
     ccall((:clang_ClassTemplateSpecializationDecl_setTemplateArgs, libclangex), Cvoid, (CXClassTemplateSpecializationDecl, CXTemplateArgumentList), CTSD, TAL)
 end
 
-function clang_ASTContext_VoidTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_VoidTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_VoidTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_VoidTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_BoolTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_BoolTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_BoolTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_BoolTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_CharTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_CharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_CharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_CharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_WCharTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_WCharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_WCharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_WCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_WideCharTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_WideCharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_WideCharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_WideCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_WIntTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_WIntTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_WIntTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_WIntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_Char8Ty_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_Char8Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_Char8Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Char8Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_Char16Ty_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_Char16Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_Char16Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Char16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_Char32Ty_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_Char32Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_Char32Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Char32Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_SignedCharTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_SignedCharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_SignedCharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_SignedCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_ShortTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_ShortTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_ShortTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_ShortTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_IntTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_IntTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_IntTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_IntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_LongTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_LongTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_LongTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_LongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_LongLongTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_LongLongTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_LongLongTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_LongLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_Int128Ty_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_Int128Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_Int128Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Int128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_UnsignedCharTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_UnsignedCharTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_UnsignedCharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_UnsignedShortTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_UnsignedShortTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_UnsignedShortTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedShortTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_UnsignedIntTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_UnsignedIntTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_UnsignedIntTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedIntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_UnsignedLongTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_UnsignedLongTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_UnsignedLongTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_UnsignedLongLongTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_UnsignedLongLongTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_UnsignedLongLongTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedLongLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_UnsignedInt128Ty_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_UnsignedInt128Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_UnsignedInt128Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedInt128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_FloatTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_FloatTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_FloatTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_FloatTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_DoubleTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_DoubleTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_DoubleTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_DoubleTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_LongDoubleTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_LongDoubleTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_LongDoubleTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_LongDoubleTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_Float128Ty_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_Float128Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_Float128Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Float128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_HalfTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_HalfTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_HalfTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_HalfTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_BFloat16Ty_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_BFloat16Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_BFloat16Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_BFloat16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_Float16Ty_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_Float16Ty_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_Float16Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Float16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_FloatComplexTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_FloatComplexTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_FloatComplexTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_FloatComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_DoubleComplexTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_DoubleComplexTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_DoubleComplexTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_DoubleComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_LongDoubleComplexTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_LongDoubleComplexTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_LongDoubleComplexTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_LongDoubleComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_Float128ComplexTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_Float128ComplexTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_Float128ComplexTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Float128ComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_VoidPtrTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_VoidPtrTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_VoidPtrTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_VoidPtrTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
-function clang_ASTContext_NullPtrTy_getTypePtrOrNull(Ctx)
-    ccall((:clang_ASTContext_NullPtrTy_getTypePtrOrNull, libclangex), CXType_, (CXASTContext,), Ctx)
+function clang_ASTContext_NullPtrTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_NullPtrTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
 @enum CXInit_Error::UInt32 begin
@@ -1983,6 +2037,10 @@ function clang_QualType_hasLocalQualifiers(OpaquePtr)
     ccall((:clang_QualType_hasLocalQualifiers, libclangex), Bool, (CXQualType,), OpaquePtr)
 end
 
+function clang_QualType_getCVRQualifiers(OpaquePtr)
+    ccall((:clang_QualType_getCVRQualifiers, libclangex), Cuint, (CXQualType,), OpaquePtr)
+end
+
 function clang_QualType_getAsString(OpaquePtr)
     ccall((:clang_QualType_getAsString, libclangex), Ptr{Cchar}, (CXQualType,), OpaquePtr)
 end
@@ -2005,6 +2063,466 @@ end
 
 function clang_QualType_getUnqualifiedType(OpaquePtr)
     ccall((:clang_QualType_getUnqualifiedType, libclangex), CXQualType, (CXQualType,), OpaquePtr)
+end
+
+function clang_Type_isFromAST(T)
+    ccall((:clang_Type_isFromAST, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isCanonicalUnqualified(T)
+    ccall((:clang_Type_isCanonicalUnqualified, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isSizelessType(T)
+    ccall((:clang_Type_isSizelessType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isSizelessBuiltinType(T)
+    ccall((:clang_Type_isSizelessBuiltinType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isBuiltinType(T)
+    ccall((:clang_Type_isBuiltinType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isEnumeralType(T)
+    ccall((:clang_Type_isEnumeralType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isScopedEnumeralType(T)
+    ccall((:clang_Type_isScopedEnumeralType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isBooleanType(T)
+    ccall((:clang_Type_isBooleanType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isCharType(T)
+    ccall((:clang_Type_isCharType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isWideCharType(T)
+    ccall((:clang_Type_isWideCharType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isChar8Type(T)
+    ccall((:clang_Type_isChar8Type, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isChar16Type(T)
+    ccall((:clang_Type_isChar16Type, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isChar32Type(T)
+    ccall((:clang_Type_isChar32Type, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isAnyCharacterType(T)
+    ccall((:clang_Type_isAnyCharacterType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isIntegralOrUnscopedEnumerationType(T)
+    ccall((:clang_Type_isIntegralOrUnscopedEnumerationType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isUnscopedEnumerationType(T)
+    ccall((:clang_Type_isUnscopedEnumerationType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isRealFloatingType(T)
+    ccall((:clang_Type_isRealFloatingType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isComplexType(T)
+    ccall((:clang_Type_isComplexType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isAnyComplexType(T)
+    ccall((:clang_Type_isAnyComplexType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFloatingType(T)
+    ccall((:clang_Type_isFloatingType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isHalfType(T)
+    ccall((:clang_Type_isHalfType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFloat16Type(T)
+    ccall((:clang_Type_isFloat16Type, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isBFloat16Type(T)
+    ccall((:clang_Type_isBFloat16Type, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFloat128Type(T)
+    ccall((:clang_Type_isFloat128Type, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isRealType(T)
+    ccall((:clang_Type_isRealType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isArithmeticType(T)
+    ccall((:clang_Type_isArithmeticType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isVoidType(T)
+    ccall((:clang_Type_isVoidType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isAggregateType(T)
+    ccall((:clang_Type_isAggregateType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFundamentalType(T)
+    ccall((:clang_Type_isFundamentalType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isCompoundType(T)
+    ccall((:clang_Type_isCompoundType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFunctionType(T)
+    ccall((:clang_Type_isFunctionType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFunctionNoProtoType(T)
+    ccall((:clang_Type_isFunctionNoProtoType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFunctionProtoType(T)
+    ccall((:clang_Type_isFunctionProtoType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isPointerType(T)
+    ccall((:clang_Type_isPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isAnyPointerType(T)
+    ccall((:clang_Type_isAnyPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isBlockPointerType(T)
+    ccall((:clang_Type_isBlockPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isVoidPointerType(T)
+    ccall((:clang_Type_isVoidPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isReferenceType(T)
+    ccall((:clang_Type_isReferenceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isLValueReferenceType(T)
+    ccall((:clang_Type_isLValueReferenceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isRValueReferenceType(T)
+    ccall((:clang_Type_isRValueReferenceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isObjectPointerType(T)
+    ccall((:clang_Type_isObjectPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFunctionPointerType(T)
+    ccall((:clang_Type_isFunctionPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFunctionReferenceType(T)
+    ccall((:clang_Type_isFunctionReferenceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isMemberPointerType(T)
+    ccall((:clang_Type_isMemberPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isMemberFunctionPointerType(T)
+    ccall((:clang_Type_isMemberFunctionPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isMemberDataPointerType(T)
+    ccall((:clang_Type_isMemberDataPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isArrayType(T)
+    ccall((:clang_Type_isArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isConstantArrayType(T)
+    ccall((:clang_Type_isConstantArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isIncompleteArrayType(T)
+    ccall((:clang_Type_isIncompleteArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isVariableArrayType(T)
+    ccall((:clang_Type_isVariableArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isDependentSizedArrayType(T)
+    ccall((:clang_Type_isDependentSizedArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isRecordType(T)
+    ccall((:clang_Type_isRecordType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isClassType(T)
+    ccall((:clang_Type_isClassType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isStructureType(T)
+    ccall((:clang_Type_isStructureType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isObjCBoxableRecordType(T)
+    ccall((:clang_Type_isObjCBoxableRecordType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isInterfaceType(T)
+    ccall((:clang_Type_isInterfaceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isStructureOrClassType(T)
+    ccall((:clang_Type_isStructureOrClassType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isUnionType(T)
+    ccall((:clang_Type_isUnionType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isComplexIntegerType(T)
+    ccall((:clang_Type_isComplexIntegerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isVectorType(T)
+    ccall((:clang_Type_isVectorType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isExtVectorType(T)
+    ccall((:clang_Type_isExtVectorType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isMatrixType(T)
+    ccall((:clang_Type_isMatrixType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isConstantMatrixType(T)
+    ccall((:clang_Type_isConstantMatrixType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isDependentAddressSpaceType(T)
+    ccall((:clang_Type_isDependentAddressSpaceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isDecltypeType(T)
+    ccall((:clang_Type_isDecltypeType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isTemplateTypeParmType(T)
+    ccall((:clang_Type_isTemplateTypeParmType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isNullPtrType(T)
+    ccall((:clang_Type_isNullPtrType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isNothrowT(T)
+    ccall((:clang_Type_isNothrowT, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isAlignValT(T)
+    ccall((:clang_Type_isAlignValT, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isStdByteType(T)
+    ccall((:clang_Type_isStdByteType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isAtomicType(T)
+    ccall((:clang_Type_isAtomicType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isUndeducedAutoType(T)
+    ccall((:clang_Type_isUndeducedAutoType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isTypedefNameType(T)
+    ccall((:clang_Type_isTypedefNameType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isDependentType(T)
+    ccall((:clang_Type_isDependentType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isInstantiationDependentType(T)
+    ccall((:clang_Type_isInstantiationDependentType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isUndeducedType(T)
+    ccall((:clang_Type_isUndeducedType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isVariablyModifiedType(T)
+    ccall((:clang_Type_isVariablyModifiedType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_hasSizedVLAType(T)
+    ccall((:clang_Type_hasSizedVLAType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_hasUnnamedOrLocalType(T)
+    ccall((:clang_Type_hasUnnamedOrLocalType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isOverloadableType(T)
+    ccall((:clang_Type_isOverloadableType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isElaboratedTypeSpecifier(T)
+    ccall((:clang_Type_isElaboratedTypeSpecifier, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_canDecayToPointerType(T)
+    ccall((:clang_Type_canDecayToPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_hasPointerRepresentation(T)
+    ccall((:clang_Type_hasPointerRepresentation, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_hasObjCPointerRepresentation(T)
+    ccall((:clang_Type_hasObjCPointerRepresentation, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_hasSignedIntegerRepresentation(T)
+    ccall((:clang_Type_hasSignedIntegerRepresentation, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_hasUnsignedIntegerRepresentation(T)
+    ccall((:clang_Type_hasUnsignedIntegerRepresentation, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_hasFloatingRepresentation(T)
+    ccall((:clang_Type_hasFloatingRepresentation, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_getAsStructureType(T)
+    ccall((:clang_Type_getAsStructureType, libclangex), CXRecordType, (CXType_,), T)
+end
+
+function clang_Type_getAsUnionType(T)
+    ccall((:clang_Type_getAsUnionType, libclangex), CXRecordType, (CXType_,), T)
+end
+
+function clang_Type_getAsCXXRecordDecl(T)
+    ccall((:clang_Type_getAsCXXRecordDecl, libclangex), CXCXXRecordDecl, (CXType_,), T)
+end
+
+function clang_Type_getAsRecordDecl(T)
+    ccall((:clang_Type_getAsRecordDecl, libclangex), CXRecordDecl, (CXType_,), T)
+end
+
+function clang_Type_getAsTagDecl(T)
+    ccall((:clang_Type_getAsTagDecl, libclangex), CXTagDecl, (CXType_,), T)
+end
+
+function clang_Type_getPointeeCXXRecordDecl(T)
+    ccall((:clang_Type_getPointeeCXXRecordDecl, libclangex), CXCXXRecordDecl, (CXType_,), T)
+end
+
+function clang_Type_getContainedDeducedType(T)
+    ccall((:clang_Type_getContainedDeducedType, libclangex), CXDeducedType, (CXType_,), T)
+end
+
+function clang_Type_hasAutoForTrailingReturnType(T)
+    ccall((:clang_Type_hasAutoForTrailingReturnType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_getArrayElementTypeNoTypeQual(T)
+    ccall((:clang_Type_getArrayElementTypeNoTypeQual, libclangex), CXType_, (CXType_,), T)
+end
+
+function clang_Type_getPointeeOrArrayElementType(T)
+    ccall((:clang_Type_getPointeeOrArrayElementType, libclangex), CXType_, (CXType_,), T)
+end
+
+function clang_Type_getPointeeType(T)
+    ccall((:clang_Type_getPointeeType, libclangex), CXQualType, (CXType_,), T)
+end
+
+function clang_Type_getUnqualifiedDesugaredType(T)
+    ccall((:clang_Type_getUnqualifiedDesugaredType, libclangex), CXType_, (CXType_,), T)
+end
+
+function clang_Type_isPromotableIntegerType(T)
+    ccall((:clang_Type_isPromotableIntegerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isSignedIntegerType(T)
+    ccall((:clang_Type_isSignedIntegerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isUnsignedIntegerType(T)
+    ccall((:clang_Type_isUnsignedIntegerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isSignedIntegerOrEnumerationType(T)
+    ccall((:clang_Type_isSignedIntegerOrEnumerationType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isUnsignedIntegerOrEnumerationType(T)
+    ccall((:clang_Type_isUnsignedIntegerOrEnumerationType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFixedPointType(T)
+    ccall((:clang_Type_isFixedPointType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isSaturatedFixedPointType(T)
+    ccall((:clang_Type_isSaturatedFixedPointType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isUnsaturatedFixedPointType(T)
+    ccall((:clang_Type_isUnsaturatedFixedPointType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isSignedFixedPointType(T)
+    ccall((:clang_Type_isSignedFixedPointType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isUnsignedFixedPointType(T)
+    ccall((:clang_Type_isUnsignedFixedPointType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isConstantSizeType(T)
+    ccall((:clang_Type_isConstantSizeType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isSpecifierType(T)
+    ccall((:clang_Type_isSpecifierType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isVisibilityExplicit(T)
+    ccall((:clang_Type_isVisibilityExplicit, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isLinkageValid(T)
+    ccall((:clang_Type_isLinkageValid, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_getCanonicalTypeInternal(T)
+    ccall((:clang_Type_getCanonicalTypeInternal, libclangex), CXQualType, (CXType_,), T)
+end
+
+function clang_Type_dump(T)
+    ccall((:clang_Type_dump, libclangex), Cvoid, (CXType_,), T)
 end
 
 function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)

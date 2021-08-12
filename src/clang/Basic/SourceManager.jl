@@ -1,6 +1,6 @@
 """
     struct SourceManager <: Any
-Holds a pointer to a `clang::SourceManager` object.
+Hold a pointer to a `clang::SourceManager` object.
 """
 struct SourceManager
     ptr::CXSourceManager
