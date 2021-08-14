@@ -22,10 +22,10 @@ jlty_to_clty(::Type{UInt128}, ctx::ASTContext) = get_builtin_type(ctx, UnsignedI
 jlty_to_clty(::Type{Float16}, ctx::ASTContext) = get_builtin_type(ctx, Float16Ty)
 jlty_to_clty(::Type{Float32}, ctx::ASTContext) = get_builtin_type(ctx, FloatTy)
 jlty_to_clty(::Type{Float64}, ctx::ASTContext) = get_builtin_type(ctx, DoubleTy)
-jlty_to_clty(::Type{Ptr{Cvoid}}, ctx::ASTContext) = get_builtin_type(ctx, VoidPtr)
+jlty_to_clty(::Type{Ptr{Cvoid}}, ctx::ASTContext) = get_builtin_type(ctx, VoidPtrTy)
 
 """
-    clty_to_jlty(::Type{T}, ctx::ASTContext) where {T}
+    clty_to_jlty(::Type{T}) where {T}
 Interface for mapping a Clang type to the corresponding Julia type representation.
 
 See also, [`jlty_to_clty`](@ref). Note that, the mapping is not injective.
@@ -33,6 +33,7 @@ See also, [`jlty_to_clty`](@ref). Note that, the mapping is not injective.
 clty_to_jlty(clty::T) where {T<:AbstractClangType} = error("no mapping found for $T")
 
 # builtin types
+clty_to_jlty(clty::T) where {T<:AbstractBuiltinType} = error("no mapping found for builtin type: $T")
 clty_to_jlty(clty::VoidTy) = Cvoid
 clty_to_jlty(clty::BoolTy) = Bool
 clty_to_jlty(clty::CharTy) = Cchar
@@ -44,15 +45,95 @@ clty_to_jlty(clty::LongTy) = Clong
 clty_to_jlty(clty::LongLongTy) = Clonglong
 clty_to_jlty(clty::Int128Ty) = Int128
 clty_to_jlty(clty::UnsignedCharTy) = Cuchar
-clty_to_jlty(clty::UnsignedShortTy) = Cshort
+clty_to_jlty(clty::UnsignedShortTy) = Cushort
 clty_to_jlty(clty::UnsignedIntTy) = Cuint
 clty_to_jlty(clty::UnsignedLongTy) = Culong
 clty_to_jlty(clty::UnsignedLongLongTy) = Culonglong
-clty_to_jlty(clty::UnsignedInt128Ty) = Cuint128
+clty_to_jlty(clty::UnsignedInt128Ty) = UInt128
 clty_to_jlty(clty::FloatTy) = Cfloat
 clty_to_jlty(clty::DoubleTy) = Cdouble
-clty_to_jlty(clty::Float16Ty) = Cfloat16
+clty_to_jlty(clty::Float16Ty) = Float16
 clty_to_jlty(clty::VoidPtrTy) = Ptr{Cvoid}
+
+# Clang types
+clty_to_jlty(clty::QualType) = clty_to_jlty(typeclass(clty))
+clty_to_jlty(clty::BuiltinType) = clty_to_jlty(typeclass(clty))
+clty_to_jlty(clty::ReferenceType) = clty_to_jlty(typeclass(clty))
+clty_to_jlty(clty::FunctionType) = clty_to_jlty(typeclass(clty))
+clty_to_jlty(clty::ArrayType) = clty_to_jlty(typeclass(clty))
+clty_to_jlty(clty::TagType) = clty_to_jlty(typeclass(clty))
+
+clty_to_jlty(clty::PointerType) = Ptr{clty_to_jlty(get_pointee_type(clty))}
+
+function typeclass(ty::QualType)
+    is_builtin_type(ty) && return BuiltinType(ty.ptr)
+    is_complex_type(ty) && return ComplexType(ty.ptr)
+    is_pointer_type(ty) && return PointerType(ty.ptr)
+    is_reference_type(ty) && return ReferenceType(ty.ptr)
+    is_member_pointer_type(ty) && return MemberPointerType(ty.ptr)
+    is_array_type(ty) && return ArrayType(ty.ptr)
+    is_function_type(ty) && return FunctionType(ty.ptr)
+    is_typedef_type(ty) && return TypedefType(ty.ptr)
+    is_tag_type(ty) && return TagType(ty.ptr)
+    is_template_type_parm_type(ty) && return TemplateTypeParmType(ty.ptr)
+    is_subst_template_type_parm_type(ty) && return SubstTemplateTypeParmType(ty.ptr)
+    is_subst_template_type_parm_pack_type(ty) && return SubstTemplateTypeParmPackType(ty.ptr)
+    is_template_specialization_type(ty) && return TemplateSpecializationType(ty.ptr)
+    is_elaborated_type(ty) && return ElaboratedType(clty.ptr)
+    is_dependent_name_type(ty) && return DependentNameType(clty.ptr)
+    is_dependent_template_specilization_type(ty) && return DependentTemplateSpecializationType(clty.ptr)
+    return UnexposedType(ty)
+end
+
+function typeclass(ty::BuiltinType)
+    true && return VoidTy(ty.ptr)
+    true && return BoolTy(clty.ptr)
+    true && return CharTy(clty.ptr)
+    true && return WideCharTy(clty.ptr)
+    true && return SignedCharTy(clty.ptr)
+    true && return IntTy(clty.ptr)
+    true && return LongTy(clty.ptr)
+    true && return LongLongTy(clty.ptr)
+    true && return Int128Ty(clty.ptr)
+    true && return UnsignedCharTy(clty.ptr)
+    true && return UnsignedShortTy(clty.ptr)
+    true && return UnsignedIntTy(clty.ptr)
+    true && return UnsignedLongTy(clty.ptr)
+    true && return UnsignedLongLongTy(clty.ptr)
+    true && return UnsignedInt128Ty(clty.ptr)
+    true && return FloatTy(clty.ptr)
+    true && return DoubleTy(clty.ptr)
+    true && return Float16Ty(clty.ptr)
+    true && return VoidPtrTy(clty.ptr)
+    return UnexposedType(ty)
+end
+
+function typeclass(ty::ReferenceType)
+    is_lvalue_reference_type(ty) && return LValueReferenceType(ty.ptr)
+    is_rvalue_reference_type(ty) && return RValueReferenceType(ty.ptr)
+    return UnexposedType(ty)
+end
+
+function typeclass(ty::FunctionType)
+    is_function_no_proto_type(ty) && return FunctionNoProtoType(ty.ptr)
+    is_function_proto_type(ty) && return FunctionProtoType(ty.ptr)
+    return UnexposedType(ty)
+end
+
+function typeclass(ty::ArrayType)
+    is_constant_array_type(ty) && return ConstantArrayType(ty.ptr)
+    is_incomplete_array_type(ty) && return IncompleteArrayType(ty.ptr)
+    is_variable_array_type(ty) && return VariableArrayType(ty.ptr)
+    is_dependent_size_array_type(ty) && return DependentSizedArrayType(ty.ptr)
+    return UnexposedType(ty)
+end
+
+function typeclass(ty::TagType)
+    is_record_type(ty) && return RecordType(ty.ptr)
+    is_enum_type(ty) && return EnumType(ty.ptr)
+    return UnexposedType(ty)
+end
+
 
 """
     jlty_to_llvmty(::Type{T}, ctx::LLVM.Context) where {T}

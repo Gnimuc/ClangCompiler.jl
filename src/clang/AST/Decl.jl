@@ -450,6 +450,44 @@ function get_qualifier(x::AbstractTagDecl)
 end
 
 """
+    struct EnumDecl <: AbstractTagDecl
+Hold a pointer to a `clang::EnumDecl` object.
+"""
+struct EnumDecl <: AbstractTagDecl
+    ptr::CXEnumDecl
+end
+
+function get_canonical_decl(x::EnumDecl)
+    @assert x.ptr != C_NULL "EnumDecl has a NULL pointer."
+    return EnumDecl(clang_EnumDecl_getCanonicalDecl(x.ptr))
+end
+
+function get_previous_decl(x::EnumDecl)
+    @assert x.ptr != C_NULL "EnumDecl has a NULL pointer."
+    return EnumDecl(clang_EnumDecl_getPreviousDecl(x.ptr))
+end
+
+function get_most_recent_decl(x::EnumDecl)
+    @assert x.ptr != C_NULL "EnumDecl has a NULL pointer."
+    return EnumDecl(clang_EnumDecl_getMostRecentDecl(x.ptr))
+end
+
+function get_definition(x::EnumDecl)
+    @assert x.ptr != C_NULL "EnumDecl has a NULL pointer."
+    return EnumDecl(clang_EnumDecl_getDefinition(x.ptr))
+end
+
+function get_integer_type(x::EnumDecl)
+    @assert x.ptr != C_NULL "EnumDecl has a NULL pointer."
+    return QualType(clang_EnumDecl_getIntegerType(x.ptr))
+end
+
+function get_decl(x::EnumType)
+    @assert x.ptr != C_NULL "EnumType has a NULL pointer."
+    return EnumDecl(clang_EnumType_getDecl(x.ptr))
+end
+
+"""
     abstract type AbstractRecordDecl <: AbstractTagDecl
 Supertype for `RecordDecl`s.
 """

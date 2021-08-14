@@ -86,6 +86,8 @@ const CXTypedefNameDecl = Ptr{Cvoid}
 
 const CXTagDecl = Ptr{Cvoid}
 
+const CXEnumDecl = Ptr{Cvoid}
+
 const CXTemplateDecl = Ptr{Cvoid}
 
 const CXRedeclarableTemplateDecl = Ptr{Cvoid}
@@ -810,6 +812,26 @@ end
 
 function clang_TagDecl_getTemplateParameterList(TD, i)
     ccall((:clang_TagDecl_getTemplateParameterList, libclangex), CXTemplateParameterList, (CXTagDecl, Cuint), TD, i)
+end
+
+function clang_EnumDecl_getCanonicalDecl(ED)
+    ccall((:clang_EnumDecl_getCanonicalDecl, libclangex), CXEnumDecl, (CXEnumDecl,), ED)
+end
+
+function clang_EnumDecl_getPreviousDecl(ED)
+    ccall((:clang_EnumDecl_getPreviousDecl, libclangex), CXEnumDecl, (CXEnumDecl,), ED)
+end
+
+function clang_EnumDecl_getMostRecentDecl(ED)
+    ccall((:clang_EnumDecl_getMostRecentDecl, libclangex), CXEnumDecl, (CXEnumDecl,), ED)
+end
+
+function clang_EnumDecl_getDefinition(ED)
+    ccall((:clang_EnumDecl_getDefinition, libclangex), CXEnumDecl, (CXEnumDecl,), ED)
+end
+
+function clang_EnumDecl_getIntegerType(ED)
+    ccall((:clang_EnumDecl_getIntegerType, libclangex), CXQualType, (CXEnumDecl,), ED)
 end
 
 function clang_TemplateParameterList_getParam(TPL, Idx)
@@ -1965,6 +1987,10 @@ function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)
     ccall((:clang_Sema_processWeakTopLevelDecls, libclangex), Cvoid, (CXSema, CXCodeGenerator), Sema, CodeGen)
 end
 
+function clang_QualType_constructFromTypePtr(Ptr, Quals)
+    ccall((:clang_QualType_constructFromTypePtr, libclangex), CXQualType, (CXType_, Cuint), Ptr, Quals)
+end
+
 function clang_QualType_getTypePtr(OpaquePtr)
     ccall((:clang_QualType_getTypePtr, libclangex), CXType_, (CXQualType,), OpaquePtr)
 end
@@ -2523,6 +2549,150 @@ end
 
 function clang_Type_dump(T)
     ccall((:clang_Type_dump, libclangex), Cvoid, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType(T)
+    ccall((:clang_isa_BuiltinType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_ComplexType(T)
+    ccall((:clang_isa_ComplexType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_PointerType(T)
+    ccall((:clang_isa_PointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_ReferenceType(T)
+    ccall((:clang_isa_ReferenceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_LValueReferenceType(T)
+    ccall((:clang_isa_LValueReferenceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_RValueReferenceType(T)
+    ccall((:clang_isa_RValueReferenceType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_MemberPointerType(T)
+    ccall((:clang_isa_MemberPointerType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_ArrayType(T)
+    ccall((:clang_isa_ArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_ConstantArrayType(T)
+    ccall((:clang_isa_ConstantArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_IncompleteArrayType(T)
+    ccall((:clang_isa_IncompleteArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_VariableArrayType(T)
+    ccall((:clang_isa_VariableArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_DependentSizedArrayType(T)
+    ccall((:clang_isa_DependentSizedArrayType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_FunctionType(T)
+    ccall((:clang_isa_FunctionType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_FunctionNoProtoType(T)
+    ccall((:clang_isa_FunctionNoProtoType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_FunctionProtoType(T)
+    ccall((:clang_isa_FunctionProtoType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_UnresolvedUsingType(T)
+    ccall((:clang_isa_UnresolvedUsingType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_TypedefType(T)
+    ccall((:clang_isa_TypedefType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_DecltypeType(T)
+    ccall((:clang_isa_DecltypeType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_DependentDecltypeType(T)
+    ccall((:clang_isa_DependentDecltypeType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_TagType(T)
+    ccall((:clang_isa_TagType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_RecordType(T)
+    ccall((:clang_isa_RecordType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_EnumType(T)
+    ccall((:clang_isa_EnumType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_TemplateTypeParmType(T)
+    ccall((:clang_isa_TemplateTypeParmType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_SubstTemplateTypeParmType(T)
+    ccall((:clang_isa_SubstTemplateTypeParmType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_SubstTemplateTypeParmPackType(T)
+    ccall((:clang_isa_SubstTemplateTypeParmPackType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_DeducedType(T)
+    ccall((:clang_isa_DeducedType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_AutoType(T)
+    ccall((:clang_isa_AutoType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_DeducedTemplateSpecializationType(T)
+    ccall((:clang_isa_DeducedTemplateSpecializationType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_TemplateSpecializationType(T)
+    ccall((:clang_isa_TemplateSpecializationType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_ElaboratedType(T)
+    ccall((:clang_isa_ElaboratedType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_DependentNameType(T)
+    ccall((:clang_isa_DependentNameType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_DependentTemplateSpecializationType(T)
+    ccall((:clang_isa_DependentTemplateSpecializationType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_PointerType_getPointeeType(T)
+    ccall((:clang_PointerType_getPointeeType, libclangex), CXQualType, (CXPointerType,), T)
+end
+
+function clang_EnumType_getDecl(T)
+    ccall((:clang_EnumType_getDecl, libclangex), CXEnumDecl, (CXEnumType,), T)
+end
+
+function clang_FunctionProtoType_getNumParams(T)
+    ccall((:clang_FunctionProtoType_getNumParams, libclangex), Cuint, (CXFunctionProtoType,), T)
+end
+
+function clang_FunctionProtoType_getParamType(T, i)
+    ccall((:clang_FunctionProtoType_getParamType, libclangex), CXQualType, (CXFunctionProtoType, Cuint), T, i)
 end
 
 function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)

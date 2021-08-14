@@ -100,7 +100,6 @@ function get_builtin_type(ctx::ASTContext, ::Type{T}) where {T<:AbstractBuiltinT
     @assert ctx.ptr != C_NULL "ASTContext has a NULL pointer."
     return T(ctx)
 end
-get_builtin_qualified_type(ctx::ASTContext, ty) = QualType(get_builtin_type(ctx, ty))
 
 function get_ast_context(x::AbstractDecl)
     @assert x.ptr != C_NULL "Decl has a NULL pointer."

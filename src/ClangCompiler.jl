@@ -75,6 +75,8 @@ include("clang/Frontend/CompilerInstance.jl")
 include("clang/CodeGen/ModuleBuilder.jl")
 include("clang/CodeGen/CodeGenAction.jl")
 
+export AbstractClangType, AbstractQualType, AbstractBuiltinType
+
 # interface
 include("types.jl")
 export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
