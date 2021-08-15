@@ -95,9 +95,6 @@ dump(x::AbstractQualType) = clang_QualType_dump(x.ptr)
 get_pointee_type(ty_ptr::CXType_) = clang_Type_getPointeeType(ty_ptr)
 get_pointee_type(ty::AbstractQualType) = QualType(get_pointee_type(get_type_ptr(ty)))
 
-get_canonical_type_internal(ty_ptr::CXType_) = clang_Type_getCanonicalTypeInternal(ty_ptr)
-get_canonical_type_internal(ty::AbstractQualType) = QualType(get_canonical_type_internal(get_type_ptr(ty)))
-
 is_void_type(ty_ptr::CXType_) = clang_Type_isVoidType(ty_ptr)
 is_void_type(ty::AbstractQualType) = is_void_type(get_type_ptr(ty))
 
