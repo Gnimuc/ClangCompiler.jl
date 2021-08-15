@@ -340,6 +340,11 @@ struct ReferenceType <: AbstractReferenceType
     ptr::CXReferenceType
 end
 
+function get_pointee_type(x::ReferenceType)
+    @assert x.ptr != C_NULL "ReferenceType has a NULL pointer."
+    return QualType(clang_ReferenceType_getPointeeType(x.ptr))
+end
+
 """
     struct LValueReferenceType <: AbstractReferenceType
 Hold a pointer to a `clang::LValueReferenceType` object.
@@ -375,6 +380,16 @@ end
 is_member_pointer_type(ty_ptr::CXType_) = clang_isa_MemberPointerType(ty_ptr)
 is_member_pointer_type(ty::AbstractQualType) = is_member_pointer_type(get_type_ptr(ty))
 is_member_pointer_type(ty::MemberPointerType) = true
+
+function get_pointee_type(x::MemberPointerType)
+    @assert x.ptr != C_NULL "MemberPointerType has a NULL pointer."
+    return QualType(clang_MemberPointerType_getPointeeType(x.ptr))
+end
+
+function get_class(x::MemberPointerType)::CXType_
+    @assert x.ptr != C_NULL "MemberPointerType has a NULL pointer."
+    return clang_MemberPointerType_getClass(x.ptr)
+end
 
 """
     abstract type AbstractArrayType <: AbstractClangType
@@ -448,6 +463,11 @@ abstract type AbstractFunctionType <: AbstractClangType end
 
 is_function_type(ty::AbstractFunctionType) = true
 
+function get_return_type(x::AbstractFunctionType)
+    @assert x.ptr != C_NULL "FunctionType has a NULL pointer."
+    return clang_FunctionType_getReturnType(x.ptr)
+end
+
 """
     struct FunctionType <: AbstractFunctionType
 Hold a pointer to a `clang::FunctionType` object.
@@ -490,7 +510,7 @@ function get_param_type(x::FunctionProtoType, i::Integer)
     return QualType(clang_FunctionProtoType_getParamType(x.ptr, i))
 end
 
-get_params(x::FunctionProtoType) = [get_param_type(x, i) for i = 1:get_num_params(x)]
+get_params(x::FunctionProtoType) = [get_param_type(x, i) for i = 0:get_num_params(x)-1]
 
 """
     struct TypedefType <: AbstractClangType
@@ -596,6 +616,40 @@ is_template_specialization_type(ty_ptr::CXType_) = clang_isa_TemplateSpecializat
 is_template_specialization_type(ty::AbstractQualType) = is_template_specialization_type(get_type_ptr(ty))
 is_template_specialization_type(ty::TemplateSpecializationType) = true
 
+function is_current_instantiation(x::TemplateSpecializationType)
+    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
+    return clang_TemplateSpecializationType_isCurrentInstantiation(x.ptr)
+end
+
+function is_type_alias(x::TemplateSpecializationType)
+    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
+    return clang_TemplateSpecializationType_isTypeAlias(x.ptr)
+end
+
+function get_aliased_type(x::TemplateSpecializationType)
+    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
+    return QualType(clang_TemplateSpecializationType_getAliasedType(x.ptr))
+end
+
+function get_num_args(x::TemplateSpecializationType)
+    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
+    return clang_TemplateSpecializationType_getNumArgs(x.ptr)
+end
+
+function is_sugared(x::TemplateSpecializationType)
+    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
+    return clang_TemplateSpecializationType_isSugared(x.ptr)
+end
+
+function desugar(x::TemplateSpecializationType)
+    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
+    return QualType(clang_TemplateSpecializationType_desugar(x.ptr))
+end
+
+get_name(x::TemplateSpecializationType) = get_name(get_as_template_decl(get_template_name(x)))
+
+name(x::TemplateSpecializationType) = get_name(x)
+
 """
     abstract type AbstractTypeWithKeyword <: AbstractClangType
 Supertype for `TypeWithKeyword`s.
@@ -621,6 +675,11 @@ end
 is_elaborated_type(ty_ptr::CXType_) = clang_isa_ElaboratedType(ty_ptr)
 is_elaborated_type(ty::AbstractQualType) = is_elaborated_type(get_type_ptr(ty))
 is_elaborated_type(ty::ElaboratedType) = true
+
+function desugar(x::ElaboratedType)
+    @assert x.ptr != C_NULL "ElaboratedType has a NULL pointer."
+    return clang_ElaboratedType_desugar(x.ptr)
+end
 
 """
     struct DependentNameType <: AbstractTypeWithKeyword

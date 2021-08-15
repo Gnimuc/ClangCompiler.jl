@@ -10,6 +10,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
             v = LLVM.GenericValue(jlty_to_llvmty(jlty, llvm_ctx), Int(arg))
             @assert LLVM.intwidth(v) == bitwidth_clty
             arg_vec[i] = TemplateArgument(ctx, v, clty)
+            dispose(v)
         elseif arg isa Integer
             int_jlty = typeof(arg)
             int_clty = jlty_to_clty(int_jlty, ctx)
@@ -17,6 +18,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
             v = LLVM.GenericValue(jlty_to_llvmty(int_jlty, llvm_ctx), arg)
             @assert LLVM.intwidth(v) == bitwidth_clty
             arg_vec[i] = TemplateArgument(ctx, v, int_clty)
+            dispose(v)
         elseif arg isa AbstractQualType
             arg_vec[i] = TemplateArgument(arg)
         else
@@ -35,7 +37,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
         end
     end
 
-    # dispose.(arg_vec)
+    dispose.(arg_vec)
 
     return specialization_decl
 end

@@ -75,6 +75,8 @@ function init(x::AbstractTemplateDecl, nd::NamedDecl, tp::TemplateParameterList)
     return clang_TemplateDecl_init(x.ptr, nd.ptr, tp.ptr)
 end
 
+get_as_template_decl(x::TemplateName) = TemplateDecl(clang_TemplateName_getAsTemplateDecl(x.ptr))
+
 """
     abstract type AbstractRedeclarableTemplateDecl <: AbstractTemplateDecl
 Supertype for `RedeclarableTemplateDecl`s.

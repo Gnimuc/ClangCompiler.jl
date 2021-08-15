@@ -126,6 +126,28 @@ const CXTemplateArgument = Ptr{Cvoid}
     CXTagTypeKind_TTK_Enum = 4
 end
 
+@enum CXTemplateName_NameKind::UInt32 begin
+    CXTemplateName_NameKind_Template = 0
+    CXTemplateName_NameKind_OverloadedTemplate = 1
+    CXTemplateName_NameKind_AssumedTemplate = 2
+    CXTemplateName_NameKind_QualifiedTemplate = 3
+    CXTemplateName_NameKind_DependentTemplate = 4
+    CXTemplateName_NameKind_SubstTemplateTemplateParm = 5
+    CXTemplateName_NameKind_SubstTemplateTemplateParmPack = 6
+end
+
+@enum CXTemplateArgument_ArgKind::UInt32 begin
+    CXTemplateArgument_ArgKind_Null = 0
+    CXTemplateArgument_ArgKind_Type = 1
+    CXTemplateArgument_ArgKind_Declaration = 2
+    CXTemplateArgument_ArgKind_NullPtr = 3
+    CXTemplateArgument_ArgKind_Integral = 4
+    CXTemplateArgument_ArgKind_Template = 5
+    CXTemplateArgument_ArgKind_TemplateExpansion = 6
+    CXTemplateArgument_ArgKind_Expression = 7
+    CXTemplateArgument_ArgKind_Pack = 8
+end
+
 const CXType_ = Ptr{Cvoid}
 
 const CXQualType = Ptr{Cvoid}
@@ -874,6 +896,10 @@ function clang_TemplateArgument_dispose(TA)
     ccall((:clang_TemplateArgument_dispose, libclangex), Cvoid, (CXTemplateArgument,), TA)
 end
 
+function clang_TemplateArgument_getKind(TA)
+    ccall((:clang_TemplateArgument_getKind, libclangex), CXTemplateArgument_ArgKind, (CXTemplateArgument,), TA)
+end
+
 function clang_TemplateArgument_isNull(TA)
     ccall((:clang_TemplateArgument_isNull, libclangex), Bool, (CXTemplateArgument,), TA)
 end
@@ -900,6 +926,18 @@ end
 
 function clang_TemplateArgument_getNullPtrType(TA)
     ccall((:clang_TemplateArgument_getNullPtrType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsTemplate(TA)
+    ccall((:clang_TemplateArgument_getAsTemplate, libclangex), CXTemplateName, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsTemplateOrTemplatePattern(TA)
+    ccall((:clang_TemplateArgument_getAsTemplateOrTemplatePattern, libclangex), CXTemplateName, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getNumTemplateExpansions(TA)
+    ccall((:clang_TemplateArgument_getNumTemplateExpansions, libclangex), Cuint, (CXTemplateArgument,), TA)
 end
 
 function clang_TemplateArgument_getAsIntegral(TA)
@@ -1044,6 +1082,42 @@ end
 
 function clang_CXXRecordDecl_isEmpty(CXXRD)
     ccall((:clang_CXXRecordDecl_isEmpty, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_TemplateName_isNull(TN)
+    ccall((:clang_TemplateName_isNull, libclangex), Bool, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_getKind(TN)
+    ccall((:clang_TemplateName_getKind, libclangex), CXTemplateName_NameKind, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_getAsTemplateDecl(TN)
+    ccall((:clang_TemplateName_getAsTemplateDecl, libclangex), CXTemplateDecl, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_getUnderlying(TN)
+    ccall((:clang_TemplateName_getUnderlying, libclangex), CXTemplateName, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_getNameToSubstitute(TN)
+    ccall((:clang_TemplateName_getNameToSubstitute, libclangex), CXTemplateName, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_isDependent(TN)
+    ccall((:clang_TemplateName_isDependent, libclangex), Bool, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_isInstantiationDependent(TN)
+    ccall((:clang_TemplateName_isInstantiationDependent, libclangex), Bool, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_containsUnexpandedParameterPack(TN)
+    ccall((:clang_TemplateName_containsUnexpandedParameterPack, libclangex), Bool, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_dump(TN)
+    ccall((:clang_TemplateName_dump, libclangex), Cvoid, (CXTemplateName,), TN)
 end
 
 function clang_ClassTemplateSpecializationDecl_Create(Context, TK, DC, StartLoc, IdLoc, SpecializedTemplate, Args, PrevDecl)
@@ -2111,6 +2185,10 @@ function clang_Type_isBuiltinType(T)
     ccall((:clang_Type_isBuiltinType, libclangex), Bool, (CXType_,), T)
 end
 
+function clang_Type_isIntegerType(T)
+    ccall((:clang_Type_isIntegerType, libclangex), Bool, (CXType_,), T)
+end
+
 function clang_Type_isEnumeralType(T)
     ccall((:clang_Type_isEnumeralType, libclangex), Bool, (CXType_,), T)
 end
@@ -2145,6 +2223,10 @@ end
 
 function clang_Type_isAnyCharacterType(T)
     ccall((:clang_Type_isAnyCharacterType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isIntegralOrEnumerationType(T)
+    ccall((:clang_Type_isIntegralOrEnumerationType, libclangex), Bool, (CXType_,), T)
 end
 
 function clang_Type_isIntegralOrUnscopedEnumerationType(T)
@@ -2197,6 +2279,10 @@ end
 
 function clang_Type_isVoidType(T)
     ccall((:clang_Type_isVoidType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isScalarType(T)
+    ccall((:clang_Type_isScalarType, libclangex), Bool, (CXType_,), T)
 end
 
 function clang_Type_isAggregateType(T)
@@ -2427,6 +2513,10 @@ function clang_Type_hasObjCPointerRepresentation(T)
     ccall((:clang_Type_hasObjCPointerRepresentation, libclangex), Bool, (CXType_,), T)
 end
 
+function clang_Type_hasIntegerRepresentation(T)
+    ccall((:clang_Type_hasIntegerRepresentation, libclangex), Bool, (CXType_,), T)
+end
+
 function clang_Type_hasSignedIntegerRepresentation(T)
     ccall((:clang_Type_hasSignedIntegerRepresentation, libclangex), Bool, (CXType_,), T)
 end
@@ -2445,6 +2535,10 @@ end
 
 function clang_Type_getAsUnionType(T)
     ccall((:clang_Type_getAsUnionType, libclangex), CXRecordType, (CXType_,), T)
+end
+
+function clang_Type_getAsComplexIntegerType(T)
+    ccall((:clang_Type_getAsComplexIntegerType, libclangex), CXComplexType, (CXType_,), T)
 end
 
 function clang_Type_getAsCXXRecordDecl(T)
@@ -2509,6 +2603,10 @@ end
 
 function clang_Type_isFixedPointType(T)
     ccall((:clang_Type_isFixedPointType, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_Type_isFixedPointOrIntegerType(T)
+    ccall((:clang_Type_isFixedPointOrIntegerType, libclangex), Bool, (CXType_,), T)
 end
 
 function clang_Type_isSaturatedFixedPointType(T)
@@ -2683,8 +2781,20 @@ function clang_PointerType_getPointeeType(T)
     ccall((:clang_PointerType_getPointeeType, libclangex), CXQualType, (CXPointerType,), T)
 end
 
+function clang_MemberPointerType_getPointeeType(T)
+    ccall((:clang_MemberPointerType_getPointeeType, libclangex), CXQualType, (CXMemberPointerType,), T)
+end
+
+function clang_MemberPointerType_getClass(T)
+    ccall((:clang_MemberPointerType_getClass, libclangex), CXType_, (CXMemberPointerType,), T)
+end
+
 function clang_EnumType_getDecl(T)
     ccall((:clang_EnumType_getDecl, libclangex), CXEnumDecl, (CXEnumType,), T)
+end
+
+function clang_FunctionType_getReturnType(T)
+    ccall((:clang_FunctionType_getReturnType, libclangex), CXQualType, (CXFunctionType,), T)
 end
 
 function clang_FunctionProtoType_getNumParams(T)
@@ -2693,6 +2803,46 @@ end
 
 function clang_FunctionProtoType_getParamType(T, i)
     ccall((:clang_FunctionProtoType_getParamType, libclangex), CXQualType, (CXFunctionProtoType, Cuint), T, i)
+end
+
+function clang_ReferenceType_getPointeeType(T)
+    ccall((:clang_ReferenceType_getPointeeType, libclangex), CXQualType, (CXReferenceType,), T)
+end
+
+function clang_ElaboratedType_desugar(T)
+    ccall((:clang_ElaboratedType_desugar, libclangex), CXQualType, (CXElaboratedType,), T)
+end
+
+function clang_TemplateSpecializationType_isCurrentInstantiation(T)
+    ccall((:clang_TemplateSpecializationType_isCurrentInstantiation, libclangex), Bool, (CXTemplateSpecializationType,), T)
+end
+
+function clang_TemplateSpecializationType_isTypeAlias(T)
+    ccall((:clang_TemplateSpecializationType_isTypeAlias, libclangex), Bool, (CXTemplateSpecializationType,), T)
+end
+
+function clang_TemplateSpecializationType_getAliasedType(T)
+    ccall((:clang_TemplateSpecializationType_getAliasedType, libclangex), CXQualType, (CXTemplateSpecializationType,), T)
+end
+
+function clang_TemplateSpecializationType_getTemplateName(T)
+    ccall((:clang_TemplateSpecializationType_getTemplateName, libclangex), CXTemplateName, (CXTemplateSpecializationType,), T)
+end
+
+function clang_TemplateSpecializationType_getNumArgs(T)
+    ccall((:clang_TemplateSpecializationType_getNumArgs, libclangex), Cuint, (CXTemplateSpecializationType,), T)
+end
+
+function clang_TemplateSpecializationType_getArg(T, Idx)
+    ccall((:clang_TemplateSpecializationType_getArg, libclangex), CXTemplateArgument, (CXTemplateSpecializationType, Cuint), T, Idx)
+end
+
+function clang_TemplateSpecializationType_isSugared(T)
+    ccall((:clang_TemplateSpecializationType_isSugared, libclangex), Bool, (CXTemplateSpecializationType,), T)
+end
+
+function clang_TemplateSpecializationType_desugar(T)
+    ccall((:clang_TemplateSpecializationType_desugar, libclangex), CXQualType, (CXTemplateSpecializationType,), T)
 end
 
 function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
