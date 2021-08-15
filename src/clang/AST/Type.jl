@@ -568,6 +568,10 @@ is_enum_type(ty::EnumType) = true
 
 get_integer_type(x::EnumType) = get_integer_type(get_decl(x))
 
+get_name(x::EnumType) = get_name(get_decl(x))
+
+name(x::EnumType) = get_name(x)
+
 """
     struct TemplateTypeParmType <: AbstractClangType
 Hold a pointer to a `clang::TemplateTypeParmType` object.
