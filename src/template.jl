@@ -37,7 +37,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
         end
     end
 
-    dispose.(arg_vec)
+    # dispose.(arg_vec)  # FIXME: free NULL pointer
 
     return specialization_decl
 end
