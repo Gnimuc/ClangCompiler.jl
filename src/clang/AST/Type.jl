@@ -156,113 +156,228 @@ struct VoidTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_void_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Void(ty_ptr)
+is_void_ty(ty::AbstractQualType) = is_void_ty(get_type_ptr(ty))
+is_void_ty(ty::VoidTy) = true
+
 struct BoolTy <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_bool_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Bool(ty_ptr)
+is_bool_ty(ty::AbstractQualType) = is_bool_ty(get_type_ptr(ty))
+is_bool_ty(ty::BoolTy) = true
 
 struct CharTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_char_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Char_U(ty_ptr) || clang_isa_BuiltinType_Char_S(ty_ptr)
+is_char_ty(ty::AbstractQualType) = is_char_ty(get_type_ptr(ty))
+is_char_ty(ty::CharTy) = true
+
+# [C++ 3.9.1p5].
 struct WCharTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_wchar_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_WChar_U(ty_ptr) || clang_isa_BuiltinType_WChar_S(ty_ptr)
+is_wchar_ty(ty::AbstractQualType) = is_wchar_ty(get_type_ptr(ty))
+is_wchar_ty(ty::WCharTy) = true
+
+# Same as WCharTy in C++, integer type in C99.
 struct WideCharTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_widechar_ty(ty::AbstractQualType) = is_wchar_ty(ty)
+is_widechar_ty(ty::WideCharTy) = true
+
+# [C99 7.24.1], integer type unchanged by default promotions.
 struct WIntTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+# [C++20 proposal]
 struct Char8Ty <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_char8_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Char8(ty_ptr)
+is_char8_ty(ty::AbstractQualType) = is_char8_ty(get_type_ptr(ty))
+is_char8_ty(ty::Char8Ty) = true
+
+# [C++0x 3.9.1p5], integer type in C99.
 struct Char16Ty <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_char16_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Char16(ty_ptr)
+is_char16_ty(ty::AbstractQualType) = is_char16_ty(get_type_ptr(ty))
+is_char16_ty(ty::Char16Ty) = true
+
+# [C++0x 3.9.1p5], integer type in C99.
 struct Char32Ty <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_char32_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Char32(ty_ptr)
+is_char32_ty(ty::AbstractQualType) = is_char32_ty(get_type_ptr(ty))
+is_char32_ty(ty::Char32Ty) = true
 
 struct SignedCharTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_signed_char_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_SChar(ty_ptr)
+is_signed_char_ty(ty::AbstractQualType) = is_signed_char_ty(get_type_ptr(ty))
+is_signed_char_ty(ty::SignedCharTy) = true
+
 struct ShortTy <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_short_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Short(ty_ptr)
+is_short_ty(ty::AbstractQualType) = is_short_ty(get_type_ptr(ty))
+is_short_ty(ty::ShortTy) = true
 
 struct IntTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_int_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Int(ty_ptr)
+is_int_ty(ty::AbstractQualType) = is_int_ty(get_type_ptr(ty))
+is_int_ty(ty::IntTy) = true
+
 struct LongTy <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_long_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Long(ty_ptr)
+is_long_ty(ty::AbstractQualType) = is_long_ty(get_type_ptr(ty))
+is_long_ty(ty::LongTy) = true
 
 struct LongLongTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_longlong_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_LongLong(ty_ptr)
+is_longlong_ty(ty::AbstractQualType) = is_longlong_ty(get_type_ptr(ty))
+is_longlong_ty(ty::LongLongTy) = true
+
 struct Int128Ty <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_int128_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Int128(ty_ptr)
+is_int128_ty(ty::AbstractQualType) = is_int128_ty(get_type_ptr(ty))
+is_int128_ty(ty::Int128Ty) = true
 
 struct UnsignedCharTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_unsigned_char_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_UChar(ty_ptr)
+is_unsigned_char_ty(ty::AbstractQualType) = is_unsigned_char_ty(get_type_ptr(ty))
+is_unsigned_char_ty(ty::UnsignedCharTy) = true
+
 struct UnsignedShortTy <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_unsigned_short_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_UShort(ty_ptr)
+is_unsigned_short_ty(ty::AbstractQualType) = is_unsigned_short_ty(get_type_ptr(ty))
+is_unsigned_short_ty(ty::UnsignedShortTy) = true
 
 struct UnsignedIntTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_unsigned_int_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_UInt(ty_ptr)
+is_unsigned_int_ty(ty::AbstractQualType) = is_unsigned_int_ty(get_type_ptr(ty))
+is_unsigned_int_ty(ty::UnsignedIntTy) = true
+
 struct UnsignedLongTy <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_unsigned_long_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_ULong(ty_ptr)
+is_unsigned_long_ty(ty::AbstractQualType) = is_unsigned_long_ty(get_type_ptr(ty))
+is_unsigned_long_ty(ty::UnsignedLongTy) = true
 
 struct UnsignedLongLongTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_unsigned_longlong_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_ULongLong(ty_ptr)
+is_unsigned_longlong_ty(ty::AbstractQualType) = is_unsigned_longlong_ty(get_type_ptr(ty))
+is_unsigned_longlong_ty(ty::UnsignedLongLongTy) = true
+
 struct UnsignedInt128Ty <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_unsigned_int128_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_UInt128(ty_ptr)
+is_unsigned_int128_ty(ty::AbstractQualType) = is_unsigned_int128_ty(get_type_ptr(ty))
+is_unsigned_int128_ty(ty::UnsignedInt128Ty) = true
 
 struct FloatTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_float_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Float(ty_ptr)
+is_float_ty(ty::AbstractQualType) = is_float_ty(get_type_ptr(ty))
+is_float_ty(ty::FloatTy) = true
+
 struct DoubleTy <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_double_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Double(ty_ptr)
+is_double_ty(ty::AbstractQualType) = is_double_ty(get_type_ptr(ty))
+is_double_ty(ty::DoubleTy) = true
 
 struct LongDoubleTy <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_long_double_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_LongDouble(ty_ptr)
+is_long_double_ty(ty::AbstractQualType) = is_long_double_ty(get_type_ptr(ty))
+is_long_double_ty(ty::LongDoubleTy) = true
+
 struct Float128Ty <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_float128_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Float128(ty_ptr)
+is_float128_ty(ty::AbstractQualType) = is_float128_ty(get_type_ptr(ty))
+is_float128_ty(ty::Float128Ty) = true
+
+# [OpenCL 6.1.1.1], ARM NEON
 struct HalfTy <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_half_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Half(ty_ptr)
+is_half_ty(ty::AbstractQualType) = is_half_ty(get_type_ptr(ty))
+is_half_ty(ty::HalfTy) = true
 
 struct BFloat16Ty <: AbstractBuiltinType
     ptr::CXQualType
 end
 
+is_bfloat_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_BFloat16(ty_ptr)
+is_bfloat_ty(ty::AbstractQualType) = is_bfloat_ty(get_type_ptr(ty))
+is_bfloat_ty(ty::BFloat16Ty) = true
+
+# C11 extension ISO/IEC TS 18661-3
 struct Float16Ty <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_float16_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Float16(ty_ptr)
+is_float16_ty(ty::AbstractQualType) = is_float16_ty(get_type_ptr(ty))
+is_float16_ty(ty::Float16Ty) = true
 
 struct FloatComplexTy <: AbstractBuiltinType
     ptr::CXQualType
@@ -287,6 +402,10 @@ end
 struct NullPtrTy <: AbstractBuiltinType
     ptr::CXQualType
 end
+
+is_nullptr_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_NullPtr(ty_ptr)
+is_nullptr_ty(ty::AbstractQualType) = is_nullptr_ty(get_type_ptr(ty))
+is_nullptr_ty(ty::NullPtrTy) = true
 
 """
     abstract type AbstractComplexType <: AbstractQualType

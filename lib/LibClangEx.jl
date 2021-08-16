@@ -2781,6 +2781,122 @@ function clang_isa_DependentTemplateSpecializationType(T)
     ccall((:clang_isa_DependentTemplateSpecializationType, libclangex), Bool, (CXType_,), T)
 end
 
+function clang_isa_BuiltinType_Void(T)
+    ccall((:clang_isa_BuiltinType_Void, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Bool(T)
+    ccall((:clang_isa_BuiltinType_Bool, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Char_U(T)
+    ccall((:clang_isa_BuiltinType_Char_U, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_UChar(T)
+    ccall((:clang_isa_BuiltinType_UChar, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_WChar_U(T)
+    ccall((:clang_isa_BuiltinType_WChar_U, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Char8(T)
+    ccall((:clang_isa_BuiltinType_Char8, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Char16(T)
+    ccall((:clang_isa_BuiltinType_Char16, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Char32(T)
+    ccall((:clang_isa_BuiltinType_Char32, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_UShort(T)
+    ccall((:clang_isa_BuiltinType_UShort, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_UInt(T)
+    ccall((:clang_isa_BuiltinType_UInt, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_ULong(T)
+    ccall((:clang_isa_BuiltinType_ULong, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_ULongLong(T)
+    ccall((:clang_isa_BuiltinType_ULongLong, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_UInt128(T)
+    ccall((:clang_isa_BuiltinType_UInt128, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Char_S(T)
+    ccall((:clang_isa_BuiltinType_Char_S, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_SChar(T)
+    ccall((:clang_isa_BuiltinType_SChar, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_WChar_S(T)
+    ccall((:clang_isa_BuiltinType_WChar_S, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Short(T)
+    ccall((:clang_isa_BuiltinType_Short, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Int(T)
+    ccall((:clang_isa_BuiltinType_Int, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Long(T)
+    ccall((:clang_isa_BuiltinType_Long, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_LongLong(T)
+    ccall((:clang_isa_BuiltinType_LongLong, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Int128(T)
+    ccall((:clang_isa_BuiltinType_Int128, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Half(T)
+    ccall((:clang_isa_BuiltinType_Half, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Float(T)
+    ccall((:clang_isa_BuiltinType_Float, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Double(T)
+    ccall((:clang_isa_BuiltinType_Double, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_LongDouble(T)
+    ccall((:clang_isa_BuiltinType_LongDouble, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Float16(T)
+    ccall((:clang_isa_BuiltinType_Float16, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_BFloat16(T)
+    ccall((:clang_isa_BuiltinType_BFloat16, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_Float128(T)
+    ccall((:clang_isa_BuiltinType_Float128, libclangex), Bool, (CXType_,), T)
+end
+
+function clang_isa_BuiltinType_NullPtr(T)
+    ccall((:clang_isa_BuiltinType_NullPtr, libclangex), Bool, (CXType_,), T)
+end
+
 function clang_PointerType_getPointeeType(T)
     ccall((:clang_PointerType_getPointeeType, libclangex), CXQualType, (CXPointerType,), T)
 end

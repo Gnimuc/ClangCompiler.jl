@@ -36,7 +36,8 @@ clty_to_jlty(clty::T) where {T<:AbstractClangType} = error("no mapping found for
 clty_to_jlty(clty::T) where {T<:AbstractBuiltinType} = error("no mapping found for builtin type: $T")
 clty_to_jlty(clty::VoidTy) = Cvoid
 clty_to_jlty(clty::BoolTy) = Bool
-clty_to_jlty(clty::CharTy) = Cchar
+clty_to_jlty(clty::CharTy) = Cuchar
+clty_to_jlty(clty::WCharTy) = Cwchar_t
 clty_to_jlty(clty::WideCharTy) = Cwchar_t
 clty_to_jlty(clty::SignedCharTy) = Cchar
 clty_to_jlty(clty::ShortTy) = Cshort
@@ -53,6 +54,9 @@ clty_to_jlty(clty::UnsignedInt128Ty) = UInt128
 clty_to_jlty(clty::FloatTy) = Cfloat
 clty_to_jlty(clty::DoubleTy) = Cdouble
 clty_to_jlty(clty::Float16Ty) = Float16
+clty_to_jlty(clty::HalfTy) = Float16
+clty_to_jlty(clty::BFloat16Ty) = Float16
+clty_to_jlty(clty::NullPtrTy) = Ptr{Cvoid}
 clty_to_jlty(clty::VoidPtrTy) = Ptr{Cvoid}
 
 # Clang types
@@ -64,6 +68,8 @@ clty_to_jlty(clty::ArrayType) = clty_to_jlty(typeclass(clty))
 clty_to_jlty(clty::TagType) = clty_to_jlty(typeclass(clty))
 
 clty_to_jlty(clty::PointerType) = Ptr{clty_to_jlty(get_pointee_type(clty))}
+
+typeclass(x::UnexposedType) = x
 
 function typeclass(ty::QualType)
     is_builtin_type(ty) && return BuiltinType(ty.ptr)
@@ -82,42 +88,46 @@ function typeclass(ty::QualType)
     is_elaborated_type(ty) && return ElaboratedType(ty.ptr)
     is_dependent_name_type(ty) && return DependentNameType(ty.ptr)
     is_dependent_template_specilization_type(ty) && return DependentTemplateSpecializationType(ty.ptr)
-    return UnexposedType(ty)
+    return typeclass(UnexposedType(ty))
 end
 
 function typeclass(ty::BuiltinType)
-    true && return VoidTy(ty.ptr)
-    true && return BoolTy(ty.ptr)
-    true && return CharTy(ty.ptr)
-    true && return WideCharTy(ty.ptr)
-    true && return SignedCharTy(ty.ptr)
-    true && return IntTy(ty.ptr)
-    true && return LongTy(ty.ptr)
-    true && return LongLongTy(ty.ptr)
-    true && return Int128Ty(ty.ptr)
-    true && return UnsignedCharTy(ty.ptr)
-    true && return UnsignedShortTy(ty.ptr)
-    true && return UnsignedIntTy(ty.ptr)
-    true && return UnsignedLongTy(ty.ptr)
-    true && return UnsignedLongLongTy(ty.ptr)
-    true && return UnsignedInt128Ty(ty.ptr)
-    true && return FloatTy(ty.ptr)
-    true && return DoubleTy(ty.ptr)
-    true && return Float16Ty(ty.ptr)
-    true && return VoidPtrTy(ty.ptr)
-    return UnexposedType(ty)
+    is_void_ty(ty) && return VoidTy(ty.ptr)
+    is_bool_ty(ty) && return BoolTy(ty.ptr)
+    is_char_ty(ty) && return CharTy(ty.ptr)
+    is_wchar_ty(ty) && return WCharTy(ty.ptr)
+    is_widechar_ty(ty) && return WideCharTy(ty.ptr)
+    is_signed_char_ty(ty) && return SignedCharTy(ty.ptr)
+    is_short_ty(ty) && return ShortTy(ty.ptr)
+    is_int_ty(ty) && return IntTy(ty.ptr)
+    is_long_ty(ty) && return LongTy(ty.ptr)
+    is_longlong_ty(ty) && return LongLongTy(ty.ptr)
+    is_int128_ty(ty) && return Int128Ty(ty.ptr)
+    is_unsigned_char_ty(ty) && return UnsignedCharTy(ty.ptr)
+    is_unsigned_short_ty(ty) && return UnsignedShortTy(ty.ptr)
+    is_unsigned_int_ty(ty) && return UnsignedIntTy(ty.ptr)
+    is_unsigned_long_ty(ty) && return UnsignedLongTy(ty.ptr)
+    is_unsigned_longlong_ty(ty) && return UnsignedLongLongTy(ty.ptr)
+    is_unsigned_int128_ty(ty) && return UnsignedInt128Ty(ty.ptr)
+    is_float_ty(ty) && return FloatTy(ty.ptr)
+    is_double_ty(ty) && return DoubleTy(ty.ptr)
+    is_float16_ty(ty) && return Float16Ty(ty.ptr)
+    is_half_ty(ty) && return HalfTy(ty.ptr)
+    is_bfloat_ty(ty) && return BFloat16Ty(ty.ptr)
+    is_nullptr_ty(ty) && return NullPtrTy(ty.ptr)
+    return typeclass(UnexposedType(ty))
 end
 
 function typeclass(ty::ReferenceType)
     is_lvalue_reference_type(ty) && return LValueReferenceType(ty.ptr)
     is_rvalue_reference_type(ty) && return RValueReferenceType(ty.ptr)
-    return UnexposedType(ty)
+    return typeclass(UnexposedType(ty))
 end
 
 function typeclass(ty::FunctionType)
     is_function_no_proto_type(ty) && return FunctionNoProtoType(ty.ptr)
     is_function_proto_type(ty) && return FunctionProtoType(ty.ptr)
-    return UnexposedType(ty)
+    return typeclass(UnexposedType(ty))
 end
 
 function typeclass(ty::ArrayType)
@@ -125,13 +135,13 @@ function typeclass(ty::ArrayType)
     is_incomplete_array_type(ty) && return IncompleteArrayType(ty.ptr)
     is_variable_array_type(ty) && return VariableArrayType(ty.ptr)
     is_dependent_size_array_type(ty) && return DependentSizedArrayType(ty.ptr)
-    return UnexposedType(ty)
+    return typeclass(UnexposedType(ty))
 end
 
 function typeclass(ty::TagType)
     is_record_type(ty) && return RecordType(ty.ptr)
     is_enum_type(ty) && return EnumType(ty.ptr)
-    return UnexposedType(ty)
+    return typeclass(UnexposedType(ty))
 end
 
 
