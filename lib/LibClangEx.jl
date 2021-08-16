@@ -664,6 +664,10 @@ function clang_NamedDecl_getName(ND)
     ccall((:clang_NamedDecl_getName, libclangex), Ptr{Cchar}, (CXNamedDecl,), ND)
 end
 
+function clang_NamedDecl_getDeclName(ND)
+    ccall((:clang_NamedDecl_getDeclName, libclangex), CXDeclarationName, (CXNamedDecl,), ND)
+end
+
 function clang_NamedDecl_setDeclName(ND, DN)
     ccall((:clang_NamedDecl_setDeclName, libclangex), Cvoid, (CXNamedDecl, CXDeclarationName), ND, DN)
 end
@@ -2110,15 +2114,15 @@ function clang_QualType_withRestrict(OpaquePtr)
 end
 
 function clang_QualType_addConst(OpaquePtr)
-    ccall((:clang_QualType_addConst, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+    ccall((:clang_QualType_addConst, libclangex), CXQualType, (CXQualType,), OpaquePtr)
 end
 
 function clang_QualType_addVolatile(OpaquePtr)
-    ccall((:clang_QualType_addVolatile, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+    ccall((:clang_QualType_addVolatile, libclangex), CXQualType, (CXQualType,), OpaquePtr)
 end
 
 function clang_QualType_addRestrict(OpaquePtr)
-    ccall((:clang_QualType_addRestrict, libclangex), Cvoid, (CXQualType,), OpaquePtr)
+    ccall((:clang_QualType_addRestrict, libclangex), CXQualType, (CXQualType,), OpaquePtr)
 end
 
 function clang_QualType_isLocalConstQualified(OpaquePtr)
@@ -2787,6 +2791,10 @@ end
 
 function clang_MemberPointerType_getClass(T)
     ccall((:clang_MemberPointerType_getClass, libclangex), CXType_, (CXMemberPointerType,), T)
+end
+
+function clang_TypedefType_desugar(T)
+    ccall((:clang_TypedefType_desugar, libclangex), CXQualType, (CXTypedefType,), T)
 end
 
 function clang_EnumType_getDecl(T)

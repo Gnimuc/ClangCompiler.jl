@@ -42,13 +42,6 @@ function get_loc_with_offset(x::SourceLocation, offset::Integer)
     return SourceLocation(clang_SourceLocation_getLocWithOffset(x.ptr, offset))
 end
 
-function get_string(x::SourceLocation)
-    str = clang_SourceLocation_printToString(x.ptr)
-    s = unsafe_string(str)
-    clang_SourceLocation_disposeString(str)
-    return s
-end
-
 """
     struct SourceRange <: Any
 Hold two `SourceLocation`s.

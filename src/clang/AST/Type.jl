@@ -4,7 +4,7 @@ Supertype for `clang::Type`s.
 
 1. `clang::Type` has no corresponding handle type in Julia.
 2. `CXType_` is an opaque pointer for `clang::Type *`.
-3. `get_type_ptr(x::QualType)` is for converting a `QualType` to a `CXType_`.
+3. `get_type_ptr(x::AbstractQualType)` is for converting a `QualType` to a `CXType_`.
 4. `get_qual_type(x::CXType_)` is for converting a `CXType_` to a `QualType`.
 """
 abstract type AbstractClangType end
@@ -19,9 +19,6 @@ Supertype for `clang::QualType`s.
 
 As we use `QualType` everywhere, it's useful to create a type hierarchy of different
 `QualType`s on the Julia side for multiple dispatch.
-
-For other types that are `<: AbstractClangType` but not `AbstractQualType`, e.g.
-[`ComplexType`](@ref), one needs to use [`desugar`](@ref) to extract the underlying `QualType`.
 """
 abstract type AbstractQualType <: AbstractClangType end
 
@@ -41,7 +38,6 @@ QualType(ptr::CXType_, quals::Unsigned) = QualType(clang_QualType_constructFromT
 
 get_canonical_type_internal(ptr::CXType_) = QualType(clang_Type_getCanonicalTypeInternal(ptr))
 get_qual_type(ptr::CXType_) = get_canonical_type_internal(ptr)
-get_qual_type(x::AbstractClangType) = get_qual_type(x.ptr)
 get_qual_type(x::AbstractQualType) = x
 
 get_type_ptr(x::AbstractQualType)::CXType_ = clang_QualType_getTypePtr(x.ptr)
@@ -75,20 +71,22 @@ with_const(x::AbstractQualType) = QualType(clang_QualType_withConst(x.ptr))
 with_restrict(x::AbstractQualType) = QualType(clang_QualType_withRestrict(x.ptr))
 with_volatile(x::AbstractQualType) = QualType(clang_QualType_withVolatile(x.ptr))
 
-add_const(x::AbstractQualType) = clang_QualType_addConst(x.ptr)
-add_restrict(x::AbstractQualType) = clang_QualType_addRestrict(x.ptr)
-add_volatile(x::AbstractQualType) = clang_QualType_addVolatile(x.ptr)
+add_const(x::AbstractQualType) = QualType(clang_QualType_addConst(x.ptr))
+add_restrict(x::AbstractQualType) = QualType(clang_QualType_addRestrict(x.ptr))
+add_volatile(x::AbstractQualType) = QualType(clang_QualType_addVolatile(x.ptr))
 
 get_canonical_type(x::AbstractQualType) = QualType(clang_QualType_getCanonicalType(x.ptr))
 get_canonical_unqualified_type(x::AbstractQualType) = QualType(clang_QualType_getLocalUnqualifiedType(x.ptr))
 get_unqualified_type(x::AbstractQualType) = QualType(clang_QualType_getUnqualifiedType(x.ptr))
 
-function get_string(x::AbstractQualType)
+function get_as_string(x::AbstractQualType)
     str = clang_QualType_getAsString(x.ptr)
     s = unsafe_string(str)
     clang_QualType_disposeString(str)
     return s
 end
+
+name(x::AbstractQualType) = get_as_string(x)
 
 dump(x::AbstractQualType) = clang_QualType_dump(x.ptr)
 
@@ -147,6 +145,8 @@ is_builtin_type(ty::AbstractBuiltinType) = true
 """
     BuiltinType <: AbstractBuiltinType
 A builtin `QualType`.
+
+Note that, we treat `BuiltinType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct BuiltinType <: AbstractBuiltinType
     ptr::CXQualType
@@ -289,10 +289,10 @@ struct NullPtrTy <: AbstractBuiltinType
 end
 
 """
-    abstract type AbstractComplexType <: AbstractClangType
+    abstract type AbstractComplexType <: AbstractQualType
 Supertype for `ComplexType`s.
 """
-abstract type AbstractComplexType <: AbstractClangType end
+abstract type AbstractComplexType <: AbstractQualType end
 
 is_complex_type(ty_ptr::CXType_) = clang_isa_ComplexType(ty_ptr)
 is_complex_type(ty::AbstractQualType) = is_complex_type(get_type_ptr(ty))
@@ -300,54 +300,56 @@ is_complex_type(ty::AbstractComplexType) = true
 
 """
     struct ComplexType <: AbstractComplexType
-Hold a pointer to a `clang::ComplexType` object.
+A `ComplexType`.
+
+Note that, we treat `ComplexType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct ComplexType <: AbstractComplexType
-    ptr::CXComplexType
+    ptr::CXQualType
 end
 
 """
-    struct PointerType <: AbstractClangType
-Hold a pointer to a `clang::PointerType` object.
+    struct PointerType <: AbstractQualType
+A `PointerType`.
+
+Note that, we treat `PointerType` as a `QualType`, not a `CXType_` in Clang.
 """
-struct PointerType <: AbstractClangType
-    ptr::CXPointerType
+struct PointerType <: AbstractQualType
+    ptr::CXQualType
 end
 
 is_pointer_type(ty::PointerType) = true
 
-function get_pointee_type(x::PointerType)
-    @assert x.ptr != C_NULL "PointerType has a NULL pointer."
-    return QualType(clang_PointerType_getPointeeType(x.ptr))
-end
+get_pointee_type(x::PointerType) = QualType(clang_PointerType_getPointeeType(get_type_ptr(x)))
 
 """
-    abstract type AbstractReferenceType <: AbstractClangType
+    abstract type AbstractReferenceType <: AbstractQualType
 Supertype for `ReferenceType`s.
 """
-abstract type AbstractReferenceType <: AbstractClangType end
+abstract type AbstractReferenceType <: AbstractQualType end
 
 is_reference_type(ty::AbstractReferenceType) = true
 
 """
     struct ReferenceType <: AbstractReferenceType
-Hold a pointer to a `clang::ReferenceType` object.
+A `ReferenceType`.
+
+Note that, we treat `ReferenceType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct ReferenceType <: AbstractReferenceType
-    ptr::CXReferenceType
+    ptr::CXQualType
 end
 
-function get_pointee_type(x::ReferenceType)
-    @assert x.ptr != C_NULL "ReferenceType has a NULL pointer."
-    return QualType(clang_ReferenceType_getPointeeType(x.ptr))
-end
+get_pointee_type(x::ReferenceType) = QualType(clang_ReferenceType_getPointeeType(get_type_ptr(x)))
 
 """
     struct LValueReferenceType <: AbstractReferenceType
-Hold a pointer to a `clang::LValueReferenceType` object.
+A `LValueReferenceType`.
+
+Note that, we treat `LValueReferenceType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct LValueReferenceType <: AbstractReferenceType
-    ptr::CXLValueReferenceType
+    ptr::CXQualType
 end
 
 is_lvalue_reference_type(ty_ptr::CXType_) = clang_isa_LValueReferenceType(ty_ptr)
@@ -356,10 +358,12 @@ is_lvalue_reference_type(ty::LValueReferenceType) = true
 
 """
     struct RValueReferenceType <: AbstractReferenceType
-Hold a pointer to a `clang::RValueReferenceType` object.
+A `RValueReferenceType`.
+
+Note that, we treat `RValueReferenceType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct RValueReferenceType <: AbstractReferenceType
-    ptr::CXRValueReferenceType
+    ptr::CXQualType
 end
 
 is_rvalue_reference_type(ty_ptr::CXType_) = clang_isa_RValueReferenceType(ty_ptr)
@@ -367,49 +371,49 @@ is_rvalue_reference_type(ty::AbstractQualType) = is_rvalue_reference_type(get_ty
 is_rvalue_reference_type(ty::RValueReferenceType) = true
 
 """
-    struct MemberPointerType <: AbstractClangType
-Hold a pointer to a `clang::MemberPointerType` object.
+    struct MemberPointerType <: AbstractQualType
+A `MemberPointerType`.
+
+Note that, we treat `MemberPointerType` as a `QualType`, not a `CXType_` in Clang.
 """
-struct MemberPointerType <: AbstractClangType
-    ptr::CXMemberPointerType
+struct MemberPointerType <: AbstractQualType
+    ptr::CXQualType
 end
 
 is_member_pointer_type(ty_ptr::CXType_) = clang_isa_MemberPointerType(ty_ptr)
 is_member_pointer_type(ty::AbstractQualType) = is_member_pointer_type(get_type_ptr(ty))
 is_member_pointer_type(ty::MemberPointerType) = true
 
-function get_pointee_type(x::MemberPointerType)
-    @assert x.ptr != C_NULL "MemberPointerType has a NULL pointer."
-    return QualType(clang_MemberPointerType_getPointeeType(x.ptr))
-end
+get_pointee_type(x::MemberPointerType) = QualType(clang_MemberPointerType_getPointeeType(get_type_ptr(x)))
 
-function get_class(x::MemberPointerType)::CXType_
-    @assert x.ptr != C_NULL "MemberPointerType has a NULL pointer."
-    return clang_MemberPointerType_getClass(x.ptr)
-end
+get_class(x::MemberPointerType)::CXType_ = clang_MemberPointerType_getClass(get_type_ptr(x))
 
 """
-    abstract type AbstractArrayType <: AbstractClangType
+    abstract type AbstractArrayType <: AbstractQualType
 Supertype for `ArrayType`s.
 """
-abstract type AbstractArrayType <: AbstractClangType end
+abstract type AbstractArrayType <: AbstractQualType end
 
 is_array_type(ty::AbstractArrayType) = true
 
 """
     struct ArrayType <: AbstractArrayType
-Hold a pointer to a `clang::ArrayType` object.
+A `ArrayType`.
+
+Note that, we treat `ArrayType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct ArrayType <: AbstractArrayType
-    ptr::CXArrayType
+    ptr::CXQualType
 end
 
 """
     struct ConstantArrayType <: AbstractArrayType
-Hold a pointer to a `clang::ConstantArrayType` object.
+A `ConstantArrayType`.
+
+Note that, we treat `ConstantArrayType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct ConstantArrayType <: AbstractArrayType
-    ptr::CXConstantArrayType
+    ptr::CXQualType
 end
 
 is_constant_array_type(ty_ptr::CXType_) = clang_isa_ConstantArrayType(ty_ptr)
@@ -418,10 +422,12 @@ is_constant_array_type(ty::ConstantArrayType) = true
 
 """
     struct IncompleteArrayType <: AbstractArrayType
-Hold a pointer to a `clang::IncompleteArrayType` object.
+A `IncompleteArrayType`.
+
+Note that, we treat `IncompleteArrayType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct IncompleteArrayType <: AbstractArrayType
-    ptr::CXIncompleteArrayType
+    ptr::CXQualType
 end
 
 is_incomplete_array_type(ty_ptr::CXType_) = clang_isa_IncompleteArrayType(ty_ptr)
@@ -430,10 +436,12 @@ is_incomplete_array_type(ty::IncompleteArrayType) = true
 
 """
     struct VariableArrayType <: AbstractArrayType
-Hold a pointer to a `clang::VariableArrayType` object.
+A `VariableArrayType`.
+
+Note that, we treat `VariableArrayType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct VariableArrayType <: AbstractArrayType
-    ptr::CXVariableArrayType
+    ptr::CXQualType
 end
 
 is_variable_array_type(ty_ptr::CXType_) = clang_isa_VariableArrayType(ty_ptr)
@@ -442,10 +450,12 @@ is_variable_array_type(ty::VariableArrayType) = true
 
 """
     struct DependentSizedArrayType <: AbstractArrayType
-Hold a pointer to a `clang::DependentSizedArrayType` object.
+A `DependentSizedArrayType`.
+
+Note that, we treat `DependentSizedArrayType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct DependentSizedArrayType <: AbstractArrayType
-    ptr::CXDependentSizedArrayType
+    ptr::CXQualType
 end
 
 is_dependent_size_array_type(ty_ptr::CXType_) = clang_isa_DependentSizedArrayType(ty_ptr)
@@ -453,32 +463,33 @@ is_dependent_size_array_type(ty::AbstractQualType) = is_dependent_size_array_typ
 is_dependent_size_array_type(ty::DependentSizedArrayType) = true
 
 """
-    abstract type AbstractFunctionType <: AbstractClangType
+    abstract type AbstractFunctionType <: AbstractQualType
 Supertype for `FunctionType`s.
 """
-abstract type AbstractFunctionType <: AbstractClangType end
+abstract type AbstractFunctionType <: AbstractQualType end
 
 is_function_type(ty::AbstractFunctionType) = true
 
-function get_return_type(x::AbstractFunctionType)
-    @assert x.ptr != C_NULL "FunctionType has a NULL pointer."
-    return clang_FunctionType_getReturnType(x.ptr)
-end
+get_return_type(x::AbstractFunctionType) = QualType(clang_FunctionType_getReturnType(get_type_ptr(x)))
 
 """
     struct FunctionType <: AbstractFunctionType
-Hold a pointer to a `clang::FunctionType` object.
+A `FunctionType`.
+
+Note that, we treat `FunctionType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct FunctionType <: AbstractFunctionType
-    ptr::CXFunctionType
+    ptr::CXQualType
 end
 
 """
     struct FunctionNoProtoType <: AbstractFunctionType
-Hold a pointer to a `clang::FunctionNoProtoType` object.
+A `FunctionNoProtoType`.
+
+Note that, we treat `FunctionNoProtoType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct FunctionNoProtoType <: AbstractFunctionType
-    ptr::CXFunctionNoProtoType
+    ptr::CXQualType
 end
 
 is_function_no_proto_type(ty_ptr::CXType_) = clang_isa_FunctionNoProtoType(ty_ptr)
@@ -487,45 +498,45 @@ is_function_no_proto_type(ty::FunctionNoProtoType) = true
 
 """
     struct FunctionProtoType <: AbstractFunctionType
-Hold a pointer to a `clang::FunctionProtoType` object.
+A `FunctionProtoType`.
+
+Note that, we treat `FunctionProtoType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct FunctionProtoType <: AbstractFunctionType
-    ptr::CXFunctionProtoType
+    ptr::CXQualType
 end
 
 is_function_proto_type(ty_ptr::CXType_) = clang_isa_FunctionProtoType(ty_ptr)
 is_function_proto_type(ty::AbstractQualType) = is_function_proto_type(get_type_ptr(ty))
 is_function_proto_type(ty::FunctionProtoType) = true
 
-function get_num_params(x::FunctionProtoType)
-    @assert x.ptr != C_NULL "FunctionProtoType has a NULL pointer."
-    return clang_FunctionProtoType_getNumParams(x.ptr)
-end
+get_num_params(x::FunctionProtoType) = clang_FunctionProtoType_getNumParams(get_type_ptr(x))
 
-function get_param_type(x::FunctionProtoType, i::Integer)
-    @assert x.ptr != C_NULL "FunctionProtoType has a NULL pointer."
-    return QualType(clang_FunctionProtoType_getParamType(x.ptr, i))
-end
+get_param_type(x::FunctionProtoType, i::Integer) = QualType(clang_FunctionProtoType_getParamType(get_type_ptr(x), i))
 
 get_params(x::FunctionProtoType) = [get_param_type(x, i) for i = 0:get_num_params(x)-1]
 
 """
-    struct TypedefType <: AbstractClangType
-Hold a pointer to a `clang::TypedefType` object.
+    struct TypedefType <: AbstractQualType
+A `TypedefType`.
+
+Note that, we treat `TypedefType` as a `QualType`, not a `CXType_` in Clang.
 """
-struct TypedefType <: AbstractClangType
-    ptr::CXTypedefType
+struct TypedefType <: AbstractQualType
+    ptr::CXQualType
 end
 
 is_typedef_type(ty_ptr::CXType_) = clang_isa_TypedefType(ty_ptr)
 is_typedef_type(ty::AbstractQualType) = is_typedef_type(get_type_ptr(ty))
 is_typedef_type(ty::TypedefType) = true
 
+desugar(x::TypedefType) = QualType(clang_TypedefType_desugar(get_type_ptr(x)))
+
 """
-    abstract type AbstractTagType <: AbstractClangType
+    abstract type AbstractTagType <: AbstractQualType
 Supertype for `TagType`s.
 """
-abstract type AbstractTagType <: AbstractClangType end
+abstract type AbstractTagType <: AbstractQualType end
 
 is_tag_type(ty_ptr::CXType_) = clang_isa_TagType(ty_ptr)
 is_tag_type(ty::AbstractQualType) = is_tag_type(get_type_ptr(ty))
@@ -533,18 +544,22 @@ is_tag_type(ty::AbstractTagType) = true
 
 """
     struct TagType <: AbstractTagType
-Hold a pointer to a `clang::TagType` object.
+A `TagType`.
+
+Note that, we treat `TagType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct TagType <: AbstractTagType
-    ptr::CXTagType
+    ptr::CXQualType
 end
 
 """
     struct RecordType <: AbstractTagType
-Hold a pointer to a `clang::RecordType` object.
+A `RecordType`.
+
+Note that, we treat `RecordType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct RecordType <: AbstractTagType
-    ptr::CXRecordType
+    ptr::CXQualType
 end
 
 is_record_type(ty_ptr::CXType_) = clang_isa_RecordType(ty_ptr)
@@ -553,10 +568,12 @@ is_record_type(ty::RecordType) = true
 
 """
     struct EnumType <: AbstractTagType
-Hold a pointer to a `clang::EnumType` object.
+A `EnumType`.
+
+Note that, we treat `EnumType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct EnumType <: AbstractTagType
-    ptr::CXEnumType
+    ptr::CXQualType
 end
 
 is_enum_type(ty_ptr::CXType_) = clang_isa_EnumType(ty_ptr)
@@ -570,11 +587,13 @@ get_name(x::EnumType) = get_name(get_decl(x))
 name(x::EnumType) = get_name(x)
 
 """
-    struct TemplateTypeParmType <: AbstractClangType
-Hold a pointer to a `clang::TemplateTypeParmType` object.
+    struct TemplateTypeParmType <: AbstractQualType
+A `TemplateTypeParmType`.
+
+Note that, we treat `TemplateTypeParmType` as a `QualType`, not a `CXType_` in Clang.
 """
-struct TemplateTypeParmType <: AbstractClangType
-    ptr::CXTemplateTypeParmType
+struct TemplateTypeParmType <: AbstractQualType
+    ptr::CXQualType
 end
 
 is_template_type_parm_type(ty_ptr::CXType_) = clang_isa_TemplateTypeParmType(ty_ptr)
@@ -582,11 +601,13 @@ is_template_type_parm_type(ty::AbstractQualType) = is_template_type_parm_type(ge
 is_template_type_parm_type(ty::TemplateTypeParmType) = true
 
 """
-    struct SubstTemplateTypeParmType <: AbstractClangType
-Hold a pointer to a `clang::SubstTemplateTypeParmType` object.
+    struct SubstTemplateTypeParmType <: AbstractQualType
+A `SubstTemplateTypeParmType`.
+
+Note that, we treat `SubstTemplateTypeParmType` as a `QualType`, not a `CXType_` in Clang.
 """
-struct SubstTemplateTypeParmType <: AbstractClangType
-    ptr::CXSubstTemplateTypeParmType
+struct SubstTemplateTypeParmType <: AbstractQualType
+    ptr::CXQualType
 end
 
 is_subst_template_type_parm_type(ty_ptr::CXType_) = clang_isa_SubstTemplateTypeParmType(ty_ptr)
@@ -594,11 +615,13 @@ is_subst_template_type_parm_type(ty::AbstractQualType) = is_subst_template_type_
 is_subst_template_type_parm_type(ty::SubstTemplateTypeParmType) = true
 
 """
-    struct SubstTemplateTypeParmPackType <: AbstractClangType
-Hold a pointer to a `clang::SubstTemplateTypeParmPackType` object.
+    struct SubstTemplateTypeParmPackType <: AbstractQualType
+A `SubstTemplateTypeParmPackType`.
+
+Note that, we treat `SubstTemplateTypeParmPackType` as a `QualType`, not a `CXType_` in Clang.
 """
-struct SubstTemplateTypeParmPackType <: AbstractClangType
-    ptr::CXSubstTemplateTypeParmPackType
+struct SubstTemplateTypeParmPackType <: AbstractQualType
+    ptr::CXQualType
 end
 
 is_subst_template_type_parm_pack_type(ty_ptr::CXType_) = clang_isa_SubstTemplateTypeParmPackType(ty_ptr)
@@ -606,11 +629,13 @@ is_subst_template_type_parm_pack_type(ty::AbstractQualType) = is_subst_template_
 is_subst_template_type_parm_pack_type(ty::SubstTemplateTypeParmPackType) = true
 
 """
-    struct TemplateSpecializationType <: AbstractClangType
-Hold a pointer to a `clang::TemplateSpecializationType` object.
+    struct TemplateSpecializationType <: AbstractQualType
+A `TemplateSpecializationType`.
+
+Note that, we treat `TemplateSpecializationType` as a `QualType`, not a `CXType_` in Clang.
 """
-struct TemplateSpecializationType <: AbstractClangType
-    ptr::CXTemplateSpecializationType
+struct TemplateSpecializationType <: AbstractQualType
+    ptr::CXQualType
 end
 
 is_template_specialization_type(ty_ptr::CXType_) = clang_isa_TemplateSpecializationType(ty_ptr)
@@ -618,33 +643,27 @@ is_template_specialization_type(ty::AbstractQualType) = is_template_specializati
 is_template_specialization_type(ty::TemplateSpecializationType) = true
 
 function is_current_instantiation(x::TemplateSpecializationType)
-    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
-    return clang_TemplateSpecializationType_isCurrentInstantiation(x.ptr)
+    return clang_TemplateSpecializationType_isCurrentInstantiation(get_type_ptr(ty))
 end
 
 function is_type_alias(x::TemplateSpecializationType)
-    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
-    return clang_TemplateSpecializationType_isTypeAlias(x.ptr)
+    return clang_TemplateSpecializationType_isTypeAlias(get_type_ptr(ty))
 end
 
 function get_aliased_type(x::TemplateSpecializationType)
-    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
-    return QualType(clang_TemplateSpecializationType_getAliasedType(x.ptr))
+    return QualType(clang_TemplateSpecializationType_getAliasedType(get_type_ptr(ty)))
 end
 
 function get_num_args(x::TemplateSpecializationType)
-    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
-    return clang_TemplateSpecializationType_getNumArgs(x.ptr)
+    return clang_TemplateSpecializationType_getNumArgs(get_type_ptr(ty))
 end
 
 function is_sugared(x::TemplateSpecializationType)
-    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
-    return clang_TemplateSpecializationType_isSugared(x.ptr)
+    return clang_TemplateSpecializationType_isSugared(get_type_ptr(ty))
 end
 
 function desugar(x::TemplateSpecializationType)
-    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
-    return QualType(clang_TemplateSpecializationType_desugar(x.ptr))
+    return QualType(clang_TemplateSpecializationType_desugar(get_type_ptr(ty)))
 end
 
 get_name(x::TemplateSpecializationType) = get_name(get_as_template_decl(get_template_name(x)))
@@ -652,42 +671,45 @@ get_name(x::TemplateSpecializationType) = get_name(get_as_template_decl(get_temp
 name(x::TemplateSpecializationType) = get_name(x)
 
 """
-    abstract type AbstractTypeWithKeyword <: AbstractClangType
+    abstract type AbstractTypeWithKeyword <: AbstractQualType
 Supertype for `TypeWithKeyword`s.
 """
-abstract type AbstractTypeWithKeyword <: AbstractClangType end
+abstract type AbstractTypeWithKeyword <: AbstractQualType end
 
 """
     struct TypeWithKeyword <: AbstractTypeWithKeyword
-Hold a pointer to a `clang::TypeWithKeyword` object.
+A `TypeWithKeyword`.
+
+Note that, we treat `TypeWithKeyword` as a `QualType`, not a `CXType_` in Clang.
 """
 struct TypeWithKeyword <: AbstractTypeWithKeyword
-    ptr::CXTypeWithKeyword
+    ptr::CXQualType
 end
 
 """
     struct ElaboratedType <: AbstractTypeWithKeyword
-Hold a pointer to a `clang::ElaboratedType` object.
+A `ElaboratedType`.
+
+Note that, we treat `ElaboratedType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct ElaboratedType <: AbstractTypeWithKeyword
-    ptr::CXElaboratedType
+    ptr::CXQualType
 end
 
 is_elaborated_type(ty_ptr::CXType_) = clang_isa_ElaboratedType(ty_ptr)
 is_elaborated_type(ty::AbstractQualType) = is_elaborated_type(get_type_ptr(ty))
 is_elaborated_type(ty::ElaboratedType) = true
 
-function desugar(x::ElaboratedType)
-    @assert x.ptr != C_NULL "ElaboratedType has a NULL pointer."
-    return clang_ElaboratedType_desugar(x.ptr)
-end
+desugar(x::ElaboratedType) = clang_ElaboratedType_desugar(get_type_ptr(x))
 
 """
     struct DependentNameType <: AbstractTypeWithKeyword
-Hold a pointer to a `clang::DependentNameType` object.
+A `DependentNameType`.
+
+Note that, we treat `DependentNameType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct DependentNameType <: AbstractTypeWithKeyword
-    ptr::CXDependentNameType
+    ptr::CXQualType
 end
 
 is_dependent_name_type(ty_ptr::CXType_) = clang_isa_DependentNameType(ty_ptr)
@@ -696,10 +718,12 @@ is_dependent_name_type(ty::DependentNameType) = true
 
 """
     struct DependentTemplateSpecializationType <: AbstractTypeWithKeyword
-Hold a pointer to a `clang::DependentTemplateSpecializationType` object.
+A `DependentTemplateSpecializationType`.
+
+Note that, we treat `DependentTemplateSpecializationType` as a `QualType`, not a `CXType_` in Clang.
 """
 struct DependentTemplateSpecializationType <: AbstractTypeWithKeyword
-    ptr::CXDependentTemplateSpecializationType
+    ptr::CXQualType
 end
 
 is_dependent_template_specilization_type(ty_ptr::CXType_) = clang_isa_DependentTemplateSpecializationType(ty_ptr)

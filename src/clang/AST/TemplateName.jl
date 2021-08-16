@@ -26,6 +26,5 @@ contains_unexpanded_parameter_pack(x::TemplateName) = clang_TemplateName_contain
 dump(x::TemplateName) = clang_TemplateName_dump(x.ptr)
 
 function get_template_name(x::TemplateSpecializationType)
-    @assert x.ptr != C_NULL "TemplateSpecializationType has a NULL pointer."
-    return TemplateName(clang_TemplateSpecializationType_getTemplateName(x.ptr))
+    return TemplateName(clang_TemplateSpecializationType_getTemplateName(get_type_ptr(x)))
 end

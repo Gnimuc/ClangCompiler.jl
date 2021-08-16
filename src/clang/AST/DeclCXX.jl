@@ -12,7 +12,7 @@ struct CXXRecordDecl <: AbstractCXXRecordDecl
     ptr::CXCXXRecordDecl
 end
 
-function get_cannonical_decl(x::AbstractCXXRecordDecl)
+function get_canonical_decl(x::AbstractCXXRecordDecl)
     @assert x.ptr != C_NULL "CXXRecordDecl has a NULL pointer."
     return CXCXXRecordDecl(clang_CXXRecordDecl_getCanonicalDecl(x.ptr))
 end

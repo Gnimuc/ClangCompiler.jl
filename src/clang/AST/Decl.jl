@@ -190,6 +190,11 @@ end
 
 name(x::AbstractNamedDecl) = get_name(x)
 
+function get_decl_name(x::AbstractNamedDecl)
+    @assert x.ptr != C_NULL "NamedDecl has a NULL pointer."
+    return DeclarationName(clang_NamedDecl_getDeclName(x.ptr))
+end
+
 function set_name(x::AbstractNamedDecl, name::DeclarationName)
     @assert x.ptr != C_NULL "NamedDecl has a NULL pointer."
     return clang_NamedDecl_setDeclName(x.ptr, name.ptr)
@@ -482,10 +487,7 @@ function get_integer_type(x::EnumDecl)
     return QualType(clang_EnumDecl_getIntegerType(x.ptr))
 end
 
-function get_decl(x::EnumType)
-    @assert x.ptr != C_NULL "EnumType has a NULL pointer."
-    return EnumDecl(clang_EnumType_getDecl(x.ptr))
-end
+get_decl(x::EnumType) = EnumDecl(clang_EnumType_getDecl(get_type_ptr(x)))
 
 """
     abstract type AbstractRecordDecl <: AbstractTagDecl

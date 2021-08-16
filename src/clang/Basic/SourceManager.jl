@@ -111,10 +111,12 @@ function dump(x::SourceLocation, src_mgr::SourceManager)
     return clang_SourceLocation_dump(x.ptr, src_mgr.ptr)
 end
 
-function get_string(x::SourceLocation, src_mgr::SourceManager)
+function get_as_string(x::SourceLocation, src_mgr::SourceManager)
     @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
     str = clang_SourceLocation_printToString(x.ptr, src_mgr.ptr)
     s = unsafe_string(str)
     clang_SourceLocation_disposeString(str)
     return s
 end
+
+string(x::SourceLocation) = get_as_string(x)
