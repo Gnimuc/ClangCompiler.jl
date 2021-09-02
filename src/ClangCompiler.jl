@@ -4,9 +4,17 @@ const __DLEXT = Base.BinaryPlatforms.platform_dlext()
 const __ARTIFACT_BINDIR = Sys.iswindows() ? "bin" : "lib"
 
 using LLVM_full_jll
-# using libclangex_jll
-const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], __ARTIFACT_BINDIR, "libclangex.$__DLEXT") |> normpath
-const libclangex_include = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "include") |> normpath
+
+if haskey(ENV, "LIBCLANGEX_INSTALL_PREFIX") && !isempty(get(ENV, "LIBCLANGEX_INSTALL_PREFIX", ""))
+    const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], __ARTIFACT_BINDIR, "libclangex.$__DLEXT") |> normpath
+    const libclangex_include = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "include") |> normpath
+else
+    # need manually add the output path below to `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH`/`PATH`
+    # julia -e "using LLVM_full_jll; println(joinpath(LLVM_full_jll.artifact_dir, \"lib\"))"
+    using libclangex_jll
+    const libclangex_include = joinpath(libclangex_jll.artifact_dir, "include") |> normpath
+end
+
 const julia_include_dir = joinpath(Sys.BINDIR, "..", "include", "julia") |> normpath
 const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "bin", "clang")
 
