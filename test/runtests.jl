@@ -13,6 +13,6 @@ if !Sys.iswindows()
 end
 include("types.jl")
 
-if get(ENV, "CLANGCOMPILER_ENABLE_BOOT", false)
+if haskey(ENV, "CLANGCOMPILER_ENABLE_BOOT")
     include("boot.jl")
 end

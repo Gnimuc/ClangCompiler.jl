@@ -77,7 +77,6 @@ function get_system_includes!(env::MacEnv, prefix::String, isys::Vector{String})
 end
 
 function get_system_includes!(env::WindowsEnv, prefix::String, isys::Vector{String})
-    p = env.platform
     triple = __triplet(env.platform)
     version = env.gcc_version
     if env.is_cxx
@@ -95,7 +94,6 @@ function get_system_includes!(env::WindowsEnv, prefix::String, isys::Vector{Stri
 end
 
 function get_system_includes!(env::GnuEnv, prefix::String, isys::Vector{String})
-    p = env.platform
     triple = __triplet(env.platform)
     version = env.gcc_version
     if env.is_cxx
@@ -105,15 +103,14 @@ function get_system_includes!(env::GnuEnv, prefix::String, isys::Vector{String})
         push!(isys, joinpath(prefix, triple, "include"))
         push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
     else
-        push!(isys, joinpath(gcc_triple_path, "lib", "gcc", triple, string(version), "include"))
-        push!(isys, joinpath(gcc_triple_path, "lib", "gcc", triple, string(version), "include-fixed"))
-        push!(isys, joinpath(gcc_triple_path, triple, "include"))
-        push!(isys, joinpath(gcc_triple_path, triple, "sys-root", "usr", "include"))
+        push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include"))
+        push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include-fixed"))
+        push!(isys, joinpath(prefix, triple, "include"))
+        push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
     end
 end
 
 function get_system_includes!(env::MuslEnv, prefix::String, isys::Vector{String})
-    p = env.platform
     triple = __triplet(env.platform)
     version = env.gcc_version
     if env.is_cxx
@@ -123,14 +120,13 @@ function get_system_includes!(env::MuslEnv, prefix::String, isys::Vector{String}
         push!(isys, joinpath(prefix, triple, "include"))
         push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
     else
-        push!(isys, joinpath(gcc_triple_path, "lib", "gcc", triple, string(version), "include"))
-        push!(isys, joinpath(gcc_triple_path, triple, "include"))
-        push!(isys, joinpath(gcc_triple_path, triple, "sys-root", "usr", "include"))
+        push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include"))
+        push!(isys, joinpath(prefix, triple, "include"))
+        push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
     end
 end
 
 function get_system_includes!(env::ArmEnv, prefix::String, isys::Vector{String})
-    p = env.platform
     triple = __triplet(env.platform)
     version = env.gcc_version
     if env.platform == Platform("armv7l", "linux")
