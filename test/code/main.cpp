@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 int main() {   
   int x = 40;
