@@ -7,16 +7,20 @@
 This package do not provide an out-of-box installation experience due to the limitation of [BinaryBuilder.jl](https://github.com/JuliaPackaging/BinaryBuilder.jl)(see [this issue](https://github.com/JuliaPackaging/Yggdrasil/pull/3315)).
 
 1. Find the path to `libclang-cpp`, for example, run:
-```
+```shell
+# macOS & Linux
 julia -e "using LLVM_full_jll; println(joinpath(LLVM_full_jll.artifact_dir, \"lib\"))"
+
+# Windows
+julia -e "using LLVM_full_jll; println(joinpath(LLVM_full_jll.artifact_dir, \"bin\"))"
 ```
 2. Add the path to `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH`/`PATH`, for example, on macOS you could add the line below to your `.bashrc`.
-```
-export DYLD_LIBRARY_PATH="/.julia/artifacts/8bfb227d3cb7e2ccd779f47050025cfa0b0fea9b/lib:${DYLD_LIBRARY_PATH:-}"
+```bash
+export DYLD_LIBRARY_PATH="/path to/.julia/artifacts/8bfb227d3cb7e2ccd779f47050025cfa0b0fea9b/lib:${DYLD_LIBRARY_PATH:-}"
 ```
 3. Make sure you don't have "LIBCLANGEX_INSTALL_PREFIX" in your environment variable.
 4. Install and test the package by running:
-```
+```julia-repl
 pkg> dev https://github.com/Gnimuc/ClangCompiler.jl.git
 
 pkg> test ClangCompiler
@@ -25,7 +29,7 @@ pkg> test ClangCompiler
 ### Development(macOS and Linux)
 1. Build [libclangex](https://github.com/Gnimuc/libclangex) locally and setup `ENV["LIBCLANGEX_INSTALL_PREFIX"]` to the `install` directory.
 2. Install and test the package by running:
-```
+```julia-repl
 pkg> dev https://github.com/Gnimuc/ClangCompiler.jl.git
 
 pkg> test ClangCompiler
@@ -33,7 +37,7 @@ pkg> test ClangCompiler
 
 ## Quick start
 
-```
+```julia-repl
 using ClangCompiler
 using ClangCompiler.LLVM
 
