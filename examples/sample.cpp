@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 int main(void) {
   float x = 15000;

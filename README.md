@@ -35,7 +35,36 @@ pkg> dev https://github.com/Gnimuc/ClangCompiler.jl.git
 pkg> test ClangCompiler
 ```
 
-## Quick start
+## Examples
+
+### Decl Lookup
+
+```
+using ClangCompiler
+
+# source file
+src = joinpath(dirname(pathof(ClangCompiler)), "..", "examples", "sample.cpp")
+
+# compilation flags
+args = get_compiler_args()
+
+cc = IncrementalIRGenerator(src, args)
+
+decl_lookup = DeclFinder(cc.instance)
+
+@assert decl_lookup(cc, "vector", "std::vector")
+
+decl = get_decl(decl_lookup)
+dump(decl)
+
+# clean up
+dispose(decl_lookup)
+dispose(cc)
+```
+
+### JIT (experimental)
+
+The following example is only tested on macOS.
 
 ```julia-repl
 using ClangCompiler
