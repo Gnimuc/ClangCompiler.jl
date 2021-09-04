@@ -40,7 +40,7 @@ function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true, n
         # do not emit `__dso_handle` etc.
         insert!(args, length(args), "-fno-use-cxa-atexit")
     else
-        icxxabi_inc = joinpath(@__DIR__, "..", "abi")
+        icxxabi_inc = joinpath(@__DIR__, "..", "abi") |> normpath
         insert!(args, length(args), "-isystem$icxxabi_inc")
         insert!(args, length(args), "-includeicxxabi.h")
     end
@@ -125,7 +125,7 @@ function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_col
         # do not emit `__dso_handle` etc.
         insert!(args, length(args), "-fno-use-cxa-atexit")
     else
-        icxxabi_inc = joinpath(@__DIR__, "..", "abi")
+        icxxabi_inc = joinpath(@__DIR__, "..", "abi") |> normpath
         insert!(args, length(args), "-isystem$icxxabi_inc")
         insert!(args, length(args), "-includeicxxabi.h")
     end

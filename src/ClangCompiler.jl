@@ -16,14 +16,16 @@ else
 end
 
 const julia_include_dir = joinpath(Sys.BINDIR, "..", "include", "julia") |> normpath
-const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "bin", "clang")
-
-import Base: dump
 
 using LLVM
 using LLVM.Interop: call_function
 export call_function
 import LLVM: dispose, name, value
+
+import Base: dump, string
+
+const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "bin", "clang")
+const CLANG_INC = joinpath(LLVM_full_jll.artifact_dir, "lib", "clang", string(LLVM.version()), "include")
 
 include("../lib/LibClangEx.jl")
 using .LibClangEx
@@ -33,7 +35,9 @@ using .JLLEnvs
 
 function get_compiler_args(;is_cxx=true, version=v"7.1.0")
     args = JLLEnvs.get_default_args(is_cxx, version)
-    is_cxx ? push!(args, "-nostdinc++", "-nostdlib++") : push!(args, "-nostdinc", "-nostdlib")
+    push!(args, "-isystem"*CLANG_INC)
+    is_cxx && push!(args, "-nostdinc++", "-nostdlib++")
+    push!(args, "-nostdinc", "-nostdlib")
     pushfirst!(args, CLANG_BIN)  # Argv0
     return args
 end
