@@ -100,8 +100,6 @@ function get_system_includes!(env::GnuEnv, prefix::String, isys::Vector{String})
         push!(isys, joinpath(prefix, triple, "include", "c++", string(version)))
         push!(isys, joinpath(prefix, triple, "include", "c++", string(version), triple))
         push!(isys, joinpath(prefix, triple, "include", "c++", string(version), "backward"))
-        # push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include"))  # FIXME: missing symbols defined by the compiler
-        push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include-fixed"))
         push!(isys, joinpath(prefix, triple, "include"))
         push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
     else
