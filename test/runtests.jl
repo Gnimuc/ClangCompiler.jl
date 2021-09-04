@@ -7,7 +7,7 @@ include("clang/instance.jl")
 haskey(ENV, "CI") && include("clang/status.jl")
 
 include("lookup.jl")
-if !Sys.iswindows()
+if Sys.isapple()
     include("call.jl")
     include("execution.jl")
 end

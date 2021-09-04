@@ -26,7 +26,7 @@ end
 
 get_module(x::IRGenerator) = take_module(x.act)
 
-function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
+function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true, no_use_cxa_atexit=false)
     ts_ctx = ThreadSafeContext()
     ctx = context(ts_ctx)
     instance = CompilerInstance()
@@ -36,8 +36,14 @@ function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     create_diagnostics(instance)
     diag = get_diagnostics(instance)
     # invocation
-    # do not emit `__dso_handle` etc.
-    insert!(args, length(args), "-fno-use-cxa-atexit")
+    if no_use_cxa_atexit
+        # do not emit `__dso_handle` etc.
+        insert!(args, length(args), "-fno-use-cxa-atexit")
+    else
+        icxxabi_inc = joinpath(@__DIR__, "..", "abi")
+        insert!(args, length(args), "-isystem$icxxabi_inc")
+        insert!(args, length(args), "-includeicxxabi.h")
+    end
     invok = create_compiler_invocation_from_cmd(src, args, diag)
     set_invocation(instance, invok)
     # codegen action
@@ -105,7 +111,7 @@ get_parser(x::IncrementalIRGenerator) = x.parser
 get_modules(x::IncrementalIRGenerator) = x.modules
 get_current_module(x::IncrementalIRGenerator) = x.modules[x.current_module]
 
-function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
+function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_colors=true, no_use_cxa_atexit=false)
     ts_ctx = ThreadSafeContext()
     ctx = context(ts_ctx)
     instance = CompilerInstance()
@@ -115,8 +121,14 @@ function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_col
     create_diagnostics(instance)
     diag = get_diagnostics(instance)
     # invocation
-    # do not emit `__dso_handle` etc.
-    insert!(args, length(args), "-fno-use-cxa-atexit")
+    if no_use_cxa_atexit
+        # do not emit `__dso_handle` etc.
+        insert!(args, length(args), "-fno-use-cxa-atexit")
+    else
+        icxxabi_inc = joinpath(@__DIR__, "..", "abi")
+        insert!(args, length(args), "-isystem$icxxabi_inc")
+        insert!(args, length(args), "-includeicxxabi.h")
+    end
     invok = create_compiler_invocation_from_cmd(src, args, diag)
     set_invocation(instance, invok)
     set_target(instance)
