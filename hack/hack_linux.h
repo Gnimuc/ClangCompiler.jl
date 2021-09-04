@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-int atexit (void (*func)(void));
+int atexit (void (*func)(void)) noexcept;
 
 #ifdef __cplusplus
 };
