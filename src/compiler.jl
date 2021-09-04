@@ -26,7 +26,7 @@ end
 
 get_module(x::IRGenerator) = take_module(x.act)
 
-function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true, no_use_cxa_atexit=false)
+function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     ts_ctx = ThreadSafeContext()
     ctx = context(ts_ctx)
     instance = CompilerInstance()
@@ -36,13 +36,14 @@ function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true, n
     create_diagnostics(instance)
     diag = get_diagnostics(instance)
     # invocation
-    if no_use_cxa_atexit
-        # do not emit `__dso_handle` etc.
-        insert!(args, length(args), "-fno-use-cxa-atexit")
-    else
+    if Sys.isapple()
         icxxabi_inc = joinpath(@__DIR__, "..", "abi") |> normpath
         insert!(args, length(args), "-isystem$icxxabi_inc")
         insert!(args, length(args), "-includeicxxabi.h")
+    elseif Sys.islinux()
+        hack_inc = joinpath(@__DIR__, "..", "hack") |> normpath
+        insert!(args, length(args), "-isystem$hack_inc")
+        insert!(args, length(args), "-include"*"hack_linux.h")
     end
     invok = create_compiler_invocation_from_cmd(src, args, diag)
     set_invocation(instance, invok)
@@ -111,7 +112,7 @@ get_parser(x::IncrementalIRGenerator) = x.parser
 get_modules(x::IncrementalIRGenerator) = x.modules
 get_current_module(x::IncrementalIRGenerator) = x.modules[x.current_module]
 
-function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_colors=true, no_use_cxa_atexit=false)
+function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     ts_ctx = ThreadSafeContext()
     ctx = context(ts_ctx)
     instance = CompilerInstance()
@@ -121,13 +122,14 @@ function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_col
     create_diagnostics(instance)
     diag = get_diagnostics(instance)
     # invocation
-    if no_use_cxa_atexit
-        # do not emit `__dso_handle` etc.
-        insert!(args, length(args), "-fno-use-cxa-atexit")
-    else
+    if Sys.isapple()
         icxxabi_inc = joinpath(@__DIR__, "..", "abi") |> normpath
         insert!(args, length(args), "-isystem$icxxabi_inc")
         insert!(args, length(args), "-includeicxxabi.h")
+    elseif Sys.islinux()
+        hack_inc = joinpath(@__DIR__, "..", "hack") |> normpath
+        insert!(args, length(args), "-isystem$hack_inc")
+        insert!(args, length(args), "-include"*"hack_linux.h")
     end
     invok = create_compiler_invocation_from_cmd(src, args, diag)
     set_invocation(instance, invok)
