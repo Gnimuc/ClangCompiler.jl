@@ -18,17 +18,17 @@ function create_diagnostic_opts()
     return opts
 end
 
-function print_stats(x::DiagnosticOptions)
-    @assert x.ptr != C_NULL "DiagnosticOptions has a NULL pointer."
+function PrintStats(x::DiagnosticOptions)
+    @check_ptrs x
     return clang_DiagnosticOptions_PrintStats(x.ptr)
 end
 
 function set_show_colors(x::DiagnosticOptions, should_show::Bool)
-    @assert x.ptr != C_NULL "DiagnosticOptions has a NULL pointer."
+    @check_ptrs x
     return clang_DiagnosticOptions_setShowColors(x.ptr, should_show)
 end
 
 function set_show_presumed_loc(x::DiagnosticOptions, should_show::Bool)
-    @assert x.ptr != C_NULL "DiagnosticOptions has a NULL pointer."
+    @check_ptrs x
     return clang_DiagnosticOptions_setShowPresumedLoc(x.ptr, should_show)
 end

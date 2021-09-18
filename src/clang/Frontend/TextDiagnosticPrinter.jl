@@ -7,7 +7,7 @@ struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
 end
 
 function TextDiagnosticPrinter(opts::DiagnosticOptions)
-    @assert opts.ptr != C_NULL "DiagnosticOptions has a NULL pointer."
+    @check_ptrs opts
     status = Ref{CXInit_Error}(CXInit_NoError)
     consumer = clang_TextDiagnosticPrinter_create(opts.ptr, status)
     @assert status[] == CXInit_NoError

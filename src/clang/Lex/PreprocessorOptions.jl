@@ -6,7 +6,7 @@ struct PreprocessorOptions
     ptr::CXPreprocessorOptions
 end
 
-function print_stats(x::PreprocessorOptions)
-    @assert x.ptr != C_NULL "PreprocessorOptions has a NULL pointer."
+function PrintStats(x::PreprocessorOptions)
+    @check_ptrs x
     return clang_PreprocessorOptions_PrintStats(x.ptr)
 end

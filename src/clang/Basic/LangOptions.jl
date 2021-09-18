@@ -6,7 +6,7 @@ struct LangOptions
     ptr::CXLangOptions
 end
 
-function print_stats(x::LangOptions)
-    @assert x.ptr != C_NULL "LangOptions has a NULL pointer."
+function PrintStats(x::LangOptions)
+    @check_ptrs x
     return clang_LangOptions_PrintStats(x.ptr)
 end

@@ -6,7 +6,7 @@ using Test
     args = get_compiler_args()
     haskey(ENV, "CI") && push!(args, "-v")
     irgen = IncrementalIRGenerator(src, args)
-    ctx = ClangCompiler.get_ast_context(get_instance(irgen))
+    ctx = ClangCompiler.getASTContext(get_instance(irgen))
 
     @test clty_to_jlty(jlty_to_clty(Cvoid, ctx)) == Cvoid
     @test clty_to_jlty(jlty_to_clty(Bool, ctx)) == Bool

@@ -19,12 +19,12 @@ function create_target_options()
 end
 
 function set_triple(x::TargetOptions, triple::String)
-    @assert x.ptr != C_NULL "TargetOptions has a NULL pointer."
+    @check_ptrs x
     clang_TargetOptions_setTriple(x.ptr, triple, length(triple))
     return nothing
 end
 
-function print_stats(x::TargetOptions)
-    @assert x.ptr != C_NULL "TargetOptions has a NULL pointer."
+function PrintStats(x::TargetOptions)
+    @check_ptrs x
     return clang_TargetOptions_PrintStats(x.ptr)
 end

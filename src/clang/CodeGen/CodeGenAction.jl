@@ -5,7 +5,7 @@ Supertype for `CodeGenAction`s.
 abstract type AbstractCodeGenAction <: AbstractFrontendAction end
 
 function take_module(x::T) where {T<:AbstractCodeGenAction}
-    @assert x.ptr != C_NULL "$T has a NULL pointer."
+    @check_ptrs x
     m = clang_CodeGenAction_takeModule(x.ptr)
     m == C_NULL && error("failed to generate IR.")
     return LLVM.Module(m)

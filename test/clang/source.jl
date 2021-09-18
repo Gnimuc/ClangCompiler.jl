@@ -1,6 +1,6 @@
 using ClangCompiler
 using ClangCompiler: FileManager, SourceManager, MemoryBuffer, FileID
-using ClangCompiler: create_file_manager, print_stats, dispose
+using ClangCompiler: create_file_manager, PrintStats, dispose
 using ClangCompiler: get_file, get_UID, name, real_path_name, is_valid, is_named_pipe
 using ClangCompiler: value, set_main_file_id, get_main_file_id
 using Test

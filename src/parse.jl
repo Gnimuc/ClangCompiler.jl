@@ -21,11 +21,11 @@ function parse(instance::CompilerInstance, parser::Parser, codegen::CodeGenerato
     initialize(parser)
 
     sema = get_sema(instance)
-    ast_ctx = get_ast_context(instance)
+    ast_ctx = getASTContext(instance)
 
     if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
         process_weak_toplevel_decls(sema, codegen)
-        handle_translation_unit(codegen, ast_ctx)
+        HandleTranslationUnit(codegen, ast_ctx)
         end_source_file(diag_csr)
         return true
     else
@@ -35,14 +35,12 @@ function parse(instance::CompilerInstance, parser::Parser, codegen::CodeGenerato
 end
 
 function try_parse_and_skip_invalid_or_parsed_decl(p::Parser, cg::CodeGenerator)
-    @assert p.ptr != C_NULL "Parser has a NULL pointer."
-    @assert cg.ptr != C_NULL "CodeGenerator has a NULL pointer."
+    @check_ptrs p cg
     return clang_Parser_tryParseAndSkipInvalidOrParsedDecl(p.ptr, cg.ptr)
 end
 
 function process_weak_toplevel_decls(sema::Sema, cg::CodeGenerator)
-    @assert sema.ptr != C_NULL "Sema has a NULL pointer."
-    @assert cg.ptr != C_NULL "CodeGenerator has a NULL pointer."
+    @check_ptrs sema cg
     clang_Sema_processWeakTopLevelDecls(sema.ptr, cg.ptr)
     return nothing
 end

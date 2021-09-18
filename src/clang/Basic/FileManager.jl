@@ -25,8 +25,8 @@ end
 
 dispose(x::FileManager) = clang_FileManager_dispose(x.ptr)
 
-function print_stats(mgr::FileManager)
-    @assert mgr.ptr != C_NULL "FileManager has a NULL pointer."
+function PrintStats(mgr::FileManager)
+    @check_ptrs mgr
     return clang_FileManager_PrintStats(mgr.ptr)
 end
 
@@ -39,7 +39,7 @@ If `cache_failure` is true, the failure that this file does not exist will be ca
 """
 function get_file(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
                   cache_failure::Bool=true)
-    @assert filemgr.ptr != C_NULL "FileManager has a NULL pointer."
+    @check_ptrs filemgr
     GC.@preserve filename begin
         ref = clang_FileManager_getFileRef(filemgr.ptr, filename, open_file, cache_failure)
         @assert ref != C_NULL "failed to create a FileRef to $filename."

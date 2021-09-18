@@ -7,19 +7,19 @@ struct FileEntry
 end
 
 function name(x::FileEntry)
-    @assert x.ptr != C_NULL "FileEntry has a NULL pointer."
+   @check_ptrs x
     s = clang_FileEntry_getName(x.ptr)
     return unsafe_string(s)
 end
 
 function real_path_name(x::FileEntry)
-    @assert x.ptr != C_NULL "FileEntry has a NULL pointer."
+   @check_ptrs x
     s = clang_FileEntry_tryGetRealPathName(x.ptr)
     return unsafe_string(s)
 end
 
 function is_valid(x::FileEntry)::Bool
-    @assert x.ptr != C_NULL "FileEntry has a NULL pointer."
+   @check_ptrs x
     return clang_FileEntry_isValid(x.ptr)
 end
 
@@ -28,11 +28,11 @@ end
 `UID` is a unique (small) ID for the file.
 """
 function get_UID(x::FileEntry)::Int
-    @assert x.ptr != C_NULL "FileEntry has a NULL pointer."
+   @check_ptrs x
     return clang_FileEntry_getUID(x.ptr)
 end
 
 function is_named_pipe(x::FileEntry)::Bool
-    @assert x.ptr != C_NULL "FileEntry has a NULL pointer."
+   @check_ptrs x
     return clang_FileEntry_isNamedPipe(x.ptr)
 end

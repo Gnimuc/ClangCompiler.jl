@@ -7,7 +7,7 @@ struct HeaderSearchOptions
 end
 
 function get_resource_dir(x::HeaderSearchOptions)
-    @assert x.ptr != C_NULL "HeaderSearchOptions has a NULL pointer."
+    @check_ptrs x
     n = clang_HeaderSearchOptions_GetResourceDirLength(x.ptr)
     dir = Vector{Cuchar}(undef, n)
     clang_HeaderSearchOptions_GetResourceDir(x.ptr, dir, n)
@@ -15,12 +15,12 @@ function get_resource_dir(x::HeaderSearchOptions)
 end
 
 function set_resource_dir(x::HeaderSearchOptions, dir::String)
-    @assert x.ptr != C_NULL "HeaderSearchOptions has a NULL pointer."
+    @check_ptrs x
     clang_HeaderSearchOptions_GetResourceDir(x.ptr, dir, length(dir))
     return nothing
 end
 
-function print_stats(x::HeaderSearchOptions)
-    @assert x.ptr != C_NULL "HeaderSearchOptions has a NULL pointer."
+function PrintStats(x::HeaderSearchOptions)
+    @check_ptrs x
     return clang_HeaderSearchOptions_PrintStats(x.ptr)
 end

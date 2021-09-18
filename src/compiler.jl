@@ -147,11 +147,11 @@ function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_col
         enter_main_file(preprocessor)
         initialize(parser)
 
-        ast_ctx = get_ast_context(instance)
+        ast_ctx = getASTContext(instance)
 
         if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
             process_weak_toplevel_decls(sema, codegen)
-            handle_translation_unit(codegen, ast_ctx)
+            HandleTranslationUnit(codegen, ast_ctx)
         end
     finally
         end_diag(instance)
@@ -180,7 +180,7 @@ function incremental_parse(irgen::IncrementalIRGenerator, code::String)
     try
         if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
             process_weak_toplevel_decls(get_sema(ci), codegen)
-            handle_translation_unit(codegen, get_ast_context(ci))
+            HandleTranslationUnit(codegen, getASTContext(ci))
         end
     finally
         dispose(fid)

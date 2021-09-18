@@ -45,6 +45,7 @@ export get_compiler_args
 
 # internal
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
+include("clang/utils.jl")
 include("clang/Basic/LangOptions.jl")
 include("clang/Basic/CodeGenOptions.jl")
 include("clang/Basic/TargetOptions.jl")
@@ -87,7 +88,8 @@ include("clang/Frontend/CompilerInvocation.jl")
 include("clang/Frontend/CompilerInstance.jl")
 include("clang/CodeGen/ModuleBuilder.jl")
 include("clang/CodeGen/CodeGenAction.jl")
-
+include("clang/interface.jl")
+include("clang/helper.jl")
 export AbstractClangType, AbstractQualType, AbstractBuiltinType
 
 # interface

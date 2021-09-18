@@ -7,8 +7,7 @@ struct Parser
 end
 
 function Parser(pp::Preprocessor, sema::Sema, skip_func_body::Bool=false)
-    @assert pp.ptr != C_NULL "Preprocessor has a NULL pointer."
-    @assert sema.ptr != C_NULL "Sema has a NULL pointer."
+    @check_ptrs pp sema
     status = Ref{CXInit_Error}(CXInit_NoError)
     p = clang_Parser_create(pp.ptr, sema.ptr, skip_func_body, status)
     @assert status[] == CXInit_NoError
@@ -18,61 +17,61 @@ end
 dispose(x::Parser) = clang_Parser_dispose(x.ptr)
 
 function initialize(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return clang_Parser_Initialize(x.ptr)
 end
 
 function get_lang_options(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return clang_Parser_getLangOpts(x.ptr)
 end
 
 function get_target_info(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return TargetInfo(clang_Parser_getTargetInfo(x.ptr))
 end
 
 get_target(x::Parser) = get_target_info(x)
 
 function get_preprocessor(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return Preprocessor(clang_Parser_getPreprocessor(x.ptr))
 end
 
 function get_actions(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return Sema(clang_Parser_getActions(x.ptr))
 end
 
 get_sema(x::Parser) = get_actions(x)
 
 function parse_decl(x::Parser, is_first_decl::Bool=false)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return DeclGroupRef(clang_Parser_parseOneTopLevelDecl(x.ptr, is_first_decl))
 end
 
 function get_current_token(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return Token(clang_Parser_getCurToken(x.ptr))
 end
 
 function get_next_token(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return Token(clang_Parser_NextToken(x.ptr))
 end
 
 function consume_token(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return SourceLocation(clang_Parser_ConsumeToken(x.ptr))
 end
 
 function consume_any_token(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return SourceLocation(clang_Parser_ConsumeAnyToken(x.ptr))
 end
 
 function get_current_scope(x::Parser)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return Scope(clang_Parser_getCurScope(x.ptr))
 end
 
@@ -106,7 +105,7 @@ end
 Return true if there was an error.
 """
 function try_annotate_cxx_scope_token(x::Parser, entering_context::Bool)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
+    @check_ptrs x
     return clang_Parser_TryAnnotateCXXScopeToken(x.ptr, entering_context)
 end
 
@@ -129,8 +128,7 @@ Return true if there was an error.
 """
 function try_annotate_type_or_scope_token_after_scope_spec(x::Parser, ss::CXXScopeSpec,
                                                            is_new_scope::Bool=false)
-    @assert x.ptr != C_NULL "Parser has a NULL pointer."
-    @assert ss.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x ss
     return clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(x.ptr, ss.ptr,
                                                                   is_new_scope)
 end

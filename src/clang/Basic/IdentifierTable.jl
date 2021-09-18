@@ -6,15 +6,8 @@ struct IdentifierTable
     ptr::CXIdentifierTable
 end
 
-function print_stats(x::IdentifierTable)
-    @assert x.ptr != C_NULL "IdentifierTable has a NULL pointer."
-    return clang_IdentifierTable_PrintStats(x.ptr)
-end
-
-function get_name(x::IdentifierTable, s::String)
-    @assert x.ptr != C_NULL "IdentifierTable has a NULL pointer."
-    return IdentifierInfo(clang_IdentifierTable_get(x.ptr, s))
-end
+Base.unsafe_convert(::Type{CXIdentifierTable}, x::IdentifierTable) = x.ptr
+Base.cconvert(::Type{CXIdentifierTable}, x::IdentifierTable) = x
 
 """
     struct IdentifierInfo <: Any
@@ -23,3 +16,6 @@ Hold a pointer to a `clang::IdentifierInfo` object.
 struct IdentifierInfo
     ptr::CXIdentifierInfo
 end
+
+Base.unsafe_convert(::Type{CXIdentifierInfo}, x::IdentifierInfo) = x.ptr
+Base.cconvert(::Type{CXIdentifierInfo}, x::IdentifierInfo) = x

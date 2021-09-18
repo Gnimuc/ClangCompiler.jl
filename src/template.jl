@@ -4,7 +4,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
         if arg isa Bool
             jlty = typeof(arg)
             clty = jlty_to_clty(jlty, ctx)
-            bitwidth_clty = get_type_size(ctx, clty)
+            bitwidth_clty = getTypeSize(ctx, clty)
             # this assumes Bool is lowered to int8
             @assert bitwidth_clty == 8
             v = LLVM.GenericValue(jlty_to_llvmty(jlty, llvm_ctx), Int(arg))
@@ -14,7 +14,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
         elseif arg isa Integer
             int_jlty = typeof(arg)
             int_clty = jlty_to_clty(int_jlty, ctx)
-            bitwidth_clty = get_type_size(ctx, int_clty)
+            bitwidth_clty = getTypeSize(ctx, int_clty)
             v = LLVM.GenericValue(jlty_to_llvmty(int_jlty, llvm_ctx), arg)
             @assert LLVM.intwidth(v) == bitwidth_clty
             arg_vec[i] = TemplateArgument(ctx, v, int_clty)
@@ -31,7 +31,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
     if specialization_decl.ptr == C_NULL
         specialization_decl = ClassTemplateSpecializationDecl(ctx, template_decl, arg_list)
         add_specialization(template_decl, specialization_decl)
-        if is_out_of_line(template_decl)
+        if isOutOfLine(template_decl)
             lexical_decl_ctx = get_lexical_decl_context(template_decl)
             set_lexcial_decl_context(specialization_decl, lexical_decl_ctx)
         end

@@ -21,54 +21,54 @@ end
 dispose(x::CXXScopeSpec) = clang_CXXScopeSpec_dispose(x.ptr)
 
 function clear(x::CXXScopeSpec)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return clang_CXXScopeSpec_clear(x.ptr)
 end
 
 function get_scope_representation(x::CXXScopeSpec)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return NestedNameSpecifier(clang_CXXScopeSpec_getScopeRep(x.ptr))
 end
 
 dump(x::CXXScopeSpec) = dump(get_scope_representation(x))
 
 function get_begin_loc(x::CXXScopeSpec)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return SourceLocation(clang_CXXScopeSpec_getBeginLoc(x.ptr))
 end
 
 function get_end_loc(x::CXXScopeSpec)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return SourceLocation(clang_CXXScopeSpec_getEndLoc(x.ptr))
 end
 
 function set_begin_loc(x::CXXScopeSpec, loc::SourceLocation)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return clang_CXXScopeSpec_setBeginLoc(x.ptr, loc.ptr)
 end
 
 function set_end_loc(x::CXXScopeSpec, loc::SourceLocation)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return clang_CXXScopeSpec_setEndLoc(x.ptr, loc.ptr)
 end
 
 function is_empty(x::CXXScopeSpec)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return clang_CXXScopeSpec_isEmpty(x.ptr)
 end
 
 function is_not_empty(x::CXXScopeSpec)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return clang_CXXScopeSpec_isNotEmpty(x.ptr)
 end
 
 function is_invalid(x::CXXScopeSpec)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return clang_CXXScopeSpec_isInvalid(x.ptr)
 end
 
 function is_valid(x::CXXScopeSpec)
-    @assert x.ptr != C_NULL "CXXScopeSpec has a NULL pointer."
+    @check_ptrs x
     return clang_CXXScopeSpec_isValid(x.ptr)
 end
 

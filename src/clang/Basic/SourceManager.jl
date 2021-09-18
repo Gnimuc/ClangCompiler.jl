@@ -15,8 +15,8 @@ end
 
 dispose(x::SourceManager) = clang_SourceManager_dispose(x.ptr)
 
-function print_stats(mgr::SourceManager)
-    @assert mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+function PrintStats(mgr::SourceManager)
+    @check_ptrs mgr
     return clang_SourceManager_PrintStats(mgr.ptr)
 end
 
@@ -27,7 +27,7 @@ Create a file ID from a memory buffer.
 This function takes ownership of the memory buffer.
 """
 function FileID(src_mgr::SourceManager, buffer::MemoryBuffer)
-    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    @check_ptrs src_mgr
     return FileID(clang_SourceManager_createFileIDFromMemoryBuffer(src_mgr.ptr, buffer.ref))
 end
 
@@ -39,8 +39,7 @@ See also [`get_file`](@ref).
 """
 function FileID(src_mgr::SourceManager, file_entry::FileEntry,
                 loc::SourceLocation=SourceLocation())
-    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
-    @assert file_entry.ptr != C_NULL "FileEntry has a NULL pointer."
+    @check_ptrs src_mgr file_entry
     return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr.ptr, file_entry.ptr,
                                                                 loc.ptr))
 end
@@ -52,7 +51,7 @@ Return the main file ID.
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
 function get_main_file_id(src_mgr::SourceManager)
-    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    @check_ptrs src_mgr
     return FileID(clang_SourceManager_getMainFileID(src_mgr.ptr))
 end
 
@@ -61,8 +60,7 @@ end
 Set the main file ID of the source manager to `id`.
 """
 function set_main_file_id(src_mgr::SourceManager, id::FileID)
-    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
-    @assert id.ptr != C_NULL "FileID has a NULL pointer."
+    @check_ptrs src_mgr id
     return clang_SourceManager_setMainFileID(src_mgr.ptr, id.ptr)
 end
 
@@ -81,8 +79,7 @@ function set_main_file(src_mgr::SourceManager, buffer::MemoryBuffer)
 end
 
 function get_loc_for_start_of_file(src_mgr::SourceManager, id::FileID)
-    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
-    @assert id.ptr != C_NULL "FileID has a NULL pointer."
+    @check_ptrs src_mgr id
     return SourceLocation(clang_SourceManager_getLocForStartOfFile(src_mgr.ptr, id.ptr))
 end
 
@@ -94,8 +91,7 @@ function get_loc_for_start_of_main_file(src_mgr::SourceManager)
 end
 
 function get_loc_for_end_of_file(src_mgr::SourceManager, id::FileID)
-    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
-    @assert id.ptr != C_NULL "FileID has a NULL pointer."
+    @check_ptrs x id
     return SourceLocation(clang_SourceManager_getLocForEndOfFile(src_mgr.ptr, id.ptr))
 end
 
@@ -107,12 +103,12 @@ function get_loc_for_end_of_main_file(src_mgr::SourceManager)
 end
 
 function dump(x::SourceLocation, src_mgr::SourceManager)
-    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    @check_ptrs src_mgr
     return clang_SourceLocation_dump(x.ptr, src_mgr.ptr)
 end
 
 function get_as_string(x::SourceLocation, src_mgr::SourceManager)
-    @assert src_mgr.ptr != C_NULL "SourceManager has a NULL pointer."
+    @check_ptrs src_mgr
     str = clang_SourceLocation_printToString(x.ptr, src_mgr.ptr)
     s = unsafe_string(str)
     clang_SourceLocation_disposeString(str)

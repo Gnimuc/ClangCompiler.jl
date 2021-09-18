@@ -4,17 +4,16 @@ Supretype for DiagnosticConsumers.
 """
 abstract type AbstractDiagnosticConsumer end
 
-function begin_source_file(consumer::T, lang::LangOptions,
-                           pp::CXPreprocessor) where {T<:AbstractDiagnosticConsumer}
-    @assert consumer.ptr != C_NULL "$T has a NULL pointer."
-    @assert lang.ptr != C_NULL "LangOptions has a NULL pointer."
+function begin_source_file(consumer::AbstractDiagnosticConsumer, lang::LangOptions,
+                           pp::CXPreprocessor)
+    @check_ptrs consumer lang
     @assert pp != C_NULL
     clang_DiagnosticConsumer_BeginSourceFile(consumer.ptr, lang.ptr, pp)
     return nothing
 end
 
-function end_source_file(consumer::T) where {T<:AbstractDiagnosticConsumer}
-    @assert consumer.ptr != C_NULL "$T has a NULL pointer."
+function end_source_file(consumer::AbstractDiagnosticConsumer)
+    @check_ptrs consumer
     clang_DiagnosticConsumer_EndSourceFile(consumer.ptr)
     return nothing
 end
@@ -97,6 +96,6 @@ end
 dispose(x::DiagnosticsEngine) = clang_DiagnosticsEngine_dispose(x.ptr)
 
 function set_show_colors(x::DiagnosticsEngine, should_show::Bool)
-    @assert x.ptr != C_NULL "DiagnosticsEngine has a NULL pointer."
+    @check_ptrs x
     return clang_DiagnosticsEngine_setShowColors(x.ptr, should_show)
 end
