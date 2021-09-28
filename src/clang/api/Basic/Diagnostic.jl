@@ -1,39 +1,21 @@
-"""
-    AbstractDiagnosticConsumer <: Any
-Supretype for DiagnosticConsumers.
-"""
-abstract type AbstractDiagnosticConsumer end
-
-function begin_source_file(consumer::AbstractDiagnosticConsumer, lang::LangOptions,
+# DiagnosticConsumer
+function BeginSourceFile(consumer::AbstractDiagnosticConsumer, lang::LangOptions,
                            pp::CXPreprocessor)
     @check_ptrs consumer lang
     @assert pp != C_NULL
-    clang_DiagnosticConsumer_BeginSourceFile(consumer.ptr, lang.ptr, pp)
+    clang_DiagnosticConsumer_BeginSourceFile(consumer, lang, pp)
     return nothing
 end
 
-function end_source_file(consumer::AbstractDiagnosticConsumer)
+function EndSourceFile(consumer::AbstractDiagnosticConsumer)
     @check_ptrs consumer
-    clang_DiagnosticConsumer_EndSourceFile(consumer.ptr)
+    clang_DiagnosticConsumer_EndSourceFile(consumer)
     return nothing
 end
 
-dispose(x::AbstractDiagnosticConsumer) = clang_DiagnosticConsumer_dispose(x.ptr)
+dispose(x::AbstractDiagnosticConsumer) = clang_DiagnosticConsumer_dispose(x)
 
-"""
-    struct DiagnosticConsumer <: AbstractDiagnosticConsumer
-"""
-struct DiagnosticConsumer <: AbstractDiagnosticConsumer
-    ptr::CXDiagnosticConsumer
-end
-
-"""
-    struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
-Hold a pointer to a `clang::IgnoringDiagConsumer` object.
-"""
-struct IgnoringDiagConsumer <: AbstractDiagnosticConsumer
-    ptr::CXDiagnosticConsumer
-end
+# IgnoringDiagConsumer
 IgnoringDiagConsumer() = IgnoringDiagConsumer(create_ignoring_diagnostic_consumer())
 
 """
@@ -47,13 +29,7 @@ function create_ignoring_diagnostic_consumer()
     return consumer
 end
 
-"""
-    struct DiagnosticsEngine <: Any
-Hold a pointer to a `clang::DiagnosticsEngine` object.
-"""
-struct DiagnosticsEngine
-    ptr::CXDiagnosticsEngine
-end
+# DiagnosticsEngine
 DiagnosticsEngine() = DiagnosticsEngine(create_diagnostics_engine())
 
 function DiagnosticsEngine(opts::DiagnosticOptions,
@@ -61,7 +37,7 @@ function DiagnosticsEngine(opts::DiagnosticOptions,
                            should_own_client=true)
     status = Ref{CXInit_Error}(CXInit_NoError)
     ids = create_diagnostic_ids()
-    engine = clang_DiagnosticsEngine_create(ids, opts.ptr, client.ptr, should_own_client,
+    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client,
                                             status)
     @assert status[] == CXInit_NoError
     return DiagnosticsEngine(engine)
@@ -71,7 +47,7 @@ function DiagnosticsEngine(ids::DiagnosticIDs, opts::DiagnosticOptions,
                            client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts),
                            should_own_client=true)
     status = Ref{CXInit_Error}(CXInit_NoError)
-    engine = clang_DiagnosticsEngine_create(ids.ptr, opts.ptr, client.ptr,
+    engine = clang_DiagnosticsEngine_create(ids, opts, client,
                                             should_own_client, status)
     @assert status[] == CXInit_NoError
     return DiagnosticsEngine(engine)
@@ -87,15 +63,15 @@ function create_diagnostics_engine()
     opts = DiagnosticOptions()
     client = TextDiagnosticPrinter(opts)
     should_own_client = true
-    engine = clang_DiagnosticsEngine_create(ids, opts.ptr, client.ptr, should_own_client,
+    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client,
                                             status)
     @assert status[] == CXInit_NoError
     return engine
 end
 
-dispose(x::DiagnosticsEngine) = clang_DiagnosticsEngine_dispose(x.ptr)
+dispose(x::DiagnosticsEngine) = clang_DiagnosticsEngine_dispose(x)
 
-function set_show_colors(x::DiagnosticsEngine, should_show::Bool)
+function setShowColors(x::DiagnosticsEngine, should_show::Bool)
     @check_ptrs x
-    return clang_DiagnosticsEngine_setShowColors(x.ptr, should_show)
+    return clang_DiagnosticsEngine_setShowColors(x, should_show)
 end

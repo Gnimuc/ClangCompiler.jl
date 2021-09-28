@@ -6,7 +6,5 @@ struct LangOptions
     ptr::CXLangOptions
 end
 
-function PrintStats(x::LangOptions)
-    @check_ptrs x
-    return clang_LangOptions_PrintStats(x.ptr)
-end
+Base.unsafe_convert(::Type{CXLangOptions}, x::LangOptions) = x.ptr
+Base.cconvert(::Type{CXLangOptions}, x::LangOptions) = x

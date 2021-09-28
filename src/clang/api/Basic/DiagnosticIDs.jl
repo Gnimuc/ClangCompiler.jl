@@ -1,10 +1,4 @@
-"""
-    struct DiagnosticIDs <: Any
-Hold a pointer to a `clang::DiagnosticIDs` object.
-"""
-struct DiagnosticIDs
-    ptr::CXDiagnosticIDs
-end
+# DiagnosticIDs
 DiagnosticIDs() = DiagnosticIDs(create_diagnostic_ids())
 
 """

@@ -1,10 +1,4 @@
-"""
-    struct TargetOptions <: Any
-Hold a pointer to a `clang::TargetOptions` object.
-"""
-struct TargetOptions
-    ptr::CXTargetOptions
-end
+# TargetOptions
 TargetOptions() = TargetOptions(create_target_options())
 
 """
@@ -18,13 +12,13 @@ function create_target_options()
     return opts
 end
 
-function set_triple(x::TargetOptions, triple::String)
+function setTriple(x::TargetOptions, triple::String)
     @check_ptrs x
-    clang_TargetOptions_setTriple(x.ptr, triple, length(triple))
+    clang_TargetOptions_setTriple(x, triple, length(triple))
     return nothing
 end
 
 function PrintStats(x::TargetOptions)
     @check_ptrs x
-    return clang_TargetOptions_PrintStats(x.ptr)
+    return clang_TargetOptions_PrintStats(x)
 end

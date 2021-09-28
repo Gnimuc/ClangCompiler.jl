@@ -1,10 +1,4 @@
-"""
-    struct FileManager <: Any
-Hold a pointer to a `clang::FileManager` object.
-"""
-struct FileManager
-    ptr::CXFileManager
-end
+# FileManager
 FileManager() = FileManager(create_file_manager())
 
 """
@@ -23,25 +17,25 @@ function create_file_manager()
     return mgr
 end
 
-dispose(x::FileManager) = clang_FileManager_dispose(x.ptr)
+dispose(x::FileManager) = clang_FileManager_dispose(x)
 
 function PrintStats(mgr::FileManager)
     @check_ptrs mgr
-    return clang_FileManager_PrintStats(mgr.ptr)
+    return clang_FileManager_PrintStats(mgr)
 end
 
 """
-    get_file(filemgr::FileManager, filename::AbstractString; open_file::Bool=false, cache_failure::Bool=true) -> FileEntry
+    getFileEntry(filemgr::FileManager, filename::AbstractString; open_file::Bool=false, cache_failure::Bool=true) -> FileEntry
 Get a file entry from the file manager.
 
 If `open_file` is true, the file will be opened.
 If `cache_failure` is true, the failure that this file does not exist will be cached.
 """
-function get_file(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
+function getFileEntry(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
                   cache_failure::Bool=true)
     @check_ptrs filemgr
     GC.@preserve filename begin
-        ref = clang_FileManager_getFileRef(filemgr.ptr, filename, open_file, cache_failure)
+        ref = clang_FileManager_getFileRef(filemgr, filename, open_file, cache_failure)
         @assert ref != C_NULL "failed to create a FileRef to $filename."
         entry = clang_FileEntryRef_getFileEntry(ref)
         clang_FileEntryRef_dispose(ref)
