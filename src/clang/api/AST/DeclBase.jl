@@ -4,27 +4,27 @@ function getParentASTContext(x::DeclContext)
     return ASTContext(clang_DeclContext_getParentASTContext(x))
 end
 
-function add_decl(x::DeclContext, decl::AbstractDecl)
+function addDecl(x::DeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_addDecl(x, decl)
 end
 
-function add_decl_internal(x::DeclContext, decl::AbstractDecl)
+function addDeclInternal(x::DeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_addDeclInternal(x, decl)
 end
 
-function add_hidden_decl(x::DeclContext, decl::AbstractDecl)
+function addHiddenDecl(x::DeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_addHiddenDecl(x, decl)
 end
 
-function remove_decl(x::DeclContext, decl::AbstractDecl)
+function removeDecl(x::DeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_removeDecl(x, decl)
 end
 
-function contains_decl(x::DeclContext, decl::AbstractDecl)
+function containsDecl(x::DeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_containsDecl(x, decl)
 end

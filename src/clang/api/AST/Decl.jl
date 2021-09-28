@@ -39,82 +39,82 @@ function getNextDeclInContext(x::AbstractDecl)
     return Decl(clang_Decl_getNextDeclInContext(x))
 end
 
-function get_decl_context(x::AbstractDecl)
+function getDeclContext(x::AbstractDecl)
     @check_ptrs x
     return DeclContext(clang_Decl_getDeclContext(x))
 end
 
-function get_non_closure_context(x::AbstractDecl)
+function getNonClosureContext(x::AbstractDecl)
     @check_ptrs x
     return Decl(clang_Decl_getNonClosureContext(x))
 end
 
-function is_in_anonymous_namespace(x::AbstractDecl)
+function isInAnonymousNamespace(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isInAnonymousNamespace(x)
 end
 
-function is_in_std_namespace(x::AbstractDecl)
+function isInStdNamespace(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isInStdNamespace(x)
 end
 
-function get_lang_options(x::AbstractDecl)
+function getLangOpts(x::AbstractDecl)
     @check_ptrs x
     return LangOptions(clang_Decl_getLangOpts(x))
 end
 
-function get_lexical_decl_context(x::AbstractDecl)
+function getLexicalDeclContext(x::AbstractDecl)
     @check_ptrs x
     return DeclContext(clang_Decl_getLexicalDeclContext(x))
 end
 
-function is_templated(x::AbstractDecl)
+function isTemplated(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isTemplated(x)
 end
 
-function is_canonical(x::AbstractDecl)
+function isCanonicalDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isCanonicalDecl(x)
 end
 
-function get_previous_decl(x::AbstractDecl)
+function getPreviousDecl(x::AbstractDecl)
     @check_ptrs x
     return Decl(clang_Decl_getPreviousDecl(x))
 end
 
-function is_first_decl(x::AbstractDecl)
+function isFirstDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isFirstDecl(x)
 end
 
-function get_most_recent_decl(x::AbstractDecl)
+function getMostRecentDecl(x::AbstractDecl)
     @check_ptrs x
     return Decl(clang_Decl_getMostRecentDecl(x))
 end
 
-function is_template_parameter(x::AbstractDecl)
+function isTemplateParameter(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isTemplateParameter(x)
 end
 
-function is_template_decl(x::AbstractDecl)
+function isTemplateDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isTemplateDecl(x)
 end
 
-function get_described_template(x::AbstractDecl)
+function getDescribedTemplate(x::AbstractDecl)
     @check_ptrs x
     return TemplateDecl(clang_Decl_getDescribedTemplate(x))
 end
 
-function set_decl_context(decl::AbstractDecl, x::DeclContext)
+function setDeclContext(decl::AbstractDecl, x::DeclContext)
     @check_ptrs x decl
     return clang_Decl_setDeclContext(decl.ptr, x)
 end
 
-function set_lexcial_decl_context(decl::AbstractDecl, x::DeclContext)
+function setLexicalDeclContext(decl::AbstractDecl, x::DeclContext)
     @check_ptrs x decl
     return clang_Decl_setLexicalDeclContext(decl.ptr, x)
 end
