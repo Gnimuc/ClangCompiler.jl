@@ -6,5 +6,5 @@ struct FileManager
     ptr::CXFileManager
 end
 
-Base.unsafe_convert(::Type{CXCodeGenOptions}, x::CodeGenOptions) = x.ptr
-Base.cconvert(::Type{CXCodeGenOptions}, x::CodeGenOptions) = x
+Base.unsafe_convert(::Type{CXCodeGenOptions}, x::FileManager) = x.ptr
+Base.cconvert(::Type{CXCodeGenOptions}, x::FileManager) = x

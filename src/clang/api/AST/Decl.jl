@@ -111,12 +111,12 @@ end
 
 function setDeclContext(decl::AbstractDecl, x::DeclContext)
     @check_ptrs x decl
-    return clang_Decl_setDeclContext(decl.ptr, x)
+    return clang_Decl_setDeclContext(decl, x)
 end
 
 function setLexicalDeclContext(decl::AbstractDecl, x::DeclContext)
     @check_ptrs x decl
-    return clang_Decl_setLexicalDeclContext(decl.ptr, x)
+    return clang_Decl_setLexicalDeclContext(decl, x)
 end
 
 # NamedDecl
@@ -142,7 +142,7 @@ end
 
 function setDeclName(x::AbstractNamedDecl, name::DeclarationName)
     @check_ptrs x
-    return clang_NamedDecl_setDeclName(x, name.ptr)
+    return clang_NamedDecl_setDeclName(x, name)
 end
 
 function hasLinkage(x::AbstractNamedDecl)
@@ -204,7 +204,7 @@ end
 # TypeDecl
 function getTypeForDecl(x::AbstractTypeDecl)::CXType_
     @check_ptrs x
-    return clang_TypeDecl_getTypeForDecl(x.ptr)
+    return clang_TypeDecl_getTypeForDecl(x)
 end
 getTypeForDecl(x::NamedDecl) = getTypeForDecl(TypeDecl(x))
 
@@ -248,7 +248,7 @@ end
 # TagDecl
 function DeclContext(x::AbstractTagDecl)
     @check_ptrs x
-    return DeclContext(clang_TagDecl_castToDeclContext(x.ptr))
+    return DeclContext(clang_TagDecl_castToDeclContext(x))
 end
 
 function getCanonicalDecl(x::AbstractTagDecl)
@@ -370,45 +370,45 @@ end
 # RecordDecl
 function getPreviousDecl(x::AbstractRecordDecl)
     @check_ptrs x
-    return RecordDecl(clang_RecordDecl_getPreviousDecl(x.ptr))
+    return RecordDecl(clang_RecordDecl_getPreviousDecl(x))
 end
 
 function getMostRecentDecl(x::AbstractRecordDecl)
     @check_ptrs x
-    return RecordDecl(clang_RecordDecl_getMostRecentDecl(x.ptr))
+    return RecordDecl(clang_RecordDecl_getMostRecentDecl(x))
 end
 
 function hasFlexibleArrayMember(x::AbstractRecordDecl)
     @check_ptrs x
-    return clang_RecordDecl_hasFlexibleArrayMember(x.ptr)
+    return clang_RecordDecl_hasFlexibleArrayMember(x)
 end
 
 function isAnonymousStructOrUnion(x::AbstractRecordDecl)
     @check_ptrs x
-    return clang_RecordDecl_isAnonymousStructOrUnion(x.ptr)
+    return clang_RecordDecl_isAnonymousStructOrUnion(x)
 end
 
 function isInjectedClassName(x::AbstractRecordDecl)
     @check_ptrs x
-    return clang_RecordDecl_isInjectedClassName(x.ptr)
+    return clang_RecordDecl_isInjectedClassName(x)
 end
 
 function isLambda(x::AbstractRecordDecl)
     @check_ptrs x
-    return clang_RecordDecl_isLambda(x.ptr)
+    return clang_RecordDecl_isLambda(x)
 end
 
 function isCapturedRecord(x::AbstractRecordDecl)
     @check_ptrs x
-    return clang_RecordDecl_isCapturedRecord(x.ptr)
+    return clang_RecordDecl_isCapturedRecord(x)
 end
 
 function getDefinition(x::AbstractRecordDecl)
     @check_ptrs x
-    return RecordDecl(clang_RecordDecl_getDefinition(x.ptr))
+    return RecordDecl(clang_RecordDecl_getDefinition(x))
 end
 
 function isOrContainsUnion(x::AbstractRecordDecl)
     @check_ptrs x
-    return clang_RecordDecl_isOrContainsUnion(x.ptr)
+    return clang_RecordDecl_isOrContainsUnion(x)
 end

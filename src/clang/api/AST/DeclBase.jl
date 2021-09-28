@@ -116,7 +116,7 @@ end
 
 function Equals(x::DeclContext, y::DeclContext)
     @check_ptrs x y
-    return clang_DeclContext_Equals(x, y.ptr)
+    return clang_DeclContext_Equals(x, y)
 end
 
 function getPrimaryContext(x::DeclContext)
