@@ -35,6 +35,13 @@ getUnqualifiedType(x::AbstractQualType) = QualType(clang_QualType_getUnqualified
 
 dump(x::AbstractQualType) = clang_QualType_dump(x)
 
+function getAsString(x::AbstractQualType)
+    str = clang_QualType_getAsString(x.ptr)
+    s = unsafe_string(str)
+    clang_QualType_disposeString(str)
+    return s
+end
+
 getPointeeType(ty_ptr::CXType_) = clang_Type_getPointeeType(ty_ptr)
 getPointeeType(ty::AbstractQualType) = QualType(getPointeeType(getTypePtr(ty)))
 
@@ -69,125 +76,99 @@ isArrayType(ty_ptr::CXType_) = clang_Type_isArrayType(ty_ptr)
 isArrayType(ty::AbstractQualType) = isArrayType(getTypePtr(ty))
 
 # BuiltinTypes
-is_builtin_type(ty_ptr::CXType_) = clang_isa_BuiltinType(ty_ptr)
-is_builtin_type(ty::AbstractQualType) = is_builtin_type(getTypePtr(ty))
-is_builtin_type(ty::AbstractBuiltinType) = true
+isa_BuiltinType(ty_ptr::CXType_) = clang_isa_BuiltinType(ty_ptr)
+isa_BuiltinType(ty::AbstractQualType) = isa_BuiltinType(getTypePtr(ty))
 
-is_void_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Void(ty_ptr)
-is_void_ty(ty::AbstractQualType) = is_void_ty(getTypePtr(ty))
-is_void_ty(ty::VoidTy) = true
+isa_BuiltinType_Void(ty_ptr::CXType_) = clang_isa_BuiltinType_Void(ty_ptr)
+isa_BuiltinType_Void(ty::AbstractQualType) = isa_BuiltinType_Void(getTypePtr(ty))
 
-is_bool_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Bool(ty_ptr)
-is_bool_ty(ty::AbstractQualType) = is_bool_ty(getTypePtr(ty))
-is_bool_ty(ty::BoolTy) = true
+isa_BuiltinType_Bool(ty_ptr::CXType_) = clang_isa_BuiltinType_Bool(ty_ptr)
+isa_BuiltinType_Bool(ty::AbstractQualType) = isa_BuiltinType_Bool(getTypePtr(ty))
 
-is_char_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Char_U(ty_ptr) || clang_isa_BuiltinType_Char_S(ty_ptr)
-is_char_ty(ty::AbstractQualType) = is_char_ty(getTypePtr(ty))
-is_char_ty(ty::CharTy) = true
+isa_BuiltinType_Char_U(ty_ptr::CXType_) = clang_isa_BuiltinType_Char_U(ty_ptr)
+isa_BuiltinType_Char_U(ty::AbstractQualType) = isa_BuiltinType_Char_U(getTypePtr(ty))
 
-is_wchar_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_WChar_U(ty_ptr) || clang_isa_BuiltinType_WChar_S(ty_ptr)
-is_wchar_ty(ty::AbstractQualType) = is_wchar_ty(getTypePtr(ty))
-is_wchar_ty(ty::WCharTy) = true
+isa_BuiltinType_Char_S(ty_ptr::CXType_) = clang_isa_BuiltinType_Char_S(ty_ptr)
+isa_BuiltinType_Char_S(ty::AbstractQualType) = isa_BuiltinType_Char_S(getTypePtr(ty))
 
-is_widechar_ty(ty::AbstractQualType) = is_wchar_ty(ty)
-is_widechar_ty(ty::WideCharTy) = true
+isa_BuiltinType_WChar_U(ty_ptr::CXType_) = clang_isa_BuiltinType_WChar_U(ty_ptr)
+isa_BuiltinType_WChar_U(ty::AbstractQualType) = isa_BuiltinType_WChar_U(getTypePtr(ty))
 
-is_char8_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Char8(ty_ptr)
-is_char8_ty(ty::AbstractQualType) = is_char8_ty(getTypePtr(ty))
-is_char8_ty(ty::Char8Ty) = true
+isa_BuiltinType_WChar_S(ty_ptr::CXType_) = clang_isa_BuiltinType_WChar_S(ty_ptr)
+isa_BuiltinType_WChar_S(ty::AbstractQualType) = isa_BuiltinType_WChar_S(getTypePtr(ty))
 
-is_char16_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Char16(ty_ptr)
-is_char16_ty(ty::AbstractQualType) = is_char16_ty(getTypePtr(ty))
-is_char16_ty(ty::Char16Ty) = true
+isa_BuiltinType_Char8(ty_ptr::CXType_) = clang_isa_BuiltinType_Char8(ty_ptr)
+isa_BuiltinType_Char8(ty::AbstractQualType) = isa_BuiltinType_Char8(getTypePtr(ty))
 
-is_char32_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Char32(ty_ptr)
-is_char32_ty(ty::AbstractQualType) = is_char32_ty(getTypePtr(ty))
-is_char32_ty(ty::Char32Ty) = true
+isa_BuiltinType_Char16(ty_ptr::CXType_) = clang_isa_BuiltinType_Char16(ty_ptr)
+isa_BuiltinType_Char16(ty::AbstractQualType) = isa_BuiltinType_Char16(getTypePtr(ty))
 
-is_signed_char_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_SChar(ty_ptr)
-is_signed_char_ty(ty::AbstractQualType) = is_signed_char_ty(getTypePtr(ty))
-is_signed_char_ty(ty::SignedCharTy) = true
+isa_BuiltinType_Char32(ty_ptr::CXType_) = clang_isa_BuiltinType_Char32(ty_ptr)
+isa_BuiltinType_Char32(ty::AbstractQualType) = isa_BuiltinType_Char32(getTypePtr(ty))
 
-is_short_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Short(ty_ptr)
-is_short_ty(ty::AbstractQualType) = is_short_ty(getTypePtr(ty))
-is_short_ty(ty::ShortTy) = true
+isa_BuiltinType_SChar(ty_ptr::CXType_) = clang_isa_BuiltinType_SChar(ty_ptr)
+isa_BuiltinType_SChar(ty::AbstractQualType) = isa_BuiltinType_SChar(getTypePtr(ty))
 
-is_int_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Int(ty_ptr)
-is_int_ty(ty::AbstractQualType) = is_int_ty(getTypePtr(ty))
-is_int_ty(ty::IntTy) = true
+isa_BuiltinType_Short(ty_ptr::CXType_) = clang_isa_BuiltinType_Short(ty_ptr)
+isa_BuiltinType_Short(ty::AbstractQualType) = isa_BuiltinType_Short(getTypePtr(ty))
 
-is_long_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Long(ty_ptr)
-is_long_ty(ty::AbstractQualType) = is_long_ty(getTypePtr(ty))
-is_long_ty(ty::LongTy) = true
+isa_BuiltinType_Int(ty_ptr::CXType_) = clang_isa_BuiltinType_Int(ty_ptr)
+isa_BuiltinType_Int(ty::AbstractQualType) = isa_BuiltinType_Int(getTypePtr(ty))
 
-is_longlong_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_LongLong(ty_ptr)
-is_longlong_ty(ty::AbstractQualType) = is_longlong_ty(getTypePtr(ty))
-is_longlong_ty(ty::LongLongTy) = true
+isa_BuiltinType_Long(ty_ptr::CXType_) = clang_isa_BuiltinType_Long(ty_ptr)
+isa_BuiltinType_Long(ty::AbstractQualType) = isa_BuiltinType_Long(getTypePtr(ty))
 
-is_int128_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Int128(ty_ptr)
-is_int128_ty(ty::AbstractQualType) = is_int128_ty(getTypePtr(ty))
-is_int128_ty(ty::Int128Ty) = true
+isa_BuiltinType_LongLong(ty_ptr::CXType_) = clang_isa_BuiltinType_LongLong(ty_ptr)
+isa_BuiltinType_LongLong(ty::AbstractQualType) = isa_BuiltinType_LongLong(getTypePtr(ty))
 
-is_unsigned_char_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_UChar(ty_ptr)
-is_unsigned_char_ty(ty::AbstractQualType) = is_unsigned_char_ty(getTypePtr(ty))
-is_unsigned_char_ty(ty::UnsignedCharTy) = true
+isa_BuiltinType_Int128(ty_ptr::CXType_) = clang_isa_BuiltinType_Int128(ty_ptr)
+isa_BuiltinType_Int128(ty::AbstractQualType) = isa_BuiltinType_Int128(getTypePtr(ty))
 
-is_unsigned_short_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_UShort(ty_ptr)
-is_unsigned_short_ty(ty::AbstractQualType) = is_unsigned_short_ty(getTypePtr(ty))
-is_unsigned_short_ty(ty::UnsignedShortTy) = true
+isa_BuiltinType_UChar(ty_ptr::CXType_) = clang_isa_BuiltinType_UChar(ty_ptr)
+isa_BuiltinType_UChar(ty::AbstractQualType) = isa_BuiltinType_UChar(getTypePtr(ty))
 
-is_unsigned_int_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_UInt(ty_ptr)
-is_unsigned_int_ty(ty::AbstractQualType) = is_unsigned_int_ty(getTypePtr(ty))
-is_unsigned_int_ty(ty::UnsignedIntTy) = true
+isa_BuiltinType_UShort(ty_ptr::CXType_) = clang_isa_BuiltinType_UShort(ty_ptr)
+isa_BuiltinType_UShort(ty::AbstractQualType) = isa_BuiltinType_UShort(getTypePtr(ty))
 
-is_unsigned_long_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_ULong(ty_ptr)
-is_unsigned_long_ty(ty::AbstractQualType) = is_unsigned_long_ty(getTypePtr(ty))
-is_unsigned_long_ty(ty::UnsignedLongTy) = true
+isa_BuiltinType_UInt(ty_ptr::CXType_) = clang_isa_BuiltinType_UInt(ty_ptr)
+isa_BuiltinType_UInt(ty::AbstractQualType) = isa_BuiltinType_UInt(getTypePtr(ty))
 
-is_unsigned_longlong_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_ULongLong(ty_ptr)
-is_unsigned_longlong_ty(ty::AbstractQualType) = is_unsigned_longlong_ty(getTypePtr(ty))
-is_unsigned_longlong_ty(ty::UnsignedLongLongTy) = true
+isa_BuiltinType_ULong(ty_ptr::CXType_) = clang_isa_BuiltinType_ULong(ty_ptr)
+isa_BuiltinType_ULong(ty::AbstractQualType) = isa_BuiltinType_ULong(getTypePtr(ty))
 
-is_unsigned_int128_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_UInt128(ty_ptr)
-is_unsigned_int128_ty(ty::AbstractQualType) = is_unsigned_int128_ty(getTypePtr(ty))
-is_unsigned_int128_ty(ty::UnsignedInt128Ty) = true
+isa_BuiltinType_ULongLong(ty_ptr::CXType_) = clang_isa_BuiltinType_ULongLong(ty_ptr)
+isa_BuiltinType_ULongLong(ty::AbstractQualType) = isa_BuiltinType_ULongLong(getTypePtr(ty))
 
-is_float_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Float(ty_ptr)
-is_float_ty(ty::AbstractQualType) = is_float_ty(getTypePtr(ty))
-is_float_ty(ty::FloatTy) = true
+isa_BuiltinType_UInt128(ty_ptr::CXType_) = clang_isa_BuiltinType_UInt128(ty_ptr)
+isa_BuiltinType_UInt128(ty::AbstractQualType) = isa_BuiltinType_UInt128(getTypePtr(ty))
 
-is_double_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Double(ty_ptr)
-is_double_ty(ty::AbstractQualType) = is_double_ty(getTypePtr(ty))
-is_double_ty(ty::DoubleTy) = true
+isa_BuiltinType_Float(ty_ptr::CXType_) = clang_isa_BuiltinType_Float(ty_ptr)
+isa_BuiltinType_Float(ty::AbstractQualType) = isa_BuiltinType_Float(getTypePtr(ty))
 
-is_long_double_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_LongDouble(ty_ptr)
-is_long_double_ty(ty::AbstractQualType) = is_long_double_ty(getTypePtr(ty))
-is_long_double_ty(ty::LongDoubleTy) = true
+isa_BuiltinType_Double(ty_ptr::CXType_) = clang_isa_BuiltinType_Double(ty_ptr)
+isa_BuiltinType_Double(ty::AbstractQualType) = isa_BuiltinType_Double(getTypePtr(ty))
 
-is_float128_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Float128(ty_ptr)
-is_float128_ty(ty::AbstractQualType) = is_float128_ty(getTypePtr(ty))
-is_float128_ty(ty::Float128Ty) = true
+isa_BuiltinType_LongDouble(ty_ptr::CXType_) = clang_isa_BuiltinType_LongDouble(ty_ptr)
+isa_BuiltinType_LongDouble(ty::AbstractQualType) = isa_BuiltinType_LongDouble(getTypePtr(ty))
 
-is_half_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Half(ty_ptr)
-is_half_ty(ty::AbstractQualType) = is_half_ty(getTypePtr(ty))
-is_half_ty(ty::HalfTy) = true
+isa_BuiltinType_Float128(ty_ptr::CXType_) = clang_isa_BuiltinType_Float128(ty_ptr)
+isa_BuiltinType_Float128(ty::AbstractQualType) = isa_BuiltinType_Float128(getTypePtr(ty))
 
-is_bfloat_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_BFloat16(ty_ptr)
-is_bfloat_ty(ty::AbstractQualType) = is_bfloat_ty(getTypePtr(ty))
-is_bfloat_ty(ty::BFloat16Ty) = true
+isa_BuiltinType_Half(ty_ptr::CXType_) = clang_isa_BuiltinType_Half(ty_ptr)
+isa_BuiltinType_Half(ty::AbstractQualType) = isa_BuiltinType_Half(getTypePtr(ty))
 
-is_float16_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_Float16(ty_ptr)
-is_float16_ty(ty::AbstractQualType) = is_float16_ty(getTypePtr(ty))
-is_float16_ty(ty::Float16Ty) = true
+isa_BuiltinType_BFloat16(ty_ptr::CXType_) = clang_isa_BuiltinType_BFloat16(ty_ptr)
+isa_BuiltinType_BFloat16(ty::AbstractQualType) = isa_BuiltinType_BFloat16(getTypePtr(ty))
 
-is_nullptr_ty(ty_ptr::CXType_) = clang_isa_BuiltinType_NullPtr(ty_ptr)
-is_nullptr_ty(ty::AbstractQualType) = is_nullptr_ty(getTypePtr(ty))
-is_nullptr_ty(ty::NullPtrTy) = true
+isa_BuiltinType_Float16(ty_ptr::CXType_) = clang_isa_BuiltinType_Float16(ty_ptr)
+isa_BuiltinType_Float16(ty::AbstractQualType) = isa_BuiltinType_Float16(getTypePtr(ty))
+
+isa_BuiltinType_NullPtr(ty_ptr::CXType_) = clang_isa_BuiltinType_NullPtr(ty_ptr)
+isa_BuiltinType_NullPtr(ty::AbstractQualType) = isa_BuiltinType_NullPtr(getTypePtr(ty))
 
 # ComplexType
-is_complex_type(ty_ptr::CXType_) = clang_isa_ComplexType(ty_ptr)
-is_complex_type(ty::AbstractQualType) = is_complex_type(getTypePtr(ty))
-is_complex_type(ty::AbstractComplexType) = true
+isa_ComplexType(ty_ptr::CXType_) = clang_isa_ComplexType(ty_ptr)
+isa_ComplexType(ty::AbstractQualType) = isa_ComplexType(getTypePtr(ty))
 
 # PointerType
 getPointeeType(x::PointerType) = QualType(clang_PointerType_getPointeeType(getTypePtr(x)))
@@ -196,105 +177,88 @@ getPointeeType(x::PointerType) = QualType(clang_PointerType_getPointeeType(getTy
 getPointeeType(x::ReferenceType) = QualType(clang_ReferenceType_getPointeeType(getTypePtr(x)))
 
 # LValueReferenceType
-is_lvalue_reference_type(ty_ptr::CXType_) = clang_isa_LValueReferenceType(ty_ptr)
-is_lvalue_reference_type(ty::AbstractQualType) = is_lvalue_reference_type(getTypePtr(ty))
-is_lvalue_reference_type(ty::LValueReferenceType) = true
+isa_LValueReferenceType(ty_ptr::CXType_) = clang_isa_LValueReferenceType(ty_ptr)
+isa_LValueReferenceType(ty::AbstractQualType) = isa_LValueReferenceType(getTypePtr(ty))
 
 # RValueReferenceType
-is_rvalue_reference_type(ty_ptr::CXType_) = clang_isa_RValueReferenceType(ty_ptr)
-is_rvalue_reference_type(ty::AbstractQualType) = is_rvalue_reference_type(getTypePtr(ty))
-is_rvalue_reference_type(ty::RValueReferenceType) = true
+isa_RValueReferenceType(ty_ptr::CXType_) = clang_isa_RValueReferenceType(ty_ptr)
+isa_RValueReferenceType(ty::AbstractQualType) = isa_RValueReferenceType(getTypePtr(ty))
 
 # MemberPointerType
-is_member_pointer_type(ty_ptr::CXType_) = clang_isa_MemberPointerType(ty_ptr)
-is_member_pointer_type(ty::AbstractQualType) = is_member_pointer_type(getTypePtr(ty))
-is_member_pointer_type(ty::MemberPointerType) = true
+isa_MemberPointerType(ty_ptr::CXType_) = clang_isa_MemberPointerType(ty_ptr)
+isa_MemberPointerType(ty::AbstractQualType) = isa_MemberPointerType(getTypePtr(ty))
 
 getPointeeType(x::MemberPointerType) = QualType(clang_MemberPointerType_getPointeeType(getTypePtr(x)))
 
 getClass(x::MemberPointerType)::CXType_ = clang_MemberPointerType_getClass(getTypePtr(x))
 
 # ConstantArrayType
-is_constant_array_type(ty_ptr::CXType_) = clang_isa_ConstantArrayType(ty_ptr)
-is_constant_array_type(ty::AbstractQualType) = is_constant_array_type(getTypePtr(ty))
-is_constant_array_type(ty::ConstantArrayType) = true
+isa_ConstantArrayType(ty_ptr::CXType_) = clang_isa_ConstantArrayType(ty_ptr)
+isa_ConstantArrayType(ty::AbstractQualType) = isa_ConstantArrayType(getTypePtr(ty))
 
 # IncompleteArrayType
-is_incomplete_array_type(ty_ptr::CXType_) = clang_isa_IncompleteArrayType(ty_ptr)
-is_incomplete_array_type(ty::AbstractQualType) = is_incomplete_array_type(getTypePtr(ty))
-is_incomplete_array_type(ty::IncompleteArrayType) = true
+isa_IncompleteArrayType(ty_ptr::CXType_) = clang_isa_IncompleteArrayType(ty_ptr)
+isa_IncompleteArrayType(ty::AbstractQualType) = isa_IncompleteArrayType(getTypePtr(ty))
 
 # VariableArrayType
-is_variable_array_type(ty_ptr::CXType_) = clang_isa_VariableArrayType(ty_ptr)
-is_variable_array_type(ty::AbstractQualType) = is_variable_array_type(getTypePtr(ty))
-is_variable_array_type(ty::VariableArrayType) = true
+isa_VariableArrayType(ty_ptr::CXType_) = clang_isa_VariableArrayType(ty_ptr)
+isa_VariableArrayType(ty::AbstractQualType) = isa_VariableArrayType(getTypePtr(ty))
 
 # DependentSizedArrayType
-is_dependent_size_array_type(ty_ptr::CXType_) = clang_isa_DependentSizedArrayType(ty_ptr)
-is_dependent_size_array_type(ty::AbstractQualType) = is_dependent_size_array_type(getTypePtr(ty))
-is_dependent_size_array_type(ty::DependentSizedArrayType) = true
+isa_DependentSizedArrayType(ty_ptr::CXType_) = clang_isa_DependentSizedArrayType(ty_ptr)
+isa_DependentSizedArrayType(ty::AbstractQualType) = isa_DependentSizedArrayType(getTypePtr(ty))
 
 # FunctionType
 getReturnType(x::AbstractFunctionType) = QualType(clang_FunctionType_getReturnType(getTypePtr(x)))
 
 # FunctionNoProtoType
-is_function_no_proto_type(ty_ptr::CXType_) = clang_isa_FunctionNoProtoType(ty_ptr)
-is_function_no_proto_type(ty::AbstractQualType) = is_function_no_proto_type(getTypePtr(ty))
-is_function_no_proto_type(ty::FunctionNoProtoType) = true
+isa_FunctionNoProtoType(ty_ptr::CXType_) = clang_isa_FunctionNoProtoType(ty_ptr)
+isa_FunctionNoProtoType(ty::AbstractQualType) = isa_FunctionNoProtoType(getTypePtr(ty))
 
 # FunctionProtoType
-is_function_proto_type(ty_ptr::CXType_) = clang_isa_FunctionProtoType(ty_ptr)
-is_function_proto_type(ty::AbstractQualType) = is_function_proto_type(getTypePtr(ty))
-is_function_proto_type(ty::FunctionProtoType) = true
+isa_FunctionProtoType(ty_ptr::CXType_) = clang_isa_FunctionProtoType(ty_ptr)
+isa_FunctionProtoType(ty::AbstractQualType) = isa_FunctionProtoType(getTypePtr(ty))
 
 getNumParams(x::FunctionProtoType) = clang_FunctionProtoType_getNumParams(getTypePtr(x))
 getParamType(x::FunctionProtoType, i::Integer) = QualType(clang_FunctionProtoType_getParamType(getTypePtr(x), i))
 
 # TypedefType
-is_typedef_type(ty_ptr::CXType_) = clang_isa_TypedefType(ty_ptr)
-is_typedef_type(ty::AbstractQualType) = is_typedef_type(getTypePtr(ty))
-is_typedef_type(ty::TypedefType) = true
+isa_TypedefType(ty_ptr::CXType_) = clang_isa_TypedefType(ty_ptr)
+isa_TypedefType(ty::AbstractQualType) = isa_TypedefType(getTypePtr(ty))
 
 desugar(x::TypedefType) = QualType(clang_TypedefType_desugar(getTypePtr(x)))
 
 # TagType
-is_tag_type(ty_ptr::CXType_) = clang_isa_TagType(ty_ptr)
-is_tag_type(ty::AbstractQualType) = is_tag_type(getTypePtr(ty))
-is_tag_type(ty::AbstractTagType) = true
+isa_TagType(ty_ptr::CXType_) = clang_isa_TagType(ty_ptr)
+isa_TagType(ty::AbstractQualType) = isa_TagType(getTypePtr(ty))
 
 # RecordType
-is_record_type(ty_ptr::CXType_) = clang_isa_RecordType(ty_ptr)
-is_record_type(ty::AbstractQualType) = is_record_type(getTypePtr(ty))
-is_record_type(ty::RecordType) = true
+isa_RecordType(ty_ptr::CXType_) = clang_isa_RecordType(ty_ptr)
+isa_RecordType(ty::AbstractQualType) = isa_RecordType(getTypePtr(ty))
 
 # EnumType
-is_enum_type(ty_ptr::CXType_) = clang_isa_EnumType(ty_ptr)
-is_enum_type(ty::AbstractQualType) = is_enum_type(getTypePtr(ty))
-is_enum_type(ty::EnumType) = true
+isa_EnumType(ty_ptr::CXType_) = clang_isa_EnumType(ty_ptr)
+isa_EnumType(ty::AbstractQualType) = isa_EnumType(getTypePtr(ty))
 
 getDecl(x::EnumType) = EnumDecl(clang_EnumType_getDecl(x))
 getIntegerType(x::EnumType) = getIntegerType(getDecl(x))
 getName(x::EnumType) = getName(getDecl(x))
 
 # TemplateTypeParmType
-is_template_type_parm_type(ty_ptr::CXType_) = clang_isa_TemplateTypeParmType(ty_ptr)
-is_template_type_parm_type(ty::AbstractQualType) = is_template_type_parm_type(getTypePtr(ty))
-is_template_type_parm_type(ty::TemplateTypeParmType) = true
+isa_TemplateTypeParmType(ty_ptr::CXType_) = clang_isa_TemplateTypeParmType(ty_ptr)
+isa_TemplateTypeParmType(ty::AbstractQualType) = isa_TemplateTypeParmType(getTypePtr(ty))
 
 # SubstTemplateTypeParmType
-is_subst_template_type_parm_type(ty_ptr::CXType_) = clang_isa_SubstTemplateTypeParmType(ty_ptr)
-is_subst_template_type_parm_type(ty::AbstractQualType) = is_subst_template_type_parm_type(getTypePtr(ty))
-is_subst_template_type_parm_type(ty::SubstTemplateTypeParmType) = true
+isa_SubstTemplateTypeParmType(ty_ptr::CXType_) = clang_isa_SubstTemplateTypeParmType(ty_ptr)
+isa_SubstTemplateTypeParmType(ty::AbstractQualType) = isa_SubstTemplateTypeParmType(getTypePtr(ty))
 
 # SubstTemplateTypeParmPackType
-is_subst_template_type_parm_pack_type(ty_ptr::CXType_) = clang_isa_SubstTemplateTypeParmPackType(ty_ptr)
-is_subst_template_type_parm_pack_type(ty::AbstractQualType) = is_subst_template_type_parm_pack_type(getTypePtr(ty))
-is_subst_template_type_parm_pack_type(ty::SubstTemplateTypeParmPackType) = true
+isa_SubstTemplateTypeParmPackType(ty_ptr::CXType_) = clang_isa_SubstTemplateTypeParmPackType(ty_ptr)
+isa_SubstTemplateTypeParmPackType(ty::AbstractQualType) = isa_SubstTemplateTypeParmPackType(getTypePtr(ty))
 
 # TemplateSpecializationType
-is_template_specialization_type(ty_ptr::CXType_) = clang_isa_TemplateSpecializationType(ty_ptr)
-is_template_specialization_type(ty::AbstractQualType) = is_template_specialization_type(getTypePtr(ty))
-is_template_specialization_type(ty::TemplateSpecializationType) = true
+isa_TemplateSpecializationType(ty_ptr::CXType_) = clang_isa_TemplateSpecializationType(ty_ptr)
+isa_TemplateSpecializationType(ty::AbstractQualType) = isa_TemplateSpecializationType(getTypePtr(ty))
 
 function isCurrentInstantiation(x::TemplateSpecializationType)
     return clang_TemplateSpecializationType_isCurrentInstantiation(getTypePtr(ty))
@@ -323,18 +287,15 @@ end
 getName(x::TemplateSpecializationType) = getName(getAsTemplateDecl(getTemplateName(x)))
 
 # ElaboratedType
-is_elaborated_type(ty_ptr::CXType_) = clang_isa_ElaboratedType(ty_ptr)
-is_elaborated_type(ty::AbstractQualType) = is_elaborated_type(getTypePtr(ty))
-is_elaborated_type(ty::ElaboratedType) = true
+isa_ElaboratedType(ty_ptr::CXType_) = clang_isa_ElaboratedType(ty_ptr)
+isa_ElaboratedType(ty::AbstractQualType) = isa_ElaboratedType(getTypePtr(ty))
 
 desugar(x::ElaboratedType) = clang_ElaboratedType_desugar(getTypePtr(x))
 
 # DependentNameType
-is_dependent_name_type(ty_ptr::CXType_) = clang_isa_DependentNameType(ty_ptr)
-is_dependent_name_type(ty::AbstractQualType) = is_dependent_name_type(getTypePtr(ty))
-is_dependent_name_type(ty::DependentNameType) = true
+isa_DependentNameType(ty_ptr::CXType_) = clang_isa_DependentNameType(ty_ptr)
+isa_DependentNameType(ty::AbstractQualType) = isa_DependentNameType(getTypePtr(ty))
 
 # DependentTemplateSpecializationType
-is_dependent_template_specilization_type(ty_ptr::CXType_) = clang_isa_DependentTemplateSpecializationType(ty_ptr)
-is_dependent_template_specilization_type(ty::AbstractQualType) = is_dependent_template_specilization_type(getTypePtr(ty))
-is_dependent_template_specilization_type(ty::DependentTemplateSpecializationType) = true
+isa_DependentTemplateSpecializationType(ty_ptr::CXType_) = clang_isa_DependentTemplateSpecializationType(ty_ptr)
+isa_DependentTemplateSpecializationType(ty::AbstractQualType) = isa_DependentTemplateSpecializationType(getTypePtr(ty))

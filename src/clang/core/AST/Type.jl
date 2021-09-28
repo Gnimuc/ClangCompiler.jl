@@ -4,8 +4,8 @@ Supertype for `clang::Type`s.
 
 1. `clang::Type` has no corresponding handle type in Julia.
 2. `CXType_` is an opaque pointer for `clang::Type *`.
-3. `get_type_ptr(x::AbstractQualType)` is for converting a `QualType` to a `CXType_`.
-4. `get_qual_type(x::CXType_)` is for converting a `CXType_` to a `QualType`.
+3. `get_type_ptr`/`getTypePtr` is for converting a `QualType` to a `CXType_`.
+4. `get_qual_type`/`getCanonicalTypeInternal` is for converting a `CXType_` to a `QualType`.
 """
 abstract type AbstractClangType end
 
@@ -37,6 +37,7 @@ struct QualType <: AbstractQualType
 end
 QualType(x::T) where {T<:AbstractQualType} = QualType(x.ptr)
 
+# FIXME: find a use case
 # """
 #     CanQualType <: AbstractClangType
 # Represent a canonical, qualified type.
