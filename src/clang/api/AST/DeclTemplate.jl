@@ -74,8 +74,8 @@ function isThisDeclarationADefinition(x::AbstractRedeclarableTemplateDecl)
     return clang_ClassTemplateDecl_isThisDeclarationADefinition(x)
 end
 
-function findSpecialization(x::AbstractRedeclarableTemplateDecl,
-                             list::TemplateArgumentList, insert_pos=C_NULL)
+function findSpecialization(x::AbstractRedeclarableTemplateDecl, list::TemplateArgumentList,
+                            insert_pos=C_NULL)
     @check_ptrs x list
     return ClassTemplateSpecializationDecl(clang_ClassTemplateDecl_findSpecialization(x,
                                                                                       list,
@@ -100,7 +100,7 @@ end
 
 # ClassTemplateSpecializationDecl
 function AddSpecialization(x::AbstractRedeclarableTemplateDecl,
-                            ctsd::ClassTemplateSpecializationDecl, insert_pos=C_NULL)
+                           ctsd::ClassTemplateSpecializationDecl, insert_pos=C_NULL)
     @check_ptrs x ctsd
     return clang_ClassTemplateDecl_AddSpecialization(x, ctsd, insert_pos)
 end

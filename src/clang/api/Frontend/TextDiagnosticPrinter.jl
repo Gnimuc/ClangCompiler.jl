@@ -1,11 +1,4 @@
-"""
-    struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
-Hold a pointer to a `clang::TextDiagnosticPrinter` object.
-"""
-struct TextDiagnosticPrinter <: AbstractDiagnosticConsumer
-    ptr::CXDiagnosticConsumer
-end
-
+# TextDiagnosticPrinter
 function TextDiagnosticPrinter(opts::DiagnosticOptions)
     @check_ptrs opts
     status = Ref{CXInit_Error}(CXInit_NoError)

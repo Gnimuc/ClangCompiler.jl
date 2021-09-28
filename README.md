@@ -2,6 +2,8 @@
 
 [![Build Status](https://github.com/Gnimuc/ClangCompiler.jl/workflows/CI/badge.svg)](https://github.com/Gnimuc/ClangCompiler.jl/actions)
 
+Still WIP...
+
 ## Installation
 
 This package does not provide an out-of-box installation experience at the moment due to a limitation of [BinaryBuilder.jl](https://github.com/JuliaPackaging/BinaryBuilder.jl)(see [this issue](https://github.com/JuliaPackaging/Yggdrasil/pull/3315)).

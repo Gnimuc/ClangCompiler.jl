@@ -6,7 +6,5 @@ struct HeaderSearch
     ptr::CXHeaderSearch
 end
 
-function PrintStats(x::HeaderSearch)
-    @check_ptrs x
-    return clang_HeaderSearch_PrintStats(x.ptr)
-end
+Base.unsafe_convert(::Type{CXHeaderSearch}, x::HeaderSearch) = x.ptr
+Base.cconvert(::Type{CXHeaderSearch}, x::HeaderSearch) = x

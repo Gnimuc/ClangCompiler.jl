@@ -1,6 +1,6 @@
 # DiagnosticConsumer
 function BeginSourceFile(consumer::AbstractDiagnosticConsumer, lang::LangOptions,
-                           pp::CXPreprocessor)
+                         pp::CXPreprocessor)
     @check_ptrs consumer lang
     @assert pp != C_NULL
     clang_DiagnosticConsumer_BeginSourceFile(consumer, lang, pp)
@@ -37,8 +37,7 @@ function DiagnosticsEngine(opts::DiagnosticOptions,
                            should_own_client=true)
     status = Ref{CXInit_Error}(CXInit_NoError)
     ids = create_diagnostic_ids()
-    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client,
-                                            status)
+    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client, status)
     @assert status[] == CXInit_NoError
     return DiagnosticsEngine(engine)
 end
@@ -47,8 +46,7 @@ function DiagnosticsEngine(ids::DiagnosticIDs, opts::DiagnosticOptions,
                            client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts),
                            should_own_client=true)
     status = Ref{CXInit_Error}(CXInit_NoError)
-    engine = clang_DiagnosticsEngine_create(ids, opts, client,
-                                            should_own_client, status)
+    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client, status)
     @assert status[] == CXInit_NoError
     return DiagnosticsEngine(engine)
 end
@@ -63,8 +61,7 @@ function create_diagnostics_engine()
     opts = DiagnosticOptions()
     client = TextDiagnosticPrinter(opts)
     should_own_client = true
-    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client,
-                                            status)
+    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client, status)
     @assert status[] == CXInit_NoError
     return engine
 end

@@ -34,8 +34,7 @@ See also [`get_file`](@ref).
 function FileID(src_mgr::SourceManager, file_entry::FileEntry,
                 loc::SourceLocation=SourceLocation())
     @check_ptrs src_mgr file_entry
-    return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr, file_entry,
-                                                                loc))
+    return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr, file_entry, loc))
 end
 
 """

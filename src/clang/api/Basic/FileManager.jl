@@ -32,7 +32,7 @@ If `open_file` is true, the file will be opened.
 If `cache_failure` is true, the failure that this file does not exist will be cached.
 """
 function getFileEntry(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
-                  cache_failure::Bool=true)
+                      cache_failure::Bool=true)
     @check_ptrs filemgr
     GC.@preserve filename begin
         ref = clang_FileManager_getFileRef(filemgr, filename, open_file, cache_failure)
