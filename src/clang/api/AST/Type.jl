@@ -36,7 +36,7 @@ getUnqualifiedType(x::AbstractQualType) = QualType(clang_QualType_getUnqualified
 dump(x::AbstractQualType) = clang_QualType_dump(x)
 
 function getAsString(x::AbstractQualType)
-    str = clang_QualType_getAsString(x.ptr)
+    str = clang_QualType_getAsString(x)
     s = unsafe_string(str)
     clang_QualType_disposeString(str)
     return s
@@ -274,6 +274,11 @@ end
 
 function getNumArgs(x::TemplateSpecializationType)
     return clang_TemplateSpecializationType_getNumArgs(getTypePtr(ty))
+end
+
+function getArg(x::TemplateSpecializationType, i::Integer)
+    @check_ptrs x
+    return TemplateArgument(clang_TemplateSpecializationType_getArg(x, i))
 end
 
 function isSugared(x::TemplateSpecializationType)

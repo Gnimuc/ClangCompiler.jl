@@ -19,3 +19,15 @@ end
 function getLocWithOffset(x::SourceLocation, offset::Integer)
     return SourceLocation(clang_SourceLocation_getLocWithOffset(x, offset))
 end
+
+function printToString(x::SourceLocation, src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    str = clang_SourceLocation_printToString(x, src_mgr)
+    s = unsafe_string(str)
+    clang_SourceLocation_disposeString(str)
+    return s
+end
+
+# SourceRange
+getBeginLoc(x::SourceRange) = x.begin_loc
+getEndLoc(x::SourceRange) = x.end_loc

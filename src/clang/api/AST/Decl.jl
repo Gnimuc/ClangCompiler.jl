@@ -119,6 +119,16 @@ function setLexicalDeclContext(decl::AbstractDecl, x::DeclContext)
     return clang_Decl_setLexicalDeclContext(decl, x)
 end
 
+function ClassTemplateDecl(x::AbstractDecl)
+    @check_ptrs x
+    return ClassTemplateDecl(clang_Decl_castToClassTemplateDecl(x))
+end
+
+function ValueDecl(x::AbstractDecl)
+    @check_ptrs x
+    return ValueDecl(clang_Decl_castToValueDecl(x))
+end
+
 # NamedDecl
 function isOutOfLine(x::AbstractNamedDecl)
     @check_ptrs x
@@ -183,6 +193,11 @@ end
 function getMostRecentDecl(x::AbstractNamedDecl)
     @check_ptrs x
     return clang_NamedDecl_getMostRecentDecl(x)
+end
+
+function TypeDecl(x::NamedDecl)
+    @check_ptrs x
+    return TypeDecl(clang_NamedDecl_castToTypeDecl(x))
 end
 
 # ValueDecl

@@ -133,3 +133,19 @@ function dumpLookups(x::DeclContext)
     @check_ptrs x
     return clang_DeclContext_dumpLookups(x)
 end
+
+# cast
+function TagDecl(x::DeclContext)
+    @check_ptrs x
+    return TagDecl(clang_DeclContext_castToTagDecl(x))
+end
+
+function RecordDecl(x::DeclContext)
+    @check_ptrs x
+    return RecordDecl(clang_DeclContext_castToRecordDecl(x))
+end
+
+function CXXRecordDecl(x::DeclContext)
+    @check_ptrs x
+    return CXXRecordDecl(clang_DeclContext_castToCXXRecordDecl(x))
+end

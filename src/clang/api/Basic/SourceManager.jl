@@ -57,6 +57,13 @@ function setMainFileID(src_mgr::SourceManager, id::FileID)
     return clang_SourceManager_setMainFileID(src_mgr, id)
 end
 
+function setMainFileID(src_mgr::SourceManager, file_entry::FileEntry)
+    id = FileID(src_mgr, file_entry)
+    setMainFileID(src_mgr, id)
+    dispose(id)
+    return nothing
+end
+
 function getLocForStartOfFile(src_mgr::SourceManager, id::FileID)
     @check_ptrs src_mgr id
     return SourceLocation(clang_SourceManager_getLocForStartOfFile(src_mgr, id))

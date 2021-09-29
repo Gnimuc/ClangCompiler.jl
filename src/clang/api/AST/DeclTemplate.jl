@@ -25,6 +25,16 @@ function getDescribedTemplateParams(x::AbstractDecl)
 end
 
 # TemplateArgumentList
+function TemplateArgumentList(ctx::ASTContext, args::Vector{CXTemplateArgument})
+    @check_ptrs ctx
+    list = clang_TemplateArgumentList_CreateCopy(ctx, args, length(args))
+    return TemplateArgumentList(list)
+end
+
+function TemplateArgumentList(ctx::ASTContext, args::Vector{TemplateArgument})
+    return TemplateArgumentList(ctx, [arg for arg in args])
+end
+
 function Base.size(x::TemplateArgumentList)
     @check_ptrs x
     return clang_TemplateArgumentList_size(x)
@@ -77,9 +87,8 @@ end
 function findSpecialization(x::AbstractRedeclarableTemplateDecl, list::TemplateArgumentList,
                             insert_pos=C_NULL)
     @check_ptrs x list
-    return ClassTemplateSpecializationDecl(clang_ClassTemplateDecl_findSpecialization(x,
-                                                                                      list,
-                                                                                      insert_pos))
+    ctsd = clang_ClassTemplateDecl_findSpecialization(x, list, insert_pos)
+    return ClassTemplateSpecializationDecl(ctsd)
 end
 
 # ClassTemplateDecl
@@ -99,6 +108,36 @@ function setTemplateArgs(x::AbstractClassTemplateDecl, list::TemplateArgumentLis
 end
 
 # ClassTemplateSpecializationDecl
+function ClassTemplateSpecializationDecl(ctx::ASTContext, tk::CXTagTypeKind,
+    dc::DeclContext, start_loc::SourceLocation,
+    id_loc::SourceLocation,
+    template::ClassTemplateDecl,
+    args::TemplateArgumentList,
+    prev_decl::ClassTemplateSpecializationDecl)
+@check_ptrs ctx dc template args
+ctsd = clang_ClassTemplateSpecializationDecl_Create(ctx,
+                                                   tk,
+                                                   dc,
+                                                   start_loc,
+                                                   id_loc,
+                                                   template,
+                                                   args,
+                                                   prev_decl)
+return ClassTemplateSpecializationDecl(ctsd)
+end
+
+function ClassTemplateSpecializationDecl(ctx::ASTContext, template::ClassTemplateDecl,
+    args::TemplateArgumentList,
+    prev_decl::ClassTemplateSpecializationDecl=ClassTemplateSpecializationDecl(C_NULL))
+tdecl = getTemplateDecl(template)
+tk = getTagKind(tdecl)
+dc_ctx = getDeclContext(template)
+start_loc = getBeginLoc(tdecl)
+id_loc = getLocation(template)
+return ClassTemplateSpecializationDecl(ctx, tk, dc_ctx, start_loc, id_loc, template,
+      args, prev_decl)
+end
+
 function AddSpecialization(x::AbstractRedeclarableTemplateDecl,
                            ctsd::ClassTemplateSpecializationDecl, insert_pos=C_NULL)
     @check_ptrs x ctsd
