@@ -43,6 +43,6 @@ argv = pointer.(local_machine_env_compiler_args)
 argv = Base.unsafe_convert(Ptr{Ptr{UInt8}}, argv)
 
 run(ee, f, [
-    GenericValue(LLVM.Int32Type(irgen.ctx), argc),
+    GenericValue(LLVM.Int32Type(LLVM.context(get_context(irgen))), argc),
     GenericValue(argv)
 ])

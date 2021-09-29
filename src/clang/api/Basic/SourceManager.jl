@@ -57,8 +57,23 @@ function setMainFileID(src_mgr::SourceManager, id::FileID)
     return clang_SourceManager_setMainFileID(src_mgr, id)
 end
 
+"""
+    setMainFileID(src_mgr::SourceManager, file_entry::FileEntry)
+Set the main file ID of the source manager to `file_entry`.
+"""
 function setMainFileID(src_mgr::SourceManager, file_entry::FileEntry)
     id = FileID(src_mgr, file_entry)
+    setMainFileID(src_mgr, id)
+    dispose(id)
+    return nothing
+end
+
+"""
+    setMainFileID(src_mgr::SourceManager, buffer::MemoryBuffer)
+Set the main file ID of the source manager to `buffer`.
+"""
+function setMainFileID(src_mgr::SourceManager, buffer::MemoryBuffer)
+    id = FileID(src_mgr, buffer)
     setMainFileID(src_mgr, id)
     dispose(id)
     return nothing

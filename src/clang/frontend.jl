@@ -7,26 +7,11 @@ end
 
 end_diag(ci::CompilerInstance) = EndSourceFile(getDiagnosticClient(ci))
 
-function get_codegen(ci::CompilerInstance)
-    return CodeGenerator(getASTConsumer(ci))
-end
+get_codegen(ci::CompilerInstance) = CodeGenerator(getASTConsumer(ci).ptr)
 
-function get_llvm_module(ci::CompilerInstance)
-    return getLLVMModule(get_codegen(ci))
-end
+get_llvm_module(ci::CompilerInstance) = get_llvm_module(get_codegen(ci))
 
-function get_builtin_clang_type(ci::CompilerInstance, ty)
-    @check_ptrs ci
-    return getBuiltinClangType(getASTContext(ci), ty)
-end
-
-enter_main_source_file(ci::CompilerInstance) = EnterMainSourceFile(getPreprocessor(ci))
-
-function get_header_search_info(ci::CompilerInstance)
-    return getHeaderSearchInfo(getPreprocessor(ci))
-end
-
-
+get_builtin_clang_type(ci::CompilerInstance, ty) = getBuiltinClangType(getASTContext(ci), ty)
 
 # status
 function print_stats_options(ci::CompilerInstance)

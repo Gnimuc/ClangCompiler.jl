@@ -21,13 +21,6 @@ get_begin_loc(x::SourceRange) = getBeginLoc(x)
 get_end_loc(x::SourceRange) = getEndLoc(x)
 
 # SourceManager
-function setMainFileID(src_mgr::SourceManager, buffer::MemoryBuffer)
-    id = FileID(src_mgr, buffer)
-    setMainFileID(src_mgr, id)
-    dispose(id)
-    return nothing
-end
-
 function get_main_file_begin_loc(src_mgr::SourceManager)
     id = getMainFileID(src_mgr)
     loc = getLocForStartOfFile(src_mgr, id)

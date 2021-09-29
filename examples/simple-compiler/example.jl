@@ -12,25 +12,25 @@ function create_simple_compiler(src::String, args::Vector{String}; diag_show_col
     ctx = CC.Context()
     instance = CC.CompilerInstance()
     # diagnostics
-    CC.set_opt_show_presumed_loc(instance, true)
-    CC.set_opt_show_colors(instance, diag_show_colors)
-    CC.create_diagnostics(instance)
-    diag = CC.get_diagnostics(instance)
+    CC.setShowPresumedLoc(instance, true)
+    CC.setShowColors(instance, diag_show_colors)
+    CC.createDiagnostics(instance)
+    diag = CC.getDiagnostics(instance)
     # invocation
     # do not emit `__dso_handle` etc.
     insert!(args, length(args), "-fno-use-cxa-atexit")
     invok = CC.create_compiler_invocation_from_cmd(src, args, diag)
-    CC.set_invocation(instance, invok)
-    CC.set_target(instance)
+    CC.setInvocation(instance, invok)
+    CC.setTargetAndLangOpts(instance)
     # source
-    CC.create_file_manager(instance)
-    CC.create_source_manager(instance)
-    CC.set_main_file(instance, src)
+    CC.createFileManager(instance)
+    CC.createSourceManager(instance)
+    CC.setMainFileID(instance, src)
     # preprocessor & AST & sema
-    CC.create_preprocessor(instance)
-    CC.create_ast_context(instance)
-    CC.set_ast_consumer(instance, CC.create_llvm_codegen(instance, ctx))
-    CC.create_sema(instance)
+    CC.createPreprocessor(instance)
+    CC.createASTContext(instance)
+    CC.setASTConsumer(instance, CC.CreateLLVMCodeGen(instance, ctx))
+    CC.createSema(instance)
     return SimpleCompiler(ctx, instance)
 end
 
