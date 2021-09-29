@@ -1,31 +1,29 @@
 using ClangCompiler
-using ClangCompiler: FileManager, SourceManager, MemoryBuffer, FileID
-using ClangCompiler: create_file_manager, PrintStats, dispose
-using ClangCompiler: get_file, get_UID, name, real_path_name, is_valid, is_named_pipe
-using ClangCompiler: value, set_main_file_id, get_main_file_id
 using Test
 
+const CC = ClangCompiler
+
 @testset "FileManager" begin
-    fm = FileManager()
+    fm = CC.FileManager()
     @test fm.ptr != C_NULL
 
     @testset "FileEntry" begin
         p = joinpath(@__DIR__, "..", "code", "main.cpp") |> normpath
-        f = get_file(fm, p)
+        f = CC.getFileEntry(fm, p)
         @test f.ptr != C_NULL
-        @test name(f) == p == real_path_name(f)
-        @test is_valid(f)
-        @test !is_named_pipe(f)
+        @test CC.get_name(f) == p == CC.real_path_name(f)
+        @test CC.isValid(f)
+        @test !CC.isNamedPipe(f)
     end
 
     dispose(fm)
 end
 
 @testset "SourceManager" begin
-    fm = FileManager()
+    fm = CC.FileManager()
     @test fm.ptr != C_NULL
 
-    sm = SourceManager(fm)
+    sm = CC.SourceManager(fm)
     @test sm.ptr != C_NULL
 
     code = """
@@ -34,15 +32,15 @@ end
     """
     buffer = get_buffer(code)
 
-    fid = FileID(sm, buffer)
+    fid = CC.FileID(sm, buffer)
     @test fid.ptr != C_NULL
 
-    set_main_file_id(sm, fid)
+    CC.setMainFileID(sm, fid)
 
-    fid2 = get_main_file_id(sm)
+    fid2 = CC.getMainFileID(sm)
     @test fid2.ptr != C_NULL
 
-    @test value(fid) == value(fid2)
+    @test CC.value(fid) == CC.value(fid2)
 
     dispose(fid)
     dispose(fid2)

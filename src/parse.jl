@@ -1,8 +1,8 @@
 function parse(instance::CompilerInstance)
     begin_diag(instance)
     try
-        initialize_builtins(get_preprocessor(instance))
-        parse_ast(get_sema(instance))
+        InitializeBuiltins(getPreprocessor(instance))
+        ParseAST(getSema(instance))
     finally
         end_diag(instance)
     end
@@ -10,21 +10,21 @@ function parse(instance::CompilerInstance)
 end
 
 function parse(instance::CompilerInstance, parser::Parser, codegen::CodeGenerator)
-    diag_csr = get_diagnostic_client(instance)
+    diag_csr = getDiagnosticClient(instance)
 
-    preprocessor = get_preprocessor(instance)
-    enter_main_file(preprocessor)
-    initialize_builtins(preprocessor)
+    preprocessor = getPreprocessor(instance)
+    EnterMainSourceFile(preprocessor)
+    InitializeBuiltins(preprocessor)
 
-    begin_source_file(diag_csr, get_lang_options(instance), preprocessor)
+    begin_source_file(diag_csr, getLangOpts(instance), preprocessor)
 
     initialize(parser)
 
-    sema = get_sema(instance)
+    sema = getSema(instance)
     ast_ctx = getASTContext(instance)
 
-    if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
-        process_weak_toplevel_decls(sema, codegen)
+    if tryParseAndSkipInvalidOrParsedDecl(parser, codegen)
+        processWeakTopLevelDecls(sema, codegen)
         HandleTranslationUnit(codegen, ast_ctx)
         end_source_file(diag_csr)
         return true
@@ -34,62 +34,53 @@ function parse(instance::CompilerInstance, parser::Parser, codegen::CodeGenerato
     end
 end
 
-function try_parse_and_skip_invalid_or_parsed_decl(p::Parser, cg::CodeGenerator)
-    @check_ptrs p cg
-    return clang_Parser_tryParseAndSkipInvalidOrParsedDecl(p.ptr, cg.ptr)
-end
 
-function process_weak_toplevel_decls(sema::Sema, cg::CodeGenerator)
-    @check_ptrs sema cg
-    clang_Sema_processWeakTopLevelDecls(sema.ptr, cg.ptr)
-    return nothing
-end
 
 function parse_cxx_scope_spec(p::Parser, spec::CXXScopeSpec)
-    sema = get_sema(p)
-    pp = get_preprocessor(p)
-    tok = get_current_token(p)
-    is_incremental(pp) && is_eof(tok) && consume_token(p)
+    sema = getSema(p)
+    pp = getPreprocessor(p)
+    tok = getCurToken(p)
+    is_incremental(pp) && is_eof(tok) && ConsumeToken(p)
     while !is_eof(tok)
         if is_coloncolon(tok)  # `::foo::bar::baz`
-            try_annotate_cxx_scope_token(p) && error("failed to annotate token.")
+            TryAnnotateCXXScopeToken(p) && error("failed to annotate token.")
         elseif is_identifier(tok)  # `foo::bar::baz`
-            try_annotate_cxx_scope_token(p) && error("failed to annotate token.")
+            TryAnnotateCXXScopeToken(p) && error("failed to annotate token.")
             if !is_identifier(tok)
                 continue
             else
-                consume_token(p)
+                ConsumeToken(p)
             end
         elseif is_annot_cxxscope(tok) || is_annot_typename(tok)
             restore_nns_annotation(sema, tok, spec)
             break
         elseif is_annot_template_id(tok)
-            try_annotate_type_or_scope_token_after_scope_spec(p, spec)
+            TryAnnotateTypeOrScopeTokenAfterScopeSpec(p, spec)
             break
         else  # skip other cases which we may add support in the future
-            consume_any_token(p)
+            ConsumeAnyToken(p)
         end
     end
     # parse to the end of file, ignore everything
     while !is_eof(tok)
-        consume_any_token(p)
+        ConsumeAnyToken(p)
     end
     return nothing
 end
 
 function parse_cxx_scope_spec(p::Parser, fid::FileID, spec::CXXScopeSpec)
-    pp = get_preprocessor(p)
-    enter_file(pp, fid)
+    pp = getPreprocessor(p)
+    EnterSourceFile(pp, fid)
     try
         parse_cxx_scope_spec(p, spec)
     finally
-        end_file(pp)
+        EndSourceFile(pp)
     end
     return nothing
 end
 
 function parse_cxx_scope_spec(ci::CompilerInstance, p::Parser, str::String, spec::CXXScopeSpec)
-    src_mgr = get_source_manager(ci)
+    src_mgr = getSourceManager(ci)
     begin_diag(ci)
     fid = FileID(src_mgr, get_buffer(str))
     try

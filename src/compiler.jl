@@ -24,17 +24,17 @@ struct IRGenerator <: AbstractIRGenerator
     act::LLVMOnlyAction
 end
 
-get_module(x::IRGenerator) = take_module(x.act)
+get_module(x::IRGenerator) = takeModule(x.act)
 
 function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     ts_ctx = ThreadSafeContext()
     ctx = context(ts_ctx)
     instance = CompilerInstance()
     # diagnostics
-    set_opt_show_presumed_loc(instance, true)
-    set_opt_show_colors(instance, diag_show_colors)
-    create_diagnostics(instance)
-    diag = get_diagnostics(instance)
+    setShowPresumedLoc(instance, true)
+    setShowColors(instance, diag_show_colors)
+    createDiagnostics(instance)
+    diag = getDiagnostics(instance)
     # invocation
     if Sys.isapple()
         # FIXME: Duplicate definition of symbol '___cxa_atexit'
@@ -47,10 +47,10 @@ function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
         insert!(args, length(args), "-include"*"hack_linux.h")
     end
     invok = create_compiler_invocation_from_cmd(src, args, diag)
-    set_invocation(instance, invok)
+    setInvocation(instance, invok)
     # codegen action
     act = LLVMOnlyAction(ctx)
-    execute_action(instance, act)
+    ExecuteAction(instance, act)
     return IRGenerator(ts_ctx, instance, act)
 end
 
@@ -109,7 +109,7 @@ mutable struct IncrementalIRGenerator <: AbstractIRGenerator
     src_counter::Int
 end
 
-get_parser(x::IncrementalIRGenerator) = x.parser
+getParser(x::IncrementalIRGenerator) = x.parser
 get_modules(x::IncrementalIRGenerator) = x.modules
 get_current_module(x::IncrementalIRGenerator) = x.modules[x.current_module]
 
@@ -118,39 +118,39 @@ function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_col
     ctx = context(ts_ctx)
     instance = CompilerInstance()
     # diagnostics
-    set_opt_show_presumed_loc(instance, true)
-    set_opt_show_colors(instance, diag_show_colors)
-    create_diagnostics(instance)
-    diag = get_diagnostics(instance)
+    setShowPresumedLoc(instance, true)
+    setShowColors(instance, diag_show_colors)
+    createDiagnostics(instance)
+    diag = getDiagnostics(instance)
     # invocation
     invok = create_compiler_invocation_from_cmd(src, args, diag)
-    set_invocation(instance, invok)
-    set_target(instance)
+    setInvocation(instance, invok)
+    setTargetAndLangOpts(instance)
     # source
-    create_file_manager(instance)
-    create_source_manager(instance)
-    set_main_file(instance, src)
+    createFileManager(instance)
+    createSourceManager(instance)
+    setMainFileID(instance, src)
     # preprocessor & AST & sema
-    create_preprocessor(instance, CXTranslationUnitKind_TU_Prefix)
-    create_ast_context(instance)
-    codegen = create_llvm_codegen(instance, ctx, "JLCC_Incremental_1")
-    set_ast_consumer(instance, codegen)
-    create_sema(instance, CXTranslationUnitKind_TU_Prefix)
+    createPreprocessor(instance, CXTranslationUnitKind_TU_Prefix)
+    createASTContext(instance)
+    codegen = CreateLLVMCodeGen(instance, ctx, "JLCC_Incremental_1")
+    setASTConsumer(instance, codegen)
+    createSema(instance, CXTranslationUnitKind_TU_Prefix)
     # parser
-    preprocessor = get_preprocessor(instance)
+    preprocessor = getPreprocessor(instance)
     enable_incremental(preprocessor)
-    sema = get_sema(instance)
+    sema = getSema(instance)
     parser = Parser(preprocessor, sema)
     begin_diag(instance)
     try
-        initialize_builtins(preprocessor)
-        enter_main_file(preprocessor)
-        initialize(parser)
+        InitializeBuiltins(preprocessor)
+        EnterMainSourceFile(preprocessor)
+        Initialize(parser)
 
         ast_ctx = getASTContext(instance)
 
-        if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
-            process_weak_toplevel_decls(sema, codegen)
+        if tryParseAndSkipInvalidOrParsedDecl(parser, codegen)
+            processWeakTopLevelDecls(sema, codegen)
             HandleTranslationUnit(codegen, ast_ctx)
         end
     finally
@@ -168,23 +168,23 @@ end
 
 function incremental_parse(irgen::IncrementalIRGenerator, code::String)
     ci = get_instance(irgen)
-    parser = get_parser(irgen)
-    pp = get_preprocessor(ci)
-    src_mgr = get_source_manager(ci)
-    codegen = get_ast_consumer(ci)
+    parser = getParser(irgen)
+    pp = getPreprocessor(ci)
+    src_mgr = getSourceManager(ci)
+    codegen = getASTConsumer(ci)
     buffer = get_buffer(code)
     fid = FileID(src_mgr, buffer)
     begin_diag(ci)
-    loc = get_loc_with_offset(get_loc_for_start_of_main_file(src_mgr), irgen.src_counter)
-    enter_file(pp, fid, loc)
+    loc = get_loc_with_offset(get_main_file_begin_loc(src_mgr), irgen.src_counter)
+    EnterSourceFile(pp, fid, loc)
     try
-        if try_parse_and_skip_invalid_or_parsed_decl(parser, codegen)
-            process_weak_toplevel_decls(get_sema(ci), codegen)
+        if tryParseAndSkipInvalidOrParsedDecl(parser, codegen)
+            processWeakTopLevelDecls(getSema(ci), codegen)
             HandleTranslationUnit(codegen, getASTContext(ci))
         end
     finally
         dispose(fid)
-        end_file(pp)
+        EndSourceFile(pp)
         end_diag(ci)
         irgen.src_counter += 1
     end
@@ -208,12 +208,12 @@ end
 
 function parse_cxx_scope_spec(irgen::IncrementalIRGenerator, str::String, spec::CXXScopeSpec)
     ci = get_instance(irgen)
-    parser = get_parser(irgen)
+    parser = getParser(irgen)
     parse_cxx_scope_spec(ci, parser, str, spec)
 end
 
 function (x::DeclFinder)(irgen::IncrementalIRGenerator, decl::String, scope::String="")
     ci = get_instance(irgen)
-    parser = get_parser(irgen)
+    parser = getParser(irgen)
     return x(ci, parser, decl, scope)
 end

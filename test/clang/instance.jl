@@ -5,68 +5,68 @@ const CC = ClangCompiler
 
 @testset "CompilerInstance | SubModule" begin
     instance = CC.CompilerInstance()
-    @test CC.has_diagnostics(instance) == false
-    @test CC.has_invocation(instance) == true
-    @test CC.has_file_manager(instance) == false
-    @test CC.has_source_manager(instance) == false
-    @test CC.has_preprocessor(instance) == false
-    @test CC.has_sema(instance) == false
+    @test CC.hasDiagnostics(instance) == false
+    @test CC.hasInvocation(instance) == true
+    @test CC.hasFileManager(instance) == false
+    @test CC.hasSourceManager(instance) == false
+    @test CC.hasPreprocessor(instance) == false
+    @test CC.hasSema(instance) == false
 
-    CC.create_diagnostics(instance)
-    @test CC.has_diagnostics(instance) == true
-    @test CC.has_invocation(instance) == true
-    @test CC.has_file_manager(instance) == false
-    @test CC.has_source_manager(instance) == false
-    @test CC.has_preprocessor(instance) == false
-    @test CC.has_sema(instance) == false
+    CC.createDiagnostics(instance)
+    @test CC.hasDiagnostics(instance) == true
+    @test CC.hasInvocation(instance) == true
+    @test CC.hasFileManager(instance) == false
+    @test CC.hasSourceManager(instance) == false
+    @test CC.hasPreprocessor(instance) == false
+    @test CC.hasSema(instance) == false
 
-    CC.create_file_manager(instance)
-    @test CC.has_diagnostics(instance) == true
-    @test CC.has_invocation(instance) == true
-    @test CC.has_file_manager(instance) == true
-    @test CC.has_source_manager(instance) == false
-    @test CC.has_preprocessor(instance) == false
-    @test CC.has_sema(instance) == false
+    CC.createFileManager(instance)
+    @test CC.hasDiagnostics(instance) == true
+    @test CC.hasInvocation(instance) == true
+    @test CC.hasFileManager(instance) == true
+    @test CC.hasSourceManager(instance) == false
+    @test CC.hasPreprocessor(instance) == false
+    @test CC.hasSema(instance) == false
 
-    CC.create_source_manager(instance, CC.get_file_manager(instance))
-    @test CC.has_diagnostics(instance) == true
-    @test CC.has_invocation(instance) == true
-    @test CC.has_file_manager(instance) == true
-    @test CC.has_source_manager(instance) == true
-    @test CC.has_preprocessor(instance) == false
-    @test CC.has_sema(instance) == false
+    CC.createSourceManager(instance, CC.getFileManager(instance))
+    @test CC.hasDiagnostics(instance) == true
+    @test CC.hasInvocation(instance) == true
+    @test CC.hasFileManager(instance) == true
+    @test CC.hasSourceManager(instance) == true
+    @test CC.hasPreprocessor(instance) == false
+    @test CC.hasSema(instance) == false
 
-    diag = CC.get_diagnostics(instance)
+    diag = CC.getDiagnostics(instance)
     target_opts = CC.TargetOptions()
-    CC.set_triple(target_opts, "x86_64-apple-darwin11.1.0")
+    CC.setTriple(target_opts, "x86_64-apple-darwin11.1.0")
     target = CC.TargetInfo(target_opts, diag)
-    CC.set_target(instance, target)
+    CC.setTarget(instance, target)
 
-    CC.create_preprocessor(instance)
-    @test CC.has_diagnostics(instance) == true
-    @test CC.has_invocation(instance) == true
-    @test CC.has_file_manager(instance) == true
-    @test CC.has_source_manager(instance) == true
-    @test CC.has_preprocessor(instance) == true
-    @test CC.has_sema(instance) == false
+    CC.createPreprocessor(instance)
+    @test CC.hasDiagnostics(instance) == true
+    @test CC.hasInvocation(instance) == true
+    @test CC.hasFileManager(instance) == true
+    @test CC.hasSourceManager(instance) == true
+    @test CC.hasPreprocessor(instance) == true
+    @test CC.hasSema(instance) == false
 
-    @test CC.has_ast_context(instance) == false
-    CC.create_ast_context(instance)
-    @test CC.has_ast_context(instance) == true
+    @test CC.hasASTContext(instance) == false
+    CC.createASTContext(instance)
+    @test CC.hasASTContext(instance) == true
 
     @test CC.hasASTConsumer(instance) == false
     llvm_ctx = CC.LLVM.Context()
-    codegen = CC.create_llvm_codegen(instance, llvm_ctx)
-    CC.set_ast_consumer(instance, codegen)
+    codegen = CC.CreateLLVMCodeGen(instance, llvm_ctx)
+    CC.setASTConsumer(instance, codegen)
     @test CC.hasASTConsumer(instance) == true
 
-    CC.create_sema(instance)
-    @test CC.has_diagnostics(instance) == true
-    @test CC.has_invocation(instance) == true
-    @test CC.has_file_manager(instance) == true
-    @test CC.has_source_manager(instance) == true
-    @test CC.has_preprocessor(instance) == true
-    @test CC.has_sema(instance) == true
+    CC.createSema(instance)
+    @test CC.hasDiagnostics(instance) == true
+    @test CC.hasInvocation(instance) == true
+    @test CC.hasFileManager(instance) == true
+    @test CC.hasSourceManager(instance) == true
+    @test CC.hasPreprocessor(instance) == true
+    @test CC.hasSema(instance) == true
 
     CC.dispose(instance)
     CC.LLVM.dispose(llvm_ctx)
@@ -80,18 +80,18 @@ end
     push!(args, "-I$(@__DIR__)")
 
     instance = CC.CompilerInstance()
-    CC.create_diagnostics(instance)
-    diag = CC.get_diagnostics(instance)
+    CC.createDiagnostics(instance)
+    diag = CC.getDiagnostics(instance)
 
     invok = CC.create_compiler_invocation_from_cmd(src, args, diag)
-    CC.set_invocation(instance, invok)
-    CC.set_target(instance)
+    CC.setInvocation(instance, invok)
+    CC.setTargetAndLangOpts(instance)
 
-    CC.create_file_manager(instance)
-    CC.create_source_manager(instance)
+    CC.createFileManager(instance)
+    CC.createSourceManager(instance)
 
-    CC.set_main_file(instance, src)
-    id = CC.get_main_file_id(instance)
+    CC.setMainFileID(instance, src)
+    id = CC.getMainFileID(instance)
     @test CC.value(id) == 1
     CC.dispose(id)
 

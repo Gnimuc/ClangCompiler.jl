@@ -32,3 +32,9 @@ function LookupName(x::Sema, r::LookupResult, sp::Scope, allow_builtin_creation=
     @check_ptrs x r sp
     return clang_Sema_LookupName(x, r, sp, allow_builtin_creation)
 end
+
+function processWeakTopLevelDecls(sema::Sema, cg::CodeGenerator)
+    @check_ptrs sema cg
+    clang_Sema_processWeakTopLevelDecls(sema, cg)
+    return nothing
+end

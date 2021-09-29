@@ -1,29 +1,18 @@
 # CompilerInstance
 function begin_diag(ci::CompilerInstance)
-    diag_csr = get_diagnostic_client(ci)
-    preprocessor = get_preprocessor(ci)
-    return begin_source_file(diag_csr, getLangOpts(ci), preprocessor)
+    diag_csr = getDiagnosticClient(ci)
+    preprocessor = getPreprocessor(ci)
+    return BeginSourceFile(diag_csr, getLangOpts(ci), preprocessor)
 end
 
-end_diag(ci::CompilerInstance) = end_source_file(get_diagnostic_client(ci))
-
-function get_file(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
-    file_mgr = getFileManager(ci)
-    return get_file(file_mgr, filename; open_file)
-end
-
-function set_main_file(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
-    file_entry = get_file(ci, filename, open_file)
-    src_mgr = getSourceManager(ci)
-    return set_main_file(src_mgr, file_entry)
-end
+end_diag(ci::CompilerInstance) = EndSourceFile(getDiagnosticClient(ci))
 
 function get_codegen(ci::CompilerInstance)
     return CodeGenerator(getASTConsumer(ci))
 end
 
 function get_llvm_module(ci::CompilerInstance)
-    return get_llvm_module(get_codegen(ci))
+    return getLLVMModule(get_codegen(ci))
 end
 
 function get_builtin_clang_type(ci::CompilerInstance, ty)
@@ -31,36 +20,13 @@ function get_builtin_clang_type(ci::CompilerInstance, ty)
     return getBuiltinClangType(getASTContext(ci), ty)
 end
 
-function set_opt_show_presumed_loc(ci::CompilerInstance, should_show::Bool=true)
-    opt = getDiagnosticOpts(ci)
-    return setShowPresumedLoc(opt, should_show)
+enter_main_source_file(ci::CompilerInstance) = EnterMainSourceFile(getPreprocessor(ci))
+
+function get_header_search_info(ci::CompilerInstance)
+    return getHeaderSearchInfo(getPreprocessor(ci))
 end
 
-function set_opt_show_colors(ci::CompilerInstance, should_show::Bool=true)
-    opt = getDiagnosticOpts(ci)
-    return setShowColors(opt, should_show)
-end
 
-function create_source_manager(ci::CompilerInstance)
-    file_mgr = getFileManager(ci)
-    return createSourceManager(ci, file_mgr)
-end
-
-function EnterMainSourceFile(ci::CompilerInstance)
-    return EnterMainSourceFile(get_preprocessor(ci))
-end
-
-function getHeaderSearchInfo(ci::CompilerInstance)
-    return getHeaderSearchInfo(get_preprocessor(ci))
-end
-
-"""
-    get_main_file_id(ci::CompilerInstance) -> FileID
-Return the main file ID.
-
-This function allocates and one should call `dispose` to release the resources after using this object.
-"""
-get_main_file_id(ci::CompilerInstance) = getMainFileID(getSourceManager(ci))
 
 # status
 function print_stats_options(ci::CompilerInstance)

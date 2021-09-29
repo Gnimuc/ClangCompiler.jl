@@ -9,3 +9,5 @@ function restore_nns_annotation(x::Sema, tok::Token, spec::CXXScopeSpec)
     rng = getAnnotationRange(tok)
     return restore_nns_annotation(x, val, rng, spec)
 end
+
+Base.isempty(x::LookupResult) = empty(x)

@@ -1,8 +1,7 @@
 # DiagnosticConsumer
 function BeginSourceFile(consumer::AbstractDiagnosticConsumer, lang::LangOptions,
-                         pp::CXPreprocessor)
-    @check_ptrs consumer lang
-    @assert pp != C_NULL
+                         pp::Preprocessor)
+    @check_ptrs consumer lang pp
     clang_DiagnosticConsumer_BeginSourceFile(consumer, lang, pp)
     return nothing
 end

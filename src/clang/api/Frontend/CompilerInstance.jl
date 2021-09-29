@@ -43,6 +43,16 @@ function createDiagnostics(ci::CompilerInstance,
     return clang_CompilerInstance_createDiagnostics(ci, client, should_own_client)
 end
 
+function setShowPresumedLoc(ci::CompilerInstance, should_show::Bool=true)
+    opt = getDiagnosticOpts(ci)
+    return setShowPresumedLoc(opt, should_show)
+end
+
+function setShowColors(ci::CompilerInstance, should_show::Bool=true)
+    opt = getDiagnosticOpts(ci)
+    return setShowColors(opt, should_show)
+end
+
 # FileManager
 function hasFileManager(ci::CompilerInstance)
     @check_ptrs ci
@@ -65,6 +75,11 @@ function createFileManager(ci::CompilerInstance)
     return clang_CompilerInstance_createFileManager(ci)
 end
 
+function getFileEntry(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
+    file_mgr = getFileManager(ci)
+    return getFileEntry(file_mgr, filename; open_file)
+end
+
 # SourceManager
 function hasSourceManager(ci::CompilerInstance)
     @check_ptrs ci
@@ -84,9 +99,28 @@ end
 
 function createSourceManager(ci::CompilerInstance, src_mgr::FileManager)
     @check_ptrs ci src_mgr
-    @assert has_diagnostics(ci) "CompilerInstance has no diagnostics."
+    @assert hasDiagnostics(ci) "CompilerInstance has no diagnostics."
     return clang_CompilerInstance_createSourceManager(ci, src_mgr)
 end
+
+function createSourceManager(ci::CompilerInstance)
+    file_mgr = getFileManager(ci)
+    return createSourceManager(ci, file_mgr)
+end
+
+function setMainFileID(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
+    file_entry = getFileEntry(ci, filename, open_file)
+    src_mgr = getSourceManager(ci)
+    return setMainFileID(src_mgr, file_entry)
+end
+
+"""
+    get_main_file_id(ci::CompilerInstance) -> FileID
+Return the main file ID.
+
+This function allocates and one should call `dispose` to release the resources after using this object.
+"""
+getMainFileID(ci::CompilerInstance) = getMainFileID(getSourceManager(ci))
 
 # Invocation
 function hasInvocation(ci::CompilerInstance)

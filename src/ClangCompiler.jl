@@ -51,12 +51,13 @@ include("clang/ast.jl")
 include("clang/basic.jl")
 include("clang/codegen.jl")
 include("clang/frontend.jl")
+include("clang/lex.jl")
 include("clang/parse.jl")
 include("clang/qualtype.jl")
 include("clang/sema.jl")
 export AbstractClangType, AbstractQualType, AbstractBuiltinType
 
-# interface
+# high-level
 include("types.jl")
 export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
 

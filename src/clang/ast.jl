@@ -12,12 +12,6 @@ function get_builtin_type(ctx::ASTContext, ::Type{T}) where {T<:AbstractBuiltinT
     return T(ctx)
 end
 
-function begin_source_file(consumer::T, lang::LangOptions,
-                           pp::Preprocessor) where {T<:AbstractDiagnosticConsumer}
-    @check_ptrs pp
-    return begin_source_file(consumer, lang, pp)
-end
-
 # Decl
 get_ast_context(x::AbstractDecl) = getASTContext(x)
 get_ast_context(x::DeclContext) = getParentASTContext(x)

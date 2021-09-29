@@ -1,35 +1,34 @@
 using ClangCompiler
-using ClangCompiler: DiagnosticIDs, DiagnosticOptions
-using ClangCompiler: IgnoringDiagConsumer, DiagnosticsEngine
-using ClangCompiler: dispose
 using Test
+
+const CC = ClangCompiler
 
 @testset "Diagnostic" begin
     @testset "Engine" begin
-        id = DiagnosticIDs()
+        id = CC.DiagnosticIDs()
         @test id.ptr != C_NULL
 
-        opts = DiagnosticOptions()
+        opts = CC.DiagnosticOptions()
         @test opts.ptr != C_NULL
 
-        diag = DiagnosticsEngine(id, opts)
+        diag = CC.DiagnosticsEngine(id, opts)
         @test diag.ptr != C_NULL
         dispose(diag)
     end
 
     @testset "Consumer" begin
-        opts = DiagnosticOptions()
+        opts = CC.DiagnosticOptions()
         @test opts.ptr != C_NULL
 
-        client = IgnoringDiagConsumer()
+        client = CC.IgnoringDiagConsumer()
         @test client.ptr != C_NULL
 
-        diag = DiagnosticsEngine(opts, client)
+        diag = CC.DiagnosticsEngine(opts, client)
         @test diag.ptr != C_NULL
         dispose(diag)
     end
 
-    diag = DiagnosticsEngine()
+    diag = CC.DiagnosticsEngine()
     @test diag.ptr != C_NULL
     dispose(diag)
 end

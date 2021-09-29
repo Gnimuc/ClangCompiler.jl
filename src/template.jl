@@ -26,14 +26,14 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
         end
     end
     arg_list = TemplateArgumentList(ctx, arg_vec)
-    specialization_decl = find_specialization(template_decl, arg_list)
+    specialization_decl = findSpecialization(template_decl, arg_list)
 
     if specialization_decl.ptr == C_NULL
         specialization_decl = ClassTemplateSpecializationDecl(ctx, template_decl, arg_list)
-        add_specialization(template_decl, specialization_decl)
+        addSpecialization(template_decl, specialization_decl)
         if isOutOfLine(template_decl)
-            lexical_decl_ctx = get_lexical_decl_context(template_decl)
-            set_lexcial_decl_context(specialization_decl, lexical_decl_ctx)
+            lexical_decl_ctx = getLexicalDeclContext(template_decl)
+            setLexcialDeclContext(specialization_decl, lexical_decl_ctx)
         end
     end
 

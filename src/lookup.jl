@@ -21,8 +21,8 @@ function dispose(x::DeclFinder)
 end
 
 function DeclFinder(ci::CompilerInstance, kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
-    sema = get_sema(ci)
-    loc = get_loc_for_start_of_main_file(get_source_manager(ci))  # used as a fake loc
+    sema = getSema(ci)
+    loc = get_main_file_begin_loc(getSourceManager(ci))  # used as a fake loc
     result = LookupResult(sema, DeclarationName(), loc, kind)
     return DeclFinder(result, kind)
 end
@@ -33,20 +33,20 @@ function reset(x::DeclFinder)
 end
 
 function get_decl(x::DeclFinder)
-    is_empty(x.result) && error("no lookup result.")
-    return get_representative_decl(x.result)
+    isempty(x.result) && error("no lookup result.")
+    return getRepresentativeDecl(x.result)
 end
 
 function (x::DeclFinder)(ci::CompilerInstance, parser::Parser, decl::String, scope::String="")
     reset(x)
     parse_cxx_scope_spec(ci, parser, scope, x.spec)
-    set_name(x.result, DeclarationName(get_name(getASTContext(ci), decl)))
-    if is_valid(x.spec)
-        is_found = lookup_parsed_name(get_sema(ci), x.result, get_current_scope(parser), x.spec)
+    setLookupName(x.result, DeclarationName(get_name(getASTContext(ci), decl)))
+    if isValid(x.spec)
+        is_found = LookupParsedName(getSema(ci), x.result, getCurScope(parser), x.spec)
         !is_found && error("failed to find decl(`$decl`) in the CXXScopeSpec.")
     else
-        is_found = lookup_name(get_sema(ci), x.result, get_current_scope(parser))
+        is_found = LookupName(getSema(ci), x.result, getCurScope(parser))
         !is_found && error("failed to find decl(`$decl`) in the current scope.")
     end
-    return !is_empty(x.result)
+    return !isempty(x.result)
 end
