@@ -109,33 +109,27 @@ end
 
 # ClassTemplateSpecializationDecl
 function ClassTemplateSpecializationDecl(ctx::ASTContext, tk::CXTagTypeKind,
-    dc::DeclContext, start_loc::SourceLocation,
-    id_loc::SourceLocation,
-    template::ClassTemplateDecl,
-    args::TemplateArgumentList,
-    prev_decl::ClassTemplateSpecializationDecl)
-@check_ptrs ctx dc template args
-ctsd = clang_ClassTemplateSpecializationDecl_Create(ctx,
-                                                   tk,
-                                                   dc,
-                                                   start_loc,
-                                                   id_loc,
-                                                   template,
-                                                   args,
-                                                   prev_decl)
-return ClassTemplateSpecializationDecl(ctsd)
+                                         dc::DeclContext, start_loc::SourceLocation,
+                                         id_loc::SourceLocation,
+                                         template::ClassTemplateDecl,
+                                         args::TemplateArgumentList,
+                                         prev_decl::ClassTemplateSpecializationDecl)
+    @check_ptrs ctx dc template args
+    ctsd = clang_ClassTemplateSpecializationDecl_Create(ctx, tk, dc, start_loc, id_loc,
+                                                        template, args, prev_decl)
+    return ClassTemplateSpecializationDecl(ctsd)
 end
 
 function ClassTemplateSpecializationDecl(ctx::ASTContext, template::ClassTemplateDecl,
-    args::TemplateArgumentList,
-    prev_decl::ClassTemplateSpecializationDecl=ClassTemplateSpecializationDecl(C_NULL))
-tdecl = getTemplateDecl(template)
-tk = getTagKind(tdecl)
-dc_ctx = getDeclContext(template)
-start_loc = getBeginLoc(tdecl)
-id_loc = getLocation(template)
-return ClassTemplateSpecializationDecl(ctx, tk, dc_ctx, start_loc, id_loc, template,
-      args, prev_decl)
+                                         args::TemplateArgumentList,
+                                         prev_decl::ClassTemplateSpecializationDecl=ClassTemplateSpecializationDecl(C_NULL))
+    tdecl = getTemplateDecl(template)
+    tk = getTagKind(tdecl)
+    dc_ctx = getDeclContext(template)
+    start_loc = getBeginLoc(tdecl)
+    id_loc = getLocation(template)
+    return ClassTemplateSpecializationDecl(ctx, tk, dc_ctx, start_loc, id_loc, template,
+                                           args, prev_decl)
 end
 
 function AddSpecialization(x::AbstractRedeclarableTemplateDecl,

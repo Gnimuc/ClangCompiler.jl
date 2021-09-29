@@ -13,9 +13,9 @@ function get_builtin_type(ctx::ASTContext, ::Type{T}) where {T<:AbstractBuiltinT
 end
 
 function begin_source_file(consumer::T, lang::LangOptions,
-    pp::Preprocessor) where {T<:AbstractDiagnosticConsumer}
-@check_ptrs pp
-return begin_source_file(consumer, lang, pp)
+                           pp::Preprocessor) where {T<:AbstractDiagnosticConsumer}
+    @check_ptrs pp
+    return begin_source_file(consumer, lang, pp)
 end
 
 # Decl
