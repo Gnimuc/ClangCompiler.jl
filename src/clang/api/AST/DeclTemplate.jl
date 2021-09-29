@@ -32,7 +32,7 @@ function TemplateArgumentList(ctx::ASTContext, args::Vector{CXTemplateArgument})
 end
 
 function TemplateArgumentList(ctx::ASTContext, args::Vector{TemplateArgument})
-    return TemplateArgumentList(ctx, [arg for arg in args])
+    return TemplateArgumentList(ctx, [arg.ptr for arg in args])
 end
 
 function Base.size(x::TemplateArgumentList)
@@ -123,7 +123,7 @@ end
 function ClassTemplateSpecializationDecl(ctx::ASTContext, template::ClassTemplateDecl,
                                          args::TemplateArgumentList,
                                          prev_decl::ClassTemplateSpecializationDecl=ClassTemplateSpecializationDecl(C_NULL))
-    tdecl = getTemplateDecl(template)
+    tdecl = getTemplatedDecl(template)
     tk = getTagKind(tdecl)
     dc_ctx = getDeclContext(template)
     start_loc = getBeginLoc(tdecl)

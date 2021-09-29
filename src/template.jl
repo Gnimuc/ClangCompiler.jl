@@ -30,10 +30,10 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
 
     if specialization_decl.ptr == C_NULL
         specialization_decl = ClassTemplateSpecializationDecl(ctx, template_decl, arg_list)
-        addSpecialization(template_decl, specialization_decl)
+        AddSpecialization(template_decl, specialization_decl)
         if isOutOfLine(template_decl)
             lexical_decl_ctx = getLexicalDeclContext(template_decl)
-            setLexcialDeclContext(specialization_decl, lexical_decl_ctx)
+            setLexicalDeclContext(specialization_decl, lexical_decl_ctx)
         end
     end
 

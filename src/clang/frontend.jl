@@ -13,6 +13,8 @@ get_llvm_module(ci::CompilerInstance) = get_llvm_module(get_codegen(ci))
 
 get_builtin_clang_type(ci::CompilerInstance, ty) = getBuiltinClangType(getASTContext(ci), ty)
 
+get_ast_context(ci::CompilerInstance) = getASTContext(ci)
+
 # status
 function print_stats_options(ci::CompilerInstance)
     PrintStats(ci, CodeGenOptions)

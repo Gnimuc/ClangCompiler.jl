@@ -27,6 +27,16 @@ is_local_volatile(x::AbstractQualType) = isLocalVolatileQualified(x)
 
 has_local_qualifiers(x::AbstractQualType) = hasLocalQualifiers(x)
 
+add_const(x::AbstractQualType) = addConst(x)
+add_restrict(x::AbstractQualType) = addRestrict(x)
+add_volatile(x::AbstractQualType) = addVolatile(x)
+
+get_canonical_type(x::AbstractQualType) = getCanonicalType(x)
+get_integer_type(x::AbstractQualType) = getIntegerType(x)
+get_return_type(x::AbstractQualType) = getReturnType(x)
+get_kind(x::AbstractQualType) = get_kind(x)
+get_as_type(x::AbstractQualType) = get_as_type(x)
+
 is_void_type(x) = isVoidType(x)
 is_boolean_type(x) = isBooleanType(x)
 is_function_pointer_type(x) = isFunctionPointerType(x)
@@ -142,11 +152,11 @@ is_lvalue_reference_type(x::AbstractQualType) = isa_LValueReferenceType(x)
 is_lvalue_reference_type(x::LValueReferenceType) = true
 
 # RValueReferenceType
-is_rvalue_reference_type(x::AbstractQualType) = isaRValueReferenceType(x)
+is_rvalue_reference_type(x::AbstractQualType) = isa_RValueReferenceType(x)
 is_rvalue_reference_type(x::RValueReferenceType) = true
 
 # MemberPointerType
-is_member_pointer_type(x::AbstractQualType) = isaMemberPointerType(x)
+is_member_pointer_type(x::AbstractQualType) = isa_MemberPointerType(x)
 is_member_pointer_type(x::MemberPointerType) = true
 
 get_pointee_type(x::MemberPointerType) = getPointeeType(x)

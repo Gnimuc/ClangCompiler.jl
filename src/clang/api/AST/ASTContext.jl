@@ -19,9 +19,9 @@ function getRecordType(x::ASTContext, decl::RecordDecl)
     return QualType(clang_ASTContext_getRecordType(x, decl))
 end
 
-getTypeDeclType(x::ASTContext, decl::NamedDecl) = getTypeDeclType(x, TypeDecl(decl))
-getTypeDeclType(x::ASTContext, decl::AbstractTypeDecl) = getTypeDeclType(x, TypeDecl(decl))
-getTypeDeclType(x::ASTContext, decl::AbstractRecordDecl) = getRecordType(x, RecordDecl(decl))
+getTypeDeclType(x::ASTContext, decl::NamedDecl) = getTypeDeclType(x, TypeDecl(decl.ptr))
+getTypeDeclType(x::ASTContext, decl::AbstractTypeDecl) = getTypeDeclType(x, TypeDecl(decl.ptr))
+getTypeDeclType(x::ASTContext, decl::AbstractRecordDecl) = getRecordType(x, RecordDecl(decl.ptr))
 
 function getPointerType(x::ASTContext, ty::AbstractQualType)
     @check_ptrs x
