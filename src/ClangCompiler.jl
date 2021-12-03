@@ -3,17 +3,14 @@ module ClangCompiler
 const __DLEXT = Base.BinaryPlatforms.platform_dlext()
 const __ARTIFACT_BINDIR = Sys.iswindows() ? "bin" : "lib"
 
-using LLVM_full_jll
+include("jllshim.jl")
+using .JLLShim
 
-if haskey(ENV, "LIBCLANGEX_INSTALL_PREFIX") && !isempty(get(ENV, "LIBCLANGEX_INSTALL_PREFIX", ""))
-    const libclangex = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], __ARTIFACT_BINDIR, "libclangex.$__DLEXT") |> normpath
-    const libclangex_include = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "include") |> normpath
-else
-    # need manually add the output path below to `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH`/`PATH`
-    # julia -e "using LLVM_full_jll; println(joinpath(LLVM_full_jll.artifact_dir, \"lib\"))"
-    using libclangex_jll
-    const libclangex_include = joinpath(libclangex_jll.artifact_dir, "include") |> normpath
-end
+using Clang_jll
+using libclangex_jll
+
+# need manually add the output path below to `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH`/`PATH`
+const libclangex_include = joinpath(libclangex_jll.artifact_dir, "include") |> normpath
 
 const julia_include_dir = joinpath(Sys.BINDIR, "..", "include", "julia") |> normpath
 
@@ -24,8 +21,8 @@ import LLVM: dispose, name, value
 
 import Base: dump, string
 
-const CLANG_BIN = joinpath(LLVM_full_jll.artifact_dir, "bin", "clang")
-const CLANG_INC = joinpath(LLVM_full_jll.artifact_dir, "lib", "clang", string(LLVM.version()), "include")
+const CLANG_BIN = joinpath(Clang_jll.artifact_dir, "bin", "clang")
+const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(LLVM.version()), "include")
 
 include("../lib/LibClangEx.jl")
 using .LibClangEx
