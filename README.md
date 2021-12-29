@@ -6,26 +6,10 @@ Still WIP...
 
 ## Installation
 
-This package does not provide an out-of-box installation experience at the moment due to a limitation of [BinaryBuilder.jl](https://github.com/JuliaPackaging/BinaryBuilder.jl)(see [this issue](https://github.com/JuliaPackaging/Yggdrasil/pull/3315)).
+Make sure you don't have `LIBCLANGEX_INSTALL_PREFIX` in your environment variable.
 
-1. Find the path to `libclang-cpp`, for example, run:
-```shell
-# macOS & Linux
-julia -e "using LLVM_full_jll; println(joinpath(LLVM_full_jll.artifact_dir, \"lib\"))"
-
-# Windows
-julia -e "using LLVM_full_jll; println(joinpath(LLVM_full_jll.artifact_dir, \"bin\"))"
 ```
-2. Add the path to `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH`/`PATH`, for example, on macOS you could add the line below to your `.bashrc`.
-```bash
-export DYLD_LIBRARY_PATH="/path to/.julia/artifacts/8bfb227d3cb7e2ccd779f47050025cfa0b0fea9b/lib:${DYLD_LIBRARY_PATH:-}"
-```
-3. Make sure you don't have `LIBCLANGEX_INSTALL_PREFIX` in your environment variable.
-4. Install and test the package by running:
-```julia-repl
-pkg> dev https://github.com/Gnimuc/ClangCompiler.jl.git
-
-pkg> test ClangCompiler
+pkg> add https://github.com/Gnimuc/ClangCompiler.jl.git
 ```
 
 ### Development(macOS and Linux)
