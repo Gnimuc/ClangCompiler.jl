@@ -1,4 +1,5 @@
 using ClangCompiler
+using Test
 
 const CC = ClangCompiler
 
@@ -10,12 +11,12 @@ const CC = ClangCompiler
     push!(args, "-I$(@__DIR__)")
 
     instance = CC.CompilerInstance()
-    CC.create_diagnostics(instance)
-    diag = CC.get_diagnostics(instance)
+    CC.createDiagnostics(instance)
+    diag = CC.getDiagnostics(instance)
 
-    invok = CC.create_compiler_invocation_from_cmd(src, args, diag)
-    CC.set_invocation(instance, invok)
-    CC.set_target(instance)
+    invok = CC.createFromCommandLine(src, args, diag)
+    CC.setInvocation(instance, invok)
+    CC.setTargetAndLangOpts(instance)
 
     CC.PrintStats(instance, CC.HeaderSearchOptions)
     CC.PrintStats(instance, CC.DiagnosticOptions)
@@ -24,12 +25,12 @@ const CC = ClangCompiler
     CC.PrintStats(instance, CC.PreprocessorOptions)
     CC.PrintStats(instance, CC.TargetOptions)
 
-    CC.create_file_manager(instance)
-    CC.create_source_manager(instance)
+    CC.createFileManager(instance)
+    CC.createSourceManager(instance)
 
-    CC.get_file(instance, src)
+    CC.getFileEntry(instance, src)
 
-    CC.create_preprocessor(instance)
+    CC.createPreprocessor(instance)
 
     CC.PrintStats(instance, CC.HeaderSearch)
 
