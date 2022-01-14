@@ -345,7 +345,7 @@ end
 
 function PrintStats(ci::CompilerInstance, ::Type{HeaderSearch})
     pp = getPreprocessor(ci)
-    opts = getHeaderSearch(pp)
+    opts = getHeaderSearchInfo(pp)
     return PrintStats(opts)
 end
 
