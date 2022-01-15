@@ -98,7 +98,7 @@ export jlty2llvmty
 const BOOT_COMPILER_REF = Ref{CXCompiler}()
 
 function __init__()
-    @static if haskey(ENV, "CLANGCOMPILER_ENABLE_BOOT")
+    if haskey(ENV, "CLANGCOMPILER_ENABLE_BOOT")
         clang_include_dir = normpath(joinpath(Clang_jll.artifact_dir, "include"))
         @assert isdir(clang_include_dir) "failed to find Clang include dir."
 
@@ -121,7 +121,7 @@ function __init__()
         compile(BOOT_COMPILER_REF[])
 
         include(joinpath(@__DIR__, "boot.jl"))
-    end # @static
+    end
 end
 
 end
