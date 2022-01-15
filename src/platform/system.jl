@@ -8,7 +8,7 @@ function get_default_env(; version::VersionNumber=GCC_MIN_VER, is_cxx=false)
         return ArmEnv(p, version, is_cxx)
     elseif libc(p) == "musl"
         return MuslEnv(p, version, is_cxx)
-    elseif libc(p) == "gnu"
+    elseif libc(p) == "glibc" || libc(p) == "gnu"
         return GnuEnv(p, version, is_cxx)
     else
         @warn "unknown platform! using default GNU environment."
@@ -49,15 +49,19 @@ function get_system_includes!(env::MacEnv, prefix::String, isys::Vector{String})
             push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
             push!(isys, joinpath(prefix, triple, "include", "c++", string(version)))
             push!(isys, joinpath(prefix, triple, "include", "c++", string(version), triple))
-            push!(isys, joinpath(prefix, triple, "include", "c++", string(version), "backward"))
+            push!(isys,
+                  joinpath(prefix, triple, "include", "c++", string(version), "backward"))
             push!(isys, joinpath(prefix, triple, "include"))
-            push!(isys, joinpath(prefix, triple, "sys-root", "System", "Library", "Frameworks"))
+            push!(isys,
+                  joinpath(prefix, triple, "sys-root", "System", "Library", "Frameworks"))
         else
             push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include"))
-            push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include-fixed"))
+            push!(isys,
+                  joinpath(prefix, "lib", "gcc", triple, string(version), "include-fixed"))
             push!(isys, joinpath(prefix, triple, "include"))
             push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
-            push!(isys, joinpath(prefix, triple, "sys-root", "System", "Library", "Frameworks"))
+            push!(isys,
+                  joinpath(prefix, triple, "sys-root", "System", "Library", "Frameworks"))
         end
     else  # "aarch64-apple-darwin20"
         if env.is_cxx
@@ -71,7 +75,8 @@ function get_system_includes!(env::MacEnv, prefix::String, isys::Vector{String})
             push!(isys, joinpath(prefix, "lib", "gcc", triple, "11.0.0", "include-fixed"))
             push!(isys, joinpath(prefix, triple, "include"))
             push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
-            push!(isys, joinpath(prefix, triple, "sys-root", "System", "Library", "Frameworks"))
+            push!(isys,
+                  joinpath(prefix, triple, "sys-root", "System", "Library", "Frameworks"))
         end
     end
 end
@@ -87,7 +92,8 @@ function get_system_includes!(env::WindowsEnv, prefix::String, isys::Vector{Stri
         push!(isys, joinpath(prefix, triple, "sys-root", "include"))
     else
         push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include"))
-        push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include-fixed"))
+        push!(isys,
+              joinpath(prefix, "lib", "gcc", triple, string(version), "include-fixed"))
         push!(isys, joinpath(prefix, triple, "include"))
         push!(isys, joinpath(prefix, triple, "sys-root", "include"))
     end
@@ -104,7 +110,8 @@ function get_system_includes!(env::GnuEnv, prefix::String, isys::Vector{String})
         push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
     else
         push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include"))
-        push!(isys, joinpath(prefix, "lib", "gcc", triple, string(version), "include-fixed"))
+        push!(isys,
+              joinpath(prefix, "lib", "gcc", triple, string(version), "include-fixed"))
         push!(isys, joinpath(prefix, triple, "include"))
         push!(isys, joinpath(prefix, triple, "sys-root", "usr", "include"))
     end
@@ -131,29 +138,53 @@ function get_system_includes!(env::ArmEnv, prefix::String, isys::Vector{String})
     version = env.gcc_version
     if env.platform == Platform("armv7l", "linux")
         if env.is_cxx
-            push!(isys, joinpath(prefix, "arm-linux-gnueabihf", "include", "c++", string(version)))
-            push!(isys, joinpath(prefix, "arm-linux-gnueabihf", "include", "c++", string(version), "arm-linux-gnueabihf"))
-            push!(isys, joinpath(prefix, "arm-linux-gnueabihf", "include", "c++", string(version), "backward"))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-gnueabihf", "include", "c++",
+                           string(version)))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-gnueabihf", "include", "c++", string(version),
+                           "arm-linux-gnueabihf"))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-gnueabihf", "include", "c++", string(version),
+                           "backward"))
             push!(isys, joinpath(prefix, "arm-linux-gnueabihf", "include"))
-            push!(isys, joinpath(prefix, "arm-linux-gnueabihf", "sys-root", "usr", "include"))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-gnueabihf", "sys-root", "usr", "include"))
         else
-            push!(isys, joinpath(prefix, "lib", "gcc", "arm-linux-gnueabihf", string(version), "include"))
-            push!(isys, joinpath(prefix, "lib", "gcc", "arm-linux-gnueabihf", string(version), "include-fixed"))
+            push!(isys,
+                  joinpath(prefix, "lib", "gcc", "arm-linux-gnueabihf", string(version),
+                           "include"))
+            push!(isys,
+                  joinpath(prefix, "lib", "gcc", "arm-linux-gnueabihf", string(version),
+                           "include-fixed"))
             push!(isys, joinpath(prefix, "arm-linux-gnueabihf", "include"))
-            push!(isys, joinpath(prefix, "arm-linux-gnueabihf", "sys-root", "usr", "include"))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-gnueabihf", "sys-root", "usr", "include"))
         end
     else  # "armv7l-linux-musleabihf"
         if env.is_cxx
-            push!(isys, joinpath(prefix, "arm-linux-musleabihf", "include", "c++", string(version)))
-            push!(isys, joinpath(prefix, "arm-linux-musleabihf", "include", "c++", string(version), "arm-linux-musleabihf"))
-            push!(isys, joinpath(prefix, "arm-linux-musleabihf", "include", "c++", string(version), "backward"))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-musleabihf", "include", "c++",
+                           string(version)))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-musleabihf", "include", "c++",
+                           string(version), "arm-linux-musleabihf"))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-musleabihf", "include", "c++",
+                           string(version), "backward"))
             push!(isys, joinpath(prefix, "arm-linux-musleabihf", "include"))
-            push!(isys, joinpath(prefix, "arm-linux-musleabihf", "sys-root", "usr", "include"))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-musleabihf", "sys-root", "usr", "include"))
         else
-            push!(isys, joinpath(prefix, "lib", "gcc", "arm-linux-musleabihf", string(version), "include"))
-            push!(isys, joinpath(prefix, "lib", "gcc", "arm-linux-musleabihf", string(version), "include-fixed"))
+            push!(isys,
+                  joinpath(prefix, "lib", "gcc", "arm-linux-musleabihf", string(version),
+                           "include"))
+            push!(isys,
+                  joinpath(prefix, "lib", "gcc", "arm-linux-musleabihf", string(version),
+                           "include-fixed"))
             push!(isys, joinpath(prefix, "arm-linux-musleabihf", "include"))
-            push!(isys, joinpath(prefix, "arm-linux-musleabihf", "sys-root", "usr", "include"))
+            push!(isys,
+                  joinpath(prefix, "arm-linux-musleabihf", "sys-root", "usr", "include"))
         end
     end
 end
