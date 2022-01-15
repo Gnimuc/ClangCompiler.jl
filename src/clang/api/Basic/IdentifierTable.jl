@@ -3,7 +3,7 @@ function PrintStats(x::IdentifierTable)
     return clang_IdentifierTable_PrintStats(x)
 end
 
-function get(x::IdentifierTable, s::String)
+function Base.get(x::IdentifierTable, s::String)
     @check_ptrs x
     return IdentifierInfo(clang_IdentifierTable_get(x, s))
 end

@@ -45,7 +45,7 @@ function data(x::TemplateArgumentList)
     return clang_TemplateArgumentList_data(x)
 end
 
-function get(x::TemplateArgumentList, i::Integer)
+function Base.get(x::TemplateArgumentList, i::Integer)
     @check_ptrs x
     return clang_TemplateArgumentList_get(x, i)
 end

@@ -1,16 +1,26 @@
 module ClangCompiler
 
-const __DLEXT = Base.BinaryPlatforms.platform_dlext()
-const __ARTIFACT_BINDIR = Sys.iswindows() ? "bin" : "lib"
-
-include("jllshim.jl")
-using .JLLShim
-
 using Clang_jll
-using libclangex_jll
 
-# need manually add the output path below to `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH`/`PATH`
-const libclangex_include = normpath(joinpath(libclangex_jll.artifact_dir, "include"))
+if haskey(ENV, "LIBCLANGEX_INSTALL_PREFIX") &&
+   !isempty(get(ENV, "LIBCLANGEX_INSTALL_PREFIX", ""))
+    # DevMode
+    const __DLEXT = Base.BinaryPlatforms.platform_dlext()
+    const __ARTIFACT_BINDIR = Sys.iswindows() ? "bin" : "lib"
+
+    const libclangex = normpath(joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"],
+                                         __ARTIFACT_BINDIR, "libclangex.$__DLEXT"))
+    const libclangex_include = normpath(joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"],
+                                                 "include"))
+else
+    # JLLMode
+    include("jllshim.jl")
+    using .JLLShim
+
+    using libclangex_jll
+
+    const libclangex_include = normpath(joinpath(libclangex_jll.artifact_dir, "include"))
+end
 
 const julia_include_dir = normpath(joinpath(Sys.BINDIR, "..", "include", "julia"))
 

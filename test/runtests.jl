@@ -1,14 +1,14 @@
 using ClangCompiler
 using Test
 
-include("clang/diagnostic.jl")
-include("clang/source.jl")
-include("clang/instance.jl")
-
 if haskey(ENV, "CI")
     include("clang/status.jl")
     include("platform/env.jl")
 end
+
+include("clang/diagnostic.jl")
+include("clang/source.jl")
+include("clang/instance.jl")
 
 include("lookup.jl")
 if Sys.isapple()
