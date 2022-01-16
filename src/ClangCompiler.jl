@@ -119,9 +119,9 @@ function __init__()
 
         link_process_symbols(BOOT_COMPILER_REF[])
         compile(BOOT_COMPILER_REF[])
-
-        include(joinpath(@__DIR__, "boot.jl"))
     end
 end
+
+include(joinpath(@__DIR__, "boot.jl"))
 
 end
