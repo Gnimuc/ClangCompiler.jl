@@ -1,5 +1,11 @@
 # abstract types
 """
+    abstract type AbstractDecl <: Any
+Supertype for `Decl`s.
+"""
+abstract type AbstractDecl end
+
+"""
     abstract type AbstractFrontendAction <: Any
 Supertype for `FrontendAction`s.
 """
@@ -15,6 +21,7 @@ include("AST/DeclBase.jl")
 include("AST/DeclCXX.jl")
 include("AST/DeclGroup.jl")
 include("AST/DeclTemplate.jl")
+include("AST/Expr.jl")
 include("AST/NestedNameSpecifier.jl")
 include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")

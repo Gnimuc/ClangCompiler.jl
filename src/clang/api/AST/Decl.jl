@@ -1,140 +1,42 @@
-# Decl
-function dumpColor(x::AbstractDecl)
+# TranslationUnitDecl
+function getASTContext(x::TranslationUnitDecl)
     @check_ptrs x
-    return clang_Decl_dumpColor(x)
+    return ASTContext(clang_TranslationUnitDecl_getASTContext(x))
 end
 
-function getBeginLoc(x::AbstractDecl)
+function getAnonymousNamespace(x::TranslationUnitDecl)
     @check_ptrs x
-    return SourceLocation(clang_Decl_getBeginLoc(x))
+    return NamespaceDecl(clang_TranslationUnitDecl_getAnonymousNamespace(x))
 end
 
-function getEndLoc(x::AbstractDecl)
+function getAnonymousNamespace(x::TranslationUnitDecl, namespace::NamespaceDecl)
+    @check_ptrs x namespace
+    return clang_TranslationUnitDecl_setAnonymousNamespace(x, namespace)
+end
+
+# PragmaCommentDecl
+function getCommentKind(x::PragmaCommentDecl)
     @check_ptrs x
-    return SourceLocation(clang_Decl_getEndLoc(x))
+    return clang_PragmaCommentDecl_getCommentKind(x)
 end
 
-function getASTContext(x::AbstractDecl)
+function getArg(x::PragmaCommentDecl)
     @check_ptrs x
-    return ASTContext(clang_Decl_getASTContext(x))
+    return unsafe_string(clang_PragmaCommentDecl_getArg(x))
 end
 
-function isOutOfLine(x::AbstractDecl)
+# PragmaDetectMismatchDecl
+function getName(x::PragmaCommentDecl)
     @check_ptrs x
-    return clang_Decl_isOutOfLine(x)
+    return unsafe_string(clang_PragmaDetectMismatchDecl_getName(x))
 end
 
-function getLocation(x::AbstractDecl)
+function getValue(x::PragmaCommentDecl)
     @check_ptrs x
-    return SourceLocation(clang_Decl_getLocation(x))
-end
-
-function getDeclKindName(x::AbstractDecl)
-    @check_ptrs x
-    return unsafe_string(clang_Decl_getDeclKindName(x))
-end
-
-function getNextDeclInContext(x::AbstractDecl)
-    @check_ptrs x
-    return Decl(clang_Decl_getNextDeclInContext(x))
-end
-
-function getDeclContext(x::AbstractDecl)
-    @check_ptrs x
-    return DeclContext(clang_Decl_getDeclContext(x))
-end
-
-function getNonClosureContext(x::AbstractDecl)
-    @check_ptrs x
-    return Decl(clang_Decl_getNonClosureContext(x))
-end
-
-function isInAnonymousNamespace(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isInAnonymousNamespace(x)
-end
-
-function isInStdNamespace(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isInStdNamespace(x)
-end
-
-function getLangOpts(x::AbstractDecl)
-    @check_ptrs x
-    return LangOptions(clang_Decl_getLangOpts(x))
-end
-
-function getLexicalDeclContext(x::AbstractDecl)
-    @check_ptrs x
-    return DeclContext(clang_Decl_getLexicalDeclContext(x))
-end
-
-function isTemplated(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isTemplated(x)
-end
-
-function isCanonicalDecl(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isCanonicalDecl(x)
-end
-
-function getPreviousDecl(x::AbstractDecl)
-    @check_ptrs x
-    return Decl(clang_Decl_getPreviousDecl(x))
-end
-
-function isFirstDecl(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isFirstDecl(x)
-end
-
-function getMostRecentDecl(x::AbstractDecl)
-    @check_ptrs x
-    return Decl(clang_Decl_getMostRecentDecl(x))
-end
-
-function isTemplateParameter(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isTemplateParameter(x)
-end
-
-function isTemplateDecl(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isTemplateDecl(x)
-end
-
-function getDescribedTemplate(x::AbstractDecl)
-    @check_ptrs x
-    return TemplateDecl(clang_Decl_getDescribedTemplate(x))
-end
-
-function setDeclContext(decl::AbstractDecl, x::DeclContext)
-    @check_ptrs x decl
-    return clang_Decl_setDeclContext(decl, x)
-end
-
-function setLexicalDeclContext(decl::AbstractDecl, x::DeclContext)
-    @check_ptrs x decl
-    return clang_Decl_setLexicalDeclContext(decl, x)
-end
-
-function ClassTemplateDecl(x::AbstractDecl)
-    @check_ptrs x
-    return ClassTemplateDecl(clang_Decl_castToClassTemplateDecl(x))
-end
-
-function ValueDecl(x::AbstractDecl)
-    @check_ptrs x
-    return ValueDecl(clang_Decl_castToValueDecl(x))
+    return unsafe_string(clang_PragmaDetectMismatchDecl_getValue(x))
 end
 
 # NamedDecl
-function isOutOfLine(x::AbstractNamedDecl)
-    @check_ptrs x
-    return clang_NamedDecl_isOutOfLine(x)
-end
-
 function getIdentifier(x::AbstractNamedDecl)
     @check_ptrs x
     return IdentifierInfo(clang_NamedDecl_getIdentifier(x))
@@ -155,6 +57,11 @@ function setDeclName(x::AbstractNamedDecl, name::DeclarationName)
     return clang_NamedDecl_setDeclName(x, name)
 end
 
+function declarationReplaces(x::AbstractNamedDecl, old_decl::AbstractNamedDecl, is_known_newer=true)
+    @check_ptrs x
+    return clang_NamedDecl_declarationReplaces(x, old_decl, is_known_newer)
+end
+
 function hasLinkage(x::AbstractNamedDecl)
     @check_ptrs x
     return clang_NamedDecl_hasLinkage(x)
@@ -168,6 +75,11 @@ end
 function isCXXInstanceMember(x::AbstractNamedDecl)
     @check_ptrs x
     return clang_NamedDecl_isCXXInstanceMember(x)
+end
+
+function getLinkageInternal(x::AbstractNamedDecl)
+    @check_ptrs x
+    return clang_NamedDecl_getLinkageInternal(x)
 end
 
 function hasExternalFormalLinkage(x::AbstractNamedDecl)
@@ -185,6 +97,21 @@ function isExternallyDeclarable(x::AbstractNamedDecl)
     return clang_NamedDecl_isExternallyDeclarable(x)
 end
 
+function getVisibility(x::AbstractNamedDecl)
+    @check_ptrs x
+    return clang_NamedDecl_getVisibility(x)
+end
+
+function isLinkageValid(x::AbstractNamedDecl)
+    @check_ptrs x
+    return clang_NamedDecl_isLinkageValid(x)
+end
+
+function hasLinkageBeenComputed(x::AbstractNamedDecl)
+    @check_ptrs x
+    return clang_NamedDecl_hasLinkageBeenComputed(x)
+end
+
 function getUnderlyingDecl(x::AbstractNamedDecl)
     @check_ptrs x
     return NamedDecl(clang_NamedDecl_getUnderlyingDecl(x))
@@ -195,6 +122,7 @@ function getMostRecentDecl(x::AbstractNamedDecl)
     return clang_NamedDecl_getMostRecentDecl(x)
 end
 
+# NamedDecl Cast
 function TypeDecl(x::NamedDecl)
     @check_ptrs x
     return TypeDecl(clang_NamedDecl_castToTypeDecl(x))
@@ -214,6 +142,77 @@ end
 function isWeak(x::AbstractValueDecl)
     @check_ptrs x
     return clang_ValueDecl_isWeak(x)
+end
+
+# DeclaratorDecl
+function getTypeSourceInfo(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return TypeSourceInfo(clang_DeclaratorDecl_getTypeSourceInfo(x))
+end
+
+function setTypeSourceInfo(x::AbstractDeclaratorDecl, info::TypeSourceInfo)
+    @check_ptrs x
+    return clang_DeclaratorDecl_setTypeSourceInfo(x, info)
+end
+
+function getInnerLocStart(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return SourceLocation(clang_DeclaratorDecl_getInnerLocStart(x))
+end
+
+function setInnerLocStart(x::AbstractDeclaratorDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_DeclaratorDecl_setInnerLocStart(x, loc)
+end
+
+function getOuterLocStart(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return SourceLocation(clang_DeclaratorDecl_getOuterLocStart(x))
+end
+
+function getBeginLoc(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return SourceLocation(clang_DeclaratorDecl_getBeginLoc(x))
+end
+
+function getQualifier(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return NestedNameSpecifier(clang_DeclaratorDecl_getQualifier(x))
+end
+
+# TODO: getQualifierLoc
+# TODO: setQualifierInfo
+
+function getTrailingRequiresClause(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return Expr_(clang_DeclaratorDecl_getTrailingRequiresClause(x))
+end
+
+function setTrailingRequiresClause(x::AbstractDeclaratorDecl, clause::AbstractExpr)
+    @check_ptrs x
+    return clang_DeclaratorDecl_setTrailingRequiresClause(x, clause)
+end
+
+function getNumTemplateParameterLists(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return clang_DeclaratorDecl_getNumTemplateParameterLists(x)
+end
+
+function getTemplateParameterList(x::AbstractDeclaratorDecl, i::Integer)
+    @check_ptrs x
+    return clang_DeclaratorDecl_getTemplateParameterList(x, i)
+end
+
+# TODO: setTemplateParameterListsInfo
+
+function getTypeSpecStartLoc(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return SourceLocation(clang_DeclaratorDecl_getTypeSpecStartLoc(x))
+end
+
+function getTypeSpecEndLoc(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return SourceLocation(clang_DeclaratorDecl_getTypeSpecEndLoc(x))
 end
 
 # TypeDecl
