@@ -43,12 +43,6 @@ Base.unsafe_convert(::Type{CXExternCContextDecl}, x::ExternCContextDecl) = x.ptr
 Base.cconvert(::Type{CXExternCContextDecl}, x::ExternCContextDecl) = x
 
 """
-    abstract type AbstractNamedDecl <: AbstractDecl
-Supertype for `NamedDecl`s.
-"""
-abstract type AbstractNamedDecl <: AbstractDecl end
-
-"""
     struct NamedDecl <: AbstractNamedDecl
 Hold a pointer to a `clang::NamedDecl` object.
 """
@@ -82,12 +76,6 @@ Base.unsafe_convert(::Type{CXNamespaceDecl}, x::NamespaceDecl) = x.ptr
 Base.cconvert(::Type{CXNamespaceDecl}, x::NamespaceDecl) = x
 
 """
-    abstract type AbstractValueDecl <: AbstractNamedDecl
-Supertype for `ValueDecl`s.
-"""
-abstract type AbstractValueDecl <: AbstractNamedDecl end
-
-"""
     struct ValueDecl <: AbstractValueDecl
 Hold a pointer to a `clang::ValueDecl` object.
 """
@@ -99,12 +87,6 @@ Base.unsafe_convert(::Type{CXValueDecl}, x::ValueDecl) = x.ptr
 Base.cconvert(::Type{CXValueDecl}, x::ValueDecl) = x
 
 """
-    abstract type AbstractDeclaratorDecl <: AbstractValueDecl
-Supertype for `DeclaratorDecl`s.
-"""
-abstract type AbstractDeclaratorDecl <: AbstractValueDecl end
-
-"""
     struct DeclaratorDecl <: AbstractDeclaratorDecl
 Hold a pointer to a `clang::DeclaratorDecl` object.
 """
@@ -114,12 +96,6 @@ end
 
 Base.unsafe_convert(::Type{CXDeclaratorDecl}, x::DeclaratorDecl) = x.ptr
 Base.cconvert(::Type{CXDeclaratorDecl}, x::DeclaratorDecl) = x
-
-"""
-    abstract type AbstractVarDecl <: AbstractDeclaratorDecl
-Supertype for `VarDecl`s.
-"""
-abstract type AbstractVarDecl <: AbstractDeclaratorDecl end
 
 """
     struct VarDecl <: AbstractVarDecl
@@ -155,12 +131,6 @@ Base.unsafe_convert(::Type{CXParmVarDecl}, x::ParmVarDecl) = x.ptr
 Base.cconvert(::Type{CXParmVarDecl}, x::ParmVarDecl) = x
 
 """
-    abstract type AbstractFunctionDecl <: AbstractDeclaratorDecl
-Supertype for `FunctionDecl`s.
-"""
-abstract type AbstractFunctionDecl <: AbstractDeclaratorDecl end
-
-"""
     struct FunctionDecl <: AbstractFunctionDecl
 Hold a pointer to a `clang::FunctionDecl` object.
 """
@@ -170,12 +140,6 @@ end
 
 Base.unsafe_convert(::Type{CXFunctionDecl}, x::FunctionDecl) = x.ptr
 Base.cconvert(::Type{CXFunctionDecl}, x::FunctionDecl) = x
-
-"""
-    abstract type AbstractFieldDecl <: AbstractDeclaratorDecl
-Supertype for `FieldDecl`s.
-"""
-abstract type AbstractFieldDecl <: AbstractDeclaratorDecl end
 
 """
     struct FieldDecl <: AbstractFieldDecl
@@ -211,12 +175,6 @@ Base.unsafe_convert(::Type{CXIndirectFieldDecl}, x::IndirectFieldDecl) = x.ptr
 Base.cconvert(::Type{CXIndirectFieldDecl}, x::IndirectFieldDecl) = x
 
 """
-    abstract type AbstractTypeDecl <: AbstractNamedDecl
-Supertype for `TypeDecl`s.
-"""
-abstract type AbstractTypeDecl <: AbstractNamedDecl end
-
-"""
     struct TypeDecl <: AbstractTypeDecl
 Hold a pointer to a `clang::TypeDecl` object.
 """
@@ -226,12 +184,6 @@ end
 
 Base.unsafe_convert(::Type{CXTypeDecl}, x::TypeDecl) = x.ptr
 Base.cconvert(::Type{CXTypeDecl}, x::TypeDecl) = x
-
-"""
-    abstract type AbstractTypedefNameDecl <: AbstractTypeDecl
-Supertype for `TypedefNameDecl`s.
-"""
-abstract type AbstractTypedefNameDecl <: AbstractTypeDecl end
 
 """
     struct TypedefNameDecl <: AbstractTypedefNameDecl
@@ -267,12 +219,6 @@ Base.unsafe_convert(::Type{CXTypeAliasDecl}, x::TypeAliasDecl) = x.ptr
 Base.cconvert(::Type{CXTypeAliasDecl}, x::TypeAliasDecl) = x
 
 """
-    abstract type AbstractTagDecl <: AbstractTypeDecl
-Supertype for `TagDecl`s.
-"""
-abstract type AbstractTagDecl <: AbstractTypeDecl end
-
-"""
     struct TagDecl <: AbstractTagDecl
 Hold a pointer to a `clang::TagDecl` object.
 """
@@ -293,12 +239,6 @@ end
 
 Base.unsafe_convert(::Type{CXEnumDecl}, x::EnumDecl) = x.ptr
 Base.cconvert(::Type{CXEnumDecl}, x::EnumDecl) = x
-
-"""
-    abstract type AbstractRecordDecl <: AbstractTagDecl
-Supertype for `RecordDecl`s.
-"""
-abstract type AbstractRecordDecl <: AbstractTagDecl end
 
 """
     struct RecordDecl <: AbstractRecordDecl
