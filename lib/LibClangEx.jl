@@ -301,6 +301,114 @@ const CXTypoExpr = Ptr{Cvoid}
 
 const CXRecoveryExpr = Ptr{Cvoid}
 
+const CXCXXOperatorCallExpr = Ptr{Cvoid}
+
+const CXCXXMemberCallExpr = Ptr{Cvoid}
+
+const CXCUDAKernelCallExpr = Ptr{Cvoid}
+
+const CXCXXRewrittenBinaryOperator = Ptr{Cvoid}
+
+const CXCXXNamedCastExpr = Ptr{Cvoid}
+
+const CXCXXStaticCastExpr = Ptr{Cvoid}
+
+const CXCXXDynamicCastExpr = Ptr{Cvoid}
+
+const CXCXXReinterpretCastExpr = Ptr{Cvoid}
+
+const CXCXXConstCastExpr = Ptr{Cvoid}
+
+const CXCXXAddrspaceCastExpr = Ptr{Cvoid}
+
+const CXUserDefinedLiteral = Ptr{Cvoid}
+
+const CXCXXBoolLiteralExpr = Ptr{Cvoid}
+
+const CXCXXNullPtrLiteralExpr = Ptr{Cvoid}
+
+const CXCXXStdInitializerListExpr = Ptr{Cvoid}
+
+const CXCXXTypeidExpr = Ptr{Cvoid}
+
+const CXMSPropertyRefExpr = Ptr{Cvoid}
+
+const CXMSPropertySubscriptExpr = Ptr{Cvoid}
+
+const CXCXXUuidofExpr = Ptr{Cvoid}
+
+const CXCXXThisExpr = Ptr{Cvoid}
+
+const CXCXXThrowExpr = Ptr{Cvoid}
+
+const CXCXXDefaultArgExpr = Ptr{Cvoid}
+
+const CXCXXDefaultInitExpr = Ptr{Cvoid}
+
+const CXCXXBindTemporaryExpr = Ptr{Cvoid}
+
+const CXCXXConstructExpr = Ptr{Cvoid}
+
+const CXCXXInheritedCtorInitExpr = Ptr{Cvoid}
+
+const CXCXXFunctionalCastExpr = Ptr{Cvoid}
+
+const CXCXXTemporaryObjectExpr = Ptr{Cvoid}
+
+const CXLambdaExpr = Ptr{Cvoid}
+
+const CXCXXScalarValueInitExpr = Ptr{Cvoid}
+
+const CXCXXNewExpr = Ptr{Cvoid}
+
+const CXCXXDeleteExpr = Ptr{Cvoid}
+
+const CXCXXPseudoDestructorExpr = Ptr{Cvoid}
+
+const CXTypeTraitExpr = Ptr{Cvoid}
+
+const CXArrayTypeTraitExpr = Ptr{Cvoid}
+
+const CXExpressionTraitExpr = Ptr{Cvoid}
+
+const CXOverloadExpr = Ptr{Cvoid}
+
+const CXUnresolvedLookupExpr = Ptr{Cvoid}
+
+const CXDependentScopeDeclRefExpr = Ptr{Cvoid}
+
+const CXCXXUnresolvedConstructExpr = Ptr{Cvoid}
+
+const CXCXXDependentScopeMemberExpr = Ptr{Cvoid}
+
+const CXUnresolvedMemberExpr = Ptr{Cvoid}
+
+const CXCXXNoexceptExpr = Ptr{Cvoid}
+
+const CXPackExpansionExpr = Ptr{Cvoid}
+
+const CXSizeOfPackExpr = Ptr{Cvoid}
+
+const CXSubstNonTypeTemplateParmExpr = Ptr{Cvoid}
+
+const CXSubstNonTypeTemplateParmPackExpr = Ptr{Cvoid}
+
+const CXFunctionParmPackExpr = Ptr{Cvoid}
+
+const CXMaterializeTemporaryExpr = Ptr{Cvoid}
+
+const CXCXXFoldExpr = Ptr{Cvoid}
+
+const CXCoroutineSuspendExpr = Ptr{Cvoid}
+
+const CXCoawaitExpr = Ptr{Cvoid}
+
+const CXDependentCoawaitExpr = Ptr{Cvoid}
+
+const CXCoyieldExpr = Ptr{Cvoid}
+
+const CXBuiltinBitCastExpr = Ptr{Cvoid}
+
 const CXNestedNameSpecifier = Ptr{Cvoid}
 
 const CXStmt = Ptr{Cvoid}

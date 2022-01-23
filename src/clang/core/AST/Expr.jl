@@ -186,10 +186,10 @@ Base.unsafe_convert(::Type{CXMatrixSubscriptExpr}, x::MatrixSubscriptExpr) = x.p
 Base.cconvert(::Type{CXMatrixSubscriptExpr}, x::MatrixSubscriptExpr) = x
 
 """
-    struct CallExpr <: AbstractExpr
+    struct CallExpr <: AbstractCallExpr
 Hold a pointer to a `clang::CallExpr` object.
 """
-struct CallExpr <: AbstractExpr
+struct CallExpr <: AbstractCallExpr
     ptr::CXCallExpr
 end
 
