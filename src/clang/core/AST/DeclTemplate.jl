@@ -32,6 +32,39 @@ Base.unsafe_convert(::Type{CXTemplateDecl}, x::TemplateDecl) = x.ptr
 Base.cconvert(::Type{CXTemplateDecl}, x::TemplateDecl) = x
 
 """
+    struct FunctionTemplateSpecializationInfo <: Any
+Hold a pointer to a `clang::FunctionTemplateSpecializationInfo` object.
+"""
+struct FunctionTemplateSpecializationInfo
+    ptr::CXFunctionTemplateSpecializationInfo
+end
+
+Base.unsafe_convert(::Type{CXFunctionTemplateSpecializationInfo}, x::FunctionTemplateSpecializationInfo) = x.ptr
+Base.cconvert(::Type{CXFunctionTemplateSpecializationInfo}, x::FunctionTemplateSpecializationInfo) = x
+
+"""
+    struct MemberSpecializationInfo <: Any
+Hold a pointer to a `clang::MemberSpecializationInfo` object.
+"""
+struct MemberSpecializationInfo
+    ptr::CXMemberSpecializationInfo
+end
+
+Base.unsafe_convert(::Type{CXMemberSpecializationInfo}, x::MemberSpecializationInfo) = x.ptr
+Base.cconvert(::Type{CXMemberSpecializationInfo}, x::MemberSpecializationInfo) = x
+
+"""
+    struct DependentFunctionTemplateSpecializationInfo <: Any
+Hold a pointer to a `clang::DependentFunctionTemplateSpecializationInfo` object.
+"""
+struct DependentFunctionTemplateSpecializationInfo
+    ptr::CXDependentFunctionTemplateSpecializationInfo
+end
+
+Base.unsafe_convert(::Type{CXDependentFunctionTemplateSpecializationInfo}, x::DependentFunctionTemplateSpecializationInfo) = x.ptr
+Base.cconvert(::Type{CXDependentFunctionTemplateSpecializationInfo}, x::DependentFunctionTemplateSpecializationInfo) = x
+
+"""
     struct RedeclarableTemplateDecl <: AbstractRedeclarableTemplateDecl
 Hold a pointer to a `clang::RedeclarableTemplateDecl` object.
 """

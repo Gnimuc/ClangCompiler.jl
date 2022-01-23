@@ -613,6 +613,12 @@ const CXTypeSourceInfo = Ptr{Cvoid}
 
 const CXTemplateName = Ptr{Cvoid}
 
+const CXTemplateArgumentLocInfo = Ptr{Cvoid}
+
+const CXTemplateArgumentLoc = Ptr{Cvoid}
+
+const CXTemplateArgumentListInfo = Ptr{Cvoid}
+
 const CXASTTemplateArgumentListInfo = Ptr{Cvoid}
 
 const CXTemplateArgument = Ptr{Cvoid}
@@ -2441,8 +2447,8 @@ end
     CXImplicitParamDecl_ImplicitParamKind_Other = 0x0000000000000005
 end
 
-function clang_VarDecl_getParameterKind(IPD)
-    ccall((:clang_VarDecl_getParameterKind, libclangex), CXImplicitParamDecl_ImplicitParamKind, (CXImplicitParamDecl,), IPD)
+function clang_ImplicitParamDecl_getParameterKind(IPD)
+    ccall((:clang_ImplicitParamDecl_getParameterKind, libclangex), CXImplicitParamDecl_ImplicitParamKind, (CXImplicitParamDecl,), IPD)
 end
 
 function clang_ParmVarDecl_setObjCMethodScopeInfo(PVD, parameterIndex)
