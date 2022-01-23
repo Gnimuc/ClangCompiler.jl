@@ -84,8 +84,6 @@ Supertype for `UsingShadowDecl`s.
 """
 abstract type AbstractUsingShadowDecl <: AbstractNamedDecl end
 
-
-
 # DeclTemplate
 """
     abstract type AbstractTemplateDecl <: AbstractNamedDecl
@@ -173,6 +171,38 @@ abstract type AbstractBinaryOperator <: AbstractExpr end
 Supertype for `AbstractConditionalOperator`s.
 """
 abstract type AbstractConditionalOperator <: AbstractExpr end
+
+# ExprCXX
+"""
+    abstract type AbstractCallExpr <: AbstractExpr
+Supertype for `CallExpr`s.
+"""
+abstract type AbstractCallExpr <: AbstractExpr end
+
+"""
+    abstract type AbstractCXXNamedCastExpr <: AbstractExplicitCastExpr
+Supertype for `CallExpr`s.
+"""
+abstract type AbstractCXXNamedCastExpr <: AbstractExplicitCastExpr end
+
+"""
+    abstract type AbstractCXXConstructExpr <: AbstractExpr
+Supertype for `CXXConstructExpr`s.
+"""
+abstract type AbstractCXXConstructExpr <: AbstractExpr end
+
+"""
+    abstract type AbstractOverloadExpr <: AbstractExpr
+Supertype for `OverloadExpr`s.
+"""
+abstract type AbstractOverloadExpr <: AbstractExpr end
+
+"""
+    abstract type AbstractCoroutineSuspendExpr <: AbstractExpr
+Supertype for `CoroutineSuspendExpr`s.
+"""
+abstract type AbstractCoroutineSuspendExpr <: AbstractExpr end
+
 
 # FrontendAction
 """
