@@ -65,6 +65,59 @@ Supertype for `RecordDecl`s.
 """
 abstract type AbstractRecordDecl <: AbstractTagDecl end
 
+# DeclCXX
+"""
+    abstract type AbstractCXXRecordDecl <: AbstractRecordDecl
+Supertype for `CXXRecordDecl`s.
+"""
+abstract type AbstractCXXRecordDecl <: AbstractRecordDecl end
+
+"""
+    abstract type AbstractCXXMethodDecl <: AbstractFunctionDecl
+Supertype for `CXXMethodDecl`s.
+"""
+abstract type AbstractCXXMethodDecl <: AbstractFunctionDecl end
+
+"""
+    abstract type AbstractUsingShadowDecl <: AbstractNamedDecl
+Supertype for `UsingShadowDecl`s.
+"""
+abstract type AbstractUsingShadowDecl <: AbstractNamedDecl end
+
+
+
+# DeclTemplate
+"""
+    abstract type AbstractTemplateDecl <: AbstractNamedDecl
+Supertype for `TemplateDecl`s.
+"""
+abstract type AbstractTemplateDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractRedeclarableTemplateDecl <: AbstractTemplateDecl
+Supertype for `RedeclarableTemplateDecl`s.
+"""
+abstract type AbstractRedeclarableTemplateDecl <: AbstractTemplateDecl end
+
+"""
+    abstract type AbstractClassTemplateSpecializationDecl <: AbstractCXXRecordDecl
+Supertype for `ClassTemplateSpecializationDecl`s.
+"""
+abstract type AbstractClassTemplateSpecializationDecl <: AbstractCXXRecordDecl end
+
+"""
+    abstract type AbstractClassTemplateDecl <: AbstractRedeclarableTemplateDecl
+Supertype for `ClassTemplateDecl`s.
+"""
+abstract type AbstractClassTemplateDecl <: AbstractRedeclarableTemplateDecl end
+
+"""
+    abstract type AbstractVarTemplateSpecializationDecl <: AbstractVarDecl
+Supertype for `VarTemplateSpecializationDecl`s.
+"""
+abstract type AbstractVarTemplateSpecializationDecl <: AbstractVarDecl end
+
+
 # Stmt
 """
     abstract type AbstractStmt <: Any

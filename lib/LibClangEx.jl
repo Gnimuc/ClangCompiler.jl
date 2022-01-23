@@ -117,6 +117,8 @@ const CXUsingShadowDecl = Ptr{Cvoid}
 
 const CXConstructorUsingShadowDecl = Ptr{Cvoid}
 
+const CXUsingDecl = Ptr{Cvoid}
+
 const CXUsingPackDecl = Ptr{Cvoid}
 
 const CXUnresolvedUsingValueDecl = Ptr{Cvoid}
@@ -134,6 +136,10 @@ const CXMSPropertyDecl = Ptr{Cvoid}
 const CXMSGuidDecl = Ptr{Cvoid}
 
 const CXDeclGroupRef = Ptr{Cvoid}
+
+const CXTemplateParameterList = Ptr{Cvoid}
+
+const CXTemplateArgumentList = Ptr{Cvoid}
 
 const CXTemplateDecl = Ptr{Cvoid}
 
@@ -176,10 +182,6 @@ const CXVarTemplateDecl = Ptr{Cvoid}
 const CXConceptDecl = Ptr{Cvoid}
 
 const CXTemplateParamObjectDecl = Ptr{Cvoid}
-
-const CXTemplateParameterList = Ptr{Cvoid}
-
-const CXTemplateArgumentList = Ptr{Cvoid}
 
 const CXExpr = Ptr{Cvoid}
 
