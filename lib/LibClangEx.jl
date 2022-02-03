@@ -8,6 +8,16 @@ using LLVM.API: LLVMMemoryBufferRef, LLVMGenericValueRef
 const time_t = Clong
 
 
+struct CXString
+    data::Ptr{Cvoid}
+    private_flags::Cuint
+end
+
+struct CXStringSet
+    Strings::Ptr{CXString}
+    Count::Cuint
+end
+
 @enum CXInit_Error::UInt32 begin
     CXInit_NoError = 0
     CXInit_CanNotCreate = 1
@@ -410,6 +420,12 @@ const CXCoyieldExpr = Ptr{Cvoid}
 const CXBuiltinBitCastExpr = Ptr{Cvoid}
 
 const CXMangleContext = Ptr{Cvoid}
+
+const CXItaniumMangleContext = Ptr{Cvoid}
+
+const CXMicrosoftMangleContext = Ptr{Cvoid}
+
+const CXASTNameGenerator = Ptr{Cvoid}
 
 const CXNestedNameSpecifier = Ptr{Cvoid}
 
@@ -876,6 +892,55 @@ function clang_Stmt_PrintStats()
     ccall((:clang_Stmt_PrintStats, libclangex), Cvoid, ())
 end
 
+@enum CXMangleContext_ManglerKind::UInt32 begin
+    CXMangleContext_ManglerKind_MK_Itanium = 0
+    CXMangleContext_ManglerKind_MK_Microsoft = 1
+end
+
+function clang_MangleContext_getKind(MC)
+    ccall((:clang_MangleContext_getKind, libclangex), CXMangleContext_ManglerKind, (CXMangleContext,), MC)
+end
+
+function clang_MangleContext_getASTContext(MC)
+    ccall((:clang_MangleContext_getASTContext, libclangex), CXASTContext, (CXMangleContext,), MC)
+end
+
+function clang_MangleContext_getDiags(MC)
+    ccall((:clang_MangleContext_getDiags, libclangex), CXDiagnosticsEngine, (CXMangleContext,), MC)
+end
+
+function clang_MangleContext_getAnonymousStructId(MC, D)
+    ccall((:clang_MangleContext_getAnonymousStructId, libclangex), UInt64, (CXMangleContext, CXNamedDecl), MC, D)
+end
+
+function clang_MangleContext_shouldMangleDeclName(MC, D)
+    ccall((:clang_MangleContext_shouldMangleDeclName, libclangex), Bool, (CXMangleContext, CXNamedDecl), MC, D)
+end
+
+function clang_MangleContext_shouldMangleCXXName(MC, D)
+    ccall((:clang_MangleContext_shouldMangleCXXName, libclangex), Bool, (CXMangleContext, CXNamedDecl), MC, D)
+end
+
+function clang_MangleContext_shouldMangleStringLiteral(MC, SL)
+    ccall((:clang_MangleContext_shouldMangleStringLiteral, libclangex), Bool, (CXMangleContext, CXStringLiteral), MC, SL)
+end
+
+function clang_MangleContext_isDeviceMangleContext(MC)
+    ccall((:clang_MangleContext_isDeviceMangleContext, libclangex), Bool, (CXMangleContext,), MC)
+end
+
+function clang_MangleContext_setDeviceMangleContext(MC, setDMC)
+    ccall((:clang_MangleContext_setDeviceMangleContext, libclangex), Cvoid, (CXMangleContext, Bool), MC, setDMC)
+end
+
+function clang_ASTNameGenerator_getName(G, D)
+    ccall((:clang_ASTNameGenerator_getName, libclangex), CXString, (CXASTNameGenerator, CXDecl), G, D)
+end
+
+function clang_ASTNameGenerator_getAllManglings(G, D)
+    ccall((:clang_ASTNameGenerator_getAllManglings, libclangex), Ptr{CXStringSet}, (CXASTNameGenerator, CXDecl), G, D)
+end
+
 function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
     ccall((:clang_TextDiagnosticPrinter_create, libclangex), CXDiagnosticConsumer, (CXDiagnosticOptions, Ptr{CXInit_Error}), Opts, ErrorCode)
 end
@@ -961,11 +1026,7 @@ function clang_QualType_getCVRQualifiers(OpaquePtr)
 end
 
 function clang_QualType_getAsString(OpaquePtr)
-    ccall((:clang_QualType_getAsString, libclangex), Ptr{Cchar}, (CXQualType,), OpaquePtr)
-end
-
-function clang_QualType_disposeString(Str)
-    ccall((:clang_QualType_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
+    ccall((:clang_QualType_getAsString, libclangex), CXString, (CXQualType,), OpaquePtr)
 end
 
 function clang_QualType_dump(OpaquePtr)
@@ -4231,11 +4292,7 @@ function clang_SourceLocation_dump(Loc, SM)
 end
 
 function clang_SourceLocation_printToString(Loc, SM)
-    ccall((:clang_SourceLocation_printToString, libclangex), Ptr{Cchar}, (CXSourceLocation_, CXSourceManager), Loc, SM)
-end
-
-function clang_SourceLocation_disposeString(Str)
-    ccall((:clang_SourceLocation_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
+    ccall((:clang_SourceLocation_printToString, libclangex), CXString, (CXSourceLocation_, CXSourceManager), Loc, SM)
 end
 
 function clang_SourceLocation_getLocWithOffset(Loc, Offset)
@@ -6078,11 +6135,7 @@ function clang_DeclarationName_isEmpty(DN)
 end
 
 function clang_DeclarationName_getAsString(DN)
-    ccall((:clang_DeclarationName_getAsString, libclangex), Ptr{Cchar}, (CXDeclarationName,), DN)
-end
-
-function clang_DeclarationName_disposeString(Str)
-    ccall((:clang_DeclarationName_disposeString, libclangex), Cvoid, (Ptr{Cchar},), Str)
+    ccall((:clang_DeclarationName_getAsString, libclangex), CXString, (CXDeclarationName,), DN)
 end
 
 function clang_EmitAssemblyAction_create(ErrorCode, LLVMCtx)
