@@ -37,6 +37,7 @@ const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(LLVM.v
 
 include("../lib/LibClangEx.jl")
 using .LibClangEx
+include("../lib/LibClang.jl")
 
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
