@@ -28,6 +28,7 @@ include("Basic/TargetInfo.jl")
 include("Basic/TargetOptions.jl")
 
 # CodeGen
+include("CodeGen/CodeGenABITypes.jl")
 include("CodeGen/CodeGenAction.jl")
 include("CodeGen/ModuleBuilder.jl")
 

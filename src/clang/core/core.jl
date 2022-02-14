@@ -36,6 +36,7 @@ include("Basic/TargetOptions.jl")
 
 # CodeGen
 include("CodeGen/CodeGenAction.jl")
+include("CodeGen/CodeGenModule.jl")
 include("CodeGen/ModuleBuilder.jl")
 
 # Frontend

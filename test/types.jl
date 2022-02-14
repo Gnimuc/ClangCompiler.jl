@@ -1,4 +1,5 @@
 using ClangCompiler
+using ClangCompiler.LLVM
 using Test
 
 @testset "Types" begin
@@ -26,4 +27,15 @@ using Test
     @test clty_to_jlty(jlty_to_clty(Ptr{Cvoid}, ctx)) == Ptr{Cvoid}
 
     dispose(irgen)
+end
+
+@testset "convertTypeForMemory" begin
+    src = joinpath(@__DIR__, "code", "main.cpp")
+    args = get_compiler_args()
+    haskey(ENV, "CI") && push!(args, "-v")
+    irgen = IncrementalIRGenerator(src, args)
+    ctx = ClangCompiler.getASTContext(get_instance(irgen))
+    cgm = ClangCompiler.CGM(irgen.codegen)
+    i8 = LLVM.LLVMType(CC.convertTypeForMemory(cgm, CC.BoolTy(ctx)))
+    @test width(i8) == 8
 end

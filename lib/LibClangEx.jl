@@ -4,6 +4,7 @@ using ..ClangCompiler: libclangex
 using LLVM.API: LLVMModuleRef, LLVMOpaqueModule
 using LLVM.API: LLVMOpaqueContext, LLVMContextRef
 using LLVM.API: LLVMMemoryBufferRef, LLVMGenericValueRef
+using LLVM.API: LLVMTypeRef
 
 const time_t = Clong
 
@@ -2218,6 +2219,10 @@ end
 
 function clang_DeclGroupRef_getSingleDecl(DG)
     ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
+end
+
+function clang_CodeGen_convertTypeForMemory(CGM, T)
+    ccall((:clang_CodeGen_convertTypeForMemory, libclangex), LLVMTypeRef, (CXCodeGenModule, CXQualType), CGM, T)
 end
 
 @enum CXLookupNameKind::UInt32 begin

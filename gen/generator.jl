@@ -21,6 +21,7 @@ headers = detect_headers(include_dir, args)
 @add_def LLVMContextRef
 @add_def LLVMMemoryBufferRef
 @add_def LLVMGenericValueRef
+@add_def LLVMTypeRef
 
 ctx = create_context(headers, args, options)
 
