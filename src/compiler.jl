@@ -103,7 +103,6 @@ Incremental LLVM IR Generator.
 mutable struct IncrementalIRGenerator <: AbstractIRGenerator
     ts_ctx::ThreadSafeContext
     instance::CompilerInstance
-    codegen::CodeGenerator
     parser::Parser
     modules::Vector{LLVM.Module}
     current_module::Int
@@ -113,7 +112,7 @@ end
 get_parser(x::IncrementalIRGenerator) = x.parser
 get_modules(x::IncrementalIRGenerator) = x.modules
 get_current_module(x::IncrementalIRGenerator) = x.modules[x.current_module]
-get_codegen_module(x::IncrementalIRGenerator) = CGM(x.codegen)
+get_codegen_module(x::IncrementalIRGenerator) = CGM(CodeGenerator(getASTConsumer(get_instance(x)).ptr))
 
 function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     ts_ctx = ThreadSafeContext()
@@ -165,7 +164,7 @@ function IncrementalIRGenerator(src::String, args::Vector{String}; diag_show_col
 
     m_next = start_llvm_module(codegen, context(m_cur), "JLCC_Incremental_2")
 
-    return IncrementalIRGenerator(ts_ctx, instance, codegen, parser, [m_cur, m_next], 2, 1)
+    return IncrementalIRGenerator(ts_ctx, instance, parser, [m_cur, m_next], 2, 1)
 end
 
 function incremental_parse(irgen::IncrementalIRGenerator, code::String)
