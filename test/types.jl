@@ -35,7 +35,7 @@ end
     haskey(ENV, "CI") && push!(args, "-v")
     irgen = IncrementalIRGenerator(src, args)
     ctx = ClangCompiler.getASTContext(get_instance(irgen))
-    cgm = ClangCompiler.CGM(irgen.codegen)
+    cgm = ClangCompiler.get_codegen_module(irgen)
     i8 = LLVM.LLVMType(CC.convertTypeForMemory(cgm, CC.BoolTy(ctx)))
     @test width(i8) == 8
 end
