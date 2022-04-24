@@ -17,17 +17,14 @@ function get_default_env(; version::VersionNumber=GCC_MIN_VER, is_cxx=false)
 end
 
 function get_system_includes(env::AbstractJLLEnv=get_default_env())
-    info = get_environment_info(env.platform, env.gcc_version)
-    gcc_info = info[1]
-    sys_info = info[2]
+    gcc_info = get_environment_info(env.platform, env.gcc_version)[1]
 
     # download shards
-    download_artifact(Base.SHA1(gcc_info.id), gcc_info.url, gcc_info.chk)
-    # download_artifact(Base.SHA1(sys_info.id), sys_info.url, sys_info.chk)
+    name = get_gcc_shard_key(env.platform, env.gcc_version)
+    Artifacts.ensure_artifact_installed(name, SHARDS[name][], ARTIFACT_TOML_PATH)
 
     # -isystem paths
     gcc_prefix = artifact_path(Base.SHA1(gcc_info.id))
-    # sys_prefix = artifact_path(Base.SHA1(sys_info.id))
 
     isys = String[]
     get_system_includes!(env, gcc_prefix, isys)

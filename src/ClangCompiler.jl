@@ -32,7 +32,7 @@ import LLVM: dispose, name, value
 import Base: dump, string
 
 const CLANG_BIN = joinpath(Clang_jll.artifact_dir, "bin", "clang")
-const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(LLVM.version()),
+const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(Base.libllvm_version),
                            "include")
 
 include("../lib/LibClangEx.jl")
