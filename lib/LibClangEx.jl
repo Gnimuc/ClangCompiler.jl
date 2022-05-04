@@ -725,6 +725,7 @@ const CXScope = Ptr{Cvoid}
     CXTranslationUnitKind_TU_Complete = 0
     CXTranslationUnitKind_TU_Prefix = 1
     CXTranslationUnitKind_TU_Module = 2
+    CXTranslationUnitKind_TU_Incremental = 3
 end
 
 const CXFrontendAction = Ptr{Cvoid}
@@ -2315,14 +2316,6 @@ end
 
 function clang_MangleContext_shouldMangleStringLiteral(MC, SL)
     ccall((:clang_MangleContext_shouldMangleStringLiteral, libclangex), Bool, (CXMangleContext, CXStringLiteral), MC, SL)
-end
-
-function clang_MangleContext_isDeviceMangleContext(MC)
-    ccall((:clang_MangleContext_isDeviceMangleContext, libclangex), Bool, (CXMangleContext,), MC)
-end
-
-function clang_MangleContext_setDeviceMangleContext(MC, setDMC)
-    ccall((:clang_MangleContext_setDeviceMangleContext, libclangex), Cvoid, (CXMangleContext, Bool), MC, setDMC)
 end
 
 function clang_ASTNameGenerator_getName(G, D)
