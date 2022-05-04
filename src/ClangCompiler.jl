@@ -78,7 +78,7 @@ include("template.jl")
 export specialize
 
 include("compiler.jl")
-export AbstractCompiler, AbstractIRGenerator
+export AbstractClangCompiler, AbstractIRGenerator
 export IRGenerator, IncrementalIRGenerator
 export CXCompiler
 export get_instance, get_context
