@@ -1,14 +1,14 @@
 """
-    abstract type AbstractCompiler <: Any
+    abstract type AbstractClangCompiler <: Any
 Supertype for Clang compilers.
 """
-abstract type AbstractCompiler end
+abstract type AbstractClangCompiler end
 
 """
-    abstract type AbstractIRGenerator <: AbstractCompiler
+    abstract type AbstractIRGenerator <: AbstractClangCompiler
 Supertype for LLVM IR generators.
 """
-abstract type AbstractIRGenerator <: AbstractCompiler end
+abstract type AbstractIRGenerator <: AbstractClangCompiler end
 
 # interface
 get_instance(x::AbstractIRGenerator) = x.instance
@@ -61,10 +61,10 @@ function dispose(x::IRGenerator)
 end
 
 """
-    struct CXCompiler <: AbstractCompiler
+    struct CXCompiler <: AbstractClangCompiler
 [`IRGenerator`](@ref) + [`LLJIT`](@ref).
 """
-struct CXCompiler <: AbstractCompiler
+struct CXCompiler <: AbstractClangCompiler
     irgen::IRGenerator
     jit::LLJIT
 end
