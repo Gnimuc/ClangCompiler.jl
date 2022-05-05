@@ -77,23 +77,24 @@ export DeclFinder, get_decl
 include("template.jl")
 export specialize
 
-include("compiler.jl")
-export AbstractClangCompiler, AbstractIRGenerator
-export IRGenerator, IncrementalIRGenerator
+# compiler
+include("compiler/compiler.jl")
+export AbstractClangCompiler
+export AbstractIRGenerator, IRGenerator
+export take_module
 export CXCompiler
 export get_instance, get_context
-export get_module, get_jit, get_dylib, get_codegen
 export compile, dispose
+export get_jit, get_dylib, get_codegen
 export link_process_symbols
-export get_modules, get_current_module
-export incremental_parse
 
-include("llvm.jl")
-export lookup_function, link, link_crt
-export get_buffer
+include("compiler/interpreter.jl")
+export AbstractClangInterpreter, CXInterpreter
 
 include("utils.jl")
 export jlty2llvmty
+export lookup_function, link, link_crt
+export get_buffer
 
 # boot
 const BOOT_COMPILER_REF = Ref{CXCompiler}()
