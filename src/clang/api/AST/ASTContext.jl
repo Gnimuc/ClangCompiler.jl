@@ -28,9 +28,9 @@ function getPointerType(x::ASTContext, ty::AbstractQualType)
     return QualType(clang_ASTContext_getPointerType(x, ty))
 end
 
-function getLValueReferenceType(x::ASTContext, ty::AbstractQualType)
+function getLValueReferenceType(x::ASTContext, ty::AbstractQualType, spelled_as_lvalue=true)
     @check_ptrs x
-    return QualType(clang_ASTContext_getLValueReferenceType(x, ty))
+    return QualType(clang_ASTContext_getLValueReferenceType(x, ty, spelled_as_lvalue))
 end
 
 function getRValueReferenceType(x::ASTContext, ty::AbstractQualType)

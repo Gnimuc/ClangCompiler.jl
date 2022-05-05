@@ -71,6 +71,10 @@ clty_to_jlty(clty::PointerType) = Ptr{clty_to_jlty(get_pointee_type(clty))}
 
 typeclass(x::UnexposedType) = x
 
+"""
+    typeclass(ty::QualType)
+Resolve type using Clang's RTTI.
+"""
 function typeclass(ty::QualType)
     is_builtin_type(ty) && return BuiltinType(ty.ptr)
     is_complex_type(ty) && return ComplexType(ty.ptr)
@@ -175,3 +179,11 @@ jlty_to_llvmty(::Type{Nothing}, ctx::LLVM.Context) = LLVM.VoidType(ctx)
 
 # Julia type to PointerType <: SequentialType <: CompositeType <: LLVMType
 jlty_to_llvmty(::Type{Ptr{Cvoid}}, ctx::LLVM.Context) = LLVM.PointerType(LLVM.VoidType(ctx))
+
+"""
+    clty_to_llvmty_mem(ty::T, cgm::CodeGenModule) where {T<:AbstractClangType} -> LLVMType
+Convert a Clang type to the corresponding memory representation of the LLVM type.
+"""
+function clty_to_llvmty_mem(ty::T, cgm::CodeGenModule) where {T<:AbstractClangType}
+    return LLVMType(convertTypeForMemory(cgm, ty))
+end

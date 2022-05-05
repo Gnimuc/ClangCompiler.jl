@@ -19,11 +19,6 @@ function Base.size(x::TemplateParameterList)
     return clang_TemplateParameterList_size(x)
 end
 
-function getDescribedTemplateParams(x::AbstractDecl)
-    @check_ptrs x
-    return TemplateParameterList(clang_Decl_getDescribedTemplateParams(x))
-end
-
 # TemplateArgumentList
 function TemplateArgumentList(ctx::ASTContext, args::Vector{CXTemplateArgument})
     @check_ptrs ctx

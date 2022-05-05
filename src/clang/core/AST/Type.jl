@@ -502,3 +502,14 @@ Note that, we treat `DependentTemplateSpecializationType` as a `QualType`, not a
 struct DependentTemplateSpecializationType <: AbstractTypeWithKeyword
     ptr::CXQualType
 end
+
+"""
+    struct TypeSourceInfo
+Hold a pointer to a `clang::TypeSourceInfo` object.
+"""
+struct TypeSourceInfo
+    ptr::CXTypeSourceInfo
+end
+
+Base.unsafe_convert(::Type{CXTypeSourceInfo}, x::TypeSourceInfo) = x.ptr
+Base.cconvert(::Type{CXTypeSourceInfo}, x::TypeSourceInfo) = x

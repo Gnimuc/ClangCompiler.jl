@@ -1,9 +1,5 @@
 # abstract types
-"""
-    abstract type AbstractFrontendAction <: Any
-Supertype for `FrontendAction`s.
-"""
-abstract type AbstractFrontendAction end
+include("abstract.jl")
 
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
 # AST
@@ -15,7 +11,11 @@ include("AST/DeclBase.jl")
 include("AST/DeclCXX.jl")
 include("AST/DeclGroup.jl")
 include("AST/DeclTemplate.jl")
+include("AST/Expr.jl")
+include("AST/ExprCXX.jl")
 include("AST/NestedNameSpecifier.jl")
+include("AST/Stmt.jl")
+include("AST/StmtCXX.jl")
 include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")
 include("AST/Type.jl")
@@ -36,6 +36,7 @@ include("Basic/TargetOptions.jl")
 
 # CodeGen
 include("CodeGen/CodeGenAction.jl")
+include("CodeGen/CodeGenModule.jl")
 include("CodeGen/ModuleBuilder.jl")
 
 # Frontend
@@ -43,6 +44,11 @@ include("Frontend/CompilerInstance.jl")
 include("Frontend/CompilerInvocation.jl")
 include("Frontend/FrontendOptions.jl")
 include("Frontend/TextDiagnosticPrinter.jl")
+
+# Interpreter
+include("Interpreter/IncrementalParser.jl")
+include("Interpreter/Interpreter.jl")
+include("Interpreter/PartialTranslationUnit.jl")
 
 # Lex
 include("Lex/HeaderSearch.jl")

@@ -6,6 +6,8 @@ if haskey(ENV, "CI")
     include("platform/env.jl")
 end
 
+include("llvm/pointer_from_objref.jl")
+
 include("clang/diagnostic.jl")
 include("clang/source.jl")
 include("clang/instance.jl")

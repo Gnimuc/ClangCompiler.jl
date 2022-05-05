@@ -21,7 +21,7 @@ push!(args, "-I$llvm_include_dir")
 
 irgen = IRGenerator(src, args)
 
-m = get_module(irgen)
+m = take_module(irgen)
 
 ee = JIT(m);
 

@@ -28,6 +28,7 @@ include("Basic/TargetInfo.jl")
 include("Basic/TargetOptions.jl")
 
 # CodeGen
+include("CodeGen/CodeGenABITypes.jl")
 include("CodeGen/CodeGenAction.jl")
 include("CodeGen/ModuleBuilder.jl")
 
@@ -36,6 +37,11 @@ include("Frontend/CompilerInstance.jl")
 include("Frontend/CompilerInvocation.jl")
 include("Frontend/FrontendOptions.jl")
 include("Frontend/TextDiagnosticPrinter.jl")
+
+# Interpreter
+include("Interpreter/IncrementalParser.jl")
+include("Interpreter/Interpreter.jl")
+include("Interpreter/PartialTranslationUnit.jl")
 
 # Lex
 include("Lex/HeaderSearch.jl")

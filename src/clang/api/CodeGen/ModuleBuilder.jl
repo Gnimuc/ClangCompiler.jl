@@ -1,4 +1,9 @@
 # CodeGenerator
+function CGM(x::CodeGenerator)
+    @check_ptrs x
+    return CodeGenModule(clang_CodeGenerator_CGM(x))
+end
+
 function GetModule(x::CodeGenerator)
     @check_ptrs x
     return LLVM.Module(clang_CodeGenerator_GetModule(x))

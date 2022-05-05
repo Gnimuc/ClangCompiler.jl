@@ -8,3 +8,11 @@ macro check_ptrs(args...)
     end
     return ex
 end
+
+function _get_string(cxstr::CXString)
+    ptr = clang_getCString(cxstr)
+    ptr == C_NULL && return ""
+    s = unsafe_string(ptr)
+    clang_disposeString(cxstr)
+    return s
+end

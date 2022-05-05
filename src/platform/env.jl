@@ -1,5 +1,19 @@
-const SHARDS_URL = "https://raw.githubusercontent.com/JuliaPackaging/BinaryBuilderBase.jl/master/Artifacts.toml"
-const SHARDS = Dict{String,Any}()
+const JLL_ENV_TRIPLES = String[
+    "aarch64-apple-darwin20",
+    "aarch64-linux-gnu",           # Tier 1
+    "aarch64-linux-musl",
+    "armv7l-linux-gnueabihf",
+    "armv7l-linux-musleabihf",
+    "i686-linux-gnu",              # Tier 1
+    "i686-linux-musl",
+    "i686-w64-mingw32",            # Tier 2
+    "powerpc64le-linux-gnu",
+    "x86_64-apple-darwin14",       # Tier 1
+    "x86_64-linux-gnu",            # Tier 1
+    "x86_64-linux-musl",
+    "x86_64-unknown-freebsd",      # Tier 1
+    "x86_64-w64-mingw32",          # Tier 1
+]
 
 const HOST_TRIPLE = "x86_64-linux-musl"
 const GCC_SHARD_NAME = "GCCBootstrap"
