@@ -697,6 +697,10 @@ const CXCompilerInvocation = Ptr{Cvoid}
 
 const CXFrontendOptions = Ptr{Cvoid}
 
+const CXInterpreter = Ptr{Cvoid}
+
+const CXPartialTranslationUnit = Ptr{Cvoid}
+
 const CXHeaderSearch = Ptr{Cvoid}
 
 const CXHeaderSearchOptions = Ptr{Cvoid}
@@ -2222,6 +2226,14 @@ function clang_DeclGroupRef_getSingleDecl(DG)
     ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
 end
 
+function clang_PartialTranslationUnit_get_TUPart(PTU)
+    ccall((:clang_PartialTranslationUnit_get_TUPart, libclangex), CXTranslationUnitDecl, (CXPartialTranslationUnit,), PTU)
+end
+
+function clang_PartialTranslationUnit_get_TheModule(PTU)
+    ccall((:clang_PartialTranslationUnit_get_TheModule, libclangex), LLVMModuleRef, (CXPartialTranslationUnit,), PTU)
+end
+
 function clang_CodeGen_convertTypeForMemory(CGM, T)
     ccall((:clang_CodeGen_convertTypeForMemory, libclangex), LLVMTypeRef, (CXCodeGenModule, CXQualType), CGM, T)
 end
@@ -2324,6 +2336,30 @@ end
 
 function clang_ASTNameGenerator_getAllManglings(G, D)
     ccall((:clang_ASTNameGenerator_getAllManglings, libclangex), Ptr{CXStringSet}, (CXASTNameGenerator, CXDecl), G, D)
+end
+
+function clang_Interpreter_create(CI)
+    ccall((:clang_Interpreter_create, libclangex), CXInterpreter, (CXCompilerInstance,), CI)
+end
+
+function clang_Interpreter_dispose(Interp)
+    ccall((:clang_Interpreter_dispose, libclangex), Cvoid, (CXInterpreter,), Interp)
+end
+
+function clang_Interpreter_getCompilerInstance(Interp)
+    ccall((:clang_Interpreter_getCompilerInstance, libclangex), CXCompilerInstance, (CXInterpreter,), Interp)
+end
+
+function clang_Interpreter_Parse(Interp, Code)
+    ccall((:clang_Interpreter_Parse, libclangex), CXPartialTranslationUnit, (CXInterpreter, Ptr{Cchar}), Interp, Code)
+end
+
+function clang_Interpreter_Execute(Interp, PTU)
+    ccall((:clang_Interpreter_Execute, libclangex), Cvoid, (CXInterpreter, CXPartialTranslationUnit), Interp, PTU)
+end
+
+function clang_Interpreter_ParseAndExecute(Interp, Code)
+    ccall((:clang_Interpreter_ParseAndExecute, libclangex), Cvoid, (CXInterpreter, Ptr{Cchar}), Interp, Code)
 end
 
 function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
