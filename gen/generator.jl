@@ -1,10 +1,11 @@
 using Clang.Generators
 using LLVM_full_jll
+using libclangex_jll
 
 cd(@__DIR__)
 
 llvm_include_dir = joinpath(LLVM_full_jll.artifact_dir, "include") |> normpath
-include_dir = joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"], "include") |> normpath
+include_dir = joinpath(libclangex_jll.artifact_dir, "include") |> normpath
 
 options = load_options(joinpath(@__DIR__, "generator.toml"))
 
@@ -21,6 +22,7 @@ headers = detect_headers(include_dir, args)
 @add_def LLVMContextRef
 @add_def LLVMMemoryBufferRef
 @add_def LLVMGenericValueRef
+@add_def LLVMTypeRef
 
 ctx = create_context(headers, args, options)
 
