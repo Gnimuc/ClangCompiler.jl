@@ -14,9 +14,3 @@ libclangex_jll = "82994860-12e5-56b1-9971-c34819be692e"
 libclangex_jll = "0.1.7"
 LLVM = "4"
 julia = "1.7"
-
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test"]
