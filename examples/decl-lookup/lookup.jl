@@ -18,6 +18,10 @@ decl_lookup = DeclFinder(cc.instance)
 decl = get_decl(decl_lookup)
 CC.dump(decl)
 
+func = ClangCompiler.getAsFunction(func)
+
+# TODO: getMangledName(func)
+
 # clean up
 dispose(decl_lookup)
 dispose(cc)

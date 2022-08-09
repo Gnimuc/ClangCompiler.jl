@@ -200,6 +200,12 @@ function TypeDecl(x::NamedDecl)
     return TypeDecl(clang_NamedDecl_castToTypeDecl(x))
 end
 
+# FunctionDecl
+function getAsFunction(x::AbstractNamedDecl)::CXFunctionDecl
+    @check_ptrs x
+    return clang_Decl_getAsFunction(x)
+end
+
 # ValueDecl
 function getType(x::AbstractValueDecl)
     @check_ptrs x
