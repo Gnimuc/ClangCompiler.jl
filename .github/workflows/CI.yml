@@ -28,16 +28,16 @@ jobs:
           # special test with LLVM assertions enabled
           # TODO: enable this across all versions
           #       (needs LLVM.jl fixes, and julia-actions/setup-julia support)
-          - os: ubuntu-latest
-            arch: x64
-            libClangEx: packaged
-            version: '1.7'
-            assertions: true
-          - os: ubuntu-latest
-            arch: x64
-            libClangEx: packaged
-            version: '1.8'
-            assertions: true
+          # - os: ubuntu-latest
+          #   arch: x64
+          #   libClangEx: packaged
+          #   version: '1.7'
+          #   assertions: true
+          # - os: ubuntu-latest
+          #   arch: x64
+          #   libClangEx: packaged
+          #   version: '1.8'
+          #   assertions: true
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
