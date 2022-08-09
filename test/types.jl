@@ -6,7 +6,7 @@ using Test
     src = joinpath(@__DIR__, "code", "main.cpp")
     args = get_compiler_args()
     haskey(ENV, "CI") && push!(args, "-v")
-    irgen = IncrementalIRGenerator(src, args)
+    irgen = ClangCompiler.IncrementalIRGenerator(src, args)
     ctx = ClangCompiler.getASTContext(get_instance(irgen))
 
     @test clty_to_jlty(jlty_to_clty(Cvoid, ctx)) == Cvoid
@@ -33,7 +33,7 @@ end
     src = joinpath(@__DIR__, "code", "main.cpp")
     args = get_compiler_args()
     haskey(ENV, "CI") && push!(args, "-v")
-    irgen = IncrementalIRGenerator(src, args)
+    irgen = ClangCompiler.IncrementalIRGenerator(src, args)
     ctx = ClangCompiler.getASTContext(get_instance(irgen))
     cgm = ClangCompiler.get_codegen_module(irgen)
     i8 = LLVM.LLVMType(CC.convertTypeForMemory(cgm, CC.BoolTy(ctx)))

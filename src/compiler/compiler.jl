@@ -5,6 +5,7 @@ Supertype for Clang compilers.
 abstract type AbstractClangCompiler end
 
 include("irgen.jl")
+include("deprecated.jl")
 
 """
     struct CXCompiler <: AbstractClangCompiler
