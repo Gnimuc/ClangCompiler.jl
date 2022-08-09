@@ -88,9 +88,6 @@ export compile, dispose
 export get_jit, get_dylib, get_codegen
 export link_process_symbols
 
-include("compiler/interpreter.jl")
-export AbstractClangInterpreter, CXInterpreter
-
 include("utils.jl")
 export jlty2llvmty
 export lookup_function, link, link_crt
