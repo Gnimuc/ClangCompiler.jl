@@ -20,6 +20,8 @@ jobs:
         arch:
           - x64
         libClangEx: [packaged]
+        assertions: 
+          - false
         exclude:
           - os: windows-latest
             arch: x64
