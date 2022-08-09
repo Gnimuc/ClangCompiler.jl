@@ -11,6 +11,7 @@ jobs:
       matrix:
         version:
           - '1.7'
+          - '~1.8.0-0'
           # - 'nightly'
         os:
           - ubuntu-latest
@@ -18,12 +19,42 @@ jobs:
           - windows-latest
         arch:
           - x64
+        libClangEx: local
+        exclude:
+          - os: windows-latest
+            arch: x64
+            libClangEx: local
+        include:
+          # special test with LLVM assertions enabled
+          # TODO: enable this across all versions
+          #       (needs LLVM.jl fixes, and julia-actions/setup-julia support)
+          - os: ubuntu-latest
+            arch: x64
+            libClangEx: packaged
+            version: '1.7'
+            assertions: true
+          - os: ubuntu-latest
+            arch: x64
+            libClangEx: packaged
+            version: '1.8'
+            assertions: true
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
+        if: ${{ ! matrix.assertions }}
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
+      - name: Download Julia with assertions
+        if: ${{ matrix.assertions }}
+        env:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+        run: |
+          wget https://julialangnightlies.s3.amazonaws.com/assert_bin/linux/$arch/$version/julia-latest-linux64.tar.gz
+          tar -xvzf julia-latest-linux64.tar.gz
+          rm -rf julia-latest-linux64.tar.gz
+          echo $PWD/julia-*/bin >> $GITHUB_PATH
       - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
