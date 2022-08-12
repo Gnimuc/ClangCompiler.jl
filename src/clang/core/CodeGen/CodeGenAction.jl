@@ -10,3 +10,9 @@ Base.cconvert(::Type{CXCodeGenAction}, x::T) where {T<:AbstractCodeGenAction} = 
 struct LLVMOnlyAction <: AbstractCodeGenAction
     ptr::CXCodeGenAction
 end
+
+"""
+    abstract type AbstractWrapperFrontendAction <: AbstractFrontendAction
+Supertype for `WrapperFrontendAction`s.
+"""
+abstract type AbstractWrapperFrontendAction <: AbstractFrontendAction end

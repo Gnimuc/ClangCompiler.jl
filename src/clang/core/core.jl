@@ -45,6 +45,11 @@ include("Frontend/CompilerInvocation.jl")
 include("Frontend/FrontendOptions.jl")
 include("Frontend/TextDiagnosticPrinter.jl")
 
+# Interpreter
+include("Interpreter/IncrementalParser.jl")
+include("Interpreter/Interpreter.jl")
+include("Interpreter/PartialTranslationUnit.jl")
+
 # Lex
 include("Lex/HeaderSearch.jl")
 include("Lex/HeaderSearchOptions.jl")
