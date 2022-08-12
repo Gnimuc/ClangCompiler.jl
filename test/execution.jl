@@ -7,7 +7,7 @@ using Test
     args = get_compiler_args()
     haskey(ENV, "CI") && push!(args, "-v")
     irgen = IRGenerator(src, args)
-    ee = JIT(get_module(irgen))
+    ee = JIT(take_module(irgen))
     f = lookup_function(ee, "main")
     ret = convert(Cint, run(ee, f))
     @test ret == 42

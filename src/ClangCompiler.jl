@@ -32,11 +32,12 @@ import LLVM: dispose, name, value
 import Base: dump, string
 
 const CLANG_BIN = joinpath(Clang_jll.artifact_dir, "bin", "clang")
-const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(LLVM.version()),
+const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(Base.libllvm_version),
                            "include")
 
 include("../lib/LibClangEx.jl")
 using .LibClangEx
+include("../lib/LibClang.jl")
 
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
@@ -76,23 +77,21 @@ export DeclFinder, get_decl
 include("template.jl")
 export specialize
 
-include("compiler.jl")
-export AbstractCompiler, AbstractIRGenerator
-export IRGenerator, IncrementalIRGenerator
+# compiler
+include("compiler/compiler.jl")
+export AbstractClangCompiler
+export AbstractIRGenerator, IRGenerator
+export take_module
 export CXCompiler
 export get_instance, get_context
-export get_module, get_jit, get_dylib, get_codegen
 export compile, dispose
+export get_jit, get_dylib, get_codegen
 export link_process_symbols
-export get_modules, get_current_module
-export incremental_parse
-
-include("llvm.jl")
-export lookup_function, link, link_crt
-export get_buffer
 
 include("utils.jl")
 export jlty2llvmty
+export lookup_function, link, link_crt
+export get_buffer
 
 # boot
 const BOOT_COMPILER_REF = Ref{CXCompiler}()

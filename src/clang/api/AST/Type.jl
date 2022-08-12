@@ -35,12 +35,7 @@ getUnqualifiedType(x::AbstractQualType) = QualType(clang_QualType_getUnqualified
 
 dump(x::AbstractQualType) = clang_QualType_dump(x)
 
-function getAsString(x::AbstractQualType)
-    str = clang_QualType_getAsString(x)
-    s = unsafe_string(str)
-    clang_QualType_disposeString(str)
-    return s
-end
+getAsString(x::AbstractQualType) = _get_string(clang_QualType_getAsString(x))
 
 getPointeeType(ty_ptr::CXType_) = clang_Type_getPointeeType(ty_ptr)
 getPointeeType(ty::AbstractQualType) = QualType(getPointeeType(getTypePtr(ty)))

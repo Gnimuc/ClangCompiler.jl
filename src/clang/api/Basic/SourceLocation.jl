@@ -22,10 +22,7 @@ end
 
 function printToString(x::SourceLocation, src_mgr::SourceManager)
     @check_ptrs src_mgr
-    str = clang_SourceLocation_printToString(x, src_mgr)
-    s = unsafe_string(str)
-    clang_SourceLocation_disposeString(str)
-    return s
+    return _get_string(clang_SourceLocation_printToString(x, src_mgr))
 end
 
 # SourceRange
