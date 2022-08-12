@@ -2099,6 +2099,14 @@ function clang_Type_hasSignedIntegerRepresentation(T)
     ccall((:clang_Type_hasSignedIntegerRepresentation, libclangex), Bool, (CXType_,), T)
 end
 
+function clang_IncrementalCompilerBuilder_create(Args, N)
+    ccall((:clang_IncrementalCompilerBuilder_create, libclangex), CXCompilerInstance, (Ptr{Ptr{Cchar}}, Cint), Args, N)
+end
+
+function clang_Interpreter_create(CI)
+    ccall((:clang_Interpreter_create, libclangex), CXInterpreter, (CXCompilerInstance,), CI)
+end
+
 function clang_Type_hasUnsignedIntegerRepresentation(T)
     ccall((:clang_Type_hasUnsignedIntegerRepresentation, libclangex), Bool, (CXType_,), T)
 end

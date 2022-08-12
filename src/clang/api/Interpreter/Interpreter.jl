@@ -10,7 +10,7 @@ end
 
 function Parse(x::Interpreter, code::String)
     @check_ptrs x
-    return PartialTranslationUnit(clang_Interpreter_parse(x, code))
+    return PartialTranslationUnit(clang_Interpreter_Parse(x, code))
 end
 
 function Execute(x::Interpreter, ptu::PartialTranslationUnit)
@@ -21,4 +21,9 @@ end
 function ParseAndExecute(x::Interpreter, code::String)
     @check_ptrs x
     return clang_Interpreter_ParseAndExecute(x, code)
+end
+
+# IncrementalCompilerBuilder
+function IncrementalCompilerBuilder_create(args::Vector{String})
+    return CompilerInstance(clang_IncrementalCompilerBuilder_create(args, length(args)))
 end
