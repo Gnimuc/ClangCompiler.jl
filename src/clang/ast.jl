@@ -35,3 +35,20 @@ Base.isempty(x::DeclarationName) = isEmpty(x)
 Base.string(x::DeclarationName) = get_as_string(x)
 
 dump(x::CXXScopeSpec) = dump(getScopeRep(x))
+
+# DeclContext
+"""
+    struct DeclIterator <: Any
+An iterator for traversing the declarations in a `DeclContext`.
+See also `clang::DeclContext::decl_iterator`.
+"""
+struct DeclIterator{T<:AbstractDecl}
+    decl::T
+end
+
+function Base.iterate(x::DeclIterator, state=decl_iterator_begin(castToDeclContext(x.decl)))
+    state.ptr == C_NULL && return nothing
+    next_decl = getNextDeclInContext(state)
+    next_decl.ptr == C_NULL && return nothing
+    return (next_decl, next_decl)
+end
