@@ -195,6 +195,16 @@ function PrintStats(x::AbstractDecl)
 end
 
 # Decl Cast
+function castToDeclContext(x::AbstractDecl)
+    @check_ptrs x
+    return DeclContext(clang_Decl_castToDeclContext(x))
+end
+
+function castFromDeclContext(x::DeclContext)
+    @check_ptrs x
+    return Decl(clang_Decl_castFromDeclContext(x))
+end
+
 function ClassTemplateDecl(x::AbstractDecl)
     @check_ptrs x
     return ClassTemplateDecl(clang_Decl_castToClassTemplateDecl(x))
@@ -339,6 +349,11 @@ end
 function dumpLookups(x::DeclContext)
     @check_ptrs x
     return clang_DeclContext_dumpLookups(x)
+end
+
+function decl_iterator_begin(x::DeclContext)
+    @check_ptrs x
+    return Decl(clang_DeclContext_decl_iterator_begin(x))
 end
 
 # DeclContext Cast
