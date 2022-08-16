@@ -31,8 +31,10 @@ import LLVM: dispose, name, value
 
 import Base: dump, string
 
-llvm_version = if LLVM.version() < v"14"
+llvm_version = if LLVM.version() < v"13"
     "12"
+elseif LLVM.version().major == 13
+    "13"
 else
     "14"
 end

@@ -1,6 +1,6 @@
 [general]
 library_name = "libclangex"
-output_file_path = "../lib/LibClangEx.jl"
+output_file_path = "LibClangEx.jl"
 module_name = "LibClangEx"
 export_symbol_prefixes = ["clang", "CX"]
 prologue_file_path = "./prologue.jl"
