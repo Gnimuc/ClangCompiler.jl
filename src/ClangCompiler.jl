@@ -39,7 +39,7 @@ end
 libdir = joinpath(@__DIR__, "..", "lib")
 
 const CLANG_BIN = joinpath(Clang_jll.artifact_dir, "bin", "clang")
-const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", llvm_version, "include")
+const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(Base.libllvm_version), "include")
 
 include(joinpath(libdir, llvm_version, "LibClangEx.jl"))
 using .LibClangEx
