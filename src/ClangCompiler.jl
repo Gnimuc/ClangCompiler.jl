@@ -31,13 +31,20 @@ import LLVM: dispose, name, value
 
 import Base: dump, string
 
-const CLANG_BIN = joinpath(Clang_jll.artifact_dir, "bin", "clang")
-const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(Base.libllvm_version),
-                           "include")
+llvm_version = if LLVM.version() < v"14"
+    "12"
+else
+    "14"
+end
+libdir = joinpath(@__DIR__, "..", "lib")
 
-include("../lib/LibClangEx.jl")
+const CLANG_BIN = joinpath(Clang_jll.artifact_dir, "bin", "clang")
+const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", llvm_version, "include")
+
+include(joinpath(libdir, llvm_version, "LibClangEx.jl"))
 using .LibClangEx
-include("../lib/LibClang.jl")
+
+include(joinpath(libdir, "LibClang.jl"))
 
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
