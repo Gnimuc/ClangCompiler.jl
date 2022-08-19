@@ -1,7 +1,12 @@
 #include <iostream>
 #include <vector>
 
-int main() {   
+struct Node {
+    int x;
+    float y;
+};
+
+int main() {
   int x = 40;
   int y = 2;
   int z = x + y;
