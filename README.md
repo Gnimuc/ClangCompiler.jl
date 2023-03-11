@@ -36,7 +36,7 @@ src = joinpath(dirname(pathof(ClangCompiler)), "..", "examples", "sample.cpp")
 # compilation flags
 args = get_compiler_args()
 
-cc = IncrementalIRGenerator(src, args)
+cc = ClangCompiler.IncrementalIRGenerator(src, args)
 
 decl_lookup = DeclFinder(cc.instance)
 
