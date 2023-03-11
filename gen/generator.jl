@@ -23,9 +23,20 @@ const dependencies = PkgSpec[
 
 const libdir = joinpath(@__DIR__, "..", "lib")
 
-for (llvm_version, julia_version) in ((v"12.0.1", v"1.7"),
-                                      (v"13.0.1", v"1.8"),
-                                      (v"14.0.5", v"1.9"))
+const versions = Dict(
+    v"1.7" => v"12.0.1",
+    v"1.8" => v"13.0.1",
+    v"1.9" => v"14.0.6",
+)
+
+if length(ARGS) > 0
+    julia_version = VersionNumber(ARGS[1])
+    llvm_version = versions[julia_version]
+    empty!(versions)
+    versions[julia_version] = llvm_version
+end
+
+for (julia_version, llvm_version) in versions
     @info "Generating..." llvm_version julia_version
     temp_prefix() do prefix
     # let prefix = Prefix(mktempdir())
