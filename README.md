@@ -27,7 +27,7 @@ pkg> test ClangCompiler
 
 ### Decl Lookup
 
-```
+```julia
 using ClangCompiler
 
 # source file
@@ -36,7 +36,7 @@ src = joinpath(dirname(pathof(ClangCompiler)), "..", "examples", "sample.cpp")
 # compilation flags
 args = get_compiler_args()
 
-cc = IncrementalIRGenerator(src, args)
+cc = ClangCompiler.IncrementalIRGenerator(src, args)
 
 decl_lookup = DeclFinder(cc.instance)
 
@@ -54,7 +54,7 @@ dispose(cc)
 
 The following example is only tested on macOS.
 
-```julia-repl
+```julia
 using ClangCompiler
 using ClangCompiler.LLVM
 
