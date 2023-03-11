@@ -19,1251 +19,14 @@ struct CXStringSet
     Count::Cuint
 end
 
-@enum CXTemplateArgument_ArgKind::UInt32 begin
-    CXTemplateArgument_Null = 0
-    CXTemplateArgument_Type = 1
-    CXTemplateArgument_Declaration = 2
-    CXTemplateArgument_NullPtr = 3
-    CXTemplateArgument_Integral = 4
-    CXTemplateArgument_Template = 5
-    CXTemplateArgument_TemplateExpansion = 6
-    CXTemplateArgument_Expression = 7
-    CXTemplateArgument_Pack = 8
-end
-
-const CXQualType = Ptr{Cvoid}
-
-const CXTemplateArgument = Ptr{Cvoid}
-
-function clang_TemplateArgument_constructFromQualType(OpaquePtr, isNullPtr)
-    ccall((:clang_TemplateArgument_constructFromQualType, libclangex), CXTemplateArgument, (CXQualType, Bool), OpaquePtr, isNullPtr)
-end
-
-const CXValueDecl = Ptr{Cvoid}
-
-function clang_TemplateArgument_constructFromValueDecl(VD, OpaquePtr)
-    ccall((:clang_TemplateArgument_constructFromValueDecl, libclangex), CXTemplateArgument, (CXValueDecl, CXQualType), VD, OpaquePtr)
-end
-
-const CXASTContext = Ptr{Cvoid}
-
-function clang_TemplateArgument_constructFromIntegral(Ctx, Val, OpaquePtr)
-    ccall((:clang_TemplateArgument_constructFromIntegral, libclangex), CXTemplateArgument, (CXASTContext, LLVMGenericValueRef, CXQualType), Ctx, Val, OpaquePtr)
-end
-
-function clang_TemplateArgument_dispose(TA)
-    ccall((:clang_TemplateArgument_dispose, libclangex), Cvoid, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getKind(TA)
-    ccall((:clang_TemplateArgument_getKind, libclangex), CXTemplateArgument_ArgKind, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_isNull(TA)
-    ccall((:clang_TemplateArgument_isNull, libclangex), Bool, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_isDependent(TA)
-    ccall((:clang_TemplateArgument_isDependent, libclangex), Bool, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_isInstantiationDependent(TA)
-    ccall((:clang_TemplateArgument_isInstantiationDependent, libclangex), Bool, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getAsType(TA)
-    ccall((:clang_TemplateArgument_getAsType, libclangex), CXQualType, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getAsDecl(TA)
-    ccall((:clang_TemplateArgument_getAsDecl, libclangex), CXValueDecl, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getParamTypeForDecl(TA)
-    ccall((:clang_TemplateArgument_getParamTypeForDecl, libclangex), CXQualType, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getNullPtrType(TA)
-    ccall((:clang_TemplateArgument_getNullPtrType, libclangex), CXQualType, (CXTemplateArgument,), TA)
-end
-
-const CXTemplateName = Ptr{Cvoid}
-
-function clang_TemplateArgument_getAsTemplate(TA)
-    ccall((:clang_TemplateArgument_getAsTemplate, libclangex), CXTemplateName, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getAsTemplateOrTemplatePattern(TA)
-    ccall((:clang_TemplateArgument_getAsTemplateOrTemplatePattern, libclangex), CXTemplateName, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getNumTemplateExpansions(TA)
-    ccall((:clang_TemplateArgument_getNumTemplateExpansions, libclangex), Cuint, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getAsIntegral(TA)
-    ccall((:clang_TemplateArgument_getAsIntegral, libclangex), LLVMGenericValueRef, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_getIntegralType(TA)
-    ccall((:clang_TemplateArgument_getIntegralType, libclangex), CXQualType, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_setIntegralType(TA, OpaquePtr)
-    ccall((:clang_TemplateArgument_setIntegralType, libclangex), Cvoid, (CXTemplateArgument, CXQualType), TA, OpaquePtr)
-end
-
-function clang_TemplateArgument_getNonTypeTemplateArgumentType(TA)
-    ccall((:clang_TemplateArgument_getNonTypeTemplateArgumentType, libclangex), CXQualType, (CXTemplateArgument,), TA)
-end
-
-function clang_TemplateArgument_dump(TA)
-    ccall((:clang_TemplateArgument_dump, libclangex), Cvoid, (CXTemplateArgument,), TA)
-end
-
-const CXCodeGenModule = Ptr{Cvoid}
-
-function clang_CodeGen_convertTypeForMemory(CGM, T)
-    ccall((:clang_CodeGen_convertTypeForMemory, libclangex), LLVMTypeRef, (CXCodeGenModule, CXQualType), CGM, T)
-end
-
-@enum CXTemplateName_NameKind::UInt32 begin
-    CXTemplateName_Template = 0
-    CXTemplateName_OverloadedTemplate = 1
-    CXTemplateName_AssumedTemplate = 2
-    CXTemplateName_QualifiedTemplate = 3
-    CXTemplateName_DependentTemplate = 4
-    CXTemplateName_SubstTemplateTemplateParm = 5
-    CXTemplateName_SubstTemplateTemplateParmPack = 6
-end
-
-function clang_TemplateName_isNull(TN)
-    ccall((:clang_TemplateName_isNull, libclangex), Bool, (CXTemplateName,), TN)
-end
-
-function clang_TemplateName_getKind(TN)
-    ccall((:clang_TemplateName_getKind, libclangex), CXTemplateName_NameKind, (CXTemplateName,), TN)
-end
-
-const CXTemplateDecl = Ptr{Cvoid}
-
-function clang_TemplateName_getAsTemplateDecl(TN)
-    ccall((:clang_TemplateName_getAsTemplateDecl, libclangex), CXTemplateDecl, (CXTemplateName,), TN)
-end
-
-function clang_TemplateName_getUnderlying(TN)
-    ccall((:clang_TemplateName_getUnderlying, libclangex), CXTemplateName, (CXTemplateName,), TN)
-end
-
-function clang_TemplateName_getNameToSubstitute(TN)
-    ccall((:clang_TemplateName_getNameToSubstitute, libclangex), CXTemplateName, (CXTemplateName,), TN)
-end
-
-function clang_TemplateName_isDependent(TN)
-    ccall((:clang_TemplateName_isDependent, libclangex), Bool, (CXTemplateName,), TN)
-end
-
-function clang_TemplateName_isInstantiationDependent(TN)
-    ccall((:clang_TemplateName_isInstantiationDependent, libclangex), Bool, (CXTemplateName,), TN)
-end
-
-function clang_TemplateName_containsUnexpandedParameterPack(TN)
-    ccall((:clang_TemplateName_containsUnexpandedParameterPack, libclangex), Bool, (CXTemplateName,), TN)
-end
-
-function clang_TemplateName_dump(TN)
-    ccall((:clang_TemplateName_dump, libclangex), Cvoid, (CXTemplateName,), TN)
-end
-
-const CXDiagnosticsEngine = Ptr{Cvoid}
-
-const CXTargetOptions = Ptr{Cvoid}
-
-const CXTargetInfo_ = Ptr{Cvoid}
-
-function clang_TargetInfo_CreateTargetInfo(DE, Opts)
-    ccall((:clang_TargetInfo_CreateTargetInfo, libclangex), CXTargetInfo_, (CXDiagnosticsEngine, CXTargetOptions), DE, Opts)
-end
-
-function clang_Driver_GetResourcesPathLength(BinaryPath)
-    ccall((:clang_Driver_GetResourcesPathLength, libclangex), Csize_t, (Ptr{Cchar},), BinaryPath)
-end
-
-function clang_Driver_GetResourcesPath(BinaryPath, ResourcesPath, N)
-    ccall((:clang_Driver_GetResourcesPath, libclangex), Cvoid, (Ptr{Cchar}, Ptr{Cchar}, Csize_t), BinaryPath, ResourcesPath, N)
-end
-
 @enum CXInit_Error::UInt32 begin
     CXInit_NoError = 0
     CXInit_CanNotCreate = 1
 end
 
-const CXDiagnosticIDs = Ptr{Cvoid}
-
-function clang_DiagnosticIDs_create(ErrorCode)
-    ccall((:clang_DiagnosticIDs_create, libclangex), CXDiagnosticIDs, (Ptr{CXInit_Error},), ErrorCode)
-end
-
-function clang_DiagnosticIDs_dispose(ID)
-    ccall((:clang_DiagnosticIDs_dispose, libclangex), Cvoid, (CXDiagnosticIDs,), ID)
-end
-
-const CXTemplateParameterList = Ptr{Cvoid}
-
-const CXNamedDecl = Ptr{Cvoid}
-
-function clang_TemplateParameterList_getParam(TPL, Idx)
-    ccall((:clang_TemplateParameterList_getParam, libclangex), CXNamedDecl, (CXTemplateParameterList, Cuint), TPL, Idx)
-end
-
-function clang_TemplateParameterList_size(TPL)
-    ccall((:clang_TemplateParameterList_size, libclangex), Cuint, (CXTemplateParameterList,), TPL)
-end
-
-const CXTemplateArgumentList = Ptr{Cvoid}
-
-function clang_TemplateArgumentList_CreateCopy(Context, Args, ArgNum)
-    ccall((:clang_TemplateArgumentList_CreateCopy, libclangex), CXTemplateArgumentList, (CXASTContext, CXTemplateArgument, Csize_t), Context, Args, ArgNum)
-end
-
-function clang_TemplateArgumentList_size(TAL)
-    ccall((:clang_TemplateArgumentList_size, libclangex), Cuint, (CXTemplateArgumentList,), TAL)
-end
-
-function clang_TemplateArgumentList_data(TAL)
-    ccall((:clang_TemplateArgumentList_data, libclangex), CXTemplateArgument, (CXTemplateArgumentList,), TAL)
-end
-
-function clang_TemplateArgumentList_get(TAL, Idx)
-    ccall((:clang_TemplateArgumentList_get, libclangex), CXTemplateArgument, (CXTemplateArgumentList, Cuint), TAL, Idx)
-end
-
-function clang_TemplateDecl_init(TD, ND, TP)
-    ccall((:clang_TemplateDecl_init, libclangex), Cvoid, (CXTemplateDecl, CXNamedDecl, CXTemplateParameterList), TD, ND, TP)
-end
-
-const CXRedeclarableTemplateDecl = Ptr{Cvoid}
-
-function clang_RedeclarableTemplateDecl_getCanonicalDecl(RTD)
-    ccall((:clang_RedeclarableTemplateDecl_getCanonicalDecl, libclangex), CXRedeclarableTemplateDecl, (CXRedeclarableTemplateDecl,), RTD)
-end
-
-function clang_RedeclarableTemplateDecl_isMemberSpecialization(RTD)
-    ccall((:clang_RedeclarableTemplateDecl_isMemberSpecialization, libclangex), Bool, (CXRedeclarableTemplateDecl,), RTD)
-end
-
-function clang_RedeclarableTemplateDecl_setMemberSpecialization(RTD)
-    ccall((:clang_RedeclarableTemplateDecl_setMemberSpecialization, libclangex), Cvoid, (CXRedeclarableTemplateDecl,), RTD)
-end
-
-const CXClassTemplateDecl = Ptr{Cvoid}
-
-const CXCXXRecordDecl = Ptr{Cvoid}
-
-function clang_ClassTemplateDecl_getTemplatedDecl(CTD)
-    ccall((:clang_ClassTemplateDecl_getTemplatedDecl, libclangex), CXCXXRecordDecl, (CXClassTemplateDecl,), CTD)
-end
-
-function clang_ClassTemplateDecl_isThisDeclarationADefinition(CTD)
-    ccall((:clang_ClassTemplateDecl_isThisDeclarationADefinition, libclangex), Bool, (CXClassTemplateDecl,), CTD)
-end
-
-const CXClassTemplateSpecializationDecl = Ptr{Cvoid}
-
-function clang_ClassTemplateDecl_findSpecialization(CTD, TAL, InsertPos)
-    ccall((:clang_ClassTemplateDecl_findSpecialization, libclangex), CXClassTemplateSpecializationDecl, (CXClassTemplateDecl, CXTemplateArgumentList, Ptr{Cvoid}), CTD, TAL, InsertPos)
-end
-
-function clang_ClassTemplateDecl_AddSpecialization(CTD, CTSD, InsertPos)
-    ccall((:clang_ClassTemplateDecl_AddSpecialization, libclangex), Cvoid, (CXClassTemplateDecl, CXClassTemplateSpecializationDecl, Ptr{Cvoid}), CTD, CTSD, InsertPos)
-end
-
-function clang_ClassTemplateDecl_getCanonicalDecl(CTD)
-    ccall((:clang_ClassTemplateDecl_getCanonicalDecl, libclangex), CXClassTemplateDecl, (CXClassTemplateDecl,), CTD)
-end
-
-function clang_ClassTemplateDecl_getPreviousDecl(CTD)
-    ccall((:clang_ClassTemplateDecl_getPreviousDecl, libclangex), CXClassTemplateDecl, (CXClassTemplateDecl,), CTD)
-end
-
-function clang_ClassTemplateDecl_getMostRecentDecl(CTD)
-    ccall((:clang_ClassTemplateDecl_getMostRecentDecl, libclangex), CXClassTemplateDecl, (CXClassTemplateDecl,), CTD)
-end
-
-@enum CXTagTypeKind::UInt32 begin
-    CXTagTypeKind_TTK_Struct = 0
-    CXTagTypeKind_TTK_Interface = 1
-    CXTagTypeKind_TTK_Union = 2
-    CXTagTypeKind_TTK_Class = 3
-    CXTagTypeKind_TTK_Enum = 4
-end
-
-const CXDeclContext = Ptr{Cvoid}
-
-const CXSourceLocation_ = Ptr{Cvoid}
-
-function clang_ClassTemplateSpecializationDecl_Create(Context, TK, DC, StartLoc, IdLoc, SpecializedTemplate, Args, PrevDecl)
-    ccall((:clang_ClassTemplateSpecializationDecl_Create, libclangex), CXClassTemplateSpecializationDecl, (CXASTContext, CXTagTypeKind, CXDeclContext, CXSourceLocation_, CXSourceLocation_, CXClassTemplateDecl, CXTemplateArgumentList, CXClassTemplateSpecializationDecl), Context, TK, DC, StartLoc, IdLoc, SpecializedTemplate, Args, PrevDecl)
-end
-
-function clang_ClassTemplateSpecializationDecl_getTemplateArgs(CTSD)
-    ccall((:clang_ClassTemplateSpecializationDecl_getTemplateArgs, libclangex), CXTemplateArgumentList, (CXClassTemplateSpecializationDecl,), CTSD)
-end
-
-function clang_ClassTemplateSpecializationDecl_setTemplateArgs(CTSD, TAL)
-    ccall((:clang_ClassTemplateSpecializationDecl_setTemplateArgs, libclangex), Cvoid, (CXClassTemplateSpecializationDecl, CXTemplateArgumentList), CTSD, TAL)
-end
-
-const CXFrontendOptions = Ptr{Cvoid}
-
-function clang_FrontendOptions_PrintStats(FEO)
-    ccall((:clang_FrontendOptions_PrintStats, libclangex), Cvoid, (CXFrontendOptions,), FEO)
-end
-
-function clang_Stmt_EnableStatistics()
-    ccall((:clang_Stmt_EnableStatistics, libclangex), Cvoid, ())
-end
-
-function clang_Stmt_PrintStats()
-    ccall((:clang_Stmt_PrintStats, libclangex), Cvoid, ())
-end
-
-const CXPreprocessorOptions = Ptr{Cvoid}
-
-function clang_PreprocessorOptions_getIncludesNum(PPO)
-    ccall((:clang_PreprocessorOptions_getIncludesNum, libclangex), Csize_t, (CXPreprocessorOptions,), PPO)
-end
-
-function clang_PreprocessorOptions_getIncludes(PPO, IncsOut, Num)
-    ccall((:clang_PreprocessorOptions_getIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
-end
-
-function clang_PreprocessorOptions_PrintStats(PPO)
-    ccall((:clang_PreprocessorOptions_PrintStats, libclangex), Cvoid, (CXPreprocessorOptions,), PPO)
-end
-
-@enum CXLambdaCaptureDefault::UInt32 begin
-    CXLambdaCaptureDefault_LCD_None = 0
-    CXLambdaCaptureDefault_LCD_ByCopy = 1
-    CXLambdaCaptureDefault_LCD_ByRef = 2
-end
-
-@enum CXLambdaCaptureKind::UInt32 begin
-    CXLambdaCaptureKind_LCK_This = 0
-    CXLambdaCaptureKind_LCK_StarThis = 1
-    CXLambdaCaptureKind_LCK_ByCopy = 2
-    CXLambdaCaptureKind_LCK_ByRef = 3
-    CXLambdaCaptureKind_LCK_VLAType = 4
-end
-
-@enum CXLinkage::UInt8 begin
-    CXLinkage_NoLinkage = 0x0000000000000000
-    CXLinkage_InternalLinkage = 0x0000000000000001
-    CXLinkage_UniqueExternalLinkage = 0x0000000000000002
-    CXLinkage_VisibleNoLinkage = 0x0000000000000003
-    CXLinkage_ModuleInternalLinkage = 0x0000000000000004
-    CXLinkage_ModuleLinkage = 0x0000000000000005
-    CXLinkage_ExternalLinkage = 0x0000000000000006
-end
-
-@enum CXLanguageLinkage::UInt32 begin
-    CXLanguageLinkage_CLanguageLinkage = 0
-    CXLanguageLinkage_CXXLanguageLinkage = 1
-    CXLanguageLinkage_NoLanguageLinkage = 2
-end
-
-const CXCodeGenOptions = Ptr{Cvoid}
-
-function clang_CodeGenOptions_create(ErrorCode)
-    ccall((:clang_CodeGenOptions_create, libclangex), CXCodeGenOptions, (Ptr{CXInit_Error},), ErrorCode)
-end
-
-function clang_CodeGenOptions_dispose(DO)
-    ccall((:clang_CodeGenOptions_dispose, libclangex), Cvoid, (CXCodeGenOptions,), DO)
-end
-
-function clang_CodeGenOptions_getArgv0(CGO)
-    ccall((:clang_CodeGenOptions_getArgv0, libclangex), Ptr{Cchar}, (CXCodeGenOptions,), CGO)
-end
-
-function clang_CodeGenOptions_PrintStats(CGO)
-    ccall((:clang_CodeGenOptions_PrintStats, libclangex), Cvoid, (CXCodeGenOptions,), CGO)
-end
-
-const CXNestedNameSpecifier = Ptr{Cvoid}
-
-function clang_NestedNameSpecifier_getPrefix(NNS)
-    ccall((:clang_NestedNameSpecifier_getPrefix, libclangex), CXNestedNameSpecifier, (CXNestedNameSpecifier,), NNS)
-end
-
-function clang_NestedNameSpecifier_containsErrors(NNS)
-    ccall((:clang_NestedNameSpecifier_containsErrors, libclangex), Bool, (CXNestedNameSpecifier,), NNS)
-end
-
-function clang_NestedNameSpecifier_dump(NNS)
-    ccall((:clang_NestedNameSpecifier_dump, libclangex), Cvoid, (CXNestedNameSpecifier,), NNS)
-end
-
-@enum CXMangleContext_ManglerKind::UInt32 begin
-    CXMangleContext_MK_Itanium = 0
-    CXMangleContext_MK_Microsoft = 1
-end
-
-const CXMangleContext = Ptr{Cvoid}
-
-function clang_MangleContext_getKind(MC)
-    ccall((:clang_MangleContext_getKind, libclangex), CXMangleContext_ManglerKind, (CXMangleContext,), MC)
-end
-
-function clang_MangleContext_getASTContext(MC)
-    ccall((:clang_MangleContext_getASTContext, libclangex), CXASTContext, (CXMangleContext,), MC)
-end
-
-function clang_MangleContext_getDiags(MC)
-    ccall((:clang_MangleContext_getDiags, libclangex), CXDiagnosticsEngine, (CXMangleContext,), MC)
-end
-
-function clang_MangleContext_getAnonymousStructId(MC, D)
-    ccall((:clang_MangleContext_getAnonymousStructId, libclangex), UInt64, (CXMangleContext, CXNamedDecl), MC, D)
-end
-
-function clang_MangleContext_shouldMangleDeclName(MC, D)
-    ccall((:clang_MangleContext_shouldMangleDeclName, libclangex), Bool, (CXMangleContext, CXNamedDecl), MC, D)
-end
-
-function clang_MangleContext_shouldMangleCXXName(MC, D)
-    ccall((:clang_MangleContext_shouldMangleCXXName, libclangex), Bool, (CXMangleContext, CXNamedDecl), MC, D)
-end
-
-const CXStringLiteral = Ptr{Cvoid}
-
-function clang_MangleContext_shouldMangleStringLiteral(MC, SL)
-    ccall((:clang_MangleContext_shouldMangleStringLiteral, libclangex), Bool, (CXMangleContext, CXStringLiteral), MC, SL)
-end
-
-const CXASTNameGenerator = Ptr{Cvoid}
-
-const CXDecl = Ptr{Cvoid}
-
-function clang_ASTNameGenerator_getName(G, D)
-    ccall((:clang_ASTNameGenerator_getName, libclangex), CXString, (CXASTNameGenerator, CXDecl), G, D)
-end
-
-function clang_ASTNameGenerator_getAllManglings(G, D)
-    ccall((:clang_ASTNameGenerator_getAllManglings, libclangex), Ptr{CXStringSet}, (CXASTNameGenerator, CXDecl), G, D)
-end
-
-@enum CXVisibility::UInt32 begin
-    CXVisibility_HiddenVisibility = 0
-    CXVisibility_ProtectedVisibility = 1
-    CXVisibility_DefaultVisibility = 2
-end
-
-@enum CXDeclSpecContext::UInt32 begin
-    CXDeclSpecContext_DSC_normal = 0
-    CXDeclSpecContext_DSC_class = 1
-    CXDeclSpecContext_DSC_type_specifier = 2
-    CXDeclSpecContext_DSC_trailing = 3
-    CXDeclSpecContext_DSC_alias_declaration = 4
-    CXDeclSpecContext_DSC_top_level = 5
-    CXDeclSpecContext_DSC_template_param = 6
-    CXDeclSpecContext_DSC_template_type_arg = 7
-    CXDeclSpecContext_DSC_objc_method_result = 8
-    CXDeclSpecContext_DSC_condition = 9
-end
-
-const CXPreprocessor = Ptr{Cvoid}
-
-const CXSema = Ptr{Cvoid}
-
-const CXParser = Ptr{Cvoid}
-
-function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
-    ccall((:clang_Parser_create, libclangex), CXParser, (CXPreprocessor, CXSema, Bool, Ptr{CXInit_Error}), PP, Actions, SkipFunctionBodies, ErrorCode)
-end
-
-function clang_Parser_dispose(P)
-    ccall((:clang_Parser_dispose, libclangex), Cvoid, (CXParser,), P)
-end
-
-function clang_Parser_Initialize(P)
-    ccall((:clang_Parser_Initialize, libclangex), Cvoid, (CXParser,), P)
-end
-
-const CXLangOptions = Ptr{Cvoid}
-
-function clang_Parser_getLangOpts(P)
-    ccall((:clang_Parser_getLangOpts, libclangex), CXLangOptions, (CXParser,), P)
-end
-
-function clang_Parser_getTargetInfo(P)
-    ccall((:clang_Parser_getTargetInfo, libclangex), CXTargetInfo_, (CXParser,), P)
-end
-
-function clang_Parser_getPreprocessor(P)
-    ccall((:clang_Parser_getPreprocessor, libclangex), CXPreprocessor, (CXParser,), P)
-end
-
-function clang_Parser_getActions(P)
-    ccall((:clang_Parser_getActions, libclangex), CXSema, (CXParser,), P)
-end
-
-const CXToken_ = Ptr{Cvoid}
-
-function clang_Parser_getCurToken(P)
-    ccall((:clang_Parser_getCurToken, libclangex), CXToken_, (CXParser,), P)
-end
-
-function clang_Parser_NextToken(P)
-    ccall((:clang_Parser_NextToken, libclangex), CXToken_, (CXParser,), P)
-end
-
-const CXScope = Ptr{Cvoid}
-
-function clang_Parser_getCurScope(P)
-    ccall((:clang_Parser_getCurScope, libclangex), CXScope, (CXParser,), P)
-end
-
-function clang_Parser_ConsumeToken(P)
-    ccall((:clang_Parser_ConsumeToken, libclangex), CXSourceLocation_, (CXParser,), P)
-end
-
-function clang_Parser_ConsumeAnyToken(P)
-    ccall((:clang_Parser_ConsumeAnyToken, libclangex), CXSourceLocation_, (CXParser,), P)
-end
-
-function clang_Parser_TryAnnotateCXXScopeToken(P, EnteringContext)
-    ccall((:clang_Parser_TryAnnotateCXXScopeToken, libclangex), Bool, (CXParser, Bool), P, EnteringContext)
-end
-
-const CXCXXScopeSpec = Ptr{Cvoid}
-
-function clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(P, SS, IsNewScope)
-    ccall((:clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec, libclangex), Bool, (CXParser, CXCXXScopeSpec, Bool), P, SS, IsNewScope)
-end
-
-const CXDeclGroupRef = Ptr{Cvoid}
-
-function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)
-    ccall((:clang_Parser_parseOneTopLevelDecl, libclangex), CXDeclGroupRef, (CXParser, Bool), Parser, IsFirstDecl)
-end
-
-@enum CXExceptionSpecificationType::UInt32 begin
-    CXExceptionSpecificationType_EST_None = 0
-    CXExceptionSpecificationType_EST_DynamicNone = 1
-    CXExceptionSpecificationType_EST_Dynamic = 2
-    CXExceptionSpecificationType_EST_MSAny = 3
-    CXExceptionSpecificationType_EST_NoThrow = 4
-    CXExceptionSpecificationType_EST_BasicNoexcept = 5
-    CXExceptionSpecificationType_EST_DependentNoexcept = 6
-    CXExceptionSpecificationType_EST_NoexceptFalse = 7
-    CXExceptionSpecificationType_EST_NoexceptTrue = 8
-    CXExceptionSpecificationType_EST_Unevaluated = 9
-    CXExceptionSpecificationType_EST_Uninstantiated = 10
-    CXExceptionSpecificationType_EST_Unparsed = 11
-end
-
-const CXHeaderSearchOptions = Ptr{Cvoid}
-
-function clang_HeaderSearchOptions_GetResourceDirLength(HSO)
-    ccall((:clang_HeaderSearchOptions_GetResourceDirLength, libclangex), Csize_t, (CXHeaderSearchOptions,), HSO)
-end
-
-function clang_HeaderSearchOptions_GetResourceDir(HSO, ResourcesDir, N)
-    ccall((:clang_HeaderSearchOptions_GetResourceDir, libclangex), Cvoid, (CXHeaderSearchOptions, Ptr{Cchar}, Csize_t), HSO, ResourcesDir, N)
-end
-
-function clang_HeaderSearchOptions_SetResourceDir(HSO, ResourcesDir, N)
-    ccall((:clang_HeaderSearchOptions_SetResourceDir, libclangex), Cvoid, (CXHeaderSearchOptions, Ptr{Cchar}, Csize_t), HSO, ResourcesDir, N)
-end
-
-function clang_HeaderSearchOptions_PrintStats(HSO)
-    ccall((:clang_HeaderSearchOptions_PrintStats, libclangex), Cvoid, (CXHeaderSearchOptions,), HSO)
-end
-
-const CXHeaderSearch = Ptr{Cvoid}
-
-function clang_HeaderSearch_PrintStats(HS)
-    ccall((:clang_HeaderSearch_PrintStats, libclangex), Cvoid, (CXHeaderSearch,), HS)
-end
-
-const CXFileManager = Ptr{Cvoid}
-
-function clang_FileManager_create(ErrorCode)
-    ccall((:clang_FileManager_create, libclangex), CXFileManager, (Ptr{CXInit_Error},), ErrorCode)
-end
-
-function clang_FileManager_dispose(FM)
-    ccall((:clang_FileManager_dispose, libclangex), Cvoid, (CXFileManager,), FM)
-end
-
-const CXFileEntry = Ptr{Cvoid}
-
-function clang_FileManager_getBufferForFile(FM, FE, isVolatile, RequiresNullTerminator)
-    ccall((:clang_FileManager_getBufferForFile, libclangex), LLVMMemoryBufferRef, (CXFileManager, CXFileEntry, Bool, Bool), FM, FE, isVolatile, RequiresNullTerminator)
-end
-
-function clang_FileManager_PrintStats(FM)
-    ccall((:clang_FileManager_PrintStats, libclangex), Cvoid, (CXFileManager,), FM)
-end
-
-const CXDirectoryEntry = Ptr{Cvoid}
-
-function clang_FileManager_getDirectory(FM, DirName, CacheFailure)
-    ccall((:clang_FileManager_getDirectory, libclangex), CXDirectoryEntry, (CXFileManager, Ptr{Cchar}, Bool), FM, DirName, CacheFailure)
-end
-
-function clang_DirectoryEntry_getName(DE)
-    ccall((:clang_DirectoryEntry_getName, libclangex), Ptr{Cchar}, (CXDirectoryEntry,), DE)
-end
-
-const CXFileEntryRef = Ptr{Cvoid}
-
-function clang_FileManager_getFileRef(FM, Filename, OpenFile, CacheFailure)
-    ccall((:clang_FileManager_getFileRef, libclangex), CXFileEntryRef, (CXFileManager, Ptr{Cchar}, Bool, Bool), FM, Filename, OpenFile, CacheFailure)
-end
-
-function clang_FileEntryRef_dispose(FER)
-    ccall((:clang_FileEntryRef_dispose, libclangex), Cvoid, (CXFileEntryRef,), FER)
-end
-
-function clang_FileEntryRef_getFileEntry(FER)
-    ccall((:clang_FileEntryRef_getFileEntry, libclangex), CXFileEntry, (CXFileEntryRef,), FER)
-end
-
-const CXAccessSpecDecl = Ptr{Cvoid}
-
-function clang_AccessSpecDecl_getAccessSpecifierLoc(AS)
-    ccall((:clang_AccessSpecDecl_getAccessSpecifierLoc, libclangex), CXSourceLocation_, (CXAccessSpecDecl,), AS)
-end
-
-function clang_AccessSpecDecl_setAccessSpecifierLoc(AS, ASLoc)
-    ccall((:clang_AccessSpecDecl_setAccessSpecifierLoc, libclangex), Cvoid, (CXAccessSpecDecl, CXSourceLocation_), AS, ASLoc)
-end
-
-function clang_AccessSpecDecl_getColonLoc(AS)
-    ccall((:clang_AccessSpecDecl_getColonLoc, libclangex), CXSourceLocation_, (CXAccessSpecDecl,), AS)
-end
-
-function clang_AccessSpecDecl_setColonLoc(AS, CLoc)
-    ccall((:clang_AccessSpecDecl_setColonLoc, libclangex), Cvoid, (CXAccessSpecDecl, CXSourceLocation_), AS, CLoc)
-end
-
-struct CXSourceRange_
-    B::CXSourceLocation_
-    E::CXSourceLocation_
-end
-
-function clang_AccessSpecDecl_getSourceRange(AS)
-    ccall((:clang_AccessSpecDecl_getSourceRange, libclangex), CXSourceRange_, (CXAccessSpecDecl,), AS)
-end
-
-@enum CXAccessSpecifier::UInt32 begin
-    CXAccessSpecifier_AS_public = 0
-    CXAccessSpecifier_AS_protected = 1
-    CXAccessSpecifier_AS_private = 2
-    CXAccessSpecifier_AS_none = 3
-end
-
-function clang_AccessSpecDecl_Create(C, AS, DC, ASLoc, ColonLoc)
-    ccall((:clang_AccessSpecDecl_Create, libclangex), CXAccessSpecDecl, (CXASTContext, CXAccessSpecifier, CXDeclContext, CXSourceLocation_, CXSourceLocation_), C, AS, DC, ASLoc, ColonLoc)
-end
-
-function clang_AccessSpecDecl_CreateDeserialized(C, ID)
-    ccall((:clang_AccessSpecDecl_CreateDeserialized, libclangex), CXAccessSpecDecl, (CXASTContext, Cuint), C, ID)
-end
-
-const CXCXXBaseSpecifier = Ptr{Cvoid}
-
-function clang_CXXBaseSpecifier_getSourceRange(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getSourceRange, libclangex), CXSourceRange_, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_getColonLoc(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getColonLoc, libclangex), CXSourceLocation_, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_getEndLoc(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getEndLoc, libclangex), CXSourceLocation_, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_getBaseTypeLoc(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getBaseTypeLoc, libclangex), CXSourceLocation_, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_isVirtual(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_isVirtual, libclangex), Bool, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_isBaseOfClass(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_isBaseOfClass, libclangex), Bool, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_isPackExpansion(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_isPackExpansion, libclangex), Bool, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_getInheritConstructors(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getInheritConstructors, libclangex), Bool, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_setInheritConstructors(CXXBS, Inherit)
-    ccall((:clang_CXXBaseSpecifier_setInheritConstructors, libclangex), Cvoid, (CXCXXBaseSpecifier, Bool), CXXBS, Inherit)
-end
-
-function clang_CXXBaseSpecifier_getEllipsisLoc(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getEllipsisLoc, libclangex), CXSourceLocation_, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_getAccessSpecifier(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getAccessSpecifier, libclangex), CXAccessSpecifier, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_getAccessSpecifierAsWritten(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getAccessSpecifierAsWritten, libclangex), CXAccessSpecifier, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXBaseSpecifier_getType(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getType, libclangex), CXQualType, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-const CXTypeSourceInfo = Ptr{Cvoid}
-
-function clang_CXXBaseSpecifier_getTypeSourceInfo(CXXBS)
-    ccall((:clang_CXXBaseSpecifier_getTypeSourceInfo, libclangex), CXTypeSourceInfo, (CXCXXBaseSpecifier,), CXXBS)
-end
-
-function clang_CXXRecordDecl_getCanonicalDecl(CXXRD)
-    ccall((:clang_CXXRecordDecl_getCanonicalDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_getPreviousDecl(CXXRD)
-    ccall((:clang_CXXRecordDecl_getPreviousDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_getMostRecentDecl(CXXRD)
-    ccall((:clang_CXXRecordDecl_getMostRecentDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_getMostRecentNonInjectedDecl(CXXRD)
-    ccall((:clang_CXXRecordDecl_getMostRecentNonInjectedDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_getDefinition(CXXRD)
-    ccall((:clang_CXXRecordDecl_getDefinition, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_hasDefinition(CXXRD)
-    ccall((:clang_CXXRecordDecl_hasDefinition, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
-end
-
-const CXIdentifierInfo = Ptr{Cvoid}
-
-function clang_CXXRecordDecl_Create(C, TK, DC, StartLoc, IdLoc, Id, PrevDecl, DelayTypeCreation)
-    ccall((:clang_CXXRecordDecl_Create, libclangex), CXCXXRecordDecl, (CXASTContext, CXTagTypeKind, CXDeclContext, CXSourceLocation_, CXSourceLocation_, CXIdentifierInfo, CXCXXRecordDecl, Bool), C, TK, DC, StartLoc, IdLoc, Id, PrevDecl, DelayTypeCreation)
-end
-
-function clang_CXXRecordDecl_CreateLambda(C, DC, Info, Loc, DependentLambda, IsGeneric, CaptureDefault)
-    ccall((:clang_CXXRecordDecl_CreateLambda, libclangex), CXCXXRecordDecl, (CXASTContext, CXDeclContext, CXTypeSourceInfo, CXSourceLocation_, Bool, Bool, CXLambdaCaptureDefault), C, DC, Info, Loc, DependentLambda, IsGeneric, CaptureDefault)
-end
-
-function clang_CXXRecordDecl_isLambda(CXXRD)
-    ccall((:clang_CXXRecordDecl_isLambda, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_isGenericLambda(CXXRD)
-    ccall((:clang_CXXRecordDecl_isGenericLambda, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_getGenericLambdaTemplateParameterList(CXXRD)
-    ccall((:clang_CXXRecordDecl_getGenericLambdaTemplateParameterList, libclangex), CXTemplateParameterList, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_isAggregate(CXXRD)
-    ccall((:clang_CXXRecordDecl_isAggregate, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_isPOD(CXXRD)
-    ccall((:clang_CXXRecordDecl_isPOD, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_isCLike(CXXRD)
-    ccall((:clang_CXXRecordDecl_isCLike, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
-end
-
-function clang_CXXRecordDecl_isEmpty(CXXRD)
-    ccall((:clang_CXXRecordDecl_isEmpty, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
-end
-
-const CXExplicitSpecifier = Ptr{Cvoid}
-
-@enum CXExplicitSpecKind::UInt32 begin
-    CXExplicitSpecKind_ResolvedFalse = 0x0000000000000000
-    CXExplicitSpecKind_ResolvedTrue = 0x0000000000000001
-    CXExplicitSpecKind_Unresolved = 0x0000000000000002
-end
-
-function clang_ExplicitSpecifier_getKind(ES)
-    ccall((:clang_ExplicitSpecifier_getKind, libclangex), CXExplicitSpecKind, (CXExplicitSpecifier,), ES)
-end
-
-const CXExpr = Ptr{Cvoid}
-
-function clang_ExplicitSpecifier_getExpr(ES)
-    ccall((:clang_ExplicitSpecifier_getExpr, libclangex), CXExpr, (CXExplicitSpecifier,), ES)
-end
-
-function clang_ExplicitSpecifier_isSpecified(ES)
-    ccall((:clang_ExplicitSpecifier_isSpecified, libclangex), Bool, (CXExplicitSpecifier,), ES)
-end
-
-function clang_ExplicitSpecifier_isExplicit(ES)
-    ccall((:clang_ExplicitSpecifier_isExplicit, libclangex), Bool, (CXExplicitSpecifier,), ES)
-end
-
-function clang_ExplicitSpecifier_isInvalid(ES)
-    ccall((:clang_ExplicitSpecifier_isInvalid, libclangex), Bool, (CXExplicitSpecifier,), ES)
-end
-
-function clang_ExplicitSpecifier_setKind(ES, Kind)
-    ccall((:clang_ExplicitSpecifier_setKind, libclangex), Cvoid, (CXExplicitSpecifier, CXExplicitSpecKind), ES, Kind)
-end
-
-function clang_ExplicitSpecifier_setExpr(ES, E)
-    ccall((:clang_ExplicitSpecifier_setExpr, libclangex), Cvoid, (CXExplicitSpecifier, CXExpr), ES, E)
-end
-
-const CXRequiresExprBodyDecl = Ptr{Cvoid}
-
-function clang_RequiresExprBodyDecl_Create(C, DC, StartLoc)
-    ccall((:clang_RequiresExprBodyDecl_Create, libclangex), CXRequiresExprBodyDecl, (CXASTContext, CXDeclContext, CXSourceLocation_), C, DC, StartLoc)
-end
-
-function clang_RequiresExprBodyDecl_CreateDeserialized(C, ID)
-    ccall((:clang_RequiresExprBodyDecl_CreateDeserialized, libclangex), CXRequiresExprBodyDecl, (CXASTContext, Cuint), C, ID)
-end
-
-const CXDeclarationNameInfo = Ptr{Cvoid}
-
-@enum CXStorageClass::UInt32 begin
-    CXStorageClass_SC_None = 0
-    CXStorageClass_SC_Extern = 1
-    CXStorageClass_SC_Static = 2
-    CXStorageClass_SC_PrivateExtern = 3
-    CXStorageClass_SC_Auto = 4
-    CXStorageClass_SC_Register = 5
-end
-
-@enum CXConstexprSpecKind::UInt32 begin
-    CXConstexprSpecKind_Unspecified = 0
-    CXConstexprSpecKind_Constexpr = 1
-    CXConstexprSpecKind_Consteval = 2
-    CXConstexprSpecKind_Constinit = 3
-end
-
-const CXCXXMethodDecl = Ptr{Cvoid}
-
-function clang_CXXMethodDecl_Create(C, RD, StartLoc, NameInfo, T, TInfo, SC, isInline, ConstexprKind, EndLocation, TrailingRequiresClause)
-    ccall((:clang_CXXMethodDecl_Create, libclangex), CXCXXMethodDecl, (CXASTContext, CXCXXRecordDecl, CXSourceLocation_, CXDeclarationNameInfo, CXQualType, CXTypeSourceInfo, CXStorageClass, Bool, CXConstexprSpecKind, CXSourceLocation_, CXExpr), C, RD, StartLoc, NameInfo, T, TInfo, SC, isInline, ConstexprKind, EndLocation, TrailingRequiresClause)
-end
-
-function clang_CXXMethodDecl_CreateDeserialized(C, ID)
-    ccall((:clang_CXXMethodDecl_CreateDeserialized, libclangex), CXCXXMethodDecl, (CXASTContext, Cuint), C, ID)
-end
-
-function clang_CXXMethodDecl_isStatic(CXXMD)
-    ccall((:clang_CXXMethodDecl_isStatic, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_isInstance(CXXMD)
-    ccall((:clang_CXXMethodDecl_isInstance, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_isConst(CXXMD)
-    ccall((:clang_CXXMethodDecl_isConst, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_isVolatile(CXXMD)
-    ccall((:clang_CXXMethodDecl_isVolatile, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_isVirtual(CXXMD)
-    ccall((:clang_CXXMethodDecl_isVirtual, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_getDevirtualizedMethod(CXXMD, Base, IsAppleKext)
-    ccall((:clang_CXXMethodDecl_getDevirtualizedMethod, libclangex), CXCXXMethodDecl, (CXCXXMethodDecl, CXExpr, Bool), CXXMD, Base, IsAppleKext)
-end
-
-function clang_CXXMethodDecl_isCopyAssignmentOperator(CXXMD)
-    ccall((:clang_CXXMethodDecl_isCopyAssignmentOperator, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_isMoveAssignmentOperator(CXXMD)
-    ccall((:clang_CXXMethodDecl_isMoveAssignmentOperator, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_getCanonicalDecl(CXXMD)
-    ccall((:clang_CXXMethodDecl_getCanonicalDecl, libclangex), CXCXXMethodDecl, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_getMostRecentDecl(CXXMD)
-    ccall((:clang_CXXMethodDecl_getMostRecentDecl, libclangex), CXCXXMethodDecl, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_addOverriddenMethod(CXXMD, MD)
-    ccall((:clang_CXXMethodDecl_addOverriddenMethod, libclangex), Cvoid, (CXCXXMethodDecl, CXCXXMethodDecl), CXXMD, MD)
-end
-
-function clang_CXXMethodDecl_getParent(CXXMD)
-    ccall((:clang_CXXMethodDecl_getParent, libclangex), CXCXXRecordDecl, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_getThisType(CXXMD)
-    ccall((:clang_CXXMethodDecl_getThisType, libclangex), CXQualType, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_getThisObjectType(CXXMD)
-    ccall((:clang_CXXMethodDecl_getThisObjectType, libclangex), CXQualType, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_hasInlineBody(CXXMD)
-    ccall((:clang_CXXMethodDecl_hasInlineBody, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_isLambdaStaticInvoker(CXXMD)
-    ccall((:clang_CXXMethodDecl_isLambdaStaticInvoker, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
-end
-
-function clang_CXXMethodDecl_getCorrespondingMethodInClass(CXXMD, RD, MayBeBase)
-    ccall((:clang_CXXMethodDecl_getCorrespondingMethodInClass, libclangex), CXCXXRecordDecl, (CXCXXMethodDecl, CXCXXRecordDecl, Bool), CXXMD, RD, MayBeBase)
-end
-
-function clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD, RD, MayBeBase)
-    ccall((:clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass, libclangex), CXCXXRecordDecl, (CXCXXMethodDecl, CXCXXRecordDecl, Bool), CXXMD, RD, MayBeBase)
-end
-
-@enum CXLinkageSpecDecl_LanguageIDs::UInt32 begin
-    CXLinkageSpecDecl_lang_c = 1
-    CXLinkageSpecDecl_lang_cxx = 2
-end
-
-const CXLinkageSpecDecl = Ptr{Cvoid}
-
-function clang_LinkageSpecDecl_Create(C, DC, ExternLoc, LangLoc, Lang, HasBraces)
-    ccall((:clang_LinkageSpecDecl_Create, libclangex), CXLinkageSpecDecl, (CXASTContext, CXDeclContext, CXSourceLocation_, CXSourceLocation_, CXLinkageSpecDecl_LanguageIDs, Bool), C, DC, ExternLoc, LangLoc, Lang, HasBraces)
-end
-
-function clang_LinkageSpecDecl_CreateDeserialized(C, ID)
-    ccall((:clang_LinkageSpecDecl_CreateDeserialized, libclangex), CXLinkageSpecDecl, (CXASTContext, Cuint), C, ID)
-end
-
-function clang_LinkageSpecDecl_getLanguage(LSD)
-    ccall((:clang_LinkageSpecDecl_getLanguage, libclangex), CXLinkageSpecDecl_LanguageIDs, (CXLinkageSpecDecl,), LSD)
-end
-
-function clang_LinkageSpecDecl_setLanguage(LSD, Lang)
-    ccall((:clang_LinkageSpecDecl_setLanguage, libclangex), Cvoid, (CXLinkageSpecDecl, CXLinkageSpecDecl_LanguageIDs), LSD, Lang)
-end
-
-function clang_LinkageSpecDecl_hasBraces(LSD)
-    ccall((:clang_LinkageSpecDecl_hasBraces, libclangex), Bool, (CXLinkageSpecDecl,), LSD)
-end
-
-function clang_LinkageSpecDecl_getExternLoc(LSD)
-    ccall((:clang_LinkageSpecDecl_getExternLoc, libclangex), CXSourceLocation_, (CXLinkageSpecDecl,), LSD)
-end
-
-function clang_LinkageSpecDecl_getRBraceLoc(LSD)
-    ccall((:clang_LinkageSpecDecl_getRBraceLoc, libclangex), CXSourceLocation_, (CXLinkageSpecDecl,), LSD)
-end
-
-function clang_LinkageSpecDecl_setExternLoc(LSD, Loc)
-    ccall((:clang_LinkageSpecDecl_setExternLoc, libclangex), Cvoid, (CXLinkageSpecDecl, CXSourceLocation_), LSD, Loc)
-end
-
-function clang_LinkageSpecDecl_setRBraceLoc(LSD, Loc)
-    ccall((:clang_LinkageSpecDecl_setRBraceLoc, libclangex), Cvoid, (CXLinkageSpecDecl, CXSourceLocation_), LSD, Loc)
-end
-
-function clang_LinkageSpecDecl_getEndLoc(LSD)
-    ccall((:clang_LinkageSpecDecl_getEndLoc, libclangex), CXSourceLocation_, (CXLinkageSpecDecl,), LSD)
-end
-
-function clang_LinkageSpecDecl_getSourceRange(LSD)
-    ccall((:clang_LinkageSpecDecl_getSourceRange, libclangex), CXSourceRange_, (CXLinkageSpecDecl,), LSD)
-end
-
-function clang_LinkageSpecDecl_castToDeclContext(LSD)
-    ccall((:clang_LinkageSpecDecl_castToDeclContext, libclangex), CXDeclContext, (CXLinkageSpecDecl,), LSD)
-end
-
-function clang_LinkageSpecDecl_castFromDeclContext(DC)
-    ccall((:clang_LinkageSpecDecl_castFromDeclContext, libclangex), CXLinkageSpecDecl, (CXDeclContext,), DC)
-end
-
-const CXIntegerLiteral = Ptr{Cvoid}
-
-function clang_IntegerLiteral_Create(C, Val, T, L)
-    ccall((:clang_IntegerLiteral_Create, libclangex), CXIntegerLiteral, (CXASTContext, LLVMGenericValueRef, CXQualType, CXSourceLocation_), C, Val, T, L)
-end
-
-function clang_IntegerLiteral_getBeginLoc(IL)
-    ccall((:clang_IntegerLiteral_getBeginLoc, libclangex), CXSourceLocation_, (CXIntegerLiteral,), IL)
-end
-
-function clang_IntegerLiteral_getEndLoc(IL)
-    ccall((:clang_IntegerLiteral_getEndLoc, libclangex), CXSourceLocation_, (CXIntegerLiteral,), IL)
-end
-
-function clang_IntegerLiteral_getLocation(IL)
-    ccall((:clang_IntegerLiteral_getLocation, libclangex), CXSourceLocation_, (CXIntegerLiteral,), IL)
-end
-
-function clang_IntegerLiteral_setLocation(IL, L)
-    ccall((:clang_IntegerLiteral_setLocation, libclangex), Cvoid, (CXIntegerLiteral, CXSourceLocation_), IL, L)
-end
-
-@enum CXExprValueKind::UInt32 begin
-    CXExprValueKind_VK_RValue = 0
-    CXExprValueKind_VK_LValue = 1
-    CXExprValueKind_VK_XValue = 2
-end
-
-@enum CXCastKind::UInt32 begin
-    CK_Dependent = 0
-    CK_BitCast = 1
-    CK_LValueBitCast = 2
-    CK_LValueToRValueBitCast = 3
-    CK_LValueToRValue = 4
-    CK_NoOp = 5
-    CK_BaseToDerived = 6
-    CK_DerivedToBase = 7
-    CK_UncheckedDerivedToBase = 8
-    CK_Dynamic = 9
-    CK_ToUnion = 10
-    CK_ArrayToPointerDecay = 11
-    CK_FunctionToPointerDecay = 12
-    CK_NullToPointer = 13
-    CK_NullToMemberPointer = 14
-    CK_BaseToDerivedMemberPointer = 15
-    CK_DerivedToBaseMemberPointer = 16
-    CK_MemberPointerToBoolean = 17
-    CK_ReinterpretMemberPointer = 18
-    CK_UserDefinedConversion = 19
-    CK_ConstructorConversion = 20
-    CK_IntegralToPointer = 21
-    CK_PointerToIntegral = 22
-    CK_PointerToBoolean = 23
-    CK_ToVoid = 24
-    CK_VectorSplat = 25
-    CK_IntegralCast = 26
-    CK_IntegralToBoolean = 27
-    CK_IntegralToFloating = 28
-    CK_FloatingToFixedPoint = 29
-    CK_FixedPointToFloating = 30
-    CK_FixedPointCast = 31
-    CK_FixedPointToIntegral = 32
-    CK_IntegralToFixedPoint = 33
-    CK_FixedPointToBoolean = 34
-    CK_FloatingToIntegral = 35
-    CK_FloatingToBoolean = 36
-    CK_BooleanToSignedIntegral = 37
-    CK_FloatingCast = 38
-    CK_CPointerToObjCPointerCast = 39
-    CK_BlockPointerToObjCPointerCast = 40
-    CK_AnyPointerToBlockPointerCast = 41
-    CK_ObjCObjectLValueCast = 42
-    CK_FloatingRealToComplex = 43
-    CK_FloatingComplexToReal = 44
-    CK_FloatingComplexToBoolean = 45
-    CK_FloatingComplexCast = 46
-    CK_FloatingComplexToIntegralComplex = 47
-    CK_IntegralRealToComplex = 48
-    CK_IntegralComplexToReal = 49
-    CK_IntegralComplexToBoolean = 50
-    CK_IntegralComplexCast = 51
-    CK_IntegralComplexToFloatingComplex = 52
-    CK_ARCProduceObject = 53
-    CK_ARCConsumeObject = 54
-    CK_ARCReclaimReturnedObject = 55
-    CK_ARCExtendBlockObject = 56
-    CK_AtomicToNonAtomic = 57
-    CK_NonAtomicToAtomic = 58
-    CK_CopyAndAutoreleaseBlockObject = 59
-    CK_BuiltinFnToFnPtr = 60
-    CK_ZeroToOCLOpaqueType = 61
-    CK_AddressSpaceConversion = 62
-    CK_IntToOCLSampler = 63
-end
-
-const CXCStyleCastExpr = Ptr{Cvoid}
-
-function clang_CStyleCastExpr_CreateWithNoTypeInfo(C, T, VK, K, Op)
-    ccall((:clang_CStyleCastExpr_CreateWithNoTypeInfo, libclangex), CXCStyleCastExpr, (CXASTContext, CXQualType, CXExprValueKind, CXCastKind, CXExpr), C, T, VK, K, Op)
-end
-
-function clang_CStyleCastExpr_CreateEmpty(C, PathSize, HasFPFeatures)
-    ccall((:clang_CStyleCastExpr_CreateEmpty, libclangex), CXCStyleCastExpr, (CXASTContext, Cuint, Bool), C, PathSize, HasFPFeatures)
-end
-
-function clang_CStyleCastExpr_getLParenLoc(CSCE)
-    ccall((:clang_CStyleCastExpr_getLParenLoc, libclangex), CXSourceLocation_, (CXCStyleCastExpr,), CSCE)
-end
-
-function clang_CStyleCastExpr_setLParenLoc(CSCE, L)
-    ccall((:clang_CStyleCastExpr_setLParenLoc, libclangex), Cvoid, (CXCStyleCastExpr, CXSourceLocation_), CSCE, L)
-end
-
-function clang_CStyleCastExpr_getRParenLoc(CSCE)
-    ccall((:clang_CStyleCastExpr_getRParenLoc, libclangex), CXSourceLocation_, (CXCStyleCastExpr,), CSCE)
-end
-
-function clang_CStyleCastExpr_setRParenLoc(CSCE, L)
-    ccall((:clang_CStyleCastExpr_setRParenLoc, libclangex), Cvoid, (CXCStyleCastExpr, CXSourceLocation_), CSCE, L)
-end
-
-function clang_CStyleCastExpr_getBeginLoc(CSCE)
-    ccall((:clang_CStyleCastExpr_getBeginLoc, libclangex), CXSourceLocation_, (CXCStyleCastExpr,), CSCE)
-end
-
-function clang_CStyleCastExpr_getEndLoc(CSCE)
-    ccall((:clang_CStyleCastExpr_getEndLoc, libclangex), CXSourceLocation_, (CXCStyleCastExpr,), CSCE)
-end
-
-const CXDiagnosticOptions = Ptr{Cvoid}
-
-function clang_DiagnosticOptions_create(ErrorCode)
-    ccall((:clang_DiagnosticOptions_create, libclangex), CXDiagnosticOptions, (Ptr{CXInit_Error},), ErrorCode)
-end
-
-function clang_DiagnosticOptions_dispose(DO)
-    ccall((:clang_DiagnosticOptions_dispose, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
-end
-
-function clang_DiagnosticOptions_PrintStats(DO)
-    ccall((:clang_DiagnosticOptions_PrintStats, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
-end
-
-function clang_DiagnosticOptions_setShowColors(DO, ShowColors)
-    ccall((:clang_DiagnosticOptions_setShowColors, libclangex), Cvoid, (CXDiagnosticOptions, Bool), DO, ShowColors)
-end
-
-function clang_DiagnosticOptions_setShowPresumedLoc(DO, ShowPresumedLoc)
-    ccall((:clang_DiagnosticOptions_setShowPresumedLoc, libclangex), Cvoid, (CXDiagnosticOptions, Bool), DO, ShowPresumedLoc)
-end
-
-function clang_Preprocessor_getHeaderSearchInfo(PP)
-    ccall((:clang_Preprocessor_getHeaderSearchInfo, libclangex), CXHeaderSearch, (CXPreprocessor,), PP)
-end
-
-function clang_Preprocessor_EnterMainSourceFile(PP)
-    ccall((:clang_Preprocessor_EnterMainSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
-end
-
-const CXFileID = Ptr{Cvoid}
-
-function clang_Preprocessor_EnterSourceFile(PP, FID, Loc)
-    ccall((:clang_Preprocessor_EnterSourceFile, libclangex), Bool, (CXPreprocessor, CXFileID, CXSourceLocation_), PP, FID, Loc)
-end
-
-function clang_Preprocessor_EndSourceFile(PP)
-    ccall((:clang_Preprocessor_EndSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
-end
-
-function clang_Preprocessor_PrintStats(PP)
-    ccall((:clang_Preprocessor_PrintStats, libclangex), Cvoid, (CXPreprocessor,), PP)
-end
-
-function clang_Preprocessor_InitializeBuiltins(PP)
-    ccall((:clang_Preprocessor_InitializeBuiltins, libclangex), Cvoid, (CXPreprocessor,), PP)
-end
-
-function clang_Preprocessor_enableIncrementalProcessing(PP)
-    ccall((:clang_Preprocessor_enableIncrementalProcessing, libclangex), Cvoid, (CXPreprocessor,), PP)
-end
-
-function clang_Preprocessor_isIncrementalProcessingEnabled(PP)
-    ccall((:clang_Preprocessor_isIncrementalProcessingEnabled, libclangex), Bool, (CXPreprocessor,), PP)
-end
-
-function clang_Preprocessor_DumpToken(PP, Tok, DumpFlags)
-    ccall((:clang_Preprocessor_DumpToken, libclangex), Cvoid, (CXPreprocessor, CXToken_, Bool), PP, Tok, DumpFlags)
-end
-
-function clang_Preprocessor_DumpLocation(PP, Loc)
-    ccall((:clang_Preprocessor_DumpLocation, libclangex), Cvoid, (CXPreprocessor, CXSourceLocation_), PP, Loc)
-end
-
-const CXSourceManager = Ptr{Cvoid}
-
-const CXLexer = Ptr{Cvoid}
-
-function clang_Lexer_create(FID, FromFile, SM, langOpts, ErrorCode)
-    ccall((:clang_Lexer_create, libclangex), CXLexer, (CXFileID, LLVMMemoryBufferRef, CXSourceManager, CXLangOptions, Ptr{CXInit_Error}), FID, FromFile, SM, langOpts, ErrorCode)
-end
-
-function clang_Lexer_dispose(Lex)
-    ccall((:clang_Lexer_dispose, libclangex), Cvoid, (CXLexer,), Lex)
-end
-
-const CXAnnotationValue = Ptr{Cvoid}
-
-function clang_Token_getAnnotationValue(Tok)
-    ccall((:clang_Token_getAnnotationValue, libclangex), CXAnnotationValue, (CXToken_,), Tok)
-end
-
-function clang_Token_getLocation(Tok)
-    ccall((:clang_Token_getLocation, libclangex), CXSourceLocation_, (CXToken_,), Tok)
-end
-
-function clang_Token_getAnnotationEndLoc(Tok)
-    ccall((:clang_Token_getAnnotationEndLoc, libclangex), CXSourceLocation_, (CXToken_,), Tok)
-end
-
-function clang_Token_isKind_eof(Tok)
-    ccall((:clang_Token_isKind_eof, libclangex), Bool, (CXToken_,), Tok)
-end
-
-function clang_Token_isKind_identifier(Tok)
-    ccall((:clang_Token_isKind_identifier, libclangex), Bool, (CXToken_,), Tok)
-end
-
-function clang_Token_isKind_coloncolon(Tok)
-    ccall((:clang_Token_isKind_coloncolon, libclangex), Bool, (CXToken_,), Tok)
-end
-
-function clang_Token_isKind_annot_cxxscope(Tok)
-    ccall((:clang_Token_isKind_annot_cxxscope, libclangex), Bool, (CXToken_,), Tok)
-end
-
-function clang_Token_isKind_annot_typename(Tok)
-    ccall((:clang_Token_isKind_annot_typename, libclangex), Bool, (CXToken_,), Tok)
-end
-
-function clang_Token_isKind_annot_template_id(Tok)
-    ccall((:clang_Token_isKind_annot_template_id, libclangex), Bool, (CXToken_,), Tok)
-end
-
-function clang_Token_isKind_kw_enum(Tok)
-    ccall((:clang_Token_isKind_kw_enum, libclangex), Bool, (CXToken_,), Tok)
-end
-
-function clang_Token_isKind_kw_typename(Tok)
-    ccall((:clang_Token_isKind_kw_typename, libclangex), Bool, (CXToken_,), Tok)
-end
-
-function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
-    ccall((:clang_ParseAST, libclangex), Cvoid, (CXSema, Bool, Bool), Sema, PrintStats, SkipFunctionBodies)
-end
-
-const CXCodeGenerator = Ptr{Cvoid}
-
-function clang_Parser_tryParseAndSkipInvalidOrParsedDecl(Parser, CodeGen)
-    ccall((:clang_Parser_tryParseAndSkipInvalidOrParsedDecl, libclangex), Bool, (CXParser, CXCodeGenerator), Parser, CodeGen)
-end
-
 const CXASTConsumer = Ptr{Cvoid}
+
+const CXASTContext = Ptr{Cvoid}
 
 const CXTranslationUnitDecl = Ptr{Cvoid}
 
@@ -1273,9 +36,13 @@ const CXPragmaDetectMismatchDecl = Ptr{Cvoid}
 
 const CXExternCContextDecl = Ptr{Cvoid}
 
+const CXNamedDecl = Ptr{Cvoid}
+
 const CXLabelDecl = Ptr{Cvoid}
 
 const CXNamespaceDecl = Ptr{Cvoid}
+
+const CXValueDecl = Ptr{Cvoid}
 
 const CXDeclaratorDecl = Ptr{Cvoid}
 
@@ -1323,7 +90,25 @@ const CXEmptyDecl = Ptr{Cvoid}
 
 const CXDeclarationName = Ptr{Cvoid}
 
+const CXDeclarationNameInfo = Ptr{Cvoid}
+
+const CXDecl = Ptr{Cvoid}
+
+const CXDeclContext = Ptr{Cvoid}
+
+const CXAccessSpecDecl = Ptr{Cvoid}
+
+const CXCXXBaseSpecifier = Ptr{Cvoid}
+
+const CXCXXRecordDecl = Ptr{Cvoid}
+
+const CXExplicitSpecifier = Ptr{Cvoid}
+
 const CXCXXDeductionGuideDecl = Ptr{Cvoid}
+
+const CXRequiresExprBodyDecl = Ptr{Cvoid}
+
+const CXCXXMethodDecl = Ptr{Cvoid}
 
 const CXCXXCtorInitializer = Ptr{Cvoid}
 
@@ -1332,6 +117,8 @@ const CXCXXConstructorDecl = Ptr{Cvoid}
 const CXCXXDestructorDecl = Ptr{Cvoid}
 
 const CXCXXConversionDecl = Ptr{Cvoid}
+
+const CXLinkageSpecDecl = Ptr{Cvoid}
 
 const CXUsingDirectiveDecl = Ptr{Cvoid}
 
@@ -1361,11 +148,21 @@ const CXMSPropertyDecl = Ptr{Cvoid}
 
 const CXMSGuidDecl = Ptr{Cvoid}
 
+const CXDeclGroupRef = Ptr{Cvoid}
+
+const CXTemplateParameterList = Ptr{Cvoid}
+
+const CXTemplateArgumentList = Ptr{Cvoid}
+
+const CXTemplateDecl = Ptr{Cvoid}
+
 const CXFunctionTemplateSpecializationInfo = Ptr{Cvoid}
 
 const CXMemberSpecializationInfo = Ptr{Cvoid}
 
 const CXDependentFunctionTemplateSpecializationInfo = Ptr{Cvoid}
+
+const CXRedeclarableTemplateDecl = Ptr{Cvoid}
 
 const CXFunctionTemplateDecl = Ptr{Cvoid}
 
@@ -1377,7 +174,11 @@ const CXTemplateTemplateParmDecl = Ptr{Cvoid}
 
 const CXBuiltinTemplateDecl = Ptr{Cvoid}
 
+const CXClassTemplateSpecializationDecl = Ptr{Cvoid}
+
 const CXClassTemplatePartialSpecializationDecl = Ptr{Cvoid}
+
+const CXClassTemplateDecl = Ptr{Cvoid}
 
 const CXFriendTemplateDecl = Ptr{Cvoid}
 
@@ -1395,6 +196,8 @@ const CXConceptDecl = Ptr{Cvoid}
 
 const CXTemplateParamObjectDecl = Ptr{Cvoid}
 
+const CXExpr = Ptr{Cvoid}
+
 const CXFullExpr = Ptr{Cvoid}
 
 const CXConstantExpr = Ptr{Cvoid}
@@ -1409,6 +212,8 @@ const CXAPIntStorage = Ptr{Cvoid}
 
 const CXAPFloatStorage = Ptr{Cvoid}
 
+const CXIntegerLiteral = Ptr{Cvoid}
+
 const CXFixedPointLiteral = Ptr{Cvoid}
 
 const CXCharacterLiteral = Ptr{Cvoid}
@@ -1416,6 +221,8 @@ const CXCharacterLiteral = Ptr{Cvoid}
 const CXFloatingLiteral = Ptr{Cvoid}
 
 const CXImaginaryLiteral = Ptr{Cvoid}
+
+const CXStringLiteral = Ptr{Cvoid}
 
 const CXPredefinedExpr = Ptr{Cvoid}
 
@@ -1444,6 +251,8 @@ const CXCastExpr = Ptr{Cvoid}
 const CXImplicitCastExpr = Ptr{Cvoid}
 
 const CXExplicitCastExpr = Ptr{Cvoid}
+
+const CXCStyleCastExpr = Ptr{Cvoid}
 
 const CXBinaryOperator = Ptr{Cvoid}
 
@@ -1613,9 +422,15 @@ const CXCoyieldExpr = Ptr{Cvoid}
 
 const CXBuiltinBitCastExpr = Ptr{Cvoid}
 
+const CXMangleContext = Ptr{Cvoid}
+
 const CXItaniumMangleContext = Ptr{Cvoid}
 
 const CXMicrosoftMangleContext = Ptr{Cvoid}
+
+const CXASTNameGenerator = Ptr{Cvoid}
+
+const CXNestedNameSpecifier = Ptr{Cvoid}
 
 const CXStmt = Ptr{Cvoid}
 
@@ -1684,6 +499,8 @@ const CXMSDependentExistsStmt = Ptr{Cvoid}
 const CXCoroutineBodyStmt = Ptr{Cvoid}
 
 const CXCoreturnStmt = Ptr{Cvoid}
+
+const CXQualType = Ptr{Cvoid}
 
 const CXType_ = Ptr{Cvoid}
 
@@ -1813,6 +630,10 @@ const CXDependentExtIntType = Ptr{Cvoid}
 
 const CXQualifierCollector = Ptr{Cvoid}
 
+const CXTypeSourceInfo = Ptr{Cvoid}
+
+const CXTemplateName = Ptr{Cvoid}
+
 const CXTemplateArgumentLocInfo = Ptr{Cvoid}
 
 const CXTemplateArgumentLoc = Ptr{Cvoid}
@@ -1821,19 +642,84 @@ const CXTemplateArgumentListInfo = Ptr{Cvoid}
 
 const CXASTTemplateArgumentListInfo = Ptr{Cvoid}
 
+const CXTemplateArgument = Ptr{Cvoid}
+
+const CXCodeGenOptions = Ptr{Cvoid}
+
 const CXDiagnosticConsumer = Ptr{Cvoid}
+
+const CXDiagnosticsEngine = Ptr{Cvoid}
+
+const CXDiagnosticIDs = Ptr{Cvoid}
+
+const CXDiagnosticOptions = Ptr{Cvoid}
+
+const CXFileEntry = Ptr{Cvoid}
+
+const CXDirectoryEntry = Ptr{Cvoid}
+
+const CXFileEntryRef = Ptr{Cvoid}
+
+const CXFileManager = Ptr{Cvoid}
+
+const CXIdentifierInfo = Ptr{Cvoid}
 
 const CXIdentifierTable = Ptr{Cvoid}
 
+const CXLangOptions = Ptr{Cvoid}
+
 const CXModule = Ptr{Cvoid}
 
+const CXSourceLocation_ = Ptr{Cvoid}
+
+struct CXSourceRange_
+    B::CXSourceLocation_
+    E::CXSourceLocation_
+end
+
+const CXFileID = Ptr{Cvoid}
+
+const CXSourceManager = Ptr{Cvoid}
+
+const CXTargetInfo_ = Ptr{Cvoid}
+
+const CXTargetOptions = Ptr{Cvoid}
+
 const CXCodeGenAction = Ptr{Cvoid}
+
+const CXCodeGenerator = Ptr{Cvoid}
+
+const CXCodeGenModule = Ptr{Cvoid}
 
 const CXCompilerInstance = Ptr{Cvoid}
 
 const CXCompilerInvocation = Ptr{Cvoid}
 
+const CXFrontendOptions = Ptr{Cvoid}
+
+const CXHeaderSearch = Ptr{Cvoid}
+
+const CXHeaderSearchOptions = Ptr{Cvoid}
+
+const CXLexer = Ptr{Cvoid}
+
+const CXPreprocessor = Ptr{Cvoid}
+
+const CXPreprocessorOptions = Ptr{Cvoid}
+
+const CXToken_ = Ptr{Cvoid}
+
+const CXAnnotationValue = Ptr{Cvoid}
+
+const CXParser = Ptr{Cvoid}
+
+const CXSema = Ptr{Cvoid}
+
+const CXCXXScopeSpec = Ptr{Cvoid}
+
 const CXLookupResult = Ptr{Cvoid}
+
+const CXScope = Ptr{Cvoid}
 
 @enum CXTranslationUnitKind::UInt32 begin
     CXTranslationUnitKind_TU_Complete = 0
@@ -1844,581 +730,12 @@ end
 
 const CXFrontendAction = Ptr{Cvoid}
 
-function clang_SourceLocation_createInvalid()
-    ccall((:clang_SourceLocation_createInvalid, libclangex), CXSourceLocation_, ())
+function clang_Stmt_EnableStatistics()
+    ccall((:clang_Stmt_EnableStatistics, libclangex), Cvoid, ())
 end
 
-function clang_SourceLocation_isFileID(Loc)
-    ccall((:clang_SourceLocation_isFileID, libclangex), Bool, (CXSourceLocation_,), Loc)
-end
-
-function clang_SourceLocation_isMacroID(Loc)
-    ccall((:clang_SourceLocation_isMacroID, libclangex), Bool, (CXSourceLocation_,), Loc)
-end
-
-function clang_SourceLocation_isValid(Loc)
-    ccall((:clang_SourceLocation_isValid, libclangex), Bool, (CXSourceLocation_,), Loc)
-end
-
-function clang_SourceLocation_isInvalid(Loc)
-    ccall((:clang_SourceLocation_isInvalid, libclangex), Bool, (CXSourceLocation_,), Loc)
-end
-
-function clang_SourceLocation_isPairOfFileLocations(Start, End)
-    ccall((:clang_SourceLocation_isPairOfFileLocations, libclangex), Bool, (CXSourceLocation_, CXSourceLocation_), Start, End)
-end
-
-function clang_SourceLocation_getHashValue(Loc)
-    ccall((:clang_SourceLocation_getHashValue, libclangex), Cuint, (CXSourceLocation_,), Loc)
-end
-
-function clang_SourceLocation_dump(Loc, SM)
-    ccall((:clang_SourceLocation_dump, libclangex), Cvoid, (CXSourceLocation_, CXSourceManager), Loc, SM)
-end
-
-function clang_SourceLocation_printToString(Loc, SM)
-    ccall((:clang_SourceLocation_printToString, libclangex), CXString, (CXSourceLocation_, CXSourceManager), Loc, SM)
-end
-
-function clang_SourceLocation_getLocWithOffset(Loc, Offset)
-    ccall((:clang_SourceLocation_getLocWithOffset, libclangex), CXSourceLocation_, (CXSourceLocation_, Cint), Loc, Offset)
-end
-
-function clang_Decl_getLocation(DC)
-    ccall((:clang_Decl_getLocation, libclangex), CXSourceLocation_, (CXDecl,), DC)
-end
-
-function clang_Decl_getBeginLoc(DC)
-    ccall((:clang_Decl_getBeginLoc, libclangex), CXSourceLocation_, (CXDecl,), DC)
-end
-
-function clang_Decl_getEndLoc(DC)
-    ccall((:clang_Decl_getEndLoc, libclangex), CXSourceLocation_, (CXDecl,), DC)
-end
-
-function clang_Decl_getDeclKindName(DC)
-    ccall((:clang_Decl_getDeclKindName, libclangex), Ptr{Cchar}, (CXDecl,), DC)
-end
-
-function clang_Decl_getNextDeclInContext(DC)
-    ccall((:clang_Decl_getNextDeclInContext, libclangex), CXDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_getDeclContext(DC)
-    ccall((:clang_Decl_getDeclContext, libclangex), CXDeclContext, (CXDecl,), DC)
-end
-
-function clang_Decl_getNonClosureContext(DC)
-    ccall((:clang_Decl_getNonClosureContext, libclangex), CXDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_getTranslationUnitDecl(DC)
-    ccall((:clang_Decl_getTranslationUnitDecl, libclangex), CXTranslationUnitDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_isInAnonymousNamespace(DC)
-    ccall((:clang_Decl_isInAnonymousNamespace, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_isInStdNamespace(DC)
-    ccall((:clang_Decl_isInStdNamespace, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_getASTContext(DC)
-    ccall((:clang_Decl_getASTContext, libclangex), CXASTContext, (CXDecl,), DC)
-end
-
-function clang_Decl_getLangOpts(DC)
-    ccall((:clang_Decl_getLangOpts, libclangex), CXLangOptions, (CXDecl,), DC)
-end
-
-function clang_Decl_getLexicalDeclContext(DC)
-    ccall((:clang_Decl_getLexicalDeclContext, libclangex), CXDeclContext, (CXDecl,), DC)
-end
-
-function clang_Decl_isOutOfLine(DC)
-    ccall((:clang_Decl_isOutOfLine, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_setDeclContext(DC, Ctx)
-    ccall((:clang_Decl_setDeclContext, libclangex), Cvoid, (CXDecl, CXDeclContext), DC, Ctx)
-end
-
-function clang_Decl_setLexicalDeclContext(DC, Ctx)
-    ccall((:clang_Decl_setLexicalDeclContext, libclangex), Cvoid, (CXDecl, CXDeclContext), DC, Ctx)
-end
-
-function clang_Decl_isTemplated(DC)
-    ccall((:clang_Decl_isTemplated, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_getTemplateDepth(DC)
-    ccall((:clang_Decl_getTemplateDepth, libclangex), Cuint, (CXDecl,), DC)
-end
-
-function clang_Decl_isDefinedOutsideFunctionOrMethod(DC)
-    ccall((:clang_Decl_isDefinedOutsideFunctionOrMethod, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_isInLocalScopeForInstantiation(DC)
-    ccall((:clang_Decl_isInLocalScopeForInstantiation, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_getParentFunctionOrMethod(DC)
-    ccall((:clang_Decl_getParentFunctionOrMethod, libclangex), CXDeclContext, (CXDecl,), DC)
-end
-
-function clang_Decl_getCanonicalDecl(DC)
-    ccall((:clang_Decl_getCanonicalDecl, libclangex), CXDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_isCanonicalDecl(DC)
-    ccall((:clang_Decl_isCanonicalDecl, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_getPreviousDecl(DC)
-    ccall((:clang_Decl_getPreviousDecl, libclangex), CXDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_isFirstDecl(DC)
-    ccall((:clang_Decl_isFirstDecl, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_getMostRecentDecl(DC)
-    ccall((:clang_Decl_getMostRecentDecl, libclangex), CXDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_isTemplateParameter(DC)
-    ccall((:clang_Decl_isTemplateParameter, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_isTemplateParameterPack(DC)
-    ccall((:clang_Decl_isTemplateParameterPack, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_isParameterPack(DC)
-    ccall((:clang_Decl_isParameterPack, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_isTemplateDecl(DC)
-    ccall((:clang_Decl_isTemplateDecl, libclangex), Bool, (CXDecl,), DC)
-end
-
-function clang_Decl_getDescribedTemplate(DC)
-    ccall((:clang_Decl_getDescribedTemplate, libclangex), CXTemplateDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_getDescribedTemplateParams(DC)
-    ccall((:clang_Decl_getDescribedTemplateParams, libclangex), CXTemplateParameterList, (CXDecl,), DC)
-end
-
-function clang_Decl_getAsFunction(DC)
-    ccall((:clang_Decl_getAsFunction, libclangex), CXFunctionDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_dump(DC)
-    ccall((:clang_Decl_dump, libclangex), Cvoid, (CXDecl,), DC)
-end
-
-function clang_Decl_dumpColor(DC)
-    ccall((:clang_Decl_dumpColor, libclangex), Cvoid, (CXDecl,), DC)
-end
-
-function clang_Decl_getID(DC)
-    ccall((:clang_Decl_getID, libclangex), Int64, (CXDecl,), DC)
-end
-
-function clang_Decl_getFunctionType(DC, BlocksToo)
-    ccall((:clang_Decl_getFunctionType, libclangex), CXFunctionType, (CXDecl, Bool), DC, BlocksToo)
-end
-
-function clang_Decl_EnableStatistics()
-    ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
-end
-
-function clang_Decl_PrintStats()
-    ccall((:clang_Decl_PrintStats, libclangex), Cvoid, ())
-end
-
-function clang_Decl_castToDeclContext(D)
-    ccall((:clang_Decl_castToDeclContext, libclangex), CXDeclContext, (CXDecl,), D)
-end
-
-function clang_Decl_castFromDeclContext(DC)
-    ccall((:clang_Decl_castFromDeclContext, libclangex), CXDecl, (CXDeclContext,), DC)
-end
-
-function clang_Decl_castToClassTemplateDecl(DC)
-    ccall((:clang_Decl_castToClassTemplateDecl, libclangex), CXClassTemplateDecl, (CXDecl,), DC)
-end
-
-function clang_Decl_castToValueDecl(DC)
-    ccall((:clang_Decl_castToValueDecl, libclangex), CXValueDecl, (CXDecl,), DC)
-end
-
-function clang_DeclContext_castToTagDecl(DC)
-    ccall((:clang_DeclContext_castToTagDecl, libclangex), CXTagDecl, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_castToRecordDecl(DC)
-    ccall((:clang_DeclContext_castToRecordDecl, libclangex), CXRecordDecl, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_castToCXXRecordDecl(DC)
-    ccall((:clang_DeclContext_castToCXXRecordDecl, libclangex), CXCXXRecordDecl, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_getDeclKindName(DC)
-    ccall((:clang_DeclContext_getDeclKindName, libclangex), Ptr{Cchar}, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_getParent(DC)
-    ccall((:clang_DeclContext_getParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_getLexicalParent(DC)
-    ccall((:clang_DeclContext_getLexicalParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_getLookupParent(DC)
-    ccall((:clang_DeclContext_getLookupParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_getParentASTContext(DC)
-    ccall((:clang_DeclContext_getParentASTContext, libclangex), CXASTContext, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isClosure(DC)
-    ccall((:clang_DeclContext_isClosure, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isFunctionOrMethod(DC)
-    ccall((:clang_DeclContext_isFunctionOrMethod, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isLookupContext(DC)
-    ccall((:clang_DeclContext_isLookupContext, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isFileContext(DC)
-    ccall((:clang_DeclContext_isFileContext, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isTranslationUnit(DC)
-    ccall((:clang_DeclContext_isTranslationUnit, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isRecord(DC)
-    ccall((:clang_DeclContext_isRecord, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isNamespace(DC)
-    ccall((:clang_DeclContext_isNamespace, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isStdNamespace(DC)
-    ccall((:clang_DeclContext_isStdNamespace, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isInlineNamespace(DC)
-    ccall((:clang_DeclContext_isInlineNamespace, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isDependentContext(DC)
-    ccall((:clang_DeclContext_isDependentContext, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isTransparentContext(DC)
-    ccall((:clang_DeclContext_isTransparentContext, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isExternCContext(DC)
-    ccall((:clang_DeclContext_isExternCContext, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_isExternCXXContext(DC)
-    ccall((:clang_DeclContext_isExternCXXContext, libclangex), Bool, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_Equals(DC, DC2)
-    ccall((:clang_DeclContext_Equals, libclangex), Bool, (CXDeclContext, CXDeclContext), DC, DC2)
-end
-
-function clang_DeclContext_getPrimaryContext(DC)
-    ccall((:clang_DeclContext_getPrimaryContext, libclangex), CXDeclContext, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_decl_iterator_begin(DC)
-    ccall((:clang_DeclContext_decl_iterator_begin, libclangex), CXDecl, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_addDecl(DC, D)
-    ccall((:clang_DeclContext_addDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
-end
-
-function clang_DeclContext_addDeclInternal(DC, D)
-    ccall((:clang_DeclContext_addDeclInternal, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
-end
-
-function clang_DeclContext_addHiddenDecl(DC, D)
-    ccall((:clang_DeclContext_addHiddenDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
-end
-
-function clang_DeclContext_removeDecl(DC, D)
-    ccall((:clang_DeclContext_removeDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
-end
-
-function clang_DeclContext_containsDecl(DC, D)
-    ccall((:clang_DeclContext_containsDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
-end
-
-function clang_DeclContext_dumpDeclContext(DC)
-    ccall((:clang_DeclContext_dumpDeclContext, libclangex), Cvoid, (CXDeclContext,), DC)
-end
-
-function clang_DeclContext_dumpLookups(DC)
-    ccall((:clang_DeclContext_dumpLookups, libclangex), Cvoid, (CXDeclContext,), DC)
-end
-
-function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
-    ccall((:clang_CreateLLVMCodeGen, libclangex), CXCodeGenerator, (CXCompilerInstance, LLVMContextRef, Ptr{Cchar}), CI, LLVMCtx, ModuleName)
-end
-
-function clang_CodeGenerator_CGM(CG)
-    ccall((:clang_CodeGenerator_CGM, libclangex), CXCodeGenModule, (CXCodeGenerator,), CG)
-end
-
-function clang_CodeGenerator_GetModule(CG)
-    ccall((:clang_CodeGenerator_GetModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
-end
-
-function clang_CodeGenerator_ReleaseModule(CG)
-    ccall((:clang_CodeGenerator_ReleaseModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
-end
-
-function clang_CodeGenerator_GetDeclForMangledName(CG, MangledName)
-    ccall((:clang_CodeGenerator_GetDeclForMangledName, libclangex), CXDecl, (CXCodeGenerator, Ptr{Cchar}), CG, MangledName)
-end
-
-function clang_CodeGenerator_StartModule(CG, LLVMCtx, ModuleName)
-    ccall((:clang_CodeGenerator_StartModule, libclangex), LLVMModuleRef, (CXCodeGenerator, LLVMContextRef, Ptr{Cchar}), CG, LLVMCtx, ModuleName)
-end
-
-function clang_CompilerInstance_create(ErrorCode)
-    ccall((:clang_CompilerInstance_create, libclangex), CXCompilerInstance, (Ptr{CXInit_Error},), ErrorCode)
-end
-
-function clang_CompilerInstance_dispose(CI)
-    ccall((:clang_CompilerInstance_dispose, libclangex), Cvoid, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_hasDiagnostics(CI)
-    ccall((:clang_CompilerInstance_hasDiagnostics, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getDiagnostics(CI)
-    ccall((:clang_CompilerInstance_getDiagnostics, libclangex), CXDiagnosticsEngine, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setDiagnostics(CI, Value)
-    ccall((:clang_CompilerInstance_setDiagnostics, libclangex), Cvoid, (CXCompilerInstance, CXDiagnosticsEngine), CI, Value)
-end
-
-function clang_CompilerInstance_getDiagnosticClient(CI)
-    ccall((:clang_CompilerInstance_getDiagnosticClient, libclangex), CXDiagnosticConsumer, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_createDiagnostics(CI, DC, ShouldOwnClient)
-    ccall((:clang_CompilerInstance_createDiagnostics, libclangex), Cvoid, (CXCompilerInstance, CXDiagnosticConsumer, Bool), CI, DC, ShouldOwnClient)
-end
-
-function clang_CompilerInstance_hasFileManager(CI)
-    ccall((:clang_CompilerInstance_hasFileManager, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getFileManager(CI)
-    ccall((:clang_CompilerInstance_getFileManager, libclangex), CXFileManager, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setFileManager(CI, FM)
-    ccall((:clang_CompilerInstance_setFileManager, libclangex), Cvoid, (CXCompilerInstance, CXFileManager), CI, FM)
-end
-
-function clang_CompilerInstance_createFileManager(CI)
-    ccall((:clang_CompilerInstance_createFileManager, libclangex), CXFileManager, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_createFileManagerWithVOFS4PCH(CI, Path, ModificationTime, PCHBuffer)
-    ccall((:clang_CompilerInstance_createFileManagerWithVOFS4PCH, libclangex), CXFileManager, (CXCompilerInstance, Ptr{Cchar}, time_t, LLVMMemoryBufferRef), CI, Path, ModificationTime, PCHBuffer)
-end
-
-function clang_CompilerInstance_hasSourceManager(CI)
-    ccall((:clang_CompilerInstance_hasSourceManager, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getSourceManager(CI)
-    ccall((:clang_CompilerInstance_getSourceManager, libclangex), CXSourceManager, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setSourceManager(CI, SM)
-    ccall((:clang_CompilerInstance_setSourceManager, libclangex), Cvoid, (CXCompilerInstance, CXSourceManager), CI, SM)
-end
-
-function clang_CompilerInstance_createSourceManager(CI, FileMgr)
-    ccall((:clang_CompilerInstance_createSourceManager, libclangex), Cvoid, (CXCompilerInstance, CXFileManager), CI, FileMgr)
-end
-
-function clang_CompilerInstance_hasInvocation(CI)
-    ccall((:clang_CompilerInstance_hasInvocation, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getInvocation(CI)
-    ccall((:clang_CompilerInstance_getInvocation, libclangex), CXCompilerInvocation, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setInvocation(CI, CInv)
-    ccall((:clang_CompilerInstance_setInvocation, libclangex), Cvoid, (CXCompilerInstance, CXCompilerInvocation), CI, CInv)
-end
-
-function clang_CompilerInstance_hasTarget(CI)
-    ccall((:clang_CompilerInstance_hasTarget, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getTarget(CI)
-    ccall((:clang_CompilerInstance_getTarget, libclangex), CXTargetInfo_, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setTarget(CI, Info)
-    ccall((:clang_CompilerInstance_setTarget, libclangex), Cvoid, (CXCompilerInstance, CXTargetInfo_), CI, Info)
-end
-
-function clang_CompilerInstance_setTargetAndLangOpts(CI)
-    ccall((:clang_CompilerInstance_setTargetAndLangOpts, libclangex), Cvoid, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_hasPreprocessor(CI)
-    ccall((:clang_CompilerInstance_hasPreprocessor, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getPreprocessor(CI)
-    ccall((:clang_CompilerInstance_getPreprocessor, libclangex), CXPreprocessor, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setPreprocessor(CI, PP)
-    ccall((:clang_CompilerInstance_setPreprocessor, libclangex), Cvoid, (CXCompilerInstance, CXPreprocessor), CI, PP)
-end
-
-function clang_CompilerInstance_createPreprocessor(CI, TUKind)
-    ccall((:clang_CompilerInstance_createPreprocessor, libclangex), Cvoid, (CXCompilerInstance, CXTranslationUnitKind), CI, TUKind)
-end
-
-function clang_CompilerInstance_hasSema(CI)
-    ccall((:clang_CompilerInstance_hasSema, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getSema(CI)
-    ccall((:clang_CompilerInstance_getSema, libclangex), CXSema, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setSema(CI, S)
-    ccall((:clang_CompilerInstance_setSema, libclangex), Cvoid, (CXCompilerInstance, CXSema), CI, S)
-end
-
-function clang_CompilerInstance_createSema(CI, TUKind)
-    ccall((:clang_CompilerInstance_createSema, libclangex), Cvoid, (CXCompilerInstance, CXTranslationUnitKind), CI, TUKind)
-end
-
-function clang_CompilerInstance_hasASTContext(CI)
-    ccall((:clang_CompilerInstance_hasASTContext, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getASTContext(CI)
-    ccall((:clang_CompilerInstance_getASTContext, libclangex), CXASTContext, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setASTContext(CI, Ctx)
-    ccall((:clang_CompilerInstance_setASTContext, libclangex), Cvoid, (CXCompilerInstance, CXASTContext), CI, Ctx)
-end
-
-function clang_CompilerInstance_createASTContext(CI)
-    ccall((:clang_CompilerInstance_createASTContext, libclangex), Cvoid, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_hasASTConsumer(CI)
-    ccall((:clang_CompilerInstance_hasASTConsumer, libclangex), Bool, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getASTConsumer(CI)
-    ccall((:clang_CompilerInstance_getASTConsumer, libclangex), CXASTConsumer, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_setASTConsumer(CI, CG)
-    ccall((:clang_CompilerInstance_setASTConsumer, libclangex), Cvoid, (CXCompilerInstance, CXASTConsumer), CI, CG)
-end
-
-function clang_CompilerInstance_getCodeGenOpts(CI)
-    ccall((:clang_CompilerInstance_getCodeGenOpts, libclangex), CXCodeGenOptions, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getDiagnosticOpts(CI)
-    ccall((:clang_CompilerInstance_getDiagnosticOpts, libclangex), CXDiagnosticOptions, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getFrontendOpts(CI)
-    ccall((:clang_CompilerInstance_getFrontendOpts, libclangex), CXFrontendOptions, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getHeaderSearchOpts(CI)
-    ccall((:clang_CompilerInstance_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getPreprocessorOpts(CI)
-    ccall((:clang_CompilerInstance_getPreprocessorOpts, libclangex), CXPreprocessorOptions, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getTargetOpts(CI)
-    ccall((:clang_CompilerInstance_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_getLangOpts(CI)
-    ccall((:clang_CompilerInstance_getLangOpts, libclangex), CXLangOptions, (CXCompilerInstance,), CI)
-end
-
-function clang_CompilerInstance_ExecuteAction(CI, Act)
-    ccall((:clang_CompilerInstance_ExecuteAction, libclangex), Bool, (CXCompilerInstance, CXFrontendAction), CI, Act)
-end
-
-function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
-    ccall((:clang_TextDiagnosticPrinter_create, libclangex), CXDiagnosticConsumer, (CXDiagnosticOptions, Ptr{CXInit_Error}), Opts, ErrorCode)
-end
-
-@enum CXTemplateSpecializationKind::UInt32 begin
-    CXTemplateSpecializationKind_TSK_Undeclared = 0
-    CXTemplateSpecializationKind_TSK_ImplicitInstantiation = 1
-    CXTemplateSpecializationKind_TSK_ExplicitSpecialization = 2
-    CXTemplateSpecializationKind_TSK_ExplicitInstantiationDeclaration = 3
-    CXTemplateSpecializationKind_TSK_ExplicitInstantiationDefinition = 4
-end
-
-@enum CXThreadStorageClassSpecifier::UInt32 begin
-    CXThreadStorageClassSpecifier_TSCS_unspecified = 0
-    CXThreadStorageClassSpecifier_TSCS___thread = 1
-    CXThreadStorageClassSpecifier_TSCS_thread_local = 2
-    CXThreadStorageClassSpecifier_TSCS__Thread_local = 3
-end
-
-@enum CXInClassInitStyle::UInt32 begin
-    CXInClassInitStyle_ICIS_NoInit = 0
-    CXInClassInitStyle_ICIS_CopyInit = 1
-    CXInClassInitStyle_ICIS_ListInit = 2
-end
-
-@enum CXStorageDuration::UInt32 begin
-    CXStorageDuration_SD_FullExpression = 0
-    CXStorageDuration_SD_Automatic = 1
-    CXStorageDuration_SD_Thread = 2
-    CXStorageDuration_SD_Static = 3
-    CXStorageDuration_SD_Dynamic = 4
+function clang_Stmt_PrintStats()
+    ccall((:clang_Stmt_PrintStats, libclangex), Cvoid, ())
 end
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
@@ -2433,114 +750,992 @@ function clang_ASTConsumer_PrintStats(Csr)
     ccall((:clang_ASTConsumer_PrintStats, libclangex), Cvoid, (CXASTConsumer,), Csr)
 end
 
-@enum CXDeclaratorContext::UInt32 begin
-    CXDeclaratorContext_File = 0
-    CXDeclaratorContext_Prototype = 1
-    CXDeclaratorContext_ObjCResult = 2
-    CXDeclaratorContext_ObjCParameter = 3
-    CXDeclaratorContext_KNRTypeList = 4
-    CXDeclaratorContext_TypeName = 5
-    CXDeclaratorContext_FunctionalCast = 6
-    CXDeclaratorContext_Member = 7
-    CXDeclaratorContext_Block = 8
-    CXDeclaratorContext_ForInit = 9
-    CXDeclaratorContext_SelectionInit = 10
-    CXDeclaratorContext_Condition = 11
-    CXDeclaratorContext_TemplateParam = 12
-    CXDeclaratorContext_CXXNew = 13
-    CXDeclaratorContext_CXXCatch = 14
-    CXDeclaratorContext_ObjCCatch = 15
-    CXDeclaratorContext_BlockLiteral = 16
-    CXDeclaratorContext_LambdaExpr = 17
-    CXDeclaratorContext_LambdaExprParameter = 18
-    CXDeclaratorContext_ConversionId = 19
-    CXDeclaratorContext_TrailingReturn = 20
-    CXDeclaratorContext_TrailingReturnVar = 21
-    CXDeclaratorContext_TemplateArg = 22
-    CXDeclaratorContext_TemplateTypeArg = 23
-    CXDeclaratorContext_AliasDecl = 24
-    CXDeclaratorContext_AliasTemplate = 25
-    CXDeclaratorContext_RequiresExpr = 26
+function clang_ASTContext_getSourceManager(Ctx)
+    ccall((:clang_ASTContext_getSourceManager, libclangex), CXSourceManager, (CXASTContext,), Ctx)
 end
 
-function clang_CXXScopeSpec_create(ErrorCode)
-    ccall((:clang_CXXScopeSpec_create, libclangex), CXCXXScopeSpec, (Ptr{CXInit_Error},), ErrorCode)
+function clang_ASTContext_getASTAllocatedMemory(Ctx)
+    ccall((:clang_ASTContext_getASTAllocatedMemory, libclangex), Csize_t, (CXASTContext,), Ctx)
 end
 
-function clang_CXXScopeSpec_dispose(SS)
-    ccall((:clang_CXXScopeSpec_dispose, libclangex), Cvoid, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_getSideTableAllocatedMemory(Ctx)
+    ccall((:clang_ASTContext_getSideTableAllocatedMemory, libclangex), Csize_t, (CXASTContext,), Ctx)
 end
 
-function clang_CXXScopeSpec_clear(SS)
-    ccall((:clang_CXXScopeSpec_clear, libclangex), Cvoid, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_getTargetInfo(Ctx)
+    ccall((:clang_ASTContext_getTargetInfo, libclangex), CXTargetInfo_, (CXASTContext,), Ctx)
 end
 
-function clang_CXXScopeSpec_getScopeRep(SS)
-    ccall((:clang_CXXScopeSpec_getScopeRep, libclangex), CXNestedNameSpecifier, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_getAuxTargetInfo(Ctx)
+    ccall((:clang_ASTContext_getAuxTargetInfo, libclangex), CXTargetInfo_, (CXASTContext,), Ctx)
 end
 
-function clang_CXXScopeSpec_getBeginLoc(SS)
-    ccall((:clang_CXXScopeSpec_getBeginLoc, libclangex), CXSourceLocation_, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_getIntTypeForBitwidth(Ctx, DestWidth, Signed)
+    ccall((:clang_ASTContext_getIntTypeForBitwidth, libclangex), CXQualType, (CXASTContext, Cuint, Cuint), Ctx, DestWidth, Signed)
 end
 
-function clang_CXXScopeSpec_getEndLoc(SS)
-    ccall((:clang_CXXScopeSpec_getEndLoc, libclangex), CXSourceLocation_, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_getRealTypeForBitwidth(Ctx, DestWidth, ExplicitIEEE)
+    ccall((:clang_ASTContext_getRealTypeForBitwidth, libclangex), CXQualType, (CXASTContext, Cuint, Bool), Ctx, DestWidth, ExplicitIEEE)
 end
 
-function clang_CXXScopeSpec_setBeginLoc(SS, Loc)
-    ccall((:clang_CXXScopeSpec_setBeginLoc, libclangex), Cvoid, (CXCXXScopeSpec, CXSourceLocation_), SS, Loc)
+function clang_ASTContext_AtomicUsesUnsupportedLibcall(Ctx, E)
+    ccall((:clang_ASTContext_AtomicUsesUnsupportedLibcall, libclangex), Bool, (CXASTContext, CXAtomicExpr), Ctx, E)
 end
 
-function clang_CXXScopeSpec_setEndLoc(SS, Loc)
-    ccall((:clang_CXXScopeSpec_setEndLoc, libclangex), Cvoid, (CXCXXScopeSpec, CXSourceLocation_), SS, Loc)
+function clang_ASTContext_getLangOpts(Ctx)
+    ccall((:clang_ASTContext_getLangOpts, libclangex), CXLangOptions, (CXASTContext,), Ctx)
 end
 
-function clang_CXXScopeSpec_isEmpty(SS)
-    ccall((:clang_CXXScopeSpec_isEmpty, libclangex), Bool, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_isDependceAllowed(Ctx)
+    ccall((:clang_ASTContext_isDependceAllowed, libclangex), Bool, (CXASTContext,), Ctx)
 end
 
-function clang_CXXScopeSpec_isNotEmpty(SS)
-    ccall((:clang_CXXScopeSpec_isNotEmpty, libclangex), Bool, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_getDiagnostics(Ctx)
+    ccall((:clang_ASTContext_getDiagnostics, libclangex), CXDiagnosticsEngine, (CXASTContext,), Ctx)
 end
 
-function clang_CXXScopeSpec_isInvalid(SS)
-    ccall((:clang_CXXScopeSpec_isInvalid, libclangex), Bool, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_eraseDeclAttrs(Ctx, D)
+    ccall((:clang_ASTContext_eraseDeclAttrs, libclangex), Cvoid, (CXASTContext, CXDecl), Ctx, D)
 end
 
-function clang_CXXScopeSpec_isValid(SS)
-    ccall((:clang_CXXScopeSpec_isValid, libclangex), Bool, (CXCXXScopeSpec,), SS)
+function clang_ASTContext_getInstantiatedFromUsingDecl(Ctx, Inst)
+    ccall((:clang_ASTContext_getInstantiatedFromUsingDecl, libclangex), CXNamedDecl, (CXASTContext, CXNamedDecl), Ctx, Inst)
 end
 
-@enum CXPragmaMSCommentKind::UInt32 begin
-    CXPragmaMSCommentKind_PCK_Unknown = 0
-    CXPragmaMSCommentKind_PCK_Linker = 1
-    CXPragmaMSCommentKind_PCK_Lib = 2
-    CXPragmaMSCommentKind_PCK_Compiler = 3
-    CXPragmaMSCommentKind_PCK_ExeStr = 4
-    CXPragmaMSCommentKind_PCK_User = 5
+function clang_ASTContext_setInstantiatedFromUsingDecl(Ctx, Inst, Pattern)
+    ccall((:clang_ASTContext_setInstantiatedFromUsingDecl, libclangex), Cvoid, (CXASTContext, CXNamedDecl, CXNamedDecl), Ctx, Inst, Pattern)
 end
 
-@enum CXPragmaMSStructKind::UInt32 begin
-    CXPragmaMSStructKind_PMSST_OFF = 0
-    CXPragmaMSStructKind_PMSST_ON = 1
+function clang_ASTContext_setInstantiatedFromUsingShadowDecl(Ctx, Inst, Pattern)
+    ccall((:clang_ASTContext_setInstantiatedFromUsingShadowDecl, libclangex), Cvoid, (CXASTContext, CXUsingShadowDecl, CXUsingShadowDecl), Ctx, Inst, Pattern)
 end
 
-@enum CXPragmaFloatControlKind::UInt32 begin
-    CXPragmaFloatControlKind_PFC_Unknown = 0
-    CXPragmaFloatControlKind_PFC_Precise = 1
-    CXPragmaFloatControlKind_PFC_NoPrecise = 2
-    CXPragmaFloatControlKind_PFC_Except = 3
-    CXPragmaFloatControlKind_PFC_NoExcept = 4
-    CXPragmaFloatControlKind_PFC_Push = 5
-    CXPragmaFloatControlKind_PFC_Pop = 6
+function clang_ASTContext_getInstantiatedFromUsingShadowDecl(Ctx, Inst)
+    ccall((:clang_ASTContext_getInstantiatedFromUsingShadowDecl, libclangex), CXUsingShadowDecl, (CXASTContext, CXUsingShadowDecl), Ctx, Inst)
 end
 
-function clang_IdentifierTable_PrintStats(IT)
-    ccall((:clang_IdentifierTable_PrintStats, libclangex), Cvoid, (CXIdentifierTable,), IT)
+function clang_ASTContext_getInstantiatedFromUnnamedFieldDecl(Ctx, Field)
+    ccall((:clang_ASTContext_getInstantiatedFromUnnamedFieldDecl, libclangex), CXFieldDecl, (CXASTContext, CXFieldDecl), Ctx, Field)
 end
 
-function clang_IdentifierTable_get(Idents, Name)
-    ccall((:clang_IdentifierTable_get, libclangex), CXIdentifierInfo, (CXIdentifierTable, Ptr{Cchar}), Idents, Name)
+function clang_ASTContext_setInstantiatedFromUnnamedFieldDecl(Ctx, Inst, Tmpl)
+    ccall((:clang_ASTContext_setInstantiatedFromUnnamedFieldDecl, libclangex), Cvoid, (CXASTContext, CXFieldDecl, CXFieldDecl), Ctx, Inst, Tmpl)
+end
+
+function clang_ASTContext_addOverriddenMethod(Ctx, Method, Overridden)
+    ccall((:clang_ASTContext_addOverriddenMethod, libclangex), Cvoid, (CXASTContext, CXCXXMethodDecl, CXCXXMethodDecl), Ctx, Method, Overridden)
+end
+
+function clang_ASTContext_addedLocalImportDecl(Ctx, Import)
+    ccall((:clang_ASTContext_addedLocalImportDecl, libclangex), Cvoid, (CXASTContext, CXImportDecl), Ctx, Import)
+end
+
+function clang_ASTContext_getPrimaryMergedDecl(Ctx, D)
+    ccall((:clang_ASTContext_getPrimaryMergedDecl, libclangex), CXDecl, (CXASTContext, CXDecl), Ctx, D)
+end
+
+function clang_ASTContext_setPrimaryMergedDecl(Ctx, D, Primary)
+    ccall((:clang_ASTContext_setPrimaryMergedDecl, libclangex), Cvoid, (CXASTContext, CXDecl, CXDecl), Ctx, D, Primary)
+end
+
+function clang_ASTContext_mergeDefinitionIntoModule(Ctx, ND, Module, NotifyListeners)
+    ccall((:clang_ASTContext_mergeDefinitionIntoModule, libclangex), Cvoid, (CXASTContext, CXNamedDecl, CXModule, Bool), Ctx, ND, Module, NotifyListeners)
+end
+
+function clang_ASTContext_deduplicateMergedDefinitonsFor(Ctx, ND)
+    ccall((:clang_ASTContext_deduplicateMergedDefinitonsFor, libclangex), Cvoid, (CXASTContext, CXNamedDecl), Ctx, ND)
+end
+
+function clang_ASTContext_getTranslationUnitDecl(Ctx)
+    ccall((:clang_ASTContext_getTranslationUnitDecl, libclangex), CXTranslationUnitDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getExternCContextDecl(Ctx)
+    ccall((:clang_ASTContext_getExternCContextDecl, libclangex), CXExternCContextDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getMakeIntegerSeqDecl(Ctx)
+    ccall((:clang_ASTContext_getMakeIntegerSeqDecl, libclangex), CXBuiltinTemplateDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getTypePackElementDecl(Ctx)
+    ccall((:clang_ASTContext_getTypePackElementDecl, libclangex), CXBuiltinTemplateDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_PrintStats(Ctx)
+    ccall((:clang_ASTContext_PrintStats, libclangex), Cvoid, (CXASTContext,), Ctx)
+end
+
+@enum CXTagTypeKind::UInt32 begin
+    CXTagTypeKind_TTK_Struct = 0
+    CXTagTypeKind_TTK_Interface = 1
+    CXTagTypeKind_TTK_Union = 2
+    CXTagTypeKind_TTK_Class = 3
+    CXTagTypeKind_TTK_Enum = 4
+end
+
+function clang_ASTContext_buildImplicitRecord(Ctx, Name, TK)
+    ccall((:clang_ASTContext_buildImplicitRecord, libclangex), CXRecordDecl, (CXASTContext, Ptr{Cchar}, CXTagTypeKind), Ctx, Name, TK)
+end
+
+function clang_ASTContext_buildImplicitTypedef(Ctx, T, Name)
+    ccall((:clang_ASTContext_buildImplicitTypedef, libclangex), CXTypedefDecl, (CXASTContext, CXQualType, Ptr{Cchar}), Ctx, T, Name)
+end
+
+function clang_ASTContext_getInt128Decl(Ctx)
+    ccall((:clang_ASTContext_getInt128Decl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getUInt128Decl(Ctx)
+    ccall((:clang_ASTContext_getUInt128Decl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_removeAddrSpaceQualType(Ctx, T)
+    ccall((:clang_ASTContext_removeAddrSpaceQualType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_removePtrSizeAddrSpace(Ctx, T)
+    ccall((:clang_ASTContext_removePtrSizeAddrSpace, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getRestrictType(Ctx, T)
+    ccall((:clang_ASTContext_getRestrictType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getVolatileType(Ctx, T)
+    ccall((:clang_ASTContext_getVolatileType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getConstType(Ctx, T)
+    ccall((:clang_ASTContext_getConstType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_adjustDeducedFunctionResultType(Ctx, FD, ResultType)
+    ccall((:clang_ASTContext_adjustDeducedFunctionResultType, libclangex), Cvoid, (CXASTContext, CXFunctionDecl, CXQualType), Ctx, FD, ResultType)
+end
+
+function clang_ASTContext_hasSameFunctionTypeIgnoringExceptionSpec(Ctx, T, U)
+    ccall((:clang_ASTContext_hasSameFunctionTypeIgnoringExceptionSpec, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T, U)
+end
+
+function clang_ASTContext_getFunctionTypeWithoutPtrSizes(Ctx, T)
+    ccall((:clang_ASTContext_getFunctionTypeWithoutPtrSizes, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_hasSameFunctionTypeIgnoringPtrSizes(Ctx, T, U)
+    ccall((:clang_ASTContext_hasSameFunctionTypeIgnoringPtrSizes, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T, U)
+end
+
+function clang_ASTContext_getComplexType(Ctx, T)
+    ccall((:clang_ASTContext_getComplexType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getPointerType(Ctx, T)
+    ccall((:clang_ASTContext_getPointerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getAdjustedType(Ctx, Orig, New)
+    ccall((:clang_ASTContext_getAdjustedType, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType), Ctx, Orig, New)
+end
+
+function clang_ASTContext_getDecayedType(Ctx, T)
+    ccall((:clang_ASTContext_getDecayedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getAtomicType(Ctx, T)
+    ccall((:clang_ASTContext_getAtomicType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getBlockPointerType(Ctx, T)
+    ccall((:clang_ASTContext_getBlockPointerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getBlockDescriptorType(Ctx)
+    ccall((:clang_ASTContext_getBlockDescriptorType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getReadPipeType(Ctx, T)
+    ccall((:clang_ASTContext_getReadPipeType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getWritePipeType(Ctx, T)
+    ccall((:clang_ASTContext_getWritePipeType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getExtIntType(Ctx, Unsigned, NumBits)
+    ccall((:clang_ASTContext_getExtIntType, libclangex), CXQualType, (CXASTContext, Bool, Cuint), Ctx, Unsigned, NumBits)
+end
+
+function clang_ASTContext_getDependentExtIntType(Ctx, Unsigned, BitsExpr)
+    ccall((:clang_ASTContext_getDependentExtIntType, libclangex), CXQualType, (CXASTContext, Bool, CXExpr), Ctx, Unsigned, BitsExpr)
+end
+
+function clang_ASTContext_getBlockDescriptorExtendedType(Ctx)
+    ccall((:clang_ASTContext_getBlockDescriptorExtendedType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_setcudaConfigureCallDecl(Ctx, FD)
+    ccall((:clang_ASTContext_setcudaConfigureCallDecl, libclangex), Cvoid, (CXASTContext, CXFunctionDecl), Ctx, FD)
+end
+
+function clang_ASTContext_getcudaConfigureCallDecl(Ctx)
+    ccall((:clang_ASTContext_getcudaConfigureCallDecl, libclangex), CXFunctionDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_BlockRequiresCopying(Ctx, T, D)
+    ccall((:clang_ASTContext_BlockRequiresCopying, libclangex), Bool, (CXASTContext, CXQualType, CXVarDecl), Ctx, T, D)
+end
+
+function clang_ASTContext_getLValueReferenceType(Ctx, T, SpelledAsLValue)
+    ccall((:clang_ASTContext_getLValueReferenceType, libclangex), CXQualType, (CXASTContext, CXQualType, Bool), Ctx, T, SpelledAsLValue)
+end
+
+function clang_ASTContext_getRValueReferenceType(Ctx, T)
+    ccall((:clang_ASTContext_getRValueReferenceType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getMemberPointerType(Ctx, T, Cls)
+    ccall((:clang_ASTContext_getMemberPointerType, libclangex), CXQualType, (CXASTContext, CXQualType, CXType_), Ctx, T, Cls)
+end
+
+function clang_ASTContext_getStringLiteralArrayType(Ctx, EltTy, Length)
+    ccall((:clang_ASTContext_getStringLiteralArrayType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint), Ctx, EltTy, Length)
+end
+
+function clang_ASTContext_getVariableArrayDecayedType(Ctx, T)
+    ccall((:clang_ASTContext_getVariableArrayDecayedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getScalableVectorType(Ctx, EltTy, NumElts)
+    ccall((:clang_ASTContext_getScalableVectorType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint), Ctx, EltTy, NumElts)
+end
+
+function clang_ASTContext_getExtVectorType(Ctx, VectorType, NumElts)
+    ccall((:clang_ASTContext_getExtVectorType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint), Ctx, VectorType, NumElts)
+end
+
+function clang_ASTContext_getDependentSizedExtVectorType(Ctx, VectorType, SizeExpr, AttrLoc)
+    ccall((:clang_ASTContext_getDependentSizedExtVectorType, libclangex), CXQualType, (CXASTContext, CXQualType, CXExpr, CXSourceLocation_), Ctx, VectorType, SizeExpr, AttrLoc)
+end
+
+function clang_ASTContext_getConstantMatrixType(Ctx, ElementType, NumRows, NumCols)
+    ccall((:clang_ASTContext_getConstantMatrixType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint, Cuint), Ctx, ElementType, NumRows, NumCols)
+end
+
+function clang_ASTContext_getDependentSizedMatrixType(Ctx, ElementType, RowsExpr, ColsExpr, AttrLoc)
+    ccall((:clang_ASTContext_getDependentSizedMatrixType, libclangex), CXQualType, (CXASTContext, CXQualType, CXExpr, CXExpr, CXSourceLocation_), Ctx, ElementType, RowsExpr, ColsExpr, AttrLoc)
+end
+
+function clang_ASTContext_getDependentAddressSpaceType(Ctx, PointeeType, AddrSpaceExpr, AddrSpace)
+    ccall((:clang_ASTContext_getDependentAddressSpaceType, libclangex), CXQualType, (CXASTContext, CXQualType, CXExpr, CXSourceLocation_), Ctx, PointeeType, AddrSpaceExpr, AddrSpace)
+end
+
+function clang_ASTContext_getFunctionNoProtoType(Ctx, ResultTy)
+    ccall((:clang_ASTContext_getFunctionNoProtoType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, ResultTy)
+end
+
+function clang_ASTContext_adjustStringLiteralBaseType(Ctx, StrLTy)
+    ccall((:clang_ASTContext_adjustStringLiteralBaseType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, StrLTy)
+end
+
+function clang_ASTContext_getTypeDeclType(Ctx, Decl, PrevDecl)
+    ccall((:clang_ASTContext_getTypeDeclType, libclangex), CXQualType, (CXASTContext, CXTypeDecl, CXTypeDecl), Ctx, Decl, PrevDecl)
+end
+
+function clang_ASTContext_getTypedefType(Ctx, Decl, Underlying)
+    ccall((:clang_ASTContext_getTypedefType, libclangex), CXQualType, (CXASTContext, CXTypedefNameDecl, CXQualType), Ctx, Decl, Underlying)
+end
+
+function clang_ASTContext_getRecordType(Ctx, Decl)
+    ccall((:clang_ASTContext_getRecordType, libclangex), CXQualType, (CXASTContext, CXRecordDecl), Ctx, Decl)
+end
+
+function clang_ASTContext_getEnumType(Ctx, Decl)
+    ccall((:clang_ASTContext_getEnumType, libclangex), CXQualType, (CXASTContext, CXEnumDecl), Ctx, Decl)
+end
+
+function clang_ASTContext_getInjectedClassNameType(Ctx, Decl, TST)
+    ccall((:clang_ASTContext_getInjectedClassNameType, libclangex), CXQualType, (CXASTContext, CXCXXRecordDecl, CXQualType), Ctx, Decl, TST)
+end
+
+function clang_ASTContext_getSubstTemplateTypeParmType(Ctx, Replaced, Replacement)
+    ccall((:clang_ASTContext_getSubstTemplateTypeParmType, libclangex), CXQualType, (CXASTContext, CXTemplateTypeParmType, CXQualType), Ctx, Replaced, Replacement)
+end
+
+function clang_ASTContext_getTemplateTypeParmType(Ctx, Depth, Index, ParameterPack, ParmDecl)
+    ccall((:clang_ASTContext_getTemplateTypeParmType, libclangex), CXQualType, (CXASTContext, Cuint, Cuint, Bool, CXTemplateTypeParmType), Ctx, Depth, Index, ParameterPack, ParmDecl)
+end
+
+function clang_ASTContext_getParenType(Ctx, NamedType)
+    ccall((:clang_ASTContext_getParenType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, NamedType)
+end
+
+function clang_ASTContext_getMacroQualifiedType(Ctx, UnderlyingTy, MacroII)
+    ccall((:clang_ASTContext_getMacroQualifiedType, libclangex), CXQualType, (CXASTContext, CXQualType, CXIdentifierInfo), Ctx, UnderlyingTy, MacroII)
+end
+
+function clang_ASTContext_getTypeOfExprType(Ctx, Expr)
+    ccall((:clang_ASTContext_getTypeOfExprType, libclangex), CXQualType, (CXASTContext, CXExpr), Ctx, Expr)
+end
+
+function clang_ASTContext_getTypeOfType(Ctx, T)
+    ccall((:clang_ASTContext_getTypeOfType, libclangex), CXQualType, (CXASTContext, CXType_), Ctx, T)
+end
+
+function clang_ASTContext_getDecltypeType(Ctx, Expr, UnderlyingType)
+    ccall((:clang_ASTContext_getDecltypeType, libclangex), CXQualType, (CXASTContext, CXExpr, CXQualType), Ctx, Expr, UnderlyingType)
+end
+
+function clang_ASTContext_getAutoDeductType(Ctx)
+    ccall((:clang_ASTContext_getAutoDeductType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getAutoRRefDeductType(Ctx)
+    ccall((:clang_ASTContext_getAutoRRefDeductType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getDeducedTemplateSpecializationType(Ctx, Template, DeducedType, IsDependent)
+    ccall((:clang_ASTContext_getDeducedTemplateSpecializationType, libclangex), CXQualType, (CXASTContext, CXTemplateName, CXQualType, Bool), Ctx, Template, DeducedType, IsDependent)
+end
+
+function clang_ASTContext_getTagDeclType(Ctx, Decl)
+    ccall((:clang_ASTContext_getTagDeclType, libclangex), CXQualType, (CXASTContext, CXTagDecl), Ctx, Decl)
+end
+
+function clang_ASTContext_getWCharType(Ctx)
+    ccall((:clang_ASTContext_getWCharType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getWideCharType(Ctx)
+    ccall((:clang_ASTContext_getWideCharType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getSignedWCharType(Ctx)
+    ccall((:clang_ASTContext_getSignedWCharType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getUnsignedWCharType(Ctx)
+    ccall((:clang_ASTContext_getUnsignedWCharType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getWIntType(Ctx)
+    ccall((:clang_ASTContext_getWIntType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getIntPtrType(Ctx)
+    ccall((:clang_ASTContext_getIntPtrType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getUIntPtrType(Ctx)
+    ccall((:clang_ASTContext_getUIntPtrType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getPointerDiffType(Ctx)
+    ccall((:clang_ASTContext_getPointerDiffType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getUnsignedPointerDiffType(Ctx)
+    ccall((:clang_ASTContext_getUnsignedPointerDiffType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getProcessIDType(Ctx)
+    ccall((:clang_ASTContext_getProcessIDType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getCFConstantStringType(Ctx)
+    ccall((:clang_ASTContext_getCFConstantStringType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getObjCSuperType(Ctx)
+    ccall((:clang_ASTContext_getObjCSuperType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getRawCFConstantStringType(Ctx)
+    ccall((:clang_ASTContext_getRawCFConstantStringType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_setCFConstantStringType(Ctx, T)
+    ccall((:clang_ASTContext_setCFConstantStringType, libclangex), Cvoid, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getCFContantStringDecl(Ctx)
+    ccall((:clang_ASTContext_getCFContantStringDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getCFConstantStringTagDecl(Ctx)
+    ccall((:clang_ASTContext_getCFConstantStringTagDecl, libclangex), CXRecordDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getObjCIdRedefinitionType(Ctx)
+    ccall((:clang_ASTContext_getObjCIdRedefinitionType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_setObjCIdRedefinitionType(Ctx, T)
+    ccall((:clang_ASTContext_setObjCIdRedefinitionType, libclangex), Cvoid, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getObjCClassRedefinitionType(Ctx)
+    ccall((:clang_ASTContext_getObjCClassRedefinitionType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_setObjCClassRedefinitionType(Ctx, T)
+    ccall((:clang_ASTContext_setObjCClassRedefinitionType, libclangex), Cvoid, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getNSCopyingName(Ctx)
+    ccall((:clang_ASTContext_getNSCopyingName, libclangex), CXIdentifierInfo, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getBoolName(Ctx)
+    ccall((:clang_ASTContext_getBoolName, libclangex), CXIdentifierInfo, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getMakeIntegerSeqName(Ctx)
+    ccall((:clang_ASTContext_getMakeIntegerSeqName, libclangex), CXIdentifierInfo, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getTypePackElementName(Ctx)
+    ccall((:clang_ASTContext_getTypePackElementName, libclangex), CXIdentifierInfo, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getObjCInstanceType(Ctx)
+    ccall((:clang_ASTContext_getObjCInstanceType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getObjCInstanceTypeDecl(Ctx)
+    ccall((:clang_ASTContext_getObjCInstanceTypeDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_setFILEDecl(Ctx, FILEDecl)
+    ccall((:clang_ASTContext_setFILEDecl, libclangex), Cvoid, (CXASTContext, CXTypeDecl), Ctx, FILEDecl)
+end
+
+function clang_ASTContext_getFILEType(Ctx)
+    ccall((:clang_ASTContext_getFILEType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getLogicalOperationType(Ctx)
+    ccall((:clang_ASTContext_getLogicalOperationType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getBOOLDecl(Ctx)
+    ccall((:clang_ASTContext_getBOOLDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_setBOOLDecl(Ctx, TD)
+    ccall((:clang_ASTContext_setBOOLDecl, libclangex), Cvoid, (CXASTContext, CXTypedefDecl), Ctx, TD)
+end
+
+function clang_ASTContext_getBOOLType(Ctx)
+    ccall((:clang_ASTContext_getBOOLType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getObjCProtoType(Ctx)
+    ccall((:clang_ASTContext_getObjCProtoType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getBuiltinVaListDecl(Ctx)
+    ccall((:clang_ASTContext_getBuiltinVaListDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getVaListTagDecl(Ctx)
+    ccall((:clang_ASTContext_getVaListTagDecl, libclangex), CXDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getBuiltinMSVaListDecl(Ctx)
+    ccall((:clang_ASTContext_getBuiltinMSVaListDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getBuiltinMSVaListType(Ctx)
+    ccall((:clang_ASTContext_getBuiltinMSVaListType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getMSGuidTagDecl(Ctx)
+    ccall((:clang_ASTContext_getMSGuidTagDecl, libclangex), CXTagDecl, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getMSGuidType(Ctx)
+    ccall((:clang_ASTContext_getMSGuidType, libclangex), CXTagType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_canBuiltinBeRedeclared(Ctx, D)
+    ccall((:clang_ASTContext_canBuiltinBeRedeclared, libclangex), Bool, (CXASTContext, CXFunctionDecl), Ctx, D)
+end
+
+function clang_ASTContext_getCVRQualifiedType(Ctx, T, CVR)
+    ccall((:clang_ASTContext_getCVRQualifiedType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint), Ctx, T, CVR)
+end
+
+function clang_ASTContext_getFixedPointScale(Ctx, Ty)
+    ccall((:clang_ASTContext_getFixedPointScale, libclangex), Cuchar, (CXASTContext, CXQualType), Ctx, Ty)
+end
+
+function clang_ASTContext_getFixedPointIBits(Ctx, Ty)
+    ccall((:clang_ASTContext_getFixedPointIBits, libclangex), Cuchar, (CXASTContext, CXQualType), Ctx, Ty)
+end
+
+function clang_ASTContext_getAssumedTemplateName(Ctx, Name)
+    ccall((:clang_ASTContext_getAssumedTemplateName, libclangex), CXTemplateName, (CXASTContext, CXDeclarationName), Ctx, Name)
+end
+
+function clang_ASTContext_getQualifiedTemplateName(Ctx, NNS, TemplateKeyword, Template)
+    ccall((:clang_ASTContext_getQualifiedTemplateName, libclangex), CXTemplateName, (CXASTContext, CXNestedNameSpecifier, Bool, CXTemplateDecl), Ctx, NNS, TemplateKeyword, Template)
+end
+
+function clang_ASTContext_getDependentTemplateName(Ctx, NNS, Name)
+    ccall((:clang_ASTContext_getDependentTemplateName, libclangex), CXTemplateName, (CXASTContext, CXNestedNameSpecifier, CXIdentifierInfo), Ctx, NNS, Name)
+end
+
+function clang_ASTContext_getSubstTemplateTemplateParm(Ctx, param, replacement)
+    ccall((:clang_ASTContext_getSubstTemplateTemplateParm, libclangex), CXTemplateName, (CXASTContext, CXTemplateTemplateParmDecl, CXTemplateName), Ctx, param, replacement)
+end
+
+function clang_ASTContext_areCompatibleVectorTypes(Ctx, FirstVec, SecondVec)
+    ccall((:clang_ASTContext_areCompatibleVectorTypes, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, FirstVec, SecondVec)
+end
+
+function clang_ASTContext_areCompatibleSveTypes(Ctx, FirstVec, SecondVec)
+    ccall((:clang_ASTContext_areCompatibleSveTypes, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, FirstVec, SecondVec)
+end
+
+function clang_ASTContext_areLaxCompatibleSveTypes(Ctx, FirstVec, SecondVec)
+    ccall((:clang_ASTContext_areLaxCompatibleSveTypes, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, FirstVec, SecondVec)
+end
+
+function clang_ASTContext_hasDirectOwnershipQualifier(Ctx, Ty)
+    ccall((:clang_ASTContext_hasDirectOwnershipQualifier, libclangex), Bool, (CXASTContext, CXQualType), Ctx, Ty)
+end
+
+function clang_ASTContext_getOpenMPDefaultSimdAlign(Ctx, T)
+    ccall((:clang_ASTContext_getOpenMPDefaultSimdAlign, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getTypeSize(Ctx, T)
+    ccall((:clang_ASTContext_getTypeSize, libclangex), UInt64, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getCharWidth(Ctx)
+    ccall((:clang_ASTContext_getCharWidth, libclangex), UInt64, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getTypeAlign(Ctx, T)
+    ccall((:clang_ASTContext_getTypeAlign, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getTypeUnadjustedAlign(Ctx, T)
+    ccall((:clang_ASTContext_getTypeUnadjustedAlign, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getTypeAlignIfKnown(Ctx, T, NeedsPreferredAlignment)
+    ccall((:clang_ASTContext_getTypeAlignIfKnown, libclangex), Cuint, (CXASTContext, CXQualType, Bool), Ctx, T, NeedsPreferredAlignment)
+end
+
+function clang_ASTContext_isAlignmentRequired(Ctx, T)
+    ccall((:clang_ASTContext_isAlignmentRequired, libclangex), Bool, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getPreferredTypeAlign(Ctx, T)
+    ccall((:clang_ASTContext_getPreferredTypeAlign, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getTargetDefaultAlignForAttributeAligned(Ctx)
+    ccall((:clang_ASTContext_getTargetDefaultAlignForAttributeAligned, libclangex), Cuint, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_getAlignOfGlobalVar(Ctx, T)
+    ccall((:clang_ASTContext_getAlignOfGlobalVar, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getFieldOffset(Ctx, FD)
+    ccall((:clang_ASTContext_getFieldOffset, libclangex), UInt64, (CXASTContext, CXValueDecl), Ctx, FD)
+end
+
+function clang_ASTContext_isNearlyEmpty(Ctx, RD)
+    ccall((:clang_ASTContext_isNearlyEmpty, libclangex), Bool, (CXASTContext, CXCXXRecordDecl), Ctx, RD)
+end
+
+function clang_ASTContext_createMangleContext(Ctx, T)
+    ccall((:clang_ASTContext_createMangleContext, libclangex), CXMangleContext, (CXASTContext, CXTargetInfo_), Ctx, T)
+end
+
+function clang_ASTContext_hasUniqueObjectRepresentations(Ctx, Ty)
+    ccall((:clang_ASTContext_hasUniqueObjectRepresentations, libclangex), Bool, (CXASTContext, CXQualType), Ctx, Ty)
+end
+
+function clang_ASTContext_hasSameType(Ctx, T1, T2)
+    ccall((:clang_ASTContext_hasSameType, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
+end
+
+function clang_ASTContext_hasSameUnqualifiedType(Ctx, T1, T2)
+    ccall((:clang_ASTContext_hasSameUnqualifiedType, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
+end
+
+function clang_ASTContext_hasSameNullabilityTypeQualifier(Ctx, SubT, SuperT, IsParam)
+    ccall((:clang_ASTContext_hasSameNullabilityTypeQualifier, libclangex), Bool, (CXASTContext, CXQualType, CXQualType, Bool), Ctx, SubT, SuperT, IsParam)
+end
+
+function clang_ASTContext_hasSimilarType(Ctx, T1, T2)
+    ccall((:clang_ASTContext_hasSimilarType, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
+end
+
+function clang_ASTContext_hasCvrSimilarType(Ctx, T1, T2)
+    ccall((:clang_ASTContext_hasCvrSimilarType, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
+end
+
+function clang_ASTContext_getCanonicalNestedNameSpecifier(Ctx, NNS)
+    ccall((:clang_ASTContext_getCanonicalNestedNameSpecifier, libclangex), CXNestedNameSpecifier, (CXASTContext, CXNestedNameSpecifier), Ctx, NNS)
+end
+
+function clang_ASTContext_getCanonicalTemplateName(Ctx, TemplateName)
+    ccall((:clang_ASTContext_getCanonicalTemplateName, libclangex), CXTemplateName, (CXASTContext, CXTemplateName), Ctx, TemplateName)
+end
+
+function clang_ASTContext_hasSameTempalteName(Ctx, T1, T2)
+    ccall((:clang_ASTContext_hasSameTempalteName, libclangex), Bool, (CXASTContext, CXTemplateName, CXTemplateName), Ctx, T1, T2)
+end
+
+function clang_ASTContext_getAsArrayType(Ctx, T)
+    ccall((:clang_ASTContext_getAsArrayType, libclangex), CXArrayType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getAsConstantArrayType(Ctx, T)
+    ccall((:clang_ASTContext_getAsConstantArrayType, libclangex), CXConstantArrayType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getAsVariableArrayType(Ctx, T)
+    ccall((:clang_ASTContext_getAsVariableArrayType, libclangex), CXVariableArrayType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getAsIncompleteArrayType(Ctx, T)
+    ccall((:clang_ASTContext_getAsIncompleteArrayType, libclangex), CXIncompleteArrayType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getAsDependentSizedArrayType(Ctx, T)
+    ccall((:clang_ASTContext_getAsDependentSizedArrayType, libclangex), CXDependentSizedArrayType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getBaseElementType(Ctx, QT)
+    ccall((:clang_ASTContext_getBaseElementType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, QT)
+end
+
+function clang_ASTContext_getConstantArrayElementCount(Ctx, CAT)
+    ccall((:clang_ASTContext_getConstantArrayElementCount, libclangex), UInt64, (CXASTContext, CXConstantArrayType), Ctx, CAT)
+end
+
+function clang_ASTContext_getAdjustedParameterType(Ctx, T)
+    ccall((:clang_ASTContext_getAdjustedParameterType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getSignatureParameterType(Ctx, T)
+    ccall((:clang_ASTContext_getSignatureParameterType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getExceptionObjectType(Ctx, T)
+    ccall((:clang_ASTContext_getExceptionObjectType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getArrayDecayedType(Ctx, T)
+    ccall((:clang_ASTContext_getArrayDecayedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getPromotedIntegerType(Ctx, T)
+    ccall((:clang_ASTContext_getPromotedIntegerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_isPromotableBitField(Ctx, E)
+    ccall((:clang_ASTContext_isPromotableBitField, libclangex), CXQualType, (CXASTContext, CXExpr), Ctx, E)
+end
+
+function clang_ASTContext_getIntegerTypeOrder(Ctx, LHS, RHS)
+    ccall((:clang_ASTContext_getIntegerTypeOrder, libclangex), Cint, (CXASTContext, CXQualType, CXQualType), Ctx, LHS, RHS)
+end
+
+function clang_ASTContext_getFloatingTypeOrder(Ctx, LHS, RHS)
+    ccall((:clang_ASTContext_getFloatingTypeOrder, libclangex), Cint, (CXASTContext, CXQualType, CXQualType), Ctx, LHS, RHS)
+end
+
+function clang_ASTContext_getFloatingTypeSemanticOrder(Ctx, LHS, RHS)
+    ccall((:clang_ASTContext_getFloatingTypeSemanticOrder, libclangex), Cint, (CXASTContext, CXQualType, CXQualType), Ctx, LHS, RHS)
+end
+
+function clang_ASTContext_getFloatingTypeOfSizeWithinDomain(Ctx, typeSize, typeDomain)
+    ccall((:clang_ASTContext_getFloatingTypeOfSizeWithinDomain, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType), Ctx, typeSize, typeDomain)
+end
+
+function clang_ASTContext_getTargetAddressSpace(Ctx, T)
+    ccall((:clang_ASTContext_getTargetAddressSpace, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getTargetNullPointerValue(Ctx, T)
+    ccall((:clang_ASTContext_getTargetNullPointerValue, libclangex), UInt64, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_typesAreCompatible(Ctx, T1, T2, CompareUnqualified)
+    ccall((:clang_ASTContext_typesAreCompatible, libclangex), Bool, (CXASTContext, CXQualType, CXQualType, Bool), Ctx, T1, T2, CompareUnqualified)
+end
+
+function clang_ASTContext_propertyTypesAreCompatible(Ctx, T1, T2)
+    ccall((:clang_ASTContext_propertyTypesAreCompatible, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
+end
+
+function clang_ASTContext_typesAreBlockPointerCompatible(Ctx, T1, T2)
+    ccall((:clang_ASTContext_typesAreBlockPointerCompatible, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
+end
+
+function clang_ASTContext_mergeTypes(Ctx, T1, T2, OfBlockPointer, Unqualified, BlockReturnType)
+    ccall((:clang_ASTContext_mergeTypes, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType, Bool, Bool, Bool), Ctx, T1, T2, OfBlockPointer, Unqualified, BlockReturnType)
+end
+
+function clang_ASTContext_mergeFunctionTypes(Ctx, T1, T2, OfBlockPointer, Unqualified, AllowCXX)
+    ccall((:clang_ASTContext_mergeFunctionTypes, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType, Bool, Bool, Bool), Ctx, T1, T2, OfBlockPointer, Unqualified, AllowCXX)
+end
+
+function clang_ASTContext_mergeFunctionParameterTypes(Ctx, T1, T2, OfBlockPointer, Unqualified)
+    ccall((:clang_ASTContext_mergeFunctionParameterTypes, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType, Bool, Bool), Ctx, T1, T2, OfBlockPointer, Unqualified)
+end
+
+function clang_ASTContext_mergeTransparentUnionType(Ctx, T1, T2, OfBlockPointer, Unqualified)
+    ccall((:clang_ASTContext_mergeTransparentUnionType, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType, Bool, Bool), Ctx, T1, T2, OfBlockPointer, Unqualified)
+end
+
+function clang_ASTContext_mergeObjCGCQualifiers(Ctx, T1, T2)
+    ccall((:clang_ASTContext_mergeObjCGCQualifiers, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
+end
+
+function clang_ASTContext_getIntWidth(Ctx, T)
+    ccall((:clang_ASTContext_getIntWidth, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getCorrespondingUnsignedType(Ctx, T)
+    ccall((:clang_ASTContext_getCorrespondingUnsignedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getCorrespondingSaturatedType(Ctx, T)
+    ccall((:clang_ASTContext_getCorrespondingSaturatedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getCorrespondingSignedFixedPointType(Ctx, T)
+    ccall((:clang_ASTContext_getCorrespondingSignedFixedPointType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
+end
+
+function clang_ASTContext_getIdents(Ctx)
+    ccall((:clang_ASTContext_getIdents, libclangex), CXIdentifierTable, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_isSentinelNullExpr(Ctx, E)
+    ccall((:clang_ASTContext_isSentinelNullExpr, libclangex), Bool, (CXASTContext, CXExpr), Ctx, E)
+end
+
+function clang_ASTContext_CreateTypeSourceInfo(Ctx, T, Size)
+    ccall((:clang_ASTContext_CreateTypeSourceInfo, libclangex), CXTypeSourceInfo, (CXASTContext, CXQualType, Cuint), Ctx, T, Size)
+end
+
+function clang_ASTContext_getTrivialTypeSourceInfo(Ctx, T, Loc)
+    ccall((:clang_ASTContext_getTrivialTypeSourceInfo, libclangex), CXTypeSourceInfo, (CXASTContext, CXQualType, CXSourceLocation_), Ctx, T, Loc)
+end
+
+function clang_ASTContext_getCopyConstructorForExceptionObject(Ctx, RD)
+    ccall((:clang_ASTContext_getCopyConstructorForExceptionObject, libclangex), CXCXXConstructorDecl, (CXASTContext, CXCXXRecordDecl), Ctx, RD)
+end
+
+function clang_ASTContext_addCopyConstructorForExceptionObject(Ctx, RD, CD)
+    ccall((:clang_ASTContext_addCopyConstructorForExceptionObject, libclangex), Cvoid, (CXASTContext, CXCXXRecordDecl, CXCXXConstructorDecl), Ctx, RD, CD)
+end
+
+function clang_ASTContext_addTypedefNameForUnnamedTagDecl(Ctx, TD, TND)
+    ccall((:clang_ASTContext_addTypedefNameForUnnamedTagDecl, libclangex), Cvoid, (CXASTContext, CXTagDecl, CXTypedefNameDecl), Ctx, TD, TND)
+end
+
+function clang_ASTContext_getTypedefNameForUnnamedTagDecl(Ctx, TD)
+    ccall((:clang_ASTContext_getTypedefNameForUnnamedTagDecl, libclangex), CXTypedefNameDecl, (CXASTContext, CXTagDecl), Ctx, TD)
+end
+
+function clang_ASTContext_addDeclaratorForUnnamedTagDecl(Ctx, TD, D)
+    ccall((:clang_ASTContext_addDeclaratorForUnnamedTagDecl, libclangex), Cvoid, (CXASTContext, CXTagDecl, CXDeclaratorDecl), Ctx, TD, D)
+end
+
+function clang_ASTContext_getDeclaratorForUnnamedTagDecl(Ctx, TD)
+    ccall((:clang_ASTContext_getDeclaratorForUnnamedTagDecl, libclangex), CXDeclaratorDecl, (CXASTContext, CXTagDecl), Ctx, TD)
+end
+
+function clang_ASTContext_setManglingNumber(Ctx, ND, Number)
+    ccall((:clang_ASTContext_setManglingNumber, libclangex), Cvoid, (CXASTContext, CXNamedDecl, Cuint), Ctx, ND, Number)
+end
+
+function clang_ASTContext_getManglingNumber(Ctx, ND)
+    ccall((:clang_ASTContext_getManglingNumber, libclangex), Cuint, (CXASTContext, CXNamedDecl), Ctx, ND)
+end
+
+function clang_ASTContext_setStaticLocalNumber(Ctx, ND, Number)
+    ccall((:clang_ASTContext_setStaticLocalNumber, libclangex), Cvoid, (CXASTContext, CXVarDecl, Cuint), Ctx, ND, Number)
+end
+
+function clang_ASTContext_getStaticLocalNumber(Ctx, ND)
+    ccall((:clang_ASTContext_getStaticLocalNumber, libclangex), Cuint, (CXASTContext, CXVarDecl), Ctx, ND)
+end
+
+function clang_ASTContext_setParameterIndex(Ctx, D, index)
+    ccall((:clang_ASTContext_setParameterIndex, libclangex), Cvoid, (CXASTContext, CXParmVarDecl, Cuint), Ctx, D, index)
+end
+
+function clang_ASTContext_getParameterIndex(Ctx, D)
+    ccall((:clang_ASTContext_getParameterIndex, libclangex), Cuint, (CXASTContext, CXParmVarDecl), Ctx, D)
+end
+
+function clang_ASTContext_getPredefinedStringLiteralFromCache(Ctx, Key)
+    ccall((:clang_ASTContext_getPredefinedStringLiteralFromCache, libclangex), CXStringLiteral, (CXASTContext, Ptr{Cchar}), Ctx, Key)
+end
+
+function clang_ASTContext_InitBuiltinTypes(Ctx, Target, AuxTarget)
+    ccall((:clang_ASTContext_InitBuiltinTypes, libclangex), Cvoid, (CXASTContext, CXTargetInfo_, CXTargetInfo_), Ctx, Target, AuxTarget)
+end
+
+function clang_ASTContext_isMSStaticDataMemberInlineDefinition(Ctx, VD)
+    ccall((:clang_ASTContext_isMSStaticDataMemberInlineDefinition, libclangex), Bool, (CXASTContext, CXVarDecl), Ctx, VD)
+end
+
+function clang_ASTContext_mayExternalizeStaticVar(Ctx, D)
+    ccall((:clang_ASTContext_mayExternalizeStaticVar, libclangex), Bool, (CXASTContext, CXDecl), Ctx, D)
+end
+
+function clang_ASTContext_shouldExternalizeStaticVar(Ctx, D)
+    ccall((:clang_ASTContext_shouldExternalizeStaticVar, libclangex), Bool, (CXASTContext, CXDecl), Ctx, D)
+end
+
+function clang_ASTContext_VoidTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_VoidTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_BoolTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_BoolTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_CharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_CharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_WCharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_WCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_WideCharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_WideCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_WIntTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_WIntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Char8Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Char8Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Char16Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Char16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Char32Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Char32Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_SignedCharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_SignedCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_ShortTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_ShortTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_IntTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_IntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_LongTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_LongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_LongLongTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_LongLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Int128Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Int128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedCharTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedShortTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedShortTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedIntTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedIntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedLongTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedLongLongTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedLongLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_UnsignedInt128Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_UnsignedInt128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_FloatTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_FloatTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_DoubleTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_DoubleTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_LongDoubleTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_LongDoubleTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Float128Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Float128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_HalfTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_HalfTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_BFloat16Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_BFloat16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Float16Ty_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Float16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_FloatComplexTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_FloatComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_DoubleComplexTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_DoubleComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_LongDoubleComplexTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_LongDoubleComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_Float128ComplexTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_Float128ComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_VoidPtrTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_VoidPtrTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+end
+
+function clang_ASTContext_NullPtrTy_getAsQualType(Ctx)
+    ccall((:clang_ASTContext_NullPtrTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
 end
 
 function clang_TranslationUnitDecl_getASTContext(TUD)
@@ -2557,6 +1752,15 @@ end
 
 function clang_TranslationUnitDecl_Create(TUD, C)
     ccall((:clang_TranslationUnitDecl_Create, libclangex), CXTranslationUnitDecl, (CXTranslationUnitDecl, CXASTContext), TUD, C)
+end
+
+@enum CXPragmaMSCommentKind::UInt32 begin
+    CXPragmaMSCommentKind_PCK_Unknown = 0
+    CXPragmaMSCommentKind_PCK_Linker = 1
+    CXPragmaMSCommentKind_PCK_Lib = 2
+    CXPragmaMSCommentKind_PCK_Compiler = 3
+    CXPragmaMSCommentKind_PCK_ExeStr = 4
+    CXPragmaMSCommentKind_PCK_User = 5
 end
 
 function clang_PragmaCommentDecl_Create(C, DC, CommentLoc, CommentKind, Arg)
@@ -2627,6 +1831,16 @@ function clang_NamedDecl_isCXXInstanceMember(ND)
     ccall((:clang_NamedDecl_isCXXInstanceMember, libclangex), Bool, (CXNamedDecl,), ND)
 end
 
+@enum CXLinkage::UInt8 begin
+    CXLinkage_NoLinkage = 0x0000000000000000
+    CXLinkage_InternalLinkage = 0x0000000000000001
+    CXLinkage_UniqueExternalLinkage = 0x0000000000000002
+    CXLinkage_VisibleNoLinkage = 0x0000000000000003
+    CXLinkage_ModuleInternalLinkage = 0x0000000000000004
+    CXLinkage_ModuleLinkage = 0x0000000000000005
+    CXLinkage_ExternalLinkage = 0x0000000000000006
+end
+
 function clang_NamedDecl_getLinkageInternal(ND)
     ccall((:clang_NamedDecl_getLinkageInternal, libclangex), CXLinkage, (CXNamedDecl,), ND)
 end
@@ -2645,6 +1859,12 @@ end
 
 function clang_NamedDecl_isExternallyDeclarable(ND)
     ccall((:clang_NamedDecl_isExternallyDeclarable, libclangex), Bool, (CXNamedDecl,), ND)
+end
+
+@enum CXVisibility::UInt32 begin
+    CXVisibility_HiddenVisibility = 0
+    CXVisibility_ProtectedVisibility = 1
+    CXVisibility_DefaultVisibility = 2
 end
 
 function clang_NamedDecl_getVisibility(ND)
@@ -2839,6 +2059,15 @@ function clang_DeclaratorDecl_getTypeSpecEndLoc(DD)
     ccall((:clang_DeclaratorDecl_getTypeSpecEndLoc, libclangex), CXSourceLocation_, (CXDeclaratorDecl,), DD)
 end
 
+@enum CXStorageClass::UInt32 begin
+    CXStorageClass_SC_None = 0
+    CXStorageClass_SC_Extern = 1
+    CXStorageClass_SC_Static = 2
+    CXStorageClass_SC_PrivateExtern = 3
+    CXStorageClass_SC_Auto = 4
+    CXStorageClass_SC_Register = 5
+end
+
 function clang_VarDecl_Create(C, DC, StartLoc, IdLoc, Id, T, TInfo, S)
     ccall((:clang_VarDecl_Create, libclangex), CXVarDecl, (CXASTContext, CXDeclContext, CXSourceLocation_, CXSourceLocation_, CXIdentifierInfo, CXQualType, CXTypeSourceInfo, CXStorageClass), C, DC, StartLoc, IdLoc, Id, T, TInfo, S)
 end
@@ -2857,6 +2086,13 @@ end
 
 function clang_VarDecl_setStorageClass(VD, SC)
     ccall((:clang_VarDecl_setStorageClass, libclangex), Cvoid, (CXVarDecl, CXStorageClass), VD, SC)
+end
+
+@enum CXThreadStorageClassSpecifier::UInt32 begin
+    CXThreadStorageClassSpecifier_TSCS_unspecified = 0
+    CXThreadStorageClassSpecifier_TSCS___thread = 1
+    CXThreadStorageClassSpecifier_TSCS_thread_local = 2
+    CXThreadStorageClassSpecifier_TSCS__Thread_local = 3
 end
 
 function clang_VarDecl_setTSCSpec(VD, TSC)
@@ -2883,8 +2119,22 @@ function clang_VarDecl_hasGlobalStorage(VD)
     ccall((:clang_VarDecl_hasGlobalStorage, libclangex), Bool, (CXVarDecl,), VD)
 end
 
+@enum CXStorageDuration::UInt32 begin
+    CXStorageDuration_SD_FullExpression = 0
+    CXStorageDuration_SD_Automatic = 1
+    CXStorageDuration_SD_Thread = 2
+    CXStorageDuration_SD_Static = 3
+    CXStorageDuration_SD_Dynamic = 4
+end
+
 function clang_VarDecl_getStorageDuration(VD)
     ccall((:clang_VarDecl_getStorageDuration, libclangex), CXStorageDuration, (CXVarDecl,), VD)
+end
+
+@enum CXLanguageLinkage::UInt32 begin
+    CXLanguageLinkage_CLanguageLinkage = 0
+    CXLanguageLinkage_CXXLanguageLinkage = 1
+    CXLanguageLinkage_NoLanguageLinkage = 2
 end
 
 function clang_VarDecl_getLanguageLinkage(VD)
@@ -3097,6 +2347,14 @@ end
 
 function clang_VarDecl_getInstantiatedFromStaticDataMember(VD)
     ccall((:clang_VarDecl_getInstantiatedFromStaticDataMember, libclangex), CXVarDecl, (CXVarDecl,), VD)
+end
+
+@enum CXTemplateSpecializationKind::UInt32 begin
+    CXTemplateSpecializationKind_TSK_Undeclared = 0
+    CXTemplateSpecializationKind_TSK_ImplicitInstantiation = 1
+    CXTemplateSpecializationKind_TSK_ExplicitSpecialization = 2
+    CXTemplateSpecializationKind_TSK_ExplicitInstantiationDeclaration = 3
+    CXTemplateSpecializationKind_TSK_ExplicitInstantiationDefinition = 4
 end
 
 function clang_VarDecl_getTemplateSpecializationKind(VD)
@@ -3425,6 +2683,13 @@ function clang_FunctionDecl_isConstexpr(FD)
     ccall((:clang_FunctionDecl_isConstexpr, libclangex), Bool, (CXFunctionDecl,), FD)
 end
 
+@enum CXConstexprSpecKind::UInt32 begin
+    CXConstexprSpecKind_Unspecified = 0
+    CXConstexprSpecKind_Constexpr = 1
+    CXConstexprSpecKind_Consteval = 2
+    CXConstexprSpecKind_Constinit = 3
+end
+
 function clang_FunctionDecl_setConstexprKind(FD, CSK)
     ccall((:clang_FunctionDecl_setConstexprKind, libclangex), Cvoid, (CXFunctionDecl, CXConstexprSpecKind), FD, CSK)
 end
@@ -3601,6 +2866,21 @@ function clang_FunctionDecl_getDeclaredReturnType(FD)
     ccall((:clang_FunctionDecl_getDeclaredReturnType, libclangex), CXQualType, (CXFunctionDecl,), FD)
 end
 
+@enum CXExceptionSpecificationType::UInt32 begin
+    CXExceptionSpecificationType_EST_None = 0
+    CXExceptionSpecificationType_EST_DynamicNone = 1
+    CXExceptionSpecificationType_EST_Dynamic = 2
+    CXExceptionSpecificationType_EST_MSAny = 3
+    CXExceptionSpecificationType_EST_NoThrow = 4
+    CXExceptionSpecificationType_EST_BasicNoexcept = 5
+    CXExceptionSpecificationType_EST_DependentNoexcept = 6
+    CXExceptionSpecificationType_EST_NoexceptFalse = 7
+    CXExceptionSpecificationType_EST_NoexceptTrue = 8
+    CXExceptionSpecificationType_EST_Unevaluated = 9
+    CXExceptionSpecificationType_EST_Uninstantiated = 10
+    CXExceptionSpecificationType_EST_Unparsed = 11
+end
+
 function clang_FunctionDecl_getExceptionSpecType(FD)
     ccall((:clang_FunctionDecl_getExceptionSpecType, libclangex), CXExceptionSpecificationType, (CXFunctionDecl,), FD)
 end
@@ -3747,6 +3027,12 @@ end
 
 function clang_FunctionDecl_getODRHash(FD)
     ccall((:clang_FunctionDecl_getODRHash, libclangex), Cuint, (CXFunctionDecl,), FD)
+end
+
+@enum CXInClassInitStyle::UInt32 begin
+    CXInClassInitStyle_ICIS_NoInit = 0
+    CXInClassInitStyle_ICIS_CopyInit = 1
+    CXInClassInitStyle_ICIS_ListInit = 2
 end
 
 function clang_FieldDecl_Create(C, DC, StartLoc, IdLoc, I, T, TInfo, BW, Mutable, InitStyle)
@@ -4647,92 +3933,1072 @@ function clang_EmptyDecl_CreateDeserialized(C, ID)
     ccall((:clang_EmptyDecl_CreateDeserialized, libclangex), CXEmptyDecl, (CXASTContext, Cuint), C, ID)
 end
 
-function clang_Sema_setCollectStats(S, ShouldCollect)
-    ccall((:clang_Sema_setCollectStats, libclangex), Cvoid, (CXSema, Bool), S, ShouldCollect)
+function clang_Decl_getLocation(DC)
+    ccall((:clang_Decl_getLocation, libclangex), CXSourceLocation_, (CXDecl,), DC)
 end
 
-function clang_Sema_PrintStats(S)
-    ccall((:clang_Sema_PrintStats, libclangex), Cvoid, (CXSema,), S)
+function clang_Decl_getBeginLoc(DC)
+    ccall((:clang_Decl_getBeginLoc, libclangex), CXSourceLocation_, (CXDecl,), DC)
 end
 
-function clang_Sema_RestoreNestedNameSpecifierAnnotation(S, Annotation, AnnotationRange_begin, AnnotationRange_end, SS)
-    ccall((:clang_Sema_RestoreNestedNameSpecifierAnnotation, libclangex), Cvoid, (CXSema, Ptr{Cvoid}, CXSourceLocation_, CXSourceLocation_, CXCXXScopeSpec), S, Annotation, AnnotationRange_begin, AnnotationRange_end, SS)
+function clang_Decl_getEndLoc(DC)
+    ccall((:clang_Decl_getEndLoc, libclangex), CXSourceLocation_, (CXDecl,), DC)
 end
 
-function clang_Sema_LookupParsedName(S, R, Sp, SS, AllowBuiltinCreation, EnteringContext)
-    ccall((:clang_Sema_LookupParsedName, libclangex), Bool, (CXSema, CXLookupResult, CXScope, CXCXXScopeSpec, Bool, Bool), S, R, Sp, SS, AllowBuiltinCreation, EnteringContext)
+function clang_Decl_getDeclKindName(DC)
+    ccall((:clang_Decl_getDeclKindName, libclangex), Ptr{Cchar}, (CXDecl,), DC)
 end
 
-function clang_Sema_LookupName(S, R, Sp, AllowBuiltinCreation)
-    ccall((:clang_Sema_LookupName, libclangex), Bool, (CXSema, CXLookupResult, CXScope, Bool), S, R, Sp, AllowBuiltinCreation)
+function clang_Decl_getNextDeclInContext(DC)
+    ccall((:clang_Decl_getNextDeclInContext, libclangex), CXDecl, (CXDecl,), DC)
 end
 
-function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)
-    ccall((:clang_Sema_processWeakTopLevelDecls, libclangex), Cvoid, (CXSema, CXCodeGenerator), Sema, CodeGen)
+function clang_Decl_getDeclContext(DC)
+    ccall((:clang_Decl_getDeclContext, libclangex), CXDeclContext, (CXDecl,), DC)
 end
 
-function clang_LangOptions_PrintStats(LO)
-    ccall((:clang_LangOptions_PrintStats, libclangex), Cvoid, (CXLangOptions,), LO)
+function clang_Decl_getNonClosureContext(DC)
+    ccall((:clang_Decl_getNonClosureContext, libclangex), CXDecl, (CXDecl,), DC)
 end
 
-function clang_IgnoringDiagConsumer_create(ErrorCode)
-    ccall((:clang_IgnoringDiagConsumer_create, libclangex), CXDiagnosticConsumer, (Ptr{CXInit_Error},), ErrorCode)
+function clang_Decl_getTranslationUnitDecl(DC)
+    ccall((:clang_Decl_getTranslationUnitDecl, libclangex), CXTranslationUnitDecl, (CXDecl,), DC)
 end
 
-function clang_DiagnosticConsumer_dispose(DC)
-    ccall((:clang_DiagnosticConsumer_dispose, libclangex), Cvoid, (CXDiagnosticConsumer,), DC)
+function clang_Decl_isInAnonymousNamespace(DC)
+    ccall((:clang_Decl_isInAnonymousNamespace, libclangex), Bool, (CXDecl,), DC)
 end
 
-function clang_DiagnosticConsumer_BeginSourceFile(DC, LangOpts, PP)
-    ccall((:clang_DiagnosticConsumer_BeginSourceFile, libclangex), Cvoid, (CXDiagnosticConsumer, CXLangOptions, CXPreprocessor), DC, LangOpts, PP)
+function clang_Decl_isInStdNamespace(DC)
+    ccall((:clang_Decl_isInStdNamespace, libclangex), Bool, (CXDecl,), DC)
 end
 
-function clang_DiagnosticConsumer_EndSourceFile(DC)
-    ccall((:clang_DiagnosticConsumer_EndSourceFile, libclangex), Cvoid, (CXDiagnosticConsumer,), DC)
+function clang_Decl_getASTContext(DC)
+    ccall((:clang_Decl_getASTContext, libclangex), CXASTContext, (CXDecl,), DC)
 end
 
-function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient, ErrorCode)
-    ccall((:clang_DiagnosticsEngine_create, libclangex), CXDiagnosticsEngine, (CXDiagnosticIDs, CXDiagnosticOptions, CXDiagnosticConsumer, Bool, Ptr{CXInit_Error}), ID, DO, DC, ShouldOwnClient, ErrorCode)
+function clang_Decl_getLangOpts(DC)
+    ccall((:clang_Decl_getLangOpts, libclangex), CXLangOptions, (CXDecl,), DC)
 end
 
-function clang_DiagnosticsEngine_dispose(DE)
-    ccall((:clang_DiagnosticsEngine_dispose, libclangex), Cvoid, (CXDiagnosticsEngine,), DE)
+function clang_Decl_getLexicalDeclContext(DC)
+    ccall((:clang_Decl_getLexicalDeclContext, libclangex), CXDeclContext, (CXDecl,), DC)
 end
 
-function clang_DiagnosticsEngine_setShowColors(DE, ShowColors)
-    ccall((:clang_DiagnosticsEngine_setShowColors, libclangex), Cvoid, (CXDiagnosticsEngine, Bool), DE, ShowColors)
+function clang_Decl_isOutOfLine(DC)
+    ccall((:clang_Decl_isOutOfLine, libclangex), Bool, (CXDecl,), DC)
 end
 
-function clang_EmitAssemblyAction_create(ErrorCode, LLVMCtx)
-    ccall((:clang_EmitAssemblyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+function clang_Decl_setDeclContext(DC, Ctx)
+    ccall((:clang_Decl_setDeclContext, libclangex), Cvoid, (CXDecl, CXDeclContext), DC, Ctx)
 end
 
-function clang_EmitBCAction_create(ErrorCode, LLVMCtx)
-    ccall((:clang_EmitBCAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+function clang_Decl_setLexicalDeclContext(DC, Ctx)
+    ccall((:clang_Decl_setLexicalDeclContext, libclangex), Cvoid, (CXDecl, CXDeclContext), DC, Ctx)
 end
 
-function clang_EmitLLVMAction_create(ErrorCode, LLVMCtx)
-    ccall((:clang_EmitLLVMAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+function clang_Decl_isTemplated(DC)
+    ccall((:clang_Decl_isTemplated, libclangex), Bool, (CXDecl,), DC)
 end
 
-function clang_EmitLLVMOnlyAction_create(ErrorCode, LLVMCtx)
-    ccall((:clang_EmitLLVMOnlyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+function clang_Decl_getTemplateDepth(DC)
+    ccall((:clang_Decl_getTemplateDepth, libclangex), Cuint, (CXDecl,), DC)
 end
 
-function clang_EmitCodeGenOnlyAction_create(ErrorCode, LLVMCtx)
-    ccall((:clang_EmitCodeGenOnlyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+function clang_Decl_isDefinedOutsideFunctionOrMethod(DC)
+    ccall((:clang_Decl_isDefinedOutsideFunctionOrMethod, libclangex), Bool, (CXDecl,), DC)
 end
 
-function clang_EmitObjAction_create(ErrorCode, LLVMCtx)
-    ccall((:clang_EmitObjAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+function clang_Decl_isInLocalScopeForInstantiation(DC)
+    ccall((:clang_Decl_isInLocalScopeForInstantiation, libclangex), Bool, (CXDecl,), DC)
 end
 
-function clang_CodeGenAction_dispose(CA)
-    ccall((:clang_CodeGenAction_dispose, libclangex), Cvoid, (CXCodeGenAction,), CA)
+function clang_Decl_getParentFunctionOrMethod(DC)
+    ccall((:clang_Decl_getParentFunctionOrMethod, libclangex), CXDeclContext, (CXDecl,), DC)
 end
 
-function clang_CodeGenAction_takeModule(CA)
-    ccall((:clang_CodeGenAction_takeModule, libclangex), LLVMModuleRef, (CXCodeGenAction,), CA)
+function clang_Decl_getCanonicalDecl(DC)
+    ccall((:clang_Decl_getCanonicalDecl, libclangex), CXDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_isCanonicalDecl(DC)
+    ccall((:clang_Decl_isCanonicalDecl, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_getPreviousDecl(DC)
+    ccall((:clang_Decl_getPreviousDecl, libclangex), CXDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_isFirstDecl(DC)
+    ccall((:clang_Decl_isFirstDecl, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_getMostRecentDecl(DC)
+    ccall((:clang_Decl_getMostRecentDecl, libclangex), CXDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_isTemplateParameter(DC)
+    ccall((:clang_Decl_isTemplateParameter, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_isTemplateParameterPack(DC)
+    ccall((:clang_Decl_isTemplateParameterPack, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_isParameterPack(DC)
+    ccall((:clang_Decl_isParameterPack, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_isTemplateDecl(DC)
+    ccall((:clang_Decl_isTemplateDecl, libclangex), Bool, (CXDecl,), DC)
+end
+
+function clang_Decl_getDescribedTemplate(DC)
+    ccall((:clang_Decl_getDescribedTemplate, libclangex), CXTemplateDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_getDescribedTemplateParams(DC)
+    ccall((:clang_Decl_getDescribedTemplateParams, libclangex), CXTemplateParameterList, (CXDecl,), DC)
+end
+
+function clang_Decl_getAsFunction(DC)
+    ccall((:clang_Decl_getAsFunction, libclangex), CXFunctionDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_dump(DC)
+    ccall((:clang_Decl_dump, libclangex), Cvoid, (CXDecl,), DC)
+end
+
+function clang_Decl_dumpColor(DC)
+    ccall((:clang_Decl_dumpColor, libclangex), Cvoid, (CXDecl,), DC)
+end
+
+function clang_Decl_getID(DC)
+    ccall((:clang_Decl_getID, libclangex), Int64, (CXDecl,), DC)
+end
+
+function clang_Decl_getFunctionType(DC, BlocksToo)
+    ccall((:clang_Decl_getFunctionType, libclangex), CXFunctionType, (CXDecl, Bool), DC, BlocksToo)
+end
+
+function clang_Decl_EnableStatistics()
+    ccall((:clang_Decl_EnableStatistics, libclangex), Cvoid, ())
+end
+
+function clang_Decl_PrintStats()
+    ccall((:clang_Decl_PrintStats, libclangex), Cvoid, ())
+end
+
+function clang_Decl_castToDeclContext(D)
+    ccall((:clang_Decl_castToDeclContext, libclangex), CXDeclContext, (CXDecl,), D)
+end
+
+function clang_Decl_castFromDeclContext(DC)
+    ccall((:clang_Decl_castFromDeclContext, libclangex), CXDecl, (CXDeclContext,), DC)
+end
+
+function clang_Decl_castToClassTemplateDecl(DC)
+    ccall((:clang_Decl_castToClassTemplateDecl, libclangex), CXClassTemplateDecl, (CXDecl,), DC)
+end
+
+function clang_Decl_castToValueDecl(DC)
+    ccall((:clang_Decl_castToValueDecl, libclangex), CXValueDecl, (CXDecl,), DC)
+end
+
+function clang_DeclContext_castToTagDecl(DC)
+    ccall((:clang_DeclContext_castToTagDecl, libclangex), CXTagDecl, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_castToRecordDecl(DC)
+    ccall((:clang_DeclContext_castToRecordDecl, libclangex), CXRecordDecl, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_castToCXXRecordDecl(DC)
+    ccall((:clang_DeclContext_castToCXXRecordDecl, libclangex), CXCXXRecordDecl, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getDeclKindName(DC)
+    ccall((:clang_DeclContext_getDeclKindName, libclangex), Ptr{Cchar}, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getParent(DC)
+    ccall((:clang_DeclContext_getParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getLexicalParent(DC)
+    ccall((:clang_DeclContext_getLexicalParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getLookupParent(DC)
+    ccall((:clang_DeclContext_getLookupParent, libclangex), CXDeclContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_getParentASTContext(DC)
+    ccall((:clang_DeclContext_getParentASTContext, libclangex), CXASTContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isClosure(DC)
+    ccall((:clang_DeclContext_isClosure, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isFunctionOrMethod(DC)
+    ccall((:clang_DeclContext_isFunctionOrMethod, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isLookupContext(DC)
+    ccall((:clang_DeclContext_isLookupContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isFileContext(DC)
+    ccall((:clang_DeclContext_isFileContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isTranslationUnit(DC)
+    ccall((:clang_DeclContext_isTranslationUnit, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isRecord(DC)
+    ccall((:clang_DeclContext_isRecord, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isNamespace(DC)
+    ccall((:clang_DeclContext_isNamespace, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isStdNamespace(DC)
+    ccall((:clang_DeclContext_isStdNamespace, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isInlineNamespace(DC)
+    ccall((:clang_DeclContext_isInlineNamespace, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isDependentContext(DC)
+    ccall((:clang_DeclContext_isDependentContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isTransparentContext(DC)
+    ccall((:clang_DeclContext_isTransparentContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isExternCContext(DC)
+    ccall((:clang_DeclContext_isExternCContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_isExternCXXContext(DC)
+    ccall((:clang_DeclContext_isExternCXXContext, libclangex), Bool, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_Equals(DC, DC2)
+    ccall((:clang_DeclContext_Equals, libclangex), Bool, (CXDeclContext, CXDeclContext), DC, DC2)
+end
+
+function clang_DeclContext_getPrimaryContext(DC)
+    ccall((:clang_DeclContext_getPrimaryContext, libclangex), CXDeclContext, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_decl_iterator_begin(DC)
+    ccall((:clang_DeclContext_decl_iterator_begin, libclangex), CXDecl, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_addDecl(DC, D)
+    ccall((:clang_DeclContext_addDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_addDeclInternal(DC, D)
+    ccall((:clang_DeclContext_addDeclInternal, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_addHiddenDecl(DC, D)
+    ccall((:clang_DeclContext_addHiddenDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_removeDecl(DC, D)
+    ccall((:clang_DeclContext_removeDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_containsDecl(DC, D)
+    ccall((:clang_DeclContext_containsDecl, libclangex), Cvoid, (CXDeclContext, CXDecl), DC, D)
+end
+
+function clang_DeclContext_dumpDeclContext(DC)
+    ccall((:clang_DeclContext_dumpDeclContext, libclangex), Cvoid, (CXDeclContext,), DC)
+end
+
+function clang_DeclContext_dumpLookups(DC)
+    ccall((:clang_DeclContext_dumpLookups, libclangex), Cvoid, (CXDeclContext,), DC)
+end
+
+function clang_AccessSpecDecl_getAccessSpecifierLoc(AS)
+    ccall((:clang_AccessSpecDecl_getAccessSpecifierLoc, libclangex), CXSourceLocation_, (CXAccessSpecDecl,), AS)
+end
+
+function clang_AccessSpecDecl_setAccessSpecifierLoc(AS, ASLoc)
+    ccall((:clang_AccessSpecDecl_setAccessSpecifierLoc, libclangex), Cvoid, (CXAccessSpecDecl, CXSourceLocation_), AS, ASLoc)
+end
+
+function clang_AccessSpecDecl_getColonLoc(AS)
+    ccall((:clang_AccessSpecDecl_getColonLoc, libclangex), CXSourceLocation_, (CXAccessSpecDecl,), AS)
+end
+
+function clang_AccessSpecDecl_setColonLoc(AS, CLoc)
+    ccall((:clang_AccessSpecDecl_setColonLoc, libclangex), Cvoid, (CXAccessSpecDecl, CXSourceLocation_), AS, CLoc)
+end
+
+function clang_AccessSpecDecl_getSourceRange(AS)
+    ccall((:clang_AccessSpecDecl_getSourceRange, libclangex), CXSourceRange_, (CXAccessSpecDecl,), AS)
+end
+
+@enum CXAccessSpecifier::UInt32 begin
+    CXAccessSpecifier_AS_public = 0
+    CXAccessSpecifier_AS_protected = 1
+    CXAccessSpecifier_AS_private = 2
+    CXAccessSpecifier_AS_none = 3
+end
+
+function clang_AccessSpecDecl_Create(C, AS, DC, ASLoc, ColonLoc)
+    ccall((:clang_AccessSpecDecl_Create, libclangex), CXAccessSpecDecl, (CXASTContext, CXAccessSpecifier, CXDeclContext, CXSourceLocation_, CXSourceLocation_), C, AS, DC, ASLoc, ColonLoc)
+end
+
+function clang_AccessSpecDecl_CreateDeserialized(C, ID)
+    ccall((:clang_AccessSpecDecl_CreateDeserialized, libclangex), CXAccessSpecDecl, (CXASTContext, Cuint), C, ID)
+end
+
+function clang_CXXBaseSpecifier_getSourceRange(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getSourceRange, libclangex), CXSourceRange_, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_getColonLoc(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getColonLoc, libclangex), CXSourceLocation_, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_getEndLoc(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getEndLoc, libclangex), CXSourceLocation_, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_getBaseTypeLoc(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getBaseTypeLoc, libclangex), CXSourceLocation_, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_isVirtual(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_isVirtual, libclangex), Bool, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_isBaseOfClass(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_isBaseOfClass, libclangex), Bool, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_isPackExpansion(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_isPackExpansion, libclangex), Bool, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_getInheritConstructors(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getInheritConstructors, libclangex), Bool, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_setInheritConstructors(CXXBS, Inherit)
+    ccall((:clang_CXXBaseSpecifier_setInheritConstructors, libclangex), Cvoid, (CXCXXBaseSpecifier, Bool), CXXBS, Inherit)
+end
+
+function clang_CXXBaseSpecifier_getEllipsisLoc(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getEllipsisLoc, libclangex), CXSourceLocation_, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_getAccessSpecifier(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getAccessSpecifier, libclangex), CXAccessSpecifier, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_getAccessSpecifierAsWritten(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getAccessSpecifierAsWritten, libclangex), CXAccessSpecifier, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_getType(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getType, libclangex), CXQualType, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXBaseSpecifier_getTypeSourceInfo(CXXBS)
+    ccall((:clang_CXXBaseSpecifier_getTypeSourceInfo, libclangex), CXTypeSourceInfo, (CXCXXBaseSpecifier,), CXXBS)
+end
+
+function clang_CXXRecordDecl_getCanonicalDecl(CXXRD)
+    ccall((:clang_CXXRecordDecl_getCanonicalDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getPreviousDecl(CXXRD)
+    ccall((:clang_CXXRecordDecl_getPreviousDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getMostRecentDecl(CXXRD)
+    ccall((:clang_CXXRecordDecl_getMostRecentDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getMostRecentNonInjectedDecl(CXXRD)
+    ccall((:clang_CXXRecordDecl_getMostRecentNonInjectedDecl, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getDefinition(CXXRD)
+    ccall((:clang_CXXRecordDecl_getDefinition, libclangex), CXCXXRecordDecl, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_hasDefinition(CXXRD)
+    ccall((:clang_CXXRecordDecl_hasDefinition, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_Create(C, TK, DC, StartLoc, IdLoc, Id, PrevDecl, DelayTypeCreation)
+    ccall((:clang_CXXRecordDecl_Create, libclangex), CXCXXRecordDecl, (CXASTContext, CXTagTypeKind, CXDeclContext, CXSourceLocation_, CXSourceLocation_, CXIdentifierInfo, CXCXXRecordDecl, Bool), C, TK, DC, StartLoc, IdLoc, Id, PrevDecl, DelayTypeCreation)
+end
+
+@enum CXLambdaCaptureDefault::UInt32 begin
+    CXLambdaCaptureDefault_LCD_None = 0
+    CXLambdaCaptureDefault_LCD_ByCopy = 1
+    CXLambdaCaptureDefault_LCD_ByRef = 2
+end
+
+function clang_CXXRecordDecl_CreateLambda(C, DC, Info, Loc, DependentLambda, IsGeneric, CaptureDefault)
+    ccall((:clang_CXXRecordDecl_CreateLambda, libclangex), CXCXXRecordDecl, (CXASTContext, CXDeclContext, CXTypeSourceInfo, CXSourceLocation_, Bool, Bool, CXLambdaCaptureDefault), C, DC, Info, Loc, DependentLambda, IsGeneric, CaptureDefault)
+end
+
+function clang_CXXRecordDecl_isLambda(CXXRD)
+    ccall((:clang_CXXRecordDecl_isLambda, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isGenericLambda(CXXRD)
+    ccall((:clang_CXXRecordDecl_isGenericLambda, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_getGenericLambdaTemplateParameterList(CXXRD)
+    ccall((:clang_CXXRecordDecl_getGenericLambdaTemplateParameterList, libclangex), CXTemplateParameterList, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isAggregate(CXXRD)
+    ccall((:clang_CXXRecordDecl_isAggregate, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isPOD(CXXRD)
+    ccall((:clang_CXXRecordDecl_isPOD, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isCLike(CXXRD)
+    ccall((:clang_CXXRecordDecl_isCLike, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+function clang_CXXRecordDecl_isEmpty(CXXRD)
+    ccall((:clang_CXXRecordDecl_isEmpty, libclangex), Bool, (CXCXXRecordDecl,), CXXRD)
+end
+
+@enum CXExplicitSpecKind::UInt32 begin
+    CXExplicitSpecKind_ResolvedFalse = 0x0000000000000000
+    CXExplicitSpecKind_ResolvedTrue = 0x0000000000000001
+    CXExplicitSpecKind_Unresolved = 0x0000000000000002
+end
+
+function clang_ExplicitSpecifier_getKind(ES)
+    ccall((:clang_ExplicitSpecifier_getKind, libclangex), CXExplicitSpecKind, (CXExplicitSpecifier,), ES)
+end
+
+function clang_ExplicitSpecifier_getExpr(ES)
+    ccall((:clang_ExplicitSpecifier_getExpr, libclangex), CXExpr, (CXExplicitSpecifier,), ES)
+end
+
+function clang_ExplicitSpecifier_isSpecified(ES)
+    ccall((:clang_ExplicitSpecifier_isSpecified, libclangex), Bool, (CXExplicitSpecifier,), ES)
+end
+
+function clang_ExplicitSpecifier_isExplicit(ES)
+    ccall((:clang_ExplicitSpecifier_isExplicit, libclangex), Bool, (CXExplicitSpecifier,), ES)
+end
+
+function clang_ExplicitSpecifier_isInvalid(ES)
+    ccall((:clang_ExplicitSpecifier_isInvalid, libclangex), Bool, (CXExplicitSpecifier,), ES)
+end
+
+function clang_ExplicitSpecifier_setKind(ES, Kind)
+    ccall((:clang_ExplicitSpecifier_setKind, libclangex), Cvoid, (CXExplicitSpecifier, CXExplicitSpecKind), ES, Kind)
+end
+
+function clang_ExplicitSpecifier_setExpr(ES, E)
+    ccall((:clang_ExplicitSpecifier_setExpr, libclangex), Cvoid, (CXExplicitSpecifier, CXExpr), ES, E)
+end
+
+function clang_RequiresExprBodyDecl_Create(C, DC, StartLoc)
+    ccall((:clang_RequiresExprBodyDecl_Create, libclangex), CXRequiresExprBodyDecl, (CXASTContext, CXDeclContext, CXSourceLocation_), C, DC, StartLoc)
+end
+
+function clang_RequiresExprBodyDecl_CreateDeserialized(C, ID)
+    ccall((:clang_RequiresExprBodyDecl_CreateDeserialized, libclangex), CXRequiresExprBodyDecl, (CXASTContext, Cuint), C, ID)
+end
+
+function clang_CXXMethodDecl_Create(C, RD, StartLoc, NameInfo, T, TInfo, SC, isInline, ConstexprKind, EndLocation, TrailingRequiresClause)
+    ccall((:clang_CXXMethodDecl_Create, libclangex), CXCXXMethodDecl, (CXASTContext, CXCXXRecordDecl, CXSourceLocation_, CXDeclarationNameInfo, CXQualType, CXTypeSourceInfo, CXStorageClass, Bool, CXConstexprSpecKind, CXSourceLocation_, CXExpr), C, RD, StartLoc, NameInfo, T, TInfo, SC, isInline, ConstexprKind, EndLocation, TrailingRequiresClause)
+end
+
+function clang_CXXMethodDecl_CreateDeserialized(C, ID)
+    ccall((:clang_CXXMethodDecl_CreateDeserialized, libclangex), CXCXXMethodDecl, (CXASTContext, Cuint), C, ID)
+end
+
+function clang_CXXMethodDecl_isStatic(CXXMD)
+    ccall((:clang_CXXMethodDecl_isStatic, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_isInstance(CXXMD)
+    ccall((:clang_CXXMethodDecl_isInstance, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_isConst(CXXMD)
+    ccall((:clang_CXXMethodDecl_isConst, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_isVolatile(CXXMD)
+    ccall((:clang_CXXMethodDecl_isVolatile, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_isVirtual(CXXMD)
+    ccall((:clang_CXXMethodDecl_isVirtual, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_getDevirtualizedMethod(CXXMD, Base, IsAppleKext)
+    ccall((:clang_CXXMethodDecl_getDevirtualizedMethod, libclangex), CXCXXMethodDecl, (CXCXXMethodDecl, CXExpr, Bool), CXXMD, Base, IsAppleKext)
+end
+
+function clang_CXXMethodDecl_isCopyAssignmentOperator(CXXMD)
+    ccall((:clang_CXXMethodDecl_isCopyAssignmentOperator, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_isMoveAssignmentOperator(CXXMD)
+    ccall((:clang_CXXMethodDecl_isMoveAssignmentOperator, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_getCanonicalDecl(CXXMD)
+    ccall((:clang_CXXMethodDecl_getCanonicalDecl, libclangex), CXCXXMethodDecl, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_getMostRecentDecl(CXXMD)
+    ccall((:clang_CXXMethodDecl_getMostRecentDecl, libclangex), CXCXXMethodDecl, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_addOverriddenMethod(CXXMD, MD)
+    ccall((:clang_CXXMethodDecl_addOverriddenMethod, libclangex), Cvoid, (CXCXXMethodDecl, CXCXXMethodDecl), CXXMD, MD)
+end
+
+function clang_CXXMethodDecl_getParent(CXXMD)
+    ccall((:clang_CXXMethodDecl_getParent, libclangex), CXCXXRecordDecl, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_getThisType(CXXMD)
+    ccall((:clang_CXXMethodDecl_getThisType, libclangex), CXQualType, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_getThisObjectType(CXXMD)
+    ccall((:clang_CXXMethodDecl_getThisObjectType, libclangex), CXQualType, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_hasInlineBody(CXXMD)
+    ccall((:clang_CXXMethodDecl_hasInlineBody, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_isLambdaStaticInvoker(CXXMD)
+    ccall((:clang_CXXMethodDecl_isLambdaStaticInvoker, libclangex), Bool, (CXCXXMethodDecl,), CXXMD)
+end
+
+function clang_CXXMethodDecl_getCorrespondingMethodInClass(CXXMD, RD, MayBeBase)
+    ccall((:clang_CXXMethodDecl_getCorrespondingMethodInClass, libclangex), CXCXXRecordDecl, (CXCXXMethodDecl, CXCXXRecordDecl, Bool), CXXMD, RD, MayBeBase)
+end
+
+function clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD, RD, MayBeBase)
+    ccall((:clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass, libclangex), CXCXXRecordDecl, (CXCXXMethodDecl, CXCXXRecordDecl, Bool), CXXMD, RD, MayBeBase)
+end
+
+@enum CXLinkageSpecDecl_LanguageIDs::UInt32 begin
+    CXLinkageSpecDecl_lang_c = 1
+    CXLinkageSpecDecl_lang_cxx = 2
+end
+
+function clang_LinkageSpecDecl_Create(C, DC, ExternLoc, LangLoc, Lang, HasBraces)
+    ccall((:clang_LinkageSpecDecl_Create, libclangex), CXLinkageSpecDecl, (CXASTContext, CXDeclContext, CXSourceLocation_, CXSourceLocation_, CXLinkageSpecDecl_LanguageIDs, Bool), C, DC, ExternLoc, LangLoc, Lang, HasBraces)
+end
+
+function clang_LinkageSpecDecl_CreateDeserialized(C, ID)
+    ccall((:clang_LinkageSpecDecl_CreateDeserialized, libclangex), CXLinkageSpecDecl, (CXASTContext, Cuint), C, ID)
+end
+
+function clang_LinkageSpecDecl_getLanguage(LSD)
+    ccall((:clang_LinkageSpecDecl_getLanguage, libclangex), CXLinkageSpecDecl_LanguageIDs, (CXLinkageSpecDecl,), LSD)
+end
+
+function clang_LinkageSpecDecl_setLanguage(LSD, Lang)
+    ccall((:clang_LinkageSpecDecl_setLanguage, libclangex), Cvoid, (CXLinkageSpecDecl, CXLinkageSpecDecl_LanguageIDs), LSD, Lang)
+end
+
+function clang_LinkageSpecDecl_hasBraces(LSD)
+    ccall((:clang_LinkageSpecDecl_hasBraces, libclangex), Bool, (CXLinkageSpecDecl,), LSD)
+end
+
+function clang_LinkageSpecDecl_getExternLoc(LSD)
+    ccall((:clang_LinkageSpecDecl_getExternLoc, libclangex), CXSourceLocation_, (CXLinkageSpecDecl,), LSD)
+end
+
+function clang_LinkageSpecDecl_getRBraceLoc(LSD)
+    ccall((:clang_LinkageSpecDecl_getRBraceLoc, libclangex), CXSourceLocation_, (CXLinkageSpecDecl,), LSD)
+end
+
+function clang_LinkageSpecDecl_setExternLoc(LSD, Loc)
+    ccall((:clang_LinkageSpecDecl_setExternLoc, libclangex), Cvoid, (CXLinkageSpecDecl, CXSourceLocation_), LSD, Loc)
+end
+
+function clang_LinkageSpecDecl_setRBraceLoc(LSD, Loc)
+    ccall((:clang_LinkageSpecDecl_setRBraceLoc, libclangex), Cvoid, (CXLinkageSpecDecl, CXSourceLocation_), LSD, Loc)
+end
+
+function clang_LinkageSpecDecl_getEndLoc(LSD)
+    ccall((:clang_LinkageSpecDecl_getEndLoc, libclangex), CXSourceLocation_, (CXLinkageSpecDecl,), LSD)
+end
+
+function clang_LinkageSpecDecl_getSourceRange(LSD)
+    ccall((:clang_LinkageSpecDecl_getSourceRange, libclangex), CXSourceRange_, (CXLinkageSpecDecl,), LSD)
+end
+
+function clang_LinkageSpecDecl_castToDeclContext(LSD)
+    ccall((:clang_LinkageSpecDecl_castToDeclContext, libclangex), CXDeclContext, (CXLinkageSpecDecl,), LSD)
+end
+
+function clang_LinkageSpecDecl_castFromDeclContext(DC)
+    ccall((:clang_LinkageSpecDecl_castFromDeclContext, libclangex), CXLinkageSpecDecl, (CXDeclContext,), DC)
+end
+
+function clang_DeclGroupRef_fromeDecl(D)
+    ccall((:clang_DeclGroupRef_fromeDecl, libclangex), CXDeclGroupRef, (CXDecl,), D)
+end
+
+function clang_DeclGroupRef_isNull(DG)
+    ccall((:clang_DeclGroupRef_isNull, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_isSingleDecl(DG)
+    ccall((:clang_DeclGroupRef_isSingleDecl, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_isDeclGroup(DG)
+    ccall((:clang_DeclGroupRef_isDeclGroup, libclangex), Bool, (CXDeclGroupRef,), DG)
+end
+
+function clang_DeclGroupRef_getSingleDecl(DG)
+    ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
+end
+
+function clang_TemplateParameterList_getParam(TPL, Idx)
+    ccall((:clang_TemplateParameterList_getParam, libclangex), CXNamedDecl, (CXTemplateParameterList, Cuint), TPL, Idx)
+end
+
+function clang_TemplateParameterList_size(TPL)
+    ccall((:clang_TemplateParameterList_size, libclangex), Cuint, (CXTemplateParameterList,), TPL)
+end
+
+function clang_TemplateArgumentList_CreateCopy(Context, Args, ArgNum)
+    ccall((:clang_TemplateArgumentList_CreateCopy, libclangex), CXTemplateArgumentList, (CXASTContext, CXTemplateArgument, Csize_t), Context, Args, ArgNum)
+end
+
+function clang_TemplateArgumentList_size(TAL)
+    ccall((:clang_TemplateArgumentList_size, libclangex), Cuint, (CXTemplateArgumentList,), TAL)
+end
+
+function clang_TemplateArgumentList_data(TAL)
+    ccall((:clang_TemplateArgumentList_data, libclangex), CXTemplateArgument, (CXTemplateArgumentList,), TAL)
+end
+
+function clang_TemplateArgumentList_get(TAL, Idx)
+    ccall((:clang_TemplateArgumentList_get, libclangex), CXTemplateArgument, (CXTemplateArgumentList, Cuint), TAL, Idx)
+end
+
+function clang_TemplateDecl_init(TD, ND, TP)
+    ccall((:clang_TemplateDecl_init, libclangex), Cvoid, (CXTemplateDecl, CXNamedDecl, CXTemplateParameterList), TD, ND, TP)
+end
+
+function clang_RedeclarableTemplateDecl_getCanonicalDecl(RTD)
+    ccall((:clang_RedeclarableTemplateDecl_getCanonicalDecl, libclangex), CXRedeclarableTemplateDecl, (CXRedeclarableTemplateDecl,), RTD)
+end
+
+function clang_RedeclarableTemplateDecl_isMemberSpecialization(RTD)
+    ccall((:clang_RedeclarableTemplateDecl_isMemberSpecialization, libclangex), Bool, (CXRedeclarableTemplateDecl,), RTD)
+end
+
+function clang_RedeclarableTemplateDecl_setMemberSpecialization(RTD)
+    ccall((:clang_RedeclarableTemplateDecl_setMemberSpecialization, libclangex), Cvoid, (CXRedeclarableTemplateDecl,), RTD)
+end
+
+function clang_ClassTemplateDecl_getTemplatedDecl(CTD)
+    ccall((:clang_ClassTemplateDecl_getTemplatedDecl, libclangex), CXCXXRecordDecl, (CXClassTemplateDecl,), CTD)
+end
+
+function clang_ClassTemplateDecl_isThisDeclarationADefinition(CTD)
+    ccall((:clang_ClassTemplateDecl_isThisDeclarationADefinition, libclangex), Bool, (CXClassTemplateDecl,), CTD)
+end
+
+function clang_ClassTemplateDecl_findSpecialization(CTD, TAL, InsertPos)
+    ccall((:clang_ClassTemplateDecl_findSpecialization, libclangex), CXClassTemplateSpecializationDecl, (CXClassTemplateDecl, CXTemplateArgumentList, Ptr{Cvoid}), CTD, TAL, InsertPos)
+end
+
+function clang_ClassTemplateDecl_AddSpecialization(CTD, CTSD, InsertPos)
+    ccall((:clang_ClassTemplateDecl_AddSpecialization, libclangex), Cvoid, (CXClassTemplateDecl, CXClassTemplateSpecializationDecl, Ptr{Cvoid}), CTD, CTSD, InsertPos)
+end
+
+function clang_ClassTemplateDecl_getCanonicalDecl(CTD)
+    ccall((:clang_ClassTemplateDecl_getCanonicalDecl, libclangex), CXClassTemplateDecl, (CXClassTemplateDecl,), CTD)
+end
+
+function clang_ClassTemplateDecl_getPreviousDecl(CTD)
+    ccall((:clang_ClassTemplateDecl_getPreviousDecl, libclangex), CXClassTemplateDecl, (CXClassTemplateDecl,), CTD)
+end
+
+function clang_ClassTemplateDecl_getMostRecentDecl(CTD)
+    ccall((:clang_ClassTemplateDecl_getMostRecentDecl, libclangex), CXClassTemplateDecl, (CXClassTemplateDecl,), CTD)
+end
+
+function clang_ClassTemplateSpecializationDecl_Create(Context, TK, DC, StartLoc, IdLoc, SpecializedTemplate, Args, PrevDecl)
+    ccall((:clang_ClassTemplateSpecializationDecl_Create, libclangex), CXClassTemplateSpecializationDecl, (CXASTContext, CXTagTypeKind, CXDeclContext, CXSourceLocation_, CXSourceLocation_, CXClassTemplateDecl, CXTemplateArgumentList, CXClassTemplateSpecializationDecl), Context, TK, DC, StartLoc, IdLoc, SpecializedTemplate, Args, PrevDecl)
+end
+
+function clang_ClassTemplateSpecializationDecl_getTemplateArgs(CTSD)
+    ccall((:clang_ClassTemplateSpecializationDecl_getTemplateArgs, libclangex), CXTemplateArgumentList, (CXClassTemplateSpecializationDecl,), CTSD)
+end
+
+function clang_ClassTemplateSpecializationDecl_setTemplateArgs(CTSD, TAL)
+    ccall((:clang_ClassTemplateSpecializationDecl_setTemplateArgs, libclangex), Cvoid, (CXClassTemplateSpecializationDecl, CXTemplateArgumentList), CTSD, TAL)
+end
+
+function clang_DeclarationName_create()
+    ccall((:clang_DeclarationName_create, libclangex), CXDeclarationName, ())
+end
+
+function clang_DeclarationName_createFromIdentifierInfo(IDInfo)
+    ccall((:clang_DeclarationName_createFromIdentifierInfo, libclangex), CXDeclarationName, (CXIdentifierInfo,), IDInfo)
+end
+
+function clang_DeclarationName_dump(DN)
+    ccall((:clang_DeclarationName_dump, libclangex), Cvoid, (CXDeclarationName,), DN)
+end
+
+function clang_DeclarationName_isEmpty(DN)
+    ccall((:clang_DeclarationName_isEmpty, libclangex), Bool, (CXDeclarationName,), DN)
+end
+
+function clang_DeclarationName_getAsString(DN)
+    ccall((:clang_DeclarationName_getAsString, libclangex), CXString, (CXDeclarationName,), DN)
+end
+
+function clang_IntegerLiteral_Create(C, Val, T, L)
+    ccall((:clang_IntegerLiteral_Create, libclangex), CXIntegerLiteral, (CXASTContext, LLVMGenericValueRef, CXQualType, CXSourceLocation_), C, Val, T, L)
+end
+
+function clang_IntegerLiteral_getBeginLoc(IL)
+    ccall((:clang_IntegerLiteral_getBeginLoc, libclangex), CXSourceLocation_, (CXIntegerLiteral,), IL)
+end
+
+function clang_IntegerLiteral_getEndLoc(IL)
+    ccall((:clang_IntegerLiteral_getEndLoc, libclangex), CXSourceLocation_, (CXIntegerLiteral,), IL)
+end
+
+function clang_IntegerLiteral_getLocation(IL)
+    ccall((:clang_IntegerLiteral_getLocation, libclangex), CXSourceLocation_, (CXIntegerLiteral,), IL)
+end
+
+function clang_IntegerLiteral_setLocation(IL, L)
+    ccall((:clang_IntegerLiteral_setLocation, libclangex), Cvoid, (CXIntegerLiteral, CXSourceLocation_), IL, L)
+end
+
+@enum CXExprValueKind::UInt32 begin
+    CXExprValueKind_VK_RValue = 0
+    CXExprValueKind_VK_LValue = 1
+    CXExprValueKind_VK_XValue = 2
+end
+
+@enum CXCastKind::UInt32 begin
+    CK_Dependent = 0
+    CK_BitCast = 1
+    CK_LValueBitCast = 2
+    CK_LValueToRValueBitCast = 3
+    CK_LValueToRValue = 4
+    CK_NoOp = 5
+    CK_BaseToDerived = 6
+    CK_DerivedToBase = 7
+    CK_UncheckedDerivedToBase = 8
+    CK_Dynamic = 9
+    CK_ToUnion = 10
+    CK_ArrayToPointerDecay = 11
+    CK_FunctionToPointerDecay = 12
+    CK_NullToPointer = 13
+    CK_NullToMemberPointer = 14
+    CK_BaseToDerivedMemberPointer = 15
+    CK_DerivedToBaseMemberPointer = 16
+    CK_MemberPointerToBoolean = 17
+    CK_ReinterpretMemberPointer = 18
+    CK_UserDefinedConversion = 19
+    CK_ConstructorConversion = 20
+    CK_IntegralToPointer = 21
+    CK_PointerToIntegral = 22
+    CK_PointerToBoolean = 23
+    CK_ToVoid = 24
+    CK_VectorSplat = 25
+    CK_IntegralCast = 26
+    CK_IntegralToBoolean = 27
+    CK_IntegralToFloating = 28
+    CK_FloatingToFixedPoint = 29
+    CK_FixedPointToFloating = 30
+    CK_FixedPointCast = 31
+    CK_FixedPointToIntegral = 32
+    CK_IntegralToFixedPoint = 33
+    CK_FixedPointToBoolean = 34
+    CK_FloatingToIntegral = 35
+    CK_FloatingToBoolean = 36
+    CK_BooleanToSignedIntegral = 37
+    CK_FloatingCast = 38
+    CK_CPointerToObjCPointerCast = 39
+    CK_BlockPointerToObjCPointerCast = 40
+    CK_AnyPointerToBlockPointerCast = 41
+    CK_ObjCObjectLValueCast = 42
+    CK_FloatingRealToComplex = 43
+    CK_FloatingComplexToReal = 44
+    CK_FloatingComplexToBoolean = 45
+    CK_FloatingComplexCast = 46
+    CK_FloatingComplexToIntegralComplex = 47
+    CK_IntegralRealToComplex = 48
+    CK_IntegralComplexToReal = 49
+    CK_IntegralComplexToBoolean = 50
+    CK_IntegralComplexCast = 51
+    CK_IntegralComplexToFloatingComplex = 52
+    CK_ARCProduceObject = 53
+    CK_ARCConsumeObject = 54
+    CK_ARCReclaimReturnedObject = 55
+    CK_ARCExtendBlockObject = 56
+    CK_AtomicToNonAtomic = 57
+    CK_NonAtomicToAtomic = 58
+    CK_CopyAndAutoreleaseBlockObject = 59
+    CK_BuiltinFnToFnPtr = 60
+    CK_ZeroToOCLOpaqueType = 61
+    CK_AddressSpaceConversion = 62
+    CK_IntToOCLSampler = 63
+end
+
+function clang_CStyleCastExpr_CreateWithNoTypeInfo(C, T, VK, K, Op)
+    ccall((:clang_CStyleCastExpr_CreateWithNoTypeInfo, libclangex), CXCStyleCastExpr, (CXASTContext, CXQualType, CXExprValueKind, CXCastKind, CXExpr), C, T, VK, K, Op)
+end
+
+function clang_CStyleCastExpr_CreateEmpty(C, PathSize, HasFPFeatures)
+    ccall((:clang_CStyleCastExpr_CreateEmpty, libclangex), CXCStyleCastExpr, (CXASTContext, Cuint, Bool), C, PathSize, HasFPFeatures)
+end
+
+function clang_CStyleCastExpr_getLParenLoc(CSCE)
+    ccall((:clang_CStyleCastExpr_getLParenLoc, libclangex), CXSourceLocation_, (CXCStyleCastExpr,), CSCE)
+end
+
+function clang_CStyleCastExpr_setLParenLoc(CSCE, L)
+    ccall((:clang_CStyleCastExpr_setLParenLoc, libclangex), Cvoid, (CXCStyleCastExpr, CXSourceLocation_), CSCE, L)
+end
+
+function clang_CStyleCastExpr_getRParenLoc(CSCE)
+    ccall((:clang_CStyleCastExpr_getRParenLoc, libclangex), CXSourceLocation_, (CXCStyleCastExpr,), CSCE)
+end
+
+function clang_CStyleCastExpr_setRParenLoc(CSCE, L)
+    ccall((:clang_CStyleCastExpr_setRParenLoc, libclangex), Cvoid, (CXCStyleCastExpr, CXSourceLocation_), CSCE, L)
+end
+
+function clang_CStyleCastExpr_getBeginLoc(CSCE)
+    ccall((:clang_CStyleCastExpr_getBeginLoc, libclangex), CXSourceLocation_, (CXCStyleCastExpr,), CSCE)
+end
+
+function clang_CStyleCastExpr_getEndLoc(CSCE)
+    ccall((:clang_CStyleCastExpr_getEndLoc, libclangex), CXSourceLocation_, (CXCStyleCastExpr,), CSCE)
+end
+
+@enum CXMangleContext_ManglerKind::UInt32 begin
+    CXMangleContext_MK_Itanium = 0
+    CXMangleContext_MK_Microsoft = 1
+end
+
+function clang_MangleContext_getKind(MC)
+    ccall((:clang_MangleContext_getKind, libclangex), CXMangleContext_ManglerKind, (CXMangleContext,), MC)
+end
+
+function clang_MangleContext_getASTContext(MC)
+    ccall((:clang_MangleContext_getASTContext, libclangex), CXASTContext, (CXMangleContext,), MC)
+end
+
+function clang_MangleContext_getDiags(MC)
+    ccall((:clang_MangleContext_getDiags, libclangex), CXDiagnosticsEngine, (CXMangleContext,), MC)
+end
+
+function clang_MangleContext_getAnonymousStructId(MC, D)
+    ccall((:clang_MangleContext_getAnonymousStructId, libclangex), UInt64, (CXMangleContext, CXNamedDecl), MC, D)
+end
+
+function clang_MangleContext_shouldMangleDeclName(MC, D)
+    ccall((:clang_MangleContext_shouldMangleDeclName, libclangex), Bool, (CXMangleContext, CXNamedDecl), MC, D)
+end
+
+function clang_MangleContext_shouldMangleCXXName(MC, D)
+    ccall((:clang_MangleContext_shouldMangleCXXName, libclangex), Bool, (CXMangleContext, CXNamedDecl), MC, D)
+end
+
+function clang_MangleContext_shouldMangleStringLiteral(MC, SL)
+    ccall((:clang_MangleContext_shouldMangleStringLiteral, libclangex), Bool, (CXMangleContext, CXStringLiteral), MC, SL)
+end
+
+function clang_ASTNameGenerator_getName(G, D)
+    ccall((:clang_ASTNameGenerator_getName, libclangex), CXString, (CXASTNameGenerator, CXDecl), G, D)
+end
+
+function clang_ASTNameGenerator_getAllManglings(G, D)
+    ccall((:clang_ASTNameGenerator_getAllManglings, libclangex), Ptr{CXStringSet}, (CXASTNameGenerator, CXDecl), G, D)
+end
+
+function clang_NestedNameSpecifier_getPrefix(NNS)
+    ccall((:clang_NestedNameSpecifier_getPrefix, libclangex), CXNestedNameSpecifier, (CXNestedNameSpecifier,), NNS)
+end
+
+function clang_NestedNameSpecifier_containsErrors(NNS)
+    ccall((:clang_NestedNameSpecifier_containsErrors, libclangex), Bool, (CXNestedNameSpecifier,), NNS)
+end
+
+function clang_NestedNameSpecifier_dump(NNS)
+    ccall((:clang_NestedNameSpecifier_dump, libclangex), Cvoid, (CXNestedNameSpecifier,), NNS)
+end
+
+@enum CXTemplateArgument_ArgKind::UInt32 begin
+    CXTemplateArgument_Null = 0
+    CXTemplateArgument_Type = 1
+    CXTemplateArgument_Declaration = 2
+    CXTemplateArgument_NullPtr = 3
+    CXTemplateArgument_Integral = 4
+    CXTemplateArgument_Template = 5
+    CXTemplateArgument_TemplateExpansion = 6
+    CXTemplateArgument_Expression = 7
+    CXTemplateArgument_Pack = 8
+end
+
+function clang_TemplateArgument_constructFromQualType(OpaquePtr, isNullPtr)
+    ccall((:clang_TemplateArgument_constructFromQualType, libclangex), CXTemplateArgument, (CXQualType, Bool), OpaquePtr, isNullPtr)
+end
+
+function clang_TemplateArgument_constructFromValueDecl(VD, OpaquePtr)
+    ccall((:clang_TemplateArgument_constructFromValueDecl, libclangex), CXTemplateArgument, (CXValueDecl, CXQualType), VD, OpaquePtr)
+end
+
+function clang_TemplateArgument_constructFromIntegral(Ctx, Val, OpaquePtr)
+    ccall((:clang_TemplateArgument_constructFromIntegral, libclangex), CXTemplateArgument, (CXASTContext, LLVMGenericValueRef, CXQualType), Ctx, Val, OpaquePtr)
+end
+
+function clang_TemplateArgument_dispose(TA)
+    ccall((:clang_TemplateArgument_dispose, libclangex), Cvoid, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getKind(TA)
+    ccall((:clang_TemplateArgument_getKind, libclangex), CXTemplateArgument_ArgKind, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_isNull(TA)
+    ccall((:clang_TemplateArgument_isNull, libclangex), Bool, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_isDependent(TA)
+    ccall((:clang_TemplateArgument_isDependent, libclangex), Bool, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_isInstantiationDependent(TA)
+    ccall((:clang_TemplateArgument_isInstantiationDependent, libclangex), Bool, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsType(TA)
+    ccall((:clang_TemplateArgument_getAsType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsDecl(TA)
+    ccall((:clang_TemplateArgument_getAsDecl, libclangex), CXValueDecl, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getParamTypeForDecl(TA)
+    ccall((:clang_TemplateArgument_getParamTypeForDecl, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getNullPtrType(TA)
+    ccall((:clang_TemplateArgument_getNullPtrType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsTemplate(TA)
+    ccall((:clang_TemplateArgument_getAsTemplate, libclangex), CXTemplateName, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsTemplateOrTemplatePattern(TA)
+    ccall((:clang_TemplateArgument_getAsTemplateOrTemplatePattern, libclangex), CXTemplateName, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getNumTemplateExpansions(TA)
+    ccall((:clang_TemplateArgument_getNumTemplateExpansions, libclangex), Cuint, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getAsIntegral(TA)
+    ccall((:clang_TemplateArgument_getAsIntegral, libclangex), LLVMGenericValueRef, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_getIntegralType(TA)
+    ccall((:clang_TemplateArgument_getIntegralType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_setIntegralType(TA, OpaquePtr)
+    ccall((:clang_TemplateArgument_setIntegralType, libclangex), Cvoid, (CXTemplateArgument, CXQualType), TA, OpaquePtr)
+end
+
+function clang_TemplateArgument_getNonTypeTemplateArgumentType(TA)
+    ccall((:clang_TemplateArgument_getNonTypeTemplateArgumentType, libclangex), CXQualType, (CXTemplateArgument,), TA)
+end
+
+function clang_TemplateArgument_dump(TA)
+    ccall((:clang_TemplateArgument_dump, libclangex), Cvoid, (CXTemplateArgument,), TA)
+end
+
+@enum CXTemplateName_NameKind::UInt32 begin
+    CXTemplateName_Template = 0
+    CXTemplateName_OverloadedTemplate = 1
+    CXTemplateName_AssumedTemplate = 2
+    CXTemplateName_QualifiedTemplate = 3
+    CXTemplateName_DependentTemplate = 4
+    CXTemplateName_SubstTemplateTemplateParm = 5
+    CXTemplateName_SubstTemplateTemplateParmPack = 6
+end
+
+function clang_TemplateName_isNull(TN)
+    ccall((:clang_TemplateName_isNull, libclangex), Bool, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_getKind(TN)
+    ccall((:clang_TemplateName_getKind, libclangex), CXTemplateName_NameKind, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_getAsTemplateDecl(TN)
+    ccall((:clang_TemplateName_getAsTemplateDecl, libclangex), CXTemplateDecl, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_getUnderlying(TN)
+    ccall((:clang_TemplateName_getUnderlying, libclangex), CXTemplateName, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_getNameToSubstitute(TN)
+    ccall((:clang_TemplateName_getNameToSubstitute, libclangex), CXTemplateName, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_isDependent(TN)
+    ccall((:clang_TemplateName_isDependent, libclangex), Bool, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_isInstantiationDependent(TN)
+    ccall((:clang_TemplateName_isInstantiationDependent, libclangex), Bool, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_containsUnexpandedParameterPack(TN)
+    ccall((:clang_TemplateName_containsUnexpandedParameterPack, libclangex), Bool, (CXTemplateName,), TN)
+end
+
+function clang_TemplateName_dump(TN)
+    ccall((:clang_TemplateName_dump, libclangex), Cvoid, (CXTemplateName,), TN)
 end
 
 function clang_QualType_constructFromTypePtr(Ptr, Quals)
@@ -5645,20 +5911,76 @@ end
     CXElaboratedTypeKeyword_ETK_None = 6
 end
 
-function clang_TargetOptions_create(ErrorCode)
-    ccall((:clang_TargetOptions_create, libclangex), CXTargetOptions, (Ptr{CXInit_Error},), ErrorCode)
+function clang_CodeGenOptions_create(ErrorCode)
+    ccall((:clang_CodeGenOptions_create, libclangex), CXCodeGenOptions, (Ptr{CXInit_Error},), ErrorCode)
 end
 
-function clang_TargetOptions_dispose(TO)
-    ccall((:clang_TargetOptions_dispose, libclangex), Cvoid, (CXTargetOptions,), TO)
+function clang_CodeGenOptions_dispose(DO)
+    ccall((:clang_CodeGenOptions_dispose, libclangex), Cvoid, (CXCodeGenOptions,), DO)
 end
 
-function clang_TargetOptions_setTriple(TO, TripleStr, Num)
-    ccall((:clang_TargetOptions_setTriple, libclangex), Cvoid, (CXTargetOptions, Ptr{Cchar}, Csize_t), TO, TripleStr, Num)
+function clang_CodeGenOptions_getArgv0(CGO)
+    ccall((:clang_CodeGenOptions_getArgv0, libclangex), Ptr{Cchar}, (CXCodeGenOptions,), CGO)
 end
 
-function clang_TargetOptions_PrintStats(TO)
-    ccall((:clang_TargetOptions_PrintStats, libclangex), Cvoid, (CXTargetOptions,), TO)
+function clang_CodeGenOptions_PrintStats(CGO)
+    ccall((:clang_CodeGenOptions_PrintStats, libclangex), Cvoid, (CXCodeGenOptions,), CGO)
+end
+
+function clang_IgnoringDiagConsumer_create(ErrorCode)
+    ccall((:clang_IgnoringDiagConsumer_create, libclangex), CXDiagnosticConsumer, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_DiagnosticConsumer_dispose(DC)
+    ccall((:clang_DiagnosticConsumer_dispose, libclangex), Cvoid, (CXDiagnosticConsumer,), DC)
+end
+
+function clang_DiagnosticConsumer_BeginSourceFile(DC, LangOpts, PP)
+    ccall((:clang_DiagnosticConsumer_BeginSourceFile, libclangex), Cvoid, (CXDiagnosticConsumer, CXLangOptions, CXPreprocessor), DC, LangOpts, PP)
+end
+
+function clang_DiagnosticConsumer_EndSourceFile(DC)
+    ccall((:clang_DiagnosticConsumer_EndSourceFile, libclangex), Cvoid, (CXDiagnosticConsumer,), DC)
+end
+
+function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient, ErrorCode)
+    ccall((:clang_DiagnosticsEngine_create, libclangex), CXDiagnosticsEngine, (CXDiagnosticIDs, CXDiagnosticOptions, CXDiagnosticConsumer, Bool, Ptr{CXInit_Error}), ID, DO, DC, ShouldOwnClient, ErrorCode)
+end
+
+function clang_DiagnosticsEngine_dispose(DE)
+    ccall((:clang_DiagnosticsEngine_dispose, libclangex), Cvoid, (CXDiagnosticsEngine,), DE)
+end
+
+function clang_DiagnosticsEngine_setShowColors(DE, ShowColors)
+    ccall((:clang_DiagnosticsEngine_setShowColors, libclangex), Cvoid, (CXDiagnosticsEngine, Bool), DE, ShowColors)
+end
+
+function clang_DiagnosticIDs_create(ErrorCode)
+    ccall((:clang_DiagnosticIDs_create, libclangex), CXDiagnosticIDs, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_DiagnosticIDs_dispose(ID)
+    ccall((:clang_DiagnosticIDs_dispose, libclangex), Cvoid, (CXDiagnosticIDs,), ID)
+end
+
+function clang_DiagnosticOptions_create(ErrorCode)
+    ccall((:clang_DiagnosticOptions_create, libclangex), CXDiagnosticOptions, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_DiagnosticOptions_dispose(DO)
+    ccall((:clang_DiagnosticOptions_dispose, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
+end
+
+function clang_DiagnosticOptions_PrintStats(DO)
+    ccall((:clang_DiagnosticOptions_PrintStats, libclangex), Cvoid, (CXDiagnosticOptions,), DO)
+end
+
+function clang_DiagnosticOptions_setShowColors(DO, ShowColors)
+    ccall((:clang_DiagnosticOptions_setShowColors, libclangex), Cvoid, (CXDiagnosticOptions, Bool), DO, ShowColors)
+end
+
+function clang_DiagnosticOptions_setShowPresumedLoc(DO, ShowPresumedLoc)
+    ccall((:clang_DiagnosticOptions_setShowPresumedLoc, libclangex), Cvoid, (CXDiagnosticOptions, Bool), DO, ShowPresumedLoc)
 end
 
 function clang_FileEntry_getName(FE)
@@ -5689,92 +6011,115 @@ function clang_FileEntry_isNamedPipe(FE)
     ccall((:clang_FileEntry_isNamedPipe, libclangex), Bool, (CXFileEntry,), FE)
 end
 
-function clang_Scope_dump(S)
-    ccall((:clang_Scope_dump, libclangex), Cvoid, (CXScope,), S)
+function clang_FileManager_create(ErrorCode)
+    ccall((:clang_FileManager_create, libclangex), CXFileManager, (Ptr{CXInit_Error},), ErrorCode)
 end
 
-function clang_Scope_getParent(S)
-    ccall((:clang_Scope_getParent, libclangex), CXScope, (CXScope,), S)
+function clang_FileManager_dispose(FM)
+    ccall((:clang_FileManager_dispose, libclangex), Cvoid, (CXFileManager,), FM)
 end
 
-function clang_Scope_getDepth(S)
-    ccall((:clang_Scope_getDepth, libclangex), Cuint, (CXScope,), S)
+function clang_FileManager_getBufferForFile(FM, FE, isVolatile, RequiresNullTerminator)
+    ccall((:clang_FileManager_getBufferForFile, libclangex), LLVMMemoryBufferRef, (CXFileManager, CXFileEntry, Bool, Bool), FM, FE, isVolatile, RequiresNullTerminator)
 end
 
-function clang_CompilerInvocation_create(ErrorCode)
-    ccall((:clang_CompilerInvocation_create, libclangex), CXCompilerInvocation, (Ptr{CXInit_Error},), ErrorCode)
+function clang_FileManager_PrintStats(FM)
+    ccall((:clang_FileManager_PrintStats, libclangex), Cvoid, (CXFileManager,), FM)
 end
 
-function clang_CompilerInvocation_dispose(CI)
-    ccall((:clang_CompilerInvocation_dispose, libclangex), Cvoid, (CXCompilerInvocation,), CI)
+function clang_FileManager_getDirectory(FM, DirName, CacheFailure)
+    ccall((:clang_FileManager_getDirectory, libclangex), CXDirectoryEntry, (CXFileManager, Ptr{Cchar}, Bool), FM, DirName, CacheFailure)
 end
 
-function clang_CompilerInvocation_createFromCommandLine(command_line_args_with_src, num_command_line_args, Diags, ErrorCode)
-    ccall((:clang_CompilerInvocation_createFromCommandLine, libclangex), CXCompilerInvocation, (Ptr{Ptr{Cchar}}, Cint, CXDiagnosticsEngine, Ptr{CXInit_Error}), command_line_args_with_src, num_command_line_args, Diags, ErrorCode)
+function clang_DirectoryEntry_getName(DE)
+    ccall((:clang_DirectoryEntry_getName, libclangex), Ptr{Cchar}, (CXDirectoryEntry,), DE)
 end
 
-function clang_CompilerInvocation_getCodeGenOpts(CI)
-    ccall((:clang_CompilerInvocation_getCodeGenOpts, libclangex), CXCodeGenOptions, (CXCompilerInvocation,), CI)
+function clang_FileManager_getFileRef(FM, Filename, OpenFile, CacheFailure)
+    ccall((:clang_FileManager_getFileRef, libclangex), CXFileEntryRef, (CXFileManager, Ptr{Cchar}, Bool, Bool), FM, Filename, OpenFile, CacheFailure)
 end
 
-function clang_CompilerInvocation_getDiagnosticOpts(CI)
-    ccall((:clang_CompilerInvocation_getDiagnosticOpts, libclangex), CXDiagnosticOptions, (CXCompilerInvocation,), CI)
+function clang_FileEntryRef_dispose(FER)
+    ccall((:clang_FileEntryRef_dispose, libclangex), Cvoid, (CXFileEntryRef,), FER)
 end
 
-function clang_CompilerInvocation_getFrontendOpts(CI)
-    ccall((:clang_CompilerInvocation_getFrontendOpts, libclangex), CXFrontendOptions, (CXCompilerInvocation,), CI)
+function clang_FileEntryRef_getFileEntry(FER)
+    ccall((:clang_FileEntryRef_getFileEntry, libclangex), CXFileEntry, (CXFileEntryRef,), FER)
 end
 
-function clang_CompilerInvocation_getHeaderSearchOpts(CI)
-    ccall((:clang_CompilerInvocation_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXCompilerInvocation,), CI)
+function clang_IdentifierTable_PrintStats(IT)
+    ccall((:clang_IdentifierTable_PrintStats, libclangex), Cvoid, (CXIdentifierTable,), IT)
 end
 
-function clang_CompilerInvocation_getPreprocessorOpts(CI)
-    ccall((:clang_CompilerInvocation_getPreprocessorOpts, libclangex), CXPreprocessorOptions, (CXCompilerInvocation,), CI)
+function clang_IdentifierTable_get(Idents, Name)
+    ccall((:clang_IdentifierTable_get, libclangex), CXIdentifierInfo, (CXIdentifierTable, Ptr{Cchar}), Idents, Name)
 end
 
-function clang_CompilerInvocation_getTargetOpts(CI)
-    ccall((:clang_CompilerInvocation_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInvocation,), CI)
+@enum CXLambdaCaptureKind::UInt32 begin
+    CXLambdaCaptureKind_LCK_This = 0
+    CXLambdaCaptureKind_LCK_StarThis = 1
+    CXLambdaCaptureKind_LCK_ByCopy = 2
+    CXLambdaCaptureKind_LCK_ByRef = 3
+    CXLambdaCaptureKind_LCK_VLAType = 4
 end
 
-function clang_DeclGroupRef_fromeDecl(D)
-    ccall((:clang_DeclGroupRef_fromeDecl, libclangex), CXDeclGroupRef, (CXDecl,), D)
+function clang_LangOptions_PrintStats(LO)
+    ccall((:clang_LangOptions_PrintStats, libclangex), Cvoid, (CXLangOptions,), LO)
 end
 
-function clang_DeclGroupRef_isNull(DG)
-    ccall((:clang_DeclGroupRef_isNull, libclangex), Bool, (CXDeclGroupRef,), DG)
+@enum CXPragmaMSStructKind::UInt32 begin
+    CXPragmaMSStructKind_PMSST_OFF = 0
+    CXPragmaMSStructKind_PMSST_ON = 1
 end
 
-function clang_DeclGroupRef_isSingleDecl(DG)
-    ccall((:clang_DeclGroupRef_isSingleDecl, libclangex), Bool, (CXDeclGroupRef,), DG)
+@enum CXPragmaFloatControlKind::UInt32 begin
+    CXPragmaFloatControlKind_PFC_Unknown = 0
+    CXPragmaFloatControlKind_PFC_Precise = 1
+    CXPragmaFloatControlKind_PFC_NoPrecise = 2
+    CXPragmaFloatControlKind_PFC_Except = 3
+    CXPragmaFloatControlKind_PFC_NoExcept = 4
+    CXPragmaFloatControlKind_PFC_Push = 5
+    CXPragmaFloatControlKind_PFC_Pop = 6
 end
 
-function clang_DeclGroupRef_isDeclGroup(DG)
-    ccall((:clang_DeclGroupRef_isDeclGroup, libclangex), Bool, (CXDeclGroupRef,), DG)
+function clang_SourceLocation_createInvalid()
+    ccall((:clang_SourceLocation_createInvalid, libclangex), CXSourceLocation_, ())
 end
 
-function clang_DeclGroupRef_getSingleDecl(DG)
-    ccall((:clang_DeclGroupRef_getSingleDecl, libclangex), CXDecl, (CXDeclGroupRef,), DG)
+function clang_SourceLocation_isFileID(Loc)
+    ccall((:clang_SourceLocation_isFileID, libclangex), Bool, (CXSourceLocation_,), Loc)
 end
 
-function clang_DeclarationName_create()
-    ccall((:clang_DeclarationName_create, libclangex), CXDeclarationName, ())
+function clang_SourceLocation_isMacroID(Loc)
+    ccall((:clang_SourceLocation_isMacroID, libclangex), Bool, (CXSourceLocation_,), Loc)
 end
 
-function clang_DeclarationName_createFromIdentifierInfo(IDInfo)
-    ccall((:clang_DeclarationName_createFromIdentifierInfo, libclangex), CXDeclarationName, (CXIdentifierInfo,), IDInfo)
+function clang_SourceLocation_isValid(Loc)
+    ccall((:clang_SourceLocation_isValid, libclangex), Bool, (CXSourceLocation_,), Loc)
 end
 
-function clang_DeclarationName_dump(DN)
-    ccall((:clang_DeclarationName_dump, libclangex), Cvoid, (CXDeclarationName,), DN)
+function clang_SourceLocation_isInvalid(Loc)
+    ccall((:clang_SourceLocation_isInvalid, libclangex), Bool, (CXSourceLocation_,), Loc)
 end
 
-function clang_DeclarationName_isEmpty(DN)
-    ccall((:clang_DeclarationName_isEmpty, libclangex), Bool, (CXDeclarationName,), DN)
+function clang_SourceLocation_isPairOfFileLocations(Start, End)
+    ccall((:clang_SourceLocation_isPairOfFileLocations, libclangex), Bool, (CXSourceLocation_, CXSourceLocation_), Start, End)
 end
 
-function clang_DeclarationName_getAsString(DN)
-    ccall((:clang_DeclarationName_getAsString, libclangex), CXString, (CXDeclarationName,), DN)
+function clang_SourceLocation_getHashValue(Loc)
+    ccall((:clang_SourceLocation_getHashValue, libclangex), Cuint, (CXSourceLocation_,), Loc)
+end
+
+function clang_SourceLocation_dump(Loc, SM)
+    ccall((:clang_SourceLocation_dump, libclangex), Cvoid, (CXSourceLocation_, CXSourceManager), Loc, SM)
+end
+
+function clang_SourceLocation_printToString(Loc, SM)
+    ccall((:clang_SourceLocation_printToString, libclangex), CXString, (CXSourceLocation_, CXSourceManager), Loc, SM)
+end
+
+function clang_SourceLocation_getLocWithOffset(Loc, Offset)
+    ccall((:clang_SourceLocation_getLocWithOffset, libclangex), CXSourceLocation_, (CXSourceLocation_, Cint), Loc, Offset)
 end
 
 function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
@@ -5823,6 +6168,605 @@ end
 
 function clang_SourceManager_getLocForEndOfFile(SM, FID)
     ccall((:clang_SourceManager_getLocForEndOfFile, libclangex), CXSourceLocation_, (CXSourceManager, CXFileID), SM, FID)
+end
+
+function clang_TargetInfo_CreateTargetInfo(DE, Opts)
+    ccall((:clang_TargetInfo_CreateTargetInfo, libclangex), CXTargetInfo_, (CXDiagnosticsEngine, CXTargetOptions), DE, Opts)
+end
+
+function clang_TargetOptions_create(ErrorCode)
+    ccall((:clang_TargetOptions_create, libclangex), CXTargetOptions, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_TargetOptions_dispose(TO)
+    ccall((:clang_TargetOptions_dispose, libclangex), Cvoid, (CXTargetOptions,), TO)
+end
+
+function clang_TargetOptions_setTriple(TO, TripleStr, Num)
+    ccall((:clang_TargetOptions_setTriple, libclangex), Cvoid, (CXTargetOptions, Ptr{Cchar}, Csize_t), TO, TripleStr, Num)
+end
+
+function clang_TargetOptions_PrintStats(TO)
+    ccall((:clang_TargetOptions_PrintStats, libclangex), Cvoid, (CXTargetOptions,), TO)
+end
+
+function clang_CodeGen_convertTypeForMemory(CGM, T)
+    ccall((:clang_CodeGen_convertTypeForMemory, libclangex), LLVMTypeRef, (CXCodeGenModule, CXQualType), CGM, T)
+end
+
+function clang_EmitAssemblyAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitAssemblyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitBCAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitBCAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitLLVMAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitLLVMAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitLLVMOnlyAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitLLVMOnlyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitCodeGenOnlyAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitCodeGenOnlyAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_EmitObjAction_create(ErrorCode, LLVMCtx)
+    ccall((:clang_EmitObjAction_create, libclangex), CXCodeGenAction, (Ptr{CXInit_Error}, LLVMContextRef), ErrorCode, LLVMCtx)
+end
+
+function clang_CodeGenAction_dispose(CA)
+    ccall((:clang_CodeGenAction_dispose, libclangex), Cvoid, (CXCodeGenAction,), CA)
+end
+
+function clang_CodeGenAction_takeModule(CA)
+    ccall((:clang_CodeGenAction_takeModule, libclangex), LLVMModuleRef, (CXCodeGenAction,), CA)
+end
+
+function clang_CreateLLVMCodeGen(CI, LLVMCtx, ModuleName)
+    ccall((:clang_CreateLLVMCodeGen, libclangex), CXCodeGenerator, (CXCompilerInstance, LLVMContextRef, Ptr{Cchar}), CI, LLVMCtx, ModuleName)
+end
+
+function clang_CodeGenerator_CGM(CG)
+    ccall((:clang_CodeGenerator_CGM, libclangex), CXCodeGenModule, (CXCodeGenerator,), CG)
+end
+
+function clang_CodeGenerator_GetModule(CG)
+    ccall((:clang_CodeGenerator_GetModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
+end
+
+function clang_CodeGenerator_ReleaseModule(CG)
+    ccall((:clang_CodeGenerator_ReleaseModule, libclangex), LLVMModuleRef, (CXCodeGenerator,), CG)
+end
+
+function clang_CodeGenerator_GetDeclForMangledName(CG, MangledName)
+    ccall((:clang_CodeGenerator_GetDeclForMangledName, libclangex), CXDecl, (CXCodeGenerator, Ptr{Cchar}), CG, MangledName)
+end
+
+function clang_CodeGenerator_StartModule(CG, LLVMCtx, ModuleName)
+    ccall((:clang_CodeGenerator_StartModule, libclangex), LLVMModuleRef, (CXCodeGenerator, LLVMContextRef, Ptr{Cchar}), CG, LLVMCtx, ModuleName)
+end
+
+function clang_Driver_GetResourcesPathLength(BinaryPath)
+    ccall((:clang_Driver_GetResourcesPathLength, libclangex), Csize_t, (Ptr{Cchar},), BinaryPath)
+end
+
+function clang_Driver_GetResourcesPath(BinaryPath, ResourcesPath, N)
+    ccall((:clang_Driver_GetResourcesPath, libclangex), Cvoid, (Ptr{Cchar}, Ptr{Cchar}, Csize_t), BinaryPath, ResourcesPath, N)
+end
+
+function clang_CompilerInstance_create(ErrorCode)
+    ccall((:clang_CompilerInstance_create, libclangex), CXCompilerInstance, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_CompilerInstance_dispose(CI)
+    ccall((:clang_CompilerInstance_dispose, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_hasDiagnostics(CI)
+    ccall((:clang_CompilerInstance_hasDiagnostics, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getDiagnostics(CI)
+    ccall((:clang_CompilerInstance_getDiagnostics, libclangex), CXDiagnosticsEngine, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setDiagnostics(CI, Value)
+    ccall((:clang_CompilerInstance_setDiagnostics, libclangex), Cvoid, (CXCompilerInstance, CXDiagnosticsEngine), CI, Value)
+end
+
+function clang_CompilerInstance_getDiagnosticClient(CI)
+    ccall((:clang_CompilerInstance_getDiagnosticClient, libclangex), CXDiagnosticConsumer, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_createDiagnostics(CI, DC, ShouldOwnClient)
+    ccall((:clang_CompilerInstance_createDiagnostics, libclangex), Cvoid, (CXCompilerInstance, CXDiagnosticConsumer, Bool), CI, DC, ShouldOwnClient)
+end
+
+function clang_CompilerInstance_hasFileManager(CI)
+    ccall((:clang_CompilerInstance_hasFileManager, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getFileManager(CI)
+    ccall((:clang_CompilerInstance_getFileManager, libclangex), CXFileManager, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setFileManager(CI, FM)
+    ccall((:clang_CompilerInstance_setFileManager, libclangex), Cvoid, (CXCompilerInstance, CXFileManager), CI, FM)
+end
+
+function clang_CompilerInstance_createFileManager(CI)
+    ccall((:clang_CompilerInstance_createFileManager, libclangex), CXFileManager, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_createFileManagerWithVOFS4PCH(CI, Path, ModificationTime, PCHBuffer)
+    ccall((:clang_CompilerInstance_createFileManagerWithVOFS4PCH, libclangex), CXFileManager, (CXCompilerInstance, Ptr{Cchar}, time_t, LLVMMemoryBufferRef), CI, Path, ModificationTime, PCHBuffer)
+end
+
+function clang_CompilerInstance_hasSourceManager(CI)
+    ccall((:clang_CompilerInstance_hasSourceManager, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getSourceManager(CI)
+    ccall((:clang_CompilerInstance_getSourceManager, libclangex), CXSourceManager, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setSourceManager(CI, SM)
+    ccall((:clang_CompilerInstance_setSourceManager, libclangex), Cvoid, (CXCompilerInstance, CXSourceManager), CI, SM)
+end
+
+function clang_CompilerInstance_createSourceManager(CI, FileMgr)
+    ccall((:clang_CompilerInstance_createSourceManager, libclangex), Cvoid, (CXCompilerInstance, CXFileManager), CI, FileMgr)
+end
+
+function clang_CompilerInstance_hasInvocation(CI)
+    ccall((:clang_CompilerInstance_hasInvocation, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getInvocation(CI)
+    ccall((:clang_CompilerInstance_getInvocation, libclangex), CXCompilerInvocation, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setInvocation(CI, CInv)
+    ccall((:clang_CompilerInstance_setInvocation, libclangex), Cvoid, (CXCompilerInstance, CXCompilerInvocation), CI, CInv)
+end
+
+function clang_CompilerInstance_hasTarget(CI)
+    ccall((:clang_CompilerInstance_hasTarget, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getTarget(CI)
+    ccall((:clang_CompilerInstance_getTarget, libclangex), CXTargetInfo_, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setTarget(CI, Info)
+    ccall((:clang_CompilerInstance_setTarget, libclangex), Cvoid, (CXCompilerInstance, CXTargetInfo_), CI, Info)
+end
+
+function clang_CompilerInstance_setTargetAndLangOpts(CI)
+    ccall((:clang_CompilerInstance_setTargetAndLangOpts, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_hasPreprocessor(CI)
+    ccall((:clang_CompilerInstance_hasPreprocessor, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getPreprocessor(CI)
+    ccall((:clang_CompilerInstance_getPreprocessor, libclangex), CXPreprocessor, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setPreprocessor(CI, PP)
+    ccall((:clang_CompilerInstance_setPreprocessor, libclangex), Cvoid, (CXCompilerInstance, CXPreprocessor), CI, PP)
+end
+
+function clang_CompilerInstance_createPreprocessor(CI, TUKind)
+    ccall((:clang_CompilerInstance_createPreprocessor, libclangex), Cvoid, (CXCompilerInstance, CXTranslationUnitKind), CI, TUKind)
+end
+
+function clang_CompilerInstance_hasSema(CI)
+    ccall((:clang_CompilerInstance_hasSema, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getSema(CI)
+    ccall((:clang_CompilerInstance_getSema, libclangex), CXSema, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setSema(CI, S)
+    ccall((:clang_CompilerInstance_setSema, libclangex), Cvoid, (CXCompilerInstance, CXSema), CI, S)
+end
+
+function clang_CompilerInstance_createSema(CI, TUKind)
+    ccall((:clang_CompilerInstance_createSema, libclangex), Cvoid, (CXCompilerInstance, CXTranslationUnitKind), CI, TUKind)
+end
+
+function clang_CompilerInstance_hasASTContext(CI)
+    ccall((:clang_CompilerInstance_hasASTContext, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getASTContext(CI)
+    ccall((:clang_CompilerInstance_getASTContext, libclangex), CXASTContext, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setASTContext(CI, Ctx)
+    ccall((:clang_CompilerInstance_setASTContext, libclangex), Cvoid, (CXCompilerInstance, CXASTContext), CI, Ctx)
+end
+
+function clang_CompilerInstance_createASTContext(CI)
+    ccall((:clang_CompilerInstance_createASTContext, libclangex), Cvoid, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_hasASTConsumer(CI)
+    ccall((:clang_CompilerInstance_hasASTConsumer, libclangex), Bool, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getASTConsumer(CI)
+    ccall((:clang_CompilerInstance_getASTConsumer, libclangex), CXASTConsumer, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_setASTConsumer(CI, CG)
+    ccall((:clang_CompilerInstance_setASTConsumer, libclangex), Cvoid, (CXCompilerInstance, CXASTConsumer), CI, CG)
+end
+
+function clang_CompilerInstance_getCodeGenOpts(CI)
+    ccall((:clang_CompilerInstance_getCodeGenOpts, libclangex), CXCodeGenOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getDiagnosticOpts(CI)
+    ccall((:clang_CompilerInstance_getDiagnosticOpts, libclangex), CXDiagnosticOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getFrontendOpts(CI)
+    ccall((:clang_CompilerInstance_getFrontendOpts, libclangex), CXFrontendOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getHeaderSearchOpts(CI)
+    ccall((:clang_CompilerInstance_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getPreprocessorOpts(CI)
+    ccall((:clang_CompilerInstance_getPreprocessorOpts, libclangex), CXPreprocessorOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getTargetOpts(CI)
+    ccall((:clang_CompilerInstance_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_getLangOpts(CI)
+    ccall((:clang_CompilerInstance_getLangOpts, libclangex), CXLangOptions, (CXCompilerInstance,), CI)
+end
+
+function clang_CompilerInstance_ExecuteAction(CI, Act)
+    ccall((:clang_CompilerInstance_ExecuteAction, libclangex), Bool, (CXCompilerInstance, CXFrontendAction), CI, Act)
+end
+
+function clang_CompilerInvocation_create(ErrorCode)
+    ccall((:clang_CompilerInvocation_create, libclangex), CXCompilerInvocation, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_CompilerInvocation_dispose(CI)
+    ccall((:clang_CompilerInvocation_dispose, libclangex), Cvoid, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_createFromCommandLine(command_line_args_with_src, num_command_line_args, Diags, ErrorCode)
+    ccall((:clang_CompilerInvocation_createFromCommandLine, libclangex), CXCompilerInvocation, (Ptr{Ptr{Cchar}}, Cint, CXDiagnosticsEngine, Ptr{CXInit_Error}), command_line_args_with_src, num_command_line_args, Diags, ErrorCode)
+end
+
+function clang_CompilerInvocation_getCodeGenOpts(CI)
+    ccall((:clang_CompilerInvocation_getCodeGenOpts, libclangex), CXCodeGenOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getDiagnosticOpts(CI)
+    ccall((:clang_CompilerInvocation_getDiagnosticOpts, libclangex), CXDiagnosticOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getFrontendOpts(CI)
+    ccall((:clang_CompilerInvocation_getFrontendOpts, libclangex), CXFrontendOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getHeaderSearchOpts(CI)
+    ccall((:clang_CompilerInvocation_getHeaderSearchOpts, libclangex), CXHeaderSearchOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getPreprocessorOpts(CI)
+    ccall((:clang_CompilerInvocation_getPreprocessorOpts, libclangex), CXPreprocessorOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_CompilerInvocation_getTargetOpts(CI)
+    ccall((:clang_CompilerInvocation_getTargetOpts, libclangex), CXTargetOptions, (CXCompilerInvocation,), CI)
+end
+
+function clang_FrontendOptions_PrintStats(FEO)
+    ccall((:clang_FrontendOptions_PrintStats, libclangex), Cvoid, (CXFrontendOptions,), FEO)
+end
+
+function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
+    ccall((:clang_TextDiagnosticPrinter_create, libclangex), CXDiagnosticConsumer, (CXDiagnosticOptions, Ptr{CXInit_Error}), Opts, ErrorCode)
+end
+
+function clang_HeaderSearch_PrintStats(HS)
+    ccall((:clang_HeaderSearch_PrintStats, libclangex), Cvoid, (CXHeaderSearch,), HS)
+end
+
+function clang_HeaderSearchOptions_GetResourceDirLength(HSO)
+    ccall((:clang_HeaderSearchOptions_GetResourceDirLength, libclangex), Csize_t, (CXHeaderSearchOptions,), HSO)
+end
+
+function clang_HeaderSearchOptions_GetResourceDir(HSO, ResourcesDir, N)
+    ccall((:clang_HeaderSearchOptions_GetResourceDir, libclangex), Cvoid, (CXHeaderSearchOptions, Ptr{Cchar}, Csize_t), HSO, ResourcesDir, N)
+end
+
+function clang_HeaderSearchOptions_SetResourceDir(HSO, ResourcesDir, N)
+    ccall((:clang_HeaderSearchOptions_SetResourceDir, libclangex), Cvoid, (CXHeaderSearchOptions, Ptr{Cchar}, Csize_t), HSO, ResourcesDir, N)
+end
+
+function clang_HeaderSearchOptions_PrintStats(HSO)
+    ccall((:clang_HeaderSearchOptions_PrintStats, libclangex), Cvoid, (CXHeaderSearchOptions,), HSO)
+end
+
+function clang_Lexer_create(FID, FromFile, SM, langOpts, ErrorCode)
+    ccall((:clang_Lexer_create, libclangex), CXLexer, (CXFileID, LLVMMemoryBufferRef, CXSourceManager, CXLangOptions, Ptr{CXInit_Error}), FID, FromFile, SM, langOpts, ErrorCode)
+end
+
+function clang_Lexer_dispose(Lex)
+    ccall((:clang_Lexer_dispose, libclangex), Cvoid, (CXLexer,), Lex)
+end
+
+function clang_Preprocessor_getHeaderSearchInfo(PP)
+    ccall((:clang_Preprocessor_getHeaderSearchInfo, libclangex), CXHeaderSearch, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_EnterMainSourceFile(PP)
+    ccall((:clang_Preprocessor_EnterMainSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_EnterSourceFile(PP, FID, Loc)
+    ccall((:clang_Preprocessor_EnterSourceFile, libclangex), Bool, (CXPreprocessor, CXFileID, CXSourceLocation_), PP, FID, Loc)
+end
+
+function clang_Preprocessor_EndSourceFile(PP)
+    ccall((:clang_Preprocessor_EndSourceFile, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_PrintStats(PP)
+    ccall((:clang_Preprocessor_PrintStats, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_InitializeBuiltins(PP)
+    ccall((:clang_Preprocessor_InitializeBuiltins, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_enableIncrementalProcessing(PP)
+    ccall((:clang_Preprocessor_enableIncrementalProcessing, libclangex), Cvoid, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_isIncrementalProcessingEnabled(PP)
+    ccall((:clang_Preprocessor_isIncrementalProcessingEnabled, libclangex), Bool, (CXPreprocessor,), PP)
+end
+
+function clang_Preprocessor_DumpToken(PP, Tok, DumpFlags)
+    ccall((:clang_Preprocessor_DumpToken, libclangex), Cvoid, (CXPreprocessor, CXToken_, Bool), PP, Tok, DumpFlags)
+end
+
+function clang_Preprocessor_DumpLocation(PP, Loc)
+    ccall((:clang_Preprocessor_DumpLocation, libclangex), Cvoid, (CXPreprocessor, CXSourceLocation_), PP, Loc)
+end
+
+function clang_PreprocessorOptions_getIncludesNum(PPO)
+    ccall((:clang_PreprocessorOptions_getIncludesNum, libclangex), Csize_t, (CXPreprocessorOptions,), PPO)
+end
+
+function clang_PreprocessorOptions_getIncludes(PPO, IncsOut, Num)
+    ccall((:clang_PreprocessorOptions_getIncludes, libclangex), Cvoid, (CXPreprocessorOptions, Ptr{Ptr{Cchar}}, Csize_t), PPO, IncsOut, Num)
+end
+
+function clang_PreprocessorOptions_PrintStats(PPO)
+    ccall((:clang_PreprocessorOptions_PrintStats, libclangex), Cvoid, (CXPreprocessorOptions,), PPO)
+end
+
+function clang_Token_getAnnotationValue(Tok)
+    ccall((:clang_Token_getAnnotationValue, libclangex), CXAnnotationValue, (CXToken_,), Tok)
+end
+
+function clang_Token_getLocation(Tok)
+    ccall((:clang_Token_getLocation, libclangex), CXSourceLocation_, (CXToken_,), Tok)
+end
+
+function clang_Token_getAnnotationEndLoc(Tok)
+    ccall((:clang_Token_getAnnotationEndLoc, libclangex), CXSourceLocation_, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_eof(Tok)
+    ccall((:clang_Token_isKind_eof, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_identifier(Tok)
+    ccall((:clang_Token_isKind_identifier, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_coloncolon(Tok)
+    ccall((:clang_Token_isKind_coloncolon, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_annot_cxxscope(Tok)
+    ccall((:clang_Token_isKind_annot_cxxscope, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_annot_typename(Tok)
+    ccall((:clang_Token_isKind_annot_typename, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_annot_template_id(Tok)
+    ccall((:clang_Token_isKind_annot_template_id, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_kw_enum(Tok)
+    ccall((:clang_Token_isKind_kw_enum, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_Token_isKind_kw_typename(Tok)
+    ccall((:clang_Token_isKind_kw_typename, libclangex), Bool, (CXToken_,), Tok)
+end
+
+function clang_ParseAST(Sema, PrintStats, SkipFunctionBodies)
+    ccall((:clang_ParseAST, libclangex), Cvoid, (CXSema, Bool, Bool), Sema, PrintStats, SkipFunctionBodies)
+end
+
+function clang_Parser_tryParseAndSkipInvalidOrParsedDecl(Parser, CodeGen)
+    ccall((:clang_Parser_tryParseAndSkipInvalidOrParsedDecl, libclangex), Bool, (CXParser, CXCodeGenerator), Parser, CodeGen)
+end
+
+@enum CXDeclSpecContext::UInt32 begin
+    CXDeclSpecContext_DSC_normal = 0
+    CXDeclSpecContext_DSC_class = 1
+    CXDeclSpecContext_DSC_type_specifier = 2
+    CXDeclSpecContext_DSC_trailing = 3
+    CXDeclSpecContext_DSC_alias_declaration = 4
+    CXDeclSpecContext_DSC_top_level = 5
+    CXDeclSpecContext_DSC_template_param = 6
+    CXDeclSpecContext_DSC_template_type_arg = 7
+    CXDeclSpecContext_DSC_objc_method_result = 8
+    CXDeclSpecContext_DSC_condition = 9
+end
+
+function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
+    ccall((:clang_Parser_create, libclangex), CXParser, (CXPreprocessor, CXSema, Bool, Ptr{CXInit_Error}), PP, Actions, SkipFunctionBodies, ErrorCode)
+end
+
+function clang_Parser_dispose(P)
+    ccall((:clang_Parser_dispose, libclangex), Cvoid, (CXParser,), P)
+end
+
+function clang_Parser_Initialize(P)
+    ccall((:clang_Parser_Initialize, libclangex), Cvoid, (CXParser,), P)
+end
+
+function clang_Parser_getLangOpts(P)
+    ccall((:clang_Parser_getLangOpts, libclangex), CXLangOptions, (CXParser,), P)
+end
+
+function clang_Parser_getTargetInfo(P)
+    ccall((:clang_Parser_getTargetInfo, libclangex), CXTargetInfo_, (CXParser,), P)
+end
+
+function clang_Parser_getPreprocessor(P)
+    ccall((:clang_Parser_getPreprocessor, libclangex), CXPreprocessor, (CXParser,), P)
+end
+
+function clang_Parser_getActions(P)
+    ccall((:clang_Parser_getActions, libclangex), CXSema, (CXParser,), P)
+end
+
+function clang_Parser_getCurToken(P)
+    ccall((:clang_Parser_getCurToken, libclangex), CXToken_, (CXParser,), P)
+end
+
+function clang_Parser_NextToken(P)
+    ccall((:clang_Parser_NextToken, libclangex), CXToken_, (CXParser,), P)
+end
+
+function clang_Parser_getCurScope(P)
+    ccall((:clang_Parser_getCurScope, libclangex), CXScope, (CXParser,), P)
+end
+
+function clang_Parser_ConsumeToken(P)
+    ccall((:clang_Parser_ConsumeToken, libclangex), CXSourceLocation_, (CXParser,), P)
+end
+
+function clang_Parser_ConsumeAnyToken(P)
+    ccall((:clang_Parser_ConsumeAnyToken, libclangex), CXSourceLocation_, (CXParser,), P)
+end
+
+function clang_Parser_TryAnnotateCXXScopeToken(P, EnteringContext)
+    ccall((:clang_Parser_TryAnnotateCXXScopeToken, libclangex), Bool, (CXParser, Bool), P, EnteringContext)
+end
+
+function clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(P, SS, IsNewScope)
+    ccall((:clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec, libclangex), Bool, (CXParser, CXCXXScopeSpec, Bool), P, SS, IsNewScope)
+end
+
+function clang_Parser_parseOneTopLevelDecl(Parser, IsFirstDecl)
+    ccall((:clang_Parser_parseOneTopLevelDecl, libclangex), CXDeclGroupRef, (CXParser, Bool), Parser, IsFirstDecl)
+end
+
+@enum CXDeclaratorContext::UInt32 begin
+    CXDeclaratorContext_File = 0
+    CXDeclaratorContext_Prototype = 1
+    CXDeclaratorContext_ObjCResult = 2
+    CXDeclaratorContext_ObjCParameter = 3
+    CXDeclaratorContext_KNRTypeList = 4
+    CXDeclaratorContext_TypeName = 5
+    CXDeclaratorContext_FunctionalCast = 6
+    CXDeclaratorContext_Member = 7
+    CXDeclaratorContext_Block = 8
+    CXDeclaratorContext_ForInit = 9
+    CXDeclaratorContext_SelectionInit = 10
+    CXDeclaratorContext_Condition = 11
+    CXDeclaratorContext_TemplateParam = 12
+    CXDeclaratorContext_CXXNew = 13
+    CXDeclaratorContext_CXXCatch = 14
+    CXDeclaratorContext_ObjCCatch = 15
+    CXDeclaratorContext_BlockLiteral = 16
+    CXDeclaratorContext_LambdaExpr = 17
+    CXDeclaratorContext_LambdaExprParameter = 18
+    CXDeclaratorContext_ConversionId = 19
+    CXDeclaratorContext_TrailingReturn = 20
+    CXDeclaratorContext_TrailingReturnVar = 21
+    CXDeclaratorContext_TemplateArg = 22
+    CXDeclaratorContext_TemplateTypeArg = 23
+    CXDeclaratorContext_AliasDecl = 24
+    CXDeclaratorContext_AliasTemplate = 25
+    CXDeclaratorContext_RequiresExpr = 26
+end
+
+function clang_CXXScopeSpec_create(ErrorCode)
+    ccall((:clang_CXXScopeSpec_create, libclangex), CXCXXScopeSpec, (Ptr{CXInit_Error},), ErrorCode)
+end
+
+function clang_CXXScopeSpec_dispose(SS)
+    ccall((:clang_CXXScopeSpec_dispose, libclangex), Cvoid, (CXCXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_clear(SS)
+    ccall((:clang_CXXScopeSpec_clear, libclangex), Cvoid, (CXCXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_getScopeRep(SS)
+    ccall((:clang_CXXScopeSpec_getScopeRep, libclangex), CXNestedNameSpecifier, (CXCXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_getBeginLoc(SS)
+    ccall((:clang_CXXScopeSpec_getBeginLoc, libclangex), CXSourceLocation_, (CXCXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_getEndLoc(SS)
+    ccall((:clang_CXXScopeSpec_getEndLoc, libclangex), CXSourceLocation_, (CXCXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_setBeginLoc(SS, Loc)
+    ccall((:clang_CXXScopeSpec_setBeginLoc, libclangex), Cvoid, (CXCXXScopeSpec, CXSourceLocation_), SS, Loc)
+end
+
+function clang_CXXScopeSpec_setEndLoc(SS, Loc)
+    ccall((:clang_CXXScopeSpec_setEndLoc, libclangex), Cvoid, (CXCXXScopeSpec, CXSourceLocation_), SS, Loc)
+end
+
+function clang_CXXScopeSpec_isEmpty(SS)
+    ccall((:clang_CXXScopeSpec_isEmpty, libclangex), Bool, (CXCXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_isNotEmpty(SS)
+    ccall((:clang_CXXScopeSpec_isNotEmpty, libclangex), Bool, (CXCXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_isInvalid(SS)
+    ccall((:clang_CXXScopeSpec_isInvalid, libclangex), Bool, (CXCXXScopeSpec,), SS)
+end
+
+function clang_CXXScopeSpec_isValid(SS)
+    ccall((:clang_CXXScopeSpec_isValid, libclangex), Bool, (CXCXXScopeSpec,), SS)
 end
 
 @enum CXLookupNameKind::UInt32 begin
@@ -5876,984 +6820,40 @@ function clang_LookupResult_getRepresentativeDecl(LR)
     ccall((:clang_LookupResult_getRepresentativeDecl, libclangex), CXNamedDecl, (CXLookupResult,), LR)
 end
 
-function clang_ASTContext_getSourceManager(Ctx)
-    ccall((:clang_ASTContext_getSourceManager, libclangex), CXSourceManager, (CXASTContext,), Ctx)
+function clang_Scope_dump(S)
+    ccall((:clang_Scope_dump, libclangex), Cvoid, (CXScope,), S)
 end
 
-function clang_ASTContext_getASTAllocatedMemory(Ctx)
-    ccall((:clang_ASTContext_getASTAllocatedMemory, libclangex), Csize_t, (CXASTContext,), Ctx)
+function clang_Scope_getParent(S)
+    ccall((:clang_Scope_getParent, libclangex), CXScope, (CXScope,), S)
 end
 
-function clang_ASTContext_getSideTableAllocatedMemory(Ctx)
-    ccall((:clang_ASTContext_getSideTableAllocatedMemory, libclangex), Csize_t, (CXASTContext,), Ctx)
+function clang_Scope_getDepth(S)
+    ccall((:clang_Scope_getDepth, libclangex), Cuint, (CXScope,), S)
 end
 
-function clang_ASTContext_getTargetInfo(Ctx)
-    ccall((:clang_ASTContext_getTargetInfo, libclangex), CXTargetInfo_, (CXASTContext,), Ctx)
+function clang_Sema_setCollectStats(S, ShouldCollect)
+    ccall((:clang_Sema_setCollectStats, libclangex), Cvoid, (CXSema, Bool), S, ShouldCollect)
 end
 
-function clang_ASTContext_getAuxTargetInfo(Ctx)
-    ccall((:clang_ASTContext_getAuxTargetInfo, libclangex), CXTargetInfo_, (CXASTContext,), Ctx)
+function clang_Sema_PrintStats(S)
+    ccall((:clang_Sema_PrintStats, libclangex), Cvoid, (CXSema,), S)
 end
 
-function clang_ASTContext_getIntTypeForBitwidth(Ctx, DestWidth, Signed)
-    ccall((:clang_ASTContext_getIntTypeForBitwidth, libclangex), CXQualType, (CXASTContext, Cuint, Cuint), Ctx, DestWidth, Signed)
+function clang_Sema_RestoreNestedNameSpecifierAnnotation(S, Annotation, AnnotationRange_begin, AnnotationRange_end, SS)
+    ccall((:clang_Sema_RestoreNestedNameSpecifierAnnotation, libclangex), Cvoid, (CXSema, Ptr{Cvoid}, CXSourceLocation_, CXSourceLocation_, CXCXXScopeSpec), S, Annotation, AnnotationRange_begin, AnnotationRange_end, SS)
 end
 
-function clang_ASTContext_getRealTypeForBitwidth(Ctx, DestWidth, ExplicitIEEE)
-    ccall((:clang_ASTContext_getRealTypeForBitwidth, libclangex), CXQualType, (CXASTContext, Cuint, Bool), Ctx, DestWidth, ExplicitIEEE)
+function clang_Sema_LookupParsedName(S, R, Sp, SS, AllowBuiltinCreation, EnteringContext)
+    ccall((:clang_Sema_LookupParsedName, libclangex), Bool, (CXSema, CXLookupResult, CXScope, CXCXXScopeSpec, Bool, Bool), S, R, Sp, SS, AllowBuiltinCreation, EnteringContext)
 end
 
-function clang_ASTContext_AtomicUsesUnsupportedLibcall(Ctx, E)
-    ccall((:clang_ASTContext_AtomicUsesUnsupportedLibcall, libclangex), Bool, (CXASTContext, CXAtomicExpr), Ctx, E)
+function clang_Sema_LookupName(S, R, Sp, AllowBuiltinCreation)
+    ccall((:clang_Sema_LookupName, libclangex), Bool, (CXSema, CXLookupResult, CXScope, Bool), S, R, Sp, AllowBuiltinCreation)
 end
 
-function clang_ASTContext_getLangOpts(Ctx)
-    ccall((:clang_ASTContext_getLangOpts, libclangex), CXLangOptions, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_isDependceAllowed(Ctx)
-    ccall((:clang_ASTContext_isDependceAllowed, libclangex), Bool, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getDiagnostics(Ctx)
-    ccall((:clang_ASTContext_getDiagnostics, libclangex), CXDiagnosticsEngine, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_eraseDeclAttrs(Ctx, D)
-    ccall((:clang_ASTContext_eraseDeclAttrs, libclangex), Cvoid, (CXASTContext, CXDecl), Ctx, D)
-end
-
-function clang_ASTContext_getInstantiatedFromUsingDecl(Ctx, Inst)
-    ccall((:clang_ASTContext_getInstantiatedFromUsingDecl, libclangex), CXNamedDecl, (CXASTContext, CXNamedDecl), Ctx, Inst)
-end
-
-function clang_ASTContext_setInstantiatedFromUsingDecl(Ctx, Inst, Pattern)
-    ccall((:clang_ASTContext_setInstantiatedFromUsingDecl, libclangex), Cvoid, (CXASTContext, CXNamedDecl, CXNamedDecl), Ctx, Inst, Pattern)
-end
-
-function clang_ASTContext_setInstantiatedFromUsingShadowDecl(Ctx, Inst, Pattern)
-    ccall((:clang_ASTContext_setInstantiatedFromUsingShadowDecl, libclangex), Cvoid, (CXASTContext, CXUsingShadowDecl, CXUsingShadowDecl), Ctx, Inst, Pattern)
-end
-
-function clang_ASTContext_getInstantiatedFromUsingShadowDecl(Ctx, Inst)
-    ccall((:clang_ASTContext_getInstantiatedFromUsingShadowDecl, libclangex), CXUsingShadowDecl, (CXASTContext, CXUsingShadowDecl), Ctx, Inst)
-end
-
-function clang_ASTContext_getInstantiatedFromUnnamedFieldDecl(Ctx, Field)
-    ccall((:clang_ASTContext_getInstantiatedFromUnnamedFieldDecl, libclangex), CXFieldDecl, (CXASTContext, CXFieldDecl), Ctx, Field)
-end
-
-function clang_ASTContext_setInstantiatedFromUnnamedFieldDecl(Ctx, Inst, Tmpl)
-    ccall((:clang_ASTContext_setInstantiatedFromUnnamedFieldDecl, libclangex), Cvoid, (CXASTContext, CXFieldDecl, CXFieldDecl), Ctx, Inst, Tmpl)
-end
-
-function clang_ASTContext_addOverriddenMethod(Ctx, Method, Overridden)
-    ccall((:clang_ASTContext_addOverriddenMethod, libclangex), Cvoid, (CXASTContext, CXCXXMethodDecl, CXCXXMethodDecl), Ctx, Method, Overridden)
-end
-
-function clang_ASTContext_addedLocalImportDecl(Ctx, Import)
-    ccall((:clang_ASTContext_addedLocalImportDecl, libclangex), Cvoid, (CXASTContext, CXImportDecl), Ctx, Import)
-end
-
-function clang_ASTContext_getPrimaryMergedDecl(Ctx, D)
-    ccall((:clang_ASTContext_getPrimaryMergedDecl, libclangex), CXDecl, (CXASTContext, CXDecl), Ctx, D)
-end
-
-function clang_ASTContext_setPrimaryMergedDecl(Ctx, D, Primary)
-    ccall((:clang_ASTContext_setPrimaryMergedDecl, libclangex), Cvoid, (CXASTContext, CXDecl, CXDecl), Ctx, D, Primary)
-end
-
-function clang_ASTContext_mergeDefinitionIntoModule(Ctx, ND, Module, NotifyListeners)
-    ccall((:clang_ASTContext_mergeDefinitionIntoModule, libclangex), Cvoid, (CXASTContext, CXNamedDecl, CXModule, Bool), Ctx, ND, Module, NotifyListeners)
-end
-
-function clang_ASTContext_deduplicateMergedDefinitonsFor(Ctx, ND)
-    ccall((:clang_ASTContext_deduplicateMergedDefinitonsFor, libclangex), Cvoid, (CXASTContext, CXNamedDecl), Ctx, ND)
-end
-
-function clang_ASTContext_getTranslationUnitDecl(Ctx)
-    ccall((:clang_ASTContext_getTranslationUnitDecl, libclangex), CXTranslationUnitDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getExternCContextDecl(Ctx)
-    ccall((:clang_ASTContext_getExternCContextDecl, libclangex), CXExternCContextDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getMakeIntegerSeqDecl(Ctx)
-    ccall((:clang_ASTContext_getMakeIntegerSeqDecl, libclangex), CXBuiltinTemplateDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getTypePackElementDecl(Ctx)
-    ccall((:clang_ASTContext_getTypePackElementDecl, libclangex), CXBuiltinTemplateDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_PrintStats(Ctx)
-    ccall((:clang_ASTContext_PrintStats, libclangex), Cvoid, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_buildImplicitRecord(Ctx, Name, TK)
-    ccall((:clang_ASTContext_buildImplicitRecord, libclangex), CXRecordDecl, (CXASTContext, Ptr{Cchar}, CXTagTypeKind), Ctx, Name, TK)
-end
-
-function clang_ASTContext_buildImplicitTypedef(Ctx, T, Name)
-    ccall((:clang_ASTContext_buildImplicitTypedef, libclangex), CXTypedefDecl, (CXASTContext, CXQualType, Ptr{Cchar}), Ctx, T, Name)
-end
-
-function clang_ASTContext_getInt128Decl(Ctx)
-    ccall((:clang_ASTContext_getInt128Decl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getUInt128Decl(Ctx)
-    ccall((:clang_ASTContext_getUInt128Decl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_removeAddrSpaceQualType(Ctx, T)
-    ccall((:clang_ASTContext_removeAddrSpaceQualType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_removePtrSizeAddrSpace(Ctx, T)
-    ccall((:clang_ASTContext_removePtrSizeAddrSpace, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getRestrictType(Ctx, T)
-    ccall((:clang_ASTContext_getRestrictType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getVolatileType(Ctx, T)
-    ccall((:clang_ASTContext_getVolatileType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getConstType(Ctx, T)
-    ccall((:clang_ASTContext_getConstType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_adjustDeducedFunctionResultType(Ctx, FD, ResultType)
-    ccall((:clang_ASTContext_adjustDeducedFunctionResultType, libclangex), Cvoid, (CXASTContext, CXFunctionDecl, CXQualType), Ctx, FD, ResultType)
-end
-
-function clang_ASTContext_hasSameFunctionTypeIgnoringExceptionSpec(Ctx, T, U)
-    ccall((:clang_ASTContext_hasSameFunctionTypeIgnoringExceptionSpec, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T, U)
-end
-
-function clang_ASTContext_getFunctionTypeWithoutPtrSizes(Ctx, T)
-    ccall((:clang_ASTContext_getFunctionTypeWithoutPtrSizes, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_hasSameFunctionTypeIgnoringPtrSizes(Ctx, T, U)
-    ccall((:clang_ASTContext_hasSameFunctionTypeIgnoringPtrSizes, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T, U)
-end
-
-function clang_ASTContext_getComplexType(Ctx, T)
-    ccall((:clang_ASTContext_getComplexType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getPointerType(Ctx, T)
-    ccall((:clang_ASTContext_getPointerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getAdjustedType(Ctx, Orig, New)
-    ccall((:clang_ASTContext_getAdjustedType, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType), Ctx, Orig, New)
-end
-
-function clang_ASTContext_getDecayedType(Ctx, T)
-    ccall((:clang_ASTContext_getDecayedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getAtomicType(Ctx, T)
-    ccall((:clang_ASTContext_getAtomicType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getBlockPointerType(Ctx, T)
-    ccall((:clang_ASTContext_getBlockPointerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getBlockDescriptorType(Ctx)
-    ccall((:clang_ASTContext_getBlockDescriptorType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getReadPipeType(Ctx, T)
-    ccall((:clang_ASTContext_getReadPipeType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getWritePipeType(Ctx, T)
-    ccall((:clang_ASTContext_getWritePipeType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getExtIntType(Ctx, Unsigned, NumBits)
-    ccall((:clang_ASTContext_getExtIntType, libclangex), CXQualType, (CXASTContext, Bool, Cuint), Ctx, Unsigned, NumBits)
-end
-
-function clang_ASTContext_getDependentExtIntType(Ctx, Unsigned, BitsExpr)
-    ccall((:clang_ASTContext_getDependentExtIntType, libclangex), CXQualType, (CXASTContext, Bool, CXExpr), Ctx, Unsigned, BitsExpr)
-end
-
-function clang_ASTContext_getBlockDescriptorExtendedType(Ctx)
-    ccall((:clang_ASTContext_getBlockDescriptorExtendedType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_setcudaConfigureCallDecl(Ctx, FD)
-    ccall((:clang_ASTContext_setcudaConfigureCallDecl, libclangex), Cvoid, (CXASTContext, CXFunctionDecl), Ctx, FD)
-end
-
-function clang_ASTContext_getcudaConfigureCallDecl(Ctx)
-    ccall((:clang_ASTContext_getcudaConfigureCallDecl, libclangex), CXFunctionDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_BlockRequiresCopying(Ctx, T, D)
-    ccall((:clang_ASTContext_BlockRequiresCopying, libclangex), Bool, (CXASTContext, CXQualType, CXVarDecl), Ctx, T, D)
-end
-
-function clang_ASTContext_getLValueReferenceType(Ctx, T, SpelledAsLValue)
-    ccall((:clang_ASTContext_getLValueReferenceType, libclangex), CXQualType, (CXASTContext, CXQualType, Bool), Ctx, T, SpelledAsLValue)
-end
-
-function clang_ASTContext_getRValueReferenceType(Ctx, T)
-    ccall((:clang_ASTContext_getRValueReferenceType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getMemberPointerType(Ctx, T, Cls)
-    ccall((:clang_ASTContext_getMemberPointerType, libclangex), CXQualType, (CXASTContext, CXQualType, CXType_), Ctx, T, Cls)
-end
-
-function clang_ASTContext_getStringLiteralArrayType(Ctx, EltTy, Length)
-    ccall((:clang_ASTContext_getStringLiteralArrayType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint), Ctx, EltTy, Length)
-end
-
-function clang_ASTContext_getVariableArrayDecayedType(Ctx, T)
-    ccall((:clang_ASTContext_getVariableArrayDecayedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getScalableVectorType(Ctx, EltTy, NumElts)
-    ccall((:clang_ASTContext_getScalableVectorType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint), Ctx, EltTy, NumElts)
-end
-
-function clang_ASTContext_getExtVectorType(Ctx, VectorType, NumElts)
-    ccall((:clang_ASTContext_getExtVectorType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint), Ctx, VectorType, NumElts)
-end
-
-function clang_ASTContext_getDependentSizedExtVectorType(Ctx, VectorType, SizeExpr, AttrLoc)
-    ccall((:clang_ASTContext_getDependentSizedExtVectorType, libclangex), CXQualType, (CXASTContext, CXQualType, CXExpr, CXSourceLocation_), Ctx, VectorType, SizeExpr, AttrLoc)
-end
-
-function clang_ASTContext_getConstantMatrixType(Ctx, ElementType, NumRows, NumCols)
-    ccall((:clang_ASTContext_getConstantMatrixType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint, Cuint), Ctx, ElementType, NumRows, NumCols)
-end
-
-function clang_ASTContext_getDependentSizedMatrixType(Ctx, ElementType, RowsExpr, ColsExpr, AttrLoc)
-    ccall((:clang_ASTContext_getDependentSizedMatrixType, libclangex), CXQualType, (CXASTContext, CXQualType, CXExpr, CXExpr, CXSourceLocation_), Ctx, ElementType, RowsExpr, ColsExpr, AttrLoc)
-end
-
-function clang_ASTContext_getDependentAddressSpaceType(Ctx, PointeeType, AddrSpaceExpr, AddrSpace)
-    ccall((:clang_ASTContext_getDependentAddressSpaceType, libclangex), CXQualType, (CXASTContext, CXQualType, CXExpr, CXSourceLocation_), Ctx, PointeeType, AddrSpaceExpr, AddrSpace)
-end
-
-function clang_ASTContext_getFunctionNoProtoType(Ctx, ResultTy)
-    ccall((:clang_ASTContext_getFunctionNoProtoType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, ResultTy)
-end
-
-function clang_ASTContext_adjustStringLiteralBaseType(Ctx, StrLTy)
-    ccall((:clang_ASTContext_adjustStringLiteralBaseType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, StrLTy)
-end
-
-function clang_ASTContext_getTypeDeclType(Ctx, Decl, PrevDecl)
-    ccall((:clang_ASTContext_getTypeDeclType, libclangex), CXQualType, (CXASTContext, CXTypeDecl, CXTypeDecl), Ctx, Decl, PrevDecl)
-end
-
-function clang_ASTContext_getTypedefType(Ctx, Decl, Underlying)
-    ccall((:clang_ASTContext_getTypedefType, libclangex), CXQualType, (CXASTContext, CXTypedefNameDecl, CXQualType), Ctx, Decl, Underlying)
-end
-
-function clang_ASTContext_getRecordType(Ctx, Decl)
-    ccall((:clang_ASTContext_getRecordType, libclangex), CXQualType, (CXASTContext, CXRecordDecl), Ctx, Decl)
-end
-
-function clang_ASTContext_getEnumType(Ctx, Decl)
-    ccall((:clang_ASTContext_getEnumType, libclangex), CXQualType, (CXASTContext, CXEnumDecl), Ctx, Decl)
-end
-
-function clang_ASTContext_getInjectedClassNameType(Ctx, Decl, TST)
-    ccall((:clang_ASTContext_getInjectedClassNameType, libclangex), CXQualType, (CXASTContext, CXCXXRecordDecl, CXQualType), Ctx, Decl, TST)
-end
-
-function clang_ASTContext_getSubstTemplateTypeParmType(Ctx, Replaced, Replacement)
-    ccall((:clang_ASTContext_getSubstTemplateTypeParmType, libclangex), CXQualType, (CXASTContext, CXTemplateTypeParmType, CXQualType), Ctx, Replaced, Replacement)
-end
-
-function clang_ASTContext_getTemplateTypeParmType(Ctx, Depth, Index, ParameterPack, ParmDecl)
-    ccall((:clang_ASTContext_getTemplateTypeParmType, libclangex), CXQualType, (CXASTContext, Cuint, Cuint, Bool, CXTemplateTypeParmType), Ctx, Depth, Index, ParameterPack, ParmDecl)
-end
-
-function clang_ASTContext_getParenType(Ctx, NamedType)
-    ccall((:clang_ASTContext_getParenType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, NamedType)
-end
-
-function clang_ASTContext_getMacroQualifiedType(Ctx, UnderlyingTy, MacroII)
-    ccall((:clang_ASTContext_getMacroQualifiedType, libclangex), CXQualType, (CXASTContext, CXQualType, CXIdentifierInfo), Ctx, UnderlyingTy, MacroII)
-end
-
-function clang_ASTContext_getTypeOfExprType(Ctx, Expr)
-    ccall((:clang_ASTContext_getTypeOfExprType, libclangex), CXQualType, (CXASTContext, CXExpr), Ctx, Expr)
-end
-
-function clang_ASTContext_getTypeOfType(Ctx, T)
-    ccall((:clang_ASTContext_getTypeOfType, libclangex), CXQualType, (CXASTContext, CXType_), Ctx, T)
-end
-
-function clang_ASTContext_getDecltypeType(Ctx, Expr, UnderlyingType)
-    ccall((:clang_ASTContext_getDecltypeType, libclangex), CXQualType, (CXASTContext, CXExpr, CXQualType), Ctx, Expr, UnderlyingType)
-end
-
-function clang_ASTContext_getAutoDeductType(Ctx)
-    ccall((:clang_ASTContext_getAutoDeductType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getAutoRRefDeductType(Ctx)
-    ccall((:clang_ASTContext_getAutoRRefDeductType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getDeducedTemplateSpecializationType(Ctx, Template, DeducedType, IsDependent)
-    ccall((:clang_ASTContext_getDeducedTemplateSpecializationType, libclangex), CXQualType, (CXASTContext, CXTemplateName, CXQualType, Bool), Ctx, Template, DeducedType, IsDependent)
-end
-
-function clang_ASTContext_getTagDeclType(Ctx, Decl)
-    ccall((:clang_ASTContext_getTagDeclType, libclangex), CXQualType, (CXASTContext, CXTagDecl), Ctx, Decl)
-end
-
-function clang_ASTContext_getWCharType(Ctx)
-    ccall((:clang_ASTContext_getWCharType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getWideCharType(Ctx)
-    ccall((:clang_ASTContext_getWideCharType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getSignedWCharType(Ctx)
-    ccall((:clang_ASTContext_getSignedWCharType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getUnsignedWCharType(Ctx)
-    ccall((:clang_ASTContext_getUnsignedWCharType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getWIntType(Ctx)
-    ccall((:clang_ASTContext_getWIntType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getIntPtrType(Ctx)
-    ccall((:clang_ASTContext_getIntPtrType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getUIntPtrType(Ctx)
-    ccall((:clang_ASTContext_getUIntPtrType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getPointerDiffType(Ctx)
-    ccall((:clang_ASTContext_getPointerDiffType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getUnsignedPointerDiffType(Ctx)
-    ccall((:clang_ASTContext_getUnsignedPointerDiffType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getProcessIDType(Ctx)
-    ccall((:clang_ASTContext_getProcessIDType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getCFConstantStringType(Ctx)
-    ccall((:clang_ASTContext_getCFConstantStringType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getObjCSuperType(Ctx)
-    ccall((:clang_ASTContext_getObjCSuperType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getRawCFConstantStringType(Ctx)
-    ccall((:clang_ASTContext_getRawCFConstantStringType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_setCFConstantStringType(Ctx, T)
-    ccall((:clang_ASTContext_setCFConstantStringType, libclangex), Cvoid, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getCFContantStringDecl(Ctx)
-    ccall((:clang_ASTContext_getCFContantStringDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getCFConstantStringTagDecl(Ctx)
-    ccall((:clang_ASTContext_getCFConstantStringTagDecl, libclangex), CXRecordDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getObjCIdRedefinitionType(Ctx)
-    ccall((:clang_ASTContext_getObjCIdRedefinitionType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_setObjCIdRedefinitionType(Ctx, T)
-    ccall((:clang_ASTContext_setObjCIdRedefinitionType, libclangex), Cvoid, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getObjCClassRedefinitionType(Ctx)
-    ccall((:clang_ASTContext_getObjCClassRedefinitionType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_setObjCClassRedefinitionType(Ctx, T)
-    ccall((:clang_ASTContext_setObjCClassRedefinitionType, libclangex), Cvoid, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getNSCopyingName(Ctx)
-    ccall((:clang_ASTContext_getNSCopyingName, libclangex), CXIdentifierInfo, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getBoolName(Ctx)
-    ccall((:clang_ASTContext_getBoolName, libclangex), CXIdentifierInfo, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getMakeIntegerSeqName(Ctx)
-    ccall((:clang_ASTContext_getMakeIntegerSeqName, libclangex), CXIdentifierInfo, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getTypePackElementName(Ctx)
-    ccall((:clang_ASTContext_getTypePackElementName, libclangex), CXIdentifierInfo, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getObjCInstanceType(Ctx)
-    ccall((:clang_ASTContext_getObjCInstanceType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getObjCInstanceTypeDecl(Ctx)
-    ccall((:clang_ASTContext_getObjCInstanceTypeDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_setFILEDecl(Ctx, FILEDecl)
-    ccall((:clang_ASTContext_setFILEDecl, libclangex), Cvoid, (CXASTContext, CXTypeDecl), Ctx, FILEDecl)
-end
-
-function clang_ASTContext_getFILEType(Ctx)
-    ccall((:clang_ASTContext_getFILEType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getLogicalOperationType(Ctx)
-    ccall((:clang_ASTContext_getLogicalOperationType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getBOOLDecl(Ctx)
-    ccall((:clang_ASTContext_getBOOLDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_setBOOLDecl(Ctx, TD)
-    ccall((:clang_ASTContext_setBOOLDecl, libclangex), Cvoid, (CXASTContext, CXTypedefDecl), Ctx, TD)
-end
-
-function clang_ASTContext_getBOOLType(Ctx)
-    ccall((:clang_ASTContext_getBOOLType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getObjCProtoType(Ctx)
-    ccall((:clang_ASTContext_getObjCProtoType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getBuiltinVaListDecl(Ctx)
-    ccall((:clang_ASTContext_getBuiltinVaListDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getVaListTagDecl(Ctx)
-    ccall((:clang_ASTContext_getVaListTagDecl, libclangex), CXDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getBuiltinMSVaListDecl(Ctx)
-    ccall((:clang_ASTContext_getBuiltinMSVaListDecl, libclangex), CXTypedefDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getBuiltinMSVaListType(Ctx)
-    ccall((:clang_ASTContext_getBuiltinMSVaListType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getMSGuidTagDecl(Ctx)
-    ccall((:clang_ASTContext_getMSGuidTagDecl, libclangex), CXTagDecl, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getMSGuidType(Ctx)
-    ccall((:clang_ASTContext_getMSGuidType, libclangex), CXTagType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_canBuiltinBeRedeclared(Ctx, D)
-    ccall((:clang_ASTContext_canBuiltinBeRedeclared, libclangex), Bool, (CXASTContext, CXFunctionDecl), Ctx, D)
-end
-
-function clang_ASTContext_getCVRQualifiedType(Ctx, T, CVR)
-    ccall((:clang_ASTContext_getCVRQualifiedType, libclangex), CXQualType, (CXASTContext, CXQualType, Cuint), Ctx, T, CVR)
-end
-
-function clang_ASTContext_getFixedPointScale(Ctx, Ty)
-    ccall((:clang_ASTContext_getFixedPointScale, libclangex), Cuchar, (CXASTContext, CXQualType), Ctx, Ty)
-end
-
-function clang_ASTContext_getFixedPointIBits(Ctx, Ty)
-    ccall((:clang_ASTContext_getFixedPointIBits, libclangex), Cuchar, (CXASTContext, CXQualType), Ctx, Ty)
-end
-
-function clang_ASTContext_getAssumedTemplateName(Ctx, Name)
-    ccall((:clang_ASTContext_getAssumedTemplateName, libclangex), CXTemplateName, (CXASTContext, CXDeclarationName), Ctx, Name)
-end
-
-function clang_ASTContext_getQualifiedTemplateName(Ctx, NNS, TemplateKeyword, Template)
-    ccall((:clang_ASTContext_getQualifiedTemplateName, libclangex), CXTemplateName, (CXASTContext, CXNestedNameSpecifier, Bool, CXTemplateDecl), Ctx, NNS, TemplateKeyword, Template)
-end
-
-function clang_ASTContext_getDependentTemplateName(Ctx, NNS, Name)
-    ccall((:clang_ASTContext_getDependentTemplateName, libclangex), CXTemplateName, (CXASTContext, CXNestedNameSpecifier, CXIdentifierInfo), Ctx, NNS, Name)
-end
-
-function clang_ASTContext_getSubstTemplateTemplateParm(Ctx, param, replacement)
-    ccall((:clang_ASTContext_getSubstTemplateTemplateParm, libclangex), CXTemplateName, (CXASTContext, CXTemplateTemplateParmDecl, CXTemplateName), Ctx, param, replacement)
-end
-
-function clang_ASTContext_areCompatibleVectorTypes(Ctx, FirstVec, SecondVec)
-    ccall((:clang_ASTContext_areCompatibleVectorTypes, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, FirstVec, SecondVec)
-end
-
-function clang_ASTContext_areCompatibleSveTypes(Ctx, FirstVec, SecondVec)
-    ccall((:clang_ASTContext_areCompatibleSveTypes, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, FirstVec, SecondVec)
-end
-
-function clang_ASTContext_areLaxCompatibleSveTypes(Ctx, FirstVec, SecondVec)
-    ccall((:clang_ASTContext_areLaxCompatibleSveTypes, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, FirstVec, SecondVec)
-end
-
-function clang_ASTContext_hasDirectOwnershipQualifier(Ctx, Ty)
-    ccall((:clang_ASTContext_hasDirectOwnershipQualifier, libclangex), Bool, (CXASTContext, CXQualType), Ctx, Ty)
-end
-
-function clang_ASTContext_getOpenMPDefaultSimdAlign(Ctx, T)
-    ccall((:clang_ASTContext_getOpenMPDefaultSimdAlign, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getTypeSize(Ctx, T)
-    ccall((:clang_ASTContext_getTypeSize, libclangex), UInt64, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getCharWidth(Ctx)
-    ccall((:clang_ASTContext_getCharWidth, libclangex), UInt64, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getTypeAlign(Ctx, T)
-    ccall((:clang_ASTContext_getTypeAlign, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getTypeUnadjustedAlign(Ctx, T)
-    ccall((:clang_ASTContext_getTypeUnadjustedAlign, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getTypeAlignIfKnown(Ctx, T, NeedsPreferredAlignment)
-    ccall((:clang_ASTContext_getTypeAlignIfKnown, libclangex), Cuint, (CXASTContext, CXQualType, Bool), Ctx, T, NeedsPreferredAlignment)
-end
-
-function clang_ASTContext_isAlignmentRequired(Ctx, T)
-    ccall((:clang_ASTContext_isAlignmentRequired, libclangex), Bool, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getPreferredTypeAlign(Ctx, T)
-    ccall((:clang_ASTContext_getPreferredTypeAlign, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getTargetDefaultAlignForAttributeAligned(Ctx)
-    ccall((:clang_ASTContext_getTargetDefaultAlignForAttributeAligned, libclangex), Cuint, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_getAlignOfGlobalVar(Ctx, T)
-    ccall((:clang_ASTContext_getAlignOfGlobalVar, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getFieldOffset(Ctx, FD)
-    ccall((:clang_ASTContext_getFieldOffset, libclangex), UInt64, (CXASTContext, CXValueDecl), Ctx, FD)
-end
-
-function clang_ASTContext_isNearlyEmpty(Ctx, RD)
-    ccall((:clang_ASTContext_isNearlyEmpty, libclangex), Bool, (CXASTContext, CXCXXRecordDecl), Ctx, RD)
-end
-
-function clang_ASTContext_createMangleContext(Ctx, T)
-    ccall((:clang_ASTContext_createMangleContext, libclangex), CXMangleContext, (CXASTContext, CXTargetInfo_), Ctx, T)
-end
-
-function clang_ASTContext_hasUniqueObjectRepresentations(Ctx, Ty)
-    ccall((:clang_ASTContext_hasUniqueObjectRepresentations, libclangex), Bool, (CXASTContext, CXQualType), Ctx, Ty)
-end
-
-function clang_ASTContext_hasSameType(Ctx, T1, T2)
-    ccall((:clang_ASTContext_hasSameType, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
-end
-
-function clang_ASTContext_hasSameUnqualifiedType(Ctx, T1, T2)
-    ccall((:clang_ASTContext_hasSameUnqualifiedType, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
-end
-
-function clang_ASTContext_hasSameNullabilityTypeQualifier(Ctx, SubT, SuperT, IsParam)
-    ccall((:clang_ASTContext_hasSameNullabilityTypeQualifier, libclangex), Bool, (CXASTContext, CXQualType, CXQualType, Bool), Ctx, SubT, SuperT, IsParam)
-end
-
-function clang_ASTContext_hasSimilarType(Ctx, T1, T2)
-    ccall((:clang_ASTContext_hasSimilarType, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
-end
-
-function clang_ASTContext_hasCvrSimilarType(Ctx, T1, T2)
-    ccall((:clang_ASTContext_hasCvrSimilarType, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
-end
-
-function clang_ASTContext_getCanonicalNestedNameSpecifier(Ctx, NNS)
-    ccall((:clang_ASTContext_getCanonicalNestedNameSpecifier, libclangex), CXNestedNameSpecifier, (CXASTContext, CXNestedNameSpecifier), Ctx, NNS)
-end
-
-function clang_ASTContext_getCanonicalTemplateName(Ctx, TemplateName)
-    ccall((:clang_ASTContext_getCanonicalTemplateName, libclangex), CXTemplateName, (CXASTContext, CXTemplateName), Ctx, TemplateName)
-end
-
-function clang_ASTContext_hasSameTempalteName(Ctx, T1, T2)
-    ccall((:clang_ASTContext_hasSameTempalteName, libclangex), Bool, (CXASTContext, CXTemplateName, CXTemplateName), Ctx, T1, T2)
-end
-
-function clang_ASTContext_getAsArrayType(Ctx, T)
-    ccall((:clang_ASTContext_getAsArrayType, libclangex), CXArrayType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getAsConstantArrayType(Ctx, T)
-    ccall((:clang_ASTContext_getAsConstantArrayType, libclangex), CXConstantArrayType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getAsVariableArrayType(Ctx, T)
-    ccall((:clang_ASTContext_getAsVariableArrayType, libclangex), CXVariableArrayType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getAsIncompleteArrayType(Ctx, T)
-    ccall((:clang_ASTContext_getAsIncompleteArrayType, libclangex), CXIncompleteArrayType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getAsDependentSizedArrayType(Ctx, T)
-    ccall((:clang_ASTContext_getAsDependentSizedArrayType, libclangex), CXDependentSizedArrayType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getBaseElementType(Ctx, QT)
-    ccall((:clang_ASTContext_getBaseElementType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, QT)
-end
-
-function clang_ASTContext_getConstantArrayElementCount(Ctx, CAT)
-    ccall((:clang_ASTContext_getConstantArrayElementCount, libclangex), UInt64, (CXASTContext, CXConstantArrayType), Ctx, CAT)
-end
-
-function clang_ASTContext_getAdjustedParameterType(Ctx, T)
-    ccall((:clang_ASTContext_getAdjustedParameterType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getSignatureParameterType(Ctx, T)
-    ccall((:clang_ASTContext_getSignatureParameterType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getExceptionObjectType(Ctx, T)
-    ccall((:clang_ASTContext_getExceptionObjectType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getArrayDecayedType(Ctx, T)
-    ccall((:clang_ASTContext_getArrayDecayedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getPromotedIntegerType(Ctx, T)
-    ccall((:clang_ASTContext_getPromotedIntegerType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_isPromotableBitField(Ctx, E)
-    ccall((:clang_ASTContext_isPromotableBitField, libclangex), CXQualType, (CXASTContext, CXExpr), Ctx, E)
-end
-
-function clang_ASTContext_getIntegerTypeOrder(Ctx, LHS, RHS)
-    ccall((:clang_ASTContext_getIntegerTypeOrder, libclangex), Cint, (CXASTContext, CXQualType, CXQualType), Ctx, LHS, RHS)
-end
-
-function clang_ASTContext_getFloatingTypeOrder(Ctx, LHS, RHS)
-    ccall((:clang_ASTContext_getFloatingTypeOrder, libclangex), Cint, (CXASTContext, CXQualType, CXQualType), Ctx, LHS, RHS)
-end
-
-function clang_ASTContext_getFloatingTypeSemanticOrder(Ctx, LHS, RHS)
-    ccall((:clang_ASTContext_getFloatingTypeSemanticOrder, libclangex), Cint, (CXASTContext, CXQualType, CXQualType), Ctx, LHS, RHS)
-end
-
-function clang_ASTContext_getFloatingTypeOfSizeWithinDomain(Ctx, typeSize, typeDomain)
-    ccall((:clang_ASTContext_getFloatingTypeOfSizeWithinDomain, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType), Ctx, typeSize, typeDomain)
-end
-
-function clang_ASTContext_getTargetAddressSpace(Ctx, T)
-    ccall((:clang_ASTContext_getTargetAddressSpace, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getTargetNullPointerValue(Ctx, T)
-    ccall((:clang_ASTContext_getTargetNullPointerValue, libclangex), UInt64, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_typesAreCompatible(Ctx, T1, T2, CompareUnqualified)
-    ccall((:clang_ASTContext_typesAreCompatible, libclangex), Bool, (CXASTContext, CXQualType, CXQualType, Bool), Ctx, T1, T2, CompareUnqualified)
-end
-
-function clang_ASTContext_propertyTypesAreCompatible(Ctx, T1, T2)
-    ccall((:clang_ASTContext_propertyTypesAreCompatible, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
-end
-
-function clang_ASTContext_typesAreBlockPointerCompatible(Ctx, T1, T2)
-    ccall((:clang_ASTContext_typesAreBlockPointerCompatible, libclangex), Bool, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
-end
-
-function clang_ASTContext_mergeTypes(Ctx, T1, T2, OfBlockPointer, Unqualified, BlockReturnType)
-    ccall((:clang_ASTContext_mergeTypes, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType, Bool, Bool, Bool), Ctx, T1, T2, OfBlockPointer, Unqualified, BlockReturnType)
-end
-
-function clang_ASTContext_mergeFunctionTypes(Ctx, T1, T2, OfBlockPointer, Unqualified, AllowCXX)
-    ccall((:clang_ASTContext_mergeFunctionTypes, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType, Bool, Bool, Bool), Ctx, T1, T2, OfBlockPointer, Unqualified, AllowCXX)
-end
-
-function clang_ASTContext_mergeFunctionParameterTypes(Ctx, T1, T2, OfBlockPointer, Unqualified)
-    ccall((:clang_ASTContext_mergeFunctionParameterTypes, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType, Bool, Bool), Ctx, T1, T2, OfBlockPointer, Unqualified)
-end
-
-function clang_ASTContext_mergeTransparentUnionType(Ctx, T1, T2, OfBlockPointer, Unqualified)
-    ccall((:clang_ASTContext_mergeTransparentUnionType, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType, Bool, Bool), Ctx, T1, T2, OfBlockPointer, Unqualified)
-end
-
-function clang_ASTContext_mergeObjCGCQualifiers(Ctx, T1, T2)
-    ccall((:clang_ASTContext_mergeObjCGCQualifiers, libclangex), CXQualType, (CXASTContext, CXQualType, CXQualType), Ctx, T1, T2)
-end
-
-function clang_ASTContext_getIntWidth(Ctx, T)
-    ccall((:clang_ASTContext_getIntWidth, libclangex), Cuint, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getCorrespondingUnsignedType(Ctx, T)
-    ccall((:clang_ASTContext_getCorrespondingUnsignedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getCorrespondingSaturatedType(Ctx, T)
-    ccall((:clang_ASTContext_getCorrespondingSaturatedType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getCorrespondingSignedFixedPointType(Ctx, T)
-    ccall((:clang_ASTContext_getCorrespondingSignedFixedPointType, libclangex), CXQualType, (CXASTContext, CXQualType), Ctx, T)
-end
-
-function clang_ASTContext_getIdents(Ctx)
-    ccall((:clang_ASTContext_getIdents, libclangex), CXIdentifierTable, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_isSentinelNullExpr(Ctx, E)
-    ccall((:clang_ASTContext_isSentinelNullExpr, libclangex), Bool, (CXASTContext, CXExpr), Ctx, E)
-end
-
-function clang_ASTContext_CreateTypeSourceInfo(Ctx, T, Size)
-    ccall((:clang_ASTContext_CreateTypeSourceInfo, libclangex), CXTypeSourceInfo, (CXASTContext, CXQualType, Cuint), Ctx, T, Size)
-end
-
-function clang_ASTContext_getTrivialTypeSourceInfo(Ctx, T, Loc)
-    ccall((:clang_ASTContext_getTrivialTypeSourceInfo, libclangex), CXTypeSourceInfo, (CXASTContext, CXQualType, CXSourceLocation_), Ctx, T, Loc)
-end
-
-function clang_ASTContext_getCopyConstructorForExceptionObject(Ctx, RD)
-    ccall((:clang_ASTContext_getCopyConstructorForExceptionObject, libclangex), CXCXXConstructorDecl, (CXASTContext, CXCXXRecordDecl), Ctx, RD)
-end
-
-function clang_ASTContext_addCopyConstructorForExceptionObject(Ctx, RD, CD)
-    ccall((:clang_ASTContext_addCopyConstructorForExceptionObject, libclangex), Cvoid, (CXASTContext, CXCXXRecordDecl, CXCXXConstructorDecl), Ctx, RD, CD)
-end
-
-function clang_ASTContext_addTypedefNameForUnnamedTagDecl(Ctx, TD, TND)
-    ccall((:clang_ASTContext_addTypedefNameForUnnamedTagDecl, libclangex), Cvoid, (CXASTContext, CXTagDecl, CXTypedefNameDecl), Ctx, TD, TND)
-end
-
-function clang_ASTContext_getTypedefNameForUnnamedTagDecl(Ctx, TD)
-    ccall((:clang_ASTContext_getTypedefNameForUnnamedTagDecl, libclangex), CXTypedefNameDecl, (CXASTContext, CXTagDecl), Ctx, TD)
-end
-
-function clang_ASTContext_addDeclaratorForUnnamedTagDecl(Ctx, TD, D)
-    ccall((:clang_ASTContext_addDeclaratorForUnnamedTagDecl, libclangex), Cvoid, (CXASTContext, CXTagDecl, CXDeclaratorDecl), Ctx, TD, D)
-end
-
-function clang_ASTContext_getDeclaratorForUnnamedTagDecl(Ctx, TD)
-    ccall((:clang_ASTContext_getDeclaratorForUnnamedTagDecl, libclangex), CXDeclaratorDecl, (CXASTContext, CXTagDecl), Ctx, TD)
-end
-
-function clang_ASTContext_setManglingNumber(Ctx, ND, Number)
-    ccall((:clang_ASTContext_setManglingNumber, libclangex), Cvoid, (CXASTContext, CXNamedDecl, Cuint), Ctx, ND, Number)
-end
-
-function clang_ASTContext_getManglingNumber(Ctx, ND)
-    ccall((:clang_ASTContext_getManglingNumber, libclangex), Cuint, (CXASTContext, CXNamedDecl), Ctx, ND)
-end
-
-function clang_ASTContext_setStaticLocalNumber(Ctx, ND, Number)
-    ccall((:clang_ASTContext_setStaticLocalNumber, libclangex), Cvoid, (CXASTContext, CXVarDecl, Cuint), Ctx, ND, Number)
-end
-
-function clang_ASTContext_getStaticLocalNumber(Ctx, ND)
-    ccall((:clang_ASTContext_getStaticLocalNumber, libclangex), Cuint, (CXASTContext, CXVarDecl), Ctx, ND)
-end
-
-function clang_ASTContext_setParameterIndex(Ctx, D, index)
-    ccall((:clang_ASTContext_setParameterIndex, libclangex), Cvoid, (CXASTContext, CXParmVarDecl, Cuint), Ctx, D, index)
-end
-
-function clang_ASTContext_getParameterIndex(Ctx, D)
-    ccall((:clang_ASTContext_getParameterIndex, libclangex), Cuint, (CXASTContext, CXParmVarDecl), Ctx, D)
-end
-
-function clang_ASTContext_getPredefinedStringLiteralFromCache(Ctx, Key)
-    ccall((:clang_ASTContext_getPredefinedStringLiteralFromCache, libclangex), CXStringLiteral, (CXASTContext, Ptr{Cchar}), Ctx, Key)
-end
-
-function clang_ASTContext_InitBuiltinTypes(Ctx, Target, AuxTarget)
-    ccall((:clang_ASTContext_InitBuiltinTypes, libclangex), Cvoid, (CXASTContext, CXTargetInfo_, CXTargetInfo_), Ctx, Target, AuxTarget)
-end
-
-function clang_ASTContext_isMSStaticDataMemberInlineDefinition(Ctx, VD)
-    ccall((:clang_ASTContext_isMSStaticDataMemberInlineDefinition, libclangex), Bool, (CXASTContext, CXVarDecl), Ctx, VD)
-end
-
-function clang_ASTContext_mayExternalizeStaticVar(Ctx, D)
-    ccall((:clang_ASTContext_mayExternalizeStaticVar, libclangex), Bool, (CXASTContext, CXDecl), Ctx, D)
-end
-
-function clang_ASTContext_shouldExternalizeStaticVar(Ctx, D)
-    ccall((:clang_ASTContext_shouldExternalizeStaticVar, libclangex), Bool, (CXASTContext, CXDecl), Ctx, D)
-end
-
-function clang_ASTContext_VoidTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_VoidTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_BoolTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_BoolTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_CharTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_CharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_WCharTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_WCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_WideCharTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_WideCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_WIntTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_WIntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_Char8Ty_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_Char8Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_Char16Ty_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_Char16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_Char32Ty_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_Char32Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_SignedCharTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_SignedCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_ShortTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_ShortTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_IntTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_IntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_LongTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_LongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_LongLongTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_LongLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_Int128Ty_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_Int128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_UnsignedCharTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_UnsignedCharTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_UnsignedShortTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_UnsignedShortTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_UnsignedIntTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_UnsignedIntTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_UnsignedLongTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_UnsignedLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_UnsignedLongLongTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_UnsignedLongLongTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_UnsignedInt128Ty_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_UnsignedInt128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_FloatTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_FloatTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_DoubleTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_DoubleTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_LongDoubleTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_LongDoubleTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_Float128Ty_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_Float128Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_HalfTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_HalfTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_BFloat16Ty_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_BFloat16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_Float16Ty_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_Float16Ty_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_FloatComplexTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_FloatComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_DoubleComplexTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_DoubleComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_LongDoubleComplexTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_LongDoubleComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_Float128ComplexTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_Float128ComplexTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_VoidPtrTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_VoidPtrTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
-end
-
-function clang_ASTContext_NullPtrTy_getAsQualType(Ctx)
-    ccall((:clang_ASTContext_NullPtrTy_getAsQualType, libclangex), CXQualType, (CXASTContext,), Ctx)
+function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)
+    ccall((:clang_Sema_processWeakTopLevelDecls, libclangex), Cvoid, (CXSema, CXCodeGenerator), Sema, CodeGen)
 end
 
 # exports
