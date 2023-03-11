@@ -27,7 +27,7 @@ pkg> test ClangCompiler
 
 ### Decl Lookup
 
-```
+```julia
 using ClangCompiler
 
 # source file
@@ -54,7 +54,7 @@ dispose(cc)
 
 The following example is only tested on macOS.
 
-```julia-repl
+```julia
 using ClangCompiler
 using ClangCompiler.LLVM
 
