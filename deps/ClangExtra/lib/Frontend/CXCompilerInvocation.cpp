@@ -23,25 +23,25 @@ void clang_CompilerInvocation_dispose(CXCompilerInvocation CI) {
   delete static_cast<clang::CompilerInvocation *>(CI);
 }
 
-CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
-    const char **command_line_args_with_src, int num_command_line_args,
-    CXDiagnosticsEngine Diags, CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::CompilerInvocation> ptr = clang::createInvocationFromCommandLine(
-      llvm::makeArrayRef(command_line_args_with_src, num_command_line_args),
-      llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(
-          static_cast<clang::DiagnosticsEngine *>(Diags)));
+// CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
+//     const char **command_line_args_with_src, int num_command_line_args,
+//     CXDiagnosticsEngine Diags, CXInit_Error *ErrorCode) {
+//   CXInit_Error Err = CXInit_NoError;
+//   std::unique_ptr<clang::CompilerInvocation> ptr = clang::createInvocation(
+//       llvm::ArrayRef(command_line_args_with_src, num_command_line_args),
+//       llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(
+//           static_cast<clang::DiagnosticsEngine *>(Diags)));
 
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::CompilerInvocation`\n");
-    Err = CXInit_CanNotCreate;
-  }
+//   if (!ptr) {
+//     fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::CompilerInvocation`\n");
+//     Err = CXInit_CanNotCreate;
+//   }
 
-  if (ErrorCode)
-    *ErrorCode = Err;
+//   if (ErrorCode)
+//     *ErrorCode = Err;
 
-  return ptr.release();
-}
+//   return ptr.release();
+// }
 
 // Options
 CXCodeGenOptions clang_CompilerInvocation_getCodeGenOpts(CXCompilerInvocation CI) {

@@ -1,5 +1,5 @@
 #include "clang-ex/AST/CXType.h"
-#include "libclang/CXString.h"
+#include "utils.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/TemplateBase.h"
 #include "clang/AST/Type.h"
@@ -94,8 +94,7 @@ unsigned clang_QualType_getCVRQualifiers(CXQualType OpaquePtr) {
 }
 
 CXString clang_QualType_getAsString(CXQualType OpaquePtr) {
-  return clang::cxstring::createDup(
-      clang::QualType::getFromOpaquePtr(OpaquePtr).getAsString());
+  return extra::makeCXString(clang::QualType::getFromOpaquePtr(OpaquePtr).getAsString());
 }
 
 void clang_QualType_dump(CXQualType OpaquePtr) {
@@ -537,9 +536,9 @@ CXType_ clang_Type_getUnqualifiedDesugaredType(CXType_ T) {
       static_cast<clang::Type *>(T)->getUnqualifiedDesugaredType());
 }
 
-bool clang_Type_isPromotableIntegerType(CXType_ T) {
-  return static_cast<clang::Type *>(T)->isPromotableIntegerType();
-}
+// bool clang_Type_isPromotableIntegerType(CXType_ T) {
+//   return static_cast<clang::Type *>(T)->isPromotableIntegerType();
+// }
 
 bool clang_Type_isSignedIntegerType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isSignedIntegerType();
@@ -921,15 +920,16 @@ clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T)
       .getAsVoidPointer();
 }
 
-unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T) {
-  return static_cast<clang::TemplateSpecializationType *>(T)->getNumArgs();
-}
+// unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T) {
+//   return static_cast<clang::TemplateSpecializationType *>(T)->getNumArgs();
+// }
 
-CXTemplateArgument clang_TemplateSpecializationType_getArg(CXTemplateSpecializationType T,
-                                                           unsigned Idx) {
-  return const_cast<clang::TemplateArgument *>(
-      &static_cast<clang::TemplateSpecializationType *>(T)->getArg(Idx));
-}
+// CXTemplateArgument clang_TemplateSpecializationType_getArg(CXTemplateSpecializationType
+// T,
+//                                                            unsigned Idx) {
+//   return const_cast<clang::TemplateArgument *>(
+//       &static_cast<clang::TemplateSpecializationType *>(T)->getArg(Idx));
+// }
 
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T) {
   return static_cast<clang::TemplateSpecializationType *>(T)->isSugared();

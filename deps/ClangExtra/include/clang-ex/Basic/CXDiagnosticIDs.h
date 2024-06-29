@@ -1,19 +1,17 @@
-#ifndef LIBCLANGEX_CXDIAGNOSTICIDS_H
-#define LIBCLANGEX_CXDIAGNOSTICIDS_H
+#ifndef LLVM_CLANG_C_EXTRA_CXDIAGNOSTICIDS_H
+#define LLVM_CLANG_C_EXTRA_CXDIAGNOSTICIDS_H
 
 #include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXDiagnosticIDs clang_DiagnosticIDs_create(CXInit_Error *ErrorCode);
+CXDiagnosticIDs clang_DiagnosticIDs_create(CXInit_Error *ErrorCode);
 
-CINDEX_LINKAGE void clang_DiagnosticIDs_dispose(CXDiagnosticIDs ID);
+void clang_DiagnosticIDs_dispose(CXDiagnosticIDs ID);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

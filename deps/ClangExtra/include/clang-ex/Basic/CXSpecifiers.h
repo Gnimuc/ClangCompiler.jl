@@ -1,9 +1,7 @@
-#ifndef LIBCLANGEX_CXSPECIFIERS_H
-#define LIBCLANGEX_CXSPECIFIERS_H
+#ifndef LLVM_CLANG_C_EXTRA_CXSPECIFIERS_H
+#define LLVM_CLANG_C_EXTRA_CXSPECIFIERS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXExplicitSpecKind : unsigned {
   CXExplicitSpecKind_ResolvedFalse,
@@ -69,7 +67,6 @@ typedef enum CXStorageDuration {
   CXStorageDuration_SD_Dynamic
 } CXStorageDuration;
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

@@ -1,19 +1,16 @@
-#ifndef LIBCLANGEX_CXIDENTIFIERTABLE_H
-#define LIBCLANGEX_CXIDENTIFIERTABLE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXIDENTIFIERTABLE_H
+#define LLVM_CLANG_C_EXTRA_CXIDENTIFIERTABLE_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE void clang_IdentifierTable_PrintStats(CXIdentifierTable IT);
+void clang_IdentifierTable_PrintStats(CXIdentifierTable IT);
 
-CINDEX_LINKAGE CXIdentifierInfo clang_IdentifierTable_get(CXIdentifierTable Idents,
-                                                          const char *Name);
+CXIdentifierInfo clang_IdentifierTable_get(CXIdentifierTable Idents, const char *Name);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

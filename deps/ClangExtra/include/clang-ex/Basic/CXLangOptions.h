@@ -1,16 +1,14 @@
-#ifndef LIBCLANGEX_CXLANGOPTIONS_H
-#define LIBCLANGEX_CXLANGOPTIONS_H
+#ifndef LLVM_CLANG_C_EXTRA_CXLANGOPTIONS_H
+#define LLVM_CLANG_C_EXTRA_CXLANGOPTIONS_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE void clang_LangOptions_PrintStats(CXLangOptions LO);
+void clang_LangOptions_PrintStats(CXLangOptions LO);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

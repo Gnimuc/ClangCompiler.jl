@@ -1,9 +1,10 @@
-#ifndef LIBCLANGEX_CXOPERATIONKINDS_H
-#define LIBCLANGEX_CXOPERATIONKINDS_H
+#ifndef LLVM_CLANG_C_EXTRA_CXOPERATIONKINDS_H
+#define LLVM_CLANG_C_EXTRA_CXOPERATIONKINDS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "clang-c/ExternC.h"
+#include "clang-c/Platform.h"
+
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXCastKind {
   CK_Dependent,
@@ -72,7 +73,6 @@ typedef enum CXCastKind {
   CK_IntToOCLSampler,
 } CXCastKind;
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

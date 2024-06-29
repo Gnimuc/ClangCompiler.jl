@@ -1,21 +1,18 @@
-#ifndef LIBCLANGEX_CXNESTEDNAMESPECIFIER_H
-#define LIBCLANGEX_CXNESTEDNAMESPECIFIER_H
+#ifndef LLVM_CLANG_C_EXTRA_CXNESTEDNAMESPECIFIER_H
+#define LLVM_CLANG_C_EXTRA_CXNESTEDNAMESPECIFIER_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXNestedNameSpecifier
-clang_NestedNameSpecifier_getPrefix(CXNestedNameSpecifier NNS);
+CXNestedNameSpecifier clang_NestedNameSpecifier_getPrefix(CXNestedNameSpecifier NNS);
 
-CINDEX_LINKAGE bool clang_NestedNameSpecifier_containsErrors(CXNestedNameSpecifier NNS);
+bool clang_NestedNameSpecifier_containsErrors(CXNestedNameSpecifier NNS);
 
-CINDEX_LINKAGE void clang_NestedNameSpecifier_dump(CXNestedNameSpecifier NNS);
+void clang_NestedNameSpecifier_dump(CXNestedNameSpecifier NNS);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

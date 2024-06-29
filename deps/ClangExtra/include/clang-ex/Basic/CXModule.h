@@ -1,11 +1,8 @@
-#ifndef LIBCLANGEX_CXMODULE_H
-#define LIBCLANGEX_CXMODULE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXMODULE_H
+#define LLVM_CLANG_C_EXTRA_CXMODULE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

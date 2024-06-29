@@ -1,9 +1,7 @@
-#ifndef LIBCLANGEX_CXLAMBDA_H
-#define LIBCLANGEX_CXLAMBDA_H
+#ifndef LLVM_CLANG_C_EXTRA_CXLAMBDA_H
+#define LLVM_CLANG_C_EXTRA_CXLAMBDA_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXLambdaCaptureDefault {
   CXLambdaCaptureDefault_LCD_None,
@@ -19,7 +17,6 @@ typedef enum CXLambdaCaptureKind {
   CXLambdaCaptureKind_LCK_VLAType,
 } CXLambdaCaptureKind;
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

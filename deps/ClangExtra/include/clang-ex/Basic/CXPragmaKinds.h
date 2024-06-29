@@ -1,9 +1,7 @@
-#ifndef LIBCLANGEX_CXPRAGMAKINDS_H
-#define LIBCLANGEX_CXPRAGMAKINDS_H
+#ifndef LLVM_CLANG_C_EXTRA_CXPRAGMAKINDS_H
+#define LLVM_CLANG_C_EXTRA_CXPRAGMAKINDS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXPragmaMSCommentKind {
   CXPragmaMSCommentKind_PCK_Unknown,
@@ -29,7 +27,6 @@ typedef enum CXPragmaFloatControlKind {
   CXPragmaFloatControlKind_PFC_Pop
 } CXPragmaFloatControlKind;
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

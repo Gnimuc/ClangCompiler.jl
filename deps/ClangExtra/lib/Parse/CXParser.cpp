@@ -64,17 +64,18 @@ bool clang_Parser_TryAnnotateCXXScopeToken(CXParser P, bool EnteringContext) {
   return static_cast<clang::Parser *>(P)->TryAnnotateCXXScopeToken(EnteringContext);
 }
 
-bool clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(CXParser P, CXCXXScopeSpec SS,
-                                                            bool IsNewScope) {
-  return static_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeTokenAfterScopeSpec(
-      *static_cast<clang::CXXScopeSpec *>(SS), IsNewScope);
-}
+// bool clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(CXParser P, CXCXXScopeSpec
+// SS,
+//                                                             bool IsNewScope) {
+//   return static_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeTokenAfterScopeSpec(
+//       *static_cast<clang::CXXScopeSpec *>(SS), IsNewScope);
+// }
 
-CXDeclGroupRef clang_Parser_parseOneTopLevelDecl(CXParser Parser, bool IsFirstDecl) {
-  clang::Parser::DeclGroupPtrTy ADecl;
-  static_cast<clang::Parser *>(Parser)->ParseTopLevelDecl(ADecl, IsFirstDecl);
-  if (ADecl)
-    return ADecl.get().getAsOpaquePtr();
-  else
-    return nullptr;
-}
+// CXDeclGroupRef clang_Parser_parseOneTopLevelDecl(CXParser Parser, bool IsFirstDecl) {
+//   clang::Parser::DeclGroupPtrTy ADecl;
+//   static_cast<clang::Parser *>(Parser)->ParseTopLevelDecl(ADecl, IsFirstDecl);
+//   if (ADecl)
+//     return ADecl.get().getAsOpaquePtr();
+//   else
+//     return nullptr;
+// }

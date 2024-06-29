@@ -46,21 +46,12 @@ CXQualType clang_ASTContext_getIntTypeForBitwidth(CXASTContext Ctx, unsigned Des
       .getAsOpaquePtr();
 }
 
-#if LLVM_VERSION_MAJOR >= 14
-CXQualType clang_ASTContext_getRealTypeForBitwidth(CXASTContext Ctx, unsigned DestWidth,
-                                                   clang::FloatModeKind ExplicitType) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getRealTypeForBitwidth(DestWidth, ExplicitType)
-      .getAsOpaquePtr();
-}
-#else
-CXQualType clang_ASTContext_getRealTypeForBitwidth(CXASTContext Ctx, unsigned DestWidth,
-                                                   bool ExplicitIEEE) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getRealTypeForBitwidth(DestWidth, ExplicitIEEE)
-      .getAsOpaquePtr();
-}
-#endif
+// CXQualType clang_ASTContext_getRealTypeForBitwidth(CXASTContext Ctx, unsigned DestWidth,
+//                                                    clang::FloatModeKind ExplicitType) {
+//   return static_cast<clang::ASTContext *>(Ctx)
+//       ->getRealTypeForBitwidth(DestWidth, ExplicitType)
+//       .getAsOpaquePtr();
+// }
 
 bool clang_ASTContext_AtomicUsesUnsupportedLibcall(CXASTContext Ctx, CXAtomicExpr E) {
   return static_cast<clang::ASTContext *>(Ctx)->AtomicUsesUnsupportedLibcall(
@@ -354,7 +345,6 @@ CXQualType clang_ASTContext_getWritePipeType(CXASTContext Ctx, CXQualType T) {
       .getAsOpaquePtr();
 }
 
-#if LLVM_VERSION_MAJOR >= 14
 CXQualType clang_ASTContext_getBitIntType(CXASTContext Ctx, bool Unsigned,
                                           unsigned NumBits) {
   return static_cast<clang::ASTContext *>(Ctx)
@@ -368,21 +358,6 @@ CXQualType clang_ASTContext_getDependentBitIntType(CXASTContext Ctx, bool Unsign
       ->getDependentBitIntType(Unsigned, static_cast<clang::Expr *>(BitsExpr))
       .getAsOpaquePtr();
 }
-#else
-CXQualType clang_ASTContext_getExtIntType(CXASTContext Ctx, bool Unsigned,
-                                          unsigned NumBits) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getExtIntType(Unsigned, NumBits)
-      .getAsOpaquePtr();
-}
-
-CXQualType clang_ASTContext_getDependentExtIntType(CXASTContext Ctx, bool Unsigned,
-                                                   CXExpr BitsExpr) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getDependentExtIntType(Unsigned, static_cast<clang::Expr *>(BitsExpr))
-      .getAsOpaquePtr();
-}
-#endif
 
 CXQualType clang_ASTContext_getBlockDescriptorExtendedType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)
@@ -563,14 +538,15 @@ CXQualType clang_ASTContext_getInjectedClassNameType(CXASTContext Ctx, CXCXXReco
 
 // getAttributedType
 
-CXQualType clang_ASTContext_getSubstTemplateTypeParmType(CXASTContext Ctx,
-                                                         CXTemplateTypeParmType Replaced,
-                                                         CXQualType Replacement) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getSubstTemplateTypeParmType(static_cast<clang::TemplateTypeParmType *>(Replaced),
-                                     clang::QualType::getFromOpaquePtr(Replacement))
-      .getAsOpaquePtr();
-}
+// CXQualType clang_ASTContext_getSubstTemplateTypeParmType(CXASTContext Ctx,
+//                                                          CXTemplateTypeParmType Replaced,
+//                                                          CXQualType Replacement) {
+//   return static_cast<clang::ASTContext *>(Ctx)
+//       ->getSubstTemplateTypeParmType(static_cast<clang::TemplateTypeParmType
+//       *>(Replaced),
+//                                      clang::QualType::getFromOpaquePtr(Replacement))
+//       .getAsOpaquePtr();
+// }
 
 // getSubstTemplateTypeParmPackType
 
@@ -615,17 +591,17 @@ CXQualType clang_ASTContext_getMacroQualifiedType(CXASTContext Ctx, CXQualType U
 // QIdProtocolsAdoptObjCObjectProtocols
 // getObjCObjectPointerType
 
-CXQualType clang_ASTContext_getTypeOfExprType(CXASTContext Ctx, CXExpr Expr) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getTypeOfExprType(static_cast<clang::Expr *>(Expr))
-      .getAsOpaquePtr();
-}
+// CXQualType clang_ASTContext_getTypeOfExprType(CXASTContext Ctx, CXExpr Expr) {
+//   return static_cast<clang::ASTContext *>(Ctx)
+//       ->getTypeOfExprType(static_cast<clang::Expr *>(Expr))
+//       .getAsOpaquePtr();
+// }
 
-CXQualType clang_ASTContext_getTypeOfType(CXASTContext Ctx, CXType_ T) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getTypeOfType(clang::QualType::getFromOpaquePtr(T))
-      .getAsOpaquePtr();
-}
+// CXQualType clang_ASTContext_getTypeOfType(CXASTContext Ctx, CXType_ T) {
+//   return static_cast<clang::ASTContext *>(Ctx)
+//       ->getTypeOfType(clang::QualType::getFromOpaquePtr(T))
+//       .getAsOpaquePtr();
+// }
 
 CXQualType clang_ASTContext_getDecltypeType(CXASTContext Ctx, CXExpr Expr,
                                             CXQualType UnderlyingType) {
@@ -907,16 +883,16 @@ CXTemplateName clang_ASTContext_getAssumedTemplateName(CXASTContext Ctx,
       .getAsVoidPointer();
 }
 
-CXTemplateName clang_ASTContext_getQualifiedTemplateName(CXASTContext Ctx,
-                                                         CXNestedNameSpecifier NNS,
-                                                         bool TemplateKeyword,
-                                                         CXTemplateDecl Template) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getQualifiedTemplateName(static_cast<clang::NestedNameSpecifier *>(NNS),
-                                 TemplateKeyword,
-                                 static_cast<clang::TemplateDecl *>(Template))
-      .getAsVoidPointer();
-}
+// CXTemplateName clang_ASTContext_getQualifiedTemplateName(CXASTContext Ctx,
+//                                                          CXNestedNameSpecifier NNS,
+//                                                          bool TemplateKeyword,
+//                                                          CXTemplateDecl Template) {
+//   return static_cast<clang::ASTContext *>(Ctx)
+//       ->getQualifiedTemplateName(static_cast<clang::NestedNameSpecifier *>(NNS),
+//                                  TemplateKeyword,
+//                                  static_cast<clang::TemplateDecl *>(Template))
+//       .getAsVoidPointer();
+// }
 
 CXTemplateName clang_ASTContext_getDependentTemplateName(CXASTContext Ctx,
                                                          CXNestedNameSpecifier NNS,
@@ -927,13 +903,14 @@ CXTemplateName clang_ASTContext_getDependentTemplateName(CXASTContext Ctx,
       .getAsVoidPointer();
 }
 
-CXTemplateName clang_ASTContext_getSubstTemplateTemplateParm(
-    CXASTContext Ctx, CXTemplateTemplateParmDecl param, CXTemplateName replacement) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getSubstTemplateTemplateParm(static_cast<clang::TemplateTemplateParmDecl *>(param),
-                                     clang::TemplateName::getFromVoidPointer(replacement))
-      .getAsVoidPointer();
-}
+// CXTemplateName clang_ASTContext_getSubstTemplateTemplateParm(
+//     CXASTContext Ctx, CXTemplateTemplateParmDecl param, CXTemplateName replacement) {
+//   return static_cast<clang::ASTContext *>(Ctx)
+//       ->getSubstTemplateTemplateParm(static_cast<clang::TemplateTemplateParmDecl
+//       *>(param),
+//                                      clang::TemplateName::getFromVoidPointer(replacement))
+//       .getAsVoidPointer();
+// }
 
 // getSubstTemplateTemplateParmPack
 // DecodeTypeStr
@@ -1239,19 +1216,19 @@ int clang_ASTContext_getFloatingTypeSemanticOrder(CXASTContext Ctx, CXQualType L
       clang::QualType::getFromOpaquePtr(LHS), clang::QualType::getFromOpaquePtr(RHS));
 }
 
-CXQualType clang_ASTContext_getFloatingTypeOfSizeWithinDomain(CXASTContext Ctx,
-                                                              CXQualType typeSize,
-                                                              CXQualType typeDomain) {
-  return static_cast<clang::ASTContext *>(Ctx)
-      ->getFloatingTypeOfSizeWithinDomain(clang::QualType::getFromOpaquePtr(typeSize),
-                                          clang::QualType::getFromOpaquePtr(typeDomain))
-      .getAsOpaquePtr();
-}
+// CXQualType clang_ASTContext_getFloatingTypeOfSizeWithinDomain(CXASTContext Ctx,
+//                                                               CXQualType typeSize,
+//                                                               CXQualType typeDomain) {
+//   return static_cast<clang::ASTContext *>(Ctx)
+//       ->getFloatingTypeOfSizeWithinDomain(clang::QualType::getFromOpaquePtr(typeSize),
+//                                           clang::QualType::getFromOpaquePtr(typeDomain))
+//       .getAsOpaquePtr();
+// }
 
-unsigned clang_ASTContext_getTargetAddressSpace(CXASTContext Ctx, CXQualType T) {
-  return static_cast<clang::ASTContext *>(Ctx)->getTargetAddressSpace(
-      clang::QualType::getFromOpaquePtr(T));
-}
+// unsigned clang_ASTContext_getTargetAddressSpace(CXASTContext Ctx, CXQualType T) {
+//   return static_cast<clang::ASTContext *>(Ctx)->getTargetAddressSpace(
+//       clang::QualType::getFromOpaquePtr(T));
+// }
 
 // getLangASForBuiltinAddressSpace
 
@@ -1499,15 +1476,15 @@ bool clang_ASTContext_isMSStaticDataMemberInlineDefinition(CXASTContext Ctx, CXV
 
 // getInlineVariableDefinitionKind
 
-bool clang_ASTContext_mayExternalizeStaticVar(CXASTContext Ctx, CXDecl D) {
-  return static_cast<clang::ASTContext *>(Ctx)->mayExternalizeStaticVar(
-      static_cast<clang::Decl *>(D));
-}
+// bool clang_ASTContext_mayExternalizeStaticVar(CXASTContext Ctx, CXDecl D) {
+//   return static_cast<clang::ASTContext *>(Ctx)->mayExternalizeStaticVar(
+//       static_cast<clang::Decl *>(D));
+// }
 
-bool clang_ASTContext_shouldExternalizeStaticVar(CXASTContext Ctx, CXDecl D) {
-  return static_cast<clang::ASTContext *>(Ctx)->shouldExternalizeStaticVar(
-      static_cast<clang::Decl *>(D));
-}
+// bool clang_ASTContext_shouldExternalizeStaticVar(CXASTContext Ctx, CXDecl D) {
+//   return static_cast<clang::ASTContext *>(Ctx)->shouldExternalizeStaticVar(
+//       static_cast<clang::Decl *>(D));
+// }
 
 // Builtin Types
 CXQualType clang_ASTContext_VoidTy_getAsQualType(CXASTContext Ctx) {
@@ -1621,25 +1598,6 @@ CXQualType clang_ASTContext_BFloat16Ty_getAsQualType(CXASTContext Ctx) {
 CXQualType clang_ASTContext_Float16Ty_getAsQualType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)->Float16Ty.getAsOpaquePtr();
 }
-
-#if LLVM_VERSION_MAJOR >= 14
-#else
-CXQualType clang_ASTContext_FloatComplexTy_getAsQualType(CXASTContext Ctx) {
-  return static_cast<clang::ASTContext *>(Ctx)->FloatComplexTy.getAsOpaquePtr();
-}
-
-CXQualType clang_ASTContext_DoubleComplexTy_getAsQualType(CXASTContext Ctx) {
-  return static_cast<clang::ASTContext *>(Ctx)->DoubleComplexTy.getAsOpaquePtr();
-}
-
-CXQualType clang_ASTContext_LongDoubleComplexTy_getAsQualType(CXASTContext Ctx) {
-  return static_cast<clang::ASTContext *>(Ctx)->LongDoubleComplexTy.getAsOpaquePtr();
-}
-
-CXQualType clang_ASTContext_Float128ComplexTy_getAsQualType(CXASTContext Ctx) {
-  return static_cast<clang::ASTContext *>(Ctx)->Float128ComplexTy.getAsOpaquePtr();
-}
-#endif
 
 CXQualType clang_ASTContext_VoidPtrTy_getAsQualType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)->VoidPtrTy.getAsOpaquePtr();

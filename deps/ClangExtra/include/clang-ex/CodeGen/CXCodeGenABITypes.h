@@ -1,17 +1,15 @@
-#ifndef LIBCLANGEX_CXCODEGENABITYPES_H
-#define LIBCLANGEX_CXCODEGENABITYPES_H
+#ifndef LLVM_CLANG_C_EXTRA_CXCODEGENABITYPES_H
+#define LLVM_CLANG_C_EXTRA_CXCODEGENABITYPES_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 #include "llvm-c/Types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE LLVMTypeRef clang_CodeGen_convertTypeForMemory(CXCodeGenModule CGM, CXQualType T);
+LLVMTypeRef clang_CodeGen_convertTypeForMemory(CXCodeGenModule CGM, CXQualType T);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

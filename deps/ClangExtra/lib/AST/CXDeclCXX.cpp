@@ -244,7 +244,6 @@ CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_CreateDeserialized(CXASTContex
 }
 
 // CXXMethodDecl
-#if LLVM_VERSION_MAJOR >= 14
 CXCXXMethodDecl clang_CXXMethodDecl_Create(CXASTContext C, CXCXXRecordDecl RD,
                                            CXSourceLocation_ StartLoc,
                                            CXDeclarationNameInfo NameInfo, CXQualType T,
@@ -263,26 +262,6 @@ CXCXXMethodDecl clang_CXXMethodDecl_Create(CXASTContext C, CXCXXRecordDecl RD,
       clang::SourceLocation::getFromPtrEncoding(EndLocation),
       static_cast<clang::Expr *>(TrailingRequiresClause));
 }
-#else
-CXCXXMethodDecl clang_CXXMethodDecl_Create(CXASTContext C, CXCXXRecordDecl RD,
-                                           CXSourceLocation_ StartLoc,
-                                           CXDeclarationNameInfo NameInfo, CXQualType T,
-                                           CXTypeSourceInfo TInfo, CXStorageClass SC,
-                                           bool isInline, CXConstexprSpecKind ConstexprKind,
-                                           CXSourceLocation_ EndLocation,
-                                           CXExpr TrailingRequiresClause) {
-  return clang::CXXMethodDecl::Create(
-      *static_cast<clang::ASTContext *>(C), static_cast<clang::CXXRecordDecl *>(RD),
-      clang::SourceLocation::getFromPtrEncoding(StartLoc),
-      *static_cast<clang::DeclarationNameInfo *>(NameInfo),
-      clang::QualType::getFromOpaquePtr(T), static_cast<clang::TypeSourceInfo *>(TInfo),
-
-      static_cast<clang::StorageClass>(SC), isInline,
-      static_cast<clang::ConstexprSpecKind>(ConstexprKind),
-      clang::SourceLocation::getFromPtrEncoding(EndLocation),
-      static_cast<clang::Expr *>(TrailingRequiresClause));
-}
-#endif
 
 CXCXXMethodDecl clang_CXXMethodDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
   return clang::CXXMethodDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C), ID);

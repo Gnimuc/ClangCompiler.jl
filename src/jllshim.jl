@@ -5,7 +5,7 @@ using Clang_jll
 using libclangex_jll
 using Libdl
 
-import ..CppInterOp: libclangex
+import ..ClangCompiler: libclangex
 
 function __init__()
     if Clang_jll.libclang_cpp_handle == C_NULL

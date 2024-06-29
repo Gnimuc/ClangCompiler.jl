@@ -1,28 +1,24 @@
-#ifndef LIBCLANGEX_CXFILEENTRY_H
-#define LIBCLANGEX_CXFILEENTRY_H
+#ifndef LLVM_CLANG_C_EXTRA_CXFILEENTRY_H
+#define LLVM_CLANG_C_EXTRA_CXFILEENTRY_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE const char *clang_FileEntry_getName(CXFileEntry FE);
+const char *clang_FileEntry_getName(CXFileEntry FE);
 
-CINDEX_LINKAGE const char *clang_FileEntry_tryGetRealPathName(CXFileEntry FE);
+const char *clang_FileEntry_tryGetRealPathName(CXFileEntry FE);
 
-CINDEX_LINKAGE bool clang_FileEntry_isValid(CXFileEntry FE);
+unsigned clang_FileEntry_getUID(CXFileEntry FE);
 
-CINDEX_LINKAGE unsigned clang_FileEntry_getUID(CXFileEntry FE);
+time_t clang_FileEntry_getModificationTime(CXFileEntry FE);
 
-CINDEX_LINKAGE time_t clang_FileEntry_getModificationTime(CXFileEntry FE);
+CXDirectoryEntry clang_FileEntry_getDir(CXFileEntry FE);
 
-CINDEX_LINKAGE CXDirectoryEntry clang_FileEntry_getDir(CXFileEntry FE);
+bool clang_FileEntry_isNamedPipe(CXFileEntry FE);
 
-CINDEX_LINKAGE bool clang_FileEntry_isNamedPipe(CXFileEntry FE);
+LLVM_CLANG_C_EXTERN_C_END
 
-#ifdef __cplusplus
-}
-#endif
 #endif

@@ -17,7 +17,7 @@ CXTemplateArgumentList clang_TemplateArgumentList_CreateCopy(CXASTContext Contex
                                                              size_t ArgNum) {
   return clang::TemplateArgumentList::CreateCopy(
       *static_cast<clang::ASTContext *>(Context),
-      llvm::makeArrayRef(static_cast<clang::TemplateArgument *>(Args), ArgNum));
+      llvm::ArrayRef(static_cast<clang::TemplateArgument *>(Args), ArgNum));
 }
 
 unsigned clang_TemplateArgumentList_size(CXTemplateArgumentList TAL) {
@@ -36,11 +36,12 @@ CXTemplateArgument clang_TemplateArgumentList_get(CXTemplateArgumentList TAL,
 }
 
 // TemplateDecl
-void clang_TemplateDecl_init(CXTemplateDecl TD, CXNamedDecl ND,
-                             CXTemplateParameterList TP) {
-  static_cast<clang::TemplateDecl *>(TD)->init(
-      static_cast<clang::NamedDecl *>(ND), static_cast<clang::TemplateParameterList *>(ND));
-}
+// void clang_TemplateDecl_init(CXTemplateDecl TD, CXNamedDecl ND,
+//                              CXTemplateParameterList TP) {
+//   static_cast<clang::TemplateDecl *>(TD)->init(
+//       static_cast<clang::NamedDecl *>(ND), static_cast<clang::TemplateParameterList
+//       *>(ND));
+// }
 
 // RedeclarableTemplateDecl
 CXRedeclarableTemplateDecl

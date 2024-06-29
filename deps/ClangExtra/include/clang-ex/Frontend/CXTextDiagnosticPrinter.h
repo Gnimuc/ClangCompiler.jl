@@ -1,18 +1,16 @@
-#ifndef LIBCLANGEX_CXTEXTDIAGNOSTICPRINTER_H
-#define LIBCLANGEX_CXTEXTDIAGNOSTICPRINTER_H
+#ifndef LLVM_CLANG_C_EXTRA_CXTEXTDIAGNOSTICPRINTER_H
+#define LLVM_CLANG_C_EXTRA_CXTEXTDIAGNOSTICPRINTER_H
 
 #include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXDiagnosticConsumer
-clang_TextDiagnosticPrinter_create(CXDiagnosticOptions Opts, CXInit_Error *ErrorCode);
+CXDiagnosticConsumer clang_TextDiagnosticPrinter_create(CXDiagnosticOptions Opts,
+                                                        CXInit_Error *ErrorCode);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

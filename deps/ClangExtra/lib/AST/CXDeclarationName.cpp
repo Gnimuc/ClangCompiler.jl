@@ -1,5 +1,5 @@
 #include "clang-ex/AST/CXDeclarationName.h"
-#include "libclang/CXString.h"
+#include "utils.h"
 #include "clang/AST/DeclarationName.h"
 
 CXDeclarationName clang_DeclarationName_create(void) {
@@ -20,6 +20,5 @@ bool clang_DeclarationName_isEmpty(CXDeclarationName DN) {
 }
 
 CXString clang_DeclarationName_getAsString(CXDeclarationName DN) {
-  return clang::cxstring::createDup(
-      clang::DeclarationName::getFromOpaquePtr(DN).getAsString());
+  return extra::makeCXString(clang::DeclarationName::getFromOpaquePtr(DN).getAsString());
 }

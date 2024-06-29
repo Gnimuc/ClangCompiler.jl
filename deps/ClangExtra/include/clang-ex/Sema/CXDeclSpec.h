@@ -1,13 +1,12 @@
-#ifndef LIBCLANGEX_CXDECLSPEC_H
-#define LIBCLANGEX_CXDECLSPEC_H
+#ifndef LLVM_CLANG_C_EXTRA_CXDECLSPEC_H
+#define LLVM_CLANG_C_EXTRA_CXDECLSPEC_H
 
 #include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXDeclaratorContext {
   CXDeclaratorContext_File,
@@ -39,32 +38,30 @@ typedef enum CXDeclaratorContext {
   CXDeclaratorContext_RequiresExpr
 } CXDeclaratorContext;
 
-CINDEX_LINKAGE CXCXXScopeSpec clang_CXXScopeSpec_create(CXInit_Error *ErrorCode);
+CXCXXScopeSpec clang_CXXScopeSpec_create(CXInit_Error *ErrorCode);
 
-CINDEX_LINKAGE void clang_CXXScopeSpec_dispose(CXCXXScopeSpec SS);
+void clang_CXXScopeSpec_dispose(CXCXXScopeSpec SS);
 
-CINDEX_LINKAGE void clang_CXXScopeSpec_clear(CXCXXScopeSpec SS);
+void clang_CXXScopeSpec_clear(CXCXXScopeSpec SS);
 
-CINDEX_LINKAGE CXNestedNameSpecifier clang_CXXScopeSpec_getScopeRep(CXCXXScopeSpec SS);
+CXNestedNameSpecifier clang_CXXScopeSpec_getScopeRep(CXCXXScopeSpec SS);
 
-CINDEX_LINKAGE CXSourceLocation_ clang_CXXScopeSpec_getBeginLoc(CXCXXScopeSpec SS);
+CXSourceLocation_ clang_CXXScopeSpec_getBeginLoc(CXCXXScopeSpec SS);
 
-CINDEX_LINKAGE CXSourceLocation_ clang_CXXScopeSpec_getEndLoc(CXCXXScopeSpec SS);
+CXSourceLocation_ clang_CXXScopeSpec_getEndLoc(CXCXXScopeSpec SS);
 
-CINDEX_LINKAGE void clang_CXXScopeSpec_setBeginLoc(CXCXXScopeSpec SS,
-                                                   CXSourceLocation_ Loc);
+void clang_CXXScopeSpec_setBeginLoc(CXCXXScopeSpec SS, CXSourceLocation_ Loc);
 
-CINDEX_LINKAGE void clang_CXXScopeSpec_setEndLoc(CXCXXScopeSpec SS, CXSourceLocation_ Loc);
+void clang_CXXScopeSpec_setEndLoc(CXCXXScopeSpec SS, CXSourceLocation_ Loc);
 
-CINDEX_LINKAGE bool clang_CXXScopeSpec_isEmpty(CXCXXScopeSpec SS);
+bool clang_CXXScopeSpec_isEmpty(CXCXXScopeSpec SS);
 
-CINDEX_LINKAGE bool clang_CXXScopeSpec_isNotEmpty(CXCXXScopeSpec SS);
+bool clang_CXXScopeSpec_isNotEmpty(CXCXXScopeSpec SS);
 
-CINDEX_LINKAGE bool clang_CXXScopeSpec_isInvalid(CXCXXScopeSpec SS);
+bool clang_CXXScopeSpec_isInvalid(CXCXXScopeSpec SS);
 
-CINDEX_LINKAGE bool clang_CXXScopeSpec_isValid(CXCXXScopeSpec SS);
+bool clang_CXXScopeSpec_isValid(CXCXXScopeSpec SS);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

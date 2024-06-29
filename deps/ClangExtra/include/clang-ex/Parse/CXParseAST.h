@@ -1,19 +1,14 @@
-#ifndef LIBCLANGEX_CXPARSEAST_H
-#define LIBCLANGEX_CXPARSEAST_H
+#ifndef LLVM_CLANG_C_EXTRA_CXPARSEAST_H
+#define LLVM_CLANG_C_EXTRA_CXPARSEAST_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE void clang_ParseAST(CXSema Sema, bool PrintStats, bool SkipFunctionBodies);
+void clang_ParseAST(CXSema Sema, bool PrintStats, bool SkipFunctionBodies);
 
-CINDEX_LINKAGE bool
-clang_Parser_tryParseAndSkipInvalidOrParsedDecl(CXParser Parser, CXCodeGenerator CodeGen);
+LLVM_CLANG_C_EXTERN_C_END
 
-#ifdef __cplusplus
-}
-#endif
 #endif

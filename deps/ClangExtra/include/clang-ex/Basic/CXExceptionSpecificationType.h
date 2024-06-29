@@ -1,9 +1,7 @@
-#ifndef LIBCLANGEX_CXEXCEPTIONSPECIFICATIONTYPE_H
-#define LIBCLANGEX_CXEXCEPTIONSPECIFICATIONTYPE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXEXCEPTIONSPECIFICATIONTYPE_H
+#define LLVM_CLANG_C_EXTRA_CXEXCEPTIONSPECIFICATIONTYPE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXExceptionSpecificationType {
   CXExceptionSpecificationType_EST_None,
@@ -20,7 +18,6 @@ typedef enum CXExceptionSpecificationType {
   CXExceptionSpecificationType_EST_Unparsed
 } CXExceptionSpecificationType;
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

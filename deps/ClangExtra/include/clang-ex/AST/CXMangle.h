@@ -1,13 +1,12 @@
-#ifndef LIBCLANGEX_CXMANGLE_H
-#define LIBCLANGEX_CXMANGLE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXMANGLE_H
+#define LLVM_CLANG_C_EXTRA_CXMANGLE_H
 
 #include "clang-ex/CXTypes.h"
 #include "clang-c/CXString.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXMangleContext_ManglerKind {
   CXMangleContext_MK_Itanium,
@@ -15,22 +14,22 @@ typedef enum CXMangleContext_ManglerKind {
 } CXMangleContext_ManglerKind;
 
 // MangleContext
-CINDEX_LINKAGE CXMangleContext_ManglerKind clang_MangleContext_getKind(CXMangleContext MC);
+CXMangleContext_ManglerKind clang_MangleContext_getKind(CXMangleContext MC);
 
-CINDEX_LINKAGE CXASTContext clang_MangleContext_getASTContext(CXMangleContext MC);
+CXASTContext clang_MangleContext_getASTContext(CXMangleContext MC);
 
-CINDEX_LINKAGE CXDiagnosticsEngine clang_MangleContext_getDiags(CXMangleContext MC);
+CXDiagnosticsEngine clang_MangleContext_getDiags(CXMangleContext MC);
 
 // startNewFunction
 // getBlockId
 
-CINDEX_LINKAGE uint64_t clang_MangleContext_getAnonymousStructId(CXMangleContext MC, CXNamedDecl D);
+uint64_t clang_MangleContext_getAnonymousStructId(CXMangleContext MC, CXNamedDecl D);
 
-CINDEX_LINKAGE bool clang_MangleContext_shouldMangleDeclName(CXMangleContext MC, CXNamedDecl D);
+bool clang_MangleContext_shouldMangleDeclName(CXMangleContext MC, CXNamedDecl D);
 
-CINDEX_LINKAGE bool clang_MangleContext_shouldMangleCXXName(CXMangleContext MC, CXNamedDecl D);
+bool clang_MangleContext_shouldMangleCXXName(CXMangleContext MC, CXNamedDecl D);
 
-CINDEX_LINKAGE bool clang_MangleContext_shouldMangleStringLiteral(CXMangleContext MC, CXStringLiteral SL);
+bool clang_MangleContext_shouldMangleStringLiteral(CXMangleContext MC, CXStringLiteral SL);
 
 // mangleName
 // mangleCXXName
@@ -82,11 +81,10 @@ CINDEX_LINKAGE bool clang_MangleContext_shouldMangleStringLiteral(CXMangleContex
 // ASTNameGenerator
 // writeName
 
-CINDEX_LINKAGE CXString clang_ASTNameGenerator_getName(CXASTNameGenerator G, CXDecl D);
+CXString clang_ASTNameGenerator_getName(CXASTNameGenerator G, CXDecl D);
 
-CINDEX_LINKAGE CXStringSet *clang_ASTNameGenerator_getAllManglings(CXASTNameGenerator G, CXDecl D);
+CXStringSet *clang_ASTNameGenerator_getAllManglings(CXASTNameGenerator G, CXDecl D);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

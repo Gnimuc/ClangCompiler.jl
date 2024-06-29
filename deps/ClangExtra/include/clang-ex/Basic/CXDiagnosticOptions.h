@@ -1,27 +1,24 @@
-#ifndef LIBCLANGEX_CXDIAGNOSTICOPTIONS_H
-#define LIBCLANGEX_CXDIAGNOSTICOPTIONS_H
+#ifndef LLVM_CLANG_C_EXTRA_CXDIAGNOSTICOPTIONS_H
+#define LLVM_CLANG_C_EXTRA_CXDIAGNOSTICOPTIONS_H
 
 #include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXDiagnosticOptions clang_DiagnosticOptions_create(CXInit_Error *ErrorCode);
+CXDiagnosticOptions clang_DiagnosticOptions_create(CXInit_Error *ErrorCode);
 
-CINDEX_LINKAGE void clang_DiagnosticOptions_dispose(CXDiagnosticOptions DO);
+void clang_DiagnosticOptions_dispose(CXDiagnosticOptions DO);
 
-CINDEX_LINKAGE void clang_DiagnosticOptions_PrintStats(CXDiagnosticOptions DO);
+void clang_DiagnosticOptions_PrintStats(CXDiagnosticOptions DO);
 
-CINDEX_LINKAGE void clang_DiagnosticOptions_setShowColors(CXDiagnosticOptions DO,
-                                                          bool ShowColors);
+void clang_DiagnosticOptions_setShowColors(CXDiagnosticOptions DO, bool ShowColors);
 
-CINDEX_LINKAGE void clang_DiagnosticOptions_setShowPresumedLoc(CXDiagnosticOptions DO,
-                                                               bool ShowPresumedLoc);
+void clang_DiagnosticOptions_setShowPresumedLoc(CXDiagnosticOptions DO,
+                                                bool ShowPresumedLoc);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

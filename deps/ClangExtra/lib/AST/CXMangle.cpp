@@ -1,5 +1,5 @@
 #include "clang-ex/AST/CXMangle.h"
-#include "libclang/CXString.h"
+#include "utils.h"
 #include "clang/AST/Mangle.h"
 
 // MangleContext
@@ -90,12 +90,11 @@ bool clang_MangleContext_shouldMangleStringLiteral(CXMangleContext MC, CXStringL
 // writeName
 
 CXString clang_ASTNameGenerator_getName(CXASTNameGenerator G, CXDecl D) {
-  return clang::cxstring::createDup(
+  return extra::makeCXString(
       static_cast<clang::ASTNameGenerator *>(G)->getName(static_cast<clang::Decl *>(D)));
 }
 
 CXStringSet *clang_ASTNameGenerator_getAllManglings(CXASTNameGenerator G, CXDecl D) {
-  return clang::cxstring::createSet(
-      static_cast<clang::ASTNameGenerator *>(G)->getAllManglings(
-          static_cast<clang::Decl *>(D)));
+  return extra::makeCXStringSet(static_cast<clang::ASTNameGenerator *>(G)->getAllManglings(
+      static_cast<clang::Decl *>(D)));
 }

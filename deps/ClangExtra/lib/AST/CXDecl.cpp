@@ -225,17 +225,17 @@ void clang_LabelDecl_setMSAsmLabelResolved(CXLabelDecl LD) {
 }
 
 // NamespaceDecl
-CXNamespaceDecl clang_NamespaceDecl_Create(CXASTContext C, CXDeclContext DC, bool Inline,
-                                           CXSourceLocation_ StartLoc,
-                                           CXSourceLocation_ IdLoc, CXIdentifierInfo Id,
-                                           CXNamespaceDecl PrevDecl) {
-  return clang::NamespaceDecl::Create(*static_cast<clang::ASTContext *>(C),
-                                      static_cast<clang::DeclContext *>(DC), Inline,
-                                      clang::SourceLocation::getFromPtrEncoding(StartLoc),
-                                      clang::SourceLocation::getFromPtrEncoding(IdLoc),
-                                      static_cast<clang::IdentifierInfo *>(Id),
-                                      static_cast<clang::NamespaceDecl *>(PrevDecl));
-}
+// CXNamespaceDecl clang_NamespaceDecl_Create(CXASTContext C, CXDeclContext DC, bool Inline,
+//                                            CXSourceLocation_ StartLoc,
+//                                            CXSourceLocation_ IdLoc, CXIdentifierInfo Id,
+//                                            CXNamespaceDecl PrevDecl) {
+//   return clang::NamespaceDecl::Create(*static_cast<clang::ASTContext *>(C),
+//                                       static_cast<clang::DeclContext *>(DC), Inline,
+//                                       clang::SourceLocation::getFromPtrEncoding(StartLoc),
+//                                       clang::SourceLocation::getFromPtrEncoding(IdLoc),
+//                                       static_cast<clang::IdentifierInfo *>(Id),
+//                                       static_cast<clang::NamespaceDecl *>(PrevDecl));
+// }
 
 CXNamespaceDecl clang_NamespaceDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
   return clang::NamespaceDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C), ID);

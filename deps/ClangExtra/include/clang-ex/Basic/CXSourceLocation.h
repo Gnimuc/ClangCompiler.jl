@@ -1,38 +1,34 @@
-#ifndef LIBCLANGEX_CXSOURCELOCATION_H
-#define LIBCLANGEX_CXSOURCELOCATION_H
+#ifndef LLVM_CLANG_C_EXTRA_CXSOURCELOCATION_H
+#define LLVM_CLANG_C_EXTRA_CXSOURCELOCATION_H
 
 #include "clang-ex/CXTypes.h"
-#include "clang-c/Platform.h"
 #include "clang-c/CXString.h"
+#include "clang-c/ExternC.h"
+#include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXSourceLocation_ clang_SourceLocation_createInvalid(void);
+CXSourceLocation_ clang_SourceLocation_createInvalid(void);
 
-CINDEX_LINKAGE bool clang_SourceLocation_isFileID(CXSourceLocation_ Loc);
+bool clang_SourceLocation_isFileID(CXSourceLocation_ Loc);
 
-CINDEX_LINKAGE bool clang_SourceLocation_isMacroID(CXSourceLocation_ Loc);
+bool clang_SourceLocation_isMacroID(CXSourceLocation_ Loc);
 
-CINDEX_LINKAGE bool clang_SourceLocation_isValid(CXSourceLocation_ Loc);
+bool clang_SourceLocation_isValid(CXSourceLocation_ Loc);
 
-CINDEX_LINKAGE bool clang_SourceLocation_isInvalid(CXSourceLocation_ Loc);
+bool clang_SourceLocation_isInvalid(CXSourceLocation_ Loc);
 
-CINDEX_LINKAGE bool clang_SourceLocation_isPairOfFileLocations(CXSourceLocation_ Start,
-                                                               CXSourceLocation_ End);
+bool clang_SourceLocation_isPairOfFileLocations(CXSourceLocation_ Start,
+                                                CXSourceLocation_ End);
 
-CINDEX_LINKAGE unsigned clang_SourceLocation_getHashValue(CXSourceLocation_ Loc);
+unsigned clang_SourceLocation_getHashValue(CXSourceLocation_ Loc);
 
-CINDEX_LINKAGE void clang_SourceLocation_dump(CXSourceLocation_ Loc, CXSourceManager SM);
+void clang_SourceLocation_dump(CXSourceLocation_ Loc, CXSourceManager SM);
 
-CINDEX_LINKAGE CXString clang_SourceLocation_printToString(CXSourceLocation_ Loc,
-                                                           CXSourceManager SM);
+CXString clang_SourceLocation_printToString(CXSourceLocation_ Loc, CXSourceManager SM);
 
-CINDEX_LINKAGE CXSourceLocation_
-clang_SourceLocation_getLocWithOffset(CXSourceLocation_ Loc, int Offset);
+CXSourceLocation_ clang_SourceLocation_getLocWithOffset(CXSourceLocation_ Loc, int Offset);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

@@ -1,20 +1,18 @@
-#ifndef LIBCLANGEX_CXASTCONSUMER_H
-#define LIBCLANGEX_CXASTCONSUMER_H
+#ifndef LLVM_CLANG_C_EXTRA_CXASTCONSUMER_H
+#define LLVM_CLANG_C_EXTRA_CXASTCONSUMER_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE void clang_ASTConsumer_Initialize(CXASTConsumer Csr, CXASTContext Ctx);
+void clang_ASTConsumer_Initialize(CXASTConsumer Csr, CXASTContext Ctx);
 
-CINDEX_LINKAGE void clang_ASTConsumer_HandleTranslationUnit(CXASTConsumer Csr, CXASTContext Ctx);
+void clang_ASTConsumer_HandleTranslationUnit(CXASTConsumer Csr, CXASTContext Ctx);
 
-CINDEX_LINKAGE void clang_ASTConsumer_PrintStats(CXASTConsumer Csr);
+void clang_ASTConsumer_PrintStats(CXASTConsumer Csr);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

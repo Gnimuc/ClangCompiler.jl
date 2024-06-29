@@ -1,5 +1,5 @@
 #include "clang-ex/Basic/CXSourceLocation.h"
-#include "libclang/CXString.h"
+#include "utils.h"
 #include "clang/Basic/SourceLocation.h"
 
 CXSourceLocation_ clang_SourceLocation_createInvalid(void) {
@@ -39,9 +39,8 @@ void clang_SourceLocation_dump(CXSourceLocation_ Loc, CXSourceManager SM) {
 }
 
 CXString clang_SourceLocation_printToString(CXSourceLocation_ Loc, CXSourceManager SM) {
-  return clang::cxstring::createDup(
-      clang::SourceLocation::getFromPtrEncoding(Loc).printToString(
-          *static_cast<clang::SourceManager *>(SM)));
+  return extra::makeCXString(clang::SourceLocation::getFromPtrEncoding(Loc).printToString(
+      *static_cast<clang::SourceManager *>(SM)));
 }
 
 CXSourceLocation_ clang_SourceLocation_getLocWithOffset(CXSourceLocation_ Loc, int Offset) {

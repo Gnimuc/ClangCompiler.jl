@@ -147,11 +147,7 @@ void clang_CompilerInstance_setTargetAndLangOpts(CXCompilerInstance CI) {
   compiler->setTarget(clang::TargetInfo::CreateTargetInfo(
       compiler->getDiagnostics(),
       std::make_shared<clang::TargetOptions>(compiler->getTargetOpts())));
-#if LLVM_VERSION_MAJOR < 13
-  compiler->getTarget().adjust(compiler->getLangOpts());
-#else
   compiler->getTarget().adjust(compiler->getDiagnostics(), compiler->getLangOpts());
-#endif
 }
 
 // Preprocessor

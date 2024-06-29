@@ -1,20 +1,18 @@
-#ifndef LIBCLANGEX_CXSCOPE_H
-#define LIBCLANGEX_CXSCOPE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXSCOPE_H
+#define LLVM_CLANG_C_EXTRA_CXSCOPE_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE void clang_Scope_dump(CXScope S);
+void clang_Scope_dump(CXScope S);
 
-CINDEX_LINKAGE CXScope clang_Scope_getParent(CXScope S);
+CXScope clang_Scope_getParent(CXScope S);
 
-CINDEX_LINKAGE unsigned clang_Scope_getDepth(CXScope S);
+unsigned clang_Scope_getDepth(CXScope S);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

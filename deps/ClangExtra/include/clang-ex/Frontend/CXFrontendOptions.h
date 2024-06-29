@@ -1,16 +1,14 @@
-#ifndef LIBCLANGEX_CXFRONTENDOPTIONS_H
-#define LIBCLANGEX_CXFRONTENDOPTIONS_H
+#ifndef LLVM_CLANG_C_EXTRA_CXFRONTENDOPTIONS_H
+#define LLVM_CLANG_C_EXTRA_CXFRONTENDOPTIONS_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE void clang_FrontendOptions_PrintStats(CXFrontendOptions FEO);
+void clang_FrontendOptions_PrintStats(CXFrontendOptions FEO);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

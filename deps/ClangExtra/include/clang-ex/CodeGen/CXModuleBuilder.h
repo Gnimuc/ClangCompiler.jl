@@ -1,32 +1,28 @@
-#ifndef LIBCLANGEX_CXMODULEBUILDER_H
-#define LIBCLANGEX_CXMODULEBUILDER_H
+#ifndef LLVM_CLANG_C_EXTRA_CXMODULEBUILDER_H
+#define LLVM_CLANG_C_EXTRA_CXMODULEBUILDER_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 #include "llvm-c/Types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXCodeGenerator clang_CreateLLVMCodeGen(CXCompilerInstance CI,
-                                                       LLVMContextRef LLVMCtx,
-                                                       const char *ModuleName);
+// CXCodeGenerator clang_CreateLLVMCodeGen(CXCompilerInstance CI, LLVMContextRef LLVMCtx,
+//                                         const char *ModuleName);
 
-CINDEX_LINKAGE CXCodeGenModule clang_CodeGenerator_CGM(CXCodeGenerator CG);
+CXCodeGenModule clang_CodeGenerator_CGM(CXCodeGenerator CG);
 
-CINDEX_LINKAGE LLVMModuleRef clang_CodeGenerator_GetModule(CXCodeGenerator CG);
+LLVMModuleRef clang_CodeGenerator_GetModule(CXCodeGenerator CG);
 
-CINDEX_LINKAGE LLVMModuleRef clang_CodeGenerator_ReleaseModule(CXCodeGenerator CG);
+LLVMModuleRef clang_CodeGenerator_ReleaseModule(CXCodeGenerator CG);
 
-CINDEX_LINKAGE CXDecl clang_CodeGenerator_GetDeclForMangledName(CXCodeGenerator CG,
-                                                                const char *MangledName);
+CXDecl clang_CodeGenerator_GetDeclForMangledName(CXCodeGenerator CG,
+                                                 const char *MangledName);
 
-CINDEX_LINKAGE LLVMModuleRef clang_CodeGenerator_StartModule(CXCodeGenerator CG,
-                                                             LLVMContextRef LLVMCtx,
-                                                             const char *ModuleName);
+LLVMModuleRef clang_CodeGenerator_StartModule(CXCodeGenerator CG, LLVMContextRef LLVMCtx,
+                                              const char *ModuleName);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

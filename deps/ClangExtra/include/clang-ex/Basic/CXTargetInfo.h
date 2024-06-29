@@ -1,17 +1,15 @@
-#ifndef LIBCLANGEX_CXTARGETINFO_H
-#define LIBCLANGEX_CXTARGETINFO_H
+#ifndef LLVM_CLANG_C_EXTRA_CXTARGETINFO_H
+#define LLVM_CLANG_C_EXTRA_CXTARGETINFO_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXTargetInfo_ clang_TargetInfo_CreateTargetInfo(CXDiagnosticsEngine DE,
-                                                               CXTargetOptions Opts);
+CXTargetInfo_ clang_TargetInfo_CreateTargetInfo(CXDiagnosticsEngine DE,
+                                                CXTargetOptions Opts);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

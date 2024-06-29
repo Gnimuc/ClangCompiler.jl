@@ -48,15 +48,9 @@ CXDirectoryEntry clang_FileManager_getDirectory(CXFileManager FM, const char *Di
                                                            CacheFailure));
 }
 
-const char *clang_DirectoryEntry_getName(CXDirectoryEntry DE) {
-  return static_cast<clang::DirectoryEntry *>(DE)->getName().data();
-}
-
 // FileEntryRef
-CINDEX_LINKAGE CXFileEntryRef clang_FileManager_getFileRef(CXFileManager FM,
-                                                           const char *Filename,
-                                                           bool OpenFile,
-                                                           bool CacheFailure);
+CXFileEntryRef clang_FileManager_getFileRef(CXFileManager FM, const char *Filename,
+                                            bool OpenFile, bool CacheFailure);
 
 CXFileEntryRef clang_FileManager_getFileRef(CXFileManager FM, const char *Filename,
                                             bool OpenFile, bool CacheFailure) {

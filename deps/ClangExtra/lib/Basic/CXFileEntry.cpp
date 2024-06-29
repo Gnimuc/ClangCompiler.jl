@@ -9,10 +9,6 @@ const char *clang_FileEntry_tryGetRealPathName(CXFileEntry FE) {
   return static_cast<clang::FileEntry *>(FE)->tryGetRealPathName().data();
 }
 
-bool clang_FileEntry_isValid(CXFileEntry FE) {
-  return static_cast<clang::FileEntry *>(FE)->isValid();
-}
-
 unsigned clang_FileEntry_getUID(CXFileEntry FE) {
   return static_cast<clang::FileEntry *>(FE)->getUID();
 }

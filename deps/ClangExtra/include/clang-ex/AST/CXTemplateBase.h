@@ -1,13 +1,12 @@
-#ifndef LIBCLANGEX_CXTEMPLATEBASE_H
-#define LIBCLANGEX_CXTEMPLATEBASE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXTEMPLATEBASE_H
+#define LLVM_CLANG_C_EXTRA_CXTEMPLATEBASE_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 #include "llvm-c/ExecutionEngine.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXTemplateArgument_ArgKind {
   CXTemplateArgument_Null = 0,
@@ -21,56 +20,50 @@ typedef enum CXTemplateArgument_ArgKind {
   CXTemplateArgument_Pack
 } CXTemplateArgument_ArgKind;
 
-CINDEX_LINKAGE CXTemplateArgument
-clang_TemplateArgument_constructFromQualType(CXQualType OpaquePtr, bool isNullPtr);
+CXTemplateArgument clang_TemplateArgument_constructFromQualType(CXQualType OpaquePtr,
+                                                                bool isNullPtr);
 
-CINDEX_LINKAGE CXTemplateArgument
-clang_TemplateArgument_constructFromValueDecl(CXValueDecl VD, CXQualType OpaquePtr);
+CXTemplateArgument clang_TemplateArgument_constructFromValueDecl(CXValueDecl VD,
+                                                                 CXQualType OpaquePtr);
 
-CINDEX_LINKAGE CXTemplateArgument clang_TemplateArgument_constructFromIntegral(
-    CXASTContext Ctx, LLVMGenericValueRef Val, CXQualType OpaquePtr);
+CXTemplateArgument clang_TemplateArgument_constructFromIntegral(CXASTContext Ctx,
+                                                                LLVMGenericValueRef Val,
+                                                                CXQualType OpaquePtr);
 
-CINDEX_LINKAGE void clang_TemplateArgument_dispose(CXTemplateArgument TA);
+void clang_TemplateArgument_dispose(CXTemplateArgument TA);
 
-CINDEX_LINKAGE CXTemplateArgument_ArgKind
-clang_TemplateArgument_getKind(CXTemplateArgument TA);
+CXTemplateArgument_ArgKind clang_TemplateArgument_getKind(CXTemplateArgument TA);
 
-CINDEX_LINKAGE bool clang_TemplateArgument_isNull(CXTemplateArgument TA);
+bool clang_TemplateArgument_isNull(CXTemplateArgument TA);
 
-CINDEX_LINKAGE bool clang_TemplateArgument_isDependent(CXTemplateArgument TA);
+bool clang_TemplateArgument_isDependent(CXTemplateArgument TA);
 
-CINDEX_LINKAGE bool clang_TemplateArgument_isInstantiationDependent(CXTemplateArgument TA);
+bool clang_TemplateArgument_isInstantiationDependent(CXTemplateArgument TA);
 
-CINDEX_LINKAGE CXQualType clang_TemplateArgument_getAsType(CXTemplateArgument TA);
+CXQualType clang_TemplateArgument_getAsType(CXTemplateArgument TA);
 
-CINDEX_LINKAGE CXValueDecl clang_TemplateArgument_getAsDecl(CXTemplateArgument TA);
+CXValueDecl clang_TemplateArgument_getAsDecl(CXTemplateArgument TA);
 
-CINDEX_LINKAGE CXQualType clang_TemplateArgument_getParamTypeForDecl(CXTemplateArgument TA);
+CXQualType clang_TemplateArgument_getParamTypeForDecl(CXTemplateArgument TA);
 
-CINDEX_LINKAGE CXQualType clang_TemplateArgument_getNullPtrType(CXTemplateArgument TA);
+CXQualType clang_TemplateArgument_getNullPtrType(CXTemplateArgument TA);
 
-CINDEX_LINKAGE CXTemplateName clang_TemplateArgument_getAsTemplate(CXTemplateArgument TA);
+CXTemplateName clang_TemplateArgument_getAsTemplate(CXTemplateArgument TA);
 
-CINDEX_LINKAGE CXTemplateName
-clang_TemplateArgument_getAsTemplateOrTemplatePattern(CXTemplateArgument TA);
+CXTemplateName clang_TemplateArgument_getAsTemplateOrTemplatePattern(CXTemplateArgument TA);
 
-CINDEX_LINKAGE unsigned
-clang_TemplateArgument_getNumTemplateExpansions(CXTemplateArgument TA);
+unsigned clang_TemplateArgument_getNumTemplateExpansions(CXTemplateArgument TA);
 
-CINDEX_LINKAGE LLVMGenericValueRef
-clang_TemplateArgument_getAsIntegral(CXTemplateArgument TA);
+LLVMGenericValueRef clang_TemplateArgument_getAsIntegral(CXTemplateArgument TA);
 
-CINDEX_LINKAGE CXQualType clang_TemplateArgument_getIntegralType(CXTemplateArgument TA);
+CXQualType clang_TemplateArgument_getIntegralType(CXTemplateArgument TA);
 
-CINDEX_LINKAGE void clang_TemplateArgument_setIntegralType(CXTemplateArgument TA,
-                                                           CXQualType OpaquePtr);
+void clang_TemplateArgument_setIntegralType(CXTemplateArgument TA, CXQualType OpaquePtr);
 
-CINDEX_LINKAGE CXQualType
-clang_TemplateArgument_getNonTypeTemplateArgumentType(CXTemplateArgument TA);
+CXQualType clang_TemplateArgument_getNonTypeTemplateArgumentType(CXTemplateArgument TA);
 
-CINDEX_LINKAGE void clang_TemplateArgument_dump(CXTemplateArgument TA);
+void clang_TemplateArgument_dump(CXTemplateArgument TA);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

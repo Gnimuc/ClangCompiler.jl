@@ -1,24 +1,21 @@
-#ifndef LIBCLANGEX_CXTARGETOPTIONS_H
-#define LIBCLANGEX_CXTARGETOPTIONS_H
+#ifndef LLVM_CLANG_C_EXTRA_CXTARGETOPTIONS_H
+#define LLVM_CLANG_C_EXTRA_CXTARGETOPTIONS_H
 
 #include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXTargetOptions clang_TargetOptions_create(CXInit_Error *ErrorCode);
+CXTargetOptions clang_TargetOptions_create(CXInit_Error *ErrorCode);
 
-CINDEX_LINKAGE void clang_TargetOptions_dispose(CXTargetOptions TO);
+void clang_TargetOptions_dispose(CXTargetOptions TO);
 
-CINDEX_LINKAGE void clang_TargetOptions_setTriple(CXTargetOptions TO, const char *TripleStr,
-                                                  size_t Num);
+void clang_TargetOptions_setTriple(CXTargetOptions TO, const char *TripleStr, size_t Num);
 
-CINDEX_LINKAGE void clang_TargetOptions_PrintStats(CXTargetOptions TO);
+void clang_TargetOptions_PrintStats(CXTargetOptions TO);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

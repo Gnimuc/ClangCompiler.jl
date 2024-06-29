@@ -1,9 +1,7 @@
-#ifndef LIBCLANGEX_CXLINKAGE_H
-#define LIBCLANGEX_CXLINKAGE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXLINKAGE_H
+#define LLVM_CLANG_C_EXTRA_CXLINKAGE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXLinkage : unsigned char {
   CXLinkage_NoLinkage = 0,
@@ -21,7 +19,6 @@ typedef enum CXLanguageLinkage {
   CXLanguageLinkage_NoLanguageLinkage
 } CXLanguageLinkage;
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

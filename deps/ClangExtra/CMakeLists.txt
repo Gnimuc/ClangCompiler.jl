@@ -21,14 +21,11 @@ add_library(clangex SHARED)
 add_subdirectory(lib)
 add_subdirectory(include)
 
-set(CLANG_SRC ${CMAKE_CURRENT_SOURCE_DIR}/upstream/${LLVM_VERSION_MAJOR})
-target_sources(clangex PRIVATE ${CLANG_SRC}/libclang/CXString.cpp)
-
 target_include_directories(clangex PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
     $<BUILD_INTERFACE:${LLVM_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${Clang_INCLUDE_DIRS}>
-    $<BUILD_INTERFACE:${CLANG_SRC}>
     $<INSTALL_INTERFACE:include>)
     
 target_compile_features(clangex PRIVATE cxx_std_17)

@@ -1,22 +1,19 @@
-#ifndef LIBCLANGEX_CXLEXER_H
-#define LIBCLANGEX_CXLEXER_H
+#ifndef LLVM_CLANG_C_EXTRA_CXLEXER_H
+#define LLVM_CLANG_C_EXTRA_CXLEXER_H
 
 #include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
+#include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 #include "llvm-c/Types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CINDEX_LINKAGE CXLexer clang_Lexer_create(CXFileID FID, LLVMMemoryBufferRef FromFile,
-                                          CXSourceManager SM, CXLangOptions langOpts,
-                                          CXInit_Error *ErrorCode);
+CXLexer clang_Lexer_create(CXFileID FID, LLVMMemoryBufferRef FromFile, CXSourceManager SM,
+                           CXLangOptions langOpts, CXInit_Error *ErrorCode);
 
-CINDEX_LINKAGE void clang_Lexer_dispose(CXLexer Lex);
+void clang_Lexer_dispose(CXLexer Lex);
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif

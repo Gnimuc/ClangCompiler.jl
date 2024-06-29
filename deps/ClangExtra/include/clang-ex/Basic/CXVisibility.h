@@ -1,9 +1,7 @@
-#ifndef LIBCLANGEX_CXVISIBILITY_H
-#define LIBCLANGEX_CXVISIBILITY_H
+#ifndef LLVM_CLANG_C_EXTRA_CXVISIBILITY_H
+#define LLVM_CLANG_C_EXTRA_CXVISIBILITY_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_CLANG_C_EXTERN_C_BEGIN
 
 typedef enum CXVisibility {
   CXVisibility_HiddenVisibility,
@@ -11,7 +9,6 @@ typedef enum CXVisibility {
   CXVisibility_DefaultVisibility
 } CXVisibility;
 
-#ifdef __cplusplus
-}
-#endif
+LLVM_CLANG_C_EXTERN_C_END
+
 #endif
