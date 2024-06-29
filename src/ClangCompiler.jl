@@ -1,28 +1,20 @@
 module ClangCompiler
 
 using Clang_jll
+using libclangex_jll
 
-if haskey(ENV, "LIBCLANGEX_INSTALL_PREFIX") &&
-   !isempty(get(ENV, "LIBCLANGEX_INSTALL_PREFIX", ""))
-    # DevMode
-    const __DLEXT = Base.BinaryPlatforms.platform_dlext()
-    const __ARTIFACT_BINDIR = Sys.iswindows() ? "bin" : "lib"
+using Preferences
 
-    const libclangex = normpath(joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"],
-                                         __ARTIFACT_BINDIR, "libclangex.$__DLEXT"))
-    const libclangex_include = normpath(joinpath(ENV["LIBCLANGEX_INSTALL_PREFIX"],
-                                                 "include"))
+if has_preference(ClangCompiler, "libclangex")
+	const libCppInterOpExtra = load_preference(CppInterOp, "libclangex")
 else
-    # JLLMode
-    include("jllshim.jl")
-    using .JLLShim
-
-    using libclangex_jll
-
-    const libclangex_include = normpath(joinpath(libclangex_jll.artifact_dir, "include"))
+	if isdefined(libclangex_jll, :libclangex)
+		import libclangex_jll: libclangex
+	end
 end
 
-const julia_include_dir = normpath(joinpath(Sys.BINDIR, "..", "include", "julia"))
+include("jllshim.jl")
+using .JLLShim
 
 using LLVM
 using LLVM.Interop: call_function
@@ -31,22 +23,17 @@ import LLVM: dispose, name, value
 
 import Base: dump, string
 
-llvm_version = if LLVM.version() < v"13"
-    "12"
-elseif LLVM.version().major == 13
-    "13"
-else
-    "14"
-end
-libdir = joinpath(@__DIR__, "..", "lib")
+const llvm_version = string(Base.libllvm_version.major)
 
 const CLANG_BIN = joinpath(Clang_jll.artifact_dir, "bin", "clang")
 const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(Base.libllvm_version), "include")
 
-include(joinpath(libdir, llvm_version, "LibClangEx.jl"))
-using .LibClangEx
+const libdir = joinpath(@__DIR__, "..", "lib")
 
 include(joinpath(libdir, "LibClang.jl"))
+
+include(joinpath(libdir, llvm_version, "LibClangEx.jl"))
+using .LibClangEx
 
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
@@ -112,6 +99,8 @@ function __init__()
 
         boot_include_dir = normpath(joinpath(@__DIR__, "..", "boot"))
         boot_src = joinpath(boot_include_dir, "boot.cpp")
+
+        julia_include_dir = normpath(joinpath(Sys.BINDIR, "..", "include", "julia"))
 
         args = get_compiler_args(; version=v"7.1.0")
         push!(args, "-std=c++14")

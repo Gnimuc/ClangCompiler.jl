@@ -4,23 +4,10 @@
 [![TagBot](https://github.com/Gnimuc/ClangCompiler.jl/actions/workflows/TagBot.yml/badge.svg)](https://github.com/Gnimuc/ClangCompiler.jl/actions/workflows/TagBot.yml)
 [![codecov](https://codecov.io/gh/Gnimuc/ClangCompiler.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/Gnimuc/ClangCompiler.jl)
 
-Still WIP...
-
 ## Installation
-
-Make sure you don't have `LIBCLANGEX_INSTALL_PREFIX` in your environment variable.
 
 ```
 pkg> add https://github.com/Gnimuc/ClangCompiler.jl.git
-```
-
-### Development(macOS and Linux)
-1. Build [libclangex](https://github.com/Gnimuc/libclangex) locally and set `ENV["LIBCLANGEX_INSTALL_PREFIX"]` to the `install` directory.
-2. Install and test the package by running:
-```julia-repl
-pkg> dev https://github.com/Gnimuc/ClangCompiler.jl.git
-
-pkg> test ClangCompiler
 ```
 
 ## Examples

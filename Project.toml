@@ -12,4 +12,4 @@ libclangex_jll = "82994860-12e5-56b1-9971-c34819be692e"
 [compat]
 libclangex_jll = "0.1.8"
 LLVM = "4"
-julia = "1.7"
+julia = "1.12"

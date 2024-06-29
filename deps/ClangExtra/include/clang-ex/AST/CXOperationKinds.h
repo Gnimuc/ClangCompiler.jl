@@ -1,0 +1,78 @@
+#ifndef LIBCLANGEX_CXOPERATIONKINDS_H
+#define LIBCLANGEX_CXOPERATIONKINDS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum CXCastKind {
+  CK_Dependent,
+  CK_BitCast,
+  CK_LValueBitCast,
+  CK_LValueToRValueBitCast,
+  CK_LValueToRValue,
+  CK_NoOp,
+  CK_BaseToDerived,
+  CK_DerivedToBase,
+  CK_UncheckedDerivedToBase,
+  CK_Dynamic,
+  CK_ToUnion,
+  CK_ArrayToPointerDecay,
+  CK_FunctionToPointerDecay,
+  CK_NullToPointer,
+  CK_NullToMemberPointer,
+  CK_BaseToDerivedMemberPointer,
+  CK_DerivedToBaseMemberPointer,
+  CK_MemberPointerToBoolean,
+  CK_ReinterpretMemberPointer,
+  CK_UserDefinedConversion,
+  CK_ConstructorConversion,
+  CK_IntegralToPointer,
+  CK_PointerToIntegral,
+  CK_PointerToBoolean,
+  CK_ToVoid,
+  CK_VectorSplat,
+  CK_IntegralCast,
+  CK_IntegralToBoolean,
+  CK_IntegralToFloating,
+  CK_FloatingToFixedPoint,
+  CK_FixedPointToFloating,
+  CK_FixedPointCast,
+  CK_FixedPointToIntegral,
+  CK_IntegralToFixedPoint,
+  CK_FixedPointToBoolean,
+  CK_FloatingToIntegral,
+  CK_FloatingToBoolean,
+  CK_BooleanToSignedIntegral,
+  CK_FloatingCast,
+  CK_CPointerToObjCPointerCast,
+  CK_BlockPointerToObjCPointerCast,
+  CK_AnyPointerToBlockPointerCast,
+  CK_ObjCObjectLValueCast,
+  CK_FloatingRealToComplex,
+  CK_FloatingComplexToReal,
+  CK_FloatingComplexToBoolean,
+  CK_FloatingComplexCast,
+  CK_FloatingComplexToIntegralComplex,
+  CK_IntegralRealToComplex,
+  CK_IntegralComplexToReal,
+  CK_IntegralComplexToBoolean,
+  CK_IntegralComplexCast,
+  CK_IntegralComplexToFloatingComplex,
+  CK_ARCProduceObject,
+  CK_ARCConsumeObject,
+  CK_ARCReclaimReturnedObject,
+  CK_ARCExtendBlockObject,
+  CK_AtomicToNonAtomic,
+  CK_NonAtomicToAtomic,
+  CK_CopyAndAutoreleaseBlockObject,
+  CK_BuiltinFnToFnPtr,
+  CK_ZeroToOCLOpaqueType,
+  CK_AddressSpaceConversion,
+  CK_IntToOCLSampler,
+} CXCastKind;
+
+#ifdef __cplusplus
+}
+#endif
+#endif
