@@ -1,7 +1,6 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXDIAGNOSTIC_H
 #define LLVM_CLANG_C_EXTRA_CXDIAGNOSTIC_H
 
-#include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -9,7 +8,7 @@
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
 // DiagnosticConsumer
-CXDiagnosticConsumer clang_IgnoringDiagConsumer_create(CXInit_Error *ErrorCode);
+CXDiagnosticConsumer clang_IgnoringDiagConsumer_create(void);
 
 void clang_DiagnosticConsumer_dispose(CXDiagnosticConsumer DC);
 
@@ -22,8 +21,7 @@ void clang_DiagnosticConsumer_EndSourceFile(CXDiagnosticConsumer DC);
 CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
                                                    CXDiagnosticOptions DO,
                                                    CXDiagnosticConsumer DC,
-                                                   bool ShouldOwnClient,
-                                                   CXInit_Error *ErrorCode);
+                                                   bool ShouldOwnClient);
 
 void clang_DiagnosticsEngine_dispose(CXDiagnosticsEngine DE);
 

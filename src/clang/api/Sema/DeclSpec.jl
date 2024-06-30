@@ -6,9 +6,8 @@ CXXScopeSpec() = CXXScopeSpec(create_cxx_scope_spec())
 Return a pointer to a `clang::CXXScopeSpec` object.
 """
 function create_cxx_scope_spec()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    ss = clang_CXXScopeSpec_create(status)
-    @assert status[] == CXInit_NoError
+    ss = clang_CXXScopeSpec_create()
+    @assert ss != C_NULL "Failed to create CXXScopeSpec"
     return ss
 end
 

@@ -30,18 +30,18 @@ function IRGenerator(src::String, args::Vector{String}; diag_show_colors=true)
     createDiagnostics(instance)
     diag = getDiagnostics(instance)
     # invocation
-    if Sys.isapple()
-        # FIXME: Duplicate definition of symbol '___cxa_atexit'
-        # icxxabi_inc = joinpath(@__DIR__, "..", "..", "abi") |> normpath
-        # insert!(args, length(args), "-isystem$icxxabi_inc")
-        # insert!(args, length(args), "-includeicxxabi.h")
-    elseif Sys.islinux()
-        hack_inc = joinpath(@__DIR__, "..", "..", "hack") |> normpath
-        insert!(args, length(args), "-isystem$hack_inc")
-        insert!(args, length(args), "-include"*"hack_linux.h")
-    end
-    invok = create_compiler_invocation_from_cmd(src, args, diag)
-    setInvocation(instance, invok)
+    # if Sys.isapple()
+    #     # FIXME: Duplicate definition of symbol '___cxa_atexit'
+    #     # icxxabi_inc = joinpath(@__DIR__, "..", "..", "abi") |> normpath
+    #     # insert!(args, length(args), "-isystem$icxxabi_inc")
+    #     # insert!(args, length(args), "-includeicxxabi.h")
+    # elseif Sys.islinux()
+    #     hack_inc = joinpath(@__DIR__, "..", "..", "hack") |> normpath
+    #     insert!(args, length(args), "-isystem$hack_inc")
+    #     insert!(args, length(args), "-include"*"hack_linux.h")
+    # end
+    # invok = create_compiler_invocation_from_cmd(src, args, diag)
+    # setInvocation(instance, invok)
     # codegen action
     act = LLVMOnlyAction(ctx)
     ExecuteAction(instance, act)

@@ -11,9 +11,8 @@ For now, `FileSystemOptions` is set to nothing and `llvm::vfs::FileSystem` defau
 TODO: support custom `FileSystemOptions` and `llvm::vfs::FileSystem`
 """
 function create_file_manager()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    mgr = clang_FileManager_create(status)
-    @assert status[] == CXInit_NoError
+    mgr = clang_FileManager_create()
+    @assert mgr != C_NULL "Failed to create FileManager"
     return mgr
 end
 

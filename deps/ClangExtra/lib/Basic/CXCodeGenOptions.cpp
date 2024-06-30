@@ -2,19 +2,9 @@
 #include "clang/Basic/CodeGenOptions.h"
 #include "llvm/Support/raw_ostream.h"
 
-CXCodeGenOptions clang_CodeGenOptions_create(CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::CodeGenOptions> ptr = std::make_unique<clang::CodeGenOptions>();
-
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::CodeGenOptions`\n");
-    Err = CXInit_CanNotCreate;
-  }
-
-  if (ErrorCode)
-    *ErrorCode = Err;
-
-  return ptr.release();
+CXCodeGenOptions clang_CodeGenOptions_create(void) {
+  auto CGO = std::make_unique<clang::CodeGenOptions>();
+  return CGO.release();
 }
 
 void clang_CodeGenOptions_dispose(CXCodeGenOptions DO) {

@@ -5,7 +5,7 @@ using ..ClangCompiler: CXString, CXStringSet
 using LLVM.API: LLVMModuleRef, LLVMOpaqueModule
 using LLVM.API: LLVMOpaqueContext, LLVMContextRef
 using LLVM.API: LLVMMemoryBufferRef, LLVMGenericValueRef
-using LLVM.API: LLVMTypeRef
+using LLVM.API: LLVMTypeRef, LLVMOrcLLJITRef
 
 const time_t = Clong
 
@@ -682,6 +682,16 @@ const CXCompilerInstance = Ptr{Cvoid}
 const CXCompilerInvocation = Ptr{Cvoid}
 
 const CXFrontendOptions = Ptr{Cvoid}
+
+const CXIncrementalCompilerBuilder = Ptr{Cvoid}
+
+const CXInterpreter = Ptr{Cvoid}
+
+const CXPartialTranslationUnit = Ptr{Cvoid}
+
+const CXExecutorAddr = Ptr{Cvoid}
+
+const CXValue = Ptr{Cvoid}
 
 const CXHeaderSearch = Ptr{Cvoid}
 
@@ -5841,13 +5851,8 @@ function clang_TemplateName_dump(TN)
     @ccall libclangex.clang_TemplateName_dump(TN::CXTemplateName)::Cvoid
 end
 
-@enum CXInit_Error::UInt32 begin
-    CXInit_NoError = 0
-    CXInit_CanNotCreate = 1
-end
-
-function clang_CodeGenOptions_create(ErrorCode)
-    @ccall libclangex.clang_CodeGenOptions_create(ErrorCode::Ptr{CXInit_Error})::CXCodeGenOptions
+function clang_CodeGenOptions_create()
+    @ccall libclangex.clang_CodeGenOptions_create()::CXCodeGenOptions
 end
 
 function clang_CodeGenOptions_dispose(DO)
@@ -5862,8 +5867,8 @@ function clang_CodeGenOptions_PrintStats(CGO)
     @ccall libclangex.clang_CodeGenOptions_PrintStats(CGO::CXCodeGenOptions)::Cvoid
 end
 
-function clang_IgnoringDiagConsumer_create(ErrorCode)
-    @ccall libclangex.clang_IgnoringDiagConsumer_create(ErrorCode::Ptr{CXInit_Error})::CXDiagnosticConsumer
+function clang_IgnoringDiagConsumer_create()
+    @ccall libclangex.clang_IgnoringDiagConsumer_create()::CXDiagnosticConsumer
 end
 
 function clang_DiagnosticConsumer_dispose(DC)
@@ -5878,8 +5883,8 @@ function clang_DiagnosticConsumer_EndSourceFile(DC)
     @ccall libclangex.clang_DiagnosticConsumer_EndSourceFile(DC::CXDiagnosticConsumer)::Cvoid
 end
 
-function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient, ErrorCode)
-    @ccall libclangex.clang_DiagnosticsEngine_create(ID::CXDiagnosticIDs, DO::CXDiagnosticOptions, DC::CXDiagnosticConsumer, ShouldOwnClient::Bool, ErrorCode::Ptr{CXInit_Error})::CXDiagnosticsEngine
+function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient)
+    @ccall libclangex.clang_DiagnosticsEngine_create(ID::CXDiagnosticIDs, DO::CXDiagnosticOptions, DC::CXDiagnosticConsumer, ShouldOwnClient::Bool)::CXDiagnosticsEngine
 end
 
 function clang_DiagnosticsEngine_dispose(DE)
@@ -5890,16 +5895,16 @@ function clang_DiagnosticsEngine_setShowColors(DE, ShowColors)
     @ccall libclangex.clang_DiagnosticsEngine_setShowColors(DE::CXDiagnosticsEngine, ShowColors::Bool)::Cvoid
 end
 
-function clang_DiagnosticIDs_create(ErrorCode)
-    @ccall libclangex.clang_DiagnosticIDs_create(ErrorCode::Ptr{CXInit_Error})::CXDiagnosticIDs
+function clang_DiagnosticIDs_create()
+    @ccall libclangex.clang_DiagnosticIDs_create()::CXDiagnosticIDs
 end
 
 function clang_DiagnosticIDs_dispose(ID)
     @ccall libclangex.clang_DiagnosticIDs_dispose(ID::CXDiagnosticIDs)::Cvoid
 end
 
-function clang_DiagnosticOptions_create(ErrorCode)
-    @ccall libclangex.clang_DiagnosticOptions_create(ErrorCode::Ptr{CXInit_Error})::CXDiagnosticOptions
+function clang_DiagnosticOptions_create()
+    @ccall libclangex.clang_DiagnosticOptions_create()::CXDiagnosticOptions
 end
 
 function clang_DiagnosticOptions_dispose(DO)
@@ -5942,8 +5947,8 @@ function clang_FileEntry_isNamedPipe(FE)
     @ccall libclangex.clang_FileEntry_isNamedPipe(FE::CXFileEntry)::Bool
 end
 
-function clang_FileManager_create(ErrorCode)
-    @ccall libclangex.clang_FileManager_create(ErrorCode::Ptr{CXInit_Error})::CXFileManager
+function clang_FileManager_create()
+    @ccall libclangex.clang_FileManager_create()::CXFileManager
 end
 
 function clang_FileManager_dispose(FM)
@@ -6026,8 +6031,8 @@ function clang_SourceLocation_getLocWithOffset(Loc, Offset)
     @ccall libclangex.clang_SourceLocation_getLocWithOffset(Loc::CXSourceLocation_, Offset::Cint)::CXSourceLocation_
 end
 
-function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
-    @ccall libclangex.clang_SourceManager_create(Diag::CXDiagnosticsEngine, FileMgr::CXFileManager, UserFilesAreVolatile::Bool, ErrorCode::Ptr{CXInit_Error})::CXSourceManager
+function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile)
+    @ccall libclangex.clang_SourceManager_create(Diag::CXDiagnosticsEngine, FileMgr::CXFileManager, UserFilesAreVolatile::Bool)::CXSourceManager
 end
 
 function clang_SourceManager_dispose(SM)
@@ -6078,8 +6083,8 @@ function clang_TargetInfo_CreateTargetInfo(DE, Opts)
     @ccall libclangex.clang_TargetInfo_CreateTargetInfo(DE::CXDiagnosticsEngine, Opts::CXTargetOptions)::CXTargetInfo_
 end
 
-function clang_TargetOptions_create(ErrorCode)
-    @ccall libclangex.clang_TargetOptions_create(ErrorCode::Ptr{CXInit_Error})::CXTargetOptions
+function clang_TargetOptions_create()
+    @ccall libclangex.clang_TargetOptions_create()::CXTargetOptions
 end
 
 function clang_TargetOptions_dispose(TO)
@@ -6098,28 +6103,28 @@ function clang_CodeGen_convertTypeForMemory(CGM, T)
     @ccall libclangex.clang_CodeGen_convertTypeForMemory(CGM::CXCodeGenModule, T::CXQualType)::LLVMTypeRef
 end
 
-function clang_EmitAssemblyAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitAssemblyAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitAssemblyAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitAssemblyAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitBCAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitBCAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitBCAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitBCAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitLLVMAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitLLVMAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitLLVMAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitLLVMAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitLLVMOnlyAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitLLVMOnlyAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitLLVMOnlyAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitLLVMOnlyAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitCodeGenOnlyAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitCodeGenOnlyAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitCodeGenOnlyAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitCodeGenOnlyAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitObjAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitObjAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitObjAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitObjAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
 function clang_CodeGenAction_dispose(CA)
@@ -6158,8 +6163,8 @@ function clang_Driver_GetResourcesPath(BinaryPath, ResourcesPath, N)
     @ccall libclangex.clang_Driver_GetResourcesPath(BinaryPath::Ptr{Cchar}, ResourcesPath::Ptr{Cchar}, N::Csize_t)::Cvoid
 end
 
-function clang_CompilerInstance_create(ErrorCode)
-    @ccall libclangex.clang_CompilerInstance_create(ErrorCode::Ptr{CXInit_Error})::CXCompilerInstance
+function clang_CompilerInstance_create()
+    @ccall libclangex.clang_CompilerInstance_create()::CXCompilerInstance
 end
 
 function clang_CompilerInstance_dispose(CI)
@@ -6342,8 +6347,8 @@ function clang_CompilerInstance_ExecuteAction(CI, Act)
     @ccall libclangex.clang_CompilerInstance_ExecuteAction(CI::CXCompilerInstance, Act::CXFrontendAction)::Bool
 end
 
-function clang_CompilerInvocation_create(ErrorCode)
-    @ccall libclangex.clang_CompilerInvocation_create(ErrorCode::Ptr{CXInit_Error})::CXCompilerInvocation
+function clang_CompilerInvocation_create()
+    @ccall libclangex.clang_CompilerInvocation_create()::CXCompilerInvocation
 end
 
 function clang_CompilerInvocation_dispose(CI)
@@ -6378,8 +6383,285 @@ function clang_FrontendOptions_PrintStats(FEO)
     @ccall libclangex.clang_FrontendOptions_PrintStats(FEO::CXFrontendOptions)::Cvoid
 end
 
-function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
-    @ccall libclangex.clang_TextDiagnosticPrinter_create(Opts::CXDiagnosticOptions, ErrorCode::Ptr{CXInit_Error})::CXDiagnosticConsumer
+function clang_TextDiagnosticPrinter_create(Opts)
+    @ccall libclangex.clang_TextDiagnosticPrinter_create(Opts::CXDiagnosticOptions)::CXDiagnosticConsumer
+end
+
+function clang_IncrementalCompilerBuilder_create()
+    @ccall libclangex.clang_IncrementalCompilerBuilder_create()::CXIncrementalCompilerBuilder
+end
+
+function clang_IncrementalCompilerBuilder_dispose(CB)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_dispose(CB::CXIncrementalCompilerBuilder)::Cvoid
+end
+
+function clang_IncrementalCompilerBuilder_SetCompilerArgs(Args, N)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_SetCompilerArgs(Args::Ptr{Ptr{Cchar}}, N::Cint)::Cvoid
+end
+
+function clang_IncrementalCompilerBuilder_CreateCpp()
+    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCpp()::CXCompilerInstance
+end
+
+function clang_IncrementalCompilerBuilder_SetOffloadArch(Arch)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_SetOffloadArch(Arch::Ptr{Cchar})::Cvoid
+end
+
+function clang_IncrementalCompilerBuilder_SetCudaSDK(path)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_SetCudaSDK(path::Ptr{Cchar})::Cvoid
+end
+
+function clang_IncrementalCompilerBuilder_CreateCudaHost()
+    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCudaHost()::CXCompilerInstance
+end
+
+function clang_IncrementalCompilerBuilder_CreateCudaDevice()
+    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCudaDevice()::CXCompilerInstance
+end
+
+function clang_Interpreter_create(CI)
+    @ccall libclangex.clang_Interpreter_create(CI::CXCompilerInstance)::CXInterpreter
+end
+
+function clang_Interpreter_createWithCUDA(CI, DCI)
+    @ccall libclangex.clang_Interpreter_createWithCUDA(CI::CXCompilerInstance, DCI::CXCompilerInstance)::CXInterpreter
+end
+
+function clang_Interpreter_dispose(Interp)
+    @ccall libclangex.clang_Interpreter_dispose(Interp::CXInterpreter)::Cvoid
+end
+
+function clang_Interpreter_getCompilerInstance(Interp)
+    @ccall libclangex.clang_Interpreter_getCompilerInstance(Interp::CXInterpreter)::CXCompilerInstance
+end
+
+function clang_Interpreter_getExecutionEngine(Interp)
+    @ccall libclangex.clang_Interpreter_getExecutionEngine(Interp::CXInterpreter)::LLVMOrcLLJITRef
+end
+
+function clang_Interpreter_Parse(Interp, Code)
+    @ccall libclangex.clang_Interpreter_Parse(Interp::CXInterpreter, Code::Ptr{Cchar})::CXPartialTranslationUnit
+end
+
+function clang_Interpreter_Execute(Interp, PTU)
+    @ccall libclangex.clang_Interpreter_Execute(Interp::CXInterpreter, PTU::CXPartialTranslationUnit)::Cvoid
+end
+
+function clang_Interpreter_ParseAndExecute(Interp, Code, Result)
+    @ccall libclangex.clang_Interpreter_ParseAndExecute(Interp::CXInterpreter, Code::Ptr{Cchar}, Result::Ptr{CXValue})::Cvoid
+end
+
+function clang_Interpreter_CompileDtorCall(Interp, CXXRD)
+    @ccall libclangex.clang_Interpreter_CompileDtorCall(Interp::CXInterpreter, CXXRD::CXCXXRecordDecl)::CXExecutorAddr
+end
+
+function clang_Interpreter_Undo(Interp, N)
+    @ccall libclangex.clang_Interpreter_Undo(Interp::CXInterpreter, N::Cuint)::Cvoid
+end
+
+function clang_Interpreter_LoadDynamicLibrary(Interp, name)
+    @ccall libclangex.clang_Interpreter_LoadDynamicLibrary(Interp::CXInterpreter, name::Ptr{Cchar})::Cvoid
+end
+
+function clang_Interpreter_getSymbolAddress(Interp, IRName)
+    @ccall libclangex.clang_Interpreter_getSymbolAddress(Interp::CXInterpreter, IRName::Ptr{Cchar})::CXExecutorAddr
+end
+
+function clang_Interpreter_getSymbolAddressFromLinkerName(Interp, LinkerName)
+    @ccall libclangex.clang_Interpreter_getSymbolAddressFromLinkerName(Interp::CXInterpreter, LinkerName::Ptr{Cchar})::CXExecutorAddr
+end
+
+function clang_value_create()
+    @ccall libclangex.clang_value_create()::CXValue
+end
+
+function clang_value_dispose(V)
+    @ccall libclangex.clang_value_dispose(V::CXValue)::Cvoid
+end
+
+function clang_createValueFromType(I, Ty)
+    @ccall libclangex.clang_createValueFromType(I::CXInterpreter, Ty::Ptr{Cvoid})::CXValue
+end
+
+function clang_value_getType(V)
+    @ccall libclangex.clang_value_getType(V::CXValue)::Ptr{Cvoid}
+end
+
+function clang_value_isValid(V)
+    @ccall libclangex.clang_value_isValid(V::CXValue)::Bool
+end
+
+function clang_value_isVoid(V)
+    @ccall libclangex.clang_value_isVoid(V::CXValue)::Bool
+end
+
+function clang_value_hasValue(V)
+    @ccall libclangex.clang_value_hasValue(V::CXValue)::Bool
+end
+
+function clang_value_isManuallyAlloc(V)
+    @ccall libclangex.clang_value_isManuallyAlloc(V::CXValue)::Bool
+end
+
+@enum CXValueKind::UInt32 begin
+    CXValue_Bool = 0
+    CXValue_Char_S = 1
+    CXValue_SChar = 2
+    CXValue_UChar = 3
+    CXValue_Short = 4
+    CXValue_UShort = 5
+    CXValue_Int = 6
+    CXValue_UInt = 7
+    CXValue_Long = 8
+    CXValue_ULong = 9
+    CXValue_LongLong = 10
+    CXValue_ULongLong = 11
+    CXValue_Float = 12
+    CXValue_Double = 13
+    CXValue_LongDouble = 14
+    CXValue_Void = 15
+    CXValue_PtrOrObj = 16
+    CXValue_Unspecified = 17
+end
+
+function clang_value_getKind(V)
+    @ccall libclangex.clang_value_getKind(V::CXValue)::CXValueKind
+end
+
+function clang_value_setKind(V, K)
+    @ccall libclangex.clang_value_setKind(V::CXValue, K::CXValueKind)::Cvoid
+end
+
+function clang_value_setOpaqueType(V, Ty)
+    @ccall libclangex.clang_value_setOpaqueType(V::CXValue, Ty::Ptr{Cvoid})::Cvoid
+end
+
+function clang_value_getPtr(V)
+    @ccall libclangex.clang_value_getPtr(V::CXValue)::Ptr{Cvoid}
+end
+
+function clang_value_setPtr(V, P)
+    @ccall libclangex.clang_value_setPtr(V::CXValue, P::Ptr{Cvoid})::Cvoid
+end
+
+function clang_value_setBool(V, Val)
+    @ccall libclangex.clang_value_setBool(V::CXValue, Val::Bool)::Cvoid
+end
+
+function clang_value_getBool(V)
+    @ccall libclangex.clang_value_getBool(V::CXValue)::Bool
+end
+
+function clang_value_setChar_S(V, Val)
+    @ccall libclangex.clang_value_setChar_S(V::CXValue, Val::Cchar)::Cvoid
+end
+
+function clang_value_getChar_S(V)
+    @ccall libclangex.clang_value_getChar_S(V::CXValue)::Cchar
+end
+
+function clang_value_setSChar(V, Val)
+    @ccall libclangex.clang_value_setSChar(V::CXValue, Val::Int8)::Cvoid
+end
+
+function clang_value_getSChar(V)
+    @ccall libclangex.clang_value_getSChar(V::CXValue)::Int8
+end
+
+function clang_value_setUChar(V, Val)
+    @ccall libclangex.clang_value_setUChar(V::CXValue, Val::Cuchar)::Cvoid
+end
+
+function clang_value_getUChar(V)
+    @ccall libclangex.clang_value_getUChar(V::CXValue)::Cuchar
+end
+
+function clang_value_setShort(V, Val)
+    @ccall libclangex.clang_value_setShort(V::CXValue, Val::Cshort)::Cvoid
+end
+
+function clang_value_getShort(V)
+    @ccall libclangex.clang_value_getShort(V::CXValue)::Cshort
+end
+
+function clang_value_setUShort(V, Val)
+    @ccall libclangex.clang_value_setUShort(V::CXValue, Val::Cushort)::Cvoid
+end
+
+function clang_value_getUShort(V)
+    @ccall libclangex.clang_value_getUShort(V::CXValue)::Cushort
+end
+
+function clang_value_setInt(V, Val)
+    @ccall libclangex.clang_value_setInt(V::CXValue, Val::Cint)::Cvoid
+end
+
+function clang_value_getInt(V)
+    @ccall libclangex.clang_value_getInt(V::CXValue)::Cint
+end
+
+function clang_value_setUInt(V, Val)
+    @ccall libclangex.clang_value_setUInt(V::CXValue, Val::Cuint)::Cvoid
+end
+
+function clang_value_getUInt(V)
+    @ccall libclangex.clang_value_getUInt(V::CXValue)::Cuint
+end
+
+function clang_value_setLong(V, Val)
+    @ccall libclangex.clang_value_setLong(V::CXValue, Val::Clong)::Cvoid
+end
+
+function clang_value_getLong(V)
+    @ccall libclangex.clang_value_getLong(V::CXValue)::Clong
+end
+
+function clang_value_setULong(V, Val)
+    @ccall libclangex.clang_value_setULong(V::CXValue, Val::Culong)::Cvoid
+end
+
+function clang_value_getULong(V)
+    @ccall libclangex.clang_value_getULong(V::CXValue)::Culong
+end
+
+function clang_value_setLongLong(V, Val)
+    @ccall libclangex.clang_value_setLongLong(V::CXValue, Val::Clonglong)::Cvoid
+end
+
+function clang_value_getLongLong(V)
+    @ccall libclangex.clang_value_getLongLong(V::CXValue)::Clonglong
+end
+
+function clang_value_setULongLong(V, Val)
+    @ccall libclangex.clang_value_setULongLong(V::CXValue, Val::Culonglong)::Cvoid
+end
+
+function clang_value_getULongLong(V)
+    @ccall libclangex.clang_value_getULongLong(V::CXValue)::Culonglong
+end
+
+function clang_value_setFloat(V, Val)
+    @ccall libclangex.clang_value_setFloat(V::CXValue, Val::Cfloat)::Cvoid
+end
+
+function clang_value_getFloat(V)
+    @ccall libclangex.clang_value_getFloat(V::CXValue)::Cfloat
+end
+
+function clang_value_setDouble(V, Val)
+    @ccall libclangex.clang_value_setDouble(V::CXValue, Val::Cdouble)::Cvoid
+end
+
+function clang_value_getDouble(V)
+    @ccall libclangex.clang_value_getDouble(V::CXValue)::Cdouble
+end
+
+function clang_value_setLongDouble(V, Val)
+    @ccall libclangex.clang_value_setLongDouble(V::CXValue, Val::Float64)::Cvoid
+end
+
+function clang_value_getLongDouble(V)
+    @ccall libclangex.clang_value_getLongDouble(V::CXValue)::Float64
 end
 
 function clang_HeaderSearch_PrintStats(HS)
@@ -6402,8 +6684,8 @@ function clang_HeaderSearchOptions_PrintStats(HSO)
     @ccall libclangex.clang_HeaderSearchOptions_PrintStats(HSO::CXHeaderSearchOptions)::Cvoid
 end
 
-function clang_Lexer_create(FID, FromFile, SM, langOpts, ErrorCode)
-    @ccall libclangex.clang_Lexer_create(FID::CXFileID, FromFile::LLVMMemoryBufferRef, SM::CXSourceManager, langOpts::CXLangOptions, ErrorCode::Ptr{CXInit_Error})::CXLexer
+function clang_Lexer_create(FID, FromFile, SM, langOpts)
+    @ccall libclangex.clang_Lexer_create(FID::CXFileID, FromFile::LLVMMemoryBufferRef, SM::CXSourceManager, langOpts::CXLangOptions)::CXLexer
 end
 
 function clang_Lexer_dispose(Lex)
@@ -6527,8 +6809,8 @@ end
     CXDeclSpecContext_DSC_new = 13
 end
 
-function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
-    @ccall libclangex.clang_Parser_create(PP::CXPreprocessor, Actions::CXSema, SkipFunctionBodies::Bool, ErrorCode::Ptr{CXInit_Error})::CXParser
+function clang_Parser_create(PP, Actions, SkipFunctionBodies)
+    @ccall libclangex.clang_Parser_create(PP::CXPreprocessor, Actions::CXSema, SkipFunctionBodies::Bool)::CXParser
 end
 
 function clang_Parser_dispose(P)
@@ -6610,8 +6892,8 @@ end
     CXDeclaratorContext_Association = 27
 end
 
-function clang_CXXScopeSpec_create(ErrorCode)
-    @ccall libclangex.clang_CXXScopeSpec_create(ErrorCode::Ptr{CXInit_Error})::CXCXXScopeSpec
+function clang_CXXScopeSpec_create()
+    @ccall libclangex.clang_CXXScopeSpec_create()::CXCXXScopeSpec
 end
 
 function clang_CXXScopeSpec_dispose(SS)
@@ -6677,8 +6959,8 @@ end
     CXLookupNameKind_LookupAnyName = 15
 end
 
-function clang_LookupResult_create(S, Name, NameLoc, LookupKind, ErrorCode)
-    @ccall libclangex.clang_LookupResult_create(S::CXSema, Name::CXDeclarationName, NameLoc::CXSourceLocation_, LookupKind::CXLookupNameKind, ErrorCode::Ptr{CXInit_Error})::CXLookupResult
+function clang_LookupResult_create(S, Name, NameLoc, LookupKind)
+    @ccall libclangex.clang_LookupResult_create(S::CXSema, Name::CXDeclarationName, NameLoc::CXSourceLocation_, LookupKind::CXLookupNameKind)::CXLookupResult
 end
 
 function clang_LookupResult_dispose(LR)

@@ -1,7 +1,6 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXCOMPILERINSTANCE_H
 #define LLVM_CLANG_C_EXTRA_CXCOMPILERINSTANCE_H
 
-#include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -9,7 +8,7 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CXCompilerInstance clang_CompilerInstance_create(CXInit_Error *ErrorCode);
+CXCompilerInstance clang_CompilerInstance_create(void);
 
 void clang_CompilerInstance_dispose(CXCompilerInstance CI);
 

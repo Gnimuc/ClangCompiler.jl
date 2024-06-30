@@ -1,7 +1,6 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXPARSER_H
 #define LLVM_CLANG_C_EXTRA_CXPARSER_H
 
-#include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -25,8 +24,7 @@ typedef enum CXDeclSpecContext {
   CXDeclSpecContext_DSC_new
 } CXDeclSpecContext;
 
-CXParser clang_Parser_create(CXPreprocessor PP, CXSema Actions, bool SkipFunctionBodies,
-                             CXInit_Error *ErrorCode);
+CXParser clang_Parser_create(CXPreprocessor PP, CXSema Actions, bool SkipFunctionBodies);
 
 void clang_Parser_dispose(CXParser P);
 

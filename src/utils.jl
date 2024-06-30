@@ -1,5 +1,5 @@
-function jlty2llvmty(typ::Type, isboxed_ref=Ref{Bool}(false))
-    ccall(:jl_type_to_llvm, LLVM.API.LLVMTypeRef, (Any, Ptr{Bool}), typ, isboxed_ref)
+function jlty2llvmty(ty::Type, isboxed_ref=Ref{Bool}(false))
+    ccall(:jl_type_to_llvm, LLVM.API.LLVMTypeRef, (Any, Ptr{Bool}), ty, isboxed_ref)
 end
 
 function lookup_function(mod::LLVM.Module, func_name::String)

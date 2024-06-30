@@ -12,6 +12,8 @@ generate_isystem_symbols = false
 output_ignorelist = [
     "LLVM_CLANG_C_EXTERN_C_BEGIN",
     "LLVM_CLANG_C_EXTERN_C_END",
+    "REPL_BUILTIN_TYPES",
+    "X",
 ]
 
 [codegen]

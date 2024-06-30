@@ -1,10 +1,4 @@
 """
-    abstract type AbstractASTConsumer <: Any
-Supertype for ASTConsumers.
-"""
-abstract type AbstractASTConsumer end
-
-"""
     struct ASTConsumer <: AbstractASTConsumer
 """
 struct ASTConsumer <: AbstractASTConsumer

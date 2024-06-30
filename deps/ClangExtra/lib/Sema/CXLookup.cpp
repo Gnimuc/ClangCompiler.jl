@@ -4,23 +4,12 @@
 
 CXLookupResult clang_LookupResult_create(CXSema S, CXDeclarationName Name,
                                          CXSourceLocation_ NameLoc,
-                                         CXLookupNameKind LookupKind,
-                                         CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::LookupResult> ptr = std::make_unique<clang::LookupResult>(
+                                         CXLookupNameKind LookupKind) {
+  auto LR = std::make_unique<clang::LookupResult>(
       *static_cast<clang::Sema *>(S), clang::DeclarationName::getFromOpaquePtr(Name),
       clang::SourceLocation::getFromPtrEncoding(NameLoc),
       static_cast<clang::Sema::LookupNameKind>(LookupKind));
-
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::LookupResult`\n");
-    Err = CXInit_CanNotCreate;
-  }
-
-  if (ErrorCode)
-    *ErrorCode = Err;
-
-  return ptr.release();
+  return LR.release();
 }
 
 void clang_LookupResult_dispose(CXLookupResult LR) {

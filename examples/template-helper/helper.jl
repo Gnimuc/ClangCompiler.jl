@@ -10,7 +10,7 @@ args = get_compiler_args()
 # create JIT, generate LLVM IR, and call function
 jit = LLJIT(;tm=JITTargetMachine())
 irgen = IRGenerator(src, args)
-cc = CXCompiler(irgen, jit)
+cc = ClangCompiler(irgen, jit)
 link_process_symbols(cc)
 compile(cc)
 

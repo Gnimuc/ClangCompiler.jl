@@ -1,8 +1,8 @@
 """
-    struct DeclGroupRef <: Any
+    struct DeclGroupRef <: AbstractDeclGroupRef
 Hold a `clang::DeclGroupRef` opaque pointer.
 """
-struct DeclGroupRef
+struct DeclGroupRef <: AbstractDeclGroupRef
     ptr::CXDeclGroupRef
 end
 

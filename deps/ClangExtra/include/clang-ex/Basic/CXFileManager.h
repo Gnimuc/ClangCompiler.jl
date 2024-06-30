@@ -1,7 +1,6 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXFILEMANAGER_H
 #define LLVM_CLANG_C_EXTRA_CXFILEMANAGER_H
 
-#include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -9,7 +8,7 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CXFileManager clang_FileManager_create(CXInit_Error *ErrorCode);
+CXFileManager clang_FileManager_create(void);
 
 void clang_FileManager_dispose(CXFileManager FM);
 

@@ -6,9 +6,8 @@ TargetOptions() = TargetOptions(create_target_options())
 Return a pointer to a `clang::TargetOptions` object.
 """
 function create_target_options()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    opts = clang_TargetOptions_create(status)
-    @assert status[] == CXInit_NoError
+    opts = clang_TargetOptions_create()
+    @assert opts != C_NULL "Failed to create TargetOptions"
     return opts
 end
 

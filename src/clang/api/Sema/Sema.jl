@@ -15,9 +15,8 @@ end
 function LookupResult(sema::Sema, name::DeclarationName, loc::SourceLocation,
                       kind::CXLookupNameKind)
     @check_ptrs sema
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    result = clang_LookupResult_create(sema, name, loc, kind, status)
-    @assert status[] == CXInit_NoError
+    result = clang_LookupResult_create(sema, name, loc, kind)
+    @assert result != C_NULL "Failed to create LookupResult"
     return LookupResult(result)
 end
 

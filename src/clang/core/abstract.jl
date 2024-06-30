@@ -1,3 +1,18 @@
+# AST
+# ASTConsumer
+"""
+    abstract type AbstractASTConsumer <: Any
+Supertype for `ASTConsumer`s.
+"""
+abstract type AbstractASTConsumer end
+
+# ASTContext
+"""
+    abstract type AbstractASTContext <: Any
+Supertype for `ASTContext`s.
+"""
+abstract type AbstractASTContext end
+
 # Decl
 """
     abstract type AbstractDecl <: Any
@@ -6,10 +21,47 @@ Supertype for `Decl`s.
 abstract type AbstractDecl end
 
 """
+    abstract type AbstractTranslationUnitDecl <: AbstractDecl
+Supertype for `TranslationUnitDecl`s.
+"""
+abstract type AbstractTranslationUnitDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractPragmaCommentDecl <: AbstractDecl
+Supertype for `PragmaCommentDecl`s.
+"""
+abstract type AbstractPragmaCommentDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractPragmaDetectMismatchDecl <: AbstractDecl
+Supertype for `PragmaDetectMismatchDecl`s.
+"""
+abstract type AbstractPragmaDetectMismatchDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractExternCContextDecl <: AbstractDecl
+Supertype for `ExternCContextDecl`s.
+"""
+abstract type AbstractExternCContextDecl <: AbstractDecl end
+
+"""
     abstract type AbstractNamedDecl <: AbstractDecl
 Supertype for `NamedDecl`s.
 """
 abstract type AbstractNamedDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractLabelDecl <: AbstractNamedDecl
+Supertype for `LabelDecl`s.
+"""
+abstract type AbstractLabelDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractNamespaceDecl <: AbstractNamedDecl
+Supertype for `NamespaceDecl`s.
+"""
+abstract type AbstractNamespaceDecl <: AbstractNamedDecl end
+
 
 """
     abstract type AbstractValueDecl <: AbstractNamedDecl
@@ -30,6 +82,18 @@ Supertype for `VarDecl`s.
 abstract type AbstractVarDecl <: AbstractDeclaratorDecl end
 
 """
+    abstract type AbstractImplicitParamDecl <: AbstractVarDecl
+Supertype for `ImplicitParamDecl`s.
+"""
+abstract type AbstractImplicitParamDecl <: AbstractVarDecl end
+
+"""
+    abstract type AbstractParmVarDecl <: AbstractVarDecl
+Supertype for `ParmVarDecl`s.
+"""
+abstract type AbstractParmVarDecl <: AbstractVarDecl end
+
+"""
     abstract type AbstractFunctionDecl <: AbstractDeclaratorDecl
 Supertype for `FunctionDecl`s.
 """
@@ -40,6 +104,18 @@ abstract type AbstractFunctionDecl <: AbstractDeclaratorDecl end
 Supertype for `FieldDecl`s.
 """
 abstract type AbstractFieldDecl <: AbstractDeclaratorDecl end
+
+"""
+    abstract type AbstractEnumConstantDecl <: AbstractValueDecl
+Supertype for `EnumConstantDecl`s.
+"""
+abstract type AbstractEnumConstantDecl <: AbstractValueDecl end
+
+"""
+    abstract type AbstractIndirectFieldDecl <: AbstractValueDecl
+Supertype for `IndirectFieldDecl`s.
+"""
+abstract type AbstractIndirectFieldDecl <: AbstractValueDecl end
 
 """
     abstract type AbstractTypeDecl <: AbstractNamedDecl
@@ -54,10 +130,28 @@ Supertype for `TypedefNameDecl`s.
 abstract type AbstractTypedefNameDecl <: AbstractTypeDecl end
 
 """
+    abstract type AbstractTypedefDecl <: AbstractTypedefNameDecl
+Supertype for `TypedefDecl`s.
+"""
+abstract type AbstractTypedefDecl <: AbstractTypedefNameDecl end
+
+"""
+    abstract type AbstractTypeAliasDecl <: AbstractTypedefNameDecl
+Supertype for `TypeAliasDecl`s.
+"""
+abstract type AbstractTypeAliasDecl <: AbstractTypedefNameDecl end
+
+"""
     abstract type AbstractTagDecl <: AbstractTypeDecl
 Supertype for `TagDecl`s.
 """
 abstract type AbstractTagDecl <: AbstractTypeDecl end
+
+"""
+    abstract type AbstractEnumDecl <: AbstractTagDecl
+Supertype for `EnumDecl`s.
+"""
+abstract type AbstractEnumDecl <: AbstractTagDecl end
 
 """
     abstract type AbstractRecordDecl <: AbstractTagDecl
@@ -65,12 +159,80 @@ Supertype for `RecordDecl`s.
 """
 abstract type AbstractRecordDecl <: AbstractTagDecl end
 
+"""
+    abstract type AbstractFileScopeAsmDecl <: AbstractDecl
+Supertype for `FileScopeAsmDecl`s.
+"""
+abstract type AbstractFileScopeAsmDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractBlockDecl <: AbstractDecl
+Supertype for `BlockDecl`s.
+"""
+abstract type AbstractBlockDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractCapturedDecl <: AbstractDecl
+Supertype for `CapturedDecl`s.
+"""
+abstract type AbstractCapturedDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractImportDecl <: AbstractDecl
+Supertype for `ImportDecl`s.
+"""
+abstract type AbstractImportDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractExportDecl <: AbstractDecl
+Supertype for `ExportDecl`s.
+"""
+abstract type AbstractExportDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractEmptyDecl <: AbstractDecl
+Supertype for `EmptyDecl`s.
+"""
+abstract type AbstractEmptyDecl <: AbstractDecl end
+
+# DeclarationName
+"""
+    abstract type AbstractDeclarationName <: Any
+Supertype for `DeclarationName`s.
+"""
+abstract type AbstractDeclarationName end
+
+# DeclBase
+"""
+    abstract type AbstractDeclContext <: Any
+Supertype for `DeclContext`s.
+"""
+abstract type AbstractDeclContext end
+
 # DeclCXX
+"""
+    abstract type AbstractAccessSpecDecl <: AbstractDecl
+Supertype for `AccessSpecDecl`s.
+"""
+abstract type AbstractAccessSpecDecl <: AbstractDecl end
+
 """
     abstract type AbstractCXXRecordDecl <: AbstractRecordDecl
 Supertype for `CXXRecordDecl`s.
 """
 abstract type AbstractCXXRecordDecl <: AbstractRecordDecl end
+
+"""
+    abstract type AbstractCXXDeductionGuideDecl <: AbstractFunctionDecl
+Supertype for `CXXDeductionGuideDecl`s.
+"""
+abstract type AbstractCXXDeductionGuideDecl <: AbstractFunctionDecl end
+
+"""
+    abstract type AbstractRequiresExprBodyDecl <: AbstractDecl
+Supertype for `RequiresExprBodyDecl`s.
+"""
+abstract type AbstractRequiresExprBodyDecl <: AbstractDecl end
 
 """
     abstract type AbstractCXXMethodDecl <: AbstractFunctionDecl
@@ -79,10 +241,125 @@ Supertype for `CXXMethodDecl`s.
 abstract type AbstractCXXMethodDecl <: AbstractFunctionDecl end
 
 """
+    abstract type AbstractCXXConstructorDecl <: AbstractCXXMethodDecl
+Supertype for `CXXConstructorDecl`s.
+"""
+abstract type AbstractCXXConstructorDecl <: AbstractCXXMethodDecl end
+
+"""
+    abstract type AbstractCXXDestructorDecl <: AbstractCXXMethodDecl
+Supertype for `CXXDestructorDecl`s.
+"""
+abstract type AbstractCXXDestructorDecl <: AbstractCXXMethodDecl end
+
+"""
+    abstract type AbstractCXXConversionDecl <: AbstractCXXMethodDecl
+Supertype for `CXXConversionDecl`s.
+"""
+abstract type AbstractCXXConversionDecl <: AbstractCXXMethodDecl end
+
+"""
+    abstract type AbstractLinkageSpecDecl <: AbstractDecl
+Supertype for `LinkageSpecDecl`s.
+"""
+abstract type AbstractLinkageSpecDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractUsingDirectiveDecl <: AbstractNamedDecl
+Supertype for `UsingDirectiveDecl`s.
+"""
+abstract type AbstractUsingDirectiveDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractNamespaceAliasDecl <: AbstractNamedDecl
+Supertype for `NamespaceAliasDecl`s.
+"""
+abstract type AbstractNamespaceAliasDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractLifetimeExtendedTemporaryDecl <: AbstractDecl
+Supertype for `LifetimeExtendedTemporaryDecl`s.
+"""
+abstract type AbstractLifetimeExtendedTemporaryDecl <: AbstractDecl end
+
+"""
     abstract type AbstractUsingShadowDecl <: AbstractNamedDecl
 Supertype for `UsingShadowDecl`s.
 """
 abstract type AbstractUsingShadowDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractConstructorUsingShadowDecl <: AbstractNamedDecl
+Supertype for `ConstructorUsingShadowDecl`s.
+"""
+abstract type AbstractConstructorUsingShadowDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractBaseUsingDecl <: AbstractNamedDecl
+Supertype for `BaseUsingDecl`s.
+"""
+abstract type AbstractBaseUsingDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractUsingDecl <: AbstractBaseUsingDecl
+Supertype for `UsingDecl`s.
+"""
+abstract type AbstractUsingDecl <: AbstractBaseUsingDecl end
+
+"""
+    abstract type AbstractUsingPackDecl <: AbstractNamedDecl
+Supertype for `UsingPackDecl`s.
+"""
+abstract type AbstractUsingPackDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractUnresolvedUsingValueDecl <: AbstractValueDecl
+Supertype for `UnresolvedUsingValueDecl`s.
+"""
+abstract type AbstractUnresolvedUsingValueDecl <: AbstractValueDecl end
+
+"""
+    abstract type AbstractUnresolvedUsingTypenameDecl <: AbstractTypeDecl
+Supertype for `UnresolvedUsingTypenameDecl`s.
+"""
+abstract type AbstractUnresolvedUsingTypenameDecl <: AbstractTypeDecl end
+
+"""
+    abstract type AbstractStaticAssertDecl <: AbstractDecl
+Supertype for `StaticAssertDecl`s.
+"""
+abstract type AbstractStaticAssertDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractBindingDecl <: AbstractValueDecl
+Supertype for `BindingDecl`s.
+"""
+abstract type AbstractBindingDecl <: AbstractValueDecl end
+
+"""
+    abstract type AbstractDecompositionDecl <: AbstractVarDecl
+Supertype for `DecompositionDecl`s.
+"""
+abstract type AbstractDecompositionDecl <: AbstractVarDecl end
+
+"""
+    abstract type AbstractMSPropertyDecl <: AbstractDeclaratorDecl
+Supertype for `MSPropertyDecl`s.
+"""
+abstract type AbstractMSPropertyDecl <: AbstractDeclaratorDecl end
+
+"""
+    abstract type AbstractMSGuidDecl <: AbstractValueDecl
+Supertype for `MSGuidDecl`s.
+"""
+abstract type AbstractMSGuidDecl <: AbstractValueDecl end
+
+# DeclGroup
+"""
+    abstract type AbstractDeclGroupRef <: Any
+Supertype for `DeclGroupRef`s.
+"""
+abstract type AbstractDeclGroupRef end
 
 # DeclTemplate
 """
@@ -203,6 +480,14 @@ Supertype for `CoroutineSuspendExpr`s.
 """
 abstract type AbstractCoroutineSuspendExpr <: AbstractExpr end
 
+
+# Frontend
+# CompilerInstance
+"""
+    abstract type AbstractCompilerInstance <: Any
+Supertype for `CompilerInstance`s.
+"""
+abstract type AbstractCompilerInstance end
 
 # FrontendAction
 """

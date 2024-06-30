@@ -423,6 +423,13 @@ typedef void *CXCompilerInvocation;
 // FrontendOptions
 typedef void *CXFrontendOptions;
 
+// Interpreter
+typedef void *CXIncrementalCompilerBuilder;
+typedef void *CXInterpreter;
+typedef void *CXPartialTranslationUnit;
+typedef void* CXExecutorAddr; // FIXME: upstream to LLVM.jl
+typedef void *CXValue;
+
 // Lex
 // HeaderSearch
 typedef void *CXHeaderSearch;
