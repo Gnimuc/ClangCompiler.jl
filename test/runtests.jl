@@ -18,7 +18,3 @@ include("clang/source.jl")
 #     include("execution.jl")
 # end
 # include("types.jl")
-
-if haskey(ENV, "CLANGCOMPILER_ENABLE_BOOT")
-    include("boot.jl")
-end

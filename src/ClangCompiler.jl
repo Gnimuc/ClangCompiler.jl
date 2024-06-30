@@ -78,36 +78,4 @@ export jlty2llvmty
 export lookup_function, link, link_crt
 export get_buffer
 
-# boot
-const BOOT_COMPILER_REF = Ref{ClangCompiler}()
-
-function __init__()
-    if haskey(ENV, "CLANGCOMPILER_ENABLE_BOOT")
-        clang_include_dir = normpath(joinpath(Clang_jll.artifact_dir, "include"))
-        @assert isdir(clang_include_dir) "failed to find Clang include dir."
-
-        boot_include_dir = normpath(joinpath(@__DIR__, "..", "boot"))
-        boot_src = joinpath(boot_include_dir, "boot.cpp")
-
-        julia_include_dir = normpath(joinpath(Sys.BINDIR, "..", "include", "julia"))
-
-        args = get_compiler_args(; version=v"7.1.0")
-        push!(args, "-std=c++14")
-        Sys.isapple() && push!(args, "-stdlib=libc++")
-        push!(args, "-I$clang_include_dir")
-        push!(args, "-I$libclangex_include")
-        push!(args, "-I$julia_include_dir")
-        push!(args, "-I$boot_include_dir")
-
-        jit = LLJIT(; tm=JITTargetMachine())
-        irgen = IRGenerator(boot_src, args)
-        BOOT_COMPILER_REF[] = ClangCompiler(irgen, jit)
-
-        link_process_symbols(BOOT_COMPILER_REF[])
-        compile(BOOT_COMPILER_REF[])
-    end
-end
-
-include(joinpath(@__DIR__, "boot.jl"))
-
 end
