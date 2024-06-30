@@ -10,10 +10,10 @@ Base.unsafe_convert(::Type{CXDecl}, x::Decl) = x.ptr
 Base.cconvert(::Type{CXDecl}, x::Decl) = x
 
 """
-    struct DeclContext <: Any
+    struct DeclContext <: AbstractDeclContext
 Hold a pointer to a `clang::DeclContext` object.
 """
-struct DeclContext
+struct DeclContext <: AbstractDeclContext
     ptr::CXDeclContext
 end
 

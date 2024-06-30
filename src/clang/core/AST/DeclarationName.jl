@@ -1,11 +1,11 @@
 """
-    struct DeclarationName <: Any
+    struct DeclarationName <: AbstractDeclarationName
 Represent a declaration name.
 
 Note that, the underlying pointer is NOT a *pointer* to a `clang::DeclarationName` object.
 Instead, it's the opaque pointer representation of the `clang::DeclarationName` itself.
 """
-struct DeclarationName
+struct DeclarationName <: AbstractDeclarationName
     ptr::CXDeclarationName
 end
 
