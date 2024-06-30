@@ -4,6 +4,13 @@
 
 #include <memory>
 
+CXValue clang_value_create(void) {
+  auto V = std::make_unique<clang::Value>();
+  return V.release();
+}
+
+void clang_value_dispose(CXValue V) { delete static_cast<clang::Value *>(V); }
+
 CXValue clang_createValueFromType(CXInterpreter I, void *Ty) {
   auto V = std::make_unique<clang::Value>(static_cast<clang::Interpreter *>(I), Ty);
   return V.release();

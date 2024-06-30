@@ -25,9 +25,6 @@ import Base: dump, string
 
 const llvm_version = string(Base.libllvm_version.major)
 
-const CLANG_BIN = joinpath(Clang_jll.artifact_dir, "bin", "clang")
-const CLANG_INC = joinpath(Clang_jll.artifact_dir, "lib", "clang", string(Base.libllvm_version), "include")
-
 const libdir = joinpath(@__DIR__, "..", "lib")
 
 include(joinpath(libdir, "LibClang.jl"))
@@ -38,15 +35,8 @@ using .LibClangEx
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
-function get_compiler_args(; is_cxx=true, version=v"7.1.0")
-    args = JLLEnvs.get_default_args(is_cxx, version)
-    push!(args, "-isystem" * CLANG_INC)
-    is_cxx && push!(args, "-nostdinc++", "-nostdlib++")
-    push!(args, "-nostdinc", "-nostdlib")
-    pushfirst!(args, CLANG_BIN)  # Argv0
-    return args
-end
-export get_compiler_args
+include("env.jl")
+export get_compiler_flags, get_default_args
 
 # low-level
 include("clang/utils.jl")
@@ -60,7 +50,6 @@ include("clang/lex.jl")
 include("clang/parse.jl")
 include("clang/qualtype.jl")
 include("clang/sema.jl")
-export AbstractClangType, AbstractQualType, AbstractBuiltinType
 
 # high-level
 include("types.jl")
@@ -78,7 +67,7 @@ include("compiler/compiler.jl")
 export AbstractClangCompiler
 export AbstractIRGenerator, IRGenerator
 export take_module
-export CXCompiler
+export ClangCompiler
 export get_instance, get_context
 export compile, dispose
 export get_jit, get_dylib, get_codegen
@@ -90,7 +79,7 @@ export lookup_function, link, link_crt
 export get_buffer
 
 # boot
-const BOOT_COMPILER_REF = Ref{CXCompiler}()
+const BOOT_COMPILER_REF = Ref{ClangCompiler}()
 
 function __init__()
     if haskey(ENV, "CLANGCOMPILER_ENABLE_BOOT")
@@ -112,7 +101,7 @@ function __init__()
 
         jit = LLJIT(; tm=JITTargetMachine())
         irgen = IRGenerator(boot_src, args)
-        BOOT_COMPILER_REF[] = CXCompiler(irgen, jit)
+        BOOT_COMPILER_REF[] = ClangCompiler(irgen, jit)
 
         link_process_symbols(BOOT_COMPILER_REF[])
         compile(BOOT_COMPILER_REF[])

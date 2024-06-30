@@ -6463,12 +6463,20 @@ function clang_Interpreter_LoadDynamicLibrary(Interp, name)
     @ccall libclangex.clang_Interpreter_LoadDynamicLibrary(Interp::CXInterpreter, name::Ptr{Cchar})::Cvoid
 end
 
-function clang_Interpreter_getSymbolAddress(IRName)
-    @ccall libclangex.clang_Interpreter_getSymbolAddress(IRName::Ptr{Cchar})::CXExecutorAddr
+function clang_Interpreter_getSymbolAddress(Interp, IRName)
+    @ccall libclangex.clang_Interpreter_getSymbolAddress(Interp::CXInterpreter, IRName::Ptr{Cchar})::CXExecutorAddr
 end
 
-function clang_Interpreter_getSymbolAddressFromLinkerName(LinkerName)
-    @ccall libclangex.clang_Interpreter_getSymbolAddressFromLinkerName(LinkerName::Ptr{Cchar})::CXExecutorAddr
+function clang_Interpreter_getSymbolAddressFromLinkerName(Interp, LinkerName)
+    @ccall libclangex.clang_Interpreter_getSymbolAddressFromLinkerName(Interp::CXInterpreter, LinkerName::Ptr{Cchar})::CXExecutorAddr
+end
+
+function clang_value_create()
+    @ccall libclangex.clang_value_create()::CXValue
+end
+
+function clang_value_dispose(V)
+    @ccall libclangex.clang_value_dispose(V::CXValue)::Cvoid
 end
 
 function clang_createValueFromType(I, Ty)

@@ -204,6 +204,14 @@ Supertype for `CoroutineSuspendExpr`s.
 abstract type AbstractCoroutineSuspendExpr <: AbstractExpr end
 
 
+# Frontend
+# CompilerInstance
+"""
+    abstract type AbstractCompilerInstance <: Any
+Supertype for `CompilerInstance`s.
+"""
+abstract type AbstractCompilerInstance end
+
 # FrontendAction
 """
     abstract type AbstractFrontendAction <: Any

@@ -1,8 +1,8 @@
 """
-    struct CompilerInstance <: Any
+    struct CompilerInstance <: AbstractCompilerInstance
 Hold a pointer to a `clang::CompilerInstance` object.
 """
-struct CompilerInstance
+struct CompilerInstance <: AbstractCompilerInstance
     ptr::CXCompilerInstance
 end
 

@@ -7,6 +7,10 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+CXValue clang_value_create(void);
+
+void clang_value_dispose(CXValue V);
+
 CXValue clang_createValueFromType(CXInterpreter I, void *Ty);
 
 void *clang_value_getType(CXValue V);

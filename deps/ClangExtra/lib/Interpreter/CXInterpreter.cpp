@@ -143,20 +143,24 @@ void clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(err)) << "\n";
 }
 
-CXExecutorAddr clang_Interpreter_getSymbolAddress(const char *IRName) {
-    auto Addr = clang::Interpreter::getSymbolAddress(llvm::StringRef(IRName));
-    if (auto E = Addr.takeError()) {
-        llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
-        return nullptr;
-    }
-    return Addr->release();
+CXExecutorAddr clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
+                                                  const char *IRName) {
+  auto Addr =
+      static_cast<clang::Interpreter *>(Interp)->getSymbolAddress(llvm::StringRef(IRName));
+  if (auto E = Addr.takeError()) {
+    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
+    return nullptr;
+  }
+  return Addr->release();
 }
 
-CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(const char *LinkerName) {
-    auto Addr = clang::Interpreter::getSymbolAddressFromLinkerName(llvm::StringRef(LinkerName));
-    if (auto E = Addr.takeError()) {
-        llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
-        return nullptr;
-    }
-    return Addr->release();
+CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
+                                                                const char *LinkerName) {
+  auto Addr = static_cast<clang::Interpreter *>(Interp)->getSymbolAddressFromLinkerName(
+      llvm::StringRef(LinkerName));
+  if (auto E = Addr.takeError()) {
+    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
+    return nullptr;
+  }
+  return Addr->release();
 }

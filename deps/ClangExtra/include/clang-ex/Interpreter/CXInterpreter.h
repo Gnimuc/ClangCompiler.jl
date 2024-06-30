@@ -49,9 +49,10 @@ void clang_Interpreter_Undo(CXInterpreter Interp, unsigned int N);
 
 void clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name);
 
-CXExecutorAddr clang_Interpreter_getSymbolAddress(const char *IRName);
+CXExecutorAddr clang_Interpreter_getSymbolAddress(CXInterpreter Interp, const char *IRName);
 
-CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(const char *LinkerName);
+CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
+                                                                const char *LinkerName);
 
 LLVM_CLANG_C_EXTERN_C_END
 
