@@ -1,9 +1,8 @@
 # Parser
 function Parser(pp::Preprocessor, sema::Sema, skip_func_body::Bool=false)
     @check_ptrs pp sema
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    p = clang_Parser_create(pp, sema, skip_func_body, status)
-    @assert status[] == CXInit_NoError
+    p = clang_Parser_create(pp, sema, skip_func_body)
+    @assert p != C_NULL "Failed to create Parser"
     return Parser(p)
 end
 

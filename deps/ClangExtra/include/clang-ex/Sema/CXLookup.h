@@ -1,7 +1,6 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXLOOKUP_H
 #define LLVM_CLANG_C_EXTRA_CXLOOKUP_H
 
-#include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -29,8 +28,7 @@ typedef enum CXLookupNameKind {
 
 CXLookupResult clang_LookupResult_create(CXSema S, CXDeclarationName Name,
                                          CXSourceLocation_ NameLoc,
-                                         CXLookupNameKind LookupKind,
-                                         CXInit_Error *ErrorCode);
+                                         CXLookupNameKind LookupKind);
 
 void clang_LookupResult_dispose(CXLookupResult LR);
 

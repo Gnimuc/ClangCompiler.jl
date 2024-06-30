@@ -4,22 +4,11 @@
 #include <cstdio>
 
 CXSourceManager clang_SourceManager_create(CXDiagnosticsEngine Diag, CXFileManager FileMgr,
-                                           bool UserFilesAreVolatile,
-                                           CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::SourceManager> ptr = std::make_unique<clang::SourceManager>(
+                                           bool UserFilesAreVolatile) {
+  auto SM = std::make_unique<clang::SourceManager>(
       *(static_cast<clang::DiagnosticsEngine *>(Diag)),
       *(static_cast<clang::FileManager *>(FileMgr)), UserFilesAreVolatile);
-
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::SourceManager`\n");
-    Err = CXInit_CanNotCreate;
-  }
-
-  if (ErrorCode)
-    *ErrorCode = Err;
-
-  return ptr.release();
+  return SM.release();
 }
 
 void clang_SourceManager_dispose(CXSourceManager SM) {

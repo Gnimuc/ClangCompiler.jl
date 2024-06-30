@@ -1,9 +1,8 @@
 # SourceManager
 function SourceManager(file_mgr::FileManager, diag::DiagnosticsEngine=DiagnosticsEngine(),
                        volatile::Bool=false)
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    mgr = clang_SourceManager_create(diag, file_mgr, volatile, status)
-    @assert status[] == CXInit_NoError
+    mgr = clang_SourceManager_create(diag, file_mgr, volatile)
+    @assert mgr != C_NULL "Failed to create SourceManager"
     return SourceManager(mgr)
 end
 

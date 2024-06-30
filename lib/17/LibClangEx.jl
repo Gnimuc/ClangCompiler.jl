@@ -5851,13 +5851,8 @@ function clang_TemplateName_dump(TN)
     @ccall libclangex.clang_TemplateName_dump(TN::CXTemplateName)::Cvoid
 end
 
-@enum CXInit_Error::UInt32 begin
-    CXInit_NoError = 0
-    CXInit_CanNotCreate = 1
-end
-
-function clang_CodeGenOptions_create(ErrorCode)
-    @ccall libclangex.clang_CodeGenOptions_create(ErrorCode::Ptr{CXInit_Error})::CXCodeGenOptions
+function clang_CodeGenOptions_create()
+    @ccall libclangex.clang_CodeGenOptions_create()::CXCodeGenOptions
 end
 
 function clang_CodeGenOptions_dispose(DO)
@@ -5872,8 +5867,8 @@ function clang_CodeGenOptions_PrintStats(CGO)
     @ccall libclangex.clang_CodeGenOptions_PrintStats(CGO::CXCodeGenOptions)::Cvoid
 end
 
-function clang_IgnoringDiagConsumer_create(ErrorCode)
-    @ccall libclangex.clang_IgnoringDiagConsumer_create(ErrorCode::Ptr{CXInit_Error})::CXDiagnosticConsumer
+function clang_IgnoringDiagConsumer_create()
+    @ccall libclangex.clang_IgnoringDiagConsumer_create()::CXDiagnosticConsumer
 end
 
 function clang_DiagnosticConsumer_dispose(DC)
@@ -5888,8 +5883,8 @@ function clang_DiagnosticConsumer_EndSourceFile(DC)
     @ccall libclangex.clang_DiagnosticConsumer_EndSourceFile(DC::CXDiagnosticConsumer)::Cvoid
 end
 
-function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient, ErrorCode)
-    @ccall libclangex.clang_DiagnosticsEngine_create(ID::CXDiagnosticIDs, DO::CXDiagnosticOptions, DC::CXDiagnosticConsumer, ShouldOwnClient::Bool, ErrorCode::Ptr{CXInit_Error})::CXDiagnosticsEngine
+function clang_DiagnosticsEngine_create(ID, DO, DC, ShouldOwnClient)
+    @ccall libclangex.clang_DiagnosticsEngine_create(ID::CXDiagnosticIDs, DO::CXDiagnosticOptions, DC::CXDiagnosticConsumer, ShouldOwnClient::Bool)::CXDiagnosticsEngine
 end
 
 function clang_DiagnosticsEngine_dispose(DE)
@@ -5900,16 +5895,16 @@ function clang_DiagnosticsEngine_setShowColors(DE, ShowColors)
     @ccall libclangex.clang_DiagnosticsEngine_setShowColors(DE::CXDiagnosticsEngine, ShowColors::Bool)::Cvoid
 end
 
-function clang_DiagnosticIDs_create(ErrorCode)
-    @ccall libclangex.clang_DiagnosticIDs_create(ErrorCode::Ptr{CXInit_Error})::CXDiagnosticIDs
+function clang_DiagnosticIDs_create()
+    @ccall libclangex.clang_DiagnosticIDs_create()::CXDiagnosticIDs
 end
 
 function clang_DiagnosticIDs_dispose(ID)
     @ccall libclangex.clang_DiagnosticIDs_dispose(ID::CXDiagnosticIDs)::Cvoid
 end
 
-function clang_DiagnosticOptions_create(ErrorCode)
-    @ccall libclangex.clang_DiagnosticOptions_create(ErrorCode::Ptr{CXInit_Error})::CXDiagnosticOptions
+function clang_DiagnosticOptions_create()
+    @ccall libclangex.clang_DiagnosticOptions_create()::CXDiagnosticOptions
 end
 
 function clang_DiagnosticOptions_dispose(DO)
@@ -5952,8 +5947,8 @@ function clang_FileEntry_isNamedPipe(FE)
     @ccall libclangex.clang_FileEntry_isNamedPipe(FE::CXFileEntry)::Bool
 end
 
-function clang_FileManager_create(ErrorCode)
-    @ccall libclangex.clang_FileManager_create(ErrorCode::Ptr{CXInit_Error})::CXFileManager
+function clang_FileManager_create()
+    @ccall libclangex.clang_FileManager_create()::CXFileManager
 end
 
 function clang_FileManager_dispose(FM)
@@ -6036,8 +6031,8 @@ function clang_SourceLocation_getLocWithOffset(Loc, Offset)
     @ccall libclangex.clang_SourceLocation_getLocWithOffset(Loc::CXSourceLocation_, Offset::Cint)::CXSourceLocation_
 end
 
-function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile, ErrorCode)
-    @ccall libclangex.clang_SourceManager_create(Diag::CXDiagnosticsEngine, FileMgr::CXFileManager, UserFilesAreVolatile::Bool, ErrorCode::Ptr{CXInit_Error})::CXSourceManager
+function clang_SourceManager_create(Diag, FileMgr, UserFilesAreVolatile)
+    @ccall libclangex.clang_SourceManager_create(Diag::CXDiagnosticsEngine, FileMgr::CXFileManager, UserFilesAreVolatile::Bool)::CXSourceManager
 end
 
 function clang_SourceManager_dispose(SM)
@@ -6088,8 +6083,8 @@ function clang_TargetInfo_CreateTargetInfo(DE, Opts)
     @ccall libclangex.clang_TargetInfo_CreateTargetInfo(DE::CXDiagnosticsEngine, Opts::CXTargetOptions)::CXTargetInfo_
 end
 
-function clang_TargetOptions_create(ErrorCode)
-    @ccall libclangex.clang_TargetOptions_create(ErrorCode::Ptr{CXInit_Error})::CXTargetOptions
+function clang_TargetOptions_create()
+    @ccall libclangex.clang_TargetOptions_create()::CXTargetOptions
 end
 
 function clang_TargetOptions_dispose(TO)
@@ -6108,28 +6103,28 @@ function clang_CodeGen_convertTypeForMemory(CGM, T)
     @ccall libclangex.clang_CodeGen_convertTypeForMemory(CGM::CXCodeGenModule, T::CXQualType)::LLVMTypeRef
 end
 
-function clang_EmitAssemblyAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitAssemblyAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitAssemblyAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitAssemblyAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitBCAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitBCAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitBCAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitBCAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitLLVMAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitLLVMAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitLLVMAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitLLVMAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitLLVMOnlyAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitLLVMOnlyAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitLLVMOnlyAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitLLVMOnlyAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitCodeGenOnlyAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitCodeGenOnlyAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitCodeGenOnlyAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitCodeGenOnlyAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
-function clang_EmitObjAction_create(ErrorCode, LLVMCtx)
-    @ccall libclangex.clang_EmitObjAction_create(ErrorCode::Ptr{CXInit_Error}, LLVMCtx::LLVMContextRef)::CXCodeGenAction
+function clang_EmitObjAction_create(LLVMCtx)
+    @ccall libclangex.clang_EmitObjAction_create(LLVMCtx::LLVMContextRef)::CXCodeGenAction
 end
 
 function clang_CodeGenAction_dispose(CA)
@@ -6168,8 +6163,8 @@ function clang_Driver_GetResourcesPath(BinaryPath, ResourcesPath, N)
     @ccall libclangex.clang_Driver_GetResourcesPath(BinaryPath::Ptr{Cchar}, ResourcesPath::Ptr{Cchar}, N::Csize_t)::Cvoid
 end
 
-function clang_CompilerInstance_create(ErrorCode)
-    @ccall libclangex.clang_CompilerInstance_create(ErrorCode::Ptr{CXInit_Error})::CXCompilerInstance
+function clang_CompilerInstance_create()
+    @ccall libclangex.clang_CompilerInstance_create()::CXCompilerInstance
 end
 
 function clang_CompilerInstance_dispose(CI)
@@ -6352,8 +6347,8 @@ function clang_CompilerInstance_ExecuteAction(CI, Act)
     @ccall libclangex.clang_CompilerInstance_ExecuteAction(CI::CXCompilerInstance, Act::CXFrontendAction)::Bool
 end
 
-function clang_CompilerInvocation_create(ErrorCode)
-    @ccall libclangex.clang_CompilerInvocation_create(ErrorCode::Ptr{CXInit_Error})::CXCompilerInvocation
+function clang_CompilerInvocation_create()
+    @ccall libclangex.clang_CompilerInvocation_create()::CXCompilerInvocation
 end
 
 function clang_CompilerInvocation_dispose(CI)
@@ -6388,8 +6383,8 @@ function clang_FrontendOptions_PrintStats(FEO)
     @ccall libclangex.clang_FrontendOptions_PrintStats(FEO::CXFrontendOptions)::Cvoid
 end
 
-function clang_TextDiagnosticPrinter_create(Opts, ErrorCode)
-    @ccall libclangex.clang_TextDiagnosticPrinter_create(Opts::CXDiagnosticOptions, ErrorCode::Ptr{CXInit_Error})::CXDiagnosticConsumer
+function clang_TextDiagnosticPrinter_create(Opts)
+    @ccall libclangex.clang_TextDiagnosticPrinter_create(Opts::CXDiagnosticOptions)::CXDiagnosticConsumer
 end
 
 function clang_IncrementalCompilerBuilder_create()
@@ -6681,8 +6676,8 @@ function clang_HeaderSearchOptions_PrintStats(HSO)
     @ccall libclangex.clang_HeaderSearchOptions_PrintStats(HSO::CXHeaderSearchOptions)::Cvoid
 end
 
-function clang_Lexer_create(FID, FromFile, SM, langOpts, ErrorCode)
-    @ccall libclangex.clang_Lexer_create(FID::CXFileID, FromFile::LLVMMemoryBufferRef, SM::CXSourceManager, langOpts::CXLangOptions, ErrorCode::Ptr{CXInit_Error})::CXLexer
+function clang_Lexer_create(FID, FromFile, SM, langOpts)
+    @ccall libclangex.clang_Lexer_create(FID::CXFileID, FromFile::LLVMMemoryBufferRef, SM::CXSourceManager, langOpts::CXLangOptions)::CXLexer
 end
 
 function clang_Lexer_dispose(Lex)
@@ -6806,8 +6801,8 @@ end
     CXDeclSpecContext_DSC_new = 13
 end
 
-function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
-    @ccall libclangex.clang_Parser_create(PP::CXPreprocessor, Actions::CXSema, SkipFunctionBodies::Bool, ErrorCode::Ptr{CXInit_Error})::CXParser
+function clang_Parser_create(PP, Actions, SkipFunctionBodies)
+    @ccall libclangex.clang_Parser_create(PP::CXPreprocessor, Actions::CXSema, SkipFunctionBodies::Bool)::CXParser
 end
 
 function clang_Parser_dispose(P)
@@ -6889,8 +6884,8 @@ end
     CXDeclaratorContext_Association = 27
 end
 
-function clang_CXXScopeSpec_create(ErrorCode)
-    @ccall libclangex.clang_CXXScopeSpec_create(ErrorCode::Ptr{CXInit_Error})::CXCXXScopeSpec
+function clang_CXXScopeSpec_create()
+    @ccall libclangex.clang_CXXScopeSpec_create()::CXCXXScopeSpec
 end
 
 function clang_CXXScopeSpec_dispose(SS)
@@ -6956,8 +6951,8 @@ end
     CXLookupNameKind_LookupAnyName = 15
 end
 
-function clang_LookupResult_create(S, Name, NameLoc, LookupKind, ErrorCode)
-    @ccall libclangex.clang_LookupResult_create(S::CXSema, Name::CXDeclarationName, NameLoc::CXSourceLocation_, LookupKind::CXLookupNameKind, ErrorCode::Ptr{CXInit_Error})::CXLookupResult
+function clang_LookupResult_create(S, Name, NameLoc, LookupKind)
+    @ccall libclangex.clang_LookupResult_create(S::CXSema, Name::CXDeclarationName, NameLoc::CXSourceLocation_, LookupKind::CXLookupNameKind)::CXLookupResult
 end
 
 function clang_LookupResult_dispose(LR)

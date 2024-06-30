@@ -6,20 +6,9 @@
 #include "llvm/Support/VirtualFileSystem.h"
 #include <cstdio>
 
-CXCompilerInstance clang_CompilerInstance_create(CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::CompilerInstance> ptr =
-      std::make_unique<clang::CompilerInstance>();
-
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::CompilerInstance`\n");
-    Err = CXInit_CanNotCreate;
-  }
-
-  if (ErrorCode)
-    *ErrorCode = Err;
-
-  return ptr.release();
+CXCompilerInstance clang_CompilerInstance_create(void) {
+  auto CI = std::make_unique<clang::CompilerInstance>();
+  return CI.release();
 }
 
 void clang_CompilerInstance_dispose(CXCompilerInstance CI) {

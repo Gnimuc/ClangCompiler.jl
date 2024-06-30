@@ -6,9 +6,8 @@ CompilerInvocation() = CompilerInvocation(create_compiler_invocation())
 Return a pointer to a `clang::CompilerInvocation` object.
 """
 function create_compiler_invocation()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    invocation = clang_CompilerInvocation_create(status)
-    @assert status[] == CXInit_NoError
+    invocation = clang_CompilerInvocation_create(x)
+    @assert invocation != C_NULL "Failed to create CompilerInvocation"
     return invocation
 end
 
@@ -18,13 +17,12 @@ Return a `CompilerInvocation` created from command line arguments.
 """
 function createFromCommandLine(src::String, args::Vector{String}=String[],
                                diag::DiagnosticsEngine=DiagnosticsEngine())
-    status = Ref{CXInit_Error}(CXInit_NoError)
     args_with_src = copy(args)
     push!(args_with_src, src)
     invocation = clang_CompilerInvocation_createFromCommandLine(args_with_src,
-                                                                length(args_with_src), diag,
-                                                                status)
-    @assert status[] == CXInit_NoError
+                                                                length(args_with_src), diag
+                                                                )
+    @assert invocation != C_NULL "Failed to create CompilerInvocation"
     return CompilerInvocation(invocation)
 end
 

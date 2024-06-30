@@ -6,9 +6,8 @@ DiagnosticOptions() = DiagnosticOptions(create_diagnostic_opts())
 Return a pointer to a `clang::DiagnosticOptions` object.
 """
 function create_diagnostic_opts()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    opts = clang_DiagnosticOptions_create(status)
-    @assert status[] == CXInit_NoError
+    opts = clang_DiagnosticOptions_create()
+    @assert opts != C_NULL "Failed to create DiagnosticOptions"
     return opts
 end
 

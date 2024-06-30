@@ -22,9 +22,8 @@ IgnoringDiagConsumer() = IgnoringDiagConsumer(create_ignoring_diagnostic_consume
 Return a pointer to a `clang::IgnoringDiagConsumer` object.
 """
 function create_ignoring_diagnostic_consumer()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    consumer = clang_IgnoringDiagConsumer_create(status)
-    @assert status[] == CXInit_NoError
+    consumer = clang_IgnoringDiagConsumer_create()
+    @assert consumer != C_NULL "Failed to create IgnoringDiagConsumer"
     return consumer
 end
 
@@ -34,19 +33,17 @@ DiagnosticsEngine() = DiagnosticsEngine(create_diagnostics_engine())
 function DiagnosticsEngine(opts::DiagnosticOptions,
                            client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts),
                            should_own_client=true)
-    status = Ref{CXInit_Error}(CXInit_NoError)
     ids = create_diagnostic_ids()
-    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client, status)
-    @assert status[] == CXInit_NoError
+    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client)
+    @assert engine != C_NULL "Failed to create DiagnosticsEngine"
     return DiagnosticsEngine(engine)
 end
 
 function DiagnosticsEngine(ids::DiagnosticIDs, opts::DiagnosticOptions,
                            client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts),
                            should_own_client=true)
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client, status)
-    @assert status[] == CXInit_NoError
+    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client)
+    @assert engine != C_NULL "Failed to create DiagnosticsEngine"
     return DiagnosticsEngine(engine)
 end
 
@@ -55,13 +52,12 @@ end
 Return a pointer to a `clang::DiagnosticsEngine` object.
 """
 function create_diagnostics_engine()
-    status = Ref{CXInit_Error}(CXInit_NoError)
     ids = create_diagnostic_ids()
     opts = DiagnosticOptions()
     client = TextDiagnosticPrinter(opts)
     should_own_client = true
-    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client, status)
-    @assert status[] == CXInit_NoError
+    engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client)
+    @assert engine != C_NULL "Failed to create DiagnosticsEngine"
     return engine
 end
 

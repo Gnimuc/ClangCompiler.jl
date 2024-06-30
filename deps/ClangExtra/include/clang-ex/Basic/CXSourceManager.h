@@ -1,7 +1,6 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXSOURCEMANAGER_H
 #define LLVM_CLANG_C_EXTRA_CXSOURCEMANAGER_H
 
-#include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -10,8 +9,7 @@
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
 CXSourceManager clang_SourceManager_create(CXDiagnosticsEngine Diag, CXFileManager FileMgr,
-                                           bool UserFilesAreVolatile,
-                                           CXInit_Error *ErrorCode);
+                                           bool UserFilesAreVolatile);
 
 void clang_SourceManager_dispose(CXSourceManager SM);
 

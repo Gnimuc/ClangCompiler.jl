@@ -1,7 +1,6 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXDECLSPEC_H
 #define LLVM_CLANG_C_EXTRA_CXDECLSPEC_H
 
-#include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -39,7 +38,7 @@ typedef enum CXDeclaratorContext {
   CXDeclaratorContext_Association
 } CXDeclaratorContext;
 
-CXCXXScopeSpec clang_CXXScopeSpec_create(CXInit_Error *ErrorCode);
+CXCXXScopeSpec clang_CXXScopeSpec_create(void);
 
 void clang_CXXScopeSpec_dispose(CXCXXScopeSpec SS);
 

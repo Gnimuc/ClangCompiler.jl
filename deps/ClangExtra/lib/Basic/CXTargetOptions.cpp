@@ -2,19 +2,9 @@
 #include "clang/Basic/TargetOptions.h"
 #include "llvm/Support/Errc.h"
 
-CXTargetOptions clang_TargetOptions_create(CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::TargetOptions> ptr = std::make_unique<clang::TargetOptions>();
-
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::TargetOptions`\n");
-    Err = CXInit_CanNotCreate;
-  }
-
-  if (ErrorCode)
-    *ErrorCode = Err;
-
-  return ptr.release();
+CXTargetOptions clang_TargetOptions_create(void) {
+  auto TO = std::make_unique<clang::TargetOptions>();
+  return TO.release();
 }
 
 void clang_TargetOptions_dispose(CXTargetOptions TO) {

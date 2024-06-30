@@ -12,8 +12,7 @@ dispose(x::AbstractCodeGenAction) = clang_CodeGenAction_dispose(x)
 LLVMOnlyAction(ctx::Context) = LLVMOnlyAction(create_emit_llvm_only_action(ctx))
 
 function create_emit_llvm_only_action(ctx::Context)
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    act = clang_EmitLLVMOnlyAction_create(status, ctx.ref)
-    @assert status[] == CXInit_NoError
+    act = clang_EmitLLVMOnlyAction_create(ctx.ref)
+    @assert act != C_NULL "Failed to create EmitLLVMOnlyAction"
     return act
 end

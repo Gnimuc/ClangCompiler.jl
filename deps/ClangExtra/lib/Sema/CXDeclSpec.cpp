@@ -2,19 +2,9 @@
 #include "clang/Sema/DeclSpec.h"
 #include <cstdio>
 
-CXCXXScopeSpec clang_CXXScopeSpec_create(CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::CXXScopeSpec> ptr = std::make_unique<clang::CXXScopeSpec>();
-
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::CXXScopeSpec`\n");
-    Err = CXInit_CanNotCreate;
-  }
-
-  if (ErrorCode)
-    *ErrorCode = Err;
-
-  return ptr.release();
+CXCXXScopeSpec clang_CXXScopeSpec_create() {
+  auto CXXSS = std::make_unique<clang::CXXScopeSpec>();
+  return CXXSS.release();
 }
 
 void clang_CXXScopeSpec_dispose(CXCXXScopeSpec SS) {

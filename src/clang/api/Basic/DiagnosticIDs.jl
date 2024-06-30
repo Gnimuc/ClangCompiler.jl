@@ -6,8 +6,7 @@ DiagnosticIDs() = DiagnosticIDs(create_diagnostic_ids())
 Return a pointer to a `clang::DiagnosticIDs` object.
 """
 function create_diagnostic_ids()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    ids = clang_DiagnosticIDs_create(status)
-    @assert status[] == CXInit_NoError
+    ids = clang_DiagnosticIDs_create()
+    @assert ids != C_NULL "Failed to create DiagnosticIDs"
     return ids
 end

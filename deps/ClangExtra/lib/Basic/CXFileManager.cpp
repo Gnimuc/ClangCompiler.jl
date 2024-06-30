@@ -4,20 +4,9 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include <cstdio>
 
-CXFileManager clang_FileManager_create(CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::FileManager> ptr =
-      std::make_unique<clang::FileManager>(clang::FileSystemOptions());
-
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::FileManager`\n");
-    Err = CXInit_CanNotCreate;
-  }
-
-  if (ErrorCode)
-    *ErrorCode = Err;
-
-  return ptr.release();
+CXFileManager clang_FileManager_create(void) {
+  auto FM = std::make_unique<clang::FileManager>(clang::FileSystemOptions());
+  return FM.release();
 }
 
 void clang_FileManager_dispose(CXFileManager FM) {

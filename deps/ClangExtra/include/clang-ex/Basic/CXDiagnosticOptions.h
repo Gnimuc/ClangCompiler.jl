@@ -1,14 +1,13 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXDIAGNOSTICOPTIONS_H
 #define LLVM_CLANG_C_EXTRA_CXDIAGNOSTICOPTIONS_H
 
-#include "clang-ex/CXError.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CXDiagnosticOptions clang_DiagnosticOptions_create(CXInit_Error *ErrorCode);
+CXDiagnosticOptions clang_DiagnosticOptions_create(void);
 
 void clang_DiagnosticOptions_dispose(CXDiagnosticOptions DO);
 

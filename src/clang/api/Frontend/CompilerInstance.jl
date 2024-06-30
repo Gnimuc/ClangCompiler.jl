@@ -6,9 +6,8 @@ CompilerInstance() = CompilerInstance(create_compiler_instance())
 Return a pointer to a `clang::CompilerInstance` object.
 """
 function create_compiler_instance()
-    status = Ref{CXInit_Error}(CXInit_NoError)
-    instance = clang_CompilerInstance_create(status)
-    @assert status[] == CXInit_NoError
+    instance = clang_CompilerInstance_create()
+    @assert instance != C_NULL "Failed to create a CompilerInstance object."
     return instance
 end
 

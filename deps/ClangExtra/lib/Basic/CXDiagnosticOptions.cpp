@@ -2,20 +2,9 @@
 #include "clang/Basic/DiagnosticOptions.h"
 #include "llvm/Support/raw_ostream.h"
 
-CXDiagnosticOptions clang_DiagnosticOptions_create(CXInit_Error *ErrorCode) {
-  CXInit_Error Err = CXInit_NoError;
-  std::unique_ptr<clang::DiagnosticOptions> ptr =
-      std::make_unique<clang::DiagnosticOptions>();
-
-  if (!ptr) {
-    fprintf(stderr, "LIBCLANGEX ERROR: failed to create `clang::DiagnosticOptions`\n");
-    Err = CXInit_CanNotCreate;
-  }
-
-  if (ErrorCode)
-    *ErrorCode = Err;
-
-  return ptr.release();
+CXDiagnosticOptions clang_DiagnosticOptions_create(void) {
+  auto DO = std::make_unique<clang::DiagnosticOptions>();
+  return DO.release();
 }
 
 void clang_DiagnosticOptions_dispose(CXDiagnosticOptions DO) {
