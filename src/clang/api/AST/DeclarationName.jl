@@ -10,4 +10,4 @@ dump(x::DeclarationName) = clang_DeclarationName_dump(x)
 
 isEmpty(x::DeclarationName) = clang_DeclarationName_isEmpty(x)
 
-getAsString(x::DeclarationName) = _get_string(clang_DeclarationName_getAsString(x))
+getAsString(x::DeclarationName) = get_string(clang_DeclarationName_getAsString(x))
