@@ -35,7 +35,8 @@ typedef enum CXDeclaratorContext {
   CXDeclaratorContext_TemplateTypeArg,
   CXDeclaratorContext_AliasDecl,
   CXDeclaratorContext_AliasTemplate,
-  CXDeclaratorContext_RequiresExpr
+  CXDeclaratorContext_RequiresExpr,
+  CXDeclaratorContext_Association
 } CXDeclaratorContext;
 
 CXCXXScopeSpec clang_CXXScopeSpec_create(CXInit_Error *ErrorCode);

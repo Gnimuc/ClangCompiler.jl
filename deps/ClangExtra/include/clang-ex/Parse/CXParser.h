@@ -14,11 +14,15 @@ typedef enum CXDeclSpecContext {
   CXDeclSpecContext_DSC_type_specifier,
   CXDeclSpecContext_DSC_trailing,
   CXDeclSpecContext_DSC_alias_declaration,
+  CXDeclSpecContext_DSC_conv_operator,
   CXDeclSpecContext_DSC_top_level,
   CXDeclSpecContext_DSC_template_param,
+  CXDeclSpecContext_DSC_template_arg,
   CXDeclSpecContext_DSC_template_type_arg,
   CXDeclSpecContext_DSC_objc_method_result,
-  CXDeclSpecContext_DSC_condition
+  CXDeclSpecContext_DSC_condition,
+  CXDeclSpecContext_DSC_association,
+  CXDeclSpecContext_DSC_new
 } CXDeclSpecContext;
 
 CXParser clang_Parser_create(CXPreprocessor PP, CXSema Actions, bool SkipFunctionBodies,

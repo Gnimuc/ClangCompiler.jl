@@ -8,7 +8,6 @@ typedef enum CXLinkage : unsigned char {
   CXLinkage_InternalLinkage,
   CXLinkage_UniqueExternalLinkage,
   CXLinkage_VisibleNoLinkage,
-  CXLinkage_ModuleInternalLinkage,
   CXLinkage_ModuleLinkage,
   CXLinkage_ExternalLinkage
 } CXLinkage;

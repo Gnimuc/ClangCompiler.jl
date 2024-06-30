@@ -17,7 +17,7 @@ typedef enum CXAccessSpecifier {
 } CXAccessSpecifier;
 
 typedef enum CXExprValueKind {
-  CXExprValueKind_VK_RValue,
+  CXExprValueKind_VK_PRValue,
   CXExprValueKind_VK_LValue,
   CXExprValueKind_VK_XValue,
 } CXExprValueKind;

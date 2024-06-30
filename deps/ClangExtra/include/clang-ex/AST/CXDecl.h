@@ -385,6 +385,7 @@ typedef enum CXImplicitParamDecl_ImplicitParamKind : unsigned {
   CXImplicitParamDecl_CXXThis,
   CXImplicitParamDecl_CXXVTT,
   CXImplicitParamDecl_CapturedContext,
+  CXImplicitParamDecl_ThreadPrivateVar,
   CXImplicitParamDecl_Other,
 } CXImplicitParamDecl_ImplicitParamKind;
 
@@ -458,7 +459,9 @@ typedef enum CXMultiVersionKind {
   CXMultiVersionKind_None,
   CXMultiVersionKind_Target,
   CXMultiVersionKind_CPUSpecific,
-  CXMultiVersionKind_CPUDispatch
+  CXMultiVersionKind_CPUDispatch,
+  CXMultiVersionKind_TargetClones,
+  CXMultiVersionKind_TargetVersion
 } CXMultiVersionKind;
 
 // FunctionDecl
@@ -467,7 +470,8 @@ typedef enum CXFunctionDecl_TemplatedKind {
   CXFunctionDecl_TK_FunctionTemplate,
   CXFunctionDecl_TK_MemberSpecialization,
   CXFunctionDecl_TK_FunctionTemplateSpecialization,
-  CXFunctionDecl_TK_DependentFunctionTemplateSpecialization
+  CXFunctionDecl_TK_DependentFunctionTemplateSpecialization,
+  CXFunctionDecl_TK_DependentNonTemplate
 } CXFunctionDecl_TemplatedKind;
 
 typedef void *CXFunctionDecl_DefaultedFunctionInfo;

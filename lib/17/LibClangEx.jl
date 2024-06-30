@@ -2882,7 +2882,7 @@ end
 end
 
 @enum CXExprValueKind::UInt32 begin
-    CXExprValueKind_VK_RValue = 0
+    CXExprValueKind_VK_PRValue = 0
     CXExprValueKind_VK_LValue = 1
     CXExprValueKind_VK_XValue = 2
 end
@@ -3289,9 +3289,8 @@ end
     CXLinkage_InternalLinkage = 0x0000000000000001
     CXLinkage_UniqueExternalLinkage = 0x0000000000000002
     CXLinkage_VisibleNoLinkage = 0x0000000000000003
-    CXLinkage_ModuleInternalLinkage = 0x0000000000000004
-    CXLinkage_ModuleLinkage = 0x0000000000000005
-    CXLinkage_ExternalLinkage = 0x0000000000000006
+    CXLinkage_ModuleLinkage = 0x0000000000000004
+    CXLinkage_ExternalLinkage = 0x0000000000000005
 end
 
 @enum CXLanguageLinkage::UInt32 begin
@@ -3924,7 +3923,8 @@ end
     CXImplicitParamDecl_CXXThis = 0x0000000000000002
     CXImplicitParamDecl_CXXVTT = 0x0000000000000003
     CXImplicitParamDecl_CapturedContext = 0x0000000000000004
-    CXImplicitParamDecl_Other = 0x0000000000000005
+    CXImplicitParamDecl_ThreadPrivateVar = 0x0000000000000005
+    CXImplicitParamDecl_Other = 0x0000000000000006
 end
 
 function clang_ImplicitParamDecl_Create(C, DC, IdLoc, Id, T, ParamKind)
@@ -4036,6 +4036,8 @@ end
     CXMultiVersionKind_Target = 1
     CXMultiVersionKind_CPUSpecific = 2
     CXMultiVersionKind_CPUDispatch = 3
+    CXMultiVersionKind_TargetClones = 4
+    CXMultiVersionKind_TargetVersion = 5
 end
 
 @enum CXFunctionDecl_TemplatedKind::UInt32 begin
@@ -4044,6 +4046,7 @@ end
     CXFunctionDecl_TK_MemberSpecialization = 2
     CXFunctionDecl_TK_FunctionTemplateSpecialization = 3
     CXFunctionDecl_TK_DependentFunctionTemplateSpecialization = 4
+    CXFunctionDecl_TK_DependentNonTemplate = 5
 end
 
 const CXFunctionDecl_DefaultedFunctionInfo = Ptr{Cvoid}
@@ -5527,70 +5530,71 @@ function clang_DeclarationName_getAsString(DN)
 end
 
 @enum CXCastKind::UInt32 begin
-    CK_Dependent = 0
-    CK_BitCast = 1
-    CK_LValueBitCast = 2
-    CK_LValueToRValueBitCast = 3
-    CK_LValueToRValue = 4
-    CK_NoOp = 5
-    CK_BaseToDerived = 6
-    CK_DerivedToBase = 7
-    CK_UncheckedDerivedToBase = 8
-    CK_Dynamic = 9
-    CK_ToUnion = 10
-    CK_ArrayToPointerDecay = 11
-    CK_FunctionToPointerDecay = 12
-    CK_NullToPointer = 13
-    CK_NullToMemberPointer = 14
-    CK_BaseToDerivedMemberPointer = 15
-    CK_DerivedToBaseMemberPointer = 16
-    CK_MemberPointerToBoolean = 17
-    CK_ReinterpretMemberPointer = 18
-    CK_UserDefinedConversion = 19
-    CK_ConstructorConversion = 20
-    CK_IntegralToPointer = 21
-    CK_PointerToIntegral = 22
-    CK_PointerToBoolean = 23
-    CK_ToVoid = 24
-    CK_VectorSplat = 25
-    CK_IntegralCast = 26
-    CK_IntegralToBoolean = 27
-    CK_IntegralToFloating = 28
-    CK_FloatingToFixedPoint = 29
-    CK_FixedPointToFloating = 30
-    CK_FixedPointCast = 31
-    CK_FixedPointToIntegral = 32
-    CK_IntegralToFixedPoint = 33
-    CK_FixedPointToBoolean = 34
-    CK_FloatingToIntegral = 35
-    CK_FloatingToBoolean = 36
-    CK_BooleanToSignedIntegral = 37
-    CK_FloatingCast = 38
-    CK_CPointerToObjCPointerCast = 39
-    CK_BlockPointerToObjCPointerCast = 40
-    CK_AnyPointerToBlockPointerCast = 41
-    CK_ObjCObjectLValueCast = 42
-    CK_FloatingRealToComplex = 43
-    CK_FloatingComplexToReal = 44
-    CK_FloatingComplexToBoolean = 45
-    CK_FloatingComplexCast = 46
-    CK_FloatingComplexToIntegralComplex = 47
-    CK_IntegralRealToComplex = 48
-    CK_IntegralComplexToReal = 49
-    CK_IntegralComplexToBoolean = 50
-    CK_IntegralComplexCast = 51
-    CK_IntegralComplexToFloatingComplex = 52
-    CK_ARCProduceObject = 53
-    CK_ARCConsumeObject = 54
-    CK_ARCReclaimReturnedObject = 55
-    CK_ARCExtendBlockObject = 56
-    CK_AtomicToNonAtomic = 57
-    CK_NonAtomicToAtomic = 58
-    CK_CopyAndAutoreleaseBlockObject = 59
-    CK_BuiltinFnToFnPtr = 60
-    CK_ZeroToOCLOpaqueType = 61
-    CK_AddressSpaceConversion = 62
-    CK_IntToOCLSampler = 63
+    CXCastKind_CK_Dependent = 0
+    CXCastKind_CK_BitCast = 1
+    CXCastKind_CK_LValueBitCast = 2
+    CXCastKind_CK_LValueToRValueBitCast = 3
+    CXCastKind_CK_LValueToRValue = 4
+    CXCastKind_CK_NoOp = 5
+    CXCastKind_CK_BaseToDerived = 6
+    CXCastKind_CK_DerivedToBase = 7
+    CXCastKind_CK_UncheckedDerivedToBase = 8
+    CXCastKind_CK_Dynamic = 9
+    CXCastKind_CK_ToUnion = 10
+    CXCastKind_CK_ArrayToPointerDecay = 11
+    CXCastKind_CK_FunctionToPointerDecay = 12
+    CXCastKind_CK_NullToPointer = 13
+    CXCastKind_CK_NullToMemberPointer = 14
+    CXCastKind_CK_BaseToDerivedMemberPointer = 15
+    CXCastKind_CK_DerivedToBaseMemberPointer = 16
+    CXCastKind_CK_MemberPointerToBoolean = 17
+    CXCastKind_CK_ReinterpretMemberPointer = 18
+    CXCastKind_CK_UserDefinedConversion = 19
+    CXCastKind_CK_ConstructorConversion = 20
+    CXCastKind_CK_IntegralToPointer = 21
+    CXCastKind_CK_PointerToIntegral = 22
+    CXCastKind_CK_PointerToBoolean = 23
+    CXCastKind_CK_ToVoid = 24
+    CXCastKind_CK_MatrixCast = 25
+    CXCastKind_CK_VectorSplat = 26
+    CXCastKind_CK_IntegralCast = 27
+    CXCastKind_CK_IntegralToBoolean = 28
+    CXCastKind_CK_IntegralToFloating = 29
+    CXCastKind_CK_FloatingToFixedPoint = 30
+    CXCastKind_CK_FixedPointToFloating = 31
+    CXCastKind_CK_FixedPointCast = 32
+    CXCastKind_CK_FixedPointToIntegral = 33
+    CXCastKind_CK_IntegralToFixedPoint = 34
+    CXCastKind_CK_FixedPointToBoolean = 35
+    CXCastKind_CK_FloatingToIntegral = 36
+    CXCastKind_CK_FloatingToBoolean = 37
+    CXCastKind_CK_BooleanToSignedIntegral = 38
+    CXCastKind_CK_FloatingCast = 39
+    CXCastKind_CK_CPointerToObjCPointerCast = 40
+    CXCastKind_CK_BlockPointerToObjCPointerCast = 41
+    CXCastKind_CK_AnyPointerToBlockPointerCast = 42
+    CXCastKind_CK_ObjCObjectLValueCast = 43
+    CXCastKind_CK_FloatingRealToComplex = 44
+    CXCastKind_CK_FloatingComplexToReal = 45
+    CXCastKind_CK_FloatingComplexToBoolean = 46
+    CXCastKind_CK_FloatingComplexCast = 47
+    CXCastKind_CK_FloatingComplexToIntegralComplex = 48
+    CXCastKind_CK_IntegralRealToComplex = 49
+    CXCastKind_CK_IntegralComplexToReal = 50
+    CXCastKind_CK_IntegralComplexToBoolean = 51
+    CXCastKind_CK_IntegralComplexCast = 52
+    CXCastKind_CK_IntegralComplexToFloatingComplex = 53
+    CXCastKind_CK_ARCProduceObject = 54
+    CXCastKind_CK_ARCConsumeObject = 55
+    CXCastKind_CK_ARCReclaimReturnedObject = 56
+    CXCastKind_CK_ARCExtendBlockObject = 57
+    CXCastKind_CK_AtomicToNonAtomic = 58
+    CXCastKind_CK_NonAtomicToAtomic = 59
+    CXCastKind_CK_CopyAndAutoreleaseBlockObject = 60
+    CXCastKind_CK_BuiltinFnToFnPtr = 61
+    CXCastKind_CK_ZeroToOCLOpaqueType = 62
+    CXCastKind_CK_AddressSpaceConversion = 63
+    CXCastKind_CK_IntToOCLSampler = 64
 end
 
 function clang_IntegerLiteral_Create(C, Val, T, L)
@@ -5798,6 +5802,7 @@ end
     CXTemplateName_DependentTemplate = 4
     CXTemplateName_SubstTemplateTemplateParm = 5
     CXTemplateName_SubstTemplateTemplateParmPack = 6
+    UsingTemplate = 7
 end
 
 function clang_TemplateName_isNull(TN)
@@ -6511,11 +6516,15 @@ end
     CXDeclSpecContext_DSC_type_specifier = 2
     CXDeclSpecContext_DSC_trailing = 3
     CXDeclSpecContext_DSC_alias_declaration = 4
-    CXDeclSpecContext_DSC_top_level = 5
-    CXDeclSpecContext_DSC_template_param = 6
-    CXDeclSpecContext_DSC_template_type_arg = 7
-    CXDeclSpecContext_DSC_objc_method_result = 8
-    CXDeclSpecContext_DSC_condition = 9
+    CXDeclSpecContext_DSC_conv_operator = 5
+    CXDeclSpecContext_DSC_top_level = 6
+    CXDeclSpecContext_DSC_template_param = 7
+    CXDeclSpecContext_DSC_template_arg = 8
+    CXDeclSpecContext_DSC_template_type_arg = 9
+    CXDeclSpecContext_DSC_objc_method_result = 10
+    CXDeclSpecContext_DSC_condition = 11
+    CXDeclSpecContext_DSC_association = 12
+    CXDeclSpecContext_DSC_new = 13
 end
 
 function clang_Parser_create(PP, Actions, SkipFunctionBodies, ErrorCode)
@@ -6598,6 +6607,7 @@ end
     CXDeclaratorContext_AliasDecl = 24
     CXDeclaratorContext_AliasTemplate = 25
     CXDeclaratorContext_RequiresExpr = 26
+    CXDeclaratorContext_Association = 27
 end
 
 function clang_CXXScopeSpec_create(ErrorCode)

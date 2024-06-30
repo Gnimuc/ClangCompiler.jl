@@ -14,7 +14,8 @@ typedef enum CXTemplateName_NameKind {
   CXTemplateName_QualifiedTemplate,
   CXTemplateName_DependentTemplate,
   CXTemplateName_SubstTemplateTemplateParm,
-  CXTemplateName_SubstTemplateTemplateParmPack
+  CXTemplateName_SubstTemplateTemplateParmPack,
+  UsingTemplate
 } CXTemplateName_NameKind;
 
 bool clang_TemplateName_isNull(CXTemplateName TN);
