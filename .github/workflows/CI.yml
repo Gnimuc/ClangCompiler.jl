@@ -54,11 +54,11 @@ jobs:
           install: mingw-w64-x86_64-gcc
         if: runner.os == 'Windows'
 
-      - name: Build libCppInterOpExtra
+      - name: Build ClangExtra
         run: julia --project=deps deps/build_ci.jl
         if: runner.os != 'Windows'
 
-      - name: Build libCppInterOpExtra (in msys2)
+      - name: Build ClangExtra (in msys2)
         shell: msys2 {0}
         run: julia --project=deps deps/build_ci.jl
         if: runner.os == 'Windows'

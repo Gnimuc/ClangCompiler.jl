@@ -52,5 +52,3 @@ else
              This means we cannot check for changes, and need to unconditionally build the support library."""
     include(joinpath(@__DIR__, "build_local.jl"))
 end
-
-include(joinpath(@__DIR__, "build_local.jl"))
