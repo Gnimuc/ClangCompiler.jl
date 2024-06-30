@@ -855,7 +855,7 @@ CXQualType clang_TypedefNameDecl_getUnderlyingType(CXTypedefNameDecl TND);
 
 void clang_TypedefNameDecl_setTypeSourceInfo(CXTypedefNameDecl TND,
                                              CXTypeSourceInfo newType);
-CINDEX_LINKAGE
+
 void clang_TypedefNameDecl_setModedTypeSourceInfo(CXTypedefNameDecl TND,
                                                   CXTypeSourceInfo unmodedTSI,
                                                   CXQualType modedTy);
@@ -1236,7 +1236,7 @@ CXImplicitParamDecl clang_CapturedDecl_getContextParam(CXCapturedDecl CD);
 
 void clang_CapturedDecl_setContextParam(CXCapturedDecl CD, unsigned i,
                                         CXImplicitParamDecl P);
-CINDEX_LINKAGE
+
 unsigned clang_CapturedDecl_getContextParamPosition(CXCapturedDecl CD);
 
 // ImportDecl

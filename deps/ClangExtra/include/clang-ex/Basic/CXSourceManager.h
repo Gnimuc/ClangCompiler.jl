@@ -22,7 +22,7 @@ void clang_FileID_dispose(CXFileID FID);
 CXFileID clang_SourceManager_createFileIDFromMemoryBuffer(CXSourceManager SM,
                                                           LLVMMemoryBufferRef MB);
 
-CINDEX_LINKAGE
+
 CXFileID clang_SourceManager_createFileIDFromFileEntry(CXSourceManager SM, CXFileEntry FE,
                                                        CXSourceLocation_ Loc);
 
