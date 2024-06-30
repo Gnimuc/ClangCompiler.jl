@@ -1,0 +1,6 @@
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXHeaderSearch.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXHeaderSearchOptions.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXLexer.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXPreprocessor.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXPreprocessorOptions.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXToken.h)

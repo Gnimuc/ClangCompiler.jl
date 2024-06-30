@@ -1,0 +1,18 @@
+[general]
+library_name = "libclangex"
+output_file_path = "LibClangEx.jl"
+module_name = "LibClangEx"
+export_symbol_prefixes = ["clang", "CX"]
+prologue_file_path = "./prologue.jl"
+
+use_deterministic_symbol = true
+use_julia_native_enum_type = true
+generate_isystem_symbols = false
+
+output_ignorelist = [
+    "LLVM_CLANG_C_EXTERN_C_BEGIN",
+    "LLVM_CLANG_C_EXTERN_C_END",
+]
+
+[codegen]
+use_ccall_macro = true

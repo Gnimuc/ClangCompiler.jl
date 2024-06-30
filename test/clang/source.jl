@@ -12,7 +12,6 @@ const CC = ClangCompiler
         f = CC.getFileEntry(fm, p)
         @test f.ptr != C_NULL
         @test CC.get_name(f) == p == CC.real_path_name(f)
-        @test CC.isValid(f)
         @test !CC.isNamedPipe(f)
     end
 

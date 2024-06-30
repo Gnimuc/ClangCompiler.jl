@@ -1,5 +1,12 @@
-comment: false
 coverage:
+  ignore:
+    - "lib"
+    - "gen"
   status:
-    project: off
-    patch: off
+    patch: false
+    project: false
+    changes: false
+comment:
+  layout: " diff, files"
+  behavior: default
+  require_changes: false

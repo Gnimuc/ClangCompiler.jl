@@ -34,10 +34,10 @@ function getActions(x::Parser)
     return Sema(clang_Parser_getActions(x))
 end
 
-function parseOneTopLevelDecl(x::Parser, is_first_decl::Bool=false)
-    @check_ptrs x
-    return DeclGroupRef(clang_Parser_parseOneTopLevelDecl(x, is_first_decl))
-end
+# function parseOneTopLevelDecl(x::Parser, is_first_decl::Bool=false)
+#     @check_ptrs x
+#     return DeclGroupRef(clang_Parser_parseOneTopLevelDecl(x, is_first_decl))
+# end
 
 function getCurToken(x::Parser)
     @check_ptrs x
@@ -111,12 +111,12 @@ function TryAnnotateCXXScopeToken(x::Parser)
     return TryAnnotateCXXScopeToken(x, CXDeclSpecContext_DSC_top_level)
 end
 
-"""
-    TryAnnotateTypeOrScopeTokenAfterScopeSpec(x::Parser, ss::CXXScopeSpec, is_new_scope::Bool=false)
-Return true if there was an error.
-"""
-function TryAnnotateTypeOrScopeTokenAfterScopeSpec(x::Parser, ss::CXXScopeSpec,
-                                                   is_new_scope::Bool=false)
-    @check_ptrs x ss
-    return clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(x, ss, is_new_scope)
-end
+# """
+#     TryAnnotateTypeOrScopeTokenAfterScopeSpec(x::Parser, ss::CXXScopeSpec, is_new_scope::Bool=false)
+# Return true if there was an error.
+# """
+# function TryAnnotateTypeOrScopeTokenAfterScopeSpec(x::Parser, ss::CXXScopeSpec,
+#                                                    is_new_scope::Bool=false)
+#     @check_ptrs x ss
+#     return clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(x, ss, is_new_scope)
+# end

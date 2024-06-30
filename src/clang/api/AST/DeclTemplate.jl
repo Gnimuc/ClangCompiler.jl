@@ -46,10 +46,10 @@ function Base.get(x::TemplateArgumentList, i::Integer)
 end
 
 # TemplateDecl
-function init(x::AbstractTemplateDecl, nd::NamedDecl, tp::TemplateParameterList)
-    @check_ptrs x nd tp
-    return clang_TemplateDecl_init(x, nd, tp)
-end
+# function init(x::AbstractTemplateDecl, nd::NamedDecl, tp::TemplateParameterList)
+#     @check_ptrs x nd tp
+#     return clang_TemplateDecl_init(x, nd, tp)
+# end
 
 getAsTemplateDecl(x::TemplateName) = TemplateDecl(clang_TemplateName_getAsTemplateDecl(x))
 

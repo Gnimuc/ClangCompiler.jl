@@ -11,11 +11,6 @@ function tryGetRealPathName(x::FileEntry)
     return unsafe_string(s)
 end
 
-function isValid(x::FileEntry)::Bool
-    @check_ptrs x
-    return clang_FileEntry_isValid(x)
-end
-
 """
     getUID(x::FileEntry)
 `UID` is a unique (small) ID for the file.
