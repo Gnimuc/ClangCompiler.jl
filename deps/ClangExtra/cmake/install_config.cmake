@@ -9,7 +9,7 @@ endif()
 # Install Binaries
 install(TARGETS clangex
         EXPORT ClangExtraTargets
-        RUNTIME DESTINATION bin
+        RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib/static
         INCLUDES DESTINATION include/clang-ex)
