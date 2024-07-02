@@ -29,6 +29,8 @@ function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_
     return CxxInterpreter(I)
 end
 
+dispose(x::CxxInterpreter) = dispose(x.interp)
+
 get_instance(x::CxxInterpreter) = getCompilerInstance(x.interp)
 get_ast_context(x::CxxInterpreter) = getASTContext(get_instance(x))
-dispose(x::CxxInterpreter) = dispose(x.interp)
+get_codegen_module(x::CxxInterpreter) = CGM(getCodeGen(x.interp))

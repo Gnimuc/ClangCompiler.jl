@@ -1,6 +1,10 @@
 #include "clang-ex/Interpreter/CXInterpreter.h"
 #include "clang/Frontend/CompilerInstance.h"
-#include "clang/Interpreter/Interpreter.h"
+// hacks
+// #include "clang/Interpreter/Interpreter.h"
+#include "Interpreter/IncrementalParser.h"
+#include "Interpreter/Interpreter.h"
+
 #include <memory>
 #include <vector>
 
@@ -169,4 +173,8 @@ CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter In
     return nullptr;
   }
   return &*Addr;
+}
+
+CXCodeGenerator clang_Interpreter_getCodeGen(CXInterpreter Interp) {
+  return static_cast<clang::Interpreter *>(Interp)->IncrParser->getCodeGen();
 }

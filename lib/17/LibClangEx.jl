@@ -6471,6 +6471,10 @@ function clang_Interpreter_getSymbolAddressFromLinkerName(Interp, LinkerName)
     @ccall libclangex.clang_Interpreter_getSymbolAddressFromLinkerName(Interp::CXInterpreter, LinkerName::Ptr{Cchar})::CXExecutorAddr
 end
 
+function clang_Interpreter_getCodeGen(Interp)
+    @ccall libclangex.clang_Interpreter_getCodeGen(Interp::CXInterpreter)::CXCodeGenerator
+end
+
 function clang_value_create()
     @ccall libclangex.clang_value_create()::CXValue
 end

@@ -54,6 +54,8 @@ CXExecutorAddr clang_Interpreter_getSymbolAddress(CXInterpreter Interp, const ch
 CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
                                                                 const char *LinkerName);
 
+CXCodeGenerator clang_Interpreter_getCodeGen(CXInterpreter Interp);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

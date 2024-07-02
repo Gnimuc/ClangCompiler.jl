@@ -1,7 +1,9 @@
 using ClangCompiler
-using ClangCompiler: create_interpreter, get_ast_context
-using ClangCompiler: clty_to_jlty, jlty_to_clty, dispose
+using ClangCompiler: LLVM
+using ClangCompiler: create_interpreter, dispose, get_ast_context, get_codegen_module
+using ClangCompiler: clty_to_jlty, jlty_to_clty, convertTypeForMemory
 using Test
+import ClangCompiler as CC
 
 @testset "Types" begin
     I = create_interpreter()
@@ -27,13 +29,13 @@ using Test
     dispose(I)
 end
 
-# @testset "convertTypeForMemory" begin
-#     src = joinpath(@__DIR__, "code", "main.cpp")
-#     args = get_compiler_args()
-#     haskey(ENV, "CI") && push!(args, "-v")
-#     irgen = ClangCompiler.IncrementalIRGenerator(src, args)
-#     ctx = ClangCompiler.getASTContext(get_instance(irgen))
-#     cgm = ClangCompiler.get_codegen_module(irgen)
-#     i8 = LLVM.LLVMType(CC.convertTypeForMemory(cgm, CC.BoolTy(ctx)))
-#     @test width(i8) == 8
-# end
+@testset "convertTypeForMemory" begin
+    I = create_interpreter()
+    ctx = get_ast_context(I)
+    cgm = get_codegen_module(I)
+
+    i8 = LLVM.LLVMType(convertTypeForMemory(cgm, CC.BoolTy(ctx)))
+    @test LLVM.width(i8) == 8
+
+    dispose(I)
+end

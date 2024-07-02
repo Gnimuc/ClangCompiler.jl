@@ -48,3 +48,8 @@ function getSymbolAddressFromLinkerName(x::AbstractInterpreter, name::AbstractSt
     @check_ptrs x
     return clang_Interpreter_getSymbolAddressFromLinkerName(x, name)
 end
+
+function getCodeGen(x::AbstractInterpreter)
+    @check_ptrs x
+    return CodeGenerator(clang_Interpreter_getCodeGen(x))
+end
