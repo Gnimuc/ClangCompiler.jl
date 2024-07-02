@@ -6,11 +6,11 @@ using libclangex_jll
 using Preferences
 
 if has_preference(ClangCompiler, "libclangex")
-	const libclangex = load_preference(ClangCompiler, "libclangex")
+    const libclangex = load_preference(ClangCompiler, "libclangex")
 else
-	if isdefined(libclangex_jll, :libclangex)
-		import libclangex_jll: libclangex
-	end
+    if isdefined(libclangex_jll, :libclangex)
+        import libclangex_jll: libclangex
+    end
 end
 
 include("jllshim.jl")

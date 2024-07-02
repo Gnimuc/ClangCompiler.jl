@@ -8,7 +8,7 @@ abstract type AbstractIncrementalCompilerBuilder end
 	struct IncrementalCompilerBuilder <: AbstractIncrementalCompilerBuilder
 """
 struct IncrementalCompilerBuilder <: AbstractIncrementalCompilerBuilder
-	ptr::CXIncrementalCompilerBuilder
+    ptr::CXIncrementalCompilerBuilder
 end
 
 Base.unsafe_convert(::Type{CXIncrementalCompilerBuilder}, x::IncrementalCompilerBuilder) = x.ptr
@@ -25,7 +25,7 @@ abstract type AbstractInterpreter end
 A Clang interpreter.
 """
 struct Interpreter <: AbstractInterpreter
-	ptr::CXInterpreter
+    ptr::CXInterpreter
 end
 
 Base.unsafe_convert(::Type{CXInterpreter}, x::Interpreter) = x.ptr

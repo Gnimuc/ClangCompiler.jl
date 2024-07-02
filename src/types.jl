@@ -148,7 +148,6 @@ function typeclass(ty::TagType)
     return typeclass(UnexposedType(ty))
 end
 
-
 """
     jlty_to_llvmty(::Type{T}, ctx::LLVM.Context) where {T}
 Interface for mapping a Julia type to the corresponding LLVM type representation.

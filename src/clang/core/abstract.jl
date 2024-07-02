@@ -62,7 +62,6 @@ Supertype for `NamespaceDecl`s.
 """
 abstract type AbstractNamespaceDecl <: AbstractNamedDecl end
 
-
 """
     abstract type AbstractValueDecl <: AbstractNamedDecl
 Supertype for `ValueDecl`s.
@@ -392,7 +391,6 @@ Supertype for `VarTemplateSpecializationDecl`s.
 """
 abstract type AbstractVarTemplateSpecializationDecl <: AbstractVarDecl end
 
-
 # Stmt
 """
     abstract type AbstractStmt <: Any
@@ -479,7 +477,6 @@ abstract type AbstractOverloadExpr <: AbstractExpr end
 Supertype for `CoroutineSuspendExpr`s.
 """
 abstract type AbstractCoroutineSuspendExpr <: AbstractExpr end
-
 
 # Frontend
 # CompilerInstance

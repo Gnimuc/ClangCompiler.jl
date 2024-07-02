@@ -20,8 +20,7 @@ function createFromCommandLine(src::String, args::Vector{String}=String[],
     args_with_src = copy(args)
     push!(args_with_src, src)
     invocation = clang_CompilerInvocation_createFromCommandLine(args_with_src,
-                                                                length(args_with_src), diag
-                                                                )
+                                                                length(args_with_src), diag)
     @assert invocation != C_NULL "Failed to create CompilerInvocation"
     return CompilerInvocation(invocation)
 end

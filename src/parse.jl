@@ -34,8 +34,6 @@ end
 #     end
 # end
 
-
-
 # function parse_cxx_scope_spec(p::Parser, spec::CXXScopeSpec)
 #     sema = getSema(p)
 #     pp = getPreprocessor(p)

@@ -11,11 +11,11 @@ using Clang.Generators
 
 options = load_options(joinpath(@__DIR__, "option.toml"))
 
-import Pkg
+using Pkg: Pkg
 import BinaryBuilderBase:
-    PkgSpec, Prefix, temp_prefix, setup_dependencies, cleanup_dependencies, destdir
+                          PkgSpec, Prefix, temp_prefix, setup_dependencies, cleanup_dependencies, destdir
 
-const dependencies = PkgSpec[PkgSpec(; name = "LLVM_full_jll")]
+const dependencies = PkgSpec[PkgSpec(; name="LLVM_full_jll")]
 
 const libdir = joinpath(@__DIR__, "..", "lib")
 
@@ -27,15 +27,12 @@ cd(@__DIR__) do
             platform = Pkg.BinaryPlatforms.HostPlatform()
             platform["llvm_version"] = string(llvm_version.major)
             platform["julia_version"] = string(julia_version)
-            artifact_paths =
-                setup_dependencies(prefix, dependencies, platform; verbose = true)
+            artifact_paths = setup_dependencies(prefix, dependencies, platform; verbose=true)
 
             let options = deepcopy(options)
-                output_file_path = joinpath(
-                    libdir,
-                    string(llvm_version.major),
-                    options["general"]["output_file_path"],
-                )
+                output_file_path = joinpath(libdir,
+                                            string(llvm_version.major),
+                                            options["general"]["output_file_path"])
                 isdir(dirname(output_file_path)) || mkpath(dirname(output_file_path))
                 options["general"]["output_file_path"] = output_file_path
 
@@ -45,7 +42,7 @@ cd(@__DIR__) do
                 push!(args, "-isystem$llvm_include_dir")
                 push!(args, "-I$include_dir")
 
-                headers = detect_headers(include_dir, args, options, x->endswith(x, "CMakeLists.txt"))
+                headers = detect_headers(include_dir, args, options, x -> endswith(x, "CMakeLists.txt"))
 
                 ctx = create_context(headers, args, options)
 
