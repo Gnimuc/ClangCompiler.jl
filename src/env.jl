@@ -18,13 +18,13 @@ function get_compiler_flags(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER)
 end
 
 """
-    get_default_args(; is_cxx=true, version=v"7.1.0")
+    get_default_args(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER)
 Return the default arguments for the C/C++ compiler JLL build environment.
 """
-function get_default_args(; is_cxx=true, version=v"7.1.0")
+function get_default_args(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER)
     default_args = get_compiler_flags(; is_cxx, version)
     is_cxx && push!(default_args, "-xc++")
-    clang_bin = joinpath(Clang_jll.artifact_dir, "bin", "clang")
-    pushfirst!(default_args, clang_bin)  # Argv0
+    # clang_bin = joinpath(Clang_jll.artifact_dir, "bin", "clang")
+    # pushfirst!(default_args, clang_bin)  # Argv0
     return default_args
 end

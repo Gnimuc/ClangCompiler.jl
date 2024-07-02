@@ -1,6 +1,20 @@
-function create_interpreter(x::AbstractCompilerInstance)
+IncrementalCompilerBuilder() = IncrementalCompilerBuilder(clang_IncrementalCompilerBuilder_create())
+
+dispose(x::IncrementalCompilerBuilder) = clang_IncrementalCompilerBuilder_dispose(x)
+
+function SetCompilerArgs(x::AbstractIncrementalCompilerBuilder, args::AbstractVector{<:String})
     @check_ptrs x
-	return Interpreter(clang_Interpreter_create(x))
+    return clang_IncrementalCompilerBuilder_SetCompilerArgs(x, args, length(args))
+end
+
+function CreateCpp(x::AbstractIncrementalCompilerBuilder)
+    @check_ptrs x
+    return CompilerInstance(clang_IncrementalCompilerBuilder_CreateCpp(x))
+end
+
+function Interpreter(x::AbstractCompilerInstance)
+    @check_ptrs x
+    return Interpreter(clang_Interpreter_create(x))
 end
 
 function createWithCUDA(ci::AbstractCompilerInstance, dci::AbstractCompilerInstance)
@@ -8,7 +22,7 @@ function createWithCUDA(ci::AbstractCompilerInstance, dci::AbstractCompilerInsta
     return Interpreter(clang_Interpreter_createWithCUDA(ci, dci))
 end
 
-dispose(x::AbstractInterpreter) = clang_interpreter_dispose(x)
+dispose(x::Interpreter) = clang_Interpreter_dispose(x)
 
 function getCompilerInstance(x::AbstractInterpreter)
     @check_ptrs x

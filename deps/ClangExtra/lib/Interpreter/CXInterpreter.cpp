@@ -1,84 +1,91 @@
 #include "clang-ex/Interpreter/CXInterpreter.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Interpreter/Interpreter.h"
+#include <memory>
 #include <vector>
 
 CXIncrementalCompilerBuilder clang_IncrementalCompilerBuilder_create(void) {
   auto CB = std::make_unique<clang::IncrementalCompilerBuilder>();
-  return CB->release();
+  return CB.release();
 }
 
 void clang_IncrementalCompilerBuilder_dispose(CXIncrementalCompilerBuilder CB) {
   delete static_cast<clang::IncrementalCompilerBuilder *>(CB);
 }
 
-void clang_IncrementalCompilerBuilder_SetCompilerArgs(const char **Args, int N) {
+void clang_IncrementalCompilerBuilder_SetCompilerArgs(CXIncrementalCompilerBuilder CB,
+                                                      const char **Args, int N) {
   std::vector<const char *> arr(Args, Args + N);
-  static_cast<clang::IncrementalCompilerBuilder *>(CB)->SetCompilerArgs(
-      llvm::StringRef(arr));
+  static_cast<clang::IncrementalCompilerBuilder *>(CB)->SetCompilerArgs(arr);
 }
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCpp(void) {
+CXCompilerInstance
+clang_IncrementalCompilerBuilder_CreateCpp(CXIncrementalCompilerBuilder CB) {
   auto CI = static_cast<clang::IncrementalCompilerBuilder *>(CB)->CreateCpp();
   if (auto E = CI.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
     return nullptr;
   }
-  return CI->release();
+  std::unique_ptr<clang::CompilerInstance> Ptr = std::move(*CI);
+  return Ptr.release();
 }
 
-void clang_IncrementalCompilerBuilder_SetOffloadArch(const char *Arch) {
+void clang_IncrementalCompilerBuilder_SetOffloadArch(CXIncrementalCompilerBuilder CB,
+                                                     const char *Arch) {
   static_cast<clang::IncrementalCompilerBuilder *>(CB)->SetOffloadArch(
       llvm::StringRef(Arch));
 }
 
-void clang_IncrementalCompilerBuilder_SetCudaSDK(const char *path) {
+void clang_IncrementalCompilerBuilder_SetCudaSDK(CXIncrementalCompilerBuilder CB,
+                                                 const char *path) {
   static_cast<clang::IncrementalCompilerBuilder *>(CB)->SetCudaSDK(llvm::StringRef(path));
 }
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCudaHost(void) {
+CXCompilerInstance
+clang_IncrementalCompilerBuilder_CreateCudaHost(CXIncrementalCompilerBuilder CB) {
   auto CI = static_cast<clang::IncrementalCompilerBuilder *>(CB)->CreateCudaHost();
   if (auto E = CI.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
     return nullptr;
   }
-  return CI->release();
+  std::unique_ptr<clang::CompilerInstance> Ptr = std::move(*CI);
+  return Ptr.release();
 }
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCudaDevice(void) {
+CXCompilerInstance
+clang_IncrementalCompilerBuilder_CreateCudaDevice(CXIncrementalCompilerBuilder CB) {
   auto CI = static_cast<clang::IncrementalCompilerBuilder *>(CB)->CreateCudaDevice();
   if (auto E = CI.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
     return nullptr;
   }
-  return CI->release();
+  std::unique_ptr<clang::CompilerInstance> Ptr = std::move(*CI);
+  return Ptr.release();
 }
 
 CXInterpreter clang_Interpreter_create(CXCompilerInstance CI) {
   auto I = clang::Interpreter::create(
       std::unique_ptr<clang::CompilerInstance>(static_cast<clang::CompilerInstance *>(CI)));
-
   if (auto E = I.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
     return nullptr;
   }
-
-  return I->release();
+  std::unique_ptr<clang::Interpreter> Ptr = std::move(*I);
+  return Ptr.release();
 }
 
 CXInterpreter clang_Interpreter_createWithCUDA(CXCompilerInstance CI,
                                                CXCompilerInstance DCI) {
-  auto I = clang::Interpreter::create(
+  auto I = clang::Interpreter::createWithCUDA(
       std::unique_ptr<clang::CompilerInstance>(static_cast<clang::CompilerInstance *>(CI)),
       std::unique_ptr<clang::CompilerInstance>(
           static_cast<clang::CompilerInstance *>(DCI)));
-
   if (auto E = I.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
     return nullptr;
   }
-
-  return I->release();
+  std::unique_ptr<clang::Interpreter> Ptr = std::move(*I);
+  return Ptr.release();
 }
 
 void clang_Interpreter_dispose(CXInterpreter Interp) {
@@ -92,7 +99,7 @@ CXCompilerInstance clang_Interpreter_getCompilerInstance(CXInterpreter Interp) {
 
 LLVMOrcLLJITRef clang_Interpreter_getExecutionEngine(CXInterpreter Interp) {
   return reinterpret_cast<LLVMOrcLLJITRef>(const_cast<llvm::orc::LLJIT *>(
-      static_cast<clang::Interpreter *>(Interp)->getExecutionEngine()));
+      &*static_cast<clang::Interpreter *>(Interp)->getExecutionEngine()));
 }
 
 CXPartialTranslationUnit clang_Interpreter_Parse(CXInterpreter Interp, const char *Code) {
@@ -108,39 +115,38 @@ void clang_Interpreter_Execute(CXInterpreter Interp, CXPartialTranslationUnit PT
   auto Err = static_cast<clang::Interpreter *>(Interp)->Execute(
       *static_cast<clang::PartialTranslationUnit *>(PTU));
   if (Err)
-    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(err)) << "\n";
+    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
 }
 
 void clang_Interpreter_ParseAndExecute(CXInterpreter Interp, const char *Code,
-                                       CXValue *Result) {
+                                       CXValue Result) {
   auto Err = static_cast<clang::Interpreter *>(Interp)->ParseAndExecute(
-      llvm::StringRef(Code), Result);
+      llvm::StringRef(Code), static_cast<clang::Value *>(Result));
   if (Err)
-    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(err)) << "\n";
+    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
 }
 
 CXExecutorAddr clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
                                                  CXCXXRecordDecl CXXRD) {
   auto Addr = static_cast<clang::Interpreter *>(Interp)->CompileDtorCall(
-      *static_cast<clang::CXXRecordDecl *>(CXXRD));
+      static_cast<clang::CXXRecordDecl *>(CXXRD));
   if (auto E = Addr.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
     return nullptr;
   }
-  return Addr->release();
+  return &*Addr;
 }
 
 void clang_Interpreter_Undo(CXInterpreter Interp, unsigned int N) {
   auto Err = static_cast<clang::Interpreter *>(Interp)->Undo(N);
   if (Err)
-    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(err)) << "\n";
+    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
 }
 
 void clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name) {
-  auto Err =
-      static_cast<clang::Interpreter *>(Interp)->LoadDynamicLibrary(llvm::StringRef(name));
+  auto Err = static_cast<clang::Interpreter *>(Interp)->LoadDynamicLibrary(name);
   if (Err)
-    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(err)) << "\n";
+    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
 }
 
 CXExecutorAddr clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
@@ -151,7 +157,7 @@ CXExecutorAddr clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
     return nullptr;
   }
-  return Addr->release();
+  return &*Addr;
 }
 
 CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
@@ -162,5 +168,5 @@ CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter In
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
     return nullptr;
   }
-  return Addr->release();
+  return &*Addr;
 }

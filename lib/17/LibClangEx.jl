@@ -6395,28 +6395,28 @@ function clang_IncrementalCompilerBuilder_dispose(CB)
     @ccall libclangex.clang_IncrementalCompilerBuilder_dispose(CB::CXIncrementalCompilerBuilder)::Cvoid
 end
 
-function clang_IncrementalCompilerBuilder_SetCompilerArgs(Args, N)
-    @ccall libclangex.clang_IncrementalCompilerBuilder_SetCompilerArgs(Args::Ptr{Ptr{Cchar}}, N::Cint)::Cvoid
+function clang_IncrementalCompilerBuilder_SetCompilerArgs(CB, Args, N)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_SetCompilerArgs(CB::CXIncrementalCompilerBuilder, Args::Ptr{Ptr{Cchar}}, N::Cint)::Cvoid
 end
 
-function clang_IncrementalCompilerBuilder_CreateCpp()
-    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCpp()::CXCompilerInstance
+function clang_IncrementalCompilerBuilder_CreateCpp(CB)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCpp(CB::CXIncrementalCompilerBuilder)::CXCompilerInstance
 end
 
-function clang_IncrementalCompilerBuilder_SetOffloadArch(Arch)
-    @ccall libclangex.clang_IncrementalCompilerBuilder_SetOffloadArch(Arch::Ptr{Cchar})::Cvoid
+function clang_IncrementalCompilerBuilder_SetOffloadArch(CB, Arch)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_SetOffloadArch(CB::CXIncrementalCompilerBuilder, Arch::Ptr{Cchar})::Cvoid
 end
 
-function clang_IncrementalCompilerBuilder_SetCudaSDK(path)
-    @ccall libclangex.clang_IncrementalCompilerBuilder_SetCudaSDK(path::Ptr{Cchar})::Cvoid
+function clang_IncrementalCompilerBuilder_SetCudaSDK(CB, path)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_SetCudaSDK(CB::CXIncrementalCompilerBuilder, path::Ptr{Cchar})::Cvoid
 end
 
-function clang_IncrementalCompilerBuilder_CreateCudaHost()
-    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCudaHost()::CXCompilerInstance
+function clang_IncrementalCompilerBuilder_CreateCudaHost(CB)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCudaHost(CB::CXIncrementalCompilerBuilder)::CXCompilerInstance
 end
 
-function clang_IncrementalCompilerBuilder_CreateCudaDevice()
-    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCudaDevice()::CXCompilerInstance
+function clang_IncrementalCompilerBuilder_CreateCudaDevice(CB)
+    @ccall libclangex.clang_IncrementalCompilerBuilder_CreateCudaDevice(CB::CXIncrementalCompilerBuilder)::CXCompilerInstance
 end
 
 function clang_Interpreter_create(CI)
@@ -6448,7 +6448,7 @@ function clang_Interpreter_Execute(Interp, PTU)
 end
 
 function clang_Interpreter_ParseAndExecute(Interp, Code, Result)
-    @ccall libclangex.clang_Interpreter_ParseAndExecute(Interp::CXInterpreter, Code::Ptr{Cchar}, Result::Ptr{CXValue})::Cvoid
+    @ccall libclangex.clang_Interpreter_ParseAndExecute(Interp::CXInterpreter, Code::Ptr{Cchar}, Result::CXValue)::Cvoid
 end
 
 function clang_Interpreter_CompileDtorCall(Interp, CXXRD)

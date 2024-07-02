@@ -7,8 +7,8 @@ using Test
 
 # include("llvm/pointer_from_objref.jl")
 
-include("clang/diagnostic.jl")
-include("clang/source.jl")
+# include("clang/diagnostic.jl")
+# include("clang/source.jl")
 # include("clang/instance.jl")
 
 # include("lookup.jl")
@@ -17,4 +17,4 @@ include("clang/source.jl")
 #     include("call.jl")
 #     include("execution.jl")
 # end
-# include("types.jl")
+include("types.jl")

@@ -1,13 +1,11 @@
 using ClangCompiler
-using ClangCompiler.LLVM
+using ClangCompiler: create_interpreter, get_ast_context
+using ClangCompiler: clty_to_jlty, jlty_to_clty, dispose
 using Test
 
 @testset "Types" begin
-    src = joinpath(@__DIR__, "code", "main.cpp")
-    args = get_compiler_args()
-    haskey(ENV, "CI") && push!(args, "-v")
-    irgen = ClangCompiler.IncrementalIRGenerator(src, args)
-    ctx = ClangCompiler.getASTContext(get_instance(irgen))
+    I = create_interpreter()
+    ctx = get_ast_context(I)
 
     @test clty_to_jlty(jlty_to_clty(Cvoid, ctx)) == Cvoid
     @test clty_to_jlty(jlty_to_clty(Bool, ctx)) == Bool
@@ -26,16 +24,16 @@ using Test
     @test clty_to_jlty(jlty_to_clty(Float64, ctx)) == Float64
     @test clty_to_jlty(jlty_to_clty(Ptr{Cvoid}, ctx)) == Ptr{Cvoid}
 
-    dispose(irgen)
+    dispose(I)
 end
 
-@testset "convertTypeForMemory" begin
-    src = joinpath(@__DIR__, "code", "main.cpp")
-    args = get_compiler_args()
-    haskey(ENV, "CI") && push!(args, "-v")
-    irgen = ClangCompiler.IncrementalIRGenerator(src, args)
-    ctx = ClangCompiler.getASTContext(get_instance(irgen))
-    cgm = ClangCompiler.get_codegen_module(irgen)
-    i8 = LLVM.LLVMType(CC.convertTypeForMemory(cgm, CC.BoolTy(ctx)))
-    @test width(i8) == 8
-end
+# @testset "convertTypeForMemory" begin
+#     src = joinpath(@__DIR__, "code", "main.cpp")
+#     args = get_compiler_args()
+#     haskey(ENV, "CI") && push!(args, "-v")
+#     irgen = ClangCompiler.IncrementalIRGenerator(src, args)
+#     ctx = ClangCompiler.getASTContext(get_instance(irgen))
+#     cgm = ClangCompiler.get_codegen_module(irgen)
+#     i8 = LLVM.LLVMType(CC.convertTypeForMemory(cgm, CC.BoolTy(ctx)))
+#     @test width(i8) == 8
+# end

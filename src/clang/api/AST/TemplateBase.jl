@@ -85,7 +85,7 @@ function TemplateArgument(decl::ValueDecl, ty::AbstractQualType)
     return TemplateArgument(clang_TemplateArgument_constructFromValueDecl(decl, ty))
 end
 
-function TemplateArgument(ctx::ASTContext, v::GenericValue, ty::AbstractQualType)
+function TemplateArgument(ctx::ASTContext, v::LLVM.GenericValue, ty::AbstractQualType)
     @check_ptrs ctx
     return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx, v, ty))
 end

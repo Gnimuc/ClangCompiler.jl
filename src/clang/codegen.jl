@@ -1,5 +1,5 @@
 # CodeGen
-function start_llvm_module(x::CodeGenerator, ctx::Context, mod_name::String)
+function start_llvm_module(x::CodeGenerator, ctx::LLVM.Context, mod_name::String)
     return StartModule(x, ctx, mod_name)
 end
 

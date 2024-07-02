@@ -19,7 +19,7 @@ function GetDeclForMangledName(x::CodeGenerator, s::String)
     return Decl(clang_CodeGenerator_GetDeclForMangledName(x, s))
 end
 
-function StartModule(x::CodeGenerator, ctx::Context, mod_name::String)
+function StartModule(x::CodeGenerator, ctx::LLVM.Context, mod_name::String)
     @check_ptrs x
     @assert ctx.ref != C_NULL "LLVMContextRef has a NULL pointer."
     return LLVM.Module(clang_CodeGenerator_StartModule(x, ctx, mod_name))

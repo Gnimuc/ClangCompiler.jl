@@ -12,17 +12,17 @@ CXIncrementalCompilerBuilder clang_IncrementalCompilerBuilder_create(void);
 
 void clang_IncrementalCompilerBuilder_dispose(CXIncrementalCompilerBuilder CB);
 
-void clang_IncrementalCompilerBuilder_SetCompilerArgs(const char **Args, int N);
+void clang_IncrementalCompilerBuilder_SetCompilerArgs(CXIncrementalCompilerBuilder CB, const char **Args, int N);
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCpp(void);
+CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCpp(CXIncrementalCompilerBuilder CB);
 
-void clang_IncrementalCompilerBuilder_SetOffloadArch(const char *Arch);
+void clang_IncrementalCompilerBuilder_SetOffloadArch(CXIncrementalCompilerBuilder CB, const char *Arch);
 
-void clang_IncrementalCompilerBuilder_SetCudaSDK(const char *path);
+void clang_IncrementalCompilerBuilder_SetCudaSDK(CXIncrementalCompilerBuilder CB, const char *path);
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCudaHost(void);
+CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCudaHost(CXIncrementalCompilerBuilder CB);
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCudaDevice(void);
+CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCudaDevice(CXIncrementalCompilerBuilder CB);
 
 CXInterpreter clang_Interpreter_create(CXCompilerInstance CI);
 
@@ -40,7 +40,7 @@ CXPartialTranslationUnit clang_Interpreter_Parse(CXInterpreter Interp, const cha
 void clang_Interpreter_Execute(CXInterpreter Interp, CXPartialTranslationUnit PTU);
 
 void clang_Interpreter_ParseAndExecute(CXInterpreter Interp, const char *Code,
-                                       CXValue *Result);
+                                       CXValue Result);
 
 CXExecutorAddr clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
                                                  CXCXXRecordDecl CXXRD);

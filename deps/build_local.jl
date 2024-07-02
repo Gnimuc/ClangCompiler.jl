@@ -55,7 +55,7 @@ cmake() do cmake_path
         config_opts = `$config_opts -G "MSYS Makefiles"`
     end
     run(`$cmake_path $config_opts -B$(build_dir) -S$(source_dir)`)
-    run(`$cmake_path --build $(build_dir) --target install`)
+    run(`$cmake_path --build $(build_dir) --target install --parallel $(Sys.CPU_THREADS)`)
 end
 
 # discover built libraries

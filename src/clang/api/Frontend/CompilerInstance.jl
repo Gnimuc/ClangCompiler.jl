@@ -248,7 +248,7 @@ function setASTConsumer(ci::CompilerInstance, csr::AbstractASTConsumer)
 end
 
 # CodeGenerator
-function CreateLLVMCodeGen(ci::CompilerInstance, ctx::Context, mod_name::String="JLCC")
+function CreateLLVMCodeGen(ci::CompilerInstance, ctx::LLVM.Context, mod_name::String="JLCC")
     @check_ptrs ci
     @assert ctx.ref != C_NULL "Context has a NULL pointer."
     return CodeGenerator(clang_CreateLLVMCodeGen(ci, ctx, mod_name))

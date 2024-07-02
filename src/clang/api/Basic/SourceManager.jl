@@ -19,7 +19,7 @@ Create a file ID from a memory buffer.
 
 This function takes ownership of the memory buffer.
 """
-function FileID(src_mgr::SourceManager, buffer::MemoryBuffer)
+function FileID(src_mgr::SourceManager, buffer::LLVM.MemoryBuffer)
     @check_ptrs src_mgr
     return FileID(clang_SourceManager_createFileIDFromMemoryBuffer(src_mgr, buffer.ref))
 end
@@ -71,7 +71,7 @@ end
     setMainFileID(src_mgr::SourceManager, buffer::MemoryBuffer)
 Set the main file ID of the source manager to `buffer`.
 """
-function setMainFileID(src_mgr::SourceManager, buffer::MemoryBuffer)
+function setMainFileID(src_mgr::SourceManager, buffer::LLVM.MemoryBuffer)
     id = FileID(src_mgr, buffer)
     setMainFileID(src_mgr, id)
     dispose(id)

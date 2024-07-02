@@ -16,10 +16,8 @@ end
 include("jllshim.jl")
 using .JLLShim
 
-using LLVM
+using LLVM: LLVM
 using LLVM.Interop: call_function
-export call_function
-import LLVM: dispose, name, value
 
 import Base: dump, string
 
@@ -38,7 +36,7 @@ using .JLLEnvs
 include("env.jl")
 export get_compiler_flags, get_default_args
 
-# low-level
+# clang
 include("clang/utils.jl")
 include("clang/core/core.jl")
 include("clang/api/api.jl")
@@ -51,31 +49,32 @@ include("clang/parse.jl")
 include("clang/qualtype.jl")
 include("clang/sema.jl")
 
-# high-level
+# type mapping
 include("types.jl")
-export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
+# export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
 
-include("parse.jl")
-include("lookup.jl")
-export DeclFinder, get_decl
+# include("parse.jl")
+# include("lookup.jl")
+# export DeclFinder, get_decl
 
-include("template.jl")
-export specialize
+# include("template.jl")
+# export specialize
 
 # compiler
 include("compiler/compiler.jl")
-export AbstractClangCompiler
-export AbstractIRGenerator, IRGenerator
-export take_module
-export ClangCompiler
-export get_instance, get_context
-export compile, dispose
-export get_jit, get_dylib, get_codegen
-export link_process_symbols
+include("compiler/interpreter.jl")
+# include("compiler/irgen.jl")
+# export create_interpreter
+# export take_module
+# export ClangCompiler
+# export get_instance, get_context
+# export compile, dispose
+# export get_jit, get_dylib, get_codegen
+# export link_process_symbols
 
 include("utils.jl")
-export jlty2llvmty
-export lookup_function, link, link_crt
-export get_buffer
+# export jlty2llvmty
+# export lookup_function, link, link_crt
+# export get_buffer
 
 end
