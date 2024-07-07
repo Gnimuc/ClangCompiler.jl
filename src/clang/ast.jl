@@ -15,8 +15,8 @@ end
 get_decl_type(x::ASTContext, decl) = getTypeDeclType(x, decl)
 get_decl_type(x::ASTContext, decl, prev) = getTypeDeclType(x, decl, prev)
 
-get_pointer_type(x::ASTContext, ty::AbstractQualType) = getPointerType(x, ty)
-get_lvalue_reference_type(x::ASTContext, ty::AbstractQualType) = getLValueReferenceType(x, ty)
+get_pointer_type(x::ASTContext, ty::QualType) = getPointerType(x, ty)
+get_lvalue_reference_type(x::ASTContext, ty::QualType) = getLValueReferenceType(x, ty)
 
 # Decl
 get_ast_context(x::AbstractDecl) = getASTContext(x)

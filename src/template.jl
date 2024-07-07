@@ -19,7 +19,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
             @assert LLVM.intwidth(v) == bitwidth_clty
             arg_vec[i] = TemplateArgument(ctx, v, int_clty)
             dispose(v)
-        elseif arg isa AbstractQualType
+        elseif arg isa AbstractType
             arg_vec[i] = TemplateArgument(arg)
         else
             error("failed to specialize $arg")

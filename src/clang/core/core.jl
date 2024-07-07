@@ -1,4 +1,14 @@
 # abstract types
+"""
+    abstract type AbstractClangType <: Any
+Supertype for all Clang types.
+"""
+abstract type AbstractClangType end
+
+struct UnexposedType{T<:AbstractClangType} <: AbstractClangType
+    ty::T
+end
+
 include("abstract.jl")
 
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.

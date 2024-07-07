@@ -603,10 +603,6 @@ CXQualType clang_Type_getCanonicalTypeInternal(CXType_ T) {
 void clang_Type_dump(CXType_ T) { return static_cast<clang::Type *>(T)->dump(); }
 
 // isa
-bool clang_isa_BuiltinType(CXType_ T) {
-  return llvm::isa<clang::BuiltinType>(static_cast<clang::Type *>(T));
-}
-
 bool clang_isa_ComplexType(CXType_ T) {
   return llvm::isa<clang::ComplexType>(static_cast<clang::Type *>(T));
 }
@@ -916,8 +912,7 @@ CXQualType clang_TemplateSpecializationType_getAliasedType(CXTemplateSpecializat
 CXTemplateName
 clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T) {
   return static_cast<clang::TemplateSpecializationType *>(T)
-      ->getTemplateName()
-      .getAsVoidPointer();
+      ->getTemplateName().getAsVoidPointer();
 }
 
 // unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T) {

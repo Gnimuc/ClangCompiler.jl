@@ -247,7 +247,7 @@ function getType(x::AbstractValueDecl)
     return QualType(clang_ValueDecl_getType(x))
 end
 
-function setType(x::AbstractValueDecl, ty::AbstractQualType)
+function setType(x::AbstractValueDecl, ty::QualType)
     @check_ptrs x
     return clang_ValueDecl_setType(x, ty)
 end
@@ -1421,7 +1421,7 @@ function setTypeForDecl(x::AbstractTypeDecl, ty_ptr::CXType_)
     @check_ptrs x
     return clang_TypeDecl_setTypeForDecl(x, ty_ptr)
 end
-setTypeForDecl(x::AbstractTypeDecl, ty::AbstractQualType) = setTypeForDecl(x, get_type_ptr(ty))
+setTypeForDecl(x::AbstractTypeDecl, ty::QualType) = setTypeForDecl(x, get_type_ptr(ty))
 
 function getBeginLoc(x::AbstractTypeDecl)
     @check_ptrs x

@@ -1,5 +1,5 @@
 # TemplateArgument
-function TemplateArgument(x::AbstractQualType, is_null::Bool=false)
+function TemplateArgument(x::QualType, is_null::Bool=false)
     return TemplateArgument(clang_TemplateArgument_constructFromQualType(x, is_null))
 end
 
@@ -65,7 +65,7 @@ function getIntegralType(x::TemplateArgument)
     return QualType(clang_TemplateArgument_getIntegralType(x))
 end
 
-function setIntegralType(x::TemplateArgument, ty::AbstractQualType)
+function setIntegralType(x::TemplateArgument, ty::QualType)
     @check_ptrs x
     return clang_TemplateArgument_setIntegralType(x, ty)
 end
@@ -80,12 +80,12 @@ function getAsDecl(x::TemplateArgument)
     return ValueDecl(clang_TemplateArgument_getAsDecl(x))
 end
 
-function TemplateArgument(decl::ValueDecl, ty::AbstractQualType)
+function TemplateArgument(decl::ValueDecl, ty::QualType)
     @check_ptrs decl
     return TemplateArgument(clang_TemplateArgument_constructFromValueDecl(decl, ty))
 end
 
-function TemplateArgument(ctx::ASTContext, v::LLVM.GenericValue, ty::AbstractQualType)
+function TemplateArgument(ctx::ASTContext, v::LLVM.GenericValue, ty::QualType)
     @check_ptrs ctx
     return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx, v, ty))
 end

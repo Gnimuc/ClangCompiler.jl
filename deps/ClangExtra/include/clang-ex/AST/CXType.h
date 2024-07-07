@@ -21,6 +21,7 @@ bool clang_QualType_isNull(CXQualType OpaquePtr);
 bool clang_QualType_isConstQualified(CXQualType OpaquePtr);
 bool clang_QualType_isRestrictQualified(CXQualType OpaquePtr);
 bool clang_QualType_isVolatileQualified(CXQualType OpaquePtr);
+
 bool clang_QualType_hasQualifiers(CXQualType OpaquePtr);
 
 CXQualType clang_QualType_withConst(CXQualType OpaquePtr);
@@ -34,6 +35,7 @@ CXQualType clang_QualType_addRestrict(CXQualType OpaquePtr);
 bool clang_QualType_isLocalConstQualified(CXQualType OpaquePtr);
 bool clang_QualType_isLocalRestrictQualified(CXQualType OpaquePtr);
 bool clang_QualType_isLocalVolatileQualified(CXQualType OpaquePtr);
+
 bool clang_QualType_hasLocalQualifiers(CXQualType OpaquePtr);
 
 unsigned clang_QualType_getCVRQualifiers(CXQualType OpaquePtr);
@@ -51,13 +53,55 @@ CXQualType clang_QualType_getUnqualifiedType(CXQualType OpaquePtr);
 // Type
 bool clang_Type_isFromAST(CXType_ T);
 
+// containsUnexpandedParameterPack
+
 bool clang_Type_isCanonicalUnqualified(CXType_ T);
+
+// getLocallyUnqualifiedSingleStepDesugaredType
 
 bool clang_Type_isSizelessType(CXType_ T);
 
 bool clang_Type_isSizelessBuiltinType(CXType_ T);
 
+// isSVESizelessBuiltinType
+
+// isRVVSizelessBuiltinType
+
+// isWebAssemblyExternrefType
+
+// isWebAssemblyTableType
+
+// isVLSTBuiltinType
+
+// getSveEltType
+
+// isRVVVLSBuiltinType
+
+// getRVVEltType
+
+// isIncompleteType
+
+// isIncompleteOrObjectType
+
+// isObjectType
+
+// isLiteralType
+
+// isStructuralType
+
+// isStandardLayoutType
+
 bool clang_Type_isBuiltinType(CXType_ T);
+
+// isSpecificBuiltinType
+
+// isPlaceholderType
+
+// getAsPlaceholderType
+
+// isSpecificPlaceholderType
+
+// isNonOverloadPlaceholderType
 
 bool clang_Type_isIntegerType(CXType_ T);
 
@@ -78,6 +122,8 @@ bool clang_Type_isChar16Type(CXType_ T);
 bool clang_Type_isChar32Type(CXType_ T);
 
 bool clang_Type_isAnyCharacterType(CXType_ T);
+
+// isIntegralType
 
 bool clang_Type_isIntegralOrEnumerationType(CXType_ T);
 
@@ -100,6 +146,8 @@ bool clang_Type_isFloat16Type(CXType_ T);
 bool clang_Type_isBFloat16Type(CXType_ T);
 
 bool clang_Type_isFloat128Type(CXType_ T);
+
+// isIbm128Type
 
 bool clang_Type_isRealType(CXType_ T);
 
@@ -141,8 +189,6 @@ bool clang_Type_isFunctionPointerType(CXType_ T);
 
 bool clang_Type_isFunctionReferenceType(CXType_ T);
 
-bool clang_Type_isMemberPointerType(CXType_ T);
-
 bool clang_Type_isMemberFunctionPointerType(CXType_ T);
 
 bool clang_Type_isMemberDataPointerType(CXType_ T);
@@ -177,13 +223,57 @@ bool clang_Type_isVectorType(CXType_ T);
 
 bool clang_Type_isExtVectorType(CXType_ T);
 
+// isExtVectorBoolType
+
 bool clang_Type_isMatrixType(CXType_ T);
 
 bool clang_Type_isConstantMatrixType(CXType_ T);
 
 bool clang_Type_isDependentAddressSpaceType(CXType_ T);
 
+// isObjCObjectPointerType
+
+// isObjCRetainableType
+
+// isObjCLifetimeType
+
+// isObjCIndirectLifetimeType
+
+// isObjCNSObjectType
+
+// isObjCIndependentClassType
+
+// isObjCObjectType
+
+// isObjCQualifiedInterfaceType
+
+// isObjCQualifiedIdType
+
+// isObjCQualifiedClassType
+
+// isObjCObjectOrInterfaceType
+
+// isObjCIdType
+
 bool clang_Type_isDecltypeType(CXType_ T);
+
+// isObjCInertUnsafeUnretainedType
+
+// isObjCIdOrObjectKindOfType
+
+// isObjCClassType
+
+// isObjCClassOrClassKindOfType
+
+// isBlockCompatibleObjCPointerType
+
+// isObjCSelType
+
+// isObjCBuiltinType
+
+// isObjCARCBridgableType
+
+// isCARCBridgableType
 
 bool clang_Type_isTemplateTypeParmType(CXType_ T);
 
@@ -200,6 +290,42 @@ bool clang_Type_isAtomicType(CXType_ T);
 bool clang_Type_isUndeducedAutoType(CXType_ T);
 
 bool clang_Type_isTypedefNameType(CXType_ T);
+
+// clang/Basic/OpenCLImageTypes.def
+
+// isImageType
+
+// isSamplerT
+
+// isEventT
+
+// isClkEventT
+
+// isQueueT
+
+// isReserveIDT
+
+// clang/Basic/OpenCLExtensionTypes.def
+
+// isOCLIntelSubgroupAVCType
+
+// isOCLExtOpaqueType
+
+// isPipeType
+
+// isBitIntType
+
+// isOpenCLSpecificType
+
+// isObjCARCImplicitlyUnretainedType
+
+// isCUDADeviceBuiltinSurfaceType
+
+// isCUDADeviceBuiltinTextureType
+
+// isRVVType
+
+// containsErrors
 
 bool clang_Type_isDependentType(CXType_ T);
 
@@ -237,6 +363,16 @@ CXRecordType clang_Type_getAsUnionType(CXType_ T);
 
 CXComplexType clang_Type_getAsComplexIntegerType(CXType_ T);
 
+// getAsObjCInterfaceType
+
+// getAsObjCInterfacePointerType
+
+// getAsObjCQualifiedIdType
+
+// getAsObjCQualifiedClassType
+
+// getAsObjCQualifiedInterfaceType
+
 CXCXXRecordDecl clang_Type_getAsCXXRecordDecl(CXType_ T);
 
 CXRecordDecl clang_Type_getAsRecordDecl(CXType_ T);
@@ -247,7 +383,17 @@ CXCXXRecordDecl clang_Type_getPointeeCXXRecordDecl(CXType_ T);
 
 CXDeducedType clang_Type_getContainedDeducedType(CXType_ T);
 
+// getContainedAutoType
+
 bool clang_Type_hasAutoForTrailingReturnType(CXType_ T);
+
+// getAsArrayTypeUnsafe
+
+// castAsArrayTypeUnsafe
+
+// hasAttr
+
+// getBaseElementTypeUnsafe
 
 CXType_ clang_Type_getArrayElementTypeNoTypeQual(CXType_ T);
 
@@ -256,8 +402,6 @@ CXType_ clang_Type_getPointeeOrArrayElementType(CXType_ T);
 CXQualType clang_Type_getPointeeType(CXType_ T);
 
 CXType_ clang_Type_getUnqualifiedDesugaredType(CXType_ T);
-
-// bool clang_Type_isPromotableIntegerType(CXType_ T);
 
 bool clang_Type_isSignedIntegerType(CXType_ T);
 
@@ -283,44 +427,34 @@ bool clang_Type_isConstantSizeType(CXType_ T);
 
 bool clang_Type_isSpecifierType(CXType_ T);
 
+// getLinkage
+
+// getVisibility
+
 bool clang_Type_isVisibilityExplicit(CXType_ T);
 
+// getLinkageAndVisibility
+
 bool clang_Type_isLinkageValid(CXType_ T);
+
+// getNullability
+
+// canHaveNullability
+
+// acceptsObjCTypeParams
+
+// getresolveName
 
 CXQualType clang_Type_getCanonicalTypeInternal(CXType_ T);
 
 void clang_Type_dump(CXType_ T);
 
 // isa
-bool clang_isa_BuiltinType(CXType_ T);
-
-bool clang_isa_ComplexType(CXType_ T);
-
 bool clang_isa_PointerType(CXType_ T);
 
 bool clang_isa_ReferenceType(CXType_ T);
 
-bool clang_isa_LValueReferenceType(CXType_ T);
-
-bool clang_isa_RValueReferenceType(CXType_ T);
-
-bool clang_isa_MemberPointerType(CXType_ T);
-
 bool clang_isa_ArrayType(CXType_ T);
-
-bool clang_isa_ConstantArrayType(CXType_ T);
-
-bool clang_isa_IncompleteArrayType(CXType_ T);
-
-bool clang_isa_VariableArrayType(CXType_ T);
-
-bool clang_isa_DependentSizedArrayType(CXType_ T);
-
-bool clang_isa_FunctionType(CXType_ T);
-
-bool clang_isa_FunctionNoProtoType(CXType_ T);
-
-bool clang_isa_FunctionProtoType(CXType_ T);
 
 bool clang_isa_UnresolvedUsingType(CXType_ T);
 
@@ -415,33 +549,153 @@ bool clang_isa_BuiltinType_Float128(CXType_ T);
 
 bool clang_isa_BuiltinType_NullPtr(CXType_ T);
 
+// ComplexType
+// getElementType
+// isSugared
+
+// ParenType
+// getInnerType
+
 // PointerType
 CXQualType clang_PointerType_getPointeeType(CXPointerType T);
 
+// AdjustedType
+// getOriginalType
+// getAdjustedType
+
+// DecayedType
+// getDecayedType
+
+// ReferenceType
+// isSpelledAsLValue
+// isInnerRef
+// getPointeeTypeAsWritten
+CXQualType clang_ReferenceType_getPointeeType(CXReferenceType T);
+
+// LValueReferenceType
+// RValueReferenceType
+
 // MemberPointerType
 CXQualType clang_MemberPointerType_getPointeeType(CXMemberPointerType T);
-
+// isMemberFunctionPointer
+// isMemberDataPointer
 CXType_ clang_MemberPointerType_getClass(CXMemberPointerType T);
+// getMostRecentCXXRecordDecl
 
-// TypedefType
-CXQualType clang_TypedefType_desugar(CXTypedefType T);
+// ArrayType
+// getElementType
+// getIndexTypeCVRQualifiers
 
-// EnumType
-CXEnumDecl clang_EnumType_getDecl(CXEnumType T);
+// ConstantArrayType
+// getSize
+// getSizeExpr
+
+// IncompleteArrayType
+
+// VariableArrayType
+
+// DependentSizedArrayType
+
+// DependentAddressSpaceType
+
+// DependentSizedExtVectorType
+
+// VectorType
+// getElementType
+// getNumElements
+
+// DependentVectorType
+// getElementType
+
+// ExtVectorType
+
+// MatrixType
+// getElementType
+
+// ConstantMatrixType
+// getNumRows
+// getNumColumns
+// getNumElementsFlattened
+
+// DependentSizedMatrixType
 
 // FunctionType
 CXQualType clang_FunctionType_getReturnType(CXFunctionType T);
+// getHasRegParm
+// getRegParmType
+// getNoReturnAttr
+// getCmseNSCallAttr
+// getCallResultType
+// getNameForCallConv
+
+// FunctionNoProtoType
 
 // FunctionProtoType
 unsigned clang_FunctionProtoType_getNumParams(CXFunctionProtoType T);
 
 CXQualType clang_FunctionProtoType_getParamType(CXFunctionProtoType T, unsigned i);
+// getParamTypes
+// ...
+// isVariadic
+// isTemplateVariadic
 
-// ReferenceType
-CXQualType clang_ReferenceType_getPointeeType(CXReferenceType T);
+// UnresolvedUsingType
 
-// ElaboratedType
-CXQualType clang_ElaboratedType_desugar(CXElaboratedType T);
+// UsingType
+// getUnderlyingType
+
+// TypedefType
+// getDecl
+CXQualType clang_TypedefType_desugar(CXTypedefType T);
+
+// MacroQualifiedType
+// getUnderlyingType
+// getModifiedType
+
+// TypeOfExprType
+
+// DependentTypeOfExprType
+
+// TypeOfType
+// getUnmodifiedType
+
+// DecltypeType
+// getUnderlyingType
+
+// DependentDecltypeType
+
+// UnaryTransformType
+// getUnderlyingType
+// getBaseType
+
+// DependentUnaryTransformType
+
+// TagType
+// getDecl
+// isBeingDefined
+
+// RecordType
+// getDecl
+// hasConstFields
+
+// EnumType
+CXEnumDecl clang_EnumType_getDecl(CXEnumType T);
+
+// AttributedType
+
+// BTFTagAttributedType
+
+// TemplateTypeParmType
+
+// SubstTemplateTypeParmType
+
+// SubstTemplateTypeParmPackType
+
+// DeducedType
+
+// AutoType
+
+// DeducedTemplateSpecializationType
 
 // TemplateSpecializationType
 bool clang_TemplateSpecializationType_isCurrentInstantiation(
@@ -463,6 +717,24 @@ clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T)
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T);
 
 CXQualType clang_TemplateSpecializationType_desugar(CXTemplateSpecializationType T);
+
+// InjectedClassNameType
+
+// TypeWithKeyword
+
+// ElaboratedType
+// getQualifier
+// getNamedType
+CXQualType clang_ElaboratedType_desugar(CXElaboratedType T);
+// getOwnedTagDecl
+
+// DependentNameType
+
+// DependentTemplateSpecializationType
+
+// PackExpansionType
+
+// AtomicType
 
 // TagTypeKind
 typedef enum CXTagTypeKind {

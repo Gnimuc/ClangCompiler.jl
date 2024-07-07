@@ -47,6 +47,7 @@ include("clang/frontend.jl")
 include("clang/lex.jl")
 include("clang/parse.jl")
 include("clang/qualtype.jl")
+include("clang/type.jl")
 include("clang/sema.jl")
 
 # type mapping
