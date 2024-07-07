@@ -19,7 +19,7 @@ end
 
 function get_string(cxstrset::CXStringSet)
     strs = Vector{String}(undef, cxstrset.Count)
-    for i = 1:cxstrset.Count
+    for i = 1:(cxstrset.Count)
         ptr = clang_getCString(cxstrset.Strings[i])
         s = ptr == C_NULL ? "" : unsafe_string(ptr)
         strs[i] = s

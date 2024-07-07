@@ -30,46 +30,64 @@ Interface for mapping a Clang type to the corresponding Julia type representatio
 
 See also, [`jlty_to_clty`](@ref). Note that, the mapping is not injective.
 """
-clty_to_jlty(clty::T) where {T<:AbstractClangType} = error("no mapping found for $T")
+clty_to_jlty(x::T) where {T<:AbstractClangType} = error("no mapping found for $T")
 
 # builtin types
-clty_to_jlty(clty::T) where {T<:AbstractBuiltinType} = error("no mapping found for builtin type: $T")
-clty_to_jlty(clty::VoidTy) = Cvoid
-clty_to_jlty(clty::BoolTy) = Bool
-clty_to_jlty(clty::CharTy) = Cuchar
-clty_to_jlty(clty::WCharTy) = Cwchar_t
-clty_to_jlty(clty::WideCharTy) = Cwchar_t
-clty_to_jlty(clty::SignedCharTy) = Cchar
-clty_to_jlty(clty::ShortTy) = Cshort
-clty_to_jlty(clty::IntTy) = Cint
-clty_to_jlty(clty::LongTy) = Clong
-clty_to_jlty(clty::LongLongTy) = Clonglong
-clty_to_jlty(clty::Int128Ty) = Int128
-clty_to_jlty(clty::UnsignedCharTy) = Cuchar
-clty_to_jlty(clty::UnsignedShortTy) = Cushort
-clty_to_jlty(clty::UnsignedIntTy) = Cuint
-clty_to_jlty(clty::UnsignedLongTy) = Culong
-clty_to_jlty(clty::UnsignedLongLongTy) = Culonglong
-clty_to_jlty(clty::UnsignedInt128Ty) = UInt128
-clty_to_jlty(clty::FloatTy) = Cfloat
-clty_to_jlty(clty::DoubleTy) = Cdouble
-clty_to_jlty(clty::Float16Ty) = Float16
-clty_to_jlty(clty::HalfTy) = Float16
-clty_to_jlty(clty::BFloat16Ty) = Float16
-clty_to_jlty(clty::NullPtrTy) = Ptr{Cvoid}
-clty_to_jlty(clty::VoidPtrTy) = Ptr{Cvoid}
+clty_to_jlty(x::T) where {T<:AbstractBuiltinType} = error("no mapping found for builtin type: $T")
+clty_to_jlty(x::VoidTy) = Cvoid
+clty_to_jlty(x::BoolTy) = Bool
+clty_to_jlty(x::CharTy) = Cuchar
+clty_to_jlty(x::WCharTy) = Cwchar_t
+clty_to_jlty(x::WideCharTy) = Cwchar_t
+clty_to_jlty(x::SignedCharTy) = Cchar
+clty_to_jlty(x::ShortTy) = Cshort
+clty_to_jlty(x::IntTy) = Cint
+clty_to_jlty(x::LongTy) = Clong
+clty_to_jlty(x::LongLongTy) = Clonglong
+clty_to_jlty(x::Int128Ty) = Int128
+clty_to_jlty(x::UnsignedCharTy) = Cuchar
+clty_to_jlty(x::UnsignedShortTy) = Cushort
+clty_to_jlty(x::UnsignedIntTy) = Cuint
+clty_to_jlty(x::UnsignedLongTy) = Culong
+clty_to_jlty(x::UnsignedLongLongTy) = Culonglong
+clty_to_jlty(x::UnsignedInt128Ty) = UInt128
+clty_to_jlty(x::FloatTy) = Cfloat
+clty_to_jlty(x::DoubleTy) = Cdouble
+clty_to_jlty(x::Float16Ty) = Float16
+clty_to_jlty(x::HalfTy) = Float16
+clty_to_jlty(x::BFloat16Ty) = Float16
+clty_to_jlty(x::NullPtrTy) = Ptr{Cvoid}
+clty_to_jlty(x::VoidPtrTy) = Ptr{Cvoid}
 
 # Clang types
-clty_to_jlty(clty::QualType) = clty_to_jlty(typeclass(clty))
-clty_to_jlty(clty::BuiltinType) = clty_to_jlty(typeclass(clty))
-clty_to_jlty(clty::ReferenceType) = clty_to_jlty(typeclass(clty))
-clty_to_jlty(clty::FunctionType) = clty_to_jlty(typeclass(clty))
-clty_to_jlty(clty::ArrayType) = clty_to_jlty(typeclass(clty))
-clty_to_jlty(clty::TagType) = clty_to_jlty(typeclass(clty))
+clty_to_jlty(x::QualType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::BuiltinType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::ElaboratedType) = clty_to_jlty(desugar(x))
+clty_to_jlty(x::TypedefType) = clty_to_jlty(desugar(x))
 
-clty_to_jlty(clty::PointerType) = Ptr{clty_to_jlty(get_pointee_type(clty))}
+clty_to_jlty(x::PointerType) = x
 
-typeclass(x::UnexposedType) = x
+# `TagType`s are resolved to `RecordType` or `EnumType`.
+clty_to_jlty(x::TagType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::RecordType) = x
+clty_to_jlty(x::EnumType) = x
+
+# `FunctionType`s are resolved to `FunctionProtoType` or `FunctionNoProtoType`.
+clty_to_jlty(x::FunctionType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::FunctionProtoType) = x
+clty_to_jlty(x::FunctionNoProtoType) = x
+
+# `ReferenceType`s are resolved to `LValueReferenceType` or `RValueReferenceType`.
+clty_to_jlty(x::ReferenceType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::LValueReferenceType) = x
+clty_to_jlty(x::RValueReferenceType) = x
+
+# `ArrayType`s are resolved to `ConstantArrayType`, `IncompleteArrayType`, `VariableArrayType`, or `DependentSizedArrayType`.
+clty_to_jlty(x::ArrayType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::ConstantArrayType) = x
+clty_to_jlty(x::IncompleteArrayType) = x
+clty_to_jlty(x::VariableArrayType) = x
+clty_to_jlty(x::DependentSizedArrayType) = x
 
 """
     typeclass(ty::QualType)
@@ -94,6 +112,8 @@ function typeclass(ty::QualType)
     is_dependent_template_specilization_type(ty) && return DependentTemplateSpecializationType(ty.ptr)
     return typeclass(UnexposedType(ty))
 end
+
+typeclass(x::UnexposedType) = x
 
 function typeclass(ty::BuiltinType)
     is_void_ty(ty) && return VoidTy(ty.ptr)
@@ -122,9 +142,9 @@ function typeclass(ty::BuiltinType)
     return typeclass(UnexposedType(ty))
 end
 
-function typeclass(ty::ReferenceType)
-    is_lvalue_reference_type(ty) && return LValueReferenceType(ty.ptr)
-    is_rvalue_reference_type(ty) && return RValueReferenceType(ty.ptr)
+function typeclass(ty::TagType)
+    is_record_type(ty) && return RecordType(ty.ptr)
+    is_enum_type(ty) && return EnumType(ty.ptr)
     return typeclass(UnexposedType(ty))
 end
 
@@ -134,17 +154,17 @@ function typeclass(ty::FunctionType)
     return typeclass(UnexposedType(ty))
 end
 
+function typeclass(ty::ReferenceType)
+    is_lvalue_reference_type(ty) && return LValueReferenceType(ty.ptr)
+    is_rvalue_reference_type(ty) && return RValueReferenceType(ty.ptr)
+    return typeclass(UnexposedType(ty))
+end
+
 function typeclass(ty::ArrayType)
     is_constant_array_type(ty) && return ConstantArrayType(ty.ptr)
     is_incomplete_array_type(ty) && return IncompleteArrayType(ty.ptr)
     is_variable_array_type(ty) && return VariableArrayType(ty.ptr)
     is_dependent_size_array_type(ty) && return DependentSizedArrayType(ty.ptr)
-    return typeclass(UnexposedType(ty))
-end
-
-function typeclass(ty::TagType)
-    is_record_type(ty) && return RecordType(ty.ptr)
-    is_enum_type(ty) && return EnumType(ty.ptr)
     return typeclass(UnexposedType(ty))
 end
 

@@ -42,7 +42,9 @@ function getMemberPointerType(x::ASTContext, ty::AbstractQualType, class_ptr::CX
     @check_ptrs x
     return QualType(clang_ASTContext_getMemberPointerType(x, ty, class_ptr))
 end
-getMemberPointerType(x::ASTContext, ty::AbstractQualType, class::AbstractQualType) = getMemberPointerType(x, ty, get_type_ptr(class))
+function getMemberPointerType(x::ASTContext, ty::AbstractQualType, class::AbstractQualType)
+    getMemberPointerType(x, ty, get_type_ptr(class))
+end
 
 function getIdents(x::ASTContext)
     @check_ptrs x

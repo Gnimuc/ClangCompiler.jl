@@ -51,7 +51,7 @@ include("clang/sema.jl")
 
 # type mapping
 include("types.jl")
-# export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
+export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
 
 # include("parse.jl")
 # include("lookup.jl")

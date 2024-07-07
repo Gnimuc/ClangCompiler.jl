@@ -195,7 +195,7 @@ is_function_no_proto_type(x::FunctionNoProtoType) = true
 is_function_proto_type(x::AbstractQualType) = isa_FunctionProtoType(x)
 is_function_proto_type(x::FunctionProtoType) = true
 
-get_params(x::FunctionProtoType) = [getParamType(x, i) for i in 0:(getNumParams(x) - 1)]
+get_params(x::FunctionProtoType) = [getParamType(x, i) for i = 0:(getNumParams(x) - 1)]
 
 # TypedefType
 is_typedef_type(x::AbstractQualType) = isa_TypedefType(x)
@@ -239,7 +239,7 @@ is_sugared(x::TemplateSpecializationType) = isSugared(x)
 
 get_name(x::TemplateSpecializationType) = getName(x)
 
-get_template_args(x::TemplateSpecializationType) = [getArg(x, i) for i in 0:getNumArgs(x)-1]
+get_template_args(x::TemplateSpecializationType) = [getArg(x, i) for i = 0:(getNumArgs(x) - 1)]
 
 # ElaboratedType
 is_elaborated_type(x::AbstractQualType) = isa_ElaboratedType(x)

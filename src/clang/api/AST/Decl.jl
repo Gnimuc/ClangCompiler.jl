@@ -672,7 +672,8 @@ function setTemplateSpecializationKind(x::AbstractVarDecl, tsk::CXTemplateSpecia
     return clang_VarDecl_setTemplateSpecializationKind(x, tsk, poi)
 end
 
-function setInstantiationOfStaticDataMember(x::AbstractVarDecl, decl::AbstractVarDecl, tsk::CXTemplateSpecializationKind)
+function setInstantiationOfStaticDataMember(x::AbstractVarDecl, decl::AbstractVarDecl,
+                                            tsk::CXTemplateSpecializationKind)
     @check_ptrs x decl
     return clang_VarDecl_setInstantiationOfStaticDataMember(x, decl, tsk)
 end

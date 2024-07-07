@@ -1,6 +1,8 @@
 using ClangCompiler
 using Test
 
+include("types.jl")
+
 # if haskey(ENV, "CI")
 #     include("clang/status.jl")
 # end
@@ -17,4 +19,3 @@ using Test
 #     include("call.jl")
 #     include("execution.jl")
 # end
-include("types.jl")

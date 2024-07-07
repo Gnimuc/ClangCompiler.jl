@@ -1,7 +1,7 @@
 using ClangCompiler
 using ClangCompiler: LLVM
 using ClangCompiler: create_interpreter, dispose, get_ast_context, get_codegen_module
-using ClangCompiler: clty_to_jlty, jlty_to_clty, convertTypeForMemory
+using ClangCompiler: convertTypeForMemory
 using Test
 import ClangCompiler as CC
 

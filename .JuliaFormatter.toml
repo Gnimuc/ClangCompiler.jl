@@ -1,5 +1,10 @@
+style = "yas"
+
 margin=120
 always_for_in=false
 whitespace_in_kwargs=false
+whitespace_typedefs=false
 always_use_return=false
 pipe_to_function_call=false
+
+ignore = ["lib", "examples"]

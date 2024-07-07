@@ -290,7 +290,7 @@ getName(x::TemplateSpecializationType) = getName(getAsTemplateDecl(getTemplateNa
 isa_ElaboratedType(ty_ptr::CXType_) = clang_isa_ElaboratedType(ty_ptr)
 isa_ElaboratedType(ty::AbstractQualType) = isa_ElaboratedType(getTypePtr(ty))
 
-desugar(x::ElaboratedType) = clang_ElaboratedType_desugar(getTypePtr(x))
+desugar(x::ElaboratedType) = QualType(clang_ElaboratedType_desugar(getTypePtr(x)))
 
 # DependentNameType
 isa_DependentNameType(ty_ptr::CXType_) = clang_isa_DependentNameType(ty_ptr)

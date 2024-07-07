@@ -5,6 +5,8 @@ struct CxxInterpreter <: AbstractClangCompiler
     interp::Interpreter
 end
 
+CxxInterpreter(x::CXInterpreter) = CxxInterpreter(Interpreter(x))
+
 """
     create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER) -> Interpreter
 Create a C/C++ interpreter.

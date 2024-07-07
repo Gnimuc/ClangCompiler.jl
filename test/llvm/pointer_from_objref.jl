@@ -7,7 +7,7 @@ using Test
             T_jlvalue = LLVM.StructType(LLVMType[]; ctx)
             T_pjlvalue = LLVM.PointerType(T_jlvalue, 0)
             T_prjlvalue = convert(LLVMType, Any; ctx, allow_boxed=true)
-            T_pdjlvalue = LLVM.PointerType(T_jlvalue, 11) #=AS Drived=#
+            T_pdjlvalue = LLVM.PointerType(T_jlvalue, 11)  #=AS Drived=#
             rettype = convert(LLVMType, Ptr{Cvoid}; ctx)
             llvm_f, _ = LLVM.Interop.create_function(rettype, [T_prjlvalue])
             mod = LLVM.parent(llvm_f)
