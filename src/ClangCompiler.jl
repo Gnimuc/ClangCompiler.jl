@@ -55,27 +55,15 @@ include("types.jl")
 export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
 
 include("parse.jl")
-# include("lookup.jl")
-# export DeclFinder, get_decl
-
 # include("template.jl")
-# export specialize
 
 # compiler
 include("compiler/compiler.jl")
 include("compiler/interpreter.jl")
 # include("compiler/irgen.jl")
-# export create_interpreter
-# export take_module
-# export ClangCompiler
-# export get_instance, get_context
-# export compile, dispose
-# export get_jit, get_dylib, get_codegen
-# export link_process_symbols
+
+include("lookup.jl")
 
 include("utils.jl")
-# export jlty2llvmty
-# export lookup_function, link, link_crt
-# export get_buffer
 
 end

@@ -3,6 +3,7 @@ using Test
 
 include("types.jl")
 include("parse.jl")
+include("lookup.jl")
 
 # if haskey(ENV, "CI")
 #     include("clang/status.jl")
@@ -14,7 +15,6 @@ include("parse.jl")
 # include("clang/source.jl")
 # include("clang/instance.jl")
 
-# include("lookup.jl")
 # include("traversal.jl")
 # if Sys.isapple()
 #     include("call.jl")

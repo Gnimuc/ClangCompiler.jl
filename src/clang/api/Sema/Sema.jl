@@ -40,9 +40,10 @@ function LookupParsedName(x::Sema, r::LookupResult, sp::Scope, ss::CXXScopeSpec,
                                        entering_context)
 end
 
-function LookupName(x::Sema, r::LookupResult, sp::Scope, allow_builtin_creation=false)
+function LookupName(x::Sema, r::LookupResult, sp::Scope, allow_builtin_creation::Bool=false,
+                    force_no_cxx::Bool=false)
     @check_ptrs x r sp
-    return clang_Sema_LookupName(x, r, sp, allow_builtin_creation)
+    return clang_Sema_LookupName(x, r, sp, allow_builtin_creation, force_no_cxx)
 end
 
 function processWeakTopLevelDecls(sema::Sema, cg::CodeGenerator)

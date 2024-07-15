@@ -47,10 +47,10 @@ bool clang_Sema_LookupParsedName(CXSema S, CXLookupResult R, CXScope Sp, CXCXXSc
 }
 
 bool clang_Sema_LookupName(CXSema S, CXLookupResult R, CXScope Sp,
-                           bool AllowBuiltinCreation) {
+                           bool AllowBuiltinCreation, bool ForceNoCPlusPlus) {
   return static_cast<clang::Sema *>(S)->LookupName(*static_cast<clang::LookupResult *>(R),
                                                    static_cast<clang::Scope *>(Sp),
-                                                   AllowBuiltinCreation);
+                                                   AllowBuiltinCreation, ForceNoCPlusPlus);
 }
 
 void clang_Sema_processWeakTopLevelDecls(CXSema Sema, CXCodeGenerator CodeGen) {

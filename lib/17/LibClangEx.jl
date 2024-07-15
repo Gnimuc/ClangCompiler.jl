@@ -7019,8 +7019,8 @@ function clang_Sema_LookupParsedName(S, R, Sp, SS, AllowBuiltinCreation, Enterin
     @ccall libclangex.clang_Sema_LookupParsedName(S::CXSema, R::CXLookupResult, Sp::CXScope, SS::CXCXXScopeSpec, AllowBuiltinCreation::Bool, EnteringContext::Bool)::Bool
 end
 
-function clang_Sema_LookupName(S, R, Sp, AllowBuiltinCreation)
-    @ccall libclangex.clang_Sema_LookupName(S::CXSema, R::CXLookupResult, Sp::CXScope, AllowBuiltinCreation::Bool)::Bool
+function clang_Sema_LookupName(S, R, Sp, AllowBuiltinCreation, ForceNoCPlusPlus)
+    @ccall libclangex.clang_Sema_LookupName(S::CXSema, R::CXLookupResult, Sp::CXScope, AllowBuiltinCreation::Bool, ForceNoCPlusPlus::Bool)::Bool
 end
 
 function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)

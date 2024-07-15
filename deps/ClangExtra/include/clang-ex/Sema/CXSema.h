@@ -26,7 +26,7 @@ bool clang_Sema_LookupParsedName(CXSema S, CXLookupResult R, CXScope Sp, CXCXXSc
                                  bool AllowBuiltinCreation, bool EnteringContext);
 
 bool clang_Sema_LookupName(CXSema S, CXLookupResult R, CXScope Sp,
-                           bool AllowBuiltinCreation);
+                           bool AllowBuiltinCreation, bool ForceNoCPlusPlus);
 
 void clang_Sema_processWeakTopLevelDecls(CXSema Sema, CXCodeGenerator CodeGen);
 

@@ -69,13 +69,13 @@ function parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::St
         TryAnnotateOptionalCXXScopeToken(p, CXDeclSpecContext_DSC_top_level)
         type_name = ""
         while !is_annot_repl_input_end(tok)
-            if is_coloncolon(tok) # ignore ::new or ::delete
-                ConsumeAnyToken(p)
+            if is_coloncolon(tok)
+                ConsumeAnyToken(p) # ignore all `::`s
             elseif is_annot_cxxscope(tok)
                 restore_nns_annotation(sema, tok, ss) # extract the scope specifier
                 ConsumeAnyToken(p)
             elseif is_identifier(tok)
-                type_name = getName(getIdentifierInfo(tok)) # extract type name
+                type_name = getName(getIdentifierInfo(tok)) # extract (possible-) type name
                 ConsumeToken(p)
             elseif is_annot_template_id(tok)
                 ConsumeAnyToken(p) # ignore template-ids
