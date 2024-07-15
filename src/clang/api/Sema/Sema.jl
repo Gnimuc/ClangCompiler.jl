@@ -12,6 +12,19 @@ function RestoreNestedNameSpecifierAnnotation(x::Sema, v::AnnotationValue, rng::
     return clang_Sema_RestoreNestedNameSpecifierAnnotation(x, v, rb, re, spec)
 end
 
+function getTypeName(x::Sema, ii::IdentifierInfo, name_loc::SourceLocation,
+                     scope::Scope, ss::CXXScopeSpec, is_class_name::Bool=false,
+                     has_trailing_dot::Bool=false, object_type::QualType=QualType(C_NULL),
+                     is_ctor_or_dtor_name::Bool=false, want_nontrivial_type_source_info::Bool=false,
+                     is_class_template_deduction_context::Bool=false, allow_implcit_typename::Bool=false)
+    @check_ptrs x ii
+    return QualType(clang_sema_getTypeName(x, ii, name_loc, scope, ss, is_class_name,
+                                           has_trailing_dot, object_type, is_ctor_or_dtor_name,
+                                           want_nontrivial_type_source_info,
+                                           is_class_template_deduction_context,
+                                           allow_implcit_typename))
+end
+
 function LookupResult(sema::Sema, name::DeclarationName, loc::SourceLocation,
                       kind::CXLookupNameKind)
     @check_ptrs sema
@@ -27,9 +40,10 @@ function LookupParsedName(x::Sema, r::LookupResult, sp::Scope, ss::CXXScopeSpec,
                                        entering_context)
 end
 
-function LookupName(x::Sema, r::LookupResult, sp::Scope, allow_builtin_creation=false)
+function LookupName(x::Sema, r::LookupResult, sp::Scope, allow_builtin_creation::Bool=false,
+                    force_no_cxx::Bool=false)
     @check_ptrs x r sp
-    return clang_Sema_LookupName(x, r, sp, allow_builtin_creation)
+    return clang_Sema_LookupName(x, r, sp, allow_builtin_creation, force_no_cxx)
 end
 
 function processWeakTopLevelDecls(sema::Sema, cg::CodeGenerator)

@@ -478,6 +478,185 @@ Supertype for `CoroutineSuspendExpr`s.
 """
 abstract type AbstractCoroutineSuspendExpr <: AbstractExpr end
 
+# Type
+"""
+    abstract type AbstractClangType <: AbstractClangType end
+Supertype for `clang::Type`s.
+
+1. `CXType_` is an opaque pointer for `clang::Type *`.
+2. `get_type_ptr`/`getTypePtr` is for converting a `QualType` to a `CXType_`.
+3. `get_qual_type`/`getCanonicalTypeInternal` is for converting a `CXType_` to a `QualType`.
+"""
+abstract type AbstractType <: AbstractClangType end
+
+"""
+    abstract type AbstractQualType <: AbstractClangType
+Supertype for `clang::QualType`s.
+"""
+abstract type AbstractQualType <: AbstractClangType end
+
+"""
+    abstract type AbstractBuiltinType <: AbstractType
+Supertype for Clang builtin types.
+"""
+abstract type AbstractBuiltinType <: AbstractType end
+
+"""
+    abstract type AbstractComplexType <: AbstractType
+Supertype for `ComplexType`s.
+"""
+abstract type AbstractComplexType <: AbstractType end
+
+"""
+    abstract type AbstractPointerType <: AbstractType
+Supertype for `PointerType`s.
+"""
+abstract type AbstractPointerType <: AbstractType end
+
+"""
+    abstract type AbstractReferenceType <: AbstractType
+Supertype for `ReferenceType`s.
+"""
+abstract type AbstractReferenceType <: AbstractType end
+
+"""
+    abstract type AbstractLValueReferenceType <: AbstractReferenceType
+Supertype for `LValueReferenceType`s.
+"""
+abstract type AbstractLValueReferenceType <: AbstractReferenceType end
+
+"""
+    abstract type AbstractRValueReferenceType <: AbstractReferenceType
+Supertype for `RValueReferenceType`s.
+"""
+abstract type AbstractRValueReferenceType <: AbstractReferenceType end
+
+"""
+    abstract type AbstractMemberPointerType <: AbstractType
+Supertype for `MemberPointerType`s.
+"""
+abstract type AbstractMemberPointerType <: AbstractType end
+
+"""
+    abstract type AbstractArrayType <: AbstractType
+Supertype for `ArrayType`s.
+"""
+abstract type AbstractArrayType <: AbstractType end
+
+"""
+    abstract type AbstractConstantArrayType <: AbstractArrayType
+Supertype for `ConstantArrayType`s.
+"""
+abstract type AbstractConstantArrayType <: AbstractArrayType end
+
+"""
+    abstract type AbstractIncompleteArrayType <: AbstractArrayType
+Supertype for `IncompleteArrayType`s.
+"""
+abstract type AbstractIncompleteArrayType <: AbstractArrayType end
+
+"""
+    abstract type AbstractVariableArrayType <: AbstractArrayType
+Supertype for `VariableArrayType`s.
+"""
+abstract type AbstractVariableArrayType <: AbstractArrayType end
+
+"""
+    abstract type AbstractDependentSizedArrayType <: AbstractArrayType
+Supertype for `DependentSizedArrayType`s.
+"""
+abstract type AbstractDependentSizedArrayType <: AbstractArrayType end
+
+"""
+    abstract type AbstractFunctionType <: AbstractType
+Supertype for `FunctionType`s.
+"""
+abstract type AbstractFunctionType <: AbstractType end
+
+"""
+    abstract type AbstractFunctionNoProtoType <: AbstractFunctionType
+Supertype for `FunctionNoProtoType`s.
+"""
+abstract type AbstractFunctionNoProtoType <: AbstractFunctionType end
+
+"""
+    abstract type AbstractFunctionProtoType <: AbstractFunctionType
+Supertype for `FunctionProtoType`s.
+"""
+abstract type AbstractFunctionProtoType <: AbstractFunctionType end
+
+"""
+    abstract type AbstractTypedefType <: AbstractType
+Supertype for `TypedefType`s.
+"""
+abstract type AbstractTypedefType <: AbstractType end
+
+"""
+    abstract type AbstractTagType <: AbstractType
+Supertype for `TagType`s.
+"""
+abstract type AbstractTagType <: AbstractType end
+
+"""
+    abstract type AbstractRecordType <: AbstractTagType
+Supertype for `RecordType`s.
+"""
+abstract type AbstractRecordType <: AbstractTagType end
+
+"""
+    abstract type AbstractEnumType <: AbstractTagType
+Supertype for `EnumType`s.
+"""
+abstract type AbstractEnumType <: AbstractTagType end
+
+"""
+    abstract type AbstractTemplateTypeParmType <: AbstractType
+Supertype for `TemplateTypeParmType`s.
+"""
+abstract type AbstractTemplateTypeParmType <: AbstractType end
+
+"""
+    abstract type AbstractSubstTemplateTypeParmType <: AbstractType
+Supertype for `SubstTemplateTypeParmType`s.
+"""
+abstract type AbstractSubstTemplateTypeParmType <: AbstractType end
+
+"""
+    abstract type AbstractSubstTemplateTypeParmPackType <: AbstractType
+Supertype for `SubstTemplateTypeParmPackType`s.
+"""
+abstract type AbstractSubstTemplateTypeParmPackType <: AbstractType end
+
+"""
+    abstract type AbstractTemplateSpecializationType <: AbstractType
+Supertype for `TemplateSpecializationType`s.
+"""
+abstract type AbstractTemplateSpecializationType <: AbstractType end
+
+"""
+    abstract type AbstractTypeWithKeyword <: AbstractType
+Supertype for `TypeWithKeyword`s.
+"""
+abstract type AbstractTypeWithKeyword <: AbstractType end
+
+"""
+    abstract type AbstractElaboratedType <: AbstractTypeWithKeyword
+Supertype for `ElaboratedType`s.
+"""
+abstract type AbstractElaboratedType <: AbstractTypeWithKeyword end
+
+"""
+    abstract type AbstractDependentNameType <: AbstractTypeWithKeyword
+Supertype for `DependentNameType`s.
+"""
+abstract type AbstractDependentNameType <: AbstractTypeWithKeyword end
+
+"""
+    abstract type AbstractDependentTemplateSpecializationType <: AbstractTypeWithKeyword
+Supertype for `DependentTemplateSpecializationType`s.
+"""
+abstract type AbstractDependentTemplateSpecializationType <: AbstractTypeWithKeyword end
+
 # Frontend
 # CompilerInstance
 """

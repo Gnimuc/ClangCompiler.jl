@@ -32,6 +32,9 @@ See also, [`jlty_to_clty`](@ref). Note that, the mapping is not injective.
 """
 clty_to_jlty(x::T) where {T<:AbstractClangType} = error("no mapping found for $T")
 
+clty_to_jlty(x::AbstractType) = clty_to_jlty(resolve(x))
+clty_to_jlty(x::QualType) = clty_to_jlty(get_type_ptr(x))
+
 # builtin types
 clty_to_jlty(x::T) where {T<:AbstractBuiltinType} = error("no mapping found for builtin type: $T")
 clty_to_jlty(x::VoidTy) = Cvoid
@@ -60,40 +63,39 @@ clty_to_jlty(x::NullPtrTy) = Ptr{Cvoid}
 clty_to_jlty(x::VoidPtrTy) = Ptr{Cvoid}
 
 # Clang types
-clty_to_jlty(x::QualType) = clty_to_jlty(typeclass(x))
-clty_to_jlty(x::BuiltinType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::BuiltinType) = clty_to_jlty(resolve(x))
 clty_to_jlty(x::ElaboratedType) = clty_to_jlty(desugar(x))
 clty_to_jlty(x::TypedefType) = clty_to_jlty(desugar(x))
 
 clty_to_jlty(x::PointerType) = x
 
 # `TagType`s are resolved to `RecordType` or `EnumType`.
-clty_to_jlty(x::TagType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::TagType) = clty_to_jlty(resolve(x))
 clty_to_jlty(x::RecordType) = x
 clty_to_jlty(x::EnumType) = x
 
 # `FunctionType`s are resolved to `FunctionProtoType` or `FunctionNoProtoType`.
-clty_to_jlty(x::FunctionType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::FunctionType) = clty_to_jlty(resolve(x))
 clty_to_jlty(x::FunctionProtoType) = x
 clty_to_jlty(x::FunctionNoProtoType) = x
 
 # `ReferenceType`s are resolved to `LValueReferenceType` or `RValueReferenceType`.
-clty_to_jlty(x::ReferenceType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::ReferenceType) = clty_to_jlty(resolve(x))
 clty_to_jlty(x::LValueReferenceType) = x
 clty_to_jlty(x::RValueReferenceType) = x
 
 # `ArrayType`s are resolved to `ConstantArrayType`, `IncompleteArrayType`, `VariableArrayType`, or `DependentSizedArrayType`.
-clty_to_jlty(x::ArrayType) = clty_to_jlty(typeclass(x))
+clty_to_jlty(x::ArrayType) = clty_to_jlty(resolve(x))
 clty_to_jlty(x::ConstantArrayType) = x
 clty_to_jlty(x::IncompleteArrayType) = x
 clty_to_jlty(x::VariableArrayType) = x
 clty_to_jlty(x::DependentSizedArrayType) = x
 
 """
-    typeclass(ty::QualType)
+    resolve(ty::AbstractType)
 Resolve type using Clang's RTTI.
 """
-function typeclass(ty::QualType)
+function resolve(ty::AbstractType)
     is_builtin_type(ty) && return BuiltinType(ty.ptr)
     is_complex_type(ty) && return ComplexType(ty.ptr)
     is_pointer_type(ty) && return PointerType(ty.ptr)
@@ -110,12 +112,12 @@ function typeclass(ty::QualType)
     is_elaborated_type(ty) && return ElaboratedType(ty.ptr)
     is_dependent_name_type(ty) && return DependentNameType(ty.ptr)
     is_dependent_template_specilization_type(ty) && return DependentTemplateSpecializationType(ty.ptr)
-    return typeclass(UnexposedType(ty))
+    return resolve(UnexposedType(ty))
 end
 
-typeclass(x::UnexposedType) = x
+resolve(x::UnexposedType) = x
 
-function typeclass(ty::BuiltinType)
+function resolve(ty::AbstractBuiltinType)
     is_void_ty(ty) && return VoidTy(ty.ptr)
     is_bool_ty(ty) && return BoolTy(ty.ptr)
     is_char_ty(ty) && return CharTy(ty.ptr)
@@ -139,33 +141,33 @@ function typeclass(ty::BuiltinType)
     is_half_ty(ty) && return HalfTy(ty.ptr)
     is_bfloat_ty(ty) && return BFloat16Ty(ty.ptr)
     is_nullptr_ty(ty) && return NullPtrTy(ty.ptr)
-    return typeclass(UnexposedType(ty))
+    return resolve(UnexposedType(ty))
 end
 
-function typeclass(ty::TagType)
+function resolve(ty::AbstractTagType)
     is_record_type(ty) && return RecordType(ty.ptr)
     is_enum_type(ty) && return EnumType(ty.ptr)
-    return typeclass(UnexposedType(ty))
+    return resolve(UnexposedType(ty))
 end
 
-function typeclass(ty::FunctionType)
+function resolve(ty::AbstractFunctionType)
     is_function_no_proto_type(ty) && return FunctionNoProtoType(ty.ptr)
     is_function_proto_type(ty) && return FunctionProtoType(ty.ptr)
-    return typeclass(UnexposedType(ty))
+    return resolve(UnexposedType(ty))
 end
 
-function typeclass(ty::ReferenceType)
+function resolve(ty::AbstractReferenceType)
     is_lvalue_reference_type(ty) && return LValueReferenceType(ty.ptr)
     is_rvalue_reference_type(ty) && return RValueReferenceType(ty.ptr)
-    return typeclass(UnexposedType(ty))
+    return resolve(UnexposedType(ty))
 end
 
-function typeclass(ty::ArrayType)
+function resolve(ty::AbstractArrayType)
     is_constant_array_type(ty) && return ConstantArrayType(ty.ptr)
     is_incomplete_array_type(ty) && return IncompleteArrayType(ty.ptr)
     is_variable_array_type(ty) && return VariableArrayType(ty.ptr)
     is_dependent_size_array_type(ty) && return DependentSizedArrayType(ty.ptr)
-    return typeclass(UnexposedType(ty))
+    return resolve(UnexposedType(ty))
 end
 
 """

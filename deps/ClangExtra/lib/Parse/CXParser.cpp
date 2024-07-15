@@ -49,16 +49,34 @@ CXSourceLocation_ clang_Parser_ConsumeAnyToken(CXParser P) {
   return static_cast<clang::Parser *>(P)->ConsumeAnyToken(true).getPtrEncoding();
 }
 
+bool clang_Parser_TryAnnotateTypeOrScopeToken(CXParser P, bool AllowImplicitTypename) {
+  return static_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeToken(
+      AllowImplicitTypename ? clang::ImplicitTypenameContext::Yes
+                            : clang::ImplicitTypenameContext::No);
+}
+
+bool clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(CXParser P, CXCXXScopeSpec SS,
+                                                            bool IsNewScope,
+                                                            bool AllowImplicitTypename) {
+  return static_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeTokenAfterScopeSpec(
+      *static_cast<clang::CXXScopeSpec *>(SS), IsNewScope,
+      AllowImplicitTypename ? clang::ImplicitTypenameContext::Yes
+                            : clang::ImplicitTypenameContext::No);
+}
+
 bool clang_Parser_TryAnnotateCXXScopeToken(CXParser P, bool EnteringContext) {
   return static_cast<clang::Parser *>(P)->TryAnnotateCXXScopeToken(EnteringContext);
 }
 
-// bool clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(CXParser P, CXCXXScopeSpec
-// SS,
-//                                                             bool IsNewScope) {
-//   return static_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeTokenAfterScopeSpec(
-//       *static_cast<clang::CXXScopeSpec *>(SS), IsNewScope);
-// }
+bool clang_Parser_TryAnnotateOptionalCXXScopeToken(CXParser P, bool EnteringContext) {
+  return static_cast<clang::Parser *>(P)->TryAnnotateOptionalCXXScopeToken(EnteringContext);
+}
+
+CXQualType clang_Parser_getTypeAnnotation(CXToken_ Tok) {
+  return clang::Parser::getTypeAnnotation(*static_cast<clang::Token *>(Tok))
+      .get()
+      .getAsOpaquePtr();
+}
 
 // CXDeclGroupRef clang_Parser_parseOneTopLevelDecl(CXParser Parser, bool IsFirstDecl) {
 //   clang::Parser::DeclGroupPtrTy ADecl;

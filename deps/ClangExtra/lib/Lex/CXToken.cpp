@@ -13,8 +13,20 @@ CXSourceLocation_ clang_Token_getAnnotationEndLoc(CXToken_ Tok) {
   return static_cast<clang::Token *>(Tok)->getAnnotationEndLoc().getPtrEncoding();
 }
 
+const char *clang_Token_getName(CXToken_ Tok) {
+  return static_cast<clang::Token *>(Tok)->getName();
+}
+
+CXIdentifierInfo clang_Token_getIdentifierInfo(CXToken_ Tok) {
+  return static_cast<clang::Token *>(Tok)->getIdentifierInfo();
+}
+
 bool clang_Token_isKind_eof(CXToken_ Tok) {
   return static_cast<clang::Token *>(Tok)->is(clang::tok::eof);
+}
+
+bool clang_Token_isKind_annot_repl_input_end(CXToken_ Tok) {
+  return static_cast<clang::Token *>(Tok)->is(clang::tok::annot_repl_input_end);
 }
 
 bool clang_Token_isKind_identifier(CXToken_ Tok) {

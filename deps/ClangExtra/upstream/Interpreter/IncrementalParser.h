@@ -44,9 +44,11 @@ protected:
   /// Compiler instance performing the incremental compilation.
   std::unique_ptr<CompilerInstance> CI;
 
+public:
   /// Parser.
   std::unique_ptr<Parser> P;
 
+protected:
   /// Consumer to process the produced top level decls. Owned by Act.
   ASTConsumer *Consumer = nullptr;
 

@@ -53,3 +53,8 @@ function getCodeGen(x::AbstractInterpreter)
     @check_ptrs x
     return CodeGenerator(clang_Interpreter_getCodeGen(x))
 end
+
+function getParser(x::AbstractInterpreter)
+    @check_ptrs x
+    return Parser(clang_Interpreter_getParser(x))
+end

@@ -36,3 +36,7 @@ dispose(x::CxxInterpreter) = dispose(x.interp)
 get_instance(x::CxxInterpreter) = getCompilerInstance(x.interp)
 get_ast_context(x::CxxInterpreter) = getASTContext(get_instance(x))
 get_codegen_module(x::CxxInterpreter) = CGM(getCodeGen(x.interp))
+get_parser(x::CxxInterpreter) = getParser(x.interp)
+get_sema(x::CxxInterpreter) = getSema(get_parser(x))
+
+parse_cxx_scope_spec(x::CxxInterpreter, ss::CXXScopeSpec, code::String) = parse_cxx_scope_spec(x.interp, ss, code)

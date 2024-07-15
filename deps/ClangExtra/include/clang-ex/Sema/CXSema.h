@@ -15,11 +15,18 @@ void clang_Sema_RestoreNestedNameSpecifierAnnotation(
     CXSema S, void *Annotation, CXSourceLocation_ AnnotationRange_begin,
     CXSourceLocation_ AnnotationRange_end, CXCXXScopeSpec SS);
 
+CXQualType clang_sema_getTypeName(CXSema S, CXIdentifierInfo II, CXSourceLocation_ NameLoc,
+                                  CXScope Scp, CXCXXScopeSpec SS, bool isClassName,
+                                  bool HasTrailingDot, CXQualType ObjectTypePtr,
+                                  bool IsCtorOrDtorName, bool WantNontrivialTypeSourceInfo,
+                                  bool IsClassTemplateDeductionContext,
+                                  bool AllowImplicitTypename);
+
 bool clang_Sema_LookupParsedName(CXSema S, CXLookupResult R, CXScope Sp, CXCXXScopeSpec SS,
                                  bool AllowBuiltinCreation, bool EnteringContext);
 
 bool clang_Sema_LookupName(CXSema S, CXLookupResult R, CXScope Sp,
-                           bool AllowBuiltinCreation);
+                           bool AllowBuiltinCreation, bool ForceNoCPlusPlus);
 
 void clang_Sema_processWeakTopLevelDecls(CXSema Sema, CXCodeGenerator CodeGen);
 

@@ -44,15 +44,29 @@ void clang_CXXScopeSpec_dispose(CXCXXScopeSpec SS);
 
 void clang_CXXScopeSpec_clear(CXCXXScopeSpec SS);
 
-CXNestedNameSpecifier clang_CXXScopeSpec_getScopeRep(CXCXXScopeSpec SS);
+// getRange
+
+// setRange
+
+void clang_CXXScopeSpec_setBeginLoc(CXCXXScopeSpec SS, CXSourceLocation_ Loc);
+
+void clang_CXXScopeSpec_setEndLoc(CXCXXScopeSpec SS, CXSourceLocation_ Loc);
 
 CXSourceLocation_ clang_CXXScopeSpec_getBeginLoc(CXCXXScopeSpec SS);
 
 CXSourceLocation_ clang_CXXScopeSpec_getEndLoc(CXCXXScopeSpec SS);
 
-void clang_CXXScopeSpec_setBeginLoc(CXCXXScopeSpec SS, CXSourceLocation_ Loc);
+// setTemplateParamLists
 
-void clang_CXXScopeSpec_setEndLoc(CXCXXScopeSpec SS, CXSourceLocation_ Loc);
+// getTemplateParamLists
+
+// Extend
+
+// void clang_CXXScopeSpec_MakeGlobal(CXCXXScopeSpec SS, CXASTContext Ctx, CXSourceLocation_ ColonColonLoc);
+
+// void clang_CXXScopeSpec_MakeTrivial(CXCXXScopeSpec SS, CXASTContext Ctx, CXNestedNameSpecifier Qualifier, CXSourceRange_ R);
+
+CXNestedNameSpecifier clang_CXXScopeSpec_getScopeRep(CXCXXScopeSpec SS);
 
 bool clang_CXXScopeSpec_isEmpty(CXCXXScopeSpec SS);
 

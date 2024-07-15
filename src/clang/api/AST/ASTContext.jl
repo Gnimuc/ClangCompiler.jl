@@ -7,7 +7,7 @@ function getTypeSize(x::ASTContext, ty_ptr::CXType_)
     @check_ptrs x
     return clang_ASTContext_getTypeSize(x, ty_ptr)
 end
-getTypeSize(x::ASTContext, ty::AbstractQualType) = getTypeSize(x, get_type_ptr(ty))
+getTypeSize(x::ASTContext, ty::QualType) = getTypeSize(x, get_type_ptr(ty))
 
 function getTypeDeclType(x::ASTContext, decl::TypeDecl, prev::TypeDecl=TypeDecl(C_NULL))
     @check_ptrs x decl
@@ -23,26 +23,26 @@ getTypeDeclType(x::ASTContext, decl::NamedDecl) = getTypeDeclType(x, TypeDecl(de
 getTypeDeclType(x::ASTContext, decl::AbstractTypeDecl) = getTypeDeclType(x, TypeDecl(decl.ptr))
 getTypeDeclType(x::ASTContext, decl::AbstractRecordDecl) = getRecordType(x, RecordDecl(decl.ptr))
 
-function getPointerType(x::ASTContext, ty::AbstractQualType)
+function getPointerType(x::ASTContext, ty::QualType)
     @check_ptrs x
     return QualType(clang_ASTContext_getPointerType(x, ty))
 end
 
-function getLValueReferenceType(x::ASTContext, ty::AbstractQualType, spelled_as_lvalue=true)
+function getLValueReferenceType(x::ASTContext, ty::QualType, spelled_as_lvalue=true)
     @check_ptrs x
     return QualType(clang_ASTContext_getLValueReferenceType(x, ty, spelled_as_lvalue))
 end
 
-function getRValueReferenceType(x::ASTContext, ty::AbstractQualType)
+function getRValueReferenceType(x::ASTContext, ty::QualType)
     @check_ptrs x
     return QualType(clang_ASTContext_getRValueReferenceType(x, ty))
 end
 
-function getMemberPointerType(x::ASTContext, ty::AbstractQualType, class_ptr::CXType_)
+function getMemberPointerType(x::ASTContext, ty::QualType, class_ptr::CXType_)
     @check_ptrs x
     return QualType(clang_ASTContext_getMemberPointerType(x, ty, class_ptr))
 end
-function getMemberPointerType(x::ASTContext, ty::AbstractQualType, class::AbstractQualType)
+function getMemberPointerType(x::ASTContext, ty::QualType, class::QualType)
     getMemberPointerType(x, ty, get_type_ptr(class))
 end
 

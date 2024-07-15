@@ -10,3 +10,22 @@
 pkg> add https://github.com/Gnimuc/ClangCompiler.jl.git
 ```
 
+## Examples
+
+### Decl Lookup
+
+```julia-repl
+import ClangCompiler as CC
+
+I = CC.create_interpreter(["-include", "vector"])
+
+decl_lookup = CC.DeclFinder(I)
+
+@assert decl_lookup(I, "std::vector")
+
+decl = CC.get_decl(decl_lookup)
+dump(decl)
+
+CC.dispose(decl_lookup)
+CC.dispose(I)
+```

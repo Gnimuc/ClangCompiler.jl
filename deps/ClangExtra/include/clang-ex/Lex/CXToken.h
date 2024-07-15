@@ -12,7 +12,12 @@ CXAnnotationValue clang_Token_getAnnotationValue(CXToken_ Tok);
 CXSourceLocation_ clang_Token_getLocation(CXToken_ Tok);
 CXSourceLocation_ clang_Token_getAnnotationEndLoc(CXToken_ Tok);
 
+const char *clang_Token_getName(CXToken_ Tok);
+
+CXIdentifierInfo clang_Token_getIdentifierInfo(CXToken_ Tok);
+
 bool clang_Token_isKind_eof(CXToken_ Tok);
+bool clang_Token_isKind_annot_repl_input_end(CXToken_ Tok);
 bool clang_Token_isKind_identifier(CXToken_ Tok);
 bool clang_Token_isKind_coloncolon(CXToken_ Tok);
 

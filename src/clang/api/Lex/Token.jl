@@ -4,7 +4,11 @@ getLocation(x::Token) = SourceLocation(clang_Token_getLocation(x))
 getAnnotationEndLoc(x::Token) = SourceLocation(clang_Token_getAnnotationEndLoc(x))
 getAnnotationRange(x::Token) = SourceRange(getLocation(x), getAnnotationEndLoc(x))
 
+getName(x::Token) = unsafe_string(clang_Token_getName(x))
+getIdentifierInfo(x::Token) = IdentifierInfo(clang_Token_getIdentifierInfo(x))
+
 is_eof(Tok) = clang_Token_isKind_eof(Tok)
+is_annot_repl_input_end(Tok) = clang_Token_isKind_annot_repl_input_end(Tok)
 is_identifier(Tok) = clang_Token_isKind_identifier(Tok)
 is_coloncolon(Tok) = clang_Token_isKind_coloncolon(Tok)
 

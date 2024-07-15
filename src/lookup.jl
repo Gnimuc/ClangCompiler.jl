@@ -1,6 +1,6 @@
 """
     abstract type AbstractFinder <: Any
-Supertype for various "lookup" functors.
+Supertype for "lookup" functors.
 """
 abstract type AbstractFinder end
 
@@ -20,8 +20,8 @@ function dispose(x::DeclFinder)
     dispose(x.result)
 end
 
-function DeclFinder(ci::CompilerInstance, kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
-    sema = getSema(ci)
+function DeclFinder(i::CxxInterpreter, kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
+    ci, sema = get_instance(i), get_sema(i)
     loc = get_main_file_begin_loc(getSourceManager(ci))  # used as a fake loc
     result = LookupResult(sema, DeclarationName(), loc, kind)
     return DeclFinder(result, kind)
@@ -37,16 +37,41 @@ function get_decl(x::DeclFinder)
     return getRepresentativeDecl(x.result)
 end
 
-function (x::DeclFinder)(ci::CompilerInstance, parser::Parser, decl::String, scope::String="")
+strip_nns(nns::AbstractString, code::AbstractString) = code[length(nns)+1:end]
+
+function diagnose_declname(code::AbstractString, type_name::AbstractString, nns::AbstractString="")
+    s = strip_nns(nns, code)
+    if isempty(type_name) # template-ids are not handled in `parse_cxx_scope_spec`
+        # assume this is a template-id (e.g. `vector<int>`)
+        # do the lookup for `vector`
+        idx = findfirst('<', s)
+        s = isnothing(idx) ? s : s[1:idx-1]
+    elseif s != type_name
+        # this happends when the template-id is not annotated in `parse_cxx_scope_spec` due to missing headers
+        @assert occursin(type_name, s)
+        idx = findfirst('>', s)
+        id = isnothing(idx) ? s : s[1:idx]
+        error("failed to annotate the template-id `$id`. Please include the missing headers.")
+    elseif isempty(s)
+        error("the input is a scope specifier `$nns` without a decl name.")
+    end
+    return s
+end
+
+function (x::DeclFinder)(i::CxxInterpreter, code::String)
     reset(x)
-    parse_cxx_scope_spec(ci, parser, scope, x.spec)
-    setLookupName(x.result, DeclarationName(get_name(getASTContext(ci), decl)))
+    sema, parser = get_sema(i), get_parser(i)
+    type_name = parse_cxx_scope_spec(i, x.spec, code)
     if isValid(x.spec)
-        is_found = LookupParsedName(getSema(ci), x.result, getCurScope(parser), x.spec)
-        !is_found && error("failed to find decl(`$decl`) in the CXXScopeSpec.")
+        nns = getName(getScopeRep(x.spec))
+        declname = diagnose_declname(code, type_name, nns)
+        setLookupName(x.result, DeclarationName(get_name(get_ast_context(i), declname)))
+        is_found = LookupParsedName(sema, x.result, getCurScope(parser), x.spec, true, true)
+        !is_found && error("failed to lookup `$code`.")
     else
-        is_found = LookupName(getSema(ci), x.result, getCurScope(parser))
-        !is_found && error("failed to find decl(`$decl`) in the current scope.")
+        setLookupName(x.result, DeclarationName(get_name(get_ast_context(i), code)))
+        is_found = LookupName(sema, x.result, getCurScope(parser), true)
+        !is_found && error("failed to lookup `$code`.")
     end
     return !isempty(x.result)
 end
