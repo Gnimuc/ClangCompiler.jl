@@ -189,6 +189,8 @@ bool clang_Type_isFunctionPointerType(CXType_ T);
 
 bool clang_Type_isFunctionReferenceType(CXType_ T);
 
+bool clang_Type_isMemberPointerType(CXType_ T);
+
 bool clang_Type_isMemberFunctionPointerType(CXType_ T);
 
 bool clang_Type_isMemberDataPointerType(CXType_ T);

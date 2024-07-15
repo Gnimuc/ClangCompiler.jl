@@ -34,58 +34,66 @@ end
 #     end
 # end
 
-# function parse_cxx_scope_spec(p::Parser, spec::CXXScopeSpec)
-#     sema = getSema(p)
-#     pp = getPreprocessor(p)
-#     tok = getCurToken(p)
-#     is_incremental(pp) && is_eof(tok) && ConsumeToken(p)
-#     while !is_eof(tok)
-#         if is_coloncolon(tok)  # `::foo::bar::baz`
-#             TryAnnotateCXXScopeToken(p) && error("failed to annotate token.")
-#         elseif is_identifier(tok)  # `foo::bar::baz`
-#             TryAnnotateCXXScopeToken(p) && error("failed to annotate token.")
-#             if !is_identifier(tok)
-#                 continue
-#             else
-#                 ConsumeToken(p)
-#             end
-#         elseif is_annot_cxxscope(tok) || is_annot_typename(tok)
-#             restore_nns_annotation(sema, tok, spec)
-#             break
-#         elseif is_annot_template_id(tok)
-#             TryAnnotateTypeOrScopeTokenAfterScopeSpec(p, spec)
-#             break
-#         else  # skip other cases which we may add support in the future
-#             ConsumeAnyToken(p)
-#         end
-#     end
-#     # parse to the end of file, ignore everything
-#     while !is_eof(tok)
-#         ConsumeAnyToken(p)
-#     end
-#     return nothing
-# end
+"""
+    parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::String) -> String
+Parse the C++ decl specifier w.r.t current translation unit and extract the scope specifier to `ss`.
+Return the tailing type name if it can be extracted. Otherwise, return "".
 
-function parse_cxx_scope_spec(p::Parser, fid::FileID, spec::CXXScopeSpec)
-    pp = getPreprocessor(p)
-    EnterSourceFile(pp, fid)
-    try
-        parse_cxx_scope_spec(p, spec)
-    finally
-        EndSourceFile(pp)
-    end
-    return nothing
-end
-
-function parse_cxx_scope_spec(ci::CompilerInstance, p::Parser, str::String, spec::CXXScopeSpec)
-    src_mgr = getSourceManager(ci)
+For `std::vector<int>::size_type`, it will extract `std::vector<int>::` and return "size_type".
+For `std::vector<int>::`, it will extract `std::vector<int>::` and return "".
+For `std::vector<int>`, it will extract `std::` and return "". (`vector<int>` is used as a template-id)
+For `std::vector`, it will extract `std::` and return "vector". (`vector` is used as an identifier)
+For `std::`, it will extract `std::` and return "".
+For `std`, it will extract nothing and return "std". (`std` is used as an identifier)
+"""
+function parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::String)
+    ci, p = getCompilerInstance(x), getParser(x)
+    src_mgr, pp, sema = getSourceManager(ci), getPreprocessor(p), getSema(p)
     begin_diag(ci)
-    fid = FileID(src_mgr, get_buffer(str))
+    fid = FileID(src_mgr, get_buffer(code))
+    setShowColors(ci, true)
     try
-        parse_cxx_scope_spec(p, fid, spec)
+        EnterSourceFile(pp, fid)
+        # the preprocessor should be in incremental mode
+        @assert is_incremental(pp)
+        # parse the scope spec and the type
+        tok = getCurToken(p)
+        is_annot_repl_input_end(tok) && ConsumeAnyToken(p)
+        # try to annotate the current token in the following cases:
+        # nested-name-specifier 'template'[opt] simple-template-id '::'
+        # template-id '::'
+        # type-name '::'
+        # namespace-name '::'
+        # nested-name-specifier identifier '::'
+        # type-name '<'
+        TryAnnotateOptionalCXXScopeToken(p, CXDeclSpecContext_DSC_top_level)
+        type_name = ""
+        while !is_annot_repl_input_end(tok)
+            if is_coloncolon(tok) # ignore ::new or ::delete
+                ConsumeAnyToken(p)
+            elseif is_annot_cxxscope(tok)
+                restore_nns_annotation(sema, tok, ss) # extract the scope specifier
+                ConsumeAnyToken(p)
+            elseif is_identifier(tok)
+                type_name = getName(getIdentifierInfo(tok)) # extract type name
+                ConsumeToken(p)
+            elseif is_annot_template_id(tok)
+                ConsumeAnyToken(p) # ignore template-ids
+            elseif is_annot_typename(tok)
+                ConsumeAnyToken(p) # actually impossible to reach here
+            else
+                # ignore anything until EOF(annot_repl_input_end)
+                ConsumeAnyToken(p)
+            end
+        end
+        return type_name
     finally
+        tok = getCurToken(p)
+        while !is_annot_repl_input_end(tok)
+            ConsumeAnyToken(p)
+        end
+        EndSourceFile(pp)
         dispose(fid)
         end_diag(ci)
     end
-    return nothing
 end

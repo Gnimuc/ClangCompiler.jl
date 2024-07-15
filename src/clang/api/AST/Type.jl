@@ -187,7 +187,7 @@ getClass(x::AbstractMemberPointerType) = Type_(clang_MemberPointerType_getClass(
 # DependentSizedArrayType
 
 # FunctionType
-getReturnType(x::AbstractFunctionType) = QualType(clang_FunctionType_getReturnType(getTypePtr(x)))
+getReturnType(x::AbstractFunctionType) = QualType(clang_FunctionType_getReturnType(get_qual_type(x)))
 
 # FunctionNoProtoType
 

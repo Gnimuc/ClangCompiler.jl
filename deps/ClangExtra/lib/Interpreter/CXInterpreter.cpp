@@ -178,3 +178,7 @@ CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter In
 CXCodeGenerator clang_Interpreter_getCodeGen(CXInterpreter Interp) {
   return static_cast<clang::Interpreter *>(Interp)->IncrParser->getCodeGen();
 }
+
+CXParser clang_Interpreter_getParser(CXInterpreter Interp) {
+  return static_cast<clang::Interpreter *>(Interp)->IncrParser->P.get();
+}

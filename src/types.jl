@@ -32,6 +32,9 @@ See also, [`jlty_to_clty`](@ref). Note that, the mapping is not injective.
 """
 clty_to_jlty(x::T) where {T<:AbstractClangType} = error("no mapping found for $T")
 
+clty_to_jlty(x::AbstractType) = clty_to_jlty(resolve(x))
+clty_to_jlty(x::QualType) = clty_to_jlty(get_type_ptr(x))
+
 # builtin types
 clty_to_jlty(x::T) where {T<:AbstractBuiltinType} = error("no mapping found for builtin type: $T")
 clty_to_jlty(x::VoidTy) = Cvoid
@@ -60,7 +63,6 @@ clty_to_jlty(x::NullPtrTy) = Ptr{Cvoid}
 clty_to_jlty(x::VoidPtrTy) = Ptr{Cvoid}
 
 # Clang types
-clty_to_jlty(x::QualType) = clty_to_jlty(resolve(x))
 clty_to_jlty(x::BuiltinType) = clty_to_jlty(resolve(x))
 clty_to_jlty(x::ElaboratedType) = clty_to_jlty(desugar(x))
 clty_to_jlty(x::TypedefType) = clty_to_jlty(desugar(x))

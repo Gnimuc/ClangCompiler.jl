@@ -48,11 +48,17 @@ CXSourceLocation_ clang_Parser_ConsumeToken(CXParser P);
 
 CXSourceLocation_ clang_Parser_ConsumeAnyToken(CXParser P);
 
+bool clang_Parser_TryAnnotateTypeOrScopeToken(CXParser P, bool AllowImplicitTypename);
+
+bool clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(CXParser P, CXCXXScopeSpec SS,
+                                                            bool IsNewScope,
+                                                            bool AllowImplicitTypename);
+
 bool clang_Parser_TryAnnotateCXXScopeToken(CXParser P, bool EnteringContext);
 
-// bool clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(CXParser P, CXCXXScopeSpec
-// SS,
-//                                                             bool IsNewScope);
+bool clang_Parser_TryAnnotateOptionalCXXScopeToken(CXParser P, bool EnteringContext);
+
+CXQualType clang_Parser_getTypeAnnotation(CXToken_ Tok);
 
 // CXDeclGroupRef clang_Parser_parseOneTopLevelDecl(CXParser Parser, bool IsFirstDecl);
 

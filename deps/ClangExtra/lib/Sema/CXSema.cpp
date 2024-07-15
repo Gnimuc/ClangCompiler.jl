@@ -18,6 +18,27 @@ void clang_Sema_RestoreNestedNameSpecifierAnnotation(
       *static_cast<clang::CXXScopeSpec *>(SS));
 }
 
+CXQualType clang_sema_getTypeName(CXSema S, CXIdentifierInfo II, CXSourceLocation_ NameLoc,
+                                  CXScope Scp, CXCXXScopeSpec SS, bool isClassName,
+                                  bool HasTrailingDot, CXQualType ObjectTypePtr,
+                                  bool IsCtorOrDtorName, bool WantNontrivialTypeSourceInfo,
+                                  bool IsClassTemplateDeductionContext,
+                                  bool AllowImplicitTypename) {
+  return static_cast<clang::Sema *>(S)
+      ->getTypeName(*static_cast<clang::IdentifierInfo *>(II),
+                    clang::SourceLocation::getFromPtrEncoding(NameLoc),
+                    static_cast<clang::Scope *>(Scp),
+                    static_cast<clang::CXXScopeSpec *>(SS), isClassName, HasTrailingDot,
+                    clang::OpaquePtr<clang::QualType>::make(
+                        clang::QualType::getFromOpaquePtr(ObjectTypePtr)),
+                    IsCtorOrDtorName, WantNontrivialTypeSourceInfo,
+                    IsClassTemplateDeductionContext,
+                    AllowImplicitTypename ? clang::ImplicitTypenameContext::Yes
+                                          : clang::ImplicitTypenameContext::No)
+      .get()
+      .getAsOpaquePtr();
+}
+
 bool clang_Sema_LookupParsedName(CXSema S, CXLookupResult R, CXScope Sp, CXCXXScopeSpec SS,
                                  bool AllowBuiltinCreation, bool EnteringContext) {
   return static_cast<clang::Sema *>(S)->LookupParsedName(

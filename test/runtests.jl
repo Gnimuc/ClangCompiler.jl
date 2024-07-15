@@ -2,6 +2,7 @@ using ClangCompiler
 using Test
 
 include("types.jl")
+include("parse.jl")
 
 # if haskey(ENV, "CI")
 #     include("clang/status.jl")

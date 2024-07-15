@@ -13,3 +13,8 @@ function dump(x::NestedNameSpecifier)
     @check_ptrs x
     return clang_NestedNameSpecifier_dump(x)
 end
+
+function getName(x::NestedNameSpecifier)
+    @check_ptrs x
+    return get_string(clang_NestedNameSpecifier_getName(x))
+end

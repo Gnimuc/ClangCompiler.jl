@@ -1,6 +1,6 @@
 """
     abstract type AbstractFinder <: Any
-Supertype for various "lookup" functors.
+Supertype for "lookup" functors.
 """
 abstract type AbstractFinder end
 

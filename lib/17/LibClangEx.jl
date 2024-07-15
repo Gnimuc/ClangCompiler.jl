@@ -1318,14 +1318,6 @@ function clang_Type_dump(T)
     @ccall libclangex.clang_Type_dump(T::CXType_)::Cvoid
 end
 
-function clang_isa_BuiltinType(T)
-    @ccall libclangex.clang_isa_BuiltinType(T::CXType_)::Bool
-end
-
-function clang_isa_ComplexType(T)
-    @ccall libclangex.clang_isa_ComplexType(T::CXType_)::Bool
-end
-
 function clang_isa_PointerType(T)
     @ccall libclangex.clang_isa_PointerType(T::CXType_)::Bool
 end
@@ -1334,48 +1326,8 @@ function clang_isa_ReferenceType(T)
     @ccall libclangex.clang_isa_ReferenceType(T::CXType_)::Bool
 end
 
-function clang_isa_LValueReferenceType(T)
-    @ccall libclangex.clang_isa_LValueReferenceType(T::CXType_)::Bool
-end
-
-function clang_isa_RValueReferenceType(T)
-    @ccall libclangex.clang_isa_RValueReferenceType(T::CXType_)::Bool
-end
-
-function clang_isa_MemberPointerType(T)
-    @ccall libclangex.clang_isa_MemberPointerType(T::CXType_)::Bool
-end
-
 function clang_isa_ArrayType(T)
     @ccall libclangex.clang_isa_ArrayType(T::CXType_)::Bool
-end
-
-function clang_isa_ConstantArrayType(T)
-    @ccall libclangex.clang_isa_ConstantArrayType(T::CXType_)::Bool
-end
-
-function clang_isa_IncompleteArrayType(T)
-    @ccall libclangex.clang_isa_IncompleteArrayType(T::CXType_)::Bool
-end
-
-function clang_isa_VariableArrayType(T)
-    @ccall libclangex.clang_isa_VariableArrayType(T::CXType_)::Bool
-end
-
-function clang_isa_DependentSizedArrayType(T)
-    @ccall libclangex.clang_isa_DependentSizedArrayType(T::CXType_)::Bool
-end
-
-function clang_isa_FunctionType(T)
-    @ccall libclangex.clang_isa_FunctionType(T::CXType_)::Bool
-end
-
-function clang_isa_FunctionNoProtoType(T)
-    @ccall libclangex.clang_isa_FunctionNoProtoType(T::CXType_)::Bool
-end
-
-function clang_isa_FunctionProtoType(T)
-    @ccall libclangex.clang_isa_FunctionProtoType(T::CXType_)::Bool
 end
 
 function clang_isa_UnresolvedUsingType(T)
@@ -1566,20 +1518,16 @@ function clang_PointerType_getPointeeType(T)
     @ccall libclangex.clang_PointerType_getPointeeType(T::CXPointerType)::CXQualType
 end
 
+function clang_ReferenceType_getPointeeType(T)
+    @ccall libclangex.clang_ReferenceType_getPointeeType(T::CXReferenceType)::CXQualType
+end
+
 function clang_MemberPointerType_getPointeeType(T)
     @ccall libclangex.clang_MemberPointerType_getPointeeType(T::CXMemberPointerType)::CXQualType
 end
 
 function clang_MemberPointerType_getClass(T)
     @ccall libclangex.clang_MemberPointerType_getClass(T::CXMemberPointerType)::CXType_
-end
-
-function clang_TypedefType_desugar(T)
-    @ccall libclangex.clang_TypedefType_desugar(T::CXTypedefType)::CXQualType
-end
-
-function clang_EnumType_getDecl(T)
-    @ccall libclangex.clang_EnumType_getDecl(T::CXEnumType)::CXEnumDecl
 end
 
 function clang_FunctionType_getReturnType(T)
@@ -1594,12 +1542,12 @@ function clang_FunctionProtoType_getParamType(T, i)
     @ccall libclangex.clang_FunctionProtoType_getParamType(T::CXFunctionProtoType, i::Cuint)::CXQualType
 end
 
-function clang_ReferenceType_getPointeeType(T)
-    @ccall libclangex.clang_ReferenceType_getPointeeType(T::CXReferenceType)::CXQualType
+function clang_TypedefType_desugar(T)
+    @ccall libclangex.clang_TypedefType_desugar(T::CXTypedefType)::CXQualType
 end
 
-function clang_ElaboratedType_desugar(T)
-    @ccall libclangex.clang_ElaboratedType_desugar(T::CXElaboratedType)::CXQualType
+function clang_EnumType_getDecl(T)
+    @ccall libclangex.clang_EnumType_getDecl(T::CXEnumType)::CXEnumDecl
 end
 
 function clang_TemplateSpecializationType_isCurrentInstantiation(T)
@@ -1624,6 +1572,10 @@ end
 
 function clang_TemplateSpecializationType_desugar(T)
     @ccall libclangex.clang_TemplateSpecializationType_desugar(T::CXTemplateSpecializationType)::CXQualType
+end
+
+function clang_ElaboratedType_desugar(T)
+    @ccall libclangex.clang_ElaboratedType_desugar(T::CXElaboratedType)::CXQualType
 end
 
 @enum CXTagTypeKind::UInt32 begin
@@ -5712,6 +5664,10 @@ function clang_NestedNameSpecifier_dump(NNS)
     @ccall libclangex.clang_NestedNameSpecifier_dump(NNS::CXNestedNameSpecifier)::Cvoid
 end
 
+function clang_NestedNameSpecifier_getName(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_getName(NNS::CXNestedNameSpecifier)::CXString
+end
+
 @enum CXTemplateArgument_ArgKind::UInt32 begin
     CXTemplateArgument_Null = 0
     CXTemplateArgument_Type = 1
@@ -5985,6 +5941,10 @@ end
 
 function clang_IdentifierTable_get(Idents, Name)
     @ccall libclangex.clang_IdentifierTable_get(Idents::CXIdentifierTable, Name::Ptr{Cchar})::CXIdentifierInfo
+end
+
+function clang_IdentifierInfo_getName(II)
+    @ccall libclangex.clang_IdentifierInfo_getName(II::CXIdentifierInfo)::Ptr{Cchar}
 end
 
 function clang_LangOptions_PrintStats(LO)
@@ -6475,6 +6435,10 @@ function clang_Interpreter_getCodeGen(Interp)
     @ccall libclangex.clang_Interpreter_getCodeGen(Interp::CXInterpreter)::CXCodeGenerator
 end
 
+function clang_Interpreter_getParser(Interp)
+    @ccall libclangex.clang_Interpreter_getParser(Interp::CXInterpreter)::CXParser
+end
+
 function clang_value_create()
     @ccall libclangex.clang_value_create()::CXValue
 end
@@ -6760,8 +6724,20 @@ function clang_Token_getAnnotationEndLoc(Tok)
     @ccall libclangex.clang_Token_getAnnotationEndLoc(Tok::CXToken_)::CXSourceLocation_
 end
 
+function clang_Token_getName(Tok)
+    @ccall libclangex.clang_Token_getName(Tok::CXToken_)::Ptr{Cchar}
+end
+
+function clang_Token_getIdentifierInfo(Tok)
+    @ccall libclangex.clang_Token_getIdentifierInfo(Tok::CXToken_)::CXIdentifierInfo
+end
+
 function clang_Token_isKind_eof(Tok)
     @ccall libclangex.clang_Token_isKind_eof(Tok::CXToken_)::Bool
+end
+
+function clang_Token_isKind_annot_repl_input_end(Tok)
+    @ccall libclangex.clang_Token_isKind_annot_repl_input_end(Tok::CXToken_)::Bool
 end
 
 function clang_Token_isKind_identifier(Tok)
@@ -6861,8 +6837,24 @@ function clang_Parser_ConsumeAnyToken(P)
     @ccall libclangex.clang_Parser_ConsumeAnyToken(P::CXParser)::CXSourceLocation_
 end
 
+function clang_Parser_TryAnnotateTypeOrScopeToken(P, AllowImplicitTypename)
+    @ccall libclangex.clang_Parser_TryAnnotateTypeOrScopeToken(P::CXParser, AllowImplicitTypename::Bool)::Bool
+end
+
+function clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(P, SS, IsNewScope, AllowImplicitTypename)
+    @ccall libclangex.clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(P::CXParser, SS::CXCXXScopeSpec, IsNewScope::Bool, AllowImplicitTypename::Bool)::Bool
+end
+
 function clang_Parser_TryAnnotateCXXScopeToken(P, EnteringContext)
     @ccall libclangex.clang_Parser_TryAnnotateCXXScopeToken(P::CXParser, EnteringContext::Bool)::Bool
+end
+
+function clang_Parser_TryAnnotateOptionalCXXScopeToken(P, EnteringContext)
+    @ccall libclangex.clang_Parser_TryAnnotateOptionalCXXScopeToken(P::CXParser, EnteringContext::Bool)::Bool
+end
+
+function clang_Parser_getTypeAnnotation(Tok)
+    @ccall libclangex.clang_Parser_getTypeAnnotation(Tok::CXToken_)::CXQualType
 end
 
 @enum CXDeclaratorContext::UInt32 begin
@@ -6908,8 +6900,12 @@ function clang_CXXScopeSpec_clear(SS)
     @ccall libclangex.clang_CXXScopeSpec_clear(SS::CXCXXScopeSpec)::Cvoid
 end
 
-function clang_CXXScopeSpec_getScopeRep(SS)
-    @ccall libclangex.clang_CXXScopeSpec_getScopeRep(SS::CXCXXScopeSpec)::CXNestedNameSpecifier
+function clang_CXXScopeSpec_setBeginLoc(SS, Loc)
+    @ccall libclangex.clang_CXXScopeSpec_setBeginLoc(SS::CXCXXScopeSpec, Loc::CXSourceLocation_)::Cvoid
+end
+
+function clang_CXXScopeSpec_setEndLoc(SS, Loc)
+    @ccall libclangex.clang_CXXScopeSpec_setEndLoc(SS::CXCXXScopeSpec, Loc::CXSourceLocation_)::Cvoid
 end
 
 function clang_CXXScopeSpec_getBeginLoc(SS)
@@ -6920,12 +6916,8 @@ function clang_CXXScopeSpec_getEndLoc(SS)
     @ccall libclangex.clang_CXXScopeSpec_getEndLoc(SS::CXCXXScopeSpec)::CXSourceLocation_
 end
 
-function clang_CXXScopeSpec_setBeginLoc(SS, Loc)
-    @ccall libclangex.clang_CXXScopeSpec_setBeginLoc(SS::CXCXXScopeSpec, Loc::CXSourceLocation_)::Cvoid
-end
-
-function clang_CXXScopeSpec_setEndLoc(SS, Loc)
-    @ccall libclangex.clang_CXXScopeSpec_setEndLoc(SS::CXCXXScopeSpec, Loc::CXSourceLocation_)::Cvoid
+function clang_CXXScopeSpec_getScopeRep(SS)
+    @ccall libclangex.clang_CXXScopeSpec_getScopeRep(SS::CXCXXScopeSpec)::CXNestedNameSpecifier
 end
 
 function clang_CXXScopeSpec_isEmpty(SS)
@@ -7017,6 +7009,10 @@ end
 
 function clang_Sema_RestoreNestedNameSpecifierAnnotation(S, Annotation, AnnotationRange_begin, AnnotationRange_end, SS)
     @ccall libclangex.clang_Sema_RestoreNestedNameSpecifierAnnotation(S::CXSema, Annotation::Ptr{Cvoid}, AnnotationRange_begin::CXSourceLocation_, AnnotationRange_end::CXSourceLocation_, SS::CXCXXScopeSpec)::Cvoid
+end
+
+function clang_sema_getTypeName(S, II, NameLoc, Scp, SS, isClassName, HasTrailingDot, ObjectTypePtr, IsCtorOrDtorName, WantNontrivialTypeSourceInfo, IsClassTemplateDeductionContext, AllowImplicitTypename)
+    @ccall libclangex.clang_sema_getTypeName(S::CXSema, II::CXIdentifierInfo, NameLoc::CXSourceLocation_, Scp::CXScope, SS::CXCXXScopeSpec, isClassName::Bool, HasTrailingDot::Bool, ObjectTypePtr::CXQualType, IsCtorOrDtorName::Bool, WantNontrivialTypeSourceInfo::Bool, IsClassTemplateDeductionContext::Bool, AllowImplicitTypename::Bool)::CXQualType
 end
 
 function clang_Sema_LookupParsedName(S, R, Sp, SS, AllowBuiltinCreation, EnteringContext)
