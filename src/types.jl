@@ -33,39 +33,14 @@ See also, [`jlty_to_clty`](@ref). Note that, the mapping is not injective.
 clty_to_jlty(x::T) where {T<:AbstractClangType} = error("no mapping found for $T")
 
 clty_to_jlty(x::AbstractType) = clty_to_jlty(resolve(x))
-clty_to_jlty(x::QualType) = clty_to_jlty(get_type_ptr(x))
 
 # builtin types
-clty_to_jlty(x::T) where {T<:AbstractBuiltinType} = error("no mapping found for builtin type: $T")
-clty_to_jlty(x::VoidTy) = Cvoid
-clty_to_jlty(x::BoolTy) = Bool
-clty_to_jlty(x::CharTy) = Cuchar
-clty_to_jlty(x::WCharTy) = Cwchar_t
-clty_to_jlty(x::WideCharTy) = Cwchar_t
-clty_to_jlty(x::SignedCharTy) = Cchar
-clty_to_jlty(x::ShortTy) = Cshort
-clty_to_jlty(x::IntTy) = Cint
-clty_to_jlty(x::LongTy) = Clong
-clty_to_jlty(x::LongLongTy) = Clonglong
-clty_to_jlty(x::Int128Ty) = Int128
-clty_to_jlty(x::UnsignedCharTy) = Cuchar
-clty_to_jlty(x::UnsignedShortTy) = Cushort
-clty_to_jlty(x::UnsignedIntTy) = Cuint
-clty_to_jlty(x::UnsignedLongTy) = Culong
-clty_to_jlty(x::UnsignedLongLongTy) = Culonglong
-clty_to_jlty(x::UnsignedInt128Ty) = UInt128
-clty_to_jlty(x::FloatTy) = Cfloat
-clty_to_jlty(x::DoubleTy) = Cdouble
-clty_to_jlty(x::Float16Ty) = Float16
-clty_to_jlty(x::HalfTy) = Float16
-clty_to_jlty(x::BFloat16Ty) = Float16
-clty_to_jlty(x::NullPtrTy) = Ptr{Cvoid}
-clty_to_jlty(x::VoidPtrTy) = Ptr{Cvoid}
+clty_to_jlty(x::T) where {T<:AbstractBuiltinType} = x
 
 # Clang types
 clty_to_jlty(x::BuiltinType) = clty_to_jlty(resolve(x))
-clty_to_jlty(x::ElaboratedType) = clty_to_jlty(desugar(x))
-clty_to_jlty(x::TypedefType) = clty_to_jlty(desugar(x))
+clty_to_jlty(x::ElaboratedType) = x
+clty_to_jlty(x::TypedefType) = x
 
 clty_to_jlty(x::PointerType) = x
 
@@ -96,6 +71,9 @@ clty_to_jlty(x::DependentSizedArrayType) = x
 Resolve type using Clang's RTTI.
 """
 function resolve(ty::AbstractType)
+    # keep an eye on the order
+    is_elaborated_type(ty) && return ElaboratedType(ty.ptr)
+    is_typedef_type(ty) && return TypedefType(ty.ptr)
     is_builtin_type(ty) && return BuiltinType(ty.ptr)
     is_complex_type(ty) && return ComplexType(ty.ptr)
     is_pointer_type(ty) && return PointerType(ty.ptr)
@@ -103,13 +81,11 @@ function resolve(ty::AbstractType)
     is_member_pointer_type(ty) && return MemberPointerType(ty.ptr)
     is_array_type(ty) && return ArrayType(ty.ptr)
     is_function_type(ty) && return FunctionType(ty.ptr)
-    is_typedef_type(ty) && return TypedefType(ty.ptr)
     is_tag_type(ty) && return TagType(ty.ptr)
     is_template_type_parm_type(ty) && return TemplateTypeParmType(ty.ptr)
     is_subst_template_type_parm_type(ty) && return SubstTemplateTypeParmType(ty.ptr)
     is_subst_template_type_parm_pack_type(ty) && return SubstTemplateTypeParmPackType(ty.ptr)
     is_template_specialization_type(ty) && return TemplateSpecializationType(ty.ptr)
-    is_elaborated_type(ty) && return ElaboratedType(ty.ptr)
     is_dependent_name_type(ty) && return DependentNameType(ty.ptr)
     is_dependent_template_specilization_type(ty) && return DependentTemplateSpecializationType(ty.ptr)
     return resolve(UnexposedType(ty))

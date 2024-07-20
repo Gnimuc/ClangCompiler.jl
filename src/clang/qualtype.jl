@@ -6,7 +6,7 @@ Return a `QualType`.
 get_qual_type(x::AbstractType) = getCanonicalTypeInternal(x)
 
 """
-    get_type_ptr(x::QualType) -> CXType_
+    get_type_ptr(x::QualType) -> Type_
 Return a `Type_`.
 """
 get_type_ptr(x::QualType) = getTypePtr(x)

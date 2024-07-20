@@ -480,11 +480,11 @@ abstract type AbstractCoroutineSuspendExpr <: AbstractExpr end
 
 # Type
 """
-    abstract type AbstractClangType <: AbstractClangType end
+    abstract type AbstractType <: AbstractClangType end
 Supertype for `clang::Type`s.
 
 1. `CXType_` is an opaque pointer for `clang::Type *`.
-2. `get_type_ptr`/`getTypePtr` is for converting a `QualType` to a `CXType_`.
+2. `get_type_ptr`/`getTypePtr` is for converting a `QualType` to a `CXType_`. (qualifiers are removed)
 3. `get_qual_type`/`getCanonicalTypeInternal` is for converting a `CXType_` to a `QualType`.
 """
 abstract type AbstractType <: AbstractClangType end

@@ -6,6 +6,31 @@ using ClangCompiler: get_ast_context, get_codegen_module, convertTypeForMemory
 using Test
 import ClangCompiler as CC
 
+CC.clty_to_jlty(x::CC.VoidTy) = Cvoid
+CC.clty_to_jlty(x::CC.BoolTy) = Bool
+CC.clty_to_jlty(x::CC.CharTy) = Cuchar
+CC.clty_to_jlty(x::CC.WCharTy) = Cwchar_t
+CC.clty_to_jlty(x::CC.WideCharTy) = Cwchar_t
+CC.clty_to_jlty(x::CC.SignedCharTy) = Cchar
+CC.clty_to_jlty(x::CC.ShortTy) = Cshort
+CC.clty_to_jlty(x::CC.IntTy) = Cint
+CC.clty_to_jlty(x::CC.LongTy) = Clong
+CC.clty_to_jlty(x::CC.LongLongTy) = Clonglong
+CC.clty_to_jlty(x::CC.Int128Ty) = Int128
+CC.clty_to_jlty(x::CC.UnsignedCharTy) = Cuchar
+CC.clty_to_jlty(x::CC.UnsignedShortTy) = Cushort
+CC.clty_to_jlty(x::CC.UnsignedIntTy) = Cuint
+CC.clty_to_jlty(x::CC.UnsignedLongTy) = Culong
+CC.clty_to_jlty(x::CC.UnsignedLongLongTy) = Culonglong
+CC.clty_to_jlty(x::CC.UnsignedInt128Ty) = UInt128
+CC.clty_to_jlty(x::CC.FloatTy) = Cfloat
+CC.clty_to_jlty(x::CC.DoubleTy) = Cdouble
+CC.clty_to_jlty(x::CC.Float16Ty) = Float16
+CC.clty_to_jlty(x::CC.HalfTy) = Float16
+CC.clty_to_jlty(x::CC.BFloat16Ty) = Float16
+CC.clty_to_jlty(x::CC.NullPtrTy) = Ptr{Cvoid}
+CC.clty_to_jlty(x::CC.VoidPtrTy) = Ptr{Cvoid}
+
 @testset "Types" begin
     I = create_interpreter()
     ctx = get_ast_context(I)
