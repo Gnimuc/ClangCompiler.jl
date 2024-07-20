@@ -35,7 +35,7 @@ end
 # end
 
 """
-    parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::String) -> String
+    parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::AbstractString) -> String
 Parse the C++ decl specifier w.r.t current translation unit and extract the scope specifier to `ss`.
 Return the tailing type name if it can be extracted. Otherwise, return "".
 
@@ -46,7 +46,7 @@ For `std::vector`, it will extract `std::` and return "vector". (`vector` is use
 For `std::`, it will extract `std::` and return "".
 For `std`, it will extract nothing and return "std". (`std` is used as an identifier)
 """
-function parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::String)
+function parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::AbstractString)
     ci, p = getCompilerInstance(x), getParser(x)
     src_mgr, pp, sema = getSourceManager(ci), getPreprocessor(p), getSema(p)
     begin_diag(ci)

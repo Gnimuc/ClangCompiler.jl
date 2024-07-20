@@ -1,6 +1,7 @@
 using ClangCompiler
 using ClangCompiler: create_interpreter, dispose
-using ClangCompiler: parse_cxx_scope_spec, CXXScopeSpec, getScopeRep, getName, isValid, isEmpty, clear
+using ClangCompiler: parse_cxx_scope_spec
+using ClangCompiler: CXXScopeSpec, getScopeRep, getName, isValid, isEmpty, clear
 using Test
 
 @testset "Parse Decl" begin

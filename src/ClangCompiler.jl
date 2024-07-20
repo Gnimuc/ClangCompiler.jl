@@ -19,8 +19,6 @@ using .JLLShim
 using LLVM: LLVM
 using LLVM.Interop: call_function
 
-import Base: dump, string
-
 const llvm_version = string(Base.libllvm_version.major)
 
 const libdir = joinpath(@__DIR__, "..", "lib")
@@ -34,7 +32,7 @@ include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
 include("env.jl")
-export get_compiler_flags, get_default_args
+public get_compiler_flags, get_default_args
 
 # clang
 include("clang/utils.jl")
@@ -50,20 +48,27 @@ include("clang/qualtype.jl")
 include("clang/type.jl")
 include("clang/sema.jl")
 
-# type mapping
-include("types.jl")
-export jlty_to_clty, clty_to_jlty, jlty_to_llvmty
-
-include("parse.jl")
-# include("template.jl")
-
-# compiler
+# public
 include("compiler/compiler.jl")
+public AbstractClangCompiler
+
 include("compiler/interpreter.jl")
+public CxxInterpreter, create_interpreter, dispose
+public get_instance, get_ast_context, get_codegen_module, get_parser, get_sema
+
 # include("compiler/irgen.jl")
 
+include("types.jl")
+public clty_to_jlty, jlty_to_clty
+
+include("parse.jl")
+public parse_cxx_scope_spec
+
 include("lookup.jl")
+public AbstractFinder, DeclFinder, reset, get_decl
 
 include("utils.jl")
+
+# include("template.jl")
 
 end
