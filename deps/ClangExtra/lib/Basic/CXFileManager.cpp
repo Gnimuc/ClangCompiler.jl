@@ -2,7 +2,6 @@
 #include "clang/Basic/FileManager.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include <cstdio>
 
 CXFileManager clang_FileManager_create(void) {
   auto FM = std::make_unique<clang::FileManager>(clang::FileSystemOptions());

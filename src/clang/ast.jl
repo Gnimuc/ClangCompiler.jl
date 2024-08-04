@@ -31,8 +31,8 @@ get_loc(x::AbstractDecl) = getLocation(x)
 
 dump(x::AbstractDecl) = dumpColor(x)
 
-Base.isempty(x::DeclarationName) = isEmpty(x)
-Base.string(x::DeclarationName) = get_as_string(x)
+is_empty(x::DeclarationName) = isEmpty(x)
+get_string(x::DeclarationName) = get_as_string(x)
 
 dump(x::CXXScopeSpec) = dump(getScopeRep(x))
 

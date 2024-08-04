@@ -1,6 +1,5 @@
 #include "clang-ex/Sema/CXDeclSpec.h"
 #include "clang/Sema/DeclSpec.h"
-#include <cstdio>
 
 CXCXXScopeSpec clang_CXXScopeSpec_create() {
   auto CXXSS = std::make_unique<clang::CXXScopeSpec>();

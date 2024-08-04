@@ -1,7 +1,6 @@
 #include "clang-ex/Lex/CXLexer.h"
 #include "clang/Lex/Lexer.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include <cstdio>
 
 CXLexer clang_Lexer_create(CXFileID FID, LLVMMemoryBufferRef FromFile, CXSourceManager SM,
                            CXLangOptions langOpts) {
