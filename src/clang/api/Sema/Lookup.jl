@@ -84,7 +84,7 @@ end
 function getResults(x::LookupResult)
     @check_ptrs x
     n = getNum(x)
-    v = Vector{NamedDecl}(undef, n)
+    v = Vector{CXNamedDecl}(undef, n)
     clang_LookupResult_getResults(x, v, n)
-    return v
+    return NamedDecl.(v)
 end
