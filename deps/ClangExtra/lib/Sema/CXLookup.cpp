@@ -1,6 +1,5 @@
 #include "clang-ex/Sema/CXLookup.h"
 #include "clang/Sema/Lookup.h"
-#include <cstdio>
 
 CXLookupResult clang_LookupResult_create(CXSema S, CXDeclarationName Name,
                                          CXSourceLocation_ NameLoc,

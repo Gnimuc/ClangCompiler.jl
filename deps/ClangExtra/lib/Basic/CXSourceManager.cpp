@@ -1,7 +1,6 @@
 #include "clang-ex/Basic/CXSourceManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include <cstdio>
 
 CXSourceManager clang_SourceManager_create(CXDiagnosticsEngine Diag, CXFileManager FileMgr,
                                            bool UserFilesAreVolatile) {

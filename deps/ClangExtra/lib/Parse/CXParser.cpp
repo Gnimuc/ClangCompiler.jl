@@ -1,6 +1,5 @@
 #include "clang-ex/Parse/CXParser.h"
 #include "clang/Parse/Parser.h"
-#include <cstdio>
 
 CXParser clang_Parser_create(CXPreprocessor PP, CXSema Actions, bool SkipFunctionBodies) {
   auto P = std::make_unique<clang::Parser>(*static_cast<clang::Preprocessor *>(PP),
