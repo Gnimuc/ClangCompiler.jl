@@ -6963,6 +6963,42 @@ function clang_LookupResult_dispose(LR)
     @ccall libclangex.clang_LookupResult_dispose(LR::CXLookupResult)::Cvoid
 end
 
+function clang_LookupResult_isForRedeclaration(LR)
+    @ccall libclangex.clang_LookupResult_isForRedeclaration(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isTemplateNameLookup(LR)
+    @ccall libclangex.clang_LookupResult_isTemplateNameLookup(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isAmbiguous(LR)
+    @ccall libclangex.clang_LookupResult_isAmbiguous(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isSingleResult(LR)
+    @ccall libclangex.clang_LookupResult_isSingleResult(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isOverloadedResult(LR)
+    @ccall libclangex.clang_LookupResult_isOverloadedResult(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isUnresolvableResult(LR)
+    @ccall libclangex.clang_LookupResult_isUnresolvableResult(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isClassLookup(LR)
+    @ccall libclangex.clang_LookupResult_isClassLookup(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_resolveKind(LR)
+    @ccall libclangex.clang_LookupResult_resolveKind(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_isSingleTagDecl(LR)
+    @ccall libclangex.clang_LookupResult_isSingleTagDecl(LR::CXLookupResult)::Bool
+end
+
 function clang_LookupResult_clear(LR, LookupKind)
     @ccall libclangex.clang_LookupResult_clear(LR::CXLookupResult, LookupKind::CXLookupNameKind)::Cvoid
 end
@@ -6985,6 +7021,14 @@ end
 
 function clang_LookupResult_getRepresentativeDecl(LR)
     @ccall libclangex.clang_LookupResult_getRepresentativeDecl(LR::CXLookupResult)::CXNamedDecl
+end
+
+function clang_LookupResult_getNum(LR)
+    @ccall libclangex.clang_LookupResult_getNum(LR::CXLookupResult)::Csize_t
+end
+
+function clang_LookupResult_getResults(LR, Decls, N)
+    @ccall libclangex.clang_LookupResult_getResults(LR::CXLookupResult, Decls::Ptr{CXNamedDecl}, N::Csize_t)::Cvoid
 end
 
 function clang_Scope_dump(S)

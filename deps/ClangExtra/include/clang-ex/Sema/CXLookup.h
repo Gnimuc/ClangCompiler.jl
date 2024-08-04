@@ -32,6 +32,24 @@ CXLookupResult clang_LookupResult_create(CXSema S, CXDeclarationName Name,
 
 void clang_LookupResult_dispose(CXLookupResult LR);
 
+bool clang_LookupResult_isForRedeclaration(CXLookupResult LR);
+
+bool clang_LookupResult_isTemplateNameLookup(CXLookupResult LR);
+
+bool clang_LookupResult_isAmbiguous(CXLookupResult LR);
+
+bool clang_LookupResult_isSingleResult(CXLookupResult LR);
+
+bool clang_LookupResult_isOverloadedResult(CXLookupResult LR);
+
+bool clang_LookupResult_isUnresolvableResult(CXLookupResult LR);
+
+bool clang_LookupResult_isClassLookup(CXLookupResult LR);
+
+void clang_LookupResult_resolveKind(CXLookupResult LR);
+
+bool clang_LookupResult_isSingleTagDecl(CXLookupResult LR);
+
 void clang_LookupResult_clear(CXLookupResult LR, CXLookupNameKind LookupKind);
 
 void clang_LookupResult_setLookupName(CXLookupResult LR, CXDeclarationName DN);
@@ -47,6 +65,10 @@ CXNamedDecl clang_LookupResult_getRepresentativeDecl(CXLookupResult LR);
 void clang_LookupResult_setLookupName(CXLookupResult LR, CXDeclarationName DN);
 
 CXDeclarationName clang_LookupResult_getLookupName(CXLookupResult LR);
+
+size_t clang_LookupResult_getNum(CXLookupResult LR);
+
+void clang_LookupResult_getResults(CXLookupResult LR, CXNamedDecl *Decls, size_t N);
 
 LLVM_CLANG_C_EXTERN_C_END
 

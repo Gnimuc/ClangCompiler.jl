@@ -33,8 +33,18 @@ function reset(x::DeclFinder)
 end
 
 function get_decl(x::DeclFinder)
-    isempty(x.result) && error("no lookup result.")
-    return getRepresentativeDecl(x.result)
+    @assert is_unique(x.result) "the lookup result is not unique."
+    return getUnderlyingDecl(getRepresentativeDecl(x.result))
+end
+
+function get_decls(x::DeclFinder)
+    is_empty(x.result) && error("failed to find any lookup result.")
+    return getResults(x.result)
+end
+
+function get_tag(x::DeclFinder)
+    @assert is_tag(x.result) "the lookup result is not a single tag decl."
+    return getUnderlyingDecl(getRepresentativeDecl(x.result))
 end
 
 strip_nns(nns::AbstractString, code::AbstractString) = code[length(nns)+1:end]
@@ -51,9 +61,9 @@ function diagnose_declname(code::AbstractString, type_name::AbstractString, nns:
         @assert occursin(type_name, s)
         idx = findfirst('>', s)
         id = isnothing(idx) ? s : s[1:idx]
-        error("failed to annotate the template-id `$id`. Please include the missing headers.")
+        error("failed to annotate the template-id `$id`; did you forget to include any headers?")
     elseif isempty(s)
-        error("the input is a scope specifier `$nns` without a decl name.")
+        error("failed to get the decl name; did you forget to add the decl name after the scope specifier `$nns`?")
     end
     return s
 end
@@ -66,12 +76,11 @@ function (x::DeclFinder)(i::CxxInterpreter, code::String)
         nns = getName(getScopeRep(x.spec))
         declname = diagnose_declname(code, type_name, nns)
         setLookupName(x.result, DeclarationName(get_name(get_ast_context(i), declname)))
-        is_found = LookupParsedName(sema, x.result, getCurScope(parser), x.spec, true, true)
-        !is_found && error("failed to lookup `$code`.")
+        LookupParsedName(sema, x.result, getCurScope(parser), x.spec, true, true)
     else
         setLookupName(x.result, DeclarationName(get_name(get_ast_context(i), code)))
-        is_found = LookupName(sema, x.result, getCurScope(parser), true)
-        !is_found && error("failed to lookup `$code`.")
+        LookupName(sema, x.result, getCurScope(parser), true)
     end
-    return !isempty(x.result)
+    resolveKind(x.result)
+    return !is_empty(x.result)
 end

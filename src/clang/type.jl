@@ -100,7 +100,7 @@ get_pointee_type(x::PointerType) = getPointeeType(x)
 is_reference_type(x::AbstractType) = isReferenceType(x)
 is_reference_type(x::AbstractReferenceType) = true
 
-get_pointee_type(x::ReferenceType) = getPointeeType(x)
+get_pointee_type(x::AbstractReferenceType) = getPointeeType(x)
 
 # LValueReferenceType
 is_lvalue_reference_type(x::AbstractType) = isLValueReferenceType(x)

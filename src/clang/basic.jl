@@ -15,7 +15,7 @@ get_name(x::FileEntry) = getName(x)
 # SourceLocation
 value(x::SourceLocation) = getHashValue(x)
 
-Base.string(x::SourceLocation) = printToString(x)
+get_string(x::SourceLocation) = printToString(x)
 
 get_begin_loc(x::SourceRange) = getBeginLoc(x)
 get_end_loc(x::SourceRange) = getEndLoc(x)
