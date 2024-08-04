@@ -70,6 +70,8 @@ size_t clang_LookupResult_getNum(CXLookupResult LR);
 
 void clang_LookupResult_getResults(CXLookupResult LR, CXNamedDecl *Decls, size_t N);
 
+CXNamedDecl clang_LookupResult_getResult(CXLookupResult LR);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

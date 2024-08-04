@@ -87,5 +87,10 @@ void clang_LookupResult_getResults(CXLookupResult LR, CXNamedDecl *Decls, size_t
   auto *R = static_cast<clang::LookupResult *>(LR);
   auto It = R->begin();
   for (size_t I = 0; I < N; ++I, ++It)
-    Decls[I] = *It;
+    Decls[I] = (*It)->getUnderlyingDecl();
+}
+
+CXNamedDecl clang_LookupResult_getResult(CXLookupResult LR) {
+  auto It = static_cast<clang::LookupResult *>(LR)->begin();
+  return (*It)->getUnderlyingDecl();
 }

@@ -7031,6 +7031,10 @@ function clang_LookupResult_getResults(LR, Decls, N)
     @ccall libclangex.clang_LookupResult_getResults(LR::CXLookupResult, Decls::Ptr{CXNamedDecl}, N::Csize_t)::Cvoid
 end
 
+function clang_LookupResult_getResult(LR)
+    @ccall libclangex.clang_LookupResult_getResult(LR::CXLookupResult)::CXNamedDecl
+end
+
 function clang_Scope_dump(S)
     @ccall libclangex.clang_Scope_dump(S::CXScope)::Cvoid
 end

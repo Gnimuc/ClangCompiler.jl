@@ -88,3 +88,8 @@ function getResults(x::LookupResult)
     clang_LookupResult_getResults(x, v, n)
     return NamedDecl.(v)
 end
+
+function getResult(x::LookupResult)
+    @check_ptrs x
+    return NamedDecl(clang_LookupResult_getResult(x))
+end

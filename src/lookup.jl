@@ -34,7 +34,7 @@ end
 
 function get_decl(x::DeclFinder)
     @assert is_unique(x.result) "the lookup result is not unique."
-    return getUnderlyingDecl(getRepresentativeDecl(x.result))
+    return getResult(x.result)
 end
 
 function get_decls(x::DeclFinder)
@@ -44,7 +44,7 @@ end
 
 function get_tag(x::DeclFinder)
     @assert is_tag(x.result) "the lookup result is not a single tag decl."
-    return getUnderlyingDecl(getRepresentativeDecl(x.result))
+    return getResult(x.result)
 end
 
 strip_nns(nns::AbstractString, code::AbstractString) = code[length(nns)+1:end]
