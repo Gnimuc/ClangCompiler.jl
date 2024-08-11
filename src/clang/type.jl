@@ -152,6 +152,9 @@ is_function_proto_type(x::FunctionProtoType) = true
 
 get_return_type(x::FunctionProtoType) = getReturnType(x)
 
+get_param_num(x::FunctionProtoType) = getNumParams(x)
+get_param_type(x::FunctionProtoType, i::Integer) = getParamType(x, i-1)
+
 get_params(x::FunctionProtoType) = [getParamType(x, i) for i = 0:(getNumParams(x) - 1)]
 
 # TypedefType
