@@ -3,11 +3,16 @@ function PrintStats(x::ASTContext)
     return clang_ASTContext_PrintStats(x)
 end
 
-function getTypeSize(x::ASTContext, ty_ptr::CXType_)
+function getTypeSize(x::ASTContext, ty::QualType)
     @check_ptrs x
-    return clang_ASTContext_getTypeSize(x, ty_ptr)
+    return clang_ASTContext_getTypeSize(x, ty)
 end
-getTypeSize(x::ASTContext, ty::QualType) = getTypeSize(x, get_type_ptr(ty))
+getTypeSize(x::ASTContext, ty::CXType_) = getTypeSize(x, get_qual_type(ty))
+
+function getSizeOf(x::ASTContext, ty::QualType)
+    @check_ptrs x
+    return clang_ASTContext_getSizeOf(x, ty)
+end
 
 function getTypeDeclType(x::ASTContext, decl::TypeDecl, prev::TypeDecl=TypeDecl(C_NULL))
     @check_ptrs x decl

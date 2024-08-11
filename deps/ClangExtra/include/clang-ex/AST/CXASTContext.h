@@ -509,6 +509,8 @@ uint64_t clang_ASTContext_getCharWidth(CXASTContext Ctx);
 // getTypeSizeInChars
 // getTypeSizeInCharsIfKnown
 
+uint64_t clang_ASTContext_getSizeOf(CXASTContext Ctx, CXQualType T);
+
 unsigned clang_ASTContext_getTypeAlign(CXASTContext Ctx, CXQualType T);
 
 unsigned clang_ASTContext_getTypeUnadjustedAlign(CXASTContext Ctx, CXQualType T);

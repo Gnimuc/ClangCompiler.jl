@@ -36,6 +36,8 @@ get_string(x::DeclarationName) = get_as_string(x)
 
 dump(x::CXXScopeSpec) = dump(getScopeRep(x))
 
+size_of(x::ASTContext, ty::QualType)::Int = getSizeOf(x, ty)
+
 # DeclContext
 """
     struct DeclIterator <: Any

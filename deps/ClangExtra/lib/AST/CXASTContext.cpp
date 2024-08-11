@@ -966,6 +966,15 @@ uint64_t clang_ASTContext_getCharWidth(CXASTContext Ctx) {
 // getTypeSizeInChars
 // getTypeSizeInCharsIfKnown
 
+uint64_t clang_ASTContext_getSizeOf(CXASTContext Ctx, CXQualType T) {
+  auto QT = clang::QualType::getFromOpaquePtr(T);
+  if (QT->isReferenceType())
+    QT = QT.getNonReferenceType();
+  auto S = static_cast<clang::ASTContext *>(Ctx)->getTypeSizeInCharsIfKnown(QT).value_or(
+      clang::CharUnits::Zero());
+  return S.getQuantity();
+}
+
 unsigned clang_ASTContext_getTypeAlign(CXASTContext Ctx, CXQualType T) {
   return static_cast<clang::ASTContext *>(Ctx)->getTypeAlign(
       clang::QualType::getFromOpaquePtr(T));

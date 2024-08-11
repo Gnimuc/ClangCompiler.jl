@@ -2132,6 +2132,10 @@ function clang_ASTContext_getCharWidth(Ctx)
     @ccall libclangex.clang_ASTContext_getCharWidth(Ctx::CXASTContext)::UInt64
 end
 
+function clang_ASTContext_getSizeOf(Ctx, T)
+    @ccall libclangex.clang_ASTContext_getSizeOf(Ctx::CXASTContext, T::CXQualType)::UInt64
+end
+
 function clang_ASTContext_getTypeAlign(Ctx, T)
     @ccall libclangex.clang_ASTContext_getTypeAlign(Ctx::CXASTContext, T::CXQualType)::Cuint
 end
