@@ -4,7 +4,6 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Preprocessor.h"
 #include "llvm/Support/VirtualFileSystem.h"
-#include <cstdio>
 
 CXCompilerInstance clang_CompilerInstance_create(void) {
   auto CI = std::make_unique<clang::CompilerInstance>();

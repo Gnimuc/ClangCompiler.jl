@@ -1,7 +1,6 @@
 #include "clang-ex/Frontend/CXCompilerInvocation.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/Utils.h"
-#include <cstdio>
 
 CXCompilerInvocation clang_CompilerInvocation_create(void) {
   auto Invoc = std::make_unique<clang::CompilerInvocation>();
