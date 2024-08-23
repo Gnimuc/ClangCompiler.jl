@@ -11,7 +11,7 @@ Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 libclangex_jll = "82994860-12e5-56b1-9971-c34819be692e"
 
 [compat]
-LLVM = "8"
+LLVM = "8, 9"
 Preferences = "1.4.3"
 julia = "1.12"
 libclangex_jll = "0.1.8"
