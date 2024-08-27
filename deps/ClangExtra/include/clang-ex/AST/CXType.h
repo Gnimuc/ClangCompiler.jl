@@ -673,11 +673,13 @@ CXQualType clang_TypedefType_desugar(CXTypedefType T);
 // DependentUnaryTransformType
 
 // TagType
-// getDecl
+CXTagDecl clang_TagType_getDecl(CXTagType T);
+
 // isBeingDefined
 
 // RecordType
-// getDecl
+CXRecordDecl clang_RecordType_getDecl(CXRecordType T);
+
 // hasConstFields
 
 // EnumType

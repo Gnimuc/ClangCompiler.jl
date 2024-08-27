@@ -51,3 +51,13 @@ function processWeakTopLevelDecls(sema::Sema, cg::CodeGenerator)
     clang_Sema_processWeakTopLevelDecls(sema, cg)
     return nothing
 end
+
+function LookupDefaultConstructor(sema::Sema, cxxrd::CXXRecordDecl)
+    @check_ptrs sema cxxrd
+    return CXXConstructorDecl(clang_Sema_LookupDefaultConstructor(sema, cxxrd))
+end
+
+function LookupDestructor(sema::Sema, cxxrd::CXXRecordDecl)
+    @check_ptrs sema cxxrd
+    return CXXDestructorDecl(clang_Sema_LookupDestructor(sema, cxxrd))
+end

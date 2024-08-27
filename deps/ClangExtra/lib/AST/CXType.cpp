@@ -864,6 +864,16 @@ CXQualType clang_TypedefType_desugar(CXTypedefType T) {
   return static_cast<clang::TypedefType *>(T)->desugar().getAsOpaquePtr();
 }
 
+// TagType
+CXTagDecl clang_TagType_getDecl(CXTagType T) {
+  return static_cast<clang::TagType *>(T)->getDecl();
+}
+
+// RecordType
+CXRecordDecl clang_RecordType_getDecl(CXRecordType T) {
+  return static_cast<clang::RecordType *>(T)->getDecl();
+}
+
 // EnumType
 CXEnumDecl clang_EnumType_getDecl(CXEnumType T) {
   return static_cast<clang::EnumType *>(T)->getDecl();

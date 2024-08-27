@@ -30,6 +30,12 @@ bool clang_Sema_LookupName(CXSema S, CXLookupResult R, CXScope Sp,
 
 void clang_Sema_processWeakTopLevelDecls(CXSema Sema, CXCodeGenerator CodeGen);
 
+CXCXXConstructorDecl clang_Sema_LookupDefaultConstructor(CXSema S, CXCXXRecordDecl Class);
+
+CXCXXDestructorDecl clang_Sema_LookupDestructor(CXSema S, CXCXXRecordDecl Class);
+
+// DeclContextLookupResult LookupConstructors(CXXRecordDecl *Class);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

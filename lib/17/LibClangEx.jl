@@ -1546,6 +1546,14 @@ function clang_TypedefType_desugar(T)
     @ccall libclangex.clang_TypedefType_desugar(T::CXTypedefType)::CXQualType
 end
 
+function clang_TagType_getDecl(T)
+    @ccall libclangex.clang_TagType_getDecl(T::CXTagType)::CXTagDecl
+end
+
+function clang_RecordType_getDecl(T)
+    @ccall libclangex.clang_RecordType_getDecl(T::CXRecordType)::CXRecordDecl
+end
+
 function clang_EnumType_getDecl(T)
     @ccall libclangex.clang_EnumType_getDecl(T::CXEnumType)::CXEnumDecl
 end
@@ -7077,6 +7085,14 @@ end
 
 function clang_Sema_processWeakTopLevelDecls(Sema, CodeGen)
     @ccall libclangex.clang_Sema_processWeakTopLevelDecls(Sema::CXSema, CodeGen::CXCodeGenerator)::Cvoid
+end
+
+function clang_Sema_LookupDefaultConstructor(S, Class)
+    @ccall libclangex.clang_Sema_LookupDefaultConstructor(S::CXSema, Class::CXCXXRecordDecl)::CXCXXConstructorDecl
+end
+
+function clang_Sema_LookupDestructor(S, Class)
+    @ccall libclangex.clang_Sema_LookupDestructor(S::CXSema, Class::CXCXXRecordDecl)::CXCXXDestructorDecl
 end
 
 function clang_Stmt_EnableStatistics()

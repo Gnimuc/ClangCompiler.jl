@@ -199,8 +199,10 @@ getParamType(x::FunctionProtoType, i::Integer) = QualType(clang_FunctionProtoTyp
 desugar(x::TypedefType) = QualType(clang_TypedefType_desugar(x))
 
 # TagType
+getDecl(x::TagType) = TagDecl(clang_TagType_getDecl(x))
 
 # RecordType
+getDecl(x::RecordType) = RecordDecl(clang_RecordType_getDecl(x))
 
 # EnumType
 getDecl(x::EnumType) = EnumDecl(clang_EnumType_getDecl(x))

@@ -59,3 +59,13 @@ void clang_Sema_processWeakTopLevelDecls(CXSema Sema, CXCodeGenerator CodeGen) {
   for (clang::Decl *D : S->WeakTopLevelDecls())
     CG->HandleTopLevelDecl(clang::DeclGroupRef(D));
 }
+
+CXCXXConstructorDecl clang_Sema_LookupDefaultConstructor(CXSema S, CXCXXRecordDecl Class) {
+  return static_cast<clang::Sema *>(S)->LookupDefaultConstructor(
+      static_cast<clang::CXXRecordDecl *>(Class));
+}
+
+CXCXXDestructorDecl clang_Sema_LookupDestructor(CXSema S, CXCXXRecordDecl Class) {
+  return static_cast<clang::Sema *>(S)->LookupDestructor(
+      static_cast<clang::CXXRecordDecl *>(Class));
+}
