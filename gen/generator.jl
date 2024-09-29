@@ -20,7 +20,7 @@ const dependencies = PkgSpec[PkgSpec(; name="LLVM_full_jll")]
 const libdir = joinpath(@__DIR__, "..", "lib")
 
 cd(@__DIR__) do
-    for (llvm_version, julia_version) in ((v"17.0.6", v"1.12"),)
+    for (llvm_version, julia_version) in ((v"18.1.7", v"1.12"),)
         @info "Generating..." llvm_version julia_version
         temp_prefix() do prefix
             # let prefix = Prefix(mktempdir())
