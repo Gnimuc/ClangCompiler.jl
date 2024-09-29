@@ -24,7 +24,7 @@ decl_lookup = CC.DeclFinder(I)
 @assert decl_lookup(I, "std::vector")
 
 decl = CC.get_decl(decl_lookup)
-dump(decl)
+CC.dump(decl)
 
 CC.dispose(decl_lookup)
 CC.dispose(I)
