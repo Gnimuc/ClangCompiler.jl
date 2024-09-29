@@ -3146,10 +3146,6 @@ function clang_CXXMethodDecl_getThisType(CXXMD)
     @ccall libclangex.clang_CXXMethodDecl_getThisType(CXXMD::CXCXXMethodDecl)::CXQualType
 end
 
-function clang_CXXMethodDecl_getThisObjectType(CXXMD)
-    @ccall libclangex.clang_CXXMethodDecl_getThisObjectType(CXXMD::CXCXXMethodDecl)::CXQualType
-end
-
 function clang_CXXMethodDecl_hasInlineBody(CXXMD)
     @ccall libclangex.clang_CXXMethodDecl_hasInlineBody(CXXMD::CXCXXMethodDecl)::Bool
 end
@@ -3166,13 +3162,13 @@ function clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD, RD, Ma
     @ccall libclangex.clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD::CXCXXMethodDecl, RD::CXCXXRecordDecl, MayBeBase::Bool)::CXCXXRecordDecl
 end
 
-@enum CXLinkageSpecDecl_LanguageIDs::UInt32 begin
+@enum CXLinkageSpecLanguageIDs::UInt32 begin
     CXLinkageSpecDecl_lang_c = 1
     CXLinkageSpecDecl_lang_cxx = 2
 end
 
 function clang_LinkageSpecDecl_Create(C, DC, ExternLoc, LangLoc, Lang, HasBraces)
-    @ccall libclangex.clang_LinkageSpecDecl_Create(C::CXASTContext, DC::CXDeclContext, ExternLoc::CXSourceLocation_, LangLoc::CXSourceLocation_, Lang::CXLinkageSpecDecl_LanguageIDs, HasBraces::Bool)::CXLinkageSpecDecl
+    @ccall libclangex.clang_LinkageSpecDecl_Create(C::CXASTContext, DC::CXDeclContext, ExternLoc::CXSourceLocation_, LangLoc::CXSourceLocation_, Lang::CXLinkageSpecLanguageIDs, HasBraces::Bool)::CXLinkageSpecDecl
 end
 
 function clang_LinkageSpecDecl_CreateDeserialized(C, ID)
@@ -3180,11 +3176,11 @@ function clang_LinkageSpecDecl_CreateDeserialized(C, ID)
 end
 
 function clang_LinkageSpecDecl_getLanguage(LSD)
-    @ccall libclangex.clang_LinkageSpecDecl_getLanguage(LSD::CXLinkageSpecDecl)::CXLinkageSpecDecl_LanguageIDs
+    @ccall libclangex.clang_LinkageSpecDecl_getLanguage(LSD::CXLinkageSpecDecl)::CXLinkageSpecLanguageIDs
 end
 
 function clang_LinkageSpecDecl_setLanguage(LSD, Lang)
-    @ccall libclangex.clang_LinkageSpecDecl_setLanguage(LSD::CXLinkageSpecDecl, Lang::CXLinkageSpecDecl_LanguageIDs)::Cvoid
+    @ccall libclangex.clang_LinkageSpecDecl_setLanguage(LSD::CXLinkageSpecDecl, Lang::CXLinkageSpecLanguageIDs)::Cvoid
 end
 
 function clang_LinkageSpecDecl_hasBraces(LSD)
@@ -3891,18 +3887,18 @@ function clang_VarDecl_isNoDestroy(VD, AST)
     @ccall libclangex.clang_VarDecl_isNoDestroy(VD::CXVarDecl, AST::CXASTContext)::Bool
 end
 
-@enum CXImplicitParamDecl_ImplicitParamKind::UInt32 begin
-    CXImplicitParamDecl_ObjCSelf = 0x0000000000000000
-    CXImplicitParamDecl_ObjCCmd = 0x0000000000000001
-    CXImplicitParamDecl_CXXThis = 0x0000000000000002
-    CXImplicitParamDecl_CXXVTT = 0x0000000000000003
-    CXImplicitParamDecl_CapturedContext = 0x0000000000000004
-    CXImplicitParamDecl_ThreadPrivateVar = 0x0000000000000005
-    CXImplicitParamDecl_Other = 0x0000000000000006
+@enum CXImplicitParamKind::UInt32 begin
+    CXImplicitParamKind_ObjCSelf = 0x0000000000000000
+    CXImplicitParamKind_ObjCCmd = 0x0000000000000001
+    CXImplicitParamKind_CXXThis = 0x0000000000000002
+    CXImplicitParamKind_CXXVTT = 0x0000000000000003
+    CXImplicitParamKind_CapturedContext = 0x0000000000000004
+    CXImplicitParamKind_ThreadPrivateVar = 0x0000000000000005
+    CXImplicitParamKind_Other = 0x0000000000000006
 end
 
 function clang_ImplicitParamDecl_Create(C, DC, IdLoc, Id, T, ParamKind)
-    @ccall libclangex.clang_ImplicitParamDecl_Create(C::CXASTContext, DC::CXDeclContext, IdLoc::CXSourceLocation_, Id::CXIdentifierInfo, T::CXQualType, ParamKind::CXImplicitParamDecl_ImplicitParamKind)::CXImplicitParamDecl
+    @ccall libclangex.clang_ImplicitParamDecl_Create(C::CXASTContext, DC::CXDeclContext, IdLoc::CXSourceLocation_, Id::CXIdentifierInfo, T::CXQualType, ParamKind::CXImplicitParamKind)::CXImplicitParamDecl
 end
 
 function clang_ImplicitParamDecl_CreateDeserialized(C, ID)
@@ -3910,7 +3906,7 @@ function clang_ImplicitParamDecl_CreateDeserialized(C, ID)
 end
 
 function clang_ImplicitParamDecl_getParameterKind(IPD)
-    @ccall libclangex.clang_ImplicitParamDecl_getParameterKind(IPD::CXImplicitParamDecl)::CXImplicitParamDecl_ImplicitParamKind
+    @ccall libclangex.clang_ImplicitParamDecl_getParameterKind(IPD::CXImplicitParamDecl)::CXImplicitParamKind
 end
 
 function clang_ParmVarDecl_Create(C, DC, StartLoc, IdLoc, Id, T, TInfo, S, DefArg)
@@ -4101,12 +4097,12 @@ function clang_FunctionDecl_setVirtualAsWritten(FD, V)
     @ccall libclangex.clang_FunctionDecl_setVirtualAsWritten(FD::CXFunctionDecl, V::Bool)::Cvoid
 end
 
-function clang_FunctionDecl_isPure(FD)
-    @ccall libclangex.clang_FunctionDecl_isPure(FD::CXFunctionDecl)::Bool
+function clang_FunctionDecl_isPureVirtual(FD)
+    @ccall libclangex.clang_FunctionDecl_isPureVirtual(FD::CXFunctionDecl)::Bool
 end
 
-function clang_FunctionDecl_setPure(FD, P)
-    @ccall libclangex.clang_FunctionDecl_setPure(FD::CXFunctionDecl, P::Bool)::Cvoid
+function clang_FunctionDecl_setIsPureVirtual(FD, P)
+    @ccall libclangex.clang_FunctionDecl_setIsPureVirtual(FD::CXFunctionDecl, P::Bool)::Cvoid
 end
 
 function clang_FunctionDecl_isLateTemplateParsed(FD)
@@ -5001,7 +4997,7 @@ function clang_EnumDecl_setInstantiationOfMemberEnum(ED, ED2, TSK)
     @ccall libclangex.clang_EnumDecl_setInstantiationOfMemberEnum(ED::CXEnumDecl, ED2::CXEnumDecl, TSK::CXTemplateSpecializationKind)::Cvoid
 end
 
-@enum CXRecordDecl_ArgPassingKind::UInt32 begin
+@enum CXRecordArgPassingKind::UInt32 begin
     CXRecordDecl_APK_CanPassInRegs = 0x0000000000000000
     CXRecordDecl_APK_CannotPassInRegs = 0x0000000000000001
     CXRecordDecl_APK_CanNeverPassInRegs = 0x0000000000000002
@@ -5116,11 +5112,11 @@ function clang_RecordDecl_canPassInRegisters(RD)
 end
 
 function clang_RecordDecl_getArgPassingRestrictions(RD)
-    @ccall libclangex.clang_RecordDecl_getArgPassingRestrictions(RD::CXRecordDecl)::CXRecordDecl_ArgPassingKind
+    @ccall libclangex.clang_RecordDecl_getArgPassingRestrictions(RD::CXRecordDecl)::CXRecordArgPassingKind
 end
 
 function clang_RecordDecl_setArgPassingRestrictions(RD, Kind)
-    @ccall libclangex.clang_RecordDecl_setArgPassingRestrictions(RD::CXRecordDecl, Kind::CXRecordDecl_ArgPassingKind)::Cvoid
+    @ccall libclangex.clang_RecordDecl_setArgPassingRestrictions(RD::CXRecordDecl, Kind::CXRecordArgPassingKind)::Cvoid
 end
 
 function clang_RecordDecl_isParamDestroyedInCallee(RD)
@@ -5923,8 +5919,8 @@ function clang_FileManager_dispose(FM)
     @ccall libclangex.clang_FileManager_dispose(FM::CXFileManager)::Cvoid
 end
 
-function clang_FileManager_getBufferForFile(FM, FE, isVolatile, RequiresNullTerminator)
-    @ccall libclangex.clang_FileManager_getBufferForFile(FM::CXFileManager, FE::CXFileEntry, isVolatile::Bool, RequiresNullTerminator::Bool)::LLVMMemoryBufferRef
+function clang_FileManager_getBufferForFile(FM, FER, isVolatile, RequiresNullTerminator)
+    @ccall libclangex.clang_FileManager_getBufferForFile(FM::CXFileManager, FER::CXFileEntryRef, isVolatile::Bool, RequiresNullTerminator::Bool)::LLVMMemoryBufferRef
 end
 
 function clang_FileManager_PrintStats(FM)
@@ -6027,8 +6023,8 @@ function clang_SourceManager_createFileIDFromMemoryBuffer(SM, MB)
     @ccall libclangex.clang_SourceManager_createFileIDFromMemoryBuffer(SM::CXSourceManager, MB::LLVMMemoryBufferRef)::CXFileID
 end
 
-function clang_SourceManager_createFileIDFromFileEntry(SM, FE, Loc)
-    @ccall libclangex.clang_SourceManager_createFileIDFromFileEntry(SM::CXSourceManager, FE::CXFileEntry, Loc::CXSourceLocation_)::CXFileID
+function clang_SourceManager_createFileIDFromFileEntry(SM, FER, Loc)
+    @ccall libclangex.clang_SourceManager_createFileIDFromFileEntry(SM::CXSourceManager, FER::CXFileEntryRef, Loc::CXSourceLocation_)::CXFileID
 end
 
 function clang_SourceManager_getMainFileID(SM)
@@ -6039,8 +6035,8 @@ function clang_SourceManager_setMainFileID(SM, ID)
     @ccall libclangex.clang_SourceManager_setMainFileID(SM::CXSourceManager, ID::CXFileID)::Cvoid
 end
 
-function clang_SourceManager_overrideFileContents(SM, FE, MB)
-    @ccall libclangex.clang_SourceManager_overrideFileContents(SM::CXSourceManager, FE::CXFileEntry, MB::LLVMMemoryBufferRef)::Cvoid
+function clang_SourceManager_overrideFileContents(SM, FER, MB)
+    @ccall libclangex.clang_SourceManager_overrideFileContents(SM::CXSourceManager, FER::CXFileEntryRef, MB::LLVMMemoryBufferRef)::Cvoid
 end
 
 function clang_SourceManager_getLocForStartOfFile(SM, FID)

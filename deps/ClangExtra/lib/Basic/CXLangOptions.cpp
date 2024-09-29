@@ -9,7 +9,6 @@ void clang_LangOptions_PrintStats(CXLangOptions LO) {
   llvm::errs() << "    C99: " << Opts->C99 << "\n";
   llvm::errs() << "    C11: " << Opts->C11 << "\n";
   llvm::errs() << "    C17: " << Opts->C17 << "\n";
-  llvm::errs() << "    C2x: " << Opts->C2x << "\n";
   llvm::errs() << "    MSVCCompat: " << Opts->MSVCCompat << "\n";
   llvm::errs() << "    AsmBlocks: " << Opts->AsmBlocks << "\n";
   llvm::errs() << "    Borland: " << Opts->Borland << "\n";

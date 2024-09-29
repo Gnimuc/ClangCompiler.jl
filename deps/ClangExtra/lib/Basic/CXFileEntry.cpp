@@ -2,7 +2,7 @@
 #include "clang/Basic/FileEntry.h"
 
 const char *clang_FileEntry_getName(CXFileEntry FE) {
-  return static_cast<clang::FileEntry *>(FE)->getName().data();
+  return static_cast<clang::FileEntry *>(FE)->getName().data(); // FIXME: use FileEntryRef::getName() instead
 }
 
 const char *clang_FileEntry_tryGetRealPathName(CXFileEntry FE) {

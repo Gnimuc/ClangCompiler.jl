@@ -374,7 +374,7 @@ typedef void *CXFileEntry;
 
 // FileManager
 typedef void *CXDirectoryEntry;
-typedef void *CXFileEntryRef; // FIXME: make it a stack value instead of opaque pointer
+typedef void *CXFileEntryRef;
 typedef void *CXFileManager;
 
 // IdentifierTable

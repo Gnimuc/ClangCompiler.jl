@@ -12,7 +12,7 @@ CXFileManager clang_FileManager_create(void);
 
 void clang_FileManager_dispose(CXFileManager FM);
 
-LLVMMemoryBufferRef clang_FileManager_getBufferForFile(CXFileManager FM, CXFileEntry FE,
+LLVMMemoryBufferRef clang_FileManager_getBufferForFile(CXFileManager FM, CXFileEntryRef FER,
                                                        bool isVolatile,
                                                        bool RequiresNullTerminator);
 

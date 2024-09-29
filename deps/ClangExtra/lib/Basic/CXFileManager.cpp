@@ -12,11 +12,11 @@ void clang_FileManager_dispose(CXFileManager FM) {
   delete static_cast<clang::FileManager *>(FM);
 }
 
-LLVMMemoryBufferRef clang_FileManager_getBufferForFile(CXFileManager FM, CXFileEntry FE,
+LLVMMemoryBufferRef clang_FileManager_getBufferForFile(CXFileManager FM, CXFileEntryRef FER,
                                                        bool isVolatile,
                                                        bool RequiresNullTerminator) {
   auto buffer = static_cast<clang::FileManager *>(FM)->getBufferForFile(
-      static_cast<clang::FileEntry *>(FE), isVolatile, RequiresNullTerminator);
+      *static_cast<clang::FileEntryRef *>(FER), isVolatile, RequiresNullTerminator);
   if (std::error_code EC = buffer.getError()) {
     llvm::errs() << "Cannot get buffer for file. Error: " << EC.message() << "\n";
     return nullptr;

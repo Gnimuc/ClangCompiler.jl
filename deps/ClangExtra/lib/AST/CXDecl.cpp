@@ -722,15 +722,15 @@ bool clang_VarDecl_isNoDestroy(CXVarDecl VD, CXASTContext AST) {
 // needsDestruction
 
 // ImplicitParamDecl
-CXImplicitParamDecl
-clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ IdLoc,
-                               CXIdentifierInfo Id, CXQualType T,
-                               CXImplicitParamDecl_ImplicitParamKind ParamKind) {
+CXImplicitParamDecl clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                   CXSourceLocation_ IdLoc,
+                                                   CXIdentifierInfo Id, CXQualType T,
+                                                   CXImplicitParamKind ParamKind) {
   return clang::ImplicitParamDecl::Create(
       *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
       clang::SourceLocation::getFromPtrEncoding(IdLoc),
       static_cast<clang::IdentifierInfo *>(Id), clang::QualType::getFromOpaquePtr(T),
-      static_cast<clang::ImplicitParamDecl::ImplicitParamKind>(ParamKind));
+      static_cast<clang::ImplicitParamKind>(ParamKind));
 }
 
 CXImplicitParamDecl clang_ImplicitParamDecl_CreateDeserialized(CXASTContext C,
@@ -739,9 +739,8 @@ CXImplicitParamDecl clang_ImplicitParamDecl_CreateDeserialized(CXASTContext C,
                                                       ID);
 }
 
-CXImplicitParamDecl_ImplicitParamKind
-clang_ImplicitParamDecl_getParameterKind(CXImplicitParamDecl IPD) {
-  return static_cast<CXImplicitParamDecl_ImplicitParamKind>(
+CXImplicitParamKind clang_ImplicitParamDecl_getParameterKind(CXImplicitParamDecl IPD) {
+  return static_cast<CXImplicitParamKind>(
       static_cast<clang::ImplicitParamDecl *>(IPD)->getParameterKind());
 }
 
@@ -960,12 +959,12 @@ void clang_FunctionDecl_setVirtualAsWritten(CXFunctionDecl FD, bool V) {
   static_cast<clang::FunctionDecl *>(FD)->setVirtualAsWritten(V);
 }
 
-bool clang_FunctionDecl_isPure(CXFunctionDecl FD) {
-  return static_cast<clang::FunctionDecl *>(FD)->isPure();
+bool clang_FunctionDecl_isPureVirtual(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->isPureVirtual();
 }
 
-void clang_FunctionDecl_setPure(CXFunctionDecl FD, bool P) {
-  static_cast<clang::FunctionDecl *>(FD)->setPure(P);
+void clang_FunctionDecl_setIsPureVirtual(CXFunctionDecl FD, bool P) {
+  static_cast<clang::FunctionDecl *>(FD)->setIsPureVirtual(P);
 }
 
 bool clang_FunctionDecl_isLateTemplateParsed(CXFunctionDecl FD) {
@@ -2162,15 +2161,15 @@ bool clang_RecordDecl_canPassInRegisters(CXRecordDecl RD) {
   return static_cast<clang::RecordDecl *>(RD)->canPassInRegisters();
 }
 
-CXRecordDecl_ArgPassingKind clang_RecordDecl_getArgPassingRestrictions(CXRecordDecl RD) {
-  return static_cast<CXRecordDecl_ArgPassingKind>(
+CXRecordArgPassingKind clang_RecordDecl_getArgPassingRestrictions(CXRecordDecl RD) {
+  return static_cast<CXRecordArgPassingKind>(
       static_cast<clang::RecordDecl *>(RD)->getArgPassingRestrictions());
 }
 
 void clang_RecordDecl_setArgPassingRestrictions(CXRecordDecl RD,
-                                                CXRecordDecl_ArgPassingKind Kind) {
+                                                CXRecordArgPassingKind Kind) {
   static_cast<clang::RecordDecl *>(RD)->setArgPassingRestrictions(
-      static_cast<clang::RecordDecl::ArgPassingKind>(Kind));
+      static_cast<clang::RecordArgPassingKind>(Kind));
 }
 
 bool clang_RecordDecl_isParamDestroyedInCallee(CXRecordDecl RD) {

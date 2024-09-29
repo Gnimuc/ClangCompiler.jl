@@ -379,25 +379,24 @@ bool clang_VarDecl_isNoDestroy(CXVarDecl VD, CXASTContext AST);
 // needsDestruction
 
 // ImplicitParamDecl
-typedef enum CXImplicitParamDecl_ImplicitParamKind : unsigned {
-  CXImplicitParamDecl_ObjCSelf,
-  CXImplicitParamDecl_ObjCCmd,
-  CXImplicitParamDecl_CXXThis,
-  CXImplicitParamDecl_CXXVTT,
-  CXImplicitParamDecl_CapturedContext,
-  CXImplicitParamDecl_ThreadPrivateVar,
-  CXImplicitParamDecl_Other,
-} CXImplicitParamDecl_ImplicitParamKind;
+typedef enum CXImplicitParamKind : unsigned {
+  CXImplicitParamKind_ObjCSelf,
+  CXImplicitParamKind_ObjCCmd,
+  CXImplicitParamKind_CXXThis,
+  CXImplicitParamKind_CXXVTT,
+  CXImplicitParamKind_CapturedContext,
+  CXImplicitParamKind_ThreadPrivateVar,
+  CXImplicitParamKind_Other,
+} CXImplicitParamKind;
 
-CXImplicitParamDecl
-clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ IdLoc,
-                               CXIdentifierInfo Id, CXQualType T,
-                               CXImplicitParamDecl_ImplicitParamKind ParamKind);
+CXImplicitParamDecl clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                   CXSourceLocation_ IdLoc,
+                                                   CXIdentifierInfo Id, CXQualType T,
+                                                   CXImplicitParamKind ParamKind);
 
 CXImplicitParamDecl clang_ImplicitParamDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
-CXImplicitParamDecl_ImplicitParamKind
-clang_ImplicitParamDecl_getParameterKind(CXImplicitParamDecl IPD);
+CXImplicitParamKind clang_ImplicitParamDecl_getParameterKind(CXImplicitParamDecl IPD);
 
 // ParmVarDecl
 CXParmVarDecl clang_ParmVarDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -523,9 +522,9 @@ bool clang_FunctionDecl_isVirtualAsWritten(CXFunctionDecl FD);
 
 void clang_FunctionDecl_setVirtualAsWritten(CXFunctionDecl FD, bool V);
 
-bool clang_FunctionDecl_isPure(CXFunctionDecl FD);
+bool clang_FunctionDecl_isPureVirtual(CXFunctionDecl FD);
 
-void clang_FunctionDecl_setPure(CXFunctionDecl FD, bool P);
+void clang_FunctionDecl_setIsPureVirtual(CXFunctionDecl FD, bool P);
 
 bool clang_FunctionDecl_isLateTemplateParsed(CXFunctionDecl FD);
 
@@ -1044,11 +1043,11 @@ void clang_EnumDecl_setInstantiationOfMemberEnum(CXEnumDecl ED, CXEnumDecl ED2,
                                                  CXTemplateSpecializationKind TSK);
 
 // RecordDecl
-typedef enum CXRecordDecl_ArgPassingKind : unsigned {
+typedef enum CXRecordArgPassingKind : unsigned {
   CXRecordDecl_APK_CanPassInRegs,
   CXRecordDecl_APK_CannotPassInRegs,
   CXRecordDecl_APK_CanNeverPassInRegs
-} CXRecordDecl_ArgPassingKind;
+} CXRecordArgPassingKind;
 
 CXRecordDecl clang_RecordDecl_Create(CXASTContext C, CXTagTypeKind TK, CXDeclContext DC,
                                      CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
@@ -1107,10 +1106,10 @@ void clang_RecordDecl_setHasNonTrivialToPrimitiveCopyCUnion(CXRecordDecl RD, boo
 
 bool clang_RecordDecl_canPassInRegisters(CXRecordDecl RD);
 
-CXRecordDecl_ArgPassingKind clang_RecordDecl_getArgPassingRestrictions(CXRecordDecl RD);
+CXRecordArgPassingKind clang_RecordDecl_getArgPassingRestrictions(CXRecordDecl RD);
 
 void clang_RecordDecl_setArgPassingRestrictions(CXRecordDecl RD,
-                                                CXRecordDecl_ArgPassingKind Kind);
+                                                CXRecordArgPassingKind Kind);
 
 bool clang_RecordDecl_isParamDestroyedInCallee(CXRecordDecl RD);
 

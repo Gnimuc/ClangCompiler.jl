@@ -22,15 +22,15 @@ void clang_FileID_dispose(CXFileID FID);
 CXFileID clang_SourceManager_createFileIDFromMemoryBuffer(CXSourceManager SM,
                                                           LLVMMemoryBufferRef MB);
 
-
-CXFileID clang_SourceManager_createFileIDFromFileEntry(CXSourceManager SM, CXFileEntry FE,
+CXFileID clang_SourceManager_createFileIDFromFileEntry(CXSourceManager SM,
+                                                       CXFileEntryRef FER,
                                                        CXSourceLocation_ Loc);
 
 CXFileID clang_SourceManager_getMainFileID(CXSourceManager SM);
 
 void clang_SourceManager_setMainFileID(CXSourceManager SM, CXFileID ID);
 
-void clang_SourceManager_overrideFileContents(CXSourceManager SM, CXFileEntry FE,
+void clang_SourceManager_overrideFileContents(CXSourceManager SM, CXFileEntryRef FER,
                                               LLVMMemoryBufferRef MB);
 
 CXSourceLocation_ clang_SourceManager_getLocForStartOfFile(CXSourceManager SM,

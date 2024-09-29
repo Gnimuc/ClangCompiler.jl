@@ -244,14 +244,12 @@ CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_CreateDeserialized(CXASTContex
 }
 
 // CXXMethodDecl
-CXCXXMethodDecl clang_CXXMethodDecl_Create(CXASTContext C, CXCXXRecordDecl RD,
-                                           CXSourceLocation_ StartLoc,
-                                           CXDeclarationNameInfo NameInfo, CXQualType T,
-                                           CXTypeSourceInfo TInfo, CXStorageClass SC,
-                                           bool UsesFPIntrin, bool isInline,
-                                           CXConstexprSpecKind ConstexprKind,
-                                           CXSourceLocation_ EndLocation,
-                                           CXExpr TrailingRequiresClause) {
+CXCXXMethodDecl
+clang_CXXMethodDecl_Create(CXASTContext C, CXCXXRecordDecl RD, CXSourceLocation_ StartLoc,
+                           CXDeclarationNameInfo NameInfo, CXQualType T,
+                           CXTypeSourceInfo TInfo, CXStorageClass SC, bool UsesFPIntrin,
+                           bool isInline, CXConstexprSpecKind ConstexprKind,
+                           CXSourceLocation_ EndLocation, CXExpr TrailingRequiresClause) {
   return clang::CXXMethodDecl::Create(
       *static_cast<clang::ASTContext *>(C), static_cast<clang::CXXRecordDecl *>(RD),
       clang::SourceLocation::getFromPtrEncoding(StartLoc),
@@ -326,10 +324,6 @@ CXQualType clang_CXXMethodDecl_getThisType(CXCXXMethodDecl CXXMD) {
   return static_cast<clang::CXXMethodDecl *>(CXXMD)->getThisType().getAsOpaquePtr();
 }
 
-CXQualType clang_CXXMethodDecl_getThisObjectType(CXCXXMethodDecl CXXMD) {
-  return static_cast<clang::CXXMethodDecl *>(CXXMD)->getThisObjectType().getAsOpaquePtr();
-}
-
 // getMethodQualifiers
 // getRefQualifier
 
@@ -368,13 +362,13 @@ CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
 CXLinkageSpecDecl clang_LinkageSpecDecl_Create(CXASTContext C, CXDeclContext DC,
                                                CXSourceLocation_ ExternLoc,
                                                CXSourceLocation_ LangLoc,
-                                               CXLinkageSpecDecl_LanguageIDs Lang,
+                                               CXLinkageSpecLanguageIDs Lang,
                                                bool HasBraces) {
   return clang::LinkageSpecDecl::Create(
       *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
       clang::SourceLocation::getFromPtrEncoding(ExternLoc),
       clang::SourceLocation::getFromPtrEncoding(LangLoc),
-      static_cast<clang::LinkageSpecDecl::LanguageIDs>(Lang), HasBraces);
+      static_cast<clang::LinkageSpecLanguageIDs>(Lang), HasBraces);
 }
 
 CXLinkageSpecDecl clang_LinkageSpecDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
@@ -382,15 +376,15 @@ CXLinkageSpecDecl clang_LinkageSpecDecl_CreateDeserialized(CXASTContext C, unsig
                                                     ID);
 }
 
-CXLinkageSpecDecl_LanguageIDs clang_LinkageSpecDecl_getLanguage(CXLinkageSpecDecl LSD) {
-  return static_cast<CXLinkageSpecDecl_LanguageIDs>(
+CXLinkageSpecLanguageIDs clang_LinkageSpecDecl_getLanguage(CXLinkageSpecDecl LSD) {
+  return static_cast<CXLinkageSpecLanguageIDs>(
       static_cast<clang::LinkageSpecDecl *>(LSD)->getLanguage());
 }
 
 void clang_LinkageSpecDecl_setLanguage(CXLinkageSpecDecl LSD,
-                                       CXLinkageSpecDecl_LanguageIDs Lang) {
+                                       CXLinkageSpecLanguageIDs Lang) {
   static_cast<clang::LinkageSpecDecl *>(LSD)->setLanguage(
-      static_cast<clang::LinkageSpecDecl::LanguageIDs>(Lang));
+      static_cast<clang::LinkageSpecLanguageIDs>(Lang));
 }
 
 bool clang_LinkageSpecDecl_hasBraces(CXLinkageSpecDecl LSD) {

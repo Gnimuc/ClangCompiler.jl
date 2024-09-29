@@ -168,8 +168,6 @@ CXCXXRecordDecl clang_CXXMethodDecl_getParent(CXCXXMethodDecl CXXMD);
 
 CXQualType clang_CXXMethodDecl_getThisType(CXCXXMethodDecl CXXMD);
 
-CXQualType clang_CXXMethodDecl_getThisObjectType(CXCXXMethodDecl CXXMD);
-
 // getMethodQualifiers
 // getRefQualifier
 
@@ -195,23 +193,23 @@ CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
 // CXXConversionDecl
 
 // LinkageSpecDecl
-typedef enum CXLinkageSpecDecl_LanguageIDs {
+typedef enum CXLinkageSpecLanguageIDs {
   CXLinkageSpecDecl_lang_c = 1,
   CXLinkageSpecDecl_lang_cxx = 2
-} CXLinkageSpecDecl_LanguageIDs;
+} CXLinkageSpecLanguageIDs;
 
 CXLinkageSpecDecl clang_LinkageSpecDecl_Create(CXASTContext C, CXDeclContext DC,
                                                CXSourceLocation_ ExternLoc,
                                                CXSourceLocation_ LangLoc,
-                                               CXLinkageSpecDecl_LanguageIDs Lang,
+                                               CXLinkageSpecLanguageIDs Lang,
                                                bool HasBraces);
 
 CXLinkageSpecDecl clang_LinkageSpecDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
-CXLinkageSpecDecl_LanguageIDs clang_LinkageSpecDecl_getLanguage(CXLinkageSpecDecl LSD);
+CXLinkageSpecLanguageIDs clang_LinkageSpecDecl_getLanguage(CXLinkageSpecDecl LSD);
 
 void clang_LinkageSpecDecl_setLanguage(CXLinkageSpecDecl LSD,
-                                       CXLinkageSpecDecl_LanguageIDs Lang);
+                                       CXLinkageSpecLanguageIDs Lang);
 
 bool clang_LinkageSpecDecl_hasBraces(CXLinkageSpecDecl LSD);
 

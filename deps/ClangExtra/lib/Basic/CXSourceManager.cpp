@@ -32,11 +32,12 @@ CXFileID clang_SourceManager_createFileIDFromMemoryBuffer(CXSourceManager SM,
   return ptr.release();
 }
 
-CXFileID clang_SourceManager_createFileIDFromFileEntry(CXSourceManager SM, CXFileEntry FE,
+CXFileID clang_SourceManager_createFileIDFromFileEntry(CXSourceManager SM,
+                                                       CXFileEntryRef FER,
                                                        CXSourceLocation_ Loc) {
   std::unique_ptr<clang::FileID> ptr =
       std::make_unique<clang::FileID>(static_cast<clang::SourceManager *>(SM)->createFileID(
-          static_cast<clang::FileEntry *>(FE),
+          *static_cast<clang::FileEntryRef *>(FER),
           clang::SourceLocation::getFromPtrEncoding(Loc), clang::SrcMgr::C_User));
   return ptr.release();
 }
@@ -54,10 +55,10 @@ void clang_SourceManager_setMainFileID(CXSourceManager SM, CXFileID FID) {
       *static_cast<clang::FileID *>(FID));
 }
 
-void clang_SourceManager_overrideFileContents(CXSourceManager SM, CXFileEntry FE,
+void clang_SourceManager_overrideFileContents(CXSourceManager SM, CXFileEntryRef FER,
                                               LLVMMemoryBufferRef MB) {
   static_cast<clang::SourceManager *>(SM)->overrideFileContents(
-      static_cast<clang::FileEntry *>(FE),
+      *static_cast<clang::FileEntryRef *>(FER),
       std::unique_ptr<llvm::MemoryBuffer>(llvm::unwrap(MB)));
 }
 
