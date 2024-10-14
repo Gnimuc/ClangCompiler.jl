@@ -66,6 +66,14 @@ clty_to_jlty(x::IncompleteArrayType) = x
 clty_to_jlty(x::VariableArrayType) = x
 clty_to_jlty(x::DependentSizedArrayType) = x
 
+# templates
+clty_to_jlty(x::TemplateTypeParmType) = x
+clty_to_jlty(x::SubstTemplateTypeParmType) = x
+clty_to_jlty(x::SubstTemplateTypeParmPackType) = x
+clty_to_jlty(x::TemplateSpecializationType) = x
+clty_to_jlty(x::DependentNameType) = x
+clty_to_jlty(x::DependentTemplateSpecializationType) = x
+
 """
     resolve(ty::AbstractType)
 Resolve type using Clang's RTTI.

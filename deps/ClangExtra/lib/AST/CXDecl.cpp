@@ -2,6 +2,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTContextAllocate.h"
 #include "clang/AST/Decl.h"
+#include "clang/AST/DeclTemplate.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 
 // TranslationUnitDecl
@@ -2216,6 +2217,13 @@ bool clang_RecordDecl_mayInsertExtraPadding(CXRecordDecl RD, bool EmitRemark) {
 CXFieldDecl clang_RecordDecl_findFirstNamedDataMember(CXRecordDecl RD) {
   return const_cast<clang::FieldDecl *>(
       static_cast<clang::RecordDecl *>(RD)->findFirstNamedDataMember());
+}
+
+// RecordDecl Cast
+CXClassTemplateSpecializationDecl
+clang_RecordDecl_castToClassTemplateSpecializationDecl(CXRecordDecl RD) {
+  return llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(
+      static_cast<clang::RecordDecl *>(RD));
 }
 
 // FileScopeAsmDecl

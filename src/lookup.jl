@@ -47,7 +47,12 @@ function get_tag(x::DeclFinder)
     return getResult(x.result)
 end
 
-strip_nns(nns::AbstractString, code::AbstractString) = code[length(nns)+1:end]
+function strip_nns(nns::AbstractString, code::AbstractString)
+    if occursin("class ", nns) # FIXME: should output the correct name format in `getName`
+        nns = replace(nns, "class " => "")
+    end
+    return code[length(nns)+1:end]
+end
 
 function diagnose_declname(code::AbstractString, type_name::AbstractString, nns::AbstractString="")
     s = strip_nns(nns, code)

@@ -1133,6 +1133,10 @@ bool clang_RecordDecl_mayInsertExtraPadding(CXRecordDecl RD, bool EmitRemark);
 
 CXFieldDecl clang_RecordDecl_findFirstNamedDataMember(CXRecordDecl RD);
 
+// RecordDecl Cast
+CXClassTemplateSpecializationDecl
+clang_RecordDecl_castToClassTemplateSpecializationDecl(CXRecordDecl RD);
+
 // FileScopeAsmDecl
 CXFileScopeAsmDecl clang_FileScopeAsmDecl_Create(CXASTContext C, CXDeclContext DC,
                                                  CXStringLiteral Str,

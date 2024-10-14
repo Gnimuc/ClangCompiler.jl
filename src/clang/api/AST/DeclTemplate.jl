@@ -42,7 +42,7 @@ end
 
 function Base.get(x::TemplateArgumentList, i::Integer)
     @check_ptrs x
-    return clang_TemplateArgumentList_get(x, i)
+    return TemplateArgument(clang_TemplateArgumentList_get(x, i))
 end
 
 # TemplateDecl
@@ -92,16 +92,6 @@ function getCanonicalDecl(x::AbstractClassTemplateDecl)
     return ClassTemplateDecl(clang_ClassTemplateDecl_getCanonicalDecl(x))
 end
 
-function getTemplateArgs(x::AbstractClassTemplateDecl)
-    @check_ptrs x
-    return TemplateArgumentList(clang_ClassTemplateSpecializationDecl_getTemplateArgs(x))
-end
-
-function setTemplateArgs(x::AbstractClassTemplateDecl, list::TemplateArgumentList)
-    @check_ptrs x list
-    return clang_ClassTemplateSpecializationDecl_setTemplateArgs(x, list)
-end
-
 # ClassTemplateSpecializationDecl
 function ClassTemplateSpecializationDecl(ctx::ASTContext, tk::CXTagTypeKind,
                                          dc::DeclContext, start_loc::SourceLocation,
@@ -131,4 +121,14 @@ function AddSpecialization(x::AbstractRedeclarableTemplateDecl,
                            ctsd::ClassTemplateSpecializationDecl, insert_pos=C_NULL)
     @check_ptrs x ctsd
     return clang_ClassTemplateDecl_AddSpecialization(x, ctsd, insert_pos)
+end
+
+function getTemplateArgs(x::AbstractClassTemplateSpecializationDecl)
+    @check_ptrs x
+    return TemplateArgumentList(clang_ClassTemplateSpecializationDecl_getTemplateArgs(x))
+end
+
+function setTemplateArgs(x::AbstractClassTemplateSpecializationDecl, list::TemplateArgumentList)
+    @check_ptrs x list
+    return clang_ClassTemplateSpecializationDecl_setTemplateArgs(x, list)
 end

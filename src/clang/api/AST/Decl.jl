@@ -1621,3 +1621,9 @@ function isOrContainsUnion(x::AbstractRecordDecl)
     @check_ptrs x
     return clang_RecordDecl_isOrContainsUnion(x)
 end
+
+# RecordDecl Cast
+function ClassTemplateSpecializationDecl(x::RecordDecl)
+    @check_ptrs x
+    return ClassTemplateSpecializationDecl(clang_RecordDecl_castToClassTemplateSpecializationDecl(x))
+end

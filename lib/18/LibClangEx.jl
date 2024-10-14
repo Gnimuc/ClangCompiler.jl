@@ -5163,6 +5163,10 @@ function clang_RecordDecl_findFirstNamedDataMember(RD)
     @ccall libclangex.clang_RecordDecl_findFirstNamedDataMember(RD::CXRecordDecl)::CXFieldDecl
 end
 
+function clang_RecordDecl_castToClassTemplateSpecializationDecl(RD)
+    @ccall libclangex.clang_RecordDecl_castToClassTemplateSpecializationDecl(RD::CXRecordDecl)::CXClassTemplateSpecializationDecl
+end
+
 function clang_FileScopeAsmDecl_Create(C, DC, Str, AsmLoc, RParenLoc)
     @ccall libclangex.clang_FileScopeAsmDecl_Create(C::CXASTContext, DC::CXDeclContext, Str::CXStringLiteral, AsmLoc::CXSourceLocation_, RParenLoc::CXSourceLocation_)::CXFileScopeAsmDecl
 end
