@@ -10,6 +10,11 @@ using LLVM.API: LLVMTypeRef, LLVMOrcLLJITRef
 const time_t = Clong
 
 
+struct CXArrayRef
+    Data::Ptr{Cvoid}
+    Length::Csize_t
+end
+
 const CXASTConsumer = Ptr{Cvoid}
 
 const CXASTContext = Ptr{Cvoid}
@@ -1572,6 +1577,10 @@ end
 
 function clang_TemplateSpecializationType_getTemplateName(T)
     @ccall libclangex.clang_TemplateSpecializationType_getTemplateName(T::CXTemplateSpecializationType)::CXTemplateName
+end
+
+function clang_TemplateSpecializationType_template_arguments(T)
+    @ccall libclangex.clang_TemplateSpecializationType_template_arguments(T::CXTemplateSpecializationType)::CXArrayRef
 end
 
 function clang_TemplateSpecializationType_isSugared(T)

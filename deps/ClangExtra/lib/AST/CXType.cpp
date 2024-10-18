@@ -925,16 +925,10 @@ clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T)
       ->getTemplateName().getAsVoidPointer();
 }
 
-// unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T) {
-//   return static_cast<clang::TemplateSpecializationType *>(T)->getNumArgs();
-// }
-
-// CXTemplateArgument clang_TemplateSpecializationType_getArg(CXTemplateSpecializationType
-// T,
-//                                                            unsigned Idx) {
-//   return const_cast<clang::TemplateArgument *>(
-//       &static_cast<clang::TemplateSpecializationType *>(T)->getArg(Idx));
-// }
+CXArrayRef clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T) {
+  auto arr = static_cast<clang::TemplateSpecializationType *>(T)->template_arguments();
+  return {arr.data(), arr.size()};
+}
 
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T) {
   return static_cast<clang::TemplateSpecializationType *>(T)->isSugared();

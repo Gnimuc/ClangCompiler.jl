@@ -217,31 +217,32 @@ getName(x::EnumType) = getName(getDecl(x))
 
 # TemplateSpecializationType
 function isCurrentInstantiation(x::TemplateSpecializationType)
+    @check_ptrs x
     return clang_TemplateSpecializationType_isCurrentInstantiation(x)
 end
 
 function isTypeAlias(x::TemplateSpecializationType)
+    @check_ptrs x
     return clang_TemplateSpecializationType_isTypeAlias(x)
 end
 
 function getAliasedType(x::TemplateSpecializationType)
+    @check_ptrs x
     return QualType(clang_TemplateSpecializationType_getAliasedType(x))
 end
 
-# function getNumArgs(x::TemplateSpecializationType)
-#     return clang_TemplateSpecializationType_getNumArgs(x)
-# end
-
-# function getArg(x::TemplateSpecializationType, i::Integer)
-#     @check_ptrs x
-#     return TemplateArgument(clang_TemplateSpecializationType_getArg(x, i))
-# end
+function getTemplateArguments(x::TemplateSpecializationType)
+    @check_ptrs x
+    return clang_TemplateSpecializationType_template_arguments(x)
+end
 
 function isSugared(x::TemplateSpecializationType)
+    @check_ptrs x
     return clang_TemplateSpecializationType_isSugared(x)
 end
 
 function desugar(x::TemplateSpecializationType)
+    @check_ptrs x
     return QualType(clang_TemplateSpecializationType_desugar(x))
 end
 

@@ -712,11 +712,7 @@ CXQualType clang_TemplateSpecializationType_getAliasedType(CXTemplateSpecializat
 CXTemplateName
 clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T);
 
-// unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T);
-
-// CXTemplateArgument clang_TemplateSpecializationType_getArg(CXTemplateSpecializationType
-// T,
-//                                                            unsigned Idx);
+CXArrayRef clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T);
 
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T);
 

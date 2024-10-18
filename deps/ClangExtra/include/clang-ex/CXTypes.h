@@ -9,6 +9,12 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+// ADT
+typedef struct {
+  const void *Data;
+  size_t Length;
+} CXArrayRef;
+
 // AST
 // ASTConsumer
 typedef void *CXASTConsumer;

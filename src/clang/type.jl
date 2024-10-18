@@ -201,7 +201,10 @@ is_sugared(x::TemplateSpecializationType) = isSugared(x)
 
 get_name(x::TemplateSpecializationType) = getName(x)
 
-get_template_args(x::TemplateSpecializationType) = [getArg(x, i) for i = 0:(getNumArgs(x) - 1)]
+function get_template_args(x::TemplateSpecializationType)
+    arr = getTemplateArguments(x)
+    return [TemplateArgument(Ptr{CXTemplateArgument}(arr.Data) + i) for i in 0:arr.Length-1]
+end
 
 # ElaboratedType
 is_elaborated_type(x::AbstractType) = isa_ElaboratedType(x)
