@@ -51,6 +51,7 @@ function strip_nns(nns::AbstractString, code::AbstractString)
     if occursin("class ", nns) # FIXME: should output the correct name format in `getName`
         nns = replace(nns, "class " => "")
     end
+    nns = replace(nns, " " => "")
     return code[length(nns)+1:end]
 end
 

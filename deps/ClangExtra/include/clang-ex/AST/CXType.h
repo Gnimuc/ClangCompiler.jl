@@ -692,6 +692,10 @@ CXEnumDecl clang_EnumType_getDecl(CXEnumType T);
 // TemplateTypeParmType
 
 // SubstTemplateTypeParmType
+CXQualType
+clang_SubstTemplateTypeParmType_getReplacementType(CXSubstTemplateTypeParmType T);
+
+CXQualType clang_SubstTemplateTypeParmType_desugar(CXSubstTemplateTypeParmType T);
 
 // SubstTemplateTypeParmPackType
 
@@ -712,7 +716,8 @@ CXQualType clang_TemplateSpecializationType_getAliasedType(CXTemplateSpecializat
 CXTemplateName
 clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T);
 
-CXArrayRef clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T);
+CXArrayRef
+clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T);
 
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T);
 

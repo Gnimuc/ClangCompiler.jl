@@ -41,142 +41,348 @@ getLocalUnqualifiedType(x::QualType) = QualType(clang_QualType_getLocalUnqualifi
 getUnqualifiedType(x::QualType) = QualType(clang_QualType_getUnqualifiedType(x))
 
 # Type
-getCanonicalTypeInternal(x::AbstractType) = QualType(clang_Type_getCanonicalTypeInternal(x))
+function getCanonicalTypeInternal(x::AbstractType)
+    @check_ptrs x
+    return QualType(clang_Type_getCanonicalTypeInternal(x))
+end
 
 # getPointeeType(x::AbstractType) = getTypePtr(QualType(clang_Type_getPointeeType(x)))
 
-isVoidType(x::AbstractType) = clang_Type_isVoidType(x)
+function isVoidType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isVoidType(x)
+end
 
-isBooleanType(x::AbstractType) = clang_Type_isBooleanType(x)
+function isBooleanType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isBooleanType(x)
+end
 
-isPointerType(x::AbstractType) = clang_Type_isPointerType(x)
+function isPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isPointerType(x)
+end
 
-isFunctionPointerType(x::AbstractType) = clang_Type_isFunctionPointerType(x)
+function isFunctionPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFunctionPointerType(x)
+end
 
-isFunctionType(x::AbstractType) = clang_Type_isFunctionType(x)
+function isFunctionType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFunctionType(x)
+end
 
-isMemberFunctionPointerType(x::AbstractType) = clang_Type_isMemberFunctionPointerType(x)
+function isMemberFunctionPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isMemberFunctionPointerType(x)
+end
 
-isReferenceType(x::AbstractType) = clang_Type_isReferenceType(x)
+function isReferenceType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isReferenceType(x)
+end
 
-isCharType(x::AbstractType) = clang_Type_isCharType(x)
+function isCharType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isCharType(x)
+end
 
-isEnumeralType(x::AbstractType) = clang_Type_isEnumeralType(x)
+function isEnumeralType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isEnumeralType(x)
+end
 
-isBuiltinType(x::AbstractType) = clang_Type_isBuiltinType(x)
+function isBuiltinType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isBuiltinType(x)
+end
 
-isComplexType(x::AbstractType) = clang_Type_isComplexType(x)
+function isComplexType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isComplexType(x)
+end
 
-isArrayType(x::AbstractType) = clang_Type_isArrayType(x)
+function isArrayType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isArrayType(x)
+end
 
-isLValueReferenceType(x::AbstractType) = clang_Type_isLValueReferenceType(x)
+function isLValueReferenceType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isLValueReferenceType(x)
+end
 
-isRValueReferenceType(x::AbstractType) = clang_Type_isRValueReferenceType(x)
+function isRValueReferenceType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isRValueReferenceType(x)
+end
 
-isMemberPointerType(x::AbstractType) = clang_Type_isMemberPointerType(x)
+function isMemberPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isMemberPointerType(x)
+end
 
-isConstantArrayType(x::AbstractType) = clang_Type_isConstantArrayType(x)
+function isConstantArrayType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isConstantArrayType(x)
+end
 
-isIncompleteArrayType(x::AbstractType) = clang_Type_isIncompleteArrayType(x)
+function isIncompleteArrayType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isIncompleteArrayType(x)
+end
 
-isVariableArrayType(x::AbstractType) = clang_Type_isVariableArrayType(x)
+function isVariableArrayType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isVariableArrayType(x)
+end
 
-isDependentSizedArrayType(x::AbstractType) = clang_Type_isDependentSizedArrayType(x)
+function isDependentSizedArrayType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isDependentSizedArrayType(x)
+end
 
-isFunctionNoProtoType(x::AbstractType) = clang_Type_isFunctionNoProtoType(x)
+function isFunctionNoProtoType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFunctionNoProtoType(x)
+end
 
-isFunctionProtoType(x::AbstractType) = clang_Type_isFunctionProtoType(x)
+function isFunctionProtoType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFunctionProtoType(x)
+end
 
-isRecordType(x::AbstractType) = clang_Type_isRecordType(x)
+function isRecordType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isRecordType(x)
+end
 
-isTemplateTypeParmType(x::AbstractType) = clang_Type_isTemplateTypeParmType(x)
+function isTemplateTypeParmType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isTemplateTypeParmType(x)
+end
 
 # extra
-isa_TypedefType(x::AbstractType) = clang_isa_TypedefType(x)
-isa_TagType(x::AbstractType) = clang_isa_TagType(x)
-isa_EnumType(x::AbstractType) = clang_isa_EnumType(x)
-isa_SubstTemplateTypeParmType(x::AbstractType) = clang_isa_SubstTemplateTypeParmType(x)
-isa_SubstTemplateTypeParmPackType(x::AbstractType) = clang_isa_SubstTemplateTypeParmPackType(x)
-isa_TemplateSpecializationType(x::AbstractType) = clang_isa_TemplateSpecializationType(x)
-isa_ElaboratedType(x::AbstractType) = clang_isa_ElaboratedType(x)
-isa_DependentNameType(x::AbstractType) = clang_isa_DependentNameType(x)
-isa_DependentTemplateSpecializationType(x::AbstractType) = clang_isa_DependentTemplateSpecializationType(x)
+function isa_TypedefType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_TypedefType(x)
+end
+
+function isa_TagType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_TagType(x)
+end
+
+function isa_EnumType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_EnumType(x)
+end
+
+function isa_SubstTemplateTypeParmType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_SubstTemplateTypeParmType(x)
+end
+
+function isa_SubstTemplateTypeParmPackType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_SubstTemplateTypeParmPackType(x)
+end
+
+function isa_TemplateSpecializationType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_TemplateSpecializationType(x)
+end
+
+function isa_ElaboratedType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_ElaboratedType(x)
+end
+
+function isa_DependentNameType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_DependentNameType(x)
+end
+
+function isa_DependentTemplateSpecializationType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_DependentTemplateSpecializationType(x)
+end
 
 # BuiltinTypes
-isa_BuiltinType_Void(x::AbstractBuiltinType) = clang_isa_BuiltinType_Void(x)
+function isa_BuiltinType_Void(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Void(x)
+end
 
-isa_BuiltinType_Bool(x::AbstractBuiltinType) = clang_isa_BuiltinType_Bool(x)
+function isa_BuiltinType_Bool(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Bool(x)
+end
 
-isa_BuiltinType_Char_U(x::AbstractBuiltinType) = clang_isa_BuiltinType_Char_U(x)
+function isa_BuiltinType_Char_U(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Char_U(x)
+end
 
-isa_BuiltinType_Char_S(x::AbstractBuiltinType) = clang_isa_BuiltinType_Char_S(x)
+function isa_BuiltinType_Char_S(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Char_S(x)
+end
 
-isa_BuiltinType_WChar_U(x::AbstractBuiltinType) = clang_isa_BuiltinType_WChar_U(x)
+function isa_BuiltinType_WChar_U(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_WChar_U(x)
+end
 
-isa_BuiltinType_WChar_S(x::AbstractBuiltinType) = clang_isa_BuiltinType_WChar_S(x)
+function isa_BuiltinType_WChar_S(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_WChar_S(x)
+end
 
-isa_BuiltinType_Char8(x::AbstractBuiltinType) = clang_isa_BuiltinType_Char8(x)
+function isa_BuiltinType_Char8(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Char8(x)
+end
 
-isa_BuiltinType_Char16(x::AbstractBuiltinType) = clang_isa_BuiltinType_Char16(x)
+function isa_BuiltinType_Char16(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Char16(x)
+end
 
-isa_BuiltinType_Char32(x::AbstractBuiltinType) = clang_isa_BuiltinType_Char32(x)
+function isa_BuiltinType_Char32(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Char32(x)
+end
 
-isa_BuiltinType_SChar(x::AbstractBuiltinType) = clang_isa_BuiltinType_SChar(x)
+function isa_BuiltinType_SChar(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_SChar(x)
+end
 
-isa_BuiltinType_Short(x::AbstractBuiltinType) = clang_isa_BuiltinType_Short(x)
+function isa_BuiltinType_Short(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Short(x)
+end
 
-isa_BuiltinType_Int(x::AbstractBuiltinType) = clang_isa_BuiltinType_Int(x)
+function isa_BuiltinType_Int(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Int(x)
+end
 
-isa_BuiltinType_Long(x::AbstractBuiltinType) = clang_isa_BuiltinType_Long(x)
+function isa_BuiltinType_Long(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Long(x)
+end
 
-isa_BuiltinType_LongLong(x::AbstractBuiltinType) = clang_isa_BuiltinType_LongLong(x)
+function isa_BuiltinType_LongLong(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_LongLong(x)
+end
 
-isa_BuiltinType_Int128(x::AbstractBuiltinType) = clang_isa_BuiltinType_Int128(x)
+function isa_BuiltinType_Int128(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Int128(x)
+end
 
-isa_BuiltinType_UChar(x::AbstractBuiltinType) = clang_isa_BuiltinType_UChar(x)
+function isa_BuiltinType_UChar(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_UChar(x)
+end
 
-isa_BuiltinType_UShort(x::AbstractBuiltinType) = clang_isa_BuiltinType_UShort(x)
+function isa_BuiltinType_UShort(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_UShort(x)
+end
 
-isa_BuiltinType_UInt(x::AbstractBuiltinType) = clang_isa_BuiltinType_UInt(x)
+function isa_BuiltinType_UInt(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_UInt(x)
+end
 
-isa_BuiltinType_ULong(x::AbstractBuiltinType) = clang_isa_BuiltinType_ULong(x)
+function isa_BuiltinType_ULong(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_ULong(x)
+end
 
-isa_BuiltinType_ULongLong(x::AbstractBuiltinType) = clang_isa_BuiltinType_ULongLong(x)
+function isa_BuiltinType_ULongLong(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_ULongLong(x)
+end
 
-isa_BuiltinType_UInt128(x::AbstractBuiltinType) = clang_isa_BuiltinType_UInt128(x)
+function isa_BuiltinType_UInt128(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_UInt128(x)
+end
 
-isa_BuiltinType_Float(x::AbstractBuiltinType) = clang_isa_BuiltinType_Float(x)
+function isa_BuiltinType_Float(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Float(x)
+end
 
-isa_BuiltinType_Double(x::AbstractBuiltinType) = clang_isa_BuiltinType_Double(x)
+function isa_BuiltinType_Double(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Double(x)
+end
 
-isa_BuiltinType_LongDouble(x::AbstractBuiltinType) = clang_isa_BuiltinType_LongDouble(x)
+function isa_BuiltinType_LongDouble(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_LongDouble(x)
+end
 
-isa_BuiltinType_Float128(x::AbstractBuiltinType) = clang_isa_BuiltinType_Float128(x)
+function isa_BuiltinType_Float128(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Float128(x)
+end
 
-isa_BuiltinType_Half(x::AbstractBuiltinType) = clang_isa_BuiltinType_Half(x)
+function isa_BuiltinType_Half(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Half(x)
+end
 
-isa_BuiltinType_BFloat16(x::AbstractBuiltinType) = clang_isa_BuiltinType_BFloat16(x)
+function isa_BuiltinType_BFloat16(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_BFloat16(x)
+end
 
-isa_BuiltinType_Float16(x::AbstractBuiltinType) = clang_isa_BuiltinType_Float16(x)
+function isa_BuiltinType_Float16(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_Float16(x)
+end
 
-isa_BuiltinType_NullPtr(x::AbstractBuiltinType) = clang_isa_BuiltinType_NullPtr(x)
+function isa_BuiltinType_NullPtr(x::AbstractBuiltinType)
+    @check_ptrs x
+    return clang_isa_BuiltinType_NullPtr(x)
+end
 
 # ComplexType
 
 # PointerType
-getPointeeType(x::PointerType) = QualType(clang_PointerType_getPointeeType(x))
+function getPointeeType(x::PointerType)
+    @check_ptrs x
+    return QualType(clang_PointerType_getPointeeType(x))
+end
 
 # ReferenceType
-getPointeeType(x::AbstractReferenceType) = QualType(clang_ReferenceType_getPointeeType(x))
+function getPointeeType(x::AbstractReferenceType)
+    @check_ptrs x
+    return QualType(clang_ReferenceType_getPointeeType(x))
+end
 
 # LValueReferenceType
 
 # RValueReferenceType
 
 # MemberPointerType
-getPointeeType(x::AbstractMemberPointerType) = QualType(clang_MemberPointerType_getPointeeType(x))
+function getPointeeType(x::AbstractMemberPointerType)
+    @check_ptrs x
+    return QualType(clang_MemberPointerType_getPointeeType(x))
+end
 
-getClass(x::AbstractMemberPointerType) = Type_(clang_MemberPointerType_getClass(x))
+function getClass(x::AbstractMemberPointerType)
+    @check_ptrs x
+    return Type_(clang_MemberPointerType_getClass(x))
+end
 
 # ConstantArrayType
 
@@ -187,31 +393,70 @@ getClass(x::AbstractMemberPointerType) = Type_(clang_MemberPointerType_getClass(
 # DependentSizedArrayType
 
 # FunctionType
-getReturnType(x::AbstractFunctionType) = QualType(clang_FunctionType_getReturnType(get_qual_type(x)))
+function getReturnType(x::AbstractFunctionType)
+    @check_ptrs x
+    return QualType(clang_FunctionType_getReturnType(get_qual_type(x)))
+end
 
 # FunctionNoProtoType
 
 # FunctionProtoType
-getNumParams(x::FunctionProtoType) = clang_FunctionProtoType_getNumParams(x)
-getParamType(x::FunctionProtoType, i::Integer) = QualType(clang_FunctionProtoType_getParamType(x, i))
+function getNumParams(x::FunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_getNumParams(x)
+end
+
+function getParamType(x::FunctionProtoType, i::Integer)
+    @check_ptrs x
+    return QualType(clang_FunctionProtoType_getParamType(x, i))
+end
 
 # TypedefType
-desugar(x::TypedefType) = QualType(clang_TypedefType_desugar(x))
+function desugar(x::TypedefType)
+    @check_ptrs x
+    return QualType(clang_TypedefType_desugar(x))
+end
 
 # TagType
-getDecl(x::TagType) = TagDecl(clang_TagType_getDecl(x))
+function getDecl(x::TagType)
+    @check_ptrs x
+    return TagDecl(clang_TagType_getDecl(x))
+end
 
 # RecordType
-getDecl(x::RecordType) = RecordDecl(clang_RecordType_getDecl(x))
+function getDecl(x::RecordType)
+    @check_ptrs x
+    return RecordDecl(clang_RecordType_getDecl(x))
+end
 
 # EnumType
-getDecl(x::EnumType) = EnumDecl(clang_EnumType_getDecl(x))
-getIntegerType(x::EnumType) = getIntegerType(getDecl(x))
-getName(x::EnumType) = getName(getDecl(x))
+function getDecl(x::EnumType)
+    @check_ptrs x
+    return EnumDecl(clang_EnumType_getDecl(x))
+end
+
+function getIntegerType(x::EnumType)
+    @check_ptrs x
+    return getIntegerType(getDecl(x))
+end
+
+function getName(x::EnumType)
+    @check_ptrs x
+    return getName(getDecl(x))
+end
 
 # TemplateTypeParmType
 
 # SubstTemplateTypeParmType
+function getReplacementType(x::SubstTemplateTypeParmType)
+    @check_ptrs x
+    return QualType(clang_SubstTemplateTypeParmType_getReplacementType(x))
+end
+
+function desugar(x::SubstTemplateTypeParmType)
+    @check_ptrs x
+    return QualType(clang_SubstTemplateTypeParmType_desugar(x))
+end
 
 # SubstTemplateTypeParmPackType
 
@@ -246,10 +491,16 @@ function desugar(x::TemplateSpecializationType)
     return QualType(clang_TemplateSpecializationType_desugar(x))
 end
 
-getName(x::TemplateSpecializationType) = getName(getAsTemplateDecl(getTemplateName(x)))
+function getName(x::TemplateSpecializationType)
+    @check_ptrs x
+    return getName(getAsTemplateDecl(getTemplateName(x)))
+end
 
 # ElaboratedType
-desugar(x::ElaboratedType) = QualType(clang_ElaboratedType_desugar(x))
+function desugar(x::ElaboratedType)
+    @check_ptrs x
+    return QualType(clang_ElaboratedType_desugar(x))
+end
 
 # DependentNameType
 

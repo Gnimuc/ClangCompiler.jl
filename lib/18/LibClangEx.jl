@@ -1563,6 +1563,14 @@ function clang_EnumType_getDecl(T)
     @ccall libclangex.clang_EnumType_getDecl(T::CXEnumType)::CXEnumDecl
 end
 
+function clang_SubstTemplateTypeParmType_getReplacementType(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmType_getReplacementType(T::CXSubstTemplateTypeParmType)::CXQualType
+end
+
+function clang_SubstTemplateTypeParmType_desugar(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmType_desugar(T::CXSubstTemplateTypeParmType)::CXQualType
+end
+
 function clang_TemplateSpecializationType_isCurrentInstantiation(T)
     @ccall libclangex.clang_TemplateSpecializationType_isCurrentInstantiation(T::CXTemplateSpecializationType)::Bool
 end

@@ -903,6 +903,16 @@ CXQualType clang_ElaboratedType_desugar(CXElaboratedType T) {
   return static_cast<clang::ElaboratedType *>(T)->desugar().getAsOpaquePtr();
 }
 
+// SubstTemplateTypeParmType
+CXQualType
+clang_SubstTemplateTypeParmType_getReplacementType(CXSubstTemplateTypeParmType T) {
+  return static_cast<clang::SubstTemplateTypeParmType *>(T)->getReplacementType().getAsOpaquePtr();
+}
+
+CXQualType clang_SubstTemplateTypeParmType_desugar(CXSubstTemplateTypeParmType T) {
+  return static_cast<clang::SubstTemplateTypeParmType *>(T)->desugar().getAsOpaquePtr();
+}
+
 // TemplateSpecializationType
 bool clang_TemplateSpecializationType_isCurrentInstantiation(
     CXTemplateSpecializationType T) {
