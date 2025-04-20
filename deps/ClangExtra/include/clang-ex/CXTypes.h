@@ -313,6 +313,7 @@ typedef void *CXFunctionType;
 typedef void *CXFunctionNoProtoType;
 typedef void *CXFunctionProtoType;
 typedef void *CXUnresolvedUsingType;
+typedef void *CXUsingType;
 typedef void *CXTypedefType;
 typedef void *CXMacroQualifiedType;
 typedef void *CXTypeOfExprType;

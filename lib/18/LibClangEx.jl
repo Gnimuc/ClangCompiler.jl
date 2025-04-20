@@ -551,6 +551,8 @@ const CXFunctionProtoType = Ptr{Cvoid}
 
 const CXUnresolvedUsingType = Ptr{Cvoid}
 
+const CXUsingType = Ptr{Cvoid}
+
 const CXTypedefType = Ptr{Cvoid}
 
 const CXMacroQualifiedType = Ptr{Cvoid}
@@ -1339,6 +1341,10 @@ function clang_isa_UnresolvedUsingType(T)
     @ccall libclangex.clang_isa_UnresolvedUsingType(T::CXType_)::Bool
 end
 
+function clang_isa_UsingType(T)
+    @ccall libclangex.clang_isa_UsingType(T::CXType_)::Bool
+end
+
 function clang_isa_TypedefType(T)
     @ccall libclangex.clang_isa_TypedefType(T::CXType_)::Bool
 end
@@ -1519,24 +1525,262 @@ function clang_isa_BuiltinType_NullPtr(T)
     @ccall libclangex.clang_isa_BuiltinType_NullPtr(T::CXType_)::Bool
 end
 
+function clang_ComplexType_getElementType(T)
+    @ccall libclangex.clang_ComplexType_getElementType(T::CXComplexType)::CXQualType
+end
+
+function clang_ComplexType_isSugared(T)
+    @ccall libclangex.clang_ComplexType_isSugared(T::CXComplexType)::Bool
+end
+
+function clang_ComplexType_desugar(T)
+    @ccall libclangex.clang_ComplexType_desugar(T::CXComplexType)::CXQualType
+end
+
+function clang_ParenType_getInnerType(T)
+    @ccall libclangex.clang_ParenType_getInnerType(T::CXParenType)::CXQualType
+end
+
+function clang_ParenType_isSugared(T)
+    @ccall libclangex.clang_ParenType_isSugared(T::CXParenType)::Bool
+end
+
+function clang_ParenType_desugar(T)
+    @ccall libclangex.clang_ParenType_desugar(T::CXParenType)::CXQualType
+end
+
 function clang_PointerType_getPointeeType(T)
     @ccall libclangex.clang_PointerType_getPointeeType(T::CXPointerType)::CXQualType
+end
+
+function clang_PointerType_isSugared(T)
+    @ccall libclangex.clang_PointerType_isSugared(T::CXPointerType)::Bool
+end
+
+function clang_PointerType_desugar(T)
+    @ccall libclangex.clang_PointerType_desugar(T::CXPointerType)::CXQualType
+end
+
+function clang_AdjustedType_getOriginalType(T)
+    @ccall libclangex.clang_AdjustedType_getOriginalType(T::CXAdjustedType)::CXQualType
+end
+
+function clang_AdjustedType_getAdjustedType(T)
+    @ccall libclangex.clang_AdjustedType_getAdjustedType(T::CXAdjustedType)::CXQualType
+end
+
+function clang_AdjustedType_isSugared(T)
+    @ccall libclangex.clang_AdjustedType_isSugared(T::CXAdjustedType)::Bool
+end
+
+function clang_AdjustedType_desugar(T)
+    @ccall libclangex.clang_AdjustedType_desugar(T::CXAdjustedType)::CXQualType
+end
+
+function clang_DecayedType_getDecayedType(T)
+    @ccall libclangex.clang_DecayedType_getDecayedType(T::CXDecayedType)::CXQualType
+end
+
+function clang_DecayedType_getPointeeType(T)
+    @ccall libclangex.clang_DecayedType_getPointeeType(T::CXDecayedType)::CXQualType
+end
+
+function clang_ReferenceType_isSpelledAsLValue(T)
+    @ccall libclangex.clang_ReferenceType_isSpelledAsLValue(T::CXReferenceType)::Bool
+end
+
+function clang_ReferenceType_isInnerRef(T)
+    @ccall libclangex.clang_ReferenceType_isInnerRef(T::CXReferenceType)::Bool
+end
+
+function clang_ReferenceType_getPointeeTypeAsWritten(T)
+    @ccall libclangex.clang_ReferenceType_getPointeeTypeAsWritten(T::CXReferenceType)::CXQualType
 end
 
 function clang_ReferenceType_getPointeeType(T)
     @ccall libclangex.clang_ReferenceType_getPointeeType(T::CXReferenceType)::CXQualType
 end
 
+function clang_LValueReferenceType_isSugared(T)
+    @ccall libclangex.clang_LValueReferenceType_isSugared(T::CXLValueReferenceType)::Bool
+end
+
+function clang_LValueReferenceType_desugar(T)
+    @ccall libclangex.clang_LValueReferenceType_desugar(T::CXLValueReferenceType)::CXQualType
+end
+
+function clang_RValueReferenceType_isSugared(T)
+    @ccall libclangex.clang_RValueReferenceType_isSugared(T::CXRValueReferenceType)::Bool
+end
+
+function clang_RValueReferenceType_desugar(T)
+    @ccall libclangex.clang_RValueReferenceType_desugar(T::CXRValueReferenceType)::CXQualType
+end
+
 function clang_MemberPointerType_getPointeeType(T)
     @ccall libclangex.clang_MemberPointerType_getPointeeType(T::CXMemberPointerType)::CXQualType
+end
+
+function clang_MemberPointerType_isMemberFunctionPointer(T)
+    @ccall libclangex.clang_MemberPointerType_isMemberFunctionPointer(T::CXMemberPointerType)::Bool
+end
+
+function clang_MemberPointerType_isMemberDataPointer(T)
+    @ccall libclangex.clang_MemberPointerType_isMemberDataPointer(T::CXMemberPointerType)::Bool
 end
 
 function clang_MemberPointerType_getClass(T)
     @ccall libclangex.clang_MemberPointerType_getClass(T::CXMemberPointerType)::CXType_
 end
 
+function clang_MemberPointerType_getMostRecentCXXRecordDecl(T)
+    @ccall libclangex.clang_MemberPointerType_getMostRecentCXXRecordDecl(T::CXMemberPointerType)::CXCXXRecordDecl
+end
+
+function clang_MemberPointerType_isSugared(T)
+    @ccall libclangex.clang_MemberPointerType_isSugared(T::CXMemberPointerType)::Bool
+end
+
+function clang_MemberPointerType_desugar(T)
+    @ccall libclangex.clang_MemberPointerType_desugar(T::CXMemberPointerType)::CXQualType
+end
+
+@enum CXArraySizeModifier::UInt32 begin
+    CXArraySizeModifier_Normal = 0
+    CXArraySizeModifier_Static = 1
+    CXArraySizeModifier_Star = 2
+end
+
+function clang_ArrayType_getElementType(T)
+    @ccall libclangex.clang_ArrayType_getElementType(T::CXArrayType)::CXQualType
+end
+
+function clang_ArrayType_getSizeModifier(T)
+    @ccall libclangex.clang_ArrayType_getSizeModifier(T::CXArrayType)::CXArraySizeModifier
+end
+
+function clang_ArrayType_getIndexTypeCVRQualifiers(T)
+    @ccall libclangex.clang_ArrayType_getIndexTypeCVRQualifiers(T::CXArrayType)::Cuint
+end
+
+function clang_ConstantArrayType_getSizeExpr(T)
+    @ccall libclangex.clang_ConstantArrayType_getSizeExpr(T::CXConstantArrayType)::CXExpr
+end
+
+function clang_ConstantArrayType_isSugared(T)
+    @ccall libclangex.clang_ConstantArrayType_isSugared(T::CXConstantArrayType)::Bool
+end
+
+function clang_ConstantArrayType_desugar(T)
+    @ccall libclangex.clang_ConstantArrayType_desugar(T::CXConstantArrayType)::CXQualType
+end
+
+function clang_ConstantArrayType_getNumAddressingBits(T, C)
+    @ccall libclangex.clang_ConstantArrayType_getNumAddressingBits(T::CXConstantArrayType, C::CXASTContext)::Cuint
+end
+
+function clang_IncompleteArrayType_isSugared(T)
+    @ccall libclangex.clang_IncompleteArrayType_isSugared(T::CXIncompleteArrayType)::Bool
+end
+
+function clang_IncompleteArrayType_desugar(T)
+    @ccall libclangex.clang_IncompleteArrayType_desugar(T::CXIncompleteArrayType)::CXQualType
+end
+
+function clang_VariableArrayType_getSizeExpr(T)
+    @ccall libclangex.clang_VariableArrayType_getSizeExpr(T::CXVariableArrayType)::CXExpr
+end
+
+function clang_VariableArrayType_isSugared(T)
+    @ccall libclangex.clang_VariableArrayType_isSugared(T::CXVariableArrayType)::Bool
+end
+
+function clang_VariableArrayType_desugar(T)
+    @ccall libclangex.clang_VariableArrayType_desugar(T::CXVariableArrayType)::CXQualType
+end
+
+function clang_DependentSizedArrayType_getSizeExpr(T)
+    @ccall libclangex.clang_DependentSizedArrayType_getSizeExpr(T::CXDependentSizedArrayType)::CXExpr
+end
+
+function clang_DependentSizedArrayType_isSugared(T)
+    @ccall libclangex.clang_DependentSizedArrayType_isSugared(T::CXDependentSizedArrayType)::Bool
+end
+
+function clang_DependentSizedArrayType_desugar(T)
+    @ccall libclangex.clang_DependentSizedArrayType_desugar(T::CXDependentSizedArrayType)::CXQualType
+end
+
+function clang_DependentAddressSpaceType_getAddrSpaceExpr(T)
+    @ccall libclangex.clang_DependentAddressSpaceType_getAddrSpaceExpr(T::CXDependentAddressSpaceType)::CXExpr
+end
+
+function clang_DependentAddressSpaceType_getPointeeType(T)
+    @ccall libclangex.clang_DependentAddressSpaceType_getPointeeType(T::CXDependentAddressSpaceType)::CXQualType
+end
+
+function clang_DependentAddressSpaceType_isSugared(T)
+    @ccall libclangex.clang_DependentAddressSpaceType_isSugared(T::CXDependentAddressSpaceType)::Bool
+end
+
+function clang_DependentAddressSpaceType_desugar(T)
+    @ccall libclangex.clang_DependentAddressSpaceType_desugar(T::CXDependentAddressSpaceType)::CXQualType
+end
+
+function clang_DependentSizedExtVectorType_getSizeExpr(T)
+    @ccall libclangex.clang_DependentSizedExtVectorType_getSizeExpr(T::CXDependentSizedExtVectorType)::CXExpr
+end
+
+function clang_DependentSizedExtVectorType_getElementType(T)
+    @ccall libclangex.clang_DependentSizedExtVectorType_getElementType(T::CXDependentSizedExtVectorType)::CXQualType
+end
+
+function clang_DependentSizedExtVectorType_isSugared(T)
+    @ccall libclangex.clang_DependentSizedExtVectorType_isSugared(T::CXDependentSizedExtVectorType)::Bool
+end
+
+function clang_DependentSizedExtVectorType_desugar(T)
+    @ccall libclangex.clang_DependentSizedExtVectorType_desugar(T::CXDependentSizedExtVectorType)::CXQualType
+end
+
 function clang_FunctionType_getReturnType(T)
     @ccall libclangex.clang_FunctionType_getReturnType(T::CXFunctionType)::CXQualType
+end
+
+function clang_FunctionType_getHasRegParm(T)
+    @ccall libclangex.clang_FunctionType_getHasRegParm(T::CXFunctionType)::Bool
+end
+
+function clang_FunctionType_getRegParmType(T)
+    @ccall libclangex.clang_FunctionType_getRegParmType(T::CXFunctionType)::Cuint
+end
+
+function clang_FunctionType_getNoReturnAttr(T)
+    @ccall libclangex.clang_FunctionType_getNoReturnAttr(T::CXFunctionType)::Bool
+end
+
+function clang_FunctionType_getCmseNSCallAttr(T)
+    @ccall libclangex.clang_FunctionType_getCmseNSCallAttr(T::CXFunctionType)::Bool
+end
+
+function clang_FunctionType_isConst(T)
+    @ccall libclangex.clang_FunctionType_isConst(T::CXFunctionType)::Bool
+end
+
+function clang_FunctionType_isRestrict(T)
+    @ccall libclangex.clang_FunctionType_isRestrict(T::CXFunctionType)::Bool
+end
+
+function clang_FunctionType_isVolatile(T)
+    @ccall libclangex.clang_FunctionType_isVolatile(T::CXFunctionType)::Bool
+end
+
+function clang_FunctionNoProtoType_isSugared(T)
+    @ccall libclangex.clang_FunctionNoProtoType_isSugared(T::CXFunctionNoProtoType)::Bool
+end
+
+function clang_FunctionNoProtoType_desugar(T)
+    @ccall libclangex.clang_FunctionNoProtoType_desugar(T::CXFunctionNoProtoType)::CXQualType
 end
 
 function clang_FunctionProtoType_getNumParams(T)
@@ -1547,8 +1791,168 @@ function clang_FunctionProtoType_getParamType(T, i)
     @ccall libclangex.clang_FunctionProtoType_getParamType(T::CXFunctionProtoType, i::Cuint)::CXQualType
 end
 
+function clang_FunctionProtoType_getParamTypes(T)
+    @ccall libclangex.clang_FunctionProtoType_getParamTypes(T::CXFunctionProtoType)::CXArrayRef
+end
+
+function clang_FunctionProtoType_hasExceptionSpec(T)
+    @ccall libclangex.clang_FunctionProtoType_hasExceptionSpec(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_hasDynamicExceptionSpec(T)
+    @ccall libclangex.clang_FunctionProtoType_hasDynamicExceptionSpec(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_hasNoexceptExceptionSpec(T)
+    @ccall libclangex.clang_FunctionProtoType_hasNoexceptExceptionSpec(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_hasDependentExceptionSpec(T)
+    @ccall libclangex.clang_FunctionProtoType_hasDependentExceptionSpec(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_hasInstantiationDependentExceptionSpec(T)
+    @ccall libclangex.clang_FunctionProtoType_hasInstantiationDependentExceptionSpec(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_getNumExceptions(T)
+    @ccall libclangex.clang_FunctionProtoType_getNumExceptions(T::CXFunctionProtoType)::Cuint
+end
+
+function clang_FunctionProtoType_getExceptionType(T, i)
+    @ccall libclangex.clang_FunctionProtoType_getExceptionType(T::CXFunctionProtoType, i::Cuint)::CXQualType
+end
+
+function clang_FunctionProtoType_getNoexceptExpr(T)
+    @ccall libclangex.clang_FunctionProtoType_getNoexceptExpr(T::CXFunctionProtoType)::CXExpr
+end
+
+function clang_FunctionProtoType_getExceptionSpecDecl(T)
+    @ccall libclangex.clang_FunctionProtoType_getExceptionSpecDecl(T::CXFunctionProtoType)::CXFunctionDecl
+end
+
+function clang_FunctionProtoType_getExceptionSpecTemplate(T)
+    @ccall libclangex.clang_FunctionProtoType_getExceptionSpecTemplate(T::CXFunctionProtoType)::CXFunctionDecl
+end
+
+function clang_FunctionProtoType_isNothrow(T)
+    @ccall libclangex.clang_FunctionProtoType_isNothrow(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_isVariadic(T)
+    @ccall libclangex.clang_FunctionProtoType_isVariadic(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_isTemplateVariadic(T)
+    @ccall libclangex.clang_FunctionProtoType_isTemplateVariadic(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_hasTrailingReturn(T)
+    @ccall libclangex.clang_FunctionProtoType_hasTrailingReturn(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_param_types(T)
+    @ccall libclangex.clang_FunctionProtoType_param_types(T::CXFunctionProtoType)::CXArrayRef
+end
+
+function clang_FunctionProtoType_exceptions(T)
+    @ccall libclangex.clang_FunctionProtoType_exceptions(T::CXFunctionProtoType)::CXArrayRef
+end
+
+function clang_FunctionProtoType_isSugared(T)
+    @ccall libclangex.clang_FunctionProtoType_isSugared(T::CXFunctionProtoType)::Bool
+end
+
+function clang_UnresolvedUsingType_getDecl(T)
+    @ccall libclangex.clang_UnresolvedUsingType_getDecl(T::CXUnresolvedUsingType)::CXUnresolvedUsingTypenameDecl
+end
+
+function clang_UnresolvedUsingType_isSugared(T)
+    @ccall libclangex.clang_UnresolvedUsingType_isSugared(T::CXUnresolvedUsingType)::Bool
+end
+
+function clang_UnresolvedUsingType_desugar(T)
+    @ccall libclangex.clang_UnresolvedUsingType_desugar(T::CXUnresolvedUsingType)::CXQualType
+end
+
+function clang_UsingType_getFoundDecl(T)
+    @ccall libclangex.clang_UsingType_getFoundDecl(T::CXUsingType)::CXUsingShadowDecl
+end
+
+function clang_UsingType_getUnderlyingType(T)
+    @ccall libclangex.clang_UsingType_getUnderlyingType(T::CXUsingType)::CXQualType
+end
+
+function clang_UsingType_isSugared(T)
+    @ccall libclangex.clang_UsingType_isSugared(T::CXUsingType)::Bool
+end
+
+function clang_UsingType_desugar(T)
+    @ccall libclangex.clang_UsingType_desugar(T::CXUsingType)::CXQualType
+end
+
+function clang_TypedefType_getDecl(T)
+    @ccall libclangex.clang_TypedefType_getDecl(T::CXTypedefType)::CXTypedefNameDecl
+end
+
+function clang_TypedefType_isSugared(T)
+    @ccall libclangex.clang_TypedefType_isSugared(T::CXTypedefType)::Bool
+end
+
 function clang_TypedefType_desugar(T)
     @ccall libclangex.clang_TypedefType_desugar(T::CXTypedefType)::CXQualType
+end
+
+function clang_MacroQualifiedType_getMacroIdentifier(T)
+    @ccall libclangex.clang_MacroQualifiedType_getMacroIdentifier(T::CXMacroQualifiedType)::CXIdentifierInfo
+end
+
+function clang_MacroQualifiedType_getUnderlyingType(T)
+    @ccall libclangex.clang_MacroQualifiedType_getUnderlyingType(T::CXMacroQualifiedType)::CXQualType
+end
+
+function clang_MacroQualifiedType_getModifiedType(T)
+    @ccall libclangex.clang_MacroQualifiedType_getModifiedType(T::CXMacroQualifiedType)::CXQualType
+end
+
+function clang_MacroQualifiedType_isSugared(T)
+    @ccall libclangex.clang_MacroQualifiedType_isSugared(T::CXMacroQualifiedType)::Bool
+end
+
+function clang_MacroQualifiedType_desugar(T)
+    @ccall libclangex.clang_MacroQualifiedType_desugar(T::CXMacroQualifiedType)::CXQualType
+end
+
+function clang_DecltypeType_getUnderlyingExpr(T)
+    @ccall libclangex.clang_DecltypeType_getUnderlyingExpr(T::CXDecltypeType)::CXExpr
+end
+
+function clang_DecltypeType_getUnderlyingType(T)
+    @ccall libclangex.clang_DecltypeType_getUnderlyingType(T::CXDecltypeType)::CXQualType
+end
+
+function clang_DecltypeType_isSugared(T)
+    @ccall libclangex.clang_DecltypeType_isSugared(T::CXDecltypeType)::Bool
+end
+
+function clang_DecltypeType_desugar(T)
+    @ccall libclangex.clang_DecltypeType_desugar(T::CXDecltypeType)::CXQualType
+end
+
+function clang_UnaryTransformType_isSugared(T)
+    @ccall libclangex.clang_UnaryTransformType_isSugared(T::CXUnaryTransformType)::Bool
+end
+
+function clang_UnaryTransformType_desugar(T)
+    @ccall libclangex.clang_UnaryTransformType_desugar(T::CXUnaryTransformType)::CXQualType
+end
+
+function clang_UnaryTransformType_getUnderlyingType(T)
+    @ccall libclangex.clang_UnaryTransformType_getUnderlyingType(T::CXUnaryTransformType)::CXQualType
+end
+
+function clang_UnaryTransformType_getBaseType(T)
+    @ccall libclangex.clang_UnaryTransformType_getBaseType(T::CXUnaryTransformType)::CXQualType
 end
 
 function clang_TagType_getDecl(T)
@@ -1559,16 +1963,128 @@ function clang_RecordType_getDecl(T)
     @ccall libclangex.clang_RecordType_getDecl(T::CXRecordType)::CXRecordDecl
 end
 
+function clang_RecordType_hasConstFields(T)
+    @ccall libclangex.clang_RecordType_hasConstFields(T::CXRecordType)::Bool
+end
+
+function clang_RecordType_isSugared(T)
+    @ccall libclangex.clang_RecordType_isSugared(T::CXRecordType)::Bool
+end
+
+function clang_RecordType_desugar(T)
+    @ccall libclangex.clang_RecordType_desugar(T::CXRecordType)::CXQualType
+end
+
 function clang_EnumType_getDecl(T)
     @ccall libclangex.clang_EnumType_getDecl(T::CXEnumType)::CXEnumDecl
+end
+
+function clang_EnumType_isSugared(T)
+    @ccall libclangex.clang_EnumType_isSugared(T::CXEnumType)::Bool
+end
+
+function clang_EnumType_desugar(T)
+    @ccall libclangex.clang_EnumType_desugar(T::CXEnumType)::CXQualType
+end
+
+function clang_TemplateTypeParmType_getDepth(T)
+    @ccall libclangex.clang_TemplateTypeParmType_getDepth(T::CXTemplateTypeParmType)::Cuint
+end
+
+function clang_TemplateTypeParmType_getIndex(T)
+    @ccall libclangex.clang_TemplateTypeParmType_getIndex(T::CXTemplateTypeParmType)::Cuint
+end
+
+function clang_TemplateTypeParmType_isParameterPack(T)
+    @ccall libclangex.clang_TemplateTypeParmType_isParameterPack(T::CXTemplateTypeParmType)::Bool
+end
+
+function clang_TemplateTypeParmType_getDecl(T)
+    @ccall libclangex.clang_TemplateTypeParmType_getDecl(T::CXTemplateTypeParmType)::CXTemplateTypeParmDecl
+end
+
+function clang_TemplateTypeParmType_isSugared(T)
+    @ccall libclangex.clang_TemplateTypeParmType_isSugared(T::CXTemplateTypeParmType)::Bool
+end
+
+function clang_TemplateTypeParmType_desugar(T)
+    @ccall libclangex.clang_TemplateTypeParmType_desugar(T::CXTemplateTypeParmType)::CXQualType
 end
 
 function clang_SubstTemplateTypeParmType_getReplacementType(T)
     @ccall libclangex.clang_SubstTemplateTypeParmType_getReplacementType(T::CXSubstTemplateTypeParmType)::CXQualType
 end
 
+function clang_SubstTemplateTypeParmType_getAssociatedDecl(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmType_getAssociatedDecl(T::CXSubstTemplateTypeParmType)::CXDecl
+end
+
+function clang_SubstTemplateTypeParmType_getReplacedParameter(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmType_getReplacedParameter(T::CXSubstTemplateTypeParmType)::CXTemplateTypeParmDecl
+end
+
+function clang_SubstTemplateTypeParmType_getIndex(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmType_getIndex(T::CXSubstTemplateTypeParmType)::Cuint
+end
+
+function clang_SubstTemplateTypeParmType_isSugared(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmType_isSugared(T::CXSubstTemplateTypeParmType)::Bool
+end
+
 function clang_SubstTemplateTypeParmType_desugar(T)
     @ccall libclangex.clang_SubstTemplateTypeParmType_desugar(T::CXSubstTemplateTypeParmType)::CXQualType
+end
+
+function clang_SubstTemplateTypeParmPackType_getAssociatedDecl(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmPackType_getAssociatedDecl(T::CXSubstTemplateTypeParmPackType)::CXDecl
+end
+
+function clang_SubstTemplateTypeParmPackType_getReplacedParameter(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmPackType_getReplacedParameter(T::CXSubstTemplateTypeParmPackType)::CXTemplateTypeParmDecl
+end
+
+function clang_SubstTemplateTypeParmPackType_getIndex(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmPackType_getIndex(T::CXSubstTemplateTypeParmPackType)::Cuint
+end
+
+function clang_SubstTemplateTypeParmPackType_getFinal(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmPackType_getFinal(T::CXSubstTemplateTypeParmPackType)::Bool
+end
+
+function clang_SubstTemplateTypeParmPackType_getNumArgs(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmPackType_getNumArgs(T::CXSubstTemplateTypeParmPackType)::Cuint
+end
+
+function clang_SubstTemplateTypeParmPackType_isSugared(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmPackType_isSugared(T::CXSubstTemplateTypeParmPackType)::Bool
+end
+
+function clang_SubstTemplateTypeParmPackType_desugar(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmPackType_desugar(T::CXSubstTemplateTypeParmPackType)::CXQualType
+end
+
+function clang_SubstTemplateTypeParmPackType_getArgumentPack(T)
+    @ccall libclangex.clang_SubstTemplateTypeParmPackType_getArgumentPack(T::CXSubstTemplateTypeParmPackType)::CXArrayRef
+end
+
+function clang_DeducedType_isSugared(T)
+    @ccall libclangex.clang_DeducedType_isSugared(T::CXDeducedType)::Bool
+end
+
+function clang_DeducedType_desugar(T)
+    @ccall libclangex.clang_DeducedType_desugar(T::CXDeducedType)::CXQualType
+end
+
+function clang_DeducedType_getDeducedType(T)
+    @ccall libclangex.clang_DeducedType_getDeducedType(T::CXDeducedType)::CXQualType
+end
+
+function clang_DeducedType_isDeduced(T)
+    @ccall libclangex.clang_DeducedType_isDeduced(T::CXDeducedType)::Bool
+end
+
+function clang_DeducedTemplateSpecializationType_getTemplateName(T)
+    @ccall libclangex.clang_DeducedTemplateSpecializationType_getTemplateName(T::CXDeducedTemplateSpecializationType)::CXTemplateName
 end
 
 function clang_TemplateSpecializationType_isCurrentInstantiation(T)
@@ -1599,26 +2115,114 @@ function clang_TemplateSpecializationType_desugar(T)
     @ccall libclangex.clang_TemplateSpecializationType_desugar(T::CXTemplateSpecializationType)::CXQualType
 end
 
+function clang_InjectedClassNameType_getInjectedSpecializationType(T)
+    @ccall libclangex.clang_InjectedClassNameType_getInjectedSpecializationType(T::CXInjectedClassNameType)::CXQualType
+end
+
+function clang_InjectedClassNameType_getInjectedTST(T)
+    @ccall libclangex.clang_InjectedClassNameType_getInjectedTST(T::CXInjectedClassNameType)::CXTemplateSpecializationType
+end
+
+function clang_InjectedClassNameType_getTemplateName(T)
+    @ccall libclangex.clang_InjectedClassNameType_getTemplateName(T::CXInjectedClassNameType)::CXTemplateName
+end
+
+function clang_InjectedClassNameType_getDecl(T)
+    @ccall libclangex.clang_InjectedClassNameType_getDecl(T::CXInjectedClassNameType)::CXCXXRecordDecl
+end
+
+function clang_InjectedClassNameType_isSugared(T)
+    @ccall libclangex.clang_InjectedClassNameType_isSugared(T::CXInjectedClassNameType)::Bool
+end
+
+function clang_InjectedClassNameType_desugar(T)
+    @ccall libclangex.clang_InjectedClassNameType_desugar(T::CXInjectedClassNameType)::CXQualType
+end
+
+function clang_ElaboratedType_getQualifier(T)
+    @ccall libclangex.clang_ElaboratedType_getQualifier(T::CXElaboratedType)::CXNestedNameSpecifier
+end
+
+function clang_ElaboratedType_getNamedType(T)
+    @ccall libclangex.clang_ElaboratedType_getNamedType(T::CXElaboratedType)::CXQualType
+end
+
 function clang_ElaboratedType_desugar(T)
     @ccall libclangex.clang_ElaboratedType_desugar(T::CXElaboratedType)::CXQualType
 end
 
+function clang_ElaboratedType_isSugared(T)
+    @ccall libclangex.clang_ElaboratedType_isSugared(T::CXElaboratedType)::Bool
+end
+
+function clang_ElaboratedType_getOwnedTagDecl(T)
+    @ccall libclangex.clang_ElaboratedType_getOwnedTagDecl(T::CXElaboratedType)::CXTagDecl
+end
+
+function clang_DependentNameType_getQualifier(T)
+    @ccall libclangex.clang_DependentNameType_getQualifier(T::CXDependentNameType)::CXNestedNameSpecifier
+end
+
+function clang_DependentNameType_getIdentifier(T)
+    @ccall libclangex.clang_DependentNameType_getIdentifier(T::CXDependentNameType)::CXIdentifierInfo
+end
+
+function clang_DependentNameType_isSugared(T)
+    @ccall libclangex.clang_DependentNameType_isSugared(T::CXDependentNameType)::Bool
+end
+
+function clang_DependentNameType_desugar(T)
+    @ccall libclangex.clang_DependentNameType_desugar(T::CXDependentNameType)::CXQualType
+end
+
+function clang_DependentTemplateSpecializationType_getQualifier(T)
+    @ccall libclangex.clang_DependentTemplateSpecializationType_getQualifier(T::CXDependentTemplateSpecializationType)::CXNestedNameSpecifier
+end
+
+function clang_DependentTemplateSpecializationType_getIdentifier(T)
+    @ccall libclangex.clang_DependentTemplateSpecializationType_getIdentifier(T::CXDependentTemplateSpecializationType)::CXIdentifierInfo
+end
+
+function clang_DependentTemplateSpecializationType_template_arguments(T)
+    @ccall libclangex.clang_DependentTemplateSpecializationType_template_arguments(T::CXDependentTemplateSpecializationType)::CXArrayRef
+end
+
+function clang_DependentTemplateSpecializationType_isSugared(T)
+    @ccall libclangex.clang_DependentTemplateSpecializationType_isSugared(T::CXDependentTemplateSpecializationType)::Bool
+end
+
+function clang_DependentTemplateSpecializationType_desugar(T)
+    @ccall libclangex.clang_DependentTemplateSpecializationType_desugar(T::CXDependentTemplateSpecializationType)::CXQualType
+end
+
+function clang_AtomicType_getValueType(T)
+    @ccall libclangex.clang_AtomicType_getValueType(T::CXAtomicType)::CXQualType
+end
+
+function clang_AtomicType_isSugared(T)
+    @ccall libclangex.clang_AtomicType_isSugared(T::CXAtomicType)::Bool
+end
+
+function clang_AtomicType_desugar(T)
+    @ccall libclangex.clang_AtomicType_desugar(T::CXAtomicType)::CXQualType
+end
+
 @enum CXTagTypeKind::UInt32 begin
-    CXTagTypeKind_TTK_Struct = 0
-    CXTagTypeKind_TTK_Interface = 1
-    CXTagTypeKind_TTK_Union = 2
-    CXTagTypeKind_TTK_Class = 3
-    CXTagTypeKind_TTK_Enum = 4
+    CXTagTypeKind_Struct = 0
+    CXTagTypeKind_Interface = 1
+    CXTagTypeKind_Union = 2
+    CXTagTypeKind_Class = 3
+    CXTagTypeKind_Enum = 4
 end
 
 @enum CXElaboratedTypeKeyword::UInt32 begin
-    CXElaboratedTypeKeyword_ETK_Struct = 0
-    CXElaboratedTypeKeyword_ETK_Interface = 1
-    CXElaboratedTypeKeyword_ETK_Union = 2
-    CXElaboratedTypeKeyword_ETK_Class = 3
-    CXElaboratedTypeKeyword_ETK_Enum = 4
-    CXElaboratedTypeKeyword_ETK_Typename = 5
-    CXElaboratedTypeKeyword_ETK_None = 6
+    CXElaboratedTypeKeyword_Struct = 0
+    CXElaboratedTypeKeyword_Interface = 1
+    CXElaboratedTypeKeyword_Union = 2
+    CXElaboratedTypeKeyword_Class = 3
+    CXElaboratedTypeKeyword_Enum = 4
+    CXElaboratedTypeKeyword_Typename = 5
+    CXElaboratedTypeKeyword_None = 6
 end
 
 function clang_ASTContext_getSourceManager(Ctx)

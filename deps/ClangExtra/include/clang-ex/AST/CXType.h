@@ -460,6 +460,8 @@ bool clang_isa_ArrayType(CXType_ T);
 
 bool clang_isa_UnresolvedUsingType(CXType_ T);
 
+bool clang_isa_UsingType(CXType_ T);
+
 bool clang_isa_TypedefType(CXType_ T);
 
 bool clang_isa_DecltypeType(CXType_ T);
@@ -552,55 +554,137 @@ bool clang_isa_BuiltinType_Float128(CXType_ T);
 bool clang_isa_BuiltinType_NullPtr(CXType_ T);
 
 // ComplexType
-// getElementType
-// isSugared
+CXQualType clang_ComplexType_getElementType(CXComplexType T);
+
+bool clang_ComplexType_isSugared(CXComplexType T);
+
+CXQualType clang_ComplexType_desugar(CXComplexType T);
 
 // ParenType
-// getInnerType
+CXQualType clang_ParenType_getInnerType(CXParenType T);
+
+bool clang_ParenType_isSugared(CXParenType T);
+
+CXQualType clang_ParenType_desugar(CXParenType T);
 
 // PointerType
 CXQualType clang_PointerType_getPointeeType(CXPointerType T);
 
+bool clang_PointerType_isSugared(CXPointerType T);
+
+CXQualType clang_PointerType_desugar(CXPointerType T);
+
 // AdjustedType
-// getOriginalType
-// getAdjustedType
+CXQualType clang_AdjustedType_getOriginalType(CXAdjustedType T);
+
+CXQualType clang_AdjustedType_getAdjustedType(CXAdjustedType T);
+
+bool clang_AdjustedType_isSugared(CXAdjustedType T);
+
+CXQualType clang_AdjustedType_desugar(CXAdjustedType T);
 
 // DecayedType
-// getDecayedType
+CXQualType clang_DecayedType_getDecayedType(CXDecayedType T);
+
+CXQualType clang_DecayedType_getPointeeType(CXDecayedType T);
 
 // ReferenceType
-// isSpelledAsLValue
-// isInnerRef
-// getPointeeTypeAsWritten
+bool clang_ReferenceType_isSpelledAsLValue(CXReferenceType T);
+
+bool clang_ReferenceType_isInnerRef(CXReferenceType T);
+
+CXQualType clang_ReferenceType_getPointeeTypeAsWritten(CXReferenceType T);
+
 CXQualType clang_ReferenceType_getPointeeType(CXReferenceType T);
 
 // LValueReferenceType
+bool clang_LValueReferenceType_isSugared(CXLValueReferenceType T);
+
+CXQualType clang_LValueReferenceType_desugar(CXLValueReferenceType T);
+
 // RValueReferenceType
+bool clang_RValueReferenceType_isSugared(CXRValueReferenceType T);
+
+CXQualType clang_RValueReferenceType_desugar(CXRValueReferenceType T);
 
 // MemberPointerType
 CXQualType clang_MemberPointerType_getPointeeType(CXMemberPointerType T);
-// isMemberFunctionPointer
-// isMemberDataPointer
+
+bool clang_MemberPointerType_isMemberFunctionPointer(CXMemberPointerType T);
+
+bool clang_MemberPointerType_isMemberDataPointer(CXMemberPointerType T);
+
 CXType_ clang_MemberPointerType_getClass(CXMemberPointerType T);
-// getMostRecentCXXRecordDecl
+
+CXCXXRecordDecl clang_MemberPointerType_getMostRecentCXXRecordDecl(CXMemberPointerType T);
+
+bool clang_MemberPointerType_isSugared(CXMemberPointerType T);
+
+CXQualType clang_MemberPointerType_desugar(CXMemberPointerType T);
 
 // ArrayType
-// getElementType
-// getIndexTypeCVRQualifiers
+typedef enum CXArraySizeModifier {
+  CXArraySizeModifier_Normal,
+  CXArraySizeModifier_Static,
+  CXArraySizeModifier_Star
+} CXArraySizeModifier;
+
+CXQualType clang_ArrayType_getElementType(CXArrayType T);
+
+CXArraySizeModifier clang_ArrayType_getSizeModifier(CXArrayType T);
+
+// CXQualifiers clang_ArrayType_getIndexTypeQualifiers(CXArrayType T);
+
+unsigned clang_ArrayType_getIndexTypeCVRQualifiers(CXArrayType T);
 
 // ConstantArrayType
 // getSize
-// getSizeExpr
+CXExpr clang_ConstantArrayType_getSizeExpr(CXConstantArrayType T);
+
+bool clang_ConstantArrayType_isSugared(CXConstantArrayType T);
+
+CXQualType clang_ConstantArrayType_desugar(CXConstantArrayType T);
+
+unsigned clang_ConstantArrayType_getNumAddressingBits(CXConstantArrayType T,
+                                                      CXASTContext C);
 
 // IncompleteArrayType
+bool clang_IncompleteArrayType_isSugared(CXIncompleteArrayType T);
+
+CXQualType clang_IncompleteArrayType_desugar(CXIncompleteArrayType T);
 
 // VariableArrayType
+CXExpr clang_VariableArrayType_getSizeExpr(CXVariableArrayType T);
+
+bool clang_VariableArrayType_isSugared(CXVariableArrayType T);
+
+CXQualType clang_VariableArrayType_desugar(CXVariableArrayType T);
 
 // DependentSizedArrayType
+CXExpr clang_DependentSizedArrayType_getSizeExpr(CXDependentSizedArrayType T);
+
+bool clang_DependentSizedArrayType_isSugared(CXDependentSizedArrayType T);
+
+CXQualType clang_DependentSizedArrayType_desugar(CXDependentSizedArrayType T);
 
 // DependentAddressSpaceType
+CXExpr clang_DependentAddressSpaceType_getAddrSpaceExpr(CXDependentAddressSpaceType T);
+
+CXQualType clang_DependentAddressSpaceType_getPointeeType(CXDependentAddressSpaceType T);
+
+bool clang_DependentAddressSpaceType_isSugared(CXDependentAddressSpaceType T);
+
+CXQualType clang_DependentAddressSpaceType_desugar(CXDependentAddressSpaceType T);
 
 // DependentSizedExtVectorType
+CXExpr clang_DependentSizedExtVectorType_getSizeExpr(CXDependentSizedExtVectorType T);
+
+CXQualType
+clang_DependentSizedExtVectorType_getElementType(CXDependentSizedExtVectorType T);
+
+bool clang_DependentSizedExtVectorType_isSugared(CXDependentSizedExtVectorType T);
+
+CXQualType clang_DependentSizedExtVectorType_desugar(CXDependentSizedExtVectorType T);
 
 // VectorType
 // getElementType
@@ -623,36 +707,104 @@ CXType_ clang_MemberPointerType_getClass(CXMemberPointerType T);
 
 // FunctionType
 CXQualType clang_FunctionType_getReturnType(CXFunctionType T);
-// getHasRegParm
-// getRegParmType
-// getNoReturnAttr
-// getCmseNSCallAttr
+
+bool clang_FunctionType_getHasRegParm(CXFunctionType T);
+
+unsigned clang_FunctionType_getRegParmType(CXFunctionType T);
+
+bool clang_FunctionType_getNoReturnAttr(CXFunctionType T);
+
+bool clang_FunctionType_getCmseNSCallAttr(CXFunctionType T);
+
+bool clang_FunctionType_isConst(CXFunctionType T);
+
+bool clang_FunctionType_isRestrict(CXFunctionType T);
+
+bool clang_FunctionType_isVolatile(CXFunctionType T);
+
+// getCallConv
 // getCallResultType
 // getNameForCallConv
 
 // FunctionNoProtoType
+bool clang_FunctionNoProtoType_isSugared(CXFunctionNoProtoType T);
+
+CXQualType clang_FunctionNoProtoType_desugar(CXFunctionNoProtoType T);
 
 // FunctionProtoType
 unsigned clang_FunctionProtoType_getNumParams(CXFunctionProtoType T);
 
 CXQualType clang_FunctionProtoType_getParamType(CXFunctionProtoType T, unsigned i);
-// getParamTypes
-// ...
-// isVariadic
-// isTemplateVariadic
+
+CXArrayRef clang_FunctionProtoType_getParamTypes(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_hasExceptionSpec(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_hasDynamicExceptionSpec(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_hasNoexceptExceptionSpec(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_hasDependentExceptionSpec(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_hasInstantiationDependentExceptionSpec(CXFunctionProtoType T);
+
+unsigned clang_FunctionProtoType_getNumExceptions(CXFunctionProtoType T);
+
+CXQualType clang_FunctionProtoType_getExceptionType(CXFunctionProtoType T, unsigned i);
+
+CXExpr clang_FunctionProtoType_getNoexceptExpr(CXFunctionProtoType T);
+
+CXFunctionDecl clang_FunctionProtoType_getExceptionSpecDecl(CXFunctionProtoType T);
+
+CXFunctionDecl clang_FunctionProtoType_getExceptionSpecTemplate(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_isNothrow(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_isVariadic(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_isTemplateVariadic(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_hasTrailingReturn(CXFunctionProtoType T);
+
+CXArrayRef clang_FunctionProtoType_param_types(CXFunctionProtoType T);
+
+CXArrayRef clang_FunctionProtoType_exceptions(CXFunctionProtoType T);
+
+bool clang_FunctionProtoType_isSugared(CXFunctionProtoType T);
 
 // UnresolvedUsingType
+CXUnresolvedUsingTypenameDecl clang_UnresolvedUsingType_getDecl(CXUnresolvedUsingType T);
+
+bool clang_UnresolvedUsingType_isSugared(CXUnresolvedUsingType T);
+
+CXQualType clang_UnresolvedUsingType_desugar(CXUnresolvedUsingType T);
 
 // UsingType
-// getUnderlyingType
+CXUsingShadowDecl clang_UsingType_getFoundDecl(CXUsingType T);
+
+CXQualType clang_UsingType_getUnderlyingType(CXUsingType T);
+
+bool clang_UsingType_isSugared(CXUsingType T);
+
+CXQualType clang_UsingType_desugar(CXUsingType T);
 
 // TypedefType
-// getDecl
+CXTypedefNameDecl clang_TypedefType_getDecl(CXTypedefType T);
+
+bool clang_TypedefType_isSugared(CXTypedefType T);
+
 CXQualType clang_TypedefType_desugar(CXTypedefType T);
 
 // MacroQualifiedType
-// getUnderlyingType
-// getModifiedType
+CXIdentifierInfo clang_MacroQualifiedType_getMacroIdentifier(CXMacroQualifiedType T);
+
+CXQualType clang_MacroQualifiedType_getUnderlyingType(CXMacroQualifiedType T);
+
+CXQualType clang_MacroQualifiedType_getModifiedType(CXMacroQualifiedType T);
+
+bool clang_MacroQualifiedType_isSugared(CXMacroQualifiedType T);
+
+CXQualType clang_MacroQualifiedType_desugar(CXMacroQualifiedType T);
 
 // TypeOfExprType
 
@@ -662,13 +814,24 @@ CXQualType clang_TypedefType_desugar(CXTypedefType T);
 // getUnmodifiedType
 
 // DecltypeType
-// getUnderlyingType
+CXExpr clang_DecltypeType_getUnderlyingExpr(CXDecltypeType T);
+
+CXQualType clang_DecltypeType_getUnderlyingType(CXDecltypeType T);
+
+bool clang_DecltypeType_isSugared(CXDecltypeType T);
+
+CXQualType clang_DecltypeType_desugar(CXDecltypeType T);
 
 // DependentDecltypeType
 
 // UnaryTransformType
-// getUnderlyingType
-// getBaseType
+bool clang_UnaryTransformType_isSugared(CXUnaryTransformType T);
+
+CXQualType clang_UnaryTransformType_desugar(CXUnaryTransformType T);
+
+CXQualType clang_UnaryTransformType_getUnderlyingType(CXUnaryTransformType T);
+
+CXQualType clang_UnaryTransformType_getBaseType(CXUnaryTransformType T);
 
 // DependentUnaryTransformType
 
@@ -680,30 +843,85 @@ CXTagDecl clang_TagType_getDecl(CXTagType T);
 // RecordType
 CXRecordDecl clang_RecordType_getDecl(CXRecordType T);
 
-// hasConstFields
+bool clang_RecordType_hasConstFields(CXRecordType T);
+
+bool clang_RecordType_isSugared(CXRecordType T);
+
+CXQualType clang_RecordType_desugar(CXRecordType T);
 
 // EnumType
 CXEnumDecl clang_EnumType_getDecl(CXEnumType T);
+
+bool clang_EnumType_isSugared(CXEnumType T);
+
+CXQualType clang_EnumType_desugar(CXEnumType T);
 
 // AttributedType
 
 // BTFTagAttributedType
 
 // TemplateTypeParmType
+unsigned clang_TemplateTypeParmType_getDepth(CXTemplateTypeParmType T);
+
+unsigned clang_TemplateTypeParmType_getIndex(CXTemplateTypeParmType T);
+
+bool clang_TemplateTypeParmType_isParameterPack(CXTemplateTypeParmType T);
+
+CXTemplateTypeParmDecl clang_TemplateTypeParmType_getDecl(CXTemplateTypeParmType T);
+
+bool clang_TemplateTypeParmType_isSugared(CXTemplateTypeParmType T);
+
+CXQualType clang_TemplateTypeParmType_desugar(CXTemplateTypeParmType T);
 
 // SubstTemplateTypeParmType
 CXQualType
 clang_SubstTemplateTypeParmType_getReplacementType(CXSubstTemplateTypeParmType T);
 
+CXDecl clang_SubstTemplateTypeParmType_getAssociatedDecl(CXSubstTemplateTypeParmType T);
+
+CXTemplateTypeParmDecl
+clang_SubstTemplateTypeParmType_getReplacedParameter(CXSubstTemplateTypeParmType T);
+
+unsigned clang_SubstTemplateTypeParmType_getIndex(CXSubstTemplateTypeParmType T);
+
+bool clang_SubstTemplateTypeParmType_isSugared(CXSubstTemplateTypeParmType T);
+
 CXQualType clang_SubstTemplateTypeParmType_desugar(CXSubstTemplateTypeParmType T);
 
 // SubstTemplateTypeParmPackType
+CXDecl
+clang_SubstTemplateTypeParmPackType_getAssociatedDecl(CXSubstTemplateTypeParmPackType T);
+
+CXTemplateTypeParmDecl
+clang_SubstTemplateTypeParmPackType_getReplacedParameter(CXSubstTemplateTypeParmPackType T);
+
+unsigned clang_SubstTemplateTypeParmPackType_getIndex(CXSubstTemplateTypeParmPackType T);
+
+bool clang_SubstTemplateTypeParmPackType_getFinal(CXSubstTemplateTypeParmPackType T);
+
+unsigned clang_SubstTemplateTypeParmPackType_getNumArgs(CXSubstTemplateTypeParmPackType T);
+
+bool clang_SubstTemplateTypeParmPackType_isSugared(CXSubstTemplateTypeParmPackType T);
+
+CXQualType clang_SubstTemplateTypeParmPackType_desugar(CXSubstTemplateTypeParmPackType T);
+
+CXArrayRef
+clang_SubstTemplateTypeParmPackType_getArgumentPack(CXSubstTemplateTypeParmPackType T);
 
 // DeducedType
+bool clang_DeducedType_isSugared(CXDeducedType T);
+
+CXQualType clang_DeducedType_desugar(CXDeducedType T);
+
+CXQualType clang_DeducedType_getDeducedType(CXDeducedType T);
+
+bool clang_DeducedType_isDeduced(CXDeducedType T);
 
 // AutoType
 
 // DeducedTemplateSpecializationType
+CXTemplateName clang_DeducedTemplateSpecializationType_getTemplateName(
+    CXDeducedTemplateSpecializationType T);
 
 // TemplateSpecializationType
 bool clang_TemplateSpecializationType_isCurrentInstantiation(
@@ -724,41 +942,89 @@ bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T);
 CXQualType clang_TemplateSpecializationType_desugar(CXTemplateSpecializationType T);
 
 // InjectedClassNameType
+CXQualType
+clang_InjectedClassNameType_getInjectedSpecializationType(CXInjectedClassNameType T);
+
+CXTemplateSpecializationType
+clang_InjectedClassNameType_getInjectedTST(CXInjectedClassNameType T);
+
+CXTemplateName clang_InjectedClassNameType_getTemplateName(CXInjectedClassNameType T);
+
+CXCXXRecordDecl clang_InjectedClassNameType_getDecl(CXInjectedClassNameType T);
+
+bool clang_InjectedClassNameType_isSugared(CXInjectedClassNameType T);
+
+CXQualType clang_InjectedClassNameType_desugar(CXInjectedClassNameType T);
 
 // TypeWithKeyword
 
 // ElaboratedType
-// getQualifier
-// getNamedType
+CXNestedNameSpecifier clang_ElaboratedType_getQualifier(CXElaboratedType T);
+
+CXQualType clang_ElaboratedType_getNamedType(CXElaboratedType T);
+
 CXQualType clang_ElaboratedType_desugar(CXElaboratedType T);
-// getOwnedTagDecl
+
+bool clang_ElaboratedType_isSugared(CXElaboratedType T);
+
+CXTagDecl clang_ElaboratedType_getOwnedTagDecl(CXElaboratedType T);
 
 // DependentNameType
+CXNestedNameSpecifier clang_DependentNameType_getQualifier(CXDependentNameType T);
+
+CXIdentifierInfo clang_DependentNameType_getIdentifier(CXDependentNameType T);
+
+bool clang_DependentNameType_isSugared(CXDependentNameType T);
+
+CXQualType clang_DependentNameType_desugar(CXDependentNameType T);
 
 // DependentTemplateSpecializationType
+CXNestedNameSpecifier clang_DependentTemplateSpecializationType_getQualifier(
+    CXDependentTemplateSpecializationType T);
+
+CXIdentifierInfo clang_DependentTemplateSpecializationType_getIdentifier(
+    CXDependentTemplateSpecializationType T);
+
+CXArrayRef clang_DependentTemplateSpecializationType_template_arguments(
+    CXDependentTemplateSpecializationType T);
+
+bool clang_DependentTemplateSpecializationType_isSugared(
+    CXDependentTemplateSpecializationType T);
+
+CXQualType
+clang_DependentTemplateSpecializationType_desugar(CXDependentTemplateSpecializationType T);
 
 // PackExpansionType
 
 // AtomicType
+CXQualType clang_AtomicType_getValueType(CXAtomicType T);
+
+bool clang_AtomicType_isSugared(CXAtomicType T);
+
+CXQualType clang_AtomicType_desugar(CXAtomicType T);
+
+// BitIntType
+
+// DependentBitIntType
 
 // TagTypeKind
 typedef enum CXTagTypeKind {
-  CXTagTypeKind_TTK_Struct,
-  CXTagTypeKind_TTK_Interface,
-  CXTagTypeKind_TTK_Union,
-  CXTagTypeKind_TTK_Class,
-  CXTagTypeKind_TTK_Enum
+  CXTagTypeKind_Struct,
+  CXTagTypeKind_Interface,
+  CXTagTypeKind_Union,
+  CXTagTypeKind_Class,
+  CXTagTypeKind_Enum
 } CXTagTypeKind;
 
 // ElaboratedTypeKeyword
 typedef enum CXElaboratedTypeKeyword {
-  CXElaboratedTypeKeyword_ETK_Struct,
-  CXElaboratedTypeKeyword_ETK_Interface,
-  CXElaboratedTypeKeyword_ETK_Union,
-  CXElaboratedTypeKeyword_ETK_Class,
-  CXElaboratedTypeKeyword_ETK_Enum,
-  CXElaboratedTypeKeyword_ETK_Typename,
-  CXElaboratedTypeKeyword_ETK_None
+  CXElaboratedTypeKeyword_Struct,
+  CXElaboratedTypeKeyword_Interface,
+  CXElaboratedTypeKeyword_Union,
+  CXElaboratedTypeKeyword_Class,
+  CXElaboratedTypeKeyword_Enum,
+  CXElaboratedTypeKeyword_Typename,
+  CXElaboratedTypeKeyword_None
 } CXElaboratedTypeKeyword;
 
 LLVM_CLANG_C_EXTERN_C_END

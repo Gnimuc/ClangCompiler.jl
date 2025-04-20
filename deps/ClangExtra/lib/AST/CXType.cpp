@@ -663,6 +663,10 @@ bool clang_isa_UnresolvedUsingType(CXType_ T) {
   return llvm::isa<clang::UnresolvedUsingType>(static_cast<clang::Type *>(T));
 }
 
+bool clang_isa_UsingType(CXType_ T) {
+  return llvm::isa<clang::UsingType>(static_cast<clang::Type *>(T));
+}
+
 bool clang_isa_TypedefType(CXType_ T) {
   return llvm::isa<clang::TypedefType>(static_cast<clang::Type *>(T));
 }
@@ -845,9 +849,104 @@ bool clang_isa_BuiltinType_NullPtr(CXType_ T) {
   return static_cast<clang::BuiltinType *>(T)->getKind() == clang::BuiltinType::NullPtr;
 }
 
+// ComplexType
+CXQualType clang_ComplexType_getElementType(CXComplexType T) {
+  return static_cast<clang::ComplexType *>(T)->getElementType().getAsOpaquePtr();
+}
+
+bool clang_ComplexType_isSugared(CXComplexType T) {
+  return static_cast<clang::ComplexType *>(T)->isSugared();
+}
+
+CXQualType clang_ComplexType_desugar(CXComplexType T) {
+  return static_cast<clang::ComplexType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// ParenType
+CXQualType clang_ParenType_getInnerType(CXParenType T) {
+  return static_cast<clang::ParenType *>(T)->getInnerType().getAsOpaquePtr();
+}
+
+bool clang_ParenType_isSugared(CXParenType T) {
+  return static_cast<clang::ParenType *>(T)->isSugared();
+}
+
+CXQualType clang_ParenType_desugar(CXParenType T) {
+  return static_cast<clang::ParenType *>(T)->desugar().getAsOpaquePtr();
+}
+
 // PointerType
 CXQualType clang_PointerType_getPointeeType(CXPointerType T) {
   return static_cast<clang::PointerType *>(T)->getPointeeType().getAsOpaquePtr();
+}
+
+bool clang_PointerType_isSugared(CXPointerType T) {
+  return static_cast<clang::PointerType *>(T)->isSugared();
+}
+
+CXQualType clang_PointerType_desugar(CXPointerType T) {
+  return static_cast<clang::PointerType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// AdjustedType
+CXQualType clang_AdjustedType_getOriginalType(CXAdjustedType T) {
+  return static_cast<clang::AdjustedType *>(T)->getOriginalType().getAsOpaquePtr();
+}
+
+CXQualType clang_AdjustedType_getAdjustedType(CXAdjustedType T) {
+  return static_cast<clang::AdjustedType *>(T)->getAdjustedType().getAsOpaquePtr();
+}
+
+bool clang_AdjustedType_isSugared(CXAdjustedType T) {
+  return static_cast<clang::AdjustedType *>(T)->isSugared();
+}
+
+CXQualType clang_AdjustedType_desugar(CXAdjustedType T) {
+  return static_cast<clang::AdjustedType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// DecayedType
+CXQualType clang_DecayedType_getDecayedType(CXDecayedType T) {
+  return static_cast<clang::DecayedType *>(T)->getDecayedType().getAsOpaquePtr();
+}
+
+CXQualType clang_DecayedType_getPointeeType(CXDecayedType T) {
+  return static_cast<clang::DecayedType *>(T)->getPointeeType().getAsOpaquePtr();
+}
+
+// ReferenceType
+bool clang_ReferenceType_isSpelledAsLValue(CXReferenceType T) {
+  return static_cast<clang::ReferenceType *>(T)->isSpelledAsLValue();
+}
+
+bool clang_ReferenceType_isInnerRef(CXReferenceType T) {
+  return static_cast<clang::ReferenceType *>(T)->isInnerRef();
+}
+
+CXQualType clang_ReferenceType_getPointeeTypeAsWritten(CXReferenceType T) {
+  return static_cast<clang::ReferenceType *>(T)->getPointeeTypeAsWritten().getAsOpaquePtr();
+}
+
+CXQualType clang_ReferenceType_getPointeeType(CXReferenceType T) {
+  return static_cast<clang::ReferenceType *>(T)->getPointeeType().getAsOpaquePtr();
+}
+
+// LValueReferenceType
+bool clang_LValueReferenceType_isSugared(CXLValueReferenceType T) {
+  return static_cast<clang::LValueReferenceType *>(T)->isSugared();
+}
+
+CXQualType clang_LValueReferenceType_desugar(CXLValueReferenceType T) {
+  return static_cast<clang::LValueReferenceType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// RValueReferenceType
+bool clang_RValueReferenceType_isSugared(CXRValueReferenceType T) {
+  return static_cast<clang::RValueReferenceType *>(T)->isSugared();
+}
+
+CXQualType clang_RValueReferenceType_desugar(CXRValueReferenceType T) {
+  return static_cast<clang::RValueReferenceType *>(T)->desugar().getAsOpaquePtr();
 }
 
 // MemberPointerType
@@ -855,33 +954,182 @@ CXQualType clang_MemberPointerType_getPointeeType(CXMemberPointerType T) {
   return static_cast<clang::MemberPointerType *>(T)->getPointeeType().getAsOpaquePtr();
 }
 
+bool clang_MemberPointerType_isMemberFunctionPointerType(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->isMemberFunctionPointerType();
+}
+
+bool clang_MemberPointerType_isMemberDataPointerType(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->isMemberDataPointerType();
+}
+
 CXType_ clang_MemberPointerType_getClass(CXMemberPointerType T) {
   return const_cast<clang::Type *>(static_cast<clang::MemberPointerType *>(T)->getClass());
 }
 
-// TypedefType
-CXQualType clang_TypedefType_desugar(CXTypedefType T) {
-  return static_cast<clang::TypedefType *>(T)->desugar().getAsOpaquePtr();
+CXCXXRecordDecl clang_MemberPointerType_getMostRecentCXXRecordDecl(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->getMostRecentCXXRecordDecl();
 }
 
-// TagType
-CXTagDecl clang_TagType_getDecl(CXTagType T) {
-  return static_cast<clang::TagType *>(T)->getDecl();
+bool clang_MemberPointerType_isSugared(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->isSugared();
 }
 
-// RecordType
-CXRecordDecl clang_RecordType_getDecl(CXRecordType T) {
-  return static_cast<clang::RecordType *>(T)->getDecl();
+CXQualType clang_MemberPointerType_desugar(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->desugar().getAsOpaquePtr();
 }
 
-// EnumType
-CXEnumDecl clang_EnumType_getDecl(CXEnumType T) {
-  return static_cast<clang::EnumType *>(T)->getDecl();
+// ArrayType
+CXQualType clang_ArrayType_getElementType(CXArrayType T) {
+  return static_cast<clang::ArrayType *>(T)->getElementType().getAsOpaquePtr();
+}
+
+CXArraySizeModifier clang_ArrayType_getSizeModifier(CXArrayType T) {
+  return static_cast<CXArraySizeModifier>(
+      static_cast<clang::ArrayType *>(T)->getSizeModifier());
+}
+
+unsigned clang_ArrayType_getIndexTypeCVRQualifiers(CXArrayType T) {
+  return static_cast<clang::ArrayType *>(T)->getIndexTypeCVRQualifiers();
+}
+
+// ConstantArrayType
+CXExpr clang_ConstantArrayType_getSizeExpr(CXConstantArrayType T) {
+  return const_cast<clang::Expr *>(
+      static_cast<clang::ConstantArrayType *>(T)->getSizeExpr());
+}
+
+bool clang_ConstantArrayType_isSugared(CXConstantArrayType T) {
+  return static_cast<clang::ConstantArrayType *>(T)->isSugared();
+}
+
+CXQualType clang_ConstantArrayType_desugar(CXConstantArrayType T) {
+  return static_cast<clang::ConstantArrayType *>(T)->desugar().getAsOpaquePtr();
+}
+
+unsigned clang_ConstantArrayType_getNumAddressingBits(CXConstantArrayType T,
+                                                      CXASTContext C) {
+  return static_cast<clang::ConstantArrayType *>(T)->getNumAddressingBits(
+      *static_cast<clang::ASTContext *>(C));
+}
+
+// IncompleteArrayType
+bool clang_IncompleteArrayType_isSugared(CXIncompleteArrayType T) {
+  return static_cast<clang::IncompleteArrayType *>(T)->isSugared();
+}
+
+CXQualType clang_IncompleteArrayType_desugar(CXIncompleteArrayType T) {
+  return static_cast<clang::IncompleteArrayType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// VariableArrayType
+CXExpr clang_VariableArrayType_getSizeExpr(CXVariableArrayType T) {
+  return const_cast<clang::Expr *>(
+      static_cast<clang::VariableArrayType *>(T)->getSizeExpr());
+}
+
+bool clang_VariableArrayType_isSugared(CXVariableArrayType T) {
+  return static_cast<clang::VariableArrayType *>(T)->isSugared();
+}
+
+CXQualType clang_VariableArrayType_desugar(CXVariableArrayType T) {
+  return static_cast<clang::VariableArrayType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// DependentSizedArrayType
+CXExpr clang_DependentSizedArrayType_getSizeExpr(CXDependentSizedArrayType T) {
+  return const_cast<clang::Expr *>(
+      static_cast<clang::DependentSizedArrayType *>(T)->getSizeExpr());
+}
+
+bool clang_DependentSizedArrayType_isSugared(CXDependentSizedArrayType T) {
+  return static_cast<clang::DependentSizedArrayType *>(T)->isSugared();
+}
+
+CXQualType clang_DependentSizedArrayType_desugar(CXDependentSizedArrayType T) {
+  return static_cast<clang::DependentSizedArrayType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// DepedentAddressSpaceType
+CXExpr clang_DependentAddressSpaceType_getAddrSpaceExpr(CXDependentAddressSpaceType T) {
+  return const_cast<clang::Expr *>(
+      static_cast<clang::DependentAddressSpaceType *>(T)->getAddrSpaceExpr());
+}
+
+CXQualType clang_DependentAddressSpaceType_getPointeeType(CXDependentAddressSpaceType T) {
+  return static_cast<clang::DependentAddressSpaceType *>(T)
+      ->getPointeeType()
+      .getAsOpaquePtr();
+}
+
+bool clang_DependentAddressSpaceType_isSugared(CXDependentAddressSpaceType T) {
+  return static_cast<clang::DependentAddressSpaceType *>(T)->isSugared();
+}
+
+CXQualType clang_DependentAddressSpaceType_desugar(CXDependentAddressSpaceType T) {
+  return static_cast<clang::DependentAddressSpaceType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// DependentSizedExtVectorType
+CXExpr clang_DependentSizedExtVectorType_getSizeExpr(CXDependentSizedExtVectorType T) {
+  return const_cast<clang::Expr *>(
+      static_cast<clang::DependentSizedExtVectorType *>(T)->getSizeExpr());
+}
+
+CXQualType
+clang_DependentSizedExtVectorType_getElementType(CXDependentSizedExtVectorType T) {
+  return static_cast<clang::DependentSizedExtVectorType *>(T)
+      ->getElementType()
+      .getAsOpaquePtr();
+}
+
+bool clang_DependentSizedExtVectorType_isSugared(CXDependentSizedExtVectorType T) {
+  return static_cast<clang::DependentSizedExtVectorType *>(T)->isSugared();
+}
+
+CXQualType clang_DependentSizedExtVectorType_desugar(CXDependentSizedExtVectorType T) {
+  return static_cast<clang::DependentSizedExtVectorType *>(T)->desugar().getAsOpaquePtr();
 }
 
 // FunctionType
 CXQualType clang_FunctionType_getReturnType(CXFunctionType T) {
   return static_cast<clang::FunctionType *>(T)->getReturnType().getAsOpaquePtr();
+}
+
+bool clang_FunctionType_getHasRegParm(CXFunctionType T) {
+  return static_cast<clang::FunctionType *>(T)->getHasRegParm();
+}
+
+unsigned clang_FunctionType_getRegParmType(CXFunctionType T) {
+  return static_cast<clang::FunctionType *>(T)->getRegParmType();
+}
+
+bool clang_FunctionType_getNoReturnAttr(CXFunctionType T) {
+  return static_cast<clang::FunctionType *>(T)->getNoReturnAttr();
+}
+
+bool clang_FunctionType_getCmseNSCallAttr(CXFunctionType T) {
+  return static_cast<clang::FunctionType *>(T)->getCmseNSCallAttr();
+}
+
+bool clang_FunctionType_isConst(CXFunctionType T) {
+  return static_cast<clang::FunctionType *>(T)->isConst();
+}
+
+bool clang_FunctionType_isVolatile(CXFunctionType T) {
+  return static_cast<clang::FunctionType *>(T)->isVolatile();
+}
+
+bool clang_FunctionType_isRestrict(CXFunctionType T) {
+  return static_cast<clang::FunctionType *>(T)->isRestrict();
+}
+
+// FunctionNoProtoType
+bool clang_FunctionNoProtoType_isSugared(CXFunctionNoProtoType T) {
+  return static_cast<clang::FunctionNoProtoType *>(T)->isSugared();
+}
+
+CXQualType clang_FunctionNoProtoType_desugar(CXFunctionNoProtoType T) {
+  return static_cast<clang::FunctionNoProtoType *>(T)->desugar().getAsOpaquePtr();
 }
 
 // FunctionProtoType
@@ -893,24 +1141,356 @@ CXQualType clang_FunctionProtoType_getParamType(CXFunctionProtoType T, unsigned 
   return static_cast<clang::FunctionProtoType *>(T)->getParamType(i).getAsOpaquePtr();
 }
 
-// ReferenceType
-CXQualType clang_ReferenceType_getPointeeType(CXReferenceType T) {
-  return static_cast<clang::ReferenceType *>(T)->getPointeeType().getAsOpaquePtr();
+CXArrayRef clang_FunctionProtoType_getParamTypes(CXFunctionProtoType T) {
+  auto arr = static_cast<clang::FunctionProtoType *>(T)->getParamTypes();
+  return {arr.data(), arr.size()};
 }
 
-// ElaboratedType
-CXQualType clang_ElaboratedType_desugar(CXElaboratedType T) {
-  return static_cast<clang::ElaboratedType *>(T)->desugar().getAsOpaquePtr();
+bool clang_FunctionProtoType_hasExceptionSpec(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->hasExceptionSpec();
+}
+
+bool clang_FunctionProtoType_hasDynamicExceptionSpec(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->hasDynamicExceptionSpec();
+}
+
+bool clang_FunctionProtoType_hasNoexceptExceptionSpec(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->hasNoexceptExceptionSpec();
+}
+
+bool clang_FunctionProtoType_hasDependentExceptionSpec(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->hasDependentExceptionSpec();
+}
+
+bool clang_FunctionProtoType_hasInstantiationDependentExceptionSpec(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)
+      ->hasInstantiationDependentExceptionSpec();
+}
+
+unsigned clang_FunctionProtoType_getNumExceptions(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->getNumExceptions();
+}
+
+CXQualType clang_FunctionProtoType_getExceptionType(CXFunctionProtoType T, unsigned i) {
+  return static_cast<clang::FunctionProtoType *>(T)->getExceptionType(i).getAsOpaquePtr();
+}
+
+CXExpr clang_FunctionProtoType_getNoexceptExpr(CXFunctionProtoType T) {
+  return const_cast<clang::Expr *>(
+      static_cast<clang::FunctionProtoType *>(T)->getNoexceptExpr());
+}
+
+CXFunctionDecl clang_FunctionProtoType_getExceptionSpecDecl(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->getExceptionSpecDecl();
+}
+
+CXFunctionDecl clang_FunctionProtoType_getExceptionSpecTemplate(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->getExceptionSpecTemplate();
+}
+
+bool clang_FunctionProtoType_isNothrow(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->isNothrow();
+}
+
+bool clang_FunctionProtoType_isVariadic(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->isVariadic();
+}
+
+bool clang_FunctionProtoType_isTemplateVariadic(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->isTemplateVariadic();
+}
+
+bool clang_FunctionProtoType_hasTrailingReturn(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->hasTrailingReturn();
+}
+
+CXArrayRef clang_FunctionProtoType_param_types(CXFunctionProtoType T) {
+  auto arr = static_cast<clang::FunctionProtoType *>(T)->param_types();
+  return {arr.data(), arr.size()};
+}
+
+CXArrayRef clang_FunctionProtoType_exceptions(CXFunctionProtoType T) {
+  auto arr = static_cast<clang::FunctionProtoType *>(T)->exceptions();
+  return {arr.data(), arr.size()};
+}
+
+bool clang_FunctionProtoType_isSugared(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->isSugared();
+}
+
+CXQualType clang_FunctionProtoType_desugar(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// UnresolvedUsingType
+CXUnresolvedUsingTypenameDecl clang_UnresolvedUsingType_getDecl(CXUnresolvedUsingType T) {
+  return static_cast<clang::UnresolvedUsingType *>(T)->getDecl();
+}
+
+bool clang_UnresolvedUsingType_isSugared(CXUnresolvedUsingType T) {
+  return static_cast<clang::UnresolvedUsingType *>(T)->isSugared();
+}
+
+CXQualType clang_UnresolvedUsingType_desugar(CXUnresolvedUsingType T) {
+  return static_cast<clang::UnresolvedUsingType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// UsingType
+CXUsingShadowDecl clang_UsingType_getFoundDecl(CXUsingType T) {
+  return static_cast<clang::UsingType *>(T)->getFoundDecl();
+}
+
+CXQualType clang_UsingType_getUnderlyingType(CXUsingType T) {
+  return static_cast<clang::UsingType *>(T)->getUnderlyingType().getAsOpaquePtr();
+}
+
+bool clang_UsingType_isSugared(CXUsingType T) {
+  return static_cast<clang::UsingType *>(T)->isSugared();
+}
+
+CXQualType clang_UsingType_desugar(CXUsingType T) {
+  return static_cast<clang::UsingType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// TypedefType
+CXTypedefNameDecl clang_TypedefType_getDecl(CXTypedefType T) {
+  return static_cast<clang::TypedefType *>(T)->getDecl();
+}
+
+bool clang_TypedefType_isSugared(CXTypedefType T) {
+  return static_cast<clang::TypedefType *>(T)->isSugared();
+}
+
+CXQualType clang_TypedefType_desugar(CXTypedefType T) {
+  return static_cast<clang::TypedefType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// MacroQualifiedType
+CXIdentifierInfo clang_MacroQualifiedType_getMacroIdentifier(CXMacroQualifiedType T) {
+  return const_cast<clang::IdentifierInfo *>(
+      static_cast<clang::MacroQualifiedType *>(T)->getMacroIdentifier());
+}
+
+CXQualType clang_MacroQualifiedType_getUnderlyingType(CXMacroQualifiedType T) {
+  return static_cast<clang::MacroQualifiedType *>(T)->getUnderlyingType().getAsOpaquePtr();
+}
+
+CXQualType clang_MacroQualifiedType_getModifiedType(CXMacroQualifiedType T) {
+  return static_cast<clang::MacroQualifiedType *>(T)->getModifiedType().getAsOpaquePtr();
+}
+
+bool clang_MacroQualifiedType_isSugared(CXMacroQualifiedType T) {
+  return static_cast<clang::MacroQualifiedType *>(T)->isSugared();
+}
+
+CXQualType clang_MacroQualifiedType_desugar(CXMacroQualifiedType T) {
+  return static_cast<clang::MacroQualifiedType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// TypeOfExprType
+
+// DependentTypeOfExprType
+
+// TypeOfType
+
+// DecltypeType
+CXExpr clang_DecltypeType_getUnderlyingExpr(CXDecltypeType T) {
+  return const_cast<clang::Expr *>(
+      static_cast<clang::DecltypeType *>(T)->getUnderlyingExpr());
+}
+
+CXQualType clang_DecltypeType_getUnderlyingType(CXDecltypeType T) {
+  return static_cast<clang::DecltypeType *>(T)->getUnderlyingType().getAsOpaquePtr();
+}
+
+bool clang_DecltypeType_isSugared(CXDecltypeType T) {
+  return static_cast<clang::DecltypeType *>(T)->isSugared();
+}
+
+CXQualType clang_DecltypeType_desugar(CXDecltypeType T) {
+  return static_cast<clang::DecltypeType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// DependentDecltypeType
+
+// UnaryTransformType
+bool clang_UnaryTransformType_isSugared(CXUnaryTransformType T) {
+  return static_cast<clang::UnaryTransformType *>(T)->isSugared();
+}
+
+CXQualType clang_UnaryTransformType_desugar(CXUnaryTransformType T) {
+  return static_cast<clang::UnaryTransformType *>(T)->desugar().getAsOpaquePtr();
+}
+
+CXQualType clang_UnaryTransformType_getUnderlyingType(CXUnaryTransformType T) {
+  return static_cast<clang::UnaryTransformType *>(T)->getUnderlyingType().getAsOpaquePtr();
+}
+
+CXQualType clang_UnaryTransformType_getBaseType(CXUnaryTransformType T) {
+  return static_cast<clang::UnaryTransformType *>(T)->getBaseType().getAsOpaquePtr();
+}
+
+// DependentUnaryTransformType
+
+// TagType
+CXTagDecl clang_TagType_getDecl(CXTagType T) {
+  return static_cast<clang::TagType *>(T)->getDecl();
+}
+
+// RecordType
+CXRecordDecl clang_RecordType_getDecl(CXRecordType T) {
+  return static_cast<clang::RecordType *>(T)->getDecl();
+}
+
+bool clang_RecordType_hasConstFields(CXRecordType T) {
+  return static_cast<clang::RecordType *>(T)->hasConstFields();
+}
+
+bool clang_RecordType_isSugared(CXRecordType T) {
+  return static_cast<clang::RecordType *>(T)->isSugared();
+}
+
+CXQualType clang_RecordType_desugar(CXRecordType T) {
+  return static_cast<clang::RecordType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// EnumType
+CXEnumDecl clang_EnumType_getDecl(CXEnumType T) {
+  return static_cast<clang::EnumType *>(T)->getDecl();
+}
+
+bool clang_EnumType_isSugared(CXEnumType T) {
+  return static_cast<clang::EnumType *>(T)->isSugared();
+}
+
+CXQualType clang_EnumType_desugar(CXEnumType T) {
+  return static_cast<clang::EnumType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// AttributedType
+
+// BTFTagAttributedType
+
+// TemplateTypeParmType
+unsigned clang_TemplateTypeParmType_getDepth(CXTemplateTypeParmType T) {
+  return static_cast<clang::TemplateTypeParmType *>(T)->getDepth();
+}
+
+unsigned clang_TemplateTypeParmType_getIndex(CXTemplateTypeParmType T) {
+  return static_cast<clang::TemplateTypeParmType *>(T)->getIndex();
+}
+
+bool clang_TemplateTypeParmType_isParameterPack(CXTemplateTypeParmType T) {
+  return static_cast<clang::TemplateTypeParmType *>(T)->isParameterPack();
+}
+
+CXTemplateTypeParmDecl clang_TemplateTypeParmType_getDecl(CXTemplateTypeParmType T) {
+  return static_cast<clang::TemplateTypeParmType *>(T)->getDecl();
+}
+
+bool clang_TemplateTypeParmType_isSugared(CXTemplateTypeParmType T) {
+  return static_cast<clang::TemplateTypeParmType *>(T)->isSugared();
+}
+
+CXQualType clang_TemplateTypeParmType_desugar(CXTemplateTypeParmType T) {
+  return static_cast<clang::TemplateTypeParmType *>(T)->desugar().getAsOpaquePtr();
 }
 
 // SubstTemplateTypeParmType
 CXQualType
 clang_SubstTemplateTypeParmType_getReplacementType(CXSubstTemplateTypeParmType T) {
-  return static_cast<clang::SubstTemplateTypeParmType *>(T)->getReplacementType().getAsOpaquePtr();
+  return static_cast<clang::SubstTemplateTypeParmType *>(T)
+      ->getReplacementType()
+      .getAsOpaquePtr();
+}
+
+CXDecl clang_SubstTemplateTypeParmType_getAssociatedDecl(CXSubstTemplateTypeParmType T) {
+  return static_cast<clang::SubstTemplateTypeParmType *>(T)->getAssociatedDecl();
+}
+
+CXTemplateTypeParmDecl
+clang_SubstTemplateTypeParmType_getReplacedParameter(CXSubstTemplateTypeParmType T) {
+  return const_cast<clang::TemplateTypeParmDecl *>(
+      static_cast<clang::SubstTemplateTypeParmType *>(T)->getReplacedParameter());
+}
+
+unsigned clang_SubstTemplateTypeParmType_getIndex(CXSubstTemplateTypeParmType T) {
+  return static_cast<clang::SubstTemplateTypeParmType *>(T)->getIndex();
+}
+
+bool clang_SubstTemplateTypeParmType_isSugared(CXSubstTemplateTypeParmType T) {
+  return static_cast<clang::SubstTemplateTypeParmType *>(T)->isSugared();
 }
 
 CXQualType clang_SubstTemplateTypeParmType_desugar(CXSubstTemplateTypeParmType T) {
   return static_cast<clang::SubstTemplateTypeParmType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// SubstTemplateTypeParmPackType
+CXDecl
+clang_SubstTemplateTypeParmPackType_getAssociatedDecl(CXSubstTemplateTypeParmPackType T) {
+  return static_cast<clang::SubstTemplateTypeParmPackType *>(T)->getAssociatedDecl();
+}
+
+CXTemplateTypeParmDecl clang_SubstTemplateTypeParmPackType_getReplacedParameter(
+    CXSubstTemplateTypeParmPackType T) {
+  return const_cast<clang::TemplateTypeParmDecl *>(
+      static_cast<clang::SubstTemplateTypeParmPackType *>(T)->getReplacedParameter());
+}
+
+unsigned clang_SubstTemplateTypeParmPackType_getIndex(CXSubstTemplateTypeParmPackType T) {
+  return static_cast<clang::SubstTemplateTypeParmPackType *>(T)->getIndex();
+}
+
+bool clang_SubstTemplateTypeParmPackType_getFinal(CXSubstTemplateTypeParmPackType T) {
+  return static_cast<clang::SubstTemplateTypeParmPackType *>(T)->getFinal();
+}
+
+unsigned clang_SubstTemplateTypeParmPackType_getNumArgs(CXSubstTemplateTypeParmPackType T) {
+  return static_cast<clang::SubstTemplateTypeParmPackType *>(T)->getNumArgs();
+}
+
+bool clang_SubstTemplateTypeParmPackType_isSugared(CXSubstTemplateTypeParmPackType T) {
+  return static_cast<clang::SubstTemplateTypeParmPackType *>(T)->isSugared();
+}
+
+CXQualType clang_SubstTemplateTypeParmPackType_desugar(CXSubstTemplateTypeParmPackType T) {
+  return static_cast<clang::SubstTemplateTypeParmPackType *>(T)->desugar().getAsOpaquePtr();
+}
+
+CXArrayRef
+clang_SubstTemplateTypeParmPackType_getArgumentPack(CXSubstTemplateTypeParmPackType T) {
+  auto arr = static_cast<clang::SubstTemplateTypeParmPackType *>(T)
+                 ->getArgumentPack()
+                 .getPackAsArray();
+  return {arr.data(), arr.size()};
+}
+
+// DeducedType
+bool clang_DeducedType_isSugared(CXDeducedType T) {
+  return static_cast<clang::DeducedType *>(T)->isSugared();
+}
+
+CXQualType clang_DeducedType_desugar(CXDeducedType T) {
+  return static_cast<clang::DeducedType *>(T)->desugar().getAsOpaquePtr();
+}
+
+CXQualType clang_DeducedType_getDeducedType(CXDeducedType T) {
+  return static_cast<clang::DeducedType *>(T)->getDeducedType().getAsOpaquePtr();
+}
+
+bool clang_DeducedType_isDeduced(CXDeducedType T) {
+  return static_cast<clang::DeducedType *>(T)->isDeduced();
+}
+
+// AutoType
+
+// DeducedTemplateSpecializationType
+CXTemplateName clang_DeducedTemplateSpecializationType_getTemplateName(
+    CXDeducedTemplateSpecializationType T) {
+  return static_cast<clang::DeducedTemplateSpecializationType *>(T)
+      ->getTemplateName()
+      .getAsVoidPointer();
 }
 
 // TemplateSpecializationType
@@ -932,10 +1512,12 @@ CXQualType clang_TemplateSpecializationType_getAliasedType(CXTemplateSpecializat
 CXTemplateName
 clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T) {
   return static_cast<clang::TemplateSpecializationType *>(T)
-      ->getTemplateName().getAsVoidPointer();
+      ->getTemplateName()
+      .getAsVoidPointer();
 }
 
-CXArrayRef clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T) {
+CXArrayRef
+clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T) {
   auto arr = static_cast<clang::TemplateSpecializationType *>(T)->template_arguments();
   return {arr.data(), arr.size()};
 }
@@ -947,3 +1529,128 @@ bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T) 
 CXQualType clang_TemplateSpecializationType_desugar(CXTemplateSpecializationType T) {
   return static_cast<clang::TemplateSpecializationType *>(T)->desugar().getAsOpaquePtr();
 }
+
+// InjectedClassNameType
+CXQualType
+clang_InjectedClassNameType_getInjectedSpecializationType(CXInjectedClassNameType T) {
+  return static_cast<clang::InjectedClassNameType *>(T)
+      ->getInjectedSpecializationType()
+      .getAsOpaquePtr();
+}
+
+CXTemplateSpecializationType
+clang_InjectedClassNameType_getInjectedTST(CXInjectedClassNameType T) {
+  return const_cast<clang::TemplateSpecializationType *>(
+      static_cast<clang::InjectedClassNameType *>(T)->getInjectedTST());
+}
+
+CXTemplateName clang_InjectedClassNameType_getTemplateName(CXInjectedClassNameType T) {
+  return static_cast<clang::InjectedClassNameType *>(T)
+      ->getTemplateName()
+      .getAsVoidPointer();
+}
+
+CXCXXRecordDecl clang_InjectedClassNameType_getDecl(CXInjectedClassNameType T) {
+  return static_cast<clang::InjectedClassNameType *>(T)->getDecl();
+}
+
+bool clang_InjectedClassNameType_isSugared(CXInjectedClassNameType T) {
+  return static_cast<clang::InjectedClassNameType *>(T)->isSugared();
+}
+
+CXQualType clang_InjectedClassNameType_desugar(CXInjectedClassNameType T) {
+  return static_cast<clang::InjectedClassNameType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// TypeWithKeyword
+
+// ElaboratedType
+CXNestedNameSpecifier clang_ElaboratedType_getQualifier(CXElaboratedType T) {
+  return static_cast<clang::ElaboratedType *>(T)->getQualifier();
+}
+
+CXQualType clang_ElaboratedType_getNamedType(CXElaboratedType T) {
+  return static_cast<clang::ElaboratedType *>(T)->getNamedType().getAsOpaquePtr();
+}
+
+CXQualType clang_ElaboratedType_desugar(CXElaboratedType T) {
+  return static_cast<clang::ElaboratedType *>(T)->desugar().getAsOpaquePtr();
+}
+
+bool clang_ElaboratedType_isSugared(CXElaboratedType T) {
+  return static_cast<clang::ElaboratedType *>(T)->isSugared();
+}
+
+CXTagDecl clang_ElaboratedType_getOwnedTagDecl(CXElaboratedType T) {
+  return static_cast<clang::ElaboratedType *>(T)->getOwnedTagDecl();
+}
+
+// DependentNameType
+CXNestedNameSpecifier clang_DependentNameType_getQualifier(CXDependentNameType T) {
+  return static_cast<clang::DependentNameType *>(T)->getQualifier();
+}
+
+CXIdentifierInfo clang_DependentNameType_getIdentifier(CXDependentNameType T) {
+  return const_cast<clang::IdentifierInfo *>(
+      static_cast<clang::DependentNameType *>(T)->getIdentifier());
+}
+
+bool clang_DependentNameType_isSugared(CXDependentNameType T) {
+  return static_cast<clang::DependentNameType *>(T)->isSugared();
+}
+
+CXQualType clang_DependentNameType_desugar(CXDependentNameType T) {
+  return static_cast<clang::DependentNameType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// DependentTemplateSpecializationType
+CXNestedNameSpecifier clang_DependentTemplateSpecializationType_getQualifier(
+    CXDependentTemplateSpecializationType T) {
+  return static_cast<clang::DependentTemplateSpecializationType *>(T)->getQualifier();
+}
+
+CXIdentifierInfo clang_DependentTemplateSpecializationType_getIdentifier(
+    CXDependentTemplateSpecializationType T) {
+  return const_cast<clang::IdentifierInfo *>(
+      static_cast<clang::DependentTemplateSpecializationType *>(T)->getIdentifier());
+}
+
+CXArrayRef clang_DependentTemplateSpecializationType_template_arguments(
+    CXDependentTemplateSpecializationType T) {
+  auto arr =
+      static_cast<clang::DependentTemplateSpecializationType *>(T)->template_arguments();
+  return {arr.data(), arr.size()};
+}
+
+bool clang_DependentTemplateSpecializationType_isSugared(
+    CXDependentTemplateSpecializationType T) {
+  return static_cast<clang::DependentTemplateSpecializationType *>(T)->isSugared();
+}
+
+CXQualType
+clang_DependentTemplateSpecializationType_desugar(CXDependentTemplateSpecializationType T) {
+  return static_cast<clang::DependentTemplateSpecializationType *>(T)
+      ->desugar()
+      .getAsOpaquePtr();
+}
+
+// PackExpansionType
+
+// AtomicType
+CXQualType clang_AtomicType_getValueType(CXAtomicType T) {
+  return static_cast<clang::AtomicType *>(T)->getValueType().getAsOpaquePtr();
+}
+
+bool clang_AtomicType_isSugared(CXAtomicType T) {
+  return static_cast<clang::AtomicType *>(T)->isSugared();
+}
+
+CXQualType clang_AtomicType_desugar(CXAtomicType T) {
+  return static_cast<clang::AtomicType *>(T)->desugar().getAsOpaquePtr();
+}
+
+// PipeType
+
+// BitIntType
+
+// DependentBitIntType
