@@ -209,6 +209,16 @@ function isa_DependentTemplateSpecializationType(x::AbstractType)
     return clang_isa_DependentTemplateSpecializationType(x)
 end
 
+function clang_isa_UnresolvedUsingType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_UnresolvedUsingType(x)
+end
+
+function isa_UsingType(x::AbstractType)
+    @check_ptrs x
+    return clang_isa_UsingType(x)
+end
+
 # BuiltinTypes
 function isa_BuiltinType_Void(x::AbstractBuiltinType)
     @check_ptrs x
@@ -409,6 +419,12 @@ end
 function getParamType(x::FunctionProtoType, i::Integer)
     @check_ptrs x
     return QualType(clang_FunctionProtoType_getParamType(x, i))
+end
+
+# UsingType
+function desugar(x::UsingType)
+    @check_ptrs x
+    return QualType(clang_UsingType_desugar(x))
 end
 
 # TypedefType

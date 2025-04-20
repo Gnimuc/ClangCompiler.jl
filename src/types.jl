@@ -74,12 +74,16 @@ clty_to_jlty(x::TemplateSpecializationType) = x
 clty_to_jlty(x::DependentNameType) = x
 clty_to_jlty(x::DependentTemplateSpecializationType) = x
 
+# `UsingType`s are resolved to `UnresolvedUsingType`.
+clty_to_jlty(x::UsingType) = clty_to_jlty(resolve(desugar(x)))
+
 """
     resolve(ty::AbstractType)
 Resolve type using Clang's RTTI.
 """
 function resolve(ty::AbstractType)
     # keep an eye on the order
+    is_using_type(ty) && return UsingType(ty.ptr)
     is_elaborated_type(ty) && return ElaboratedType(ty.ptr)
     is_typedef_type(ty) && return TypedefType(ty.ptr)
     is_template_type_parm_type(ty) && return TemplateTypeParmType(ty.ptr)

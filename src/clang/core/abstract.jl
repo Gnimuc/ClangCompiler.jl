@@ -586,6 +586,18 @@ Supertype for `FunctionProtoType`s.
 abstract type AbstractFunctionProtoType <: AbstractFunctionType end
 
 """
+    abstract type AbstractUnresolvedUsingType <: AbstractType
+Supertype for `UnresolvedUsingType`s.
+"""
+abstract type AbstractUnresolvedUsingType <: AbstractType end
+
+"""
+    abstract type AbstractUsingType <: AbstractType
+Supertype for `UsingType`s.
+"""
+abstract type AbstractUsingType <: AbstractType end
+
+"""
     abstract type AbstractTypedefType <: AbstractType
 Supertype for `TypedefType`s.
 """

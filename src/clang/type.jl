@@ -157,11 +157,15 @@ get_param_type(x::FunctionProtoType, i::Integer) = getParamType(x, i-1)
 
 get_params(x::FunctionProtoType) = [getParamType(x, i) for i = 0:(getNumParams(x) - 1)]
 
+# UnresolvedUsingType
+is_unresolved_using_type(x::AbstractType) = isa_UnresolvedUsingType(x)
+
+# UsingType
+is_using_type(x::AbstractType) = isa_UsingType(x)
+
 # TypedefType
 is_typedef_type(x::AbstractType) = isa_TypedefType(x)
 is_typedef_type(x::TypedefType) = true
-
-#= desugar(x::TypedefType) =#
 
 # TagType
 is_tag_type(x::AbstractType) = isa_TagType(x)
@@ -197,8 +201,6 @@ is_template_specialization_type(x::TemplateSpecializationType) = true
 
 is_sugared(x::TemplateSpecializationType) = isSugared(x)
 
-#= desugar(x::TemplateSpecializationType) =#
-
 get_name(x::TemplateSpecializationType) = getName(x)
 
 function get_template_args(x::TemplateSpecializationType)
@@ -209,8 +211,6 @@ end
 # ElaboratedType
 is_elaborated_type(x::AbstractType) = isa_ElaboratedType(x)
 is_elaborated_type(x::ElaboratedType) = true
-
-#= desugar(x::ElaboratedType) =#
 
 # DependentNameType
 is_dependent_name_type(x::AbstractType) = isa_DependentNameType(x)
