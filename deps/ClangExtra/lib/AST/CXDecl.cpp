@@ -167,7 +167,12 @@ CXNamedDecl clang_NamedDecl_getMostRecentDecl(CXNamedDecl ND) {
 
 // NamedDecl Cast
 CXTypeDecl clang_NamedDecl_castToTypeDecl(CXNamedDecl ND) {
-  return llvm::dyn_cast<clang::TypeDecl>(static_cast<clang::NamedDecl *>(ND));
+  return llvm::dyn_cast_or_null<clang::TypeDecl>(static_cast<clang::NamedDecl *>(ND));
+}
+
+CXEnumConstantDecl clang_NamedDecl_castToEnumConstantDecl(CXNamedDecl ND) {
+  return llvm::dyn_cast_or_null<clang::EnumConstantDecl>(
+      static_cast<clang::NamedDecl *>(ND));
 }
 
 // LabelDecl
@@ -1581,6 +1586,10 @@ CXEnumConstantDecl clang_EnumConstantDecl_getCanonicalDecl(CXEnumConstantDecl EC
   return static_cast<clang::EnumConstantDecl *>(ECD)->getCanonicalDecl();
 }
 
+long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD) {
+  return static_cast<clang::EnumConstantDecl *>(ECD)->getInitVal().getSExtValue();
+}
+
 // IndirectFieldDecl
 CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C,
                                                                unsigned ID) {
@@ -1881,7 +1890,7 @@ CXTemplateParameterList clang_TagDecl_getTemplateParameterList(CXTagDecl TD, uns
 
 // TagDecl Cast
 CXDeclContext clang_TagDecl_castToDeclContext(CXTagDecl TD) {
-  return llvm::dyn_cast<clang::DeclContext>(static_cast<clang::TagDecl *>(TD));
+  return llvm::dyn_cast_or_null<clang::DeclContext>(static_cast<clang::TagDecl *>(TD));
 }
 
 // EnumDecl
@@ -2222,7 +2231,7 @@ CXFieldDecl clang_RecordDecl_findFirstNamedDataMember(CXRecordDecl RD) {
 // RecordDecl Cast
 CXClassTemplateSpecializationDecl
 clang_RecordDecl_castToClassTemplateSpecializationDecl(CXRecordDecl RD) {
-  return llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(
+  return llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(
       static_cast<clang::RecordDecl *>(RD));
 }
 

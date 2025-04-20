@@ -169,24 +169,25 @@ CXDecl clang_Decl_castFromDeclContext(CXDeclContext DC) {
 
 // Decl Cast
 CXClassTemplateDecl clang_Decl_castToClassTemplateDecl(CXDecl DC) {
-  return llvm::dyn_cast<clang::ClassTemplateDecl>(static_cast<clang::Decl *>(DC));
+  return llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(static_cast<clang::Decl *>(DC));
 }
 
 CXValueDecl clang_Decl_castToValueDecl(CXDecl DC) {
-  return llvm::dyn_cast<clang::ValueDecl>(static_cast<clang::Decl *>(DC));
+  return llvm::dyn_cast_or_null<clang::ValueDecl>(static_cast<clang::Decl *>(DC));
 }
 
 // DeclContext
 CXTagDecl clang_DeclContext_castToTagDecl(CXDeclContext DC) {
-  return llvm::dyn_cast<clang::TagDecl>(static_cast<clang::DeclContext *>(DC));
+  return llvm::dyn_cast_or_null<clang::TagDecl>(static_cast<clang::DeclContext *>(DC));
 }
 
 CXRecordDecl clang_DeclContext_castToRecordDecl(CXDeclContext DC) {
-  return llvm::dyn_cast<clang::RecordDecl>(static_cast<clang::DeclContext *>(DC));
+  return llvm::dyn_cast_or_null<clang::RecordDecl>(static_cast<clang::DeclContext *>(DC));
 }
 
 CXCXXRecordDecl clang_DeclContext_castToCXXRecordDecl(CXDeclContext DC) {
-  return llvm::dyn_cast<clang::CXXRecordDecl>(static_cast<clang::DeclContext *>(DC));
+  return llvm::dyn_cast_or_null<clang::CXXRecordDecl>(
+      static_cast<clang::DeclContext *>(DC));
 }
 
 const char *clang_DeclContext_getDeclKindName(CXDeclContext DC) {
@@ -301,4 +302,3 @@ void clang_DeclContext_dumpDeclContext(CXDeclContext DC) {
 void clang_DeclContext_dumpLookups(CXDeclContext DC) {
   static_cast<clang::DeclContext *>(DC)->dumpLookups();
 }
-

@@ -4048,6 +4048,10 @@ function clang_NamedDecl_castToTypeDecl(ND)
     @ccall libclangex.clang_NamedDecl_castToTypeDecl(ND::CXNamedDecl)::CXTypeDecl
 end
 
+function clang_NamedDecl_castToEnumConstantDecl(ND)
+    @ccall libclangex.clang_NamedDecl_castToEnumConstantDecl(ND::CXNamedDecl)::CXEnumConstantDecl
+end
+
 function clang_LabelDecl_Create(C, DC, IdentL, II)
     @ccall libclangex.clang_LabelDecl_Create(C::CXASTContext, DC::CXDeclContext, IdentL::CXSourceLocation_, II::CXIdentifierInfo)::CXLabelDecl
 end
@@ -5244,6 +5248,10 @@ end
 
 function clang_EnumConstantDecl_getCanonicalDecl(ECD)
     @ccall libclangex.clang_EnumConstantDecl_getCanonicalDecl(ECD::CXEnumConstantDecl)::CXEnumConstantDecl
+end
+
+function clang_EnumConstantDecl_getEnumConstantDeclValue(ECD)
+    @ccall libclangex.clang_EnumConstantDecl_getEnumConstantDeclValue(ECD::CXEnumConstantDecl)::Clonglong
 end
 
 function clang_IndirectFieldDecl_CreateDeserialized(C, ID)

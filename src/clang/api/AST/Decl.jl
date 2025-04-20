@@ -133,6 +133,11 @@ function TypeDecl(x::NamedDecl)
     return TypeDecl(clang_NamedDecl_castToTypeDecl(x))
 end
 
+function EnumConstantDecl(x::NamedDecl)
+    @check_ptrs x
+    return EnumConstantDecl(clang_NamedDecl_castToEnumConstantDecl(x))
+end
+
 # LabelDecl
 function getStmt(x::LabelDecl)
     @check_ptrs x
@@ -1408,6 +1413,12 @@ end
 function getODRHash(x::FunctionDecl)
     @check_ptrs x
     return clang_FunctionDecl_getODRHash(x)
+end
+
+# EnumConstantDecl
+function getEnumConstantDeclValue(x::EnumConstantDecl)
+    @check_ptrs x
+    return clang_EnumConstantDecl_getEnumConstantDeclValue(x)
 end
 
 # TypeDecl

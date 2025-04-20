@@ -103,6 +103,8 @@ CXNamedDecl clang_NamedDecl_getMostRecentDecl(CXNamedDecl ND);
 // NamedDecl Cast
 CXTypeDecl clang_NamedDecl_castToTypeDecl(CXNamedDecl ND);
 
+CXEnumConstantDecl clang_NamedDecl_castToEnumConstantDecl(CXNamedDecl ND);
+
 // LabelDecl
 CXLabelDecl clang_LabelDecl_Create(CXASTContext C, CXDeclContext DC,
                                    CXSourceLocation_ IdentL, CXIdentifierInfo II);
@@ -822,6 +824,9 @@ void clang_EnumConstantDecl_setInitExpr(CXEnumConstantDecl ECD, CXExpr E);
 CXSourceRange_ clang_EnumConstantDecl_getSourceRange(CXEnumConstantDecl ECD);
 
 CXEnumConstantDecl clang_EnumConstantDecl_getCanonicalDecl(CXEnumConstantDecl ECD);
+
+// helper
+long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD);
 
 // IndirectFieldDecl
 CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C, unsigned ID);
