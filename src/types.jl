@@ -41,7 +41,7 @@ clty_to_jlty(x::T) where {T<:AbstractBuiltinType} = x
 clty_to_jlty(x::BuiltinType) = clty_to_jlty(resolve(x))
 clty_to_jlty(x::ElaboratedType) = x
 clty_to_jlty(x::TypedefType) = x
-
+clty_to_jlty(x::UsingType) = x
 clty_to_jlty(x::PointerType) = x
 
 # `TagType`s are resolved to `RecordType` or `EnumType`.
@@ -73,9 +73,6 @@ clty_to_jlty(x::SubstTemplateTypeParmPackType) = x
 clty_to_jlty(x::TemplateSpecializationType) = x
 clty_to_jlty(x::DependentNameType) = x
 clty_to_jlty(x::DependentTemplateSpecializationType) = x
-
-# `UsingType`s are resolved to `UnresolvedUsingType`.
-clty_to_jlty(x::UsingType) = clty_to_jlty(resolve(desugar(x)))
 
 """
     resolve(ty::AbstractType)
