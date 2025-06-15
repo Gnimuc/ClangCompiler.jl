@@ -1,18 +1,25 @@
 using ClangCompiler
+using ClangCompiler: create_interpreter, dispose
+using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
 using Test
-import ClangCompiler as cc
 
 @testset "Traversal | AST" begin
-    src = joinpath(@__DIR__, "code", "main.cpp")
-    args = get_compiler_args()
-    irgen = ClangCompiler.IncrementalIRGenerator(src, args)
-    decl_lookup = DeclFinder(get_instance(irgen))
-    @test decl_lookup(irgen, "Node", "Node")
+    I = create_interpreter([joinpath(@__DIR__, "cxx", "main.cpp")])
+
+    decl_lookup = DeclFinder(I)
+    @test decl_lookup(I, "Node")
     decl = get_decl(decl_lookup)
-    for field in cc.DeclIterator(decl)
-        cc.dump(field)
-        @test cc.getDeclKindName(field) == "Field"
+    for field in DeclIterator(decl)
+        ClangCompiler.dump(field)
+        @test getDeclKindName(field) == "Field"
     end
+
+    @test decl_lookup(I, "Foo")
+    decl = get_decl(decl_lookup)
+    for x in DeclIterator(decl)
+        ClangCompiler.dump(x)
+    end
+
     dispose(decl_lookup)
-    dispose(irgen)
+    dispose(I)
 end

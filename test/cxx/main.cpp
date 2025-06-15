@@ -6,6 +6,13 @@ struct Node {
     float y;
 };
 
+class Foo {
+  int x;
+public:
+  Foo() : x(0) {}
+  Foo(int x) : x(x) {}
+};
+
 int main() {
   int x = 40;
   int y = 2;
