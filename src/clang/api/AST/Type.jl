@@ -421,6 +421,11 @@ function getParamType(x::FunctionProtoType, i::Integer)
     return QualType(clang_FunctionProtoType_getParamType(x, i))
 end
 
+function isNoThrow(x::FunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_isNothrow(x)
+end
+
 # UsingType
 function desugar(x::UsingType)
     @check_ptrs x
