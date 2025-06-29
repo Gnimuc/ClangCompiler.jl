@@ -215,6 +215,11 @@ function ValueDecl(x::AbstractDecl)
     return ValueDecl(clang_Decl_castToValueDecl(x))
 end
 
+function CXXConstructorDecl(x::AbstractDecl)
+    @check_ptrs x
+    return CXXConstructorDecl(clang_Decl_castToCXXConstructorDecl(x))
+end
+
 # DeclContext
 function getParentASTContext(x::DeclContext)
     @check_ptrs x

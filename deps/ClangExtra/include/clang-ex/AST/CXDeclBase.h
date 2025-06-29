@@ -95,6 +95,8 @@ CXClassTemplateDecl clang_Decl_castToClassTemplateDecl(CXDecl DC);
 
 CXValueDecl clang_Decl_castToValueDecl(CXDecl DC);
 
+CXCXXConstructorDecl clang_Decl_castToCXXConstructorDecl(CXDecl D);
+
 // DeclContext
 CXTagDecl clang_DeclContext_castToTagDecl(CXDeclContext DC);
 

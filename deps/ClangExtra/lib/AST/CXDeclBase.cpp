@@ -176,6 +176,10 @@ CXValueDecl clang_Decl_castToValueDecl(CXDecl DC) {
   return llvm::dyn_cast_or_null<clang::ValueDecl>(static_cast<clang::Decl *>(DC));
 }
 
+CXCXXConstructorDecl clang_Decl_castToCXXConstructorDecl(CXDecl D) {
+  return llvm::dyn_cast_or_null<clang::CXXConstructorDecl>(static_cast<clang::Decl *>(D));
+}
+
 // DeclContext
 CXTagDecl clang_DeclContext_castToTagDecl(CXDeclContext DC) {
   return llvm::dyn_cast_or_null<clang::TagDecl>(static_cast<clang::DeclContext *>(DC));

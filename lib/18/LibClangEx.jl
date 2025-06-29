@@ -3325,6 +3325,10 @@ function clang_Decl_castToValueDecl(DC)
     @ccall libclangex.clang_Decl_castToValueDecl(DC::CXDecl)::CXValueDecl
 end
 
+function clang_Decl_castToCXXConstructorDecl(D)
+    @ccall libclangex.clang_Decl_castToCXXConstructorDecl(D::CXDecl)::CXCXXConstructorDecl
+end
+
 function clang_DeclContext_castToTagDecl(DC)
     @ccall libclangex.clang_DeclContext_castToTagDecl(DC::CXDeclContext)::CXTagDecl
 end
