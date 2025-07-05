@@ -30,3 +30,21 @@ end
 
 Base.unsafe_convert(::Type{CXInterpreter}, x::Interpreter) = x.ptr
 Base.cconvert(::Type{CXInterpreter}, x::Interpreter) = x
+
+
+"""
+	abstract type AbstractPartialTranslationUnit <: Any
+Supertype for `clang::PartialTranslationUnit`s.
+"""
+abstract type AbstractPartialTranslationUnit end
+
+"""
+	struct PartialTranslationUnit <: AbstractPartialTranslationUnit
+A Clang partial translation unit.
+"""
+struct PartialTranslationUnit <: AbstractPartialTranslationUnit
+    ptr::CXPartialTranslationUnit
+end
+
+Base.unsafe_convert(::Type{CXPartialTranslationUnit}, x::PartialTranslationUnit) = x.ptr
+Base.cconvert(::Type{CXPartialTranslationUnit}, x::PartialTranslationUnit) = x

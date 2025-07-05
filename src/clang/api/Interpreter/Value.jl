@@ -1,4 +1,4 @@
-create_value() = Value(clang_createValue())
+create_value() = Value(clang_value_create())
 
 dispose(x::AbstractValue) = clang_value_dispose(x)
 

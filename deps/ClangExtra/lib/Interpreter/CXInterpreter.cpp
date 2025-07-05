@@ -130,15 +130,15 @@ void clang_Interpreter_ParseAndExecute(CXInterpreter Interp, const char *Code,
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
 }
 
-CXExecutorAddr clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
-                                                 CXCXXRecordDecl CXXRD) {
+LLVMOrcExecutorAddress clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
+                                                         CXCXXRecordDecl CXXRD) {
   auto Addr = static_cast<clang::Interpreter *>(Interp)->CompileDtorCall(
       static_cast<clang::CXXRecordDecl *>(CXXRD));
   if (auto E = Addr.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
-    return nullptr;
+    return 0;
   }
-  return &*Addr;
+  return Addr->getValue();
 }
 
 void clang_Interpreter_Undo(CXInterpreter Interp, unsigned int N) {
@@ -153,26 +153,27 @@ void clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
 }
 
-CXExecutorAddr clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
-                                                  const char *IRName) {
+LLVMOrcExecutorAddress clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
+                                                          const char *IRName) {
   auto Addr =
       static_cast<clang::Interpreter *>(Interp)->getSymbolAddress(llvm::StringRef(IRName));
   if (auto E = Addr.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
-    return nullptr;
+    return 0;
   }
-  return &*Addr;
+  return Addr->getValue();
 }
 
-CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
-                                                                const char *LinkerName) {
+LLVMOrcExecutorAddress
+clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
+                                                 const char *LinkerName) {
   auto Addr = static_cast<clang::Interpreter *>(Interp)->getSymbolAddressFromLinkerName(
       llvm::StringRef(LinkerName));
   if (auto E = Addr.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
-    return nullptr;
+    return 0;
   }
-  return &*Addr;
+  return Addr->getValue();
 }
 
 CXCodeGenerator clang_Interpreter_getCodeGen(CXInterpreter Interp) {

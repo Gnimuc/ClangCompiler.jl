@@ -434,7 +434,6 @@ typedef void *CXFrontendOptions;
 typedef void *CXIncrementalCompilerBuilder;
 typedef void *CXInterpreter;
 typedef void *CXPartialTranslationUnit;
-typedef void* CXExecutorAddr; // FIXME: upstream to LLVM.jl
 typedef void *CXValue;
 
 // Lex

@@ -6,6 +6,7 @@ using LLVM.API: LLVMModuleRef, LLVMOpaqueModule
 using LLVM.API: LLVMOpaqueContext, LLVMContextRef
 using LLVM.API: LLVMMemoryBufferRef, LLVMGenericValueRef
 using LLVM.API: LLVMTypeRef, LLVMOrcLLJITRef
+using LLVM.API: LLVMOrcExecutorAddress
 
 const time_t = Clong
 
@@ -695,8 +696,6 @@ const CXIncrementalCompilerBuilder = Ptr{Cvoid}
 const CXInterpreter = Ptr{Cvoid}
 
 const CXPartialTranslationUnit = Ptr{Cvoid}
-
-const CXExecutorAddr = Ptr{Cvoid}
 
 const CXValue = Ptr{Cvoid}
 
@@ -7110,7 +7109,7 @@ function clang_Interpreter_ParseAndExecute(Interp, Code, Result)
 end
 
 function clang_Interpreter_CompileDtorCall(Interp, CXXRD)
-    @ccall libclangex.clang_Interpreter_CompileDtorCall(Interp::CXInterpreter, CXXRD::CXCXXRecordDecl)::CXExecutorAddr
+    @ccall libclangex.clang_Interpreter_CompileDtorCall(Interp::CXInterpreter, CXXRD::CXCXXRecordDecl)::LLVMOrcExecutorAddress
 end
 
 function clang_Interpreter_Undo(Interp, N)
@@ -7122,11 +7121,11 @@ function clang_Interpreter_LoadDynamicLibrary(Interp, name)
 end
 
 function clang_Interpreter_getSymbolAddress(Interp, IRName)
-    @ccall libclangex.clang_Interpreter_getSymbolAddress(Interp::CXInterpreter, IRName::Ptr{Cchar})::CXExecutorAddr
+    @ccall libclangex.clang_Interpreter_getSymbolAddress(Interp::CXInterpreter, IRName::Ptr{Cchar})::LLVMOrcExecutorAddress
 end
 
 function clang_Interpreter_getSymbolAddressFromLinkerName(Interp, LinkerName)
-    @ccall libclangex.clang_Interpreter_getSymbolAddressFromLinkerName(Interp::CXInterpreter, LinkerName::Ptr{Cchar})::CXExecutorAddr
+    @ccall libclangex.clang_Interpreter_getSymbolAddressFromLinkerName(Interp::CXInterpreter, LinkerName::Ptr{Cchar})::LLVMOrcExecutorAddress
 end
 
 function clang_Interpreter_getCodeGen(Interp)

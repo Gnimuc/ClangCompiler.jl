@@ -29,9 +29,9 @@ function getCompilerInstance(x::AbstractInterpreter)
     return CompilerInstance(clang_Interpreter_getCompilerInstance(x))
 end
 
-function getExecuteEngine(x::AbstractInterpreter)
+function getExecutionEngine(x::AbstractInterpreter)
     @check_ptrs x
-    return clang_Interpreter_getExecutionEngine(x)
+    return LLVM.LLJIT(clang_Interpreter_getExecutionEngine(x))
 end
 
 function undo(x::AbstractInterpreter)
@@ -57,4 +57,21 @@ end
 function getParser(x::AbstractInterpreter)
     @check_ptrs x
     return Parser(clang_Interpreter_getParser(x))
+end
+
+function Parse(x::AbstractInterpreter, code::AbstractString)
+    @check_ptrs x
+    return PartialTranslationUnit(clang_Interpreter_Parse(x, code))
+end
+
+function Execute(x::AbstractInterpreter, ptu::PartialTranslationUnit)
+    @check_ptrs x ptu
+    return clang_Interpreter_Execute(x, ptu)
+end
+
+function ParseAndExecute(x::AbstractInterpreter, code::AbstractString)
+    @check_ptrs x
+    v = create_value()
+    clang_Interpreter_ParseAndExecute(x, code, v)
+    return v
 end

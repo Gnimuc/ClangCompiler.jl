@@ -12,17 +12,23 @@ CXIncrementalCompilerBuilder clang_IncrementalCompilerBuilder_create(void);
 
 void clang_IncrementalCompilerBuilder_dispose(CXIncrementalCompilerBuilder CB);
 
-void clang_IncrementalCompilerBuilder_SetCompilerArgs(CXIncrementalCompilerBuilder CB, const char **Args, int N);
+void clang_IncrementalCompilerBuilder_SetCompilerArgs(CXIncrementalCompilerBuilder CB,
+                                                      const char **Args, int N);
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCpp(CXIncrementalCompilerBuilder CB);
+CXCompilerInstance
+clang_IncrementalCompilerBuilder_CreateCpp(CXIncrementalCompilerBuilder CB);
 
-void clang_IncrementalCompilerBuilder_SetOffloadArch(CXIncrementalCompilerBuilder CB, const char *Arch);
+void clang_IncrementalCompilerBuilder_SetOffloadArch(CXIncrementalCompilerBuilder CB,
+                                                     const char *Arch);
 
-void clang_IncrementalCompilerBuilder_SetCudaSDK(CXIncrementalCompilerBuilder CB, const char *path);
+void clang_IncrementalCompilerBuilder_SetCudaSDK(CXIncrementalCompilerBuilder CB,
+                                                 const char *path);
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCudaHost(CXIncrementalCompilerBuilder CB);
+CXCompilerInstance
+clang_IncrementalCompilerBuilder_CreateCudaHost(CXIncrementalCompilerBuilder CB);
 
-CXCompilerInstance clang_IncrementalCompilerBuilder_CreateCudaDevice(CXIncrementalCompilerBuilder CB);
+CXCompilerInstance
+clang_IncrementalCompilerBuilder_CreateCudaDevice(CXIncrementalCompilerBuilder CB);
 
 CXInterpreter clang_Interpreter_create(CXCompilerInstance CI);
 
@@ -42,17 +48,19 @@ void clang_Interpreter_Execute(CXInterpreter Interp, CXPartialTranslationUnit PT
 void clang_Interpreter_ParseAndExecute(CXInterpreter Interp, const char *Code,
                                        CXValue Result);
 
-CXExecutorAddr clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
-                                                 CXCXXRecordDecl CXXRD);
+LLVMOrcExecutorAddress clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
+                                                         CXCXXRecordDecl CXXRD);
 
 void clang_Interpreter_Undo(CXInterpreter Interp, unsigned int N);
 
 void clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name);
 
-CXExecutorAddr clang_Interpreter_getSymbolAddress(CXInterpreter Interp, const char *IRName);
+LLVMOrcExecutorAddress clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
+                                                          const char *IRName);
 
-CXExecutorAddr clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
-                                                                const char *LinkerName);
+LLVMOrcExecutorAddress
+clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
+                                                 const char *LinkerName);
 
 CXCodeGenerator clang_Interpreter_getCodeGen(CXInterpreter Interp);
 
