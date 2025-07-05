@@ -6596,6 +6596,59 @@ function clang_LangOptions_PrintStats(LO)
     @ccall libclangex.clang_LangOptions_PrintStats(LO::CXLangOptions)::Cvoid
 end
 
+@enum CXOverloadedOperatorKind::Int32 begin
+    CXOverloadedOperatorKind_OO_None = 0
+    CXOverloadedOperatorKind_OO_New = 1
+    CXOverloadedOperatorKind_OO_Delete = 2
+    CXOverloadedOperatorKind_OO_Array_New = 3
+    CXOverloadedOperatorKind_OO_Array_Delete = 4
+    CXOverloadedOperatorKind_OO_Plus = 5
+    CXOverloadedOperatorKind_OO_Minus = 6
+    CXOverloadedOperatorKind_OO_Star = 7
+    CXOverloadedOperatorKind_OO_Slash = 8
+    CXOverloadedOperatorKind_OO_Percent = 9
+    CXOverloadedOperatorKind_OO_Caret = 10
+    CXOverloadedOperatorKind_OO_Amp = 11
+    CXOverloadedOperatorKind_OO_Pipe = 12
+    CXOverloadedOperatorKind_OO_Tilde = 13
+    CXOverloadedOperatorKind_OO_Exclaim = 14
+    CXOverloadedOperatorKind_OO_Equal = 15
+    CXOverloadedOperatorKind_OO_Less = 16
+    CXOverloadedOperatorKind_OO_Greater = 17
+    CXOverloadedOperatorKind_OO_PlusEqual = 18
+    CXOverloadedOperatorKind_OO_MinusEqual = 19
+    CXOverloadedOperatorKind_OO_StarEqual = 20
+    CXOverloadedOperatorKind_OO_SlashEqual = 21
+    CXOverloadedOperatorKind_OO_PercentEqual = 22
+    CXOverloadedOperatorKind_OO_CaretEqual = 23
+    CXOverloadedOperatorKind_OO_AmpEqual = 24
+    CXOverloadedOperatorKind_OO_PipeEqual = 25
+    CXOverloadedOperatorKind_OO_LessLess = 26
+    CXOverloadedOperatorKind_OO_GreaterGreater = 27
+    CXOverloadedOperatorKind_OO_LessLessEqual = 28
+    CXOverloadedOperatorKind_OO_GreaterGreaterEqual = 29
+    CXOverloadedOperatorKind_OO_EqualEqual = 30
+    CXOverloadedOperatorKind_OO_ExclaimEqual = 31
+    CXOverloadedOperatorKind_OO_LessEqual = 32
+    CXOverloadedOperatorKind_OO_GreaterEqual = 33
+    CXOverloadedOperatorKind_OO_Spaceship = 34
+    CXOverloadedOperatorKind_OO_AmpAmp = 35
+    CXOverloadedOperatorKind_OO_PipePipe = 36
+    CXOverloadedOperatorKind_OO_PlusPlus = 37
+    CXOverloadedOperatorKind_OO_MinusMinus = 38
+    CXOverloadedOperatorKind_OO_Comma = 39
+    CXOverloadedOperatorKind_OO_ArrowStar = 40
+    CXOverloadedOperatorKind_OO_Arrow = 41
+    CXOverloadedOperatorKind_OO_Call = 42
+    CXOverloadedOperatorKind_OO_Subscript = 43
+    CXOverloadedOperatorKind_OO_Conditional = 44
+    CXOverloadedOperatorKind_OO_Coawait = 45
+end
+
+function clang_getOperatorSpelling(Operator)
+    @ccall libclangex.clang_getOperatorSpelling(Operator::CXOverloadedOperatorKind)::Ptr{Cchar}
+end
+
 function clang_SourceLocation_createInvalid()
     @ccall libclangex.clang_SourceLocation_createInvalid()::CXSourceLocation_
 end
