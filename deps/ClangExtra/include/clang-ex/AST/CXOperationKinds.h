@@ -74,6 +74,59 @@ typedef enum CXCastKind {
   CXCastKind_CK_IntToOCLSampler
 } CXCastKind;
 
+typedef enum CXUnaryOperatorKind {
+  CXUnaryOperatorKind_UO_PostInc,
+  CXUnaryOperatorKind_UO_PostDec,
+  CXUnaryOperatorKind_UO_PreInc,
+  CXUnaryOperatorKind_UO_PreDec,
+  CXUnaryOperatorKind_UO_AddrOf,
+  CXUnaryOperatorKind_UO_Deref,
+  CXUnaryOperatorKind_UO_Plus,
+  CXUnaryOperatorKind_UO_Minus,
+  CXUnaryOperatorKind_UO_Not,
+  CXUnaryOperatorKind_UO_LNot,
+  CXUnaryOperatorKind_UO_Real,
+  CXUnaryOperatorKind_UO_Imag,
+  CXUnaryOperatorKind_UO_Extension,
+  CXUnaryOperatorKind_UO_Coawait,
+} CXUnaryOperatorKind;
+
+typedef enum CXBinaryOperatorKind {
+  CXBinaryOperatorKind_BO_PtrMemD,
+  CXBinaryOperatorKind_BO_PtrMemI,
+  CXBinaryOperatorKind_BO_Mul,
+  CXBinaryOperatorKind_BO_Div,
+  CXBinaryOperatorKind_BO_Rem,
+  CXBinaryOperatorKind_BO_Add,
+  CXBinaryOperatorKind_BO_Sub,
+  CXBinaryOperatorKind_BO_Shl,
+  CXBinaryOperatorKind_BO_Shr,
+  CXBinaryOperatorKind_BO_Cmp,
+  CXBinaryOperatorKind_BO_LT,
+  CXBinaryOperatorKind_BO_GT,
+  CXBinaryOperatorKind_BO_LE,
+  CXBinaryOperatorKind_BO_GE,
+  CXBinaryOperatorKind_BO_EQ,
+  CXBinaryOperatorKind_BO_NE,
+  CXBinaryOperatorKind_BO_And,
+  CXBinaryOperatorKind_BO_Xor,
+  CXBinaryOperatorKind_BO_Or,
+  CXBinaryOperatorKind_BO_LAnd,
+  CXBinaryOperatorKind_BO_LOr,
+  CXBinaryOperatorKind_BO_Assign,
+  CXBinaryOperatorKind_BO_MulAssign,
+  CXBinaryOperatorKind_BO_DivAssign,
+  CXBinaryOperatorKind_BO_RemAssign,
+  CXBinaryOperatorKind_BO_AddAssign,
+  CXBinaryOperatorKind_BO_SubAssign,
+  CXBinaryOperatorKind_BO_ShlAssign,
+  CXBinaryOperatorKind_BO_ShrAssign,
+  CXBinaryOperatorKind_BO_AndAssign,
+  CXBinaryOperatorKind_BO_XorAssign,
+  CXBinaryOperatorKind_BO_OrAssign,
+  CXBinaryOperatorKind_BO_Comma,
+} CXBinaryOperatorKind;
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif
