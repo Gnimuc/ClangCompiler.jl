@@ -39,9 +39,37 @@ ClangCompiler.jl
 │   ├── parse.jl             # C++ scope specifier parsing
 │   ├── env.jl               # Compiler flags and default args
 │   └── platform/JLLEnvs.jl  # Platform-specific JLL environments
-├── deps/ClangExtra/         # libclangex C header files (58 headers)
+├── deps/
+│   ├── ClangExtra/          # libclangex C library source (subproject)
+│   │   ├── CMakeLists.txt   # Builds the clangex shared library
+│   │   ├── include/clang-ex/ # Public C API headers (58 headers)
+│   │   ├── lib/             # C++ wrapper implementations
+│   │   │   ├── AST/         # CXASTContext.cpp, CXDecl.cpp, ...
+│   │   │   ├── Basic/       # CXDiagnostic.cpp, CXSourceManager.cpp, ...
+│   │   │   ├── CodeGen/     # CXCodeGenAction.cpp, CXModuleBuilder.cpp, ...
+│   │   │   ├── Driver/, Frontend/, Interpreter/, Lex/, Parse/, Sema/
+│   │   │   └── libclangex.cpp / utils.cpp
+│   │   └── upstream/        # Upstream Clang headers used internally
+│   │       └── Interpreter/ # IncrementalParser.h, Interpreter.h
+│   ├── build_local.jl       # Build ClangExtra locally (CMake + Julia Scratch)
+│   └── build_ci.jl          # CI build script
 └── gen/generator.jl         # Auto-generator for C API bindings
 ```
+
+## libclangex Subproject (`deps/ClangExtra`)
+
+`deps/ClangExtra` is a self-contained C++ library that acts as a thin C wrapper around Clang's internal C++ APIs. Because Clang exposes no stable C ABI for its internal compiler infrastructure, libclangex bridges that gap by providing:
+
+1. **A stable C API** — all functions follow a `clang_<Component>_<method>` naming convention and use only C-compatible types (`void*` handles, enums, primitives), making them callable from Julia via `@ccall`.
+2. **Opaque pointer handles** — Clang C++ objects are exposed as `CX<Type>` opaque pointer typedefs (e.g. `CXASTContext`, `CXFunctionDecl`), hiding C++ ABI details.
+3. **Coverage of Clang internals** — unlike the standard `libclang`, this library exposes deep internals: `ASTContext`, `Sema`, `Parser`, `CompilerInstance`, the incremental interpreter, and more.
+
+### Build System
+
+The library is built with CMake, links against a full LLVM+Clang install, and produces a single `libclangex.{so,dylib,dll}`. Two build paths are supported:
+
+- **`libclangex_jll`** (default) — a pre-built binary artifact distributed via Julia's BinaryBuilder ecosystem. ClangCompiler.jl uses this by default.
+- **Local build** (`deps/build_local.jl`) — downloads the matching `LLVM_full_jll`, runs CMake via `CMake_jll`, installs into a Julia `Scratch` directory, and writes the resulting library path to `LocalPreferences.toml` so ClangCompiler.jl picks it up automatically. Useful when developing or patching libclangex itself.
 
 ## Key Components
 
@@ -174,3 +202,15 @@ The `examples/` directory contains several runnable examples:
 ## Binding Generation
 
 Bindings are auto-generated from the C headers in `deps/ClangExtra/include/clang-ex/` using `gen/generator.jl`, which leverages `Clang.Generators` (part of the `Clang.jl` ecosystem). The generator produces the `lib/18/LibClangEx.jl` file with all `@ccall` declarations.
+
+The full pipeline from source to Julia call is:
+
+```
+deps/ClangExtra/lib/**/*.cpp   ←  C++ wrappers around Clang internals
+        ↓  (CMake build)
+    libclangex.so              ←  shared library (shipped as libclangex_jll)
+        ↓  (gen/generator.jl)
+lib/18/LibClangEx.jl           ←  auto-generated @ccall bindings
+        ↓  (src/clang/**)
+ClangCompiler.jl public API    ←  Julia-idiomatic wrappers
+```
