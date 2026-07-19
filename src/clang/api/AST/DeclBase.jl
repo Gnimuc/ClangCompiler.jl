@@ -19,6 +19,11 @@ function getDeclKindName(x::AbstractDecl)
     return unsafe_string(clang_Decl_getDeclKindName(x))
 end
 
+function getKind(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_getKind(x)
+end
+
 function getNextDeclInContext(x::AbstractDecl)
     @check_ptrs x
     return Decl(clang_Decl_getNextDeclInContext(x))

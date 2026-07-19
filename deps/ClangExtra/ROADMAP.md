@@ -24,8 +24,8 @@ remaining phases. Status markers: [x] done, [ ] open.
   rejected unless bulk demand appears.
 - **Vendored .inc tables.** The binding generator drops declarations expanded
   from `-isystem` paths, so TableGen tables are vendored verbatim under
-  `include/clang-ex/` (currently `AST/StmtNodes.inc`). A stale vendored copy
-  cannot ship: the impl-side static_assert tables fail the build.
+  `include/clang-ex/` (`AST/StmtNodes.inc`, `AST/DeclNodes.inc`). A stale
+  vendored copy cannot ship: the impl-side static_assert tables fail the build.
 - **Version-following stamped ABI.** Stamped symbols (`CXStmtClass_*`,
   `clang_Stmt_castTo*/is*`) track clang's naming per LLVM major (clang inserts
   and renames nodes between majors; `lib/<major>/` models that). The
@@ -96,15 +96,25 @@ remaining phases. Status markers: [x] done, [ ] open.
       base path. Payload: StringLiteral, UnaryExprOrTypeTraitExpr getKind (+ UETT
       enum), PredefinedExpr. +61 C bindings, five new ENUM_SYNC-guarded enum
       mirrors, exercised by test/wrappers_tail.jl.
+- [x] DeclNodes.inc stamping — the Phase-1 Stmt mechanism applied to the Decl
+      hierarchy. Vendored DeclNodes.inc drives a mirror-by-construction CXDeclKind
+      enum (with the first/last range markers) + per-class static_assert drift
+      table, and X-macro-stamped clang_Decl_castTo*/is* for all ~95 classes
+      (ObjC/OMP included) + clang_Decl_getKind. gen/decl_nodes.jl emits
+      lib/<major>/DeclNodes.jl; the Julia layer builds DECL_KIND_TO_TYPE and an
+      O(1) resolve(::AbstractDecl) from it, replacing the unsafe raw-pointer
+      reconstruction with a getKind-checked downcast. +191 C bindings; the three
+      superseded hand-written casts and the isTemplateDecl method fold into the
+      stamped family.
 
 ## Remaining
 
 - [ ] **Payload leftovers** — the long breadth-first tail of core classes with
       ≤2 payload methods (the priority Expr/value-type surface is now done).
-- [ ] **Decl/Type .inc treatment** — apply the Phase-1 mechanism to
-      DeclNodes.inc (CXDeclKind + castTo/is, replacing string-compare
-      getDeclKindName dispatch) and TypeNodes.inc (replacing the ordered
-      resolve() predicate chain in src/types.jl).
+- [ ] **Type .inc treatment** — apply the same DeclNodes mechanism to
+      TypeNodes.inc: a CXTypeKind mirror + stamped castTo/is, to replace the
+      order-sensitive `resolve()` predicate chain in src/types.jl with an O(1)
+      getTypeClass lookup. (DeclNodes.inc is done — see below.)
 - [ ] **Attributes** — a third .inc-driven family (Attrs.inc); zero exposure
       today, `Decl::getAttrs` unreachable.
 - [ ] **TypeLoc** — at minimum an opaque handle + source-range floor;
@@ -117,7 +127,7 @@ remaining phases. Status markers: [x] done, [ ] open.
       real tools (null-check linter, unused-include pass, template
       instantiation dumper) that must be expressible from Julia.
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
-      (this branch adds ~820 C symbols — the earlier drift fixes, the 90
-      CXXRecordDecl traits, the APValue bridge with its Expr eval cluster, and
-      the 8-family mechanical wrapper tail — and corrects CXCastKind/CXLinkage
-      values).
+      (this branch adds ~1010 C symbols — the earlier drift fixes, the 90
+      CXXRecordDecl traits, the APValue bridge with its Expr eval cluster, the
+      8-family mechanical wrapper tail, and the DeclNodes.inc stamping — and
+      corrects CXCastKind/CXLinkage values).

@@ -24,9 +24,12 @@ using Test
         end
     end
 
-    # wrapped-by-construction: the api layer stamps these via @eval from the
-    # STMT_NODES table, so they never appear as literal text in src/
-    stamped(n) = occursin(r"^clang_Stmt_(castTo|is)[A-Z]", n)
+    # wrapped-by-construction: the Stmt castTo/is families are @eval-stamped from
+    # STMT_NODES, and the Decl castTo/is families are X-macro-stamped from
+    # DeclNodes.inc (reached from Julia via resolve(::AbstractDecl)/getKind), so
+    # neither appears as literal text in src/
+    stamped(n) = occursin(r"^clang_Stmt_(castTo|is)[A-Z]", n) ||
+                 occursin(r"^clang_Decl_(castTo|is)[A-Z]\w*Decl$", n)
 
     skiplist_file = joinpath(@__DIR__, "api_skiplist.txt")
     skiplist = Set{String}(l for l in readlines(skiplist_file)

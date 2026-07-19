@@ -141,6 +141,27 @@ end
     dispose(I)
 end
 
+@testset "Tail | Decl classification (getKind / resolve)" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "int gv = 3; int fn(int a){return a;} struct S { int m; }; namespace N {}")
+    f = DeclFinder(I)
+    cases = [("gv", CC.VarDecl, CC.LibClangEx.CXDeclKind_Var, "Var"),
+             ("fn", CC.FunctionDecl, CC.LibClangEx.CXDeclKind_Function, "Function"),
+             ("S", CC.CXXRecordDecl, CC.LibClangEx.CXDeclKind_CXXRecord, "CXXRecord"),
+             ("N", CC.NamespaceDecl, CC.LibClangEx.CXDeclKind_Namespace, "Namespace")]
+    for (name, carrier, kind, kindname) in cases
+        @test f(I, name)
+        d = get_decl(f)                       # base Decl carrier
+        @test CC.getKind(d) == kind
+        @test CC.getDeclKindName(d) == kindname
+        r = CC.resolve(d)                     # O(1) downcast via getKind
+        @test r isa carrier
+        @test r.ptr == d.ptr                  # Decl is the primary base: identity
+    end
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Tail | Expr payload (StringLiteral / UETT)" begin
     I = create_interpreter(String[])
     f = DeclFinder(I)

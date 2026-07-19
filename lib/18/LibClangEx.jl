@@ -3425,6 +3425,917 @@ function clang_ASTContext_NullPtrTy_getAsQualType(Ctx)
     @ccall libclangex.clang_ASTContext_NullPtrTy_getAsQualType(Ctx::CXASTContext)::CXQualType
 end
 
+@enum CXDeclKind::UInt32 begin
+    CXDeclKind_TranslationUnit = 0
+    CXDeclKind_RequiresExprBody = 1
+    CXDeclKind_LinkageSpec = 2
+    CXDeclKind_ExternCContext = 3
+    CXDeclKind_Export = 4
+    CXDeclKind_Captured = 5
+    CXDeclKind_Block = 6
+    CXDeclKind_TopLevelStmt = 7
+    CXDeclKind_StaticAssert = 8
+    CXDeclKind_PragmaDetectMismatch = 9
+    CXDeclKind_PragmaComment = 10
+    CXDeclKind_ObjCPropertyImpl = 11
+    CXDeclKind_OMPThreadPrivate = 12
+    CXDeclKind_OMPRequires = 13
+    CXDeclKind_OMPAllocate = 14
+    CXDeclKind_ObjCMethod = 15
+    CXDeclKind_ObjCProtocol = 16
+    CXDeclKind_ObjCInterface = 17
+    CXDeclKind_ObjCImplementation = 18
+    CXDeclKind_ObjCCategoryImpl = 19
+    # CXDeclKind_firstObjCImpl = 18
+    # CXDeclKind_lastObjCImpl = 19
+    CXDeclKind_ObjCCategory = 20
+    # CXDeclKind_firstObjCContainer = 16
+    # CXDeclKind_lastObjCContainer = 20
+    CXDeclKind_Namespace = 21
+    CXDeclKind_HLSLBuffer = 22
+    CXDeclKind_OMPDeclareReduction = 23
+    CXDeclKind_OMPDeclareMapper = 24
+    CXDeclKind_UnresolvedUsingValue = 25
+    CXDeclKind_UnnamedGlobalConstant = 26
+    CXDeclKind_TemplateParamObject = 27
+    CXDeclKind_MSGuid = 28
+    CXDeclKind_IndirectField = 29
+    CXDeclKind_EnumConstant = 30
+    CXDeclKind_Function = 31
+    CXDeclKind_CXXMethod = 32
+    CXDeclKind_CXXDestructor = 33
+    CXDeclKind_CXXConversion = 34
+    CXDeclKind_CXXConstructor = 35
+    # CXDeclKind_firstCXXMethod = 32
+    # CXDeclKind_lastCXXMethod = 35
+    CXDeclKind_CXXDeductionGuide = 36
+    # CXDeclKind_firstFunction = 31
+    # CXDeclKind_lastFunction = 36
+    CXDeclKind_Var = 37
+    CXDeclKind_VarTemplateSpecialization = 38
+    CXDeclKind_VarTemplatePartialSpecialization = 39
+    # CXDeclKind_firstVarTemplateSpecialization = 38
+    # CXDeclKind_lastVarTemplateSpecialization = 39
+    CXDeclKind_ParmVar = 40
+    CXDeclKind_OMPCapturedExpr = 41
+    CXDeclKind_ImplicitParam = 42
+    CXDeclKind_Decomposition = 43
+    # CXDeclKind_firstVar = 37
+    # CXDeclKind_lastVar = 43
+    CXDeclKind_NonTypeTemplateParm = 44
+    CXDeclKind_MSProperty = 45
+    CXDeclKind_Field = 46
+    CXDeclKind_ObjCIvar = 47
+    CXDeclKind_ObjCAtDefsField = 48
+    # CXDeclKind_firstField = 46
+    # CXDeclKind_lastField = 48
+    # CXDeclKind_firstDeclarator = 31
+    # CXDeclKind_lastDeclarator = 48
+    CXDeclKind_Binding = 49
+    # CXDeclKind_firstValue = 23
+    # CXDeclKind_lastValue = 49
+    CXDeclKind_UsingShadow = 50
+    CXDeclKind_ConstructorUsingShadow = 51
+    # CXDeclKind_firstUsingShadow = 50
+    # CXDeclKind_lastUsingShadow = 51
+    CXDeclKind_UsingPack = 52
+    CXDeclKind_UsingDirective = 53
+    CXDeclKind_UnresolvedUsingIfExists = 54
+    CXDeclKind_Record = 55
+    CXDeclKind_CXXRecord = 56
+    CXDeclKind_ClassTemplateSpecialization = 57
+    CXDeclKind_ClassTemplatePartialSpecialization = 58
+    # CXDeclKind_firstClassTemplateSpecialization = 57
+    # CXDeclKind_lastClassTemplateSpecialization = 58
+    # CXDeclKind_firstCXXRecord = 56
+    # CXDeclKind_lastCXXRecord = 58
+    # CXDeclKind_firstRecord = 55
+    # CXDeclKind_lastRecord = 58
+    CXDeclKind_Enum = 59
+    # CXDeclKind_firstTag = 55
+    # CXDeclKind_lastTag = 59
+    CXDeclKind_UnresolvedUsingTypename = 60
+    CXDeclKind_Typedef = 61
+    CXDeclKind_TypeAlias = 62
+    CXDeclKind_ObjCTypeParam = 63
+    # CXDeclKind_firstTypedefName = 61
+    # CXDeclKind_lastTypedefName = 63
+    CXDeclKind_TemplateTypeParm = 64
+    # CXDeclKind_firstType = 55
+    # CXDeclKind_lastType = 64
+    CXDeclKind_TemplateTemplateParm = 65
+    CXDeclKind_VarTemplate = 66
+    CXDeclKind_TypeAliasTemplate = 67
+    CXDeclKind_FunctionTemplate = 68
+    CXDeclKind_ClassTemplate = 69
+    # CXDeclKind_firstRedeclarableTemplate = 66
+    # CXDeclKind_lastRedeclarableTemplate = 69
+    CXDeclKind_Concept = 70
+    CXDeclKind_BuiltinTemplate = 71
+    # CXDeclKind_firstTemplate = 65
+    # CXDeclKind_lastTemplate = 71
+    CXDeclKind_ObjCProperty = 72
+    CXDeclKind_ObjCCompatibleAlias = 73
+    CXDeclKind_NamespaceAlias = 74
+    CXDeclKind_Label = 75
+    CXDeclKind_UsingEnum = 76
+    CXDeclKind_Using = 77
+    # CXDeclKind_firstBaseUsing = 76
+    # CXDeclKind_lastBaseUsing = 77
+    # CXDeclKind_firstNamed = 15
+    # CXDeclKind_lastNamed = 77
+    CXDeclKind_LifetimeExtendedTemporary = 78
+    CXDeclKind_Import = 79
+    CXDeclKind_ImplicitConceptSpecialization = 80
+    CXDeclKind_FriendTemplate = 81
+    CXDeclKind_Friend = 82
+    CXDeclKind_FileScopeAsm = 83
+    CXDeclKind_Empty = 84
+    CXDeclKind_AccessSpec = 85
+    # CXDeclKind_firstDecl = 0
+    # CXDeclKind_lastDecl = 85
+end
+
+function clang_Decl_castToTranslationUnitDecl(D)
+    @ccall libclangex.clang_Decl_castToTranslationUnitDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTranslationUnitDecl(D)
+    @ccall libclangex.clang_Decl_isTranslationUnitDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToRequiresExprBodyDecl(D)
+    @ccall libclangex.clang_Decl_castToRequiresExprBodyDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isRequiresExprBodyDecl(D)
+    @ccall libclangex.clang_Decl_isRequiresExprBodyDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToLinkageSpecDecl(D)
+    @ccall libclangex.clang_Decl_castToLinkageSpecDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isLinkageSpecDecl(D)
+    @ccall libclangex.clang_Decl_isLinkageSpecDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToExternCContextDecl(D)
+    @ccall libclangex.clang_Decl_castToExternCContextDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isExternCContextDecl(D)
+    @ccall libclangex.clang_Decl_isExternCContextDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToExportDecl(D)
+    @ccall libclangex.clang_Decl_castToExportDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isExportDecl(D)
+    @ccall libclangex.clang_Decl_isExportDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToCapturedDecl(D)
+    @ccall libclangex.clang_Decl_castToCapturedDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isCapturedDecl(D)
+    @ccall libclangex.clang_Decl_isCapturedDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToBlockDecl(D)
+    @ccall libclangex.clang_Decl_castToBlockDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isBlockDecl(D)
+    @ccall libclangex.clang_Decl_isBlockDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTopLevelStmtDecl(D)
+    @ccall libclangex.clang_Decl_castToTopLevelStmtDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTopLevelStmtDecl(D)
+    @ccall libclangex.clang_Decl_isTopLevelStmtDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToStaticAssertDecl(D)
+    @ccall libclangex.clang_Decl_castToStaticAssertDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isStaticAssertDecl(D)
+    @ccall libclangex.clang_Decl_isStaticAssertDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToPragmaDetectMismatchDecl(D)
+    @ccall libclangex.clang_Decl_castToPragmaDetectMismatchDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isPragmaDetectMismatchDecl(D)
+    @ccall libclangex.clang_Decl_isPragmaDetectMismatchDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToPragmaCommentDecl(D)
+    @ccall libclangex.clang_Decl_castToPragmaCommentDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isPragmaCommentDecl(D)
+    @ccall libclangex.clang_Decl_isPragmaCommentDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCPropertyImplDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCPropertyImplDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCPropertyImplDecl(D)
+    @ccall libclangex.clang_Decl_isObjCPropertyImplDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToOMPThreadPrivateDecl(D)
+    @ccall libclangex.clang_Decl_castToOMPThreadPrivateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isOMPThreadPrivateDecl(D)
+    @ccall libclangex.clang_Decl_isOMPThreadPrivateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToOMPRequiresDecl(D)
+    @ccall libclangex.clang_Decl_castToOMPRequiresDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isOMPRequiresDecl(D)
+    @ccall libclangex.clang_Decl_isOMPRequiresDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToOMPAllocateDecl(D)
+    @ccall libclangex.clang_Decl_castToOMPAllocateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isOMPAllocateDecl(D)
+    @ccall libclangex.clang_Decl_isOMPAllocateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToNamedDecl(D)
+    @ccall libclangex.clang_Decl_castToNamedDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isNamedDecl(D)
+    @ccall libclangex.clang_Decl_isNamedDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCMethodDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCMethodDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCMethodDecl(D)
+    @ccall libclangex.clang_Decl_isObjCMethodDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCContainerDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCContainerDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCContainerDecl(D)
+    @ccall libclangex.clang_Decl_isObjCContainerDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCProtocolDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCProtocolDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCProtocolDecl(D)
+    @ccall libclangex.clang_Decl_isObjCProtocolDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCInterfaceDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCInterfaceDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCInterfaceDecl(D)
+    @ccall libclangex.clang_Decl_isObjCInterfaceDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCImplDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCImplDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCImplDecl(D)
+    @ccall libclangex.clang_Decl_isObjCImplDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCImplementationDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCImplementationDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCImplementationDecl(D)
+    @ccall libclangex.clang_Decl_isObjCImplementationDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCCategoryImplDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCCategoryImplDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCCategoryImplDecl(D)
+    @ccall libclangex.clang_Decl_isObjCCategoryImplDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCCategoryDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCCategoryDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCCategoryDecl(D)
+    @ccall libclangex.clang_Decl_isObjCCategoryDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToNamespaceDecl(D)
+    @ccall libclangex.clang_Decl_castToNamespaceDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isNamespaceDecl(D)
+    @ccall libclangex.clang_Decl_isNamespaceDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToHLSLBufferDecl(D)
+    @ccall libclangex.clang_Decl_castToHLSLBufferDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isHLSLBufferDecl(D)
+    @ccall libclangex.clang_Decl_isHLSLBufferDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToValueDecl(D)
+    @ccall libclangex.clang_Decl_castToValueDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isValueDecl(D)
+    @ccall libclangex.clang_Decl_isValueDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToOMPDeclareReductionDecl(D)
+    @ccall libclangex.clang_Decl_castToOMPDeclareReductionDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isOMPDeclareReductionDecl(D)
+    @ccall libclangex.clang_Decl_isOMPDeclareReductionDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToOMPDeclareMapperDecl(D)
+    @ccall libclangex.clang_Decl_castToOMPDeclareMapperDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isOMPDeclareMapperDecl(D)
+    @ccall libclangex.clang_Decl_isOMPDeclareMapperDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUnresolvedUsingValueDecl(D)
+    @ccall libclangex.clang_Decl_castToUnresolvedUsingValueDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUnresolvedUsingValueDecl(D)
+    @ccall libclangex.clang_Decl_isUnresolvedUsingValueDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUnnamedGlobalConstantDecl(D)
+    @ccall libclangex.clang_Decl_castToUnnamedGlobalConstantDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUnnamedGlobalConstantDecl(D)
+    @ccall libclangex.clang_Decl_isUnnamedGlobalConstantDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTemplateParamObjectDecl(D)
+    @ccall libclangex.clang_Decl_castToTemplateParamObjectDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTemplateParamObjectDecl(D)
+    @ccall libclangex.clang_Decl_isTemplateParamObjectDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToMSGuidDecl(D)
+    @ccall libclangex.clang_Decl_castToMSGuidDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isMSGuidDecl(D)
+    @ccall libclangex.clang_Decl_isMSGuidDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToIndirectFieldDecl(D)
+    @ccall libclangex.clang_Decl_castToIndirectFieldDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isIndirectFieldDecl(D)
+    @ccall libclangex.clang_Decl_isIndirectFieldDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToEnumConstantDecl(D)
+    @ccall libclangex.clang_Decl_castToEnumConstantDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isEnumConstantDecl(D)
+    @ccall libclangex.clang_Decl_isEnumConstantDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToDeclaratorDecl(D)
+    @ccall libclangex.clang_Decl_castToDeclaratorDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isDeclaratorDecl(D)
+    @ccall libclangex.clang_Decl_isDeclaratorDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToFunctionDecl(D)
+    @ccall libclangex.clang_Decl_castToFunctionDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isFunctionDecl(D)
+    @ccall libclangex.clang_Decl_isFunctionDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToCXXMethodDecl(D)
+    @ccall libclangex.clang_Decl_castToCXXMethodDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isCXXMethodDecl(D)
+    @ccall libclangex.clang_Decl_isCXXMethodDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToCXXDestructorDecl(D)
+    @ccall libclangex.clang_Decl_castToCXXDestructorDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isCXXDestructorDecl(D)
+    @ccall libclangex.clang_Decl_isCXXDestructorDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToCXXConversionDecl(D)
+    @ccall libclangex.clang_Decl_castToCXXConversionDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isCXXConversionDecl(D)
+    @ccall libclangex.clang_Decl_isCXXConversionDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToCXXConstructorDecl(D)
+    @ccall libclangex.clang_Decl_castToCXXConstructorDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isCXXConstructorDecl(D)
+    @ccall libclangex.clang_Decl_isCXXConstructorDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToCXXDeductionGuideDecl(D)
+    @ccall libclangex.clang_Decl_castToCXXDeductionGuideDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isCXXDeductionGuideDecl(D)
+    @ccall libclangex.clang_Decl_isCXXDeductionGuideDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToVarDecl(D)
+    @ccall libclangex.clang_Decl_castToVarDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isVarDecl(D)
+    @ccall libclangex.clang_Decl_isVarDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToVarTemplateSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_castToVarTemplateSpecializationDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isVarTemplateSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_isVarTemplateSpecializationDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToVarTemplatePartialSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_castToVarTemplatePartialSpecializationDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isVarTemplatePartialSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_isVarTemplatePartialSpecializationDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToParmVarDecl(D)
+    @ccall libclangex.clang_Decl_castToParmVarDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isParmVarDecl(D)
+    @ccall libclangex.clang_Decl_isParmVarDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToOMPCapturedExprDecl(D)
+    @ccall libclangex.clang_Decl_castToOMPCapturedExprDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isOMPCapturedExprDecl(D)
+    @ccall libclangex.clang_Decl_isOMPCapturedExprDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToImplicitParamDecl(D)
+    @ccall libclangex.clang_Decl_castToImplicitParamDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isImplicitParamDecl(D)
+    @ccall libclangex.clang_Decl_isImplicitParamDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToDecompositionDecl(D)
+    @ccall libclangex.clang_Decl_castToDecompositionDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isDecompositionDecl(D)
+    @ccall libclangex.clang_Decl_isDecompositionDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToNonTypeTemplateParmDecl(D)
+    @ccall libclangex.clang_Decl_castToNonTypeTemplateParmDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isNonTypeTemplateParmDecl(D)
+    @ccall libclangex.clang_Decl_isNonTypeTemplateParmDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToMSPropertyDecl(D)
+    @ccall libclangex.clang_Decl_castToMSPropertyDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isMSPropertyDecl(D)
+    @ccall libclangex.clang_Decl_isMSPropertyDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToFieldDecl(D)
+    @ccall libclangex.clang_Decl_castToFieldDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isFieldDecl(D)
+    @ccall libclangex.clang_Decl_isFieldDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCIvarDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCIvarDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCIvarDecl(D)
+    @ccall libclangex.clang_Decl_isObjCIvarDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCAtDefsFieldDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCAtDefsFieldDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCAtDefsFieldDecl(D)
+    @ccall libclangex.clang_Decl_isObjCAtDefsFieldDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToBindingDecl(D)
+    @ccall libclangex.clang_Decl_castToBindingDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isBindingDecl(D)
+    @ccall libclangex.clang_Decl_isBindingDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUsingShadowDecl(D)
+    @ccall libclangex.clang_Decl_castToUsingShadowDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUsingShadowDecl(D)
+    @ccall libclangex.clang_Decl_isUsingShadowDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToConstructorUsingShadowDecl(D)
+    @ccall libclangex.clang_Decl_castToConstructorUsingShadowDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isConstructorUsingShadowDecl(D)
+    @ccall libclangex.clang_Decl_isConstructorUsingShadowDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUsingPackDecl(D)
+    @ccall libclangex.clang_Decl_castToUsingPackDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUsingPackDecl(D)
+    @ccall libclangex.clang_Decl_isUsingPackDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUsingDirectiveDecl(D)
+    @ccall libclangex.clang_Decl_castToUsingDirectiveDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUsingDirectiveDecl(D)
+    @ccall libclangex.clang_Decl_isUsingDirectiveDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUnresolvedUsingIfExistsDecl(D)
+    @ccall libclangex.clang_Decl_castToUnresolvedUsingIfExistsDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUnresolvedUsingIfExistsDecl(D)
+    @ccall libclangex.clang_Decl_isUnresolvedUsingIfExistsDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTypeDecl(D)
+    @ccall libclangex.clang_Decl_castToTypeDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTypeDecl(D)
+    @ccall libclangex.clang_Decl_isTypeDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTagDecl(D)
+    @ccall libclangex.clang_Decl_castToTagDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTagDecl(D)
+    @ccall libclangex.clang_Decl_isTagDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToRecordDecl(D)
+    @ccall libclangex.clang_Decl_castToRecordDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isRecordDecl(D)
+    @ccall libclangex.clang_Decl_isRecordDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToCXXRecordDecl(D)
+    @ccall libclangex.clang_Decl_castToCXXRecordDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isCXXRecordDecl(D)
+    @ccall libclangex.clang_Decl_isCXXRecordDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToClassTemplateSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_castToClassTemplateSpecializationDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isClassTemplateSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_isClassTemplateSpecializationDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToClassTemplatePartialSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_castToClassTemplatePartialSpecializationDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isClassTemplatePartialSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_isClassTemplatePartialSpecializationDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToEnumDecl(D)
+    @ccall libclangex.clang_Decl_castToEnumDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isEnumDecl(D)
+    @ccall libclangex.clang_Decl_isEnumDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUnresolvedUsingTypenameDecl(D)
+    @ccall libclangex.clang_Decl_castToUnresolvedUsingTypenameDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUnresolvedUsingTypenameDecl(D)
+    @ccall libclangex.clang_Decl_isUnresolvedUsingTypenameDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTypedefNameDecl(D)
+    @ccall libclangex.clang_Decl_castToTypedefNameDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTypedefNameDecl(D)
+    @ccall libclangex.clang_Decl_isTypedefNameDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTypedefDecl(D)
+    @ccall libclangex.clang_Decl_castToTypedefDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTypedefDecl(D)
+    @ccall libclangex.clang_Decl_isTypedefDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTypeAliasDecl(D)
+    @ccall libclangex.clang_Decl_castToTypeAliasDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTypeAliasDecl(D)
+    @ccall libclangex.clang_Decl_isTypeAliasDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCTypeParamDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCTypeParamDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCTypeParamDecl(D)
+    @ccall libclangex.clang_Decl_isObjCTypeParamDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTemplateTypeParmDecl(D)
+    @ccall libclangex.clang_Decl_castToTemplateTypeParmDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTemplateTypeParmDecl(D)
+    @ccall libclangex.clang_Decl_isTemplateTypeParmDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTemplateDecl(D)
+    @ccall libclangex.clang_Decl_castToTemplateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTemplateDecl(D)
+    @ccall libclangex.clang_Decl_isTemplateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTemplateTemplateParmDecl(D)
+    @ccall libclangex.clang_Decl_castToTemplateTemplateParmDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTemplateTemplateParmDecl(D)
+    @ccall libclangex.clang_Decl_isTemplateTemplateParmDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToRedeclarableTemplateDecl(D)
+    @ccall libclangex.clang_Decl_castToRedeclarableTemplateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isRedeclarableTemplateDecl(D)
+    @ccall libclangex.clang_Decl_isRedeclarableTemplateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToVarTemplateDecl(D)
+    @ccall libclangex.clang_Decl_castToVarTemplateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isVarTemplateDecl(D)
+    @ccall libclangex.clang_Decl_isVarTemplateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToTypeAliasTemplateDecl(D)
+    @ccall libclangex.clang_Decl_castToTypeAliasTemplateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isTypeAliasTemplateDecl(D)
+    @ccall libclangex.clang_Decl_isTypeAliasTemplateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToFunctionTemplateDecl(D)
+    @ccall libclangex.clang_Decl_castToFunctionTemplateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isFunctionTemplateDecl(D)
+    @ccall libclangex.clang_Decl_isFunctionTemplateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToClassTemplateDecl(D)
+    @ccall libclangex.clang_Decl_castToClassTemplateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isClassTemplateDecl(D)
+    @ccall libclangex.clang_Decl_isClassTemplateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToConceptDecl(D)
+    @ccall libclangex.clang_Decl_castToConceptDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isConceptDecl(D)
+    @ccall libclangex.clang_Decl_isConceptDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToBuiltinTemplateDecl(D)
+    @ccall libclangex.clang_Decl_castToBuiltinTemplateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isBuiltinTemplateDecl(D)
+    @ccall libclangex.clang_Decl_isBuiltinTemplateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCPropertyDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCPropertyDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCPropertyDecl(D)
+    @ccall libclangex.clang_Decl_isObjCPropertyDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToObjCCompatibleAliasDecl(D)
+    @ccall libclangex.clang_Decl_castToObjCCompatibleAliasDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isObjCCompatibleAliasDecl(D)
+    @ccall libclangex.clang_Decl_isObjCCompatibleAliasDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToNamespaceAliasDecl(D)
+    @ccall libclangex.clang_Decl_castToNamespaceAliasDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isNamespaceAliasDecl(D)
+    @ccall libclangex.clang_Decl_isNamespaceAliasDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToLabelDecl(D)
+    @ccall libclangex.clang_Decl_castToLabelDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isLabelDecl(D)
+    @ccall libclangex.clang_Decl_isLabelDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToBaseUsingDecl(D)
+    @ccall libclangex.clang_Decl_castToBaseUsingDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isBaseUsingDecl(D)
+    @ccall libclangex.clang_Decl_isBaseUsingDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUsingEnumDecl(D)
+    @ccall libclangex.clang_Decl_castToUsingEnumDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUsingEnumDecl(D)
+    @ccall libclangex.clang_Decl_isUsingEnumDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToUsingDecl(D)
+    @ccall libclangex.clang_Decl_castToUsingDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isUsingDecl(D)
+    @ccall libclangex.clang_Decl_isUsingDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToLifetimeExtendedTemporaryDecl(D)
+    @ccall libclangex.clang_Decl_castToLifetimeExtendedTemporaryDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isLifetimeExtendedTemporaryDecl(D)
+    @ccall libclangex.clang_Decl_isLifetimeExtendedTemporaryDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToImportDecl(D)
+    @ccall libclangex.clang_Decl_castToImportDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isImportDecl(D)
+    @ccall libclangex.clang_Decl_isImportDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToImplicitConceptSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_castToImplicitConceptSpecializationDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isImplicitConceptSpecializationDecl(D)
+    @ccall libclangex.clang_Decl_isImplicitConceptSpecializationDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToFriendTemplateDecl(D)
+    @ccall libclangex.clang_Decl_castToFriendTemplateDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isFriendTemplateDecl(D)
+    @ccall libclangex.clang_Decl_isFriendTemplateDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToFriendDecl(D)
+    @ccall libclangex.clang_Decl_castToFriendDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isFriendDecl(D)
+    @ccall libclangex.clang_Decl_isFriendDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToFileScopeAsmDecl(D)
+    @ccall libclangex.clang_Decl_castToFileScopeAsmDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isFileScopeAsmDecl(D)
+    @ccall libclangex.clang_Decl_isFileScopeAsmDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToEmptyDecl(D)
+    @ccall libclangex.clang_Decl_castToEmptyDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isEmptyDecl(D)
+    @ccall libclangex.clang_Decl_isEmptyDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToAccessSpecDecl(D)
+    @ccall libclangex.clang_Decl_castToAccessSpecDecl(D::CXDecl)::CXDecl
+end
+
+function clang_Decl_isAccessSpecDecl(D)
+    @ccall libclangex.clang_Decl_isAccessSpecDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_getKind(D)
+    @ccall libclangex.clang_Decl_getKind(D::CXDecl)::CXDeclKind
+end
+
 function clang_Decl_getLocation(DC)
     @ccall libclangex.clang_Decl_getLocation(DC::CXDecl)::CXSourceLocation_
 end
@@ -3541,10 +4452,6 @@ function clang_Decl_isParameterPack(DC)
     @ccall libclangex.clang_Decl_isParameterPack(DC::CXDecl)::Bool
 end
 
-function clang_Decl_isTemplateDecl(DC)
-    @ccall libclangex.clang_Decl_isTemplateDecl(DC::CXDecl)::Bool
-end
-
 function clang_Decl_isFunctionOrFunctionTemplate(DC)
     @ccall libclangex.clang_Decl_isFunctionOrFunctionTemplate(DC::CXDecl)::Bool
 end
@@ -3591,18 +4498,6 @@ end
 
 function clang_Decl_castFromDeclContext(DC)
     @ccall libclangex.clang_Decl_castFromDeclContext(DC::CXDeclContext)::CXDecl
-end
-
-function clang_Decl_castToClassTemplateDecl(DC)
-    @ccall libclangex.clang_Decl_castToClassTemplateDecl(DC::CXDecl)::CXClassTemplateDecl
-end
-
-function clang_Decl_castToValueDecl(DC)
-    @ccall libclangex.clang_Decl_castToValueDecl(DC::CXDecl)::CXValueDecl
-end
-
-function clang_Decl_castToCXXConstructorDecl(D)
-    @ccall libclangex.clang_Decl_castToCXXConstructorDecl(D::CXDecl)::CXCXXConstructorDecl
 end
 
 function clang_DeclContext_castToTagDecl(DC)
@@ -12420,6 +13315,8 @@ end
 function clang_Stmt_PrintStats()
     @ccall libclangex.clang_Stmt_PrintStats()::Cvoid
 end
+
+# Skipping MacroDefinition: DECL ( DERIVED , BASE ) CXDeclKind_ ## DERIVED ,
 
 # exports
 const PREFIXES = ["clang", "CX"]
