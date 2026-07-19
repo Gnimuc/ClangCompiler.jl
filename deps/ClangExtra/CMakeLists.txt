@@ -33,6 +33,14 @@ target_include_directories(clangex PUBLIC
     
 target_compile_features(clangex PRIVATE cxx_std_17)
 
+# A definition whose signature drifts from its extern-C declaration silently
+# becomes a mangled C++ overload, so the extern-C symbol never exists. Requiring
+# a previous prototype turns that drift into a compile error. GCC's
+# -Wmissing-prototypes is C-only; its C++ spelling is -Wmissing-declarations.
+target_compile_options(clangex PRIVATE
+    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Werror=missing-prototypes>
+    $<$<CXX_COMPILER_ID:GNU>:-Werror=missing-declarations>)
+
 if (WIN32)
     message(STATUS "Windows detected, adding `_CINDEX_LIB_` definition...")
     target_compile_definitions(clangex PUBLIC "_CINDEX_LIB_")

@@ -1,5 +1,5 @@
-#ifndef LLVM_CLANG_C_EXTRA_CXQUALTYPE_H
-#define LLVM_CLANG_C_EXTRA_CXQUALTYPE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXTYPE_H
+#define LLVM_CLANG_C_EXTRA_CXTYPE_H
 
 #include "clang-ex/CXTypes.h"
 #include "clang-c/CXString.h"

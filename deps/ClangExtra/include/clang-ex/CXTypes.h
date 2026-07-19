@@ -330,7 +330,6 @@ typedef void *CXAttributedType;
 typedef void *CXTemplateTypeParmType;
 typedef void *CXSubstTemplateTypeParmType;
 typedef void *CXSubstTemplateTypeParmPackType;
-typedef void *CXTemplateSpecializationType;
 typedef void *CXDeducedType;
 typedef void *CXAutoType;
 typedef void *CXDeducedTemplateSpecializationType;

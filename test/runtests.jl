@@ -1,6 +1,8 @@
 using ClangCompiler
 using Test
 
+include("lint.jl")
+include("abi.jl")
 include("types.jl")
 include("parse.jl")
 include("lookup.jl")
