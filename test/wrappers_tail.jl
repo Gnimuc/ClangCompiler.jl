@@ -141,6 +141,34 @@ end
     dispose(I)
 end
 
+@testset "Tail | skiplist-sweep accessors" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "struct S { int a : 3; int b; }; int fn(){ return (int)3.5; }")
+    f = DeclFinder(I)
+    ctx = CC.get_ast_context(I)
+
+    @test f(I, "S")
+    rd = CC.CXXRecordDecl(get_decl(f).ptr)
+    fields = collect(CC.getFields(rd))
+    @test CC.getBitWidthValue(fields[1], ctx) == 3          # `int a : 3`
+    @test !CC.isZeroSize(fields[1], ctx)
+    @test !CC.isMsStruct(rd, ctx)
+
+    @test f(I, "fn")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    @test CC.isFunctionOrFunctionTemplate(get_decl(f))
+    csce = nothing
+    for n in CC.subtree(CC.resolve(CC.getBody(fd)))
+        n isa CC.CStyleCastExpr && (csce = n; break)
+    end
+    @test csce !== nothing
+    @test CC.getLParenLoc(csce) isa CC.SourceLocation
+    @test CC.getRParenLoc(csce) isa CC.SourceLocation
+
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Tail | whole-TU decls traversal" begin
     I = create_interpreter(String[])
     CC.parse(I, "namespace N { struct S { int x; void m(); }; int g; }")

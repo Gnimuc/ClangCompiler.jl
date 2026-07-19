@@ -932,3 +932,15 @@ function getPathElement(x::AbstractCastExpr, i::Integer)
     return CXXBaseSpecifier(clang_CastExpr_getPathElement(x, i))
 end
 
+
+# CStyleCastExpr — the parenthesized cast's own paren locations (getBeginLoc /
+# getEndLoc are provided by the Stmt base).
+function getLParenLoc(x::CStyleCastExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CStyleCastExpr_getLParenLoc(x))
+end
+
+function getRParenLoc(x::CStyleCastExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CStyleCastExpr_getRParenLoc(x))
+end

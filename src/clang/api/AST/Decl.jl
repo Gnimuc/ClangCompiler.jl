@@ -2268,3 +2268,56 @@ function getSourceRange(x::AbstractTypedefDecl)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
+
+# --- skiplist sweep: introspection accessors parked in api_skiplist.txt ---
+
+function isFunctionOrFunctionTemplate(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isFunctionOrFunctionTemplate(x)
+end
+
+function getBitWidthValue(x::AbstractFieldDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_FieldDecl_getBitWidthValue(x, ctx)
+end
+
+function isZeroLengthBitField(x::AbstractFieldDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_FieldDecl_isZeroLengthBitField(x, ctx)
+end
+
+function isZeroSize(x::AbstractFieldDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_FieldDecl_isZeroSize(x, ctx)
+end
+
+function isMsStruct(x::AbstractRecordDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_RecordDecl_isMsStruct(x, ctx)
+end
+
+# NOTE: the TagDecl template-parameter-list bindings stay parked in
+# api_skiplist.txt — getNumTemplateParameterLists(::AbstractTagDecl) /
+# getTemplateParameterList already exist via the TypeDecl binding in
+# DeclTemplate.jl; wrapping the TagDecl symbols too would collide.
+
+function capturesVariable(x::AbstractBlockDecl, var::AbstractVarDecl)
+    @check_ptrs x var
+    return clang_BlockDecl_capturesVariable(x, var)
+end
+
+function getParamDecl(x::AbstractBlockDecl, i::Integer)
+    @check_ptrs x
+    return ParmVarDecl(clang_BlockDecl_getParamDecl(x, i))
+end
+
+# All formal parameters of a block, in order.
+function getParams(x::AbstractBlockDecl)
+    @check_ptrs x
+    return ParmVarDecl[getParamDecl(x, i) for i in 0:(clang_BlockDecl_getNumParams(x) - 1)]
+end
+
+function getParam(x::AbstractCapturedDecl, i::Integer)
+    @check_ptrs x
+    return ImplicitParamDecl(clang_CapturedDecl_getParam(x, i))
+end
