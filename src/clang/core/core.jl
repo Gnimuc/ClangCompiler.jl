@@ -35,6 +35,7 @@ include("AST/StmtCXX.jl")
 include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")
 include("AST/Type.jl")
+include("AST/TypeLoc.jl")
 # after the hand-written AST files: fills in every Stmt-hierarchy class they
 # don't define, from the generated STMT_NODES table
 include("AST/StmtHierarchy.jl")

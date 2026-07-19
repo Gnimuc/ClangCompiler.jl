@@ -141,6 +141,27 @@ end
     dispose(I)
 end
 
+@testset "Tail | TypeLoc" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "int *tlp;")
+    f = DeclFinder(I)
+    @test f(I, "tlp")
+    vd = CC.VarDecl(get_decl(f).ptr)
+    tl = CC.getTypeLoc(CC.getTypeSourceInfo(vd))   # owned box
+    @test tl isa CC.TypeLoc
+    @test !CC.isNull(tl)
+    @test CC.resolve(CC.getTypePtr(CC.getType(tl))) isa CC.PointerType
+    @test CC.getSourceRange(tl) isa CC.SourceRange
+    @test CC.getBeginLoc(tl) isa CC.SourceLocation
+
+    nxt = CC.getNextTypeLoc(tl)                     # the pointee (int) loc; owned box
+    @test CC.resolve(CC.getTypePtr(CC.getType(nxt))) isa CC.BuiltinType
+    CC.dispose(nxt)
+    CC.dispose(tl)
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Tail | Attributes (Decl::getAttrs)" begin
     I = create_interpreter(String[])
     CC.parse(I, "int __attribute__((aligned(16), deprecated)) gattr;")

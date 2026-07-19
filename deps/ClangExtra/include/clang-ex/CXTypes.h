@@ -358,6 +358,9 @@ typedef void *CXDependentExtIntType;
 typedef void *CXQualifierCollector;
 typedef void *CXTypeSourceInfo;
 
+// TypeLoc
+typedef void *CXTypeLoc;
+
 // TemplateBase
 typedef void *CXTemplateName;
 typedef void *CXTemplateArgumentLocInfo;

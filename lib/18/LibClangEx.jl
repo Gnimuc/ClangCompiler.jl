@@ -628,6 +628,8 @@ const CXQualifierCollector = Ptr{Cvoid}
 
 const CXTypeSourceInfo = Ptr{Cvoid}
 
+const CXTypeLoc = Ptr{Cvoid}
+
 const CXTemplateName = Ptr{Cvoid}
 
 const CXTemplateArgumentLocInfo = Ptr{Cvoid}
@@ -12791,6 +12793,42 @@ end
 
 function clang_TemplateName_dump(TN)
     @ccall libclangex.clang_TemplateName_dump(TN::CXTemplateName)::Cvoid
+end
+
+function clang_TypeSourceInfo_getTypeLoc(TSI)
+    @ccall libclangex.clang_TypeSourceInfo_getTypeLoc(TSI::CXTypeSourceInfo)::CXTypeLoc
+end
+
+function clang_TypeLoc_getType(TL)
+    @ccall libclangex.clang_TypeLoc_getType(TL::CXTypeLoc)::CXQualType
+end
+
+function clang_TypeLoc_getBeginLoc(TL)
+    @ccall libclangex.clang_TypeLoc_getBeginLoc(TL::CXTypeLoc)::CXSourceLocation_
+end
+
+function clang_TypeLoc_getEndLoc(TL)
+    @ccall libclangex.clang_TypeLoc_getEndLoc(TL::CXTypeLoc)::CXSourceLocation_
+end
+
+function clang_TypeLoc_getSourceRange(TL)
+    @ccall libclangex.clang_TypeLoc_getSourceRange(TL::CXTypeLoc)::CXSourceRange_
+end
+
+function clang_TypeLoc_getLocalSourceRange(TL)
+    @ccall libclangex.clang_TypeLoc_getLocalSourceRange(TL::CXTypeLoc)::CXSourceRange_
+end
+
+function clang_TypeLoc_getNextTypeLoc(TL)
+    @ccall libclangex.clang_TypeLoc_getNextTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+end
+
+function clang_TypeLoc_isNull(TL)
+    @ccall libclangex.clang_TypeLoc_isNull(TL::CXTypeLoc)::Bool
+end
+
+function clang_TypeLoc_dispose(TL)
+    @ccall libclangex.clang_TypeLoc_dispose(TL::CXTypeLoc)::Cvoid
 end
 
 function clang_CodeGenOptions_create()
