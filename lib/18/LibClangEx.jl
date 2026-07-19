@@ -6670,6 +6670,58 @@ function clang_ClassTemplateSpecializationDecl_setTemplateArgs(CTSD, TAL)
     @ccall libclangex.clang_ClassTemplateSpecializationDecl_setTemplateArgs(CTSD::CXClassTemplateSpecializationDecl, TAL::CXTemplateArgumentList)::Cvoid
 end
 
+function clang_TemplateDecl_getTemplatedDecl(TD)
+    @ccall libclangex.clang_TemplateDecl_getTemplatedDecl(TD::CXTemplateDecl)::CXNamedDecl
+end
+
+function clang_TemplateDecl_getTemplateParameters(TD)
+    @ccall libclangex.clang_TemplateDecl_getTemplateParameters(TD::CXTemplateDecl)::CXTemplateParameterList
+end
+
+function clang_TemplateParameterList_getDepth(L)
+    @ccall libclangex.clang_TemplateParameterList_getDepth(L::CXTemplateParameterList)::Cuint
+end
+
+function clang_TemplateParameterList_getMinRequiredArguments(L)
+    @ccall libclangex.clang_TemplateParameterList_getMinRequiredArguments(L::CXTemplateParameterList)::Cuint
+end
+
+function clang_TemplateParameterList_hasParameterPack(L)
+    @ccall libclangex.clang_TemplateParameterList_hasParameterPack(L::CXTemplateParameterList)::Bool
+end
+
+function clang_TemplateTypeParmDecl_getDepth(D)
+    @ccall libclangex.clang_TemplateTypeParmDecl_getDepth(D::CXTemplateTypeParmDecl)::Cuint
+end
+
+function clang_TemplateTypeParmDecl_getIndex(D)
+    @ccall libclangex.clang_TemplateTypeParmDecl_getIndex(D::CXTemplateTypeParmDecl)::Cuint
+end
+
+function clang_TemplateTypeParmDecl_isParameterPack(D)
+    @ccall libclangex.clang_TemplateTypeParmDecl_isParameterPack(D::CXTemplateTypeParmDecl)::Bool
+end
+
+function clang_NonTypeTemplateParmDecl_getDepth(D)
+    @ccall libclangex.clang_NonTypeTemplateParmDecl_getDepth(D::CXNonTypeTemplateParmDecl)::Cuint
+end
+
+function clang_NonTypeTemplateParmDecl_getIndex(D)
+    @ccall libclangex.clang_NonTypeTemplateParmDecl_getIndex(D::CXNonTypeTemplateParmDecl)::Cuint
+end
+
+function clang_NonTypeTemplateParmDecl_isParameterPack(D)
+    @ccall libclangex.clang_NonTypeTemplateParmDecl_isParameterPack(D::CXNonTypeTemplateParmDecl)::Bool
+end
+
+function clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(D)
+    @ccall libclangex.clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(D::CXClassTemplateSpecializationDecl)::CXClassTemplateDecl
+end
+
+function clang_ClassTemplateSpecializationDecl_getSpecializationKind(D)
+    @ccall libclangex.clang_ClassTemplateSpecializationDecl_getSpecializationKind(D::CXClassTemplateSpecializationDecl)::CXTemplateSpecializationKind
+end
+
 function clang_DeclarationName_create()
     @ccall libclangex.clang_DeclarationName_create()::CXDeclarationName
 end

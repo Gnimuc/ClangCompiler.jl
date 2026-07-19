@@ -19,6 +19,21 @@ function Base.size(x::TemplateParameterList)
     return clang_TemplateParameterList_size(x)
 end
 
+function getDepth(x::TemplateParameterList)
+    @check_ptrs x
+    return clang_TemplateParameterList_getDepth(x)
+end
+
+function getMinRequiredArguments(x::TemplateParameterList)
+    @check_ptrs x
+    return clang_TemplateParameterList_getMinRequiredArguments(x)
+end
+
+function hasParameterPack(x::TemplateParameterList)
+    @check_ptrs x
+    return clang_TemplateParameterList_hasParameterPack(x)
+end
+
 # TemplateArgumentList
 function TemplateArgumentList(ctx::ASTContext, args::Vector{CXTemplateArgument})
     @check_ptrs ctx
@@ -46,6 +61,17 @@ function Base.get(x::TemplateArgumentList, i::Integer)
 end
 
 # TemplateDecl
+
+function getTemplateParameters(x::AbstractTemplateDecl)
+    @check_ptrs x
+    return TemplateParameterList(clang_TemplateDecl_getTemplateParameters(x))
+end
+
+function getTemplatedDecl(x::AbstractTemplateDecl)
+    @check_ptrs x
+    return NamedDecl(clang_TemplateDecl_getTemplatedDecl(x))
+end
+
 # function init(x::AbstractTemplateDecl, nd::NamedDecl, tp::TemplateParameterList)
 #     @check_ptrs x nd tp
 #     return clang_TemplateDecl_init(x, nd, tp)
@@ -142,3 +168,47 @@ function setTemplateArgs(x::AbstractClassTemplateSpecializationDecl, list::Templ
     @check_ptrs x list
     return clang_ClassTemplateSpecializationDecl_setTemplateArgs(x, list)
 end
+
+function getSpecializationKind(x::AbstractClassTemplateSpecializationDecl)
+    @check_ptrs x
+    return clang_ClassTemplateSpecializationDecl_getSpecializationKind(x)
+end
+
+function getSpecializedTemplate(x::AbstractClassTemplateSpecializationDecl)
+    @check_ptrs x
+    return ClassTemplateDecl(clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(x))
+end
+
+
+# NonTypeTemplateParmDecl
+function getDepth(x::NonTypeTemplateParmDecl)
+    @check_ptrs x
+    return clang_NonTypeTemplateParmDecl_getDepth(x)
+end
+
+function getIndex(x::NonTypeTemplateParmDecl)
+    @check_ptrs x
+    return clang_NonTypeTemplateParmDecl_getIndex(x)
+end
+
+function isParameterPack(x::NonTypeTemplateParmDecl)
+    @check_ptrs x
+    return clang_NonTypeTemplateParmDecl_isParameterPack(x)
+end
+
+# TemplateTypeParmDecl
+function getDepth(x::TemplateTypeParmDecl)
+    @check_ptrs x
+    return clang_TemplateTypeParmDecl_getDepth(x)
+end
+
+function getIndex(x::TemplateTypeParmDecl)
+    @check_ptrs x
+    return clang_TemplateTypeParmDecl_getIndex(x)
+end
+
+function isParameterPack(x::TemplateTypeParmDecl)
+    @check_ptrs x
+    return clang_TemplateTypeParmDecl_isParameterPack(x)
+end
+
