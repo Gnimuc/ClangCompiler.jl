@@ -25,7 +25,19 @@ for sym in [:ComplexType,
             :TypeWithKeyword,
             :ElaboratedType,
             :DependentNameType,
-            :DependentTemplateSpecializationType]
+            :DependentTemplateSpecializationType,
+            :AtomicType,
+            :AdjustedType,
+            :DecayedType,
+            :InjectedClassNameType,
+            :MacroQualifiedType,
+            :UnaryTransformType,
+            :ParenType,
+            :DependentAddressSpaceType,
+            :DependentSizedExtVectorType,
+            :DecltypeType,
+            :DeducedType,
+            :DeducedTemplateSpecializationType]
     asym = Symbol("Abstract", sym)
     cxsym = Symbol("CX", sym)
 

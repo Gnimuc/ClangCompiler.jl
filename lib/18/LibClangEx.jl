@@ -1446,6 +1446,42 @@ function clang_isa_DependentTemplateSpecializationType(T)
     @ccall libclangex.clang_isa_DependentTemplateSpecializationType(T::CXType_)::Bool
 end
 
+function clang_isa_AtomicType(T)
+    @ccall libclangex.clang_isa_AtomicType(T::CXType_)::Bool
+end
+
+function clang_isa_DecayedType(T)
+    @ccall libclangex.clang_isa_DecayedType(T::CXType_)::Bool
+end
+
+function clang_isa_AdjustedType(T)
+    @ccall libclangex.clang_isa_AdjustedType(T::CXType_)::Bool
+end
+
+function clang_isa_InjectedClassNameType(T)
+    @ccall libclangex.clang_isa_InjectedClassNameType(T::CXType_)::Bool
+end
+
+function clang_isa_MacroQualifiedType(T)
+    @ccall libclangex.clang_isa_MacroQualifiedType(T::CXType_)::Bool
+end
+
+function clang_isa_UnaryTransformType(T)
+    @ccall libclangex.clang_isa_UnaryTransformType(T::CXType_)::Bool
+end
+
+function clang_isa_ParenType(T)
+    @ccall libclangex.clang_isa_ParenType(T::CXType_)::Bool
+end
+
+function clang_isa_DependentAddressSpaceType(T)
+    @ccall libclangex.clang_isa_DependentAddressSpaceType(T::CXType_)::Bool
+end
+
+function clang_isa_DependentSizedExtVectorType(T)
+    @ccall libclangex.clang_isa_DependentSizedExtVectorType(T::CXType_)::Bool
+end
+
 function clang_isa_BuiltinType_Void(T)
     @ccall libclangex.clang_isa_BuiltinType_Void(T::CXType_)::Bool
 end

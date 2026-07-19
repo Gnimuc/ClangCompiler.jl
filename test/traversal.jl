@@ -60,3 +60,16 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Traversal | sugar type resolve" begin
+    I = create_interpreter(String[])
+    ClangCompiler.parse(I, "_Atomic int av;")
+    f = DeclFinder(I)
+    @test f(I, "av")
+    vd = ClangCompiler.VarDecl(get_decl(f).ptr)
+    ty = ClangCompiler.resolve(ClangCompiler.getTypePtr(ClangCompiler.getType(vd)))
+    @test ty isa ClangCompiler.AtomicType
+    @test ClangCompiler.getValueType(ty) isa ClangCompiler.QualType
+    dispose(f)
+    dispose(I)
+end

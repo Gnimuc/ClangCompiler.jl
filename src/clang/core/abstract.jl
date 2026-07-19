@@ -669,6 +669,78 @@ Supertype for `DependentTemplateSpecializationType`s.
 """
 abstract type AbstractDependentTemplateSpecializationType <: AbstractTypeWithKeyword end
 
+"""
+    abstract type AbstractAtomicType <: AbstractType
+Supertype for `AtomicType`s.
+"""
+abstract type AbstractAtomicType <: AbstractType end
+
+"""
+    abstract type AbstractAdjustedType <: AbstractType
+Supertype for `AdjustedType`s.
+"""
+abstract type AbstractAdjustedType <: AbstractType end
+
+"""
+    abstract type AbstractDecayedType <: AbstractAdjustedType
+Supertype for `DecayedType`s.
+"""
+abstract type AbstractDecayedType <: AbstractAdjustedType end
+
+"""
+    abstract type AbstractInjectedClassNameType <: AbstractType
+Supertype for `InjectedClassNameType`s.
+"""
+abstract type AbstractInjectedClassNameType <: AbstractType end
+
+"""
+    abstract type AbstractMacroQualifiedType <: AbstractType
+Supertype for `MacroQualifiedType`s.
+"""
+abstract type AbstractMacroQualifiedType <: AbstractType end
+
+"""
+    abstract type AbstractUnaryTransformType <: AbstractType
+Supertype for `UnaryTransformType`s.
+"""
+abstract type AbstractUnaryTransformType <: AbstractType end
+
+"""
+    abstract type AbstractParenType <: AbstractType
+Supertype for `ParenType`s.
+"""
+abstract type AbstractParenType <: AbstractType end
+
+"""
+    abstract type AbstractDependentAddressSpaceType <: AbstractType
+Supertype for `DependentAddressSpaceType`s.
+"""
+abstract type AbstractDependentAddressSpaceType <: AbstractType end
+
+"""
+    abstract type AbstractDependentSizedExtVectorType <: AbstractType
+Supertype for `DependentSizedExtVectorType`s.
+"""
+abstract type AbstractDependentSizedExtVectorType <: AbstractType end
+
+"""
+    abstract type AbstractDecltypeType <: AbstractType
+Supertype for `DecltypeType`s.
+"""
+abstract type AbstractDecltypeType <: AbstractType end
+
+"""
+    abstract type AbstractDeducedType <: AbstractType
+Supertype for `DeducedType`s.
+"""
+abstract type AbstractDeducedType <: AbstractType end
+
+"""
+    abstract type AbstractDeducedTemplateSpecializationType <: AbstractDeducedType
+Supertype for `DeducedTemplateSpecializationType`s.
+"""
+abstract type AbstractDeducedTemplateSpecializationType <: AbstractDeducedType end
+
 # Frontend
 # CompilerInstance
 """

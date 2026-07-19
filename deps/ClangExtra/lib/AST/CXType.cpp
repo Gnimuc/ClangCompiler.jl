@@ -732,6 +732,42 @@ bool clang_isa_DependentTemplateSpecializationType(CXType_ T) {
       static_cast<clang::Type *>(T));
 }
 
+bool clang_isa_AtomicType(CXType_ T) {
+  return llvm::isa<clang::AtomicType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_DecayedType(CXType_ T) {
+  return llvm::isa<clang::DecayedType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_AdjustedType(CXType_ T) {
+  return llvm::isa<clang::AdjustedType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_InjectedClassNameType(CXType_ T) {
+  return llvm::isa<clang::InjectedClassNameType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_MacroQualifiedType(CXType_ T) {
+  return llvm::isa<clang::MacroQualifiedType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_UnaryTransformType(CXType_ T) {
+  return llvm::isa<clang::UnaryTransformType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_ParenType(CXType_ T) {
+  return llvm::isa<clang::ParenType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_DependentAddressSpaceType(CXType_ T) {
+  return llvm::isa<clang::DependentAddressSpaceType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_DependentSizedExtVectorType(CXType_ T) {
+  return llvm::isa<clang::DependentSizedExtVectorType>(static_cast<clang::Type *>(T));
+}
+
 // BuiltinTypes
 bool clang_isa_BuiltinType_Void(CXType_ T) {
   return static_cast<clang::BuiltinType *>(T)->getKind() == clang::BuiltinType::Void;

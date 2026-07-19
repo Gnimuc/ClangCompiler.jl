@@ -219,3 +219,40 @@ is_dependent_name_type(x::DependentNameType) = true
 # DependentTemplateSpecializationType
 is_dependent_template_specilization_type(x::AbstractType) = isa_DependentTemplateSpecializationType(x)
 is_dependent_template_specilization_type(x::DependentTemplateSpecializationType) = true
+
+# sugar types
+is_atomic_type(x::AbstractType) = isa_AtomicType(x)
+is_atomic_type(x::AtomicType) = true
+
+is_adjusted_type(x::AbstractType) = isa_AdjustedType(x)
+is_adjusted_type(x::AbstractAdjustedType) = true
+
+is_decayed_type(x::AbstractType) = isa_DecayedType(x)
+is_decayed_type(x::DecayedType) = true
+
+is_injected_class_name_type(x::AbstractType) = isa_InjectedClassNameType(x)
+is_injected_class_name_type(x::InjectedClassNameType) = true
+
+is_macro_qualified_type(x::AbstractType) = isa_MacroQualifiedType(x)
+is_macro_qualified_type(x::MacroQualifiedType) = true
+
+is_unary_transform_type(x::AbstractType) = isa_UnaryTransformType(x)
+is_unary_transform_type(x::UnaryTransformType) = true
+
+is_paren_type(x::AbstractType) = isa_ParenType(x)
+is_paren_type(x::ParenType) = true
+
+is_dependent_address_space_type(x::AbstractType) = isa_DependentAddressSpaceType(x)
+is_dependent_address_space_type(x::DependentAddressSpaceType) = true
+
+is_dependent_sized_ext_vector_type(x::AbstractType) = isa_DependentSizedExtVectorType(x)
+is_dependent_sized_ext_vector_type(x::DependentSizedExtVectorType) = true
+
+is_decltype_type(x::AbstractType) = isa_DecltypeType(x)
+is_decltype_type(x::DecltypeType) = true
+
+is_deduced_type(x::AbstractType) = isa_DeducedType(x)
+is_deduced_type(x::AbstractDeducedType) = true
+
+is_deduced_template_specialization_type(x::AbstractType) = isa_DeducedTemplateSpecializationType(x)
+is_deduced_template_specialization_type(x::DeducedTemplateSpecializationType) = true
