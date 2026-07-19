@@ -551,6 +551,22 @@ bool clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(CXCXXRecordDe
   return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsOverloadResolutionForMoveConstructor();
 }
 
+unsigned clang_CXXRecordDecl_getNumBases(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->getNumBases();
+}
+
+CXCXXBaseSpecifier clang_CXXRecordDecl_getBase(CXCXXRecordDecl CXXRD, unsigned i) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->bases_begin() + i;
+}
+
+unsigned clang_CXXRecordDecl_getNumVBases(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->getNumVBases();
+}
+
+CXCXXBaseSpecifier clang_CXXRecordDecl_getVBase(CXCXXRecordDecl CXXRD, unsigned i) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->vbases_begin() + i;
+}
+
 // ExplicitSpecifier
 CXExplicitSpecKind clang_ExplicitSpecifier_getKind(CXExplicitSpecifier ES) {
   return static_cast<CXExplicitSpecKind>(

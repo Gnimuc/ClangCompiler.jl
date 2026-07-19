@@ -2052,6 +2052,23 @@ void clang_EnumDecl_setInstantiationOfMemberEnum(CXEnumDecl ED, CXEnumDecl ED2,
       static_cast<clang::TemplateSpecializationKind>(TSK));
 }
 
+unsigned clang_EnumDecl_getNumEnumerators(CXEnumDecl ED) {
+  auto *D = static_cast<clang::EnumDecl *>(ED);
+  unsigned N = 0;
+  for (auto *E : D->enumerators()) {
+    (void)E;
+    ++N;
+  }
+  return N;
+}
+
+void clang_EnumDecl_getEnumerators(CXEnumDecl ED, CXEnumConstantDecl *Buf) {
+  auto *D = static_cast<clang::EnumDecl *>(ED);
+  unsigned I = 0;
+  for (auto *E : D->enumerators())
+    Buf[I++] = E;
+}
+
 // RecordDecl
 CXRecordDecl clang_RecordDecl_Create(CXASTContext C, CXTagTypeKind TK, CXDeclContext DC,
                                      CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
@@ -2226,6 +2243,23 @@ bool clang_RecordDecl_mayInsertExtraPadding(CXRecordDecl RD, bool EmitRemark) {
 CXFieldDecl clang_RecordDecl_findFirstNamedDataMember(CXRecordDecl RD) {
   return const_cast<clang::FieldDecl *>(
       static_cast<clang::RecordDecl *>(RD)->findFirstNamedDataMember());
+}
+
+unsigned clang_RecordDecl_getNumFields(CXRecordDecl RD) {
+  auto *D = static_cast<clang::RecordDecl *>(RD);
+  unsigned N = 0;
+  for (auto *F : D->fields()) {
+    (void)F;
+    ++N;
+  }
+  return N;
+}
+
+void clang_RecordDecl_getFields(CXRecordDecl RD, CXFieldDecl *Buf) {
+  auto *D = static_cast<clang::RecordDecl *>(RD);
+  unsigned I = 0;
+  for (auto *F : D->fields())
+    Buf[I++] = F;
 }
 
 // RecordDecl Cast

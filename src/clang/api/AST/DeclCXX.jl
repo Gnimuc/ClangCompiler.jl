@@ -519,6 +519,46 @@ function needsOverloadResolutionForMoveConstructor(x::AbstractCXXRecordDecl)
     return clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(x)
 end
 
+function getNumBases(x::AbstractCXXRecordDecl)
+    @check_ptrs x
+    return Int(clang_CXXRecordDecl_getNumBases(x))
+end
+
+function getBase(x::AbstractCXXRecordDecl, i::Integer)
+    @check_ptrs x
+    return CXXBaseSpecifier(clang_CXXRecordDecl_getBase(x, i))
+end
+
+"""
+    getBases(x::AbstractCXXRecordDecl) -> Vector{CXXBaseSpecifier}
+Return the direct base-class specifiers. Requires a complete definition.
+"""
+
+function getBases(x::AbstractCXXRecordDecl)
+    @check_ptrs x
+    return [getBase(x, i) for i in 0:(clang_CXXRecordDecl_getNumBases(x) - 1)]
+end
+
+function getNumVBases(x::AbstractCXXRecordDecl)
+    @check_ptrs x
+    return Int(clang_CXXRecordDecl_getNumVBases(x))
+end
+
+function getVBase(x::AbstractCXXRecordDecl, i::Integer)
+    @check_ptrs x
+    return CXXBaseSpecifier(clang_CXXRecordDecl_getVBase(x, i))
+end
+
+"""
+    getVBases(x::AbstractCXXRecordDecl) -> Vector{CXXBaseSpecifier}
+Return the virtual base-class specifiers. Requires a complete definition.
+"""
+
+function getVBases(x::AbstractCXXRecordDecl)
+    @check_ptrs x
+    return [getVBase(x, i) for i in 0:(clang_CXXRecordDecl_getNumVBases(x) - 1)]
+end
+
 # AccessSpecDecl
 function getAccessSpecifierLoc(x::AbstractAccessSpecDecl)
     @check_ptrs x

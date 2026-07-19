@@ -4090,6 +4090,22 @@ function clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(CXXRD)
     @ccall libclangex.clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
 end
 
+function clang_CXXRecordDecl_getNumBases(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_getNumBases(CXXRD::CXCXXRecordDecl)::Cuint
+end
+
+function clang_CXXRecordDecl_getBase(CXXRD, i)
+    @ccall libclangex.clang_CXXRecordDecl_getBase(CXXRD::CXCXXRecordDecl, i::Cuint)::CXCXXBaseSpecifier
+end
+
+function clang_CXXRecordDecl_getNumVBases(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_getNumVBases(CXXRD::CXCXXRecordDecl)::Cuint
+end
+
+function clang_CXXRecordDecl_getVBase(CXXRD, i)
+    @ccall libclangex.clang_CXXRecordDecl_getVBase(CXXRD::CXCXXRecordDecl, i::Cuint)::CXCXXBaseSpecifier
+end
+
 function clang_ExplicitSpecifier_getKind(ES)
     @ccall libclangex.clang_ExplicitSpecifier_getKind(ES::CXExplicitSpecifier)::CXExplicitSpecKind
 end
@@ -6050,6 +6066,14 @@ function clang_EnumDecl_setInstantiationOfMemberEnum(ED, ED2, TSK)
     @ccall libclangex.clang_EnumDecl_setInstantiationOfMemberEnum(ED::CXEnumDecl, ED2::CXEnumDecl, TSK::CXTemplateSpecializationKind)::Cvoid
 end
 
+function clang_EnumDecl_getNumEnumerators(ED)
+    @ccall libclangex.clang_EnumDecl_getNumEnumerators(ED::CXEnumDecl)::Cuint
+end
+
+function clang_EnumDecl_getEnumerators(ED, Buf)
+    @ccall libclangex.clang_EnumDecl_getEnumerators(ED::CXEnumDecl, Buf::Ptr{CXEnumConstantDecl})::Cvoid
+end
+
 @enum CXRecordArgPassingKind::UInt32 begin
     CXRecordDecl_APK_CanPassInRegs = 0x0000000000000000
     CXRecordDecl_APK_CannotPassInRegs = 0x0000000000000001
@@ -6214,6 +6238,14 @@ end
 
 function clang_RecordDecl_findFirstNamedDataMember(RD)
     @ccall libclangex.clang_RecordDecl_findFirstNamedDataMember(RD::CXRecordDecl)::CXFieldDecl
+end
+
+function clang_RecordDecl_getNumFields(RD)
+    @ccall libclangex.clang_RecordDecl_getNumFields(RD::CXRecordDecl)::Cuint
+end
+
+function clang_RecordDecl_getFields(RD, Buf)
+    @ccall libclangex.clang_RecordDecl_getFields(RD::CXRecordDecl, Buf::Ptr{CXFieldDecl})::Cvoid
 end
 
 function clang_RecordDecl_castToClassTemplateSpecializationDecl(RD)

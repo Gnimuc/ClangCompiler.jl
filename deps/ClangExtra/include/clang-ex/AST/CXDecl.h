@@ -1048,6 +1048,12 @@ CXMemberSpecializationInfo clang_EnumDecl_getMemberSpecializationInfo(CXEnumDecl
 void clang_EnumDecl_setInstantiationOfMemberEnum(CXEnumDecl ED, CXEnumDecl ED2,
                                                  CXTemplateSpecializationKind TSK);
 
+// enumerators: two-call protocol (enumerator_begin/end is a forward iterator).
+// getNumEnumerators counts; getEnumerators fills a caller buffer of that size.
+unsigned clang_EnumDecl_getNumEnumerators(CXEnumDecl ED);
+
+void clang_EnumDecl_getEnumerators(CXEnumDecl ED, CXEnumConstantDecl *Buf);
+
 // RecordDecl
 typedef enum CXRecordArgPassingKind : unsigned {
   CXRecordDecl_APK_CanPassInRegs,
@@ -1138,6 +1144,12 @@ bool clang_RecordDecl_isMsStruct(CXRecordDecl RD, CXASTContext C);
 bool clang_RecordDecl_mayInsertExtraPadding(CXRecordDecl RD, bool EmitRemark);
 
 CXFieldDecl clang_RecordDecl_findFirstNamedDataMember(CXRecordDecl RD);
+
+// fields: two-call protocol (field_begin/end is a forward iterator).
+// getNumFields counts; getFields fills a caller buffer of that size.
+unsigned clang_RecordDecl_getNumFields(CXRecordDecl RD);
+
+void clang_RecordDecl_getFields(CXRecordDecl RD, CXFieldDecl *Buf);
 
 // RecordDecl Cast
 CXClassTemplateSpecializationDecl

@@ -280,6 +280,16 @@ bool clang_CXXRecordDecl_needsOverloadResolutionForMoveAssignment(CXCXXRecordDec
 
 bool clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(CXCXXRecordDecl CXXRD);
 
+// bases: random-access (bases_begin is a contiguous CXXBaseSpecifier array).
+// getNumBases/getNumVBases require a complete definition.
+unsigned clang_CXXRecordDecl_getNumBases(CXCXXRecordDecl CXXRD);
+
+CXCXXBaseSpecifier clang_CXXRecordDecl_getBase(CXCXXRecordDecl CXXRD, unsigned i);
+
+unsigned clang_CXXRecordDecl_getNumVBases(CXCXXRecordDecl CXXRD);
+
+CXCXXBaseSpecifier clang_CXXRecordDecl_getVBase(CXCXXRecordDecl CXXRD, unsigned i);
+
 // ExplicitSpecifier
 CXExplicitSpecKind clang_ExplicitSpecifier_getKind(CXExplicitSpecifier ES);
 

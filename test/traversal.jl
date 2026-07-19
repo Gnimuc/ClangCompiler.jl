@@ -23,3 +23,27 @@ using Test
     dispose(decl_lookup)
     dispose(I)
 end
+
+@testset "Traversal | member iteration" begin
+    I = create_interpreter([joinpath(@__DIR__, "cxx", "main.cpp")])
+    f = DeclFinder(I)
+
+    @test f(I, "Node")
+    node = ClangCompiler.CXXRecordDecl(get_decl(f).ptr)
+    @test ClangCompiler.getNumFields(node) == 2
+    @test [ClangCompiler.getName(x) for x in ClangCompiler.getFields(node)] == ["x", "y"]
+
+    ClangCompiler.parse(I, "struct BaseA { int a; }; struct BaseB { int b; }; struct Der : BaseA, BaseB { int c; };")
+    @test f(I, "Der")
+    der = ClangCompiler.CXXRecordDecl(get_decl(f).ptr)
+    @test ClangCompiler.getNumFields(der) == 1
+    @test ClangCompiler.getNumBases(der) == 2
+    @test ClangCompiler.getNumVBases(der) == 0
+    bases = ClangCompiler.getBases(der)
+    basenames = [ClangCompiler.getName(ClangCompiler.getAsCXXRecordDecl(ClangCompiler.getTypePtr(ClangCompiler.getType(b))))
+                 for b in bases]
+    @test basenames == ["BaseA", "BaseB"]
+
+    dispose(f)
+    dispose(I)
+end

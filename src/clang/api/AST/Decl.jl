@@ -1806,6 +1806,24 @@ function isScopedUsingClassTag(x::AbstractEnumDecl)
     return clang_EnumDecl_isScopedUsingClassTag(x)
 end
 
+function getNumEnumerators(x::AbstractEnumDecl)
+    @check_ptrs x
+    return Int(clang_EnumDecl_getNumEnumerators(x))
+end
+
+"""
+    getEnumerators(x::AbstractEnumDecl) -> Vector{EnumConstantDecl}
+Return the enumerators declared in the enum, in source order.
+"""
+
+function getEnumerators(x::AbstractEnumDecl)
+    @check_ptrs x
+    n = clang_EnumDecl_getNumEnumerators(x)
+    buf = Vector{CXEnumConstantDecl}(undef, n)
+    n > 0 && clang_EnumDecl_getEnumerators(x, buf)
+    return [EnumConstantDecl(p) for p in buf]
+end
+
 # RecordDecl
 function getPreviousDecl(x::AbstractRecordDecl)
     @check_ptrs x
@@ -1915,6 +1933,24 @@ end
 function isParamDestroyedInCallee(x::AbstractRecordDecl)
     @check_ptrs x
     return clang_RecordDecl_isParamDestroyedInCallee(x)
+end
+
+function getNumFields(x::AbstractRecordDecl)
+    @check_ptrs x
+    return Int(clang_RecordDecl_getNumFields(x))
+end
+
+"""
+    getFields(x::AbstractRecordDecl) -> Vector{FieldDecl}
+Return the fields (non-static data members) of the record, in layout order.
+"""
+
+function getFields(x::AbstractRecordDecl)
+    @check_ptrs x
+    n = clang_RecordDecl_getNumFields(x)
+    buf = Vector{CXFieldDecl}(undef, n)
+    n > 0 && clang_RecordDecl_getFields(x, buf)
+    return [FieldDecl(p) for p in buf]
 end
 
 # RecordDecl Cast
