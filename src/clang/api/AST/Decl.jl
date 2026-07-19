@@ -102,6 +102,11 @@ function getVisibility(x::AbstractNamedDecl)
     return clang_NamedDecl_getVisibility(x)
 end
 
+function getFormalLinkage(x::AbstractNamedDecl)
+    @check_ptrs x
+    return clang_NamedDecl_getFormalLinkage(x)
+end
+
 # TODO: getLinkageAndVisibility
 # TODO: getExplicitVisibility
 
@@ -157,6 +162,12 @@ end
 function setStmt(x::LabelDecl, loc::SourceLocation)
     @check_ptrs x stmt
     return clang_LabelDecl_setLocStart(x, loc)
+end
+
+function getSourceRange(x::AbstractLabelDecl)
+    @check_ptrs x
+    r = clang_LabelDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
 # TODO: getSourceRange
@@ -222,6 +233,12 @@ end
 function getCanonicalDecl(x::NamespaceDecl)
     @check_ptrs x
     return NamespaceDecl(clang_NamespaceDecl_getCanonicalDecl(x))
+end
+
+function getSourceRange(x::AbstractNamespaceDecl)
+    @check_ptrs x
+    r = clang_NamespaceDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
 # TODO: getSourceRange
@@ -334,6 +351,12 @@ function getTypeSpecEndLoc(x::AbstractDeclaratorDecl)
 end
 
 # VarDecl
+
+function getSourceRange(x::AbstractVarDecl)
+    @check_ptrs x
+    r = clang_VarDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
 
 # TODO: getSourceRange
 
@@ -742,6 +765,12 @@ function getFunctionScopeIndex(x::ParmVarDecl)
     return clang_ParmVarDecl_getFunctionScopeIndex(x)
 end
 
+function getDefaultArgRange(x::AbstractParmVarDecl)
+    @check_ptrs x
+    r = clang_ParmVarDecl_getDefaultArgRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
 # TODO: getObjCDeclQualifier
 # TODO: setObjCDeclQualifier
 
@@ -818,6 +847,36 @@ function setOwningFunction(x::ParmVarDecl, fd::DeclContext)
 end
 
 # FunctionDecl
+
+function getExceptionSpecSourceRange(x::AbstractFunctionDecl)
+    @check_ptrs x
+    r = clang_FunctionDecl_getExceptionSpecSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function getParametersSourceRange(x::AbstractFunctionDecl)
+    @check_ptrs x
+    r = clang_FunctionDecl_getParametersSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function getReturnTypeSourceRange(x::AbstractFunctionDecl)
+    @check_ptrs x
+    r = clang_FunctionDecl_getReturnTypeSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function getSourceRange(x::AbstractFunctionDecl)
+    @check_ptrs x
+    r = clang_FunctionDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function isPureVirtual(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_isPureVirtual(x)
+end
+
 # TODO: getNameInfo
 # TODO: getNameForDiagnostic
 function setRangeEnd(x::FunctionDecl, loc::SourceLocation)
@@ -1421,6 +1480,22 @@ function getEnumConstantDeclValue(x::EnumConstantDecl)
     return clang_EnumConstantDecl_getEnumConstantDeclValue(x)
 end
 
+function getCanonicalDecl(x::AbstractEnumConstantDecl)
+    @check_ptrs x
+    return EnumConstantDecl(clang_EnumConstantDecl_getCanonicalDecl(x))
+end
+
+function getInitExpr(x::AbstractEnumConstantDecl)
+    @check_ptrs x
+    return Expr_(clang_EnumConstantDecl_getInitExpr(x))
+end
+
+function getSourceRange(x::AbstractEnumConstantDecl)
+    @check_ptrs x
+    r = clang_EnumConstantDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
 # TypeDecl
 function getTypeForDecl(x::AbstractTypeDecl)::CXType_
     @check_ptrs x
@@ -1444,6 +1519,12 @@ function setLocStart(x::AbstractTypeDecl, loc::SourceLocation)
     return clang_TypeDecl_setLocStart(x, loc)
 end
 
+function getSourceRange(x::AbstractTypeDecl)
+    @check_ptrs x
+    r = clang_TypeDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
 # TypedefNameDecl
 function getUnderlyingType(x::AbstractTypedefNameDecl)
     @check_ptrs x
@@ -1463,6 +1544,16 @@ end
 function isTransparentTag(x::AbstractTypedefNameDecl)
     @check_ptrs x
     return clang_TypedefNameDecl_isTransparentTag(x)
+end
+
+function getTypeSourceInfo(x::AbstractTypedefNameDecl)
+    @check_ptrs x
+    return TypeSourceInfo(clang_TypedefNameDecl_getTypeSourceInfo(x))
+end
+
+function isModed(x::AbstractTypedefNameDecl)
+    @check_ptrs x
+    return clang_TypedefNameDecl_isModed(x)
 end
 
 # TagDecl
@@ -1561,6 +1652,48 @@ function getQualifier(x::AbstractTagDecl)
     return NestedNameSpecifier(clang_TagDecl_getQualifier(x))
 end
 
+function getBraceRange(x::AbstractTagDecl)
+    @check_ptrs x
+    r = clang_TagDecl_getBraceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function getInnerLocStart(x::AbstractTagDecl)
+    @check_ptrs x
+    return SourceLocation(clang_TagDecl_getInnerLocStart(x))
+end
+
+function getOuterLocStart(x::AbstractTagDecl)
+    @check_ptrs x
+    return SourceLocation(clang_TagDecl_getOuterLocStart(x))
+end
+
+function getSourceRange(x::AbstractTagDecl)
+    @check_ptrs x
+    r = clang_TagDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function isCompleteDefinitionRequired(x::AbstractTagDecl)
+    @check_ptrs x
+    return clang_TagDecl_isCompleteDefinitionRequired(x)
+end
+
+function isDependentType(x::AbstractTagDecl)
+    @check_ptrs x
+    return clang_TagDecl_isDependentType(x)
+end
+
+function isEmbeddedInDeclarator(x::AbstractTagDecl)
+    @check_ptrs x
+    return clang_TagDecl_isEmbeddedInDeclarator(x)
+end
+
+function mayHaveOutOfDateDef(x::AbstractTagDecl)
+    @check_ptrs x
+    return clang_TagDecl_mayHaveOutOfDateDef(x)
+end
+
 # EnumDecl
 function getCanonicalDecl(x::EnumDecl)
     @check_ptrs x
@@ -1585,6 +1718,92 @@ end
 function getIntegerType(x::EnumDecl)
     @check_ptrs x
     return QualType(clang_EnumDecl_getIntegerType(x))
+end
+
+function getInstantiatedFromMemberEnum(x::AbstractEnumDecl)
+    @check_ptrs x
+    return EnumDecl(clang_EnumDecl_getInstantiatedFromMemberEnum(x))
+end
+
+function getIntegerTypeRange(x::AbstractEnumDecl)
+    @check_ptrs x
+    r = clang_EnumDecl_getIntegerTypeRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function getIntegerTypeSourceInfo(x::AbstractEnumDecl)
+    @check_ptrs x
+    return TypeSourceInfo(clang_EnumDecl_getIntegerTypeSourceInfo(x))
+end
+
+function getMemberSpecializationInfo(x::AbstractEnumDecl)
+    @check_ptrs x
+    return MemberSpecializationInfo(clang_EnumDecl_getMemberSpecializationInfo(x))
+end
+
+function getNumNegativeBits(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_getNumNegativeBits(x)
+end
+
+function getNumPositiveBits(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_getNumPositiveBits(x)
+end
+
+function getODRHash(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_getODRHash(x)
+end
+
+function getPromotionType(x::AbstractEnumDecl)
+    @check_ptrs x
+    return QualType(clang_EnumDecl_getPromotionType(x))
+end
+
+function getTemplateInstantiationPattern(x::AbstractEnumDecl)
+    @check_ptrs x
+    return EnumDecl(clang_EnumDecl_getTemplateInstantiationPattern(x))
+end
+
+function getTemplateSpecializationKind(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_getTemplateSpecializationKind(x)
+end
+
+function isClosed(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_isClosed(x)
+end
+
+function isClosedFlag(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_isClosedFlag(x)
+end
+
+function isClosedNonFlag(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_isClosedNonFlag(x)
+end
+
+function isComplete(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_isComplete(x)
+end
+
+function isFixed(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_isFixed(x)
+end
+
+function isScoped(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_isScoped(x)
+end
+
+function isScopedUsingClassTag(x::AbstractEnumDecl)
+    @check_ptrs x
+    return clang_EnumDecl_isScopedUsingClassTag(x)
 end
 
 # RecordDecl
@@ -1633,8 +1852,355 @@ function isOrContainsUnion(x::AbstractRecordDecl)
     return clang_RecordDecl_isOrContainsUnion(x)
 end
 
+function canPassInRegisters(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_canPassInRegisters(x)
+end
+
+function findFirstNamedDataMember(x::AbstractRecordDecl)
+    @check_ptrs x
+    return FieldDecl(clang_RecordDecl_findFirstNamedDataMember(x))
+end
+
+function getArgPassingRestrictions(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_getArgPassingRestrictions(x)
+end
+
+function hasLoadedFieldsFromExternalStorage(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_hasLoadedFieldsFromExternalStorage(x)
+end
+
+function hasNonTrivialToPrimitiveCopyCUnion(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_hasNonTrivialToPrimitiveCopyCUnion(x)
+end
+
+function hasNonTrivialToPrimitiveDefaultInitializeCUnion(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_hasNonTrivialToPrimitiveDefaultInitializeCUnion(x)
+end
+
+function hasNonTrivialToPrimitiveDestructCUnion(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_hasNonTrivialToPrimitiveDestructCUnion(x)
+end
+
+function hasObjectMember(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_hasObjectMember(x)
+end
+
+function hasVolatileMember(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_hasVolatileMember(x)
+end
+
+function isNonTrivialToPrimitiveCopy(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_isNonTrivialToPrimitiveCopy(x)
+end
+
+function isNonTrivialToPrimitiveDefaultInitialize(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_isNonTrivialToPrimitiveDefaultInitialize(x)
+end
+
+function isNonTrivialToPrimitiveDestroy(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_isNonTrivialToPrimitiveDestroy(x)
+end
+
+function isParamDestroyedInCallee(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_isParamDestroyedInCallee(x)
+end
+
 # RecordDecl Cast
 function ClassTemplateSpecializationDecl(x::RecordDecl)
     @check_ptrs x
     return ClassTemplateSpecializationDecl(clang_RecordDecl_castToClassTemplateSpecializationDecl(x))
 end
+
+# BlockDecl
+function blockMissingReturnType(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_blockMissingReturnType(x)
+end
+
+function canAvoidCopyToHeap(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_canAvoidCopyToHeap(x)
+end
+
+function capturesCXXThis(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_capturesCXXThis(x)
+end
+
+function doesNotEscape(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_doesNotEscape(x)
+end
+
+function getBlockManglingContextDecl(x::AbstractBlockDecl)
+    @check_ptrs x
+    return Decl(clang_BlockDecl_getBlockManglingContextDecl(x))
+end
+
+function getBlockManglingNumber(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_getBlockManglingNumber(x)
+end
+
+function getCaretLocation(x::AbstractBlockDecl)
+    @check_ptrs x
+    return SourceLocation(clang_BlockDecl_getCaretLocation(x))
+end
+
+function getNumCaptures(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_getNumCaptures(x)
+end
+
+function getNumParams(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_getNumParams(x)
+end
+
+function getSignatureAsWritten(x::AbstractBlockDecl)
+    @check_ptrs x
+    return TypeSourceInfo(clang_BlockDecl_getSignatureAsWritten(x))
+end
+
+function getSourceRange(x::AbstractBlockDecl)
+    @check_ptrs x
+    r = clang_BlockDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function hasCaptures(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_hasCaptures(x)
+end
+
+function isConversionFromLambda(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_isConversionFromLambda(x)
+end
+
+function isVariadic(x::AbstractBlockDecl)
+    @check_ptrs x
+    return clang_BlockDecl_isVariadic(x)
+end
+
+# CapturedDecl
+function getBody(x::AbstractCapturedDecl)
+    @check_ptrs x
+    return Stmt(clang_CapturedDecl_getBody(x))
+end
+
+function getContextParam(x::AbstractCapturedDecl)
+    @check_ptrs x
+    return ImplicitParamDecl(clang_CapturedDecl_getContextParam(x))
+end
+
+function getContextParamPosition(x::AbstractCapturedDecl)
+    @check_ptrs x
+    return clang_CapturedDecl_getContextParamPosition(x)
+end
+
+function getNumParams(x::AbstractCapturedDecl)
+    @check_ptrs x
+    return clang_CapturedDecl_getNumParams(x)
+end
+
+function isNothrow(x::AbstractCapturedDecl)
+    @check_ptrs x
+    return clang_CapturedDecl_isNothrow(x)
+end
+
+# ExportDecl
+function getEndLoc(x::AbstractExportDecl)
+    @check_ptrs x
+    return SourceLocation(clang_ExportDecl_getEndLoc(x))
+end
+
+function getExportLoc(x::AbstractExportDecl)
+    @check_ptrs x
+    return SourceLocation(clang_ExportDecl_getExportLoc(x))
+end
+
+function getRBraceLoc(x::AbstractExportDecl)
+    @check_ptrs x
+    return SourceLocation(clang_ExportDecl_getRBraceLoc(x))
+end
+
+function getSourceRange(x::AbstractExportDecl)
+    @check_ptrs x
+    r = clang_ExportDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function hasBraces(x::AbstractExportDecl)
+    @check_ptrs x
+    return clang_ExportDecl_hasBraces(x)
+end
+
+# FieldDecl
+function getBitWidth(x::AbstractFieldDecl)
+    @check_ptrs x
+    return Expr_(clang_FieldDecl_getBitWidth(x))
+end
+
+function getCanonicalDecl(x::AbstractFieldDecl)
+    @check_ptrs x
+    return FieldDecl(clang_FieldDecl_getCanonicalDecl(x))
+end
+
+function getCapturedVLAType(x::AbstractFieldDecl)
+    @check_ptrs x
+    return VariableArrayType(clang_FieldDecl_getCapturedVLAType(x))
+end
+
+function getFieldIndex(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_getFieldIndex(x)
+end
+
+function getInClassInitStyle(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_getInClassInitStyle(x)
+end
+
+function getInClassInitializer(x::AbstractFieldDecl)
+    @check_ptrs x
+    return Expr_(clang_FieldDecl_getInClassInitializer(x))
+end
+
+function getParent(x::AbstractFieldDecl)
+    @check_ptrs x
+    return RecordDecl(clang_FieldDecl_getParent(x))
+end
+
+function getSourceRange(x::AbstractFieldDecl)
+    @check_ptrs x
+    r = clang_FieldDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function hasCapturedVLAType(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_hasCapturedVLAType(x)
+end
+
+function hasInClassInitializer(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_hasInClassInitializer(x)
+end
+
+function isAnonymousStructOrUnion(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_isAnonymousStructOrUnion(x)
+end
+
+function isBitField(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_isBitField(x)
+end
+
+function isMutable(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_isMutable(x)
+end
+
+function isUnnamedBitfield(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_isUnnamedBitfield(x)
+end
+
+function removeBitWidth(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_removeBitWidth(x)
+end
+
+function removeInClassInitializer(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_removeInClassInitializer(x)
+end
+
+# FileScopeAsmDecl
+function getAsmLoc(x::AbstractFileScopeAsmDecl)
+    @check_ptrs x
+    return SourceLocation(clang_FileScopeAsmDecl_getAsmLoc(x))
+end
+
+function getAsmString(x::AbstractFileScopeAsmDecl)
+    @check_ptrs x
+    return StringLiteral(clang_FileScopeAsmDecl_getAsmString(x))
+end
+
+function getRParenLoc(x::AbstractFileScopeAsmDecl)
+    @check_ptrs x
+    return SourceLocation(clang_FileScopeAsmDecl_getRParenLoc(x))
+end
+
+function getSourceRange(x::AbstractFileScopeAsmDecl)
+    @check_ptrs x
+    r = clang_FileScopeAsmDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# ImportDecl
+function getImportedModule(x::AbstractImportDecl)
+    @check_ptrs x
+    return Module(clang_ImportDecl_getImportedModule(x))
+end
+
+function getSourceRange(x::AbstractImportDecl)
+    @check_ptrs x
+    r = clang_ImportDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# IndirectFieldDecl
+function getAnonField(x::AbstractIndirectFieldDecl)
+    @check_ptrs x
+    return FieldDecl(clang_IndirectFieldDecl_getAnonField(x))
+end
+
+function getCanonicalDecl(x::AbstractIndirectFieldDecl)
+    @check_ptrs x
+    return IndirectFieldDecl(clang_IndirectFieldDecl_getCanonicalDecl(x))
+end
+
+function getChainingSize(x::AbstractIndirectFieldDecl)
+    @check_ptrs x
+    return clang_IndirectFieldDecl_getChainingSize(x)
+end
+
+function getVarDecl(x::AbstractIndirectFieldDecl)
+    @check_ptrs x
+    return VarDecl(clang_IndirectFieldDecl_getVarDecl(x))
+end
+
+# TypeAliasDecl
+function getDescribedAliasTemplate(x::AbstractTypeAliasDecl)
+    @check_ptrs x
+    return TypeAliasTemplateDecl(clang_TypeAliasDecl_getDescribedAliasTemplate(x))
+end
+
+function getSourceRange(x::AbstractTypeAliasDecl)
+    @check_ptrs x
+    r = clang_TypeAliasDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# TypedefDecl
+function getSourceRange(x::AbstractTypedefDecl)
+    @check_ptrs x
+    r = clang_TypedefDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+

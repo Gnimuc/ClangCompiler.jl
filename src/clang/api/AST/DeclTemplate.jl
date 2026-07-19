@@ -92,6 +92,16 @@ function getCanonicalDecl(x::AbstractClassTemplateDecl)
     return ClassTemplateDecl(clang_ClassTemplateDecl_getCanonicalDecl(x))
 end
 
+function getMostRecentDecl(x::AbstractClassTemplateDecl)
+    @check_ptrs x
+    return ClassTemplateDecl(clang_ClassTemplateDecl_getMostRecentDecl(x))
+end
+
+function getPreviousDecl(x::AbstractClassTemplateDecl)
+    @check_ptrs x
+    return ClassTemplateDecl(clang_ClassTemplateDecl_getPreviousDecl(x))
+end
+
 # ClassTemplateSpecializationDecl
 function ClassTemplateSpecializationDecl(ctx::ASTContext, tk::CXTagTypeKind,
                                          dc::DeclContext, start_loc::SourceLocation,

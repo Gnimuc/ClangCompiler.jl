@@ -356,3 +356,20 @@ function getSyntacticForm(x::AbstractInitListExpr)
     @check_ptrs x
     return InitListExpr(clang_InitListExpr_getSyntacticForm(x))
 end
+
+# IntegerLiteral
+function getBeginLoc(x::IntegerLiteral)
+    @check_ptrs x
+    return SourceLocation(clang_IntegerLiteral_getBeginLoc(x))
+end
+
+function getEndLoc(x::IntegerLiteral)
+    @check_ptrs x
+    return SourceLocation(clang_IntegerLiteral_getEndLoc(x))
+end
+
+function getLocation(x::IntegerLiteral)
+    @check_ptrs x
+    return SourceLocation(clang_IntegerLiteral_getLocation(x))
+end
+
