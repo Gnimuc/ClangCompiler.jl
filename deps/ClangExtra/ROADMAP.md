@@ -142,6 +142,13 @@ remaining phases. Status markers: [x] done, [ ] open.
       decl/CXDeclKind buffers in one pre-order walk (recursing into nested
       contexts), so decls(::DeclContext) resolves an entire TU with O(1) FFI
       round-trips instead of the per-decl decl_iterator protocol.
+- [x] Test-coverage sweep (two subagent workflows). Exercise tests calling the
+      read surface (getters/predicates) took src/clang/api function coverage 14%
+      -> 86%; then wrapping + round-trip/factory-testing the AST Create*/set*
+      surface took it to 89% (skiplist 794-era -> 83). Surfaced + fixed three
+      latent wrapper arity/name bugs invisible to abi.jl/coverage.jl
+      (isNoDestroy, getTemplateInstantiationPattern, isPure->isPureVirtual).
+      test/{coverage_exercise,setter_factory,platform}.jl.
 - [x] Acceptance corpus — "full power" demonstrated falsifiably by four real
       static-analysis tools built entirely on the wrapped surface, in
       test/acceptance.jl: a null-safety pointer-dereference finder (subtree +
@@ -176,10 +183,12 @@ use surfaces. They do not gate anything.
 - [ ] **TypeLoc payload** — per-TypeLoc-class accessors (PointerTypeLoc star loc,
       FunctionTypeLoc param locs, …). The handle + source-range/getNextTypeLoc
       floor is done.
-- [ ] **AST construction/mutation** — the `Create*`/`CreateDeserialized`/`set*`
-      surface still parked in api_skiplist.txt (~200 symbols), intentionally left
-      until there is demand to build/mutate AST from Julia (the wrapper is
-      analysis-focused). The introspection accessors have been swept out.
+- [ ] **CompilerInstance/frontend mutators** — the interpreter-setup setters
+      (setInvocation/setDiagnostics/setFileManager/…) and execution entry points
+      (ParseAndExecute/undo/…) still parked in api_skiplist.txt (~83 symbols).
+      These can't be round-trip-tested on the live interpreter without corrupting
+      it, so they need a throwaway CompilerInstance harness — deferred until a use
+      needs them. (The AST Create*/set* surface is now wrapped + covered — below.)
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
       (this branch adds ~1100 C symbols — the earlier drift fixes, the 90
       CXXRecordDecl traits, the APValue bridge with its Expr eval cluster, the
