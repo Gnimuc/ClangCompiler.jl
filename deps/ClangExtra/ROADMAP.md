@@ -63,33 +63,28 @@ remaining phases. Status markers: [x] done, [ ] open.
 - [x] CXXBaseSpecifier and ExplicitSpecifier carriers + accessors (base-edge
       and explicit-specifier introspection).
 - [x] MARSHALLING.md — the standing playbook for the complex value-type,
-      iterator-range, and out-of-band-result wrappers.
+      iterator-range, and out-of-band-result wrappers, plus the LLVM-type-reuse
+      rule (§0): LLVM-owned values cross as their llvm-c/libLLVMExtra handle.
+- [x] Payload/type tail (T1–T5): ASTContext Decl/Type-arg builders and the
+      MangleContext/ASTNameGenerator manglers (mangleName); the Expr·Stmt
+      enum/pointer/location payload (construction/new/predefined-kind enums,
+      sub-node pointer accessors, statement locations); the sugar-type layer
+      (carriers, isa predicates, ordered resolve) for all twelve remaining
+      Type classes; method/ctor and DeclStmt-decl iteration; and template
+      navigation (getTemplateParameters/getTemplatedDecl, param depth/index,
+      getSpecializedTemplate/Kind). Skiplist 794 → 220.
 
 ## Remaining
 
-- [ ] **Payload tail** (priority order from the measured census): the Expr-base
-      dependence predicates and the control-flow statement location/predicate
-      accessors are done; remaining are the Expr-base evaluation cluster (needs
-      APValue bridge), StringLiteral width variants, UnaryExprOrTypeTraitExpr
-      (needs a UETT enum mirror from TokenKinds.def), the remaining top-25
-      classes (StmtExpr, GenericSelectionExpr, …), then breadth-first over the
-      core classes with ≤2 payload methods.
-- [ ] **Member iteration** (count+fill per MARSHALLING.md §6): RecordDecl
-      fields, EnumDecl enumerators, CXXRecordDecl bases/methods/ctors, DeclStmt
-      decls — the primary remaining traversal gap, all needing C-side shims.
-- [ ] **DeclCXX completion** — CXXRecordDecl traits, base iteration, and the
-      constructor/conversion/destructor predicate surface are done; the
-      deduction-guide class, the using-decls, and the CtorInitializer /
-      ExplicitSpecifier-by-value paths (MARSHALLING.md §7) still remain.
-- [ ] **Type-system completion** — carriers + `is_*`/resolve entries for the
-      remaining sugar types (Atomic, Decltype, Decayed, Adjusted, Deduced,
-      InjectedClassName, MacroQualified, UnaryTransform, DependentAddressSpace,
-      DependentSizedExtVector, Paren); several need a new `clang_isa_*` C
-      predicate first.
-- [ ] **Decl/Type .inc treatment** — apply the Phase-1 mechanism to
-      DeclNodes.inc (CXDeclKind + castTo/is, replacing string-compare
-      getDeclKindName dispatch) and TypeNodes.inc (replacing the ordered
-      resolve() predicate chain in src/types.jl).
+- [ ] **Payload leftovers** — the Expr-base constant-evaluation cluster (gated on
+      the APValue bridge), StringLiteral width variants, UnaryExprOrTypeTraitExpr
+      `getKind` (needs a `.def`-driven UETT enum mirror), PredefinedExpr, and a
+      long breadth-first tail of core classes with ≤2 payload methods.
+- [ ] **Iteration leftovers** — LambdaExpr captures (needs a CXLambdaCapture
+      carrier), FunctionProtoType exceptions/param-type arrays, IndirectFieldDecl
+      chain, ImportDecl identifier locs, CastExpr base path.
+- [ ] **DeclCXX leftovers** — the deduction-guide class, the using-decls, and the
+      CtorInitializer / ExplicitSpecifier-by-value paths (MARSHALLING.md §7).
 - [ ] **Decl/Type .inc treatment** — apply the Phase-1 mechanism to
       DeclNodes.inc (CXDeclKind + castTo/is, replacing string-compare
       getDeclKindName dispatch) and TypeNodes.inc (replacing the ordered
