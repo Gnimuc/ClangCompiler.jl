@@ -137,6 +137,14 @@ remaining phases. Status markers: [x] done, [ ] open.
       pre-order walk, so subtree(::AbstractStmt) resolves a whole subtree with O(1)
       FFI round-trips (2 ccalls) and no per-node getStmtClass — the fix for the
       per-child round-trip that would not survive whole-function walks.
+- [x] Acceptance corpus — "full power" demonstrated falsifiably by four real
+      static-analysis tools built entirely on the wrapped surface, in
+      test/acceptance.jl: a null-safety pointer-dereference finder (subtree +
+      UnaryOperator/MemberExpr/ArraySubscriptExpr classification), an
+      unused-local-variable linter (DeclStmt/DeclRefExpr cross-referencing), a
+      direct-call/call-graph edge lister (CallExpr -> getDirectCallee), and a
+      struct-layout dumper (field iteration + QualType resolve). Each proves the
+      parse -> find -> traverse -> resolve -> payload path end to end.
 
 ## Remaining
 
@@ -151,9 +159,6 @@ remaining phases. Status markers: [x] done, [ ] open.
 - [ ] **Whole-TU Decl traversal** — the bulk Stmt subtree extraction is done; the
       DeclContext side (a flat decls() sweep of a TU) is the remaining half.
 - [ ] **OMP abstract-base payload** (per posture above).
-- [ ] **Acceptance corpus** — define "full power" falsifiably: a small set of
-      real tools (null-check linter, unused-include pass, template
-      instantiation dumper) that must be expressible from Julia.
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
       (this branch adds ~1100 C symbols — the earlier drift fixes, the 90
       CXXRecordDecl traits, the APValue bridge with its Expr eval cluster, the
