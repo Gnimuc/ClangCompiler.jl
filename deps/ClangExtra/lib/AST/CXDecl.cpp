@@ -2288,7 +2288,7 @@ CXFileScopeAsmDecl clang_FileScopeAsmDecl_Create(CXASTContext C, CXDeclContext D
                                                  CXSourceLocation_ RParenLoc) {
   return clang::FileScopeAsmDecl::Create(
       *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
-      static_cast<clang::StringLiteral *>(DC),
+      static_cast<clang::StringLiteral *>(Str),
       clang::SourceLocation::getFromPtrEncoding(AsmLoc),
       clang::SourceLocation::getFromPtrEncoding(RParenLoc));
 }

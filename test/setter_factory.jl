@@ -524,3 +524,26 @@ end
     dispose(lookup)
     dispose(I)
 end
+
+@testset "SetFactory | FileScopeAsmDecl_Create round-trip" begin
+    # Regression: clang_FileScopeAsmDecl_Create had cast the DeclContext (not the
+    # Str param) to StringLiteral, so getAsmString returned garbage. A content
+    # round-trip (not just isa) catches it.
+    _fnd(::Type{T}, x) where {T} =
+        x isa T ? x : (for c in CC.children(x); r = _fnd(T, CC.resolve(c)); r === nothing || return r; end; nothing)
+    I = create_interpreter(String[])
+    CC.parse(I, "const char *asmstr = \"roundtrip_asm\";")
+    ctx = CC.get_ast_context(I)
+    dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
+    f = DeclFinder(I)
+    @test f(I, "asmstr")
+    vd = CC.VarDecl(get_decl(f).ptr)
+    sl = _fnd(CC.StringLiteral, CC.resolve(CC.getInit(vd)))
+    @test sl !== nothing
+    loc = CC.getLocation(vd)
+    asmdecl = CC.FileScopeAsmDecl(ctx, dc, sl, loc, loc)
+    @test asmdecl isa CC.FileScopeAsmDecl
+    @test CC.getString(CC.getAsmString(asmdecl)) == "roundtrip_asm"   # was garbage before the fix
+    dispose(f)
+    dispose(I)
+end
