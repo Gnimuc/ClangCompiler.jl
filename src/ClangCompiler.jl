@@ -54,7 +54,7 @@ include("clang/qualtype.jl")
 include("clang/type.jl")
 include("clang/sema.jl")
 include("clang/stmt.jl")
-public getStmtClass, getChildren, children, resolve, dump_ast
+public getStmtClass, getChildren, children, subtree, resolve, dump_ast
 include("clang/decl.jl")
 public getKind
 

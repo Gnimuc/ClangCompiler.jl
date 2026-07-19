@@ -81,6 +81,34 @@ void clang_Stmt_getChildren(CXStmt S, CXStmt *Buf) {
     Buf[I++] = Child;
 }
 
+namespace {
+size_t subtreeSize(clang::Stmt *S) {
+  if (!S)
+    return 0;
+  size_t N = 1;
+  for (clang::Stmt *Child : S->children())
+    N += subtreeSize(Child);
+  return N;
+}
+
+void collectSubtree(clang::Stmt *S, CXStmt *&Nodes, CXStmtClass *&Classes) {
+  if (!S)
+    return;
+  *Nodes++ = S;
+  *Classes++ = static_cast<CXStmtClass>(S->getStmtClass());
+  for (clang::Stmt *Child : S->children())
+    collectSubtree(Child, Nodes, Classes);
+}
+} // namespace
+
+size_t clang_Stmt_getSubtreeSize(CXStmt S) {
+  return subtreeSize(static_cast<clang::Stmt *>(S));
+}
+
+void clang_Stmt_collectSubtree(CXStmt S, CXStmt *Nodes, CXStmtClass *Classes) {
+  collectSubtree(static_cast<clang::Stmt *>(S), Nodes, Classes);
+}
+
 // DeclStmt
 bool clang_DeclStmt_isSingleDecl(CXDeclStmt DS) {
   return static_cast<clang::DeclStmt *>(DS)->isSingleDecl();

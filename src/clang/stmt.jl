@@ -30,6 +30,24 @@ function children(x::AbstractStmt)
     return [resolve(c) for c in getChildren(x) if c.ptr != C_NULL]
 end
 
+"""
+    subtree(x::AbstractStmt) -> Vector{AbstractStmt}
+Every statement in `x`'s subtree in pre-order (`x` first), each resolved to its
+concrete type. The whole subtree is bulk-extracted in a single pair of ccalls
+(size + fill) that also returns each node's `CXStmtClass`, so building the
+resolved carriers needs no per-node round-trip — O(1) FFI calls for the walk
+instead of the O(nodes) that repeated [`children`](@ref) recursion costs. Use
+this for whole-function/whole-subtree analysis; use `children` for one level.
+"""
+function subtree(x::AbstractStmt)
+    @check_ptrs x
+    n = Int(clang_Stmt_getSubtreeSize(x))
+    nodes = Vector{CXStmt}(undef, n)
+    classes = Vector{CXStmtClass}(undef, n)
+    clang_Stmt_collectSubtree(x, nodes, classes)
+    return AbstractStmt[STMT_CLASS_TO_TYPE[classes[i]](nodes[i]) for i in 1:n]
+end
+
 get_stmt_class(x::AbstractStmt) = getStmtClass(x)
 get_stmt_class_name(x::AbstractStmt) = getStmtClassName(x)
 dump_ast(x::AbstractStmt) = clang_Stmt_dump(x)

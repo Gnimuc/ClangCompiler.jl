@@ -59,6 +59,16 @@ size_t clang_Stmt_getNumChildren(CXStmt S);
 
 void clang_Stmt_getChildren(CXStmt S, CXStmt *Buf);
 
+// subtree: bulk pre-order extraction of S and all (non-null) descendants in a
+// single walk, so a whole-subtree traversal costs O(1) FFI round-trips instead
+// of one per node. getSubtreeSize counts the nodes; collectSubtree fills two
+// caller-allocated buffers of exactly that many slots — the node pointers and
+// their CXStmtClass values in lockstep — letting the caller build resolved
+// carriers without a per-node getStmtClass call.
+size_t clang_Stmt_getSubtreeSize(CXStmt S);
+
+void clang_Stmt_collectSubtree(CXStmt S, CXStmt *Nodes, CXStmtClass *Classes);
+
 // DeclStmt
 bool clang_DeclStmt_isSingleDecl(CXDeclStmt DS);
 

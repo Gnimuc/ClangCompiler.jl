@@ -141,6 +141,34 @@ end
     dispose(I)
 end
 
+@testset "Tail | bulk subtree traversal" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "int fn(int a){ int s=0; for(int i=0;i<a;i++){ s+=i*2; if(s>10) break; } return s; }")
+    f = DeclFinder(I)
+    @test f(I, "fn")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    body = CC.resolve(CC.getBody(fd))
+
+    # bulk subtree must match a manual recursive children walk, node-for-node.
+    function walk(x, acc)
+        push!(acc, x)
+        for c in CC.children(x)
+            walk(c, acc)
+        end
+        acc
+    end
+    rec = walk(body, CC.AbstractStmt[])
+    bulk = CC.subtree(body)
+    @test length(bulk) == length(rec)
+    @test bulk[1] isa CC.CompoundStmt                       # pre-order: root first
+    @test all(x -> x isa CC.AbstractStmt, bulk)
+    @test !any(x -> isabstracttype(typeof(x)), bulk)        # every node fully resolved
+    @test [s.ptr for s in bulk] == [s.ptr for s in rec]     # same nodes, same order
+
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Tail | TypeLoc" begin
     I = create_interpreter(String[])
     CC.parse(I, "int *tlp;")

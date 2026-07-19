@@ -127,6 +127,16 @@ remaining phases. Status markers: [x] done, [ ] open.
       (hasAttrs/getNumAttrs/getAttr). Attributes are now reachable and
       identifiable from Julia (getAttrs -> [Attr], getKind, getSpelling); per-attr
       payload and the castTo/is stamp are deferred (see Attribute payload above).
+- [x] TypeLoc floor — an opaque heap-boxed CXTypeLoc handle reached via
+      clang_TypeSourceInfo_getTypeLoc, with getType, getBeginLoc/getEndLoc,
+      getSourceRange/getLocalSourceRange, getNextTypeLoc (chain walk), isNull, and
+      dispose. Makes a declarator's written type and its location chain reachable
+      — the source-range floor for rewriting tools.
+- [x] Traversal throughput — bulk Stmt subtree extraction. clang_Stmt_getSubtreeSize
+      + clang_Stmt_collectSubtree fill parallel node/CXStmtClass buffers in one
+      pre-order walk, so subtree(::AbstractStmt) resolves a whole subtree with O(1)
+      FFI round-trips (2 ccalls) and no per-node getStmtClass — the fix for the
+      per-child round-trip that would not survive whole-function walks.
 
 ## Remaining
 
@@ -135,17 +145,18 @@ remaining phases. Status markers: [x] done, [ ] open.
 - [ ] **Attribute payload** — the per-attribute accessors (AlignedAttr::getAlignment,
       …) and the stamped clang_Attr_castTo/is family, once the ~396-class breadth
       is worth wrapping. The classification floor is done (see below).
-- [ ] **TypeLoc** — at minimum an opaque handle + source-range floor;
-      required for rewriting tools.
-- [ ] **Traversal throughput** — one FFI round-trip per child won't survive
-      whole-TU walks; plan a C-level visitor callback or bulk subtree
-      extraction.
+- [ ] **TypeLoc payload** — the per-TypeLoc-class accessors (PointerTypeLoc star
+      loc, FunctionTypeLoc param locs, TemplateSpecializationTypeLoc arg locs, …);
+      the handle + source-range floor is done (see below).
+- [ ] **Whole-TU Decl traversal** — the bulk Stmt subtree extraction is done; the
+      DeclContext side (a flat decls() sweep of a TU) is the remaining half.
 - [ ] **OMP abstract-base payload** (per posture above).
 - [ ] **Acceptance corpus** — define "full power" falsifiably: a small set of
       real tools (null-check linter, unused-include pass, template
       instantiation dumper) that must be expressible from Julia.
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
-      (this branch adds ~1070 C symbols — the earlier drift fixes, the 90
+      (this branch adds ~1100 C symbols — the earlier drift fixes, the 90
       CXXRecordDecl traits, the APValue bridge with its Expr eval cluster, the
-      8-family mechanical wrapper tail, and the DeclNodes.inc + TypeNodes.inc
-      stamping — and corrects CXCastKind/CXLinkage values).
+      8-family mechanical wrapper tail, the DeclNodes/TypeNodes/AttrList.inc
+      stamping, and the TypeLoc + bulk-subtree floors — and corrects
+      CXCastKind/CXLinkage values).

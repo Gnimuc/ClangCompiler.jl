@@ -12256,6 +12256,14 @@ function clang_Stmt_getChildren(S, Buf)
     @ccall libclangex.clang_Stmt_getChildren(S::CXStmt, Buf::Ptr{CXStmt})::Cvoid
 end
 
+function clang_Stmt_getSubtreeSize(S)
+    @ccall libclangex.clang_Stmt_getSubtreeSize(S::CXStmt)::Csize_t
+end
+
+function clang_Stmt_collectSubtree(S, Nodes, Classes)
+    @ccall libclangex.clang_Stmt_collectSubtree(S::CXStmt, Nodes::Ptr{CXStmt}, Classes::Ptr{CXStmtClass})::Cvoid
+end
+
 function clang_DeclStmt_isSingleDecl(DS)
     @ccall libclangex.clang_DeclStmt_isSingleDecl(DS::CXDeclStmt)::Bool
 end
