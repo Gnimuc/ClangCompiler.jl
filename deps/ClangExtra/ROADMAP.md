@@ -48,6 +48,17 @@ remaining phases. Status markers: [x] done, [ ] open.
       operators/literals/calls/members/casts/control flow, CXX call/construct/
       lambda/new/delete/try/for-range. ~130 new payload functions, all wrapped
       in the Julia api layer and exercised by test/stmt.jl.
+- [x] Coverage sweep of the already-bound surface — Julia thin wrappers for the
+      accessors parked in the skiplist across Type, Decl, DeclCXX, Expr,
+      DeclTemplate, and ASTContext (type builders/comparisons/info/navigation).
+      The binding-coverage ratchet dropped 794 → 323.
+- [x] CXXRecordDecl class-trait predicates — 90 new C bindings for the
+      polymorphism/layout/triviality/special-member/lambda queries, wrapped on
+      AbstractCXXRecordDecl.
+- [x] CXXBaseSpecifier and ExplicitSpecifier carriers + accessors (base-edge
+      and explicit-specifier introspection).
+- [x] MARSHALLING.md — the standing playbook for the complex value-type,
+      iterator-range, and out-of-band-result wrappers.
 
 ## Remaining
 
@@ -56,10 +67,21 @@ remaining phases. Status markers: [x] done, [ ] open.
       UnaryExprOrTypeTraitExpr (needs a UETT enum mirror from TokenKinds.def),
       remaining top-25 classes (StmtExpr, GenericSelectionExpr, …), then
       breadth-first over the ~95 core classes with ≤2 payload methods.
-- [ ] **DeclCXX completion** — "Decl is almost finished" holds only for the C
-      half: CXXRecordDecl is at ~7.5% coverage, and the constructor/destructor
-      /conversion/deduction-guide classes are empty placeholders. Same budget
-      priority as the Expr/Stmt tail.
+- [ ] **Member iteration** (count+fill per MARSHALLING.md §6): RecordDecl
+      fields, EnumDecl enumerators, CXXRecordDecl bases/methods/ctors, DeclStmt
+      decls — the primary remaining traversal gap, all needing C-side shims.
+- [ ] **DeclCXX completion** — CXXRecordDecl traits are done; the constructor/
+      destructor/conversion/deduction-guide classes and the using-decls still
+      have little or no payload.
+- [ ] **Type-system completion** — carriers + `is_*`/resolve entries for the
+      remaining sugar types (Atomic, Decltype, Decayed, Adjusted, Deduced,
+      InjectedClassName, MacroQualified, UnaryTransform, DependentAddressSpace,
+      DependentSizedExtVector, Paren); several need a new `clang_isa_*` C
+      predicate first.
+- [ ] **Decl/Type .inc treatment** — apply the Phase-1 mechanism to
+      DeclNodes.inc (CXDeclKind + castTo/is, replacing string-compare
+      getDeclKindName dispatch) and TypeNodes.inc (replacing the ordered
+      resolve() predicate chain in src/types.jl).
 - [ ] **Decl/Type .inc treatment** — apply the Phase-1 mechanism to
       DeclNodes.inc (CXDeclKind + castTo/is, replacing string-compare
       getDeclKindName dispatch) and TypeNodes.inc (replacing the ordered
@@ -79,5 +101,5 @@ remaining phases. Status markers: [x] done, [ ] open.
       real tools (null-check linter, unused-include pass, template
       instantiation dumper) that must be expressible from Julia.
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
-      (this branch adds ~650 symbols and corrects CXCastKind/CXLinkage
-      values).
+      (this branch adds ~740 C symbols — the earlier drift fixes plus the 90
+      CXXRecordDecl traits — and corrects CXCastKind/CXLinkage values).

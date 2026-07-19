@@ -33,3 +33,21 @@ for sym in [:AccessSpecDecl,
         Base.cconvert(::Type{$cxsym}, x::$sym) = x
     end
 end
+
+# Standalone value classes (no AST-node hierarchy): a base-class edge in a
+# CXXRecordDecl, and the explicit(...) specifier on a constructor/conversion.
+for sym in [:CXXBaseSpecifier, :ExplicitSpecifier]
+    cxsym = Symbol("CX", sym)
+    @eval begin
+        """
+            struct $($(QuoteNode(sym)))
+        Hold a pointer to a `clang::$($(QuoteNode(sym)))` object.
+        """
+        struct $sym
+            ptr::$cxsym
+        end
+
+        Base.unsafe_convert(::Type{$cxsym}, x::$sym) = x.ptr
+        Base.cconvert(::Type{$cxsym}, x::$sym) = x
+    end
+end

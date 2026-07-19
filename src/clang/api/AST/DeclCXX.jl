@@ -634,3 +634,97 @@ function hasBraces(x::AbstractLinkageSpecDecl)
     return clang_LinkageSpecDecl_hasBraces(x)
 end
 
+
+# CXXBaseSpecifier
+function getAccessSpecifier(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return clang_CXXBaseSpecifier_getAccessSpecifier(x)
+end
+
+function getAccessSpecifierAsWritten(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return clang_CXXBaseSpecifier_getAccessSpecifierAsWritten(x)
+end
+
+function getBaseTypeLoc(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return SourceLocation(clang_CXXBaseSpecifier_getBaseTypeLoc(x))
+end
+
+function getColonLoc(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return SourceLocation(clang_CXXBaseSpecifier_getColonLoc(x))
+end
+
+function getEllipsisLoc(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return SourceLocation(clang_CXXBaseSpecifier_getEllipsisLoc(x))
+end
+
+function getEndLoc(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return SourceLocation(clang_CXXBaseSpecifier_getEndLoc(x))
+end
+
+function getInheritConstructors(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return clang_CXXBaseSpecifier_getInheritConstructors(x)
+end
+
+function getSourceRange(x::CXXBaseSpecifier)
+    @check_ptrs x
+    r = clang_CXXBaseSpecifier_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function getType(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return QualType(clang_CXXBaseSpecifier_getType(x))
+end
+
+function getTypeSourceInfo(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return TypeSourceInfo(clang_CXXBaseSpecifier_getTypeSourceInfo(x))
+end
+
+function isBaseOfClass(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return clang_CXXBaseSpecifier_isBaseOfClass(x)
+end
+
+function isPackExpansion(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return clang_CXXBaseSpecifier_isPackExpansion(x)
+end
+
+function isVirtual(x::CXXBaseSpecifier)
+    @check_ptrs x
+    return clang_CXXBaseSpecifier_isVirtual(x)
+end
+
+# ExplicitSpecifier
+function getExpr(x::ExplicitSpecifier)
+    @check_ptrs x
+    return Expr_(clang_ExplicitSpecifier_getExpr(x))
+end
+
+function getKind(x::ExplicitSpecifier)
+    @check_ptrs x
+    return clang_ExplicitSpecifier_getKind(x)
+end
+
+function isExplicit(x::ExplicitSpecifier)
+    @check_ptrs x
+    return clang_ExplicitSpecifier_isExplicit(x)
+end
+
+function isInvalid(x::ExplicitSpecifier)
+    @check_ptrs x
+    return clang_ExplicitSpecifier_isInvalid(x)
+end
+
+function isSpecified(x::ExplicitSpecifier)
+    @check_ptrs x
+    return clang_ExplicitSpecifier_isSpecified(x)
+end
+
