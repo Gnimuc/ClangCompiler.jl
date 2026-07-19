@@ -34,6 +34,17 @@ CXDeclKind clang_Decl_getKind(CXDecl D) {
   return static_cast<CXDeclKind>(static_cast<clang::Decl *>(D)->getKind());
 }
 
+bool clang_Decl_hasAttrs(CXDecl D) { return static_cast<clang::Decl *>(D)->hasAttrs(); }
+
+unsigned clang_Decl_getNumAttrs(CXDecl D) {
+  clang::Decl *DD = static_cast<clang::Decl *>(D);
+  return DD->hasAttrs() ? DD->getAttrs().size() : 0;
+}
+
+CXAttr clang_Decl_getAttr(CXDecl D, unsigned I) {
+  return static_cast<clang::Decl *>(D)->getAttrs()[I];
+}
+
 // Decl
 CXSourceLocation_ clang_Decl_getLocation(CXDecl DC) {
   return static_cast<clang::Decl *>(DC)->getLocation().getPtrEncoding();

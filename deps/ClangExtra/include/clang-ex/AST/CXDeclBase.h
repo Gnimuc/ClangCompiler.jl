@@ -42,6 +42,14 @@ typedef enum CXDeclKind {
 
 CXDeclKind clang_Decl_getKind(CXDecl D);
 
+// attrs: Decl::attrs() as a count+index pair. getAttr returns the borrowed Attr*
+// at position I (< getNumAttrs); classify it with clang_Attr_getKind.
+bool clang_Decl_hasAttrs(CXDecl D);
+
+unsigned clang_Decl_getNumAttrs(CXDecl D);
+
+CXAttr clang_Decl_getAttr(CXDecl D, unsigned I);
+
 // Decl
 CXSourceLocation_ clang_Decl_getLocation(CXDecl DC);
 

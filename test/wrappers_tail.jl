@@ -141,6 +141,34 @@ end
     dispose(I)
 end
 
+@testset "Tail | Attributes (Decl::getAttrs)" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "int __attribute__((aligned(16), deprecated)) gattr;")
+    f = DeclFinder(I)
+    @test f(I, "gattr")
+    d = get_decl(f)
+    @test CC.hasAttrs(d)
+    @test CC.getNumAttrs(d) == 2
+    attrs = CC.getAttrs(d)
+    @test length(attrs) == 2
+    @test all(a -> a isa CC.Attr, attrs)
+    spellings = [CC.getSpelling(a) for a in attrs]
+    @test "aligned" in spellings
+    @test "deprecated" in spellings
+    @test CC.getKind(attrs[1]) == CC.LibClangEx.CXAttrKind_Aligned
+    @test !CC.isImplicit(attrs[1])
+    @test CC.getLocation(attrs[1]) isa CC.SourceLocation
+
+    @test f(I, "gattr")   # a decl with no attrs
+    CC.parse(I, "int noattr;")
+    @test f(I, "noattr")
+    @test !CC.hasAttrs(get_decl(f))
+    @test isempty(CC.getAttrs(get_decl(f)))
+
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Tail | Type classification (getTypeClass / resolve)" begin
     I = create_interpreter(String[])
     CC.parse(I, "int *tc_p; int tc_arr[4]; int &tc_r = *tc_p;")

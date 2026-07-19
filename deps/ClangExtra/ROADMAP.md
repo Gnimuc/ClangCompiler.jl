@@ -25,8 +25,8 @@ remaining phases. Status markers: [x] done, [ ] open.
 - **Vendored .inc tables.** The binding generator drops declarations expanded
   from `-isystem` paths, so TableGen tables are vendored verbatim under
   `include/clang-ex/` (`AST/StmtNodes.inc`, `AST/DeclNodes.inc`,
-  `AST/TypeNodes.inc`). A stale vendored copy cannot ship: the impl-side
-  static_assert tables fail the build.
+  `AST/TypeNodes.inc`, `AST/AttrList.inc`). A stale vendored copy cannot ship:
+  the impl-side static_assert tables fail the build.
 - **Version-following stamped ABI.** Stamped symbols (`CXStmtClass_*`,
   `clang_Stmt_castTo*/is*`) track clang's naming per LLVM major (clang inserts
   and renames nodes between majors; `lib/<major>/` models that). The
@@ -119,13 +119,22 @@ remaining phases. Status markers: [x] done, [ ] open.
       classification predicates stay in the separate clang_isa_ family; only
       downcasts are stamped, since clang_Type_is<Class>Type is reserved for
       clang's sugar-piercing semantic queries. +61 C bindings.
+- [x] Attribute classification floor — the fourth .inc-driven family. Vendored
+      AttrList.inc drives a mirror-by-construction CXAttrKind enum (396 attrs +
+      the category range markers) with a per-attr static_assert drift table, plus
+      the Attr base API (getKind/getSpelling/getRange/getLocation/isImplicit/
+      isInherited/isPackExpansion) and Decl::getAttrs iteration
+      (hasAttrs/getNumAttrs/getAttr). Attributes are now reachable and
+      identifiable from Julia (getAttrs -> [Attr], getKind, getSpelling); per-attr
+      payload and the castTo/is stamp are deferred (see Attribute payload above).
 
 ## Remaining
 
 - [ ] **Payload leftovers** — the long breadth-first tail of core classes with
       ≤2 payload methods (the priority Expr/value-type surface is now done).
-- [ ] **Attributes** — a third .inc-driven family (Attrs.inc); zero exposure
-      today, `Decl::getAttrs` unreachable.
+- [ ] **Attribute payload** — the per-attribute accessors (AlignedAttr::getAlignment,
+      …) and the stamped clang_Attr_castTo/is family, once the ~396-class breadth
+      is worth wrapping. The classification floor is done (see below).
 - [ ] **TypeLoc** — at minimum an opaque handle + source-range floor;
       required for rewriting tools.
 - [ ] **Traversal throughput** — one FFI round-trip per child won't survive

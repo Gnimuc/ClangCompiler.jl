@@ -122,6 +122,9 @@ typedef void *CXTemplateParamObjectDecl;
 // APValue
 typedef void *CXAPValue;
 
+// Attr
+typedef void *CXAttr;
+
 // Expr
 typedef void *CXExpr;
 typedef void *CXFullExpr;

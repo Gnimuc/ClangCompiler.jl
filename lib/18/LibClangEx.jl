@@ -192,6 +192,8 @@ const CXTemplateParamObjectDecl = Ptr{Cvoid}
 
 const CXAPValue = Ptr{Cvoid}
 
+const CXAttr = Ptr{Cvoid}
+
 const CXExpr = Ptr{Cvoid}
 
 const CXFullExpr = Ptr{Cvoid}
@@ -3727,6 +3729,451 @@ function clang_ASTContext_NullPtrTy_getAsQualType(Ctx)
     @ccall libclangex.clang_ASTContext_NullPtrTy_getAsQualType(Ctx::CXASTContext)::CXQualType
 end
 
+@enum CXAttrKind::UInt32 begin
+    CXAttrKind_AddressSpace = 0
+    CXAttrKind_AnnotateType = 1
+    CXAttrKind_ArmIn = 2
+    CXAttrKind_ArmInOut = 3
+    CXAttrKind_ArmMveStrictPolymorphism = 4
+    CXAttrKind_ArmOut = 5
+    CXAttrKind_ArmPreserves = 6
+    CXAttrKind_ArmStreaming = 7
+    CXAttrKind_ArmStreamingCompatible = 8
+    CXAttrKind_BTFTypeTag = 9
+    CXAttrKind_CmseNSCall = 10
+    CXAttrKind_HLSLGroupSharedAddressSpace = 11
+    CXAttrKind_HLSLParamModifier = 12
+    CXAttrKind_NoDeref = 13
+    CXAttrKind_ObjCGC = 14
+    CXAttrKind_ObjCInertUnsafeUnretained = 15
+    CXAttrKind_ObjCKindOf = 16
+    CXAttrKind_OpenCLConstantAddressSpace = 17
+    CXAttrKind_OpenCLGenericAddressSpace = 18
+    CXAttrKind_OpenCLGlobalAddressSpace = 19
+    CXAttrKind_OpenCLGlobalDeviceAddressSpace = 20
+    CXAttrKind_OpenCLGlobalHostAddressSpace = 21
+    CXAttrKind_OpenCLLocalAddressSpace = 22
+    CXAttrKind_OpenCLPrivateAddressSpace = 23
+    CXAttrKind_Ptr32 = 24
+    CXAttrKind_Ptr64 = 25
+    CXAttrKind_SPtr = 26
+    CXAttrKind_TypeNonNull = 27
+    CXAttrKind_TypeNullUnspecified = 28
+    CXAttrKind_TypeNullable = 29
+    CXAttrKind_TypeNullableResult = 30
+    CXAttrKind_UPtr = 31
+    CXAttrKind_WebAssemblyFuncref = 32
+    CXAttrKind_CodeAlign = 33
+    CXAttrKind_FallThrough = 34
+    CXAttrKind_Likely = 35
+    CXAttrKind_MustTail = 36
+    CXAttrKind_OpenCLUnrollHint = 37
+    CXAttrKind_Unlikely = 38
+    CXAttrKind_AlwaysInline = 39
+    CXAttrKind_NoInline = 40
+    CXAttrKind_NoMerge = 41
+    CXAttrKind_Suppress = 42
+    CXAttrKind_AArch64SVEPcs = 43
+    CXAttrKind_AArch64VectorPcs = 44
+    CXAttrKind_AMDGPUKernelCall = 45
+    CXAttrKind_AcquireHandle = 46
+    CXAttrKind_AnyX86NoCfCheck = 47
+    CXAttrKind_CDecl = 48
+    CXAttrKind_FastCall = 49
+    CXAttrKind_IntelOclBicc = 50
+    CXAttrKind_LifetimeBound = 51
+    CXAttrKind_M68kRTD = 52
+    CXAttrKind_MSABI = 53
+    CXAttrKind_NSReturnsRetained = 54
+    CXAttrKind_ObjCOwnership = 55
+    CXAttrKind_Pascal = 56
+    CXAttrKind_Pcs = 57
+    CXAttrKind_PreserveAll = 58
+    CXAttrKind_PreserveMost = 59
+    CXAttrKind_RegCall = 60
+    CXAttrKind_StdCall = 61
+    CXAttrKind_SwiftAsyncCall = 62
+    CXAttrKind_SwiftCall = 63
+    CXAttrKind_SysVABI = 64
+    CXAttrKind_ThisCall = 65
+    CXAttrKind_VectorCall = 66
+    CXAttrKind_SwiftAsyncContext = 67
+    CXAttrKind_SwiftContext = 68
+    CXAttrKind_SwiftErrorResult = 69
+    CXAttrKind_SwiftIndirectResult = 70
+    CXAttrKind_Annotate = 71
+    CXAttrKind_CFConsumed = 72
+    CXAttrKind_CarriesDependency = 73
+    CXAttrKind_NSConsumed = 74
+    CXAttrKind_NonNull = 75
+    CXAttrKind_OSConsumed = 76
+    CXAttrKind_PassObjectSize = 77
+    CXAttrKind_ReleaseHandle = 78
+    CXAttrKind_UseHandle = 79
+    CXAttrKind_HLSLSV_DispatchThreadID = 80
+    CXAttrKind_HLSLSV_GroupIndex = 81
+    CXAttrKind_AMDGPUFlatWorkGroupSize = 82
+    CXAttrKind_AMDGPUNumSGPR = 83
+    CXAttrKind_AMDGPUNumVGPR = 84
+    CXAttrKind_AMDGPUWavesPerEU = 85
+    CXAttrKind_ARMInterrupt = 86
+    CXAttrKind_AVRInterrupt = 87
+    CXAttrKind_AVRSignal = 88
+    CXAttrKind_AcquireCapability = 89
+    CXAttrKind_AcquiredAfter = 90
+    CXAttrKind_AcquiredBefore = 91
+    CXAttrKind_AlignMac68k = 92
+    CXAttrKind_AlignNatural = 93
+    CXAttrKind_Aligned = 94
+    CXAttrKind_AllocAlign = 95
+    CXAttrKind_AllocSize = 96
+    CXAttrKind_AlwaysDestroy = 97
+    CXAttrKind_AnalyzerNoReturn = 98
+    CXAttrKind_AnyX86Interrupt = 99
+    CXAttrKind_AnyX86NoCallerSavedRegisters = 100
+    CXAttrKind_ArcWeakrefUnavailable = 101
+    CXAttrKind_ArgumentWithTypeTag = 102
+    CXAttrKind_ArmBuiltinAlias = 103
+    CXAttrKind_ArmLocallyStreaming = 104
+    CXAttrKind_ArmNew = 105
+    CXAttrKind_Artificial = 106
+    CXAttrKind_AsmLabel = 107
+    CXAttrKind_AssertCapability = 108
+    CXAttrKind_AssertExclusiveLock = 109
+    CXAttrKind_AssertSharedLock = 110
+    CXAttrKind_AssumeAligned = 111
+    CXAttrKind_Assumption = 112
+    CXAttrKind_Availability = 113
+    CXAttrKind_AvailableOnlyInDefaultEvalMethod = 114
+    CXAttrKind_BPFPreserveAccessIndex = 115
+    CXAttrKind_BPFPreserveStaticOffset = 116
+    CXAttrKind_BTFDeclTag = 117
+    CXAttrKind_Blocks = 118
+    CXAttrKind_Builtin = 119
+    CXAttrKind_C11NoReturn = 120
+    CXAttrKind_CFAuditedTransfer = 121
+    CXAttrKind_CFGuard = 122
+    CXAttrKind_CFICanonicalJumpTable = 123
+    CXAttrKind_CFReturnsNotRetained = 124
+    CXAttrKind_CFReturnsRetained = 125
+    CXAttrKind_CFUnknownTransfer = 126
+    CXAttrKind_CPUDispatch = 127
+    CXAttrKind_CPUSpecific = 128
+    CXAttrKind_CUDAConstant = 129
+    CXAttrKind_CUDADevice = 130
+    CXAttrKind_CUDADeviceBuiltinSurfaceType = 131
+    CXAttrKind_CUDADeviceBuiltinTextureType = 132
+    CXAttrKind_CUDAGlobal = 133
+    CXAttrKind_CUDAHost = 134
+    CXAttrKind_CUDAInvalidTarget = 135
+    CXAttrKind_CUDALaunchBounds = 136
+    CXAttrKind_CUDAShared = 137
+    CXAttrKind_CXX11NoReturn = 138
+    CXAttrKind_CallableWhen = 139
+    CXAttrKind_Callback = 140
+    CXAttrKind_Capability = 141
+    CXAttrKind_CapturedRecord = 142
+    CXAttrKind_Cleanup = 143
+    CXAttrKind_CmseNSEntry = 144
+    CXAttrKind_CodeModel = 145
+    CXAttrKind_CodeSeg = 146
+    CXAttrKind_Cold = 147
+    CXAttrKind_Common = 148
+    CXAttrKind_Const = 149
+    CXAttrKind_ConstInit = 150
+    CXAttrKind_Constructor = 151
+    CXAttrKind_Consumable = 152
+    CXAttrKind_ConsumableAutoCast = 153
+    CXAttrKind_ConsumableSetOnRead = 154
+    CXAttrKind_Convergent = 155
+    CXAttrKind_CoroDisableLifetimeBound = 156
+    CXAttrKind_CoroLifetimeBound = 157
+    CXAttrKind_CoroOnlyDestroyWhenComplete = 158
+    CXAttrKind_CoroReturnType = 159
+    CXAttrKind_CoroWrapper = 160
+    CXAttrKind_CountedBy = 161
+    CXAttrKind_DLLExport = 162
+    CXAttrKind_DLLExportStaticLocal = 163
+    CXAttrKind_DLLImport = 164
+    CXAttrKind_DLLImportStaticLocal = 165
+    CXAttrKind_Deprecated = 166
+    CXAttrKind_Destructor = 167
+    CXAttrKind_DiagnoseAsBuiltin = 168
+    CXAttrKind_DiagnoseIf = 169
+    CXAttrKind_DisableSanitizerInstrumentation = 170
+    CXAttrKind_DisableTailCalls = 171
+    CXAttrKind_EmptyBases = 172
+    CXAttrKind_EnableIf = 173
+    CXAttrKind_EnforceTCB = 174
+    CXAttrKind_EnforceTCBLeaf = 175
+    CXAttrKind_EnumExtensibility = 176
+    CXAttrKind_Error = 177
+    CXAttrKind_ExcludeFromExplicitInstantiation = 178
+    CXAttrKind_ExclusiveTrylockFunction = 179
+    CXAttrKind_ExternalSourceSymbol = 180
+    CXAttrKind_Final = 181
+    CXAttrKind_FlagEnum = 182
+    CXAttrKind_Flatten = 183
+    CXAttrKind_Format = 184
+    CXAttrKind_FormatArg = 185
+    CXAttrKind_FunctionReturnThunks = 186
+    CXAttrKind_GNUInline = 187
+    CXAttrKind_GuardedBy = 188
+    CXAttrKind_GuardedVar = 189
+    CXAttrKind_HIPManaged = 190
+    CXAttrKind_HLSLNumThreads = 191
+    CXAttrKind_HLSLResource = 192
+    CXAttrKind_HLSLResourceBinding = 193
+    CXAttrKind_HLSLShader = 194
+    CXAttrKind_Hot = 195
+    CXAttrKind_IBAction = 196
+    CXAttrKind_IBOutlet = 197
+    CXAttrKind_IBOutletCollection = 198
+    CXAttrKind_InitPriority = 199
+    CXAttrKind_InternalLinkage = 200
+    CXAttrKind_LTOVisibilityPublic = 201
+    CXAttrKind_LayoutVersion = 202
+    CXAttrKind_Leaf = 203
+    CXAttrKind_LockReturned = 204
+    CXAttrKind_LocksExcluded = 205
+    CXAttrKind_M68kInterrupt = 206
+    CXAttrKind_MIGServerRoutine = 207
+    CXAttrKind_MSAllocator = 208
+    CXAttrKind_MSConstexpr = 209
+    CXAttrKind_MSInheritance = 210
+    CXAttrKind_MSNoVTable = 211
+    CXAttrKind_MSP430Interrupt = 212
+    CXAttrKind_MSStruct = 213
+    CXAttrKind_MSVtorDisp = 214
+    CXAttrKind_MaxFieldAlignment = 215
+    CXAttrKind_MayAlias = 216
+    CXAttrKind_MaybeUndef = 217
+    CXAttrKind_MicroMips = 218
+    CXAttrKind_MinSize = 219
+    CXAttrKind_MinVectorWidth = 220
+    CXAttrKind_Mips16 = 221
+    CXAttrKind_MipsInterrupt = 222
+    CXAttrKind_MipsLongCall = 223
+    CXAttrKind_MipsShortCall = 224
+    CXAttrKind_NSConsumesSelf = 225
+    CXAttrKind_NSErrorDomain = 226
+    CXAttrKind_NSReturnsAutoreleased = 227
+    CXAttrKind_NSReturnsNotRetained = 228
+    CXAttrKind_NVPTXKernel = 229
+    CXAttrKind_Naked = 230
+    CXAttrKind_NoAlias = 231
+    CXAttrKind_NoCommon = 232
+    CXAttrKind_NoDebug = 233
+    CXAttrKind_NoDestroy = 234
+    CXAttrKind_NoDuplicate = 235
+    CXAttrKind_NoInstrumentFunction = 236
+    CXAttrKind_NoMicroMips = 237
+    CXAttrKind_NoMips16 = 238
+    CXAttrKind_NoProfileFunction = 239
+    CXAttrKind_NoRandomizeLayout = 240
+    CXAttrKind_NoReturn = 241
+    CXAttrKind_NoSanitize = 242
+    CXAttrKind_NoSpeculativeLoadHardening = 243
+    CXAttrKind_NoSplitStack = 244
+    CXAttrKind_NoStackProtector = 245
+    CXAttrKind_NoThreadSafetyAnalysis = 246
+    CXAttrKind_NoThrow = 247
+    CXAttrKind_NoUniqueAddress = 248
+    CXAttrKind_NoUwtable = 249
+    CXAttrKind_NotTailCalled = 250
+    CXAttrKind_OMPAllocateDecl = 251
+    CXAttrKind_OMPCaptureNoInit = 252
+    CXAttrKind_OMPDeclareTargetDecl = 253
+    CXAttrKind_OMPDeclareVariant = 254
+    CXAttrKind_OMPThreadPrivateDecl = 255
+    CXAttrKind_OSConsumesThis = 256
+    CXAttrKind_OSReturnsNotRetained = 257
+    CXAttrKind_OSReturnsRetained = 258
+    CXAttrKind_OSReturnsRetainedOnNonZero = 259
+    CXAttrKind_OSReturnsRetainedOnZero = 260
+    CXAttrKind_ObjCBridge = 261
+    CXAttrKind_ObjCBridgeMutable = 262
+    CXAttrKind_ObjCBridgeRelated = 263
+    CXAttrKind_ObjCException = 264
+    CXAttrKind_ObjCExplicitProtocolImpl = 265
+    CXAttrKind_ObjCExternallyRetained = 266
+    CXAttrKind_ObjCIndependentClass = 267
+    CXAttrKind_ObjCMethodFamily = 268
+    CXAttrKind_ObjCNSObject = 269
+    CXAttrKind_ObjCPreciseLifetime = 270
+    CXAttrKind_ObjCRequiresPropertyDefs = 271
+    CXAttrKind_ObjCRequiresSuper = 272
+    CXAttrKind_ObjCReturnsInnerPointer = 273
+    CXAttrKind_ObjCRootClass = 274
+    CXAttrKind_ObjCSubclassingRestricted = 275
+    CXAttrKind_OpenCLIntelReqdSubGroupSize = 276
+    CXAttrKind_OpenCLKernel = 277
+    CXAttrKind_OptimizeNone = 278
+    CXAttrKind_Override = 279
+    CXAttrKind_Owner = 280
+    CXAttrKind_Ownership = 281
+    CXAttrKind_Packed = 282
+    CXAttrKind_ParamTypestate = 283
+    CXAttrKind_PatchableFunctionEntry = 284
+    CXAttrKind_Pointer = 285
+    CXAttrKind_PragmaClangBSSSection = 286
+    CXAttrKind_PragmaClangDataSection = 287
+    CXAttrKind_PragmaClangRelroSection = 288
+    CXAttrKind_PragmaClangRodataSection = 289
+    CXAttrKind_PragmaClangTextSection = 290
+    CXAttrKind_PreferredName = 291
+    CXAttrKind_PreferredType = 292
+    CXAttrKind_PtGuardedBy = 293
+    CXAttrKind_PtGuardedVar = 294
+    CXAttrKind_Pure = 295
+    CXAttrKind_RISCVInterrupt = 296
+    CXAttrKind_RandomizeLayout = 297
+    CXAttrKind_ReadOnlyPlacement = 298
+    CXAttrKind_Reinitializes = 299
+    CXAttrKind_ReleaseCapability = 300
+    CXAttrKind_ReqdWorkGroupSize = 301
+    CXAttrKind_RequiresCapability = 302
+    CXAttrKind_Restrict = 303
+    CXAttrKind_Retain = 304
+    CXAttrKind_ReturnTypestate = 305
+    CXAttrKind_ReturnsNonNull = 306
+    CXAttrKind_ReturnsTwice = 307
+    CXAttrKind_SYCLKernel = 308
+    CXAttrKind_SYCLSpecialClass = 309
+    CXAttrKind_ScopedLockable = 310
+    CXAttrKind_Section = 311
+    CXAttrKind_SelectAny = 312
+    CXAttrKind_Sentinel = 313
+    CXAttrKind_SetTypestate = 314
+    CXAttrKind_SharedTrylockFunction = 315
+    CXAttrKind_SpeculativeLoadHardening = 316
+    CXAttrKind_StandaloneDebug = 317
+    CXAttrKind_StrictFP = 318
+    CXAttrKind_StrictGuardStackCheck = 319
+    CXAttrKind_SwiftAsync = 320
+    CXAttrKind_SwiftAsyncError = 321
+    CXAttrKind_SwiftAsyncName = 322
+    CXAttrKind_SwiftAttr = 323
+    CXAttrKind_SwiftBridge = 324
+    CXAttrKind_SwiftBridgedTypedef = 325
+    CXAttrKind_SwiftError = 326
+    CXAttrKind_SwiftImportAsNonGeneric = 327
+    CXAttrKind_SwiftImportPropertyAsAccessors = 328
+    CXAttrKind_SwiftName = 329
+    CXAttrKind_SwiftNewType = 330
+    CXAttrKind_SwiftPrivate = 331
+    CXAttrKind_TLSModel = 332
+    CXAttrKind_Target = 333
+    CXAttrKind_TargetClones = 334
+    CXAttrKind_TargetVersion = 335
+    CXAttrKind_TestTypestate = 336
+    CXAttrKind_TransparentUnion = 337
+    CXAttrKind_TrivialABI = 338
+    CXAttrKind_TryAcquireCapability = 339
+    CXAttrKind_TypeTagForDatatype = 340
+    CXAttrKind_TypeVisibility = 341
+    CXAttrKind_Unavailable = 342
+    CXAttrKind_Uninitialized = 343
+    CXAttrKind_UnsafeBufferUsage = 344
+    CXAttrKind_Unused = 345
+    CXAttrKind_Used = 346
+    CXAttrKind_UsingIfExists = 347
+    CXAttrKind_Uuid = 348
+    CXAttrKind_VecReturn = 349
+    CXAttrKind_VecTypeHint = 350
+    CXAttrKind_Visibility = 351
+    CXAttrKind_WarnUnused = 352
+    CXAttrKind_WarnUnusedResult = 353
+    CXAttrKind_Weak = 354
+    CXAttrKind_WeakImport = 355
+    CXAttrKind_WeakRef = 356
+    CXAttrKind_WebAssemblyExportName = 357
+    CXAttrKind_WebAssemblyImportModule = 358
+    CXAttrKind_WebAssemblyImportName = 359
+    CXAttrKind_WorkGroupSizeHint = 360
+    CXAttrKind_X86ForceAlignArgPointer = 361
+    CXAttrKind_XRayInstrument = 362
+    CXAttrKind_XRayLogArgs = 363
+    CXAttrKind_ZeroCallUsedRegs = 364
+    CXAttrKind_AbiTag = 365
+    CXAttrKind_Alias = 366
+    CXAttrKind_AlignValue = 367
+    CXAttrKind_BuiltinAlias = 368
+    CXAttrKind_CalledOnce = 369
+    CXAttrKind_IFunc = 370
+    CXAttrKind_InitSeg = 371
+    CXAttrKind_LoaderUninitialized = 372
+    CXAttrKind_LoopHint = 373
+    CXAttrKind_Mode = 374
+    CXAttrKind_NoBuiltin = 375
+    CXAttrKind_NoEscape = 376
+    CXAttrKind_OMPCaptureKind = 377
+    CXAttrKind_OMPDeclareSimdDecl = 378
+    CXAttrKind_OMPReferencedVar = 379
+    CXAttrKind_ObjCBoxable = 380
+    CXAttrKind_ObjCClassStub = 381
+    CXAttrKind_ObjCDesignatedInitializer = 382
+    CXAttrKind_ObjCDirect = 383
+    CXAttrKind_ObjCDirectMembers = 384
+    CXAttrKind_ObjCNonLazyClass = 385
+    CXAttrKind_ObjCNonRuntimeProtocol = 386
+    CXAttrKind_ObjCRuntimeName = 387
+    CXAttrKind_ObjCRuntimeVisible = 388
+    CXAttrKind_OpenCLAccess = 389
+    CXAttrKind_Overloadable = 390
+    CXAttrKind_RenderScriptKernel = 391
+    CXAttrKind_SwiftObjCMembers = 392
+    CXAttrKind_SwiftVersionedAddition = 393
+    CXAttrKind_SwiftVersionedRemoval = 394
+    CXAttrKind_Thread = 395
+    # CXAttrKind_FirstAttr = 0
+    # CXAttrKind_LastAttr = 395
+    # CXAttrKind_FirstTypeAttr = 0
+    # CXAttrKind_LastTypeAttr = 32
+    # CXAttrKind_FirstStmtAttr = 33
+    # CXAttrKind_LastStmtAttr = 38
+    # CXAttrKind_FirstDeclOrStmtAttr = 39
+    # CXAttrKind_LastDeclOrStmtAttr = 42
+    # CXAttrKind_FirstInheritableAttr = 39
+    # CXAttrKind_LastInheritableAttr = 364
+    # CXAttrKind_FirstDeclOrTypeAttr = 43
+    # CXAttrKind_LastDeclOrTypeAttr = 66
+    # CXAttrKind_FirstInheritableParamAttr = 67
+    # CXAttrKind_LastInheritableParamAttr = 79
+    # CXAttrKind_FirstParameterABIAttr = 67
+    # CXAttrKind_LastParameterABIAttr = 70
+    # CXAttrKind_FirstHLSLAnnotationAttr = 80
+    # CXAttrKind_LastHLSLAnnotationAttr = 81
+end
+
+function clang_Attr_getKind(A)
+    @ccall libclangex.clang_Attr_getKind(A::CXAttr)::CXAttrKind
+end
+
+function clang_Attr_getSpelling(A)
+    @ccall libclangex.clang_Attr_getSpelling(A::CXAttr)::Ptr{Cchar}
+end
+
+function clang_Attr_getRange(A)
+    @ccall libclangex.clang_Attr_getRange(A::CXAttr)::CXSourceRange_
+end
+
+function clang_Attr_getLocation(A)
+    @ccall libclangex.clang_Attr_getLocation(A::CXAttr)::CXSourceLocation_
+end
+
+function clang_Attr_isImplicit(A)
+    @ccall libclangex.clang_Attr_isImplicit(A::CXAttr)::Bool
+end
+
+function clang_Attr_isInherited(A)
+    @ccall libclangex.clang_Attr_isInherited(A::CXAttr)::Bool
+end
+
+function clang_Attr_isPackExpansion(A)
+    @ccall libclangex.clang_Attr_isPackExpansion(A::CXAttr)::Bool
+end
+
 @enum CXDeclKind::UInt32 begin
     CXDeclKind_TranslationUnit = 0
     CXDeclKind_RequiresExprBody = 1
@@ -4636,6 +5083,18 @@ end
 
 function clang_Decl_getKind(D)
     @ccall libclangex.clang_Decl_getKind(D::CXDecl)::CXDeclKind
+end
+
+function clang_Decl_hasAttrs(D)
+    @ccall libclangex.clang_Decl_hasAttrs(D::CXDecl)::Bool
+end
+
+function clang_Decl_getNumAttrs(D)
+    @ccall libclangex.clang_Decl_getNumAttrs(D::CXDecl)::Cuint
+end
+
+function clang_Decl_getAttr(D, I)
+    @ccall libclangex.clang_Decl_getAttr(D::CXDecl, I::Cuint)::CXAttr
 end
 
 function clang_Decl_getLocation(DC)
@@ -13619,6 +14078,10 @@ function clang_Stmt_PrintStats()
 end
 
 # Skipping MacroDefinition: LAST_TYPE ( Class ) CXTypeClass_TypeLast = CXTypeClass_ ## Class
+
+# Skipping MacroDefinition: ATTR ( X ) CXAttrKind_ ## X ,
+
+# Skipping MacroDefinition: ATTR_RANGE ( CLASS , FIRST , LAST ) CXAttrKind_First ## CLASS = CXAttrKind_ ## FIRST , CXAttrKind_Last ## CLASS = CXAttrKind_ ## LAST ,
 
 # Skipping MacroDefinition: DECL ( DERIVED , BASE ) CXDeclKind_ ## DERIVED ,
 
