@@ -91,6 +91,11 @@ function isImmediateEscalating(x::AbstractCXXConstructExpr)
     return clang_CXXConstructExpr_isImmediateEscalating(x)
 end
 
+function getConstructionKind(x::AbstractCXXConstructExpr)
+    @check_ptrs x
+    return clang_CXXConstructExpr_getConstructionKind(x)
+end
+
 # LambdaExpr
 function getCallOperator(x::AbstractLambdaExpr)
     @check_ptrs x
@@ -172,6 +177,21 @@ function doesUsualArrayDeleteWantSize(x::AbstractCXXNewExpr)
     return clang_CXXNewExpr_doesUsualArrayDeleteWantSize(x)
 end
 
+function getInitializationStyle(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return clang_CXXNewExpr_getInitializationStyle(x)
+end
+
+function getOperatorDelete(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return FunctionDecl(clang_CXXNewExpr_getOperatorDelete(x))
+end
+
+function getOperatorNew(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return FunctionDecl(clang_CXXNewExpr_getOperatorNew(x))
+end
+
 # CXXDeleteExpr
 function getArgument(x::AbstractCXXDeleteExpr)
     @check_ptrs x
@@ -203,6 +223,10 @@ function getDestroyedType(x::AbstractCXXDeleteExpr)
     return QualType(clang_CXXDeleteExpr_getDestroyedType(x))
 end
 
+function getOperatorDelete(x::AbstractCXXDeleteExpr)
+    @check_ptrs x
+    return FunctionDecl(clang_CXXDeleteExpr_getOperatorDelete(x))
+end
 
 # CastExpr
 function path_empty(x::AbstractCastExpr)

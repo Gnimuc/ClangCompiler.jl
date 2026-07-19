@@ -24,6 +24,14 @@ CXCXXRecordDecl clang_CXXMemberCallExpr_getRecordDecl(CXCXXMemberCallExpr MCE);
 bool clang_CXXBoolLiteralExpr_getValue(CXCXXBoolLiteralExpr BLE);
 
 // CXXConstructExpr
+// mirrors clang::CXXConstructionKind (synced by static_assert in CXEnumSync.cpp)
+typedef enum CXCXXConstructionKind {
+  CXCXXConstructionKind_Complete,
+  CXCXXConstructionKind_NonVirtualBase,
+  CXCXXConstructionKind_VirtualBase,
+  CXCXXConstructionKind_Delegating
+} CXCXXConstructionKind;
+
 CXCXXConstructorDecl clang_CXXConstructExpr_getConstructor(CXCXXConstructExpr CE);
 
 unsigned clang_CXXConstructExpr_getNumArgs(CXCXXConstructExpr CE);
@@ -31,6 +39,8 @@ unsigned clang_CXXConstructExpr_getNumArgs(CXCXXConstructExpr CE);
 CXExpr clang_CXXConstructExpr_getArg(CXCXXConstructExpr CE, unsigned Arg);
 
 bool clang_CXXConstructExpr_isElidable(CXCXXConstructExpr CE);
+
+CXCXXConstructionKind clang_CXXConstructExpr_getConstructionKind(CXCXXConstructExpr CE);
 
 // LambdaExpr
 CXCXXMethodDecl clang_LambdaExpr_getCallOperator(CXLambdaExpr LE);
@@ -42,6 +52,19 @@ CXStmt clang_LambdaExpr_getBody(CXLambdaExpr LE);
 bool clang_LambdaExpr_isMutable(CXLambdaExpr LE);
 
 // CXXNewExpr
+// mirrors clang::CXXNewInitializationStyle (synced by static_assert in CXEnumSync.cpp)
+typedef enum CXCXXNewInitializationStyle {
+  CXCXXNewInitializationStyle_None,
+  CXCXXNewInitializationStyle_Parens,
+  CXCXXNewInitializationStyle_Braces
+} CXCXXNewInitializationStyle;
+
+CXCXXNewInitializationStyle clang_CXXNewExpr_getInitializationStyle(CXCXXNewExpr NE);
+
+CXFunctionDecl clang_CXXNewExpr_getOperatorNew(CXCXXNewExpr NE);
+
+CXFunctionDecl clang_CXXNewExpr_getOperatorDelete(CXCXXNewExpr NE);
+
 CXQualType clang_CXXNewExpr_getAllocatedType(CXCXXNewExpr NE);
 
 bool clang_CXXNewExpr_isArray(CXCXXNewExpr NE);
@@ -57,6 +80,8 @@ CXExpr clang_CXXNewExpr_getInitializer(CXCXXNewExpr NE);
 CXExpr clang_CXXDeleteExpr_getArgument(CXCXXDeleteExpr DE);
 
 bool clang_CXXDeleteExpr_isArrayForm(CXCXXDeleteExpr DE);
+
+CXFunctionDecl clang_CXXDeleteExpr_getOperatorDelete(CXCXXDeleteExpr DE);
 
 // CXXBoolLiteralExpr
 CXSourceLocation_ clang_CXXBoolLiteralExpr_getLocation(CXCXXBoolLiteralExpr E);

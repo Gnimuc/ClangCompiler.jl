@@ -9,12 +9,14 @@
 #include "clang-ex/CXTypes.h"
 
 #include "clang-ex/AST/CXExpr.h"
+#include "clang-ex/AST/CXExprCXX.h"
 #include "clang-ex/AST/CXOperationKinds.h"
 #include "clang-ex/Basic/CXLinkage.h"
 #include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-ex/Basic/CXVisibility.h"
 
 #include "clang/AST/Expr.h"
+#include "clang/AST/ExprCXX.h"
 #include "clang/AST/OperationKinds.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/Linkage.h"
@@ -238,5 +240,16 @@ ENUM_SYNC(CXCharacterLiteralKind_Wide, clang::CharacterLiteralKind::Wide);
 ENUM_SYNC(CXCharacterLiteralKind_UTF8, clang::CharacterLiteralKind::UTF8);
 ENUM_SYNC(CXCharacterLiteralKind_UTF16, clang::CharacterLiteralKind::UTF16);
 ENUM_SYNC(CXCharacterLiteralKind_UTF32, clang::CharacterLiteralKind::UTF32);
+
+// clang/AST/ExprCXX.h: enum class CXXConstructionKind
+ENUM_SYNC(CXCXXConstructionKind_Complete, clang::CXXConstructionKind::Complete);
+ENUM_SYNC(CXCXXConstructionKind_NonVirtualBase, clang::CXXConstructionKind::NonVirtualBase);
+ENUM_SYNC(CXCXXConstructionKind_VirtualBase, clang::CXXConstructionKind::VirtualBase);
+ENUM_SYNC(CXCXXConstructionKind_Delegating, clang::CXXConstructionKind::Delegating);
+
+// clang/AST/ExprCXX.h: enum class CXXNewInitializationStyle
+ENUM_SYNC(CXCXXNewInitializationStyle_None, clang::CXXNewInitializationStyle::None);
+ENUM_SYNC(CXCXXNewInitializationStyle_Parens, clang::CXXNewInitializationStyle::Parens);
+ENUM_SYNC(CXCXXNewInitializationStyle_Braces, clang::CXXNewInitializationStyle::Braces);
 
 #undef ENUM_SYNC

@@ -7500,6 +7500,13 @@ function clang_CXXBoolLiteralExpr_getValue(BLE)
     @ccall libclangex.clang_CXXBoolLiteralExpr_getValue(BLE::CXCXXBoolLiteralExpr)::Bool
 end
 
+@enum CXCXXConstructionKind::UInt32 begin
+    CXCXXConstructionKind_Complete = 0
+    CXCXXConstructionKind_NonVirtualBase = 1
+    CXCXXConstructionKind_VirtualBase = 2
+    CXCXXConstructionKind_Delegating = 3
+end
+
 function clang_CXXConstructExpr_getConstructor(CE)
     @ccall libclangex.clang_CXXConstructExpr_getConstructor(CE::CXCXXConstructExpr)::CXCXXConstructorDecl
 end
@@ -7516,6 +7523,10 @@ function clang_CXXConstructExpr_isElidable(CE)
     @ccall libclangex.clang_CXXConstructExpr_isElidable(CE::CXCXXConstructExpr)::Bool
 end
 
+function clang_CXXConstructExpr_getConstructionKind(CE)
+    @ccall libclangex.clang_CXXConstructExpr_getConstructionKind(CE::CXCXXConstructExpr)::CXCXXConstructionKind
+end
+
 function clang_LambdaExpr_getCallOperator(LE)
     @ccall libclangex.clang_LambdaExpr_getCallOperator(LE::CXLambdaExpr)::CXCXXMethodDecl
 end
@@ -7530,6 +7541,24 @@ end
 
 function clang_LambdaExpr_isMutable(LE)
     @ccall libclangex.clang_LambdaExpr_isMutable(LE::CXLambdaExpr)::Bool
+end
+
+@enum CXCXXNewInitializationStyle::UInt32 begin
+    CXCXXNewInitializationStyle_None = 0
+    CXCXXNewInitializationStyle_Parens = 1
+    CXCXXNewInitializationStyle_Braces = 2
+end
+
+function clang_CXXNewExpr_getInitializationStyle(NE)
+    @ccall libclangex.clang_CXXNewExpr_getInitializationStyle(NE::CXCXXNewExpr)::CXCXXNewInitializationStyle
+end
+
+function clang_CXXNewExpr_getOperatorNew(NE)
+    @ccall libclangex.clang_CXXNewExpr_getOperatorNew(NE::CXCXXNewExpr)::CXFunctionDecl
+end
+
+function clang_CXXNewExpr_getOperatorDelete(NE)
+    @ccall libclangex.clang_CXXNewExpr_getOperatorDelete(NE::CXCXXNewExpr)::CXFunctionDecl
 end
 
 function clang_CXXNewExpr_getAllocatedType(NE)
@@ -7558,6 +7587,10 @@ end
 
 function clang_CXXDeleteExpr_isArrayForm(DE)
     @ccall libclangex.clang_CXXDeleteExpr_isArrayForm(DE::CXCXXDeleteExpr)::Bool
+end
+
+function clang_CXXDeleteExpr_getOperatorDelete(DE)
+    @ccall libclangex.clang_CXXDeleteExpr_getOperatorDelete(DE::CXCXXDeleteExpr)::CXFunctionDecl
 end
 
 function clang_CXXBoolLiteralExpr_getLocation(E)

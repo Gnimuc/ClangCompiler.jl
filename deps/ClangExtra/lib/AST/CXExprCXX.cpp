@@ -194,3 +194,28 @@ CXSourceLocation_ clang_CXXNamedCastExpr_getRParenLoc(CXCXXNamedCastExpr E) {
   return static_cast<clang::CXXNamedCastExpr *>(E)->getRParenLoc().getPtrEncoding();
 }
 
+
+// CXXConstructExpr construction kind
+CXCXXConstructionKind clang_CXXConstructExpr_getConstructionKind(CXCXXConstructExpr CE) {
+  return static_cast<CXCXXConstructionKind>(
+      static_cast<clang::CXXConstructExpr *>(CE)->getConstructionKind());
+}
+
+// CXXNewExpr metadata
+CXCXXNewInitializationStyle clang_CXXNewExpr_getInitializationStyle(CXCXXNewExpr NE) {
+  return static_cast<CXCXXNewInitializationStyle>(
+      static_cast<clang::CXXNewExpr *>(NE)->getInitializationStyle());
+}
+
+CXFunctionDecl clang_CXXNewExpr_getOperatorNew(CXCXXNewExpr NE) {
+  return static_cast<clang::CXXNewExpr *>(NE)->getOperatorNew();
+}
+
+CXFunctionDecl clang_CXXNewExpr_getOperatorDelete(CXCXXNewExpr NE) {
+  return static_cast<clang::CXXNewExpr *>(NE)->getOperatorDelete();
+}
+
+// CXXDeleteExpr operator delete
+CXFunctionDecl clang_CXXDeleteExpr_getOperatorDelete(CXCXXDeleteExpr DE) {
+  return static_cast<clang::CXXDeleteExpr *>(DE)->getOperatorDelete();
+}
