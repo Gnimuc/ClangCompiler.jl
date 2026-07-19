@@ -191,6 +191,366 @@ bool clang_CXXRecordDecl_isEmpty(CXCXXRecordDecl CXXRD) {
   return static_cast<clang::CXXRecordDecl *>(CXXRD)->isEmpty();
 }
 
+bool clang_CXXRecordDecl_allowConstDefaultInit(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->allowConstDefaultInit();
+}
+
+bool clang_CXXRecordDecl_defaultedCopyConstructorIsDeleted(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->defaultedCopyConstructorIsDeleted();
+}
+
+bool clang_CXXRecordDecl_defaultedDefaultConstructorIsConstexpr(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->defaultedDefaultConstructorIsConstexpr();
+}
+
+bool clang_CXXRecordDecl_defaultedDestructorIsConstexpr(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->defaultedDestructorIsConstexpr();
+}
+
+bool clang_CXXRecordDecl_defaultedDestructorIsDeleted(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->defaultedDestructorIsDeleted();
+}
+
+bool clang_CXXRecordDecl_defaultedMoveConstructorIsDeleted(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->defaultedMoveConstructorIsDeleted();
+}
+
+bool clang_CXXRecordDecl_hasAnyDependentBases(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasAnyDependentBases();
+}
+
+bool clang_CXXRecordDecl_hasConstexprDefaultConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasConstexprDefaultConstructor();
+}
+
+bool clang_CXXRecordDecl_hasConstexprDestructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasConstexprDestructor();
+}
+
+bool clang_CXXRecordDecl_hasConstexprNonCopyMoveConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasConstexprNonCopyMoveConstructor();
+}
+
+bool clang_CXXRecordDecl_hasCopyAssignmentWithConstParam(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasCopyAssignmentWithConstParam();
+}
+
+bool clang_CXXRecordDecl_hasCopyConstructorWithConstParam(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasCopyConstructorWithConstParam();
+}
+
+bool clang_CXXRecordDecl_hasDefaultConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasDefaultConstructor();
+}
+
+bool clang_CXXRecordDecl_hasDirectFields(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasDirectFields();
+}
+
+bool clang_CXXRecordDecl_hasFriends(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasFriends();
+}
+
+bool clang_CXXRecordDecl_hasInClassInitializer(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasInClassInitializer();
+}
+
+bool clang_CXXRecordDecl_hasInheritedAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasInheritedAssignment();
+}
+
+bool clang_CXXRecordDecl_hasInheritedConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasInheritedConstructor();
+}
+
+bool clang_CXXRecordDecl_hasInitMethod(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasInitMethod();
+}
+
+bool clang_CXXRecordDecl_hasIrrelevantDestructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasIrrelevantDestructor();
+}
+
+bool clang_CXXRecordDecl_hasKnownLambdaInternalLinkage(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasKnownLambdaInternalLinkage();
+}
+
+bool clang_CXXRecordDecl_hasMoveAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasMoveAssignment();
+}
+
+bool clang_CXXRecordDecl_hasMoveConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasMoveConstructor();
+}
+
+bool clang_CXXRecordDecl_hasMutableFields(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasMutableFields();
+}
+
+bool clang_CXXRecordDecl_hasNonLiteralTypeFieldsOrBases(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonLiteralTypeFieldsOrBases();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialCopyAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialCopyAssignment();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialCopyConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialCopyConstructor();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialCopyConstructorForCall(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialCopyConstructorForCall();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialDefaultConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialDefaultConstructor();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialDestructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialDestructor();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialDestructorForCall(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialDestructorForCall();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialMoveAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialMoveAssignment();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialMoveConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialMoveConstructor();
+}
+
+bool clang_CXXRecordDecl_hasNonTrivialMoveConstructorForCall(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasNonTrivialMoveConstructorForCall();
+}
+
+bool clang_CXXRecordDecl_hasPrivateFields(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasPrivateFields();
+}
+
+bool clang_CXXRecordDecl_hasProtectedFields(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasProtectedFields();
+}
+
+bool clang_CXXRecordDecl_hasSimpleCopyAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasSimpleCopyAssignment();
+}
+
+bool clang_CXXRecordDecl_hasSimpleCopyConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasSimpleCopyConstructor();
+}
+
+bool clang_CXXRecordDecl_hasSimpleDestructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasSimpleDestructor();
+}
+
+bool clang_CXXRecordDecl_hasSimpleMoveAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasSimpleMoveAssignment();
+}
+
+bool clang_CXXRecordDecl_hasSimpleMoveConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasSimpleMoveConstructor();
+}
+
+bool clang_CXXRecordDecl_hasTrivialCopyAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialCopyAssignment();
+}
+
+bool clang_CXXRecordDecl_hasTrivialCopyConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialCopyConstructor();
+}
+
+bool clang_CXXRecordDecl_hasTrivialCopyConstructorForCall(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialCopyConstructorForCall();
+}
+
+bool clang_CXXRecordDecl_hasTrivialDefaultConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialDefaultConstructor();
+}
+
+bool clang_CXXRecordDecl_hasTrivialDestructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialDestructor();
+}
+
+bool clang_CXXRecordDecl_hasTrivialDestructorForCall(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialDestructorForCall();
+}
+
+bool clang_CXXRecordDecl_hasTrivialMoveAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialMoveAssignment();
+}
+
+bool clang_CXXRecordDecl_hasTrivialMoveConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialMoveConstructor();
+}
+
+bool clang_CXXRecordDecl_hasTrivialMoveConstructorForCall(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasTrivialMoveConstructorForCall();
+}
+
+bool clang_CXXRecordDecl_hasUninitializedReferenceMember(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUninitializedReferenceMember();
+}
+
+bool clang_CXXRecordDecl_hasUserDeclaredConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUserDeclaredConstructor();
+}
+
+bool clang_CXXRecordDecl_hasUserDeclaredCopyAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUserDeclaredCopyAssignment();
+}
+
+bool clang_CXXRecordDecl_hasUserDeclaredCopyConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUserDeclaredCopyConstructor();
+}
+
+bool clang_CXXRecordDecl_hasUserDeclaredDestructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUserDeclaredDestructor();
+}
+
+bool clang_CXXRecordDecl_hasUserDeclaredMoveAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUserDeclaredMoveAssignment();
+}
+
+bool clang_CXXRecordDecl_hasUserDeclaredMoveConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUserDeclaredMoveConstructor();
+}
+
+bool clang_CXXRecordDecl_hasUserDeclaredMoveOperation(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUserDeclaredMoveOperation();
+}
+
+bool clang_CXXRecordDecl_hasUserProvidedDefaultConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasUserProvidedDefaultConstructor();
+}
+
+bool clang_CXXRecordDecl_hasVariantMembers(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->hasVariantMembers();
+}
+
+bool clang_CXXRecordDecl_isAbstract(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isAbstract();
+}
+
+bool clang_CXXRecordDecl_isAnyDestructorNoReturn(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isAnyDestructorNoReturn();
+}
+
+bool clang_CXXRecordDecl_isCXX11StandardLayout(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isCXX11StandardLayout();
+}
+
+bool clang_CXXRecordDecl_isCapturelessLambda(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isCapturelessLambda();
+}
+
+bool clang_CXXRecordDecl_isDependentLambda(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isDependentLambda();
+}
+
+bool clang_CXXRecordDecl_isEffectivelyFinal(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isEffectivelyFinal();
+}
+
+bool clang_CXXRecordDecl_isInterfaceLike(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isInterfaceLike();
+}
+
+bool clang_CXXRecordDecl_isLiteral(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isLiteral();
+}
+
+bool clang_CXXRecordDecl_isNeverDependentLambda(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isNeverDependentLambda();
+}
+
+bool clang_CXXRecordDecl_isParsingBaseSpecifiers(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isParsingBaseSpecifiers();
+}
+
+bool clang_CXXRecordDecl_isPolymorphic(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isPolymorphic();
+}
+
+bool clang_CXXRecordDecl_isStandardLayout(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isStandardLayout();
+}
+
+bool clang_CXXRecordDecl_isStructural(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isStructural();
+}
+
+bool clang_CXXRecordDecl_isTrivial(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isTrivial();
+}
+
+bool clang_CXXRecordDecl_isTriviallyCopyConstructible(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isTriviallyCopyConstructible();
+}
+
+bool clang_CXXRecordDecl_isTriviallyCopyable(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isTriviallyCopyable();
+}
+
+bool clang_CXXRecordDecl_mayBeAbstract(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->mayBeAbstract();
+}
+
+bool clang_CXXRecordDecl_mayBeDynamicClass(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->mayBeDynamicClass();
+}
+
+bool clang_CXXRecordDecl_mayBeNonDynamicClass(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->mayBeNonDynamicClass();
+}
+
+bool clang_CXXRecordDecl_needsImplicitCopyAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsImplicitCopyAssignment();
+}
+
+bool clang_CXXRecordDecl_needsImplicitCopyConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsImplicitCopyConstructor();
+}
+
+bool clang_CXXRecordDecl_needsImplicitDefaultConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsImplicitDefaultConstructor();
+}
+
+bool clang_CXXRecordDecl_needsImplicitDestructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsImplicitDestructor();
+}
+
+bool clang_CXXRecordDecl_needsImplicitMoveAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsImplicitMoveAssignment();
+}
+
+bool clang_CXXRecordDecl_needsImplicitMoveConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsImplicitMoveConstructor();
+}
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForCopyAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsOverloadResolutionForCopyAssignment();
+}
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForCopyConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsOverloadResolutionForCopyConstructor();
+}
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForDestructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsOverloadResolutionForDestructor();
+}
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForMoveAssignment(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsOverloadResolutionForMoveAssignment();
+}
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(CXCXXRecordDecl CXXRD) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->needsOverloadResolutionForMoveConstructor();
+}
+
 // ExplicitSpecifier
 CXExplicitSpecKind clang_ExplicitSpecifier_getKind(CXExplicitSpecifier ES) {
   return static_cast<CXExplicitSpecKind>(

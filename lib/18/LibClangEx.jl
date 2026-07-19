@@ -3730,6 +3730,366 @@ function clang_CXXRecordDecl_isEmpty(CXXRD)
     @ccall libclangex.clang_CXXRecordDecl_isEmpty(CXXRD::CXCXXRecordDecl)::Bool
 end
 
+function clang_CXXRecordDecl_allowConstDefaultInit(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_allowConstDefaultInit(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_defaultedCopyConstructorIsDeleted(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_defaultedCopyConstructorIsDeleted(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_defaultedDefaultConstructorIsConstexpr(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_defaultedDefaultConstructorIsConstexpr(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_defaultedDestructorIsConstexpr(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_defaultedDestructorIsConstexpr(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_defaultedDestructorIsDeleted(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_defaultedDestructorIsDeleted(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_defaultedMoveConstructorIsDeleted(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_defaultedMoveConstructorIsDeleted(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasAnyDependentBases(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasAnyDependentBases(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasConstexprDefaultConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasConstexprDefaultConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasConstexprDestructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasConstexprDestructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasConstexprNonCopyMoveConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasConstexprNonCopyMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasCopyAssignmentWithConstParam(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasCopyAssignmentWithConstParam(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasCopyConstructorWithConstParam(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasCopyConstructorWithConstParam(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasDefaultConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasDefaultConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasDirectFields(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasDirectFields(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasFriends(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasFriends(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasInClassInitializer(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasInClassInitializer(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasInheritedAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasInheritedAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasInheritedConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasInheritedConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasInitMethod(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasInitMethod(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasIrrelevantDestructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasIrrelevantDestructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasKnownLambdaInternalLinkage(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasKnownLambdaInternalLinkage(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasMoveAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasMoveAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasMoveConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasMutableFields(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasMutableFields(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonLiteralTypeFieldsOrBases(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonLiteralTypeFieldsOrBases(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialCopyAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialCopyAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialCopyConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialCopyConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialCopyConstructorForCall(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialCopyConstructorForCall(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialDefaultConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialDefaultConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialDestructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialDestructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialDestructorForCall(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialDestructorForCall(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialMoveAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialMoveAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialMoveConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasNonTrivialMoveConstructorForCall(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasNonTrivialMoveConstructorForCall(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasPrivateFields(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasPrivateFields(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasProtectedFields(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasProtectedFields(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasSimpleCopyAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasSimpleCopyAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasSimpleCopyConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasSimpleCopyConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasSimpleDestructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasSimpleDestructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasSimpleMoveAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasSimpleMoveAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasSimpleMoveConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasSimpleMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialCopyAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialCopyAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialCopyConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialCopyConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialCopyConstructorForCall(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialCopyConstructorForCall(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialDefaultConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialDefaultConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialDestructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialDestructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialDestructorForCall(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialDestructorForCall(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialMoveAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialMoveAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialMoveConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasTrivialMoveConstructorForCall(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasTrivialMoveConstructorForCall(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUninitializedReferenceMember(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUninitializedReferenceMember(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUserDeclaredConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUserDeclaredConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUserDeclaredCopyAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUserDeclaredCopyAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUserDeclaredCopyConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUserDeclaredCopyConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUserDeclaredDestructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUserDeclaredDestructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUserDeclaredMoveAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUserDeclaredMoveAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUserDeclaredMoveConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUserDeclaredMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUserDeclaredMoveOperation(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUserDeclaredMoveOperation(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasUserProvidedDefaultConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasUserProvidedDefaultConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_hasVariantMembers(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_hasVariantMembers(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isAbstract(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isAbstract(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isAnyDestructorNoReturn(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isAnyDestructorNoReturn(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isCXX11StandardLayout(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isCXX11StandardLayout(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isCapturelessLambda(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isCapturelessLambda(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isDependentLambda(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isDependentLambda(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isEffectivelyFinal(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isEffectivelyFinal(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isInterfaceLike(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isInterfaceLike(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isLiteral(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isLiteral(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isNeverDependentLambda(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isNeverDependentLambda(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isParsingBaseSpecifiers(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isParsingBaseSpecifiers(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isPolymorphic(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isPolymorphic(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isStandardLayout(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isStandardLayout(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isStructural(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isStructural(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isTrivial(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isTrivial(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isTriviallyCopyConstructible(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isTriviallyCopyConstructible(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isTriviallyCopyable(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isTriviallyCopyable(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_mayBeAbstract(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_mayBeAbstract(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_mayBeDynamicClass(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_mayBeDynamicClass(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_mayBeNonDynamicClass(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_mayBeNonDynamicClass(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsImplicitCopyAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsImplicitCopyAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsImplicitCopyConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsImplicitCopyConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsImplicitDefaultConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsImplicitDefaultConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsImplicitDestructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsImplicitDestructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsImplicitMoveAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsImplicitMoveAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsImplicitMoveConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsImplicitMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsOverloadResolutionForCopyAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsOverloadResolutionForCopyAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsOverloadResolutionForCopyConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsOverloadResolutionForCopyConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsOverloadResolutionForDestructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsOverloadResolutionForDestructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsOverloadResolutionForMoveAssignment(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsOverloadResolutionForMoveAssignment(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(CXXRD::CXCXXRecordDecl)::Bool
+end
+
 function clang_ExplicitSpecifier_getKind(ES)
     @ccall libclangex.clang_ExplicitSpecifier_getKind(ES::CXExplicitSpecifier)::CXExplicitSpecKind
 end
