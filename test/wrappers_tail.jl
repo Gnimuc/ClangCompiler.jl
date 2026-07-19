@@ -141,6 +141,25 @@ end
     dispose(I)
 end
 
+@testset "Tail | Type classification (getTypeClass / resolve)" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "int *tc_p; int tc_arr[4]; int &tc_r = *tc_p;")
+    f = DeclFinder(I)
+    cases = [("tc_p", CC.PointerType, CC.LibClangEx.CXTypeClass_Pointer),
+             # getTypeClass resolves straight to the leaf: array -> ConstantArray
+             # (not the abstract Array), reference -> LValueReference.
+             ("tc_arr", CC.ConstantArrayType, CC.LibClangEx.CXTypeClass_ConstantArray),
+             ("tc_r", CC.LValueReferenceType, CC.LibClangEx.CXTypeClass_LValueReference)]
+    for (name, carrier, cls) in cases
+        @test f(I, name)
+        typtr = CC.getTypePtr(CC.getType(CC.VarDecl(get_decl(f).ptr)))
+        @test CC.getTypeClass(typtr) == cls
+        @test CC.resolve(typtr) isa carrier
+    end
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Tail | Decl classification (getKind / resolve)" begin
     I = create_interpreter(String[])
     CC.parse(I, "int gv = 3; int fn(int a){return a;} struct S { int m; }; namespace N {}")

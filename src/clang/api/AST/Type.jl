@@ -41,6 +41,11 @@ getLocalUnqualifiedType(x::QualType) = QualType(clang_QualType_getLocalUnqualifi
 getUnqualifiedType(x::QualType) = QualType(clang_QualType_getUnqualifiedType(x))
 
 # Type
+function getTypeClass(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_getTypeClass(x)
+end
+
 function getCanonicalTypeInternal(x::AbstractType)
     @check_ptrs x
     return QualType(clang_Type_getCanonicalTypeInternal(x))

@@ -29,7 +29,8 @@ using Test
     # DeclNodes.inc (reached from Julia via resolve(::AbstractDecl)/getKind), so
     # neither appears as literal text in src/
     stamped(n) = occursin(r"^clang_Stmt_(castTo|is)[A-Z]", n) ||
-                 occursin(r"^clang_Decl_(castTo|is)[A-Z]\w*Decl$", n)
+                 occursin(r"^clang_Decl_(castTo|is)[A-Z]\w*Decl$", n) ||
+                 occursin(r"^clang_Type_castTo[A-Z]\w*Type$", n)
 
     skiplist_file = joinpath(@__DIR__, "api_skiplist.txt")
     skiplist = Set{String}(l for l in readlines(skiplist_file)

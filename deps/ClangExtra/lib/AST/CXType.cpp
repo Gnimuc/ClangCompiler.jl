@@ -4,6 +4,29 @@
 #include "clang/AST/TemplateBase.h"
 #include "clang/AST/Type.h"
 
+// Drift alarm: the vendored TypeNodes.inc must match the pinned LLVM version.
+// One assert per concrete class proves CXTypeClass equals clang's TypeClass
+// value-for-value; the TypeLast assert catches classes appended at the end.
+#define TYPE(Class, Base)                                                                  \
+  static_assert(static_cast<int>(CXTypeClass_##Class) ==                                   \
+                    static_cast<int>(clang::Type::Class),                                   \
+                "CXTypeClass drift: " #Class);
+#define ABSTRACT_TYPE(Class, Base)
+#include "clang-ex/AST/TypeNodes.inc"
+static_assert(static_cast<int>(CXTypeClass_TypeLast) ==
+                  static_cast<int>(clang::Type::TypeLast),
+              "CXTypeClass drift: vendored TypeNodes.inc is missing classes");
+
+#define TYPE(Class, Base)                                                                  \
+  CXType_ clang_Type_castTo##Class##Type(CXType_ T) {                                       \
+    return llvm::dyn_cast_or_null<clang::Class##Type>(static_cast<clang::Type *>(T));       \
+  }
+#include "clang-ex/AST/TypeNodes.inc"
+
+CXTypeClass clang_Type_getTypeClass(CXType_ T) {
+  return static_cast<CXTypeClass>(static_cast<clang::Type *>(T)->getTypeClass());
+}
+
 // QualType
 CXQualType clang_QualType_constructFromTypePtr(CXType_ Ptr, unsigned Quals) {
   return clang::QualType(static_cast<clang::Type *>(Ptr), Quals).getAsOpaquePtr();

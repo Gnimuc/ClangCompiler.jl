@@ -32,6 +32,7 @@ using .LibClangEx
 # from the vendored StmtNodes.inc / DeclNodes.inc alongside the bindings.
 include(joinpath(libdir, llvm_version, "StmtNodes.jl"))
 include(joinpath(libdir, llvm_version, "DeclNodes.jl"))
+include(joinpath(libdir, llvm_version, "TypeNodes.jl"))
 
 include("platform/JLLEnvs.jl")
 using .JLLEnvs

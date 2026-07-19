@@ -43,7 +43,7 @@ cd(@__DIR__) do
                 # of transient per-class X-macros (WHILESTMT, EXPR, …; FUNCTION,
                 # NAMESPACE, …); ignore them all, self-syncing with whatever the
                 # pinned .inc files define
-                for inc in ("StmtNodes.inc", "DeclNodes.inc")
+                for inc in ("StmtNodes.inc", "DeclNodes.inc", "TypeNodes.inc")
                     inc_path = joinpath(include_dir, "clang-ex", "AST", inc)
                     for line in eachline(inc_path)
                         m = match(r"^#\s*define ([A-Z][A-Z0-9_]*)\(", line)
@@ -69,3 +69,4 @@ end
 
 include(joinpath(@__DIR__, "stmt_nodes.jl"))
 include(joinpath(@__DIR__, "decl_nodes.jl"))
+include(joinpath(@__DIR__, "type_nodes.jl"))

@@ -917,6 +917,308 @@ end
     CXCallingConv_CC_M68kRTD = 21
 end
 
+@enum CXTypeClass::UInt32 begin
+    CXTypeClass_Adjusted = 0
+    CXTypeClass_Decayed = 1
+    CXTypeClass_ConstantArray = 2
+    CXTypeClass_DependentSizedArray = 3
+    CXTypeClass_IncompleteArray = 4
+    CXTypeClass_VariableArray = 5
+    CXTypeClass_Atomic = 6
+    CXTypeClass_Attributed = 7
+    CXTypeClass_BTFTagAttributed = 8
+    CXTypeClass_BitInt = 9
+    CXTypeClass_BlockPointer = 10
+    CXTypeClass_Builtin = 11
+    CXTypeClass_Complex = 12
+    CXTypeClass_Decltype = 13
+    CXTypeClass_Auto = 14
+    CXTypeClass_DeducedTemplateSpecialization = 15
+    CXTypeClass_DependentAddressSpace = 16
+    CXTypeClass_DependentBitInt = 17
+    CXTypeClass_DependentName = 18
+    CXTypeClass_DependentSizedExtVector = 19
+    CXTypeClass_DependentTemplateSpecialization = 20
+    CXTypeClass_DependentVector = 21
+    CXTypeClass_Elaborated = 22
+    CXTypeClass_FunctionNoProto = 23
+    CXTypeClass_FunctionProto = 24
+    CXTypeClass_InjectedClassName = 25
+    CXTypeClass_MacroQualified = 26
+    CXTypeClass_ConstantMatrix = 27
+    CXTypeClass_DependentSizedMatrix = 28
+    CXTypeClass_MemberPointer = 29
+    CXTypeClass_ObjCObjectPointer = 30
+    CXTypeClass_ObjCObject = 31
+    CXTypeClass_ObjCInterface = 32
+    CXTypeClass_ObjCTypeParam = 33
+    CXTypeClass_PackExpansion = 34
+    CXTypeClass_Paren = 35
+    CXTypeClass_Pipe = 36
+    CXTypeClass_Pointer = 37
+    CXTypeClass_LValueReference = 38
+    CXTypeClass_RValueReference = 39
+    CXTypeClass_SubstTemplateTypeParmPack = 40
+    CXTypeClass_SubstTemplateTypeParm = 41
+    CXTypeClass_Enum = 42
+    CXTypeClass_Record = 43
+    CXTypeClass_TemplateSpecialization = 44
+    CXTypeClass_TemplateTypeParm = 45
+    CXTypeClass_TypeOfExpr = 46
+    CXTypeClass_TypeOf = 47
+    CXTypeClass_Typedef = 48
+    CXTypeClass_UnaryTransform = 49
+    CXTypeClass_UnresolvedUsing = 50
+    CXTypeClass_Using = 51
+    CXTypeClass_Vector = 52
+    CXTypeClass_ExtVector = 53
+    # CXTypeClass_TypeLast = 53
+end
+
+function clang_Type_castToAdjustedType(T)
+    @ccall libclangex.clang_Type_castToAdjustedType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDecayedType(T)
+    @ccall libclangex.clang_Type_castToDecayedType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToArrayType(T)
+    @ccall libclangex.clang_Type_castToArrayType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToConstantArrayType(T)
+    @ccall libclangex.clang_Type_castToConstantArrayType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDependentSizedArrayType(T)
+    @ccall libclangex.clang_Type_castToDependentSizedArrayType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToIncompleteArrayType(T)
+    @ccall libclangex.clang_Type_castToIncompleteArrayType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToVariableArrayType(T)
+    @ccall libclangex.clang_Type_castToVariableArrayType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToAtomicType(T)
+    @ccall libclangex.clang_Type_castToAtomicType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToAttributedType(T)
+    @ccall libclangex.clang_Type_castToAttributedType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToBTFTagAttributedType(T)
+    @ccall libclangex.clang_Type_castToBTFTagAttributedType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToBitIntType(T)
+    @ccall libclangex.clang_Type_castToBitIntType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToBlockPointerType(T)
+    @ccall libclangex.clang_Type_castToBlockPointerType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToBuiltinType(T)
+    @ccall libclangex.clang_Type_castToBuiltinType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToComplexType(T)
+    @ccall libclangex.clang_Type_castToComplexType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDecltypeType(T)
+    @ccall libclangex.clang_Type_castToDecltypeType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDeducedType(T)
+    @ccall libclangex.clang_Type_castToDeducedType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToAutoType(T)
+    @ccall libclangex.clang_Type_castToAutoType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDeducedTemplateSpecializationType(T)
+    @ccall libclangex.clang_Type_castToDeducedTemplateSpecializationType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDependentAddressSpaceType(T)
+    @ccall libclangex.clang_Type_castToDependentAddressSpaceType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDependentBitIntType(T)
+    @ccall libclangex.clang_Type_castToDependentBitIntType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDependentNameType(T)
+    @ccall libclangex.clang_Type_castToDependentNameType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDependentSizedExtVectorType(T)
+    @ccall libclangex.clang_Type_castToDependentSizedExtVectorType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDependentTemplateSpecializationType(T)
+    @ccall libclangex.clang_Type_castToDependentTemplateSpecializationType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDependentVectorType(T)
+    @ccall libclangex.clang_Type_castToDependentVectorType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToElaboratedType(T)
+    @ccall libclangex.clang_Type_castToElaboratedType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToFunctionType(T)
+    @ccall libclangex.clang_Type_castToFunctionType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToFunctionNoProtoType(T)
+    @ccall libclangex.clang_Type_castToFunctionNoProtoType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToFunctionProtoType(T)
+    @ccall libclangex.clang_Type_castToFunctionProtoType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToInjectedClassNameType(T)
+    @ccall libclangex.clang_Type_castToInjectedClassNameType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToMacroQualifiedType(T)
+    @ccall libclangex.clang_Type_castToMacroQualifiedType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToMatrixType(T)
+    @ccall libclangex.clang_Type_castToMatrixType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToConstantMatrixType(T)
+    @ccall libclangex.clang_Type_castToConstantMatrixType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToDependentSizedMatrixType(T)
+    @ccall libclangex.clang_Type_castToDependentSizedMatrixType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToMemberPointerType(T)
+    @ccall libclangex.clang_Type_castToMemberPointerType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToObjCObjectPointerType(T)
+    @ccall libclangex.clang_Type_castToObjCObjectPointerType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToObjCObjectType(T)
+    @ccall libclangex.clang_Type_castToObjCObjectType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToObjCInterfaceType(T)
+    @ccall libclangex.clang_Type_castToObjCInterfaceType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToObjCTypeParamType(T)
+    @ccall libclangex.clang_Type_castToObjCTypeParamType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToPackExpansionType(T)
+    @ccall libclangex.clang_Type_castToPackExpansionType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToParenType(T)
+    @ccall libclangex.clang_Type_castToParenType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToPipeType(T)
+    @ccall libclangex.clang_Type_castToPipeType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToPointerType(T)
+    @ccall libclangex.clang_Type_castToPointerType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToReferenceType(T)
+    @ccall libclangex.clang_Type_castToReferenceType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToLValueReferenceType(T)
+    @ccall libclangex.clang_Type_castToLValueReferenceType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToRValueReferenceType(T)
+    @ccall libclangex.clang_Type_castToRValueReferenceType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToSubstTemplateTypeParmPackType(T)
+    @ccall libclangex.clang_Type_castToSubstTemplateTypeParmPackType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToSubstTemplateTypeParmType(T)
+    @ccall libclangex.clang_Type_castToSubstTemplateTypeParmType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToTagType(T)
+    @ccall libclangex.clang_Type_castToTagType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToEnumType(T)
+    @ccall libclangex.clang_Type_castToEnumType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToRecordType(T)
+    @ccall libclangex.clang_Type_castToRecordType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToTemplateSpecializationType(T)
+    @ccall libclangex.clang_Type_castToTemplateSpecializationType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToTemplateTypeParmType(T)
+    @ccall libclangex.clang_Type_castToTemplateTypeParmType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToTypeOfExprType(T)
+    @ccall libclangex.clang_Type_castToTypeOfExprType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToTypeOfType(T)
+    @ccall libclangex.clang_Type_castToTypeOfType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToTypedefType(T)
+    @ccall libclangex.clang_Type_castToTypedefType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToUnaryTransformType(T)
+    @ccall libclangex.clang_Type_castToUnaryTransformType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToUnresolvedUsingType(T)
+    @ccall libclangex.clang_Type_castToUnresolvedUsingType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToUsingType(T)
+    @ccall libclangex.clang_Type_castToUsingType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToVectorType(T)
+    @ccall libclangex.clang_Type_castToVectorType(T::CXType_)::CXType_
+end
+
+function clang_Type_castToExtVectorType(T)
+    @ccall libclangex.clang_Type_castToExtVectorType(T::CXType_)::CXType_
+end
+
+function clang_Type_getTypeClass(T)
+    @ccall libclangex.clang_Type_getTypeClass(T::CXType_)::CXTypeClass
+end
+
 function clang_QualType_constructFromTypePtr(Ptr, Quals)
     @ccall libclangex.clang_QualType_constructFromTypePtr(Ptr::CXType_, Quals::Cuint)::CXQualType
 end
@@ -13315,6 +13617,8 @@ end
 function clang_Stmt_PrintStats()
     @ccall libclangex.clang_Stmt_PrintStats()::Cvoid
 end
+
+# Skipping MacroDefinition: LAST_TYPE ( Class ) CXTypeClass_TypeLast = CXTypeClass_ ## Class
 
 # Skipping MacroDefinition: DECL ( DERIVED , BASE ) CXDeclKind_ ## DERIVED ,
 

@@ -74,44 +74,33 @@ clty_to_jlty(x::TemplateSpecializationType) = x
 clty_to_jlty(x::DependentNameType) = x
 clty_to_jlty(x::DependentTemplateSpecializationType) = x
 
+# CXTypeClass value -> concrete Julia carrier type, built from the vendored
+# TypeNodes.inc table (the same table the C CXTypeClass enum is stamped from), so
+# resolving a type is one ccall (getTypeClass) + one lookup instead of the
+# order-sensitive is_*_type predicate chain this replaced. Concrete classes
+# whose carrier is not wrapped fall back to UnexposedType; getTypeClass returns a
+# concrete class directly, so Tag/Function/Reference/Array resolve straight to
+# their leaf (Record/Enum, Proto/NoProto, LValue/RValue, Constant/…) — the
+# sub-resolves below stay for callers that hold an abstract carrier.
+const TYPE_CLASS_TO_TYPE = Dict{CXTypeClass,Any}()
+for node in TYPE_NODES
+    node.isabstract && continue
+    carrier = Symbol(node.name, "Type")
+    isdefined(@__MODULE__, carrier) || continue
+    cls = getproperty(LibClangEx, Symbol("CXTypeClass_", node.name))
+    TYPE_CLASS_TO_TYPE[cls] = getfield(@__MODULE__, carrier)
+end
+
 """
     resolve(ty::AbstractType)
-Resolve type using Clang's RTTI.
+Return `ty` rewrapped as the concrete Type reported by `getTypeClass` (Clang's
+RTTI). Builtin types resolve to the `BuiltinType` carrier; a second `resolve`
+refines those to the per-kind singletons. Falls back to `UnexposedType` for
+classes without a wrapped carrier.
 """
 function resolve(ty::AbstractType)
-    # keep an eye on the order
-    is_using_type(ty) && return UsingType(ty.ptr)
-    is_elaborated_type(ty) && return ElaboratedType(ty.ptr)
-    is_typedef_type(ty) && return TypedefType(ty.ptr)
-    is_template_type_parm_type(ty) && return TemplateTypeParmType(ty.ptr)
-    is_subst_template_type_parm_type(ty) && return SubstTemplateTypeParmType(ty.ptr)
-    is_subst_template_type_parm_pack_type(ty) && return SubstTemplateTypeParmPackType(ty.ptr)
-    is_template_specialization_type(ty) && return TemplateSpecializationType(ty.ptr)
-    is_dependent_name_type(ty) && return DependentNameType(ty.ptr)
-    is_dependent_template_specilization_type(ty) && return DependentTemplateSpecializationType(ty.ptr)
-    is_builtin_type(ty) && return BuiltinType(ty.ptr)
-    is_complex_type(ty) && return ComplexType(ty.ptr)
-    is_pointer_type(ty) && return PointerType(ty.ptr)
-    is_reference_type(ty) && return ReferenceType(ty.ptr)
-    is_member_pointer_type(ty) && return MemberPointerType(ty.ptr)
-    is_array_type(ty) && return ArrayType(ty.ptr)
-    is_function_type(ty) && return FunctionType(ty.ptr)
-    is_tag_type(ty) && return TagType(ty.ptr)
-    # sugar types — derived before base (DecayedType<:AdjustedType,
-    # DeducedTemplateSpecializationType<:DeducedType)
-    is_decayed_type(ty) && return DecayedType(ty.ptr)
-    is_adjusted_type(ty) && return AdjustedType(ty.ptr)
-    is_atomic_type(ty) && return AtomicType(ty.ptr)
-    is_paren_type(ty) && return ParenType(ty.ptr)
-    is_macro_qualified_type(ty) && return MacroQualifiedType(ty.ptr)
-    is_unary_transform_type(ty) && return UnaryTransformType(ty.ptr)
-    is_injected_class_name_type(ty) && return InjectedClassNameType(ty.ptr)
-    is_dependent_address_space_type(ty) && return DependentAddressSpaceType(ty.ptr)
-    is_dependent_sized_ext_vector_type(ty) && return DependentSizedExtVectorType(ty.ptr)
-    is_decltype_type(ty) && return DecltypeType(ty.ptr)
-    is_deduced_template_specialization_type(ty) && return DeducedTemplateSpecializationType(ty.ptr)
-    is_deduced_type(ty) && return DeducedType(ty.ptr)
-    return resolve(UnexposedType(ty))
+    T = get(TYPE_CLASS_TO_TYPE, getTypeClass(ty), nothing)
+    return T === nothing ? resolve(UnexposedType(ty)) : T(ty.ptr)
 end
 
 resolve(x::UnexposedType) = x

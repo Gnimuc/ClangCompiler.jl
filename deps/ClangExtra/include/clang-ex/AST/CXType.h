@@ -10,6 +10,32 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+// The Type classification surface below is stamped from the vendored
+// clang-ex/AST/TypeNodes.inc (a verbatim copy of clang's TableGen output for
+// the pinned LLVM version). Mirror-by-construction: the same table clang uses
+// to build clang::Type::TypeClass builds CXTypeClass here, and the impl-side
+// static_assert table in CXType.cpp proves value-for-value equality (plus a
+// TypeLast count assert), so a stale vendored copy fails the build. POLICY:
+// stamped symbols (CXTypeClass_* and the castTo family) are version-following
+// per LLVM major, exempt from the frozen-ABI rule. Named CXTypeClass (not
+// CXTypeKind) to avoid the libclang collision. The classification predicates
+// live in the separate clang_isa_<Class>Type family; only downcasts are stamped
+// here (clang_Type_is<Class>Type is reserved for clang's sugar-piercing
+// semantic queries, which mean something different from isa).
+typedef enum CXTypeClass {
+#define TYPE(Class, Base) CXTypeClass_##Class,
+#define ABSTRACT_TYPE(Class, Base)
+#define LAST_TYPE(Class) CXTypeClass_TypeLast = CXTypeClass_##Class
+#include "clang-ex/AST/TypeNodes.inc"
+} CXTypeClass;
+
+// Null-safe downcast for every class in the hierarchy, ABSTRACT bases included.
+// The wrapper name carries the full class spelling (TypeNodes name + "Type").
+#define TYPE(Class, Base) CXType_ clang_Type_castTo##Class##Type(CXType_ T);
+#include "clang-ex/AST/TypeNodes.inc"
+
+CXTypeClass clang_Type_getTypeClass(CXType_ T);
+
 CXQualType clang_QualType_constructFromTypePtr(CXType_ Ptr, unsigned Quals);
 
 CXType_ clang_QualType_getTypePtr(CXQualType OpaquePtr);
