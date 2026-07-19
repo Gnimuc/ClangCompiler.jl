@@ -44,6 +44,12 @@ end
                  for b in bases]
     @test basenames == ["BaseA", "BaseB"]
 
+    @test f(I, "Foo")
+    foo = ClangCompiler.CXXRecordDecl(get_decl(f).ptr)
+    @test ClangCompiler.getNumCtors(foo) == 2                     # Foo() and Foo(int)
+    @test length(ClangCompiler.getMethods(foo)) == ClangCompiler.getNumMethods(foo)
+    @test all(c -> c isa ClangCompiler.CXXConstructorDecl, ClangCompiler.getCtors(foo))
+
     dispose(f)
     dispose(I)
 end

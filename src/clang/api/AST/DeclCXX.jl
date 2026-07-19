@@ -559,6 +559,42 @@ function getVBases(x::AbstractCXXRecordDecl)
     return [getVBase(x, i) for i in 0:(clang_CXXRecordDecl_getNumVBases(x) - 1)]
 end
 
+function getNumMethods(x::AbstractCXXRecordDecl)
+    @check_ptrs x
+    return Int(clang_CXXRecordDecl_getNumMethods(x))
+end
+
+"""
+    getMethods(x::AbstractCXXRecordDecl) -> Vector{CXXMethodDecl}
+Return the member functions declared in the class (requires a definition).
+"""
+
+function getMethods(x::AbstractCXXRecordDecl)
+    @check_ptrs x
+    n = clang_CXXRecordDecl_getNumMethods(x)
+    buf = Vector{CXCXXMethodDecl}(undef, n)
+    n > 0 && clang_CXXRecordDecl_getMethods(x, buf)
+    return [CXXMethodDecl(p) for p in buf]
+end
+
+function getNumCtors(x::AbstractCXXRecordDecl)
+    @check_ptrs x
+    return Int(clang_CXXRecordDecl_getNumCtors(x))
+end
+
+"""
+    getCtors(x::AbstractCXXRecordDecl) -> Vector{CXXConstructorDecl}
+Return the constructors declared in the class (requires a definition).
+"""
+
+function getCtors(x::AbstractCXXRecordDecl)
+    @check_ptrs x
+    n = clang_CXXRecordDecl_getNumCtors(x)
+    buf = Vector{CXCXXConstructorDecl}(undef, n)
+    n > 0 && clang_CXXRecordDecl_getCtors(x, buf)
+    return [CXXConstructorDecl(p) for p in buf]
+end
+
 # AccessSpecDecl
 function getAccessSpecifierLoc(x::AbstractAccessSpecDecl)
     @check_ptrs x

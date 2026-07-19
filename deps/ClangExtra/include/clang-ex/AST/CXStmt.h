@@ -64,6 +64,11 @@ bool clang_DeclStmt_isSingleDecl(CXDeclStmt DS);
 
 CXDecl clang_DeclStmt_getSingleDecl(CXDeclStmt DS);
 
+// decls: two-call protocol (decl_iterator is forward-only).
+size_t clang_DeclStmt_getNumDecls(CXDeclStmt DS);
+
+void clang_DeclStmt_getDecls(CXDeclStmt DS, CXDecl *Buf);
+
 // CompoundStmt
 unsigned clang_CompoundStmt_size(CXCompoundStmt CS);
 

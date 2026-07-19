@@ -482,3 +482,23 @@ function hasStoredFPFeatures(x::AbstractCompoundStmt)
     return clang_CompoundStmt_hasStoredFPFeatures(x)
 end
 
+
+# DeclStmt
+function getNumDecls(x::AbstractDeclStmt)
+    @check_ptrs x
+    return Int(clang_DeclStmt_getNumDecls(x))
+end
+
+"""
+    getDecls(x::AbstractDeclStmt) -> Vector{Decl}
+Return the declarations introduced by the declaration statement.
+"""
+
+function getDecls(x::AbstractDeclStmt)
+    @check_ptrs x
+    n = clang_DeclStmt_getNumDecls(x)
+    buf = Vector{CXDecl}(undef, n)
+    n > 0 && clang_DeclStmt_getDecls(x, buf)
+    return [Decl(p) for p in buf]
+end
+

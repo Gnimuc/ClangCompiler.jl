@@ -290,6 +290,15 @@ unsigned clang_CXXRecordDecl_getNumVBases(CXCXXRecordDecl CXXRD);
 
 CXCXXBaseSpecifier clang_CXXRecordDecl_getVBase(CXCXXRecordDecl CXXRD, unsigned i);
 
+// methods/ctors: two-call protocol (specific_decl_iterator is forward-only).
+unsigned clang_CXXRecordDecl_getNumMethods(CXCXXRecordDecl CXXRD);
+
+void clang_CXXRecordDecl_getMethods(CXCXXRecordDecl CXXRD, CXCXXMethodDecl *Buf);
+
+unsigned clang_CXXRecordDecl_getNumCtors(CXCXXRecordDecl CXXRD);
+
+void clang_CXXRecordDecl_getCtors(CXCXXRecordDecl CXXRD, CXCXXConstructorDecl *Buf);
+
 // ExplicitSpecifier
 CXExplicitSpecKind clang_ExplicitSpecifier_getKind(CXExplicitSpecifier ES);
 

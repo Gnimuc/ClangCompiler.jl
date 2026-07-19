@@ -4136,6 +4136,22 @@ function clang_CXXRecordDecl_getVBase(CXXRD, i)
     @ccall libclangex.clang_CXXRecordDecl_getVBase(CXXRD::CXCXXRecordDecl, i::Cuint)::CXCXXBaseSpecifier
 end
 
+function clang_CXXRecordDecl_getNumMethods(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_getNumMethods(CXXRD::CXCXXRecordDecl)::Cuint
+end
+
+function clang_CXXRecordDecl_getMethods(CXXRD, Buf)
+    @ccall libclangex.clang_CXXRecordDecl_getMethods(CXXRD::CXCXXRecordDecl, Buf::Ptr{CXCXXMethodDecl})::Cvoid
+end
+
+function clang_CXXRecordDecl_getNumCtors(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_getNumCtors(CXXRD::CXCXXRecordDecl)::Cuint
+end
+
+function clang_CXXRecordDecl_getCtors(CXXRD, Buf)
+    @ccall libclangex.clang_CXXRecordDecl_getCtors(CXXRD::CXCXXRecordDecl, Buf::Ptr{CXCXXConstructorDecl})::Cvoid
+end
+
 function clang_ExplicitSpecifier_getKind(ES)
     @ccall libclangex.clang_ExplicitSpecifier_getKind(ES::CXExplicitSpecifier)::CXExplicitSpecKind
 end
@@ -10114,6 +10130,14 @@ end
 
 function clang_DeclStmt_getSingleDecl(DS)
     @ccall libclangex.clang_DeclStmt_getSingleDecl(DS::CXDeclStmt)::CXDecl
+end
+
+function clang_DeclStmt_getNumDecls(DS)
+    @ccall libclangex.clang_DeclStmt_getNumDecls(DS::CXDeclStmt)::Csize_t
+end
+
+function clang_DeclStmt_getDecls(DS, Buf)
+    @ccall libclangex.clang_DeclStmt_getDecls(DS::CXDeclStmt, Buf::Ptr{CXDecl})::Cvoid
 end
 
 function clang_CompoundStmt_size(CS)

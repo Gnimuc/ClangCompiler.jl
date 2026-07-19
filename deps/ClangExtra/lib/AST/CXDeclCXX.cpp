@@ -567,6 +567,40 @@ CXCXXBaseSpecifier clang_CXXRecordDecl_getVBase(CXCXXRecordDecl CXXRD, unsigned 
   return static_cast<clang::CXXRecordDecl *>(CXXRD)->vbases_begin() + i;
 }
 
+unsigned clang_CXXRecordDecl_getNumMethods(CXCXXRecordDecl CXXRD) {
+  auto *D = static_cast<clang::CXXRecordDecl *>(CXXRD);
+  unsigned N = 0;
+  for (auto *M : D->methods()) {
+    (void)M;
+    ++N;
+  }
+  return N;
+}
+
+void clang_CXXRecordDecl_getMethods(CXCXXRecordDecl CXXRD, CXCXXMethodDecl *Buf) {
+  auto *D = static_cast<clang::CXXRecordDecl *>(CXXRD);
+  unsigned I = 0;
+  for (auto *M : D->methods())
+    Buf[I++] = M;
+}
+
+unsigned clang_CXXRecordDecl_getNumCtors(CXCXXRecordDecl CXXRD) {
+  auto *D = static_cast<clang::CXXRecordDecl *>(CXXRD);
+  unsigned N = 0;
+  for (auto *C : D->ctors()) {
+    (void)C;
+    ++N;
+  }
+  return N;
+}
+
+void clang_CXXRecordDecl_getCtors(CXCXXRecordDecl CXXRD, CXCXXConstructorDecl *Buf) {
+  auto *D = static_cast<clang::CXXRecordDecl *>(CXXRD);
+  unsigned I = 0;
+  for (auto *C : D->ctors())
+    Buf[I++] = C;
+}
+
 // ExplicitSpecifier
 CXExplicitSpecKind clang_ExplicitSpecifier_getKind(CXExplicitSpecifier ES) {
   return static_cast<CXExplicitSpecKind>(

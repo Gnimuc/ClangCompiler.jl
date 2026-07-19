@@ -90,6 +90,23 @@ CXDecl clang_DeclStmt_getSingleDecl(CXDeclStmt DS) {
   return static_cast<clang::DeclStmt *>(DS)->getSingleDecl();
 }
 
+size_t clang_DeclStmt_getNumDecls(CXDeclStmt DS) {
+  auto *D = static_cast<clang::DeclStmt *>(DS);
+  size_t N = 0;
+  for (auto *X : D->decls()) {
+    (void)X;
+    ++N;
+  }
+  return N;
+}
+
+void clang_DeclStmt_getDecls(CXDeclStmt DS, CXDecl *Buf) {
+  auto *D = static_cast<clang::DeclStmt *>(DS);
+  size_t I = 0;
+  for (auto *X : D->decls())
+    Buf[I++] = X;
+}
+
 // CompoundStmt
 unsigned clang_CompoundStmt_size(CXCompoundStmt CS) {
   return static_cast<clang::CompoundStmt *>(CS)->size();
