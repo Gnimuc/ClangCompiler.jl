@@ -877,7 +877,7 @@ CXFunctionDecl clang_FunctionDecl_Create(CXASTContext C, CXDeclContext DC,
       clang::SourceLocation::getFromPtrEncoding(NLoc),
       clang::DeclarationName::getFromOpaquePtr(N), clang::QualType::getFromOpaquePtr(T),
       static_cast<clang::TypeSourceInfo *>(TInfo), static_cast<clang::StorageClass>(SC),
-      isInlineSpecified, hasWrittenPrototype);
+      /*UsesFPIntrin=*/false, isInlineSpecified, hasWrittenPrototype);
 }
 
 CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, unsigned ID) {

@@ -547,3 +547,68 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "SetFactory | FunctionDecl_Create bool round-trip" begin
+    # Regression: clang_FunctionDecl_Create omitted LLVM-18's UsesFPIntrin slot,
+    # so (isInlineSpecified, hasWrittenPrototype) landed one argument to the left —
+    # isInlineSpecified went into UsesFPIntrin, hasWrittenPrototype into
+    # isInlineSpecified, and the real hasWrittenPrototype defaulted to true. A
+    # content round-trip over two distinct flag combos catches the misalignment.
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
+    CC.parse(I, "void ffn_seed(int p) {}")
+    f = DeclFinder(I)
+    @test f(I, "ffn_seed")
+    seed = CC.FunctionDecl(get_decl(f).ptr)
+    name = CC.getDeclName(seed)
+    fty = CC.getType(seed)
+    loc = CC.getLocation(seed)
+    tsi = CC.getTrivialTypeSourceInfo(ctx, fty, loc)
+
+    # inline + no-written-prototype
+    fd1 = CC.FunctionDecl(ctx, dc, loc, loc, name, fty, tsi, LX.CXStorageClass_SC_None, true, false)
+    @test CC.isInlineSpecified(fd1) == true       # was false before the fix
+    @test CC.hasWrittenPrototype(fd1) == false     # was true (defaulted) before the fix
+
+    # the complementary combo: non-inline + written-prototype
+    fd2 = CC.FunctionDecl(ctx, dc, loc, loc, name, fty, tsi, LX.CXStorageClass_SC_None, false, true)
+    @test CC.isInlineSpecified(fd2) == false
+    @test CC.hasWrittenPrototype(fd2) == true
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "SetFactory | CXXMethodDecl_Create bool round-trip" begin
+    # Regression: clang_CXXMethodDecl_Create forwarded (isInline, UsesFPIntrin) in
+    # reversed order, so a method created inline read back non-inline. isInlineSpecified
+    # is inherited from FunctionDecl; reach it through the free primary-base upcast.
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
+    CC.parse(I, "struct MFoo { void mbar(int); };")
+    f = DeclFinder(I)
+    @test f(I, "MFoo")
+    mfoo = CC.CXXRecordDecl(get_decl(f).ptr)
+    mbar = first(m for m in CC.getMethods(mfoo) if CC.getName(m) == "mbar")
+    ni = CC.getNameInfo(mbar)
+    mty = CC.getType(mbar)
+    mtsi = CC.getTypeSourceInfo(mbar)
+    sloc = CC.getBeginLoc(mbar)
+    eloc = CC.getLocation(mbar)
+
+    # uses_fp_intrin=false, is_inline=true
+    md = CC.CXXMethodDecl(ctx, mfoo, sloc, ni, mty, mtsi, LX.CXStorageClass_SC_None,
+                          false, true, LX.CXConstexprSpecKind_Unspecified, eloc)
+    @test md isa CC.CXXMethodDecl
+    @test CC.isInlineSpecified(CC.FunctionDecl(md.ptr)) == true    # was false before the fix
+
+    # complementary: uses_fp_intrin=false, is_inline=false
+    md2 = CC.CXXMethodDecl(ctx, mfoo, sloc, ni, mty, mtsi, LX.CXStorageClass_SC_None,
+                           false, false, LX.CXConstexprSpecKind_Unspecified, eloc)
+    @test CC.isInlineSpecified(CC.FunctionDecl(md2.ptr)) == false
+
+    dispose(f)
+    dispose(I)
+end

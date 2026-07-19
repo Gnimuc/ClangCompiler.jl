@@ -684,7 +684,7 @@ clang_CXXMethodDecl_Create(CXASTContext C, CXCXXRecordDecl RD, CXSourceLocation_
       clang::SourceLocation::getFromPtrEncoding(StartLoc),
       *static_cast<clang::DeclarationNameInfo *>(NameInfo),
       clang::QualType::getFromOpaquePtr(T), static_cast<clang::TypeSourceInfo *>(TInfo),
-      static_cast<clang::StorageClass>(SC), isInline, UsesFPIntrin,
+      static_cast<clang::StorageClass>(SC), UsesFPIntrin, isInline,
       static_cast<clang::ConstexprSpecKind>(ConstexprKind),
       clang::SourceLocation::getFromPtrEncoding(EndLocation),
       static_cast<clang::Expr *>(TrailingRequiresClause));
