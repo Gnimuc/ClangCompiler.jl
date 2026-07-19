@@ -48,7 +48,7 @@ Clang_DIR = joinpath(LLVM.artifact_dir, "lib", "cmake", "clang")
 
 # build and install
 @info "Building" source_dir scratch_dir build_dir LLVM_DIR Clang_DIR
-cmake() do cmake_path
+function build_clangex(cmake_path)
     config_opts = `-DLLVM_DIR=$(LLVM_DIR) -DClang_DIR=$(Clang_DIR) -DCMAKE_INSTALL_PREFIX=$(scratch_dir)`
     if Sys.iswindows()
         # prevent picking up MSVC
@@ -56,6 +56,20 @@ cmake() do cmake_path
     end
     run(`$cmake_path $config_opts -B$(build_dir) -S$(source_dir)`)
     run(`$cmake_path --build $(build_dir) --target install --parallel $(Sys.CPU_THREADS)`)
+end
+
+# In an MSYS2 shell, use the environment's own cmake instead of CMake_jll's:
+# JLLWrappers uses PATH as the library path on Windows and prepends the
+# artifact DLL directories to it, so gcc subprocesses spawned by the
+# JLL-wrapped cmake resolve mismatched runtime DLLs from those directories
+# and fail without a diagnostic.
+msys2_cmake = Sys.iswindows() && haskey(ENV, "MSYSTEM") ? Sys.which("cmake") : nothing
+if msys2_cmake !== nothing
+    build_clangex(msys2_cmake)
+else
+    cmake() do cmake_path
+        build_clangex(cmake_path)
+    end
 end
 
 # discover built libraries
