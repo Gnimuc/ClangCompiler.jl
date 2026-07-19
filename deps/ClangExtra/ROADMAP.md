@@ -150,19 +150,36 @@ remaining phases. Status markers: [x] done, [ ] open.
       direct-call/call-graph edge lister (CallExpr -> getDirectCallee), and a
       struct-layout dumper (field iteration + QualType resolve). Each proves the
       parse -> find -> traverse -> resolve -> payload path end to end.
+- [x] Whole-TU Decl traversal — the DeclContext sibling of bulk subtree.
+      clang_DeclContext_getRecursiveDeclCount + collectRecursiveDecls fill parallel
+      decl/CXDeclKind buffers in one pre-order walk (recursing into nested
+      contexts), so decls(::DeclContext) resolves an entire TU in O(1) FFI
+      round-trips.
+- [x] Skiplist introspection sweep — wrapped the genuinely-useful accessors still
+      parked (FieldDecl bit-width/zero-size, RecordDecl isMsStruct, BlockDecl/
+      CapturedDecl params, CStyleCastExpr paren locs, Decl isFunctionOrFunctionTemplate);
+      ratchet 219 -> 209. The residue is Create*/set* AST-mutation, parked by design.
+- [x] OMP abstract-base payload — OMPExecutableDirective getNumClauses /
+      isStandaloneDirective / hasAssociatedStmt / getAssociatedStmt (the base where
+      the real API lives; per-directive payload stays on demand).
 
 ## Remaining
 
-- [ ] **Payload leftovers** — the long breadth-first tail of core classes with
-      ≤2 payload methods (the priority Expr/value-type surface is now done).
-- [ ] **Attribute payload** — the per-attribute accessors (AlignedAttr::getAlignment,
-      …) and the stamped clang_Attr_castTo/is family, once the ~396-class breadth
-      is worth wrapping. The classification floor is done (see below).
-- [ ] **TypeLoc payload** — the per-TypeLoc-class accessors (PointerTypeLoc star
-      loc, FunctionTypeLoc param locs, TemplateSpecializationTypeLoc arg locs, …);
-      the handle + source-range floor is done (see below).
+All of the below is **on-demand payload depth** (per the Hybrid-strategy and
+OMP/ObjC standing decisions): the classification, traversal, and bridge
+*infrastructure* is complete, so each of these is a bounded add whenever a real
+use surfaces. They do not gate anything.
 
-- [ ] **OMP abstract-base payload** (per posture above).
+- [ ] **Attribute payload** — per-attribute accessors (AlignedAttr::getAlignment, …)
+      + the stamped clang_Attr_castTo/is family, once the ~396-class breadth is
+      worth wrapping. Classification floor done; getAttrs/getKind reach any attr.
+- [ ] **TypeLoc payload** — per-TypeLoc-class accessors (PointerTypeLoc star loc,
+      FunctionTypeLoc param locs, …). The handle + source-range/getNextTypeLoc
+      floor is done.
+- [ ] **AST construction/mutation** — the `Create*`/`CreateDeserialized`/`set*`
+      surface still parked in api_skiplist.txt (~200 symbols), intentionally left
+      until there is demand to build/mutate AST from Julia (the wrapper is
+      analysis-focused). The introspection accessors have been swept out.
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
       (this branch adds ~1100 C symbols — the earlier drift fixes, the 90
       CXXRecordDecl traits, the APValue bridge with its Expr eval cluster, the

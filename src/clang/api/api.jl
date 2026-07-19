@@ -19,6 +19,7 @@ include("AST/TypeLoc.jl")
 include("AST/Expr.jl")
 include("AST/ExprCXX.jl")
 include("AST/Stmt.jl")
+include("AST/StmtOpenMP.jl")
 include("AST/StmtCXX.jl")
 
 # Basic

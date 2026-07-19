@@ -141,6 +141,25 @@ end
     dispose(I)
 end
 
+@testset "Tail | OMP directive payload" begin
+    I = create_interpreter(["-fopenmp"])
+    CC.parse(I, "void ompf(int n){\n#pragma omp parallel num_threads(4)\n{ int x = n; }\n}")
+    f = DeclFinder(I)
+    @test f(I, "ompf")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    dir = nothing
+    for n in CC.subtree(CC.resolve(CC.getBody(fd)))
+        n isa CC.AbstractOMPExecutableDirective && (dir = n; break)
+    end
+    @test dir isa CC.OMPParallelDirective
+    @test CC.getNumClauses(dir) == 1                        # num_threads(4)
+    @test !CC.isStandaloneDirective(dir)
+    @test CC.hasAssociatedStmt(dir)
+    @test CC.getAssociatedStmt(dir) isa CC.CapturedStmt     # resolved base Stmt*
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Tail | skiplist-sweep accessors" begin
     I = create_interpreter(String[])
     CC.parse(I, "struct S { int a : 3; int b; }; int fn(){ return (int)3.5; }")

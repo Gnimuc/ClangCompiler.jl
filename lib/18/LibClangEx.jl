@@ -12672,6 +12672,22 @@ function clang_CXXForRangeStmt_getRParenLoc(S)
     @ccall libclangex.clang_CXXForRangeStmt_getRParenLoc(S::CXCXXForRangeStmt)::CXSourceLocation_
 end
 
+function clang_OMPExecutableDirective_getNumClauses(S)
+    @ccall libclangex.clang_OMPExecutableDirective_getNumClauses(S::CXStmt)::Cuint
+end
+
+function clang_OMPExecutableDirective_isStandaloneDirective(S)
+    @ccall libclangex.clang_OMPExecutableDirective_isStandaloneDirective(S::CXStmt)::Bool
+end
+
+function clang_OMPExecutableDirective_hasAssociatedStmt(S)
+    @ccall libclangex.clang_OMPExecutableDirective_hasAssociatedStmt(S::CXStmt)::Bool
+end
+
+function clang_OMPExecutableDirective_getAssociatedStmt(S)
+    @ccall libclangex.clang_OMPExecutableDirective_getAssociatedStmt(S::CXStmt)::CXStmt
+end
+
 @enum CXTemplateArgument_ArgKind::UInt32 begin
     CXTemplateArgument_Null = 0
     CXTemplateArgument_Type = 1
