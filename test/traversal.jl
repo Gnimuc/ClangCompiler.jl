@@ -47,3 +47,16 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Traversal | name mangling" begin
+    I = create_interpreter([joinpath(@__DIR__, "cxx", "main.cpp")])
+    ctx = ClangCompiler.get_ast_context(I)
+    mc = ClangCompiler.createMangleContext(ctx, ClangCompiler.getTargetInfo(ctx))
+    f = DeclFinder(I)
+    @test f(I, "sum")
+    nd = ClangCompiler.NamedDecl(get_decl(f).ptr)
+    @test ClangCompiler.shouldMangleDeclName(mc, nd)
+    @test ClangCompiler.mangleName(mc, nd) == "_Z3sumRNSt3__16vectorIfNS_9allocatorIfEEEE"
+    dispose(f)
+    dispose(I)
+end

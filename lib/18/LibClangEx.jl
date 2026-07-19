@@ -7685,6 +7685,10 @@ function clang_MangleContext_shouldMangleStringLiteral(MC, SL)
     @ccall libclangex.clang_MangleContext_shouldMangleStringLiteral(MC::CXMangleContext, SL::CXStringLiteral)::Bool
 end
 
+function clang_MangleContext_mangleName(MC, D)
+    @ccall libclangex.clang_MangleContext_mangleName(MC::CXMangleContext, D::CXNamedDecl)::CXString
+end
+
 function clang_ASTNameGenerator_getName(G, D)
     @ccall libclangex.clang_ASTNameGenerator_getName(G::CXASTNameGenerator, D::CXDecl)::CXString
 end

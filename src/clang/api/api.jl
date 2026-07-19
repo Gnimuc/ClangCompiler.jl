@@ -2,6 +2,7 @@
 # AST
 include("AST/ASTConsumer.jl")
 include("AST/ASTContext.jl")
+include("AST/Mangle.jl")
 include("AST/Decl.jl")
 include("AST/DeclarationName.jl")
 include("AST/DeclBase.jl")
