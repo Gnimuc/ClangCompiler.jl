@@ -448,3 +448,332 @@ function getLocation(x::IntegerLiteral)
     return SourceLocation(clang_IntegerLiteral_getLocation(x))
 end
 
+
+# UnaryExprOrTypeTraitExpr
+function isArgumentType(x::AbstractUnaryExprOrTypeTraitExpr)
+    @check_ptrs x
+    return clang_UnaryExprOrTypeTraitExpr_isArgumentType(x)
+end
+
+function getArgumentType(x::AbstractUnaryExprOrTypeTraitExpr)
+    @check_ptrs x
+    return QualType(clang_UnaryExprOrTypeTraitExpr_getArgumentType(x))
+end
+
+function getTypeOfArgument(x::AbstractUnaryExprOrTypeTraitExpr)
+    @check_ptrs x
+    return QualType(clang_UnaryExprOrTypeTraitExpr_getTypeOfArgument(x))
+end
+
+function getOperatorLoc(x::AbstractUnaryExprOrTypeTraitExpr)
+    @check_ptrs x
+    return SourceLocation(clang_UnaryExprOrTypeTraitExpr_getOperatorLoc(x))
+end
+
+function getRParenLoc(x::AbstractUnaryExprOrTypeTraitExpr)
+    @check_ptrs x
+    return SourceLocation(clang_UnaryExprOrTypeTraitExpr_getRParenLoc(x))
+end
+
+# StringLiteral
+function isOrdinary(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_isOrdinary(x)
+end
+
+function isWide(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_isWide(x)
+end
+
+function isUTF8(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_isUTF8(x)
+end
+
+function isUTF16(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_isUTF16(x)
+end
+
+function isUTF32(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_isUTF32(x)
+end
+
+function isUnevaluated(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_isUnevaluated(x)
+end
+
+function isPascal(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_isPascal(x)
+end
+
+function containsNonAscii(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_containsNonAscii(x)
+end
+
+function containsNonAsciiOrNull(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_containsNonAsciiOrNull(x)
+end
+
+function getNumConcatenated(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_getNumConcatenated(x)
+end
+
+# CharacterLiteral
+function getLocation(x::AbstractCharacterLiteral)
+    @check_ptrs x
+    return SourceLocation(clang_CharacterLiteral_getLocation(x))
+end
+
+# UnaryOperator
+function canOverflow(x::AbstractUnaryOperator)
+    @check_ptrs x
+    return clang_UnaryOperator_canOverflow(x)
+end
+
+function isIncrementDecrementOp(x::AbstractUnaryOperator)
+    @check_ptrs x
+    return clang_UnaryOperator_isIncrementDecrementOp(x)
+end
+
+function isArithmeticOp(x::AbstractUnaryOperator)
+    @check_ptrs x
+    return clang_UnaryOperator_isArithmeticOp(x)
+end
+
+function hasStoredFPFeatures(x::AbstractUnaryOperator)
+    @check_ptrs x
+    return clang_UnaryOperator_hasStoredFPFeatures(x)
+end
+
+# CallExpr
+function usesADL(x::AbstractCallExpr)
+    @check_ptrs x
+    return clang_CallExpr_usesADL(x)
+end
+
+function hasStoredFPFeatures(x::AbstractCallExpr)
+    @check_ptrs x
+    return clang_CallExpr_hasStoredFPFeatures(x)
+end
+
+function getBuiltinCallee(x::AbstractCallExpr)
+    @check_ptrs x
+    return clang_CallExpr_getBuiltinCallee(x)
+end
+
+function isCallToStdMove(x::AbstractCallExpr)
+    @check_ptrs x
+    return clang_CallExpr_isCallToStdMove(x)
+end
+
+# MemberExpr
+function hasQualifier(x::AbstractMemberExpr)
+    @check_ptrs x
+    return clang_MemberExpr_hasQualifier(x)
+end
+
+function getTemplateKeywordLoc(x::AbstractMemberExpr)
+    @check_ptrs x
+    return SourceLocation(clang_MemberExpr_getTemplateKeywordLoc(x))
+end
+
+function getLAngleLoc(x::AbstractMemberExpr)
+    @check_ptrs x
+    return SourceLocation(clang_MemberExpr_getLAngleLoc(x))
+end
+
+function getRAngleLoc(x::AbstractMemberExpr)
+    @check_ptrs x
+    return SourceLocation(clang_MemberExpr_getRAngleLoc(x))
+end
+
+function hasTemplateKeyword(x::AbstractMemberExpr)
+    @check_ptrs x
+    return clang_MemberExpr_hasTemplateKeyword(x)
+end
+
+function hasExplicitTemplateArgs(x::AbstractMemberExpr)
+    @check_ptrs x
+    return clang_MemberExpr_hasExplicitTemplateArgs(x)
+end
+
+function getNumTemplateArgs(x::AbstractMemberExpr)
+    @check_ptrs x
+    return clang_MemberExpr_getNumTemplateArgs(x)
+end
+
+function getOperatorLoc(x::AbstractMemberExpr)
+    @check_ptrs x
+    return SourceLocation(clang_MemberExpr_getOperatorLoc(x))
+end
+
+function hadMultipleCandidates(x::AbstractMemberExpr)
+    @check_ptrs x
+    return clang_MemberExpr_hadMultipleCandidates(x)
+end
+
+# InitListExpr
+function hasArrayFiller(x::AbstractInitListExpr)
+    @check_ptrs x
+    return clang_InitListExpr_hasArrayFiller(x)
+end
+
+function hasDesignatedInit(x::AbstractInitListExpr)
+    @check_ptrs x
+    return clang_InitListExpr_hasDesignatedInit(x)
+end
+
+function isExplicit(x::AbstractInitListExpr)
+    @check_ptrs x
+    return clang_InitListExpr_isExplicit(x)
+end
+
+function isStringLiteralInit(x::AbstractInitListExpr)
+    @check_ptrs x
+    return clang_InitListExpr_isStringLiteralInit(x)
+end
+
+function isTransparent(x::AbstractInitListExpr)
+    @check_ptrs x
+    return clang_InitListExpr_isTransparent(x)
+end
+
+function getLBraceLoc(x::AbstractInitListExpr)
+    @check_ptrs x
+    return SourceLocation(clang_InitListExpr_getLBraceLoc(x))
+end
+
+function getRBraceLoc(x::AbstractInitListExpr)
+    @check_ptrs x
+    return SourceLocation(clang_InitListExpr_getRBraceLoc(x))
+end
+
+function isSyntacticForm(x::AbstractInitListExpr)
+    @check_ptrs x
+    return clang_InitListExpr_isSyntacticForm(x)
+end
+
+function hadArrayRangeDesignator(x::AbstractInitListExpr)
+    @check_ptrs x
+    return clang_InitListExpr_hadArrayRangeDesignator(x)
+end
+
+# ParenExpr
+function getLParen(x::AbstractParenExpr)
+    @check_ptrs x
+    return SourceLocation(clang_ParenExpr_getLParen(x))
+end
+
+function getRParen(x::AbstractParenExpr)
+    @check_ptrs x
+    return SourceLocation(clang_ParenExpr_getRParen(x))
+end
+
+# ArraySubscriptExpr
+function getRBracketLoc(x::AbstractArraySubscriptExpr)
+    @check_ptrs x
+    return SourceLocation(clang_ArraySubscriptExpr_getRBracketLoc(x))
+end
+
+# DeclRefExpr
+function hasTemplateKWAndArgsInfo(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return clang_DeclRefExpr_hasTemplateKWAndArgsInfo(x)
+end
+
+function getTemplateKeywordLoc(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return SourceLocation(clang_DeclRefExpr_getTemplateKeywordLoc(x))
+end
+
+function getLAngleLoc(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return SourceLocation(clang_DeclRefExpr_getLAngleLoc(x))
+end
+
+function getRAngleLoc(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return SourceLocation(clang_DeclRefExpr_getRAngleLoc(x))
+end
+
+function hasTemplateKeyword(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return clang_DeclRefExpr_hasTemplateKeyword(x)
+end
+
+function hasExplicitTemplateArgs(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return clang_DeclRefExpr_hasExplicitTemplateArgs(x)
+end
+
+function getNumTemplateArgs(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return clang_DeclRefExpr_getNumTemplateArgs(x)
+end
+
+function hadMultipleCandidates(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return clang_DeclRefExpr_hadMultipleCandidates(x)
+end
+
+function refersToEnclosingVariableOrCapture(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return clang_DeclRefExpr_refersToEnclosingVariableOrCapture(x)
+end
+
+function isImmediateEscalating(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return clang_DeclRefExpr_isImmediateEscalating(x)
+end
+
+function isCapturedByCopyInLambdaWithExplicitObjectParameter(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return clang_DeclRefExpr_isCapturedByCopyInLambdaWithExplicitObjectParameter(x)
+end
+
+# ConstantExpr
+function isImmediateInvocation(x::AbstractConstantExpr)
+    @check_ptrs x
+    return clang_ConstantExpr_isImmediateInvocation(x)
+end
+
+function hasAPValueResult(x::AbstractConstantExpr)
+    @check_ptrs x
+    return clang_ConstantExpr_hasAPValueResult(x)
+end
+
+# StmtExpr
+function getLParenLoc(x::AbstractStmtExpr)
+    @check_ptrs x
+    return SourceLocation(clang_StmtExpr_getLParenLoc(x))
+end
+
+function getRParenLoc(x::AbstractStmtExpr)
+    @check_ptrs x
+    return SourceLocation(clang_StmtExpr_getRParenLoc(x))
+end
+
+function getTemplateDepth(x::AbstractStmtExpr)
+    @check_ptrs x
+    return clang_StmtExpr_getTemplateDepth(x)
+end
+
+# CompoundLiteralExpr
+function isFileScope(x::AbstractCompoundLiteralExpr)
+    @check_ptrs x
+    return clang_CompoundLiteralExpr_isFileScope(x)
+end
+
+function getLParenLoc(x::AbstractCompoundLiteralExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CompoundLiteralExpr_getLParenLoc(x))
+end
+

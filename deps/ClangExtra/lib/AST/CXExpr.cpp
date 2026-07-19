@@ -432,3 +432,286 @@ bool clang_InitListExpr_isSemanticForm(CXInitListExpr ILE) {
 CXInitListExpr clang_InitListExpr_getSyntacticForm(CXInitListExpr ILE) {
   return static_cast<clang::InitListExpr *>(ILE)->getSyntacticForm();
 }
+
+// UnaryExprOrTypeTraitExpr
+bool clang_UnaryExprOrTypeTraitExpr_isArgumentType(CXUnaryExprOrTypeTraitExpr E) {
+  return static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->isArgumentType();
+}
+
+CXQualType clang_UnaryExprOrTypeTraitExpr_getArgumentType(CXUnaryExprOrTypeTraitExpr E) {
+  return static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->getArgumentType().getAsOpaquePtr();
+}
+
+CXQualType clang_UnaryExprOrTypeTraitExpr_getTypeOfArgument(CXUnaryExprOrTypeTraitExpr E) {
+  return static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->getTypeOfArgument().getAsOpaquePtr();
+}
+
+CXSourceLocation_ clang_UnaryExprOrTypeTraitExpr_getOperatorLoc(CXUnaryExprOrTypeTraitExpr E) {
+  return static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->getOperatorLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_UnaryExprOrTypeTraitExpr_getRParenLoc(CXUnaryExprOrTypeTraitExpr E) {
+  return static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->getRParenLoc().getPtrEncoding();
+}
+
+// StringLiteral
+bool clang_StringLiteral_isOrdinary(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->isOrdinary();
+}
+
+bool clang_StringLiteral_isWide(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->isWide();
+}
+
+bool clang_StringLiteral_isUTF8(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->isUTF8();
+}
+
+bool clang_StringLiteral_isUTF16(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->isUTF16();
+}
+
+bool clang_StringLiteral_isUTF32(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->isUTF32();
+}
+
+bool clang_StringLiteral_isUnevaluated(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->isUnevaluated();
+}
+
+bool clang_StringLiteral_isPascal(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->isPascal();
+}
+
+bool clang_StringLiteral_containsNonAscii(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->containsNonAscii();
+}
+
+bool clang_StringLiteral_containsNonAsciiOrNull(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->containsNonAsciiOrNull();
+}
+
+unsigned clang_StringLiteral_getNumConcatenated(CXStringLiteral E) {
+  return static_cast<clang::StringLiteral *>(E)->getNumConcatenated();
+}
+
+// CharacterLiteral
+CXSourceLocation_ clang_CharacterLiteral_getLocation(CXCharacterLiteral E) {
+  return static_cast<clang::CharacterLiteral *>(E)->getLocation().getPtrEncoding();
+}
+
+// UnaryOperator
+bool clang_UnaryOperator_canOverflow(CXUnaryOperator E) {
+  return static_cast<clang::UnaryOperator *>(E)->canOverflow();
+}
+
+bool clang_UnaryOperator_isIncrementDecrementOp(CXUnaryOperator E) {
+  return static_cast<clang::UnaryOperator *>(E)->isIncrementDecrementOp();
+}
+
+bool clang_UnaryOperator_isArithmeticOp(CXUnaryOperator E) {
+  return static_cast<clang::UnaryOperator *>(E)->isArithmeticOp();
+}
+
+bool clang_UnaryOperator_hasStoredFPFeatures(CXUnaryOperator E) {
+  return static_cast<clang::UnaryOperator *>(E)->hasStoredFPFeatures();
+}
+
+// CallExpr
+bool clang_CallExpr_usesADL(CXCallExpr E) {
+  return static_cast<clang::CallExpr *>(E)->usesADL();
+}
+
+bool clang_CallExpr_hasStoredFPFeatures(CXCallExpr E) {
+  return static_cast<clang::CallExpr *>(E)->hasStoredFPFeatures();
+}
+
+unsigned clang_CallExpr_getBuiltinCallee(CXCallExpr E) {
+  return static_cast<clang::CallExpr *>(E)->getBuiltinCallee();
+}
+
+bool clang_CallExpr_isCallToStdMove(CXCallExpr E) {
+  return static_cast<clang::CallExpr *>(E)->isCallToStdMove();
+}
+
+// MemberExpr
+bool clang_MemberExpr_hasQualifier(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->hasQualifier();
+}
+
+CXSourceLocation_ clang_MemberExpr_getTemplateKeywordLoc(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->getTemplateKeywordLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_MemberExpr_getLAngleLoc(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->getLAngleLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_MemberExpr_getRAngleLoc(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->getRAngleLoc().getPtrEncoding();
+}
+
+bool clang_MemberExpr_hasTemplateKeyword(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->hasTemplateKeyword();
+}
+
+bool clang_MemberExpr_hasExplicitTemplateArgs(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->hasExplicitTemplateArgs();
+}
+
+unsigned clang_MemberExpr_getNumTemplateArgs(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->getNumTemplateArgs();
+}
+
+CXSourceLocation_ clang_MemberExpr_getOperatorLoc(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->getOperatorLoc().getPtrEncoding();
+}
+
+bool clang_MemberExpr_hadMultipleCandidates(CXMemberExpr E) {
+  return static_cast<clang::MemberExpr *>(E)->hadMultipleCandidates();
+}
+
+// InitListExpr
+bool clang_InitListExpr_hasArrayFiller(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->hasArrayFiller();
+}
+
+bool clang_InitListExpr_hasDesignatedInit(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->hasDesignatedInit();
+}
+
+bool clang_InitListExpr_isExplicit(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->isExplicit();
+}
+
+bool clang_InitListExpr_isStringLiteralInit(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->isStringLiteralInit();
+}
+
+bool clang_InitListExpr_isTransparent(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->isTransparent();
+}
+
+CXSourceLocation_ clang_InitListExpr_getLBraceLoc(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->getLBraceLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_InitListExpr_getRBraceLoc(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->getRBraceLoc().getPtrEncoding();
+}
+
+bool clang_InitListExpr_isSyntacticForm(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->isSyntacticForm();
+}
+
+bool clang_InitListExpr_hadArrayRangeDesignator(CXInitListExpr E) {
+  return static_cast<clang::InitListExpr *>(E)->hadArrayRangeDesignator();
+}
+
+// ParenExpr
+CXSourceLocation_ clang_ParenExpr_getLParen(CXParenExpr E) {
+  return static_cast<clang::ParenExpr *>(E)->getLParen().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_ParenExpr_getRParen(CXParenExpr E) {
+  return static_cast<clang::ParenExpr *>(E)->getRParen().getPtrEncoding();
+}
+
+// ArraySubscriptExpr
+CXSourceLocation_ clang_ArraySubscriptExpr_getRBracketLoc(CXArraySubscriptExpr E) {
+  return static_cast<clang::ArraySubscriptExpr *>(E)->getRBracketLoc().getPtrEncoding();
+}
+
+// DeclRefExpr
+bool clang_DeclRefExpr_hasTemplateKWAndArgsInfo(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->hasTemplateKWAndArgsInfo();
+}
+
+CXSourceLocation_ clang_DeclRefExpr_getTemplateKeywordLoc(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->getTemplateKeywordLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_DeclRefExpr_getLAngleLoc(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->getLAngleLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_DeclRefExpr_getRAngleLoc(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->getRAngleLoc().getPtrEncoding();
+}
+
+bool clang_DeclRefExpr_hasTemplateKeyword(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->hasTemplateKeyword();
+}
+
+bool clang_DeclRefExpr_hasExplicitTemplateArgs(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->hasExplicitTemplateArgs();
+}
+
+unsigned clang_DeclRefExpr_getNumTemplateArgs(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->getNumTemplateArgs();
+}
+
+bool clang_DeclRefExpr_hadMultipleCandidates(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->hadMultipleCandidates();
+}
+
+bool clang_DeclRefExpr_refersToEnclosingVariableOrCapture(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->refersToEnclosingVariableOrCapture();
+}
+
+bool clang_DeclRefExpr_isImmediateEscalating(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->isImmediateEscalating();
+}
+
+bool clang_DeclRefExpr_isCapturedByCopyInLambdaWithExplicitObjectParameter(CXDeclRefExpr E) {
+  return static_cast<clang::DeclRefExpr *>(E)->isCapturedByCopyInLambdaWithExplicitObjectParameter();
+}
+
+// CastExpr
+bool clang_CastExpr_path_empty(CXCastExpr E) {
+  return static_cast<clang::CastExpr *>(E)->path_empty();
+}
+
+unsigned clang_CastExpr_path_size(CXCastExpr E) {
+  return static_cast<clang::CastExpr *>(E)->path_size();
+}
+
+bool clang_CastExpr_hasStoredFPFeatures(CXCastExpr E) {
+  return static_cast<clang::CastExpr *>(E)->hasStoredFPFeatures();
+}
+
+bool clang_CastExpr_changesVolatileQualification(CXCastExpr E) {
+  return static_cast<clang::CastExpr *>(E)->changesVolatileQualification();
+}
+
+// ConstantExpr
+bool clang_ConstantExpr_isImmediateInvocation(CXConstantExpr E) {
+  return static_cast<clang::ConstantExpr *>(E)->isImmediateInvocation();
+}
+
+bool clang_ConstantExpr_hasAPValueResult(CXConstantExpr E) {
+  return static_cast<clang::ConstantExpr *>(E)->hasAPValueResult();
+}
+
+// StmtExpr
+CXSourceLocation_ clang_StmtExpr_getLParenLoc(CXStmtExpr E) {
+  return static_cast<clang::StmtExpr *>(E)->getLParenLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_StmtExpr_getRParenLoc(CXStmtExpr E) {
+  return static_cast<clang::StmtExpr *>(E)->getRParenLoc().getPtrEncoding();
+}
+
+unsigned clang_StmtExpr_getTemplateDepth(CXStmtExpr E) {
+  return static_cast<clang::StmtExpr *>(E)->getTemplateDepth();
+}
+
+// CompoundLiteralExpr
+bool clang_CompoundLiteralExpr_isFileScope(CXCompoundLiteralExpr E) {
+  return static_cast<clang::CompoundLiteralExpr *>(E)->isFileScope();
+}
+
+CXSourceLocation_ clang_CompoundLiteralExpr_getLParenLoc(CXCompoundLiteralExpr E) {
+  return static_cast<clang::CompoundLiteralExpr *>(E)->getLParenLoc().getPtrEncoding();
+}
+

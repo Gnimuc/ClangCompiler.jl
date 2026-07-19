@@ -31,6 +31,11 @@ function getValue(x::AbstractCXXBoolLiteralExpr)
     return clang_CXXBoolLiteralExpr_getValue(x)
 end
 
+function getLocation(x::AbstractCXXBoolLiteralExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CXXBoolLiteralExpr_getLocation(x))
+end
+
 # CXXConstructExpr
 function getConstructor(x::AbstractCXXConstructExpr)
     @check_ptrs x
@@ -54,6 +59,36 @@ end
 function isElidable(x::AbstractCXXConstructExpr)
     @check_ptrs x
     return clang_CXXConstructExpr_isElidable(x)
+end
+
+function getLocation(x::AbstractCXXConstructExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CXXConstructExpr_getLocation(x))
+end
+
+function hadMultipleCandidates(x::AbstractCXXConstructExpr)
+    @check_ptrs x
+    return clang_CXXConstructExpr_hadMultipleCandidates(x)
+end
+
+function isListInitialization(x::AbstractCXXConstructExpr)
+    @check_ptrs x
+    return clang_CXXConstructExpr_isListInitialization(x)
+end
+
+function isStdInitListInitialization(x::AbstractCXXConstructExpr)
+    @check_ptrs x
+    return clang_CXXConstructExpr_isStdInitListInitialization(x)
+end
+
+function requiresZeroInitialization(x::AbstractCXXConstructExpr)
+    @check_ptrs x
+    return clang_CXXConstructExpr_requiresZeroInitialization(x)
+end
+
+function isImmediateEscalating(x::AbstractCXXConstructExpr)
+    @check_ptrs x
+    return clang_CXXConstructExpr_isImmediateEscalating(x)
 end
 
 # LambdaExpr
@@ -107,6 +142,36 @@ function getInitializer(x::AbstractCXXNewExpr)
     return Expr_(clang_CXXNewExpr_getInitializer(x))
 end
 
+function shouldNullCheckAllocation(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return clang_CXXNewExpr_shouldNullCheckAllocation(x)
+end
+
+function getNumPlacementArgs(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return clang_CXXNewExpr_getNumPlacementArgs(x)
+end
+
+function isParenTypeId(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return clang_CXXNewExpr_isParenTypeId(x)
+end
+
+function isGlobalNew(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return clang_CXXNewExpr_isGlobalNew(x)
+end
+
+function passAlignment(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return clang_CXXNewExpr_passAlignment(x)
+end
+
+function doesUsualArrayDeleteWantSize(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return clang_CXXNewExpr_doesUsualArrayDeleteWantSize(x)
+end
+
 # CXXDeleteExpr
 function getArgument(x::AbstractCXXDeleteExpr)
     @check_ptrs x
@@ -117,3 +182,79 @@ function isArrayForm(x::AbstractCXXDeleteExpr)
     @check_ptrs x
     return clang_CXXDeleteExpr_isArrayForm(x)
 end
+
+function isGlobalDelete(x::AbstractCXXDeleteExpr)
+    @check_ptrs x
+    return clang_CXXDeleteExpr_isGlobalDelete(x)
+end
+
+function isArrayFormAsWritten(x::AbstractCXXDeleteExpr)
+    @check_ptrs x
+    return clang_CXXDeleteExpr_isArrayFormAsWritten(x)
+end
+
+function doesUsualArrayDeleteWantSize(x::AbstractCXXDeleteExpr)
+    @check_ptrs x
+    return clang_CXXDeleteExpr_doesUsualArrayDeleteWantSize(x)
+end
+
+function getDestroyedType(x::AbstractCXXDeleteExpr)
+    @check_ptrs x
+    return QualType(clang_CXXDeleteExpr_getDestroyedType(x))
+end
+
+
+# CastExpr
+function path_empty(x::AbstractCastExpr)
+    @check_ptrs x
+    return clang_CastExpr_path_empty(x)
+end
+
+function path_size(x::AbstractCastExpr)
+    @check_ptrs x
+    return clang_CastExpr_path_size(x)
+end
+
+function hasStoredFPFeatures(x::AbstractCastExpr)
+    @check_ptrs x
+    return clang_CastExpr_hasStoredFPFeatures(x)
+end
+
+function changesVolatileQualification(x::AbstractCastExpr)
+    @check_ptrs x
+    return clang_CastExpr_changesVolatileQualification(x)
+end
+
+# CXXThisExpr
+function getLocation(x::AbstractCXXThisExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CXXThisExpr_getLocation(x))
+end
+
+function isImplicit(x::AbstractCXXThisExpr)
+    @check_ptrs x
+    return clang_CXXThisExpr_isImplicit(x)
+end
+
+# MaterializeTemporaryExpr
+function getManglingNumber(x::AbstractMaterializeTemporaryExpr)
+    @check_ptrs x
+    return clang_MaterializeTemporaryExpr_getManglingNumber(x)
+end
+
+function isBoundToLvalueReference(x::AbstractMaterializeTemporaryExpr)
+    @check_ptrs x
+    return clang_MaterializeTemporaryExpr_isBoundToLvalueReference(x)
+end
+
+# CXXNamedCastExpr
+function getOperatorLoc(x::AbstractCXXNamedCastExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CXXNamedCastExpr_getOperatorLoc(x))
+end
+
+function getRParenLoc(x::AbstractCXXNamedCastExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CXXNamedCastExpr_getRParenLoc(x))
+end
+

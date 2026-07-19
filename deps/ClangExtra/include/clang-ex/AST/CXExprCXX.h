@@ -58,6 +58,60 @@ CXExpr clang_CXXDeleteExpr_getArgument(CXCXXDeleteExpr DE);
 
 bool clang_CXXDeleteExpr_isArrayForm(CXCXXDeleteExpr DE);
 
+// CXXBoolLiteralExpr
+CXSourceLocation_ clang_CXXBoolLiteralExpr_getLocation(CXCXXBoolLiteralExpr E);
+
+// CXXThisExpr
+CXSourceLocation_ clang_CXXThisExpr_getLocation(CXCXXThisExpr E);
+
+bool clang_CXXThisExpr_isImplicit(CXCXXThisExpr E);
+
+// CXXNewExpr
+bool clang_CXXNewExpr_shouldNullCheckAllocation(CXCXXNewExpr E);
+
+unsigned clang_CXXNewExpr_getNumPlacementArgs(CXCXXNewExpr E);
+
+bool clang_CXXNewExpr_isParenTypeId(CXCXXNewExpr E);
+
+bool clang_CXXNewExpr_isGlobalNew(CXCXXNewExpr E);
+
+bool clang_CXXNewExpr_passAlignment(CXCXXNewExpr E);
+
+bool clang_CXXNewExpr_doesUsualArrayDeleteWantSize(CXCXXNewExpr E);
+
+// CXXDeleteExpr
+bool clang_CXXDeleteExpr_isGlobalDelete(CXCXXDeleteExpr E);
+
+bool clang_CXXDeleteExpr_isArrayFormAsWritten(CXCXXDeleteExpr E);
+
+bool clang_CXXDeleteExpr_doesUsualArrayDeleteWantSize(CXCXXDeleteExpr E);
+
+CXQualType clang_CXXDeleteExpr_getDestroyedType(CXCXXDeleteExpr E);
+
+// CXXConstructExpr
+CXSourceLocation_ clang_CXXConstructExpr_getLocation(CXCXXConstructExpr E);
+
+bool clang_CXXConstructExpr_hadMultipleCandidates(CXCXXConstructExpr E);
+
+bool clang_CXXConstructExpr_isListInitialization(CXCXXConstructExpr E);
+
+bool clang_CXXConstructExpr_isStdInitListInitialization(CXCXXConstructExpr E);
+
+bool clang_CXXConstructExpr_requiresZeroInitialization(CXCXXConstructExpr E);
+
+bool clang_CXXConstructExpr_isImmediateEscalating(CXCXXConstructExpr E);
+
+// MaterializeTemporaryExpr
+unsigned clang_MaterializeTemporaryExpr_getManglingNumber(CXMaterializeTemporaryExpr E);
+
+bool clang_MaterializeTemporaryExpr_isBoundToLvalueReference(CXMaterializeTemporaryExpr E);
+
+// CXXNamedCastExpr
+CXSourceLocation_ clang_CXXNamedCastExpr_getOperatorLoc(CXCXXNamedCastExpr E);
+
+CXSourceLocation_ clang_CXXNamedCastExpr_getRParenLoc(CXCXXNamedCastExpr E);
+
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

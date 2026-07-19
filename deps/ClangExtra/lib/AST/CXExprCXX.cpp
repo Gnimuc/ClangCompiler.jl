@@ -94,3 +94,103 @@ CXExpr clang_CXXDeleteExpr_getArgument(CXCXXDeleteExpr DE) {
 bool clang_CXXDeleteExpr_isArrayForm(CXCXXDeleteExpr DE) {
   return static_cast<clang::CXXDeleteExpr *>(DE)->isArrayForm();
 }
+
+// CXXBoolLiteralExpr
+CXSourceLocation_ clang_CXXBoolLiteralExpr_getLocation(CXCXXBoolLiteralExpr E) {
+  return static_cast<clang::CXXBoolLiteralExpr *>(E)->getLocation().getPtrEncoding();
+}
+
+// CXXThisExpr
+CXSourceLocation_ clang_CXXThisExpr_getLocation(CXCXXThisExpr E) {
+  return static_cast<clang::CXXThisExpr *>(E)->getLocation().getPtrEncoding();
+}
+
+bool clang_CXXThisExpr_isImplicit(CXCXXThisExpr E) {
+  return static_cast<clang::CXXThisExpr *>(E)->isImplicit();
+}
+
+// CXXNewExpr
+bool clang_CXXNewExpr_shouldNullCheckAllocation(CXCXXNewExpr E) {
+  return static_cast<clang::CXXNewExpr *>(E)->shouldNullCheckAllocation();
+}
+
+unsigned clang_CXXNewExpr_getNumPlacementArgs(CXCXXNewExpr E) {
+  return static_cast<clang::CXXNewExpr *>(E)->getNumPlacementArgs();
+}
+
+bool clang_CXXNewExpr_isParenTypeId(CXCXXNewExpr E) {
+  return static_cast<clang::CXXNewExpr *>(E)->isParenTypeId();
+}
+
+bool clang_CXXNewExpr_isGlobalNew(CXCXXNewExpr E) {
+  return static_cast<clang::CXXNewExpr *>(E)->isGlobalNew();
+}
+
+bool clang_CXXNewExpr_passAlignment(CXCXXNewExpr E) {
+  return static_cast<clang::CXXNewExpr *>(E)->passAlignment();
+}
+
+bool clang_CXXNewExpr_doesUsualArrayDeleteWantSize(CXCXXNewExpr E) {
+  return static_cast<clang::CXXNewExpr *>(E)->doesUsualArrayDeleteWantSize();
+}
+
+// CXXDeleteExpr
+bool clang_CXXDeleteExpr_isGlobalDelete(CXCXXDeleteExpr E) {
+  return static_cast<clang::CXXDeleteExpr *>(E)->isGlobalDelete();
+}
+
+bool clang_CXXDeleteExpr_isArrayFormAsWritten(CXCXXDeleteExpr E) {
+  return static_cast<clang::CXXDeleteExpr *>(E)->isArrayFormAsWritten();
+}
+
+bool clang_CXXDeleteExpr_doesUsualArrayDeleteWantSize(CXCXXDeleteExpr E) {
+  return static_cast<clang::CXXDeleteExpr *>(E)->doesUsualArrayDeleteWantSize();
+}
+
+CXQualType clang_CXXDeleteExpr_getDestroyedType(CXCXXDeleteExpr E) {
+  return static_cast<clang::CXXDeleteExpr *>(E)->getDestroyedType().getAsOpaquePtr();
+}
+
+// CXXConstructExpr
+CXSourceLocation_ clang_CXXConstructExpr_getLocation(CXCXXConstructExpr E) {
+  return static_cast<clang::CXXConstructExpr *>(E)->getLocation().getPtrEncoding();
+}
+
+bool clang_CXXConstructExpr_hadMultipleCandidates(CXCXXConstructExpr E) {
+  return static_cast<clang::CXXConstructExpr *>(E)->hadMultipleCandidates();
+}
+
+bool clang_CXXConstructExpr_isListInitialization(CXCXXConstructExpr E) {
+  return static_cast<clang::CXXConstructExpr *>(E)->isListInitialization();
+}
+
+bool clang_CXXConstructExpr_isStdInitListInitialization(CXCXXConstructExpr E) {
+  return static_cast<clang::CXXConstructExpr *>(E)->isStdInitListInitialization();
+}
+
+bool clang_CXXConstructExpr_requiresZeroInitialization(CXCXXConstructExpr E) {
+  return static_cast<clang::CXXConstructExpr *>(E)->requiresZeroInitialization();
+}
+
+bool clang_CXXConstructExpr_isImmediateEscalating(CXCXXConstructExpr E) {
+  return static_cast<clang::CXXConstructExpr *>(E)->isImmediateEscalating();
+}
+
+// MaterializeTemporaryExpr
+unsigned clang_MaterializeTemporaryExpr_getManglingNumber(CXMaterializeTemporaryExpr E) {
+  return static_cast<clang::MaterializeTemporaryExpr *>(E)->getManglingNumber();
+}
+
+bool clang_MaterializeTemporaryExpr_isBoundToLvalueReference(CXMaterializeTemporaryExpr E) {
+  return static_cast<clang::MaterializeTemporaryExpr *>(E)->isBoundToLvalueReference();
+}
+
+// CXXNamedCastExpr
+CXSourceLocation_ clang_CXXNamedCastExpr_getOperatorLoc(CXCXXNamedCastExpr E) {
+  return static_cast<clang::CXXNamedCastExpr *>(E)->getOperatorLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_CXXNamedCastExpr_getRParenLoc(CXCXXNamedCastExpr E) {
+  return static_cast<clang::CXXNamedCastExpr *>(E)->getRParenLoc().getPtrEncoding();
+}
+

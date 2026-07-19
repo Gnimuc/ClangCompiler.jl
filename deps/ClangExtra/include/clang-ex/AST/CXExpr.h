@@ -241,6 +241,155 @@ bool clang_InitListExpr_isSemanticForm(CXInitListExpr ILE);
 
 CXInitListExpr clang_InitListExpr_getSyntacticForm(CXInitListExpr ILE);
 
+// UnaryExprOrTypeTraitExpr
+bool clang_UnaryExprOrTypeTraitExpr_isArgumentType(CXUnaryExprOrTypeTraitExpr E);
+
+CXQualType clang_UnaryExprOrTypeTraitExpr_getArgumentType(CXUnaryExprOrTypeTraitExpr E);
+
+CXQualType clang_UnaryExprOrTypeTraitExpr_getTypeOfArgument(CXUnaryExprOrTypeTraitExpr E);
+
+CXSourceLocation_ clang_UnaryExprOrTypeTraitExpr_getOperatorLoc(CXUnaryExprOrTypeTraitExpr E);
+
+CXSourceLocation_ clang_UnaryExprOrTypeTraitExpr_getRParenLoc(CXUnaryExprOrTypeTraitExpr E);
+
+// StringLiteral
+bool clang_StringLiteral_isOrdinary(CXStringLiteral E);
+
+bool clang_StringLiteral_isWide(CXStringLiteral E);
+
+bool clang_StringLiteral_isUTF8(CXStringLiteral E);
+
+bool clang_StringLiteral_isUTF16(CXStringLiteral E);
+
+bool clang_StringLiteral_isUTF32(CXStringLiteral E);
+
+bool clang_StringLiteral_isUnevaluated(CXStringLiteral E);
+
+bool clang_StringLiteral_isPascal(CXStringLiteral E);
+
+bool clang_StringLiteral_containsNonAscii(CXStringLiteral E);
+
+bool clang_StringLiteral_containsNonAsciiOrNull(CXStringLiteral E);
+
+unsigned clang_StringLiteral_getNumConcatenated(CXStringLiteral E);
+
+// CharacterLiteral
+CXSourceLocation_ clang_CharacterLiteral_getLocation(CXCharacterLiteral E);
+
+// UnaryOperator
+bool clang_UnaryOperator_canOverflow(CXUnaryOperator E);
+
+bool clang_UnaryOperator_isIncrementDecrementOp(CXUnaryOperator E);
+
+bool clang_UnaryOperator_isArithmeticOp(CXUnaryOperator E);
+
+bool clang_UnaryOperator_hasStoredFPFeatures(CXUnaryOperator E);
+
+// CallExpr
+bool clang_CallExpr_usesADL(CXCallExpr E);
+
+bool clang_CallExpr_hasStoredFPFeatures(CXCallExpr E);
+
+unsigned clang_CallExpr_getBuiltinCallee(CXCallExpr E);
+
+bool clang_CallExpr_isCallToStdMove(CXCallExpr E);
+
+// MemberExpr
+bool clang_MemberExpr_hasQualifier(CXMemberExpr E);
+
+CXSourceLocation_ clang_MemberExpr_getTemplateKeywordLoc(CXMemberExpr E);
+
+CXSourceLocation_ clang_MemberExpr_getLAngleLoc(CXMemberExpr E);
+
+CXSourceLocation_ clang_MemberExpr_getRAngleLoc(CXMemberExpr E);
+
+bool clang_MemberExpr_hasTemplateKeyword(CXMemberExpr E);
+
+bool clang_MemberExpr_hasExplicitTemplateArgs(CXMemberExpr E);
+
+unsigned clang_MemberExpr_getNumTemplateArgs(CXMemberExpr E);
+
+CXSourceLocation_ clang_MemberExpr_getOperatorLoc(CXMemberExpr E);
+
+bool clang_MemberExpr_hadMultipleCandidates(CXMemberExpr E);
+
+// InitListExpr
+bool clang_InitListExpr_hasArrayFiller(CXInitListExpr E);
+
+bool clang_InitListExpr_hasDesignatedInit(CXInitListExpr E);
+
+bool clang_InitListExpr_isExplicit(CXInitListExpr E);
+
+bool clang_InitListExpr_isStringLiteralInit(CXInitListExpr E);
+
+bool clang_InitListExpr_isTransparent(CXInitListExpr E);
+
+CXSourceLocation_ clang_InitListExpr_getLBraceLoc(CXInitListExpr E);
+
+CXSourceLocation_ clang_InitListExpr_getRBraceLoc(CXInitListExpr E);
+
+bool clang_InitListExpr_isSyntacticForm(CXInitListExpr E);
+
+bool clang_InitListExpr_hadArrayRangeDesignator(CXInitListExpr E);
+
+// ParenExpr
+CXSourceLocation_ clang_ParenExpr_getLParen(CXParenExpr E);
+
+CXSourceLocation_ clang_ParenExpr_getRParen(CXParenExpr E);
+
+// ArraySubscriptExpr
+CXSourceLocation_ clang_ArraySubscriptExpr_getRBracketLoc(CXArraySubscriptExpr E);
+
+// DeclRefExpr
+bool clang_DeclRefExpr_hasTemplateKWAndArgsInfo(CXDeclRefExpr E);
+
+CXSourceLocation_ clang_DeclRefExpr_getTemplateKeywordLoc(CXDeclRefExpr E);
+
+CXSourceLocation_ clang_DeclRefExpr_getLAngleLoc(CXDeclRefExpr E);
+
+CXSourceLocation_ clang_DeclRefExpr_getRAngleLoc(CXDeclRefExpr E);
+
+bool clang_DeclRefExpr_hasTemplateKeyword(CXDeclRefExpr E);
+
+bool clang_DeclRefExpr_hasExplicitTemplateArgs(CXDeclRefExpr E);
+
+unsigned clang_DeclRefExpr_getNumTemplateArgs(CXDeclRefExpr E);
+
+bool clang_DeclRefExpr_hadMultipleCandidates(CXDeclRefExpr E);
+
+bool clang_DeclRefExpr_refersToEnclosingVariableOrCapture(CXDeclRefExpr E);
+
+bool clang_DeclRefExpr_isImmediateEscalating(CXDeclRefExpr E);
+
+bool clang_DeclRefExpr_isCapturedByCopyInLambdaWithExplicitObjectParameter(CXDeclRefExpr E);
+
+// CastExpr
+bool clang_CastExpr_path_empty(CXCastExpr E);
+
+unsigned clang_CastExpr_path_size(CXCastExpr E);
+
+bool clang_CastExpr_hasStoredFPFeatures(CXCastExpr E);
+
+bool clang_CastExpr_changesVolatileQualification(CXCastExpr E);
+
+// ConstantExpr
+bool clang_ConstantExpr_isImmediateInvocation(CXConstantExpr E);
+
+bool clang_ConstantExpr_hasAPValueResult(CXConstantExpr E);
+
+// StmtExpr
+CXSourceLocation_ clang_StmtExpr_getLParenLoc(CXStmtExpr E);
+
+CXSourceLocation_ clang_StmtExpr_getRParenLoc(CXStmtExpr E);
+
+unsigned clang_StmtExpr_getTemplateDepth(CXStmtExpr E);
+
+// CompoundLiteralExpr
+bool clang_CompoundLiteralExpr_isFileScope(CXCompoundLiteralExpr E);
+
+CXSourceLocation_ clang_CompoundLiteralExpr_getLParenLoc(CXCompoundLiteralExpr E);
+
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif
