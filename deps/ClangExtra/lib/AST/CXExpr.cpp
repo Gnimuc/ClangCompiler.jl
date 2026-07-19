@@ -111,6 +111,47 @@ CXAPValue clang_Expr_EvaluateAsRValue(CXExpr E, CXASTContext Ctx) {
   return new clang::APValue(Result.Val); // NOLINT(*-owning-memory)
 }
 
+bool clang_Expr_isEvaluatable(CXExpr E, CXASTContext Ctx) {
+  return static_cast<clang::Expr *>(E)->isEvaluatable(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_Expr_isIntegerConstantExpr(CXExpr E, CXASTContext Ctx) {
+  return static_cast<clang::Expr *>(E)->isIntegerConstantExpr(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_Expr_isCXX11ConstantExpr(CXExpr E, CXASTContext Ctx) {
+  return static_cast<clang::Expr *>(E)->isCXX11ConstantExpr(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+int clang_Expr_EvaluateAsBooleanCondition(CXExpr E, CXASTContext Ctx) {
+  bool Result = false;
+  if (!static_cast<clang::Expr *>(E)->EvaluateAsBooleanCondition(
+          Result, *static_cast<clang::ASTContext *>(Ctx)))
+    return -1;
+  return Result ? 1 : 0;
+}
+
+CXAPValue clang_Expr_EvaluateAsInt(CXExpr E, CXASTContext Ctx) {
+  clang::Expr::EvalResult Result;
+  if (!static_cast<clang::Expr *>(E)->EvaluateAsInt(
+          Result, *static_cast<clang::ASTContext *>(Ctx)))
+    return nullptr;
+  return new clang::APValue(Result.Val); // NOLINT(*-owning-memory)
+}
+
+LLVMGenericValueRef clang_Expr_EvaluateAsFloat(CXExpr E, CXASTContext Ctx) {
+  llvm::APFloat Result(0.0);
+  if (!static_cast<clang::Expr *>(E)->EvaluateAsFloat(
+          Result, *static_cast<clang::ASTContext *>(Ctx)))
+    return nullptr;
+  auto *GV = new llvm::GenericValue; // NOLINT(*-owning-memory)
+  GV->IntVal = Result.bitcastToAPInt();
+  return reinterpret_cast<LLVMGenericValueRef>(GV);
+}
+
 // DeclRefExpr
 CXValueDecl clang_DeclRefExpr_getDecl(CXDeclRefExpr DRE) {
   return static_cast<clang::DeclRefExpr *>(DRE)->getDecl();

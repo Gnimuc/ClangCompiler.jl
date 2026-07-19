@@ -7046,6 +7046,30 @@ function clang_Expr_EvaluateAsRValue(E, Ctx)
     @ccall libclangex.clang_Expr_EvaluateAsRValue(E::CXExpr, Ctx::CXASTContext)::CXAPValue
 end
 
+function clang_Expr_isEvaluatable(E, Ctx)
+    @ccall libclangex.clang_Expr_isEvaluatable(E::CXExpr, Ctx::CXASTContext)::Bool
+end
+
+function clang_Expr_isIntegerConstantExpr(E, Ctx)
+    @ccall libclangex.clang_Expr_isIntegerConstantExpr(E::CXExpr, Ctx::CXASTContext)::Bool
+end
+
+function clang_Expr_isCXX11ConstantExpr(E, Ctx)
+    @ccall libclangex.clang_Expr_isCXX11ConstantExpr(E::CXExpr, Ctx::CXASTContext)::Bool
+end
+
+function clang_Expr_EvaluateAsBooleanCondition(E, Ctx)
+    @ccall libclangex.clang_Expr_EvaluateAsBooleanCondition(E::CXExpr, Ctx::CXASTContext)::Cint
+end
+
+function clang_Expr_EvaluateAsInt(E, Ctx)
+    @ccall libclangex.clang_Expr_EvaluateAsInt(E::CXExpr, Ctx::CXASTContext)::CXAPValue
+end
+
+function clang_Expr_EvaluateAsFloat(E, Ctx)
+    @ccall libclangex.clang_Expr_EvaluateAsFloat(E::CXExpr, Ctx::CXASTContext)::LLVMGenericValueRef
+end
+
 function clang_DeclRefExpr_getDecl(DRE)
     @ccall libclangex.clang_DeclRefExpr_getDecl(DRE::CXDeclRefExpr)::CXValueDecl
 end

@@ -69,6 +69,26 @@ CXSourceLocation_ clang_Expr_getExprLoc(CXExpr E);
 // expression. See CXAPValue.h / MARSHALLING.md §3.
 CXAPValue clang_Expr_EvaluateAsRValue(CXExpr E, CXASTContext Ctx);
 
+// Constant-evaluation predicates (all use the strict SE_NoSideEffects policy).
+bool clang_Expr_isEvaluatable(CXExpr E, CXASTContext Ctx);
+
+bool clang_Expr_isIntegerConstantExpr(CXExpr E, CXASTContext Ctx);
+
+bool clang_Expr_isCXX11ConstantExpr(CXExpr E, CXASTContext Ctx);
+
+// Fold E as a boolean condition: 1 / 0 for true / false, or -1 when E is not a
+// constant condition.
+int clang_Expr_EvaluateAsBooleanCondition(CXExpr E, CXASTContext Ctx);
+
+// Fold E to an integer constant. Returns an OWNED CXAPValue (dispose) on
+// success, or nullptr when E is not an integer constant.
+CXAPValue clang_Expr_EvaluateAsInt(CXExpr E, CXASTContext Ctx);
+
+// Fold E to a floating constant. Returns the folded bits as a caller-owned
+// LLVMGenericValueRef (APFloat::bitcastToAPInt in GV->IntVal, released via
+// llvm-c), or nullptr when E is not a floating constant.
+LLVMGenericValueRef clang_Expr_EvaluateAsFloat(CXExpr E, CXASTContext Ctx);
+
 // DeclRefExpr
 CXValueDecl clang_DeclRefExpr_getDecl(CXDeclRefExpr DRE);
 

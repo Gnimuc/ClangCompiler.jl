@@ -440,6 +440,40 @@ function EvaluateAsRValue(x::AbstractExpr, ctx::ASTContext)
     return APValue(clang_Expr_EvaluateAsRValue(x, ctx))
 end
 
+function isEvaluatable(x::AbstractExpr, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_Expr_isEvaluatable(x, ctx)
+end
+
+function isIntegerConstantExpr(x::AbstractExpr, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_Expr_isIntegerConstantExpr(x, ctx)
+end
+
+function isCXX11ConstantExpr(x::AbstractExpr, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_Expr_isCXX11ConstantExpr(x, ctx)
+end
+
+# 1/0 for a true/false constant condition, -1 when `x` is not a constant condition.
+function EvaluateAsBooleanCondition(x::AbstractExpr, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_Expr_EvaluateAsBooleanCondition(x, ctx)
+end
+
+# Owned APValue (dispose) when `x` folds to an integer constant, else wraps C_NULL.
+function EvaluateAsInt(x::AbstractExpr, ctx::ASTContext)
+    @check_ptrs x ctx
+    return APValue(clang_Expr_EvaluateAsInt(x, ctx))
+end
+
+# Folded float bits as a caller-owned LLVMGenericValueRef (release via LLVM-C),
+# or C_NULL when `x` is not a floating constant.
+function EvaluateAsFloat(x::AbstractExpr, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_Expr_EvaluateAsFloat(x, ctx)
+end
+
 # IntegerLiteral
 function getBeginLoc(x::IntegerLiteral)
     @check_ptrs x
