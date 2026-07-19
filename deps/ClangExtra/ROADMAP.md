@@ -7,6 +7,11 @@ remaining phases. Status markers: [x] done, [ ] open.
 
 ## Standing decisions
 
+- **Single-client C ABI.** The C shim has exactly one client — the Julia thin wrapper in
+  `src/clang/`, which is the sole safety boundary. The C layer stays type-erased (`void *`)
+  and check-free by design; subtyping, multiple inheritance, and all type-checking are
+  reproduced in Julia. The axiom and its two enforcing invariants live in
+  `deps/ClangExtra/CLAUDE.md` and `src/clang/CLAUDE.md`.
 - **Hybrid strategy.** Uniform machinery (classification, casts, kind enums)
   is stamped from clang's own TableGen tables; payload accessors are
   hand-written under the conventions in CLAUDE.md, because marshalling and

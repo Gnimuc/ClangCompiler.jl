@@ -7,6 +7,36 @@ Everything compiles into one shared target `clangex` (C++17, `-fPIC -fno-rtti`, 
 monolithic `LLVM` + `clang-cpp` shared libs). Format C++ with clang-format (LLVM style,
 ColumnLimit 92 — narrower than the Julia code's 120).
 
+## The governing axiom
+
+This C API has exactly one client: the Julia thin wrapper in `src/clang/`. It is not a
+public C library — nothing else, C or C++, ever calls it directly. Every other rule in this
+file derives from that single fact, and the choices that look unsafe in isolation are
+principled because of it:
+
+- **Handles are opaque `void *`** (all of them, in `CXTypes.h`). The C layer carries no
+  subtyping information at all; Clang's class hierarchy and its multiple-inheritance pivots
+  are reproduced one layer up, in Julia's type system.
+- **Payload downcasts are `static_cast`, not `dyn_cast`.** The wrapper has already
+  established the receiver's dynamic type before it calls, so the cast's precondition holds
+  by construction.
+- **No null checks, no validation, no error codes cross the boundary** (see Error handling).
+  Preconditions are the caller's contract, and there is exactly one caller.
+
+The safety this discards is re-established entirely in the Julia thin wrapper, which is the
+**sole safety boundary**. Two invariants there make every `static_cast` in this library
+valid — they are specified and must be preserved in `../../src/clang/CLAUDE.md`:
+
+1. **Faithful carriers** — a Julia carrier's type always reflects its pointee's true dynamic
+   C++ class, because carriers are constructed only through checked casts.
+2. **Correctly-leveled receivers** — each wrapper types its receiver at the abstract
+   supertype of the C++ class that declares the method, so multiple dispatch rejects a
+   mistyped receiver before the ccall is emitted.
+
+Corollary for writing C here: never add defensive code to protect a hypothetical direct
+caller — there isn't one. Keep the shim dumb and total; the type-checking intelligence lives
+in Julia.
+
 ## The rule that prevents disasters
 
 **Header and .cpp must change in lockstep.** The Julia bindings are generated from the
