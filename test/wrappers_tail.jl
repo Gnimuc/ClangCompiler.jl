@@ -141,6 +141,27 @@ end
     dispose(I)
 end
 
+@testset "Tail | whole-TU decls traversal" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "namespace N { struct S { int x; void m(); }; int g; }")
+    f = DeclFinder(I)
+    @test f(I, "N")
+    nsdc = CC.castToDeclContext(get_decl(f))    # NamespaceDecl -> DeclContext pivot
+    ds = CC.decls(nsdc)
+    @test all(d -> d isa CC.AbstractDecl, ds)
+    @test !any(d -> isabstracttype(typeof(d)), ds)          # every node resolved
+    names = [CC.getDeclKindName(d) for d in ds]
+    # recurses into the nested record: S, then S's members (x, m), plus g.
+    @test "CXXRecord" in names
+    @test "Field" in names
+    @test "CXXMethod" in names
+    @test "Var" in names
+    @test any(d -> d isa CC.CXXRecordDecl, ds)
+    @test any(d -> d isa CC.FieldDecl && CC.getName(d) == "x", ds)
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Tail | bulk subtree traversal" begin
     I = create_interpreter(String[])
     CC.parse(I, "int fn(int a){ int s=0; for(int i=0;i<a;i++){ s+=i*2; if(s>10) break; } return s; }")

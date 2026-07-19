@@ -137,6 +137,11 @@ remaining phases. Status markers: [x] done, [ ] open.
       pre-order walk, so subtree(::AbstractStmt) resolves a whole subtree with O(1)
       FFI round-trips (2 ccalls) and no per-node getStmtClass — the fix for the
       per-child round-trip that would not survive whole-function walks.
+- [x] Whole-TU Decl traversal — the DeclContext sibling of bulk subtree.
+      clang_DeclContext_getRecursiveDeclCount + collectRecursiveDecls fill parallel
+      decl/CXDeclKind buffers in one pre-order walk (recursing into nested
+      contexts), so decls(::DeclContext) resolves an entire TU with O(1) FFI
+      round-trips instead of the per-decl decl_iterator protocol.
 - [x] Acceptance corpus — "full power" demonstrated falsifiably by four real
       static-analysis tools built entirely on the wrapped surface, in
       test/acceptance.jl: a null-safety pointer-dereference finder (subtree +
@@ -156,8 +161,7 @@ remaining phases. Status markers: [x] done, [ ] open.
 - [ ] **TypeLoc payload** — the per-TypeLoc-class accessors (PointerTypeLoc star
       loc, FunctionTypeLoc param locs, TemplateSpecializationTypeLoc arg locs, …);
       the handle + source-range floor is done (see below).
-- [ ] **Whole-TU Decl traversal** — the bulk Stmt subtree extraction is done; the
-      DeclContext side (a flat decls() sweep of a TU) is the remaining half.
+
 - [ ] **OMP abstract-base payload** (per posture above).
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
       (this branch adds ~1100 C symbols — the earlier drift fixes, the 90

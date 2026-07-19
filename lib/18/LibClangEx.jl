@@ -5359,6 +5359,14 @@ function clang_DeclContext_decl_iterator_begin(DC)
     @ccall libclangex.clang_DeclContext_decl_iterator_begin(DC::CXDeclContext)::CXDecl
 end
 
+function clang_DeclContext_getRecursiveDeclCount(DC)
+    @ccall libclangex.clang_DeclContext_getRecursiveDeclCount(DC::CXDeclContext)::Csize_t
+end
+
+function clang_DeclContext_collectRecursiveDecls(DC, Nodes, Kinds)
+    @ccall libclangex.clang_DeclContext_collectRecursiveDecls(DC::CXDeclContext, Nodes::Ptr{CXDecl}, Kinds::Ptr{CXDeclKind})::Cvoid
+end
+
 function clang_DeclContext_addDecl(DC, D)
     @ccall libclangex.clang_DeclContext_addDecl(DC::CXDeclContext, D::CXDecl)::Cvoid
 end

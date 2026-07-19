@@ -56,7 +56,7 @@ include("clang/sema.jl")
 include("clang/stmt.jl")
 public getStmtClass, getChildren, children, subtree, resolve, dump_ast
 include("clang/decl.jl")
-public getKind
+public getKind, decls
 
 # public
 include("compiler/compiler.jl")

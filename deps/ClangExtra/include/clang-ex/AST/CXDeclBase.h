@@ -187,6 +187,18 @@ CXDeclContext clang_DeclContext_getPrimaryContext(CXDeclContext DC);
 
 CXDecl clang_DeclContext_decl_iterator_begin(CXDeclContext DC);
 
+// recursive decls: bulk pre-order extraction of every decl in DC and all nested
+// decl-contexts (namespaces, records, functions, …) in a single walk, so a
+// whole-translation-unit sweep costs O(1) FFI round-trips instead of one per
+// decl. getRecursiveDeclCount counts the decls; collectRecursiveDecls fills two
+// caller-allocated buffers of exactly that many slots — the decl pointers and
+// their CXDeclKind values in lockstep — letting the caller build resolved
+// carriers without a per-decl getKind call.
+size_t clang_DeclContext_getRecursiveDeclCount(CXDeclContext DC);
+
+void clang_DeclContext_collectRecursiveDecls(CXDeclContext DC, CXDecl *Nodes,
+                                             CXDeclKind *Kinds);
+
 void clang_DeclContext_addDecl(CXDeclContext DC, CXDecl D);
 
 void clang_DeclContext_addDeclInternal(CXDeclContext DC, CXDecl D);

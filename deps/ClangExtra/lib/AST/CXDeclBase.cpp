@@ -306,6 +306,36 @@ CXDecl clang_DeclContext_decl_iterator_begin(CXDeclContext DC) {
   return *static_cast<clang::DeclContext *>(DC)->decls_begin();
 }
 
+namespace {
+size_t recursiveDeclCount(clang::DeclContext *DC) {
+  size_t N = 0;
+  for (clang::Decl *D : DC->decls()) {
+    ++N;
+    if (auto *Inner = llvm::dyn_cast<clang::DeclContext>(D))
+      N += recursiveDeclCount(Inner);
+  }
+  return N;
+}
+
+void collectRecursiveDecls(clang::DeclContext *DC, CXDecl *&Nodes, CXDeclKind *&Kinds) {
+  for (clang::Decl *D : DC->decls()) {
+    *Nodes++ = D;
+    *Kinds++ = static_cast<CXDeclKind>(D->getKind());
+    if (auto *Inner = llvm::dyn_cast<clang::DeclContext>(D))
+      collectRecursiveDecls(Inner, Nodes, Kinds);
+  }
+}
+} // namespace
+
+size_t clang_DeclContext_getRecursiveDeclCount(CXDeclContext DC) {
+  return recursiveDeclCount(static_cast<clang::DeclContext *>(DC));
+}
+
+void clang_DeclContext_collectRecursiveDecls(CXDeclContext DC, CXDecl *Nodes,
+                                             CXDeclKind *Kinds) {
+  collectRecursiveDecls(static_cast<clang::DeclContext *>(DC), Nodes, Kinds);
+}
+
 void clang_DeclContext_addDecl(CXDeclContext DC, CXDecl D) {
   static_cast<clang::DeclContext *>(DC)->addDecl(static_cast<clang::Decl *>(D));
 }
