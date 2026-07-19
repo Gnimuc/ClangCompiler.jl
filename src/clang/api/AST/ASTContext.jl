@@ -728,3 +728,238 @@ function typesAreCompatible(x::ASTContext, a2::QualType, a3::QualType, a4::Integ
     return clang_ASTContext_typesAreCompatible(x, a2, a3, a4)
 end
 
+function AtomicUsesUnsupportedLibcall(x::ASTContext, a2::AbstractAtomicExpr)
+    @check_ptrs x
+    return clang_ASTContext_AtomicUsesUnsupportedLibcall(x, a2)
+end
+
+function BlockRequiresCopying(x::ASTContext, a2::QualType, a3::AbstractVarDecl)
+    @check_ptrs x
+    return clang_ASTContext_BlockRequiresCopying(x, a2, a3)
+end
+
+function InitBuiltinTypes(x::ASTContext, a2::TargetInfo, a3::TargetInfo)
+    @check_ptrs x
+    return clang_ASTContext_InitBuiltinTypes(x, a2, a3)
+end
+
+function addCopyConstructorForExceptionObject(x::ASTContext, a2::AbstractCXXRecordDecl, a3::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_ASTContext_addCopyConstructorForExceptionObject(x, a2, a3)
+end
+
+function addDeclaratorForUnnamedTagDecl(x::ASTContext, a2::AbstractTagDecl, a3::AbstractDeclaratorDecl)
+    @check_ptrs x
+    return clang_ASTContext_addDeclaratorForUnnamedTagDecl(x, a2, a3)
+end
+
+function addOverriddenMethod(x::ASTContext, a2::AbstractCXXMethodDecl, a3::AbstractCXXMethodDecl)
+    @check_ptrs x
+    return clang_ASTContext_addOverriddenMethod(x, a2, a3)
+end
+
+function addTypedefNameForUnnamedTagDecl(x::ASTContext, a2::AbstractTagDecl, a3::AbstractTypedefNameDecl)
+    @check_ptrs x
+    return clang_ASTContext_addTypedefNameForUnnamedTagDecl(x, a2, a3)
+end
+
+function addedLocalImportDecl(x::ASTContext, a2::AbstractImportDecl)
+    @check_ptrs x
+    return clang_ASTContext_addedLocalImportDecl(x, a2)
+end
+
+function adjustDeducedFunctionResultType(x::ASTContext, a2::AbstractFunctionDecl, a3::QualType)
+    @check_ptrs x
+    return clang_ASTContext_adjustDeducedFunctionResultType(x, a2, a3)
+end
+
+function canBuiltinBeRedeclared(x::ASTContext, a2::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_ASTContext_canBuiltinBeRedeclared(x, a2)
+end
+
+function deduplicateMergedDefinitonsFor(x::ASTContext, a2::AbstractNamedDecl)
+    @check_ptrs x
+    return clang_ASTContext_deduplicateMergedDefinitonsFor(x, a2)
+end
+
+function eraseDeclAttrs(x::ASTContext, a2::AbstractDecl)
+    @check_ptrs x
+    return clang_ASTContext_eraseDeclAttrs(x, a2)
+end
+
+function getAssumedTemplateName(x::ASTContext, a2::AbstractDeclarationName)
+    @check_ptrs x
+    return TemplateName(clang_ASTContext_getAssumedTemplateName(x, a2))
+end
+
+function getCanonicalNestedNameSpecifier(x::ASTContext, a2::NestedNameSpecifier)
+    @check_ptrs x
+    return NestedNameSpecifier(clang_ASTContext_getCanonicalNestedNameSpecifier(x, a2))
+end
+
+function getCanonicalTemplateName(x::ASTContext, a2::TemplateName)
+    @check_ptrs x
+    return TemplateName(clang_ASTContext_getCanonicalTemplateName(x, a2))
+end
+
+function getConstantArrayElementCount(x::ASTContext, a2::AbstractConstantArrayType)
+    @check_ptrs x
+    return clang_ASTContext_getConstantArrayElementCount(x, a2)
+end
+
+function getCopyConstructorForExceptionObject(x::ASTContext, a2::AbstractCXXRecordDecl)
+    @check_ptrs x
+    return CXXConstructorDecl(clang_ASTContext_getCopyConstructorForExceptionObject(x, a2))
+end
+
+function getDeclaratorForUnnamedTagDecl(x::ASTContext, a2::AbstractTagDecl)
+    @check_ptrs x
+    return DeclaratorDecl(clang_ASTContext_getDeclaratorForUnnamedTagDecl(x, a2))
+end
+
+function getDecltypeType(x::ASTContext, a2::AbstractExpr, a3::QualType)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getDecltypeType(x, a2, a3))
+end
+
+function getDeducedTemplateSpecializationType(x::ASTContext, a2::TemplateName, a3::QualType, a4::Integer)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getDeducedTemplateSpecializationType(x, a2, a3, a4))
+end
+
+function getDependentAddressSpaceType(x::ASTContext, a2::QualType, a3::AbstractExpr, a4::SourceLocation)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getDependentAddressSpaceType(x, a2, a3, a4))
+end
+
+function getDependentBitIntType(x::ASTContext, a2::Integer, a3::AbstractExpr)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getDependentBitIntType(x, a2, a3))
+end
+
+function getDependentSizedExtVectorType(x::ASTContext, a2::QualType, a3::AbstractExpr, a4::SourceLocation)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getDependentSizedExtVectorType(x, a2, a3, a4))
+end
+
+function getDependentSizedMatrixType(x::ASTContext, a2::QualType, a3::AbstractExpr, a4::AbstractExpr, a5::SourceLocation)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getDependentSizedMatrixType(x, a2, a3, a4, a5))
+end
+
+function getDependentTemplateName(x::ASTContext, a2::NestedNameSpecifier, a3::IdentifierInfo)
+    @check_ptrs x
+    return TemplateName(clang_ASTContext_getDependentTemplateName(x, a2, a3))
+end
+
+function getEnumType(x::ASTContext, a2::AbstractEnumDecl)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getEnumType(x, a2))
+end
+
+function getFieldOffset(x::ASTContext, a2::AbstractValueDecl)
+    @check_ptrs x
+    return clang_ASTContext_getFieldOffset(x, a2)
+end
+
+function getInjectedClassNameType(x::ASTContext, a2::AbstractCXXRecordDecl, a3::QualType)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getInjectedClassNameType(x, a2, a3))
+end
+
+function getInstantiatedFromUnnamedFieldDecl(x::ASTContext, a2::AbstractFieldDecl)
+    @check_ptrs x
+    return FieldDecl(clang_ASTContext_getInstantiatedFromUnnamedFieldDecl(x, a2))
+end
+
+function getInstantiatedFromUsingDecl(x::ASTContext, a2::AbstractNamedDecl)
+    @check_ptrs x
+    return NamedDecl(clang_ASTContext_getInstantiatedFromUsingDecl(x, a2))
+end
+
+function getInstantiatedFromUsingShadowDecl(x::ASTContext, a2::AbstractUsingShadowDecl)
+    @check_ptrs x
+    return UsingShadowDecl(clang_ASTContext_getInstantiatedFromUsingShadowDecl(x, a2))
+end
+
+function getMacroQualifiedType(x::ASTContext, a2::QualType, a3::IdentifierInfo)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getMacroQualifiedType(x, a2, a3))
+end
+
+function getManglingNumber(x::ASTContext, a2::AbstractNamedDecl)
+    @check_ptrs x
+    return clang_ASTContext_getManglingNumber(x, a2)
+end
+
+function getParameterIndex(x::ASTContext, a2::AbstractParmVarDecl)
+    @check_ptrs x
+    return clang_ASTContext_getParameterIndex(x, a2)
+end
+
+function getPrimaryMergedDecl(x::ASTContext, a2::AbstractDecl)
+    @check_ptrs x
+    return Decl(clang_ASTContext_getPrimaryMergedDecl(x, a2))
+end
+
+function getStaticLocalNumber(x::ASTContext, a2::AbstractVarDecl)
+    @check_ptrs x
+    return clang_ASTContext_getStaticLocalNumber(x, a2)
+end
+
+function getTagDeclType(x::ASTContext, a2::AbstractTagDecl)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getTagDeclType(x, a2))
+end
+
+function getTemplateTypeParmType(x::ASTContext, a2::Integer, a3::Integer, a4::Integer, a5::AbstractTemplateTypeParmType)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getTemplateTypeParmType(x, a2, a3, a4, a5))
+end
+
+function getTrivialTypeSourceInfo(x::ASTContext, a2::QualType, a3::SourceLocation)
+    @check_ptrs x
+    return TypeSourceInfo(clang_ASTContext_getTrivialTypeSourceInfo(x, a2, a3))
+end
+
+function getTypedefNameForUnnamedTagDecl(x::ASTContext, a2::AbstractTagDecl)
+    @check_ptrs x
+    return TypedefNameDecl(clang_ASTContext_getTypedefNameForUnnamedTagDecl(x, a2))
+end
+
+function getTypedefType(x::ASTContext, a2::AbstractTypedefNameDecl, a3::QualType)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getTypedefType(x, a2, a3))
+end
+
+function hasSameTempalteName(x::ASTContext, a2::TemplateName, a3::TemplateName)
+    @check_ptrs x
+    return clang_ASTContext_hasSameTempalteName(x, a2, a3)
+end
+
+function isMSStaticDataMemberInlineDefinition(x::ASTContext, a2::AbstractVarDecl)
+    @check_ptrs x
+    return clang_ASTContext_isMSStaticDataMemberInlineDefinition(x, a2)
+end
+
+function isNearlyEmpty(x::ASTContext, a2::AbstractCXXRecordDecl)
+    @check_ptrs x
+    return clang_ASTContext_isNearlyEmpty(x, a2)
+end
+
+function isPromotableBitField(x::ASTContext, a2::AbstractExpr)
+    @check_ptrs x
+    return QualType(clang_ASTContext_isPromotableBitField(x, a2))
+end
+
+function isSentinelNullExpr(x::ASTContext, a2::AbstractExpr)
+    @check_ptrs x
+    return clang_ASTContext_isSentinelNullExpr(x, a2)
+end
+
+function mergeDefinitionIntoModule(x::ASTContext, a2::AbstractNamedDecl, a3::Module, a4::Integer)
+    @check_ptrs x
+    return clang_ASTContext_mergeDefinitionIntoModule(x, a2, a3, a4)
+end
+
