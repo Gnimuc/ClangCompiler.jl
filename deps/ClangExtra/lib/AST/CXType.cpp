@@ -954,12 +954,12 @@ CXQualType clang_MemberPointerType_getPointeeType(CXMemberPointerType T) {
   return static_cast<clang::MemberPointerType *>(T)->getPointeeType().getAsOpaquePtr();
 }
 
-bool clang_MemberPointerType_isMemberFunctionPointerType(CXMemberPointerType T) {
-  return static_cast<clang::MemberPointerType *>(T)->isMemberFunctionPointerType();
+bool clang_MemberPointerType_isMemberFunctionPointer(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->isMemberFunctionPointer();
 }
 
-bool clang_MemberPointerType_isMemberDataPointerType(CXMemberPointerType T) {
-  return static_cast<clang::MemberPointerType *>(T)->isMemberDataPointerType();
+bool clang_MemberPointerType_isMemberDataPointer(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->isMemberDataPointer();
 }
 
 CXType_ clang_MemberPointerType_getClass(CXMemberPointerType T) {

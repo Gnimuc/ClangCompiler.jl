@@ -452,11 +452,33 @@ CXQualType clang_Type_getCanonicalTypeInternal(CXType_ T);
 void clang_Type_dump(CXType_ T);
 
 // isa
+bool clang_isa_ComplexType(CXType_ T);
+
 bool clang_isa_PointerType(CXType_ T);
 
 bool clang_isa_ReferenceType(CXType_ T);
 
+bool clang_isa_LValueReferenceType(CXType_ T);
+
+bool clang_isa_RValueReferenceType(CXType_ T);
+
+bool clang_isa_MemberPointerType(CXType_ T);
+
 bool clang_isa_ArrayType(CXType_ T);
+
+bool clang_isa_ConstantArrayType(CXType_ T);
+
+bool clang_isa_IncompleteArrayType(CXType_ T);
+
+bool clang_isa_VariableArrayType(CXType_ T);
+
+bool clang_isa_DependentSizedArrayType(CXType_ T);
+
+bool clang_isa_FunctionType(CXType_ T);
+
+bool clang_isa_FunctionNoProtoType(CXType_ T);
+
+bool clang_isa_FunctionProtoType(CXType_ T);
 
 bool clang_isa_UnresolvedUsingType(CXType_ T);
 
@@ -771,6 +793,8 @@ CXArrayRef clang_FunctionProtoType_param_types(CXFunctionProtoType T);
 CXArrayRef clang_FunctionProtoType_exceptions(CXFunctionProtoType T);
 
 bool clang_FunctionProtoType_isSugared(CXFunctionProtoType T);
+
+CXQualType clang_FunctionProtoType_desugar(CXFunctionProtoType T);
 
 // UnresolvedUsingType
 CXUnresolvedUsingTypenameDecl clang_UnresolvedUsingType_getDecl(CXUnresolvedUsingType T);

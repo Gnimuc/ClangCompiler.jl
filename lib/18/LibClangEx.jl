@@ -1324,6 +1324,10 @@ function clang_Type_dump(T)
     @ccall libclangex.clang_Type_dump(T::CXType_)::Cvoid
 end
 
+function clang_isa_ComplexType(T)
+    @ccall libclangex.clang_isa_ComplexType(T::CXType_)::Bool
+end
+
 function clang_isa_PointerType(T)
     @ccall libclangex.clang_isa_PointerType(T::CXType_)::Bool
 end
@@ -1332,8 +1336,48 @@ function clang_isa_ReferenceType(T)
     @ccall libclangex.clang_isa_ReferenceType(T::CXType_)::Bool
 end
 
+function clang_isa_LValueReferenceType(T)
+    @ccall libclangex.clang_isa_LValueReferenceType(T::CXType_)::Bool
+end
+
+function clang_isa_RValueReferenceType(T)
+    @ccall libclangex.clang_isa_RValueReferenceType(T::CXType_)::Bool
+end
+
+function clang_isa_MemberPointerType(T)
+    @ccall libclangex.clang_isa_MemberPointerType(T::CXType_)::Bool
+end
+
 function clang_isa_ArrayType(T)
     @ccall libclangex.clang_isa_ArrayType(T::CXType_)::Bool
+end
+
+function clang_isa_ConstantArrayType(T)
+    @ccall libclangex.clang_isa_ConstantArrayType(T::CXType_)::Bool
+end
+
+function clang_isa_IncompleteArrayType(T)
+    @ccall libclangex.clang_isa_IncompleteArrayType(T::CXType_)::Bool
+end
+
+function clang_isa_VariableArrayType(T)
+    @ccall libclangex.clang_isa_VariableArrayType(T::CXType_)::Bool
+end
+
+function clang_isa_DependentSizedArrayType(T)
+    @ccall libclangex.clang_isa_DependentSizedArrayType(T::CXType_)::Bool
+end
+
+function clang_isa_FunctionType(T)
+    @ccall libclangex.clang_isa_FunctionType(T::CXType_)::Bool
+end
+
+function clang_isa_FunctionNoProtoType(T)
+    @ccall libclangex.clang_isa_FunctionNoProtoType(T::CXType_)::Bool
+end
+
+function clang_isa_FunctionProtoType(T)
+    @ccall libclangex.clang_isa_FunctionProtoType(T::CXType_)::Bool
 end
 
 function clang_isa_UnresolvedUsingType(T)
@@ -1860,6 +1904,10 @@ end
 
 function clang_FunctionProtoType_isSugared(T)
     @ccall libclangex.clang_FunctionProtoType_isSugared(T::CXFunctionProtoType)::Bool
+end
+
+function clang_FunctionProtoType_desugar(T)
+    @ccall libclangex.clang_FunctionProtoType_desugar(T::CXFunctionProtoType)::CXQualType
 end
 
 function clang_UnresolvedUsingType_getDecl(T)
@@ -3272,6 +3320,10 @@ function clang_Decl_isTemplateDecl(DC)
     @ccall libclangex.clang_Decl_isTemplateDecl(DC::CXDecl)::Bool
 end
 
+function clang_Decl_isFunctionOrFunctionTemplate(DC)
+    @ccall libclangex.clang_Decl_isFunctionOrFunctionTemplate(DC::CXDecl)::Bool
+end
+
 function clang_Decl_getDescribedTemplate(DC)
     @ccall libclangex.clang_Decl_getDescribedTemplate(DC::CXDecl)::CXTemplateDecl
 end
@@ -3646,6 +3698,10 @@ function clang_CXXRecordDecl_CreateLambda(C, DC, Info, Loc, DependentLambda, IsG
     @ccall libclangex.clang_CXXRecordDecl_CreateLambda(C::CXASTContext, DC::CXDeclContext, Info::CXTypeSourceInfo, Loc::CXSourceLocation_, DependentLambda::Bool, IsGeneric::Bool, CaptureDefault::CXLambdaCaptureDefault)::CXCXXRecordDecl
 end
 
+function clang_CXXRecordDecl_isDynamicClass(CXXRD)
+    @ccall libclangex.clang_CXXRecordDecl_isDynamicClass(CXXRD::CXCXXRecordDecl)::Bool
+end
+
 function clang_CXXRecordDecl_isLambda(CXXRD)
     @ccall libclangex.clang_CXXRecordDecl_isLambda(CXXRD::CXCXXRecordDecl)::Bool
 end
@@ -3879,12 +3935,13 @@ end
 end
 
 @enum CXLinkage::UInt8 begin
-    CXLinkage_NoLinkage = 0x0000000000000000
-    CXLinkage_InternalLinkage = 0x0000000000000001
-    CXLinkage_UniqueExternalLinkage = 0x0000000000000002
-    CXLinkage_VisibleNoLinkage = 0x0000000000000003
-    CXLinkage_ModuleLinkage = 0x0000000000000004
-    CXLinkage_ExternalLinkage = 0x0000000000000005
+    CXLinkage_Invalid = 0x0000000000000000
+    CXLinkage_None = 0x0000000000000001
+    CXLinkage_Internal = 0x0000000000000002
+    CXLinkage_UniqueExternal = 0x0000000000000003
+    CXLinkage_VisibleNone = 0x0000000000000004
+    CXLinkage_Module = 0x0000000000000005
+    CXLinkage_External = 0x0000000000000006
 end
 
 @enum CXLanguageLinkage::UInt32 begin
@@ -3935,8 +3992,8 @@ function clang_TranslationUnitDecl_setAnonymousNamespace(TUD, ND)
     @ccall libclangex.clang_TranslationUnitDecl_setAnonymousNamespace(TUD::CXTranslationUnitDecl, ND::CXNamespaceDecl)::Cvoid
 end
 
-function clang_TranslationUnitDecl_Create(TUD, C)
-    @ccall libclangex.clang_TranslationUnitDecl_Create(TUD::CXTranslationUnitDecl, C::CXASTContext)::CXTranslationUnitDecl
+function clang_TranslationUnitDecl_Create(C)
+    @ccall libclangex.clang_TranslationUnitDecl_Create(C::CXASTContext)::CXTranslationUnitDecl
 end
 
 function clang_PragmaCommentDecl_Create(C, DC, CommentLoc, CommentKind, Arg)
@@ -5291,6 +5348,10 @@ end
 
 function clang_TypeDecl_setLocStart(TD, Loc)
     @ccall libclangex.clang_TypeDecl_setLocStart(TD::CXTypeDecl, Loc::CXSourceLocation_)::Cvoid
+end
+
+function clang_TypeDecl_getSourceRange(TD)
+    @ccall libclangex.clang_TypeDecl_getSourceRange(TD::CXTypeDecl)::CXSourceRange_
 end
 
 function clang_TypedefNameDecl_isModed(TND)

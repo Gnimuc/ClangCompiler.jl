@@ -68,6 +68,8 @@ bool clang_Decl_isParameterPack(CXDecl DC);
 
 bool clang_Decl_isTemplateDecl(CXDecl DC);
 
+bool clang_Decl_isFunctionOrFunctionTemplate(CXDecl DC);
+
 CXTemplateDecl clang_Decl_getDescribedTemplate(CXDecl DC);
 
 CXTemplateParameterList clang_Decl_getDescribedTemplateParams(CXDecl DC);

@@ -83,6 +83,8 @@ CXCXXRecordDecl clang_CXXRecordDecl_CreateLambda(CXASTContext C, CXDeclContext D
                                                  bool DependentLambda, bool IsGeneric,
                                                  CXLambdaCaptureDefault CaptureDefault);
 
+bool clang_CXXRecordDecl_isDynamicClass(CXCXXRecordDecl CXXRD);
+
 bool clang_CXXRecordDecl_isLambda(CXCXXRecordDecl CXXRD);
 
 bool clang_CXXRecordDecl_isGenericLambda(CXCXXRecordDecl CXXRD);

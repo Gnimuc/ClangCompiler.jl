@@ -22,8 +22,7 @@ CXNamespaceDecl clang_TranslationUnitDecl_getAnonymousNamespace(CXTranslationUni
 void clang_TranslationUnitDecl_setAnonymousNamespace(CXTranslationUnitDecl TUD,
                                                      CXNamespaceDecl ND);
 
-CXTranslationUnitDecl clang_TranslationUnitDecl_Create(CXTranslationUnitDecl TUD,
-                                                       CXASTContext C);
+CXTranslationUnitDecl clang_TranslationUnitDecl_Create(CXASTContext C);
 
 // PragmaCommentDecl
 CXPragmaCommentDecl clang_PragmaCommentDecl_Create(CXASTContext C, CXTranslationUnitDecl DC,
@@ -849,6 +848,8 @@ void clang_TypeDecl_setTypeForDecl(CXTypeDecl TD, CXType_ Ty);
 CXSourceLocation_ clang_TypeDecl_getBeginLoc(CXTypeDecl TD);
 
 void clang_TypeDecl_setLocStart(CXTypeDecl TD, CXSourceLocation_ Loc);
+
+CXSourceRange_ clang_TypeDecl_getSourceRange(CXTypeDecl TD);
 
 // TypedefNameDecl
 bool clang_TypedefNameDecl_isModed(CXTypedefNameDecl TND);
