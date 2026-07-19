@@ -79,15 +79,18 @@ remaining phases. Status markers: [x] done, [ ] open.
       leaves crossing as `LLVMGenericValueRef` per the LLVM-reuse rule (§0).
       Two evaluation entry points feed it: `clang_Expr_EvaluateAsRValue`
       (owned result) and `clang_VarDecl_evaluateValue` (borrowed, cached).
+- [x] Expr constant-evaluation cluster on the APValue bridge —
+      isEvaluatable/isIntegerConstantExpr/isCXX11ConstantExpr predicates and the
+      typed EvaluateAsInt (owned CXAPValue), EvaluateAsBooleanCondition (1/0/-1),
+      and EvaluateAsFloat (folded bits as LLVMGenericValueRef) entry points, all
+      at the strict SE_NoSideEffects policy.
 
 ## Remaining
 
-- [ ] **Payload leftovers** — the rest of the Expr-base constant-evaluation
-      cluster now that the APValue bridge has landed (EvaluateAsInt/EvaluateAsFloat/
-      EvaluateAsBooleanCondition, isEvaluatable, isCXX11ConstantExpr), StringLiteral
-      width variants, UnaryExprOrTypeTraitExpr `getKind` (needs a `.def`-driven UETT
-      enum mirror), PredefinedExpr, and a long breadth-first tail of core classes
-      with ≤2 payload methods.
+- [ ] **Payload leftovers** — StringLiteral width variants, UnaryExprOrTypeTraitExpr
+      `getKind` (needs a `.def`-driven UETT enum mirror), PredefinedExpr, and a
+      long breadth-first tail of core classes with ≤2 payload methods. (The
+      Expr-base constant-evaluation cluster is done.)
 - [ ] **Iteration leftovers** — LambdaExpr captures (needs a CXLambdaCapture
       carrier), FunctionProtoType exceptions/param-type arrays, IndirectFieldDecl
       chain, ImportDecl identifier locs, CastExpr base path.
@@ -112,6 +115,6 @@ remaining phases. Status markers: [x] done, [ ] open.
       real tools (null-check linter, unused-include pass, template
       instantiation dumper) that must be expressible from Julia.
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
-      (this branch adds ~755 C symbols — the earlier drift fixes, the 90
-      CXXRecordDecl traits, and the APValue bridge — and corrects
-      CXCastKind/CXLinkage values).
+      (this branch adds ~760 C symbols — the earlier drift fixes, the 90
+      CXXRecordDecl traits, and the APValue bridge with its Expr eval cluster —
+      and corrects CXCastKind/CXLinkage values).
