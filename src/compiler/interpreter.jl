@@ -41,12 +41,7 @@ get_sema(x::CxxInterpreter) = getSema(get_parser(x))
 get_execution_engine(x::CxxInterpreter) = getExecutionEngine(x.interp)
 get_symbol_address(x::CxxInterpreter, name::AbstractString) = getSymbolAddress(x.interp, name)
 get_symbol_address_from_linker_name(x::CxxInterpreter, name::AbstractString) = getSymbolAddressFromLinkerName(x.interp, name)
-function get_function_pointer(x::CxxInterpreter, name::AbstractString)
-    addr = get_symbol_address(x, name)
-    iszero(addr) &&
-        error("failed to resolve the address of `$name`; the symbol may not be JIT-compiled yet or the loaded libclangex is incompatible.")
-    return Ptr{Cvoid}(addr)
-end
+get_function_pointer(x::CxxInterpreter, name::AbstractString) = Ptr{Cvoid}(get_symbol_address(x, name))
 
 parse(x::CxxInterpreter, code::String) = Parse(x.interp, code)
 execute(x::CxxInterpreter, tu::PartialTranslationUnit) = Execute(x.interp, tu)

@@ -13,9 +13,7 @@ ColumnLimit 92 — narrower than the Julia code's 120).
 headers alone, and `extern "C"` + `void*`-typedef signatures mean neither the C++ compiler
 nor the linker catches arity or type drift between declaration and definition — failures
 surface at Julia runtime as memory corruption or `dlsym` errors, never at build time.
-(Live example of the failure mode: `clang_TranslationUnitDecl_Create` is declared with 2
-params in `include/clang-ex/AST/CXDecl.h:25` but defined with 1 in `lib/AST/CXDecl.cpp:23`;
-the generated binding follows the header and passes 2.) Corollaries:
+Corollaries:
 
 - A function defined only in the .cpp but missing from the header never reaches Julia.
 - A .cpp missing from its `CMakeLists.txt` compiles into nothing — the symbol is missing
@@ -48,7 +46,7 @@ the generated binding follows the header and passes 2.) Corollaries:
   `CXToken_`. Function names never get the underscore. Using the un-underscored name in a
   new signature silently binds to libclang's unrelated type in the generated bindings.
 - Header skeleton: guard `LLVM_CLANG_C_EXTRA_<NAME>_H` (watch for copy-paste guard
-  collisions — CXType.h's stale `CXQUALTYPE` guard is the cautionary tale); include
+  collisions — a colliding guard silently drops the header from the generated bindings); include
   `clang-ex/CXTypes.h`, `clang-c/ExternC.h`, `clang-c/Platform.h` (+ `clang-c/CXString.h`
   only if CXString appears, + `llvm-c/...` only if `LLVM*Ref` appears); wrap everything in
   `LLVM_CLANG_C_EXTERN_C_BEGIN/END`; zero-arg functions are `(void)`.
@@ -133,8 +131,8 @@ regenerate with the bindings.
 ## Enums
 
 - Every mirrored enum MUST have an ENUM_SYNC table in lib/Basic/CXEnumSync.cpp
-  covering every enumerator — partial mirrors are how CXCastKind shipped with
-  6 of 65 values and silently wrong numbering.
+  covering every enumerator — a partial mirror silently ships missing enumerators
+  and wrong numbering.
 - Mirror as `typedef enum CX<ClangEnumName> { CX<ClangEnumName>_<EnumeratorVerbatim>, ... }`
   in the subsystem header matching the Clang header the enum lives in (shared clang/Basic
   enums → `include/clang-ex/Basic/*.h`; class-local enums inline in the class's CX header).
@@ -143,10 +141,8 @@ regenerate with the bindings.
   `@enum ...::UInt8`); the default maps to UInt32.
 - Conversion is a blind `static_cast` in both directions — **order and values must match
   the pinned LLVM version's header exactly**, verified against the actual artifact header
-  (`~/.julia/artifacts/<LLVM_full_jll>/include/clang/...`), not memory. Live drift bug to
-  not replicate: `CXLinkage` still mirrors pre-18 numbering (`NoLinkage=0…External=5`)
-  while clang 18's `Linkage` is `Invalid=0…External=6`, so linkage values come back
-  shifted by one.
+  (`~/.julia/artifacts/<LLVM_full_jll>/include/clang/...`), not memory. A mirror that lags
+  the pinned LLVM version's numbering returns values shifted from what callers expect.
 - Pure-enum headers get no .cpp and are registered only in the include-side CMakeLists.
   The six Basic ones (CXLinkage.h, CXSpecifiers.h, CXLambda.h, CXPragmaKinds.h,
   CXVisibility.h, CXExceptionSpecificationType.h) contain no #includes at all and must be
@@ -198,9 +194,8 @@ new code by:
 
 ## Error handling
 
-- Nothing crosses the C boundary: no exceptions and no error codes (the old
-  `CXError.h`/`CXInit_Error` scheme was deliberately removed in fc64b25 — checks happen
-  on the Julia side). Fallible calls (`llvm::Expected`/`ErrorOr`/`llvm::Error`) are
+- Nothing crosses the C boundary: no exceptions and no error codes — checks happen
+  on the Julia side. Fallible calls (`llvm::Expected`/`ErrorOr`/`llvm::Error`) are
   unwrapped in the shim: log to `llvm::errs()` and return a sentinel (nullptr for
   pointers, 0 for `LLVMOrcExecutorAddress`); void wrappers log the same way but give the
   caller no failure signal. Always consume the `Error` (`toString(std::move(E))`) — a

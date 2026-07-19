@@ -1,7 +1,6 @@
 // Compile-time sync tables for hand-mirrored enums. Conversion at the C
 // boundary is a bare static_cast in both directions, so an upstream
-// renumbering (like clang 18 turning Linkage into an enum class starting at
-// Invalid = 0) silently corrupts every value crossing the boundary. Each
+// renumbering silently corrupts every value crossing the boundary. Each
 // mirrored enum gets one ENUM_SYNC line per enumerator; an LLVM bump that
 // shifts values then fails this translation unit instead of shipping wrong
 // numbers. When adding a new mirrored enum, add its table here.
