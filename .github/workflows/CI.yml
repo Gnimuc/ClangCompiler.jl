@@ -52,7 +52,10 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           path-type: inherit
-          install: mingw-w64-x86_64-gcc
+          # `make` (msys) is required so CMake's "MSYS Makefiles" generator picks
+          # msys2's own make instead of the runner image's C:/mingw64/bin/make.exe,
+          # which is on the inherited PATH and cannot drive msys2's compilers.
+          install: mingw-w64-x86_64-gcc make
         if: runner.os == 'Windows'
 
       - name: Build ClangExtra
