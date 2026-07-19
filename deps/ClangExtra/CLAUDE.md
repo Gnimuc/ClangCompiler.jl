@@ -106,6 +106,12 @@ Corollaries:
 
 ## Marshalling
 
+The trivial shapes are below. For value types, iterator ranges, arbitrary-precision numbers,
+and other out-of-band results that a `void *` accessor can't carry, follow the playbook in
+`MARSHALLING.md` (APValue/APSInt/APFloat, `std::string`→CXString, count+fill vs count+index for
+ranges, exposing aggregate fields, discriminated unions, opaque navigation handles) — extend
+that file rather than inventing a one-off scheme.
+
 - Handle → C++: `static_cast<clang::T *>(h)`. Never `dynamic_cast`/`typeid` (built with
   `-fno-rtti`), never C-style casts. `T&` returns → `return &...;` const returns →
   `const_cast` (the C surface is all non-const `void*`). Reference params → deref a
