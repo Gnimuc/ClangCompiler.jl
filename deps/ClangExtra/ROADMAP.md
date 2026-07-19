@@ -12,6 +12,11 @@ remaining phases. Status markers: [x] done, [ ] open.
   and check-free by design; subtyping, multiple inheritance, and all type-checking are
   reproduced in Julia. The axiom and its two enforcing invariants live in
   `deps/ClangExtra/CLAUDE.md` and `src/clang/CLAUDE.md`.
+- **Reuse LLVM's C types.** Clang sits on LLVM; anything already exposed by the LLVM-C API
+  or LLVM.jl's libLLVMExtra (APInt/APFloat/Value/Type/Module/MemoryBuffer/…) crosses as that
+  handle, never a parallel `CX` type. Missing LLVM accessors go upstream to libLLVMExtra in
+  llvm-c style, not into libclangex. Only genuinely-Clang types get `CX` handles. See
+  `MARSHALLING.md` §0.
 - **Hybrid strategy.** Uniform machinery (classification, casts, kind enums)
   is stamped from clang's own TableGen tables; payload accessors are
   hand-written under the conventions in CLAUDE.md, because marshalling and

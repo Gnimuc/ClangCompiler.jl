@@ -10,6 +10,33 @@ Pick the lightest pattern that fits. Prefer exposing components over marshalling
 prefer a borrowed interior pointer over an owned copy; only heap-box when the value has no
 pointer form and the caller genuinely needs it.
 
+## 0. Reuse LLVM's own C types — don't reinvent them
+
+Clang is built on LLVM, so many values crossing the boundary are LLVM-owned, not Clang-owned.
+For any type already exposed by the **LLVM-C API** or **LLVM.jl's libLLVMExtra**, cross it as
+that existing handle and convert with `llvm::wrap`/`llvm::unwrap` (or the established
+`reinterpret_cast` where llvm-c has no public wrap) — never mint a parallel `CX` type:
+
+- `llvm::Module`/`Type`/`Value`/`Constant`/`LLVMContext`/`MemoryBuffer` → `LLVMModuleRef`,
+  `LLVMTypeRef`, `LLVMValueRef`, `LLVMContextRef`, `LLVMMemoryBufferRef` (the shim already does
+  this for CodeGen, PCH buffers, and the Orc `LLVMOrcLLJITRef`/`LLVMOrcExecutorAddress`).
+- `llvm::APInt`/`APSInt` → an `llvm::GenericValue*` (its `IntVal`) reinterpreted to
+  `LLVMGenericValueRef`, the bridge `clang_IntegerLiteral_getValue` /
+  `clang_TemplateArgument_getAsIntegral` already use. `APFloat` rides the same bridge
+  (§2). A ConstantInt/ConstantFP `LLVMValueRef` is the alternative when a context is in hand.
+
+Only genuinely-Clang types get a `CX` handle: `Decl`/`Stmt`/`Expr`/`QualType`/`Type`,
+`APValue`, `Attr`, `TypeLoc`, `TemplateArgument`, `NestedNameSpecifier`, `DeclarationNameInfo`,
+`ASTRecordLayout`, `clang::Module` (`CXModule` — the header-modules type, *not* `llvm::Module`),
+`clang::Value` (`CXValue` — the interpreter value). When one of these wraps an LLVM value
+(e.g. `APValue`'s integer/float leaves), the wrapper is `CX` but the leaf still crosses as its
+LLVM-C handle.
+
+**Upstreamability.** If an LLVM accessor you need is missing from llvm-c/libLLVMExtra, add it
+*there*, in llvm-c's own style — `LLVM<Thing>Ref` opaque pointers, `LLVMBool`, out-params,
+`LLVMDispose<Thing>` — so it can be contributed to LLVM.jl's libLLVMExtra rather than fossilised
+as a one-off Clang-side shim. Reserve libclangex for what is genuinely Clang.
+
 ## 1. Arbitrary-precision integers (`APSInt`, `APInt`)
 
 Returned by `IntegerLiteral::getValue`, `EnumConstantDecl::getInitVal`,
@@ -25,9 +52,11 @@ invent a second integer-boxing scheme.
 
 Returned by `FloatingLiteral::getValue`.
 
-**Lossy accessor first, opaque handle only on demand.** `getValueAsApproximateDouble` covers
-the common case with a plain `double`. If exactness matters, add an opaque `CXAPFloat`
-(heap-box + `dispose`) with bit-pattern / string accessors. Don't return the `APFloat` by value.
+**Reuse the LLVM-C numeric bridge — `APFloat` is an LLVM type (§0), so no `CXAPFloat`.**
+`getValueAsApproximateDouble` covers the common case with a plain `double`. For exactness,
+`APFloat::bitcastToAPInt()` gives the raw bit pattern; cross that through the same
+`LLVMGenericValueRef` (`GenericValue::IntVal`) bridge as §1, or wrap a ConstantFP as an
+`LLVMValueRef`. Never return the `APFloat` by value and never mint a parallel `CX` handle for it.
 
 ## 3. Compile-time values (`APValue`)
 

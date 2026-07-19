@@ -147,7 +147,10 @@ that file rather than inventing a one-off scheme.
   exposes them (Module, Context, MemoryBuffer, Type). Where llvm-c has no public
   wrap/unwrap, the established pattern is `reinterpret_cast` — currently the
   `LLVMGenericValueRef ↔ llvm::GenericValue*` bridge for APSInt values and the
-  `LLVMOrcLLJITRef` return in `clang_Interpreter_getExecutionEngine`.
+  `LLVMOrcLLJITRef` return in `clang_Interpreter_getExecutionEngine`. **Never mint a
+  parallel `CX` type for something llvm-c or LLVM.jl's libLLVMExtra already exposes** (APInt,
+  APFloat, Value, Type, Module, …); reuse the LLVM-C handle, and if an accessor is missing add
+  it to libLLVMExtra in llvm-c style so it stays upstreamable. See `MARSHALLING.md` §0.
 
 ## The stamped Stmt layer (AST/CXStmt.h)
 

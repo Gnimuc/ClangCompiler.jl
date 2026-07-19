@@ -198,12 +198,6 @@ const CXOpaqueValueExpr = Ptr{Cvoid}
 
 const CXDeclRefExpr = Ptr{Cvoid}
 
-const CXAPNumericStorage = Ptr{Cvoid}
-
-const CXAPIntStorage = Ptr{Cvoid}
-
-const CXAPFloatStorage = Ptr{Cvoid}
-
 const CXIntegerLiteral = Ptr{Cvoid}
 
 const CXFixedPointLiteral = Ptr{Cvoid}
