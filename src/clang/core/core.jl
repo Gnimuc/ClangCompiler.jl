@@ -10,6 +10,9 @@ struct UnexposedType{T<:AbstractClangType} <: AbstractClangType
 end
 
 include("abstract.jl")
+# abstract-type skeleton for the Stmt hierarchy (from the STMT_NODES table);
+# must precede the AST struct files that subtype it
+include("AST/StmtAbstract.jl")
 
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
 # AST
@@ -29,6 +32,9 @@ include("AST/StmtCXX.jl")
 include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")
 include("AST/Type.jl")
+# after the hand-written AST files: fills in every Stmt-hierarchy class they
+# don't define, from the generated STMT_NODES table
+include("AST/StmtHierarchy.jl")
 
 # Basic
 include("Basic/CodeGenOptions.jl")

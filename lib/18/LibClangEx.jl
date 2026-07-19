@@ -586,13 +586,13 @@ const CXSubstTemplateTypeParmType = Ptr{Cvoid}
 
 const CXSubstTemplateTypeParmPackType = Ptr{Cvoid}
 
-const CXTemplateSpecializationType = Ptr{Cvoid}
-
 const CXDeducedType = Ptr{Cvoid}
 
 const CXAutoType = Ptr{Cvoid}
 
 const CXDeducedTemplateSpecializationType = Ptr{Cvoid}
+
+const CXTemplateSpecializationType = Ptr{Cvoid}
 
 const CXInjectedClassNameType = Ptr{Cvoid}
 
@@ -6264,6 +6264,50 @@ end
     CXCastKind_CK_IntToOCLSampler = 64
 end
 
+function clang_Expr_getType(E)
+    @ccall libclangex.clang_Expr_getType(E::CXExpr)::CXQualType
+end
+
+function clang_Expr_getValueKind(E)
+    @ccall libclangex.clang_Expr_getValueKind(E::CXExpr)::CXExprValueKind
+end
+
+function clang_Expr_isLValue(E)
+    @ccall libclangex.clang_Expr_isLValue(E::CXExpr)::Bool
+end
+
+function clang_Expr_isPRValue(E)
+    @ccall libclangex.clang_Expr_isPRValue(E::CXExpr)::Bool
+end
+
+function clang_Expr_isXValue(E)
+    @ccall libclangex.clang_Expr_isXValue(E::CXExpr)::Bool
+end
+
+function clang_Expr_isGLValue(E)
+    @ccall libclangex.clang_Expr_isGLValue(E::CXExpr)::Bool
+end
+
+function clang_Expr_IgnoreImpCasts(E)
+    @ccall libclangex.clang_Expr_IgnoreImpCasts(E::CXExpr)::CXExpr
+end
+
+function clang_Expr_IgnoreCasts(E)
+    @ccall libclangex.clang_Expr_IgnoreCasts(E::CXExpr)::CXExpr
+end
+
+function clang_Expr_IgnoreParens(E)
+    @ccall libclangex.clang_Expr_IgnoreParens(E::CXExpr)::CXExpr
+end
+
+function clang_Expr_IgnoreParenCasts(E)
+    @ccall libclangex.clang_Expr_IgnoreParenCasts(E::CXExpr)::CXExpr
+end
+
+function clang_Expr_IgnoreParenImpCasts(E)
+    @ccall libclangex.clang_Expr_IgnoreParenImpCasts(E::CXExpr)::CXExpr
+end
+
 function clang_IntegerLiteral_Create(C, Val, T, L)
     @ccall libclangex.clang_IntegerLiteral_Create(C::CXASTContext, Val::LLVMGenericValueRef, T::CXQualType, L::CXSourceLocation_)::CXIntegerLiteral
 end
@@ -6371,6 +6415,2268 @@ end
 
 function clang_NestedNameSpecifier_getName(NNS)
     @ccall libclangex.clang_NestedNameSpecifier_getName(NNS::CXNestedNameSpecifier)::CXString
+end
+
+@enum CXStmtClass::UInt32 begin
+    CXStmtClass_NoStmtClass = 0
+    CXStmtClass_WhileStmtClass = 1
+    CXStmtClass_LabelStmtClass = 2
+    CXStmtClass_VAArgExprClass = 3
+    CXStmtClass_UnaryOperatorClass = 4
+    CXStmtClass_UnaryExprOrTypeTraitExprClass = 5
+    CXStmtClass_TypoExprClass = 6
+    CXStmtClass_TypeTraitExprClass = 7
+    CXStmtClass_SubstNonTypeTemplateParmPackExprClass = 8
+    CXStmtClass_SubstNonTypeTemplateParmExprClass = 9
+    CXStmtClass_StringLiteralClass = 10
+    CXStmtClass_StmtExprClass = 11
+    CXStmtClass_SourceLocExprClass = 12
+    CXStmtClass_SizeOfPackExprClass = 13
+    CXStmtClass_ShuffleVectorExprClass = 14
+    CXStmtClass_SYCLUniqueStableNameExprClass = 15
+    CXStmtClass_RequiresExprClass = 16
+    CXStmtClass_RecoveryExprClass = 17
+    CXStmtClass_PseudoObjectExprClass = 18
+    CXStmtClass_PredefinedExprClass = 19
+    CXStmtClass_ParenListExprClass = 20
+    CXStmtClass_ParenExprClass = 21
+    CXStmtClass_PackExpansionExprClass = 22
+    CXStmtClass_UnresolvedMemberExprClass = 23
+    CXStmtClass_UnresolvedLookupExprClass = 24
+    CXStmtClass_OpaqueValueExprClass = 25
+    CXStmtClass_OffsetOfExprClass = 26
+    CXStmtClass_ObjCSubscriptRefExprClass = 27
+    CXStmtClass_ObjCStringLiteralClass = 28
+    CXStmtClass_ObjCSelectorExprClass = 29
+    CXStmtClass_ObjCProtocolExprClass = 30
+    CXStmtClass_ObjCPropertyRefExprClass = 31
+    CXStmtClass_ObjCMessageExprClass = 32
+    CXStmtClass_ObjCIvarRefExprClass = 33
+    CXStmtClass_ObjCIsaExprClass = 34
+    CXStmtClass_ObjCIndirectCopyRestoreExprClass = 35
+    CXStmtClass_ObjCEncodeExprClass = 36
+    CXStmtClass_ObjCDictionaryLiteralClass = 37
+    CXStmtClass_ObjCBoxedExprClass = 38
+    CXStmtClass_ObjCBoolLiteralExprClass = 39
+    CXStmtClass_ObjCAvailabilityCheckExprClass = 40
+    CXStmtClass_ObjCArrayLiteralClass = 41
+    CXStmtClass_OMPIteratorExprClass = 42
+    CXStmtClass_OMPArrayShapingExprClass = 43
+    CXStmtClass_OMPArraySectionExprClass = 44
+    CXStmtClass_NoInitExprClass = 45
+    CXStmtClass_MemberExprClass = 46
+    CXStmtClass_MatrixSubscriptExprClass = 47
+    CXStmtClass_MaterializeTemporaryExprClass = 48
+    CXStmtClass_MSPropertySubscriptExprClass = 49
+    CXStmtClass_MSPropertyRefExprClass = 50
+    CXStmtClass_LambdaExprClass = 51
+    CXStmtClass_IntegerLiteralClass = 52
+    CXStmtClass_InitListExprClass = 53
+    CXStmtClass_ImplicitValueInitExprClass = 54
+    CXStmtClass_ImaginaryLiteralClass = 55
+    CXStmtClass_GenericSelectionExprClass = 56
+    CXStmtClass_GNUNullExprClass = 57
+    CXStmtClass_FunctionParmPackExprClass = 58
+    CXStmtClass_ExprWithCleanupsClass = 59
+    CXStmtClass_ConstantExprClass = 60
+    CXStmtClass_FloatingLiteralClass = 61
+    CXStmtClass_FixedPointLiteralClass = 62
+    CXStmtClass_ExtVectorElementExprClass = 63
+    CXStmtClass_ExpressionTraitExprClass = 64
+    CXStmtClass_DesignatedInitUpdateExprClass = 65
+    CXStmtClass_DesignatedInitExprClass = 66
+    CXStmtClass_DependentScopeDeclRefExprClass = 67
+    CXStmtClass_DependentCoawaitExprClass = 68
+    CXStmtClass_DeclRefExprClass = 69
+    CXStmtClass_CoyieldExprClass = 70
+    CXStmtClass_CoawaitExprClass = 71
+    CXStmtClass_ConvertVectorExprClass = 72
+    CXStmtClass_ConceptSpecializationExprClass = 73
+    CXStmtClass_CompoundLiteralExprClass = 74
+    CXStmtClass_ChooseExprClass = 75
+    CXStmtClass_CharacterLiteralClass = 76
+    CXStmtClass_ImplicitCastExprClass = 77
+    CXStmtClass_ObjCBridgedCastExprClass = 78
+    CXStmtClass_CXXStaticCastExprClass = 79
+    CXStmtClass_CXXReinterpretCastExprClass = 80
+    CXStmtClass_CXXDynamicCastExprClass = 81
+    CXStmtClass_CXXConstCastExprClass = 82
+    CXStmtClass_CXXAddrspaceCastExprClass = 83
+    CXStmtClass_CXXFunctionalCastExprClass = 84
+    CXStmtClass_CStyleCastExprClass = 85
+    CXStmtClass_BuiltinBitCastExprClass = 86
+    CXStmtClass_CallExprClass = 87
+    CXStmtClass_UserDefinedLiteralClass = 88
+    CXStmtClass_CXXOperatorCallExprClass = 89
+    CXStmtClass_CXXMemberCallExprClass = 90
+    CXStmtClass_CUDAKernelCallExprClass = 91
+    CXStmtClass_CXXUuidofExprClass = 92
+    CXStmtClass_CXXUnresolvedConstructExprClass = 93
+    CXStmtClass_CXXTypeidExprClass = 94
+    CXStmtClass_CXXThrowExprClass = 95
+    CXStmtClass_CXXThisExprClass = 96
+    CXStmtClass_CXXStdInitializerListExprClass = 97
+    CXStmtClass_CXXScalarValueInitExprClass = 98
+    CXStmtClass_CXXRewrittenBinaryOperatorClass = 99
+    CXStmtClass_CXXPseudoDestructorExprClass = 100
+    CXStmtClass_CXXParenListInitExprClass = 101
+    CXStmtClass_CXXNullPtrLiteralExprClass = 102
+    CXStmtClass_CXXNoexceptExprClass = 103
+    CXStmtClass_CXXNewExprClass = 104
+    CXStmtClass_CXXInheritedCtorInitExprClass = 105
+    CXStmtClass_CXXFoldExprClass = 106
+    CXStmtClass_CXXDependentScopeMemberExprClass = 107
+    CXStmtClass_CXXDeleteExprClass = 108
+    CXStmtClass_CXXDefaultInitExprClass = 109
+    CXStmtClass_CXXDefaultArgExprClass = 110
+    CXStmtClass_CXXConstructExprClass = 111
+    CXStmtClass_CXXTemporaryObjectExprClass = 112
+    CXStmtClass_CXXBoolLiteralExprClass = 113
+    CXStmtClass_CXXBindTemporaryExprClass = 114
+    CXStmtClass_BlockExprClass = 115
+    CXStmtClass_BinaryOperatorClass = 116
+    CXStmtClass_CompoundAssignOperatorClass = 117
+    CXStmtClass_AtomicExprClass = 118
+    CXStmtClass_AsTypeExprClass = 119
+    CXStmtClass_ArrayTypeTraitExprClass = 120
+    CXStmtClass_ArraySubscriptExprClass = 121
+    CXStmtClass_ArrayInitLoopExprClass = 122
+    CXStmtClass_ArrayInitIndexExprClass = 123
+    CXStmtClass_AddrLabelExprClass = 124
+    CXStmtClass_ConditionalOperatorClass = 125
+    CXStmtClass_BinaryConditionalOperatorClass = 126
+    CXStmtClass_AttributedStmtClass = 127
+    CXStmtClass_SwitchStmtClass = 128
+    CXStmtClass_DefaultStmtClass = 129
+    CXStmtClass_CaseStmtClass = 130
+    CXStmtClass_SEHTryStmtClass = 131
+    CXStmtClass_SEHLeaveStmtClass = 132
+    CXStmtClass_SEHFinallyStmtClass = 133
+    CXStmtClass_SEHExceptStmtClass = 134
+    CXStmtClass_ReturnStmtClass = 135
+    CXStmtClass_ObjCForCollectionStmtClass = 136
+    CXStmtClass_ObjCAutoreleasePoolStmtClass = 137
+    CXStmtClass_ObjCAtTryStmtClass = 138
+    CXStmtClass_ObjCAtThrowStmtClass = 139
+    CXStmtClass_ObjCAtSynchronizedStmtClass = 140
+    CXStmtClass_ObjCAtFinallyStmtClass = 141
+    CXStmtClass_ObjCAtCatchStmtClass = 142
+    CXStmtClass_OMPTeamsDirectiveClass = 143
+    CXStmtClass_OMPTaskyieldDirectiveClass = 144
+    CXStmtClass_OMPTaskwaitDirectiveClass = 145
+    CXStmtClass_OMPTaskgroupDirectiveClass = 146
+    CXStmtClass_OMPTaskDirectiveClass = 147
+    CXStmtClass_OMPTargetUpdateDirectiveClass = 148
+    CXStmtClass_OMPTargetTeamsDirectiveClass = 149
+    CXStmtClass_OMPTargetParallelForDirectiveClass = 150
+    CXStmtClass_OMPTargetParallelDirectiveClass = 151
+    CXStmtClass_OMPTargetExitDataDirectiveClass = 152
+    CXStmtClass_OMPTargetEnterDataDirectiveClass = 153
+    CXStmtClass_OMPTargetDirectiveClass = 154
+    CXStmtClass_OMPTargetDataDirectiveClass = 155
+    CXStmtClass_OMPSingleDirectiveClass = 156
+    CXStmtClass_OMPSectionsDirectiveClass = 157
+    CXStmtClass_OMPSectionDirectiveClass = 158
+    CXStmtClass_OMPScopeDirectiveClass = 159
+    CXStmtClass_OMPScanDirectiveClass = 160
+    CXStmtClass_OMPParallelSectionsDirectiveClass = 161
+    CXStmtClass_OMPParallelMasterDirectiveClass = 162
+    CXStmtClass_OMPParallelMaskedDirectiveClass = 163
+    CXStmtClass_OMPParallelDirectiveClass = 164
+    CXStmtClass_OMPOrderedDirectiveClass = 165
+    CXStmtClass_OMPMetaDirectiveClass = 166
+    CXStmtClass_OMPMasterDirectiveClass = 167
+    CXStmtClass_OMPMaskedDirectiveClass = 168
+    CXStmtClass_OMPUnrollDirectiveClass = 169
+    CXStmtClass_OMPTileDirectiveClass = 170
+    CXStmtClass_OMPTeamsGenericLoopDirectiveClass = 171
+    CXStmtClass_OMPTeamsDistributeSimdDirectiveClass = 172
+    CXStmtClass_OMPTeamsDistributeParallelForSimdDirectiveClass = 173
+    CXStmtClass_OMPTeamsDistributeParallelForDirectiveClass = 174
+    CXStmtClass_OMPTeamsDistributeDirectiveClass = 175
+    CXStmtClass_OMPTaskLoopSimdDirectiveClass = 176
+    CXStmtClass_OMPTaskLoopDirectiveClass = 177
+    CXStmtClass_OMPTargetTeamsGenericLoopDirectiveClass = 178
+    CXStmtClass_OMPTargetTeamsDistributeSimdDirectiveClass = 179
+    CXStmtClass_OMPTargetTeamsDistributeParallelForSimdDirectiveClass = 180
+    CXStmtClass_OMPTargetTeamsDistributeParallelForDirectiveClass = 181
+    CXStmtClass_OMPTargetTeamsDistributeDirectiveClass = 182
+    CXStmtClass_OMPTargetSimdDirectiveClass = 183
+    CXStmtClass_OMPTargetParallelGenericLoopDirectiveClass = 184
+    CXStmtClass_OMPTargetParallelForSimdDirectiveClass = 185
+    CXStmtClass_OMPSimdDirectiveClass = 186
+    CXStmtClass_OMPParallelMasterTaskLoopSimdDirectiveClass = 187
+    CXStmtClass_OMPParallelMasterTaskLoopDirectiveClass = 188
+    CXStmtClass_OMPParallelMaskedTaskLoopSimdDirectiveClass = 189
+    CXStmtClass_OMPParallelMaskedTaskLoopDirectiveClass = 190
+    CXStmtClass_OMPParallelGenericLoopDirectiveClass = 191
+    CXStmtClass_OMPParallelForSimdDirectiveClass = 192
+    CXStmtClass_OMPParallelForDirectiveClass = 193
+    CXStmtClass_OMPMasterTaskLoopSimdDirectiveClass = 194
+    CXStmtClass_OMPMasterTaskLoopDirectiveClass = 195
+    CXStmtClass_OMPMaskedTaskLoopSimdDirectiveClass = 196
+    CXStmtClass_OMPMaskedTaskLoopDirectiveClass = 197
+    CXStmtClass_OMPGenericLoopDirectiveClass = 198
+    CXStmtClass_OMPForSimdDirectiveClass = 199
+    CXStmtClass_OMPForDirectiveClass = 200
+    CXStmtClass_OMPDistributeSimdDirectiveClass = 201
+    CXStmtClass_OMPDistributeParallelForSimdDirectiveClass = 202
+    CXStmtClass_OMPDistributeParallelForDirectiveClass = 203
+    CXStmtClass_OMPDistributeDirectiveClass = 204
+    CXStmtClass_OMPInteropDirectiveClass = 205
+    CXStmtClass_OMPFlushDirectiveClass = 206
+    CXStmtClass_OMPErrorDirectiveClass = 207
+    CXStmtClass_OMPDispatchDirectiveClass = 208
+    CXStmtClass_OMPDepobjDirectiveClass = 209
+    CXStmtClass_OMPCriticalDirectiveClass = 210
+    CXStmtClass_OMPCancellationPointDirectiveClass = 211
+    CXStmtClass_OMPCancelDirectiveClass = 212
+    CXStmtClass_OMPBarrierDirectiveClass = 213
+    CXStmtClass_OMPAtomicDirectiveClass = 214
+    CXStmtClass_OMPCanonicalLoopClass = 215
+    CXStmtClass_NullStmtClass = 216
+    CXStmtClass_MSDependentExistsStmtClass = 217
+    CXStmtClass_IndirectGotoStmtClass = 218
+    CXStmtClass_IfStmtClass = 219
+    CXStmtClass_GotoStmtClass = 220
+    CXStmtClass_ForStmtClass = 221
+    CXStmtClass_DoStmtClass = 222
+    CXStmtClass_DeclStmtClass = 223
+    CXStmtClass_CoroutineBodyStmtClass = 224
+    CXStmtClass_CoreturnStmtClass = 225
+    CXStmtClass_ContinueStmtClass = 226
+    CXStmtClass_CompoundStmtClass = 227
+    CXStmtClass_CapturedStmtClass = 228
+    CXStmtClass_CXXTryStmtClass = 229
+    CXStmtClass_CXXForRangeStmtClass = 230
+    CXStmtClass_CXXCatchStmtClass = 231
+    CXStmtClass_BreakStmtClass = 232
+    CXStmtClass_MSAsmStmtClass = 233
+    CXStmtClass_GCCAsmStmtClass = 234
+end
+
+function clang_Stmt_castToWhileStmt(S)
+    @ccall libclangex.clang_Stmt_castToWhileStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isWhileStmt(S)
+    @ccall libclangex.clang_Stmt_isWhileStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToValueStmt(S)
+    @ccall libclangex.clang_Stmt_castToValueStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isValueStmt(S)
+    @ccall libclangex.clang_Stmt_isValueStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToLabelStmt(S)
+    @ccall libclangex.clang_Stmt_castToLabelStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isLabelStmt(S)
+    @ccall libclangex.clang_Stmt_isLabelStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToExpr(S)
+    @ccall libclangex.clang_Stmt_castToExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isExpr(S)
+    @ccall libclangex.clang_Stmt_isExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToVAArgExpr(S)
+    @ccall libclangex.clang_Stmt_castToVAArgExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isVAArgExpr(S)
+    @ccall libclangex.clang_Stmt_isVAArgExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToUnaryOperator(S)
+    @ccall libclangex.clang_Stmt_castToUnaryOperator(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isUnaryOperator(S)
+    @ccall libclangex.clang_Stmt_isUnaryOperator(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToUnaryExprOrTypeTraitExpr(S)
+    @ccall libclangex.clang_Stmt_castToUnaryExprOrTypeTraitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isUnaryExprOrTypeTraitExpr(S)
+    @ccall libclangex.clang_Stmt_isUnaryExprOrTypeTraitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToTypoExpr(S)
+    @ccall libclangex.clang_Stmt_castToTypoExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isTypoExpr(S)
+    @ccall libclangex.clang_Stmt_isTypoExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToTypeTraitExpr(S)
+    @ccall libclangex.clang_Stmt_castToTypeTraitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isTypeTraitExpr(S)
+    @ccall libclangex.clang_Stmt_isTypeTraitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSubstNonTypeTemplateParmPackExpr(S)
+    @ccall libclangex.clang_Stmt_castToSubstNonTypeTemplateParmPackExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSubstNonTypeTemplateParmPackExpr(S)
+    @ccall libclangex.clang_Stmt_isSubstNonTypeTemplateParmPackExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSubstNonTypeTemplateParmExpr(S)
+    @ccall libclangex.clang_Stmt_castToSubstNonTypeTemplateParmExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSubstNonTypeTemplateParmExpr(S)
+    @ccall libclangex.clang_Stmt_isSubstNonTypeTemplateParmExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToStringLiteral(S)
+    @ccall libclangex.clang_Stmt_castToStringLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isStringLiteral(S)
+    @ccall libclangex.clang_Stmt_isStringLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToStmtExpr(S)
+    @ccall libclangex.clang_Stmt_castToStmtExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isStmtExpr(S)
+    @ccall libclangex.clang_Stmt_isStmtExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSourceLocExpr(S)
+    @ccall libclangex.clang_Stmt_castToSourceLocExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSourceLocExpr(S)
+    @ccall libclangex.clang_Stmt_isSourceLocExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSizeOfPackExpr(S)
+    @ccall libclangex.clang_Stmt_castToSizeOfPackExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSizeOfPackExpr(S)
+    @ccall libclangex.clang_Stmt_isSizeOfPackExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToShuffleVectorExpr(S)
+    @ccall libclangex.clang_Stmt_castToShuffleVectorExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isShuffleVectorExpr(S)
+    @ccall libclangex.clang_Stmt_isShuffleVectorExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSYCLUniqueStableNameExpr(S)
+    @ccall libclangex.clang_Stmt_castToSYCLUniqueStableNameExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSYCLUniqueStableNameExpr(S)
+    @ccall libclangex.clang_Stmt_isSYCLUniqueStableNameExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToRequiresExpr(S)
+    @ccall libclangex.clang_Stmt_castToRequiresExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isRequiresExpr(S)
+    @ccall libclangex.clang_Stmt_isRequiresExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToRecoveryExpr(S)
+    @ccall libclangex.clang_Stmt_castToRecoveryExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isRecoveryExpr(S)
+    @ccall libclangex.clang_Stmt_isRecoveryExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToPseudoObjectExpr(S)
+    @ccall libclangex.clang_Stmt_castToPseudoObjectExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isPseudoObjectExpr(S)
+    @ccall libclangex.clang_Stmt_isPseudoObjectExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToPredefinedExpr(S)
+    @ccall libclangex.clang_Stmt_castToPredefinedExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isPredefinedExpr(S)
+    @ccall libclangex.clang_Stmt_isPredefinedExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToParenListExpr(S)
+    @ccall libclangex.clang_Stmt_castToParenListExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isParenListExpr(S)
+    @ccall libclangex.clang_Stmt_isParenListExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToParenExpr(S)
+    @ccall libclangex.clang_Stmt_castToParenExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isParenExpr(S)
+    @ccall libclangex.clang_Stmt_isParenExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToPackExpansionExpr(S)
+    @ccall libclangex.clang_Stmt_castToPackExpansionExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isPackExpansionExpr(S)
+    @ccall libclangex.clang_Stmt_isPackExpansionExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOverloadExpr(S)
+    @ccall libclangex.clang_Stmt_castToOverloadExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOverloadExpr(S)
+    @ccall libclangex.clang_Stmt_isOverloadExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToUnresolvedMemberExpr(S)
+    @ccall libclangex.clang_Stmt_castToUnresolvedMemberExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isUnresolvedMemberExpr(S)
+    @ccall libclangex.clang_Stmt_isUnresolvedMemberExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToUnresolvedLookupExpr(S)
+    @ccall libclangex.clang_Stmt_castToUnresolvedLookupExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isUnresolvedLookupExpr(S)
+    @ccall libclangex.clang_Stmt_isUnresolvedLookupExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpaqueValueExpr(S)
+    @ccall libclangex.clang_Stmt_castToOpaqueValueExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOpaqueValueExpr(S)
+    @ccall libclangex.clang_Stmt_isOpaqueValueExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOffsetOfExpr(S)
+    @ccall libclangex.clang_Stmt_castToOffsetOfExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOffsetOfExpr(S)
+    @ccall libclangex.clang_Stmt_isOffsetOfExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCSubscriptRefExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCSubscriptRefExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCSubscriptRefExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCSubscriptRefExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCStringLiteral(S)
+    @ccall libclangex.clang_Stmt_castToObjCStringLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCStringLiteral(S)
+    @ccall libclangex.clang_Stmt_isObjCStringLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCSelectorExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCSelectorExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCSelectorExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCSelectorExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCProtocolExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCProtocolExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCProtocolExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCProtocolExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCPropertyRefExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCPropertyRefExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCPropertyRefExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCPropertyRefExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCMessageExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCMessageExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCMessageExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCMessageExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCIvarRefExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCIvarRefExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCIvarRefExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCIvarRefExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCIsaExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCIsaExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCIsaExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCIsaExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCIndirectCopyRestoreExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCIndirectCopyRestoreExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCIndirectCopyRestoreExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCIndirectCopyRestoreExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCEncodeExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCEncodeExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCEncodeExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCEncodeExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCDictionaryLiteral(S)
+    @ccall libclangex.clang_Stmt_castToObjCDictionaryLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCDictionaryLiteral(S)
+    @ccall libclangex.clang_Stmt_isObjCDictionaryLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCBoxedExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCBoxedExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCBoxedExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCBoxedExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCBoolLiteralExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCBoolLiteralExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCBoolLiteralExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCBoolLiteralExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCAvailabilityCheckExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCAvailabilityCheckExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCAvailabilityCheckExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCAvailabilityCheckExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCArrayLiteral(S)
+    @ccall libclangex.clang_Stmt_castToObjCArrayLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCArrayLiteral(S)
+    @ccall libclangex.clang_Stmt_isObjCArrayLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPIteratorExpr(S)
+    @ccall libclangex.clang_Stmt_castToOMPIteratorExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPIteratorExpr(S)
+    @ccall libclangex.clang_Stmt_isOMPIteratorExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPArrayShapingExpr(S)
+    @ccall libclangex.clang_Stmt_castToOMPArrayShapingExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPArrayShapingExpr(S)
+    @ccall libclangex.clang_Stmt_isOMPArrayShapingExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPArraySectionExpr(S)
+    @ccall libclangex.clang_Stmt_castToOMPArraySectionExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPArraySectionExpr(S)
+    @ccall libclangex.clang_Stmt_isOMPArraySectionExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToNoInitExpr(S)
+    @ccall libclangex.clang_Stmt_castToNoInitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isNoInitExpr(S)
+    @ccall libclangex.clang_Stmt_isNoInitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToMemberExpr(S)
+    @ccall libclangex.clang_Stmt_castToMemberExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isMemberExpr(S)
+    @ccall libclangex.clang_Stmt_isMemberExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToMatrixSubscriptExpr(S)
+    @ccall libclangex.clang_Stmt_castToMatrixSubscriptExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isMatrixSubscriptExpr(S)
+    @ccall libclangex.clang_Stmt_isMatrixSubscriptExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToMaterializeTemporaryExpr(S)
+    @ccall libclangex.clang_Stmt_castToMaterializeTemporaryExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isMaterializeTemporaryExpr(S)
+    @ccall libclangex.clang_Stmt_isMaterializeTemporaryExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToMSPropertySubscriptExpr(S)
+    @ccall libclangex.clang_Stmt_castToMSPropertySubscriptExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isMSPropertySubscriptExpr(S)
+    @ccall libclangex.clang_Stmt_isMSPropertySubscriptExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToMSPropertyRefExpr(S)
+    @ccall libclangex.clang_Stmt_castToMSPropertyRefExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isMSPropertyRefExpr(S)
+    @ccall libclangex.clang_Stmt_isMSPropertyRefExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToLambdaExpr(S)
+    @ccall libclangex.clang_Stmt_castToLambdaExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isLambdaExpr(S)
+    @ccall libclangex.clang_Stmt_isLambdaExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToIntegerLiteral(S)
+    @ccall libclangex.clang_Stmt_castToIntegerLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isIntegerLiteral(S)
+    @ccall libclangex.clang_Stmt_isIntegerLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToInitListExpr(S)
+    @ccall libclangex.clang_Stmt_castToInitListExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isInitListExpr(S)
+    @ccall libclangex.clang_Stmt_isInitListExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToImplicitValueInitExpr(S)
+    @ccall libclangex.clang_Stmt_castToImplicitValueInitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isImplicitValueInitExpr(S)
+    @ccall libclangex.clang_Stmt_isImplicitValueInitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToImaginaryLiteral(S)
+    @ccall libclangex.clang_Stmt_castToImaginaryLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isImaginaryLiteral(S)
+    @ccall libclangex.clang_Stmt_isImaginaryLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToGenericSelectionExpr(S)
+    @ccall libclangex.clang_Stmt_castToGenericSelectionExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isGenericSelectionExpr(S)
+    @ccall libclangex.clang_Stmt_isGenericSelectionExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToGNUNullExpr(S)
+    @ccall libclangex.clang_Stmt_castToGNUNullExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isGNUNullExpr(S)
+    @ccall libclangex.clang_Stmt_isGNUNullExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToFunctionParmPackExpr(S)
+    @ccall libclangex.clang_Stmt_castToFunctionParmPackExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isFunctionParmPackExpr(S)
+    @ccall libclangex.clang_Stmt_isFunctionParmPackExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToFullExpr(S)
+    @ccall libclangex.clang_Stmt_castToFullExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isFullExpr(S)
+    @ccall libclangex.clang_Stmt_isFullExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToExprWithCleanups(S)
+    @ccall libclangex.clang_Stmt_castToExprWithCleanups(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isExprWithCleanups(S)
+    @ccall libclangex.clang_Stmt_isExprWithCleanups(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToConstantExpr(S)
+    @ccall libclangex.clang_Stmt_castToConstantExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isConstantExpr(S)
+    @ccall libclangex.clang_Stmt_isConstantExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToFloatingLiteral(S)
+    @ccall libclangex.clang_Stmt_castToFloatingLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isFloatingLiteral(S)
+    @ccall libclangex.clang_Stmt_isFloatingLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToFixedPointLiteral(S)
+    @ccall libclangex.clang_Stmt_castToFixedPointLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isFixedPointLiteral(S)
+    @ccall libclangex.clang_Stmt_isFixedPointLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToExtVectorElementExpr(S)
+    @ccall libclangex.clang_Stmt_castToExtVectorElementExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isExtVectorElementExpr(S)
+    @ccall libclangex.clang_Stmt_isExtVectorElementExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToExpressionTraitExpr(S)
+    @ccall libclangex.clang_Stmt_castToExpressionTraitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isExpressionTraitExpr(S)
+    @ccall libclangex.clang_Stmt_isExpressionTraitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToDesignatedInitUpdateExpr(S)
+    @ccall libclangex.clang_Stmt_castToDesignatedInitUpdateExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isDesignatedInitUpdateExpr(S)
+    @ccall libclangex.clang_Stmt_isDesignatedInitUpdateExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToDesignatedInitExpr(S)
+    @ccall libclangex.clang_Stmt_castToDesignatedInitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isDesignatedInitExpr(S)
+    @ccall libclangex.clang_Stmt_isDesignatedInitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToDependentScopeDeclRefExpr(S)
+    @ccall libclangex.clang_Stmt_castToDependentScopeDeclRefExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isDependentScopeDeclRefExpr(S)
+    @ccall libclangex.clang_Stmt_isDependentScopeDeclRefExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToDependentCoawaitExpr(S)
+    @ccall libclangex.clang_Stmt_castToDependentCoawaitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isDependentCoawaitExpr(S)
+    @ccall libclangex.clang_Stmt_isDependentCoawaitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToDeclRefExpr(S)
+    @ccall libclangex.clang_Stmt_castToDeclRefExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isDeclRefExpr(S)
+    @ccall libclangex.clang_Stmt_isDeclRefExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCoroutineSuspendExpr(S)
+    @ccall libclangex.clang_Stmt_castToCoroutineSuspendExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCoroutineSuspendExpr(S)
+    @ccall libclangex.clang_Stmt_isCoroutineSuspendExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCoyieldExpr(S)
+    @ccall libclangex.clang_Stmt_castToCoyieldExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCoyieldExpr(S)
+    @ccall libclangex.clang_Stmt_isCoyieldExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCoawaitExpr(S)
+    @ccall libclangex.clang_Stmt_castToCoawaitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCoawaitExpr(S)
+    @ccall libclangex.clang_Stmt_isCoawaitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToConvertVectorExpr(S)
+    @ccall libclangex.clang_Stmt_castToConvertVectorExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isConvertVectorExpr(S)
+    @ccall libclangex.clang_Stmt_isConvertVectorExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToConceptSpecializationExpr(S)
+    @ccall libclangex.clang_Stmt_castToConceptSpecializationExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isConceptSpecializationExpr(S)
+    @ccall libclangex.clang_Stmt_isConceptSpecializationExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCompoundLiteralExpr(S)
+    @ccall libclangex.clang_Stmt_castToCompoundLiteralExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCompoundLiteralExpr(S)
+    @ccall libclangex.clang_Stmt_isCompoundLiteralExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToChooseExpr(S)
+    @ccall libclangex.clang_Stmt_castToChooseExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isChooseExpr(S)
+    @ccall libclangex.clang_Stmt_isChooseExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCharacterLiteral(S)
+    @ccall libclangex.clang_Stmt_castToCharacterLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCharacterLiteral(S)
+    @ccall libclangex.clang_Stmt_isCharacterLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToImplicitCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToImplicitCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isImplicitCastExpr(S)
+    @ccall libclangex.clang_Stmt_isImplicitCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToExplicitCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToExplicitCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isExplicitCastExpr(S)
+    @ccall libclangex.clang_Stmt_isExplicitCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCBridgedCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToObjCBridgedCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCBridgedCastExpr(S)
+    @ccall libclangex.clang_Stmt_isObjCBridgedCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXNamedCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXNamedCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXNamedCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXNamedCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXStaticCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXStaticCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXStaticCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXStaticCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXReinterpretCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXReinterpretCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXReinterpretCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXReinterpretCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXDynamicCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXDynamicCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXDynamicCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXDynamicCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXConstCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXConstCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXConstCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXConstCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXAddrspaceCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXAddrspaceCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXAddrspaceCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXAddrspaceCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXFunctionalCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXFunctionalCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXFunctionalCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXFunctionalCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCStyleCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToCStyleCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCStyleCastExpr(S)
+    @ccall libclangex.clang_Stmt_isCStyleCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToBuiltinBitCastExpr(S)
+    @ccall libclangex.clang_Stmt_castToBuiltinBitCastExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isBuiltinBitCastExpr(S)
+    @ccall libclangex.clang_Stmt_isBuiltinBitCastExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCallExpr(S)
+    @ccall libclangex.clang_Stmt_castToCallExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCallExpr(S)
+    @ccall libclangex.clang_Stmt_isCallExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToUserDefinedLiteral(S)
+    @ccall libclangex.clang_Stmt_castToUserDefinedLiteral(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isUserDefinedLiteral(S)
+    @ccall libclangex.clang_Stmt_isUserDefinedLiteral(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXOperatorCallExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXOperatorCallExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXOperatorCallExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXOperatorCallExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXMemberCallExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXMemberCallExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXMemberCallExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXMemberCallExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCUDAKernelCallExpr(S)
+    @ccall libclangex.clang_Stmt_castToCUDAKernelCallExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCUDAKernelCallExpr(S)
+    @ccall libclangex.clang_Stmt_isCUDAKernelCallExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXUuidofExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXUuidofExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXUuidofExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXUuidofExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXUnresolvedConstructExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXUnresolvedConstructExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXUnresolvedConstructExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXUnresolvedConstructExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXTypeidExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXTypeidExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXTypeidExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXTypeidExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXThrowExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXThrowExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXThrowExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXThrowExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXThisExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXThisExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXThisExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXThisExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXStdInitializerListExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXStdInitializerListExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXStdInitializerListExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXStdInitializerListExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXScalarValueInitExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXScalarValueInitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXScalarValueInitExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXScalarValueInitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXRewrittenBinaryOperator(S)
+    @ccall libclangex.clang_Stmt_castToCXXRewrittenBinaryOperator(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXRewrittenBinaryOperator(S)
+    @ccall libclangex.clang_Stmt_isCXXRewrittenBinaryOperator(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXPseudoDestructorExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXPseudoDestructorExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXPseudoDestructorExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXPseudoDestructorExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXParenListInitExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXParenListInitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXParenListInitExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXParenListInitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXNullPtrLiteralExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXNullPtrLiteralExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXNullPtrLiteralExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXNullPtrLiteralExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXNoexceptExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXNoexceptExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXNoexceptExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXNoexceptExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXNewExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXNewExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXNewExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXNewExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXInheritedCtorInitExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXInheritedCtorInitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXInheritedCtorInitExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXInheritedCtorInitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXFoldExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXFoldExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXFoldExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXFoldExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXDependentScopeMemberExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXDependentScopeMemberExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXDependentScopeMemberExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXDependentScopeMemberExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXDeleteExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXDeleteExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXDeleteExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXDeleteExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXDefaultInitExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXDefaultInitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXDefaultInitExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXDefaultInitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXDefaultArgExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXDefaultArgExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXDefaultArgExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXDefaultArgExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXConstructExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXConstructExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXConstructExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXConstructExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXTemporaryObjectExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXTemporaryObjectExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXTemporaryObjectExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXTemporaryObjectExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXBoolLiteralExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXBoolLiteralExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXBoolLiteralExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXBoolLiteralExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXBindTemporaryExpr(S)
+    @ccall libclangex.clang_Stmt_castToCXXBindTemporaryExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXBindTemporaryExpr(S)
+    @ccall libclangex.clang_Stmt_isCXXBindTemporaryExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToBlockExpr(S)
+    @ccall libclangex.clang_Stmt_castToBlockExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isBlockExpr(S)
+    @ccall libclangex.clang_Stmt_isBlockExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToBinaryOperator(S)
+    @ccall libclangex.clang_Stmt_castToBinaryOperator(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isBinaryOperator(S)
+    @ccall libclangex.clang_Stmt_isBinaryOperator(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCompoundAssignOperator(S)
+    @ccall libclangex.clang_Stmt_castToCompoundAssignOperator(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCompoundAssignOperator(S)
+    @ccall libclangex.clang_Stmt_isCompoundAssignOperator(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToAtomicExpr(S)
+    @ccall libclangex.clang_Stmt_castToAtomicExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isAtomicExpr(S)
+    @ccall libclangex.clang_Stmt_isAtomicExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToAsTypeExpr(S)
+    @ccall libclangex.clang_Stmt_castToAsTypeExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isAsTypeExpr(S)
+    @ccall libclangex.clang_Stmt_isAsTypeExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToArrayTypeTraitExpr(S)
+    @ccall libclangex.clang_Stmt_castToArrayTypeTraitExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isArrayTypeTraitExpr(S)
+    @ccall libclangex.clang_Stmt_isArrayTypeTraitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToArraySubscriptExpr(S)
+    @ccall libclangex.clang_Stmt_castToArraySubscriptExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isArraySubscriptExpr(S)
+    @ccall libclangex.clang_Stmt_isArraySubscriptExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToArrayInitLoopExpr(S)
+    @ccall libclangex.clang_Stmt_castToArrayInitLoopExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isArrayInitLoopExpr(S)
+    @ccall libclangex.clang_Stmt_isArrayInitLoopExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToArrayInitIndexExpr(S)
+    @ccall libclangex.clang_Stmt_castToArrayInitIndexExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isArrayInitIndexExpr(S)
+    @ccall libclangex.clang_Stmt_isArrayInitIndexExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToAddrLabelExpr(S)
+    @ccall libclangex.clang_Stmt_castToAddrLabelExpr(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isAddrLabelExpr(S)
+    @ccall libclangex.clang_Stmt_isAddrLabelExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToAbstractConditionalOperator(S)
+    @ccall libclangex.clang_Stmt_castToAbstractConditionalOperator(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isAbstractConditionalOperator(S)
+    @ccall libclangex.clang_Stmt_isAbstractConditionalOperator(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToConditionalOperator(S)
+    @ccall libclangex.clang_Stmt_castToConditionalOperator(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isConditionalOperator(S)
+    @ccall libclangex.clang_Stmt_isConditionalOperator(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToBinaryConditionalOperator(S)
+    @ccall libclangex.clang_Stmt_castToBinaryConditionalOperator(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isBinaryConditionalOperator(S)
+    @ccall libclangex.clang_Stmt_isBinaryConditionalOperator(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToAttributedStmt(S)
+    @ccall libclangex.clang_Stmt_castToAttributedStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isAttributedStmt(S)
+    @ccall libclangex.clang_Stmt_isAttributedStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSwitchStmt(S)
+    @ccall libclangex.clang_Stmt_castToSwitchStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSwitchStmt(S)
+    @ccall libclangex.clang_Stmt_isSwitchStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSwitchCase(S)
+    @ccall libclangex.clang_Stmt_castToSwitchCase(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSwitchCase(S)
+    @ccall libclangex.clang_Stmt_isSwitchCase(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToDefaultStmt(S)
+    @ccall libclangex.clang_Stmt_castToDefaultStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isDefaultStmt(S)
+    @ccall libclangex.clang_Stmt_isDefaultStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCaseStmt(S)
+    @ccall libclangex.clang_Stmt_castToCaseStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCaseStmt(S)
+    @ccall libclangex.clang_Stmt_isCaseStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSEHTryStmt(S)
+    @ccall libclangex.clang_Stmt_castToSEHTryStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSEHTryStmt(S)
+    @ccall libclangex.clang_Stmt_isSEHTryStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSEHLeaveStmt(S)
+    @ccall libclangex.clang_Stmt_castToSEHLeaveStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSEHLeaveStmt(S)
+    @ccall libclangex.clang_Stmt_isSEHLeaveStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSEHFinallyStmt(S)
+    @ccall libclangex.clang_Stmt_castToSEHFinallyStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSEHFinallyStmt(S)
+    @ccall libclangex.clang_Stmt_isSEHFinallyStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToSEHExceptStmt(S)
+    @ccall libclangex.clang_Stmt_castToSEHExceptStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isSEHExceptStmt(S)
+    @ccall libclangex.clang_Stmt_isSEHExceptStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToReturnStmt(S)
+    @ccall libclangex.clang_Stmt_castToReturnStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isReturnStmt(S)
+    @ccall libclangex.clang_Stmt_isReturnStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCForCollectionStmt(S)
+    @ccall libclangex.clang_Stmt_castToObjCForCollectionStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCForCollectionStmt(S)
+    @ccall libclangex.clang_Stmt_isObjCForCollectionStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCAutoreleasePoolStmt(S)
+    @ccall libclangex.clang_Stmt_castToObjCAutoreleasePoolStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCAutoreleasePoolStmt(S)
+    @ccall libclangex.clang_Stmt_isObjCAutoreleasePoolStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCAtTryStmt(S)
+    @ccall libclangex.clang_Stmt_castToObjCAtTryStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCAtTryStmt(S)
+    @ccall libclangex.clang_Stmt_isObjCAtTryStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCAtThrowStmt(S)
+    @ccall libclangex.clang_Stmt_castToObjCAtThrowStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCAtThrowStmt(S)
+    @ccall libclangex.clang_Stmt_isObjCAtThrowStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCAtSynchronizedStmt(S)
+    @ccall libclangex.clang_Stmt_castToObjCAtSynchronizedStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCAtSynchronizedStmt(S)
+    @ccall libclangex.clang_Stmt_isObjCAtSynchronizedStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCAtFinallyStmt(S)
+    @ccall libclangex.clang_Stmt_castToObjCAtFinallyStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCAtFinallyStmt(S)
+    @ccall libclangex.clang_Stmt_isObjCAtFinallyStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToObjCAtCatchStmt(S)
+    @ccall libclangex.clang_Stmt_castToObjCAtCatchStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isObjCAtCatchStmt(S)
+    @ccall libclangex.clang_Stmt_isObjCAtCatchStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPExecutableDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPExecutableDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPExecutableDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPExecutableDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTeamsDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTeamsDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTeamsDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTaskyieldDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTaskyieldDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTaskyieldDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTaskyieldDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTaskwaitDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTaskwaitDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTaskwaitDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTaskwaitDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTaskgroupDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTaskgroupDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTaskgroupDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTaskgroupDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTaskDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTaskDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTaskDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTaskDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetUpdateDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetUpdateDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetUpdateDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetUpdateDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetTeamsDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetTeamsDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetTeamsDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetParallelForDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetParallelForDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetParallelDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetParallelDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetParallelDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetParallelDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetExitDataDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetExitDataDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetExitDataDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetExitDataDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetEnterDataDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetEnterDataDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetEnterDataDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetEnterDataDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetDataDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetDataDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetDataDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetDataDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPSingleDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPSingleDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPSingleDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPSingleDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPSectionsDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPSectionsDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPSectionsDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPSectionsDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPSectionDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPSectionDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPSectionDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPSectionDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPScopeDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPScopeDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPScopeDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPScopeDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPScanDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPScanDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPScanDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPScanDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelSectionsDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelSectionsDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelSectionsDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelSectionsDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelMasterDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelMasterDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelMasterDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelMasterDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelMaskedDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelMaskedDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelMaskedDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPOrderedDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPOrderedDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPOrderedDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPOrderedDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPMetaDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPMetaDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPMetaDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPMetaDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPMasterDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPMasterDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPMasterDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPMasterDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPMaskedDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPMaskedDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPMaskedDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPMaskedDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPLoopBasedDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPLoopBasedDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPLoopBasedDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPLoopBasedDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPLoopTransformationDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPLoopTransformationDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPLoopTransformationDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPLoopTransformationDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPUnrollDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPUnrollDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPUnrollDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPUnrollDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTileDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTileDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTileDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTileDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTeamsGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTeamsGenericLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTeamsGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTeamsGenericLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTeamsDistributeSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTeamsDistributeSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTeamsDistributeSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTeamsDistributeParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeParallelForSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTeamsDistributeParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTeamsDistributeParallelForSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTeamsDistributeParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeParallelForDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTeamsDistributeParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTeamsDistributeParallelForDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTeamsDistributeDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTeamsDistributeDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTeamsDistributeDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTaskLoopSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTaskLoopSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTaskLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTaskLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetTeamsGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsGenericLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetTeamsGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetTeamsGenericLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetTeamsDistributeSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetTeamsDistributeSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetTeamsDistributeSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetTeamsDistributeParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetTeamsDistributeParallelForSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetTeamsDistributeParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetTeamsDistributeParallelForDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetTeamsDistributeDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetTeamsDistributeDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetTeamsDistributeDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetParallelGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetParallelGenericLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetParallelGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetParallelGenericLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPTargetParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPTargetParallelForSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPTargetParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPTargetParallelForSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelMasterTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelMasterTaskLoopSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelMasterTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelMasterTaskLoopSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelMasterTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelMasterTaskLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelMasterTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelMasterTaskLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelMaskedTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedTaskLoopSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelMaskedTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelMaskedTaskLoopSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelMaskedTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedTaskLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelMaskedTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelMaskedTaskLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelGenericLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelGenericLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelForSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelForSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPParallelForDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPParallelForDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPMasterTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPMasterTaskLoopSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPMasterTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPMasterTaskLoopSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPMasterTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPMasterTaskLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPMasterTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPMasterTaskLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPMaskedTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPMaskedTaskLoopSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPMaskedTaskLoopSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPMaskedTaskLoopSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPMaskedTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPMaskedTaskLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPMaskedTaskLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPMaskedTaskLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPGenericLoopDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPGenericLoopDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPGenericLoopDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPForSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPForSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPForDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPForDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPForDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPForDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPDistributeSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPDistributeSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPDistributeSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPDistributeSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPDistributeParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPDistributeParallelForSimdDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPDistributeParallelForSimdDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPDistributeParallelForSimdDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPDistributeParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPDistributeParallelForDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPDistributeParallelForDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPDistributeParallelForDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPDistributeDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPDistributeDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPDistributeDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPDistributeDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPInteropDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPInteropDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPInteropDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPInteropDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPFlushDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPFlushDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPFlushDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPFlushDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPErrorDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPErrorDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPErrorDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPErrorDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPDispatchDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPDispatchDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPDispatchDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPDispatchDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPDepobjDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPDepobjDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPDepobjDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPDepobjDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPCriticalDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPCriticalDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPCriticalDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPCriticalDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPCancellationPointDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPCancellationPointDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPCancellationPointDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPCancellationPointDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPCancelDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPCancelDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPCancelDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPCancelDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPBarrierDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPBarrierDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPBarrierDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPBarrierDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPAtomicDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPAtomicDirective(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPAtomicDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPAtomicDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPCanonicalLoop(S)
+    @ccall libclangex.clang_Stmt_castToOMPCanonicalLoop(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isOMPCanonicalLoop(S)
+    @ccall libclangex.clang_Stmt_isOMPCanonicalLoop(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToNullStmt(S)
+    @ccall libclangex.clang_Stmt_castToNullStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isNullStmt(S)
+    @ccall libclangex.clang_Stmt_isNullStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToMSDependentExistsStmt(S)
+    @ccall libclangex.clang_Stmt_castToMSDependentExistsStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isMSDependentExistsStmt(S)
+    @ccall libclangex.clang_Stmt_isMSDependentExistsStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToIndirectGotoStmt(S)
+    @ccall libclangex.clang_Stmt_castToIndirectGotoStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isIndirectGotoStmt(S)
+    @ccall libclangex.clang_Stmt_isIndirectGotoStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToIfStmt(S)
+    @ccall libclangex.clang_Stmt_castToIfStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isIfStmt(S)
+    @ccall libclangex.clang_Stmt_isIfStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToGotoStmt(S)
+    @ccall libclangex.clang_Stmt_castToGotoStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isGotoStmt(S)
+    @ccall libclangex.clang_Stmt_isGotoStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToForStmt(S)
+    @ccall libclangex.clang_Stmt_castToForStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isForStmt(S)
+    @ccall libclangex.clang_Stmt_isForStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToDoStmt(S)
+    @ccall libclangex.clang_Stmt_castToDoStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isDoStmt(S)
+    @ccall libclangex.clang_Stmt_isDoStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToDeclStmt(S)
+    @ccall libclangex.clang_Stmt_castToDeclStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isDeclStmt(S)
+    @ccall libclangex.clang_Stmt_isDeclStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCoroutineBodyStmt(S)
+    @ccall libclangex.clang_Stmt_castToCoroutineBodyStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCoroutineBodyStmt(S)
+    @ccall libclangex.clang_Stmt_isCoroutineBodyStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCoreturnStmt(S)
+    @ccall libclangex.clang_Stmt_castToCoreturnStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCoreturnStmt(S)
+    @ccall libclangex.clang_Stmt_isCoreturnStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToContinueStmt(S)
+    @ccall libclangex.clang_Stmt_castToContinueStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isContinueStmt(S)
+    @ccall libclangex.clang_Stmt_isContinueStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCompoundStmt(S)
+    @ccall libclangex.clang_Stmt_castToCompoundStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCompoundStmt(S)
+    @ccall libclangex.clang_Stmt_isCompoundStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCapturedStmt(S)
+    @ccall libclangex.clang_Stmt_castToCapturedStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCapturedStmt(S)
+    @ccall libclangex.clang_Stmt_isCapturedStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXTryStmt(S)
+    @ccall libclangex.clang_Stmt_castToCXXTryStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXTryStmt(S)
+    @ccall libclangex.clang_Stmt_isCXXTryStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXForRangeStmt(S)
+    @ccall libclangex.clang_Stmt_castToCXXForRangeStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXForRangeStmt(S)
+    @ccall libclangex.clang_Stmt_isCXXForRangeStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToCXXCatchStmt(S)
+    @ccall libclangex.clang_Stmt_castToCXXCatchStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isCXXCatchStmt(S)
+    @ccall libclangex.clang_Stmt_isCXXCatchStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToBreakStmt(S)
+    @ccall libclangex.clang_Stmt_castToBreakStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isBreakStmt(S)
+    @ccall libclangex.clang_Stmt_isBreakStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToAsmStmt(S)
+    @ccall libclangex.clang_Stmt_castToAsmStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isAsmStmt(S)
+    @ccall libclangex.clang_Stmt_isAsmStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToMSAsmStmt(S)
+    @ccall libclangex.clang_Stmt_castToMSAsmStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isMSAsmStmt(S)
+    @ccall libclangex.clang_Stmt_isMSAsmStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToGCCAsmStmt(S)
+    @ccall libclangex.clang_Stmt_castToGCCAsmStmt(S::CXStmt)::CXStmt
+end
+
+function clang_Stmt_isGCCAsmStmt(S)
+    @ccall libclangex.clang_Stmt_isGCCAsmStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_getStmtClass(S)
+    @ccall libclangex.clang_Stmt_getStmtClass(S::CXStmt)::CXStmtClass
+end
+
+function clang_Stmt_getStmtClassName(S)
+    @ccall libclangex.clang_Stmt_getStmtClassName(S::CXStmt)::Ptr{Cchar}
+end
+
+function clang_Stmt_getBeginLoc(S)
+    @ccall libclangex.clang_Stmt_getBeginLoc(S::CXStmt)::CXSourceLocation_
+end
+
+function clang_Stmt_getEndLoc(S)
+    @ccall libclangex.clang_Stmt_getEndLoc(S::CXStmt)::CXSourceLocation_
+end
+
+function clang_Stmt_getSourceRange(S)
+    @ccall libclangex.clang_Stmt_getSourceRange(S::CXStmt)::CXSourceRange_
+end
+
+function clang_Stmt_dump(S)
+    @ccall libclangex.clang_Stmt_dump(S::CXStmt)::Cvoid
+end
+
+function clang_Stmt_getNumChildren(S)
+    @ccall libclangex.clang_Stmt_getNumChildren(S::CXStmt)::Csize_t
+end
+
+function clang_Stmt_getChildren(S, Buf)
+    @ccall libclangex.clang_Stmt_getChildren(S::CXStmt, Buf::Ptr{CXStmt})::Cvoid
 end
 
 @enum CXTemplateArgument_ArgKind::UInt32 begin

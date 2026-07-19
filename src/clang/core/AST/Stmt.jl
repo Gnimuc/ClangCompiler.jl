@@ -10,10 +10,10 @@ Base.unsafe_convert(::Type{CXStmt}, x::Stmt) = x.ptr
 Base.cconvert(::Type{CXStmt}, x::Stmt) = x
 
 """
-    struct DeclStmt <: AbstractStmt
+    struct DeclStmt <: AbstractDeclStmt
 Hold a pointer to a `clang::DeclStmt` object.
 """
-struct DeclStmt <: AbstractStmt
+struct DeclStmt <: AbstractDeclStmt
     ptr::CXDeclStmt
 end
 
@@ -21,10 +21,10 @@ Base.unsafe_convert(::Type{CXDeclStmt}, x::DeclStmt) = x.ptr
 Base.cconvert(::Type{CXDeclStmt}, x::DeclStmt) = x
 
 """
-    struct NullStmt <: AbstractStmt
+    struct NullStmt <: AbstractNullStmt
 Hold a pointer to a `clang::NullStmt` object.
 """
-struct NullStmt <: AbstractStmt
+struct NullStmt <: AbstractNullStmt
     ptr::CXNullStmt
 end
 
@@ -32,10 +32,10 @@ Base.unsafe_convert(::Type{CXNullStmt}, x::NullStmt) = x.ptr
 Base.cconvert(::Type{CXNullStmt}, x::NullStmt) = x
 
 """
-    struct CompoundStmt <: AbstractStmt
+    struct CompoundStmt <: AbstractCompoundStmt
 Hold a pointer to a `clang::CompoundStmt` object.
 """
-struct CompoundStmt <: AbstractStmt
+struct CompoundStmt <: AbstractCompoundStmt
     ptr::CXCompoundStmt
 end
 
@@ -54,10 +54,10 @@ Base.unsafe_convert(::Type{CXSwitchCase}, x::SwitchCase) = x.ptr
 Base.cconvert(::Type{CXSwitchCase}, x::SwitchCase) = x
 
 """
-    struct CaseStmt <: AbstractSwitchCase
+    struct CaseStmt <: AbstractCaseStmt
 Hold a pointer to a `clang::CaseStmt` object.
 """
-struct CaseStmt <: AbstractSwitchCase
+struct CaseStmt <: AbstractCaseStmt
     ptr::CXCaseStmt
 end
 
@@ -65,10 +65,10 @@ Base.unsafe_convert(::Type{CXCaseStmt}, x::CaseStmt) = x.ptr
 Base.cconvert(::Type{CXCaseStmt}, x::CaseStmt) = x
 
 """
-    struct DefaultStmt <: AbstractSwitchCase
+    struct DefaultStmt <: AbstractDefaultStmt
 Hold a pointer to a `clang::DefaultStmt` object.
 """
-struct DefaultStmt <: AbstractSwitchCase
+struct DefaultStmt <: AbstractDefaultStmt
     ptr::CXDefaultStmt
 end
 
@@ -87,10 +87,10 @@ Base.unsafe_convert(::Type{CXValueStmt}, x::ValueStmt) = x.ptr
 Base.cconvert(::Type{CXValueStmt}, x::ValueStmt) = x
 
 """
-    struct LabelStmt <: AbstractValueStmt
+    struct LabelStmt <: AbstractLabelStmt
 Hold a pointer to a `clang::LabelStmt` object.
 """
-struct LabelStmt <: AbstractValueStmt
+struct LabelStmt <: AbstractLabelStmt
     ptr::CXLabelStmt
 end
 
@@ -98,10 +98,10 @@ Base.unsafe_convert(::Type{CXLabelStmt}, x::LabelStmt) = x.ptr
 Base.cconvert(::Type{CXLabelStmt}, x::LabelStmt) = x
 
 """
-    struct AttributedStmt <: AbstractValueStmt
+    struct AttributedStmt <: AbstractAttributedStmt
 Hold a pointer to a `clang::AttributedStmt` object.
 """
-struct AttributedStmt <: AbstractValueStmt
+struct AttributedStmt <: AbstractAttributedStmt
     ptr::CXAttributedStmt
 end
 
@@ -109,10 +109,10 @@ Base.unsafe_convert(::Type{CXAttributedStmt}, x::AttributedStmt) = x.ptr
 Base.cconvert(::Type{CXAttributedStmt}, x::AttributedStmt) = x
 
 """
-    struct IfStmt <: AbstractStmt
+    struct IfStmt <: AbstractIfStmt
 Hold a pointer to a `clang::IfStmt` object.
 """
-struct IfStmt <: AbstractStmt
+struct IfStmt <: AbstractIfStmt
     ptr::CXIfStmt
 end
 
@@ -120,10 +120,10 @@ Base.unsafe_convert(::Type{CXIfStmt}, x::IfStmt) = x.ptr
 Base.cconvert(::Type{CXIfStmt}, x::IfStmt) = x
 
 """
-    struct SwitchStmt <: AbstractStmt
+    struct SwitchStmt <: AbstractSwitchStmt
 Hold a pointer to a `clang::SwitchStmt` object.
 """
-struct SwitchStmt <: AbstractStmt
+struct SwitchStmt <: AbstractSwitchStmt
     ptr::CXSwitchStmt
 end
 
@@ -131,10 +131,10 @@ Base.unsafe_convert(::Type{CXSwitchStmt}, x::SwitchStmt) = x.ptr
 Base.cconvert(::Type{CXSwitchStmt}, x::SwitchStmt) = x
 
 """
-    struct WhileStmt <: AbstractStmt
+    struct WhileStmt <: AbstractWhileStmt
 Hold a pointer to a `clang::WhileStmt` object.
 """
-struct WhileStmt <: AbstractStmt
+struct WhileStmt <: AbstractWhileStmt
     ptr::CXWhileStmt
 end
 
@@ -142,10 +142,10 @@ Base.unsafe_convert(::Type{CXWhileStmt}, x::WhileStmt) = x.ptr
 Base.cconvert(::Type{CXWhileStmt}, x::WhileStmt) = x
 
 """
-    struct DoStmt <: AbstractStmt
+    struct DoStmt <: AbstractDoStmt
 Hold a pointer to a `clang::DoStmt` object.
 """
-struct DoStmt <: AbstractStmt
+struct DoStmt <: AbstractDoStmt
     ptr::CXDoStmt
 end
 
@@ -153,10 +153,10 @@ Base.unsafe_convert(::Type{CXDoStmt}, x::DoStmt) = x.ptr
 Base.cconvert(::Type{CXDoStmt}, x::DoStmt) = x
 
 """
-    struct ForStmt <: AbstractStmt
+    struct ForStmt <: AbstractForStmt
 Hold a pointer to a `clang::ForStmt` object.
 """
-struct ForStmt <: AbstractStmt
+struct ForStmt <: AbstractForStmt
     ptr::CXForStmt
 end
 
@@ -164,10 +164,10 @@ Base.unsafe_convert(::Type{CXForStmt}, x::ForStmt) = x.ptr
 Base.cconvert(::Type{CXForStmt}, x::ForStmt) = x
 
 """
-    struct GotoStmt <: AbstractStmt
+    struct GotoStmt <: AbstractGotoStmt
 Hold a pointer to a `clang::GotoStmt` object.
 """
-struct GotoStmt <: AbstractStmt
+struct GotoStmt <: AbstractGotoStmt
     ptr::CXGotoStmt
 end
 
@@ -175,10 +175,10 @@ Base.unsafe_convert(::Type{CXGotoStmt}, x::GotoStmt) = x.ptr
 Base.cconvert(::Type{CXGotoStmt}, x::GotoStmt) = x
 
 """
-    struct IndirectGotoStmt <: AbstractStmt
+    struct IndirectGotoStmt <: AbstractIndirectGotoStmt
 Hold a pointer to a `clang::IndirectGotoStmt` object.
 """
-struct IndirectGotoStmt <: AbstractStmt
+struct IndirectGotoStmt <: AbstractIndirectGotoStmt
     ptr::CXIndirectGotoStmt
 end
 
@@ -186,10 +186,10 @@ Base.unsafe_convert(::Type{CXIndirectGotoStmt}, x::IndirectGotoStmt) = x.ptr
 Base.cconvert(::Type{CXIndirectGotoStmt}, x::IndirectGotoStmt) = x
 
 """
-    struct ContinueStmt <: AbstractStmt
+    struct ContinueStmt <: AbstractContinueStmt
 Hold a pointer to a `clang::ContinueStmt` object.
 """
-struct ContinueStmt <: AbstractStmt
+struct ContinueStmt <: AbstractContinueStmt
     ptr::CXContinueStmt
 end
 
@@ -197,10 +197,10 @@ Base.unsafe_convert(::Type{CXContinueStmt}, x::ContinueStmt) = x.ptr
 Base.cconvert(::Type{CXContinueStmt}, x::ContinueStmt) = x
 
 """
-    struct BreakStmt <: AbstractStmt
+    struct BreakStmt <: AbstractBreakStmt
 Hold a pointer to a `clang::BreakStmt` object.
 """
-struct BreakStmt <: AbstractStmt
+struct BreakStmt <: AbstractBreakStmt
     ptr::CXBreakStmt
 end
 
@@ -208,10 +208,10 @@ Base.unsafe_convert(::Type{CXBreakStmt}, x::BreakStmt) = x.ptr
 Base.cconvert(::Type{CXBreakStmt}, x::BreakStmt) = x
 
 """
-    struct ReturnStmt <: AbstractStmt
+    struct ReturnStmt <: AbstractReturnStmt
 Hold a pointer to a `clang::ReturnStmt` object.
 """
-struct ReturnStmt <: AbstractStmt
+struct ReturnStmt <: AbstractReturnStmt
     ptr::CXReturnStmt
 end
 
@@ -230,10 +230,10 @@ Base.unsafe_convert(::Type{CXAsmStmt}, x::AsmStmt) = x.ptr
 Base.cconvert(::Type{CXAsmStmt}, x::AsmStmt) = x
 
 """
-    struct GCCAsmStmt <: AbstractAsmStmt
+    struct GCCAsmStmt <: AbstractGCCAsmStmt
 Hold a pointer to a `clang::GCCAsmStmt` object.
 """
-struct GCCAsmStmt <: AbstractAsmStmt
+struct GCCAsmStmt <: AbstractGCCAsmStmt
     ptr::CXGCCAsmStmt
 end
 
@@ -241,10 +241,10 @@ Base.unsafe_convert(::Type{CXGCCAsmStmt}, x::GCCAsmStmt) = x.ptr
 Base.cconvert(::Type{CXGCCAsmStmt}, x::GCCAsmStmt) = x
 
 """
-    struct MSAsmStmt <: AbstractAsmStmt
+    struct MSAsmStmt <: AbstractMSAsmStmt
 Hold a pointer to a `clang::MSAsmStmt` object.
 """
-struct MSAsmStmt <: AbstractAsmStmt
+struct MSAsmStmt <: AbstractMSAsmStmt
     ptr::CXMSAsmStmt
 end
 
@@ -252,10 +252,10 @@ Base.unsafe_convert(::Type{CXMSAsmStmt}, x::MSAsmStmt) = x.ptr
 Base.cconvert(::Type{CXMSAsmStmt}, x::MSAsmStmt) = x
 
 """
-    struct SEHExceptStmt <: AbstractStmt
+    struct SEHExceptStmt <: AbstractSEHExceptStmt
 Hold a pointer to a `clang::SEHExceptStmt` object.
 """
-struct SEHExceptStmt <: AbstractStmt
+struct SEHExceptStmt <: AbstractSEHExceptStmt
     ptr::CXSEHExceptStmt
 end
 
@@ -263,10 +263,10 @@ Base.unsafe_convert(::Type{CXSEHExceptStmt}, x::SEHExceptStmt) = x.ptr
 Base.cconvert(::Type{CXSEHExceptStmt}, x::SEHExceptStmt) = x
 
 """
-    struct SEHFinallyStmt <: AbstractStmt
+    struct SEHFinallyStmt <: AbstractSEHFinallyStmt
 Hold a pointer to a `clang::SEHFinallyStmt` object.
 """
-struct SEHFinallyStmt <: AbstractStmt
+struct SEHFinallyStmt <: AbstractSEHFinallyStmt
     ptr::CXSEHFinallyStmt
 end
 
@@ -274,10 +274,10 @@ Base.unsafe_convert(::Type{CXSEHFinallyStmt}, x::SEHFinallyStmt) = x.ptr
 Base.cconvert(::Type{CXSEHFinallyStmt}, x::SEHFinallyStmt) = x
 
 """
-    struct SEHTryStmt <: AbstractStmt
+    struct SEHTryStmt <: AbstractSEHTryStmt
 Hold a pointer to a `clang::SEHTryStmt` object.
 """
-struct SEHTryStmt <: AbstractStmt
+struct SEHTryStmt <: AbstractSEHTryStmt
     ptr::CXSEHTryStmt
 end
 
@@ -285,10 +285,10 @@ Base.unsafe_convert(::Type{CXSEHTryStmt}, x::SEHTryStmt) = x.ptr
 Base.cconvert(::Type{CXSEHTryStmt}, x::SEHTryStmt) = x
 
 """
-    struct SEHLeaveStmt <: AbstractStmt
+    struct SEHLeaveStmt <: AbstractSEHLeaveStmt
 Hold a pointer to a `clang::SEHLeaveStmt` object.
 """
-struct SEHLeaveStmt <: AbstractStmt
+struct SEHLeaveStmt <: AbstractSEHLeaveStmt
     ptr::CXSEHLeaveStmt
 end
 
@@ -296,10 +296,10 @@ Base.unsafe_convert(::Type{CXSEHLeaveStmt}, x::SEHLeaveStmt) = x.ptr
 Base.cconvert(::Type{CXSEHLeaveStmt}, x::SEHLeaveStmt) = x
 
 """
-    struct CapturedStmt <: AbstractStmt
+    struct CapturedStmt <: AbstractCapturedStmt
 Hold a pointer to a `clang::CapturedStmt` object.
 """
-struct CapturedStmt <: AbstractStmt
+struct CapturedStmt <: AbstractCapturedStmt
     ptr::CXCapturedStmt
 end
 

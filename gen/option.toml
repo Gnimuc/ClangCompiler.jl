@@ -14,6 +14,11 @@ output_ignorelist = [
     "LLVM_CLANG_C_EXTERN_C_END",
     "REPL_BUILTIN_TYPES",
     "X",
+    # X-macro machinery of the vendored StmtNodes.inc (see AST/CXStmt.h)
+    "STMT",
+    "ABSTRACT_STMT",
+    "STMT_RANGE",
+    "LAST_STMT_RANGE",
 ]
 
 [codegen]

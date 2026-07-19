@@ -4,6 +4,43 @@
 #include "clang/Basic/LangOptions.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 
+// Expr
+CXQualType clang_Expr_getType(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->getType().getAsOpaquePtr();
+}
+
+CXExprValueKind clang_Expr_getValueKind(CXExpr E) {
+  return static_cast<CXExprValueKind>(static_cast<clang::Expr *>(E)->getValueKind());
+}
+
+bool clang_Expr_isLValue(CXExpr E) { return static_cast<clang::Expr *>(E)->isLValue(); }
+
+bool clang_Expr_isPRValue(CXExpr E) { return static_cast<clang::Expr *>(E)->isPRValue(); }
+
+bool clang_Expr_isXValue(CXExpr E) { return static_cast<clang::Expr *>(E)->isXValue(); }
+
+bool clang_Expr_isGLValue(CXExpr E) { return static_cast<clang::Expr *>(E)->isGLValue(); }
+
+CXExpr clang_Expr_IgnoreImpCasts(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->IgnoreImpCasts();
+}
+
+CXExpr clang_Expr_IgnoreCasts(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->IgnoreCasts();
+}
+
+CXExpr clang_Expr_IgnoreParens(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->IgnoreParens();
+}
+
+CXExpr clang_Expr_IgnoreParenCasts(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->IgnoreParenCasts();
+}
+
+CXExpr clang_Expr_IgnoreParenImpCasts(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->IgnoreParenImpCasts();
+}
+
 // IntegerLiteral
 CXIntegerLiteral clang_IntegerLiteral_Create(CXASTContext C, LLVMGenericValueRef Val,
                                              CXQualType T, CXSourceLocation_ L) {

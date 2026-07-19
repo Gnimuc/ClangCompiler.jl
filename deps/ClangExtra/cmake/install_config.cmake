@@ -15,7 +15,7 @@ install(TARGETS clangex
         INCLUDES DESTINATION include/clang-ex)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/clang-ex/ DESTINATION include/clang-ex
-        FILES_MATCHING PATTERN "*.h")
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.inc")
 
 # Install CMake targets
 install(EXPORT ClangExtraTargets

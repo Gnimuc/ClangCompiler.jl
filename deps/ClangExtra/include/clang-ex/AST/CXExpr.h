@@ -10,6 +10,29 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+// Expr
+CXQualType clang_Expr_getType(CXExpr E);
+
+CXExprValueKind clang_Expr_getValueKind(CXExpr E);
+
+bool clang_Expr_isLValue(CXExpr E);
+
+bool clang_Expr_isPRValue(CXExpr E);
+
+bool clang_Expr_isXValue(CXExpr E);
+
+bool clang_Expr_isGLValue(CXExpr E);
+
+CXExpr clang_Expr_IgnoreImpCasts(CXExpr E);
+
+CXExpr clang_Expr_IgnoreCasts(CXExpr E);
+
+CXExpr clang_Expr_IgnoreParens(CXExpr E);
+
+CXExpr clang_Expr_IgnoreParenCasts(CXExpr E);
+
+CXExpr clang_Expr_IgnoreParenImpCasts(CXExpr E);
+
 // IntegerLiteral
 CXIntegerLiteral clang_IntegerLiteral_Create(CXASTContext C, LLVMGenericValueRef Val,
                                              CXQualType T, CXSourceLocation_ L);

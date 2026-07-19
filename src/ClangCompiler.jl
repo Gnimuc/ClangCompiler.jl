@@ -28,6 +28,10 @@ include(joinpath(libdir, "LibClang.jl"))
 include(joinpath(libdir, llvm_version, "LibClangEx.jl"))
 using .LibClangEx
 
+# (name, parent, isabstract) table for the Stmt hierarchy, generated from the
+# vendored StmtNodes.inc alongside the bindings.
+include(joinpath(libdir, llvm_version, "StmtNodes.jl"))
+
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
@@ -47,6 +51,8 @@ include("clang/parse.jl")
 include("clang/qualtype.jl")
 include("clang/type.jl")
 include("clang/sema.jl")
+include("clang/stmt.jl")
+public getStmtClass, getChildren, children, resolve, dump_ast
 
 # public
 include("compiler/compiler.jl")

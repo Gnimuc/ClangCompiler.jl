@@ -12,6 +12,8 @@ include("AST/NestedNameSpecifier.jl")
 include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")
 include("AST/Type.jl")
+include("AST/Expr.jl")
+include("AST/Stmt.jl")
 
 # Basic
 include("Basic/CodeGenOptions.jl")

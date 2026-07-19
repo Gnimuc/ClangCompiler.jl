@@ -38,6 +38,16 @@ cd(@__DIR__) do
 
                 llvm_include_dir = joinpath(destdir(prefix, platform), "include")
                 include_dir = joinpath(@__DIR__, "..", "deps", "ClangExtra", "include")
+
+                # the vendored StmtNodes.inc defines ~250 transient per-class
+                # X-macros (WHILESTMT, EXPR, ...); ignore them all, self-syncing
+                # with whatever the pinned .inc defines
+                stmt_nodes_inc = joinpath(include_dir, "clang-ex", "AST", "StmtNodes.inc")
+                for line in eachline(stmt_nodes_inc)
+                    m = match(r"^#\s*define ([A-Z][A-Z0-9_]*)\(", line)
+                    m === nothing && continue
+                    push!(options["general"]["output_ignorelist"], m.captures[1])
+                end
                 args = get_default_args()
                 push!(args, "-isystem$llvm_include_dir")
                 push!(args, "-I$include_dir")
@@ -53,3 +63,5 @@ cd(@__DIR__) do
         end
     end
 end
+
+include(joinpath(@__DIR__, "stmt_nodes.jl"))
