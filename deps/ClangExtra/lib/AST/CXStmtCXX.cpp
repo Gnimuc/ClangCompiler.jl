@@ -47,3 +47,31 @@ CXDeclStmt clang_CXXForRangeStmt_getBeginStmt(CXCXXForRangeStmt FRS) {
 CXDeclStmt clang_CXXForRangeStmt_getEndStmt(CXCXXForRangeStmt FRS) {
   return static_cast<clang::CXXForRangeStmt *>(FRS)->getEndStmt();
 }
+
+// CXXCatchStmt
+CXSourceLocation_ clang_CXXCatchStmt_getCatchLoc(CXCXXCatchStmt S) {
+  return static_cast<clang::CXXCatchStmt *>(S)->getCatchLoc().getPtrEncoding();
+}
+
+// CXXTryStmt
+CXSourceLocation_ clang_CXXTryStmt_getTryLoc(CXCXXTryStmt S) {
+  return static_cast<clang::CXXTryStmt *>(S)->getTryLoc().getPtrEncoding();
+}
+
+// CXXForRangeStmt
+CXSourceLocation_ clang_CXXForRangeStmt_getForLoc(CXCXXForRangeStmt S) {
+  return static_cast<clang::CXXForRangeStmt *>(S)->getForLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_CXXForRangeStmt_getCoawaitLoc(CXCXXForRangeStmt S) {
+  return static_cast<clang::CXXForRangeStmt *>(S)->getCoawaitLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_CXXForRangeStmt_getColonLoc(CXCXXForRangeStmt S) {
+  return static_cast<clang::CXXForRangeStmt *>(S)->getColonLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_CXXForRangeStmt_getRParenLoc(CXCXXForRangeStmt S) {
+  return static_cast<clang::CXXForRangeStmt *>(S)->getRParenLoc().getPtrEncoding();
+}
+

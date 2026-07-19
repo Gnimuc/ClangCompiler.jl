@@ -268,3 +268,168 @@ CXSourceLocation_ clang_GotoStmt_getGotoLoc(CXGotoStmt GS) {
 CXExpr clang_ReturnStmt_getRetValue(CXReturnStmt RS) {
   return static_cast<clang::ReturnStmt *>(RS)->getRetValue();
 }
+
+// IfStmt
+CXSourceLocation_ clang_IfStmt_getElseLoc(CXIfStmt S) {
+  return static_cast<clang::IfStmt *>(S)->getElseLoc().getPtrEncoding();
+}
+
+bool clang_IfStmt_isConsteval(CXIfStmt S) {
+  return static_cast<clang::IfStmt *>(S)->isConsteval();
+}
+
+bool clang_IfStmt_isNonNegatedConsteval(CXIfStmt S) {
+  return static_cast<clang::IfStmt *>(S)->isNonNegatedConsteval();
+}
+
+bool clang_IfStmt_isNegatedConsteval(CXIfStmt S) {
+  return static_cast<clang::IfStmt *>(S)->isNegatedConsteval();
+}
+
+bool clang_IfStmt_isConstexpr(CXIfStmt S) {
+  return static_cast<clang::IfStmt *>(S)->isConstexpr();
+}
+
+bool clang_IfStmt_isObjCAvailabilityCheck(CXIfStmt S) {
+  return static_cast<clang::IfStmt *>(S)->isObjCAvailabilityCheck();
+}
+
+CXSourceLocation_ clang_IfStmt_getLParenLoc(CXIfStmt S) {
+  return static_cast<clang::IfStmt *>(S)->getLParenLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_IfStmt_getRParenLoc(CXIfStmt S) {
+  return static_cast<clang::IfStmt *>(S)->getRParenLoc().getPtrEncoding();
+}
+
+// SwitchStmt
+bool clang_SwitchStmt_hasInitStorage(CXSwitchStmt S) {
+  return static_cast<clang::SwitchStmt *>(S)->hasInitStorage();
+}
+
+bool clang_SwitchStmt_hasVarStorage(CXSwitchStmt S) {
+  return static_cast<clang::SwitchStmt *>(S)->hasVarStorage();
+}
+
+CXSourceLocation_ clang_SwitchStmt_getSwitchLoc(CXSwitchStmt S) {
+  return static_cast<clang::SwitchStmt *>(S)->getSwitchLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_SwitchStmt_getLParenLoc(CXSwitchStmt S) {
+  return static_cast<clang::SwitchStmt *>(S)->getLParenLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_SwitchStmt_getRParenLoc(CXSwitchStmt S) {
+  return static_cast<clang::SwitchStmt *>(S)->getRParenLoc().getPtrEncoding();
+}
+
+// WhileStmt
+bool clang_WhileStmt_hasVarStorage(CXWhileStmt S) {
+  return static_cast<clang::WhileStmt *>(S)->hasVarStorage();
+}
+
+CXSourceLocation_ clang_WhileStmt_getLParenLoc(CXWhileStmt S) {
+  return static_cast<clang::WhileStmt *>(S)->getLParenLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_WhileStmt_getRParenLoc(CXWhileStmt S) {
+  return static_cast<clang::WhileStmt *>(S)->getRParenLoc().getPtrEncoding();
+}
+
+// DoStmt
+CXSourceLocation_ clang_DoStmt_getRParenLoc(CXDoStmt S) {
+  return static_cast<clang::DoStmt *>(S)->getRParenLoc().getPtrEncoding();
+}
+
+// ForStmt
+CXSourceLocation_ clang_ForStmt_getLParenLoc(CXForStmt S) {
+  return static_cast<clang::ForStmt *>(S)->getLParenLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_ForStmt_getRParenLoc(CXForStmt S) {
+  return static_cast<clang::ForStmt *>(S)->getRParenLoc().getPtrEncoding();
+}
+
+// GotoStmt
+CXSourceLocation_ clang_GotoStmt_getLabelLoc(CXGotoStmt S) {
+  return static_cast<clang::GotoStmt *>(S)->getLabelLoc().getPtrEncoding();
+}
+
+// IndirectGotoStmt
+CXSourceLocation_ clang_IndirectGotoStmt_getGotoLoc(CXIndirectGotoStmt S) {
+  return static_cast<clang::IndirectGotoStmt *>(S)->getGotoLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_IndirectGotoStmt_getStarLoc(CXIndirectGotoStmt S) {
+  return static_cast<clang::IndirectGotoStmt *>(S)->getStarLoc().getPtrEncoding();
+}
+
+// ContinueStmt
+CXSourceLocation_ clang_ContinueStmt_getContinueLoc(CXContinueStmt S) {
+  return static_cast<clang::ContinueStmt *>(S)->getContinueLoc().getPtrEncoding();
+}
+
+// BreakStmt
+CXSourceLocation_ clang_BreakStmt_getBreakLoc(CXBreakStmt S) {
+  return static_cast<clang::BreakStmt *>(S)->getBreakLoc().getPtrEncoding();
+}
+
+// ReturnStmt
+CXSourceLocation_ clang_ReturnStmt_getReturnLoc(CXReturnStmt S) {
+  return static_cast<clang::ReturnStmt *>(S)->getReturnLoc().getPtrEncoding();
+}
+
+// SwitchCase
+CXSourceLocation_ clang_SwitchCase_getKeywordLoc(CXSwitchCase S) {
+  return static_cast<clang::SwitchCase *>(S)->getKeywordLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_SwitchCase_getColonLoc(CXSwitchCase S) {
+  return static_cast<clang::SwitchCase *>(S)->getColonLoc().getPtrEncoding();
+}
+
+// CaseStmt
+bool clang_CaseStmt_caseStmtIsGNURange(CXCaseStmt S) {
+  return static_cast<clang::CaseStmt *>(S)->caseStmtIsGNURange();
+}
+
+CXSourceLocation_ clang_CaseStmt_getCaseLoc(CXCaseStmt S) {
+  return static_cast<clang::CaseStmt *>(S)->getCaseLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_CaseStmt_getEllipsisLoc(CXCaseStmt S) {
+  return static_cast<clang::CaseStmt *>(S)->getEllipsisLoc().getPtrEncoding();
+}
+
+// DefaultStmt
+CXSourceLocation_ clang_DefaultStmt_getDefaultLoc(CXDefaultStmt S) {
+  return static_cast<clang::DefaultStmt *>(S)->getDefaultLoc().getPtrEncoding();
+}
+
+// LabelStmt
+CXSourceLocation_ clang_LabelStmt_getIdentLoc(CXLabelStmt S) {
+  return static_cast<clang::LabelStmt *>(S)->getIdentLoc().getPtrEncoding();
+}
+
+bool clang_LabelStmt_isSideEntry(CXLabelStmt S) {
+  return static_cast<clang::LabelStmt *>(S)->isSideEntry();
+}
+
+// NullStmt
+CXSourceLocation_ clang_NullStmt_getSemiLoc(CXNullStmt S) {
+  return static_cast<clang::NullStmt *>(S)->getSemiLoc().getPtrEncoding();
+}
+
+bool clang_NullStmt_hasLeadingEmptyMacro(CXNullStmt S) {
+  return static_cast<clang::NullStmt *>(S)->hasLeadingEmptyMacro();
+}
+
+// CompoundStmt
+bool clang_CompoundStmt_body_empty(CXCompoundStmt S) {
+  return static_cast<clang::CompoundStmt *>(S)->body_empty();
+}
+
+bool clang_CompoundStmt_hasStoredFPFeatures(CXCompoundStmt S) {
+  return static_cast<clang::CompoundStmt *>(S)->hasStoredFPFeatures();
+}
+

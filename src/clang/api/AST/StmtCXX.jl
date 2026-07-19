@@ -14,6 +14,11 @@ function getHandlerBlock(x::AbstractCXXCatchStmt)
     return Stmt(clang_CXXCatchStmt_getHandlerBlock(x))
 end
 
+function getCatchLoc(x::AbstractCXXCatchStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CXXCatchStmt_getCatchLoc(x))
+end
+
 # CXXTryStmt
 function getTryBlock(x::AbstractCXXTryStmt)
     @check_ptrs x
@@ -32,6 +37,11 @@ Return the `i`-th handler (0-based, following the C++ API).
 function getHandler(x::AbstractCXXTryStmt, i::Integer)
     @check_ptrs x
     return CXXCatchStmt(clang_CXXTryStmt_getHandler(x, i))
+end
+
+function getTryLoc(x::AbstractCXXTryStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CXXTryStmt_getTryLoc(x))
 end
 
 # CXXForRangeStmt
@@ -59,3 +69,24 @@ function getEndStmt(x::AbstractCXXForRangeStmt)
     @check_ptrs x
     return DeclStmt(clang_CXXForRangeStmt_getEndStmt(x))
 end
+
+function getForLoc(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CXXForRangeStmt_getForLoc(x))
+end
+
+function getCoawaitLoc(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CXXForRangeStmt_getCoawaitLoc(x))
+end
+
+function getColonLoc(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CXXForRangeStmt_getColonLoc(x))
+end
+
+function getRParenLoc(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CXXForRangeStmt_getRParenLoc(x))
+end
+

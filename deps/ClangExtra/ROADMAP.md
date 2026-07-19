@@ -62,11 +62,13 @@ remaining phases. Status markers: [x] done, [ ] open.
 
 ## Remaining
 
-- [ ] **Payload tail** (priority order from the measured census): Expr-base
-      evaluation cluster (needs APValue bridge), StringLiteral width variants,
-      UnaryExprOrTypeTraitExpr (needs a UETT enum mirror from TokenKinds.def),
-      remaining top-25 classes (StmtExpr, GenericSelectionExpr, …), then
-      breadth-first over the ~95 core classes with ≤2 payload methods.
+- [ ] **Payload tail** (priority order from the measured census): the Expr-base
+      dependence predicates and the control-flow statement location/predicate
+      accessors are done; remaining are the Expr-base evaluation cluster (needs
+      APValue bridge), StringLiteral width variants, UnaryExprOrTypeTraitExpr
+      (needs a UETT enum mirror from TokenKinds.def), the remaining top-25
+      classes (StmtExpr, GenericSelectionExpr, …), then breadth-first over the
+      core classes with ≤2 payload methods.
 - [ ] **Member iteration** (count+fill per MARSHALLING.md §6): RecordDecl
       fields, EnumDecl enumerators, CXXRecordDecl bases/methods/ctors, DeclStmt
       decls — the primary remaining traversal gap, all needing C-side shims.

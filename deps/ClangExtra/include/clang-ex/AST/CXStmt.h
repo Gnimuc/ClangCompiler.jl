@@ -159,6 +159,97 @@ CXSourceLocation_ clang_GotoStmt_getGotoLoc(CXGotoStmt GS);
 // ReturnStmt
 CXExpr clang_ReturnStmt_getRetValue(CXReturnStmt RS);
 
+// IfStmt
+CXSourceLocation_ clang_IfStmt_getElseLoc(CXIfStmt S);
+
+bool clang_IfStmt_isConsteval(CXIfStmt S);
+
+bool clang_IfStmt_isNonNegatedConsteval(CXIfStmt S);
+
+bool clang_IfStmt_isNegatedConsteval(CXIfStmt S);
+
+bool clang_IfStmt_isConstexpr(CXIfStmt S);
+
+bool clang_IfStmt_isObjCAvailabilityCheck(CXIfStmt S);
+
+CXSourceLocation_ clang_IfStmt_getLParenLoc(CXIfStmt S);
+
+CXSourceLocation_ clang_IfStmt_getRParenLoc(CXIfStmt S);
+
+// SwitchStmt
+bool clang_SwitchStmt_hasInitStorage(CXSwitchStmt S);
+
+bool clang_SwitchStmt_hasVarStorage(CXSwitchStmt S);
+
+CXSourceLocation_ clang_SwitchStmt_getSwitchLoc(CXSwitchStmt S);
+
+CXSourceLocation_ clang_SwitchStmt_getLParenLoc(CXSwitchStmt S);
+
+CXSourceLocation_ clang_SwitchStmt_getRParenLoc(CXSwitchStmt S);
+
+// WhileStmt
+bool clang_WhileStmt_hasVarStorage(CXWhileStmt S);
+
+CXSourceLocation_ clang_WhileStmt_getLParenLoc(CXWhileStmt S);
+
+CXSourceLocation_ clang_WhileStmt_getRParenLoc(CXWhileStmt S);
+
+// DoStmt
+CXSourceLocation_ clang_DoStmt_getRParenLoc(CXDoStmt S);
+
+// ForStmt
+CXSourceLocation_ clang_ForStmt_getLParenLoc(CXForStmt S);
+
+CXSourceLocation_ clang_ForStmt_getRParenLoc(CXForStmt S);
+
+// GotoStmt
+CXSourceLocation_ clang_GotoStmt_getLabelLoc(CXGotoStmt S);
+
+// IndirectGotoStmt
+CXSourceLocation_ clang_IndirectGotoStmt_getGotoLoc(CXIndirectGotoStmt S);
+
+CXSourceLocation_ clang_IndirectGotoStmt_getStarLoc(CXIndirectGotoStmt S);
+
+// ContinueStmt
+CXSourceLocation_ clang_ContinueStmt_getContinueLoc(CXContinueStmt S);
+
+// BreakStmt
+CXSourceLocation_ clang_BreakStmt_getBreakLoc(CXBreakStmt S);
+
+// ReturnStmt
+CXSourceLocation_ clang_ReturnStmt_getReturnLoc(CXReturnStmt S);
+
+// SwitchCase
+CXSourceLocation_ clang_SwitchCase_getKeywordLoc(CXSwitchCase S);
+
+CXSourceLocation_ clang_SwitchCase_getColonLoc(CXSwitchCase S);
+
+// CaseStmt
+bool clang_CaseStmt_caseStmtIsGNURange(CXCaseStmt S);
+
+CXSourceLocation_ clang_CaseStmt_getCaseLoc(CXCaseStmt S);
+
+CXSourceLocation_ clang_CaseStmt_getEllipsisLoc(CXCaseStmt S);
+
+// DefaultStmt
+CXSourceLocation_ clang_DefaultStmt_getDefaultLoc(CXDefaultStmt S);
+
+// LabelStmt
+CXSourceLocation_ clang_LabelStmt_getIdentLoc(CXLabelStmt S);
+
+bool clang_LabelStmt_isSideEntry(CXLabelStmt S);
+
+// NullStmt
+CXSourceLocation_ clang_NullStmt_getSemiLoc(CXNullStmt S);
+
+bool clang_NullStmt_hasLeadingEmptyMacro(CXNullStmt S);
+
+// CompoundStmt
+bool clang_CompoundStmt_body_empty(CXCompoundStmt S);
+
+bool clang_CompoundStmt_hasStoredFPFeatures(CXCompoundStmt S);
+
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

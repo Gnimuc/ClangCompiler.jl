@@ -9793,6 +9793,154 @@ function clang_ReturnStmt_getRetValue(RS)
     @ccall libclangex.clang_ReturnStmt_getRetValue(RS::CXReturnStmt)::CXExpr
 end
 
+function clang_IfStmt_getElseLoc(S)
+    @ccall libclangex.clang_IfStmt_getElseLoc(S::CXIfStmt)::CXSourceLocation_
+end
+
+function clang_IfStmt_isConsteval(S)
+    @ccall libclangex.clang_IfStmt_isConsteval(S::CXIfStmt)::Bool
+end
+
+function clang_IfStmt_isNonNegatedConsteval(S)
+    @ccall libclangex.clang_IfStmt_isNonNegatedConsteval(S::CXIfStmt)::Bool
+end
+
+function clang_IfStmt_isNegatedConsteval(S)
+    @ccall libclangex.clang_IfStmt_isNegatedConsteval(S::CXIfStmt)::Bool
+end
+
+function clang_IfStmt_isConstexpr(S)
+    @ccall libclangex.clang_IfStmt_isConstexpr(S::CXIfStmt)::Bool
+end
+
+function clang_IfStmt_isObjCAvailabilityCheck(S)
+    @ccall libclangex.clang_IfStmt_isObjCAvailabilityCheck(S::CXIfStmt)::Bool
+end
+
+function clang_IfStmt_getLParenLoc(S)
+    @ccall libclangex.clang_IfStmt_getLParenLoc(S::CXIfStmt)::CXSourceLocation_
+end
+
+function clang_IfStmt_getRParenLoc(S)
+    @ccall libclangex.clang_IfStmt_getRParenLoc(S::CXIfStmt)::CXSourceLocation_
+end
+
+function clang_SwitchStmt_hasInitStorage(S)
+    @ccall libclangex.clang_SwitchStmt_hasInitStorage(S::CXSwitchStmt)::Bool
+end
+
+function clang_SwitchStmt_hasVarStorage(S)
+    @ccall libclangex.clang_SwitchStmt_hasVarStorage(S::CXSwitchStmt)::Bool
+end
+
+function clang_SwitchStmt_getSwitchLoc(S)
+    @ccall libclangex.clang_SwitchStmt_getSwitchLoc(S::CXSwitchStmt)::CXSourceLocation_
+end
+
+function clang_SwitchStmt_getLParenLoc(S)
+    @ccall libclangex.clang_SwitchStmt_getLParenLoc(S::CXSwitchStmt)::CXSourceLocation_
+end
+
+function clang_SwitchStmt_getRParenLoc(S)
+    @ccall libclangex.clang_SwitchStmt_getRParenLoc(S::CXSwitchStmt)::CXSourceLocation_
+end
+
+function clang_WhileStmt_hasVarStorage(S)
+    @ccall libclangex.clang_WhileStmt_hasVarStorage(S::CXWhileStmt)::Bool
+end
+
+function clang_WhileStmt_getLParenLoc(S)
+    @ccall libclangex.clang_WhileStmt_getLParenLoc(S::CXWhileStmt)::CXSourceLocation_
+end
+
+function clang_WhileStmt_getRParenLoc(S)
+    @ccall libclangex.clang_WhileStmt_getRParenLoc(S::CXWhileStmt)::CXSourceLocation_
+end
+
+function clang_DoStmt_getRParenLoc(S)
+    @ccall libclangex.clang_DoStmt_getRParenLoc(S::CXDoStmt)::CXSourceLocation_
+end
+
+function clang_ForStmt_getLParenLoc(S)
+    @ccall libclangex.clang_ForStmt_getLParenLoc(S::CXForStmt)::CXSourceLocation_
+end
+
+function clang_ForStmt_getRParenLoc(S)
+    @ccall libclangex.clang_ForStmt_getRParenLoc(S::CXForStmt)::CXSourceLocation_
+end
+
+function clang_GotoStmt_getLabelLoc(S)
+    @ccall libclangex.clang_GotoStmt_getLabelLoc(S::CXGotoStmt)::CXSourceLocation_
+end
+
+function clang_IndirectGotoStmt_getGotoLoc(S)
+    @ccall libclangex.clang_IndirectGotoStmt_getGotoLoc(S::CXIndirectGotoStmt)::CXSourceLocation_
+end
+
+function clang_IndirectGotoStmt_getStarLoc(S)
+    @ccall libclangex.clang_IndirectGotoStmt_getStarLoc(S::CXIndirectGotoStmt)::CXSourceLocation_
+end
+
+function clang_ContinueStmt_getContinueLoc(S)
+    @ccall libclangex.clang_ContinueStmt_getContinueLoc(S::CXContinueStmt)::CXSourceLocation_
+end
+
+function clang_BreakStmt_getBreakLoc(S)
+    @ccall libclangex.clang_BreakStmt_getBreakLoc(S::CXBreakStmt)::CXSourceLocation_
+end
+
+function clang_ReturnStmt_getReturnLoc(S)
+    @ccall libclangex.clang_ReturnStmt_getReturnLoc(S::CXReturnStmt)::CXSourceLocation_
+end
+
+function clang_SwitchCase_getKeywordLoc(S)
+    @ccall libclangex.clang_SwitchCase_getKeywordLoc(S::CXSwitchCase)::CXSourceLocation_
+end
+
+function clang_SwitchCase_getColonLoc(S)
+    @ccall libclangex.clang_SwitchCase_getColonLoc(S::CXSwitchCase)::CXSourceLocation_
+end
+
+function clang_CaseStmt_caseStmtIsGNURange(S)
+    @ccall libclangex.clang_CaseStmt_caseStmtIsGNURange(S::CXCaseStmt)::Bool
+end
+
+function clang_CaseStmt_getCaseLoc(S)
+    @ccall libclangex.clang_CaseStmt_getCaseLoc(S::CXCaseStmt)::CXSourceLocation_
+end
+
+function clang_CaseStmt_getEllipsisLoc(S)
+    @ccall libclangex.clang_CaseStmt_getEllipsisLoc(S::CXCaseStmt)::CXSourceLocation_
+end
+
+function clang_DefaultStmt_getDefaultLoc(S)
+    @ccall libclangex.clang_DefaultStmt_getDefaultLoc(S::CXDefaultStmt)::CXSourceLocation_
+end
+
+function clang_LabelStmt_getIdentLoc(S)
+    @ccall libclangex.clang_LabelStmt_getIdentLoc(S::CXLabelStmt)::CXSourceLocation_
+end
+
+function clang_LabelStmt_isSideEntry(S)
+    @ccall libclangex.clang_LabelStmt_isSideEntry(S::CXLabelStmt)::Bool
+end
+
+function clang_NullStmt_getSemiLoc(S)
+    @ccall libclangex.clang_NullStmt_getSemiLoc(S::CXNullStmt)::CXSourceLocation_
+end
+
+function clang_NullStmt_hasLeadingEmptyMacro(S)
+    @ccall libclangex.clang_NullStmt_hasLeadingEmptyMacro(S::CXNullStmt)::Bool
+end
+
+function clang_CompoundStmt_body_empty(S)
+    @ccall libclangex.clang_CompoundStmt_body_empty(S::CXCompoundStmt)::Bool
+end
+
+function clang_CompoundStmt_hasStoredFPFeatures(S)
+    @ccall libclangex.clang_CompoundStmt_hasStoredFPFeatures(S::CXCompoundStmt)::Bool
+end
+
 function clang_CXXCatchStmt_getExceptionDecl(CS)
     @ccall libclangex.clang_CXXCatchStmt_getExceptionDecl(CS::CXCXXCatchStmt)::CXVarDecl
 end
@@ -9835,6 +9983,30 @@ end
 
 function clang_CXXForRangeStmt_getEndStmt(FRS)
     @ccall libclangex.clang_CXXForRangeStmt_getEndStmt(FRS::CXCXXForRangeStmt)::CXDeclStmt
+end
+
+function clang_CXXCatchStmt_getCatchLoc(S)
+    @ccall libclangex.clang_CXXCatchStmt_getCatchLoc(S::CXCXXCatchStmt)::CXSourceLocation_
+end
+
+function clang_CXXTryStmt_getTryLoc(S)
+    @ccall libclangex.clang_CXXTryStmt_getTryLoc(S::CXCXXTryStmt)::CXSourceLocation_
+end
+
+function clang_CXXForRangeStmt_getForLoc(S)
+    @ccall libclangex.clang_CXXForRangeStmt_getForLoc(S::CXCXXForRangeStmt)::CXSourceLocation_
+end
+
+function clang_CXXForRangeStmt_getCoawaitLoc(S)
+    @ccall libclangex.clang_CXXForRangeStmt_getCoawaitLoc(S::CXCXXForRangeStmt)::CXSourceLocation_
+end
+
+function clang_CXXForRangeStmt_getColonLoc(S)
+    @ccall libclangex.clang_CXXForRangeStmt_getColonLoc(S::CXCXXForRangeStmt)::CXSourceLocation_
+end
+
+function clang_CXXForRangeStmt_getRParenLoc(S)
+    @ccall libclangex.clang_CXXForRangeStmt_getRParenLoc(S::CXCXXForRangeStmt)::CXSourceLocation_
 end
 
 @enum CXTemplateArgument_ArgKind::UInt32 begin

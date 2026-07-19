@@ -280,3 +280,205 @@ function getRetValue(x::AbstractReturnStmt)
     @check_ptrs x
     return Expr_(clang_ReturnStmt_getRetValue(x))
 end
+
+# IfStmt
+function getElseLoc(x::AbstractIfStmt)
+    @check_ptrs x
+    return SourceLocation(clang_IfStmt_getElseLoc(x))
+end
+
+function isConsteval(x::AbstractIfStmt)
+    @check_ptrs x
+    return clang_IfStmt_isConsteval(x)
+end
+
+function isNonNegatedConsteval(x::AbstractIfStmt)
+    @check_ptrs x
+    return clang_IfStmt_isNonNegatedConsteval(x)
+end
+
+function isNegatedConsteval(x::AbstractIfStmt)
+    @check_ptrs x
+    return clang_IfStmt_isNegatedConsteval(x)
+end
+
+function isConstexpr(x::AbstractIfStmt)
+    @check_ptrs x
+    return clang_IfStmt_isConstexpr(x)
+end
+
+function isObjCAvailabilityCheck(x::AbstractIfStmt)
+    @check_ptrs x
+    return clang_IfStmt_isObjCAvailabilityCheck(x)
+end
+
+function getLParenLoc(x::AbstractIfStmt)
+    @check_ptrs x
+    return SourceLocation(clang_IfStmt_getLParenLoc(x))
+end
+
+function getRParenLoc(x::AbstractIfStmt)
+    @check_ptrs x
+    return SourceLocation(clang_IfStmt_getRParenLoc(x))
+end
+
+# SwitchStmt
+function hasInitStorage(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return clang_SwitchStmt_hasInitStorage(x)
+end
+
+function hasVarStorage(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return clang_SwitchStmt_hasVarStorage(x)
+end
+
+function getSwitchLoc(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return SourceLocation(clang_SwitchStmt_getSwitchLoc(x))
+end
+
+function getLParenLoc(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return SourceLocation(clang_SwitchStmt_getLParenLoc(x))
+end
+
+function getRParenLoc(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return SourceLocation(clang_SwitchStmt_getRParenLoc(x))
+end
+
+# WhileStmt
+function hasVarStorage(x::AbstractWhileStmt)
+    @check_ptrs x
+    return clang_WhileStmt_hasVarStorage(x)
+end
+
+function getLParenLoc(x::AbstractWhileStmt)
+    @check_ptrs x
+    return SourceLocation(clang_WhileStmt_getLParenLoc(x))
+end
+
+function getRParenLoc(x::AbstractWhileStmt)
+    @check_ptrs x
+    return SourceLocation(clang_WhileStmt_getRParenLoc(x))
+end
+
+# DoStmt
+function getRParenLoc(x::AbstractDoStmt)
+    @check_ptrs x
+    return SourceLocation(clang_DoStmt_getRParenLoc(x))
+end
+
+# ForStmt
+function getLParenLoc(x::AbstractForStmt)
+    @check_ptrs x
+    return SourceLocation(clang_ForStmt_getLParenLoc(x))
+end
+
+function getRParenLoc(x::AbstractForStmt)
+    @check_ptrs x
+    return SourceLocation(clang_ForStmt_getRParenLoc(x))
+end
+
+# GotoStmt
+function getLabelLoc(x::AbstractGotoStmt)
+    @check_ptrs x
+    return SourceLocation(clang_GotoStmt_getLabelLoc(x))
+end
+
+# IndirectGotoStmt
+function getGotoLoc(x::AbstractIndirectGotoStmt)
+    @check_ptrs x
+    return SourceLocation(clang_IndirectGotoStmt_getGotoLoc(x))
+end
+
+function getStarLoc(x::AbstractIndirectGotoStmt)
+    @check_ptrs x
+    return SourceLocation(clang_IndirectGotoStmt_getStarLoc(x))
+end
+
+# ContinueStmt
+function getContinueLoc(x::AbstractContinueStmt)
+    @check_ptrs x
+    return SourceLocation(clang_ContinueStmt_getContinueLoc(x))
+end
+
+# BreakStmt
+function getBreakLoc(x::AbstractBreakStmt)
+    @check_ptrs x
+    return SourceLocation(clang_BreakStmt_getBreakLoc(x))
+end
+
+# ReturnStmt
+function getReturnLoc(x::AbstractReturnStmt)
+    @check_ptrs x
+    return SourceLocation(clang_ReturnStmt_getReturnLoc(x))
+end
+
+# SwitchCase
+function getKeywordLoc(x::AbstractSwitchCase)
+    @check_ptrs x
+    return SourceLocation(clang_SwitchCase_getKeywordLoc(x))
+end
+
+function getColonLoc(x::AbstractSwitchCase)
+    @check_ptrs x
+    return SourceLocation(clang_SwitchCase_getColonLoc(x))
+end
+
+# CaseStmt
+function caseStmtIsGNURange(x::AbstractCaseStmt)
+    @check_ptrs x
+    return clang_CaseStmt_caseStmtIsGNURange(x)
+end
+
+function getCaseLoc(x::AbstractCaseStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CaseStmt_getCaseLoc(x))
+end
+
+function getEllipsisLoc(x::AbstractCaseStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CaseStmt_getEllipsisLoc(x))
+end
+
+# DefaultStmt
+function getDefaultLoc(x::AbstractDefaultStmt)
+    @check_ptrs x
+    return SourceLocation(clang_DefaultStmt_getDefaultLoc(x))
+end
+
+# LabelStmt
+function getIdentLoc(x::AbstractLabelStmt)
+    @check_ptrs x
+    return SourceLocation(clang_LabelStmt_getIdentLoc(x))
+end
+
+function isSideEntry(x::AbstractLabelStmt)
+    @check_ptrs x
+    return clang_LabelStmt_isSideEntry(x)
+end
+
+# NullStmt
+function getSemiLoc(x::AbstractNullStmt)
+    @check_ptrs x
+    return SourceLocation(clang_NullStmt_getSemiLoc(x))
+end
+
+function hasLeadingEmptyMacro(x::AbstractNullStmt)
+    @check_ptrs x
+    return clang_NullStmt_hasLeadingEmptyMacro(x)
+end
+
+# CompoundStmt
+function body_empty(x::AbstractCompoundStmt)
+    @check_ptrs x
+    return clang_CompoundStmt_body_empty(x)
+end
+
+function hasStoredFPFeatures(x::AbstractCompoundStmt)
+    @check_ptrs x
+    return clang_CompoundStmt_hasStoredFPFeatures(x)
+end
+

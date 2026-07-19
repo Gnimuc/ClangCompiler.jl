@@ -32,6 +32,22 @@ CXDeclStmt clang_CXXForRangeStmt_getBeginStmt(CXCXXForRangeStmt FRS);
 
 CXDeclStmt clang_CXXForRangeStmt_getEndStmt(CXCXXForRangeStmt FRS);
 
+// CXXCatchStmt
+CXSourceLocation_ clang_CXXCatchStmt_getCatchLoc(CXCXXCatchStmt S);
+
+// CXXTryStmt
+CXSourceLocation_ clang_CXXTryStmt_getTryLoc(CXCXXTryStmt S);
+
+// CXXForRangeStmt
+CXSourceLocation_ clang_CXXForRangeStmt_getForLoc(CXCXXForRangeStmt S);
+
+CXSourceLocation_ clang_CXXForRangeStmt_getCoawaitLoc(CXCXXForRangeStmt S);
+
+CXSourceLocation_ clang_CXXForRangeStmt_getColonLoc(CXCXXForRangeStmt S);
+
+CXSourceLocation_ clang_CXXForRangeStmt_getRParenLoc(CXCXXForRangeStmt S);
+
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif
