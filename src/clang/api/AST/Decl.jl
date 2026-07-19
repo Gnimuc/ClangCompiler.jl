@@ -729,9 +729,9 @@ function isKnownToBeDefined(x::AbstractVarDecl)
     return clang_VarDecl_isKnownToBeDefined(x)
 end
 
-function isNoDestroy(x::AbstractVarDecl)
-    @check_ptrs x
-    return clang_VarDecl_isNoDestroy(x)
+function isNoDestroy(x::AbstractVarDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_VarDecl_isNoDestroy(x, ctx)
 end
 
 # TODO: needsDestruction
@@ -974,10 +974,9 @@ function setVirtualAsWritten(x::FunctionDecl, v::Bool)
     return clang_FunctionDecl_setVirtualAsWritten(x, v)
 end
 
-function isPure(x::FunctionDecl)
-    @check_ptrs x
-    return clang_FunctionDecl_isPure(x)
-end
+# NOTE: FunctionDecl::isPure() was renamed isPureVirtual() upstream; the working
+# wrapper is isPureVirtual(::AbstractFunctionDecl) above. The old isPure wrapper
+# called a binding that no longer exists and has been removed.
 
 function setPure(x::FunctionDecl, pure::Bool=true)
     @check_ptrs x
@@ -1426,7 +1425,7 @@ end
 
 function getTemplateInstantiationPattern(x::FunctionDecl, for_def::Bool=true)
     @check_ptrs x
-    return FunctionDecl(clang_FunctionDecl_getTemplateInstantiationPattern(x))
+    return FunctionDecl(clang_FunctionDecl_getTemplateInstantiationPattern(x, for_def))
 end
 
 function getPrimaryTemplate(x::FunctionDecl)

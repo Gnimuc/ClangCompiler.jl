@@ -2892,3 +2892,26 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Coverage | fixed wrapper arity bugs" begin
+    # Regression for three wrappers whose Julia arity/name had drifted from the
+    # binding so any call errored (never covered before).
+    I = create_interpreter(String[])
+    CC.parse(I, "int gvfix = 0; int plainfix(int a){ return a; } struct Afix { virtual void p() = 0; virtual void q(); };")
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+
+    @test f(I, "gvfix")
+    @test CC.isNoDestroy(CC.VarDecl(get_decl(f).ptr), ctx) isa Bool     # was: missing ctx arg
+
+    @test f(I, "plainfix")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    @test CC.getTemplateInstantiationPattern(fd, true) isa CC.FunctionDecl  # was: missing for_def arg
+
+    @test f(I, "Afix")
+    afix = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test any(m -> CC.isPureVirtual(m), CC.getMethods(afix))            # isPure removed; isPureVirtual is the live one
+
+    dispose(f)
+    dispose(I)
+end
