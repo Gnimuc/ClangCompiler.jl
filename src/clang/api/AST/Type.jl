@@ -46,6 +46,476 @@ function getCanonicalTypeInternal(x::AbstractType)
     return QualType(clang_Type_getCanonicalTypeInternal(x))
 end
 
+function canDecayToPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_canDecayToPointerType(x)
+end
+
+function dump(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_dump(x)
+end
+
+function getArrayElementTypeNoTypeQual(x::AbstractType)
+    @check_ptrs x
+    return Type_(clang_Type_getArrayElementTypeNoTypeQual(x))
+end
+
+function getAsCXXRecordDecl(x::AbstractType)
+    @check_ptrs x
+    return CXXRecordDecl(clang_Type_getAsCXXRecordDecl(x))
+end
+
+function getAsComplexIntegerType(x::AbstractType)
+    @check_ptrs x
+    return ComplexType(clang_Type_getAsComplexIntegerType(x))
+end
+
+function getAsRecordDecl(x::AbstractType)
+    @check_ptrs x
+    return RecordDecl(clang_Type_getAsRecordDecl(x))
+end
+
+function getAsStructureType(x::AbstractType)
+    @check_ptrs x
+    return RecordType(clang_Type_getAsStructureType(x))
+end
+
+function getAsTagDecl(x::AbstractType)
+    @check_ptrs x
+    return TagDecl(clang_Type_getAsTagDecl(x))
+end
+
+function getAsUnionType(x::AbstractType)
+    @check_ptrs x
+    return RecordType(clang_Type_getAsUnionType(x))
+end
+
+function getPointeeCXXRecordDecl(x::AbstractType)
+    @check_ptrs x
+    return CXXRecordDecl(clang_Type_getPointeeCXXRecordDecl(x))
+end
+
+function getPointeeOrArrayElementType(x::AbstractType)
+    @check_ptrs x
+    return Type_(clang_Type_getPointeeOrArrayElementType(x))
+end
+
+function getUnqualifiedDesugaredType(x::AbstractType)
+    @check_ptrs x
+    return Type_(clang_Type_getUnqualifiedDesugaredType(x))
+end
+
+function hasAutoForTrailingReturnType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasAutoForTrailingReturnType(x)
+end
+
+function hasFloatingRepresentation(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasFloatingRepresentation(x)
+end
+
+function hasIntegerRepresentation(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasIntegerRepresentation(x)
+end
+
+function hasObjCPointerRepresentation(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasObjCPointerRepresentation(x)
+end
+
+function hasPointerRepresentation(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasPointerRepresentation(x)
+end
+
+function hasSignedIntegerRepresentation(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasSignedIntegerRepresentation(x)
+end
+
+function hasSizedVLAType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasSizedVLAType(x)
+end
+
+function hasUnnamedOrLocalType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasUnnamedOrLocalType(x)
+end
+
+function hasUnsignedIntegerRepresentation(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_hasUnsignedIntegerRepresentation(x)
+end
+
+function isAggregateType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isAggregateType(x)
+end
+
+function isAlignValT(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isAlignValT(x)
+end
+
+function isAnyCharacterType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isAnyCharacterType(x)
+end
+
+function isAnyComplexType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isAnyComplexType(x)
+end
+
+function isAnyPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isAnyPointerType(x)
+end
+
+function isArithmeticType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isArithmeticType(x)
+end
+
+function isAtomicType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isAtomicType(x)
+end
+
+function isBFloat16Type(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isBFloat16Type(x)
+end
+
+function isBlockPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isBlockPointerType(x)
+end
+
+function isCanonicalUnqualified(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isCanonicalUnqualified(x)
+end
+
+function isChar16Type(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isChar16Type(x)
+end
+
+function isChar32Type(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isChar32Type(x)
+end
+
+function isChar8Type(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isChar8Type(x)
+end
+
+function isClassType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isClassType(x)
+end
+
+function isComplexIntegerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isComplexIntegerType(x)
+end
+
+function isCompoundType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isCompoundType(x)
+end
+
+function isConstantMatrixType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isConstantMatrixType(x)
+end
+
+function isConstantSizeType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isConstantSizeType(x)
+end
+
+function isDecltypeType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isDecltypeType(x)
+end
+
+function isDependentAddressSpaceType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isDependentAddressSpaceType(x)
+end
+
+function isDependentType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isDependentType(x)
+end
+
+function isElaboratedTypeSpecifier(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isElaboratedTypeSpecifier(x)
+end
+
+function isExtVectorType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isExtVectorType(x)
+end
+
+function isFixedPointOrIntegerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFixedPointOrIntegerType(x)
+end
+
+function isFixedPointType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFixedPointType(x)
+end
+
+function isFloat128Type(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFloat128Type(x)
+end
+
+function isFloat16Type(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFloat16Type(x)
+end
+
+function isFloatingType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFloatingType(x)
+end
+
+function isFromAST(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFromAST(x)
+end
+
+function isFunctionReferenceType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFunctionReferenceType(x)
+end
+
+function isFundamentalType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isFundamentalType(x)
+end
+
+function isHalfType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isHalfType(x)
+end
+
+function isInstantiationDependentType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isInstantiationDependentType(x)
+end
+
+function isIntegerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isIntegerType(x)
+end
+
+function isIntegralOrEnumerationType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isIntegralOrEnumerationType(x)
+end
+
+function isIntegralOrUnscopedEnumerationType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isIntegralOrUnscopedEnumerationType(x)
+end
+
+function isInterfaceType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isInterfaceType(x)
+end
+
+function isLinkageValid(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isLinkageValid(x)
+end
+
+function isMatrixType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isMatrixType(x)
+end
+
+function isMemberDataPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isMemberDataPointerType(x)
+end
+
+function isNothrowT(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isNothrowT(x)
+end
+
+function isNullPtrType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isNullPtrType(x)
+end
+
+function isObjCBoxableRecordType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCBoxableRecordType(x)
+end
+
+function isObjectPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjectPointerType(x)
+end
+
+function isOverloadableType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isOverloadableType(x)
+end
+
+function isRealFloatingType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isRealFloatingType(x)
+end
+
+function isRealType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isRealType(x)
+end
+
+function isSaturatedFixedPointType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isSaturatedFixedPointType(x)
+end
+
+function isScalarType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isScalarType(x)
+end
+
+function isScopedEnumeralType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isScopedEnumeralType(x)
+end
+
+function isSignedFixedPointType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isSignedFixedPointType(x)
+end
+
+function isSignedIntegerOrEnumerationType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isSignedIntegerOrEnumerationType(x)
+end
+
+function isSignedIntegerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isSignedIntegerType(x)
+end
+
+function isSizelessBuiltinType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isSizelessBuiltinType(x)
+end
+
+function isSizelessType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isSizelessType(x)
+end
+
+function isSpecifierType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isSpecifierType(x)
+end
+
+function isStdByteType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isStdByteType(x)
+end
+
+function isStructureOrClassType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isStructureOrClassType(x)
+end
+
+function isStructureType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isStructureType(x)
+end
+
+function isTypedefNameType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isTypedefNameType(x)
+end
+
+function isUndeducedAutoType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isUndeducedAutoType(x)
+end
+
+function isUndeducedType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isUndeducedType(x)
+end
+
+function isUnionType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isUnionType(x)
+end
+
+function isUnsaturatedFixedPointType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isUnsaturatedFixedPointType(x)
+end
+
+function isUnscopedEnumerationType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isUnscopedEnumerationType(x)
+end
+
+function isUnsignedFixedPointType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isUnsignedFixedPointType(x)
+end
+
+function isUnsignedIntegerOrEnumerationType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isUnsignedIntegerOrEnumerationType(x)
+end
+
+function isUnsignedIntegerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isUnsignedIntegerType(x)
+end
+
+function isVariablyModifiedType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isVariablyModifiedType(x)
+end
+
+function isVectorType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isVectorType(x)
+end
+
+function isVisibilityExplicit(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isVisibilityExplicit(x)
+end
+
+function isVoidPointerType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isVoidPointerType(x)
+end
+
+function isWideCharType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isWideCharType(x)
+end
+
 # getPointeeType(x::AbstractType) = getTypePtr(QualType(clang_Type_getPointeeType(x)))
 
 function isVoidType(x::AbstractType)
@@ -367,10 +837,35 @@ end
 
 # ComplexType
 
+function desugar(x::AbstractComplexType)
+    @check_ptrs x
+    return QualType(clang_ComplexType_desugar(x))
+end
+
+function getElementType(x::AbstractComplexType)
+    @check_ptrs x
+    return QualType(clang_ComplexType_getElementType(x))
+end
+
+function isSugared(x::AbstractComplexType)
+    @check_ptrs x
+    return clang_ComplexType_isSugared(x)
+end
+
 # PointerType
 function getPointeeType(x::PointerType)
     @check_ptrs x
     return QualType(clang_PointerType_getPointeeType(x))
+end
+
+function desugar(x::AbstractPointerType)
+    @check_ptrs x
+    return QualType(clang_PointerType_desugar(x))
+end
+
+function isSugared(x::AbstractPointerType)
+    @check_ptrs x
+    return clang_PointerType_isSugared(x)
 end
 
 # ReferenceType
@@ -379,9 +874,44 @@ function getPointeeType(x::AbstractReferenceType)
     return QualType(clang_ReferenceType_getPointeeType(x))
 end
 
+function getPointeeTypeAsWritten(x::AbstractReferenceType)
+    @check_ptrs x
+    return QualType(clang_ReferenceType_getPointeeTypeAsWritten(x))
+end
+
+function isInnerRef(x::AbstractReferenceType)
+    @check_ptrs x
+    return clang_ReferenceType_isInnerRef(x)
+end
+
+function isSpelledAsLValue(x::AbstractReferenceType)
+    @check_ptrs x
+    return clang_ReferenceType_isSpelledAsLValue(x)
+end
+
 # LValueReferenceType
 
+function desugar(x::AbstractLValueReferenceType)
+    @check_ptrs x
+    return QualType(clang_LValueReferenceType_desugar(x))
+end
+
+function isSugared(x::AbstractLValueReferenceType)
+    @check_ptrs x
+    return clang_LValueReferenceType_isSugared(x)
+end
+
 # RValueReferenceType
+
+function desugar(x::AbstractRValueReferenceType)
+    @check_ptrs x
+    return QualType(clang_RValueReferenceType_desugar(x))
+end
+
+function isSugared(x::AbstractRValueReferenceType)
+    @check_ptrs x
+    return clang_RValueReferenceType_isSugared(x)
+end
 
 # MemberPointerType
 function getPointeeType(x::AbstractMemberPointerType)
@@ -394,13 +924,93 @@ function getClass(x::AbstractMemberPointerType)
     return Type_(clang_MemberPointerType_getClass(x))
 end
 
+function desugar(x::AbstractMemberPointerType)
+    @check_ptrs x
+    return QualType(clang_MemberPointerType_desugar(x))
+end
+
+function getMostRecentCXXRecordDecl(x::AbstractMemberPointerType)
+    @check_ptrs x
+    return CXXRecordDecl(clang_MemberPointerType_getMostRecentCXXRecordDecl(x))
+end
+
+function isMemberDataPointer(x::AbstractMemberPointerType)
+    @check_ptrs x
+    return clang_MemberPointerType_isMemberDataPointer(x)
+end
+
+function isMemberFunctionPointer(x::AbstractMemberPointerType)
+    @check_ptrs x
+    return clang_MemberPointerType_isMemberFunctionPointer(x)
+end
+
+function isSugared(x::AbstractMemberPointerType)
+    @check_ptrs x
+    return clang_MemberPointerType_isSugared(x)
+end
+
 # ConstantArrayType
+
+function desugar(x::AbstractConstantArrayType)
+    @check_ptrs x
+    return QualType(clang_ConstantArrayType_desugar(x))
+end
+
+function getSizeExpr(x::AbstractConstantArrayType)
+    @check_ptrs x
+    return Expr_(clang_ConstantArrayType_getSizeExpr(x))
+end
+
+function isSugared(x::AbstractConstantArrayType)
+    @check_ptrs x
+    return clang_ConstantArrayType_isSugared(x)
+end
 
 # IncompleteArrayType
 
+function desugar(x::AbstractIncompleteArrayType)
+    @check_ptrs x
+    return QualType(clang_IncompleteArrayType_desugar(x))
+end
+
+function isSugared(x::AbstractIncompleteArrayType)
+    @check_ptrs x
+    return clang_IncompleteArrayType_isSugared(x)
+end
+
 # VariableArrayType
 
+function desugar(x::AbstractVariableArrayType)
+    @check_ptrs x
+    return QualType(clang_VariableArrayType_desugar(x))
+end
+
+function getSizeExpr(x::AbstractVariableArrayType)
+    @check_ptrs x
+    return Expr_(clang_VariableArrayType_getSizeExpr(x))
+end
+
+function isSugared(x::AbstractVariableArrayType)
+    @check_ptrs x
+    return clang_VariableArrayType_isSugared(x)
+end
+
 # DependentSizedArrayType
+
+function desugar(x::AbstractDependentSizedArrayType)
+    @check_ptrs x
+    return QualType(clang_DependentSizedArrayType_desugar(x))
+end
+
+function getSizeExpr(x::AbstractDependentSizedArrayType)
+    @check_ptrs x
+    return Expr_(clang_DependentSizedArrayType_getSizeExpr(x))
+end
+
+function isSugared(x::AbstractDependentSizedArrayType)
+    @check_ptrs x
+    return clang_DependentSizedArrayType_isSugared(x)
+end
 
 # FunctionType
 function getReturnType(x::AbstractFunctionType)
@@ -408,7 +1018,52 @@ function getReturnType(x::AbstractFunctionType)
     return QualType(clang_FunctionType_getReturnType(get_qual_type(x)))
 end
 
+function getCmseNSCallAttr(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_getCmseNSCallAttr(x)
+end
+
+function getHasRegParm(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_getHasRegParm(x)
+end
+
+function getNoReturnAttr(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_getNoReturnAttr(x)
+end
+
+function getRegParmType(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_getRegParmType(x)
+end
+
+function isConst(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_isConst(x)
+end
+
+function isRestrict(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_isRestrict(x)
+end
+
+function isVolatile(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_isVolatile(x)
+end
+
 # FunctionNoProtoType
+
+function desugar(x::AbstractFunctionNoProtoType)
+    @check_ptrs x
+    return QualType(clang_FunctionNoProtoType_desugar(x))
+end
+
+function isSugared(x::AbstractFunctionNoProtoType)
+    @check_ptrs x
+    return clang_FunctionNoProtoType_isSugared(x)
+end
 
 # FunctionProtoType
 function getNumParams(x::FunctionProtoType)
@@ -426,16 +1081,111 @@ function isNoThrow(x::FunctionProtoType)
     return clang_FunctionProtoType_isNothrow(x)
 end
 
+function desugar(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return QualType(clang_FunctionProtoType_desugar(x))
+end
+
+function getExceptionSpecDecl(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return FunctionDecl(clang_FunctionProtoType_getExceptionSpecDecl(x))
+end
+
+function getExceptionSpecTemplate(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return FunctionDecl(clang_FunctionProtoType_getExceptionSpecTemplate(x))
+end
+
+function getNoexceptExpr(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return Expr_(clang_FunctionProtoType_getNoexceptExpr(x))
+end
+
+function getNumExceptions(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_getNumExceptions(x)
+end
+
+function hasDependentExceptionSpec(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_hasDependentExceptionSpec(x)
+end
+
+function hasDynamicExceptionSpec(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_hasDynamicExceptionSpec(x)
+end
+
+function hasExceptionSpec(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_hasExceptionSpec(x)
+end
+
+function hasInstantiationDependentExceptionSpec(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_hasInstantiationDependentExceptionSpec(x)
+end
+
+function hasNoexceptExceptionSpec(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_hasNoexceptExceptionSpec(x)
+end
+
+function hasTrailingReturn(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_hasTrailingReturn(x)
+end
+
+function isSugared(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_isSugared(x)
+end
+
+function isTemplateVariadic(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_isTemplateVariadic(x)
+end
+
+function isVariadic(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_isVariadic(x)
+end
+
 # UsingType
 function desugar(x::UsingType)
     @check_ptrs x
     return QualType(clang_UsingType_desugar(x))
 end
 
+function getFoundDecl(x::AbstractUsingType)
+    @check_ptrs x
+    return UsingShadowDecl(clang_UsingType_getFoundDecl(x))
+end
+
+function getUnderlyingType(x::AbstractUsingType)
+    @check_ptrs x
+    return QualType(clang_UsingType_getUnderlyingType(x))
+end
+
+function isSugared(x::AbstractUsingType)
+    @check_ptrs x
+    return clang_UsingType_isSugared(x)
+end
+
 # TypedefType
 function desugar(x::TypedefType)
     @check_ptrs x
     return QualType(clang_TypedefType_desugar(x))
+end
+
+function getDecl(x::AbstractTypedefType)
+    @check_ptrs x
+    return TypedefNameDecl(clang_TypedefType_getDecl(x))
+end
+
+function isSugared(x::AbstractTypedefType)
+    @check_ptrs x
+    return clang_TypedefType_isSugared(x)
 end
 
 # TagType
@@ -448,6 +1198,21 @@ end
 function getDecl(x::RecordType)
     @check_ptrs x
     return RecordDecl(clang_RecordType_getDecl(x))
+end
+
+function desugar(x::AbstractRecordType)
+    @check_ptrs x
+    return QualType(clang_RecordType_desugar(x))
+end
+
+function hasConstFields(x::AbstractRecordType)
+    @check_ptrs x
+    return clang_RecordType_hasConstFields(x)
+end
+
+function isSugared(x::AbstractRecordType)
+    @check_ptrs x
+    return clang_RecordType_isSugared(x)
 end
 
 # EnumType
@@ -466,7 +1231,47 @@ function getName(x::EnumType)
     return getName(getDecl(x))
 end
 
+function desugar(x::AbstractEnumType)
+    @check_ptrs x
+    return QualType(clang_EnumType_desugar(x))
+end
+
+function isSugared(x::AbstractEnumType)
+    @check_ptrs x
+    return clang_EnumType_isSugared(x)
+end
+
 # TemplateTypeParmType
+
+function desugar(x::AbstractTemplateTypeParmType)
+    @check_ptrs x
+    return QualType(clang_TemplateTypeParmType_desugar(x))
+end
+
+function getDecl(x::AbstractTemplateTypeParmType)
+    @check_ptrs x
+    return TemplateTypeParmDecl(clang_TemplateTypeParmType_getDecl(x))
+end
+
+function getDepth(x::AbstractTemplateTypeParmType)
+    @check_ptrs x
+    return clang_TemplateTypeParmType_getDepth(x)
+end
+
+function getIndex(x::AbstractTemplateTypeParmType)
+    @check_ptrs x
+    return clang_TemplateTypeParmType_getIndex(x)
+end
+
+function isParameterPack(x::AbstractTemplateTypeParmType)
+    @check_ptrs x
+    return clang_TemplateTypeParmType_isParameterPack(x)
+end
+
+function isSugared(x::AbstractTemplateTypeParmType)
+    @check_ptrs x
+    return clang_TemplateTypeParmType_isSugared(x)
+end
 
 # SubstTemplateTypeParmType
 function getReplacementType(x::SubstTemplateTypeParmType)
@@ -479,7 +1284,62 @@ function desugar(x::SubstTemplateTypeParmType)
     return QualType(clang_SubstTemplateTypeParmType_desugar(x))
 end
 
+function getAssociatedDecl(x::AbstractSubstTemplateTypeParmType)
+    @check_ptrs x
+    return Decl(clang_SubstTemplateTypeParmType_getAssociatedDecl(x))
+end
+
+function getIndex(x::AbstractSubstTemplateTypeParmType)
+    @check_ptrs x
+    return clang_SubstTemplateTypeParmType_getIndex(x)
+end
+
+function getReplacedParameter(x::AbstractSubstTemplateTypeParmType)
+    @check_ptrs x
+    return TemplateTypeParmDecl(clang_SubstTemplateTypeParmType_getReplacedParameter(x))
+end
+
+function isSugared(x::AbstractSubstTemplateTypeParmType)
+    @check_ptrs x
+    return clang_SubstTemplateTypeParmType_isSugared(x)
+end
+
 # SubstTemplateTypeParmPackType
+
+function desugar(x::AbstractSubstTemplateTypeParmPackType)
+    @check_ptrs x
+    return QualType(clang_SubstTemplateTypeParmPackType_desugar(x))
+end
+
+function getAssociatedDecl(x::AbstractSubstTemplateTypeParmPackType)
+    @check_ptrs x
+    return Decl(clang_SubstTemplateTypeParmPackType_getAssociatedDecl(x))
+end
+
+function getFinal(x::AbstractSubstTemplateTypeParmPackType)
+    @check_ptrs x
+    return clang_SubstTemplateTypeParmPackType_getFinal(x)
+end
+
+function getIndex(x::AbstractSubstTemplateTypeParmPackType)
+    @check_ptrs x
+    return clang_SubstTemplateTypeParmPackType_getIndex(x)
+end
+
+function getNumArgs(x::AbstractSubstTemplateTypeParmPackType)
+    @check_ptrs x
+    return clang_SubstTemplateTypeParmPackType_getNumArgs(x)
+end
+
+function getReplacedParameter(x::AbstractSubstTemplateTypeParmPackType)
+    @check_ptrs x
+    return TemplateTypeParmDecl(clang_SubstTemplateTypeParmPackType_getReplacedParameter(x))
+end
+
+function isSugared(x::AbstractSubstTemplateTypeParmPackType)
+    @check_ptrs x
+    return clang_SubstTemplateTypeParmPackType_isSugared(x)
+end
 
 # TemplateSpecializationType
 function isCurrentInstantiation(x::TemplateSpecializationType)
@@ -523,6 +1383,102 @@ function desugar(x::ElaboratedType)
     return QualType(clang_ElaboratedType_desugar(x))
 end
 
+function getNamedType(x::AbstractElaboratedType)
+    @check_ptrs x
+    return QualType(clang_ElaboratedType_getNamedType(x))
+end
+
+function getOwnedTagDecl(x::AbstractElaboratedType)
+    @check_ptrs x
+    return TagDecl(clang_ElaboratedType_getOwnedTagDecl(x))
+end
+
+function getQualifier(x::AbstractElaboratedType)
+    @check_ptrs x
+    return NestedNameSpecifier(clang_ElaboratedType_getQualifier(x))
+end
+
+function isSugared(x::AbstractElaboratedType)
+    @check_ptrs x
+    return clang_ElaboratedType_isSugared(x)
+end
+
 # DependentNameType
 
+function desugar(x::AbstractDependentNameType)
+    @check_ptrs x
+    return QualType(clang_DependentNameType_desugar(x))
+end
+
+function getIdentifier(x::AbstractDependentNameType)
+    @check_ptrs x
+    return IdentifierInfo(clang_DependentNameType_getIdentifier(x))
+end
+
+function getQualifier(x::AbstractDependentNameType)
+    @check_ptrs x
+    return NestedNameSpecifier(clang_DependentNameType_getQualifier(x))
+end
+
+function isSugared(x::AbstractDependentNameType)
+    @check_ptrs x
+    return clang_DependentNameType_isSugared(x)
+end
+
 # DependentTemplateSpecializationType
+
+function desugar(x::AbstractDependentTemplateSpecializationType)
+    @check_ptrs x
+    return QualType(clang_DependentTemplateSpecializationType_desugar(x))
+end
+
+function getIdentifier(x::AbstractDependentTemplateSpecializationType)
+    @check_ptrs x
+    return IdentifierInfo(clang_DependentTemplateSpecializationType_getIdentifier(x))
+end
+
+function getQualifier(x::AbstractDependentTemplateSpecializationType)
+    @check_ptrs x
+    return NestedNameSpecifier(clang_DependentTemplateSpecializationType_getQualifier(x))
+end
+
+function isSugared(x::AbstractDependentTemplateSpecializationType)
+    @check_ptrs x
+    return clang_DependentTemplateSpecializationType_isSugared(x)
+end
+
+
+# ArrayType
+# ---- Increment 1a: generated accessors for existing-carrier type classes ----
+
+function getElementType(x::AbstractArrayType)
+    @check_ptrs x
+    return QualType(clang_ArrayType_getElementType(x))
+end
+
+function getIndexTypeCVRQualifiers(x::AbstractArrayType)
+    @check_ptrs x
+    return clang_ArrayType_getIndexTypeCVRQualifiers(x)
+end
+
+function getSizeModifier(x::AbstractArrayType)
+    @check_ptrs x
+    return clang_ArrayType_getSizeModifier(x)
+end
+
+# UnresolvedUsingType
+function desugar(x::AbstractUnresolvedUsingType)
+    @check_ptrs x
+    return QualType(clang_UnresolvedUsingType_desugar(x))
+end
+
+function getDecl(x::AbstractUnresolvedUsingType)
+    @check_ptrs x
+    return UnresolvedUsingTypenameDecl(clang_UnresolvedUsingType_getDecl(x))
+end
+
+function isSugared(x::AbstractUnresolvedUsingType)
+    @check_ptrs x
+    return clang_UnresolvedUsingType_isSugared(x)
+end
+
