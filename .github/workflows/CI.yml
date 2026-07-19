@@ -58,13 +58,20 @@ jobs:
           install: mingw-w64-x86_64-gcc make
         if: runner.os == 'Windows'
 
+      # Build ClangExtra unconditionally (build_local.jl) instead of relying on
+      # build_ci.jl's timestamp heuristic: libclangex_jll v0.2.0+1 is a rebuild of
+      # the pre-2025-07 v0.2.0 sources, so a newer JLL tag does not imply it
+      # contains the current wrappers. Its clang_Interpreter_getSymbolAddress
+      # returns the address of a dead stack temporary (nulled by GCC), breaking
+      # the execution tests. Revert to build_ci.jl once a JLL built from the
+      # current ClangExtra sources is tagged.
       - name: Build ClangExtra
-        run: julia --project=deps deps/build_ci.jl
+        run: julia --project=deps deps/build_local.jl
         if: runner.os != 'Windows'
 
       - name: Build ClangExtra (in msys2)
         shell: msys2 {0}
-        run: julia --project=deps deps/build_ci.jl
+        run: julia --project=deps deps/build_local.jl
         if: runner.os == 'Windows'
 
       - uses: julia-actions/julia-runtest@v1
