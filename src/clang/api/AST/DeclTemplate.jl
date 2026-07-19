@@ -179,6 +179,12 @@ function getSpecializedTemplate(x::AbstractClassTemplateSpecializationDecl)
     return ClassTemplateDecl(clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(x))
 end
 
+# VarTemplateSpecializationDecl
+function getTemplateArgs(x::AbstractVarTemplateSpecializationDecl)
+    @check_ptrs x
+    return TemplateArgumentList(clang_VarTemplateSpecializationDecl_getTemplateArgs(x))
+end
+
 
 # NonTypeTemplateParmDecl
 function getDepth(x::NonTypeTemplateParmDecl)

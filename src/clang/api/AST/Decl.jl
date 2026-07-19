@@ -885,6 +885,11 @@ function isPureVirtual(x::AbstractFunctionDecl)
     return clang_FunctionDecl_isPureVirtual(x)
 end
 
+function getNameInfo(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return DeclarationNameInfo(clang_FunctionDecl_getNameInfo(x))
+end
+
 # TODO: getNameInfo
 # TODO: getNameForDiagnostic
 function setRangeEnd(x::FunctionDecl, loc::SourceLocation)
@@ -2202,6 +2207,16 @@ function getImportedModule(x::AbstractImportDecl)
     return Module(clang_ImportDecl_getImportedModule(x))
 end
 
+function getNumIdentifierLocs(x::AbstractImportDecl)
+    @check_ptrs x
+    return clang_ImportDecl_getNumIdentifierLocs(x)
+end
+
+function getIdentifierLoc(x::AbstractImportDecl, i::Integer)
+    @check_ptrs x
+    return SourceLocation(clang_ImportDecl_getIdentifierLoc(x, i))
+end
+
 function getSourceRange(x::AbstractImportDecl)
     @check_ptrs x
     r = clang_ImportDecl_getSourceRange(x)
@@ -2222,6 +2237,11 @@ end
 function getChainingSize(x::AbstractIndirectFieldDecl)
     @check_ptrs x
     return clang_IndirectFieldDecl_getChainingSize(x)
+end
+
+function getChainElement(x::AbstractIndirectFieldDecl, i::Integer)
+    @check_ptrs x
+    return NamedDecl(clang_IndirectFieldDecl_getChainElement(x, i))
 end
 
 function getVarDecl(x::AbstractIndirectFieldDecl)

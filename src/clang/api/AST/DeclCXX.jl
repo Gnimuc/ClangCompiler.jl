@@ -851,6 +851,22 @@ function getNumCtorInitializers(x::AbstractCXXConstructorDecl)
     return clang_CXXConstructorDecl_getNumCtorInitializers(x)
 end
 
+function getCtorInitializer(x::AbstractCXXConstructorDecl, i::Integer)
+    @check_ptrs x
+    return CXXCtorInitializer(clang_CXXConstructorDecl_getCtorInitializer(x, i))
+end
+
+"""
+    getCtorInitializers(x::AbstractCXXConstructorDecl) -> Vector{CXXCtorInitializer}
+Return the base/member initializers written in the constructor's init list.
+"""
+
+function getCtorInitializers(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return [getCtorInitializer(x, i)
+            for i in 0:(clang_CXXConstructorDecl_getNumCtorInitializers(x) - 1)]
+end
+
 function getTargetConstructor(x::AbstractCXXConstructorDecl)
     @check_ptrs x
     return CXXConstructorDecl(clang_CXXConstructorDecl_getTargetConstructor(x))
@@ -876,5 +892,98 @@ end
 function isLambdaToBlockPointerConversion(x::AbstractCXXConversionDecl)
     @check_ptrs x
     return clang_CXXConversionDecl_isLambdaToBlockPointerConversion(x)
+end
+
+# CXXDeductionGuideDecl
+function isExplicit(x::AbstractCXXDeductionGuideDecl)
+    @check_ptrs x
+    return clang_CXXDeductionGuideDecl_isExplicit(x)
+end
+
+function getCorrespondingConstructor(x::AbstractCXXDeductionGuideDecl)
+    @check_ptrs x
+    return CXXConstructorDecl(clang_CXXDeductionGuideDecl_getCorrespondingConstructor(x))
+end
+
+function getDeducedTemplate(x::AbstractCXXDeductionGuideDecl)
+    @check_ptrs x
+    return TemplateDecl(clang_CXXDeductionGuideDecl_getDeducedTemplate(x))
+end
+
+function getDeductionCandidateKind(x::AbstractCXXDeductionGuideDecl)
+    @check_ptrs x
+    return clang_CXXDeductionGuideDecl_getDeductionCandidateKind(x)
+end
+
+# CXXCtorInitializer
+function isBaseInitializer(x::CXXCtorInitializer)
+    @check_ptrs x
+    return clang_CXXCtorInitializer_isBaseInitializer(x)
+end
+
+function isMemberInitializer(x::CXXCtorInitializer)
+    @check_ptrs x
+    return clang_CXXCtorInitializer_isMemberInitializer(x)
+end
+
+function isAnyMemberInitializer(x::CXXCtorInitializer)
+    @check_ptrs x
+    return clang_CXXCtorInitializer_isAnyMemberInitializer(x)
+end
+
+function isDelegatingInitializer(x::CXXCtorInitializer)
+    @check_ptrs x
+    return clang_CXXCtorInitializer_isDelegatingInitializer(x)
+end
+
+function getMember(x::CXXCtorInitializer)
+    @check_ptrs x
+    return FieldDecl(clang_CXXCtorInitializer_getMember(x))
+end
+
+function getBaseClass(x::CXXCtorInitializer)
+    @check_ptrs x
+    return Type_(clang_CXXCtorInitializer_getBaseClass(x))
+end
+
+function getInit(x::CXXCtorInitializer)
+    @check_ptrs x
+    return Expr_(clang_CXXCtorInitializer_getInit(x))
+end
+
+function getSourceLocation(x::CXXCtorInitializer)
+    @check_ptrs x
+    return SourceLocation(clang_CXXCtorInitializer_getSourceLocation(x))
+end
+
+# UsingDirectiveDecl
+function getNominatedNamespace(x::AbstractUsingDirectiveDecl)
+    @check_ptrs x
+    return NamespaceDecl(clang_UsingDirectiveDecl_getNominatedNamespace(x))
+end
+
+# UsingShadowDecl
+function getTargetDecl(x::AbstractUsingShadowDecl)
+    @check_ptrs x
+    return NamedDecl(clang_UsingShadowDecl_getTargetDecl(x))
+end
+
+# BaseUsingDecl
+function shadow_size(x::AbstractBaseUsingDecl)
+    @check_ptrs x
+    return Int(clang_BaseUsingDecl_shadow_size(x))
+end
+
+"""
+    getShadows(x::AbstractBaseUsingDecl) -> Vector{UsingShadowDecl}
+Return the using-shadow declarations introduced by this using-declaration.
+"""
+
+function getShadows(x::AbstractBaseUsingDecl)
+    @check_ptrs x
+    n = clang_BaseUsingDecl_shadow_size(x)
+    buf = Vector{CXUsingShadowDecl}(undef, n)
+    n > 0 && clang_BaseUsingDecl_getShadows(x, buf)
+    return [UsingShadowDecl(p) for p in buf]
 end
 

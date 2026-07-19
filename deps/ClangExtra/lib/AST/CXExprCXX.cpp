@@ -1,6 +1,7 @@
 #include "clang-ex/AST/CXExprCXX.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/LambdaCapture.h"
 
 // CXXOperatorCallExpr
 CXOverloadedOperatorKind clang_CXXOperatorCallExpr_getOperator(CXCXXOperatorCallExpr OCE) {
@@ -236,5 +237,41 @@ CXExpr clang_MaterializeTemporaryExpr_getSubExpr(CXMaterializeTemporaryExpr E) {
 
 CXValueDecl clang_MaterializeTemporaryExpr_getExtendingDecl(CXMaterializeTemporaryExpr E) {
   return const_cast<clang::ValueDecl *>(static_cast<clang::MaterializeTemporaryExpr *>(E)->getExtendingDecl());
+}
+
+// LambdaExpr captures
+unsigned clang_LambdaExpr_getNumCaptures(CXLambdaExpr LE) {
+  return static_cast<clang::LambdaExpr *>(LE)->capture_size();
+}
+
+CXLambdaCapture clang_LambdaExpr_getCapture(CXLambdaExpr LE, unsigned I) {
+  return const_cast<clang::LambdaCapture *>(
+      static_cast<clang::LambdaExpr *>(LE)->capture_begin() + I);
+}
+
+bool clang_LambdaExpr_isGenericLambda(CXLambdaExpr LE) {
+  return static_cast<clang::LambdaExpr *>(LE)->isGenericLambda();
+}
+
+// LambdaCapture
+CXLambdaCaptureKind clang_LambdaCapture_getCaptureKind(CXLambdaCapture C) {
+  return static_cast<CXLambdaCaptureKind>(
+      static_cast<clang::LambdaCapture *>(C)->getCaptureKind());
+}
+
+bool clang_LambdaCapture_capturesThis(CXLambdaCapture C) {
+  return static_cast<clang::LambdaCapture *>(C)->capturesThis();
+}
+
+bool clang_LambdaCapture_capturesVariable(CXLambdaCapture C) {
+  return static_cast<clang::LambdaCapture *>(C)->capturesVariable();
+}
+
+bool clang_LambdaCapture_capturesVLAType(CXLambdaCapture C) {
+  return static_cast<clang::LambdaCapture *>(C)->capturesVLAType();
+}
+
+CXValueDecl clang_LambdaCapture_getCapturedVar(CXLambdaCapture C) {
+  return static_cast<clang::LambdaCapture *>(C)->getCapturedVar();
 }
 

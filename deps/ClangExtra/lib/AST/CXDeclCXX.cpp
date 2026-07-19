@@ -638,6 +638,25 @@ void clang_ExplicitSpecifier_setExpr(CXExplicitSpecifier ES, CXExpr E) {
 // Invalid
 
 // CXXDeductionGuideDecl
+bool clang_CXXDeductionGuideDecl_isExplicit(CXCXXDeductionGuideDecl DGD) {
+  return static_cast<clang::CXXDeductionGuideDecl *>(DGD)->isExplicit();
+}
+
+CXCXXConstructorDecl
+clang_CXXDeductionGuideDecl_getCorrespondingConstructor(CXCXXDeductionGuideDecl DGD) {
+  return static_cast<clang::CXXDeductionGuideDecl *>(DGD)->getCorrespondingConstructor();
+}
+
+CXTemplateDecl
+clang_CXXDeductionGuideDecl_getDeducedTemplate(CXCXXDeductionGuideDecl DGD) {
+  return static_cast<clang::CXXDeductionGuideDecl *>(DGD)->getDeducedTemplate();
+}
+
+CXDeductionCandidate
+clang_CXXDeductionGuideDecl_getDeductionCandidateKind(CXCXXDeductionGuideDecl DGD) {
+  return static_cast<CXDeductionCandidate>(
+      static_cast<clang::CXXDeductionGuideDecl *>(DGD)->getDeductionCandidateKind());
+}
 
 // RequiresExprBodyDecl
 CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -759,6 +778,39 @@ CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
 }
 
 // CXXCtorInitializer
+// A CXXCtorInitializer is interior to its CXXConstructorDecl: borrowed, no dispose.
+bool clang_CXXCtorInitializer_isBaseInitializer(CXCXXCtorInitializer CI) {
+  return static_cast<clang::CXXCtorInitializer *>(CI)->isBaseInitializer();
+}
+
+bool clang_CXXCtorInitializer_isMemberInitializer(CXCXXCtorInitializer CI) {
+  return static_cast<clang::CXXCtorInitializer *>(CI)->isMemberInitializer();
+}
+
+bool clang_CXXCtorInitializer_isAnyMemberInitializer(CXCXXCtorInitializer CI) {
+  return static_cast<clang::CXXCtorInitializer *>(CI)->isAnyMemberInitializer();
+}
+
+bool clang_CXXCtorInitializer_isDelegatingInitializer(CXCXXCtorInitializer CI) {
+  return static_cast<clang::CXXCtorInitializer *>(CI)->isDelegatingInitializer();
+}
+
+CXFieldDecl clang_CXXCtorInitializer_getMember(CXCXXCtorInitializer CI) {
+  return static_cast<clang::CXXCtorInitializer *>(CI)->getMember();
+}
+
+CXType_ clang_CXXCtorInitializer_getBaseClass(CXCXXCtorInitializer CI) {
+  return const_cast<clang::Type *>(
+      static_cast<clang::CXXCtorInitializer *>(CI)->getBaseClass());
+}
+
+CXExpr clang_CXXCtorInitializer_getInit(CXCXXCtorInitializer CI) {
+  return static_cast<clang::CXXCtorInitializer *>(CI)->getInit();
+}
+
+CXSourceLocation_ clang_CXXCtorInitializer_getSourceLocation(CXCXXCtorInitializer CI) {
+  return static_cast<clang::CXXCtorInitializer *>(CI)->getSourceLocation().getPtrEncoding();
+}
 
 // InheritedConstructor
 
@@ -797,6 +849,11 @@ bool clang_CXXConstructorDecl_isSpecializationCopyingObject(CXCXXConstructorDecl
 
 unsigned clang_CXXConstructorDecl_getNumCtorInitializers(CXCXXConstructorDecl CD) {
   return static_cast<clang::CXXConstructorDecl *>(CD)->getNumCtorInitializers();
+}
+
+CXCXXCtorInitializer
+clang_CXXConstructorDecl_getCtorInitializer(CXCXXConstructorDecl CD, unsigned i) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->init_begin()[i];
 }
 
 CXCXXConstructorDecl clang_CXXConstructorDecl_getTargetConstructor(CXCXXConstructorDecl CD) {
@@ -891,4 +948,26 @@ CXDeclContext clang_LinkageSpecDecl_castToDeclContext(CXLinkageSpecDecl LSD) {
 
 CXLinkageSpecDecl clang_LinkageSpecDecl_castFromDeclContext(CXDeclContext DC) {
   return clang::LinkageSpecDecl::castFromDeclContext(static_cast<clang::DeclContext *>(DC));
+}
+
+// UsingDirectiveDecl
+CXNamespaceDecl clang_UsingDirectiveDecl_getNominatedNamespace(CXUsingDirectiveDecl UDD) {
+  return static_cast<clang::UsingDirectiveDecl *>(UDD)->getNominatedNamespace();
+}
+
+// UsingShadowDecl
+CXNamedDecl clang_UsingShadowDecl_getTargetDecl(CXUsingShadowDecl USD) {
+  return static_cast<clang::UsingShadowDecl *>(USD)->getTargetDecl();
+}
+
+// BaseUsingDecl
+unsigned clang_BaseUsingDecl_shadow_size(CXBaseUsingDecl BUD) {
+  return static_cast<clang::BaseUsingDecl *>(BUD)->shadow_size();
+}
+
+void clang_BaseUsingDecl_getShadows(CXBaseUsingDecl BUD, CXUsingShadowDecl *Buf) {
+  auto *D = static_cast<clang::BaseUsingDecl *>(BUD);
+  unsigned I = 0;
+  for (auto *S : D->shadows())
+    Buf[I++] = S;
 }

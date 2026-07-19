@@ -74,6 +74,11 @@ function getLocation(x::AbstractDeclRefExpr)
     return SourceLocation(clang_DeclRefExpr_getLocation(x))
 end
 
+function getNameInfo(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return DeclarationNameInfo(clang_DeclRefExpr_getNameInfo(x))
+end
+
 """
     getValue(x::AbstractIntegerLiteral)
 Return the value as an `LLVMGenericValueRef`. This function allocates and one
@@ -236,6 +241,11 @@ end
 function isImplicitAccess(x::AbstractMemberExpr)
     @check_ptrs x
     return clang_MemberExpr_isImplicitAccess(x)
+end
+
+function getMemberNameInfo(x::AbstractMemberExpr)
+    @check_ptrs x
+    return DeclarationNameInfo(clang_MemberExpr_getMemberNameInfo(x))
 end
 
 function getCastKind(x::AbstractCastExpr)
@@ -867,5 +877,58 @@ end
 function getTypeSourceInfo(x::AbstractCompoundLiteralExpr)
     @check_ptrs x
     return TypeSourceInfo(clang_CompoundLiteralExpr_getTypeSourceInfo(x))
+end
+
+# StringLiteral
+function getString(x::AbstractStringLiteral)
+    @check_ptrs x
+    return get_string(clang_StringLiteral_getString(x))
+end
+
+function getKind(x::AbstractStringLiteral)
+    @check_ptrs x
+    return clang_StringLiteral_getKind(x)
+end
+
+function getBeginLoc(x::AbstractStringLiteral)
+    @check_ptrs x
+    return SourceLocation(clang_StringLiteral_getBeginLoc(x))
+end
+
+function getEndLoc(x::AbstractStringLiteral)
+    @check_ptrs x
+    return SourceLocation(clang_StringLiteral_getEndLoc(x))
+end
+
+# UnaryExprOrTypeTraitExpr
+function getKind(x::AbstractUnaryExprOrTypeTraitExpr)
+    @check_ptrs x
+    return clang_UnaryExprOrTypeTraitExpr_getKind(x)
+end
+
+# PredefinedExpr
+function getIdentKind(x::AbstractPredefinedExpr)
+    @check_ptrs x
+    return clang_PredefinedExpr_getIdentKind(x)
+end
+
+function getFunctionName(x::AbstractPredefinedExpr)
+    @check_ptrs x
+    return StringLiteral(clang_PredefinedExpr_getFunctionName(x))
+end
+
+function getIdentKindName(x::AbstractPredefinedExpr)
+    @check_ptrs x
+    return get_string(clang_PredefinedExpr_getIdentKindName(x))
+end
+
+# CastExpr
+"""
+    getPathElement(x::AbstractCastExpr, i)
+Return the `i`-th inheritance-path base specifier (0-based, `i < path_size()`).
+"""
+function getPathElement(x::AbstractCastExpr, i::Integer)
+    @check_ptrs x
+    return CXXBaseSpecifier(clang_CastExpr_getPathElement(x, i))
 end
 

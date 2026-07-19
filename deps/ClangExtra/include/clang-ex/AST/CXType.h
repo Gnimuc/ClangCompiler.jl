@@ -2,6 +2,8 @@
 #define LLVM_CLANG_C_EXTRA_CXTYPE_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-ex/Basic/CXExceptionSpecificationType.h"
+#include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -763,6 +765,7 @@ bool clang_FunctionType_isRestrict(CXFunctionType T);
 bool clang_FunctionType_isVolatile(CXFunctionType T);
 
 // getCallConv
+CXCallingConv_ clang_FunctionType_getCallConv(CXFunctionType T);
 // getCallResultType
 // getNameForCallConv
 
@@ -777,6 +780,9 @@ unsigned clang_FunctionProtoType_getNumParams(CXFunctionProtoType T);
 CXQualType clang_FunctionProtoType_getParamType(CXFunctionProtoType T, unsigned i);
 
 CXArrayRef clang_FunctionProtoType_getParamTypes(CXFunctionProtoType T);
+
+CXExceptionSpecificationType
+clang_FunctionProtoType_getExceptionSpecType(CXFunctionProtoType T);
 
 bool clang_FunctionProtoType_hasExceptionSpec(CXFunctionProtoType T);
 
@@ -978,6 +984,14 @@ clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T)
 
 CXArrayRef
 clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T);
+
+// TemplateSpecializationType has no getNumArgs()/getArg() in this LLVM version;
+// these compose the count+index idiom over template_arguments() so callers get
+// correctly-strided per-element access (getArg borrows an interior pointer).
+unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T);
+
+CXTemplateArgument
+clang_TemplateSpecializationType_getArg(CXTemplateSpecializationType T, unsigned Idx);
 
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T);
 

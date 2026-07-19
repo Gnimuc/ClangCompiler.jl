@@ -487,6 +487,9 @@ CXFunctionDecl clang_FunctionDecl_Create(CXASTContext C, CXDeclContext DC,
 
 CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
+// Returns an owned box; release with clang_DeclarationNameInfo_dispose.
+CXDeclarationNameInfo clang_FunctionDecl_getNameInfo(CXFunctionDecl FD);
+
 // getNameInfo
 // getNameForDiagnostic
 
@@ -834,6 +837,7 @@ long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD
 CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
 // chain
+CXNamedDecl clang_IndirectFieldDecl_getChainElement(CXIndirectFieldDecl IFD, unsigned i);
 
 unsigned clang_IndirectFieldDecl_getChainingSize(CXIndirectFieldDecl IFD);
 
@@ -1274,6 +1278,9 @@ CXImportDecl clang_ImportDecl_CreateDeserialized(CXASTContext C, unsigned ID,
 CXModule clang_ImportDecl_getImportedModule(CXImportDecl ID);
 
 // getIdentifierLocs
+unsigned clang_ImportDecl_getNumIdentifierLocs(CXImportDecl ID);
+
+CXSourceLocation_ clang_ImportDecl_getIdentifierLoc(CXImportDecl ID, unsigned i);
 
 CXSourceRange_ clang_ImportDecl_getSourceRange(CXImportDecl ID);
 

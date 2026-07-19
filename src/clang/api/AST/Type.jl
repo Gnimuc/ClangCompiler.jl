@@ -1018,6 +1018,11 @@ function getReturnType(x::AbstractFunctionType)
     return QualType(clang_FunctionType_getReturnType(get_qual_type(x)))
 end
 
+function getCallConv(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_getCallConv(x)
+end
+
 function getCmseNSCallAttr(x::AbstractFunctionType)
     @check_ptrs x
     return clang_FunctionType_getCmseNSCallAttr(x)
@@ -1104,6 +1109,16 @@ end
 function getNumExceptions(x::AbstractFunctionProtoType)
     @check_ptrs x
     return clang_FunctionProtoType_getNumExceptions(x)
+end
+
+function getExceptionType(x::AbstractFunctionProtoType, i::Integer)
+    @check_ptrs x
+    return QualType(clang_FunctionProtoType_getExceptionType(x, i))
+end
+
+function getExceptionSpecType(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_getExceptionSpecType(x)
 end
 
 function hasDependentExceptionSpec(x::AbstractFunctionProtoType)
@@ -1360,6 +1375,16 @@ end
 function getTemplateArguments(x::TemplateSpecializationType)
     @check_ptrs x
     return clang_TemplateSpecializationType_template_arguments(x)
+end
+
+function getNumArgs(x::TemplateSpecializationType)
+    @check_ptrs x
+    return clang_TemplateSpecializationType_getNumArgs(x)
+end
+
+function getArg(x::TemplateSpecializationType, i::Integer)
+    @check_ptrs x
+    return TemplateArgument(clang_TemplateSpecializationType_getArg(x, i))
 end
 
 function isSugared(x::TemplateSpecializationType)

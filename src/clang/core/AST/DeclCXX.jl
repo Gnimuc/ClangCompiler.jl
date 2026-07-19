@@ -36,7 +36,7 @@ end
 
 # Standalone value classes (no AST-node hierarchy): a base-class edge in a
 # CXXRecordDecl, and the explicit(...) specifier on a constructor/conversion.
-for sym in [:CXXBaseSpecifier, :ExplicitSpecifier]
+for sym in [:CXXBaseSpecifier, :CXXCtorInitializer, :ExplicitSpecifier]
     cxsym = Symbol("CX", sym)
     @eval begin
         """

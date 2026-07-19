@@ -84,25 +84,27 @@ remaining phases. Status markers: [x] done, [ ] open.
       typed EvaluateAsInt (owned CXAPValue), EvaluateAsBooleanCondition (1/0/-1),
       and EvaluateAsFloat (folded bits as LLVMGenericValueRef) entry points, all
       at the strict SE_NoSideEffects policy.
+- [x] Mechanical wrapper tail (8 families, parallel-designed + adversarially
+      reviewed by subagents, integrated serially). Value-type bridges:
+      NestedNameSpecifier navigation (+ SpecifierKind enum), DeclarationNameInfo
+      (heap-boxed carrier), TemplateArgumentList / TemplateSpecializationType
+      arg indexing. DeclCXX: CXXDeductionGuideDecl, using-decls
+      (BaseUsingDecl/UsingShadowDecl/UsingDirectiveDecl), CXXCtorInitializer +
+      ctor-init iteration. Iteration: LambdaExpr captures (+ CXLambdaCapture
+      carrier), FunctionType/FunctionProtoType params/return/exception-spec/
+      calling-conv, IndirectFieldDecl chain, ImportDecl identifier locs, CastExpr
+      base path. Payload: StringLiteral, UnaryExprOrTypeTraitExpr getKind (+ UETT
+      enum), PredefinedExpr. +61 C bindings, five new ENUM_SYNC-guarded enum
+      mirrors, exercised by test/wrappers_tail.jl.
 
 ## Remaining
 
-- [ ] **Payload leftovers** — StringLiteral width variants, UnaryExprOrTypeTraitExpr
-      `getKind` (needs a `.def`-driven UETT enum mirror), PredefinedExpr, and a
-      long breadth-first tail of core classes with ≤2 payload methods. (The
-      Expr-base constant-evaluation cluster is done.)
-- [ ] **Iteration leftovers** — LambdaExpr captures (needs a CXLambdaCapture
-      carrier), FunctionProtoType exceptions/param-type arrays, IndirectFieldDecl
-      chain, ImportDecl identifier locs, CastExpr base path.
-- [ ] **DeclCXX leftovers** — the deduction-guide class, the using-decls, and the
-      CtorInitializer / ExplicitSpecifier-by-value paths (MARSHALLING.md §7).
+- [ ] **Payload leftovers** — the long breadth-first tail of core classes with
+      ≤2 payload methods (the priority Expr/value-type surface is now done).
 - [ ] **Decl/Type .inc treatment** — apply the Phase-1 mechanism to
       DeclNodes.inc (CXDeclKind + castTo/is, replacing string-compare
       getDeclKindName dispatch) and TypeNodes.inc (replacing the ordered
       resolve() predicate chain in src/types.jl).
-- [ ] **Value-type bridges** that gate full power: DeclarationNameInfo,
-      TemplateArgument lists, NestedNameSpecifier navigation. These cause most of
-      Decl's systematic skips. (APValue: done.)
 - [ ] **Attributes** — a third .inc-driven family (Attrs.inc); zero exposure
       today, `Decl::getAttrs` unreachable.
 - [ ] **TypeLoc** — at minimum an opaque handle + source-range floor;
@@ -115,6 +117,7 @@ remaining phases. Status markers: [x] done, [ ] open.
       real tools (null-check linter, unused-include pass, template
       instantiation dumper) that must be expressible from Julia.
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
-      (this branch adds ~760 C symbols — the earlier drift fixes, the 90
-      CXXRecordDecl traits, and the APValue bridge with its Expr eval cluster —
-      and corrects CXCastKind/CXLinkage values).
+      (this branch adds ~820 C symbols — the earlier drift fixes, the 90
+      CXXRecordDecl traits, the APValue bridge with its Expr eval cluster, and
+      the 8-family mechanical wrapper tail — and corrects CXCastKind/CXLinkage
+      values).

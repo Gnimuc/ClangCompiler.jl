@@ -178,3 +178,10 @@ clang_ClassTemplateSpecializationDecl_getSpecializationKind(CXClassTemplateSpeci
   return static_cast<CXTemplateSpecializationKind>(
       static_cast<clang::ClassTemplateSpecializationDecl *>(D)->getSpecializationKind());
 }
+
+// VarTemplateSpecializationDecl
+CXTemplateArgumentList clang_VarTemplateSpecializationDecl_getTemplateArgs(
+    CXVarTemplateSpecializationDecl VTSD) {
+  return const_cast<clang::TemplateArgumentList *>(
+      &static_cast<clang::VarTemplateSpecializationDecl *>(VTSD)->getTemplateArgs());
+}

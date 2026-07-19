@@ -884,6 +884,12 @@ CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, unsigned ID
   return clang::FunctionDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C), ID);
 }
 
+CXDeclarationNameInfo clang_FunctionDecl_getNameInfo(CXFunctionDecl FD) {
+  return std::make_unique<clang::DeclarationNameInfo>(
+             static_cast<clang::FunctionDecl *>(FD)->getNameInfo())
+      .release();
+}
+
 // getNameInfo
 // getNameForDiagnostic
 
@@ -1601,6 +1607,9 @@ CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C,
 }
 
 // chain
+CXNamedDecl clang_IndirectFieldDecl_getChainElement(CXIndirectFieldDecl IFD, unsigned i) {
+  return static_cast<clang::IndirectFieldDecl *>(IFD)->chain()[i];
+}
 
 unsigned clang_IndirectFieldDecl_getChainingSize(CXIndirectFieldDecl IFD) {
   return static_cast<clang::IndirectFieldDecl *>(IFD)->getChainingSize();
@@ -2513,6 +2522,13 @@ CXModule clang_ImportDecl_getImportedModule(CXImportDecl ID) {
 }
 
 // getIdentifierLocs
+unsigned clang_ImportDecl_getNumIdentifierLocs(CXImportDecl ID) {
+  return static_cast<clang::ImportDecl *>(ID)->getIdentifierLocs().size();
+}
+
+CXSourceLocation_ clang_ImportDecl_getIdentifierLoc(CXImportDecl ID, unsigned i) {
+  return static_cast<clang::ImportDecl *>(ID)->getIdentifierLocs()[i].getPtrEncoding();
+}
 
 CXSourceRange_ clang_ImportDecl_getSourceRange(CXImportDecl ID) {
   auto rng = static_cast<clang::ImportDecl *>(ID)->getSourceRange();

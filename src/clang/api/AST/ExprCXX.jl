@@ -117,6 +117,58 @@ function isMutable(x::AbstractLambdaExpr)
     return clang_LambdaExpr_isMutable(x)
 end
 
+function getNumCaptures(x::AbstractLambdaExpr)
+    @check_ptrs x
+    return clang_LambdaExpr_getNumCaptures(x)
+end
+
+"""
+    getCapture(x::AbstractLambdaExpr, i)
+Return the `i`-th capture (0-based, following the C++ API). The wrapped pointer
+borrows into the lambda's capture list; do not dispose it.
+"""
+function getCapture(x::AbstractLambdaExpr, i::Integer)
+    @check_ptrs x
+    return LambdaCapture(clang_LambdaExpr_getCapture(x, i))
+end
+
+function isGenericLambda(x::AbstractLambdaExpr)
+    @check_ptrs x
+    return clang_LambdaExpr_isGenericLambda(x)
+end
+
+# LambdaCapture
+function getCaptureKind(x::LambdaCapture)
+    @check_ptrs x
+    return clang_LambdaCapture_getCaptureKind(x)
+end
+
+function capturesThis(x::LambdaCapture)
+    @check_ptrs x
+    return clang_LambdaCapture_capturesThis(x)
+end
+
+function capturesVariable(x::LambdaCapture)
+    @check_ptrs x
+    return clang_LambdaCapture_capturesVariable(x)
+end
+
+function capturesVLAType(x::LambdaCapture)
+    @check_ptrs x
+    return clang_LambdaCapture_capturesVLAType(x)
+end
+
+"""
+    getCapturedVar(x::LambdaCapture)
+Retrieve the captured variable (a `clang::ValueDecl`). Valid only when
+`capturesVariable(x)` is `true`.
+"""
+function getCapturedVar(x::LambdaCapture)
+    @check_ptrs x
+    @assert capturesVariable(x) "LambdaCapture does not capture a variable."
+    return ValueDecl(clang_LambdaCapture_getCapturedVar(x))
+end
+
 # CXXNewExpr
 function getAllocatedType(x::AbstractCXXNewExpr)
     @check_ptrs x

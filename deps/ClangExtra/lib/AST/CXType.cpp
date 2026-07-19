@@ -1159,6 +1159,11 @@ bool clang_FunctionType_isRestrict(CXFunctionType T) {
   return static_cast<clang::FunctionType *>(T)->isRestrict();
 }
 
+CXCallingConv_ clang_FunctionType_getCallConv(CXFunctionType T) {
+  return static_cast<CXCallingConv_>(
+      static_cast<clang::FunctionType *>(T)->getCallConv());
+}
+
 // FunctionNoProtoType
 bool clang_FunctionNoProtoType_isSugared(CXFunctionNoProtoType T) {
   return static_cast<clang::FunctionNoProtoType *>(T)->isSugared();
@@ -1180,6 +1185,12 @@ CXQualType clang_FunctionProtoType_getParamType(CXFunctionProtoType T, unsigned 
 CXArrayRef clang_FunctionProtoType_getParamTypes(CXFunctionProtoType T) {
   auto arr = static_cast<clang::FunctionProtoType *>(T)->getParamTypes();
   return {arr.data(), arr.size()};
+}
+
+CXExceptionSpecificationType
+clang_FunctionProtoType_getExceptionSpecType(CXFunctionProtoType T) {
+  return static_cast<CXExceptionSpecificationType>(
+      static_cast<clang::FunctionProtoType *>(T)->getExceptionSpecType());
 }
 
 bool clang_FunctionProtoType_hasExceptionSpec(CXFunctionProtoType T) {
@@ -1556,6 +1567,18 @@ CXArrayRef
 clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T) {
   auto arr = static_cast<clang::TemplateSpecializationType *>(T)->template_arguments();
   return {arr.data(), arr.size()};
+}
+
+unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T) {
+  return static_cast<clang::TemplateSpecializationType *>(T)->template_arguments().size();
+}
+
+// Borrowed interior pointer into the type's trailing TemplateArgument storage
+// (AST-arena owned; no dispose).
+CXTemplateArgument
+clang_TemplateSpecializationType_getArg(CXTemplateSpecializationType T, unsigned Idx) {
+  return const_cast<clang::TemplateArgument *>(
+      &static_cast<clang::TemplateSpecializationType *>(T)->template_arguments()[Idx]);
 }
 
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T) {

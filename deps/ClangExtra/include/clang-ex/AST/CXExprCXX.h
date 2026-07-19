@@ -2,6 +2,7 @@
 #define LLVM_CLANG_C_EXTRA_CXEXPRCXX_H
 
 #include "clang-ex/Basic/CXOperatorKinds.h"
+#include "clang-ex/Basic/CXLambda.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -146,6 +147,29 @@ CXCXXConstructExpr clang_CXXNewExpr_getConstructExpr(CXCXXNewExpr E);
 CXExpr clang_MaterializeTemporaryExpr_getSubExpr(CXMaterializeTemporaryExpr E);
 
 CXValueDecl clang_MaterializeTemporaryExpr_getExtendingDecl(CXMaterializeTemporaryExpr E);
+
+// LambdaExpr captures
+// getNumCaptures/getCapture wrap LambdaExpr::capture_size/capture_begin; the
+// capture_iterator is a random-access `const LambdaCapture *`.
+unsigned clang_LambdaExpr_getNumCaptures(CXLambdaExpr LE);
+
+// Borrowed interior pointer into the lambda's capture list; do not dispose.
+CXLambdaCapture clang_LambdaExpr_getCapture(CXLambdaExpr LE, unsigned I);
+
+bool clang_LambdaExpr_isGenericLambda(CXLambdaExpr LE);
+
+// LambdaCapture (clang/AST/LambdaCapture.h) - borrowed, interior to the LambdaExpr
+CXLambdaCaptureKind clang_LambdaCapture_getCaptureKind(CXLambdaCapture C);
+
+bool clang_LambdaCapture_capturesThis(CXLambdaCapture C);
+
+bool clang_LambdaCapture_capturesVariable(CXLambdaCapture C);
+
+bool clang_LambdaCapture_capturesVLAType(CXLambdaCapture C);
+
+// getCapturedVar returns clang::ValueDecl* (not VarDecl*); valid only when
+// capturesVariable() is true (Clang asserts this precondition).
+CXValueDecl clang_LambdaCapture_getCapturedVar(CXLambdaCapture C);
 
 
 LLVM_CLANG_C_EXTERN_C_END

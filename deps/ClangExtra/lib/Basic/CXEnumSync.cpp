@@ -15,6 +15,11 @@
 #include "clang-ex/Basic/CXLinkage.h"
 #include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-ex/Basic/CXVisibility.h"
+#include "clang-ex/AST/CXNestedNameSpecifier.h"
+#include "clang-ex/AST/CXDeclCXX.h"
+#include "clang-ex/Basic/CXLambda.h"
+#include "clang-ex/Basic/CXExceptionSpecificationType.h"
+#include "clang-ex/Basic/CXTypeTraits.h"
 
 #include "clang/AST/APValue.h"
 #include "clang/AST/Expr.h"
@@ -24,6 +29,11 @@
 #include "clang/Basic/Linkage.h"
 #include "clang/Basic/Specifiers.h"
 #include "clang/Basic/Visibility.h"
+#include "clang/AST/NestedNameSpecifier.h"
+#include "clang/AST/DeclBase.h"
+#include "clang/Basic/Lambda.h"
+#include "clang/Basic/ExceptionSpecificationType.h"
+#include "clang/Basic/TypeTraits.h"
 
 #define ENUM_SYNC(cx, cpp)                                                                 \
   static_assert(static_cast<int>(cx) == static_cast<int>(cpp), #cx " != " #cpp)
@@ -269,5 +279,89 @@ ENUM_SYNC(CXAPValueKind_Struct, clang::APValue::Struct);
 ENUM_SYNC(CXAPValueKind_Union, clang::APValue::Union);
 ENUM_SYNC(CXAPValueKind_MemberPointer, clang::APValue::MemberPointer);
 ENUM_SYNC(CXAPValueKind_AddrLabelDiff, clang::APValue::AddrLabelDiff);
+
+ENUM_SYNC(CXNestedNameSpecifierKind_Identifier, clang::NestedNameSpecifier::Identifier);
+ENUM_SYNC(CXNestedNameSpecifierKind_Namespace, clang::NestedNameSpecifier::Namespace);
+ENUM_SYNC(CXNestedNameSpecifierKind_NamespaceAlias, clang::NestedNameSpecifier::NamespaceAlias);
+ENUM_SYNC(CXNestedNameSpecifierKind_TypeSpec, clang::NestedNameSpecifier::TypeSpec);
+ENUM_SYNC(CXNestedNameSpecifierKind_TypeSpecWithTemplate, clang::NestedNameSpecifier::TypeSpecWithTemplate);
+ENUM_SYNC(CXNestedNameSpecifierKind_Global, clang::NestedNameSpecifier::Global);
+ENUM_SYNC(CXNestedNameSpecifierKind_Super, clang::NestedNameSpecifier::Super);
+
+// clang/AST/DeclBase.h: enum class DeductionCandidate : unsigned char
+ENUM_SYNC(CXDeductionCandidate_Normal, clang::DeductionCandidate::Normal);
+ENUM_SYNC(CXDeductionCandidate_Copy, clang::DeductionCandidate::Copy);
+ENUM_SYNC(CXDeductionCandidate_Aggregate, clang::DeductionCandidate::Aggregate);
+
+// clang/Basic/Lambda.h: enum LambdaCaptureDefault
+ENUM_SYNC(CXLambdaCaptureDefault_LCD_None, clang::LCD_None);
+ENUM_SYNC(CXLambdaCaptureDefault_LCD_ByCopy, clang::LCD_ByCopy);
+ENUM_SYNC(CXLambdaCaptureDefault_LCD_ByRef, clang::LCD_ByRef);
+
+// clang/Basic/Lambda.h: enum LambdaCaptureKind
+ENUM_SYNC(CXLambdaCaptureKind_LCK_This, clang::LCK_This);
+ENUM_SYNC(CXLambdaCaptureKind_LCK_StarThis, clang::LCK_StarThis);
+ENUM_SYNC(CXLambdaCaptureKind_LCK_ByCopy, clang::LCK_ByCopy);
+ENUM_SYNC(CXLambdaCaptureKind_LCK_ByRef, clang::LCK_ByRef);
+ENUM_SYNC(CXLambdaCaptureKind_LCK_VLAType, clang::LCK_VLAType);
+
+// clang/Basic/Specifiers.h: enum CallingConv (mirrored as CXCallingConv_ due to libclang name collision)
+ENUM_SYNC(CXCallingConv_CC_C, clang::CC_C);
+ENUM_SYNC(CXCallingConv_CC_X86StdCall, clang::CC_X86StdCall);
+ENUM_SYNC(CXCallingConv_CC_X86FastCall, clang::CC_X86FastCall);
+ENUM_SYNC(CXCallingConv_CC_X86ThisCall, clang::CC_X86ThisCall);
+ENUM_SYNC(CXCallingConv_CC_X86VectorCall, clang::CC_X86VectorCall);
+ENUM_SYNC(CXCallingConv_CC_X86Pascal, clang::CC_X86Pascal);
+ENUM_SYNC(CXCallingConv_CC_Win64, clang::CC_Win64);
+ENUM_SYNC(CXCallingConv_CC_X86_64SysV, clang::CC_X86_64SysV);
+ENUM_SYNC(CXCallingConv_CC_X86RegCall, clang::CC_X86RegCall);
+ENUM_SYNC(CXCallingConv_CC_AAPCS, clang::CC_AAPCS);
+ENUM_SYNC(CXCallingConv_CC_AAPCS_VFP, clang::CC_AAPCS_VFP);
+ENUM_SYNC(CXCallingConv_CC_IntelOclBicc, clang::CC_IntelOclBicc);
+ENUM_SYNC(CXCallingConv_CC_SpirFunction, clang::CC_SpirFunction);
+ENUM_SYNC(CXCallingConv_CC_OpenCLKernel, clang::CC_OpenCLKernel);
+ENUM_SYNC(CXCallingConv_CC_Swift, clang::CC_Swift);
+ENUM_SYNC(CXCallingConv_CC_SwiftAsync, clang::CC_SwiftAsync);
+ENUM_SYNC(CXCallingConv_CC_PreserveMost, clang::CC_PreserveMost);
+ENUM_SYNC(CXCallingConv_CC_PreserveAll, clang::CC_PreserveAll);
+ENUM_SYNC(CXCallingConv_CC_AArch64VectorCall, clang::CC_AArch64VectorCall);
+ENUM_SYNC(CXCallingConv_CC_AArch64SVEPCS, clang::CC_AArch64SVEPCS);
+ENUM_SYNC(CXCallingConv_CC_AMDGPUKernelCall, clang::CC_AMDGPUKernelCall);
+ENUM_SYNC(CXCallingConv_CC_M68kRTD, clang::CC_M68kRTD);
+
+// clang/Basic/ExceptionSpecificationType.h: enum ExceptionSpecificationType (backfill: this mirror previously had NO sync table)
+ENUM_SYNC(CXExceptionSpecificationType_EST_None, clang::EST_None);
+ENUM_SYNC(CXExceptionSpecificationType_EST_DynamicNone, clang::EST_DynamicNone);
+ENUM_SYNC(CXExceptionSpecificationType_EST_Dynamic, clang::EST_Dynamic);
+ENUM_SYNC(CXExceptionSpecificationType_EST_MSAny, clang::EST_MSAny);
+ENUM_SYNC(CXExceptionSpecificationType_EST_NoThrow, clang::EST_NoThrow);
+ENUM_SYNC(CXExceptionSpecificationType_EST_BasicNoexcept, clang::EST_BasicNoexcept);
+ENUM_SYNC(CXExceptionSpecificationType_EST_DependentNoexcept, clang::EST_DependentNoexcept);
+ENUM_SYNC(CXExceptionSpecificationType_EST_NoexceptFalse, clang::EST_NoexceptFalse);
+ENUM_SYNC(CXExceptionSpecificationType_EST_NoexceptTrue, clang::EST_NoexceptTrue);
+ENUM_SYNC(CXExceptionSpecificationType_EST_Unevaluated, clang::EST_Unevaluated);
+ENUM_SYNC(CXExceptionSpecificationType_EST_Uninstantiated, clang::EST_Uninstantiated);
+ENUM_SYNC(CXExceptionSpecificationType_EST_Unparsed, clang::EST_Unparsed);
+ENUM_SYNC(CXStringLiteralKind_Ordinary, clang::StringLiteralKind::Ordinary);
+ENUM_SYNC(CXStringLiteralKind_Wide, clang::StringLiteralKind::Wide);
+ENUM_SYNC(CXStringLiteralKind_UTF8, clang::StringLiteralKind::UTF8);
+ENUM_SYNC(CXStringLiteralKind_UTF16, clang::StringLiteralKind::UTF16);
+ENUM_SYNC(CXStringLiteralKind_UTF32, clang::StringLiteralKind::UTF32);
+ENUM_SYNC(CXStringLiteralKind_Unevaluated, clang::StringLiteralKind::Unevaluated);
+ENUM_SYNC(CXPredefinedIdentKind_Func, clang::PredefinedIdentKind::Func);
+ENUM_SYNC(CXPredefinedIdentKind_Function, clang::PredefinedIdentKind::Function);
+ENUM_SYNC(CXPredefinedIdentKind_LFunction, clang::PredefinedIdentKind::LFunction);
+ENUM_SYNC(CXPredefinedIdentKind_FuncDName, clang::PredefinedIdentKind::FuncDName);
+ENUM_SYNC(CXPredefinedIdentKind_FuncSig, clang::PredefinedIdentKind::FuncSig);
+ENUM_SYNC(CXPredefinedIdentKind_LFuncSig, clang::PredefinedIdentKind::LFuncSig);
+ENUM_SYNC(CXPredefinedIdentKind_PrettyFunction, clang::PredefinedIdentKind::PrettyFunction);
+ENUM_SYNC(CXPredefinedIdentKind_PrettyFunctionNoVirtual, clang::PredefinedIdentKind::PrettyFunctionNoVirtual);
+ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_SizeOf, clang::UETT_SizeOf);
+ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_DataSizeOf, clang::UETT_DataSizeOf);
+ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_AlignOf, clang::UETT_AlignOf);
+ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_PreferredAlignOf, clang::UETT_PreferredAlignOf);
+ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_VecStep, clang::UETT_VecStep);
+ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_OpenMPRequiredSimdAlign, clang::UETT_OpenMPRequiredSimdAlign);
+ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_VectorElements, clang::UETT_VectorElements);
 
 #undef ENUM_SYNC

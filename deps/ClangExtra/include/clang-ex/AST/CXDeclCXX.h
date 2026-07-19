@@ -320,6 +320,22 @@ void clang_ExplicitSpecifier_setExpr(CXExplicitSpecifier ES, CXExpr E);
 // Invalid
 
 // CXXDeductionGuideDecl
+typedef enum CXDeductionCandidate : unsigned char {
+  CXDeductionCandidate_Normal,
+  CXDeductionCandidate_Copy,
+  CXDeductionCandidate_Aggregate
+} CXDeductionCandidate;
+
+bool clang_CXXDeductionGuideDecl_isExplicit(CXCXXDeductionGuideDecl DGD);
+
+CXCXXConstructorDecl
+clang_CXXDeductionGuideDecl_getCorrespondingConstructor(CXCXXDeductionGuideDecl DGD);
+
+CXTemplateDecl
+clang_CXXDeductionGuideDecl_getDeducedTemplate(CXCXXDeductionGuideDecl DGD);
+
+CXDeductionCandidate
+clang_CXXDeductionGuideDecl_getDeductionCandidateKind(CXCXXDeductionGuideDecl DGD);
 
 // RequiresExprBodyDecl
 CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -384,6 +400,22 @@ CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
     CXCXXMethodDecl CXXMD, CXCXXRecordDecl RD, bool MayBeBase);
 
 // CXXCtorInitializer
+// A CXXCtorInitializer is interior to its CXXConstructorDecl: borrowed, no dispose.
+bool clang_CXXCtorInitializer_isBaseInitializer(CXCXXCtorInitializer CI);
+
+bool clang_CXXCtorInitializer_isMemberInitializer(CXCXXCtorInitializer CI);
+
+bool clang_CXXCtorInitializer_isAnyMemberInitializer(CXCXXCtorInitializer CI);
+
+bool clang_CXXCtorInitializer_isDelegatingInitializer(CXCXXCtorInitializer CI);
+
+CXFieldDecl clang_CXXCtorInitializer_getMember(CXCXXCtorInitializer CI);
+
+CXType_ clang_CXXCtorInitializer_getBaseClass(CXCXXCtorInitializer CI);
+
+CXExpr clang_CXXCtorInitializer_getInit(CXCXXCtorInitializer CI);
+
+CXSourceLocation_ clang_CXXCtorInitializer_getSourceLocation(CXCXXCtorInitializer CI);
 
 // InheritedConstructor
 
@@ -405,6 +437,10 @@ bool clang_CXXConstructorDecl_isInheritingConstructor(CXCXXConstructorDecl CD);
 bool clang_CXXConstructorDecl_isSpecializationCopyingObject(CXCXXConstructorDecl CD);
 
 unsigned clang_CXXConstructorDecl_getNumCtorInitializers(CXCXXConstructorDecl CD);
+
+// inits: random-access (init_begin is a contiguous CXXCtorInitializer* array).
+CXCXXCtorInitializer
+clang_CXXConstructorDecl_getCtorInitializer(CXCXXConstructorDecl CD, unsigned i);
 
 CXCXXConstructorDecl clang_CXXConstructorDecl_getTargetConstructor(CXCXXConstructorDecl CD);
 
@@ -454,6 +490,18 @@ CXSourceRange_ clang_LinkageSpecDecl_getSourceRange(CXLinkageSpecDecl LSD);
 CXDeclContext clang_LinkageSpecDecl_castToDeclContext(CXLinkageSpecDecl LSD);
 
 CXLinkageSpecDecl clang_LinkageSpecDecl_castFromDeclContext(CXDeclContext DC);
+
+// UsingDirectiveDecl
+CXNamespaceDecl clang_UsingDirectiveDecl_getNominatedNamespace(CXUsingDirectiveDecl UDD);
+
+// UsingShadowDecl
+CXNamedDecl clang_UsingShadowDecl_getTargetDecl(CXUsingShadowDecl USD);
+
+// BaseUsingDecl
+// shadows: two-call protocol (shadow_iterator is forward-only).
+unsigned clang_BaseUsingDecl_shadow_size(CXBaseUsingDecl BUD);
+
+void clang_BaseUsingDecl_getShadows(CXBaseUsingDecl BUD, CXUsingShadowDecl *Buf);
 
 LLVM_CLANG_C_EXTERN_C_END
 

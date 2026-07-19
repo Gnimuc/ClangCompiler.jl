@@ -3,6 +3,7 @@
 
 #include "clang-ex/AST/CXOperationKinds.h"
 #include "clang-ex/Basic/CXSpecifiers.h"
+#include "clang-ex/Basic/CXTypeTraits.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
@@ -98,6 +99,9 @@ bool clang_DeclRefExpr_hasQualifier(CXDeclRefExpr DRE);
 
 CXSourceLocation_ clang_DeclRefExpr_getLocation(CXDeclRefExpr DRE);
 
+// Returns an owned box; release with clang_DeclarationNameInfo_dispose.
+CXDeclarationNameInfo clang_DeclRefExpr_getNameInfo(CXDeclRefExpr DRE);
+
 // IntegerLiteral
 CXIntegerLiteral clang_IntegerLiteral_Create(CXASTContext C, LLVMGenericValueRef Val,
                                              CXQualType T, CXSourceLocation_ L);
@@ -124,6 +128,30 @@ typedef enum CXCharacterLiteralKind {
   CXCharacterLiteralKind_UTF16,
   CXCharacterLiteralKind_UTF32
 } CXCharacterLiteralKind;
+
+// mirrors clang::StringLiteralKind (clang/AST/Expr.h; synced by static_assert in
+// lib/Basic/CXEnumSync.cpp)
+typedef enum CXStringLiteralKind {
+  CXStringLiteralKind_Ordinary,
+  CXStringLiteralKind_Wide,
+  CXStringLiteralKind_UTF8,
+  CXStringLiteralKind_UTF16,
+  CXStringLiteralKind_UTF32,
+  CXStringLiteralKind_Unevaluated
+} CXStringLiteralKind;
+
+// mirrors clang::PredefinedIdentKind (clang/AST/Expr.h; synced by static_assert
+// in lib/Basic/CXEnumSync.cpp)
+typedef enum CXPredefinedIdentKind {
+  CXPredefinedIdentKind_Func,
+  CXPredefinedIdentKind_Function,
+  CXPredefinedIdentKind_LFunction,
+  CXPredefinedIdentKind_FuncDName,
+  CXPredefinedIdentKind_FuncSig,
+  CXPredefinedIdentKind_LFuncSig,
+  CXPredefinedIdentKind_PrettyFunction,
+  CXPredefinedIdentKind_PrettyFunctionNoVirtual
+} CXPredefinedIdentKind;
 
 unsigned clang_CharacterLiteral_getValue(CXCharacterLiteral CL);
 
@@ -191,6 +219,9 @@ bool clang_MemberExpr_isArrow(CXMemberExpr ME);
 CXSourceLocation_ clang_MemberExpr_getMemberLoc(CXMemberExpr ME);
 
 bool clang_MemberExpr_isImplicitAccess(CXMemberExpr ME);
+
+// Returns an owned box; release with clang_DeclarationNameInfo_dispose.
+CXDeclarationNameInfo clang_MemberExpr_getMemberNameInfo(CXMemberExpr ME);
 
 // CastExpr
 CXCastKind clang_CastExpr_getCastKind(CXCastExpr CE);
@@ -445,6 +476,35 @@ CXCompoundStmt clang_StmtExpr_getSubStmt(CXStmtExpr E);
 CXExpr clang_CompoundLiteralExpr_getInitializer(CXCompoundLiteralExpr E);
 
 CXTypeSourceInfo clang_CompoundLiteralExpr_getTypeSourceInfo(CXCompoundLiteralExpr E);
+
+// StringLiteral
+// getString asserts char width 1 (or unevaluated) upstream; NUL-safe copy via
+// makeCXString(std::string). Julia reads with get_string.
+CXString clang_StringLiteral_getString(CXStringLiteral SL);
+
+CXStringLiteralKind clang_StringLiteral_getKind(CXStringLiteral SL);
+
+CXSourceLocation_ clang_StringLiteral_getBeginLoc(CXStringLiteral SL);
+
+CXSourceLocation_ clang_StringLiteral_getEndLoc(CXStringLiteral SL);
+
+// UnaryExprOrTypeTraitExpr
+CXUnaryExprOrTypeTrait
+clang_UnaryExprOrTypeTraitExpr_getKind(CXUnaryExprOrTypeTraitExpr E);
+
+// PredefinedExpr
+CXPredefinedIdentKind clang_PredefinedExpr_getIdentKind(CXPredefinedExpr E);
+
+// getFunctionName returns the interior StringLiteral (nullptr when the
+// predefined expr carries no function-name literal); borrowed, no dispose.
+CXStringLiteral clang_PredefinedExpr_getFunctionName(CXPredefinedExpr E);
+
+CXString clang_PredefinedExpr_getIdentKindName(CXPredefinedExpr E);
+
+// CastExpr
+// getPathElement returns the I-th inheritance-path base specifier
+// (0-based, I < path_size()); the CXXBaseSpecifier is AST-owned, borrowed.
+CXCXXBaseSpecifier clang_CastExpr_getPathElement(CXCastExpr E, unsigned I);
 
 
 LLVM_CLANG_C_EXTERN_C_END

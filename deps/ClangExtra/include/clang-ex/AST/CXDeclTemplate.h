@@ -100,6 +100,11 @@ clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(CXClassTemplateSpec
 CXTemplateSpecializationKind
 clang_ClassTemplateSpecializationDecl_getSpecializationKind(CXClassTemplateSpecializationDecl D);
 
+// VarTemplateSpecializationDecl
+// Borrowed interior reference to the specialization's argument list (no dispose).
+CXTemplateArgumentList clang_VarTemplateSpecializationDecl_getTemplateArgs(
+    CXVarTemplateSpecializationDecl VTSD);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

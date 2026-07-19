@@ -67,6 +67,35 @@ typedef enum CXStorageDuration {
   CXStorageDuration_SD_Dynamic
 } CXStorageDuration;
 
+// clang::CallingConv (clang/Basic/Specifiers.h). Trailing underscore: libclang's
+// clang-c/Index.h defines an unrelated `enum CXCallingConv` (Index.h:2961). Order
+// and values must stay identical to the pinned Clang header; the ENUM_SYNC table
+// in lib/Basic/CXEnumSync.cpp fails the build if an LLVM bump renumbers them.
+typedef enum CXCallingConv_ {
+  CXCallingConv_CC_C,
+  CXCallingConv_CC_X86StdCall,
+  CXCallingConv_CC_X86FastCall,
+  CXCallingConv_CC_X86ThisCall,
+  CXCallingConv_CC_X86VectorCall,
+  CXCallingConv_CC_X86Pascal,
+  CXCallingConv_CC_Win64,
+  CXCallingConv_CC_X86_64SysV,
+  CXCallingConv_CC_X86RegCall,
+  CXCallingConv_CC_AAPCS,
+  CXCallingConv_CC_AAPCS_VFP,
+  CXCallingConv_CC_IntelOclBicc,
+  CXCallingConv_CC_SpirFunction,
+  CXCallingConv_CC_OpenCLKernel,
+  CXCallingConv_CC_Swift,
+  CXCallingConv_CC_SwiftAsync,
+  CXCallingConv_CC_PreserveMost,
+  CXCallingConv_CC_PreserveAll,
+  CXCallingConv_CC_AArch64VectorCall,
+  CXCallingConv_CC_AArch64SVEPCS,
+  CXCallingConv_CC_AMDGPUKernelCall,
+  CXCallingConv_CC_M68kRTD
+} CXCallingConv_;
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

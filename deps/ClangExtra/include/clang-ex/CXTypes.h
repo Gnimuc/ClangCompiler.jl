@@ -80,6 +80,7 @@ typedef void *CXNamespaceAliasDecl;
 typedef void *CXLifetimeExtendedTemporaryDecl;
 typedef void *CXUsingShadowDecl;
 typedef void *CXConstructorUsingShadowDecl;
+typedef void *CXBaseUsingDecl;
 typedef void *CXUsingDecl;
 typedef void *CXUsingPackDecl;
 typedef void *CXUnresolvedUsingValueDecl;
@@ -208,6 +209,9 @@ typedef void *CXCXXInheritedCtorInitExpr;
 typedef void *CXCXXFunctionalCastExpr;
 typedef void *CXCXXTemporaryObjectExpr;
 typedef void *CXLambdaExpr;
+
+// LambdaCapture
+typedef void *CXLambdaCapture;
 typedef void *CXCXXScalarValueInitExpr;
 typedef void *CXCXXNewExpr;
 typedef void *CXCXXDeleteExpr;

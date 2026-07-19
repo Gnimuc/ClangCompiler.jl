@@ -591,3 +591,14 @@ end
 
 Base.unsafe_convert(::Type{CXBuiltinBitCastExpr}, x::BuiltinBitCastExpr) = x.ptr
 Base.cconvert(::Type{CXBuiltinBitCastExpr}, x::BuiltinBitCastExpr) = x
+
+"""
+    struct LambdaCapture <: Any
+Hold a pointer to a `clang::LambdaCapture` object.
+"""
+struct LambdaCapture
+    ptr::CXLambdaCapture
+end
+
+Base.unsafe_convert(::Type{CXLambdaCapture}, x::LambdaCapture) = x.ptr
+Base.cconvert(::Type{CXLambdaCapture}, x::LambdaCapture) = x

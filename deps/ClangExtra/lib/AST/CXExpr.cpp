@@ -169,6 +169,12 @@ CXSourceLocation_ clang_DeclRefExpr_getLocation(CXDeclRefExpr DRE) {
   return static_cast<clang::DeclRefExpr *>(DRE)->getLocation().getPtrEncoding();
 }
 
+CXDeclarationNameInfo clang_DeclRefExpr_getNameInfo(CXDeclRefExpr DRE) {
+  return std::make_unique<clang::DeclarationNameInfo>(
+             static_cast<clang::DeclRefExpr *>(DRE)->getNameInfo())
+      .release();
+}
+
 // IntegerLiteral
 CXIntegerLiteral clang_IntegerLiteral_Create(CXASTContext C, LLVMGenericValueRef Val,
                                              CXQualType T, CXSourceLocation_ L) {
@@ -374,6 +380,12 @@ CXSourceLocation_ clang_MemberExpr_getMemberLoc(CXMemberExpr ME) {
 
 bool clang_MemberExpr_isImplicitAccess(CXMemberExpr ME) {
   return static_cast<clang::MemberExpr *>(ME)->isImplicitAccess();
+}
+
+CXDeclarationNameInfo clang_MemberExpr_getMemberNameInfo(CXMemberExpr ME) {
+  return std::make_unique<clang::DeclarationNameInfo>(
+             static_cast<clang::MemberExpr *>(ME)->getMemberNameInfo())
+      .release();
 }
 
 // CastExpr
@@ -819,5 +831,50 @@ CXExpr clang_CompoundLiteralExpr_getInitializer(CXCompoundLiteralExpr E) {
 
 CXTypeSourceInfo clang_CompoundLiteralExpr_getTypeSourceInfo(CXCompoundLiteralExpr E) {
   return const_cast<clang::TypeSourceInfo *>(static_cast<clang::CompoundLiteralExpr *>(E)->getTypeSourceInfo());
+}
+
+// StringLiteral
+CXString clang_StringLiteral_getString(CXStringLiteral SL) {
+  return extra::makeCXString(static_cast<clang::StringLiteral *>(SL)->getString().str());
+}
+
+CXStringLiteralKind clang_StringLiteral_getKind(CXStringLiteral SL) {
+  return static_cast<CXStringLiteralKind>(
+      static_cast<clang::StringLiteral *>(SL)->getKind());
+}
+
+CXSourceLocation_ clang_StringLiteral_getBeginLoc(CXStringLiteral SL) {
+  return static_cast<clang::StringLiteral *>(SL)->getBeginLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_StringLiteral_getEndLoc(CXStringLiteral SL) {
+  return static_cast<clang::StringLiteral *>(SL)->getEndLoc().getPtrEncoding();
+}
+
+// UnaryExprOrTypeTraitExpr
+CXUnaryExprOrTypeTrait
+clang_UnaryExprOrTypeTraitExpr_getKind(CXUnaryExprOrTypeTraitExpr E) {
+  return static_cast<CXUnaryExprOrTypeTrait>(
+      static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->getKind());
+}
+
+// PredefinedExpr
+CXPredefinedIdentKind clang_PredefinedExpr_getIdentKind(CXPredefinedExpr E) {
+  return static_cast<CXPredefinedIdentKind>(
+      static_cast<clang::PredefinedExpr *>(E)->getIdentKind());
+}
+
+CXStringLiteral clang_PredefinedExpr_getFunctionName(CXPredefinedExpr E) {
+  return static_cast<clang::PredefinedExpr *>(E)->getFunctionName();
+}
+
+CXString clang_PredefinedExpr_getIdentKindName(CXPredefinedExpr E) {
+  return extra::makeCXString(
+      static_cast<clang::PredefinedExpr *>(E)->getIdentKindName().str());
+}
+
+// CastExpr
+CXCXXBaseSpecifier clang_CastExpr_getPathElement(CXCastExpr E, unsigned I) {
+  return *(static_cast<clang::CastExpr *>(E)->path_begin() + I);
 }
 

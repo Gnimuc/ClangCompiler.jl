@@ -122,6 +122,8 @@ const CXUsingShadowDecl = Ptr{Cvoid}
 
 const CXConstructorUsingShadowDecl = Ptr{Cvoid}
 
+const CXBaseUsingDecl = Ptr{Cvoid}
+
 const CXUsingDecl = Ptr{Cvoid}
 
 const CXUsingPackDecl = Ptr{Cvoid}
@@ -357,6 +359,8 @@ const CXCXXFunctionalCastExpr = Ptr{Cvoid}
 const CXCXXTemporaryObjectExpr = Ptr{Cvoid}
 
 const CXLambdaExpr = Ptr{Cvoid}
+
+const CXLambdaCapture = Ptr{Cvoid}
 
 const CXCXXScalarValueInitExpr = Ptr{Cvoid}
 
@@ -807,6 +811,110 @@ end
 
 function clang_ASTConsumer_PrintStats(Csr)
     @ccall libclangex.clang_ASTConsumer_PrintStats(Csr::CXASTConsumer)::Cvoid
+end
+
+@enum CXExceptionSpecificationType::UInt32 begin
+    CXExceptionSpecificationType_EST_None = 0
+    CXExceptionSpecificationType_EST_DynamicNone = 1
+    CXExceptionSpecificationType_EST_Dynamic = 2
+    CXExceptionSpecificationType_EST_MSAny = 3
+    CXExceptionSpecificationType_EST_NoThrow = 4
+    CXExceptionSpecificationType_EST_BasicNoexcept = 5
+    CXExceptionSpecificationType_EST_DependentNoexcept = 6
+    CXExceptionSpecificationType_EST_NoexceptFalse = 7
+    CXExceptionSpecificationType_EST_NoexceptTrue = 8
+    CXExceptionSpecificationType_EST_Unevaluated = 9
+    CXExceptionSpecificationType_EST_Uninstantiated = 10
+    CXExceptionSpecificationType_EST_Unparsed = 11
+end
+
+@enum CXExplicitSpecKind::UInt32 begin
+    CXExplicitSpecKind_ResolvedFalse = 0x0000000000000000
+    CXExplicitSpecKind_ResolvedTrue = 0x0000000000000001
+    CXExplicitSpecKind_Unresolved = 0x0000000000000002
+end
+
+@enum CXAccessSpecifier::UInt32 begin
+    CXAccessSpecifier_AS_public = 0
+    CXAccessSpecifier_AS_protected = 1
+    CXAccessSpecifier_AS_private = 2
+    CXAccessSpecifier_AS_none = 3
+end
+
+@enum CXExprValueKind::UInt32 begin
+    CXExprValueKind_VK_PRValue = 0
+    CXExprValueKind_VK_LValue = 1
+    CXExprValueKind_VK_XValue = 2
+end
+
+@enum CXConstexprSpecKind::UInt32 begin
+    CXConstexprSpecKind_Unspecified = 0
+    CXConstexprSpecKind_Constexpr = 1
+    CXConstexprSpecKind_Consteval = 2
+    CXConstexprSpecKind_Constinit = 3
+end
+
+@enum CXTemplateSpecializationKind::UInt32 begin
+    CXTemplateSpecializationKind_TSK_Undeclared = 0
+    CXTemplateSpecializationKind_TSK_ImplicitInstantiation = 1
+    CXTemplateSpecializationKind_TSK_ExplicitSpecialization = 2
+    CXTemplateSpecializationKind_TSK_ExplicitInstantiationDeclaration = 3
+    CXTemplateSpecializationKind_TSK_ExplicitInstantiationDefinition = 4
+end
+
+@enum CXThreadStorageClassSpecifier::UInt32 begin
+    CXThreadStorageClassSpecifier_TSCS_unspecified = 0
+    CXThreadStorageClassSpecifier_TSCS___thread = 1
+    CXThreadStorageClassSpecifier_TSCS_thread_local = 2
+    CXThreadStorageClassSpecifier_TSCS__Thread_local = 3
+end
+
+@enum CXStorageClass::UInt32 begin
+    CXStorageClass_SC_None = 0
+    CXStorageClass_SC_Extern = 1
+    CXStorageClass_SC_Static = 2
+    CXStorageClass_SC_PrivateExtern = 3
+    CXStorageClass_SC_Auto = 4
+    CXStorageClass_SC_Register = 5
+end
+
+@enum CXInClassInitStyle::UInt32 begin
+    CXInClassInitStyle_ICIS_NoInit = 0
+    CXInClassInitStyle_ICIS_CopyInit = 1
+    CXInClassInitStyle_ICIS_ListInit = 2
+end
+
+@enum CXStorageDuration::UInt32 begin
+    CXStorageDuration_SD_FullExpression = 0
+    CXStorageDuration_SD_Automatic = 1
+    CXStorageDuration_SD_Thread = 2
+    CXStorageDuration_SD_Static = 3
+    CXStorageDuration_SD_Dynamic = 4
+end
+
+@enum CXCallingConv_::UInt32 begin
+    CXCallingConv_CC_C = 0
+    CXCallingConv_CC_X86StdCall = 1
+    CXCallingConv_CC_X86FastCall = 2
+    CXCallingConv_CC_X86ThisCall = 3
+    CXCallingConv_CC_X86VectorCall = 4
+    CXCallingConv_CC_X86Pascal = 5
+    CXCallingConv_CC_Win64 = 6
+    CXCallingConv_CC_X86_64SysV = 7
+    CXCallingConv_CC_X86RegCall = 8
+    CXCallingConv_CC_AAPCS = 9
+    CXCallingConv_CC_AAPCS_VFP = 10
+    CXCallingConv_CC_IntelOclBicc = 11
+    CXCallingConv_CC_SpirFunction = 12
+    CXCallingConv_CC_OpenCLKernel = 13
+    CXCallingConv_CC_Swift = 14
+    CXCallingConv_CC_SwiftAsync = 15
+    CXCallingConv_CC_PreserveMost = 16
+    CXCallingConv_CC_PreserveAll = 17
+    CXCallingConv_CC_AArch64VectorCall = 18
+    CXCallingConv_CC_AArch64SVEPCS = 19
+    CXCallingConv_CC_AMDGPUKernelCall = 20
+    CXCallingConv_CC_M68kRTD = 21
 end
 
 function clang_QualType_constructFromTypePtr(Ptr, Quals)
@@ -1919,6 +2027,10 @@ function clang_FunctionType_isVolatile(T)
     @ccall libclangex.clang_FunctionType_isVolatile(T::CXFunctionType)::Bool
 end
 
+function clang_FunctionType_getCallConv(T)
+    @ccall libclangex.clang_FunctionType_getCallConv(T::CXFunctionType)::CXCallingConv_
+end
+
 function clang_FunctionNoProtoType_isSugared(T)
     @ccall libclangex.clang_FunctionNoProtoType_isSugared(T::CXFunctionNoProtoType)::Bool
 end
@@ -1937,6 +2049,10 @@ end
 
 function clang_FunctionProtoType_getParamTypes(T)
     @ccall libclangex.clang_FunctionProtoType_getParamTypes(T::CXFunctionProtoType)::CXArrayRef
+end
+
+function clang_FunctionProtoType_getExceptionSpecType(T)
+    @ccall libclangex.clang_FunctionProtoType_getExceptionSpecType(T::CXFunctionProtoType)::CXExceptionSpecificationType
 end
 
 function clang_FunctionProtoType_hasExceptionSpec(T)
@@ -2253,6 +2369,14 @@ end
 
 function clang_TemplateSpecializationType_template_arguments(T)
     @ccall libclangex.clang_TemplateSpecializationType_template_arguments(T::CXTemplateSpecializationType)::CXArrayRef
+end
+
+function clang_TemplateSpecializationType_getNumArgs(T)
+    @ccall libclangex.clang_TemplateSpecializationType_getNumArgs(T::CXTemplateSpecializationType)::Cuint
+end
+
+function clang_TemplateSpecializationType_getArg(T, Idx)
+    @ccall libclangex.clang_TemplateSpecializationType_getArg(T::CXTemplateSpecializationType, Idx::Cuint)::CXTemplateArgument
 end
 
 function clang_TemplateSpecializationType_isSugared(T)
@@ -3619,70 +3743,6 @@ end
     CXLambdaCaptureKind_LCK_VLAType = 4
 end
 
-@enum CXExplicitSpecKind::UInt32 begin
-    CXExplicitSpecKind_ResolvedFalse = 0x0000000000000000
-    CXExplicitSpecKind_ResolvedTrue = 0x0000000000000001
-    CXExplicitSpecKind_Unresolved = 0x0000000000000002
-end
-
-@enum CXAccessSpecifier::UInt32 begin
-    CXAccessSpecifier_AS_public = 0
-    CXAccessSpecifier_AS_protected = 1
-    CXAccessSpecifier_AS_private = 2
-    CXAccessSpecifier_AS_none = 3
-end
-
-@enum CXExprValueKind::UInt32 begin
-    CXExprValueKind_VK_PRValue = 0
-    CXExprValueKind_VK_LValue = 1
-    CXExprValueKind_VK_XValue = 2
-end
-
-@enum CXConstexprSpecKind::UInt32 begin
-    CXConstexprSpecKind_Unspecified = 0
-    CXConstexprSpecKind_Constexpr = 1
-    CXConstexprSpecKind_Consteval = 2
-    CXConstexprSpecKind_Constinit = 3
-end
-
-@enum CXTemplateSpecializationKind::UInt32 begin
-    CXTemplateSpecializationKind_TSK_Undeclared = 0
-    CXTemplateSpecializationKind_TSK_ImplicitInstantiation = 1
-    CXTemplateSpecializationKind_TSK_ExplicitSpecialization = 2
-    CXTemplateSpecializationKind_TSK_ExplicitInstantiationDeclaration = 3
-    CXTemplateSpecializationKind_TSK_ExplicitInstantiationDefinition = 4
-end
-
-@enum CXThreadStorageClassSpecifier::UInt32 begin
-    CXThreadStorageClassSpecifier_TSCS_unspecified = 0
-    CXThreadStorageClassSpecifier_TSCS___thread = 1
-    CXThreadStorageClassSpecifier_TSCS_thread_local = 2
-    CXThreadStorageClassSpecifier_TSCS__Thread_local = 3
-end
-
-@enum CXStorageClass::UInt32 begin
-    CXStorageClass_SC_None = 0
-    CXStorageClass_SC_Extern = 1
-    CXStorageClass_SC_Static = 2
-    CXStorageClass_SC_PrivateExtern = 3
-    CXStorageClass_SC_Auto = 4
-    CXStorageClass_SC_Register = 5
-end
-
-@enum CXInClassInitStyle::UInt32 begin
-    CXInClassInitStyle_ICIS_NoInit = 0
-    CXInClassInitStyle_ICIS_CopyInit = 1
-    CXInClassInitStyle_ICIS_ListInit = 2
-end
-
-@enum CXStorageDuration::UInt32 begin
-    CXStorageDuration_SD_FullExpression = 0
-    CXStorageDuration_SD_Automatic = 1
-    CXStorageDuration_SD_Thread = 2
-    CXStorageDuration_SD_Static = 3
-    CXStorageDuration_SD_Dynamic = 4
-end
-
 function clang_AccessSpecDecl_getAccessSpecifierLoc(AS)
     @ccall libclangex.clang_AccessSpecDecl_getAccessSpecifierLoc(AS::CXAccessSpecDecl)::CXSourceLocation_
 end
@@ -4251,6 +4311,28 @@ function clang_ExplicitSpecifier_setExpr(ES, E)
     @ccall libclangex.clang_ExplicitSpecifier_setExpr(ES::CXExplicitSpecifier, E::CXExpr)::Cvoid
 end
 
+@enum CXDeductionCandidate::UInt8 begin
+    CXDeductionCandidate_Normal = 0x0000000000000000
+    CXDeductionCandidate_Copy = 0x0000000000000001
+    CXDeductionCandidate_Aggregate = 0x0000000000000002
+end
+
+function clang_CXXDeductionGuideDecl_isExplicit(DGD)
+    @ccall libclangex.clang_CXXDeductionGuideDecl_isExplicit(DGD::CXCXXDeductionGuideDecl)::Bool
+end
+
+function clang_CXXDeductionGuideDecl_getCorrespondingConstructor(DGD)
+    @ccall libclangex.clang_CXXDeductionGuideDecl_getCorrespondingConstructor(DGD::CXCXXDeductionGuideDecl)::CXCXXConstructorDecl
+end
+
+function clang_CXXDeductionGuideDecl_getDeducedTemplate(DGD)
+    @ccall libclangex.clang_CXXDeductionGuideDecl_getDeducedTemplate(DGD::CXCXXDeductionGuideDecl)::CXTemplateDecl
+end
+
+function clang_CXXDeductionGuideDecl_getDeductionCandidateKind(DGD)
+    @ccall libclangex.clang_CXXDeductionGuideDecl_getDeductionCandidateKind(DGD::CXCXXDeductionGuideDecl)::CXDeductionCandidate
+end
+
 function clang_RequiresExprBodyDecl_Create(C, DC, StartLoc)
     @ccall libclangex.clang_RequiresExprBodyDecl_Create(C::CXASTContext, DC::CXDeclContext, StartLoc::CXSourceLocation_)::CXRequiresExprBodyDecl
 end
@@ -4335,6 +4417,38 @@ function clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD, RD, Ma
     @ccall libclangex.clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD::CXCXXMethodDecl, RD::CXCXXRecordDecl, MayBeBase::Bool)::CXCXXRecordDecl
 end
 
+function clang_CXXCtorInitializer_isBaseInitializer(CI)
+    @ccall libclangex.clang_CXXCtorInitializer_isBaseInitializer(CI::CXCXXCtorInitializer)::Bool
+end
+
+function clang_CXXCtorInitializer_isMemberInitializer(CI)
+    @ccall libclangex.clang_CXXCtorInitializer_isMemberInitializer(CI::CXCXXCtorInitializer)::Bool
+end
+
+function clang_CXXCtorInitializer_isAnyMemberInitializer(CI)
+    @ccall libclangex.clang_CXXCtorInitializer_isAnyMemberInitializer(CI::CXCXXCtorInitializer)::Bool
+end
+
+function clang_CXXCtorInitializer_isDelegatingInitializer(CI)
+    @ccall libclangex.clang_CXXCtorInitializer_isDelegatingInitializer(CI::CXCXXCtorInitializer)::Bool
+end
+
+function clang_CXXCtorInitializer_getMember(CI)
+    @ccall libclangex.clang_CXXCtorInitializer_getMember(CI::CXCXXCtorInitializer)::CXFieldDecl
+end
+
+function clang_CXXCtorInitializer_getBaseClass(CI)
+    @ccall libclangex.clang_CXXCtorInitializer_getBaseClass(CI::CXCXXCtorInitializer)::CXType_
+end
+
+function clang_CXXCtorInitializer_getInit(CI)
+    @ccall libclangex.clang_CXXCtorInitializer_getInit(CI::CXCXXCtorInitializer)::CXExpr
+end
+
+function clang_CXXCtorInitializer_getSourceLocation(CI)
+    @ccall libclangex.clang_CXXCtorInitializer_getSourceLocation(CI::CXCXXCtorInitializer)::CXSourceLocation_
+end
+
 function clang_CXXConstructorDecl_isExplicit(CD)
     @ccall libclangex.clang_CXXConstructorDecl_isExplicit(CD::CXCXXConstructorDecl)::Bool
 end
@@ -4369,6 +4483,10 @@ end
 
 function clang_CXXConstructorDecl_getNumCtorInitializers(CD)
     @ccall libclangex.clang_CXXConstructorDecl_getNumCtorInitializers(CD::CXCXXConstructorDecl)::Cuint
+end
+
+function clang_CXXConstructorDecl_getCtorInitializer(CD, i)
+    @ccall libclangex.clang_CXXConstructorDecl_getCtorInitializer(CD::CXCXXConstructorDecl, i::Cuint)::CXCXXCtorInitializer
 end
 
 function clang_CXXConstructorDecl_getTargetConstructor(CD)
@@ -4448,6 +4566,22 @@ function clang_LinkageSpecDecl_castFromDeclContext(DC)
     @ccall libclangex.clang_LinkageSpecDecl_castFromDeclContext(DC::CXDeclContext)::CXLinkageSpecDecl
 end
 
+function clang_UsingDirectiveDecl_getNominatedNamespace(UDD)
+    @ccall libclangex.clang_UsingDirectiveDecl_getNominatedNamespace(UDD::CXUsingDirectiveDecl)::CXNamespaceDecl
+end
+
+function clang_UsingShadowDecl_getTargetDecl(USD)
+    @ccall libclangex.clang_UsingShadowDecl_getTargetDecl(USD::CXUsingShadowDecl)::CXNamedDecl
+end
+
+function clang_BaseUsingDecl_shadow_size(BUD)
+    @ccall libclangex.clang_BaseUsingDecl_shadow_size(BUD::CXBaseUsingDecl)::Cuint
+end
+
+function clang_BaseUsingDecl_getShadows(BUD, Buf)
+    @ccall libclangex.clang_BaseUsingDecl_getShadows(BUD::CXBaseUsingDecl, Buf::Ptr{CXUsingShadowDecl})::Cvoid
+end
+
 function clang_DeclGroupRef_fromeDecl(D)
     @ccall libclangex.clang_DeclGroupRef_fromeDecl(D::CXDecl)::CXDeclGroupRef
 end
@@ -4466,21 +4600,6 @@ end
 
 function clang_DeclGroupRef_getSingleDecl(DG)
     @ccall libclangex.clang_DeclGroupRef_getSingleDecl(DG::CXDeclGroupRef)::CXDecl
-end
-
-@enum CXExceptionSpecificationType::UInt32 begin
-    CXExceptionSpecificationType_EST_None = 0
-    CXExceptionSpecificationType_EST_DynamicNone = 1
-    CXExceptionSpecificationType_EST_Dynamic = 2
-    CXExceptionSpecificationType_EST_MSAny = 3
-    CXExceptionSpecificationType_EST_NoThrow = 4
-    CXExceptionSpecificationType_EST_BasicNoexcept = 5
-    CXExceptionSpecificationType_EST_DependentNoexcept = 6
-    CXExceptionSpecificationType_EST_NoexceptFalse = 7
-    CXExceptionSpecificationType_EST_NoexceptTrue = 8
-    CXExceptionSpecificationType_EST_Unevaluated = 9
-    CXExceptionSpecificationType_EST_Uninstantiated = 10
-    CXExceptionSpecificationType_EST_Unparsed = 11
 end
 
 @enum CXLinkage::UInt8 begin
@@ -5267,6 +5386,10 @@ function clang_FunctionDecl_CreateDeserialized(C, ID)
     @ccall libclangex.clang_FunctionDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXFunctionDecl
 end
 
+function clang_FunctionDecl_getNameInfo(FD)
+    @ccall libclangex.clang_FunctionDecl_getNameInfo(FD::CXFunctionDecl)::CXDeclarationNameInfo
+end
+
 function clang_FunctionDecl_setRangeEnd(FD, Loc)
     @ccall libclangex.clang_FunctionDecl_setRangeEnd(FD::CXFunctionDecl, Loc::CXSourceLocation_)::Cvoid
 end
@@ -5869,6 +5992,10 @@ end
 
 function clang_IndirectFieldDecl_CreateDeserialized(C, ID)
     @ccall libclangex.clang_IndirectFieldDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXIndirectFieldDecl
+end
+
+function clang_IndirectFieldDecl_getChainElement(IFD, i)
+    @ccall libclangex.clang_IndirectFieldDecl_getChainElement(IFD::CXIndirectFieldDecl, i::Cuint)::CXNamedDecl
 end
 
 function clang_IndirectFieldDecl_getChainingSize(IFD)
@@ -6625,6 +6752,14 @@ function clang_ImportDecl_getImportedModule(ID)
     @ccall libclangex.clang_ImportDecl_getImportedModule(ID::CXImportDecl)::CXModule
 end
 
+function clang_ImportDecl_getNumIdentifierLocs(ID)
+    @ccall libclangex.clang_ImportDecl_getNumIdentifierLocs(ID::CXImportDecl)::Cuint
+end
+
+function clang_ImportDecl_getIdentifierLoc(ID, i)
+    @ccall libclangex.clang_ImportDecl_getIdentifierLoc(ID::CXImportDecl, i::Cuint)::CXSourceLocation_
+end
+
 function clang_ImportDecl_getSourceRange(ID)
     @ccall libclangex.clang_ImportDecl_getSourceRange(ID::CXImportDecl)::CXSourceRange_
 end
@@ -6797,6 +6932,10 @@ function clang_ClassTemplateSpecializationDecl_getSpecializationKind(D)
     @ccall libclangex.clang_ClassTemplateSpecializationDecl_getSpecializationKind(D::CXClassTemplateSpecializationDecl)::CXTemplateSpecializationKind
 end
 
+function clang_VarTemplateSpecializationDecl_getTemplateArgs(VTSD)
+    @ccall libclangex.clang_VarTemplateSpecializationDecl_getTemplateArgs(VTSD::CXVarTemplateSpecializationDecl)::CXTemplateArgumentList
+end
+
 function clang_DeclarationName_create()
     @ccall libclangex.clang_DeclarationName_create()::CXDeclarationName
 end
@@ -6815,6 +6954,34 @@ end
 
 function clang_DeclarationName_getAsString(DN)
     @ccall libclangex.clang_DeclarationName_getAsString(DN::CXDeclarationName)::CXString
+end
+
+function clang_DeclarationNameInfo_create(Name, NameLoc)
+    @ccall libclangex.clang_DeclarationNameInfo_create(Name::CXDeclarationName, NameLoc::CXSourceLocation_)::CXDeclarationNameInfo
+end
+
+function clang_DeclarationNameInfo_dispose(DNInfo)
+    @ccall libclangex.clang_DeclarationNameInfo_dispose(DNInfo::CXDeclarationNameInfo)::Cvoid
+end
+
+function clang_DeclarationNameInfo_getName(DNInfo)
+    @ccall libclangex.clang_DeclarationNameInfo_getName(DNInfo::CXDeclarationNameInfo)::CXDeclarationName
+end
+
+function clang_DeclarationNameInfo_getLoc(DNInfo)
+    @ccall libclangex.clang_DeclarationNameInfo_getLoc(DNInfo::CXDeclarationNameInfo)::CXSourceLocation_
+end
+
+function clang_DeclarationNameInfo_getBeginLoc(DNInfo)
+    @ccall libclangex.clang_DeclarationNameInfo_getBeginLoc(DNInfo::CXDeclarationNameInfo)::CXSourceLocation_
+end
+
+function clang_DeclarationNameInfo_getEndLoc(DNInfo)
+    @ccall libclangex.clang_DeclarationNameInfo_getEndLoc(DNInfo::CXDeclarationNameInfo)::CXSourceLocation_
+end
+
+function clang_DeclarationNameInfo_getAsString(DNInfo)
+    @ccall libclangex.clang_DeclarationNameInfo_getAsString(DNInfo::CXDeclarationNameInfo)::CXString
 end
 
 @enum CXCastKind::UInt32 begin
@@ -6936,6 +7103,16 @@ end
     CXUnaryOperatorKind_UO_Imag = 11
     CXUnaryOperatorKind_UO_Extension = 12
     CXUnaryOperatorKind_UO_Coawait = 13
+end
+
+@enum CXUnaryExprOrTypeTrait::UInt32 begin
+    CXUnaryExprOrTypeTrait_UETT_SizeOf = 0
+    CXUnaryExprOrTypeTrait_UETT_DataSizeOf = 1
+    CXUnaryExprOrTypeTrait_UETT_AlignOf = 2
+    CXUnaryExprOrTypeTrait_UETT_PreferredAlignOf = 3
+    CXUnaryExprOrTypeTrait_UETT_VecStep = 4
+    CXUnaryExprOrTypeTrait_UETT_OpenMPRequiredSimdAlign = 5
+    CXUnaryExprOrTypeTrait_UETT_VectorElements = 6
 end
 
 function clang_Expr_getType(E)
@@ -7086,6 +7263,10 @@ function clang_DeclRefExpr_getLocation(DRE)
     @ccall libclangex.clang_DeclRefExpr_getLocation(DRE::CXDeclRefExpr)::CXSourceLocation_
 end
 
+function clang_DeclRefExpr_getNameInfo(DRE)
+    @ccall libclangex.clang_DeclRefExpr_getNameInfo(DRE::CXDeclRefExpr)::CXDeclarationNameInfo
+end
+
 function clang_IntegerLiteral_Create(C, Val, T, L)
     @ccall libclangex.clang_IntegerLiteral_Create(C::CXASTContext, Val::LLVMGenericValueRef, T::CXQualType, L::CXSourceLocation_)::CXIntegerLiteral
 end
@@ -7116,6 +7297,26 @@ end
     CXCharacterLiteralKind_UTF8 = 2
     CXCharacterLiteralKind_UTF16 = 3
     CXCharacterLiteralKind_UTF32 = 4
+end
+
+@enum CXStringLiteralKind::UInt32 begin
+    CXStringLiteralKind_Ordinary = 0
+    CXStringLiteralKind_Wide = 1
+    CXStringLiteralKind_UTF8 = 2
+    CXStringLiteralKind_UTF16 = 3
+    CXStringLiteralKind_UTF32 = 4
+    CXStringLiteralKind_Unevaluated = 5
+end
+
+@enum CXPredefinedIdentKind::UInt32 begin
+    CXPredefinedIdentKind_Func = 0
+    CXPredefinedIdentKind_Function = 1
+    CXPredefinedIdentKind_LFunction = 2
+    CXPredefinedIdentKind_FuncDName = 3
+    CXPredefinedIdentKind_FuncSig = 4
+    CXPredefinedIdentKind_LFuncSig = 5
+    CXPredefinedIdentKind_PrettyFunction = 6
+    CXPredefinedIdentKind_PrettyFunctionNoVirtual = 7
 end
 
 function clang_CharacterLiteral_getValue(CL)
@@ -7236,6 +7437,10 @@ end
 
 function clang_MemberExpr_isImplicitAccess(ME)
     @ccall libclangex.clang_MemberExpr_isImplicitAccess(ME::CXMemberExpr)::Bool
+end
+
+function clang_MemberExpr_getMemberNameInfo(ME)
+    @ccall libclangex.clang_MemberExpr_getMemberNameInfo(ME::CXMemberExpr)::CXDeclarationNameInfo
 end
 
 function clang_CastExpr_getCastKind(CE)
@@ -7678,6 +7883,42 @@ function clang_CompoundLiteralExpr_getTypeSourceInfo(E)
     @ccall libclangex.clang_CompoundLiteralExpr_getTypeSourceInfo(E::CXCompoundLiteralExpr)::CXTypeSourceInfo
 end
 
+function clang_StringLiteral_getString(SL)
+    @ccall libclangex.clang_StringLiteral_getString(SL::CXStringLiteral)::CXString
+end
+
+function clang_StringLiteral_getKind(SL)
+    @ccall libclangex.clang_StringLiteral_getKind(SL::CXStringLiteral)::CXStringLiteralKind
+end
+
+function clang_StringLiteral_getBeginLoc(SL)
+    @ccall libclangex.clang_StringLiteral_getBeginLoc(SL::CXStringLiteral)::CXSourceLocation_
+end
+
+function clang_StringLiteral_getEndLoc(SL)
+    @ccall libclangex.clang_StringLiteral_getEndLoc(SL::CXStringLiteral)::CXSourceLocation_
+end
+
+function clang_UnaryExprOrTypeTraitExpr_getKind(E)
+    @ccall libclangex.clang_UnaryExprOrTypeTraitExpr_getKind(E::CXUnaryExprOrTypeTraitExpr)::CXUnaryExprOrTypeTrait
+end
+
+function clang_PredefinedExpr_getIdentKind(E)
+    @ccall libclangex.clang_PredefinedExpr_getIdentKind(E::CXPredefinedExpr)::CXPredefinedIdentKind
+end
+
+function clang_PredefinedExpr_getFunctionName(E)
+    @ccall libclangex.clang_PredefinedExpr_getFunctionName(E::CXPredefinedExpr)::CXStringLiteral
+end
+
+function clang_PredefinedExpr_getIdentKindName(E)
+    @ccall libclangex.clang_PredefinedExpr_getIdentKindName(E::CXPredefinedExpr)::CXString
+end
+
+function clang_CastExpr_getPathElement(E, I)
+    @ccall libclangex.clang_CastExpr_getPathElement(E::CXCastExpr, I::Cuint)::CXCXXBaseSpecifier
+end
+
 @enum CXOverloadedOperatorKind::Int32 begin
     CXOverloadedOperatorKind_OO_None = 0
     CXOverloadedOperatorKind_OO_New = 1
@@ -7956,6 +8197,38 @@ function clang_MaterializeTemporaryExpr_getExtendingDecl(E)
     @ccall libclangex.clang_MaterializeTemporaryExpr_getExtendingDecl(E::CXMaterializeTemporaryExpr)::CXValueDecl
 end
 
+function clang_LambdaExpr_getNumCaptures(LE)
+    @ccall libclangex.clang_LambdaExpr_getNumCaptures(LE::CXLambdaExpr)::Cuint
+end
+
+function clang_LambdaExpr_getCapture(LE, I)
+    @ccall libclangex.clang_LambdaExpr_getCapture(LE::CXLambdaExpr, I::Cuint)::CXLambdaCapture
+end
+
+function clang_LambdaExpr_isGenericLambda(LE)
+    @ccall libclangex.clang_LambdaExpr_isGenericLambda(LE::CXLambdaExpr)::Bool
+end
+
+function clang_LambdaCapture_getCaptureKind(C)
+    @ccall libclangex.clang_LambdaCapture_getCaptureKind(C::CXLambdaCapture)::CXLambdaCaptureKind
+end
+
+function clang_LambdaCapture_capturesThis(C)
+    @ccall libclangex.clang_LambdaCapture_capturesThis(C::CXLambdaCapture)::Bool
+end
+
+function clang_LambdaCapture_capturesVariable(C)
+    @ccall libclangex.clang_LambdaCapture_capturesVariable(C::CXLambdaCapture)::Bool
+end
+
+function clang_LambdaCapture_capturesVLAType(C)
+    @ccall libclangex.clang_LambdaCapture_capturesVLAType(C::CXLambdaCapture)::Bool
+end
+
+function clang_LambdaCapture_getCapturedVar(C)
+    @ccall libclangex.clang_LambdaCapture_getCapturedVar(C::CXLambdaCapture)::CXValueDecl
+end
+
 @enum CXMangleContext_ManglerKind::UInt32 begin
     CXMangleContext_MK_Itanium = 0
     CXMangleContext_MK_Microsoft = 1
@@ -8001,8 +8274,54 @@ function clang_ASTNameGenerator_getAllManglings(G, D)
     @ccall libclangex.clang_ASTNameGenerator_getAllManglings(G::CXASTNameGenerator, D::CXDecl)::Ptr{CXStringSet}
 end
 
+@enum CXNestedNameSpecifierKind::UInt32 begin
+    CXNestedNameSpecifierKind_Identifier = 0
+    CXNestedNameSpecifierKind_Namespace = 1
+    CXNestedNameSpecifierKind_NamespaceAlias = 2
+    CXNestedNameSpecifierKind_TypeSpec = 3
+    CXNestedNameSpecifierKind_TypeSpecWithTemplate = 4
+    CXNestedNameSpecifierKind_Global = 5
+    CXNestedNameSpecifierKind_Super = 6
+end
+
 function clang_NestedNameSpecifier_getPrefix(NNS)
     @ccall libclangex.clang_NestedNameSpecifier_getPrefix(NNS::CXNestedNameSpecifier)::CXNestedNameSpecifier
+end
+
+function clang_NestedNameSpecifier_getKind(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_getKind(NNS::CXNestedNameSpecifier)::CXNestedNameSpecifierKind
+end
+
+function clang_NestedNameSpecifier_getAsIdentifier(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_getAsIdentifier(NNS::CXNestedNameSpecifier)::CXIdentifierInfo
+end
+
+function clang_NestedNameSpecifier_getAsNamespace(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_getAsNamespace(NNS::CXNestedNameSpecifier)::CXNamespaceDecl
+end
+
+function clang_NestedNameSpecifier_getAsNamespaceAlias(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_getAsNamespaceAlias(NNS::CXNestedNameSpecifier)::CXNamespaceAliasDecl
+end
+
+function clang_NestedNameSpecifier_getAsRecordDecl(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_getAsRecordDecl(NNS::CXNestedNameSpecifier)::CXCXXRecordDecl
+end
+
+function clang_NestedNameSpecifier_getAsType(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_getAsType(NNS::CXNestedNameSpecifier)::CXType_
+end
+
+function clang_NestedNameSpecifier_isDependent(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_isDependent(NNS::CXNestedNameSpecifier)::Bool
+end
+
+function clang_NestedNameSpecifier_isInstantiationDependent(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_isInstantiationDependent(NNS::CXNestedNameSpecifier)::Bool
+end
+
+function clang_NestedNameSpecifier_containsUnexpandedParameterPack(NNS)
+    @ccall libclangex.clang_NestedNameSpecifier_containsUnexpandedParameterPack(NNS::CXNestedNameSpecifier)::Bool
 end
 
 function clang_NestedNameSpecifier_containsErrors(NNS)

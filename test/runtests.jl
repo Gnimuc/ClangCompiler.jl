@@ -8,6 +8,7 @@ include("types.jl")
 include("parse.jl")
 include("lookup.jl")
 include("traversal.jl")
+include("wrappers_tail.jl")
 include("stmt.jl")
 include("execution.jl")
 
