@@ -11,6 +11,7 @@ include("traversal.jl")
 include("wrappers_tail.jl")
 include("acceptance.jl")
 include("stmt.jl")
+include("platform.jl")
 include("execution.jl")
 
 # include("llvm/pointer_from_objref.jl")

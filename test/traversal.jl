@@ -170,3 +170,40 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Traversal | Decl predicate exercise" begin
+    I = create_interpreter(String[])
+    ClangCompiler.parse(I, """
+    int gv = 5; static int sv; constexpr int cev = 7;
+    int variadic_fn(int, ...); inline int inl_fn(){ return 1; }
+    struct Abstract { virtual void pure() = 0; };
+    struct Base { virtual void v(); virtual ~Base(); int m; };
+    struct Der : Base { void v() override; };
+    """)
+    f = DeclFinder(I)
+    D(name, T) = (f(I, name); T(get_decl(f).ptr))
+
+    gv = D("gv", ClangCompiler.VarDecl)
+    @test ClangCompiler.hasGlobalStorage(gv)
+    @test ClangCompiler.hasInit(gv)
+    @test !ClangCompiler.isStaticLocal(D("sv", ClangCompiler.VarDecl))
+    @test ClangCompiler.hasGlobalStorage(D("sv", ClangCompiler.VarDecl))
+    @test ClangCompiler.hasInit(D("cev", ClangCompiler.VarDecl))
+
+    vfn = D("variadic_fn", ClangCompiler.FunctionDecl)
+    @test ClangCompiler.isVariadic(vfn)
+    @test ClangCompiler.getNumParams(vfn) == 1
+    @test ClangCompiler.isInlined(D("inl_fn", ClangCompiler.FunctionDecl))
+
+    @test ClangCompiler.isAbstract(D("Abstract", ClangCompiler.CXXRecordDecl))
+    base = D("Base", ClangCompiler.CXXRecordDecl)
+    @test ClangCompiler.isPolymorphic(base)
+    @test ClangCompiler.hasUserDeclaredDestructor(base)
+    @test !ClangCompiler.isAbstract(base)
+    der = D("Der", ClangCompiler.CXXRecordDecl)
+    @test ClangCompiler.isPolymorphic(der)
+    @test ClangCompiler.getNumBases(der) == 1
+
+    dispose(f)
+    dispose(I)
+end

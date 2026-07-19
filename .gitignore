@@ -1,3 +1,6 @@
 /Manifest.toml
 deps/Manifest.toml
 LocalPreferences.toml
+
+# Julia code-coverage artifacts
+*.cov

@@ -65,3 +65,50 @@ end
 
     dispose(I)
 end
+
+@testset "Types | qualifier and predicate exercise" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    const int ci = 0; volatile int vi = 0; int gx = 0; int *p; int &r = gx;
+    int arr[3]; int fn5(double, char); typedef int myint; myint mi;
+    enum E { A }; E ev; struct Rec { int m; }; Rec rc;
+    """)
+    f = CC.DeclFinder(I)
+    tp(name) = (f(I, name); CC.getTypePtr(CC.getType(CC.VarDecl(CC.get_decl(f).ptr))))
+    qt(name) = (f(I, name); CC.getType(CC.VarDecl(CC.get_decl(f).ptr)))
+
+    # QualType qualifiers
+    @test CC.isConstQualified(qt("ci"))
+    @test !CC.isVolatileQualified(qt("ci"))
+    @test CC.isVolatileQualified(qt("vi"))
+    @test CC.hasQualifiers(qt("ci"))
+    @test !CC.hasQualifiers(qt("gx"))
+    @test !CC.isNull(qt("gx"))
+
+    # pointer / reference / array accessors
+    pty = CC.resolve(tp("p"))
+    @test pty isa CC.PointerType
+    @test CC.is_pointer_type(tp("p"))
+    @test CC.resolve(CC.getTypePtr(CC.getPointeeType(pty))) isa CC.BuiltinType
+    @test CC.resolve(tp("r")) isa CC.LValueReferenceType
+    @test CC.is_reference_type(tp("r"))
+    aty = CC.resolve(tp("arr"))
+    @test aty isa CC.ConstantArrayType
+    @test CC.is_array_type(tp("arr"))
+    @test CC.resolve(CC.getTypePtr(CC.getElementType(aty))) isa CC.BuiltinType
+
+    # function type return
+    f(I, "fn5")
+    fty = CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(CC.get_decl(f).ptr)))))
+    @test fty isa CC.FunctionProtoType
+    @test CC.resolve(CC.getTypePtr(CC.getReturnType(fty))) isa CC.BuiltinType
+
+    # typedef sugar desugars; elaborated record/enum sugar unwraps to a concrete leaf
+    @test CC.desugar(CC.resolve(tp("mi"))) isa CC.QualType
+    @test CC.resolve(tp("rc")) isa CC.ElaboratedType
+    @test CC.is_record_type(tp("rc"))
+    @test CC.resolve(CC.getTypePtr(CC.getNamedType(CC.resolve(tp("ev"))))) isa CC.EnumType
+
+    CC.dispose(f)
+    CC.dispose(I)
+end
