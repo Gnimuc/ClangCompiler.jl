@@ -963,3 +963,83 @@ function mergeDefinitionIntoModule(x::ASTContext, a2::AbstractNamedDecl, a3::Mod
     return clang_ASTContext_mergeDefinitionIntoModule(x, a2, a3, a4)
 end
 
+
+function setInstantiatedFromUsingDecl(x::ASTContext, Inst::AbstractNamedDecl, Pattern::AbstractNamedDecl)
+    @check_ptrs x Inst Pattern
+    return clang_ASTContext_setInstantiatedFromUsingDecl(x, Inst, Pattern)
+end
+
+function setInstantiatedFromUsingShadowDecl(x::ASTContext, Inst::AbstractUsingShadowDecl, Pattern::AbstractUsingShadowDecl)
+    @check_ptrs x Inst Pattern
+    return clang_ASTContext_setInstantiatedFromUsingShadowDecl(x, Inst, Pattern)
+end
+
+function setInstantiatedFromUnnamedFieldDecl(x::ASTContext, Inst::AbstractFieldDecl, Tmpl::AbstractFieldDecl)
+    @check_ptrs x Inst Tmpl
+    return clang_ASTContext_setInstantiatedFromUnnamedFieldDecl(x, Inst, Tmpl)
+end
+
+function setPrimaryMergedDecl(x::ASTContext, D::AbstractDecl, Primary::AbstractDecl)
+    @check_ptrs x D Primary
+    return clang_ASTContext_setPrimaryMergedDecl(x, D, Primary)
+end
+
+function buildImplicitRecord(x::ASTContext, name::AbstractString, TK::CXTagTypeKind=CXTagTypeKind_Struct)
+    @check_ptrs x
+    return RecordDecl(clang_ASTContext_buildImplicitRecord(x, name, TK))
+end
+
+function buildImplicitTypedef(x::ASTContext, T::QualType, name::AbstractString)
+    @check_ptrs x
+    return TypedefDecl(clang_ASTContext_buildImplicitTypedef(x, T, name))
+end
+
+function setcudaConfigureCallDecl(x::ASTContext, FD::AbstractFunctionDecl)
+    @check_ptrs x FD
+    return clang_ASTContext_setcudaConfigureCallDecl(x, FD)
+end
+
+function setCFConstantStringType(x::ASTContext, T::QualType)
+    @check_ptrs x
+    return clang_ASTContext_setCFConstantStringType(x, T)
+end
+
+function setObjCIdRedefinitionType(x::ASTContext, T::QualType)
+    @check_ptrs x
+    return clang_ASTContext_setObjCIdRedefinitionType(x, T)
+end
+
+function setObjCClassRedefinitionType(x::ASTContext, T::QualType)
+    @check_ptrs x
+    return clang_ASTContext_setObjCClassRedefinitionType(x, T)
+end
+
+function setFILEDecl(x::ASTContext, FILEDecl::AbstractTypeDecl)
+    @check_ptrs x FILEDecl
+    return clang_ASTContext_setFILEDecl(x, FILEDecl)
+end
+
+function setBOOLDecl(x::ASTContext, TD::AbstractTypedefDecl)
+    @check_ptrs x TD
+    return clang_ASTContext_setBOOLDecl(x, TD)
+end
+
+function setManglingNumber(x::ASTContext, ND::AbstractNamedDecl, Number::Integer)
+    @check_ptrs x ND
+    return clang_ASTContext_setManglingNumber(x, ND, Number)
+end
+
+function setStaticLocalNumber(x::ASTContext, ND::AbstractVarDecl, Number::Integer)
+    @check_ptrs x ND
+    return clang_ASTContext_setStaticLocalNumber(x, ND, Number)
+end
+
+function setParameterIndex(x::ASTContext, D::AbstractParmVarDecl, index::Integer)
+    @check_ptrs x D
+    return clang_ASTContext_setParameterIndex(x, D, index)
+end
+
+function getPredefinedStringLiteralFromCache(x::ASTContext, key::AbstractString)
+    @check_ptrs x
+    return StringLiteral(clang_ASTContext_getPredefinedStringLiteralFromCache(x, key))
+end

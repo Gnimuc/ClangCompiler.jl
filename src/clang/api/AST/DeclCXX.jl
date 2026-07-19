@@ -987,3 +987,123 @@ function getShadows(x::AbstractBaseUsingDecl)
     return [UsingShadowDecl(p) for p in buf]
 end
 
+
+
+# --- SetFactory sweep: skiplisted set*/Create*/CreateDeserialized ---
+
+# AccessSpecDecl
+function AccessSpecDecl(ctx::ASTContext, as::CXAccessSpecifier, dc::DeclContext,
+                        as_loc::SourceLocation, colon_loc::SourceLocation)
+    @check_ptrs ctx dc
+    return AccessSpecDecl(clang_AccessSpecDecl_Create(ctx, as, dc, as_loc, colon_loc))
+end
+
+function AccessSpecDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return AccessSpecDecl(clang_AccessSpecDecl_CreateDeserialized(ctx, id))
+end
+
+function setAccessSpecifierLoc(x::AbstractAccessSpecDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_AccessSpecDecl_setAccessSpecifierLoc(x, loc)
+end
+
+function setColonLoc(x::AbstractAccessSpecDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_AccessSpecDecl_setColonLoc(x, loc)
+end
+
+# LinkageSpecDecl
+function LinkageSpecDecl(ctx::ASTContext, dc::DeclContext, extern_loc::SourceLocation,
+                         lang_loc::SourceLocation, lang::CXLinkageSpecLanguageIDs, has_braces::Bool)
+    @check_ptrs ctx dc
+    return LinkageSpecDecl(clang_LinkageSpecDecl_Create(ctx, dc, extern_loc, lang_loc, lang, has_braces))
+end
+
+function LinkageSpecDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return LinkageSpecDecl(clang_LinkageSpecDecl_CreateDeserialized(ctx, id))
+end
+
+function setLanguage(x::AbstractLinkageSpecDecl, lang::CXLinkageSpecLanguageIDs)
+    @check_ptrs x
+    return clang_LinkageSpecDecl_setLanguage(x, lang)
+end
+
+function setExternLoc(x::AbstractLinkageSpecDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_LinkageSpecDecl_setExternLoc(x, loc)
+end
+
+function setRBraceLoc(x::AbstractLinkageSpecDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_LinkageSpecDecl_setRBraceLoc(x, loc)
+end
+
+# AccessSpecDecl setters
+
+
+# AccessSpecDecl factories
+
+
+# CXXRecordDecl factories
+function CXXRecordDecl(ctx::ASTContext, tk::CXTagTypeKind, dc::DeclContext,
+                      start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo,
+                      prev_decl::AbstractCXXRecordDecl=CXXRecordDecl(C_NULL),
+                      delay_type_creation::Bool=false)
+    @check_ptrs ctx dc
+    rd = clang_CXXRecordDecl_Create(ctx, tk, dc, start_loc, id_loc, id, prev_decl,
+                                    delay_type_creation)
+    return CXXRecordDecl(rd)
+end
+
+function CXXRecordDecl(ctx::ASTContext, dc::DeclContext, info::TypeSourceInfo,
+                      loc::SourceLocation, dependent_lambda::Bool, is_generic::Bool,
+                      capture_default::CXLambdaCaptureDefault)
+    @check_ptrs ctx dc info
+    rd = clang_CXXRecordDecl_CreateLambda(ctx, dc, info, loc, dependent_lambda, is_generic,
+                                          capture_default)
+    return CXXRecordDecl(rd)
+end
+
+# CXXMethodDecl factories
+function CXXMethodDecl(ctx::ASTContext, rd::AbstractCXXRecordDecl, start_loc::SourceLocation,
+                      name_info::DeclarationNameInfo, ty::QualType, tinfo::TypeSourceInfo,
+                      sc::CXStorageClass, uses_fp_intrin::Bool, is_inline::Bool,
+                      constexpr_kind::CXConstexprSpecKind, end_loc::SourceLocation,
+                      trailing_requires_clause::AbstractExpr=Expr_(C_NULL))
+    @check_ptrs ctx rd tinfo
+    md = clang_CXXMethodDecl_Create(ctx, rd, start_loc, name_info, ty, tinfo, sc,
+                                    uses_fp_intrin, is_inline, constexpr_kind, end_loc,
+                                    trailing_requires_clause)
+    return CXXMethodDecl(md)
+end
+
+function CXXMethodDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return CXXMethodDecl(clang_CXXMethodDecl_CreateDeserialized(ctx, id))
+end
+
+# CXXBaseSpecifier setter
+function setInheritConstructors(x::CXXBaseSpecifier, inherit::Bool=true)
+    @check_ptrs x
+    return clang_CXXBaseSpecifier_setInheritConstructors(x, inherit)
+end
+
+# ExplicitSpecifier setters
+function setKind(x::ExplicitSpecifier, kind::CXExplicitSpecKind)
+    @check_ptrs x
+    return clang_ExplicitSpecifier_setKind(x, kind)
+end
+
+function setExpr(x::ExplicitSpecifier, e::AbstractExpr)
+    @check_ptrs x e
+    return clang_ExplicitSpecifier_setExpr(x, e)
+end
+
+# LinkageSpecDecl factories
+
+
+# LinkageSpecDecl setters
+
+

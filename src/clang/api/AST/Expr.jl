@@ -944,3 +944,36 @@ function getRParenLoc(x::CStyleCastExpr)
     @check_ptrs x
     return SourceLocation(clang_CStyleCastExpr_getRParenLoc(x))
 end
+
+# IntegerLiteral — factory and location setter
+function IntegerLiteral(ctx::ASTContext, val, ty::QualType, loc::SourceLocation)
+    @check_ptrs ctx
+    return IntegerLiteral(clang_IntegerLiteral_Create(ctx, val, ty, loc))
+end
+
+function setLocation(x::IntegerLiteral, loc::SourceLocation)
+    @check_ptrs x
+    return clang_IntegerLiteral_setLocation(x, loc)
+end
+
+# CStyleCastExpr — factories and paren-location setters
+function CStyleCastExpr(ctx::ASTContext, path_size::Integer, has_fp_features::Bool)
+    @check_ptrs ctx
+    return CStyleCastExpr(clang_CStyleCastExpr_CreateEmpty(ctx, path_size, has_fp_features))
+end
+
+function CStyleCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind,
+                        op::AbstractExpr)
+    @check_ptrs ctx op
+    return CStyleCastExpr(clang_CStyleCastExpr_CreateWithNoTypeInfo(ctx, ty, vk, k, op))
+end
+
+function setLParenLoc(x::CStyleCastExpr, loc::SourceLocation)
+    @check_ptrs x
+    return clang_CStyleCastExpr_setLParenLoc(x, loc)
+end
+
+function setRParenLoc(x::CStyleCastExpr, loc::SourceLocation)
+    @check_ptrs x
+    return clang_CStyleCastExpr_setRParenLoc(x, loc)
+end

@@ -2320,3 +2320,487 @@ function getParam(x::AbstractCapturedDecl, i::Integer)
     @check_ptrs x
     return ImplicitParamDecl(clang_CapturedDecl_getParam(x, i))
 end
+
+
+# --- SetFactory sweep: skiplisted set*/Create*/CreateDeserialized ---
+
+# TranslationUnitDecl
+function TranslationUnitDecl(ctx::ASTContext)
+    @check_ptrs ctx
+    return TranslationUnitDecl(clang_TranslationUnitDecl_Create(ctx))
+end
+
+# LabelDecl
+function LabelDecl(ctx::ASTContext, dc::DeclContext, ident_loc::SourceLocation, id::IdentifierInfo)
+    @check_ptrs ctx dc id
+    return LabelDecl(clang_LabelDecl_Create(ctx, dc, ident_loc, id))
+end
+
+function LabelDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return LabelDecl(clang_LabelDecl_CreateDeserialized(ctx, id))
+end
+
+# NamespaceDecl
+function NamespaceDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return NamespaceDecl(clang_NamespaceDecl_CreateDeserialized(ctx, id))
+end
+
+# VarDecl
+function VarDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
+                 id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass)
+    @check_ptrs ctx dc id tsi
+    return VarDecl(clang_VarDecl_Create(ctx, dc, start_loc, id_loc, id, ty, tsi, sc))
+end
+
+function VarDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return VarDecl(clang_VarDecl_CreateDeserialized(ctx, id))
+end
+
+# ImplicitParamDecl
+function ImplicitParamDecl(ctx::ASTContext, dc::DeclContext, id_loc::SourceLocation,
+                           id::IdentifierInfo, ty::QualType, param_kind::CXImplicitParamKind)
+    @check_ptrs ctx dc
+    return ImplicitParamDecl(clang_ImplicitParamDecl_Create(ctx, dc, id_loc, id, ty, param_kind))
+end
+
+function ImplicitParamDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return ImplicitParamDecl(clang_ImplicitParamDecl_CreateDeserialized(ctx, id))
+end
+
+# ParmVarDecl
+function ParmVarDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
+                     id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass,
+                     def_arg::Expr_=Expr_(C_NULL))
+    @check_ptrs ctx dc id tsi
+    return ParmVarDecl(clang_ParmVarDecl_Create(ctx, dc, start_loc, id_loc, id, ty, tsi, sc, def_arg))
+end
+
+function ParmVarDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return ParmVarDecl(clang_ParmVarDecl_CreateDeserialized(ctx, id))
+end
+
+# FunctionDecl
+function FunctionDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation, name_loc::SourceLocation,
+                      name::DeclarationName, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass,
+                      is_inline_specified::Bool, has_written_prototype::Bool)
+    @check_ptrs ctx dc tsi
+    return FunctionDecl(clang_FunctionDecl_Create(ctx, dc, start_loc, name_loc, name, ty, tsi, sc,
+                                                  is_inline_specified, has_written_prototype))
+end
+
+function FunctionDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return FunctionDecl(clang_FunctionDecl_CreateDeserialized(ctx, id))
+end
+
+function setIsPureVirtual(x::FunctionDecl, p::Bool=true)
+    @check_ptrs x
+    return clang_FunctionDecl_setIsPureVirtual(x, p)
+end
+
+# FieldDecl
+function FieldDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
+                   id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, bw::Expr_,
+                   mutable::Bool, init_style::CXInClassInitStyle)
+    @check_ptrs ctx dc tsi
+    return FieldDecl(clang_FieldDecl_Create(ctx, dc, start_loc, id_loc, id, ty, tsi, bw, mutable, init_style))
+end
+
+function FieldDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return FieldDecl(clang_FieldDecl_CreateDeserialized(ctx, id))
+end
+
+function setBitWidth(x::AbstractFieldDecl, width::Expr_)
+    @check_ptrs x width
+    return clang_FieldDecl_setBitWidth(x, width)
+end
+
+function setInClassInitializer(x::AbstractFieldDecl, init::Expr_)
+    @check_ptrs x init
+    return clang_FieldDecl_setInClassInitializer(x, init)
+end
+
+function setCapturedVLAType(x::AbstractFieldDecl, vla::VariableArrayType)
+    @check_ptrs x vla
+    return clang_FieldDecl_setCapturedVLAType(x, vla)
+end
+
+# EnumConstantDecl
+function EnumConstantDecl(ctx::ASTContext, dc::AbstractEnumDecl, loc::SourceLocation,
+                          id::IdentifierInfo, ty::QualType, init::Expr_,
+                          val::LibClangEx.LLVMGenericValueRef)
+    @check_ptrs ctx dc
+    return EnumConstantDecl(clang_EnumConstantDecl_Create(ctx, dc, loc, id, ty, init, val))
+end
+
+function EnumConstantDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return EnumConstantDecl(clang_EnumConstantDecl_CreateDeserialized(ctx, id))
+end
+
+function setInitExpr(x::AbstractEnumConstantDecl, e::Expr_)
+    @check_ptrs x e
+    return clang_EnumConstantDecl_setInitExpr(x, e)
+end
+
+# IndirectFieldDecl
+function IndirectFieldDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return IndirectFieldDecl(clang_IndirectFieldDecl_CreateDeserialized(ctx, id))
+end
+
+# TypedefDecl
+function TypedefDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
+                     id::IdentifierInfo, tsi::TypeSourceInfo)
+    @check_ptrs ctx dc id tsi
+    return TypedefDecl(clang_TypedefDecl_Create(ctx, dc, start_loc, id_loc, id, tsi))
+end
+
+function TypedefDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return TypedefDecl(clang_TypedefDecl_CreateDeserialized(ctx, id))
+end
+
+# TypeAliasDecl
+function TypeAliasDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
+                       id::IdentifierInfo, tsi::TypeSourceInfo)
+    @check_ptrs ctx dc id tsi
+    return TypeAliasDecl(clang_TypeAliasDecl_Create(ctx, dc, start_loc, id_loc, id, tsi))
+end
+
+function TypeAliasDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return TypeAliasDecl(clang_TypeAliasDecl_CreateDeserialized(ctx, id))
+end
+
+function setDescribedAliasTemplate(x::AbstractTypeAliasDecl, tat::TypeAliasTemplateDecl)
+    @check_ptrs x tat
+    return clang_TypeAliasDecl_setDescribedAliasTemplate(x, tat)
+end
+
+# TypedefNameDecl
+function setTypeSourceInfo(x::AbstractTypedefNameDecl, tsi::TypeSourceInfo)
+    @check_ptrs x tsi
+    return clang_TypedefNameDecl_setTypeSourceInfo(x, tsi)
+end
+
+function setModedTypeSourceInfo(x::AbstractTypedefNameDecl, unmoded_tsi::TypeSourceInfo, moded_ty::QualType)
+    @check_ptrs x unmoded_tsi
+    return clang_TypedefNameDecl_setModedTypeSourceInfo(x, unmoded_tsi, moded_ty)
+end
+
+# TagDecl
+function setBraceRange(x::AbstractTagDecl, r::SourceRange)
+    @check_ptrs x
+    return clang_TagDecl_setBraceRange(x, CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr))
+end
+
+function setCompleteDefinitionRequired(x::AbstractTagDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_TagDecl_setCompleteDefinitionRequired(x, v)
+end
+
+function setEmbeddedInDeclarator(x::AbstractTagDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_TagDecl_setEmbeddedInDeclarator(x, v)
+end
+
+function setFreeStanding(x::AbstractTagDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_TagDecl_setFreeStanding(x, v)
+end
+
+function setTagKind(x::AbstractTagDecl, tk::CXTagTypeKind)
+    @check_ptrs x
+    return clang_TagDecl_setTagKind(x, tk)
+end
+
+function setTypedefNameForAnonDecl(x::AbstractTagDecl, tnd::AbstractTypedefNameDecl)
+    @check_ptrs x tnd
+    return clang_TagDecl_setTypedefNameForAnonDecl(x, tnd)
+end
+
+# EnumDecl
+function EnumDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
+                  id::IdentifierInfo, prev_decl::EnumDecl=EnumDecl(C_NULL), is_scoped::Bool=false,
+                  is_scoped_using_class_tag::Bool=false, is_fixed::Bool=false)
+    @check_ptrs ctx dc id
+    return EnumDecl(clang_EnumDecl_Create(ctx, dc, start_loc, id_loc, id, prev_decl, is_scoped,
+                                          is_scoped_using_class_tag, is_fixed))
+end
+
+function EnumDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return EnumDecl(clang_EnumDecl_CreateDeserialized(ctx, id))
+end
+
+function setScoped(x::AbstractEnumDecl, scoped::Bool=true)
+    @check_ptrs x
+    return clang_EnumDecl_setScoped(x, scoped)
+end
+
+function setScopedUsingClassTag(x::AbstractEnumDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_EnumDecl_setScopedUsingClassTag(x, v)
+end
+
+function setFixed(x::AbstractEnumDecl, fixed::Bool=true)
+    @check_ptrs x
+    return clang_EnumDecl_setFixed(x, fixed)
+end
+
+function setIntegerType(x::AbstractEnumDecl, ty::QualType)
+    @check_ptrs x
+    return clang_EnumDecl_setIntegerType(x, ty)
+end
+
+function setIntegerTypeSourceInfo(x::AbstractEnumDecl, tsi::TypeSourceInfo)
+    @check_ptrs x tsi
+    return clang_EnumDecl_setIntegerTypeSourceInfo(x, tsi)
+end
+
+function setPromotionType(x::AbstractEnumDecl, ty::QualType)
+    @check_ptrs x
+    return clang_EnumDecl_setPromotionType(x, ty)
+end
+
+function setTemplateSpecializationKind(x::AbstractEnumDecl, tsk::CXTemplateSpecializationKind, poi::SourceLocation)
+    @check_ptrs x
+    return clang_EnumDecl_setTemplateSpecializationKind(x, tsk, poi)
+end
+
+function setInstantiationOfMemberEnum(x::AbstractEnumDecl, ed::AbstractEnumDecl, tsk::CXTemplateSpecializationKind)
+    @check_ptrs x ed
+    return clang_EnumDecl_setInstantiationOfMemberEnum(x, ed, tsk)
+end
+
+# RecordDecl
+function RecordDecl(ctx::ASTContext, tk::CXTagTypeKind, dc::DeclContext, start_loc::SourceLocation,
+                    id_loc::SourceLocation, id::IdentifierInfo, prev_decl::RecordDecl=RecordDecl(C_NULL))
+    @check_ptrs ctx dc
+    return RecordDecl(clang_RecordDecl_Create(ctx, tk, dc, start_loc, id_loc, id, prev_decl))
+end
+
+function RecordDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return RecordDecl(clang_RecordDecl_CreateDeserialized(ctx, id))
+end
+
+function setArgPassingRestrictions(x::AbstractRecordDecl, kind::CXRecordArgPassingKind)
+    @check_ptrs x
+    return clang_RecordDecl_setArgPassingRestrictions(x, kind)
+end
+
+function setAnonymousStructOrUnion(x::AbstractRecordDecl, anon::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setAnonymousStructOrUnion(x, anon)
+end
+
+function setCapturedRecord(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_setCapturedRecord(x)
+end
+
+function setHasFlexibleArrayMember(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setHasFlexibleArrayMember(x, v)
+end
+
+function setHasLoadedFieldsFromExternalStorage(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setHasLoadedFieldsFromExternalStorage(x, v)
+end
+
+function setHasNonTrivialToPrimitiveCopyCUnion(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setHasNonTrivialToPrimitiveCopyCUnion(x, v)
+end
+
+function setHasNonTrivialToPrimitiveDefaultInitializeCUnion(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setHasNonTrivialToPrimitiveDefaultInitializeCUnion(x, v)
+end
+
+function setHasNonTrivialToPrimitiveDestructCUnion(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setHasNonTrivialToPrimitiveDestructCUnion(x, v)
+end
+
+function setHasObjectMember(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setHasObjectMember(x, v)
+end
+
+function setHasVolatileMember(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setHasVolatileMember(x, v)
+end
+
+function setNonTrivialToPrimitiveCopy(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setNonTrivialToPrimitiveCopy(x, v)
+end
+
+function setNonTrivialToPrimitiveDefaultInitialize(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setNonTrivialToPrimitiveDefaultInitialize(x, v)
+end
+
+function setNonTrivialToPrimitiveDestroy(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setNonTrivialToPrimitiveDestroy(x, v)
+end
+
+function setParamDestroyedInCallee(x::AbstractRecordDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_RecordDecl_setParamDestroyedInCallee(x, v)
+end
+
+# FileScopeAsmDecl
+function FileScopeAsmDecl(ctx::ASTContext, dc::DeclContext, str::StringLiteral,
+                          asm_loc::SourceLocation, rparen_loc::SourceLocation)
+    @check_ptrs ctx dc str
+    return FileScopeAsmDecl(clang_FileScopeAsmDecl_Create(ctx, dc, str, asm_loc, rparen_loc))
+end
+
+function FileScopeAsmDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return FileScopeAsmDecl(clang_FileScopeAsmDecl_CreateDeserialized(ctx, id))
+end
+
+function setAsmString(x::AbstractFileScopeAsmDecl, asm::StringLiteral)
+    @check_ptrs x asm
+    return clang_FileScopeAsmDecl_setAsmString(x, asm)
+end
+
+function setRParenLoc(x::AbstractFileScopeAsmDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_FileScopeAsmDecl_setRParenLoc(x, loc)
+end
+
+# BlockDecl
+function BlockDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation)
+    @check_ptrs ctx dc
+    return BlockDecl(clang_BlockDecl_Create(ctx, dc, loc))
+end
+
+function BlockDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return BlockDecl(clang_BlockDecl_CreateDeserialized(ctx, id))
+end
+
+function setBody(x::AbstractBlockDecl, body::CompoundStmt)
+    @check_ptrs x body
+    return clang_BlockDecl_setBody(x, body)
+end
+
+function setSignatureAsWritten(x::AbstractBlockDecl, sig::TypeSourceInfo)
+    @check_ptrs x sig
+    return clang_BlockDecl_setSignatureAsWritten(x, sig)
+end
+
+function setCapturesCXXThis(x::AbstractBlockDecl, b::Bool=true)
+    @check_ptrs x
+    return clang_BlockDecl_setCapturesCXXThis(x, b)
+end
+
+function setBlockMissingReturnType(x::AbstractBlockDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_BlockDecl_setBlockMissingReturnType(x, v)
+end
+
+function setIsConversionFromLambda(x::AbstractBlockDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_BlockDecl_setIsConversionFromLambda(x, v)
+end
+
+function setDoesNotEscape(x::AbstractBlockDecl, b::Bool=true)
+    @check_ptrs x
+    return clang_BlockDecl_setDoesNotEscape(x, b)
+end
+
+function setCanAvoidCopyToHeap(x::AbstractBlockDecl, b::Bool=true)
+    @check_ptrs x
+    return clang_BlockDecl_setCanAvoidCopyToHeap(x, b)
+end
+
+function setBlockMangling(x::AbstractBlockDecl, number::Integer, ctx_decl::AbstractDecl)
+    @check_ptrs x ctx_decl
+    return clang_BlockDecl_setBlockMangling(x, number, ctx_decl)
+end
+
+# CapturedDecl
+function CapturedDecl(ctx::ASTContext, dc::DeclContext, num_params::Integer)
+    @check_ptrs ctx dc
+    return CapturedDecl(clang_CapturedDecl_Create(ctx, dc, num_params))
+end
+
+function CapturedDecl(ctx::ASTContext, id::Integer, num_params::Integer)
+    @check_ptrs ctx
+    return CapturedDecl(clang_CapturedDecl_CreateDeserialized(ctx, id, num_params))
+end
+
+function setBody(x::AbstractCapturedDecl, body::AbstractStmt)
+    @check_ptrs x body
+    return clang_CapturedDecl_setBody(x, body)
+end
+
+function setNothrow(x::AbstractCapturedDecl, nothrow::Bool=true)
+    @check_ptrs x
+    return clang_CapturedDecl_setNothrow(x, nothrow)
+end
+
+function setParam(x::AbstractCapturedDecl, i::Integer, p::ImplicitParamDecl)
+    @check_ptrs x p
+    return clang_CapturedDecl_setParam(x, i, p)
+end
+
+function setContextParam(x::AbstractCapturedDecl, i::Integer, p::ImplicitParamDecl)
+    @check_ptrs x p
+    return clang_CapturedDecl_setContextParam(x, i, p)
+end
+
+# ImportDecl
+function ImportDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+                    imported::CXModule, end_loc::SourceLocation)
+    @check_ptrs ctx dc
+    return ImportDecl(clang_ImportDecl_CreateImplicit(ctx, dc, start_loc, imported, end_loc))
+end
+
+function ImportDecl(ctx::ASTContext, id::Integer, num_locations::Integer)
+    @check_ptrs ctx
+    return ImportDecl(clang_ImportDecl_CreateDeserialized(ctx, id, num_locations))
+end
+
+# ExportDecl
+function ExportDecl(ctx::ASTContext, dc::DeclContext, export_loc::SourceLocation)
+    @check_ptrs ctx dc
+    return ExportDecl(clang_ExportDecl_Create(ctx, dc, export_loc))
+end
+
+function ExportDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return ExportDecl(clang_ExportDecl_CreateDeserialized(ctx, id))
+end
+
+function setRBraceLoc(x::AbstractExportDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_ExportDecl_setRBraceLoc(x, loc)
+end
+
+# EmptyDecl
+function EmptyDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation)
+    @check_ptrs ctx dc
+    return EmptyDecl(clang_EmptyDecl_Create(ctx, dc, loc))
+end
+
+function EmptyDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return EmptyDecl(clang_EmptyDecl_CreateDeserialized(ctx, id))
+end
