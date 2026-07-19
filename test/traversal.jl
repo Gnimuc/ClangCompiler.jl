@@ -55,14 +55,26 @@ end
 end
 
 @testset "Traversal | name mangling" begin
-    I = create_interpreter([joinpath(@__DIR__, "cxx", "main.cpp")])
+    I = create_interpreter(String[])
     ctx = ClangCompiler.get_ast_context(I)
     mc = ClangCompiler.createMangleContext(ctx, ClangCompiler.getTargetInfo(ctx))
     f = DeclFinder(I)
-    @test f(I, "sum")
-    nd = ClangCompiler.NamedDecl(get_decl(f).ptr)
-    @test ClangCompiler.shouldMangleDeclName(mc, nd)
-    @test ClangCompiler.mangleName(mc, nd) == "_Z3sumRNSt3__16vectorIfNS_9allocatorIfEEEE"
+    # Primitive-signature functions so the expected Itanium mangling is
+    # stable across every target the interpreter may resolve. A std-library
+    # parameter (e.g. std::vector) would drag in the platform-specific inline
+    # namespace (`std` under libstdc++ vs `std::__1` under libc++) and make the
+    # string host-dependent.
+    ClangCompiler.parse(I, "int add(int a, int b) { return a + b; } void ref(int &r) { r = 0; }")
+
+    @test f(I, "add")
+    add_nd = ClangCompiler.NamedDecl(get_decl(f).ptr)
+    @test ClangCompiler.shouldMangleDeclName(mc, add_nd)
+    @test ClangCompiler.mangleName(mc, add_nd) == "_Z3addii"
+
+    @test f(I, "ref")
+    ref_nd = ClangCompiler.NamedDecl(get_decl(f).ptr)
+    @test ClangCompiler.mangleName(mc, ref_nd) == "_Z3refRi"
+
     dispose(f)
     dispose(I)
 end
