@@ -729,10 +729,64 @@ CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
 // InheritedConstructor
 
 // CXXConstructorDecl
+bool clang_CXXConstructorDecl_isExplicit(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->isExplicit();
+}
+
+bool clang_CXXConstructorDecl_isDefaultConstructor(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->isDefaultConstructor();
+}
+
+bool clang_CXXConstructorDecl_isCopyConstructor(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->isCopyConstructor();
+}
+
+bool clang_CXXConstructorDecl_isMoveConstructor(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->isMoveConstructor();
+}
+
+bool clang_CXXConstructorDecl_isCopyOrMoveConstructor(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->isCopyOrMoveConstructor();
+}
+
+bool clang_CXXConstructorDecl_isDelegatingConstructor(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->isDelegatingConstructor();
+}
+
+bool clang_CXXConstructorDecl_isInheritingConstructor(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->isInheritingConstructor();
+}
+
+bool clang_CXXConstructorDecl_isSpecializationCopyingObject(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->isSpecializationCopyingObject();
+}
+
+unsigned clang_CXXConstructorDecl_getNumCtorInitializers(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->getNumCtorInitializers();
+}
+
+CXCXXConstructorDecl clang_CXXConstructorDecl_getTargetConstructor(CXCXXConstructorDecl CD) {
+  return static_cast<clang::CXXConstructorDecl *>(CD)->getTargetConstructor();
+}
 
 // CXXDestructorDecl
+CXFunctionDecl clang_CXXDestructorDecl_getOperatorDelete(CXCXXDestructorDecl DD) {
+  return const_cast<clang::FunctionDecl *>(
+      static_cast<clang::CXXDestructorDecl *>(DD)->getOperatorDelete());
+}
 
 // CXXConversionDecl
+CXQualType clang_CXXConversionDecl_getConversionType(CXCXXConversionDecl CD) {
+  return static_cast<clang::CXXConversionDecl *>(CD)->getConversionType().getAsOpaquePtr();
+}
+
+bool clang_CXXConversionDecl_isExplicit(CXCXXConversionDecl CD) {
+  return static_cast<clang::CXXConversionDecl *>(CD)->isExplicit();
+}
+
+bool clang_CXXConversionDecl_isLambdaToBlockPointerConversion(CXCXXConversionDecl CD) {
+  return static_cast<clang::CXXConversionDecl *>(CD)->isLambdaToBlockPointerConversion();
+}
 
 // LinkageSpecDecl
 CXLinkageSpecDecl clang_LinkageSpecDecl_Create(CXASTContext C, CXDeclContext DC,

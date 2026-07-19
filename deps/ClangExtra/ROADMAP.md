@@ -70,9 +70,10 @@ remaining phases. Status markers: [x] done, [ ] open.
 - [ ] **Member iteration** (count+fill per MARSHALLING.md §6): RecordDecl
       fields, EnumDecl enumerators, CXXRecordDecl bases/methods/ctors, DeclStmt
       decls — the primary remaining traversal gap, all needing C-side shims.
-- [ ] **DeclCXX completion** — CXXRecordDecl traits are done; the constructor/
-      destructor/conversion/deduction-guide classes and the using-decls still
-      have little or no payload.
+- [ ] **DeclCXX completion** — CXXRecordDecl traits, base iteration, and the
+      constructor/conversion/destructor predicate surface are done; the
+      deduction-guide class, the using-decls, and the CtorInitializer /
+      ExplicitSpecifier-by-value paths (MARSHALLING.md §7) still remain.
 - [ ] **Type-system completion** — carriers + `is_*`/resolve entries for the
       remaining sugar types (Atomic, Decltype, Decayed, Adjusted, Deduced,
       InjectedClassName, MacroQualified, UnaryTransform, DependentAddressSpace,

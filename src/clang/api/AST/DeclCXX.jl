@@ -768,3 +768,77 @@ function isSpecified(x::ExplicitSpecifier)
     return clang_ExplicitSpecifier_isSpecified(x)
 end
 
+
+# CXXConstructorDecl
+function isExplicit(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_isExplicit(x)
+end
+
+function isDefaultConstructor(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_isDefaultConstructor(x)
+end
+
+function isCopyConstructor(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_isCopyConstructor(x)
+end
+
+function isMoveConstructor(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_isMoveConstructor(x)
+end
+
+function isCopyOrMoveConstructor(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_isCopyOrMoveConstructor(x)
+end
+
+function isDelegatingConstructor(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_isDelegatingConstructor(x)
+end
+
+function isInheritingConstructor(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_isInheritingConstructor(x)
+end
+
+function isSpecializationCopyingObject(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_isSpecializationCopyingObject(x)
+end
+
+function getNumCtorInitializers(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return clang_CXXConstructorDecl_getNumCtorInitializers(x)
+end
+
+function getTargetConstructor(x::AbstractCXXConstructorDecl)
+    @check_ptrs x
+    return CXXConstructorDecl(clang_CXXConstructorDecl_getTargetConstructor(x))
+end
+
+# CXXDestructorDecl
+function getOperatorDelete(x::AbstractCXXDestructorDecl)
+    @check_ptrs x
+    return FunctionDecl(clang_CXXDestructorDecl_getOperatorDelete(x))
+end
+
+# CXXConversionDecl
+function getConversionType(x::AbstractCXXConversionDecl)
+    @check_ptrs x
+    return QualType(clang_CXXConversionDecl_getConversionType(x))
+end
+
+function isExplicit(x::AbstractCXXConversionDecl)
+    @check_ptrs x
+    return clang_CXXConversionDecl_isExplicit(x)
+end
+
+function isLambdaToBlockPointerConversion(x::AbstractCXXConversionDecl)
+    @check_ptrs x
+    return clang_CXXConversionDecl_isLambdaToBlockPointerConversion(x)
+end
+

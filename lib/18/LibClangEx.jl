@@ -4218,6 +4218,62 @@ function clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD, RD, Ma
     @ccall libclangex.clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD::CXCXXMethodDecl, RD::CXCXXRecordDecl, MayBeBase::Bool)::CXCXXRecordDecl
 end
 
+function clang_CXXConstructorDecl_isExplicit(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_isExplicit(CD::CXCXXConstructorDecl)::Bool
+end
+
+function clang_CXXConstructorDecl_isDefaultConstructor(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_isDefaultConstructor(CD::CXCXXConstructorDecl)::Bool
+end
+
+function clang_CXXConstructorDecl_isCopyConstructor(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_isCopyConstructor(CD::CXCXXConstructorDecl)::Bool
+end
+
+function clang_CXXConstructorDecl_isMoveConstructor(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_isMoveConstructor(CD::CXCXXConstructorDecl)::Bool
+end
+
+function clang_CXXConstructorDecl_isCopyOrMoveConstructor(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_isCopyOrMoveConstructor(CD::CXCXXConstructorDecl)::Bool
+end
+
+function clang_CXXConstructorDecl_isDelegatingConstructor(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_isDelegatingConstructor(CD::CXCXXConstructorDecl)::Bool
+end
+
+function clang_CXXConstructorDecl_isInheritingConstructor(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_isInheritingConstructor(CD::CXCXXConstructorDecl)::Bool
+end
+
+function clang_CXXConstructorDecl_isSpecializationCopyingObject(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_isSpecializationCopyingObject(CD::CXCXXConstructorDecl)::Bool
+end
+
+function clang_CXXConstructorDecl_getNumCtorInitializers(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_getNumCtorInitializers(CD::CXCXXConstructorDecl)::Cuint
+end
+
+function clang_CXXConstructorDecl_getTargetConstructor(CD)
+    @ccall libclangex.clang_CXXConstructorDecl_getTargetConstructor(CD::CXCXXConstructorDecl)::CXCXXConstructorDecl
+end
+
+function clang_CXXDestructorDecl_getOperatorDelete(DD)
+    @ccall libclangex.clang_CXXDestructorDecl_getOperatorDelete(DD::CXCXXDestructorDecl)::CXFunctionDecl
+end
+
+function clang_CXXConversionDecl_getConversionType(CD)
+    @ccall libclangex.clang_CXXConversionDecl_getConversionType(CD::CXCXXConversionDecl)::CXQualType
+end
+
+function clang_CXXConversionDecl_isExplicit(CD)
+    @ccall libclangex.clang_CXXConversionDecl_isExplicit(CD::CXCXXConversionDecl)::Bool
+end
+
+function clang_CXXConversionDecl_isLambdaToBlockPointerConversion(CD)
+    @ccall libclangex.clang_CXXConversionDecl_isLambdaToBlockPointerConversion(CD::CXCXXConversionDecl)::Bool
+end
+
 @enum CXLinkageSpecLanguageIDs::UInt32 begin
     CXLinkageSpecDecl_lang_c = 1
     CXLinkageSpecDecl_lang_cxx = 2

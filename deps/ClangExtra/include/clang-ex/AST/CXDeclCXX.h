@@ -379,10 +379,35 @@ CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
 // InheritedConstructor
 
 // CXXConstructorDecl
+bool clang_CXXConstructorDecl_isExplicit(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isDefaultConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isCopyConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isMoveConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isCopyOrMoveConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isDelegatingConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isInheritingConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isSpecializationCopyingObject(CXCXXConstructorDecl CD);
+
+unsigned clang_CXXConstructorDecl_getNumCtorInitializers(CXCXXConstructorDecl CD);
+
+CXCXXConstructorDecl clang_CXXConstructorDecl_getTargetConstructor(CXCXXConstructorDecl CD);
 
 // CXXDestructorDecl
+CXFunctionDecl clang_CXXDestructorDecl_getOperatorDelete(CXCXXDestructorDecl DD);
 
 // CXXConversionDecl
+CXQualType clang_CXXConversionDecl_getConversionType(CXCXXConversionDecl CD);
+
+bool clang_CXXConversionDecl_isExplicit(CXCXXConversionDecl CD);
+
+bool clang_CXXConversionDecl_isLambdaToBlockPointerConversion(CXCXXConversionDecl CD);
 
 // LinkageSpecDecl
 typedef enum CXLinkageSpecLanguageIDs {
