@@ -6809,6 +6809,66 @@ function clang_Expr_IgnoreParenImpCasts(E)
     @ccall libclangex.clang_Expr_IgnoreParenImpCasts(E::CXExpr)::CXExpr
 end
 
+function clang_Expr_containsErrors(E)
+    @ccall libclangex.clang_Expr_containsErrors(E::CXExpr)::Bool
+end
+
+function clang_Expr_containsUnexpandedParameterPack(E)
+    @ccall libclangex.clang_Expr_containsUnexpandedParameterPack(E::CXExpr)::Bool
+end
+
+function clang_Expr_hasPlaceholderType(E)
+    @ccall libclangex.clang_Expr_hasPlaceholderType(E::CXExpr)::Bool
+end
+
+function clang_Expr_isDefaultArgument(E)
+    @ccall libclangex.clang_Expr_isDefaultArgument(E::CXExpr)::Bool
+end
+
+function clang_Expr_isImplicitCXXThis(E)
+    @ccall libclangex.clang_Expr_isImplicitCXXThis(E::CXExpr)::Bool
+end
+
+function clang_Expr_isInstantiationDependent(E)
+    @ccall libclangex.clang_Expr_isInstantiationDependent(E::CXExpr)::Bool
+end
+
+function clang_Expr_isObjCSelfExpr(E)
+    @ccall libclangex.clang_Expr_isObjCSelfExpr(E::CXExpr)::Bool
+end
+
+function clang_Expr_isOrdinaryOrBitFieldObject(E)
+    @ccall libclangex.clang_Expr_isOrdinaryOrBitFieldObject(E::CXExpr)::Bool
+end
+
+function clang_Expr_isTypeDependent(E)
+    @ccall libclangex.clang_Expr_isTypeDependent(E::CXExpr)::Bool
+end
+
+function clang_Expr_isValueDependent(E)
+    @ccall libclangex.clang_Expr_isValueDependent(E::CXExpr)::Bool
+end
+
+function clang_Expr_refersToBitField(E)
+    @ccall libclangex.clang_Expr_refersToBitField(E::CXExpr)::Bool
+end
+
+function clang_Expr_refersToGlobalRegisterVar(E)
+    @ccall libclangex.clang_Expr_refersToGlobalRegisterVar(E::CXExpr)::Bool
+end
+
+function clang_Expr_refersToMatrixElement(E)
+    @ccall libclangex.clang_Expr_refersToMatrixElement(E::CXExpr)::Bool
+end
+
+function clang_Expr_refersToVectorElement(E)
+    @ccall libclangex.clang_Expr_refersToVectorElement(E::CXExpr)::Bool
+end
+
+function clang_Expr_getExprLoc(E)
+    @ccall libclangex.clang_Expr_getExprLoc(E::CXExpr)::CXSourceLocation_
+end
+
 function clang_DeclRefExpr_getDecl(DRE)
     @ccall libclangex.clang_DeclRefExpr_getDecl(DRE::CXDeclRefExpr)::CXValueDecl
 end

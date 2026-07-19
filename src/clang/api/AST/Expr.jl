@@ -357,6 +357,81 @@ function getSyntacticForm(x::AbstractInitListExpr)
     return InitListExpr(clang_InitListExpr_getSyntacticForm(x))
 end
 
+function containsErrors(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_containsErrors(x)
+end
+
+function containsUnexpandedParameterPack(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_containsUnexpandedParameterPack(x)
+end
+
+function hasPlaceholderType(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_hasPlaceholderType(x)
+end
+
+function isDefaultArgument(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_isDefaultArgument(x)
+end
+
+function isImplicitCXXThis(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_isImplicitCXXThis(x)
+end
+
+function isInstantiationDependent(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_isInstantiationDependent(x)
+end
+
+function isObjCSelfExpr(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_isObjCSelfExpr(x)
+end
+
+function isOrdinaryOrBitFieldObject(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_isOrdinaryOrBitFieldObject(x)
+end
+
+function isTypeDependent(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_isTypeDependent(x)
+end
+
+function isValueDependent(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_isValueDependent(x)
+end
+
+function refersToBitField(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_refersToBitField(x)
+end
+
+function refersToGlobalRegisterVar(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_refersToGlobalRegisterVar(x)
+end
+
+function refersToMatrixElement(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_refersToMatrixElement(x)
+end
+
+function refersToVectorElement(x::AbstractExpr)
+    @check_ptrs x
+    return clang_Expr_refersToVectorElement(x)
+end
+
+function getExprLoc(x::AbstractExpr)
+    @check_ptrs x
+    return SourceLocation(clang_Expr_getExprLoc(x))
+end
+
 # IntegerLiteral
 function getBeginLoc(x::IntegerLiteral)
     @check_ptrs x

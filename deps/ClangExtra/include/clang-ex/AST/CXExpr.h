@@ -34,6 +34,36 @@ CXExpr clang_Expr_IgnoreParenCasts(CXExpr E);
 
 CXExpr clang_Expr_IgnoreParenImpCasts(CXExpr E);
 
+bool clang_Expr_containsErrors(CXExpr E);
+
+bool clang_Expr_containsUnexpandedParameterPack(CXExpr E);
+
+bool clang_Expr_hasPlaceholderType(CXExpr E);
+
+bool clang_Expr_isDefaultArgument(CXExpr E);
+
+bool clang_Expr_isImplicitCXXThis(CXExpr E);
+
+bool clang_Expr_isInstantiationDependent(CXExpr E);
+
+bool clang_Expr_isObjCSelfExpr(CXExpr E);
+
+bool clang_Expr_isOrdinaryOrBitFieldObject(CXExpr E);
+
+bool clang_Expr_isTypeDependent(CXExpr E);
+
+bool clang_Expr_isValueDependent(CXExpr E);
+
+bool clang_Expr_refersToBitField(CXExpr E);
+
+bool clang_Expr_refersToGlobalRegisterVar(CXExpr E);
+
+bool clang_Expr_refersToMatrixElement(CXExpr E);
+
+bool clang_Expr_refersToVectorElement(CXExpr E);
+
+CXSourceLocation_ clang_Expr_getExprLoc(CXExpr E);
+
 // DeclRefExpr
 CXValueDecl clang_DeclRefExpr_getDecl(CXDeclRefExpr DRE);
 

@@ -42,6 +42,66 @@ CXExpr clang_Expr_IgnoreParenImpCasts(CXExpr E) {
   return static_cast<clang::Expr *>(E)->IgnoreParenImpCasts();
 }
 
+bool clang_Expr_containsErrors(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->containsErrors();
+}
+
+bool clang_Expr_containsUnexpandedParameterPack(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->containsUnexpandedParameterPack();
+}
+
+bool clang_Expr_hasPlaceholderType(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->hasPlaceholderType();
+}
+
+bool clang_Expr_isDefaultArgument(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->isDefaultArgument();
+}
+
+bool clang_Expr_isImplicitCXXThis(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->isImplicitCXXThis();
+}
+
+bool clang_Expr_isInstantiationDependent(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->isInstantiationDependent();
+}
+
+bool clang_Expr_isObjCSelfExpr(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->isObjCSelfExpr();
+}
+
+bool clang_Expr_isOrdinaryOrBitFieldObject(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->isOrdinaryOrBitFieldObject();
+}
+
+bool clang_Expr_isTypeDependent(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->isTypeDependent();
+}
+
+bool clang_Expr_isValueDependent(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->isValueDependent();
+}
+
+bool clang_Expr_refersToBitField(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->refersToBitField();
+}
+
+bool clang_Expr_refersToGlobalRegisterVar(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->refersToGlobalRegisterVar();
+}
+
+bool clang_Expr_refersToMatrixElement(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->refersToMatrixElement();
+}
+
+bool clang_Expr_refersToVectorElement(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->refersToVectorElement();
+}
+
+CXSourceLocation_ clang_Expr_getExprLoc(CXExpr E) {
+  return static_cast<clang::Expr *>(E)->getExprLoc().getPtrEncoding();
+}
+
 // DeclRefExpr
 CXValueDecl clang_DeclRefExpr_getDecl(CXDeclRefExpr DRE) {
   return static_cast<clang::DeclRefExpr *>(DRE)->getDecl();
