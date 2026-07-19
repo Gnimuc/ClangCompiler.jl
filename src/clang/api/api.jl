@@ -13,7 +13,9 @@ include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")
 include("AST/Type.jl")
 include("AST/Expr.jl")
+include("AST/ExprCXX.jl")
 include("AST/Stmt.jl")
+include("AST/StmtCXX.jl")
 
 # Basic
 include("Basic/CodeGenOptions.jl")

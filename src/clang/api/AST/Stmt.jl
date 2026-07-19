@@ -63,3 +63,220 @@ for node in STMT_NODES
         return $tsym($cast(x))
     end
 end
+
+function isSingleDecl(x::AbstractDeclStmt)
+    @check_ptrs x
+    return clang_DeclStmt_isSingleDecl(x)
+end
+
+function getSingleDecl(x::AbstractDeclStmt)
+    @check_ptrs x
+    return Decl(clang_DeclStmt_getSingleDecl(x))
+end
+
+Base.length(x::AbstractCompoundStmt) = (@check_ptrs x; Int(clang_CompoundStmt_size(x)))
+
+function body_front(x::AbstractCompoundStmt)
+    @check_ptrs x
+    return Stmt(clang_CompoundStmt_body_front(x))
+end
+
+function body_back(x::AbstractCompoundStmt)
+    @check_ptrs x
+    return Stmt(clang_CompoundStmt_body_back(x))
+end
+
+function getLBracLoc(x::AbstractCompoundStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CompoundStmt_getLBracLoc(x))
+end
+
+function getRBracLoc(x::AbstractCompoundStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CompoundStmt_getRBracLoc(x))
+end
+
+function getNextSwitchCase(x::AbstractSwitchCase)
+    @check_ptrs x
+    return SwitchCase(clang_SwitchCase_getNextSwitchCase(x))
+end
+
+function getSubStmt(x::AbstractSwitchCase)
+    @check_ptrs x
+    return Stmt(clang_SwitchCase_getSubStmt(x))
+end
+
+function getLHS(x::AbstractCaseStmt)
+    @check_ptrs x
+    return Expr_(clang_CaseStmt_getLHS(x))
+end
+
+function getRHS(x::AbstractCaseStmt)
+    @check_ptrs x
+    return Expr_(clang_CaseStmt_getRHS(x))
+end
+
+function getName(x::AbstractLabelStmt)
+    @check_ptrs x
+    return unsafe_string(clang_LabelStmt_getName(x))
+end
+
+function getDecl(x::AbstractLabelStmt)
+    @check_ptrs x
+    return LabelDecl(clang_LabelStmt_getDecl(x))
+end
+
+function getSubStmt(x::AbstractLabelStmt)
+    @check_ptrs x
+    return Stmt(clang_LabelStmt_getSubStmt(x))
+end
+
+function getCond(x::AbstractIfStmt)
+    @check_ptrs x
+    return Expr_(clang_IfStmt_getCond(x))
+end
+
+function getThen(x::AbstractIfStmt)
+    @check_ptrs x
+    return Stmt(clang_IfStmt_getThen(x))
+end
+
+function getElse(x::AbstractIfStmt)
+    @check_ptrs x
+    return Stmt(clang_IfStmt_getElse(x))
+end
+
+function hasElseStorage(x::AbstractIfStmt)
+    @check_ptrs x
+    return clang_IfStmt_hasElseStorage(x)
+end
+
+function hasInitStorage(x::AbstractIfStmt)
+    @check_ptrs x
+    return clang_IfStmt_hasInitStorage(x)
+end
+
+function hasVarStorage(x::AbstractIfStmt)
+    @check_ptrs x
+    return clang_IfStmt_hasVarStorage(x)
+end
+
+function getInit(x::AbstractIfStmt)
+    @check_ptrs x
+    return Stmt(clang_IfStmt_getInit(x))
+end
+
+function getConditionVariable(x::AbstractIfStmt)
+    @check_ptrs x
+    return VarDecl(clang_IfStmt_getConditionVariable(x))
+end
+
+function getIfLoc(x::AbstractIfStmt)
+    @check_ptrs x
+    return SourceLocation(clang_IfStmt_getIfLoc(x))
+end
+
+function getCond(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return Expr_(clang_SwitchStmt_getCond(x))
+end
+
+function getBody(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return Stmt(clang_SwitchStmt_getBody(x))
+end
+
+function getSwitchCaseList(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return SwitchCase(clang_SwitchStmt_getSwitchCaseList(x))
+end
+
+function isAllEnumCasesCovered(x::AbstractSwitchStmt)
+    @check_ptrs x
+    return clang_SwitchStmt_isAllEnumCasesCovered(x)
+end
+
+function getCond(x::AbstractWhileStmt)
+    @check_ptrs x
+    return Expr_(clang_WhileStmt_getCond(x))
+end
+
+function getBody(x::AbstractWhileStmt)
+    @check_ptrs x
+    return Stmt(clang_WhileStmt_getBody(x))
+end
+
+function getConditionVariable(x::AbstractWhileStmt)
+    @check_ptrs x
+    return VarDecl(clang_WhileStmt_getConditionVariable(x))
+end
+
+function getWhileLoc(x::AbstractWhileStmt)
+    @check_ptrs x
+    return SourceLocation(clang_WhileStmt_getWhileLoc(x))
+end
+
+function getCond(x::AbstractDoStmt)
+    @check_ptrs x
+    return Expr_(clang_DoStmt_getCond(x))
+end
+
+function getBody(x::AbstractDoStmt)
+    @check_ptrs x
+    return Stmt(clang_DoStmt_getBody(x))
+end
+
+function getDoLoc(x::AbstractDoStmt)
+    @check_ptrs x
+    return SourceLocation(clang_DoStmt_getDoLoc(x))
+end
+
+function getWhileLoc(x::AbstractDoStmt)
+    @check_ptrs x
+    return SourceLocation(clang_DoStmt_getWhileLoc(x))
+end
+
+function getInit(x::AbstractForStmt)
+    @check_ptrs x
+    return Stmt(clang_ForStmt_getInit(x))
+end
+
+function getCond(x::AbstractForStmt)
+    @check_ptrs x
+    return Expr_(clang_ForStmt_getCond(x))
+end
+
+function getInc(x::AbstractForStmt)
+    @check_ptrs x
+    return Expr_(clang_ForStmt_getInc(x))
+end
+
+function getBody(x::AbstractForStmt)
+    @check_ptrs x
+    return Stmt(clang_ForStmt_getBody(x))
+end
+
+function getConditionVariable(x::AbstractForStmt)
+    @check_ptrs x
+    return VarDecl(clang_ForStmt_getConditionVariable(x))
+end
+
+function getForLoc(x::AbstractForStmt)
+    @check_ptrs x
+    return SourceLocation(clang_ForStmt_getForLoc(x))
+end
+
+function getLabel(x::AbstractGotoStmt)
+    @check_ptrs x
+    return LabelDecl(clang_GotoStmt_getLabel(x))
+end
+
+function getGotoLoc(x::AbstractGotoStmt)
+    @check_ptrs x
+    return SourceLocation(clang_GotoStmt_getGotoLoc(x))
+end
+
+function getRetValue(x::AbstractReturnStmt)
+    @check_ptrs x
+    return Expr_(clang_ReturnStmt_getRetValue(x))
+end

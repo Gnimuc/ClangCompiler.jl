@@ -2,6 +2,7 @@
 
 Guidance for working on the hand-written C API shim over Clang's C++ API. The repo-root
 CLAUDE.md covers the overall package; this file covers the C/C++ wrapper conventions.
+ROADMAP.md records the standing strategy decisions and remaining phases.
 Everything compiles into one shared target `clangex` (C++17, `-fPIC -fno-rtti`, links the
 monolithic `LLVM` + `clang-cpp` shared libs). Format C++ with clang-format (LLVM style,
 ColumnLimit 92 — narrower than the Julia code's 120).
@@ -114,8 +115,26 @@ the generated binding follows the header and passes 2.) Corollaries:
   `LLVMGenericValueRef ↔ llvm::GenericValue*` bridge for APSInt values and the
   `LLVMOrcLLJITRef` return in `clang_Interpreter_getExecutionEngine`.
 
+## The stamped Stmt layer (AST/CXStmt.h)
+
+The Stmt hierarchy's classification surface is NOT hand-written: `CXStmtClass`
+and the `clang_Stmt_castTo*`/`clang_Stmt_is*` families are stamped by X-macro
+from the vendored `include/clang-ex/AST/StmtNodes.inc` (a verbatim copy of the
+pinned LLVM version's TableGen output — vendored because the binding generator
+drops declarations expanded from `-isystem` paths). Rules: never edit the
+vendored .inc (re-copy it on an LLVM bump; the static_assert tables in
+CXStmt.cpp fail the build if it goes stale); stamped symbols are
+version-following per LLVM major, exempt from the frozen-ABI rule; per-class
+payload accessors are hand-written in the normal per-header files, NOT stamped.
+gen/generator.jl auto-ignorelists the .inc's transient per-class macros and
+emits lib/<major>/StmtNodes.jl (the table the Julia layer stamps from) — both
+regenerate with the bindings.
+
 ## Enums
 
+- Every mirrored enum MUST have an ENUM_SYNC table in lib/Basic/CXEnumSync.cpp
+  covering every enumerator — partial mirrors are how CXCastKind shipped with
+  6 of 65 values and silently wrong numbering.
 - Mirror as `typedef enum CX<ClangEnumName> { CX<ClangEnumName>_<EnumeratorVerbatim>, ... }`
   in the subsystem header matching the Clang header the enum lives in (shared clang/Basic
   enums → `include/clang-ex/Basic/*.h`; class-local enums inline in the class's CX header).
@@ -223,9 +242,11 @@ are never installed.
    tables etc.) must go in `output_ignorelist` in gen/option.toml or it becomes a junk
    binding.
 3. Commit the header, .cpp, CMakeLists, and regenerated `lib/18/LibClangEx.jl` together —
-   deterministic symbol mode keeps the lib diff minimal, and **CI never regenerates
-   bindings**, so a forgotten regeneration ships stale bindings that fail only when
-   called.
+   deterministic symbol mode keeps the lib diff minimal. The `bindings` CI job reruns the
+   generator and fails on any diff under `lib/`, and the test suite enforces the rest:
+   test/abi.jl (every binding's symbol resolves), test/lint.jl (layout/guards/CMake
+   parity/collision names), test/coverage.jl (every binding wrapped, stamped, or
+   skiplisted — and the skiplist only shrinks).
 4. Note: any commit touching deps/ClangExtra makes every CI job compile libclangex from
    source (build_ci.jl timestamp check), and a ClangCompiler.jl release then requires a
    libclangex_jll rebuild on Yggdrasil + a compat bump in the top-level Project.toml —

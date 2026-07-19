@@ -1,4 +1,5 @@
 #include "clang-ex/AST/CXExpr.h"
+#include "utils.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
@@ -39,6 +40,23 @@ CXExpr clang_Expr_IgnoreParenCasts(CXExpr E) {
 
 CXExpr clang_Expr_IgnoreParenImpCasts(CXExpr E) {
   return static_cast<clang::Expr *>(E)->IgnoreParenImpCasts();
+}
+
+// DeclRefExpr
+CXValueDecl clang_DeclRefExpr_getDecl(CXDeclRefExpr DRE) {
+  return static_cast<clang::DeclRefExpr *>(DRE)->getDecl();
+}
+
+CXNamedDecl clang_DeclRefExpr_getFoundDecl(CXDeclRefExpr DRE) {
+  return static_cast<clang::DeclRefExpr *>(DRE)->getFoundDecl();
+}
+
+bool clang_DeclRefExpr_hasQualifier(CXDeclRefExpr DRE) {
+  return static_cast<clang::DeclRefExpr *>(DRE)->hasQualifier();
+}
+
+CXSourceLocation_ clang_DeclRefExpr_getLocation(CXDeclRefExpr DRE) {
+  return static_cast<clang::DeclRefExpr *>(DRE)->getLocation().getPtrEncoding();
 }
 
 // IntegerLiteral
@@ -110,4 +128,247 @@ CXSourceLocation_ clang_CStyleCastExpr_getBeginLoc(CXCStyleCastExpr CSCE) {
 
 CXSourceLocation_ clang_CStyleCastExpr_getEndLoc(CXCStyleCastExpr CSCE) {
   return static_cast<clang::CStyleCastExpr *>(CSCE)->getEndLoc().getPtrEncoding();
+}
+
+LLVMGenericValueRef clang_IntegerLiteral_getValue(CXIntegerLiteral IL) {
+  auto *GV = new llvm::GenericValue; // NOLINT(*-owning-memory)
+  GV->IntVal = static_cast<clang::IntegerLiteral *>(IL)->getValue();
+  return reinterpret_cast<LLVMGenericValueRef>(GV);
+}
+
+// CharacterLiteral
+unsigned clang_CharacterLiteral_getValue(CXCharacterLiteral CL) {
+  return static_cast<clang::CharacterLiteral *>(CL)->getValue();
+}
+
+CXCharacterLiteralKind clang_CharacterLiteral_getKind(CXCharacterLiteral CL) {
+  return static_cast<CXCharacterLiteralKind>(
+      static_cast<clang::CharacterLiteral *>(CL)->getKind());
+}
+
+// FloatingLiteral
+double clang_FloatingLiteral_getValueAsApproximateDouble(CXFloatingLiteral FL) {
+  return static_cast<clang::FloatingLiteral *>(FL)->getValueAsApproximateDouble();
+}
+
+// StringLiteral
+CXString clang_StringLiteral_getBytes(CXStringLiteral SL) {
+  return extra::makeCXString(static_cast<clang::StringLiteral *>(SL)->getBytes().str());
+}
+
+unsigned clang_StringLiteral_getByteLength(CXStringLiteral SL) {
+  return static_cast<clang::StringLiteral *>(SL)->getByteLength();
+}
+
+unsigned clang_StringLiteral_getLength(CXStringLiteral SL) {
+  return static_cast<clang::StringLiteral *>(SL)->getLength();
+}
+
+unsigned clang_StringLiteral_getCharByteWidth(CXStringLiteral SL) {
+  return static_cast<clang::StringLiteral *>(SL)->getCharByteWidth();
+}
+
+// ParenExpr
+CXExpr clang_ParenExpr_getSubExpr(CXParenExpr PE) {
+  return static_cast<clang::ParenExpr *>(PE)->getSubExpr();
+}
+
+// UnaryOperator
+CXUnaryOperatorKind clang_UnaryOperator_getOpcode(CXUnaryOperator UO) {
+  return static_cast<CXUnaryOperatorKind>(
+      static_cast<clang::UnaryOperator *>(UO)->getOpcode());
+}
+
+CXExpr clang_UnaryOperator_getSubExpr(CXUnaryOperator UO) {
+  return static_cast<clang::UnaryOperator *>(UO)->getSubExpr();
+}
+
+CXSourceLocation_ clang_UnaryOperator_getOperatorLoc(CXUnaryOperator UO) {
+  return static_cast<clang::UnaryOperator *>(UO)->getOperatorLoc().getPtrEncoding();
+}
+
+bool clang_UnaryOperator_isPrefix(CXUnaryOperator UO) {
+  return static_cast<clang::UnaryOperator *>(UO)->isPrefix();
+}
+
+bool clang_UnaryOperator_isPostfix(CXUnaryOperator UO) {
+  return static_cast<clang::UnaryOperator *>(UO)->isPostfix();
+}
+
+bool clang_UnaryOperator_isIncrementOp(CXUnaryOperator UO) {
+  return static_cast<clang::UnaryOperator *>(UO)->isIncrementOp();
+}
+
+bool clang_UnaryOperator_isDecrementOp(CXUnaryOperator UO) {
+  return static_cast<clang::UnaryOperator *>(UO)->isDecrementOp();
+}
+
+// ArraySubscriptExpr
+CXExpr clang_ArraySubscriptExpr_getLHS(CXArraySubscriptExpr ASE) {
+  return static_cast<clang::ArraySubscriptExpr *>(ASE)->getLHS();
+}
+
+CXExpr clang_ArraySubscriptExpr_getRHS(CXArraySubscriptExpr ASE) {
+  return static_cast<clang::ArraySubscriptExpr *>(ASE)->getRHS();
+}
+
+CXExpr clang_ArraySubscriptExpr_getBase(CXArraySubscriptExpr ASE) {
+  return static_cast<clang::ArraySubscriptExpr *>(ASE)->getBase();
+}
+
+CXExpr clang_ArraySubscriptExpr_getIdx(CXArraySubscriptExpr ASE) {
+  return static_cast<clang::ArraySubscriptExpr *>(ASE)->getIdx();
+}
+
+// CallExpr
+CXExpr clang_CallExpr_getCallee(CXCallExpr CE) {
+  return static_cast<clang::CallExpr *>(CE)->getCallee();
+}
+
+CXDecl clang_CallExpr_getCalleeDecl(CXCallExpr CE) {
+  return static_cast<clang::CallExpr *>(CE)->getCalleeDecl();
+}
+
+CXFunctionDecl clang_CallExpr_getDirectCallee(CXCallExpr CE) {
+  return static_cast<clang::CallExpr *>(CE)->getDirectCallee();
+}
+
+unsigned clang_CallExpr_getNumArgs(CXCallExpr CE) {
+  return static_cast<clang::CallExpr *>(CE)->getNumArgs();
+}
+
+CXExpr clang_CallExpr_getArg(CXCallExpr CE, unsigned Arg) {
+  return static_cast<clang::CallExpr *>(CE)->getArg(Arg);
+}
+
+CXSourceLocation_ clang_CallExpr_getRParenLoc(CXCallExpr CE) {
+  return static_cast<clang::CallExpr *>(CE)->getRParenLoc().getPtrEncoding();
+}
+
+// MemberExpr
+CXExpr clang_MemberExpr_getBase(CXMemberExpr ME) {
+  return static_cast<clang::MemberExpr *>(ME)->getBase();
+}
+
+CXValueDecl clang_MemberExpr_getMemberDecl(CXMemberExpr ME) {
+  return static_cast<clang::MemberExpr *>(ME)->getMemberDecl();
+}
+
+bool clang_MemberExpr_isArrow(CXMemberExpr ME) {
+  return static_cast<clang::MemberExpr *>(ME)->isArrow();
+}
+
+CXSourceLocation_ clang_MemberExpr_getMemberLoc(CXMemberExpr ME) {
+  return static_cast<clang::MemberExpr *>(ME)->getMemberLoc().getPtrEncoding();
+}
+
+bool clang_MemberExpr_isImplicitAccess(CXMemberExpr ME) {
+  return static_cast<clang::MemberExpr *>(ME)->isImplicitAccess();
+}
+
+// CastExpr
+CXCastKind clang_CastExpr_getCastKind(CXCastExpr CE) {
+  return static_cast<CXCastKind>(static_cast<clang::CastExpr *>(CE)->getCastKind());
+}
+
+const char *clang_CastExpr_getCastKindName(CXCastExpr CE) {
+  return static_cast<clang::CastExpr *>(CE)->getCastKindName();
+}
+
+CXExpr clang_CastExpr_getSubExpr(CXCastExpr CE) {
+  return static_cast<clang::CastExpr *>(CE)->getSubExpr();
+}
+
+CXExpr clang_CastExpr_getSubExprAsWritten(CXCastExpr CE) {
+  return static_cast<clang::CastExpr *>(CE)->getSubExprAsWritten();
+}
+
+// ImplicitCastExpr
+bool clang_ImplicitCastExpr_isPartOfExplicitCast(CXImplicitCastExpr ICE) {
+  return static_cast<clang::ImplicitCastExpr *>(ICE)->isPartOfExplicitCast();
+}
+
+// ExplicitCastExpr
+CXQualType clang_ExplicitCastExpr_getTypeAsWritten(CXExplicitCastExpr ECE) {
+  return static_cast<clang::ExplicitCastExpr *>(ECE)->getTypeAsWritten().getAsOpaquePtr();
+}
+
+// BinaryOperator
+CXBinaryOperatorKind clang_BinaryOperator_getOpcode(CXBinaryOperator BO) {
+  return static_cast<CXBinaryOperatorKind>(
+      static_cast<clang::BinaryOperator *>(BO)->getOpcode());
+}
+
+CXExpr clang_BinaryOperator_getLHS(CXBinaryOperator BO) {
+  return static_cast<clang::BinaryOperator *>(BO)->getLHS();
+}
+
+CXExpr clang_BinaryOperator_getRHS(CXBinaryOperator BO) {
+  return static_cast<clang::BinaryOperator *>(BO)->getRHS();
+}
+
+CXSourceLocation_ clang_BinaryOperator_getOperatorLoc(CXBinaryOperator BO) {
+  return static_cast<clang::BinaryOperator *>(BO)->getOperatorLoc().getPtrEncoding();
+}
+
+const char *clang_BinaryOperator_getOpcodeStr(CXBinaryOperator BO) {
+  // the spelling table is static string literals: borrowed, NUL-terminated
+  return static_cast<clang::BinaryOperator *>(BO)->getOpcodeStr().data();
+}
+
+bool clang_BinaryOperator_isAssignmentOp(CXBinaryOperator BO) {
+  return static_cast<clang::BinaryOperator *>(BO)->isAssignmentOp();
+}
+
+bool clang_BinaryOperator_isCompoundAssignmentOp(CXBinaryOperator BO) {
+  return static_cast<clang::BinaryOperator *>(BO)->isCompoundAssignmentOp();
+}
+
+bool clang_BinaryOperator_isComparisonOp(CXBinaryOperator BO) {
+  return static_cast<clang::BinaryOperator *>(BO)->isComparisonOp();
+}
+
+// CompoundAssignOperator
+CXQualType
+clang_CompoundAssignOperator_getComputationLHSType(CXCompoundAssignOperator CAO) {
+  return static_cast<clang::CompoundAssignOperator *>(CAO)
+      ->getComputationLHSType()
+      .getAsOpaquePtr();
+}
+
+CXQualType
+clang_CompoundAssignOperator_getComputationResultType(CXCompoundAssignOperator CAO) {
+  return static_cast<clang::CompoundAssignOperator *>(CAO)
+      ->getComputationResultType()
+      .getAsOpaquePtr();
+}
+
+// AbstractConditionalOperator
+CXExpr clang_AbstractConditionalOperator_getCond(CXAbstractConditionalOperator ACO) {
+  return static_cast<clang::AbstractConditionalOperator *>(ACO)->getCond();
+}
+
+CXExpr clang_AbstractConditionalOperator_getTrueExpr(CXAbstractConditionalOperator ACO) {
+  return static_cast<clang::AbstractConditionalOperator *>(ACO)->getTrueExpr();
+}
+
+CXExpr clang_AbstractConditionalOperator_getFalseExpr(CXAbstractConditionalOperator ACO) {
+  return static_cast<clang::AbstractConditionalOperator *>(ACO)->getFalseExpr();
+}
+
+// InitListExpr
+unsigned clang_InitListExpr_getNumInits(CXInitListExpr ILE) {
+  return static_cast<clang::InitListExpr *>(ILE)->getNumInits();
+}
+
+CXExpr clang_InitListExpr_getInit(CXInitListExpr ILE, unsigned Init) {
+  return static_cast<clang::InitListExpr *>(ILE)->getInit(Init);
+}
+
+bool clang_InitListExpr_isSemanticForm(CXInitListExpr ILE) {
+  return static_cast<clang::InitListExpr *>(ILE)->isSemanticForm();
+}
+
+CXInitListExpr clang_InitListExpr_getSyntacticForm(CXInitListExpr ILE) {
+  return static_cast<clang::InitListExpr *>(ILE)->getSyntacticForm();
 }

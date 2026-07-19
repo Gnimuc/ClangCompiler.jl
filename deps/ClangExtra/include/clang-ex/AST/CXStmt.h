@@ -59,6 +59,106 @@ size_t clang_Stmt_getNumChildren(CXStmt S);
 
 void clang_Stmt_getChildren(CXStmt S, CXStmt *Buf);
 
+// DeclStmt
+bool clang_DeclStmt_isSingleDecl(CXDeclStmt DS);
+
+CXDecl clang_DeclStmt_getSingleDecl(CXDeclStmt DS);
+
+// CompoundStmt
+unsigned clang_CompoundStmt_size(CXCompoundStmt CS);
+
+CXStmt clang_CompoundStmt_body_front(CXCompoundStmt CS);
+
+CXStmt clang_CompoundStmt_body_back(CXCompoundStmt CS);
+
+CXSourceLocation_ clang_CompoundStmt_getLBracLoc(CXCompoundStmt CS);
+
+CXSourceLocation_ clang_CompoundStmt_getRBracLoc(CXCompoundStmt CS);
+
+// SwitchCase
+CXSwitchCase clang_SwitchCase_getNextSwitchCase(CXSwitchCase SC);
+
+CXStmt clang_SwitchCase_getSubStmt(CXSwitchCase SC);
+
+// CaseStmt
+CXExpr clang_CaseStmt_getLHS(CXCaseStmt CS);
+
+CXExpr clang_CaseStmt_getRHS(CXCaseStmt CS);
+
+// LabelStmt
+const char *clang_LabelStmt_getName(CXLabelStmt LS);
+
+CXLabelDecl clang_LabelStmt_getDecl(CXLabelStmt LS);
+
+CXStmt clang_LabelStmt_getSubStmt(CXLabelStmt LS);
+
+// IfStmt
+CXExpr clang_IfStmt_getCond(CXIfStmt IS);
+
+CXStmt clang_IfStmt_getThen(CXIfStmt IS);
+
+CXStmt clang_IfStmt_getElse(CXIfStmt IS);
+
+bool clang_IfStmt_hasElseStorage(CXIfStmt IS);
+
+bool clang_IfStmt_hasInitStorage(CXIfStmt IS);
+
+bool clang_IfStmt_hasVarStorage(CXIfStmt IS);
+
+CXStmt clang_IfStmt_getInit(CXIfStmt IS);
+
+CXVarDecl clang_IfStmt_getConditionVariable(CXIfStmt IS);
+
+CXSourceLocation_ clang_IfStmt_getIfLoc(CXIfStmt IS);
+
+// SwitchStmt
+CXExpr clang_SwitchStmt_getCond(CXSwitchStmt SS);
+
+CXStmt clang_SwitchStmt_getBody(CXSwitchStmt SS);
+
+CXSwitchCase clang_SwitchStmt_getSwitchCaseList(CXSwitchStmt SS);
+
+bool clang_SwitchStmt_isAllEnumCasesCovered(CXSwitchStmt SS);
+
+// WhileStmt
+CXExpr clang_WhileStmt_getCond(CXWhileStmt WS);
+
+CXStmt clang_WhileStmt_getBody(CXWhileStmt WS);
+
+CXVarDecl clang_WhileStmt_getConditionVariable(CXWhileStmt WS);
+
+CXSourceLocation_ clang_WhileStmt_getWhileLoc(CXWhileStmt WS);
+
+// DoStmt
+CXExpr clang_DoStmt_getCond(CXDoStmt DS);
+
+CXStmt clang_DoStmt_getBody(CXDoStmt DS);
+
+CXSourceLocation_ clang_DoStmt_getDoLoc(CXDoStmt DS);
+
+CXSourceLocation_ clang_DoStmt_getWhileLoc(CXDoStmt DS);
+
+// ForStmt
+CXStmt clang_ForStmt_getInit(CXForStmt FS);
+
+CXExpr clang_ForStmt_getCond(CXForStmt FS);
+
+CXExpr clang_ForStmt_getInc(CXForStmt FS);
+
+CXStmt clang_ForStmt_getBody(CXForStmt FS);
+
+CXVarDecl clang_ForStmt_getConditionVariable(CXForStmt FS);
+
+CXSourceLocation_ clang_ForStmt_getForLoc(CXForStmt FS);
+
+// GotoStmt
+CXLabelDecl clang_GotoStmt_getLabel(CXGotoStmt GS);
+
+CXSourceLocation_ clang_GotoStmt_getGotoLoc(CXGotoStmt GS);
+
+// ReturnStmt
+CXExpr clang_ReturnStmt_getRetValue(CXReturnStmt RS);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

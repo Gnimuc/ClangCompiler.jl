@@ -6264,6 +6264,59 @@ end
     CXCastKind_CK_IntToOCLSampler = 64
 end
 
+@enum CXBinaryOperatorKind::UInt32 begin
+    CXBinaryOperatorKind_BO_PtrMemD = 0
+    CXBinaryOperatorKind_BO_PtrMemI = 1
+    CXBinaryOperatorKind_BO_Mul = 2
+    CXBinaryOperatorKind_BO_Div = 3
+    CXBinaryOperatorKind_BO_Rem = 4
+    CXBinaryOperatorKind_BO_Add = 5
+    CXBinaryOperatorKind_BO_Sub = 6
+    CXBinaryOperatorKind_BO_Shl = 7
+    CXBinaryOperatorKind_BO_Shr = 8
+    CXBinaryOperatorKind_BO_Cmp = 9
+    CXBinaryOperatorKind_BO_LT = 10
+    CXBinaryOperatorKind_BO_GT = 11
+    CXBinaryOperatorKind_BO_LE = 12
+    CXBinaryOperatorKind_BO_GE = 13
+    CXBinaryOperatorKind_BO_EQ = 14
+    CXBinaryOperatorKind_BO_NE = 15
+    CXBinaryOperatorKind_BO_And = 16
+    CXBinaryOperatorKind_BO_Xor = 17
+    CXBinaryOperatorKind_BO_Or = 18
+    CXBinaryOperatorKind_BO_LAnd = 19
+    CXBinaryOperatorKind_BO_LOr = 20
+    CXBinaryOperatorKind_BO_Assign = 21
+    CXBinaryOperatorKind_BO_MulAssign = 22
+    CXBinaryOperatorKind_BO_DivAssign = 23
+    CXBinaryOperatorKind_BO_RemAssign = 24
+    CXBinaryOperatorKind_BO_AddAssign = 25
+    CXBinaryOperatorKind_BO_SubAssign = 26
+    CXBinaryOperatorKind_BO_ShlAssign = 27
+    CXBinaryOperatorKind_BO_ShrAssign = 28
+    CXBinaryOperatorKind_BO_AndAssign = 29
+    CXBinaryOperatorKind_BO_XorAssign = 30
+    CXBinaryOperatorKind_BO_OrAssign = 31
+    CXBinaryOperatorKind_BO_Comma = 32
+end
+
+@enum CXUnaryOperatorKind::UInt32 begin
+    CXUnaryOperatorKind_UO_PostInc = 0
+    CXUnaryOperatorKind_UO_PostDec = 1
+    CXUnaryOperatorKind_UO_PreInc = 2
+    CXUnaryOperatorKind_UO_PreDec = 3
+    CXUnaryOperatorKind_UO_AddrOf = 4
+    CXUnaryOperatorKind_UO_Deref = 5
+    CXUnaryOperatorKind_UO_Plus = 6
+    CXUnaryOperatorKind_UO_Minus = 7
+    CXUnaryOperatorKind_UO_Not = 8
+    CXUnaryOperatorKind_UO_LNot = 9
+    CXUnaryOperatorKind_UO_Real = 10
+    CXUnaryOperatorKind_UO_Imag = 11
+    CXUnaryOperatorKind_UO_Extension = 12
+    CXUnaryOperatorKind_UO_Coawait = 13
+end
+
 function clang_Expr_getType(E)
     @ccall libclangex.clang_Expr_getType(E::CXExpr)::CXQualType
 end
@@ -6308,6 +6361,22 @@ function clang_Expr_IgnoreParenImpCasts(E)
     @ccall libclangex.clang_Expr_IgnoreParenImpCasts(E::CXExpr)::CXExpr
 end
 
+function clang_DeclRefExpr_getDecl(DRE)
+    @ccall libclangex.clang_DeclRefExpr_getDecl(DRE::CXDeclRefExpr)::CXValueDecl
+end
+
+function clang_DeclRefExpr_getFoundDecl(DRE)
+    @ccall libclangex.clang_DeclRefExpr_getFoundDecl(DRE::CXDeclRefExpr)::CXNamedDecl
+end
+
+function clang_DeclRefExpr_hasQualifier(DRE)
+    @ccall libclangex.clang_DeclRefExpr_hasQualifier(DRE::CXDeclRefExpr)::Bool
+end
+
+function clang_DeclRefExpr_getLocation(DRE)
+    @ccall libclangex.clang_DeclRefExpr_getLocation(DRE::CXDeclRefExpr)::CXSourceLocation_
+end
+
 function clang_IntegerLiteral_Create(C, Val, T, L)
     @ccall libclangex.clang_IntegerLiteral_Create(C::CXASTContext, Val::LLVMGenericValueRef, T::CXQualType, L::CXSourceLocation_)::CXIntegerLiteral
 end
@@ -6326,6 +6395,162 @@ end
 
 function clang_IntegerLiteral_setLocation(IL, L)
     @ccall libclangex.clang_IntegerLiteral_setLocation(IL::CXIntegerLiteral, L::CXSourceLocation_)::Cvoid
+end
+
+function clang_IntegerLiteral_getValue(IL)
+    @ccall libclangex.clang_IntegerLiteral_getValue(IL::CXIntegerLiteral)::LLVMGenericValueRef
+end
+
+@enum CXCharacterLiteralKind::UInt32 begin
+    CXCharacterLiteralKind_Ascii = 0
+    CXCharacterLiteralKind_Wide = 1
+    CXCharacterLiteralKind_UTF8 = 2
+    CXCharacterLiteralKind_UTF16 = 3
+    CXCharacterLiteralKind_UTF32 = 4
+end
+
+function clang_CharacterLiteral_getValue(CL)
+    @ccall libclangex.clang_CharacterLiteral_getValue(CL::CXCharacterLiteral)::Cuint
+end
+
+function clang_CharacterLiteral_getKind(CL)
+    @ccall libclangex.clang_CharacterLiteral_getKind(CL::CXCharacterLiteral)::CXCharacterLiteralKind
+end
+
+function clang_FloatingLiteral_getValueAsApproximateDouble(FL)
+    @ccall libclangex.clang_FloatingLiteral_getValueAsApproximateDouble(FL::CXFloatingLiteral)::Cdouble
+end
+
+function clang_StringLiteral_getBytes(SL)
+    @ccall libclangex.clang_StringLiteral_getBytes(SL::CXStringLiteral)::CXString
+end
+
+function clang_StringLiteral_getByteLength(SL)
+    @ccall libclangex.clang_StringLiteral_getByteLength(SL::CXStringLiteral)::Cuint
+end
+
+function clang_StringLiteral_getLength(SL)
+    @ccall libclangex.clang_StringLiteral_getLength(SL::CXStringLiteral)::Cuint
+end
+
+function clang_StringLiteral_getCharByteWidth(SL)
+    @ccall libclangex.clang_StringLiteral_getCharByteWidth(SL::CXStringLiteral)::Cuint
+end
+
+function clang_ParenExpr_getSubExpr(PE)
+    @ccall libclangex.clang_ParenExpr_getSubExpr(PE::CXParenExpr)::CXExpr
+end
+
+function clang_UnaryOperator_getOpcode(UO)
+    @ccall libclangex.clang_UnaryOperator_getOpcode(UO::CXUnaryOperator)::CXUnaryOperatorKind
+end
+
+function clang_UnaryOperator_getSubExpr(UO)
+    @ccall libclangex.clang_UnaryOperator_getSubExpr(UO::CXUnaryOperator)::CXExpr
+end
+
+function clang_UnaryOperator_getOperatorLoc(UO)
+    @ccall libclangex.clang_UnaryOperator_getOperatorLoc(UO::CXUnaryOperator)::CXSourceLocation_
+end
+
+function clang_UnaryOperator_isPrefix(UO)
+    @ccall libclangex.clang_UnaryOperator_isPrefix(UO::CXUnaryOperator)::Bool
+end
+
+function clang_UnaryOperator_isPostfix(UO)
+    @ccall libclangex.clang_UnaryOperator_isPostfix(UO::CXUnaryOperator)::Bool
+end
+
+function clang_UnaryOperator_isIncrementOp(UO)
+    @ccall libclangex.clang_UnaryOperator_isIncrementOp(UO::CXUnaryOperator)::Bool
+end
+
+function clang_UnaryOperator_isDecrementOp(UO)
+    @ccall libclangex.clang_UnaryOperator_isDecrementOp(UO::CXUnaryOperator)::Bool
+end
+
+function clang_ArraySubscriptExpr_getLHS(ASE)
+    @ccall libclangex.clang_ArraySubscriptExpr_getLHS(ASE::CXArraySubscriptExpr)::CXExpr
+end
+
+function clang_ArraySubscriptExpr_getRHS(ASE)
+    @ccall libclangex.clang_ArraySubscriptExpr_getRHS(ASE::CXArraySubscriptExpr)::CXExpr
+end
+
+function clang_ArraySubscriptExpr_getBase(ASE)
+    @ccall libclangex.clang_ArraySubscriptExpr_getBase(ASE::CXArraySubscriptExpr)::CXExpr
+end
+
+function clang_ArraySubscriptExpr_getIdx(ASE)
+    @ccall libclangex.clang_ArraySubscriptExpr_getIdx(ASE::CXArraySubscriptExpr)::CXExpr
+end
+
+function clang_CallExpr_getCallee(CE)
+    @ccall libclangex.clang_CallExpr_getCallee(CE::CXCallExpr)::CXExpr
+end
+
+function clang_CallExpr_getCalleeDecl(CE)
+    @ccall libclangex.clang_CallExpr_getCalleeDecl(CE::CXCallExpr)::CXDecl
+end
+
+function clang_CallExpr_getDirectCallee(CE)
+    @ccall libclangex.clang_CallExpr_getDirectCallee(CE::CXCallExpr)::CXFunctionDecl
+end
+
+function clang_CallExpr_getNumArgs(CE)
+    @ccall libclangex.clang_CallExpr_getNumArgs(CE::CXCallExpr)::Cuint
+end
+
+function clang_CallExpr_getArg(CE, Arg)
+    @ccall libclangex.clang_CallExpr_getArg(CE::CXCallExpr, Arg::Cuint)::CXExpr
+end
+
+function clang_CallExpr_getRParenLoc(CE)
+    @ccall libclangex.clang_CallExpr_getRParenLoc(CE::CXCallExpr)::CXSourceLocation_
+end
+
+function clang_MemberExpr_getBase(ME)
+    @ccall libclangex.clang_MemberExpr_getBase(ME::CXMemberExpr)::CXExpr
+end
+
+function clang_MemberExpr_getMemberDecl(ME)
+    @ccall libclangex.clang_MemberExpr_getMemberDecl(ME::CXMemberExpr)::CXValueDecl
+end
+
+function clang_MemberExpr_isArrow(ME)
+    @ccall libclangex.clang_MemberExpr_isArrow(ME::CXMemberExpr)::Bool
+end
+
+function clang_MemberExpr_getMemberLoc(ME)
+    @ccall libclangex.clang_MemberExpr_getMemberLoc(ME::CXMemberExpr)::CXSourceLocation_
+end
+
+function clang_MemberExpr_isImplicitAccess(ME)
+    @ccall libclangex.clang_MemberExpr_isImplicitAccess(ME::CXMemberExpr)::Bool
+end
+
+function clang_CastExpr_getCastKind(CE)
+    @ccall libclangex.clang_CastExpr_getCastKind(CE::CXCastExpr)::CXCastKind
+end
+
+function clang_CastExpr_getCastKindName(CE)
+    @ccall libclangex.clang_CastExpr_getCastKindName(CE::CXCastExpr)::Ptr{Cchar}
+end
+
+function clang_CastExpr_getSubExpr(CE)
+    @ccall libclangex.clang_CastExpr_getSubExpr(CE::CXCastExpr)::CXExpr
+end
+
+function clang_CastExpr_getSubExprAsWritten(CE)
+    @ccall libclangex.clang_CastExpr_getSubExprAsWritten(CE::CXCastExpr)::CXExpr
+end
+
+function clang_ImplicitCastExpr_isPartOfExplicitCast(ICE)
+    @ccall libclangex.clang_ImplicitCastExpr_isPartOfExplicitCast(ICE::CXImplicitCastExpr)::Bool
+end
+
+function clang_ExplicitCastExpr_getTypeAsWritten(ECE)
+    @ccall libclangex.clang_ExplicitCastExpr_getTypeAsWritten(ECE::CXExplicitCastExpr)::CXQualType
 end
 
 function clang_CStyleCastExpr_CreateWithNoTypeInfo(C, T, VK, K, Op)
@@ -6358,6 +6583,211 @@ end
 
 function clang_CStyleCastExpr_getEndLoc(CSCE)
     @ccall libclangex.clang_CStyleCastExpr_getEndLoc(CSCE::CXCStyleCastExpr)::CXSourceLocation_
+end
+
+function clang_BinaryOperator_getOpcode(BO)
+    @ccall libclangex.clang_BinaryOperator_getOpcode(BO::CXBinaryOperator)::CXBinaryOperatorKind
+end
+
+function clang_BinaryOperator_getLHS(BO)
+    @ccall libclangex.clang_BinaryOperator_getLHS(BO::CXBinaryOperator)::CXExpr
+end
+
+function clang_BinaryOperator_getRHS(BO)
+    @ccall libclangex.clang_BinaryOperator_getRHS(BO::CXBinaryOperator)::CXExpr
+end
+
+function clang_BinaryOperator_getOperatorLoc(BO)
+    @ccall libclangex.clang_BinaryOperator_getOperatorLoc(BO::CXBinaryOperator)::CXSourceLocation_
+end
+
+function clang_BinaryOperator_getOpcodeStr(BO)
+    @ccall libclangex.clang_BinaryOperator_getOpcodeStr(BO::CXBinaryOperator)::Ptr{Cchar}
+end
+
+function clang_BinaryOperator_isAssignmentOp(BO)
+    @ccall libclangex.clang_BinaryOperator_isAssignmentOp(BO::CXBinaryOperator)::Bool
+end
+
+function clang_BinaryOperator_isCompoundAssignmentOp(BO)
+    @ccall libclangex.clang_BinaryOperator_isCompoundAssignmentOp(BO::CXBinaryOperator)::Bool
+end
+
+function clang_BinaryOperator_isComparisonOp(BO)
+    @ccall libclangex.clang_BinaryOperator_isComparisonOp(BO::CXBinaryOperator)::Bool
+end
+
+function clang_CompoundAssignOperator_getComputationLHSType(CAO)
+    @ccall libclangex.clang_CompoundAssignOperator_getComputationLHSType(CAO::CXCompoundAssignOperator)::CXQualType
+end
+
+function clang_CompoundAssignOperator_getComputationResultType(CAO)
+    @ccall libclangex.clang_CompoundAssignOperator_getComputationResultType(CAO::CXCompoundAssignOperator)::CXQualType
+end
+
+function clang_AbstractConditionalOperator_getCond(ACO)
+    @ccall libclangex.clang_AbstractConditionalOperator_getCond(ACO::CXAbstractConditionalOperator)::CXExpr
+end
+
+function clang_AbstractConditionalOperator_getTrueExpr(ACO)
+    @ccall libclangex.clang_AbstractConditionalOperator_getTrueExpr(ACO::CXAbstractConditionalOperator)::CXExpr
+end
+
+function clang_AbstractConditionalOperator_getFalseExpr(ACO)
+    @ccall libclangex.clang_AbstractConditionalOperator_getFalseExpr(ACO::CXAbstractConditionalOperator)::CXExpr
+end
+
+function clang_InitListExpr_getNumInits(ILE)
+    @ccall libclangex.clang_InitListExpr_getNumInits(ILE::CXInitListExpr)::Cuint
+end
+
+function clang_InitListExpr_getInit(ILE, Init)
+    @ccall libclangex.clang_InitListExpr_getInit(ILE::CXInitListExpr, Init::Cuint)::CXExpr
+end
+
+function clang_InitListExpr_isSemanticForm(ILE)
+    @ccall libclangex.clang_InitListExpr_isSemanticForm(ILE::CXInitListExpr)::Bool
+end
+
+function clang_InitListExpr_getSyntacticForm(ILE)
+    @ccall libclangex.clang_InitListExpr_getSyntacticForm(ILE::CXInitListExpr)::CXInitListExpr
+end
+
+@enum CXOverloadedOperatorKind::Int32 begin
+    CXOverloadedOperatorKind_OO_None = 0
+    CXOverloadedOperatorKind_OO_New = 1
+    CXOverloadedOperatorKind_OO_Delete = 2
+    CXOverloadedOperatorKind_OO_Array_New = 3
+    CXOverloadedOperatorKind_OO_Array_Delete = 4
+    CXOverloadedOperatorKind_OO_Plus = 5
+    CXOverloadedOperatorKind_OO_Minus = 6
+    CXOverloadedOperatorKind_OO_Star = 7
+    CXOverloadedOperatorKind_OO_Slash = 8
+    CXOverloadedOperatorKind_OO_Percent = 9
+    CXOverloadedOperatorKind_OO_Caret = 10
+    CXOverloadedOperatorKind_OO_Amp = 11
+    CXOverloadedOperatorKind_OO_Pipe = 12
+    CXOverloadedOperatorKind_OO_Tilde = 13
+    CXOverloadedOperatorKind_OO_Exclaim = 14
+    CXOverloadedOperatorKind_OO_Equal = 15
+    CXOverloadedOperatorKind_OO_Less = 16
+    CXOverloadedOperatorKind_OO_Greater = 17
+    CXOverloadedOperatorKind_OO_PlusEqual = 18
+    CXOverloadedOperatorKind_OO_MinusEqual = 19
+    CXOverloadedOperatorKind_OO_StarEqual = 20
+    CXOverloadedOperatorKind_OO_SlashEqual = 21
+    CXOverloadedOperatorKind_OO_PercentEqual = 22
+    CXOverloadedOperatorKind_OO_CaretEqual = 23
+    CXOverloadedOperatorKind_OO_AmpEqual = 24
+    CXOverloadedOperatorKind_OO_PipeEqual = 25
+    CXOverloadedOperatorKind_OO_LessLess = 26
+    CXOverloadedOperatorKind_OO_GreaterGreater = 27
+    CXOverloadedOperatorKind_OO_LessLessEqual = 28
+    CXOverloadedOperatorKind_OO_GreaterGreaterEqual = 29
+    CXOverloadedOperatorKind_OO_EqualEqual = 30
+    CXOverloadedOperatorKind_OO_ExclaimEqual = 31
+    CXOverloadedOperatorKind_OO_LessEqual = 32
+    CXOverloadedOperatorKind_OO_GreaterEqual = 33
+    CXOverloadedOperatorKind_OO_Spaceship = 34
+    CXOverloadedOperatorKind_OO_AmpAmp = 35
+    CXOverloadedOperatorKind_OO_PipePipe = 36
+    CXOverloadedOperatorKind_OO_PlusPlus = 37
+    CXOverloadedOperatorKind_OO_MinusMinus = 38
+    CXOverloadedOperatorKind_OO_Comma = 39
+    CXOverloadedOperatorKind_OO_ArrowStar = 40
+    CXOverloadedOperatorKind_OO_Arrow = 41
+    CXOverloadedOperatorKind_OO_Call = 42
+    CXOverloadedOperatorKind_OO_Subscript = 43
+    CXOverloadedOperatorKind_OO_Conditional = 44
+    CXOverloadedOperatorKind_OO_Coawait = 45
+end
+
+function clang_getOperatorSpelling(Operator)
+    @ccall libclangex.clang_getOperatorSpelling(Operator::CXOverloadedOperatorKind)::Ptr{Cchar}
+end
+
+function clang_CXXOperatorCallExpr_getOperator(OCE)
+    @ccall libclangex.clang_CXXOperatorCallExpr_getOperator(OCE::CXCXXOperatorCallExpr)::CXOverloadedOperatorKind
+end
+
+function clang_CXXOperatorCallExpr_getOperatorLoc(OCE)
+    @ccall libclangex.clang_CXXOperatorCallExpr_getOperatorLoc(OCE::CXCXXOperatorCallExpr)::CXSourceLocation_
+end
+
+function clang_CXXMemberCallExpr_getImplicitObjectArgument(MCE)
+    @ccall libclangex.clang_CXXMemberCallExpr_getImplicitObjectArgument(MCE::CXCXXMemberCallExpr)::CXExpr
+end
+
+function clang_CXXMemberCallExpr_getMethodDecl(MCE)
+    @ccall libclangex.clang_CXXMemberCallExpr_getMethodDecl(MCE::CXCXXMemberCallExpr)::CXCXXMethodDecl
+end
+
+function clang_CXXMemberCallExpr_getRecordDecl(MCE)
+    @ccall libclangex.clang_CXXMemberCallExpr_getRecordDecl(MCE::CXCXXMemberCallExpr)::CXCXXRecordDecl
+end
+
+function clang_CXXBoolLiteralExpr_getValue(BLE)
+    @ccall libclangex.clang_CXXBoolLiteralExpr_getValue(BLE::CXCXXBoolLiteralExpr)::Bool
+end
+
+function clang_CXXConstructExpr_getConstructor(CE)
+    @ccall libclangex.clang_CXXConstructExpr_getConstructor(CE::CXCXXConstructExpr)::CXCXXConstructorDecl
+end
+
+function clang_CXXConstructExpr_getNumArgs(CE)
+    @ccall libclangex.clang_CXXConstructExpr_getNumArgs(CE::CXCXXConstructExpr)::Cuint
+end
+
+function clang_CXXConstructExpr_getArg(CE, Arg)
+    @ccall libclangex.clang_CXXConstructExpr_getArg(CE::CXCXXConstructExpr, Arg::Cuint)::CXExpr
+end
+
+function clang_CXXConstructExpr_isElidable(CE)
+    @ccall libclangex.clang_CXXConstructExpr_isElidable(CE::CXCXXConstructExpr)::Bool
+end
+
+function clang_LambdaExpr_getCallOperator(LE)
+    @ccall libclangex.clang_LambdaExpr_getCallOperator(LE::CXLambdaExpr)::CXCXXMethodDecl
+end
+
+function clang_LambdaExpr_getLambdaClass(LE)
+    @ccall libclangex.clang_LambdaExpr_getLambdaClass(LE::CXLambdaExpr)::CXCXXRecordDecl
+end
+
+function clang_LambdaExpr_getBody(LE)
+    @ccall libclangex.clang_LambdaExpr_getBody(LE::CXLambdaExpr)::CXStmt
+end
+
+function clang_LambdaExpr_isMutable(LE)
+    @ccall libclangex.clang_LambdaExpr_isMutable(LE::CXLambdaExpr)::Bool
+end
+
+function clang_CXXNewExpr_getAllocatedType(NE)
+    @ccall libclangex.clang_CXXNewExpr_getAllocatedType(NE::CXCXXNewExpr)::CXQualType
+end
+
+function clang_CXXNewExpr_isArray(NE)
+    @ccall libclangex.clang_CXXNewExpr_isArray(NE::CXCXXNewExpr)::Bool
+end
+
+function clang_CXXNewExpr_getArraySize(NE)
+    @ccall libclangex.clang_CXXNewExpr_getArraySize(NE::CXCXXNewExpr)::CXExpr
+end
+
+function clang_CXXNewExpr_hasInitializer(NE)
+    @ccall libclangex.clang_CXXNewExpr_hasInitializer(NE::CXCXXNewExpr)::Bool
+end
+
+function clang_CXXNewExpr_getInitializer(NE)
+    @ccall libclangex.clang_CXXNewExpr_getInitializer(NE::CXCXXNewExpr)::CXExpr
+end
+
+function clang_CXXDeleteExpr_getArgument(DE)
+    @ccall libclangex.clang_CXXDeleteExpr_getArgument(DE::CXCXXDeleteExpr)::CXExpr
+end
+
+function clang_CXXDeleteExpr_isArrayForm(DE)
+    @ccall libclangex.clang_CXXDeleteExpr_isArrayForm(DE::CXCXXDeleteExpr)::Bool
 end
 
 @enum CXMangleContext_ManglerKind::UInt32 begin
@@ -8679,6 +9109,226 @@ function clang_Stmt_getChildren(S, Buf)
     @ccall libclangex.clang_Stmt_getChildren(S::CXStmt, Buf::Ptr{CXStmt})::Cvoid
 end
 
+function clang_DeclStmt_isSingleDecl(DS)
+    @ccall libclangex.clang_DeclStmt_isSingleDecl(DS::CXDeclStmt)::Bool
+end
+
+function clang_DeclStmt_getSingleDecl(DS)
+    @ccall libclangex.clang_DeclStmt_getSingleDecl(DS::CXDeclStmt)::CXDecl
+end
+
+function clang_CompoundStmt_size(CS)
+    @ccall libclangex.clang_CompoundStmt_size(CS::CXCompoundStmt)::Cuint
+end
+
+function clang_CompoundStmt_body_front(CS)
+    @ccall libclangex.clang_CompoundStmt_body_front(CS::CXCompoundStmt)::CXStmt
+end
+
+function clang_CompoundStmt_body_back(CS)
+    @ccall libclangex.clang_CompoundStmt_body_back(CS::CXCompoundStmt)::CXStmt
+end
+
+function clang_CompoundStmt_getLBracLoc(CS)
+    @ccall libclangex.clang_CompoundStmt_getLBracLoc(CS::CXCompoundStmt)::CXSourceLocation_
+end
+
+function clang_CompoundStmt_getRBracLoc(CS)
+    @ccall libclangex.clang_CompoundStmt_getRBracLoc(CS::CXCompoundStmt)::CXSourceLocation_
+end
+
+function clang_SwitchCase_getNextSwitchCase(SC)
+    @ccall libclangex.clang_SwitchCase_getNextSwitchCase(SC::CXSwitchCase)::CXSwitchCase
+end
+
+function clang_SwitchCase_getSubStmt(SC)
+    @ccall libclangex.clang_SwitchCase_getSubStmt(SC::CXSwitchCase)::CXStmt
+end
+
+function clang_CaseStmt_getLHS(CS)
+    @ccall libclangex.clang_CaseStmt_getLHS(CS::CXCaseStmt)::CXExpr
+end
+
+function clang_CaseStmt_getRHS(CS)
+    @ccall libclangex.clang_CaseStmt_getRHS(CS::CXCaseStmt)::CXExpr
+end
+
+function clang_LabelStmt_getName(LS)
+    @ccall libclangex.clang_LabelStmt_getName(LS::CXLabelStmt)::Ptr{Cchar}
+end
+
+function clang_LabelStmt_getDecl(LS)
+    @ccall libclangex.clang_LabelStmt_getDecl(LS::CXLabelStmt)::CXLabelDecl
+end
+
+function clang_LabelStmt_getSubStmt(LS)
+    @ccall libclangex.clang_LabelStmt_getSubStmt(LS::CXLabelStmt)::CXStmt
+end
+
+function clang_IfStmt_getCond(IS)
+    @ccall libclangex.clang_IfStmt_getCond(IS::CXIfStmt)::CXExpr
+end
+
+function clang_IfStmt_getThen(IS)
+    @ccall libclangex.clang_IfStmt_getThen(IS::CXIfStmt)::CXStmt
+end
+
+function clang_IfStmt_getElse(IS)
+    @ccall libclangex.clang_IfStmt_getElse(IS::CXIfStmt)::CXStmt
+end
+
+function clang_IfStmt_hasElseStorage(IS)
+    @ccall libclangex.clang_IfStmt_hasElseStorage(IS::CXIfStmt)::Bool
+end
+
+function clang_IfStmt_hasInitStorage(IS)
+    @ccall libclangex.clang_IfStmt_hasInitStorage(IS::CXIfStmt)::Bool
+end
+
+function clang_IfStmt_hasVarStorage(IS)
+    @ccall libclangex.clang_IfStmt_hasVarStorage(IS::CXIfStmt)::Bool
+end
+
+function clang_IfStmt_getInit(IS)
+    @ccall libclangex.clang_IfStmt_getInit(IS::CXIfStmt)::CXStmt
+end
+
+function clang_IfStmt_getConditionVariable(IS)
+    @ccall libclangex.clang_IfStmt_getConditionVariable(IS::CXIfStmt)::CXVarDecl
+end
+
+function clang_IfStmt_getIfLoc(IS)
+    @ccall libclangex.clang_IfStmt_getIfLoc(IS::CXIfStmt)::CXSourceLocation_
+end
+
+function clang_SwitchStmt_getCond(SS)
+    @ccall libclangex.clang_SwitchStmt_getCond(SS::CXSwitchStmt)::CXExpr
+end
+
+function clang_SwitchStmt_getBody(SS)
+    @ccall libclangex.clang_SwitchStmt_getBody(SS::CXSwitchStmt)::CXStmt
+end
+
+function clang_SwitchStmt_getSwitchCaseList(SS)
+    @ccall libclangex.clang_SwitchStmt_getSwitchCaseList(SS::CXSwitchStmt)::CXSwitchCase
+end
+
+function clang_SwitchStmt_isAllEnumCasesCovered(SS)
+    @ccall libclangex.clang_SwitchStmt_isAllEnumCasesCovered(SS::CXSwitchStmt)::Bool
+end
+
+function clang_WhileStmt_getCond(WS)
+    @ccall libclangex.clang_WhileStmt_getCond(WS::CXWhileStmt)::CXExpr
+end
+
+function clang_WhileStmt_getBody(WS)
+    @ccall libclangex.clang_WhileStmt_getBody(WS::CXWhileStmt)::CXStmt
+end
+
+function clang_WhileStmt_getConditionVariable(WS)
+    @ccall libclangex.clang_WhileStmt_getConditionVariable(WS::CXWhileStmt)::CXVarDecl
+end
+
+function clang_WhileStmt_getWhileLoc(WS)
+    @ccall libclangex.clang_WhileStmt_getWhileLoc(WS::CXWhileStmt)::CXSourceLocation_
+end
+
+function clang_DoStmt_getCond(DS)
+    @ccall libclangex.clang_DoStmt_getCond(DS::CXDoStmt)::CXExpr
+end
+
+function clang_DoStmt_getBody(DS)
+    @ccall libclangex.clang_DoStmt_getBody(DS::CXDoStmt)::CXStmt
+end
+
+function clang_DoStmt_getDoLoc(DS)
+    @ccall libclangex.clang_DoStmt_getDoLoc(DS::CXDoStmt)::CXSourceLocation_
+end
+
+function clang_DoStmt_getWhileLoc(DS)
+    @ccall libclangex.clang_DoStmt_getWhileLoc(DS::CXDoStmt)::CXSourceLocation_
+end
+
+function clang_ForStmt_getInit(FS)
+    @ccall libclangex.clang_ForStmt_getInit(FS::CXForStmt)::CXStmt
+end
+
+function clang_ForStmt_getCond(FS)
+    @ccall libclangex.clang_ForStmt_getCond(FS::CXForStmt)::CXExpr
+end
+
+function clang_ForStmt_getInc(FS)
+    @ccall libclangex.clang_ForStmt_getInc(FS::CXForStmt)::CXExpr
+end
+
+function clang_ForStmt_getBody(FS)
+    @ccall libclangex.clang_ForStmt_getBody(FS::CXForStmt)::CXStmt
+end
+
+function clang_ForStmt_getConditionVariable(FS)
+    @ccall libclangex.clang_ForStmt_getConditionVariable(FS::CXForStmt)::CXVarDecl
+end
+
+function clang_ForStmt_getForLoc(FS)
+    @ccall libclangex.clang_ForStmt_getForLoc(FS::CXForStmt)::CXSourceLocation_
+end
+
+function clang_GotoStmt_getLabel(GS)
+    @ccall libclangex.clang_GotoStmt_getLabel(GS::CXGotoStmt)::CXLabelDecl
+end
+
+function clang_GotoStmt_getGotoLoc(GS)
+    @ccall libclangex.clang_GotoStmt_getGotoLoc(GS::CXGotoStmt)::CXSourceLocation_
+end
+
+function clang_ReturnStmt_getRetValue(RS)
+    @ccall libclangex.clang_ReturnStmt_getRetValue(RS::CXReturnStmt)::CXExpr
+end
+
+function clang_CXXCatchStmt_getExceptionDecl(CS)
+    @ccall libclangex.clang_CXXCatchStmt_getExceptionDecl(CS::CXCXXCatchStmt)::CXVarDecl
+end
+
+function clang_CXXCatchStmt_getCaughtType(CS)
+    @ccall libclangex.clang_CXXCatchStmt_getCaughtType(CS::CXCXXCatchStmt)::CXQualType
+end
+
+function clang_CXXCatchStmt_getHandlerBlock(CS)
+    @ccall libclangex.clang_CXXCatchStmt_getHandlerBlock(CS::CXCXXCatchStmt)::CXStmt
+end
+
+function clang_CXXTryStmt_getTryBlock(TS)
+    @ccall libclangex.clang_CXXTryStmt_getTryBlock(TS::CXCXXTryStmt)::CXCompoundStmt
+end
+
+function clang_CXXTryStmt_getNumHandlers(TS)
+    @ccall libclangex.clang_CXXTryStmt_getNumHandlers(TS::CXCXXTryStmt)::Cuint
+end
+
+function clang_CXXTryStmt_getHandler(TS, i)
+    @ccall libclangex.clang_CXXTryStmt_getHandler(TS::CXCXXTryStmt, i::Cuint)::CXCXXCatchStmt
+end
+
+function clang_CXXForRangeStmt_getLoopVariable(FRS)
+    @ccall libclangex.clang_CXXForRangeStmt_getLoopVariable(FRS::CXCXXForRangeStmt)::CXVarDecl
+end
+
+function clang_CXXForRangeStmt_getRangeInit(FRS)
+    @ccall libclangex.clang_CXXForRangeStmt_getRangeInit(FRS::CXCXXForRangeStmt)::CXExpr
+end
+
+function clang_CXXForRangeStmt_getBody(FRS)
+    @ccall libclangex.clang_CXXForRangeStmt_getBody(FRS::CXCXXForRangeStmt)::CXStmt
+end
+
+function clang_CXXForRangeStmt_getBeginStmt(FRS)
+    @ccall libclangex.clang_CXXForRangeStmt_getBeginStmt(FRS::CXCXXForRangeStmt)::CXDeclStmt
+end
+
+function clang_CXXForRangeStmt_getEndStmt(FRS)
+    @ccall libclangex.clang_CXXForRangeStmt_getEndStmt(FRS::CXCXXForRangeStmt)::CXDeclStmt
+end
+
 @enum CXTemplateArgument_ArgKind::UInt32 begin
     CXTemplateArgument_Null = 0
     CXTemplateArgument_Type = 1
@@ -8960,59 +9610,6 @@ end
 
 function clang_LangOptions_PrintStats(LO)
     @ccall libclangex.clang_LangOptions_PrintStats(LO::CXLangOptions)::Cvoid
-end
-
-@enum CXOverloadedOperatorKind::Int32 begin
-    CXOverloadedOperatorKind_OO_None = 0
-    CXOverloadedOperatorKind_OO_New = 1
-    CXOverloadedOperatorKind_OO_Delete = 2
-    CXOverloadedOperatorKind_OO_Array_New = 3
-    CXOverloadedOperatorKind_OO_Array_Delete = 4
-    CXOverloadedOperatorKind_OO_Plus = 5
-    CXOverloadedOperatorKind_OO_Minus = 6
-    CXOverloadedOperatorKind_OO_Star = 7
-    CXOverloadedOperatorKind_OO_Slash = 8
-    CXOverloadedOperatorKind_OO_Percent = 9
-    CXOverloadedOperatorKind_OO_Caret = 10
-    CXOverloadedOperatorKind_OO_Amp = 11
-    CXOverloadedOperatorKind_OO_Pipe = 12
-    CXOverloadedOperatorKind_OO_Tilde = 13
-    CXOverloadedOperatorKind_OO_Exclaim = 14
-    CXOverloadedOperatorKind_OO_Equal = 15
-    CXOverloadedOperatorKind_OO_Less = 16
-    CXOverloadedOperatorKind_OO_Greater = 17
-    CXOverloadedOperatorKind_OO_PlusEqual = 18
-    CXOverloadedOperatorKind_OO_MinusEqual = 19
-    CXOverloadedOperatorKind_OO_StarEqual = 20
-    CXOverloadedOperatorKind_OO_SlashEqual = 21
-    CXOverloadedOperatorKind_OO_PercentEqual = 22
-    CXOverloadedOperatorKind_OO_CaretEqual = 23
-    CXOverloadedOperatorKind_OO_AmpEqual = 24
-    CXOverloadedOperatorKind_OO_PipeEqual = 25
-    CXOverloadedOperatorKind_OO_LessLess = 26
-    CXOverloadedOperatorKind_OO_GreaterGreater = 27
-    CXOverloadedOperatorKind_OO_LessLessEqual = 28
-    CXOverloadedOperatorKind_OO_GreaterGreaterEqual = 29
-    CXOverloadedOperatorKind_OO_EqualEqual = 30
-    CXOverloadedOperatorKind_OO_ExclaimEqual = 31
-    CXOverloadedOperatorKind_OO_LessEqual = 32
-    CXOverloadedOperatorKind_OO_GreaterEqual = 33
-    CXOverloadedOperatorKind_OO_Spaceship = 34
-    CXOverloadedOperatorKind_OO_AmpAmp = 35
-    CXOverloadedOperatorKind_OO_PipePipe = 36
-    CXOverloadedOperatorKind_OO_PlusPlus = 37
-    CXOverloadedOperatorKind_OO_MinusMinus = 38
-    CXOverloadedOperatorKind_OO_Comma = 39
-    CXOverloadedOperatorKind_OO_ArrowStar = 40
-    CXOverloadedOperatorKind_OO_Arrow = 41
-    CXOverloadedOperatorKind_OO_Call = 42
-    CXOverloadedOperatorKind_OO_Subscript = 43
-    CXOverloadedOperatorKind_OO_Conditional = 44
-    CXOverloadedOperatorKind_OO_Coawait = 45
-end
-
-function clang_getOperatorSpelling(Operator)
-    @ccall libclangex.clang_getOperatorSpelling(Operator::CXOverloadedOperatorKind)::Ptr{Cchar}
 end
 
 function clang_SourceLocation_createInvalid()
