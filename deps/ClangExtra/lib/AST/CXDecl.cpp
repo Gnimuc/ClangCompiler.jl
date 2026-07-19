@@ -542,7 +542,10 @@ CXEvaluatedStmt clang_VarDecl_getEvaluatedStmt(CXVarDecl VD) {
   return static_cast<clang::VarDecl *>(VD)->getEvaluatedStmt();
 }
 
-// evaluateValue
+CXAPValue clang_VarDecl_evaluateValue(CXVarDecl VD) {
+  return static_cast<clang::VarDecl *>(VD)->evaluateValue();
+}
+
 // getEvaluatedValue
 // evaluateDestruction
 

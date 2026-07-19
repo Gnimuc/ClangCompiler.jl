@@ -432,6 +432,14 @@ function getExprLoc(x::AbstractExpr)
     return SourceLocation(clang_Expr_getExprLoc(x))
 end
 
+# Fold `x` to a compile-time constant. The returned `APValue` wraps `C_NULL`
+# when `x` is not a constant expression (check `.ptr`); a non-null result is
+# owned — `dispose` it after use.
+function EvaluateAsRValue(x::AbstractExpr, ctx::ASTContext)
+    @check_ptrs x ctx
+    return APValue(clang_Expr_EvaluateAsRValue(x, ctx))
+end
+
 # IntegerLiteral
 function getBeginLoc(x::IntegerLiteral)
     @check_ptrs x

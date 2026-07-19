@@ -507,6 +507,14 @@ function mightBeUsableInConstantExpressions(x::AbstractVarDecl, ctx::ASTContext)
     return clang_VarDecl_mightBeUsableInConstantExpressions(x, ctx)
 end
 
+# Evaluate the initializer to a constant. The returned `APValue` wraps `C_NULL`
+# when the initializer is absent or not constant-foldable (check `.ptr`); a
+# non-null result is borrowed (cached in the VarDecl) — never `dispose` it.
+function evaluateValue(x::AbstractVarDecl)
+    @check_ptrs x
+    return APValue(clang_VarDecl_evaluateValue(x))
+end
+
 function isUsableInConstantExpressions(x::AbstractVarDecl, ctx::ASTContext)
     @check_ptrs x ctx
     return clang_VarDecl_isUsableInConstantExpressions(x, ctx)

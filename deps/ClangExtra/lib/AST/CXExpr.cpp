@@ -1,5 +1,6 @@
 #include "clang-ex/AST/CXExpr.h"
 #include "utils.h"
+#include "clang/AST/APValue.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
@@ -100,6 +101,14 @@ bool clang_Expr_refersToVectorElement(CXExpr E) {
 
 CXSourceLocation_ clang_Expr_getExprLoc(CXExpr E) {
   return static_cast<clang::Expr *>(E)->getExprLoc().getPtrEncoding();
+}
+
+CXAPValue clang_Expr_EvaluateAsRValue(CXExpr E, CXASTContext Ctx) {
+  clang::Expr::EvalResult Result;
+  if (!static_cast<clang::Expr *>(E)->EvaluateAsRValue(
+          Result, *static_cast<clang::ASTContext *>(Ctx)))
+    return nullptr;
+  return new clang::APValue(Result.Val); // NOLINT(*-owning-memory)
 }
 
 // DeclRefExpr

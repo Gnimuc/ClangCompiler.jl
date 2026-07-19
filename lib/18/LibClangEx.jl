@@ -188,6 +188,8 @@ const CXConceptDecl = Ptr{Cvoid}
 
 const CXTemplateParamObjectDecl = Ptr{Cvoid}
 
+const CXAPValue = Ptr{Cvoid}
+
 const CXExpr = Ptr{Cvoid}
 
 const CXFullExpr = Ptr{Cvoid}
@@ -725,6 +727,75 @@ const CXScope = Ptr{Cvoid}
 end
 
 const CXFrontendAction = Ptr{Cvoid}
+
+@enum CXAPValueKind::UInt32 begin
+    CXAPValueKind_None = 0
+    CXAPValueKind_Indeterminate = 1
+    CXAPValueKind_Int = 2
+    CXAPValueKind_Float = 3
+    CXAPValueKind_FixedPoint = 4
+    CXAPValueKind_ComplexInt = 5
+    CXAPValueKind_ComplexFloat = 6
+    CXAPValueKind_LValue = 7
+    CXAPValueKind_Vector = 8
+    CXAPValueKind_Array = 9
+    CXAPValueKind_Struct = 10
+    CXAPValueKind_Union = 11
+    CXAPValueKind_MemberPointer = 12
+    CXAPValueKind_AddrLabelDiff = 13
+end
+
+function clang_APValue_getKind(V)
+    @ccall libclangex.clang_APValue_getKind(V::CXAPValue)::CXAPValueKind
+end
+
+function clang_APValue_isInt(V)
+    @ccall libclangex.clang_APValue_isInt(V::CXAPValue)::Bool
+end
+
+function clang_APValue_isFloat(V)
+    @ccall libclangex.clang_APValue_isFloat(V::CXAPValue)::Bool
+end
+
+function clang_APValue_isArray(V)
+    @ccall libclangex.clang_APValue_isArray(V::CXAPValue)::Bool
+end
+
+function clang_APValue_isStruct(V)
+    @ccall libclangex.clang_APValue_isStruct(V::CXAPValue)::Bool
+end
+
+function clang_APValue_getInt(V)
+    @ccall libclangex.clang_APValue_getInt(V::CXAPValue)::LLVMGenericValueRef
+end
+
+function clang_APValue_getFloat(V)
+    @ccall libclangex.clang_APValue_getFloat(V::CXAPValue)::LLVMGenericValueRef
+end
+
+function clang_APValue_getArraySize(V)
+    @ccall libclangex.clang_APValue_getArraySize(V::CXAPValue)::Cuint
+end
+
+function clang_APValue_getArrayInitializedElts(V)
+    @ccall libclangex.clang_APValue_getArrayInitializedElts(V::CXAPValue)::Cuint
+end
+
+function clang_APValue_getArrayInitializedElt(V, I)
+    @ccall libclangex.clang_APValue_getArrayInitializedElt(V::CXAPValue, I::Cuint)::CXAPValue
+end
+
+function clang_APValue_getStructNumFields(V)
+    @ccall libclangex.clang_APValue_getStructNumFields(V::CXAPValue)::Cuint
+end
+
+function clang_APValue_getStructField(V, I)
+    @ccall libclangex.clang_APValue_getStructField(V::CXAPValue, I::Cuint)::CXAPValue
+end
+
+function clang_APValue_dispose(V)
+    @ccall libclangex.clang_APValue_dispose(V::CXAPValue)::Cvoid
+end
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
     @ccall libclangex.clang_ASTConsumer_Initialize(Csr::CXASTConsumer, Ctx::CXASTContext)::Cvoid
@@ -4890,6 +4961,10 @@ function clang_VarDecl_getEvaluatedStmt(VD)
     @ccall libclangex.clang_VarDecl_getEvaluatedStmt(VD::CXVarDecl)::CXEvaluatedStmt
 end
 
+function clang_VarDecl_evaluateValue(VD)
+    @ccall libclangex.clang_VarDecl_evaluateValue(VD::CXVarDecl)::CXAPValue
+end
+
 function clang_VarDecl_hasConstantInitialization(VD)
     @ccall libclangex.clang_VarDecl_hasConstantInitialization(VD::CXVarDecl)::Bool
 end
@@ -6965,6 +7040,10 @@ end
 
 function clang_Expr_getExprLoc(E)
     @ccall libclangex.clang_Expr_getExprLoc(E::CXExpr)::CXSourceLocation_
+end
+
+function clang_Expr_EvaluateAsRValue(E, Ctx)
+    @ccall libclangex.clang_Expr_EvaluateAsRValue(E::CXExpr, Ctx::CXASTContext)::CXAPValue
 end
 
 function clang_DeclRefExpr_getDecl(DRE)

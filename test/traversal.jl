@@ -80,6 +80,35 @@ end
     dispose(I)
 end
 
+@testset "Traversal | APValue constant evaluation" begin
+    I = create_interpreter(String[])
+    ClangCompiler.parse(I, "constexpr int cx = 2 + 3;")
+    f = DeclFinder(I)
+    @test f(I, "cx")
+    vd = ClangCompiler.VarDecl(get_decl(f).ptr)
+
+    # VarDecl::evaluateValue — borrowed, cached in the VarDecl (never disposed).
+    av = ClangCompiler.evaluateValue(vd)
+    @test av.ptr != C_NULL
+    @test ClangCompiler.isInt(av)
+    @test ClangCompiler.getKind(av) == ClangCompiler.LibClangEx.CXAPValueKind_Int
+    gv = ClangCompiler.LLVM.GenericValue(ClangCompiler.getInt(av))
+    @test convert(Int, gv) == 5
+    ClangCompiler.LLVM.dispose(gv)
+
+    # Expr::EvaluateAsRValue — owned, must be disposed.
+    ctx = ClangCompiler.get_ast_context(I)
+    av2 = ClangCompiler.EvaluateAsRValue(ClangCompiler.getInit(vd), ctx)
+    @test av2.ptr != C_NULL
+    gv2 = ClangCompiler.LLVM.GenericValue(ClangCompiler.getInt(av2))
+    @test convert(Int, gv2) == 5
+    ClangCompiler.LLVM.dispose(gv2)
+    ClangCompiler.dispose(av2)
+
+    dispose(f)
+    dispose(I)
+end
+
 @testset "Traversal | template navigation" begin
     I = create_interpreter(String[])
     ClangCompiler.parse(I, "template<typename T, int N> struct S { T x; };")

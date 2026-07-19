@@ -8,6 +8,7 @@
 // without including clang-c/ExternC.h themselves.
 #include "clang-ex/CXTypes.h"
 
+#include "clang-ex/AST/CXAPValue.h"
 #include "clang-ex/AST/CXExpr.h"
 #include "clang-ex/AST/CXExprCXX.h"
 #include "clang-ex/AST/CXOperationKinds.h"
@@ -15,6 +16,7 @@
 #include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-ex/Basic/CXVisibility.h"
 
+#include "clang/AST/APValue.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/OperationKinds.h"
@@ -251,5 +253,21 @@ ENUM_SYNC(CXCXXConstructionKind_Delegating, clang::CXXConstructionKind::Delegati
 ENUM_SYNC(CXCXXNewInitializationStyle_None, clang::CXXNewInitializationStyle::None);
 ENUM_SYNC(CXCXXNewInitializationStyle_Parens, clang::CXXNewInitializationStyle::Parens);
 ENUM_SYNC(CXCXXNewInitializationStyle_Braces, clang::CXXNewInitializationStyle::Braces);
+
+// clang/AST/APValue.h: enum ValueKind (nested in clang::APValue)
+ENUM_SYNC(CXAPValueKind_None, clang::APValue::None);
+ENUM_SYNC(CXAPValueKind_Indeterminate, clang::APValue::Indeterminate);
+ENUM_SYNC(CXAPValueKind_Int, clang::APValue::Int);
+ENUM_SYNC(CXAPValueKind_Float, clang::APValue::Float);
+ENUM_SYNC(CXAPValueKind_FixedPoint, clang::APValue::FixedPoint);
+ENUM_SYNC(CXAPValueKind_ComplexInt, clang::APValue::ComplexInt);
+ENUM_SYNC(CXAPValueKind_ComplexFloat, clang::APValue::ComplexFloat);
+ENUM_SYNC(CXAPValueKind_LValue, clang::APValue::LValue);
+ENUM_SYNC(CXAPValueKind_Vector, clang::APValue::Vector);
+ENUM_SYNC(CXAPValueKind_Array, clang::APValue::Array);
+ENUM_SYNC(CXAPValueKind_Struct, clang::APValue::Struct);
+ENUM_SYNC(CXAPValueKind_Union, clang::APValue::Union);
+ENUM_SYNC(CXAPValueKind_MemberPointer, clang::APValue::MemberPointer);
+ENUM_SYNC(CXAPValueKind_AddrLabelDiff, clang::APValue::AddrLabelDiff);
 
 #undef ENUM_SYNC

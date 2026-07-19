@@ -64,6 +64,11 @@ bool clang_Expr_refersToVectorElement(CXExpr E);
 
 CXSourceLocation_ clang_Expr_getExprLoc(CXExpr E);
 
+// Fold E to a compile-time constant. Returns an OWNED CXAPValue (dispose via
+// clang_APValue_dispose) on success, or nullptr if E is not a constant
+// expression. See CXAPValue.h / MARSHALLING.md §3.
+CXAPValue clang_Expr_EvaluateAsRValue(CXExpr E, CXASTContext Ctx);
+
 // DeclRefExpr
 CXValueDecl clang_DeclRefExpr_getDecl(CXDeclRefExpr DRE);
 

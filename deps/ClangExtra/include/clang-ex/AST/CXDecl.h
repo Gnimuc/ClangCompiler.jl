@@ -283,7 +283,10 @@ CXEvaluatedStmt clang_VarDecl_ensureEvaluatedStmt(CXVarDecl VD);
 
 CXEvaluatedStmt clang_VarDecl_getEvaluatedStmt(CXVarDecl VD);
 
-// evaluateValue
+// Evaluate the initializer to a constant. Returns a BORROWED CXAPValue cached
+// in the VarDecl (do NOT dispose; invalidated with the VarDecl), or nullptr if
+// the initializer is absent or not constant-foldable. See CXAPValue.h.
+CXAPValue clang_VarDecl_evaluateValue(CXVarDecl VD);
 // getEvaluatedValue
 // evaluateDestruction
 

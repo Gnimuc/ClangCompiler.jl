@@ -16,6 +16,7 @@ include("AST/StmtAbstract.jl")
 
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
 # AST
+include("AST/APValue.jl")
 include("AST/ASTConsumer.jl")
 include("AST/ASTContext.jl")
 include("AST/Mangle.jl")

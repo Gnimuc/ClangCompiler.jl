@@ -73,13 +73,21 @@ remaining phases. Status markers: [x] done, [ ] open.
       Type classes; method/ctor and DeclStmt-decl iteration; and template
       navigation (getTemplateParameters/getTemplatedDecl, param depth/index,
       getSpecializedTemplate/Kind). Skiplist 794 → 220.
+- [x] APValue bridge — opaque `CXAPValue` handle (MARSHALLING.md §3) with
+      kind-dispatched accessors (getKind + the CXAPValueKind ENUM_SYNC mirror,
+      isInt/isFloat/isArray/isStruct, array/struct navigation) and int/float
+      leaves crossing as `LLVMGenericValueRef` per the LLVM-reuse rule (§0).
+      Two evaluation entry points feed it: `clang_Expr_EvaluateAsRValue`
+      (owned result) and `clang_VarDecl_evaluateValue` (borrowed, cached).
 
 ## Remaining
 
-- [ ] **Payload leftovers** — the Expr-base constant-evaluation cluster (gated on
-      the APValue bridge), StringLiteral width variants, UnaryExprOrTypeTraitExpr
-      `getKind` (needs a `.def`-driven UETT enum mirror), PredefinedExpr, and a
-      long breadth-first tail of core classes with ≤2 payload methods.
+- [ ] **Payload leftovers** — the rest of the Expr-base constant-evaluation
+      cluster now that the APValue bridge has landed (EvaluateAsInt/EvaluateAsFloat/
+      EvaluateAsBooleanCondition, isEvaluatable, isCXX11ConstantExpr), StringLiteral
+      width variants, UnaryExprOrTypeTraitExpr `getKind` (needs a `.def`-driven UETT
+      enum mirror), PredefinedExpr, and a long breadth-first tail of core classes
+      with ≤2 payload methods.
 - [ ] **Iteration leftovers** — LambdaExpr captures (needs a CXLambdaCapture
       carrier), FunctionProtoType exceptions/param-type arrays, IndirectFieldDecl
       chain, ImportDecl identifier locs, CastExpr base path.
@@ -89,9 +97,9 @@ remaining phases. Status markers: [x] done, [ ] open.
       DeclNodes.inc (CXDeclKind + castTo/is, replacing string-compare
       getDeclKindName dispatch) and TypeNodes.inc (replacing the ordered
       resolve() predicate chain in src/types.jl).
-- [ ] **Value-type bridges** that gate full power: APValue,
-      DeclarationNameInfo, TemplateArgument lists, NestedNameSpecifier
-      navigation. These cause most of Decl's systematic skips.
+- [ ] **Value-type bridges** that gate full power: DeclarationNameInfo,
+      TemplateArgument lists, NestedNameSpecifier navigation. These cause most of
+      Decl's systematic skips. (APValue: done.)
 - [ ] **Attributes** — a third .inc-driven family (Attrs.inc); zero exposure
       today, `Decl::getAttrs` unreachable.
 - [ ] **TypeLoc** — at minimum an opaque handle + source-range floor;
@@ -104,5 +112,6 @@ remaining phases. Status markers: [x] done, [ ] open.
       real tools (null-check linter, unused-include pass, template
       instantiation dumper) that must be expressible from Julia.
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
-      (this branch adds ~740 C symbols — the earlier drift fixes plus the 90
-      CXXRecordDecl traits — and corrects CXCastKind/CXLinkage values).
+      (this branch adds ~755 C symbols — the earlier drift fixes, the 90
+      CXXRecordDecl traits, and the APValue bridge — and corrects
+      CXCastKind/CXLinkage values).

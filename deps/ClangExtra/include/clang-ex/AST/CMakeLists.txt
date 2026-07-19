@@ -1,3 +1,4 @@
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXAPValue.h)
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXASTConsumer.h)
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXASTContext.h)
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXDecl.h)
