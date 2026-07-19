@@ -715,3 +715,59 @@ CXSourceLocation_ clang_CompoundLiteralExpr_getLParenLoc(CXCompoundLiteralExpr E
   return static_cast<clang::CompoundLiteralExpr *>(E)->getLParenLoc().getPtrEncoding();
 }
 
+
+// UnaryExprOrTypeTraitExpr
+CXTypeSourceInfo clang_UnaryExprOrTypeTraitExpr_getArgumentTypeInfo(CXUnaryExprOrTypeTraitExpr E) {
+  return const_cast<clang::TypeSourceInfo *>(static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->getArgumentTypeInfo());
+}
+
+CXExpr clang_UnaryExprOrTypeTraitExpr_getArgumentExpr(CXUnaryExprOrTypeTraitExpr E) {
+  return const_cast<clang::Expr *>(static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->getArgumentExpr());
+}
+
+// MemberExpr
+CXNestedNameSpecifier clang_MemberExpr_getQualifier(CXMemberExpr E) {
+  return const_cast<clang::NestedNameSpecifier *>(static_cast<clang::MemberExpr *>(E)->getQualifier());
+}
+
+// InitListExpr
+CXExpr clang_InitListExpr_getArrayFiller(CXInitListExpr E) {
+  return const_cast<clang::Expr *>(static_cast<clang::InitListExpr *>(E)->getArrayFiller());
+}
+
+CXFieldDecl clang_InitListExpr_getInitializedFieldInUnion(CXInitListExpr E) {
+  return const_cast<clang::FieldDecl *>(static_cast<clang::InitListExpr *>(E)->getInitializedFieldInUnion());
+}
+
+CXInitListExpr clang_InitListExpr_getSemanticForm(CXInitListExpr E) {
+  return const_cast<clang::InitListExpr *>(static_cast<clang::InitListExpr *>(E)->getSemanticForm());
+}
+
+// DeclRefExpr
+CXNestedNameSpecifier clang_DeclRefExpr_getQualifier(CXDeclRefExpr E) {
+  return const_cast<clang::NestedNameSpecifier *>(static_cast<clang::DeclRefExpr *>(E)->getQualifier());
+}
+
+// CastExpr
+CXNamedDecl clang_CastExpr_getConversionFunction(CXCastExpr E) {
+  return const_cast<clang::NamedDecl *>(static_cast<clang::CastExpr *>(E)->getConversionFunction());
+}
+
+CXFieldDecl clang_CastExpr_getTargetUnionField(CXCastExpr E) {
+  return const_cast<clang::FieldDecl *>(static_cast<clang::CastExpr *>(E)->getTargetUnionField());
+}
+
+// StmtExpr
+CXCompoundStmt clang_StmtExpr_getSubStmt(CXStmtExpr E) {
+  return const_cast<clang::CompoundStmt *>(static_cast<clang::StmtExpr *>(E)->getSubStmt());
+}
+
+// CompoundLiteralExpr
+CXExpr clang_CompoundLiteralExpr_getInitializer(CXCompoundLiteralExpr E) {
+  return const_cast<clang::Expr *>(static_cast<clang::CompoundLiteralExpr *>(E)->getInitializer());
+}
+
+CXTypeSourceInfo clang_CompoundLiteralExpr_getTypeSourceInfo(CXCompoundLiteralExpr E) {
+  return const_cast<clang::TypeSourceInfo *>(static_cast<clang::CompoundLiteralExpr *>(E)->getTypeSourceInfo());
+}
+

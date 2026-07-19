@@ -475,6 +475,16 @@ function getRParenLoc(x::AbstractUnaryExprOrTypeTraitExpr)
     return SourceLocation(clang_UnaryExprOrTypeTraitExpr_getRParenLoc(x))
 end
 
+function getArgumentExpr(x::AbstractUnaryExprOrTypeTraitExpr)
+    @check_ptrs x
+    return Expr_(clang_UnaryExprOrTypeTraitExpr_getArgumentExpr(x))
+end
+
+function getArgumentTypeInfo(x::AbstractUnaryExprOrTypeTraitExpr)
+    @check_ptrs x
+    return TypeSourceInfo(clang_UnaryExprOrTypeTraitExpr_getArgumentTypeInfo(x))
+end
+
 # StringLiteral
 function isOrdinary(x::AbstractStringLiteral)
     @check_ptrs x
@@ -620,6 +630,11 @@ function hadMultipleCandidates(x::AbstractMemberExpr)
     return clang_MemberExpr_hadMultipleCandidates(x)
 end
 
+function getQualifier(x::AbstractMemberExpr)
+    @check_ptrs x
+    return NestedNameSpecifier(clang_MemberExpr_getQualifier(x))
+end
+
 # InitListExpr
 function hasArrayFiller(x::AbstractInitListExpr)
     @check_ptrs x
@@ -664,6 +679,21 @@ end
 function hadArrayRangeDesignator(x::AbstractInitListExpr)
     @check_ptrs x
     return clang_InitListExpr_hadArrayRangeDesignator(x)
+end
+
+function getArrayFiller(x::AbstractInitListExpr)
+    @check_ptrs x
+    return Expr_(clang_InitListExpr_getArrayFiller(x))
+end
+
+function getInitializedFieldInUnion(x::AbstractInitListExpr)
+    @check_ptrs x
+    return FieldDecl(clang_InitListExpr_getInitializedFieldInUnion(x))
+end
+
+function getSemanticForm(x::AbstractInitListExpr)
+    @check_ptrs x
+    return InitListExpr(clang_InitListExpr_getSemanticForm(x))
 end
 
 # ParenExpr
@@ -739,6 +769,11 @@ function isCapturedByCopyInLambdaWithExplicitObjectParameter(x::AbstractDeclRefE
     return clang_DeclRefExpr_isCapturedByCopyInLambdaWithExplicitObjectParameter(x)
 end
 
+function getQualifier(x::AbstractDeclRefExpr)
+    @check_ptrs x
+    return NestedNameSpecifier(clang_DeclRefExpr_getQualifier(x))
+end
+
 # ConstantExpr
 function isImmediateInvocation(x::AbstractConstantExpr)
     @check_ptrs x
@@ -766,6 +801,11 @@ function getTemplateDepth(x::AbstractStmtExpr)
     return clang_StmtExpr_getTemplateDepth(x)
 end
 
+function getSubStmt(x::AbstractStmtExpr)
+    @check_ptrs x
+    return CompoundStmt(clang_StmtExpr_getSubStmt(x))
+end
+
 # CompoundLiteralExpr
 function isFileScope(x::AbstractCompoundLiteralExpr)
     @check_ptrs x
@@ -775,5 +815,15 @@ end
 function getLParenLoc(x::AbstractCompoundLiteralExpr)
     @check_ptrs x
     return SourceLocation(clang_CompoundLiteralExpr_getLParenLoc(x))
+end
+
+function getInitializer(x::AbstractCompoundLiteralExpr)
+    @check_ptrs x
+    return Expr_(clang_CompoundLiteralExpr_getInitializer(x))
+end
+
+function getTypeSourceInfo(x::AbstractCompoundLiteralExpr)
+    @check_ptrs x
+    return TypeSourceInfo(clang_CompoundLiteralExpr_getTypeSourceInfo(x))
 end
 

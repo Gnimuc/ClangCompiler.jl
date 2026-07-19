@@ -219,3 +219,22 @@ CXFunctionDecl clang_CXXNewExpr_getOperatorDelete(CXCXXNewExpr NE) {
 CXFunctionDecl clang_CXXDeleteExpr_getOperatorDelete(CXCXXDeleteExpr DE) {
   return static_cast<clang::CXXDeleteExpr *>(DE)->getOperatorDelete();
 }
+
+// CXXNewExpr
+CXTypeSourceInfo clang_CXXNewExpr_getAllocatedTypeSourceInfo(CXCXXNewExpr E) {
+  return const_cast<clang::TypeSourceInfo *>(static_cast<clang::CXXNewExpr *>(E)->getAllocatedTypeSourceInfo());
+}
+
+CXCXXConstructExpr clang_CXXNewExpr_getConstructExpr(CXCXXNewExpr E) {
+  return const_cast<clang::CXXConstructExpr *>(static_cast<clang::CXXNewExpr *>(E)->getConstructExpr());
+}
+
+// MaterializeTemporaryExpr
+CXExpr clang_MaterializeTemporaryExpr_getSubExpr(CXMaterializeTemporaryExpr E) {
+  return const_cast<clang::Expr *>(static_cast<clang::MaterializeTemporaryExpr *>(E)->getSubExpr());
+}
+
+CXValueDecl clang_MaterializeTemporaryExpr_getExtendingDecl(CXMaterializeTemporaryExpr E) {
+  return const_cast<clang::ValueDecl *>(static_cast<clang::MaterializeTemporaryExpr *>(E)->getExtendingDecl());
+}
+

@@ -390,6 +390,38 @@ bool clang_CompoundLiteralExpr_isFileScope(CXCompoundLiteralExpr E);
 CXSourceLocation_ clang_CompoundLiteralExpr_getLParenLoc(CXCompoundLiteralExpr E);
 
 
+// UnaryExprOrTypeTraitExpr
+CXTypeSourceInfo clang_UnaryExprOrTypeTraitExpr_getArgumentTypeInfo(CXUnaryExprOrTypeTraitExpr E);
+
+CXExpr clang_UnaryExprOrTypeTraitExpr_getArgumentExpr(CXUnaryExprOrTypeTraitExpr E);
+
+// MemberExpr
+CXNestedNameSpecifier clang_MemberExpr_getQualifier(CXMemberExpr E);
+
+// InitListExpr
+CXExpr clang_InitListExpr_getArrayFiller(CXInitListExpr E);
+
+CXFieldDecl clang_InitListExpr_getInitializedFieldInUnion(CXInitListExpr E);
+
+CXInitListExpr clang_InitListExpr_getSemanticForm(CXInitListExpr E);
+
+// DeclRefExpr
+CXNestedNameSpecifier clang_DeclRefExpr_getQualifier(CXDeclRefExpr E);
+
+// CastExpr
+CXNamedDecl clang_CastExpr_getConversionFunction(CXCastExpr E);
+
+CXFieldDecl clang_CastExpr_getTargetUnionField(CXCastExpr E);
+
+// StmtExpr
+CXCompoundStmt clang_StmtExpr_getSubStmt(CXStmtExpr E);
+
+// CompoundLiteralExpr
+CXExpr clang_CompoundLiteralExpr_getInitializer(CXCompoundLiteralExpr E);
+
+CXTypeSourceInfo clang_CompoundLiteralExpr_getTypeSourceInfo(CXCompoundLiteralExpr E);
+
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

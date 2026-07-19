@@ -7423,6 +7423,54 @@ function clang_CompoundLiteralExpr_getLParenLoc(E)
     @ccall libclangex.clang_CompoundLiteralExpr_getLParenLoc(E::CXCompoundLiteralExpr)::CXSourceLocation_
 end
 
+function clang_UnaryExprOrTypeTraitExpr_getArgumentTypeInfo(E)
+    @ccall libclangex.clang_UnaryExprOrTypeTraitExpr_getArgumentTypeInfo(E::CXUnaryExprOrTypeTraitExpr)::CXTypeSourceInfo
+end
+
+function clang_UnaryExprOrTypeTraitExpr_getArgumentExpr(E)
+    @ccall libclangex.clang_UnaryExprOrTypeTraitExpr_getArgumentExpr(E::CXUnaryExprOrTypeTraitExpr)::CXExpr
+end
+
+function clang_MemberExpr_getQualifier(E)
+    @ccall libclangex.clang_MemberExpr_getQualifier(E::CXMemberExpr)::CXNestedNameSpecifier
+end
+
+function clang_InitListExpr_getArrayFiller(E)
+    @ccall libclangex.clang_InitListExpr_getArrayFiller(E::CXInitListExpr)::CXExpr
+end
+
+function clang_InitListExpr_getInitializedFieldInUnion(E)
+    @ccall libclangex.clang_InitListExpr_getInitializedFieldInUnion(E::CXInitListExpr)::CXFieldDecl
+end
+
+function clang_InitListExpr_getSemanticForm(E)
+    @ccall libclangex.clang_InitListExpr_getSemanticForm(E::CXInitListExpr)::CXInitListExpr
+end
+
+function clang_DeclRefExpr_getQualifier(E)
+    @ccall libclangex.clang_DeclRefExpr_getQualifier(E::CXDeclRefExpr)::CXNestedNameSpecifier
+end
+
+function clang_CastExpr_getConversionFunction(E)
+    @ccall libclangex.clang_CastExpr_getConversionFunction(E::CXCastExpr)::CXNamedDecl
+end
+
+function clang_CastExpr_getTargetUnionField(E)
+    @ccall libclangex.clang_CastExpr_getTargetUnionField(E::CXCastExpr)::CXFieldDecl
+end
+
+function clang_StmtExpr_getSubStmt(E)
+    @ccall libclangex.clang_StmtExpr_getSubStmt(E::CXStmtExpr)::CXCompoundStmt
+end
+
+function clang_CompoundLiteralExpr_getInitializer(E)
+    @ccall libclangex.clang_CompoundLiteralExpr_getInitializer(E::CXCompoundLiteralExpr)::CXExpr
+end
+
+function clang_CompoundLiteralExpr_getTypeSourceInfo(E)
+    @ccall libclangex.clang_CompoundLiteralExpr_getTypeSourceInfo(E::CXCompoundLiteralExpr)::CXTypeSourceInfo
+end
+
 @enum CXOverloadedOperatorKind::Int32 begin
     CXOverloadedOperatorKind_OO_None = 0
     CXOverloadedOperatorKind_OO_New = 1
@@ -7683,6 +7731,22 @@ end
 
 function clang_CXXNamedCastExpr_getRParenLoc(E)
     @ccall libclangex.clang_CXXNamedCastExpr_getRParenLoc(E::CXCXXNamedCastExpr)::CXSourceLocation_
+end
+
+function clang_CXXNewExpr_getAllocatedTypeSourceInfo(E)
+    @ccall libclangex.clang_CXXNewExpr_getAllocatedTypeSourceInfo(E::CXCXXNewExpr)::CXTypeSourceInfo
+end
+
+function clang_CXXNewExpr_getConstructExpr(E)
+    @ccall libclangex.clang_CXXNewExpr_getConstructExpr(E::CXCXXNewExpr)::CXCXXConstructExpr
+end
+
+function clang_MaterializeTemporaryExpr_getSubExpr(E)
+    @ccall libclangex.clang_MaterializeTemporaryExpr_getSubExpr(E::CXMaterializeTemporaryExpr)::CXExpr
+end
+
+function clang_MaterializeTemporaryExpr_getExtendingDecl(E)
+    @ccall libclangex.clang_MaterializeTemporaryExpr_getExtendingDecl(E::CXMaterializeTemporaryExpr)::CXValueDecl
 end
 
 @enum CXMangleContext_ManglerKind::UInt32 begin

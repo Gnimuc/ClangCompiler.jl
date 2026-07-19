@@ -137,6 +137,17 @@ CXSourceLocation_ clang_CXXNamedCastExpr_getOperatorLoc(CXCXXNamedCastExpr E);
 CXSourceLocation_ clang_CXXNamedCastExpr_getRParenLoc(CXCXXNamedCastExpr E);
 
 
+// CXXNewExpr
+CXTypeSourceInfo clang_CXXNewExpr_getAllocatedTypeSourceInfo(CXCXXNewExpr E);
+
+CXCXXConstructExpr clang_CXXNewExpr_getConstructExpr(CXCXXNewExpr E);
+
+// MaterializeTemporaryExpr
+CXExpr clang_MaterializeTemporaryExpr_getSubExpr(CXMaterializeTemporaryExpr E);
+
+CXValueDecl clang_MaterializeTemporaryExpr_getExtendingDecl(CXMaterializeTemporaryExpr E);
+
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

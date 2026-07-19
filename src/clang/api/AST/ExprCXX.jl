@@ -192,6 +192,16 @@ function getOperatorNew(x::AbstractCXXNewExpr)
     return FunctionDecl(clang_CXXNewExpr_getOperatorNew(x))
 end
 
+function getAllocatedTypeSourceInfo(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return TypeSourceInfo(clang_CXXNewExpr_getAllocatedTypeSourceInfo(x))
+end
+
+function getConstructExpr(x::AbstractCXXNewExpr)
+    @check_ptrs x
+    return CXXConstructExpr(clang_CXXNewExpr_getConstructExpr(x))
+end
+
 # CXXDeleteExpr
 function getArgument(x::AbstractCXXDeleteExpr)
     @check_ptrs x
@@ -249,6 +259,16 @@ function changesVolatileQualification(x::AbstractCastExpr)
     return clang_CastExpr_changesVolatileQualification(x)
 end
 
+function getConversionFunction(x::AbstractCastExpr)
+    @check_ptrs x
+    return NamedDecl(clang_CastExpr_getConversionFunction(x))
+end
+
+function getTargetUnionField(x::AbstractCastExpr)
+    @check_ptrs x
+    return FieldDecl(clang_CastExpr_getTargetUnionField(x))
+end
+
 # CXXThisExpr
 function getLocation(x::AbstractCXXThisExpr)
     @check_ptrs x
@@ -269,6 +289,16 @@ end
 function isBoundToLvalueReference(x::AbstractMaterializeTemporaryExpr)
     @check_ptrs x
     return clang_MaterializeTemporaryExpr_isBoundToLvalueReference(x)
+end
+
+function getExtendingDecl(x::AbstractMaterializeTemporaryExpr)
+    @check_ptrs x
+    return ValueDecl(clang_MaterializeTemporaryExpr_getExtendingDecl(x))
+end
+
+function getSubExpr(x::AbstractMaterializeTemporaryExpr)
+    @check_ptrs x
+    return Expr_(clang_MaterializeTemporaryExpr_getSubExpr(x))
 end
 
 # CXXNamedCastExpr
