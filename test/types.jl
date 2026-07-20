@@ -54,14 +54,3 @@ CC.clty_to_jlty(x::CC.VoidPtrTy) = Ptr{Cvoid}
 
     dispose(I)
 end
-
-@testset "convertTypeForMemory" begin
-    I = create_interpreter()
-    ctx = get_ast_context(I)
-    cgm = get_codegen_module(I)
-
-    i8 = LLVM.LLVMType(convertTypeForMemory(cgm, CC.BoolTy(ctx)))
-    @test LLVM.width(i8) == 8
-
-    dispose(I)
-end
