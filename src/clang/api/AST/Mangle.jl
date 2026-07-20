@@ -58,3 +58,13 @@ function getName(x::ASTNameGenerator, d::AbstractDecl)
     @check_ptrs x d
     return get_string(clang_ASTNameGenerator_getName(x, d))
 end
+
+"""
+    getAllManglings(x::ASTNameGenerator, d::AbstractDecl) -> Vector{String}
+Return all of the mangled names of the declaration (constructors and destructors have
+several).
+"""
+function getAllManglings(x::ASTNameGenerator, d::AbstractDecl)
+    @check_ptrs x d
+    return get_string(clang_ASTNameGenerator_getAllManglings(x, d))
+end

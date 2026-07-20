@@ -25,3 +25,5 @@ function setShowPresumedLoc(x::DiagnosticOptions, should_show::Bool)
     @check_ptrs x
     return clang_DiagnosticOptions_setShowPresumedLoc(x, should_show)
 end
+
+dispose(x::DiagnosticOptions) = clang_DiagnosticOptions_dispose(x)

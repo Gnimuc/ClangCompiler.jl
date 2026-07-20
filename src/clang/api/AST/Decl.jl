@@ -26,6 +26,15 @@ function getArg(x::PragmaCommentDecl)
 end
 
 # PragmaDetectMismatchDecl
+function getName(x::AbstractPragmaDetectMismatchDecl)
+    @check_ptrs x
+    return unsafe_string(clang_PragmaDetectMismatchDecl_getName(x))
+end
+
+function getValue(x::AbstractPragmaDetectMismatchDecl)
+    @check_ptrs x
+    return unsafe_string(clang_PragmaDetectMismatchDecl_getValue(x))
+end
 function getName(x::PragmaCommentDecl)
     @check_ptrs x
     return unsafe_string(clang_PragmaDetectMismatchDecl_getName(x))
@@ -2295,10 +2304,10 @@ function isMsStruct(x::AbstractRecordDecl, ctx::ASTContext)
     return clang_RecordDecl_isMsStruct(x, ctx)
 end
 
-# NOTE: the TagDecl template-parameter-list bindings stay parked in
-# api_skiplist.txt — getNumTemplateParameterLists(::AbstractTagDecl) /
-# getTemplateParameterList already exist via the TypeDecl binding in
-# DeclTemplate.jl; wrapping the TagDecl symbols too would collide.
+function mayInsertExtraPadding(x::AbstractRecordDecl, emit_remark::Bool=false)
+    @check_ptrs x
+    return clang_RecordDecl_mayInsertExtraPadding(x, emit_remark)
+end
 
 function capturesVariable(x::AbstractBlockDecl, var::AbstractVarDecl)
     @check_ptrs x var
@@ -2570,6 +2579,12 @@ function setPromotionType(x::AbstractEnumDecl, ty::QualType)
     return clang_EnumDecl_setPromotionType(x, ty)
 end
 
+function completeDefinition(x::AbstractEnumDecl, new_type::QualType, promotion_type::QualType,
+                            num_positive_bits::Integer, num_negative_bits::Integer)
+    @check_ptrs x
+    return clang_EnumDecl_completeDefinition(x, new_type, promotion_type, num_positive_bits,
+                                             num_negative_bits)
+end
 function setTemplateSpecializationKind(x::AbstractEnumDecl, tsk::CXTemplateSpecializationKind, poi::SourceLocation)
     @check_ptrs x
     return clang_EnumDecl_setTemplateSpecializationKind(x, tsk, poi)
@@ -2803,4 +2818,35 @@ end
 function EmptyDecl(ctx::ASTContext, id::Integer)
     @check_ptrs ctx
     return EmptyDecl(clang_EmptyDecl_CreateDeserialized(ctx, id))
+end
+
+# PragmaCommentDecl factories
+function PragmaCommentDecl(ctx::ASTContext, tu::TranslationUnitDecl, comment_loc::SourceLocation,
+                           kind::CXPragmaMSCommentKind, arg::AbstractString)
+    @check_ptrs ctx tu
+    return PragmaCommentDecl(clang_PragmaCommentDecl_Create(ctx, tu, comment_loc, kind, arg))
+end
+
+function PragmaCommentDecl(ctx::ASTContext, id::Integer, arg_size::Integer)
+    @check_ptrs ctx
+    return PragmaCommentDecl(clang_PragmaCommentDecl_CreateDeserialized(ctx, id, arg_size))
+end
+
+# PragmaDetectMismatchDecl factories
+function PragmaDetectMismatchDecl(ctx::ASTContext, tu::TranslationUnitDecl, loc::SourceLocation,
+                                  name::AbstractString, value::AbstractString)
+    @check_ptrs ctx tu
+    return PragmaDetectMismatchDecl(clang_PragmaDetectMismatchDecl_Create(ctx, tu, loc, name, value))
+end
+
+function PragmaDetectMismatchDecl(ctx::ASTContext, id::Integer, name_value_size::Integer)
+    @check_ptrs ctx
+    return PragmaDetectMismatchDecl(clang_PragmaDetectMismatchDecl_CreateDeserialized(ctx, id,
+                                                                                      name_value_size))
+end
+
+# ExternCContextDecl factory
+function ExternCContextDecl(ctx::ASTContext, tu::TranslationUnitDecl)
+    @check_ptrs ctx tu
+    return ExternCContextDecl(clang_ExternCContextDecl_Create(ctx, tu))
 end

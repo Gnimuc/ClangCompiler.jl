@@ -1,12 +1,12 @@
 # TemplateParameterList
 function getNumTemplateParameterLists(x::AbstractTagDecl)
     @check_ptrs x
-    return clang_TypeDecl_getNumTemplateParameterLists(x)
+    return clang_TagDecl_getNumTemplateParameterLists(x)
 end
 
 function getTemplateParameterList(x::AbstractTagDecl, i::Integer)
     @check_ptrs x
-    return TemplateParameterList(clang_TypeDecl_getTemplateParameterList(x, i))
+    return TemplateParameterList(clang_TagDecl_getTemplateParameterList(x, i))
 end
 
 function getParam(x::TemplateParameterList, i::Integer)

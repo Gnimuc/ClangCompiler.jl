@@ -88,6 +88,17 @@ function getLocForEndOfFile(src_mgr::SourceManager, id::FileID)
     return SourceLocation(clang_SourceManager_getLocForEndOfFile(src_mgr, id))
 end
 
+"""
+    overrideFileContents(src_mgr::SourceManager, entry::FileEntryRef, buffer::LLVM.MemoryBuffer)
+Override the contents of the given source file with the buffer.
+
+This function takes ownership of the memory buffer.
+"""
+function overrideFileContents(src_mgr::SourceManager, entry::FileEntryRef,
+                              buffer::LLVM.MemoryBuffer)
+    @check_ptrs src_mgr entry
+    return clang_SourceManager_overrideFileContents(src_mgr, entry, buffer)
+end
 function dump(x::SourceLocation, src_mgr::SourceManager)
     @check_ptrs src_mgr
     return clang_SourceLocation_dump(x, src_mgr)

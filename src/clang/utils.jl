@@ -27,3 +27,15 @@ function get_string(cxstrset::CXStringSet)
     clang_disposeStringSet(cxstrset)
     return strs
 end
+
+function get_string(ptr::Ptr{CXStringSet})
+    ptr == C_NULL && return String[]
+    cxstrset = unsafe_load(ptr)
+    strs = Vector{String}(undef, cxstrset.Count)
+    for i = 1:(cxstrset.Count)
+        cstr = clang_getCString(unsafe_load(cxstrset.Strings, i))
+        strs[i] = cstr == C_NULL ? "" : unsafe_string(cstr)
+    end
+    clang_disposeStringSet(ptr)
+    return strs
+end

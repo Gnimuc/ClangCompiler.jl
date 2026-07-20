@@ -933,8 +933,8 @@ function getPathElement(x::AbstractCastExpr, i::Integer)
 end
 
 
-# CStyleCastExpr — the parenthesized cast's own paren locations (getBeginLoc /
-# getEndLoc are provided by the Stmt base).
+# CStyleCastExpr — the parenthesized cast's own paren locations and its
+# class-declared begin/end locations.
 function getLParenLoc(x::CStyleCastExpr)
     @check_ptrs x
     return SourceLocation(clang_CStyleCastExpr_getLParenLoc(x))
@@ -945,6 +945,15 @@ function getRParenLoc(x::CStyleCastExpr)
     return SourceLocation(clang_CStyleCastExpr_getRParenLoc(x))
 end
 
+function getBeginLoc(x::AbstractCStyleCastExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CStyleCastExpr_getBeginLoc(x))
+end
+
+function getEndLoc(x::AbstractCStyleCastExpr)
+    @check_ptrs x
+    return SourceLocation(clang_CStyleCastExpr_getEndLoc(x))
+end
 # IntegerLiteral — factory and location setter
 function IntegerLiteral(ctx::ASTContext, val, ty::QualType, loc::SourceLocation)
     @check_ptrs ctx

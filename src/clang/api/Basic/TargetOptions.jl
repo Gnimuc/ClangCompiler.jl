@@ -21,3 +21,5 @@ function PrintStats(x::TargetOptions)
     @check_ptrs x
     return clang_TargetOptions_PrintStats(x)
 end
+
+dispose(x::TargetOptions) = clang_TargetOptions_dispose(x)

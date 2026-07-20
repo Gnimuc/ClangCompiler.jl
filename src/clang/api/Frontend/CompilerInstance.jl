@@ -74,6 +74,20 @@ function createFileManager(ci::CompilerInstance)
     return clang_CompilerInstance_createFileManager(ci)
 end
 
+"""
+    createFileManagerWithVOFS4PCH(ci::CompilerInstance, path::AbstractString, mtime::Integer, pch_buffer::LLVM.MemoryBuffer) -> FileManager
+Create a file manager backed by an overlay VFS that exposes `pch_buffer` as an in-memory
+file at `path` (so a PCH can be loaded without touching the disk). The compiler instance
+keeps ownership of the returned file manager.
+
+This function takes ownership of the memory buffer.
+"""
+function createFileManagerWithVOFS4PCH(ci::CompilerInstance, path::AbstractString,
+                                       mtime::Integer, pch_buffer::LLVM.MemoryBuffer)
+    @check_ptrs ci
+    return FileManager(clang_CompilerInstance_createFileManagerWithVOFS4PCH(ci, path, mtime,
+                                                                            pch_buffer))
+end
 function getFileEntry(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
     file_mgr = getFileManager(ci)
     return getFileEntry(file_mgr, filename; open_file)

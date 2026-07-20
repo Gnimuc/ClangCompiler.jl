@@ -41,3 +41,49 @@ function getFileEntry(filemgr::FileManager, filename::AbstractString; open_file:
     end
     return FileEntry(entry)
 end
+
+"""
+    getFileRef(filemgr::FileManager, filename::AbstractString; open_file::Bool=false, cache_failure::Bool=true) -> FileEntryRef
+Return a heap-boxed `clang::FileEntryRef` for `filename`.
+
+This function allocates and one should call `dispose` to release the resources after using this object.
+"""
+function getFileRef(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
+                    cache_failure::Bool=true)
+    @check_ptrs filemgr
+    ref = clang_FileManager_getFileRef(filemgr, filename, open_file, cache_failure)
+    @assert ref != C_NULL "failed to create a FileEntryRef to $filename."
+    return FileEntryRef(ref)
+end
+
+dispose(x::FileEntryRef) = clang_FileEntryRef_dispose(x)
+
+function getFileEntry(x::FileEntryRef)
+    @check_ptrs x
+    return FileEntry(clang_FileEntryRef_getFileEntry(x))
+end
+
+"""
+    getBufferForFile(filemgr::FileManager, entry::FileEntryRef; is_volatile::Bool=false, requires_null_terminator::Bool=true) -> LLVM.MemoryBuffer
+Open the file as a caller-owned memory buffer.
+
+This function allocates and one should call `LLVM.dispose` to release the resources after using this object.
+"""
+function getBufferForFile(filemgr::FileManager, entry::FileEntryRef; is_volatile::Bool=false,
+                          requires_null_terminator::Bool=true)
+    @check_ptrs filemgr entry
+    buf = clang_FileManager_getBufferForFile(filemgr, entry, is_volatile,
+                                             requires_null_terminator)
+    @assert buf != C_NULL "failed to read the file into a memory buffer."
+    return LLVM.MemoryBuffer(buf)
+end
+
+"""
+    getDirectory(filemgr::FileManager, dirname::AbstractString; cache_failure::Bool=true) -> DirectoryEntry
+Look up a directory entry. The directory must exist: the C shim dereferences the lookup
+result unchecked, so passing a non-existent directory is undefined behaviour.
+"""
+function getDirectory(filemgr::FileManager, dirname::AbstractString; cache_failure::Bool=true)
+    @check_ptrs filemgr
+    return DirectoryEntry(clang_FileManager_getDirectory(filemgr, dirname, cache_failure))
+end

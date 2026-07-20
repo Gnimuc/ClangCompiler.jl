@@ -66,6 +66,10 @@ function getArrayElementTypeNoTypeQual(x::AbstractType)
     return Type_(clang_Type_getArrayElementTypeNoTypeQual(x))
 end
 
+function getContainedDeducedType(x::AbstractType)
+    @check_ptrs x
+    return DeducedType(clang_Type_getContainedDeducedType(x))
+end
 function getAsCXXRecordDecl(x::AbstractType)
     @check_ptrs x
     return CXXRecordDecl(clang_Type_getAsCXXRecordDecl(x))
@@ -961,6 +965,10 @@ function desugar(x::AbstractConstantArrayType)
     return QualType(clang_ConstantArrayType_desugar(x))
 end
 
+function getNumAddressingBits(x::AbstractConstantArrayType, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_ConstantArrayType_getNumAddressingBits(x, ctx)
+end
 function getSizeExpr(x::AbstractConstantArrayType)
     @check_ptrs x
     return Expr_(clang_ConstantArrayType_getSizeExpr(x))
@@ -1086,6 +1094,22 @@ function getParamType(x::FunctionProtoType, i::Integer)
     return QualType(clang_FunctionProtoType_getParamType(x, i))
 end
 
+# Borrowed CXArrayRef views into the prototype's AST-owned parameter/exception
+# arrays; elements are CXQualType encodings.
+function getParamTypes(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_getParamTypes(x)
+end
+
+function param_types(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_param_types(x)
+end
+
+function exceptions(x::AbstractFunctionProtoType)
+    @check_ptrs x
+    return clang_FunctionProtoType_exceptions(x)
+end
 function isNoThrow(x::FunctionProtoType)
     @check_ptrs x
     return clang_FunctionProtoType_isNothrow(x)
@@ -1336,6 +1360,11 @@ function getAssociatedDecl(x::AbstractSubstTemplateTypeParmPackType)
     return Decl(clang_SubstTemplateTypeParmPackType_getAssociatedDecl(x))
 end
 
+# Borrowed CXArrayRef view of the pack's TemplateArgument array.
+function getArgumentPack(x::AbstractSubstTemplateTypeParmPackType)
+    @check_ptrs x
+    return clang_SubstTemplateTypeParmPackType_getArgumentPack(x)
+end
 function getFinal(x::AbstractSubstTemplateTypeParmPackType)
     @check_ptrs x
     return clang_SubstTemplateTypeParmPackType_getFinal(x)
@@ -1472,6 +1501,10 @@ function getQualifier(x::AbstractDependentTemplateSpecializationType)
     return NestedNameSpecifier(clang_DependentTemplateSpecializationType_getQualifier(x))
 end
 
+function getTemplateArguments(x::AbstractDependentTemplateSpecializationType)
+    @check_ptrs x
+    return clang_DependentTemplateSpecializationType_template_arguments(x)
+end
 function isSugared(x::AbstractDependentTemplateSpecializationType)
     @check_ptrs x
     return clang_DependentTemplateSpecializationType_isSugared(x)
@@ -1526,6 +1559,24 @@ isa_DependentSizedExtVectorType(x::AbstractType) = (@check_ptrs x; clang_isa_Dep
 isa_DecltypeType(x::AbstractType) = (@check_ptrs x; clang_isa_DecltypeType(x))
 isa_DeducedType(x::AbstractType) = (@check_ptrs x; clang_isa_DeducedType(x))
 isa_DeducedTemplateSpecializationType(x::AbstractType) = (@check_ptrs x; clang_isa_DeducedTemplateSpecializationType(x))
+isa_ComplexType(x::AbstractType) = (@check_ptrs x; clang_isa_ComplexType(x))
+isa_PointerType(x::AbstractType) = (@check_ptrs x; clang_isa_PointerType(x))
+isa_ReferenceType(x::AbstractType) = (@check_ptrs x; clang_isa_ReferenceType(x))
+isa_LValueReferenceType(x::AbstractType) = (@check_ptrs x; clang_isa_LValueReferenceType(x))
+isa_RValueReferenceType(x::AbstractType) = (@check_ptrs x; clang_isa_RValueReferenceType(x))
+isa_MemberPointerType(x::AbstractType) = (@check_ptrs x; clang_isa_MemberPointerType(x))
+isa_ArrayType(x::AbstractType) = (@check_ptrs x; clang_isa_ArrayType(x))
+isa_ConstantArrayType(x::AbstractType) = (@check_ptrs x; clang_isa_ConstantArrayType(x))
+isa_IncompleteArrayType(x::AbstractType) = (@check_ptrs x; clang_isa_IncompleteArrayType(x))
+isa_VariableArrayType(x::AbstractType) = (@check_ptrs x; clang_isa_VariableArrayType(x))
+isa_DependentSizedArrayType(x::AbstractType) = (@check_ptrs x; clang_isa_DependentSizedArrayType(x))
+isa_FunctionType(x::AbstractType) = (@check_ptrs x; clang_isa_FunctionType(x))
+isa_FunctionNoProtoType(x::AbstractType) = (@check_ptrs x; clang_isa_FunctionNoProtoType(x))
+isa_FunctionProtoType(x::AbstractType) = (@check_ptrs x; clang_isa_FunctionProtoType(x))
+isa_DependentDecltypeType(x::AbstractType) = (@check_ptrs x; clang_isa_DependentDecltypeType(x))
+isa_RecordType(x::AbstractType) = (@check_ptrs x; clang_isa_RecordType(x))
+isa_TemplateTypeParmType(x::AbstractType) = (@check_ptrs x; clang_isa_TemplateTypeParmType(x))
+isa_AutoType(x::AbstractType) = (@check_ptrs x; clang_isa_AutoType(x))
 
 # AdjustedType
 function desugar(x::AbstractAdjustedType)

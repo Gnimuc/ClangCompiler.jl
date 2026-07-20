@@ -177,21 +177,37 @@ OMP/ObjC standing decisions): the classification, traversal, and bridge
 *infrastructure* is complete, so each of these is a bounded add whenever a real
 use surfaces. They do not gate anything.
 
-- [ ] **Attribute payload** — per-attribute accessors (AlignedAttr::getAlignment, …)
-      + the stamped clang_Attr_castTo/is family, once the ~396-class breadth is
-      worth wrapping. Classification floor done; getAttrs/getKind reach any attr.
-- [ ] **TypeLoc payload** — per-TypeLoc-class accessors (PointerTypeLoc star loc,
-      FunctionTypeLoc param locs, …). The handle + source-range/getNextTypeLoc
-      floor is done.
-- [ ] **CompilerInstance/frontend mutators** — the interpreter-setup setters
-      (setInvocation/setDiagnostics/setFileManager/…) and execution entry points
-      (ParseAndExecute/undo/…) still parked in api_skiplist.txt (~83 symbols).
-      These can't be round-trip-tested on the live interpreter without corrupting
-      it, so they need a throwaway CompilerInstance harness — deferred until a use
-      needs them. (The AST Create*/set* surface is now wrapped + covered — below.)
+- [x] **Attribute payload** — the clang_Attr_castTo/is families are stamped from
+      the vendored AttrList.inc (mirror-by-construction, drift table already in
+      place); AttrNodes.jl carries each attribute's real C++ category so Julia
+      mirrors the hierarchy (7 category abstracts + one carrier per attribute,
+      O(1) resolve via getKind); hand-written payload accessors for the
+      high-value set (Aligned, Annotate, AsmLabel, Cleanup, Constructor,
+      Deprecated, Destructor, Format, NonNull, Section, TLSModel, Unavailable,
+      Visibility, WarnUnusedResult). TableGen string payloads cross as owned
+      CXString copies (stored length+data with no NUL — a borrowed const char*
+      would over-read). Remaining per-attr accessors stay on-demand.
+- [x] **TypeLoc payload** — CXTypeLocClass stamped from the vendored
+      TypeNodes.inc exactly as clang builds TypeLoc::TypeLocClass (values match
+      CXTypeClass by construction, Qualified appended) + stamped value-based
+      castTo family (getAs re-boxed on the heap, nullptr on mismatch) + payload
+      accessors for the declarator classes (pointer/reference sigils, function
+      paren + param decls, array brackets + size expr, template angle locs,
+      elaborated/name/builtin locs, qualified/paren unwrapping). Julia resolves
+      a TypeLoc to a per-class carrier off getTypeLocClass.
+- [x] **CompilerInstance/frontend mutators** — api_skiplist.txt is drained to
+      zero: the frontend/infra tail (Emit*Action, options lifecycles, FileManager
+      buffers + VFS-for-PCH, Driver resource path, raw Lexer, CUDA builder knobs,
+      interpreter dtor-call/dylib-load, Value-from-type) is wrapped and exercised
+      on throwaway objects — fresh CompilerInstance/builder/options built and
+      disposed per test, never the live interpreter — alongside the AST tail
+      (isa_* family, FunctionProtoType/array params, pragma decls, method
+      correspondence/devirtualization, TagDecl template parameter lists).
 - [ ] **Release train** — libclangex_jll rebuild on Yggdrasil + compat bump
-      (this branch adds ~1100 C symbols — the earlier drift fixes, the 90
+      (this branch adds ~2000 C symbols — the earlier drift fixes, the 90
       CXXRecordDecl traits, the APValue bridge with its Expr eval cluster, the
       8-family mechanical wrapper tail, the DeclNodes/TypeNodes/AttrList.inc
-      stamping, and the TypeLoc + bulk-subtree floors — and corrects
+      stamping, the TypeLoc + bulk-subtree floors, the stamped Attr castTo/is
+      families with the attr payload accessors, and the stamped TypeLoc
+      castTo family with the TypeLoc payload accessors — and corrects
       CXCastKind/CXLinkage values).

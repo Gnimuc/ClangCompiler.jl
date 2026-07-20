@@ -55,3 +55,5 @@ function getTargetOpts(ci::CompilerInvocation)
     @check_ptrs ci
     return TargetOptions(clang_CompilerInvocation_getTargetOpts(ci))
 end
+
+dispose(x::CompilerInvocation) = clang_CompilerInvocation_dispose(x)

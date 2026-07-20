@@ -72,6 +72,7 @@ include("Interpreter/Value.jl")
 # Lex
 include("Lex/HeaderSearch.jl")
 include("Lex/HeaderSearchOptions.jl")
+include("Lex/Lexer.jl")
 include("Lex/Preprocessor.jl")
 include("Lex/PreprocessorOptions.jl")
 include("Lex/Token.jl")

@@ -613,6 +613,27 @@ function getSourceRange(x::AbstractAccessSpecDecl)
 end
 
 # CXXMethodDecl
+function addOverriddenMethod(x::AbstractCXXMethodDecl, md::AbstractCXXMethodDecl)
+    @check_ptrs x md
+    return clang_CXXMethodDecl_addOverriddenMethod(x, md)
+end
+
+function getCorrespondingMethodDeclaredInClass(x::AbstractCXXMethodDecl, rd::AbstractCXXRecordDecl,
+                                               may_be_base::Bool=false)
+    @check_ptrs x rd
+    return CXXMethodDecl(clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(x, rd, may_be_base))
+end
+
+function getCorrespondingMethodInClass(x::AbstractCXXMethodDecl, rd::AbstractCXXRecordDecl,
+                                       may_be_base::Bool=false)
+    @check_ptrs x rd
+    return CXXMethodDecl(clang_CXXMethodDecl_getCorrespondingMethodInClass(x, rd, may_be_base))
+end
+
+function getDevirtualizedMethod(x::AbstractCXXMethodDecl, base::AbstractExpr, is_apple_kext::Bool=false)
+    @check_ptrs x base
+    return CXXMethodDecl(clang_CXXMethodDecl_getDevirtualizedMethod(x, base, is_apple_kext))
+end
 function getCanonicalDecl(x::AbstractCXXMethodDecl)
     @check_ptrs x
     return CXXMethodDecl(clang_CXXMethodDecl_getCanonicalDecl(x))
@@ -708,6 +729,17 @@ end
 function hasBraces(x::AbstractLinkageSpecDecl)
     @check_ptrs x
     return clang_LinkageSpecDecl_hasBraces(x)
+end
+
+# LinkageSpecDecl Cast
+function DeclContext(x::AbstractLinkageSpecDecl)
+    @check_ptrs x
+    return DeclContext(clang_LinkageSpecDecl_castToDeclContext(x))
+end
+
+function LinkageSpecDecl(x::DeclContext)
+    @check_ptrs x
+    return LinkageSpecDecl(clang_LinkageSpecDecl_castFromDeclContext(x))
 end
 
 
@@ -1106,4 +1138,13 @@ end
 
 # LinkageSpecDecl setters
 
+# RequiresExprBodyDecl factories
+function RequiresExprBodyDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation)
+    @check_ptrs ctx dc
+    return RequiresExprBodyDecl(clang_RequiresExprBodyDecl_Create(ctx, dc, start_loc))
+end
 
+function RequiresExprBodyDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return RequiresExprBodyDecl(clang_RequiresExprBodyDecl_CreateDeserialized(ctx, id))
+end

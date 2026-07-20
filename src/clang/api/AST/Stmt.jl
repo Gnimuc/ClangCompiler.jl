@@ -43,6 +43,13 @@ function getChildren(x::AbstractStmt)
     return [Stmt(p) for p in buf]
 end
 
+function EnableStatistics()
+    return clang_Stmt_EnableStatistics()
+end
+
+function PrintStats()
+    return clang_Stmt_PrintStats()
+end
 # Stmt Cast — one constructor-shaped downcast and one predicate per class in
 # the hierarchy (abstract bases included), stamped from the STMT_NODES table.
 # The wrapped pointer is NULL when the node is not of that class
