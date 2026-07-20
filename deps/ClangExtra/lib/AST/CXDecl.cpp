@@ -542,7 +542,10 @@ CXEvaluatedStmt clang_VarDecl_getEvaluatedStmt(CXVarDecl VD) {
   return static_cast<clang::VarDecl *>(VD)->getEvaluatedStmt();
 }
 
-// evaluateValue
+CXAPValue clang_VarDecl_evaluateValue(CXVarDecl VD) {
+  return static_cast<clang::VarDecl *>(VD)->evaluateValue();
+}
+
 // getEvaluatedValue
 // evaluateDestruction
 
@@ -874,11 +877,17 @@ CXFunctionDecl clang_FunctionDecl_Create(CXASTContext C, CXDeclContext DC,
       clang::SourceLocation::getFromPtrEncoding(NLoc),
       clang::DeclarationName::getFromOpaquePtr(N), clang::QualType::getFromOpaquePtr(T),
       static_cast<clang::TypeSourceInfo *>(TInfo), static_cast<clang::StorageClass>(SC),
-      isInlineSpecified, hasWrittenPrototype);
+      /*UsesFPIntrin=*/false, isInlineSpecified, hasWrittenPrototype);
 }
 
 CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
   return clang::FunctionDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C), ID);
+}
+
+CXDeclarationNameInfo clang_FunctionDecl_getNameInfo(CXFunctionDecl FD) {
+  return std::make_unique<clang::DeclarationNameInfo>(
+             static_cast<clang::FunctionDecl *>(FD)->getNameInfo())
+      .release();
 }
 
 // getNameInfo
@@ -1598,6 +1607,9 @@ CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C,
 }
 
 // chain
+CXNamedDecl clang_IndirectFieldDecl_getChainElement(CXIndirectFieldDecl IFD, unsigned i) {
+  return static_cast<clang::IndirectFieldDecl *>(IFD)->chain()[i];
+}
 
 unsigned clang_IndirectFieldDecl_getChainingSize(CXIndirectFieldDecl IFD) {
   return static_cast<clang::IndirectFieldDecl *>(IFD)->getChainingSize();
@@ -2052,6 +2064,23 @@ void clang_EnumDecl_setInstantiationOfMemberEnum(CXEnumDecl ED, CXEnumDecl ED2,
       static_cast<clang::TemplateSpecializationKind>(TSK));
 }
 
+unsigned clang_EnumDecl_getNumEnumerators(CXEnumDecl ED) {
+  auto *D = static_cast<clang::EnumDecl *>(ED);
+  unsigned N = 0;
+  for (auto *E : D->enumerators()) {
+    (void)E;
+    ++N;
+  }
+  return N;
+}
+
+void clang_EnumDecl_getEnumerators(CXEnumDecl ED, CXEnumConstantDecl *Buf) {
+  auto *D = static_cast<clang::EnumDecl *>(ED);
+  unsigned I = 0;
+  for (auto *E : D->enumerators())
+    Buf[I++] = E;
+}
+
 // RecordDecl
 CXRecordDecl clang_RecordDecl_Create(CXASTContext C, CXTagTypeKind TK, CXDeclContext DC,
                                      CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
@@ -2228,6 +2257,23 @@ CXFieldDecl clang_RecordDecl_findFirstNamedDataMember(CXRecordDecl RD) {
       static_cast<clang::RecordDecl *>(RD)->findFirstNamedDataMember());
 }
 
+unsigned clang_RecordDecl_getNumFields(CXRecordDecl RD) {
+  auto *D = static_cast<clang::RecordDecl *>(RD);
+  unsigned N = 0;
+  for (auto *F : D->fields()) {
+    (void)F;
+    ++N;
+  }
+  return N;
+}
+
+void clang_RecordDecl_getFields(CXRecordDecl RD, CXFieldDecl *Buf) {
+  auto *D = static_cast<clang::RecordDecl *>(RD);
+  unsigned I = 0;
+  for (auto *F : D->fields())
+    Buf[I++] = F;
+}
+
 // RecordDecl Cast
 CXClassTemplateSpecializationDecl
 clang_RecordDecl_castToClassTemplateSpecializationDecl(CXRecordDecl RD) {
@@ -2242,7 +2288,7 @@ CXFileScopeAsmDecl clang_FileScopeAsmDecl_Create(CXASTContext C, CXDeclContext D
                                                  CXSourceLocation_ RParenLoc) {
   return clang::FileScopeAsmDecl::Create(
       *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
-      static_cast<clang::StringLiteral *>(DC),
+      static_cast<clang::StringLiteral *>(Str),
       clang::SourceLocation::getFromPtrEncoding(AsmLoc),
       clang::SourceLocation::getFromPtrEncoding(RParenLoc));
 }
@@ -2476,6 +2522,13 @@ CXModule clang_ImportDecl_getImportedModule(CXImportDecl ID) {
 }
 
 // getIdentifierLocs
+unsigned clang_ImportDecl_getNumIdentifierLocs(CXImportDecl ID) {
+  return static_cast<clang::ImportDecl *>(ID)->getIdentifierLocs().size();
+}
+
+CXSourceLocation_ clang_ImportDecl_getIdentifierLoc(CXImportDecl ID, unsigned i) {
+  return static_cast<clang::ImportDecl *>(ID)->getIdentifierLocs()[i].getPtrEncoding();
+}
 
 CXSourceRange_ clang_ImportDecl_getSourceRange(CXImportDecl ID) {
   auto rng = static_cast<clang::ImportDecl *>(ID)->getSourceRange();

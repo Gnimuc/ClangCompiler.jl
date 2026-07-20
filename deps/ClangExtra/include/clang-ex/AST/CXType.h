@@ -1,12 +1,40 @@
-#ifndef LLVM_CLANG_C_EXTRA_CXQUALTYPE_H
-#define LLVM_CLANG_C_EXTRA_CXQUALTYPE_H
+#ifndef LLVM_CLANG_C_EXTRA_CXTYPE_H
+#define LLVM_CLANG_C_EXTRA_CXTYPE_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-ex/Basic/CXExceptionSpecificationType.h"
+#include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
+
+// The Type classification surface below is stamped from the vendored
+// clang-ex/AST/TypeNodes.inc (a verbatim copy of clang's TableGen output for
+// the pinned LLVM version). Mirror-by-construction: the same table clang uses
+// to build clang::Type::TypeClass builds CXTypeClass here, and the impl-side
+// static_assert table in CXType.cpp proves value-for-value equality (plus a
+// TypeLast count assert), so a stale vendored copy fails the build. POLICY:
+// stamped symbols (CXTypeClass_* and the castTo family) are version-following
+// per LLVM major, exempt from the frozen-ABI rule. Named CXTypeClass (not
+// CXTypeKind) to avoid the libclang collision. The classification predicates
+// live in the separate clang_isa_<Class>Type family; only downcasts are stamped
+// here (clang_Type_is<Class>Type is reserved for clang's sugar-piercing
+// semantic queries, which mean something different from isa).
+typedef enum CXTypeClass {
+#define TYPE(Class, Base) CXTypeClass_##Class,
+#define ABSTRACT_TYPE(Class, Base)
+#define LAST_TYPE(Class) CXTypeClass_TypeLast = CXTypeClass_##Class
+#include "clang-ex/AST/TypeNodes.inc"
+} CXTypeClass;
+
+// Null-safe downcast for every class in the hierarchy, ABSTRACT bases included.
+// The wrapper name carries the full class spelling (TypeNodes name + "Type").
+#define TYPE(Class, Base) CXType_ clang_Type_castTo##Class##Type(CXType_ T);
+#include "clang-ex/AST/TypeNodes.inc"
+
+CXTypeClass clang_Type_getTypeClass(CXType_ T);
 
 CXQualType clang_QualType_constructFromTypePtr(CXType_ Ptr, unsigned Quals);
 
@@ -452,11 +480,33 @@ CXQualType clang_Type_getCanonicalTypeInternal(CXType_ T);
 void clang_Type_dump(CXType_ T);
 
 // isa
+bool clang_isa_ComplexType(CXType_ T);
+
 bool clang_isa_PointerType(CXType_ T);
 
 bool clang_isa_ReferenceType(CXType_ T);
 
+bool clang_isa_LValueReferenceType(CXType_ T);
+
+bool clang_isa_RValueReferenceType(CXType_ T);
+
+bool clang_isa_MemberPointerType(CXType_ T);
+
 bool clang_isa_ArrayType(CXType_ T);
+
+bool clang_isa_ConstantArrayType(CXType_ T);
+
+bool clang_isa_IncompleteArrayType(CXType_ T);
+
+bool clang_isa_VariableArrayType(CXType_ T);
+
+bool clang_isa_DependentSizedArrayType(CXType_ T);
+
+bool clang_isa_FunctionType(CXType_ T);
+
+bool clang_isa_FunctionNoProtoType(CXType_ T);
+
+bool clang_isa_FunctionProtoType(CXType_ T);
 
 bool clang_isa_UnresolvedUsingType(CXType_ T);
 
@@ -493,6 +543,24 @@ bool clang_isa_ElaboratedType(CXType_ T);
 bool clang_isa_DependentNameType(CXType_ T);
 
 bool clang_isa_DependentTemplateSpecializationType(CXType_ T);
+
+bool clang_isa_AtomicType(CXType_ T);
+
+bool clang_isa_DecayedType(CXType_ T);
+
+bool clang_isa_AdjustedType(CXType_ T);
+
+bool clang_isa_InjectedClassNameType(CXType_ T);
+
+bool clang_isa_MacroQualifiedType(CXType_ T);
+
+bool clang_isa_UnaryTransformType(CXType_ T);
+
+bool clang_isa_ParenType(CXType_ T);
+
+bool clang_isa_DependentAddressSpaceType(CXType_ T);
+
+bool clang_isa_DependentSizedExtVectorType(CXType_ T);
 
 // BuiltinTypes
 bool clang_isa_BuiltinType_Void(CXType_ T);
@@ -723,6 +791,7 @@ bool clang_FunctionType_isRestrict(CXFunctionType T);
 bool clang_FunctionType_isVolatile(CXFunctionType T);
 
 // getCallConv
+CXCallingConv_ clang_FunctionType_getCallConv(CXFunctionType T);
 // getCallResultType
 // getNameForCallConv
 
@@ -737,6 +806,9 @@ unsigned clang_FunctionProtoType_getNumParams(CXFunctionProtoType T);
 CXQualType clang_FunctionProtoType_getParamType(CXFunctionProtoType T, unsigned i);
 
 CXArrayRef clang_FunctionProtoType_getParamTypes(CXFunctionProtoType T);
+
+CXExceptionSpecificationType
+clang_FunctionProtoType_getExceptionSpecType(CXFunctionProtoType T);
 
 bool clang_FunctionProtoType_hasExceptionSpec(CXFunctionProtoType T);
 
@@ -771,6 +843,8 @@ CXArrayRef clang_FunctionProtoType_param_types(CXFunctionProtoType T);
 CXArrayRef clang_FunctionProtoType_exceptions(CXFunctionProtoType T);
 
 bool clang_FunctionProtoType_isSugared(CXFunctionProtoType T);
+
+CXQualType clang_FunctionProtoType_desugar(CXFunctionProtoType T);
 
 // UnresolvedUsingType
 CXUnresolvedUsingTypenameDecl clang_UnresolvedUsingType_getDecl(CXUnresolvedUsingType T);
@@ -936,6 +1010,14 @@ clang_TemplateSpecializationType_getTemplateName(CXTemplateSpecializationType T)
 
 CXArrayRef
 clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T);
+
+// TemplateSpecializationType has no getNumArgs()/getArg() in this LLVM version;
+// these compose the count+index idiom over template_arguments() so callers get
+// correctly-strided per-element access (getArg borrows an interior pointer).
+unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T);
+
+CXTemplateArgument
+clang_TemplateSpecializationType_getArg(CXTemplateSpecializationType T, unsigned Idx);
 
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T);
 

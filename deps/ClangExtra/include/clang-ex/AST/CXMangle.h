@@ -31,7 +31,10 @@ bool clang_MangleContext_shouldMangleCXXName(CXMangleContext MC, CXNamedDecl D);
 
 bool clang_MangleContext_shouldMangleStringLiteral(CXMangleContext MC, CXStringLiteral SL);
 
-// mangleName
+// Mangle the linkage name of a non-constructor/destructor decl (Clang's
+// GlobalDecl(NamedDecl*) contract). The CXString is caller-owned.
+CXString clang_MangleContext_mangleName(CXMangleContext MC, CXNamedDecl D);
+
 // mangleCXXName
 // mangleCXXDtorThunk
 // mangleReferenceTemporary

@@ -2,7 +2,48 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclBase.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclFriend.h"
+#include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclOpenMP.h"
 #include "clang/AST/DeclTemplate.h"
+
+// Drift alarm: the vendored DeclNodes.inc must match the pinned LLVM version.
+// One assert per concrete class proves CXDeclKind equals clang's Decl::Kind
+// value-for-value. (clang exposes no Decl-count sentinel like Stmt's
+// lastStmtConstant, so a class appended at the very end of the enum in a future
+// LLVM is only caught when DeclNodes.inc is re-vendored — the documented
+// per-bump step — not by these asserts.)
+#define DECL(DERIVED, BASE)                                                                \
+  static_assert(static_cast<int>(CXDeclKind_##DERIVED) ==                                  \
+                    static_cast<int>(clang::Decl::DERIVED),                                 \
+                "CXDeclKind drift: " #DERIVED);
+#define ABSTRACT_DECL(DECL)
+#include "clang-ex/AST/DeclNodes.inc"
+
+#define DECL(DERIVED, BASE)                                                                \
+  CXDecl clang_Decl_castTo##DERIVED##Decl(CXDecl D) {                                       \
+    return llvm::dyn_cast_or_null<clang::DERIVED##Decl>(static_cast<clang::Decl *>(D));     \
+  }                                                                                         \
+  bool clang_Decl_is##DERIVED##Decl(CXDecl D) {                                             \
+    return llvm::isa_and_nonnull<clang::DERIVED##Decl>(static_cast<clang::Decl *>(D));      \
+  }
+#define ABSTRACT_DECL(DECL) DECL
+#include "clang-ex/AST/DeclNodes.inc"
+
+CXDeclKind clang_Decl_getKind(CXDecl D) {
+  return static_cast<CXDeclKind>(static_cast<clang::Decl *>(D)->getKind());
+}
+
+bool clang_Decl_hasAttrs(CXDecl D) { return static_cast<clang::Decl *>(D)->hasAttrs(); }
+
+unsigned clang_Decl_getNumAttrs(CXDecl D) {
+  clang::Decl *DD = static_cast<clang::Decl *>(D);
+  return DD->hasAttrs() ? DD->getAttrs().size() : 0;
+}
+
+CXAttr clang_Decl_getAttr(CXDecl D, unsigned I) {
+  return static_cast<clang::Decl *>(D)->getAttrs()[I];
+}
 
 // Decl
 CXSourceLocation_ clang_Decl_getLocation(CXDecl DC) {
@@ -123,9 +164,8 @@ bool clang_Decl_isParameterPack(CXDecl DC) {
   return static_cast<clang::Decl *>(DC)->isParameterPack();
 }
 
-bool clang_Decl_isTemplateDecl(CXDecl DC) {
-  return static_cast<clang::Decl *>(DC)->isTemplateDecl();
-}
+// clang_Decl_isTemplateDecl is provided by the stamped is<Class>Decl family
+// above (clang::Decl::isTemplateDecl() is isa<TemplateDecl>).
 
 bool clang_Decl_isFunctionOrFunctionTemplate(CXDecl DC) {
   return static_cast<clang::Decl *>(DC)->isFunctionOrFunctionTemplate();
@@ -165,19 +205,6 @@ CXDeclContext clang_Decl_castToDeclContext(CXDecl D) {
 
 CXDecl clang_Decl_castFromDeclContext(CXDeclContext DC) {
   return clang::Decl::castFromDeclContext(static_cast<clang::DeclContext *>(DC));
-}
-
-// Decl Cast
-CXClassTemplateDecl clang_Decl_castToClassTemplateDecl(CXDecl DC) {
-  return llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(static_cast<clang::Decl *>(DC));
-}
-
-CXValueDecl clang_Decl_castToValueDecl(CXDecl DC) {
-  return llvm::dyn_cast_or_null<clang::ValueDecl>(static_cast<clang::Decl *>(DC));
-}
-
-CXCXXConstructorDecl clang_Decl_castToCXXConstructorDecl(CXDecl D) {
-  return llvm::dyn_cast_or_null<clang::CXXConstructorDecl>(static_cast<clang::Decl *>(D));
 }
 
 // DeclContext
@@ -279,6 +306,36 @@ CXDecl clang_DeclContext_decl_iterator_begin(CXDeclContext DC) {
   return *static_cast<clang::DeclContext *>(DC)->decls_begin();
 }
 
+namespace {
+size_t recursiveDeclCount(clang::DeclContext *DC) {
+  size_t N = 0;
+  for (clang::Decl *D : DC->decls()) {
+    ++N;
+    if (auto *Inner = llvm::dyn_cast<clang::DeclContext>(D))
+      N += recursiveDeclCount(Inner);
+  }
+  return N;
+}
+
+void collectRecursiveDecls(clang::DeclContext *DC, CXDecl *&Nodes, CXDeclKind *&Kinds) {
+  for (clang::Decl *D : DC->decls()) {
+    *Nodes++ = D;
+    *Kinds++ = static_cast<CXDeclKind>(D->getKind());
+    if (auto *Inner = llvm::dyn_cast<clang::DeclContext>(D))
+      collectRecursiveDecls(Inner, Nodes, Kinds);
+  }
+}
+} // namespace
+
+size_t clang_DeclContext_getRecursiveDeclCount(CXDeclContext DC) {
+  return recursiveDeclCount(static_cast<clang::DeclContext *>(DC));
+}
+
+void clang_DeclContext_collectRecursiveDecls(CXDeclContext DC, CXDecl *Nodes,
+                                             CXDeclKind *Kinds) {
+  collectRecursiveDecls(static_cast<clang::DeclContext *>(DC), Nodes, Kinds);
+}
+
 void clang_DeclContext_addDecl(CXDeclContext DC, CXDecl D) {
   static_cast<clang::DeclContext *>(DC)->addDecl(static_cast<clang::Decl *>(D));
 }
@@ -295,8 +352,9 @@ void clang_DeclContext_removeDecl(CXDeclContext DC, CXDecl D) {
   static_cast<clang::DeclContext *>(DC)->removeDecl(static_cast<clang::Decl *>(D));
 }
 
-void clang_DeclContext_containsDecl(CXDeclContext DC, CXDecl D) {
-  static_cast<clang::DeclContext *>(DC)->containsDecl(static_cast<clang::Decl *>(D));
+bool clang_DeclContext_containsDecl(CXDeclContext DC, CXDecl D) {
+  return static_cast<clang::DeclContext *>(DC)->containsDecl(
+      static_cast<clang::Decl *>(D));
 }
 
 void clang_DeclContext_dumpDeclContext(CXDeclContext DC) {

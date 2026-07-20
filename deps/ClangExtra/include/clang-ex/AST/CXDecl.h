@@ -22,8 +22,7 @@ CXNamespaceDecl clang_TranslationUnitDecl_getAnonymousNamespace(CXTranslationUni
 void clang_TranslationUnitDecl_setAnonymousNamespace(CXTranslationUnitDecl TUD,
                                                      CXNamespaceDecl ND);
 
-CXTranslationUnitDecl clang_TranslationUnitDecl_Create(CXTranslationUnitDecl TUD,
-                                                       CXASTContext C);
+CXTranslationUnitDecl clang_TranslationUnitDecl_Create(CXASTContext C);
 
 // PragmaCommentDecl
 CXPragmaCommentDecl clang_PragmaCommentDecl_Create(CXASTContext C, CXTranslationUnitDecl DC,
@@ -284,7 +283,10 @@ CXEvaluatedStmt clang_VarDecl_ensureEvaluatedStmt(CXVarDecl VD);
 
 CXEvaluatedStmt clang_VarDecl_getEvaluatedStmt(CXVarDecl VD);
 
-// evaluateValue
+// Evaluate the initializer to a constant. Returns a BORROWED CXAPValue cached
+// in the VarDecl (do NOT dispose; invalidated with the VarDecl), or nullptr if
+// the initializer is absent or not constant-foldable. See CXAPValue.h.
+CXAPValue clang_VarDecl_evaluateValue(CXVarDecl VD);
 // getEvaluatedValue
 // evaluateDestruction
 
@@ -484,6 +486,9 @@ CXFunctionDecl clang_FunctionDecl_Create(CXASTContext C, CXDeclContext DC,
                                          bool isInlineSpecified, bool hasWrittenPrototype);
 
 CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+
+// Returns an owned box; release with clang_DeclarationNameInfo_dispose.
+CXDeclarationNameInfo clang_FunctionDecl_getNameInfo(CXFunctionDecl FD);
 
 // getNameInfo
 // getNameForDiagnostic
@@ -832,6 +837,7 @@ long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD
 CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
 // chain
+CXNamedDecl clang_IndirectFieldDecl_getChainElement(CXIndirectFieldDecl IFD, unsigned i);
 
 unsigned clang_IndirectFieldDecl_getChainingSize(CXIndirectFieldDecl IFD);
 
@@ -849,6 +855,8 @@ void clang_TypeDecl_setTypeForDecl(CXTypeDecl TD, CXType_ Ty);
 CXSourceLocation_ clang_TypeDecl_getBeginLoc(CXTypeDecl TD);
 
 void clang_TypeDecl_setLocStart(CXTypeDecl TD, CXSourceLocation_ Loc);
+
+CXSourceRange_ clang_TypeDecl_getSourceRange(CXTypeDecl TD);
 
 // TypedefNameDecl
 bool clang_TypedefNameDecl_isModed(CXTypedefNameDecl TND);
@@ -1047,6 +1055,12 @@ CXMemberSpecializationInfo clang_EnumDecl_getMemberSpecializationInfo(CXEnumDecl
 void clang_EnumDecl_setInstantiationOfMemberEnum(CXEnumDecl ED, CXEnumDecl ED2,
                                                  CXTemplateSpecializationKind TSK);
 
+// enumerators: two-call protocol (enumerator_begin/end is a forward iterator).
+// getNumEnumerators counts; getEnumerators fills a caller buffer of that size.
+unsigned clang_EnumDecl_getNumEnumerators(CXEnumDecl ED);
+
+void clang_EnumDecl_getEnumerators(CXEnumDecl ED, CXEnumConstantDecl *Buf);
+
 // RecordDecl
 typedef enum CXRecordArgPassingKind : unsigned {
   CXRecordDecl_APK_CanPassInRegs,
@@ -1137,6 +1151,12 @@ bool clang_RecordDecl_isMsStruct(CXRecordDecl RD, CXASTContext C);
 bool clang_RecordDecl_mayInsertExtraPadding(CXRecordDecl RD, bool EmitRemark);
 
 CXFieldDecl clang_RecordDecl_findFirstNamedDataMember(CXRecordDecl RD);
+
+// fields: two-call protocol (field_begin/end is a forward iterator).
+// getNumFields counts; getFields fills a caller buffer of that size.
+unsigned clang_RecordDecl_getNumFields(CXRecordDecl RD);
+
+void clang_RecordDecl_getFields(CXRecordDecl RD, CXFieldDecl *Buf);
 
 // RecordDecl Cast
 CXClassTemplateSpecializationDecl
@@ -1258,6 +1278,9 @@ CXImportDecl clang_ImportDecl_CreateDeserialized(CXASTContext C, unsigned ID,
 CXModule clang_ImportDecl_getImportedModule(CXImportDecl ID);
 
 // getIdentifierLocs
+unsigned clang_ImportDecl_getNumIdentifierLocs(CXImportDecl ID);
+
+CXSourceLocation_ clang_ImportDecl_getIdentifierLoc(CXImportDecl ID, unsigned i);
 
 CXSourceRange_ clang_ImportDecl_getSourceRange(CXImportDecl ID);
 

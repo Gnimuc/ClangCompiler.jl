@@ -4,6 +4,29 @@
 #include "clang/AST/TemplateBase.h"
 #include "clang/AST/Type.h"
 
+// Drift alarm: the vendored TypeNodes.inc must match the pinned LLVM version.
+// One assert per concrete class proves CXTypeClass equals clang's TypeClass
+// value-for-value; the TypeLast assert catches classes appended at the end.
+#define TYPE(Class, Base)                                                                  \
+  static_assert(static_cast<int>(CXTypeClass_##Class) ==                                   \
+                    static_cast<int>(clang::Type::Class),                                   \
+                "CXTypeClass drift: " #Class);
+#define ABSTRACT_TYPE(Class, Base)
+#include "clang-ex/AST/TypeNodes.inc"
+static_assert(static_cast<int>(CXTypeClass_TypeLast) ==
+                  static_cast<int>(clang::Type::TypeLast),
+              "CXTypeClass drift: vendored TypeNodes.inc is missing classes");
+
+#define TYPE(Class, Base)                                                                  \
+  CXType_ clang_Type_castTo##Class##Type(CXType_ T) {                                       \
+    return llvm::dyn_cast_or_null<clang::Class##Type>(static_cast<clang::Type *>(T));       \
+  }
+#include "clang-ex/AST/TypeNodes.inc"
+
+CXTypeClass clang_Type_getTypeClass(CXType_ T) {
+  return static_cast<CXTypeClass>(static_cast<clang::Type *>(T)->getTypeClass());
+}
+
 // QualType
 CXQualType clang_QualType_constructFromTypePtr(CXType_ Ptr, unsigned Quals) {
   return clang::QualType(static_cast<clang::Type *>(Ptr), Quals).getAsOpaquePtr();
@@ -732,6 +755,42 @@ bool clang_isa_DependentTemplateSpecializationType(CXType_ T) {
       static_cast<clang::Type *>(T));
 }
 
+bool clang_isa_AtomicType(CXType_ T) {
+  return llvm::isa<clang::AtomicType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_DecayedType(CXType_ T) {
+  return llvm::isa<clang::DecayedType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_AdjustedType(CXType_ T) {
+  return llvm::isa<clang::AdjustedType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_InjectedClassNameType(CXType_ T) {
+  return llvm::isa<clang::InjectedClassNameType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_MacroQualifiedType(CXType_ T) {
+  return llvm::isa<clang::MacroQualifiedType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_UnaryTransformType(CXType_ T) {
+  return llvm::isa<clang::UnaryTransformType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_ParenType(CXType_ T) {
+  return llvm::isa<clang::ParenType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_DependentAddressSpaceType(CXType_ T) {
+  return llvm::isa<clang::DependentAddressSpaceType>(static_cast<clang::Type *>(T));
+}
+
+bool clang_isa_DependentSizedExtVectorType(CXType_ T) {
+  return llvm::isa<clang::DependentSizedExtVectorType>(static_cast<clang::Type *>(T));
+}
+
 // BuiltinTypes
 bool clang_isa_BuiltinType_Void(CXType_ T) {
   return static_cast<clang::BuiltinType *>(T)->getKind() == clang::BuiltinType::Void;
@@ -954,12 +1013,12 @@ CXQualType clang_MemberPointerType_getPointeeType(CXMemberPointerType T) {
   return static_cast<clang::MemberPointerType *>(T)->getPointeeType().getAsOpaquePtr();
 }
 
-bool clang_MemberPointerType_isMemberFunctionPointerType(CXMemberPointerType T) {
-  return static_cast<clang::MemberPointerType *>(T)->isMemberFunctionPointerType();
+bool clang_MemberPointerType_isMemberFunctionPointer(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->isMemberFunctionPointer();
 }
 
-bool clang_MemberPointerType_isMemberDataPointerType(CXMemberPointerType T) {
-  return static_cast<clang::MemberPointerType *>(T)->isMemberDataPointerType();
+bool clang_MemberPointerType_isMemberDataPointer(CXMemberPointerType T) {
+  return static_cast<clang::MemberPointerType *>(T)->isMemberDataPointer();
 }
 
 CXType_ clang_MemberPointerType_getClass(CXMemberPointerType T) {
@@ -1123,6 +1182,11 @@ bool clang_FunctionType_isRestrict(CXFunctionType T) {
   return static_cast<clang::FunctionType *>(T)->isRestrict();
 }
 
+CXCallingConv_ clang_FunctionType_getCallConv(CXFunctionType T) {
+  return static_cast<CXCallingConv_>(
+      static_cast<clang::FunctionType *>(T)->getCallConv());
+}
+
 // FunctionNoProtoType
 bool clang_FunctionNoProtoType_isSugared(CXFunctionNoProtoType T) {
   return static_cast<clang::FunctionNoProtoType *>(T)->isSugared();
@@ -1144,6 +1208,12 @@ CXQualType clang_FunctionProtoType_getParamType(CXFunctionProtoType T, unsigned 
 CXArrayRef clang_FunctionProtoType_getParamTypes(CXFunctionProtoType T) {
   auto arr = static_cast<clang::FunctionProtoType *>(T)->getParamTypes();
   return {arr.data(), arr.size()};
+}
+
+CXExceptionSpecificationType
+clang_FunctionProtoType_getExceptionSpecType(CXFunctionProtoType T) {
+  return static_cast<CXExceptionSpecificationType>(
+      static_cast<clang::FunctionProtoType *>(T)->getExceptionSpecType());
 }
 
 bool clang_FunctionProtoType_hasExceptionSpec(CXFunctionProtoType T) {
@@ -1520,6 +1590,18 @@ CXArrayRef
 clang_TemplateSpecializationType_template_arguments(CXTemplateSpecializationType T) {
   auto arr = static_cast<clang::TemplateSpecializationType *>(T)->template_arguments();
   return {arr.data(), arr.size()};
+}
+
+unsigned clang_TemplateSpecializationType_getNumArgs(CXTemplateSpecializationType T) {
+  return static_cast<clang::TemplateSpecializationType *>(T)->template_arguments().size();
+}
+
+// Borrowed interior pointer into the type's trailing TemplateArgument storage
+// (AST-arena owned; no dispose).
+CXTemplateArgument
+clang_TemplateSpecializationType_getArg(CXTemplateSpecializationType T, unsigned Idx) {
+  return const_cast<clang::TemplateArgument *>(
+      &static_cast<clang::TemplateSpecializationType *>(T)->template_arguments()[Idx]);
 }
 
 bool clang_TemplateSpecializationType_isSugared(CXTemplateSpecializationType T) {

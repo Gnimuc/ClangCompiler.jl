@@ -9,6 +9,44 @@ CXNestedNameSpecifier clang_NestedNameSpecifier_getPrefix(CXNestedNameSpecifier 
   return static_cast<clang::NestedNameSpecifier *>(NNS)->getPrefix();
 }
 
+CXNestedNameSpecifierKind clang_NestedNameSpecifier_getKind(CXNestedNameSpecifier NNS) {
+  return static_cast<CXNestedNameSpecifierKind>(
+      static_cast<clang::NestedNameSpecifier *>(NNS)->getKind());
+}
+
+CXIdentifierInfo clang_NestedNameSpecifier_getAsIdentifier(CXNestedNameSpecifier NNS) {
+  return static_cast<clang::NestedNameSpecifier *>(NNS)->getAsIdentifier();
+}
+
+CXNamespaceDecl clang_NestedNameSpecifier_getAsNamespace(CXNestedNameSpecifier NNS) {
+  return static_cast<clang::NestedNameSpecifier *>(NNS)->getAsNamespace();
+}
+
+CXNamespaceAliasDecl clang_NestedNameSpecifier_getAsNamespaceAlias(CXNestedNameSpecifier NNS) {
+  return static_cast<clang::NestedNameSpecifier *>(NNS)->getAsNamespaceAlias();
+}
+
+CXCXXRecordDecl clang_NestedNameSpecifier_getAsRecordDecl(CXNestedNameSpecifier NNS) {
+  return static_cast<clang::NestedNameSpecifier *>(NNS)->getAsRecordDecl();
+}
+
+CXType_ clang_NestedNameSpecifier_getAsType(CXNestedNameSpecifier NNS) {
+  return const_cast<clang::Type *>(
+      static_cast<clang::NestedNameSpecifier *>(NNS)->getAsType());
+}
+
+bool clang_NestedNameSpecifier_isDependent(CXNestedNameSpecifier NNS) {
+  return static_cast<clang::NestedNameSpecifier *>(NNS)->isDependent();
+}
+
+bool clang_NestedNameSpecifier_isInstantiationDependent(CXNestedNameSpecifier NNS) {
+  return static_cast<clang::NestedNameSpecifier *>(NNS)->isInstantiationDependent();
+}
+
+bool clang_NestedNameSpecifier_containsUnexpandedParameterPack(CXNestedNameSpecifier NNS) {
+  return static_cast<clang::NestedNameSpecifier *>(NNS)->containsUnexpandedParameterPack();
+}
+
 bool clang_NestedNameSpecifier_containsErrors(CXNestedNameSpecifier NNS) {
   return static_cast<clang::NestedNameSpecifier *>(NNS)->containsErrors();
 }

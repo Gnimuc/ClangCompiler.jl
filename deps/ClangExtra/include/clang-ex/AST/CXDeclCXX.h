@@ -31,8 +31,6 @@ CXAccessSpecDecl clang_AccessSpecDecl_CreateDeserialized(CXASTContext C, unsigne
 // CXXBaseSpecifier
 CXSourceRange_ clang_CXXBaseSpecifier_getSourceRange(CXCXXBaseSpecifier CXXBS);
 
-CXSourceLocation_ clang_CXXBaseSpecifier_getColonLoc(CXCXXBaseSpecifier CXXBS);
-
 CXSourceLocation_ clang_CXXBaseSpecifier_getEndLoc(CXCXXBaseSpecifier CXXBS);
 
 CXSourceLocation_ clang_CXXBaseSpecifier_getBaseTypeLoc(CXCXXBaseSpecifier CXXBS);
@@ -77,11 +75,21 @@ CXCXXRecordDecl clang_CXXRecordDecl_Create(CXASTContext C, CXTagTypeKind TK,
                                            CXCXXRecordDecl PrevDecl,
                                            bool DelayTypeCreation);
 
+// CXXRecordDecl::LambdaDependencyKind
+typedef enum CXLambdaDependencyKind {
+  CXLambdaDependencyKind_Unknown = 0,
+  CXLambdaDependencyKind_AlwaysDependent,
+  CXLambdaDependencyKind_NeverDependent
+} CXLambdaDependencyKind;
+
 CXCXXRecordDecl clang_CXXRecordDecl_CreateLambda(CXASTContext C, CXDeclContext DC,
                                                  CXTypeSourceInfo Info,
                                                  CXSourceLocation_ Loc,
-                                                 bool DependentLambda, bool IsGeneric,
+                                                 CXLambdaDependencyKind DependencyKind,
+                                                 bool IsGeneric,
                                                  CXLambdaCaptureDefault CaptureDefault);
+
+bool clang_CXXRecordDecl_isDynamicClass(CXCXXRecordDecl CXXRD);
 
 bool clang_CXXRecordDecl_isLambda(CXCXXRecordDecl CXXRD);
 
@@ -97,6 +105,205 @@ bool clang_CXXRecordDecl_isPOD(CXCXXRecordDecl CXXRD);
 bool clang_CXXRecordDecl_isCLike(CXCXXRecordDecl CXXRD);
 
 bool clang_CXXRecordDecl_isEmpty(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_allowConstDefaultInit(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_defaultedCopyConstructorIsDeleted(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_defaultedDefaultConstructorIsConstexpr(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_defaultedDestructorIsConstexpr(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_defaultedDestructorIsDeleted(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_defaultedMoveConstructorIsDeleted(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasAnyDependentBases(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasConstexprDefaultConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasConstexprDestructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasConstexprNonCopyMoveConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasCopyAssignmentWithConstParam(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasCopyConstructorWithConstParam(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasDefaultConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasDirectFields(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasFriends(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasInClassInitializer(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasInheritedAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasInheritedConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasInitMethod(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasIrrelevantDestructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasKnownLambdaInternalLinkage(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasMoveAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasMoveConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasMutableFields(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonLiteralTypeFieldsOrBases(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialCopyAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialCopyConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialCopyConstructorForCall(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialDefaultConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialDestructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialDestructorForCall(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialMoveAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialMoveConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasNonTrivialMoveConstructorForCall(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasPrivateFields(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasProtectedFields(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasSimpleCopyAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasSimpleCopyConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasSimpleDestructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasSimpleMoveAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasSimpleMoveConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialCopyAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialCopyConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialCopyConstructorForCall(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialDefaultConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialDestructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialDestructorForCall(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialMoveAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialMoveConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasTrivialMoveConstructorForCall(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUninitializedReferenceMember(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUserDeclaredConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUserDeclaredCopyAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUserDeclaredCopyConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUserDeclaredDestructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUserDeclaredMoveAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUserDeclaredMoveConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUserDeclaredMoveOperation(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasUserProvidedDefaultConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_hasVariantMembers(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isAbstract(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isAnyDestructorNoReturn(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isCXX11StandardLayout(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isCapturelessLambda(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isDependentLambda(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isEffectivelyFinal(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isInterfaceLike(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isLiteral(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isNeverDependentLambda(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isParsingBaseSpecifiers(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isPolymorphic(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isStandardLayout(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isStructural(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isTrivial(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isTriviallyCopyConstructible(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isTriviallyCopyable(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_mayBeAbstract(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_mayBeDynamicClass(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_mayBeNonDynamicClass(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsImplicitCopyAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsImplicitCopyConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsImplicitDefaultConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsImplicitDestructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsImplicitMoveAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsImplicitMoveConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForCopyAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForCopyConstructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForDestructor(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForMoveAssignment(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_needsOverloadResolutionForMoveConstructor(CXCXXRecordDecl CXXRD);
+
+// bases: random-access (bases_begin is a contiguous CXXBaseSpecifier array).
+// getNumBases/getNumVBases require a complete definition.
+unsigned clang_CXXRecordDecl_getNumBases(CXCXXRecordDecl CXXRD);
+
+CXCXXBaseSpecifier clang_CXXRecordDecl_getBase(CXCXXRecordDecl CXXRD, unsigned i);
+
+unsigned clang_CXXRecordDecl_getNumVBases(CXCXXRecordDecl CXXRD);
+
+CXCXXBaseSpecifier clang_CXXRecordDecl_getVBase(CXCXXRecordDecl CXXRD, unsigned i);
+
+// methods/ctors: two-call protocol (specific_decl_iterator is forward-only).
+unsigned clang_CXXRecordDecl_getNumMethods(CXCXXRecordDecl CXXRD);
+
+void clang_CXXRecordDecl_getMethods(CXCXXRecordDecl CXXRD, CXCXXMethodDecl *Buf);
+
+unsigned clang_CXXRecordDecl_getNumCtors(CXCXXRecordDecl CXXRD);
+
+void clang_CXXRecordDecl_getCtors(CXCXXRecordDecl CXXRD, CXCXXConstructorDecl *Buf);
 
 // ExplicitSpecifier
 CXExplicitSpecKind clang_ExplicitSpecifier_getKind(CXExplicitSpecifier ES);
@@ -119,6 +326,22 @@ void clang_ExplicitSpecifier_setExpr(CXExplicitSpecifier ES, CXExpr E);
 // Invalid
 
 // CXXDeductionGuideDecl
+typedef enum CXDeductionCandidate : unsigned char {
+  CXDeductionCandidate_Normal,
+  CXDeductionCandidate_Copy,
+  CXDeductionCandidate_Aggregate
+} CXDeductionCandidate;
+
+bool clang_CXXDeductionGuideDecl_isExplicit(CXCXXDeductionGuideDecl DGD);
+
+CXCXXConstructorDecl
+clang_CXXDeductionGuideDecl_getCorrespondingConstructor(CXCXXDeductionGuideDecl DGD);
+
+CXTemplateDecl
+clang_CXXDeductionGuideDecl_getDeducedTemplate(CXCXXDeductionGuideDecl DGD);
+
+CXDeductionCandidate
+clang_CXXDeductionGuideDecl_getDeductionCandidateKind(CXCXXDeductionGuideDecl DGD);
 
 // RequiresExprBodyDecl
 CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -183,14 +406,59 @@ CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
     CXCXXMethodDecl CXXMD, CXCXXRecordDecl RD, bool MayBeBase);
 
 // CXXCtorInitializer
+// A CXXCtorInitializer is interior to its CXXConstructorDecl: borrowed, no dispose.
+bool clang_CXXCtorInitializer_isBaseInitializer(CXCXXCtorInitializer CI);
+
+bool clang_CXXCtorInitializer_isMemberInitializer(CXCXXCtorInitializer CI);
+
+bool clang_CXXCtorInitializer_isAnyMemberInitializer(CXCXXCtorInitializer CI);
+
+bool clang_CXXCtorInitializer_isDelegatingInitializer(CXCXXCtorInitializer CI);
+
+CXFieldDecl clang_CXXCtorInitializer_getMember(CXCXXCtorInitializer CI);
+
+CXType_ clang_CXXCtorInitializer_getBaseClass(CXCXXCtorInitializer CI);
+
+CXExpr clang_CXXCtorInitializer_getInit(CXCXXCtorInitializer CI);
+
+CXSourceLocation_ clang_CXXCtorInitializer_getSourceLocation(CXCXXCtorInitializer CI);
 
 // InheritedConstructor
 
 // CXXConstructorDecl
+bool clang_CXXConstructorDecl_isExplicit(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isDefaultConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isCopyConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isMoveConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isCopyOrMoveConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isDelegatingConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isInheritingConstructor(CXCXXConstructorDecl CD);
+
+bool clang_CXXConstructorDecl_isSpecializationCopyingObject(CXCXXConstructorDecl CD);
+
+unsigned clang_CXXConstructorDecl_getNumCtorInitializers(CXCXXConstructorDecl CD);
+
+// inits: random-access (init_begin is a contiguous CXXCtorInitializer* array).
+CXCXXCtorInitializer
+clang_CXXConstructorDecl_getCtorInitializer(CXCXXConstructorDecl CD, unsigned i);
+
+CXCXXConstructorDecl clang_CXXConstructorDecl_getTargetConstructor(CXCXXConstructorDecl CD);
 
 // CXXDestructorDecl
+CXFunctionDecl clang_CXXDestructorDecl_getOperatorDelete(CXCXXDestructorDecl DD);
 
 // CXXConversionDecl
+CXQualType clang_CXXConversionDecl_getConversionType(CXCXXConversionDecl CD);
+
+bool clang_CXXConversionDecl_isExplicit(CXCXXConversionDecl CD);
+
+bool clang_CXXConversionDecl_isLambdaToBlockPointerConversion(CXCXXConversionDecl CD);
 
 // LinkageSpecDecl
 typedef enum CXLinkageSpecLanguageIDs {
@@ -228,6 +496,18 @@ CXSourceRange_ clang_LinkageSpecDecl_getSourceRange(CXLinkageSpecDecl LSD);
 CXDeclContext clang_LinkageSpecDecl_castToDeclContext(CXLinkageSpecDecl LSD);
 
 CXLinkageSpecDecl clang_LinkageSpecDecl_castFromDeclContext(CXDeclContext DC);
+
+// UsingDirectiveDecl
+CXNamespaceDecl clang_UsingDirectiveDecl_getNominatedNamespace(CXUsingDirectiveDecl UDD);
+
+// UsingShadowDecl
+CXNamedDecl clang_UsingShadowDecl_getTargetDecl(CXUsingShadowDecl USD);
+
+// BaseUsingDecl
+// shadows: two-call protocol (shadow_iterator is forward-only).
+unsigned clang_BaseUsingDecl_shadow_size(CXBaseUsingDecl BUD);
+
+void clang_BaseUsingDecl_getShadows(CXBaseUsingDecl BUD, CXUsingShadowDecl *Buf);
 
 LLVM_CLANG_C_EXTERN_C_END
 

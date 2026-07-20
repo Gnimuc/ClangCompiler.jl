@@ -1,6 +1,8 @@
 #include "clang-ex/AST/CXMangle.h"
 #include "utils.h"
+#include "clang/AST/GlobalDecl.h"
 #include "clang/AST/Mangle.h"
+#include "llvm/Support/raw_ostream.h"
 
 // MangleContext
 CXMangleContext_ManglerKind clang_MangleContext_getKind(CXMangleContext MC) {
@@ -27,6 +29,14 @@ uint64_t clang_MangleContext_getAnonymousStructId(CXMangleContext MC, CXNamedDec
 bool clang_MangleContext_shouldMangleDeclName(CXMangleContext MC, CXNamedDecl D) {
   return static_cast<clang::MangleContext *>(MC)->shouldMangleDeclName(
       static_cast<clang::NamedDecl *>(D));
+}
+
+CXString clang_MangleContext_mangleName(CXMangleContext MC, CXNamedDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleName(
+      clang::GlobalDecl(static_cast<clang::NamedDecl *>(D)), OS);
+  return extra::makeCXString(OS.str());
 }
 
 bool clang_MangleContext_shouldMangleCXXName(CXMangleContext MC, CXNamedDecl D) {

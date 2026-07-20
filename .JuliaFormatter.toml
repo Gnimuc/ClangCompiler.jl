@@ -7,4 +7,10 @@ whitespace_typedefs=false
 always_use_return=false
 pipe_to_function_call=false
 
-ignore = ["lib", "examples"]
+# "lib" and "examples" are generated / vendored. The src files below are also
+# generated (from the vendored *.inc by gen/*_nodes.jl) — do not hand-format;
+# regenerate instead.
+ignore = ["lib", "examples",
+          "AttrAbstracts.jl", "AttrCarriers.jl", "AttrWrappers.jl", "AttrKindMap.jl",
+          "StmtAbstractGen.jl", "StmtCarriers.jl", "StmtWrappers.jl", "StmtClassMap.jl",
+          "DeclKindMap.jl", "TypeClassMap.jl"]

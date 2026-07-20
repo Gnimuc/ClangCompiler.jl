@@ -1,5 +1,5 @@
-#ifndef LLVM_CLANG_C_EXTRA_H
-#define LLVM_CLANG_C_EXTRA_H
+#ifndef LLVM_CLANG_C_EXTRA_LIBCLANGEX_H
+#define LLVM_CLANG_C_EXTRA_LIBCLANGEX_H
 
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"

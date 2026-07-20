@@ -14,6 +14,7 @@ typedef enum CXTemplateArgument_ArgKind {
   CXTemplateArgument_Declaration,
   CXTemplateArgument_NullPtr,
   CXTemplateArgument_Integral,
+  CXTemplateArgument_StructuralValue,
   CXTemplateArgument_Template,
   CXTemplateArgument_TemplateExpansion,
   CXTemplateArgument_Expression,

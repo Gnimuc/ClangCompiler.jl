@@ -67,6 +67,44 @@ CXTemplateArgumentList clang_ClassTemplateSpecializationDecl_getTemplateArgs(
 void clang_ClassTemplateSpecializationDecl_setTemplateArgs(
     CXClassTemplateSpecializationDecl CTSD, CXTemplateArgumentList TAL);
 
+// TemplateDecl navigation
+CXNamedDecl clang_TemplateDecl_getTemplatedDecl(CXTemplateDecl TD);
+
+CXTemplateParameterList clang_TemplateDecl_getTemplateParameters(CXTemplateDecl TD);
+
+// TemplateParameterList
+unsigned clang_TemplateParameterList_getDepth(CXTemplateParameterList L);
+
+unsigned clang_TemplateParameterList_getMinRequiredArguments(CXTemplateParameterList L);
+
+bool clang_TemplateParameterList_hasParameterPack(CXTemplateParameterList L);
+
+// TemplateTypeParmDecl
+unsigned clang_TemplateTypeParmDecl_getDepth(CXTemplateTypeParmDecl D);
+
+unsigned clang_TemplateTypeParmDecl_getIndex(CXTemplateTypeParmDecl D);
+
+bool clang_TemplateTypeParmDecl_isParameterPack(CXTemplateTypeParmDecl D);
+
+// NonTypeTemplateParmDecl
+unsigned clang_NonTypeTemplateParmDecl_getDepth(CXNonTypeTemplateParmDecl D);
+
+unsigned clang_NonTypeTemplateParmDecl_getIndex(CXNonTypeTemplateParmDecl D);
+
+bool clang_NonTypeTemplateParmDecl_isParameterPack(CXNonTypeTemplateParmDecl D);
+
+// ClassTemplateSpecializationDecl navigation
+CXClassTemplateDecl
+clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(CXClassTemplateSpecializationDecl D);
+
+CXTemplateSpecializationKind
+clang_ClassTemplateSpecializationDecl_getSpecializationKind(CXClassTemplateSpecializationDecl D);
+
+// VarTemplateSpecializationDecl
+// Borrowed interior reference to the specialization's argument list (no dispose).
+CXTemplateArgumentList clang_VarTemplateSpecializationDecl_getTemplateArgs(
+    CXVarTemplateSpecializationDecl VTSD);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

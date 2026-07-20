@@ -15,9 +15,16 @@ unsigned clang_TemplateParameterList_size(CXTemplateParameterList TPL) {
 CXTemplateArgumentList clang_TemplateArgumentList_CreateCopy(CXASTContext Context,
                                                              CXTemplateArgument Args,
                                                              size_t ArgNum) {
+  // Args is a caller buffer of CXTemplateArgument handles (pointers to
+  // heap-boxed clang::TemplateArgument), not a contiguous value array —
+  // dereference each into a value vector before copying.
+  auto **Handles = static_cast<clang::TemplateArgument **>(Args);
+  llvm::SmallVector<clang::TemplateArgument, 4> Vec;
+  Vec.reserve(ArgNum);
+  for (size_t I = 0; I < ArgNum; ++I)
+    Vec.push_back(*Handles[I]);
   return clang::TemplateArgumentList::CreateCopy(
-      *static_cast<clang::ASTContext *>(Context),
-      llvm::ArrayRef(static_cast<clang::TemplateArgument *>(Args), ArgNum));
+      *static_cast<clang::ASTContext *>(Context), Vec);
 }
 
 unsigned clang_TemplateArgumentList_size(CXTemplateArgumentList TAL) {
@@ -118,4 +125,70 @@ void clang_ClassTemplateSpecializationDecl_setTemplateArgs(
     CXClassTemplateSpecializationDecl CTSD, CXTemplateArgumentList TAL) {
   static_cast<clang::ClassTemplateSpecializationDecl *>(CTSD)->setTemplateArgs(
       static_cast<clang::TemplateArgumentList *>(TAL));
+}
+// TemplateDecl navigation
+CXNamedDecl clang_TemplateDecl_getTemplatedDecl(CXTemplateDecl TD) {
+  return static_cast<clang::TemplateDecl *>(TD)->getTemplatedDecl();
+}
+
+CXTemplateParameterList clang_TemplateDecl_getTemplateParameters(CXTemplateDecl TD) {
+  return static_cast<clang::TemplateDecl *>(TD)->getTemplateParameters();
+}
+
+// TemplateParameterList
+unsigned clang_TemplateParameterList_getDepth(CXTemplateParameterList L) {
+  return static_cast<clang::TemplateParameterList *>(L)->getDepth();
+}
+
+unsigned clang_TemplateParameterList_getMinRequiredArguments(CXTemplateParameterList L) {
+  return static_cast<clang::TemplateParameterList *>(L)->getMinRequiredArguments();
+}
+
+bool clang_TemplateParameterList_hasParameterPack(CXTemplateParameterList L) {
+  return static_cast<clang::TemplateParameterList *>(L)->hasParameterPack();
+}
+
+// TemplateTypeParmDecl
+unsigned clang_TemplateTypeParmDecl_getDepth(CXTemplateTypeParmDecl D) {
+  return static_cast<clang::TemplateTypeParmDecl *>(D)->getDepth();
+}
+
+unsigned clang_TemplateTypeParmDecl_getIndex(CXTemplateTypeParmDecl D) {
+  return static_cast<clang::TemplateTypeParmDecl *>(D)->getIndex();
+}
+
+bool clang_TemplateTypeParmDecl_isParameterPack(CXTemplateTypeParmDecl D) {
+  return static_cast<clang::TemplateTypeParmDecl *>(D)->isParameterPack();
+}
+
+// NonTypeTemplateParmDecl
+unsigned clang_NonTypeTemplateParmDecl_getDepth(CXNonTypeTemplateParmDecl D) {
+  return static_cast<clang::NonTypeTemplateParmDecl *>(D)->getDepth();
+}
+
+unsigned clang_NonTypeTemplateParmDecl_getIndex(CXNonTypeTemplateParmDecl D) {
+  return static_cast<clang::NonTypeTemplateParmDecl *>(D)->getIndex();
+}
+
+bool clang_NonTypeTemplateParmDecl_isParameterPack(CXNonTypeTemplateParmDecl D) {
+  return static_cast<clang::NonTypeTemplateParmDecl *>(D)->isParameterPack();
+}
+
+// ClassTemplateSpecializationDecl navigation
+CXClassTemplateDecl
+clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(CXClassTemplateSpecializationDecl D) {
+  return static_cast<clang::ClassTemplateSpecializationDecl *>(D)->getSpecializedTemplate();
+}
+
+CXTemplateSpecializationKind
+clang_ClassTemplateSpecializationDecl_getSpecializationKind(CXClassTemplateSpecializationDecl D) {
+  return static_cast<CXTemplateSpecializationKind>(
+      static_cast<clang::ClassTemplateSpecializationDecl *>(D)->getSpecializationKind());
+}
+
+// VarTemplateSpecializationDecl
+CXTemplateArgumentList clang_VarTemplateSpecializationDecl_getTemplateArgs(
+    CXVarTemplateSpecializationDecl VTSD) {
+  return const_cast<clang::TemplateArgumentList *>(
+      &static_cast<clang::VarTemplateSpecializationDecl *>(VTSD)->getTemplateArgs());
 }

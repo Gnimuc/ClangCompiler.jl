@@ -7,6 +7,49 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+// The Decl classification surface below is stamped from the vendored
+// clang-ex/AST/DeclNodes.inc (a verbatim copy of clang's TableGen output for
+// the pinned LLVM version). Mirror-by-construction: the same table clang uses
+// to build clang::Decl::Kind builds CXDeclKind here, and the impl-side
+// static_assert table in CXDeclBase.cpp proves value-for-value equality, so a
+// stale vendored copy fails the build instead of shipping shifted values.
+// POLICY: stamped symbols (CXDeclKind_* and the castTo/is families) are
+// version-following per LLVM major, exempt from the frozen-ABI rule.
+
+// Mirrors clang::Decl::Kind: one enumerator per CONCRETE class (the bare
+// DeclNodes name, no "Decl" suffix) plus the first##Base/last##Base range
+// markers, in DeclNodes.inc order; abstract classes get no enumerator (matching
+// clang).
+typedef enum CXDeclKind {
+#define DECL(DERIVED, BASE) CXDeclKind_##DERIVED,
+#define ABSTRACT_DECL(DECL)
+#define DECL_RANGE(BASE, START, END)                                                       \
+  CXDeclKind_first##BASE = CXDeclKind_##START, CXDeclKind_last##BASE = CXDeclKind_##END,
+#define LAST_DECL_RANGE(BASE, START, END)                                                  \
+  CXDeclKind_first##BASE = CXDeclKind_##START, CXDeclKind_last##BASE = CXDeclKind_##END
+#include "clang-ex/AST/DeclNodes.inc"
+} CXDeclKind;
+
+// Null-safe downcast (dyn_cast_or_null) and kind predicate for every class in
+// the hierarchy, ABSTRACT bases included. The wrapper name carries the full
+// class spelling (DeclNodes name + "Decl"); stamped functions take and return
+// plain CXDecl.
+#define DECL(DERIVED, BASE)                                                                \
+  CXDecl clang_Decl_castTo##DERIVED##Decl(CXDecl D);                                        \
+  bool clang_Decl_is##DERIVED##Decl(CXDecl D);
+#define ABSTRACT_DECL(DECL) DECL
+#include "clang-ex/AST/DeclNodes.inc"
+
+CXDeclKind clang_Decl_getKind(CXDecl D);
+
+// attrs: Decl::attrs() as a count+index pair. getAttr returns the borrowed Attr*
+// at position I (< getNumAttrs); classify it with clang_Attr_getKind.
+bool clang_Decl_hasAttrs(CXDecl D);
+
+unsigned clang_Decl_getNumAttrs(CXDecl D);
+
+CXAttr clang_Decl_getAttr(CXDecl D, unsigned I);
+
 // Decl
 CXSourceLocation_ clang_Decl_getLocation(CXDecl DC);
 
@@ -66,7 +109,9 @@ bool clang_Decl_isTemplateParameterPack(CXDecl DC);
 
 bool clang_Decl_isParameterPack(CXDecl DC);
 
-bool clang_Decl_isTemplateDecl(CXDecl DC);
+// clang_Decl_isTemplateDecl is stamped from DeclNodes.inc above (the Template
+// class): clang::Decl::isTemplateDecl() is isa<TemplateDecl>.
+bool clang_Decl_isFunctionOrFunctionTemplate(CXDecl DC);
 
 CXTemplateDecl clang_Decl_getDescribedTemplate(CXDecl DC);
 
@@ -86,16 +131,12 @@ void clang_Decl_EnableStatistics(void);
 
 void clang_Decl_PrintStats(void);
 
-// Decl Cast
+// Decl Cast — the Decl<->DeclContext pivot (DeclContext is not a Decl::Kind, so
+// it is not part of the stamped castTo family above). Decl->Decl downcasts and
+// kind predicates are stamped from DeclNodes.inc.
 CXDeclContext clang_Decl_castToDeclContext(CXDecl D);
 
 CXDecl clang_Decl_castFromDeclContext(CXDeclContext DC);
-
-CXClassTemplateDecl clang_Decl_castToClassTemplateDecl(CXDecl DC);
-
-CXValueDecl clang_Decl_castToValueDecl(CXDecl DC);
-
-CXCXXConstructorDecl clang_Decl_castToCXXConstructorDecl(CXDecl D);
 
 // DeclContext
 CXTagDecl clang_DeclContext_castToTagDecl(CXDeclContext DC);
@@ -146,6 +187,18 @@ CXDeclContext clang_DeclContext_getPrimaryContext(CXDeclContext DC);
 
 CXDecl clang_DeclContext_decl_iterator_begin(CXDeclContext DC);
 
+// recursive decls: bulk pre-order extraction of every decl in DC and all nested
+// decl-contexts (namespaces, records, functions, …) in a single walk, so a
+// whole-translation-unit sweep costs O(1) FFI round-trips instead of one per
+// decl. getRecursiveDeclCount counts the decls; collectRecursiveDecls fills two
+// caller-allocated buffers of exactly that many slots — the decl pointers and
+// their CXDeclKind values in lockstep — letting the caller build resolved
+// carriers without a per-decl getKind call.
+size_t clang_DeclContext_getRecursiveDeclCount(CXDeclContext DC);
+
+void clang_DeclContext_collectRecursiveDecls(CXDeclContext DC, CXDecl *Nodes,
+                                             CXDeclKind *Kinds);
+
 void clang_DeclContext_addDecl(CXDeclContext DC, CXDecl D);
 
 void clang_DeclContext_addDeclInternal(CXDeclContext DC, CXDecl D);
@@ -154,7 +207,7 @@ void clang_DeclContext_addHiddenDecl(CXDeclContext DC, CXDecl D);
 
 void clang_DeclContext_removeDecl(CXDeclContext DC, CXDecl D);
 
-void clang_DeclContext_containsDecl(CXDeclContext DC, CXDecl D);
+bool clang_DeclContext_containsDecl(CXDeclContext DC, CXDecl D);
 
 void clang_DeclContext_dumpDeclContext(CXDeclContext DC);
 

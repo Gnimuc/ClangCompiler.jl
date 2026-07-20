@@ -552,7 +552,7 @@ CXQualType clang_ASTContext_getInjectedClassNameType(CXASTContext Ctx, CXCXXReco
 
 CXQualType clang_ASTContext_getTemplateTypeParmType(CXASTContext Ctx, unsigned Depth,
                                                     unsigned Index, bool ParameterPack,
-                                                    CXTemplateTypeParmType ParmDecl) {
+                                                    CXTemplateTypeParmDecl ParmDecl) {
   return static_cast<clang::ASTContext *>(Ctx)
       ->getTemplateTypeParmType(Depth, Index, ParameterPack,
                                 static_cast<clang::TemplateTypeParmDecl *>(ParmDecl))

@@ -60,20 +60,16 @@ jobs:
           install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make
         if: runner.os == 'Windows'
 
-      # Build ClangExtra unconditionally (build_local.jl) instead of relying on
-      # build_ci.jl's timestamp heuristic: libclangex_jll v0.2.0+1 is a rebuild of
-      # the pre-2025-07 v0.2.0 sources, so a newer JLL tag does not imply it
-      # contains the current wrappers. Its clang_Interpreter_getSymbolAddress
-      # returns the address of a dead stack temporary (nulled by GCC), breaking
-      # the execution tests. Revert to build_ci.jl once a JLL built from the
-      # current ClangExtra sources is tagged.
+      # build_ci.jl builds ClangExtra from source when deps/ClangExtra is newer
+      # than the resolved libclangex_jll tag, otherwise uses the JLL. Its local-build
+      # path is build_local.jl, so the msys2/cmake handling for Windows still applies.
       - name: Build ClangExtra
-        run: julia --project=deps deps/build_local.jl
+        run: julia --project=deps deps/build_ci.jl
         if: runner.os != 'Windows'
 
       - name: Build ClangExtra (in msys2)
         shell: msys2 {0}
-        run: julia --project=deps deps/build_local.jl
+        run: julia --project=deps deps/build_ci.jl
         if: runner.os == 'Windows'
 
       - uses: julia-actions/julia-runtest@v1
@@ -83,3 +79,26 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
           file: lcov.info
+  bindings:
+    # CI never regenerates bindings during test jobs, so a ClangExtra header
+    # edited without rerunning gen/generator.jl would silently ship stale
+    # bindings. This job regenerates and fails on any diff under lib/.
+    name: Regenerated bindings match lib/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+          arch: x64
+      - uses: actions/cache@v4
+        env:
+          cache-name: cache-gen-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-gen-${{ env.cache-name }}-${{ hashFiles('gen/Manifest.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gen-${{ env.cache-name }}-
+      - run: julia --project=gen -e 'using Pkg; Pkg.instantiate()'
+      - run: julia --project=gen gen/generator.jl
+      - run: git diff --exit-code lib/

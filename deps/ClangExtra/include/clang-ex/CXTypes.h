@@ -80,6 +80,7 @@ typedef void *CXNamespaceAliasDecl;
 typedef void *CXLifetimeExtendedTemporaryDecl;
 typedef void *CXUsingShadowDecl;
 typedef void *CXConstructorUsingShadowDecl;
+typedef void *CXBaseUsingDecl;
 typedef void *CXUsingDecl;
 typedef void *CXUsingPackDecl;
 typedef void *CXUnresolvedUsingValueDecl;
@@ -118,15 +119,32 @@ typedef void *CXVarTemplateDecl;
 typedef void *CXConceptDecl;
 typedef void *CXTemplateParamObjectDecl;
 
+// APValue
+typedef void *CXAPValue;
+
+// Attr
+typedef void *CXAttr;
+typedef void *CXAlignedAttr;
+typedef void *CXAnnotateAttr;
+typedef void *CXAsmLabelAttr;
+typedef void *CXCleanupAttr;
+typedef void *CXConstructorAttr;
+typedef void *CXDeprecatedAttr;
+typedef void *CXDestructorAttr;
+typedef void *CXFormatAttr;
+typedef void *CXNonNullAttr;
+typedef void *CXSectionAttr;
+typedef void *CXTLSModelAttr;
+typedef void *CXUnavailableAttr;
+typedef void *CXVisibilityAttr;
+typedef void *CXWarnUnusedResultAttr;
+
 // Expr
 typedef void *CXExpr;
 typedef void *CXFullExpr;
 typedef void *CXConstantExpr;
 typedef void *CXOpaqueValueExpr;
 typedef void *CXDeclRefExpr;
-typedef void *CXAPNumericStorage;
-typedef void *CXAPIntStorage;
-typedef void *CXAPFloatStorage;
 typedef void *CXIntegerLiteral;
 typedef void *CXFixedPointLiteral;
 typedef void *CXCharacterLiteral;
@@ -208,6 +226,9 @@ typedef void *CXCXXInheritedCtorInitExpr;
 typedef void *CXCXXFunctionalCastExpr;
 typedef void *CXCXXTemporaryObjectExpr;
 typedef void *CXLambdaExpr;
+
+// LambdaCapture
+typedef void *CXLambdaCapture;
 typedef void *CXCXXScalarValueInitExpr;
 typedef void *CXCXXNewExpr;
 typedef void *CXCXXDeleteExpr;
@@ -330,7 +351,6 @@ typedef void *CXAttributedType;
 typedef void *CXTemplateTypeParmType;
 typedef void *CXSubstTemplateTypeParmType;
 typedef void *CXSubstTemplateTypeParmPackType;
-typedef void *CXTemplateSpecializationType;
 typedef void *CXDeducedType;
 typedef void *CXAutoType;
 typedef void *CXDeducedTemplateSpecializationType;
@@ -351,6 +371,9 @@ typedef void *CXExtIntType;
 typedef void *CXDependentExtIntType;
 typedef void *CXQualifierCollector;
 typedef void *CXTypeSourceInfo;
+
+// TypeLoc
+typedef void *CXTypeLoc;
 
 // TemplateBase
 typedef void *CXTemplateName;
