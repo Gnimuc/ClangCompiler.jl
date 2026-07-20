@@ -33,6 +33,7 @@ using .LibClangEx
 include(joinpath(libdir, llvm_version, "StmtNodes.jl"))
 include(joinpath(libdir, llvm_version, "DeclNodes.jl"))
 include(joinpath(libdir, llvm_version, "TypeNodes.jl"))
+include(joinpath(libdir, llvm_version, "AttrNodes.jl"))
 
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
@@ -54,9 +55,12 @@ include("clang/qualtype.jl")
 include("clang/type.jl")
 include("clang/sema.jl")
 include("clang/stmt.jl")
+include("clang/typeloc.jl")
 public getStmtClass, getChildren, children, subtree, resolve, dump_ast
 include("clang/decl.jl")
 public getKind, decls
+include("clang/attr.jl")
+public getAttrs, get_attr_kind, get_attr_spelling
 
 # public
 include("compiler/compiler.jl")

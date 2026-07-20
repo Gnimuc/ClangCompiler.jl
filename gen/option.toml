@@ -19,6 +19,9 @@ output_ignorelist = [
     "ABSTRACT_STMT",
     "STMT_RANGE",
     "LAST_STMT_RANGE",
+    # X-macro machinery of the vendored AttrList.inc (see AST/CXAttr.h)
+    "ATTR",
+    "ATTR_RANGE",
 ]
 
 [codegen]

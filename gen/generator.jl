@@ -70,3 +70,4 @@ end
 include(joinpath(@__DIR__, "stmt_nodes.jl"))
 include(joinpath(@__DIR__, "decl_nodes.jl"))
 include(joinpath(@__DIR__, "type_nodes.jl"))
+include(joinpath(@__DIR__, "attr_nodes.jl"))

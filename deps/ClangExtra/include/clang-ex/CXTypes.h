@@ -124,6 +124,20 @@ typedef void *CXAPValue;
 
 // Attr
 typedef void *CXAttr;
+typedef void *CXAlignedAttr;
+typedef void *CXAnnotateAttr;
+typedef void *CXAsmLabelAttr;
+typedef void *CXCleanupAttr;
+typedef void *CXConstructorAttr;
+typedef void *CXDeprecatedAttr;
+typedef void *CXDestructorAttr;
+typedef void *CXFormatAttr;
+typedef void *CXNonNullAttr;
+typedef void *CXSectionAttr;
+typedef void *CXTLSModelAttr;
+typedef void *CXUnavailableAttr;
+typedef void *CXVisibilityAttr;
+typedef void *CXWarnUnusedResultAttr;
 
 // Expr
 typedef void *CXExpr;

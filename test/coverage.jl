@@ -24,13 +24,15 @@ using Test
         end
     end
 
-    # wrapped-by-construction: the Stmt castTo/is families are @eval-stamped from
-    # STMT_NODES, and the Decl castTo/is families are X-macro-stamped from
-    # DeclNodes.inc (reached from Julia via resolve(::AbstractDecl)/getKind), so
-    # neither appears as literal text in src/
+    # wrapped-by-construction: the Stmt/Decl/Attr castTo/is families and the
+    # Type/TypeLoc castTo families are stamped from their vendored node tables
+    # (reached from Julia via resolve/getKind @eval loops), so none appears as
+    # literal text in src/
     stamped(n) = occursin(r"^clang_Stmt_(castTo|is)[A-Z]", n) ||
                  occursin(r"^clang_Decl_(castTo|is)[A-Z]\w*Decl$", n) ||
-                 occursin(r"^clang_Type_castTo[A-Z]\w*Type$", n)
+                 occursin(r"^clang_Type_castTo[A-Z]\w*Type$", n) ||
+                 occursin(r"^clang_Attr_(castTo|is)[A-Z]\w*Attr$", n) ||
+                 occursin(r"^clang_TypeLoc_castTo[A-Z]\w*TypeLoc$", n)
 
     skiplist_file = joinpath(@__DIR__, "api_skiplist.txt")
     skiplist = Set{String}(l for l in readlines(skiplist_file)

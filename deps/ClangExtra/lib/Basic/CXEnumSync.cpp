@@ -9,6 +9,7 @@
 #include "clang-ex/CXTypes.h"
 
 #include "clang-ex/AST/CXAPValue.h"
+#include "clang-ex/AST/CXAttr.h"
 #include "clang-ex/AST/CXExpr.h"
 #include "clang-ex/AST/CXExprCXX.h"
 #include "clang-ex/AST/CXOperationKinds.h"
@@ -22,6 +23,7 @@
 #include "clang-ex/Basic/CXTypeTraits.h"
 
 #include "clang/AST/APValue.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/OperationKinds.h"
@@ -364,4 +366,8 @@ ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_VecStep, clang::UETT_VecStep);
 ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_OpenMPRequiredSimdAlign, clang::UETT_OpenMPRequiredSimdAlign);
 ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_VectorElements, clang::UETT_VectorElements);
 
+// clang/AST/Attrs.inc: enum VisibilityAttr::VisibilityType (class-local)
+ENUM_SYNC(CXVisibilityAttr_Default, clang::VisibilityAttr::Default);
+ENUM_SYNC(CXVisibilityAttr_Hidden, clang::VisibilityAttr::Hidden);
+ENUM_SYNC(CXVisibilityAttr_Protected, clang::VisibilityAttr::Protected);
 #undef ENUM_SYNC
