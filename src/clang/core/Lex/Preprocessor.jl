@@ -1,8 +1,8 @@
 """
-    struct Preprocessor <: Any
+    struct Preprocessor <: AbstractPreprocessor
 Hold a pointer to a `clang::Preprocessor` object.
 """
-struct Preprocessor
+struct Preprocessor <: AbstractPreprocessor
     ptr::CXPreprocessor
 end
 

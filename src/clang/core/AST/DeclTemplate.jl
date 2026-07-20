@@ -1,8 +1,8 @@
 """
-    struct TemplateParameterList <: Any
+    struct TemplateParameterList <: AbstractTemplateParameterList
 Hold a pointer to a `clang::TemplateParameterList` object.
 """
-struct TemplateParameterList
+struct TemplateParameterList <: AbstractTemplateParameterList
     ptr::CXTemplateParameterList
 end
 
@@ -10,10 +10,10 @@ Base.unsafe_convert(::Type{CXTemplateParameterList}, x::TemplateParameterList) =
 Base.cconvert(::Type{CXTemplateParameterList}, x::TemplateParameterList) = x
 
 """
-    struct TemplateArgumentList <: Any
+    struct TemplateArgumentList <: AbstractTemplateArgumentList
 Hold a pointer to a `clang::TemplateArgumentList` object.
 """
-struct TemplateArgumentList
+struct TemplateArgumentList <: AbstractTemplateArgumentList
     ptr::CXTemplateArgumentList
 end
 
@@ -32,10 +32,10 @@ Base.unsafe_convert(::Type{CXTemplateDecl}, x::TemplateDecl) = x.ptr
 Base.cconvert(::Type{CXTemplateDecl}, x::TemplateDecl) = x
 
 """
-    struct FunctionTemplateSpecializationInfo <: Any
+    struct FunctionTemplateSpecializationInfo <: AbstractFunctionTemplateSpecializationInfo
 Hold a pointer to a `clang::FunctionTemplateSpecializationInfo` object.
 """
-struct FunctionTemplateSpecializationInfo
+struct FunctionTemplateSpecializationInfo <: AbstractFunctionTemplateSpecializationInfo
     ptr::CXFunctionTemplateSpecializationInfo
 end
 
@@ -43,10 +43,10 @@ Base.unsafe_convert(::Type{CXFunctionTemplateSpecializationInfo}, x::FunctionTem
 Base.cconvert(::Type{CXFunctionTemplateSpecializationInfo}, x::FunctionTemplateSpecializationInfo) = x
 
 """
-    struct MemberSpecializationInfo <: Any
+    struct MemberSpecializationInfo <: AbstractMemberSpecializationInfo
 Hold a pointer to a `clang::MemberSpecializationInfo` object.
 """
-struct MemberSpecializationInfo
+struct MemberSpecializationInfo <: AbstractMemberSpecializationInfo
     ptr::CXMemberSpecializationInfo
 end
 
@@ -54,14 +54,17 @@ Base.unsafe_convert(::Type{CXMemberSpecializationInfo}, x::MemberSpecializationI
 Base.cconvert(::Type{CXMemberSpecializationInfo}, x::MemberSpecializationInfo) = x
 
 """
-    struct DependentFunctionTemplateSpecializationInfo <: Any
+    struct DependentFunctionTemplateSpecializationInfo <: AbstractDependentFunctionTemplateSpecializationInfo
 Hold a pointer to a `clang::DependentFunctionTemplateSpecializationInfo` object.
 """
-struct DependentFunctionTemplateSpecializationInfo
+struct DependentFunctionTemplateSpecializationInfo <: AbstractDependentFunctionTemplateSpecializationInfo
     ptr::CXDependentFunctionTemplateSpecializationInfo
 end
 
-Base.unsafe_convert(::Type{CXDependentFunctionTemplateSpecializationInfo}, x::DependentFunctionTemplateSpecializationInfo) = x.ptr
+function Base.unsafe_convert(::Type{CXDependentFunctionTemplateSpecializationInfo},
+                             x::DependentFunctionTemplateSpecializationInfo)
+    x.ptr
+end
 Base.cconvert(::Type{CXDependentFunctionTemplateSpecializationInfo}, x::DependentFunctionTemplateSpecializationInfo) = x
 
 """
@@ -76,10 +79,10 @@ Base.unsafe_convert(::Type{CXRedeclarableTemplateDecl}, x::RedeclarableTemplateD
 Base.cconvert(::Type{CXRedeclarableTemplateDecl}, x::RedeclarableTemplateDecl) = x
 
 """
-    struct FunctionTemplateDecl <: AbstractRedeclarableTemplateDecl
+    struct FunctionTemplateDecl <: AbstractFunctionTemplateDecl
 Hold a pointer to a `clang::FunctionTemplateDecl` object.
 """
-struct FunctionTemplateDecl <: AbstractRedeclarableTemplateDecl
+struct FunctionTemplateDecl <: AbstractFunctionTemplateDecl
     ptr::CXFunctionTemplateDecl
 end
 
@@ -87,10 +90,10 @@ Base.unsafe_convert(::Type{CXFunctionTemplateDecl}, x::FunctionTemplateDecl) = x
 Base.cconvert(::Type{CXFunctionTemplateDecl}, x::FunctionTemplateDecl) = x
 
 """
-    struct TemplateTypeParmDecl <: AbstractTypeDecl
+    struct TemplateTypeParmDecl <: AbstractTemplateTypeParmDecl
 Hold a pointer to a `clang::TemplateTypeParmDecl` object.
 """
-struct TemplateTypeParmDecl <: AbstractTypeDecl
+struct TemplateTypeParmDecl <: AbstractTemplateTypeParmDecl
     ptr::CXTemplateTypeParmDecl
 end
 
@@ -98,10 +101,10 @@ Base.unsafe_convert(::Type{CXTemplateTypeParmDecl}, x::TemplateTypeParmDecl) = x
 Base.cconvert(::Type{CXTemplateTypeParmDecl}, x::TemplateTypeParmDecl) = x
 
 """
-    struct NonTypeTemplateParmDecl <: AbstractDeclaratorDecl
+    struct NonTypeTemplateParmDecl <: AbstractNonTypeTemplateParmDecl
 Hold a pointer to a `clang::NonTypeTemplateParmDecl` object.
 """
-struct NonTypeTemplateParmDecl <: AbstractDeclaratorDecl
+struct NonTypeTemplateParmDecl <: AbstractNonTypeTemplateParmDecl
     ptr::CXNonTypeTemplateParmDecl
 end
 
@@ -109,22 +112,21 @@ Base.unsafe_convert(::Type{CXNonTypeTemplateParmDecl}, x::NonTypeTemplateParmDec
 Base.cconvert(::Type{CXNonTypeTemplateParmDecl}, x::NonTypeTemplateParmDecl) = x
 
 """
-    struct TemplateTemplateParmDecl <: AbstractTemplateDecl
+    struct TemplateTemplateParmDecl <: AbstractTemplateTemplateParmDecl
 Hold a pointer to a `clang::TemplateTemplateParmDecl` object.
 """
-struct TemplateTemplateParmDecl <: AbstractTemplateDecl
+struct TemplateTemplateParmDecl <: AbstractTemplateTemplateParmDecl
     ptr::CXTemplateTemplateParmDecl
 end
 
 Base.unsafe_convert(::Type{CXTemplateTemplateParmDecl}, x::TemplateTemplateParmDecl) = x.ptr
 Base.cconvert(::Type{CXTemplateTemplateParmDecl}, x::TemplateTemplateParmDecl) = x
 
-
 """
-    struct BuiltinTemplateDecl <: AbstractTemplateDecl
+    struct BuiltinTemplateDecl <: AbstractBuiltinTemplateDecl
 Hold a pointer to a `clang::BuiltinTemplateDecl` object.
 """
-struct BuiltinTemplateDecl <: AbstractTemplateDecl
+struct BuiltinTemplateDecl <: AbstractBuiltinTemplateDecl
     ptr::CXBuiltinTemplateDecl
 end
 
@@ -143,10 +145,10 @@ Base.unsafe_convert(::Type{CXClassTemplateSpecializationDecl}, x::ClassTemplateS
 Base.cconvert(::Type{CXClassTemplateSpecializationDecl}, x::ClassTemplateSpecializationDecl) = x
 
 """
-    struct ClassTemplatePartialSpecializationDecl <: AbstractClassTemplateSpecializationDecl
+    struct ClassTemplatePartialSpecializationDecl <: AbstractClassTemplatePartialSpecializationDecl
 Hold a pointer to a `clang::ClassTemplatePartialSpecializationDecl` object.
 """
-struct ClassTemplatePartialSpecializationDecl <: AbstractClassTemplateSpecializationDecl
+struct ClassTemplatePartialSpecializationDecl <: AbstractClassTemplatePartialSpecializationDecl
     ptr::CXClassTemplatePartialSpecializationDecl
 end
 
@@ -165,10 +167,10 @@ Base.unsafe_convert(::Type{CXClassTemplateDecl}, x::ClassTemplateDecl) = x.ptr
 Base.cconvert(::Type{CXClassTemplateDecl}, x::ClassTemplateDecl) = x
 
 """
-    struct FriendTemplateDecl <: AbstractDecl
+    struct FriendTemplateDecl <: AbstractFriendTemplateDecl
 Hold a pointer to a `clang::FriendTemplateDecl` object.
 """
-struct FriendTemplateDecl <: AbstractDecl
+struct FriendTemplateDecl <: AbstractFriendTemplateDecl
     ptr::CXFriendTemplateDecl
 end
 
@@ -176,10 +178,10 @@ Base.unsafe_convert(::Type{CXFriendTemplateDecl}, x::FriendTemplateDecl) = x.ptr
 Base.cconvert(::Type{CXFriendTemplateDecl}, x::FriendTemplateDecl) = x
 
 """
-    struct TypeAliasTemplateDecl <: AbstractRedeclarableTemplateDecl
+    struct TypeAliasTemplateDecl <: AbstractTypeAliasTemplateDecl
 Hold a pointer to a `clang::TypeAliasTemplateDecl` object.
 """
-struct TypeAliasTemplateDecl <: AbstractRedeclarableTemplateDecl
+struct TypeAliasTemplateDecl <: AbstractTypeAliasTemplateDecl
     ptr::CXTypeAliasTemplateDecl
 end
 
@@ -187,10 +189,10 @@ Base.unsafe_convert(::Type{CXTypeAliasTemplateDecl}, x::TypeAliasTemplateDecl) =
 Base.cconvert(::Type{CXTypeAliasTemplateDecl}, x::TypeAliasTemplateDecl) = x
 
 """
-    struct ClassScopeFunctionSpecializationDecl <: AbstractDecl
+    struct ClassScopeFunctionSpecializationDecl <: AbstractClassScopeFunctionSpecializationDecl
 Hold a pointer to a `clang::ClassScopeFunctionSpecializationDecl` object.
 """
-struct ClassScopeFunctionSpecializationDecl <: AbstractDecl
+struct ClassScopeFunctionSpecializationDecl <: AbstractClassScopeFunctionSpecializationDecl
     ptr::CXClassScopeFunctionSpecializationDecl
 end
 
@@ -209,10 +211,10 @@ Base.unsafe_convert(::Type{CXVarTemplateSpecializationDecl}, x::VarTemplateSpeci
 Base.cconvert(::Type{CXVarTemplateSpecializationDecl}, x::VarTemplateSpecializationDecl) = x
 
 """
-    struct VarTemplatePartialSpecializationDecl <: AbstractVarTemplateSpecializationDecl
+    struct VarTemplatePartialSpecializationDecl <: AbstractVarTemplatePartialSpecializationDecl
 Hold a pointer to a `clang::VarTemplatePartialSpecializationDecl` object.
 """
-struct VarTemplatePartialSpecializationDecl <: AbstractVarTemplateSpecializationDecl
+struct VarTemplatePartialSpecializationDecl <: AbstractVarTemplatePartialSpecializationDecl
     ptr::CXVarTemplatePartialSpecializationDecl
 end
 
@@ -220,10 +222,10 @@ Base.unsafe_convert(::Type{CXVarTemplatePartialSpecializationDecl}, x::VarTempla
 Base.cconvert(::Type{CXVarTemplatePartialSpecializationDecl}, x::VarTemplatePartialSpecializationDecl) = x
 
 """
-    struct VarTemplateDecl <: AbstractRedeclarableTemplateDecl
+    struct VarTemplateDecl <: AbstractVarTemplateDecl
 Hold a pointer to a `clang::VarTemplateDecl` object.
 """
-struct VarTemplateDecl <: AbstractRedeclarableTemplateDecl
+struct VarTemplateDecl <: AbstractVarTemplateDecl
     ptr::CXVarTemplateDecl
 end
 
@@ -231,10 +233,10 @@ Base.unsafe_convert(::Type{CXVarTemplateDecl}, x::VarTemplateDecl) = x.ptr
 Base.cconvert(::Type{CXVarTemplateDecl}, x::VarTemplateDecl) = x
 
 """
-    struct ConceptDecl <: AbstractTemplateDecl
+    struct ConceptDecl <: AbstractConceptDecl
 Hold a pointer to a `clang::ConceptDecl` object.
 """
-struct ConceptDecl <: AbstractTemplateDecl
+struct ConceptDecl <: AbstractConceptDecl
     ptr::CXConceptDecl
 end
 
@@ -242,10 +244,10 @@ Base.unsafe_convert(::Type{CXConceptDecl}, x::ConceptDecl) = x.ptr
 Base.cconvert(::Type{CXConceptDecl}, x::ConceptDecl) = x
 
 """
-    struct TemplateParamObjectDecl <: AbstractValueDecl
+    struct TemplateParamObjectDecl <: AbstractTemplateParamObjectDecl
 Hold a pointer to a `clang::TemplateParamObjectDecl` object.
 """
-struct TemplateParamObjectDecl <: AbstractValueDecl
+struct TemplateParamObjectDecl <: AbstractTemplateParamObjectDecl
     ptr::CXTemplateParamObjectDecl
 end
 

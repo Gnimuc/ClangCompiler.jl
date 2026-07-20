@@ -74,30 +74,28 @@ clty_to_jlty(x::TemplateSpecializationType) = x
 clty_to_jlty(x::DependentNameType) = x
 clty_to_jlty(x::DependentTemplateSpecializationType) = x
 
+# CXTypeClass value -> concrete Julia carrier type, built from the vendored
+# TypeNodes.inc table (the same table the C CXTypeClass enum is stamped from), so
+# resolving a type is one ccall (getTypeClass) + one lookup instead of the
+# order-sensitive is_*_type predicate chain this replaced. Concrete classes
+# whose carrier is not wrapped fall back to UnexposedType; getTypeClass returns a
+# concrete class directly, so Tag/Function/Reference/Array resolve straight to
+# their leaf (Record/Enum, Proto/NoProto, LValue/RValue, Constant/…) — the
+# sub-resolves below stay for callers that hold an abstract carrier.
+# The classes derive from TypeNodes.inc, so the map is generated from it into
+# lib/<major>/TypeClassMap.jl (defines `TYPE_CLASS_TO_TYPE`).
+include("TypeClassMap.jl")
+
 """
     resolve(ty::AbstractType)
-Resolve type using Clang's RTTI.
+Return `ty` rewrapped as the concrete Type reported by `getTypeClass` (Clang's
+RTTI). Builtin types resolve to the `BuiltinType` carrier; a second `resolve`
+refines those to the per-kind singletons. Falls back to `UnexposedType` for
+classes without a wrapped carrier.
 """
 function resolve(ty::AbstractType)
-    # keep an eye on the order
-    is_using_type(ty) && return UsingType(ty.ptr)
-    is_elaborated_type(ty) && return ElaboratedType(ty.ptr)
-    is_typedef_type(ty) && return TypedefType(ty.ptr)
-    is_template_type_parm_type(ty) && return TemplateTypeParmType(ty.ptr)
-    is_subst_template_type_parm_type(ty) && return SubstTemplateTypeParmType(ty.ptr)
-    is_subst_template_type_parm_pack_type(ty) && return SubstTemplateTypeParmPackType(ty.ptr)
-    is_template_specialization_type(ty) && return TemplateSpecializationType(ty.ptr)
-    is_dependent_name_type(ty) && return DependentNameType(ty.ptr)
-    is_dependent_template_specilization_type(ty) && return DependentTemplateSpecializationType(ty.ptr)
-    is_builtin_type(ty) && return BuiltinType(ty.ptr)
-    is_complex_type(ty) && return ComplexType(ty.ptr)
-    is_pointer_type(ty) && return PointerType(ty.ptr)
-    is_reference_type(ty) && return ReferenceType(ty.ptr)
-    is_member_pointer_type(ty) && return MemberPointerType(ty.ptr)
-    is_array_type(ty) && return ArrayType(ty.ptr)
-    is_function_type(ty) && return FunctionType(ty.ptr)
-    is_tag_type(ty) && return TagType(ty.ptr)
-    return resolve(UnexposedType(ty))
+    T = get(TYPE_CLASS_TO_TYPE, getTypeClass(ty), nothing)
+    return T === nothing ? resolve(UnexposedType(ty)) : T(ty.ptr)
 end
 
 resolve(x::UnexposedType) = x
@@ -120,11 +118,16 @@ function resolve(ty::AbstractBuiltinType)
     is_unsigned_long_ty(ty) && return UnsignedLongTy(ty.ptr)
     is_unsigned_longlong_ty(ty) && return UnsignedLongLongTy(ty.ptr)
     is_unsigned_int128_ty(ty) && return UnsignedInt128Ty(ty.ptr)
+    is_char8_ty(ty) && return Char8Ty(ty.ptr)
+    is_char16_ty(ty) && return Char16Ty(ty.ptr)
+    is_char32_ty(ty) && return Char32Ty(ty.ptr)
     is_float_ty(ty) && return FloatTy(ty.ptr)
     is_double_ty(ty) && return DoubleTy(ty.ptr)
+    is_long_double_ty(ty) && return LongDoubleTy(ty.ptr)
     is_float16_ty(ty) && return Float16Ty(ty.ptr)
     is_half_ty(ty) && return HalfTy(ty.ptr)
     is_bfloat_ty(ty) && return BFloat16Ty(ty.ptr)
+    is_float128_ty(ty) && return Float128Ty(ty.ptr)
     is_nullptr_ty(ty) && return NullPtrTy(ty.ptr)
     return resolve(UnexposedType(ty))
 end

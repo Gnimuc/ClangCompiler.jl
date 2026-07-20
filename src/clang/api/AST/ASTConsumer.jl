@@ -3,6 +3,11 @@ function PrintStats(x::T) where {T<:AbstractASTConsumer}
     return clang_ASTConsumer_PrintStats(x)
 end
 
+function Initialize(csr::T, ctx::ASTContext) where {T<:AbstractASTConsumer}
+    @check_ptrs csr ctx
+    return clang_ASTConsumer_Initialize(csr, ctx)
+end
+
 function HandleTranslationUnit(csr::T, ctx::ASTContext) where {T<:AbstractASTConsumer}
     @check_ptrs csr ctx
     return clang_ASTConsumer_HandleTranslationUnit(csr, ctx)

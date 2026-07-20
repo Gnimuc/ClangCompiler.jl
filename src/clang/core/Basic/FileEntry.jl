@@ -1,8 +1,8 @@
 """
-    struct FileEntry <: Any
+    struct FileEntry <: AbstractFileEntry
 Hold both a pointer to a `clang::FileEntry` object.
 """
-struct FileEntry
+struct FileEntry <: AbstractFileEntry
     ptr::CXFileEntry
 end
 

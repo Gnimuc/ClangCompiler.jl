@@ -6,7 +6,7 @@ CompilerInvocation() = CompilerInvocation(create_compiler_invocation())
 Return a pointer to a `clang::CompilerInvocation` object.
 """
 function create_compiler_invocation()
-    invocation = clang_CompilerInvocation_create(x)
+    invocation = clang_CompilerInvocation_create()
     @assert invocation != C_NULL "Failed to create CompilerInvocation"
     return invocation
 end
@@ -55,3 +55,5 @@ function getTargetOpts(ci::CompilerInvocation)
     @check_ptrs ci
     return TargetOptions(clang_CompilerInvocation_getTargetOpts(ci))
 end
+
+dispose(x::CompilerInvocation) = clang_CompilerInvocation_dispose(x)

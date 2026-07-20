@@ -12,6 +12,39 @@ function CreateCpp(x::AbstractIncrementalCompilerBuilder)
     return CompilerInstance(clang_IncrementalCompilerBuilder_CreateCpp(x))
 end
 
+function SetOffloadArch(x::AbstractIncrementalCompilerBuilder, arch::AbstractString)
+    @check_ptrs x
+    return clang_IncrementalCompilerBuilder_SetOffloadArch(x, arch)
+end
+
+function SetCudaSDK(x::AbstractIncrementalCompilerBuilder, path::AbstractString)
+    @check_ptrs x
+    return clang_IncrementalCompilerBuilder_SetCudaSDK(x, path)
+end
+
+"""
+    CreateCudaHost(x::AbstractIncrementalCompilerBuilder) -> CompilerInstance
+Create a compiler instance configured for CUDA host compilation. The result holds a NULL
+pointer on failure. This function allocates and one should call `dispose` to release the
+resources after using this object (creating an `Interpreter` from it transfers ownership
+instead).
+"""
+function CreateCudaHost(x::AbstractIncrementalCompilerBuilder)
+    @check_ptrs x
+    return CompilerInstance(clang_IncrementalCompilerBuilder_CreateCudaHost(x))
+end
+
+"""
+    CreateCudaDevice(x::AbstractIncrementalCompilerBuilder) -> CompilerInstance
+Create a compiler instance configured for CUDA device compilation. The result holds a NULL
+pointer on failure. This function allocates and one should call `dispose` to release the
+resources after using this object (creating an `Interpreter` from it transfers ownership
+instead).
+"""
+function CreateCudaDevice(x::AbstractIncrementalCompilerBuilder)
+    @check_ptrs x
+    return CompilerInstance(clang_IncrementalCompilerBuilder_CreateCudaDevice(x))
+end
 function Interpreter(x::AbstractCompilerInstance)
     @check_ptrs x
     return Interpreter(clang_Interpreter_create(x))
@@ -74,4 +107,19 @@ function ParseAndExecute(x::AbstractInterpreter, code::AbstractString)
     v = create_value()
     clang_Interpreter_ParseAndExecute(x, code, v)
     return v
+end
+
+"""
+    CompileDtorCall(x::AbstractInterpreter, rd::AbstractCXXRecordDecl) -> UInt64
+Compile the destructor call for the record and return its executor address. Records whose
+destructor is irrelevant (trivial) yield 0, as do failures (logged to stderr).
+"""
+function CompileDtorCall(x::AbstractInterpreter, rd::AbstractCXXRecordDecl)
+    @check_ptrs x rd
+    return clang_Interpreter_CompileDtorCall(x, rd)
+end
+
+function LoadDynamicLibrary(x::AbstractInterpreter, name::AbstractString)
+    @check_ptrs x
+    return clang_Interpreter_LoadDynamicLibrary(x, name)
 end

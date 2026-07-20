@@ -1,4 +1,14 @@
 create_value() = Value(clang_value_create())
+"""
+    createValueFromType(interp::AbstractInterpreter, ty::QualType) -> Value
+Create a value whose kind is derived from the qualified type, which must belong to the
+interpreter's AST context. This function allocates and one should call `dispose` to release
+the resources after using this object.
+"""
+function createValueFromType(interp::AbstractInterpreter, ty::QualType)
+    @check_ptrs interp ty
+    return Value(clang_createValueFromType(interp, ty))
+end
 
 dispose(x::AbstractValue) = clang_value_dispose(x)
 
@@ -22,6 +32,10 @@ function setKind(x::AbstractValue, kind::CXValueKind)
     clang_value_setKind(x, kind)
 end
 
+function setOpaqueType(x::AbstractValue, ty::QualType)
+    @check_ptrs x ty
+    return clang_value_setOpaqueType(x, ty)
+end
 function getPtr(x::AbstractValue)
     @check_ptrs x
     return clang_value_getPtr(x)

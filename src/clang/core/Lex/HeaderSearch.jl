@@ -1,8 +1,8 @@
 """
-    struct HeaderSearch <: Any
+    struct HeaderSearch <: AbstractHeaderSearch
 Hold a pointer to a `clang::HeaderSearch` object.
 """
-struct HeaderSearch
+struct HeaderSearch <: AbstractHeaderSearch
     ptr::CXHeaderSearch
 end
 

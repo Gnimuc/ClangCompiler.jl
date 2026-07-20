@@ -70,6 +70,10 @@ function setIntegralType(x::TemplateArgument, ty::QualType)
     return clang_TemplateArgument_setIntegralType(x, ty)
 end
 
+function getNonTypeTemplateArgumentType(x::TemplateArgument)
+    @check_ptrs x
+    return QualType(clang_TemplateArgument_getNonTypeTemplateArgumentType(x))
+end
 function dump(x::TemplateArgument)
     @check_ptrs x
     return clang_TemplateArgument_dump(x)

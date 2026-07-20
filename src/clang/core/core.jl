@@ -9,12 +9,17 @@ struct UnexposedType{T<:AbstractClangType} <: AbstractClangType
     ty::T
 end
 
+# the whole abstract-type skeleton (backbone + the subsystem/generated abstract
+# files it aggregates); front-loaded before every struct file that subtypes it
 include("abstract.jl")
 
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
 # AST
+include("AST/APValue.jl")
+include("AST/Attr.jl")
 include("AST/ASTConsumer.jl")
 include("AST/ASTContext.jl")
+include("AST/Mangle.jl")
 include("AST/Decl.jl")
 include("AST/DeclarationName.jl")
 include("AST/DeclBase.jl")
@@ -29,6 +34,10 @@ include("AST/StmtCXX.jl")
 include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")
 include("AST/Type.jl")
+include("AST/TypeLoc.jl")
+# after the hand-written AST files: fills in every Stmt-hierarchy class they
+# don't define, generated from StmtNodes.inc
+include("AST/StmtHierarchy.jl")
 
 # Basic
 include("Basic/CodeGenOptions.jl")
@@ -62,6 +71,7 @@ include("Interpreter/Value.jl")
 # Lex
 include("Lex/HeaderSearch.jl")
 include("Lex/HeaderSearchOptions.jl")
+include("Lex/Lexer.jl")
 include("Lex/Preprocessor.jl")
 include("Lex/PreprocessorOptions.jl")
 include("Lex/Token.jl")

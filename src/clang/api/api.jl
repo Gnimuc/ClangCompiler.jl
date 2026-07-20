@@ -1,7 +1,10 @@
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
 # AST
+include("AST/APValue.jl")
+include("AST/Attr.jl")
 include("AST/ASTConsumer.jl")
 include("AST/ASTContext.jl")
+include("AST/Mangle.jl")
 include("AST/Decl.jl")
 include("AST/DeclarationName.jl")
 include("AST/DeclBase.jl")
@@ -12,6 +15,12 @@ include("AST/NestedNameSpecifier.jl")
 include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")
 include("AST/Type.jl")
+include("AST/TypeLoc.jl")
+include("AST/Expr.jl")
+include("AST/ExprCXX.jl")
+include("AST/Stmt.jl")
+include("AST/StmtOpenMP.jl")
+include("AST/StmtCXX.jl")
 
 # Basic
 include("Basic/CodeGenOptions.jl")
@@ -22,6 +31,7 @@ include("Basic/FileEntry.jl")
 include("Basic/FileManager.jl")
 include("Basic/IdentifierTable.jl")
 include("Basic/LangOptions.jl")
+include("Basic/OperatorKinds.jl")
 include("Basic/SourceLocation.jl")
 include("Basic/SourceManager.jl")
 include("Basic/TargetInfo.jl")
@@ -32,6 +42,8 @@ include("CodeGen/CodeGenABITypes.jl")
 include("CodeGen/CodeGenAction.jl")
 include("CodeGen/ModuleBuilder.jl")
 
+# Driver
+include("Driver/Driver.jl")
 # Frontend
 include("Frontend/CompilerInstance.jl")
 include("Frontend/CompilerInvocation.jl")
@@ -45,6 +57,7 @@ include("Interpreter/Value.jl")
 # Lex
 include("Lex/HeaderSearch.jl")
 include("Lex/HeaderSearchOptions.jl")
+include("Lex/Lexer.jl")
 include("Lex/Preprocessor.jl")
 include("Lex/PreprocessorOptions.jl")
 include("Lex/Token.jl")

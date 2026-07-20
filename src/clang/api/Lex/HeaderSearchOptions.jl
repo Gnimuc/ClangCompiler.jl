@@ -13,6 +13,15 @@ function GetResourceDir(x::HeaderSearchOptions, dir::String)
     return nothing
 end
 
+"""
+    SetResourceDir(x::HeaderSearchOptions, dir::AbstractString)
+Set the directory which holds the compiler resource files.
+"""
+function SetResourceDir(x::HeaderSearchOptions, dir::AbstractString)
+    @check_ptrs x
+    clang_HeaderSearchOptions_SetResourceDir(x, dir, ncodeunits(dir))
+    return nothing
+end
 function PrintStats(x::HeaderSearchOptions)
     @check_ptrs x
     return clang_HeaderSearchOptions_PrintStats(x)

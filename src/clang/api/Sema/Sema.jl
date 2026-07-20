@@ -4,6 +4,10 @@ function PrintStats(x::Sema)
     return clang_Sema_PrintStats(x)
 end
 
+function setCollectStats(x::Sema, should_collect::Bool=true)
+    @check_ptrs x
+    return clang_Sema_setCollectStats(x, should_collect)
+end
 function RestoreNestedNameSpecifierAnnotation(x::Sema, v::AnnotationValue, rng::SourceRange,
                                               spec::CXXScopeSpec)
     @check_ptrs x

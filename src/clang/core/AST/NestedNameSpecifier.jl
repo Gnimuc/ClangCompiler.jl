@@ -1,8 +1,8 @@
 """
-    struct NestedNameSpecifier <: Any
+    struct NestedNameSpecifier <: AbstractNestedNameSpecifier
 Hold a `clang::NestedNameSpecifier` opaque pointer.
 """
-struct NestedNameSpecifier
+struct NestedNameSpecifier <: AbstractNestedNameSpecifier
     ptr::CXNestedNameSpecifier
 end
 

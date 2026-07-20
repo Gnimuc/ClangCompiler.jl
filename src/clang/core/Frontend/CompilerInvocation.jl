@@ -1,8 +1,8 @@
 """
-    struct CompilerInvocation <: Any
+    struct CompilerInvocation <: AbstractCompilerInvocation
 Hold a pointer to a `clang::CompilerInvocation` object.
 """
-struct CompilerInvocation
+struct CompilerInvocation <: AbstractCompilerInvocation
     ptr::CXCompilerInvocation
 end
 

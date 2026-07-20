@@ -5,7 +5,7 @@ Represent a template name.
 Note that, the underlying pointer is NOT a *pointer* to a `clang::TemplateName` object.
 Instead, it's the opaque pointer representation of the `clang::TemplateName` itself.
 """
-struct TemplateName
+struct TemplateName <: AbstractTemplateName
     ptr::CXTemplateName
 end
 

@@ -19,6 +19,33 @@ function getDeclKindName(x::AbstractDecl)
     return unsafe_string(clang_Decl_getDeclKindName(x))
 end
 
+function getKind(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_getKind(x)
+end
+
+function hasAttrs(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_hasAttrs(x)
+end
+
+function getNumAttrs(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_getNumAttrs(x)
+end
+
+# The borrowed `Attr` at position `i` (0-based); classify it with `getKind`.
+function getAttr(x::AbstractDecl, i::Integer)
+    @check_ptrs x
+    return Attr(clang_Decl_getAttr(x, i))
+end
+
+# All attributes on `x`, each a borrowed `Attr`.
+function getAttrs(x::AbstractDecl)
+    @check_ptrs x
+    return Attr[getAttr(x, i) for i in 0:(getNumAttrs(x) - 1)]
+end
+
 function getNextDeclInContext(x::AbstractDecl)
     @check_ptrs x
     return Decl(clang_Decl_getNextDeclInContext(x))

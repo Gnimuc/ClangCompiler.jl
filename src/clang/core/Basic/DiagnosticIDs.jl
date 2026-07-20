@@ -1,8 +1,8 @@
 """
-    struct DiagnosticIDs <: Any
+    struct DiagnosticIDs <: AbstractDiagnosticIDs
 Hold a pointer to a `clang::DiagnosticIDs` object.
 """
-struct DiagnosticIDs
+struct DiagnosticIDs <: AbstractDiagnosticIDs
     ptr::CXDiagnosticIDs
 end
 

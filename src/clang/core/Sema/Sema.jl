@@ -1,8 +1,8 @@
 """
-    struct Sema <: Any
+    struct Sema <: AbstractSema
 Hold a pointer to a `clang::Sema` object.
 """
-struct Sema
+struct Sema <: AbstractSema
     ptr::CXSema
 end
 

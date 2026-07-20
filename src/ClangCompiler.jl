@@ -28,6 +28,11 @@ include(joinpath(libdir, "LibClang.jl"))
 include(joinpath(libdir, llvm_version, "LibClangEx.jl"))
 using .LibClangEx
 
+# The Attr/Stmt/Decl/Type hierarchies are emitted as explicit source (carriers,
+# wrappers, and downcast maps) from the vendored *.inc files by gen/*_nodes.jl
+# into lib/<major>/, and included where each subsystem is defined — there is no
+# runtime node-table mirror.
+
 include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
@@ -47,6 +52,13 @@ include("clang/parse.jl")
 include("clang/qualtype.jl")
 include("clang/type.jl")
 include("clang/sema.jl")
+include("clang/stmt.jl")
+include("clang/typeloc.jl")
+public getStmtClass, getChildren, children, subtree, resolve, dump_ast
+include("clang/decl.jl")
+public getKind, decls
+include("clang/attr.jl")
+public getAttrs, get_attr_kind, get_attr_spelling
 
 # public
 include("compiler/compiler.jl")

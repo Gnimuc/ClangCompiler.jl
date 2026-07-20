@@ -1,8 +1,8 @@
 """
-    struct CXXOperatorCallExpr <: AbstractCallExpr
+    struct CXXOperatorCallExpr <: AbstractCXXOperatorCallExpr
 Hold a pointer to a `clang::CXXOperatorCallExpr` object.
 """
-struct CXXOperatorCallExpr <: AbstractCallExpr
+struct CXXOperatorCallExpr <: AbstractCXXOperatorCallExpr
     ptr::CXCXXOperatorCallExpr
 end
 
@@ -10,10 +10,10 @@ Base.unsafe_convert(::Type{CXCXXOperatorCallExpr}, x::CXXOperatorCallExpr) = x.p
 Base.cconvert(::Type{CXCXXOperatorCallExpr}, x::CXXOperatorCallExpr) = x
 
 """
-    struct CXXMemberCallExpr <: AbstractCallExpr
+    struct CXXMemberCallExpr <: AbstractCXXMemberCallExpr
 Hold a pointer to a `clang::CXXMemberCallExpr` object.
 """
-struct CXXMemberCallExpr <: AbstractCallExpr
+struct CXXMemberCallExpr <: AbstractCXXMemberCallExpr
     ptr::CXCXXMemberCallExpr
 end
 
@@ -21,10 +21,10 @@ Base.unsafe_convert(::Type{CXCXXMemberCallExpr}, x::CXXMemberCallExpr) = x.ptr
 Base.cconvert(::Type{CXCXXMemberCallExpr}, x::CXXMemberCallExpr) = x
 
 """
-    struct CUDAKernelCallExpr <: AbstractCallExpr
+    struct CUDAKernelCallExpr <: AbstractCUDAKernelCallExpr
 Hold a pointer to a `clang::CUDAKernelCallExpr` object.
 """
-struct CUDAKernelCallExpr <: AbstractCallExpr
+struct CUDAKernelCallExpr <: AbstractCUDAKernelCallExpr
     ptr::CXCUDAKernelCallExpr
 end
 
@@ -32,10 +32,10 @@ Base.unsafe_convert(::Type{CXCUDAKernelCallExpr}, x::CUDAKernelCallExpr) = x.ptr
 Base.cconvert(::Type{CXCUDAKernelCallExpr}, x::CUDAKernelCallExpr) = x
 
 """
-    struct CXXRewrittenBinaryOperator <: AbstractExpr
+    struct CXXRewrittenBinaryOperator <: AbstractCXXRewrittenBinaryOperator
 Hold a pointer to a `clang::CXXRewrittenBinaryOperator` object.
 """
-struct CXXRewrittenBinaryOperator <: AbstractExpr
+struct CXXRewrittenBinaryOperator <: AbstractCXXRewrittenBinaryOperator
     ptr::CXCXXRewrittenBinaryOperator
 end
 
@@ -54,10 +54,10 @@ Base.unsafe_convert(::Type{CXCXXNamedCastExpr}, x::CXXNamedCastExpr) = x.ptr
 Base.cconvert(::Type{CXCXXNamedCastExpr}, x::CXXNamedCastExpr) = x
 
 """
-    struct CXXStaticCastExpr <: AbstractCXXNamedCastExpr
+    struct CXXStaticCastExpr <: AbstractCXXStaticCastExpr
 Hold a pointer to a `clang::CXXStaticCastExpr` object.
 """
-struct CXXStaticCastExpr <: AbstractCXXNamedCastExpr
+struct CXXStaticCastExpr <: AbstractCXXStaticCastExpr
     ptr::CXCXXStaticCastExpr
 end
 
@@ -65,10 +65,10 @@ Base.unsafe_convert(::Type{CXCXXStaticCastExpr}, x::CXXStaticCastExpr) = x.ptr
 Base.cconvert(::Type{CXCXXStaticCastExpr}, x::CXXStaticCastExpr) = x
 
 """
-    struct CXXDynamicCastExpr <: AbstractCXXNamedCastExpr
+    struct CXXDynamicCastExpr <: AbstractCXXDynamicCastExpr
 Hold a pointer to a `clang::CXXDynamicCastExpr` object.
 """
-struct CXXDynamicCastExpr <: AbstractCXXNamedCastExpr
+struct CXXDynamicCastExpr <: AbstractCXXDynamicCastExpr
     ptr::CXCXXDynamicCastExpr
 end
 
@@ -76,10 +76,10 @@ Base.unsafe_convert(::Type{CXCXXDynamicCastExpr}, x::CXXDynamicCastExpr) = x.ptr
 Base.cconvert(::Type{CXCXXDynamicCastExpr}, x::CXXDynamicCastExpr) = x
 
 """
-    struct CXXReinterpretCastExpr <: AbstractCXXNamedCastExpr
+    struct CXXReinterpretCastExpr <: AbstractCXXReinterpretCastExpr
 Hold a pointer to a `clang::CXXReinterpretCastExpr` object.
 """
-struct CXXReinterpretCastExpr <: AbstractCXXNamedCastExpr
+struct CXXReinterpretCastExpr <: AbstractCXXReinterpretCastExpr
     ptr::CXCXXReinterpretCastExpr
 end
 
@@ -87,10 +87,10 @@ Base.unsafe_convert(::Type{CXCXXReinterpretCastExpr}, x::CXXReinterpretCastExpr)
 Base.cconvert(::Type{CXCXXReinterpretCastExpr}, x::CXXReinterpretCastExpr) = x
 
 """
-    struct CXXConstCastExpr <: AbstractCXXNamedCastExpr
+    struct CXXConstCastExpr <: AbstractCXXConstCastExpr
 Hold a pointer to a `clang::CXXConstCastExpr` object.
 """
-struct CXXConstCastExpr <: AbstractCXXNamedCastExpr
+struct CXXConstCastExpr <: AbstractCXXConstCastExpr
     ptr::CXCXXConstCastExpr
 end
 
@@ -98,10 +98,10 @@ Base.unsafe_convert(::Type{CXCXXConstCastExpr}, x::CXXConstCastExpr) = x.ptr
 Base.cconvert(::Type{CXCXXConstCastExpr}, x::CXXConstCastExpr) = x
 
 """
-    struct CXXAddrspaceCastExpr <: AbstractCXXNamedCastExpr
+    struct CXXAddrspaceCastExpr <: AbstractCXXAddrspaceCastExpr
 Hold a pointer to a `clang::CXXAddrspaceCastExpr` object.
 """
-struct CXXAddrspaceCastExpr <: AbstractCXXNamedCastExpr
+struct CXXAddrspaceCastExpr <: AbstractCXXAddrspaceCastExpr
     ptr::CXCXXAddrspaceCastExpr
 end
 
@@ -109,10 +109,10 @@ Base.unsafe_convert(::Type{CXCXXAddrspaceCastExpr}, x::CXXAddrspaceCastExpr) = x
 Base.cconvert(::Type{CXCXXAddrspaceCastExpr}, x::CXXAddrspaceCastExpr) = x
 
 """
-    struct UserDefinedLiteral <: AbstractCallExpr
+    struct UserDefinedLiteral <: AbstractUserDefinedLiteral
 Hold a pointer to a `clang::UserDefinedLiteral` object.
 """
-struct UserDefinedLiteral <: AbstractCallExpr
+struct UserDefinedLiteral <: AbstractUserDefinedLiteral
     ptr::CXUserDefinedLiteral
 end
 
@@ -120,10 +120,10 @@ Base.unsafe_convert(::Type{CXUserDefinedLiteral}, x::UserDefinedLiteral) = x.ptr
 Base.cconvert(::Type{CXUserDefinedLiteral}, x::UserDefinedLiteral) = x
 
 """
-    struct CXXBoolLiteralExpr <: AbstractExpr
+    struct CXXBoolLiteralExpr <: AbstractCXXBoolLiteralExpr
 Hold a pointer to a `clang::CXXBoolLiteralExpr` object.
 """
-struct CXXBoolLiteralExpr <: AbstractExpr
+struct CXXBoolLiteralExpr <: AbstractCXXBoolLiteralExpr
     ptr::CXCXXBoolLiteralExpr
 end
 
@@ -131,10 +131,10 @@ Base.unsafe_convert(::Type{CXCXXBoolLiteralExpr}, x::CXXBoolLiteralExpr) = x.ptr
 Base.cconvert(::Type{CXCXXBoolLiteralExpr}, x::CXXBoolLiteralExpr) = x
 
 """
-    struct CXXNullPtrLiteralExpr <: AbstractExpr
+    struct CXXNullPtrLiteralExpr <: AbstractCXXNullPtrLiteralExpr
 Hold a pointer to a `clang::CXXNullPtrLiteralExpr` object.
 """
-struct CXXNullPtrLiteralExpr <: AbstractExpr
+struct CXXNullPtrLiteralExpr <: AbstractCXXNullPtrLiteralExpr
     ptr::CXCXXNullPtrLiteralExpr
 end
 
@@ -142,10 +142,10 @@ Base.unsafe_convert(::Type{CXCXXNullPtrLiteralExpr}, x::CXXNullPtrLiteralExpr) =
 Base.cconvert(::Type{CXCXXNullPtrLiteralExpr}, x::CXXNullPtrLiteralExpr) = x
 
 """
-    struct CXXStdInitializerListExpr <: AbstractExpr
+    struct CXXStdInitializerListExpr <: AbstractCXXStdInitializerListExpr
 Hold a pointer to a `clang::CXXStdInitializerListExpr` object.
 """
-struct CXXStdInitializerListExpr <: AbstractExpr
+struct CXXStdInitializerListExpr <: AbstractCXXStdInitializerListExpr
     ptr::CXCXXStdInitializerListExpr
 end
 
@@ -153,10 +153,10 @@ Base.unsafe_convert(::Type{CXCXXStdInitializerListExpr}, x::CXXStdInitializerLis
 Base.cconvert(::Type{CXCXXStdInitializerListExpr}, x::CXXStdInitializerListExpr) = x
 
 """
-    struct CXXTypeidExpr <: AbstractExpr
+    struct CXXTypeidExpr <: AbstractCXXTypeidExpr
 Hold a pointer to a `clang::CXXTypeidExpr` object.
 """
-struct CXXTypeidExpr <: AbstractExpr
+struct CXXTypeidExpr <: AbstractCXXTypeidExpr
     ptr::CXCXXTypeidExpr
 end
 
@@ -164,10 +164,10 @@ Base.unsafe_convert(::Type{CXCXXTypeidExpr}, x::CXXTypeidExpr) = x.ptr
 Base.cconvert(::Type{CXCXXTypeidExpr}, x::CXXTypeidExpr) = x
 
 """
-    struct MSPropertyRefExpr <: AbstractExpr
+    struct MSPropertyRefExpr <: AbstractMSPropertyRefExpr
 Hold a pointer to a `clang::MSPropertyRefExpr` object.
 """
-struct MSPropertyRefExpr <: AbstractExpr
+struct MSPropertyRefExpr <: AbstractMSPropertyRefExpr
     ptr::CXMSPropertyRefExpr
 end
 
@@ -175,10 +175,10 @@ Base.unsafe_convert(::Type{CXMSPropertyRefExpr}, x::MSPropertyRefExpr) = x.ptr
 Base.cconvert(::Type{CXMSPropertyRefExpr}, x::MSPropertyRefExpr) = x
 
 """
-    struct MSPropertySubscriptExpr <: AbstractExpr
+    struct MSPropertySubscriptExpr <: AbstractMSPropertySubscriptExpr
 Hold a pointer to a `clang::MSPropertySubscriptExpr` object.
 """
-struct MSPropertySubscriptExpr <: AbstractExpr
+struct MSPropertySubscriptExpr <: AbstractMSPropertySubscriptExpr
     ptr::CXMSPropertySubscriptExpr
 end
 
@@ -186,10 +186,10 @@ Base.unsafe_convert(::Type{CXMSPropertySubscriptExpr}, x::MSPropertySubscriptExp
 Base.cconvert(::Type{CXMSPropertySubscriptExpr}, x::MSPropertySubscriptExpr) = x
 
 """
-    struct CXXUuidofExpr <: AbstractExpr
+    struct CXXUuidofExpr <: AbstractCXXUuidofExpr
 Hold a pointer to a `clang::CXXUuidofExpr` object.
 """
-struct CXXUuidofExpr <: AbstractExpr
+struct CXXUuidofExpr <: AbstractCXXUuidofExpr
     ptr::CXCXXUuidofExpr
 end
 
@@ -197,10 +197,10 @@ Base.unsafe_convert(::Type{CXCXXUuidofExpr}, x::CXXUuidofExpr) = x.ptr
 Base.cconvert(::Type{CXCXXUuidofExpr}, x::CXXUuidofExpr) = x
 
 """
-    struct CXXThisExpr <: AbstractExpr
+    struct CXXThisExpr <: AbstractCXXThisExpr
 Hold a pointer to a `clang::CXXThisExpr` object.
 """
-struct CXXThisExpr <: AbstractExpr
+struct CXXThisExpr <: AbstractCXXThisExpr
     ptr::CXCXXThisExpr
 end
 
@@ -208,10 +208,10 @@ Base.unsafe_convert(::Type{CXCXXThisExpr}, x::CXXThisExpr) = x.ptr
 Base.cconvert(::Type{CXCXXThisExpr}, x::CXXThisExpr) = x
 
 """
-    struct CXXThrowExpr <: AbstractExpr
+    struct CXXThrowExpr <: AbstractCXXThrowExpr
 Hold a pointer to a `clang::CXXThrowExpr` object.
 """
-struct CXXThrowExpr <: AbstractExpr
+struct CXXThrowExpr <: AbstractCXXThrowExpr
     ptr::CXCXXThrowExpr
 end
 
@@ -219,10 +219,10 @@ Base.unsafe_convert(::Type{CXCXXThrowExpr}, x::CXXThrowExpr) = x.ptr
 Base.cconvert(::Type{CXCXXThrowExpr}, x::CXXThrowExpr) = x
 
 """
-    struct CXXDefaultArgExpr <: AbstractExpr
+    struct CXXDefaultArgExpr <: AbstractCXXDefaultArgExpr
 Hold a pointer to a `clang::CXXDefaultArgExpr` object.
 """
-struct CXXDefaultArgExpr <: AbstractExpr
+struct CXXDefaultArgExpr <: AbstractCXXDefaultArgExpr
     ptr::CXCXXDefaultArgExpr
 end
 
@@ -230,10 +230,10 @@ Base.unsafe_convert(::Type{CXCXXDefaultArgExpr}, x::CXXDefaultArgExpr) = x.ptr
 Base.cconvert(::Type{CXCXXDefaultArgExpr}, x::CXXDefaultArgExpr) = x
 
 """
-    struct CXXDefaultInitExpr <: AbstractExpr
+    struct CXXDefaultInitExpr <: AbstractCXXDefaultInitExpr
 Hold a pointer to a `clang::CXXDefaultInitExpr` object.
 """
-struct CXXDefaultInitExpr <: AbstractExpr
+struct CXXDefaultInitExpr <: AbstractCXXDefaultInitExpr
     ptr::CXCXXDefaultInitExpr
 end
 
@@ -241,10 +241,10 @@ Base.unsafe_convert(::Type{CXCXXDefaultInitExpr}, x::CXXDefaultInitExpr) = x.ptr
 Base.cconvert(::Type{CXCXXDefaultInitExpr}, x::CXXDefaultInitExpr) = x
 
 """
-    struct CXXBindTemporaryExpr <: AbstractExpr
+    struct CXXBindTemporaryExpr <: AbstractCXXBindTemporaryExpr
 Hold a pointer to a `clang::CXXBindTemporaryExpr` object.
 """
-struct CXXBindTemporaryExpr <: AbstractExpr
+struct CXXBindTemporaryExpr <: AbstractCXXBindTemporaryExpr
     ptr::CXCXXBindTemporaryExpr
 end
 
@@ -263,10 +263,10 @@ Base.unsafe_convert(::Type{CXCXXConstructExpr}, x::CXXConstructExpr) = x.ptr
 Base.cconvert(::Type{CXCXXConstructExpr}, x::CXXConstructExpr) = x
 
 """
-    struct CXXInheritedCtorInitExpr <: AbstractExpr
+    struct CXXInheritedCtorInitExpr <: AbstractCXXInheritedCtorInitExpr
 Hold a pointer to a `clang::CXXInheritedCtorInitExpr` object.
 """
-struct CXXInheritedCtorInitExpr <: AbstractExpr
+struct CXXInheritedCtorInitExpr <: AbstractCXXInheritedCtorInitExpr
     ptr::CXCXXInheritedCtorInitExpr
 end
 
@@ -274,10 +274,10 @@ Base.unsafe_convert(::Type{CXCXXInheritedCtorInitExpr}, x::CXXInheritedCtorInitE
 Base.cconvert(::Type{CXCXXInheritedCtorInitExpr}, x::CXXInheritedCtorInitExpr) = x
 
 """
-    struct CXXFunctionalCastExpr <: AbstractExplicitCastExpr
+    struct CXXFunctionalCastExpr <: AbstractCXXFunctionalCastExpr
 Hold a pointer to a `clang::CXXFunctionalCastExpr` object.
 """
-struct CXXFunctionalCastExpr <: AbstractExplicitCastExpr
+struct CXXFunctionalCastExpr <: AbstractCXXFunctionalCastExpr
     ptr::CXCXXFunctionalCastExpr
 end
 
@@ -285,10 +285,10 @@ Base.unsafe_convert(::Type{CXCXXFunctionalCastExpr}, x::CXXFunctionalCastExpr) =
 Base.cconvert(::Type{CXCXXFunctionalCastExpr}, x::CXXFunctionalCastExpr) = x
 
 """
-    struct CXXTemporaryObjectExpr <: AbstractCXXConstructExpr
+    struct CXXTemporaryObjectExpr <: AbstractCXXTemporaryObjectExpr
 Hold a pointer to a `clang::CXXTemporaryObjectExpr` object.
 """
-struct CXXTemporaryObjectExpr <: AbstractCXXConstructExpr
+struct CXXTemporaryObjectExpr <: AbstractCXXTemporaryObjectExpr
     ptr::CXCXXTemporaryObjectExpr
 end
 
@@ -296,10 +296,10 @@ Base.unsafe_convert(::Type{CXCXXTemporaryObjectExpr}, x::CXXTemporaryObjectExpr)
 Base.cconvert(::Type{CXCXXTemporaryObjectExpr}, x::CXXTemporaryObjectExpr) = x
 
 """
-    struct LambdaExpr <: AbstractExpr
+    struct LambdaExpr <: AbstractLambdaExpr
 Hold a pointer to a `clang::LambdaExpr` object.
 """
-struct LambdaExpr <: AbstractExpr
+struct LambdaExpr <: AbstractLambdaExpr
     ptr::CXLambdaExpr
 end
 
@@ -307,10 +307,10 @@ Base.unsafe_convert(::Type{CXLambdaExpr}, x::LambdaExpr) = x.ptr
 Base.cconvert(::Type{CXLambdaExpr}, x::LambdaExpr) = x
 
 """
-    struct CXXScalarValueInitExpr <: AbstractExpr
+    struct CXXScalarValueInitExpr <: AbstractCXXScalarValueInitExpr
 Hold a pointer to a `clang::CXXScalarValueInitExpr` object.
 """
-struct CXXScalarValueInitExpr <: AbstractExpr
+struct CXXScalarValueInitExpr <: AbstractCXXScalarValueInitExpr
     ptr::CXCXXScalarValueInitExpr
 end
 
@@ -318,10 +318,10 @@ Base.unsafe_convert(::Type{CXCXXScalarValueInitExpr}, x::CXXScalarValueInitExpr)
 Base.cconvert(::Type{CXCXXScalarValueInitExpr}, x::CXXScalarValueInitExpr) = x
 
 """
-    struct CXXNewExpr <: AbstractExpr
+    struct CXXNewExpr <: AbstractCXXNewExpr
 Hold a pointer to a `clang::CXXNewExpr` object.
 """
-struct CXXNewExpr <: AbstractExpr
+struct CXXNewExpr <: AbstractCXXNewExpr
     ptr::CXCXXNewExpr
 end
 
@@ -329,10 +329,10 @@ Base.unsafe_convert(::Type{CXCXXNewExpr}, x::CXXNewExpr) = x.ptr
 Base.cconvert(::Type{CXCXXNewExpr}, x::CXXNewExpr) = x
 
 """
-    struct CXXDeleteExpr <: AbstractExpr
+    struct CXXDeleteExpr <: AbstractCXXDeleteExpr
 Hold a pointer to a `clang::CXXDeleteExpr` object.
 """
-struct CXXDeleteExpr <: AbstractExpr
+struct CXXDeleteExpr <: AbstractCXXDeleteExpr
     ptr::CXCXXDeleteExpr
 end
 
@@ -340,10 +340,10 @@ Base.unsafe_convert(::Type{CXCXXDeleteExpr}, x::CXXDeleteExpr) = x.ptr
 Base.cconvert(::Type{CXCXXDeleteExpr}, x::CXXDeleteExpr) = x
 
 """
-    struct CXXPseudoDestructorExpr <: AbstractExpr
+    struct CXXPseudoDestructorExpr <: AbstractCXXPseudoDestructorExpr
 Hold a pointer to a `clang::CXXPseudoDestructorExpr` object.
 """
-struct CXXPseudoDestructorExpr <: AbstractExpr
+struct CXXPseudoDestructorExpr <: AbstractCXXPseudoDestructorExpr
     ptr::CXCXXPseudoDestructorExpr
 end
 
@@ -351,10 +351,10 @@ Base.unsafe_convert(::Type{CXCXXPseudoDestructorExpr}, x::CXXPseudoDestructorExp
 Base.cconvert(::Type{CXCXXPseudoDestructorExpr}, x::CXXPseudoDestructorExpr) = x
 
 """
-    struct TypeTraitExpr <: AbstractExpr
+    struct TypeTraitExpr <: AbstractTypeTraitExpr
 Hold a pointer to a `clang::TypeTraitExpr` object.
 """
-struct TypeTraitExpr <: AbstractExpr
+struct TypeTraitExpr <: AbstractTypeTraitExpr
     ptr::CXTypeTraitExpr
 end
 
@@ -362,10 +362,10 @@ Base.unsafe_convert(::Type{CXTypeTraitExpr}, x::TypeTraitExpr) = x.ptr
 Base.cconvert(::Type{CXTypeTraitExpr}, x::TypeTraitExpr) = x
 
 """
-    struct ArrayTypeTraitExpr <: AbstractExpr
+    struct ArrayTypeTraitExpr <: AbstractArrayTypeTraitExpr
 Hold a pointer to a `clang::ArrayTypeTraitExpr` object.
 """
-struct ArrayTypeTraitExpr <: AbstractExpr
+struct ArrayTypeTraitExpr <: AbstractArrayTypeTraitExpr
     ptr::CXArrayTypeTraitExpr
 end
 
@@ -373,10 +373,10 @@ Base.unsafe_convert(::Type{CXArrayTypeTraitExpr}, x::ArrayTypeTraitExpr) = x.ptr
 Base.cconvert(::Type{CXArrayTypeTraitExpr}, x::ArrayTypeTraitExpr) = x
 
 """
-    struct ExpressionTraitExpr <: AbstractExpr
+    struct ExpressionTraitExpr <: AbstractExpressionTraitExpr
 Hold a pointer to a `clang::ExpressionTraitExpr` object.
 """
-struct ExpressionTraitExpr <: AbstractExpr
+struct ExpressionTraitExpr <: AbstractExpressionTraitExpr
     ptr::CXExpressionTraitExpr
 end
 
@@ -395,10 +395,10 @@ Base.unsafe_convert(::Type{CXOverloadExpr}, x::OverloadExpr) = x.ptr
 Base.cconvert(::Type{CXOverloadExpr}, x::OverloadExpr) = x
 
 """
-    struct UnresolvedLookupExpr <: AbstractOverloadExpr
+    struct UnresolvedLookupExpr <: AbstractUnresolvedLookupExpr
 Hold a pointer to a `clang::UnresolvedLookupExpr` object.
 """
-struct UnresolvedLookupExpr <: AbstractOverloadExpr
+struct UnresolvedLookupExpr <: AbstractUnresolvedLookupExpr
     ptr::CXUnresolvedLookupExpr
 end
 
@@ -406,10 +406,10 @@ Base.unsafe_convert(::Type{CXUnresolvedLookupExpr}, x::UnresolvedLookupExpr) = x
 Base.cconvert(::Type{CXUnresolvedLookupExpr}, x::UnresolvedLookupExpr) = x
 
 """
-    struct DependentScopeDeclRefExpr <: AbstractExpr
+    struct DependentScopeDeclRefExpr <: AbstractDependentScopeDeclRefExpr
 Hold a pointer to a `clang::DependentScopeDeclRefExpr` object.
 """
-struct DependentScopeDeclRefExpr <: AbstractExpr
+struct DependentScopeDeclRefExpr <: AbstractDependentScopeDeclRefExpr
     ptr::CXDependentScopeDeclRefExpr
 end
 
@@ -417,10 +417,10 @@ Base.unsafe_convert(::Type{CXDependentScopeDeclRefExpr}, x::DependentScopeDeclRe
 Base.cconvert(::Type{CXDependentScopeDeclRefExpr}, x::DependentScopeDeclRefExpr) = x
 
 """
-    struct CXXUnresolvedConstructExpr <: AbstractExpr
+    struct CXXUnresolvedConstructExpr <: AbstractCXXUnresolvedConstructExpr
 Hold a pointer to a `clang::CXXUnresolvedConstructExpr` object.
 """
-struct CXXUnresolvedConstructExpr <: AbstractExpr
+struct CXXUnresolvedConstructExpr <: AbstractCXXUnresolvedConstructExpr
     ptr::CXCXXUnresolvedConstructExpr
 end
 
@@ -428,10 +428,10 @@ Base.unsafe_convert(::Type{CXCXXUnresolvedConstructExpr}, x::CXXUnresolvedConstr
 Base.cconvert(::Type{CXCXXUnresolvedConstructExpr}, x::CXXUnresolvedConstructExpr) = x
 
 """
-    struct CXXDependentScopeMemberExpr <: AbstractExpr
+    struct CXXDependentScopeMemberExpr <: AbstractCXXDependentScopeMemberExpr
 Hold a pointer to a `clang::CXXDependentScopeMemberExpr` object.
 """
-struct CXXDependentScopeMemberExpr <: AbstractExpr
+struct CXXDependentScopeMemberExpr <: AbstractCXXDependentScopeMemberExpr
     ptr::CXCXXDependentScopeMemberExpr
 end
 
@@ -439,10 +439,10 @@ Base.unsafe_convert(::Type{CXCXXDependentScopeMemberExpr}, x::CXXDependentScopeM
 Base.cconvert(::Type{CXCXXDependentScopeMemberExpr}, x::CXXDependentScopeMemberExpr) = x
 
 """
-    struct UnresolvedMemberExpr <: AbstractOverloadExpr
+    struct UnresolvedMemberExpr <: AbstractUnresolvedMemberExpr
 Hold a pointer to a `clang::UnresolvedMemberExpr` object.
 """
-struct UnresolvedMemberExpr <: AbstractOverloadExpr
+struct UnresolvedMemberExpr <: AbstractUnresolvedMemberExpr
     ptr::CXUnresolvedMemberExpr
 end
 
@@ -450,10 +450,10 @@ Base.unsafe_convert(::Type{CXUnresolvedMemberExpr}, x::UnresolvedMemberExpr) = x
 Base.cconvert(::Type{CXUnresolvedMemberExpr}, x::UnresolvedMemberExpr) = x
 
 """
-    struct CXXNoexceptExpr <: AbstractExpr
+    struct CXXNoexceptExpr <: AbstractCXXNoexceptExpr
 Hold a pointer to a `clang::CXXNoexceptExpr` object.
 """
-struct CXXNoexceptExpr <: AbstractExpr
+struct CXXNoexceptExpr <: AbstractCXXNoexceptExpr
     ptr::CXCXXNoexceptExpr
 end
 
@@ -461,10 +461,10 @@ Base.unsafe_convert(::Type{CXCXXNoexceptExpr}, x::CXXNoexceptExpr) = x.ptr
 Base.cconvert(::Type{CXCXXNoexceptExpr}, x::CXXNoexceptExpr) = x
 
 """
-    struct PackExpansionExpr <: AbstractExpr
+    struct PackExpansionExpr <: AbstractPackExpansionExpr
 Hold a pointer to a `clang::PackExpansionExpr` object.
 """
-struct PackExpansionExpr <: AbstractExpr
+struct PackExpansionExpr <: AbstractPackExpansionExpr
     ptr::CXPackExpansionExpr
 end
 
@@ -472,10 +472,10 @@ Base.unsafe_convert(::Type{CXPackExpansionExpr}, x::PackExpansionExpr) = x.ptr
 Base.cconvert(::Type{CXPackExpansionExpr}, x::PackExpansionExpr) = x
 
 """
-    struct SizeOfPackExpr <: AbstractExpr
+    struct SizeOfPackExpr <: AbstractSizeOfPackExpr
 Hold a pointer to a `clang::SizeOfPackExpr` object.
 """
-struct SizeOfPackExpr <: AbstractExpr
+struct SizeOfPackExpr <: AbstractSizeOfPackExpr
     ptr::CXSizeOfPackExpr
 end
 
@@ -483,10 +483,10 @@ Base.unsafe_convert(::Type{CXSizeOfPackExpr}, x::SizeOfPackExpr) = x.ptr
 Base.cconvert(::Type{CXSizeOfPackExpr}, x::SizeOfPackExpr) = x
 
 """
-    struct SubstNonTypeTemplateParmExpr <: AbstractExpr
+    struct SubstNonTypeTemplateParmExpr <: AbstractSubstNonTypeTemplateParmExpr
 Hold a pointer to a `clang::SubstNonTypeTemplateParmExpr` object.
 """
-struct SubstNonTypeTemplateParmExpr <: AbstractExpr
+struct SubstNonTypeTemplateParmExpr <: AbstractSubstNonTypeTemplateParmExpr
     ptr::CXSubstNonTypeTemplateParmExpr
 end
 
@@ -494,10 +494,10 @@ Base.unsafe_convert(::Type{CXSubstNonTypeTemplateParmExpr}, x::SubstNonTypeTempl
 Base.cconvert(::Type{CXSubstNonTypeTemplateParmExpr}, x::SubstNonTypeTemplateParmExpr) = x
 
 """
-    struct SubstNonTypeTemplateParmPackExpr <: AbstractExpr
+    struct SubstNonTypeTemplateParmPackExpr <: AbstractSubstNonTypeTemplateParmPackExpr
 Hold a pointer to a `clang::SubstNonTypeTemplateParmPackExpr` object.
 """
-struct SubstNonTypeTemplateParmPackExpr <: AbstractExpr
+struct SubstNonTypeTemplateParmPackExpr <: AbstractSubstNonTypeTemplateParmPackExpr
     ptr::CXSubstNonTypeTemplateParmPackExpr
 end
 
@@ -505,10 +505,10 @@ Base.unsafe_convert(::Type{CXSubstNonTypeTemplateParmPackExpr}, x::SubstNonTypeT
 Base.cconvert(::Type{CXSubstNonTypeTemplateParmPackExpr}, x::SubstNonTypeTemplateParmPackExpr) = x
 
 """
-    struct FunctionParmPackExpr <: AbstractExpr
+    struct FunctionParmPackExpr <: AbstractFunctionParmPackExpr
 Hold a pointer to a `clang::FunctionParmPackExpr` object.
 """
-struct FunctionParmPackExpr <: AbstractExpr
+struct FunctionParmPackExpr <: AbstractFunctionParmPackExpr
     ptr::CXFunctionParmPackExpr
 end
 
@@ -516,10 +516,10 @@ Base.unsafe_convert(::Type{CXFunctionParmPackExpr}, x::FunctionParmPackExpr) = x
 Base.cconvert(::Type{CXFunctionParmPackExpr}, x::FunctionParmPackExpr) = x
 
 """
-    struct MaterializeTemporaryExpr <: AbstractExpr
+    struct MaterializeTemporaryExpr <: AbstractMaterializeTemporaryExpr
 Hold a pointer to a `clang::MaterializeTemporaryExpr` object.
 """
-struct MaterializeTemporaryExpr <: AbstractExpr
+struct MaterializeTemporaryExpr <: AbstractMaterializeTemporaryExpr
     ptr::CXMaterializeTemporaryExpr
 end
 
@@ -527,10 +527,10 @@ Base.unsafe_convert(::Type{CXMaterializeTemporaryExpr}, x::MaterializeTemporaryE
 Base.cconvert(::Type{CXMaterializeTemporaryExpr}, x::MaterializeTemporaryExpr) = x
 
 """
-    struct CXXFoldExpr <: AbstractExpr
+    struct CXXFoldExpr <: AbstractCXXFoldExpr
 Hold a pointer to a `clang::CXXFoldExpr` object.
 """
-struct CXXFoldExpr <: AbstractExpr
+struct CXXFoldExpr <: AbstractCXXFoldExpr
     ptr::CXCXXFoldExpr
 end
 
@@ -549,10 +549,10 @@ Base.unsafe_convert(::Type{CXCoroutineSuspendExpr}, x::CoroutineSuspendExpr) = x
 Base.cconvert(::Type{CXCoroutineSuspendExpr}, x::CoroutineSuspendExpr) = x
 
 """
-    struct CoawaitExpr <: AbstractCoroutineSuspendExpr
+    struct CoawaitExpr <: AbstractCoawaitExpr
 Hold a pointer to a `clang::CoawaitExpr` object.
 """
-struct CoawaitExpr <: AbstractCoroutineSuspendExpr
+struct CoawaitExpr <: AbstractCoawaitExpr
     ptr::CXCoawaitExpr
 end
 
@@ -560,10 +560,10 @@ Base.unsafe_convert(::Type{CXCoawaitExpr}, x::CoawaitExpr) = x.ptr
 Base.cconvert(::Type{CXCoawaitExpr}, x::CoawaitExpr) = x
 
 """
-    struct DependentCoawaitExpr <: AbstractExpr
+    struct DependentCoawaitExpr <: AbstractDependentCoawaitExpr
 Hold a pointer to a `clang::DependentCoawaitExpr` object.
 """
-struct DependentCoawaitExpr <: AbstractExpr
+struct DependentCoawaitExpr <: AbstractDependentCoawaitExpr
     ptr::CXDependentCoawaitExpr
 end
 
@@ -571,10 +571,10 @@ Base.unsafe_convert(::Type{CXDependentCoawaitExpr}, x::DependentCoawaitExpr) = x
 Base.cconvert(::Type{CXDependentCoawaitExpr}, x::DependentCoawaitExpr) = x
 
 """
-    struct CoyieldExpr <: AbstractCoroutineSuspendExpr
+    struct CoyieldExpr <: AbstractCoyieldExpr
 Hold a pointer to a `clang::CoyieldExpr` object.
 """
-struct CoyieldExpr <: AbstractCoroutineSuspendExpr
+struct CoyieldExpr <: AbstractCoyieldExpr
     ptr::CXCoyieldExpr
 end
 
@@ -582,12 +582,23 @@ Base.unsafe_convert(::Type{CXCoyieldExpr}, x::CoyieldExpr) = x.ptr
 Base.cconvert(::Type{CXCoyieldExpr}, x::CoyieldExpr) = x
 
 """
-    struct BuiltinBitCastExpr <: AbstractExplicitCastExpr
+    struct BuiltinBitCastExpr <: AbstractBuiltinBitCastExpr
 Hold a pointer to a `clang::BuiltinBitCastExpr` object.
 """
-struct BuiltinBitCastExpr <: AbstractExplicitCastExpr
+struct BuiltinBitCastExpr <: AbstractBuiltinBitCastExpr
     ptr::CXBuiltinBitCastExpr
 end
 
 Base.unsafe_convert(::Type{CXBuiltinBitCastExpr}, x::BuiltinBitCastExpr) = x.ptr
 Base.cconvert(::Type{CXBuiltinBitCastExpr}, x::BuiltinBitCastExpr) = x
+
+"""
+    struct LambdaCapture <: AbstractLambdaCapture
+Hold a pointer to a `clang::LambdaCapture` object.
+"""
+struct LambdaCapture <: AbstractLambdaCapture
+    ptr::CXLambdaCapture
+end
+
+Base.unsafe_convert(::Type{CXLambdaCapture}, x::LambdaCapture) = x.ptr
+Base.cconvert(::Type{CXLambdaCapture}, x::LambdaCapture) = x

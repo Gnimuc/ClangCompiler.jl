@@ -1,8 +1,8 @@
 """
-    struct Parser <: Any
+    struct Parser <: AbstractParser
 Hold a pointer to a `clang::Parser` object.
 """
-struct Parser
+struct Parser <: AbstractParser
     ptr::CXParser
 end
 

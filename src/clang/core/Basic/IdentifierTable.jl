@@ -1,8 +1,8 @@
 """
-    struct IdentifierTable <: Any
+    struct IdentifierTable <: AbstractIdentifierTable
 Hold a pointer to a `clang::IdentifierTable` object.
 """
-struct IdentifierTable
+struct IdentifierTable <: AbstractIdentifierTable
     ptr::CXIdentifierTable
 end
 
@@ -10,10 +10,10 @@ Base.unsafe_convert(::Type{CXIdentifierTable}, x::IdentifierTable) = x.ptr
 Base.cconvert(::Type{CXIdentifierTable}, x::IdentifierTable) = x
 
 """
-    struct IdentifierInfo <: Any
+    struct IdentifierInfo <: AbstractIdentifierInfo
 Hold a pointer to a `clang::IdentifierInfo` object.
 """
-struct IdentifierInfo
+struct IdentifierInfo <: AbstractIdentifierInfo
     ptr::CXIdentifierInfo
 end
 

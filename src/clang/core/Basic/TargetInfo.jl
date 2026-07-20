@@ -1,8 +1,8 @@
 """
-    struct TargetInfo <: Any
+    struct TargetInfo <: AbstractTargetInfo
 Hold a pointer to a `clang::TargetInfo` object.
 """
-struct TargetInfo
+struct TargetInfo <: AbstractTargetInfo
     ptr::CXTargetInfo_
 end
 

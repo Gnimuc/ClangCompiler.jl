@@ -1,8 +1,8 @@
 """
-    struct TargetOptions <: Any
+    struct TargetOptions <: AbstractTargetOptions
 Hold a pointer to a `clang::TargetOptions` object.
 """
-struct TargetOptions
+struct TargetOptions <: AbstractTargetOptions
     ptr::CXTargetOptions
 end
 

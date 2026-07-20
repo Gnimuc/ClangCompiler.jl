@@ -1,8 +1,8 @@
 """
-    struct CXXScopeSpec <: Any
+    struct CXXScopeSpec <: AbstractCXXScopeSpec
 Hold a pointer to a `clang::CXXScopeSpec` object.
 """
-struct CXXScopeSpec
+struct CXXScopeSpec <: AbstractCXXScopeSpec
     ptr::CXCXXScopeSpec
 end
 

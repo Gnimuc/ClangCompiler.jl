@@ -1,8 +1,8 @@
 """
-    struct Scope <: Any
+    struct Scope <: AbstractScope
 Hold a pointer to a `clang::Scope` object.
 """
-struct Scope
+struct Scope <: AbstractScope
     ptr::CXScope
 end
 

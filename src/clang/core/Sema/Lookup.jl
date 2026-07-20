@@ -1,8 +1,8 @@
 """
-    struct LookupResult <: Any
+    struct LookupResult <: AbstractLookupResult
 Hold a pointer to a `clang::LookupResult` object.
 """
-struct LookupResult
+struct LookupResult <: AbstractLookupResult
     ptr::CXLookupResult
 end
 

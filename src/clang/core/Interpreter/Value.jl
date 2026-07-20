@@ -1,10 +1,4 @@
 """
-    abstract type AbstractValue <: Any
-Supertype for `clang::Value`s.
-"""
-abstract type AbstractValue end
-
-"""
     struct Value <: AbstractValue
 A Clang value.
 """

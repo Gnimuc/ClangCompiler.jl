@@ -288,10 +288,10 @@ Supertype for `UsingShadowDecl`s.
 abstract type AbstractUsingShadowDecl <: AbstractNamedDecl end
 
 """
-    abstract type AbstractConstructorUsingShadowDecl <: AbstractNamedDecl
+    abstract type AbstractConstructorUsingShadowDecl <: AbstractUsingShadowDecl
 Supertype for `ConstructorUsingShadowDecl`s.
 """
-abstract type AbstractConstructorUsingShadowDecl <: AbstractNamedDecl end
+abstract type AbstractConstructorUsingShadowDecl <: AbstractUsingShadowDecl end
 
 """
     abstract type AbstractBaseUsingDecl <: AbstractNamedDecl
@@ -669,6 +669,78 @@ Supertype for `DependentTemplateSpecializationType`s.
 """
 abstract type AbstractDependentTemplateSpecializationType <: AbstractTypeWithKeyword end
 
+"""
+    abstract type AbstractAtomicType <: AbstractType
+Supertype for `AtomicType`s.
+"""
+abstract type AbstractAtomicType <: AbstractType end
+
+"""
+    abstract type AbstractAdjustedType <: AbstractType
+Supertype for `AdjustedType`s.
+"""
+abstract type AbstractAdjustedType <: AbstractType end
+
+"""
+    abstract type AbstractDecayedType <: AbstractAdjustedType
+Supertype for `DecayedType`s.
+"""
+abstract type AbstractDecayedType <: AbstractAdjustedType end
+
+"""
+    abstract type AbstractInjectedClassNameType <: AbstractType
+Supertype for `InjectedClassNameType`s.
+"""
+abstract type AbstractInjectedClassNameType <: AbstractType end
+
+"""
+    abstract type AbstractMacroQualifiedType <: AbstractType
+Supertype for `MacroQualifiedType`s.
+"""
+abstract type AbstractMacroQualifiedType <: AbstractType end
+
+"""
+    abstract type AbstractUnaryTransformType <: AbstractType
+Supertype for `UnaryTransformType`s.
+"""
+abstract type AbstractUnaryTransformType <: AbstractType end
+
+"""
+    abstract type AbstractParenType <: AbstractType
+Supertype for `ParenType`s.
+"""
+abstract type AbstractParenType <: AbstractType end
+
+"""
+    abstract type AbstractDependentAddressSpaceType <: AbstractType
+Supertype for `DependentAddressSpaceType`s.
+"""
+abstract type AbstractDependentAddressSpaceType <: AbstractType end
+
+"""
+    abstract type AbstractDependentSizedExtVectorType <: AbstractType
+Supertype for `DependentSizedExtVectorType`s.
+"""
+abstract type AbstractDependentSizedExtVectorType <: AbstractType end
+
+"""
+    abstract type AbstractDecltypeType <: AbstractType
+Supertype for `DecltypeType`s.
+"""
+abstract type AbstractDecltypeType <: AbstractType end
+
+"""
+    abstract type AbstractDeducedType <: AbstractType
+Supertype for `DeducedType`s.
+"""
+abstract type AbstractDeducedType <: AbstractType end
+
+"""
+    abstract type AbstractDeducedTemplateSpecializationType <: AbstractDeducedType
+Supertype for `DeducedTemplateSpecializationType`s.
+"""
+abstract type AbstractDeducedTemplateSpecializationType <: AbstractDeducedType end
+
 # Frontend
 # CompilerInstance
 """
@@ -683,3 +755,20 @@ abstract type AbstractCompilerInstance end
 Supertype for `FrontendAction`s.
 """
 abstract type AbstractFrontendAction end
+
+# Subsystem abstract types, aggregated here so the whole abstract skeleton is
+# front-loaded before any struct file — Julia has no forward declaration, so
+# every abstract must precede its concrete carriers and any wrapper that
+# dispatches on it. The backbone above defines the roots these depend on;
+# includes are ordered parent-before-child (e.g. the generated Stmt tail
+# subtypes AbstractStmt, AbstractCodeGenAction subtypes AbstractFrontendAction).
+include("AST/StmtAbstract.jl")   # generated Stmt OpenMP/ObjC tail
+include("AST/AbstractAttr.jl")       # the 8 category bases
+include("AST/AttrAbstracts.jl")      # generated per-attribute Abstract<Name>Attr
+include("AST/AbstractTypeLoc.jl")
+include("Basic/AbstractBasic.jl")
+include("CodeGen/AbstractCodeGen.jl")
+include("Interpreter/AbstractInterpreter.jl")
+# per-carrier leaf abstracts (every hand-written Foo gets an AbstractFoo); last,
+# since these subtype the backbone/subsystem abstracts above.
+include("AbstractExtras.jl")

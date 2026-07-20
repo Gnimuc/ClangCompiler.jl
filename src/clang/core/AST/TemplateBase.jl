@@ -1,8 +1,8 @@
 """
-    struct TemplateArgument <: Any
+    struct TemplateArgument <: AbstractTemplateArgument
 Hold a pointer to a `clang::TemplateArgument` object.
 """
-struct TemplateArgument
+struct TemplateArgument <: AbstractTemplateArgument
     ptr::CXTemplateArgument
 end
 
@@ -10,10 +10,10 @@ Base.unsafe_convert(::Type{CXTemplateArgument}, x::TemplateArgument) = x.ptr
 Base.cconvert(::Type{CXTemplateArgument}, x::TemplateArgument) = x
 
 """
-    struct TemplateArgumentLocInfo <: Any
+    struct TemplateArgumentLocInfo <: AbstractTemplateArgumentLocInfo
 Hold a pointer to a `clang::TemplateArgumentLocInfo` object.
 """
-struct TemplateArgumentLocInfo
+struct TemplateArgumentLocInfo <: AbstractTemplateArgumentLocInfo
     ptr::CXTemplateArgumentLocInfo
 end
 
@@ -21,10 +21,10 @@ Base.unsafe_convert(::Type{CXTemplateArgumentLocInfo}, x::TemplateArgumentLocInf
 Base.cconvert(::Type{CXTemplateArgumentLocInfo}, x::TemplateArgumentLocInfo) = x
 
 """
-    struct TemplateArgumentLoc <: Any
+    struct TemplateArgumentLoc <: AbstractTemplateArgumentLoc
 Hold a pointer to a `clang::TemplateArgumentLoc` object.
 """
-struct TemplateArgumentLoc
+struct TemplateArgumentLoc <: AbstractTemplateArgumentLoc
     ptr::CXTemplateArgumentLoc
 end
 
@@ -32,10 +32,10 @@ Base.unsafe_convert(::Type{CXTemplateArgumentLoc}, x::TemplateArgumentLoc) = x.p
 Base.cconvert(::Type{CXTemplateArgumentLoc}, x::TemplateArgumentLoc) = x
 
 """
-    struct TemplateArgumentListInfo <: Any
+    struct TemplateArgumentListInfo <: AbstractTemplateArgumentListInfo
 Hold a pointer to a `clang::TemplateArgumentListInfo` object.
 """
-struct TemplateArgumentListInfo
+struct TemplateArgumentListInfo <: AbstractTemplateArgumentListInfo
     ptr::CXTemplateArgumentListInfo
 end
 
@@ -43,10 +43,10 @@ Base.unsafe_convert(::Type{CXTemplateArgumentListInfo}, x::TemplateArgumentListI
 Base.cconvert(::Type{CXTemplateArgumentListInfo}, x::TemplateArgumentListInfo) = x
 
 """
-    struct ASTTemplateArgumentListInfo <: Any
+    struct ASTTemplateArgumentListInfo <: AbstractASTTemplateArgumentListInfo
 Hold a pointer to a `clang::ASTTemplateArgumentListInfo` object.
 """
-struct ASTTemplateArgumentListInfo
+struct ASTTemplateArgumentListInfo <: AbstractASTTemplateArgumentListInfo
     ptr::CXASTTemplateArgumentListInfo
 end
 

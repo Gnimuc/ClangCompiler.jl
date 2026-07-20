@@ -1,8 +1,8 @@
 """
-    struct Token <: Any
+    struct Token <: AbstractToken
 Hold a pointer to a `clang::Token` object.
 """
-struct Token
+struct Token <: AbstractToken
     ptr::CXToken_
 end
 
@@ -10,10 +10,10 @@ Base.unsafe_convert(::Type{CXToken_}, x::Token) = x.ptr
 Base.cconvert(::Type{CXToken_}, x::Token) = x
 
 """
-    struct AnnotationValue <: Any
+    struct AnnotationValue <: AbstractAnnotationValue
 Hold a pointer to an "AnnotationValue".
 """
-struct AnnotationValue
+struct AnnotationValue <: AbstractAnnotationValue
     ptr::CXAnnotationValue
 end
 

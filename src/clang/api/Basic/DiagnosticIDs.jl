@@ -10,3 +10,5 @@ function create_diagnostic_ids()
     @assert ids != C_NULL "Failed to create DiagnosticIDs"
     return ids
 end
+
+dispose(x::DiagnosticIDs) = clang_DiagnosticIDs_dispose(x)

@@ -1,8 +1,8 @@
 """
-    struct SourceManager <: Any
+    struct SourceManager <: AbstractSourceManager
 Hold a pointer to a `clang::SourceManager` object.
 """
-struct SourceManager
+struct SourceManager <: AbstractSourceManager
     ptr::CXSourceManager
 end
 
