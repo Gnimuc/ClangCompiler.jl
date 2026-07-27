@@ -167,3 +167,338 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "isDerivedFrom" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    struct IdfB1 { int a; };
+    struct IdfB2 : IdfB1 { int b; };
+    struct IdfD : IdfB2 { int c; };
+    struct IdfV : virtual IdfB1 { int d; };
+    """)
+    f = DeclFinder(I)
+    @test f(I, "IdfB1")
+    b1 = CC.CXXRecordDecl(CC.get_tag(f).ptr)
+    @test f(I, "IdfB2")
+    b2 = CC.CXXRecordDecl(CC.get_tag(f).ptr)
+    @test f(I, "IdfD")
+    d = CC.CXXRecordDecl(CC.get_tag(f).ptr)
+    @test f(I, "IdfV")
+    v = CC.CXXRecordDecl(CC.get_tag(f).ptr)
+
+    @test CC.isDerivedFrom(d, b2)
+    @test CC.isDerivedFrom(d, b1)      # transitive
+    @test !CC.isDerivedFrom(b1, d)     # not the reverse
+    @test !CC.isDerivedFrom(b1, b1)    # a class is not derived from itself
+    @test CC.is_derived_from(d, b1)
+
+    @test CC.isVirtuallyDerivedFrom(v, b1)
+    @test !CC.isVirtuallyDerivedFrom(d, b1)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Coverage | DeclCXX" begin
+    src = """
+    extern "C" { int c_linked_var; }
+
+    namespace NS2 {}
+    using namespace NS2;
+
+    struct VBase { int vb; virtual void vf() {} };
+    struct Lft : virtual VBase {};
+    struct Rgt : virtual VBase {};
+    struct Diamond : Lft, Rgt {};
+
+    struct Mixin { int mm; void mfn() {} };
+
+    struct Plain { int p; double q; };
+
+    struct Base {
+    public:
+        int b;
+        Base() : b(0) {}
+        Base(const Base& o) : b(o.b) {}
+        Base(Base&& o) : b(o.b) {}
+        explicit Base(int x) : b(x) {}
+        virtual ~Base() {}
+        virtual void foo() = 0;
+        virtual int bar() const { return b; }
+        void nonvirt() {}
+        operator int() const { return b; }
+    protected:
+        int prot;
+    private:
+        int priv;
+    };
+
+    struct Derived : public Base, public Mixin {
+        int d;
+        Derived() : Derived(0) {}
+        explicit Derived(int x) : Base(x), Mixin(), d(x) {}
+        Derived(const Derived&) = default;
+        ~Derived() override {}
+        void foo() override {}
+        using Base::bar;
+    };
+
+    template<typename T> struct Wrapper { T val; Wrapper(T x) : val(x) {} };
+    template<typename T> Wrapper(T) -> Wrapper<T>;
+    Wrapper wobj{5};
+
+    auto glam = [](auto x){ return x; };
+    """
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I, src)
+
+    ctx = CC.get_ast_context(I)
+    tu = CC.getTranslationUnitDecl(ctx)
+    alldecls = CC.decls(CC.castToDeclContext(tu))
+
+    f = DeclFinder(I)
+    @test f(I, "Base")
+    baseRD = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test f(I, "Derived")
+    derivedRD = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test f(I, "Diamond")
+    diamondRD = CC.CXXRecordDecl(get_decl(f).ptr)
+
+    # ---- CXXRecordDecl: decl-chain accessors ----
+    @test CC.getCanonicalDecl(baseRD) isa CC.CXXRecordDecl
+    @test CC.getPreviousDecl(baseRD) isa CC.CXXRecordDecl
+    @test CC.getMostRecentDecl(baseRD) isa CC.CXXRecordDecl
+    @test CC.getMostRecentNonInjectedDecl(baseRD) isa CC.CXXRecordDecl
+    @test CC.getDefinition(baseRD) isa CC.CXXRecordDecl
+
+    # ---- CXXRecordDecl: Bool-returning trait predicates (~90) ----
+    boolpreds = [CC.hasDefinition, CC.isLambda, CC.isGenericLambda, CC.isAggregate,
+        CC.isPOD, CC.isCLike, CC.isEmpty, CC.isDynamicClass, CC.allowConstDefaultInit,
+        CC.hasAnyDependentBases,
+        CC.hasConstexprDefaultConstructor, CC.hasConstexprDestructor,
+        CC.hasConstexprNonCopyMoveConstructor, CC.hasCopyAssignmentWithConstParam,
+        CC.hasCopyConstructorWithConstParam, CC.hasDefaultConstructor, CC.hasDirectFields,
+        CC.hasFriends, CC.hasInClassInitializer, CC.hasInheritedAssignment,
+        CC.hasInheritedConstructor, CC.hasInitMethod, CC.hasIrrelevantDestructor,
+        CC.hasMoveAssignment, CC.hasMoveConstructor,
+        CC.hasMutableFields, CC.hasNonLiteralTypeFieldsOrBases, CC.hasNonTrivialCopyAssignment,
+        CC.hasNonTrivialCopyConstructor, CC.hasNonTrivialCopyConstructorForCall,
+        CC.hasNonTrivialDefaultConstructor, CC.hasNonTrivialDestructor,
+        CC.hasNonTrivialDestructorForCall, CC.hasNonTrivialMoveAssignment,
+        CC.hasNonTrivialMoveConstructor, CC.hasNonTrivialMoveConstructorForCall,
+        CC.hasPrivateFields, CC.hasProtectedFields, CC.hasSimpleCopyAssignment,
+        CC.hasSimpleCopyConstructor, CC.hasSimpleDestructor, CC.hasSimpleMoveAssignment,
+        CC.hasSimpleMoveConstructor, CC.hasTrivialCopyAssignment, CC.hasTrivialCopyConstructor,
+        CC.hasTrivialCopyConstructorForCall, CC.hasTrivialDefaultConstructor,
+        CC.hasTrivialDestructor, CC.hasTrivialDestructorForCall, CC.hasTrivialMoveAssignment,
+        CC.hasTrivialMoveConstructor, CC.hasTrivialMoveConstructorForCall,
+        CC.hasUninitializedReferenceMember, CC.hasUserDeclaredConstructor,
+        CC.hasUserDeclaredCopyAssignment, CC.hasUserDeclaredCopyConstructor,
+        CC.hasUserDeclaredDestructor, CC.hasUserDeclaredMoveAssignment,
+        CC.hasUserDeclaredMoveConstructor, CC.hasUserDeclaredMoveOperation,
+        CC.hasUserProvidedDefaultConstructor, CC.hasVariantMembers, CC.isAbstract,
+        CC.isAnyDestructorNoReturn, CC.isCXX11StandardLayout, CC.isCapturelessLambda,
+        CC.isDependentLambda, CC.isEffectivelyFinal, CC.isInterfaceLike, CC.isLiteral,
+        CC.isNeverDependentLambda, CC.isParsingBaseSpecifiers, CC.isPolymorphic,
+        CC.isStandardLayout, CC.isStructural, CC.isTrivial, CC.isTriviallyCopyConstructible,
+        CC.isTriviallyCopyable, CC.mayBeAbstract, CC.mayBeDynamicClass, CC.mayBeNonDynamicClass,
+        CC.needsImplicitCopyAssignment, CC.needsImplicitCopyConstructor,
+        CC.needsImplicitDefaultConstructor, CC.needsImplicitDestructor,
+        CC.needsImplicitMoveAssignment, CC.needsImplicitMoveConstructor,
+        CC.needsOverloadResolutionForCopyAssignment,
+        CC.needsOverloadResolutionForCopyConstructor,
+        CC.needsOverloadResolutionForDestructor,
+        CC.needsOverloadResolutionForMoveAssignment,
+        CC.needsOverloadResolutionForMoveConstructor]
+    for p in boolpreds
+        @test p(baseRD) isa Bool
+        @test p(derivedRD) isa Bool
+    end
+    # a few meaningful values
+    @test CC.isPolymorphic(baseRD)
+    @test CC.isAbstract(baseRD)
+    @test CC.isDynamicClass(baseRD)
+    @test CC.hasUserDeclaredConstructor(baseRD)
+    @test CC.hasUserDeclaredDestructor(baseRD)
+
+    # defaulted-special-member predicates: only well-defined on a class whose
+    # special members do not need overload resolution (Clang asserts otherwise),
+    # so exercise them on a trivial struct.
+    @test f(I, "Plain")
+    plainRD = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.defaultedCopyConstructorIsDeleted(plainRD) isa Bool
+    @test CC.defaultedDefaultConstructorIsConstexpr(plainRD) isa Bool
+    @test CC.defaultedDestructorIsConstexpr(plainRD) isa Bool
+    @test CC.defaultedDestructorIsDeleted(plainRD) isa Bool
+    @test CC.defaultedMoveConstructorIsDeleted(plainRD) isa Bool
+
+    # generic-lambda template parameter list (nullptr-safe on a non-lambda)
+    @test CC.getGenericLambdaTemplateParameterList(baseRD) isa CC.TemplateParameterList
+    glamClass = nothing
+    for d in alldecls
+        if d isa CC.CXXRecordDecl && CC.isGenericLambda(d)
+            glamClass = d
+            break
+        end
+    end
+    if glamClass !== nothing
+        @test CC.getGenericLambdaTemplateParameterList(glamClass) isa CC.TemplateParameterList
+        @test CC.hasKnownLambdaInternalLinkage(glamClass) isa Bool
+    end
+
+    # ---- CXXRecordDecl: bases / methods / ctors counts + collections ----
+    @test CC.getNumBases(derivedRD) isa Integer
+    @test CC.getNumVBases(diamondRD) isa Integer
+    @test CC.getNumMethods(baseRD) isa Integer
+    @test CC.getNumCtors(baseRD) isa Integer
+
+    bases = CC.getBases(derivedRD)
+    @test all(x -> x isa CC.CXXBaseSpecifier, bases)
+    @test CC.getBase(derivedRD, 0) isa CC.CXXBaseSpecifier
+
+    vbases = CC.getVBases(diamondRD)
+    @test all(x -> x isa CC.CXXBaseSpecifier, vbases)
+    if CC.getNumVBases(diamondRD) > 0
+        @test CC.getVBase(diamondRD, 0) isa CC.CXXBaseSpecifier
+    end
+
+    methods = CC.getMethods(baseRD)
+    @test all(m -> m isa CC.CXXMethodDecl, methods)
+    ctors = CC.getCtors(baseRD)
+    @test all(c -> c isa CC.CXXConstructorDecl, ctors)
+
+    # ---- CXXBaseSpecifier accessors ----
+    b0 = bases[1]
+    @test CC.getAccessSpecifier(b0) isa Integer || CC.getAccessSpecifier(b0) isa Enum
+    @test CC.getAccessSpecifierAsWritten(b0) isa Integer || CC.getAccessSpecifierAsWritten(b0) isa Enum
+    @test CC.getBaseTypeLoc(b0) isa CC.SourceLocation
+    @test CC.getEllipsisLoc(b0) isa CC.SourceLocation
+    @test CC.getEndLoc(b0) isa CC.SourceLocation
+    @test CC.getInheritConstructors(b0) isa Bool
+    @test CC.getSourceRange(b0) isa CC.SourceRange
+    @test CC.getType(b0) isa CC.QualType
+    @test CC.getTypeSourceInfo(b0) isa CC.TypeSourceInfo
+    @test CC.isBaseOfClass(b0) isa Bool
+    @test CC.isPackExpansion(b0) isa Bool
+    @test CC.isVirtual(b0) isa Bool
+    # a virtual base specifier
+    if !isempty(vbases)
+        @test CC.isVirtual(vbases[1])
+    end
+
+    # ---- CXXMethodDecl accessors on every method ----
+    for m in methods
+        @test CC.getCanonicalDecl(m) isa CC.CXXMethodDecl
+        @test CC.getMostRecentDecl(m) isa CC.CXXMethodDecl
+        @test CC.getParent(m) isa CC.CXXRecordDecl
+        @test CC.hasInlineBody(m) isa Bool
+        @test CC.isConst(m) isa Bool
+        @test CC.isCopyAssignmentOperator(m) isa Bool
+        @test CC.isInstance(m) isa Bool
+        @test CC.isLambdaStaticInvoker(m) isa Bool
+        @test CC.isMoveAssignmentOperator(m) isa Bool
+        @test CC.isStatic(m) isa Bool
+        @test CC.isVirtual(m) isa Bool
+        @test CC.isVolatile(m) isa Bool
+        if CC.isInstance(m)
+            @test CC.getThisType(m) isa CC.QualType
+        end
+    end
+
+    # ---- CXXConstructorDecl / CXXDestructorDecl / CXXConversionDecl via resolve ----
+    resolved = [CC.resolve(m) for m in methods]
+
+    ctorPreds = [CC.isExplicit, CC.isDefaultConstructor, CC.isCopyConstructor,
+        CC.isMoveConstructor, CC.isCopyOrMoveConstructor, CC.isDelegatingConstructor,
+        CC.isInheritingConstructor, CC.isSpecializationCopyingObject]
+    for c in ctors
+        for p in ctorPreds
+            @test p(c) isa Bool
+        end
+        @test CC.getNumCtorInitializers(c) isa Integer
+    end
+    @test any(CC.isDefaultConstructor, ctors)
+    @test any(CC.isCopyConstructor, ctors)
+    @test any(CC.isMoveConstructor, ctors)
+    @test any(c -> CC.isCopyOrMoveConstructor(c), ctors)
+    @test any(CC.isExplicit, ctors)
+
+    dtor = first(m for m in resolved if m isa CC.CXXDestructorDecl)
+    @test CC.getOperatorDelete(dtor) isa CC.FunctionDecl
+
+    conv = first(m for m in resolved if m isa CC.CXXConversionDecl)
+    @test CC.getConversionType(conv) isa CC.QualType
+    @test CC.isExplicit(conv) isa Bool
+    @test CC.isLambdaToBlockPointerConversion(conv) isa Bool
+
+    # ---- CXXCtorInitializer via Derived's ctors ----
+    dctors = CC.getCtors(derivedRD)
+    initCtor = first(c for c in dctors if CC.getNumCtorInitializers(c) >= 2)
+    inits = CC.getCtorInitializers(initCtor)
+    @test all(x -> x isa CC.CXXCtorInitializer, inits)
+    baseInit = first(i for i in inits if CC.isBaseInitializer(i))
+    memInit = first(i for i in inits if CC.isMemberInitializer(i))
+    @test CC.isBaseInitializer(baseInit)
+    @test CC.isAnyMemberInitializer(baseInit) isa Bool
+    @test CC.isDelegatingInitializer(baseInit) isa Bool
+    @test CC.getBaseClass(baseInit) isa CC.Type_
+    @test CC.getInit(baseInit) isa CC.Expr_
+    @test CC.getSourceLocation(baseInit) isa CC.SourceLocation
+    @test CC.isMemberInitializer(memInit)
+    @test CC.isAnyMemberInitializer(memInit)
+    @test CC.getMember(memInit) isa CC.FieldDecl
+    @test CC.getName(CC.getMember(memInit)) == "d"
+
+    # delegating constructor + its target + delegating initializer
+    delegCtor = first(c for c in dctors if CC.isDelegatingConstructor(c))
+    @test CC.getTargetConstructor(delegCtor) isa CC.CXXConstructorDecl
+    dinits = CC.getCtorInitializers(delegCtor)
+    @test any(CC.isDelegatingInitializer, dinits)
+
+    # ---- AccessSpecDecl ----
+    asd = first(d for d in alldecls if d isa CC.AccessSpecDecl)
+    @test CC.getAccessSpecifierLoc(asd) isa CC.SourceLocation
+    @test CC.getColonLoc(asd) isa CC.SourceLocation
+    @test CC.getSourceRange(asd) isa CC.SourceRange
+
+    # ---- LinkageSpecDecl (extern "C" { ... }) ----
+    lsd = first(d for d in alldecls if d isa CC.LinkageSpecDecl)
+    @test CC.getEndLoc(lsd) isa CC.SourceLocation
+    @test CC.getExternLoc(lsd) isa CC.SourceLocation
+    @test CC.getLanguage(lsd) isa Integer || CC.getLanguage(lsd) isa Enum
+    @test CC.getRBraceLoc(lsd) isa CC.SourceLocation
+    @test CC.getSourceRange(lsd) isa CC.SourceRange
+    @test CC.hasBraces(lsd) isa Bool
+
+    # ---- UsingDirectiveDecl (using namespace NS2;) ----
+    udir = first(d for d in alldecls if d isa CC.UsingDirectiveDecl)
+    @test CC.getNominatedNamespace(udir) isa CC.NamespaceDecl
+
+    # ---- UsingDecl / BaseUsingDecl / UsingShadowDecl (using Base::bar;) ----
+    usingD = first(d for d in alldecls if d isa CC.UsingDecl)
+    @test CC.shadow_size(usingD) isa Integer
+    shadows = CC.getShadows(usingD)
+    @test all(s -> s isa CC.UsingShadowDecl, shadows)
+    if !isempty(shadows)
+        @test CC.getTargetDecl(shadows[1]) isa CC.NamedDecl
+    end
+
+    # ---- CXXDeductionGuideDecl (templated decl of a FunctionTemplateDecl) ----
+    dgs = CC.CXXDeductionGuideDecl[]
+    for d in alldecls
+        d isa CC.FunctionTemplateDecl || continue
+        td = CC.resolve(CC.getTemplatedDecl(d))
+        td isa CC.CXXDeductionGuideDecl && push!(dgs, td)
+    end
+    @test !isempty(dgs)
+    for dg in dgs
+        @test CC.isExplicit(dg) isa Bool
+        @test CC.getCorrespondingConstructor(dg) isa CC.CXXConstructorDecl
+        @test CC.getDeducedTemplate(dg) isa CC.TemplateDecl
+        @test CC.getDeductionCandidateKind(dg) isa Integer ||
+              CC.getDeductionCandidateKind(dg) isa Enum
+    end
+
+    dispose(f)
+    dispose(I)
+end

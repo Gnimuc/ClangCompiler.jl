@@ -570,3 +570,892 @@ end
     dispose(f)
     dispose(I)
 end
+
+using ClangCompiler: get_tag
+@testset "coverage tail: decl-api" begin
+    LXD = CC.LibClangEx
+
+    # depth-first search for the first node whose resolved carrier is `T`
+    function dkfind(::Type{T}, x) where {T}
+        x isa T && return x
+        for c in CC.children(x)
+            r = dkfind(T, CC.resolve(c))
+            r === nothing || return r
+        end
+        return nothing
+    end
+
+    I = create_interpreter(String[])
+    fnd = DeclFinder(I)
+    try
+        ctx = CC.get_ast_context(I)
+
+        CC.parse(I, """
+            int dk_gvar = 3;
+            long dk_lvar = 7;
+            int dk_noinit;
+            void dk_gfunc(int p) { int dk_loc = p; (void)dk_loc; }
+            void dk_lblfn() { dk_lbl: goto dk_lbl; }
+            void dk_vlafn(int n) { int dk_vla[n]; (void)dk_vla; }
+            struct DKS { int dk_fb : 3; int dk_fi; };
+            enum DKE { DK_EA = 1, DK_EB };
+            typedef int DKMyInt;
+            namespace DKNS {}
+            struct DKA { static int dka_s; };
+            struct DKB { static int dkb_s; };
+            static union { int dkiu_a; };
+            template<typename T> void dk_tfn(T x) { (void)x; }
+            template<typename T> using DKAlias = T;
+            template<typename T> struct DK6S { static int dk6_sdm; void dk6_m(); };
+            template<typename T> int DK6S<T>::dk6_sdm = 0;
+            template<typename T> void DK6S<T>::dk6_m() {}
+            template<typename T> struct DK7S { T v; DK7S* dk7_self; };
+            DK7S<int> dk7_var;
+            template<typename T> struct DK8Out { template<typename U> struct DK8In { U u; }; };
+            DK8Out<int>::DK8In<char> dk8_var;
+            template<typename T> T dk10_vt = T();
+            template<> int dk10_vt<char> = 5;
+            int dk10_use = dk10_vt<int>;
+            const char* dk_cstr = "dk_hi";
+        """)
+
+        look(name) = (@assert fnd(I, name) "lookup failed: $name"; get_decl(fnd))
+
+        # ================= Section A: captures =================
+        # Each incremental parse gets its own TranslationUnitDecl, so the TU (and
+        # its DeclContext) must be captured after `parse`.
+        tu = CC.getTranslationUnitDecl(ctx)
+        dc = CC.castToDeclContext(tu)
+        vd_g = CC.VarDecl(look("dk_gvar").ptr)
+        vd_l = CC.VarDecl(look("dk_lvar").ptr)
+        vd_n = CC.VarDecl(look("dk_noinit").ptr)
+        gfd = CC.FunctionDecl(look("dk_gfunc").ptr)
+        lblfd = CC.FunctionDecl(look("dk_lblfn").ptr)
+        vlafd = CC.FunctionDecl(look("dk_vlafn").ptr)
+        tnd = CC.TypedefDecl(look("DKMyInt").ptr)
+        nsd = CC.NamespaceDecl(look("DKNS").ptr)
+        vd_cstr = CC.VarDecl(look("dk_cstr").ptr)
+
+        gloc = CC.getLocation(vd_g)
+        lloc = CC.getLocation(vd_l)
+        id = CC.getIdentifier(vd_g)
+        qt_int = CC.getType(vd_g)
+        tsi = CC.getTrivialTypeSourceInfo(ctx, qt_int, gloc)
+
+        einit = CC.getInit(vd_g)                       # Expr_ (IntegerLiteral 3)
+        il = CC.resolve(einit)
+        @test il isa CC.IntegerLiteral
+        gv = CC.getValue(il)                           # LLVMGenericValueRef
+
+        gname = CC.getDeclName(vd_g)
+        gbody = CC.getBody(gfd)                        # Stmt
+        gfdc = CC.castToDeclContext(gfd)
+        fname = CC.getDeclName(gfd)
+        gfty = CC.getType(gfd)
+        gftsi = CC.getTrivialTypeSourceInfo(ctx, gfty, gloc)
+
+        # ================= LabelDecl =================
+        ls = dkfind(CC.LabelStmt, CC.resolve(CC.getBody(lblfd)))
+        @test ls isa CC.LabelStmt
+        ld = CC.getDecl(ls)
+        @test ld isa CC.LabelDecl
+        @test CC.getStmt(ld).ptr == ls.ptr
+        CC.setStmt(ld, ls)
+        @test CC.getStmt(ld).ptr == ls.ptr
+        @test CC.isGnuLocal(ld) isa Bool
+        CC.setLocStart(ld, gloc)
+        @test CC.getSourceRange(ld) isa CC.SourceRange
+        @test CC.isMSAsmLabel(ld) == false
+        @test CC.isResolvedMSAsmLabel(ld) isa Bool
+        CC.setMSAsmLabelResolved(ld)
+        @test CC.isResolvedMSAsmLabel(ld) isa Bool
+        # MSAsmName is an empty StringRef here, so the shim returns NULL and the
+        # wrapper's unsafe_string throws (safely) before any dereference.
+        @test_throws ArgumentError CC.getMSAsmLabel(ld)
+
+        # ================= TranslationUnitDecl / NamespaceDecl =================
+        CC.getAnonymousNamespace(tu, nsd)              # misnamed setter wrapper
+        @test CC.getAnonymousNamespace(tu).ptr == nsd.ptr
+        CC.setInline(nsd, true)
+        @test CC.isInline(nsd)
+        CC.setAnonymousNamespace(nsd, nsd)
+        @test CC.getAnonymousNamespace(nsd).ptr == nsd.ptr
+        CC.setLocStart(nsd, gloc)
+        CC.setRBraceLoc(nsd, lloc)
+        @test CC.getRBraceLoc(nsd) == lloc
+
+        # ================= NamedDecl / ValueDecl / DeclaratorDecl =================
+        vd_f1 = CC.VarDecl(ctx, dc, gloc, gloc, id, qt_int, tsi, LXD.CXStorageClass_SC_None)
+        CC.setDeclName(vd_f1, gname)
+        @test CC.getName(vd_f1) == "dk_gvar"
+
+        CC.setType(vd_l, CC.getType(vd_l))
+        @test CC.getType(vd_l).ptr == CC.getType(vd_l).ptr
+
+        CC.setTypeSourceInfo(vd_g, tsi)
+        @test CC.getTypeSourceInfo(vd_g).ptr == tsi.ptr
+        CC.setInnerLocStart(vd_g, gloc)
+        @test CC.getInnerLocStart(vd_g) == gloc
+
+        # ================= VarDecl =================
+        es1 = CC.ensureEvaluatedStmt(vd_g)
+        @test es1 isa CC.EvaluatedStmt && es1.ptr != C_NULL
+        @test CC.getEvaluatedStmt(vd_g).ptr == es1.ptr
+        CC.demoteThisDefinitionToDeclaration(vd_g)
+        @test CC.isThisDeclarationADemotedDefinition(vd_g)
+
+        CC.setInit(vd_n, einit)
+        @test CC.hasInit(vd_n)
+        @test CC.getInit(vd_n).ptr == einit.ptr
+
+        # static data members: DKA::dka_s gets member-specialization info from DKB::dkb_s
+        @assert fnd(I, "DKA")
+        rd_a = CC.getDefinition(CC.RecordDecl(get_tag(fnd).ptr))
+        sdm_a = nothing
+        for d in CC.DeclIterator(rd_a)
+            CC.getDeclKindName(d) == "Var" || continue
+            sdm_a = CC.VarDecl(d.ptr)
+            break
+        end
+        @assert fnd(I, "DKB")
+        rd_b = CC.getDefinition(CC.RecordDecl(get_tag(fnd).ptr))
+        sdm_b = nothing
+        for d in CC.DeclIterator(rd_b)
+            CC.getDeclKindName(d) == "Var" || continue
+            sdm_b = CC.VarDecl(d.ptr)
+            break
+        end
+        @test sdm_a isa CC.VarDecl && sdm_b isa CC.VarDecl
+        CC.setInstantiationOfStaticDataMember(sdm_a, sdm_b,
+                                              LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+        @test CC.getInstantiatedFromStaticDataMember(sdm_a).ptr == sdm_b.ptr
+        CC.setTemplateSpecializationKind(sdm_a,
+                                         LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
+        @test CC.getTemplateSpecializationKind(sdm_a) ==
+              LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
+
+        # described var template on a fresh VarDecl
+        @assert fnd(I, "dk10_vt")
+        vtd = nothing
+        for d in CC.get_decls(fnd)
+            if CC.getDeclKindName(d) == "VarTemplate"
+                vtd = CC.VarTemplateDecl(d.ptr)
+                break
+            end
+        end
+        @test vtd isa CC.VarTemplateDecl
+        vd_f2 = CC.VarDecl(ctx, dc, gloc, gloc, id, qt_int, tsi, LXD.CXStorageClass_SC_None)
+        CC.setInstantiationOfStaticDataMember(vd_f2, vtd)  # wraps setDescribedVarTemplate
+        @test CC.getDescribedVarTemplate(vd_f2).ptr == vtd.ptr
+
+        # ================= ImplicitParamDecl / ParmVarDecl =================
+        ipd = CC.ImplicitParamDecl(ctx, dc, gloc, id, qt_int, LXD.CXImplicitParamKind_CXXThis)
+        @test CC.getParameterKind(ipd) == LXD.CXImplicitParamKind_CXXThis
+
+        parm_a = CC.ParmVarDecl(ctx, dc, gloc, gloc, id, qt_int, tsi, LXD.CXStorageClass_SC_None)
+        parm_b = CC.ParmVarDecl(ctx, dc, gloc, gloc, id, qt_int, tsi, LXD.CXStorageClass_SC_None)
+
+        CC.setDefaultArg(parm_a, einit)
+        @test CC.hasDefaultArg(parm_a)
+        @test CC.getDefaultArg(parm_a).ptr == einit.ptr
+        CC.getDefaultArg(parm_a, einit)                # wraps setUninstantiatedDefaultArg
+        @test CC.hasUninstantiatedDefaultArg(parm_a)
+        @test CC.getUninstantiatedDefaultArg(parm_a).ptr == einit.ptr
+        CC.setUnparsedDefaultArg(parm_a)
+        @test CC.hasUnparsedDefaultArg(parm_a)
+        CC.setHasInheritedDefaultArg(parm_a, true)
+        @test CC.hasInheritedDefaultArg(parm_a)
+        CC.setKNRPromoted(parm_a, true)
+        @test CC.isKNRPromoted(parm_a)
+        CC.setScopeInfo(parm_a, 1, 2)
+        @test CC.getFunctionScopeDepth(parm_a) == 1
+        @test CC.getFunctionScopeIndex(parm_a) == 2
+        CC.setOwningFunction(parm_a, gfdc)
+        @test CC.getDeclContext(parm_a).ptr == gfdc.ptr
+        CC.setObjCMethodScopeInfo(parm_b, 2)
+        @test CC.isObjCMethodParameter(parm_b)
+
+        # ================= FunctionDecl =================
+        mkfd() = CC.FunctionDecl(ctx, dc, gloc, gloc, fname, gfty, gftsi,
+                                 LXD.CXStorageClass_SC_None, false, true)
+
+        fd_f1 = mkfd()
+        CC.setBody(fd_f1, gbody)
+        @test CC.doesThisDeclarationHaveABody(fd_f1)
+        @test CC.getBody(fd_f1).ptr == gbody.ptr
+
+        fd_f2 = mkfd()
+        @test (CC.setLazyBody(fd_f2, 0); true)
+
+        fd_f3 = mkfd()
+        @test (CC.setDefaultedFunctionInfo(fd_f3, C_NULL); true)
+
+        fd_f4 = mkfd()
+        CC.setPreviousDeclaration(fd_f4, gfd)
+        @test CC.getPreviousDecl(fd_f4).ptr == gfd.ptr
+
+        fd_f5 = mkfd()
+        CC.setInstantiationOfMemberFunction(fd_f5, gfd,
+                                            LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+        @test CC.getMemberSpecializationInfo(fd_f5).ptr != C_NULL
+        CC.setTemplateSpecializationKind(fd_f5,
+                                         LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
+        @test CC.getTemplateSpecializationKind(fd_f5) ==
+              LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
+
+        @assert fnd(I, "dk_tfn")
+        ftd = nothing
+        for d in CC.get_decls(fnd)
+            if CC.getDeclKindName(d) == "FunctionTemplate"
+                ftd = CC.FunctionTemplateDecl(d.ptr)
+                break
+            end
+        end
+        @test ftd isa CC.FunctionTemplateDecl
+        fd_f6 = mkfd()
+        CC.setDescribedFunctionTemplate(fd_f6, ftd)
+        @test CC.getDescribedFunctionTemplate(fd_f6).ptr == ftd.ptr
+
+        fd_f7 = mkfd()
+        CC.setTrailingRequiresClause(fd_f7, einit)
+        @test CC.getTrailingRequiresClause(fd_f7).ptr == einit.ptr
+
+        # DeclaratorDecl::getTemplateParameterList via an out-of-line member of a
+        # class template (the written `template<typename T>` list is stored on the
+        # declarator).
+        tplh = nothing
+        for d in CC.DeclIterator(tu)
+            k = CC.getDeclKindName(d)
+            if k == "Var"
+                cand = CC.VarDecl(d.ptr)
+                if CC.getNumTemplateParameterLists(cand) > 0
+                    tplh = cand
+                    break
+                end
+            elseif k == "CXXMethod"
+                cand = CC.CXXMethodDecl(d.ptr)
+                if CC.getNumTemplateParameterLists(cand) > 0
+                    tplh = cand
+                    break
+                end
+            end
+        end
+        @test tplh !== nothing
+        if tplh !== nothing
+            @test CC.getTemplateParameterList(tplh, 0) isa CC.TemplateParameterList
+        end
+
+        # ================= TypeDecl / TypedefDecl =================
+        # NOTE: the QualType convenience setTypeForDecl(x, ::QualType) is not
+        # exercised — it forwards get_type_ptr's Type_ carrier to the raw-Ptr
+        # method and always throws MethodError.
+        typ0 = CC.getTypeForDecl(tnd)
+        CC.setTypeForDecl(tnd, typ0)                   # raw CXType_ variant
+        @test CC.getTypeForDecl(tnd) == typ0
+        CC.setLocStart(tnd, gloc)
+        @test CC.getBeginLoc(tnd) == gloc
+
+        # ================= TagDecl =================
+        @assert fnd(I, "DKS")
+        td_s = CC.TagDecl(get_tag(fnd).ptr)
+        @test CC.getDefinition(td_s) isa CC.TagDecl
+        @test CC.getDefinition(td_s).ptr != C_NULL
+
+        rec_f = CC.RecordDecl(ctx, LXD.CXTagTypeKind_Struct, dc, gloc, gloc, id)
+        CC.startDefinition(rec_f)
+        @test CC.isBeingDefined(rec_f)
+        CC.setCompleteDefinition(rec_f, true)
+        @test CC.isCompleteDefinition(rec_f)
+
+        # ================= FieldDecl =================
+        rd_s = CC.getDefinition(CC.RecordDecl(td_s.ptr))
+        flds = CC.getFields(rd_s)
+        fb = flds[1]
+        @test CC.isBitField(fb)
+        CC.removeBitWidth(fb)
+        @test !CC.isBitField(fb)
+
+        fld_ici = CC.FieldDecl(ctx, dc, gloc, gloc, id, qt_int, tsi, CC.Expr_(C_NULL), false,
+                               LXD.CXInClassInitStyle_ICIS_CopyInit)
+        CC.setInClassInitializer(fld_ici, einit)
+        CC.removeInClassInitializer(fld_ici)
+        @test !CC.hasInClassInitializer(fld_ici)
+
+        # captured-VLA field on a fresh captured record
+        vds = dkfind(CC.DeclStmt, CC.resolve(CC.getBody(vlafd)))
+        @test vds isa CC.DeclStmt
+        vla_d = CC.getSingleDecl(vds)
+        @test CC.getDeclKindName(vla_d) == "Var"
+        vla_vd = CC.VarDecl(vla_d.ptr)
+        vla_qt = CC.getType(vla_vd)
+        vla_ty = CC.resolve(CC.getTypePtr(vla_qt))
+        @test vla_ty isa CC.VariableArrayType
+        rec_f2 = CC.RecordDecl(ctx, LXD.CXTagTypeKind_Struct, dc, gloc, gloc, id)
+        CC.setCapturedRecord(rec_f2)
+        fld_vla = CC.FieldDecl(ctx, CC.DeclContext(rec_f2), gloc, gloc, id, vla_qt, tsi,
+                               CC.Expr_(C_NULL), false, LXD.CXInClassInitStyle_ICIS_NoInit)
+        CC.setCapturedVLAType(fld_vla, vla_ty)
+        @test CC.hasCapturedVLAType(fld_vla)
+        @test CC.getCapturedVLAType(fld_vla) isa CC.VariableArrayType
+
+        # ================= EnumDecl / EnumConstantDecl =================
+        ed = CC.getDefinition(CC.EnumDecl(look("DKE").ptr))
+        enum_f = CC.EnumDecl(ctx, dc, gloc, gloc, id)
+        CC.setInstantiationOfMemberEnum(enum_f, ed,
+                                        LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+        CC.setTemplateSpecializationKind(enum_f,
+                                         LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
+        @test CC.getTemplateSpecializationKind(enum_f) ==
+              LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
+
+        ecd = CC.EnumConstantDecl(ctx, ed, gloc, id, qt_int, CC.Expr_(C_NULL), gv)
+        @test ecd isa CC.EnumConstantDecl
+
+        # ================= CapturedDecl =================
+        cd_f = CC.CapturedDecl(ctx, dc, 1)
+        ipd2 = CC.ImplicitParamDecl(ctx, dc, gloc, id, qt_int,
+                                    LXD.CXImplicitParamKind_CapturedContext)
+        CC.setContextParam(cd_f, 0, ipd2)
+        @test CC.getContextParamPosition(cd_f) == 0
+        @test CC.getNumParams(cd_f) == 1
+
+        # ================= ExportDecl =================
+        exd = CC.ExportDecl(ctx, dc, gloc)
+        @test CC.getExportLoc(exd) == gloc
+        @test CC.hasBraces(exd) == false
+        CC.setRBraceLoc(exd, lloc)
+        @test CC.hasBraces(exd)
+        @test CC.getEndLoc(exd) == lloc
+        @test CC.getSourceRange(exd) isa CC.SourceRange
+
+        # ================= FileScopeAsmDecl =================
+        sl = dkfind(CC.StringLiteral, CC.resolve(CC.getInit(vd_cstr)))
+        @test sl isa CC.StringLiteral
+        fsad = CC.FileScopeAsmDecl(ctx, dc, sl, gloc, lloc)
+        @test CC.getAsmLoc(fsad) == gloc
+        @test CC.getSourceRange(fsad) isa CC.SourceRange
+
+        # ================= ImportDecl =================
+        # CreateImplicit stores the module pointer without dereferencing it.
+        imp1 = CC.ImportDecl(ctx, dc, gloc, C_NULL, gloc)
+        @test imp1 isa CC.ImportDecl
+        # A deserialized import is incomplete: no identifier locs, safe getters.
+        imp2 = CC.ImportDecl(ctx, 99, 0)
+        @test CC.getNumIdentifierLocs(imp2) == 0
+        @test CC.getSourceRange(imp2) isa CC.SourceRange
+
+        # ================= IndirectFieldDecl =================
+        @assert fnd(I, "dkiu_a")
+        dif = get_decl(fnd)
+        @test CC.getDeclKindName(dif) == "IndirectField"
+        ifd = CC.IndirectFieldDecl(dif.ptr)
+        @test CC.getVarDecl(ifd) isa CC.VarDecl
+        @test CC.getVarDecl(ifd).ptr != C_NULL
+        @test CC.getCanonicalDecl(ifd) isa CC.IndirectFieldDecl
+        # base Decl receivers on the plain Decl carrier
+        @test CC.getBeginLoc(dif) isa CC.SourceLocation
+        @test CC.isOutOfLine(dif) isa Bool
+
+        # ================= TypeAliasDecl =================
+        @assert fnd(I, "DKAlias")
+        tatd = nothing
+        for d in CC.get_decls(fnd)
+            if CC.getDeclKindName(d) == "TypeAliasTemplate"
+                tatd = CC.TypeAliasTemplateDecl(d.ptr)
+                break
+            end
+        end
+        @test tatd isa CC.TypeAliasTemplateDecl
+        tad_f = CC.TypeAliasDecl(ctx, dc, gloc, gloc, id, tsi)
+        CC.setDescribedAliasTemplate(tad_f, tatd)
+        @test CC.getDescribedAliasTemplate(tad_f).ptr == tatd.ptr
+
+        # ================= DeclTemplate =================
+        vd7 = CC.VarDecl(look("dk7_var").ptr)
+        specrec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd7)))
+        @test CC.getDeclKindName(specrec) == "ClassTemplateSpecialization"
+        spec = CC.ClassTemplateSpecializationDecl(specrec.ptr)
+        stpl = CC.getSpecializedTemplate(spec)
+        args = CC.getTemplateArgs(spec)
+        newspec = CC.ClassTemplateSpecializationDecl(ctx, stpl, args)
+        @test (CC.AddSpecialization(stpl, newspec); true)
+
+        # TemplateName::getAsTemplateDecl via the pattern's injected-class-name
+        # (the DK7S* self-pointer field inside the template pattern)
+        p7 = CC.getTemplatedDecl(stpl)                 # pattern CXXRecordDecl
+        flds7 = CC.getFields(p7)
+        @test length(flds7) == 2
+        pt7 = CC.resolve(CC.getTypePtr(CC.getType(flds7[2])))
+        @test pt7 isa CC.PointerType
+        inj = CC.resolve(CC.getTypePtr(CC.getPointeeType(pt7)))
+        if inj isa CC.ElaboratedType
+            inj = CC.resolve(CC.getTypePtr(CC.desugar(inj)))
+        end
+        @test inj isa CC.InjectedClassNameType
+        tn = CC.getTemplateName(inj)
+        @test CC.getAsTemplateDecl(tn) isa CC.TemplateDecl
+        @test CC.getAsTemplateDecl(tn).ptr != C_NULL
+
+        # member template of an instantiated class template -> member specialization
+        vd8 = CC.VarDecl(look("dk8_var").ptr)
+        rec8 = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd8)))
+        @test CC.getDeclKindName(rec8) == "ClassTemplateSpecialization"
+        spec8 = CC.ClassTemplateSpecializationDecl(rec8.ptr)
+        stpl8 = CC.getSpecializedTemplate(spec8)
+        CC.setMemberSpecialization(stpl8)
+        @test CC.isMemberSpecialization(stpl8)
+
+        # VarTemplateSpecializationDecl::getTemplateArgs
+        vtsd = nothing
+        for d in CC.DeclIterator(tu)
+            if CC.getDeclKindName(d) == "VarTemplateSpecialization"
+                vtsd = CC.VarTemplateSpecializationDecl(d.ptr)
+                break
+            end
+        end
+        @test vtsd !== nothing
+        if vtsd !== nothing
+            @test CC.getTemplateArgs(vtsd) isa CC.TemplateArgumentList
+        end
+
+        # ================= ExplicitSpecifier =================
+        # clang::ExplicitSpecifier is a trivially-copyable one-word value
+        # (PointerIntPair<Expr*, 2, ExplicitSpecKind>); a zeroed pointer-sized
+        # buffer is a valid {ResolvedFalse, nullptr} instance.
+        esp = Libc.malloc(Csize_t(sizeof(Ptr{Cvoid})))
+        try
+            unsafe_store!(Ptr{UInt}(esp), UInt(0))
+            es = CC.ExplicitSpecifier(esp)
+            @test CC.getKind(es) == LXD.CXExplicitSpecKind_ResolvedFalse
+            @test CC.isSpecified(es) == false
+            @test CC.isExplicit(es) isa Bool
+            @test CC.isInvalid(es) isa Bool
+            CC.setKind(es, LXD.CXExplicitSpecKind_ResolvedTrue)
+            @test CC.getKind(es) == LXD.CXExplicitSpecKind_ResolvedTrue
+            CC.setExpr(es, einit)
+            @test CC.getExpr(es).ptr == einit.ptr
+        finally
+            Libc.free(esp)
+        end
+
+        # ================= DeclBase: contexts, add/remove, stats =================
+        e1 = CC.EmptyDecl(ctx, dc, gloc)
+        e2 = CC.EmptyDecl(ctx, dc, gloc)
+        e3 = CC.EmptyDecl(ctx, dc, gloc)
+        CC.setDeclContext(e1, dc)
+        CC.setLexicalDeclContext(e1, dc)
+        @test CC.getDeclContext(e1).ptr == dc.ptr
+        CC.addDecl(dc, e1)
+        @test CC.containsDecl(dc, e1)
+        CC.removeDecl(dc, e1)
+        @test !CC.containsDecl(dc, e1)
+        CC.addDeclInternal(dc, e2)
+        @test CC.containsDecl(dc, e2)
+        CC.addHiddenDecl(dc, e3)
+        @test CC.containsDecl(dc, e3)
+        # NOTE: EnableStatistics/PrintStats are not exercised — their wrappers
+        # pass the receiver to the 0-arg static-method bindings and always
+        # throw MethodError.
+    finally
+        dispose(fnd)
+        dispose(I)
+    end
+end
+
+@testset "Coverage | Decl" begin
+    I = create_interpreter(["-fblocks"])
+    CC.parse(I, """
+    namespace ns { int nsvar; namespace { int anon_v; } }
+    inline namespace top_inl { int tinl_v; }
+
+    const int cglob = 42;
+    static int sglob = 7;
+    extern int eglob;
+    constexpr int cxglob = 2 + 3;
+    int gvar = 10;
+
+    typedef int MyInt;
+    using MyAlias = double;
+
+    enum Color { Red, Green = 5, Blue };
+    enum class Scoped : long { A, B, C };
+
+    struct Point {
+        int x;
+        int y : 3;
+        double z;
+        int : 0;
+        static int count;
+    };
+
+    int variadic_fn(int a, double b, ...);
+    int add(int a, int b) { return a + b; }
+    extern "C" int cfunc(int);
+    inline int inl_fn() { return 1; }
+    static int sfunc() { return 0; }
+    int withdef(int a, int b = 3);
+
+    void host() {
+        int addend = 10;
+        int (^blk)(int) = ^int(int q){ return q + addend; };
+        (void)blk;
+    }
+    """)
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+    getptr(name) = (@assert f(I, name); get_decl(f).ptr)
+
+    # ---------------- VarDecl / ValueDecl / DeclaratorDecl ----------------
+    gvar = CC.VarDecl(getptr("gvar"))
+    cxglob = CC.VarDecl(getptr("cxglob"))
+    eglob = CC.VarDecl(getptr("eglob"))
+    sglob = CC.VarDecl(getptr("sglob"))
+
+    var_bools = (CC.hasLocalStorage, CC.isStaticLocal, CC.hasExternalStorage,
+                 CC.hasGlobalStorage, CC.isExternC, CC.isInExternCContext,
+                 CC.isInExternCXXContext, CC.isLocalVarDecl, CC.isLocalVarDeclOrParm,
+                 CC.isFunctionOrMethodVarDecl, CC.isStaticDataMember, CC.isOutOfLine,
+                 CC.isFileVarDecl, CC.hasInit, CC.hasConstantInitialization,
+                 CC.isDirectInit, CC.isThisDeclarationADemotedDefinition,
+                 CC.isExceptionVariable, CC.isNRVOVariable, CC.isCXXForRangeDecl,
+                 CC.isObjCForDecl, CC.isARCPseudoStrong, CC.isInline, CC.isInlineSpecified,
+                 CC.isConstexpr, CC.isInitCapture, CC.isParameterPack,
+                 CC.isPreviousDeclInSameBlockScope, CC.isEscapingByref,
+                 CC.isNonEscapingByref, CC.isKnownToBeDefined, CC.isWeak)
+    for g in var_bools
+        @test g(gvar) isa Bool
+    end
+
+    var_misc = (CC.getStorageClass, CC.getTSCSpec, CC.getStorageDuration,
+                CC.getLanguageLinkage, CC.getTemplateSpecializationKind,
+                CC.getTemplateSpecializationKindForInstantiation,
+                CC.getInitializingDeclaration, CC.getNumTemplateParameterLists)
+    for g in var_misc
+        @test g(gvar) !== nothing
+    end
+
+    @test CC.getType(gvar) isa CC.QualType
+    @test CC.getCanonicalDecl(gvar) isa CC.VarDecl
+    @test CC.getActingDefinition(gvar) isa CC.VarDecl
+    @test CC.getDefinition(gvar) isa CC.VarDecl
+    @test CC.getAnyInitializer(gvar) isa CC.Expr_
+    @test CC.getInit(gvar) isa CC.Expr_
+    @test CC.getTemplateInstantiationPattern(gvar) isa CC.VarDecl
+    @test CC.getInstantiatedFromStaticDataMember(gvar) isa CC.VarDecl
+    @test CC.getDescribedVarTemplate(gvar) !== nothing
+    @test CC.getPointOfInstantiation(gvar) isa CC.SourceLocation
+    @test CC.evaluateValue(cxglob) isa CC.APValue
+    @test CC.getSourceRange(gvar) isa CC.SourceRange
+    @test CC.mightBeUsableInConstantExpressions(cxglob, ctx) isa Bool
+    @test CC.isUsableInConstantExpressions(cxglob, ctx) isa Bool
+    @test CC.hasICEInitializer(cxglob, ctx) isa Bool
+    @test CC.hasExternalStorage(eglob) isa Bool
+    @test CC.getStorageClass(sglob) !== nothing
+
+    # DeclaratorDecl accessors
+    @test CC.getTypeSourceInfo(gvar) isa CC.TypeSourceInfo
+    @test CC.getInnerLocStart(gvar) isa CC.SourceLocation
+    @test CC.getOuterLocStart(gvar) isa CC.SourceLocation
+    @test CC.getBeginLoc(gvar) isa CC.SourceLocation
+    @test CC.getQualifier(gvar) isa CC.NestedNameSpecifier
+    @test CC.getTrailingRequiresClause(gvar) isa CC.Expr_
+    @test CC.getTypeSpecStartLoc(gvar) isa CC.SourceLocation
+    @test CC.getTypeSpecEndLoc(gvar) isa CC.SourceLocation
+
+    # ---------------- NamedDecl (call on a plainly-named decl) ----------------
+    named_bools = (CC.hasLinkage, CC.isCXXClassMember, CC.isCXXInstanceMember,
+                   CC.hasExternalFormalLinkage, CC.isExternallyVisible,
+                   CC.isExternallyDeclarable, CC.isLinkageValid, CC.hasLinkageBeenComputed)
+    for g in named_bools
+        @test g(gvar) isa Bool
+    end
+    @test CC.getName(gvar) isa String
+    @test CC.getIdentifier(gvar) isa CC.IdentifierInfo
+    @test CC.getDeclName(gvar) isa CC.DeclarationName
+    @test CC.getUnderlyingDecl(gvar) isa CC.NamedDecl
+    @test CC.getVisibility(gvar) !== nothing
+    @test CC.getLinkageInternal(gvar) !== nothing
+    @test CC.getFormalLinkage(gvar) !== nothing
+    @test CC.getMostRecentDecl(gvar) !== nothing
+    @test CC.declarationReplaces(gvar, gvar) isa Bool
+    @test CC.isFunctionOrFunctionTemplate(gvar) isa Bool
+
+    # ---------------- FunctionDecl ----------------
+    add = CC.FunctionDecl(getptr("add"))
+    vfn = CC.FunctionDecl(getptr("variadic_fn"))
+    cfn = CC.FunctionDecl(getptr("cfunc"))
+    sfn = CC.FunctionDecl(getptr("sfunc"))
+    inl = CC.FunctionDecl(getptr("inl_fn"))
+    wdf = CC.FunctionDecl(getptr("withdef"))
+
+    fn_bools = (CC.isPureVirtual, CC.hasBody, CC.hasTrivialBody, CC.isDefined,
+                CC.isThisDeclarationADefinition,
+                CC.isThisDeclarationInstantiatedFromAFriendDefinition,
+                CC.doesThisDeclarationHaveABody, CC.isVariadic, CC.isVirtualAsWritten,
+                CC.isLateTemplateParsed, CC.isTrivial, CC.isTrivialForCall,
+                CC.isDefaulted, CC.isExplicitlyDefaulted, CC.isUserProvided,
+                CC.hasImplicitReturnZero, CC.hasPrototype, CC.hasWrittenPrototype,
+                CC.hasInheritedPrototype, CC.isConstexpr, CC.isConstexprSpecified,
+                CC.isConsteval, CC.instantiationIsPending, CC.usesSEHTry, CC.isDeleted,
+                CC.isDeletedAsWritten, CC.isMain, CC.isMSVCRTEntryPoint,
+                CC.isReservedGlobalPlacementOperator,
+                CC.isReplaceableGlobalAllocationFunction, CC.isInlineBuiltinDeclaration,
+                CC.isDestroyingOperatorDelete, CC.isExternC, CC.isInExternCContext,
+                CC.isInExternCXXContext, CC.isGlobal, CC.isNoReturn, CC.hasSkippedBody,
+                CC.willHaveBody, CC.isMultiVersion, CC.isCPUDispatchMultiVersion,
+                CC.isCPUSpecificMultiVersion, CC.isTargetMultiVersion, CC.isInlineSpecified,
+                CC.isInlined, CC.isInlineDefinitionExternallyVisible, CC.isMSExternInline,
+                CC.doesDeclarationForceExternallyVisibleDefinition, CC.isStatic,
+                CC.isOverloadedOperator, CC.isFunctionTemplateSpecialization,
+                CC.isImplicitlyInstantiable, CC.isTemplateInstantiation, CC.isOutOfLine,
+                CC.hasOneParamOrDefaultArgs)
+    for g in fn_bools
+        @test g(add) isa Bool
+    end
+
+    fn_misc = (CC.getConstexprKind, CC.getExceptionSpecType, CC.getStorageClass,
+               CC.getLanguageLinkage, CC.getMultiVersionKind, CC.getTemplatedKind,
+               CC.getTemplateSpecializationKind,
+               CC.getTemplateSpecializationKindForInstantiation, CC.getMemoryFunctionKind,
+               CC.getBuiltinID, CC.getNumParams, CC.getMinRequiredArguments, CC.getODRHash)
+    for g in fn_misc
+        @test g(add) !== nothing
+    end
+
+    @test CC.getExceptionSpecSourceRange(add) isa CC.SourceRange
+    @test CC.getParametersSourceRange(add) isa CC.SourceRange
+    @test CC.getReturnTypeSourceRange(add) isa CC.SourceRange
+    @test CC.getSourceRange(add) isa CC.SourceRange
+    @test CC.getNameInfo(add) !== nothing
+    @test CC.getDefinition(add) isa CC.FunctionDecl
+    @test CC.getBody(add) isa CC.Stmt
+    @test CC.getCanonicalDecl(add) isa CC.FunctionDecl
+    @test CC.getReturnType(add) isa CC.QualType
+    @test CC.getDeclaredReturnType(add) isa CC.QualType
+    @test CC.getCallResultType(add) isa CC.QualType
+    @test CC.getLiteralIdentifier(add) isa CC.IdentifierInfo
+    @test CC.getMemberSpecializationInfo(add) !== nothing
+    @test CC.getDescribedFunctionTemplate(add) !== nothing
+    @test CC.getInstantiatedFromMemberFunction(add) isa CC.FunctionDecl
+    @test CC.getTemplateSpecializationInfo(add) !== nothing
+    @test CC.getPrimaryTemplate(add) !== nothing
+    @test CC.getTemplateSpecializationArgs(add) !== nothing
+    @test CC.getTemplateSpecializationArgsAsWritten(add) !== nothing
+    @test CC.getDependentSpecializationInfo(add) !== nothing
+    @test CC.getPointOfInstantiation(add) isa CC.SourceLocation
+    @test CC.getParamDecl(add, 0) !== nothing
+    @test CC.isVariadic(vfn) isa Bool
+    @test CC.getEllipsisLoc(vfn) !== nothing
+    @test CC.isExternC(cfn) isa Bool
+    @test CC.isStatic(sfn) isa Bool
+    @test CC.isInlined(inl) isa Bool
+
+    # ---------------- ParmVarDecl ----------------
+    p0 = CC.getParamDecl(add, 0)
+    pdef = CC.getParamDecl(wdf, 1)
+    parm_bools = (CC.isObjCMethodParameter, CC.isDestroyedInCallee, CC.isKNRPromoted,
+                  CC.hasDefaultArg, CC.hasUnparsedDefaultArg, CC.hasUninstantiatedDefaultArg,
+                  CC.hasInheritedDefaultArg)
+    for g in parm_bools
+        @test g(p0) isa Bool
+    end
+    @test CC.getFunctionScopeDepth(p0) !== nothing
+    @test CC.getFunctionScopeIndex(p0) !== nothing
+    @test CC.getDefaultArgRange(p0) isa CC.SourceRange
+    @test CC.getOriginalType(p0) isa CC.QualType
+    @test CC.hasDefaultArg(pdef)
+    @test CC.getDefaultArg(pdef) isa CC.Expr_
+
+    # ---------------- RecordDecl / TagDecl / TypeDecl ----------------
+    rd = CC.RecordDecl(getptr("Point"))
+    rec_bools = (CC.hasFlexibleArrayMember, CC.isAnonymousStructOrUnion,
+                 CC.isInjectedClassName, CC.isLambda, CC.isCapturedRecord,
+                 CC.isOrContainsUnion, CC.canPassInRegisters,
+                 CC.hasLoadedFieldsFromExternalStorage, CC.hasNonTrivialToPrimitiveCopyCUnion,
+                 CC.hasNonTrivialToPrimitiveDefaultInitializeCUnion,
+                 CC.hasNonTrivialToPrimitiveDestructCUnion, CC.hasObjectMember,
+                 CC.hasVolatileMember, CC.isNonTrivialToPrimitiveCopy,
+                 CC.isNonTrivialToPrimitiveDefaultInitialize,
+                 CC.isNonTrivialToPrimitiveDestroy, CC.isParamDestroyedInCallee)
+    for g in rec_bools
+        @test g(rd) isa Bool
+    end
+    @test CC.getNumFields(rd) isa Integer
+    @test CC.getArgPassingRestrictions(rd) !== nothing
+    @test CC.getPreviousDecl(rd) isa CC.RecordDecl
+    @test CC.getMostRecentDecl(rd) isa CC.RecordDecl
+    @test CC.getDefinition(rd) isa CC.RecordDecl
+    @test CC.findFirstNamedDataMember(rd) isa CC.FieldDecl
+    @test CC.isMsStruct(rd, ctx) isa Bool
+    @test CC.ClassTemplateSpecializationDecl(rd) !== nothing
+
+    # TagDecl-level accessors (dispatch to AbstractTagDecl via RecordDecl)
+    tag_bools = (CC.isThisDeclarationADefinition, CC.isCompleteDefinition,
+                 CC.isBeingDefined, CC.isFreeStanding, CC.isStruct, CC.isInterface,
+                 CC.isClass, CC.isUnion, CC.isEnum, CC.hasNameForLinkage,
+                 CC.isCompleteDefinitionRequired, CC.isDependentType,
+                 CC.isEmbeddedInDeclarator, CC.mayHaveOutOfDateDef)
+    for g in tag_bools
+        @test g(rd) isa Bool
+    end
+    @test CC.DeclContext(rd) isa CC.DeclContext
+    @test CC.getCanonicalDecl(rd) isa CC.TagDecl
+    @test CC.getDefinition(rd) isa CC.RecordDecl
+    @test CC.getKindName(rd) isa String
+    @test CC.getTagKind(rd) !== nothing
+    @test CC.getTypedefNameForAnonDecl(rd) isa CC.TypedefNameDecl
+    @test CC.getQualifier(rd) isa CC.NestedNameSpecifier
+    @test CC.getBraceRange(rd) isa CC.SourceRange
+    @test CC.getInnerLocStart(rd) isa CC.SourceLocation
+    @test CC.getOuterLocStart(rd) isa CC.SourceLocation
+    @test CC.getSourceRange(rd) isa CC.SourceRange
+
+    # NamedDecl -> TypeDecl cast + TypeDecl accessors
+    rec_named = CC.NamedDecl(getptr("Point"))
+    td_base = CC.TypeDecl(rec_named)
+    @test td_base isa CC.TypeDecl
+    @test CC.getTypeForDecl(rec_named) !== nothing
+    @test CC.getTypeForDecl(td_base) !== nothing
+    @test CC.getBeginLoc(td_base) isa CC.SourceLocation
+    @test CC.getSourceRange(td_base) isa CC.SourceRange
+
+    # ---------------- FieldDecl ----------------
+    fields = CC.getFields(rd)
+    @test !isempty(fields)
+    for fld in fields
+        @test CC.isBitField(fld) isa Bool
+        @test CC.isMutable(fld) isa Bool
+        @test CC.isUnnamedBitfield(fld) isa Bool
+        @test CC.isAnonymousStructOrUnion(fld) isa Bool
+        @test CC.hasCapturedVLAType(fld) isa Bool
+        @test CC.hasInClassInitializer(fld) isa Bool
+        @test CC.getFieldIndex(fld) isa Integer
+        @test CC.getInClassInitStyle(fld) !== nothing
+        @test CC.getBitWidth(fld) isa CC.Expr_
+        @test CC.getCanonicalDecl(fld) isa CC.FieldDecl
+        @test CC.getCapturedVLAType(fld) isa CC.VariableArrayType
+        @test CC.getInClassInitializer(fld) isa CC.Expr_
+        @test CC.getParent(fld) isa CC.RecordDecl
+        @test CC.getSourceRange(fld) isa CC.SourceRange
+        @test CC.isZeroLengthBitField(fld, ctx) isa Bool
+        @test CC.isZeroSize(fld, ctx) isa Bool
+    end
+    bf = fields[findfirst(CC.isBitField, fields)]
+    @test CC.getBitWidthValue(bf, ctx) isa Integer
+
+    # ---------------- EnumDecl / EnumConstantDecl ----------------
+    ed = CC.EnumDecl(getptr("Color"))
+    sed = CC.EnumDecl(getptr("Scoped"))
+    enum_bools = (CC.isClosed, CC.isClosedFlag, CC.isClosedNonFlag, CC.isComplete,
+                  CC.isFixed, CC.isScoped, CC.isScopedUsingClassTag)
+    for g in enum_bools
+        @test g(ed) isa Bool
+    end
+    @test CC.isScoped(sed) isa Bool
+    @test CC.getNumNegativeBits(ed) !== nothing
+    @test CC.getNumPositiveBits(ed) !== nothing
+    @test CC.getODRHash(ed) !== nothing
+    @test CC.getNumEnumerators(ed) isa Integer
+    @test CC.getCanonicalDecl(ed) isa CC.EnumDecl
+    @test CC.getPreviousDecl(ed) isa CC.EnumDecl
+    @test CC.getMostRecentDecl(ed) isa CC.EnumDecl
+    @test CC.getDefinition(ed) isa CC.EnumDecl
+    @test CC.getIntegerType(sed) isa CC.QualType
+    @test CC.getInstantiatedFromMemberEnum(ed) isa CC.EnumDecl
+    @test CC.getIntegerTypeRange(sed) isa CC.SourceRange
+    @test CC.getIntegerTypeSourceInfo(sed) isa CC.TypeSourceInfo
+    @test CC.getMemberSpecializationInfo(ed) !== nothing
+    @test CC.getPromotionType(ed) isa CC.QualType
+    @test CC.getTemplateInstantiationPattern(ed) isa CC.EnumDecl
+    @test CC.getTemplateSpecializationKind(ed) !== nothing
+
+    enumerators = CC.getEnumerators(ed)
+    @test length(enumerators) == 3
+    ec = enumerators[2]   # Green = 5
+    @test CC.getEnumConstantDeclValue(ec) isa Integer
+    @test CC.getCanonicalDecl(ec) isa CC.EnumConstantDecl
+    @test CC.getInitExpr(ec) isa CC.Expr_
+    @test CC.getSourceRange(ec) isa CC.SourceRange
+    # NamedDecl -> EnumConstantDecl cast
+    ec_named = CC.NamedDecl(ec.ptr)
+    @test CC.EnumConstantDecl(ec_named) isa CC.EnumConstantDecl
+
+    # ---------------- TypedefNameDecl / TypedefDecl / TypeAliasDecl ----------------
+    td = CC.TypedefDecl(getptr("MyInt"))
+    tad = CC.TypeAliasDecl(getptr("MyAlias"))
+    @test CC.getUnderlyingType(td) isa CC.QualType
+    @test CC.getCanonicalDecl(td) isa CC.TypedefNameDecl
+    @test CC.getAnonDeclWithTypedefName(td) isa CC.TagDecl
+    @test CC.isTransparentTag(td) isa Bool
+    @test CC.getTypeSourceInfo(td) isa CC.TypeSourceInfo
+    @test CC.isModed(td) isa Bool
+    @test CC.getSourceRange(td) isa CC.SourceRange
+    @test CC.getUnderlyingType(tad) isa CC.QualType
+    @test CC.getDescribedAliasTemplate(tad) !== nothing
+    @test CC.getSourceRange(tad) isa CC.SourceRange
+
+    # ---------------- NamespaceDecl ----------------
+    ns = CC.NamespaceDecl(getptr("ns"))
+    tinl = CC.NamespaceDecl(getptr("top_inl"))
+    @test CC.isAnonymousNamespace(ns) isa Bool
+    @test CC.isInline(ns) isa Bool
+    @test CC.isInline(tinl) isa Bool
+    @test CC.isOriginalNamespace(ns) isa Bool
+    @test CC.getOriginalNamespace(ns) isa CC.NamespaceDecl
+    @test CC.getAnonymousNamespace(ns) isa CC.NamespaceDecl
+    @test CC.getCanonicalDecl(ns) isa CC.NamespaceDecl
+    @test CC.getSourceRange(ns) isa CC.SourceRange
+    @test CC.getBeginLoc(ns) isa CC.SourceLocation
+    @test CC.getRBraceLoc(ns) isa CC.SourceLocation
+
+    # ---------------- TranslationUnitDecl ----------------
+    tu = CC.getTranslationUnitDecl(gvar)
+    @test CC.getASTContext(tu) isa CC.ASTContext
+    @test CC.getAnonymousNamespace(tu) isa CC.NamespaceDecl
+
+    # ---------------- BlockDecl (reached via the recursive decl walk) ----------------
+    all_decls = CC.decls(CC.castToDeclContext(tu))
+    blk = all_decls[findfirst(d -> d isa CC.BlockDecl, all_decls)]
+    addend = all_decls[findfirst(d -> d isa CC.VarDecl && CC.getName(d) == "addend", all_decls)]
+    blk_bools = (CC.blockMissingReturnType, CC.canAvoidCopyToHeap, CC.capturesCXXThis,
+                 CC.doesNotEscape, CC.hasCaptures, CC.isConversionFromLambda, CC.isVariadic)
+    for g in blk_bools
+        @test g(blk) isa Bool
+    end
+    @test CC.getBlockManglingContextDecl(blk) isa CC.Decl
+    @test CC.getBlockManglingNumber(blk) !== nothing
+    @test CC.getCaretLocation(blk) isa CC.SourceLocation
+    @test CC.getNumCaptures(blk) !== nothing
+    @test CC.getNumParams(blk) !== nothing
+    @test CC.getSignatureAsWritten(blk) isa CC.TypeSourceInfo
+    @test CC.getSourceRange(blk) isa CC.SourceRange
+    @test CC.capturesVariable(blk, addend) isa Bool
+    @test CC.getParamDecl(blk, 0) isa CC.ParmVarDecl
+    @test CC.getParams(blk) isa Vector{CC.ParmVarDecl}
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Coverage | fixed wrapper arity bugs" begin
+    # Regression for three wrappers whose Julia arity/name had drifted from the
+    # binding so any call errored (never covered before).
+    I = create_interpreter(String[])
+    CC.parse(I, "int gvfix = 0; int plainfix(int a){ return a; } struct Afix { virtual void p() = 0; virtual void q(); };")
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+
+    @test f(I, "gvfix")
+    @test CC.isNoDestroy(CC.VarDecl(get_decl(f).ptr), ctx) isa Bool     # was: missing ctx arg
+
+    @test f(I, "plainfix")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    @test CC.getTemplateInstantiationPattern(fd, true) isa CC.FunctionDecl  # was: missing for_def arg
+
+    @test f(I, "Afix")
+    afix = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test any(m -> CC.isPureVirtual(m), CC.getMethods(afix))            # isPure removed; isPureVirtual is the live one
+
+    dispose(f)
+    dispose(I)
+end

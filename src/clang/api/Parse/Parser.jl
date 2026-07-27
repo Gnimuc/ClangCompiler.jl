@@ -15,7 +15,7 @@ end
 
 function getLangOpts(x::Parser)
     @check_ptrs x
-    return clang_Parser_getLangOpts(x)
+    return LangOptions(clang_Parser_getLangOpts(x))
 end
 
 function getTargetInfo(x::Parser)

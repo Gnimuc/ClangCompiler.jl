@@ -191,10 +191,10 @@ function getAsFunction(x::AbstractDecl)
     return FunctionDecl(clang_Decl_getAsFunction(x))
 end
 
-# function dump(x::AbstractDecl)
-#     @check_ptrs x
-#     return clang_Decl_dump(x)
-# end
+function dump(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_dump(x)
+end
 
 function dumpColor(x::AbstractDecl)
     @check_ptrs x
@@ -285,17 +285,17 @@ end
 
 function getParent(x::DeclContext)
     @check_ptrs x
-    return clang_DeclContext_getParent(x)
+    return DeclContext(clang_DeclContext_getParent(x))
 end
 
 function getLexicalParent(x::DeclContext)
     @check_ptrs x
-    return clang_DeclContext_getLexicalParent(x)
+    return DeclContext(clang_DeclContext_getLexicalParent(x))
 end
 
 function getLookupParent(x::DeclContext)
     @check_ptrs x
-    return clang_DeclContext_getLookupParent(x)
+    return DeclContext(clang_DeclContext_getLookupParent(x))
 end
 
 function isClosure(x::DeclContext)

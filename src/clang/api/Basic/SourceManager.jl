@@ -25,15 +25,17 @@ function FileID(src_mgr::SourceManager, buffer::LLVM.MemoryBuffer)
 end
 
 """
-    FileID(src_mgr::SourceManager, file_entry::FileEntry)
-Create a file ID from a file entry.
+    FileID(src_mgr::SourceManager, ref::FileEntryRef)
+Create a file ID from a file entry reference (see `getFileRef`). The C side
+dereferences the heap-boxed `clang::FileEntryRef` — a plain `FileEntry` is not
+accepted.
 
 See also [`get_file`](@ref).
 """
-function FileID(src_mgr::SourceManager, file_entry::FileEntry,
+function FileID(src_mgr::SourceManager, ref::FileEntryRef,
                 loc::SourceLocation=SourceLocation())
-    @check_ptrs src_mgr file_entry
-    return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr, file_entry, loc))
+    @check_ptrs src_mgr ref
+    return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr, ref, loc))
 end
 
 """
@@ -57,11 +59,11 @@ function setMainFileID(src_mgr::SourceManager, id::FileID)
 end
 
 """
-    setMainFileID(src_mgr::SourceManager, file_entry::FileEntry)
-Set the main file ID of the source manager to `file_entry`.
+    setMainFileID(src_mgr::SourceManager, ref::FileEntryRef)
+Set the main file ID of the source manager to the file `ref` points to.
 """
-function setMainFileID(src_mgr::SourceManager, file_entry::FileEntry)
-    id = FileID(src_mgr, file_entry)
+function setMainFileID(src_mgr::SourceManager, ref::FileEntryRef)
+    id = FileID(src_mgr, ref)
     setMainFileID(src_mgr, id)
     dispose(id)
     return nothing

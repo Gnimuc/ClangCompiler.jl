@@ -99,6 +99,17 @@ Base.unsafe_convert(::Type{CXDeclaratorDecl}, x::DeclaratorDecl) = x.ptr
 Base.cconvert(::Type{CXDeclaratorDecl}, x::DeclaratorDecl) = x
 
 """
+    struct EvaluatedStmt
+Hold a pointer to a `clang::EvaluatedStmt` object.
+"""
+struct EvaluatedStmt
+    ptr::CXEvaluatedStmt
+end
+
+Base.unsafe_convert(::Type{CXEvaluatedStmt}, x::EvaluatedStmt) = x.ptr
+Base.cconvert(::Type{CXEvaluatedStmt}, x::EvaluatedStmt) = x
+
+"""
     struct VarDecl <: AbstractVarDecl
 Hold a pointer to a `clang::VarDecl` object.
 """

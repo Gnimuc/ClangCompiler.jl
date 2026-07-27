@@ -1,27 +1,27 @@
 # CXXRecordDecl
 function getCanonicalDecl(x::AbstractCXXRecordDecl)
     @check_ptrs x
-    return CXCXXRecordDecl(clang_CXXRecordDecl_getCanonicalDecl(x))
+    return CXXRecordDecl(clang_CXXRecordDecl_getCanonicalDecl(x))
 end
 
 function getPreviousDecl(x::AbstractCXXRecordDecl)
     @check_ptrs x
-    return CXCXXRecordDecl(clang_CXXRecordDecl_getPreviousDecl(x))
+    return CXXRecordDecl(clang_CXXRecordDecl_getPreviousDecl(x))
 end
 
 function getMostRecentDecl(x::AbstractCXXRecordDecl)
     @check_ptrs x
-    return CXCXXRecordDecl(clang_CXXRecordDecl_getMostRecentDecl(x))
+    return CXXRecordDecl(clang_CXXRecordDecl_getMostRecentDecl(x))
 end
 
 function getMostRecentNonInjectedDecl(x::AbstractCXXRecordDecl)
     @check_ptrs x
-    return CXCXXRecordDecl(clang_CXXRecordDecl_getMostRecentNonInjectedDecl(x))
+    return CXXRecordDecl(clang_CXXRecordDecl_getMostRecentNonInjectedDecl(x))
 end
 
 function getDefinition(x::AbstractCXXRecordDecl)
     @check_ptrs x
-    return CXCXXRecordDecl(clang_CXXRecordDecl_getDefinition(x))
+    return CXXRecordDecl(clang_CXXRecordDecl_getDefinition(x))
 end
 
 function hasDefinition(x::AbstractCXXRecordDecl)
@@ -394,6 +394,17 @@ function isDependentLambda(x::AbstractCXXRecordDecl)
     return clang_CXXRecordDecl_isDependentLambda(x)
 end
 
+"""
+    isDerivedFrom(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl) -> Bool
+Return `true` when `x` is (transitively) derived from `base`. Both records must
+have complete definitions; the base walk runs entirely on the C++ side.
+"""
+function isDerivedFrom(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl)
+    @check_ptrs x base
+    @assert hasDefinition(x) "CXXRecordDecl has no definition."
+    return clang_CXXRecordDecl_isDerivedFrom(x, base)
+end
+
 function isEffectivelyFinal(x::AbstractCXXRecordDecl)
     @check_ptrs x
     return clang_CXXRecordDecl_isEffectivelyFinal(x)
@@ -447,6 +458,12 @@ end
 function isTriviallyCopyable(x::AbstractCXXRecordDecl)
     @check_ptrs x
     return clang_CXXRecordDecl_isTriviallyCopyable(x)
+end
+
+function isVirtuallyDerivedFrom(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl)
+    @check_ptrs x base
+    @assert hasDefinition(x) "CXXRecordDecl has no definition."
+    return clang_CXXRecordDecl_isVirtuallyDerivedFrom(x, base)
 end
 
 function mayBeAbstract(x::AbstractCXXRecordDecl)

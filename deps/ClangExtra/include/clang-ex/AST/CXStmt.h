@@ -187,6 +187,11 @@ bool clang_IfStmt_isConstexpr(CXIfStmt S);
 
 bool clang_IfStmt_isObjCAvailabilityCheck(CXIfStmt S);
 
+// optional<Stmt*> crosses by nullptr sentinel (MARSHALLING.md §8): the branch
+// a constexpr-if keeps, or null when the statement is not a constexpr-if with
+// a known condition — or when the kept branch is an absent else.
+CXStmt clang_IfStmt_getNondiscardedCase(CXIfStmt S, CXASTContext Ctx);
+
 CXSourceLocation_ clang_IfStmt_getLParenLoc(CXIfStmt S);
 
 CXSourceLocation_ clang_IfStmt_getRParenLoc(CXIfStmt S);

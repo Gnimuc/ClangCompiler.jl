@@ -74,8 +74,12 @@ clang_TemplateArgument_getAsTemplateOrTemplatePattern(CXTemplateArgument TA) {
       .getAsVoidPointer();
 }
 
-unsigned clang_TemplateArgument_getNumTemplateExpansions(CXTemplateArgument TA) {
-  return *static_cast<clang::TemplateArgument *>(TA)->getNumTemplateExpansions();
+bool clang_TemplateArgument_getNumTemplateExpansions(CXTemplateArgument TA, unsigned *N) {
+  if (auto Num = static_cast<clang::TemplateArgument *>(TA)->getNumTemplateExpansions()) {
+    *N = *Num;
+    return true;
+  }
+  return false;
 }
 
 LLVMGenericValueRef clang_TemplateArgument_getAsIntegral(CXTemplateArgument TA) {

@@ -50,9 +50,15 @@ function Base.size(x::TemplateArgumentList)
     return clang_TemplateArgumentList_size(x)
 end
 
+"""
+    data(x::TemplateArgumentList) -> TemplateArgument
+Return a borrowed carrier of the list's first element. Julia cannot stride the
+underlying value array (`sizeof(clang::TemplateArgument)` is unknown here); use
+`get(x, i)` for indexed access.
+"""
 function data(x::TemplateArgumentList)
     @check_ptrs x
-    return clang_TemplateArgumentList_data(x)
+    return TemplateArgument(clang_TemplateArgumentList_data(x))
 end
 
 function Base.get(x::TemplateArgumentList, i::Integer)
@@ -177,6 +183,24 @@ end
 function getSpecializedTemplate(x::AbstractClassTemplateSpecializationDecl)
     @check_ptrs x
     return ClassTemplateDecl(clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(x))
+end
+
+function specializedOnPartial(x::AbstractClassTemplateSpecializationDecl)
+    @check_ptrs x
+    return clang_ClassTemplateSpecializationDecl_specializedOnPartial(x)
+end
+
+"""
+    getSpecializedTemplateOrPartial(x::AbstractClassTemplateSpecializationDecl)
+Return the template this specialization was instantiated from, without
+collapsing the `PointerUnion`: a `ClassTemplatePartialSpecializationDecl` when
+`specializedOnPartial(x)` holds, a `ClassTemplateDecl` otherwise.
+"""
+function getSpecializedTemplateOrPartial(x::AbstractClassTemplateSpecializationDecl)
+    @check_ptrs x
+    ptr = clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial(x)
+    return specializedOnPartial(x) ? ClassTemplatePartialSpecializationDecl(ptr) :
+           ClassTemplateDecl(ptr)
 end
 
 # VarTemplateSpecializationDecl

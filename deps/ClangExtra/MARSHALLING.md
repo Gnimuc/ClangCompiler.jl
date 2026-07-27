@@ -127,8 +127,13 @@ Clang exposes members as C++ ranges, not arrays. Two shapes:
 State the count semantics in a header comment (slots may be null; count is exact).
 
 **In the tree.** Count+index — `clang_CXXRecordDecl_getNumBases` / `getBase`
-(`lib/AST/CXDeclCXX.cpp`). Count+fill — `clang_RecordDecl_getFields`,
-`clang_EnumDecl_getEnumerators` (`lib/AST/CXDecl.cpp`). Bulk two-buffer (node
+(`lib/AST/CXDeclCXX.cpp`), `clang_TemplateSpecializationType_getNumArgs` /
+`clang_TemplateSpecializationType_getArg` (`lib/AST/CXType.cpp`). Count+fill —
+`clang_RecordDecl_getFields`, `clang_EnumDecl_getEnumerators`
+(`lib/AST/CXDecl.cpp`); for a `std::vector<std::string>` member the fill buffer
+carries borrowed `c_str()` pointers — `clang_CodeGenOptions_getCommandLineArgs`
+(`lib/Basic/CXCodeGenOptions.cpp`), `clang_FrontendOptions_getModulesEmbedFiles`
+(`lib/Frontend/CXFrontendOptions.cpp`). Bulk two-buffer (node
 pointers + kinds in lockstep, whole walk in one call) — `clang_Stmt_getSubtreeSize`
 / `clang_Stmt_collectSubtree` (`lib/AST/CXStmt.cpp`),
 `clang_DeclContext_collectRecursiveDecls` (`lib/AST/CXDeclBase.cpp`).
@@ -145,7 +150,8 @@ forward-only ranges. The one case a cursor would win — search with early exit 
 better served by a narrow predicate that runs the loop in C (§10), not by dragging
 a lazy iterator across FFI. A Julia-side stride over a raw value array is *not* an
 option: the caller can't know `sizeof(clang::TemplateArgument)` etc., which is
-exactly how `get_template_args` mis-strided.
+exactly how the old `get_template_args` mis-strided before it moved to the
+count+index pair.
 
 ## 7. Value-type aggregates → expose the parts
 
@@ -172,12 +178,21 @@ aggregate must round-trip intact.
 `bool` predicate (`...specializedOnPartial`) so the Julia layer picks the right carrier. For
 `optional<T*>`, use `nullptr` as the disengaged sentinel when `T*` is a pointer.
 
-**Not yet in the tree.** No wrapper splits a `PointerUnion` this way today:
+**Partly in the tree.** The union split —
+`clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial` +
+`clang_ClassTemplateSpecializationDecl_specializedOnPartial`
+(`lib/AST/CXDeclTemplate.cpp`); the arm pointer crosses untouched (no base-class
+adjustment) so the Julia layer wraps it at the exact arm type the predicate
+names. The collapsed convenience form
 `clang_ClassTemplateSpecializationDecl_getSpecializedTemplate`
-(`lib/AST/CXDeclTemplate.cpp`) *collapses* the union to its template arm rather than
-returning the pointer + a `specializedOnPartial` predicate. The `nullptr`-sentinel
-form for `optional<T*>` is likewise unimplemented. The paragraph above is the
-intended shape.
+(`lib/AST/CXDeclTemplate.cpp`) also remains. For `optional<scalar>`, bool-return
++ out-param — `clang_TemplateArgument_getNumTemplateExpansions`
+(`lib/AST/CXTemplateBase.cpp`); a blind `*opt` is UB on a disengaged optional
+and aborts outright under mingw's assertion-enabled libstdc++. The
+`nullptr`-sentinel form for `optional<T*>` —
+`clang_IfStmt_getNondiscardedCase` (`lib/AST/CXStmt.cpp`); note the sentinel
+deliberately conflates "disengaged" with "engaged holding null" (an absent
+else branch), which the wrapper documents.
 
 ## 9. Qualifier / navigation classes with their own surface (`NestedNameSpecifier`, `TypeLoc`, `ASTRecordLayout`)
 
@@ -191,9 +206,13 @@ an opaque handle + source-range floor.
 `CXNestedNameSpecifier` family (`lib/AST/CXNestedNameSpecifier.cpp`), borrowed;
 `TypeLoc` → the `CXTypeLoc` floor from `clang_TypeSourceInfo_getTypeLoc`
 (`lib/AST/CXTypeLoc.cpp`), *owned* with a `dispose` because a `TypeLoc` is a
-by-value object. `ASTRecordLayout` is still a `// getASTRecordLayout` placeholder in
-`CXASTContext.h` — the `CXASTRecordLayout` handle and its accessor family are
-unimplemented.
+by-value object; `ASTRecordLayout` → the borrowed entry point
+`clang_ASTContext_getASTRecordLayout` (`lib/AST/CXASTContext.cpp`) and the
+`clang_ASTRecordLayout_getSize` / `getFieldOffset` / `getBaseClassOffset`
+accessor family (`lib/AST/CXRecordLayout.cpp`), including the CXXInfo-gated
+tail (`clang_ASTRecordLayout_getNonVirtualSize` / `hasOwnVFPtr` / `hasVBPtr`
+etc., `lib/AST/CXRecordLayout.cpp`) — CharUnits cross in bytes as `int64_t`,
+`getFieldOffset` alone in bits, matching the C++ API.
 
 ## 10. C++ callbacks / visitors — don't cross the boundary
 
@@ -204,12 +223,13 @@ unimplemented.
 true visitor is unavoidable, expose it as an explicit count+fill of results, not a function
 pointer across FFI.
 
-**Partly in the tree.** The "run the whole walk in C" form is the bulk extractors —
+**In the tree.** The "run the whole walk in C" form is the bulk extractors —
 `clang_Stmt_collectSubtree` (`lib/AST/CXStmt.cpp`) and
 `clang_DeclContext_collectRecursiveDecls` (`lib/AST/CXDeclBase.cpp`) do the entire
-recursion on the C side and hand back flat buffers. The narrow-predicate form
-(`isDerivedFrom` instead of `forallBases`) is the recommendation but is not yet
-bound.
+recursion on the C side and hand back flat buffers. The narrow-predicate form —
+`clang_CXXRecordDecl_isDerivedFrom` / `clang_CXXRecordDecl_isVirtuallyDerivedFrom`
+(`lib/AST/CXDeclCXX.cpp`) — runs the base walk in C instead of exposing
+`forallBases`.
 
 ## 11. Builders taking `ArrayRef` / non-trivial value inputs (`ASTContext::getFunctionType`, `getConstantArrayType`, `getTemplateSpecializationType`)
 
@@ -222,10 +242,35 @@ array of heap-boxed encodings. These are AST-construction APIs — lower priorit
 **Partly in the tree.** The array-input half is instanced by
 `clang_TemplateArgumentList_CreateCopy` (`lib/AST/CXDeclTemplate.cpp`), which rebuilds
 an `ArrayRef` from a `(handle-buffer, count)` pair (note it dereferences each handle —
-the buffer is handles, not a contiguous value array). The `ExtProtoInfo`-flattening
-builders — `getFunctionType`, `getConstantArrayType`, `getTemplateSpecializationType`
-— remain `//` placeholders in `CXASTContext.h`; the sketch above is the intended
-shape, not yet implemented.
+the buffer is handles, not a contiguous value array), and by
+`clang_ASTContext_getFunctionType` (`lib/AST/CXASTContext.cpp`), whose
+`CXQualType` buffer decodes through `getFromOpaquePtr` and whose `ExtProtoInfo`
+is flattened to the FFI-relevant subset (variadic + calling convention).
+`clang_ASTContext_getConstantArrayType` (`lib/AST/CXASTContext.cpp`) builds the
+`APInt` from a `uint64_t` at the target's `size_t` width, and
+`clang_ASTContext_getTemplateSpecializationType` (`lib/AST/CXASTContext.cpp`)
+rebuilds its argument `ArrayRef` from a `(handle-buffer, count)` pair of
+heap-boxed `CXTemplateArgument` encodings.
+
+## 12. Refcount-adopting parameters (`IntrusiveRefCntPtr` sinks)
+
+Some Clang entry points take an `IntrusiveRefCntPtr<T>` (e.g.
+`CreateInvocationOptions::Diags`), but the shim's handles are caller-owned raw
+pointers whose `_dispose` is an unconditional `delete` — refcounts are never part
+of the C surface.
+
+**Pin with `Retain()` before wrapping.** Wrapping the raw pointer in a temporary
+`IntrusiveRefCntPtr` bumps the count 0→1 and the temporary's destructor takes it
+back to 0 — deleting an object the caller still owns. One explicit `Retain()`
+before constructing the temporary makes the count end at 1 instead: the borrowed
+object survives, the caller's `_dispose` still frees it (plain `delete` ignores
+the count), and no second boxing scheme appears. Never hand the C API's raw
+handle to a refcount-taking parameter without the pin, and never add a
+dispose-via-`Release` variant next to the `delete`-based one.
+
+**In the tree.** `clang_CompilerInvocation_createFromCommandLine`
+(`lib/Frontend/CXCompilerInvocation.cpp`) pins the borrowed `DiagnosticsEngine`
+before `clang::createInvocation` runs the driver.
 
 ---
 

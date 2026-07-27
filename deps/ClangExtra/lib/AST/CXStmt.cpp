@@ -339,6 +339,12 @@ bool clang_IfStmt_isObjCAvailabilityCheck(CXIfStmt S) {
   return static_cast<clang::IfStmt *>(S)->isObjCAvailabilityCheck();
 }
 
+CXStmt clang_IfStmt_getNondiscardedCase(CXIfStmt S, CXASTContext Ctx) {
+  auto Case = static_cast<clang::IfStmt *>(S)->getNondiscardedCase(
+      *static_cast<clang::ASTContext *>(Ctx));
+  return Case ? *Case : nullptr;
+}
+
 CXSourceLocation_ clang_IfStmt_getLParenLoc(CXIfStmt S) {
   return static_cast<clang::IfStmt *>(S)->getLParenLoc().getPtrEncoding();
 }

@@ -97,6 +97,16 @@ bool clang_NonTypeTemplateParmDecl_isParameterPack(CXNonTypeTemplateParmDecl D);
 CXClassTemplateDecl
 clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(CXClassTemplateSpecializationDecl D);
 
+// PointerUnion split: the raw arm pointer, discriminated by the companion
+// predicate — CXClassTemplatePartialSpecializationDecl when specializedOnPartial
+// is true, CXClassTemplateDecl otherwise. The arm pointer is returned untouched
+// (no base-class adjustment), so the caller wraps it at the exact arm type.
+CXDecl clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial(
+    CXClassTemplateSpecializationDecl D);
+
+bool clang_ClassTemplateSpecializationDecl_specializedOnPartial(
+    CXClassTemplateSpecializationDecl D);
+
 CXTemplateSpecializationKind
 clang_ClassTemplateSpecializationDecl_getSpecializationKind(CXClassTemplateSpecializationDecl D);
 

@@ -278,8 +278,8 @@ are never installed.
    deterministic symbol mode keeps the lib diff minimal. The `bindings` CI job reruns the
    generator and fails on any diff under `lib/`, and the test suite enforces the rest:
    test/abi.jl (every binding's symbol resolves), test/lint.jl (layout/guards/CMake
-   parity/collision names), test/coverage.jl (every binding wrapped, stamped, or
-   skiplisted — and the skiplist only shrinks).
+   parity/collision names, every binding wrapped or stamped, and every
+   `clang_*` reference in src/ resolving to a binding).
 4. Note: any commit touching deps/ClangExtra makes every CI job compile libclangex from
    source (build_ci.jl timestamp check), and a ClangCompiler.jl release then requires a
    libclangex_jll rebuild on Yggdrasil + a compat bump in the top-level Project.toml —

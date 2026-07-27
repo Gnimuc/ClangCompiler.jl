@@ -265,6 +265,9 @@ typedef void *CXASTNameGenerator;
 // NestedNameSpacifier
 typedef void *CXNestedNameSpecifier;
 
+// RecordLayout
+typedef void *CXASTRecordLayout;
+
 // Stmt
 typedef void *CXStmt;
 typedef void *CXDeclStmt;

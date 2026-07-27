@@ -7,26 +7,34 @@ function getTypeSize(x::ASTContext, ty::QualType)
     @check_ptrs x
     return clang_ASTContext_getTypeSize(x, ty)
 end
-getTypeSize(x::ASTContext, ty::CXType_) = getTypeSize(x, get_qual_type(ty))
+getTypeSize(x::ASTContext, ty::AbstractType) = getTypeSize(x, get_qual_type(ty))
 
 function getSizeOf(x::ASTContext, ty::QualType)
     @check_ptrs x
     return clang_ASTContext_getSizeOf(x, ty)
 end
 
-function getTypeDeclType(x::ASTContext, decl::TypeDecl, prev::TypeDecl=TypeDecl(C_NULL))
+function getTypeDeclType(x::ASTContext, decl::AbstractTypeDecl,
+                         prev::AbstractTypeDecl=TypeDecl(C_NULL))
     @check_ptrs x decl
     return QualType(clang_ASTContext_getTypeDeclType(x, decl, prev))
 end
 
-function getRecordType(x::ASTContext, decl::RecordDecl)
+function getRecordType(x::ASTContext, decl::AbstractRecordDecl)
     @check_ptrs x decl
     return QualType(clang_ASTContext_getRecordType(x, decl))
 end
 
-getTypeDeclType(x::ASTContext, decl::NamedDecl) = getTypeDeclType(x, TypeDecl(decl.ptr))
-getTypeDeclType(x::ASTContext, decl::AbstractTypeDecl) = getTypeDeclType(x, TypeDecl(decl.ptr))
-getTypeDeclType(x::ASTContext, decl::AbstractRecordDecl) = getRecordType(x, RecordDecl(decl.ptr))
+"""
+    getASTRecordLayout(x::ASTContext, decl::AbstractRecordDecl) -> ASTRecordLayout
+Return the record's memory layout. The layout is owned by the `ASTContext`
+arena (no `dispose`). The record must have a complete definition.
+"""
+function getASTRecordLayout(x::ASTContext, decl::AbstractRecordDecl)
+    @check_ptrs x decl
+    @assert getDefinition(decl).ptr != C_NULL "cannot get the layout of a forward declaration"
+    return ASTRecordLayout(clang_ASTContext_getASTRecordLayout(x, decl))
+end
 
 function getPointerType(x::ASTContext, ty::QualType)
     @check_ptrs x
@@ -343,6 +351,20 @@ function getFloatingTypeSemanticOrder(x::ASTContext, a2::QualType, a3::QualType)
     return clang_ASTContext_getFloatingTypeSemanticOrder(x, a2, a3)
 end
 
+"""
+    getFunctionType(x::ASTContext, ret::QualType, args::Vector{QualType};
+                    variadic=false, cc=CXCallingConv_CC_C) -> QualType
+Build a `FunctionProtoType` from a return type and parameter types. The
+remaining `ExtProtoInfo` fields keep their defaults.
+"""
+function getFunctionType(x::ASTContext, ret::QualType, args::Vector{QualType}=QualType[];
+                         variadic::Bool=false, cc::CXCallingConv_=CXCallingConv_CC_C)
+    @check_ptrs x
+    ptrs = CXQualType[a.ptr for a in args]
+    return QualType(clang_ASTContext_getFunctionType(x, ret, ptrs, length(ptrs), variadic,
+                                                     cc))
+end
+
 function getFunctionNoProtoType(x::ASTContext, a2::QualType)
     @check_ptrs x
     return QualType(clang_ASTContext_getFunctionNoProtoType(x, a2))
@@ -511,6 +533,18 @@ end
 function getSourceManager(x::ASTContext)
     @check_ptrs x
     return SourceManager(clang_ASTContext_getSourceManager(x))
+end
+
+"""
+    getConstantArrayType(x::ASTContext, elt::QualType, size::Integer) -> QualType
+Build a `ConstantArrayType` of `size` elements of `elt`.
+"""
+function getConstantArrayType(x::ASTContext, elt::QualType, size::Integer,
+                              asm::CXArraySizeModifier=CXArraySizeModifier_Normal,
+                              index_type_quals::Integer=0)
+    @check_ptrs x
+    return QualType(clang_ASTContext_getConstantArrayType(x, elt, size, asm,
+                                                          index_type_quals))
 end
 
 function getStringLiteralArrayType(x::ASTContext, a2::QualType, a3::Integer)
@@ -916,6 +950,24 @@ end
 function getTemplateTypeParmType(x::ASTContext, a2::Integer, a3::Integer, a4::Integer, a5::TemplateTypeParmDecl)
     @check_ptrs x a5
     return QualType(clang_ASTContext_getTemplateTypeParmType(x, a2, a3, a4, a5))
+end
+
+"""
+    getTemplateSpecializationType(x::ASTContext, name::TemplateName,
+                                  args::Vector{TemplateArgument},
+                                  underlying::QualType=QualType(C_NULL)) -> QualType
+Build a `TemplateSpecializationType` from a template name and arguments. The
+arguments cross as a handle buffer (MARSHALLING.md §11); `underlying` is only
+consulted for alias templates and may stay null otherwise.
+"""
+function getTemplateSpecializationType(x::ASTContext, name::TemplateName,
+                                       args::Vector{TemplateArgument},
+                                       underlying::QualType=QualType(C_NULL))
+    @check_ptrs x name
+    ptrs = CXTemplateArgument[a.ptr for a in args]
+    return QualType(clang_ASTContext_getTemplateSpecializationType(x, name, ptrs,
+                                                                   length(ptrs),
+                                                                   underlying))
 end
 
 function getTrivialTypeSourceInfo(x::ASTContext, a2::QualType, a3::SourceLocation)

@@ -127,7 +127,7 @@ end
 
 function getMostRecentDecl(x::AbstractNamedDecl)
     @check_ptrs x
-    return clang_NamedDecl_getMostRecentDecl(x)
+    return NamedDecl(clang_NamedDecl_getMostRecentDecl(x))
 end
 
 # TODO: getObjCFStringFormattingFamily
@@ -335,7 +335,7 @@ end
 
 function getTemplateParameterList(x::AbstractDeclaratorDecl, i::Integer)
     @check_ptrs x
-    return clang_DeclaratorDecl_getTemplateParameterList(x, i)
+    return TemplateParameterList(clang_DeclaratorDecl_getTemplateParameterList(x, i))
 end
 
 # TODO: setTemplateParameterListsInfo
@@ -492,14 +492,14 @@ end
 
 # TODO: getInitAddress
 
-function getInit(x::AbstractVarDecl, expr::Expr_)
+function setInit(x::AbstractVarDecl, expr::Expr_)
     @check_ptrs x expr
     return clang_VarDecl_setInit(x, expr)
 end
 
 function getInitializingDeclaration(x::AbstractVarDecl)
     @check_ptrs x
-    return clang_VarDecl_getInitializingDeclaration(x)
+    return VarDecl(clang_VarDecl_getInitializingDeclaration(x))
 end
 
 function mightBeUsableInConstantExpressions(x::AbstractVarDecl, ctx::ASTContext)
@@ -520,8 +520,17 @@ function isUsableInConstantExpressions(x::AbstractVarDecl, ctx::ASTContext)
     return clang_VarDecl_isUsableInConstantExpressions(x, ctx)
 end
 
-# TODO: clang_VarDecl_ensureEvaluatedStmt
-# TODO: clang_VarDecl_getEvaluatedStmt
+function ensureEvaluatedStmt(x::AbstractVarDecl)
+    @check_ptrs x
+    return EvaluatedStmt(clang_VarDecl_ensureEvaluatedStmt(x))
+end
+
+# The returned `EvaluatedStmt` wraps C_NULL when the initializer has not been
+# evaluated yet (see `ensureEvaluatedStmt`).
+function getEvaluatedStmt(x::AbstractVarDecl)
+    @check_ptrs x
+    return EvaluatedStmt(clang_VarDecl_getEvaluatedStmt(x))
+end
 
 # TODO: evaluateValue
 # TODO: getEvaluatedValue
@@ -899,7 +908,7 @@ end
 
 function getEllipsisLoc(x::AbstractFunctionDecl)
     @check_ptrs x
-    return clang_FunctionDecl_getEllipsisLoc(x)
+    return SourceLocation(clang_FunctionDecl_getEllipsisLoc(x))
 end
 
 # TODO: getSourceRange
@@ -974,14 +983,11 @@ function setVirtualAsWritten(x::AbstractFunctionDecl, v::Bool)
     return clang_FunctionDecl_setVirtualAsWritten(x, v)
 end
 
-# NOTE: FunctionDecl::isPure() was renamed isPureVirtual() upstream; the working
-# wrapper is isPureVirtual(::AbstractFunctionDecl) above. The old isPure wrapper
-# called a binding that no longer exists and has been removed.
-
-function setPure(x::AbstractFunctionDecl, pure::Bool=true)
-    @check_ptrs x
-    return clang_FunctionDecl_setPure(x, pure)
-end
+# NOTE: FunctionDecl::isPure()/setPure() were renamed isPureVirtual()/
+# setIsPureVirtual() upstream; the working wrappers are
+# isPureVirtual(::AbstractFunctionDecl) above and
+# setIsPureVirtual(::AbstractFunctionDecl) below. The old-name wrappers called
+# bindings that no longer exist and have been removed.
 
 function isLateTemplateParsed(x::AbstractFunctionDecl)
     @check_ptrs x
@@ -1269,7 +1275,7 @@ end
 
 function getParamDecl(x::AbstractFunctionDecl, i::Integer)
     @check_ptrs x
-    return clang_FunctionDecl_getParamDecl(x, i)
+    return ParmVarDecl(clang_FunctionDecl_getParamDecl(x, i))
 end
 
 # TODO: setParams

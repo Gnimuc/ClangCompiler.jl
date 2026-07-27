@@ -28,3 +28,14 @@ using Test
     dispose(f)
     dispose(I)
 end
+
+@testset "undo" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    CC.parse(I, "int cii_gone = 2;")
+    @test f(I, "cii_gone")
+    # retract the most recent partial translation unit
+    @test CC.undo(I.interp) === nothing
+    dispose(f)
+    dispose(I)
+end

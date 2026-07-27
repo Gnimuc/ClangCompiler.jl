@@ -20,6 +20,8 @@ end
 
 strip_line_comment(line) = first(split(line, "//"; limit=2))
 
+isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
+
 @testset "ClangExtra layout lint" begin
     @testset "no duplicate typedefs in CXTypes.h" begin
         typedefs = filter(startswith("typedef void *"),
@@ -83,6 +85,80 @@ strip_line_comment(line) = first(split(line, "//"; limit=2))
                 @test m === nothing
             end
         end
+    end
+
+    @testset "every clang_* reference in src/ resolves to a binding" begin
+        # The generated bindings and the Julia wrappers drift silently: a wrapper
+        # calling a binding that does not exist passes coverage.jl (which checks
+        # the opposite direction) and abi.jl (which checks bindings, not
+        # references), then fails at call time as UndefVarError — three wrappers
+        # shipped that way. Comment-stripped so a commented-out reference is not
+        # required to resolve.
+        root = normpath(joinpath(@__DIR__, ".."))
+        llvm_major = string(Base.libllvm_version.major)
+        defined = Set{String}()
+        for lib in (joinpath(root, "lib", llvm_major, "LibClangEx.jl"),
+                    joinpath(root, "lib", "LibClang.jl"))
+            for m in eachmatch(r"function (clang_\w+)\(", read(lib, String))
+                push!(defined, m.captures[1])
+            end
+        end
+        @test length(defined) > 2000
+
+        # Call-shaped references only (`clang_foo(`): plain-variable names like
+        # `clang_inc` in env.jl are not binding references.
+        unresolved = Dict{String,Vector{String}}()
+        for (r, _, files) in walkdir(joinpath(root, "src")), f in files
+            endswith(f, ".jl") || continue
+            path = joinpath(r, f)
+            for m in eachmatch(r"\b(clang_\w+)\(", strip_jl_comments(read(path, String)))
+                name = m.captures[1]
+                name in defined && continue
+                push!(get!(Vector{String}, unresolved, name), relpath(path, root))
+            end
+        end
+        if !isempty(unresolved)
+            @error "src/ references clang_* names with no binding" unresolved
+        end
+        @test isempty(unresolved)
+    end
+
+    @testset "every libclangex binding is wrapped or stamped" begin
+        # The reverse of the reference-resolution check above: every generated
+        # binding must be referenced by the Julia layer (comment-stripped — a
+        # clang_* token in a comment is not a wrapper), or belong to a downcast
+        # helper family reached indirectly through resolve()/getKind table
+        # lookups rather than per-class calls.
+        root = normpath(joinpath(@__DIR__, ".."))
+        llvm_major = string(Base.libllvm_version.major)
+        binding_names = Set{String}()
+        for line in eachline(joinpath(root, "lib", llvm_major, "LibClangEx.jl"))
+            m = match(r"@ccall libclangex\.(\w+)\(", line)
+            m === nothing || push!(binding_names, m.captures[1])
+        end
+        @test length(binding_names) > 2000
+
+        referenced = Set{String}()
+        for (r, _, files) in walkdir(joinpath(root, "src")), f in files
+            endswith(f, ".jl") || continue
+            for m in eachmatch(r"clang_\w+",
+                               strip_jl_comments(read(joinpath(r, f), String)))
+                push!(referenced, m.match)
+            end
+        end
+
+        stamped(n) = occursin(r"^clang_Stmt_(castTo|is)[A-Z]", n) ||
+                     occursin(r"^clang_Decl_(castTo|is)[A-Z]\w*Decl$", n) ||
+                     occursin(r"^clang_Type_castTo[A-Z]\w*Type$", n) ||
+                     occursin(r"^clang_Attr_(castTo|is)[A-Z]\w*Attr$", n) ||
+                     occursin(r"^clang_TypeLoc_castTo[A-Z]\w*TypeLoc$", n)
+
+        unaccounted = sort!([n for n in binding_names
+                             if !(n in referenced) && !stamped(n)])
+        if !isempty(unaccounted)
+            @error "libclangex bindings with no Julia wrapper (wrap them)" unaccounted
+        end
+        @test isempty(unaccounted)
     end
 
     @testset "MARSHALLING.md anchors resolve" begin

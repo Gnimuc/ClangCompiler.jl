@@ -1,5 +1,6 @@
 #include "clang-ex/AST/CXASTContext.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/TemplateBase.h"
 
 // ASTContext
 
@@ -408,7 +409,19 @@ CXQualType clang_ASTContext_getMemberPointerType(CXASTContext Ctx, CXQualType T,
 // getVariableArrayType
 // getDependentSizedArrayType
 // getIncompleteArrayType
-// getConstantArrayType
+
+CXQualType clang_ASTContext_getConstantArrayType(CXASTContext Ctx, CXQualType EltTy,
+                                                 uint64_t Size, CXArraySizeModifier ASM,
+                                                 unsigned IndexTypeQuals) {
+  auto *C = static_cast<clang::ASTContext *>(Ctx);
+  llvm::APInt ArySize(C->getTypeSize(C->getSizeType()), Size);
+  return C
+      ->getConstantArrayType(clang::QualType::getFromOpaquePtr(EltTy), ArySize,
+                             /*SizeExpr=*/nullptr,
+                             static_cast<clang::ArraySizeModifier>(ASM), IndexTypeQuals)
+      .getAsOpaquePtr();
+}
+
 // getStringLiteralArrayType
 
 CXQualType clang_ASTContext_getStringLiteralArrayType(CXASTContext Ctx, CXQualType EltTy,
@@ -491,7 +504,20 @@ CXQualType clang_ASTContext_getFunctionNoProtoType(CXASTContext Ctx, CXQualType 
       .getAsOpaquePtr();
 }
 
-// getFunctionType
+CXQualType clang_ASTContext_getFunctionType(CXASTContext Ctx, CXQualType ResultTy,
+                                            const CXQualType *ArgTys, unsigned NumArgs,
+                                            bool IsVariadic, CXCallingConv_ CC) {
+  llvm::SmallVector<clang::QualType, 8> Args;
+  Args.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    Args.push_back(clang::QualType::getFromOpaquePtr(ArgTys[I]));
+  clang::FunctionProtoType::ExtProtoInfo EPI;
+  EPI.Variadic = IsVariadic;
+  EPI.ExtInfo = EPI.ExtInfo.withCallingConv(static_cast<clang::CallingConv>(CC));
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getFunctionType(clang::QualType::getFromOpaquePtr(ResultTy), Args, EPI)
+      .getAsOpaquePtr();
+}
 
 CXQualType clang_ASTContext_adjustStringLiteralBaseType(CXASTContext Ctx,
                                                         CXQualType StrLTy) {
@@ -559,9 +585,23 @@ CXQualType clang_ASTContext_getTemplateTypeParmType(CXASTContext Ctx, unsigned D
       .getAsOpaquePtr();
 }
 
-// getTemplateSpecializationType
+CXQualType clang_ASTContext_getTemplateSpecializationType(
+    CXASTContext Ctx, CXTemplateName T, const CXTemplateArgument *Args,
+    unsigned NumArgs, CXQualType Underlying) {
+  llvm::SmallVector<clang::TemplateArgument, 8> ArgVec;
+  ArgVec.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    ArgVec.push_back(
+        *static_cast<clang::TemplateArgument *>(const_cast<void *>(Args[I])));
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getTemplateSpecializationType(
+          clang::TemplateName::getFromVoidPointer(const_cast<void *>(T)), ArgVec,
+          clang::QualType::getFromOpaquePtr(Underlying))
+      .getAsOpaquePtr();
+}
+
 // getCanonicalTemplateSpecializationType
-// getTemplateSpecializationType
+// getTemplateSpecializationType (TemplateArgumentLoc overload)
 // getTemplateSpecializationTypeInfo
 
 CXQualType clang_ASTContext_getParenType(CXASTContext Ctx, CXQualType NamedType) {
@@ -1019,7 +1059,13 @@ unsigned clang_ASTContext_getAlignOfGlobalVar(CXASTContext Ctx, CXQualType T) {
 // getAlignOfGlobalVarInChars
 // getDeclAlign
 // getExnObjectAlignment
-// getASTRecordLayout
+
+CXASTRecordLayout clang_ASTContext_getASTRecordLayout(CXASTContext Ctx,
+                                                      CXRecordDecl RD) {
+  return const_cast<clang::ASTRecordLayout *>(
+      &static_cast<clang::ASTContext *>(Ctx)->getASTRecordLayout(
+          static_cast<clang::RecordDecl *>(RD)));
+}
 // getASTObjCInterfaceLayout
 // DumpRecordLayout
 // getASTObjCImplementationLayout

@@ -305,6 +305,18 @@ function isObjCAvailabilityCheck(x::AbstractIfStmt)
     return clang_IfStmt_isObjCAvailabilityCheck(x)
 end
 
+"""
+    getNondiscardedCase(x::AbstractIfStmt, ctx::ASTContext) -> Stmt
+Return the branch a constexpr-if keeps. The returned `Stmt` wraps C_NULL when
+the statement is not a constexpr-if with a known condition, or when the kept
+branch is an absent `else` (the C side collapses `std::optional<Stmt*>` to a
+nullptr sentinel).
+"""
+function getNondiscardedCase(x::AbstractIfStmt, ctx::ASTContext)
+    @check_ptrs x ctx
+    return Stmt(clang_IfStmt_getNondiscardedCase(x, ctx))
+end
+
 function getLParenLoc(x::AbstractIfStmt)
     @check_ptrs x
     return SourceLocation(clang_IfStmt_getLParenLoc(x))

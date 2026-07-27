@@ -236,6 +236,11 @@ bool clang_CXXRecordDecl_isCapturelessLambda(CXCXXRecordDecl CXXRD);
 
 bool clang_CXXRecordDecl_isDependentLambda(CXCXXRecordDecl CXXRD);
 
+// Narrow predicates in place of the std::function-taking forallBases/
+// lookupInBases (the walk runs entirely on the C++ side); both require the
+// receiver to have a definition.
+bool clang_CXXRecordDecl_isDerivedFrom(CXCXXRecordDecl CXXRD, CXCXXRecordDecl Base);
+
 bool clang_CXXRecordDecl_isEffectivelyFinal(CXCXXRecordDecl CXXRD);
 
 bool clang_CXXRecordDecl_isInterfaceLike(CXCXXRecordDecl CXXRD);
@@ -257,6 +262,9 @@ bool clang_CXXRecordDecl_isTrivial(CXCXXRecordDecl CXXRD);
 bool clang_CXXRecordDecl_isTriviallyCopyConstructible(CXCXXRecordDecl CXXRD);
 
 bool clang_CXXRecordDecl_isTriviallyCopyable(CXCXXRecordDecl CXXRD);
+
+bool clang_CXXRecordDecl_isVirtuallyDerivedFrom(CXCXXRecordDecl CXXRD,
+                                                CXCXXRecordDecl Base);
 
 bool clang_CXXRecordDecl_mayBeAbstract(CXCXXRecordDecl CXXRD);
 

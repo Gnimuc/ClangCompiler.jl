@@ -122,9 +122,11 @@ function createSourceManager(ci::CompilerInstance)
 end
 
 function setMainFileID(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
-    file_entry = getFileEntry(ci, filename, open_file)
+    ref = getFileRef(getFileManager(ci), filename; open_file)
     src_mgr = getSourceManager(ci)
-    return setMainFileID(src_mgr, file_entry)
+    setMainFileID(src_mgr, ref)
+    dispose(ref)
+    return nothing
 end
 
 """
@@ -259,13 +261,6 @@ end
 function setASTConsumer(ci::CompilerInstance, csr::AbstractASTConsumer)
     @check_ptrs ci csr
     return clang_CompilerInstance_setASTConsumer(ci, csr)
-end
-
-# CodeGenerator
-function CreateLLVMCodeGen(ci::CompilerInstance, ctx::LLVM.Context, mod_name::String="JLCC")
-    @check_ptrs ci
-    @assert ctx.ref != C_NULL "Context has a NULL pointer."
-    return CodeGenerator(clang_CreateLLVMCodeGen(ci, ctx, mod_name))
 end
 
 # Actions

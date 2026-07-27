@@ -13,10 +13,14 @@ end
 
 """
     createFromCommandLine(src::String, args::Vector{String}=String[], diag::DiagnosticsEngine=DiagnosticsEngine()) -> CompilerInvocation
-Return a `CompilerInvocation` created from command line arguments.
+Return a `CompilerInvocation` created from command line arguments (the source
+file goes last). Parse problems are reported through `diag`. This function
+allocates and one should call `dispose` to release the resources after using
+this object.
 """
 function createFromCommandLine(src::String, args::Vector{String}=String[],
                                diag::DiagnosticsEngine=DiagnosticsEngine())
+    @check_ptrs diag
     args_with_src = copy(args)
     push!(args_with_src, src)
     invocation = clang_CompilerInvocation_createFromCommandLine(args_with_src,

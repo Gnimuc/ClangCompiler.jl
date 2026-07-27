@@ -182,3 +182,39 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "stamped Attr predicate/cast surface" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "[[noreturn]] void ce2_f();")
+    f = DeclFinder(I)
+    @test f(I, "ce2_f")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    attrs = CC.getAttrs(fd)
+    @test length(attrs) == 1
+    a = attrs[1]
+
+    npred = ncast = 0
+    for nm in names(CC; all=true)
+        isdefined(CC, nm) || continue
+        v = getproperty(CC, nm)
+        if v isa Function && !(v isa Type) && startswith(String(nm), "is") &&
+           hasmethod(v, Tuple{CC.Attr})
+            @test v(a) isa Bool
+            npred += 1
+        elseif v isa Type && v != CC.Attr && hasmethod(v, Tuple{CC.Attr}) &&
+               # exact stamped-cast signature — every struct also has the
+               # implicit converting constructor, whose sig is (::Type, ::Any)
+               which(v, Tuple{CC.Attr}).sig <: Tuple{Type,CC.AbstractAttr}
+            c = v(a)
+            @test c isa v
+            # dyn_cast_or_null: exactly the one matching class casts non-null
+            c.ptr == C_NULL || @test c isa CC.CXX11NoReturnAttr
+            ncast += 1
+        end
+    end
+    @test npred >= 390
+    @test ncast >= 390
+
+    dispose(f)
+    dispose(I)
+end

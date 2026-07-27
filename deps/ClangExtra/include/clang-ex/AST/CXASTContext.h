@@ -2,6 +2,7 @@
 #define LLVM_CLANG_C_EXTRA_CXASTCONTEXT_H
 
 #include "clang-ex/AST/CXType.h"
+#include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -222,7 +223,13 @@ CXQualType clang_ASTContext_getMemberPointerType(CXASTContext Ctx, CXQualType T,
 // getVariableArrayType
 // getDependentSizedArrayType
 // getIncompleteArrayType
-// getConstantArrayType
+
+// The APInt size is built inside the shim from `Size` at the target's size_t
+// width; SizeExpr is always null.
+CXQualType clang_ASTContext_getConstantArrayType(CXASTContext Ctx, CXQualType EltTy,
+                                                 uint64_t Size, CXArraySizeModifier ASM,
+                                                 unsigned IndexTypeQuals);
+
 // getStringLiteralArrayType
 
 CXQualType clang_ASTContext_getStringLiteralArrayType(CXASTContext Ctx, CXQualType EltTy,
@@ -261,7 +268,12 @@ CXQualType clang_ASTContext_getDependentAddressSpaceType(CXASTContext Ctx,
 
 CXQualType clang_ASTContext_getFunctionNoProtoType(CXASTContext Ctx, CXQualType ResultTy);
 
-// getFunctionType
+// ExtProtoInfo flattened to the FFI-relevant subset (variadic + calling
+// convention; everything else defaulted). `ArgTys` is a (handle-buffer, count)
+// array of CXQualType encodings rebuilt into an ArrayRef inside the shim.
+CXQualType clang_ASTContext_getFunctionType(CXASTContext Ctx, CXQualType ResultTy,
+                                            const CXQualType *ArgTys, unsigned NumArgs,
+                                            bool IsVariadic, CXCallingConv_ CC);
 
 CXQualType clang_ASTContext_adjustStringLiteralBaseType(CXASTContext Ctx,
                                                         CXQualType StrLTy);
@@ -291,9 +303,16 @@ CXQualType clang_ASTContext_getTemplateTypeParmType(CXASTContext Ctx, unsigned D
                                                     unsigned Index, bool ParameterPack,
                                                     CXTemplateTypeParmDecl ParmDecl);
 
-// getTemplateSpecializationType
+// `Args` is a (handle-buffer, count) pair of CXTemplateArgument encodings
+// (each handle is dereferenced — the buffer is handles, not a contiguous
+// value array). `Underlying` may be null; it is only consulted for alias
+// templates.
+CXQualType clang_ASTContext_getTemplateSpecializationType(
+    CXASTContext Ctx, CXTemplateName T, const CXTemplateArgument *Args,
+    unsigned NumArgs, CXQualType Underlying);
+
 // getCanonicalTemplateSpecializationType
-// getTemplateSpecializationType
+// getTemplateSpecializationType (TemplateArgumentLoc overload)
 // getTemplateSpecializationTypeInfo
 
 CXQualType clang_ASTContext_getParenType(CXASTContext Ctx, CXQualType NamedType);
@@ -535,7 +554,10 @@ unsigned clang_ASTContext_getAlignOfGlobalVar(CXASTContext Ctx, CXQualType T);
 // getAlignOfGlobalVarInChars
 // getDeclAlign
 // getExnObjectAlignment
-// getASTRecordLayout
+
+// Borrowed, ASTContext-arena owned — no dispose. Precondition (checked by the
+// Julia layer, per the axiom): `RD` has a complete definition.
+CXASTRecordLayout clang_ASTContext_getASTRecordLayout(CXASTContext Ctx, CXRecordDecl RD);
 // getASTObjCInterfaceLayout
 // DumpRecordLayout
 // getASTObjCImplementationLayout

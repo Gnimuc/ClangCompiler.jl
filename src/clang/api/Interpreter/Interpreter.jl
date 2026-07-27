@@ -67,9 +67,9 @@ function getExecutionEngine(x::AbstractInterpreter)
     return LLVM.LLJIT(clang_Interpreter_getExecutionEngine(x))
 end
 
-function undo(x::AbstractInterpreter)
+function undo(x::AbstractInterpreter, n::Integer=1)
     @check_ptrs x
-    return clang_Interpreter_Undo(x)
+    return clang_Interpreter_Undo(x, n)
 end
 
 function getSymbolAddress(x::AbstractInterpreter, name::AbstractString)

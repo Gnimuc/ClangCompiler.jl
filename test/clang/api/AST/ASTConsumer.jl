@@ -17,7 +17,7 @@ using Test
     I = create_interpreter(String[])
     ci = CC.get_instance(I)
     @test CC.hasASTConsumer(ci)
-    cg = CC.get_codegen(ci)                      # borrowed consumer
-    @test CC.Initialize(cg, CC.get_ast_context(I)) === nothing
+    csr = CC.getASTConsumer(ci)                  # borrowed consumer
+    @test CC.Initialize(csr, CC.get_ast_context(I)) === nothing
     dispose(I)
 end

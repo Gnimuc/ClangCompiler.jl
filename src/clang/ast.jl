@@ -29,14 +29,26 @@ get_begin_loc(x::AbstractDecl) = getBeginLoc(x)
 get_end_loc(x::AbstractDecl) = getEndLoc(x)
 get_loc(x::AbstractDecl) = getLocation(x)
 
-dump(x::AbstractDecl) = dumpColor(x)
-
 is_empty(x::DeclarationName) = isEmpty(x)
-get_string(x::DeclarationName) = get_as_string(x)
+get_string(x::DeclarationName) = getAsString(x)
 
 dump(x::CXXScopeSpec) = dump(getScopeRep(x))
 
 size_of(x::ASTContext, ty::QualType)::Int = getSizeOf(x, ty)
+
+# record layout
+get_record_layout(x::ASTContext, decl::AbstractRecordDecl) = getASTRecordLayout(x, decl)
+
+"""
+    field_offsets(x::ASTContext, decl::AbstractRecordDecl) -> Vector{UInt64}
+Return the offset of each field of the record in **bits**, in declaration order.
+"""
+function field_offsets(x::ASTContext, decl::AbstractRecordDecl)
+    layout = get_record_layout(x, decl)
+    return [getFieldOffset(layout, i) for i in 0:(getFieldCount(layout) - 1)]
+end
+
+is_derived_from(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl) = isDerivedFrom(x, base)
 
 # DeclContext
 """

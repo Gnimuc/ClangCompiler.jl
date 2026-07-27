@@ -16,5 +16,6 @@ containsUnexpandedParameterPack(x::TemplateName) = clang_TemplateName_containsUn
 dump(x::TemplateName) = clang_TemplateName_dump(x)
 
 function getTemplateName(x::TemplateSpecializationType)
-    return TemplateName(clang_TemplateSpecializationType_getTemplateName(get_type_ptr(x)))
+    @check_ptrs x
+    return TemplateName(clang_TemplateSpecializationType_getTemplateName(x))
 end

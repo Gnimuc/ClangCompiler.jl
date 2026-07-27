@@ -53,7 +53,9 @@ CXTemplateName clang_TemplateArgument_getAsTemplate(CXTemplateArgument TA);
 
 CXTemplateName clang_TemplateArgument_getAsTemplateOrTemplatePattern(CXTemplateArgument TA);
 
-unsigned clang_TemplateArgument_getNumTemplateExpansions(CXTemplateArgument TA);
+// TemplateArgument::getNumTemplateExpansions is optional<unsigned>: engaged ->
+// fills *N and returns true; disengaged -> returns false, *N untouched.
+bool clang_TemplateArgument_getNumTemplateExpansions(CXTemplateArgument TA, unsigned *N);
 
 LLVMGenericValueRef clang_TemplateArgument_getAsIntegral(CXTemplateArgument TA);
 

@@ -15,6 +15,17 @@ const char *clang_CodeGenOptions_getArgv0(CXCodeGenOptions CGO) {
   return static_cast<clang::CodeGenOptions *>(CGO)->Argv0;
 }
 
+unsigned clang_CodeGenOptions_getCommandLineArgsNum(CXCodeGenOptions CGO) {
+  return static_cast<clang::CodeGenOptions *>(CGO)->CommandLineArgs.size();
+}
+
+void clang_CodeGenOptions_getCommandLineArgs(CXCodeGenOptions CGO, const char **Buf,
+                                             unsigned N) {
+  const auto &Args = static_cast<clang::CodeGenOptions *>(CGO)->CommandLineArgs;
+  for (unsigned I = 0; I < N && I < Args.size(); ++I)
+    Buf[I] = Args[I].c_str();
+}
+
 void clang_CodeGenOptions_PrintStats(CXCodeGenOptions CGO) {
   auto Opts = static_cast<clang::CodeGenOptions *>(CGO);
   llvm::errs() << "\n*** CodeGenOptions Stats:\n";

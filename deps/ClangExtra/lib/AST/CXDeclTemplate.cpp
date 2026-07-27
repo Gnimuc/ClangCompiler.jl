@@ -180,6 +180,22 @@ clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(CXClassTemplateSpec
   return static_cast<clang::ClassTemplateSpecializationDecl *>(D)->getSpecializedTemplate();
 }
 
+CXDecl clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial(
+    CXClassTemplateSpecializationDecl D) {
+  auto U = static_cast<clang::ClassTemplateSpecializationDecl *>(D)
+               ->getSpecializedTemplateOrPartial();
+  if (auto *PD = U.dyn_cast<clang::ClassTemplatePartialSpecializationDecl *>())
+    return PD;
+  return U.get<clang::ClassTemplateDecl *>();
+}
+
+bool clang_ClassTemplateSpecializationDecl_specializedOnPartial(
+    CXClassTemplateSpecializationDecl D) {
+  return static_cast<clang::ClassTemplateSpecializationDecl *>(D)
+      ->getSpecializedTemplateOrPartial()
+      .is<clang::ClassTemplatePartialSpecializationDecl *>();
+}
+
 CXTemplateSpecializationKind
 clang_ClassTemplateSpecializationDecl_getSpecializationKind(CXClassTemplateSpecializationDecl D) {
   return static_cast<CXTemplateSpecializationKind>(

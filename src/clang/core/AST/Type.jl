@@ -481,7 +481,7 @@ struct BuiltinType <: AbstractBuiltinType
     ptr::CXType_
 end
 
-BuiltinType(x::QualType) = BuiltinType(get_type_ptr(x))
+BuiltinType(x::QualType) = BuiltinType(get_type_ptr(x).ptr)
 
 Base.unsafe_convert(::Type{CXType_}, x::T) where {T<:AbstractBuiltinType} = x.ptr
 Base.cconvert(::Type{CXType_}, x::T) where {T<:AbstractBuiltinType} = x
@@ -490,213 +490,213 @@ struct VoidTy <: AbstractVoidTy
     ptr::CXType_
 end
 
-VoidTy(x::QualType) = VoidTy(get_type_ptr(x))
+VoidTy(x::QualType) = VoidTy(get_type_ptr(x).ptr)
 
 struct BoolTy <: AbstractBoolTy
     ptr::CXType_
 end
 
-BoolTy(x::QualType) = BoolTy(get_type_ptr(x))
+BoolTy(x::QualType) = BoolTy(get_type_ptr(x).ptr)
 
 struct CharTy <: AbstractCharTy
     ptr::CXType_
 end
 
-CharTy(x::QualType) = CharTy(get_type_ptr(x))
+CharTy(x::QualType) = CharTy(get_type_ptr(x).ptr)
 
 # [C++ 3.9.1p5].
 struct WCharTy <: AbstractWCharTy
     ptr::CXType_
 end
 
-WCharTy(x::QualType) = WCharTy(get_type_ptr(x))
+WCharTy(x::QualType) = WCharTy(get_type_ptr(x).ptr)
 
 # Same as WCharTy in C++, integer type in C99.
 struct WideCharTy <: AbstractWideCharTy
     ptr::CXType_
 end
 
-WideCharTy(x::QualType) = WideCharTy(get_type_ptr(x))
+WideCharTy(x::QualType) = WideCharTy(get_type_ptr(x).ptr)
 
 # [C99 7.24.1], integer type unchanged by default promotions.
 struct WIntTy <: AbstractWIntTy
     ptr::CXType_
 end
 
-WIntTy(x::QualType) = WIntTy(get_type_ptr(x))
+WIntTy(x::QualType) = WIntTy(get_type_ptr(x).ptr)
 
 # [C++20 proposal]
 struct Char8Ty <: AbstractChar8Ty
     ptr::CXType_
 end
 
-Char8Ty(x::QualType) = Char8Ty(get_type_ptr(x))
+Char8Ty(x::QualType) = Char8Ty(get_type_ptr(x).ptr)
 
 # [C++0x 3.9.1p5], integer type in C99.
 struct Char16Ty <: AbstractChar16Ty
     ptr::CXType_
 end
 
-Char16Ty(x::QualType) = Char16Ty(get_type_ptr(x))
+Char16Ty(x::QualType) = Char16Ty(get_type_ptr(x).ptr)
 
 # [C++0x 3.9.1p5], integer type in C99.
 struct Char32Ty <: AbstractChar32Ty
     ptr::CXType_
 end
 
-Char32Ty(x::QualType) = Char32Ty(get_type_ptr(x))
+Char32Ty(x::QualType) = Char32Ty(get_type_ptr(x).ptr)
 
 struct SignedCharTy <: AbstractSignedCharTy
     ptr::CXType_
 end
 
-SignedCharTy(x::QualType) = SignedCharTy(get_type_ptr(x))
+SignedCharTy(x::QualType) = SignedCharTy(get_type_ptr(x).ptr)
 
 struct ShortTy <: AbstractShortTy
     ptr::CXType_
 end
 
-ShortTy(x::QualType) = ShortTy(get_type_ptr(x))
+ShortTy(x::QualType) = ShortTy(get_type_ptr(x).ptr)
 
 struct IntTy <: AbstractIntTy
     ptr::CXType_
 end
 
-IntTy(x::QualType) = IntTy(get_type_ptr(x))
+IntTy(x::QualType) = IntTy(get_type_ptr(x).ptr)
 
 struct LongTy <: AbstractLongTy
     ptr::CXType_
 end
 
-LongTy(x::QualType) = LongTy(get_type_ptr(x))
+LongTy(x::QualType) = LongTy(get_type_ptr(x).ptr)
 
 struct LongLongTy <: AbstractLongLongTy
     ptr::CXType_
 end
 
-LongLongTy(x::QualType) = LongLongTy(get_type_ptr(x))
+LongLongTy(x::QualType) = LongLongTy(get_type_ptr(x).ptr)
 
 struct Int128Ty <: AbstractInt128Ty
     ptr::CXType_
 end
 
-Int128Ty(x::QualType) = Int128Ty(get_type_ptr(x))
+Int128Ty(x::QualType) = Int128Ty(get_type_ptr(x).ptr)
 
 struct UnsignedCharTy <: AbstractUnsignedCharTy
     ptr::CXType_
 end
 
-UnsignedCharTy(x::QualType) = UnsignedCharTy(get_type_ptr(x))
+UnsignedCharTy(x::QualType) = UnsignedCharTy(get_type_ptr(x).ptr)
 
 struct UnsignedShortTy <: AbstractUnsignedShortTy
     ptr::CXType_
 end
 
-UnsignedShortTy(x::QualType) = UnsignedShortTy(get_type_ptr(x))
+UnsignedShortTy(x::QualType) = UnsignedShortTy(get_type_ptr(x).ptr)
 
 struct UnsignedIntTy <: AbstractUnsignedIntTy
     ptr::CXType_
 end
 
-UnsignedIntTy(x::QualType) = UnsignedIntTy(get_type_ptr(x))
+UnsignedIntTy(x::QualType) = UnsignedIntTy(get_type_ptr(x).ptr)
 
 struct UnsignedLongTy <: AbstractUnsignedLongTy
     ptr::CXType_
 end
 
-UnsignedLongTy(x::QualType) = UnsignedLongTy(get_type_ptr(x))
+UnsignedLongTy(x::QualType) = UnsignedLongTy(get_type_ptr(x).ptr)
 
 struct UnsignedLongLongTy <: AbstractUnsignedLongLongTy
     ptr::CXType_
 end
 
-UnsignedLongLongTy(x::QualType) = UnsignedLongLongTy(get_type_ptr(x))
+UnsignedLongLongTy(x::QualType) = UnsignedLongLongTy(get_type_ptr(x).ptr)
 
 struct UnsignedInt128Ty <: AbstractUnsignedInt128Ty
     ptr::CXType_
 end
 
-UnsignedInt128Ty(x::QualType) = UnsignedInt128Ty(get_type_ptr(x))
+UnsignedInt128Ty(x::QualType) = UnsignedInt128Ty(get_type_ptr(x).ptr)
 
 struct FloatTy <: AbstractFloatTy
     ptr::CXType_
 end
 
-FloatTy(x::QualType) = FloatTy(get_type_ptr(x))
+FloatTy(x::QualType) = FloatTy(get_type_ptr(x).ptr)
 
 struct DoubleTy <: AbstractDoubleTy
     ptr::CXType_
 end
 
-DoubleTy(x::QualType) = DoubleTy(get_type_ptr(x))
+DoubleTy(x::QualType) = DoubleTy(get_type_ptr(x).ptr)
 
 struct LongDoubleTy <: AbstractLongDoubleTy
     ptr::CXType_
 end
 
-LongDoubleTy(x::QualType) = LongDoubleTy(get_type_ptr(x))
+LongDoubleTy(x::QualType) = LongDoubleTy(get_type_ptr(x).ptr)
 
 struct Float128Ty <: AbstractFloat128Ty
     ptr::CXType_
 end
 
-Float128Ty(x::QualType) = Float128Ty(get_type_ptr(x))
+Float128Ty(x::QualType) = Float128Ty(get_type_ptr(x).ptr)
 
 # [OpenCL 6.1.1.1], ARM NEON
 struct HalfTy <: AbstractHalfTy
     ptr::CXType_
 end
 
-HalfTy(x::QualType) = HalfTy(get_type_ptr(x))
+HalfTy(x::QualType) = HalfTy(get_type_ptr(x).ptr)
 
 struct BFloat16Ty <: AbstractBFloat16Ty
     ptr::CXType_
 end
 
-BFloat16Ty(x::QualType) = BFloat16Ty(get_type_ptr(x))
+BFloat16Ty(x::QualType) = BFloat16Ty(get_type_ptr(x).ptr)
 
 # C11 extension ISO/IEC TS 18661-3
 struct Float16Ty <: AbstractFloat16Ty
     ptr::CXType_
 end
 
-Float16Ty(x::QualType) = Float16Ty(get_type_ptr(x))
+Float16Ty(x::QualType) = Float16Ty(get_type_ptr(x).ptr)
 
 struct FloatComplexTy <: AbstractFloatComplexTy
     ptr::CXType_
 end
 
-FloatComplexTy(x::QualType) = FloatComplexTy(get_type_ptr(x))
+FloatComplexTy(x::QualType) = FloatComplexTy(get_type_ptr(x).ptr)
 
 struct DoubleComplexTy <: AbstractDoubleComplexTy
     ptr::CXType_
 end
 
-DoubleComplexTy(x::QualType) = DoubleComplexTy(get_type_ptr(x))
+DoubleComplexTy(x::QualType) = DoubleComplexTy(get_type_ptr(x).ptr)
 
 struct LongDoubleComplexTy <: AbstractLongDoubleComplexTy
     ptr::CXType_
 end
 
-LongDoubleComplexTy(x::QualType) = LongDoubleComplexTy(get_type_ptr(x))
+LongDoubleComplexTy(x::QualType) = LongDoubleComplexTy(get_type_ptr(x).ptr)
 
 struct Float128ComplexTy <: AbstractFloat128ComplexTy
     ptr::CXType_
 end
 
-Float128ComplexTy(x::QualType) = Float128ComplexTy(get_type_ptr(x))
+Float128ComplexTy(x::QualType) = Float128ComplexTy(get_type_ptr(x).ptr)
 
 struct VoidPtrTy <: AbstractVoidPtrTy
     ptr::CXType_
 end
 
-VoidPtrTy(x::QualType) = VoidPtrTy(get_type_ptr(x))
+VoidPtrTy(x::QualType) = VoidPtrTy(get_type_ptr(x).ptr)
 
 struct NullPtrTy <: AbstractNullPtrTy
     ptr::CXType_
 end
 
-NullPtrTy(x::QualType) = NullPtrTy(get_type_ptr(x))
+NullPtrTy(x::QualType) = NullPtrTy(get_type_ptr(x).ptr)
 
 """
     struct TypeSourceInfo <: AbstractTypeSourceInfo

@@ -11,15 +11,23 @@ void clang_CompilerInvocation_dispose(CXCompilerInvocation CI) {
   delete static_cast<clang::CompilerInvocation *>(CI);
 }
 
-// CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
-//     const char **command_line_args_with_src, int num_command_line_args,
-//     CXDiagnosticsEngine Diags) {
-//   auto Invoc = clang::createInvocation(
-//       llvm::ArrayRef(command_line_args_with_src, num_command_line_args),
-//       llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(
-//           static_cast<clang::DiagnosticsEngine *>(Diags)));
-//   return Invoc.release();
-// }
+// Runs the driver to translate driver-style arguments (argv[0] excluded) into
+// a CompilerInvocation, reporting problems through the borrowed engine — the
+// cc1-parsing CompilerInvocation::CreateFromArgs would reject driver flags
+// like --target. The explicit Retain pins the engine so the temporary
+// IntrusiveRefCntPtr inside CreateInvocationOptions cannot delete it; the
+// caller keeps sole ownership (its dispose deletes unconditionally).
+CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
+    const char **command_line_args_with_src, int num_command_line_args,
+    CXDiagnosticsEngine Diags) {
+  auto *DE = static_cast<clang::DiagnosticsEngine *>(Diags);
+  DE->Retain();
+  clang::CreateInvocationOptions Opts;
+  Opts.Diags = llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(DE);
+  auto Invoc = clang::createInvocation(
+      llvm::ArrayRef(command_line_args_with_src, num_command_line_args), Opts);
+  return Invoc.release();
+}
 
 // Options
 CXCodeGenOptions clang_CompilerInvocation_getCodeGenOpts(CXCompilerInvocation CI) {

@@ -1,5 +1,5 @@
 # QualType
-QualType(ptr::CXType_, quals::Unsigned) = QualType(clang_QualType_constructFromTypePtr(ptr), quals)
+QualType(ty::Type_, quals::Integer=0) = QualType(clang_QualType_constructFromTypePtr(ty, quals))
 
 getTypePtr(x::QualType) = Type_(clang_QualType_getTypePtr(x))
 getTypePtrOrNull(x::QualType) = Type_(clang_QualType_getTypePtrOrNull(x))
@@ -525,7 +525,13 @@ function isWideCharType(x::AbstractType)
     return clang_Type_isWideCharType(x)
 end
 
-# getPointeeType(x::AbstractType) = getTypePtr(QualType(clang_Type_getPointeeType(x)))
+# `Type::getPointeeType` handles every pointer-like class (pointers,
+# references, member pointers, ObjC pointers, blocks) and returns a null
+# QualType otherwise; the per-class methods below shadow it where they exist.
+function getPointeeType(x::AbstractType)
+    @check_ptrs x
+    return QualType(clang_Type_getPointeeType(x))
+end
 
 function isVoidType(x::AbstractType)
     @check_ptrs x

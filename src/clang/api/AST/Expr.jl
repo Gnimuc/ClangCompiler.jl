@@ -81,8 +81,8 @@ end
 
 """
     getValue(x::AbstractIntegerLiteral)
-Return the value as an `LLVMGenericValueRef`. This function allocates and one
-should call `dispose` to release the resources after using this object.
+Return the value as a caller-owned `LLVMGenericValueRef` (release via LLVM-C's
+`LLVMDisposeGenericValue`; no Julia `dispose` method exists for it).
 """
 function getValue(x::AbstractIntegerLiteral)
     @check_ptrs x

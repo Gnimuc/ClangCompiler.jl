@@ -449,6 +449,11 @@ bool clang_CXXRecordDecl_isDependentLambda(CXCXXRecordDecl CXXRD) {
   return static_cast<clang::CXXRecordDecl *>(CXXRD)->isDependentLambda();
 }
 
+bool clang_CXXRecordDecl_isDerivedFrom(CXCXXRecordDecl CXXRD, CXCXXRecordDecl Base) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isDerivedFrom(
+      static_cast<clang::CXXRecordDecl *>(Base));
+}
+
 bool clang_CXXRecordDecl_isEffectivelyFinal(CXCXXRecordDecl CXXRD) {
   return static_cast<clang::CXXRecordDecl *>(CXXRD)->isEffectivelyFinal();
 }
@@ -491,6 +496,12 @@ bool clang_CXXRecordDecl_isTriviallyCopyConstructible(CXCXXRecordDecl CXXRD) {
 
 bool clang_CXXRecordDecl_isTriviallyCopyable(CXCXXRecordDecl CXXRD) {
   return static_cast<clang::CXXRecordDecl *>(CXXRD)->isTriviallyCopyable();
+}
+
+bool clang_CXXRecordDecl_isVirtuallyDerivedFrom(CXCXXRecordDecl CXXRD,
+                                                CXCXXRecordDecl Base) {
+  return static_cast<clang::CXXRecordDecl *>(CXXRD)->isVirtuallyDerivedFrom(
+      static_cast<clang::CXXRecordDecl *>(Base));
 }
 
 bool clang_CXXRecordDecl_mayBeAbstract(CXCXXRecordDecl CXXRD) {

@@ -47,3 +47,24 @@ using Test
         @test isempty(missing_syms)
     end
 end
+
+import ClangCompiler as CC
+@testset "carrier constructors and converts" begin
+    # Every carrier is `struct T; ptr::Ptr{Cvoid}; end` + a cconvert/
+    # unsafe_convert pair targeting its (Ptr{Cvoid}-aliased) CX handle type.
+    # A null carrier is a legal value, so the whole family is constructible
+    # and convertible without an AST.
+    n = 0
+    for nm in names(CC; all=true)
+        isdefined(CC, nm) || continue
+        T = getproperty(CC, nm)
+        (T isa DataType && isstructtype(T) && fieldcount(T) == 1 &&
+         fieldnames(T) == (:ptr,)) || continue
+        fieldtype(T, 1) == Ptr{Cvoid} || continue
+        x = T(C_NULL)
+        @test Base.cconvert(Ptr{Cvoid}, x) === x
+        @test Base.unsafe_convert(Ptr{Cvoid}, x) == C_NULL
+        n += 1
+    end
+    @test n >= 880
+end

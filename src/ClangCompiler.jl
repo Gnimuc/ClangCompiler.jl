@@ -44,6 +44,7 @@ include("clang/utils.jl")
 include("clang/core/core.jl")
 include("clang/api/api.jl")
 include("clang/ast.jl")
+public get_record_layout, field_offsets, is_derived_from
 include("clang/basic.jl")
 include("clang/codegen.jl")
 include("clang/frontend.jl")

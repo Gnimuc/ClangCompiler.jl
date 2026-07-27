@@ -54,7 +54,10 @@ void *clang_value_getPtr(CXValue V);
 
 void clang_value_setPtr(CXValue V, void *P);
 
-#define REPL_BUILTIN_TYPES                                                                 \
+// Deliberately NOT named REPL_BUILTIN_TYPES: clang/Interpreter/Value.h defines
+// a macro of that name (including long double), and whichever definition comes
+// second would silently win inside a TU that includes both headers.
+#define CXVALUE_ABI_TYPES                                                                  \
   X(bool, Bool)                                                                            \
   X(char, Char_S)                                                                          \
   X(signed char, SChar)                                                                    \
@@ -68,14 +71,19 @@ void clang_value_setPtr(CXValue V, void *P);
   X(long long, LongLong)                                                                   \
   X(unsigned long long, ULongLong)                                                         \
   X(float, Float)                                                                          \
-  X(double, Double)                                                                        \
-  X(long double, LongDouble)
+  X(double, Double)
 
 #define X(type, name)                                                                      \
   void clang_value_set##name(CXValue V, type Val);                                         \
   type clang_value_get##name(CXValue V);
-REPL_BUILTIN_TYPES
+CXVALUE_ABI_TYPES
 #undef X
+
+// long double is not ABI-portable across the C boundary (80-bit x87 on
+// x86_64, double on Apple aarch64); it crosses as double, converting inside
+// the shim.
+void clang_value_setLongDouble(CXValue V, double Val);
+double clang_value_getLongDouble(CXValue V);
 
 LLVM_CLANG_C_EXTERN_C_END
 

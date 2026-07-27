@@ -454,6 +454,8 @@ const CXASTNameGenerator = Ptr{Cvoid}
 
 const CXNestedNameSpecifier = Ptr{Cvoid}
 
+const CXASTRecordLayout = Ptr{Cvoid}
+
 const CXStmt = Ptr{Cvoid}
 
 const CXDeclStmt = Ptr{Cvoid}
@@ -3067,6 +3069,10 @@ function clang_ASTContext_getMemberPointerType(Ctx, T, Cls)
     @ccall libclangex.clang_ASTContext_getMemberPointerType(Ctx::CXASTContext, T::CXQualType, Cls::CXType_)::CXQualType
 end
 
+function clang_ASTContext_getConstantArrayType(Ctx, EltTy, Size, ASM, IndexTypeQuals)
+    @ccall libclangex.clang_ASTContext_getConstantArrayType(Ctx::CXASTContext, EltTy::CXQualType, Size::UInt64, ASM::CXArraySizeModifier, IndexTypeQuals::Cuint)::CXQualType
+end
+
 function clang_ASTContext_getStringLiteralArrayType(Ctx, EltTy, Length)
     @ccall libclangex.clang_ASTContext_getStringLiteralArrayType(Ctx::CXASTContext, EltTy::CXQualType, Length::Cuint)::CXQualType
 end
@@ -3103,6 +3109,10 @@ function clang_ASTContext_getFunctionNoProtoType(Ctx, ResultTy)
     @ccall libclangex.clang_ASTContext_getFunctionNoProtoType(Ctx::CXASTContext, ResultTy::CXQualType)::CXQualType
 end
 
+function clang_ASTContext_getFunctionType(Ctx, ResultTy, ArgTys, NumArgs, IsVariadic, CC)
+    @ccall libclangex.clang_ASTContext_getFunctionType(Ctx::CXASTContext, ResultTy::CXQualType, ArgTys::Ptr{CXQualType}, NumArgs::Cuint, IsVariadic::Bool, CC::CXCallingConv_)::CXQualType
+end
+
 function clang_ASTContext_adjustStringLiteralBaseType(Ctx, StrLTy)
     @ccall libclangex.clang_ASTContext_adjustStringLiteralBaseType(Ctx::CXASTContext, StrLTy::CXQualType)::CXQualType
 end
@@ -3129,6 +3139,10 @@ end
 
 function clang_ASTContext_getTemplateTypeParmType(Ctx, Depth, Index, ParameterPack, ParmDecl)
     @ccall libclangex.clang_ASTContext_getTemplateTypeParmType(Ctx::CXASTContext, Depth::Cuint, Index::Cuint, ParameterPack::Bool, ParmDecl::CXTemplateTypeParmDecl)::CXQualType
+end
+
+function clang_ASTContext_getTemplateSpecializationType(Ctx, T, Args, NumArgs, Underlying)
+    @ccall libclangex.clang_ASTContext_getTemplateSpecializationType(Ctx::CXASTContext, T::CXTemplateName, Args::Ptr{CXTemplateArgument}, NumArgs::Cuint, Underlying::CXQualType)::CXQualType
 end
 
 function clang_ASTContext_getParenType(Ctx, NamedType)
@@ -3397,6 +3411,10 @@ end
 
 function clang_ASTContext_getAlignOfGlobalVar(Ctx, T)
     @ccall libclangex.clang_ASTContext_getAlignOfGlobalVar(Ctx::CXASTContext, T::CXQualType)::Cuint
+end
+
+function clang_ASTContext_getASTRecordLayout(Ctx, RD)
+    @ccall libclangex.clang_ASTContext_getASTRecordLayout(Ctx::CXASTContext, RD::CXRecordDecl)::CXASTRecordLayout
 end
 
 function clang_ASTContext_getFieldOffset(Ctx, FD)
@@ -9109,6 +9127,10 @@ function clang_CXXRecordDecl_isDependentLambda(CXXRD)
     @ccall libclangex.clang_CXXRecordDecl_isDependentLambda(CXXRD::CXCXXRecordDecl)::Bool
 end
 
+function clang_CXXRecordDecl_isDerivedFrom(CXXRD, Base)
+    @ccall libclangex.clang_CXXRecordDecl_isDerivedFrom(CXXRD::CXCXXRecordDecl, Base::CXCXXRecordDecl)::Bool
+end
+
 function clang_CXXRecordDecl_isEffectivelyFinal(CXXRD)
     @ccall libclangex.clang_CXXRecordDecl_isEffectivelyFinal(CXXRD::CXCXXRecordDecl)::Bool
 end
@@ -9151,6 +9173,10 @@ end
 
 function clang_CXXRecordDecl_isTriviallyCopyable(CXXRD)
     @ccall libclangex.clang_CXXRecordDecl_isTriviallyCopyable(CXXRD::CXCXXRecordDecl)::Bool
+end
+
+function clang_CXXRecordDecl_isVirtuallyDerivedFrom(CXXRD, Base)
+    @ccall libclangex.clang_CXXRecordDecl_isVirtuallyDerivedFrom(CXXRD::CXCXXRecordDecl, Base::CXCXXRecordDecl)::Bool
 end
 
 function clang_CXXRecordDecl_mayBeAbstract(CXXRD)
@@ -11886,6 +11912,14 @@ function clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(D)
     @ccall libclangex.clang_ClassTemplateSpecializationDecl_getSpecializedTemplate(D::CXClassTemplateSpecializationDecl)::CXClassTemplateDecl
 end
 
+function clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial(D)
+    @ccall libclangex.clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial(D::CXClassTemplateSpecializationDecl)::CXDecl
+end
+
+function clang_ClassTemplateSpecializationDecl_specializedOnPartial(D)
+    @ccall libclangex.clang_ClassTemplateSpecializationDecl_specializedOnPartial(D::CXClassTemplateSpecializationDecl)::Bool
+end
+
 function clang_ClassTemplateSpecializationDecl_getSpecializationKind(D)
     @ccall libclangex.clang_ClassTemplateSpecializationDecl_getSpecializationKind(D::CXClassTemplateSpecializationDecl)::CXTemplateSpecializationKind
 end
@@ -13292,6 +13326,82 @@ end
 
 function clang_NestedNameSpecifier_getName(NNS)
     @ccall libclangex.clang_NestedNameSpecifier_getName(NNS::CXNestedNameSpecifier)::CXString
+end
+
+function clang_ASTRecordLayout_getAlignment(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getAlignment(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getPreferredAlignment(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getPreferredAlignment(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getUnadjustedAlignment(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getUnadjustedAlignment(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getRequiredAlignment(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getRequiredAlignment(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getSize(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getSize(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getFieldCount(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getFieldCount(RL::CXASTRecordLayout)::Cuint
+end
+
+function clang_ASTRecordLayout_getFieldOffset(RL, FieldNo)
+    @ccall libclangex.clang_ASTRecordLayout_getFieldOffset(RL::CXASTRecordLayout, FieldNo::Cuint)::UInt64
+end
+
+function clang_ASTRecordLayout_getDataSize(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getDataSize(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getNonVirtualSize(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getNonVirtualSize(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getNonVirtualAlignment(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getNonVirtualAlignment(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getPreferredNVAlignment(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getPreferredNVAlignment(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getSizeOfLargestEmptySubobject(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getSizeOfLargestEmptySubobject(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_getBaseClassOffset(RL, Base)
+    @ccall libclangex.clang_ASTRecordLayout_getBaseClassOffset(RL::CXASTRecordLayout, Base::CXCXXRecordDecl)::Int64
+end
+
+function clang_ASTRecordLayout_getVBaseClassOffset(RL, VBase)
+    @ccall libclangex.clang_ASTRecordLayout_getVBaseClassOffset(RL::CXASTRecordLayout, VBase::CXCXXRecordDecl)::Int64
+end
+
+function clang_ASTRecordLayout_getVBPtrOffset(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getVBPtrOffset(RL::CXASTRecordLayout)::Int64
+end
+
+function clang_ASTRecordLayout_hasOwnVFPtr(RL)
+    @ccall libclangex.clang_ASTRecordLayout_hasOwnVFPtr(RL::CXASTRecordLayout)::Bool
+end
+
+function clang_ASTRecordLayout_hasExtendableVFPtr(RL)
+    @ccall libclangex.clang_ASTRecordLayout_hasExtendableVFPtr(RL::CXASTRecordLayout)::Bool
+end
+
+function clang_ASTRecordLayout_hasOwnVBPtr(RL)
+    @ccall libclangex.clang_ASTRecordLayout_hasOwnVBPtr(RL::CXASTRecordLayout)::Bool
+end
+
+function clang_ASTRecordLayout_hasVBPtr(RL)
+    @ccall libclangex.clang_ASTRecordLayout_hasVBPtr(RL::CXASTRecordLayout)::Bool
 end
 
 @enum CXStmtClass::UInt32 begin
@@ -15772,6 +15882,10 @@ function clang_IfStmt_isObjCAvailabilityCheck(S)
     @ccall libclangex.clang_IfStmt_isObjCAvailabilityCheck(S::CXIfStmt)::Bool
 end
 
+function clang_IfStmt_getNondiscardedCase(S, Ctx)
+    @ccall libclangex.clang_IfStmt_getNondiscardedCase(S::CXIfStmt, Ctx::CXASTContext)::CXStmt
+end
+
 function clang_IfStmt_getLParenLoc(S)
     @ccall libclangex.clang_IfStmt_getLParenLoc(S::CXIfStmt)::CXSourceLocation_
 end
@@ -16049,8 +16163,8 @@ function clang_TemplateArgument_getAsTemplateOrTemplatePattern(TA)
     @ccall libclangex.clang_TemplateArgument_getAsTemplateOrTemplatePattern(TA::CXTemplateArgument)::CXTemplateName
 end
 
-function clang_TemplateArgument_getNumTemplateExpansions(TA)
-    @ccall libclangex.clang_TemplateArgument_getNumTemplateExpansions(TA::CXTemplateArgument)::Cuint
+function clang_TemplateArgument_getNumTemplateExpansions(TA, N)
+    @ccall libclangex.clang_TemplateArgument_getNumTemplateExpansions(TA::CXTemplateArgument, N::Ptr{Cuint})::Bool
 end
 
 function clang_TemplateArgument_getAsIntegral(TA)
@@ -16574,6 +16688,14 @@ function clang_CodeGenOptions_getArgv0(CGO)
     @ccall libclangex.clang_CodeGenOptions_getArgv0(CGO::CXCodeGenOptions)::Ptr{Cchar}
 end
 
+function clang_CodeGenOptions_getCommandLineArgsNum(CGO)
+    @ccall libclangex.clang_CodeGenOptions_getCommandLineArgsNum(CGO::CXCodeGenOptions)::Cuint
+end
+
+function clang_CodeGenOptions_getCommandLineArgs(CGO, Buf, N)
+    @ccall libclangex.clang_CodeGenOptions_getCommandLineArgs(CGO::CXCodeGenOptions, Buf::Ptr{Ptr{Cchar}}, N::Cuint)::Cvoid
+end
+
 function clang_CodeGenOptions_PrintStats(CGO)
     @ccall libclangex.clang_CodeGenOptions_PrintStats(CGO::CXCodeGenOptions)::Cvoid
 end
@@ -17070,6 +17192,10 @@ function clang_CompilerInvocation_dispose(CI)
     @ccall libclangex.clang_CompilerInvocation_dispose(CI::CXCompilerInvocation)::Cvoid
 end
 
+function clang_CompilerInvocation_createFromCommandLine(command_line_args_with_src, num_command_line_args, Diags)
+    @ccall libclangex.clang_CompilerInvocation_createFromCommandLine(command_line_args_with_src::Ptr{Ptr{Cchar}}, num_command_line_args::Cint, Diags::CXDiagnosticsEngine)::CXCompilerInvocation
+end
+
 function clang_CompilerInvocation_getCodeGenOpts(CI)
     @ccall libclangex.clang_CompilerInvocation_getCodeGenOpts(CI::CXCompilerInvocation)::CXCodeGenOptions
 end
@@ -17092,6 +17218,14 @@ end
 
 function clang_CompilerInvocation_getTargetOpts(CI)
     @ccall libclangex.clang_CompilerInvocation_getTargetOpts(CI::CXCompilerInvocation)::CXTargetOptions
+end
+
+function clang_FrontendOptions_getModulesEmbedFilesNum(FEO)
+    @ccall libclangex.clang_FrontendOptions_getModulesEmbedFilesNum(FEO::CXFrontendOptions)::Cuint
+end
+
+function clang_FrontendOptions_getModulesEmbedFiles(FEO, Buf, N)
+    @ccall libclangex.clang_FrontendOptions_getModulesEmbedFiles(FEO::CXFrontendOptions, Buf::Ptr{Ptr{Cchar}}, N::Cuint)::Cvoid
 end
 
 function clang_FrontendOptions_PrintStats(FEO)
@@ -17380,11 +17514,11 @@ function clang_value_getDouble(V)
 end
 
 function clang_value_setLongDouble(V, Val)
-    @ccall libclangex.clang_value_setLongDouble(V::CXValue, Val::Float64)::Cvoid
+    @ccall libclangex.clang_value_setLongDouble(V::CXValue, Val::Cdouble)::Cvoid
 end
 
 function clang_value_getLongDouble(V)
-    @ccall libclangex.clang_value_getLongDouble(V::CXValue)::Float64
+    @ccall libclangex.clang_value_getLongDouble(V::CXValue)::Cdouble
 end
 
 function clang_HeaderSearch_PrintStats(HS)

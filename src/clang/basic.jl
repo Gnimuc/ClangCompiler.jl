@@ -15,7 +15,7 @@ get_name(x::FileEntry) = getName(x)
 # SourceLocation
 value(x::SourceLocation) = getHashValue(x)
 
-get_string(x::SourceLocation) = printToString(x)
+get_string(x::SourceLocation, src_mgr::SourceManager) = printToString(x, src_mgr)
 
 get_begin_loc(x::SourceRange) = getBeginLoc(x)
 get_end_loc(x::SourceRange) = getEndLoc(x)

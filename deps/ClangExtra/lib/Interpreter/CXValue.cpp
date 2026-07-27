@@ -46,6 +46,9 @@ void *clang_value_getPtr(CXValue V) { return static_cast<clang::Value *>(V)->get
 
 void clang_value_setPtr(CXValue V, void *P) { static_cast<clang::Value *>(V)->setPtr(P); }
 
+// Expand the CX table (CXVALUE_ABI_TYPES), not clang's REPL_BUILTIN_TYPES:
+// clang/Interpreter/Value.h redefines the latter with a long double entry,
+// which must not cross the C boundary (see the header note).
 #define X(type, name)                                                                      \
   void clang_value_set##name(CXValue V, type Val) {                                        \
     static_cast<clang::Value *>(V)->set##name(Val);                                        \
@@ -53,5 +56,13 @@ void clang_value_setPtr(CXValue V, void *P) { static_cast<clang::Value *>(V)->se
   type clang_value_get##name(CXValue V) {                                                  \
     return static_cast<clang::Value *>(V)->get##name();                                    \
   }
-REPL_BUILTIN_TYPES
+CXVALUE_ABI_TYPES
 #undef X
+
+void clang_value_setLongDouble(CXValue V, double Val) {
+  static_cast<clang::Value *>(V)->setLongDouble(static_cast<long double>(Val));
+}
+
+double clang_value_getLongDouble(CXValue V) {
+  return static_cast<double>(static_cast<clang::Value *>(V)->getLongDouble());
+}

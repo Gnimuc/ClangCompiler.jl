@@ -11,9 +11,11 @@ CXCompilerInvocation clang_CompilerInvocation_create(void);
 
 void clang_CompilerInvocation_dispose(CXCompilerInvocation CI);
 
-// CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
-//     const char **command_line_args_with_src, int num_command_line_args,
-//     CXDiagnosticsEngine Diags);
+// Caller-owned on success (share clang_CompilerInvocation_dispose); nullptr when
+// the arguments do not parse.
+CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
+    const char **command_line_args_with_src, int num_command_line_args,
+    CXDiagnosticsEngine Diags);
 
 // Options
 CXCodeGenOptions clang_CompilerInvocation_getCodeGenOpts(CXCompilerInvocation CI);

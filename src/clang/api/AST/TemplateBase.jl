@@ -50,9 +50,15 @@ function getAsTemplateOrTemplatePattern(x::TemplateArgument)
     return TemplateName(clang_TemplateArgument_getAsTemplateOrTemplatePattern(x))
 end
 
+"""
+    getNumTemplateExpansions(x::TemplateArgument) -> Union{UInt32,Nothing}
+Return the number of expansions of a `TemplateExpansion` argument, or `nothing`
+when the argument carries no expansion count (the C++ optional is disengaged).
+"""
 function getNumTemplateExpansions(x::TemplateArgument)
     @check_ptrs x
-    return clang_TemplateArgument_getNumTemplateExpansions(x)
+    n = Ref{Cuint}(0)
+    return clang_TemplateArgument_getNumTemplateExpansions(x, n) ? n[] : nothing
 end
 
 function getAsIntegral(x::TemplateArgument)

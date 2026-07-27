@@ -12,7 +12,7 @@ generate_isystem_symbols = false
 output_ignorelist = [
     "LLVM_CLANG_C_EXTERN_C_BEGIN",
     "LLVM_CLANG_C_EXTERN_C_END",
-    "REPL_BUILTIN_TYPES",
+    "CXVALUE_ABI_TYPES",
     "X",
     # X-macro machinery of the vendored StmtNodes.inc (see AST/CXStmt.h)
     "STMT",
