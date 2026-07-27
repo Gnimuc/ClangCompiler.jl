@@ -40,6 +40,9 @@ include("AST/TypeLoc.jl")
 # don't define, generated from StmtNodes.inc
 include("AST/StmtHierarchy.jl")
 
+# Analysis
+include("Analysis/CFG.jl")
+
 # Basic
 include("Basic/CodeGenOptions.jl")
 include("Basic/Diagnostic.jl")
@@ -48,6 +51,7 @@ include("Basic/DiagnosticOptions.jl")
 include("Basic/FileEntry.jl")
 include("Basic/FileManager.jl")
 include("Basic/IdentifierTable.jl")
+include("Basic/Module.jl")
 include("Basic/LangOptions.jl")
 include("Basic/SourceLocation.jl")
 include("Basic/SourceManager.jl")
@@ -73,6 +77,7 @@ include("Interpreter/Value.jl")
 include("Lex/HeaderSearch.jl")
 include("Lex/HeaderSearchOptions.jl")
 include("Lex/Lexer.jl")
+include("Lex/MacroInfo.jl")
 include("Lex/Preprocessor.jl")
 include("Lex/PreprocessorOptions.jl")
 include("Lex/Token.jl")

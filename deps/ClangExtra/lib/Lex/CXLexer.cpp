@@ -1,4 +1,5 @@
 #include "clang-ex/Lex/CXLexer.h"
+#include "utils.h"
 #include "clang/Lex/Lexer.h"
 #include "llvm/Support/MemoryBuffer.h"
 
@@ -12,3 +13,146 @@ CXLexer clang_Lexer_create(CXFileID FID, LLVMMemoryBufferRef FromFile, CXSourceM
 }
 
 void clang_Lexer_dispose(CXLexer Lex) { delete static_cast<clang::Lexer *>(Lex); }
+
+CXSourceLocation_ clang_Lexer_getFileLoc(CXLexer Lex) {
+  return static_cast<clang::Lexer *>(Lex)->getFileLoc().getPtrEncoding();
+}
+
+bool clang_Lexer_Lex(CXLexer Lex, CXToken_ Result) {
+  return static_cast<clang::Lexer *>(Lex)->Lex(*static_cast<clang::Token *>(Result));
+}
+
+bool clang_Lexer_isPragmaLexer(CXLexer Lex) {
+  return static_cast<clang::Lexer *>(Lex)->isPragmaLexer();
+}
+
+bool clang_Lexer_LexFromRawLexer(CXLexer Lex, CXToken_ Result) {
+  return static_cast<clang::Lexer *>(Lex)->LexFromRawLexer(
+      *static_cast<clang::Token *>(Result));
+}
+
+bool clang_Lexer_isKeepWhitespaceMode(CXLexer Lex) {
+  return static_cast<clang::Lexer *>(Lex)->isKeepWhitespaceMode();
+}
+
+void clang_Lexer_SetKeepWhitespaceMode(CXLexer Lex, bool Val) {
+  static_cast<clang::Lexer *>(Lex)->SetKeepWhitespaceMode(Val);
+}
+
+bool clang_Lexer_inKeepCommentMode(CXLexer Lex) {
+  return static_cast<clang::Lexer *>(Lex)->inKeepCommentMode();
+}
+
+void clang_Lexer_SetCommentRetentionState(CXLexer Lex, bool Mode) {
+  static_cast<clang::Lexer *>(Lex)->SetCommentRetentionState(Mode);
+}
+
+unsigned clang_Lexer_getCurrentBufferOffset(CXLexer Lex) {
+  return static_cast<clang::Lexer *>(Lex)->getCurrentBufferOffset();
+}
+
+CXString clang_Lexer_getSpelling(CXToken_ Tok, CXSourceManager SM,
+                                 CXLangOptions LangOpts) {
+  return extra::makeCXString(
+      clang::Lexer::getSpelling(*static_cast<clang::Token *>(Tok),
+                                *static_cast<clang::SourceManager *>(SM),
+                                *static_cast<clang::LangOptions *>(LangOpts)));
+}
+
+unsigned clang_Lexer_MeasureTokenLength(CXSourceLocation_ Loc, CXSourceManager SM,
+                                        CXLangOptions LangOpts) {
+  return clang::Lexer::MeasureTokenLength(clang::SourceLocation::getFromPtrEncoding(Loc),
+                                          *static_cast<clang::SourceManager *>(SM),
+                                          *static_cast<clang::LangOptions *>(LangOpts));
+}
+
+bool clang_Lexer_getRawToken(CXSourceLocation_ Loc, CXToken_ Result, CXSourceManager SM,
+                             CXLangOptions LangOpts, bool IgnoreWhiteSpace) {
+  return clang::Lexer::getRawToken(clang::SourceLocation::getFromPtrEncoding(Loc),
+                                   *static_cast<clang::Token *>(Result),
+                                   *static_cast<clang::SourceManager *>(SM),
+                                   *static_cast<clang::LangOptions *>(LangOpts),
+                                   IgnoreWhiteSpace);
+}
+
+CXSourceLocation_ clang_Lexer_GetBeginningOfToken(CXSourceLocation_ Loc,
+                                                  CXSourceManager SM,
+                                                  CXLangOptions LangOpts) {
+  return clang::Lexer::GetBeginningOfToken(clang::SourceLocation::getFromPtrEncoding(Loc),
+                                           *static_cast<clang::SourceManager *>(SM),
+                                           *static_cast<clang::LangOptions *>(LangOpts))
+      .getPtrEncoding();
+}
+
+CXSourceLocation_ clang_Lexer_getLocForEndOfToken(CXSourceLocation_ Loc, unsigned Offset,
+                                                  CXSourceManager SM,
+                                                  CXLangOptions LangOpts) {
+  return clang::Lexer::getLocForEndOfToken(clang::SourceLocation::getFromPtrEncoding(Loc),
+                                           Offset,
+                                           *static_cast<clang::SourceManager *>(SM),
+                                           *static_cast<clang::LangOptions *>(LangOpts))
+      .getPtrEncoding();
+}
+
+bool clang_Lexer_isAtStartOfMacroExpansion(CXSourceLocation_ Loc, CXSourceManager SM,
+                                           CXLangOptions LangOpts,
+                                           CXSourceLocation_ *MacroBegin) {
+  clang::SourceLocation MB;
+  bool Res = clang::Lexer::isAtStartOfMacroExpansion(
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      *static_cast<clang::SourceManager *>(SM),
+      *static_cast<clang::LangOptions *>(LangOpts), MacroBegin ? &MB : nullptr);
+  if (Res && MacroBegin)
+    *MacroBegin = MB.getPtrEncoding();
+  return Res;
+}
+
+bool clang_Lexer_isAtEndOfMacroExpansion(CXSourceLocation_ Loc, CXSourceManager SM,
+                                         CXLangOptions LangOpts,
+                                         CXSourceLocation_ *MacroEnd) {
+  clang::SourceLocation ME;
+  bool Res = clang::Lexer::isAtEndOfMacroExpansion(
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      *static_cast<clang::SourceManager *>(SM),
+      *static_cast<clang::LangOptions *>(LangOpts), MacroEnd ? &ME : nullptr);
+  if (Res && MacroEnd)
+    *MacroEnd = ME.getPtrEncoding();
+  return Res;
+}
+
+CXString clang_Lexer_getSourceText(CXSourceRange_ Range, bool IsTokenRange,
+                                   CXSourceManager SM, CXLangOptions LangOpts) {
+  clang::CharSourceRange CSR(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(Range.B),
+                         clang::SourceLocation::getFromPtrEncoding(Range.E)),
+      IsTokenRange);
+  return extra::makeCXString(
+      clang::Lexer::getSourceText(CSR, *static_cast<clang::SourceManager *>(SM),
+                                  *static_cast<clang::LangOptions *>(LangOpts))
+          .str());
+}
+
+CXString clang_Lexer_getImmediateMacroName(CXSourceLocation_ Loc, CXSourceManager SM,
+                                           CXLangOptions LangOpts) {
+  return extra::makeCXString(
+      clang::Lexer::getImmediateMacroName(clang::SourceLocation::getFromPtrEncoding(Loc),
+                                          *static_cast<clang::SourceManager *>(SM),
+                                          *static_cast<clang::LangOptions *>(LangOpts))
+          .str());
+}
+
+bool clang_Lexer_findNextToken(CXSourceLocation_ Loc, CXSourceManager SM,
+                               CXLangOptions LangOpts, CXToken_ Result) {
+  std::optional<clang::Token> Tok = clang::Lexer::findNextToken(
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      *static_cast<clang::SourceManager *>(SM),
+      *static_cast<clang::LangOptions *>(LangOpts));
+  if (!Tok)
+    return false;
+  *static_cast<clang::Token *>(Result) = *Tok;
+  return true;
+}
+
+bool clang_Lexer_isFirstTimeLexingFile(CXLexer Lex) {
+  return static_cast<clang::Lexer *>(Lex)->isFirstTimeLexingFile();
+}

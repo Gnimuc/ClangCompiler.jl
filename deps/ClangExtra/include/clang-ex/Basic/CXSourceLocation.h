@@ -29,6 +29,14 @@ CXString clang_SourceLocation_printToString(CXSourceLocation_ Loc, CXSourceManag
 
 CXSourceLocation_ clang_SourceLocation_getLocWithOffset(CXSourceLocation_ Loc, int Offset);
 
+uint32_t clang_SourceLocation_getRawEncoding(CXSourceLocation_ Loc);
+
+CXSourceLocation_ clang_SourceLocation_getFromRawEncoding(uint32_t Encoding);
+
+CXString clang_SourceRange_printToString(CXSourceRange_ R, CXSourceManager SM);
+
+void clang_SourceRange_dump(CXSourceRange_ R, CXSourceManager SM);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

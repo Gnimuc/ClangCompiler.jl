@@ -388,6 +388,11 @@ typedef void *CXASTTemplateArgumentListInfo;
 // TemplateName
 typedef void *CXTemplateArgument;
 
+// Analysis
+// CFG
+typedef void *CXCFGBlock;
+typedef void *CXCFG;
+
 // Basic
 // CodeGenOptions
 typedef void *CXCodeGenOptions;
@@ -471,6 +476,9 @@ typedef void *CXHeaderSearchOptions;
 
 // Lexer
 typedef void *CXLexer;
+
+// MacroInfo
+typedef void *CXMacroInfo;
 
 // Preprocessor
 typedef void *CXPreprocessor;

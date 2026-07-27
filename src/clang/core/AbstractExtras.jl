@@ -112,3 +112,5 @@ abstract type AbstractVoidTy <: AbstractBuiltinType end
 abstract type AbstractWCharTy <: AbstractBuiltinType end
 abstract type AbstractWIntTy <: AbstractBuiltinType end
 abstract type AbstractWideCharTy <: AbstractBuiltinType end
+
+abstract type AbstractMacroInfo end

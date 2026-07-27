@@ -2,6 +2,26 @@
 #include "utils.h"
 #include "clang/Basic/SourceLocation.h"
 
+uint32_t clang_SourceLocation_getRawEncoding(CXSourceLocation_ Loc) {
+  return clang::SourceLocation::getFromPtrEncoding(Loc).getRawEncoding();
+}
+
+CXSourceLocation_ clang_SourceLocation_getFromRawEncoding(uint32_t Encoding) {
+  return clang::SourceLocation::getFromRawEncoding(Encoding).getPtrEncoding();
+}
+
+CXString clang_SourceRange_printToString(CXSourceRange_ R, CXSourceManager SM) {
+  clang::SourceRange SR(clang::SourceLocation::getFromPtrEncoding(R.B),
+                        clang::SourceLocation::getFromPtrEncoding(R.E));
+  return extra::makeCXString(SR.printToString(*static_cast<clang::SourceManager *>(SM)));
+}
+
+void clang_SourceRange_dump(CXSourceRange_ R, CXSourceManager SM) {
+  clang::SourceRange SR(clang::SourceLocation::getFromPtrEncoding(R.B),
+                        clang::SourceLocation::getFromPtrEncoding(R.E));
+  SR.dump(*static_cast<clang::SourceManager *>(SM));
+}
+
 CXSourceLocation_ clang_SourceLocation_createInvalid(void) {
   return clang::SourceLocation().getPtrEncoding();
 }
