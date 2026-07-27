@@ -12,6 +12,114 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
 
+// Expr::Classification
+namespace {
+// clang::Expr::Classification keeps "was modifiability tested" in a private member
+// that only clang::Expr may read, and getModifiable() asserts on it. The box carries
+// that flag next to the boxed value so the Julia layer can restate the precondition
+// (MARSHALLING.md §13) instead of tripping the assert.
+struct ClassificationBox {
+  clang::Expr::Classification Value;
+  bool Tested;
+
+  ClassificationBox(clang::Expr::Classification V, bool T) : Value(V), Tested(T) {}
+};
+} // namespace
+
+CXClassification clang_Expr_Classify(CXExpr E, CXASTContext Ctx) {
+  return new ClassificationBox(
+      static_cast<clang::Expr *>(E)->Classify(*static_cast<clang::ASTContext *>(Ctx)),
+      false);
+}
+
+CXClassification clang_Expr_ClassifyModifiable(CXExpr E, CXASTContext Ctx,
+                                               CXSourceLocation_ *Loc) {
+  clang::SourceLocation L;
+  clang::Expr::Classification C = static_cast<clang::Expr *>(E)->ClassifyModifiable(
+      *static_cast<clang::ASTContext *>(Ctx), L);
+  *Loc = L.getPtrEncoding();
+  return new ClassificationBox(C, true);
+}
+
+CXClassification clang_Classification_makeSimpleLValue(void) {
+  return new ClassificationBox(clang::Expr::Classification::makeSimpleLValue(), true);
+}
+
+void clang_Classification_dispose(CXClassification C) {
+  delete static_cast<ClassificationBox *>(C);
+}
+
+CXClassification_Kinds clang_Classification_getKind(CXClassification C) {
+  return static_cast<CXClassification_Kinds>(
+      static_cast<ClassificationBox *>(C)->Value.getKind());
+}
+
+bool clang_Classification_isModifiableTested(CXClassification C) {
+  return static_cast<ClassificationBox *>(C)->Tested;
+}
+
+CXClassification_ModifiableType clang_Classification_getModifiable(CXClassification C) {
+  return static_cast<CXClassification_ModifiableType>(
+      static_cast<ClassificationBox *>(C)->Value.getModifiable());
+}
+
+bool clang_Classification_isLValue(CXClassification C) {
+  return static_cast<ClassificationBox *>(C)->Value.isLValue();
+}
+
+bool clang_Classification_isXValue(CXClassification C) {
+  return static_cast<ClassificationBox *>(C)->Value.isXValue();
+}
+
+bool clang_Classification_isGLValue(CXClassification C) {
+  return static_cast<ClassificationBox *>(C)->Value.isGLValue();
+}
+
+bool clang_Classification_isPRValue(CXClassification C) {
+  return static_cast<ClassificationBox *>(C)->Value.isPRValue();
+}
+
+bool clang_Classification_isRValue(CXClassification C) {
+  return static_cast<ClassificationBox *>(C)->Value.isRValue();
+}
+
+bool clang_Classification_isModifiable(CXClassification C) {
+  return static_cast<ClassificationBox *>(C)->Value.isModifiable();
+}
+
+// Expr
+bool clang_Expr_isOBJCGCCandidate(CXExpr E, CXASTContext Ctx) {
+  return static_cast<clang::Expr *>(E)->isOBJCGCCandidate(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+// BinaryOperator
+uint64_t clang_BinaryOperator_getFPFeatures(CXBinaryOperator BO) {
+  return static_cast<clang::BinaryOperator *>(BO)->getFPFeatures().getAsOpaqueInt();
+}
+
+uint64_t clang_BinaryOperator_getStoredFPFeatures(CXBinaryOperator BO) {
+  return static_cast<clang::BinaryOperator *>(BO)->getStoredFPFeatures().getAsOpaqueInt();
+}
+
+// CallExpr
+uint64_t clang_CallExpr_getFPFeatures(CXCallExpr E) {
+  return static_cast<clang::CallExpr *>(E)->getFPFeatures().getAsOpaqueInt();
+}
+
+uint64_t clang_CallExpr_getStoredFPFeatures(CXCallExpr E) {
+  return static_cast<clang::CallExpr *>(E)->getStoredFPFeatures().getAsOpaqueInt();
+}
+
+// UnaryOperator
+uint64_t clang_UnaryOperator_getFPOptionsOverride(CXUnaryOperator E) {
+  return static_cast<clang::UnaryOperator *>(E)->getFPOptionsOverride().getAsOpaqueInt();
+}
+
+uint64_t clang_UnaryOperator_getStoredFPFeatures(CXUnaryOperator E) {
+  return static_cast<clang::UnaryOperator *>(E)->getStoredFPFeatures().getAsOpaqueInt();
+}
+
 // AtomicExpr
 unsigned clang_AtomicExpr_getOp(CXAtomicExpr E) {
   return static_cast<unsigned>(static_cast<clang::AtomicExpr *>(E)->getOp());
@@ -2289,4 +2397,1066 @@ void clang_InitListExpr_setSyntacticForm(CXInitListExpr E, CXInitListExpr Init) 
 
 void clang_InitListExpr_sawArrayRangeDesignator(CXInitListExpr E, bool ARD) {
   static_cast<clang::InitListExpr *>(E)->sawArrayRangeDesignator(ARD);
+}
+
+// UnaryOperator
+bool clang_UnaryOperator_isFPContractableWithinStatement(CXUnaryOperator UO,
+                                                         CXLangOptions LO) {
+  return static_cast<clang::UnaryOperator *>(UO)->isFPContractableWithinStatement(
+      *static_cast<clang::LangOptions *>(LO));
+}
+
+bool clang_UnaryOperator_isFEnvAccessOn(CXUnaryOperator UO, CXLangOptions LO) {
+  return static_cast<clang::UnaryOperator *>(UO)->isFEnvAccessOn(
+      *static_cast<clang::LangOptions *>(LO));
+}
+
+// UnaryExprOrTypeTraitExpr
+void clang_UnaryExprOrTypeTraitExpr_setOperatorLoc(CXUnaryExprOrTypeTraitExpr E,
+                                                   CXSourceLocation_ L) {
+  static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->setOperatorLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_UnaryExprOrTypeTraitExpr_setRParenLoc(CXUnaryExprOrTypeTraitExpr E,
+                                                 CXSourceLocation_ L) {
+  static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->setRParenLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+// BinaryOperator
+bool clang_BinaryOperator_isFPContractableWithinStatement(CXBinaryOperator BO,
+                                                          CXLangOptions LO) {
+  return static_cast<clang::BinaryOperator *>(BO)->isFPContractableWithinStatement(
+      *static_cast<clang::LangOptions *>(LO));
+}
+
+bool clang_BinaryOperator_isFEnvAccessOn(CXBinaryOperator BO, CXLangOptions LO) {
+  return static_cast<clang::BinaryOperator *>(BO)->isFEnvAccessOn(
+      *static_cast<clang::LangOptions *>(LO));
+}
+
+// StmtExpr
+void clang_StmtExpr_setSubStmt(CXStmtExpr E, CXCompoundStmt S) {
+  static_cast<clang::StmtExpr *>(E)->setSubStmt(static_cast<clang::CompoundStmt *>(S));
+}
+
+void clang_StmtExpr_setLParenLoc(CXStmtExpr E, CXSourceLocation_ L) {
+  static_cast<clang::StmtExpr *>(E)->setLParenLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_StmtExpr_setRParenLoc(CXStmtExpr E, CXSourceLocation_ L) {
+  static_cast<clang::StmtExpr *>(E)->setRParenLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+// ChooseExpr
+void clang_ChooseExpr_setIsConditionTrue(CXChooseExpr E, bool IsTrue) {
+  static_cast<clang::ChooseExpr *>(E)->setIsConditionTrue(IsTrue);
+}
+
+void clang_ChooseExpr_setCond(CXChooseExpr E, CXExpr Cond) {
+  static_cast<clang::ChooseExpr *>(E)->setCond(static_cast<clang::Expr *>(Cond));
+}
+
+void clang_ChooseExpr_setLHS(CXChooseExpr E, CXExpr LHS) {
+  static_cast<clang::ChooseExpr *>(E)->setLHS(static_cast<clang::Expr *>(LHS));
+}
+
+void clang_ChooseExpr_setRHS(CXChooseExpr E, CXExpr RHS) {
+  static_cast<clang::ChooseExpr *>(E)->setRHS(static_cast<clang::Expr *>(RHS));
+}
+
+void clang_ChooseExpr_setBuiltinLoc(CXChooseExpr E, CXSourceLocation_ L) {
+  static_cast<clang::ChooseExpr *>(E)->setBuiltinLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_ChooseExpr_setRParenLoc(CXChooseExpr E, CXSourceLocation_ L) {
+  static_cast<clang::ChooseExpr *>(E)->setRParenLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+// VAArgExpr
+void clang_VAArgExpr_setSubExpr(CXVAArgExpr E, CXExpr Sub) {
+  static_cast<clang::VAArgExpr *>(E)->setSubExpr(static_cast<clang::Expr *>(Sub));
+}
+
+void clang_VAArgExpr_setIsMicrosoftABI(CXVAArgExpr E, bool IsMS) {
+  static_cast<clang::VAArgExpr *>(E)->setIsMicrosoftABI(IsMS);
+}
+
+void clang_VAArgExpr_setWrittenTypeInfo(CXVAArgExpr E, CXTypeSourceInfo TI) {
+  static_cast<clang::VAArgExpr *>(E)->setWrittenTypeInfo(
+      static_cast<clang::TypeSourceInfo *>(TI));
+}
+
+void clang_VAArgExpr_setBuiltinLoc(CXVAArgExpr E, CXSourceLocation_ L) {
+  static_cast<clang::VAArgExpr *>(E)->setBuiltinLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_VAArgExpr_setRParenLoc(CXVAArgExpr E, CXSourceLocation_ L) {
+  static_cast<clang::VAArgExpr *>(E)->setRParenLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+// OpaqueValueExpr
+void clang_OpaqueValueExpr_setIsUnique(CXOpaqueValueExpr E, bool V) {
+  static_cast<clang::OpaqueValueExpr *>(E)->setIsUnique(V);
+}
+
+// PredefinedExpr
+void clang_PredefinedExpr_setLocation(CXPredefinedExpr E, CXSourceLocation_ L) {
+  static_cast<clang::PredefinedExpr *>(E)->setLocation(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+// CompoundLiteralExpr
+void clang_CompoundLiteralExpr_setInitializer(CXCompoundLiteralExpr E, CXExpr Init) {
+  static_cast<clang::CompoundLiteralExpr *>(E)->setInitializer(
+      static_cast<clang::Expr *>(Init));
+}
+
+void clang_CompoundLiteralExpr_setFileScope(CXCompoundLiteralExpr E, bool FS) {
+  static_cast<clang::CompoundLiteralExpr *>(E)->setFileScope(FS);
+}
+
+void clang_CompoundLiteralExpr_setLParenLoc(CXCompoundLiteralExpr E, CXSourceLocation_ L) {
+  static_cast<clang::CompoundLiteralExpr *>(E)->setLParenLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_CompoundLiteralExpr_setTypeSourceInfo(CXCompoundLiteralExpr E,
+                                                 CXTypeSourceInfo TI) {
+  static_cast<clang::CompoundLiteralExpr *>(E)->setTypeSourceInfo(
+      static_cast<clang::TypeSourceInfo *>(TI));
+}
+
+// CompoundAssignOperator
+void clang_CompoundAssignOperator_setComputationLHSType(CXCompoundAssignOperator CAO,
+                                                        CXQualType T) {
+  static_cast<clang::CompoundAssignOperator *>(CAO)->setComputationLHSType(
+      clang::QualType::getFromOpaquePtr(T));
+}
+
+void clang_CompoundAssignOperator_setComputationResultType(CXCompoundAssignOperator CAO,
+                                                           CXQualType T) {
+  static_cast<clang::CompoundAssignOperator *>(CAO)->setComputationResultType(
+      clang::QualType::getFromOpaquePtr(T));
+}
+
+// AddrLabelExpr
+void clang_AddrLabelExpr_setAmpAmpLoc(CXAddrLabelExpr E, CXSourceLocation_ L) {
+  static_cast<clang::AddrLabelExpr *>(E)->setAmpAmpLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_AddrLabelExpr_setLabelLoc(CXAddrLabelExpr E, CXSourceLocation_ L) {
+  static_cast<clang::AddrLabelExpr *>(E)->setLabelLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_AddrLabelExpr_setLabel(CXAddrLabelExpr E, CXLabelDecl L) {
+  static_cast<clang::AddrLabelExpr *>(E)->setLabel(static_cast<clang::LabelDecl *>(L));
+}
+
+// ConvertVectorExpr
+void clang_ConvertVectorExpr_setTypeSourceInfo(CXConvertVectorExpr E, CXTypeSourceInfo TI) {
+  static_cast<clang::ConvertVectorExpr *>(E)->setTypeSourceInfo(
+      static_cast<clang::TypeSourceInfo *>(TI));
+}
+
+// GNUNullExpr
+void clang_GNUNullExpr_setTokenLocation(CXGNUNullExpr E, CXSourceLocation_ L) {
+  static_cast<clang::GNUNullExpr *>(E)->setTokenLocation(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+// DesignatedInitUpdateExpr
+CXExpr clang_DesignatedInitUpdateExpr_getBase(CXDesignatedInitUpdateExpr E) {
+  return static_cast<clang::DesignatedInitUpdateExpr *>(E)->getBase();
+}
+
+void clang_DesignatedInitUpdateExpr_setBase(CXDesignatedInitUpdateExpr E, CXExpr Base) {
+  static_cast<clang::DesignatedInitUpdateExpr *>(E)->setBase(
+      static_cast<clang::Expr *>(Base));
+}
+
+CXInitListExpr clang_DesignatedInitUpdateExpr_getUpdater(CXDesignatedInitUpdateExpr E) {
+  return static_cast<clang::DesignatedInitUpdateExpr *>(E)->getUpdater();
+}
+
+void clang_DesignatedInitUpdateExpr_setUpdater(CXDesignatedInitUpdateExpr E,
+                                               CXInitListExpr Updater) {
+  static_cast<clang::DesignatedInitUpdateExpr *>(E)->setUpdater(
+      static_cast<clang::InitListExpr *>(Updater));
+}
+
+// ExtVectorElementExpr
+void clang_ExtVectorElementExpr_setBase(CXExtVectorElementExpr E, CXExpr Base) {
+  static_cast<clang::ExtVectorElementExpr *>(E)->setBase(static_cast<clang::Expr *>(Base));
+}
+
+void clang_ExtVectorElementExpr_setAccessor(CXExtVectorElementExpr E, CXIdentifierInfo II) {
+  static_cast<clang::ExtVectorElementExpr *>(E)->setAccessor(
+      static_cast<clang::IdentifierInfo *>(II));
+}
+
+void clang_ExtVectorElementExpr_setAccessorLoc(CXExtVectorElementExpr E,
+                                               CXSourceLocation_ L) {
+  static_cast<clang::ExtVectorElementExpr *>(E)->setAccessorLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+// Expr
+CXExpr_LValueClassification clang_Expr_ClassifyLValue(CXExpr E, CXASTContext Ctx) {
+  return static_cast<CXExpr_LValueClassification>(
+      static_cast<clang::Expr *>(E)->ClassifyLValue(
+          *static_cast<clang::ASTContext *>(Ctx)));
+}
+
+unsigned clang_Expr_getFPFeaturesInEffect(CXExpr E, CXLangOptions LO) {
+  return static_cast<clang::Expr *>(E)
+      ->getFPFeaturesInEffect(*static_cast<clang::LangOptions *>(LO))
+      .getAsOpaqueInt();
+}
+
+bool clang_Expr_isPotentialConstantExprUnevaluated(CXExpr E, CXFunctionDecl FD) {
+  llvm::SmallVector<clang::PartialDiagnosticAt, 8> Diags;
+  return clang::Expr::isPotentialConstantExprUnevaluated(
+      static_cast<clang::Expr *>(E), static_cast<clang::FunctionDecl *>(FD), Diags);
+}
+
+CXAPValue clang_Expr_EvaluateAsInitializer(CXExpr E, CXASTContext Ctx, CXVarDecl VD,
+                                           bool IsConstantInitializer) {
+  clang::APValue Value;
+  llvm::SmallVector<clang::PartialDiagnosticAt, 8> Notes;
+  if (!static_cast<clang::Expr *>(E)->EvaluateAsInitializer(
+          Value, *static_cast<clang::ASTContext *>(Ctx), static_cast<clang::VarDecl *>(VD),
+          Notes, IsConstantInitializer))
+    return nullptr;
+  return new clang::APValue(Value); // NOLINT(*-owning-memory)
+}
+
+CXAPValue clang_Expr_EvaluateWithSubstitution(CXExpr E, CXASTContext Ctx,
+                                              CXFunctionDecl Callee, const CXExpr *Args,
+                                              unsigned NumArgs, CXExpr This) {
+  llvm::SmallVector<const clang::Expr *, 8> ArgExprs;
+  ArgExprs.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    ArgExprs.push_back(static_cast<const clang::Expr *>(Args[I]));
+  clang::APValue Value;
+  if (!static_cast<clang::Expr *>(E)->EvaluateWithSubstitution(
+          Value, *static_cast<clang::ASTContext *>(Ctx),
+          static_cast<clang::FunctionDecl *>(Callee), ArgExprs,
+          static_cast<clang::Expr *>(This)))
+    return nullptr;
+  return new clang::APValue(Value); // NOLINT(*-owning-memory)
+}
+
+// CallExpr
+void clang_CallExpr_setADLCallKind(CXCallExpr E, bool UsesADL) {
+  static_cast<clang::CallExpr *>(E)->setADLCallKind(UsesADL ? clang::CallExpr::UsesADL
+                                                            : clang::CallExpr::NotADL);
+}
+
+// CastExpr
+uint64_t clang_CastExpr_getFPFeatures(CXCastExpr E) {
+  return static_cast<clang::CastExpr *>(E)->getFPFeatures().getAsOpaqueInt();
+}
+
+uint64_t clang_CastExpr_getStoredFPFeatures(CXCastExpr E) {
+  return static_cast<clang::CastExpr *>(E)->getStoredFPFeatures().getAsOpaqueInt();
+}
+
+// OffsetOfExpr
+void clang_OffsetOfExpr_setOperatorLoc(CXOffsetOfExpr E, CXSourceLocation_ L) {
+  static_cast<clang::OffsetOfExpr *>(E)->setOperatorLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_OffsetOfExpr_setRParenLoc(CXOffsetOfExpr E, CXSourceLocation_ R) {
+  static_cast<clang::OffsetOfExpr *>(E)->setRParenLoc(
+      clang::SourceLocation::getFromPtrEncoding(R));
+}
+
+void clang_OffsetOfExpr_setTypeSourceInfo(CXOffsetOfExpr E, CXTypeSourceInfo TSI) {
+  static_cast<clang::OffsetOfExpr *>(E)->setTypeSourceInfo(
+      static_cast<clang::TypeSourceInfo *>(TSI));
+}
+
+void clang_OffsetOfExpr_setIndexExpr(CXOffsetOfExpr E, unsigned Idx, CXExpr Value) {
+  static_cast<clang::OffsetOfExpr *>(E)->setIndexExpr(Idx,
+                                                      static_cast<clang::Expr *>(Value));
+}
+
+// InitListExpr
+void clang_InitListExpr_reserveInits(CXInitListExpr E, CXASTContext C, unsigned NumInits) {
+  static_cast<clang::InitListExpr *>(E)->reserveInits(*static_cast<clang::ASTContext *>(C),
+                                                      NumInits);
+}
+
+CXExpr clang_InitListExpr_updateInit(CXInitListExpr E, CXASTContext C, unsigned Init,
+                                     CXExpr Value) {
+  return static_cast<clang::InitListExpr *>(E)->updateInit(
+      *static_cast<clang::ASTContext *>(C), Init, static_cast<clang::Expr *>(Value));
+}
+
+void clang_InitListExpr_markError(CXInitListExpr E) {
+  static_cast<clang::InitListExpr *>(E)->markError();
+}
+
+// DesignatedInitExpr
+void clang_DesignatedInitExpr_setEqualOrColonLoc(CXDesignatedInitExpr E,
+                                                 CXSourceLocation_ L) {
+  static_cast<clang::DesignatedInitExpr *>(E)->setEqualOrColonLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_DesignatedInitExpr_setGNUSyntax(CXDesignatedInitExpr E, bool GNU) {
+  static_cast<clang::DesignatedInitExpr *>(E)->setGNUSyntax(GNU);
+}
+
+void clang_DesignatedInitExpr_setInit(CXDesignatedInitExpr E, CXExpr Init) {
+  static_cast<clang::DesignatedInitExpr *>(E)->setInit(static_cast<clang::Expr *>(Init));
+}
+
+void clang_DesignatedInitExpr_setSubExpr(CXDesignatedInitExpr E, unsigned Idx,
+                                         CXExpr Value) {
+  static_cast<clang::DesignatedInitExpr *>(E)->setSubExpr(
+      Idx, static_cast<clang::Expr *>(Value));
+}
+
+// SourceLocExpr
+CXAPValue clang_SourceLocExpr_EvaluateInContext(CXSourceLocExpr E, CXASTContext Ctx,
+                                                CXExpr DefaultExpr) {
+  return new clang::APValue( // NOLINT(*-owning-memory)
+      static_cast<clang::SourceLocExpr *>(E)->EvaluateInContext(
+          *static_cast<clang::ASTContext *>(Ctx), static_cast<clang::Expr *>(DefaultExpr)));
+}
+
+// CallExpr
+void clang_CallExpr_computeDependence(CXCallExpr CE) {
+  static_cast<clang::CallExpr *>(CE)->computeDependence();
+}
+
+void clang_CallExpr_markDependentForPostponedNameLookup(CXCallExpr CE) {
+  static_cast<clang::CallExpr *>(CE)->markDependentForPostponedNameLookup();
+}
+
+void clang_CallExpr_shrinkNumArgs(CXCallExpr CE, unsigned NewNumArgs) {
+  static_cast<clang::CallExpr *>(CE)->shrinkNumArgs(NewNumArgs);
+}
+
+// InitListExpr
+void clang_InitListExpr_resizeInits(CXInitListExpr E, CXASTContext C, unsigned NumInits) {
+  static_cast<clang::InitListExpr *>(E)->resizeInits(*static_cast<clang::ASTContext *>(C),
+                                                     NumInits);
+}
+
+// DeclRefExpr
+void clang_DeclRefExpr_setIsImmediateEscalating(CXDeclRefExpr E, bool Set) {
+  static_cast<clang::DeclRefExpr *>(E)->setIsImmediateEscalating(Set);
+}
+
+// FloatingLiteral
+void clang_FloatingLiteral_setExact(CXFloatingLiteral E, bool Exact) {
+  static_cast<clang::FloatingLiteral *>(E)->setExact(Exact);
+}
+
+// BinaryOperator
+bool clang_BinaryOperator_isCompoundAssignmentOpKind(CXBinaryOperatorKind Opc) {
+  return clang::BinaryOperator::isCompoundAssignmentOp(
+      static_cast<clang::BinaryOperatorKind>(Opc));
+}
+
+CXBinaryOperator clang_BinaryOperator_Create(CXASTContext C, CXExpr LHS, CXExpr RHS,
+                                             CXBinaryOperatorKind Opc, CXQualType ResTy,
+                                             CXExprValueKind VK, CXExprObjectKind OK,
+                                             CXSourceLocation_ OpLoc, uint64_t FPFeatures) {
+  return clang::BinaryOperator::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::Expr *>(LHS),
+      static_cast<clang::Expr *>(RHS), static_cast<clang::BinaryOperatorKind>(Opc),
+      clang::QualType::getFromOpaquePtr(ResTy), static_cast<clang::ExprValueKind>(VK),
+      static_cast<clang::ExprObjectKind>(OK),
+      clang::SourceLocation::getFromPtrEncoding(OpLoc),
+      clang::FPOptionsOverride::getFromOpaqueInt(FPFeatures));
+}
+
+CXBinaryOperator clang_BinaryOperator_CreateEmpty(CXASTContext C, bool HasFPFeatures) {
+  return clang::BinaryOperator::CreateEmpty(*static_cast<clang::ASTContext *>(C),
+                                            HasFPFeatures);
+}
+
+// CompoundAssignOperator
+CXCompoundAssignOperator clang_CompoundAssignOperator_Create(
+    CXASTContext C, CXExpr LHS, CXExpr RHS, CXBinaryOperatorKind Opc, CXQualType ResTy,
+    CXExprValueKind VK, CXExprObjectKind OK, CXSourceLocation_ OpLoc, uint64_t FPFeatures,
+    CXQualType CompLHSType, CXQualType CompResultType) {
+  return clang::CompoundAssignOperator::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::Expr *>(LHS),
+      static_cast<clang::Expr *>(RHS), static_cast<clang::BinaryOperatorKind>(Opc),
+      clang::QualType::getFromOpaquePtr(ResTy), static_cast<clang::ExprValueKind>(VK),
+      static_cast<clang::ExprObjectKind>(OK),
+      clang::SourceLocation::getFromPtrEncoding(OpLoc),
+      clang::FPOptionsOverride::getFromOpaqueInt(FPFeatures),
+      clang::QualType::getFromOpaquePtr(CompLHSType),
+      clang::QualType::getFromOpaquePtr(CompResultType));
+}
+
+// UnaryOperator
+CXUnaryOperator clang_UnaryOperator_Create(CXASTContext C, CXExpr Input,
+                                           CXUnaryOperatorKind Opc, CXQualType Type,
+                                           CXExprValueKind VK, CXExprObjectKind OK,
+                                           CXSourceLocation_ L, bool CanOverflow,
+                                           uint64_t FPFeatures) {
+  return clang::UnaryOperator::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::Expr *>(Input),
+      static_cast<clang::UnaryOperatorKind>(Opc), clang::QualType::getFromOpaquePtr(Type),
+      static_cast<clang::ExprValueKind>(VK), static_cast<clang::ExprObjectKind>(OK),
+      clang::SourceLocation::getFromPtrEncoding(L), CanOverflow,
+      clang::FPOptionsOverride::getFromOpaqueInt(FPFeatures));
+}
+
+// ImplicitCastExpr
+CXImplicitCastExpr clang_ImplicitCastExpr_Create(CXASTContext C, CXQualType T, CXCastKind K,
+                                                 CXExpr Op, CXExprValueKind VK,
+                                                 uint64_t FPO) {
+  return clang::ImplicitCastExpr::Create(
+      *static_cast<clang::ASTContext *>(C), clang::QualType::getFromOpaquePtr(T),
+      static_cast<clang::CastKind>(K), static_cast<clang::Expr *>(Op), nullptr,
+      static_cast<clang::ExprValueKind>(VK),
+      clang::FPOptionsOverride::getFromOpaqueInt(FPO));
+}
+
+CXImplicitCastExpr clang_ImplicitCastExpr_CreateEmpty(CXASTContext C, unsigned PathSize,
+                                                      bool HasFPFeatures) {
+  return clang::ImplicitCastExpr::CreateEmpty(*static_cast<clang::ASTContext *>(C),
+                                              PathSize, HasFPFeatures);
+}
+
+// MemberExpr
+CXMemberExpr clang_MemberExpr_CreateImplicit(CXASTContext C, CXExpr Base, bool IsArrow,
+                                             CXValueDecl MemberDecl, CXQualType T,
+                                             CXExprValueKind VK, CXExprObjectKind OK) {
+  return clang::MemberExpr::CreateImplicit(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::Expr *>(Base), IsArrow,
+      static_cast<clang::ValueDecl *>(MemberDecl), clang::QualType::getFromOpaquePtr(T),
+      static_cast<clang::ExprValueKind>(VK), static_cast<clang::ExprObjectKind>(OK));
+}
+
+// PredefinedExpr
+CXPredefinedExpr clang_PredefinedExpr_Create(CXASTContext C, CXSourceLocation_ L,
+                                             CXQualType FNTy, CXPredefinedIdentKind IK,
+                                             bool IsTransparent, CXStringLiteral SL) {
+  return clang::PredefinedExpr::Create(
+      *static_cast<clang::ASTContext *>(C), clang::SourceLocation::getFromPtrEncoding(L),
+      clang::QualType::getFromOpaquePtr(FNTy), static_cast<clang::PredefinedIdentKind>(IK),
+      IsTransparent, static_cast<clang::StringLiteral *>(SL));
+}
+
+// ParenListExpr
+CXParenListExpr clang_ParenListExpr_Create(CXASTContext C, CXSourceLocation_ LParenLoc,
+                                           const CXExpr *Exprs, unsigned NumExprs,
+                                           CXSourceLocation_ RParenLoc) {
+  llvm::SmallVector<clang::Expr *, 8> Es;
+  Es.reserve(NumExprs);
+  for (unsigned I = 0; I < NumExprs; ++I)
+    Es.push_back(static_cast<clang::Expr *>(Exprs[I]));
+  return clang::ParenListExpr::Create(*static_cast<clang::ASTContext *>(C),
+                                      clang::SourceLocation::getFromPtrEncoding(LParenLoc),
+                                      Es,
+                                      clang::SourceLocation::getFromPtrEncoding(RParenLoc));
+}
+
+// ConstantExpr
+CXConstantExpr clang_ConstantExpr_Create(CXASTContext C, CXExpr E, CXAPValue Result) {
+  return clang::ConstantExpr::Create(*static_cast<clang::ASTContext *>(C),
+                                     static_cast<clang::Expr *>(E),
+                                     *static_cast<clang::APValue *>(Result));
+}
+
+CXConstantExpr clang_ConstantExpr_CreateEmpty(CXASTContext C,
+                                              CXConstantResultStorageKind StorageKind) {
+  return clang::ConstantExpr::CreateEmpty(
+      *static_cast<clang::ASTContext *>(C),
+      static_cast<clang::ConstantResultStorageKind>(StorageKind));
+}
+
+// RecoveryExpr
+CXRecoveryExpr clang_RecoveryExpr_Create(CXASTContext C, CXQualType T,
+                                         CXSourceLocation_ BeginLoc,
+                                         CXSourceLocation_ EndLoc, const CXExpr *SubExprs,
+                                         unsigned NumSubExprs) {
+  llvm::SmallVector<clang::Expr *, 8> Es;
+  Es.reserve(NumSubExprs);
+  for (unsigned I = 0; I < NumSubExprs; ++I)
+    Es.push_back(static_cast<clang::Expr *>(SubExprs[I]));
+  return clang::RecoveryExpr::Create(*static_cast<clang::ASTContext *>(C),
+                                     clang::QualType::getFromOpaquePtr(T),
+                                     clang::SourceLocation::getFromPtrEncoding(BeginLoc),
+                                     clang::SourceLocation::getFromPtrEncoding(EndLoc), Es);
+}
+
+unsigned clang_RecoveryExpr_getNumSubExpressions(CXRecoveryExpr E) {
+  return static_cast<clang::RecoveryExpr *>(E)->subExpressions().size();
+}
+
+CXExpr clang_RecoveryExpr_getSubExpression(CXRecoveryExpr E, unsigned I) {
+  return static_cast<clang::RecoveryExpr *>(E)->subExpressions()[I];
+}
+
+// Expr
+CXAPValue clang_Expr_EvaluateAsFixedPoint(CXExpr E, CXASTContext Ctx) {
+  clang::Expr::EvalResult Result;
+  if (!static_cast<clang::Expr *>(E)->EvaluateAsFixedPoint(
+          Result, *static_cast<clang::ASTContext *>(Ctx)))
+    return nullptr;
+  return new clang::APValue(Result.Val); // NOLINT(*-owning-memory)
+}
+
+// ConstantExpr
+void clang_ConstantExpr_SetResult(CXConstantExpr E, CXAPValue Value, CXASTContext Ctx) {
+  static_cast<clang::ConstantExpr *>(E)->SetResult(*static_cast<clang::APValue *>(Value),
+                                                   *static_cast<clang::ASTContext *>(Ctx));
+}
+
+// FloatingLiteral
+unsigned clang_FloatingLiteral_getRawSemantics(CXFloatingLiteral E) {
+  return static_cast<unsigned>(static_cast<clang::FloatingLiteral *>(E)->getRawSemantics());
+}
+
+void clang_FloatingLiteral_setRawSemantics(CXFloatingLiteral E, unsigned Sem) {
+  static_cast<clang::FloatingLiteral *>(E)->setRawSemantics(
+      static_cast<llvm::APFloatBase::Semantics>(Sem));
+}
+
+void clang_FloatingLiteral_setValue(CXFloatingLiteral E, CXASTContext C,
+                                    LLVMGenericValueRef Value) {
+  auto *FL = static_cast<clang::FloatingLiteral *>(E);
+  auto *GV = reinterpret_cast<llvm::GenericValue *>(Value);
+  FL->setValue(*static_cast<clang::ASTContext *>(C),
+               llvm::APFloat(FL->getSemantics(), GV->IntVal));
+}
+
+// ImaginaryLiteral
+void clang_ImaginaryLiteral_setSubExpr(CXImaginaryLiteral E, CXExpr S) {
+  static_cast<clang::ImaginaryLiteral *>(E)->setSubExpr(static_cast<clang::Expr *>(S));
+}
+
+// MatrixSubscriptExpr
+void clang_MatrixSubscriptExpr_setBase(CXMatrixSubscriptExpr E, CXExpr Base) {
+  static_cast<clang::MatrixSubscriptExpr *>(E)->setBase(static_cast<clang::Expr *>(Base));
+}
+
+void clang_MatrixSubscriptExpr_setRowIdx(CXMatrixSubscriptExpr E, CXExpr RowIdx) {
+  static_cast<clang::MatrixSubscriptExpr *>(E)->setRowIdx(
+      static_cast<clang::Expr *>(RowIdx));
+}
+
+void clang_MatrixSubscriptExpr_setColumnIdx(CXMatrixSubscriptExpr E, CXExpr ColumnIdx) {
+  static_cast<clang::MatrixSubscriptExpr *>(E)->setColumnIdx(
+      static_cast<clang::Expr *>(ColumnIdx));
+}
+
+void clang_MatrixSubscriptExpr_setRBracketLoc(CXMatrixSubscriptExpr E,
+                                              CXSourceLocation_ L) {
+  static_cast<clang::MatrixSubscriptExpr *>(E)->setRBracketLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+// CallExpr
+unsigned clang_CallExpr_getNumRawSubExprs(CXCallExpr E) {
+  return static_cast<clang::CallExpr *>(E)->getRawSubExprs().size();
+}
+
+CXStmt clang_CallExpr_getRawSubExpr(CXCallExpr E, unsigned I) {
+  return static_cast<clang::CallExpr *>(E)->getRawSubExprs()[I];
+}
+
+void clang_CallExpr_setStoredFPFeatures(CXCallExpr E, uint64_t F) {
+  static_cast<clang::CallExpr *>(E)->setStoredFPFeatures(
+      clang::FPOptionsOverride::getFromOpaqueInt(F));
+}
+
+// BinaryOperator
+void clang_BinaryOperator_setStoredFPFeatures(CXBinaryOperator BO, uint64_t F) {
+  static_cast<clang::BinaryOperator *>(BO)->setStoredFPFeatures(
+      clang::FPOptionsOverride::getFromOpaqueInt(F));
+}
+
+// ShuffleVectorExpr
+void clang_ShuffleVectorExpr_setExprs(CXShuffleVectorExpr E, CXASTContext C,
+                                      const CXExpr *Exprs, unsigned NumExprs) {
+  llvm::SmallVector<clang::Expr *, 8> Es;
+  Es.reserve(NumExprs);
+  for (unsigned I = 0; I < NumExprs; ++I)
+    Es.push_back(static_cast<clang::Expr *>(Exprs[I]));
+  static_cast<clang::ShuffleVectorExpr *>(E)->setExprs(*static_cast<clang::ASTContext *>(C),
+                                                       Es);
+}
+
+// DesignatedInitExpr::Designator
+void clang_Designator_setFieldDecl(CXDesignator D, CXFieldDecl FD) {
+  static_cast<clang::DesignatedInitExpr::Designator *>(D)->setFieldDecl(
+      static_cast<clang::FieldDecl *>(FD));
+}
+
+// BlockExpr
+void clang_BlockExpr_setBlockDecl(CXBlockExpr E, CXBlockDecl BD) {
+  static_cast<clang::BlockExpr *>(E)->setBlockDecl(static_cast<clang::BlockDecl *>(BD));
+}
+
+// Expr
+unsigned clang_Expr_getDependence(CXExpr E) {
+  return static_cast<unsigned>(static_cast<clang::Expr *>(E)->getDependence());
+}
+
+bool clang_Expr_isFlexibleArrayMemberLike(CXExpr E, CXASTContext Ctx,
+                                          CXStrictFlexArraysLevelKind StrictFlexArraysLevel,
+                                          bool IgnoreTemplateOrMacroSubstitution) {
+  return static_cast<clang::Expr *>(E)->isFlexibleArrayMemberLike(
+      *static_cast<clang::ASTContext *>(Ctx),
+      static_cast<clang::LangOptions::StrictFlexArraysLevelKind>(StrictFlexArraysLevel),
+      IgnoreTemplateOrMacroSubstitution);
+}
+
+// StringLiteral
+CXStringLiteral clang_StringLiteral_Create(CXASTContext Ctx, const char *Str, size_t StrLen,
+                                           CXStringLiteralKind Kind, bool Pascal,
+                                           CXQualType Ty, const CXSourceLocation_ *Locs,
+                                           unsigned NumConcatenated) {
+  llvm::SmallVector<clang::SourceLocation, 4> Ls;
+  Ls.reserve(NumConcatenated);
+  for (unsigned I = 0; I < NumConcatenated; ++I)
+    Ls.push_back(clang::SourceLocation::getFromPtrEncoding(Locs[I]));
+  return clang::StringLiteral::Create(
+      *static_cast<clang::ASTContext *>(Ctx), llvm::StringRef(Str, StrLen),
+      static_cast<clang::StringLiteralKind>(Kind), Pascal,
+      clang::QualType::getFromOpaquePtr(Ty), Ls.data(), NumConcatenated);
+}
+
+CXStringLiteral clang_StringLiteral_CreateEmpty(CXASTContext Ctx, unsigned NumConcatenated,
+                                                unsigned Length, unsigned CharByteWidth) {
+  return clang::StringLiteral::CreateEmpty(*static_cast<clang::ASTContext *>(Ctx),
+                                           NumConcatenated, Length, CharByteWidth);
+}
+
+// PredefinedExpr
+CXPredefinedExpr clang_PredefinedExpr_CreateEmpty(CXASTContext Ctx, bool HasFunctionName) {
+  return clang::PredefinedExpr::CreateEmpty(*static_cast<clang::ASTContext *>(Ctx),
+                                            HasFunctionName);
+}
+
+// UnaryOperator
+CXUnaryOperator clang_UnaryOperator_CreateEmpty(CXASTContext C, bool HasFPFeatures) {
+  return clang::UnaryOperator::CreateEmpty(*static_cast<clang::ASTContext *>(C),
+                                           HasFPFeatures);
+}
+
+// OffsetOfExpr
+CXOffsetOfExpr clang_OffsetOfExpr_CreateEmpty(CXASTContext C, unsigned NumComps,
+                                              unsigned NumExprs) {
+  return clang::OffsetOfExpr::CreateEmpty(*static_cast<clang::ASTContext *>(C), NumComps,
+                                          NumExprs);
+}
+
+// CallExpr
+CXCallExpr clang_CallExpr_CreateEmpty(CXASTContext Ctx, unsigned NumArgs,
+                                      bool HasFPFeatures) {
+  return clang::CallExpr::CreateEmpty(*static_cast<clang::ASTContext *>(Ctx), NumArgs,
+                                      HasFPFeatures, clang::Stmt::EmptyShell());
+}
+
+// MemberExpr
+CXMemberExpr clang_MemberExpr_CreateEmpty(CXASTContext Context, bool HasQualifier,
+                                          bool HasFoundDecl, bool HasTemplateKWAndArgsInfo,
+                                          unsigned NumTemplateArgs) {
+  return clang::MemberExpr::CreateEmpty(*static_cast<clang::ASTContext *>(Context),
+                                        HasQualifier, HasFoundDecl,
+                                        HasTemplateKWAndArgsInfo, NumTemplateArgs);
+}
+
+// CompoundAssignOperator
+CXCompoundAssignOperator clang_CompoundAssignOperator_CreateEmpty(CXASTContext C,
+                                                                  bool HasFPFeatures) {
+  return clang::CompoundAssignOperator::CreateEmpty(*static_cast<clang::ASTContext *>(C),
+                                                    HasFPFeatures);
+}
+
+// DesignatedInitExpr::Designator
+CXDesignator clang_Designator_CreateFieldDesignator(CXIdentifierInfo FieldName,
+                                                    CXSourceLocation_ DotLoc,
+                                                    CXSourceLocation_ FieldLoc) {
+  return std::make_unique<clang::DesignatedInitExpr::Designator>(
+             clang::DesignatedInitExpr::Designator::CreateFieldDesignator(
+                 static_cast<const clang::IdentifierInfo *>(FieldName),
+                 clang::SourceLocation::getFromPtrEncoding(DotLoc),
+                 clang::SourceLocation::getFromPtrEncoding(FieldLoc)))
+      .release();
+}
+
+CXDesignator clang_Designator_CreateArrayDesignator(unsigned Index,
+                                                    CXSourceLocation_ LBracketLoc,
+                                                    CXSourceLocation_ RBracketLoc) {
+  return std::make_unique<clang::DesignatedInitExpr::Designator>(
+             clang::DesignatedInitExpr::Designator::CreateArrayDesignator(
+                 Index, clang::SourceLocation::getFromPtrEncoding(LBracketLoc),
+                 clang::SourceLocation::getFromPtrEncoding(RBracketLoc)))
+      .release();
+}
+
+CXDesignator clang_Designator_CreateArrayRangeDesignator(unsigned Index,
+                                                         CXSourceLocation_ LBracketLoc,
+                                                         CXSourceLocation_ EllipsisLoc,
+                                                         CXSourceLocation_ RBracketLoc) {
+  return std::make_unique<clang::DesignatedInitExpr::Designator>(
+             clang::DesignatedInitExpr::Designator::CreateArrayRangeDesignator(
+                 Index, clang::SourceLocation::getFromPtrEncoding(LBracketLoc),
+                 clang::SourceLocation::getFromPtrEncoding(EllipsisLoc),
+                 clang::SourceLocation::getFromPtrEncoding(RBracketLoc)))
+      .release();
+}
+
+void clang_Designator_dispose(CXDesignator D) {
+  delete static_cast<clang::DesignatedInitExpr::Designator *>(D);
+}
+
+// DesignatedInitExpr
+CXDesignatedInitExpr clang_DesignatedInitExpr_CreateEmpty(CXASTContext C,
+                                                          unsigned NumIndexExprs) {
+  return clang::DesignatedInitExpr::CreateEmpty(*static_cast<clang::ASTContext *>(C),
+                                                NumIndexExprs);
+}
+
+void clang_DesignatedInitExpr_setDesignators(CXDesignatedInitExpr E, CXASTContext C,
+                                             const CXDesignator *Desigs,
+                                             unsigned NumDesigs) {
+  llvm::SmallVector<clang::DesignatedInitExpr::Designator, 4> Ds;
+  Ds.reserve(NumDesigs);
+  for (unsigned I = 0; I < NumDesigs; ++I)
+    Ds.push_back(*static_cast<clang::DesignatedInitExpr::Designator *>(Desigs[I]));
+  static_cast<clang::DesignatedInitExpr *>(E)->setDesignators(
+      *static_cast<clang::ASTContext *>(C), Ds.data(), NumDesigs);
+}
+
+// ParenListExpr
+CXParenListExpr clang_ParenListExpr_CreateEmpty(CXASTContext Ctx, unsigned NumExprs) {
+  return clang::ParenListExpr::CreateEmpty(*static_cast<clang::ASTContext *>(Ctx),
+                                           NumExprs);
+}
+
+// GenericSelectionExpr
+CXGenericSelectionExpr clang_GenericSelectionExpr_CreateEmpty(CXASTContext Context,
+                                                              unsigned NumAssocs) {
+  return clang::GenericSelectionExpr::CreateEmpty(
+      *static_cast<clang::ASTContext *>(Context), NumAssocs);
+}
+
+// RecoveryExpr
+CXRecoveryExpr clang_RecoveryExpr_CreateEmpty(CXASTContext Ctx, unsigned NumSubExprs) {
+  return clang::RecoveryExpr::CreateEmpty(*static_cast<clang::ASTContext *>(Ctx),
+                                          NumSubExprs);
+}
+
+// CallExpr
+CXCallExpr clang_CallExpr_Create(CXASTContext Ctx, CXExpr Fn, const CXExpr *Args,
+                                 unsigned NumArgs, CXQualType Ty, CXExprValueKind VK,
+                                 CXSourceLocation_ RParenLoc, uint64_t FPFeatures,
+                                 unsigned MinNumArgs, bool UsesADL) {
+  llvm::SmallVector<clang::Expr *, 8> As;
+  As.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    As.push_back(static_cast<clang::Expr *>(Args[I]));
+  return clang::CallExpr::Create(
+      *static_cast<clang::ASTContext *>(Ctx), static_cast<clang::Expr *>(Fn), As,
+      clang::QualType::getFromOpaquePtr(Ty), static_cast<clang::ExprValueKind>(VK),
+      clang::SourceLocation::getFromPtrEncoding(RParenLoc),
+      clang::FPOptionsOverride::getFromOpaqueInt(FPFeatures), MinNumArgs,
+      UsesADL ? clang::CallExpr::UsesADL : clang::CallExpr::NotADL);
+}
+
+// DeclRefExpr
+void clang_DeclRefExpr_setCapturedByCopyInLambdaWithExplicitObjectParameter(
+    CXDeclRefExpr E, bool Set, CXASTContext Ctx) {
+  static_cast<clang::DeclRefExpr *>(E)
+      ->setCapturedByCopyInLambdaWithExplicitObjectParameter(
+          Set, *static_cast<clang::ASTContext *>(Ctx));
+}
+
+// FixedPointLiteral
+CXFixedPointLiteral clang_FixedPointLiteral_Create(CXASTContext C) {
+  return clang::FixedPointLiteral::Create(*static_cast<clang::ASTContext *>(C),
+                                          clang::Stmt::EmptyShell());
+}
+
+CXSourceLocation_ clang_FixedPointLiteral_getLocation(CXFixedPointLiteral E) {
+  return static_cast<clang::FixedPointLiteral *>(E)->getLocation().getPtrEncoding();
+}
+
+void clang_FixedPointLiteral_setLocation(CXFixedPointLiteral E, CXSourceLocation_ L) {
+  static_cast<clang::FixedPointLiteral *>(E)->setLocation(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+unsigned clang_FixedPointLiteral_getScale(CXFixedPointLiteral E) {
+  return static_cast<clang::FixedPointLiteral *>(E)->getScale();
+}
+
+void clang_FixedPointLiteral_setScale(CXFixedPointLiteral E, unsigned S) {
+  static_cast<clang::FixedPointLiteral *>(E)->setScale(S);
+}
+
+// SYCLUniqueStableNameExpr
+CXTypeSourceInfo
+clang_SYCLUniqueStableNameExpr_getTypeSourceInfo(CXSYCLUniqueStableNameExpr E) {
+  return static_cast<clang::SYCLUniqueStableNameExpr *>(E)->getTypeSourceInfo();
+}
+
+CXSYCLUniqueStableNameExpr clang_SYCLUniqueStableNameExpr_Create(CXASTContext Ctx,
+                                                                 CXSourceLocation_ OpLoc,
+                                                                 CXSourceLocation_ LParen,
+                                                                 CXSourceLocation_ RParen,
+                                                                 CXTypeSourceInfo TSI) {
+  return clang::SYCLUniqueStableNameExpr::Create(
+      *static_cast<clang::ASTContext *>(Ctx),
+      clang::SourceLocation::getFromPtrEncoding(OpLoc),
+      clang::SourceLocation::getFromPtrEncoding(LParen),
+      clang::SourceLocation::getFromPtrEncoding(RParen),
+      static_cast<clang::TypeSourceInfo *>(TSI));
+}
+
+CXSourceLocation_ clang_SYCLUniqueStableNameExpr_getLocation(CXSYCLUniqueStableNameExpr E) {
+  return static_cast<clang::SYCLUniqueStableNameExpr *>(E)->getLocation().getPtrEncoding();
+}
+
+CXSourceLocation_
+clang_SYCLUniqueStableNameExpr_getLParenLocation(CXSYCLUniqueStableNameExpr E) {
+  return static_cast<clang::SYCLUniqueStableNameExpr *>(E)
+      ->getLParenLocation()
+      .getPtrEncoding();
+}
+
+CXSourceLocation_
+clang_SYCLUniqueStableNameExpr_getRParenLocation(CXSYCLUniqueStableNameExpr E) {
+  return static_cast<clang::SYCLUniqueStableNameExpr *>(E)
+      ->getRParenLocation()
+      .getPtrEncoding();
+}
+
+CXString clang_SYCLUniqueStableNameExpr_ComputeName(CXSYCLUniqueStableNameExpr E,
+                                                    CXASTContext Ctx) {
+  return extra::makeCXString(static_cast<clang::SYCLUniqueStableNameExpr *>(E)->ComputeName(
+      *static_cast<clang::ASTContext *>(Ctx)));
+}
+
+// DeclRefExpr
+CXSourceRange_ clang_DeclRefExpr_getQualifierRange(CXDeclRefExpr E) {
+  auto Q = static_cast<clang::DeclRefExpr *>(E)->getQualifierLoc();
+  clang::SourceRange R = Q.getSourceRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+void clang_DeclRefExpr_copyTemplateArgumentsInto(CXDeclRefExpr E,
+                                                 CXTemplateArgumentListInfo List) {
+  static_cast<clang::DeclRefExpr *>(E)->copyTemplateArgumentsInto(
+      *static_cast<clang::TemplateArgumentListInfo *>(List));
+}
+
+// FixedPointLiteral
+CXFixedPointLiteral clang_FixedPointLiteral_CreateFromRawInt(CXASTContext C, uint64_t Value,
+                                                             unsigned BitWidth,
+                                                             CXQualType Ty,
+                                                             CXSourceLocation_ L,
+                                                             unsigned Scale) {
+  return clang::FixedPointLiteral::CreateFromRawInt(
+      *static_cast<clang::ASTContext *>(C), llvm::APInt(BitWidth, Value),
+      clang::QualType::getFromOpaquePtr(Ty), clang::SourceLocation::getFromPtrEncoding(L),
+      Scale);
+}
+
+CXString clang_FixedPointLiteral_getValueAsString(CXFixedPointLiteral E, unsigned Radix) {
+  return extra::makeCXString(
+      static_cast<clang::FixedPointLiteral *>(E)->getValueAsString(Radix));
+}
+
+// OffsetOfExpr
+void clang_OffsetOfExpr_setComponent(CXOffsetOfExpr E, unsigned Idx, CXOffsetOfNode N) {
+  static_cast<clang::OffsetOfExpr *>(E)->setComponent(
+      Idx, *static_cast<clang::OffsetOfNode *>(N));
+}
+
+// MemberExpr
+CXSourceRange_ clang_MemberExpr_getQualifierRange(CXMemberExpr E) {
+  auto Q = static_cast<clang::MemberExpr *>(E)->getQualifierLoc();
+  clang::SourceRange R = Q.getSourceRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+void clang_MemberExpr_copyTemplateArgumentsInto(CXMemberExpr E,
+                                                CXTemplateArgumentListInfo List) {
+  static_cast<clang::MemberExpr *>(E)->copyTemplateArgumentsInto(
+      *static_cast<clang::TemplateArgumentListInfo *>(List));
+}
+
+// BinaryOperator
+void clang_BinaryOperator_setHasStoredFPFeatures(CXBinaryOperator BO, bool B) {
+  static_cast<clang::BinaryOperator *>(BO)->setHasStoredFPFeatures(B);
+}
+
+// DesignatedInitExpr
+void clang_DesignatedInitExpr_ExpandDesignator(CXDesignatedInitExpr E, CXASTContext Ctx,
+                                               unsigned Idx, const CXDesignator *Ds,
+                                               unsigned N) {
+  llvm::SmallVector<clang::DesignatedInitExpr::Designator, 4> Buf;
+  Buf.reserve(N);
+  for (unsigned I = 0; I != N; ++I)
+    Buf.push_back(*static_cast<clang::DesignatedInitExpr::Designator *>(Ds[I]));
+  static_cast<clang::DesignatedInitExpr *>(E)->ExpandDesignator(
+      *static_cast<clang::ASTContext *>(Ctx), Idx, Buf.data(), Buf.data() + Buf.size());
+}
+
+// GenericSelectionExpr
+CXQualType clang_GenericSelectionExpr_getAssocType(CXGenericSelectionExpr E, unsigned I) {
+  return static_cast<clang::GenericSelectionExpr *>(E)
+      ->getAssociation(I)
+      .getType()
+      .getAsOpaquePtr();
+}
+
+bool clang_GenericSelectionExpr_isAssocSelected(CXGenericSelectionExpr E, unsigned I) {
+  return static_cast<clang::GenericSelectionExpr *>(E)->getAssociation(I).isSelected();
+}
+
+// AsTypeExpr
+CXAsTypeExpr clang_AsTypeExpr_Create(CXASTContext Ctx, CXExpr SrcExpr, CXQualType DstType,
+                                     CXExprValueKind VK, CXExprObjectKind OK,
+                                     CXSourceLocation_ BuiltinLoc,
+                                     CXSourceLocation_ RParenLoc) {
+  clang::ASTContext &C = *static_cast<clang::ASTContext *>(Ctx);
+  return new (C) clang::AsTypeExpr(
+      static_cast<clang::Expr *>(SrcExpr), clang::QualType::getFromOpaquePtr(DstType),
+      static_cast<clang::ExprValueKind>(VK), static_cast<clang::ExprObjectKind>(OK),
+      clang::SourceLocation::getFromPtrEncoding(BuiltinLoc),
+      clang::SourceLocation::getFromPtrEncoding(RParenLoc));
+}
+
+CXExpr clang_AsTypeExpr_getSrcExpr(CXAsTypeExpr E) {
+  return static_cast<clang::AsTypeExpr *>(E)->getSrcExpr();
+}
+
+CXSourceLocation_ clang_AsTypeExpr_getBuiltinLoc(CXAsTypeExpr E) {
+  return static_cast<clang::AsTypeExpr *>(E)->getBuiltinLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_AsTypeExpr_getRParenLoc(CXAsTypeExpr E) {
+  return static_cast<clang::AsTypeExpr *>(E)->getRParenLoc().getPtrEncoding();
+}
+
+// Expr::EvalStatus / Expr::EvalResult
+CXEvalResult clang_EvalResult_create(void) { return new clang::Expr::EvalResult(); }
+
+void clang_EvalResult_dispose(CXEvalResult R) {
+  delete static_cast<clang::Expr::EvalResult *>(R);
+}
+
+CXAPValue clang_EvalResult_getVal(CXEvalResult R) {
+  return &static_cast<clang::Expr::EvalResult *>(R)->Val;
+}
+
+bool clang_EvalStatus_hasSideEffects(CXEvalResult R) {
+  return static_cast<clang::Expr::EvalResult *>(R)->hasSideEffects();
+}
+
+bool clang_EvalStatus_hasUndefinedBehavior(CXEvalResult R) {
+  return static_cast<clang::Expr::EvalResult *>(R)->HasUndefinedBehavior;
+}
+
+bool clang_EvalResult_isGlobalLValue(CXEvalResult R) {
+  return static_cast<clang::Expr::EvalResult *>(R)->isGlobalLValue();
+}
+
+// Expr
+bool clang_Expr_EvaluateAsRValueIntoResult(CXExpr E, CXASTContext Ctx,
+                                           bool InConstantContext, CXEvalResult Result) {
+  return static_cast<clang::Expr *>(E)->EvaluateAsRValue(
+      *static_cast<clang::Expr::EvalResult *>(Result),
+      *static_cast<clang::ASTContext *>(Ctx), InConstantContext);
+}
+
+bool clang_Expr_EvaluateAsLValueIntoResult(CXExpr E, CXASTContext Ctx,
+                                           bool InConstantContext, CXEvalResult Result) {
+  return static_cast<clang::Expr *>(E)->EvaluateAsLValue(
+      *static_cast<clang::Expr::EvalResult *>(Result),
+      *static_cast<clang::ASTContext *>(Ctx), InConstantContext);
+}
+
+CXString clang_Expr_EvaluateCharRangeAsString(CXExpr E, CXExpr SizeExpression,
+                                              CXExpr PtrExpression, CXASTContext Ctx,
+                                              CXEvalResult Status, bool *Succeeded) {
+  std::string Text;
+  *Succeeded = static_cast<clang::Expr *>(E)->EvaluateCharRangeAsString(
+      Text, static_cast<clang::Expr *>(SizeExpression),
+      static_cast<clang::Expr *>(PtrExpression), *static_cast<clang::ASTContext *>(Ctx),
+      *static_cast<clang::Expr::EvalResult *>(Status));
+  return extra::makeCXString(Text);
+}
+
+// DeclRefExpr
+CXDeclRefExpr clang_DeclRefExpr_CreateEmpty(CXASTContext C, bool HasQualifier,
+                                            bool HasFoundDecl,
+                                            bool HasTemplateKWAndArgsInfo,
+                                            unsigned NumTemplateArgs) {
+  return clang::DeclRefExpr::CreateEmpty(*static_cast<clang::ASTContext *>(C), HasQualifier,
+                                         HasFoundDecl, HasTemplateKWAndArgsInfo,
+                                         NumTemplateArgs);
+}
+
+// FloatingLiteral
+CXFloatingLiteral clang_FloatingLiteral_CreateEmpty(CXASTContext C) {
+  return clang::FloatingLiteral::Create(*static_cast<clang::ASTContext *>(C),
+                                        clang::Stmt::EmptyShell());
+}
+
+// SYCLUniqueStableNameExpr
+CXSYCLUniqueStableNameExpr clang_SYCLUniqueStableNameExpr_CreateEmpty(CXASTContext Ctx) {
+  return clang::SYCLUniqueStableNameExpr::CreateEmpty(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+// CallExpr
+void clang_CallExpr_setNumArgsUnsafe(CXCallExpr E, unsigned NewNumArgs) {
+  static_cast<clang::CallExpr *>(E)->setNumArgsUnsafe(NewNumArgs);
+}
+
+// BlockVarCopyInit
+CXBlockVarCopyInit clang_BlockVarCopyInit_create(CXExpr CopyExpr, bool CanThrow) {
+  return new clang::BlockVarCopyInit(static_cast<clang::Expr *>(CopyExpr), CanThrow);
+}
+
+void clang_BlockVarCopyInit_dispose(CXBlockVarCopyInit BVCI) {
+  delete static_cast<clang::BlockVarCopyInit *>(BVCI);
+}
+
+CXExpr clang_BlockVarCopyInit_getCopyExpr(CXBlockVarCopyInit BVCI) {
+  return static_cast<clang::BlockVarCopyInit *>(BVCI)->getCopyExpr();
+}
+
+bool clang_BlockVarCopyInit_canThrow(CXBlockVarCopyInit BVCI) {
+  return static_cast<clang::BlockVarCopyInit *>(BVCI)->canThrow();
+}
+
+void clang_BlockVarCopyInit_setExprAndFlag(CXBlockVarCopyInit BVCI, CXExpr CopyExpr,
+                                           bool CanThrow) {
+  static_cast<clang::BlockVarCopyInit *>(BVCI)->setExprAndFlag(
+      static_cast<clang::Expr *>(CopyExpr), CanThrow);
+}
+
+// PseudoObjectExpr
+CXPseudoObjectExpr clang_PseudoObjectExpr_CreateEmpty(CXASTContext Context,
+                                                      unsigned NumSemanticExprs) {
+  return clang::PseudoObjectExpr::Create(*static_cast<clang::ASTContext *>(Context),
+                                         clang::Stmt::EmptyShell(), NumSemanticExprs);
 }

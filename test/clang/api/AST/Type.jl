@@ -2033,3 +2033,725 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "type-j payload accessors" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    CC.parse(I, """
+    struct TjRec { int a; };
+    int tj_i = 0;
+    int *tj_p = &tj_i;
+    void *tj_vp = nullptr;
+    TjRec tj_r;
+    TjRec *tj_rp = &tj_r;
+    float tj_f = 0.0f;
+    """)
+    f = DeclFinder(I)
+    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+
+    ity = CC.getTypePtr(qt("tj_i"))
+    pty = CC.getTypePtr(qt("tj_p"))
+    vpty = CC.getTypePtr(qt("tj_vp"))
+    rty = CC.getTypePtr(qt("tj_r"))
+    rpty = CC.getTypePtr(qt("tj_rp"))
+
+    # Type -- the ObjC lifetime/ARC family. Nothing in a C++ TU is retainable, so the whole
+    # family answers false. isCARCBridgableType is the exception: it asks only about the C
+    # shape (a pointer to void or to a record), so it fires on plain C++ pointers.
+    @test CC.isObjCLifetimeType(ity) == false
+    @test CC.isObjCLifetimeType(rpty) == false
+    @test CC.isObjCIndirectLifetimeType(pty) == false
+    @test CC.isObjCIndirectLifetimeType(ity) == false
+    @test CC.isObjCNSObjectType(ity) == false
+    @test CC.isObjCIndependentClassType(rty) == false
+    @test CC.isObjCQualifiedIdType(pty) == false
+    @test CC.isObjCInertUnsafeUnretainedType(ity) == false
+    @test CC.isObjCARCBridgableType(pty) == false
+    @test CC.acceptsObjCTypeParams(rty) == false
+    @test CC.isCARCBridgableType(vpty) == true
+    @test CC.isCARCBridgableType(rpty) == true
+    @test CC.isCARCBridgableType(pty) == false
+    @test CC.isCARCBridgableType(ity) == false
+
+    # isObjCARCImplicitlyUnretainedType asserts isObjCLifetimeType() on entry; nothing here
+    # passes that gate, so the wrapper must refuse instead of reaching the C shim.
+    @test_throws AssertionError CC.isObjCARCImplicitlyUnretainedType(ity)
+    @test_throws AssertionError CC.isObjCARCImplicitlyUnretainedType(rpty)
+
+    # the CUDA device builtins are attribute-tagged records; a plain struct carries neither
+    @test CC.isCUDADeviceBuiltinSurfaceType(rty) == false
+    @test CC.isCUDADeviceBuiltinTextureType(rty) == false
+    @test CC.isCUDADeviceBuiltinSurfaceType(ity) == false
+    @test CC.isCUDADeviceBuiltinTextureType(ity) == false
+
+    # SVE/RVV VLS builtins exist only on AArch64+SVE and RISC-V+V, so both probes are false
+    # on every CI host and both gated element accessors must refuse.
+    @test CC.isSveVLSBuiltinType(ity) == false
+    @test CC.isRVVVLSBuiltinType(ity) == false
+    @test_throws AssertionError CC.getSveEltType(ity, ctx)
+    @test_throws AssertionError CC.getRVVEltType(ity, ctx)
+
+    # QualType -- the WebAssembly reference-type probes. isWebAssemblyReferenceType is the
+    # disjunction of the other two, which is the relation to assert on a non-wasm host.
+    for n in ("tj_i", "tj_p", "tj_vp")
+        t = qt(n)
+        @test CC.isWebAssemblyReferenceType(t) ==
+              (CC.isWebAssemblyExternrefType(t) || CC.isWebAssemblyFuncrefType(t))
+        @test CC.isWebAssemblyReferenceType(t) == false
+    end
+    # the QualType receiver is a distinct method from the Type_ one of the same name
+    @test CC.isWebAssemblyExternrefType(ity) == false
+
+    # UseExcessPrecision is decided by the target's float-eval method, so assert shape only
+    @test CC.UseExcessPrecision(qt("tj_f"), ctx) isa Bool
+    @test CC.UseExcessPrecision(qt("tj_i"), ctx) isa Bool
+
+    # all four QualType receivers reach the type through getTypePtr, which asserts !isNull
+    @test_throws AssertionError CC.isWebAssemblyReferenceType(CC.QualType(C_NULL))
+    @test_throws AssertionError CC.isWebAssemblyExternrefType(CC.QualType(C_NULL))
+    @test_throws AssertionError CC.isWebAssemblyFuncrefType(CC.QualType(C_NULL))
+    @test_throws AssertionError CC.UseExcessPrecision(CC.QualType(C_NULL), ctx)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "type-k nullability and ExtParameterInfo" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    int tk_i = 0;
+    int *_Nonnull tk_nn = &tk_i;
+    int *_Nullable tk_nb = nullptr;
+    int *tk_p = &tk_i;
+    int tk_fn(double a, char b) noexcept;
+    """)
+    f = DeclFinder(I)
+    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+
+    # Type::getNullability is a sugar-only query: the annotated pointers answer, the bare
+    # pointer and the bare int carry no nullability node and come back `nothing`.
+    nnty = CC.getTypePtr(qt("tk_nn"))
+    nbty = CC.getTypePtr(qt("tk_nb"))
+    @test CC.getNullability(nnty) == CC.LibClangEx.CXNullabilityKind_NonNull
+    @test CC.getNullability(nbty) == CC.LibClangEx.CXNullabilityKind_Nullable
+    @test CC.getNullability(CC.getTypePtr(qt("tk_p"))) === nothing
+    @test CC.getNullability(CC.getTypePtr(qt("tk_i"))) === nothing
+
+    # AttributedType::getImmediateNullability answers for one node without a sugar walk.
+    nnattr = CC.resolve(nnty)
+    @test nnattr isa CC.AttributedType
+    @test CC.getImmediateNullability(nnattr) == CC.LibClangEx.CXNullabilityKind_NonNull
+
+    # The static kind -> attr::Kind mapping agrees with what the node itself reports.
+    @test CC.getNullabilityAttrKind(CC.LibClangEx.CXNullabilityKind_NonNull) ==
+          CC.LibClangEx.CXAttrKind_TypeNonNull
+    @test CC.getNullabilityAttrKind(CC.LibClangEx.CXNullabilityKind_Nullable) ==
+          CC.LibClangEx.CXAttrKind_TypeNullable
+    @test CC.getNullabilityAttrKind(CC.getImmediateNullability(nnattr)) ==
+          CC.getAttrKind(nnattr)
+
+    # stripOuterNullability peels exactly one nullability node and reports what it removed;
+    # a type with none comes back unchanged and disengaged.
+    stripped, kind = CC.stripOuterNullability(qt("tk_nn"))
+    @test stripped isa CC.QualType
+    @test kind == CC.LibClangEx.CXNullabilityKind_NonNull
+    @test CC.getNullability(CC.getTypePtr(stripped)) === nothing
+    @test CC.isPointerType(CC.getTypePtr(stripped))
+    same, none = CC.stripOuterNullability(qt("tk_p"))
+    @test none === nothing
+    @test CC.getAsString(same) == CC.getAsString(qt("tk_p"))
+
+    # An ordinary C++ prototype carries no ExtParameterInfo, so every parameter reads back
+    # the zero encoding and the Ordinary ABI.
+    @test f(I, "tk_fn")
+    fpt = CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f).ptr)))))
+    @test fpt isa CC.FunctionProtoType
+    @test CC.hasExtParameterInfos(fpt) == false
+    @test CC.getNumParams(fpt) == 2
+    @test CC.getExtParameterInfo(fpt, 0) == 0x00
+    @test CC.getExtParameterInfo(fpt, 1) == 0x00
+    @test CC.getParameterABI(fpt, 1) == CC.LibClangEx.CXParameterABI_Ordinary
+    @test_throws AssertionError CC.getExtParameterInfo(fpt, 2)
+    @test_throws AssertionError CC.getParameterABI(fpt, 2)
+
+    # ExtParameterInfo crosses as one opaque byte; the with* builders round-trip and the
+    # four fields are independent bits of it.
+    zero_info = CC.getExtParameterInfo(fpt, 0)
+    @test CC.getABI(zero_info) == CC.LibClangEx.CXParameterABI_Ordinary
+    @test CC.isConsumed(zero_info) == false
+    @test CC.isNoEscape(zero_info) == false
+    @test CC.hasPassObjectSize(zero_info) == false
+
+    swift = CC.withABI(zero_info, CC.LibClangEx.CXParameterABI_SwiftContext)
+    @test CC.getABI(swift) == CC.LibClangEx.CXParameterABI_SwiftContext
+    @test CC.getABI(CC.withABI(swift, CC.LibClangEx.CXParameterABI_Ordinary)) ==
+          CC.LibClangEx.CXParameterABI_Ordinary
+
+    consumed = CC.withIsConsumed(zero_info, true)
+    @test CC.isConsumed(consumed) == true
+    @test CC.isConsumed(CC.withIsConsumed(consumed, false)) == false
+    @test CC.getABI(consumed) == CC.LibClangEx.CXParameterABI_Ordinary
+
+    noesc = CC.withIsNoEscape(zero_info, true)
+    @test CC.isNoEscape(noesc) == true
+    @test CC.isNoEscape(CC.withIsNoEscape(noesc, false)) == false
+    @test CC.isConsumed(noesc) == false
+
+    pos = CC.withHasPassObjectSize(zero_info)
+    @test CC.hasPassObjectSize(pos) == true
+    @test CC.isConsumed(pos) == false
+    @test CC.isNoEscape(pos) == false
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "type-l printing, dependence and accessor decoders" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    int tyl_i = 0;
+    int *tyl_p = &tyl_i;
+    int tyl_fn_noexcept(double a) noexcept;
+    int tyl_fn_plain(double a);
+    template <int N> struct TylDep { int tyl_arr[N]; };
+    """)
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+    function vqt(name)
+        @assert f(I, name) "lookup failed: $name"
+        return CC.getType(CC.VarDecl(get_decl(f).ptr))
+    end
+    function proto(name)
+        @assert f(I, name) "lookup failed: $name"
+        return CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f).ptr)))))
+    end
+
+    # Qualifiers printing runs under the context's own policy; the flag only ever adds a
+    # trailing space to a set that printed something.
+    @test CC.isEmptyWhenPrinted(0, ctx) == true
+    cq = CC.withConst(0)
+    @test CC.isEmptyWhenPrinted(cq, ctx) == false
+    @test CC.printAsString(0, ctx) == ""
+    @test CC.printAsString(0, ctx, true) == ""
+    cq_s = CC.printAsString(cq, ctx)
+    @test occursin("const", cq_s)
+    @test CC.printAsString(cq, ctx, true) == cq_s * " "
+
+    # QualType printing: the placeholder is the declarator name printed *inside* the type.
+    pqt = vqt("tyl_p")
+    bare = CC.printAsString(pqt, ctx)
+    named = CC.printAsString(pqt, ctx, "tyl_p")
+    @test occursin("int", bare)
+    @test occursin("tyl_p", named)
+    @test length(named) > length(bare)
+    @test CC.printAsString(pqt, ctx, "", 2) isa String
+
+    # The copied and the borrowed builtin spelling are the same string.
+    # resolve() lands on the BuiltinType carrier; IntTy is the separate carrier the
+    # ASTContext canonical-type accessors hand back, not a resolve() result.
+    bt = CC.resolve(CC.getTypePtr(vqt("tyl_i")))
+    @test bt isa CC.BuiltinType
+    @test CC.getName(bt, ctx) == "int"
+    @test CC.getNameAsCString(bt, ctx) == CC.getName(bt, ctx)
+
+    # Type::getDependence is the bitmask the five single-bit predicates each read one bit of.
+    ity = CC.getTypePtr(vqt("tyl_i"))
+    d = CC.getDependence(ity)
+    @test d isa Integer
+    @test d == 0
+    @test ((d & 0x01) != 0) == CC.containsUnexpandedParameterPack(ity)
+    @test ((d & 0x02) != 0) == CC.isInstantiationDependentType(ity)
+    @test ((d & 0x04) != 0) == CC.isDependentType(ity)
+    @test ((d & 0x08) != 0) == CC.isVariablyModifiedType(ity)
+    @test ((d & 0x10) != 0) == CC.containsErrors(ity)
+
+    @assert f(I, "TylDep")
+    patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
+    dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt)))))
+    @test dsaty isa CC.DependentSizedArrayType
+    dd = CC.getDependence(dsaty)
+    @test dd != 0
+    @test ((dd & 0x04) != 0) == CC.isDependentType(dsaty)
+    @test ((dd & 0x02) != 0) == CC.isInstantiationDependentType(dsaty)
+
+    # getAttributeLoc reads back the location the ASTContext builder was handed.
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+    dep_e = CC.getSizeExpr(dsaty)
+    loc = CC.getLocation(patt)
+    das = CC.resolve(CC.getTypePtr(CC.getDependentAddressSpaceType(ctx, int_qt, dep_e, loc)))
+    @test das isa CC.DependentAddressSpaceType
+    @test CC.getAttributeLoc(das) isa CC.SourceLocation
+    @test CC.getRawEncoding(CC.getAttributeLoc(das)) == CC.getRawEncoding(loc)
+    dev = CC.resolve(CC.getTypePtr(CC.getDependentSizedExtVectorType(ctx, int_qt, dep_e, loc)))
+    @test dev isa CC.DependentSizedExtVectorType
+    @test CC.getAttributeLoc(dev) isa CC.SourceLocation
+    @test CC.getRawEncoding(CC.getAttributeLoc(dev)) == CC.getRawEncoding(loc)
+
+    # The ExtVectorType decoders are pure static character tables, -1 meaning "no component".
+    @test CC.getPointAccessorIdx('x') == 0
+    @test CC.getPointAccessorIdx('r') == 0
+    @test CC.getPointAccessorIdx('w') == 3
+    @test CC.getPointAccessorIdx('q') == -1
+    @test CC.getNumericAccessorIdx('0') == 0
+    @test CC.getNumericAccessorIdx('9') == 9
+    @test CC.getNumericAccessorIdx('a') == 10
+    @test CC.getNumericAccessorIdx('F') == 15
+    @test CC.getNumericAccessorIdx('g') == -1
+    @test CC.getAccessorIdx('z', false) == 2
+    @test CC.getAccessorIdx('2', true) == 2
+    @test CC.getAccessorIdx('z', true) == -1
+
+    # ExtInfo ABI bits are attribute-driven, so an ordinary C++ prototype reads back all false.
+    ne = proto("tyl_fn_noexcept")
+    @test ne isa CC.FunctionProtoType
+    @test CC.getProducesResult(ne) == false
+    @test CC.getNoCallerSavedRegs(ne) == false
+    @test CC.getNoCfCheck(ne) == false
+    @test occursin("noexcept", CC.printExceptionSpecificationAsString(ne, ctx))
+    pl = proto("tyl_fn_plain")
+    @test pl isa CC.FunctionProtoType
+    @test CC.printExceptionSpecificationAsString(pl, ctx) == ""
+
+    # The DeclSpec::TST conversions: exactly the tag specifiers answer a keyword, and the two
+    # static maps agree on each of them. TST_unspecified is 0 and gates the assert.
+    kw_none = CC.LibClangEx.CXElaboratedTypeKeyword_None
+    tagspecs = [ts for ts in 0:63 if CC.getKeywordForTypeSpec(ts) != kw_none]
+    # enum, union, struct, class, interface AND typename -- TST_typename maps to the
+    # Typename keyword, so the set has six members, not the five tag kinds alone.
+    @test length(tagspecs) == 6
+    # The TagTypeKind round-trip only holds for the five genuine TAG specs: TST_typename
+    # has a keyword but no tag kind, so getTagTypeKindForTypeSpec cannot round-trip it.
+    kw_typename = CC.LibClangEx.CXElaboratedTypeKeyword_Typename
+    for ts in tagspecs
+        CC.getKeywordForTypeSpec(ts) == kw_typename && continue
+        @test CC.getKeywordForTagTypeKind(CC.getTagTypeKindForTypeSpec(ts)) ==
+              CC.getKeywordForTypeSpec(ts)
+    end
+    @test CC.getKeywordForTypeSpec(0) == kw_none
+    @test_throws AssertionError CC.getTagTypeKindForTypeSpec(0)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "type-m ObjC garbage-collection and ARC lifetime qualifiers" begin
+    LX = CC.LibClangEx
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    int tym_i = 0;
+    """)
+    f = DeclFinder(I)
+    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+
+    # A C++ translation unit never produces an ObjC GC attribute or an ARC lifetime, so both
+    # families are exercised on hand-built encodings: the qualifier set is the opaque
+    # unsigned of MARSHALLING.md 7, so every mutator returns a fresh encoding.
+    q0 = CC.fromCVRMask(0)
+    @test CC.hasObjCGCAttr(q0) == false
+    @test CC.getObjCGCAttr(q0) == LX.CXQualifiers_GCNone
+    qw = CC.setObjCGCAttr(q0, LX.CXQualifiers_Weak)
+    @test CC.hasObjCGCAttr(qw)
+    @test CC.getObjCGCAttr(qw) == LX.CXQualifiers_Weak
+    @test CC.getObjCGCAttr(CC.setObjCGCAttr(q0, LX.CXQualifiers_Strong)) ==
+          LX.CXQualifiers_Strong
+    # setObjCGCAttr(GCNone) is clang's removeObjCGCAttr, and withoutObjCGCAttr the copying
+    # spelling of the same clear.
+    @test CC.setObjCGCAttr(qw, LX.CXQualifiers_GCNone) == q0
+    @test CC.withoutObjCGCAttr(qw) == q0
+    @test CC.withoutObjCGCAttr(q0) == q0
+    @test CC.addObjCGCAttr(q0, LX.CXQualifiers_Strong) ==
+          CC.setObjCGCAttr(q0, LX.CXQualifiers_Strong)
+    @test_throws AssertionError CC.addObjCGCAttr(q0, LX.CXQualifiers_GCNone)
+
+    # The ARC lifetime rides the same encoding in its own bitfield, so it composes with the
+    # GC attribute and with the CVR set instead of replacing them.
+    @test CC.hasObjCLifetime(q0) == false
+    @test CC.getObjCLifetime(q0) == LX.CXQualifiers_OCL_None
+    @test CC.hasNonTrivialObjCLifetime(q0) == false
+    @test CC.hasStrongOrWeakObjCLifetime(q0) == false
+    qs = CC.setObjCLifetime(q0, LX.CXQualifiers_OCL_Strong)
+    @test CC.hasObjCLifetime(qs)
+    @test CC.getObjCLifetime(qs) == LX.CXQualifiers_OCL_Strong
+    @test CC.hasNonTrivialObjCLifetime(qs)
+    @test CC.hasStrongOrWeakObjCLifetime(qs)
+    @test CC.getObjCGCAttr(CC.setObjCGCAttr(qs, LX.CXQualifiers_Weak)) == LX.CXQualifiers_Weak
+    @test CC.getObjCLifetime(CC.setObjCGCAttr(qs, LX.CXQualifiers_Weak)) ==
+          LX.CXQualifiers_OCL_Strong
+    qe = CC.setObjCLifetime(q0, LX.CXQualifiers_OCL_ExplicitNone)
+    @test CC.hasObjCLifetime(qe)
+    @test CC.hasNonTrivialObjCLifetime(qe) == false
+    @test CC.hasStrongOrWeakObjCLifetime(qe) == false
+    qwk = CC.setObjCLifetime(q0, LX.CXQualifiers_OCL_Weak)
+    @test CC.hasNonTrivialObjCLifetime(qwk)
+    @test CC.hasStrongOrWeakObjCLifetime(qwk)
+    qa = CC.setObjCLifetime(q0, LX.CXQualifiers_OCL_Autoreleasing)
+    @test CC.hasNonTrivialObjCLifetime(qa)
+    @test CC.hasStrongOrWeakObjCLifetime(qa) == false
+    # setObjCLifetime(OCL_None) is clang's removeObjCLifetime; withoutObjCLifetime copies.
+    @test CC.setObjCLifetime(qs, LX.CXQualifiers_OCL_None) == q0
+    @test CC.withoutObjCLifetime(qs) == q0
+    @test CC.withoutObjCLifetime(q0) == q0
+    @test CC.addObjCLifetime(q0, LX.CXQualifiers_OCL_Strong) == qs
+    @test_throws AssertionError CC.addObjCLifetime(q0, LX.CXQualifiers_OCL_None)
+    @test_throws AssertionError CC.addObjCLifetime(qs, LX.CXQualifiers_OCL_Weak)
+
+    # compatiblyIncludesObjCLifetime: equal lifetimes always match, __weak never mixes with a
+    # different one, an OCL_None on either side is compatible, and otherwise the expected set
+    # must carry const.
+    @test CC.compatiblyIncludesObjCLifetime(q0, q0)
+    @test CC.compatiblyIncludesObjCLifetime(qs, qs)
+    @test CC.compatiblyIncludesObjCLifetime(q0, qs)
+    @test CC.compatiblyIncludesObjCLifetime(qs, q0)
+    @test CC.compatiblyIncludesObjCLifetime(qs, qwk) == false
+    @test CC.compatiblyIncludesObjCLifetime(qwk, qs) == false
+    @test CC.compatiblyIncludesObjCLifetime(qs, qe) == false
+    @test CC.compatiblyIncludesObjCLifetime(CC.withConst(qs), qe)
+
+    # QualType asks the same two questions of its own qualifier set. A C++ type carries
+    # neither attribute, so these are the negative cases plus the null-receiver gate.
+    ity = qt("tym_i")
+    @test CC.getObjCGCAttr(ity) == LX.CXQualifiers_GCNone
+    @test CC.isObjCGCWeak(ity) == false
+    @test CC.isObjCGCStrong(ity) == false
+    @test CC.getObjCLifetime(ity) == LX.CXQualifiers_OCL_None
+    @test CC.hasNonTrivialObjCLifetime(ity) == false
+    @test CC.hasStrongOrWeakObjCLifetime(ity) == false
+    @test_throws AssertionError CC.getObjCGCAttr(CC.QualType(C_NULL))
+    @test_throws AssertionError CC.isObjCGCWeak(CC.QualType(C_NULL))
+    @test_throws AssertionError CC.isObjCGCStrong(CC.QualType(C_NULL))
+    @test_throws AssertionError CC.getObjCLifetime(CC.QualType(C_NULL))
+    @test_throws AssertionError CC.hasNonTrivialObjCLifetime(CC.QualType(C_NULL))
+    @test_throws AssertionError CC.hasStrongOrWeakObjCLifetime(CC.QualType(C_NULL))
+
+    # Type::getObjCARCImplicitLifetime is only defined where the lifetime is inferrable; an
+    # int is not such a type, so the restated precondition is what is observable here.
+    ity_p = CC.getTypePtr(ity)
+    @test CC.isObjCLifetimeType(ity_p) == false
+    @test_throws AssertionError CC.getObjCARCImplicitLifetime(ity_p)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "typeof / _BitInt type nodes and the canonical-unqualified tail" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    typedef const int tn_calias;
+    int tn_base = 3;
+    __typeof__(tn_base + 1) tn_toe = 0;
+    __typeof__(int) tn_tot = 0;
+    _BitInt(17) tn_bi = 0;
+    unsigned _BitInt(9) tn_ubi = 0;
+    tn_calias tn_cv = 7;
+    const int tn_cq = 5;
+    """)
+    f = DeclFinder(I)
+    qtof(name) = (@assert f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    tyof(name) = CC.resolve(CC.getTypePtr(qtof(name)))
+
+    # `__typeof__(expr)` builds a TypeOfExprType; the sugar it provides is the operand's
+    # own type, so one desugaring step lands on `int`.
+    toe = tyof("tn_toe")
+    @test toe isa CC.TypeOfExprType
+    @test CC.getUnderlyingExpr(toe) isa CC.Expr_
+    @test CC.getKind(toe) == CC.LibClangEx.CXTypeOfKind_Qualified
+    @test CC.isSugared(toe) == true
+    @test CC.get_name(CC.desugar(toe)) == "int"
+
+    # `__typeof__(type)` builds a TypeOfType, which keeps the written type verbatim.
+    tot = tyof("tn_tot")
+    @test tot isa CC.TypeOfType
+    @test CC.get_name(CC.getUnmodifiedType(tot)) == "int"
+    @test CC.getKind(tot) == CC.LibClangEx.CXTypeOfKind_Qualified
+    @test CC.isSugared(tot) == true
+    @test CC.get_name(CC.desugar(tot)) == "int"
+
+    # `_BitInt(N)` is a leaf type: no sugar, and desugaring returns the node itself.
+    bi = tyof("tn_bi")
+    @test bi isa CC.BitIntType
+    @test CC.getNumBits(bi) == 17
+    @test CC.isSigned(bi) == true
+    @test CC.isUnsigned(bi) == false
+    @test CC.isSugared(bi) == false
+    @test CC.get_name(CC.desugar(bi)) == "_BitInt(17)"
+
+    ubi = tyof("tn_ubi")
+    @test ubi isa CC.BitIntType
+    @test CC.getNumBits(ubi) == 9
+    @test CC.isUnsigned(ubi) == true
+    @test CC.isSigned(ubi) == false
+
+    # `tn_calias` is a typedef for `const int`. Both canonical accessors keep the const:
+    # Type::getCanonicalTypeUnqualified is CanQualType::CreateUnsafe(getCanonicalTypeInternal()),
+    # so "Unqualified" names the CanQualType wrapper, NOT any qualifier stripping.
+    cvty = CC.getTypePtr(qtof("tn_cv"))
+    @test CC.get_name(CC.getCanonicalTypeInternal(cvty)) == "const int"
+    @test CC.get_name(CC.getCanonicalTypeUnqualified(cvty)) == "const int"
+
+    # split reports only the qualifiers written at this level: `const int` splits into the
+    # builtin plus a const set, while the typedef hides its const below the sugar.
+    cq = qtof("tn_cq")
+    sty, squals = CC.split(cq)
+    @test sty isa CC.Type_
+    @test sty.ptr == CC.getTypePtr(cq).ptr
+    @test CC.hasConst(squals) == true
+    @test CC.hasConst(CC.split(qtof("tn_cv"))[2]) == false
+
+    # merging two qualifier sets that cannot conflict (fast qualifiers only)
+    merged = CC.addConsistentQualifiers(CC.withConst(UInt32(0)), CC.withVolatile(UInt32(0)))
+    @test CC.hasConst(merged) == true
+    @test CC.hasVolatile(merged) == true
+    @test CC.addConsistentQualifiers(merged, UInt32(0)) == merged
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "block-pointer, matrix and dependent vector/_BitInt payloads" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    template <int TyoN> struct TyoDepMat { int tyo_arr[TyoN]; };
+    void tyo_fn(int);
+    """)
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+    float_qt = CC.get_qual_type(CC.FloatTy(ctx))
+
+    # BlockPointerType is built through the ASTContext rather than parsed: a `void (^)(int)`
+    # spelling needs -fblocks, which the default interpreter args do not pass. The builder
+    # asserts a function-type pointee, so the declared function's type is what it is handed.
+    @assert f(I, "tyo_fn")
+    fn_qt = CC.getType(CC.FunctionDecl(get_decl(f).ptr))
+    bpt = CC.resolve(CC.getTypePtr(CC.getBlockPointerType(ctx, fn_qt)))
+    @test bpt isa CC.BlockPointerType
+    @test CC.getPointeeType(bpt) isa CC.QualType
+    @test CC.isFunctionType(CC.getTypePtr(CC.getPointeeType(bpt)))
+    @test CC.isSugared(bpt) == false
+    @test CC.getTypePtr(CC.desugar(bpt)).ptr == bpt.ptr
+
+    # ConstantMatrixType: the dimensions read back are the ones the builder was handed, and
+    # the element type is reached through the MatrixType base accessor.
+    cm = CC.resolve(CC.getTypePtr(CC.getConstantMatrixType(ctx, float_qt, 2, 3)))
+    @test cm isa CC.ConstantMatrixType
+    @test CC.getNumRows(cm) == 2
+    @test CC.getNumColumns(cm) == 3
+    @test CC.getNumElementsFlattened(cm) == 6
+    @test CC.getTypePtr(CC.getElementType(cm)).ptr == CC.getTypePtr(float_qt).ptr
+    @test CC.isSugared(cm) == false
+    @test CC.getTypePtr(CC.desugar(cm)).ptr == cm.ptr
+
+    # The dependent nodes each need a value-dependent Expr; the template pattern's
+    # `int tyo_arr[TyoN]` supplies one and the pattern's location doubles as the attr loc.
+    @assert f(I, "TyoDepMat")
+    patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
+    dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt)))))
+    @test dsaty isa CC.DependentSizedArrayType
+    dep_e = CC.getSizeExpr(dsaty)
+    loc = CC.getLocation(patt)
+
+    dsm = CC.resolve(CC.getTypePtr(CC.getDependentSizedMatrixType(ctx, int_qt, dep_e, dep_e,
+                                                                  loc)))
+    @test dsm isa CC.DependentSizedMatrixType
+    @test CC.getRowExpr(dsm).ptr == dep_e.ptr
+    @test CC.getColumnExpr(dsm).ptr == dep_e.ptr
+    @test CC.getAttributeLoc(dsm) isa CC.SourceLocation
+    @test CC.getRawEncoding(CC.getAttributeLoc(dsm)) == CC.getRawEncoding(loc)
+    @test CC.getTypePtr(CC.getElementType(dsm)).ptr == CC.getTypePtr(int_qt).ptr
+    @test CC.isSugared(dsm) == false
+
+    kind = CC.LibClangEx.CXVectorKind_Generic
+    dvt = CC.resolve(CC.getTypePtr(CC.getDependentVectorType(ctx, int_qt, dep_e, loc, kind)))
+    @test dvt isa CC.DependentVectorType
+    @test CC.getSizeExpr(dvt).ptr == dep_e.ptr
+    @test CC.getTypePtr(CC.getElementType(dvt)).ptr == CC.getTypePtr(int_qt).ptr
+    @test CC.getVectorKind(dvt) == kind
+    @test CC.getRawEncoding(CC.getAttributeLoc(dvt)) == CC.getRawEncoding(loc)
+    @test CC.isSugared(dvt) == false
+    @test CC.getTypePtr(CC.desugar(dvt)).ptr == dvt.ptr
+
+    # DependentBitIntType: both the signedness flag and the width expression round-trip.
+    dbi = CC.resolve(CC.getTypePtr(CC.getDependentBitIntType(ctx, true, dep_e)))
+    @test dbi isa CC.DependentBitIntType
+    @test CC.isUnsigned(dbi) == true
+    @test CC.getNumBitsExpr(dbi).ptr == dep_e.ptr
+
+    dispose(I)
+end
+
+@testset "Objective-C type queries, type linkage, ext-vector accessors and dependent _BitInt" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    template <int WlptN> struct WlptDep { int wlpt_arr[WlptN]; };
+    """)
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+    float_qt = CC.get_qual_type(CC.FloatTy(ctx))
+    ity = CC.getTypePtr(int_qt)
+
+    # The Objective-C tail of the Type/QualType query surface. The interpreter parses C++,
+    # so no ObjCObjectPointerType is ever built and every one of these answers false; what
+    # the assertions pin down is that each stays total on an ordinary builtin type.
+    @test CC.isObjCQualifiedInterfaceType(ity) === false
+    @test CC.isObjCQualifiedClassType(ity) === false
+    @test CC.isObjCClassOrClassKindOfType(ity) === false
+    @test CC.isBlockCompatibleObjCPointerType(ity, ctx) === false
+    @test CC.isNonWeakInMRRWithObjCWeak(int_qt, ctx) === false
+
+    # stripObjCKindOfType is the identity on a type carrying no __kindof sugar.
+    @test CC.getTypePtr(CC.stripObjCKindOfType(int_qt, ctx)).ptr === ity.ptr
+
+    # LinkageInfo crosses field by field. Its components are host-decided, so the assertion
+    # is that they agree with the single-field accessors clang defines in terms of them.
+    linkage, visibility, vis_explicit = CC.getLinkageAndVisibility(ity)
+    @test linkage === CC.getLinkage(ity)
+    @test visibility === CC.getVisibility(ity)
+    @test vis_explicit isa Bool
+    @test vis_explicit === CC.isVisibilityExplicit(ity)
+
+    # isNonConstantStorage carries the reason isConstantStorage drops; the two must stay
+    # exact complements for both a non-const and a const-qualified receiver.
+    reason = CC.isNonConstantStorage(int_qt, ctx, false, false)
+    @test reason === nothing || reason isa CC.LibClangEx.CXNonConstantStorageReason
+    @test CC.isConstantStorage(int_qt, ctx, false, false) === (reason === nothing)
+    const_qt = CC.withConst(int_qt)
+    const_reason = CC.isNonConstantStorage(const_qt, ctx, false, false)
+    @test CC.isConstantStorage(const_qt, ctx, false, false) === (const_reason === nothing)
+
+    # ExtVectorType: `x`/`y`/`z`/`w` (and `r`/`g`/`b`/`a`) are the point accessors for
+    # components 0-3, so all four fit a 4-vector while a character naming no component is
+    # rejected outright; the numeric spelling decodes '0'-'9' and 'a'-'f' as 0-15.
+    evt = CC.resolve(CC.getTypePtr(CC.getExtVectorType(ctx, float_qt, 4)))
+    @test evt isa CC.ExtVectorType
+    @test CC.getNumElements(evt) == 4
+    @test CC.isAccessorWithinNumElements(evt, 'w', false) === true
+    @test CC.isAccessorWithinNumElements(evt, 'q', false) === false
+    @test CC.isAccessorWithinNumElements(evt, '3', true) === true
+    @test CC.isAccessorWithinNumElements(evt, '7', true) === false
+
+    # The dependent nodes need a value-dependent Expr; the template pattern's
+    # `int wlpt_arr[WlptN]` supplies one.
+    @assert f(I, "WlptDep")
+    patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
+    dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt)))))
+    @test dsaty isa CC.DependentSizedArrayType
+    dep_e = CC.getSizeExpr(dsaty)
+
+    # DependentBitIntType: signedness is the negation of isUnsigned, and the node is a leaf
+    # -- no sugar, and desugaring hands back the node itself.
+    dbi = CC.resolve(CC.getTypePtr(CC.getDependentBitIntType(ctx, false, dep_e)))
+    @test dbi isa CC.DependentBitIntType
+    @test CC.isSigned(dbi) === true
+    @test CC.isUnsigned(dbi) === false
+    @test CC.isSugared(dbi) === false
+    @test CC.getTypePtr(CC.desugar(dbi)).ptr === dbi.ptr
+
+    dispose(I)
+end
+
+@testset "the split single-step desugar and the Objective-C probes on clang::Type" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    typedef int TrqInt;
+    typedef const TrqInt TrqCInt;
+    TrqCInt trq_ci = 0;
+    int trq_i = 0;
+    struct TrqRec { int m; };
+    TrqRec trq_r;
+    """)
+    f = DeclFinder(I)
+    vqt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+
+    # SplitQualType::getSingleStepDesugaredType peels one level off the pair `split` returns
+    # and carries the qualifiers collected so far along with it. TrqCInt hides its const inside
+    # the typedef, so the local split sees no qualifier and the first step exposes the const.
+    ty0, q0 = CC.split(vqt("trq_ci"))
+    @test ty0 isa CC.Type_
+    @test CC.hasConst(q0) == false
+
+    # Each written typedef name contributes an ElaboratedType as well as a TypedefType, so
+    # the number of steps to the leaf is a property of how the sugar nests, not something to
+    # hard-code. Walk to the fixed point and check the invariants that do hold: qualifiers
+    # only accumulate, and the leaf is exactly what the one-shot full desugar reports.
+    ty, q = ty0, q0
+    steps = 0
+    while steps < 16
+        tnext, qnext = CC.getSingleStepDesugaredType(ty, q)
+        tnext.ptr == ty.ptr && break
+        @test CC.hasConst(qnext) >= CC.hasConst(q)   # false <= true; never lost
+        ty, q = tnext, qnext
+        steps += 1
+    end
+    @test steps > 0
+    @test CC.resolve(ty) isa CC.BuiltinType
+    @test CC.hasConst(q) == true                     # the const written into TrqCInt survived
+
+    tyN, qN = CC.getSplitDesugaredType(vqt("trq_ci"))
+    @test ty.ptr == tyN.ptr
+    @test q == qN
+    @test CC.hasConst(qN) == true
+
+    # The Objective-C probes on clang::Type are total: they dig through sugar for the shape
+    # they name and answer NULL otherwise, and a C++ translation unit holds no Objective-C
+    # object type at all, so each of them reports a NULL carrier here.
+    for t in (CC.getTypePtr(vqt("trq_i")), CC.getTypePtr(vqt("trq_r")))
+        @test CC.getAsObjCInterfaceType(t) isa CC.ObjCObjectType
+        @test CC.getAsObjCInterfaceType(t).ptr == C_NULL
+        @test CC.getAsObjCInterfacePointerType(t) isa CC.ObjCObjectPointerType
+        @test CC.getAsObjCInterfacePointerType(t).ptr == C_NULL
+        @test CC.getAsObjCQualifiedIdType(t) isa CC.ObjCObjectPointerType
+        @test CC.getAsObjCQualifiedIdType(t).ptr == C_NULL
+        @test CC.getAsObjCQualifiedClassType(t) isa CC.ObjCObjectPointerType
+        @test CC.getAsObjCQualifiedClassType(t).ptr == C_NULL
+        @test CC.getAsObjCQualifiedInterfaceType(t) isa CC.ObjCObjectType
+        @test CC.getAsObjCQualifiedInterfaceType(t).ptr == C_NULL
+    end
+
+    dispose(I)
+end
+
+@testset "pipe types, the extended-vector leaf and the Objective-C kind-of probe" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    int tps_anchor = 0;
+    """)
+    ctx = CC.get_ast_context(I)
+    ity = CC.IntTy(ctx)
+    int_qt = CC.get_qual_type(ity)
+    float_qt = CC.get_qual_type(CC.FloatTy(ctx))
+
+    # PipeType is built through the ASTContext rather than parsed: the `pipe` keyword needs
+    # an OpenCL translation unit, while getReadPipeType/getWritePipeType build the node in
+    # any language mode. The element type read back is the one the builder was handed, and
+    # the node is a canonical leaf -- no sugar, and desugaring hands back the node itself.
+    rp = CC.resolve(CC.getTypePtr(CC.getReadPipeType(ctx, int_qt)))
+    @test rp isa CC.PipeType
+    @test CC.getTypePtr(CC.getElementType(rp)).ptr === CC.getTypePtr(int_qt).ptr
+    @test CC.isReadOnly(rp) === true
+    @test CC.isSugared(rp) === false
+    @test CC.getTypePtr(CC.desugar(rp)).ptr === rp.ptr
+
+    # The read/write flag is part of the folding profile, so the two pipes over the same
+    # element type are distinct nodes.
+    wp = CC.resolve(CC.getTypePtr(CC.getWritePipeType(ctx, int_qt)))
+    @test wp isa CC.PipeType
+    @test CC.isReadOnly(wp) === false
+    @test wp.ptr !== rp.ptr
+
+    # ExtVectorType is a canonical leaf too.
+    evt = CC.resolve(CC.getTypePtr(CC.getExtVectorType(ctx, float_qt, 4)))
+    @test evt isa CC.ExtVectorType
+    @test CC.isSugared(evt) === false
+    @test CC.getTypePtr(CC.desugar(evt)).ptr === evt.ptr
+
+    # isObjCIdOrObjectKindOfType matches `id` and __kindof object types, neither of which a
+    # C++ translation unit can spell; what is worth asserting here is that the bound
+    # out-param comes back defined -- a NULL carrier, not uninitialised memory.
+    matched, bound = CC.isObjCIdOrObjectKindOfType(ity, ctx)
+    @test matched === false
+    @test bound isa CC.ObjCObjectType
+    @test bound.ptr === C_NULL
+
+    dispose(I)
+end

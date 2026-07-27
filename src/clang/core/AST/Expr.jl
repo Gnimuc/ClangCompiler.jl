@@ -596,3 +596,70 @@ end
 
 Base.unsafe_convert(::Type{CXOffsetOfNode}, x::OffsetOfNode) = x.ptr
 Base.cconvert(::Type{CXOffsetOfNode}, x::OffsetOfNode) = x
+
+
+
+"""
+    abstract type AbstractClassification end
+Supertype for `Classification`s.
+"""
+abstract type AbstractClassification end
+
+"""
+    struct Classification <: AbstractClassification
+Hold a pointer to an owned `clang::Expr::Classification` value. The value is a by-value pair
+of small enums with no pointer form, so libclangex heap-boxes it together with the flag
+recording whether modifiability was tested (see `isModifiableTested`).
+"""
+struct Classification <: AbstractClassification
+    ptr::CXClassification
+end
+
+Base.unsafe_convert(::Type{CXClassification}, x::Classification) = x.ptr
+Base.cconvert(::Type{CXClassification}, x::Classification) = x
+
+
+
+"""
+    abstract type AbstractEvalStatus end
+Supertype for `EvalStatus`es.
+"""
+abstract type AbstractEvalStatus end
+
+"""
+    abstract type AbstractEvalResult <: AbstractEvalStatus end
+Supertype for `EvalResult`s.
+"""
+abstract type AbstractEvalResult <: AbstractEvalStatus end
+
+"""
+    struct EvalResult <: AbstractEvalResult
+Hold a pointer to an owned `clang::Expr::EvalResult` value. The value is a by-value struct —
+the folded `APValue` plus the status flags of the fold that produced it — with no pointer
+form, so libclangex heap-boxes it.
+"""
+struct EvalResult <: AbstractEvalResult
+    ptr::CXEvalResult
+end
+
+Base.unsafe_convert(::Type{CXEvalResult}, x::EvalResult) = x.ptr
+Base.cconvert(::Type{CXEvalResult}, x::EvalResult) = x
+
+
+"""
+    abstract type AbstractBlockVarCopyInit end
+Supertype for `BlockVarCopyInit`s.
+"""
+abstract type AbstractBlockVarCopyInit end
+
+"""
+    struct BlockVarCopyInit <: AbstractBlockVarCopyInit
+Hold a pointer to an owned `clang::BlockVarCopyInit` value. The value is a by-value pointer
+plus flag pair with no pointer form, so libclangex heap-boxes it.
+"""
+struct BlockVarCopyInit <: AbstractBlockVarCopyInit
+    ptr::CXBlockVarCopyInit
+end
+
+Base.unsafe_convert(::Type{CXBlockVarCopyInit}, x::BlockVarCopyInit) = x.ptr
+Base.cconvert(::Type{CXBlockVarCopyInit}, x::BlockVarCopyInit) = x

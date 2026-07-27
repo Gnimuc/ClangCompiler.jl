@@ -30,6 +30,10 @@ CXTranslationUnitDecl clang_TranslationUnitDecl_Create(CXASTContext C) {
   return clang::TranslationUnitDecl::Create(*static_cast<clang::ASTContext *>(C));
 }
 
+bool clang_TranslationUnitDecl_classofKind(CXDeclKind K) {
+  return clang::TranslationUnitDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // TranslationUnitDecl Cast
 CXDeclContext clang_TranslationUnitDecl_castToDeclContext(CXTranslationUnitDecl TUD) {
   return clang::TranslationUnitDecl::castToDeclContext(
@@ -67,6 +71,10 @@ const char *clang_PragmaCommentDecl_getArg(CXPragmaCommentDecl PCD) {
   return static_cast<clang::PragmaCommentDecl *>(PCD)->getArg().data();
 }
 
+bool clang_PragmaCommentDecl_classofKind(CXDeclKind K) {
+  return clang::PragmaCommentDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // PragmaDetectMismatchDecl
 CXPragmaDetectMismatchDecl clang_PragmaDetectMismatchDecl_Create(CXASTContext C,
                                                                  CXTranslationUnitDecl DC,
@@ -94,11 +102,19 @@ const char *clang_PragmaDetectMismatchDecl_getValue(CXPragmaDetectMismatchDecl P
   return static_cast<clang::PragmaDetectMismatchDecl *>(PDMD)->getValue().data();
 }
 
+bool clang_PragmaDetectMismatchDecl_classofKind(CXDeclKind K) {
+  return clang::PragmaDetectMismatchDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // ExternCContextDecl
 CXExternCContextDecl clang_ExternCContextDecl_Create(CXASTContext C,
                                                      CXTranslationUnitDecl TU) {
   return clang::ExternCContextDecl::Create(*static_cast<clang::ASTContext *>(C),
                                            static_cast<clang::TranslationUnitDecl *>(TU));
+}
+
+bool clang_ExternCContextDecl_classofKind(CXDeclKind K) {
+  return clang::ExternCContextDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // ExternCContextDecl Cast
@@ -224,6 +240,10 @@ CXObjCStringFormatFamily clang_NamedDecl_getObjCFStringFormattingFamily(CXNamedD
       static_cast<clang::NamedDecl *>(ND)->getObjCFStringFormattingFamily());
 }
 
+bool clang_NamedDecl_classofKind(CXDeclKind K) {
+  return clang::NamedDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 CXString clang_NamedDecl_getNameAsString(CXNamedDecl ND) {
   return extra::makeCXString(static_cast<clang::NamedDecl *>(ND)->getNameAsString());
 }
@@ -329,6 +349,10 @@ void clang_LabelDecl_setMSAsmLabelResolved(CXLabelDecl LD) {
   static_cast<clang::LabelDecl *>(LD)->setMSAsmLabelResolved();
 }
 
+bool clang_LabelDecl_classofKind(CXDeclKind K) {
+  return clang::LabelDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // NamespaceDecl
 bool clang_NamespaceDecl_isNested(CXNamespaceDecl ND) {
   return static_cast<clang::NamespaceDecl *>(ND)->isNested();
@@ -430,6 +454,10 @@ void clang_NamespaceDecl_setRBraceLoc(CXNamespaceDecl ND, CXSourceLocation_ Loc)
       clang::SourceLocation::getFromPtrEncoding(Loc));
 }
 
+bool clang_NamespaceDecl_classofKind(CXDeclKind K) {
+  return clang::NamespaceDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // NamespaceDecl Cast
 CXDeclContext clang_NamespaceDecl_castToDeclContext(CXNamespaceDecl ND) {
   return clang::NamespaceDecl::castToDeclContext(static_cast<clang::NamespaceDecl *>(ND));
@@ -446,6 +474,10 @@ bool clang_ValueDecl_isInitCapture(CXValueDecl VD) {
 
 CXVarDecl clang_ValueDecl_getPotentiallyDecomposedVarDecl(CXValueDecl VD) {
   return static_cast<clang::ValueDecl *>(VD)->getPotentiallyDecomposedVarDecl();
+}
+
+bool clang_ValueDecl_classofKind(CXDeclKind K) {
+  return clang::ValueDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 CXQualType clang_ValueDecl_getType(CXValueDecl VD) {
@@ -500,6 +532,12 @@ CXNestedNameSpecifier clang_DeclaratorDecl_getQualifier(CXDeclaratorDecl DD) {
 // getQualifierLoc
 // setQualifierInfo
 
+CXSourceRange_ clang_DeclaratorDecl_getQualifierRange(CXDeclaratorDecl DD) {
+  auto Q = static_cast<clang::DeclaratorDecl *>(DD)->getQualifierLoc();
+  clang::SourceRange R = Q.getSourceRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
 CXExpr clang_DeclaratorDecl_getTrailingRequiresClause(CXDeclaratorDecl DD) {
   return static_cast<clang::DeclaratorDecl *>(DD)->getTrailingRequiresClause();
 }
@@ -538,6 +576,10 @@ CXSourceLocation_ clang_DeclaratorDecl_getTypeSpecStartLoc(CXDeclaratorDecl DD) 
 
 CXSourceLocation_ clang_DeclaratorDecl_getTypeSpecEndLoc(CXDeclaratorDecl DD) {
   return static_cast<clang::DeclaratorDecl *>(DD)->getTypeSpecEndLoc().getPtrEncoding();
+}
+
+bool clang_DeclaratorDecl_classofKind(CXDeclKind K) {
+  return clang::DeclaratorDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // VarDecl
@@ -961,6 +1003,10 @@ int64_t clang_VarDecl_getFlexibleArrayInitChars(CXVarDecl VD, CXASTContext Ctx) 
       .getQuantity();
 }
 
+bool clang_VarDecl_classofKind(CXDeclKind K) {
+  return clang::VarDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // ImplicitParamDecl
 CXImplicitParamDecl clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext DC,
                                                    CXSourceLocation_ IdLoc,
@@ -982,6 +1028,10 @@ CXImplicitParamDecl clang_ImplicitParamDecl_CreateDeserialized(CXASTContext C,
 CXImplicitParamKind clang_ImplicitParamDecl_getParameterKind(CXImplicitParamDecl IPD) {
   return static_cast<CXImplicitParamKind>(
       static_cast<clang::ImplicitParamDecl *>(IPD)->getParameterKind());
+}
+
+bool clang_ImplicitParamDecl_classofKind(CXDeclKind K) {
+  return clang::ImplicitParamDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // ParmVarDecl
@@ -1129,6 +1179,10 @@ CXQualType clang_ParmVarDecl_getOriginalType(CXParmVarDecl PVD) {
 void clang_ParmVarDecl_setOwningFunction(CXParmVarDecl PVD, CXDeclContext FD) {
   static_cast<clang::ParmVarDecl *>(PVD)->setOwningFunction(
       static_cast<clang::DeclContext *>(FD));
+}
+
+bool clang_ParmVarDecl_classofKind(CXDeclKind K) {
+  return clang::ParmVarDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // FunctionDecl
@@ -1870,6 +1924,10 @@ unsigned clang_FunctionDecl_getODRHash(CXFunctionDecl FD) {
   return static_cast<clang::FunctionDecl *>(FD)->getODRHash();
 }
 
+bool clang_FunctionDecl_classofKind(CXDeclKind K) {
+  return clang::FunctionDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // FunctionDecl Cast
 CXDeclContext clang_FunctionDecl_castToDeclContext(CXFunctionDecl FD) {
   return clang::FunctionDecl::castToDeclContext(static_cast<clang::FunctionDecl *>(FD));
@@ -2003,6 +2061,10 @@ CXFieldDecl clang_FieldDecl_getCanonicalDecl(CXFieldDecl FD) {
   return static_cast<clang::FieldDecl *>(FD)->getCanonicalDecl();
 }
 
+bool clang_FieldDecl_classofKind(CXDeclKind K) {
+  return clang::FieldDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // EnumConstantDecl
 CXEnumConstantDecl clang_EnumConstantDecl_Create(CXASTContext C, CXEnumDecl DC,
                                                  CXSourceLocation_ L, CXIdentifierInfo Id,
@@ -2061,6 +2123,10 @@ long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD
   return static_cast<clang::EnumConstantDecl *>(ECD)->getInitVal().getSExtValue();
 }
 
+bool clang_EnumConstantDecl_classofKind(CXDeclKind K) {
+  return clang::EnumConstantDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // IndirectFieldDecl
 CXIndirectFieldDecl clang_IndirectFieldDecl_Create(CXASTContext C, CXDeclContext DC,
                                                    CXSourceLocation_ L,
@@ -2107,6 +2173,10 @@ CXIndirectFieldDecl clang_IndirectFieldDecl_getCanonicalDecl(CXIndirectFieldDecl
   return static_cast<clang::IndirectFieldDecl *>(IFD)->getCanonicalDecl();
 }
 
+bool clang_IndirectFieldDecl_classofKind(CXDeclKind K) {
+  return clang::IndirectFieldDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // TypeDecl
 CXType_ clang_TypeDecl_getTypeForDecl(CXTypeDecl TD) {
   return const_cast<clang::Type *>(static_cast<clang::TypeDecl *>(TD)->getTypeForDecl());
@@ -2130,6 +2200,10 @@ CXSourceRange_ clang_TypeDecl_getSourceRange(CXTypeDecl TD) {
   CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
   CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
   return CXSourceRange_{B, E};
+}
+
+bool clang_TypeDecl_classofKind(CXDeclKind K) {
+  return clang::TypeDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // TypedefNameDecl
@@ -2172,6 +2246,10 @@ bool clang_TypedefNameDecl_isTransparentTag(CXTypedefNameDecl TND) {
   return static_cast<clang::TypedefNameDecl *>(TND)->isTransparentTag();
 }
 
+bool clang_TypedefNameDecl_classofKind(CXDeclKind K) {
+  return clang::TypedefNameDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // TypedefDecl
 CXTypedefDecl clang_TypedefDecl_Create(CXASTContext C, CXDeclContext DC,
                                        CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
@@ -2193,6 +2271,10 @@ CXSourceRange_ clang_TypedefDecl_getSourceRange(CXTypedefDecl TD) {
   CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
   CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
   return CXSourceRange_{B, E};
+}
+
+bool clang_TypedefDecl_classofKind(CXDeclKind K) {
+  return clang::TypedefDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // TypeAliasDecl
@@ -2227,6 +2309,10 @@ void clang_TypeAliasDecl_setDescribedAliasTemplate(CXTypeAliasDecl TAD,
                                                    CXTypeAliasTemplateDecl TAT) {
   static_cast<clang::TypeAliasDecl *>(TAD)->setDescribedAliasTemplate(
       static_cast<clang::TypeAliasTemplateDecl *>(TAT));
+}
+
+bool clang_TypeAliasDecl_classofKind(CXDeclKind K) {
+  return clang::TypeAliasDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // TagDecl
@@ -2370,6 +2456,12 @@ CXNestedNameSpecifier clang_TagDecl_getQualifier(CXTagDecl TD) {
 // getQualifierLoc
 // setQualifierInfo
 
+CXSourceRange_ clang_TagDecl_getQualifierRange(CXTagDecl TD) {
+  auto Q = static_cast<clang::TagDecl *>(TD)->getQualifierLoc();
+  clang::SourceRange R = Q.getSourceRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
 unsigned clang_TagDecl_getNumTemplateParameterLists(CXTagDecl TD) {
   return static_cast<clang::TagDecl *>(TD)->getNumTemplateParameterLists();
 }
@@ -2389,6 +2481,10 @@ void clang_TagDecl_setTemplateParameterListsInfo(CXTagDecl TD, CXASTContext C,
     Lists.push_back(static_cast<clang::TemplateParameterList *>(TPLists[I]));
   static_cast<clang::TagDecl *>(TD)->setTemplateParameterListsInfo(
       *static_cast<clang::ASTContext *>(C), Lists);
+}
+
+bool clang_TagDecl_classofKind(CXDeclKind K) {
+  return clang::TagDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // TagDecl Cast
@@ -2598,6 +2694,10 @@ void clang_EnumDecl_getEnumerators(CXEnumDecl ED, CXEnumConstantDecl *Buf) {
     Buf[I++] = E;
 }
 
+bool clang_EnumDecl_classofKind(CXDeclKind K) {
+  return clang::EnumDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // RecordDecl
 CXRecordDecl clang_RecordDecl_Create(CXASTContext C, CXTagTypeKind TK, CXDeclContext DC,
                                      CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
@@ -2795,6 +2895,10 @@ bool clang_RecordDecl_field_empty(CXRecordDecl RD) {
   return static_cast<clang::RecordDecl *>(RD)->field_empty();
 }
 
+bool clang_RecordDecl_classofKind(CXDeclKind K) {
+  return clang::RecordDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // RecordDecl Cast
 bool clang_RecordDecl_isRandomized(CXRecordDecl RD) {
   return static_cast<clang::RecordDecl *>(RD)->isRandomized();
@@ -2864,6 +2968,10 @@ void clang_FileScopeAsmDecl_setAsmString(CXFileScopeAsmDecl FSAD, CXStringLitera
       static_cast<clang::StringLiteral *>(Asm));
 }
 
+bool clang_FileScopeAsmDecl_classofKind(CXDeclKind K) {
+  return clang::FileScopeAsmDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // BlockDecl
 // TopLevelStmtDecl
 CXTopLevelStmtDecl clang_TopLevelStmtDecl_Create(CXASTContext C, CXStmt Statement) {
@@ -2896,6 +3004,10 @@ bool clang_TopLevelStmtDecl_isSemiMissing(CXTopLevelStmtDecl TLSD) {
 
 void clang_TopLevelStmtDecl_setSemiMissing(CXTopLevelStmtDecl TLSD, bool Missing) {
   static_cast<clang::TopLevelStmtDecl *>(TLSD)->setSemiMissing(Missing);
+}
+
+bool clang_TopLevelStmtDecl_classofKind(CXDeclKind K) {
+  return clang::TopLevelStmtDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 CXBlockDecl clang_BlockDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L) {
@@ -2935,6 +3047,15 @@ unsigned clang_BlockDecl_getNumParams(CXBlockDecl BD) {
 
 CXParmVarDecl clang_BlockDecl_getParamDecl(CXBlockDecl BD, unsigned i) {
   return static_cast<clang::BlockDecl *>(BD)->getParamDecl(i);
+}
+
+void clang_BlockDecl_setParams(CXBlockDecl BD, CXParmVarDecl *NewParamInfo,
+                               unsigned NumParams) {
+  llvm::SmallVector<clang::ParmVarDecl *, 8> Params;
+  Params.reserve(NumParams);
+  for (unsigned i = 0; i < NumParams; ++i)
+    Params.push_back(static_cast<clang::ParmVarDecl *>(NewParamInfo[i]));
+  static_cast<clang::BlockDecl *>(BD)->setParams(Params);
 }
 
 // setParams
@@ -2994,6 +3115,18 @@ bool clang_BlockDecl_capturesVariable(CXBlockDecl BD, CXVarDecl var) {
 
 // setCaptures
 
+void clang_BlockDecl_setCaptures(CXBlockDecl BD, CXASTContext C, CXVarDecl *Variables,
+                                 bool *ByRefs, bool *Nesteds, CXExpr *CopyExprs,
+                                 unsigned NumCaptures, bool CapturesCXXThis) {
+  llvm::SmallVector<clang::BlockDecl::Capture, 4> Captures;
+  Captures.reserve(NumCaptures);
+  for (unsigned i = 0; i < NumCaptures; ++i)
+    Captures.emplace_back(static_cast<clang::VarDecl *>(Variables[i]), ByRefs[i],
+                          Nesteds[i], static_cast<clang::Expr *>(CopyExprs[i]));
+  static_cast<clang::BlockDecl *>(BD)->setCaptures(*static_cast<clang::ASTContext *>(C),
+                                                   Captures, CapturesCXXThis);
+}
+
 void clang_BlockDecl_setIsVariadic(CXBlockDecl BD, bool value) {
   static_cast<clang::BlockDecl *>(BD)->setIsVariadic(value);
 }
@@ -3034,6 +3167,13 @@ CXExpr clang_BlockDecl_getCaptureCopyExpr(CXBlockDecl BD, unsigned i) {
   return static_cast<clang::BlockDecl *>(BD)->capture_begin()[i].getCopyExpr();
 }
 
+void clang_BlockDecl_setCaptureCopyExpr(CXBlockDecl BD, unsigned i, CXExpr E) {
+  const clang::BlockDecl::Capture *Captures =
+      static_cast<clang::BlockDecl *>(BD)->capture_begin();
+  const_cast<clang::BlockDecl::Capture *>(Captures)[i].setCopyExpr(
+      static_cast<clang::Expr *>(E));
+}
+
 unsigned clang_BlockDecl_getBlockManglingNumber(CXBlockDecl BD) {
   return static_cast<clang::BlockDecl *>(BD)->getBlockManglingNumber();
 }
@@ -3052,6 +3192,10 @@ CXSourceRange_ clang_BlockDecl_getSourceRange(CXBlockDecl BD) {
   CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
   CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
   return CXSourceRange_{B, E};
+}
+
+bool clang_BlockDecl_classofKind(CXDeclKind K) {
+  return clang::BlockDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // BlockDecl Cast
@@ -3119,6 +3263,10 @@ unsigned clang_CapturedDecl_getContextParamPosition(CXCapturedDecl CD) {
   return static_cast<clang::CapturedDecl *>(CD)->getContextParamPosition();
 }
 
+bool clang_CapturedDecl_classofKind(CXDeclKind K) {
+  return clang::CapturedDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // CapturedDecl Cast
 CXDeclContext clang_CapturedDecl_castToDeclContext(CXCapturedDecl CD) {
   return clang::CapturedDecl::castToDeclContext(static_cast<clang::CapturedDecl *>(CD));
@@ -3165,6 +3313,10 @@ CXSourceRange_ clang_ImportDecl_getSourceRange(CXImportDecl ID) {
   return CXSourceRange_{B, E};
 }
 
+bool clang_ImportDecl_classofKind(CXDeclKind K) {
+  return clang::ImportDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // ExportDecl
 CXExportDecl clang_ExportDecl_Create(CXASTContext C, CXDeclContext DC,
                                      CXSourceLocation_ ExportLoc) {
@@ -3205,6 +3357,10 @@ CXSourceRange_ clang_ExportDecl_getSourceRange(CXExportDecl ED) {
   return CXSourceRange_{B, E};
 }
 
+bool clang_ExportDecl_classofKind(CXDeclKind K) {
+  return clang::ExportDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
 // ExportDecl Cast
 CXDeclContext clang_ExportDecl_castToDeclContext(CXExportDecl ED) {
   return clang::ExportDecl::castToDeclContext(static_cast<clang::ExportDecl *>(ED));
@@ -3223,6 +3379,10 @@ CXEmptyDecl clang_EmptyDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLoc
 
 CXEmptyDecl clang_EmptyDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
   return clang::EmptyDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C), ID);
+}
+
+bool clang_EmptyDecl_classofKind(CXDeclKind K) {
+  return clang::EmptyDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 // HLSLBufferDecl
 CXHLSLBufferDecl clang_HLSLBufferDecl_Create(CXASTContext C, CXDeclContext LexicalParent,
@@ -3269,6 +3429,10 @@ void clang_HLSLBufferDecl_setRBraceLoc(CXHLSLBufferDecl BD, CXSourceLocation_ L)
 
 bool clang_HLSLBufferDecl_isCBuffer(CXHLSLBufferDecl BD) {
   return static_cast<clang::HLSLBufferDecl *>(BD)->isCBuffer();
+}
+
+bool clang_HLSLBufferDecl_classofKind(CXDeclKind K) {
+  return clang::HLSLBufferDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }
 
 // HLSLBufferDecl Cast

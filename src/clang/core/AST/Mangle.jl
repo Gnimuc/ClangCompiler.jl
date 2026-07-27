@@ -19,3 +19,15 @@ end
 
 Base.unsafe_convert(::Type{CXASTNameGenerator}, x::ASTNameGenerator) = x.ptr
 Base.cconvert(::Type{CXASTNameGenerator}, x::ASTNameGenerator) = x
+
+
+"""
+    struct ItaniumMangleContext <: AbstractItaniumMangleContext
+Hold a pointer to a `clang::ItaniumMangleContext` object.
+"""
+struct ItaniumMangleContext <: AbstractItaniumMangleContext
+    ptr::CXItaniumMangleContext
+end
+
+Base.unsafe_convert(::Type{CXItaniumMangleContext}, x::ItaniumMangleContext) = x.ptr
+Base.cconvert(::Type{CXItaniumMangleContext}, x::ItaniumMangleContext) = x

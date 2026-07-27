@@ -14,6 +14,9 @@ end
 include("abstract.jl")
 
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
+# APINotes
+include("APINotes/APINotesOptions.jl")
+
 # AST
 include("AST/APValue.jl")
 include("AST/Attr.jl")
@@ -43,6 +46,7 @@ include("AST/StmtHierarchy.jl")
 
 # Analysis
 include("Analysis/CFG.jl")
+include("Analysis/ConstructionContext.jl")
 
 # Basic
 include("Basic/CodeGenOptions.jl")
@@ -67,6 +71,7 @@ include("CodeGen/ModuleBuilder.jl")
 
 # Frontend
 include("Frontend/CompilerInstance.jl")
+include("Frontend/ASTUnit.jl")
 include("Frontend/CompilerInvocation.jl")
 include("Frontend/DependencyOutputOptions.jl")
 include("Frontend/MigratorOptions.jl")
@@ -84,7 +89,9 @@ include("Lex/HeaderSearchOptions.jl")
 include("Lex/Lexer.jl")
 include("Lex/MacroInfo.jl")
 include("Lex/Preprocessor.jl")
+include("Lex/PreprocessorLexer.jl")
 include("Lex/PreprocessorOptions.jl")
+include("Lex/PreprocessingRecord.jl")
 include("Lex/Token.jl")
 
 # Parse
@@ -105,3 +112,12 @@ include("Sema/Sema.jl")
 
 # Driver
 include("Driver/Driver.jl")
+include("Driver/Compilation.jl")
+include("Driver/ToolChain.jl")
+
+
+include("Basic/Builtins.jl")
+include("Lex/CodeCompletionHandler.jl")
+include("Lex/ExternalPreprocessorSource.jl")
+include("Lex/ModuleLoader.jl")
+include("Lex/PPCallbacks.jl")

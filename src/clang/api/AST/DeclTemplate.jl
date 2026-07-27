@@ -1390,3 +1390,1111 @@ function getSpecializations(x::AbstractVarTemplateDecl)
     n > 0 && clang_VarTemplateDecl_getSpecializations(x, buf)
     return [VarTemplateSpecializationDecl(p) for p in buf]
 end
+
+
+# TemplateDecl
+"""
+    setTemplateParameters(x::AbstractTemplateDecl, tpl::AbstractTemplateParameterList)
+Re-seat the template's parameter list. The list is borrowed — Clang stores the
+pointer as-is and neither copies nor frees it, so `tpl` must outlive `x`.
+"""
+function setTemplateParameters(x::AbstractTemplateDecl, tpl::AbstractTemplateParameterList)
+    @check_ptrs x tpl
+    return clang_TemplateDecl_setTemplateParameters(x, tpl)
+end
+
+# FunctionTemplateSpecializationInfo
+"""
+    setTemplateSpecializationKind(x::AbstractFunctionTemplateSpecializationInfo, tsk::CXTemplateSpecializationKind)
+Record how this function template specialization came about. `TSK_Undeclared` is
+rejected: the info object encodes `tsk - 1` in a two-bit field and Clang asserts
+on the undeclared value.
+"""
+function setTemplateSpecializationKind(x::AbstractFunctionTemplateSpecializationInfo,
+                                       tsk::CXTemplateSpecializationKind)
+    @check_ptrs x
+    @assert tsk != CXTemplateSpecializationKind_TSK_Undeclared "TSK_Undeclared has no encoding here"
+    return clang_FunctionTemplateSpecializationInfo_setTemplateSpecializationKind(x, tsk)
+end
+
+"""
+    setPointOfInstantiation(x::AbstractFunctionTemplateSpecializationInfo, loc::SourceLocation)
+Record the first point of instantiation. An invalid location is accepted and reads
+back as "not yet instantiated".
+"""
+function setPointOfInstantiation(x::AbstractFunctionTemplateSpecializationInfo, loc::SourceLocation)
+    @check_ptrs x
+    return clang_FunctionTemplateSpecializationInfo_setPointOfInstantiation(x, loc)
+end
+
+# MemberSpecializationInfo
+"""
+    setTemplateSpecializationKind(x::AbstractMemberSpecializationInfo, tsk::CXTemplateSpecializationKind)
+Record how this member specialization came about. `TSK_Undeclared` is rejected: the
+info object encodes `tsk - 1` in a two-bit field and Clang asserts on it.
+"""
+function setTemplateSpecializationKind(x::AbstractMemberSpecializationInfo,
+                                       tsk::CXTemplateSpecializationKind)
+    @check_ptrs x
+    @assert tsk != CXTemplateSpecializationKind_TSK_Undeclared "TSK_Undeclared has no encoding here"
+    return clang_MemberSpecializationInfo_setTemplateSpecializationKind(x, tsk)
+end
+
+"""
+    setPointOfInstantiation(x::AbstractMemberSpecializationInfo, loc::SourceLocation)
+Record the first point of instantiation of this member. An invalid location is
+accepted and reads back as "not yet instantiated".
+"""
+function setPointOfInstantiation(x::AbstractMemberSpecializationInfo, loc::SourceLocation)
+    @check_ptrs x
+    return clang_MemberSpecializationInfo_setPointOfInstantiation(x, loc)
+end
+
+# TemplateTypeParmDecl
+"""
+    setDefaultArgument(x::AbstractTemplateTypeParmDecl, arg::AbstractTypeSourceInfo)
+Install `arg` as the parameter's default argument. Only valid while the slot is
+empty — Clang's `DefaultArgStorage::set` asserts it is still unset, so call
+`removeDefaultArgument` first to replace an existing default.
+"""
+function setDefaultArgument(x::AbstractTemplateTypeParmDecl, arg::AbstractTypeSourceInfo)
+    @check_ptrs x arg
+    @assert !hasDefaultArgument(x) "template type parameter already has a default argument"
+    return clang_TemplateTypeParmDecl_setDefaultArgument(x, arg)
+end
+
+"""
+    removeDefaultArgument(x::AbstractTemplateTypeParmDecl)
+Clear the parameter's default argument, inherited or not. The cleared
+`TypeSourceInfo` stays alive in the ASTContext arena and can be re-installed.
+"""
+function removeDefaultArgument(x::AbstractTemplateTypeParmDecl)
+    @check_ptrs x
+    return clang_TemplateTypeParmDecl_removeDefaultArgument(x)
+end
+
+# NonTypeTemplateParmDecl
+"""
+    setDefaultArgument(x::AbstractNonTypeTemplateParmDecl, arg::AbstractExpr)
+Install `arg` as the parameter's default argument expression. Only valid while the
+slot is empty — Clang's `DefaultArgStorage::set` asserts it is still unset.
+"""
+function setDefaultArgument(x::AbstractNonTypeTemplateParmDecl, arg::AbstractExpr)
+    @check_ptrs x arg
+    @assert !hasDefaultArgument(x) "non-type template parameter already has a default argument"
+    return clang_NonTypeTemplateParmDecl_setDefaultArgument(x, arg)
+end
+
+"""
+    removeDefaultArgument(x::AbstractNonTypeTemplateParmDecl)
+Clear the parameter's default argument, inherited or not. The cleared expression
+stays alive in the ASTContext arena and can be re-installed.
+"""
+function removeDefaultArgument(x::AbstractNonTypeTemplateParmDecl)
+    @check_ptrs x
+    return clang_NonTypeTemplateParmDecl_removeDefaultArgument(x)
+end
+
+# TemplateTemplateParmDecl
+"""
+    setDefaultArgument(x::AbstractTemplateTemplateParmDecl, ctx::ASTContext, arg::AbstractTemplateArgumentLoc)
+Install `arg` as the parameter's default argument. Clang copies it into `ctx`-owned
+storage, so the carrier passed in stays the caller's and the value read back
+afterwards is a different object. Only valid while the slot is empty — Clang's
+`DefaultArgStorage::set` asserts it is still unset.
+"""
+function setDefaultArgument(x::AbstractTemplateTemplateParmDecl, ctx::ASTContext,
+                            arg::AbstractTemplateArgumentLoc)
+    @check_ptrs x ctx arg
+    @assert !hasDefaultArgument(x) "template template parameter already has a default argument"
+    return clang_TemplateTemplateParmDecl_setDefaultArgument(x, ctx, arg)
+end
+
+"""
+    removeDefaultArgument(x::AbstractTemplateTemplateParmDecl)
+Clear the parameter's default argument, inherited or not. Afterwards
+`getDefaultArgument` returns the shared empty `TemplateArgumentLoc`.
+"""
+function removeDefaultArgument(x::AbstractTemplateTemplateParmDecl)
+    @check_ptrs x
+    return clang_TemplateTemplateParmDecl_removeDefaultArgument(x)
+end
+
+# ClassTemplateSpecializationDecl
+"""
+    setSpecializedTemplate(x::AbstractClassTemplateSpecializationDecl, ctd::AbstractClassTemplateDecl)
+Point the specialization at `ctd`. The slot is a `PointerUnion`, so writing a plain
+`ClassTemplateDecl` into it would discard a stored partial-specialization and its
+deduced argument list — only valid when `specializedOnPartial(x)` is `false`.
+"""
+function setSpecializedTemplate(x::AbstractClassTemplateSpecializationDecl,
+                                ctd::AbstractClassTemplateDecl)
+    @check_ptrs x ctd
+    @assert !specializedOnPartial(x) "specialization was deduced from a partial specialization"
+    return clang_ClassTemplateSpecializationDecl_setSpecializedTemplate(x, ctd)
+end
+
+function setSpecializationKind(x::AbstractClassTemplateSpecializationDecl,
+                               tsk::CXTemplateSpecializationKind)
+    @check_ptrs x
+    return clang_ClassTemplateSpecializationDecl_setSpecializationKind(x, tsk)
+end
+
+"""
+    setPointOfInstantiation(x::AbstractClassTemplateSpecializationDecl, loc::SourceLocation)
+Record the point of instantiation. `loc` must be valid — Clang asserts on an
+invalid point of instantiation here (unlike the specialization-info setters).
+"""
+function setPointOfInstantiation(x::AbstractClassTemplateSpecializationDecl, loc::SourceLocation)
+    @check_ptrs x
+    @assert isValid(loc) "point of instantiation must be a valid source location"
+    return clang_ClassTemplateSpecializationDecl_setPointOfInstantiation(x, loc)
+end
+
+"""
+    setExternLoc(x::AbstractClassTemplateSpecializationDecl, loc::SourceLocation)
+Record the location of the `extern` keyword. The explicit-specialization info block
+is allocated in the ASTContext on first use; any location, valid or not, is accepted.
+"""
+function setExternLoc(x::AbstractClassTemplateSpecializationDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_ClassTemplateSpecializationDecl_setExternLoc(x, loc)
+end
+
+"""
+    setTemplateKeywordLoc(x::AbstractClassTemplateSpecializationDecl, loc::SourceLocation)
+Record the location of the `template` keyword. The explicit-specialization info block
+is allocated in the ASTContext on first use; any location, valid or not, is accepted.
+"""
+function setTemplateKeywordLoc(x::AbstractClassTemplateSpecializationDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_ClassTemplateSpecializationDecl_setTemplateKeywordLoc(x, loc)
+end
+
+# VarTemplateSpecializationDecl
+function setSpecializationKind(x::AbstractVarTemplateSpecializationDecl,
+                               tsk::CXTemplateSpecializationKind)
+    @check_ptrs x
+    return clang_VarTemplateSpecializationDecl_setSpecializationKind(x, tsk)
+end
+
+"""
+    setPointOfInstantiation(x::AbstractVarTemplateSpecializationDecl, loc::SourceLocation)
+Record the point of instantiation. `loc` must be valid — Clang asserts on an
+invalid point of instantiation here (unlike the specialization-info setters).
+"""
+function setPointOfInstantiation(x::AbstractVarTemplateSpecializationDecl, loc::SourceLocation)
+    @check_ptrs x
+    @assert isValid(loc) "point of instantiation must be a valid source location"
+    return clang_VarTemplateSpecializationDecl_setPointOfInstantiation(x, loc)
+end
+
+"""
+    setExternLoc(x::AbstractVarTemplateSpecializationDecl, loc::SourceLocation)
+Record the location of the `extern` keyword. The explicit-specialization info block
+is allocated in the ASTContext on first use; any location, valid or not, is accepted.
+"""
+function setExternLoc(x::AbstractVarTemplateSpecializationDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_VarTemplateSpecializationDecl_setExternLoc(x, loc)
+end
+
+"""
+    setTemplateKeywordLoc(x::AbstractVarTemplateSpecializationDecl, loc::SourceLocation)
+Record the location of the `template` keyword. The explicit-specialization info block
+is allocated in the ASTContext on first use; any location, valid or not, is accepted.
+"""
+function setTemplateKeywordLoc(x::AbstractVarTemplateSpecializationDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_VarTemplateSpecializationDecl_setTemplateKeywordLoc(x, loc)
+end
+
+
+# TemplateParameterList
+"""
+    shouldIncludeTypeForArgument(x::AbstractTemplateParameterList, ctx::ASTContext, i::Integer) -> Bool
+Whether a printer has to spell out the parameter's type when rendering the template
+argument at zero-based index `i` of `x`, judged with `ctx`'s default printing policy.
+Total: an `i` past the end of the list answers `true`, which is Clang's own guard.
+"""
+function shouldIncludeTypeForArgument(x::AbstractTemplateParameterList, ctx::ASTContext,
+                                      i::Integer)
+    @check_ptrs x ctx
+    return clang_TemplateParameterList_shouldIncludeTypeForArgument(x, ctx, i)
+end
+
+# TemplateDecl
+"""
+    getSourceRange(x::AbstractTemplateDecl) -> SourceRange
+Return the range spanning the `template` keyword of the parameter list through the end
+of the templated declaration.
+"""
+function getSourceRange(x::AbstractTemplateDecl)
+    @check_ptrs x
+    r = clang_TemplateDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# RedeclarableTemplateDecl
+"""
+    setInstantiatedFromMemberTemplate(x::AbstractRedeclarableTemplateDecl, td::AbstractRedeclarableTemplateDecl)
+Record that `x` was instantiated from the member template `td`. The slot must still be
+unset — Clang asserts on a second call — so this asserts that
+`getInstantiatedFromMemberTemplate(x)` is currently NULL.
+"""
+function setInstantiatedFromMemberTemplate(x::AbstractRedeclarableTemplateDecl,
+                                           td::AbstractRedeclarableTemplateDecl)
+    @check_ptrs x td
+    cur = clang_RedeclarableTemplateDecl_getInstantiatedFromMemberTemplate(x)
+    @assert cur == C_NULL "the instantiated-from-member-template slot is already set"
+    return clang_RedeclarableTemplateDecl_setInstantiatedFromMemberTemplate(x, td)
+end
+
+# TemplateTypeParmDecl
+"""
+    getAssociatedConstraints(x::AbstractTemplateTypeParmDecl) -> Vector{Expr_}
+Return the immediately-declared constraint introduced by the parameter's
+type-constraint, as a one-element vector. Empty when the parameter is unconstrained.
+"""
+function getAssociatedConstraints(x::AbstractTemplateTypeParmDecl)
+    @check_ptrs x
+    n = clang_TemplateTypeParmDecl_getNumAssociatedConstraints(x)
+    buf = Vector{CXExpr}(undef, n)
+    n > 0 && clang_TemplateTypeParmDecl_getAssociatedConstraints(x, buf)
+    return [Expr_(p) for p in buf]
+end
+
+"""
+    getSourceRange(x::AbstractTemplateTypeParmDecl) -> SourceRange
+Return the range covering the parameter, including its default argument when one was
+written.
+"""
+function getSourceRange(x::AbstractTemplateTypeParmDecl)
+    @check_ptrs x
+    r = clang_TemplateTypeParmDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# NonTypeTemplateParmDecl
+"""
+    getAssociatedConstraints(x::AbstractNonTypeTemplateParmDecl) -> Vector{Expr_}
+Return the immediately-declared constraint introduced by the parameter's constrained
+placeholder type, as a one-element vector. Empty when the parameter's type carries no
+placeholder constraint.
+"""
+function getAssociatedConstraints(x::AbstractNonTypeTemplateParmDecl)
+    @check_ptrs x
+    n = clang_NonTypeTemplateParmDecl_getNumAssociatedConstraints(x)
+    buf = Vector{CXExpr}(undef, n)
+    n > 0 && clang_NonTypeTemplateParmDecl_getAssociatedConstraints(x, buf)
+    return [Expr_(p) for p in buf]
+end
+
+"""
+    getSourceRange(x::AbstractNonTypeTemplateParmDecl) -> SourceRange
+Return the range covering the parameter, including its default argument when one was
+written.
+"""
+function getSourceRange(x::AbstractNonTypeTemplateParmDecl)
+    @check_ptrs x
+    r = clang_NonTypeTemplateParmDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# TemplateTemplateParmDecl
+"""
+    getSourceRange(x::AbstractTemplateTemplateParmDecl) -> SourceRange
+Return the range from the `template` keyword of the parameter's own parameter list to
+the end of its default argument, or to the parameter's location when no default
+argument was written (or the default was inherited).
+"""
+function getSourceRange(x::AbstractTemplateTemplateParmDecl)
+    @check_ptrs x
+    r = clang_TemplateTemplateParmDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# BuiltinTemplateDecl
+"""
+    getSourceRange(x::AbstractBuiltinTemplateDecl) -> SourceRange
+Always an invalid range: a builtin template declaration such as `__make_integer_seq`
+has no written source.
+"""
+function getSourceRange(x::AbstractBuiltinTemplateDecl)
+    @check_ptrs x
+    r = clang_BuiltinTemplateDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# ClassTemplateSpecializationDecl
+"""
+    setTypeAsWritten(x::AbstractClassTemplateSpecializationDecl, tsi::TypeSourceInfo)
+Record the specialization type as it was written by the user. The
+explicit-specialization info block is allocated in the ASTContext on first use.
+"""
+function setTypeAsWritten(x::AbstractClassTemplateSpecializationDecl, tsi::TypeSourceInfo)
+    @check_ptrs x tsi
+    return clang_ClassTemplateSpecializationDecl_setTypeAsWritten(x, tsi)
+end
+
+# ClassTemplatePartialSpecializationDecl
+"""
+    getAssociatedConstraints(x::AbstractClassTemplatePartialSpecializationDecl) -> Vector{Expr_}
+Return every constraint expression associated with the partial specialization's own
+template parameter list, in declaration order. Empty when it is unconstrained.
+"""
+function getAssociatedConstraints(x::AbstractClassTemplatePartialSpecializationDecl)
+    @check_ptrs x
+    n = clang_ClassTemplatePartialSpecializationDecl_getNumAssociatedConstraints(x)
+    buf = Vector{CXExpr}(undef, n)
+    n > 0 && clang_ClassTemplatePartialSpecializationDecl_getAssociatedConstraints(x, buf)
+    return [Expr_(p) for p in buf]
+end
+
+"""
+    setInstantiatedFromMember(x::AbstractClassTemplatePartialSpecializationDecl,
+                              ps::AbstractClassTemplatePartialSpecializationDecl)
+Record, on the first declaration of `x`'s redeclaration chain, the member partial
+specialization `x` was instantiated from. Any previously recorded link is overwritten.
+"""
+function setInstantiatedFromMember(x::AbstractClassTemplatePartialSpecializationDecl,
+                                   ps::AbstractClassTemplatePartialSpecializationDecl)
+    @check_ptrs x ps
+    return clang_ClassTemplatePartialSpecializationDecl_setInstantiatedFromMember(x, ps)
+end
+
+"""
+    setMemberSpecialization(x::AbstractClassTemplatePartialSpecializationDecl)
+Mark `x` as a specialization of a member partial specialization. Only a partial
+specialization that already records the member it was instantiated from may be marked —
+Clang asserts otherwise — so this asserts `getInstantiatedFromMember(x)` is non-NULL.
+"""
+function setMemberSpecialization(x::AbstractClassTemplatePartialSpecializationDecl)
+    @check_ptrs x
+    @assert getInstantiatedFromMember(x).ptr != C_NULL "only member templates can be member template specializations"
+    return clang_ClassTemplatePartialSpecializationDecl_setMemberSpecialization(x)
+end
+
+# ClassTemplateDecl
+"""
+    findPartialSpecInstantiatedFromMember(x::AbstractClassTemplateDecl,
+                                          d::AbstractClassTemplatePartialSpecializationDecl)
+        -> ClassTemplatePartialSpecializationDecl
+Return the partial specialization of `x` that was instantiated from the member partial
+specialization `d`; the carrier holds NULL when there is none. Clang's scan
+dereferences each candidate's `getInstantiatedFromMember()` unconditionally, so this
+asserts every partial specialization of `x` records one.
+"""
+function findPartialSpecInstantiatedFromMember(x::AbstractClassTemplateDecl,
+                                               d::AbstractClassTemplatePartialSpecializationDecl)
+    @check_ptrs x d
+    msg = "every partial specialization must record the member it was instantiated from"
+    @assert all(p -> getInstantiatedFromMember(p).ptr != C_NULL, getPartialSpecializations(x)) msg
+    p = clang_ClassTemplateDecl_findPartialSpecInstantiatedFromMember(x, d)
+    return ClassTemplatePartialSpecializationDecl(p)
+end
+
+# VarTemplateSpecializationDecl
+"""
+    setTypeAsWritten(x::AbstractVarTemplateSpecializationDecl, tsi::TypeSourceInfo)
+Record the specialization type as it was written by the user. The
+explicit-specialization info block is allocated in the ASTContext on first use.
+"""
+function setTypeAsWritten(x::AbstractVarTemplateSpecializationDecl, tsi::TypeSourceInfo)
+    @check_ptrs x tsi
+    return clang_VarTemplateSpecializationDecl_setTypeAsWritten(x, tsi)
+end
+
+# VarTemplatePartialSpecializationDecl
+"""
+    getAssociatedConstraints(x::AbstractVarTemplatePartialSpecializationDecl) -> Vector{Expr_}
+Return every constraint expression associated with the partial specialization's own
+template parameter list, in declaration order. Empty when it is unconstrained.
+"""
+function getAssociatedConstraints(x::AbstractVarTemplatePartialSpecializationDecl)
+    @check_ptrs x
+    n = clang_VarTemplatePartialSpecializationDecl_getNumAssociatedConstraints(x)
+    buf = Vector{CXExpr}(undef, n)
+    n > 0 && clang_VarTemplatePartialSpecializationDecl_getAssociatedConstraints(x, buf)
+    return [Expr_(p) for p in buf]
+end
+
+"""
+    setInstantiatedFromMember(x::AbstractVarTemplatePartialSpecializationDecl,
+                              ps::AbstractVarTemplatePartialSpecializationDecl)
+Record, on the first declaration of `x`'s redeclaration chain, the member partial
+specialization `x` was instantiated from. Any previously recorded link is overwritten.
+"""
+function setInstantiatedFromMember(x::AbstractVarTemplatePartialSpecializationDecl,
+                                   ps::AbstractVarTemplatePartialSpecializationDecl)
+    @check_ptrs x ps
+    return clang_VarTemplatePartialSpecializationDecl_setInstantiatedFromMember(x, ps)
+end
+
+"""
+    setMemberSpecialization(x::AbstractVarTemplatePartialSpecializationDecl)
+Mark `x` as a specialization of a member partial specialization. Only a partial
+specialization that already records the member it was instantiated from may be marked —
+Clang asserts otherwise — so this asserts `getInstantiatedFromMember(x)` is non-NULL.
+"""
+function setMemberSpecialization(x::AbstractVarTemplatePartialSpecializationDecl)
+    @check_ptrs x
+    @assert getInstantiatedFromMember(x).ptr != C_NULL "only member templates can be member template specializations"
+    return clang_VarTemplatePartialSpecializationDecl_setMemberSpecialization(x)
+end
+
+"""
+    getSourceRange(x::AbstractVarTemplatePartialSpecializationDecl) -> SourceRange
+Return the range covering the partial specialization, from its own `template` keyword
+through the end of its initializer.
+"""
+function getSourceRange(x::AbstractVarTemplatePartialSpecializationDecl)
+    @check_ptrs x
+    r = clang_VarTemplatePartialSpecializationDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# VarTemplateDecl
+"""
+    findPartialSpecInstantiatedFromMember(x::AbstractVarTemplateDecl,
+                                          d::AbstractVarTemplatePartialSpecializationDecl)
+        -> VarTemplatePartialSpecializationDecl
+Return the partial specialization of `x` that was instantiated from the member partial
+specialization `d`; the carrier holds NULL when there is none. Clang's scan
+dereferences each candidate's `getInstantiatedFromMember()` unconditionally, so this
+asserts every partial specialization of `x` records one.
+"""
+function findPartialSpecInstantiatedFromMember(x::AbstractVarTemplateDecl,
+                                               d::AbstractVarTemplatePartialSpecializationDecl)
+    @check_ptrs x d
+    msg = "every partial specialization must record the member it was instantiated from"
+    @assert all(p -> getInstantiatedFromMember(p).ptr != C_NULL, getPartialSpecializations(x)) msg
+    p = clang_VarTemplateDecl_findPartialSpecInstantiatedFromMember(x, d)
+    return VarTemplatePartialSpecializationDecl(p)
+end
+
+
+"""
+    classofKind(T, k::CXDeclKind) -> Bool
+Whether a declaration of kind `k` is a `T`, for the template hierarchy of
+`clang/AST/DeclTemplate.h` — the range test `isa<T>` performs, evaluated on the kind alone.
+Reach for it when no declaration handle is available to run the `castTo*`/`is*` family
+against: `getDeclKind(::DeclContext)` and the kinds `decls` hands back are kinds, not
+declarations. The test covers subclasses, so `classofKind(TemplateDecl, k)` also holds for
+every class/function/variable/alias template kind and for `Concept`, and
+`classofKind(ClassTemplateSpecializationDecl, k)` also holds for the partial specialization
+kind. `T` is one of `TemplateDecl`, `RedeclarableTemplateDecl`, `FunctionTemplateDecl`,
+`TemplateTypeParmDecl`, `NonTypeTemplateParmDecl`, `TemplateTemplateParmDecl`,
+`BuiltinTemplateDecl`, `ClassTemplateSpecializationDecl`,
+`ClassTemplatePartialSpecializationDecl`, `ClassTemplateDecl`, `FriendTemplateDecl`,
+`TypeAliasTemplateDecl`, `VarTemplateSpecializationDecl`,
+`VarTemplatePartialSpecializationDecl`, `VarTemplateDecl`, `ConceptDecl`,
+`TemplateParamObjectDecl`.
+"""
+classofKind(::Type{TemplateDecl}, k::CXDeclKind) = clang_TemplateDecl_classofKind(k)
+
+classofKind(::Type{RedeclarableTemplateDecl}, k::CXDeclKind) = clang_RedeclarableTemplateDecl_classofKind(k)
+
+classofKind(::Type{FunctionTemplateDecl}, k::CXDeclKind) = clang_FunctionTemplateDecl_classofKind(k)
+
+classofKind(::Type{TemplateTypeParmDecl}, k::CXDeclKind) = clang_TemplateTypeParmDecl_classofKind(k)
+
+classofKind(::Type{NonTypeTemplateParmDecl}, k::CXDeclKind) = clang_NonTypeTemplateParmDecl_classofKind(k)
+
+classofKind(::Type{TemplateTemplateParmDecl}, k::CXDeclKind) = clang_TemplateTemplateParmDecl_classofKind(k)
+
+classofKind(::Type{BuiltinTemplateDecl}, k::CXDeclKind) = clang_BuiltinTemplateDecl_classofKind(k)
+
+function classofKind(::Type{ClassTemplateSpecializationDecl}, k::CXDeclKind)
+    return clang_ClassTemplateSpecializationDecl_classofKind(k)
+end
+
+function classofKind(::Type{ClassTemplatePartialSpecializationDecl}, k::CXDeclKind)
+    return clang_ClassTemplatePartialSpecializationDecl_classofKind(k)
+end
+
+classofKind(::Type{ClassTemplateDecl}, k::CXDeclKind) = clang_ClassTemplateDecl_classofKind(k)
+
+classofKind(::Type{FriendTemplateDecl}, k::CXDeclKind) = clang_FriendTemplateDecl_classofKind(k)
+
+classofKind(::Type{TypeAliasTemplateDecl}, k::CXDeclKind) = clang_TypeAliasTemplateDecl_classofKind(k)
+
+classofKind(::Type{VarTemplateSpecializationDecl}, k::CXDeclKind) = clang_VarTemplateSpecializationDecl_classofKind(k)
+
+function classofKind(::Type{VarTemplatePartialSpecializationDecl}, k::CXDeclKind)
+    return clang_VarTemplatePartialSpecializationDecl_classofKind(k)
+end
+
+classofKind(::Type{VarTemplateDecl}, k::CXDeclKind) = clang_VarTemplateDecl_classofKind(k)
+
+classofKind(::Type{ConceptDecl}, k::CXDeclKind) = clang_ConceptDecl_classofKind(k)
+
+classofKind(::Type{TemplateParamObjectDecl}, k::CXDeclKind) = clang_TemplateParamObjectDecl_classofKind(k)
+
+# FunctionTemplateDecl
+"""
+    findSpecialization(x::AbstractFunctionTemplateDecl, list::TemplateArgumentList,
+                       insert_pos=C_NULL) -> FunctionDecl
+Return the specialization of `x` whose canonical template arguments are the ones in `list`;
+the carrier holds NULL when the specialization set has no such entry. The hit is the most
+recent redeclaration of that specialization, so it matches what `getSpecializations`
+yields. `insert_pos` is Clang's FoldingSet insertion hint: it crosses by value, so the
+position Clang writes back is not visible here.
+"""
+function findSpecialization(x::AbstractFunctionTemplateDecl, list::TemplateArgumentList,
+                            insert_pos=C_NULL)
+    @check_ptrs x list
+    fd = clang_FunctionTemplateDecl_findSpecialization(x, list, insert_pos)
+    return FunctionDecl(fd)
+end
+
+# VarTemplateDecl
+"""
+    findSpecialization(x::AbstractVarTemplateDecl, list::TemplateArgumentList,
+                       insert_pos=C_NULL) -> VarTemplateSpecializationDecl
+Return the specialization of `x` whose canonical template arguments are the ones in `list`;
+the carrier holds NULL when the specialization set has no such entry. The hit is the most
+recent redeclaration of that specialization, and `insert_pos` is the same by-value
+FoldingSet hint as above.
+"""
+function findSpecialization(x::AbstractVarTemplateDecl, list::TemplateArgumentList,
+                            insert_pos=C_NULL)
+    @check_ptrs x list
+    vtsd = clang_VarTemplateDecl_findSpecialization(x, list, insert_pos)
+    return VarTemplateSpecializationDecl(vtsd)
+end
+
+"""
+    findPartialSpecialization(x::AbstractVarTemplateDecl, list::TemplateArgumentList,
+                              params::TemplateParameterList, insert_pos=C_NULL)
+        -> VarTemplatePartialSpecializationDecl
+Return the partial specialization of `x` profiled by `list` together with `params`; the
+carrier holds NULL when the partial-specialization set has no such entry. Clang profiles
+the argument list and the parameter list as a pair, so both must come from the same partial
+specialization for the lookup to hit — passing the arguments alone cannot identify one.
+`insert_pos` is the same by-value FoldingSet hint as above.
+"""
+function findPartialSpecialization(x::AbstractVarTemplateDecl, list::TemplateArgumentList,
+                                   params::TemplateParameterList, insert_pos=C_NULL)
+    @check_ptrs x list params
+    vps = clang_VarTemplateDecl_findPartialSpecialization(x, list, params, insert_pos)
+    return VarTemplatePartialSpecializationDecl(vps)
+end
+
+
+# --- Template declaration factories and the inherited-default-argument links ---
+
+# FunctionTemplateDecl
+"""
+    FunctionTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+                         params::TemplateParameterList, decl::AbstractNamedDecl) -> FunctionTemplateDecl
+Build a function template declaration for the templated function `decl` over `params`. Clang adopts
+`params` — the parameters' owning context is re-seated when the template is built, so `decl` must be a
+`DeclContext` itself and `params` should already belong there. The node is allocated in `ctx` and is
+*not* added to `dc`; adding it is the caller's job.
+"""
+function FunctionTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                              name::DeclarationName, params::TemplateParameterList,
+                              decl::AbstractNamedDecl)
+    @check_ptrs ctx dc params decl
+    @assert classof(decl) "the templated declaration of a function template must be a DeclContext"
+    return FunctionTemplateDecl(clang_FunctionTemplateDecl_Create(ctx, dc, loc, name, params, decl))
+end
+
+# TemplateTypeParmDecl
+"""
+    setInheritedDefaultArgument(x::AbstractTemplateTypeParmDecl, ctx::ASTContext,
+                                prev::AbstractTemplateTypeParmDecl)
+Record that `x`'s default argument is the one written on `prev` rather than on `x` itself; afterwards
+`defaultArgumentWasInherited(x)` holds and `getDefaultArgumentInfo(x)` reads through to `prev`. `prev`
+must carry a default argument, and `x` must not already inherit one — re-inheriting makes Clang assert
+that the old and the new default are the same template argument, which this layer cannot establish.
+"""
+function setInheritedDefaultArgument(x::AbstractTemplateTypeParmDecl, ctx::ASTContext,
+                                     prev::AbstractTemplateTypeParmDecl)
+    @check_ptrs x ctx prev
+    @assert hasDefaultArgument(prev) "the parameter inherited from has no default argument"
+    @assert !defaultArgumentWasInherited(x) "default argument is already inherited"
+    return clang_TemplateTypeParmDecl_setInheritedDefaultArgument(x, ctx, prev)
+end
+
+# NonTypeTemplateParmDecl
+"""
+    setInheritedDefaultArgument(x::AbstractNonTypeTemplateParmDecl, ctx::ASTContext,
+                                prev::AbstractNonTypeTemplateParmDecl)
+Record that `x`'s default argument expression is the one written on `prev`. Same preconditions as the
+template type parameter form.
+"""
+function setInheritedDefaultArgument(x::AbstractNonTypeTemplateParmDecl, ctx::ASTContext,
+                                     prev::AbstractNonTypeTemplateParmDecl)
+    @check_ptrs x ctx prev
+    @assert hasDefaultArgument(prev) "the parameter inherited from has no default argument"
+    @assert !defaultArgumentWasInherited(x) "default argument is already inherited"
+    return clang_NonTypeTemplateParmDecl_setInheritedDefaultArgument(x, ctx, prev)
+end
+
+# TemplateTemplateParmDecl
+"""
+    setInheritedDefaultArgument(x::AbstractTemplateTemplateParmDecl, ctx::ASTContext,
+                                prev::AbstractTemplateTemplateParmDecl)
+Record that `x`'s default argument is the one written on `prev`. Same preconditions as the template
+type parameter form.
+"""
+function setInheritedDefaultArgument(x::AbstractTemplateTemplateParmDecl, ctx::ASTContext,
+                                     prev::AbstractTemplateTemplateParmDecl)
+    @check_ptrs x ctx prev
+    @assert hasDefaultArgument(prev) "the parameter inherited from has no default argument"
+    @assert !defaultArgumentWasInherited(x) "default argument is already inherited"
+    return clang_TemplateTemplateParmDecl_setInheritedDefaultArgument(x, ctx, prev)
+end
+
+# BuiltinTemplateDecl
+"""
+    BuiltinTemplateDecl(ctx::ASTContext, dc::DeclContext, name::DeclarationName,
+                        btk::CXBuiltinTemplateKind) -> BuiltinTemplateDecl
+Build the declaration that holds the parameters of a builtin template (`__make_integer_seq`,
+`__type_pack_element`). Clang derives the parameter list from `btk`, so there is none to pass. The
+node is allocated in `ctx` and is *not* added to `dc`.
+"""
+function BuiltinTemplateDecl(ctx::ASTContext, dc::DeclContext, name::DeclarationName,
+                             btk::CXBuiltinTemplateKind)
+    @check_ptrs ctx dc
+    return BuiltinTemplateDecl(clang_BuiltinTemplateDecl_Create(ctx, dc, name, btk))
+end
+
+# ClassTemplateDecl
+"""
+    ClassTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+                      params::TemplateParameterList, decl::AbstractNamedDecl) -> ClassTemplateDecl
+Build a class template declaration for the templated record `decl` over `params`. Adopts `params` and
+leaves the node out of `dc` exactly like the function template form, so `decl` must be a `DeclContext`
+here too.
+"""
+function ClassTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                           name::DeclarationName, params::TemplateParameterList,
+                           decl::AbstractNamedDecl)
+    @check_ptrs ctx dc params decl
+    @assert classof(decl) "the templated declaration of a class template must be a DeclContext"
+    return ClassTemplateDecl(clang_ClassTemplateDecl_Create(ctx, dc, loc, name, params, decl))
+end
+
+# FriendTemplateDecl
+"""
+    FriendTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                       params::Vector{TemplateParameterList}, friend::AbstractNamedDecl,
+                       friend_loc::SourceLocation) -> FriendTemplateDecl
+Build a friend template declaration whose friend is a declaration; `getFriendType` is NULL on the
+result. `params` crosses as a handle buffer and is copied into `ctx`-owned storage, so the vector
+stays the caller's. Clang's own parser never builds this node — a friend template written in source
+yields a `FriendDecl` — so construction is the only way to obtain one.
+"""
+function FriendTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                            params::Vector{TemplateParameterList}, friend::AbstractNamedDecl,
+                            friend_loc::SourceLocation)
+    @check_ptrs ctx dc friend
+    ptrs = CXTemplateParameterList[p.ptr for p in params]
+    ftd = clang_FriendTemplateDecl_CreateWithFriendDecl(ctx, dc, loc, ptrs, length(ptrs), friend,
+                                                        friend_loc)
+    return FriendTemplateDecl(ftd)
+end
+
+"""
+    FriendTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                       params::Vector{TemplateParameterList}, friend::AbstractTypeSourceInfo,
+                       friend_loc::SourceLocation) -> FriendTemplateDecl
+Build a friend template declaration whose friend is a type; `getFriendDecl` is NULL on the result.
+`params` is copied into `ctx`-owned storage as in the declaration form.
+"""
+function FriendTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                            params::Vector{TemplateParameterList}, friend::AbstractTypeSourceInfo,
+                            friend_loc::SourceLocation)
+    @check_ptrs ctx dc friend
+    ptrs = CXTemplateParameterList[p.ptr for p in params]
+    ftd = clang_FriendTemplateDecl_CreateWithFriendType(ctx, dc, loc, ptrs, length(ptrs), friend,
+                                                        friend_loc)
+    return FriendTemplateDecl(ftd)
+end
+
+"""
+    getFriendType(x::AbstractFriendTemplateDecl) -> TypeSourceInfo
+The type this friend declaration names; the carrier holds NULL when the friend is a declaration.
+"""
+function getFriendType(x::AbstractFriendTemplateDecl)
+    @check_ptrs x
+    return TypeSourceInfo(clang_FriendTemplateDecl_getFriendType(x))
+end
+
+"""
+    getFriendDecl(x::AbstractFriendTemplateDecl) -> NamedDecl
+The declaration this friend declaration names; the carrier holds NULL when the friend is a type.
+"""
+function getFriendDecl(x::AbstractFriendTemplateDecl)
+    @check_ptrs x
+    return NamedDecl(clang_FriendTemplateDecl_getFriendDecl(x))
+end
+
+"""
+    getFriendLoc(x::AbstractFriendTemplateDecl) -> SourceLocation
+The location of the `friend` keyword.
+"""
+function getFriendLoc(x::AbstractFriendTemplateDecl)
+    @check_ptrs x
+    return SourceLocation(clang_FriendTemplateDecl_getFriendLoc(x))
+end
+
+"""
+    getTemplateParameterList(x::AbstractFriendTemplateDecl, i::Integer) -> TemplateParameterList
+The `i`-th (0-based) parameter list of the friend template. Clang's own bound check admits
+`i == getNumTemplateParameters(x)`, which reads one slot past the array, so the bound is restated
+here.
+"""
+function getTemplateParameterList(x::AbstractFriendTemplateDecl, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumTemplateParameters(x) "template parameter list index out of range"
+    return TemplateParameterList(clang_FriendTemplateDecl_getTemplateParameterList(x, i))
+end
+
+"""
+    getNumTemplateParameters(x::AbstractFriendTemplateDecl) -> Integer
+How many parameter lists the friend template carries.
+"""
+function getNumTemplateParameters(x::AbstractFriendTemplateDecl)
+    @check_ptrs x
+    return clang_FriendTemplateDecl_getNumTemplateParameters(x)
+end
+
+# TypeAliasTemplateDecl
+"""
+    TypeAliasTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                          name::DeclarationName, params::TemplateParameterList,
+                          decl::AbstractNamedDecl) -> TypeAliasTemplateDecl
+Build an alias template declaration for the templated `TypeAliasDecl` `decl`. A `TypeAliasDecl` is not
+a `DeclContext`, so `params` is adopted into `dc` instead; pass the context the parameters already
+live in. The node is *not* added to `dc`.
+"""
+function TypeAliasTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                               name::DeclarationName, params::TemplateParameterList,
+                               decl::AbstractNamedDecl)
+    @check_ptrs ctx dc params decl
+    return TypeAliasTemplateDecl(clang_TypeAliasTemplateDecl_Create(ctx, dc, loc, name, params, decl))
+end
+
+# VarTemplateDecl
+"""
+    VarTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+                    params::TemplateParameterList, decl::AbstractVarDecl) -> VarTemplateDecl
+Build a variable template declaration for the templated variable `decl`. `params` is adopted into `dc`
+(a `VarDecl` is not a `DeclContext`), and the node is *not* added to `dc`.
+"""
+function VarTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                         name::DeclarationName, params::TemplateParameterList,
+                         decl::AbstractVarDecl)
+    @check_ptrs ctx dc params decl
+    return VarTemplateDecl(clang_VarTemplateDecl_Create(ctx, dc, loc, name, params, decl))
+end
+
+# ConceptDecl
+"""
+    ConceptDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+                params::TemplateParameterList, constraint::AbstractExpr) -> ConceptDecl
+Build a concept declaration constrained by `constraint` over `params`. `params` is adopted into `dc`,
+and the node is *not* added to `dc`.
+"""
+function ConceptDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                     name::DeclarationName, params::TemplateParameterList,
+                     constraint::AbstractExpr)
+    @check_ptrs ctx dc params constraint
+    return ConceptDecl(clang_ConceptDecl_Create(ctx, dc, loc, name, params, constraint))
+end
+
+
+# TemplateParameterList
+"""
+    TemplateParameterList(ctx::ASTContext, template_loc::SourceLocation, langle_loc::SourceLocation,
+                          params::AbstractVector{<:AbstractNamedDecl}, rangle_loc::SourceLocation,
+                          requires_clause::Union{Nothing,AbstractExpr}=nothing) -> TemplateParameterList
+Build a template parameter list holding `params`, allocated in `ctx`'s arena (borrowed -- there is
+no `dispose`). Every entry of `params` must be a `TemplateTypeParmDecl`, a `NonTypeTemplateParmDecl`
+or a `TemplateTemplateParmDecl`; the list stores the declarations themselves, so they have to
+outlive it. `requires_clause` carries the `requires` constraint, if the list has one.
+"""
+function TemplateParameterList(ctx::ASTContext, template_loc::SourceLocation,
+                               langle_loc::SourceLocation,
+                               params::AbstractVector{<:AbstractNamedDecl},
+                               rangle_loc::SourceLocation,
+                               requires_clause::Union{Nothing,AbstractExpr}=nothing)
+    @check_ptrs ctx
+    @assert all(p -> p.ptr != C_NULL, params) "every template parameter must be non-NULL"
+    ptrs = CXNamedDecl[p.ptr for p in params]
+    rc = requires_clause === nothing ? C_NULL : requires_clause.ptr
+    ptr = clang_TemplateParameterList_Create(ctx, template_loc, langle_loc, ptrs, length(ptrs),
+                                             rangle_loc, rc)
+    return TemplateParameterList(ptr)
+end
+
+# DependentFunctionTemplateSpecializationInfo
+"""
+    getCandidates(x::AbstractDependentFunctionTemplateSpecializationInfo) -> Vector{FunctionTemplateDecl}
+The primary function templates a dependent explicit specialization could still resolve to once its
+enclosing context is instantiated. The carriers borrow the array trailing the info object, so they
+must never be `dispose`d.
+"""
+function getCandidates(x::AbstractDependentFunctionTemplateSpecializationInfo)
+    @check_ptrs x
+    n = clang_DependentFunctionTemplateSpecializationInfo_getNumCandidates(x)
+    return [FunctionTemplateDecl(clang_DependentFunctionTemplateSpecializationInfo_getCandidate(x, i))
+            for i = 0:(n - 1)]
+end
+
+# TemplateTypeParmDecl
+"""
+    TemplateTypeParmDecl(ctx::ASTContext, dc::DeclContext, key_loc::SourceLocation,
+                         name_loc::SourceLocation, depth::Integer, index::Integer,
+                         id::Union{Nothing,AbstractIdentifierInfo}, typename::Bool,
+                         parameter_pack::Bool, has_type_constraint::Bool=false,
+                         num_expanded::Union{Nothing,Integer}=nothing) -> TemplateTypeParmDecl
+Build a template *type* parameter (`typename T` / `class T`) at `depth`/`index`. The node is *not*
+added to `dc`; `id` may be `nothing` for an unnamed parameter. `num_expanded` mirrors Clang's
+`std::optional`: pass a size to mark the parameter an already-expanded pack, `nothing` otherwise.
+`has_type_constraint` only reserves the trailing constraint slot -- the constraint itself stays
+uninitialized, so `hasInitializedTypeConstraint` keeps reporting `false` until Sema fills it in.
+"""
+function TemplateTypeParmDecl(ctx::ASTContext, dc::DeclContext, key_loc::SourceLocation,
+                              name_loc::SourceLocation, depth::Integer, index::Integer,
+                              id::Union{Nothing,AbstractIdentifierInfo}, typename::Bool,
+                              parameter_pack::Bool, has_type_constraint::Bool=false,
+                              num_expanded::Union{Nothing,Integer}=nothing)
+    @check_ptrs ctx dc
+    id_ptr = id === nothing ? C_NULL : id.ptr
+    ptr = clang_TemplateTypeParmDecl_Create(ctx, dc, key_loc, name_loc, depth, index, id_ptr,
+                                            typename, parameter_pack, has_type_constraint,
+                                            num_expanded !== nothing,
+                                            num_expanded === nothing ? 0 : num_expanded)
+    return TemplateTypeParmDecl(ptr)
+end
+
+"""
+    hasInitializedTypeConstraint(x::AbstractTemplateTypeParmDecl) -> Bool
+Whether the parameter's trailing `TypeConstraint` slot has actually been filled in. This is *not*
+`hasTypeConstraint`, which reports the flag chosen when the parameter was created: a parameter built
+with the flag set but not yet visited by Sema has the storage and no constraint in it, and reading
+that slot is undefined behaviour. Every `getTypeConstraint*` accessor asserts on this.
+"""
+function hasInitializedTypeConstraint(x::AbstractTemplateTypeParmDecl)
+    @check_ptrs x
+    return clang_TemplateTypeParmDecl_hasInitializedTypeConstraint(x)
+end
+
+"""
+    getTypeConstraintConcept(x::AbstractTemplateTypeParmDecl) -> ConceptDecl
+The concept constraining this type parameter, reached through its `TypeConstraint`.
+"""
+function getTypeConstraintConcept(x::AbstractTemplateTypeParmDecl)
+    @check_ptrs x
+    @assert hasInitializedTypeConstraint(x) "parameter has no initialized type-constraint"
+    return ConceptDecl(clang_TemplateTypeParmDecl_getTypeConstraintConcept(x))
+end
+
+"""
+    getTypeConstraintImmediatelyDeclaredConstraint(x::AbstractTemplateTypeParmDecl) -> Expr_
+The constraint expression the type-constraint contributes to the enclosing declaration's associated
+constraints.
+"""
+function getTypeConstraintImmediatelyDeclaredConstraint(x::AbstractTemplateTypeParmDecl)
+    @check_ptrs x
+    @assert hasInitializedTypeConstraint(x) "parameter has no initialized type-constraint"
+    return Expr_(clang_TemplateTypeParmDecl_getTypeConstraintImmediatelyDeclaredConstraint(x))
+end
+
+"""
+    getTypeConstraintConceptNameLoc(x::AbstractTemplateTypeParmDecl) -> SourceLocation
+Where the concept name of the type-constraint was written.
+"""
+function getTypeConstraintConceptNameLoc(x::AbstractTemplateTypeParmDecl)
+    @check_ptrs x
+    @assert hasInitializedTypeConstraint(x) "parameter has no initialized type-constraint"
+    return SourceLocation(clang_TemplateTypeParmDecl_getTypeConstraintConceptNameLoc(x))
+end
+
+"""
+    getTypeConstraintTemplateArgsAsWritten(x::AbstractTemplateTypeParmDecl) -> ASTTemplateArgumentListInfo
+The as-written argument list of the type-constraint. The carrier wraps `C_NULL` (check `.ptr`) when
+the constraint was written without explicit template arguments.
+"""
+function getTypeConstraintTemplateArgsAsWritten(x::AbstractTemplateTypeParmDecl)
+    @check_ptrs x
+    @assert hasInitializedTypeConstraint(x) "parameter has no initialized type-constraint"
+    return ASTTemplateArgumentListInfo(clang_TemplateTypeParmDecl_getTypeConstraintTemplateArgsAsWritten(x))
+end
+
+# NonTypeTemplateParmDecl
+"""
+    NonTypeTemplateParmDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+                            id_loc::SourceLocation, depth::Integer, position::Integer,
+                            id::Union{Nothing,AbstractIdentifierInfo}, ty::QualType,
+                            parameter_pack::Bool,
+                            tinfo::Union{Nothing,AbstractTypeSourceInfo}=nothing) -> NonTypeTemplateParmDecl
+Build a non-type template parameter (`int N`) of type `ty` at `depth`/`position`. The node is *not*
+added to `dc`; `id` and `tinfo` may be `nothing`. Clang packs the position into 20-bit and 12-bit
+fields and asserts on overflow, so both bounds are restated here.
+"""
+function NonTypeTemplateParmDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+                                 id_loc::SourceLocation, depth::Integer, position::Integer,
+                                 id::Union{Nothing,AbstractIdentifierInfo}, ty::QualType,
+                                 parameter_pack::Bool,
+                                 tinfo::Union{Nothing,AbstractTypeSourceInfo}=nothing)
+    @check_ptrs ctx dc
+    @assert 0 <= depth <= 0xFFFFE "template parameter depth must fit clang's 20-bit field"
+    @assert 0 <= position <= 0xFFE "template parameter position must fit clang's 12-bit field"
+    id_ptr = id === nothing ? C_NULL : id.ptr
+    ti_ptr = tinfo === nothing ? C_NULL : tinfo.ptr
+    ptr = clang_NonTypeTemplateParmDecl_Create(ctx, dc, start_loc, id_loc, depth, position, id_ptr,
+                                               ty, parameter_pack, ti_ptr)
+    return NonTypeTemplateParmDecl(ptr)
+end
+
+"""
+    setDepth(x::AbstractNonTypeTemplateParmDecl, depth::Integer)
+Re-seat the parameter's nesting depth. Clang stores it in a 20-bit field and asserts on overflow.
+"""
+function setDepth(x::AbstractNonTypeTemplateParmDecl, depth::Integer)
+    @check_ptrs x
+    @assert 0 <= depth <= 0xFFFFE "template parameter depth must fit clang's 20-bit field"
+    return clang_NonTypeTemplateParmDecl_setDepth(x, depth)
+end
+
+"""
+    setPosition(x::AbstractNonTypeTemplateParmDecl, position::Integer)
+Re-seat the parameter's position in its parameter list. Position and index are the same 12-bit
+field, so this also moves `getIndex`; clang asserts on overflow.
+"""
+function setPosition(x::AbstractNonTypeTemplateParmDecl, position::Integer)
+    @check_ptrs x
+    @assert 0 <= position <= 0xFFE "template parameter position must fit clang's 12-bit field"
+    return clang_NonTypeTemplateParmDecl_setPosition(x, position)
+end
+
+# TemplateTemplateParmDecl
+"""
+    TemplateTemplateParmDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, depth::Integer,
+                             position::Integer, parameter_pack::Bool,
+                             id::Union{Nothing,AbstractIdentifierInfo},
+                             params::TemplateParameterList) -> TemplateTemplateParmDecl
+Build a template template parameter (`template <typename> class P`) whose own parameter list is
+`params`. The node is *not* added to `dc`; `id` may be `nothing`. Same 20-bit depth / 12-bit
+position bounds as `NonTypeTemplateParmDecl`.
+"""
+function TemplateTemplateParmDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                                  depth::Integer, position::Integer, parameter_pack::Bool,
+                                  id::Union{Nothing,AbstractIdentifierInfo},
+                                  params::TemplateParameterList)
+    @check_ptrs ctx dc params
+    @assert 0 <= depth <= 0xFFFFE "template parameter depth must fit clang's 20-bit field"
+    @assert 0 <= position <= 0xFFE "template parameter position must fit clang's 12-bit field"
+    id_ptr = id === nothing ? C_NULL : id.ptr
+    ptr = clang_TemplateTemplateParmDecl_Create(ctx, dc, loc, depth, position, parameter_pack,
+                                                id_ptr, params)
+    return TemplateTemplateParmDecl(ptr)
+end
+
+"""
+    setDepth(x::AbstractTemplateTemplateParmDecl, depth::Integer)
+Re-seat the parameter's nesting depth. Clang stores it in a 20-bit field and asserts on overflow.
+"""
+function setDepth(x::AbstractTemplateTemplateParmDecl, depth::Integer)
+    @check_ptrs x
+    @assert 0 <= depth <= 0xFFFFE "template parameter depth must fit clang's 20-bit field"
+    return clang_TemplateTemplateParmDecl_setDepth(x, depth)
+end
+
+"""
+    setPosition(x::AbstractTemplateTemplateParmDecl, position::Integer)
+Re-seat the parameter's position in its parameter list. Position and index are the same 12-bit
+field, so this also moves `getIndex`; clang asserts on overflow.
+"""
+function setPosition(x::AbstractTemplateTemplateParmDecl, position::Integer)
+    @check_ptrs x
+    @assert 0 <= position <= 0xFFE "template parameter position must fit clang's 12-bit field"
+    return clang_TemplateTemplateParmDecl_setPosition(x, position)
+end
+
+# ClassTemplateSpecializationDecl
+"""
+    getInstantiatedFrom(x::AbstractClassTemplateSpecializationDecl)
+The class template or class template partial specialization this specialization was *instantiated*
+from -- the same union `getSpecializedTemplateOrPartial` reports, narrowed to instantiations. An
+explicit specialization is instantiated from nothing, and yields a `Decl` wrapping `C_NULL`.
+"""
+function getInstantiatedFrom(x::AbstractClassTemplateSpecializationDecl)
+    @check_ptrs x
+    ptr = clang_ClassTemplateSpecializationDecl_getInstantiatedFrom(x)
+    ptr == C_NULL && return Decl(ptr)
+    return specializedOnPartial(x) ? ClassTemplatePartialSpecializationDecl(ptr) :
+           ClassTemplateDecl(ptr)
+end
+
+# VarTemplateSpecializationDecl
+"""
+    getInstantiatedFrom(x::AbstractVarTemplateSpecializationDecl)
+The variable template or variable template partial specialization this specialization was
+*instantiated* from -- the same union `getSpecializedTemplateOrPartial` reports, narrowed to
+instantiations. An explicit specialization yields a `Decl` wrapping `C_NULL`.
+"""
+function getInstantiatedFrom(x::AbstractVarTemplateSpecializationDecl)
+    @check_ptrs x
+    ptr = clang_VarTemplateSpecializationDecl_getInstantiatedFrom(x)
+    ptr == C_NULL && return Decl(ptr)
+    return specializedOnPartial(x) ? VarTemplatePartialSpecializationDecl(ptr) :
+           VarTemplateDecl(ptr)
+end
+
+# ImplicitConceptSpecializationDecl
+"""
+    ImplicitConceptSpecializationDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                                      args::AbstractVector{<:AbstractTemplateArgument})
+Build the node that records a concept's converted template arguments. The argument values are copied
+into `ctx`'s arena, so the caller keeps ownership of the handles it passed and still has to `dispose`
+them. The node is *not* added to `dc`, and the argument array is sized once here -- see
+`setTemplateArguments`.
+"""
+function ImplicitConceptSpecializationDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                                           args::AbstractVector{<:AbstractTemplateArgument})
+    @check_ptrs ctx dc
+    @assert all(a -> a.ptr != C_NULL, args) "every template argument must be non-NULL"
+    ptrs = CXTemplateArgument[a.ptr for a in args]
+    ptr = clang_ImplicitConceptSpecializationDecl_Create(ctx, dc, loc, ptrs, length(ptrs))
+    return ImplicitConceptSpecializationDecl(ptr)
+end
+
+"""
+    getTemplateArguments(x::AbstractImplicitConceptSpecializationDecl) -> Vector{TemplateArgument}
+The converted arguments the concept was checked against. The carriers borrow the declaration's own
+trailing array, so they must never be `dispose`d.
+"""
+function getTemplateArguments(x::AbstractImplicitConceptSpecializationDecl)
+    @check_ptrs x
+    n = clang_ImplicitConceptSpecializationDecl_getNumTemplateArguments(x)
+    return [TemplateArgument(clang_ImplicitConceptSpecializationDecl_getTemplateArgument(x, i))
+            for i = 0:(n - 1)]
+end
+
+"""
+    setTemplateArguments(x::AbstractImplicitConceptSpecializationDecl,
+                         args::AbstractVector{<:AbstractTemplateArgument})
+Overwrite the converted arguments in place. The trailing array was sized once, when the node was
+built, so `args` must hold exactly as many entries as `getTemplateArguments(x)` does -- a longer
+list writes past the allocation, which is why the length is asserted here.
+"""
+function setTemplateArguments(x::AbstractImplicitConceptSpecializationDecl,
+                              args::AbstractVector{<:AbstractTemplateArgument})
+    @check_ptrs x
+    @assert all(a -> a.ptr != C_NULL, args) "every template argument must be non-NULL"
+    n = clang_ImplicitConceptSpecializationDecl_getNumTemplateArguments(x)
+    @assert length(args) == n "the trailing argument array holds exactly $n entries"
+    ptrs = CXTemplateArgument[a.ptr for a in args]
+    return clang_ImplicitConceptSpecializationDecl_setTemplateArguments(x, ptrs, length(ptrs))
+end
+
+function classofKind(::Type{ImplicitConceptSpecializationDecl}, k::CXDeclKind)
+    return clang_ImplicitConceptSpecializationDecl_classofKind(k)
+end

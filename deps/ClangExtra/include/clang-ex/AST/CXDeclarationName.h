@@ -42,6 +42,10 @@ CXDeclarationName_NameKind clang_DeclarationName_getNameKind(CXDeclarationName D
 
 bool clang_DeclarationName_isIdentifier(CXDeclarationName DN);
 
+bool clang_DeclarationName_isObjCZeroArgSelector(CXDeclarationName DN);
+
+bool clang_DeclarationName_isObjCOneArgSelector(CXDeclarationName DN);
+
 bool clang_DeclarationName_isDependentName(CXDeclarationName DN);
 
 // NULL unless the name is a plain identifier.
@@ -160,6 +164,20 @@ bool
 clang_DeclarationNameInfo_containsUnexpandedParameterPack(CXDeclarationNameInfo DNInfo);
 
 CXSourceRange_ clang_DeclarationNameInfo_getSourceRange(CXDeclarationNameInfo DNInfo);
+
+// The DeclarationNameLoc mutators. Each overwrites the whole location union, and
+// clang asserts that the info's current name matches: a constructor, destructor or
+// conversion-function name for setNamedTypeInfo, a (non-literal) overloaded
+// operator for setCXXOperatorNameRange, a literal-operator name for
+// setCXXLiteralOperatorNameLoc.
+void clang_DeclarationNameInfo_setNamedTypeInfo(CXDeclarationNameInfo DNInfo,
+                                                CXTypeSourceInfo TInfo);
+
+void clang_DeclarationNameInfo_setCXXOperatorNameRange(CXDeclarationNameInfo DNInfo,
+                                                       CXSourceRange_ R);
+
+void clang_DeclarationNameInfo_setCXXLiteralOperatorNameLoc(CXDeclarationNameInfo DNInfo,
+                                                            CXSourceLocation_ Loc);
 
 LLVM_CLANG_C_EXTERN_C_END
 

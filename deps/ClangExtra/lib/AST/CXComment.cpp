@@ -8,6 +8,9 @@
 #include "clang/AST/RawCommentList.h"
 #include "clang/Basic/SourceManager.h"
 
+#include <cstring>
+#include <new>
+
 // RawComment
 CXRawCommentKind clang_RawComment_getKind(CXRawComment RC) {
   return static_cast<CXRawCommentKind>(
@@ -47,6 +50,17 @@ const char *clang_RawComment_getBriefText(CXRawComment RC, CXASTContext Ctx) {
 // Comment
 const char *clang_Comment_getCommentKindName(CXComment C) {
   return static_cast<clang::comments::Comment *>(C)->getCommentKindName();
+}
+
+CXCommentKind_ clang_Comment_getCommentKind(CXComment C) {
+  return static_cast<CXCommentKind_>(
+      static_cast<clang::comments::Comment *>(C)->getCommentKind());
+}
+
+void clang_Comment_dump(CXComment C) { static_cast<clang::comments::Comment *>(C)->dump(); }
+
+void clang_Comment_dumpColor(CXComment C) {
+  static_cast<clang::comments::Comment *>(C)->dumpColor();
 }
 
 CXSourceRange_ clang_Comment_getSourceRange(CXComment C) {
@@ -112,9 +126,54 @@ CXTParamCommandComment clang_Comment_castToTParamCommandComment(CXComment C) {
       static_cast<clang::comments::Comment *>(C));
 }
 
+CXVerbatimBlockLineComment clang_Comment_castToVerbatimBlockLineComment(CXComment C) {
+  return llvm::dyn_cast_or_null<clang::comments::VerbatimBlockLineComment>(
+      static_cast<clang::comments::Comment *>(C));
+}
+
+CXVerbatimBlockComment clang_Comment_castToVerbatimBlockComment(CXComment C) {
+  return llvm::dyn_cast_or_null<clang::comments::VerbatimBlockComment>(
+      static_cast<clang::comments::Comment *>(C));
+}
+
+CXVerbatimLineComment clang_Comment_castToVerbatimLineComment(CXComment C) {
+  return llvm::dyn_cast_or_null<clang::comments::VerbatimLineComment>(
+      static_cast<clang::comments::Comment *>(C));
+}
+
+CXParagraphComment clang_Comment_castToParagraphComment(CXComment C) {
+  return llvm::dyn_cast_or_null<clang::comments::ParagraphComment>(
+      static_cast<clang::comments::Comment *>(C));
+}
+
+CXFullComment clang_Comment_castToFullComment(CXComment C) {
+  return llvm::dyn_cast_or_null<clang::comments::FullComment>(
+      static_cast<clang::comments::Comment *>(C));
+}
+
+// Comment Predicates
+bool clang_Comment_isInlineContentComment(CXComment C) {
+  return llvm::isa_and_nonnull<clang::comments::InlineContentComment>(
+      static_cast<clang::comments::Comment *>(C));
+}
+
+bool clang_Comment_isBlockContentComment(CXComment C) {
+  return llvm::isa_and_nonnull<clang::comments::BlockContentComment>(
+      static_cast<clang::comments::Comment *>(C));
+}
+
+bool clang_Comment_isHTMLTagComment(CXComment C) {
+  return llvm::isa_and_nonnull<clang::comments::HTMLTagComment>(
+      static_cast<clang::comments::Comment *>(C));
+}
+
 // InlineContentComment
 bool clang_InlineContentComment_hasTrailingNewline(CXInlineContentComment ICC) {
   return static_cast<clang::comments::InlineContentComment *>(ICC)->hasTrailingNewline();
+}
+
+void clang_InlineContentComment_addTrailingNewline(CXInlineContentComment ICC) {
+  static_cast<clang::comments::InlineContentComment *>(ICC)->addTrailingNewline();
 }
 
 // TextComment
@@ -189,6 +248,10 @@ bool clang_HTMLTagComment_isMalformed(CXHTMLTagComment HTC) {
   return static_cast<clang::comments::HTMLTagComment *>(HTC)->isMalformed();
 }
 
+void clang_HTMLTagComment_setIsMalformed(CXHTMLTagComment HTC) {
+  static_cast<clang::comments::HTMLTagComment *>(HTC)->setIsMalformed();
+}
+
 // HTMLStartTagComment
 unsigned clang_HTMLStartTagComment_getNumAttrs(CXHTMLStartTagComment HSTC) {
   return static_cast<clang::comments::HTMLStartTagComment *>(HSTC)->getNumAttrs();
@@ -204,8 +267,75 @@ CXString clang_HTMLStartTagComment_getAttrValue(CXHTMLStartTagComment HSTC, unsi
   return extra::makeCXString(H->getAttr(Idx).Value.str());
 }
 
+CXSourceRange_ clang_HTMLStartTagComment_getAttrNameRange(CXHTMLStartTagComment HSTC,
+                                                          unsigned Idx) {
+  auto *H = static_cast<clang::comments::HTMLStartTagComment *>(HSTC);
+  auto rng = H->getAttr(Idx).getNameRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+CXSourceLocation_ clang_HTMLStartTagComment_getAttrNameLocEnd(CXHTMLStartTagComment HSTC,
+                                                              unsigned Idx) {
+  auto *H = static_cast<clang::comments::HTMLStartTagComment *>(HSTC);
+  return H->getAttr(Idx).getNameLocEnd().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_HTMLStartTagComment_getAttrEqualsLoc(CXHTMLStartTagComment HSTC,
+                                                             unsigned Idx) {
+  auto *H = static_cast<clang::comments::HTMLStartTagComment *>(HSTC);
+  return H->getAttr(Idx).EqualsLoc.getPtrEncoding();
+}
+
+CXSourceRange_ clang_HTMLStartTagComment_getAttrValueRange(CXHTMLStartTagComment HSTC,
+                                                           unsigned Idx) {
+  auto *H = static_cast<clang::comments::HTMLStartTagComment *>(HSTC);
+  auto rng = H->getAttr(Idx).ValueRange;
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+void clang_HTMLStartTagComment_setAttrs(CXHTMLStartTagComment HSTC, CXASTContext Ctx,
+                                        const CXSourceLocation_ *NameLocBegins,
+                                        const char **Names,
+                                        const CXSourceLocation_ *EqualsLocs,
+                                        const CXSourceRange_ *ValueRanges,
+                                        const char **Values, unsigned N) {
+  using Attribute = clang::comments::HTMLStartTagComment::Attribute;
+  auto *C = static_cast<clang::ASTContext *>(Ctx);
+  auto *Buf = C->Allocate<Attribute>(N);
+  for (unsigned I = 0; I != N; ++I) {
+    llvm::StringRef Name(Names[I]);
+    char *NameBuf = C->Allocate<char>(Name.size());
+    std::memcpy(NameBuf, Name.data(), Name.size());
+    llvm::StringRef Value(Values[I]);
+    char *ValueBuf = C->Allocate<char>(Value.size());
+    std::memcpy(ValueBuf, Value.data(), Value.size());
+    clang::SourceRange VR(clang::SourceLocation::getFromPtrEncoding(ValueRanges[I].B),
+                          clang::SourceLocation::getFromPtrEncoding(ValueRanges[I].E));
+    new (&Buf[I]) Attribute(clang::SourceLocation::getFromPtrEncoding(NameLocBegins[I]),
+                            llvm::StringRef(NameBuf, Name.size()),
+                            clang::SourceLocation::getFromPtrEncoding(EqualsLocs[I]), VR,
+                            llvm::StringRef(ValueBuf, Value.size()));
+  }
+  static_cast<clang::comments::HTMLStartTagComment *>(HSTC)->setAttrs(
+      llvm::ArrayRef<Attribute>(Buf, N));
+}
+
+void clang_HTMLStartTagComment_setGreaterLoc(CXHTMLStartTagComment HSTC,
+                                             CXSourceLocation_ GreaterLoc) {
+  static_cast<clang::comments::HTMLStartTagComment *>(HSTC)->setGreaterLoc(
+      clang::SourceLocation::getFromPtrEncoding(GreaterLoc));
+}
+
 bool clang_HTMLStartTagComment_isSelfClosing(CXHTMLStartTagComment HSTC) {
   return static_cast<clang::comments::HTMLStartTagComment *>(HSTC)->isSelfClosing();
+}
+
+void clang_HTMLStartTagComment_setSelfClosing(CXHTMLStartTagComment HSTC) {
+  static_cast<clang::comments::HTMLStartTagComment *>(HSTC)->setSelfClosing();
 }
 
 // ParagraphComment
@@ -231,6 +361,16 @@ clang_BlockCommandComment_getCommandNameBeginLoc(CXBlockCommandComment BCC) {
       .getPtrEncoding();
 }
 
+CXSourceRange_ clang_BlockCommandComment_getCommandNameRange(CXBlockCommandComment BCC,
+                                                             CXASTContext Ctx) {
+  auto *B = static_cast<clang::comments::BlockCommandComment *>(BCC);
+  auto *C = static_cast<clang::ASTContext *>(Ctx);
+  auto rng = B->getCommandNameRange(C->getCommentCommandTraits());
+  CXSourceLocation_ Begin = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ End = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{Begin, End};
+}
+
 unsigned clang_BlockCommandComment_getNumArgs(CXBlockCommandComment BCC) {
   return static_cast<clang::comments::BlockCommandComment *>(BCC)->getNumArgs();
 }
@@ -248,6 +388,24 @@ CXSourceRange_ clang_BlockCommandComment_getArgRange(CXBlockCommandComment BCC,
   return CXSourceRange_{B, E};
 }
 
+void clang_BlockCommandComment_setArgs(CXBlockCommandComment BCC, CXASTContext Ctx,
+                                       const char **Texts, const CXSourceRange_ *Ranges,
+                                       unsigned N) {
+  using Argument = clang::comments::Comment::Argument;
+  auto *C = static_cast<clang::ASTContext *>(Ctx);
+  auto *Buf = C->Allocate<Argument>(N);
+  for (unsigned I = 0; I != N; ++I) {
+    llvm::StringRef Text(Texts[I]);
+    char *TextBuf = C->Allocate<char>(Text.size());
+    std::memcpy(TextBuf, Text.data(), Text.size());
+    clang::SourceRange R(clang::SourceLocation::getFromPtrEncoding(Ranges[I].B),
+                         clang::SourceLocation::getFromPtrEncoding(Ranges[I].E));
+    new (&Buf[I]) Argument{R, llvm::StringRef(TextBuf, Text.size())};
+  }
+  static_cast<clang::comments::BlockCommandComment *>(BCC)->setArgs(
+      llvm::ArrayRef<Argument>(Buf, N));
+}
+
 CXParagraphComment clang_BlockCommandComment_getParagraph(CXBlockCommandComment BCC) {
   return static_cast<clang::comments::BlockCommandComment *>(BCC)->getParagraph();
 }
@@ -255,6 +413,12 @@ CXParagraphComment clang_BlockCommandComment_getParagraph(CXBlockCommandComment 
 bool clang_BlockCommandComment_hasNonWhitespaceParagraph(CXBlockCommandComment BCC) {
   return static_cast<clang::comments::BlockCommandComment *>(BCC)
       ->hasNonWhitespaceParagraph();
+}
+
+void clang_BlockCommandComment_setParagraph(CXBlockCommandComment BCC,
+                                            CXParagraphComment PC) {
+  static_cast<clang::comments::BlockCommandComment *>(BCC)->setParagraph(
+      static_cast<clang::comments::ParagraphComment *>(PC));
 }
 
 CXCommandMarkerKind clang_BlockCommandComment_getCommandMarker(CXBlockCommandComment BCC) {
@@ -272,8 +436,27 @@ clang_ParamCommandComment_getDirection(CXParamCommandComment PCC) {
 bool clang_ParamCommandComment_isDirectionExplicit(CXParamCommandComment PCC) {
   return static_cast<clang::comments::ParamCommandComment *>(PCC)->isDirectionExplicit();
 }
+
+void clang_ParamCommandComment_setDirection(CXParamCommandComment PCC,
+                                            CXParamCommandPassDirection Direction,
+                                            bool Explicit) {
+  static_cast<clang::comments::ParamCommandComment *>(PCC)->setDirection(
+      static_cast<clang::comments::ParamCommandPassDirection>(Direction), Explicit);
+}
+
+const char *clang_ParamCommandComment_getDirectionAsString(CXParamCommandPassDirection D) {
+  return clang::comments::ParamCommandComment::getDirectionAsString(
+      static_cast<clang::comments::ParamCommandPassDirection>(D));
+}
 bool clang_ParamCommandComment_hasParamName(CXParamCommandComment PCC) {
   return static_cast<clang::comments::ParamCommandComment *>(PCC)->hasParamName();
+}
+
+CXString clang_ParamCommandComment_getParamName(CXParamCommandComment PCC,
+                                                CXFullComment FC) {
+  auto *P = static_cast<clang::comments::ParamCommandComment *>(PCC);
+  auto *F = static_cast<clang::comments::FullComment *>(FC);
+  return extra::makeCXString(P->getParamName(F).str());
 }
 
 CXString clang_ParamCommandComment_getParamNameAsWritten(CXParamCommandComment PCC) {
@@ -296,13 +479,28 @@ bool clang_ParamCommandComment_isVarArgParam(CXParamCommandComment PCC) {
   return static_cast<clang::comments::ParamCommandComment *>(PCC)->isVarArgParam();
 }
 
+void clang_ParamCommandComment_setIsVarArgParam(CXParamCommandComment PCC) {
+  static_cast<clang::comments::ParamCommandComment *>(PCC)->setIsVarArgParam();
+}
+
 unsigned clang_ParamCommandComment_getParamIndex(CXParamCommandComment PCC) {
   return static_cast<clang::comments::ParamCommandComment *>(PCC)->getParamIndex();
+}
+
+void clang_ParamCommandComment_setParamIndex(CXParamCommandComment PCC, unsigned Index) {
+  static_cast<clang::comments::ParamCommandComment *>(PCC)->setParamIndex(Index);
 }
 
 // TParamCommandComment
 bool clang_TParamCommandComment_hasParamName(CXTParamCommandComment TPCC) {
   return static_cast<clang::comments::TParamCommandComment *>(TPCC)->hasParamName();
+}
+
+CXString clang_TParamCommandComment_getParamName(CXTParamCommandComment TPCC,
+                                                 CXFullComment FC) {
+  auto *T = static_cast<clang::comments::TParamCommandComment *>(TPCC);
+  auto *F = static_cast<clang::comments::FullComment *>(FC);
+  return extra::makeCXString(T->getParamName(F).str());
 }
 
 CXString clang_TParamCommandComment_getParamNameAsWritten(CXTParamCommandComment TPCC) {
@@ -330,8 +528,102 @@ unsigned clang_TParamCommandComment_getIndex(CXTParamCommandComment TPCC, unsign
   return static_cast<clang::comments::TParamCommandComment *>(TPCC)->getIndex(Depth);
 }
 
+void clang_TParamCommandComment_setPosition(CXTParamCommandComment TPCC, CXASTContext Ctx,
+                                            const unsigned *Position, unsigned N) {
+  auto *C = static_cast<clang::ASTContext *>(Ctx);
+  unsigned *Buf = C->Allocate<unsigned>(N);
+  for (unsigned I = 0; I != N; ++I)
+    Buf[I] = Position[I];
+  static_cast<clang::comments::TParamCommandComment *>(TPCC)->setPosition(
+      llvm::ArrayRef<unsigned>(Buf, N));
+}
+
+// VerbatimBlockLineComment
+CXString clang_VerbatimBlockLineComment_getText(CXVerbatimBlockLineComment VBLC) {
+  auto *V = static_cast<clang::comments::VerbatimBlockLineComment *>(VBLC);
+  return extra::makeCXString(V->getText().str());
+}
+
+// VerbatimBlockComment
+void clang_VerbatimBlockComment_setCloseName(CXVerbatimBlockComment VBC, CXASTContext Ctx,
+                                             const char *Name, CXSourceLocation_ LocBegin) {
+  auto *C = static_cast<clang::ASTContext *>(Ctx);
+  llvm::StringRef S(Name);
+  char *Buf = C->Allocate<char>(S.size());
+  std::memcpy(Buf, S.data(), S.size());
+  static_cast<clang::comments::VerbatimBlockComment *>(VBC)->setCloseName(
+      llvm::StringRef(Buf, S.size()), clang::SourceLocation::getFromPtrEncoding(LocBegin));
+}
+
+void clang_VerbatimBlockComment_setLines(CXVerbatimBlockComment VBC, CXASTContext Ctx,
+                                         const CXVerbatimBlockLineComment *Lines,
+                                         unsigned N) {
+  auto *C = static_cast<clang::ASTContext *>(Ctx);
+  auto **Buf = C->Allocate<clang::comments::VerbatimBlockLineComment *>(N);
+  for (unsigned I = 0; I != N; ++I)
+    Buf[I] = static_cast<clang::comments::VerbatimBlockLineComment *>(Lines[I]);
+  static_cast<clang::comments::VerbatimBlockComment *>(VBC)->setLines(
+      llvm::ArrayRef<clang::comments::VerbatimBlockLineComment *>(Buf, N));
+}
+CXString clang_VerbatimBlockComment_getCloseName(CXVerbatimBlockComment VBC) {
+  auto *V = static_cast<clang::comments::VerbatimBlockComment *>(VBC);
+  return extra::makeCXString(V->getCloseName().str());
+}
+
+unsigned clang_VerbatimBlockComment_getNumLines(CXVerbatimBlockComment VBC) {
+  return static_cast<clang::comments::VerbatimBlockComment *>(VBC)->getNumLines();
+}
+
+CXString clang_VerbatimBlockComment_getText(CXVerbatimBlockComment VBC, unsigned LineIdx) {
+  auto *V = static_cast<clang::comments::VerbatimBlockComment *>(VBC);
+  return extra::makeCXString(V->getText(LineIdx).str());
+}
+
+// VerbatimLineComment
+CXString clang_VerbatimLineComment_getText(CXVerbatimLineComment VLC) {
+  auto *V = static_cast<clang::comments::VerbatimLineComment *>(VLC);
+  return extra::makeCXString(V->getText().str());
+}
+
+CXSourceRange_ clang_VerbatimLineComment_getTextRange(CXVerbatimLineComment VLC) {
+  auto *V = static_cast<clang::comments::VerbatimLineComment *>(VLC);
+  auto rng = V->getTextRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+// DeclInfo
+CXDeclInfo_DeclKind clang_DeclInfo_getKind(CXDeclInfo DI) {
+  return static_cast<CXDeclInfo_DeclKind>(
+      static_cast<clang::comments::DeclInfo *>(DI)->getKind());
+}
+
+CXDeclInfo_TemplateDeclKind clang_DeclInfo_getTemplateKind(CXDeclInfo DI) {
+  return static_cast<CXDeclInfo_TemplateDeclKind>(
+      static_cast<clang::comments::DeclInfo *>(DI)->getTemplateKind());
+}
+
+bool clang_DeclInfo_involvesFunctionType(CXDeclInfo DI) {
+  return static_cast<clang::comments::DeclInfo *>(DI)->involvesFunctionType();
+}
+
 // FullComment
 CXDecl clang_FullComment_getDecl(CXFullComment FC) {
   auto *F = static_cast<clang::comments::FullComment *>(FC);
   return const_cast<clang::Decl *>(F->getDecl());
+}
+
+CXDeclInfo clang_FullComment_getDeclInfo(CXFullComment FC) {
+  auto *F = static_cast<clang::comments::FullComment *>(FC);
+  return const_cast<clang::comments::DeclInfo *>(F->getDeclInfo());
+}
+
+unsigned clang_FullComment_getNumBlocks(CXFullComment FC) {
+  auto *F = static_cast<clang::comments::FullComment *>(FC);
+  return static_cast<unsigned>(F->getBlocks().size());
+}
+
+CXComment clang_FullComment_getBlock(CXFullComment FC, unsigned Idx) {
+  return static_cast<clang::comments::FullComment *>(FC)->getBlocks()[Idx];
 }

@@ -69,3 +69,128 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "MangleContext: lambda, RTTI and variable-mangling entry points" begin
+    I = create_interpreter(["-std=c++20"])
+    ctx = CC.get_ast_context(I)
+    mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
+    f = DeclFinder(I)
+    # Primitive-typed declarations only: the mangled spelling of a std-typed
+    # signature differs between libc++ and libstdc++, and the Itanium and MS
+    # manglers disagree on every string below, so only shape is asserted.
+    CC.parse(I, """
+             int mangle_fn(int a) { return a; }
+             int mangle_gv = 41;
+             auto mangle_lam = [](int x) { return x + 1; };
+             """)
+
+    @test f(I, "mangle_fn")
+    fn_nd = CC.NamedDecl(get_decl(f).ptr)
+    @test CC.isUniqueInternalLinkageDecl(mc, fn_nd) == false
+    @test CC.needsUniqueInternalLinkageNames(mc) === nothing
+    # An externally visible function never needs a uniqued name; the flag the call
+    # above sets is what makes the Itanium mangler answer the query at all.
+    @test CC.isUniqueInternalLinkageDecl(mc, fn_nd) isa Bool
+
+    @test f(I, "mangle_gv")
+    gv = CC.VarDecl(get_decl(f).ptr)
+    @test !isempty(CC.mangleStaticGuardVariable(mc, gv))
+    @test !isempty(CC.mangleDynamicInitializer(mc, gv))
+
+    gv_ty = CC.getType(gv)
+    @test !CC.hasQualifiers(gv_ty)
+    @test !isempty(CC.mangleCXXRTTI(mc, gv_ty))
+
+    @test f(I, "mangle_lam")
+    lam = CC.VarDecl(get_decl(f).ptr)
+    closure = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(lam)))
+    @test CC.isLambda(closure)
+    # Itanium spells it `<lambdaN>` and MSVC `<lambda_N>`: only the prefix is shared.
+    @test startswith(CC.getLambdaString(mc, closure), "<lambda")
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Itanium mangling and the raw_ostream mangler tail" begin
+    I = create_interpreter(["-std=c++20"])
+    ctx = CC.get_ast_context(I)
+    mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
+    f = DeclFinder(I)
+    # Primitive-typed declarations only: a std-typed signature mangles differently under
+    # libc++ (macOS) and libstdc++ (Linux/Windows), and the Itanium and Microsoft manglers
+    # share no spelling at all, so nothing but shape and the source spelling of the name
+    # is asserted here.
+    CC.parse(I, """
+             struct MangleVtblBase {
+                 MangleVtblBase();
+                 virtual ~MangleVtblBase();
+                 virtual int step(int n);
+             };
+             struct MangleVtblDerived : MangleVtblBase {
+                 int step(int n) override;
+             };
+             int mangle_seh_host(int a) { return a; }
+             int mangle_temp_var = 11;
+             auto mangle_sig_lam = [](int x) { return x; };
+             """)
+
+    @test f(I, "mangle_seh_host")
+    seh_fn = CC.FunctionDecl(get_decl(f).ptr)
+    @test !isempty(CC.mangleCXXName(mc, seh_fn))
+    @test !isempty(CC.mangleSEHFilterExpression(mc, seh_fn))
+    @test !isempty(CC.mangleSEHFinallyBlock(mc, seh_fn))
+    @test CC.mangleSEHFilterExpression(mc, seh_fn) != CC.mangleSEHFinallyBlock(mc, seh_fn)
+
+    @test f(I, "mangle_temp_var")
+    tv = CC.VarDecl(get_decl(f).ptr)
+    @test !isempty(CC.mangleCXXName(mc, tv))
+    @test !isempty(CC.mangleReferenceTemporary(mc, tv))
+    @test CC.mangleReferenceTemporary(mc, tv, 2) isa String
+    @test !isempty(CC.mangleDynamicAtExitDestructor(mc, tv))
+
+    # The Itanium-only surface. The cast is the gate: it yields a NULL carrier under the
+    # Microsoft C++ ABI, which is exactly what getKind reports.
+    imc = CC.ItaniumMangleContext(mc)
+    @test (imc.ptr != C_NULL) == (CC.getKind(mc) == CC.CXMangleContext_MK_Itanium)
+    if imc.ptr != C_NULL
+        @test f(I, "MangleVtblBase")
+        base = CC.CXXRecordDecl(get_decl(f).ptr)
+        @test f(I, "MangleVtblDerived")
+        derived = CC.CXXRecordDecl(get_decl(f).ptr)
+
+        vt = CC.mangleCXXVTable(imc, base)
+        @test occursin("MangleVtblBase", vt)
+        @test vt != CC.mangleCXXVTable(imc, derived)
+        @test occursin("MangleVtblBase", CC.mangleCXXVTT(imc, base))
+        ctor_vt = CC.mangleCXXCtorVTable(imc, derived, 0, base)
+        @test occursin("MangleVtblDerived", ctor_vt)
+        @test occursin("MangleVtblBase", ctor_vt)
+
+        ctors = CC.getCtors(base)
+        @test !isempty(ctors)
+        @test occursin("MangleVtblBase", CC.mangleCXXCtorComdat(imc, first(ctors)))
+        dtor = CC.getDestructor(base)
+        @test occursin("MangleVtblBase", CC.mangleCXXDtorComdat(imc, dtor))
+
+        tls_init = CC.mangleItaniumThreadLocalInit(imc, tv)
+        tls_wrap = CC.mangleItaniumThreadLocalWrapper(imc, tv)
+        @test occursin("mangle_temp_var", tls_init)
+        @test occursin("mangle_temp_var", tls_wrap)
+        @test tls_init != tls_wrap
+        @test occursin("mangle_temp_var", CC.mangleDynamicStermFinalizer(imc, tv))
+
+        @test f(I, "mangle_sig_lam")
+        lam = CC.VarDecl(get_decl(f).ptr)
+        closure = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(lam)))
+        @test CC.isLambda(closure)
+        @test !isempty(CC.mangleLambdaSig(imc, closure))
+
+        m = CC.Module_("MangleInitProbeMod")
+        @test occursin("MangleInitProbeMod", CC.mangleModuleInitializer(imc, m))
+        dispose(m)
+    end
+
+    dispose(f)
+    dispose(I)
+end

@@ -239,3 +239,180 @@ end
     CC.dispose(it)
     dispose(I)
 end
+
+@testset "Basic | IdentifierInfo token-ID reversion and packed-ID mutators" begin
+    I = create_interpreter(String[])
+    ci = get_instance(I)
+    lo = CC.getLangOpts(ci)
+
+    # every mutation below happens in a private table, so the live preprocessor's
+    # interned identifiers are never disturbed
+    it = CC.IdentifierTable(lo)
+    ii = get(it, "idii_mutator_probe")
+
+    # ---- getOwn interns exactly like get, minus the external-source lookup ----
+    own = CC.getOwn(it, "idii_mutator_probe")
+    @test own isa CC.IdentifierInfo
+    @test own.ptr == ii.ptr
+    fresh = CC.getOwn(it, "idii_own_only")
+    @test CC.getNameStart(fresh) == "idii_own_only"
+    @test CC.getOwn(it, "idii_own_only").ptr == fresh.ptr
+
+    # ---- TokenID reversion round-trip (the libstdc++ 4.2 compatibility hook) ----
+    kw = get(it, "int")                                # keywords are added on create
+    kwid = CC.getTokenID(kw)
+    # TokenKinds.def stringifies a KEYWORD(X, Y) entry as #X, so tok::kw_int names "int"
+    @test CC.getTokenName(kwid) == "int"
+    @test CC.hasRevertedTokenIDToIdentifier(kw) == false
+    @test CC.revertTokenIDToIdentifier(kw) === nothing
+    @test CC.getTokenName(CC.getTokenID(kw)) == "identifier"
+    @test CC.hasRevertedTokenIDToIdentifier(kw) == true
+    @test_throws AssertionError CC.revertTokenIDToIdentifier(kw)
+    @test CC.revertIdentifierToTokenID(kw, kwid) === nothing
+    @test CC.getTokenID(kw) == kwid
+    @test CC.hasRevertedTokenIDToIdentifier(kw) == false
+    @test_throws AssertionError CC.revertIdentifierToTokenID(kw, kwid)
+
+    # ---- the three regions of the packed ObjCOrBuiltinID field ----
+    @test CC.getObjCOrBuiltinID(ii) == 0
+    @test CC.getBuiltinID(ii) == 0
+    @test CC.getInterestingIdentifierID(ii) == 0
+    @test CC.getObjCKeywordID(ii) == 0
+
+    maxb = CC.getMaxBuiltinID()
+    @test maxb isa Integer
+    @test maxb > 0
+    CC.setBuiltinID(ii, 1)
+    @test CC.getBuiltinID(ii) == 1
+    @test CC.getObjCOrBuiltinID(ii) > 0
+    CC.setBuiltinID(ii, maxb)
+    @test CC.getBuiltinID(ii) == maxb
+    @test_throws AssertionError CC.setBuiltinID(ii, 0)
+    @test_throws AssertionError CC.setBuiltinID(ii, maxb + 1)
+    @test CC.clearBuiltinID(ii) === nothing
+    @test CC.getBuiltinID(ii) == 0
+    @test CC.getObjCOrBuiltinID(ii) == 0
+
+    maxi = CC.getMaxInterestingIdentifierID()
+    @test maxi isa Integer
+    @test maxi > 0
+    CC.setInterestingIdentifierID(ii, 1)
+    @test CC.getInterestingIdentifierID(ii) == 1
+    CC.setInterestingIdentifierID(ii, maxi)
+    @test CC.getInterestingIdentifierID(ii) == maxi
+    @test CC.getBuiltinID(ii) == 0
+    @test_throws AssertionError CC.setInterestingIdentifierID(ii, 0)
+    @test_throws AssertionError CC.setInterestingIdentifierID(ii, maxi + 1)
+
+    # the ObjC keyword slots sit at the low end of that same field
+    CC.setObjCKeywordID(ii, 1)
+    @test CC.getObjCKeywordID(ii) == 1
+    @test CC.getObjCOrBuiltinID(ii) == 1
+    @test CC.getInterestingIdentifierID(ii) == 0
+    @test CC.setObjCOrBuiltinID(ii, 0) === nothing
+    @test CC.getObjCOrBuiltinID(ii) == 0
+    @test CC.getObjCKeywordID(ii) == 0
+
+    # ---- deserialization bookkeeping (one-way flags) ----
+    @test CC.isFromAST(ii) == false
+    @test CC.setIsFromAST(ii) === nothing
+    @test CC.isFromAST(ii) == true
+
+    @test CC.hasChangedSinceDeserialization(ii) == false
+    @test CC.setChangedSinceDeserialization(ii) === nothing
+    @test CC.hasChangedSinceDeserialization(ii) == true
+
+    @test CC.hasFETokenInfoChangedSinceDeserialization(ii) == false
+    @test CC.setFETokenInfoChangedSinceDeserialization(ii) === nothing
+    @test CC.hasFETokenInfoChangedSinceDeserialization(ii) == true
+
+    # ---- OpenMP variant-name mangling flag ----
+    @test CC.isMangledOpenMPVariantName(ii) == false
+    CC.setMangledOpenMPVariantName(ii, true)
+    @test CC.isMangledOpenMPVariantName(ii) == true
+    CC.setMangledOpenMPVariantName(ii, false)
+    @test CC.isMangledOpenMPVariantName(ii) == false
+
+    CC.dispose(it)
+    dispose(I)
+end
+
+@testset "Basic | Selector and SelectorTable" begin
+    I = create_interpreter(String[])
+    ci = get_instance(I)
+    pp = CC.getPreprocessor(ci)
+    selt = CC.getSelectorTable(pp)
+    idents = CC.getIdentifierTable(pp)
+
+    width = get(idents, "width")
+    height = get(idents, "height")
+    alloc = get(idents, "alloc")
+
+    # ---- the null selector: a NULL handle is a legal Selector value, not a bad handle ----
+    nul = CC.Selector()
+    @test CC.isNull(nul) == true
+    @test CC.getNumArgs(nul) == 0
+    @test CC.isKeywordSelector(nul) isa Bool
+    @test CC.isUnarySelector(nul) isa Bool
+    @test CC.getAsString(nul) isa String
+    @test CC.getNameForSlot(nul, 0) == ""
+    @test CC.getIdentifierInfoForSlot(nul, 0).ptr == C_NULL
+
+    # ---- zero-argument selector "width" ----
+    nullary = CC.getNullarySelector(selt, width)
+    @test CC.isNull(nullary) == false
+    @test CC.isUnarySelector(nullary) == true
+    @test CC.isKeywordSelector(nullary) == false
+    @test CC.getNumArgs(nullary) == 0
+    @test CC.getAsString(nullary) == "width"
+    @test CC.getNameForSlot(nullary, 0) == "width"
+    @test CC.getName(CC.getIdentifierInfoForSlot(nullary, 0)) == "width"
+    @test CC.dump(nullary) === nothing
+
+    # ---- one-argument selector "width:" ----
+    unary = CC.getUnarySelector(selt, width)
+    @test CC.isUnarySelector(unary) == false
+    @test CC.isKeywordSelector(unary) == true
+    @test CC.getNumArgs(unary) == 1
+    @test CC.getAsString(unary) == "width:"
+    @test CC.getNameForSlot(unary, 0) == "width"
+
+    # ---- multi-keyword selector "width:height:", uniqued by the table ----
+    multi = CC.getSelector(selt, 2, [width, height])
+    @test CC.getNumArgs(multi) == 2
+    @test CC.getAsString(multi) == "width:height:"
+    @test CC.getNameForSlot(multi, 0) == "width"
+    @test CC.getNameForSlot(multi, 1) == "height"
+    @test CC.getSelector(selt, 2, [width, height]).ptr == multi.ptr
+    @test CC.getTotalMemory(selt) isa Integer
+
+    # ---- ObjC family classification: a plain C++ identifier vs a family name ----
+    @test CC.getMethodFamily(nullary) == CC.CXObjCMethodFamily_OMF_None
+    @test CC.getMethodFamily(CC.getNullarySelector(selt, alloc)) ==
+          CC.CXObjCMethodFamily_OMF_alloc
+    @test CC.getMethodFamily(multi) isa CC.CXObjCMethodFamily
+    @test CC.getStringFormatFamily(nullary) == CC.CXObjCStringFormatFamily_SFF_None
+    @test CC.getStringFormatFamily(multi) isa CC.CXObjCStringFormatFamily
+    @test CC.getInstTypeMethodFamily(nullary) == CC.CXObjCInstanceTypeFamily_OIT_None
+    @test CC.getInstTypeMethodFamily(multi) isa CC.CXObjCInstanceTypeFamily
+
+    # ---- the DenseMap sentinels are distinct non-null encodings; only isNull is defined
+    #      on them, since every other accessor would read through the sentinel bits ----
+    empty_marker = CC.getEmptyMarker()
+    tombstone = CC.getTombstoneMarker()
+    @test empty_marker isa CC.Selector
+    @test tombstone isa CC.Selector
+    @test empty_marker.ptr != tombstone.ptr
+    @test CC.isNull(empty_marker) == false
+    @test CC.isNull(tombstone) == false
+
+    # ---- setter-name round trip ----
+    @test CC.constructSetterName("width") == "setWidth"
+    setter = CC.constructSetterSelector(idents, selt, width)
+    @test CC.getNumArgs(setter) == 1
+    @test CC.getAsString(setter) == "setWidth:"
+    @test CC.getNameForSlot(setter, 0) == "setWidth"
+    @test CC.getPropertyNameFromSetterSelector(setter) == "width"
+
+    dispose(I)
+end

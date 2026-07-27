@@ -1069,3 +1069,222 @@ function setHasExternalVisibleStorage(x::DeclContext, es::Bool=true)
     @check_ptrs x
     return clang_DeclContext_setHasExternalVisibleStorage(x, es)
 end
+
+
+# The static entry points and identifier-namespace mutators of clang::Decl
+"""
+    isFlexibleArrayMemberLike(ctx::ASTContext, d::AbstractDecl, ty::QualType,
+                              level::CXStrictFlexArraysLevelKind,
+                              ignore_template_or_macro_substitution::Bool=false) -> Bool
+Return whether a member declared by `d` with type `ty` behaves as a flexible array member under the
+`-fstrict-flex-arrays` rule `level`.
+
+`d` may be a NULL-pointer carrier, which restricts the answer to the checks that depend only on `ty`
+and `level`. `level` selects the rule to apply instead of being read out of `ctx`, so the answer does
+not depend on how the interpreter was configured.
+"""
+function isFlexibleArrayMemberLike(ctx::ASTContext, d::AbstractDecl, ty::QualType,
+                                   level::CXStrictFlexArraysLevelKind,
+                                   ignore_template_or_macro_substitution::Bool=false)
+    @check_ptrs ctx ty
+    return clang_Decl_isFlexibleArrayMemberLike(ctx, d, ty, level,
+                                                ignore_template_or_macro_substitution)
+end
+
+"""
+    setLocalExternDecl(x::AbstractDecl)
+Move `x` into the identifier namespace of a function-local `extern` declaration.
+
+Clang clears `IDNS_Ordinary` and then asserts that nothing but `IDNS_OrdinaryFriend` and `IDNS_Tag`
+is left, so `x` must currently live in no namespace outside those three.
+"""
+function setLocalExternDecl(x::AbstractDecl)
+    @check_ptrs x
+    allowed = UInt32(CXDecl_IDNS_Ordinary) | UInt32(CXDecl_IDNS_OrdinaryFriend) |
+              UInt32(CXDecl_IDNS_Tag)
+    ns = getIdentifierNamespace(x)
+    @assert ns & ~allowed == 0 "the declaration must live only in the ordinary, friend or tag namespace"
+    return clang_Decl_setLocalExternDecl(x)
+end
+
+"""
+    clearIdentifierNamespace(x::AbstractDecl)
+Empty `x`'s identifier namespace, hiding it from every ordinary name lookup while leaving it
+findable for redeclaration lookup.
+"""
+function clearIdentifierNamespace(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_clearIdentifierNamespace(x)
+end
+
+"""
+    setNonMemberOperator(x::AbstractDecl)
+Mark `x` as a C++ overloaded non-member operator.
+
+Clang asserts that `x` is a `FunctionDecl` or a `FunctionTemplateDecl` and that it already lives in
+the ordinary identifier namespace.
+"""
+function setNonMemberOperator(x::AbstractDecl)
+    @check_ptrs x
+    k = getKind(x)
+    is_fn = k == CXDeclKind_Function || k == CXDeclKind_FunctionTemplate
+    @assert is_fn "only a function or a function template can be a non-member operator"
+    ns = getIdentifierNamespace(x)
+    @assert ns & UInt32(CXDecl_IDNS_Ordinary) != 0 "the declaration must be visible to ordinary lookup"
+    return clang_Decl_setNonMemberOperator(x)
+end
+
+"""
+    printGroupToString(decls::AbstractVector{<:AbstractDecl}, indentation::Integer=0) -> String
+Pretty-print `decls` as one declaration group the way `clang::Decl::printGroup` would.
+
+`decls` must be non-empty and hold no NULL-pointer carrier; the printing policy comes from the
+`ASTContext` of its first element.
+"""
+function printGroupToString(decls::AbstractVector{<:AbstractDecl}, indentation::Integer=0)
+    @assert !isempty(decls) "a declaration group holds at least one declaration"
+    buf = CXDecl[d.ptr for d in decls]
+    @assert all(!=(C_NULL), buf) "every declaration in the group must be non-NULL"
+    return get_string(clang_Decl_printGroupToString(buf, length(buf), indentation))
+end
+
+# The no-load and uncached corners of clang::DeclContext
+"""
+    noload_decls_begin(x::DeclContext) -> Decl
+The first declaration lexically stored in `x`, obtained without asking an external AST source for
+anything. A NULL-pointer `Decl` when `x` stores none; walk the rest with `getNextDeclInContext`.
+"""
+function noload_decls_begin(x::DeclContext)
+    @check_ptrs x
+    return Decl(clang_DeclContext_noload_decls_begin(x))
+end
+
+"""
+    localUncachedLookup(x::DeclContext, name::DeclarationName) -> Vector{NamedDecl}
+The declarations named `name` in `x` alone, found without relying on a cached lookup table.
+
+Clang reserves this for AST-importer-style callers; `lookup` is the normal entry point.
+"""
+function localUncachedLookup(x::DeclContext, name::DeclarationName)
+    @check_ptrs x
+    n = clang_DeclContext_getNumLocalUncachedLookupResults(x, name)
+    buf = Vector{CXNamedDecl}(undef, n)
+    n > 0 && clang_DeclContext_localUncachedLookup(x, name, buf)
+    return [NamedDecl(p) for p in buf]
+end
+
+"""
+    setMustBuildLookupTable(x::DeclContext)
+Mark `x` as having external lexical declarations that its next lookup must fold in.
+
+`x` must be its own primary context (`getPrimaryContext`); clang asserts on any other.
+"""
+function setMustBuildLookupTable(x::DeclContext)
+    @check_ptrs x
+    @assert x.ptr == getPrimaryContext(x).ptr "only a primary declaration context can be marked"
+    return clang_DeclContext_setMustBuildLookupTable(x)
+end
+
+
+# The attribute-list assignment on clang::Decl, and the lookup-table surface of
+# clang::DeclContext.
+
+"""
+    setAttrs(x::AbstractDecl, attrs::AbstractVector{<:AbstractAttr})
+Install `attrs` as the attribute list of `x`.
+
+`x` must carry no attributes yet (`hasAttrs` is false); clang asserts on a declaration whose
+list is already populated. The `Attr`s are borrowed, not copied — they stay owned by whatever
+AST allocated them, so the same attribute may end up on two declarations.
+"""
+function setAttrs(x::AbstractDecl, attrs::AbstractVector{<:AbstractAttr})
+    @check_ptrs x
+    @assert !hasAttrs(x) "the declaration already carries an attribute list"
+    buf = CXAttr[a.ptr for a in attrs]
+    @assert all(!=(C_NULL), buf) "every attribute in the list must be non-NULL"
+    return clang_Decl_setAttrs(x, buf, length(buf))
+end
+
+"""
+    getNumLookupNames(x::DeclContext) -> Int
+The number of distinct names `x` can look up, building its lookup table first.
+"""
+function getNumLookupNames(x::DeclContext)
+    @check_ptrs x
+    return Int(clang_DeclContext_getNumLookupNames(x))
+end
+
+"""
+    getLookupNames(x::DeclContext) -> Vector{DeclarationName}
+Every name `x` can look up, one entry per name — the declarations behind a name come from
+`lookup`. The lookup table is built on demand and an external AST source is consulted. clang
+filters its internal using-directive name only while advancing the iterator, so that name can
+still appear as the first entry.
+"""
+function getLookupNames(x::DeclContext)
+    @check_ptrs x
+    n = clang_DeclContext_getNumLookupNames(x)
+    buf = Vector{CXDeclarationName}(undef, n)
+    n > 0 && clang_DeclContext_getLookupNames(x, buf)
+    return [DeclarationName(p) for p in buf]
+end
+
+"""
+    getNumNoloadLookupNames(x::DeclContext, preserve::Bool) -> Int
+The number of names already present in `x`'s lookup table, without consulting an external AST
+source. `preserve` additionally suppresses loading lazily-stored lexical lookups.
+"""
+function getNumNoloadLookupNames(x::DeclContext, preserve::Bool)
+    @check_ptrs x
+    return Int(clang_DeclContext_getNumNoloadLookupNames(x, preserve))
+end
+
+"""
+    getNoloadLookupNames(x::DeclContext, preserve::Bool) -> Vector{DeclarationName}
+The names already present in `x`'s lookup table, without consulting an external AST source —
+empty when no lookup has built that table. `preserve` additionally suppresses loading
+lazily-stored lexical lookups, leaving `x` untouched.
+"""
+function getNoloadLookupNames(x::DeclContext, preserve::Bool)
+    @check_ptrs x
+    n = clang_DeclContext_getNumNoloadLookupNames(x, preserve)
+    buf = Vector{CXDeclarationName}(undef, n)
+    n > 0 && clang_DeclContext_getNoloadLookupNames(x, preserve, buf)
+    return [DeclarationName(p) for p in buf]
+end
+
+"""
+    lookupSingleResult(x::DeclContext, name::DeclarationName) -> NamedDecl
+The one declaration named `name` in `x`, or a NULL-pointer `NamedDecl` when the lookup found
+nothing or an overload set. Only this context is searched — parent contexts are not. `x` must
+not be a transparent context.
+"""
+function lookupSingleResult(x::DeclContext, name::DeclarationName)
+    @check_ptrs x
+    k = getDeclKind(x)
+    @assert k != CXDeclKind_LinkageSpec && k != CXDeclKind_Export "transparent context"
+    return NamedDecl(clang_DeclContext_lookupSingleResult(x, name))
+end
+
+"""
+    hasLookupTable(x::DeclContext) -> Bool
+Whether a lookup table has been built for `x` yet. Name lookup builds the table on the primary
+context, so ask `getPrimaryContext(x)` to learn whether the no-load enumerations see anything.
+"""
+function hasLookupTable(x::DeclContext)
+    @check_ptrs x
+    return clang_DeclContext_hasLookupTable(x)
+end
+
+"""
+    buildLookup(x::DeclContext) -> Bool
+Build `x`'s lookup table and report whether one exists afterwards — a context that declares
+nothing still has none.
+
+`x` must be its own primary context (`getPrimaryContext`); clang asserts on any other.
+"""
+function buildLookup(x::DeclContext)
+    @check_ptrs x
+    @assert x.ptr == getPrimaryContext(x).ptr "only a primary context has a lookup table"
+    return clang_DeclContext_buildLookup(x)
+end

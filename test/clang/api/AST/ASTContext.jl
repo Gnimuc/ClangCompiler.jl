@@ -1151,3 +1151,582 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "astcontext-f: traversal scope, float modes, local imports, ObjC context state" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+
+    # ---- setTraversalScope: round-trip the default scope (the TranslationUnitDecl) ----
+    tu = CC.getTranslationUnitDecl(ctx)
+    CC.setTraversalScope(ctx, [tu])
+    scope = CC.getTraversalScope(ctx)
+    @test length(scope) == 1
+    @test scope[1].ptr == tu.ptr
+
+    # ---- getRealTypeForBitwidth: which widths exist is target-decided, so assert shape ----
+    for k in (LX.CXFloatModeKind_NoFloat, LX.CXFloatModeKind_Half,
+              LX.CXFloatModeKind_Float, LX.CXFloatModeKind_Double,
+              LX.CXFloatModeKind_LongDouble, LX.CXFloatModeKind_Float128,
+              LX.CXFloatModeKind_Ibm128)
+        @test CC.getRealTypeForBitwidth(ctx, 64, k) isa CC.QualType
+    end
+    f32 = CC.getRealTypeForBitwidth(ctx, 32, LX.CXFloatModeKind_Float)
+    @test f32.ptr != C_NULL
+    @test CC.isFloatingType(CC.getTypePtr(f32))
+    # no target has a 3-bit floating-point type: a null QualType is the "none" answer
+    @test CC.getRealTypeForBitwidth(ctx, 3, LX.CXFloatModeKind_Float).ptr == C_NULL
+
+    # ---- local imports: nothing has been imported into this translation unit ----
+    imp = CC.getFirstLocalImport(ctx)
+    @test imp isa CC.ImportDecl
+    @test imp.ptr == C_NULL
+
+    # ---- ObjC side-table QualTypes: plain fields, unset in a C++ translation unit ----
+    @test CC.getObjCConstantStringInterface(ctx) isa CC.QualType
+    @test CC.getObjCNSStringType(ctx).ptr == C_NULL
+    CC.setObjCNSStringType(ctx, int_qt)
+    @test CC.getObjCNSStringType(ctx).ptr == int_qt.ptr
+
+    # ---- the lazily materialised id / SEL / Class typedefs and the types they name ----
+    id_decl = CC.getObjCIdDecl(ctx)
+    sel_decl = CC.getObjCSelDecl(ctx)
+    class_decl = CC.getObjCClassDecl(ctx)
+    @test id_decl isa CC.TypedefDecl
+    @test sel_decl isa CC.TypedefDecl
+    @test class_decl isa CC.TypedefDecl
+    @test CC.getName(id_decl) == "id"
+    @test CC.getName(sel_decl) == "SEL"
+    @test CC.getName(class_decl) == "Class"
+
+    id_ty = CC.getObjCIdType(ctx)
+    sel_ty = CC.getObjCSelType(ctx)
+    class_ty = CC.getObjCClassType(ctx)
+    @test CC.isObjCIdType(ctx, id_ty)
+    @test CC.isObjCSelType(ctx, sel_ty)
+    @test CC.isObjCClassType(ctx, class_ty)
+    @test !CC.isObjCIdType(ctx, int_qt)
+    @test !CC.isObjCSelType(ctx, int_qt)
+    @test !CC.isObjCClassType(ctx, int_qt)
+
+    # ---- 'SEL' redefinition: unset, so the getter falls back to the built-in SEL type ----
+    @test CC.getObjCSelRedefinitionType(ctx).ptr == sel_ty.ptr
+    CC.setObjCSelRedefinitionType(ctx, int_qt)
+    @test CC.getObjCSelRedefinitionType(ctx).ptr == int_qt.ptr
+
+    # ---- getUnqualifiedObjCPointerType only strips an ObjC lifetime qualifier, so both a
+    #      plain int and `id` come back unchanged ----
+    @test CC.getUnqualifiedObjCPointerType(ctx, int_qt).ptr == int_qt.ptr
+    @test CC.getUnqualifiedObjCPointerType(ctx, id_ty).ptr == id_ty.ptr
+
+    # ---- dependent-name and canonical-specialization type builders ----
+    CC.parse(I, """
+                template <class T> struct AcfDep { typename T::type m; };
+                template <class T> struct AcfBox { T v; };
+                AcfBox<int> acf_box_v;
+                """)
+    f = DeclFinder(I)
+
+    @test f(I, "AcfDep")
+    dep_patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
+    fld_qt = CC.getType(first(CC.getFields(dep_patt)))
+    dnty = CC.resolve(CC.getTypePtr(fld_qt))
+    @test dnty isa CC.DependentNameType
+    rebuilt = CC.getDependentNameType(ctx, CC.getKeyword(dnty), CC.getQualifier(dnty),
+                                      CC.getIdentifier(dnty))
+    @test rebuilt isa CC.QualType
+    # DependentNameType is uniqued, so rebuilding the same triple hands back the same node
+    @test CC.getTypePtr(rebuilt).ptr == CC.getTypePtr(fld_qt).ptr
+
+    @test f(I, "acf_box_v")
+    box_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.VarDecl(get_decl(f).ptr))))
+    box_ty isa CC.ElaboratedType && (box_ty = CC.resolve(CC.getTypePtr(CC.desugar(box_ty))))
+    @test box_ty isa CC.TemplateSpecializationType
+    canon_tn = CC.getCanonicalTemplateName(ctx, CC.getTemplateName(box_ty))
+    arg = CC.TemplateArgument(int_qt)
+    canon_arg = CC.getCanonicalTemplateArgument(ctx, arg)
+    canon_tst = CC.getCanonicalTemplateSpecializationType(ctx, canon_tn, [canon_arg])
+    @test canon_tst isa CC.QualType
+    @test canon_tst.ptr != C_NULL
+    @test CC.resolve(CC.getTypePtr(canon_tst)) isa CC.TemplateSpecializationType
+
+    dispose(canon_arg)
+    dispose(arg)
+    dispose(f)
+    dispose(I)
+end
+
+@testset "astcontext-g: ObjC type encodings, auto builder, merged-definition modules" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+    double_qt = CC.get_qual_type(CC.DoubleTy(ctx))
+
+    CC.parse(I, "int acg_gvar = 5;")
+    CC.parse(I, "int acg_gfunc(int acg_p) { return acg_p; }")
+
+    f = DeclFinder(I)
+    @test f(I, "acg_gvar")
+    vd = CC.VarDecl(get_decl(f).ptr)
+    @test f(I, "acg_gfunc")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+
+    # ---- @encode strings: the encoder is not ObjC-specific, and the letters for the
+    #      builtin types are fixed by the runtime ABI, not by the host ----
+    enc_int = CC.getObjCEncodingForType(ctx, int_qt)
+    @test enc_int isa AbstractString
+    @test enc_int == "i"
+    @test CC.getObjCEncodingForType(ctx, double_qt) == "d"
+    @test CC.getObjCEncodingForPropertyType(ctx, int_qt) == "i"
+
+    # sizeof(int) is target-decided, so only the shape and the agreement with the ordinary
+    # size query are asserted (both are >= sizeof(int) by construction for `int`)
+    sz = CC.getObjCEncodingTypeSize(ctx, int_qt)
+    @test sz isa Integer
+    @test sz > 0
+    @test sz == CC.getTypeSizeInChars(ctx, int_qt)
+
+    # the function encoding embeds parameter byte offsets, which are target-decided; only
+    # the leading return-type letter is portable
+    enc_fn = CC.getObjCEncodingForFunctionDecl(ctx, fd)
+    @test enc_fn isa AbstractString
+    @test startswith(enc_fn, "i")
+
+    # ---- the legacy rewrite only fires on a typedef of a 32-bit long ----
+    @test CC.getLegacyIntegralTypeEncoding(ctx, int_qt).ptr == int_qt.ptr
+
+    # ---- ObjC predicates over a C++ translation unit ----
+    @test CC.isObjCNSObjectType(int_qt) isa Bool
+    @test !CC.isObjCNSObjectType(int_qt)
+    @test CC.isObjCNSObjectType(int_qt) == CC.isObjCNSObjectType(CC.getTypePtr(int_qt))
+    @test !CC.areComparableObjCPointerTypes(ctx, int_qt, int_qt)
+    @test CC.AnyObjCImplementation(ctx) isa Bool
+    @test !CC.AnyObjCImplementation(ctx)
+
+    # ---- getAutoType: a deduced `auto` canonicalises to what it was deduced as ----
+    auto_int = CC.getAutoType(ctx, int_qt, LX.CXAutoTypeKeyword_Auto, false)
+    @test auto_int isa CC.QualType
+    @test auto_int.ptr != C_NULL
+    @test CC.getCanonicalType(ctx, auto_int).ptr == CC.getCanonicalType(ctx, int_qt).ptr
+    # AutoType nodes are uniqued on their parameters
+    @test CC.getAutoType(ctx, int_qt, LX.CXAutoTypeKeyword_Auto, false).ptr == auto_int.ptr
+    # a null deduced type builds the undeduced placeholder; decltype(auto) is a distinct node
+    undeduced = CC.getAutoType(ctx, CC.QualType(C_NULL), LX.CXAutoTypeKeyword_Auto, false)
+    @test undeduced isa CC.QualType
+    @test undeduced.ptr != C_NULL
+    @test undeduced.ptr != auto_int.ptr
+    decl_auto = CC.getAutoType(ctx, CC.QualType(C_NULL), LX.CXAutoTypeKeyword_DecltypeAuto,
+                               false)
+    @test decl_auto.ptr != undeduced.ptr
+
+    # ---- merged definitions: nothing is merged outside a modules build ----
+    @test CC.getNumModulesWithMergedDefinition(ctx, vd) == 0
+    @test isempty(CC.getModulesWithMergedDefinition(ctx, vd))
+    @test CC.getModulesWithMergedDefinition(ctx, vd) isa Vector{CC.Module_}
+
+    # ---- setObjCSuperType: plain field, round-tripped before the getter can materialise
+    #      the implicit `struct objc_super` record ----
+    CC.setObjCSuperType(ctx, int_qt)
+    @test CC.getObjCSuperType(ctx).ptr == int_qt.ptr
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ASTContext ObjC qualifiers, builtin types, comment cloning" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    int_qt = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
+
+    # ---- GC / ARC qualifier builders (Objective-C qualifiers, reachable from C++ too) ----
+    # getObjCGCAttrKind returns GCNone through its own early return outside an ObjC
+    # garbage-collected translation unit, so this shape holds on every host.
+    @test CC.getObjCGCAttrKind(ctx, int_qt) == CC.CXQualifiers_GCNone
+    @test CC.getInnerObjCOwnership(ctx, int_qt) == CC.CXQualifiers_OCL_None
+
+    weak_qt = CC.getObjCGCQualType(ctx, int_qt, CC.CXQualifiers_Weak)
+    @test weak_qt isa CC.QualType
+    @test CC.getObjCGCAttr(weak_qt) == CC.CXQualifiers_Weak
+    @test_throws AssertionError CC.getObjCGCQualType(ctx, int_qt, CC.CXQualifiers_GCNone)
+    @test_throws AssertionError CC.getObjCGCQualType(ctx, weak_qt, CC.CXQualifiers_Strong)
+
+    strong_qt = CC.getLifetimeQualifiedType(ctx, int_qt, CC.CXQualifiers_OCL_Strong)
+    @test strong_qt isa CC.QualType
+    @test CC.getObjCLifetime(strong_qt) == CC.CXQualifiers_OCL_Strong
+    @test_throws AssertionError CC.getLifetimeQualifiedType(ctx, int_qt,
+                                                            CC.CXQualifiers_OCL_None)
+    @test_throws AssertionError CC.getLifetimeQualifiedType(ctx, strong_qt,
+                                                            CC.CXQualifiers_OCL_Weak)
+
+    # ---- a builtin's signature type, reached through the builtin's own identifier ----
+    bid = CC.getBuiltinID(Base.get(CC.getIdents(ctx), "__builtin_abs"))
+    @test bid > 0
+    bty, berr, bmask = CC.GetBuiltinType(ctx, bid)
+    # __builtin_abs is int(int): no library type is named, so no host can miss one.
+    @test berr == CC.CXGetBuiltinTypeError_GE_None
+    @test !CC.isNull(bty)
+    @test bmask isa Integer
+    @test_throws AssertionError CC.GetBuiltinType(ctx, 0)
+
+    # ---- a builtin template built by hand, the way the two cached ones are built ----
+    btd = CC.buildBuiltinTemplateDecl(ctx, CC.CXBuiltinTemplateKind_BTK__type_pack_element,
+                                      Base.get(CC.getIdents(ctx), "cc_actx_btd"))
+    @test btd isa CC.BuiltinTemplateDecl
+    @test btd.ptr != C_NULL
+
+    CC.parse(I, """
+                /// a cloned probe
+                int cc_actx_doc_var = 7;
+                int cc_actx_other_var = 8;
+                struct cc_actx_sdm { static int su; static int sw; };
+                """)
+    f = DeclFinder(I)
+
+    @test f(I, "cc_actx_doc_var")
+    doc_vd = CC.VarDecl(get_decl(f).ptr)
+    @test f(I, "cc_actx_other_var")
+    other_vd = CC.VarDecl(get_decl(f).ptr)
+
+    # ---- cloning a parsed comment onto another decl ----
+    fc = CC.getLocalCommentForDeclUncached(ctx, doc_vd)
+    @test fc isa CC.FullComment
+    if fc.ptr != C_NULL
+        cloned = CC.cloneFullComment(ctx, fc, other_vd)
+        @test cloned isa CC.FullComment
+        @test cloned.ptr != C_NULL
+        @test cloned.ptr != fc.ptr
+    end
+
+    # ---- recording an instantiation pattern for a static data member ----
+    @test f(I, "cc_actx_sdm")
+    rd = CC.CXXRecordDecl(get_decl(f).ptr)
+    statics = filter(d -> d isa CC.VarDecl, CC.decls(CC.castToDeclContext(rd)))
+    @test length(statics) == 2
+    inst, tmpl = statics[1], statics[2]
+    tsk_impl = CC.CXTemplateSpecializationKind_TSK_ImplicitInstantiation
+    @test CC.getInstantiatedFromStaticDataMember(ctx, inst).ptr == C_NULL
+    # TSK_Undeclared cannot be encoded in a MemberSpecializationInfo
+    @test_throws AssertionError CC.setInstantiatedFromStaticDataMember(ctx, inst, tmpl,
+                                                                       CC.CXTemplateSpecializationKind_TSK_Undeclared)
+    CC.setInstantiatedFromStaticDataMember(ctx, inst, tmpl, tsk_impl)
+    msi = CC.getInstantiatedFromStaticDataMember(ctx, inst)
+    @test msi.ptr != C_NULL
+    @test CC.getInstantiatedFrom(msi).ptr == tmpl.ptr
+    @test CC.getTemplateSpecializationKind(msi) == tsk_impl
+    # the pattern may only be noted once
+    @test_throws AssertionError CC.setInstantiatedFromStaticDataMember(ctx, inst, tmpl,
+                                                                       tsk_impl)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ASTContext module initializers, float semantics and C library type decls" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    CC.parse(I, """
+                struct AciBox { int v; };
+                AciBox aci_box_v;
+                typedef int aci_jmp_buf[8];
+                typedef int aci_sigjmp_buf[16];
+                typedef int aci_ucontext_t[32];
+                template <class T> struct AciDep { typename T::type m; };
+                """)
+    f = DeclFinder(I)
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+
+    # ---- module initializers: the context keys the list on the clang::Module pointer ----
+    @test f(I, "aci_box_v")
+    var = CC.VarDecl(get_decl(f).ptr)
+    m = CC.Module_("AciSyntheticModule")
+    @test CC.getNumModuleInitializers(ctx, m) == 0
+    @test isempty(CC.getModuleInitializers(ctx, m))
+    CC.addModuleInitializer(ctx, m, var)
+    @test CC.getNumModuleInitializers(ctx, m) == 1
+    inits = CC.getModuleInitializers(ctx, m)
+    @test length(inits) == 1
+    @test inits[1] isa CC.Decl
+    @test inits[1].ptr == var.ptr
+
+    # ---- the parts of the llvm::fltSemantics behind a floating-point type ----
+    flt_qt = CC.get_qual_type(CC.FloatTy(ctx))
+    dbl_qt = CC.get_qual_type(CC.DoubleTy(ctx))
+    @test CC.getFloatTypeSemanticsPrecision(ctx, flt_qt) == 24  # IEEE single
+    @test CC.getFloatTypeSemanticsPrecision(ctx, dbl_qt) == 53  # IEEE double
+    # float/double are stored in exactly their format's width on every supported target
+    @test CC.getFloatTypeSemanticsSizeInBits(ctx, flt_qt) == CC.getTypeSize(ctx, flt_qt)
+    @test CC.getFloatTypeSemanticsSizeInBits(ctx, dbl_qt) == CC.getTypeSize(ctx, dbl_qt)
+    @test_throws AssertionError CC.getFloatTypeSemanticsPrecision(ctx, int_qt)
+    @test_throws AssertionError CC.getFloatTypeSemanticsSizeInBits(ctx, int_qt)
+
+    # ---- byref lifetimes exist only in Objective-C under ARC ----
+    @test CC.getByrefLifetime(ctx, int_qt) === nothing
+
+    # ---- a dependent specialization built from a dependent name's own pieces ----
+    @test f(I, "AciDep")
+    dep_patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
+    dnty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(dep_patt)))))
+    @test dnty isa CC.DependentNameType
+    arg = CC.TemplateArgument(int_qt, false)
+    dtst = CC.getDependentTemplateSpecializationType(ctx, CC.getKeyword(dnty),
+                                                     CC.getQualifier(dnty),
+                                                     CC.getIdentifier(dnty), [arg])
+    @test dtst isa CC.QualType
+    @test CC.resolve(CC.getTypePtr(dtst)) isa CC.DependentTemplateSpecializationType
+    # the node is uniqued on the whole quadruple, so rebuilding it returns the same type
+    again = CC.getDependentTemplateSpecializationType(ctx, CC.getKeyword(dnty),
+                                                      CC.getQualifier(dnty),
+                                                      CC.getIdentifier(dnty), [arg])
+    @test CC.getTypePtr(again).ptr == CC.getTypePtr(dtst).ptr
+    dispose(arg)
+
+    # ---- the three C library types stay null until their setter has run ----
+    @test CC.getjmp_bufType(ctx).ptr == C_NULL
+    @test f(I, "aci_jmp_buf")
+    CC.setjmp_bufDecl(ctx, CC.TypedefDecl(get_decl(f).ptr))
+    @test CC.get_name(CC.getjmp_bufType(ctx)) == "aci_jmp_buf"
+
+    @test CC.getsigjmp_bufType(ctx).ptr == C_NULL
+    @test f(I, "aci_sigjmp_buf")
+    CC.setsigjmp_bufDecl(ctx, CC.TypedefDecl(get_decl(f).ptr))
+    @test CC.get_name(CC.getsigjmp_bufType(ctx)) == "aci_sigjmp_buf"
+
+    @test CC.getucontext_tType(ctx).ptr == C_NULL
+    @test f(I, "aci_ucontext_t")
+    CC.setucontext_tDecl(ctx, CC.TypedefDecl(get_decl(f).ptr))
+    @test CC.get_name(CC.getucontext_tType(ctx)) == "aci_ucontext_t"
+
+    dispose(m)
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ASTContext variable-template info, injected arguments and constant objects" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    CC.parse(I, """
+                template <class T> struct AcjBox { T v; };
+                template <class T> T acj_tvar = T(1);
+                struct AcjNttp { int a; };
+                constexpr AcjNttp acj_nttp_val{7};
+                constexpr int acj_int_val = 11;
+                int acj_plain = 3;
+                """)
+    f = DeclFinder(I)
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+
+    # ---- the raw PointerUnion behind a variable template's pattern ----
+    @test f(I, "acj_tvar")
+    vtd = first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "VarTemplate")
+    patt = CC.VarDecl(CC.getTemplatedDecl(CC.VarTemplateDecl(vtd.ptr)).ptr)
+    arm = CC.getTemplateOrSpecializationInfoAsVarTemplate(ctx, patt)
+    @test arm isa CC.VarTemplateDecl
+    @test arm.ptr == vtd.ptr
+    # the other arm of the same union is empty for that decl
+    msi = CC.getTemplateOrSpecializationInfoAsMemberSpecialization(ctx, patt)
+    @test msi isa CC.MemberSpecializationInfo
+    @test msi.ptr == C_NULL
+    # a plain global sits in neither arm, and both accessors are total on it
+    @test f(I, "acj_plain")
+    plain = CC.VarDecl(get_decl(f).ptr)
+    @test CC.getTemplateOrSpecializationInfoAsVarTemplate(ctx, plain).ptr == C_NULL
+    @test CC.getTemplateOrSpecializationInfoAsMemberSpecialization(ctx, plain).ptr == C_NULL
+
+    # ---- one injected argument per template parameter, owned boxes ----
+    @test f(I, "AcjBox")
+    ctd = first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "ClassTemplate")
+    tpl = CC.getTemplateParameters(CC.ClassTemplateDecl(ctd.ptr))
+    args = CC.getInjectedTemplateArgs(ctx, tpl)
+    @test length(args) == size(tpl)
+    @test all(a -> a isa CC.TemplateArgument, args)
+    @test all(a -> a.ptr != C_NULL, args)
+    foreach(dispose, args)
+
+    # ---- anonymous global constants are uniqued on (type, value) ----
+    @test f(I, "acj_int_val")
+    ival = CC.evaluateValue(CC.VarDecl(get_decl(f).ptr))
+    @test ival isa CC.APValue
+    @test ival.ptr != C_NULL
+    ugc = CC.getUnnamedGlobalConstantDecl(ctx, int_qt, ival)
+    @test ugc isa CC.UnnamedGlobalConstantDecl
+    @test ugc.ptr != C_NULL
+    @test CC.getUnnamedGlobalConstantDecl(ctx, int_qt, ival).ptr == ugc.ptr
+
+    # ---- template parameter objects need a class-type value ----
+    @test f(I, "acj_nttp_val")
+    nttp = CC.VarDecl(get_decl(f).ptr)
+    sval = CC.evaluateValue(nttp)
+    @test sval.ptr != C_NULL
+    sqt = CC.getType(nttp)
+    tpo = CC.getTemplateParamObjectDecl(ctx, sqt, sval)
+    @test tpo isa CC.TemplateParamObjectDecl
+    @test tpo.ptr != C_NULL
+    @test CC.getTemplateParamObjectDecl(ctx, sqt, sval).ptr == tpo.ptr
+    @test CC.getValue(tpo) isa CC.APValue
+    @test_throws AssertionError CC.getTemplateParamObjectDecl(ctx, int_qt, ival)
+
+    # ---- GUID objects need the implicit `_GUID` record Microsoft extensions build, which
+    #      the host toolchain decides; only the shape is asserted here ----
+    parts = UInt8[0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]
+    @test_throws AssertionError CC.getMSGuidDecl(ctx, 0x12345678, 0x9abc, 0xdef0, UInt8[])
+    if CC.getMSGuidTagDecl(ctx).ptr == C_NULL
+        @test_throws AssertionError CC.getMSGuidDecl(ctx, 0x12345678, 0x9abc, 0xdef0, parts)
+    else
+        guid = CC.getMSGuidDecl(ctx, 0x12345678, 0x9abc, 0xdef0, parts)
+        @test guid isa CC.MSGuidDecl
+        @test guid.ptr != C_NULL
+        @test CC.getMSGuidDecl(ctx, 0x12345678, 0x9abc, 0xdef0, parts).ptr == guid.ptr
+    end
+
+    # ---- the alignment-requirement flag TypeInfo and TypeInfoChars share ----
+    _, _, req = CC.getTypeInfo(ctx, int_qt)
+    @test CC.isAlignRequired(req) isa Bool
+    @test CC.isAlignRequired(req) == (req != CC.CXAlignRequirementKind_None)
+    @test !CC.isAlignRequired(CC.CXAlignRequirementKind_None)
+    @test CC.isAlignRequired(CC.CXAlignRequirementKind_RequiredByTypedef)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ASTContext substitution builders, function-type rewrites and target features" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    CC.parse(I, """
+                template <class T> struct AckBox { T v; };
+                AckBox<int> ack_box_v;
+                template <class T> T ack_tvar = T(1);
+                template <class T> void ack_ovl(T);
+                template <class T, class U> void ack_ovl(T, U);
+                int ack_plain = 5;
+                void ack_fn(int);
+                """)
+    f = DeclFinder(I)
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+    dbl_qt = CC.get_qual_type(CC.DoubleTy(ctx))
+
+    # the template name and the decl that owns its parameter list
+    @test f(I, "ack_box_v")
+    box_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.VarDecl(get_decl(f).ptr))))
+    box_ty isa CC.ElaboratedType && (box_ty = CC.resolve(CC.getTypePtr(CC.desugar(box_ty))))
+    @test box_ty isa CC.TemplateSpecializationType
+    tn = CC.getTemplateName(box_ty)
+    assoc = CC.getAsTemplateDecl(tn)
+    @test assoc.ptr != C_NULL
+
+    # ---- a substituted type parameter keeps its replacement and is uniqued ----
+    subst = CC.getSubstTemplateTypeParmType(ctx, int_qt, assoc, 0)
+    @test subst isa CC.QualType
+    @test subst.ptr != C_NULL
+    stp = CC.SubstTemplateTypeParmType(CC.getTypePtr(subst).ptr)
+    @test CC.getReplacementType(stp).ptr == int_qt.ptr
+    @test CC.getSubstTemplateTypeParmType(ctx, int_qt, assoc, 0).ptr == subst.ptr
+    # engaging the pack index takes the std::optional arm of the builder; whether clang
+    # uniques the result with the disengaged form is its own canonicalisation decision for a
+    # synthetic associated decl, so only the shape is asserted
+    packed = CC.getSubstTemplateTypeParmType(ctx, int_qt, assoc, 0, 1)
+    @test packed isa CC.QualType
+    @test packed.ptr != C_NULL
+
+    # ---- the pack forms need a pack argument, and reject a scalar one ----
+    ta_int = CC.TemplateArgument(int_qt)
+    ta_dbl = CC.TemplateArgument(dbl_qt)
+    pack = CC.CreatePackCopy(ctx, [ta_int, ta_dbl])
+    @test CC.getKind(pack) == CC.CXTemplateArgument_Pack
+    packty = CC.getSubstTemplateTypeParmPackType(ctx, assoc, 0, false, pack)
+    @test packty isa CC.QualType
+    @test packty.ptr != C_NULL
+    @test_throws AssertionError CC.getSubstTemplateTypeParmPackType(ctx, assoc, 0, false, ta_int)
+
+    # ---- the template-name counterparts of both substitutions ----
+    subst_tn = CC.getSubstTemplateTemplateParm(ctx, tn, assoc, 0)
+    @test subst_tn isa CC.TemplateName
+    @test CC.getKind(subst_tn) == CC.CXTemplateName_SubstTemplateTemplateParm
+    @test CC.getSubstTemplateTemplateParm(ctx, tn, assoc, 0).ptr == subst_tn.ptr
+    # only the pack shape matters here, so the type pack built above serves
+    subst_pack_tn = CC.getSubstTemplateTemplateParmPack(ctx, pack, assoc, 0, false)
+    @test subst_pack_tn isa CC.TemplateName
+    @test CC.getKind(subst_pack_tn) == CC.CXTemplateName_SubstTemplateTemplateParmPack
+    @test_throws AssertionError CC.getSubstTemplateTemplateParmPack(ctx, ta_int, assoc, 0, false)
+    dispose(pack)
+    dispose(ta_dbl)
+    dispose(ta_int)
+
+    # ---- a TypeSourceInfo for a written specialization ----
+    tali = CC.TemplateArgumentListInfo(CC.SourceLocation(C_NULL), CC.SourceLocation(C_NULL))
+    tsi = CC.getTemplateSpecializationTypeInfo(ctx, tn, CC.SourceLocation(C_NULL), tali)
+    @test tsi isa CC.TypeSourceInfo
+    @test tsi.ptr != C_NULL
+    @test CC.getType(tsi) isa CC.QualType
+    @test CC.getType(tsi).ptr != C_NULL
+    dispose(tali)
+
+    # ---- an unresolved set of overloaded template candidates ----
+    @test f(I, "ack_ovl")
+    ovls = [CC.NamedDecl(d.ptr) for d in CC.get_decls(f) if CC.getDeclKindName(d) == "FunctionTemplate"]
+    @test length(ovls) == 2
+    ovl_name = CC.getOverloadedTemplateName(ctx, ovls)
+    @test ovl_name isa CC.TemplateName
+    @test CC.getKind(ovl_name) == CC.CXTemplateName_OverloadedTemplate
+    @test CC.getAsOverloadedTemplate(ovl_name).ptr != C_NULL
+    @test_throws AssertionError CC.getOverloadedTemplateName(ctx, ovls[1:1])
+
+    # ---- ExtInfo rewrites on a freshly built function type ----
+    fnty = CC.getFunctionType(ctx, int_qt, [int_qt])
+    fpt = CC.FunctionProtoType(CC.getTypePtr(fnty).ptr)
+    @test CC.getNoReturnAttr(fpt) isa Bool
+    adj = CC.adjustFunctionType(ctx, fpt, CC.CXCallingConv_CC_C, true, false)
+    @test adj isa CC.Type_
+    adj_fpt = CC.FunctionProtoType(adj.ptr)
+    @test CC.getNoReturnAttr(adj_fpt)
+    @test CC.getCallConv(adj_fpt) == CC.CXCallingConv_CC_C
+    # asking for the ExtInfo the type already carries hands the very same node back
+    @test CC.adjustFunctionType(ctx, adj_fpt, CC.CXCallingConv_CC_C, true, false).ptr == adj.ptr
+
+    # ---- exception specifications, on a type and on a declaration ----
+    ne_qt = CC.getFunctionTypeWithExceptionSpec(ctx, fnty,
+                                                CC.CXExceptionSpecificationType_EST_BasicNoexcept)
+    @test ne_qt isa CC.QualType
+    ne_fpt = CC.FunctionProtoType(CC.getTypePtr(ne_qt).ptr)
+    @test CC.getExceptionSpecType(ne_fpt) == CC.CXExceptionSpecificationType_EST_BasicNoexcept
+    # the kinds that need a payload this entry point cannot carry are rejected
+    @test_throws AssertionError CC.getFunctionTypeWithExceptionSpec(ctx, fnty,
+                                                                    CC.CXExceptionSpecificationType_EST_Dynamic)
+    @test_throws AssertionError CC.getFunctionTypeWithExceptionSpec(ctx, int_qt,
+                                                                    CC.CXExceptionSpecificationType_EST_BasicNoexcept)
+
+    @test f(I, "ack_fn")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    CC.adjustExceptionSpec(ctx, fd, CC.CXExceptionSpecificationType_EST_BasicNoexcept)
+    fd_fpt = CC.FunctionProtoType(CC.getTypePtr(CC.getType(fd)).ptr)
+    @test CC.getExceptionSpecType(fd_fpt) == CC.CXExceptionSpecificationType_EST_BasicNoexcept
+
+    # ---- the target feature map is entirely host-decided, so only its shape is asserted ----
+    nfeat = CC.getNumFunctionFeatures(ctx, fd)
+    @test nfeat isa Integer
+    @test nfeat >= 0
+    if nfeat > 0
+        name, enabled = CC.getFunctionFeature(ctx, fd, 0)
+        @test name isa String
+        @test !isempty(name)
+        @test enabled isa Bool
+        # the map is rebuilt per call, so the same index must name the same feature
+        @test CC.getFunctionFeature(ctx, fd, 0)[1] == name
+    end
+    @test_throws AssertionError CC.getFunctionFeature(ctx, fd, nfeat)
+
+    # ---- recording the variable template a plain variable is the pattern of ----
+    @test f(I, "ack_tvar")
+    vtd = CC.VarTemplateDecl(first(d for d in CC.get_decls(f)
+                                   if CC.getDeclKindName(d) == "VarTemplate").ptr)
+    @test f(I, "ack_plain")
+    plain = CC.VarDecl(get_decl(f).ptr)
+    @test CC.getTemplateOrSpecializationInfoAsVarTemplate(ctx, plain).ptr == C_NULL
+    CC.setTemplateOrSpecializationInfoAsVarTemplate(ctx, plain, vtd)
+    @test CC.getTemplateOrSpecializationInfoAsVarTemplate(ctx, plain).ptr == vtd.ptr
+    # the union is written once and only once
+    @test_throws AssertionError CC.setTemplateOrSpecializationInfoAsVarTemplate(ctx, plain, vtd)
+
+    dispose(f)
+    dispose(I)
+end

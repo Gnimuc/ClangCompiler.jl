@@ -180,3 +180,73 @@ function isEditorPlaceholder(x::AbstractToken)
     @check_ptrs x
     return clang_Token_isEditorPlaceholder(x)
 end
+
+
+"""
+    setIdentifierInfo(x::AbstractToken, ii::AbstractIdentifierInfo)
+Store `ii` as this token's identifier. The token borrows `ii`, which is owned by the
+identifier table.
+"""
+function setIdentifierInfo(x::AbstractToken, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    return clang_Token_setIdentifierInfo(x, ii)
+end
+
+"""
+    setKind(x::AbstractToken, kind::Integer)
+Set the raw `clang::tok::TokenKind` value of this token.
+
+The token-kind enum is not mirrored; the only portable source of a `kind` value is
+`getKind` on another token.
+"""
+function setKind(x::AbstractToken, kind::Integer)
+    @check_ptrs x
+    return clang_Token_setKind(x, kind)
+end
+
+"""
+    setLocation(x::AbstractToken, loc::SourceLocation)
+Set the location of the first character of this token.
+"""
+function setLocation(x::AbstractToken, loc::SourceLocation)
+    @check_ptrs x
+    return clang_Token_setLocation(x, loc)
+end
+
+"""
+    setLength(x::AbstractToken, len::Integer)
+Set the length in characters of this token. `x` must not be an annotation token — an
+annotation stores its end location in the same field, and Clang asserts.
+"""
+function setLength(x::AbstractToken, len::Integer)
+    @check_ptrs x
+    @assert !isAnnotation(x) "annotation tokens have no length field"
+    return clang_Token_setLength(x, len)
+end
+
+"""
+    setFlag(x::AbstractToken, flag::CXTokenFlags)
+Set `flag` on this token. Spelling of `Token::setFlag`, implemented over `setFlagValue`.
+"""
+setFlag(x::AbstractToken, flag::CXTokenFlags) = setFlagValue(x, flag, true)
+
+"""
+    clearFlag(x::AbstractToken, flag::CXTokenFlags)
+Unset `flag` on this token. Spelling of `Token::clearFlag`, implemented over
+`setFlagValue`.
+"""
+clearFlag(x::AbstractToken, flag::CXTokenFlags) = setFlagValue(x, flag, false)
+
+"""
+    getLiteralData(x::AbstractToken) -> String
+Return the text of this literal token, copied out of the source buffer. `x` must be a
+literal (`isLiteral`); Clang asserts otherwise. Returns an empty string when the literal's
+text was not recorded.
+"""
+function getLiteralData(x::AbstractToken)
+    @check_ptrs x
+    @assert isLiteral(x) "token must be a literal"
+    p = clang_Token_getLiteralData(x)
+    p == C_NULL && return ""
+    return unsafe_string(p, getLength(x))
+end

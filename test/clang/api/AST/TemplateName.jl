@@ -31,3 +31,100 @@ using Test
     dispose(f)
     dispose(I)
 end
+
+@testset "TemplateName kind payloads" begin
+    I = create_interpreter(String[])
+    src = """
+    namespace TnNS { template <typename T> struct TnBox { T v; }; }
+    template <template <typename> class TT> struct TnHolder { TT<int> m; };
+    TnHolder<TnNS::TnBox> tn_qual_v;
+    template <typename T> TnHolder<T::template Inner> tn_dep_probe();
+    """
+    CC.parse(I, src)
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+
+    # A written type name carries its qualifier in an ElaboratedType wrapper; strip it.
+    tst_of(qt) = begin
+        t = CC.resolve(CC.getTypePtr(qt))
+        t isa CC.ElaboratedType && (t = CC.resolve(CC.getTypePtr(CC.getNamedType(t))))
+        return t
+    end
+
+    @test f(I, "tn_qual_v")
+    outer = tst_of(CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    @test outer isa CC.TemplateSpecializationType
+
+    # A template template argument has no ElaboratedType to hold its qualifier, so
+    # "TnNS::TnBox" is a QualifiedTemplateName in the argument itself.
+    qarg = CC.getArg(outer, 0)
+    @test CC.getKind(qarg) == CC.LibClangEx.CXTemplateArgument_Template
+    tn_q = CC.getAsTemplate(qarg)
+    @test CC.getKind(tn_q) == CC.LibClangEx.CXTemplateName_QualifiedTemplate
+    @test CC.getDependence(tn_q) isa Integer
+    @test occursin("TnBox", CC.getAsString(tn_q, ctx))
+    @test occursin("TnBox", CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_None))
+    @test occursin("TnBox", CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_Fully))
+
+    qtn = CC.getAsQualifiedTemplateName(tn_q)
+    @test qtn isa CC.QualifiedTemplateName
+    @test qtn.ptr != C_NULL
+    @test CC.hasTemplateKeyword(qtn) isa Bool
+    nns = CC.getQualifier(qtn)
+    @test nns isa CC.NestedNameSpecifier
+    @test CC.getName(nns) isa AbstractString
+    und = CC.getUnderlyingTemplate(qtn)
+    @test und isa CC.TemplateName
+    @test CC.getKind(und) == CC.LibClangEx.CXTemplateName_Template
+
+    # The getAs* family is total: every other arm answers with a NULL carrier.
+    @test CC.getAsOverloadedTemplate(tn_q).ptr == C_NULL
+    @test CC.getAsAssumedTemplateName(tn_q).ptr == C_NULL
+    @test CC.getAsSubstTemplateTemplateParm(tn_q).ptr == C_NULL
+    @test CC.getAsSubstTemplateTemplateParmPack(tn_q).ptr == C_NULL
+    @test CC.getAsDependentTemplateName(tn_q).ptr == C_NULL
+    @test CC.getAsUsingShadowDecl(tn_q).ptr == C_NULL
+
+    # Inside the instantiation, TT<int> became TnNS::TnBox<int> through a substituted
+    # template template parameter.
+    rd = CC.getAsCXXRecordDecl(outer)
+    @test rd isa CC.CXXRecordDecl
+    flds = CC.getFields(rd)
+    @test length(flds) == 1
+    ftst = tst_of(CC.getType(flds[1]))
+    @test ftst isa CC.TemplateSpecializationType
+    tn_s = CC.getTemplateName(ftst)
+    @test CC.getKind(tn_s) == CC.LibClangEx.CXTemplateName_SubstTemplateTemplateParm
+    sub = CC.getAsSubstTemplateTemplateParm(tn_s)
+    @test sub isa CC.SubstTemplateTemplateParmStorage
+    @test sub.ptr != C_NULL
+    @test CC.getIndex(sub) isa Integer
+    @test CC.getAssociatedDecl(sub) isa CC.Decl
+    repl = CC.getReplacement(sub)
+    @test repl isa CC.TemplateName
+    @test CC.isNull(repl) == false
+
+    # "T::template Inner" as a template template argument is a DependentTemplateName.
+    @test f(I, "tn_dep_probe")
+    ftd = first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "FunctionTemplate")
+    fd = CC.getTemplatedDecl(CC.FunctionTemplateDecl(ftd.ptr))
+    dtst = tst_of(CC.getReturnType(fd))
+    @test dtst isa CC.TemplateSpecializationType
+    darg = CC.getArg(dtst, 0)
+    @test CC.getKind(darg) == CC.LibClangEx.CXTemplateArgument_Template
+    tn_d = CC.getAsTemplate(darg)
+    @test CC.getKind(tn_d) == CC.LibClangEx.CXTemplateName_DependentTemplate
+    @test CC.getDependence(tn_d) != 0
+    dtn = CC.getAsDependentTemplateName(tn_d)
+    @test dtn isa CC.DependentTemplateName
+    @test dtn.ptr != C_NULL
+    @test CC.getQualifier(dtn) isa CC.NestedNameSpecifier
+    @test CC.isIdentifier(dtn)
+    @test CC.isOverloadedOperator(dtn) == false
+    @test CC.getName(CC.getIdentifier(dtn)) == "Inner"
+    # getOperator reads the other arm of the name union; the wrapper refuses the call.
+    @test_throws AssertionError CC.getOperator(dtn)
+
+    dispose(f)
+    dispose(I)
+end

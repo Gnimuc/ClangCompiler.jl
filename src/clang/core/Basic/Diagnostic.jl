@@ -52,3 +52,49 @@ end
 
 Base.unsafe_convert(::Type{CXStoredDiagnostic}, x::StoredDiagnostic) = x.ptr
 Base.cconvert(::Type{CXStoredDiagnostic}, x::StoredDiagnostic) = x
+
+
+"""
+    struct ForwardingDiagnosticConsumer <: AbstractForwardingDiagnosticConsumer
+Hold a pointer to a `clang::ForwardingDiagnosticConsumer` object.
+"""
+struct ForwardingDiagnosticConsumer <: AbstractForwardingDiagnosticConsumer
+    ptr::CXDiagnosticConsumer
+end
+
+Base.unsafe_convert(::Type{CXDiagnosticConsumer}, x::ForwardingDiagnosticConsumer) = x.ptr
+Base.cconvert(::Type{CXDiagnosticConsumer}, x::ForwardingDiagnosticConsumer) = x
+
+"""
+    struct FixItHint <: AbstractFixItHint
+Hold a pointer to a `clang::FixItHint` object.
+"""
+struct FixItHint <: AbstractFixItHint
+    ptr::CXFixItHint
+end
+
+Base.unsafe_convert(::Type{CXFixItHint}, x::FixItHint) = x.ptr
+Base.cconvert(::Type{CXFixItHint}, x::FixItHint) = x
+
+
+"""
+    struct DiagnosticBuilder <: AbstractDiagnosticBuilder
+Hold a pointer to a `clang::DiagnosticBuilder` object.
+"""
+struct DiagnosticBuilder <: AbstractDiagnosticBuilder
+    ptr::CXDiagnosticBuilder
+end
+
+Base.unsafe_convert(::Type{CXDiagnosticBuilder}, x::DiagnosticBuilder) = x.ptr
+Base.cconvert(::Type{CXDiagnosticBuilder}, x::DiagnosticBuilder) = x
+
+"""
+    struct Diagnostic <: AbstractDiagnostic
+Hold a pointer to a `clang::Diagnostic` object.
+"""
+struct Diagnostic <: AbstractDiagnostic
+    ptr::CXDiagnostic_
+end
+
+Base.unsafe_convert(::Type{CXDiagnostic_}, x::Diagnostic) = x.ptr
+Base.cconvert(::Type{CXDiagnostic_}, x::Diagnostic) = x

@@ -231,3 +231,50 @@ function getSourceRange(x::DeclarationNameInfo)
     r = clang_DeclarationNameInfo_getSourceRange(x)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
+
+
+# DeclarationName (Objective-C selector shapes)
+isObjCZeroArgSelector(x::DeclarationName) = clang_DeclarationName_isObjCZeroArgSelector(x)
+
+isObjCOneArgSelector(x::DeclarationName) = clang_DeclarationName_isObjCOneArgSelector(x)
+
+# DeclarationNameInfo (location-union mutators)
+"""
+    setNamedTypeInfo(x::DeclarationNameInfo, tinfo::TypeSourceInfo)
+Set the written type of the constructor, destructor or conversion-function name `x` holds.
+
+`x`'s current name must be one of those three kinds; clang asserts on any other.
+"""
+function setNamedTypeInfo(x::DeclarationNameInfo, tinfo::TypeSourceInfo)
+    @check_ptrs x tinfo
+    named = (CXDeclarationName_CXXConstructorName, CXDeclarationName_CXXDestructorName,
+             CXDeclarationName_CXXConversionFunctionName)
+    @assert getNameKind(getName(x)) in named "the name must be a constructor, destructor or conversion"
+    return clang_DeclarationNameInfo_setNamedTypeInfo(x, tinfo)
+end
+
+"""
+    setCXXOperatorNameRange(x::DeclarationNameInfo, r::SourceRange)
+Set the range of the operator name `x` holds, without the `operator` keyword.
+
+`x`'s current name must be a (non-literal) overloaded operator; clang asserts on any other.
+"""
+function setCXXOperatorNameRange(x::DeclarationNameInfo, r::SourceRange)
+    @check_ptrs x
+    @assert getNameKind(getName(x)) == CXDeclarationName_CXXOperatorName "the name must be an operator"
+    rng = CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr)
+    return clang_DeclarationNameInfo_setCXXOperatorNameRange(x, rng)
+end
+
+"""
+    setCXXLiteralOperatorNameLoc(x::DeclarationNameInfo, loc::SourceLocation)
+Set the location of the literal-operator name `x` holds, without the `operator` keyword.
+
+`x`'s current name must be a literal-operator name; clang asserts on any other.
+"""
+function setCXXLiteralOperatorNameLoc(x::DeclarationNameInfo, loc::SourceLocation)
+    @check_ptrs x
+    k = getNameKind(getName(x))
+    @assert k == CXDeclarationName_CXXLiteralOperatorName "the name must be a literal-operator name"
+    return clang_DeclarationNameInfo_setCXXLiteralOperatorNameLoc(x, loc)
+end

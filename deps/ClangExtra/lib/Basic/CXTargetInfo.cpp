@@ -225,6 +225,10 @@ bool clang_TargetInfo_hasLegalHalfType(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->hasLegalHalfType();
 }
 
+bool clang_TargetInfo_allowHalfArgsAndReturns(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->allowHalfArgsAndReturns();
+}
+
 bool clang_TargetInfo_hasFloat128Type(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->hasFloat128Type();
 }
@@ -369,6 +373,10 @@ const char *clang_TargetInfo_getBFloat16Mangling(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getBFloat16Mangling();
 }
 
+bool clang_TargetInfo_supportSourceEvalMethod(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->supportSourceEvalMethod();
+}
+
 unsigned clang_TargetInfo_getLargeArrayMinWidth(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getLargeArrayMinWidth();
 }
@@ -393,6 +401,10 @@ bool clang_TargetInfo_hasBuiltinAtomic(CXTargetInfo_ TI, uint64_t AtomicSizeInBi
 
 unsigned clang_TargetInfo_getMaxVectorAlign(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getMaxVectorAlign();
+}
+
+unsigned clang_TargetInfo_getMaxOpenCLWorkGroupSize(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getMaxOpenCLWorkGroupSize();
 }
 
 unsigned clang_TargetInfo_getExnObjectAlignment(CXTargetInfo_ TI) {
@@ -466,6 +478,10 @@ const char *clang_TargetInfo_getTypeFormatModifier(CXTargetInfo_IntType T) {
       static_cast<clang::TargetInfo::IntType>(T));
 }
 
+bool clang_TargetInfo_useObjCFP2RetForComplexLongDouble(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->useObjCFP2RetForComplexLongDouble();
+}
+
 bool clang_TargetInfo_useFP16ConversionIntrinsics(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->useFP16ConversionIntrinsics();
 }
@@ -498,12 +514,20 @@ bool clang_TargetInfo_hasBuiltinMSVaList(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->hasBuiltinMSVaList();
 }
 
+bool clang_TargetInfo_isRenderScriptTarget(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->isRenderScriptTarget();
+}
+
 bool clang_TargetInfo_hasAArch64SVETypes(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->hasAArch64SVETypes();
 }
 
 bool clang_TargetInfo_hasRISCVVTypes(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->hasRISCVVTypes();
+}
+
+bool clang_TargetInfo_allowAMDGPUUnsafeFPAtomics(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->allowAMDGPUUnsafeFPAtomics();
 }
 
 uint32_t clang_TargetInfo_getARMCDECoprocMask(CXTargetInfo_ TI) {
@@ -534,6 +558,94 @@ CXString clang_TargetInfo_getConstraintRegister(CXTargetInfo_ TI, const char *Co
   return extra::makeCXString(T->getConstraintRegister(Constraint, Expression).str());
 }
 
+// TargetInfo::ConstraintInfo
+
+CXConstraintInfo clang_ConstraintInfo_create(const char *ConstraintStr, const char *Name) {
+  auto CI = std::make_unique<clang::TargetInfo::ConstraintInfo>(ConstraintStr, Name);
+  return CI.release();
+}
+
+void clang_ConstraintInfo_dispose(CXConstraintInfo CI) {
+  delete static_cast<clang::TargetInfo::ConstraintInfo *>(CI);
+}
+
+const char *clang_ConstraintInfo_getConstraintStr(CXConstraintInfo CI) {
+  auto *C = static_cast<clang::TargetInfo::ConstraintInfo *>(CI);
+  return C->getConstraintStr().c_str();
+}
+
+const char *clang_ConstraintInfo_getName(CXConstraintInfo CI) {
+  return static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->getName().c_str();
+}
+
+bool clang_ConstraintInfo_isReadWrite(CXConstraintInfo CI) {
+  return static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->isReadWrite();
+}
+
+bool clang_ConstraintInfo_earlyClobber(CXConstraintInfo CI) {
+  return static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->earlyClobber();
+}
+
+bool clang_ConstraintInfo_allowsRegister(CXConstraintInfo CI) {
+  return static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->allowsRegister();
+}
+
+bool clang_ConstraintInfo_allowsMemory(CXConstraintInfo CI) {
+  return static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->allowsMemory();
+}
+
+bool clang_ConstraintInfo_hasMatchingInput(CXConstraintInfo CI) {
+  return static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->hasMatchingInput();
+}
+
+bool clang_ConstraintInfo_hasTiedOperand(CXConstraintInfo CI) {
+  return static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->hasTiedOperand();
+}
+
+unsigned clang_ConstraintInfo_getTiedOperand(CXConstraintInfo CI) {
+  return static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->getTiedOperand();
+}
+
+bool clang_ConstraintInfo_requiresImmediateConstant(CXConstraintInfo CI) {
+  auto *C = static_cast<clang::TargetInfo::ConstraintInfo *>(CI);
+  return C->requiresImmediateConstant();
+}
+
+void clang_ConstraintInfo_setIsReadWrite(CXConstraintInfo CI) {
+  static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setIsReadWrite();
+}
+
+void clang_ConstraintInfo_setEarlyClobber(CXConstraintInfo CI) {
+  static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setEarlyClobber();
+}
+
+void clang_ConstraintInfo_setAllowsMemory(CXConstraintInfo CI) {
+  static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setAllowsMemory();
+}
+
+void clang_ConstraintInfo_setAllowsRegister(CXConstraintInfo CI) {
+  static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setAllowsRegister();
+}
+
+void clang_ConstraintInfo_setHasMatchingInput(CXConstraintInfo CI) {
+  static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setHasMatchingInput();
+}
+
+void clang_ConstraintInfo_setRequiresImmediate(CXConstraintInfo CI, int Min, int Max) {
+  static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setRequiresImmediate(Min, Max);
+}
+
+void clang_ConstraintInfo_setTiedOperand(CXConstraintInfo CI, unsigned N,
+                                         CXConstraintInfo Output) {
+  static_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setTiedOperand(
+      N, *static_cast<clang::TargetInfo::ConstraintInfo *>(Output));
+}
+
+bool clang_TargetInfo_validateOutputConstraint(CXTargetInfo_ TI, CXConstraintInfo Info) {
+  return static_cast<clang::TargetInfo *>(TI)->validateOutputConstraint(
+      *static_cast<clang::TargetInfo::ConstraintInfo *>(Info));
+}
+
 CXString clang_TargetInfo_getClobbers(CXTargetInfo_ TI) {
   return extra::makeCXString(
       std::string(static_cast<clang::TargetInfo *>(TI)->getClobbers()));
@@ -547,6 +659,11 @@ const char *clang_TargetInfo_getTriple(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getTriple().getTriple().c_str();
 }
 
+CXString clang_TargetInfo_getTargetID(CXTargetInfo_ TI) {
+  auto ID = static_cast<clang::TargetInfo *>(TI)->getTargetID();
+  return extra::makeCXString(ID ? *ID : std::string());
+}
+
 const char *clang_TargetInfo_getDataLayoutString(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getDataLayoutString();
 }
@@ -557,6 +674,10 @@ bool clang_TargetInfo_hasProtectedVisibility(CXTargetInfo_ TI) {
 
 bool clang_TargetInfo_shouldDLLImportComdatSymbols(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->shouldDLLImportComdatSymbols();
+}
+
+bool clang_TargetInfo_hasPS4DLLImportExport(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->hasPS4DLLImportExport();
 }
 
 CXString clang_TargetInfo_getABI(CXTargetInfo_ TI) {
@@ -578,6 +699,16 @@ CXStringSet *clang_TargetInfo_fillValidCPUList(CXTargetInfo_ TI) {
   return extra::makeCXStringSet(Strs);
 }
 
+CXStringSet *clang_TargetInfo_fillValidTuneCPUList(CXTargetInfo_ TI) {
+  llvm::SmallVector<llvm::StringRef, 32> Values;
+  static_cast<clang::TargetInfo *>(TI)->fillValidTuneCPUList(Values);
+  std::vector<std::string> Strs;
+  Strs.reserve(Values.size());
+  for (llvm::StringRef S : Values)
+    Strs.push_back(S.str());
+  return extra::makeCXStringSet(Strs);
+}
+
 bool clang_TargetInfo_isValidCPUName(CXTargetInfo_ TI, const char *Name) {
   return static_cast<clang::TargetInfo *>(TI)->isValidCPUName(Name);
 }
@@ -586,12 +717,33 @@ bool clang_TargetInfo_isValidTuneCPUName(CXTargetInfo_ TI, const char *Name) {
   return static_cast<clang::TargetInfo *>(TI)->isValidTuneCPUName(Name);
 }
 
+bool clang_TargetInfo_supportsTargetAttributeTune(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->supportsTargetAttributeTune();
+}
+
 bool clang_TargetInfo_isValidFeatureName(CXTargetInfo_ TI, const char *Feature) {
   return static_cast<clang::TargetInfo *>(TI)->isValidFeatureName(Feature);
 }
 
+bool clang_TargetInfo_doesFeatureAffectCodeGen(CXTargetInfo_ TI, const char *Feature) {
+  return static_cast<clang::TargetInfo *>(TI)->doesFeatureAffectCodeGen(Feature);
+}
+
+CXString clang_TargetInfo_getFeatureDependencies(CXTargetInfo_ TI, const char *Feature) {
+  return extra::makeCXString(
+      static_cast<clang::TargetInfo *>(TI)->getFeatureDependencies(Feature).str());
+}
+
+bool clang_TargetInfo_isBranchProtectionSupportedArch(CXTargetInfo_ TI, const char *Arch) {
+  return static_cast<clang::TargetInfo *>(TI)->isBranchProtectionSupportedArch(Arch);
+}
+
 bool clang_TargetInfo_hasFeature(CXTargetInfo_ TI, const char *Feature) {
   return static_cast<clang::TargetInfo *>(TI)->hasFeature(Feature);
+}
+
+bool clang_TargetInfo_isReadOnlyFeature(CXTargetInfo_ TI, const char *Feature) {
+  return static_cast<clang::TargetInfo *>(TI)->isReadOnlyFeature(Feature);
 }
 
 bool clang_TargetInfo_supportsMultiVersioning(CXTargetInfo_ TI) {
@@ -601,6 +753,32 @@ bool clang_TargetInfo_supportsMultiVersioning(CXTargetInfo_ TI) {
 bool clang_TargetInfo_supportsIFunc(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->supportsIFunc();
 }
+
+bool clang_TargetInfo_validateCpuSupports(CXTargetInfo_ TI, const char *Name) {
+  return static_cast<clang::TargetInfo *>(TI)->validateCpuSupports(Name);
+}
+
+unsigned clang_TargetInfo_multiVersionSortPriority(CXTargetInfo_ TI, const char *Name) {
+  return static_cast<clang::TargetInfo *>(TI)->multiVersionSortPriority(Name);
+}
+
+unsigned clang_TargetInfo_multiVersionFeatureCost(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->multiVersionFeatureCost();
+}
+
+bool clang_TargetInfo_validateCpuIs(CXTargetInfo_ TI, const char *Name) {
+  return static_cast<clang::TargetInfo *>(TI)->validateCpuIs(Name);
+}
+
+bool clang_TargetInfo_validateCPUSpecificCPUDispatch(CXTargetInfo_ TI, const char *Name) {
+  return static_cast<clang::TargetInfo *>(TI)->validateCPUSpecificCPUDispatch(Name);
+}
+
+char clang_TargetInfo_CPUSpecificManglingCharacter(CXTargetInfo_ TI, const char *Name) {
+  return static_cast<clang::TargetInfo *>(TI)->CPUSpecificManglingCharacter(Name);
+}
+
+// getCPUSpecificTuneName -- not wrapped, see the header.
 
 bool clang_TargetInfo_getCPUCacheLineSize(CXTargetInfo_ TI, unsigned *Size) {
   auto LineSize = static_cast<clang::TargetInfo *>(TI)->getCPUCacheLineSize();
@@ -647,9 +825,32 @@ unsigned clang_TargetInfo_getTargetAddressSpace(CXTargetInfo_ TI, CXLangAS AS) {
       static_cast<clang::LangAS>(AS));
 }
 
+CXLangAS clang_TargetInfo_getOpenCLBuiltinAddressSpace(CXTargetInfo_ TI, unsigned AS) {
+  return static_cast<CXLangAS>(
+      static_cast<clang::TargetInfo *>(TI)->getOpenCLBuiltinAddressSpace(AS));
+}
+
+CXLangAS clang_TargetInfo_getCUDABuiltinAddressSpace(CXTargetInfo_ TI, unsigned AS) {
+  return static_cast<CXLangAS>(
+      static_cast<clang::TargetInfo *>(TI)->getCUDABuiltinAddressSpace(AS));
+}
+
+bool clang_TargetInfo_getConstantAddressSpace(CXTargetInfo_ TI, CXLangAS *AS) {
+  auto Space = static_cast<clang::TargetInfo *>(TI)->getConstantAddressSpace();
+  if (!Space)
+    return false;
+  *AS = static_cast<CXLangAS>(*Space);
+  return true;
+}
+
 CXString clang_TargetInfo_getPlatformName(CXTargetInfo_ TI) {
   return extra::makeCXString(
       static_cast<clang::TargetInfo *>(TI)->getPlatformName().str());
+}
+
+CXString clang_TargetInfo_getPlatformMinVersion(CXTargetInfo_ TI) {
+  return extra::makeCXString(
+      static_cast<clang::TargetInfo *>(TI)->getPlatformMinVersion().getAsString());
 }
 
 bool clang_TargetInfo_isBigEndian(CXTargetInfo_ TI) {
@@ -658,6 +859,37 @@ bool clang_TargetInfo_isBigEndian(CXTargetInfo_ TI) {
 
 bool clang_TargetInfo_isLittleEndian(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->isLittleEndian();
+}
+
+bool clang_TargetInfo_supportsExtendIntArgs(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->supportsExtendIntArgs();
+}
+
+bool clang_TargetInfo_checkArithmeticFenceSupported(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->checkArithmeticFenceSupported();
+}
+
+CXCallingConv_ clang_TargetInfo_getDefaultCallingConv(CXTargetInfo_ TI) {
+  return static_cast<CXCallingConv_>(
+      static_cast<clang::TargetInfo *>(TI)->getDefaultCallingConv());
+}
+
+CXTargetInfo_CallingConvCheckResult
+clang_TargetInfo_checkCallingConvention(CXTargetInfo_ TI, CXCallingConv_ CC) {
+  return static_cast<CXTargetInfo_CallingConvCheckResult>(
+      static_cast<clang::TargetInfo *>(TI)->checkCallingConvention(
+          static_cast<clang::CallingConv>(CC)));
+}
+
+CXTargetInfo_CallingConvKind clang_TargetInfo_getCallingConvKind(CXTargetInfo_ TI,
+                                                                 bool ClangABICompat4) {
+  return static_cast<CXTargetInfo_CallingConvKind>(
+      static_cast<clang::TargetInfo *>(TI)->getCallingConvKind(ClangABICompat4));
+}
+
+bool clang_TargetInfo_areDefaultedSMFStillPOD(CXTargetInfo_ TI, CXLangOptions LO) {
+  return static_cast<clang::TargetInfo *>(TI)->areDefaultedSMFStillPOD(
+      *static_cast<clang::LangOptions *>(LO));
 }
 bool clang_TargetInfo_hasSjLjLowering(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->hasSjLjLowering();
@@ -671,6 +903,44 @@ bool clang_TargetInfo_defaultsToAIXPowerAlignment(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->defaultsToAIXPowerAlignment();
 }
 
+CXLangAS clang_TargetInfo_getOpenCLTypeAddrSpace(CXTargetInfo_ TI, CXOpenCLTypeKind TK) {
+  return static_cast<CXLangAS>(static_cast<clang::TargetInfo *>(TI)->getOpenCLTypeAddrSpace(
+      static_cast<clang::OpenCLTypeKind>(TK)));
+}
+
 unsigned clang_TargetInfo_getVtblPtrAddressSpace(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getVtblPtrAddressSpace();
+}
+
+bool clang_TargetInfo_getDWARFAddressSpace(CXTargetInfo_ TI, unsigned AddressSpace,
+                                           unsigned *Out) {
+  auto Space = static_cast<clang::TargetInfo *>(TI)->getDWARFAddressSpace(AddressSpace);
+  if (!Space)
+    return false;
+  *Out = *Space;
+  return true;
+}
+
+CXString clang_TargetInfo_getSDKVersion(CXTargetInfo_ TI) {
+  return extra::makeCXString(
+      static_cast<clang::TargetInfo *>(TI)->getSDKVersion().getAsString());
+}
+
+bool clang_TargetInfo_validateTarget(CXTargetInfo_ TI, CXDiagnosticsEngine Diags) {
+  return static_cast<clang::TargetInfo *>(TI)->validateTarget(
+      *static_cast<clang::DiagnosticsEngine *>(Diags));
+}
+
+bool clang_TargetInfo_allowDebugInfoForExternalRef(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->allowDebugInfoForExternalRef();
+}
+
+const char *clang_TargetInfo_getDarwinTargetVariantTriple(CXTargetInfo_ TI) {
+  const llvm::Triple *T =
+      static_cast<clang::TargetInfo *>(TI)->getDarwinTargetVariantTriple();
+  return T ? T->getTriple().c_str() : nullptr;
+}
+
+bool clang_TargetInfo_hasHIPImageSupport(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->hasHIPImageSupport();
 }

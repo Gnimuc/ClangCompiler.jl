@@ -124,6 +124,42 @@ typedef enum CXIfStatementKind : unsigned {
   CXIfStatementKind_ConstevalNegated
 } CXIfStatementKind;
 
+// Mirrors clang::NullabilityKind (clang/Basic/Specifiers.h): the nullability a
+// `_Nonnull` / `_Nullable` / `_Null_unspecified` / `_Nullable_result` annotation
+// records. Order and values must stay identical to the pinned Clang header; the
+// ENUM_SYNC table in lib/Basic/CXEnumSync.cpp fails the build if an LLVM bump
+// renumbers them.
+typedef enum CXNullabilityKind : unsigned char {
+  CXNullabilityKind_NonNull,
+  CXNullabilityKind_Nullable,
+  CXNullabilityKind_Unspecified,
+  CXNullabilityKind_NullableResult
+} CXNullabilityKind;
+
+// Mirrors clang::ParameterABI (clang/Basic/Specifiers.h): the ABI treatment one
+// function parameter gets, as carried by clang::FunctionType::ExtParameterInfo.
+// Order and values must stay identical to the pinned Clang header; the ENUM_SYNC
+// table in lib/Basic/CXEnumSync.cpp fails the build if an LLVM bump renumbers
+// them.
+typedef enum CXParameterABI {
+  CXParameterABI_Ordinary,
+  CXParameterABI_SwiftIndirectResult,
+  CXParameterABI_SwiftErrorResult,
+  CXParameterABI_SwiftContext,
+  CXParameterABI_SwiftAsyncContext
+} CXParameterABI;
+
+// Mirrors clang::MSInheritanceModel (clang/Basic/Specifiers.h): the Microsoft C++ ABI
+// member-pointer representation a class is given. Order and values must stay identical
+// to the pinned Clang header; the ENUM_SYNC table in lib/Basic/CXEnumSync.cpp fails the
+// build if an LLVM bump renumbers them.
+typedef enum CXMSInheritanceModel {
+  CXMSInheritanceModel_Single = 0,
+  CXMSInheritanceModel_Multiple = 1,
+  CXMSInheritanceModel_Virtual = 2,
+  CXMSInheritanceModel_Unspecified = 3
+} CXMSInheritanceModel;
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

@@ -523,6 +523,12 @@ typedef enum CXLikelihood {
   CXLikelihood_LH_Likely
 } CXLikelihood;
 
+// getLikelihood(ArrayRef<const Attr *>) overload: the likelihood carried by an explicit
+// attribute list. LH_None when the list holds neither [[likely]] nor [[unlikely]], the
+// empty list included. Attrs is a borrowed (ptr, count) input array (MARSHALLING.md
+// section 11); its slots must be non-null.
+CXLikelihood clang_Stmt_getLikelihoodOfAttrs(const CXAttr *Attrs, unsigned NumAttrs);
+
 // Likelihood of a branch, read from the [[likely]]/[[unlikely]] attribute of an
 // AttributedStmt. Total: LH_None for every other statement kind and for null.
 CXLikelihood clang_Stmt_getLikelihood(CXStmt S);
@@ -530,6 +536,19 @@ CXLikelihood clang_Stmt_getLikelihood(CXStmt S);
 // The [[likely]]/[[unlikely]] Attr itself, or null when the statement carries
 // none. Total (dyn_cast_or_null internally).
 CXAttr clang_Stmt_getLikelihoodAttr(CXStmt S);
+
+// getLikelihood(const Stmt *Then, const Stmt *Else) overload: likelihood of the `then`
+// branch of an if statement. The `else` branch takes part because two branches specifying
+// the same likelihood cancel out. Total on a null Then or Else.
+CXLikelihood clang_Stmt_getLikelihoodOfBranches(CXStmt Then, CXStmt Else);
+
+// Whether the two branches of an if statement carry conflicting likelihood attributes.
+// clang returns a std::tuple<bool, const Attr *, const Attr *>, which crosses as the bool
+// return plus two out-params (MARSHALLING.md section 7). *ThenAttr / *ElseAttr are always
+// written: the branch's likelihood attribute, or null when it carries none. Total on a
+// null Then or Else; both out-params must be non-null.
+bool clang_Stmt_determineLikelihoodConflict(CXStmt Then, CXStmt Else, CXAttr *ThenAttr,
+                                            CXAttr *ElseAttr);
 
 // Unique reproducible identifier of this node within Ctx's allocator.
 int64_t clang_Stmt_getID(CXStmt S, CXASTContext Ctx);
@@ -787,6 +806,55 @@ void clang_CapturedStmt_setCapturedDecl(CXCapturedStmt S, CXCapturedDecl D);
 // Julia wrapper's @check_ptrs already rejects that case.
 void clang_CapturedStmt_setCapturedRecordDecl(CXCapturedStmt S, CXRecordDecl D);
 
+// Stmt
+// Same as clang::Stmt::dump, but forces colour highlighting on: writes the AST
+// subtree rooted at S to llvm::errs().
+void clang_Stmt_dumpColor(CXStmt S);
+
+// Stmt::printPrettyControlled rendered into a string. Identical to
+// clang_Stmt_printPretty except that a control-flow body is wrapped in braces and
+// indented as a nested block. Same sources as printPretty: Ctx's own
+// getPrintingPolicy(), a null PrinterHelper and "\n" as the newline symbol.
+CXString clang_Stmt_printPrettyControlled(CXStmt S, CXASTContext Ctx, unsigned Indentation);
+
+// helper: clang::Stmt::Profile fills an llvm::FoldingSetNodeID, which has no CX
+// handle — MARSHALLING.md section 7 (expose the useful scalar, not the aggregate).
+// This runs the profile into a local ID and returns its hash, so two statements
+// with the same structural profile compare equal. It is a hash: equal profiles
+// always agree, distinct ones agree only on a collision.
+unsigned clang_Stmt_getProfileHash(CXStmt S, CXASTContext Ctx, bool Canonical,
+                                   bool ProfileLambdaExpr);
+
+// GCCAsmStmt
+void clang_GCCAsmStmt_setAsmString(CXGCCAsmStmt S, CXStringLiteral E);
+
+// MSAsmStmt
+// Number of raw preprocessor tokens making up the __asm block.
+unsigned clang_MSAsmStmt_getNumAsmToks(CXMSAsmStmt S);
+
+// Token I of the block, borrowed from the statement's own token array — the
+// count+index half of MARSHALLING.md section 6 against
+// clang_MSAsmStmt_getNumAsmToks. Do not dispose it.
+// Precondition: I < clang_MSAsmStmt_getNumAsmToks(S) — the array pointer is null
+// when the statement carries no tokens.
+CXToken_ clang_MSAsmStmt_getAsmTok(CXMSAsmStmt S, unsigned I);
+
+void clang_MSAsmStmt_setLBraceLoc(CXMSAsmStmt S, CXSourceLocation_ L);
+
+void clang_MSAsmStmt_setEndLoc(CXMSAsmStmt S, CXSourceLocation_ L);
+
+// Precondition: I < clang_AsmStmt_getNumInputs(S) — the operand array is indexed
+// unchecked, like every other MSAsmStmt operand accessor.
+void clang_MSAsmStmt_setInputExpr(CXMSAsmStmt S, unsigned I, CXExpr E);
+
+// ReturnStmt
+// PARTIAL: clang::ReturnStmt::setNRVOCandidate asserts hasNRVOCandidate() — the
+// trailing NRVO slot exists only when the statement was built with a candidate.
+// That predicate is private in clang 18, so no accessor can export the gate
+// (MARSHALLING.md section 13); the observable proxy is a non-null
+// clang_ReturnStmt_getNRVOCandidate, which the Julia wrapper asserts on.
+void clang_ReturnStmt_setNRVOCandidate(CXReturnStmt S, CXVarDecl Var);
+
 // --- Statement factories (clang/AST/Stmt.h) ---
 // Every Create/CreateEmpty below allocates in Ctx's ASTContext arena: the node is
 // owned by the context, has no dispose, and dies with the context.
@@ -909,6 +977,189 @@ CXSEHFinallyStmt clang_SEHFinallyStmt_Create(CXASTContext Ctx, CXSourceLocation_
 CXSEHTryStmt clang_SEHTryStmt_Create(CXASTContext Ctx, bool IsCXXTry,
                                      CXSourceLocation_ TryLoc, CXCompoundStmt TryBlock,
                                      CXStmt Handler);
+
+// CompoundStmt
+// `{ Stmts... }` with the given brace locations. Stmts is a (buffer, count) pair
+// rebuilt as an ArrayRef (MARSHALLING.md section 11) and copied into the node's
+// trailing storage, so the buffer need not outlive the call and NumStmts may be 0.
+// FPFeatures is the FPOptionsOverride opaque integer encoding that
+// clang_CompoundStmt_getStoredFPFeatures reads back — pass 0 for "no override",
+// the only value that leaves clang_CompoundStmt_hasStoredFPFeatures false.
+CXCompoundStmt clang_CompoundStmt_Create(CXASTContext Ctx, const CXStmt *Stmts,
+                                         unsigned NumStmts, uint64_t FPFeatures,
+                                         CXSourceLocation_ LB, CXSourceLocation_ RB);
+
+// AttributedStmt
+// PARTIAL: clang::AttributedStmt::Create requires a non-empty attribute list. Attrs
+// is a (buffer, count) pair rebuilt as an ArrayRef (MARSHALLING.md section 11) and
+// copied into the node's trailing storage, so the buffer need not outlive the call.
+CXAttributedStmt clang_AttributedStmt_Create(CXASTContext Ctx, CXSourceLocation_ Loc,
+                                             const CXAttr *Attrs, unsigned NumAttrs,
+                                             CXStmt SubStmt);
+
+// The NumAttrs attribute slots are null-filled by clang and the attribute location is
+// default-constructed invalid, but the SUB-STATEMENT slot is left uninitialized
+// (MARSHALLING.md section 13) and can never be filled: clang::AttributedStmt keeps
+// SubStmt private with only ASTStmtReader as a friend, so libclangex can export no setter
+// for it. Only clang_AttributedStmt_getAttrLoc / getNumAttrs / getAttrs are readable on a
+// shell built this way -- getSubStmt would read uninitialized memory.
+CXAttributedStmt clang_AttributedStmt_CreateEmpty(CXASTContext Ctx, unsigned NumAttrs);
+
+// GCCAsmStmt::AsmStringPiece (clang/AST/Stmt.h)
+// clang::GCCAsmStmt::AnalyzeAsmString decomposes the asm string into literal text and
+// operand references, filling a caller-owned SmallVector -- unlike every other AST range
+// there is no arena storage to borrow. The two-call protocol below (MARSHALLING.md
+// section 6) therefore hands back heap-boxed COPIES of the pieces, each of which the
+// caller releases with clang_GCCAsmStmtAsmStringPiece_dispose.
+
+// Number of pieces the asm string decomposes into. *DiagID receives clang's own
+// AnalyzeAsmString return value -- 0 when the string decomposes cleanly, nonzero when
+// clang rejects it -- and *DiagOffs the byte offset into the asm string the complaint
+// points at; either out-param may be null. A rejected string still reports however many
+// pieces clang built before it stopped.
+unsigned clang_GCCAsmStmt_getNumAsmStringPieces(CXGCCAsmStmt S, CXASTContext Ctx,
+                                                unsigned *DiagID, unsigned *DiagOffs);
+
+// Fills Buf with exactly clang_GCCAsmStmt_getNumAsmStringPieces(S, Ctx, 0, 0) pieces; the
+// analysis is deterministic, so the counting call and this one always agree.
+void clang_GCCAsmStmt_getAsmStringPieces(CXGCCAsmStmt S, CXASTContext Ctx,
+                                         CXGCCAsmStmtAsmStringPiece *Buf);
+
+void clang_GCCAsmStmtAsmStringPiece_dispose(CXGCCAsmStmtAsmStringPiece P);
+
+bool clang_GCCAsmStmtAsmStringPiece_isString(CXGCCAsmStmtAsmStringPiece P);
+
+bool clang_GCCAsmStmtAsmStringPiece_isOperand(CXGCCAsmStmtAsmStringPiece P);
+
+// Literal text of a string piece, or the operand-reference text of an operand piece.
+CXString clang_GCCAsmStmtAsmStringPiece_getString(CXGCCAsmStmtAsmStringPiece P);
+
+// PARTIAL: clang::GCCAsmStmt::AsmStringPiece::getOperandNo asserts isOperand(). The shim
+// is total by contract, so the Julia wrapper restates the precondition (Invariant 3).
+unsigned clang_GCCAsmStmtAsmStringPiece_getOperandNo(CXGCCAsmStmtAsmStringPiece P);
+
+// PARTIAL: getRange asserts isOperand() as well. AnalyzeAsmString only ever builds
+// character ranges, so only the endpoints cross (MARSHALLING.md section 7).
+CXSourceRange_ clang_GCCAsmStmtAsmStringPiece_getRange(CXGCCAsmStmtAsmStringPiece P);
+
+// Modifier letter of an operand reference (the `c` of `%c0`), or '\0' when it carries
+// none. PARTIAL: clang documents this as the modifier of an operand, so the Julia wrapper
+// restates isOperand() like the two accessors above.
+char clang_GCCAsmStmtAsmStringPiece_getModifier(CXGCCAsmStmtAsmStringPiece P);
+
+// CompoundStmt
+// Body statement I. clang::CompoundStmt::body_begin is a random-access `Stmt **`
+// into the node's own trailing storage, so this is the count+index half of
+// MARSHALLING.md section 6 against clang_CompoundStmt_size -- the O(1) counterpart
+// of the generic clang_Stmt_getNumChildren / getChildren fill, which walks the child
+// range and allocates a buffer to reach one element.
+// Precondition: I < clang_CompoundStmt_size(CS).
+CXStmt clang_CompoundStmt_getBodyStmt(CXCompoundStmt CS, unsigned I);
+
+// DeclStmt
+// Declaration I of the group. clang::DeclStmt::decl_begin is a DeclGroupRef::iterator,
+// i.e. a random-access `Decl **` (a single-declaration group indexes its inline slot at
+// 0), so this is the count+index half of MARSHALLING.md section 6 against
+// clang_DeclStmt_getNumDecls, next to the count+fill clang_DeclStmt_getDecls.
+// Precondition: I < clang_DeclStmt_getNumDecls(DS).
+CXDecl clang_DeclStmt_getDecl(CXDeclStmt DS, unsigned I);
+
+// Stmt
+// Static member function: no receiver. Bumps the per-class statistics counter that
+// clang_Stmt_PrintStats reports, completing the trio with clang_Stmt_EnableStatistics.
+// Total for every CXStmtClass value: clang indexes a table sized by the last stmt
+// constant, and initializes it on first use.
+void clang_Stmt_addStmtClass(CXStmtClass SC);
+
+// helper: clang::Stmt::ProcessODRHash fills an llvm::FoldingSetNodeID, which has no CX
+// handle -- MARSHALLING.md section 7 (expose the useful scalar, not the aggregate). This
+// runs the pointer-free ODR profile into a local ID plus a local clang::ODRHash and
+// returns the ID's hash, so two statements that are ODR-equivalent compare equal. It is a
+// hash: equal profiles always agree, distinct ones agree only on a collision. Unlike
+// clang_Stmt_getProfileHash it needs no ASTContext (pointer identity is never used), and
+// unlike the cached clang_FunctionDecl_getODRHash it recomputes on every call.
+unsigned clang_Stmt_getODRHash(CXStmt S);
+
+// CapturedStmt::Capture
+// A clang::CapturedStmt::Capture is a by-value class with no pointer form, so a
+// caller-built one is heap-boxed here and released with
+// clang_CapturedStmtCapture_dispose. Handles from clang_CapturedStmt_getCapture
+// instead borrow into the statement's trailing array and must NOT be disposed -- the
+// same handle type carries both, as clang_CompilerInvocation_create vs getInvocation
+// already does.
+// PARTIAL: the kind and the variable must agree -- VCK_ByRef and VCK_ByCopy name a
+// variable, VCK_This and VCK_VLAType take a null one. Every downstream accessor
+// (capturesVariable, getCapturedVar) assumes that pairing, so the Julia wrapper
+// restates it (Invariant 3).
+CXCapturedStmtCapture clang_CapturedStmtCapture_create(CXSourceLocation_ Loc,
+                                                       CXVariableCaptureKind Kind,
+                                                       CXVarDecl Var);
+
+void clang_CapturedStmtCapture_dispose(CXCapturedStmtCapture C);
+
+// CapturedStmt
+// Build the captured region Kind around statement S, outlined into CD with RD as the
+// record of captured variables. The Capture values behind the handle buffer and the
+// CaptureInits pointers are copied into the node's ASTContext-arena storage, so neither
+// buffer need outlive the call and the caller still owns (and must dispose) its Capture
+// boxes. One count governs both buffers: clang stores exactly one initializer per
+// capture. S, CD and RD must all be non-null -- clang's constructor asserts each. This
+// is the (handle-buffer, count) input form of MARSHALLING.md section 11.
+CXCapturedStmt clang_CapturedStmt_Create(CXASTContext Ctx, CXStmt S,
+                                         CXCapturedRegionKind Kind,
+                                         const CXCapturedStmtCapture *Captures,
+                                         const CXExpr *CaptureInits, unsigned NumCaptures,
+                                         CXCapturedDecl CD, CXRecordDecl RD);
+
+// The empty shell clang deserializes into. The NumCaptures capture slots and their
+// initializers are left UNINITIALIZED (MARSHALLING.md section 13); only the captured
+// statement slot is nulled by the shell constructor. Just clang_CapturedStmt_capture_size
+// and clang_CapturedStmt_getCapturedStmt may be read on a shell built this way --
+// clang_CapturedStmt_getCapture and getCaptureInit would read uninitialized memory.
+CXCapturedStmt clang_CapturedStmt_CreateDeserialized(CXASTContext Ctx,
+                                                     unsigned NumCaptures);
+
+// GCCAsmStmt
+// Build the GCC-style inline-assembly statement from its operand arrays.
+// clang::GCCAsmStmt has a public constructor and no Create, so this is the (ptr, count)
+// input form of MARSHALLING.md section 11 with the counts spelled out rather than
+// derived; the node is arena-allocated with a placement new and every array is copied
+// into that same arena, so no buffer need outlive the call and there is no dispose.
+//
+// Buffer lengths, which clang reads unchecked: Names and Exprs hold
+// NumOutputs + NumInputs + NumLabels entries -- the label operands sit past the
+// output/input ones, the layout clang_GCCAsmStmt_getLabelExpr indexes -- while
+// Constraints holds NumOutputs + NumInputs and Clobbers holds NumClobbers. A Names slot
+// may be NULL (that operand carries no symbolic [name]); AsmStr and every Constraints,
+// Clobbers and Exprs slot are dereferenced by the accessors and must not be. A label's
+// Exprs slot must be a clang::AddrLabelExpr -- getLabelExpr casts it unchecked.
+CXGCCAsmStmt clang_GCCAsmStmt_Create(CXASTContext Ctx, CXSourceLocation_ AsmLoc,
+                                     bool IsSimple, bool IsVolatile, unsigned NumOutputs,
+                                     unsigned NumInputs, const CXIdentifierInfo *Names,
+                                     const CXStringLiteral *Constraints,
+                                     const CXExpr *Exprs, CXStringLiteral AsmStr,
+                                     unsigned NumClobbers, const CXStringLiteral *Clobbers,
+                                     unsigned NumLabels, CXSourceLocation_ RParenLoc);
+
+// MSAsmStmt
+// Build the MS-style `__asm { ... }` block from its operand arrays -- also a public
+// constructor with no Create, and the only way to reach the MSAsmStmt accessors without
+// parsing MS inline asm. Its string operands are StringRefs rather than StringLiteral
+// nodes, so constraints and clobbers cross as NUL-terminated C strings (the parallel
+// component arrays of MARSHALLING.md section 11), while AsmToks is a buffer of CXToken_
+// HANDLES dereferenced here into the contiguous value array clang wants, the same
+// nested-value shape as clang_DesignatedInitExpr_ExpandDesignator. clang copies every
+// string, token and expression into the node's ASTContext arena, so neither the buffers
+// nor the caller's Token boxes need outlive the call.
+//
+// Buffer lengths, read unchecked: AsmToks holds NumAsmToks entries, Constraints and
+// Exprs hold NumOutputs + NumInputs each, Clobbers holds NumClobbers. Every slot is
+// dereferenced and must be non-NULL.
+CXMSAsmStmt clang_MSAsmStmt_Create(
+    CXASTContext Ctx, CXSourceLocation_ AsmLoc, CXSourceLocation_ LBraceLoc, bool IsSimple,
+    bool IsVolatile, const CXToken_ *AsmToks, unsigned NumAsmToks, unsigned NumOutputs,
+    unsigned NumInputs, const char **Constraints, const CXExpr *Exprs, const char *AsmStr,
+    const char **Clobbers, unsigned NumClobbers, CXSourceLocation_ EndLoc);
 
 LLVM_CLANG_C_EXTERN_C_END
 

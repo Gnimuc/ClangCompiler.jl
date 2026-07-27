@@ -1559,3 +1559,1050 @@ end
         dispose(I)
     end
 end
+
+@testset "DeclCXX-j | declared conversions + the DeclCXX factory tail" begin
+    I = create_interpreter(["-std=c++20"])
+    f = DeclFinder(I)
+    try
+        ctx = CC.get_ast_context(I)
+        CC.parse(I, """
+            struct CVJ { operator int() const; operator double() const; };
+            struct BJ { BJ(int); void mj(); };
+            struct DJ : BJ { using BJ::BJ; using BJ::mj; };
+            enum class EJColor { ej_red, ej_green };
+            using enum EJColor;
+            struct PJ1 { void pj() {} };
+            struct PJ2 { void pj(int) {} };
+            template <class... Ts> struct PackJ : Ts... { using Ts::pj...; };
+            PackJ<PJ1, PJ2> pj_inst;
+            int vj_a = 1;
+            int vj_b = 2;
+        """)
+        tu = CC.getTranslationUnitDecl(ctx)
+        dc = CC.castToDeclContext(tu)
+        alldecls = CC.decls(dc)
+
+        # Two real, distinct locations plus a name/identifier to feed the factories.
+        @test f(I, "vj_a")
+        vj_a = CC.VarDecl(get_decl(f).ptr)
+        @test f(I, "vj_b")
+        vj_b = CC.VarDecl(get_decl(f).ptr)
+        loc_a = CC.getLocation(vj_a)
+        loc_b = CC.getLocation(vj_b)
+        id_a = CC.getIdentifier(vj_a)
+        name_a = CC.getDeclName(vj_a)
+        @test loc_a.ptr != loc_b.ptr
+
+        # ---- CXXRecordDecl: the conversions declared directly in the class ----
+        @test f(I, "CVJ")
+        cvj = CC.CXXRecordDecl(get_decl(f).ptr)
+        @test CC.getNumConversions(cvj) == 2
+        @test CC.getConversion(cvj, 0) isa CC.NamedDecl
+        convs = CC.getConversions(cvj)
+        @test length(convs) == 2
+        @test all(c -> c.ptr != C_NULL, convs)
+        @test all(c -> startswith(CC.getNameAsString(c), "operator "), convs)
+        # The declared set is a subset of the visible one, which also carries the
+        # conversions inherited from bases.
+        @test CC.getNumConversions(cvj) <= CC.getNumVisibleConversionFunctions(cvj)
+        # A class with no conversion operator has an empty declared set.
+        @test f(I, "BJ")
+        bj = CC.CXXRecordDecl(get_decl(f).ptr)
+        @test CC.getNumConversions(bj) == 0
+        @test isempty(CC.getConversions(bj))
+
+        # ---- UsingShadowDecl / ConstructorUsingShadowDecl factories ----
+        @test f(I, "DJ")
+        dj = CC.CXXRecordDecl(get_decl(f).ptr)
+        djdecls = CC.decls(CC.castToDeclContext(dj))
+        cusd = first(d for d in djdecls if d isa CC.ConstructorUsingShadowDecl)
+        ctor_using = CC.getIntroducer(cusd)
+        @test ctor_using isa CC.UsingDecl
+        usd = first(d for d in djdecls if d isa CC.UsingShadowDecl)
+        method_using = CC.getIntroducer(usd)
+        @test method_using isa CC.BaseUsingDecl
+
+        usd2 = CC.UsingShadowDecl(ctx, dc, loc_a, name_a, method_using, vj_a)
+        @test usd2 isa CC.UsingShadowDecl
+        @test CC.getTargetDecl(usd2).ptr == vj_a.ptr
+        @test CC.getIntroducer(usd2).ptr == method_using.ptr
+        @test CC.UsingShadowDecl(ctx, UInt(1)) isa CC.UsingShadowDecl
+
+        cusd2 = CC.ConstructorUsingShadowDecl(ctx, dc, loc_b, ctor_using,
+                                              CC.getTargetDecl(cusd), false)
+        @test cusd2 isa CC.ConstructorUsingShadowDecl
+        @test CC.getIntroducer(cusd2).ptr == ctor_using.ptr
+        @test CC.constructsVirtualBase(cusd2) == false
+        @test CC.ConstructorUsingShadowDecl(ctx, UInt(1)) isa CC.ConstructorUsingShadowDecl
+
+        # ---- UsingDecl / UsingEnumDecl factories ----
+        @test CC.UsingDecl(ctx, UInt(1)) isa CC.UsingDecl
+
+        ued = first(d for d in alldecls if d isa CC.UsingEnumDecl)
+        ued2 = CC.UsingEnumDecl(ctx, dc, loc_a, loc_b, loc_a, CC.getEnumType(ued))
+        @test ued2 isa CC.UsingEnumDecl
+        @test CC.getUsingLoc(ued2).ptr == loc_a.ptr
+        @test CC.getEnumLoc(ued2).ptr == loc_b.ptr
+        @test CC.getNameAsString(CC.getEnumDecl(ued2)) == "EJColor"
+        @test CC.UsingEnumDecl(ctx, UInt(1)) isa CC.UsingEnumDecl
+
+        # ---- UsingPackDecl factory (the (buffer, count) array input) ----
+        pj_var = first(d for d in alldecls
+                       if d isa CC.VarDecl && CC.getNameAsString(d) == "pj_inst")
+        pack = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(pj_var)))
+        upd = first(d for d in CC.decls(CC.castToDeclContext(pack)) if d isa CC.UsingPackDecl)
+        exps = CC.getExpansions(upd)
+        @test length(exps) == 2
+        upd2 = CC.UsingPackDecl(ctx, dc, CC.getInstantiatedFromUsingDecl(upd), exps)
+        @test upd2 isa CC.UsingPackDecl
+        @test CC.getNumExpansions(upd2) == length(exps)
+        @test CC.getExpansion(upd2, 0).ptr == exps[1].ptr
+        @test CC.UsingPackDecl(ctx, UInt(1), UInt(0)) isa CC.UsingPackDecl
+
+        # ---- BindingDecl / MSPropertyDecl factories ----
+        bd = CC.BindingDecl(ctx, dc, loc_a, id_a)
+        @test bd isa CC.BindingDecl
+        @test CC.getNameAsString(bd) == "vj_a"
+        @test CC.BindingDecl(ctx, UInt(1)) isa CC.BindingDecl
+
+        msp = CC.MSPropertyDecl(ctx, dc, loc_a, name_a, CC.getType(vj_a),
+                                CC.getTypeSourceInfo(vj_a), loc_b, id_a, id_a)
+        @test msp isa CC.MSPropertyDecl
+        @test CC.hasGetter(msp)
+        @test CC.hasSetter(msp)
+        @test CC.getName(CC.getGetterId(msp)) == "vj_a"
+        @test CC.getName(CC.getSetterId(msp)) == "vj_a"
+        @test CC.MSPropertyDecl(ctx, UInt(1)) isa CC.MSPropertyDecl
+
+        # ---- The remaining CreateDeserialized placeholders ----
+        @test CC.CXXRecordDecl(ctx, UInt(1)) isa CC.CXXRecordDecl
+        @test CC.CXXDeductionGuideDecl(ctx, UInt(1)) isa CC.CXXDeductionGuideDecl
+        @test CC.CXXConstructorDecl(ctx, UInt(1)) isa CC.CXXConstructorDecl
+        @test CC.CXXConstructorDecl(ctx, UInt(1), 0) isa CC.CXXConstructorDecl
+        @test CC.CXXDestructorDecl(ctx, UInt(1)) isa CC.CXXDestructorDecl
+        @test CC.CXXConversionDecl(ctx, UInt(1)) isa CC.CXXConversionDecl
+    finally
+        dispose(f)
+        dispose(I)
+    end
+end
+
+@testset "DeclCXX-k | using-decl setters, qualifier range, CreateDeserialized tails" begin
+    LXK = CC.LibClangEx
+    I = create_interpreter(["-std=c++20"])
+    try
+        ctx = CC.get_ast_context(I)
+        CC.parse(I, """
+            namespace NSKOuter { namespace NSKInner { enum class KColor { k_red, k_green }; } }
+            using enum NSKOuter::NSKInner::KColor;
+            struct BaseK { void bk(); };
+            struct DerivedK : BaseK { using BaseK::bk; };
+            struct ExpK {
+                ExpK();
+                explicit ExpK(int);
+                explicit operator bool() const;
+            };
+            template <class T> struct GuideK { GuideK(T); };
+            GuideK(int) -> GuideK<int>;
+            template <class T> struct UUK : T { using T::uukv; };
+            struct BaseCK { int bck = 7; };
+            struct DerCK : BaseCK { int dck = 9; DerCK() {} };
+            int vk_a = 1;
+            int vk_b = 2;
+        """)
+        tu = CC.getTranslationUnitDecl(ctx)
+        dc = CC.castToDeclContext(tu)
+        alldecls = CC.decls(dc)
+
+        var_of(name) = first(d for d in alldecls
+                             if d isa CC.VarDecl && CC.getNameAsString(d) == name)
+        record_of(name) = first(d for d in alldecls
+                                if d isa CC.CXXRecordDecl && CC.getNameAsString(d) == name)
+        loc_a = CC.getLocation(var_of("vk_a"))
+        loc_b = CC.getLocation(var_of("vk_b"))
+        @test loc_a.ptr != loc_b.ptr
+
+        # ---- CXXRecordDecl::setInitMethod (definition-data flag, restored below) ----
+        derk = record_of("DerivedK")
+        @test CC.hasDefinition(derk)
+        init0 = CC.hasInitMethod(derk)
+        @test init0 isa Bool
+        CC.setInitMethod(derk, !init0)
+        @test CC.hasInitMethod(derk) == !init0
+        CC.setInitMethod(derk, init0)
+        @test CC.hasInitMethod(derk) == init0
+
+        # ---- UsingDecl / UsingShadowDecl setters ----
+        usingD = first(d for d in CC.decls(CC.castToDeclContext(derk)) if d isa CC.UsingDecl)
+        ul0 = CC.getUsingLoc(usingD)
+        CC.setUsingLoc(usingD, loc_a)
+        @test CC.getUsingLoc(usingD).ptr == loc_a.ptr
+        CC.setUsingLoc(usingD, ul0)
+        @test CC.getUsingLoc(usingD).ptr == ul0.ptr
+
+        tn0 = CC.hasTypename(usingD)
+        @test tn0 isa Bool
+        CC.setTypename(usingD, !tn0)
+        @test CC.hasTypename(usingD) == !tn0
+        CC.setTypename(usingD, tn0)
+        @test CC.hasTypename(usingD) == tn0
+
+        shadows = CC.getShadows(usingD)
+        @test !isempty(shadows)
+        shadow = shadows[1]
+        target = CC.getTargetDecl(shadow)
+        @test target.ptr != C_NULL
+        CC.setTargetDecl(shadow, target)
+        @test CC.getTargetDecl(shadow).ptr == target.ptr
+
+        # ---- UsingEnumDecl: location/type setters + the qualifier range ----
+        ued = first(d for d in alldecls if d isa CC.UsingEnumDecl)
+        uel0 = CC.getUsingLoc(ued)
+        enl0 = CC.getEnumLoc(ued)
+        CC.setUsingLoc(ued, loc_a)
+        @test CC.getUsingLoc(ued).ptr == loc_a.ptr
+        CC.setUsingLoc(ued, uel0)
+        @test CC.getUsingLoc(ued).ptr == uel0.ptr
+        CC.setEnumLoc(ued, loc_b)
+        @test CC.getEnumLoc(ued).ptr == loc_b.ptr
+        CC.setEnumLoc(ued, enl0)
+        @test CC.getEnumLoc(ued).ptr == enl0.ptr
+
+        tsi = CC.getEnumType(ued)
+        @test tsi.ptr != C_NULL
+        CC.setEnumType(ued, tsi)
+        @test CC.getEnumType(ued).ptr == tsi.ptr
+
+        qr = CC.getQualifierRange(ued)
+        @test qr isa CC.SourceRange
+        @test qr.begin_loc isa CC.SourceLocation
+        @test qr.end_loc isa CC.SourceLocation
+        # Both halves come out of the same NestedNameSpecifierLoc, so they agree on
+        # whether a nested-name-specifier was written at all.
+        @test (CC.getQualifier(ued).ptr == C_NULL) == (qr.begin_loc.ptr == C_NULL)
+
+        # ---- UnresolvedUsingValueDecl::setUsingLoc ----
+        uuk = first(d for d in alldecls
+                    if d isa CC.ClassTemplateDecl && CC.getNameAsString(d) == "UUK")
+        uuv = first(d for d in CC.decls(CC.castToDeclContext(CC.getTemplatedDecl(uuk)))
+                    if d isa CC.UnresolvedUsingValueDecl)
+        uuvl0 = CC.getUsingLoc(uuv)
+        CC.setUsingLoc(uuv, loc_a)
+        @test CC.getUsingLoc(uuv).ptr == loc_a.ptr
+        CC.setUsingLoc(uuv, uuvl0)
+        @test CC.getUsingLoc(uuv).ptr == uuvl0.ptr
+
+        # ---- explicit specifiers: write the declaration's own value back ----
+        expk = record_of("ExpK")
+        expk_members = CC.decls(CC.castToDeclContext(expk))
+        ector = first(d for d in expk_members
+                      if d isa CC.CXXConstructorDecl && CC.isExplicit(d))
+        es = CC.getExplicitSpecifier(ector)
+        try
+            # `explicit` without a condition: no trailing expression, so the setter's
+            # precondition holds.
+            @test CC.getExpr(es).ptr == C_NULL
+            CC.setExplicitSpecifier(ector, es)
+            @test CC.isExplicit(ector)
+        finally
+            dispose(es)
+        end
+
+        conv = first(d for d in expk_members if d isa CC.CXXConversionDecl)
+        esc = CC.getExplicitSpecifier(conv)
+        try
+            CC.setExplicitSpecifier(conv, esc)
+            @test CC.isExplicit(conv)
+        finally
+            dispose(esc)
+        end
+
+        # Only the clearing direction is safe on a constructor built without the
+        # inherited-constructor trailing object.
+        @test CC.isInheritingConstructor(ector) == false
+        CC.setInheritingConstructor(ector, false)
+        @test CC.isInheritingConstructor(ector) == false
+
+        # ---- CXXDeductionGuideDecl::setDeductionCandidateKind ----
+        guide = nothing
+        for d in alldecls
+            d isa CC.CXXDeductionGuideDecl && (guide = d)
+        end
+        @test guide !== nothing
+        if guide !== nothing
+            dk0 = CC.getDeductionCandidateKind(guide)
+            CC.setDeductionCandidateKind(guide, LXK.CXDeductionCandidate_Aggregate)
+            @test CC.getDeductionCandidateKind(guide) == LXK.CXDeductionCandidate_Aggregate
+            CC.setDeductionCandidateKind(guide, dk0)
+            @test CC.getDeductionCandidateKind(guide) == dk0
+        end
+
+        # ---- CXXCtorInitializer::setSourceOrder (one-way: implicit -> written) ----
+        derck = record_of("DerCK")
+        implicit_init = nothing
+        for c in CC.getCtors(derck), init in CC.getCtorInitializers(c)
+            if !CC.isWritten(init)
+                implicit_init = init
+                break
+            end
+        end
+        @test implicit_init !== nothing
+        if implicit_init !== nothing
+            @test CC.getSourceOrder(implicit_init) == -1
+            CC.setSourceOrder(implicit_init, 0)
+            @test CC.isWritten(implicit_init)
+            @test CC.getSourceOrder(implicit_init) == 0
+        end
+
+        # ---- The CreateDeserialized placeholders ----
+        @test CC.UsingDirectiveDecl(ctx, UInt(1)) isa CC.UsingDirectiveDecl
+        @test CC.NamespaceAliasDecl(ctx, UInt(1)) isa CC.NamespaceAliasDecl
+        @test CC.LifetimeExtendedTemporaryDecl(ctx, UInt(1)) isa CC.LifetimeExtendedTemporaryDecl
+        @test CC.UnresolvedUsingValueDecl(ctx, UInt(1)) isa CC.UnresolvedUsingValueDecl
+        @test CC.UnresolvedUsingTypenameDecl(ctx, UInt(1)) isa CC.UnresolvedUsingTypenameDecl
+        @test CC.DecompositionDecl(ctx, UInt(1), UInt(0)) isa CC.DecompositionDecl
+    finally
+        dispose(I)
+    end
+end
+
+@testset "DeclCXX-l: MSGuidDecl parts, record setters, CXXMethodDecl-family factories" begin
+    # The -fms-extensions source is parsed first, before any synthetic node exists: a
+    # rejected parse renders diagnostics over the AST, and doing that after hand-built
+    # nodes exist has crashed DiagnosticRenderer before.
+    Ims = create_interpreter(["-fms-extensions"])
+    fms = DeclFinder(Ims)
+    CC.parse(Ims, """
+    typedef struct _GUID {
+      unsigned long Data1;
+      unsigned short Data2;
+      unsigned short Data3;
+      unsigned char Data4[8];
+    } GUID;
+    struct __declspec(uuid("12345678-9abc-def0-0123-456789abcdef")) LGuid {};
+    const GUID *lg_uuid() { return &__uuidof(LGuid); }
+    """)
+    @test fms(Ims, "lg_uuid")
+    lgbody = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms).ptr)))
+    ue = _find_node(CC.CXXUuidofExpr, lgbody)
+    @test ue isa CC.CXXUuidofExpr
+    if ue isa CC.CXXUuidofExpr
+        gd = CC.getGuidDecl(ue)
+        @test gd isa CC.MSGuidDecl
+        @test gd.ptr != C_NULL
+        @test CC.getPart1(gd) == 0x12345678
+        @test CC.getPart2(gd) == 0x9abc
+        @test CC.getPart3(gd) == 0xdef0
+        # A memcpy of the last eight UUID bytes, so the integer is byte-order dependent:
+        # only its shape and its non-emptiness are host-independent.
+        @test CC.getPart4And5AsUint64(gd) isa Integer
+        @test CC.getPart4And5AsUint64(gd) != 0
+        apv = CC.getAsAPValue(gd)
+        @test apv isa CC.APValue
+        @test apv.ptr != C_NULL
+    end
+    dispose(fms)
+    dispose(Ims)
+
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
+    f = DeclFinder(I)
+
+    CC.parse(I, "int la = 5;")
+    @test f(I, "la")
+    la = CC.VarDecl(get_decl(f).ptr)
+    loc = CC.getLocation(la)
+    id = CC.getIdentifier(la)
+    ity = CC.getType(la)
+    itsi = CC.getTypeSourceInfo(la)
+
+    # ---- CXXRecordDecl::setDescribedClassTemplate: round-trip on a synthetic record ----
+    rd = CC.CXXRecordDecl(ctx, LX.CXTagTypeKind_Struct, dc, loc, loc, id)
+    CC.setDescribedClassTemplate(rd, CC.ClassTemplateDecl(C_NULL))
+    @test CC.getDescribedClassTemplate(rd).ptr == C_NULL
+
+    # ---- LifetimeExtendedTemporaryDecl::Create ----
+    @test CC.hasInit(la)
+    letd = CC.LifetimeExtendedTemporaryDecl(CC.getInit(la), la, 7)
+    @test letd isa CC.LifetimeExtendedTemporaryDecl
+    @test CC.getExtendingDecl(letd).ptr == la.ptr
+    @test CC.getManglingNumber(letd) == 7
+    @test CC.hasTemporaryExpr(letd) == true
+    @test CC.getTemporaryExpr(letd).ptr == CC.getInit(la).ptr
+    @test_throws AssertionError CC.LifetimeExtendedTemporaryDecl(CC.Expr_(C_NULL), la, 1)
+
+    # ---- DecompositionDecl::Create: (buffer, count) of BindingDecl handles ----
+    b0 = CC.BindingDecl(ctx, dc, loc, id)
+    b1 = CC.BindingDecl(ctx, dc, loc, id)
+    dcmp = CC.DecompositionDecl(ctx, dc, loc, loc, ity, itsi, LX.CXStorageClass_SC_None,
+                                [b0, b1])
+    @test dcmp isa CC.DecompositionDecl
+    @test CC.getNumBindings(dcmp) == 2
+    @test CC.getBinding(dcmp, 0).ptr == b0.ptr
+    @test CC.getBinding(dcmp, 1).ptr == b1.ptr
+
+    # ---- ctor / dtor / conversion / deduction-guide factories ----
+    CC.parse(I, "struct LKA { LKA(); ~LKA(); operator int() const; };")
+    @test f(I, "LKA")
+    lka = CC.CXXRecordDecl(get_decl(f).ptr)
+
+    c0 = first(CC.getCtors(lka))
+    ces = CC.ExplicitSpecifier(c0)
+    cni = CC.getNameInfo(c0)
+    @test CC.getNameKind(CC.getName(cni)) == LX.CXDeclarationName_CXXConstructorName
+    cd = CC.CXXConstructorDecl(ctx, lka, CC.getBeginLoc(c0), cni, CC.getType(c0),
+                               CC.getTypeSourceInfo(c0), ces, false, false, false,
+                               LX.CXConstexprSpecKind_Unspecified)
+    @test cd isa CC.CXXConstructorDecl
+    @test cd.ptr != C_NULL
+    @test CC.isInheritingConstructor(cd) == false
+
+    dtor = CC.getDestructor(lka)
+    @test dtor.ptr != C_NULL
+    dni = CC.getNameInfo(dtor)
+    dd = CC.CXXDestructorDecl(ctx, lka, CC.getBeginLoc(dtor), dni, CC.getType(dtor),
+                              CC.getTypeSourceInfo(dtor), false, false, false,
+                              LX.CXConstexprSpecKind_Unspecified)
+    @test dd isa CC.CXXDestructorDecl
+    @test dd.ptr != C_NULL
+
+    # Invariant 3: clang asserts the declaration-name kind of each factory.
+    @test_throws AssertionError CC.CXXConstructorDecl(ctx, lka, CC.getBeginLoc(c0), dni,
+                                                      CC.getType(c0),
+                                                      CC.getTypeSourceInfo(c0), ces, false,
+                                                      false, false,
+                                                      LX.CXConstexprSpecKind_Unspecified)
+    @test_throws AssertionError CC.CXXDestructorDecl(ctx, lka, CC.getBeginLoc(c0), cni,
+                                                     CC.getType(c0),
+                                                     CC.getTypeSourceInfo(c0), false, false,
+                                                     false,
+                                                     LX.CXConstexprSpecKind_Unspecified)
+
+    cvs = [m for m in CC.getMethods(lka)
+           if CC.getNameKind(CC.getName(CC.getNameInfo(m))) ==
+              LX.CXDeclarationName_CXXConversionFunctionName]
+    @test !isempty(cvs)
+    # getMethods hands back CXXMethodDecl carriers; the conversion-only accessors need
+    # the precise class.
+    cv0 = CC.CXXConversionDecl(first(cvs).ptr)
+    ves = CC.ExplicitSpecifier(cv0)
+    cvd = CC.CXXConversionDecl(ctx, lka, CC.getBeginLoc(cv0), CC.getNameInfo(cv0),
+                               CC.getType(cv0), CC.getTypeSourceInfo(cv0), false, false,
+                               ves, LX.CXConstexprSpecKind_Unspecified,
+                               CC.getLocation(cv0))
+    @test cvd isa CC.CXXConversionDecl
+    @test cvd.ptr != C_NULL
+    @test CC.getConversionType(cvd).ptr == CC.getConversionType(cv0).ptr
+    @test_throws AssertionError CC.CXXConversionDecl(ctx, lka, CC.getBeginLoc(cv0), cni,
+                                                     CC.getType(cv0),
+                                                     CC.getTypeSourceInfo(cv0), false,
+                                                     false, ves,
+                                                     LX.CXConstexprSpecKind_Unspecified,
+                                                     CC.getLocation(cv0))
+
+    dgd = CC.CXXDeductionGuideDecl(ctx, dc, CC.getBeginLoc(c0), ces, cni, CC.getType(c0),
+                                   CC.getTypeSourceInfo(c0), CC.getLocation(c0), c0,
+                                   LX.CXDeductionCandidate_Copy)
+    @test dgd isa CC.CXXDeductionGuideDecl
+    @test dgd.ptr != C_NULL
+    @test CC.getDeductionCandidateKind(dgd) == LX.CXDeductionCandidate_Copy
+    @test CC.getCorrespondingConstructor(dgd).ptr == c0.ptr
+
+    dispose(ces)
+    dispose(ves)
+
+    # ---- CXXRecordDecl::setIsParsingBaseSpecifiers: needs a definition (Invariant 3) ----
+    CC.parse(I, "struct LKFwd;")
+    @test f(I, "LKFwd")
+    fwd = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.hasDefinition(fwd) == false
+    @test_throws AssertionError CC.setIsParsingBaseSpecifiers(fwd)
+    # Applied last: the flag only ever goes false -> true, so it is set on a class no later
+    # parse in this interpreter touches.
+    CC.setIsParsingBaseSpecifiers(lka)
+    @test CC.isParsingBaseSpecifiers(lka) == true
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "DeclCXX definition-data, lambda-numbering and shadow mutators" begin
+    LCE = CC.LibClangEx
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    tu = CC.getTranslationUnitDecl(ctx)
+    dc = CC.castToDeclContext(tu)
+    f = DeclFinder(I)
+
+    # ---- CXXRecordDecl: flags that live in the definition data ----
+    CC.parse(I, "struct MDM0 { int x; };")
+    @test f(I, "MDM0")
+    mdm0 = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.hasDefinition(mdm0)
+    CC.markEmpty(mdm0)
+    @test CC.isEmpty(mdm0)
+    CC.markAbstract(mdm0)
+    @test CC.isAbstract(mdm0)
+    CC.setHasTrivialSpecialMemberForCall(mdm0)
+    @test CC.hasTrivialCopyConstructorForCall(mdm0)
+    @test CC.hasTrivialMoveConstructorForCall(mdm0)
+    @test CC.hasTrivialDestructorForCall(mdm0)
+
+    # a forward declaration carries no definition data: the setters reject it (Invariant 3)
+    CC.parse(I, "struct MDMFwd;")
+    @test f(I, "MDMFwd")
+    mdmfwd = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.hasDefinition(mdmfwd) == false
+    @test_throws AssertionError CC.markEmpty(mdmfwd)
+    @test_throws AssertionError CC.markAbstract(mdmfwd)
+    @test_throws AssertionError CC.setHasTrivialSpecialMemberForCall(mdmfwd)
+
+    # ---- CXXRecordDecl: the implicit-special-member deletion flags ----
+    # user-declaring a move operation is what makes clang need overload resolution for both
+    # copy operations; the deleted-ness of a *defaulted* member is only readable once Sema
+    # has declared it, so the round-trip stops at the setter here.
+    CC.parse(I, "struct MDM1 { MDM1(MDM1&&); MDM1& operator=(MDM1&&); };")
+    @test f(I, "MDM1")
+    mdm1 = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.needsOverloadResolutionForCopyConstructor(mdm1)
+    @test CC.needsOverloadResolutionForCopyAssignment(mdm1)
+    @test CC.setImplicitCopyConstructorIsDeleted(mdm1) === nothing
+    @test CC.setImplicitCopyAssignmentIsDeleted(mdm1) === nothing
+
+    # a member whose own special members are user-provided is what sets the class's
+    # NeedOverloadResolutionForMove*/Destructor bits
+    CC.parse(I,
+             "struct MDM2 { MDM2(MDM2&&); MDM2& operator=(MDM2&&); ~MDM2(); }; struct MDM3 { MDM2 m; };")
+    @test f(I, "MDM3")
+    mdm3 = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.needsOverloadResolutionForMoveConstructor(mdm3) isa Bool
+    @test CC.needsOverloadResolutionForMoveAssignment(mdm3) isa Bool
+    @test CC.needsOverloadResolutionForDestructor(mdm3) isa Bool
+    if CC.needsOverloadResolutionForMoveConstructor(mdm3)
+        @test CC.setImplicitMoveConstructorIsDeleted(mdm3) === nothing
+    end
+    if CC.needsOverloadResolutionForMoveAssignment(mdm3)
+        @test CC.setImplicitMoveAssignmentIsDeleted(mdm3) === nothing
+    end
+    if CC.needsOverloadResolutionForDestructor(mdm3)
+        @test CC.setImplicitDestructorIsDeleted(mdm3) === nothing
+    end
+
+    # ---- CXXRecordDecl: removeConversion ----
+    CC.parse(I, "struct MDM4 { operator int(); };")
+    @test f(I, "MDM4")
+    mdm4 = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.getNumConversions(mdm4) == 1
+    conv = CC.getConversion(mdm4, 0)
+    CC.removeConversion(mdm4, conv)
+    @test CC.getNumConversions(mdm4) == 0
+    # the set no longer holds it, and clang would llvm_unreachable() on a second removal
+    @test_throws AssertionError CC.removeConversion(mdm4, conv)
+
+    # ---- CXXRecordDecl: the two CXXMethodDecl-taking definition-data updates ----
+    CC.parse(I, "struct MDM5 { MDM5() = default; MDM5(const MDM5&) = default; };")
+    @test f(I, "MDM5")
+    mdm5 = CC.CXXRecordDecl(get_decl(f).ptr)
+    ctors = CC.getCtors(mdm5)
+    @test !isempty(ctors)
+    for c in ctors
+        @test CC.setTrivialForCallFlags(mdm5, c) === nothing
+    end
+    @test CC.hasTrivialCopyConstructorForCall(mdm5) isa Bool
+    for c in ctors
+        if !CC.isImplicit(c) && !CC.isUserProvided(c)
+            @test CC.finishedDefaultedOrDeletedMember(mdm5, c) === nothing
+        end
+    end
+
+    # ---- CXXRecordDecl: lambda numbering and the generic-lambda flag ----
+    CC.parse(I, "int mdmv = 1;")
+    @test f(I, "mdmv")
+    mdmv = CC.VarDecl(get_decl(f).ptr)
+    loc = CC.getLocation(mdmv)
+    tsi = CC.getTypeSourceInfo(mdmv)
+    lam = CC.CXXRecordDecl(ctx, dc, tsi, loc, LCE.CXLambdaDependencyKind_Unknown, false,
+                           LCE.CXLambdaCaptureDefault_LCD_None)
+    @test CC.isLambda(lam)
+    CC.setLambdaNumbering(lam, mdmv, 3, 7, 5, true)
+    @test CC.getLambdaIndexInContext(lam) == 3
+    @test CC.getLambdaManglingNumber(lam) == 7
+    @test CC.getLambdaContextDecl(lam).ptr == mdmv.ptr
+    @test CC.hasKnownLambdaInternalLinkage(lam)
+    @test CC.getDeviceLambdaManglingNumber(lam) isa Integer
+    CC.setLambdaIsGeneric(lam, true)
+    @test CC.isGenericLambda(lam)
+    CC.setLambdaIsGeneric(lam, false)
+    @test CC.isGenericLambda(lam) == false
+    # both lambda setters reject a class that is not a closure type
+    @test_throws AssertionError CC.setLambdaIsGeneric(mdm0, true)
+    @test_throws AssertionError CC.setLambdaNumbering(mdm0, mdmv, 0, 0, 0, false)
+
+    # ---- CXXDestructorDecl: setOperatorDelete ----
+    CC.parse(I, "struct MDM6 { ~MDM6(); void operator delete(void*); };")
+    @test f(I, "MDM6")
+    mdm6 = CC.CXXRecordDecl(get_decl(f).ptr)
+    dtor = CC.getDestructor(mdm6)
+    @test dtor.ptr != C_NULL
+    opdel = nothing
+    for m in CC.getMethods(mdm6)
+        CC.isStatic(m) && (opdel = m)          # a class operator delete is implicitly static
+    end
+    @test opdel !== nothing
+    if opdel !== nothing
+        before = CC.getOperatorDelete(dtor)
+        CC.setOperatorDelete(dtor, opdel)
+        # clang keeps a previously recorded operator delete, so accept either outcome
+        @test CC.getOperatorDelete(dtor).ptr ==
+              (before.ptr == C_NULL ? opdel.ptr : before.ptr)
+        @test CC.getOperatorDeleteThisArg(dtor) isa CC.Expr_
+    end
+
+    # ---- BaseUsingDecl: the shadow list round-trips through remove/add ----
+    CC.parse(I, "namespace mdmns { void mdmfn(); } using mdmns::mdmfn;")
+    # Name lookup for "mdmfn" resolves THROUGH the shadow to the Function, so the
+    # UsingDecl itself never appears in the result -- walk the TU for it instead.
+    tu_dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
+    ud = CC.UsingDecl(first(d for d in CC.decls(tu_dc)
+                            if CC.getDeclKindName(d) == "Using").ptr)
+    sh = CC.getShadows(ud)
+    @test length(sh) == 1
+    CC.removeShadowDecl(ud, sh[1])
+    @test CC.shadow_size(ud) == 0
+    @test_throws AssertionError CC.removeShadowDecl(ud, sh[1])
+    CC.addShadowDecl(ud, sh[1])
+    @test CC.shadow_size(ud) == 1
+    @test CC.getShadows(ud)[1].ptr == sh[1].ptr
+    @test_throws AssertionError CC.addShadowDecl(ud, sh[1])
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "DeclCXX: friends, MS inheritance model, member instantiation, using_if_exists" begin
+    LCE = CC.LibClangEx
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    tu = CC.getTranslationUnitDecl(ctx)
+    dc = CC.castToDeclContext(tu)
+    f = DeclFinder(I)
+
+    # ---- CXXRecordDecl: the friend declarations of a class ----
+    CC.parse(I, "struct UIFA; struct UIFB { friend void uiffn(); friend struct UIFA; };")
+    @test f(I, "UIFB")
+    uifb = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.hasFriends(uifb)
+    @test CC.getNumFriends(uifb) == 2
+    fr = CC.getFriends(uifb)
+    @test length(fr) == 2
+    @test all(d -> d isa CC.Decl, fr)
+    @test all(d -> CC.getDeclKindName(d) == "Friend", fr)
+
+    CC.parse(I, "struct UIFC { int uifcx; };")
+    @test f(I, "UIFC")
+    uifc = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.hasFriends(uifc) == false
+    @test CC.getNumFriends(uifc) == 0
+    @test isempty(CC.getFriends(uifc))
+
+    # ---- CXXRecordDecl: the Microsoft C++ ABI member-pointer model ----
+    # The model is a property of the class shape, but which of the four a given class
+    # lands on is clang's business, so only membership is asserted.
+    models = (LCE.CXMSInheritanceModel_Single, LCE.CXMSInheritanceModel_Multiple,
+              LCE.CXMSInheritanceModel_Virtual, LCE.CXMSInheritanceModel_Unspecified)
+    @test CC.calculateInheritanceModel(uifc) in models
+    CC.parse(I, "struct UIFD { virtual void uifdm() {} }; struct UIFE : virtual UIFD {};")
+    @test f(I, "UIFE")
+    uife = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.calculateInheritanceModel(uife) in models
+
+    # nullFieldOffsetIsZero is Microsoft-ABI only: the inheritance model it reads lives
+    # behind MSInheritanceAttr, which no other ABI populates, so it segfaults rather than
+    # answering on an Itanium target. CI runs no Microsoft-ABI host, so what is asserted
+    # here is that the wrapper's ABI guard rejects the call.
+    @test CC.getCXXABIKind(ctx) != CC.CXTargetCXXABI_Microsoft
+    @test_throws AssertionError CC.nullFieldOffsetIsZero(uifc)
+    @test_throws AssertionError CC.nullFieldOffsetIsZero(uife)
+
+    # ---- every definition-data reader rejects a class with no definition ----
+    CC.parse(I, "int uifv = 1;")
+    @test f(I, "uifv")
+    uifv = CC.VarDecl(get_decl(f).ptr)
+    loc = CC.getLocation(uifv)
+    id = CC.getIdentifier(uifv)
+    tsi = CC.getTypeSourceInfo(uifv)
+    fresh = CC.CXXRecordDecl(ctx, LCE.CXTagTypeKind_Struct, dc, loc, loc, id)
+    @test CC.hasDefinition(fresh) == false
+    @test_throws AssertionError CC.getNumFriends(fresh)
+    @test_throws AssertionError CC.getFriends(fresh)
+    @test_throws AssertionError CC.calculateInheritanceModel(fresh)
+    @test_throws AssertionError CC.nullFieldOffsetIsZero(fresh)
+
+    # ---- CXXRecordDecl: setLambdaTypeInfo round-trips on a closure type ----
+    CC.parse(I, "double uifw = 2;")
+    @test f(I, "uifw")
+    uifw = CC.VarDecl(get_decl(f).ptr)
+    tsi2 = CC.getTypeSourceInfo(uifw)
+    @test tsi2.ptr != tsi.ptr
+    lam = CC.CXXRecordDecl(ctx, dc, tsi, loc, LCE.CXLambdaDependencyKind_Unknown, false,
+                           LCE.CXLambdaCaptureDefault_LCD_None)
+    @test CC.isLambda(lam)
+    CC.setLambdaTypeInfo(lam, tsi2)
+    @test CC.getLambdaTypeInfo(lam).ptr == tsi2.ptr
+    @test_throws AssertionError CC.setLambdaTypeInfo(uifc, tsi2)
+
+    # ---- CXXRecordDecl: the member-instantiation slot and its specialization kind ----
+    @test CC.getMemberSpecializationInfo(fresh).ptr == C_NULL
+    @test CC.getInstantiatedFromMemberClass(fresh).ptr == C_NULL
+    # neither a specialization nor an instantiated member yet
+    @test_throws AssertionError CC.setTemplateSpecializationKind(fresh,
+                                    LCE.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+    CC.setInstantiationOfMemberClass(fresh, uifc,
+                                     LCE.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+    @test CC.getInstantiatedFromMemberClass(fresh).ptr == uifc.ptr
+    @test CC.getMemberSpecializationInfo(fresh).ptr != C_NULL
+    @test CC.getTemplateSpecializationKind(fresh) ==
+          LCE.CXTemplateSpecializationKind_TSK_ImplicitInstantiation
+    # the slot is one-way: a second call is rejected
+    @test_throws AssertionError CC.setInstantiationOfMemberClass(fresh, uifc,
+                                    LCE.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+    # the kind is now settable through the info object clang just built
+    CC.setTemplateSpecializationKind(fresh,
+                                     LCE.CXTemplateSpecializationKind_TSK_ExplicitInstantiationDefinition)
+    @test CC.getTemplateSpecializationKind(fresh) ==
+          LCE.CXTemplateSpecializationKind_TSK_ExplicitInstantiationDefinition
+    @test_throws AssertionError CC.setTemplateSpecializationKind(fresh,
+                                    LCE.CXTemplateSpecializationKind_TSK_Undeclared)
+    other = CC.CXXRecordDecl(ctx, LCE.CXTagTypeKind_Struct, dc, loc, loc, id)
+    @test_throws AssertionError CC.setInstantiationOfMemberClass(other, uifc,
+                                    LCE.CXTemplateSpecializationKind_TSK_Undeclared)
+
+    # ---- UnresolvedUsingIfExistsDecl: the whole class ----
+    name = CC.getDeclName(uifv)
+    uue = CC.UnresolvedUsingIfExistsDecl(ctx, dc, loc, name)
+    @test uue isa CC.UnresolvedUsingIfExistsDecl
+    @test uue.ptr != C_NULL
+    @test CC.getDeclKindName(uue) == "UnresolvedUsingIfExists"
+    @test CC.getName(uue) == "uifv"
+    @test CC.getDeclName(uue).ptr == name.ptr
+    @test CC.UnresolvedUsingIfExistsDecl(ctx, UInt(1)) isa CC.UnresolvedUsingIfExistsDecl
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "CXXRecordDecl: closure capture fields, imprecise base lookup, Microsoft ABI queries" begin
+    LCE = CC.LibClangEx
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    tu = CC.getTranslationUnitDecl(ctx)
+    dc = CC.castToDeclContext(tu)
+    f = DeclFinder(I)
+
+    CC.parse(I, """
+    struct CapHost {
+        int capm = 0;
+        auto capmk() { int capa = 1; return [this, capa] { return capm + capa; }; }
+    };
+    CapHost caphostobj;
+    auto CapVar = caphostobj.capmk();
+    auto CapNone = [] { return 7; };
+    struct LdnBase { int ldnprobe; };
+    struct LdnDerived : LdnBase { };
+    int ldnprobe = 0;
+    int ldnstranger = 0;
+    """)
+
+    # ---- CXXRecordDecl: which closure field holds which capture ----
+    # A lambda written at namespace scope can capture nothing (variables there have static
+    # storage duration), so the capturing closure is reached through a member function's
+    # deduced return type.
+    @test f(I, "CapVar")
+    capvar = CC.VarDecl(get_decl(f).ptr)
+    lam = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(capvar)))
+    @test lam isa CC.CXXRecordDecl
+    if lam.ptr != C_NULL && CC.isLambda(lam)
+        @test CC.capture_size(lam) == 2                # `this` and `capa`
+        @test CC.getNumCaptureFields(lam) == 1         # `this` is reported on its own
+        vars, fields, this_field = CC.getCaptureFields(lam)
+        @test length(vars) == 1
+        @test length(fields) == 1
+        @test vars[1] isa CC.ValueDecl
+        @test CC.getName(vars[1]) == "capa"
+        @test fields[1] isa CC.FieldDecl
+        @test fields[1].ptr != C_NULL
+        @test this_field isa CC.FieldDecl
+        @test this_field.ptr != C_NULL
+    end
+
+    @test f(I, "CapNone")
+    capnone = CC.VarDecl(get_decl(f).ptr)
+    nolam = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(capnone)))
+    if nolam.ptr != C_NULL && CC.isLambda(nolam)
+        @test CC.getNumCaptureFields(nolam) == 0
+        nvars, nfields, nthis = CC.getCaptureFields(nolam)
+        @test isempty(nvars)
+        @test isempty(nfields)
+        @test nthis.ptr == C_NULL
+    end
+
+    # a class that is not a closure type has no lambda definition data to reach
+    @test f(I, "CapHost")
+    caphost = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.isLambda(caphost) == false
+    @test_throws AssertionError CC.getNumCaptureFields(caphost)
+    @test_throws AssertionError CC.getCaptureFields(caphost)
+
+    # ---- CXXRecordDecl: the imprecise lookup, in the class and through a base ----
+    # DeclarationNames are uniqued per ASTContext, so the global `ldnprobe`'s name is the
+    # member's name too.
+    @test f(I, "ldnprobe")
+    probe = CC.VarDecl(get_decl(f).ptr)
+    nprobe = CC.getDeclName(probe)
+    @test f(I, "ldnstranger")
+    nstranger = CC.getDeclName(CC.VarDecl(get_decl(f).ptr))
+    @test f(I, "LdnBase")
+    ldnbase = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test f(I, "LdnDerived")
+    ldnderived = CC.CXXRecordDecl(get_decl(f).ptr)
+
+    @test CC.getNumDependentNameLookupResults(ldnbase, nprobe) == 1
+    direct = CC.lookupDependentName(ldnbase, nprobe)
+    @test length(direct) == 1
+    @test direct[1] isa CC.NamedDecl
+    @test CC.getName(direct[1]) == "ldnprobe"
+    # the derived class declares no member of that name, so the base classes are searched
+    @test CC.getNumDependentNameLookupResults(ldnderived, nprobe) == 1
+    inherited = CC.lookupDependentName(ldnderived, nprobe)
+    @test length(inherited) == 1
+    @test CC.getName(inherited[1]) == "ldnprobe"
+    @test CC.getNumDependentNameLookupResults(ldnderived, nstranger) == 0
+    @test isempty(CC.lookupDependentName(ldnderived, nstranger))
+
+    # both halves reach the definition data the base walk reads
+    loc = CC.getLocation(probe)
+    fresh = CC.CXXRecordDecl(ctx, LCE.CXTagTypeKind_Struct, dc, loc, loc, CC.getIdentifier(probe))
+    @test CC.hasDefinition(fresh) == false
+    @test_throws AssertionError CC.getNumDependentNameLookupResults(fresh, nprobe)
+    @test_throws AssertionError CC.lookupDependentName(fresh, nprobe)
+
+    # ---- CXXRecordDecl: the two Microsoft C++ ABI record queries ----
+    # getMSInheritanceModel dereferences an MSInheritanceAttr only the Microsoft C++ ABI
+    # attaches, and a vtordisp is an MS-ABI construct. CI runs no Microsoft-ABI host, so
+    # what is asserted here is that the ABI guard rejects the call.
+    @test CC.getCXXABIKind(ctx) != CC.CXTargetCXXABI_Microsoft
+    @test CC.hasAttrOfKind(ldnbase, LCE.CXAttrKind_MSInheritance) == false
+    @test_throws AssertionError CC.getMSInheritanceModel(ldnbase)
+    @test_throws AssertionError CC.getMSVtorDispMode(ldnbase)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "DeclCXX | qualifier locations, qualifier-taking factories, final overriders" begin
+    I = create_interpreter(["-std=c++20"])
+    try
+        ctx = CC.get_ast_context(I)
+        CC.parse(I, """
+            namespace NSQOuter { namespace NSQInner {
+                int nsq_v;
+                enum class NSQColor { nsq_red, nsq_green };
+            } }
+            namespace NSQTop { int nsq_t; }
+            using namespace NSQOuter::NSQInner;
+            using namespace NSQTop;
+            namespace nsq_alias = NSQOuter::NSQInner;
+            using NSQOuter::NSQInner::nsq_v;
+            using enum NSQOuter::NSQInner::NSQColor;
+            template <class T> struct UUQ : T {
+                using T::uuqv;
+                using typename T::uuqt;
+            };
+            struct FOBase { virtual void fo_f(); virtual void fo_g(); };
+            struct FOMid : FOBase { void fo_f() override; };
+            struct FOMost : FOMid { void fo_g() override; };
+            struct FOPlain { int fp; };
+        """)
+        tu = CC.getTranslationUnitDecl(ctx)
+        dc = CC.castToDeclContext(tu)
+        alldecls = CC.decls(dc)
+        rec(name) = first(d for d in alldecls
+                          if d isa CC.CXXRecordDecl && CC.getNameAsString(d) == name)
+
+        # clang defines `getQualifier` as this box's specifier, so the two must always agree
+        # and `hasQualifier` must track whether the specifier is there at all.
+        function check_qualifier_loc(d)
+            q = CC.getQualifierLoc(d)
+            try
+                @test q isa CC.NestedNameSpecifierLoc
+                @test q.ptr != C_NULL
+                @test CC.getNestedNameSpecifier(q).ptr == CC.getQualifier(d).ptr
+                @test CC.hasQualifier(q) == (CC.getQualifier(d).ptr != C_NULL)
+            finally
+                dispose(q)
+            end
+        end
+
+        # ---- UsingDirectiveDecl: qualified and unqualified ----
+        udirs = [d for d in alldecls if d isa CC.UsingDirectiveDecl]
+        qual_udir = first(d for d in udirs if CC.getQualifier(d).ptr != C_NULL)
+        plain_udir = first(d for d in udirs if CC.getQualifier(d).ptr == C_NULL)
+        check_qualifier_loc(qual_udir)
+        check_qualifier_loc(plain_udir)
+        @test CC.getCommonAncestor(qual_udir) isa CC.DeclContext
+
+        qual_q = CC.getQualifierLoc(qual_udir)
+        plain_q = CC.getQualifierLoc(plain_udir)
+        try
+            @test CC.hasQualifier(qual_q)
+            # `using namespace NSQTop;` writes no nested-name-specifier: an empty box.
+            @test !CC.hasQualifier(plain_q)
+            @test CC.getSourceRange(plain_q).begin_loc.ptr == C_NULL
+            # `using namespace NSQOuter::NSQInner;` writes `NSQOuter::` as the qualifier —
+            # NSQInner is the namespace being nominated, not part of the qualifier — so the
+            # one component present has an empty prefix.
+            prefix = CC.getPrefix(qual_q)
+            try
+                @test prefix isa CC.NestedNameSpecifierLoc
+                @test !CC.hasQualifier(prefix)
+            finally
+                dispose(prefix)
+            end
+
+            # ---- UsingDirectiveDecl::Create, fed the qualifier it just handed back ----
+            udd2 = CC.UsingDirectiveDecl(ctx, dc, CC.getUsingLoc(qual_udir),
+                                         CC.getNamespaceKeyLocation(qual_udir), qual_q,
+                                         CC.getIdentLocation(qual_udir),
+                                         CC.getNominatedNamespaceAsWritten(qual_udir), dc)
+            @test udd2 isa CC.UsingDirectiveDecl
+            @test udd2.ptr != C_NULL && udd2.ptr != qual_udir.ptr
+            @test CC.getIdentLocation(udd2).ptr == CC.getIdentLocation(qual_udir).ptr
+            q2 = CC.getQualifierLoc(udd2)
+            try
+                @test CC.getNestedNameSpecifier(q2).ptr == CC.getNestedNameSpecifier(qual_q).ptr
+            finally
+                dispose(q2)
+            end
+        finally
+            dispose(qual_q)
+            dispose(plain_q)
+        end
+
+        # ---- NamespaceAliasDecl: qualifier location + Create round-trip ----
+        nad = first(d for d in alldecls if d isa CC.NamespaceAliasDecl)
+        check_qualifier_loc(nad)
+        nq = CC.getQualifierLoc(nad)
+        try
+            nad2 = CC.NamespaceAliasDecl(ctx, dc, CC.getNamespaceLoc(nad), CC.getAliasLoc(nad),
+                                         CC.getIdentifier(nad), nq, CC.getTargetNameLoc(nad),
+                                         CC.getAliasedNamespace(nad))
+            @test nad2 isa CC.NamespaceAliasDecl
+            @test nad2.ptr != C_NULL && nad2.ptr != nad.ptr
+            @test CC.getNameAsString(nad2) == CC.getNameAsString(nad)
+            @test CC.getAliasedNamespace(nad2).ptr == CC.getAliasedNamespace(nad).ptr
+        finally
+            dispose(nq)
+        end
+
+        # ---- UsingDecl: qualifier location + Create round-trip ----
+        ud = first(d for d in alldecls if d isa CC.UsingDecl)
+        check_qualifier_loc(ud)
+        uq = CC.getQualifierLoc(ud)
+        uni = CC.getNameInfo(ud)
+        try
+            ud2 = CC.UsingDecl(ctx, dc, CC.getUsingLoc(ud), uq, uni, false)
+            @test ud2 isa CC.UsingDecl
+            @test ud2.ptr != C_NULL && ud2.ptr != ud.ptr
+            @test CC.getNameAsString(ud2) == CC.getNameAsString(ud)
+            # `has_typename` is a value this test set, so it round-trips exactly.
+            @test CC.hasTypename(ud2) == false
+        finally
+            dispose(uni)
+            dispose(uq)
+        end
+
+        # ---- UsingEnumDecl: qualifier location behind the written enumeration type ----
+        ued = first(d for d in alldecls if d isa CC.UsingEnumDecl)
+        @test CC.getEnumType(ued).ptr != C_NULL
+        check_qualifier_loc(ued)
+
+        # ---- UnresolvedUsing{Value,Typename}Decl: locations + Create round-trips ----
+        ctd = first(d for d in alldecls
+                    if d isa CC.ClassTemplateDecl && CC.getNameAsString(d) == "UUQ")
+        members = CC.decls(CC.castToDeclContext(CC.getTemplatedDecl(ctd)))
+
+        uuv = first(d for d in members if d isa CC.UnresolvedUsingValueDecl)
+        check_qualifier_loc(uuv)
+        vq = CC.getQualifierLoc(uuv)
+        vni = CC.getNameInfo(uuv)
+        try
+            # A valid ellipsis location is what marks a pack expansion, so passing one is a
+            # round-trip of a value this test set.
+            ell = CC.getUsingLoc(uuv)
+            uuv2 = CC.UnresolvedUsingValueDecl(ctx, dc, CC.getUsingLoc(uuv), vq, vni, ell)
+            @test uuv2 isa CC.UnresolvedUsingValueDecl
+            @test uuv2.ptr != C_NULL && uuv2.ptr != uuv.ptr
+            @test CC.getNameAsString(uuv2) == CC.getNameAsString(uuv)
+            @test CC.isPackExpansion(uuv2)
+            @test CC.getEllipsisLoc(uuv2).ptr == ell.ptr
+        finally
+            dispose(vni)
+            dispose(vq)
+        end
+
+        uut = first(d for d in members if d isa CC.UnresolvedUsingTypenameDecl)
+        check_qualifier_loc(uut)
+        tq = CC.getQualifierLoc(uut)
+        tni = CC.getNameInfo(uut)
+        try
+            name = CC.getName(tni)
+            @test CC.getAsIdentifierInfo(name).ptr != C_NULL
+            uut2 = CC.UnresolvedUsingTypenameDecl(ctx, dc, CC.getUsingLoc(uut),
+                                                  CC.getTypenameLoc(uut), tq,
+                                                  CC.getLocation(uut), name,
+                                                  CC.getTypenameLoc(uut))
+            @test uut2 isa CC.UnresolvedUsingTypenameDecl
+            @test uut2.ptr != C_NULL && uut2.ptr != uut.ptr
+            @test CC.getNameAsString(uut2) == CC.getNameAsString(uut)
+            @test CC.isPackExpansion(uut2)
+        finally
+            dispose(tni)
+            dispose(tq)
+        end
+
+        # ---- CXXRecordDecl::getFinalOverriders (count + five lockstep buffers) ----
+        # FOPlain declares and inherits no virtual member function, so clang's collector
+        # never records a row for it.
+        @test CC.getNumFinalOverriders(rec("FOPlain")) == 0
+        plain_rows = CC.getFinalOverriders(rec("FOPlain"))
+        @test all(isempty, plain_rows)
+
+        most = rec("FOMost")
+        n = CC.getNumFinalOverriders(most)
+        @test n isa Integer
+        # FOBase declares two virtual functions and each has at least one final overrider.
+        @test n >= 2
+        overridden, osub, overrider, rsub, invb = CC.getFinalOverriders(most)
+        @test length(overridden) == n
+        @test length(osub) == n && length(overrider) == n
+        @test length(rsub) == n && length(invb) == n
+        @test all(m -> m isa CC.CXXMethodDecl && m.ptr != C_NULL, overridden)
+        @test all(m -> m isa CC.CXXMethodDecl && m.ptr != C_NULL, overrider)
+        @test all(s -> s isa Integer, osub)
+        @test all(s -> s isa Integer, rsub)
+        @test all(r -> r isa CC.CXXRecordDecl, invb)
+        @test all(CC.isVirtual, overridden)
+        @test all(CC.isVirtual, overrider)
+        # FOMost does not redeclare fo_f, so FOBase::fo_f is finally overridden by FOMid.
+        i = findfirst(m -> CC.getNameAsString(m) == "fo_f" &&
+                           CC.getNameAsString(CC.getParent(m)) == "FOBase", overridden)
+        @test i !== nothing
+        if i !== nothing
+            @test CC.getNameAsString(overrider[i]) == "fo_f"
+            @test CC.getNameAsString(CC.getParent(overrider[i])) == "FOMid"
+        end
+    finally
+        dispose(I)
+    end
+end

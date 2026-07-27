@@ -11,6 +11,7 @@
 #include "clang/AST/Attr.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
+#include "clang/AST/DeclLookups.h"
 
 // Drift alarm: the vendored DeclNodes.inc must match the pinned LLVM version.
 // One assert per concrete class proves CXDeclKind equals clang's Decl::Kind
@@ -48,6 +49,14 @@ unsigned clang_Decl_getNumAttrs(CXDecl D) {
 
 CXAttr clang_Decl_getAttr(CXDecl D, unsigned I) {
   return static_cast<clang::Decl *>(D)->getAttrs()[I];
+}
+
+void clang_Decl_setAttrs(CXDecl D, CXAttr *Attrs, unsigned NumAttrs) {
+  clang::AttrVec V;
+  V.reserve(NumAttrs);
+  for (unsigned I = 0; I != NumAttrs; ++I)
+    V.push_back(static_cast<clang::Attr *>(Attrs[I]));
+  static_cast<clang::Decl *>(D)->setAttrs(V);
 }
 
 // Decl
@@ -506,6 +515,40 @@ bool clang_Decl_isFunctionPointerType(CXDecl D) {
   return static_cast<clang::Decl *>(D)->isFunctionPointerType();
 }
 
+bool clang_Decl_isFlexibleArrayMemberLike(CXASTContext Ctx, CXDecl D, CXQualType Ty,
+                                          CXStrictFlexArraysLevelKind StrictFlexArraysLevel,
+                                          bool IgnoreTemplateOrMacroSubstitution) {
+  return clang::Decl::isFlexibleArrayMemberLike(
+      *static_cast<clang::ASTContext *>(Ctx), static_cast<clang::Decl *>(D),
+      clang::QualType::getFromOpaquePtr(Ty),
+      static_cast<clang::LangOptions::StrictFlexArraysLevelKind>(StrictFlexArraysLevel),
+      IgnoreTemplateOrMacroSubstitution);
+}
+
+void clang_Decl_setLocalExternDecl(CXDecl D) {
+  static_cast<clang::Decl *>(D)->setLocalExternDecl();
+}
+
+void clang_Decl_clearIdentifierNamespace(CXDecl D) {
+  static_cast<clang::Decl *>(D)->clearIdentifierNamespace();
+}
+
+void clang_Decl_setNonMemberOperator(CXDecl D) {
+  static_cast<clang::Decl *>(D)->setNonMemberOperator();
+}
+
+CXString clang_Decl_printGroupToString(CXDecl *Decls, unsigned NumDecls,
+                                       unsigned Indentation) {
+  llvm::SmallVector<clang::Decl *, 8> Group;
+  for (unsigned I = 0; I != NumDecls; ++I)
+    Group.push_back(static_cast<clang::Decl *>(Decls[I]));
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  clang::Decl::printGroup(Group.data(), NumDecls, OS,
+                          Group.front()->getASTContext().getPrintingPolicy(), Indentation);
+  return extra::makeCXString(OS.str());
+}
+
 CXDeclContext clang_Decl_castToDeclContext(CXDecl D) {
   return clang::Decl::castToDeclContext(static_cast<clang::Decl *>(D));
 }
@@ -708,6 +751,31 @@ bool clang_DeclContext_containsDeclAndLoad(CXDeclContext DC, CXDecl D) {
       static_cast<clang::Decl *>(D));
 }
 
+CXDecl clang_DeclContext_noload_decls_begin(CXDeclContext DC) {
+  return *static_cast<clang::DeclContext *>(DC)->noload_decls_begin();
+}
+
+unsigned clang_DeclContext_getNumLocalUncachedLookupResults(CXDeclContext DC,
+                                                            CXDeclarationName Name) {
+  llvm::SmallVector<clang::NamedDecl *, 8> Results;
+  static_cast<clang::DeclContext *>(DC)->localUncachedLookup(
+      clang::DeclarationName::getFromOpaquePtr(Name), Results);
+  return static_cast<unsigned>(Results.size());
+}
+
+void clang_DeclContext_localUncachedLookup(CXDeclContext DC, CXDeclarationName Name,
+                                           CXNamedDecl *Results) {
+  llvm::SmallVector<clang::NamedDecl *, 8> Found;
+  static_cast<clang::DeclContext *>(DC)->localUncachedLookup(
+      clang::DeclarationName::getFromOpaquePtr(Name), Found);
+  for (clang::NamedDecl *ND : Found)
+    *Results++ = ND;
+}
+
+void clang_DeclContext_setMustBuildLookupTable(CXDeclContext DC) {
+  static_cast<clang::DeclContext *>(DC)->setMustBuildLookupTable();
+}
+
 unsigned clang_DeclContext_getNumLookupResults(CXDeclContext DC,
                                                CXDeclarationName Name) {
   unsigned N = 0;
@@ -749,6 +817,44 @@ void clang_DeclContext_makeDeclVisibleInContext(CXDeclContext DC, CXNamedDecl D)
       static_cast<clang::NamedDecl *>(D));
 }
 
+unsigned clang_DeclContext_getNumLookupNames(CXDeclContext DC) {
+  unsigned N = 0;
+  auto R = static_cast<clang::DeclContext *>(DC)->lookups();
+  for (auto I = R.begin(), E = R.end(); I != E; ++I)
+    ++N;
+  return N;
+}
+
+void clang_DeclContext_getLookupNames(CXDeclContext DC, CXDeclarationName *Buf) {
+  auto R = static_cast<clang::DeclContext *>(DC)->lookups();
+  for (auto I = R.begin(), E = R.end(); I != E; ++I)
+    *Buf++ = I.getLookupName().getAsOpaquePtr();
+}
+
+unsigned clang_DeclContext_getNumNoloadLookupNames(CXDeclContext DC,
+                                                   bool PreserveInternalState) {
+  unsigned N = 0;
+  auto R = static_cast<clang::DeclContext *>(DC)->noload_lookups(PreserveInternalState);
+  for (auto I = R.begin(), E = R.end(); I != E; ++I)
+    ++N;
+  return N;
+}
+
+void clang_DeclContext_getNoloadLookupNames(CXDeclContext DC, bool PreserveInternalState,
+                                            CXDeclarationName *Buf) {
+  auto R = static_cast<clang::DeclContext *>(DC)->noload_lookups(PreserveInternalState);
+  for (auto I = R.begin(), E = R.end(); I != E; ++I)
+    *Buf++ = I.getLookupName().getAsOpaquePtr();
+}
+
+CXNamedDecl clang_DeclContext_lookupSingleResult(CXDeclContext DC, CXDeclarationName Name) {
+  clang::DeclContext::lookup_result R = static_cast<clang::DeclContext *>(DC)->lookup(
+      clang::DeclarationName::getFromOpaquePtr(Name));
+  if (!R.isSingleResult())
+    return nullptr;
+  return R.front();
+}
+
 unsigned clang_DeclContext_getNumUsingDirectives(CXDeclContext DC) {
   unsigned N = 0;
   for (clang::UsingDirectiveDecl *UD :
@@ -763,6 +869,14 @@ void clang_DeclContext_getUsingDirectives(CXDeclContext DC, CXUsingDirectiveDecl
   for (clang::UsingDirectiveDecl *UD :
        static_cast<clang::DeclContext *>(DC)->using_directives())
     *Buf++ = UD;
+}
+
+bool clang_DeclContext_hasLookupTable(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->getLookupPtr() != nullptr;
+}
+
+bool clang_DeclContext_buildLookup(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->buildLookup() != nullptr;
 }
 
 bool clang_DeclContext_hasExternalLexicalStorage(CXDeclContext DC) {

@@ -317,3 +317,16 @@ end
 
 Base.unsafe_convert(::Type{CXCapturedStmtCapture}, x::CapturedStmtCapture) = x.ptr
 Base.cconvert(::Type{CXCapturedStmtCapture}, x::CapturedStmtCapture) = x
+
+
+
+"""
+    struct GCCAsmStmtAsmStringPiece <: AbstractGCCAsmStmtAsmStringPiece
+Hold a pointer to a `clang::GCCAsmStmt::AsmStringPiece` object.
+"""
+struct GCCAsmStmtAsmStringPiece <: AbstractGCCAsmStmtAsmStringPiece
+    ptr::CXGCCAsmStmtAsmStringPiece
+end
+
+Base.unsafe_convert(::Type{CXGCCAsmStmtAsmStringPiece}, x::GCCAsmStmtAsmStringPiece) = x.ptr
+Base.cconvert(::Type{CXGCCAsmStmtAsmStringPiece}, x::GCCAsmStmtAsmStringPiece) = x

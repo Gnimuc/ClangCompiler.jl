@@ -864,3 +864,646 @@ function getExpansion(x::AbstractSLocEntry)
     @assert isExpansion(x) "SLocEntry must be a macro-expansion entry"
     return ExpansionInfo(clang_SLocEntry_getExpansion(x))
 end
+
+
+# SourceManager: configuration, sizes and the loaded SLocEntry table
+
+"""
+    setOverridenFilesKeepOriginalName(src_mgr::SourceManager, value::Bool)
+Set whether the source manager reports the original file name for the contents of files
+that were overridden by another file. Defaults to `true`.
+"""
+function setOverridenFilesKeepOriginalName(src_mgr::SourceManager, value::Bool)
+    @check_ptrs src_mgr
+    return clang_SourceManager_setOverridenFilesKeepOriginalName(src_mgr, value)
+end
+
+"""
+    setPreambleFileID(src_mgr::SourceManager, id::FileID)
+Set the `FileID` of the precompiled preamble. The preamble must not have been set already —
+Clang asserts it and the C shim does not check, so the precondition is restated here.
+"""
+function setPreambleFileID(src_mgr::SourceManager, id::FileID)
+    @check_ptrs src_mgr id
+    current = getPreambleFileID(src_mgr)
+    already_set = isValid(current)
+    dispose(current)
+    @assert !already_set "the preamble FileID has already been set"
+    return clang_SourceManager_setPreambleFileID(src_mgr, id)
+end
+
+"""
+    getFileEntryForSLocEntry(src_mgr::SourceManager, e::AbstractSLocEntry) -> Union{FileEntry,Nothing}
+Return the borrowed `FileEntry` recorded in `e`'s content cache, or `nothing` when there is
+none (e.g. the entry was created from a memory buffer). `isFile(e)` must hold — Clang
+asserts it and the C shim does not check.
+"""
+function getFileEntryForSLocEntry(src_mgr::SourceManager, e::AbstractSLocEntry)
+    @check_ptrs src_mgr e
+    @assert isFile(e) "SLocEntry must be a file entry"
+    ptr = clang_SourceManager_getFileEntryForSLocEntry(src_mgr, e)
+    return ptr == C_NULL ? nothing : FileEntry(ptr)
+end
+
+"""
+    getBufferDataIfLoaded(src_mgr::SourceManager, id::FileID) -> Union{String,Nothing}
+Return the source buffer contents for `id`, or `nothing` when that buffer has not been
+loaded yet.
+"""
+function getBufferDataIfLoaded(src_mgr::SourceManager, id::FileID)
+    @check_ptrs src_mgr id
+    len = Ref{Csize_t}(0)
+    ptr = clang_SourceManager_getBufferDataIfLoaded(src_mgr, id, len)
+    return ptr == C_NULL ? nothing : unsafe_string(ptr, len[])
+end
+
+"""
+    setNumCreatedFIDsForFileID(src_mgr::SourceManager, id::FileID, num::Integer, force::Bool=false)
+Record how many `FileID`s (files and macros) were created while preprocessing `id`,
+including `id` itself. Unless `force` is set the slot must still be zero — Clang asserts it
+and the C shim does not check.
+"""
+function setNumCreatedFIDsForFileID(src_mgr::SourceManager, id::FileID, num::Integer, force::Bool=false)
+    @check_ptrs src_mgr id
+    @assert force || getNumCreatedFIDsForFileID(src_mgr, id) == 0 "the FileID count is already set"
+    return clang_SourceManager_setNumCreatedFIDsForFileID(src_mgr, id, num, force)
+end
+
+"""
+    isInSameSLocAddrSpace(src_mgr::SourceManager, lhs::SourceLocation, rhs::SourceLocation) -> (Bool, Int32)
+Return whether `lhs` and `rhs` both live in the local source-location address space or both
+in the loaded one, together with the offset of `rhs` relative to `lhs`. The offset is only
+written when the predicate holds, and reads back as `0` otherwise.
+"""
+function isInSameSLocAddrSpace(src_mgr::SourceManager, lhs::SourceLocation, rhs::SourceLocation)
+    @check_ptrs src_mgr
+    offset = Ref{Int32}(0)
+    same = clang_SourceManager_isInSameSLocAddrSpace(src_mgr, lhs, rhs, offset)
+    return same, offset[]
+end
+
+"""
+    getMemoryBufferSizes(src_mgr::SourceManager) -> (Csize_t, Csize_t)
+Return the memory used by the source manager's memory buffers, split into heap-backed bytes
+and mmap'ed bytes.
+"""
+function getMemoryBufferSizes(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    malloc_bytes = Ref{Csize_t}(0)
+    mmap_bytes = Ref{Csize_t}(0)
+    clang_SourceManager_getMemoryBufferSizes(src_mgr, malloc_bytes, mmap_bytes)
+    return malloc_bytes[], mmap_bytes[]
+end
+
+"""
+    getDataStructureSizes(src_mgr::SourceManager) -> Csize_t
+Return the memory used by the source manager's side tables and data structures.
+"""
+function getDataStructureSizes(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_getDataStructureSizes(src_mgr)
+end
+
+"""
+    getLoadedSLocEntry(src_mgr::SourceManager, index::Integer) -> (SLocEntry, Bool)
+Return the loaded `SLocEntry` at the 0-based `index` and whether loading it failed; `index`
+must be less than [`loaded_sloc_entry_size`](@ref).
+
+The returned carrier borrows an interior pointer with the same lifetime as
+[`getLocalSLocEntry`](@ref).
+"""
+function getLoadedSLocEntry(src_mgr::SourceManager, index::Integer)
+    @check_ptrs src_mgr
+    @assert 0 <= index < loaded_sloc_entry_size(src_mgr) "SLocEntry index out of range"
+    invalid = Ref{Bool}(false)
+    e = clang_SourceManager_getLoadedSLocEntry(src_mgr, index, invalid)
+    return SLocEntry(e), invalid[]
+end
+
+"""
+    getContentCache(x::AbstractFileInfo) -> ContentCache
+Return the content cache backing this file. The result borrows an interior pointer owned by
+the source manager's content-cache allocator.
+"""
+function getContentCache(x::AbstractFileInfo)
+    @check_ptrs x
+    return ContentCache(clang_FileInfo_getContentCache(x))
+end
+
+# SrcMgr::ContentCache
+
+"""
+    getSize(x::AbstractContentCache) -> UInt32
+Return the size of the content this cache encapsulates — either the source file's size or
+the size of a scratch buffer. [`isBufferLoaded`](@ref) must hold: without a loaded buffer
+Clang reads through a disengaged `OptionalFileEntryRef`, and the C shim does not check.
+"""
+function getSize(x::AbstractContentCache)
+    @check_ptrs x
+    @assert isBufferLoaded(x) "the content cache's memory buffer must be loaded"
+    return clang_ContentCache_getSize(x)
+end
+
+"""
+    getSizeBytesMapped(x::AbstractContentCache) -> UInt32
+Return how many bytes are actually mapped for this cache; `0` when the memory buffer was
+never expanded.
+"""
+function getSizeBytesMapped(x::AbstractContentCache)
+    @check_ptrs x
+    return clang_ContentCache_getSizeBytesMapped(x)
+end
+
+"""
+    getMemoryBufferKind(x::AbstractContentCache) -> CXBufferKind
+Return whether the memory buffer backing this cache is heap-allocated or mmap'ed.
+[`isBufferLoaded`](@ref) must hold — Clang asserts it and the C shim does not check.
+"""
+function getMemoryBufferKind(x::AbstractContentCache)
+    @check_ptrs x
+    @assert isBufferLoaded(x) "the content cache's memory buffer must be loaded"
+    return clang_ContentCache_getMemoryBufferKind(x)
+end
+
+"""
+    isBufferLoaded(x::AbstractContentCache) -> Bool
+Return `true` iff this cache's memory buffer has already been loaded. This is the gate for
+[`getSize`](@ref) and [`getMemoryBufferKind`](@ref), both of which read the buffer
+unconditionally.
+"""
+function isBufferLoaded(x::AbstractContentCache)
+    @check_ptrs x
+    return clang_ContentCache_isBufferLoaded(x)
+end
+
+"""
+    getBufferDataIfLoaded(x::AbstractContentCache) -> Union{String,Nothing}
+Return this cache's source buffer contents, or `nothing` when the buffer has not been
+loaded yet.
+"""
+function getBufferDataIfLoaded(x::AbstractContentCache)
+    @check_ptrs x
+    len = Ref{Csize_t}(0)
+    ptr = clang_ContentCache_getBufferDataIfLoaded(x, len)
+    return ptr == C_NULL ? nothing : unsafe_string(ptr, len[])
+end
+
+"""
+    getInvalidBOM(str::AbstractString) -> Union{String,Nothing}
+Return the name of the byte order mark `str` starts with when Clang cannot handle it (only
+UTF-8, with or without a BOM, is supported), and `nothing` otherwise.
+"""
+function getInvalidBOM(str::AbstractString)
+    s = String(str)
+    ptr = clang_ContentCache_getInvalidBOM(s, ncodeunits(s))
+    return ptr == C_NULL ? nothing : unsafe_string(ptr)
+end
+
+
+# SourceManager: the whole-manager dump, ID tables and the module build stack
+
+"""
+    dump(src_mgr::SourceManager) -> Nothing
+Print the source manager's whole SLocEntry table to `stderr`.
+"""
+function dump(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_dump(src_mgr)
+end
+
+"""
+    clearIDTables(src_mgr::SourceManager) -> Nothing
+Drop every `FileID` and SLocEntry the manager has handed out and restart its source location
+address space.
+
+Every `SourceLocation`, `FileID`, `SLocEntry`, `FileInfo` and `ExpansionInfo` obtained from
+`src_mgr` before the call is stale afterwards, so this is only safe on a manager whose
+results no AST refers to yet.
+"""
+function clearIDTables(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_clearIDTables(src_mgr)
+end
+
+"""
+    getModuleBuildStackSize(src_mgr::SourceManager) -> UInt32
+Return how many entries the module build stack holds.
+"""
+function getModuleBuildStackSize(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_getModuleBuildStackSize(src_mgr)
+end
+
+"""
+    getModuleBuildStackEntry(src_mgr::SourceManager, index::Integer) -> (String, SourceLocation)
+Return the module name and import location of the 0-based `index`th module build stack
+entry; `index` must be less than [`getModuleBuildStackSize`](@ref).
+
+The name is copied out, but the entry itself is invalidated by any later push.
+"""
+function getModuleBuildStackEntry(src_mgr::SourceManager, index::Integer)
+    @check_ptrs src_mgr
+    @assert 0 <= index < getModuleBuildStackSize(src_mgr) "module build stack index out of range"
+    len = Ref{Csize_t}(0)
+    loc = Ref{CXSourceLocation_}(C_NULL)
+    ptr = clang_SourceManager_getModuleBuildStackEntry(src_mgr, index, len, loc)
+    return unsafe_string(ptr, len[]), SourceLocation(loc[])
+end
+
+"""
+    getModuleBuildStack(src_mgr::SourceManager) -> Vector{Tuple{String,SourceLocation}}
+Return the whole module build stack — the chain of modules currently being built, innermost
+last — as `(module name, import location)` pairs.
+"""
+function getModuleBuildStack(src_mgr::SourceManager)
+    n = Int(getModuleBuildStackSize(src_mgr))
+    return [getModuleBuildStackEntry(src_mgr, i) for i = 0:(n - 1)]
+end
+
+"""
+    pushModuleBuildStack(src_mgr::SourceManager, name::AbstractString, import_loc::SourceLocation) -> Nothing
+Push `name` onto the module build stack, recording `import_loc` as the location that
+triggered the build. Clang stores it as a `clang::FullSourceLoc`, which the C shim builds by
+pairing `import_loc` with `src_mgr` itself.
+"""
+function pushModuleBuildStack(src_mgr::SourceManager, name::AbstractString,
+                              import_loc::SourceLocation)
+    @check_ptrs src_mgr
+    return clang_SourceManager_pushModuleBuildStack(src_mgr, name, import_loc)
+end
+
+# SourceManager: synthetic expansion locations and never-failing buffers
+
+"""
+    createMacroArgExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation, expansion_loc::SourceLocation, len::Integer) -> SourceLocation
+Create the SLocEntry for substituting a macro argument into a function-like macro's body and
+return the start of the expansion. The argument was written at `spelling_loc` and spans
+`len` bytes; `expansion_loc` is the parameter name inside the expanded macro body.
+
+This grows the manager's SLocEntry table, so every borrowed `SLocEntry`, `FileInfo` and
+`ExpansionInfo` fetched before the call dangles afterwards — re-fetch instead of caching.
+"""
+function createMacroArgExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation,
+                                    expansion_loc::SourceLocation, len::Integer)
+    @check_ptrs src_mgr
+    loc = clang_SourceManager_createMacroArgExpansionLoc(src_mgr, spelling_loc,
+                                                         expansion_loc, len)
+    return SourceLocation(loc)
+end
+
+"""
+    createTokenSplitLoc(src_mgr::SourceManager, spelling_loc::SourceLocation, token_start::SourceLocation, token_end::SourceLocation) -> SourceLocation
+Create a `SourceLocation` recording that the token starting at `token_start` ends
+prematurely at `token_end`, spelled at `spelling_loc`.
+
+`clang::SourceManager::createTokenSplitLoc` asserts that `token_start` and `token_end` are
+written in the same file; the precondition is restated here. Like
+[`createMacroArgExpansionLoc`](@ref) this grows the SLocEntry table and dangles every
+borrowed entry fetched earlier.
+"""
+function createTokenSplitLoc(src_mgr::SourceManager, spelling_loc::SourceLocation,
+                             token_start::SourceLocation, token_end::SourceLocation)
+    @check_ptrs src_mgr
+    @assert isWrittenInSameFile(src_mgr, token_start, token_end) "a split token's start and end must be in one file"
+    loc = clang_SourceManager_createTokenSplitLoc(src_mgr, spelling_loc, token_start,
+                                                  token_end)
+    return SourceLocation(loc)
+end
+
+"""
+    getMemoryBufferDataForFileOrNone(src_mgr::SourceManager, ref::FileEntryRef) -> Union{String,Nothing}
+Return the contents of the memory buffer associated with `ref`, or `nothing` when the file
+has no valid buffer.
+"""
+function getMemoryBufferDataForFileOrNone(src_mgr::SourceManager, ref::FileEntryRef)
+    @check_ptrs src_mgr ref
+    len = Ref{Csize_t}(0)
+    ptr = clang_SourceManager_getMemoryBufferDataForFileOrNone(src_mgr, ref, len)
+    return ptr == C_NULL ? nothing : unsafe_string(ptr, len[])
+end
+
+"""
+    getMemoryBufferDataForFileOrFake(src_mgr::SourceManager, ref::FileEntryRef) -> String
+Return the contents of the memory buffer associated with `ref`, falling back to Clang's fake
+recovery buffer when the file has no valid one.
+"""
+function getMemoryBufferDataForFileOrFake(src_mgr::SourceManager, ref::FileEntryRef)
+    @check_ptrs src_mgr ref
+    len = Ref{Csize_t}(0)
+    ptr = clang_SourceManager_getMemoryBufferDataForFileOrFake(src_mgr, ref, len)
+    return unsafe_string(ptr, len[])
+end
+
+"""
+    getBufferDataOrFake(src_mgr::SourceManager, id::FileID, loc::SourceLocation=SourceLocation()) -> String
+Return the source buffer contents for `id`, falling back to Clang's fake recovery buffer
+when the buffer is invalid. `loc` is where a "cannot open file" diagnostic is reported.
+"""
+function getBufferDataOrFake(src_mgr::SourceManager, id::FileID,
+                             loc::SourceLocation=SourceLocation())
+    @check_ptrs src_mgr id
+    len = Ref{Csize_t}(0)
+    ptr = clang_SourceManager_getBufferDataOrFake(src_mgr, id, loc, len)
+    return unsafe_string(ptr, len[])
+end
+
+"""
+    getModuleImportLoc(src_mgr::SourceManager, loc::SourceLocation) -> (SourceLocation, String)
+Return the import location and name of the module `loc` lives in. The location is invalid
+and the name empty when `loc` belongs to the current translation unit rather than to a
+loaded module.
+"""
+function getModuleImportLoc(src_mgr::SourceManager, loc::SourceLocation)
+    @check_ptrs src_mgr
+    name = Ref{Ptr{Cchar}}(C_NULL)
+    len = Ref{Csize_t}(0)
+    l = clang_SourceManager_getModuleImportLoc(src_mgr, loc, name, len)
+    return SourceLocation(l), name[] == C_NULL ? "" : unsafe_string(name[], len[])
+end
+
+"""
+    isInSLocAddrSpace(src_mgr::SourceManager, loc::SourceLocation, start::SourceLocation, len::Integer) -> (Bool, UInt32)
+Test whether `loc` lies inside the `len`-byte chunk of the source location address space
+beginning at `start`; the second element is `loc`'s offset within the chunk and is
+meaningful only when the predicate is `true`.
+
+Clang asserts that `[start, start + len)` is a valid chunk of one half of the address space,
+so pass a `start` obtained from this manager together with a `len` that does not run past
+the end of its file — [`getFileIDSize`](@ref) is the usual source of both.
+"""
+function isInSLocAddrSpace(src_mgr::SourceManager, loc::SourceLocation,
+                           start::SourceLocation, len::Integer)
+    @check_ptrs src_mgr
+    offset = Ref{UInt32}(0)
+    inside = clang_SourceManager_isInSLocAddrSpace(src_mgr, loc, start, len, offset)
+    return inside, offset[]
+end
+
+"""
+    AddLineNote(src_mgr::SourceManager, loc::SourceLocation, line::Integer, filename_id::Integer, is_file_entry::Bool, is_file_exit::Bool, kind::CXCharacteristicKind=CXCharacteristicKind_C_User) -> Nothing
+Record a `#line`/GNU-line-marker note in the line table for the file and offset `loc`
+designates. `filename_id` comes from [`getLineTableFilenameID`](@ref), or is `-1` for
+"unspecified".
+
+Clang asserts that notes are added to one file in strictly increasing offset order, and the
+call also flips that file's `hasLineDirectives` flag, so every later presumed location in it
+is resolved through the line table.
+"""
+function AddLineNote(src_mgr::SourceManager, loc::SourceLocation, line::Integer,
+                     filename_id::Integer, is_file_entry::Bool, is_file_exit::Bool,
+                     kind::CXCharacteristicKind=CXCharacteristicKind_C_User)
+    @check_ptrs src_mgr
+    return clang_SourceManager_AddLineNote(src_mgr, loc, line, filename_id, is_file_entry,
+                                           is_file_exit, kind)
+end
+
+# SrcMgr::ContentCache, SrcMgr::FileInfo and SrcMgr::ExpansionInfo tails
+
+"""
+    getBufferDataOrNone(x::AbstractContentCache, diag::DiagnosticsEngine, file_mgr::FileManager, loc::SourceLocation=SourceLocation()) -> Union{String,Nothing}
+Return this cache's source buffer contents, or `nothing` when the buffer is invalid. A read
+error is reported through `diag` at `loc`.
+
+Unlike [`getBufferDataIfLoaded`](@ref) this forces the buffer to be loaded, so it is also
+what makes [`isBufferLoaded`](@ref) start returning `true`.
+"""
+function getBufferDataOrNone(x::AbstractContentCache, diag::DiagnosticsEngine,
+                             file_mgr::FileManager, loc::SourceLocation=SourceLocation())
+    @check_ptrs x diag file_mgr
+    len = Ref{Csize_t}(0)
+    ptr = clang_ContentCache_getBufferDataOrNone(x, diag, file_mgr, loc, len)
+    return ptr == C_NULL ? nothing : unsafe_string(ptr, len[])
+end
+
+"""
+    setHasLineDirectives(x::AbstractFileInfo) -> Nothing
+Mark this file as containing `#line` directives, which is what makes presumed locations in
+it be resolved through the source manager's line table. The flag is one-way — Clang offers
+no way to clear it — and [`AddLineNote`](@ref) sets it as a side effect.
+"""
+function setHasLineDirectives(x::AbstractFileInfo)
+    @check_ptrs x
+    return clang_FileInfo_setHasLineDirectives(x)
+end
+
+"""
+    getExpansionLocRange(x::AbstractExpansionInfo) -> (SourceRange, Bool)
+Return the expansion's `[start, end]` range and whether it is a token range, i.e. whether
+its end designates the start of the last token rather than the last character.
+"""
+function getExpansionLocRange(x::AbstractExpansionInfo)
+    @check_ptrs x
+    is_token = Ref{Bool}(false)
+    r = clang_ExpansionInfo_getExpansionLocRange(x, is_token)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E)), is_token[]
+end
+
+
+"""
+    createExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation,
+                       expansion_start::SourceLocation, expansion_end::SourceLocation,
+                       len::Integer; is_token_range::Bool=true, loaded_id::Integer=0,
+                       loaded_offset::Integer=0) -> SourceLocation
+Create the `SLocEntry` for one macro use and return the start of its expansion. The macro
+body begins at `spelling_loc` and runs for `len` bytes; the use spans
+`[expansion_start, expansion_end]`.
+
+`is_token_range` says whether `expansion_end` designates the start of the last token rather
+than its last character. `loaded_id`/`loaded_offset` place the entry in the loaded half of
+the source-location address space and are `0` for a locally created expansion.
+"""
+function createExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation,
+                            expansion_start::SourceLocation, expansion_end::SourceLocation,
+                            len::Integer; is_token_range::Bool=true, loaded_id::Integer=0,
+                            loaded_offset::Integer=0)
+    @check_ptrs src_mgr
+    loc = clang_SourceManager_createExpansionLoc(src_mgr, spelling_loc, expansion_start,
+                                                 expansion_end, len, is_token_range,
+                                                 loaded_id, loaded_offset)
+    return SourceLocation(loc)
+end
+
+"""
+    isInTheSameTranslationUnit(src_mgr::SourceManager, lhs_id::FileID, lhs_offset::Integer,
+                               rhs_id::FileID, rhs_offset::Integer) -> (Bool, Bool, UInt32, UInt32)
+Decide whether two decomposed locations live in the same translation unit and, as a
+byproduct, order them. The result is `(same_tu, lhs_before_rhs, lhs_offset, rhs_offset)`;
+the ordering flag is meaningful only when `same_tu` is `true`.
+
+Both decomposed locations are walked up to their common ancestor file, so `lhs_id` and
+`rhs_id` are *mutated in place* to the file the walk ended in and the returned offsets are
+the walked ones. The two `FileID` boxes stay caller-owned and are still released with
+`dispose`.
+"""
+function isInTheSameTranslationUnit(src_mgr::SourceManager, lhs_id::FileID,
+                                    lhs_offset::Integer, rhs_id::FileID,
+                                    rhs_offset::Integer)
+    @check_ptrs src_mgr lhs_id rhs_id
+    loff = Ref{Cuint}(lhs_offset)
+    roff = Ref{Cuint}(rhs_offset)
+    before = Ref{Bool}(false)
+    same = clang_SourceManager_isInTheSameTranslationUnit(src_mgr, lhs_id, loff, rhs_id,
+                                                          roff, before)
+    return same, before[], loff[], roff[]
+end
+
+"""
+    isInTheSameTranslationUnitImpl(src_mgr::SourceManager, lhs_id::FileID, lhs_offset::Integer,
+                                   rhs_id::FileID, rhs_offset::Integer) -> Bool
+Return `true` iff the two decomposed locations live in the same translation unit, leaving
+both of them untouched.
+"""
+function isInTheSameTranslationUnitImpl(src_mgr::SourceManager, lhs_id::FileID,
+                                        lhs_offset::Integer, rhs_id::FileID,
+                                        rhs_offset::Integer)
+    @check_ptrs src_mgr lhs_id rhs_id
+    return clang_SourceManager_isInTheSameTranslationUnitImpl(src_mgr, lhs_id, lhs_offset,
+                                                              rhs_id, rhs_offset)
+end
+
+
+# SourceManager: replay, the fileinfo map and address-space notes
+
+"""
+    initializeForReplay(src_mgr::SourceManager, old::SourceManager) -> Nothing
+Initialize `src_mgr` to replay the compilation `old` describes, inheriting `old`'s content
+caches.
+
+The inherited buffers are *unowned* views into `old`, so `old` must outlive `src_mgr` —
+dispose `src_mgr` first. `src_mgr` must also still be fresh: replaying into a manager that
+has already handed out its main file ID corrupts its address space, and that precondition is
+asserted here.
+"""
+function initializeForReplay(src_mgr::SourceManager, old::SourceManager)
+    @check_ptrs src_mgr old
+    id = getMainFileID(src_mgr)
+    fresh = isInvalid(id)
+    dispose(id)
+    @assert fresh "the replaying source manager must not have its main file ID set yet"
+    return clang_SourceManager_initializeForReplay(src_mgr, old)
+end
+
+"""
+    bypassFileContentsOverride(src_mgr::SourceManager, ref::FileEntryRef) -> Union{FileEntryRef,Nothing}
+Return a fresh `FileEntryRef` for the on-disk contents of an overridden file, bypassing the
+override, or `nothing` when the file cannot be found in the filesystem. Call it before
+parsing begins.
+
+Clang asserts that the file's contents were overridden; the precondition is restated here.
+
+This function allocates and one should call `dispose` to release the resources after using this object.
+"""
+function bypassFileContentsOverride(src_mgr::SourceManager, ref::FileEntryRef)
+    @check_ptrs src_mgr ref
+    @assert isFileOverridden(src_mgr, getFileEntry(ref)) "the file's contents must have been overridden"
+    ptr = clang_SourceManager_bypassFileContentsOverride(src_mgr, ref)
+    return ptr == C_NULL ? nothing : FileEntryRef(ptr)
+end
+
+"""
+    getNumFileInfos(src_mgr::SourceManager) -> UInt32
+Return how many files the manager has built a content cache for.
+"""
+function getNumFileInfos(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_getNumFileInfos(src_mgr)
+end
+
+"""
+    getFileInfos(src_mgr::SourceManager) -> Vector{Tuple{FileEntry,ContentCache}}
+Return every `(file, content cache)` pair the manager holds.
+
+Both halves are borrowed and die with the manager, and the underlying map is unordered — the
+sequence is not stable and changes as files are added.
+"""
+function getFileInfos(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    n = clang_SourceManager_getNumFileInfos(src_mgr)
+    files = Vector{CXFileEntry}(undef, n)
+    caches = Vector{CXContentCache}(undef, n)
+    n > 0 && clang_SourceManager_getFileInfos(src_mgr, files, caches)
+    return [(FileEntry(files[i]), ContentCache(caches[i])) for i = 1:n]
+end
+
+"""
+    noteSLocAddressSpaceUsage(src_mgr::SourceManager, diag::DiagnosticsEngine; max_notes::Union{Integer,Nothing}=32) -> Nothing
+Report through `diag` how much of the source location address space each file occupies.
+`max_notes` caps how many files are named; pass `nothing` to report every one of them.
+"""
+function noteSLocAddressSpaceUsage(src_mgr::SourceManager, diag::DiagnosticsEngine;
+                                   max_notes::Union{Integer,Nothing}=32)
+    @check_ptrs src_mgr diag
+    has_max = max_notes !== nothing
+    return clang_SourceManager_noteSLocAddressSpaceUsage(src_mgr, diag, has_max,
+                                                         has_max ? max_notes : 0)
+end
+
+# LineOffsetMapping
+
+"""
+    LineOffsetMapping(content::AbstractString, name::AbstractString="") -> LineOffsetMapping
+Compute the byte offset at which each physical line of `content` starts; `name` only labels
+the buffer in diagnostics.
+
+`content` is read during the call and need not outlive the mapping — the offsets are copied
+into the mapping's own bump allocator.
+
+This function allocates and one should call `dispose` to release the resources after using this object.
+"""
+function LineOffsetMapping(content::AbstractString, name::AbstractString="")
+    text = String(content)
+    m = clang_LineOffsetMapping_create(text, ncodeunits(text), String(name))
+    @assert m != C_NULL "Failed to create LineOffsetMapping"
+    return LineOffsetMapping(m)
+end
+
+dispose(x::LineOffsetMapping) = clang_LineOffsetMapping_dispose(x)
+
+"""
+    size(x::AbstractLineOffsetMapping) -> UInt32
+Return how many physical lines the mapped buffer holds.
+"""
+function Base.size(x::AbstractLineOffsetMapping)
+    @check_ptrs x
+    return clang_LineOffsetMapping_size(x)
+end
+
+"""
+    getLines(x::AbstractLineOffsetMapping) -> Vector{UInt32}
+Return the byte offsets at which the buffer's physical lines start, copied out of the
+mapping's own storage.
+"""
+function getLines(x::AbstractLineOffsetMapping)
+    @check_ptrs x
+    len = Ref{Csize_t}(0)
+    ptr = clang_LineOffsetMapping_getLines(x, len)
+    return ptr == C_NULL ? UInt32[] : copy(unsafe_wrap(Array, ptr, len[]))
+end
+
+# SourceManagerForFile
+
+"""
+    SourceManagerForFile(filename::AbstractString, content::AbstractString) -> SourceManagerForFile
+Build a `SourceManager` over a single in-memory file, together with the `FileManager` and
+`DiagnosticsEngine` it needs. All three belong to the returned object and die with it.
+
+This function allocates and one should call `dispose` to release the resources after using this object.
+"""
+function SourceManagerForFile(filename::AbstractString, content::AbstractString)
+    name = String(filename)
+    text = String(content)
+    smf = clang_SourceManagerForFile_create(name, ncodeunits(name), text, ncodeunits(text))
+    @assert smf != C_NULL "Failed to create SourceManagerForFile"
+    return SourceManagerForFile(smf)
+end
+
+dispose(x::SourceManagerForFile) = clang_SourceManagerForFile_dispose(x)
+
+"""
+    getSourceManager(x::AbstractSourceManagerForFile) -> SourceManager
+Return the borrowed `SourceManager` `x` owns. It dies with `x`, so never `dispose` it.
+"""
+function getSourceManager(x::AbstractSourceManagerForFile)
+    @check_ptrs x
+    return SourceManager(clang_SourceManagerForFile_get(x))
+end

@@ -26,6 +26,7 @@ include("AST/StmtCXX.jl")
 
 # Analysis
 include("Analysis/CFG.jl")
+include("Analysis/ConstructionContext.jl")
 
 # Basic
 include("Basic/CodeGenOptions.jl")
@@ -51,9 +52,13 @@ include("CodeGen/ModuleBuilder.jl")
 
 # Driver
 include("Driver/Driver.jl")
+include("Driver/Compilation.jl")
+include("Driver/ToolChain.jl")
 # Frontend
+include("Frontend/ASTUnit.jl")
 include("Frontend/CompilerInstance.jl")
 include("Frontend/CompilerInvocation.jl")
+include("Frontend/FrontendAction.jl")
 include("Frontend/FrontendOptions.jl")
 include("Frontend/TextDiagnosticPrinter.jl")
 
@@ -67,6 +72,7 @@ include("Lex/HeaderSearchOptions.jl")
 include("Lex/Lexer.jl")
 include("Lex/MacroInfo.jl")
 include("Lex/Preprocessor.jl")
+include("Lex/PreprocessingRecord.jl")
 include("Lex/PreprocessorOptions.jl")
 include("Lex/Token.jl")
 

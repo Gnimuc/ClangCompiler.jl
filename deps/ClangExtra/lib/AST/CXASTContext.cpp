@@ -13,8 +13,12 @@
 #include "clang/AST/Expr.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/Support/raw_ostream.h"
+#include "clang/Basic/Builtins.h"
+#include "llvm/ADT/APFloat.h"
+#include "clang/AST/DeclTemplate.h"
 
 #include <memory>
+#include <vector>
 
 // ASTContext
 
@@ -34,6 +38,15 @@ void clang_ASTContext_getTraversalScopeDecls(CXASTContext Ctx, CXDecl *Buf) {
     Buf[I++] = D;
 }
 // setTraversalScope
+
+void clang_ASTContext_setTraversalScope(CXASTContext Ctx, CXDecl *Decls,
+                                        unsigned NumDecls) {
+  std::vector<clang::Decl *> Scope;
+  Scope.reserve(NumDecls);
+  for (unsigned I = 0; I != NumDecls; ++I)
+    Scope.push_back(static_cast<clang::Decl *>(Decls[I]));
+  static_cast<clang::ASTContext *>(Ctx)->setTraversalScope(Scope);
+}
 // getParents
 // getPrintingPolicy
 // setPrintingPolicy
@@ -79,6 +92,13 @@ CXQualType clang_ASTContext_getIntTypeForBitwidth(CXASTContext Ctx, unsigned Des
 //       ->getRealTypeForBitwidth(DestWidth, ExplicitType)
 //       .getAsOpaquePtr();
 // }
+
+CXQualType clang_ASTContext_getRealTypeForBitwidth(CXASTContext Ctx, unsigned DestWidth,
+                                                   CXFloatModeKind ExplicitType) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getRealTypeForBitwidth(DestWidth, static_cast<clang::FloatModeKind>(ExplicitType))
+      .getAsOpaquePtr();
+}
 
 bool clang_ASTContext_AtomicUsesUnsupportedLibcall(CXASTContext Ctx, CXAtomicExpr E) {
   return static_cast<clang::ASTContext *>(Ctx)->AtomicUsesUnsupportedLibcall(
@@ -153,6 +173,12 @@ CXFullComment clang_ASTContext_getLocalCommentForDeclUncached(CXASTContext Ctx, 
       static_cast<clang::Decl *>(D));
 }
 // cloneFullComment
+
+CXFullComment clang_ASTContext_cloneFullComment(CXASTContext Ctx, CXFullComment FC,
+                                                CXDecl D) {
+  return static_cast<clang::ASTContext *>(Ctx)->cloneFullComment(
+      static_cast<clang::comments::FullComment *>(FC), static_cast<clang::Decl *>(D));
+}
 // getCommentCommandTraits
 // getDeclAttrs
 
@@ -167,8 +193,42 @@ clang_ASTContext_getInstantiatedFromStaticDataMember(CXASTContext Ctx, CXVarDecl
 }
 
 // getTemplateOrSpecializationInfo
+
+CXVarTemplateDecl
+clang_ASTContext_getTemplateOrSpecializationInfoAsVarTemplate(CXASTContext Ctx,
+                                                              CXVarDecl Var) {
+  clang::ASTContext::TemplateOrSpecializationInfo Info =
+      static_cast<clang::ASTContext *>(Ctx)->getTemplateOrSpecializationInfo(
+          static_cast<clang::VarDecl *>(Var));
+  return Info.dyn_cast<clang::VarTemplateDecl *>();
+}
+
+CXMemberSpecializationInfo
+clang_ASTContext_getTemplateOrSpecializationInfoAsMemberSpecialization(CXASTContext Ctx,
+                                                                       CXVarDecl Var) {
+  clang::ASTContext::TemplateOrSpecializationInfo Info =
+      static_cast<clang::ASTContext *>(Ctx)->getTemplateOrSpecializationInfo(
+          static_cast<clang::VarDecl *>(Var));
+  return Info.dyn_cast<clang::MemberSpecializationInfo *>();
+}
 // setInstantiatedFromStaticDataMember
+
+void clang_ASTContext_setInstantiatedFromStaticDataMember(
+    CXASTContext Ctx, CXVarDecl Inst, CXVarDecl Tmpl, CXTemplateSpecializationKind TSK,
+    CXSourceLocation_ PointOfInstantiation) {
+  static_cast<clang::ASTContext *>(Ctx)->setInstantiatedFromStaticDataMember(
+      static_cast<clang::VarDecl *>(Inst), static_cast<clang::VarDecl *>(Tmpl),
+      static_cast<clang::TemplateSpecializationKind>(TSK),
+      clang::SourceLocation::getFromPtrEncoding(PointOfInstantiation));
+}
 // setTemplateOrSpecializationInfo
+
+void clang_ASTContext_setTemplateOrSpecializationInfoAsVarTemplate(CXASTContext Ctx,
+                                                                   CXVarDecl Inst,
+                                                                   CXVarTemplateDecl Tmpl) {
+  static_cast<clang::ASTContext *>(Ctx)->setTemplateOrSpecializationInfo(
+      static_cast<clang::VarDecl *>(Inst), static_cast<clang::VarTemplateDecl *>(Tmpl));
+}
 
 CXNamedDecl clang_ASTContext_getInstantiatedFromUsingDecl(CXASTContext Ctx,
                                                           CXNamedDecl Inst) {
@@ -266,6 +326,14 @@ CXImportDecl clang_ASTContext_getNextLocalImport(CXImportDecl Import) {
   return clang::ASTContext::getNextLocalImport(static_cast<clang::ImportDecl *>(Import));
 }
 
+// local_imports
+
+CXImportDecl clang_ASTContext_getFirstLocalImport(CXASTContext Ctx) {
+  for (clang::ImportDecl *Import : static_cast<clang::ASTContext *>(Ctx)->local_imports())
+    return Import;
+  return nullptr;
+}
+
 CXDecl clang_ASTContext_getPrimaryMergedDecl(CXASTContext Ctx, CXDecl D) {
   return static_cast<clang::ASTContext *>(Ctx)->getPrimaryMergedDecl(
       static_cast<clang::Decl *>(D));
@@ -288,7 +356,36 @@ void clang_ASTContext_deduplicateMergedDefinitonsFor(CXASTContext Ctx, CXNamedDe
       static_cast<clang::NamedDecl *>(ND));
 }
 
+unsigned clang_ASTContext_getNumModulesWithMergedDefinition(CXASTContext Ctx,
+                                                            CXNamedDecl Def) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getModulesWithMergedDefinition(static_cast<clang::NamedDecl *>(Def))
+      .size();
+}
+
+CXModule clang_ASTContext_getModuleWithMergedDefinition(CXASTContext Ctx, CXNamedDecl Def,
+                                                        unsigned I) {
+  return static_cast<clang::ASTContext *>(Ctx)->getModulesWithMergedDefinition(
+      static_cast<clang::NamedDecl *>(Def))[I];
+}
+
 // getModuleInitializers
+
+void clang_ASTContext_addModuleInitializer(CXASTContext Ctx, CXModule M, CXDecl Init) {
+  static_cast<clang::ASTContext *>(Ctx)->addModuleInitializer(
+      static_cast<clang::Module *>(M), static_cast<clang::Decl *>(Init));
+}
+
+unsigned clang_ASTContext_getNumModuleInitializers(CXASTContext Ctx, CXModule M) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getModuleInitializers(static_cast<clang::Module *>(M))
+      .size();
+}
+
+CXDecl clang_ASTContext_getModuleInitializer(CXASTContext Ctx, CXModule M, unsigned I) {
+  return static_cast<clang::ASTContext *>(Ctx)->getModuleInitializers(
+      static_cast<clang::Module *>(M))[I];
+}
 
 CXModule clang_ASTContext_getCurrentNamedModule(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)->getCurrentNamedModule();
@@ -330,6 +427,14 @@ CXType_ clang_ASTContext_getType(CXASTContext Ctx, unsigned I) {
 }
 // buildBuiltinTemplateDecl
 
+CXBuiltinTemplateDecl clang_ASTContext_buildBuiltinTemplateDecl(CXASTContext Ctx,
+                                                                CXBuiltinTemplateKind BTK,
+                                                                CXIdentifierInfo II) {
+  return static_cast<clang::ASTContext *>(Ctx)->buildBuiltinTemplateDecl(
+      static_cast<clang::BuiltinTemplateKind>(BTK),
+      static_cast<clang::IdentifierInfo *>(II));
+}
+
 CXRecordDecl clang_ASTContext_buildImplicitRecord(CXASTContext Ctx, const char *Name,
                                                   CXTagTypeKind TK) {
   return static_cast<clang::ASTContext *>(Ctx)->buildImplicitRecord(
@@ -369,6 +474,14 @@ CXQualType clang_ASTContext_removeAddrSpaceQualType(CXASTContext Ctx, CXQualType
 // applyObjCProtocolQualifiers
 // getObjCGCQualType
 
+CXQualType clang_ASTContext_getObjCGCQualType(CXASTContext Ctx, CXQualType T,
+                                              CXQualifiers_GC GCAttr) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getObjCGCQualType(clang::QualType::getFromOpaquePtr(T),
+                          static_cast<clang::Qualifiers::GC>(GCAttr))
+      .getAsOpaquePtr();
+}
+
 CXQualType clang_ASTContext_removePtrSizeAddrSpace(CXASTContext Ctx, CXQualType T) {
   return static_cast<clang::ASTContext *>(Ctx)
       ->removePtrSizeAddrSpace(clang::QualType::getFromOpaquePtr(T))
@@ -394,6 +507,19 @@ CXQualType clang_ASTContext_getConstType(CXASTContext Ctx, CXQualType T) {
 }
 
 // adjustFunctionType
+
+CXFunctionType clang_ASTContext_adjustFunctionType(CXASTContext Ctx, CXFunctionType Fn,
+                                                   CXCallingConv_ CC, bool NoReturn,
+                                                   bool ProducesResult) {
+  auto *FT = static_cast<clang::FunctionType *>(Fn);
+  clang::FunctionType::ExtInfo EI =
+      FT->getExtInfo()
+          .withCallingConv(static_cast<clang::CallingConv>(CC))
+          .withNoReturn(NoReturn)
+          .withProducesResult(ProducesResult);
+  return const_cast<clang::FunctionType *>(
+      static_cast<clang::ASTContext *>(Ctx)->adjustFunctionType(FT, EI));
+}
 // getCanonicalFunctionResultType
 
 CXQualType clang_ASTContext_getCanonicalFunctionResultType(CXASTContext Ctx,
@@ -412,6 +538,16 @@ void clang_ASTContext_adjustDeducedFunctionResultType(CXASTContext Ctx, CXFuncti
 
 // getFunctionTypeWithExceptionSpec
 
+CXQualType
+clang_ASTContext_getFunctionTypeWithExceptionSpec(CXASTContext Ctx, CXQualType Orig,
+                                                  CXExceptionSpecificationType EST) {
+  clang::FunctionProtoType::ExceptionSpecInfo ESI(
+      static_cast<clang::ExceptionSpecificationType>(EST));
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getFunctionTypeWithExceptionSpec(clang::QualType::getFromOpaquePtr(Orig), ESI)
+      .getAsOpaquePtr();
+}
+
 bool clang_ASTContext_hasSameFunctionTypeIgnoringExceptionSpec(CXASTContext Ctx,
                                                                CXQualType T, CXQualType U) {
   return static_cast<clang::ASTContext *>(Ctx)->hasSameFunctionTypeIgnoringExceptionSpec(
@@ -419,6 +555,15 @@ bool clang_ASTContext_hasSameFunctionTypeIgnoringExceptionSpec(CXASTContext Ctx,
 }
 
 // adjustExceptionSpec
+
+void clang_ASTContext_adjustExceptionSpec(CXASTContext Ctx, CXFunctionDecl FD,
+                                          CXExceptionSpecificationType EST,
+                                          bool AsWritten) {
+  clang::FunctionProtoType::ExceptionSpecInfo ESI(
+      static_cast<clang::ExceptionSpecificationType>(EST));
+  static_cast<clang::ASTContext *>(Ctx)->adjustExceptionSpec(
+      static_cast<clang::FunctionDecl *>(FD), ESI, AsWritten);
+}
 
 CXQualType clang_ASTContext_getFunctionTypeWithoutPtrSizes(CXASTContext Ctx, CXQualType T) {
   return static_cast<clang::ASTContext *>(Ctx)
@@ -584,6 +729,19 @@ bool clang_ASTContext_BlockRequiresCopying(CXASTContext Ctx, CXQualType T, CXVar
 }
 
 // getByrefLifeTime
+
+bool clang_ASTContext_getByrefLifetime(CXASTContext Ctx, CXQualType Ty,
+                                       CXQualifiers_ObjCLifetime *Lifetime,
+                                       bool *HasByrefExtendedLayout) {
+  clang::Qualifiers::ObjCLifetime LT = clang::Qualifiers::OCL_None;
+  bool Extended = false;
+  if (!static_cast<clang::ASTContext *>(Ctx)->getByrefLifetime(
+          clang::QualType::getFromOpaquePtr(Ty), LT, Extended))
+    return false;
+  *Lifetime = static_cast<CXQualifiers_ObjCLifetime>(LT);
+  *HasByrefExtendedLayout = Extended;
+  return true;
+}
 
 CXQualType clang_ASTContext_getLValueReferenceType(CXASTContext Ctx, CXQualType T,
                                                    bool SpelledAsLValue) {
@@ -838,6 +996,31 @@ CXQualType clang_ASTContext_getInjectedClassNameType(CXASTContext Ctx, CXCXXReco
 
 // getSubstTemplateTypeParmPackType
 
+CXQualType clang_ASTContext_getSubstTemplateTypeParmType(CXASTContext Ctx,
+                                                         CXQualType Replacement,
+                                                         CXDecl AssociatedDecl,
+                                                         unsigned Index, bool HasPackIndex,
+                                                         unsigned PackIndex) {
+  std::optional<unsigned> PI;
+  if (HasPackIndex)
+    PI = PackIndex;
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getSubstTemplateTypeParmType(clang::QualType::getFromOpaquePtr(Replacement),
+                                     static_cast<clang::Decl *>(AssociatedDecl), Index, PI)
+      .getAsOpaquePtr();
+}
+
+CXQualType clang_ASTContext_getSubstTemplateTypeParmPackType(CXASTContext Ctx,
+                                                             CXDecl AssociatedDecl,
+                                                             unsigned Index, bool Final,
+                                                             CXTemplateArgument ArgPack) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getSubstTemplateTypeParmPackType(static_cast<clang::Decl *>(AssociatedDecl), Index,
+                                         Final,
+                                         *static_cast<clang::TemplateArgument *>(ArgPack))
+      .getAsOpaquePtr();
+}
+
 CXQualType clang_ASTContext_getTemplateTypeParmType(CXASTContext Ctx, unsigned Depth,
                                                     unsigned Index, bool ParameterPack,
                                                     CXTemplateTypeParmDecl ParmDecl) {
@@ -863,8 +1046,30 @@ CXQualType clang_ASTContext_getTemplateSpecializationType(
 }
 
 // getCanonicalTemplateSpecializationType
+
+CXQualType clang_ASTContext_getCanonicalTemplateSpecializationType(
+    CXASTContext Ctx, CXTemplateName T, const CXTemplateArgument *Args, unsigned NumArgs) {
+  llvm::SmallVector<clang::TemplateArgument, 8> ArgVec;
+  ArgVec.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    ArgVec.push_back(*static_cast<clang::TemplateArgument *>(const_cast<void *>(Args[I])));
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getCanonicalTemplateSpecializationType(
+          clang::TemplateName::getFromVoidPointer(const_cast<void *>(T)), ArgVec)
+      .getAsOpaquePtr();
+}
 // getTemplateSpecializationType (TemplateArgumentLoc overload)
 // getTemplateSpecializationTypeInfo
+
+CXTypeSourceInfo clang_ASTContext_getTemplateSpecializationTypeInfo(
+    CXASTContext Ctx, CXTemplateName T, CXSourceLocation_ TLoc,
+    CXTemplateArgumentListInfo Args, CXQualType Canon) {
+  return static_cast<clang::ASTContext *>(Ctx)->getTemplateSpecializationTypeInfo(
+      clang::TemplateName::getFromVoidPointer(T),
+      clang::SourceLocation::getFromPtrEncoding(TLoc),
+      *static_cast<clang::TemplateArgumentListInfo *>(Args),
+      clang::QualType::getFromOpaquePtr(Canon));
+}
 
 CXQualType clang_ASTContext_getParenType(CXASTContext Ctx, CXQualType NamedType) {
   return static_cast<clang::ASTContext *>(Ctx)
@@ -907,7 +1112,35 @@ CXQualType clang_ASTContext_getPackExpansionType(CXASTContext Ctx, CXQualType Pa
 
 // getElaboratedType
 // getDependentNameType
+
+CXQualType clang_ASTContext_getDependentNameType(CXASTContext Ctx,
+                                                 CXElaboratedTypeKeyword Keyword,
+                                                 CXNestedNameSpecifier NNS,
+                                                 CXIdentifierInfo Name, CXQualType Canon) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getDependentNameType(static_cast<clang::ElaboratedTypeKeyword>(Keyword),
+                             static_cast<clang::NestedNameSpecifier *>(NNS),
+                             static_cast<clang::IdentifierInfo *>(Name),
+                             clang::QualType::getFromOpaquePtr(Canon))
+      .getAsOpaquePtr();
+}
 // getDependentTemplateSpecializationType
+
+CXQualType clang_ASTContext_getDependentTemplateSpecializationType(
+    CXASTContext Ctx, CXElaboratedTypeKeyword Keyword, CXNestedNameSpecifier NNS,
+    CXIdentifierInfo Name, const CXTemplateArgument *Args, unsigned NumArgs) {
+  llvm::SmallVector<clang::TemplateArgument, 8> ArgVec;
+  ArgVec.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    ArgVec.push_back(*static_cast<clang::TemplateArgument *>(const_cast<void *>(Args[I])));
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getDependentTemplateSpecializationType(
+          static_cast<clang::ElaboratedTypeKeyword>(Keyword),
+          static_cast<clang::NestedNameSpecifier *>(NNS),
+          static_cast<clang::IdentifierInfo *>(Name),
+          llvm::ArrayRef<clang::TemplateArgument>(ArgVec))
+      .getAsOpaquePtr();
+}
 
 CXTemplateArgument clang_ASTContext_getInjectedTemplateArg(CXASTContext Ctx,
                                                            CXNamedDecl ParamDecl) {
@@ -917,6 +1150,16 @@ CXTemplateArgument clang_ASTContext_getInjectedTemplateArg(CXASTContext Ctx,
   return ptr.release();
 }
 // getInjectedTempalteArgs
+
+void clang_ASTContext_getInjectedTemplateArgs(CXASTContext Ctx,
+                                              CXTemplateParameterList Params,
+                                              CXTemplateArgument *Buf) {
+  llvm::SmallVector<clang::TemplateArgument, 4> Args;
+  static_cast<clang::ASTContext *>(Ctx)->getInjectedTemplateArgs(
+      static_cast<clang::TemplateParameterList *>(Params), Args);
+  for (unsigned I = 0; I < Args.size(); ++I)
+    Buf[I] = std::make_unique<clang::TemplateArgument>(Args[I]).release();
+}
 // getPackExpansionType
 // getObjCInterfaceType
 // gvetObjCObjectType
@@ -980,6 +1223,23 @@ CXQualType clang_ASTContext_getUnaryTransformType(CXASTContext Ctx, CXQualType B
       ->getUnaryTransformType(clang::QualType::getFromOpaquePtr(BaseType),
                               clang::QualType::getFromOpaquePtr(UnderlyingType),
                               static_cast<clang::UnaryTransformType::UTTKind>(UKind))
+      .getAsOpaquePtr();
+}
+
+CXQualType clang_ASTContext_getAutoType(CXASTContext Ctx, CXQualType DeducedType,
+                                        CXAutoTypeKeyword Keyword, bool IsDependent,
+                                        bool IsPack, CXConceptDecl TypeConstraintConcept,
+                                        const CXTemplateArgument *TypeConstraintArgs,
+                                        unsigned NumArgs) {
+  llvm::SmallVector<clang::TemplateArgument, 8> ArgVec;
+  ArgVec.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    ArgVec.push_back(
+        *static_cast<clang::TemplateArgument *>(const_cast<void *>(TypeConstraintArgs[I])));
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getAutoType(clang::QualType::getFromOpaquePtr(DeducedType),
+                    static_cast<clang::AutoTypeKeyword>(Keyword), IsDependent, IsPack,
+                    static_cast<clang::ConceptDecl *>(TypeConstraintConcept), ArgVec)
       .getAsOpaquePtr();
 }
 
@@ -1088,6 +1348,11 @@ CXQualType clang_ASTContext_getObjCSuperType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)->getObjCSuperType().getAsOpaquePtr();
 }
 
+void clang_ASTContext_setObjCSuperType(CXASTContext Ctx, CXQualType ST) {
+  static_cast<clang::ASTContext *>(Ctx)->setObjCSuperType(
+      clang::QualType::getFromOpaquePtr(ST));
+}
+
 CXQualType clang_ASTContext_getRawCFConstantStringType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)
       ->getRawCFConstantStringType()
@@ -1117,6 +1382,21 @@ CXRecordDecl clang_ASTContext_getCFConstantStringTagDecl(CXASTContext Ctx) {
 // getObjCNSStringType
 // setObjCNSStringType
 
+CXQualType clang_ASTContext_getObjCConstantStringInterface(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getObjCConstantStringInterface()
+      .getAsOpaquePtr();
+}
+
+CXQualType clang_ASTContext_getObjCNSStringType(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)->getObjCNSStringType().getAsOpaquePtr();
+}
+
+void clang_ASTContext_setObjCNSStringType(CXASTContext Ctx, CXQualType T) {
+  static_cast<clang::ASTContext *>(Ctx)->setObjCNSStringType(
+      clang::QualType::getFromOpaquePtr(T));
+}
+
 CXQualType clang_ASTContext_getObjCIdRedefinitionType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)
       ->getObjCIdRedefinitionType()
@@ -1136,6 +1416,17 @@ CXQualType clang_ASTContext_getObjCClassRedefinitionType(CXASTContext Ctx) {
 
 void clang_ASTContext_setObjCClassRedefinitionType(CXASTContext Ctx, CXQualType T) {
   static_cast<clang::ASTContext *>(Ctx)->setObjCClassRedefinitionType(
+      clang::QualType::getFromOpaquePtr(T));
+}
+
+CXQualType clang_ASTContext_getObjCSelRedefinitionType(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getObjCSelRedefinitionType()
+      .getAsOpaquePtr();
+}
+
+void clang_ASTContext_setObjCSelRedefinitionType(CXASTContext Ctx, CXQualType T) {
+  static_cast<clang::ASTContext *>(Ctx)->setObjCSelRedefinitionType(
       clang::QualType::getFromOpaquePtr(T));
 }
 
@@ -1189,6 +1480,20 @@ CXQualType clang_ASTContext_getFILEType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)->getFILEType().getAsOpaquePtr();
 }
 
+void clang_ASTContext_setjmp_bufDecl(CXASTContext Ctx, CXTypeDecl D) {
+  static_cast<clang::ASTContext *>(Ctx)->setjmp_bufDecl(static_cast<clang::TypeDecl *>(D));
+}
+
+void clang_ASTContext_setsigjmp_bufDecl(CXASTContext Ctx, CXTypeDecl D) {
+  static_cast<clang::ASTContext *>(Ctx)->setsigjmp_bufDecl(
+      static_cast<clang::TypeDecl *>(D));
+}
+
+void clang_ASTContext_setucontext_tDecl(CXASTContext Ctx, CXTypeDecl D) {
+  static_cast<clang::ASTContext *>(Ctx)->setucontext_tDecl(
+      static_cast<clang::TypeDecl *>(D));
+}
+
 CXQualType clang_ASTContext_getjmp_bufType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)->getjmp_bufType().getAsOpaquePtr();
 }
@@ -1203,6 +1508,39 @@ CXQualType clang_ASTContext_getucontext_tType(CXASTContext Ctx) {
 
 CXQualType clang_ASTContext_getLogicalOperationType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)->getLogicalOperationType().getAsOpaquePtr();
+}
+
+CXString clang_ASTContext_getObjCEncodingForType(CXASTContext Ctx, CXQualType T) {
+  std::string S;
+  static_cast<clang::ASTContext *>(Ctx)->getObjCEncodingForType(
+      clang::QualType::getFromOpaquePtr(T), S);
+  return extra::makeCXString(S);
+}
+
+CXString clang_ASTContext_getObjCEncodingForPropertyType(CXASTContext Ctx, CXQualType T) {
+  std::string S;
+  static_cast<clang::ASTContext *>(Ctx)->getObjCEncodingForPropertyType(
+      clang::QualType::getFromOpaquePtr(T), S);
+  return extra::makeCXString(S);
+}
+
+CXQualType clang_ASTContext_getLegacyIntegralTypeEncoding(CXASTContext Ctx, CXQualType T) {
+  clang::QualType QT = clang::QualType::getFromOpaquePtr(T);
+  static_cast<clang::ASTContext *>(Ctx)->getLegacyIntegralTypeEncoding(QT);
+  return QT.getAsOpaquePtr();
+}
+
+CXString clang_ASTContext_getObjCEncodingForFunctionDecl(CXASTContext Ctx,
+                                                         CXFunctionDecl D) {
+  return extra::makeCXString(
+      static_cast<clang::ASTContext *>(Ctx)->getObjCEncodingForFunctionDecl(
+          static_cast<clang::FunctionDecl *>(D)));
+}
+
+int64_t clang_ASTContext_getObjCEncodingTypeSize(CXASTContext Ctx, CXQualType T) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getObjCEncodingTypeSize(clang::QualType::getFromOpaquePtr(T))
+      .getQuantity();
 }
 
 // getObjCEncodingForType
@@ -1222,6 +1560,30 @@ CXQualType clang_ASTContext_getLogicalOperationType(CXASTContext Ctx) {
 // getObjCSelType
 // getObjCClassDecl
 // getObjCClassType
+
+CXTypedefDecl clang_ASTContext_getObjCIdDecl(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)->getObjCIdDecl();
+}
+
+CXQualType clang_ASTContext_getObjCIdType(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)->getObjCIdType().getAsOpaquePtr();
+}
+
+CXTypedefDecl clang_ASTContext_getObjCSelDecl(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)->getObjCSelDecl();
+}
+
+CXQualType clang_ASTContext_getObjCSelType(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)->getObjCSelType().getAsOpaquePtr();
+}
+
+CXTypedefDecl clang_ASTContext_getObjCClassDecl(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)->getObjCClassDecl();
+}
+
+CXQualType clang_ASTContext_getObjCClassType(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)->getObjCClassType().getAsOpaquePtr();
+}
 // getObjCProtocolDecl
 
 CXTypedefDecl clang_ASTContext_getBOOLDecl(CXASTContext Ctx) {
@@ -1282,7 +1644,21 @@ CXQualType clang_ASTContext_getCVRQualifiedType(CXASTContext Ctx, CXQualType T,
 
 // getQualifiedType
 // getLifetimeQualifiedType
+
+CXQualType clang_ASTContext_getLifetimeQualifiedType(CXASTContext Ctx, CXQualType T,
+                                                     CXQualifiers_ObjCLifetime Lifetime) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getLifetimeQualifiedType(clang::QualType::getFromOpaquePtr(T),
+                                 static_cast<clang::Qualifiers::ObjCLifetime>(Lifetime))
+      .getAsOpaquePtr();
+}
 // getUnqualifiedObjCPointerType
+
+CXQualType clang_ASTContext_getUnqualifiedObjCPointerType(CXASTContext Ctx, CXQualType T) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getUnqualifiedObjCPointerType(clang::QualType::getFromOpaquePtr(T))
+      .getAsOpaquePtr();
+}
 
 unsigned char clang_ASTContext_getFixedPointScale(CXASTContext Ctx, CXQualType Ty) {
   return static_cast<clang::ASTContext *>(Ctx)->getFixedPointScale(
@@ -1310,6 +1686,17 @@ CXDeclarationNameInfo clang_ASTContext_getNameForTemplate(CXASTContext Ctx,
   return ptr.release();
 }
 // getOverloadedTemplateName
+
+CXTemplateName clang_ASTContext_getOverloadedTemplateName(CXASTContext Ctx,
+                                                          const CXNamedDecl *Decls,
+                                                          unsigned NumDecls) {
+  clang::UnresolvedSet<8> Set;
+  for (unsigned I = 0; I < NumDecls; ++I)
+    Set.addDecl(static_cast<clang::NamedDecl *>(Decls[I]));
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getOverloadedTemplateName(Set.begin(), Set.end())
+      .getAsVoidPointer();
+}
 
 CXTemplateName clang_ASTContext_getAssumedTemplateName(CXASTContext Ctx,
                                                        CXDeclarationName Name) {
@@ -1359,9 +1746,53 @@ CXTemplateName clang_ASTContext_getDependentTemplateName(CXASTContext Ctx,
 // }
 
 // getSubstTemplateTemplateParmPack
+
+CXTemplateName
+clang_ASTContext_getSubstTemplateTemplateParm(CXASTContext Ctx, CXTemplateName Replacement,
+                                              CXDecl AssociatedDecl, unsigned Index,
+                                              bool HasPackIndex, unsigned PackIndex) {
+  std::optional<unsigned> PI;
+  if (HasPackIndex)
+    PI = PackIndex;
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getSubstTemplateTemplateParm(clang::TemplateName::getFromVoidPointer(Replacement),
+                                     static_cast<clang::Decl *>(AssociatedDecl), Index, PI)
+      .getAsVoidPointer();
+}
+
+CXTemplateName clang_ASTContext_getSubstTemplateTemplateParmPack(CXASTContext Ctx,
+                                                                 CXTemplateArgument ArgPack,
+                                                                 CXDecl AssociatedDecl,
+                                                                 unsigned Index,
+                                                                 bool Final) {
+  return static_cast<clang::ASTContext *>(Ctx)
+      ->getSubstTemplateTemplateParmPack(*static_cast<clang::TemplateArgument *>(ArgPack),
+                                         static_cast<clang::Decl *>(AssociatedDecl), Index,
+                                         Final)
+      .getAsVoidPointer();
+}
 // DecodeTypeStr
 // GetBuiltinType
+
+CXQualType clang_ASTContext_GetBuiltinType(CXASTContext Ctx, unsigned ID,
+                                           CXGetBuiltinTypeError *Error,
+                                           unsigned *IntegerConstantArgs) {
+  clang::ASTContext::GetBuiltinTypeError Err = clang::ASTContext::GE_None;
+  // clang only ORs bits into this out-param, so the zeroing is part of the protocol.
+  if (IntegerConstantArgs)
+    *IntegerConstantArgs = 0;
+  clang::QualType T =
+      static_cast<clang::ASTContext *>(Ctx)->GetBuiltinType(ID, Err, IntegerConstantArgs);
+  *Error = static_cast<CXGetBuiltinTypeError>(Err);
+  return T.getAsOpaquePtr();
+}
 // getObjCGCAttrKind
+
+CXQualifiers_GC clang_ASTContext_getObjCGCAttrKind(CXASTContext Ctx, CXQualType Ty) {
+  return static_cast<CXQualifiers_GC>(
+      static_cast<clang::ASTContext *>(Ctx)->getObjCGCAttrKind(
+          clang::QualType::getFromOpaquePtr(Ty)));
+}
 
 bool clang_ASTContext_areCompatibleVectorTypes(CXASTContext Ctx, CXQualType FirstVec,
                                                CXQualType SecondVec) {
@@ -1403,8 +1834,24 @@ bool clang_ASTContext_hasDirectOwnershipQualifier(CXASTContext Ctx, CXQualType T
       clang::QualType::getFromOpaquePtr(Ty));
 }
 
+bool clang_ASTContext_isObjCNSObjectType(CXQualType Ty) {
+  return clang::ASTContext::isObjCNSObjectType(clang::QualType::getFromOpaquePtr(Ty));
+}
+
 // isObjCNSObjectType
 // getFloatTypeSemantics
+
+unsigned clang_ASTContext_getFloatTypeSemanticsPrecision(CXASTContext Ctx, CXQualType T) {
+  return llvm::APFloat::semanticsPrecision(
+      static_cast<clang::ASTContext *>(Ctx)->getFloatTypeSemantics(
+          clang::QualType::getFromOpaquePtr(T)));
+}
+
+unsigned clang_ASTContext_getFloatTypeSemanticsSizeInBits(CXASTContext Ctx, CXQualType T) {
+  return llvm::APFloat::semanticsSizeInBits(
+      static_cast<clang::ASTContext *>(Ctx)->getFloatTypeSemantics(
+          clang::QualType::getFromOpaquePtr(T)));
+}
 // getTypeInfo
 
 unsigned clang_ASTContext_getOpenMPDefaultSimdAlign(CXASTContext Ctx, CXQualType T) {
@@ -1878,6 +2325,13 @@ CXQualType clang_ASTContext_getPromotedIntegerType(CXASTContext Ctx, CXQualType 
 
 // getInnerObjCOwnership
 
+CXQualifiers_ObjCLifetime clang_ASTContext_getInnerObjCOwnership(CXASTContext Ctx,
+                                                                 CXQualType T) {
+  return static_cast<CXQualifiers_ObjCLifetime>(
+      static_cast<clang::ASTContext *>(Ctx)->getInnerObjCOwnership(
+          clang::QualType::getFromOpaquePtr(T)));
+}
+
 CXQualType clang_ASTContext_isPromotableBitField(CXASTContext Ctx, CXExpr E) {
   return static_cast<clang::ASTContext *>(Ctx)
       ->isPromotableBitField(static_cast<clang::Expr *>(E))
@@ -1971,6 +2425,27 @@ bool clang_ASTContext_typesAreBlockPointerCompatible(CXASTContext Ctx, CXQualTyp
 // isObjCIdType
 // isObjCClassType
 // isObjCSelType
+
+bool clang_ASTContext_isObjCIdType(CXASTContext Ctx, CXQualType T) {
+  return static_cast<clang::ASTContext *>(Ctx)->isObjCIdType(
+      clang::QualType::getFromOpaquePtr(T));
+}
+
+bool clang_ASTContext_isObjCClassType(CXASTContext Ctx, CXQualType T) {
+  return static_cast<clang::ASTContext *>(Ctx)->isObjCClassType(
+      clang::QualType::getFromOpaquePtr(T));
+}
+
+bool clang_ASTContext_isObjCSelType(CXASTContext Ctx, CXQualType T) {
+  return static_cast<clang::ASTContext *>(Ctx)->isObjCSelType(
+      clang::QualType::getFromOpaquePtr(T));
+}
+
+bool clang_ASTContext_areComparableObjCPointerTypes(CXASTContext Ctx, CXQualType LHS,
+                                                    CXQualType RHS) {
+  return static_cast<clang::ASTContext *>(Ctx)->areComparableObjCPointerTypes(
+      clang::QualType::getFromOpaquePtr(LHS), clang::QualType::getFromOpaquePtr(RHS));
+}
 // ObjCQualifiedIdTypesAreCompatible
 // ObjCQualifiedClassTypesAreCompatible
 // canAssignObjCInterfaces
@@ -2076,6 +2551,10 @@ LLVMGenericValueRef clang_ASTContext_MakeIntValue(CXASTContext Ctx, uint64_t Val
 bool clang_ASTContext_isSentinelNullExpr(CXASTContext Ctx, CXExpr E) {
   return static_cast<clang::ASTContext *>(Ctx)->isSentinelNullExpr(
       static_cast<clang::Expr *>(E));
+}
+
+bool clang_ASTContext_AnyObjCImplementation(CXASTContext Ctx) {
+  return static_cast<clang::ASTContext *>(Ctx)->AnyObjCImplementation();
 }
 
 // getObjCImplementation
@@ -2199,8 +2678,56 @@ CXStringLiteral clang_ASTContext_getPredefinedStringLiteralFromCache(CXASTContex
 
 // getMSGuidDecl
 // getTemplateParamObjectDecl
+
+CXMSGuidDecl clang_ASTContext_getMSGuidDecl(CXASTContext Ctx, uint32_t Part1,
+                                            uint16_t Part2, uint16_t Part3,
+                                            const uint8_t *Part4And5) {
+  clang::MSGuidDeclParts Parts;
+  Parts.Part1 = Part1;
+  Parts.Part2 = Part2;
+  Parts.Part3 = Part3;
+  for (unsigned I = 0; I < 8; ++I)
+    Parts.Part4And5[I] = Part4And5[I];
+  return static_cast<clang::ASTContext *>(Ctx)->getMSGuidDecl(Parts);
+}
+
+CXUnnamedGlobalConstantDecl clang_ASTContext_getUnnamedGlobalConstantDecl(CXASTContext Ctx,
+                                                                          CXQualType Ty,
+                                                                          CXAPValue Value) {
+  return static_cast<clang::ASTContext *>(Ctx)->getUnnamedGlobalConstantDecl(
+      clang::QualType::getFromOpaquePtr(Ty), *static_cast<clang::APValue *>(Value));
+}
+
+CXTemplateParamObjectDecl
+clang_ASTContext_getTemplateParamObjectDecl(CXASTContext Ctx, CXQualType T, CXAPValue V) {
+  return static_cast<clang::ASTContext *>(Ctx)->getTemplateParamObjectDecl(
+      clang::QualType::getFromOpaquePtr(T), *static_cast<clang::APValue *>(V));
+}
 // filterFunctionTargetAttrs
 // getFunctionFeatureMap
+
+unsigned clang_ASTContext_getNumFunctionFeatures(CXASTContext Ctx, CXFunctionDecl FD) {
+  llvm::StringMap<bool> FeatureMap;
+  static_cast<clang::ASTContext *>(Ctx)->getFunctionFeatureMap(
+      FeatureMap, static_cast<clang::FunctionDecl *>(FD));
+  return static_cast<unsigned>(FeatureMap.size());
+}
+
+CXString clang_ASTContext_getFunctionFeature(CXASTContext Ctx, CXFunctionDecl FD,
+                                             unsigned I, bool *IsEnabled) {
+  llvm::StringMap<bool> FeatureMap;
+  static_cast<clang::ASTContext *>(Ctx)->getFunctionFeatureMap(
+      FeatureMap, static_cast<clang::FunctionDecl *>(FD));
+  unsigned J = 0;
+  for (const auto &Entry : FeatureMap) {
+    if (J++ != I)
+      continue;
+    *IsEnabled = Entry.getValue();
+    return extra::makeCXString(Entry.getKey().str());
+  }
+  *IsEnabled = false;
+  return extra::makeCXString(std::string());
+}
 
 void clang_ASTContext_InitBuiltinTypes(CXASTContext Ctx, CXTargetInfo_ Target,
                                        CXTargetInfo_ AuxTarget) {

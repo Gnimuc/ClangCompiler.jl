@@ -3,6 +3,8 @@
 #include "clang/AST/GlobalDecl.h"
 #include "clang/AST/Mangle.h"
 #include "llvm/Support/raw_ostream.h"
+#include "clang/AST/DeclCXX.h"
+#include "clang/Basic/Module.h"
 
 // MangleContext
 CXMangleContext_ManglerKind clang_MangleContext_getKind(CXMangleContext MC) {
@@ -103,6 +105,94 @@ CXString clang_MangleContext_mangleCanonicalTypeName(CXMangleContext MC, CXQualT
   return extra::makeCXString(OS.str());
 }
 
+bool clang_MangleContext_isUniqueInternalLinkageDecl(CXMangleContext MC, CXNamedDecl ND) {
+  return static_cast<clang::MangleContext *>(MC)->isUniqueInternalLinkageDecl(
+      static_cast<clang::NamedDecl *>(ND));
+}
+
+void clang_MangleContext_needsUniqueInternalLinkageNames(CXMangleContext MC) {
+  static_cast<clang::MangleContext *>(MC)->needsUniqueInternalLinkageNames();
+}
+
+CXString clang_MangleContext_getLambdaString(CXMangleContext MC, CXCXXRecordDecl Lambda) {
+  return extra::makeCXString(static_cast<clang::MangleContext *>(MC)->getLambdaString(
+      static_cast<clang::CXXRecordDecl *>(Lambda)));
+}
+
+CXString clang_MangleContext_mangleCXXRTTI(CXMangleContext MC, CXQualType T) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleCXXRTTI(
+      clang::QualType::getFromOpaquePtr(T), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_MangleContext_mangleStaticGuardVariable(CXMangleContext MC, CXVarDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleStaticGuardVariable(
+      static_cast<clang::VarDecl *>(D), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_MangleContext_mangleDynamicInitializer(CXMangleContext MC, CXVarDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleDynamicInitializer(
+      static_cast<clang::VarDecl *>(D), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_MangleContext_mangleCXXName(CXMangleContext MC, CXNamedDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleCXXName(
+      clang::GlobalDecl(static_cast<clang::NamedDecl *>(D)), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_MangleContext_mangleReferenceTemporary(CXMangleContext MC, CXVarDecl D,
+                                                      unsigned ManglingNumber) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleReferenceTemporary(
+      static_cast<clang::VarDecl *>(D), ManglingNumber, OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_MangleContext_mangleDynamicAtExitDestructor(CXMangleContext MC,
+                                                           CXVarDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleDynamicAtExitDestructor(
+      static_cast<clang::VarDecl *>(D), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_MangleContext_mangleSEHFilterExpression(CXMangleContext MC,
+                                                       CXFunctionDecl EnclosingDecl) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleSEHFilterExpression(
+      clang::GlobalDecl(static_cast<clang::FunctionDecl *>(EnclosingDecl)), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_MangleContext_mangleSEHFinallyBlock(CXMangleContext MC,
+                                                   CXFunctionDecl EnclosingDecl) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleSEHFinallyBlock(
+      clang::GlobalDecl(static_cast<clang::FunctionDecl *>(EnclosingDecl)), OS);
+  return extra::makeCXString(OS.str());
+}
+
+// MangleContext Cast
+CXItaniumMangleContext clang_MangleContext_castToItaniumMangleContext(CXMangleContext MC) {
+  return llvm::dyn_cast_or_null<clang::ItaniumMangleContext>(
+      static_cast<clang::MangleContext *>(MC));
+}
+
 // ItaniumMangleContext
 // mangleCXXVTable
 // mangleCXXVTT
@@ -113,6 +203,99 @@ CXString clang_MangleContext_mangleCanonicalTypeName(CXMangleContext MC, CXQualT
 // mangleCXXDtorComdat
 // mangleLambdaSig
 // mangleDynamicStermFinalizer
+
+CXString clang_ItaniumMangleContext_mangleCXXVTable(CXItaniumMangleContext MC,
+                                                    CXCXXRecordDecl RD) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleCXXVTable(
+      static_cast<clang::CXXRecordDecl *>(RD), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_ItaniumMangleContext_mangleCXXVTT(CXItaniumMangleContext MC,
+                                                 CXCXXRecordDecl RD) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleCXXVTT(
+      static_cast<clang::CXXRecordDecl *>(RD), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_ItaniumMangleContext_mangleCXXCtorVTable(CXItaniumMangleContext MC,
+                                                        CXCXXRecordDecl RD, int64_t Offset,
+                                                        CXCXXRecordDecl Type) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleCXXCtorVTable(
+      static_cast<clang::CXXRecordDecl *>(RD), Offset,
+      static_cast<clang::CXXRecordDecl *>(Type), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_ItaniumMangleContext_mangleItaniumThreadLocalInit(CXItaniumMangleContext MC,
+                                                                 CXVarDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleItaniumThreadLocalInit(
+      static_cast<clang::VarDecl *>(D), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString
+clang_ItaniumMangleContext_mangleItaniumThreadLocalWrapper(CXItaniumMangleContext MC,
+                                                           CXVarDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleItaniumThreadLocalWrapper(
+      static_cast<clang::VarDecl *>(D), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_ItaniumMangleContext_mangleCXXCtorComdat(CXItaniumMangleContext MC,
+                                                        CXCXXConstructorDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleCXXCtorComdat(
+      static_cast<clang::CXXConstructorDecl *>(D), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_ItaniumMangleContext_mangleCXXDtorComdat(CXItaniumMangleContext MC,
+                                                        CXCXXDestructorDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleCXXDtorComdat(
+      static_cast<clang::CXXDestructorDecl *>(D), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_ItaniumMangleContext_mangleLambdaSig(CXItaniumMangleContext MC,
+                                                    CXCXXRecordDecl Lambda) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleLambdaSig(
+      static_cast<clang::CXXRecordDecl *>(Lambda), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_ItaniumMangleContext_mangleDynamicStermFinalizer(CXItaniumMangleContext MC,
+                                                                CXVarDecl D) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleDynamicStermFinalizer(
+      static_cast<clang::VarDecl *>(D), OS);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_ItaniumMangleContext_mangleModuleInitializer(CXItaniumMangleContext MC,
+                                                            CXModule M) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::ItaniumMangleContext *>(MC)->mangleModuleInitializer(
+      static_cast<clang::Module *>(M), OS);
+  return extra::makeCXString(OS.str());
+}
 
 // MicrosoftMangleContext
 // mangleCXXVFTable

@@ -252,3 +252,350 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Comment verbatim nodes, DeclInfo and resolved parameter names" begin
+    I = create_interpreter()
+    CC.parse(I, """
+             /// \\brief Adds two numbers.
+             /// \\defgroup cc_doc_vb_group The verbatim group
+             /// \\code
+             ///   int r = cc_doc_vb(1, 2);
+             /// \\endcode
+             /// \\param a the first addend
+             /// \\param b the second addend
+             int cc_doc_vb(int a, int b) { return a + b; }
+
+             /// \\brief Identity for <b class="lead">any</b> type.
+             /// \\tparam T the element type
+             /// \\param x the value
+             template <typename T> T cc_doc_vb_ident(T x) { return x; }
+             """)
+
+    ci = get_instance(I)
+    ctx = CC.get_ast_context(I)
+    pp = CC.getPreprocessor(ci)
+
+    # ParamCommandComment::getDirectionAsString is static — it needs no comment node.
+    dirs = (CC.CXParamCommandPassDirection_In, CC.CXParamCommandPassDirection_Out,
+            CC.CXParamCommandPassDirection_InOut)
+    for d in dirs
+        s = CC.getDirectionAsString(d)
+        @test s isa String
+        @test !isempty(s)
+    end
+    @test CC.getDirectionAsString(CC.CXParamCommandPassDirection_In) == "[in]"
+
+    function collect_nodes(root)
+        nodes = CC.Comment[]
+        queue = CC.Comment[CC.getChild(root, i) for i in 0:(CC.child_count(root) - 1)]
+        while !isempty(queue)
+            c = popfirst!(queue)
+            push!(nodes, c)
+            for i in 0:(CC.child_count(c) - 1)
+                push!(queue, CC.getChild(c, i))
+            end
+        end
+        return nodes
+    end
+
+    f = DeclFinder(I)
+    @test f(I, "cc_doc_vb")
+    d = get_decl(f)
+
+    fc = CC.getCommentForDecl(ctx, d, pp)
+    @test fc isa CC.FullComment
+    if fc.ptr != C_NULL
+        # getBlocks() as count+index: FullComment::child_begin/child_end walk exactly
+        # the Blocks array, so the two views must agree element for element.
+        nb = CC.getNumBlocks(fc)
+        @test nb isa Integer
+        @test nb == CC.child_count(fc)
+        for i in 0:(nb - 1)
+            b = CC.getBlock(fc, i)
+            @test b isa CC.Comment
+            @test b.ptr == CC.getChild(fc, i).ptr
+        end
+
+        di = CC.getDeclInfo(fc)
+        @test di isa CC.DeclInfo
+        @test di.ptr != C_NULL
+        @test CC.getKind(di) == CC.CXDeclInfo_FunctionKind
+        @test CC.getTemplateKind(di) == CC.CXDeclInfo_NotTemplate
+        @test CC.involvesFunctionType(di)
+
+        close_names = String[]
+        block_lines = String[]
+        line_texts = String[]
+        verbatim_lines = String[]
+        param_names = String[]
+        for c in collect_nodes(fc)
+            bcc = CC.BlockCommandComment(c)
+            bcc.ptr != C_NULL && @test CC.getCommandNameRange(bcc, ctx) isa CC.SourceRange
+
+            vbc = CC.VerbatimBlockComment(c)
+            if vbc.ptr != C_NULL
+                push!(close_names, CC.getCloseName(vbc))
+                nl = CC.getNumLines(vbc)
+                @test nl isa Integer
+                for k in 0:(nl - 1)
+                    push!(block_lines, CC.getText(vbc, k))
+                end
+            end
+
+            vblc = CC.VerbatimBlockLineComment(c)
+            vblc.ptr != C_NULL && push!(line_texts, CC.getText(vblc))
+
+            vlc = CC.VerbatimLineComment(c)
+            if vlc.ptr != C_NULL
+                push!(verbatim_lines, CC.getText(vlc))
+                @test CC.getTextRange(vlc) isa CC.SourceRange
+            end
+
+            pcc = CC.ParamCommandComment(c)
+            if pcc.ptr != C_NULL && CC.isParamIndexValid(pcc)
+                push!(param_names, CC.getParamName(pcc, fc))
+            end
+        end
+
+        @test "endcode" in close_names
+        @test any(s -> occursin("cc_doc_vb", s), block_lines)
+        # getText(vbc, i) forwards to Lines[i]->getText(), the same nodes the walk saw.
+        @test line_texts == block_lines
+        @test any(s -> occursin("cc_doc_vb_group", s), verbatim_lines)
+        @test all(s -> s isa String, param_names)
+        @test issubset(param_names, ["a", "b"])
+    end
+
+    @test f(I, "cc_doc_vb_ident")
+    td = first(x for x in CC.get_decls(f) if CC.getDeclKindName(x) == "FunctionTemplate")
+    tfc = CC.getCommentForDecl(ctx, td, pp)
+    @test tfc isa CC.FullComment
+    if tfc.ptr != C_NULL
+        tdi = CC.getDeclInfo(tfc)
+        @test CC.getKind(tdi) == CC.CXDeclInfo_FunctionKind
+        @test CC.getTemplateKind(tdi) == CC.CXDeclInfo_Template
+        @test CC.involvesFunctionType(tdi)
+
+        n_attrs = 0
+        tparam_names = String[]
+        for c in collect_nodes(tfc)
+            hst = CC.HTMLStartTagComment(c)
+            if hst.ptr != C_NULL
+                for k in 0:(CC.getNumAttrs(hst) - 1)
+                    n_attrs += 1
+                    @test CC.getAttrNameRange(hst, k) isa CC.SourceRange
+                    @test CC.getAttrNameLocEnd(hst, k) isa CC.SourceLocation
+                end
+            end
+
+            tpc = CC.TParamCommandComment(c)
+            if tpc.ptr != C_NULL && CC.isPositionValid(tpc)
+                push!(tparam_names, CC.getParamName(tpc, tfc))
+            end
+        end
+        @test n_attrs == 1
+        @test all(s -> s isa String, tparam_names)
+        @test issubset(tparam_names, ["T"])
+    end
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Comment node kinds and mutators; coroutine body sub-statements" begin
+    # --- documentation comment node kinds and mutators ---
+    I = create_interpreter()
+    CC.parse(I, """
+             /// \\brief Adds <b>two</b> numbers.
+             /// \\param a the first addend
+             /// \\param b the second addend
+             int cc_mutate_add(int a, int b) { return a + b; }
+             """)
+    ctx = CC.get_ast_context(I)
+    pp = CC.getPreprocessor(get_instance(I))
+    f = DeclFinder(I)
+    @test f(I, "cc_mutate_add")
+    fc = CC.getCommentForDecl(ctx, get_decl(f), pp)
+    @test fc isa CC.FullComment
+
+    # child_count is an unsigned C count: widen it before building a range, or a
+    # childless node turns `0:(n - 1)` into a 2^32-long loop.
+    nchild(c) = Int(CC.child_count(c))
+    nodes = CC.Comment[]
+    queue = CC.Comment[CC.getChild(fc, i) for i in 0:(nchild(fc) - 1)]
+    while !isempty(queue)
+        c = popfirst!(queue)
+        push!(nodes, c)
+        append!(queue, CC.Comment[CC.getChild(c, i) for i in 0:(nchild(c) - 1)])
+    end
+    @test !isempty(nodes)
+
+    # getCommentKind and getCommentKindName are stamped from the same class list,
+    # so the enumerator name is always the kind name with the mirror's prefix.
+    @test CC.getCommentKind(fc) isa Enum
+    @test string(CC.getCommentKind(fc)) == "CXCommentKind_FullComment"
+    for c in nodes
+        @test string(CC.getCommentKind(c)) == "CXCommentKind_" * CC.getCommentKindName(c)
+    end
+
+    texts = filter(t -> t.ptr != C_NULL, [CC.TextComment(c) for c in nodes])
+    @test !isempty(texts)
+    if !isempty(texts)
+        tc = first(texts)
+        @test CC.hasTrailingNewline(tc) isa Bool
+        CC.addTrailingNewline(tc)
+        @test CC.hasTrailingNewline(tc)
+    end
+
+    tags = filter(h -> h.ptr != C_NULL, [CC.HTMLStartTagComment(c) for c in nodes])
+    @test !isempty(tags)   # the <b> opening the brief paragraph
+    if !isempty(tags)
+        h = first(tags)
+        # Feeding setGreaterLoc back the range end it already carries is a no-op.
+        e = CC.getSourceRange(h).end_loc
+        CC.setGreaterLoc(h, e)
+        @test CC.getSourceRange(h).end_loc.ptr == e.ptr
+        @test CC.isSelfClosing(h) isa Bool
+        CC.setSelfClosing(h)
+        @test CC.isSelfClosing(h)
+        @test CC.isMalformed(h) isa Bool
+        CC.setIsMalformed(h)
+        @test CC.isMalformed(h)
+    end
+
+    blocks = filter(b -> b.ptr != C_NULL, [CC.BlockCommandComment(c) for c in nodes])
+    @test !isempty(blocks)
+    for b in blocks
+        p = CC.getParagraph(b)
+        p.ptr == C_NULL && continue
+        CC.setParagraph(b, p)
+        @test CC.getParagraph(b).ptr == p.ptr
+    end
+
+    params = filter(p -> p.ptr != C_NULL, [CC.ParamCommandComment(c) for c in nodes])
+    @test !isempty(params)
+    for p in params
+        d, ex = CC.getDirection(p), CC.isDirectionExplicit(p)
+        CC.setDirection(p, d, ex)
+        @test CC.getDirection(p) == d
+        @test CC.isDirectionExplicit(p) == ex
+        if CC.isParamIndexValid(p) && !CC.isVarArgParam(p)
+            idx = CC.getParamIndex(p)
+            CC.setParamIndex(p, idx)
+            @test CC.getParamIndex(p) == idx
+        end
+    end
+    # setIsVarArgParam is one-way — getParamIndex asserts afterwards — so it runs last.
+    if !isempty(params)
+        p = last(params)
+        CC.setIsVarArgParam(p)
+        @test CC.isVarArgParam(p)
+        @test CC.isParamIndexValid(p)
+    end
+    dispose(I)
+
+    # --- coroutine body sub-statements and range-for setters ---
+    function find_node(::Type{T}, x) where {T}
+        x isa T && return x
+        for c in CC.children(x)
+            r = find_node(T, c)
+            r === nothing || return r
+        end
+        return nothing
+    end
+
+    # The interpreter runs -nostdinc, so <coroutine> is on no host's include path:
+    # the minimal coroutine support library has to travel with the test.
+    J = create_interpreter(["-std=c++20"])
+    CC.parse(J, """
+    namespace std {
+    template <class Ret, class... Args> struct coroutine_traits {
+        using promise_type = typename Ret::promise_type;
+    };
+    template <class Promise = void> struct coroutine_handle;
+    template <> struct coroutine_handle<void> {
+        static coroutine_handle from_address(void *) noexcept { return {}; }
+        void *address() const noexcept { return nullptr; }
+    };
+    template <class Promise> struct coroutine_handle {
+        operator coroutine_handle<>() const noexcept { return {}; }
+        static coroutine_handle from_address(void *) noexcept { return {}; }
+        static coroutine_handle from_promise(Promise &) noexcept { return {}; }
+        void *address() const noexcept { return nullptr; }
+        Promise &promise() const noexcept { return *static_cast<Promise *>(nullptr); }
+    };
+    struct suspend_always {
+        bool await_ready() const noexcept { return false; }
+        void await_suspend(coroutine_handle<>) const noexcept {}
+        void await_resume() const noexcept {}
+    };
+    }
+    struct moved_task {
+        struct promise_type {
+            moved_task get_return_object() { return {}; }
+            std::suspend_always initial_suspend() noexcept { return {}; }
+            std::suspend_always final_suspend() noexcept { return {}; }
+            void return_void() noexcept {}
+            void unhandled_exception() noexcept {}
+        };
+    };
+    moved_task coro_with_param(int a) {
+        co_await std::suspend_always{};
+        co_return;
+    }
+    int sum_over_array() {
+        int arr[3] = {1, 2, 3};
+        int total = 0;
+        for (int x : arr) { total += x; }
+        return total;
+    }
+    """)
+
+    cf = DeclFinder(J)
+    @test cf(J, "coro_with_param")
+    cfd = CC.FunctionDecl(get_decl(cf).ptr)
+    croot = CC.resolve(CC.getBody(cfd))
+    cbs = find_node(CC.CoroutineBodyStmt, croot)
+    @test cbs isa CC.CoroutineBodyStmt
+    if cbs isa CC.CoroutineBodyStmt
+        pds = CC.getPromiseDeclStmt(cbs)
+        @test pds isa CC.AbstractStmt
+        if pds.ptr != C_NULL
+            @test CC.resolve(pds) isa CC.DeclStmt
+        end
+        @test CC.getFallthroughHandler(cbs) isa CC.AbstractStmt
+        @test CC.getResultDecl(cbs) isa CC.AbstractStmt
+        @test CC.getReturnStmtOnAllocFailure(cbs) isa CC.AbstractStmt
+        @test CC.getReturnValueInit(cbs) isa CC.Expr_
+        # `co_return;` yields nothing, so the return value may be a null carrier
+        @test CC.getReturnValue(cbs) isa CC.Expr_
+        n = Int(CC.getNumParamMoves(cbs))
+        @test n >= 0
+        for i in 0:(n - 1)
+            @test CC.getParamMove(cbs, i) isa CC.AbstractStmt
+        end
+
+        crs = find_node(CC.CoreturnStmt, croot)
+        @test crs isa CC.CoreturnStmt
+        if crs isa CC.CoreturnStmt
+            v = CC.isImplicit(crs)
+            CC.setIsImplicit(crs, v)
+            @test CC.isImplicit(crs) == v
+        end
+    end
+
+    rf = DeclFinder(J)
+    @test rf(J, "sum_over_array")
+    rfd = CC.FunctionDecl(get_decl(rf).ptr)
+    frs = find_node(CC.CXXForRangeStmt, CC.resolve(CC.getBody(rfd)))
+    @test frs isa CC.CXXForRangeStmt
+    if frs isa CC.CXXForRangeStmt
+        body = CC.getBody(frs)
+        CC.setBody(frs, body)
+        @test CC.getBody(frs).ptr == body.ptr
+        cond = CC.getCond(frs)
+        CC.setCond(frs, cond)
+        @test CC.getCond(frs).ptr == cond.ptr
+    end
+    dispose(J)
+end

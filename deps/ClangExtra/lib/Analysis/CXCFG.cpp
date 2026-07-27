@@ -4,6 +4,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
 #include "clang/Analysis/CFG.h"
+#include "clang/Analysis/ConstructionContext.h"
 #include "llvm/Support/raw_ostream.h"
 #include <iterator>
 #include <memory>
@@ -44,6 +45,17 @@ CXStmt clang_CFGBlock_getElementStmt(CXCFGBlock B, unsigned I) {
   clang::CFGElement E = (*static_cast<clang::CFGBlock *>(B))[I];
   if (std::optional<clang::CFGStmt> CS = E.getAs<clang::CFGStmt>())
     return const_cast<clang::Stmt *>(CS->getStmt());
+  return nullptr;
+}
+
+CXConstructionContext clang_CFGBlock_getElementConstructionContext(CXCFGBlock B,
+                                                                   unsigned I) {
+  clang::CFGElement E = (*static_cast<clang::CFGBlock *>(B))[I];
+  if (std::optional<clang::CFGConstructor> CE = E.getAs<clang::CFGConstructor>())
+    return const_cast<clang::ConstructionContext *>(CE->getConstructionContext());
+  if (std::optional<clang::CFGCXXRecordTypedCall> RC =
+          E.getAs<clang::CFGCXXRecordTypedCall>())
+    return const_cast<clang::ConstructionContext *>(RC->getConstructionContext());
   return nullptr;
 }
 
@@ -126,6 +138,10 @@ CXString clang_CFGBlock_printElementAsString(CXCFGBlock B, unsigned I) {
   llvm::raw_string_ostream OS(S);
   (*static_cast<clang::CFGBlock *>(B))[I].dumpToStream(OS);
   return extra::makeCXString(OS.str());
+}
+
+void clang_CFGBlock_dumpElement(CXCFGBlock B, unsigned I) {
+  (*static_cast<clang::CFGBlock *>(B))[I].dump();
 }
 
 // pred_begin / pred_end / pred_rbegin / pred_rend / preds
@@ -346,6 +362,12 @@ CXCFG clang_CFGBlock_getParent(CXCFGBlock B) {
   return static_cast<clang::CFGBlock *>(B)->getParent();
 }
 
+void clang_CFGBlock_dump(CXCFGBlock B, CXCFG G, CXASTContext Ctx, bool ShowColors) {
+  static_cast<clang::CFGBlock *>(B)->dump(
+      static_cast<clang::CFG *>(G), static_cast<clang::ASTContext *>(Ctx)->getLangOpts(),
+      ShowColors);
+}
+
 // dump
 
 CXString clang_CFGBlock_printAsString(CXCFGBlock B, CXCFG G, CXASTContext Ctx) {
@@ -399,6 +421,22 @@ void clang_CFGBlock_appendStmt(CXCFGBlock B, CXStmt S) {
   clang::CFGBlock *Blk = static_cast<clang::CFGBlock *>(B);
   clang::BumpVectorContext &C = Blk->getParent()->getBumpVectorContext();
   Blk->appendStmt(static_cast<clang::Stmt *>(S), C);
+}
+
+void clang_CFGBlock_appendConstructor(CXCFGBlock B, CXCXXConstructExpr CE,
+                                      CXConstructionContext CC) {
+  clang::CFGBlock *Blk = static_cast<clang::CFGBlock *>(B);
+  clang::BumpVectorContext &C = Blk->getParent()->getBumpVectorContext();
+  Blk->appendConstructor(static_cast<clang::CXXConstructExpr *>(CE),
+                         static_cast<clang::ConstructionContext *>(CC), C);
+}
+
+void clang_CFGBlock_appendCXXRecordTypedCall(CXCFGBlock B, CXExpr E,
+                                             CXConstructionContext CC) {
+  clang::CFGBlock *Blk = static_cast<clang::CFGBlock *>(B);
+  clang::BumpVectorContext &C = Blk->getParent()->getBumpVectorContext();
+  Blk->appendCXXRecordTypedCall(static_cast<clang::Expr *>(E),
+                                static_cast<clang::ConstructionContext *>(CC), C);
 }
 
 void clang_CFGBlock_appendInitializer(CXCFGBlock B, CXCXXCtorInitializer Init) {
@@ -505,6 +543,80 @@ void clang_CFGBuildOptions_setAlwaysAdd(CXCFGBuildOptions BO, CXStmtClass SC, bo
 
 void clang_CFGBuildOptions_setAllAlwaysAdd(CXCFGBuildOptions BO) {
   static_cast<clang::CFG::BuildOptions *>(BO)->setAllAlwaysAdd();
+}
+
+void clang_CFGBuildOptions_setAddRichCXXConstructors(CXCFGBuildOptions BO, bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->AddRichCXXConstructors = Val;
+}
+
+void clang_CFGBuildOptions_setMarkElidedCXXConstructors(CXCFGBuildOptions BO, bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->MarkElidedCXXConstructors = Val;
+}
+
+bool clang_CFGBuildOptions_getPruneTriviallyFalseEdges(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->PruneTriviallyFalseEdges;
+}
+
+void clang_CFGBuildOptions_setPruneTriviallyFalseEdges(CXCFGBuildOptions BO, bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->PruneTriviallyFalseEdges = Val;
+}
+
+bool clang_CFGBuildOptions_getAddEHEdges(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->AddEHEdges;
+}
+
+void clang_CFGBuildOptions_setAddEHEdges(CXCFGBuildOptions BO, bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->AddEHEdges = Val;
+}
+
+bool clang_CFGBuildOptions_getAddStaticInitBranches(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->AddStaticInitBranches;
+}
+
+void clang_CFGBuildOptions_setAddStaticInitBranches(CXCFGBuildOptions BO, bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->AddStaticInitBranches = Val;
+}
+
+bool clang_CFGBuildOptions_getAddCXXDefaultInitExprInCtors(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->AddCXXDefaultInitExprInCtors;
+}
+
+void clang_CFGBuildOptions_setAddCXXDefaultInitExprInCtors(CXCFGBuildOptions BO, bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->AddCXXDefaultInitExprInCtors = Val;
+}
+
+bool clang_CFGBuildOptions_getAddCXXDefaultInitExprInAggregates(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->AddCXXDefaultInitExprInAggregates;
+}
+
+void clang_CFGBuildOptions_setAddCXXDefaultInitExprInAggregates(CXCFGBuildOptions BO,
+                                                                bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->AddCXXDefaultInitExprInAggregates = Val;
+}
+
+bool clang_CFGBuildOptions_getAddRichCXXConstructors(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->AddRichCXXConstructors;
+}
+
+bool clang_CFGBuildOptions_getMarkElidedCXXConstructors(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->MarkElidedCXXConstructors;
+}
+
+bool clang_CFGBuildOptions_getAddVirtualBaseBranches(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->AddVirtualBaseBranches;
+}
+
+void clang_CFGBuildOptions_setAddVirtualBaseBranches(CXCFGBuildOptions BO, bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->AddVirtualBaseBranches = Val;
+}
+
+bool clang_CFGBuildOptions_getOmitImplicitValueInitializers(CXCFGBuildOptions BO) {
+  return static_cast<clang::CFG::BuildOptions *>(BO)->OmitImplicitValueInitializers;
+}
+
+void clang_CFGBuildOptions_setOmitImplicitValueInitializers(CXCFGBuildOptions BO,
+                                                            bool Val) {
+  static_cast<clang::CFG::BuildOptions *>(BO)->OmitImplicitValueInitializers = Val;
 }
 
 CXCFG clang_CFG_buildCFG(CXDecl D, CXStmt S, CXASTContext Ctx, bool AddInitializers,
@@ -628,6 +740,36 @@ CXDeclStmt clang_CFG_getSyntheticDeclStmtSource(CXCFG G, CXDeclStmt Synthetic) {
 }
 // VisitBlockStmts (template callback — MARSHALLING.md §10)
 
+void clang_CFG_getSyntheticDeclStmts(CXCFG G, CXDeclStmt *SyntheticBuf,
+                                     CXDeclStmt *SourceBuf, unsigned N) {
+  const clang::CFG *C = static_cast<clang::CFG *>(G);
+  unsigned J = 0;
+  for (auto I = C->synthetic_stmt_begin(), E = C->synthetic_stmt_end(); I != E && J < N;
+       ++I, ++J) {
+    SyntheticBuf[J] = const_cast<clang::DeclStmt *>(I->first);
+    SourceBuf[J] = const_cast<clang::DeclStmt *>(I->second);
+  }
+}
+
+unsigned clang_CFG_getNumBlockStmts(CXCFG G) {
+  const clang::CFG *C = static_cast<clang::CFG *>(G);
+  unsigned Count = 0;
+  for (auto I = C->begin(), E = C->end(); I != E; ++I)
+    for (auto BI = (*I)->begin(), BE = (*I)->end(); BI != BE; ++BI)
+      if (BI->getAs<clang::CFGStmt>())
+        ++Count;
+  return Count;
+}
+
+void clang_CFG_getBlockStmts(CXCFG G, CXStmt *Buf, unsigned N) {
+  const clang::CFG *C = static_cast<clang::CFG *>(G);
+  unsigned J = 0;
+  for (auto I = C->begin(), E = C->end(); I != E && J < N; ++I)
+    for (auto BI = (*I)->begin(), BE = (*I)->end(); BI != BE && J < N; ++BI)
+      if (std::optional<clang::CFGStmt> CS = BI->getAs<clang::CFGStmt>())
+        Buf[J++] = const_cast<clang::Stmt *>(CS->getStmt());
+}
+
 unsigned clang_CFG_getNumBlockIDs(CXCFG G) {
   return static_cast<clang::CFG *>(G)->getNumBlockIDs();
 }
@@ -647,6 +789,11 @@ CXString clang_CFG_printAsString(CXCFG G, CXASTContext Ctx) {
       OS, static_cast<clang::ASTContext *>(Ctx)->getLangOpts(),
       /*ShowColors=*/false);
   return extra::makeCXString(OS.str());
+}
+
+void clang_CFG_dump(CXCFG G, CXASTContext Ctx, bool ShowColors) {
+  static_cast<clang::CFG *>(G)->dump(static_cast<clang::ASTContext *>(Ctx)->getLangOpts(),
+                                     ShowColors);
 }
 
 // dump

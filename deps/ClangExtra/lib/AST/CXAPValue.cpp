@@ -5,10 +5,21 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/CharUnits.h"
 #include "clang/AST/Decl.h"
+#include "clang/AST/Expr.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
+#include "llvm/ADT/FoldingSet.h"
 
 bool clang_APValue_needsCleanup(CXAPValue V) {
   return static_cast<clang::APValue *>(V)->needsCleanup();
+}
+
+CXAPValue clang_APValue_IndeterminateValue(void) {
+  // NOLINTNEXTLINE(*-owning-memory)
+  return new clang::APValue(clang::APValue::IndeterminateValue());
+}
+
+void clang_APValue_swap(CXAPValue V, CXAPValue RHS) {
+  static_cast<clang::APValue *>(V)->swap(*static_cast<clang::APValue *>(RHS));
 }
 
 LLVMGenericValueRef clang_APValue_getComplexIntReal(CXAPValue V) {
@@ -59,6 +70,90 @@ bool clang_APValue_isNullPointer(CXAPValue V) {
   return static_cast<clang::APValue *>(V)->isNullPointer();
 }
 
+CXValueDecl clang_APValue_getLValueBaseAsValueDecl(CXAPValue V) {
+  clang::APValue::LValueBase B = static_cast<clang::APValue *>(V)->getLValueBase();
+  if (!B.is<const clang::ValueDecl *>())
+    return nullptr;
+  return const_cast<clang::ValueDecl *>(B.get<const clang::ValueDecl *>());
+}
+
+CXExpr clang_APValue_getLValueBaseAsExpr(CXAPValue V) {
+  clang::APValue::LValueBase B = static_cast<clang::APValue *>(V)->getLValueBase();
+  if (!B.is<const clang::Expr *>())
+    return nullptr;
+  return const_cast<clang::Expr *>(B.get<const clang::Expr *>());
+}
+
+bool clang_APValue_isLValueBaseNull(CXAPValue V) {
+  return static_cast<clang::APValue *>(V)->getLValueBase().isNull();
+}
+
+CXQualType clang_APValue_getLValueBaseType(CXAPValue V) {
+  return static_cast<clang::APValue *>(V)->getLValueBase().getType().getAsOpaquePtr();
+}
+
+bool clang_APValue_isLValueBaseTypeInfo(CXAPValue V) {
+  return static_cast<clang::APValue *>(V)->getLValueBase().is<clang::TypeInfoLValue>();
+}
+
+CXType_ clang_APValue_getLValueBaseTypeInfoOperand(CXAPValue V) {
+  clang::APValue::LValueBase B = static_cast<clang::APValue *>(V)->getLValueBase();
+  return const_cast<clang::Type *>(B.get<clang::TypeInfoLValue>().getType());
+}
+
+CXQualType clang_APValue_getLValueBaseTypeInfoType(CXAPValue V) {
+  return static_cast<clang::APValue *>(V)
+      ->getLValueBase()
+      .getTypeInfoType()
+      .getAsOpaquePtr();
+}
+
+bool clang_APValue_isLValueBaseDynamicAlloc(CXAPValue V) {
+  return static_cast<clang::APValue *>(V)->getLValueBase().is<clang::DynamicAllocLValue>();
+}
+
+unsigned clang_APValue_getLValueBaseDynamicAllocIndex(CXAPValue V) {
+  clang::APValue::LValueBase B = static_cast<clang::APValue *>(V)->getLValueBase();
+  return B.get<clang::DynamicAllocLValue>().getIndex();
+}
+
+CXQualType clang_APValue_getLValueBaseDynamicAllocType(CXAPValue V) {
+  return static_cast<clang::APValue *>(V)
+      ->getLValueBase()
+      .getDynamicAllocType()
+      .getAsOpaquePtr();
+}
+
+unsigned clang_APValue_getLValueBaseProfileHash(CXAPValue V) {
+  llvm::FoldingSetNodeID ID;
+  static_cast<clang::APValue *>(V)->getLValueBase().Profile(ID);
+  return ID.ComputeHash();
+}
+
+unsigned clang_APValue_getLValuePathLength(CXAPValue V) {
+  return static_cast<unsigned>(static_cast<clang::APValue *>(V)->getLValuePath().size());
+}
+
+uint64_t clang_APValue_getLValuePathAsArrayIndex(CXAPValue V, unsigned I) {
+  return static_cast<clang::APValue *>(V)->getLValuePath()[I].getAsArrayIndex();
+}
+
+CXDecl clang_APValue_getLValuePathAsBaseOrMember(CXAPValue V, unsigned I) {
+  auto Entry = static_cast<clang::APValue *>(V)->getLValuePath()[I];
+  return const_cast<clang::Decl *>(Entry.getAsBaseOrMember().getPointer());
+}
+
+bool clang_APValue_isLValuePathBaseOrMemberVirtual(CXAPValue V, unsigned I) {
+  auto Entry = static_cast<clang::APValue *>(V)->getLValuePath()[I];
+  return Entry.getAsBaseOrMember().getInt();
+}
+
+unsigned clang_APValue_getLValuePathEntryProfileHash(CXAPValue V, unsigned I) {
+  llvm::FoldingSetNodeID ID;
+  static_cast<clang::APValue *>(V)->getLValuePath()[I].Profile(ID);
+  return ID.ComputeHash();
+}
+
 CXValueDecl clang_APValue_getMemberPointerDecl(CXAPValue V) {
   return const_cast<clang::ValueDecl *>(
       static_cast<clang::APValue *>(V)->getMemberPointerDecl());
@@ -66,6 +161,16 @@ CXValueDecl clang_APValue_getMemberPointerDecl(CXAPValue V) {
 
 bool clang_APValue_isMemberPointerToDerivedMember(CXAPValue V) {
   return static_cast<clang::APValue *>(V)->isMemberPointerToDerivedMember();
+}
+
+unsigned clang_APValue_getMemberPointerPathSize(CXAPValue V) {
+  return static_cast<unsigned>(
+      static_cast<clang::APValue *>(V)->getMemberPointerPath().size());
+}
+
+CXCXXRecordDecl clang_APValue_getMemberPointerPathEntry(CXAPValue V, unsigned I) {
+  return const_cast<clang::CXXRecordDecl *>(
+      static_cast<clang::APValue *>(V)->getMemberPointerPath()[I]);
 }
 
 CXAddrLabelExpr clang_APValue_getAddrLabelDiffLHS(CXAPValue V) {
@@ -76,6 +181,48 @@ CXAddrLabelExpr clang_APValue_getAddrLabelDiffLHS(CXAPValue V) {
 CXAddrLabelExpr clang_APValue_getAddrLabelDiffRHS(CXAPValue V) {
   return const_cast<clang::AddrLabelExpr *>(
       static_cast<clang::APValue *>(V)->getAddrLabelDiffRHS());
+}
+
+void clang_APValue_setInt(CXAPValue V, LLVMGenericValueRef GV, bool IsUnsigned) {
+  auto *G = reinterpret_cast<llvm::GenericValue *>(GV);
+  static_cast<clang::APValue *>(V)->setInt(llvm::APSInt(G->IntVal, IsUnsigned));
+}
+
+void clang_APValue_setFloat(CXAPValue V, LLVMGenericValueRef GV) {
+  auto *A = static_cast<clang::APValue *>(V);
+  auto *G = reinterpret_cast<llvm::GenericValue *>(GV);
+  const llvm::fltSemantics &Sem = A->getFloat().getSemantics();
+  llvm::APFloat New(Sem, G->IntVal.zextOrTrunc(llvm::APFloat::getSizeInBits(Sem)));
+  A->setFloat(New);
+}
+
+void clang_APValue_setComplexInt(CXAPValue V, LLVMGenericValueRef Real,
+                                 LLVMGenericValueRef Imag, bool IsUnsigned) {
+  auto *A = static_cast<clang::APValue *>(V);
+  auto *R = reinterpret_cast<llvm::GenericValue *>(Real);
+  auto *I = reinterpret_cast<llvm::GenericValue *>(Imag);
+  unsigned Width = A->getComplexIntReal().getBitWidth();
+  llvm::APSInt NewReal(R->IntVal.zextOrTrunc(Width), IsUnsigned);
+  llvm::APSInt NewImag(I->IntVal.zextOrTrunc(Width), IsUnsigned);
+  A->setComplexInt(NewReal, NewImag);
+}
+
+void clang_APValue_setComplexFloat(CXAPValue V, LLVMGenericValueRef Real,
+                                   LLVMGenericValueRef Imag) {
+  auto *A = static_cast<clang::APValue *>(V);
+  auto *R = reinterpret_cast<llvm::GenericValue *>(Real);
+  auto *I = reinterpret_cast<llvm::GenericValue *>(Imag);
+  const llvm::fltSemantics &Sem = A->getComplexFloatReal().getSemantics();
+  unsigned Width = llvm::APFloat::getSizeInBits(Sem);
+  llvm::APFloat NewReal(Sem, R->IntVal.zextOrTrunc(Width));
+  llvm::APFloat NewImag(Sem, I->IntVal.zextOrTrunc(Width));
+  A->setComplexFloat(NewReal, NewImag);
+}
+
+void clang_APValue_setUnion(CXAPValue V, CXFieldDecl Field, CXAPValue Value) {
+  auto *FD = static_cast<clang::FieldDecl *>(Field);
+  auto *Val = static_cast<clang::APValue *>(Value);
+  static_cast<clang::APValue *>(V)->setUnion(FD, *Val);
 }
 
 CXAPValueKind clang_APValue_getKind(CXAPValue V) {
@@ -147,6 +294,12 @@ CXString clang_APValue_getAsString(CXAPValue V, CXASTContext Ctx, CXQualType T) 
       *static_cast<clang::ASTContext *>(Ctx), clang::QualType::getFromOpaquePtr(T)));
 }
 
+unsigned clang_APValue_getProfileHash(CXAPValue V) {
+  llvm::FoldingSetNodeID ID;
+  static_cast<clang::APValue *>(V)->Profile(ID);
+  return ID.ComputeHash();
+}
+
 LLVMGenericValueRef clang_APValue_getInt(CXAPValue V) {
   auto *GV = new llvm::GenericValue; // NOLINT(*-owning-memory)
   GV->IntVal = static_cast<clang::APValue *>(V)->getInt();
@@ -156,6 +309,18 @@ LLVMGenericValueRef clang_APValue_getInt(CXAPValue V) {
 LLVMGenericValueRef clang_APValue_getFloat(CXAPValue V) {
   auto *GV = new llvm::GenericValue; // NOLINT(*-owning-memory)
   GV->IntVal = static_cast<clang::APValue *>(V)->getFloat().bitcastToAPInt();
+  return reinterpret_cast<LLVMGenericValueRef>(GV);
+}
+
+LLVMGenericValueRef clang_APValue_toIntegralConstant(CXAPValue V, CXQualType SrcTy,
+                                                     CXASTContext Ctx) {
+  llvm::APSInt Result;
+  if (!static_cast<clang::APValue *>(V)->toIntegralConstant(
+          Result, clang::QualType::getFromOpaquePtr(SrcTy),
+          *static_cast<clang::ASTContext *>(Ctx)))
+    return nullptr;
+  auto *GV = new llvm::GenericValue; // NOLINT(*-owning-memory)
+  GV->IntVal = Result;
   return reinterpret_cast<LLVMGenericValueRef>(GV);
 }
 
@@ -214,4 +379,9 @@ CXAPValue clang_APValue_getVectorElt(CXAPValue V, unsigned I) {
 
 void clang_APValue_dispose(CXAPValue V) {
   delete static_cast<clang::APValue *>(V); // NOLINT(*-owning-memory)
+}
+
+// DynamicAllocLValue
+unsigned clang_DynamicAllocLValue_getMaxIndex(void) {
+  return clang::DynamicAllocLValue::getMaxIndex();
 }

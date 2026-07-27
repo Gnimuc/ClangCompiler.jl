@@ -1,6 +1,8 @@
 #include "clang-ex/Interpreter/CXValue.h"
+#include "utils.h"
 #include "clang/Interpreter/Interpreter.h"
 #include "clang/Interpreter/Value.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <memory>
 
@@ -14,6 +16,39 @@ void clang_value_dispose(CXValue V) { delete static_cast<clang::Value *>(V); }
 CXValue clang_createValueFromType(CXInterpreter I, void *Ty) {
   auto V = std::make_unique<clang::Value>(static_cast<clang::Interpreter *>(I), Ty);
   return V.release();
+}
+
+CXString clang_value_printType(CXValue V) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::Value *>(V)->printType(OS);
+  return extra::makeCXString(S);
+}
+
+CXString clang_value_printData(CXValue V) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::Value *>(V)->printData(OS);
+  return extra::makeCXString(S);
+}
+
+CXString clang_value_print(CXValue V) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::Value *>(V)->print(OS);
+  return extra::makeCXString(S);
+}
+
+void clang_value_dump(CXValue V) { static_cast<clang::Value *>(V)->dump(); }
+
+void clang_value_clear(CXValue V) { static_cast<clang::Value *>(V)->clear(); }
+
+CXASTContext clang_value_getASTContext(CXValue V) {
+  return &static_cast<clang::Value *>(V)->getASTContext();
+}
+
+CXInterpreter clang_value_getInterpreter(CXValue V) {
+  return &static_cast<clang::Value *>(V)->getInterpreter();
 }
 
 void *clang_value_getType(CXValue V) {

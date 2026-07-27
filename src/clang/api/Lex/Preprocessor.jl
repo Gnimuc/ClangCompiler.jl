@@ -942,3 +942,866 @@ function GetIncludeFilenameSpelling(x::AbstractPreprocessor, loc::SourceLocation
     s = get_string(clang_Preprocessor_GetIncludeFilenameSpelling(x, loc, spelling, is_angled))
     return s, is_angled[]
 end
+
+
+"""
+    setDiagnostics(x::AbstractPreprocessor, diags::AbstractDiagnosticsEngine)
+Point the preprocessor at `diags`.
+
+The engine is borrowed, not adopted: the preprocessor only stores the pointer, so `diags`
+must outlive it and must not be disposed while it is installed.
+"""
+function setDiagnostics(x::AbstractPreprocessor, diags::AbstractDiagnosticsEngine)
+    @check_ptrs x diags
+    return clang_Preprocessor_setDiagnostics(x, diags)
+end
+
+"""
+    isCurrentLexer(x::AbstractPreprocessor, lexer::AbstractPreprocessorLexer) -> Bool
+Return whether `lexer` is the lexer the preprocessor is currently reading tokens from.
+"""
+function isCurrentLexer(x::AbstractPreprocessor, lexer::AbstractPreprocessorLexer)
+    @check_ptrs x lexer
+    return clang_Preprocessor_isCurrentLexer(x, lexer)
+end
+
+"""
+    getCurrentLexer(x::AbstractPreprocessor) -> PreprocessorLexer
+Return the lexer the preprocessor is currently reading tokens from. The returned carrier
+wraps `C_NULL` while tokens are being served from a macro expansion or from the token
+cache. The lexer is borrowed and must never be disposed.
+"""
+function getCurrentLexer(x::AbstractPreprocessor)
+    @check_ptrs x
+    return PreprocessorLexer(clang_Preprocessor_getCurrentLexer(x))
+end
+
+"""
+    getCurrentFileLexer(x::AbstractPreprocessor) -> PreprocessorLexer
+Return the innermost *file* lexer on the include stack, skipping macro and token-stream
+lexers. The returned carrier wraps `C_NULL` when there is no file lexer, and is borrowed.
+"""
+function getCurrentFileLexer(x::AbstractPreprocessor)
+    @check_ptrs x
+    return PreprocessorLexer(clang_Preprocessor_getCurrentFileLexer(x))
+end
+
+"""
+    LookAhead(x::AbstractPreprocessor, n::Integer, result::AbstractToken)
+Copy the token `n` positions ahead of the next one to be lexed into `result` without
+consuming anything; `n == 0` is the token `Lex` would return next.
+
+Peeking pulls tokens into the preprocessor's cache, so this must not run from inside a
+nested lexing action — Clang asserts `LexLevel == 0`, a state no accessor exposes, so the
+precondition is documented rather than asserted.
+"""
+function LookAhead(x::AbstractPreprocessor, n::Integer, result::AbstractToken)
+    @check_ptrs x result
+    return clang_Preprocessor_LookAhead(x, n, result)
+end
+
+"""
+    RevertCachedTokens(x::AbstractPreprocessor, n::Integer)
+Rewind the cached token stream by `n` tokens.
+
+Backtracking must be enabled and `n` must not reach past the last backtrack position —
+Clang asserts both; only the first is observable and the `@assert` restates it.
+"""
+function RevertCachedTokens(x::AbstractPreprocessor, n::Integer)
+    @check_ptrs x
+    @assert isBacktrackEnabled(x) "EnableBacktrackAtThisPos must be called first"
+    return clang_Preprocessor_RevertCachedTokens(x, n)
+end
+
+"""
+    EnterToken(x::AbstractPreprocessor, tok::AbstractToken, is_reinject::Bool=true)
+Push a copy of `tok` to be lexed next; a following `Backtrack` leaves it at the insertion
+point. Outside a nested lexing action Clang asserts `is_reinject`, which is why it
+defaults to `true`.
+"""
+function EnterToken(x::AbstractPreprocessor, tok::AbstractToken, is_reinject::Bool=true)
+    @check_ptrs x tok
+    return clang_Preprocessor_EnterToken(x, tok, is_reinject)
+end
+
+"""
+    AnnotateCachedTokens(x::AbstractPreprocessor, tok::AbstractToken)
+Replace the cached tokens back to the last backtrack position with the annotation token
+`tok`; a no-op when backtracking is not enabled.
+
+`tok` must be an annotation token — Clang asserts, which the `@assert` restates.
+"""
+function AnnotateCachedTokens(x::AbstractPreprocessor, tok::AbstractToken)
+    @check_ptrs x tok
+    @assert isAnnotation(tok) "an annotation token is required"
+    return clang_Preprocessor_AnnotateCachedTokens(x, tok)
+end
+
+"""
+    getLastCachedTokenLocation(x::AbstractPreprocessor) -> SourceLocation
+Return the location of the last cached token, suitable as the end location of an
+annotation token.
+
+At least one token must already have been cached: Clang asserts `CachedLexPos != 0`, and
+the preprocessor exposes no accessor for that position, so this wrapper documents the
+precondition instead of asserting it (see `MARSHALLING.md` section 13).
+"""
+function getLastCachedTokenLocation(x::AbstractPreprocessor)
+    @check_ptrs x
+    return SourceLocation(clang_Preprocessor_getLastCachedTokenLocation(x))
+end
+
+"""
+    ReplaceLastTokenWithAnnotation(x::AbstractPreprocessor, tok::AbstractToken)
+Replace only the most recent cached token with the annotation token `tok`; a no-op when
+backtracking is not enabled.
+
+`tok` must be an annotation token — Clang asserts, which the `@assert` restates.
+"""
+function ReplaceLastTokenWithAnnotation(x::AbstractPreprocessor, tok::AbstractToken)
+    @check_ptrs x tok
+    @assert isAnnotation(tok) "an annotation token is required"
+    return clang_Preprocessor_ReplaceLastTokenWithAnnotation(x, tok)
+end
+
+"""
+    SetCodeCompletionPoint(x::AbstractPreprocessor, file::AbstractFileEntryRef,
+                           line::Integer, column::Integer) -> Bool
+Truncate `file` at `line`:`column` (both 1-based) and make that the code-completion point.
+Returns `true` on error.
+
+`line` and `column` must be non-zero and no code-completion point may have been set yet —
+Clang asserts both, and the `@assert`s restate them (`isCodeCompletionEnabled` is the
+observable gate for the second).
+"""
+function SetCodeCompletionPoint(x::AbstractPreprocessor, file::AbstractFileEntryRef,
+                                line::Integer, column::Integer)
+    @check_ptrs x file
+    @assert line > 0 && column > 0 "line and column are 1-based"
+    @assert !isCodeCompletionEnabled(x) "a code-completion point is already set"
+    return clang_Preprocessor_SetCodeCompletionPoint(x, file, line, column)
+end
+
+"""
+    SetPoisonReason(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, diag_id::Integer)
+Record the diagnostic reported in place of the default "poisoned identifier" one when the
+poisoned identifier `ii` is used.
+"""
+function SetPoisonReason(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                         diag_id::Integer)
+    @check_ptrs x ii
+    return clang_Preprocessor_SetPoisonReason(x, ii, diag_id)
+end
+
+"""
+    HandlePoisonedIdentifier(x::AbstractPreprocessor, tok::AbstractToken)
+Report why `tok`'s identifier is poisoned. Nothing is reported when that identifier is not
+poisoned.
+
+`tok` must carry an identifier info — Clang asserts, which the `@assert` restates.
+"""
+function HandlePoisonedIdentifier(x::AbstractPreprocessor, tok::AbstractToken)
+    @check_ptrs x tok
+    @assert getIdentifierInfo(tok).ptr != C_NULL "the token must carry an identifier info"
+    return clang_Preprocessor_HandlePoisonedIdentifier(x, tok)
+end
+
+"""
+    MaybeHandlePoisonedIdentifier(x::AbstractPreprocessor, tok::AbstractToken)
+Report the poison reason for `tok`'s identifier when it has one and it is poisoned. Unlike
+`HandlePoisonedIdentifier` this is a no-op for a token carrying no identifier info.
+"""
+function MaybeHandlePoisonedIdentifier(x::AbstractPreprocessor, tok::AbstractToken)
+    @check_ptrs x tok
+    return clang_Preprocessor_MaybeHandlePoisonedIdentifier(x, tok)
+end
+
+"""
+    addMacroDeprecationMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                           msg::AbstractString, annotation_loc::SourceLocation)
+Record the `#pragma clang deprecated` message reported when the macro named by `ii` is
+expanded.
+"""
+function addMacroDeprecationMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                                msg::AbstractString, annotation_loc::SourceLocation)
+    @check_ptrs x ii
+    return clang_Preprocessor_addMacroDeprecationMsg(x, ii, msg, annotation_loc)
+end
+
+"""
+    addRestrictExpansionMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                            msg::AbstractString, annotation_loc::SourceLocation)
+Record the `#pragma clang restrict_expansion` message reported when the macro named by
+`ii` is expanded outside the main file.
+"""
+function addRestrictExpansionMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                                 msg::AbstractString, annotation_loc::SourceLocation)
+    @check_ptrs x ii
+    return clang_Preprocessor_addRestrictExpansionMsg(x, ii, msg, annotation_loc)
+end
+
+"""
+    addFinalLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                annotation_loc::SourceLocation)
+Record the `#pragma clang final` location for the macro named by `ii`.
+"""
+function addFinalLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                     annotation_loc::SourceLocation)
+    @check_ptrs x ii
+    return clang_Preprocessor_addFinalLoc(x, ii, annotation_loc)
+end
+
+"""
+    processPathForFileMacro(path::AbstractString, lang_opts::AbstractLangOptions,
+                            target::AbstractTargetInfo) -> String
+Apply the `__FILE__` path transformations — the `-ffile-prefix-map` remappings and, under
+`-ffile-reproducible`, the target's preferred path separators — to `path`.
+
+Static on `clang::Preprocessor`, so it takes no preprocessor receiver.
+"""
+function processPathForFileMacro(path::AbstractString, lang_opts::AbstractLangOptions,
+                                 target::AbstractTargetInfo)
+    @check_ptrs lang_opts target
+    return get_string(clang_Preprocessor_processPathForFileMacro(path, lang_opts, target))
+end
+
+
+"""
+    getSelectorTable(x::AbstractPreprocessor) -> SelectorTable
+Return the Objective-C selector table this preprocessor owns. The result is borrowed.
+"""
+function getSelectorTable(x::AbstractPreprocessor)
+    @check_ptrs x
+    return SelectorTable(clang_Preprocessor_getSelectorTable(x))
+end
+
+"""
+    DumpMacro(x::AbstractPreprocessor, mi::AbstractMacroInfo)
+Write `mi`'s replacement tokens to stderr. A builtin macro has no replacement tokens and
+dumps as an empty body.
+"""
+function DumpMacro(x::AbstractPreprocessor, mi::AbstractMacroInfo)
+    @check_ptrs x mi
+    return clang_Preprocessor_DumpMacro(x, mi)
+end
+
+"""
+    dumpMacroInfo(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+Write `ii`'s macro-definition history to stderr. Total — an identifier that never named a
+macro dumps an empty state.
+"""
+function dumpMacroInfo(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    return clang_Preprocessor_dumpMacroInfo(x, ii)
+end
+
+"""
+    isMacroDefinedInLocalModule(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                                m::AbstractModule) -> Bool
+Return whether `ii` is `#define`d inside the already-preprocessed module `m`. Macros merely
+imported into `m` do not count, and a module this preprocessor never preprocessed answers
+false.
+"""
+function isMacroDefinedInLocalModule(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                                     m::AbstractModule)
+    @check_ptrs x ii m
+    return clang_Preprocessor_isMacroDefinedInLocalModule(x, ii, m)
+end
+
+"""
+    getLocalMacroDirective(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) -> MacroDirective
+Return `ii`'s latest non-imported macro directive. The result is borrowed and holds a NULL
+pointer when `ii` is not currently `#define`d.
+"""
+function getLocalMacroDirective(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    return MacroDirective(clang_Preprocessor_getLocalMacroDirective(x, ii))
+end
+
+"""
+    getLocalMacroDirectiveHistory(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) -> MacroDirective
+Return the head of `ii`'s local `#define`/`#undef` history. The result is borrowed and holds
+a NULL pointer when `ii` has no history; a non-NULL head may itself be an `#undef`, so it
+does not imply a live definition.
+"""
+function getLocalMacroDirectiveHistory(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    return MacroDirective(clang_Preprocessor_getLocalMacroDirectiveHistory(x, ii))
+end
+
+"""
+    getNumMacros(x::AbstractPreprocessor, include_external::Bool=true) -> Integer
+Return the number of entries in the macro history table. Reading the table folds the
+visible module macros into it, so the count can grow across calls even without lexing.
+"""
+function getNumMacros(x::AbstractPreprocessor, include_external::Bool=true)
+    @check_ptrs x
+    return clang_Preprocessor_getNumMacros(x, include_external)
+end
+
+"""
+    getMacros(x::AbstractPreprocessor, include_external::Bool=true) -> Vector{IdentifierInfo}
+Return the identifiers in the macro history table. An entry only records that the name once
+named a macro — it may since have been `#undef`'d, so pair this with `getMacroInfo` or
+`getLocalMacroDirective` to find the live definitions.
+"""
+function getMacros(x::AbstractPreprocessor, include_external::Bool=true)
+    @check_ptrs x
+    n = clang_Preprocessor_getNumMacros(x, include_external)
+    buf = Vector{CXIdentifierInfo}(undef, n)
+    n > 0 && clang_Preprocessor_getMacros(x, include_external, buf)
+    return [IdentifierInfo(p) for p in buf]
+end
+
+"""
+    markClangModuleAsAffecting(x::AbstractPreprocessor, m::AbstractModule)
+Record `m` as affecting the module or translation unit currently being built. `m` must be a
+module-map module — Clang asserts. The preprocessor keeps a borrowed pointer to `m`, so `m`
+must outlive it.
+"""
+function markClangModuleAsAffecting(x::AbstractPreprocessor, m::AbstractModule)
+    @check_ptrs x m
+    @assert isModuleMapModule(m) "module must be a module-map module"
+    return clang_Preprocessor_markClangModuleAsAffecting(x, m)
+end
+
+"""
+    getNumIncludedFiles(x::AbstractPreprocessor) -> Integer
+Return the number of files already `#include`d.
+"""
+function getNumIncludedFiles(x::AbstractPreprocessor)
+    @check_ptrs x
+    return clang_Preprocessor_getNumIncludedFiles(x)
+end
+
+"""
+    getIncludedFiles(x::AbstractPreprocessor) -> Vector{FileEntry}
+Return the files already `#include`d. The entries are borrowed and their order is the
+underlying hash set's — it carries no meaning.
+"""
+function getIncludedFiles(x::AbstractPreprocessor)
+    @check_ptrs x
+    n = clang_Preprocessor_getNumIncludedFiles(x)
+    buf = Vector{CXFileEntry}(undef, n)
+    n > 0 && clang_Preprocessor_getIncludedFiles(x, buf)
+    return [FileEntry(p) for p in buf]
+end
+
+"""
+    getPreprocessingRecord(x::AbstractPreprocessor) -> PreprocessingRecord
+Return the record of macro expansions and definitions. The result is borrowed and holds a
+NULL pointer until `createPreprocessingRecord` has run.
+"""
+function getPreprocessingRecord(x::AbstractPreprocessor)
+    @check_ptrs x
+    return PreprocessingRecord(clang_Preprocessor_getPreprocessingRecord(x))
+end
+
+"""
+    createPreprocessingRecord(x::AbstractPreprocessor)
+Install a preprocessing record that tracks every later macro expansion and definition. The
+record is adopted by the preprocessor's callback chain — it is never disposed by the caller,
+and the installation cannot be undone.
+"""
+function createPreprocessingRecord(x::AbstractPreprocessor)
+    @check_ptrs x
+    return clang_Preprocessor_createPreprocessingRecord(x)
+end
+
+"""
+    makeModuleVisible(x::AbstractPreprocessor, m::AbstractModule, loc::SourceLocation)
+Make `m` and everything it exports visible as of `loc`. `loc` must be valid unless `m` is a
+global module fragment — Clang asserts. The preprocessor keeps a borrowed pointer to `m`, so
+`m` must outlive it.
+"""
+function makeModuleVisible(x::AbstractPreprocessor, m::AbstractModule, loc::SourceLocation)
+    @check_ptrs x m
+    @assert isGlobalModule(m) || isValid(loc) "import location must be valid for a non-global module"
+    return clang_Preprocessor_makeModuleVisible(x, m, loc)
+end
+
+"""
+    getModuleImportLoc(x::AbstractPreprocessor, m::AbstractModule) -> SourceLocation
+Return the location `m` was made visible at. The location is invalid when `m` never was.
+"""
+function getModuleImportLoc(x::AbstractPreprocessor, m::AbstractModule)
+    @check_ptrs x m
+    return SourceLocation(clang_Preprocessor_getModuleImportLoc(x, m))
+end
+
+
+"""
+    getBuiltinInfo(x::AbstractPreprocessor) -> BuiltinContext
+Return the builtin-function table this preprocessor owns. The result is borrowed and is
+never NULL.
+"""
+function getBuiltinInfo(x::AbstractPreprocessor)
+    @check_ptrs x
+    return BuiltinContext(clang_Preprocessor_getBuiltinInfo(x))
+end
+
+"""
+    setExternalSource(x::AbstractPreprocessor, src::AbstractExternalPreprocessorSource)
+Attach `src` as the source of macros loaded from an AST file. The preprocessor only borrows
+the pointer, so `src` must outlive it; a NULL carrier detaches the current source.
+"""
+function setExternalSource(x::AbstractPreprocessor, src::AbstractExternalPreprocessorSource)
+    @check_ptrs x
+    return clang_Preprocessor_setExternalSource(x, src)
+end
+
+"""
+    getExternalSource(x::AbstractPreprocessor) -> ExternalPreprocessorSource
+Return the source of macros loaded from an AST file. The result is borrowed and holds a NULL
+pointer when no source is attached.
+"""
+function getExternalSource(x::AbstractPreprocessor)
+    @check_ptrs x
+    return ExternalPreprocessorSource(clang_Preprocessor_getExternalSource(x))
+end
+
+"""
+    getModuleLoader(x::AbstractPreprocessor) -> ModuleLoader
+Return the module loader this preprocessor was constructed with. The result is borrowed and
+is never NULL.
+"""
+function getModuleLoader(x::AbstractPreprocessor)
+    @check_ptrs x
+    return ModuleLoader(clang_Preprocessor_getModuleLoader(x))
+end
+
+"""
+    getPPCallbacks(x::AbstractPreprocessor) -> PPCallbacks
+Return the head of the preprocessor's callback chain. The chain is owned by the preprocessor,
+so the result is borrowed; it holds a NULL pointer when no callback is installed.
+"""
+function getPPCallbacks(x::AbstractPreprocessor)
+    @check_ptrs x
+    return PPCallbacks(clang_Preprocessor_getPPCallbacks(x))
+end
+
+"""
+    isMacroDefinitionAmbiguous(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) -> Bool
+Return whether `ii`'s macro definition is ambiguous — several visible module macros define it
+and none overrides the others. `false` when `ii` names no macro.
+"""
+function isMacroDefinitionAmbiguous(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    return clang_Preprocessor_isMacroDefinitionAmbiguous(x, ii)
+end
+
+"""
+    appendDefMacroDirective(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                            mi::AbstractMacroInfo,
+                            loc::SourceLocation=getDefinitionLoc(mi)) -> MacroDirective
+Define `ii` as the macro `mi` at `loc` by pushing a fresh `DefMacroDirective` onto `ii`'s
+macro-definition history. The directive lives in the preprocessor's arena, so the result is
+borrowed and typed at the `MacroDirective` base.
+"""
+function appendDefMacroDirective(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
+                                 mi::AbstractMacroInfo,
+                                 loc::SourceLocation=getDefinitionLoc(mi))
+    @check_ptrs x ii mi
+    return MacroDirective(clang_Preprocessor_appendDefMacroDirective(x, ii, mi, loc))
+end
+
+"""
+    setEmptylineHandler(x::AbstractPreprocessor, h::AbstractEmptylineHandler)
+Install `h` as the handler invoked for empty lines. The preprocessor only borrows the
+pointer, so `h` must outlive it; a NULL carrier detaches the current handler.
+"""
+function setEmptylineHandler(x::AbstractPreprocessor, h::AbstractEmptylineHandler)
+    @check_ptrs x
+    return clang_Preprocessor_setEmptylineHandler(x, h)
+end
+
+"""
+    getEmptylineHandler(x::AbstractPreprocessor) -> EmptylineHandler
+Return the handler invoked for empty lines. The result is borrowed and holds a NULL pointer
+when no handler is installed.
+"""
+function getEmptylineHandler(x::AbstractPreprocessor)
+    @check_ptrs x
+    return EmptylineHandler(clang_Preprocessor_getEmptylineHandler(x))
+end
+
+"""
+    getCodeCompletionHandler(x::AbstractPreprocessor) -> CodeCompletionHandler
+Return the handler invoked at the code-completion point. The result is borrowed and holds a
+NULL pointer when no handler is installed.
+"""
+function getCodeCompletionHandler(x::AbstractPreprocessor)
+    @check_ptrs x
+    return CodeCompletionHandler(clang_Preprocessor_getCodeCompletionHandler(x))
+end
+
+"""
+    clearCodeCompletionHandler(x::AbstractPreprocessor)
+Detach the code-completion handler. The handler is not owned by the preprocessor and is left
+untouched.
+"""
+function clearCodeCompletionHandler(x::AbstractPreprocessor)
+    @check_ptrs x
+    return clang_Preprocessor_clearCodeCompletionHandler(x)
+end
+
+"""
+    emitMacroExpansionWarnings(x::AbstractPreprocessor, tok::AbstractToken,
+                               is_ifndef::Bool=false)
+Emit the deprecation, restricted-expansion and `INFINITY`/`NAN` warnings registered for the
+macro `tok` names. `tok` must carry an identifier info — the method dereferences it without a
+null check. Pass `is_ifndef=true` from an `#ifndef` context to suppress the `INFINITY`/`NAN`
+warnings, which do not apply there.
+"""
+function emitMacroExpansionWarnings(x::AbstractPreprocessor, tok::AbstractToken,
+                                    is_ifndef::Bool=false)
+    @check_ptrs x tok
+    @assert getIdentifierInfo(tok).ptr != C_NULL "the token must carry an identifier info"
+    return clang_Preprocessor_emitMacroExpansionWarnings(x, tok, is_ifndef)
+end
+
+
+"""
+    getNumBuildingSubmodules(x::AbstractPreprocessor) -> Integer
+Return the number of submodules currently being built.
+"""
+function getNumBuildingSubmodules(x::AbstractPreprocessor)
+    @check_ptrs x
+    return clang_Preprocessor_getNumBuildingSubmodules(x)
+end
+
+"""
+    getBuildingSubmodules(x::AbstractPreprocessor) ->
+        Vector{Tuple{Module_,SourceLocation,Bool}}
+Return the stack of submodules currently being built, outermost first. Each entry holds the
+submodule, the location it was entered at, and whether it was entered through a
+`#pragma clang module` rather than an import. The modules are borrowed.
+"""
+function getBuildingSubmodules(x::AbstractPreprocessor)
+    @check_ptrs x
+    n = clang_Preprocessor_getNumBuildingSubmodules(x)
+    mods = Vector{CXModule}(undef, n)
+    locs = Vector{CXSourceLocation_}(undef, n)
+    pragmas = Vector{Bool}(undef, n)
+    n > 0 && clang_Preprocessor_getBuildingSubmodules(x, mods, locs, pragmas)
+    return [(Module_(mods[i]), SourceLocation(locs[i]), pragmas[i]) for i in 1:n]
+end
+
+"""
+    getNumAffectingClangModules(x::AbstractPreprocessor) -> Integer
+Return the number of top-level clang modules that affected preprocessing without being
+imported.
+"""
+function getNumAffectingClangModules(x::AbstractPreprocessor)
+    @check_ptrs x
+    return clang_Preprocessor_getNumAffectingClangModules(x)
+end
+
+"""
+    getAffectingClangModules(x::AbstractPreprocessor) -> Vector{Module_}
+Return the top-level clang modules that affected preprocessing without being imported, as
+recorded by `markClangModuleAsAffecting`. The modules are borrowed and their order is the
+underlying set's — it carries no meaning.
+"""
+function getAffectingClangModules(x::AbstractPreprocessor)
+    @check_ptrs x
+    n = clang_Preprocessor_getNumAffectingClangModules(x)
+    buf = Vector{CXModule}(undef, n)
+    n > 0 && clang_Preprocessor_getAffectingClangModules(x, buf)
+    return [Module_(p) for p in buf]
+end
+
+"""
+    isPCHThroughHeader(x::AbstractPreprocessor, fe::AbstractFileEntry) -> Bool
+Return whether `fe` is the PCH through-header. A through-header must be configured —
+`creatingPCHWithThroughHeader` or `usingPCHWithThroughHeader` — because the setting is read
+unconditionally and the answer is meaningless without one.
+"""
+function isPCHThroughHeader(x::AbstractPreprocessor, fe::AbstractFileEntry)
+    @check_ptrs x fe
+    @assert creatingPCHWithThroughHeader(x) || usingPCHWithThroughHeader(x) "a PCH through-header must be configured"
+    return clang_Preprocessor_isPCHThroughHeader(x, fe)
+end
+
+"""
+    getNumPreambleConditionals(x::AbstractPreprocessor) -> Integer
+Return the number of `#if` conditionals recorded as still open at the end of the preamble.
+"""
+function getNumPreambleConditionals(x::AbstractPreprocessor)
+    @check_ptrs x
+    return clang_Preprocessor_getNumPreambleConditionals(x)
+end
+
+"""
+    getPreambleConditionalStack(x::AbstractPreprocessor) ->
+        Vector{Tuple{SourceLocation,Bool,Bool,Bool}}
+Return the recorded preamble conditional stack, outermost first. Each entry holds where the
+conditional started, whether it sat inside a skipped block, whether tokens were already
+emitted for it, and whether its `#else` has been seen.
+"""
+function getPreambleConditionalStack(x::AbstractPreprocessor)
+    @check_ptrs x
+    n = clang_Preprocessor_getNumPreambleConditionals(x)
+    locs = Vector{CXSourceLocation_}(undef, n)
+    was_skipping = Vector{Bool}(undef, n)
+    found_non_skip = Vector{Bool}(undef, n)
+    found_else = Vector{Bool}(undef, n)
+    n > 0 && clang_Preprocessor_getPreambleConditionalStack(x, locs, was_skipping,
+                                                            found_non_skip, found_else)
+    return [(SourceLocation(locs[i]), was_skipping[i], found_non_skip[i], found_else[i])
+            for i in 1:n]
+end
+
+"""
+    setRecordedPreambleConditionalStack(x::AbstractPreprocessor, stack::AbstractVector)
+Replace the recorded preamble conditional stack with `stack`, a vector of
+`(SourceLocation, was_skipping, found_non_skip, found_else)` tuples shaped like what
+`getPreambleConditionalStack` returns. Clang keeps the new stack only while the store is
+recording or replaying a preamble (`isRecordingPreamble`); the call is inert otherwise.
+"""
+function setRecordedPreambleConditionalStack(x::AbstractPreprocessor, stack::AbstractVector)
+    @check_ptrs x
+    n = length(stack)
+    locs = Vector{CXSourceLocation_}(undef, n)
+    was_skipping = Vector{Bool}(undef, n)
+    found_non_skip = Vector{Bool}(undef, n)
+    found_else = Vector{Bool}(undef, n)
+    for (i, entry) in enumerate(stack)
+        loc, skipping, non_skip, saw_else = entry
+        locs[i] = loc.ptr
+        was_skipping[i] = skipping
+        found_non_skip[i] = non_skip
+        found_else[i] = saw_else
+    end
+    return clang_Preprocessor_setRecordedPreambleConditionalStack(x, locs, was_skipping,
+                                                                  found_non_skip,
+                                                                  found_else, n)
+end
+
+"""
+    getPreambleSkipInfo(x::AbstractPreprocessor) ->
+        Union{Tuple{SourceLocation,SourceLocation,Bool,Bool,SourceLocation},Nothing}
+Return the record of the preamble conditional that was still being skipped at end of file —
+the `#` token location, the `#if` token location, whether a non-skipped portion was found,
+whether an `#else` was seen, and the `#else` location — or `nothing` when no such
+conditional was recorded.
+"""
+function getPreambleSkipInfo(x::AbstractPreprocessor)
+    @check_ptrs x
+    hash_loc = Ref{CXSourceLocation_}(C_NULL)
+    if_loc = Ref{CXSourceLocation_}(C_NULL)
+    found_non_skip = Ref{Bool}(false)
+    found_else = Ref{Bool}(false)
+    else_loc = Ref{CXSourceLocation_}(C_NULL)
+    clang_Preprocessor_getPreambleSkipInfo(x, hash_loc, if_loc, found_non_skip, found_else,
+                                           else_loc) || return nothing
+    return (SourceLocation(hash_loc[]), SourceLocation(if_loc[]), found_non_skip[],
+            found_else[], SourceLocation(else_loc[]))
+end
+
+"""
+    setCodeCompletionHandler(x::AbstractPreprocessor, h::AbstractCodeCompletionHandler)
+Install `h` as the handler invoked at the code-completion point. The preprocessor only
+borrows the pointer, so `h` must outlive it; `clearCodeCompletionHandler` detaches it again.
+`h` must be non-NULL — Clang takes the handler by reference.
+"""
+function setCodeCompletionHandler(x::AbstractPreprocessor, h::AbstractCodeCompletionHandler)
+    @check_ptrs x h
+    return clang_Preprocessor_setCodeCompletionHandler(x, h)
+end
+
+
+"""
+    addModuleMacro(x::AbstractPreprocessor, m::AbstractModule, ii::AbstractIdentifierInfo,
+                   mi::AbstractMacroInfo, overrides::AbstractVector=ModuleMacro[]) ->
+        Tuple{ModuleMacro,Bool}
+Register `mi` as the macro module `m` exports under the name `ii`, overriding the module
+macros in `overrides`. Return the registration together with whether it is new: an
+identical `(module, name, macro, overrides)` tuple folds onto the node that already exists
+and reports `false`. The result is preprocessor-arena memory — borrowed, never disposed.
+"""
+function addModuleMacro(x::AbstractPreprocessor, m::AbstractModule,
+                        ii::AbstractIdentifierInfo, mi::AbstractMacroInfo,
+                        overrides::AbstractVector=ModuleMacro[])
+    @check_ptrs x m ii mi
+    n = length(overrides)
+    buf = Vector{CXModuleMacro}(undef, n)
+    for (i, o) in enumerate(overrides)
+        @check_ptrs o
+        buf[i] = o.ptr
+    end
+    is_new = Ref{Bool}(false)
+    mm = clang_Preprocessor_addModuleMacro(x, m, ii, mi, buf, n, is_new)
+    return ModuleMacro(mm), is_new[]
+end
+
+"""
+    getModuleMacro(x::AbstractPreprocessor, m::AbstractModule,
+                   ii::AbstractIdentifierInfo) -> ModuleMacro
+Return the macro module `m` exports under the name `ii`, or a NULL carrier when it exports
+none. The result is preprocessor-arena memory — borrowed, never disposed.
+"""
+function getModuleMacro(x::AbstractPreprocessor, m::AbstractModule,
+                        ii::AbstractIdentifierInfo)
+    @check_ptrs x m ii
+    return ModuleMacro(clang_Preprocessor_getModuleMacro(x, m, ii))
+end
+
+"""
+    getNumLeafModuleMacros(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) -> UInt32
+Return how many leaf (non-overridden) module macros are visible for the name `ii`.
+"""
+function getNumLeafModuleMacros(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    return clang_Preprocessor_getNumLeafModuleMacros(x, ii)
+end
+
+"""
+    getLeafModuleMacros(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) ->
+        Vector{ModuleMacro}
+Return the leaf (non-overridden) module macros visible for the name `ii`. Every entry is
+preprocessor-arena memory — borrowed, never disposed.
+"""
+function getLeafModuleMacros(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    n = clang_Preprocessor_getNumLeafModuleMacros(x, ii)
+    buf = Vector{CXModuleMacro}(undef, n)
+    n > 0 && clang_Preprocessor_getLeafModuleMacros(x, ii, buf)
+    return [ModuleMacro(p) for p in buf]
+end
+
+"""
+    getLastMacroWithSpelling(x::AbstractPreprocessor, loc::SourceLocation,
+                             tokens::AbstractVector) -> String
+Return the name of the last object-like macro defined before `loc` whose replacement tokens
+equal `tokens`, or the empty string when none does. Each element of `tokens` is either an
+`AbstractIdentifierInfo` (an identifier token) or an integer `clang::tok::TokenKind` value.
+`loc` must be valid — the macro directive history lookup asserts on an invalid location —
+and a kind must be neither an identifier nor a literal nor an annotation, all three of
+which Clang asserts while building the token value.
+"""
+function getLastMacroWithSpelling(x::AbstractPreprocessor, loc::SourceLocation,
+                                  tokens::AbstractVector)
+    @check_ptrs x
+    @assert isValid(loc) "location must be valid: the macro directive history asserts on it"
+    n = length(tokens)
+    kinds = zeros(Cuint, n)
+    iis = Vector{CXIdentifierInfo}(undef, n)
+    fill!(iis, C_NULL)
+    for (i, t) in enumerate(tokens)
+        if t isa AbstractIdentifierInfo
+            @check_ptrs t
+            iis[i] = t.ptr
+        else
+            @assert t isa Integer "a token is either an IdentifierInfo or a tok::TokenKind value"
+            k = Cuint(t)
+            @assert !isAnyIdentifier(k) "an identifier must be given as an IdentifierInfo"
+            @assert !isLiteral(k) "literal token kinds are not supported"
+            @assert !isAnnotation(k) "annotation token kinds are not supported"
+            kinds[i] = k
+        end
+    end
+    return get_string(clang_Preprocessor_getLastMacroWithSpelling(x, loc, kinds, iis, n))
+end
+
+"""
+    checkModuleIsAvailable(lang_opts::AbstractLangOptions, target::AbstractTargetInfo,
+                           m::AbstractModule, diags::AbstractDiagnosticsEngine) -> Bool
+Return `true` when the check FAILED — `m` is not usable — and report a diagnostic naming
+the unmet requirement, the missing header or the shadowing module through `diags`. A module
+built by hand has no module map behind it, so whether it counts as available is
+host-decided.
+"""
+function checkModuleIsAvailable(lang_opts::AbstractLangOptions, target::AbstractTargetInfo,
+                                m::AbstractModule, diags::AbstractDiagnosticsEngine)
+    @check_ptrs lang_opts target m diags
+    return clang_Preprocessor_checkModuleIsAvailable(lang_opts, target, m, diags)
+end
+
+"""
+    getHeaderToIncludeForDiagnostics(x::AbstractPreprocessor, inc_loc::SourceLocation,
+                                     m_loc::SourceLocation) -> Union{FileEntryRef,Nothing}
+Return the header to `#include` at `inc_loc` so that the entity at `m_loc` becomes
+reachable, or `nothing` when no such header exists or when importing a module is the right
+answer instead. This is not fast and may load module maps that were not otherwise needed,
+so it belongs on a path that is already about to report an error. This function allocates
+and one should call `dispose` to release the resources after using this object.
+"""
+function getHeaderToIncludeForDiagnostics(x::AbstractPreprocessor, inc_loc::SourceLocation,
+                                          m_loc::SourceLocation)
+    @check_ptrs x
+    ref = clang_Preprocessor_getHeaderToIncludeForDiagnostics(x, inc_loc, m_loc)
+    return ref == C_NULL ? nothing : FileEntryRef(ref)
+end
+
+"""
+    getMacroDeprecationLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) ->
+        Union{SourceLocation,Nothing}
+Return where the `#pragma clang deprecated` annotation for the macro named by `ii` was
+written, or `nothing` when no deprecation was recorded for it. `ii` must already carry a
+macro annotation: Clang looks the annotation entry up without checking that it exists, and
+its own gate is the identifier's annotation flags, which its pragma handlers set alongside
+the matching `addMacroDeprecationMsg`/`addRestrictExpansionMsg`/`addFinalLoc` call.
+"""
+function getMacroDeprecationLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    @assert isDeprecatedMacro(ii) || isRestrictExpansion(ii) || isFinal(ii) "no annotation"
+    loc = Ref{CXSourceLocation_}(C_NULL)
+    clang_Preprocessor_getMacroDeprecationLoc(x, ii, loc) || return nothing
+    return SourceLocation(loc[])
+end
+
+"""
+    getMacroDeprecationMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) -> String
+Return the `#pragma clang deprecated` message recorded for the macro named by `ii`, or the
+empty string when no deprecation was recorded for it. `ii` must already carry a macro
+annotation — see `getMacroDeprecationLoc` for why.
+"""
+function getMacroDeprecationMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    @assert isDeprecatedMacro(ii) || isRestrictExpansion(ii) || isFinal(ii) "no annotation"
+    return get_string(clang_Preprocessor_getMacroDeprecationMsg(x, ii))
+end
+
+"""
+    getMacroRestrictExpansionLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) ->
+        Union{SourceLocation,Nothing}
+Return where the `#pragma clang restrict_expansion` annotation for the macro named by `ii`
+was written, or `nothing` when no restriction was recorded for it. `ii` must already carry
+a macro annotation — see `getMacroDeprecationLoc` for why.
+"""
+function getMacroRestrictExpansionLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    @assert isDeprecatedMacro(ii) || isRestrictExpansion(ii) || isFinal(ii) "no annotation"
+    loc = Ref{CXSourceLocation_}(C_NULL)
+    clang_Preprocessor_getMacroRestrictExpansionLoc(x, ii, loc) || return nothing
+    return SourceLocation(loc[])
+end
+
+"""
+    getMacroRestrictExpansionMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) ->
+        String
+Return the `#pragma clang restrict_expansion` message recorded for the macro named by `ii`,
+or the empty string when no restriction was recorded for it. `ii` must already carry a
+macro annotation — see `getMacroDeprecationLoc` for why.
+"""
+function getMacroRestrictExpansionMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    @assert isDeprecatedMacro(ii) || isRestrictExpansion(ii) || isFinal(ii) "no annotation"
+    return get_string(clang_Preprocessor_getMacroRestrictExpansionMsg(x, ii))
+end
+
+"""
+    getMacroFinalAnnotationLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo) ->
+        Union{SourceLocation,Nothing}
+Return where the `#pragma clang final` annotation for the macro named by `ii` was written,
+or `nothing` when no final annotation was recorded for it. `ii` must already carry a macro
+annotation — see `getMacroDeprecationLoc` for why.
+"""
+function getMacroFinalAnnotationLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo)
+    @check_ptrs x ii
+    @assert isDeprecatedMacro(ii) || isRestrictExpansion(ii) || isFinal(ii) "no annotation"
+    loc = Ref{CXSourceLocation_}(C_NULL)
+    clang_Preprocessor_getMacroFinalAnnotationLoc(x, ii, loc) || return nothing
+    return SourceLocation(loc[])
+end

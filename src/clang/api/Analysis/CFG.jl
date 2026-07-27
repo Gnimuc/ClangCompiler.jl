@@ -784,3 +784,325 @@ function getFilteredPreds(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true
                                              IgnoreDefaultsWithCoveredEnums, buf, n)
     return [CFGBlock(p) for p in buf]
 end
+
+
+"""
+    getElementConstructionContext(x::AbstractCFGBlock, i::Integer) -> ConstructionContext
+Return the construction context of the `i`-th element — where the object it builds is
+going to live. The wrapped pointer is NULL unless the element kind is `Constructor` or
+`CXXRecordTypedCall`, and clang's builder emits those two kinds only for a graph built
+through `buildCFGWithOptions` with `setAddRichCXXConstructors(opts)` applied. The
+context is borrowed from the graph's arena and dies with it.
+"""
+function getElementConstructionContext(x::AbstractCFGBlock, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < size(x) "element index $i out of range"
+    return ConstructionContext(clang_CFGBlock_getElementConstructionContext(x, i))
+end
+
+"""
+    appendConstructor(x::AbstractCFGBlock, ce::AbstractCXXConstructExpr,
+                      cc::AbstractConstructionContext)
+Append a `Constructor` element to the block. The `BumpVectorContext` is taken from the
+block's parent graph, so an element can never be allocated out of a foreign arena. The
+element list is stored in reverse: the appended element becomes index 0 and everything
+already in the block shifts up by one.
+"""
+function appendConstructor(x::AbstractCFGBlock, ce::AbstractCXXConstructExpr,
+                           cc::AbstractConstructionContext)
+    @check_ptrs x ce cc
+    return clang_CFGBlock_appendConstructor(x, ce, cc)
+end
+
+"""
+    appendCXXRecordTypedCall(x::AbstractCFGBlock, e::AbstractExpr,
+                             cc::AbstractConstructionContext)
+Append a `CXXRecordTypedCall` element to the block. PARTIAL: clang's
+`CFGCXXRecordTypedCall` constructor asserts that `e` is a call the CFG models as such
+(`isCXXRecordTypedCall`) and that `cc` is of any kind other than
+`NewAllocatedObjectKind` (Invariant 3); both are restated here. As with
+`appendConstructor`, the appended element becomes index 0.
+"""
+function appendCXXRecordTypedCall(x::AbstractCFGBlock, e::AbstractExpr,
+                                  cc::AbstractConstructionContext)
+    @check_ptrs x e cc
+    @assert isCXXRecordTypedCall(e) "expression must be a call the CFG models as a CXXRecordTypedCall"
+    k = getKind(cc)
+    @assert k != CXConstructionContextKind_NewAllocatedObjectKind "context kind must not be NewAllocatedObject"
+    return clang_CFGBlock_appendCXXRecordTypedCall(x, e, cc)
+end
+
+"""
+    setAddRichCXXConstructors(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddRichCXXConstructors` build option (clang's default is `false`). It is what
+makes the builder emit `Constructor` / `CXXRecordTypedCall` elements with a
+construction context attached, so `getElementConstructionContext` is only ever non-NULL
+on a graph built with it on.
+"""
+function setAddRichCXXConstructors(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddRichCXXConstructors(x, val)
+end
+
+"""
+    setMarkElidedCXXConstructors(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `MarkElidedCXXConstructors` build option (clang's default is `false`), which
+makes the builder record the elided-copy flavour of a construction context
+(`CXX17ElidedCopy*Kind`, `ElidedTemporaryObjectKind`) instead of the plain one.
+"""
+function setMarkElidedCXXConstructors(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setMarkElidedCXXConstructors(x, val)
+end
+
+
+"""
+    getSyntheticDeclStmts(x::AbstractCFG) -> Vector{Pair{DeclStmt,DeclStmt}}
+The whole synthetic-`DeclStmt` map of the graph as `synthetic => source` pairs — the
+`clang::CFG::synthetic_stmts` range. The map is an `llvm::DenseMap`, so the order of the
+returned pairs is unspecified and must not be relied on; only the pairing itself is
+meaningful. `getSyntheticDeclStmtSource` stays the path for looking one key up.
+"""
+function getSyntheticDeclStmts(x::AbstractCFG)
+    @check_ptrs x
+    n = Int(getNumSyntheticDeclStmts(x))
+    synthetic = Vector{CXDeclStmt}(undef, n)
+    source = Vector{CXDeclStmt}(undef, n)
+    n > 0 && clang_CFG_getSyntheticDeclStmts(x, synthetic, source, n)
+    out = Vector{Pair{DeclStmt,DeclStmt}}(undef, n)
+    for i in 1:n
+        out[i] = DeclStmt(synthetic[i]) => DeclStmt(source[i])
+    end
+    return out
+end
+
+"""
+    getPruneTriviallyFalseEdges(x::AbstractCFGBuildOptions) -> Bool
+Read back the `PruneTriviallyFalseEdges` build option (clang's default is `true`), which
+drops the edges of a branch whose condition is a compile-time constant.
+"""
+function getPruneTriviallyFalseEdges(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getPruneTriviallyFalseEdges(x)
+end
+
+"""
+    setPruneTriviallyFalseEdges(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `PruneTriviallyFalseEdges` build option (clang's default is `true`). Clearing it
+keeps the never-taken arm of a constant-conditioned branch in the graph.
+"""
+function setPruneTriviallyFalseEdges(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setPruneTriviallyFalseEdges(x, val)
+end
+
+"""
+    getAddEHEdges(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddEHEdges` build option (clang's default is `false`).
+"""
+function getAddEHEdges(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddEHEdges(x)
+end
+
+"""
+    setAddEHEdges(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddEHEdges` build option (clang's default is `false`), which makes the builder add
+exceptional edges out of the statements that can throw.
+"""
+function setAddEHEdges(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddEHEdges(x, val)
+end
+
+"""
+    getAddStaticInitBranches(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddStaticInitBranches` build option (clang's default is `false`).
+"""
+function getAddStaticInitBranches(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddStaticInitBranches(x)
+end
+
+"""
+    setAddStaticInitBranches(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddStaticInitBranches` build option (clang's default is `false`), which makes the
+builder model the guarded-once initialization of a function-local static as a branch.
+"""
+function setAddStaticInitBranches(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddStaticInitBranches(x, val)
+end
+
+"""
+    getAddCXXDefaultInitExprInCtors(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddCXXDefaultInitExprInCtors` build option (clang's default is `false`).
+"""
+function getAddCXXDefaultInitExprInCtors(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddCXXDefaultInitExprInCtors(x)
+end
+
+"""
+    setAddCXXDefaultInitExprInCtors(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddCXXDefaultInitExprInCtors` build option (clang's default is `false`), which
+makes a constructor's graph carry the default member initializers it runs.
+"""
+function setAddCXXDefaultInitExprInCtors(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddCXXDefaultInitExprInCtors(x, val)
+end
+
+"""
+    getAddCXXDefaultInitExprInAggregates(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddCXXDefaultInitExprInAggregates` build option (clang's default is
+`false`).
+"""
+function getAddCXXDefaultInitExprInAggregates(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddCXXDefaultInitExprInAggregates(x)
+end
+
+"""
+    setAddCXXDefaultInitExprInAggregates(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddCXXDefaultInitExprInAggregates` build option (clang's default is `false`),
+which makes an aggregate initialization carry the default member initializers it runs.
+"""
+function setAddCXXDefaultInitExprInAggregates(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddCXXDefaultInitExprInAggregates(x, val)
+end
+
+"""
+    getAddRichCXXConstructors(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddRichCXXConstructors` build option (clang's default is `false`) that
+`setAddRichCXXConstructors` writes.
+"""
+function getAddRichCXXConstructors(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddRichCXXConstructors(x)
+end
+
+"""
+    getMarkElidedCXXConstructors(x::AbstractCFGBuildOptions) -> Bool
+Read back the `MarkElidedCXXConstructors` build option (clang's default is `false`) that
+`setMarkElidedCXXConstructors` writes.
+"""
+function getMarkElidedCXXConstructors(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getMarkElidedCXXConstructors(x)
+end
+
+"""
+    getAddVirtualBaseBranches(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddVirtualBaseBranches` build option (clang's default is `false`).
+"""
+function getAddVirtualBaseBranches(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddVirtualBaseBranches(x)
+end
+
+"""
+    setAddVirtualBaseBranches(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddVirtualBaseBranches` build option (clang's default is `false`), which makes a
+constructor's graph branch on whether it is the one responsible for the virtual bases —
+the branches whose terminator kind is `CXCFGTerminatorKind_VirtualBaseBranch`.
+"""
+function setAddVirtualBaseBranches(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddVirtualBaseBranches(x, val)
+end
+
+"""
+    getOmitImplicitValueInitializers(x::AbstractCFGBuildOptions) -> Bool
+Read back the `OmitImplicitValueInitializers` build option (clang's default is `false`).
+"""
+function getOmitImplicitValueInitializers(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getOmitImplicitValueInitializers(x)
+end
+
+"""
+    setOmitImplicitValueInitializers(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `OmitImplicitValueInitializers` build option (clang's default is `false`), which
+keeps implicit value initializations out of the graph's element lists.
+"""
+function setOmitImplicitValueInitializers(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setOmitImplicitValueInitializers(x, val)
+end
+
+
+"""
+    dumpElement(x::AbstractCFGBlock, i::Integer)
+Write the `i`-th element of the block to `stderr` — `clang::CFGElement::dump`, the same
+rendering `printElementAsString` returns as a string. `i` is 0-based and must be smaller
+than `size(x)`.
+"""
+function dumpElement(x::AbstractCFGBlock, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < size(x) "element index $i out of range"
+    return clang_CFGBlock_dumpElement(x, i)
+end
+
+"""
+    dump(x::AbstractCFGBlock, cfg::AbstractCFG, ctx::ASTContext, show_colors::Bool=false)
+Write the block to `stderr` — `clang::CFGBlock::dump`, the same rendering `printAsString`
+returns as a string, with clang's terminal coloring when `show_colors` is set. `cfg` is
+what labels the block's edges: pass the block's own `getParent` graph for a faithful
+listing.
+"""
+function dump(x::AbstractCFGBlock, cfg::AbstractCFG, ctx::ASTContext, show_colors::Bool=false)
+    @check_ptrs x cfg ctx
+    return clang_CFGBlock_dump(x, cfg, ctx, show_colors)
+end
+
+"""
+    dump(x::AbstractCFG, ctx::ASTContext, show_colors::Bool=false)
+Write the whole graph to `stderr` — `clang::CFG::dump`, the same rendering `printAsString`
+returns as a string, with clang's terminal coloring when `show_colors` is set.
+"""
+function dump(x::AbstractCFG, ctx::ASTContext, show_colors::Bool=false)
+    @check_ptrs x ctx
+    return clang_CFG_dump(x, ctx, show_colors)
+end
+
+
+"""
+    getNumBlockStmts(x::AbstractCFG) -> Integer
+Return how many statement-family `CFGElement`s (`Statement`, `Constructor`,
+`CXXRecordTypedCall`) the graph holds across all of its blocks — the exact length of the
+vector `getBlockStmts` returns.
+"""
+function getNumBlockStmts(x::AbstractCFG)
+    @check_ptrs x
+    return clang_CFG_getNumBlockStmts(x)
+end
+
+"""
+    getBlockStmts(x::AbstractCFG) -> Vector{Stmt}
+Return every statement the graph's blocks carry, in block order and then element order —
+`clang::CFG::VisitBlockStmts` with the whole walk run on the C side, which is what
+`MARSHALLING.md` §10 asks for instead of a callback crossing the boundary. The result is
+the same sequence a `getBlock` / `getElementStmt` double loop produces over the
+statement-family element kinds. Statements come back at the base `Stmt` type; `resolve`
+one to refine it. A statement appears more than once when two blocks carry it.
+"""
+function getBlockStmts(x::AbstractCFG)
+    @check_ptrs x
+    n = Int(getNumBlockStmts(x))
+    buf = Vector{CXStmt}(undef, n)
+    n > 0 && clang_CFG_getBlockStmts(x, buf, n)
+    return Stmt[Stmt(p) for p in buf]
+end
+
+"""
+    size(x::AbstractCFG) -> Integer
+Return the number of blocks in the graph, matching `Base.size(::AbstractCFGBlock)`. This is
+`clang::CFG::size`, which is a pure renaming of `getNumBlockIDs`, so only the latter is
+bound on the C side.
+"""
+function Base.size(x::AbstractCFG)
+    @check_ptrs x
+    return clang_CFG_getNumBlockIDs(x)
+end

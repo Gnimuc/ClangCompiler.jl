@@ -1,6 +1,8 @@
 #include "clang-ex/Basic/CXDiagnostic.h"
+#include "utils.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceManager.h"
+#include "llvm/ADT/SmallString.h"
 
 // DiagnosticConsumer
 unsigned clang_DiagnosticConsumer_getNumErrors(CXDiagnosticConsumer DC) {
@@ -42,7 +44,18 @@ void clang_DiagnosticConsumer_EndSourceFile(CXDiagnosticConsumer DC) {
   static_cast<clang::DiagnosticConsumer *>(DC)->EndSourceFile();
 }
 
+// ForwardingDiagnosticConsumer
+CXDiagnosticConsumer
+clang_ForwardingDiagnosticConsumer_create(CXDiagnosticConsumer Target) {
+  auto FDC = std::make_unique<clang::ForwardingDiagnosticConsumer>(
+      *static_cast<clang::DiagnosticConsumer *>(Target));
+  return FDC.release();
+}
+
 // DiagnosticsEngine
+void clang_DiagnosticsEngine_dump(CXDiagnosticsEngine DE) {
+  static_cast<clang::DiagnosticsEngine *>(DE)->dump();
+}
 CXDiagnosticIDs clang_DiagnosticsEngine_getDiagnosticIDs(CXDiagnosticsEngine DE) {
   return static_cast<clang::DiagnosticsEngine *>(DE)->getDiagnosticIDs().get();
 }
@@ -57,6 +70,10 @@ CXDiagnosticConsumer clang_DiagnosticsEngine_getClient(CXDiagnosticsEngine DE) {
 
 bool clang_DiagnosticsEngine_ownsClient(CXDiagnosticsEngine DE) {
   return static_cast<clang::DiagnosticsEngine *>(DE)->ownsClient();
+}
+
+CXDiagnosticConsumer clang_DiagnosticsEngine_takeClient(CXDiagnosticsEngine DE) {
+  return static_cast<clang::DiagnosticsEngine *>(DE)->takeClient().release();
 }
 
 bool clang_DiagnosticsEngine_hasSourceManager(CXDiagnosticsEngine DE) {
@@ -345,6 +362,13 @@ bool clang_DiagnosticsEngine_isDiagnosticInFlight(CXDiagnosticsEngine DE) {
   return static_cast<clang::DiagnosticsEngine *>(DE)->isDiagnosticInFlight();
 }
 
+void clang_DiagnosticsEngine_SetDelayedDiagnostic(CXDiagnosticsEngine DE, unsigned DiagID,
+                                                  const char *Arg1, const char *Arg2,
+                                                  const char *Arg3) {
+  static_cast<clang::DiagnosticsEngine *>(DE)->SetDelayedDiagnostic(DiagID, Arg1, Arg2,
+                                                                    Arg3);
+}
+
 void clang_DiagnosticsEngine_Clear(CXDiagnosticsEngine DE) {
   static_cast<clang::DiagnosticsEngine *>(DE)->Clear();
 }
@@ -446,4 +470,264 @@ unsigned clang_StoredDiagnostic_fixit_size(CXStoredDiagnostic SD) {
 
 void clang_StoredDiagnostic_dispose(CXStoredDiagnostic SD) {
   delete static_cast<clang::StoredDiagnostic *>(SD);
+}
+
+CXStoredDiagnostic clang_StoredDiagnostic_createWithRangesAndFixIts(
+    CXDiagnosticsEngine_Level Level, unsigned ID, const char *Message,
+    CXSourceLocation_ Loc, CXSourceManager SM, const CXSourceRange_ *Ranges,
+    const bool *RangeIsTokenRange, unsigned NumRanges, const CXFixItHint *FixIts,
+    unsigned NumFixIts) {
+  std::vector<clang::CharSourceRange> R;
+  R.reserve(NumRanges);
+  for (unsigned I = 0; I != NumRanges; ++I)
+    R.emplace_back(
+        clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(Ranges[I].B),
+                           clang::SourceLocation::getFromPtrEncoding(Ranges[I].E)),
+        RangeIsTokenRange[I]);
+  std::vector<clang::FixItHint> F;
+  F.reserve(NumFixIts);
+  for (unsigned I = 0; I != NumFixIts; ++I)
+    F.push_back(*static_cast<clang::FixItHint *>(FixIts[I]));
+  auto SD = std::make_unique<clang::StoredDiagnostic>(
+      static_cast<clang::DiagnosticsEngine::Level>(Level), ID, Message,
+      clang::FullSourceLoc(clang::SourceLocation::getFromPtrEncoding(Loc),
+                           *static_cast<clang::SourceManager *>(SM)),
+      R, F);
+  return SD.release();
+}
+
+CXSourceRange_ clang_StoredDiagnostic_getRange(CXStoredDiagnostic SD, unsigned Index) {
+  const clang::CharSourceRange &R =
+      static_cast<clang::StoredDiagnostic *>(SD)->getRanges()[Index];
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+bool clang_StoredDiagnostic_isRangeTokenRange(CXStoredDiagnostic SD, unsigned Index) {
+  return static_cast<clang::StoredDiagnostic *>(SD)->getRanges()[Index].isTokenRange();
+}
+
+CXFixItHint clang_StoredDiagnostic_getFixIt(CXStoredDiagnostic SD, unsigned Index) {
+  return const_cast<clang::FixItHint *>(
+      &static_cast<clang::StoredDiagnostic *>(SD)->getFixIts()[Index]);
+}
+
+// FixItHint
+CXFixItHint clang_FixItHint_create(void) {
+  auto H = std::make_unique<clang::FixItHint>();
+  return H.release();
+}
+
+bool clang_FixItHint_isNull(CXFixItHint H) {
+  return static_cast<clang::FixItHint *>(H)->isNull();
+}
+
+CXFixItHint clang_FixItHint_CreateInsertion(CXSourceLocation_ InsertionLoc,
+                                            const char *Code,
+                                            bool BeforePreviousInsertions) {
+  auto H = std::make_unique<clang::FixItHint>(clang::FixItHint::CreateInsertion(
+      clang::SourceLocation::getFromPtrEncoding(InsertionLoc), Code,
+      BeforePreviousInsertions));
+  return H.release();
+}
+
+CXFixItHint clang_FixItHint_CreateInsertionFromRange(CXSourceLocation_ InsertionLoc,
+                                                     CXSourceRange_ FromRange,
+                                                     bool IsTokenRange,
+                                                     bool BeforePreviousInsertions) {
+  clang::CharSourceRange CSR(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(FromRange.B),
+                         clang::SourceLocation::getFromPtrEncoding(FromRange.E)),
+      IsTokenRange);
+  auto H = std::make_unique<clang::FixItHint>(clang::FixItHint::CreateInsertionFromRange(
+      clang::SourceLocation::getFromPtrEncoding(InsertionLoc), CSR,
+      BeforePreviousInsertions));
+  return H.release();
+}
+
+CXFixItHint clang_FixItHint_CreateRemoval(CXSourceRange_ RemoveRange, bool IsTokenRange) {
+  clang::CharSourceRange CSR(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(RemoveRange.B),
+                         clang::SourceLocation::getFromPtrEncoding(RemoveRange.E)),
+      IsTokenRange);
+  auto H = std::make_unique<clang::FixItHint>(clang::FixItHint::CreateRemoval(CSR));
+  return H.release();
+}
+
+CXFixItHint clang_FixItHint_CreateReplacement(CXSourceRange_ RemoveRange, bool IsTokenRange,
+                                              const char *Code) {
+  clang::CharSourceRange CSR(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(RemoveRange.B),
+                         clang::SourceLocation::getFromPtrEncoding(RemoveRange.E)),
+      IsTokenRange);
+  auto H =
+      std::make_unique<clang::FixItHint>(clang::FixItHint::CreateReplacement(CSR, Code));
+  return H.release();
+}
+
+CXSourceRange_ clang_FixItHint_getRemoveRange(CXFixItHint H) {
+  const clang::CharSourceRange &R = static_cast<clang::FixItHint *>(H)->RemoveRange;
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+bool clang_FixItHint_isRemoveRangeTokenRange(CXFixItHint H) {
+  return static_cast<clang::FixItHint *>(H)->RemoveRange.isTokenRange();
+}
+
+CXSourceRange_ clang_FixItHint_getInsertFromRange(CXFixItHint H) {
+  const clang::CharSourceRange &R = static_cast<clang::FixItHint *>(H)->InsertFromRange;
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+bool clang_FixItHint_isInsertFromRangeTokenRange(CXFixItHint H) {
+  return static_cast<clang::FixItHint *>(H)->InsertFromRange.isTokenRange();
+}
+
+const char *clang_FixItHint_getCodeToInsert(CXFixItHint H) {
+  return static_cast<clang::FixItHint *>(H)->CodeToInsert.c_str();
+}
+
+bool clang_FixItHint_getBeforePreviousInsertions(CXFixItHint H) {
+  return static_cast<clang::FixItHint *>(H)->BeforePreviousInsertions;
+}
+
+void clang_FixItHint_dispose(CXFixItHint H) { delete static_cast<clang::FixItHint *>(H); }
+
+// DiagnosticBuilder
+CXDiagnosticBuilder clang_DiagnosticBuilder_create(CXDiagnosticsEngine DE,
+                                                   CXSourceLocation_ Loc, unsigned DiagID) {
+  auto DB = std::make_unique<clang::DiagnosticBuilder>(
+      static_cast<clang::DiagnosticsEngine *>(DE)->Report(
+          clang::SourceLocation::getFromPtrEncoding(Loc), DiagID));
+  return DB.release();
+}
+
+void clang_DiagnosticBuilder_dispose(CXDiagnosticBuilder DB) {
+  delete static_cast<clang::DiagnosticBuilder *>(DB);
+}
+
+CXDiagnosticBuilder clang_DiagnosticBuilder_setForceEmit(CXDiagnosticBuilder DB) {
+  return const_cast<clang::DiagnosticBuilder *>(
+      &static_cast<clang::DiagnosticBuilder *>(DB)->setForceEmit());
+}
+
+void clang_DiagnosticBuilder_addFlagValue(CXDiagnosticBuilder DB, const char *V) {
+  static_cast<clang::DiagnosticBuilder *>(DB)->addFlagValue(V);
+}
+
+// StreamingDiagnostic
+void clang_StreamingDiagnostic_AddTaggedVal(CXStreamingDiagnostic SD, uint64_t V,
+                                            CXDiagnosticsEngine_ArgumentKind Kind) {
+  static_cast<clang::StreamingDiagnostic *>(SD)->AddTaggedVal(
+      V, static_cast<clang::DiagnosticsEngine::ArgumentKind>(Kind));
+}
+
+void clang_StreamingDiagnostic_AddString(CXStreamingDiagnostic SD, const char *V) {
+  static_cast<clang::StreamingDiagnostic *>(SD)->AddString(llvm::StringRef(V));
+}
+
+void clang_StreamingDiagnostic_AddSourceRange(CXStreamingDiagnostic SD, CXSourceRange_ R,
+                                              bool IsTokenRange) {
+  clang::SourceRange Range(clang::SourceLocation::getFromPtrEncoding(R.B),
+                           clang::SourceLocation::getFromPtrEncoding(R.E));
+  static_cast<clang::StreamingDiagnostic *>(SD)->AddSourceRange(
+      clang::CharSourceRange(Range, IsTokenRange));
+}
+
+void clang_StreamingDiagnostic_AddFixItHint(CXStreamingDiagnostic SD, CXFixItHint Hint) {
+  static_cast<clang::StreamingDiagnostic *>(SD)->AddFixItHint(
+      *static_cast<clang::FixItHint *>(Hint));
+}
+
+// Diagnostic
+CXDiagnostic_ clang_Diagnostic_create(CXDiagnosticsEngine DE) {
+  auto D = std::make_unique<clang::Diagnostic>(static_cast<clang::DiagnosticsEngine *>(DE));
+  return D.release();
+}
+
+CXDiagnosticsEngine clang_Diagnostic_getDiags(CXDiagnostic_ D) {
+  return const_cast<clang::DiagnosticsEngine *>(
+      static_cast<clang::Diagnostic *>(D)->getDiags());
+}
+
+unsigned clang_Diagnostic_getID(CXDiagnostic_ D) {
+  return static_cast<clang::Diagnostic *>(D)->getID();
+}
+
+CXSourceLocation_ clang_Diagnostic_getLocation(CXDiagnostic_ D) {
+  return static_cast<clang::Diagnostic *>(D)->getLocation().getPtrEncoding();
+}
+
+bool clang_Diagnostic_hasSourceManager(CXDiagnostic_ D) {
+  return static_cast<clang::Diagnostic *>(D)->hasSourceManager();
+}
+
+CXSourceManager clang_Diagnostic_getSourceManager(CXDiagnostic_ D) {
+  return &static_cast<clang::Diagnostic *>(D)->getSourceManager();
+}
+
+unsigned clang_Diagnostic_getNumArgs(CXDiagnostic_ D) {
+  return static_cast<clang::Diagnostic *>(D)->getNumArgs();
+}
+
+CXDiagnosticsEngine_ArgumentKind clang_Diagnostic_getArgKind(CXDiagnostic_ D,
+                                                             unsigned Idx) {
+  return static_cast<CXDiagnosticsEngine_ArgumentKind>(
+      static_cast<clang::Diagnostic *>(D)->getArgKind(Idx));
+}
+
+const char *clang_Diagnostic_getArgStdStr(CXDiagnostic_ D, unsigned Idx) {
+  return static_cast<clang::Diagnostic *>(D)->getArgStdStr(Idx).c_str();
+}
+
+const char *clang_Diagnostic_getArgCStr(CXDiagnostic_ D, unsigned Idx) {
+  return static_cast<clang::Diagnostic *>(D)->getArgCStr(Idx);
+}
+
+int64_t clang_Diagnostic_getArgSInt(CXDiagnostic_ D, unsigned Idx) {
+  return static_cast<clang::Diagnostic *>(D)->getArgSInt(Idx);
+}
+
+uint64_t clang_Diagnostic_getArgUInt(CXDiagnostic_ D, unsigned Idx) {
+  return static_cast<clang::Diagnostic *>(D)->getArgUInt(Idx);
+}
+
+CXIdentifierInfo clang_Diagnostic_getArgIdentifier(CXDiagnostic_ D, unsigned Idx) {
+  return const_cast<clang::IdentifierInfo *>(
+      static_cast<clang::Diagnostic *>(D)->getArgIdentifier(Idx));
+}
+
+uint64_t clang_Diagnostic_getRawArg(CXDiagnostic_ D, unsigned Idx) {
+  return static_cast<clang::Diagnostic *>(D)->getRawArg(Idx);
+}
+
+unsigned clang_Diagnostic_getNumRanges(CXDiagnostic_ D) {
+  return static_cast<clang::Diagnostic *>(D)->getNumRanges();
+}
+
+CXSourceRange_ clang_Diagnostic_getRange(CXDiagnostic_ D, unsigned Idx) {
+  const clang::CharSourceRange &R = static_cast<clang::Diagnostic *>(D)->getRange(Idx);
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+bool clang_Diagnostic_isRangeTokenRange(CXDiagnostic_ D, unsigned Idx) {
+  return static_cast<clang::Diagnostic *>(D)->getRange(Idx).isTokenRange();
+}
+
+unsigned clang_Diagnostic_getNumFixItHints(CXDiagnostic_ D) {
+  return static_cast<clang::Diagnostic *>(D)->getNumFixItHints();
+}
+
+CXFixItHint clang_Diagnostic_getFixItHint(CXDiagnostic_ D, unsigned Idx) {
+  return const_cast<clang::FixItHint *>(
+      &static_cast<clang::Diagnostic *>(D)->getFixItHint(Idx));
+}
+
+CXString clang_Diagnostic_FormatDiagnostic(CXDiagnostic_ D) {
+  llvm::SmallString<128> Out;
+  static_cast<clang::Diagnostic *>(D)->FormatDiagnostic(Out);
+  return extra::makeCXString(std::string(Out.data(), Out.size()));
+}
+
+void clang_Diagnostic_dispose(CXDiagnostic_ D) {
+  delete static_cast<clang::Diagnostic *>(D);
 }

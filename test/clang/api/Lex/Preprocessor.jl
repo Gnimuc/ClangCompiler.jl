@@ -392,3 +392,449 @@ end
     dispose(I)
     rm(path; force=true)
 end
+
+@testset "preprocessor lexer handles, lookahead and macro annotations" begin
+    # Everything here peeks at or mutates the live token stream, the poison/annotation
+    # tables or the one-shot code-completion point, so every interpreter is a throwaway
+    # and each stream-touching block rewinds inside a backtracking scope before disposal.
+    I = create_interpreter()
+    pp = CC.getPreprocessor(get_instance(I))
+
+    # the diagnostics engine is borrowed: reinstalling the one already in use is a no-op
+    diags = CC.getDiagnostics(pp)
+    @test diags isa CC.DiagnosticsEngine
+    @test CC.setDiagnostics(pp, diags) === nothing
+    @test CC.getDiagnostics(pp).ptr == diags.ptr
+
+    # lexer handles: which one is current is host/driver decided, so only shape is asserted
+    lexer = CC.getCurrentLexer(pp)
+    @test lexer isa CC.PreprocessorLexer
+    file_lexer = CC.getCurrentFileLexer(pp)
+    @test file_lexer isa CC.PreprocessorLexer
+    if lexer.ptr != C_NULL
+        @test CC.isCurrentLexer(pp, lexer) == true
+    end
+    if file_lexer.ptr != C_NULL
+        @test CC.isCurrentLexer(pp, file_lexer) isa Bool
+    end
+
+    # macro annotation tables are write-only through the C API: assert they do not throw
+    ii = CC.getIdentifierInfo(pp, "pp_batch_annotated")
+    @test ii isa CC.IdentifierInfo
+    @test CC.addMacroDeprecationMsg(pp, ii, "deprecated by the batch test",
+                                    CC.SourceLocation()) === nothing
+    @test CC.addRestrictExpansionMsg(pp, ii, "restricted by the batch test",
+                                     CC.SourceLocation()) === nothing
+    @test CC.addFinalLoc(pp, ii, CC.SourceLocation()) === nothing
+
+    # poison bookkeeping: the identifier is never poisoned, so nothing is diagnosed
+    @test CC.SetPoisonReason(pp, ii, 0) === nothing
+    blank = CC.Token()
+    @test CC.MaybeHandlePoisonedIdentifier(pp, blank) === nothing
+    @test_throws AssertionError CC.HandlePoisonedIdentifier(pp, blank)
+
+    # a blank token is not an annotation token, so both annotation replacers reject it
+    @test_throws AssertionError CC.AnnotateCachedTokens(pp, blank)
+    @test_throws AssertionError CC.ReplaceLastTokenWithAnnotation(pp, blank)
+    dispose(blank)
+
+    # __FILE__ path processing is static and its separators are host-decided: shape only
+    processed = CC.processPathForFileMacro(joinpath("pp", "batch", "file.h"),
+                                           CC.getLangOpts(pp), CC.getTargetInfo(pp))
+    @test processed isa String
+    @test !isempty(processed)
+
+    # backtracking is not enabled here, so the rewind is rejected before the ccall
+    @test CC.isBacktrackEnabled(pp) == false
+    @test_throws AssertionError CC.RevertCachedTokens(pp, 1)
+    dispose(I)
+
+    # peeking, re-injecting and rewinding all touch the live token stream
+    J = create_interpreter()
+    ppj = CC.getPreprocessor(get_instance(J))
+    tok = CC.Token()
+    CC.EnableBacktrackAtThisPos(ppj)
+    @test CC.LookAhead(ppj, 0, tok) === nothing
+    first_kind = CC.getKind(tok)
+    @test first_kind isa Integer
+    @test CC.LookAhead(ppj, 1, tok) === nothing
+    @test CC.getKind(tok) isa Integer
+
+    # LookAhead consumes nothing: the next Lex hands back the token peeked at index 0
+    CC.Lex(ppj, tok)
+    @test CC.getKind(tok) == first_kind
+    @test CC.getLastCachedTokenLocation(ppj) isa CC.SourceLocation
+
+    # re-inject the token just consumed, lex it again, then rewind the whole scope
+    @test CC.EnterToken(ppj, tok, true) === nothing
+    CC.Lex(ppj, tok)
+    @test CC.getKind(tok) == first_kind
+    @test CC.RevertCachedTokens(ppj, 1) === nothing
+    CC.Backtrack(ppj)
+    dispose(tok)
+    dispose(J)
+
+    # the code-completion point truncates a real file and is one-shot: another throwaway
+    K = create_interpreter()
+    ppk = CC.getPreprocessor(get_instance(K))
+    path, io = mktemp()
+    write(io, "int pp_batch_cc_a;\nint pp_batch_cc_b;\n")
+    close(io)
+    ref = CC.getFileRef(CC.getFileManager(ppk), path)
+    @test ref isa CC.FileEntryRef
+    @test CC.isCodeCompletionEnabled(ppk) == false
+    @test_throws AssertionError CC.SetCodeCompletionPoint(ppk, ref, 0, 1)
+    @test_throws AssertionError CC.SetCodeCompletionPoint(ppk, ref, 1, 0)
+    failed = CC.SetCodeCompletionPoint(ppk, ref, 2, 1)
+    @test failed isa Bool
+    if !failed
+        @test CC.isCodeCompletionEnabled(ppk) == true
+        # the point is one-shot; Clang asserts on a second one and the wrapper restates it
+        @test_throws AssertionError CC.SetCodeCompletionPoint(ppk, ref, 1, 1)
+    end
+    dispose(ref)
+    dispose(K)
+    rm(path; force=true)
+end
+
+@testset "preprocessor macro table, module visibility and preprocessing record" begin
+    I = create_interpreter(["-include", "cstddef"])
+    pp = CC.getPreprocessor(get_instance(I))
+
+    # the selector table is an interior reference the preprocessor always owns
+    @test CC.getSelectorTable(pp) isa CC.SelectorTable
+
+    # the macro history table always holds the builtin macros Clang registers itself
+    n = CC.getNumMacros(pp)
+    @test n isa Integer
+    @test n > 0
+    macro_names = CC.getMacros(pp)
+    @test macro_names isa Vector{CC.IdentifierInfo}
+    @test length(macro_names) == n
+    spellings = [CC.getNameStart(ii) for ii in macro_names]
+    @test all(!isempty, spellings)
+    @test "__FILE__" in spellings
+    # there is no external source here, so dropping its macros cannot grow the table
+    @test CC.getNumMacros(pp, false) <= CC.getNumMacros(pp)
+
+    # __FILE__ is #define'd, so it has both a live directive and a directive history
+    file_ii = CC.getIdentifierInfo(pp, "__FILE__")
+    @test CC.hasMacroDefinition(file_ii) == true
+    md = CC.getLocalMacroDirective(pp, file_ii)
+    @test md isa CC.MacroDirective
+    @test md.ptr != C_NULL
+    @test CC.getLocalMacroDirectiveHistory(pp, file_ii).ptr != C_NULL
+    # a name that never was a macro has neither
+    unknown_ii = CC.getIdentifierInfo(pp, "pp_batch_g_never_a_macro")
+    @test CC.getLocalMacroDirective(pp, unknown_ii).ptr == C_NULL
+
+    # both dumps only write to stderr
+    mi = CC.getMacroInfo(pp, file_ii)
+    @test mi.ptr != C_NULL
+    dumped = redirect_stderr(devnull) do
+        CC.DumpMacro(pp, mi)
+        CC.dumpMacroInfo(pp, file_ii)
+        CC.dumpMacroInfo(pp, unknown_ii)
+        return true
+    end
+    @test dumped
+
+    # which headers the driver actually pulled in is host-decided: assert the shape only
+    nfiles = CC.getNumIncludedFiles(pp)
+    @test nfiles isa Integer
+    included = CC.getIncludedFiles(pp)
+    @test included isa Vector{CC.FileEntry}
+    @test length(included) == nfiles
+
+    # module queries run against a throwaway module this testset owns; the visibility id is
+    # far past any this translation unit uses, so its visibility slot starts out unset
+    m = CC.Module_("pp_batch_g"; visibility_id=4096)
+    @test CC.isModuleMapModule(m) == true
+    @test CC.isMacroDefinedInLocalModule(pp, file_ii, m) == false
+    @test CC.getModuleImportLoc(pp, m) isa CC.SourceLocation
+    @test CC.isValid(CC.getModuleImportLoc(pp, m)) == false
+    @test (CC.markClangModuleAsAffecting(pp, m); true)
+
+    # makeModuleVisible needs a valid import location unless the module is a global fragment
+    sm = CC.getSourceManager(pp)
+    fid = CC.getMainFileID(sm)
+    main_loc = CC.getLocForStartOfFile(sm, fid)
+    @test CC.isValid(main_loc) == true
+    @test CC.isGlobalModule(m) == false
+    @test_throws AssertionError CC.makeModuleVisible(pp, m, CC.SourceLocation())
+    @test (CC.makeModuleVisible(pp, m, main_loc); true)
+    # the module now records the location the test just made it visible at
+    @test CC.isValid(CC.getModuleImportLoc(pp, m)) == true
+    dispose(fid)
+
+    # the preprocessor holds borrowed pointers to the module: it must die first
+    dispose(I)
+    dispose(m)
+
+    # createPreprocessingRecord installs a callback for good: another throwaway interpreter
+    J = create_interpreter()
+    ppj = CC.getPreprocessor(get_instance(J))
+    @test CC.getPreprocessingRecord(ppj).ptr == C_NULL
+    @test (CC.createPreprocessingRecord(ppj); true)
+    rec = CC.getPreprocessingRecord(ppj)
+    @test rec isa CC.PreprocessingRecord
+    @test rec.ptr != C_NULL
+    dispose(J)
+end
+
+@testset "preprocessor interior handles, macro authoring and expansion warnings" begin
+    # Everything here mutates preprocessor-wide state — the handler slots, the callback
+    # chain, the macro table, the source manager's file list — so the interpreter is a
+    # throwaway this testset owns. Nothing below consumes the live token stream: the only
+    # token is relexed out of a buffer with getRawToken, which never advances the lexer.
+    I = create_interpreter()
+    pp = CC.getPreprocessor(get_instance(I))
+
+    # interior references the preprocessor always owns
+    @test CC.getBuiltinInfo(pp) isa CC.BuiltinContext
+    @test CC.getBuiltinInfo(pp).ptr != C_NULL
+    @test CC.getModuleLoader(pp) isa CC.ModuleLoader
+    @test CC.getModuleLoader(pp).ptr != C_NULL
+
+    # the external macro source is borrowed, so reinstalling whatever is already attached
+    # (a NULL carrier when no AST file was loaded) is a no-op round-trip
+    src = CC.getExternalSource(pp)
+    @test src isa CC.ExternalPreprocessorSource
+    @test CC.setExternalSource(pp, src) === nothing
+    @test CC.getExternalSource(pp).ptr == src.ptr
+
+    # same shape for the empty-line handler slot
+    handler = CC.getEmptylineHandler(pp)
+    @test handler isa CC.EmptylineHandler
+    @test CC.setEmptylineHandler(pp, handler) === nothing
+    @test CC.getEmptylineHandler(pp).ptr == handler.ptr
+
+    # no code completion is running here, so clearing the slot leaves it empty
+    @test CC.getCodeCompletionHandler(pp) isa CC.CodeCompletionHandler
+    @test CC.clearCodeCompletionHandler(pp) === nothing
+    @test CC.getCodeCompletionHandler(pp).ptr == C_NULL
+
+    # macro authoring: allocate a MacroInfo, push it as this name's live definition, then
+    # read the definition back through the macro table
+    sm = CC.getSourceManager(pp)
+    fid = CC.getMainFileID(sm)
+    loc = CC.getLocForStartOfFile(sm, fid)
+    @test CC.isValid(loc) == true
+    ii = CC.getIdentifierInfo(pp, "PP_BATCH_AUTHORED")
+    @test CC.hasMacroDefinition(ii) == false
+    @test CC.isMacroDefinitionAmbiguous(pp, ii) == false
+    mi = CC.AllocateMacroInfo(pp, loc)
+    @test mi isa CC.MacroInfo
+    md = CC.appendDefMacroDirective(pp, ii, mi, loc)
+    @test md isa CC.MacroDirective
+    @test md.ptr != C_NULL
+    @test CC.hasMacroDefinition(ii) == true
+    @test CC.isMacroDefined(pp, "PP_BATCH_AUTHORED") == true
+    @test CC.getMacroInfo(pp, ii).ptr == mi.ptr
+    # one local definition and no module macros, so there is nothing to be ambiguous about
+    @test CC.isMacroDefinitionAmbiguous(pp, ii) == false
+
+    # the location defaults to the one the MacroInfo was allocated at
+    ii2 = CC.getIdentifierInfo(pp, "PP_BATCH_AUTHORED_2")
+    mi2 = CC.AllocateMacroInfo(pp, loc)
+    @test CC.appendDefMacroDirective(pp, ii2, mi2) isa CC.MacroDirective
+    @test CC.isMacroDefined(pp, "PP_BATCH_AUTHORED_2") == true
+    dispose(fid)
+
+    # the expansion warnings dereference the token's identifier info, so a blank token is
+    # rejected before the ccall
+    blank = CC.Token()
+    @test_throws AssertionError CC.emitMacroExpansionWarnings(pp, blank)
+    dispose(blank)
+
+    # a token that does carry one: relex the first token of a scratch file and look its
+    # identifier up. Nothing annotates this name, so no warning is actually reported.
+    path, io = mktemp()
+    write(io, "pp_batch_probe_ident\n")
+    close(io)
+    ref = CC.getFileRef(CC.getFileManager(pp), path)
+    @test ref isa CC.FileEntryRef
+    probe_fid = CC.FileID(sm, ref)
+    probe_loc = CC.getLocForStartOfFile(sm, probe_fid)
+    tok = CC.Token()
+    # getRawToken reports failure, not success
+    @test CC.getRawToken(pp, probe_loc, tok, false) == false
+    @test CC.is_raw_identifier(tok) == true
+    probe_ii = CC.LookUpIdentifierInfo(pp, tok)
+    @test probe_ii isa CC.IdentifierInfo
+    @test CC.getIdentifierInfo(tok).ptr == probe_ii.ptr
+    @test CC.emitMacroExpansionWarnings(pp, tok) === nothing
+    @test CC.emitMacroExpansionWarnings(pp, tok, true) === nothing
+    dispose(tok)
+    dispose(probe_fid)
+    dispose(ref)
+    rm(path; force=true)
+
+    # a preprocessing record registers itself on the callback chain, so the chain is
+    # non-empty afterwards; the installation cannot be undone, so it runs last
+    @test CC.getPPCallbacks(pp) isa CC.PPCallbacks
+    @test (CC.createPreprocessingRecord(pp); true)
+    @test CC.getPPCallbacks(pp).ptr != C_NULL
+
+    dispose(I)
+end
+
+@testset "preprocessor module tracking and preamble conditional state" begin
+    # Everything here is a whole-preprocessor query, and recording an affecting module
+    # leaves a borrowed pointer behind, so the interpreter is a throwaway this testset owns
+    # and it dies before the module it was handed.
+    I = create_interpreter()
+    pp = CC.getPreprocessor(get_instance(I))
+
+    # the submodule build stack is empty outside a `#pragma clang module build`
+    n_subs = CC.getNumBuildingSubmodules(pp)
+    @test n_subs isa Integer
+    subs = CC.getBuildingSubmodules(pp)
+    @test subs isa Vector
+    @test length(subs) == n_subs
+
+    # affecting modules read back exactly what markClangModuleAsAffecting recorded
+    n_aff = CC.getNumAffectingClangModules(pp)
+    @test n_aff isa Integer
+    @test CC.getAffectingClangModules(pp) isa Vector{CC.Module_}
+    m = CC.Module_("pp_affecting_module"; visibility_id=4098)
+    @test CC.isModuleMapModule(m) == true
+    CC.markClangModuleAsAffecting(pp, m)
+    @test CC.getNumAffectingClangModules(pp) == n_aff + 1
+    affecting = CC.getAffectingClangModules(pp)
+    @test length(affecting) == n_aff + 1
+    @test any(mod -> mod.ptr == m.ptr, affecting)
+
+    # the preamble conditional stack is empty outside a preamble build, and writing one
+    # back is deliberately inert while the store is neither recording nor replaying
+    @test CC.isRecordingPreamble(pp) == false
+    n_cond = CC.getNumPreambleConditionals(pp)
+    @test n_cond isa Integer
+    stack = CC.getPreambleConditionalStack(pp)
+    @test stack isa Vector
+    @test length(stack) == n_cond
+    @test CC.hasRecordedPreamble(pp) == (n_cond > 0)
+    CC.setRecordedPreambleConditionalStack(pp, stack)
+    @test CC.getNumPreambleConditionals(pp) == n_cond
+
+    # nothing was left skipping at end of file, so there is no skip record
+    @test CC.getPreambleSkipInfo(pp) === nothing
+
+    # isPCHThroughHeader answers only once a through-header is configured; assert the gate
+    # its wrapper checks rather than tripping it
+    @test CC.creatingPCHWithThroughHeader(pp) == false
+    @test CC.usingPCHWithThroughHeader(pp) == false
+
+    # creating Sema installs it as the preprocessor's code-completion handler, and only the
+    # detach half of that pairing is wrapped, so this is a one-way transition
+    @test CC.getCodeCompletionHandler(pp) isa CC.CodeCompletionHandler
+    @test CC.getCodeCompletionHandler(pp).ptr != C_NULL
+    CC.clearCodeCompletionHandler(pp)
+    @test CC.getCodeCompletionHandler(pp).ptr == C_NULL
+
+    # the preprocessor holds a borrowed pointer to the module: it must die first
+    dispose(I)
+    dispose(m)
+end
+
+@testset "preprocessor module macros, macro annotations and header suggestions" begin
+    I = create_interpreter()
+    pp = CC.getPreprocessor(get_instance(I))
+    sm = CC.getSourceManager(pp)
+    fid = CC.getMainFileID(sm)
+    main_loc = CC.getLocForStartOfFile(sm, fid)
+    @test CC.isValid(main_loc) == true
+
+    # a name nothing exports yet has neither a module macro nor a leaf list; the module is a
+    # throwaway this testset owns, with a visibility id far past any this TU uses
+    m = CC.Module_("pp_module_macro_probe"; visibility_id=4097)
+    mii = CC.getIdentifierInfo(pp, "PP_MODULE_MACRO_PROBE")
+    @test CC.getNumLeafModuleMacros(pp, mii) == 0
+    @test isempty(CC.getLeafModuleMacros(pp, mii))
+    @test CC.getModuleMacro(pp, m, mii).ptr == C_NULL
+
+    # registering one makes it retrievable and puts it in the leaf list for that name
+    mi = CC.AllocateMacroInfo(pp, main_loc)
+    mm, is_new = CC.addModuleMacro(pp, m, mii, mi)
+    @test mm isa CC.ModuleMacro
+    @test mm.ptr != C_NULL
+    @test is_new == true
+    # an identical registration folds onto the node that already exists
+    mm2, is_new2 = CC.addModuleMacro(pp, m, mii, mi)
+    @test mm2.ptr == mm.ptr
+    @test is_new2 == false
+    @test CC.getModuleMacro(pp, m, mii).ptr == mm.ptr
+    leaves = CC.getLeafModuleMacros(pp, mii)
+    @test leaves isa Vector{CC.ModuleMacro}
+    @test length(leaves) == CC.getNumLeafModuleMacros(pp, mii)
+    @test mm.ptr in [l.ptr for l in leaves]
+
+    # a second registration overriding the first: clang uniques ModuleMacros on the whole
+    # (module, name, macro, overrides) tuple and decides for itself whether this is a new
+    # node, so assert what is invariant — whatever comes back is a leaf for this name.
+    mi2 = CC.AllocateMacroInfo(pp, main_loc)
+    mm3, is_new3 = CC.addModuleMacro(pp, m, mii, mi2, [mm])
+    @test is_new3 isa Bool
+    @test mm3 isa CC.ModuleMacro
+    @test mm3.ptr != C_NULL
+    @test mm3.ptr in [l.ptr for l in CC.getLeafModuleMacros(pp, mii)]
+
+    # macro annotations: each reader stays disengaged until its own recorder has run. The
+    # identifier flag and the annotation entry are set together, as Clang's pragma handlers
+    # do, because the flag is what gates the entry lookup
+    aii = CC.getIdentifierInfo(pp, "PP_ANNOTATED_MACRO_PROBE")
+    CC.setIsDeprecatedMacro(aii, true)
+    CC.addMacroDeprecationMsg(pp, aii, "use PP_OTHER instead", main_loc)
+    dep_loc = CC.getMacroDeprecationLoc(pp, aii)
+    @test dep_loc isa CC.SourceLocation
+    @test CC.isValid(dep_loc) == true
+    @test CC.getMacroDeprecationMsg(pp, aii) == "use PP_OTHER instead"
+    # the entry exists now, but carries no restrict-expansion and no final annotation yet
+    @test CC.getMacroRestrictExpansionLoc(pp, aii) === nothing
+    @test CC.getMacroRestrictExpansionMsg(pp, aii) == ""
+    @test CC.getMacroFinalAnnotationLoc(pp, aii) === nothing
+    CC.addRestrictExpansionMsg(pp, aii, "not outside this header", main_loc)
+    CC.addFinalLoc(pp, aii, main_loc)
+    @test CC.getMacroRestrictExpansionLoc(pp, aii) isa CC.SourceLocation
+    @test CC.getMacroRestrictExpansionMsg(pp, aii) == "not outside this header"
+    @test CC.getMacroFinalAnnotationLoc(pp, aii) isa CC.SourceLocation
+    # an identifier that was never annotated is rejected before the unguarded lookup runs
+    plain = CC.getIdentifierInfo(pp, "PP_UNANNOTATED_MACRO_PROBE")
+    @test_throws AssertionError CC.getMacroDeprecationLoc(pp, plain)
+    @test_throws AssertionError CC.getMacroDeprecationMsg(pp, plain)
+    @test_throws AssertionError CC.getMacroRestrictExpansionLoc(pp, plain)
+    @test_throws AssertionError CC.getMacroRestrictExpansionMsg(pp, plain)
+    @test_throws AssertionError CC.getMacroFinalAnnotationLoc(pp, plain)
+
+    # the spelling search takes token values as a parallel kind/identifier list. Kind 0 is
+    # tok::unknown, which the token value constructor accepts because it is neither an
+    # identifier nor a literal nor an annotation — assert that rather than assuming it
+    @test CC.isAnyIdentifier(0) == false
+    @test CC.isLiteral(0) == false
+    @test CC.isAnnotation(0) == false
+    file_ii = CC.getIdentifierInfo(pp, "__FILE__")
+    @test CC.getLastMacroWithSpelling(pp, main_loc, [file_ii]) isa String
+    @test CC.getLastMacroWithSpelling(pp, main_loc, Any[]) isa String
+    @test CC.getLastMacroWithSpelling(pp, main_loc, [0]) isa String
+    @test_throws AssertionError CC.getLastMacroWithSpelling(pp, CC.SourceLocation(), [0])
+    @test_throws AssertionError CC.getLastMacroWithSpelling(pp, main_loc, [file_ii.ptr])
+
+    # nothing at a main-file location sits in an unimported module, but which module maps
+    # the host loaded decides the answer: assert the shape only
+    hdr = CC.getHeaderToIncludeForDiagnostics(pp, main_loc, main_loc)
+    @test hdr === nothing || hdr isa CC.FileEntryRef
+    hdr === nothing || dispose(hdr)
+
+    # a hand-built module has no module map behind it, so its availability is host-decided;
+    # the failing branch reports through the diagnostics engine, hence the stderr redirect
+    avail = redirect_stderr(devnull) do
+        return CC.checkModuleIsAvailable(CC.getLangOpts(pp), CC.getTargetInfo(pp), m,
+                                         CC.getDiagnostics(pp))
+    end
+    @test avail isa Bool
+
+    dispose(fid)
+    # the preprocessor holds borrowed pointers to the module: it must die first
+    dispose(I)
+    dispose(m)
+end

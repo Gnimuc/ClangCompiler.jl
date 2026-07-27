@@ -125,3 +125,260 @@ function createDeviceMangleContext(x::ASTContext, ti::TargetInfo)
     @assert getCXXABI(ti) != CXTargetCXXABI_Microsoft "device mangling needs a non-Microsoft C++ ABI"
     return MangleContext(clang_ASTContext_createDeviceMangleContext(x, ti))
 end
+
+
+"""
+    isUniqueInternalLinkageDecl(x::MangleContext, d::AbstractNamedDecl) -> Bool
+Return whether `d` is given a uniqued internal-linkage name. Always `false` until
+`needsUniqueInternalLinkageNames` has been called on the mangler, and `false` for every
+declaration the base `MangleContext` implementation sees.
+"""
+function isUniqueInternalLinkageDecl(x::MangleContext, d::AbstractNamedDecl)
+    @check_ptrs x d
+    return clang_MangleContext_isUniqueInternalLinkageDecl(x, d)
+end
+
+"""
+    needsUniqueInternalLinkageNames(x::MangleContext)
+Ask the mangler to give internal-linkage declarations unique names from here on. This
+mutates the mangler, so every later `isUniqueInternalLinkageDecl` query sees the flag.
+"""
+function needsUniqueInternalLinkageNames(x::MangleContext)
+    @check_ptrs x
+    return clang_MangleContext_needsUniqueInternalLinkageNames(x)
+end
+
+"""
+    getLambdaString(x::MangleContext, rd::AbstractCXXRecordDecl) -> String
+Return the `<lambda...>` spelling the closure type `rd` contributes to mangled names.
+The Itanium mangler spells it `<lambdaN>` and the Microsoft one `<lambda_N>`.
+
+PRECONDITION: `rd` must be a lambda closure class — clang asserts `isLambda()` and then
+reads the lambda-only fields (`getLambdaContextDecl`, `getLambdaManglingNumber`)
+unconditionally.
+"""
+function getLambdaString(x::MangleContext, rd::AbstractCXXRecordDecl)
+    @check_ptrs x rd
+    @assert isLambda(rd) "getLambdaString needs a lambda closure class"
+    return get_string(clang_MangleContext_getLambdaString(x, rd))
+end
+
+"""
+    mangleCXXRTTI(x::MangleContext, ty::QualType) -> String
+Return the mangled name of the RTTI descriptor for `ty` (the Itanium `_ZTI...` symbol).
+The companion `mangleCXXRTTIName` returns the `_ZTS...` type-name string instead.
+
+PRECONDITION: `ty` must carry no qualifiers — RTTI is emitted for the unqualified type
+and the Itanium mangler asserts on a qualified one.
+"""
+function mangleCXXRTTI(x::MangleContext, ty::QualType)
+    @check_ptrs x ty
+    @assert !hasQualifiers(ty) "RTTI mangling needs an unqualified type"
+    return get_string(clang_MangleContext_mangleCXXRTTI(x, ty))
+end
+
+"""
+    mangleStaticGuardVariable(x::MangleContext, d::AbstractVarDecl) -> String
+Return the mangled name of the guard variable that protects `d`'s one-time
+initialization.
+"""
+function mangleStaticGuardVariable(x::MangleContext, d::AbstractVarDecl)
+    @check_ptrs x d
+    return get_string(clang_MangleContext_mangleStaticGuardVariable(x, d))
+end
+
+"""
+    mangleDynamicInitializer(x::MangleContext, d::AbstractVarDecl) -> String
+Return the symbol name of the stub that runs `d`'s dynamic initialization.
+"""
+function mangleDynamicInitializer(x::MangleContext, d::AbstractVarDecl)
+    @check_ptrs x d
+    return get_string(clang_MangleContext_mangleDynamicInitializer(x, d))
+end
+
+
+# The mangler entry points that write straight into a raw_ostream. Every string below is
+# target-ABI specific, so callers must not compare one across hosts.
+"""
+    mangleCXXName(x::MangleContext, d::AbstractFunctionDecl) -> String
+    mangleCXXName(x::MangleContext, d::AbstractVarDecl) -> String
+Return the C++-mangled name of `d`, applying the C++ mangling rules directly instead of
+the `asm` label and "does this need mangling at all" fallbacks `mangleName` tries first.
+
+PRECONDITION: `d` must not be a constructor or a destructor — clang's
+`GlobalDecl(NamedDecl *)` contract asserts it, because those two carry a variant type this
+entry point cannot supply.
+"""
+function mangleCXXName(x::MangleContext, d::AbstractFunctionDecl)
+    @check_ptrs x d
+    kind = getDeclKindName(d)
+    @assert kind != "CXXConstructor" && kind != "CXXDestructor" "a ctor or dtor needs its variant type"
+    return get_string(clang_MangleContext_mangleCXXName(x, d))
+end
+
+function mangleCXXName(x::MangleContext, d::AbstractVarDecl)
+    @check_ptrs x d
+    return get_string(clang_MangleContext_mangleCXXName(x, d))
+end
+
+"""
+    mangleReferenceTemporary(x::MangleContext, d::AbstractVarDecl, mangling_number::Integer=1) -> String
+Return the symbol name of the reference temporary materialized for `d`.
+`mangling_number` distinguishes the temporaries created by one initializer and is 1-based,
+matching the numbers clang's `MangleNumberingContext` hands out.
+"""
+function mangleReferenceTemporary(x::MangleContext, d::AbstractVarDecl, mangling_number::Integer=1)
+    @check_ptrs x d
+    return get_string(clang_MangleContext_mangleReferenceTemporary(x, d, mangling_number))
+end
+
+"""
+    mangleDynamicAtExitDestructor(x::MangleContext, d::AbstractVarDecl) -> String
+Return the symbol name of the stub that runs `d`'s registered at-exit destructor.
+"""
+function mangleDynamicAtExitDestructor(x::MangleContext, d::AbstractVarDecl)
+    @check_ptrs x d
+    return get_string(clang_MangleContext_mangleDynamicAtExitDestructor(x, d))
+end
+
+"""
+    mangleSEHFilterExpression(x::MangleContext, d::AbstractFunctionDecl) -> String
+Return the symbol name of the SEH filter expression outlined from `d`.
+
+PRECONDITION: `d` must not be a constructor or a destructor — `GlobalDecl(FunctionDecl *)`
+asserts it.
+"""
+function mangleSEHFilterExpression(x::MangleContext, d::AbstractFunctionDecl)
+    @check_ptrs x d
+    kind = getDeclKindName(d)
+    @assert kind != "CXXConstructor" && kind != "CXXDestructor" "a ctor or dtor cannot enclose SEH"
+    return get_string(clang_MangleContext_mangleSEHFilterExpression(x, d))
+end
+
+"""
+    mangleSEHFinallyBlock(x::MangleContext, d::AbstractFunctionDecl) -> String
+Return the symbol name of the SEH finally block outlined from `d`.
+
+PRECONDITION: `d` must not be a constructor or a destructor — `GlobalDecl(FunctionDecl *)`
+asserts it.
+"""
+function mangleSEHFinallyBlock(x::MangleContext, d::AbstractFunctionDecl)
+    @check_ptrs x d
+    kind = getDeclKindName(d)
+    @assert kind != "CXXConstructor" && kind != "CXXDestructor" "a ctor or dtor cannot enclose SEH"
+    return get_string(clang_MangleContext_mangleSEHFinallyBlock(x, d))
+end
+
+# ItaniumMangleContext
+"""
+    ItaniumMangleContext(x::MangleContext) -> ItaniumMangleContext
+Refine a mangler carrier to the Itanium mangler, the class that declares the vtable, VTT,
+thread-local, comdat, lambda-signature and module-initializer entry points. The result
+holds NULL when `x` is not an Itanium mangler (i.e. under the Microsoft C++ ABI), so test
+`.ptr` before using it.
+
+The carrier names the very same object as `x` rather than a new one, so it must never be
+disposed separately.
+"""
+function ItaniumMangleContext(x::MangleContext)
+    @check_ptrs x
+    return ItaniumMangleContext(clang_MangleContext_castToItaniumMangleContext(x))
+end
+
+"""
+    mangleCXXVTable(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl) -> String
+Return the symbol name of `rd`'s virtual table.
+"""
+function mangleCXXVTable(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl)
+    @check_ptrs x rd
+    return get_string(clang_ItaniumMangleContext_mangleCXXVTable(x, rd))
+end
+
+"""
+    mangleCXXVTT(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl) -> String
+Return the symbol name of `rd`'s virtual table table.
+"""
+function mangleCXXVTT(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl)
+    @check_ptrs x rd
+    return get_string(clang_ItaniumMangleContext_mangleCXXVTT(x, rd))
+end
+
+"""
+    mangleCXXCtorVTable(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl,
+                        offset::Integer, base::AbstractCXXRecordDecl) -> String
+Return the symbol name of the construction vtable emitted for `base` sitting at byte
+`offset` inside `rd`.
+"""
+function mangleCXXCtorVTable(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl,
+                             offset::Integer, base::AbstractCXXRecordDecl)
+    @check_ptrs x rd base
+    return get_string(clang_ItaniumMangleContext_mangleCXXCtorVTable(x, rd, offset, base))
+end
+
+"""
+    mangleItaniumThreadLocalInit(x::AbstractItaniumMangleContext, d::AbstractVarDecl) -> String
+Return the symbol name of the thread-local initialization function of `d`.
+"""
+function mangleItaniumThreadLocalInit(x::AbstractItaniumMangleContext, d::AbstractVarDecl)
+    @check_ptrs x d
+    return get_string(clang_ItaniumMangleContext_mangleItaniumThreadLocalInit(x, d))
+end
+
+"""
+    mangleItaniumThreadLocalWrapper(x::AbstractItaniumMangleContext, d::AbstractVarDecl) -> String
+Return the symbol name of the thread-local access wrapper of `d`.
+"""
+function mangleItaniumThreadLocalWrapper(x::AbstractItaniumMangleContext, d::AbstractVarDecl)
+    @check_ptrs x d
+    return get_string(clang_ItaniumMangleContext_mangleItaniumThreadLocalWrapper(x, d))
+end
+
+"""
+    mangleCXXCtorComdat(x::AbstractItaniumMangleContext, d::AbstractCXXConstructorDecl) -> String
+Return the name of the comdat group that holds `d`'s constructor variants.
+"""
+function mangleCXXCtorComdat(x::AbstractItaniumMangleContext, d::AbstractCXXConstructorDecl)
+    @check_ptrs x d
+    return get_string(clang_ItaniumMangleContext_mangleCXXCtorComdat(x, d))
+end
+
+"""
+    mangleCXXDtorComdat(x::AbstractItaniumMangleContext, d::AbstractCXXDestructorDecl) -> String
+Return the name of the comdat group that holds `d`'s destructor variants.
+"""
+function mangleCXXDtorComdat(x::AbstractItaniumMangleContext, d::AbstractCXXDestructorDecl)
+    @check_ptrs x d
+    return get_string(clang_ItaniumMangleContext_mangleCXXDtorComdat(x, d))
+end
+
+"""
+    mangleLambdaSig(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl) -> String
+Return the mangled call-operator signature of the closure type `rd`.
+
+PRECONDITION: `rd` must be a lambda closure class — the mangler reads its call operator
+unconditionally.
+"""
+function mangleLambdaSig(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl)
+    @check_ptrs x rd
+    @assert isLambda(rd) "mangleLambdaSig needs a lambda closure class"
+    return get_string(clang_ItaniumMangleContext_mangleLambdaSig(x, rd))
+end
+
+"""
+    mangleDynamicStermFinalizer(x::AbstractItaniumMangleContext, d::AbstractVarDecl) -> String
+Return the symbol name of the finalizer stub registered for `d` by `at_thread_exit`.
+"""
+function mangleDynamicStermFinalizer(x::AbstractItaniumMangleContext, d::AbstractVarDecl)
+    @check_ptrs x d
+    return get_string(clang_ItaniumMangleContext_mangleDynamicStermFinalizer(x, d))
+end
+
+"""
+    mangleModuleInitializer(x::AbstractItaniumMangleContext, m::AbstractModule) -> String
+Return the symbol name of the module-initializer function of the named module `m`. Only
+`m`'s name, kind and parent chain are read, so a `Module_` built by hand works.
+"""
+function mangleModuleInitializer(x::AbstractItaniumMangleContext, m::AbstractModule)
+    @check_ptrs x m
+    return get_string(clang_ItaniumMangleContext_mangleModuleInitializer(x, m))
+end

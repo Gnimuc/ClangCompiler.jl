@@ -8,6 +8,7 @@
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
+#include "clang-ex/Basic/CXSpecifiers.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
@@ -116,6 +117,7 @@ bool clang_TargetInfo_hasInt128Type(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasBitIntType(CXTargetInfo_ TI);
 size_t clang_TargetInfo_getMaxBitIntWidth(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasLegalHalfType(CXTargetInfo_ TI);
+bool clang_TargetInfo_allowHalfArgsAndReturns(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasFloat128Type(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasFloat16Type(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasBFloat16Type(CXTargetInfo_ TI);
@@ -154,6 +156,7 @@ const char *clang_TargetInfo_getFloat128Mangling(CXTargetInfo_ TI);
 // llvm_unreachable otherwise.
 const char *clang_TargetInfo_getIbm128Mangling(CXTargetInfo_ TI);
 const char *clang_TargetInfo_getBFloat16Mangling(CXTargetInfo_ TI);
+bool clang_TargetInfo_supportSourceEvalMethod(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getLargeArrayMinWidth(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getLargeArrayAlign(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getMaxAtomicPromoteWidth(CXTargetInfo_ TI);
@@ -161,6 +164,7 @@ unsigned clang_TargetInfo_getMaxAtomicInlineWidth(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasBuiltinAtomic(CXTargetInfo_ TI, uint64_t AtomicSizeInBits,
                                        uint64_t AlignmentInBits);
 unsigned clang_TargetInfo_getMaxVectorAlign(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getMaxOpenCLWorkGroupSize(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getExnObjectAlignment(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getIntMaxTWidth(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getUnwindWordWidth(CXTargetInfo_ TI);
@@ -181,6 +185,7 @@ const char *clang_TargetInfo_getTypeConstantSuffix(CXTargetInfo_ TI,
                                                    CXTargetInfo_IntType T);
 // Precondition: T is not CXTargetInfo_NoInt; llvm_unreachable otherwise.
 const char *clang_TargetInfo_getTypeFormatModifier(CXTargetInfo_IntType T);
+bool clang_TargetInfo_useObjCFP2RetForComplexLongDouble(CXTargetInfo_ TI);
 bool clang_TargetInfo_useFP16ConversionIntrinsics(CXTargetInfo_ TI);
 bool clang_TargetInfo_useAddressSpaceMapMangling(CXTargetInfo_ TI);
 bool clang_TargetInfo_getVScaleRange(CXTargetInfo_ TI, CXLangOptions LO, unsigned *Min,
@@ -188,8 +193,10 @@ bool clang_TargetInfo_getVScaleRange(CXTargetInfo_ TI, CXLangOptions LO, unsigne
 bool clang_TargetInfo_isCLZForZeroUndef(CXTargetInfo_ TI);
 CXTargetInfo_BuiltinVaListKind clang_TargetInfo_getBuiltinVaListKind(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasBuiltinMSVaList(CXTargetInfo_ TI);
+bool clang_TargetInfo_isRenderScriptTarget(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasAArch64SVETypes(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasRISCVVTypes(CXTargetInfo_ TI);
+bool clang_TargetInfo_allowAMDGPUUnsafeFPAtomics(CXTargetInfo_ TI);
 uint32_t clang_TargetInfo_getARMCDECoprocMask(CXTargetInfo_ TI);
 bool clang_TargetInfo_isValidClobber(CXTargetInfo_ TI, const char *Name);
 bool clang_TargetInfo_isValidGCCRegisterName(CXTargetInfo_ TI, const char *Name);
@@ -201,23 +208,92 @@ bool clang_TargetInfo_isSPRegName(CXTargetInfo_ TI, const char *Name);
 // Returns the empty string when Constraint names no single register.
 CXString clang_TargetInfo_getConstraintRegister(CXTargetInfo_ TI, const char *Constraint,
                                                 const char *Expression);
+
+// TargetInfo::ConstraintInfo
+
+// The caller owns the object; release it with clang_ConstraintInfo_dispose.
+CXConstraintInfo clang_ConstraintInfo_create(const char *ConstraintStr, const char *Name);
+
+void clang_ConstraintInfo_dispose(CXConstraintInfo CI);
+
+// Borrowed from the ConstraintInfo's own std::string storage; invalidated by dispose.
+const char *clang_ConstraintInfo_getConstraintStr(CXConstraintInfo CI);
+// Borrowed from the ConstraintInfo's own std::string storage; invalidated by dispose.
+const char *clang_ConstraintInfo_getName(CXConstraintInfo CI);
+bool clang_ConstraintInfo_isReadWrite(CXConstraintInfo CI);
+bool clang_ConstraintInfo_earlyClobber(CXConstraintInfo CI);
+bool clang_ConstraintInfo_allowsRegister(CXConstraintInfo CI);
+bool clang_ConstraintInfo_allowsMemory(CXConstraintInfo CI);
+bool clang_ConstraintInfo_hasMatchingInput(CXConstraintInfo CI);
+bool clang_ConstraintInfo_hasTiedOperand(CXConstraintInfo CI);
+// Precondition: hasTiedOperand(CI); asserts "Has no tied operand!" otherwise.
+unsigned clang_ConstraintInfo_getTiedOperand(CXConstraintInfo CI);
+bool clang_ConstraintInfo_requiresImmediateConstant(CXConstraintInfo CI);
+void clang_ConstraintInfo_setIsReadWrite(CXConstraintInfo CI);
+void clang_ConstraintInfo_setEarlyClobber(CXConstraintInfo CI);
+void clang_ConstraintInfo_setAllowsMemory(CXConstraintInfo CI);
+void clang_ConstraintInfo_setAllowsRegister(CXConstraintInfo CI);
+void clang_ConstraintInfo_setHasMatchingInput(CXConstraintInfo CI);
+// Wraps the (int Min, int Max) overload of ConstraintInfo::setRequiresImmediate.
+void clang_ConstraintInfo_setRequiresImmediate(CXConstraintInfo CI, int Min, int Max);
+// Copies Output's flags into CI and marks Output as having a matching input; CI's own
+// constraint string and name are left alone.
+void clang_ConstraintInfo_setTiedOperand(CXConstraintInfo CI, unsigned N,
+                                         CXConstraintInfo Output);
+
+// Parses Info's constraint string as an output constraint and updates Info's flags in
+// place; false when it is not a valid output constraint for this target.
+bool clang_TargetInfo_validateOutputConstraint(CXTargetInfo_ TI, CXConstraintInfo Info);
 CXString clang_TargetInfo_getClobbers(CXTargetInfo_ TI);
 bool clang_TargetInfo_isNan2008(CXTargetInfo_ TI);
 // Returns the triple string, borrowed from the llvm::Triple owned by the target.
 const char *clang_TargetInfo_getTriple(CXTargetInfo_ TI);
+// The target ID (the AMDGPU "processor:feature" form), or the empty string when the
+// target exposes none -- the disengaged optional and an engaged empty string are
+// deliberately conflated.
+CXString clang_TargetInfo_getTargetID(CXTargetInfo_ TI);
 const char *clang_TargetInfo_getDataLayoutString(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasProtectedVisibility(CXTargetInfo_ TI);
 bool clang_TargetInfo_shouldDLLImportComdatSymbols(CXTargetInfo_ TI);
+bool clang_TargetInfo_hasPS4DLLImportExport(CXTargetInfo_ TI);
 CXString clang_TargetInfo_getABI(CXTargetInfo_ TI);
 CXTargetCXXABI_Kind clang_TargetInfo_getCXXABI(CXTargetInfo_ TI);
 // The caller owns the returned set (freed via libclang's clang_disposeStringSet).
 CXStringSet *clang_TargetInfo_fillValidCPUList(CXTargetInfo_ TI);
+// The caller owns the returned set (freed via libclang's clang_disposeStringSet). Falls
+// back to the fillValidCPUList result on targets that do not model separate tune CPUs.
+CXStringSet *clang_TargetInfo_fillValidTuneCPUList(CXTargetInfo_ TI);
 bool clang_TargetInfo_isValidCPUName(CXTargetInfo_ TI, const char *Name);
 bool clang_TargetInfo_isValidTuneCPUName(CXTargetInfo_ TI, const char *Name);
+bool clang_TargetInfo_supportsTargetAttributeTune(CXTargetInfo_ TI);
 bool clang_TargetInfo_isValidFeatureName(CXTargetInfo_ TI, const char *Feature);
+bool clang_TargetInfo_doesFeatureAffectCodeGen(CXTargetInfo_ TI, const char *Feature);
+// Returns the empty string when Feature pulls in no other feature on this target (which is
+// also what every target that does not model feature dependencies returns).
+CXString clang_TargetInfo_getFeatureDependencies(CXTargetInfo_ TI, const char *Feature);
+bool clang_TargetInfo_isBranchProtectionSupportedArch(CXTargetInfo_ TI, const char *Arch);
 bool clang_TargetInfo_hasFeature(CXTargetInfo_ TI, const char *Feature);
+bool clang_TargetInfo_isReadOnlyFeature(CXTargetInfo_ TI, const char *Feature);
 bool clang_TargetInfo_supportsMultiVersioning(CXTargetInfo_ TI);
 bool clang_TargetInfo_supportsIFunc(CXTargetInfo_ TI);
+// Validates the argument of __builtin_cpu_supports; total for any string.
+bool clang_TargetInfo_validateCpuSupports(CXTargetInfo_ TI, const char *Name);
+// Precondition: on a target with multiversioning support (supportsMultiVersioning), Name is
+// one that target already accepted (isValidCPUName or validateCpuSupports) -- the x86
+// implementation looks Name up in a priority table and reads past its end otherwise.
+unsigned clang_TargetInfo_multiVersionSortPriority(CXTargetInfo_ TI, const char *Name);
+unsigned clang_TargetInfo_multiVersionFeatureCost(CXTargetInfo_ TI);
+// Validates the argument of __builtin_cpu_is; total for any string.
+bool clang_TargetInfo_validateCpuIs(CXTargetInfo_ TI, const char *Name);
+// Validates a cpu_specific/cpu_dispatch CPU option; checked through features, so the
+// accepted list differs from validateCpuIs'.
+bool clang_TargetInfo_validateCPUSpecificCPUDispatch(CXTargetInfo_ TI, const char *Name);
+// Precondition: clang_TargetInfo_validateCPUSpecificCPUDispatch(TI, Name). TargetInfo's
+// own implementation is an llvm_unreachable, so a target that does not implement
+// cpu_specific multiversioning aborts instead of returning.
+char clang_TargetInfo_CPUSpecificManglingCharacter(CXTargetInfo_ TI, const char *Name);
+// getCPUSpecificTuneName -- not wrapped. No target in clang 18 overrides it, so the base
+// llvm_unreachable is the only implementation and every call aborts the process.
 bool clang_TargetInfo_getCPUCacheLineSize(CXTargetInfo_ TI, unsigned *Size);
 unsigned clang_TargetInfo_getRegParmMax(CXTargetInfo_ TI);
 bool clang_TargetInfo_isTLSSupported(CXTargetInfo_ TI);
@@ -229,13 +305,66 @@ int clang_TargetInfo_getEHDataRegisterNumber(CXTargetInfo_ TI, unsigned RegNo);
 // Returns NULL when the target names no C++ static initialization section.
 const char *clang_TargetInfo_getStaticInitSectionSpecifier(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getTargetAddressSpace(CXTargetInfo_ TI, CXLangAS AS);
+// Map an address-space field taken from a builtin description string to the language
+// address space it names; the base implementation is the identity mapping through
+// getLangASFromTargetAS.
+CXLangAS clang_TargetInfo_getOpenCLBuiltinAddressSpace(CXTargetInfo_ TI, unsigned AS);
+CXLangAS clang_TargetInfo_getCUDABuiltinAddressSpace(CXTargetInfo_ TI, unsigned AS);
+// Writes the address space usable opportunistically for constant global memory into *AS
+// and returns true; returns false, leaving *AS untouched, when the target names none.
+bool clang_TargetInfo_getConstantAddressSpace(CXTargetInfo_ TI, CXLangAS *AS);
 CXString clang_TargetInfo_getPlatformName(CXTargetInfo_ TI);
+// The deployment version used by the availability attribute, in VersionTuple's printed
+// form ("0" when the target names no minimum version).
+CXString clang_TargetInfo_getPlatformMinVersion(CXTargetInfo_ TI);
 bool clang_TargetInfo_isBigEndian(CXTargetInfo_ TI);
 bool clang_TargetInfo_isLittleEndian(CXTargetInfo_ TI);
+bool clang_TargetInfo_supportsExtendIntArgs(CXTargetInfo_ TI);
+bool clang_TargetInfo_checkArithmeticFenceSupported(CXTargetInfo_ TI);
+CXCallingConv_ clang_TargetInfo_getDefaultCallingConv(CXTargetInfo_ TI);
+
+// Mirrors TargetInfo::CallingConvCheckResult.
+typedef enum CXTargetInfo_CallingConvCheckResult {
+  CXTargetInfo_CCCR_OK = 0,
+  CXTargetInfo_CCCR_Warning,
+  CXTargetInfo_CCCR_Ignore,
+  CXTargetInfo_CCCR_Error
+} CXTargetInfo_CallingConvCheckResult;
+
+CXTargetInfo_CallingConvCheckResult
+clang_TargetInfo_checkCallingConvention(CXTargetInfo_ TI, CXCallingConv_ CC);
+
+// Mirrors TargetInfo::CallingConvKind.
+typedef enum CXTargetInfo_CallingConvKind {
+  CXTargetInfo_CCK_Default = 0,
+  CXTargetInfo_CCK_ClangABI4OrPS4,
+  CXTargetInfo_CCK_MicrosoftWin64
+} CXTargetInfo_CallingConvKind;
+
+CXTargetInfo_CallingConvKind clang_TargetInfo_getCallingConvKind(CXTargetInfo_ TI,
+                                                                 bool ClangABICompat4);
+
+bool clang_TargetInfo_areDefaultedSMFStillPOD(CXTargetInfo_ TI, CXLangOptions LO);
 bool clang_TargetInfo_hasSjLjLowering(CXTargetInfo_ TI);
 bool clang_TargetInfo_allowsLargerPreferedTypeAlignment(CXTargetInfo_ TI);
 bool clang_TargetInfo_defaultsToAIXPowerAlignment(CXTargetInfo_ TI);
+CXLangAS clang_TargetInfo_getOpenCLTypeAddrSpace(CXTargetInfo_ TI, CXOpenCLTypeKind TK);
 unsigned clang_TargetInfo_getVtblPtrAddressSpace(CXTargetInfo_ TI);
+// Writes the DWARF address space AddressSpace must be converted to into *Out and returns
+// true; returns false, leaving *Out untouched, when the target needs no conversion.
+bool clang_TargetInfo_getDWARFAddressSpace(CXTargetInfo_ TI, unsigned AddressSpace,
+                                           unsigned *Out);
+// The SDK version recorded in the target options, in VersionTuple's printed form ("0"
+// when none was specified). Same TargetOpts precondition as
+// clang_TargetInfo_getTargetOpts.
+CXString clang_TargetInfo_getSDKVersion(CXTargetInfo_ TI);
+// Reports through Diags when the fully-initialized target is invalid.
+bool clang_TargetInfo_validateTarget(CXTargetInfo_ TI, CXDiagnosticsEngine Diags);
+bool clang_TargetInfo_allowDebugInfoForExternalRef(CXTargetInfo_ TI);
+// The Darwin target-variant triple string, borrowed from the llvm::Triple the target
+// owns; NULL when the target names no variant.
+const char *clang_TargetInfo_getDarwinTargetVariantTriple(CXTargetInfo_ TI);
+bool clang_TargetInfo_hasHIPImageSupport(CXTargetInfo_ TI);
 
 LLVM_CLANG_C_EXTERN_C_END
 

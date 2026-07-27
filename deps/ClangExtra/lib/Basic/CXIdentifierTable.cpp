@@ -2,6 +2,10 @@
 #include "utils.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/LangOptions.h"
+#include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringRef.h"
+#include <cstdint>
 
 CXIdentifierTable clang_IdentifierTable_create(CXLangOptions LO) {
   auto IT =
@@ -83,6 +87,15 @@ bool clang_IdentifierInfo_hasRevertedTokenIDToIdentifier(CXIdentifierInfo II) {
   return static_cast<clang::IdentifierInfo *>(II)->hasRevertedTokenIDToIdentifier();
 }
 
+void clang_IdentifierInfo_revertTokenIDToIdentifier(CXIdentifierInfo II) {
+  static_cast<clang::IdentifierInfo *>(II)->revertTokenIDToIdentifier();
+}
+
+void clang_IdentifierInfo_revertIdentifierToTokenID(CXIdentifierInfo II, unsigned TK) {
+  static_cast<clang::IdentifierInfo *>(II)->revertIdentifierToTokenID(
+      static_cast<clang::tok::TokenKind>(TK));
+}
+
 CXPPKeywordKind clang_IdentifierInfo_getPPKeywordID(CXIdentifierInfo II) {
   return static_cast<CXPPKeywordKind>(
       static_cast<clang::IdentifierInfo *>(II)->getPPKeywordID());
@@ -93,8 +106,25 @@ unsigned clang_IdentifierInfo_getObjCKeywordID(CXIdentifierInfo II) {
       static_cast<clang::IdentifierInfo *>(II)->getObjCKeywordID());
 }
 
+void clang_IdentifierInfo_setObjCKeywordID(CXIdentifierInfo II, unsigned ID) {
+  static_cast<clang::IdentifierInfo *>(II)->setObjCKeywordID(
+      static_cast<clang::tok::ObjCKeywordKind>(ID));
+}
+
 unsigned clang_IdentifierInfo_getBuiltinID(CXIdentifierInfo II) {
   return static_cast<clang::IdentifierInfo *>(II)->getBuiltinID();
+}
+
+void clang_IdentifierInfo_setBuiltinID(CXIdentifierInfo II, unsigned ID) {
+  static_cast<clang::IdentifierInfo *>(II)->setBuiltinID(ID);
+}
+
+unsigned clang_IdentifierInfo_getMaxBuiltinID(void) {
+  return (1u << clang::ObjCOrBuiltinIDBits) - static_cast<unsigned>(clang::FirstBuiltinID);
+}
+
+void clang_IdentifierInfo_clearBuiltinID(CXIdentifierInfo II) {
+  static_cast<clang::IdentifierInfo *>(II)->clearBuiltinID();
 }
 
 unsigned clang_IdentifierInfo_getInterestingIdentifierID(CXIdentifierInfo II) {
@@ -102,8 +132,21 @@ unsigned clang_IdentifierInfo_getInterestingIdentifierID(CXIdentifierInfo II) {
       static_cast<clang::IdentifierInfo *>(II)->getInterestingIdentifierID());
 }
 
+void clang_IdentifierInfo_setInterestingIdentifierID(CXIdentifierInfo II, unsigned ID) {
+  static_cast<clang::IdentifierInfo *>(II)->setInterestingIdentifierID(ID);
+}
+
+unsigned clang_IdentifierInfo_getMaxInterestingIdentifierID(void) {
+  return static_cast<unsigned>(clang::LastInterestingIdentifierID -
+                               clang::FirstInterestingIdentifierID + 1);
+}
+
 unsigned clang_IdentifierInfo_getObjCOrBuiltinID(CXIdentifierInfo II) {
   return static_cast<clang::IdentifierInfo *>(II)->getObjCOrBuiltinID();
+}
+
+void clang_IdentifierInfo_setObjCOrBuiltinID(CXIdentifierInfo II, unsigned ID) {
+  static_cast<clang::IdentifierInfo *>(II)->setObjCOrBuiltinID(ID);
 }
 
 bool clang_IdentifierInfo_isExtensionToken(CXIdentifierInfo II) {
@@ -156,8 +199,25 @@ bool clang_IdentifierInfo_isFromAST(CXIdentifierInfo II) {
   return static_cast<clang::IdentifierInfo *>(II)->isFromAST();
 }
 
+void clang_IdentifierInfo_setIsFromAST(CXIdentifierInfo II) {
+  static_cast<clang::IdentifierInfo *>(II)->setIsFromAST();
+}
+
 bool clang_IdentifierInfo_hasChangedSinceDeserialization(CXIdentifierInfo II) {
   return static_cast<clang::IdentifierInfo *>(II)->hasChangedSinceDeserialization();
+}
+
+void clang_IdentifierInfo_setChangedSinceDeserialization(CXIdentifierInfo II) {
+  static_cast<clang::IdentifierInfo *>(II)->setChangedSinceDeserialization();
+}
+
+bool clang_IdentifierInfo_hasFETokenInfoChangedSinceDeserialization(CXIdentifierInfo II) {
+  return static_cast<clang::IdentifierInfo *>(II)
+      ->hasFETokenInfoChangedSinceDeserialization();
+}
+
+void clang_IdentifierInfo_setFETokenInfoChangedSinceDeserialization(CXIdentifierInfo II) {
+  static_cast<clang::IdentifierInfo *>(II)->setFETokenInfoChangedSinceDeserialization();
 }
 
 bool clang_IdentifierInfo_isOutOfDate(CXIdentifierInfo II) {
@@ -174,6 +234,14 @@ bool clang_IdentifierInfo_isModulesImport(CXIdentifierInfo II) {
 
 void clang_IdentifierInfo_setModulesImport(CXIdentifierInfo II, bool I) {
   static_cast<clang::IdentifierInfo *>(II)->setModulesImport(I);
+}
+
+bool clang_IdentifierInfo_isMangledOpenMPVariantName(CXIdentifierInfo II) {
+  return static_cast<clang::IdentifierInfo *>(II)->isMangledOpenMPVariantName();
+}
+
+void clang_IdentifierInfo_setMangledOpenMPVariantName(CXIdentifierInfo II, bool I) {
+  static_cast<clang::IdentifierInfo *>(II)->setMangledOpenMPVariantName(I);
 }
 
 bool clang_IdentifierInfo_isEditorPlaceholder(CXIdentifierInfo II) {
@@ -210,6 +278,112 @@ CXIdentifierInfo clang_IdentifierTable_get(CXIdentifierTable Idents, const char 
   return &static_cast<clang::IdentifierTable *>(Idents)->get(llvm::StringRef(Name));
 }
 
+CXIdentifierInfo clang_IdentifierTable_getOwn(CXIdentifierTable IT, const char *Name) {
+  return &static_cast<clang::IdentifierTable *>(IT)->getOwn(llvm::StringRef(Name));
+}
+
 const char *clang_IdentifierInfo_getName(CXIdentifierInfo II) {
   return static_cast<clang::IdentifierInfo *>(II)->getName().data();
+}
+// A CXSelector is the clang::Selector value's own opaque encoding, so it is rebuilt
+// through Selector's public uintptr_t constructor rather than dereferenced.
+static clang::Selector toSelector(CXSelector Sel) {
+  return clang::Selector(reinterpret_cast<uintptr_t>(Sel));
+}
+
+bool clang_Selector_isNull(CXSelector Sel) { return toSelector(Sel).isNull(); }
+
+bool clang_Selector_isKeywordSelector(CXSelector Sel) {
+  return toSelector(Sel).isKeywordSelector();
+}
+
+bool clang_Selector_isUnarySelector(CXSelector Sel) {
+  return toSelector(Sel).isUnarySelector();
+}
+
+unsigned clang_Selector_getNumArgs(CXSelector Sel) { return toSelector(Sel).getNumArgs(); }
+
+CXIdentifierInfo clang_Selector_getIdentifierInfoForSlot(CXSelector Sel,
+                                                         unsigned ArgIndex) {
+  return toSelector(Sel).getIdentifierInfoForSlot(ArgIndex);
+}
+
+CXString clang_Selector_getNameForSlot(CXSelector Sel, unsigned ArgIndex) {
+  return extra::makeCXString(toSelector(Sel).getNameForSlot(ArgIndex).str());
+}
+
+CXString clang_Selector_getAsString(CXSelector Sel) {
+  return extra::makeCXString(toSelector(Sel).getAsString());
+}
+
+void clang_Selector_dump(CXSelector Sel) { toSelector(Sel).dump(); }
+
+CXObjCMethodFamily clang_Selector_getMethodFamily(CXSelector Sel) {
+  return static_cast<CXObjCMethodFamily>(toSelector(Sel).getMethodFamily());
+}
+
+CXObjCStringFormatFamily clang_Selector_getStringFormatFamily(CXSelector Sel) {
+  return static_cast<CXObjCStringFormatFamily>(toSelector(Sel).getStringFormatFamily());
+}
+
+CXObjCInstanceTypeFamily clang_Selector_getInstTypeMethodFamily(CXSelector Sel) {
+  return static_cast<CXObjCInstanceTypeFamily>(
+      clang::Selector::getInstTypeMethodFamily(toSelector(Sel)));
+}
+
+CXSelector clang_Selector_getEmptyMarker(void) {
+  return clang::Selector::getEmptyMarker().getAsOpaquePtr();
+}
+
+CXSelector clang_Selector_getTombstoneMarker(void) {
+  return clang::Selector::getTombstoneMarker().getAsOpaquePtr();
+}
+
+CXSelector clang_SelectorTable_getSelector(CXSelectorTable SelTab, unsigned NumArgs,
+                                           const CXIdentifierInfo *IIV) {
+  llvm::SmallVector<clang::IdentifierInfo *, 8> Idents;
+  for (unsigned I = 0, E = NumArgs ? NumArgs : 1u; I != E; ++I)
+    Idents.push_back(static_cast<clang::IdentifierInfo *>(IIV[I]));
+  return static_cast<clang::SelectorTable *>(SelTab)
+      ->getSelector(NumArgs, Idents.data())
+      .getAsOpaquePtr();
+}
+
+CXSelector clang_SelectorTable_getUnarySelector(CXSelectorTable SelTab,
+                                                CXIdentifierInfo ID) {
+  return static_cast<clang::SelectorTable *>(SelTab)
+      ->getUnarySelector(static_cast<clang::IdentifierInfo *>(ID))
+      .getAsOpaquePtr();
+}
+
+CXSelector clang_SelectorTable_getNullarySelector(CXSelectorTable SelTab,
+                                                  CXIdentifierInfo ID) {
+  return static_cast<clang::SelectorTable *>(SelTab)
+      ->getNullarySelector(static_cast<clang::IdentifierInfo *>(ID))
+      .getAsOpaquePtr();
+}
+
+size_t clang_SelectorTable_getTotalMemory(CXSelectorTable SelTab) {
+  return static_cast<clang::SelectorTable *>(SelTab)->getTotalMemory();
+}
+
+CXString clang_SelectorTable_constructSetterName(const char *Name) {
+  llvm::SmallString<64> Setter =
+      clang::SelectorTable::constructSetterName(llvm::StringRef(Name));
+  return extra::makeCXString(Setter.str().str());
+}
+
+CXSelector clang_SelectorTable_constructSetterSelector(CXIdentifierTable Idents,
+                                                       CXSelectorTable SelTab,
+                                                       CXIdentifierInfo Name) {
+  return clang::SelectorTable::constructSetterSelector(
+             *static_cast<clang::IdentifierTable *>(Idents),
+             *static_cast<clang::SelectorTable *>(SelTab),
+             static_cast<clang::IdentifierInfo *>(Name))
+      .getAsOpaquePtr();
+}
+
+CXString clang_SelectorTable_getPropertyNameFromSetterSelector(CXSelector Sel) {
+  return extra::makeCXString(
+      clang::SelectorTable::getPropertyNameFromSetterSelector(toSelector(Sel)));
 }

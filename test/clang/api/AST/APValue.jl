@@ -444,3 +444,406 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "APValue lvalue base/path navigation and TemplateArgument pack construction" begin
+    I = create_interpreter(["-std=c++20"])
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+
+    src = """
+    constexpr int rv_int = 7;
+    constexpr int rv_arr[3] = {1, 2, 3};
+    constexpr const int *rv_ptr = &rv_arr[2];
+    constexpr const int *rv_null = nullptr;
+    struct RvB { int b; };
+    struct RvD : RvB { int d; };
+    constexpr int RvB::*rv_mp_base = &RvB::b;
+    constexpr int RvD::*rv_mp_derived = rv_mp_base;
+    template <typename... RTs> struct RPack { };
+    template <typename... RUs> struct RFwd { RPack<RUs...> m; };
+    template <typename RT> struct RBox { };
+    template <template <typename> class RTT = RBox> struct RHolder { };
+    """
+    CC.parse(I, src)
+
+    vardecl(name) = (@test f(I, name); CC.VarDecl(get_decl(f).ptr))
+
+    # The lvalue base designator: &rv_arr[2] is based on the rv_arr VarDecl arm.
+    vd_ptr = vardecl("rv_ptr")
+    v_ptr = CC.evaluateValue(vd_ptr)
+    @test CC.isLValue(v_ptr)
+    @test !CC.isLValueBaseNull(v_ptr)
+    base_vd = CC.getLValueBaseAsValueDecl(v_ptr)
+    @test base_vd isa CC.ValueDecl
+    @test base_vd.ptr != C_NULL
+    @test CC.getName(base_vd) == "rv_arr"
+    @test CC.getLValueBaseAsExpr(v_ptr).ptr == C_NULL
+    @test CC.getLValueBaseType(v_ptr).ptr != C_NULL
+
+    # ... and its one-entry designator path, whose entry is the source-level index.
+    @test CC.getLValuePathLength(v_ptr) == 1
+    @test CC.getLValuePathAsArrayIndex(v_ptr, 0) == 2
+    @test_throws AssertionError CC.getLValuePathAsArrayIndex(v_ptr, 1)
+
+    vd_null = vardecl("rv_null")
+    v_null = CC.evaluateValue(vd_null)
+    @test CC.isLValueBaseNull(v_null)
+    @test CC.getLValueBaseAsValueDecl(v_null).ptr == C_NULL
+    @test CC.getLValueBaseType(v_null).ptr == C_NULL
+    # a null pointer still carries a designator path — an empty one
+    @test CC.hasLValuePath(v_null)
+    @test CC.getLValuePathLength(v_null) == 0
+
+    # The member-pointer class chain: empty for &RvB::b, non-empty once the pointer
+    # has been converted to a pointer to a member of the derived class.
+    v_mpb = CC.evaluateValue(vardecl("rv_mp_base"))
+    @test CC.isMemberPointer(v_mpb)
+    @test CC.getMemberPointerPathSize(v_mpb) == 0
+    @test_throws AssertionError CC.getMemberPointerPathEntry(v_mpb, 0)
+
+    v_mpd = CC.evaluateValue(vardecl("rv_mp_derived"))
+    @test CC.isMemberPointer(v_mpd)
+    # the class chain is what the base-to-derived conversion records; clang's
+    # IsDerivedMember flag stays false for it, so only the path length distinguishes
+    # rv_mp_derived from rv_mp_base
+    @test CC.isMemberPointerToDerivedMember(v_mpd) isa Bool
+    @test CC.getMemberPointerPathSize(v_mpd) == 1
+    @test CC.getMemberPointerPathEntry(v_mpd, 0) isa CC.CXXRecordDecl
+    @test CC.getMemberPointerPathEntry(v_mpd, 0).ptr != C_NULL
+
+    # toIntegralConstant: the integer path ignores src_ty, the null-pointer path runs
+    # it through the target's null pointer value, and a based lvalue has no integral form.
+    vd_int = vardecl("rv_int")
+    v_int = CC.evaluateValue(vd_int)
+    gvr = CC.toIntegralConstant(v_int, CC.getType(vd_int), ctx)
+    @test gvr != C_NULL
+    gv = CC.LLVM.GenericValue(gvr)
+    @test convert(Int, gv) == 7
+    CC.LLVM.dispose(gv)
+
+    gvr_null = CC.toIntegralConstant(v_null, CC.getType(vd_null), ctx)
+    @test gvr_null != C_NULL
+    CC.LLVM.dispose(CC.LLVM.GenericValue(gvr_null))
+    @test CC.toIntegralConstant(v_ptr, CC.getType(vd_ptr), ctx) == C_NULL
+
+    # An owned indeterminate value, swapped against an owned evaluated one.
+    indet = CC.IndeterminateValue()
+    @test CC.isIndeterminate(indet)
+    @test !CC.hasValue(indet)
+    owned = CC.EvaluateAsRValue(CC.getInit(vd_int), ctx)
+    @test CC.isInt(owned)
+    CC.swap(indet, owned)
+    @test CC.isInt(indet)
+    @test CC.isIndeterminate(owned)
+    dispose(indet)
+    dispose(owned)
+
+    # A pack copied into the ASTContext arena, and the empty pack.
+    a0 = CC.TemplateArgument(CC.getType(vd_int))
+    a1 = CC.TemplateArgument(CC.getType(vardecl("rv_arr")))
+    pack = CC.CreatePackCopy(ctx, [a0, a1])
+    @test pack isa CC.TemplateArgument
+    @test CC.getKind(pack) == CC.LibClangEx.CXTemplateArgument_Pack
+    @test CC.pack_size(pack) == 2
+    @test CC.getKind(CC.getPackElement(pack, 0)) == CC.LibClangEx.CXTemplateArgument_Type
+    dispose(pack)
+
+    empty_pack = CC.getEmptyPack()
+    @test CC.getKind(empty_pack) == CC.LibClangEx.CXTemplateArgument_Pack
+    @test CC.pack_size(empty_pack) == 0
+    dispose(empty_pack)
+
+    # No portable source produces a StructuralValue argument, so those accessors are
+    # exercised through the kind preconditions they restate.
+    @test_throws AssertionError CC.getAsStructuralValue(a0)
+    @test_throws AssertionError CC.getStructuralValueType(a0)
+    @test_throws AssertionError CC.getPackExpansionPattern(a0)
+    dispose(a0)
+    dispose(a1)
+
+    # RPack<RUs...> inside the RFwd pattern carries a pack-expansion type argument.
+    @test f(I, "RFwd")
+    rfwd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    rfwd_patt = CC.CXXRecordDecl(CC.getTemplatedDecl(rfwd).ptr)
+    fld = first(CC.getFields(rfwd_patt))
+    fty = CC.resolve(CC.getTypePtr(CC.getType(fld)))
+    fty isa CC.ElaboratedType && (fty = CC.resolve(CC.getTypePtr(CC.getNamedType(fty))))
+    @test fty isa CC.TemplateSpecializationType
+    parg = CC.getArg(fty, 0)
+    @test CC.isPackExpansion(parg)
+    patt = CC.getPackExpansionPattern(parg)
+    @test patt isa CC.TemplateArgument
+    @test CC.getKind(patt) == CC.LibClangEx.CXTemplateArgument_Type
+    dispose(patt)
+
+    # The remaining TemplateArgumentLoc source-expression accessors: a Template-kind
+    # argument satisfies none of their kind preconditions.
+    @test f(I, "RHolder")
+    rholder = CC.ClassTemplateDecl(get_decl(f).ptr)
+    rttp = CC.TemplateTemplateParmDecl(CC.getParam(CC.getTemplateParameters(rholder), 0).ptr)
+    @test CC.hasDefaultArgument(rttp)
+    tal = CC.getDefaultArgument(rttp)
+    @test CC.getKind(CC.getArgument(tal)) == CC.LibClangEx.CXTemplateArgument_Template
+    @test_throws AssertionError CC.getSourceDeclExpression(tal)
+    @test_throws AssertionError CC.getSourceNullPtrExpression(tal)
+    @test_throws AssertionError CC.getSourceIntegralExpression(tal)
+    @test_throws AssertionError CC.getSourceStructuralValueExpression(tal)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Coverage | TemplateArgumentListInfo and the lvalue-base union arms" begin
+    I = create_interpreter(["-std=c++17"])
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+    CC.parse(I, """
+             template <typename TLIT> struct TLIBox { };
+             template <template <typename> class TLITT = TLIBox> struct TLIHolder { };
+             constexpr int tli_arr[2] = {7, 9};
+             constexpr const int *tli_ptr = &tli_arr[1];
+             constexpr int tli_int = 5;
+             """)
+
+    # A Template-kind TemplateArgumentLoc to feed the builder with. Selecting by kind
+    # keeps the lookup unambiguous even though the testset instantiates a template.
+    @test f(I, "TLIHolder")
+    holder = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+                                        if getDeclKindName(d) == "ClassTemplate").ptr)
+    ttp = CC.TemplateTemplateParmDecl(CC.getParam(CC.getTemplateParameters(holder), 0).ptr)
+    @test CC.hasDefaultArgument(ttp)
+    tal = CC.getDefaultArgument(ttp)
+    @test tal isa CC.TemplateArgumentLoc
+    @test CC.getKind(CC.getArgument(tal)) == CC.LibClangEx.CXTemplateArgument_Template
+
+    # getTemplateQualifierLoc is total, so the specifier is a carrier for every kind.
+    @test CC.getTemplateQualifier(tal) isa CC.NestedNameSpecifier
+
+    # The builder list starts empty and remembers the two delimiters it was handed.
+    lb = CC.getBeginLoc(holder)
+    le = CC.getEndLoc(holder)
+    @test lb.ptr != le.ptr
+    li = CC.TemplateArgumentListInfo(lb, le)
+    @test li isa CC.TemplateArgumentListInfo
+    @test li.ptr != C_NULL
+    @test CC.size(li) == 0
+    @test CC.getLAngleLoc(li).ptr == lb.ptr
+    @test CC.getRAngleLoc(li).ptr == le.ptr
+    @test_throws AssertionError CC.getArgument(li, 0)
+
+    # ... and the setters swap them back out.
+    CC.setLAngleLoc(li, le)
+    CC.setRAngleLoc(li, lb)
+    @test CC.getLAngleLoc(li).ptr == le.ptr
+    @test CC.getRAngleLoc(li).ptr == lb.ptr
+
+    # addArgument appends a copy; size and the index accessor follow it.
+    CC.addArgument(li, tal)
+    @test CC.size(li) == 1
+    a0 = CC.getArgument(li, 0)
+    @test a0 isa CC.TemplateArgumentLoc
+    @test CC.getKind(CC.getArgument(a0)) == CC.LibClangEx.CXTemplateArgument_Template
+    CC.addArgument(li, tal)
+    @test CC.size(li) == 2
+    @test_throws AssertionError CC.getArgument(li, 2)
+
+    # ... and the arena-allocated copy reproduces the whole list.
+    astli = CC.ASTTemplateArgumentListInfo(ctx, li)
+    @test astli isa CC.ASTTemplateArgumentListInfo
+    @test astli.ptr != C_NULL
+    @test CC.getNumTemplateArgs(astli) == 2
+    @test CC.getLAngleLoc(astli).ptr == le.ptr
+    @test CC.getRAngleLoc(astli).ptr == lb.ptr
+    @test CC.getKind(CC.getArgument(CC.getTemplateArg(astli, 0))) ==
+          CC.LibClangEx.CXTemplateArgument_Template
+    dispose(li)
+
+    # The two arms of the lvalue base's union that only exist mid-fold: a completed
+    # constant designates neither, so both predicates read false and every payload
+    # accessor rejects the call through the precondition it restates.
+    @test f(I, "tli_ptr")
+    v_ptr = CC.evaluateValue(CC.VarDecl(get_decl(f).ptr))
+    @test CC.isLValue(v_ptr)
+    @test CC.isLValueBaseTypeInfo(v_ptr) == false
+    @test CC.isLValueBaseDynamicAlloc(v_ptr) == false
+    @test_throws AssertionError CC.getLValueBaseTypeInfoOperand(v_ptr)
+    @test_throws AssertionError CC.getLValueBaseTypeInfoType(v_ptr)
+    @test_throws AssertionError CC.getLValueBaseDynamicAllocIndex(v_ptr)
+    @test_throws AssertionError CC.getLValueBaseDynamicAllocType(v_ptr)
+
+    # ... and the arm predicates are themselves lvalue-only.
+    @test f(I, "tli_int")
+    v_int = CC.evaluateValue(CC.VarDecl(get_decl(f).ptr))
+    @test CC.isInt(v_int)
+    @test_throws AssertionError CC.isLValueBaseTypeInfo(v_int)
+    @test_throws AssertionError CC.isLValueBaseDynamicAlloc(v_int)
+
+    # The index bound is a pure static of the dynamic-allocation encoding.
+    @test CC.getMaxIndex() isa Integer
+    @test CC.getMaxIndex() > 0
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "APValue profiles, designator entries and leaf mutators; comment array setters" begin
+    # --- APValue: Profile hashes, base-or-member path entries, leaf mutators ---
+    I = create_interpreter(["-std=c++20"])
+    f = DeclFinder(I)
+    CC.parse(I, """
+             struct ApvS { int m; int n; };
+             union ApvU { int a; double b; };
+             constexpr ApvS apv_s{1, 2};
+             constexpr ApvU apv_u{7};
+             constexpr int apv_three = 3;
+             constexpr int apv_five = 5;
+             constexpr int apv_seven = 7;
+             constexpr double apv_d1 = 1.5;
+             constexpr double apv_d2 = 2.5;
+             constexpr _Complex int apv_ci1 = 3;
+             constexpr _Complex int apv_ci2 = 9;
+             constexpr _Complex double apv_cd1 = 1.5;
+             constexpr _Complex double apv_cd2 = 4.25;
+             constexpr const int *apv_pn = &apv_s.n;
+             constexpr const int *apv_pn2 = &apv_s.n;
+             constexpr const int *apv_pm = &apv_s.m;
+             """)
+    # VarDecl::evaluateValue caches its result in the decl, so every value here is
+    # borrowed and none is disposed; the mutators below rewrite those cached leaves.
+    cached(name) = (@test f(I, name); CC.evaluateValue(CC.VarDecl(get_decl(f).ptr)))
+
+    av3, av5, av7 = cached("apv_three"), cached("apv_five"), cached("apv_seven")
+    @test CC.isInt(av5) && CC.isInt(av7)
+    @test CC.getProfileHash(av5) isa Integer
+
+    # setInt overwrites the leaf in place, so feeding av5 the bits of av7 makes the two
+    # profiles identical — equal profiles always hash equal.
+    gv7 = CC.getInt(av7)
+    CC.setInt(av5, gv7, false)
+    CC.LLVM.dispose(CC.LLVM.GenericValue(gv7))
+    back = CC.LLVM.GenericValue(CC.getInt(av5))
+    @test convert(Int, back) == 7
+    CC.LLVM.dispose(back)
+    @test CC.getProfileHash(av5) == CC.getProfileHash(av7)
+
+    # setFloat rebuilds the APFloat from the value's own semantics plus the raw bits.
+    avd1, avd2 = cached("apv_d1"), cached("apv_d2")
+    @test CC.isFloat(avd1) && CC.isFloat(avd2)
+    gvd2 = CC.getFloat(avd2)
+    CC.setFloat(avd1, gvd2)
+    CC.LLVM.dispose(CC.LLVM.GenericValue(gvd2))
+    backf = CC.LLVM.GenericValue(CC.getFloat(avd1))
+    @test reinterpret(Float64, convert(UInt64, backf)) == 2.5
+    CC.LLVM.dispose(backf)
+
+    avci1, avci2 = cached("apv_ci1"), cached("apv_ci2")
+    @test CC.isComplexInt(avci1) && CC.isComplexInt(avci2)
+    r_i, i_i = CC.getComplexIntReal(avci2), CC.getComplexIntImag(avci2)
+    CC.setComplexInt(avci1, r_i, i_i, false)
+    CC.LLVM.dispose(CC.LLVM.GenericValue(r_i))
+    CC.LLVM.dispose(CC.LLVM.GenericValue(i_i))
+    backci = CC.LLVM.GenericValue(CC.getComplexIntReal(avci1))
+    @test convert(Int, backci) == 9
+    CC.LLVM.dispose(backci)
+
+    avcd1, avcd2 = cached("apv_cd1"), cached("apv_cd2")
+    @test CC.isComplexFloat(avcd1) && CC.isComplexFloat(avcd2)
+    r_f, i_f = CC.getComplexFloatReal(avcd2), CC.getComplexFloatImag(avcd2)
+    CC.setComplexFloat(avcd1, r_f, i_f)
+    CC.LLVM.dispose(CC.LLVM.GenericValue(r_f))
+    CC.LLVM.dispose(CC.LLVM.GenericValue(i_f))
+    backcd = CC.LLVM.GenericValue(CC.getComplexFloatReal(avcd1))
+    @test reinterpret(Float64, convert(UInt64, backcd)) == 4.25
+    CC.LLVM.dispose(backcd)
+
+    # setUnion keeps the active member and replaces only the payload.
+    avu = cached("apv_u")
+    @test CC.isUnion(avu)
+    fld = CC.getUnionField(avu)
+    @test fld.ptr != C_NULL
+    before = CC.LLVM.GenericValue(CC.getInt(CC.getUnionValue(avu)))
+    @test convert(Int, before) == 7
+    CC.LLVM.dispose(before)
+    CC.setUnion(avu, fld, av3)
+    @test CC.getUnionField(avu).ptr == fld.ptr
+    after = CC.LLVM.GenericValue(CC.getInt(CC.getUnionValue(avu)))
+    @test convert(Int, after) == 3
+    CC.LLVM.dispose(after)
+
+    # A designator path entry read as the member it names, rather than as an array index.
+    avpn, avpn2, avpm = cached("apv_pn"), cached("apv_pn2"), cached("apv_pm")
+    @test CC.isLValue(avpn)
+    @test CC.hasLValuePath(avpn)
+    @test CC.getLValuePathLength(avpn) >= 1
+    d = CC.getLValuePathAsBaseOrMember(avpn, 0)
+    @test d isa CC.Decl
+    @test CC.getDeclKindName(d) == "Field"
+    @test CC.isLValuePathBaseOrMemberVirtual(avpn, 0) isa Bool
+    @test CC.getLValuePathEntryProfileHash(avpn, 0) isa Integer
+
+    # Two pointers written to the same member of the same object have the same profile,
+    # the same base and the same path entry; one to a different member shares only the base.
+    @test CC.getProfileHash(avpn2) == CC.getProfileHash(avpn)
+    @test CC.getLValuePathEntryProfileHash(avpn2, 0) == CC.getLValuePathEntryProfileHash(avpn, 0)
+    @test CC.getLValueBaseProfileHash(avpn2) == CC.getLValueBaseProfileHash(avpn)
+    @test CC.getLValueBaseProfileHash(avpm) == CC.getLValueBaseProfileHash(avpn)
+    dispose(I)
+
+    # --- Comment: the Attribute/Argument array setters round-trip through the arena ---
+    J = create_interpreter()
+    CC.parse(J, """
+             /// \\brief Adds <a href="ref">two</a> numbers.
+             /// \\param a the first addend
+             int apv_doc_add(int a, int b) { return a + b; }
+             """)
+    jctx = CC.get_ast_context(J)
+    jpp = CC.getPreprocessor(CC.get_instance(J))
+    g = DeclFinder(J)
+    @test g(J, "apv_doc_add")
+    fc = CC.getCommentForDecl(jctx, get_decl(g), jpp)
+    @test fc isa CC.FullComment
+
+    # child_count is an unsigned C count: widen it before building a range, or a childless
+    # node turns `0:(n - 1)` into a 2^32-long loop.
+    nchild(c) = Int(CC.child_count(c))
+    nodes = CC.Comment[]
+    queue = CC.Comment[CC.getChild(fc, i) for i = 0:(nchild(fc) - 1)]
+    while !isempty(queue)
+        c = popfirst!(queue)
+        push!(nodes, c)
+        append!(queue, CC.Comment[CC.getChild(c, i) for i = 0:(nchild(c) - 1)])
+    end
+    @test !isempty(nodes)
+
+    tags = filter(h -> h.ptr != C_NULL, [CC.HTMLStartTagComment(c) for c in nodes])
+    @test !isempty(tags)
+    h = first(tags)
+    na = Int(CC.getNumAttrs(h))
+    @test na >= 1
+    names = String[CC.getAttrName(h, k) for k = 0:(na - 1)]
+    values = String[CC.getAttrValue(h, k) for k = 0:(na - 1)]
+    name_begins = CC.SourceLocation[CC.getAttrNameRange(h, k).begin_loc for k = 0:(na - 1)]
+    equals_locs = CC.SourceLocation[CC.getAttrEqualsLoc(h, k) for k = 0:(na - 1)]
+    value_ranges = CC.SourceRange[CC.getAttrValueRange(h, k) for k = 0:(na - 1)]
+    @test "href" in names
+    # setAttrs recomputes the tag's range end from the last attribute's value range, which is
+    # not where the parser had left it (the parser ends the tag at its own closing token), so
+    # the property to check is the recomputation rule, not that the end is unchanged.
+    CC.setAttrs(h, jctx, name_begins, names, equals_locs, value_ranges, values)
+    @test Int(CC.getNumAttrs(h)) == na
+    @test String[CC.getAttrName(h, k) for k = 0:(na - 1)] == names
+    @test String[CC.getAttrValue(h, k) for k = 0:(na - 1)] == values
+    @test CC.getSourceRange(h).end_loc.ptr == value_ranges[end].end_loc.ptr
+
+    blocks = filter(b -> b.ptr != C_NULL, [CC.BlockCommandComment(c) for c in nodes])
+    witharg = filter(b -> CC.getNumArgs(b) > 0, blocks)
+    @test !isempty(witharg)
+    b = first(witharg)
+    nb = Int(CC.getNumArgs(b))
+    texts = String[CC.getArgText(b, k) for k = 0:(nb - 1)]
+    ranges = CC.SourceRange[CC.getArgRange(b, k) for k = 0:(nb - 1)]
+    CC.setArgs(b, jctx, texts, ranges)
+    @test Int(CC.getNumArgs(b)) == nb
+    @test String[CC.getArgText(b, k) for k = 0:(nb - 1)] == texts
+    dispose(J)
+end

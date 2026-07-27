@@ -190,3 +190,184 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "DeclBase | flexible-array probe, group printing, uncached lookup, name-location union" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+                namespace declbase_a {
+                struct FlexTail { int n; int tail[1]; };
+                void grouped_a();
+                void grouped_b();
+                void nonmember_probe(int);
+                void localextern_probe();
+                void idns_probe();
+                }
+                """)
+    f = DeclFinder(I)
+
+    @test f(I, "declbase_a::FlexTail")
+    rd = CC.CXXRecordDecl(get_decl(f).ptr)
+    ctx = CC.getASTContext(rd)
+
+    # Decl::isFlexibleArrayMemberLike is static: the trailing member, then the same
+    # query with no declaration at all (the rule level is passed, never read out of ctx,
+    # so only the shape of the answer is host-independent)
+    flds = CC.getFields(rd)
+    tail = flds[end]
+    @test CC.getName(tail) == "tail"
+    lvl = CC.LibClangEx.CXStrictFlexArraysLevelKind_Default
+    @test CC.isFlexibleArrayMemberLike(ctx, tail, CC.getType(tail), lvl) isa Bool
+    @test CC.isFlexibleArrayMemberLike(ctx, CC.Decl(C_NULL), CC.getType(tail), lvl,
+                                       true) isa Bool
+
+    # printGroup: a single declaration, then two printed as one group
+    @test f(I, "declbase_a::grouped_a")
+    ga = get_decl(f)
+    @test f(I, "declbase_a::grouped_b")
+    gb = get_decl(f)
+    @test occursin("grouped_a", CC.printGroupToString([ga]))
+    both = CC.printGroupToString([ga, gb], 0)
+    @test occursin("grouped_a", both)
+    @test occursin("grouped_b", both)
+
+    # the DeclContext corners that bypass the cached lookup table
+    dc = CC.getDeclContext(ga)
+    @test CC.noload_decls_begin(dc) isa CC.Decl
+    @test CC.noload_decls_begin(dc).ptr != C_NULL
+    gname = CC.getDeclName(ga)
+    uncached = CC.localUncachedLookup(dc, gname)
+    @test uncached isa Vector{CC.NamedDecl}
+    @test all(d -> d.ptr != C_NULL, uncached)
+    @test any(d -> CC.getDeclName(d) == gname, uncached)
+    prim = CC.getPrimaryContext(dc)
+    CC.setMustBuildLookupTable(prim)
+    @test !isempty(CC.lookup(prim, gname))
+
+    # a C++ identifier has neither Objective-C selector shape
+    @test CC.isObjCZeroArgSelector(gname) == false
+    @test CC.isObjCOneArgSelector(gname) == false
+
+    # DeclarationNameInfo: each location-union setter, on the name kind it asserts
+    tbl = CC.getDeclarationNames(ctx)
+    rec_ty = CC.getCanonicalType(ctx, CC.getRecordType(ctx, rd))
+    loc = CC.getLocation(rd)
+    ni = CC.DeclarationNameInfo(CC.getCXXConstructorName(tbl, rec_ty), loc)
+    @test CC.getNamedTypeInfo(ni).ptr == C_NULL
+    tsi = CC.getTrivialTypeSourceInfo(ctx, rec_ty, loc)
+    CC.setNamedTypeInfo(ni, tsi)
+    @test CC.getNamedTypeInfo(ni).ptr == tsi.ptr
+    dispose(ni)
+
+    op = CC.getCXXOperatorName(tbl, CC.LibClangEx.CXOverloadedOperatorKind_OO_Plus)
+    nio = CC.DeclarationNameInfo(op, loc)
+    CC.setCXXOperatorNameRange(nio, CC.SourceRange(loc, loc))
+    @test CC.getCXXOperatorNameRange(nio).begin_loc.ptr == loc.ptr
+    dispose(nio)
+
+    ii = CC.getIdentifier(ga)
+    nlit = CC.DeclarationNameInfo(CC.getCXXLiteralOperatorName(tbl, ii), loc)
+    CC.setCXXLiteralOperatorNameLoc(nlit, loc)
+    @test CC.getCXXLiteralOperatorNameLoc(nlit).ptr == loc.ptr
+    dispose(nlit)
+
+    # NestedNameSpecifier static builders, all interned in the context's arena
+    g = CC.GlobalSpecifier(ctx)
+    @test g isa CC.NestedNameSpecifier
+    @test CC.getKind(g) == CC.LibClangEx.CXNestedNameSpecifierKind_Global
+    sup = CC.SuperSpecifier(ctx, rd)
+    @test CC.getKind(sup) == CC.LibClangEx.CXNestedNameSpecifierKind_Super
+    @test CC.getAsRecordDecl(sup).ptr == rd.ptr
+    nns = CC.NestedNameSpecifier(ctx, CC.NestedNameSpecifier(C_NULL), ii)
+    @test CC.getKind(nns) == CC.LibClangEx.CXNestedNameSpecifierKind_Identifier
+    @test CC.getAsIdentifier(nns).ptr == ii.ptr
+
+    # the identifier-namespace mutators, each on a declaration written only for it
+    # and looked up before it is mutated
+    nmo = UInt32(CC.LibClangEx.CXDecl_IDNS_NonMemberOperator)
+    @test f(I, "declbase_a::nonmember_probe")
+    nm = get_decl(f)
+    @test CC.getKind(nm) == CC.LibClangEx.CXDeclKind_Function
+    @test CC.isInIdentifierNamespace(nm, nmo) == false
+    CC.setNonMemberOperator(nm)
+    @test CC.isInIdentifierNamespace(nm, nmo)
+
+    @test f(I, "declbase_a::localextern_probe")
+    le = get_decl(f)
+    @test CC.isLocalExternDecl(le) == false
+    CC.setLocalExternDecl(le)
+    @test CC.isLocalExternDecl(le)
+
+    @test f(I, "declbase_a::idns_probe")
+    ip = get_decl(f)
+    @test CC.getIdentifierNamespace(ip) != 0
+    CC.clearIdentifierNamespace(ip)
+    @test CC.getIdentifierNamespace(ip) == 0
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "DeclBase | attribute-list assignment and the lookup-name surface" begin
+    I = create_interpreter(String[])
+    CC.parse(I,
+             """
+             namespace declbase_k {
+             __attribute__((deprecated)) void attr_source();
+             void attr_sink();
+             int lookup_probe(int);
+             struct LookupTag { int m; };
+             }
+             namespace declbase_k2 { void elsewhere(); }
+             """)
+    f = DeclFinder(I)
+
+    # setAttrs: the attribute list of one declaration, installed on a bare one
+    @test f(I, "declbase_k::attr_source")
+    src = get_decl(f)
+    @test CC.hasAttrs(src)
+    attrs = CC.getAttrs(src)
+    @test !isempty(attrs)
+    @test f(I, "declbase_k::attr_sink")
+    sink = get_decl(f)
+    @test CC.hasAttrs(sink) == false
+    CC.setAttrs(sink, attrs)
+    @test CC.hasAttrs(sink)
+    @test CC.getNumAttrs(sink) == length(attrs)
+    @test CC.getAttr(sink, 0).ptr == attrs[1].ptr
+    CC.dropAttrs(sink)                      # leave the declaration as it was found
+    @test CC.hasAttrs(sink) == false
+
+    # the lookup table itself, on the context that owns it
+    @test f(I, "declbase_k::lookup_probe")
+    lp = get_decl(f)
+    dc = CC.getDeclContext(lp)
+    prim = CC.getPrimaryContext(dc)
+    @test CC.buildLookup(prim) isa Bool
+    @test CC.hasLookupTable(prim) isa Bool
+
+    # lookups(): one entry per name, every entry a usable lookup key
+    names = CC.getLookupNames(dc)
+    @test names isa Vector{CC.DeclarationName}
+    @test length(names) == CC.getNumLookupNames(dc)
+    @test all(n -> n.ptr != C_NULL, names)
+    @test "lookup_probe" in [CC.getAsString(n) for n in names]
+
+    # noload_lookups(): the same walk restricted to what is already loaded
+    nol = CC.getNoloadLookupNames(prim, true)
+    @test nol isa Vector{CC.DeclarationName}
+    @test length(nol) == CC.getNumNoloadLookupNames(prim, true)
+    @test length(nol) <= length(names)
+
+    # lookupSingleResult: the unique declaration behind a name, and nothing for a
+    # name this context does not declare
+    single = CC.lookupSingleResult(dc, CC.getDeclName(lp))
+    @test single.ptr != C_NULL
+    @test CC.getName(single) == "lookup_probe"
+    @test f(I, "declbase_k2::elsewhere")
+    other = CC.getDeclName(get_decl(f))
+    @test CC.getNumLookupResults(dc, other) == 0
+    @test CC.lookupSingleResult(dc, other).ptr == C_NULL
+
+    dispose(f)
+    dispose(I)
+end

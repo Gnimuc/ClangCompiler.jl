@@ -11,8 +11,121 @@
 #include "clang-c/Platform.h"
 #include "llvm-c/ExecutionEngine.h"
 #include "clang-ex/AST/CXAPValue.h"
+#include "clang-ex/Basic/CXLangOptions.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
+
+// Expr::Classification
+// A CXClassification is owned: clang::Expr::Classification is a by-value pair of
+// small enums with no pointer form, so it is heap-boxed here and every function
+// returning one pairs with clang_Classification_dispose. The box also carries the
+// flag recording whether modifiability was tested — the class keeps that state in a
+// private member only clang::Expr may read, and getModifiable() asserts on it, so the
+// flag is the only way the Julia layer can observe the precondition
+// (MARSHALLING.md §13).
+
+// mirrors clang::Expr::Classification::Kinds (clang/AST/Expr.h; synced by
+// static_assert in lib/Basic/CXEnumSync.cpp)
+typedef enum CXClassification_Kinds {
+  CXClassification_CL_LValue,
+  CXClassification_CL_XValue,
+  CXClassification_CL_Function,
+  CXClassification_CL_Void,
+  CXClassification_CL_AddressableVoid,
+  CXClassification_CL_DuplicateVectorComponents,
+  CXClassification_CL_MemberFunction,
+  CXClassification_CL_SubObjCPropertySetting,
+  CXClassification_CL_ClassTemporary,
+  CXClassification_CL_ArrayTemporary,
+  CXClassification_CL_ObjCMessageRValue,
+  CXClassification_CL_PRValue
+} CXClassification_Kinds;
+
+// mirrors clang::Expr::Classification::ModifiableType (clang/AST/Expr.h; synced by
+// static_assert in lib/Basic/CXEnumSync.cpp)
+typedef enum CXClassification_ModifiableType {
+  CXClassification_CM_Untested,
+  CXClassification_CM_Modifiable,
+  CXClassification_CM_RValue,
+  CXClassification_CM_Function,
+  CXClassification_CM_LValueCast,
+  CXClassification_CM_NoSetterProperty,
+  CXClassification_CM_ConstQualified,
+  CXClassification_CM_ConstQualifiedField,
+  CXClassification_CM_ConstAddrSpace,
+  CXClassification_CM_ArrayType,
+  CXClassification_CM_IncompleteType
+} CXClassification_ModifiableType;
+
+// Classify runs the C++11 value-category taxonomy; the result carries no
+// modifiability verdict (CM_Untested).
+CXClassification clang_Expr_Classify(CXExpr E, CXASTContext Ctx);
+
+// ClassifyModifiable additionally tests modifiability. *Loc is always written: it
+// receives the location that makes E non-modifiable, or an invalid location when E is
+// modifiable.
+CXClassification clang_Expr_ClassifyModifiable(CXExpr E, CXASTContext Ctx,
+                                               CXSourceLocation_ *Loc);
+
+// makeSimpleLValue is static: it builds the CL_LValue/CM_Modifiable classification and
+// takes no receiver.
+CXClassification clang_Classification_makeSimpleLValue(void);
+
+void clang_Classification_dispose(CXClassification C);
+
+CXClassification_Kinds clang_Classification_getKind(CXClassification C);
+
+// helper: the gate the two modifiability accessors assert on. True for a
+// classification from clang_Expr_ClassifyModifiable or
+// clang_Classification_makeSimpleLValue, false for one from clang_Expr_Classify.
+bool clang_Classification_isModifiableTested(CXClassification C);
+
+// PARTIAL: clang::Expr::Classification::getModifiable asserts that modifiability was
+// tested. The shim is total by contract, so the Julia wrapper restates the
+// precondition through clang_Classification_isModifiableTested (Invariant 3).
+CXClassification_ModifiableType clang_Classification_getModifiable(CXClassification C);
+
+bool clang_Classification_isLValue(CXClassification C);
+
+bool clang_Classification_isXValue(CXClassification C);
+
+bool clang_Classification_isGLValue(CXClassification C);
+
+bool clang_Classification_isPRValue(CXClassification C);
+
+bool clang_Classification_isRValue(CXClassification C);
+
+// PARTIAL: isModifiable goes through getModifiable and inherits its assert.
+bool clang_Classification_isModifiable(CXClassification C);
+
+// Expr
+bool clang_Expr_isOBJCGCCandidate(CXExpr E, CXASTContext Ctx);
+
+// BinaryOperator
+// The FPOptionsOverride opaque integer encoding (MARSHALLING.md §7): the FPOptions
+// bits in the high half, the override mask in the low half. getFPFeatures is guarded
+// by the HasFPFeatures bit and yields the default-constructed (zero) encoding when the
+// operator has no trailing slot, so it is total.
+uint64_t clang_BinaryOperator_getFPFeatures(CXBinaryOperator BO);
+
+// PARTIAL: clang::BinaryOperator::getStoredFPFeatures asserts hasStoredFPFeatures() —
+// the trailing slot exists only when the operator was allocated with one.
+uint64_t clang_BinaryOperator_getStoredFPFeatures(CXBinaryOperator BO);
+
+// CallExpr
+// The same opaque FPOptionsOverride encoding; total for the same reason.
+uint64_t clang_CallExpr_getFPFeatures(CXCallExpr E);
+
+// PARTIAL: clang::CallExpr::getStoredFPFeatures asserts hasStoredFPFeatures().
+uint64_t clang_CallExpr_getStoredFPFeatures(CXCallExpr E);
+
+// UnaryOperator
+// UnaryOperator spells the total accessor getFPOptionsOverride; same encoding.
+uint64_t clang_UnaryOperator_getFPOptionsOverride(CXUnaryOperator E);
+
+// PARTIAL: clang::UnaryOperator::getStoredFPFeatures reads the trailing slot through
+// getTrailingFPFeatures(), which asserts hasStoredFPFeatures().
+uint64_t clang_UnaryOperator_getStoredFPFeatures(CXUnaryOperator E);
 
 // Expr
 CXQualType clang_Expr_getType(CXExpr E);
@@ -1425,6 +1538,855 @@ void clang_InitListExpr_setInitializedFieldInUnion(CXInitListExpr E, CXFieldDecl
 void clang_InitListExpr_setSyntacticForm(CXInitListExpr E, CXInitListExpr Init);
 
 void clang_InitListExpr_sawArrayRangeDesignator(CXInitListExpr E, bool ARD);
+
+// UnaryOperator
+// isFPContractableWithinStatement / isFEnvAccessOn read the operator's stored FP
+// features overridden by LO. Both are total: the stored-features branch of
+// getFPFeaturesInEffect is guarded by the HasFPFeatures bit, so no assert fires.
+// Only meaningful for operations on floating-point types.
+bool clang_UnaryOperator_isFPContractableWithinStatement(CXUnaryOperator UO,
+                                                         CXLangOptions LO);
+
+bool clang_UnaryOperator_isFEnvAccessOn(CXUnaryOperator UO, CXLangOptions LO);
+
+// UnaryExprOrTypeTraitExpr
+void clang_UnaryExprOrTypeTraitExpr_setOperatorLoc(CXUnaryExprOrTypeTraitExpr E,
+                                                   CXSourceLocation_ L);
+
+void clang_UnaryExprOrTypeTraitExpr_setRParenLoc(CXUnaryExprOrTypeTraitExpr E,
+                                                 CXSourceLocation_ L);
+
+// BinaryOperator
+// Same shape and same totality as the UnaryOperator pair above.
+bool clang_BinaryOperator_isFPContractableWithinStatement(CXBinaryOperator BO,
+                                                          CXLangOptions LO);
+
+bool clang_BinaryOperator_isFEnvAccessOn(CXBinaryOperator BO, CXLangOptions LO);
+
+// StmtExpr
+// setSubStmt stores S unchecked; getSubStmt then cast<CompoundStmt>s the slot, so S
+// must be a CompoundStmt and non-null. The statement expression's dependence bits and
+// template depth are not recomputed.
+void clang_StmtExpr_setSubStmt(CXStmtExpr E, CXCompoundStmt S);
+
+void clang_StmtExpr_setLParenLoc(CXStmtExpr E, CXSourceLocation_ L);
+
+void clang_StmtExpr_setRParenLoc(CXStmtExpr E, CXSourceLocation_ L);
+
+// ChooseExpr
+// setIsConditionTrue overwrites the cached "condition is non-zero" flag without
+// re-evaluating the condition, so a value inconsistent with getCond() makes
+// getChosenSubExpr() report the other arm.
+void clang_ChooseExpr_setIsConditionTrue(CXChooseExpr E, bool IsTrue);
+
+// setCond/setLHS/setRHS store the operand unchecked; the matching getters cast<Expr>
+// the slot, so each operand must be non-null. Upstream leaves the choose expression's
+// dependence bits stale afterwards; recomputing them is the caller's job.
+void clang_ChooseExpr_setCond(CXChooseExpr E, CXExpr Cond);
+
+void clang_ChooseExpr_setLHS(CXChooseExpr E, CXExpr LHS);
+
+void clang_ChooseExpr_setRHS(CXChooseExpr E, CXExpr RHS);
+
+void clang_ChooseExpr_setBuiltinLoc(CXChooseExpr E, CXSourceLocation_ L);
+
+void clang_ChooseExpr_setRParenLoc(CXChooseExpr E, CXSourceLocation_ L);
+
+// VAArgExpr
+// setSubExpr stores Sub unchecked; getSubExpr cast<Expr>s the slot, so Sub must be
+// non-null. The dependence bits are not recomputed.
+void clang_VAArgExpr_setSubExpr(CXVAArgExpr E, CXExpr Sub);
+
+void clang_VAArgExpr_setIsMicrosoftABI(CXVAArgExpr E, bool IsMS);
+
+// setWrittenTypeInfo writes the pointer half of a PointerIntPair, leaving the
+// Microsoft-ABI flag that shares the word untouched.
+void clang_VAArgExpr_setWrittenTypeInfo(CXVAArgExpr E, CXTypeSourceInfo TI);
+
+void clang_VAArgExpr_setBuiltinLoc(CXVAArgExpr E, CXSourceLocation_ L);
+
+void clang_VAArgExpr_setRParenLoc(CXVAArgExpr E, CXSourceLocation_ L);
+
+// OpaqueValueExpr
+// setIsUnique asserts that a unique opaque value has a source expression; the Julia
+// wrapper restates that through clang_OpaqueValueExpr_getSourceExpr.
+void clang_OpaqueValueExpr_setIsUnique(CXOpaqueValueExpr E, bool V);
+
+// PredefinedExpr
+void clang_PredefinedExpr_setLocation(CXPredefinedExpr E, CXSourceLocation_ L);
+
+// CompoundLiteralExpr
+// setInitializer stores Init unchecked; getInitializer cast<Expr>s the slot, so Init must
+// be non-null. The literal's dependence bits are not recomputed.
+void clang_CompoundLiteralExpr_setInitializer(CXCompoundLiteralExpr E, CXExpr Init);
+
+void clang_CompoundLiteralExpr_setFileScope(CXCompoundLiteralExpr E, bool FS);
+
+void clang_CompoundLiteralExpr_setLParenLoc(CXCompoundLiteralExpr E, CXSourceLocation_ L);
+
+// setTypeSourceInfo writes the pointer half of a PointerIntPair, leaving the file-scope
+// flag that shares the word untouched.
+void clang_CompoundLiteralExpr_setTypeSourceInfo(CXCompoundLiteralExpr E,
+                                                 CXTypeSourceInfo TI);
+
+// CompoundAssignOperator
+void clang_CompoundAssignOperator_setComputationLHSType(CXCompoundAssignOperator CAO,
+                                                        CXQualType T);
+
+void clang_CompoundAssignOperator_setComputationResultType(CXCompoundAssignOperator CAO,
+                                                           CXQualType T);
+
+// AddrLabelExpr
+void clang_AddrLabelExpr_setAmpAmpLoc(CXAddrLabelExpr E, CXSourceLocation_ L);
+
+void clang_AddrLabelExpr_setLabelLoc(CXAddrLabelExpr E, CXSourceLocation_ L);
+
+// setLabel stores L unchecked; getLabel hands the slot straight back, so a null L makes
+// every later reader see a null label.
+void clang_AddrLabelExpr_setLabel(CXAddrLabelExpr E, CXLabelDecl L);
+
+// ConvertVectorExpr
+void clang_ConvertVectorExpr_setTypeSourceInfo(CXConvertVectorExpr E, CXTypeSourceInfo TI);
+
+// GNUNullExpr
+void clang_GNUNullExpr_setTokenLocation(CXGNUNullExpr E, CXSourceLocation_ L);
+
+// DesignatedInitUpdateExpr
+// getBase cast<Expr>s the base slot, so it must hold a non-null expression.
+CXExpr clang_DesignatedInitUpdateExpr_getBase(CXDesignatedInitUpdateExpr E);
+
+void clang_DesignatedInitUpdateExpr_setBase(CXDesignatedInitUpdateExpr E, CXExpr Base);
+
+// getUpdater cast<InitListExpr>s the updater slot, so it must hold a non-null
+// InitListExpr — upstream types the setter's parameter as Expr * anyway.
+CXInitListExpr clang_DesignatedInitUpdateExpr_getUpdater(CXDesignatedInitUpdateExpr E);
+
+void clang_DesignatedInitUpdateExpr_setUpdater(CXDesignatedInitUpdateExpr E,
+                                               CXInitListExpr Updater);
+
+// ExtVectorElementExpr
+// setBase stores Base unchecked; getBase cast<Expr>s the slot, so Base must be non-null.
+// The dependence bits are not recomputed.
+void clang_ExtVectorElementExpr_setBase(CXExtVectorElementExpr E, CXExpr Base);
+
+// setAccessor stores II unchecked; getAccessor dereferences the slot, so II must be
+// non-null.
+void clang_ExtVectorElementExpr_setAccessor(CXExtVectorElementExpr E, CXIdentifierInfo II);
+
+void clang_ExtVectorElementExpr_setAccessorLoc(CXExtVectorElementExpr E,
+                                               CXSourceLocation_ L);
+
+// Expr
+// mirrors clang::Expr::LValueClassification (clang/AST/Expr.h; synced by
+// static_assert in lib/Basic/CXEnumSync.cpp)
+typedef enum CXExpr_LValueClassification {
+  CXExpr_LV_Valid,
+  CXExpr_LV_NotObjectType,
+  CXExpr_LV_IncompleteVoidType,
+  CXExpr_LV_DuplicateVectorComponents,
+  CXExpr_LV_InvalidExpression,
+  CXExpr_LV_InvalidMessageExpression,
+  CXExpr_LV_MemberFunction,
+  CXExpr_LV_SubObjCPropertySetting,
+  CXExpr_LV_ClassTemporary,
+  CXExpr_LV_ArrayTemporary
+} CXExpr_LValueClassification;
+
+// The coarse view of the Classify taxonomy: CXExpr_LV_Valid means E is an l-value, every
+// other enumerator names the reason it is not.
+CXExpr_LValueClassification clang_Expr_ClassifyLValue(CXExpr E, CXASTContext Ctx);
+
+// The opaque integer encoding of clang::FPOptions (MARSHALLING.md §7): the settings in
+// effect for E once LO's defaults and any trailing override slot are folded together.
+// Total — an expression with no slot reads FPOptions::defaultWithoutTrailingStorage(LO).
+unsigned clang_Expr_getFPFeaturesInEffect(CXExpr E, CXLangOptions LO);
+
+// PARTIAL: the constant evaluator asserts that E is not value-dependent. Static — FD is
+// the hypothetical enclosing function, not a receiver. The diagnostics explaining a false
+// answer are not exposed.
+bool clang_Expr_isPotentialConstantExprUnevaluated(CXExpr E, CXFunctionDecl FD);
+
+// PARTIAL: clang::Expr::EvaluateAsInitializer asserts that E is not value-dependent.
+// Returns an OWNED CXAPValue (dispose via clang_APValue_dispose) when E folds to a
+// constant initializer for VD, or nullptr otherwise. See CXAPValue.h / MARSHALLING.md §3.
+// The notes explaining a failure are not exposed.
+CXAPValue clang_Expr_EvaluateAsInitializer(CXExpr E, CXASTContext Ctx, CXVarDecl VD,
+                                           bool IsConstantInitializer);
+
+// PARTIAL: clang::Expr::EvaluateWithSubstitution asserts that E is not value-dependent.
+// Args is a (buffer, count) pair matched positionally against Callee's parameters
+// (MARSHALLING.md §11); This is the object argument of a member call, or nullptr.
+// Returns an OWNED CXAPValue on success, nullptr when E does not fold.
+CXAPValue clang_Expr_EvaluateWithSubstitution(CXExpr E, CXASTContext Ctx,
+                                              CXFunctionDecl Callee, const CXExpr *Args,
+                                              unsigned NumArgs, CXExpr This);
+
+// CallExpr
+// UsesADL is clang::CallExpr::ADLCallKind flattened to a bool (NotADL / UsesADL);
+// clang_CallExpr_usesADL reads the same flag back.
+void clang_CallExpr_setADLCallKind(CXCallExpr E, bool UsesADL);
+
+// CastExpr
+// The same FPOptionsOverride opaque integer encoding as BinaryOperator/CallExpr;
+// getFPFeatures is guarded by the HasFPFeatures bit and yields the default-constructed
+// (zero) encoding when the cast has no trailing slot, so it is total.
+uint64_t clang_CastExpr_getFPFeatures(CXCastExpr E);
+
+// PARTIAL: clang::CastExpr::getStoredFPFeatures asserts hasStoredFPFeatures().
+uint64_t clang_CastExpr_getStoredFPFeatures(CXCastExpr E);
+
+// OffsetOfExpr
+void clang_OffsetOfExpr_setOperatorLoc(CXOffsetOfExpr E, CXSourceLocation_ L);
+
+void clang_OffsetOfExpr_setRParenLoc(CXOffsetOfExpr E, CXSourceLocation_ R);
+
+// setTypeSourceInfo stores TSI unchecked; getTypeSourceInfo hands the slot straight back,
+// so a null TSI makes every later reader see a null record type.
+void clang_OffsetOfExpr_setTypeSourceInfo(CXOffsetOfExpr E, CXTypeSourceInfo TSI);
+
+// PARTIAL: the index-expression array holds getNumExpressions() slots, so Idx must be
+// below that. Upstream's own assert compares Idx against getNumComponents(), which is the
+// larger of the two and therefore does not bound the write.
+void clang_OffsetOfExpr_setIndexExpr(CXOffsetOfExpr E, unsigned Idx, CXExpr Value);
+
+// InitListExpr
+// reserveInits only grows the backing storage; getNumInits is unchanged.
+void clang_InitListExpr_reserveInits(CXInitListExpr E, CXASTContext C, unsigned NumInits);
+
+// Replaces the initializer at Init and returns the one it displaced. An Init past the end
+// extends the list with null entries first, in which case the return is null.
+CXExpr clang_InitListExpr_updateInit(CXInitListExpr E, CXASTContext C, unsigned Init,
+                                     CXExpr Value);
+
+// PARTIAL: clang::InitListExpr::markError asserts isSemanticForm().
+void clang_InitListExpr_markError(CXInitListExpr E);
+
+// DesignatedInitExpr
+void clang_DesignatedInitExpr_setEqualOrColonLoc(CXDesignatedInitExpr E,
+                                                 CXSourceLocation_ L);
+
+void clang_DesignatedInitExpr_setGNUSyntax(CXDesignatedInitExpr E, bool GNU);
+
+// setInit stores Init unchecked; getInit cast<Expr>s the slot, so Init must be non-null.
+void clang_DesignatedInitExpr_setInit(CXDesignatedInitExpr E, CXExpr Init);
+
+// PARTIAL: clang::DesignatedInitExpr::setSubExpr asserts Idx < getNumSubExprs().
+void clang_DesignatedInitExpr_setSubExpr(CXDesignatedInitExpr E, unsigned Idx,
+                                         CXExpr Value);
+
+// SourceLocExpr
+// Returns an OWNED CXAPValue (dispose via clang_APValue_dispose) holding what E evaluates
+// to. DefaultExpr may be nullptr, in which case E's own location and parent context are
+// used instead of a default-argument/default-initializer use site.
+CXAPValue clang_SourceLocExpr_EvaluateInContext(CXSourceLocExpr E, CXASTContext Ctx,
+                                                CXExpr DefaultExpr);
+
+// CallExpr
+// computeDependence recomputes the call's dependence bits from its callee and its
+// arguments; clang_CallExpr_setArg deliberately leaves them stale and this is the
+// recomputation it defers to the caller.
+void clang_CallExpr_computeDependence(CXCallExpr CE);
+
+// markDependentForPostponedNameLookup ORs the type/value/instantiation dependence bits in
+// unconditionally (MSVC-compatible delayed name lookup); it never clears them.
+// clang_CallExpr_computeDependence is the way back.
+void clang_CallExpr_markDependentForPostponedNameLookup(CXCallExpr CE);
+
+// PARTIAL: clang::CallExpr::shrinkNumArgs asserts NewNumArgs <= getNumArgs(); the trailing
+// argument array can never be grown back.
+void clang_CallExpr_shrinkNumArgs(CXCallExpr CE, unsigned NewNumArgs);
+
+// InitListExpr
+// resizeInits makes getNumInits() exactly NumInits: growing appends null slots, shrinking
+// truncates the tail and leaves the surviving entries untouched.
+void clang_InitListExpr_resizeInits(CXInitListExpr E, CXASTContext C, unsigned NumInits);
+
+// DeclRefExpr
+void clang_DeclRefExpr_setIsImmediateEscalating(CXDeclRefExpr E, bool Set);
+
+// FloatingLiteral
+void clang_FloatingLiteral_setExact(CXFloatingLiteral E, bool Exact);
+
+// BinaryOperator
+// helper: the static clang::BinaryOperator::isCompoundAssignmentOp(Opcode) overload — the
+// receiver-taking spelling is clang_BinaryOperator_isCompoundAssignmentOp. This is the gate
+// clang_BinaryOperator_Create and clang_CompoundAssignOperator_Create assert on.
+bool clang_BinaryOperator_isCompoundAssignmentOpKind(CXBinaryOperatorKind Opc);
+
+// PARTIAL: clang::BinaryOperator's constructor asserts !isCompoundAssignmentOp(Opc) — a
+// compound assignment must go through clang_CompoundAssignOperator_Create. FPFeatures is
+// the opaque clang::FPOptionsOverride encoding; 0 means "no override" and is the only value
+// that leaves hasStoredFPFeatures false.
+CXBinaryOperator clang_BinaryOperator_Create(CXASTContext C, CXExpr LHS, CXExpr RHS,
+                                             CXBinaryOperatorKind Opc, CXQualType ResTy,
+                                             CXExprValueKind VK, CXExprObjectKind OK,
+                                             CXSourceLocation_ OpLoc, uint64_t FPFeatures);
+
+// The shell clang deserializes into: the opcode starts at BO_Comma and the type is null,
+// but both operand slots are left uninitialized, so clang_BinaryOperator_setLHS/setRHS must
+// run before any reader touches them.
+CXBinaryOperator clang_BinaryOperator_CreateEmpty(CXASTContext C, bool HasFPFeatures);
+
+// CompoundAssignOperator
+// PARTIAL: the mirror precondition — clang::CompoundAssignOperator's constructor asserts
+// isCompoundAssignmentOp(Opc).
+CXCompoundAssignOperator clang_CompoundAssignOperator_Create(
+    CXASTContext C, CXExpr LHS, CXExpr RHS, CXBinaryOperatorKind Opc, CXQualType ResTy,
+    CXExprValueKind VK, CXExprObjectKind OK, CXSourceLocation_ OpLoc, uint64_t FPFeatures,
+    CXQualType CompLHSType, CXQualType CompResultType);
+
+// UnaryOperator
+// FPFeatures is the same opaque clang::FPOptionsOverride encoding as above.
+CXUnaryOperator clang_UnaryOperator_Create(CXASTContext C, CXExpr Input,
+                                           CXUnaryOperatorKind Opc, CXQualType Type,
+                                           CXExprValueKind VK, CXExprObjectKind OK,
+                                           CXSourceLocation_ L, bool CanOverflow,
+                                           uint64_t FPFeatures);
+
+// ImplicitCastExpr
+// The inheritance path is always empty: clang::ImplicitCastExpr::Create's optional
+// CXXCastPath is passed as nullptr and is not exposed. FPO is the opaque
+// clang::FPOptionsOverride encoding.
+CXImplicitCastExpr clang_ImplicitCastExpr_Create(CXASTContext C, CXQualType T, CXCastKind K,
+                                                 CXExpr Op, CXExprValueKind VK,
+                                                 uint64_t FPO);
+
+// The shell clang deserializes into: the operand slot and the cast kind are left
+// uninitialized, so clang_CastExpr_setSubExpr and clang_CastExpr_setCastKind must run
+// before any reader touches them.
+CXImplicitCastExpr clang_ImplicitCastExpr_CreateEmpty(CXASTContext C, unsigned PathSize,
+                                                      bool HasFPFeatures);
+
+// MemberExpr
+// CreateImplicit reads MemberDecl->getAccess(), so MemberDecl must be non-null. The access
+// it builds carries no nested-name qualifier, no explicit template arguments and no written
+// source locations.
+CXMemberExpr clang_MemberExpr_CreateImplicit(CXASTContext C, CXExpr Base, bool IsArrow,
+                                             CXValueDecl MemberDecl, CXQualType T,
+                                             CXExprValueKind VK, CXExprObjectKind OK);
+
+// PredefinedExpr
+// SL may be null, in which case the expression carries no function-name literal and
+// clang_PredefinedExpr_getFunctionName returns null.
+CXPredefinedExpr clang_PredefinedExpr_Create(CXASTContext C, CXSourceLocation_ L,
+                                             CXQualType FNTy, CXPredefinedIdentKind IK,
+                                             bool IsTransparent, CXStringLiteral SL);
+
+// ParenListExpr
+// Exprs is a (buffer, count) pair rebuilt as an ArrayRef (MARSHALLING.md section 11); the
+// expressions are copied into the node's trailing storage, so the buffer need not outlive
+// the call. An empty list is allowed.
+CXParenListExpr clang_ParenListExpr_Create(CXASTContext C, CXSourceLocation_ LParenLoc,
+                                           const CXExpr *Exprs, unsigned NumExprs,
+                                           CXSourceLocation_ RParenLoc);
+
+// ConstantExpr
+// Create caches Result in the node, sizing the trailing result storage from
+// clang_ConstantExpr_getStorageKind(Result). Result is copied, so the caller keeps
+// ownership of its CXAPValue.
+CXConstantExpr clang_ConstantExpr_Create(CXASTContext C, CXExpr E, CXAPValue Result);
+
+// The shell clang deserializes into: clang::FullExpr's EmptyShell constructor leaves the
+// wrapped subexpression uninitialized, so clang_FullExpr_setSubExpr must run before any
+// reader touches it. Only the result-storage accessors are safe beforehand.
+CXConstantExpr clang_ConstantExpr_CreateEmpty(CXASTContext C,
+                                              CXConstantResultStorageKind StorageKind);
+
+// RecoveryExpr
+// SubExprs is a (buffer, count) pair rebuilt as an ArrayRef (MARSHALLING.md section 11).
+// PARTIAL: clang::RecoveryExpr's constructor dereferences T and asserts both that T is
+// non-null and that no slot of SubExprs is null. An empty list is allowed.
+CXRecoveryExpr clang_RecoveryExpr_Create(CXASTContext C, CXQualType T,
+                                         CXSourceLocation_ BeginLoc,
+                                         CXSourceLocation_ EndLoc, const CXExpr *SubExprs,
+                                         unsigned NumSubExprs);
+
+// helper: getNumSubExpressions + getSubExpression are the count+index pair over
+// clang::RecoveryExpr::subExpressions() (MARSHALLING.md section 6); the count is exact and
+// no slot is null.
+unsigned clang_RecoveryExpr_getNumSubExpressions(CXRecoveryExpr E);
+
+// helper: subExpressions()[I]. I must be < clang_RecoveryExpr_getNumSubExpressions(E).
+CXExpr clang_RecoveryExpr_getSubExpression(CXRecoveryExpr E, unsigned I);
+
+// Expr
+// Fold E to a fixed-point constant. Returns an OWNED CXAPValue (dispose via
+// clang_APValue_dispose) on success, or nullptr when E is not a fixed-point constant.
+// The evaluator rejects every expression whose type is not a fixed-point type before it
+// folds anything, so a translation unit built without -ffixed-point never succeeds here.
+CXAPValue clang_Expr_EvaluateAsFixedPoint(CXExpr E, CXASTContext Ctx);
+
+// ConstantExpr
+// PARTIAL: clang::ConstantExpr::MoveIntoResult asserts
+// clang_ConstantExpr_getStorageKind(Value) <= clang_ConstantExpr_getResultStorageKind(E),
+// and its Int64 branch then reads Value's integer outright, so a node whose result storage
+// is Int64 additionally needs an integral Value. Value is copied; the caller keeps it.
+void clang_ConstantExpr_SetResult(CXConstantExpr E, CXAPValue Value, CXASTContext Ctx);
+
+// FloatingLiteral
+// The raw llvm::APFloatBase::Semantics enumerator naming the literal's float format
+// (32-bit IEEE, x87, ...). It crosses as a plain unsigned rather than as a mirrored enum
+// because the enumeration is LLVM's, not Clang's (MARSHALLING.md section 0).
+unsigned clang_FloatingLiteral_getRawSemantics(CXFloatingLiteral E);
+
+// setRawSemantics reinterprets the stored bit pattern under the new format instead of
+// converting it, so a Sem inconsistent with that pattern changes the value read back.
+void clang_FloatingLiteral_setRawSemantics(CXFloatingLiteral E, unsigned Sem);
+
+// Value is the bit pattern an llvm::APFloat of E's OWN semantics bitcasts to - the
+// encoding clang_FloatingLiteral_getValue returns in GV->IntVal (MARSHALLING.md section
+// 2). Rebuilding the APFloat with getSemantics() inside the shim is what keeps
+// clang::FloatingLiteral::setValue's "Inconsistent semantics" assert satisfied, so
+// Value's width must match those semantics. The GenericValue stays the caller's.
+void clang_FloatingLiteral_setValue(CXFloatingLiteral E, CXASTContext C,
+                                    LLVMGenericValueRef Value);
+
+// ImaginaryLiteral
+// setSubExpr stores S unchecked; getSubExpr cast<Expr>s the slot, so S must be non-null.
+// The literal's dependence bits are not recomputed.
+void clang_ImaginaryLiteral_setSubExpr(CXImaginaryLiteral E, CXExpr S);
+
+// MatrixSubscriptExpr
+// The operand setters store their argument unchecked and recompute no dependence bits.
+// getBase and getRowIdx cast<Expr> their slot, so both must stay non-null.
+void clang_MatrixSubscriptExpr_setBase(CXMatrixSubscriptExpr E, CXExpr Base);
+
+void clang_MatrixSubscriptExpr_setRowIdx(CXMatrixSubscriptExpr E, CXExpr RowIdx);
+
+// The column slot is read with cast_or_null and may legitimately be null - the incomplete
+// subscript an unfinished m[i] carries; this wrapper only ever writes a real operand.
+void clang_MatrixSubscriptExpr_setColumnIdx(CXMatrixSubscriptExpr E, CXExpr ColumnIdx);
+
+void clang_MatrixSubscriptExpr_setRBracketLoc(CXMatrixSubscriptExpr E, CXSourceLocation_ L);
+
+// CallExpr
+// getNumRawSubExprs + getRawSubExpr are the count+index pair over
+// clang::CallExpr::getRawSubExprs() (MARSHALLING.md section 6) - the callee, the pre-args
+// and the arguments in one flat view, which is why the count exceeds getNumArgs. Slot 0
+// is always the callee; the count is exact.
+unsigned clang_CallExpr_getNumRawSubExprs(CXCallExpr E);
+
+// helper: getRawSubExprs()[I]. I must be < clang_CallExpr_getNumRawSubExprs(E). A slot
+// of a still-building call may be null.
+CXStmt clang_CallExpr_getRawSubExpr(CXCallExpr E, unsigned I);
+
+// PARTIAL: clang::CallExpr::setStoredFPFeatures asserts hasStoredFPFeatures() - the
+// trailing slot exists only when the call was allocated with one. F is the same opaque
+// FPOptionsOverride encoding clang_CallExpr_getStoredFPFeatures returns.
+void clang_CallExpr_setStoredFPFeatures(CXCallExpr E, uint64_t F);
+
+// BinaryOperator
+// PARTIAL: clang::BinaryOperator::setStoredFPFeatures asserts the HasFPFeatures bit. F is
+// the same opaque FPOptionsOverride encoding clang_BinaryOperator_getStoredFPFeatures
+// returns.
+void clang_BinaryOperator_setStoredFPFeatures(CXBinaryOperator BO, uint64_t F);
+
+// ShuffleVectorExpr
+// Exprs is a (buffer, count) pair rebuilt as an ArrayRef (MARSHALLING.md section 11). The
+// operands are copied into freshly allocated ASTContext storage and the previous array is
+// deallocated, so the buffer need not outlive the call. Upstream casts every slot to Expr
+// and constant-folds slots 2 and up, so the first two entries must be the vector operands
+// and the rest integer constant expressions.
+void clang_ShuffleVectorExpr_setExprs(CXShuffleVectorExpr E, CXASTContext C,
+                                      const CXExpr *Exprs, unsigned NumExprs);
+
+// DesignatedInitExpr::Designator
+// PARTIAL: setFieldDecl asserts isFieldDesignator(). FD replaces whatever the field slot
+// held, including a still-unresolved identifier.
+void clang_Designator_setFieldDecl(CXDesignator D, CXFieldDecl FD);
+
+// BlockExpr
+// setBlockDecl stores BD unchecked; getCaretLocation, getBody and getFunctionType all
+// reach through the slot, so BD must be non-null before any of them runs.
+void clang_BlockExpr_setBlockDecl(CXBlockExpr E, CXBlockDecl BD);
+
+// Expr
+// The whole clang::ExprDependence bitmask in one call. It is an LLVM bitmask enum whose
+// combined enumerators (TypeValue, TypeValueInstantiation, ErrorDependent, ...) duplicate
+// values, which a Julia @enum rejects, so it is not mirrored; the bits
+// (clang/AST/DependenceFlags.h) are 1 UnexpandedPack, 2 Instantiation, 4 Type, 8 Value and
+// 16 Error. The numbering is NOT the one clang_Type_getDependence returns.
+unsigned clang_Expr_getDependence(CXExpr E);
+
+// Total — E may be any expression. StrictFlexArraysLevel selects the -fstrict-flex-arrays
+// rule to apply instead of being read out of Ctx, so the answer does not depend on how the
+// translation unit was configured; an expression that is not a member, declaration or ivar
+// reference, or whose type is neither a constant nor an incomplete array, answers false.
+bool clang_Expr_isFlexibleArrayMemberLike(CXExpr E, CXASTContext Ctx,
+                                          CXStrictFlexArraysLevelKind StrictFlexArraysLevel,
+                                          bool IgnoreTemplateOrMacroSubstitution);
+
+// StringLiteral
+// PARTIAL: for every Kind but Unevaluated clang asserts that Ty is a constant array type,
+// and that StrLen is a whole multiple of the Kind's character width. Str is a
+// (pointer, length) byte pair copied into Ctx's arena, so it need not outlive the call.
+// Locs is a (buffer, count) pair holding the start location of each concatenated token
+// (MARSHALLING.md section 11); NumConcatenated must be at least 1 and must match the number
+// of locations supplied.
+CXStringLiteral clang_StringLiteral_Create(CXASTContext Ctx, const char *Str, size_t StrLen,
+                                           CXStringLiteralKind Kind, bool Pascal,
+                                           CXQualType Ty, const CXSourceLocation_ *Locs,
+                                           unsigned NumConcatenated);
+
+// The empty string-literal shell clang deserializes into. NumConcatenated, Length and
+// CharByteWidth are stored and read back; the Length * CharByteWidth character bytes, the
+// NumConcatenated token locations and the expression's type are left uninitialized.
+CXStringLiteral clang_StringLiteral_CreateEmpty(CXASTContext Ctx, unsigned NumConcatenated,
+                                                unsigned Length, unsigned CharByteWidth);
+
+// PredefinedExpr
+// The empty __func__-family shell clang deserializes into. The identifier kind, the source
+// location and the HasFunctionName string-literal slot are left uninitialized, so only the
+// node's statement class may be read straight away.
+CXPredefinedExpr clang_PredefinedExpr_CreateEmpty(CXASTContext Ctx, bool HasFunctionName);
+
+// UnaryOperator
+// The empty unary-operator shell clang deserializes into. The operand, the opcode, the
+// operator location and the HasFPFeatures trailing FPOptionsOverride are left
+// uninitialized, so only the node's statement class may be read straight away.
+CXUnaryOperator clang_UnaryOperator_CreateEmpty(CXASTContext C, bool HasFPFeatures);
+
+// OffsetOfExpr
+// The empty __builtin_offsetof shell clang deserializes into. NumComps and NumExprs are
+// stored, but the component slots, the index-expression slots, the type and the source
+// locations behind them are left uninitialized.
+CXOffsetOfExpr clang_OffsetOfExpr_CreateEmpty(CXASTContext C, unsigned NumComps,
+                                              unsigned NumExprs);
+
+// CallExpr
+// The empty call shell clang deserializes into. NumArgs is stored and reads back, but the
+// callee slot, the argument slots and the HasFPFeatures trailing FPOptionsOverride are left
+// uninitialized.
+CXCallExpr clang_CallExpr_CreateEmpty(CXASTContext Ctx, unsigned NumArgs,
+                                      bool HasFPFeatures);
+
+// MemberExpr
+// The empty member-access shell clang deserializes into. The base, the member declaration
+// and every trailing slot the four shape flags reserve are left uninitialized, so only the
+// node's statement class may be read straight away.
+CXMemberExpr clang_MemberExpr_CreateEmpty(CXASTContext Context, bool HasQualifier,
+                                          bool HasFoundDecl, bool HasTemplateKWAndArgsInfo,
+                                          unsigned NumTemplateArgs);
+
+// CompoundAssignOperator
+// The empty compound-assignment shell clang deserializes into. The operands, the opcode,
+// the computation types and the HasFPFeatures trailing FPOptionsOverride are left
+// uninitialized, so only the node's statement class may be read straight away.
+CXCompoundAssignOperator clang_CompoundAssignOperator_CreateEmpty(CXASTContext C,
+                                                                  bool HasFPFeatures);
+
+// DesignatedInitExpr::Designator
+// A clang::DesignatedInitExpr::Designator is a by-value tagged union with no pointer form,
+// so each factory below heap-boxes its result: the returned CXDesignator is OWNED and must
+// be released with clang_Designator_dispose. The borrowed interior pointer that
+// clang_DesignatedInitExpr_getDesignator returns must never be passed to that dispose.
+CXDesignator clang_Designator_CreateFieldDesignator(CXIdentifierInfo FieldName,
+                                                    CXSourceLocation_ DotLoc,
+                                                    CXSourceLocation_ FieldLoc);
+
+// Index is the position of the index expression in the owning DesignatedInitExpr's
+// subexpression array, not the value of the subscript.
+CXDesignator clang_Designator_CreateArrayDesignator(unsigned Index,
+                                                    CXSourceLocation_ LBracketLoc,
+                                                    CXSourceLocation_ RBracketLoc);
+
+// The GNU `[first ... last]` form; Index names the first of the two index expressions.
+CXDesignator clang_Designator_CreateArrayRangeDesignator(unsigned Index,
+                                                         CXSourceLocation_ LBracketLoc,
+                                                         CXSourceLocation_ EllipsisLoc,
+                                                         CXSourceLocation_ RBracketLoc);
+
+// Release a Designator produced by one of the clang_Designator_Create* factories.
+void clang_Designator_dispose(CXDesignator D);
+
+// DesignatedInitExpr
+// The empty designated-initializer shell clang deserializes into. The designator list
+// starts out empty — clang_DesignatedInitExpr_size reads 0 and
+// clang_DesignatedInitExpr_setDesignators is how it gets filled — and the NumIndexExprs
+// subexpression slots are reserved but uninitialized.
+CXDesignatedInitExpr clang_DesignatedInitExpr_CreateEmpty(CXASTContext C,
+                                                          unsigned NumIndexExprs);
+
+// Desigs is a (handle-buffer, count) pair of CXDesignator handles, each dereferenced and
+// copied into freshly allocated ASTContext storage (MARSHALLING.md section 11), so neither
+// the buffer nor the designators it names need outlive the call. This replaces the whole
+// designator list and does not touch the node's index-expression slots.
+void clang_DesignatedInitExpr_setDesignators(CXDesignatedInitExpr E, CXASTContext C,
+                                             const CXDesignator *Desigs,
+                                             unsigned NumDesigs);
+
+// ParenListExpr
+// The empty paren-list shell clang deserializes into. NumExprs is stored and reads back,
+// but the operand slots and both parenthesis locations are left uninitialized.
+CXParenListExpr clang_ParenListExpr_CreateEmpty(CXASTContext Ctx, unsigned NumExprs);
+
+// GenericSelectionExpr
+// The empty _Generic shell clang deserializes into. The controlling expression, the
+// NumAssocs association expressions and their type-source-info slots, and the result index
+// are left uninitialized, so only the node's statement class may be read straight away.
+CXGenericSelectionExpr clang_GenericSelectionExpr_CreateEmpty(CXASTContext Context,
+                                                              unsigned NumAssocs);
+
+// RecoveryExpr
+// The empty recovery shell clang deserializes into. The NumSubExprs operand slots and the
+// source range are left uninitialized, so only the node's statement class may be read
+// straight away.
+CXRecoveryExpr clang_RecoveryExpr_CreateEmpty(CXASTContext Ctx, unsigned NumSubExprs);
+
+// CallExpr
+// Args is a (handle, count) pair rebuilt as an ArrayRef<clang::Expr *> in the shim
+// (MARSHALLING.md §11); the operands are copied into the node's trailing storage, so the
+// buffer need not outlive the call and may be empty. FPFeatures is the
+// clang::FPOptionsOverride opaque integer encoding (0 = no override). MinNumArgs reserves
+// default-argument slots past NumArgs. UsesADL is the two-state
+// clang::CallExpr::ADLCallKind flattened to bool.
+CXCallExpr clang_CallExpr_Create(CXASTContext Ctx, CXExpr Fn, const CXExpr *Args,
+                                 unsigned NumArgs, CXQualType Ty, CXExprValueKind VK,
+                                 CXSourceLocation_ RParenLoc, uint64_t FPFeatures,
+                                 unsigned MinNumArgs, bool UsesADL);
+
+// DeclRefExpr
+// Also recomputes the node's dependence bits, which reads the referenced decl and the
+// expression's type — both always populated on a well-formed DeclRefExpr.
+void clang_DeclRefExpr_setCapturedByCopyInLambdaWithExplicitObjectParameter(
+    CXDeclRefExpr E, bool Set, CXASTContext Ctx);
+
+// FixedPointLiteral
+// The empty fixed-point shell clang deserializes into. Only the statement class is
+// initialized: the type, the stored value and the scale carry no default initializer, so
+// reading getScale/getLocation/getBeginLoc before setScale/setLocation have run is UB
+// (MARSHALLING.md §13). The class publishes no flag recording which slots were written,
+// so the Julia wrapper documents the precondition instead of asserting it.
+CXFixedPointLiteral clang_FixedPointLiteral_Create(CXASTContext C);
+
+CXSourceLocation_ clang_FixedPointLiteral_getLocation(CXFixedPointLiteral E);
+
+void clang_FixedPointLiteral_setLocation(CXFixedPointLiteral E, CXSourceLocation_ L);
+
+unsigned clang_FixedPointLiteral_getScale(CXFixedPointLiteral E);
+
+void clang_FixedPointLiteral_setScale(CXFixedPointLiteral E, unsigned S);
+
+// SYCLUniqueStableNameExpr
+CXTypeSourceInfo
+clang_SYCLUniqueStableNameExpr_getTypeSourceInfo(CXSYCLUniqueStableNameExpr E);
+
+// TSI must be non-null — clang's constructor asserts on it. The result type is fixed to
+// `const char *` by clang, and the node is ASTContext-arena memory (borrowed, no dispose).
+CXSYCLUniqueStableNameExpr clang_SYCLUniqueStableNameExpr_Create(CXASTContext Ctx,
+                                                                 CXSourceLocation_ OpLoc,
+                                                                 CXSourceLocation_ LParen,
+                                                                 CXSourceLocation_ RParen,
+                                                                 CXTypeSourceInfo TSI);
+
+CXSourceLocation_ clang_SYCLUniqueStableNameExpr_getLocation(CXSYCLUniqueStableNameExpr E);
+
+CXSourceLocation_
+clang_SYCLUniqueStableNameExpr_getLParenLocation(CXSYCLUniqueStableNameExpr E);
+
+CXSourceLocation_
+clang_SYCLUniqueStableNameExpr_getRParenLocation(CXSYCLUniqueStableNameExpr E);
+
+// Mangles the stored type's canonical name through a freshly created Itanium mangler, so
+// the result does not follow the target's C++ ABI. Dereferences getTypeSourceInfo()
+// unchecked: valid only on a node clang parsed or clang_SYCLUniqueStableNameExpr_Create
+// built, never on a deserialization shell whose type-source-info slot is uninitialized.
+CXString clang_SYCLUniqueStableNameExpr_ComputeName(CXSYCLUniqueStableNameExpr E,
+                                                    CXASTContext Ctx);
+
+// DeclRefExpr
+// The extent of getQualifierLoc(). NestedNameSpecifierLoc has no handle of its own, so it
+// crosses as its two parts (MARSHALLING.md §7): the qualifier through getQualifier, its
+// source range here. Invalid when the reference is unqualified.
+CXSourceRange_ clang_DeclRefExpr_getQualifierRange(CXDeclRefExpr E);
+
+// Appends the written template arguments, and the angle-bracket locations, to List. List
+// is caller-owned (clang_TemplateArgumentListInfo_create / _dispose). A reference with no
+// explicit argument list leaves List untouched, so the call is total.
+void clang_DeclRefExpr_copyTemplateArgumentsInto(CXDeclRefExpr E,
+                                                 CXTemplateArgumentListInfo List);
+
+// FixedPointLiteral
+// CreateFromRawInt builds a literal over a raw two's-complement value. The llvm::APInt is
+// rebuilt inside the shim from (Value, BitWidth) rather than crossing as an
+// LLVMGenericValueRef, matching clang_ASTContext_getConstantArrayType (MARSHALLING.md
+// §11). BitWidth must be non-zero and Ty non-null; the node is ASTContext-arena memory
+// (borrowed, no dispose).
+CXFixedPointLiteral clang_FixedPointLiteral_CreateFromRawInt(CXASTContext C, uint64_t Value,
+                                                             unsigned BitWidth,
+                                                             CXQualType Ty,
+                                                             CXSourceLocation_ L,
+                                                             unsigned Scale);
+
+// The stored value rendered as a fixed-point fraction in the given radix. Reads the stored
+// value and the scale, neither of which carries a default initializer, so this is UB on a
+// clang_FixedPointLiteral_Create shell whose slots were never written (MARSHALLING.md
+// §13).
+CXString clang_FixedPointLiteral_getValueAsString(CXFixedPointLiteral E, unsigned Radix);
+
+// OffsetOfExpr
+// setComponent overwrites the Idx-th component in place; Idx must be < getNumComponents()
+// (clang asserts). The OffsetOfNode is copied by value, so N stays owned by whatever
+// produced it.
+void clang_OffsetOfExpr_setComponent(CXOffsetOfExpr E, unsigned Idx, CXOffsetOfNode N);
+
+// MemberExpr
+// The extent of getQualifierLoc(); see clang_DeclRefExpr_getQualifierRange.
+CXSourceRange_ clang_MemberExpr_getQualifierRange(CXMemberExpr E);
+
+// Appends the written template arguments to List; see
+// clang_DeclRefExpr_copyTemplateArgumentsInto.
+void clang_MemberExpr_copyTemplateArgumentsInto(CXMemberExpr E,
+                                                CXTemplateArgumentListInfo List);
+
+// BinaryOperator
+// setHasStoredFPFeatures only flips the bit recording that a trailing FPOptionsOverride
+// slot is present; it does not allocate one. Setting it on an operator clang allocated
+// without the slot makes getStoredFPFeatures read past the node, and BinaryOperator
+// publishes no independent record of how it was allocated, so the Julia wrapper documents
+// the precondition instead of asserting it (MARSHALLING.md §13).
+void clang_BinaryOperator_setHasStoredFPFeatures(CXBinaryOperator BO, bool B);
+
+// DesignatedInitExpr
+// ExpandDesignator replaces the Idx-th designator with the N designators in Ds, a buffer
+// of CXDesignator handles whose pointees are copied by value (MARSHALLING.md §11). Idx
+// must be < size(). Unless N == 1 the designator array is reallocated in the ASTContext,
+// which dangles every CXDesignator previously obtained from E.
+void clang_DesignatedInitExpr_ExpandDesignator(CXDesignatedInitExpr E, CXASTContext Ctx,
+                                               unsigned Idx, const CXDesignator *Ds,
+                                               unsigned N);
+
+// GenericSelectionExpr
+// getAssocType and isAssocSelected are the two remaining fields of the by-value
+// clang::GenericSelectionExpr::Association aggregate (MARSHALLING.md §7); its expression
+// and type-source-info fields already cross as getAssocExpr / getAssocTypeSourceInfo. I
+// must be < getNumAssocs() (clang asserts). getAssocType is the null QualType on a
+// `default:` arm, which carries no written type; isAssocSelected is false for every arm
+// while the selection is still result-dependent.
+CXQualType clang_GenericSelectionExpr_getAssocType(CXGenericSelectionExpr E, unsigned I);
+
+bool clang_GenericSelectionExpr_isAssocSelected(CXGenericSelectionExpr E, unsigned I);
+
+// AsTypeExpr
+// __builtin_astype is spelled only in OpenCL, so a C++ parse never produces an AsTypeExpr;
+// Create builds one straight into the ASTContext arena (borrowed, no dispose). SrcExpr and
+// DstType must both be non-null — the constructor computes the node's dependence from
+// both.
+CXAsTypeExpr clang_AsTypeExpr_Create(CXASTContext Ctx, CXExpr SrcExpr, CXQualType DstType,
+                                     CXExprValueKind VK, CXExprObjectKind OK,
+                                     CXSourceLocation_ BuiltinLoc,
+                                     CXSourceLocation_ RParenLoc);
+
+CXExpr clang_AsTypeExpr_getSrcExpr(CXAsTypeExpr E);
+
+CXSourceLocation_ clang_AsTypeExpr_getBuiltinLoc(CXAsTypeExpr E);
+
+CXSourceLocation_ clang_AsTypeExpr_getRParenLoc(CXAsTypeExpr E);
+
+// Expr::EvalStatus / Expr::EvalResult
+// A CXEvalResult is owned: clang::Expr::EvalResult is a by-value struct (an APValue plus
+// the status of the fold that produced it) with no pointer form, so clang_EvalResult_create
+// heap-boxes one and clang_EvalResult_dispose releases it. clang::Expr::EvalStatus is
+// EvalResult's base class, and the C surface carries no subtyping, so the EvalStatus
+// accessors below take the same handle.
+// A freshly created result holds no value: run one of the evaluators further down first.
+// clang never clears the status flags between evaluations into the same result, so use a
+// fresh result per evaluation whenever the flags matter.
+CXEvalResult clang_EvalResult_create(void);
+
+void clang_EvalResult_dispose(CXEvalResult R);
+
+// helper: the EvalResult::Val member. The APValue is interior to the box (borrowed) and
+// must never be passed to clang_APValue_dispose; it carries the None kind until an
+// evaluator has filled the result.
+CXAPValue clang_EvalResult_getVal(CXEvalResult R);
+
+bool clang_EvalStatus_hasSideEffects(CXEvalResult R);
+
+// helper: the EvalStatus::HasUndefinedBehavior member — true when the expression folded but
+// its evaluation is undefined (INT_MAX + 1 folds to INT_MIN, 1.0 / 0.0 folds to Inf).
+bool clang_EvalStatus_hasUndefinedBehavior(CXEvalResult R);
+
+// PARTIAL: clang::Expr::EvalResult::isGlobalLValue asserts that the folded value is an
+// lvalue, so the Julia wrapper restates that precondition through clang_APValue_isLValue on
+// clang_EvalResult_getVal (Invariant 3).
+bool clang_EvalResult_isGlobalLValue(CXEvalResult R);
+
+// Expr
+// helper: the EvalResult-filling form of clang::Expr::EvaluateAsRValue, which keeps the
+// side-effect and undefined-behaviour status that the CXAPValue-returning
+// clang_Expr_EvaluateAsRValue discards. Result holds whatever the failed evaluation left
+// behind when this returns false.
+bool clang_Expr_EvaluateAsRValueIntoResult(CXExpr E, CXASTContext Ctx,
+                                           bool InConstantContext, CXEvalResult Result);
+
+// helper: the EvalResult-filling form of clang::Expr::EvaluateAsLValue. This is the only
+// evaluator that leaves an lvalue in Result, so it is the one that makes
+// clang_EvalResult_isGlobalLValue callable.
+bool clang_Expr_EvaluateAsLValueIntoResult(CXExpr E, CXASTContext Ctx,
+                                           bool InConstantContext, CXEvalResult Result);
+
+// EvaluateCharRangeAsString folds SizeExpression to a count and PtrExpression to a
+// character pointer, then reads that many code units. The returned CXString is the decoded
+// text and is always written — it is the empty string when *Succeeded comes back false.
+// Status collects the evaluation's flags. E only scopes the evaluation; it need not be
+// related to either operand.
+CXString clang_Expr_EvaluateCharRangeAsString(CXExpr E, CXExpr SizeExpression,
+                                              CXExpr PtrExpression, CXASTContext Ctx,
+                                              CXEvalResult Status, bool *Succeeded);
+
+// DeclRefExpr
+// CreateEmpty allocates the trailing storage the four arguments describe but writes only
+// the node's statement class: the referenced decl, the name info, the qualifier and the
+// HasQualifier/HasFoundDecl/HasTemplateKWAndArgsInfo bits themselves are left
+// uninitialized. clang asserts NumTemplateArgs == 0 || HasTemplateKWAndArgsInfo.
+CXDeclRefExpr clang_DeclRefExpr_CreateEmpty(CXASTContext C, bool HasQualifier,
+                                            bool HasFoundDecl,
+                                            bool HasTemplateKWAndArgsInfo,
+                                            unsigned NumTemplateArgs);
+
+// FloatingLiteral
+// CreateEmpty wraps the clang::FloatingLiteral::Create(ASTContext, EmptyShell) overload —
+// the deserialization shell. Only the node's statement class may be read straight away;
+// write the raw semantics, the exactness flag, the value and the location before reading
+// them back.
+CXFloatingLiteral clang_FloatingLiteral_CreateEmpty(CXASTContext C);
+
+// SYCLUniqueStableNameExpr
+// CreateEmpty is the deserialization shell: the type-source-info and all three locations
+// are left uninitialized, so only the node's statement class may be read straight away.
+CXSYCLUniqueStableNameExpr clang_SYCLUniqueStableNameExpr_CreateEmpty(CXASTContext Ctx);
+
+// CallExpr
+// PARTIAL: setNumArgsUnsafe writes the argument count with no check at all. The argument
+// slots live in trailing storage sized once at construction, so NewNumArgs must not exceed
+// the count the node was built with; nothing in the C++ API reports that capacity, so the
+// Julia wrapper documents the precondition instead of asserting it. shrinkNumArgs is the
+// checked way down.
+void clang_CallExpr_setNumArgsUnsafe(CXCallExpr E, unsigned NewNumArgs);
+
+// BlockVarCopyInit
+// A clang::BlockVarCopyInit is a by-value PointerIntPair — the expression that copies a
+// __block variable into its block, plus whether that copy can throw — with no pointer form,
+// so clang_BlockVarCopyInit_create heap-boxes one and clang_BlockVarCopyInit_dispose
+// releases it. The boxed expression is AST-owned and outlives the box.
+CXBlockVarCopyInit clang_BlockVarCopyInit_create(CXExpr CopyExpr, bool CanThrow);
+
+void clang_BlockVarCopyInit_dispose(CXBlockVarCopyInit BVCI);
+
+CXExpr clang_BlockVarCopyInit_getCopyExpr(CXBlockVarCopyInit BVCI);
+
+bool clang_BlockVarCopyInit_canThrow(CXBlockVarCopyInit BVCI);
+
+void clang_BlockVarCopyInit_setExprAndFlag(CXBlockVarCopyInit BVCI, CXExpr CopyExpr,
+                                           bool CanThrow);
+
+// PseudoObjectExpr
+// CreateEmpty wraps the clang::PseudoObjectExpr::Create(ASTContext, EmptyShell, unsigned)
+// overload. NumSemanticExprs is stored and reads back through getNumSemanticExprs, but the
+// syntactic slot, the semantic slots and the result index are left uninitialized.
+CXPseudoObjectExpr clang_PseudoObjectExpr_CreateEmpty(CXASTContext Context,
+                                                      unsigned NumSemanticExprs);
 
 LLVM_CLANG_C_EXTERN_C_END
 

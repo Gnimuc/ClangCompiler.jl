@@ -148,3 +148,63 @@ end
 
 Base.unsafe_convert(::Type{CXTParamCommandComment}, x::TParamCommandComment) = x.ptr
 Base.cconvert(::Type{CXTParamCommandComment}, x::TParamCommandComment) = x
+
+
+# The verbatim tail of the clang::comments hierarchy (clang/AST/Comment.h).
+# `VerbatimBlockComment` (\code…\endcode) and `VerbatimLineComment` (\defgroup,
+# \fn, …) are block commands; the individual lines a verbatim block owns are plain
+# `Comment` subclasses, not block content.
+abstract type AbstractVerbatimBlockLineComment <: AbstractComment end
+abstract type AbstractVerbatimBlockComment <: AbstractBlockCommandComment end
+abstract type AbstractVerbatimLineComment <: AbstractBlockCommandComment end
+
+"""
+    struct VerbatimBlockLineComment <: AbstractVerbatimBlockLineComment
+Hold a pointer to a `clang::comments::VerbatimBlockLineComment` object.
+"""
+struct VerbatimBlockLineComment <: AbstractVerbatimBlockLineComment
+    ptr::CXVerbatimBlockLineComment
+end
+
+Base.unsafe_convert(::Type{CXVerbatimBlockLineComment}, x::VerbatimBlockLineComment) = x.ptr
+Base.cconvert(::Type{CXVerbatimBlockLineComment}, x::VerbatimBlockLineComment) = x
+
+"""
+    struct VerbatimBlockComment <: AbstractVerbatimBlockComment
+Hold a pointer to a `clang::comments::VerbatimBlockComment` object.
+"""
+struct VerbatimBlockComment <: AbstractVerbatimBlockComment
+    ptr::CXVerbatimBlockComment
+end
+
+Base.unsafe_convert(::Type{CXVerbatimBlockComment}, x::VerbatimBlockComment) = x.ptr
+Base.cconvert(::Type{CXVerbatimBlockComment}, x::VerbatimBlockComment) = x
+
+"""
+    struct VerbatimLineComment <: AbstractVerbatimLineComment
+Hold a pointer to a `clang::comments::VerbatimLineComment` object.
+"""
+struct VerbatimLineComment <: AbstractVerbatimLineComment
+    ptr::CXVerbatimLineComment
+end
+
+Base.unsafe_convert(::Type{CXVerbatimLineComment}, x::VerbatimLineComment) = x.ptr
+Base.cconvert(::Type{CXVerbatimLineComment}, x::VerbatimLineComment) = x
+
+
+# clang::comments::DeclInfo (clang/AST/Comment.h). A plain struct rather than a node
+# of the Comment hierarchy: it is a `FullComment`'s simplified description of the
+# declaration the comment documents. The pointee lives in the `ASTContext` arena —
+# there is no `dispose`.
+abstract type AbstractDeclInfo end
+
+"""
+    struct DeclInfo <: AbstractDeclInfo
+Hold a pointer to a `clang::comments::DeclInfo` object.
+"""
+struct DeclInfo <: AbstractDeclInfo
+    ptr::CXDeclInfo
+end
+
+Base.unsafe_convert(::Type{CXDeclInfo}, x::DeclInfo) = x.ptr
+Base.cconvert(::Type{CXDeclInfo}, x::DeclInfo) = x

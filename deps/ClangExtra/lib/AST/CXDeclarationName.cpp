@@ -172,6 +172,33 @@ CXSourceRange_ clang_DeclarationNameInfo_getSourceRange(CXDeclarationNameInfo DN
   return CXSourceRange_{B, E};
 }
 
+bool clang_DeclarationName_isObjCZeroArgSelector(CXDeclarationName DN) {
+  return clang::DeclarationName::getFromOpaquePtr(DN).isObjCZeroArgSelector();
+}
+
+bool clang_DeclarationName_isObjCOneArgSelector(CXDeclarationName DN) {
+  return clang::DeclarationName::getFromOpaquePtr(DN).isObjCOneArgSelector();
+}
+
+void clang_DeclarationNameInfo_setNamedTypeInfo(CXDeclarationNameInfo DNInfo,
+                                                CXTypeSourceInfo TInfo) {
+  static_cast<clang::DeclarationNameInfo *>(DNInfo)->setNamedTypeInfo(
+      static_cast<clang::TypeSourceInfo *>(TInfo));
+}
+
+void clang_DeclarationNameInfo_setCXXOperatorNameRange(CXDeclarationNameInfo DNInfo,
+                                                       CXSourceRange_ R) {
+  static_cast<clang::DeclarationNameInfo *>(DNInfo)->setCXXOperatorNameRange(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(R.B),
+                         clang::SourceLocation::getFromPtrEncoding(R.E)));
+}
+
+void clang_DeclarationNameInfo_setCXXLiteralOperatorNameLoc(CXDeclarationNameInfo DNInfo,
+                                                            CXSourceLocation_ Loc) {
+  static_cast<clang::DeclarationNameInfo *>(DNInfo)->setCXXLiteralOperatorNameLoc(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
 CXDeclarationName clang_DeclarationName_create(void) {
   return clang::DeclarationName().getAsOpaquePtr();
 }

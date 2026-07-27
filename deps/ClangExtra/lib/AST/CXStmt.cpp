@@ -11,6 +11,12 @@
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
 #include "llvm/Support/raw_ostream.h"
+#include "clang/Basic/LangOptions.h"
+#include "clang/Lex/Token.h"
+#include "llvm/ADT/FoldingSet.h"
+#include "llvm/ADT/SmallVector.h"
+#include "clang/AST/ODRHash.h"
+#include <tuple>
 
 // GCCAsmStmt (paren / label / operand tail)
 CXSourceLocation_ clang_GCCAsmStmt_getRParenLoc(CXGCCAsmStmt S) {
@@ -862,6 +868,28 @@ CXAttr clang_Stmt_getLikelihoodAttr(CXStmt S) {
       clang::Stmt::getLikelihoodAttr(static_cast<clang::Stmt *>(S)));
 }
 
+CXLikelihood clang_Stmt_getLikelihoodOfAttrs(const CXAttr *Attrs, unsigned NumAttrs) {
+  llvm::SmallVector<const clang::Attr *, 4> As;
+  As.reserve(NumAttrs);
+  for (unsigned I = 0; I < NumAttrs; ++I)
+    As.push_back(static_cast<const clang::Attr *>(Attrs[I]));
+  return static_cast<CXLikelihood>(clang::Stmt::getLikelihood(As));
+}
+
+CXLikelihood clang_Stmt_getLikelihoodOfBranches(CXStmt Then, CXStmt Else) {
+  return static_cast<CXLikelihood>(clang::Stmt::getLikelihood(
+      static_cast<clang::Stmt *>(Then), static_cast<clang::Stmt *>(Else)));
+}
+
+bool clang_Stmt_determineLikelihoodConflict(CXStmt Then, CXStmt Else, CXAttr *ThenAttr,
+                                            CXAttr *ElseAttr) {
+  auto [Conflict, TA, EA] = clang::Stmt::determineLikelihoodConflict(
+      static_cast<clang::Stmt *>(Then), static_cast<clang::Stmt *>(Else));
+  *ThenAttr = const_cast<clang::Attr *>(TA);
+  *ElseAttr = const_cast<clang::Attr *>(EA);
+  return Conflict;
+}
+
 int64_t clang_Stmt_getID(CXStmt S, CXASTContext Ctx) {
   return static_cast<clang::Stmt *>(S)->getID(*static_cast<clang::ASTContext *>(Ctx));
 }
@@ -1264,6 +1292,60 @@ void clang_CapturedStmt_setCapturedRecordDecl(CXCapturedStmt S, CXRecordDecl D) 
       static_cast<clang::RecordDecl *>(D));
 }
 
+// Stmt (colour dump, controlled pretty-printing, structural profile)
+void clang_Stmt_dumpColor(CXStmt S) { static_cast<clang::Stmt *>(S)->dumpColor(); }
+
+CXString clang_Stmt_printPrettyControlled(CXStmt S, CXASTContext Ctx,
+                                          unsigned Indentation) {
+  auto *C = static_cast<clang::ASTContext *>(Ctx);
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  static_cast<clang::Stmt *>(S)->printPrettyControlled(OS, nullptr, C->getPrintingPolicy(),
+                                                       Indentation, "\n", C);
+  return extra::makeCXString(Str);
+}
+
+unsigned clang_Stmt_getProfileHash(CXStmt S, CXASTContext Ctx, bool Canonical,
+                                   bool ProfileLambdaExpr) {
+  llvm::FoldingSetNodeID ID;
+  static_cast<clang::Stmt *>(S)->Profile(ID, *static_cast<clang::ASTContext *>(Ctx),
+                                         Canonical, ProfileLambdaExpr);
+  return ID.ComputeHash();
+}
+
+// GCCAsmStmt
+void clang_GCCAsmStmt_setAsmString(CXGCCAsmStmt S, CXStringLiteral E) {
+  static_cast<clang::GCCAsmStmt *>(S)->setAsmString(static_cast<clang::StringLiteral *>(E));
+}
+
+// MSAsmStmt
+unsigned clang_MSAsmStmt_getNumAsmToks(CXMSAsmStmt S) {
+  return static_cast<clang::MSAsmStmt *>(S)->getNumAsmToks();
+}
+
+CXToken_ clang_MSAsmStmt_getAsmTok(CXMSAsmStmt S, unsigned I) {
+  return static_cast<clang::MSAsmStmt *>(S)->getAsmToks() + I;
+}
+
+void clang_MSAsmStmt_setLBraceLoc(CXMSAsmStmt S, CXSourceLocation_ L) {
+  static_cast<clang::MSAsmStmt *>(S)->setLBraceLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_MSAsmStmt_setEndLoc(CXMSAsmStmt S, CXSourceLocation_ L) {
+  static_cast<clang::MSAsmStmt *>(S)->setEndLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_MSAsmStmt_setInputExpr(CXMSAsmStmt S, unsigned I, CXExpr E) {
+  static_cast<clang::MSAsmStmt *>(S)->setInputExpr(I, static_cast<clang::Expr *>(E));
+}
+
+// ReturnStmt
+void clang_ReturnStmt_setNRVOCandidate(CXReturnStmt S, CXVarDecl Var) {
+  static_cast<clang::ReturnStmt *>(S)->setNRVOCandidate(static_cast<clang::VarDecl *>(Var));
+}
+
 // Statement factories (clang/AST/Stmt.h)
 // CompoundStmt
 CXCompoundStmt clang_CompoundStmt_CreateEmpty(CXASTContext Ctx, unsigned NumStmts,
@@ -1405,4 +1487,218 @@ CXSEHTryStmt clang_SEHTryStmt_Create(CXASTContext Ctx, bool IsCXXTry,
                                    clang::SourceLocation::getFromPtrEncoding(TryLoc),
                                    static_cast<clang::CompoundStmt *>(TryBlock),
                                    static_cast<clang::Stmt *>(Handler));
+}
+
+// CompoundStmt
+CXCompoundStmt clang_CompoundStmt_Create(CXASTContext Ctx, const CXStmt *Stmts,
+                                         unsigned NumStmts, uint64_t FPFeatures,
+                                         CXSourceLocation_ LB, CXSourceLocation_ RB) {
+  llvm::SmallVector<clang::Stmt *, 8> Body;
+  Body.reserve(NumStmts);
+  for (unsigned I = 0; I < NumStmts; ++I)
+    Body.push_back(static_cast<clang::Stmt *>(Stmts[I]));
+  return clang::CompoundStmt::Create(*static_cast<clang::ASTContext *>(Ctx), Body,
+                                     clang::FPOptionsOverride::getFromOpaqueInt(FPFeatures),
+                                     clang::SourceLocation::getFromPtrEncoding(LB),
+                                     clang::SourceLocation::getFromPtrEncoding(RB));
+}
+
+// AttributedStmt
+CXAttributedStmt clang_AttributedStmt_Create(CXASTContext Ctx, CXSourceLocation_ Loc,
+                                             const CXAttr *Attrs, unsigned NumAttrs,
+                                             CXStmt SubStmt) {
+  llvm::SmallVector<const clang::Attr *, 4> As;
+  As.reserve(NumAttrs);
+  for (unsigned I = 0; I < NumAttrs; ++I)
+    As.push_back(static_cast<const clang::Attr *>(Attrs[I]));
+  return clang::AttributedStmt::Create(*static_cast<clang::ASTContext *>(Ctx),
+                                       clang::SourceLocation::getFromPtrEncoding(Loc), As,
+                                       static_cast<clang::Stmt *>(SubStmt));
+}
+
+CXAttributedStmt clang_AttributedStmt_CreateEmpty(CXASTContext Ctx, unsigned NumAttrs) {
+  return clang::AttributedStmt::CreateEmpty(*static_cast<clang::ASTContext *>(Ctx),
+                                            NumAttrs);
+}
+
+// GCCAsmStmt::AsmStringPiece
+unsigned clang_GCCAsmStmt_getNumAsmStringPieces(CXGCCAsmStmt S, CXASTContext Ctx,
+                                                unsigned *DiagID, unsigned *DiagOffs) {
+  llvm::SmallVector<clang::GCCAsmStmt::AsmStringPiece, 4> Pieces;
+  unsigned Offs = 0;
+  unsigned Diag = static_cast<clang::GCCAsmStmt *>(S)->AnalyzeAsmString(
+      Pieces, *static_cast<clang::ASTContext *>(Ctx), Offs);
+  if (DiagID)
+    *DiagID = Diag;
+  if (DiagOffs)
+    *DiagOffs = Offs;
+  return static_cast<unsigned>(Pieces.size());
+}
+
+void clang_GCCAsmStmt_getAsmStringPieces(CXGCCAsmStmt S, CXASTContext Ctx,
+                                         CXGCCAsmStmtAsmStringPiece *Buf) {
+  llvm::SmallVector<clang::GCCAsmStmt::AsmStringPiece, 4> Pieces;
+  unsigned Offs = 0;
+  static_cast<clang::GCCAsmStmt *>(S)->AnalyzeAsmString(
+      Pieces, *static_cast<clang::ASTContext *>(Ctx), Offs);
+  for (size_t I = 0; I < Pieces.size(); ++I)
+    Buf[I] = new clang::GCCAsmStmt::AsmStringPiece(Pieces[I]); // NOLINT(*-owning-memory)
+}
+
+void clang_GCCAsmStmtAsmStringPiece_dispose(CXGCCAsmStmtAsmStringPiece P) {
+  delete static_cast<clang::GCCAsmStmt::AsmStringPiece *>(P); // NOLINT(*-owning-memory)
+}
+
+bool clang_GCCAsmStmtAsmStringPiece_isString(CXGCCAsmStmtAsmStringPiece P) {
+  return static_cast<clang::GCCAsmStmt::AsmStringPiece *>(P)->isString();
+}
+
+bool clang_GCCAsmStmtAsmStringPiece_isOperand(CXGCCAsmStmtAsmStringPiece P) {
+  return static_cast<clang::GCCAsmStmt::AsmStringPiece *>(P)->isOperand();
+}
+
+CXString clang_GCCAsmStmtAsmStringPiece_getString(CXGCCAsmStmtAsmStringPiece P) {
+  return extra::makeCXString(
+      static_cast<clang::GCCAsmStmt::AsmStringPiece *>(P)->getString());
+}
+
+unsigned clang_GCCAsmStmtAsmStringPiece_getOperandNo(CXGCCAsmStmtAsmStringPiece P) {
+  return static_cast<clang::GCCAsmStmt::AsmStringPiece *>(P)->getOperandNo();
+}
+
+CXSourceRange_ clang_GCCAsmStmtAsmStringPiece_getRange(CXGCCAsmStmtAsmStringPiece P) {
+  clang::CharSourceRange R =
+      static_cast<clang::GCCAsmStmt::AsmStringPiece *>(P)->getRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+char clang_GCCAsmStmtAsmStringPiece_getModifier(CXGCCAsmStmtAsmStringPiece P) {
+  return static_cast<clang::GCCAsmStmt::AsmStringPiece *>(P)->getModifier();
+}
+
+// CompoundStmt
+CXStmt clang_CompoundStmt_getBodyStmt(CXCompoundStmt CS, unsigned I) {
+  return static_cast<clang::CompoundStmt *>(CS)->body_begin()[I];
+}
+
+// DeclStmt
+CXDecl clang_DeclStmt_getDecl(CXDeclStmt DS, unsigned I) {
+  return static_cast<clang::DeclStmt *>(DS)->decl_begin()[I];
+}
+
+// Stmt
+void clang_Stmt_addStmtClass(CXStmtClass SC) {
+  clang::Stmt::addStmtClass(static_cast<clang::Stmt::StmtClass>(SC));
+}
+
+unsigned clang_Stmt_getODRHash(CXStmt S) {
+  clang::ODRHash Hash;
+  llvm::FoldingSetNodeID ID;
+  static_cast<clang::Stmt *>(S)->ProcessODRHash(ID, Hash);
+  return ID.ComputeHash();
+}
+
+// CapturedStmt::Capture
+CXCapturedStmtCapture clang_CapturedStmtCapture_create(CXSourceLocation_ Loc,
+                                                       CXVariableCaptureKind Kind,
+                                                       CXVarDecl Var) {
+  return new clang::CapturedStmt::Capture( // NOLINT(*-owning-memory)
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      static_cast<clang::CapturedStmt::VariableCaptureKind>(Kind),
+      static_cast<clang::VarDecl *>(Var));
+}
+
+void clang_CapturedStmtCapture_dispose(CXCapturedStmtCapture C) {
+  delete static_cast<clang::CapturedStmt::Capture *>(C); // NOLINT(*-owning-memory)
+}
+
+// CapturedStmt
+CXCapturedStmt clang_CapturedStmt_Create(CXASTContext Ctx, CXStmt S,
+                                         CXCapturedRegionKind Kind,
+                                         const CXCapturedStmtCapture *Captures,
+                                         const CXExpr *CaptureInits, unsigned NumCaptures,
+                                         CXCapturedDecl CD, CXRecordDecl RD) {
+  llvm::SmallVector<clang::CapturedStmt::Capture, 4> Caps;
+  llvm::SmallVector<clang::Expr *, 4> Inits;
+  Caps.reserve(NumCaptures);
+  Inits.reserve(NumCaptures);
+  for (unsigned I = 0; I < NumCaptures; ++I) {
+    Caps.push_back(*static_cast<clang::CapturedStmt::Capture *>(Captures[I]));
+    Inits.push_back(static_cast<clang::Expr *>(CaptureInits[I]));
+  }
+  return clang::CapturedStmt::Create(
+      *static_cast<clang::ASTContext *>(Ctx), static_cast<clang::Stmt *>(S),
+      static_cast<clang::CapturedRegionKind>(Kind), Caps, Inits,
+      static_cast<clang::CapturedDecl *>(CD), static_cast<clang::RecordDecl *>(RD));
+}
+
+CXCapturedStmt clang_CapturedStmt_CreateDeserialized(CXASTContext Ctx,
+                                                     unsigned NumCaptures) {
+  return clang::CapturedStmt::CreateDeserialized(*static_cast<clang::ASTContext *>(Ctx),
+                                                 NumCaptures);
+}
+
+// GCCAsmStmt
+CXGCCAsmStmt clang_GCCAsmStmt_Create(CXASTContext Ctx, CXSourceLocation_ AsmLoc,
+                                     bool IsSimple, bool IsVolatile, unsigned NumOutputs,
+                                     unsigned NumInputs, const CXIdentifierInfo *Names,
+                                     const CXStringLiteral *Constraints,
+                                     const CXExpr *Exprs, CXStringLiteral AsmStr,
+                                     unsigned NumClobbers, const CXStringLiteral *Clobbers,
+                                     unsigned NumLabels, CXSourceLocation_ RParenLoc) {
+  const unsigned NumExprs = NumOutputs + NumInputs + NumLabels;
+  const unsigned NumConstraints = NumOutputs + NumInputs;
+  llvm::SmallVector<clang::IdentifierInfo *, 4> Ns;
+  llvm::SmallVector<clang::Expr *, 4> Es;
+  llvm::SmallVector<clang::StringLiteral *, 4> Cs;
+  llvm::SmallVector<clang::StringLiteral *, 4> Cls;
+  Ns.reserve(NumExprs);
+  Es.reserve(NumExprs);
+  for (unsigned I = 0; I < NumExprs; ++I) {
+    Ns.push_back(static_cast<clang::IdentifierInfo *>(Names[I]));
+    Es.push_back(static_cast<clang::Expr *>(Exprs[I]));
+  }
+  Cs.reserve(NumConstraints);
+  for (unsigned I = 0; I < NumConstraints; ++I)
+    Cs.push_back(static_cast<clang::StringLiteral *>(Constraints[I]));
+  Cls.reserve(NumClobbers);
+  for (unsigned I = 0; I < NumClobbers; ++I)
+    Cls.push_back(static_cast<clang::StringLiteral *>(Clobbers[I]));
+  clang::ASTContext &C = *static_cast<clang::ASTContext *>(Ctx);
+  return new (C) clang::GCCAsmStmt(
+      C, clang::SourceLocation::getFromPtrEncoding(AsmLoc), IsSimple, IsVolatile,
+      NumOutputs, NumInputs, Ns.data(), Cs.data(), Es.data(),
+      static_cast<clang::StringLiteral *>(AsmStr), NumClobbers, Cls.data(), NumLabels,
+      clang::SourceLocation::getFromPtrEncoding(RParenLoc));
+}
+
+// MSAsmStmt
+CXMSAsmStmt clang_MSAsmStmt_Create(
+    CXASTContext Ctx, CXSourceLocation_ AsmLoc, CXSourceLocation_ LBraceLoc, bool IsSimple,
+    bool IsVolatile, const CXToken_ *AsmToks, unsigned NumAsmToks, unsigned NumOutputs,
+    unsigned NumInputs, const char **Constraints, const CXExpr *Exprs, const char *AsmStr,
+    const char **Clobbers, unsigned NumClobbers, CXSourceLocation_ EndLoc) {
+  const unsigned NumOperands = NumOutputs + NumInputs;
+  llvm::SmallVector<clang::Token, 8> Toks;
+  llvm::SmallVector<llvm::StringRef, 4> Cs;
+  llvm::SmallVector<clang::Expr *, 4> Es;
+  llvm::SmallVector<llvm::StringRef, 4> Cls;
+  Toks.reserve(NumAsmToks);
+  for (unsigned I = 0; I < NumAsmToks; ++I)
+    Toks.push_back(*static_cast<clang::Token *>(AsmToks[I]));
+  Cs.reserve(NumOperands);
+  Es.reserve(NumOperands);
+  for (unsigned I = 0; I < NumOperands; ++I) {
+    Cs.emplace_back(Constraints[I]);
+    Es.push_back(static_cast<clang::Expr *>(Exprs[I]));
+  }
+  Cls.reserve(NumClobbers);
+  for (unsigned I = 0; I < NumClobbers; ++I)
+    Cls.emplace_back(Clobbers[I]);
+  clang::ASTContext &C = *static_cast<clang::ASTContext *>(Ctx);
+  return new (C) clang::MSAsmStmt(C, clang::SourceLocation::getFromPtrEncoding(AsmLoc),
+                                  clang::SourceLocation::getFromPtrEncoding(LBraceLoc),
+                                  IsSimple, IsVolatile, Toks, NumOutputs, NumInputs, Cs, Es,
+                                  llvm::StringRef(AsmStr), Cls,
+                                  clang::SourceLocation::getFromPtrEncoding(EndLoc));
 }

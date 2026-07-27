@@ -3483,3 +3483,1420 @@ function getTypeConstraintArguments(x::AbstractAutoType)
     @check_ptrs x
     return clang_AutoType_getTypeConstraintArguments(x)
 end
+
+
+# Type -- the ObjC lifetime/ARC classification tail. Every one of these is declared on
+# clang::Type, is total over any type (the ones that reach a subobject do it through a
+# guarded `getAs`), and answers false for every non-ObjC type.
+"""
+    isObjCLifetimeType(x::AbstractType) -> Bool
+Return whether `x` is a type whose ARC lifetime clang can infer -- a retainable object
+type, or an (arbitrarily nested) array of one. This is the gate
+[`isObjCARCImplicitlyUnretainedType`](@ref) asserts on.
+"""
+function isObjCLifetimeType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCLifetimeType(x)
+end
+
+"""
+    isObjCIndirectLifetimeType(x::AbstractType) -> Bool
+Return whether `x` is an (arbitrarily nested) pointer, reference or member pointer to a
+type satisfying [`isObjCLifetimeType`](@ref).
+"""
+function isObjCIndirectLifetimeType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCIndirectLifetimeType(x)
+end
+
+"""
+    isObjCNSObjectType(x::AbstractType) -> Bool
+Return whether `x` was written with `__attribute__((NSObject))`.
+"""
+function isObjCNSObjectType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCNSObjectType(x)
+end
+
+"""
+    isObjCIndependentClassType(x::AbstractType) -> Bool
+Return whether `x` was written with `__attribute__((objc_independent_class))`.
+"""
+function isObjCIndependentClassType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCIndependentClassType(x)
+end
+
+"""
+    isObjCQualifiedIdType(x::AbstractType) -> Bool
+Return whether `x` is a protocol-qualified `id`, e.g. `id<NSCopying>`.
+"""
+function isObjCQualifiedIdType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCQualifiedIdType(x)
+end
+
+"""
+    isObjCInertUnsafeUnretainedType(x::AbstractType) -> Bool
+Return whether `x` was written with the ARC-inert `__unsafe_unretained` qualifier, i.e.
+whether it carries the `ObjCInertUnsafeUnretained` type attribute.
+"""
+function isObjCInertUnsafeUnretainedType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCInertUnsafeUnretainedType(x)
+end
+
+"""
+    isObjCARCBridgableType(x::AbstractType) -> Bool
+Return whether `x` is an ObjC type that can be bridged to a C type -- an ObjC object
+pointer or a block pointer.
+"""
+function isObjCARCBridgableType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCARCBridgableType(x)
+end
+
+"""
+    isCARCBridgableType(x::AbstractType) -> Bool
+Return whether `x` is a C type that can be bridged to an ObjC type -- a pointer to `void`
+or to a record. Unlike the rest of this family it is answered purely from the C shape, so
+a plain C++ `void *` answers true.
+"""
+function isCARCBridgableType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isCARCBridgableType(x)
+end
+
+"""
+    isObjCARCImplicitlyUnretainedType(x::AbstractType) -> Bool
+Return whether `x`, whose ARC lifetime is inferrable, is implicitly `__unsafe_unretained`
+rather than implicitly `__strong`.
+
+`Type::isObjCARCImplicitlyUnretainedType` asserts `isObjCLifetimeType()` on entry, so the
+wrapper restates that precondition (Invariant 3).
+"""
+function isObjCARCImplicitlyUnretainedType(x::AbstractType)
+    @check_ptrs x
+    @assert isObjCLifetimeType(x) "isObjCARCImplicitlyUnretainedType requires an ObjC lifetime type"
+    return clang_Type_isObjCARCImplicitlyUnretainedType(x)
+end
+
+"""
+    isCUDADeviceBuiltinSurfaceType(x::AbstractType) -> Bool
+Return whether `x` is the CUDA device builtin surface type -- a record whose declaration
+carries `__attribute__((device_builtin_surface_type))`.
+"""
+function isCUDADeviceBuiltinSurfaceType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isCUDADeviceBuiltinSurfaceType(x)
+end
+
+"""
+    isCUDADeviceBuiltinTextureType(x::AbstractType) -> Bool
+Return whether `x` is the CUDA device builtin texture type -- a record whose declaration
+carries `__attribute__((device_builtin_texture_type))`.
+"""
+function isCUDADeviceBuiltinTextureType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isCUDADeviceBuiltinTextureType(x)
+end
+
+"""
+    acceptsObjCTypeParams(x::AbstractType) -> Bool
+Return whether `x` is an ObjC interface type that may accept type parameters.
+"""
+function acceptsObjCTypeParams(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_acceptsObjCTypeParams(x)
+end
+
+# Type -- the target-specific scalable-vector element accessors. Both `is*VLSBuiltinType`
+# probes are false unless the target is AArch64+SVE / RISC-V+V, and both element accessors
+# are gated on them.
+"""
+    isSveVLSBuiltinType(x::AbstractType) -> Bool
+Return whether `x` is a sizeless type the `arm_sve_vector_bits` attribute accepts -- a
+single SVE vector or predicate, excluding tuple types such as `svint32x4_t`.
+"""
+function isSveVLSBuiltinType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isSveVLSBuiltinType(x)
+end
+
+"""
+    getSveEltType(x::AbstractType, ctx::ASTContext) -> QualType
+Return the type clang uses to represent one element of an SVE builtin type, which is how a
+fixed-length SVE vector built with `arm_sve_vector_bits` becomes a `VectorType`.
+
+`Type::getSveEltType` reaches the `BuiltinType` subobject through an unchecked
+`getAs<BuiltinType>()` and dereferences it, so `x` must satisfy
+[`isSveVLSBuiltinType`](@ref); the assert restates that precondition (Invariant 3).
+"""
+function getSveEltType(x::AbstractType, ctx::ASTContext)
+    @check_ptrs x ctx
+    @assert isSveVLSBuiltinType(x) "getSveEltType requires an SVE VLS builtin type"
+    return QualType(clang_Type_getSveEltType(x, ctx))
+end
+
+"""
+    isRVVVLSBuiltinType(x::AbstractType) -> Bool
+Return whether `x` is a sizeless type the `riscv_rvv_vector_bits` attribute accepts -- a
+single RVV vector or mask.
+"""
+function isRVVVLSBuiltinType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isRVVVLSBuiltinType(x)
+end
+
+"""
+    getRVVEltType(x::AbstractType, ctx::ASTContext) -> QualType
+Return the type clang uses to represent one element of an RVV builtin type, which is how a
+fixed-length RVV vector built with `riscv_rvv_vector_bits` becomes a `VectorType`.
+
+Same unchecked `getAs<BuiltinType>()` reach as [`getSveEltType`](@ref), so `x` must satisfy
+[`isRVVVLSBuiltinType`](@ref); the assert restates that precondition (Invariant 3).
+"""
+function getRVVEltType(x::AbstractType, ctx::ASTContext)
+    @check_ptrs x ctx
+    @assert isRVVVLSBuiltinType(x) "getRVVEltType requires an RVV VLS builtin type"
+    return QualType(clang_Type_getRVVEltType(x, ctx))
+end
+
+# QualType -- excess-precision evaluation and the WebAssembly reference-type probes. All
+# four reach the type through `getTypePtr`, which asserts on a null QualType.
+"""
+    UseExcessPrecision(x::QualType, ctx::ASTContext) -> Bool
+Return whether operations on `x` are evaluated at a wider format than `x` itself, which is
+what the target's float-eval method decides for `_Float16` and `__bf16`.
+
+Reaches the type through `getTypePtr`, so the `QualType` must not be null.
+"""
+function UseExcessPrecision(x::QualType, ctx::ASTContext)
+    @check_ptrs ctx
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_UseExcessPrecision(x, ctx)
+end
+
+"""
+    isWebAssemblyReferenceType(x::QualType) -> Bool
+Return whether `x` is a WebAssembly reference type -- the disjunction of
+[`isWebAssemblyExternrefType`](@ref) and [`isWebAssemblyFuncrefType`](@ref).
+
+Reaches the type through `getTypePtr`, so the `QualType` must not be null.
+"""
+function isWebAssemblyReferenceType(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_isWebAssemblyReferenceType(x)
+end
+
+"""
+    isWebAssemblyExternrefType(x::QualType) -> Bool
+Return whether `x` is the WebAssembly `externref` type. This is the `QualType` receiver;
+the `AbstractType` method of the same name is the unqualified `clang::Type` query.
+
+Reaches the type through `getTypePtr`, so the `QualType` must not be null.
+"""
+function isWebAssemblyExternrefType(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_isWebAssemblyExternrefType(x)
+end
+
+"""
+    isWebAssemblyFuncrefType(x::QualType) -> Bool
+Return whether `x` is the WebAssembly `funcref` type, i.e. a funcref pointee that also
+sits in the `wasm_funcref` address space.
+
+Reaches the type through `getTypePtr`, so the `QualType` must not be null.
+"""
+function isWebAssemblyFuncrefType(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_isWebAssemblyFuncrefType(x)
+end
+
+
+"""
+    getNullability(x::AbstractType) -> Union{CXNullabilityKind,Nothing}
+Return the nullability `x` carries (`CXNullabilityKind_NonNull`, `CXNullabilityKind_Nullable`,
+...), or `nothing` when it carries none (the C++ optional is disengaged).
+
+Nullability lives only in sugar, never in the canonical type, so a canonicalised or fully
+desugared type always answers `nothing`. [`canHaveNullability`](@ref) asks the separate
+question of whether an annotation could apply to `x` at all.
+"""
+function getNullability(x::AbstractType)
+    @check_ptrs x
+    k = Ref{CXNullabilityKind}(CXNullabilityKind_NonNull)
+    return clang_Type_getNullability(x, k) ? k[] : nothing
+end
+
+
+"""
+    getImmediateNullability(x::AbstractAttributedType) -> Union{CXNullabilityKind,Nothing}
+Return the nullability this one attribute node records, or `nothing` when the attribute is
+not a nullability attribute. Unlike [`getNullability`](@ref) on a `Type_`, this answers for
+`x` alone and looks through no sugar.
+"""
+function getImmediateNullability(x::AbstractAttributedType)
+    @check_ptrs x
+    k = Ref{CXNullabilityKind}(CXNullabilityKind_NonNull)
+    return clang_AttributedType_getImmediateNullability(x, k) ? k[] : nothing
+end
+
+"""
+    getNullabilityAttrKind(kind::CXNullabilityKind) -> CXAttrKind
+Return the `clang::attr::Kind` that spells `kind` -- the value [`getAttrKind`](@ref) reports
+for the matching `AttributedType`. This is a static helper and takes no receiver.
+"""
+function getNullabilityAttrKind(kind::CXNullabilityKind)
+    return clang_AttributedType_getNullabilityAttrKind(kind)
+end
+
+"""
+    stripOuterNullability(x::QualType) -> Tuple{QualType,Union{CXNullabilityKind,Nothing}}
+Strip a top-level nullability annotation off `x` without looking through sugar, returning
+the stripped type together with the nullability that was removed. When `x` is not exactly a
+nullability `AttributedType` (possibly behind a `MacroQualifiedType`) the type comes back
+unchanged and the second element is `nothing`.
+
+`clang::AttributedType::stripOuterNullability` reaches the type through the `dyn_cast` chain,
+which asserts the `QualType` is non-null, so a null receiver is undefined behaviour in the
+shim; the precondition is restated here.
+"""
+function stripOuterNullability(x::QualType)
+    @assert !isNull(x) "QualType must be non-null"
+    ty = Ref{CXQualType}(x.ptr)
+    k = Ref{CXNullabilityKind}(CXNullabilityKind_NonNull)
+    found = clang_AttributedType_stripOuterNullability(ty, k)
+    return (QualType(ty[]), found ? k[] : nothing)
+end
+
+
+"""
+    getExtParameterInfo(x::AbstractFunctionProtoType, i::Integer) -> UInt8
+Return the opaque `clang::FunctionType::ExtParameterInfo` encoding of parameter `i`
+(0-based). Feed it to the `ExtParameterInfo` wrappers ([`getABI`](@ref),
+[`isConsumed`](@ref), [`isNoEscape`](@ref), [`hasPassObjectSize`](@ref)), which all take that
+encoding as an `Integer`. A function type with no extra parameter info
+([`hasExtParameterInfos`](@ref) is `false`) reads back `0x00` for every parameter.
+
+`clang::FunctionProtoType::getExtParameterInfo` asserts `i < getNumParams()` and the shim
+does not check, so the precondition is restated here.
+"""
+function getExtParameterInfo(x::AbstractFunctionProtoType, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < clang_FunctionProtoType_getNumParams(x) "parameter index out of range"
+    return clang_FunctionProtoType_getExtParameterInfo(x, i)
+end
+
+"""
+    getParameterABI(x::AbstractFunctionProtoType, i::Integer) -> CXParameterABI
+Return the ABI treatment of parameter `i` (0-based). Every parameter of an ordinary C or C++
+function type reports `CXParameterABI_Ordinary`; the Swift kinds only appear on types built
+with explicit parameter info.
+
+`clang::FunctionProtoType::getParameterABI` asserts `i < getNumParams()` and the shim does
+not check, so the precondition is restated here.
+"""
+function getParameterABI(x::AbstractFunctionProtoType, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < clang_FunctionProtoType_getNumParams(x) "parameter index out of range"
+    return clang_FunctionProtoType_getParameterABI(x, i)
+end
+
+# FunctionType::ExtParameterInfo
+# The ExtParameterInfo value type has no carrier struct: it crosses as its opaque
+# `unsigned char` encoding (MARSHALLING.md §7), the same encoding
+# `getExtParameterInfo(::AbstractFunctionProtoType, ::Integer)` returns. These wrappers
+# therefore dispatch on `Integer` -- there is no pointer to check.
+"""
+    getABI(info::Integer) -> CXParameterABI
+Return the ABI treatment recorded in the opaque `clang::FunctionType::ExtParameterInfo`
+encoding `info`.
+"""
+getABI(info::Integer) = clang_ExtParameterInfo_getABI(info)
+
+"""
+    withABI(info::Integer, abi::CXParameterABI) -> UInt8
+Return `info` with its ABI field replaced by `abi`, as a fresh opaque encoding. The other
+three flags are left alone.
+"""
+withABI(info::Integer, abi::CXParameterABI) = clang_ExtParameterInfo_withABI(info, abi)
+
+"""
+    isConsumed(info::Integer) -> Bool
+Return whether the parameter described by the opaque `ExtParameterInfo` encoding `info` is
+\"consumed\" by Objective-C ARC.
+"""
+isConsumed(info::Integer) = clang_ExtParameterInfo_isConsumed(info)
+
+"""
+    withIsConsumed(info::Integer, consumed::Bool) -> UInt8
+Return `info` with its ARC-consumed flag set to `consumed`, as a fresh opaque encoding.
+"""
+function withIsConsumed(info::Integer, consumed::Bool)
+    return clang_ExtParameterInfo_withIsConsumed(info, consumed)
+end
+
+"""
+    hasPassObjectSize(info::Integer) -> Bool
+Return whether the parameter described by the opaque `ExtParameterInfo` encoding `info`
+carries a `pass_object_size` attribute.
+"""
+hasPassObjectSize(info::Integer) = clang_ExtParameterInfo_hasPassObjectSize(info)
+
+"""
+    withHasPassObjectSize(info::Integer) -> UInt8
+Return `info` with its `pass_object_size` flag set, as a fresh opaque encoding.
+`clang::FunctionType::ExtParameterInfo` only ever sets this bit, so there is no flag-taking
+form to mirror.
+"""
+function withHasPassObjectSize(info::Integer)
+    return clang_ExtParameterInfo_withHasPassObjectSize(info)
+end
+
+"""
+    isNoEscape(info::Integer) -> Bool
+Return whether the parameter described by the opaque `ExtParameterInfo` encoding `info` is
+marked `noescape`.
+"""
+isNoEscape(info::Integer) = clang_ExtParameterInfo_isNoEscape(info)
+
+"""
+    withIsNoEscape(info::Integer, noescape::Bool) -> UInt8
+Return `info` with its `noescape` flag set to `noescape`, as a fresh opaque encoding.
+"""
+function withIsNoEscape(info::Integer, noescape::Bool)
+    return clang_ExtParameterInfo_withIsNoEscape(info, noescape)
+end
+
+
+"""
+    isEmptyWhenPrinted(quals::Integer, ctx::ASTContext) -> Bool
+Return whether the opaque `clang::Qualifiers` encoding `quals` prints as nothing at all under
+`ctx`'s own printing policy.
+"""
+function isEmptyWhenPrinted(quals::Integer, ctx::ASTContext)
+    @check_ptrs ctx
+    return clang_Qualifiers_isEmptyWhenPrinted(quals, ctx)
+end
+
+"""
+    printAsString(quals::Integer, ctx::ASTContext, append_space::Bool=false) -> String
+Return the printed spelling of the opaque `clang::Qualifiers` encoding `quals` under `ctx`'s
+own printing policy. `append_space` adds one trailing space when the set prints anything; an
+empty set prints `""` either way.
+"""
+function printAsString(quals::Integer, ctx::ASTContext, append_space::Bool=false)
+    @check_ptrs ctx
+    return get_string(clang_Qualifiers_printAsString(quals, ctx, append_space))
+end
+
+"""
+    printAsString(x::QualType, ctx::ASTContext, placeholder::AbstractString="",
+                  indentation::Integer=0) -> String
+Return `x` printed under `ctx`'s own printing policy. `placeholder` is the declarator name
+printed inside the type -- `"p"` on an `int *` gives `"int *p"` -- and `""` yields the bare
+type spelling; `indentation` is the base indent used when a record body is printed inline. A
+null `QualType` prints `"NULL TYPE"`, matching [`getAsString`](@ref).
+"""
+function printAsString(x::QualType, ctx::ASTContext, placeholder::AbstractString="",
+                       indentation::Integer=0)
+    @check_ptrs ctx
+    return get_string(clang_QualType_printAsString(x, ctx, placeholder, indentation))
+end
+
+"""
+    getDependence(x::AbstractType) -> UInt32
+Return the whole `clang::TypeDependence` bitmask of `x` in one call: bit 1 UnexpandedPack,
+2 Instantiation, 4 Dependent, 8 VariablyModified, 16 Error. It is an LLVM bitmask enum whose
+combined enumerators duplicate values, so it crosses as a plain integer rather than a mirrored
+`@enum`; the single-bit answers are [`containsUnexpandedParameterPack`](@ref),
+[`isInstantiationDependentType`](@ref), [`isDependentType`](@ref),
+[`isVariablyModifiedType`](@ref) and [`containsErrors`](@ref).
+"""
+function getDependence(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_getDependence(x)
+end
+
+"""
+    getName(x::AbstractBuiltinType, ctx::ASTContext) -> String
+Return the printed spelling of the builtin type `x` under `ctx`'s own printing policy, which
+is what decides e.g. `"bool"` versus `"_Bool"`.
+"""
+function getName(x::AbstractBuiltinType, ctx::ASTContext)
+    @check_ptrs x ctx
+    return get_string(clang_BuiltinType_getName(x, ctx))
+end
+
+"""
+    getNameAsCString(x::AbstractBuiltinType, ctx::ASTContext) -> String
+Return the same spelling as [`getName`](@ref), read from clang's static name tables instead of
+a freshly copied string.
+"""
+function getNameAsCString(x::AbstractBuiltinType, ctx::ASTContext)
+    @check_ptrs x ctx
+    return unsafe_string(clang_BuiltinType_getNameAsCString(x, ctx))
+end
+
+"""
+    getPointAccessorIdx(c::AbstractChar) -> Int32
+Return the component index an `xyzw`/`rgba` extended-vector accessor character names, or `-1`
+for a character that names none. Static: it takes no `ExtVectorType` receiver.
+"""
+getPointAccessorIdx(c::AbstractChar) = clang_ExtVectorType_getPointAccessorIdx(Cchar(c))
+
+"""
+    getNumericAccessorIdx(c::AbstractChar) -> Int32
+Return the component index a hexadecimal `sN` extended-vector accessor character names (`0`-`9`,
+`a`-`f`, `A`-`F`), or `-1` for a character that names none. Static: it takes no `ExtVectorType`
+receiver.
+"""
+getNumericAccessorIdx(c::AbstractChar) = clang_ExtVectorType_getNumericAccessorIdx(Cchar(c))
+
+"""
+    getAccessorIdx(c::AbstractChar, is_numeric::Bool) -> Int32
+Return [`getNumericAccessorIdx`](@ref) of `c` when `is_numeric`, otherwise
+[`getPointAccessorIdx`](@ref). Static: it takes no `ExtVectorType` receiver.
+"""
+function getAccessorIdx(c::AbstractChar, is_numeric::Bool)
+    return clang_ExtVectorType_getAccessorIdx(Cchar(c), is_numeric)
+end
+
+"""
+    getAttributeLoc(x::AbstractDependentAddressSpaceType) -> SourceLocation
+Return the location of the `address_space` attribute that built `x`.
+"""
+function getAttributeLoc(x::AbstractDependentAddressSpaceType)
+    @check_ptrs x
+    return SourceLocation(clang_DependentAddressSpaceType_getAttributeLoc(x))
+end
+
+"""
+    getAttributeLoc(x::AbstractDependentSizedExtVectorType) -> SourceLocation
+Return the location of the `ext_vector_type` attribute that built `x`.
+"""
+function getAttributeLoc(x::AbstractDependentSizedExtVectorType)
+    @check_ptrs x
+    return SourceLocation(clang_DependentSizedExtVectorType_getAttributeLoc(x))
+end
+
+"""
+    getProducesResult(x::AbstractFunctionType) -> Bool
+Return whether the function type carries the `ns_returns_retained` bit of its
+`clang::FunctionType::ExtInfo`. `ExtInfo` is a by-value aggregate whose bit field is private,
+so its accessors surface here on the owning `FunctionType`.
+"""
+function getProducesResult(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_getProducesResult(x)
+end
+
+"""
+    getNoCallerSavedRegs(x::AbstractFunctionType) -> Bool
+Return whether the function type carries the `no_caller_saved_registers` bit of its
+`clang::FunctionType::ExtInfo`.
+"""
+function getNoCallerSavedRegs(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_getNoCallerSavedRegs(x)
+end
+
+"""
+    getNoCfCheck(x::AbstractFunctionType) -> Bool
+Return whether the function type carries the `nocf_check` bit of its
+`clang::FunctionType::ExtInfo`.
+"""
+function getNoCfCheck(x::AbstractFunctionType)
+    @check_ptrs x
+    return clang_FunctionType_getNoCfCheck(x)
+end
+
+"""
+    printExceptionSpecificationAsString(x::AbstractFunctionProtoType, ctx::ASTContext) -> String
+Return the exception specification of `x` as clang prints it under `ctx`'s own printing policy,
+e.g. `" noexcept"`. A prototype with no exception specification prints `""`.
+"""
+function printExceptionSpecificationAsString(x::AbstractFunctionProtoType, ctx::ASTContext)
+    @check_ptrs x ctx
+    return get_string(clang_FunctionProtoType_printExceptionSpecificationAsString(x, ctx))
+end
+
+"""
+    getKeywordForTypeSpec(spec::Integer) -> CXElaboratedTypeKeyword
+Return the elaborated-type keyword a clang `DeclSpec::TST` type-specifier value names, or
+`CXElaboratedTypeKeyword_None` when the specifier is not a tag specifier. Static: it takes no
+receiver.
+"""
+getKeywordForTypeSpec(spec::Integer) = clang_TypeWithKeyword_getKeywordForTypeSpec(spec)
+
+"""
+    getTagTypeKindForTypeSpec(spec::Integer) -> CXTagTypeKind
+Return the tag kind a clang `DeclSpec::TST` type-specifier value names. Static: it takes no
+receiver.
+
+`clang::TypeWithKeyword::getTagTypeKindForTypeSpec` documents that it is an error to pass a
+specifier that is not a tag kind and falls off into `llvm_unreachable` otherwise, so the
+precondition is restated here with [`getKeywordForTypeSpec`](@ref).
+"""
+function getTagTypeKindForTypeSpec(spec::Integer)
+    @assert getKeywordForTypeSpec(spec) != CXElaboratedTypeKeyword_None "type specifier must name a tag kind"
+    return clang_TypeWithKeyword_getTagTypeKindForTypeSpec(spec)
+end
+
+
+# Qualifiers -- the Objective-C garbage-collection attribute and the ARC lifetime. Both live
+# inside the same opaque unsigned encoding as the CVR set (MARSHALLING.md 7), so these
+# wrappers dispatch on `Integer` and every mutator returns a fresh encoding rather than
+# mutating in place.
+"""
+    hasObjCGCAttr(quals::Integer) -> Bool
+Return whether the qualifier set carries an Objective-C garbage-collection attribute.
+"""
+hasObjCGCAttr(quals::Integer) = clang_Qualifiers_hasObjCGCAttr(quals)
+
+"""
+    getObjCGCAttr(quals::Integer) -> CXQualifiers_GC
+Return the Objective-C garbage-collection attribute of the qualifier set, or
+`CXQualifiers_GCNone` when it carries none.
+"""
+getObjCGCAttr(quals::Integer) = clang_Qualifiers_getObjCGCAttr(quals)
+
+"""
+    setObjCGCAttr(quals::Integer, gc::CXQualifiers_GC) -> UInt32
+Return the qualifier set with its garbage-collection attribute replaced by `gc`.
+`CXQualifiers_GCNone` clears it, which is how `clang::Qualifiers::removeObjCGCAttr` is
+spelled.
+"""
+setObjCGCAttr(quals::Integer, gc::CXQualifiers_GC) = clang_Qualifiers_setObjCGCAttr(quals, gc)
+
+"""
+    addObjCGCAttr(quals::Integer, gc::CXQualifiers_GC) -> UInt32
+Return the qualifier set with `gc` stored as its garbage-collection attribute.
+
+`clang::Qualifiers::addObjCGCAttr` asserts `gc` is not `CXQualifiers_GCNone`, so clearing the
+attribute this way is undefined behaviour in the shim; the precondition is restated here and
+[`setObjCGCAttr`](@ref) is the unrestricted form.
+"""
+function addObjCGCAttr(quals::Integer, gc::CXQualifiers_GC)
+    @assert gc != CXQualifiers_GCNone "garbage-collection attribute must not be GCNone"
+    return clang_Qualifiers_addObjCGCAttr(quals, gc)
+end
+
+"""
+    withoutObjCGCAttr(quals::Integer) -> UInt32
+Return the same qualifier set with its garbage-collection attribute cleared.
+"""
+withoutObjCGCAttr(quals::Integer) = clang_Qualifiers_withoutObjCGCAttr(quals)
+
+"""
+    withoutObjCLifetime(quals::Integer) -> UInt32
+Return the same qualifier set with its Objective-C ARC lifetime cleared.
+"""
+withoutObjCLifetime(quals::Integer) = clang_Qualifiers_withoutObjCLifetime(quals)
+
+"""
+    hasObjCLifetime(quals::Integer) -> Bool
+Return whether the qualifier set carries an Objective-C ARC lifetime.
+"""
+hasObjCLifetime(quals::Integer) = clang_Qualifiers_hasObjCLifetime(quals)
+
+"""
+    getObjCLifetime(quals::Integer) -> CXQualifiers_ObjCLifetime
+Return the Objective-C ARC lifetime of the qualifier set, or `CXQualifiers_OCL_None` when it
+carries none.
+"""
+getObjCLifetime(quals::Integer) = clang_Qualifiers_getObjCLifetime(quals)
+
+"""
+    setObjCLifetime(quals::Integer, lifetime::CXQualifiers_ObjCLifetime) -> UInt32
+Return the qualifier set with its ARC lifetime replaced by `lifetime`.
+`CXQualifiers_OCL_None` clears it, which is how `clang::Qualifiers::removeObjCLifetime` is
+spelled.
+"""
+function setObjCLifetime(quals::Integer, lifetime::CXQualifiers_ObjCLifetime)
+    return clang_Qualifiers_setObjCLifetime(quals, lifetime)
+end
+
+"""
+    addObjCLifetime(quals::Integer, lifetime::CXQualifiers_ObjCLifetime) -> UInt32
+Return the qualifier set with `lifetime` stored as its ARC lifetime.
+
+`clang::Qualifiers::addObjCLifetime` asserts both that `lifetime` is not
+`CXQualifiers_OCL_None` and that `quals` carries no lifetime yet, so either violation is
+undefined behaviour in the shim; both preconditions are restated here and
+[`setObjCLifetime`](@ref) is the unrestricted form.
+"""
+function addObjCLifetime(quals::Integer, lifetime::CXQualifiers_ObjCLifetime)
+    @assert lifetime != CXQualifiers_OCL_None "ARC lifetime must not be OCL_None"
+    @assert !hasObjCLifetime(quals) "qualifier set already carries an ARC lifetime"
+    return clang_Qualifiers_addObjCLifetime(quals, lifetime)
+end
+
+"""
+    hasNonTrivialObjCLifetime(quals::Integer) -> Bool
+Return whether the qualifier set's ARC lifetime is neither `CXQualifiers_OCL_None` nor
+`CXQualifiers_OCL_ExplicitNone`.
+"""
+hasNonTrivialObjCLifetime(quals::Integer) = clang_Qualifiers_hasNonTrivialObjCLifetime(quals)
+
+"""
+    hasStrongOrWeakObjCLifetime(quals::Integer) -> Bool
+Return whether the qualifier set's ARC lifetime is `CXQualifiers_OCL_Strong` or
+`CXQualifiers_OCL_Weak`.
+"""
+function hasStrongOrWeakObjCLifetime(quals::Integer)
+    return clang_Qualifiers_hasStrongOrWeakObjCLifetime(quals)
+end
+
+"""
+    compatiblyIncludesObjCLifetime(quals::Integer, other::Integer) -> Bool
+Return whether an object carrying `other`'s ARC lifetime can be used where `quals`' lifetime
+is expected, judging only the lifetimes: equal lifetimes match, `CXQualifiers_OCL_Weak` never
+mixes with a different lifetime, a `CXQualifiers_OCL_None` on either side is compatible, and
+otherwise `quals` must carry `const`. [`compatiblyIncludes`](@ref) asks the whole-set
+question.
+"""
+function compatiblyIncludesObjCLifetime(quals::Integer, other::Integer)
+    return clang_Qualifiers_compatiblyIncludesObjCLifetime(quals, other)
+end
+
+# QualType -- the same two Objective-C attributes read off the type's own qualifier set. Each
+# goes through `QualType::getQualifiers`, which reaches the type via `getCommonPtr()` and
+# asserts the QualType is non-null, so every one of them restates that precondition.
+"""
+    getObjCGCAttr(x::QualType) -> CXQualifiers_GC
+Return the Objective-C garbage-collection attribute of `x`, or `CXQualifiers_GCNone` when it
+carries none.
+
+`clang::QualType::getObjCGCAttr` reads `getQualifiers()`, which reaches the type through
+`getCommonPtr` and asserts the `QualType` is non-null, so a null receiver is undefined
+behaviour in the shim; the precondition is restated here.
+"""
+function getObjCGCAttr(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_getObjCGCAttr(x)
+end
+
+"""
+    isObjCGCWeak(x::QualType) -> Bool
+Return whether `x`'s garbage-collection attribute is `CXQualifiers_Weak`.
+
+`clang::QualType::isObjCGCWeak` reads `getQualifiers()`, which reaches the type through
+`getCommonPtr` and asserts the `QualType` is non-null, so a null receiver is undefined
+behaviour in the shim; the precondition is restated here.
+"""
+function isObjCGCWeak(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_isObjCGCWeak(x)
+end
+
+"""
+    isObjCGCStrong(x::QualType) -> Bool
+Return whether `x`'s garbage-collection attribute is `CXQualifiers_Strong`.
+
+`clang::QualType::isObjCGCStrong` reads `getQualifiers()`, which reaches the type through
+`getCommonPtr` and asserts the `QualType` is non-null, so a null receiver is undefined
+behaviour in the shim; the precondition is restated here.
+"""
+function isObjCGCStrong(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_isObjCGCStrong(x)
+end
+
+"""
+    getObjCLifetime(x::QualType) -> CXQualifiers_ObjCLifetime
+Return the Objective-C ARC lifetime of `x`, or `CXQualifiers_OCL_None` when it carries none.
+
+`clang::QualType::getObjCLifetime` reads `getQualifiers()`, which reaches the type through
+`getCommonPtr` and asserts the `QualType` is non-null, so a null receiver is undefined
+behaviour in the shim; the precondition is restated here.
+"""
+function getObjCLifetime(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_getObjCLifetime(x)
+end
+
+"""
+    hasNonTrivialObjCLifetime(x::QualType) -> Bool
+Return whether `x`'s ARC lifetime is neither `CXQualifiers_OCL_None` nor
+`CXQualifiers_OCL_ExplicitNone`.
+
+`clang::QualType::hasNonTrivialObjCLifetime` reads `getQualifiers()`, which reaches the type
+through `getCommonPtr` and asserts the `QualType` is non-null, so a null receiver is
+undefined behaviour in the shim; the precondition is restated here.
+"""
+function hasNonTrivialObjCLifetime(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_hasNonTrivialObjCLifetime(x)
+end
+
+"""
+    hasStrongOrWeakObjCLifetime(x::QualType) -> Bool
+Return whether `x`'s ARC lifetime is `CXQualifiers_OCL_Strong` or `CXQualifiers_OCL_Weak`.
+
+`clang::QualType::hasStrongOrWeakObjCLifetime` reads `getQualifiers()`, which reaches the
+type through `getCommonPtr` and asserts the `QualType` is non-null, so a null receiver is
+undefined behaviour in the shim; the precondition is restated here.
+"""
+function hasStrongOrWeakObjCLifetime(x::QualType)
+    @assert !isNull(x) "QualType must not be null"
+    return clang_QualType_hasStrongOrWeakObjCLifetime(x)
+end
+
+"""
+    getObjCARCImplicitLifetime(x::AbstractType) -> CXQualifiers_ObjCLifetime
+Return the ARC lifetime `x` is given implicitly: `CXQualifiers_OCL_ExplicitNone` for the
+types that need no retain/release, `CXQualifiers_OCL_Strong` otherwise.
+
+`Type::getObjCARCImplicitLifetime` asserts `isObjCLifetimeType()` on entry, so the wrapper
+restates that precondition (Invariant 3); [`isObjCLifetimeType`](@ref) is the gate.
+"""
+function getObjCARCImplicitLifetime(x::AbstractType)
+    @check_ptrs x
+    @assert isObjCLifetimeType(x) "getObjCARCImplicitLifetime requires an ObjC lifetime type"
+    return clang_Type_getObjCARCImplicitLifetime(x)
+end
+
+
+# TypeOfExprType
+"""
+    getUnderlyingExpr(x::AbstractTypeOfExprType) -> Expr_
+Return the operand of the `typeof`/`__typeof__` expression `x` was spelled as.
+"""
+function getUnderlyingExpr(x::AbstractTypeOfExprType)
+    @check_ptrs x
+    return Expr_(clang_TypeOfExprType_getUnderlyingExpr(x))
+end
+
+"""
+    getKind(x::AbstractTypeOfExprType) -> CXTypeOfKind
+Return whether `x` came from `typeof` (`CXTypeOfKind_Qualified`) or from the C23
+`typeof_unqual` (`CXTypeOfKind_Unqualified`), which strips the operand's qualifiers.
+"""
+function getKind(x::AbstractTypeOfExprType)
+    @check_ptrs x
+    return clang_TypeOfExprType_getKind(x)
+end
+
+"""
+    desugar(x::AbstractTypeOfExprType) -> QualType
+Return the operand expression's own type — one level of sugar removed. A dependent
+`typeof` provides no sugar and desugars to itself; [`isSugared`](@ref) is the gate.
+"""
+function desugar(x::AbstractTypeOfExprType)
+    @check_ptrs x
+    return QualType(clang_TypeOfExprType_desugar(x))
+end
+
+"""
+    isSugared(x::AbstractTypeOfExprType) -> Bool
+Return whether `x` directly provides sugar, i.e. whether it is non-dependent.
+"""
+function isSugared(x::AbstractTypeOfExprType)
+    @check_ptrs x
+    return clang_TypeOfExprType_isSugared(x)
+end
+
+# TypeOfType
+"""
+    getUnmodifiedType(x::AbstractTypeOfType) -> QualType
+Return the type written inside `typeof(...)`, before the `typeof_unqual` qualifier
+stripping is applied.
+"""
+function getUnmodifiedType(x::AbstractTypeOfType)
+    @check_ptrs x
+    return QualType(clang_TypeOfType_getUnmodifiedType(x))
+end
+
+"""
+    desugar(x::AbstractTypeOfType) -> QualType
+Return the written type — one level of sugar removed. For a `typeof_unqual` node the
+qualifiers are dropped, so this can differ from [`getUnmodifiedType`](@ref).
+"""
+function desugar(x::AbstractTypeOfType)
+    @check_ptrs x
+    return QualType(clang_TypeOfType_desugar(x))
+end
+
+"""
+    isSugared(x::AbstractTypeOfType) -> Bool
+Return whether `x` directly provides sugar. A `typeof(type)` node always does.
+"""
+function isSugared(x::AbstractTypeOfType)
+    @check_ptrs x
+    return clang_TypeOfType_isSugared(x)
+end
+
+"""
+    getKind(x::AbstractTypeOfType) -> CXTypeOfKind
+Return whether `x` came from `typeof` (`CXTypeOfKind_Qualified`) or from the C23
+`typeof_unqual` (`CXTypeOfKind_Unqualified`).
+"""
+function getKind(x::AbstractTypeOfType)
+    @check_ptrs x
+    return clang_TypeOfType_getKind(x)
+end
+
+# BitIntType
+"""
+    isUnsigned(x::AbstractBitIntType) -> Bool
+Return whether `x` is an `unsigned _BitInt(N)`.
+"""
+function isUnsigned(x::AbstractBitIntType)
+    @check_ptrs x
+    return clang_BitIntType_isUnsigned(x)
+end
+
+"""
+    isSigned(x::AbstractBitIntType) -> Bool
+Return whether `x` is a signed `_BitInt(N)`.
+"""
+function isSigned(x::AbstractBitIntType)
+    @check_ptrs x
+    return clang_BitIntType_isSigned(x)
+end
+
+"""
+    getNumBits(x::AbstractBitIntType) -> UInt32
+Return `N`, the declared bit width of the `_BitInt(N)` type `x`.
+"""
+function getNumBits(x::AbstractBitIntType)
+    @check_ptrs x
+    return clang_BitIntType_getNumBits(x)
+end
+
+"""
+    isSugared(x::AbstractBitIntType) -> Bool
+Return whether `x` directly provides sugar. A `_BitInt(N)` is a leaf type, so this is
+always `false`.
+"""
+function isSugared(x::AbstractBitIntType)
+    @check_ptrs x
+    return clang_BitIntType_isSugared(x)
+end
+
+"""
+    desugar(x::AbstractBitIntType) -> QualType
+Return `x` itself as an unqualified `QualType`: a `_BitInt(N)` has no sugar to remove.
+"""
+function desugar(x::AbstractBitIntType)
+    @check_ptrs x
+    return QualType(clang_BitIntType_desugar(x))
+end
+
+"""
+    getCanonicalTypeUnqualified(x::AbstractType) -> QualType
+Return `x`'s canonical type with its top-level qualifiers stripped. This differs from
+[`getCanonicalTypeInternal`](@ref) whenever the canonical form itself carries qualifiers,
+as it does for a typedef of `const int`.
+
+Clang types this `CanQualType`; the C surface cannot carry the "is canonical" guarantee, so
+it arrives as a plain `QualType`.
+"""
+function getCanonicalTypeUnqualified(x::AbstractType)
+    @check_ptrs x
+    return QualType(clang_Type_getCanonicalTypeUnqualified(x))
+end
+
+"""
+    split(x::QualType) -> Tuple{Type_,UInt32}
+Return `x` split into its type half and the opaque `clang::Qualifiers` encoding of the
+qualifiers written at *this* level only. Contrast [`getSplitUnqualifiedType`](@ref), which
+first strips every qualifier reachable through sugar.
+
+`clang::QualType::split` reaches the type through `getTypePtrUnsafe`/`getExtQualsUnsafe`,
+neither of which asserts, so it is total: a null `QualType` yields a NULL `Type_` carrier
+and an empty qualifier set.
+"""
+function split(x::QualType)
+    ty, quals = Ref{CXType_}(C_NULL), Ref{Cuint}(0)
+    clang_QualType_split(x, ty, quals)
+    return (Type_(ty[]), quals[])
+end
+
+"""
+    addConsistentQualifiers(quals::Integer, other::Integer) -> UInt32
+Return `quals` widened with every qualifier in `other`, given that the two sets do not
+conflict. Unlike [`addQualifiers`](@ref) this is a plain mask union, valid only because the
+non-fast fields are known to agree.
+
+`clang::Qualifiers::addConsistentQualifiers` asserts, for each of address space, ObjC GC
+attribute and ObjC lifetime, that the two values are equal or that at least one set leaves
+the field unset; the three preconditions are restated here (Invariant 3).
+"""
+function addConsistentQualifiers(quals::Integer, other::Integer)
+    @assert getAddressSpace(quals) == getAddressSpace(other) || !hasAddressSpace(quals) ||
+            !hasAddressSpace(other) "address spaces conflict"
+    @assert getObjCGCAttr(quals) == getObjCGCAttr(other) || !hasObjCGCAttr(quals) ||
+            !hasObjCGCAttr(other) "ObjC GC attributes conflict"
+    @assert getObjCLifetime(quals) == getObjCLifetime(other) || !hasObjCLifetime(quals) ||
+            !hasObjCLifetime(other) "ObjC lifetimes conflict"
+    return clang_Qualifiers_addConsistentQualifiers(quals, other)
+end
+
+
+# BlockPointerType
+"""
+    getPointeeType(x::AbstractBlockPointerType) -> QualType
+Return the type the block pointer points to. It is always a function type:
+`ASTContext::getBlockPointerType` asserts that when the node is built.
+"""
+function getPointeeType(x::AbstractBlockPointerType)
+    @check_ptrs x
+    return QualType(clang_BlockPointerType_getPointeeType(x))
+end
+
+function isSugared(x::AbstractBlockPointerType)
+    @check_ptrs x
+    return clang_BlockPointerType_isSugared(x)
+end
+
+function desugar(x::AbstractBlockPointerType)
+    @check_ptrs x
+    return QualType(clang_BlockPointerType_desugar(x))
+end
+
+# DependentVectorType
+function getElementType(x::AbstractDependentVectorType)
+    @check_ptrs x
+    return QualType(clang_DependentVectorType_getElementType(x))
+end
+
+"""
+    getSizeExpr(x::AbstractDependentVectorType) -> Expr_
+Return the dependent expression giving the vector's element count.
+"""
+function getSizeExpr(x::AbstractDependentVectorType)
+    @check_ptrs x
+    return Expr_(clang_DependentVectorType_getSizeExpr(x))
+end
+
+"""
+    getAttributeLoc(x::AbstractDependentVectorType) -> SourceLocation
+Return the location of the `vector_size` attribute that built `x`.
+"""
+function getAttributeLoc(x::AbstractDependentVectorType)
+    @check_ptrs x
+    return SourceLocation(clang_DependentVectorType_getAttributeLoc(x))
+end
+
+function getVectorKind(x::AbstractDependentVectorType)
+    @check_ptrs x
+    return clang_DependentVectorType_getVectorKind(x)
+end
+
+function isSugared(x::AbstractDependentVectorType)
+    @check_ptrs x
+    return clang_DependentVectorType_isSugared(x)
+end
+
+function desugar(x::AbstractDependentVectorType)
+    @check_ptrs x
+    return QualType(clang_DependentVectorType_desugar(x))
+end
+
+# MatrixType
+"""
+    getElementType(x::AbstractMatrixType) -> QualType
+Return the type of the elements stored in the matrix. Declared on `clang::MatrixType`, so it
+serves both `ConstantMatrixType` and `DependentSizedMatrixType`.
+"""
+function getElementType(x::AbstractMatrixType)
+    @check_ptrs x
+    return QualType(clang_MatrixType_getElementType(x))
+end
+
+function isSugared(x::AbstractMatrixType)
+    @check_ptrs x
+    return clang_MatrixType_isSugared(x)
+end
+
+function desugar(x::AbstractMatrixType)
+    @check_ptrs x
+    return QualType(clang_MatrixType_desugar(x))
+end
+
+# ConstantMatrixType
+"""
+    getNumRows(x::AbstractConstantMatrixType) -> UInt32
+Return the number of rows in the matrix type.
+"""
+function getNumRows(x::AbstractConstantMatrixType)
+    @check_ptrs x
+    return clang_ConstantMatrixType_getNumRows(x)
+end
+
+"""
+    getNumColumns(x::AbstractConstantMatrixType) -> UInt32
+Return the number of columns in the matrix type.
+"""
+function getNumColumns(x::AbstractConstantMatrixType)
+    @check_ptrs x
+    return clang_ConstantMatrixType_getNumColumns(x)
+end
+
+"""
+    getNumElementsFlattened(x::AbstractConstantMatrixType) -> UInt32
+Return the number of elements needed to embed the matrix into a vector, i.e. rows times
+columns.
+"""
+function getNumElementsFlattened(x::AbstractConstantMatrixType)
+    @check_ptrs x
+    return clang_ConstantMatrixType_getNumElementsFlattened(x)
+end
+
+# DependentSizedMatrixType
+"""
+    getRowExpr(x::AbstractDependentSizedMatrixType) -> Expr_
+Return the dependent expression giving the matrix's row count.
+"""
+function getRowExpr(x::AbstractDependentSizedMatrixType)
+    @check_ptrs x
+    return Expr_(clang_DependentSizedMatrixType_getRowExpr(x))
+end
+
+"""
+    getColumnExpr(x::AbstractDependentSizedMatrixType) -> Expr_
+Return the dependent expression giving the matrix's column count.
+"""
+function getColumnExpr(x::AbstractDependentSizedMatrixType)
+    @check_ptrs x
+    return Expr_(clang_DependentSizedMatrixType_getColumnExpr(x))
+end
+
+"""
+    getAttributeLoc(x::AbstractDependentSizedMatrixType) -> SourceLocation
+Return the location of the `matrix_type` attribute that built `x`.
+"""
+function getAttributeLoc(x::AbstractDependentSizedMatrixType)
+    @check_ptrs x
+    return SourceLocation(clang_DependentSizedMatrixType_getAttributeLoc(x))
+end
+
+# DependentBitIntType
+"""
+    isUnsigned(x::AbstractDependentBitIntType) -> Bool
+Return whether the dependent `_BitInt` type is unsigned. `clang::DependentBitIntType` also
+declares the complementary `isSigned`, which is its negation.
+"""
+function isUnsigned(x::AbstractDependentBitIntType)
+    @check_ptrs x
+    return clang_DependentBitIntType_isUnsigned(x)
+end
+
+"""
+    getNumBitsExpr(x::AbstractDependentBitIntType) -> Expr_
+Return the dependent expression giving the `_BitInt` type's width.
+"""
+function getNumBitsExpr(x::AbstractDependentBitIntType)
+    @check_ptrs x
+    return Expr_(clang_DependentBitIntType_getNumBitsExpr(x))
+end
+
+
+# QualType
+
+"""
+    isNonWeakInMRRWithObjCWeak(x::QualType, ctx::ASTContext) -> Bool
+Return whether `x` is an Objective-C `__weak` type while weak references are enabled and
+ARC is not -- manual retain/release. A C++ translation unit always reads false.
+
+Reaches the qualifier set through `getTypePtr`, so the `QualType` must not be null.
+"""
+function isNonWeakInMRRWithObjCWeak(x::QualType, ctx::ASTContext)
+    @assert !isNull(x) "QualType must not be null"
+    @check_ptrs ctx
+    return clang_QualType_isNonWeakInMRRWithObjCWeak(x, ctx)
+end
+
+"""
+    isNonConstantStorage(x::QualType, ctx::ASTContext, exclude_ctor::Bool,
+                         exclude_dtor::Bool) -> Union{CXNonConstantStorageReason,Nothing}
+Return why instances of `x` cannot be placed in immutable storage, or `nothing` when they
+can. This is the reason-carrying form of [`isConstantStorage`](@ref), whose `Bool` is the
+negation of whether a reason exists. `exclude_ctor` and `exclude_dtor` drop the construction
+and destruction windows from consideration; the caller is then responsible for proving the
+object is not written to during them.
+"""
+function isNonConstantStorage(x::QualType, ctx::ASTContext, exclude_ctor::Bool,
+                              exclude_dtor::Bool)
+    @check_ptrs ctx
+    reason = Ref{CXNonConstantStorageReason}(CXNonConstantStorageReason_MutableField)
+    found = clang_QualType_isNonConstantStorage(x, ctx, exclude_ctor, exclude_dtor, reason)
+    return found ? reason[] : nothing
+end
+
+"""
+    stripObjCKindOfType(x::QualType, ctx::ASTContext) -> QualType
+Return `x` with any Objective-C `__kindof` sugar stripped off. A type carrying none comes
+back unchanged, which is always the case in a C++ translation unit.
+
+Reaches the type through `getTypePtr`, so the `QualType` must not be null.
+"""
+function stripObjCKindOfType(x::QualType, ctx::ASTContext)
+    @assert !isNull(x) "QualType must not be null"
+    @check_ptrs ctx
+    return QualType(clang_QualType_stripObjCKindOfType(x, ctx))
+end
+
+# Type
+
+"""
+    isObjCQualifiedInterfaceType(x::AbstractType) -> Bool
+Return whether `x` is an Objective-C interface type carrying protocol qualifiers, as in
+`NSString<NSCopying>`. A C++ translation unit builds no such type, so it reads false there.
+"""
+function isObjCQualifiedInterfaceType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCQualifiedInterfaceType(x)
+end
+
+"""
+    isObjCQualifiedClassType(x::AbstractType) -> Bool
+Return whether `x` is an Objective-C `Class` type carrying protocol qualifiers, as in
+`Class<NSCopying>`. A C++ translation unit builds no such type, so it reads false there.
+"""
+function isObjCQualifiedClassType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCQualifiedClassType(x)
+end
+
+"""
+    isObjCClassOrClassKindOfType(x::AbstractType) -> Bool
+Return whether `x` is Objective-C `Class` or a `__kindof` type of a `Class` type, such as
+`__kindof Class <NSCopying>`. Unlike the `id` counterpart there is no relevant bound, since
+Objective-C's type system cannot express "a class object for a subclass of NSFoo".
+"""
+function isObjCClassOrClassKindOfType(x::AbstractType)
+    @check_ptrs x
+    return clang_Type_isObjCClassOrClassKindOfType(x)
+end
+
+"""
+    isBlockCompatibleObjCPointerType(x::AbstractType, ctx::ASTContext) -> Bool
+Return whether `x` is an Objective-C object pointer type a block pointer is compatible with.
+Any type that is not an Objective-C object pointer answers false, so a C++ translation unit
+always reads false.
+"""
+function isBlockCompatibleObjCPointerType(x::AbstractType, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_Type_isBlockCompatibleObjCPointerType(x, ctx)
+end
+
+"""
+    getLinkageAndVisibility(x::AbstractType) -> Tuple{CXLinkage,CXVisibility,Bool}
+Return the linkage computed for `x`, its computed visibility, and whether that visibility
+was explicitly specified in the source. The three components are the fields of the
+`clang::LinkageInfo` this type computes, and clang defines [`getVisibility`](@ref) and
+[`isVisibilityExplicit`](@ref) in terms of them.
+"""
+function getLinkageAndVisibility(x::AbstractType)
+    @check_ptrs x
+    linkage = Ref{CXLinkage}()
+    visibility = Ref{CXVisibility}()
+    is_explicit = Ref{Bool}()
+    clang_Type_getLinkageAndVisibility(x, linkage, visibility, is_explicit)
+    return (linkage[], visibility[], is_explicit[])
+end
+
+# ExtVectorType
+
+"""
+    isAccessorWithinNumElements(x::AbstractExtVectorType, c::AbstractChar, is_numeric::Bool) -> Bool
+Return whether `c` names a component this vector actually has -- the index
+[`getAccessorIdx`](@ref) decodes for `c` must be below [`getNumElements`](@ref).
+`is_numeric` selects the numeric spelling (`v.s0`) over the point spelling (`v.x`), and a
+character naming no component at all answers false.
+"""
+function isAccessorWithinNumElements(x::AbstractExtVectorType, c::AbstractChar,
+                                     is_numeric::Bool)
+    @check_ptrs x
+    return clang_ExtVectorType_isAccessorWithinNumElements(x, Cchar(c), is_numeric)
+end
+
+# DependentBitIntType
+
+"""
+    isSigned(x::AbstractDependentBitIntType) -> Bool
+Return whether the dependent `_BitInt` is signed -- the negation of [`isUnsigned`](@ref).
+"""
+function isSigned(x::AbstractDependentBitIntType)
+    @check_ptrs x
+    return clang_DependentBitIntType_isSigned(x)
+end
+
+"""
+    isSugared(x::AbstractDependentBitIntType) -> Bool
+Return whether the type is sugar for another type. A dependent `_BitInt` is a leaf node, so
+this is always false.
+"""
+function isSugared(x::AbstractDependentBitIntType)
+    @check_ptrs x
+    return clang_DependentBitIntType_isSugared(x)
+end
+
+"""
+    desugar(x::AbstractDependentBitIntType) -> QualType
+Return the type `x` is sugar for. A dependent `_BitInt` is a leaf node, so this hands back
+the node itself.
+"""
+function desugar(x::AbstractDependentBitIntType)
+    @check_ptrs x
+    return QualType(clang_DependentBitIntType_desugar(x))
+end
+
+
+"""
+    getSingleStepDesugaredType(ty::AbstractType, quals::Integer) -> Tuple{Type_,UInt32}
+Peel one level of sugar off the split pair `(ty, quals)` -- the `(Type_, Qualifiers)` shape
+[`split`](@ref) and [`getSplitDesugaredType`](@ref) hand back -- and return the next level as
+the same pair, with `quals` folded into the qualifiers written at that level. Unlike the
+`QualType` form of `getSingleStepDesugaredType` this needs no `ASTContext`, because the
+qualifiers travel alongside the type instead of being re-attached to it.
+
+`clang::SplitQualType::getSingleStepDesugaredType` dereferences the type half, so the NULL
+check here is a precondition rather than a convenience. It then folds `quals` in with
+`Qualifiers::addConsistentQualifiers`, which asserts that the two sets do not disagree on the
+address space or on either Objective-C field; that half cannot be checked before the call,
+since the desugared level's qualifiers are only known afterwards, so feed this a pair that came
+out of `split` / `getSplitDesugaredType` on one type rather than a hand-built one.
+"""
+function getSingleStepDesugaredType(ty::AbstractType, quals::Integer)
+    @check_ptrs ty
+    out_ty, out_quals = Ref{CXType_}(C_NULL), Ref{Cuint}(0)
+    clang_SplitQualType_getSingleStepDesugaredType(ty, quals, out_ty, out_quals)
+    return (Type_(out_ty[]), out_quals[])
+end
+
+"""
+    getAsObjCInterfaceType(x::AbstractType) -> ObjCObjectType
+Return the Objective-C object type `x` structurally is -- ignoring typedefs and qualifiers --
+provided that object type names an interface. Any other type yields a NULL carrier, which in a
+C++ translation unit means every type.
+"""
+function getAsObjCInterfaceType(x::AbstractType)
+    @check_ptrs x
+    return ObjCObjectType(clang_Type_getAsObjCInterfaceType(x))
+end
+
+"""
+    getAsObjCInterfacePointerType(x::AbstractType) -> ObjCObjectPointerType
+Return the Objective-C object pointer type `x` structurally is, provided its pointee names an
+interface -- the pointer counterpart of [`getAsObjCInterfaceType`](@ref). Any other type yields
+a NULL carrier.
+"""
+function getAsObjCInterfacePointerType(x::AbstractType)
+    @check_ptrs x
+    return ObjCObjectPointerType(clang_Type_getAsObjCInterfacePointerType(x))
+end
+
+"""
+    getAsObjCQualifiedIdType(x::AbstractType) -> ObjCObjectPointerType
+Return the Objective-C object pointer type `x` structurally is, provided it is an `id` carrying
+at least one protocol qualifier (`id<NSCopying>`). Any other type yields a NULL carrier.
+"""
+function getAsObjCQualifiedIdType(x::AbstractType)
+    @check_ptrs x
+    return ObjCObjectPointerType(clang_Type_getAsObjCQualifiedIdType(x))
+end
+
+"""
+    getAsObjCQualifiedClassType(x::AbstractType) -> ObjCObjectPointerType
+Return the Objective-C object pointer type `x` structurally is, provided it is a `Class`
+carrying at least one protocol qualifier (`Class<NSCopying>`). Any other type yields a NULL
+carrier.
+"""
+function getAsObjCQualifiedClassType(x::AbstractType)
+    @check_ptrs x
+    return ObjCObjectPointerType(clang_Type_getAsObjCQualifiedClassType(x))
+end
+
+"""
+    getAsObjCQualifiedInterfaceType(x::AbstractType) -> ObjCObjectType
+Return the Objective-C object type `x` structurally is, provided it names an interface and
+carries at least one protocol qualifier (`NSString<NSCopying>`). Any other type yields a NULL
+carrier.
+"""
+function getAsObjCQualifiedInterfaceType(x::AbstractType)
+    @check_ptrs x
+    return ObjCObjectType(clang_Type_getAsObjCQualifiedInterfaceType(x))
+end
+
+
+# The ExtVectorType sugar pair. An extended vector is a canonical leaf, so both answers are
+# fixed by construction.
+"""
+    isSugared(x::AbstractExtVectorType) -> Bool
+Return whether `x` stands for some other type. An `ExtVectorType` is a canonical leaf, so
+this is always `false`.
+"""
+function isSugared(x::AbstractExtVectorType)
+    @check_ptrs x
+    return clang_ExtVectorType_isSugared(x)
+end
+
+"""
+    desugar(x::AbstractExtVectorType) -> QualType
+Return the type `x` stands for. An `ExtVectorType` is a canonical leaf, so this is `x`
+itself.
+"""
+function desugar(x::AbstractExtVectorType)
+    @check_ptrs x
+    return QualType(clang_ExtVectorType_desugar(x))
+end
+
+# PipeType — the OpenCL pipe. `getReadPipeType`/`getWritePipeType` on an `ASTContext` build
+# one without an OpenCL translation unit.
+"""
+    getElementType(x::AbstractPipeType) -> QualType
+Return the type of the packets the pipe `x` carries.
+"""
+function getElementType(x::AbstractPipeType)
+    @check_ptrs x
+    return QualType(clang_PipeType_getElementType(x))
+end
+
+"""
+    isSugared(x::AbstractPipeType) -> Bool
+Return whether `x` stands for some other type. A `PipeType` is a canonical leaf, so this is
+always `false`.
+"""
+function isSugared(x::AbstractPipeType)
+    @check_ptrs x
+    return clang_PipeType_isSugared(x)
+end
+
+"""
+    desugar(x::AbstractPipeType) -> QualType
+Return the type `x` stands for. A `PipeType` is a canonical leaf, so this is `x` itself.
+"""
+function desugar(x::AbstractPipeType)
+    @check_ptrs x
+    return QualType(clang_PipeType_desugar(x))
+end
+
+"""
+    isReadOnly(x::AbstractPipeType) -> Bool
+Return whether `x` is a `read_only` pipe; a `write_only` pipe answers `false`. The flag is
+part of the node's folding profile, so the two pipes over one element type are distinct
+types.
+"""
+function isReadOnly(x::AbstractPipeType)
+    @check_ptrs x
+    return clang_PipeType_isReadOnly(x)
+end
+
+"""
+    isObjCIdOrObjectKindOfType(x::AbstractType, ctx::ASTContext) -> Tuple{Bool,ObjCObjectType}
+Return whether `x` is Objective-C `id` or a `__kindof` object type (`__kindof NSView *`,
+`__kindof id <NSCopying>`), together with the bound clang reports for it. The bound is the
+(possibly specialized) Objective-C class type a non-`id` subtype is bounded by; it is a NULL
+carrier for a plain `id` and for every type that does not match at all.
+"""
+function isObjCIdOrObjectKindOfType(x::AbstractType, ctx::ASTContext)
+    @check_ptrs x ctx
+    bound = Ref{CXObjCObjectType}(C_NULL)
+    matched = clang_Type_isObjCIdOrObjectKindOfType(x, ctx, bound)
+    return matched, ObjCObjectType(bound[])
+end

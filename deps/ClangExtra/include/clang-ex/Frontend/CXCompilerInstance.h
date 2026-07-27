@@ -133,6 +133,8 @@ CXFileSystemOptions clang_CompilerInstance_getFileSystemOpts(CXCompilerInstance 
 CXPreprocessorOutputOptions
 clang_CompilerInstance_getPreprocessorOutputOpts(CXCompilerInstance CI);
 
+CXAPINotesOptions clang_CompilerInstance_getAPINotesOpts(CXCompilerInstance CI);
+
 // Module loading
 // PRECONDITION: requires an invocation (reads FrontendOpts through it).
 bool clang_CompilerInstance_shouldBuildGlobalModuleIndex(CXCompilerInstance CI);
@@ -169,7 +171,34 @@ void clang_CompilerInstance_LoadRequestedPlugins(CXCompilerInstance CI);
 // Frontend timer
 bool clang_CompilerInstance_hasFrontendTimer(CXCompilerInstance CI);
 
+// getFrontendTimer is not exposed as a handle: llvm::Timer is an LLVM type with
+// no llvm-c representation (MARSHALLING.md section 0), so the timer's state is
+// published through these two composite accessors instead of a parallel CX type.
+// PRECONDITION for both: clang_CompilerInstance_hasFrontendTimer — the C++
+// accessor asserts on it.
+// helper. Caller frees the string with clang_disposeString.
+CXString clang_CompilerInstance_getFrontendTimerName(CXCompilerInstance CI);
+
+// helper.
+bool clang_CompilerInstance_isFrontendTimerRunning(CXCompilerInstance CI);
+
 void clang_CompilerInstance_createFrontendTimer(CXCompilerInstance CI);
+
+// Ownership transfer
+// Each of these drops the instance's ownership of a component without destroying
+// it: the object goes to llvm::BuryPointer and lives until the process exits.
+// They are the escape hatch for a component some other owner has already adopted.
+void clang_CompilerInstance_resetAndLeakFileManager(CXCompilerInstance CI);
+
+void clang_CompilerInstance_resetAndLeakSourceManager(CXCompilerInstance CI);
+
+// Buries a *copy* of the owning shared_ptr, so unlike its siblings this leaves the
+// instance's own pointer in place: hasPreprocessor still holds afterwards.
+void clang_CompilerInstance_resetAndLeakPreprocessor(CXCompilerInstance CI);
+
+void clang_CompilerInstance_resetAndLeakASTContext(CXCompilerInstance CI);
+
+void clang_CompilerInstance_resetAndLeakSema(CXCompilerInstance CI);
 
 LLVM_CLANG_C_EXTERN_C_END
 

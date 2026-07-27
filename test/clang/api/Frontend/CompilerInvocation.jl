@@ -232,3 +232,74 @@ end
     @test CC.clearOutputFiles(ci, false) === nothing
     CC.dispose(ci)
 end
+
+@testset "cc1 command lines, the resources path and the copy-on-write invocation" begin
+    # A default-constructed invocation already owns every option object, so the option
+    # views are safe on it — but it has selected no language standard, and generating a
+    # cc1 line reaches getLangStandardForKind, which report_fatal_errors on that.
+    inv = CC.CompilerInvocation()
+    @test CC.getAPINotesOpts(inv) isa CC.APINotesOptions
+    @test CC.getAPINotesOpts(inv).ptr != C_NULL
+    @test CC.hasLangStandard(CC.getLangOpts(inv)) == false
+    @test_throws AssertionError CC.getCC1CommandLine(inv)
+
+    # Filling one from an argument list does select a standard, and the line it then
+    # generates parses back and survives the round-trip check. Both results are
+    # host-decided (the default triple differs per runner), so only shape is asserted.
+    args = ["-x", "c++", "-std=c++17", "cc1_probe.cpp"]
+    diag = CC.DiagnosticsEngine()
+    inv2 = CC.CompilerInvocation()
+    @test CC.CreateFromArgs(inv2, args, diag) isa Bool
+    @test CC.hasLangStandard(CC.getLangOpts(inv2))
+    line = CC.getCC1CommandLine(inv2)
+    @test line isa Vector{String}
+    @test !isempty(line)
+    @test CC.checkCC1RoundTrip(args, diag) isa Bool
+
+    # Pure path arithmetic over the located executable — nothing on disk is touched,
+    # and the path itself is the runner's julia binary, so only the type is asserted.
+    @test CC.GetResourcesPath("clang", C_NULL) isa String
+
+    # The instance forwards to the invocation it already owns.
+    ci = CC.CompilerInstance()
+    @test CC.hasInvocation(ci)
+    @test CC.getAPINotesOpts(ci) isa CC.APINotesOptions
+    dispose(ci)
+
+    # CowCompilerInvocation: create, every mutable option view, dispose.
+    cow = CC.CowCompilerInvocation()
+    @test cow.ptr != C_NULL
+    @test CC.getMutLangOpts(cow) isa CC.LangOptions
+    @test CC.getMutTargetOpts(cow) isa CC.TargetOptions
+    @test CC.getMutDiagnosticOpts(cow) isa CC.DiagnosticOptions
+    @test CC.getMutHeaderSearchOpts(cow) isa CC.HeaderSearchOptions
+    @test CC.getMutPreprocessorOpts(cow) isa CC.PreprocessorOptions
+    @test CC.getMutAnalyzerOpts(cow) isa CC.AnalyzerOptions
+    @test CC.getMutMigratorOpts(cow) isa CC.MigratorOptions
+    @test CC.getMutAPINotesOpts(cow) isa CC.APINotesOptions
+    @test CC.getMutCodeGenOpts(cow) isa CC.CodeGenOptions
+    @test CC.getMutFileSystemOpts(cow) isa CC.FileSystemOptions
+    @test CC.getMutFrontendOpts(cow) isa CC.FrontendOptions
+    @test CC.getMutDependencyOutputOpts(cow) isa CC.DependencyOutputOptions
+    @test CC.getMutPreprocessorOutputOpts(cow) isa CC.PreprocessorOutputOptions
+    @test CC.getMutLangOpts(cow).ptr != C_NULL
+    @test CC.getMutFrontendOpts(cow).ptr != C_NULL
+    # a fresh Cow invocation has selected no standard either, so the same gate applies
+    @test CC.hasLangStandard(CC.getLangOpts(cow)) == false
+    @test_throws AssertionError CC.getCC1CommandLine(cow)
+    dispose(cow)
+
+    # The deep copy regenerates exactly the source invocation's cc1 line (a round-trip
+    # of a triple this testset set itself), and the source is not adopted, so both
+    # invocations still need their own dispose. inv2 is the source here because it is the
+    # one that has a language standard.
+    CC.setTriple(CC.getTargetOpts(inv2), "x86_64-unknown-linux-gnu")
+    cow2 = CC.CowCompilerInvocation(inv2)
+    @test CC.hasLangStandard(CC.getLangOpts(cow2))
+    @test CC.getCC1CommandLine(cow2) == CC.getCC1CommandLine(inv2)
+    dispose(cow2)
+
+    dispose(inv2)
+    dispose(inv)
+    dispose(diag)
+end

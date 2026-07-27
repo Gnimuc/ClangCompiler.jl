@@ -646,6 +646,525 @@ unsigned clang_VarTemplateDecl_getNumSpecializations(CXVarTemplateDecl VTD);
 void clang_VarTemplateDecl_getSpecializations(CXVarTemplateDecl VTD,
                                               CXVarTemplateSpecializationDecl *S);
 
+// TemplateDecl
+// Re-seats the parameter list; the list is borrowed (stored as-is, never copied).
+void clang_TemplateDecl_setTemplateParameters(CXTemplateDecl TD,
+                                              CXTemplateParameterList TPL);
+
+// FunctionTemplateSpecializationInfo
+// Precondition: TSK is not CXTemplateSpecializationKind_TSK_Undeclared — the info
+// object encodes TSK - 1 in a two-bit field and asserts on the undeclared value.
+void clang_FunctionTemplateSpecializationInfo_setTemplateSpecializationKind(
+    CXFunctionTemplateSpecializationInfo FTSI, CXTemplateSpecializationKind TSK);
+
+void clang_FunctionTemplateSpecializationInfo_setPointOfInstantiation(
+    CXFunctionTemplateSpecializationInfo FTSI, CXSourceLocation_ POI);
+
+// MemberSpecializationInfo
+// Precondition: TSK is not CXTemplateSpecializationKind_TSK_Undeclared — the info
+// object encodes TSK - 1 in a two-bit field and asserts on the undeclared value.
+void clang_MemberSpecializationInfo_setTemplateSpecializationKind(
+    CXMemberSpecializationInfo MSI, CXTemplateSpecializationKind TSK);
+
+void clang_MemberSpecializationInfo_setPointOfInstantiation(CXMemberSpecializationInfo MSI,
+                                                            CXSourceLocation_ POI);
+
+// TemplateTypeParmDecl
+// Precondition: !hasDefaultArgument() — DefaultArgStorage::set asserts the slot is
+// still unset, so replacing an existing default needs removeDefaultArgument first.
+void clang_TemplateTypeParmDecl_setDefaultArgument(CXTemplateTypeParmDecl D,
+                                                   CXTypeSourceInfo DefArg);
+
+void clang_TemplateTypeParmDecl_removeDefaultArgument(CXTemplateTypeParmDecl D);
+
+// NonTypeTemplateParmDecl
+// Precondition: !hasDefaultArgument() — DefaultArgStorage::set asserts the slot is
+// still unset, so replacing an existing default needs removeDefaultArgument first.
+void clang_NonTypeTemplateParmDecl_setDefaultArgument(CXNonTypeTemplateParmDecl D,
+                                                      CXExpr DefArg);
+
+void clang_NonTypeTemplateParmDecl_removeDefaultArgument(CXNonTypeTemplateParmDecl D);
+
+// TemplateTemplateParmDecl
+// Copies DefArg into Context-owned storage, so the caller's handle stays its own.
+// Precondition: !hasDefaultArgument() — same DefaultArgStorage assert as above.
+void clang_TemplateTemplateParmDecl_setDefaultArgument(CXTemplateTemplateParmDecl D,
+                                                       CXASTContext Context,
+                                                       CXTemplateArgumentLoc DefArg);
+
+void clang_TemplateTemplateParmDecl_removeDefaultArgument(CXTemplateTemplateParmDecl D);
+
+// ClassTemplateSpecializationDecl
+// Overwrites the specialized-template slot with a plain ClassTemplateDecl, dropping
+// any stored partial-specialization + deduced-argument pair. Precondition:
+// !specializedOnPartial().
+void clang_ClassTemplateSpecializationDecl_setSpecializedTemplate(
+    CXClassTemplateSpecializationDecl D, CXClassTemplateDecl CTD);
+
+void clang_ClassTemplateSpecializationDecl_setSpecializationKind(
+    CXClassTemplateSpecializationDecl D, CXTemplateSpecializationKind TSK);
+
+// Precondition: Loc is valid — Clang asserts on an invalid point of instantiation.
+void clang_ClassTemplateSpecializationDecl_setPointOfInstantiation(
+    CXClassTemplateSpecializationDecl D, CXSourceLocation_ Loc);
+
+// Allocates the explicit-specialization info block in the ASTContext on first use;
+// any location, including an invalid one, is accepted.
+void clang_ClassTemplateSpecializationDecl_setExternLoc(CXClassTemplateSpecializationDecl D,
+                                                        CXSourceLocation_ Loc);
+
+// Allocates the explicit-specialization info block in the ASTContext on first use;
+// any location, including an invalid one, is accepted.
+void clang_ClassTemplateSpecializationDecl_setTemplateKeywordLoc(
+    CXClassTemplateSpecializationDecl D, CXSourceLocation_ Loc);
+
+// VarTemplateSpecializationDecl
+void clang_VarTemplateSpecializationDecl_setSpecializationKind(
+    CXVarTemplateSpecializationDecl D, CXTemplateSpecializationKind TSK);
+
+// Precondition: Loc is valid — Clang asserts on an invalid point of instantiation.
+void clang_VarTemplateSpecializationDecl_setPointOfInstantiation(
+    CXVarTemplateSpecializationDecl D, CXSourceLocation_ Loc);
+
+// Allocates the explicit-specialization info block in the ASTContext on first use;
+// any location, including an invalid one, is accepted.
+void clang_VarTemplateSpecializationDecl_setExternLoc(CXVarTemplateSpecializationDecl D,
+                                                      CXSourceLocation_ Loc);
+
+// Allocates the explicit-specialization info block in the ASTContext on first use;
+// any location, including an invalid one, is accepted.
+void clang_VarTemplateSpecializationDecl_setTemplateKeywordLoc(
+    CXVarTemplateSpecializationDecl D, CXSourceLocation_ Loc);
+
+// TemplateParameterList
+// Runs Clang's static printer predicate with Context's default printing policy.
+// Total: a NULL list or an Idx past the end of the list both answer true, which is
+// Clang's own guard, not UB.
+bool clang_TemplateParameterList_shouldIncludeTypeForArgument(CXTemplateParameterList TPL,
+                                                              CXASTContext Context,
+                                                              unsigned Idx);
+
+// TemplateDecl
+CXSourceRange_ clang_TemplateDecl_getSourceRange(CXTemplateDecl TD);
+
+// RedeclarableTemplateDecl
+// Precondition: getInstantiatedFromMemberTemplate() is null — Clang asserts the slot
+// is still unset, so the link can be established only once.
+void clang_RedeclarableTemplateDecl_setInstantiatedFromMemberTemplate(
+    CXRedeclarableTemplateDecl RTD, CXRedeclarableTemplateDecl TD);
+
+// TemplateTypeParmDecl
+// Count for the getAssociatedConstraints fill below: 1 when the parameter carries a
+// type-constraint, 0 otherwise.
+unsigned clang_TemplateTypeParmDecl_getNumAssociatedConstraints(CXTemplateTypeParmDecl D);
+
+// Fills exactly getNumAssociatedConstraints entries into AC; no slot is null.
+void clang_TemplateTypeParmDecl_getAssociatedConstraints(CXTemplateTypeParmDecl D,
+                                                         CXExpr *AC);
+
+CXSourceRange_ clang_TemplateTypeParmDecl_getSourceRange(CXTemplateTypeParmDecl D);
+
+// NonTypeTemplateParmDecl
+// Count for the getAssociatedConstraints fill below: 1 when the parameter's type is a
+// constrained placeholder, 0 otherwise.
+unsigned
+clang_NonTypeTemplateParmDecl_getNumAssociatedConstraints(CXNonTypeTemplateParmDecl D);
+
+// Fills exactly getNumAssociatedConstraints entries into AC; no slot is null.
+void clang_NonTypeTemplateParmDecl_getAssociatedConstraints(CXNonTypeTemplateParmDecl D,
+                                                            CXExpr *AC);
+
+CXSourceRange_ clang_NonTypeTemplateParmDecl_getSourceRange(CXNonTypeTemplateParmDecl D);
+
+// TemplateTemplateParmDecl
+CXSourceRange_ clang_TemplateTemplateParmDecl_getSourceRange(CXTemplateTemplateParmDecl D);
+
+// BuiltinTemplateDecl
+// Always an invalid range: a builtin template declaration has no written source.
+CXSourceRange_ clang_BuiltinTemplateDecl_getSourceRange(CXBuiltinTemplateDecl D);
+
+// ClassTemplateSpecializationDecl
+// Records the specialization type as written by the user; allocates the
+// explicit-specialization info block in the ASTContext on first use.
+void clang_ClassTemplateSpecializationDecl_setTypeAsWritten(
+    CXClassTemplateSpecializationDecl D, CXTypeSourceInfo T);
+
+// ClassTemplatePartialSpecializationDecl
+// Count for the getAssociatedConstraints fill below; the count is exact and no slot
+// is null.
+unsigned clang_ClassTemplatePartialSpecializationDecl_getNumAssociatedConstraints(
+    CXClassTemplatePartialSpecializationDecl D);
+
+// Fills exactly getNumAssociatedConstraints entries into AC, in declaration order.
+void clang_ClassTemplatePartialSpecializationDecl_getAssociatedConstraints(
+    CXClassTemplatePartialSpecializationDecl D, CXExpr *AC);
+
+// Re-seats, on the first declaration of the redeclaration chain, the member partial
+// specialization this one was instantiated from. No assert here: any previously
+// recorded link is overwritten.
+void clang_ClassTemplatePartialSpecializationDecl_setInstantiatedFromMember(
+    CXClassTemplatePartialSpecializationDecl D,
+    CXClassTemplatePartialSpecializationDecl PartialSpec);
+
+// Precondition: getInstantiatedFromMember() is non-null — Clang asserts that only
+// member templates can be member template specializations.
+void clang_ClassTemplatePartialSpecializationDecl_setMemberSpecialization(
+    CXClassTemplatePartialSpecializationDecl D);
+
+// ClassTemplateDecl
+// Null when no partial specialization of CTD was instantiated from D. Precondition:
+// every partial specialization of CTD has a non-null getInstantiatedFromMember() —
+// the Clang implementation dereferences it unconditionally while scanning.
+CXClassTemplatePartialSpecializationDecl
+clang_ClassTemplateDecl_findPartialSpecInstantiatedFromMember(
+    CXClassTemplateDecl CTD, CXClassTemplatePartialSpecializationDecl D);
+
+// VarTemplateSpecializationDecl
+// Records the specialization type as written by the user; allocates the
+// explicit-specialization info block in the ASTContext on first use.
+void clang_VarTemplateSpecializationDecl_setTypeAsWritten(CXVarTemplateSpecializationDecl D,
+                                                          CXTypeSourceInfo T);
+
+// VarTemplatePartialSpecializationDecl
+// Count for the getAssociatedConstraints fill below; the count is exact and no slot
+// is null.
+unsigned clang_VarTemplatePartialSpecializationDecl_getNumAssociatedConstraints(
+    CXVarTemplatePartialSpecializationDecl D);
+
+// Fills exactly getNumAssociatedConstraints entries into AC, in declaration order.
+void clang_VarTemplatePartialSpecializationDecl_getAssociatedConstraints(
+    CXVarTemplatePartialSpecializationDecl D, CXExpr *AC);
+
+// Re-seats, on the first declaration of the redeclaration chain, the member partial
+// specialization this one was instantiated from. No assert here: any previously
+// recorded link is overwritten.
+void clang_VarTemplatePartialSpecializationDecl_setInstantiatedFromMember(
+    CXVarTemplatePartialSpecializationDecl D,
+    CXVarTemplatePartialSpecializationDecl PartialSpec);
+
+// Precondition: getInstantiatedFromMember() is non-null — Clang asserts that only
+// member templates can be member template specializations.
+void clang_VarTemplatePartialSpecializationDecl_setMemberSpecialization(
+    CXVarTemplatePartialSpecializationDecl D);
+
+CXSourceRange_ clang_VarTemplatePartialSpecializationDecl_getSourceRange(
+    CXVarTemplatePartialSpecializationDecl D);
+
+// VarTemplateDecl
+// Null when no partial specialization of VTD was instantiated from D. Precondition:
+// every partial specialization of VTD has a non-null getInstantiatedFromMember() —
+// the Clang implementation dereferences it unconditionally while scanning.
+CXVarTemplatePartialSpecializationDecl
+clang_VarTemplateDecl_findPartialSpecInstantiatedFromMember(
+    CXVarTemplateDecl VTD, CXVarTemplatePartialSpecializationDecl D);
+
+// TemplateDecl
+// Decl::Kind range test — the isa<> predicate for a caller holding a kind rather
+// than a declaration. Covers every subclass kind.
+bool clang_TemplateDecl_classofKind(CXDeclKind K);
+
+// RedeclarableTemplateDecl
+bool clang_RedeclarableTemplateDecl_classofKind(CXDeclKind K);
+
+// FunctionTemplateDecl
+bool clang_FunctionTemplateDecl_classofKind(CXDeclKind K);
+
+// Null when the specialization set holds no entry for TAL's arguments; otherwise
+// the most recent redeclaration of that specialization. InsertPos is Clang's
+// FoldingSet insertion hint: it crosses by value, so the position Clang writes
+// back through the reference is not observable here.
+CXFunctionDecl clang_FunctionTemplateDecl_findSpecialization(CXFunctionTemplateDecl FTD,
+                                                             CXTemplateArgumentList TAL,
+                                                             void *InsertPos);
+
+// TemplateTypeParmDecl
+bool clang_TemplateTypeParmDecl_classofKind(CXDeclKind K);
+
+// NonTypeTemplateParmDecl
+bool clang_NonTypeTemplateParmDecl_classofKind(CXDeclKind K);
+
+// TemplateTemplateParmDecl
+bool clang_TemplateTemplateParmDecl_classofKind(CXDeclKind K);
+
+// BuiltinTemplateDecl
+bool clang_BuiltinTemplateDecl_classofKind(CXDeclKind K);
+
+// ClassTemplateSpecializationDecl
+bool clang_ClassTemplateSpecializationDecl_classofKind(CXDeclKind K);
+
+// ClassTemplatePartialSpecializationDecl
+bool clang_ClassTemplatePartialSpecializationDecl_classofKind(CXDeclKind K);
+
+// ClassTemplateDecl
+bool clang_ClassTemplateDecl_classofKind(CXDeclKind K);
+
+// FriendTemplateDecl
+bool clang_FriendTemplateDecl_classofKind(CXDeclKind K);
+
+// TypeAliasTemplateDecl
+bool clang_TypeAliasTemplateDecl_classofKind(CXDeclKind K);
+
+// VarTemplateSpecializationDecl
+bool clang_VarTemplateSpecializationDecl_classofKind(CXDeclKind K);
+
+// VarTemplatePartialSpecializationDecl
+bool clang_VarTemplatePartialSpecializationDecl_classofKind(CXDeclKind K);
+
+// VarTemplateDecl
+bool clang_VarTemplateDecl_classofKind(CXDeclKind K);
+
+// Null when the specialization set holds no entry for TAL's arguments; otherwise
+// the most recent redeclaration of that specialization. InsertPos as above.
+CXVarTemplateSpecializationDecl
+clang_VarTemplateDecl_findSpecialization(CXVarTemplateDecl VTD, CXTemplateArgumentList TAL,
+                                         void *InsertPos);
+
+// Null when no partial specialization is profiled by TAL together with TPL. Clang
+// profiles the argument list and the parameter list as a pair, so both must come
+// from the same partial specialization for the lookup to hit. InsertPos as above.
+CXVarTemplatePartialSpecializationDecl clang_VarTemplateDecl_findPartialSpecialization(
+    CXVarTemplateDecl VTD, CXTemplateArgumentList TAL, CXTemplateParameterList TPL,
+    void *InsertPos);
+
+// ConceptDecl
+bool clang_ConceptDecl_classofKind(CXDeclKind K);
+
+// TemplateParamObjectDecl
+bool clang_TemplateParamObjectDecl_classofKind(CXDeclKind K);
+
+// FunctionTemplateDecl
+// Builds a function template over Params for the templated function Decl. Clang adopts
+// Params: the parameters' owning context is re-seated when the template is built, so Decl
+// must itself be a DeclContext and Params must be a list that already belongs there. The
+// declaration is arena-allocated and is NOT added to DC.
+CXFunctionTemplateDecl clang_FunctionTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                         CXSourceLocation_ L,
+                                                         CXDeclarationName Name,
+                                                         CXTemplateParameterList Params,
+                                                         CXNamedDecl Decl);
+
+// TemplateTypeParmDecl
+// Records that D's default argument is the one written on Prev. Precondition:
+// !defaultArgumentWasInherited() — re-inheriting asserts that the old and the new default
+// are the same template argument, which this API cannot establish.
+void clang_TemplateTypeParmDecl_setInheritedDefaultArgument(CXTemplateTypeParmDecl D,
+                                                            CXASTContext Context,
+                                                            CXTemplateTypeParmDecl Prev);
+
+// NonTypeTemplateParmDecl
+// Same inheritance link and the same precondition as above.
+void clang_NonTypeTemplateParmDecl_setInheritedDefaultArgument(
+    CXNonTypeTemplateParmDecl D, CXASTContext Context, CXNonTypeTemplateParmDecl Prev);
+
+// TemplateTemplateParmDecl
+// Same inheritance link and the same precondition as above.
+void clang_TemplateTemplateParmDecl_setInheritedDefaultArgument(
+    CXTemplateTemplateParmDecl D, CXASTContext Context, CXTemplateTemplateParmDecl Prev);
+
+// BuiltinTemplateDecl
+// Builds the parameter list the builtin needs out of BTK; the declaration is
+// arena-allocated and is NOT added to DC.
+CXBuiltinTemplateDecl clang_BuiltinTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                       CXDeclarationName Name,
+                                                       CXBuiltinTemplateKind BTK);
+
+// ClassTemplateDecl
+// Builds a class template over Params for the templated record Decl. Adopts Params and
+// leaves the declaration out of DC exactly like clang_FunctionTemplateDecl_Create, so Decl
+// must be a DeclContext here too.
+CXClassTemplateDecl clang_ClassTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                   CXSourceLocation_ L,
+                                                   CXDeclarationName Name,
+                                                   CXTemplateParameterList Params,
+                                                   CXNamedDecl Decl);
+
+// FriendTemplateDecl
+// Clang's Create takes the parameter-list array as a MutableArrayRef and the declaration
+// keeps that storage, so the (Params, NumParams) buffer is copied into Context-owned
+// memory here (MARSHALLING.md §11) and the caller's buffer needs no lifetime of its own.
+// The FriendUnion parameter is split into one entry point per arm (MARSHALLING.md §8):
+// this one stores the NamedDecl arm, so getFriendType is null on the result.
+CXFriendTemplateDecl clang_FriendTemplateDecl_CreateWithFriendDecl(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ Loc,
+    const CXTemplateParameterList *Params, unsigned NumParams, CXNamedDecl Friend,
+    CXSourceLocation_ FriendLoc);
+
+// The TypeSourceInfo arm of the same factory; getFriendDecl is null on the result.
+CXFriendTemplateDecl clang_FriendTemplateDecl_CreateWithFriendType(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ Loc,
+    const CXTemplateParameterList *Params, unsigned NumParams, CXTypeSourceInfo Friend,
+    CXSourceLocation_ FriendLoc);
+
+// Null unless the friend declaration names a type.
+CXTypeSourceInfo clang_FriendTemplateDecl_getFriendType(CXFriendTemplateDecl D);
+
+// Null unless the friend declaration names a declaration.
+CXNamedDecl clang_FriendTemplateDecl_getFriendDecl(CXFriendTemplateDecl D);
+
+CXSourceLocation_ clang_FriendTemplateDecl_getFriendLoc(CXFriendTemplateDecl D);
+
+// Precondition: I < getNumTemplateParameters(). Clang's own assert is off by one (it
+// admits I == NumParams, which reads one slot past the array), so the Julia layer
+// restates the bound.
+CXTemplateParameterList
+clang_FriendTemplateDecl_getTemplateParameterList(CXFriendTemplateDecl D, unsigned I);
+
+unsigned clang_FriendTemplateDecl_getNumTemplateParameters(CXFriendTemplateDecl D);
+
+// TypeAliasTemplateDecl
+// The templated TypeAliasDecl is not a DeclContext, so Params is adopted into DC itself;
+// the declaration is NOT added to DC.
+CXTypeAliasTemplateDecl clang_TypeAliasTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                           CXSourceLocation_ L,
+                                                           CXDeclarationName Name,
+                                                           CXTemplateParameterList Params,
+                                                           CXNamedDecl Decl);
+
+// VarTemplateDecl
+// Params is adopted into DC (a VarDecl is not a DeclContext); the declaration is NOT
+// added to DC.
+CXVarTemplateDecl clang_VarTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                               CXSourceLocation_ L, CXDeclarationName Name,
+                                               CXTemplateParameterList Params,
+                                               CXVarDecl Decl);
+
+// ConceptDecl
+// Params is adopted into DC; the declaration is NOT added to DC.
+CXConceptDecl clang_ConceptDecl_Create(CXASTContext C, CXDeclContext DC,
+                                       CXSourceLocation_ L, CXDeclarationName Name,
+                                       CXTemplateParameterList Params,
+                                       CXExpr ConstraintExpr);
+
+// TemplateParameterList
+// Builds a parameter list in C's arena — borrowed, no dispose. Params is a buffer of
+// NamedDecl handles, each of which must be a TemplateTypeParmDecl, a
+// NonTypeTemplateParmDecl or a TemplateTemplateParmDecl; the list stores the
+// declarations themselves, so they must outlive it. RequiresClause may be NULL.
+CXTemplateParameterList
+clang_TemplateParameterList_Create(CXASTContext C, CXSourceLocation_ TemplateLoc,
+                                   CXSourceLocation_ LAngleLoc, const CXNamedDecl *Params,
+                                   unsigned NumParams, CXSourceLocation_ RAngleLoc,
+                                   CXExpr RequiresClause);
+
+// DependentFunctionTemplateSpecializationInfo
+// Count for the index accessor below.
+unsigned clang_DependentFunctionTemplateSpecializationInfo_getNumCandidates(
+    CXDependentFunctionTemplateSpecializationInfo I);
+
+// Borrowed candidate out of the info object's trailing array (no dispose).
+// Precondition: Idx < getNumCandidates().
+CXFunctionTemplateDecl clang_DependentFunctionTemplateSpecializationInfo_getCandidate(
+    CXDependentFunctionTemplateSpecializationInfo I, unsigned Idx);
+
+// TemplateTypeParmDecl
+// The declaration is NOT added to DC. Id may be NULL for an unnamed parameter. clang's
+// std::optional<unsigned> NumExpanded is flattened into the HasNumExpanded / NumExpanded
+// pair: HasNumExpanded false means std::nullopt, i.e. not an already-expanded pack.
+// HasTypeConstraint only reserves the trailing constraint slot; the constraint itself
+// stays uninitialized, so clang_TemplateTypeParmDecl_hasInitializedTypeConstraint keeps
+// reporting false until Sema fills it in.
+CXTemplateTypeParmDecl clang_TemplateTypeParmDecl_Create(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ KeyLoc, CXSourceLocation_ NameLoc,
+    unsigned D, unsigned P, CXIdentifierInfo Id, bool Typename, bool ParameterPack,
+    bool HasTypeConstraint, bool HasNumExpanded, unsigned NumExpanded);
+
+// Whether the trailing TypeConstraint slot has actually been filled in. This is NOT
+// clang_TemplateTypeParmDecl_hasTypeConstraint: that one reports the flag chosen at
+// creation, while the four accessors below read the slot, which Sema initializes later.
+// Reading the slot before it is initialized is undefined behaviour, so this is the gate
+// the Julia layer asserts on. // helper
+bool clang_TemplateTypeParmDecl_hasInitializedTypeConstraint(CXTemplateTypeParmDecl D);
+
+// The parameter's constraining concept, reached through TypeConstraint's
+// ConceptReference. PARTIAL: precondition
+// clang_TemplateTypeParmDecl_hasInitializedTypeConstraint. // helper
+CXConceptDecl clang_TemplateTypeParmDecl_getTypeConstraintConcept(CXTemplateTypeParmDecl D);
+
+// The immediately-declared constraint expression. Same precondition. // helper
+CXExpr clang_TemplateTypeParmDecl_getTypeConstraintImmediatelyDeclaredConstraint(
+    CXTemplateTypeParmDecl D);
+
+// Location of the concept name in the type-constraint. Same precondition. // helper
+CXSourceLocation_
+clang_TemplateTypeParmDecl_getTypeConstraintConceptNameLoc(CXTemplateTypeParmDecl D);
+
+// The as-written argument list of the type-constraint, NULL unless it was written with
+// explicit template arguments. Same precondition. // helper
+CXASTTemplateArgumentListInfo
+clang_TemplateTypeParmDecl_getTypeConstraintTemplateArgsAsWritten(CXTemplateTypeParmDecl D);
+
+// NonTypeTemplateParmDecl
+// The declaration is NOT added to DC. Id and TInfo may be NULL. Depth and position are
+// bit-fields of 20 and 12 bits and clang asserts D + 1 <= 0xFFFFF and P + 1 <= 0xFFF, so
+// the Julia layer restates both bounds.
+CXNonTypeTemplateParmDecl clang_NonTypeTemplateParmDecl_Create(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
+    unsigned D, unsigned P, CXIdentifierInfo Id, CXQualType T, bool ParameterPack,
+    CXTypeSourceInfo TInfo);
+
+// Same bit-field bounds as the Create above: Depth + 1 <= 0xFFFFF.
+void clang_NonTypeTemplateParmDecl_setDepth(CXNonTypeTemplateParmDecl D, unsigned Depth);
+
+// Same bit-field bounds as the Create above: Position + 1 <= 0xFFF. Position and index
+// are the same field, so this also moves clang_NonTypeTemplateParmDecl_getIndex.
+void clang_NonTypeTemplateParmDecl_setPosition(CXNonTypeTemplateParmDecl D,
+                                               unsigned Position);
+
+// TemplateTemplateParmDecl
+// The declaration is NOT added to DC; Params becomes the parameter's own list. Id may be
+// NULL. Same 20-bit depth / 12-bit position bounds as NonTypeTemplateParmDecl.
+CXTemplateTemplateParmDecl
+clang_TemplateTemplateParmDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L,
+                                      unsigned D, unsigned P, bool ParameterPack,
+                                      CXIdentifierInfo Id, CXTemplateParameterList Params);
+
+// Same bit-field bounds as the NonTypeTemplateParmDecl pair above.
+void clang_TemplateTemplateParmDecl_setDepth(CXTemplateTemplateParmDecl D, unsigned Depth);
+
+void clang_TemplateTemplateParmDecl_setPosition(CXTemplateTemplateParmDecl D,
+                                                unsigned Position);
+
+// ClassTemplateSpecializationDecl
+// The template or partial specialization this one was INSTANTIATED from: the same union
+// clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial returns, but NULL
+// when the specialization kind is not an instantiation (an explicit specialization).
+// Pick the arm with clang_ClassTemplateSpecializationDecl_specializedOnPartial.
+CXDecl clang_ClassTemplateSpecializationDecl_getInstantiatedFrom(
+    CXClassTemplateSpecializationDecl D);
+
+// VarTemplateSpecializationDecl
+// As above, against clang_VarTemplateSpecializationDecl_getSpecializedTemplateOrPartial
+// and clang_VarTemplateSpecializationDecl_specializedOnPartial.
+CXDecl
+clang_VarTemplateSpecializationDecl_getInstantiatedFrom(CXVarTemplateSpecializationDecl D);
+
+// ImplicitConceptSpecializationDecl
+// Args is a buffer of CXTemplateArgument handles; each is dereferenced and the values are
+// copied into C's arena, so the caller keeps ownership of the handles it passed. The
+// declaration is NOT added to DC.
+CXImplicitConceptSpecializationDecl clang_ImplicitConceptSpecializationDecl_Create(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ SL, const CXTemplateArgument *Args,
+    unsigned NumArgs);
+
+// Count for the index accessor below.
+unsigned clang_ImplicitConceptSpecializationDecl_getNumTemplateArguments(
+    CXImplicitConceptSpecializationDecl D);
+
+// Borrowed interior pointer into the declaration's trailing argument array (no dispose,
+// unlike the heap-boxed TemplateArgument returned by the construct* helpers).
+// Precondition: I < getNumTemplateArguments().
+CXTemplateArgument clang_ImplicitConceptSpecializationDecl_getTemplateArgument(
+    CXImplicitConceptSpecializationDecl D, unsigned I);
+
+// Overwrites the trailing argument array in place. That array was sized once, at Create,
+// so NumArgs MUST equal getNumTemplateArguments() — a longer list writes past the
+// allocation. The Julia layer restates the bound.
+void clang_ImplicitConceptSpecializationDecl_setTemplateArguments(
+    CXImplicitConceptSpecializationDecl D, const CXTemplateArgument *Args,
+    unsigned NumArgs);
+
+bool clang_ImplicitConceptSpecializationDecl_classofKind(CXDeclKind K);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

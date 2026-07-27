@@ -1823,3 +1823,318 @@ end
         dispose(I)
     end
 end
+
+@testset "Decl.jl decl-h: kind family predicates, qualifier extents, TagDecl pivot" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    try
+        ctx = CC.get_ast_context(I)
+        tu = CC.getTranslationUnitDecl(ctx)
+        K = CC.LibClangEx
+
+        CC.parse(I, """
+                 namespace NDH { struct SDH; void fdh(); }
+                 struct NDH::SDH { int m; };
+                 void NDH::fdh() {}
+                 struct PlainDH { int p; };
+                 void plaindh() {}
+                 """)
+
+        look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
+
+        # ---------------- classofKind: the Decl::Kind range tests ----------------
+        # These read a kind and not a declaration, so they are asserted against named
+        # enumerators rather than against whatever kind the host AST happens to build.
+        @test CC.classofKind(CC.NamedDecl, K.CXDeclKind_Function)
+        @test CC.classofKind(CC.NamedDecl, K.CXDeclKind_Field)
+        @test !CC.classofKind(CC.NamedDecl, K.CXDeclKind_TranslationUnit)
+
+        @test CC.classofKind(CC.ValueDecl, K.CXDeclKind_Var)
+        @test CC.classofKind(CC.ValueDecl, K.CXDeclKind_EnumConstant)
+        @test !CC.classofKind(CC.ValueDecl, K.CXDeclKind_Namespace)
+
+        @test CC.classofKind(CC.DeclaratorDecl, K.CXDeclKind_Function)
+        @test CC.classofKind(CC.DeclaratorDecl, K.CXDeclKind_Var)
+        @test !CC.classofKind(CC.DeclaratorDecl, K.CXDeclKind_EnumConstant)
+
+        @test CC.classofKind(CC.VarDecl, K.CXDeclKind_Var)
+        @test CC.classofKind(CC.VarDecl, K.CXDeclKind_ParmVar)
+        @test !CC.classofKind(CC.VarDecl, K.CXDeclKind_Field)
+
+        @test CC.classofKind(CC.FunctionDecl, K.CXDeclKind_Function)
+        @test CC.classofKind(CC.FunctionDecl, K.CXDeclKind_CXXMethod)
+        @test !CC.classofKind(CC.FunctionDecl, K.CXDeclKind_Var)
+
+        @test CC.classofKind(CC.FieldDecl, K.CXDeclKind_Field)
+        @test !CC.classofKind(CC.FieldDecl, K.CXDeclKind_Var)
+
+        @test CC.classofKind(CC.TypeDecl, K.CXDeclKind_Record)
+        @test CC.classofKind(CC.TypeDecl, K.CXDeclKind_Typedef)
+        @test !CC.classofKind(CC.TypeDecl, K.CXDeclKind_Function)
+
+        @test CC.classofKind(CC.TypedefNameDecl, K.CXDeclKind_Typedef)
+        @test CC.classofKind(CC.TypedefNameDecl, K.CXDeclKind_TypeAlias)
+        @test !CC.classofKind(CC.TypedefNameDecl, K.CXDeclKind_Record)
+
+        # the range test covers subclasses: every record and enum kind is a TagDecl
+        @test CC.classofKind(CC.TagDecl, K.CXDeclKind_Record)
+        @test CC.classofKind(CC.TagDecl, K.CXDeclKind_CXXRecord)
+        @test CC.classofKind(CC.TagDecl, K.CXDeclKind_Enum)
+        @test !CC.classofKind(CC.TagDecl, K.CXDeclKind_Typedef)
+
+        @test CC.classofKind(CC.RecordDecl, K.CXDeclKind_Record)
+        @test CC.classofKind(CC.RecordDecl, K.CXDeclKind_CXXRecord)
+        @test !CC.classofKind(CC.RecordDecl, K.CXDeclKind_Enum)
+
+        # the kinds the live AST reports agree with the enumerator-driven answers
+        plain_fd = CC.FunctionDecl(look("plaindh").ptr)
+        @test CC.classofKind(CC.FunctionDecl, CC.getKind(plain_fd))
+        @test CC.classofKind(CC.DeclaratorDecl, CC.getKind(plain_fd))
+        @test !CC.classofKind(CC.TagDecl, CC.getKind(plain_fd))
+        @test !CC.classofKind(CC.NamedDecl, CC.getKind(tu))
+
+        # ---------------- getQualifierRange ----------------
+        # `void NDH::fdh() {}` redeclares the in-namespace `fdh`, and only the
+        # out-of-line redeclaration carries the written `NDH::`.
+        fd = CC.FunctionDecl(CC.getMostRecentDecl(CC.NamedDecl(look("NDH::fdh").ptr)).ptr)
+        @test CC.getQualifier(fd).ptr != C_NULL
+        qr = CC.getQualifierRange(fd)
+        @test qr isa CC.SourceRange
+        @test qr.begin_loc.ptr != C_NULL
+
+        # unqualified declarator: no specifier was written, so the extent is invalid
+        @test CC.getQualifier(plain_fd).ptr == C_NULL
+        @test CC.getQualifierRange(plain_fd).begin_loc.ptr == C_NULL
+
+        rd = CC.getMostRecentDecl(CC.RecordDecl(look("NDH::SDH").ptr))
+        tag_qr = CC.getQualifierRange(rd)
+        @test tag_qr isa CC.SourceRange
+        # qualifier and extent agree on whether a specifier was written
+        @test (CC.getQualifier(rd).ptr == C_NULL) == (tag_qr.begin_loc.ptr == C_NULL)
+
+        plain_rd = CC.RecordDecl(look("PlainDH").ptr)
+        @test CC.getQualifier(plain_rd).ptr == C_NULL
+        @test CC.getQualifierRange(plain_rd).begin_loc.ptr == C_NULL
+
+        # ---------------- TagDecl <-> DeclContext pivot ----------------
+        rd_dc = CC.DeclContext(plain_rd)
+        @test rd_dc isa CC.DeclContext
+        @test CC.TagDecl(rd_dc).ptr == plain_rd.ptr
+        # TagDecl(::DeclContext) goes through dyn_cast_or_null, so a context whose kind
+        # is not a tag declaration's yields the NULL carrier rather than throwing.
+        @test CC.TagDecl(CC.DeclContext(tu)).ptr == C_NULL
+    finally
+        dispose(f)
+        dispose(I)
+    end
+end
+
+@testset "Decl single-kind Decl::Kind tests" begin
+    K = CC.LibClangEx
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    try
+        ctx = CC.get_ast_context(I)
+        tu = CC.getTranslationUnitDecl(ctx)
+
+        CC.parse(I, """
+                 namespace NDI { int ndi_x; }
+                 enum EDI { EDI_A };
+                 typedef int TDI;
+                 using TAI = int;
+                 void fdi(int pdi) { (void)pdi; }
+                 """)
+
+        look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
+
+        # Every class below is final in Clang's hierarchy, so its kind test is a single
+        # equality rather than a range. The assertions name enumerators instead of
+        # reading a host-decided kind, so they are portable across CI runners.
+        @test CC.classofKind(CC.TranslationUnitDecl, K.CXDeclKind_TranslationUnit)
+        @test !CC.classofKind(CC.TranslationUnitDecl, K.CXDeclKind_Namespace)
+
+        @test CC.classofKind(CC.PragmaCommentDecl, K.CXDeclKind_PragmaComment)
+        @test !CC.classofKind(CC.PragmaCommentDecl, K.CXDeclKind_PragmaDetectMismatch)
+
+        @test CC.classofKind(CC.PragmaDetectMismatchDecl, K.CXDeclKind_PragmaDetectMismatch)
+        @test !CC.classofKind(CC.PragmaDetectMismatchDecl, K.CXDeclKind_PragmaComment)
+
+        @test CC.classofKind(CC.ExternCContextDecl, K.CXDeclKind_ExternCContext)
+        @test !CC.classofKind(CC.ExternCContextDecl, K.CXDeclKind_LinkageSpec)
+
+        @test CC.classofKind(CC.LabelDecl, K.CXDeclKind_Label)
+        @test !CC.classofKind(CC.LabelDecl, K.CXDeclKind_Var)
+
+        @test CC.classofKind(CC.NamespaceDecl, K.CXDeclKind_Namespace)
+        @test !CC.classofKind(CC.NamespaceDecl, K.CXDeclKind_NamespaceAlias)
+
+        @test CC.classofKind(CC.ImplicitParamDecl, K.CXDeclKind_ImplicitParam)
+        @test !CC.classofKind(CC.ImplicitParamDecl, K.CXDeclKind_ParmVar)
+
+        @test CC.classofKind(CC.ParmVarDecl, K.CXDeclKind_ParmVar)
+        @test !CC.classofKind(CC.ParmVarDecl, K.CXDeclKind_Var)
+
+        @test CC.classofKind(CC.EnumConstantDecl, K.CXDeclKind_EnumConstant)
+        @test !CC.classofKind(CC.EnumConstantDecl, K.CXDeclKind_Enum)
+
+        @test CC.classofKind(CC.IndirectFieldDecl, K.CXDeclKind_IndirectField)
+        @test !CC.classofKind(CC.IndirectFieldDecl, K.CXDeclKind_Field)
+
+        @test CC.classofKind(CC.TypedefDecl, K.CXDeclKind_Typedef)
+        @test !CC.classofKind(CC.TypedefDecl, K.CXDeclKind_TypeAlias)
+
+        @test CC.classofKind(CC.TypeAliasDecl, K.CXDeclKind_TypeAlias)
+        @test !CC.classofKind(CC.TypeAliasDecl, K.CXDeclKind_Typedef)
+
+        @test CC.classofKind(CC.EnumDecl, K.CXDeclKind_Enum)
+        @test !CC.classofKind(CC.EnumDecl, K.CXDeclKind_Record)
+
+        @test CC.classofKind(CC.FileScopeAsmDecl, K.CXDeclKind_FileScopeAsm)
+        @test !CC.classofKind(CC.FileScopeAsmDecl, K.CXDeclKind_TopLevelStmt)
+
+        @test CC.classofKind(CC.TopLevelStmtDecl, K.CXDeclKind_TopLevelStmt)
+        @test !CC.classofKind(CC.TopLevelStmtDecl, K.CXDeclKind_FileScopeAsm)
+
+        @test CC.classofKind(CC.BlockDecl, K.CXDeclKind_Block)
+        @test !CC.classofKind(CC.BlockDecl, K.CXDeclKind_Captured)
+
+        @test CC.classofKind(CC.CapturedDecl, K.CXDeclKind_Captured)
+        @test !CC.classofKind(CC.CapturedDecl, K.CXDeclKind_Block)
+
+        @test CC.classofKind(CC.ImportDecl, K.CXDeclKind_Import)
+        @test !CC.classofKind(CC.ImportDecl, K.CXDeclKind_Export)
+
+        @test CC.classofKind(CC.ExportDecl, K.CXDeclKind_Export)
+        @test !CC.classofKind(CC.ExportDecl, K.CXDeclKind_Import)
+
+        @test CC.classofKind(CC.EmptyDecl, K.CXDeclKind_Empty)
+        @test !CC.classofKind(CC.EmptyDecl, K.CXDeclKind_TopLevelStmt)
+
+        # "final class" is the shape being asserted: scanning the whole mirrored enum
+        # finds exactly one kind that answers true, unlike the range tests above it.
+        @test count(k -> CC.classofKind(CC.NamespaceDecl, k), instances(K.CXDeclKind)) == 1
+        @test count(k -> CC.classofKind(CC.EnumDecl, k), instances(K.CXDeclKind)) == 1
+        @test count(k -> CC.classofKind(CC.ParmVarDecl, k), instances(K.CXDeclKind)) == 1
+
+        # the kinds the live AST reports agree with the enumerator-driven answers
+        @test CC.classofKind(CC.TranslationUnitDecl, CC.getKind(tu))
+        @test CC.classofKind(CC.NamespaceDecl, CC.getKind(look("NDI")))
+        @test CC.classofKind(CC.EnumDecl, CC.getKind(look("EDI")))
+        @test CC.classofKind(CC.EnumConstantDecl, CC.getKind(look("EDI_A")))
+        @test CC.classofKind(CC.TypedefDecl, CC.getKind(look("TDI")))
+        @test CC.classofKind(CC.TypeAliasDecl, CC.getKind(look("TAI")))
+
+        fdi = CC.FunctionDecl(look("fdi").ptr)
+        @test CC.classofKind(CC.ParmVarDecl, CC.getKind(CC.getParamDecl(fdi, 0)))
+        @test !CC.classofKind(CC.NamespaceDecl, CC.getKind(fdi))
+        @test !CC.classofKind(CC.TranslationUnitDecl, CC.getKind(fdi))
+    finally
+        dispose(f)
+        dispose(I)
+    end
+end
+
+@testset "BlockDecl parameter and capture installation" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    try
+        LXB = CC.LibClangEx
+        CC.parse(I, """
+            int bpc_first = 1;
+            int bpc_second = 2;
+        """)
+        ctx = CC.get_ast_context(I)
+        tu = CC.getTranslationUnitDecl(ctx)
+        dc = CC.castToDeclContext(tu)
+        look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
+
+        # every lookup runs before the synthetic decls below are minted, so no name
+        # this testset creates can make get_decl ambiguous
+        first_vd = CC.VarDecl(look("bpc_first").ptr)
+        second_vd = CC.VarDecl(look("bpc_second").ptr)
+        loc = CC.getLocation(first_vd)
+        id = CC.getIdentifier(first_vd)
+        ty = CC.getType(first_vd)
+        tsi = CC.getTrivialTypeSourceInfo(ctx, ty, loc)
+
+        # ---------------- BlockDecl::setParams ----------------
+        bd = CC.BlockDecl(ctx, dc, loc)
+        @test CC.getNumParams(bd) == 0
+        p0 = CC.ParmVarDecl(ctx, dc, loc, loc, id, ty, tsi, LXB.CXStorageClass_SC_None)
+        p1 = CC.ParmVarDecl(ctx, dc, loc, loc, id, ty, tsi, LXB.CXStorageClass_SC_None)
+        CC.setParams(bd, [p0, p1])
+        @test CC.getNumParams(bd) == 2
+        @test CC.getParamDecl(bd, 0).ptr == p0.ptr
+        @test CC.getParamDecl(bd, 1).ptr == p1.ptr
+        @test [p.ptr for p in CC.getParams(bd)] == [p0.ptr, p1.ptr]
+        # a zero-length install stores nothing, so the block stays installable
+        empty_bd = CC.BlockDecl(ctx, dc, loc)
+        CC.setParams(empty_bd, CC.ParmVarDecl[])
+        @test CC.getNumParams(empty_bd) == 0
+        CC.setParams(empty_bd, [p0])
+        @test CC.getNumParams(empty_bd) == 1
+
+        # ---------------- BlockDecl::setCaptures ----------------
+        @test CC.getNumCaptures(bd) == 0
+        CC.setCaptures(bd, ctx, [first_vd, second_vd], [false, true], [true, false],
+                       [nothing, nothing], false)
+        @test CC.getNumCaptures(bd) == 2
+        @test CC.hasCaptures(bd)
+        @test CC.getCaptureVariable(bd, 0).ptr == first_vd.ptr
+        @test CC.getCaptureVariable(bd, 1).ptr == second_vd.ptr
+        @test !CC.isCaptureByRef(bd, 0)
+        @test CC.isCaptureByRef(bd, 1)
+        @test CC.isCaptureNested(bd, 0)
+        @test !CC.isCaptureNested(bd, 1)
+        @test !CC.captureHasCopyExpr(bd, 0)
+        @test !CC.captureHasCopyExpr(bd, 1)
+        @test !CC.capturesCXXThis(bd)
+        @test CC.capturesVariable(bd, first_vd)
+        # a second call replaces the list rather than extending it, and carries the
+        # this-capture flag with it
+        CC.setCaptures(bd, ctx, [second_vd], [false], [false], [nothing], true)
+        @test CC.getNumCaptures(bd) == 1
+        @test CC.getCaptureVariable(bd, 0).ptr == second_vd.ptr
+        @test !CC.capturesVariable(bd, first_vd)
+        @test CC.capturesCXXThis(bd)
+
+        # ---------------- BlockDecl::Capture::setCopyExpr ----------------
+        init = CC.getInit(second_vd)
+        @test init.ptr != C_NULL
+        CC.setCaptureCopyExpr(bd, 0, init)
+        @test CC.captureHasCopyExpr(bd, 0)
+        @test CC.getCaptureCopyExpr(bd, 0).ptr == init.ptr
+        CC.setCaptureCopyExpr(bd, 0, CC.Expr_(C_NULL))
+        @test !CC.captureHasCopyExpr(bd, 0)
+        # the same expression installed through the builder instead of the setter
+        CC.setCaptures(bd, ctx, [second_vd], [false], [false], [init], false)
+        @test CC.captureHasCopyExpr(bd, 0)
+        @test CC.getCaptureCopyExpr(bd, 0).ptr == init.ptr
+
+        # ---------------- HLSLBufferDecl::classofKind ----------------
+        @test CC.classofKind(CC.HLSLBufferDecl, LXB.CXDeclKind_HLSLBuffer)
+        @test !CC.classofKind(CC.HLSLBufferDecl, LXB.CXDeclKind_Record)
+        # HLSLBufferDecl is final, so exactly one enumerator of the mirror answers true
+        @test count(k -> CC.classofKind(CC.HLSLBufferDecl, k), instances(LXB.CXDeclKind)) == 1
+
+        # ---------------- Decl::classof ----------------
+        @test CC.classof(CC.TranslationUnitDecl, tu)
+        @test !CC.classof(CC.TranslationUnitDecl, first_vd)
+        @test CC.classof(CC.VarDecl, first_vd)
+        @test CC.classof(CC.NamedDecl, first_vd)
+        @test CC.classof(CC.DeclaratorDecl, first_vd)
+        @test !CC.classof(CC.FunctionDecl, first_vd)
+        @test CC.classof(CC.BlockDecl, bd)
+        @test !CC.classof(CC.CapturedDecl, bd)
+        @test CC.classof(CC.ParmVarDecl, p0)
+        @test CC.classof(CC.VarDecl, p0)    # the range test covers the subclass
+        # the handle spelling and the kind-only spelling agree, both ways
+        for T in (CC.VarDecl, CC.NamedDecl, CC.TagDecl, CC.BlockDecl, CC.ParmVarDecl)
+            @test CC.classof(T, first_vd) == CC.classofKind(T, CC.getKind(first_vd))
+            @test CC.classof(T, bd) == CC.classofKind(T, CC.getKind(bd))
+        end
+    finally
+        dispose(f)
+        dispose(I)
+    end
+end

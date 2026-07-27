@@ -3,6 +3,120 @@
 #include "utils.h"
 #include "clang/AST/Expr.h"
 #include "llvm/Support/raw_ostream.h"
+#include "clang/AST/ASTConcept.h"
+#include "llvm/ADT/SmallVector.h"
+#include <optional>
+
+// TemplateDecl
+bool clang_TemplateDecl_classofKind(CXDeclKind K) {
+  return clang::TemplateDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// RedeclarableTemplateDecl
+bool clang_RedeclarableTemplateDecl_classofKind(CXDeclKind K) {
+  return clang::RedeclarableTemplateDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// FunctionTemplateDecl
+bool clang_FunctionTemplateDecl_classofKind(CXDeclKind K) {
+  return clang::FunctionTemplateDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+CXFunctionDecl clang_FunctionTemplateDecl_findSpecialization(CXFunctionTemplateDecl FTD,
+                                                             CXTemplateArgumentList TAL,
+                                                             void *InsertPos) {
+  return static_cast<clang::FunctionTemplateDecl *>(FTD)->findSpecialization(
+      static_cast<clang::TemplateArgumentList *>(TAL)->asArray(), InsertPos);
+}
+
+// TemplateTypeParmDecl
+bool clang_TemplateTypeParmDecl_classofKind(CXDeclKind K) {
+  return clang::TemplateTypeParmDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// NonTypeTemplateParmDecl
+bool clang_NonTypeTemplateParmDecl_classofKind(CXDeclKind K) {
+  return clang::NonTypeTemplateParmDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// TemplateTemplateParmDecl
+bool clang_TemplateTemplateParmDecl_classofKind(CXDeclKind K) {
+  return clang::TemplateTemplateParmDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// BuiltinTemplateDecl
+bool clang_BuiltinTemplateDecl_classofKind(CXDeclKind K) {
+  return clang::BuiltinTemplateDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// ClassTemplateSpecializationDecl
+bool clang_ClassTemplateSpecializationDecl_classofKind(CXDeclKind K) {
+  return clang::ClassTemplateSpecializationDecl::classofKind(
+      static_cast<clang::Decl::Kind>(K));
+}
+
+// ClassTemplatePartialSpecializationDecl
+bool clang_ClassTemplatePartialSpecializationDecl_classofKind(CXDeclKind K) {
+  return clang::ClassTemplatePartialSpecializationDecl::classofKind(
+      static_cast<clang::Decl::Kind>(K));
+}
+
+// ClassTemplateDecl
+bool clang_ClassTemplateDecl_classofKind(CXDeclKind K) {
+  return clang::ClassTemplateDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// FriendTemplateDecl
+bool clang_FriendTemplateDecl_classofKind(CXDeclKind K) {
+  return clang::FriendTemplateDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// TypeAliasTemplateDecl
+bool clang_TypeAliasTemplateDecl_classofKind(CXDeclKind K) {
+  return clang::TypeAliasTemplateDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// VarTemplateSpecializationDecl
+bool clang_VarTemplateSpecializationDecl_classofKind(CXDeclKind K) {
+  return clang::VarTemplateSpecializationDecl::classofKind(
+      static_cast<clang::Decl::Kind>(K));
+}
+
+// VarTemplatePartialSpecializationDecl
+bool clang_VarTemplatePartialSpecializationDecl_classofKind(CXDeclKind K) {
+  return clang::VarTemplatePartialSpecializationDecl::classofKind(
+      static_cast<clang::Decl::Kind>(K));
+}
+
+// VarTemplateDecl
+bool clang_VarTemplateDecl_classofKind(CXDeclKind K) {
+  return clang::VarTemplateDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+CXVarTemplateSpecializationDecl
+clang_VarTemplateDecl_findSpecialization(CXVarTemplateDecl VTD, CXTemplateArgumentList TAL,
+                                         void *InsertPos) {
+  return static_cast<clang::VarTemplateDecl *>(VTD)->findSpecialization(
+      static_cast<clang::TemplateArgumentList *>(TAL)->asArray(), InsertPos);
+}
+
+CXVarTemplatePartialSpecializationDecl clang_VarTemplateDecl_findPartialSpecialization(
+    CXVarTemplateDecl VTD, CXTemplateArgumentList TAL, CXTemplateParameterList TPL,
+    void *InsertPos) {
+  return static_cast<clang::VarTemplateDecl *>(VTD)->findPartialSpecialization(
+      static_cast<clang::TemplateArgumentList *>(TAL)->asArray(),
+      static_cast<clang::TemplateParameterList *>(TPL), InsertPos);
+}
+
+// ConceptDecl
+bool clang_ConceptDecl_classofKind(CXDeclKind K) {
+  return clang::ConceptDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
+
+// TemplateParamObjectDecl
+bool clang_TemplateParamObjectDecl_classofKind(CXDeclKind K) {
+  return clang::TemplateParamObjectDecl::classofKind(static_cast<clang::Decl::Kind>(K));
+}
 
 // TemplateParameterList
 CXSourceRange_ clang_TemplateParameterList_getSourceRange(CXTemplateParameterList L) {
@@ -1082,4 +1196,655 @@ void clang_VarTemplateDecl_getSpecializations(CXVarTemplateDecl VTD,
   unsigned I = 0;
   for (auto *Spec : static_cast<clang::VarTemplateDecl *>(VTD)->specializations())
     S[I++] = Spec;
+}
+
+// TemplateDecl
+void clang_TemplateDecl_setTemplateParameters(CXTemplateDecl TD,
+                                              CXTemplateParameterList TPL) {
+  static_cast<clang::TemplateDecl *>(TD)->setTemplateParameters(
+      static_cast<clang::TemplateParameterList *>(TPL));
+}
+
+// FunctionTemplateSpecializationInfo
+void clang_FunctionTemplateSpecializationInfo_setTemplateSpecializationKind(
+    CXFunctionTemplateSpecializationInfo FTSI, CXTemplateSpecializationKind TSK) {
+  static_cast<clang::FunctionTemplateSpecializationInfo *>(FTSI)
+      ->setTemplateSpecializationKind(static_cast<clang::TemplateSpecializationKind>(TSK));
+}
+
+void clang_FunctionTemplateSpecializationInfo_setPointOfInstantiation(
+    CXFunctionTemplateSpecializationInfo FTSI, CXSourceLocation_ POI) {
+  static_cast<clang::FunctionTemplateSpecializationInfo *>(FTSI)->setPointOfInstantiation(
+      clang::SourceLocation::getFromPtrEncoding(POI));
+}
+
+// MemberSpecializationInfo
+void clang_MemberSpecializationInfo_setTemplateSpecializationKind(
+    CXMemberSpecializationInfo MSI, CXTemplateSpecializationKind TSK) {
+  static_cast<clang::MemberSpecializationInfo *>(MSI)->setTemplateSpecializationKind(
+      static_cast<clang::TemplateSpecializationKind>(TSK));
+}
+
+void clang_MemberSpecializationInfo_setPointOfInstantiation(CXMemberSpecializationInfo MSI,
+                                                            CXSourceLocation_ POI) {
+  static_cast<clang::MemberSpecializationInfo *>(MSI)->setPointOfInstantiation(
+      clang::SourceLocation::getFromPtrEncoding(POI));
+}
+
+// TemplateTypeParmDecl
+void clang_TemplateTypeParmDecl_setDefaultArgument(CXTemplateTypeParmDecl D,
+                                                   CXTypeSourceInfo DefArg) {
+  static_cast<clang::TemplateTypeParmDecl *>(D)->setDefaultArgument(
+      static_cast<clang::TypeSourceInfo *>(DefArg));
+}
+
+void clang_TemplateTypeParmDecl_removeDefaultArgument(CXTemplateTypeParmDecl D) {
+  static_cast<clang::TemplateTypeParmDecl *>(D)->removeDefaultArgument();
+}
+
+// NonTypeTemplateParmDecl
+void clang_NonTypeTemplateParmDecl_setDefaultArgument(CXNonTypeTemplateParmDecl D,
+                                                      CXExpr DefArg) {
+  static_cast<clang::NonTypeTemplateParmDecl *>(D)->setDefaultArgument(
+      static_cast<clang::Expr *>(DefArg));
+}
+
+void clang_NonTypeTemplateParmDecl_removeDefaultArgument(CXNonTypeTemplateParmDecl D) {
+  static_cast<clang::NonTypeTemplateParmDecl *>(D)->removeDefaultArgument();
+}
+
+// TemplateTemplateParmDecl
+void clang_TemplateTemplateParmDecl_setDefaultArgument(CXTemplateTemplateParmDecl D,
+                                                       CXASTContext Context,
+                                                       CXTemplateArgumentLoc DefArg) {
+  static_cast<clang::TemplateTemplateParmDecl *>(D)->setDefaultArgument(
+      *static_cast<clang::ASTContext *>(Context),
+      *static_cast<clang::TemplateArgumentLoc *>(DefArg));
+}
+
+void clang_TemplateTemplateParmDecl_removeDefaultArgument(CXTemplateTemplateParmDecl D) {
+  static_cast<clang::TemplateTemplateParmDecl *>(D)->removeDefaultArgument();
+}
+
+// ClassTemplateSpecializationDecl
+void clang_ClassTemplateSpecializationDecl_setSpecializedTemplate(
+    CXClassTemplateSpecializationDecl D, CXClassTemplateDecl CTD) {
+  static_cast<clang::ClassTemplateSpecializationDecl *>(D)->setSpecializedTemplate(
+      static_cast<clang::ClassTemplateDecl *>(CTD));
+}
+
+void clang_ClassTemplateSpecializationDecl_setSpecializationKind(
+    CXClassTemplateSpecializationDecl D, CXTemplateSpecializationKind TSK) {
+  static_cast<clang::ClassTemplateSpecializationDecl *>(D)->setSpecializationKind(
+      static_cast<clang::TemplateSpecializationKind>(TSK));
+}
+
+void clang_ClassTemplateSpecializationDecl_setPointOfInstantiation(
+    CXClassTemplateSpecializationDecl D, CXSourceLocation_ Loc) {
+  static_cast<clang::ClassTemplateSpecializationDecl *>(D)->setPointOfInstantiation(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+void clang_ClassTemplateSpecializationDecl_setExternLoc(CXClassTemplateSpecializationDecl D,
+                                                        CXSourceLocation_ Loc) {
+  static_cast<clang::ClassTemplateSpecializationDecl *>(D)->setExternLoc(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+void clang_ClassTemplateSpecializationDecl_setTemplateKeywordLoc(
+    CXClassTemplateSpecializationDecl D, CXSourceLocation_ Loc) {
+  static_cast<clang::ClassTemplateSpecializationDecl *>(D)->setTemplateKeywordLoc(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+// VarTemplateSpecializationDecl
+void clang_VarTemplateSpecializationDecl_setSpecializationKind(
+    CXVarTemplateSpecializationDecl D, CXTemplateSpecializationKind TSK) {
+  static_cast<clang::VarTemplateSpecializationDecl *>(D)->setSpecializationKind(
+      static_cast<clang::TemplateSpecializationKind>(TSK));
+}
+
+void clang_VarTemplateSpecializationDecl_setPointOfInstantiation(
+    CXVarTemplateSpecializationDecl D, CXSourceLocation_ Loc) {
+  static_cast<clang::VarTemplateSpecializationDecl *>(D)->setPointOfInstantiation(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+void clang_VarTemplateSpecializationDecl_setExternLoc(CXVarTemplateSpecializationDecl D,
+                                                      CXSourceLocation_ Loc) {
+  static_cast<clang::VarTemplateSpecializationDecl *>(D)->setExternLoc(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+void clang_VarTemplateSpecializationDecl_setTemplateKeywordLoc(
+    CXVarTemplateSpecializationDecl D, CXSourceLocation_ Loc) {
+  static_cast<clang::VarTemplateSpecializationDecl *>(D)->setTemplateKeywordLoc(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+// TemplateParameterList
+bool clang_TemplateParameterList_shouldIncludeTypeForArgument(CXTemplateParameterList TPL,
+                                                              CXASTContext Context,
+                                                              unsigned Idx) {
+  auto *Ctx = static_cast<clang::ASTContext *>(Context);
+  return clang::TemplateParameterList::shouldIncludeTypeForArgument(
+      Ctx->getPrintingPolicy(), static_cast<clang::TemplateParameterList *>(TPL), Idx);
+}
+
+// TemplateDecl
+CXSourceRange_ clang_TemplateDecl_getSourceRange(CXTemplateDecl TD) {
+  auto rng = static_cast<clang::TemplateDecl *>(TD)->getSourceRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+// RedeclarableTemplateDecl
+void clang_RedeclarableTemplateDecl_setInstantiatedFromMemberTemplate(
+    CXRedeclarableTemplateDecl RTD, CXRedeclarableTemplateDecl TD) {
+  static_cast<clang::RedeclarableTemplateDecl *>(RTD)->setInstantiatedFromMemberTemplate(
+      static_cast<clang::RedeclarableTemplateDecl *>(TD));
+}
+
+// TemplateTypeParmDecl
+unsigned clang_TemplateTypeParmDecl_getNumAssociatedConstraints(CXTemplateTypeParmDecl D) {
+  llvm::SmallVector<const clang::Expr *, 4> AC;
+  static_cast<clang::TemplateTypeParmDecl *>(D)->getAssociatedConstraints(AC);
+  return static_cast<unsigned>(AC.size());
+}
+
+void clang_TemplateTypeParmDecl_getAssociatedConstraints(CXTemplateTypeParmDecl D,
+                                                         CXExpr *AC) {
+  llvm::SmallVector<const clang::Expr *, 4> V;
+  static_cast<clang::TemplateTypeParmDecl *>(D)->getAssociatedConstraints(V);
+  for (unsigned I = 0; I < V.size(); ++I)
+    AC[I] = const_cast<clang::Expr *>(V[I]);
+}
+
+CXSourceRange_ clang_TemplateTypeParmDecl_getSourceRange(CXTemplateTypeParmDecl D) {
+  auto rng = static_cast<clang::TemplateTypeParmDecl *>(D)->getSourceRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+// NonTypeTemplateParmDecl
+unsigned
+clang_NonTypeTemplateParmDecl_getNumAssociatedConstraints(CXNonTypeTemplateParmDecl D) {
+  llvm::SmallVector<const clang::Expr *, 4> AC;
+  static_cast<clang::NonTypeTemplateParmDecl *>(D)->getAssociatedConstraints(AC);
+  return static_cast<unsigned>(AC.size());
+}
+
+void clang_NonTypeTemplateParmDecl_getAssociatedConstraints(CXNonTypeTemplateParmDecl D,
+                                                            CXExpr *AC) {
+  llvm::SmallVector<const clang::Expr *, 4> V;
+  static_cast<clang::NonTypeTemplateParmDecl *>(D)->getAssociatedConstraints(V);
+  for (unsigned I = 0; I < V.size(); ++I)
+    AC[I] = const_cast<clang::Expr *>(V[I]);
+}
+
+CXSourceRange_ clang_NonTypeTemplateParmDecl_getSourceRange(CXNonTypeTemplateParmDecl D) {
+  auto rng = static_cast<clang::NonTypeTemplateParmDecl *>(D)->getSourceRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+// TemplateTemplateParmDecl
+CXSourceRange_ clang_TemplateTemplateParmDecl_getSourceRange(CXTemplateTemplateParmDecl D) {
+  auto rng = static_cast<clang::TemplateTemplateParmDecl *>(D)->getSourceRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+// BuiltinTemplateDecl
+CXSourceRange_ clang_BuiltinTemplateDecl_getSourceRange(CXBuiltinTemplateDecl D) {
+  auto rng = static_cast<clang::BuiltinTemplateDecl *>(D)->getSourceRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+// ClassTemplateSpecializationDecl
+void clang_ClassTemplateSpecializationDecl_setTypeAsWritten(
+    CXClassTemplateSpecializationDecl D, CXTypeSourceInfo T) {
+  static_cast<clang::ClassTemplateSpecializationDecl *>(D)->setTypeAsWritten(
+      static_cast<clang::TypeSourceInfo *>(T));
+}
+
+// ClassTemplatePartialSpecializationDecl
+unsigned clang_ClassTemplatePartialSpecializationDecl_getNumAssociatedConstraints(
+    CXClassTemplatePartialSpecializationDecl D) {
+  llvm::SmallVector<const clang::Expr *, 4> AC;
+  static_cast<clang::ClassTemplatePartialSpecializationDecl *>(D)->getAssociatedConstraints(
+      AC);
+  return static_cast<unsigned>(AC.size());
+}
+
+void clang_ClassTemplatePartialSpecializationDecl_getAssociatedConstraints(
+    CXClassTemplatePartialSpecializationDecl D, CXExpr *AC) {
+  llvm::SmallVector<const clang::Expr *, 4> V;
+  static_cast<clang::ClassTemplatePartialSpecializationDecl *>(D)->getAssociatedConstraints(
+      V);
+  for (unsigned I = 0; I < V.size(); ++I)
+    AC[I] = const_cast<clang::Expr *>(V[I]);
+}
+
+void clang_ClassTemplatePartialSpecializationDecl_setInstantiatedFromMember(
+    CXClassTemplatePartialSpecializationDecl D,
+    CXClassTemplatePartialSpecializationDecl PartialSpec) {
+  static_cast<clang::ClassTemplatePartialSpecializationDecl *>(D)
+      ->setInstantiatedFromMember(
+          static_cast<clang::ClassTemplatePartialSpecializationDecl *>(PartialSpec));
+}
+
+void clang_ClassTemplatePartialSpecializationDecl_setMemberSpecialization(
+    CXClassTemplatePartialSpecializationDecl D) {
+  static_cast<clang::ClassTemplatePartialSpecializationDecl *>(D)
+      ->setMemberSpecialization();
+}
+
+// ClassTemplateDecl
+CXClassTemplatePartialSpecializationDecl
+clang_ClassTemplateDecl_findPartialSpecInstantiatedFromMember(
+    CXClassTemplateDecl CTD, CXClassTemplatePartialSpecializationDecl D) {
+  return static_cast<clang::ClassTemplateDecl *>(CTD)
+      ->findPartialSpecInstantiatedFromMember(
+          static_cast<clang::ClassTemplatePartialSpecializationDecl *>(D));
+}
+
+// VarTemplateSpecializationDecl
+void clang_VarTemplateSpecializationDecl_setTypeAsWritten(CXVarTemplateSpecializationDecl D,
+                                                          CXTypeSourceInfo T) {
+  static_cast<clang::VarTemplateSpecializationDecl *>(D)->setTypeAsWritten(
+      static_cast<clang::TypeSourceInfo *>(T));
+}
+
+// VarTemplatePartialSpecializationDecl
+unsigned clang_VarTemplatePartialSpecializationDecl_getNumAssociatedConstraints(
+    CXVarTemplatePartialSpecializationDecl D) {
+  llvm::SmallVector<const clang::Expr *, 4> AC;
+  static_cast<clang::VarTemplatePartialSpecializationDecl *>(D)->getAssociatedConstraints(
+      AC);
+  return static_cast<unsigned>(AC.size());
+}
+
+void clang_VarTemplatePartialSpecializationDecl_getAssociatedConstraints(
+    CXVarTemplatePartialSpecializationDecl D, CXExpr *AC) {
+  llvm::SmallVector<const clang::Expr *, 4> V;
+  static_cast<clang::VarTemplatePartialSpecializationDecl *>(D)->getAssociatedConstraints(
+      V);
+  for (unsigned I = 0; I < V.size(); ++I)
+    AC[I] = const_cast<clang::Expr *>(V[I]);
+}
+
+void clang_VarTemplatePartialSpecializationDecl_setInstantiatedFromMember(
+    CXVarTemplatePartialSpecializationDecl D,
+    CXVarTemplatePartialSpecializationDecl PartialSpec) {
+  static_cast<clang::VarTemplatePartialSpecializationDecl *>(D)->setInstantiatedFromMember(
+      static_cast<clang::VarTemplatePartialSpecializationDecl *>(PartialSpec));
+}
+
+void clang_VarTemplatePartialSpecializationDecl_setMemberSpecialization(
+    CXVarTemplatePartialSpecializationDecl D) {
+  static_cast<clang::VarTemplatePartialSpecializationDecl *>(D)->setMemberSpecialization();
+}
+
+CXSourceRange_ clang_VarTemplatePartialSpecializationDecl_getSourceRange(
+    CXVarTemplatePartialSpecializationDecl D) {
+  auto rng =
+      static_cast<clang::VarTemplatePartialSpecializationDecl *>(D)->getSourceRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+// VarTemplateDecl
+CXVarTemplatePartialSpecializationDecl
+clang_VarTemplateDecl_findPartialSpecInstantiatedFromMember(
+    CXVarTemplateDecl VTD, CXVarTemplatePartialSpecializationDecl D) {
+  return static_cast<clang::VarTemplateDecl *>(VTD)->findPartialSpecInstantiatedFromMember(
+      static_cast<clang::VarTemplatePartialSpecializationDecl *>(D));
+}
+
+// FunctionTemplateDecl
+CXFunctionTemplateDecl clang_FunctionTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                         CXSourceLocation_ L,
+                                                         CXDeclarationName Name,
+                                                         CXTemplateParameterList Params,
+                                                         CXNamedDecl Decl) {
+  return clang::FunctionTemplateDecl::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(L),
+      clang::DeclarationName::getFromOpaquePtr(Name),
+      static_cast<clang::TemplateParameterList *>(Params),
+      static_cast<clang::NamedDecl *>(Decl));
+}
+
+// TemplateTypeParmDecl
+void clang_TemplateTypeParmDecl_setInheritedDefaultArgument(CXTemplateTypeParmDecl D,
+                                                            CXASTContext Context,
+                                                            CXTemplateTypeParmDecl Prev) {
+  static_cast<clang::TemplateTypeParmDecl *>(D)->setInheritedDefaultArgument(
+      *static_cast<clang::ASTContext *>(Context),
+      static_cast<clang::TemplateTypeParmDecl *>(Prev));
+}
+
+// NonTypeTemplateParmDecl
+void clang_NonTypeTemplateParmDecl_setInheritedDefaultArgument(
+    CXNonTypeTemplateParmDecl D, CXASTContext Context, CXNonTypeTemplateParmDecl Prev) {
+  static_cast<clang::NonTypeTemplateParmDecl *>(D)->setInheritedDefaultArgument(
+      *static_cast<clang::ASTContext *>(Context),
+      static_cast<clang::NonTypeTemplateParmDecl *>(Prev));
+}
+
+// TemplateTemplateParmDecl
+void clang_TemplateTemplateParmDecl_setInheritedDefaultArgument(
+    CXTemplateTemplateParmDecl D, CXASTContext Context, CXTemplateTemplateParmDecl Prev) {
+  static_cast<clang::TemplateTemplateParmDecl *>(D)->setInheritedDefaultArgument(
+      *static_cast<clang::ASTContext *>(Context),
+      static_cast<clang::TemplateTemplateParmDecl *>(Prev));
+}
+
+// BuiltinTemplateDecl
+CXBuiltinTemplateDecl clang_BuiltinTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                       CXDeclarationName Name,
+                                                       CXBuiltinTemplateKind BTK) {
+  return clang::BuiltinTemplateDecl::Create(*static_cast<clang::ASTContext *>(C),
+                                            static_cast<clang::DeclContext *>(DC),
+                                            clang::DeclarationName::getFromOpaquePtr(Name),
+                                            static_cast<clang::BuiltinTemplateKind>(BTK));
+}
+
+// ClassTemplateDecl
+CXClassTemplateDecl clang_ClassTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                   CXSourceLocation_ L,
+                                                   CXDeclarationName Name,
+                                                   CXTemplateParameterList Params,
+                                                   CXNamedDecl Decl) {
+  return clang::ClassTemplateDecl::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(L),
+      clang::DeclarationName::getFromOpaquePtr(Name),
+      static_cast<clang::TemplateParameterList *>(Params),
+      static_cast<clang::NamedDecl *>(Decl));
+}
+
+// FriendTemplateDecl
+CXFriendTemplateDecl clang_FriendTemplateDecl_CreateWithFriendDecl(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ Loc,
+    const CXTemplateParameterList *Params, unsigned NumParams, CXNamedDecl Friend,
+    CXSourceLocation_ FriendLoc) {
+  clang::ASTContext &Ctx = *static_cast<clang::ASTContext *>(C);
+  auto **Buf = Ctx.Allocate<clang::TemplateParameterList *>(NumParams);
+  for (unsigned I = 0; I < NumParams; ++I)
+    Buf[I] = static_cast<clang::TemplateParameterList *>(Params[I]);
+  return clang::FriendTemplateDecl::Create(
+      Ctx, static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      llvm::MutableArrayRef<clang::TemplateParameterList *>(Buf, NumParams),
+      clang::FriendTemplateDecl::FriendUnion(static_cast<clang::NamedDecl *>(Friend)),
+      clang::SourceLocation::getFromPtrEncoding(FriendLoc));
+}
+
+CXFriendTemplateDecl clang_FriendTemplateDecl_CreateWithFriendType(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ Loc,
+    const CXTemplateParameterList *Params, unsigned NumParams, CXTypeSourceInfo Friend,
+    CXSourceLocation_ FriendLoc) {
+  clang::ASTContext &Ctx = *static_cast<clang::ASTContext *>(C);
+  auto **Buf = Ctx.Allocate<clang::TemplateParameterList *>(NumParams);
+  for (unsigned I = 0; I < NumParams; ++I)
+    Buf[I] = static_cast<clang::TemplateParameterList *>(Params[I]);
+  return clang::FriendTemplateDecl::Create(
+      Ctx, static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      llvm::MutableArrayRef<clang::TemplateParameterList *>(Buf, NumParams),
+      clang::FriendTemplateDecl::FriendUnion(static_cast<clang::TypeSourceInfo *>(Friend)),
+      clang::SourceLocation::getFromPtrEncoding(FriendLoc));
+}
+
+CXTypeSourceInfo clang_FriendTemplateDecl_getFriendType(CXFriendTemplateDecl D) {
+  return static_cast<clang::FriendTemplateDecl *>(D)->getFriendType();
+}
+
+CXNamedDecl clang_FriendTemplateDecl_getFriendDecl(CXFriendTemplateDecl D) {
+  return static_cast<clang::FriendTemplateDecl *>(D)->getFriendDecl();
+}
+
+CXSourceLocation_ clang_FriendTemplateDecl_getFriendLoc(CXFriendTemplateDecl D) {
+  return static_cast<clang::FriendTemplateDecl *>(D)->getFriendLoc().getPtrEncoding();
+}
+
+CXTemplateParameterList
+clang_FriendTemplateDecl_getTemplateParameterList(CXFriendTemplateDecl D, unsigned I) {
+  return static_cast<clang::FriendTemplateDecl *>(D)->getTemplateParameterList(I);
+}
+
+unsigned clang_FriendTemplateDecl_getNumTemplateParameters(CXFriendTemplateDecl D) {
+  return static_cast<clang::FriendTemplateDecl *>(D)->getNumTemplateParameters();
+}
+
+// TypeAliasTemplateDecl
+CXTypeAliasTemplateDecl clang_TypeAliasTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                           CXSourceLocation_ L,
+                                                           CXDeclarationName Name,
+                                                           CXTemplateParameterList Params,
+                                                           CXNamedDecl Decl) {
+  return clang::TypeAliasTemplateDecl::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(L),
+      clang::DeclarationName::getFromOpaquePtr(Name),
+      static_cast<clang::TemplateParameterList *>(Params),
+      static_cast<clang::NamedDecl *>(Decl));
+}
+
+// VarTemplateDecl
+CXVarTemplateDecl clang_VarTemplateDecl_Create(CXASTContext C, CXDeclContext DC,
+                                               CXSourceLocation_ L, CXDeclarationName Name,
+                                               CXTemplateParameterList Params,
+                                               CXVarDecl Decl) {
+  return clang::VarTemplateDecl::Create(*static_cast<clang::ASTContext *>(C),
+                                        static_cast<clang::DeclContext *>(DC),
+                                        clang::SourceLocation::getFromPtrEncoding(L),
+                                        clang::DeclarationName::getFromOpaquePtr(Name),
+                                        static_cast<clang::TemplateParameterList *>(Params),
+                                        static_cast<clang::VarDecl *>(Decl));
+}
+
+// ConceptDecl
+CXConceptDecl clang_ConceptDecl_Create(CXASTContext C, CXDeclContext DC,
+                                       CXSourceLocation_ L, CXDeclarationName Name,
+                                       CXTemplateParameterList Params,
+                                       CXExpr ConstraintExpr) {
+  return clang::ConceptDecl::Create(*static_cast<clang::ASTContext *>(C),
+                                    static_cast<clang::DeclContext *>(DC),
+                                    clang::SourceLocation::getFromPtrEncoding(L),
+                                    clang::DeclarationName::getFromOpaquePtr(Name),
+                                    static_cast<clang::TemplateParameterList *>(Params),
+                                    static_cast<clang::Expr *>(ConstraintExpr));
+}
+
+// TemplateParameterList
+CXTemplateParameterList
+clang_TemplateParameterList_Create(CXASTContext C, CXSourceLocation_ TemplateLoc,
+                                   CXSourceLocation_ LAngleLoc, const CXNamedDecl *Params,
+                                   unsigned NumParams, CXSourceLocation_ RAngleLoc,
+                                   CXExpr RequiresClause) {
+  llvm::SmallVector<clang::NamedDecl *, 4> ParamVec;
+  ParamVec.reserve(NumParams);
+  for (unsigned I = 0; I < NumParams; ++I)
+    ParamVec.push_back(static_cast<clang::NamedDecl *>(const_cast<void *>(Params[I])));
+  return clang::TemplateParameterList::Create(
+      *static_cast<clang::ASTContext *>(C),
+      clang::SourceLocation::getFromPtrEncoding(TemplateLoc),
+      clang::SourceLocation::getFromPtrEncoding(LAngleLoc), ParamVec,
+      clang::SourceLocation::getFromPtrEncoding(RAngleLoc),
+      static_cast<clang::Expr *>(RequiresClause));
+}
+
+// DependentFunctionTemplateSpecializationInfo
+unsigned clang_DependentFunctionTemplateSpecializationInfo_getNumCandidates(
+    CXDependentFunctionTemplateSpecializationInfo I) {
+  return static_cast<clang::DependentFunctionTemplateSpecializationInfo *>(I)
+      ->getCandidates()
+      .size();
+}
+
+CXFunctionTemplateDecl clang_DependentFunctionTemplateSpecializationInfo_getCandidate(
+    CXDependentFunctionTemplateSpecializationInfo I, unsigned Idx) {
+  return static_cast<clang::DependentFunctionTemplateSpecializationInfo *>(I)
+      ->getCandidates()[Idx];
+}
+
+// TemplateTypeParmDecl
+CXTemplateTypeParmDecl clang_TemplateTypeParmDecl_Create(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ KeyLoc, CXSourceLocation_ NameLoc,
+    unsigned D, unsigned P, CXIdentifierInfo Id, bool Typename, bool ParameterPack,
+    bool HasTypeConstraint, bool HasNumExpanded, unsigned NumExpanded) {
+  return clang::TemplateTypeParmDecl::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(KeyLoc),
+      clang::SourceLocation::getFromPtrEncoding(NameLoc), D, P,
+      static_cast<clang::IdentifierInfo *>(Id), Typename, ParameterPack, HasTypeConstraint,
+      HasNumExpanded ? std::optional<unsigned>(NumExpanded) : std::nullopt);
+}
+
+bool clang_TemplateTypeParmDecl_hasInitializedTypeConstraint(CXTemplateTypeParmDecl D) {
+  return static_cast<clang::TemplateTypeParmDecl *>(D)->getTypeConstraint() != nullptr;
+}
+
+CXConceptDecl
+clang_TemplateTypeParmDecl_getTypeConstraintConcept(CXTemplateTypeParmDecl D) {
+  return static_cast<clang::TemplateTypeParmDecl *>(D)
+      ->getTypeConstraint()
+      ->getNamedConcept();
+}
+
+CXExpr clang_TemplateTypeParmDecl_getTypeConstraintImmediatelyDeclaredConstraint(
+    CXTemplateTypeParmDecl D) {
+  return static_cast<clang::TemplateTypeParmDecl *>(D)
+      ->getTypeConstraint()
+      ->getImmediatelyDeclaredConstraint();
+}
+
+CXSourceLocation_
+clang_TemplateTypeParmDecl_getTypeConstraintConceptNameLoc(CXTemplateTypeParmDecl D) {
+  return static_cast<clang::TemplateTypeParmDecl *>(D)
+      ->getTypeConstraint()
+      ->getConceptNameLoc()
+      .getPtrEncoding();
+}
+
+CXASTTemplateArgumentListInfo
+clang_TemplateTypeParmDecl_getTypeConstraintTemplateArgsAsWritten(
+    CXTemplateTypeParmDecl D) {
+  return const_cast<clang::ASTTemplateArgumentListInfo *>(
+      static_cast<clang::TemplateTypeParmDecl *>(D)
+          ->getTypeConstraint()
+          ->getTemplateArgsAsWritten());
+}
+
+// NonTypeTemplateParmDecl
+CXNonTypeTemplateParmDecl clang_NonTypeTemplateParmDecl_Create(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
+    unsigned D, unsigned P, CXIdentifierInfo Id, CXQualType T, bool ParameterPack,
+    CXTypeSourceInfo TInfo) {
+  return clang::NonTypeTemplateParmDecl::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(StartLoc),
+      clang::SourceLocation::getFromPtrEncoding(IdLoc), D, P,
+      static_cast<clang::IdentifierInfo *>(Id), clang::QualType::getFromOpaquePtr(T),
+      ParameterPack, static_cast<clang::TypeSourceInfo *>(TInfo));
+}
+
+void clang_NonTypeTemplateParmDecl_setDepth(CXNonTypeTemplateParmDecl D, unsigned Depth) {
+  static_cast<clang::NonTypeTemplateParmDecl *>(D)->setDepth(Depth);
+}
+
+void clang_NonTypeTemplateParmDecl_setPosition(CXNonTypeTemplateParmDecl D,
+                                               unsigned Position) {
+  static_cast<clang::NonTypeTemplateParmDecl *>(D)->setPosition(Position);
+}
+
+// TemplateTemplateParmDecl
+CXTemplateTemplateParmDecl
+clang_TemplateTemplateParmDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L,
+                                      unsigned D, unsigned P, bool ParameterPack,
+                                      CXIdentifierInfo Id, CXTemplateParameterList Params) {
+  return clang::TemplateTemplateParmDecl::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(L), D, P, ParameterPack,
+      static_cast<clang::IdentifierInfo *>(Id),
+      static_cast<clang::TemplateParameterList *>(Params));
+}
+
+void clang_TemplateTemplateParmDecl_setDepth(CXTemplateTemplateParmDecl D, unsigned Depth) {
+  static_cast<clang::TemplateTemplateParmDecl *>(D)->setDepth(Depth);
+}
+
+void clang_TemplateTemplateParmDecl_setPosition(CXTemplateTemplateParmDecl D,
+                                                unsigned Position) {
+  static_cast<clang::TemplateTemplateParmDecl *>(D)->setPosition(Position);
+}
+
+// ClassTemplateSpecializationDecl
+CXDecl clang_ClassTemplateSpecializationDecl_getInstantiatedFrom(
+    CXClassTemplateSpecializationDecl D) {
+  auto U = static_cast<clang::ClassTemplateSpecializationDecl *>(D)->getInstantiatedFrom();
+  if (auto *PD = U.dyn_cast<clang::ClassTemplatePartialSpecializationDecl *>())
+    return PD;
+  return U.dyn_cast<clang::ClassTemplateDecl *>();
+}
+
+// VarTemplateSpecializationDecl
+CXDecl
+clang_VarTemplateSpecializationDecl_getInstantiatedFrom(CXVarTemplateSpecializationDecl D) {
+  auto U = static_cast<clang::VarTemplateSpecializationDecl *>(D)->getInstantiatedFrom();
+  if (auto *PD = U.dyn_cast<clang::VarTemplatePartialSpecializationDecl *>())
+    return PD;
+  return U.dyn_cast<clang::VarTemplateDecl *>();
+}
+
+// ImplicitConceptSpecializationDecl
+CXImplicitConceptSpecializationDecl clang_ImplicitConceptSpecializationDecl_Create(
+    CXASTContext C, CXDeclContext DC, CXSourceLocation_ SL, const CXTemplateArgument *Args,
+    unsigned NumArgs) {
+  llvm::SmallVector<clang::TemplateArgument, 4> ArgVec;
+  ArgVec.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    ArgVec.push_back(*static_cast<clang::TemplateArgument *>(const_cast<void *>(Args[I])));
+  return clang::ImplicitConceptSpecializationDecl::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(SL), ArgVec);
+}
+
+unsigned clang_ImplicitConceptSpecializationDecl_getNumTemplateArguments(
+    CXImplicitConceptSpecializationDecl D) {
+  return static_cast<clang::ImplicitConceptSpecializationDecl *>(D)
+      ->getTemplateArguments()
+      .size();
+}
+
+CXTemplateArgument clang_ImplicitConceptSpecializationDecl_getTemplateArgument(
+    CXImplicitConceptSpecializationDecl D, unsigned I) {
+  return const_cast<clang::TemplateArgument *>(
+      &static_cast<clang::ImplicitConceptSpecializationDecl *>(D)
+           ->getTemplateArguments()[I]);
+}
+
+void clang_ImplicitConceptSpecializationDecl_setTemplateArguments(
+    CXImplicitConceptSpecializationDecl D, const CXTemplateArgument *Args,
+    unsigned NumArgs) {
+  llvm::SmallVector<clang::TemplateArgument, 4> ArgVec;
+  ArgVec.reserve(NumArgs);
+  for (unsigned I = 0; I < NumArgs; ++I)
+    ArgVec.push_back(*static_cast<clang::TemplateArgument *>(const_cast<void *>(Args[I])));
+  static_cast<clang::ImplicitConceptSpecializationDecl *>(D)->setTemplateArguments(ArgVec);
+}
+
+bool clang_ImplicitConceptSpecializationDecl_classofKind(CXDeclKind K) {
+  return clang::ImplicitConceptSpecializationDecl::classofKind(
+      static_cast<clang::Decl::Kind>(K));
 }

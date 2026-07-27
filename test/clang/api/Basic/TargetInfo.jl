@@ -297,3 +297,194 @@ end
 
     dispose(I)
 end
+
+@testset "Basic | TargetInfo::ConstraintInfo" begin
+    I = CC.create_interpreter(String[])
+    ci = CC.get_instance(I)
+    ti = CC.getTarget(ci)
+
+    # a fresh ConstraintInfo carries its two strings and no flags at all
+    out = CC.ConstraintInfo("=r", "dst")
+    @test CC.getConstraintStr(out) == "=r"
+    @test CC.getName(out) == "dst"
+    @test CC.isReadWrite(out) == false
+    @test CC.earlyClobber(out) == false
+    @test CC.allowsRegister(out) == false
+    @test CC.allowsMemory(out) == false
+    @test CC.hasMatchingInput(out) == false
+    @test CC.hasTiedOperand(out) == false
+    @test CC.requiresImmediateConstant(out) == false
+
+    # "=r" is a valid output constraint on every target: '=' and 'r' are handled by
+    # TargetInfo::validateOutputConstraint itself, not by the target-specific
+    # validateAsmConstraint hook, so the flags it sets in place are the same everywhere.
+    @test CC.validateOutputConstraint(ti, out) == true
+    @test CC.allowsRegister(out) == true
+    @test CC.allowsMemory(out) == false
+    @test CC.isReadWrite(out) == false
+
+    # "=m" is memory-only; an unnamed operand round-trips as the empty name
+    mem = CC.ConstraintInfo("=m", "")
+    @test CC.validateOutputConstraint(ti, mem)
+    @test CC.allowsMemory(mem)
+    @test CC.allowsRegister(mem) == false
+    @test isempty(CC.getName(mem))
+    @test CC.getConstraintStr(mem) == "=m"
+
+    # "+&rm" is read-write, early clobber, register and memory all at once
+    rw = CC.ConstraintInfo("+&rm", "")
+    @test CC.validateOutputConstraint(ti, rw)
+    @test CC.isReadWrite(rw)
+    @test CC.earlyClobber(rw)
+    @test CC.allowsRegister(rw)
+    @test CC.allowsMemory(rw)
+
+    # an output constraint must start with '=' or '+'
+    bad = CC.ConstraintInfo("r", "")
+    @test CC.validateOutputConstraint(ti, bad) == false
+    @test CC.allowsRegister(bad) == false
+
+    # the setters reach the same flag bits without going through a target
+    flags = CC.ConstraintInfo("=r", "")
+    CC.setIsReadWrite(flags)
+    CC.setEarlyClobber(flags)
+    CC.setAllowsMemory(flags)
+    CC.setAllowsRegister(flags)
+    CC.setHasMatchingInput(flags)
+    @test CC.isReadWrite(flags)
+    @test CC.earlyClobber(flags)
+    @test CC.allowsMemory(flags)
+    @test CC.allowsRegister(flags)
+    @test CC.hasMatchingInput(flags)
+    @test CC.requiresImmediateConstant(flags) == false
+    CC.setRequiresImmediate(flags, -8, 7)
+    @test CC.requiresImmediateConstant(flags)
+
+    # tying an input operand to output 0 copies the output's flags and marks the output
+    input = CC.ConstraintInfo("0", "")
+    @test CC.hasTiedOperand(input) == false
+    CC.setTiedOperand(input, 0, out)
+    @test CC.hasTiedOperand(input)
+    @test CC.getTiedOperand(input) isa Cuint
+    @test CC.getTiedOperand(input) == 0
+    @test CC.hasMatchingInput(out)
+    @test CC.allowsRegister(input) == CC.allowsRegister(out)
+    # ... but the tied input keeps its own constraint string and name
+    @test CC.getConstraintStr(input) == "0"
+    @test isempty(CC.getName(input))
+
+    for c in (out, mem, rw, bad, flags, input)
+        dispose(c)
+    end
+    dispose(I)
+end
+
+@testset "Basic | TargetInfo feature, tuning and multiversioning queries" begin
+    I = create_interpreter(String[])
+    ci = get_instance(I)
+    ti = CC.getTarget(ci)
+
+    # Plain target predicates: the host triple decides every value, so assert only the shape.
+    @test CC.allowHalfArgsAndReturns(ti) isa Bool
+    @test CC.supportSourceEvalMethod(ti) isa Bool
+    @test CC.useObjCFP2RetForComplexLongDouble(ti) isa Bool
+    @test CC.allowAMDGPUUnsafeFPAtomics(ti) isa Bool
+    @test CC.hasPS4DLLImportExport(ti) isa Bool
+    @test CC.supportsTargetAttributeTune(ti) isa Bool
+    @test CC.supportsExtendIntArgs(ti) isa Bool
+    @test CC.checkArithmeticFenceSupported(ti) isa Bool
+    @test CC.allowDebugInfoForExternalRef(ti) isa Bool
+    @test CC.getMaxOpenCLWorkGroupSize(ti) isa Integer
+    # not host-decided: an interpreter built from an empty command line never targets
+    # RenderScript on any of the CI platforms
+    @test CC.isRenderScriptTarget(ti) == false
+
+    # Feature-name queries are total for any string.
+    @test CC.doesFeatureAffectCodeGen(ti, "sse2") isa Bool
+    @test CC.isReadOnlyFeature(ti, "sse2") isa Bool
+    @test CC.getFeatureDependencies(ti, "sse2") isa String
+    @test isempty(CC.getFeatureDependencies(ti, "no-such-feature"))
+    @test CC.isBranchProtectionSupportedArch(ti, "x86-64") isa Bool
+
+    # __builtin_cpu_supports / __builtin_cpu_is / cpu_dispatch argument validation: these
+    # are the functions Sema calls on raw user strings, so they are total.
+    @test CC.validateCpuSupports(ti, "sse2") isa Bool
+    @test CC.validateCpuIs(ti, "atom") isa Bool
+    @test CC.validateCPUSpecificCPUDispatch(ti, "generic") isa Bool
+    @test CC.validateCpuSupports(ti, "definitely-not-a-feature") == false
+    @test CC.validateCpuIs(ti, "definitely-not-a-cpu") == false
+    @test CC.multiVersionFeatureCost(ti) isa Integer
+
+    # multiVersionSortPriority indexes a target-specific priority table, so it is only
+    # defined for a name the same target already validated -- clang itself only reaches it
+    # from strings that passed validateCpuSupports. On a target with no multiversioning
+    # support nothing validates and the loop body simply does not run.
+    for f in filter(n -> CC.validateCpuSupports(ti, n), ["sse2", "avx", "neon"])
+        @test CC.multiVersionSortPriority(ti, f) isa Integer
+    end
+
+    dispose(I)
+end
+
+@testset "Basic | TargetInfo address spaces, calling conventions, target identity" begin
+    I = create_interpreter(String[])
+    ci = get_instance(I)
+    ti = CC.getTarget(ci)
+    lo = CC.getLangOpts(ci)
+    diag = CC.getDiagnostics(ci)
+
+    # Builtin-description address-space mapping. The base implementation is the identity
+    # map through getLangASFromTargetAS, so only the carrier type is host-independent.
+    @test CC.getOpenCLBuiltinAddressSpace(ti, 0) isa CC.CXLangAS
+    @test CC.getCUDABuiltinAddressSpace(ti, 0) isa CC.CXLangAS
+    @test CC.getOpenCLTypeAddrSpace(ti, CC.CXOpenCLTypeKind_OCLTK_Default) isa CC.CXLangAS
+
+    # optional<LangAS> / optional<unsigned>: `nothing` when the target names none.
+    cas = CC.getConstantAddressSpace(ti)
+    @test cas === nothing || cas isa CC.CXLangAS
+    dwarf = CC.getDWARFAddressSpace(ti, 0)
+    @test dwarf === nothing || dwarf isa Integer
+
+    # Calling conventions: whichever default the target picks, its own checker has to
+    # accept it -- that is the invariant Sema relies on when it substitutes the default.
+    cc = CC.getDefaultCallingConv(ti)
+    @test cc isa CC.CXCallingConv_
+    @test CC.checkCallingConvention(ti, cc) == CC.CXTargetInfo_CCCR_OK
+    @test CC.checkCallingConvention(ti, CC.CXCallingConv_CC_C) == CC.CXTargetInfo_CCCR_OK
+    @test CC.getCallingConvKind(ti, false) isa CC.CXTargetInfo_CallingConvKind
+    @test CC.getCallingConvKind(ti, true) isa CC.CXTargetInfo_CallingConvKind
+    @test CC.areDefaultedSMFStillPOD(ti, lo) isa Bool
+
+    # VersionTuples cross as their printed form; the digits are the target's business, but
+    # VersionTuple always prints at least a major number.
+    @test CC.getPlatformMinVersion(ti) isa String
+    @test !isempty(CC.getPlatformMinVersion(ti))
+    @test CC.getSDKVersion(ti) isa String
+
+    # Target identity. Both the target ID and the Darwin variant triple are absent on the
+    # ordinary host targets CI runs on, so only the shape is asserted.
+    @test CC.getTargetID(ti) isa String
+    variant = CC.getDarwinTargetVariantTriple(ti)
+    @test variant === nothing || variant isa String
+    @test CC.hasHIPImageSupport(ti) isa Bool
+    @test CC.validateTarget(ti, diag) isa Bool
+
+    # Tune-CPU names: the list is target-decided (and empty on targets that model none),
+    # but no entry is ever an empty string.
+    tune = CC.fillValidTuneCPUList(ti)
+    @test tune isa Vector{String}
+    @test all(!isempty, tune)
+
+    # cpu_specific mangling is an llvm_unreachable on every target that does not implement
+    # it, so the wrapper asserts the same gate Sema checks first. Only X86 implements it,
+    # so the positive branch runs on the x86_64 runners and not on an arm64 host.
+    @test_throws AssertionError CC.CPUSpecificManglingCharacter(ti, "definitely-not-a-cpu")
+    for name in ("generic", "pentium_4", "core_2_duo_ssse3")
+        if CC.validateCPUSpecificCPUDispatch(ti, name)
+            @test CC.CPUSpecificManglingCharacter(ti, name) isa Integer
+            break
+        end
+    end
+
+    dispose(I)
+end

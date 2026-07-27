@@ -13,6 +13,8 @@
 #include "clang-ex/Basic/CXTargetCXXABI.h"
 #include "clang-ex/Basic/CXTargetInfo.h"
 #include "llvm-c/ExecutionEngine.h"
+#include "clang-ex/Basic/CXFloatModeKind.h"
+#include "clang-ex/Basic/CXBuiltins.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
@@ -35,6 +37,16 @@ typedef enum CXInlineVariableDefinitionKind {
   CXInlineVariableDefinitionKind_Strong
 } CXInlineVariableDefinitionKind;
 
+// Mirrors clang::ASTContext::GetBuiltinTypeError (clang/AST/ASTContext.h) — why
+// clang_ASTContext_GetBuiltinType could not build a builtin's type.
+typedef enum CXGetBuiltinTypeError {
+  CXGetBuiltinTypeError_GE_None,
+  CXGetBuiltinTypeError_GE_Missing_type,
+  CXGetBuiltinTypeError_GE_Missing_stdio,
+  CXGetBuiltinTypeError_GE_Missing_setjmp,
+  CXGetBuiltinTypeError_GE_Missing_ucontext
+} CXGetBuiltinTypeError;
+
 // ASTContext
 
 // getInterpContext
@@ -51,6 +63,11 @@ unsigned clang_ASTContext_getNumTraversalScopeDecls(CXASTContext Ctx);
 // interior pointers into the ASTContext arena.
 void clang_ASTContext_getTraversalScopeDecls(CXASTContext Ctx, CXDecl *Buf);
 // setTraversalScope
+
+// The Decls buffer is copied into the context's own vector, so it may be freed right after
+// the call; Decls may be NULL when NumDecls is 0. Narrowing the scope also clears the
+// cached parent map.
+void clang_ASTContext_setTraversalScope(CXASTContext Ctx, CXDecl *Decls, unsigned NumDecls);
 // getParents
 // getPrintingPolicy
 // setPrintingPolicy
@@ -76,6 +93,12 @@ CXQualType clang_ASTContext_getIntTypeForBitwidth(CXASTContext Ctx, unsigned Des
 
 // CXQualType clang_ASTContext_getRealTypeForBitwidth(CXASTContext Ctx, unsigned DestWidth,
 //                                                    clang::FloatModeKind ExplicitType);
+
+// Returns a null CXQualType when the target has no floating-point type of DestWidth bits in
+// the requested mode — that is the documented "no appropriate target type" answer, not an
+// error.
+CXQualType clang_ASTContext_getRealTypeForBitwidth(CXASTContext Ctx, unsigned DestWidth,
+                                                   CXFloatModeKind ExplicitType);
 
 bool clang_ASTContext_AtomicUsesUnsupportedLibcall(CXASTContext Ctx, CXAtomicExpr E);
 
@@ -125,6 +148,12 @@ CXFullComment clang_ASTContext_getCommentForDecl(CXASTContext Ctx, CXDecl D,
 // and no cache. NULL when none is attached.
 CXFullComment clang_ASTContext_getLocalCommentForDeclUncached(CXASTContext Ctx, CXDecl D);
 // cloneFullComment
+
+// Copies FC's comment blocks onto a fresh FullComment carrying D's own DeclInfo. FC must
+// be non-null — clang dereferences it — and the clone is ASTContext-arena memory (no
+// dispose).
+CXFullComment clang_ASTContext_cloneFullComment(CXASTContext Ctx, CXFullComment FC,
+                                                CXDecl D);
 // getCommentCommandTraits
 // getDeclAttrs
 
@@ -136,8 +165,43 @@ CXMemberSpecializationInfo
 clang_ASTContext_getInstantiatedFromStaticDataMember(CXASTContext Ctx, CXVarDecl Var);
 
 // getTemplateOrSpecializationInfo
+
+// The two arms of the PointerUnion ASTContext::getTemplateOrSpecializationInfo returns
+// (MARSHALLING.md §8). The arms are unrelated classes, so no companion discriminator is
+// needed: each accessor answers NULL when the union holds the other arm or nothing at all.
+// Both are total — unlike clang_ASTContext_getInstantiatedFromStaticDataMember, which
+// asserts Var is a static data member.
+CXVarTemplateDecl
+clang_ASTContext_getTemplateOrSpecializationInfoAsVarTemplate(CXASTContext Ctx,
+                                                              CXVarDecl Var);
+
+CXMemberSpecializationInfo
+clang_ASTContext_getTemplateOrSpecializationInfoAsMemberSpecialization(CXASTContext Ctx,
+                                                                       CXVarDecl Var);
 // setInstantiatedFromStaticDataMember
+
+// PRECONDITIONS: Inst and Tmpl must both be static data members, Inst must not already
+// have a recorded pattern, and TSK must not be TSK_Undeclared — clang asserts all four
+// (the last inside MemberSpecializationInfo's constructor). The gates are
+// clang_VarDecl_isStaticDataMember, clang_ASTContext_getInstantiatedFromStaticDataMember
+// and clang_VarDecl_getDescribedVarTemplate (the other arm of the same union); the Julia
+// layer restates them.
+void clang_ASTContext_setInstantiatedFromStaticDataMember(
+    CXASTContext Ctx, CXVarDecl Inst, CXVarDecl Tmpl, CXTemplateSpecializationKind TSK,
+    CXSourceLocation_ PointOfInstantiation);
 // setTemplateOrSpecializationInfo
+
+// The VarTemplateDecl arm of the PointerUnion ASTContext::setTemplateOrSpecializationInfo
+// takes (MARSHALLING.md §8), split out so no discriminator crosses. The
+// MemberSpecializationInfo arm is already reachable through
+// clang_ASTContext_setInstantiatedFromStaticDataMember, which builds one internally.
+// PRECONDITION: Inst must not already carry either arm — clang asserts it. The gates are
+// clang_ASTContext_getTemplateOrSpecializationInfoAsVarTemplate and
+// clang_ASTContext_getTemplateOrSpecializationInfoAsMemberSpecialization, both restated as
+// @asserts in the Julia layer.
+void clang_ASTContext_setTemplateOrSpecializationInfoAsVarTemplate(CXASTContext Ctx,
+                                                                   CXVarDecl Inst,
+                                                                   CXVarTemplateDecl Tmpl);
 
 CXNamedDecl clang_ASTContext_getInstantiatedFromUsingDecl(CXASTContext Ctx,
                                                           CXNamedDecl Inst);
@@ -195,6 +259,13 @@ void clang_ASTContext_addedLocalImportDecl(CXASTContext Ctx, CXImportDecl Import
 // NULL at the end of the chain.
 CXImportDecl clang_ASTContext_getNextLocalImport(CXImportDecl Import);
 
+// local_imports
+
+// helper — the head of this translation unit's local import chain
+// (ASTContext::local_imports), walked from there with clang_ASTContext_getNextLocalImport.
+// NULL when nothing has been imported. The ImportDecl is a borrowed interior pointer.
+CXImportDecl clang_ASTContext_getFirstLocalImport(CXASTContext Ctx);
+
 CXDecl clang_ASTContext_getPrimaryMergedDecl(CXASTContext Ctx, CXDecl D);
 
 void clang_ASTContext_setPrimaryMergedDecl(CXASTContext Ctx, CXDecl D, CXDecl Primary);
@@ -204,7 +275,31 @@ void clang_ASTContext_mergeDefinitionIntoModule(CXASTContext Ctx, CXNamedDecl ND
 
 void clang_ASTContext_deduplicateMergedDefinitonsFor(CXASTContext Ctx, CXNamedDecl ND);
 
+// The additional modules the definition Def has been merged into (MARSHALLING.md §6,
+// count+index over the ArrayRef the context stores per canonical decl). The count is 0
+// outside a modules build; the CXModules are borrowed, owned by the module map.
+unsigned clang_ASTContext_getNumModulesWithMergedDefinition(CXASTContext Ctx,
+                                                            CXNamedDecl Def);
+
+// PRECONDITION: I < clang_ASTContext_getNumModulesWithMergedDefinition(Ctx, Def) — the
+// index is unchecked; restated as an @assert in the Julia layer.
+CXModule clang_ASTContext_getModuleWithMergedDefinition(CXASTContext Ctx, CXNamedDecl Def,
+                                                        unsigned I);
+
 // getModuleInitializers
+
+// Records Init as a declaration to run when Module M is initialized — typically a
+// module-scope variable whose initializer runs on import, or an ImportDecl nominating
+// another module. The context keys the list on the Module pointer and owns neither handle.
+void clang_ASTContext_addModuleInitializer(CXASTContext Ctx, CXModule M, CXDecl Init);
+
+// helper — how many initializers Module M has (MARSHALLING.md §6, count+index over the
+// ArrayRef the context stores per module). 0 for a module nothing was recorded against.
+unsigned clang_ASTContext_getNumModuleInitializers(CXASTContext Ctx, CXModule M);
+
+// PRECONDITION: I < clang_ASTContext_getNumModuleInitializers(Ctx, M) — the index is
+// unchecked; restated as an @assert in the Julia layer. The CXDecls are borrowed.
+CXDecl clang_ASTContext_getModuleInitializer(CXASTContext Ctx, CXModule M, unsigned I);
 
 // The C++20 named module under construction; NULL outside a named-module build.
 CXModule clang_ASTContext_getCurrentNamedModule(CXASTContext Ctx);
@@ -236,6 +331,13 @@ unsigned clang_ASTContext_getNumTypes(CXASTContext Ctx);
 CXType_ clang_ASTContext_getType(CXASTContext Ctx, unsigned I);
 // buildBuiltinTemplateDecl
 
+// Builds the BuiltinTemplateDecl for BTK named II and adds it to the translation unit, the
+// way getMakeIntegerSeqDecl/getTypePackElementDecl build theirs. ASTContext-arena memory
+// (no dispose).
+CXBuiltinTemplateDecl clang_ASTContext_buildBuiltinTemplateDecl(CXASTContext Ctx,
+                                                                CXBuiltinTemplateKind BTK,
+                                                                CXIdentifierInfo II);
+
 CXRecordDecl clang_ASTContext_buildImplicitRecord(CXASTContext Ctx, const char *Name,
                                                   CXTagTypeKind TK);
 
@@ -257,6 +359,14 @@ CXQualType clang_ASTContext_removeAddrSpaceQualType(CXASTContext Ctx, CXQualType
 // applyObjCProtocolQualifiers
 // getObjCGCQualType
 
+// The result carries the union of T's qualifiers and GCAttr.
+// PRECONDITIONS: GCAttr must not be CXQualifiers_GCNone (Qualifiers::addObjCGCAttr asserts
+// it names an attribute) and T must not already carry a GC attribute ("Type cannot have
+// multiple ObjCGCQualifiers"). The gate is clang_QualType_getObjCGCAttr; the Julia layer
+// restates both.
+CXQualType clang_ASTContext_getObjCGCQualType(CXASTContext Ctx, CXQualType T,
+                                              CXQualifiers_GC GCAttr);
+
 CXQualType clang_ASTContext_removePtrSizeAddrSpace(CXASTContext Ctx, CXQualType T);
 
 CXQualType clang_ASTContext_getRestrictType(CXASTContext Ctx, CXQualType T);
@@ -266,6 +376,16 @@ CXQualType clang_ASTContext_getVolatileType(CXASTContext Ctx, CXQualType T);
 CXQualType clang_ASTContext_getConstType(CXASTContext Ctx, CXQualType T);
 
 // adjustFunctionType
+
+// FunctionType::ExtInfo flattened to the FFI-relevant subset (MARSHALLING.md §7): the
+// calling convention plus the noreturn and ns_returns_retained bits. Every other ExtInfo
+// field (regparm, no_caller_saved_regs, nocf_check, cmse_nonsecure_call) is carried over
+// from Fn's own ExtInfo. The result is Fn itself when the requested ExtInfo already
+// matches, and otherwise a fresh node of Fn's own class (FunctionProtoType stays a
+// FunctionProtoType, FunctionNoProtoType stays a FunctionNoProtoType).
+CXFunctionType clang_ASTContext_adjustFunctionType(CXASTContext Ctx, CXFunctionType Fn,
+                                                   CXCallingConv_ CC, bool NoReturn,
+                                                   bool ProducesResult);
 // getCanonicalFunctionResultType
 
 CXQualType clang_ASTContext_getCanonicalFunctionResultType(CXASTContext Ctx,
@@ -276,10 +396,28 @@ void clang_ASTContext_adjustDeducedFunctionResultType(CXASTContext Ctx, CXFuncti
 
 // getFunctionTypeWithExceptionSpec
 
+// FunctionProtoType::ExceptionSpecInfo flattened to its discriminator alone (MARSHALLING.md
+// §7): only the specifications carrying no further payload can be requested this way.
+// PRECONDITION: EST must be one of EST_None, EST_DynamicNone, EST_MSAny, EST_NoThrow and
+// EST_BasicNoexcept — every other kind needs an exception type list, a noexcept expression
+// or a source declaration this entry point cannot carry. Orig must also be a function
+// prototype type: clang reaches its FunctionProtoType through an unchecked castAs<> once
+// the "already matches" fast path misses. Both are restated as @asserts in the Julia layer.
+CXQualType
+clang_ASTContext_getFunctionTypeWithExceptionSpec(CXASTContext Ctx, CXQualType Orig,
+                                                  CXExceptionSpecificationType EST);
+
 bool clang_ASTContext_hasSameFunctionTypeIgnoringExceptionSpec(CXASTContext Ctx,
                                                                CXQualType T, CXQualType U);
 
 // adjustExceptionSpec
+
+// Rewrites FD's type with the exception specification EST, and its written type source
+// info too when AsWritten is true. Same ExceptionSpecInfo flattening and the same EST
+// precondition as clang_ASTContext_getFunctionTypeWithExceptionSpec, which this runs on
+// FD's own type — so FD must have a function prototype type.
+void clang_ASTContext_adjustExceptionSpec(CXASTContext Ctx, CXFunctionDecl FD,
+                                          CXExceptionSpecificationType EST, bool AsWritten);
 
 CXQualType clang_ASTContext_getFunctionTypeWithoutPtrSizes(CXASTContext Ctx, CXQualType T);
 
@@ -353,6 +491,14 @@ CXFunctionDecl clang_ASTContext_getcudaConfigureCallDecl(CXASTContext Ctx);
 bool clang_ASTContext_BlockRequiresCopying(CXASTContext Ctx, CXQualType T, CXVarDecl D);
 
 // getByrefLifeTime
+
+// bool-return + out-params (MARSHALLING.md §8): true when Ty has a known ARC lifetime for a
+// __block capture, with *Lifetime and *HasByrefExtendedLayout filled in. False — the answer
+// for every translation unit that is not Objective-C under ARC — leaves both untouched, and
+// the Julia layer reports that as `nothing`.
+bool clang_ASTContext_getByrefLifetime(CXASTContext Ctx, CXQualType Ty,
+                                       CXQualifiers_ObjCLifetime *Lifetime,
+                                       bool *HasByrefExtendedLayout);
 
 CXQualType clang_ASTContext_getLValueReferenceType(CXASTContext Ctx, CXQualType T,
                                                    bool SpelledAsLValue);
@@ -475,6 +621,28 @@ CXQualType clang_ASTContext_getInjectedClassNameType(CXASTContext Ctx, CXCXXReco
 
 // getSubstTemplateTypeParmPackType
 
+// The std::optional<unsigned> pack index crosses as a flag plus a value (MARSHALLING.md
+// §8): pass HasPackIndex = false for a disengaged optional, in which case PackIndex is
+// ignored. The node is uniqued on the whole (replacement, decl, index, pack index) tuple.
+// PRECONDITION (documented; the C API has no cheap proxy for it): AssociatedDecl must own
+// a template parameter list with more than Index entries, because
+// SubstTemplateTypeParmType::getReplacedParameter indexes into it unchecked afterwards.
+CXQualType clang_ASTContext_getSubstTemplateTypeParmType(CXASTContext Ctx,
+                                                         CXQualType Replacement,
+                                                         CXDecl AssociatedDecl,
+                                                         unsigned Index, bool HasPackIndex,
+                                                         unsigned PackIndex);
+
+// PRECONDITION: ArgPack must be a TemplateArgument of kind Pack, and every element of the
+// pack must be a Type argument — clang reads the pack size unchecked and asserts the
+// element kinds under an assertions build. Restated as @asserts in the Julia layer, which
+// also shares AssociatedDecl's documented precondition above. The resulting type borrows
+// the pack's element array, which lives in ASTContext memory.
+CXQualType clang_ASTContext_getSubstTemplateTypeParmPackType(CXASTContext Ctx,
+                                                             CXDecl AssociatedDecl,
+                                                             unsigned Index, bool Final,
+                                                             CXTemplateArgument ArgPack);
+
 CXQualType clang_ASTContext_getTemplateTypeParmType(CXASTContext Ctx, unsigned Depth,
                                                     unsigned Index, bool ParameterPack,
                                                     CXTemplateTypeParmDecl ParmDecl);
@@ -488,8 +656,30 @@ CXQualType clang_ASTContext_getTemplateSpecializationType(
     unsigned NumArgs, CXQualType Underlying);
 
 // getCanonicalTemplateSpecializationType
+
+// PRECONDITION: T and every argument must already be canonical — this entry point builds
+// the canonical node directly and does not canonicalise its inputs. Restated as an @assert
+// in the Julia layer for T (comparable against clang_ASTContext_getCanonicalTemplateName)
+// and as a documented requirement for the arguments (canonicalise them with
+// clang_ASTContext_getCanonicalTemplateArgument). Args is a (buffer, count) pair of
+// heap-boxed CXTemplateArgument encodings (MARSHALLING.md §11), like
+// clang_ASTContext_getTemplateSpecializationType above.
+CXQualType clang_ASTContext_getCanonicalTemplateSpecializationType(
+    CXASTContext Ctx, CXTemplateName T, const CXTemplateArgument *Args, unsigned NumArgs);
 // getTemplateSpecializationType (TemplateArgumentLoc overload)
 // getTemplateSpecializationTypeInfo
+
+// The TypeSourceInfo for T<Args...>: the type itself plus the written locations, with the
+// angle brackets and the per-argument location info taken from Args. Canon may be a null
+// CXQualType, in which case clang computes the canonical type itself.
+// PRECONDITION: T must not be a dependent template name and must not be an unresolved one
+// (clang asserts the former and llvm_unreachable()s while canonicalising the latter), and
+// Canon must be non-null when T names a type alias template, whose underlying type clang
+// refuses to compute here. All three are restated as @asserts in the Julia layer.
+// ASTContext-arena memory (no dispose).
+CXTypeSourceInfo clang_ASTContext_getTemplateSpecializationTypeInfo(
+    CXASTContext Ctx, CXTemplateName T, CXSourceLocation_ TLoc,
+    CXTemplateArgumentListInfo Args, CXQualType Canon);
 
 CXQualType clang_ASTContext_getParenType(CXASTContext Ctx, CXQualType NamedType);
 
@@ -511,7 +701,23 @@ CXQualType clang_ASTContext_getPackExpansionType(CXASTContext Ctx, CXQualType Pa
 
 // getElaboratedType
 // getDependentNameType
+
+// Build the dependent type `Keyword NNS::Name` (`typename T::type` and friends). Canon may
+// be NULL, in which case clang computes the canonical type itself.
+CXQualType clang_ASTContext_getDependentNameType(CXASTContext Ctx,
+                                                 CXElaboratedTypeKeyword Keyword,
+                                                 CXNestedNameSpecifier NNS,
+                                                 CXIdentifierInfo Name, CXQualType Canon);
 // getDependentTemplateSpecializationType
+
+// Build the dependent type `Keyword NNS::Name<Args...>` — the node behind
+// `typename T::template X<int>` and its relatives. Args is a (buffer, count) pair of
+// heap-boxed CXTemplateArgument encodings, each handle dereferenced the way
+// clang_ASTContext_getTemplateSpecializationType does (MARSHALLING.md §11). Only the
+// ArrayRef<TemplateArgument> overload is wrapped, not the TemplateArgumentLoc one.
+CXQualType clang_ASTContext_getDependentTemplateSpecializationType(
+    CXASTContext Ctx, CXElaboratedTypeKeyword Keyword, CXNestedNameSpecifier NNS,
+    CXIdentifierInfo Name, const CXTemplateArgument *Args, unsigned NumArgs);
 
 // PRECONDITION: ParamDecl must be a template parameter (TemplateTypeParmDecl,
 // NonTypeTemplateParmDecl or TemplateTemplateParmDecl); clang cast<>s it unchecked.
@@ -520,6 +726,16 @@ CXQualType clang_ASTContext_getPackExpansionType(CXASTContext Ctx, CXQualType Pa
 CXTemplateArgument clang_ASTContext_getInjectedTemplateArg(CXASTContext Ctx,
                                                            CXNamedDecl ParamDecl);
 // getInjectedTempalteArgs
+
+// Fills Buf with exactly clang_TemplateParameterList_size(Params) entries — one injected
+// argument per template parameter, in order (MARSHALLING.md §6, count+fill against a count
+// the parameter list already knows; the count is exact and no slot is null). Buf is
+// caller-allocated, and unlike the borrowed array behind
+// RedeclarableTemplateDecl::getInjectedTemplateArgs every slot it receives is an OWNED
+// heap-boxed TemplateArgument encoding — release each with clang_TemplateArgument_dispose.
+void clang_ASTContext_getInjectedTemplateArgs(CXASTContext Ctx,
+                                              CXTemplateParameterList Params,
+                                              CXTemplateArgument *Buf);
 // getPackExpansionType
 // getObjCInterfaceType
 // gvetObjCObjectType
@@ -554,6 +770,18 @@ CXQualType clang_ASTContext_getDecltypeType(CXASTContext Ctx, CXExpr Expr,
 CXQualType clang_ASTContext_getUnaryTransformType(CXASTContext Ctx, CXQualType BaseType,
                                                   CXQualType UnderlyingType,
                                                   CXUTTKind UKind);
+
+// C++11 deduced `auto`. A null DeducedType builds the undeduced `auto` placeholder;
+// TypeConstraintConcept may be NULL (an unconstrained `auto`), and TypeConstraintArgs is a
+// (handle-buffer, count) pair of CXTemplateArgument encodings (MARSHALLING.md §11), each
+// handle dereferenced like clang_ASTContext_getTemplateSpecializationType does.
+// PRECONDITION: IsPack is only meaningful together with IsDependent (a pack `auto` is
+// inherently dependent); restated as an @assert in the Julia layer.
+CXQualType clang_ASTContext_getAutoType(CXASTContext Ctx, CXQualType DeducedType,
+                                        CXAutoTypeKeyword Keyword, bool IsDependent,
+                                        bool IsPack, CXConceptDecl TypeConstraintConcept,
+                                        const CXTemplateArgument *TypeConstraintArgs,
+                                        unsigned NumArgs);
 
 CXQualType clang_ASTContext_getAutoDeductType(CXASTContext Ctx);
 
@@ -605,6 +833,10 @@ CXQualType clang_ASTContext_getCFConstantStringType(CXASTContext Ctx);
 
 CXQualType clang_ASTContext_getObjCSuperType(CXASTContext Ctx);
 
+// Plain field assignment. The paired getter builds the implicit `struct objc_super` record
+// on first use only while the field is still null, so setting it first suppresses that.
+void clang_ASTContext_setObjCSuperType(CXASTContext Ctx, CXQualType ST);
+
 CXQualType clang_ASTContext_getRawCFConstantStringType(CXASTContext Ctx);
 
 void clang_ASTContext_setCFConstantStringType(CXASTContext Ctx, CXQualType T);
@@ -617,6 +849,15 @@ CXRecordDecl clang_ASTContext_getCFConstantStringTagDecl(CXASTContext Ctx);
 // getObjCNSStringType
 // setObjCNSStringType
 
+// A plain QualType field of the context, null until Sema records an @implementation of
+// NSConstantString — which a C++ translation unit never does.
+CXQualType clang_ASTContext_getObjCConstantStringInterface(CXASTContext Ctx);
+
+// A plain QualType field of the context, null until setObjCNSStringType records one.
+CXQualType clang_ASTContext_getObjCNSStringType(CXASTContext Ctx);
+
+void clang_ASTContext_setObjCNSStringType(CXASTContext Ctx, CXQualType T);
+
 CXQualType clang_ASTContext_getObjCIdRedefinitionType(CXASTContext Ctx);
 
 void clang_ASTContext_setObjCIdRedefinitionType(CXASTContext Ctx, CXQualType T);
@@ -624,6 +865,13 @@ void clang_ASTContext_setObjCIdRedefinitionType(CXASTContext Ctx, CXQualType T);
 CXQualType clang_ASTContext_getObjCClassRedefinitionType(CXASTContext Ctx);
 
 void clang_ASTContext_setObjCClassRedefinitionType(CXASTContext Ctx, CXQualType T);
+
+// Falls back to the built-in 'SEL' type when no user redefinition was recorded, which
+// lazily materialises the implicit 'SEL' typedef in the translation unit — same shape as
+// clang_ASTContext_getObjCIdRedefinitionType above.
+CXQualType clang_ASTContext_getObjCSelRedefinitionType(CXASTContext Ctx);
+
+void clang_ASTContext_setObjCSelRedefinitionType(CXASTContext Ctx, CXQualType T);
 
 CXIdentifierInfo clang_ASTContext_getNSObjectName(CXASTContext Ctx);
 
@@ -650,6 +898,15 @@ void clang_ASTContext_setFILEDecl(CXASTContext Ctx, CXTypeDecl FILEDecl);
 
 CXQualType clang_ASTContext_getFILEType(CXASTContext Ctx);
 
+// The setters behind the three C library types whose getters follow. Sema calls them when a
+// typedef literally named jmp_buf/sigjmp_buf/ucontext_t is declared; nothing else populates
+// those members, so each getter answers with a null QualType until its setter has run.
+void clang_ASTContext_setjmp_bufDecl(CXASTContext Ctx, CXTypeDecl D);
+
+void clang_ASTContext_setsigjmp_bufDecl(CXASTContext Ctx, CXTypeDecl D);
+
+void clang_ASTContext_setucontext_tDecl(CXASTContext Ctx, CXTypeDecl D);
+
 // The three C library types below are null QualTypes until the matching setter has run
 // (the decl is looked up by Sema when <setjmp.h>/<ucontext.h> is seen).
 CXQualType clang_ASTContext_getjmp_bufType(CXASTContext Ctx);
@@ -659,6 +916,32 @@ CXQualType clang_ASTContext_getsigjmp_bufType(CXASTContext Ctx);
 CXQualType clang_ASTContext_getucontext_tType(CXASTContext Ctx);
 
 CXQualType clang_ASTContext_getLogicalOperationType(CXASTContext Ctx);
+
+// The Objective-C @encode string of T. The encoder is not ObjC-specific — `int` encodes as
+// "i" in a C++ translation unit too.
+// PRECONDITION: T must be non-dependent and every record/enum type it reaches must be
+// complete (the encoder lays records out eagerly); restated as an @assert in the Julia
+// layer.
+CXString clang_ASTContext_getObjCEncodingForType(CXASTContext Ctx, CXQualType T);
+
+// The @encode string used for an Objective-C property of type T; differs from
+// clang_ASTContext_getObjCEncodingForType only in the encoder options. Same precondition.
+CXString clang_ASTContext_getObjCEncodingForPropertyType(CXASTContext Ctx, CXQualType T);
+
+// GCC-compatibility rewrite used by the legacy encoder: a typedef of a 32-bit `long` or
+// `unsigned long` comes back as `int`/`unsigned int`, and every other type is returned
+// unchanged. The C++ in/out parameter is returned by value here.
+CXQualType clang_ASTContext_getLegacyIntegralTypeEncoding(CXASTContext Ctx, CXQualType T);
+
+// The @encode string of D's signature: the return type, then the parameters with their
+// byte offsets. Inherits the completeness precondition of getObjCEncodingForType.
+CXString clang_ASTContext_getObjCEncodingForFunctionDecl(CXASTContext Ctx,
+                                                         CXFunctionDecl D);
+
+// Size of T for @encode purposes, in BYTES: like sizeof, except that integral and
+// enumeration types are widened to at least the width of `int`. Inherits the completeness
+// precondition above.
+int64_t clang_ASTContext_getObjCEncodingTypeSize(CXASTContext Ctx, CXQualType T);
 
 // getObjCEncodingForType
 // getObjCEncodingForPropertyType
@@ -677,6 +960,21 @@ CXQualType clang_ASTContext_getLogicalOperationType(CXASTContext Ctx);
 // getObjCSelType
 // getObjCClassDecl
 // getObjCClassType
+
+// The predefined ObjC 'id', 'SEL' and 'Class' typedefs and the types they name. All six are
+// lazily materialising: the first call builds the implicit typedef into the translation
+// unit (they never return NULL), so they mutate the AST even though they read like getters.
+CXTypedefDecl clang_ASTContext_getObjCIdDecl(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getObjCIdType(CXASTContext Ctx);
+
+CXTypedefDecl clang_ASTContext_getObjCSelDecl(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getObjCSelType(CXASTContext Ctx);
+
+CXTypedefDecl clang_ASTContext_getObjCClassDecl(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getObjCClassType(CXASTContext Ctx);
 // getObjCProtocolDecl
 
 CXTypedefDecl clang_ASTContext_getBOOLDecl(CXASTContext Ctx);
@@ -708,7 +1006,17 @@ CXQualType clang_ASTContext_getCVRQualifiedType(CXASTContext Ctx, CXQualType T,
 
 // getQualifiedType
 // getLifetimeQualifiedType
+
+// PRECONDITIONS: Lifetime must not be CXQualifiers_OCL_None and T must not already carry a
+// lifetime — clang asserts both. The gate is clang_QualType_getObjCLifetime; the Julia
+// layer restates them.
+CXQualType clang_ASTContext_getLifetimeQualifiedType(CXASTContext Ctx, CXQualType T,
+                                                     CXQualifiers_ObjCLifetime Lifetime);
 // getUnqualifiedObjCPointerType
+
+// Strips the ObjC lifetime qualifier from an ObjC pointer type; anything else comes back
+// unchanged. T must be a non-null QualType (clang dereferences its Type pointer).
+CXQualType clang_ASTContext_getUnqualifiedObjCPointerType(CXASTContext Ctx, CXQualType T);
 
 unsigned char clang_ASTContext_getFixedPointScale(CXASTContext Ctx, CXQualType Ty);
 
@@ -725,6 +1033,16 @@ CXDeclarationNameInfo clang_ASTContext_getNameForTemplate(CXASTContext Ctx,
                                                           CXTemplateName Name,
                                                           CXSourceLocation_ NameLoc);
 // getOverloadedTemplateName
+
+// The UnresolvedSetIterator [First, Last) pair clang wants is built inside the shim from a
+// (handle-buffer, count) array of candidates (MARSHALLING.md §11): each entry is added to a
+// local UnresolvedSet whose begin()/end() are then passed through. The candidates are
+// copied into ASTContext memory, so Decls may be freed right after the call.
+// PRECONDITION: NumDecls must be at least 2 — clang asserts the set is overloaded.
+// Restated as an @assert in the Julia layer.
+CXTemplateName clang_ASTContext_getOverloadedTemplateName(CXASTContext Ctx,
+                                                          const CXNamedDecl *Decls,
+                                                          unsigned NumDecls);
 
 CXTemplateName clang_ASTContext_getAssumedTemplateName(CXASTContext Ctx,
                                                        CXDeclarationName Name);
@@ -748,9 +1066,40 @@ CXTemplateName clang_ASTContext_getDependentTemplateName(CXASTContext Ctx,
 //     CXASTContext Ctx, CXTemplateTemplateParmDecl param, CXTemplateName replacement);
 
 // getSubstTemplateTemplateParmPack
+
+// Same optional-pack-index flattening as clang_ASTContext_getSubstTemplateTypeParmType
+// (MARSHALLING.md §8), and the same documented AssociatedDecl/Index precondition.
+CXTemplateName
+clang_ASTContext_getSubstTemplateTemplateParm(CXASTContext Ctx, CXTemplateName Replacement,
+                                              CXDecl AssociatedDecl, unsigned Index,
+                                              bool HasPackIndex, unsigned PackIndex);
+
+// PRECONDITION: ArgPack must be a TemplateArgument of kind Pack — the storage reads its
+// pack size and element pointer unchecked. Restated as an @assert in the Julia layer.
+CXTemplateName clang_ASTContext_getSubstTemplateTemplateParmPack(CXASTContext Ctx,
+                                                                 CXTemplateArgument ArgPack,
+                                                                 CXDecl AssociatedDecl,
+                                                                 unsigned Index,
+                                                                 bool Final);
 // DecodeTypeStr
 // GetBuiltinType
+
+// The type of the builtin with the given ID.
+// PRECONDITION: ID must be a builtin ID as reported by clang_IdentifierInfo_getBuiltinID or
+// clang_FunctionDecl_getBuiltinID (nonzero) — clang indexes its builtin table with it
+// unchecked. Error, which must not be NULL, says why a null QualType came back (a builtin
+// whose signature names a type this translation unit has not declared, e.g. FILE).
+// IntegerConstantArgs may be NULL; otherwise it receives the bitmask of arguments required
+// to be integer constant expressions — the shim zeroes it first because clang only ORs
+// bits into it.
+CXQualType clang_ASTContext_GetBuiltinType(CXASTContext Ctx, unsigned ID,
+                                           CXGetBuiltinTypeError *Error,
+                                           unsigned *IntegerConstantArgs);
 // getObjCGCAttrKind
+
+// Total: the method returns CXQualifiers_GCNone through its own early return whenever the
+// translation unit is not Objective-C garbage collected, which is every C/C++ one.
+CXQualifiers_GC clang_ASTContext_getObjCGCAttrKind(CXASTContext Ctx, CXQualType Ty);
 
 bool clang_ASTContext_areCompatibleVectorTypes(CXASTContext Ctx, CXQualType FirstVec,
                                                CXQualType SecondVec);
@@ -769,8 +1118,23 @@ bool clang_ASTContext_areLaxCompatibleRVVTypes(CXASTContext Ctx, CXQualType Firs
 
 bool clang_ASTContext_hasDirectOwnershipQualifier(CXASTContext Ctx, CXQualType Ty);
 
+// Static — no receiver. True when Ty is a typedef of an Objective-C object pointer
+// (NSObject and friends); always false in a C++ translation unit.
+// PRECONDITION: Ty must be a non-null QualType (clang reaches through its Type pointer);
+// restated as an @assert in the Julia layer.
+bool clang_ASTContext_isObjCNSObjectType(CXQualType Ty);
+
 // isObjCNSObjectType
 // getFloatTypeSemantics
+
+// helper — a floating-point type's llvm::fltSemantics crosses as its parts (MARSHALLING.md
+// §7): the mantissa precision, and the total width of the format, both in bits.
+// PRECONDITION for both: T must be a real (non-complex) floating builtin type — clang
+// castAs<BuiltinType>()s it and llvm_unreachable()s on every other kind; restated as an
+// @assert in the Julia layer.
+unsigned clang_ASTContext_getFloatTypeSemanticsPrecision(CXASTContext Ctx, CXQualType T);
+
+unsigned clang_ASTContext_getFloatTypeSemanticsSizeInBits(CXASTContext Ctx, CXQualType T);
 // getTypeInfo
 
 unsigned clang_ASTContext_getOpenMPDefaultSimdAlign(CXASTContext Ctx, CXQualType T);
@@ -1022,6 +1386,11 @@ CXQualType clang_ASTContext_getPromotedIntegerType(CXASTContext Ctx, CXQualType 
 
 // getInnerObjCOwnership
 
+// Walks pointer/array/reference layers down to the first retainable type and reports its
+// ARC lifetime; CXQualifiers_OCL_None when there is none. Total.
+CXQualifiers_ObjCLifetime clang_ASTContext_getInnerObjCOwnership(CXASTContext Ctx,
+                                                                 CXQualType T);
+
 CXQualType clang_ASTContext_isPromotableBitField(CXASTContext Ctx, CXExpr E);
 
 int clang_ASTContext_getIntegerTypeOrder(CXASTContext Ctx, CXQualType LHS, CXQualType RHS);
@@ -1068,6 +1437,20 @@ bool clang_ASTContext_typesAreBlockPointerCompatible(CXASTContext Ctx, CXQualTyp
 // isObjCIdType
 // isObjCClassType
 // isObjCSelType
+
+// Compare T (looking through one ElaboratedType) against this context's predefined 'id',
+// 'Class' and 'SEL' types, materialising those typedefs on first use like the getters
+// above. T must be a non-null QualType (clang dyn_casts through its Type pointer).
+bool clang_ASTContext_isObjCIdType(CXASTContext Ctx, CXQualType T);
+
+bool clang_ASTContext_isObjCClassType(CXASTContext Ctx, CXQualType T);
+
+bool clang_ASTContext_isObjCSelType(CXASTContext Ctx, CXQualType T);
+
+// True when both types are Objective-C object pointers assignable in either direction.
+// Total — a non-ObjC operand simply yields false.
+bool clang_ASTContext_areComparableObjCPointerTypes(CXASTContext Ctx, CXQualType LHS,
+                                                    CXQualType RHS);
 // ObjCQualifiedIdTypesAreCompatible
 // ObjCQualifiedClassTypesAreCompatible
 // canAssignObjCInterfaces
@@ -1122,6 +1505,9 @@ LLVMGenericValueRef clang_ASTContext_MakeIntValue(CXASTContext Ctx, uint64_t Val
                                                   CXQualType Type);
 
 bool clang_ASTContext_isSentinelNullExpr(CXASTContext Ctx, CXExpr E);
+
+// True when the translation unit contains at least one Objective-C @implementation.
+bool clang_ASTContext_AnyObjCImplementation(CXASTContext Ctx);
 
 // getObjCImplementation
 // AnyObjCImplementation
@@ -1183,8 +1569,47 @@ CXStringLiteral clang_ASTContext_getPredefinedStringLiteralFromCache(CXASTContex
 
 // getMSGuidDecl
 // getTemplateParamObjectDecl
+
+// The global GUID object for a GUID value, uniqued on the value — the declaration a
+// __uuidof expression designates. MSGuidDeclParts is flattened to its fields
+// (MARSHALLING.md §7); Part4And5 points at 8 bytes, copied inside the shim.
+// PRECONDITION: the translation unit must carry the implicit `_GUID` record, which clang
+// builds only under Microsoft extensions — this entry point reaches through it unchecked.
+// The gate is clang_ASTContext_getMSGuidTagDecl; the Julia layer restates it.
+CXMSGuidDecl clang_ASTContext_getMSGuidDecl(CXASTContext Ctx, uint32_t Part1,
+                                            uint16_t Part2, uint16_t Part3,
+                                            const uint8_t *Part4And5);
+
+// The uniqued anonymous global constant of type Ty holding Value. Total. The declaration is
+// ASTContext-arena memory (no dispose) and joins no DeclContext's lookup table.
+CXUnnamedGlobalConstantDecl clang_ASTContext_getUnnamedGlobalConstantDecl(CXASTContext Ctx,
+                                                                          CXQualType Ty,
+                                                                          CXAPValue Value);
+
+// The template parameter object of type T holding V — the static storage duration object a
+// class-type non-type template argument denotes. Uniqued on the (type, value) pair.
+// PRECONDITION: T must be a record type; clang asserts it. Restated as an @assert in the
+// Julia layer.
+CXTemplateParamObjectDecl
+clang_ASTContext_getTemplateParamObjectDecl(CXASTContext Ctx, CXQualType T, CXAPValue V);
 // filterFunctionTargetAttrs
 // getFunctionFeatureMap
+
+// helper — the size of the target feature map clang computes for FD (the target's baseline
+// features adjusted by FD's own target/target_clones attributes). clang builds the map into
+// an llvm::StringMap whose key storage dies with the call, so the map crosses as a count
+// plus an indexed accessor (MARSHALLING.md §6) and the shim rebuilds it on every call: no
+// StringRef escapes and the shim stays stateless. A StringMap's iteration order is a pure
+// function of its insertion sequence, which is the same on every rebuild, so index I names
+// the same feature in both functions.
+unsigned clang_ASTContext_getNumFunctionFeatures(CXASTContext Ctx, CXFunctionDecl FD);
+
+// helper — the I-th entry of that map: the feature name is the return value and
+// *IsEnabled receives its flag.
+// PRECONDITION: I < clang_ASTContext_getNumFunctionFeatures(Ctx, FD) — the index is
+// unchecked; restated as an @assert in the Julia layer. The CXString is caller-owned.
+CXString clang_ASTContext_getFunctionFeature(CXASTContext Ctx, CXFunctionDecl FD,
+                                             unsigned I, bool *IsEnabled);
 
 void clang_ASTContext_InitBuiltinTypes(CXASTContext Ctx, CXTargetInfo_ Target,
                                        CXTargetInfo_ AuxTarget);

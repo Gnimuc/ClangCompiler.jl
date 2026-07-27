@@ -8,6 +8,7 @@
 #include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Preprocessor.h"
+#include "llvm/Support/Timer.h"
 #include "llvm/Support/VirtualFileSystem.h"
 
 CXCompilerInstance clang_CompilerInstance_create(void) {
@@ -280,6 +281,11 @@ clang_CompilerInstance_getPreprocessorOutputOpts(CXCompilerInstance CI) {
   return &Opts;
 }
 
+CXAPINotesOptions clang_CompilerInstance_getAPINotesOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getAPINotesOpts();
+  return &Opts;
+}
+
 // Module loading
 bool clang_CompilerInstance_shouldBuildGlobalModuleIndex(CXCompilerInstance CI) {
   return static_cast<clang::CompilerInstance *>(CI)->shouldBuildGlobalModuleIndex();
@@ -332,8 +338,38 @@ bool clang_CompilerInstance_hasFrontendTimer(CXCompilerInstance CI) {
   return static_cast<clang::CompilerInstance *>(CI)->hasFrontendTimer();
 }
 
+CXString clang_CompilerInstance_getFrontendTimerName(CXCompilerInstance CI) {
+  return extra::makeCXString(
+      static_cast<clang::CompilerInstance *>(CI)->getFrontendTimer().getName());
+}
+
+bool clang_CompilerInstance_isFrontendTimerRunning(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->getFrontendTimer().isRunning();
+}
+
 void clang_CompilerInstance_createFrontendTimer(CXCompilerInstance CI) {
   static_cast<clang::CompilerInstance *>(CI)->createFrontendTimer();
+}
+
+// Ownership transfer
+void clang_CompilerInstance_resetAndLeakFileManager(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakFileManager();
+}
+
+void clang_CompilerInstance_resetAndLeakSourceManager(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakSourceManager();
+}
+
+void clang_CompilerInstance_resetAndLeakPreprocessor(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakPreprocessor();
+}
+
+void clang_CompilerInstance_resetAndLeakASTContext(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakASTContext();
+}
+
+void clang_CompilerInstance_resetAndLeakSema(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakSema();
 }
 
 // Action

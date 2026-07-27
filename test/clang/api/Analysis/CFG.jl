@@ -681,3 +681,401 @@ end
         CC.dispose(I)
     end
 end
+
+@testset "Analysis | CFG construction contexts" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    K = CC.LibClangEx
+    try
+        CC.parse(I, """
+            struct CfgCCObj {
+                int v;
+                CfgCCObj(int x) : v(x) {}
+                CfgCCObj(const CfgCCObj &o) : v(o.v) {}
+                ~CfgCCObj();
+            };
+            CfgCCObj cfg_cc_make(int x);
+            void cfg_cc_take(CfgCCObj o);
+            CfgCCObj cfg_cc_fn(int x) {
+                CfgCCObj local(x);
+                CfgCCObj made = cfg_cc_make(x);
+                CfgCCObj *heap = new CfgCCObj(x);
+                cfg_cc_take(CfgCCObj(x));
+                auto lam = [local]() { return local.v; };
+                delete heap;
+                return local;
+            }
+            """)
+        @assert f(I, "cfg_cc_fn")
+        fd = CC.getAsFunction(get_decl(f))
+        @test fd.ptr != C_NULL
+        @test CC.hasBody(fd)
+        body = CC.getBody(fd)
+        ctx = CC.get_ast_context(I)
+
+        opts = CC.CFGBuildOptions()
+        try
+            # AddRichCXXConstructors is what attaches construction contexts at all;
+            # without it there is no Constructor element to read one from
+            CC.setAddRichCXXConstructors(opts)
+            CC.setMarkElidedCXXConstructors(opts, true)
+            cfg = CC.buildCFGWithOptions(fd, body, ctx, opts, false, false, false, false,
+                                         false, false, true)
+            try
+                @test cfg isa CC.CFG
+                @test cfg.ptr != C_NULL
+                n = Int(CC.getNumBlocks(cfg))
+                @test n >= 2
+
+                stmt_kinds = (K.CXCFGElementKind_Statement, K.CXCFGElementKind_Constructor,
+                              K.CXCFGElementKind_CXXRecordTypedCall)
+                ctor_expr = nothing
+                ctor_ctx = nothing
+                typed_call = nothing
+                seen = K.CXConstructionContextKind[]
+                for i in 0:(n - 1)
+                    b = CC.getBlock(cfg, i)
+                    for j in 0:(Int(CC.size(b)) - 1)
+                        k = CC.getElementKind(b, j)
+                        k in stmt_kinds || continue
+                        s = CC.resolve(CC.getElementStmt(b, j))
+                        if s isa CC.AbstractCallExpr && CC.isCXXRecordTypedCall(s)
+                            typed_call = s
+                        end
+                        cc = CC.getElementConstructionContext(b, j)
+                        @test cc isa CC.ConstructionContext
+                        if k == K.CXCFGElementKind_Statement
+                            # a plain statement element carries no construction context
+                            @test cc.ptr == C_NULL
+                            continue
+                        end
+                        @test cc.ptr != C_NULL
+                        ck = CC.getKind(cc)
+                        @test ck isa K.CXConstructionContextKind
+                        push!(seen, ck)
+                        # every payload accessor is total: it answers a carrier of its
+                        # own type, NULL-valued unless the kind matches
+                        @test CC.getDeclStmt(cc) isa CC.DeclStmt
+                        @test CC.getCXXCtorInitializer(cc) isa CC.CXXCtorInitializer
+                        @test CC.getCXXNewExpr(cc) isa CC.CXXNewExpr
+                        @test CC.getCXXBindTemporaryExpr(cc) isa CC.CXXBindTemporaryExpr
+                        @test CC.getMaterializedTemporaryExpr(cc) isa CC.MaterializeTemporaryExpr
+                        @test CC.getConstructorAfterElision(cc) isa CC.CXXConstructExpr
+                        @test CC.getConstructionContextAfterElision(cc) isa CC.ConstructionContext
+                        @test CC.getReturnStmt(cc) isa CC.ReturnStmt
+                        @test CC.getCallLikeExpr(cc) isa CC.Expr_
+                        @test CC.getLambdaExpr(cc) isa CC.LambdaExpr
+                        @test CC.getInitializer(cc) isa CC.Expr_
+                        @test CC.getFieldDecl(cc) isa CC.FieldDecl
+                        if ck == K.CXConstructionContextKind_SimpleVariableKind ||
+                           ck == K.CXConstructionContextKind_CXX17ElidedCopyVariableKind
+                            @test CC.getDeclStmt(cc).ptr != C_NULL
+                            if k == K.CXCFGElementKind_Constructor &&
+                               s isa CC.AbstractCXXConstructExpr
+                                ctor_expr = s
+                                ctor_ctx = cc
+                            end
+                        elseif ck == K.CXConstructionContextKind_NewAllocatedObjectKind
+                            @test CC.getCXXNewExpr(cc).ptr != C_NULL
+                        elseif ck == K.CXConstructionContextKind_ElidedTemporaryObjectKind
+                            @test CC.getConstructorAfterElision(cc).ptr != C_NULL
+                            @test CC.getConstructionContextAfterElision(cc).ptr != C_NULL
+                        elseif ck == K.CXConstructionContextKind_SimpleReturnedValueKind ||
+                               ck == K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind
+                            @test CC.getReturnStmt(cc).ptr != C_NULL
+                        elseif ck == K.CXConstructionContextKind_ArgumentKind
+                            @test CC.getCallLikeExpr(cc).ptr != C_NULL
+                            @test CC.getIndex(cc) isa Integer
+                        elseif ck == K.CXConstructionContextKind_LambdaCaptureKind
+                            @test CC.getLambdaExpr(cc).ptr != C_NULL
+                            @test CC.getIndex(cc) isa Integer
+                            @test CC.getInitializer(cc).ptr != C_NULL
+                            @test CC.getFieldDecl(cc).ptr != C_NULL
+                        end
+                    end
+                end
+                # `CfgCCObj local(x);` is a direct-initialised local of class type, so the
+                # rich builder always yields a variable-kind Constructor element for it
+                @test !isempty(seen)
+                @test ctor_ctx !== nothing
+                @test ctor_expr !== nothing
+
+                if ctor_ctx !== nothing && ctor_expr !== nothing
+                    # the element list is stored in reverse, so the appended element
+                    # becomes index 0 and both payloads read back as handed in
+                    nb = CC.createBlock(cfg)
+                    @test CC.size(nb) == 0
+                    CC.appendConstructor(nb, ctor_expr, ctor_ctx)
+                    @test CC.size(nb) == 1
+                    @test CC.getElementKind(nb, 0) == K.CXCFGElementKind_Constructor
+                    @test CC.getElementStmt(nb, 0).ptr == ctor_expr.ptr
+                    @test CC.getElementConstructionContext(nb, 0).ptr == ctor_ctx.ptr
+
+                    if typed_call !== nothing
+                        CC.appendCXXRecordTypedCall(nb, typed_call, ctor_ctx)
+                        @test CC.size(nb) == 2
+                        @test CC.getElementKind(nb, 0) ==
+                              K.CXCFGElementKind_CXXRecordTypedCall
+                        @test CC.getElementStmt(nb, 0).ptr == typed_call.ptr
+                        @test CC.getElementConstructionContext(nb, 0).ptr == ctor_ctx.ptr
+                    end
+                end
+            finally
+                CC.dispose(cfg)
+            end
+        finally
+            CC.dispose(opts)
+        end
+    finally
+        CC.dispose(f)
+        CC.dispose(I)
+    end
+end
+
+@testset "Analysis | CFG BuildOptions fields and synthetic-DeclStmt enumeration" begin
+    I = CC.create_interpreter(String[])
+    f = CC.DeclFinder(I)
+    try
+        CC.parse(I, """
+            int cfg_g_fn(int x) {
+                int a = 0;
+                int b = 1;
+                if (x > 0) { a = x + 1; } else { a = x - 1; }
+                while (a < 10) { a += b; }
+                return a + b;
+            }
+            """)
+        @assert f(I, "cfg_g_fn")
+        fd = CC.getAsFunction(CC.get_decl(f))
+        @test fd.ptr != C_NULL
+        @test CC.hasBody(fd)
+        body = CC.getBody(fd)
+        ctx = CC.get_ast_context(I)
+
+        opts = CC.CFGBuildOptions()
+        try
+            # a freshly created BuildOptions carries clang's own defaults: only
+            # PruneTriviallyFalseEdges starts on
+            @test CC.getPruneTriviallyFalseEdges(opts) isa Bool
+            @test CC.getPruneTriviallyFalseEdges(opts)
+            @test !CC.getAddEHEdges(opts)
+            @test !CC.getAddStaticInitBranches(opts)
+            @test !CC.getAddCXXDefaultInitExprInCtors(opts)
+            @test !CC.getAddCXXDefaultInitExprInAggregates(opts)
+            @test !CC.getAddRichCXXConstructors(opts)
+            @test !CC.getMarkElidedCXXConstructors(opts)
+            @test !CC.getAddVirtualBaseBranches(opts)
+            @test !CC.getOmitImplicitValueInitializers(opts)
+
+            # every setter round-trips through its own getter
+            CC.setPruneTriviallyFalseEdges(opts, false)
+            @test !CC.getPruneTriviallyFalseEdges(opts)
+            CC.setAddEHEdges(opts)
+            @test CC.getAddEHEdges(opts)
+            CC.setAddStaticInitBranches(opts)
+            @test CC.getAddStaticInitBranches(opts)
+            CC.setAddCXXDefaultInitExprInCtors(opts)
+            @test CC.getAddCXXDefaultInitExprInCtors(opts)
+            CC.setAddCXXDefaultInitExprInAggregates(opts)
+            @test CC.getAddCXXDefaultInitExprInAggregates(opts)
+            CC.setAddVirtualBaseBranches(opts)
+            @test CC.getAddVirtualBaseBranches(opts)
+            CC.setOmitImplicitValueInitializers(opts)
+            @test CC.getOmitImplicitValueInitializers(opts)
+
+            # the two pre-existing setters now read back too
+            CC.setAddRichCXXConstructors(opts)
+            @test CC.getAddRichCXXConstructors(opts)
+            CC.setMarkElidedCXXConstructors(opts)
+            @test CC.getMarkElidedCXXConstructors(opts)
+            CC.setAddRichCXXConstructors(opts, false)
+            @test !CC.getAddRichCXXConstructors(opts)
+            CC.setMarkElidedCXXConstructors(opts, false)
+            @test !CC.getMarkElidedCXXConstructors(opts)
+
+            # buildCFGWithOptions copies the whole options object, so the non-default
+            # fields above reach the builder; only the graph's shape is asserted, since
+            # the exact block count is the host parser's business
+            cfg = CC.buildCFGWithOptions(fd, body, ctx, opts)
+            try
+                @test cfg isa CC.CFG
+                @test cfg.ptr != C_NULL
+                nb = Int(CC.getNumBlocks(cfg))
+                @test nb >= 4
+
+                # the synthetic-DeclStmt map starts empty on a freshly built graph
+                @test CC.getNumSyntheticDeclStmts(cfg) == 0
+                @test CC.getSyntheticDeclStmts(cfg) isa Vector{Pair{CC.DeclStmt,CC.DeclStmt}}
+                @test isempty(CC.getSyntheticDeclStmts(cfg))
+
+                # two separate `int` declarations give two single-decl DeclStmts to pair
+                decl_stmts = CC.DeclStmt[]
+                for i in 0:(nb - 1)
+                    b = CC.getBlock(cfg, i)
+                    for j in 0:(Int(CC.size(b)) - 1)
+                        CC.getElementKind(b, j) ==
+                        CC.LibClangEx.CXCFGElementKind_Statement || continue
+                        s = CC.resolve(CC.getElementStmt(b, j))
+                        s isa CC.DeclStmt && CC.isSingleDecl(s) && push!(decl_stmts, s)
+                    end
+                end
+                @test length(decl_stmts) >= 2
+
+                synthetic = decl_stmts[1]
+                si = findfirst(d -> d.ptr != synthetic.ptr, decl_stmts)
+                @test si !== nothing
+                source = decl_stmts[si]
+                CC.addSyntheticDeclStmt(cfg, synthetic, source)
+                @test Int(CC.getNumSyntheticDeclStmts(cfg)) == 1
+
+                ps = CC.getSyntheticDeclStmts(cfg)
+                @test length(ps) == 1
+                @test first(ps) isa Pair{CC.DeclStmt,CC.DeclStmt}
+                @test first(ps).first.ptr == synthetic.ptr
+                @test first(ps).second.ptr == source.ptr
+                # the bulk walk and the by-key lookup agree
+                @test CC.getSyntheticDeclStmtSource(cfg, first(ps).first).ptr ==
+                      first(ps).second.ptr
+            finally
+                CC.dispose(cfg)
+            end
+        finally
+            CC.dispose(opts)
+        end
+    finally
+        CC.dispose(f)
+        CC.dispose(I)
+    end
+end
+
+@testset "Analysis | CFG dump" begin
+    I = CC.create_interpreter(String[])
+    f = CC.DeclFinder(I)
+    try
+        CC.parse(I, """
+            int cfg_dump_fn(int x) {
+                int acc = 0;
+                if (x > 0) { acc = 1; } else { acc = 2; }
+                return acc;
+            }
+            """)
+        @assert f(I, "cfg_dump_fn")
+        fd = CC.getAsFunction(CC.get_decl(f))
+        @test CC.hasBody(fd)
+        ctx = CC.get_ast_context(I)
+        cfg = CC.buildCFG(fd, CC.getBody(fd), ctx)
+        @test cfg isa CC.CFG
+        @test cfg.ptr != C_NULL
+        try
+            entry = CC.getEntry(cfg)
+            # the first block that carries at least one element
+            elem_blk = nothing
+            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+                b = CC.getBlock(cfg, i)
+                if CC.size(b) > 0
+                    elem_blk = b
+                    break
+                end
+            end
+            @test elem_blk !== nothing
+            # Every dump writes clang's own rendering to stderr and answers nothing. The
+            # rendering is host-decided, so only the call and its `nothing` are asserted;
+            # the string forms of the same input are asserted non-empty below.
+            ok = redirect_stderr(devnull) do
+                CC.dump(cfg, ctx) === nothing &&
+                    CC.dump(cfg, ctx, true) === nothing &&
+                    CC.dump(entry, cfg, ctx) === nothing &&
+                    CC.dump(entry, cfg, ctx, true) === nothing &&
+                    CC.dump(elem_blk, cfg, ctx) === nothing &&
+                    CC.dumpElement(elem_blk, 0) === nothing
+            end
+            @test ok
+            @test !isempty(CC.printAsString(cfg, ctx))
+            @test !isempty(CC.printAsString(elem_blk, cfg, ctx))
+            @test !isempty(CC.printElementAsString(elem_blk, 0))
+            # the element index is 0-based and bounds-checked in the wrapper
+            @test_throws AssertionError CC.dumpElement(elem_blk, CC.size(elem_blk))
+        finally
+            CC.dispose(cfg)
+        end
+    finally
+        CC.dispose(I)
+    end
+end
+
+@testset "Analysis | CFG block statements" begin
+    I = CC.create_interpreter(String[])
+    f = CC.DeclFinder(I)
+    try
+        CC.parse(I, """
+            int cfg_visit_fn(int x) {
+                int acc = 0;
+                if (x > 0) { acc = 1; } else { acc = 2; }
+                while (acc < 10) { acc += x; }
+                return acc;
+            }
+            void cfg_visit_empty_fn() {}
+            """)
+        @assert f(I, "cfg_visit_fn")
+        fd = CC.getAsFunction(CC.get_decl(f))
+        @test CC.hasBody(fd)
+        ctx = CC.get_ast_context(I)
+        cfg = CC.buildCFG(fd, CC.getBody(fd), ctx)
+        @test cfg isa CC.CFG
+        @test cfg.ptr != C_NULL
+        try
+            # clang::CFG::size is the dominator interface's name for getNumBlockIDs, so
+            # the two are the same number by construction.
+            @test CC.size(cfg) isa Integer
+            @test CC.size(cfg) == CC.getNumBlockIDs(cfg)
+            @test CC.size(cfg) == CC.getNumBlocks(cfg)
+
+            n = Int(CC.getNumBlockStmts(cfg))
+            @test n > 0
+            stmts = CC.getBlockStmts(cfg)
+            @test stmts isa Vector{CC.Stmt}
+            @test length(stmts) == n
+            @test all(s -> s.ptr != C_NULL, stmts)
+            @test all(s -> CC.resolve(s) isa CC.AbstractStmt, stmts)
+
+            # the bulk walk reproduces the per-block element walk exactly: block order,
+            # then element order, statement-family element kinds only
+            expected = Ptr{Cvoid}[]
+            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+                b = CC.getBlock(cfg, i)
+                for j in 0:(Int(CC.size(b)) - 1)
+                    k = CC.getElementKind(b, j)
+                    if k == CC.LibClangEx.CXCFGElementKind_Statement ||
+                       k == CC.LibClangEx.CXCFGElementKind_Constructor ||
+                       k == CC.LibClangEx.CXCFGElementKind_CXXRecordTypedCall
+                        push!(expected, CC.getElementStmt(b, j).ptr)
+                    end
+                end
+            end
+            @test length(expected) == n
+            @test [s.ptr for s in stmts] == expected
+        finally
+            CC.dispose(cfg)
+        end
+
+        # a body with no statements: the count is zero and the Julia wrapper skips the
+        # fill ccall entirely
+        @assert f(I, "cfg_visit_empty_fn")
+        efd = CC.getAsFunction(CC.get_decl(f))
+        ecfg = CC.buildCFG(efd, CC.getBody(efd), ctx)
+        @test ecfg.ptr != C_NULL
+        try
+            @test CC.getNumBlockStmts(ecfg) == 0
+            estmts = CC.getBlockStmts(ecfg)
+            @test estmts isa Vector{CC.Stmt}
+            @test isempty(estmts)
+            @test length(estmts) == CC.getNumBlockStmts(ecfg)
+            @test CC.size(ecfg) == CC.getNumBlockIDs(ecfg)
+        finally
+            CC.dispose(ecfg)
+        end
+    finally
+        CC.dispose(f)
+        CC.dispose(I)
+    end
+end

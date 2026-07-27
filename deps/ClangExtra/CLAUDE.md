@@ -56,6 +56,21 @@ only at link time, after the whole tree has built. When a link error names a `cl
 symbol, the fix is to drop that wrapper (leave a placeholder comment in header and .cpp
 saying it is not exported), not to hunt for a missing library.
 
+A fourth: a `virtual` whose in-class body is `llvm_unreachable` may have **no override at
+all** in this LLVM version, which makes every call to it abort the process (SIGILL,
+`Unreachable reached at 0x...`). `TargetInfo::getCPUSpecificTuneName` is one — X86 overrides
+its two siblings `validateCPUSpecificCPUDispatch` and `CPUSpecificManglingCharacter` but not
+it, so the sibling gate looks like a valid precondition and is not. Settle it against the
+shipped library, not the header:
+
+```bash
+nm -C <artifact>/lib/libclang-cpp.dylib | grep '::<method>('
+```
+
+Only the base symbol back means the method is dead — drop the wrapper with a placeholder
+comment. When overrides do exist, the gate must be the flag that selects those targets
+(`hasIbm128Type` for `getIbm128Mangling`, which only PPC implements), asserted in Julia.
+
 ## The rule that prevents disasters
 
 **Header and .cpp must change in lockstep.** The Julia bindings are generated from the
@@ -91,9 +106,10 @@ Corollaries:
   already duplicated inside CXTypes.h itself). A typedef existing does not mean wrapper
   functions exist.
 - On a name collision with libclang, the **type** gets a trailing underscore — currently
-  exactly five: `CXType_`, `CXSourceLocation_`, `CXSourceRange_`, `CXTargetInfo_`,
-  `CXToken_`. Function names never get the underscore. Using the un-underscored name in a
-  new signature silently binds to libclang's unrelated type in the generated bindings.
+  exactly six: `CXType_`, `CXSourceLocation_`, `CXSourceRange_`, `CXTargetInfo_`,
+  `CXToken_`, `CXDiagnostic_`. Function names never get the underscore. Using the
+  un-underscored name in a new signature silently binds to libclang's unrelated type in
+  the generated bindings.
 - Header skeleton: guard `LLVM_CLANG_C_EXTRA_<NAME>_H` (watch for copy-paste guard
   collisions — a colliding guard silently drops the header from the generated bindings); include
   `clang-ex/CXTypes.h`, `clang-c/ExternC.h`, `clang-c/Platform.h` (+ `clang-c/CXString.h`
@@ -207,7 +223,12 @@ regenerate with the bindings.
   compile if the enum sits further down the header. `-fsyntax-only` catches this; the design
   agent cannot, since it only sees its own additions, not where a prior batch put the enum.
 - Copy Clang's explicit underlying type when it has one (`: unsigned char` → Julia
-  `@enum ...::UInt8`); the default maps to UInt32.
+  `@enum ...::UInt8`); the default maps to UInt32. The one type NOT to copy is
+  `signed char`/`int8_t` (`llvm::RoundingMode`): the binding generator dies on it with
+  "Unknown EnumConstantDecl type: CXType_SChar" — Clang.jl reads `CXType_Char_S` but not
+  `CXType_SChar`. Mirror those with no explicit underlying type and say why in a comment;
+  the value crosses by value through a `static_cast`, never by pointer and never inside a
+  struct, so the widths need not agree.
 - Conversion is a blind `static_cast` in both directions — **order and values must match
   the pinned LLVM version's header exactly**, verified against the actual artifact header
   (`~/.julia/artifacts/<LLVM_full_jll>/include/clang/...`), not memory. A mirror that lags

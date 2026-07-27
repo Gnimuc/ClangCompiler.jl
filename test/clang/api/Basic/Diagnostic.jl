@@ -242,3 +242,224 @@ end
     CC.dispose(engine)   # the adopted ids/opts/client go with it
     CC.dispose(I)
 end
+
+@testset "Diagnostic | fix-it hints, stored diagnostic ranges & client ownership" begin
+    # A default-constructed hint records nothing at all.
+    empty_hint = CC.FixItHint()
+    @test empty_hint isa CC.FixItHint
+    @test empty_hint.ptr != C_NULL
+    @test CC.isNull(empty_hint)
+    @test CC.getCodeToInsert(empty_hint) == ""
+    @test !CC.getBeforePreviousInsertions(empty_hint)
+    @test CC.isInvalid(CC.getRemoveRange(empty_hint))
+    CC.dispose(empty_hint)
+
+    # The factories need real source locations to produce a non-null hint.
+    I = create_interpreter(String[])
+    CC.parse(I, "int fixit_probe = 1;")
+    sm = CC.getSourceManager(get_instance(I))
+    f = DeclFinder(I)
+    @test f(I, "fixit_probe") isa Bool
+    loc = CC.getLocation(get_decl(f))
+    @test CC.isValid(loc)
+    span = CC.SourceRange(loc, loc)
+
+    insertion = CC.CreateInsertion(loc, "const ", true)
+    @test insertion isa CC.FixItHint
+    @test !CC.isNull(insertion)
+    @test CC.getCodeToInsert(insertion) == "const "
+    @test CC.getBeforePreviousInsertions(insertion)
+    @test CC.getRemoveRange(insertion).begin_loc.ptr == loc.ptr
+    @test CC.getRemoveRange(insertion).end_loc.ptr == loc.ptr
+    @test !CC.isRemoveRangeTokenRange(insertion)   # an insertion anchors on a character range
+    @test CC.isInvalid(CC.getInsertFromRange(insertion))
+
+    from_range = CC.CreateInsertionFromRange(loc, span, true, false)
+    @test !CC.isNull(from_range)
+    @test CC.getCodeToInsert(from_range) == ""
+    @test !CC.getBeforePreviousInsertions(from_range)
+    @test CC.getInsertFromRange(from_range).begin_loc.ptr == loc.ptr
+    @test CC.isInsertFromRangeTokenRange(from_range)
+
+    removal = CC.CreateRemoval(span, true)
+    @test !CC.isNull(removal)
+    @test CC.getCodeToInsert(removal) == ""
+    @test CC.isRemoveRangeTokenRange(removal)
+    @test CC.isInvalid(CC.getInsertFromRange(removal))
+
+    replacement = CC.CreateReplacement(span, false, "long")
+    @test !CC.isNull(replacement)
+    @test CC.getCodeToInsert(replacement) == "long"
+    @test !CC.isRemoveRangeTokenRange(replacement)
+    @test CC.getRemoveRange(replacement).end_loc.ptr == loc.ptr
+
+    # A forwarding consumer relays through the consumer it borrows.
+    target = CC.IgnoringDiagConsumer()
+    fwd = CC.ForwardingDiagnosticConsumer(target)
+    @test fwd isa CC.ForwardingDiagnosticConsumer
+    @test fwd.ptr != C_NULL
+    @test CC.IncludeInDiagnosticCounts(fwd)
+    @test CC.clear(fwd) === nothing
+
+    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), fwd, true)
+    @test CC.getClient(engine).ptr == fwd.ptr
+    @test CC.ownsClient(engine)
+    warn_id = CC.getCustomDiagID(engine, CC.CXDiagnosticsEngine_Warning, "fix-it probe")
+
+    # A full record: location, two ranges differing only in token-ness, and two hints.
+    sd = CC.StoredDiagnostic(CC.CXDiagnosticsEngine_Warning, warn_id, "needs a fix", loc, sm,
+                             [span, span], [true, false], [removal, replacement])
+    @test sd isa CC.StoredDiagnostic
+    @test sd.ptr != C_NULL
+    @test CC.getID(sd) == warn_id
+    @test CC.getMessage(sd) == "needs a fix"
+    @test CC.getLocation(sd).ptr == loc.ptr
+    @test CC.getLocationManager(sd).ptr == sm.ptr
+    @test CC.range_size(sd) == 2
+    @test CC.fixit_size(sd) == 2
+    @test CC.getRange(sd, 0).begin_loc.ptr == loc.ptr
+    @test CC.getRange(sd, 1).end_loc.ptr == loc.ptr
+    @test CC.isRangeTokenRange(sd, 0)
+    @test !CC.isRangeTokenRange(sd, 1)
+    @test_throws AssertionError CC.getRange(sd, 2)
+    @test_throws AssertionError CC.isRangeTokenRange(sd, 2)
+
+    # the hints come back borrowed, in the order they were handed in
+    stored = CC.getFixIt(sd, 1)
+    @test stored isa CC.FixItHint
+    @test CC.getCodeToInsert(stored) == "long"
+    @test !CC.isRemoveRangeTokenRange(stored)
+    @test CC.isRemoveRangeTokenRange(CC.getFixIt(sd, 0))
+    @test CC.getCodeToInsert(CC.getFixIt(sd, 0)) == ""
+    @test_throws AssertionError CC.getFixIt(sd, 2)
+
+    # takeClient hands the consumer back; the engine keeps using the same object
+    taken = CC.takeClient(engine)
+    @test taken isa CC.DiagnosticConsumer
+    @test taken.ptr == fwd.ptr
+    @test !CC.ownsClient(engine)
+    @test CC.getClient(engine).ptr == fwd.ptr
+    @test_throws AssertionError CC.takeClient(engine)
+
+    CC.dispose(sd)                  # the borrowed hints die with it
+    CC.dispose(insertion)
+    CC.dispose(from_range)
+    CC.dispose(removal)
+    CC.dispose(replacement)
+    CC.dispose(engine)              # the adopted ids/opts go with it, the client no longer does
+    CC.dispose(taken)               # frees the forwarding consumer this test now owns
+    CC.dispose(target)
+    CC.dispose(I)
+end
+
+@testset "Diagnostic | in-flight arguments, ranges & fix-it hints" begin
+    # Every diagnostic below is opened on a throwaway engine, so nothing here reaches the
+    # interpreter's own DiagnosticsEngine.
+    I = create_interpreter(String[])
+    CC.parse(I, "int diag_probe = 1;")
+    sm = CC.getSourceManager(get_instance(I))
+    f = DeclFinder(I)
+    @test f(I, "diag_probe") isa Bool
+    probe = get_decl(f)
+    loc = CC.getLocation(probe)
+    @test CC.isValid(loc)
+    span = CC.SourceRange(loc, loc)
+    ident = CC.getIdentifier(probe)
+    @test CC.getNameStart(ident) == "diag_probe"
+
+    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
+                                  CC.IgnoringDiagConsumer(), true)  # engine adopts all three
+    CC.setSourceManager(engine, sm)
+    warn_id = CC.getCustomDiagID(engine, CC.CXDiagnosticsEngine_Warning,
+                                 "probe %0 saw %1 and %2")
+
+    # With nothing in flight the storage reads back empty and the id is the sentinel, so
+    # every indexed accessor is out of bounds and the formatter has no description to find.
+    idle = CC.Diagnostic(engine)
+    @test idle isa CC.Diagnostic
+    @test idle.ptr != C_NULL
+    @test CC.getID(idle) == typemax(UInt32)
+    @test CC.getNumArgs(idle) == 0
+    @test CC.getNumRanges(idle) == 0
+    @test CC.getNumFixItHints(idle) == 0
+    @test CC.hasSourceManager(idle)
+    @test CC.getSourceManager(idle).ptr == sm.ptr
+    @test_throws AssertionError CC.getArgKind(idle, 0)
+    @test_throws AssertionError CC.getRange(idle, 0)
+    @test_throws AssertionError CC.isRangeTokenRange(idle, 0)
+    @test_throws AssertionError CC.getFixItHint(idle, 0)
+    @test_throws AssertionError CC.FormatDiagnostic(idle)
+    CC.dispose(idle)
+
+    # Open one and fill it: a string, a signed and an unsigned number, an identifier, two
+    # ranges differing only in token-ness, and one hint.
+    @test !CC.isDiagnosticInFlight(engine)
+    b = CC.DiagnosticBuilder(engine, loc, warn_id)
+    @test b isa CC.DiagnosticBuilder
+    @test b.ptr != C_NULL
+    @test CC.isDiagnosticInFlight(engine)
+    CC.AddString(b, "spelled")
+    CC.AddTaggedVal(b, -7, CC.CXDiagnosticsEngine_ak_sint)
+    CC.AddTaggedVal(b, 42, CC.CXDiagnosticsEngine_ak_uint)
+    CC.AddTaggedVal(b, UInt64(UInt(ident.ptr)), CC.CXDiagnosticsEngine_ak_identifierinfo)
+    @test_throws AssertionError CC.AddTaggedVal(b, 1, CC.CXDiagnosticsEngine_ak_std_string)
+    CC.AddSourceRange(b, span, true)
+    CC.AddSourceRange(b, span, false)
+    hint = CC.CreateReplacement(span, false, "long")
+    CC.AddFixItHint(b, hint)
+
+    d = CC.Diagnostic(engine)
+    @test CC.getID(d) == warn_id
+    @test CC.getLocation(d).ptr == loc.ptr
+
+    # arguments come back in the order they were added, each readable only by its own kind
+    @test CC.getNumArgs(d) == 4
+    @test CC.getArgKind(d, 0) == CC.CXDiagnosticsEngine_ak_std_string
+    @test CC.getArgStdStr(d, 0) == "spelled"
+    @test CC.getArgKind(d, 1) == CC.CXDiagnosticsEngine_ak_sint
+    @test CC.getArgSInt(d, 1) == -7
+    @test CC.getArgKind(d, 2) == CC.CXDiagnosticsEngine_ak_uint
+    @test CC.getArgUInt(d, 2) == 42
+    @test CC.getRawArg(d, 2) == 42
+    @test CC.getArgKind(d, 3) == CC.CXDiagnosticsEngine_ak_identifierinfo
+    @test CC.getArgIdentifier(d, 3) isa CC.IdentifierInfo
+    @test CC.getNameStart(CC.getArgIdentifier(d, 3)) == "diag_probe"
+    @test CC.getRawArg(d, 3) == UInt64(UInt(ident.ptr))
+    @test_throws AssertionError CC.getArgStdStr(d, 1)
+    @test_throws AssertionError CC.getArgSInt(d, 0)
+    @test_throws AssertionError CC.getArgUInt(d, 0)
+    @test_throws AssertionError CC.getArgIdentifier(d, 0)
+    @test_throws AssertionError CC.getRawArg(d, 0)   # a std::string has no raw payload
+    @test_throws AssertionError CC.getArgKind(d, 4)
+
+    @test CC.getNumRanges(d) == 2
+    @test CC.getRange(d, 0).begin_loc.ptr == loc.ptr
+    @test CC.getRange(d, 1).end_loc.ptr == loc.ptr
+    @test CC.isRangeTokenRange(d, 0)
+    @test !CC.isRangeTokenRange(d, 1)
+    @test_throws AssertionError CC.getRange(d, 2)
+    @test_throws AssertionError CC.isRangeTokenRange(d, 2)
+
+    @test CC.getNumFixItHints(d) == 1
+    borrowed = CC.getFixItHint(d, 0)
+    @test borrowed isa CC.FixItHint
+    @test CC.getCodeToInsert(borrowed) == "long"
+    @test !CC.isRemoveRangeTokenRange(borrowed)
+    @test_throws AssertionError CC.getFixItHint(d, 1)
+
+    # %0/%1/%2 take the first three arguments; the fourth has no slot in this format string
+    msg = CC.FormatDiagnostic(d)
+    @test msg isa String
+    @test occursin("spelled", msg)
+    @test occursin("-7", msg)
+    @test occursin("42", msg)
+
+    CC.dispose(d)
+    CC.dispose(b)                       # emits the diagnostic to the engine's client
+    @test !CC.isDiagnosticInFlight(engine)
+    @test CC.getNumWarnings(engine) == 1
+
+    CC.dispose(hint)
+    CC.dispose(engine)                  # the adopted ids/opts/client go with it
+    CC.dispose(I)
+end

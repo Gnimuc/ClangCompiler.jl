@@ -818,3 +818,100 @@ abstract type AbstractHLSLBufferDecl <: AbstractNamedDecl end
 Supertype for `UsingEnumDecl`s.
 """
 abstract type AbstractUsingEnumDecl <: AbstractBaseUsingDecl end
+
+
+"""
+    abstract type AbstractTypeOfExprType <: AbstractType
+Supertype for `TypeOfExprType`s.
+"""
+abstract type AbstractTypeOfExprType <: AbstractType end
+
+"""
+    abstract type AbstractTypeOfType <: AbstractType
+Supertype for `TypeOfType`s.
+"""
+abstract type AbstractTypeOfType <: AbstractType end
+
+"""
+    abstract type AbstractBitIntType <: AbstractType
+Supertype for `BitIntType`s.
+"""
+abstract type AbstractBitIntType <: AbstractType end
+
+
+"""
+    abstract type AbstractUnresolvedUsingIfExistsDecl <: AbstractNamedDecl
+Supertype for `UnresolvedUsingIfExistsDecl`s.
+"""
+abstract type AbstractUnresolvedUsingIfExistsDecl <: AbstractNamedDecl end
+
+
+"""
+    abstract type AbstractBlockPointerType <: AbstractType
+Supertype for `BlockPointerType`s.
+"""
+abstract type AbstractBlockPointerType <: AbstractType end
+
+"""
+    abstract type AbstractDependentVectorType <: AbstractType
+Supertype for `DependentVectorType`s.
+"""
+abstract type AbstractDependentVectorType <: AbstractType end
+
+"""
+    abstract type AbstractMatrixType <: AbstractType
+Supertype for `MatrixType`s.
+"""
+abstract type AbstractMatrixType <: AbstractType end
+
+"""
+    abstract type AbstractConstantMatrixType <: AbstractMatrixType
+Supertype for `ConstantMatrixType`s.
+"""
+abstract type AbstractConstantMatrixType <: AbstractMatrixType end
+
+"""
+    abstract type AbstractDependentSizedMatrixType <: AbstractMatrixType
+Supertype for `DependentSizedMatrixType`s.
+"""
+abstract type AbstractDependentSizedMatrixType <: AbstractMatrixType end
+
+"""
+    abstract type AbstractDependentBitIntType <: AbstractType
+Supertype for `DependentBitIntType`s.
+"""
+abstract type AbstractDependentBitIntType <: AbstractType end
+
+
+"""
+    abstract type AbstractExtVectorType <: AbstractVectorType
+Supertype for `ExtVectorType`s.
+"""
+abstract type AbstractExtVectorType <: AbstractVectorType end
+
+
+"""
+    abstract type AbstractUnnamedGlobalConstantDecl <: AbstractValueDecl
+Supertype for `UnnamedGlobalConstantDecl`s.
+"""
+abstract type AbstractUnnamedGlobalConstantDecl <: AbstractValueDecl end
+
+
+"""
+    abstract type AbstractObjCObjectType <: AbstractType
+Supertype for `ObjCObjectType`s.
+"""
+abstract type AbstractObjCObjectType <: AbstractType end
+
+"""
+    abstract type AbstractObjCObjectPointerType <: AbstractType
+Supertype for `ObjCObjectPointerType`s.
+"""
+abstract type AbstractObjCObjectPointerType <: AbstractType end
+
+
+"""
+    abstract type AbstractPipeType <: AbstractType
+Supertype for `PipeType`s.
+"""
+abstract type AbstractPipeType <: AbstractType end

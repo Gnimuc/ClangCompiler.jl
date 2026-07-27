@@ -544,3 +544,102 @@ function createFrontendTimer(ci::CompilerInstance)
     @check_ptrs ci
     return clang_CompilerInstance_createFrontendTimer(ci)
 end
+
+
+# Ownership transfer
+"""
+    resetAndLeakFileManager(ci::CompilerInstance)
+Drop the instance's ownership of its file manager without destroying it: the object goes
+to `llvm::BuryPointer` and lives until the process exits, and `hasFileManager` is false
+afterwards. This is the escape hatch for a component another owner has already adopted —
+neither owner then frees it twice.
+"""
+function resetAndLeakFileManager(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakFileManager(ci)
+end
+
+"""
+    resetAndLeakSourceManager(ci::CompilerInstance)
+Drop the instance's ownership of its source manager without destroying it: the object
+goes to `llvm::BuryPointer` and lives until the process exits, and `hasSourceManager` is
+false afterwards.
+"""
+function resetAndLeakSourceManager(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakSourceManager(ci)
+end
+
+"""
+    resetAndLeakPreprocessor(ci::CompilerInstance)
+Pin the instance's preprocessor alive for the rest of the process: a copy of the owning
+`shared_ptr` goes to `llvm::BuryPointer`. Unlike the other `resetAndLeak*` this leaves
+the instance's own pointer in place, so `hasPreprocessor` still holds afterwards.
+"""
+function resetAndLeakPreprocessor(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakPreprocessor(ci)
+end
+
+"""
+    resetAndLeakASTContext(ci::CompilerInstance)
+Drop the instance's ownership of its AST context without destroying it: the object goes
+to `llvm::BuryPointer` and lives until the process exits, and `hasASTContext` is false
+afterwards.
+"""
+function resetAndLeakASTContext(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakASTContext(ci)
+end
+
+"""
+    resetAndLeakSema(ci::CompilerInstance)
+Drop the instance's ownership of its `Sema` without destroying it: the object goes to
+`llvm::BuryPointer` and lives until the process exits, and `hasSema` is false afterwards.
+"""
+function resetAndLeakSema(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakSema(ci)
+end
+
+
+"""
+    getAPINotesOpts(ci::CompilerInstance) -> APINotesOptions
+Return the `clang::APINotesOptions` of this instance's invocation (borrowed view — the
+object belongs to the invocation, never `dispose` it). The instance must have an
+invocation: `CompilerInstance` forwards through an unchecked `Invocation->` dereference,
+hence the `hasInvocation` assertion.
+
+The view's lifetime is whoever ends up owning the invocation, not the caller:
+`setInvocation` rewraps the raw handle in a fresh `shared_ptr`, and
+`clang_Interpreter_create` consumes the whole `CompilerInstance` even when it fails.
+"""
+function getAPINotesOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return APINotesOptions(clang_CompilerInstance_getAPINotesOpts(ci))
+end
+
+
+"""
+    getFrontendTimerName(ci::CompilerInstance) -> String
+Return the name of the instance's frontend timer. `llvm::Timer` has no LLVM-C handle, so the
+timer is published through this accessor and [`isFrontendTimerRunning`](@ref) rather than as
+a carrier of its own. The instance must have a frontend timer.
+"""
+function getFrontendTimerName(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasFrontendTimer(ci) "the compiler instance has no frontend timer"
+    return get_string(clang_CompilerInstance_getFrontendTimerName(ci))
+end
+
+"""
+    isFrontendTimerRunning(ci::CompilerInstance) -> Bool
+Return whether the instance's frontend timer is currently between a `startTimer` and a
+`stopTimer`. The instance must have a frontend timer.
+"""
+function isFrontendTimerRunning(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasFrontendTimer(ci) "the compiler instance has no frontend timer"
+    return clang_CompilerInstance_isFrontendTimerRunning(ci)
+end

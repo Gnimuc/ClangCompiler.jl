@@ -308,3 +308,27 @@ end
 
 Base.unsafe_convert(::Type{CXUsingEnumDecl}, x::UsingEnumDecl) = x.ptr
 Base.cconvert(::Type{CXUsingEnumDecl}, x::UsingEnumDecl) = x
+
+
+"""
+    struct UnresolvedUsingIfExistsDecl <: AbstractUnresolvedUsingIfExistsDecl
+Hold a pointer to a `clang::UnresolvedUsingIfExistsDecl` object.
+"""
+struct UnresolvedUsingIfExistsDecl <: AbstractUnresolvedUsingIfExistsDecl
+    ptr::CXUnresolvedUsingIfExistsDecl
+end
+
+Base.unsafe_convert(::Type{CXUnresolvedUsingIfExistsDecl}, x::UnresolvedUsingIfExistsDecl) = x.ptr
+Base.cconvert(::Type{CXUnresolvedUsingIfExistsDecl}, x::UnresolvedUsingIfExistsDecl) = x
+
+
+"""
+    struct UnnamedGlobalConstantDecl <: AbstractUnnamedGlobalConstantDecl
+Hold a pointer to a `clang::UnnamedGlobalConstantDecl` object.
+"""
+struct UnnamedGlobalConstantDecl <: AbstractUnnamedGlobalConstantDecl
+    ptr::CXUnnamedGlobalConstantDecl
+end
+
+Base.unsafe_convert(::Type{CXUnnamedGlobalConstantDecl}, x::UnnamedGlobalConstantDecl) = x.ptr
+Base.cconvert(::Type{CXUnnamedGlobalConstantDecl}, x::UnnamedGlobalConstantDecl) = x

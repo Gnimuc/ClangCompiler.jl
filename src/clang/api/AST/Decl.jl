@@ -3589,7 +3589,7 @@ end
 
 
 # ---------------------------------------------------------------------------
-# decl-g: NamespaceDecl factory, outer template-parameter-list setters,
+# NamespaceDecl factory, outer template-parameter-list setters,
 # ObjC declaration qualifier setter, enumerator value setter, and the
 # FunctionDecl::DefaultedFunctionInfo family.
 # ---------------------------------------------------------------------------
@@ -3711,4 +3711,193 @@ function getUnqualifiedLookupAccess(x::AbstractDefaultedFunctionInfo, i::Integer
     @check_ptrs x
     @assert 0 <= i < getNumUnqualifiedLookups(x) "lookup index out of range"
     return clang_FunctionDecl_DefaultedFunctionInfo_getUnqualifiedLookupAccess(x, i)
+end
+
+
+# ---------------------------------------------------------------------------
+# Decl::Kind family predicates, nested-name-specifier extents, and the
+# TagDecl <-> DeclContext pivot.
+# ---------------------------------------------------------------------------
+
+"""
+    classofKind(T, k::CXDeclKind) -> Bool
+Whether a declaration of kind `k` is a `T` — the range test `isa<T>` performs, evaluated on
+the kind alone. Reach for it when no `Decl` handle is available to run the `castTo*`/`is*`
+family against: `getDeclKind(::DeclContext)` and the kinds `decls` hands back are kinds, not
+declarations. The test covers subclasses, so `classofKind(TagDecl, k)` also holds for every
+record and enum kind. `T` is one of `NamedDecl`, `ValueDecl`, `DeclaratorDecl`, `VarDecl`,
+`FunctionDecl`, `FieldDecl`, `TypeDecl`, `TypedefNameDecl`, `TagDecl`, `RecordDecl`.
+"""
+classofKind(::Type{NamedDecl}, k::CXDeclKind) = clang_NamedDecl_classofKind(k)
+
+classofKind(::Type{ValueDecl}, k::CXDeclKind) = clang_ValueDecl_classofKind(k)
+
+classofKind(::Type{DeclaratorDecl}, k::CXDeclKind) = clang_DeclaratorDecl_classofKind(k)
+
+classofKind(::Type{VarDecl}, k::CXDeclKind) = clang_VarDecl_classofKind(k)
+
+classofKind(::Type{FunctionDecl}, k::CXDeclKind) = clang_FunctionDecl_classofKind(k)
+
+classofKind(::Type{FieldDecl}, k::CXDeclKind) = clang_FieldDecl_classofKind(k)
+
+classofKind(::Type{TypeDecl}, k::CXDeclKind) = clang_TypeDecl_classofKind(k)
+
+classofKind(::Type{TypedefNameDecl}, k::CXDeclKind) = clang_TypedefNameDecl_classofKind(k)
+
+classofKind(::Type{TagDecl}, k::CXDeclKind) = clang_TagDecl_classofKind(k)
+
+classofKind(::Type{RecordDecl}, k::CXDeclKind) = clang_RecordDecl_classofKind(k)
+
+"""
+    getQualifierRange(x::AbstractDeclaratorDecl) -> SourceRange
+Return the extent of the nested-name-specifier that qualifies this declarator's name — the
+`N::` of an out-of-line `void N::f() {}`. `NestedNameSpecifierLoc` has no handle of its own,
+so it crosses as its two parts: the qualifier through `getQualifier`, its written extent
+here. Invalid when the name is written unqualified.
+"""
+function getQualifierRange(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    r = clang_DeclaratorDecl_getQualifierRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+"""
+    getQualifierRange(x::AbstractTagDecl) -> SourceRange
+Return the extent of the nested-name-specifier that qualifies this tag's name — the `N::` of
+an out-of-line `struct N::S { ... };`. Crosses as the two parts of `getQualifierLoc`, as
+above. Invalid when the tag name is written unqualified.
+"""
+function getQualifierRange(x::AbstractTagDecl)
+    @check_ptrs x
+    r = clang_TagDecl_getQualifierRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# ---------------------------------------------------------------------------
+# The remaining Decl::Kind tests — the leaf classes whose test is a single-kind
+# equality rather than a range.
+# ---------------------------------------------------------------------------
+
+"""
+    classofKind(T, k::CXDeclKind) -> Bool
+Whether a declaration of kind `k` is a `T`, as above, for the leaf classes of the hierarchy.
+Each of these is final in Clang, so its test is a single-kind equality: exactly one
+enumerator of `CXDeclKind` answers `true`. `T` is one of `TranslationUnitDecl`,
+`PragmaCommentDecl`, `PragmaDetectMismatchDecl`, `ExternCContextDecl`, `LabelDecl`,
+`NamespaceDecl`, `ImplicitParamDecl`, `ParmVarDecl`, `EnumConstantDecl`,
+`IndirectFieldDecl`, `TypedefDecl`, `TypeAliasDecl`, `EnumDecl`, `FileScopeAsmDecl`,
+`TopLevelStmtDecl`, `BlockDecl`, `CapturedDecl`, `ImportDecl`, `ExportDecl`, `EmptyDecl`.
+"""
+classofKind(::Type{TranslationUnitDecl}, k::CXDeclKind) = clang_TranslationUnitDecl_classofKind(k)
+
+classofKind(::Type{PragmaCommentDecl}, k::CXDeclKind) = clang_PragmaCommentDecl_classofKind(k)
+
+classofKind(::Type{PragmaDetectMismatchDecl}, k::CXDeclKind) = clang_PragmaDetectMismatchDecl_classofKind(k)
+
+classofKind(::Type{ExternCContextDecl}, k::CXDeclKind) = clang_ExternCContextDecl_classofKind(k)
+
+classofKind(::Type{LabelDecl}, k::CXDeclKind) = clang_LabelDecl_classofKind(k)
+
+classofKind(::Type{NamespaceDecl}, k::CXDeclKind) = clang_NamespaceDecl_classofKind(k)
+
+classofKind(::Type{ImplicitParamDecl}, k::CXDeclKind) = clang_ImplicitParamDecl_classofKind(k)
+
+classofKind(::Type{ParmVarDecl}, k::CXDeclKind) = clang_ParmVarDecl_classofKind(k)
+
+classofKind(::Type{EnumConstantDecl}, k::CXDeclKind) = clang_EnumConstantDecl_classofKind(k)
+
+classofKind(::Type{IndirectFieldDecl}, k::CXDeclKind) = clang_IndirectFieldDecl_classofKind(k)
+
+classofKind(::Type{TypedefDecl}, k::CXDeclKind) = clang_TypedefDecl_classofKind(k)
+
+classofKind(::Type{TypeAliasDecl}, k::CXDeclKind) = clang_TypeAliasDecl_classofKind(k)
+
+classofKind(::Type{EnumDecl}, k::CXDeclKind) = clang_EnumDecl_classofKind(k)
+
+classofKind(::Type{FileScopeAsmDecl}, k::CXDeclKind) = clang_FileScopeAsmDecl_classofKind(k)
+
+classofKind(::Type{TopLevelStmtDecl}, k::CXDeclKind) = clang_TopLevelStmtDecl_classofKind(k)
+
+classofKind(::Type{BlockDecl}, k::CXDeclKind) = clang_BlockDecl_classofKind(k)
+
+classofKind(::Type{CapturedDecl}, k::CXDeclKind) = clang_CapturedDecl_classofKind(k)
+
+classofKind(::Type{ImportDecl}, k::CXDeclKind) = clang_ImportDecl_classofKind(k)
+
+classofKind(::Type{ExportDecl}, k::CXDeclKind) = clang_ExportDecl_classofKind(k)
+
+classofKind(::Type{EmptyDecl}, k::CXDeclKind) = clang_EmptyDecl_classofKind(k)
+
+
+# ---------------------------------------------------------------------------
+# BlockDecl parameter and capture installation — the write half of the block
+# surface whose readers (getNumParams/getParamDecl, the getCapture* family) are
+# already bound.
+# ---------------------------------------------------------------------------
+
+"""
+    setParams(x::AbstractBlockDecl, params)
+Install `params` as the block's formal parameter list. The handles are copied into the
+`ASTContext` arena, so `params` itself is not retained. Installable exactly once: clang
+asserts unless the block still has no parameter array, and `getNumParams(x) == 0` is exactly
+that state — an empty `params` installs nothing and leaves the block installable.
+"""
+function setParams(x::AbstractBlockDecl, params::AbstractVector{<:AbstractParmVarDecl})
+    @check_ptrs x
+    @assert getNumParams(x) == 0 "the block already has a parameter list"
+    buf = CXParmVarDecl[p.ptr for p in params]
+    @assert all(!=(C_NULL), buf) "parameter handles must be non-NULL"
+    return clang_BlockDecl_setParams(x, buf, length(buf))
+end
+
+"""
+    setCaptures(x::AbstractBlockDecl, ctx::ASTContext, variables, by_refs, nesteds,
+                copy_exprs, captures_cxx_this::Bool=false)
+Rebuild the block's capture list in `ctx`'s arena. The four vectors are read in lockstep and
+must have the same length: entry `i` builds one `clang::BlockDecl::Capture` out of
+`variables[i]`, `by_refs[i]`, `nesteds[i]` and `copy_exprs[i]`, where a `nothing` copy
+expression means the capture has none. This replaces whatever captures `x` already held and
+overwrites `capturesCXXThis` with `captures_cxx_this`.
+"""
+function setCaptures(x::AbstractBlockDecl, ctx::ASTContext,
+                     variables::AbstractVector{<:AbstractVarDecl},
+                     by_refs::AbstractVector{Bool}, nesteds::AbstractVector{Bool},
+                     copy_exprs::AbstractVector{<:Union{Nothing,AbstractExpr}},
+                     captures_cxx_this::Bool=false)
+    @check_ptrs x ctx
+    n = length(variables)
+    aligned = length(by_refs) == n && length(nesteds) == n && length(copy_exprs) == n
+    @assert aligned "the capture component vectors must have the same length"
+    vbuf = CXVarDecl[v.ptr for v in variables]
+    @assert all(!=(C_NULL), vbuf) "captured variable handles must be non-NULL"
+    ebuf = CXExpr[e === nothing ? C_NULL : e.ptr for e in copy_exprs]
+    return clang_BlockDecl_setCaptures(x, ctx, vbuf, collect(Bool, by_refs),
+                                       collect(Bool, nesteds), ebuf, n, captures_cxx_this)
+end
+
+"""
+    setCaptureCopyExpr(x::AbstractBlockDecl, i::Integer, e::AbstractExpr)
+Set the copy expression of the capture at `i` — the one field of a `BlockDecl::Capture` that
+is writable in place. Only a capture of class type needs one; pass a NULL-pointer `Expr_` to
+clear it. `i` must be less than `getNumCaptures(x)`.
+"""
+function setCaptureCopyExpr(x::AbstractBlockDecl, i::Integer, e::AbstractExpr)
+    @check_ptrs x
+    @assert 0 <= i < getNumCaptures(x) "capture index out of range"
+    return clang_BlockDecl_setCaptureCopyExpr(x, i, e)
+end
+
+classofKind(::Type{HLSLBufferDecl}, k::CXDeclKind) = clang_HLSLBufferDecl_classofKind(k)
+
+"""
+    classof(T, x::AbstractDecl) -> Bool
+Whether the declaration `x` is a `T` — the test `isa<T>(x)` performs, spelled against a
+declaration instead of a bare kind. Clang defines it as `classofKind(x->getKind())` on every
+`Decl` subclass, so this composes the two bindings rather than adding a third: `T` is any
+class `classofKind` accepts, and the test covers subclasses, so `classof(TagDecl, x)` holds
+for every record and enum declaration.
+"""
+function classof(::Type{T}, x::AbstractDecl) where {T<:AbstractDecl}
+    @check_ptrs x
+    return classofKind(T, getKind(x))
 end

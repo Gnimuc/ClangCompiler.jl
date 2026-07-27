@@ -22,6 +22,10 @@ unsigned clang_Token_getKind(CXToken_ Tok) {
   return static_cast<unsigned>(static_cast<clang::Token *>(Tok)->getKind());
 }
 
+void clang_Token_setKind(CXToken_ Tok, unsigned Kind) {
+  static_cast<clang::Token *>(Tok)->setKind(static_cast<clang::tok::TokenKind>(Kind));
+}
+
 bool clang_Token_is(CXToken_ Tok, unsigned Kind) {
   return static_cast<clang::Token *>(Tok)->is(static_cast<clang::tok::TokenKind>(Kind));
 }
@@ -51,6 +55,15 @@ unsigned clang_Token_getLength(CXToken_ Tok) {
   return static_cast<clang::Token *>(Tok)->getLength();
 }
 
+void clang_Token_setLocation(CXToken_ Tok, CXSourceLocation_ L) {
+  static_cast<clang::Token *>(Tok)->setLocation(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+void clang_Token_setLength(CXToken_ Tok, unsigned Len) {
+  static_cast<clang::Token *>(Tok)->setLength(Len);
+}
+
 CXSourceLocation_ clang_Token_getLastLoc(CXToken_ Tok) {
   return static_cast<clang::Token *>(Tok)->getLastLoc().getPtrEncoding();
 }
@@ -69,6 +82,10 @@ bool clang_Token_hasPtrData(CXToken_ Tok) {
 
 CXString clang_Token_getRawIdentifier(CXToken_ Tok) {
   return extra::makeCXString(static_cast<clang::Token *>(Tok)->getRawIdentifier().str());
+}
+
+const char *clang_Token_getLiteralData(CXToken_ Tok) {
+  return static_cast<clang::Token *>(Tok)->getLiteralData();
 }
 
 bool clang_Token_getFlag(CXToken_ Tok, CXTokenFlags Flag) {
@@ -143,6 +160,11 @@ const char *clang_Token_getName(CXToken_ Tok) {
 
 CXIdentifierInfo clang_Token_getIdentifierInfo(CXToken_ Tok) {
   return static_cast<clang::Token *>(Tok)->getIdentifierInfo();
+}
+
+void clang_Token_setIdentifierInfo(CXToken_ Tok, CXIdentifierInfo II) {
+  static_cast<clang::Token *>(Tok)->setIdentifierInfo(
+      static_cast<clang::IdentifierInfo *>(II));
 }
 
 bool clang_Token_isKind_eof(CXToken_ Tok) {

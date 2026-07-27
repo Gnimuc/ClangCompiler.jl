@@ -106,8 +106,10 @@ The C-side steps (header + impl + CMake + typedef in CXTypes.h) are covered in `
 - CI runs macOS, Linux and Windows on x86_64. Assert the *shape* of anything the host decides
   — `isa Bool`, `isa Integer`, or a round-trip of a value the test itself set. Sizes and
   alignments, mangled names of std-typed signatures, ABI-specific layout offsets, module
-  provenance (`isPartOfFramework`), a `Driver`'s LTO mode, and a hand-built `Module`'s initial
-  availability all differ across those runners (or read uninitialized memory), and an equality
+  provenance (`isPartOfFramework`), a `Driver`'s LTO mode, and a hand-built `Module`'s
+  availability — both its initial value and the `markUnavailable` transition, whose gating
+  predicate reads bits a synthetic module never had a module map to set — all differ across
+  those runners (or read uninitialized memory), and an equality
   assertion on one of them turns into a red CI on a platform you did not run locally. This class
   of bug is invisible to a local single-platform run and to `-fsyntax-only`; only the per-file
   test run against real AST state catches it, so never skip it before committing. A wrapper

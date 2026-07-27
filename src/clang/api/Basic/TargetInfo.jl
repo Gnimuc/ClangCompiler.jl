@@ -888,3 +888,574 @@ function getVtblPtrAddressSpace(x::AbstractTargetInfo)
     @check_ptrs x
     return clang_TargetInfo_getVtblPtrAddressSpace(x)
 end
+
+
+# TargetInfo::ConstraintInfo
+
+"""
+    ConstraintInfo(constraint::AbstractString, name::AbstractString)
+Create a `clang::TargetInfo::ConstraintInfo` describing the inline-asm operand constraint
+string `constraint` (e.g. `"=rm"`), carrying the symbolic operand name `name` — the `foo` of
+`[foo]`, with no brackets; pass `""` for an unnamed operand.
+
+The object starts out with no flags and no tied operand: `validateOutputConstraint` and the
+`set*` methods are what populate it.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+function ConstraintInfo(constraint::AbstractString, name::AbstractString)
+    ptr = clang_ConstraintInfo_create(constraint, name)
+    @assert ptr != C_NULL "Failed to create TargetInfo::ConstraintInfo"
+    return ConstraintInfo(ptr)
+end
+
+dispose(x::ConstraintInfo) = clang_ConstraintInfo_dispose(x)
+
+"""
+    getConstraintStr(x::AbstractConstraintInfo) -> String
+Return the constraint string `x` was built from, e.g. `"=rm"`.
+"""
+function getConstraintStr(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return unsafe_string(clang_ConstraintInfo_getConstraintStr(x))
+end
+
+"""
+    getName(x::AbstractConstraintInfo) -> String
+Return the symbolic operand name of `x` (the `foo` of `[foo]`, with no brackets), or the
+empty string when the operand is unnamed.
+"""
+function getName(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return unsafe_string(clang_ConstraintInfo_getName(x))
+end
+
+"""
+    isReadWrite(x::AbstractConstraintInfo) -> Bool
+Whether `x` is a `"+r"`-style output constraint, i.e. one the asm both reads and writes.
+"""
+function isReadWrite(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_isReadWrite(x)
+end
+
+"""
+    earlyClobber(x::AbstractConstraintInfo) -> Bool
+Whether `x` carries the `"&"` early-clobber modifier — the operand is written before all
+inputs have been consumed, so it may not share a register with any of them.
+"""
+function earlyClobber(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_earlyClobber(x)
+end
+
+"""
+    allowsRegister(x::AbstractConstraintInfo) -> Bool
+Whether the operand described by `x` may live in a register.
+"""
+function allowsRegister(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_allowsRegister(x)
+end
+
+"""
+    allowsMemory(x::AbstractConstraintInfo) -> Bool
+Whether the operand described by `x` may live in memory.
+"""
+function allowsMemory(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_allowsMemory(x)
+end
+
+"""
+    hasMatchingInput(x::AbstractConstraintInfo) -> Bool
+Whether this output operand has a matching (tied) input operand.
+"""
+function hasMatchingInput(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_hasMatchingInput(x)
+end
+
+"""
+    hasTiedOperand(x::AbstractConstraintInfo) -> Bool
+Whether this input operand is a matching constraint tying it to an output operand; when
+`true`, `getTiedOperand` names which one.
+"""
+function hasTiedOperand(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_hasTiedOperand(x)
+end
+
+"""
+    getTiedOperand(x::AbstractConstraintInfo) -> Cuint
+Return the index of the output operand this input operand is tied to.
+
+Precondition: `hasTiedOperand(x)` — Clang asserts otherwise.
+"""
+function getTiedOperand(x::AbstractConstraintInfo)
+    @check_ptrs x
+    @assert hasTiedOperand(x) "constraint has no tied operand"
+    return clang_ConstraintInfo_getTiedOperand(x)
+end
+
+"""
+    requiresImmediateConstant(x::AbstractConstraintInfo) -> Bool
+Whether the operand described by `x` must be an immediate constant.
+"""
+function requiresImmediateConstant(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_requiresImmediateConstant(x)
+end
+
+"""
+    setIsReadWrite(x::AbstractConstraintInfo)
+Mark `x` as a read-write (`"+"`) output constraint.
+"""
+function setIsReadWrite(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_setIsReadWrite(x)
+end
+
+"""
+    setEarlyClobber(x::AbstractConstraintInfo)
+Mark `x` as an early-clobber (`"&"`) output constraint.
+"""
+function setEarlyClobber(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_setEarlyClobber(x)
+end
+
+"""
+    setAllowsMemory(x::AbstractConstraintInfo)
+Mark the operand described by `x` as allowed to live in memory.
+"""
+function setAllowsMemory(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_setAllowsMemory(x)
+end
+
+"""
+    setAllowsRegister(x::AbstractConstraintInfo)
+Mark the operand described by `x` as allowed to live in a register.
+"""
+function setAllowsRegister(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_setAllowsRegister(x)
+end
+
+"""
+    setHasMatchingInput(x::AbstractConstraintInfo)
+Mark this output operand as having a matching (tied) input operand.
+"""
+function setHasMatchingInput(x::AbstractConstraintInfo)
+    @check_ptrs x
+    return clang_ConstraintInfo_setHasMatchingInput(x)
+end
+
+"""
+    setRequiresImmediate(x::AbstractConstraintInfo, min::Integer, max::Integer)
+Require the operand described by `x` to be an immediate constant in the inclusive range
+`min:max`.
+"""
+function setRequiresImmediate(x::AbstractConstraintInfo, min::Integer, max::Integer)
+    @check_ptrs x
+    return clang_ConstraintInfo_setRequiresImmediate(x, min, max)
+end
+
+"""
+    setTiedOperand(x::AbstractConstraintInfo, n::Integer, output::AbstractConstraintInfo)
+Tie the input operand `x` to output operand number `n`, described by `output`: `output` is
+marked as having a matching input and its flags are copied into `x`. The constraint string
+and name of `x` are left alone.
+"""
+function setTiedOperand(x::AbstractConstraintInfo, n::Integer, output::AbstractConstraintInfo)
+    @check_ptrs x output
+    return clang_ConstraintInfo_setTiedOperand(x, n, output)
+end
+
+"""
+    validateOutputConstraint(x::AbstractTargetInfo, info::AbstractConstraintInfo) -> Bool
+Parse `info`'s constraint string as an inline-asm *output* constraint for target `x`,
+returning `false` when it is not a valid one (an output constraint must start with `=` or
+`+`). On success the flags of `info` are updated in place — `isReadWrite`, `earlyClobber`,
+`allowsRegister`, `allowsMemory` and `requiresImmediateConstant` only become meaningful
+after this call.
+"""
+function validateOutputConstraint(x::AbstractTargetInfo, info::AbstractConstraintInfo)
+    @check_ptrs x info
+    return clang_TargetInfo_validateOutputConstraint(x, info)
+end
+
+
+"""
+    allowHalfArgsAndReturns(x::AbstractTargetInfo) -> Bool
+Whether half-precision floating point may be used as a function argument or return type on
+this target.
+"""
+function allowHalfArgsAndReturns(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_allowHalfArgsAndReturns(x)
+end
+
+"""
+    supportSourceEvalMethod(x::AbstractTargetInfo) -> Bool
+Whether this target supports the `source` floating-point evaluation method.
+"""
+function supportSourceEvalMethod(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_supportSourceEvalMethod(x)
+end
+
+"""
+    getMaxOpenCLWorkGroupSize(x::AbstractTargetInfo) -> Cuint
+Return the largest OpenCL work-group size this target accepts, in work-items.
+"""
+function getMaxOpenCLWorkGroupSize(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_getMaxOpenCLWorkGroupSize(x)
+end
+
+"""
+    useObjCFP2RetForComplexLongDouble(x::AbstractTargetInfo) -> Bool
+Whether `_Complex long double` uses the `fp2ret` flavour of Objective-C message passing on
+this target.
+"""
+function useObjCFP2RetForComplexLongDouble(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_useObjCFP2RetForComplexLongDouble(x)
+end
+
+"""
+    isRenderScriptTarget(x::AbstractTargetInfo) -> Bool
+Whether this target is a RenderScript one.
+"""
+function isRenderScriptTarget(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_isRenderScriptTarget(x)
+end
+
+"""
+    allowAMDGPUUnsafeFPAtomics(x::AbstractTargetInfo) -> Bool
+Whether unsafe AMDGPU floating-point atomics are allowed on this target.
+"""
+function allowAMDGPUUnsafeFPAtomics(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_allowAMDGPUUnsafeFPAtomics(x)
+end
+
+"""
+    hasPS4DLLImportExport(x::AbstractTargetInfo) -> Bool
+Whether this target uses the PS4 flavour of `dllimport`/`dllexport` handling.
+"""
+function hasPS4DLLImportExport(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_hasPS4DLLImportExport(x)
+end
+
+"""
+    supportsTargetAttributeTune(x::AbstractTargetInfo) -> Bool
+Whether this target supports `tune=` inside `__attribute__((target(...)))`.
+"""
+function supportsTargetAttributeTune(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_supportsTargetAttributeTune(x)
+end
+
+"""
+    doesFeatureAffectCodeGen(x::AbstractTargetInfo, feature::AbstractString) -> Bool
+Whether `feature` has an impact on code generation for this target.
+"""
+function doesFeatureAffectCodeGen(x::AbstractTargetInfo, feature::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_doesFeatureAffectCodeGen(x, feature)
+end
+
+"""
+    getFeatureDependencies(x::AbstractTargetInfo, feature::AbstractString) -> String
+Return the features `feature` depends on for this target, or the empty string when it has
+none — which is also what every target that does not model feature dependencies returns.
+"""
+function getFeatureDependencies(x::AbstractTargetInfo, feature::AbstractString)
+    @check_ptrs x
+    return get_string(clang_TargetInfo_getFeatureDependencies(x, feature))
+end
+
+"""
+    isBranchProtectionSupportedArch(x::AbstractTargetInfo, arch::AbstractString) -> Bool
+Whether the architecture `arch` supports branch protection on this target.
+"""
+function isBranchProtectionSupportedArch(x::AbstractTargetInfo, arch::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_isBranchProtectionSupportedArch(x, arch)
+end
+
+"""
+    isReadOnlyFeature(x::AbstractTargetInfo, feature::AbstractString) -> Bool
+Whether `feature` is read-only on this target, i.e. it cannot be toggled through
+`__attribute__((target(...)))`.
+"""
+function isReadOnlyFeature(x::AbstractTargetInfo, feature::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_isReadOnlyFeature(x, feature)
+end
+
+"""
+    validateCpuSupports(x::AbstractTargetInfo, name::AbstractString) -> Bool
+Whether `name` is a valid argument to `__builtin_cpu_supports` on this target.
+"""
+function validateCpuSupports(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_validateCpuSupports(x, name)
+end
+
+"""
+    multiVersionSortPriority(x::AbstractTargetInfo, name::AbstractString) -> Cuint
+Return the target-specific priority of the CPU or feature `name`, used to order function
+multiversioning resolvers.
+
+On a target that supports multiversioning, `name` must be one that target has already
+accepted: the x86 implementation looks `name` up in a priority table and reads past its end
+for an unknown one. Targets without multiversioning support run the total base
+implementation and are exempt from the check.
+"""
+function multiVersionSortPriority(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    known = isValidCPUName(x, name) || validateCpuSupports(x, name)
+    @assert !supportsMultiVersioning(x) || known "`name` must be a CPU or feature this target knows"
+    return clang_TargetInfo_multiVersionSortPriority(x, name)
+end
+
+"""
+    multiVersionFeatureCost(x::AbstractTargetInfo) -> Cuint
+Return the target-specific cost a feature adds when sorting multiversioning resolvers.
+"""
+function multiVersionFeatureCost(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_multiVersionFeatureCost(x)
+end
+
+"""
+    validateCpuIs(x::AbstractTargetInfo, name::AbstractString) -> Bool
+Whether `name` is a valid argument to `__builtin_cpu_is` on this target.
+"""
+function validateCpuIs(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_validateCpuIs(x, name)
+end
+
+"""
+    validateCPUSpecificCPUDispatch(x::AbstractTargetInfo, name::AbstractString) -> Bool
+Whether `name` is a valid CPU for the `cpu_specific`/`cpu_dispatch` attributes on this
+target. That list is checked through features, so it differs from the one `validateCpuIs`
+accepts.
+"""
+function validateCPUSpecificCPUDispatch(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_validateCPUSpecificCPUDispatch(x, name)
+end
+
+"""
+    supportsExtendIntArgs(x::AbstractTargetInfo) -> Bool
+Whether `-fextend-arguments={32,64}` is supported on this target.
+"""
+function supportsExtendIntArgs(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_supportsExtendIntArgs(x)
+end
+
+"""
+    checkArithmeticFenceSupported(x::AbstractTargetInfo) -> Bool
+Whether `__arithmetic_fence` is supported by this target's backend.
+"""
+function checkArithmeticFenceSupported(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_checkArithmeticFenceSupported(x)
+end
+
+"""
+    allowDebugInfoForExternalRef(x::AbstractTargetInfo) -> Bool
+Whether this target allows debug-info types for declaration-only variables and functions.
+"""
+function allowDebugInfoForExternalRef(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_allowDebugInfoForExternalRef(x)
+end
+
+
+"""
+    getOpenCLBuiltinAddressSpace(x::AbstractTargetInfo, addr_space::Integer) -> CXLangAS
+Map `addr_space` -- an address-space field taken from an OpenCL builtin description string
+-- to the language address space it names.
+"""
+function getOpenCLBuiltinAddressSpace(x::AbstractTargetInfo, addr_space::Integer)
+    @check_ptrs x
+    return clang_TargetInfo_getOpenCLBuiltinAddressSpace(x, addr_space)
+end
+
+"""
+    getCUDABuiltinAddressSpace(x::AbstractTargetInfo, addr_space::Integer) -> CXLangAS
+Map `addr_space` -- an address-space field taken from a CUDA builtin description string --
+to the language address space it names.
+"""
+function getCUDABuiltinAddressSpace(x::AbstractTargetInfo, addr_space::Integer)
+    @check_ptrs x
+    return clang_TargetInfo_getCUDABuiltinAddressSpace(x, addr_space)
+end
+
+"""
+    getConstantAddressSpace(x::AbstractTargetInfo) -> Union{CXLangAS,Nothing}
+Return an address space that may be used opportunistically for constant global memory, or
+`nothing` when the target names none (the C++ optional is disengaged).
+"""
+function getConstantAddressSpace(x::AbstractTargetInfo)
+    @check_ptrs x
+    as = Ref{CXLangAS}(CXLangAS_Default)
+    return clang_TargetInfo_getConstantAddressSpace(x, as) ? as[] : nothing
+end
+
+"""
+    getPlatformMinVersion(x::AbstractTargetInfo) -> String
+Return the minimum platform version the program should be compiled for -- the version the
+`availability` attribute is checked against -- in `llvm::VersionTuple`'s printed form
+(`"0"` when the target names no minimum).
+"""
+function getPlatformMinVersion(x::AbstractTargetInfo)
+    @check_ptrs x
+    return get_string(clang_TargetInfo_getPlatformMinVersion(x))
+end
+
+"""
+    getDefaultCallingConv(x::AbstractTargetInfo) -> CXCallingConv_
+Return the calling convention this target uses when a declaration names none.
+"""
+function getDefaultCallingConv(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_getDefaultCallingConv(x)
+end
+
+"""
+    checkCallingConvention(x::AbstractTargetInfo, cc::CXCallingConv_) -> CXTargetInfo_CallingConvCheckResult
+Report whether `cc` is valid for this target: accepted, warned about and substituted with
+the default convention, ignored, or rejected.
+"""
+function checkCallingConvention(x::AbstractTargetInfo, cc::CXCallingConv_)
+    @check_ptrs x
+    return clang_TargetInfo_checkCallingConvention(x, cc)
+end
+
+"""
+    getCallingConvKind(x::AbstractTargetInfo, clang_abi_compat4::Bool) -> CXTargetInfo_CallingConvKind
+Return the calling-convention family this target's ABI belongs to. `clang_abi_compat4`
+requests the Clang 4 compatibility behaviour (`-fclang-abi-compat=4`).
+"""
+function getCallingConvKind(x::AbstractTargetInfo, clang_abi_compat4::Bool)
+    @check_ptrs x
+    return clang_TargetInfo_getCallingConvKind(x, clang_abi_compat4)
+end
+
+"""
+    areDefaultedSMFStillPOD(x::AbstractTargetInfo, lo::LangOptions) -> Bool
+Return whether explicitly defaulted special member functions still leave a class POD for
+layout purposes, under the Clang ABI compatibility level `lo` requests.
+"""
+function areDefaultedSMFStillPOD(x::AbstractTargetInfo, lo::LangOptions)
+    @check_ptrs x lo
+    return clang_TargetInfo_areDefaultedSMFStillPOD(x, lo)
+end
+
+"""
+    getOpenCLTypeAddrSpace(x::AbstractTargetInfo, tk::CXOpenCLTypeKind) -> CXLangAS
+Return the address space this target assigns to the OpenCL type family `tk`.
+"""
+function getOpenCLTypeAddrSpace(x::AbstractTargetInfo, tk::CXOpenCLTypeKind)
+    @check_ptrs x
+    return clang_TargetInfo_getOpenCLTypeAddrSpace(x, tk)
+end
+
+"""
+    getDWARFAddressSpace(x::AbstractTargetInfo, addr_space::Integer) -> Union{Cuint,Nothing}
+Return the DWARF address space `addr_space` must be converted to before use, or `nothing`
+when the target needs no conversion (the C++ optional is disengaged).
+"""
+function getDWARFAddressSpace(x::AbstractTargetInfo, addr_space::Integer)
+    @check_ptrs x
+    out = Ref{Cuint}(0)
+    return clang_TargetInfo_getDWARFAddressSpace(x, addr_space, out) ? out[] : nothing
+end
+
+"""
+    getSDKVersion(x::AbstractTargetInfo) -> String
+Return the SDK version recorded in the target options, in `llvm::VersionTuple`'s printed
+form (`"0"` when none was specified).
+"""
+function getSDKVersion(x::AbstractTargetInfo)
+    @check_ptrs x
+    return get_string(clang_TargetInfo_getSDKVersion(x))
+end
+
+"""
+    validateTarget(x::AbstractTargetInfo, diag::DiagnosticsEngine) -> Bool
+Return whether the fully-initialized target is valid, reporting the reason through `diag`
+when it is not.
+"""
+function validateTarget(x::AbstractTargetInfo, diag::DiagnosticsEngine)
+    @check_ptrs x diag
+    return clang_TargetInfo_validateTarget(x, diag)
+end
+
+"""
+    getDarwinTargetVariantTriple(x::AbstractTargetInfo) -> Union{String,Nothing}
+Return the Darwin target-variant triple string -- the variant of the deployment target the
+code is being compiled for -- or `nothing` when the target names no variant.
+"""
+function getDarwinTargetVariantTriple(x::AbstractTargetInfo)
+    @check_ptrs x
+    ptr = clang_TargetInfo_getDarwinTargetVariantTriple(x)
+    return ptr == C_NULL ? nothing : unsafe_string(ptr)
+end
+
+"""
+    hasHIPImageSupport(x::AbstractTargetInfo) -> Bool
+Return whether the target supports the HIP image/texture APIs.
+"""
+function hasHIPImageSupport(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_hasHIPImageSupport(x)
+end
+
+"""
+    fillValidTuneCPUList(x::AbstractTargetInfo) -> Vector{String}
+Return the valid CPU names for tuning this target (the valid values for `-tune-cpu`).
+Targets that do not model separate tune CPUs return the `fillValidCPUList` result.
+"""
+function fillValidTuneCPUList(x::AbstractTargetInfo)
+    @check_ptrs x
+    return get_string(clang_TargetInfo_fillValidTuneCPUList(x))
+end
+
+"""
+    CPUSpecificManglingCharacter(x::AbstractTargetInfo, name::AbstractString) -> Cchar
+Return the character `cpu_specific` multiversioning appends to the mangled name of the
+variant compiled for CPU `name`.
+
+Precondition: `validateCPUSpecificCPUDispatch(x, name)`. `TargetInfo`'s own implementation
+is an `llvm_unreachable`, so a target that does not implement `cpu_specific`
+multiversioning aborts instead of returning.
+"""
+function CPUSpecificManglingCharacter(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    @assert validateCPUSpecificCPUDispatch(x, name) "target rejects this cpu_specific CPU name"
+    return clang_TargetInfo_CPUSpecificManglingCharacter(x, name)
+end
+
+"""
+    getTargetID(x::AbstractTargetInfo) -> String
+Return the target ID (the AMDGPU `processor:feature` form), or the empty string when the
+target exposes none -- the disengaged C++ optional and an engaged empty string are
+conflated.
+"""
+function getTargetID(x::AbstractTargetInfo)
+    @check_ptrs x
+    return get_string(clang_TargetInfo_getTargetID(x))
+end

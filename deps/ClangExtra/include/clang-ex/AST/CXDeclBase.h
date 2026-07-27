@@ -8,6 +8,7 @@
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
+#include "clang-ex/Basic/CXLangOptions.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
@@ -101,6 +102,14 @@ bool clang_Decl_hasAttrs(CXDecl D);
 unsigned clang_Decl_getNumAttrs(CXDecl D);
 
 CXAttr clang_Decl_getAttr(CXDecl D, unsigned I);
+
+// setAttrs: Decl::setAttrs(const AttrVec &), with the vector rebuilt inside the
+// shim from a caller array of NumAttrs borrowed CXAttr handles (MARSHALLING.md
+// section 11). The Attr objects are not copied — they stay owned by whatever AST
+// allocated them, so one attribute can end up on two declarations.
+// PRECONDITION: D must carry no attributes yet (clang_Decl_hasAttrs is false);
+// clang asserts on a declaration whose attribute list is already populated.
+void clang_Decl_setAttrs(CXDecl D, CXAttr *Attrs, unsigned NumAttrs);
 
 // Decl
 CXSourceLocation_ clang_Decl_getLocation(CXDecl DC);
@@ -352,6 +361,36 @@ CXString clang_Decl_printToString(CXDecl D, unsigned Indentation,
 
 bool clang_Decl_isFunctionPointerType(CXDecl D);
 
+// The static entry points and the identifier-namespace mutators of clang::Decl,
+// in the order the methods are declared in clang/AST/DeclBase.h.
+//
+// Static and total in D: D may be NULL, which restricts the answer to the checks
+// that depend only on Ty and StrictFlexArraysLevel. StrictFlexArraysLevel selects
+// the -fstrict-flex-arrays rule to apply instead of being read out of Ctx, so the
+// answer does not depend on how the translation unit was configured.
+bool clang_Decl_isFlexibleArrayMemberLike(CXASTContext Ctx, CXDecl D, CXQualType Ty,
+                                          CXStrictFlexArraysLevelKind StrictFlexArraysLevel,
+                                          bool IgnoreTemplateOrMacroSubstitution);
+
+// PRECONDITION: clang clears IDNS_Ordinary and then asserts that nothing but
+// IDNS_OrdinaryFriend and IDNS_Tag is left, so D's identifier namespace must hold
+// no bit outside IDNS_Ordinary | IDNS_OrdinaryFriend | IDNS_Tag.
+void clang_Decl_setLocalExternDecl(CXDecl D);
+
+// Empties D's identifier namespace, hiding it from every ordinary name lookup
+// while leaving it findable for redeclaration lookup.
+void clang_Decl_clearIdentifierNamespace(CXDecl D);
+
+// PRECONDITION: D's kind must be Function or FunctionTemplate and its identifier
+// namespace must already contain IDNS_Ordinary; clang asserts both.
+void clang_Decl_setNonMemberOperator(CXDecl D);
+
+// Decl::printGroup() rendered into a string (clang writes it to a raw_ostream).
+// NumDecls must be at least 1 and no slot may be null: the printing policy is
+// taken from the ASTContext of Decls[0].
+CXString clang_Decl_printGroupToString(CXDecl *Decls, unsigned NumDecls,
+                                       unsigned Indentation); // helper
+
 // Decl Cast — the Decl<->DeclContext pivot (DeclContext is not a Decl::Kind, so
 // it is not part of the stamped castTo family above). Decl->Decl downcasts and
 // kind predicates are stamped from DeclNodes.inc.
@@ -501,6 +540,35 @@ void clang_DeclContext_noload_lookup(CXDeclContext DC, CXDeclarationName Name,
 
 void clang_DeclContext_makeDeclVisibleInContext(CXDeclContext DC, CXNamedDecl D);
 
+// lookup names: DeclContext::lookups() as a two-call count + fill over the
+// *names* the context can look up — clang's all_lookups_iterator visits one
+// entry per DeclarationName, and the declarations behind a name come from
+// clang_DeclContext_lookup. Both calls run on DC's primary context and build its
+// lookup table, so the count is stable across the pair; getLookupNames writes
+// exactly getNumLookupNames CXDeclarationName encodings, none null. Note clang
+// filters its internal using-directive name only while advancing the iterator,
+// so that name can still show up as the first entry.
+unsigned clang_DeclContext_getNumLookupNames(CXDeclContext DC);
+
+void clang_DeclContext_getLookupNames(CXDeclContext DC, CXDeclarationName *Buf);
+
+// The same pair over DeclContext::noload_lookups(): no external AST source is
+// consulted, so only names already in the built table are visited (0 when it has
+// not been built yet). PreserveInternalState additionally suppresses loading
+// lazily-stored lexical lookups, leaving the context untouched — pass the same
+// value to both calls or the two walks disagree.
+unsigned clang_DeclContext_getNumNoloadLookupNames(CXDeclContext DC,
+                                                   bool PreserveInternalState);
+
+void clang_DeclContext_getNoloadLookupNames(CXDeclContext DC, bool PreserveInternalState,
+                                            CXDeclarationName *Buf);
+
+// helper: the sole declaration named Name in DC, or null when the lookup found
+// nothing or an overload set — DeclContextLookupResult's isSingleResult + front
+// in one crossing. PRECONDITION: DC must not be a transparent context (a
+// LinkageSpec or an Export), which clang's lookup asserts against.
+CXNamedDecl clang_DeclContext_lookupSingleResult(CXDeclContext DC, CXDeclarationName Name);
+
 // using directives: DeclContext::using_directives() as a two-call count + fill.
 unsigned clang_DeclContext_getNumUsingDirectives(CXDeclContext DC);
 
@@ -527,6 +595,40 @@ bool clang_DeclContext_shouldUseQualifiedLookup(CXDeclContext DC);
 // True when D also is a DeclContext, i.e. when clang_Decl_castToDeclContext is
 // legal on it.
 bool clang_DeclContext_classof(CXDecl D);
+
+// noload decls: the first declaration lexically stored in DC, obtained without
+// asking an external AST source for anything. NULL when DC stores none; walk the
+// rest with clang_Decl_getNextDeclInContext, the way
+// clang_DeclContext_decl_iterator_begin is walked.
+CXDecl clang_DeclContext_noload_decls_begin(CXDeclContext DC);
+
+// local uncached lookup: DeclContext::localUncachedLookup(DeclarationName) as a
+// two-call count + fill. It searches this context alone and falls back to a linear
+// scan of the stored declarations when no lookup table answers, which is why clang
+// reserves it for AST-importer-style callers.
+// getNumLocalUncachedLookupResults runs the search to size it and
+// localUncachedLookup writes exactly that many CXNamedDecl slots, none null.
+unsigned clang_DeclContext_getNumLocalUncachedLookupResults(CXDeclContext DC,
+                                                            CXDeclarationName Name);
+
+void clang_DeclContext_localUncachedLookup(CXDeclContext DC, CXDeclarationName Name,
+                                           CXNamedDecl *Results);
+
+// PRECONDITION: DC must be its own primary context
+// (clang_DeclContext_getPrimaryContext returns DC itself); clang asserts on the rest.
+void clang_DeclContext_setMustBuildLookupTable(CXDeclContext DC);
+
+// getLookupPtr as a predicate: StoredDeclsMap is an internal clang type with no
+// handle of its own, so only its presence crosses. Name lookup builds the table
+// on the primary context, so query clang_DeclContext_getPrimaryContext(DC) to
+// learn whether the noload enumerations above can see anything.
+bool clang_DeclContext_hasLookupTable(CXDeclContext DC);
+
+// buildLookup: force the lookup table to be fully built, reporting whether one
+// exists afterwards (a context that declares nothing still has none).
+// PRECONDITION: DC must be its own primary context
+// (clang_DeclContext_getPrimaryContext returns DC itself); clang asserts on the rest.
+bool clang_DeclContext_buildLookup(CXDeclContext DC);
 
 LLVM_CLANG_C_EXTERN_C_END
 

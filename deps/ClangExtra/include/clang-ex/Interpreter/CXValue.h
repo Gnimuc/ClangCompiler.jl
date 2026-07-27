@@ -4,6 +4,7 @@
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
+#include "clang-c/CXString.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
@@ -12,6 +13,31 @@ CXValue clang_value_create(void);
 void clang_value_dispose(CXValue V);
 
 CXValue clang_createValueFromType(CXInterpreter I, void *Ty);
+
+// clang 18 ships placeholder bodies for printType/printData/print: each emits one
+// fixed "not implemented" line and reads nothing out of the value, so they are total.
+// Only the presence of text is stable across LLVM versions, never its content.
+CXString clang_value_printType(CXValue V);
+
+CXString clang_value_printData(CXValue V);
+
+CXString clang_value_print(CXValue V);
+
+// writes to llvm::outs()
+void clang_value_dump(CXValue V);
+
+// resets the value to the unspecified kind, dropping its opaque type, its interpreter
+// and — when the storage was manually allocated — the storage itself
+void clang_value_clear(CXValue V);
+
+// UB when the value carries no interpreter: clang::Value::getASTContext dereferences
+// its Interpreter member unconditionally, and that member is null in a
+// default-constructed value and after clang_value_clear. Gate on
+// clang_value_getInterpreter returning non-NULL.
+CXASTContext clang_value_getASTContext(CXValue V);
+
+// returns NULL for a default-constructed value and after clang_value_clear
+CXInterpreter clang_value_getInterpreter(CXValue V);
 
 void *clang_value_getType(CXValue V);
 

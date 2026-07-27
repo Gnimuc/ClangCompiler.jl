@@ -109,6 +109,72 @@ bool clang_Qualifiers_hasUnaligned(unsigned Quals);
 // of this one mutator, so only the flag-taking form is wrapped.
 unsigned clang_Qualifiers_setUnaligned(unsigned Quals, bool Flag);
 
+// GC
+// Mirrors clang::Qualifiers::GC -- the Objective-C garbage-collection attribute a
+// qualifier set can carry. Declared here, ahead of the first accessor returning it.
+typedef enum CXQualifiers_GC {
+  CXQualifiers_GCNone = 0,
+  CXQualifiers_Weak,
+  CXQualifiers_Strong
+} CXQualifiers_GC;
+
+// ObjCLifetime
+// Mirrors clang::Qualifiers::ObjCLifetime -- the ARC lifetime a qualifier set can carry.
+// Declared here, ahead of the first accessor returning it.
+typedef enum CXQualifiers_ObjCLifetime {
+  CXQualifiers_OCL_None,
+  CXQualifiers_OCL_ExplicitNone,
+  CXQualifiers_OCL_Strong,
+  CXQualifiers_OCL_Weak,
+  CXQualifiers_OCL_Autoreleasing
+} CXQualifiers_ObjCLifetime;
+
+bool clang_Qualifiers_hasObjCGCAttr(unsigned Quals);
+
+CXQualifiers_GC clang_Qualifiers_getObjCGCAttr(unsigned Quals);
+
+// setObjCGCAttr replaces the GC attribute outright and CXQualifiers_GCNone clears it,
+// which is exactly how Qualifiers::removeObjCGCAttr is spelled, so only the setter of that
+// pair is wrapped.
+unsigned clang_Qualifiers_setObjCGCAttr(unsigned Quals, CXQualifiers_GC Attr);
+
+// PRECONDITION (Invariant 3): Attr must not be CXQualifiers_GCNone;
+// Qualifiers::addObjCGCAttr asserts it. clang_Qualifiers_setObjCGCAttr is the unrestricted
+// form; the Julia wrapper restates the precondition.
+unsigned clang_Qualifiers_addObjCGCAttr(unsigned Quals, CXQualifiers_GC Attr);
+
+unsigned clang_Qualifiers_withoutObjCGCAttr(unsigned Quals);
+
+unsigned clang_Qualifiers_withoutObjCLifetime(unsigned Quals);
+
+bool clang_Qualifiers_hasObjCLifetime(unsigned Quals);
+
+CXQualifiers_ObjCLifetime clang_Qualifiers_getObjCLifetime(unsigned Quals);
+
+// setObjCLifetime replaces the lifetime outright and CXQualifiers_OCL_None clears it,
+// which is exactly how Qualifiers::removeObjCLifetime is spelled, so only the setter of
+// that pair is wrapped.
+unsigned clang_Qualifiers_setObjCLifetime(unsigned Quals,
+                                          CXQualifiers_ObjCLifetime Lifetime);
+
+// PRECONDITION (Invariant 3): Lifetime must not be CXQualifiers_OCL_None and Quals must not
+// carry a lifetime already; Qualifiers::addObjCLifetime asserts both. The gate for the
+// second is clang_Qualifiers_hasObjCLifetime above, clang_Qualifiers_setObjCLifetime is the
+// unrestricted form, and the Julia wrapper restates both.
+unsigned clang_Qualifiers_addObjCLifetime(unsigned Quals,
+                                          CXQualifiers_ObjCLifetime Lifetime);
+
+// True when the lifetime is neither OCL_None nor OCL_ExplicitNone.
+bool clang_Qualifiers_hasNonTrivialObjCLifetime(unsigned Quals);
+
+// True when the lifetime is OCL_Strong or OCL_Weak.
+bool clang_Qualifiers_hasStrongOrWeakObjCLifetime(unsigned Quals);
+
+// Whether an object qualified with Other can be used where Quals is expected, judging only
+// the ObjC lifetimes: equal lifetimes match, OCL_Weak never mixes with a different
+// lifetime, an OCL_None on either side is compatible, and otherwise Quals must carry const.
+bool clang_Qualifiers_compatiblyIncludesObjCLifetime(unsigned Quals, unsigned Other);
+
 unsigned clang_Qualifiers_withoutAddressSpace(unsigned Quals);
 
 bool clang_Qualifiers_hasAddressSpace(unsigned Quals);
@@ -163,6 +229,13 @@ unsigned clang_Qualifiers_addQualifiers(unsigned Quals, unsigned Other);
 
 unsigned clang_Qualifiers_removeQualifiers(unsigned Quals, unsigned Other);
 
+// PRECONDITION (Invariant 3): the two sets must not disagree on any of the three
+// non-fast fields. For each of address space, ObjC GC attribute and ObjC lifetime,
+// either the two values are equal or at least one of the sets leaves the field unset;
+// Qualifiers::addConsistentQualifiers asserts all three before OR-ing the masks. The
+// Julia wrapper restates them.
+unsigned clang_Qualifiers_addConsistentQualifiers(unsigned Quals, unsigned Other);
+
 // Static: the OpenCL/SYCL/CUDA address-space superset relation over two LangAS
 // values. This is Qualifiers::isAddressSpaceSupersetOf(LangAS, LangAS), not the
 // same-named member overload taking another Qualifiers set, so it has no receiver.
@@ -177,6 +250,34 @@ CXString clang_Qualifiers_getAsString(unsigned Quals);
 // Static: the name clang prints for one address space value. No receiver.
 CXString clang_Qualifiers_getAddrSpaceAsString(CXLangAS AS);
 
+// The two printing entry points below take a CXASTContext and use its own
+// getPrintingPolicy(), the way clang_Stmt_printPretty does: clang::PrintingPolicy is a
+// by-value options bag with no handle of its own. isEmptyWhenPrinted answers whether print
+// would write nothing at all.
+bool clang_Qualifiers_isEmptyWhenPrinted(unsigned Quals, CXASTContext Ctx);
+
+// clang::Qualifiers::print streams into a raw_ostream, so its output crosses as a copied
+// CXString (MARSHALLING.md §5). AppendSpaceIfNonEmpty adds one trailing space when the set
+// prints anything; an empty set prints "" whatever the flag says.
+CXString clang_Qualifiers_printAsString(unsigned Quals, CXASTContext Ctx,
+                                        bool AppendSpaceIfNonEmpty);
+
+// SplitQualType
+// A clang::SplitQualType is the (const Type *, Qualifiers) pair a QualType decomposes
+// into. It has no handle of its own and crosses in both directions as the (CXType_,
+// opaque unsigned) pair the clang_QualType_split family already produces
+// (MARSHALLING.md §7): Ty and Quals carry the receiver, OutTy and OutQuals receive the
+// result. Neither out-param may be NULL. clang::SplitQualType::asPair is the identity on
+// this representation and is therefore not wrapped.
+// PRECONDITION (Invariant 3): Ty must be non-null -- getSingleStepDesugaredType
+// dereferences it -- and Quals must not disagree with the qualifiers written at the
+// desugared level on the address space or on either Objective-C field, because the two
+// sets are folded with Qualifiers::addConsistentQualifiers, which asserts all three. A
+// pair that came out of clang_QualType_split (or clang_QualType_getSplitDesugaredType) on
+// one type always satisfies the second half. The Julia wrapper restates both.
+void clang_SplitQualType_getSingleStepDesugaredType(CXType_ Ty, unsigned Quals,
+                                                    CXType_ *OutTy, unsigned *OutQuals);
+
 // QualType
 
 CXQualType clang_QualType_constructFromTypePtr(CXType_ Ptr, unsigned Quals);
@@ -184,6 +285,14 @@ CXQualType clang_QualType_constructFromTypePtr(CXType_ Ptr, unsigned Quals);
 CXType_ clang_QualType_getTypePtr(CXQualType OpaquePtr);
 
 CXType_ clang_QualType_getTypePtrOrNull(CXQualType OpaquePtr);
+
+// The *local* split, using the same two out-param shape as the getSplit* pair documented
+// just below: Ty receives the type half, Quals the opaque Qualifiers encoding of the
+// qualifiers attached at this level only. Neither out-param may be NULL. Unlike the two
+// getSplit* variants this one is total — QualType::split reaches the type through
+// getTypePtrUnsafe/getExtQualsUnsafe, neither of which asserts, so a null QualType yields
+// a null Ty and an empty qualifier set.
+void clang_QualType_split(CXQualType OpaquePtr, CXType_ *Ty, unsigned *Quals);
 
 // A clang::SplitQualType is a (const Type *, Qualifiers) pair, so it crosses as two
 // out-params (MARSHALLING.md §7): Ty receives the type half and Quals the opaque
@@ -253,6 +362,12 @@ unsigned clang_QualType_getQualifiersAsOpaqueValue(CXQualType OpaquePtr);
 
 unsigned clang_QualType_getLocalFastQualifiers(CXQualType OpaquePtr);
 
+// Whether operations on this type are evaluated at a wider format than the type itself,
+// which is what the target's float-eval method decides for _Float16/__bf16.
+// PRECONDITION (Invariant 3): OpaquePtr must be non-null -- it reaches the type through
+// QualType::getTypePtr(), which asserts !isNull(). The Julia wrapper restates it.
+bool clang_QualType_UseExcessPrecision(CXQualType OpaquePtr, CXASTContext Ctx);
+
 // QualType is a value type crossing as its opaque encoding, so clang's in-place
 // removeLocal* mutators surface here as value-returning wrappers, matching the
 // clang_QualType_addConst/addVolatile/addRestrict trio above. Each clears only the
@@ -287,6 +402,29 @@ bool clang_QualType_isMoreQualifiedThan(CXQualType OpaquePtr, CXQualType Other);
 // restates it.
 bool clang_QualType_isAddressSpaceOverlapping(CXQualType OpaquePtr, CXQualType Other);
 
+// The ObjC qualifier tail. Every one of these reads QualType::getQualifiers(), which
+// reaches the type through getCommonPtr() and asserts !isNull(), so a null QualType is
+// undefined behaviour here; the Julia wrapper restates the precondition. The attribute and
+// lifetime values are the same CXQualifiers_GC / CXQualifiers_ObjCLifetime mirrors the
+// clang_Qualifiers_* family above uses.
+CXQualifiers_GC clang_QualType_getObjCGCAttr(CXQualType OpaquePtr);
+
+bool clang_QualType_isObjCGCWeak(CXQualType OpaquePtr);
+
+bool clang_QualType_isObjCGCStrong(CXQualType OpaquePtr);
+
+CXQualifiers_ObjCLifetime clang_QualType_getObjCLifetime(CXQualType OpaquePtr);
+
+bool clang_QualType_hasNonTrivialObjCLifetime(CXQualType OpaquePtr);
+
+bool clang_QualType_hasStrongOrWeakObjCLifetime(CXQualType OpaquePtr);
+
+// PRECONDITION (Invariant 3): OpaquePtr must not be a null QualType --
+// QualType::isNonWeakInMRRWithObjCWeak reads the qualifier set through getTypePtr(),
+// which asserts !isNull(). True only for an Objective-C __weak type in a translation unit
+// that enables weak references without ARC, so a C++ TU always reads false.
+bool clang_QualType_isNonWeakInMRRWithObjCWeak(CXQualType OpaquePtr, CXASTContext Ctx);
+
 bool clang_QualType_isAtLeastAsQualifiedAs(CXQualType OpaquePtr, CXQualType Other);
 
 CXQualType clang_QualType_getNonReferenceType(CXQualType OpaquePtr);
@@ -305,6 +443,26 @@ CXQualType clang_QualType_getSingleStepDesugaredType(CXQualType OpaquePtr,
                                                      CXASTContext Ctx);
 
 bool clang_QualType_isConstant(CXQualType OpaquePtr, CXASTContext Ctx);
+
+// NonConstantStorageReason
+// Mirrors clang::QualType::NonConstantStorageReason -- why instances of a type cannot be
+// placed in immutable storage.
+typedef enum CXNonConstantStorageReason {
+  CXNonConstantStorageReason_MutableField,
+  CXNonConstantStorageReason_NonConstNonReferenceType,
+  CXNonConstantStorageReason_NonTrivialCtor,
+  CXNonConstantStorageReason_NonTrivialDtor
+} CXNonConstantStorageReason;
+
+// std::optional<NonConstantStorageReason>: engaged (instances CANNOT go in immutable
+// storage) -> fills *Out and returns true; disengaged (they can) -> returns false with
+// *Out untouched (MARSHALLING.md §8). Out may not be NULL. This is the reason-carrying
+// form of clang_QualType_isConstantStorage below, whose bool is exactly its negation.
+// ExcludeCtor/ExcludeDtor drop the construction and destruction windows from
+// consideration, as they do there.
+bool clang_QualType_isNonConstantStorage(CXQualType OpaquePtr, CXASTContext Ctx,
+                                         bool ExcludeCtor, bool ExcludeDtor,
+                                         CXNonConstantStorageReason *Out);
 
 // QualType::isConstantStorage is the negation of isNonConstantStorage, whose
 // std::optional reason code is dropped here (MARSHALLING.md §8: only the
@@ -333,6 +491,14 @@ bool clang_QualType_isTriviallyEqualityComparableType(CXQualType OpaquePtr,
 
 CXString clang_QualType_getAsString(CXQualType OpaquePtr);
 
+// clang::QualType::print streams into a raw_ostream, so its output crosses as a copied
+// CXString (MARSHALLING.md §5), printed under Ctx's own getPrintingPolicy(). PlaceHolder is
+// the declarator name printed inside the type ("int *p" for "p") and may be ""; Indentation
+// is the base indent used when a record body is printed inline. A null QualType prints
+// "NULL TYPE" rather than crashing, matching clang_QualType_getAsString.
+CXString clang_QualType_printAsString(CXQualType OpaquePtr, CXASTContext Ctx,
+                                      const char *PlaceHolder, unsigned Indentation);
+
 void clang_QualType_dump(CXQualType OpaquePtr);
 
 CXQualType clang_QualType_getCanonicalType(CXQualType OpaquePtr);
@@ -355,6 +521,22 @@ unsigned clang_QualType_getLocalQualifiers(CXQualType OpaquePtr);
 bool clang_QualType_mayBeDynamicClass(CXQualType OpaquePtr);
 
 bool clang_QualType_mayBeNotDynamicClass(CXQualType OpaquePtr);
+
+// The WebAssembly reference-type trio. Each reaches the type through
+// QualType::getTypePtr(), which asserts !isNull(), so a null QualType is undefined
+// behaviour here and the Julia wrapper restates the precondition.
+// isWebAssemblyReferenceType is the disjunction of the other two, and
+// isWebAssemblyFuncrefType additionally requires the wasm_funcref address space.
+bool clang_QualType_isWebAssemblyReferenceType(CXQualType OpaquePtr);
+
+bool clang_QualType_isWebAssemblyExternrefType(CXQualType OpaquePtr);
+
+bool clang_QualType_isWebAssemblyFuncrefType(CXQualType OpaquePtr);
+
+// PRECONDITION (Invariant 3): OpaquePtr must not be a null QualType --
+// QualType::stripObjCKindOfType reaches the type through getTypePtr(), which asserts
+// !isNull(). It is the identity on any type carrying no Objective-C __kindof sugar.
+CXQualType clang_QualType_stripObjCKindOfType(CXQualType OpaquePtr, CXASTContext Ctx);
 
 CXQualType clang_QualType_getAtomicUnqualifiedType(CXQualType OpaquePtr);
 
@@ -427,13 +609,26 @@ bool clang_Type_isWebAssemblyExternrefType(CXType_ T);
 // isWebAssemblyTableType
 bool clang_Type_isWebAssemblyTableType(CXType_ T);
 
+// isSveVLSBuiltinType
+bool clang_Type_isSveVLSBuiltinType(CXType_ T);
+
 // isVLSTBuiltinType
 
 // getSveEltType
+// PRECONDITION (Invariant 3): T must satisfy Type::isSveVLSBuiltinType(). getSveEltType
+// reaches the BuiltinType subobject through an unchecked getAs<BuiltinType>() and
+// dereferences it, so any other type is undefined behaviour. The gate is
+// clang_Type_isSveVLSBuiltinType above; the Julia wrapper restates it.
+CXQualType clang_Type_getSveEltType(CXType_ T, CXASTContext Ctx);
 
 // isRVVVLSBuiltinType
+bool clang_Type_isRVVVLSBuiltinType(CXType_ T);
 
 // getRVVEltType
+// PRECONDITION (Invariant 3): T must satisfy Type::isRVVVLSBuiltinType(), for the same
+// unchecked getAs<BuiltinType>() reason as getSveEltType. The gate is
+// clang_Type_isRVVVLSBuiltinType above; the Julia wrapper restates it.
+CXQualType clang_Type_getRVVEltType(CXType_ T, CXASTContext Ctx);
 
 // isIncompleteType
 
@@ -632,21 +827,28 @@ bool clang_Type_isObjCObjectPointerType(CXType_ T);
 bool clang_Type_isObjCRetainableType(CXType_ T);
 
 // isObjCLifetimeType
+bool clang_Type_isObjCLifetimeType(CXType_ T);
 
 // isObjCIndirectLifetimeType
+bool clang_Type_isObjCIndirectLifetimeType(CXType_ T);
 
 // isObjCNSObjectType
+bool clang_Type_isObjCNSObjectType(CXType_ T);
 
 // isObjCIndependentClassType
+bool clang_Type_isObjCIndependentClassType(CXType_ T);
 
 // isObjCObjectType
 bool clang_Type_isObjCObjectType(CXType_ T);
 
 // isObjCQualifiedInterfaceType
+bool clang_Type_isObjCQualifiedInterfaceType(CXType_ T);
 
 // isObjCQualifiedIdType
+bool clang_Type_isObjCQualifiedIdType(CXType_ T);
 
 // isObjCQualifiedClassType
+bool clang_Type_isObjCQualifiedClassType(CXType_ T);
 
 // isObjCObjectOrInterfaceType
 bool clang_Type_isObjCObjectOrInterfaceType(CXType_ T);
@@ -657,15 +859,27 @@ bool clang_Type_isObjCIdType(CXType_ T);
 bool clang_Type_isDecltypeType(CXType_ T);
 
 // isObjCInertUnsafeUnretainedType
+bool clang_Type_isObjCInertUnsafeUnretainedType(CXType_ T);
 
 // isObjCIdOrObjectKindOfType
+// Bound is an out-param and may be NULL when only the predicate is wanted. The shim clears
+// its own local before the call, so a non-NULL Bound always receives a defined value: the
+// (possibly specialized) Objective-C class type bounding a __kindof type, or NULL both for
+// a plain `id` and for every type that does not match.
+bool clang_Type_isObjCIdOrObjectKindOfType(CXType_ T, CXASTContext Ctx,
+                                           CXObjCObjectType *Bound);
 
 // isObjCClassType
 bool clang_Type_isObjCClassType(CXType_ T);
 
 // isObjCClassOrClassKindOfType
+bool clang_Type_isObjCClassOrClassKindOfType(CXType_ T);
 
 // isBlockCompatibleObjCPointerType
+// clang takes the ASTContext by non-const reference here; Ctx may not be NULL. The
+// predicate answers false for every type that is not an Objective-C object pointer, so a
+// C++ translation unit always reads false.
+bool clang_Type_isBlockCompatibleObjCPointerType(CXType_ T, CXASTContext Ctx);
 
 // isObjCSelType
 bool clang_Type_isObjCSelType(CXType_ T);
@@ -675,8 +889,10 @@ bool clang_Type_isObjCSelType(CXType_ T);
 bool clang_Type_isObjCBuiltinType(CXType_ T);
 
 // isObjCARCBridgableType
+bool clang_Type_isObjCARCBridgableType(CXType_ T);
 
 // isCARCBridgableType
+bool clang_Type_isCARCBridgableType(CXType_ T);
 
 bool clang_Type_isTemplateTypeParmType(CXType_ T);
 
@@ -735,10 +951,22 @@ bool clang_Type_isBitIntType(CXType_ T);
 bool clang_Type_isOpenCLSpecificType(CXType_ T);
 
 // isObjCARCImplicitlyUnretainedType
+// PRECONDITION (Invariant 3): T must satisfy Type::isObjCLifetimeType();
+// Type::isObjCARCImplicitlyUnretainedType asserts it on entry. The gate is
+// clang_Type_isObjCLifetimeType above; the Julia wrapper restates it.
+bool clang_Type_isObjCARCImplicitlyUnretainedType(CXType_ T);
 
 // isCUDADeviceBuiltinSurfaceType
+bool clang_Type_isCUDADeviceBuiltinSurfaceType(CXType_ T);
 
 // isCUDADeviceBuiltinTextureType
+bool clang_Type_isCUDADeviceBuiltinTextureType(CXType_ T);
+
+// getObjCARCImplicitLifetime
+// PRECONDITION (Invariant 3): T must satisfy Type::isObjCLifetimeType();
+// Type::getObjCARCImplicitLifetime asserts it on entry. The gate is
+// clang_Type_isObjCLifetimeType above; the Julia wrapper restates it.
+CXQualifiers_ObjCLifetime clang_Type_getObjCARCImplicitLifetime(CXType_ T);
 
 // isRVVType
 
@@ -762,6 +990,16 @@ typedef enum CXScalarTypeKind {
 // total only over scalars -- it asserts on entry and falls off into llvm_unreachable
 // for anything else. The Julia wrapper restates this as @assert isScalarType(x).
 CXScalarTypeKind clang_Type_getScalarTypeKind(CXType_ T);
+
+// The whole clang::TypeDependence bitmask in one call. It is an LLVM bitmask enum whose
+// combined enumerators duplicate values, so it crosses as a plain unsigned rather than a
+// mirrored CX enum, the same way clang_FunctionProtoType_getAArch64SMEAttributes does. The
+// bits (clang/AST/DependenceFlags.h) are 1 UnexpandedPack, 2 Instantiation, 4 Dependent,
+// 8 VariablyModified and 16 Error -- each already reachable one at a time through
+// clang_Type_containsUnexpandedParameterPack, clang_Type_isInstantiationDependentType,
+// clang_Type_isDependentType, clang_Type_isVariablyModifiedType and
+// clang_Type_containsErrors.
+unsigned clang_Type_getDependence(CXType_ T);
 
 bool clang_Type_containsErrors(CXType_ T);
 
@@ -810,6 +1048,22 @@ CXComplexType clang_Type_getAsComplexIntegerType(CXType_ T);
 // getAsObjCQualifiedClassType
 
 // getAsObjCQualifiedInterfaceType
+
+// The Objective-C tail of the "Type Checking Functions" group. Each digs through typedefs
+// and qualifiers for the Objective-C shape it names and answers NULL when the type is not
+// that shape, so all five are total and a C++ translation unit reads NULL from every one
+// of them. getAsObjCInterfaceType additionally requires the object type to name an
+// interface, and the QualifiedId / QualifiedClass / QualifiedInterface forms require at
+// least one protocol qualifier.
+CXObjCObjectType clang_Type_getAsObjCInterfaceType(CXType_ T);
+
+CXObjCObjectPointerType clang_Type_getAsObjCInterfacePointerType(CXType_ T);
+
+CXObjCObjectPointerType clang_Type_getAsObjCQualifiedIdType(CXType_ T);
+
+CXObjCObjectPointerType clang_Type_getAsObjCQualifiedClassType(CXType_ T);
+
+CXObjCObjectType clang_Type_getAsObjCQualifiedInterfaceType(CXType_ T);
 
 CXCXXRecordDecl clang_Type_getAsCXXRecordDecl(CXType_ T);
 
@@ -894,10 +1148,21 @@ CXVisibility clang_Type_getVisibility(CXType_ T);
 bool clang_Type_isVisibilityExplicit(CXType_ T);
 
 // getLinkageAndVisibility
+// The LinkageInfo aggregate crosses field-by-field, exactly as
+// clang_NamedDecl_getLinkageAndVisibility does (MARSHALLING.md §7): the computed linkage,
+// the computed visibility, and whether that visibility was explicitly specified. All three
+// out-params are written on every call and must be non-NULL.
+void clang_Type_getLinkageAndVisibility(CXType_ T, CXLinkage *L, CXVisibility *V,
+                                        bool *VisibilityExplicit);
 
 bool clang_Type_isLinkageValid(CXType_ T);
 
 // getNullability
+// clang::Type::getNullability returns std::optional<NullabilityKind>: engaged -> fills
+// *Out and returns true; disengaged (the type carries no nullability sugar) -> returns
+// false with *Out untouched (MARSHALLING.md §8). Out may not be NULL. Nullability is
+// recorded only as sugar, so a canonicalised or desugared type always answers false.
+bool clang_Type_getNullability(CXType_ T, CXNullabilityKind *Out);
 
 // canHaveNullability
 // ResultIfUnknown is what clang answers for a dependent type whose nullability
@@ -905,6 +1170,7 @@ bool clang_Type_isLinkageValid(CXType_ T);
 bool clang_Type_canHaveNullability(CXType_ T, bool ResultIfUnknown);
 
 // acceptsObjCTypeParams
+bool clang_Type_acceptsObjCTypeParams(CXType_ T);
 
 // Borrowed pointer into clang's static TypeClass name table.
 const char *clang_Type_getTypeClassName(CXType_ T);
@@ -912,6 +1178,11 @@ const char *clang_Type_getTypeClassName(CXType_ T);
 // getresolveName
 
 CXQualType clang_Type_getCanonicalTypeInternal(CXType_ T);
+
+// The canonical type with its top-level qualifiers stripped. clang returns a CanQualType;
+// it crosses as the plain QualType opaque encoding, since "is canonical" is a static C++
+// guarantee the type-erased C surface cannot carry.
+CXQualType clang_Type_getCanonicalTypeUnqualified(CXType_ T);
 
 void clang_Type_dump(CXType_ T);
 
@@ -1084,6 +1355,16 @@ bool clang_BuiltinType_isPlaceholderTypeKind(unsigned K);
 // mirrored CX enum.
 unsigned clang_BuiltinType_getKind(CXBuiltinType T);
 
+// The printed spelling of a builtin type under Ctx's own getPrintingPolicy(), which is what
+// decides e.g. "bool" versus "_Bool". clang::BuiltinType::getName returns a StringRef into
+// clang's static name tables; it crosses as a copied CXString (MARSHALLING.md §5).
+CXString clang_BuiltinType_getName(CXBuiltinType T, CXASTContext Ctx);
+
+// The same spelling as a borrowed pointer into clang's static tables (never freed). clang
+// asserts the name is a non-empty NUL-terminated literal, which holds for every
+// BuiltinType::Kind, so this adds no precondition over clang_BuiltinType_getName.
+const char *clang_BuiltinType_getNameAsCString(CXBuiltinType T, CXASTContext Ctx);
+
 bool clang_BuiltinType_isPlaceholderType(CXBuiltinType T);
 
 bool clang_BuiltinType_isNonOverloadPlaceholderType(CXBuiltinType T);
@@ -1122,6 +1403,15 @@ CXQualType clang_AdjustedType_desugar(CXAdjustedType T);
 CXQualType clang_DecayedType_getDecayedType(CXDecayedType T);
 
 CXQualType clang_DecayedType_getPointeeType(CXDecayedType T);
+
+// BlockPointerType
+// The pointee is always a function type -- ASTContext::getBlockPointerType asserts it when
+// the node is built -- so the accessor itself is total.
+CXQualType clang_BlockPointerType_getPointeeType(CXBlockPointerType T);
+
+bool clang_BlockPointerType_isSugared(CXBlockPointerType T);
+
+CXQualType clang_BlockPointerType_desugar(CXBlockPointerType T);
 
 // ReferenceType
 bool clang_ReferenceType_isSpelledAsLValue(CXReferenceType T);
@@ -1232,6 +1522,9 @@ CXExpr clang_DependentAddressSpaceType_getAddrSpaceExpr(CXDependentAddressSpaceT
 
 CXQualType clang_DependentAddressSpaceType_getPointeeType(CXDependentAddressSpaceType T);
 
+CXSourceLocation_
+clang_DependentAddressSpaceType_getAttributeLoc(CXDependentAddressSpaceType T);
+
 bool clang_DependentAddressSpaceType_isSugared(CXDependentAddressSpaceType T);
 
 CXQualType clang_DependentAddressSpaceType_desugar(CXDependentAddressSpaceType T);
@@ -1241,6 +1534,9 @@ CXExpr clang_DependentSizedExtVectorType_getSizeExpr(CXDependentSizedExtVectorTy
 
 CXQualType
 clang_DependentSizedExtVectorType_getElementType(CXDependentSizedExtVectorType T);
+
+CXSourceLocation_
+clang_DependentSizedExtVectorType_getAttributeLoc(CXDependentSizedExtVectorType T);
 
 bool clang_DependentSizedExtVectorType_isSugared(CXDependentSizedExtVectorType T);
 
@@ -1277,8 +1573,40 @@ CXVectorKind clang_VectorType_getVectorKind(CXVectorType T);
 
 // DependentVectorType
 // getElementType
+CXQualType clang_DependentVectorType_getElementType(CXDependentVectorType T);
+
+CXExpr clang_DependentVectorType_getSizeExpr(CXDependentVectorType T);
+
+CXSourceLocation_ clang_DependentVectorType_getAttributeLoc(CXDependentVectorType T);
+
+CXVectorKind clang_DependentVectorType_getVectorKind(CXDependentVectorType T);
+
+bool clang_DependentVectorType_isSugared(CXDependentVectorType T);
+
+CXQualType clang_DependentVectorType_desugar(CXDependentVectorType T);
 
 // ExtVectorType
+// The static accessor-character decoders. None takes an ExtVectorType receiver, and each
+// answers -1 for a character naming no component: getPointAccessorIdx decodes the xyzw and
+// rgba spellings, getNumericAccessorIdx the hexadecimal sN spellings (0-9, a-f, A-F), and
+// getAccessorIdx dispatches between the two on IsNumericAccessor.
+int clang_ExtVectorType_getPointAccessorIdx(char C);
+
+int clang_ExtVectorType_getNumericAccessorIdx(char C);
+
+int clang_ExtVectorType_getAccessorIdx(char C, bool IsNumericAccessor);
+
+// The one ExtVectorType accessor that takes a receiver: true when C names a component this
+// vector actually has, i.e. clang_ExtVectorType_getAccessorIdx(C, IsNumericAccessor)
+// decodes to an index below getNumElements(). A character naming no component is false.
+bool clang_ExtVectorType_isAccessorWithinNumElements(CXExtVectorType T, char C,
+                                                     bool IsNumericAccessor);
+
+// An ExtVectorType is a canonical leaf: it is never sugar, and desugaring hands back the
+// node itself.
+bool clang_ExtVectorType_isSugared(CXExtVectorType T);
+
+CXQualType clang_ExtVectorType_desugar(CXExtVectorType T);
 
 // MatrixType
 // Static: whether T may be a matrix element type (a dependent type, an integer type that
@@ -1288,6 +1616,12 @@ CXVectorKind clang_VectorType_getVectorKind(CXVectorType T);
 // the type with operator->. The Julia wrapper restates it.
 bool clang_MatrixType_isValidElementType(CXQualType T);
 // getElementType
+
+CXQualType clang_MatrixType_getElementType(CXMatrixType T);
+
+bool clang_MatrixType_isSugared(CXMatrixType T);
+
+CXQualType clang_MatrixType_desugar(CXMatrixType T);
 
 // ConstantMatrixType
 // Static: the per-dimension element cap and its validity predicate. Neither takes a
@@ -1299,7 +1633,19 @@ bool clang_ConstantMatrixType_isDimensionValid(size_t NumElements);
 // getNumColumns
 // getNumElementsFlattened
 
+unsigned clang_ConstantMatrixType_getNumRows(CXConstantMatrixType T);
+
+unsigned clang_ConstantMatrixType_getNumColumns(CXConstantMatrixType T);
+
+unsigned clang_ConstantMatrixType_getNumElementsFlattened(CXConstantMatrixType T);
+
 // DependentSizedMatrixType
+CXExpr clang_DependentSizedMatrixType_getRowExpr(CXDependentSizedMatrixType T);
+
+CXExpr clang_DependentSizedMatrixType_getColumnExpr(CXDependentSizedMatrixType T);
+
+CXSourceLocation_
+clang_DependentSizedMatrixType_getAttributeLoc(CXDependentSizedMatrixType T);
 
 // FunctionType
 CXQualType clang_FunctionType_getReturnType(CXFunctionType T);
@@ -1332,6 +1678,17 @@ bool clang_FunctionType_getNoReturnAttr(CXFunctionType T);
 
 bool clang_FunctionType_getCmseNSCallAttr(CXFunctionType T);
 
+// helper: clang::FunctionType has no getProducesResult / getNoCallerSavedRegs /
+// getNoCfCheck of its own -- the three live on the by-value FunctionType::ExtInfo, whose
+// Bits field is private, so ExtInfo cannot cross as an opaque encoding the way
+// ExtParameterInfo does (MARSHALLING.md §7). Each composes getExtInfo() with the matching
+// ExtInfo accessor, alongside the 1:1 getNoReturnAttr / getCmseNSCallAttr pair above.
+bool clang_FunctionType_getProducesResult(CXFunctionType T);
+
+bool clang_FunctionType_getNoCallerSavedRegs(CXFunctionType T);
+
+bool clang_FunctionType_getNoCfCheck(CXFunctionType T);
+
 bool clang_FunctionType_isConst(CXFunctionType T);
 
 bool clang_FunctionType_isRestrict(CXFunctionType T);
@@ -1345,6 +1702,32 @@ CXQualType clang_FunctionType_getCallResultType(CXFunctionType T, CXASTContext C
 // getCallResultType
 // getNameForCallConv
 CXString clang_FunctionType_getNameForCallConv(CXCallingConv_ CC);
+
+// FunctionType::ExtParameterInfo
+// The ExtParameterInfo value type has no handle of its own: it crosses as the opaque
+// `unsigned char` encoding of MARSHALLING.md §7 -- the same encoding
+// clang_FunctionProtoType_getExtParameterInfo returns. Every wrapper below rebuilds its
+// receiver with ExtParameterInfo::getFromOpaqueValue and re-serialises an
+// ExtParameterInfo result with getOpaqueValue, so nothing is allocated and nothing needs
+// disposing. ExtParameterInfo::getOpaqueValue and ::getFromOpaqueValue are the identity
+// on this surface and are therefore not wrapped.
+CXParameterABI clang_ExtParameterInfo_getABI(unsigned char Info);
+
+unsigned char clang_ExtParameterInfo_withABI(unsigned char Info, CXParameterABI Kind);
+
+bool clang_ExtParameterInfo_isConsumed(unsigned char Info);
+
+unsigned char clang_ExtParameterInfo_withIsConsumed(unsigned char Info, bool Consumed);
+
+bool clang_ExtParameterInfo_hasPassObjectSize(unsigned char Info);
+
+// clang::FunctionType::ExtParameterInfo::withHasPassObjectSize only ever sets the bit, so
+// there is no flag-taking form to mirror.
+unsigned char clang_ExtParameterInfo_withHasPassObjectSize(unsigned char Info);
+
+bool clang_ExtParameterInfo_isNoEscape(unsigned char Info);
+
+unsigned char clang_ExtParameterInfo_withIsNoEscape(unsigned char Info, bool NoEscape);
 
 // FunctionNoProtoType
 bool clang_FunctionNoProtoType_isSugared(CXFunctionNoProtoType T);
@@ -1405,9 +1788,26 @@ bool clang_FunctionProtoType_isSugared(CXFunctionProtoType T);
 
 CXQualType clang_FunctionProtoType_desugar(CXFunctionProtoType T);
 
+// clang::FunctionProtoType::printExceptionSpecification streams into a raw_ostream, so its
+// output crosses as a copied CXString (MARSHALLING.md §5) under Ctx's own
+// getPrintingPolicy(). A prototype with no exception specification prints "".
+CXString clang_FunctionProtoType_printExceptionSpecificationAsString(CXFunctionProtoType T,
+                                                                     CXASTContext Ctx);
+
 CXSourceLocation_ clang_FunctionProtoType_getEllipsisLoc(CXFunctionProtoType T);
 
 bool clang_FunctionProtoType_hasExtParameterInfos(CXFunctionProtoType T);
+
+// PRECONDITION: I < getNumParams(). clang asserts it and this shim does not check; the
+// Julia wrapper restates it as an @assert. The result is the opaque unsigned char
+// ExtParameterInfo encoding shared with the clang_ExtParameterInfo_* family; a function
+// type carrying no extra parameter info reads back 0 for every parameter.
+unsigned char clang_FunctionProtoType_getExtParameterInfo(CXFunctionProtoType T,
+                                                          unsigned I);
+
+// PRECONDITION: I < getNumParams(), for the same reason as above. A function type with no
+// extra parameter info reports CXParameterABI_Ordinary for every parameter.
+CXParameterABI clang_FunctionProtoType_getParameterABI(CXFunctionProtoType T, unsigned I);
 
 // Mirrors clang::RefQualifierKind (clang/AST/Type.h), placed ahead of the accessor
 // that returns it.
@@ -1464,11 +1864,32 @@ bool clang_MacroQualifiedType_isSugared(CXMacroQualifiedType T);
 CXQualType clang_MacroQualifiedType_desugar(CXMacroQualifiedType T);
 
 // TypeOfExprType
+// Mirrors clang::TypeOfKind (clang/AST/Type.h), shared by TypeOfExprType and TypeOfType.
+// Declared here because this is the first section whose accessors return it.
+typedef enum CXTypeOfKind : unsigned char {
+  CXTypeOfKind_Qualified,
+  CXTypeOfKind_Unqualified
+} CXTypeOfKind;
+
+CXExpr clang_TypeOfExprType_getUnderlyingExpr(CXTypeOfExprType T);
+
+CXTypeOfKind clang_TypeOfExprType_getKind(CXTypeOfExprType T);
+
+CXQualType clang_TypeOfExprType_desugar(CXTypeOfExprType T);
+
+bool clang_TypeOfExprType_isSugared(CXTypeOfExprType T);
 
 // DependentTypeOfExprType
 
 // TypeOfType
 // getUnmodifiedType
+CXQualType clang_TypeOfType_getUnmodifiedType(CXTypeOfType T);
+
+CXQualType clang_TypeOfType_desugar(CXTypeOfType T);
+
+bool clang_TypeOfType_isSugared(CXTypeOfType T);
+
+CXTypeOfKind clang_TypeOfType_getKind(CXTypeOfType T);
 
 // DecltypeType
 CXExpr clang_DecltypeType_getUnderlyingExpr(CXDecltypeType T);
@@ -1563,6 +1984,26 @@ bool clang_AttributedType_isCallingConv(CXAttributedType T);
 // isMSTypeSpec
 // isCallingConv
 // getImmediateNullability
+// clang::AttributedType::getImmediateNullability returns std::optional<NullabilityKind>:
+// engaged -> fills *Out and returns true; disengaged (this attribute is not a nullability
+// attribute) -> returns false with *Out untouched (MARSHALLING.md §8). Out may not be
+// NULL. Unlike clang_Type_getNullability this answers for T alone and looks through no
+// sugar.
+bool clang_AttributedType_getImmediateNullability(CXAttributedType T,
+                                                  CXNullabilityKind *Out);
+
+// Static: the attr::Kind that spells one nullability kind. Takes no receiver.
+CXAttrKind clang_AttributedType_getNullabilityAttrKind(CXNullabilityKind Kind);
+
+// Static in-out: *T is read as the type to strip and, when a top-level nullability
+// AttributedType is peeled off, overwritten with that node's modified type; it is left
+// unchanged otherwise. Engaged -> *Out receives the stripped kind and the call returns
+// true; disengaged -> returns false with *Out untouched (MARSHALLING.md §8). Neither
+// out-param may be NULL.
+// PRECONDITION (Invariant 3): *T must be a non-null QualType -- the dyn_cast chain reaches
+// the type through QualType::getTypePtr(), which asserts !isNull(). The Julia wrapper
+// restates it.
+bool clang_AttributedType_stripOuterNullability(CXQualType *T, CXNullabilityKind *Out);
 
 // BTFTagAttributedType
 
@@ -1757,9 +2198,42 @@ bool clang_AtomicType_isSugared(CXAtomicType T);
 
 CXQualType clang_AtomicType_desugar(CXAtomicType T);
 
+// PipeType
+// An OpenCL pipe. clang builds these through ASTContext::getReadPipeType /
+// getWritePipeType as well as from the `pipe` keyword, so a PipeType node is reachable
+// from a translation unit in any language mode. A read pipe and a write pipe over the same
+// element type are distinct nodes -- isReadOnly is part of the folding profile.
+CXQualType clang_PipeType_getElementType(CXPipeType T);
+
+bool clang_PipeType_isSugared(CXPipeType T);
+
+CXQualType clang_PipeType_desugar(CXPipeType T);
+
+bool clang_PipeType_isReadOnly(CXPipeType T);
+
 // BitIntType
+bool clang_BitIntType_isUnsigned(CXBitIntType T);
+
+bool clang_BitIntType_isSigned(CXBitIntType T);
+
+unsigned clang_BitIntType_getNumBits(CXBitIntType T);
+
+bool clang_BitIntType_isSugared(CXBitIntType T);
+
+CXQualType clang_BitIntType_desugar(CXBitIntType T);
 
 // DependentBitIntType
+bool clang_DependentBitIntType_isUnsigned(CXDependentBitIntType T);
+// isSigned
+bool clang_DependentBitIntType_isSigned(CXDependentBitIntType T);
+
+CXExpr clang_DependentBitIntType_getNumBitsExpr(CXDependentBitIntType T);
+// isSugared
+// desugar
+
+bool clang_DependentBitIntType_isSugared(CXDependentBitIntType T);
+
+CXQualType clang_DependentBitIntType_desugar(CXDependentBitIntType T);
 
 // TagTypeKind
 typedef enum CXTagTypeKind {
@@ -1782,6 +2256,18 @@ typedef enum CXElaboratedTypeKeyword {
 } CXElaboratedTypeKeyword;
 
 CXElaboratedTypeKeyword clang_TypeWithKeyword_getKeyword(CXTypeWithKeyword T);
+
+// Static: the two DeclSpec::TST conversions. TypeSpec is a clang type-specifier value with
+// no mirrored CX enum, so it crosses as a plain unsigned; getKeywordForTypeSpec answers
+// CXElaboratedTypeKeyword_None for anything that is not a tag specifier.
+CXElaboratedTypeKeyword clang_TypeWithKeyword_getKeywordForTypeSpec(unsigned TypeSpec);
+
+// PRECONDITION (Invariant 3): TypeSpec must name a tag specifier. clang documents "it is an
+// error to provide a type specifier which *isn't* a tag kind here" and the implementation
+// falls off into llvm_unreachable otherwise. The gate is getKeywordForTypeSpec above
+// answering something other than CXElaboratedTypeKeyword_None; the Julia wrapper restates
+// it.
+CXTagTypeKind clang_TypeWithKeyword_getTagTypeKindForTypeSpec(unsigned TypeSpec);
 
 // The static keyword/tag-kind conversion helpers below take no receiver.
 CXElaboratedTypeKeyword clang_TypeWithKeyword_getKeywordForTagTypeKind(CXTagTypeKind Tag);

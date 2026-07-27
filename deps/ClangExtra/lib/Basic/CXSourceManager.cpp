@@ -10,8 +10,46 @@ CXFileManager clang_SourceManager_getFileManager(CXSourceManager SM) {
   return &static_cast<clang::SourceManager *>(SM)->getFileManager();
 }
 
+void clang_SourceManager_setOverridenFilesKeepOriginalName(CXSourceManager SM, bool Value) {
+  static_cast<clang::SourceManager *>(SM)->setOverridenFilesKeepOriginalName(Value);
+}
+
 bool clang_SourceManager_userFilesAreVolatile(CXSourceManager SM) {
   return static_cast<clang::SourceManager *>(SM)->userFilesAreVolatile();
+}
+
+void clang_SourceManager_clearIDTables(CXSourceManager SM) {
+  static_cast<clang::SourceManager *>(SM)->clearIDTables();
+}
+
+void clang_SourceManager_initializeForReplay(CXSourceManager SM, CXSourceManager Old) {
+  static_cast<clang::SourceManager *>(SM)->initializeForReplay(
+      *static_cast<clang::SourceManager *>(Old));
+}
+
+unsigned clang_SourceManager_getModuleBuildStackSize(CXSourceManager SM) {
+  return static_cast<unsigned>(
+      static_cast<clang::SourceManager *>(SM)->getModuleBuildStack().size());
+}
+
+const char *clang_SourceManager_getModuleBuildStackEntry(CXSourceManager SM, unsigned Index,
+                                                         size_t *Length,
+                                                         CXSourceLocation_ *ImportLoc) {
+  const std::pair<std::string, clang::FullSourceLoc> &Entry =
+      static_cast<clang::SourceManager *>(SM)->getModuleBuildStack()[Index];
+  if (Length)
+    *Length = Entry.first.size();
+  if (ImportLoc)
+    *ImportLoc = Entry.second.getPtrEncoding();
+  return Entry.first.c_str();
+}
+
+void clang_SourceManager_pushModuleBuildStack(CXSourceManager SM, const char *ModuleName,
+                                              CXSourceLocation_ ImportLoc) {
+  clang::SourceManager *Mgr = static_cast<clang::SourceManager *>(SM);
+  Mgr->pushModuleBuildStack(
+      llvm::StringRef(ModuleName),
+      clang::FullSourceLoc(clang::SourceLocation::getFromPtrEncoding(ImportLoc), *Mgr));
 }
 
 bool clang_SourceManager_isMainFile(CXSourceManager SM, CXFileEntry FE) {
@@ -25,6 +63,11 @@ CXFileID clang_SourceManager_getPreambleFileID(CXSourceManager SM) {
   return ptr.release();
 }
 
+void clang_SourceManager_setPreambleFileID(CXSourceManager SM, CXFileID Preamble) {
+  static_cast<clang::SourceManager *>(SM)->setPreambleFileID(
+      *static_cast<clang::FileID *>(Preamble));
+}
+
 CXFileID clang_SourceManager_getOrCreateFileID(CXSourceManager SM, CXFileEntryRef FER,
                                                CXCharacteristicKind FileCharacter) {
   std::unique_ptr<clang::FileID> ptr = std::make_unique<clang::FileID>(
@@ -34,9 +77,76 @@ CXFileID clang_SourceManager_getOrCreateFileID(CXSourceManager SM, CXFileEntryRe
   return ptr.release();
 }
 
+CXSourceLocation_ clang_SourceManager_createMacroArgExpansionLoc(
+    CXSourceManager SM, CXSourceLocation_ SpellingLoc, CXSourceLocation_ ExpansionLoc,
+    unsigned Length) {
+  return static_cast<clang::SourceManager *>(SM)
+      ->createMacroArgExpansionLoc(clang::SourceLocation::getFromPtrEncoding(SpellingLoc),
+                                   clang::SourceLocation::getFromPtrEncoding(ExpansionLoc),
+                                   Length)
+      .getPtrEncoding();
+}
+
+CXSourceLocation_ clang_SourceManager_createExpansionLoc(
+    CXSourceManager SM, CXSourceLocation_ SpellingLoc, CXSourceLocation_ ExpansionLocStart,
+    CXSourceLocation_ ExpansionLocEnd, unsigned Length, bool ExpansionIsTokenRange,
+    int LoadedID, uint32_t LoadedOffset) {
+  return static_cast<clang::SourceManager *>(SM)
+      ->createExpansionLoc(clang::SourceLocation::getFromPtrEncoding(SpellingLoc),
+                           clang::SourceLocation::getFromPtrEncoding(ExpansionLocStart),
+                           clang::SourceLocation::getFromPtrEncoding(ExpansionLocEnd),
+                           Length, ExpansionIsTokenRange, LoadedID, LoadedOffset)
+      .getPtrEncoding();
+}
+
+CXSourceLocation_ clang_SourceManager_createTokenSplitLoc(CXSourceManager SM,
+                                                          CXSourceLocation_ SpellingLoc,
+                                                          CXSourceLocation_ TokenStart,
+                                                          CXSourceLocation_ TokenEnd) {
+  return static_cast<clang::SourceManager *>(SM)
+      ->createTokenSplitLoc(clang::SourceLocation::getFromPtrEncoding(SpellingLoc),
+                            clang::SourceLocation::getFromPtrEncoding(TokenStart),
+                            clang::SourceLocation::getFromPtrEncoding(TokenEnd))
+      .getPtrEncoding();
+}
+
+const char *clang_SourceManager_getMemoryBufferDataForFileOrNone(CXSourceManager SM,
+                                                                 CXFileEntryRef FER,
+                                                                 size_t *Length) {
+  std::optional<llvm::MemoryBufferRef> Buffer =
+      static_cast<clang::SourceManager *>(SM)->getMemoryBufferForFileOrNone(
+          *static_cast<clang::FileEntryRef *>(FER));
+  if (!Buffer)
+    return nullptr;
+  if (Length)
+    *Length = Buffer->getBufferSize();
+  return Buffer->getBufferStart();
+}
+
+const char *clang_SourceManager_getMemoryBufferDataForFileOrFake(CXSourceManager SM,
+                                                                 CXFileEntryRef FER,
+                                                                 size_t *Length) {
+  llvm::MemoryBufferRef Buffer =
+      static_cast<clang::SourceManager *>(SM)->getMemoryBufferForFileOrFake(
+          *static_cast<clang::FileEntryRef *>(FER));
+  if (Length)
+    *Length = Buffer.getBufferSize();
+  return Buffer.getBufferStart();
+}
+
 bool clang_SourceManager_isFileOverridden(CXSourceManager SM, CXFileEntry FE) {
   return static_cast<clang::SourceManager *>(SM)->isFileOverridden(
       static_cast<clang::FileEntry *>(FE));
+}
+
+CXFileEntryRef clang_SourceManager_bypassFileContentsOverride(CXSourceManager SM,
+                                                              CXFileEntryRef FER) {
+  clang::OptionalFileEntryRef Bypass =
+      static_cast<clang::SourceManager *>(SM)->bypassFileContentsOverride(
+          *static_cast<clang::FileEntryRef *>(FER));
+  if (!Bypass)
+    return nullptr;
+  return std::make_unique<clang::FileEntryRef>(*Bypass).release();
 }
 
 void clang_SourceManager_setFileIsTransient(CXSourceManager SM, CXFileEntryRef FER) {
@@ -75,6 +185,13 @@ const char *clang_SourceManager_getNonBuiltinFilenameForID(CXSourceManager SM, C
   return Name->data();
 }
 
+CXFileEntry clang_SourceManager_getFileEntryForSLocEntry(CXSourceManager SM,
+                                                         CXSLocEntry E) {
+  return const_cast<clang::FileEntry *>(
+      static_cast<clang::SourceManager *>(SM)->getFileEntryForSLocEntry(
+          *static_cast<clang::SrcMgr::SLocEntry *>(E)));
+}
+
 const char *clang_SourceManager_getBufferData(CXSourceManager SM, CXFileID FID,
                                               size_t *Length, bool *Invalid) {
   llvm::StringRef Data = static_cast<clang::SourceManager *>(SM)->getBufferData(
@@ -96,9 +213,36 @@ const char *clang_SourceManager_getBufferDataOrNone(CXSourceManager SM, CXFileID
   return Data->data();
 }
 
+const char *clang_SourceManager_getBufferDataOrFake(CXSourceManager SM, CXFileID FID,
+                                                    CXSourceLocation_ Loc, size_t *Length) {
+  llvm::MemoryBufferRef Buffer = static_cast<clang::SourceManager *>(SM)->getBufferOrFake(
+      *static_cast<clang::FileID *>(FID), clang::SourceLocation::getFromPtrEncoding(Loc));
+  if (Length)
+    *Length = Buffer.getBufferSize();
+  return Buffer.getBufferStart();
+}
+
+const char *clang_SourceManager_getBufferDataIfLoaded(CXSourceManager SM, CXFileID FID,
+                                                      size_t *Length) {
+  std::optional<llvm::StringRef> Data =
+      static_cast<clang::SourceManager *>(SM)->getBufferDataIfLoaded(
+          *static_cast<clang::FileID *>(FID));
+  if (!Data)
+    return nullptr;
+  if (Length)
+    *Length = Data->size();
+  return Data->data();
+}
+
 unsigned clang_SourceManager_getNumCreatedFIDsForFileID(CXSourceManager SM, CXFileID FID) {
   return static_cast<clang::SourceManager *>(SM)->getNumCreatedFIDsForFileID(
       *static_cast<clang::FileID *>(FID));
+}
+
+void clang_SourceManager_setNumCreatedFIDsForFileID(CXSourceManager SM, CXFileID FID,
+                                                    unsigned NumFIDs, bool Force) {
+  static_cast<clang::SourceManager *>(SM)->setNumCreatedFIDsForFileID(
+      *static_cast<clang::FileID *>(FID), NumFIDs, Force);
 }
 
 CXFileID clang_SourceManager_getFileID(CXSourceManager SM, CXSourceLocation_ Loc) {
@@ -134,6 +278,20 @@ CXSourceLocation_ clang_SourceManager_getFileLoc(CXSourceManager SM, CXSourceLoc
   return static_cast<clang::SourceManager *>(SM)
       ->getFileLoc(clang::SourceLocation::getFromPtrEncoding(Loc))
       .getPtrEncoding();
+}
+
+CXSourceLocation_ clang_SourceManager_getModuleImportLoc(CXSourceManager SM,
+                                                         CXSourceLocation_ Loc,
+                                                         const char **ModuleName,
+                                                         size_t *NameLength) {
+  std::pair<clang::SourceLocation, llvm::StringRef> Result =
+      static_cast<clang::SourceManager *>(SM)->getModuleImportLoc(
+          clang::SourceLocation::getFromPtrEncoding(Loc));
+  if (ModuleName)
+    *ModuleName = Result.second.data();
+  if (NameLength)
+    *NameLength = Result.second.size();
+  return Result.first.getPtrEncoding();
 }
 
 CXSourceRange_ clang_SourceManager_getImmediateExpansionRange(CXSourceManager SM,
@@ -260,6 +418,22 @@ bool clang_SourceManager_isAtEndOfImmediateMacroExpansion(CXSourceManager SM,
   if (MacroEnd)
     *MacroEnd = End.getPtrEncoding();
   return Ret;
+}
+
+bool clang_SourceManager_isInSLocAddrSpace(CXSourceManager SM, CXSourceLocation_ Loc,
+                                           CXSourceLocation_ Start, unsigned Length,
+                                           uint32_t *RelativeOffset) {
+  return static_cast<clang::SourceManager *>(SM)->isInSLocAddrSpace(
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      clang::SourceLocation::getFromPtrEncoding(Start), Length, RelativeOffset);
+}
+
+bool clang_SourceManager_isInSameSLocAddrSpace(CXSourceManager SM, CXSourceLocation_ LHS,
+                                               CXSourceLocation_ RHS,
+                                               int32_t *RelativeOffset) {
+  return static_cast<clang::SourceManager *>(SM)->isInSameSLocAddrSpace(
+      clang::SourceLocation::getFromPtrEncoding(LHS),
+      clang::SourceLocation::getFromPtrEncoding(RHS), RelativeOffset);
 }
 
 const char *clang_SourceManager_getCharacterData(CXSourceManager SM, CXSourceLocation_ Loc,
@@ -419,12 +593,34 @@ unsigned clang_SourceManager_getLineTableFilenameID(CXSourceManager SM, const ch
       llvm::StringRef(Str));
 }
 
+void clang_SourceManager_AddLineNote(CXSourceManager SM, CXSourceLocation_ Loc,
+                                     unsigned LineNo, int FilenameID, bool IsFileEntry,
+                                     bool IsFileExit, CXCharacteristicKind FileKind) {
+  static_cast<clang::SourceManager *>(SM)->AddLineNote(
+      clang::SourceLocation::getFromPtrEncoding(Loc), LineNo, FilenameID, IsFileEntry,
+      IsFileExit, static_cast<clang::SrcMgr::CharacteristicKind>(FileKind));
+}
+
 bool clang_SourceManager_hasLineTable(CXSourceManager SM) {
   return static_cast<clang::SourceManager *>(SM)->hasLineTable();
 }
 
 size_t clang_SourceManager_getContentCacheSize(CXSourceManager SM) {
   return static_cast<clang::SourceManager *>(SM)->getContentCacheSize();
+}
+
+void clang_SourceManager_getMemoryBufferSizes(CXSourceManager SM, size_t *MallocBytes,
+                                              size_t *MmapBytes) {
+  clang::SourceManager::MemoryBufferSizes Sizes =
+      static_cast<clang::SourceManager *>(SM)->getMemoryBufferSizes();
+  if (MallocBytes)
+    *MallocBytes = Sizes.malloc_bytes;
+  if (MmapBytes)
+    *MmapBytes = Sizes.mmap_bytes;
+}
+
+size_t clang_SourceManager_getDataStructureSizes(CXSourceManager SM) {
+  return static_cast<clang::SourceManager *>(SM)->getDataStructureSizes();
 }
 
 CXSourceLocation_ clang_SourceManager_translateFileLineCol(CXSourceManager SM,
@@ -464,6 +660,31 @@ bool clang_SourceManager_isBeforeInTranslationUnit(CXSourceManager SM,
       clang::SourceLocation::getFromPtrEncoding(RHS));
 }
 
+bool clang_SourceManager_isInTheSameTranslationUnit(CXSourceManager SM, CXFileID LFID,
+                                                    unsigned *LOffset, CXFileID RFID,
+                                                    unsigned *ROffset,
+                                                    bool *IsLHSBeforeRHS) {
+  std::pair<clang::FileID, unsigned> LOffs(*static_cast<clang::FileID *>(LFID), *LOffset);
+  std::pair<clang::FileID, unsigned> ROffs(*static_cast<clang::FileID *>(RFID), *ROffset);
+  std::pair<bool, bool> R =
+      static_cast<clang::SourceManager *>(SM)->isInTheSameTranslationUnit(LOffs, ROffs);
+  *static_cast<clang::FileID *>(LFID) = LOffs.first;
+  *LOffset = LOffs.second;
+  *static_cast<clang::FileID *>(RFID) = ROffs.first;
+  *ROffset = ROffs.second;
+  if (IsLHSBeforeRHS)
+    *IsLHSBeforeRHS = R.second;
+  return R.first;
+}
+
+bool clang_SourceManager_isInTheSameTranslationUnitImpl(CXSourceManager SM, CXFileID LFID,
+                                                        unsigned LOffset, CXFileID RFID,
+                                                        unsigned ROffset) {
+  return static_cast<clang::SourceManager *>(SM)->isInTheSameTranslationUnitImpl(
+      std::make_pair(*static_cast<clang::FileID *>(LFID), LOffset),
+      std::make_pair(*static_cast<clang::FileID *>(RFID), ROffset));
+}
+
 bool clang_SourceManager_isBeforeInSLocAddrSpace(CXSourceManager SM, CXSourceLocation_ LHS,
                                                  CXSourceLocation_ RHS) {
   return static_cast<clang::SourceManager *>(SM)->isBeforeInSLocAddrSpace(
@@ -479,9 +700,37 @@ bool clang_SourceManager_isPointWithin(CXSourceManager SM, CXSourceLocation_ Loc
       clang::SourceLocation::getFromPtrEncoding(End));
 }
 
+unsigned clang_SourceManager_getNumFileInfos(CXSourceManager SM) {
+  auto *Mgr = static_cast<clang::SourceManager *>(SM);
+  unsigned N = 0;
+  for (auto It = Mgr->fileinfo_begin(), End = Mgr->fileinfo_end(); It != End; ++It)
+    ++N;
+  return N;
+}
+
+void clang_SourceManager_getFileInfos(CXSourceManager SM, CXFileEntry *Files,
+                                      CXContentCache *Caches) {
+  auto *Mgr = static_cast<clang::SourceManager *>(SM);
+  unsigned I = 0;
+  for (auto It = Mgr->fileinfo_begin(), End = Mgr->fileinfo_end(); It != End; ++It, ++I) {
+    if (Files)
+      Files[I] = const_cast<clang::FileEntry *>(&It->first.getFileEntry());
+    if (Caches)
+      Caches[I] = It->second;
+  }
+}
+
 bool clang_SourceManager_hasFileInfo(CXSourceManager SM, CXFileEntry File) {
   return static_cast<clang::SourceManager *>(SM)->hasFileInfo(
       static_cast<clang::FileEntry *>(File));
+}
+
+void clang_SourceManager_noteSLocAddressSpaceUsage(CXSourceManager SM,
+                                                   CXDiagnosticsEngine Diag,
+                                                   bool HasMaxNotes, unsigned MaxNotes) {
+  static_cast<clang::SourceManager *>(SM)->noteSLocAddressSpaceUsage(
+      *static_cast<clang::DiagnosticsEngine *>(Diag),
+      HasMaxNotes ? std::optional<unsigned>(MaxNotes) : std::nullopt);
 }
 
 unsigned clang_SourceManager_local_sloc_entry_size(CXSourceManager SM) {
@@ -495,6 +744,12 @@ CXSLocEntry clang_SourceManager_getLocalSLocEntry(CXSourceManager SM, unsigned I
 
 unsigned clang_SourceManager_loaded_sloc_entry_size(CXSourceManager SM) {
   return static_cast<clang::SourceManager *>(SM)->loaded_sloc_entry_size();
+}
+
+CXSLocEntry clang_SourceManager_getLoadedSLocEntry(CXSourceManager SM, unsigned Index,
+                                                   bool *Invalid) {
+  return const_cast<clang::SrcMgr::SLocEntry *>(
+      &static_cast<clang::SourceManager *>(SM)->getLoadedSLocEntry(Index, Invalid));
 }
 
 CXSLocEntry clang_SourceManager_getSLocEntry(CXSourceManager SM, CXFileID FID,
@@ -542,6 +797,96 @@ CXSourceLocation_ clang_SourceManager_getTopMacroCallerLoc(CXSourceManager SM,
       .getPtrEncoding();
 }
 
+namespace {
+// `clang::SrcMgr::LineOffsetMapping` keeps its offsets in a caller-supplied bump allocator,
+// so the box owns the allocator the mapping points into.
+struct LineOffsetMappingBox {
+  llvm::BumpPtrAllocator Alloc;
+  clang::SrcMgr::LineOffsetMapping Mapping;
+
+  explicit LineOffsetMappingBox(llvm::MemoryBufferRef Buffer)
+      : Mapping(clang::SrcMgr::LineOffsetMapping::get(Buffer, Alloc)) {}
+};
+} // namespace
+
+CXLineOffsetMapping clang_LineOffsetMapping_create(const char *Buffer, size_t Length,
+                                                   const char *BufferName) {
+  return std::make_unique<LineOffsetMappingBox>(
+             llvm::MemoryBufferRef(llvm::StringRef(Buffer, Length),
+                                   llvm::StringRef(BufferName ? BufferName : "")))
+      .release();
+}
+
+void clang_LineOffsetMapping_dispose(CXLineOffsetMapping M) {
+  delete static_cast<LineOffsetMappingBox *>(M);
+}
+
+unsigned clang_LineOffsetMapping_size(CXLineOffsetMapping M) {
+  return static_cast<LineOffsetMappingBox *>(M)->Mapping.size();
+}
+
+const unsigned *clang_LineOffsetMapping_getLines(CXLineOffsetMapping M, size_t *Length) {
+  llvm::ArrayRef<unsigned> Lines =
+      static_cast<LineOffsetMappingBox *>(M)->Mapping.getLines();
+  if (Length)
+    *Length = Lines.size();
+  return Lines.data();
+}
+
+// SrcMgr::ContentCache
+
+// getBufferOrNone
+
+const char *clang_ContentCache_getBufferDataOrNone(CXContentCache CC,
+                                                   CXDiagnosticsEngine Diag,
+                                                   CXFileManager FileMgr,
+                                                   CXSourceLocation_ Loc, size_t *Length) {
+  std::optional<llvm::MemoryBufferRef> Buffer =
+      static_cast<clang::SrcMgr::ContentCache *>(CC)->getBufferOrNone(
+          *static_cast<clang::DiagnosticsEngine *>(Diag),
+          *static_cast<clang::FileManager *>(FileMgr),
+          clang::SourceLocation::getFromPtrEncoding(Loc));
+  if (!Buffer)
+    return nullptr;
+  if (Length)
+    *Length = Buffer->getBufferSize();
+  return Buffer->getBufferStart();
+}
+
+unsigned clang_ContentCache_getSize(CXContentCache CC) {
+  return static_cast<clang::SrcMgr::ContentCache *>(CC)->getSize();
+}
+
+unsigned clang_ContentCache_getSizeBytesMapped(CXContentCache CC) {
+  return static_cast<clang::SrcMgr::ContentCache *>(CC)->getSizeBytesMapped();
+}
+
+CXBufferKind clang_ContentCache_getMemoryBufferKind(CXContentCache CC) {
+  return static_cast<CXBufferKind>(
+      static_cast<clang::SrcMgr::ContentCache *>(CC)->getMemoryBufferKind());
+}
+
+bool clang_ContentCache_isBufferLoaded(CXContentCache CC) {
+  return static_cast<clang::SrcMgr::ContentCache *>(CC)->getBufferIfLoaded().has_value();
+}
+
+const char *clang_ContentCache_getBufferDataIfLoaded(CXContentCache CC, size_t *Length) {
+  std::optional<llvm::StringRef> Data =
+      static_cast<clang::SrcMgr::ContentCache *>(CC)->getBufferDataIfLoaded();
+  if (!Data)
+    return nullptr;
+  if (Length)
+    *Length = Data->size();
+  return Data->data();
+}
+
+// setBuffer
+// setUnownedBuffer
+
+const char *clang_ContentCache_getInvalidBOM(const char *Str, size_t Length) {
+  return clang::SrcMgr::ContentCache::getInvalidBOM(llvm::StringRef(Str, Length));
+}
+
 CXSourceManager clang_SourceManager_create(CXDiagnosticsEngine Diag, CXFileManager FileMgr,
                                            bool UserFilesAreVolatile) {
   auto SM = std::make_unique<clang::SourceManager>(
@@ -556,6 +901,22 @@ void clang_SourceManager_dispose(CXSourceManager SM) {
 
 void clang_SourceManager_PrintStats(CXSourceManager SM) {
   static_cast<clang::SourceManager *>(SM)->PrintStats();
+}
+
+void clang_SourceManager_dump(CXSourceManager SM) {
+  static_cast<clang::SourceManager *>(SM)->dump();
+}
+
+bool clang_FileID_isValid(CXFileID FID) {
+  return static_cast<clang::FileID *>(FID)->isValid();
+}
+
+bool clang_FileID_isInvalid(CXFileID FID) {
+  return static_cast<clang::FileID *>(FID)->isInvalid();
+}
+
+CXFileID clang_FileID_getSentinel(void) {
+  return std::make_unique<clang::FileID>(clang::FileID::getSentinel()).release();
 }
 
 unsigned clang_FileID_getHashValue(CXFileID FID) {
@@ -620,6 +981,11 @@ CXSourceLocation_ clang_FileInfo_getIncludeLoc(CXFileInfo FI) {
   return static_cast<clang::SrcMgr::FileInfo *>(FI)->getIncludeLoc().getPtrEncoding();
 }
 
+CXContentCache clang_FileInfo_getContentCache(CXFileInfo FI) {
+  return const_cast<clang::SrcMgr::ContentCache *>(
+      &static_cast<clang::SrcMgr::FileInfo *>(FI)->getContentCache());
+}
+
 CXCharacteristicKind clang_FileInfo_getFileCharacteristic(CXFileInfo FI) {
   return static_cast<CXCharacteristicKind>(
       static_cast<clang::SrcMgr::FileInfo *>(FI)->getFileCharacteristic());
@@ -627,6 +993,10 @@ CXCharacteristicKind clang_FileInfo_getFileCharacteristic(CXFileInfo FI) {
 
 bool clang_FileInfo_hasLineDirectives(CXFileInfo FI) {
   return static_cast<clang::SrcMgr::FileInfo *>(FI)->hasLineDirectives();
+}
+
+void clang_FileInfo_setHasLineDirectives(CXFileInfo FI) {
+  static_cast<clang::SrcMgr::FileInfo *>(FI)->setHasLineDirectives();
 }
 
 const char *clang_FileInfo_getName(CXFileInfo FI, size_t *Length) {
@@ -656,6 +1026,15 @@ CXSourceLocation_ clang_ExpansionInfo_getExpansionLocEnd(CXExpansionInfo EI) {
 
 bool clang_ExpansionInfo_isExpansionTokenRange(CXExpansionInfo EI) {
   return static_cast<clang::SrcMgr::ExpansionInfo *>(EI)->isExpansionTokenRange();
+}
+
+CXSourceRange_ clang_ExpansionInfo_getExpansionLocRange(CXExpansionInfo EI,
+                                                        bool *IsTokenRange) {
+  clang::CharSourceRange R =
+      static_cast<clang::SrcMgr::ExpansionInfo *>(EI)->getExpansionLocRange();
+  if (IsTokenRange)
+    *IsTokenRange = R.isTokenRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
 }
 
 bool clang_ExpansionInfo_isMacroArgExpansion(CXExpansionInfo EI) {
@@ -692,4 +1071,36 @@ CXFileInfo clang_SLocEntry_getFile(CXSLocEntry E) {
 CXExpansionInfo clang_SLocEntry_getExpansion(CXSLocEntry E) {
   return const_cast<clang::SrcMgr::ExpansionInfo *>(
       &static_cast<clang::SrcMgr::SLocEntry *>(E)->getExpansion());
+}
+
+namespace {
+// `clang::SourceManagerForFile` stores only `StringRef`s of the name and content it is
+// built from — the in-memory file system it creates wraps the content without copying it —
+// so the box owns copies both outlive.
+struct SourceManagerForFileBox {
+  std::string FileName;
+  std::string Content;
+  clang::SourceManagerForFile SMF;
+
+  SourceManagerForFileBox(llvm::StringRef Name, llvm::StringRef Text)
+      : FileName(Name.str()), Content(Text.str()), SMF(FileName, Content) {}
+};
+} // namespace
+
+CXSourceManagerForFile clang_SourceManagerForFile_create(const char *FileName,
+                                                         size_t FileNameLength,
+                                                         const char *Content,
+                                                         size_t ContentLength) {
+  return std::make_unique<SourceManagerForFileBox>(
+             llvm::StringRef(FileName, FileNameLength),
+             llvm::StringRef(Content, ContentLength))
+      .release();
+}
+
+void clang_SourceManagerForFile_dispose(CXSourceManagerForFile SMF) {
+  delete static_cast<SourceManagerForFileBox *>(SMF);
+}
+
+CXSourceManager clang_SourceManagerForFile_get(CXSourceManagerForFile SMF) {
+  return &static_cast<SourceManagerForFileBox *>(SMF)->SMF.get();
 }

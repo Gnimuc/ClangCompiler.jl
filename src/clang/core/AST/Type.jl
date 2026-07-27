@@ -753,3 +753,151 @@ end
 
 Base.unsafe_convert(::Type{CXAutoType}, x::AutoType) = x.ptr
 Base.cconvert(::Type{CXAutoType}, x::AutoType) = x
+
+
+"""
+    struct TypeOfExprType <: AbstractTypeOfExprType
+Hold a pointer to a `clang::TypeOfExprType` object.
+"""
+struct TypeOfExprType <: AbstractTypeOfExprType
+    ptr::CXTypeOfExprType
+end
+
+Base.unsafe_convert(::Type{CXTypeOfExprType}, x::TypeOfExprType) = x.ptr
+Base.cconvert(::Type{CXTypeOfExprType}, x::TypeOfExprType) = x
+
+"""
+    struct TypeOfType <: AbstractTypeOfType
+Hold a pointer to a `clang::TypeOfType` object.
+"""
+struct TypeOfType <: AbstractTypeOfType
+    ptr::CXTypeOfType
+end
+
+Base.unsafe_convert(::Type{CXTypeOfType}, x::TypeOfType) = x.ptr
+Base.cconvert(::Type{CXTypeOfType}, x::TypeOfType) = x
+
+"""
+    struct BitIntType <: AbstractBitIntType
+Hold a pointer to a `clang::BitIntType` object.
+"""
+struct BitIntType <: AbstractBitIntType
+    ptr::CXBitIntType
+end
+
+Base.unsafe_convert(::Type{CXBitIntType}, x::BitIntType) = x.ptr
+Base.cconvert(::Type{CXBitIntType}, x::BitIntType) = x
+
+
+"""
+    struct BlockPointerType <: AbstractBlockPointerType
+Hold a pointer to a `clang::BlockPointerType` object.
+"""
+struct BlockPointerType <: AbstractBlockPointerType
+    ptr::CXBlockPointerType
+end
+
+Base.unsafe_convert(::Type{CXBlockPointerType}, x::BlockPointerType) = x.ptr
+Base.cconvert(::Type{CXBlockPointerType}, x::BlockPointerType) = x
+
+"""
+    struct DependentVectorType <: AbstractDependentVectorType
+Hold a pointer to a `clang::DependentVectorType` object.
+"""
+struct DependentVectorType <: AbstractDependentVectorType
+    ptr::CXDependentVectorType
+end
+
+Base.unsafe_convert(::Type{CXDependentVectorType}, x::DependentVectorType) = x.ptr
+Base.cconvert(::Type{CXDependentVectorType}, x::DependentVectorType) = x
+
+"""
+    struct MatrixType <: AbstractMatrixType
+Hold a pointer to a `clang::MatrixType` object.
+"""
+struct MatrixType <: AbstractMatrixType
+    ptr::CXMatrixType
+end
+
+Base.unsafe_convert(::Type{CXMatrixType}, x::MatrixType) = x.ptr
+Base.cconvert(::Type{CXMatrixType}, x::MatrixType) = x
+
+"""
+    struct ConstantMatrixType <: AbstractConstantMatrixType
+Hold a pointer to a `clang::ConstantMatrixType` object.
+"""
+struct ConstantMatrixType <: AbstractConstantMatrixType
+    ptr::CXConstantMatrixType
+end
+
+Base.unsafe_convert(::Type{CXConstantMatrixType}, x::ConstantMatrixType) = x.ptr
+Base.cconvert(::Type{CXConstantMatrixType}, x::ConstantMatrixType) = x
+
+"""
+    struct DependentSizedMatrixType <: AbstractDependentSizedMatrixType
+Hold a pointer to a `clang::DependentSizedMatrixType` object.
+"""
+struct DependentSizedMatrixType <: AbstractDependentSizedMatrixType
+    ptr::CXDependentSizedMatrixType
+end
+
+Base.unsafe_convert(::Type{CXDependentSizedMatrixType}, x::DependentSizedMatrixType) = x.ptr
+Base.cconvert(::Type{CXDependentSizedMatrixType}, x::DependentSizedMatrixType) = x
+
+"""
+    struct DependentBitIntType <: AbstractDependentBitIntType
+Hold a pointer to a `clang::DependentBitIntType` object.
+"""
+struct DependentBitIntType <: AbstractDependentBitIntType
+    ptr::CXDependentBitIntType
+end
+
+Base.unsafe_convert(::Type{CXDependentBitIntType}, x::DependentBitIntType) = x.ptr
+Base.cconvert(::Type{CXDependentBitIntType}, x::DependentBitIntType) = x
+
+
+"""
+    struct ExtVectorType <: AbstractExtVectorType
+Hold a pointer to a `clang::ExtVectorType` object.
+"""
+struct ExtVectorType <: AbstractExtVectorType
+    ptr::CXExtVectorType
+end
+
+Base.unsafe_convert(::Type{CXExtVectorType}, x::ExtVectorType) = x.ptr
+Base.cconvert(::Type{CXExtVectorType}, x::ExtVectorType) = x
+
+
+"""
+    struct ObjCObjectType <: AbstractObjCObjectType
+Hold a pointer to a `clang::ObjCObjectType` object.
+"""
+struct ObjCObjectType <: AbstractObjCObjectType
+    ptr::CXObjCObjectType
+end
+
+Base.unsafe_convert(::Type{CXObjCObjectType}, x::ObjCObjectType) = x.ptr
+Base.cconvert(::Type{CXObjCObjectType}, x::ObjCObjectType) = x
+
+"""
+    struct ObjCObjectPointerType <: AbstractObjCObjectPointerType
+Hold a pointer to a `clang::ObjCObjectPointerType` object.
+"""
+struct ObjCObjectPointerType <: AbstractObjCObjectPointerType
+    ptr::CXObjCObjectPointerType
+end
+
+Base.unsafe_convert(::Type{CXObjCObjectPointerType}, x::ObjCObjectPointerType) = x.ptr
+Base.cconvert(::Type{CXObjCObjectPointerType}, x::ObjCObjectPointerType) = x
+
+
+"""
+    struct PipeType <: AbstractPipeType
+Hold a pointer to a `clang::PipeType` object.
+"""
+struct PipeType <: AbstractPipeType
+    ptr::CXPipeType
+end
+
+Base.unsafe_convert(::Type{CXPipeType}, x::PipeType) = x.ptr
+Base.cconvert(::Type{CXPipeType}, x::PipeType) = x

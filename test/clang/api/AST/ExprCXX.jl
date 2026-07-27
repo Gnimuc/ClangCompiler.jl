@@ -1249,3 +1249,1464 @@ end
     CC.dispose(f)
     CC.dispose(I)
 end
+
+@testset "ExprCXX-j: paren-list init / MS property / unresolved-ctor setters" begin
+    function find_node(T, x)
+        x isa T && return x
+        for c in CC.children(x)
+            r = find_node(T, CC.resolve(c))
+            r === nothing || return r
+        end
+        return nothing
+    end
+
+    # ---- C++20: parenthesized aggregate init, rewritten `!=`, dependent T(a) ----
+    I = create_interpreter(["-std=c++20"])
+    f = DeclFinder(I)
+    CC.parse(I, """
+    struct JAgg { int a; int b = 5; };
+    JAgg j_paren() { JAgg p(1); return p; }
+    union JUni { int a; double b; };
+    JUni j_union() { JUni u(3); return u; }
+    struct JEq { int v; bool operator==(const JEq &) const; };
+    bool j_rewritten(JEq a, JEq b) { return a != b; }
+    template <class T> auto j_uctor(T a) { return T(a); }
+    """)
+
+    function fn_body(name)
+        @test f(I, name)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    end
+    function tpl_body(name)
+        @test f(I, name)
+        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+    end
+
+    # ---- CXXParenListInitExpr: `JAgg p(1)` fills `b` from its default initializer --
+    pl = find_node(CC.CXXParenListInitExpr, fn_body("j_paren"))
+    @test pl isa CC.CXXParenListInitExpr
+    if pl isa CC.CXXParenListInitExpr
+        n = CC.getNumInitExprs(pl)
+        @test n >= 1
+        nu = CC.getNumUserSpecifiedInitExprs(pl)
+        @test nu <= n
+        @test CC.getInitExpr(pl, 0) isa CC.Expr_
+        @test CC.getInitExpr(pl, 0).ptr != C_NULL
+        @test CC.getInitLoc(pl) isa CC.SourceLocation
+        if nu > 0
+            @test CC.getUserSpecifiedInitExpr(pl, 0).ptr == CC.getInitExpr(pl, 0).ptr
+        end
+        # a struct initializer engages neither arm of ArrayFillerOrUnionFieldInit
+        @test CC.getArrayFiller(pl) isa CC.Expr_
+        @test CC.getArrayFiller(pl).ptr == C_NULL
+        @test CC.getInitializedFieldInUnion(pl) isa CC.FieldDecl
+        @test CC.getInitializedFieldInUnion(pl).ptr == C_NULL
+        # both index accessors restate Clang's bounds precondition
+        @test_throws AssertionError CC.getInitExpr(pl, n)
+        @test_throws AssertionError CC.getUserSpecifiedInitExpr(pl, -1)
+    end
+
+    # ---- the union arm of the same PointerUnion, when the host built one -----------
+    ul = find_node(CC.CXXParenListInitExpr, fn_body("j_union"))
+    if ul isa CC.CXXParenListInitExpr
+        fd = CC.getInitializedFieldInUnion(ul)
+        @test fd isa CC.FieldDecl
+        if fd.ptr != C_NULL
+            @test CC.get_name(fd) == "a"
+            @test CC.getArrayFiller(ul).ptr == C_NULL
+        end
+    end
+
+    # ---- CXXRewrittenBinaryOperator::getOpcodeStr spells the WRITTEN operator ------
+    rb = find_node(CC.CXXRewrittenBinaryOperator, fn_body("j_rewritten"))
+    @test rb isa CC.CXXRewrittenBinaryOperator
+    if rb isa CC.CXXRewrittenBinaryOperator
+        @test CC.getOpcodeStr(rb) == "!="
+    end
+
+    # ---- CXXUnresolvedConstructExpr setters, round-tripped against the getters -----
+    uc = find_node(CC.CXXUnresolvedConstructExpr, tpl_body("j_uctor"))
+    @test uc isa CC.CXXUnresolvedConstructExpr
+    if uc isa CC.CXXUnresolvedConstructExpr
+        lp = CC.getLParenLoc(uc)
+        rp = CC.getRParenLoc(uc)
+        CC.setLParenLoc(uc, rp)
+        @test CC.getLParenLoc(uc).ptr == rp.ptr
+        CC.setLParenLoc(uc, lp)
+        @test CC.getLParenLoc(uc).ptr == lp.ptr
+        CC.setRParenLoc(uc, rp)
+        @test CC.getRParenLoc(uc).ptr == rp.ptr
+        na = CC.getNumArgs(uc)
+        @test na >= 1
+        if na >= 1
+            a0 = CC.getArg(uc, 0)
+            CC.setArg(uc, 0, a0)
+            @test CC.getArg(uc, 0).ptr == a0.ptr
+            @test_throws AssertionError CC.setArg(uc, na, a0)
+        end
+    end
+    dispose(f)
+    dispose(I)
+
+    # ---- MS extensions: __declspec(property) reference and its subscript form ------
+    Ims = create_interpreter(["-fms-extensions"])
+    fms = DeclFinder(Ims)
+    CC.parse(Ims, """
+    struct JMS {
+      int get_x();
+      void put_x(int);
+      __declspec(property(get = get_x, put = put_x)) int x;
+      int get_y(int);
+      void put_y(int, int);
+      __declspec(property(get = get_y, put = put_y)) int y[];
+    };
+    int jms_read(JMS *p) { return p->x; }
+    int jms_sub(JMS *p) { return p->y[2]; }
+    """)
+
+    function ms_body(name)
+        @test fms(Ims, name)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms).ptr)))
+    end
+
+    pr = find_node(CC.MSPropertyRefExpr, ms_body("jms_read"))
+    @test pr isa CC.MSPropertyRefExpr
+    if pr isa CC.MSPropertyRefExpr
+        @test CC.isArrow(pr) == true          # written `p->x`, not `p.x`
+        @test CC.isImplicitAccess(pr) == false
+        @test CC.getBaseExpr(pr) isa CC.Expr_
+        @test CC.getBaseExpr(pr).ptr != C_NULL
+        pd = CC.getPropertyDecl(pr)
+        @test pd isa CC.MSPropertyDecl
+        @test CC.get_name(pd) == "x"
+        @test CC.getMemberLoc(pr) isa CC.SourceLocation
+    end
+
+    ps = find_node(CC.MSPropertySubscriptExpr, ms_body("jms_sub"))
+    @test ps isa CC.MSPropertySubscriptExpr
+    if ps isa CC.MSPropertySubscriptExpr
+        @test CC.getBase(ps) isa CC.Expr_
+        @test CC.getBase(ps).ptr != C_NULL
+        @test CC.getIdx(ps) isa CC.Expr_
+        @test CC.getIdx(ps).ptr != C_NULL
+        rbl = CC.getRBracketLoc(ps)
+        @test rbl isa CC.SourceLocation
+        CC.setRBracketLoc(ps, rbl)
+        @test CC.getRBracketLoc(ps).ptr == rbl.ptr
+    end
+    dispose(fms)
+    dispose(Ims)
+end
+
+@testset "CXXUuidofExpr and the ExprCXX mutator tail" begin
+    function find_node(T, x)
+        x isa T && return x
+        for c in CC.children(x)
+            r = find_node(T, CC.resolve(c))
+            r === nothing || return r
+        end
+        return nothing
+    end
+
+    # ---- MS extensions: __uuidof, the __declspec(uuid) sibling of typeid ----------
+    # Parsed first, before any synthetic node exists: a rejected parse renders
+    # diagnostics over the AST, and doing that after hand-built nodes exist has
+    # crashed DiagnosticRenderer before.
+    Ims = create_interpreter(["-fms-extensions"])
+    fms = DeclFinder(Ims)
+    CC.parse(Ims, """
+    typedef struct _GUID {
+      unsigned long Data1;
+      unsigned short Data2;
+      unsigned short Data3;
+      unsigned char Data4[8];
+    } GUID;
+    struct __declspec(uuid("00000000-0000-0000-c000-000000000046")) JKGuid {};
+    const GUID *jk_uuid_type() { return &__uuidof(JKGuid); }
+    const GUID *jk_uuid_expr(JKGuid *p) { return &__uuidof(*p); }
+    """)
+    ctx_ms = CC.getASTContext(CC.get_instance(Ims))
+
+    function ms_body(name)
+        @test fms(Ims, name)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms).ptr)))
+    end
+
+    ut = find_node(CC.CXXUuidofExpr, ms_body("jk_uuid_type"))
+    @test ut isa CC.CXXUuidofExpr
+    if ut isa CC.CXXUuidofExpr
+        @test CC.isTypeOperand(ut) == true
+        @test CC.getTypeOperandSourceInfo(ut) isa CC.TypeSourceInfo
+        @test CC.getTypeOperandSourceInfo(ut).ptr != C_NULL
+        @test CC.getTypeOperand(ut, ctx_ms) isa CC.QualType
+        @test CC.getTypeOperand(ut, ctx_ms).ptr != C_NULL
+        @test_throws AssertionError CC.getExprOperand(ut)          # Invariant 3
+        gd = CC.getGuidDecl(ut)
+        @test gd isa CC.MSGuidDecl
+        @test gd.ptr != C_NULL
+        r = CC.getSourceRange(ut)
+        CC.setSourceRange(ut, r)
+        @test CC.getSourceRange(ut).begin_loc.ptr == r.begin_loc.ptr
+        @test CC.getSourceRange(ut).end_loc.ptr == r.end_loc.ptr
+    end
+
+    ue = find_node(CC.CXXUuidofExpr, ms_body("jk_uuid_expr"))
+    @test ue isa CC.CXXUuidofExpr
+    if ue isa CC.CXXUuidofExpr
+        @test CC.isTypeOperand(ue) == false
+        @test CC.getExprOperand(ue) isa CC.Expr_
+        @test CC.getExprOperand(ue).ptr != C_NULL
+        @test CC.getGuidDecl(ue) isa CC.MSGuidDecl
+        @test_throws AssertionError CC.getTypeOperandSourceInfo(ue)  # Invariant 3
+        @test_throws AssertionError CC.getTypeOperand(ue, ctx_ms)    # Invariant 3
+    end
+    dispose(fms)
+    dispose(Ims)
+
+    # ---- mutator round-trips on the nodes an ordinary translation unit builds -----
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    CC.parse(I, """
+    struct JKT { JKT(); ~JKT(); };
+    struct JKN { JKN(); };
+    void jk_bind() { JKT(); }
+    JKN *jk_new() { return new JKN(); }
+    int jk_fcast(double d) { return int(d); }
+    """)
+    ctx = CC.getASTContext(CC.get_instance(I))
+
+    function fn_body(name)
+        @test f(I, name)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    end
+
+    # CXXBindTemporaryExpr / CXXTemporary: both halves of `JKT();`
+    bt = find_node(CC.CXXBindTemporaryExpr, fn_body("jk_bind"))
+    @test bt isa CC.CXXBindTemporaryExpr
+    if bt isa CC.CXXBindTemporaryExpr
+        tmp = CC.getTemporary(bt)
+        sub = CC.getSubExpr(bt)
+        CC.setTemporary(bt, tmp)
+        @test CC.getTemporary(bt).ptr == tmp.ptr
+        CC.setSubExpr(bt, sub)
+        @test CC.getSubExpr(bt).ptr == sub.ptr
+        dtor = CC.getDestructor(tmp)
+        @test dtor isa CC.CXXDestructorDecl
+        if dtor.ptr != C_NULL
+            t2 = CC.CXXTemporary(ctx, dtor)
+            @test t2 isa CC.CXXTemporary
+            @test t2.ptr != C_NULL
+            @test CC.getDestructor(t2).ptr == dtor.ptr
+            CC.setDestructor(t2, dtor)
+            @test CC.getDestructor(t2).ptr == dtor.ptr
+        end
+    end
+
+    # CXXNewExpr: the allocation/deallocation function slots
+    ne = find_node(CC.CXXNewExpr, fn_body("jk_new"))
+    @test ne isa CC.CXXNewExpr
+    if ne isa CC.CXXNewExpr
+        on = CC.getOperatorNew(ne)
+        @test on isa CC.FunctionDecl
+        if on.ptr != C_NULL
+            CC.setOperatorNew(ne, on)
+            @test CC.getOperatorNew(ne).ptr == on.ptr
+        end
+        od = CC.getOperatorDelete(ne)
+        @test od isa CC.FunctionDecl
+        if od.ptr != C_NULL
+            CC.setOperatorDelete(ne, od)
+            @test CC.getOperatorDelete(ne).ptr == od.ptr
+        end
+
+        # CXXThisExpr::Create - built from the `new` expression's own type and location
+        loc = CC.getBeginLoc(ne)
+        ty = CC.getType(ne)
+        th = CC.CXXThisExpr(ctx, loc, ty, true)
+        @test th isa CC.CXXThisExpr
+        @test th.ptr != C_NULL
+        @test CC.isImplicit(th) == true
+        @test CC.getLocation(th).ptr == loc.ptr
+        CC.setImplicit(th, false)
+        @test CC.isImplicit(th) == false
+        # CreateEmpty yields an uninitialized shell; only its identity is defined
+        th2 = CC.CXXThisExpr(ctx)
+        @test th2 isa CC.CXXThisExpr
+        @test th2.ptr != C_NULL
+    end
+
+    # CXXFunctionalCastExpr: the paren locations, which also drive isListInitialization
+    fc = find_node(CC.CXXFunctionalCastExpr, fn_body("jk_fcast"))
+    @test fc isa CC.CXXFunctionalCastExpr
+    if fc isa CC.CXXFunctionalCastExpr
+        lp = CC.getLParenLoc(fc)
+        rp = CC.getRParenLoc(fc)
+        CC.setLParenLoc(fc, rp)
+        @test CC.getLParenLoc(fc).ptr == rp.ptr
+        CC.setLParenLoc(fc, lp)
+        @test CC.getLParenLoc(fc).ptr == lp.ptr
+        @test CC.isListInitialization(fc) isa Bool
+        CC.setRParenLoc(fc, rp)
+        @test CC.getRParenLoc(fc).ptr == rp.ptr
+    end
+    dispose(f)
+    dispose(I)
+
+    # ---- C++20: writing either arm of the CXXParenListInitExpr PointerUnion -------
+    I20 = create_interpreter(["-std=c++20"])
+    f20 = DeclFinder(I20)
+    CC.parse(I20, """
+    struct KAgg { int a; int b = 5; };
+    KAgg k_paren() { KAgg p(1); return p; }
+    union KUni { int a; double b; };
+    KUni k_union() { KUni u(3); return u; }
+    """)
+
+    function body20(name)
+        @test f20(I20, name)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f20).ptr)))
+    end
+
+    ul = find_node(CC.CXXParenListInitExpr, body20("k_union"))
+    @test ul isa CC.CXXParenListInitExpr
+    if ul isa CC.CXXParenListInitExpr
+        fd = CC.getInitializedFieldInUnion(ul)
+        @test fd isa CC.FieldDecl
+        if fd.ptr != C_NULL
+            CC.setInitializedFieldInUnion(ul, fd)
+            @test CC.getInitializedFieldInUnion(ul).ptr == fd.ptr
+            @test CC.getArrayFiller(ul).ptr == C_NULL
+        end
+    end
+
+    pl = find_node(CC.CXXParenListInitExpr, body20("k_paren"))
+    @test pl isa CC.CXXParenListInitExpr
+    if pl isa CC.CXXParenListInitExpr && CC.getNumInitExprs(pl) > 0
+        # a struct initializer engages neither arm; writing one arm disengages the other
+        @test CC.getArrayFiller(pl).ptr == C_NULL
+        e0 = CC.getInitExpr(pl, 0)
+        CC.setArrayFiller(pl, e0)
+        @test CC.getArrayFiller(pl).ptr == e0.ptr
+        @test CC.getInitializedFieldInUnion(pl).ptr == C_NULL
+    end
+    dispose(f20)
+    dispose(I20)
+end
+
+@testset "ExprCXX-l: name info / qualifier extents / node synthesis" begin
+    I = create_interpreter(["-std=c++20"])
+    f = DeclFinder(I)
+    CC.parse(I, """
+    int ll_free(int a = 5);
+    struct LLAgg { int a; int b = 7; };
+    struct LLDtor { ~LLDtor(); };
+    typedef int LLInt;
+    void ll_pd(LLInt *p) { p->LLInt::~LLInt(); }
+    struct LLEq { int v; bool operator==(const LLEq &) const; };
+    bool ll_rewritten(LLEq a, LLEq b) { return a != b; }
+    int ll_oo(int);
+    int ll_oo(double);
+    template <class T> int ll_ule(T t) { return ll_oo(t); }
+    template <class T> int ll_dref() { return T::value; }
+    template <class T> int ll_dmem(T t) { return t.LLEq::v; }
+    auto ll_lambda() { return []<class T>(T x) { return x; }; }
+    """)
+    ctx = CC.getASTContext(CC.get_instance(I))
+
+    function fn_body(name)
+        @test f(I, name)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    end
+    function tpl_body(name)
+        @test f(I, name)
+        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+    end
+
+    # ---- CXXRewrittenBinaryOperator: `a != b` rewrites to !(a == b) in C++20 ------
+    rbo = _find_node(CC.CXXRewrittenBinaryOperator, fn_body("ll_rewritten"))
+    @test rbo isa CC.CXXRewrittenBinaryOperator
+    inner = CC.getInnerBinOp(rbo)
+    @test inner isa CC.Expr_
+    @test inner.ptr != C_NULL
+
+    # ---- the pieces the synthesis factories need --------------------------------
+    @test f(I, "ll_free")
+    free_fd = CC.FunctionDecl(get_decl(f).ptr)
+    param = CC.getParamDecl(free_fd, 0)
+    @test param isa CC.ParmVarDecl
+    @test CC.hasDefaultArg(param) == true
+    defarg = CC.getDefaultArg(param)
+    @test defarg isa CC.Expr_
+    intty = CC.getType(defarg)
+    loc = CC.getBeginLoc(defarg)
+
+    @test f(I, "ll_rewritten")
+    boolty = CC.getReturnType(CC.FunctionDecl(get_decl(f).ptr))
+    @test boolty isa CC.QualType
+
+    @test f(I, "LLAgg")
+    agg = CC.CXXRecordDecl(get_decl(f).ptr)
+    aggdc = CC.castToDeclContext(agg)
+    fld_a, fld_b = nothing, nothing
+    for d in CC.decls(aggdc)
+        d isa CC.FieldDecl && CC.get_name(d) == "a" && (fld_a = d)
+        d isa CC.FieldDecl && CC.get_name(d) == "b" && (fld_b = d)
+    end
+    @test fld_a isa CC.FieldDecl
+    @test fld_b isa CC.FieldDecl
+
+    # ---- CXXBoolLiteralExpr::Create ---------------------------------------------
+    blit = CC.CXXBoolLiteralExpr(ctx, true, boolty, loc)
+    @test blit isa CC.CXXBoolLiteralExpr
+    @test blit.ptr != C_NULL
+    @test CC.getValue(blit) == true
+    @test CC.getLocation(blit).ptr == loc.ptr
+
+    # ---- CXXConstCastExpr::Create: a const_cast<int> of the `5` default arg ------
+    tsi = CC.getTrivialTypeSourceInfo(ctx, intty, loc)
+    @test tsi isa CC.TypeSourceInfo
+    cce = CC.CXXConstCastExpr(ctx, intty, CC.CXExprValueKind_VK_PRValue, defarg, tsi, loc, loc,
+                              CC.SourceRange(loc, loc))
+    @test cce isa CC.CXXConstCastExpr
+    @test cce.ptr != C_NULL
+    @test CC.getCastName(cce) == "const_cast"
+    @test CC.getSubExpr(cce).ptr == defarg.ptr
+    @test CC.getRParenLoc(cce).ptr == loc.ptr
+    @test CC.getAngleBrackets(cce) isa CC.SourceRange
+
+    # ---- CXXDefaultArgExpr::Create, with and without a rewritten initializer -----
+    dae = CC.CXXDefaultArgExpr(ctx, loc, param, nothing, aggdc)
+    @test dae isa CC.CXXDefaultArgExpr
+    @test dae.ptr != C_NULL
+    @test CC.getParam(dae).ptr == param.ptr
+    @test CC.getUsedContext(dae).ptr == aggdc.ptr
+    @test CC.getUsedLocation(dae).ptr == loc.ptr
+    @test CC.hasRewrittenInit(dae) == false
+    dae2 = CC.CXXDefaultArgExpr(ctx, loc, param, blit, aggdc)
+    @test CC.hasRewrittenInit(dae2) == true
+    @test CC.getRewrittenExpr(dae2).ptr == blit.ptr
+
+    # ---- CXXDefaultInitExpr::Create; the field must carry an in-class init -------
+    die = CC.CXXDefaultInitExpr(ctx, loc, fld_b, aggdc, nothing)
+    @test die isa CC.CXXDefaultInitExpr
+    @test die.ptr != C_NULL
+    @test CC.getField(die).ptr == fld_b.ptr
+    @test CC.getUsedContext(die).ptr == aggdc.ptr
+    @test CC.hasRewrittenInit(die) == false
+    @test CC.hasInClassInitializer(fld_a) == false
+    @test_throws AssertionError CC.CXXDefaultInitExpr(ctx, loc, fld_a, aggdc, nothing)
+
+    # ---- CXXBindTemporaryExpr::Create -------------------------------------------
+    @test f(I, "LLDtor")
+    dtor = CC.getDestructor(CC.CXXRecordDecl(get_decl(f).ptr))
+    @test dtor isa CC.CXXDestructorDecl
+    if dtor.ptr != C_NULL
+        tmp = CC.CXXTemporary(ctx, dtor)
+        bte = CC.CXXBindTemporaryExpr(ctx, tmp, blit)
+        @test bte isa CC.CXXBindTemporaryExpr
+        @test bte.ptr != C_NULL
+        @test CC.getTemporary(bte).ptr == tmp.ptr
+        @test CC.getSubExpr(bte).ptr == blit.ptr
+    end
+
+    # ---- LambdaExpr explicit template parameters: `[]<class T>(T x)` -------------
+    le = _find_node(CC.LambdaExpr, fn_body("ll_lambda"))
+    @test le isa CC.LambdaExpr
+    @test CC.isGenericLambda(le) == true
+    n = CC.getNumExplicitTemplateParameters(le)
+    @test n == 1
+    p0 = CC.getExplicitTemplateParameter(le, 0)
+    @test p0 isa CC.NamedDecl
+    @test CC.get_name(p0) == "T"
+    @test_throws AssertionError CC.getExplicitTemplateParameter(le, n)
+
+    # ---- CXXPseudoDestructorExpr: a scalar destroyed type keeps its written
+    # qualification in the scope type, so the nested-name-specifier stays empty ----
+    pd = _find_node(CC.CXXPseudoDestructorExpr, fn_body("ll_pd"))
+    @test pd isa CC.CXXPseudoDestructorExpr
+    @test CC.hasQualifier(pd) == false
+    @test CC.getQualifierRange(pd) isa CC.SourceRange
+
+    # ---- OverloadExpr name info / qualifier extent -------------------------------
+    ule = _find_node(CC.UnresolvedLookupExpr, tpl_body("ll_ule"))
+    @test ule isa CC.UnresolvedLookupExpr
+    ni = CC.getNameInfo(ule)
+    @test ni isa CC.DeclarationNameInfo
+    @test ni.ptr != C_NULL
+    @test CC.getAsString(ni) == "ll_oo"
+    @test CC.getLoc(ni).ptr == CC.getNameLoc(ule).ptr
+    dispose(ni)
+    @test CC.getQualifierRange(ule) isa CC.SourceRange   # `ll_oo` is unqualified
+
+    # ---- DependentScopeDeclRefExpr: the `T::` is always written -------------------
+    dre = _find_node(CC.DependentScopeDeclRefExpr, tpl_body("ll_dref"))
+    @test dre isa CC.DependentScopeDeclRefExpr
+    ni2 = CC.getNameInfo(dre)
+    @test ni2 isa CC.DeclarationNameInfo
+    @test CC.getAsString(ni2) == "value"
+    dispose(ni2)
+    qr2 = CC.getQualifierRange(dre)
+    @test qr2 isa CC.SourceRange
+    @test qr2.begin_loc.ptr != C_NULL
+
+    # ---- CXXDependentScopeMemberExpr: `t.LLEq::v` --------------------------------
+    dme = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("ll_dmem"))
+    @test dme isa CC.CXXDependentScopeMemberExpr
+    ni3 = CC.getMemberNameInfo(dme)
+    @test ni3 isa CC.DeclarationNameInfo
+    @test CC.getAsString(ni3) == "v"
+    dispose(ni3)
+    qr3 = CC.getQualifierRange(dme)
+    @test qr3 isa CC.SourceRange
+    @test qr3.begin_loc.ptr != C_NULL
+
+    dispose(f)
+    dispose(I)
+
+    # ---- MSPropertyRefExpr qualifier extent needs -fms-extensions ----------------
+    Ims = create_interpreter(["-fms-extensions"])
+    fms = DeclFinder(Ims)
+    CC.parse(Ims, """
+    struct LMS {
+      int get_x();
+      void put_x(int);
+      __declspec(property(get = get_x, put = put_x)) int x;
+    };
+    int lms_read(LMS *p) { return p->x; }
+    """)
+    @test fms(Ims, "lms_read")
+    ms_body = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms).ptr)))
+    mp = _find_node(CC.MSPropertyRefExpr, ms_body)
+    @test mp isa CC.MSPropertyRefExpr
+    @test CC.getQualifierRange(mp) isa CC.SourceRange   # `p->x` is unqualified
+
+    dispose(fms)
+    dispose(Ims)
+end
+
+@testset "ExprCXX-m: named-cast factories / functional cast / FunctionParmPackExpr" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    CC.parse(I, "int mm_free(int a = 5);")
+    ctx = CC.getASTContext(CC.get_instance(I))
+
+    @test f(I, "mm_free")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    param = CC.getParamDecl(fd, 0)
+    @test param isa CC.ParmVarDecl
+    @test CC.hasDefaultArg(param) == true
+    op = CC.getDefaultArg(param)
+    @test op isa CC.Expr_
+    intty = CC.getType(op)
+    loc = CC.getBeginLoc(op)
+    tsi = CC.getTrivialTypeSourceInfo(ctx, intty, loc)
+    @test tsi isa CC.TypeSourceInfo
+    angles = CC.SourceRange(loc, loc)
+    vk = CC.CXExprValueKind_VK_PRValue
+    # CK_NoOp is the one kind that keeps these synthetic nodes clear of clang's base-path
+    # and address-space cast-consistency assertions, since the factories pass no path.
+    noop = CC.LibClangEx.CXCastKind_CK_NoOp
+
+    # ---- the four named-cast factories -------------------------------------------
+    sce = CC.CXXStaticCastExpr(ctx, intty, vk, noop, op, tsi, 0, loc, loc, angles)
+    @test sce isa CC.CXXStaticCastExpr
+    @test sce.ptr != C_NULL
+    @test CC.getCastName(sce) == "static_cast"
+    @test CC.getSubExpr(sce).ptr == op.ptr
+    @test CC.getRParenLoc(sce).ptr == loc.ptr
+    @test CC.getAngleBrackets(sce) isa CC.SourceRange
+
+    dce = CC.CXXDynamicCastExpr(ctx, intty, vk, noop, op, tsi, loc, loc, angles)
+    @test dce isa CC.CXXDynamicCastExpr
+    @test dce.ptr != C_NULL
+    @test CC.getCastName(dce) == "dynamic_cast"
+    @test CC.getSubExpr(dce).ptr == op.ptr
+
+    rce = CC.CXXReinterpretCastExpr(ctx, intty, vk, noop, op, tsi, loc, loc, angles)
+    @test rce isa CC.CXXReinterpretCastExpr
+    @test rce.ptr != C_NULL
+    @test CC.getCastName(rce) == "reinterpret_cast"
+    @test CC.getOperatorLoc(rce).ptr == loc.ptr
+
+    ace = CC.CXXAddrspaceCastExpr(ctx, intty, vk, noop, op, tsi, loc, loc, angles)
+    @test ace isa CC.CXXAddrspaceCastExpr
+    @test ace.ptr != C_NULL
+    @test CC.getCastName(ace) == "addrspace_cast"
+    @test CC.getSubExpr(ace).ptr == op.ptr
+
+    # ---- CXXFunctionalCastExpr::Create: a valid LParenLoc means `T(x)`, not `T{x}` --
+    fce = CC.CXXFunctionalCastExpr(ctx, intty, vk, tsi, noop, op, 0, loc, loc)
+    @test fce isa CC.CXXFunctionalCastExpr
+    @test fce.ptr != C_NULL
+    @test CC.getLParenLoc(fce).ptr == loc.ptr
+    @test CC.getRParenLoc(fce).ptr == loc.ptr
+    @test CC.isListInitialization(fce) == false
+    @test CC.getSubExpr(fce).ptr == op.ptr
+
+    # ---- the deserialization shells: only the statement class is initialized -------
+    shells = [(CC.CXXStaticCastExpr(ctx, 0, false), "CXXStaticCastExpr"),
+              (CC.CXXDynamicCastExpr(ctx, 0), "CXXDynamicCastExpr"),
+              (CC.CXXReinterpretCastExpr(ctx, 0), "CXXReinterpretCastExpr"),
+              (CC.CXXConstCastExpr(ctx), "CXXConstCastExpr"),
+              (CC.CXXAddrspaceCastExpr(ctx), "CXXAddrspaceCastExpr"),
+              (CC.CXXFunctionalCastExpr(ctx, 0, false), "CXXFunctionalCastExpr")]
+    for (shell, name) in shells
+        @test shell.ptr != C_NULL
+        @test CC.getStmtClassName(shell) == name
+    end
+
+    # ---- FunctionParmPackExpr, covered by construction ----------------------------
+    fppe = CC.FunctionParmPackExpr(ctx, intty, param, loc, [param])
+    @test fppe isa CC.FunctionParmPackExpr
+    @test fppe.ptr != C_NULL
+    @test CC.getStmtClassName(fppe) == "FunctionParmPackExpr"
+    @test CC.getParameterPack(fppe).ptr == param.ptr
+    @test CC.getParameterPackLocation(fppe).ptr == loc.ptr
+    @test CC.getNumExpansions(fppe) == 1
+    @test CC.getExpansion(fppe, 0).ptr == param.ptr
+    @test_throws AssertionError CC.getExpansion(fppe, 1)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ExprCXX-n: substituted NTTP packs / paren-list + unresolved-construct factories / shells" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    CC.parse(I, "template <int... nn_pack> struct NNPack { }; int nn_free(int a = 11);")
+    ctx = CC.getASTContext(CC.get_instance(I))
+
+    @test f(I, "nn_free")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    param = CC.getParamDecl(fd, 0)
+    @test CC.hasDefaultArg(param) == true
+    op = CC.getDefaultArg(param)
+    @test op isa CC.Expr_
+    intty = CC.getType(op)
+    loc = CC.getBeginLoc(op)
+    tsi = CC.getTrivialTypeSourceInfo(ctx, intty, loc)
+    @test tsi isa CC.TypeSourceInfo
+    vk = CC.CXExprValueKind_VK_PRValue
+
+    # ---- SubstNonTypeTemplateParmPackExpr, covered by construction -----------------
+    # Select the class template by kind: a bare lookup of "NNPack" is unique here, but the
+    # kind filter keeps the testset safe if a later edit instantiates the template.
+    @test f(I, "NNPack")
+    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+                                     if CC.getDeclKindName(d) == "ClassTemplate").ptr)
+    tpl = CC.getTemplateParameters(ctd)
+    nttp = CC.resolve(CC.getParam(tpl, 0))
+    @test nttp isa CC.NonTypeTemplateParmDecl
+    @test CC.getName(nttp) == "nn_pack"
+
+    ta = CC.TemplateArgument(intty)
+    snp = CC.SubstNonTypeTemplateParmPackExpr(ctx, intty, vk, loc, [ta], ctd, 0)
+    @test snp isa CC.SubstNonTypeTemplateParmPackExpr
+    @test snp.ptr != C_NULL
+    @test CC.getStmtClassName(snp) == "SubstNonTypeTemplateParmPackExpr"
+    @test CC.getAssociatedDecl(snp).ptr == ctd.ptr
+    @test CC.getIndex(snp) == 0
+    @test CC.getParameterPackLocation(snp).ptr == loc.ptr
+    @test CC.getParameterPack(snp).ptr == nttp.ptr
+    pack = CC.getArgumentPack(snp)
+    @test pack isa CC.TemplateArgument
+    @test CC.getKind(pack) == CC.LibClangEx.CXTemplateArgument_Pack
+    dispose(pack)
+    dispose(ta)
+
+    # ---- CXXParenListInitExpr::Create / CreateEmpty --------------------------------
+    ple = CC.CXXParenListInitExpr(ctx, [op], intty, 1, loc, loc, loc)
+    @test ple isa CC.CXXParenListInitExpr
+    @test CC.getStmtClassName(ple) == "CXXParenListInitExpr"
+    @test CC.getNumInitExprs(ple) == 1
+    @test CC.getInitExpr(ple, 0).ptr == op.ptr
+    @test CC.getNumUserSpecifiedInitExprs(ple) == 1
+    @test CC.getInitLoc(ple).ptr == loc.ptr
+    @test_throws AssertionError CC.CXXParenListInitExpr(ctx, [op], intty, 2, loc, loc, loc)
+
+    # ---- CXXUnresolvedConstructExpr::Create / CreateEmpty --------------------------
+    uce = CC.CXXUnresolvedConstructExpr(ctx, intty, tsi, loc, [op], loc, false)
+    @test uce isa CC.CXXUnresolvedConstructExpr
+    @test CC.getStmtClassName(uce) == "CXXUnresolvedConstructExpr"
+    @test CC.getNumArgs(uce) == 1
+    @test CC.getArg(uce, 0).ptr == op.ptr
+    @test CC.getLParenLoc(uce).ptr == loc.ptr
+    @test CC.getRParenLoc(uce).ptr == loc.ptr
+    @test CC.isListInitialization(uce) == false
+
+    # ---- the deserialization shells: only the statement class is initialized -------
+    shells = [(CC.CXXParenListInitExpr(ctx, 2), "CXXParenListInitExpr"),
+              (CC.CXXUnresolvedConstructExpr(ctx, 2), "CXXUnresolvedConstructExpr"),
+              (CC.CXXConstructExpr(ctx, 1), "CXXConstructExpr"),
+              (CC.CXXTemporaryObjectExpr(ctx, 1), "CXXTemporaryObjectExpr"),
+              (CC.CXXNewExpr(ctx, false, false, 0, false), "CXXNewExpr"),
+              (CC.CXXDefaultArgExpr(ctx, false), "CXXDefaultArgExpr"),
+              (CC.CXXDefaultInitExpr(ctx, false), "CXXDefaultInitExpr"),
+              (CC.UserDefinedLiteral(ctx, 1, false), "UserDefinedLiteral"),
+              (CC.CXXOperatorCallExpr(ctx, 2, false), "CXXOperatorCallExpr"),
+              (CC.CXXMemberCallExpr(ctx, 1, false), "CXXMemberCallExpr"),
+              (CC.UnresolvedLookupExpr(ctx, 1, false, 0), "UnresolvedLookupExpr"),
+              (CC.FunctionParmPackExpr(ctx, 1), "FunctionParmPackExpr")]
+    for (shell, name) in shells
+        @test shell.ptr != C_NULL
+        @test CC.getStmtClassName(shell) == name
+    end
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ExprCXX trait kind, cleanup objects, member name info and lifetime setters" begin
+    I = create_interpreter(["-std=c++20"])
+    f = DeclFinder(I)
+    CC.parse(I, """
+    struct OOTmp { OOTmp(); ~OOTmp(); int v; };
+    struct OOBase { void m(int); void m(double); };
+    typedef int OOInt;
+    bool oo_trait() { return __is_trivial(int); }
+    int oo_temp() { return OOTmp().v; }
+    void oo_pd(OOInt *p) { p->OOInt::~OOInt(); }
+    const int &oo_ref = 7;
+    int oo_other = 3;
+    template <class... Ts> int oo_pack() { return sizeof...(Ts); }
+    template <class T> void oo_gg(T u) { OOBase s; s.m(u); }
+    auto oo_lambda(int a) { return [a](int b) { return a + b; }; }
+    auto oo_lambda2(int a) { return [=](int b) { return a + b; }; }
+    """)
+    ctx = CC.getASTContext(CC.get_instance(I))
+
+    function fn_body(name)
+        @test f(I, name)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    end
+    function tpl_body(name)
+        @test f(I, name)
+        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+    end
+
+    # ---- TypeTraitExpr::getTrait: which trait `__is_trivial(int)` spells -----------
+    tt = _find_node(CC.TypeTraitExpr, fn_body("oo_trait"))
+    @test tt isa CC.TypeTraitExpr
+    if tt !== nothing
+        @test CC.getTrait(tt) == CC.LibClangEx.CXTypeTrait_UTT_IsTrivial
+        @test CC.getNumArgs(tt) == 1
+    end
+
+    # ---- LambdaExpr: `[a]` is one explicit capture, `[=]` captures implicitly ------
+    le = _find_node(CC.LambdaExpr, fn_body("oo_lambda"))
+    @test le isa CC.LambdaExpr
+    if le !== nothing
+        @test CC.getNumExplicitCaptures(le) == 1
+        @test CC.getNumCaptures(le) >= CC.getNumExplicitCaptures(le)
+    end
+    le2 = _find_node(CC.LambdaExpr, fn_body("oo_lambda2"))
+    @test le2 isa CC.LambdaExpr
+    if le2 !== nothing
+        @test CC.getNumExplicitCaptures(le2) == 0
+        @test CC.getNumCaptures(le2) >= CC.getNumExplicitCaptures(le2)
+    end
+
+    # ---- UnresolvedMemberExpr: the member half of the OverloadExpr name -----------
+    ume = _find_node(CC.UnresolvedMemberExpr, tpl_body("oo_gg"))
+    @test ume isa CC.UnresolvedMemberExpr
+    if ume !== nothing
+        mn = CC.getMemberName(ume)
+        @test mn isa CC.DeclarationName
+        @test mn.ptr == CC.getName(ume).ptr          # forwards to OverloadExpr::getName
+        @test CC.getMemberLoc(ume).ptr == CC.getNameLoc(ume).ptr
+        mni = CC.getMemberNameInfo(ume)
+        @test mni isa CC.DeclarationNameInfo
+        @test mni.ptr != C_NULL
+        @test CC.getAsString(mni) == "m"
+        dispose(mni)
+    end
+
+    # ---- SizeOfPackExpr partial arguments: an unsubstituted pack has none, and
+    # clang's accessor would read storage that was never allocated -----------------
+    sp = _find_node(CC.SizeOfPackExpr, tpl_body("oo_pack"))
+    @test sp isa CC.SizeOfPackExpr
+    if sp !== nothing
+        @test CC.isPartiallySubstituted(sp) isa Bool
+        if CC.isPartiallySubstituted(sp)
+            n = CC.getNumPartialArguments(sp)
+            @test n isa Integer
+            @test n > 0
+            ta = CC.getPartialArgument(sp, 0)
+            @test ta isa CC.TemplateArgument
+            @test ta.ptr != C_NULL
+            dispose(ta)
+            @test_throws AssertionError CC.getPartialArgument(sp, n)
+        else
+            @test_throws AssertionError CC.getNumPartialArguments(sp)
+            @test_throws AssertionError CC.getPartialArgument(sp, 0)
+        end
+    end
+
+    # ---- ExprWithCleanups objects: the union arm is picked by the discriminator ----
+    ewc = _find_node(CC.ExprWithCleanups, fn_body("oo_temp"))
+    @test ewc isa CC.ExprWithCleanups
+    if ewc !== nothing
+        n = CC.getNumObjects(ewc)
+        @test n isa Integer
+        for i in 0:(n - 1)
+            isblk = CC.objectIsBlockDecl(ewc, i)
+            @test isblk isa Bool
+            obj = CC.getObject(ewc, i)
+            @test isblk ? obj isa CC.BlockDecl : obj isa CC.CompoundLiteralExpr
+            @test obj.ptr != C_NULL
+        end
+        @test_throws AssertionError CC.objectIsBlockDecl(ewc, n)
+        @test_throws AssertionError CC.getObject(ewc, n)
+    end
+
+    # the deserialization shell reserves its cleanup-object slots but fills none in
+    shell = CC.ExprWithCleanups(ctx, 2)
+    @test shell isa CC.ExprWithCleanups
+    @test shell.ptr != C_NULL
+    @test CC.getNumObjects(shell) == 2
+
+    # ---- CXXPseudoDestructorExpr::setDestroyedType: naming the type by identifier
+    # drops the written TypeSourceInfo, so the round-trip goes through the
+    # identifier/location pair instead ---------------------------------------------
+    pd = _find_node(CC.CXXPseudoDestructorExpr, fn_body("oo_pd"))
+    @test pd isa CC.CXXPseudoDestructorExpr
+    if pd !== nothing
+        @test f(I, "OOInt")
+        ii = CC.getIdentifier(CC.NamedDecl(get_decl(f).ptr))
+        @test ii isa CC.IdentifierInfo
+        @test CC.isStr(ii, "OOInt")
+        loc = CC.getBeginLoc(pd)
+        CC.setDestroyedType(pd, ii, loc)
+        @test CC.getDestroyedTypeIdentifier(pd).ptr == ii.ptr
+        @test CC.getDestroyedTypeLoc(pd).ptr == loc.ptr
+        @test CC.getDestroyedTypeInfo(pd).ptr == C_NULL
+    end
+
+    # ---- MaterializeTemporaryExpr::setExtendingDecl -------------------------------
+    @test f(I, "oo_ref")
+    ref_init = CC.resolve(CC.getInit(CC.VarDecl(get_decl(f).ptr)))
+    mt = _find_node(CC.MaterializeTemporaryExpr, ref_init)
+    @test mt isa CC.MaterializeTemporaryExpr
+    if mt !== nothing
+        @test f(I, "oo_other")
+        other = CC.VarDecl(get_decl(f).ptr)
+        CC.setExtendingDecl(mt, other, 7)
+        @test CC.getExtendingDecl(mt).ptr == other.ptr
+        @test CC.getManglingNumber(mt) == 7
+    end
+
+    dispose(f)
+    dispose(I)
+
+    # ---- CoawaitExpr::setIsImplicit; coroutines need a promise type, so the
+    # awaitable machinery is spelled out --------------------------------------------
+    J = create_interpreter(["-std=c++20"])
+    g = DeclFinder(J)
+    CC.parse(J, """
+    namespace std {
+    template <class Ret, class... Args> struct coroutine_traits {
+        using promise_type = typename Ret::promise_type;
+    };
+    template <class Promise = void> struct coroutine_handle;
+    template <> struct coroutine_handle<void> {
+        static coroutine_handle from_address(void *) noexcept { return {}; }
+    };
+    template <class Promise> struct coroutine_handle {
+        operator coroutine_handle<>() const noexcept { return {}; }
+        static coroutine_handle from_address(void *) noexcept { return {}; }
+        static coroutine_handle from_promise(Promise &) noexcept { return {}; }
+    };
+    struct suspend_always {
+        bool await_ready() const noexcept { return false; }
+        void await_suspend(coroutine_handle<>) const noexcept {}
+        void await_resume() const noexcept {}
+    };
+    }
+    struct ootask {
+        struct promise_type {
+            ootask get_return_object() { return {}; }
+            std::suspend_always initial_suspend() noexcept { return {}; }
+            std::suspend_always final_suspend() noexcept { return {}; }
+            void return_void() noexcept {}
+            void unhandled_exception() noexcept {}
+        };
+    };
+    ootask oo_coro() {
+        co_await std::suspend_always{};
+        co_return;
+    }
+    """)
+
+    @test g(J, "oo_coro")
+    croot = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(g).ptr)))
+    ca = _find_node(CC.CoawaitExpr, croot)
+    @test ca isa CC.CoawaitExpr
+    if ca !== nothing
+        before = CC.isImplicit(ca)
+        @test before isa Bool
+        CC.setIsImplicit(ca, !before)
+        @test CC.isImplicit(ca) == !before
+        CC.setIsImplicit(ca, before)
+        @test CC.isImplicit(ca) == before
+    end
+
+    dispose(g)
+    dispose(J)
+end
+
+@testset "ExprCXX factories: call/construct/new/trait builders and deserialization shells" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    src = """
+    struct FacPt { int x; FacPt(int v) : x(v) {} };
+    FacPt fac_make(int v) { return FacPt(v); }
+    int *fac_new() { return new int(3); }
+    int fac_use(int a = 7);
+    template <typename... FacTs> struct FacPack { };
+    """
+    CC.parse(I, src)
+    ctx = CC.getASTContext(CC.get_instance(I))
+    vk = CC.CXExprValueKind_VK_PRValue
+
+    # A parsed, non-dependent int expression, reused below as a callee and as an argument.
+    @test f(I, "fac_use")
+    fu = CC.FunctionDecl(get_decl(f).ptr)
+    param = CC.getParamDecl(fu, 0)
+    @test CC.hasDefaultArg(param) == true
+    op = CC.getDefaultArg(param)
+    @test op isa CC.Expr_
+    intty = CC.getType(op)
+    loc = CC.getBeginLoc(op)
+    tsi_int = CC.getTrivialTypeSourceInfo(ctx, intty, loc)
+    @test tsi_int isa CC.TypeSourceInfo
+
+    # ---- the CallExpr-shaped factories ---------------------------------------------
+    oce = CC.CXXOperatorCallExpr(ctx, CC.CXOverloadedOperatorKind_OO_Plus, op, [op, op], intty, vk,
+                                 loc, 0, false)
+    @test CC.getStmtClassName(oce) == "CXXOperatorCallExpr"
+    @test CC.getOperator(oce) == CC.CXOverloadedOperatorKind_OO_Plus
+    @test CC.getOperatorLoc(oce).ptr == loc.ptr
+    @test CC.getNumArgs(oce) == 2
+    @test CC.getArg(oce, 0).ptr == op.ptr
+    @test CC.getCallee(oce).ptr == op.ptr
+
+    mce = CC.CXXMemberCallExpr(ctx, op, [op], intty, vk, loc, 0, 0)
+    @test CC.getStmtClassName(mce) == "CXXMemberCallExpr"
+    @test CC.getNumArgs(mce) == 1
+    @test CC.getArg(mce, 0).ptr == op.ptr
+    @test CC.getRParenLoc(mce).ptr == loc.ptr
+
+    udl = CC.UserDefinedLiteral(ctx, op, [op], intty, vk, loc, loc, 0)
+    @test CC.getStmtClassName(udl) == "UserDefinedLiteral"
+    @test CC.getNumArgs(udl) == 1
+    @test CC.getUDSuffixLoc(udl).ptr == loc.ptr
+
+    # ---- CXXConstructExpr::Create / CXXTemporaryObjectExpr::Create ------------------
+    @test f(I, "fac_make")
+    fm = CC.FunctionDecl(get_decl(f).ptr)
+    ce = _find_node(CC.AbstractCXXConstructExpr, CC.resolve(CC.getBody(fm)))
+    @test ce isa CC.AbstractCXXConstructExpr
+    ctor = CC.getConstructor(ce)
+    pty = CC.getType(ce)
+    arg0 = CC.getArg(ce, 0)
+    brace = CC.getParenOrBraceRange(ce)
+
+    nce = CC.CXXConstructExpr(ctx, pty, loc, ctor, false, [arg0], false, false, false, false,
+                              CC.CXCXXConstructionKind_Complete, brace)
+    @test CC.getStmtClassName(nce) == "CXXConstructExpr"
+    @test CC.getConstructor(nce).ptr == ctor.ptr
+    @test CC.getNumArgs(nce) == 1
+    @test CC.getArg(nce, 0).ptr == arg0.ptr
+    @test CC.getConstructionKind(nce) == CC.CXCXXConstructionKind_Complete
+    @test CC.isElidable(nce) == false
+    @test CC.requiresZeroInitialization(nce) == false
+
+    tsi_pt = CC.getTrivialTypeSourceInfo(ctx, pty, loc)
+    toe = CC.CXXTemporaryObjectExpr(ctx, ctor, pty, tsi_pt, [arg0], brace, false, true, false, false)
+    @test CC.getStmtClassName(toe) == "CXXTemporaryObjectExpr"
+    @test CC.getTypeSourceInfo(toe).ptr == tsi_pt.ptr
+    @test CC.getNumArgs(toe) == 1
+    @test CC.isListInitialization(toe) == true
+
+    # ---- CXXNewExpr::Create, round-tripped through a parsed `new int(3)` ------------
+    @test f(I, "fac_new")
+    fnw = CC.FunctionDecl(get_decl(f).ptr)
+    ne = _find_node(CC.CXXNewExpr, CC.resolve(CC.getBody(fnw)))
+    @test ne isa CC.CXXNewExpr
+    @test CC.isArray(ne) == false
+    new_ne = CC.CXXNewExpr(ctx, CC.isGlobalNew(ne), CC.getOperatorNew(ne), CC.getOperatorDelete(ne),
+                           CC.passAlignment(ne), CC.doesUsualArrayDeleteWantSize(ne), CC.Expr_[],
+                           CC.getTypeIdParens(ne), nothing, CC.getInitializationStyle(ne),
+                           CC.getInitializer(ne), CC.getType(ne), CC.getAllocatedTypeSourceInfo(ne),
+                           CC.getSourceRange(ne), CC.getDirectInitRange(ne))
+    @test CC.getStmtClassName(new_ne) == "CXXNewExpr"
+    @test CC.getNumPlacementArgs(new_ne) == 0
+    @test CC.isArray(new_ne) == false
+    @test CC.isGlobalNew(new_ne) == CC.isGlobalNew(ne)
+    @test CC.getInitializationStyle(new_ne) == CC.getInitializationStyle(ne)
+    @test CC.getInitializer(new_ne).ptr == CC.getInitializer(ne).ptr
+    @test CC.getAllocatedTypeSourceInfo(new_ne).ptr == CC.getAllocatedTypeSourceInfo(ne).ptr
+    @test CC.getOperatorNew(new_ne).ptr == CC.getOperatorNew(ne).ptr
+
+    # ---- TypeTraitExpr::Create ------------------------------------------------------
+    tte = CC.TypeTraitExpr(ctx, intty, loc, CC.CXTypeTrait_UTT_IsConst, [tsi_int], loc, false)
+    @test CC.getStmtClassName(tte) == "TypeTraitExpr"
+    @test CC.getTrait(tte) == CC.CXTypeTrait_UTT_IsConst
+    @test CC.getNumArgs(tte) == 1
+    @test CC.getArg(tte, 0).ptr == tsi_int.ptr
+    @test CC.getValue(tte) == false
+
+    # ---- SizeOfPackExpr::Create, in both its known-length and partial forms ---------
+    @test f(I, "FacPack")
+    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+                                     if CC.getDeclKindName(d) == "ClassTemplate").ptr)
+    pk = CC.getParam(CC.getTemplateParameters(ctd), 0)
+    @test CC.getName(pk) == "FacTs"
+
+    sop = CC.SizeOfPackExpr(ctx, loc, pk, loc, loc, 3)
+    @test CC.getStmtClassName(sop) == "SizeOfPackExpr"
+    @test CC.getPack(sop).ptr == pk.ptr
+    @test CC.getPackLength(sop) == 3
+    @test CC.isPartiallySubstituted(sop) == false
+    @test CC.getOperatorLoc(sop).ptr == loc.ptr
+    @test CC.getPackLoc(sop).ptr == loc.ptr
+
+    ta = CC.TemplateArgument(intty)
+    sop_partial = CC.SizeOfPackExpr(ctx, loc, pk, loc, loc, nothing, [ta])
+    @test CC.isPartiallySubstituted(sop_partial) == true
+    @test CC.getNumPartialArguments(sop_partial) == 1
+    pa = CC.getPartialArgument(sop_partial, 0)
+    @test pa isa CC.TemplateArgument
+    dispose(pa)
+    # A non-dependent sizeof... carries no partially-substituted arguments.
+    @test_throws AssertionError CC.SizeOfPackExpr(ctx, loc, pk, loc, loc, 3, [ta])
+    dispose(ta)
+
+    # ---- the deserialization shells: only the statement class is initialized --------
+    shells = [(CC.LambdaExpr(ctx, 1), "LambdaExpr"),
+              (CC.TypeTraitExpr(ctx, 2), "TypeTraitExpr"),
+              (CC.SizeOfPackExpr(ctx, 1), "SizeOfPackExpr"),
+              (CC.CUDAKernelCallExpr(ctx, 1, false), "CUDAKernelCallExpr"),
+              (CC.DependentScopeDeclRefExpr(ctx, false, 0), "DependentScopeDeclRefExpr"),
+              (CC.CXXDependentScopeMemberExpr(ctx, false, 0, false),
+               "CXXDependentScopeMemberExpr"),
+              (CC.UnresolvedMemberExpr(ctx, 1, false, 0), "UnresolvedMemberExpr")]
+    for (shell, name) in shells
+        @test shell.ptr != C_NULL
+        @test CC.getStmtClassName(shell) == name
+    end
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ExprCXX: lambda and kernel-launch builders, overload-set search, dependence refresh" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    CC.parse(I, """
+    void oq_ovl(int);
+    void oq_ovl(double);
+    template <class T> void oq_call(T t) { oq_ovl(t); }
+    auto oq_lambda(int cap) { return [cap](int b) { return cap + b; }; }
+    int oq_use(int a = 5);
+    int oq_callee();
+    int oq_caller() { return oq_callee(); }
+    """)
+    ctx = CC.getASTContext(CC.get_instance(I))
+    vk = CC.CXExprValueKind_VK_PRValue
+
+    # A parsed, non-dependent int expression, reused below as a callee and as an argument.
+    @test f(I, "oq_use")
+    fu = CC.FunctionDecl(get_decl(f).ptr)
+    param = CC.getParamDecl(fu, 0)
+    @test CC.hasDefaultArg(param) == true
+    op = CC.getDefaultArg(param)
+    @test op isa CC.Expr_
+    intty = CC.getType(op)
+    loc = CC.getBeginLoc(op)
+
+    # ---- LambdaExpr::Create, round-tripped through a parsed lambda ------------------
+    @test f(I, "oq_lambda")
+    fl = CC.FunctionDecl(get_decl(f).ptr)
+    le = _find_node(CC.LambdaExpr, CC.resolve(CC.getBody(fl)))
+    @test le isa CC.LambdaExpr
+    cls = CC.getLambdaClass(le)
+    inits = [CC.getCaptureInit(le, i) for i in 0:(CC.getNumCaptures(le) - 1)]
+    le2 = CC.LambdaExpr(ctx, cls, CC.getIntroducerRange(le), CC.getCaptureDefault(le),
+                        CC.getCaptureDefaultLoc(le), CC.hasExplicitParameters(le),
+                        CC.hasExplicitResultType(le), inits, CC.getEndLoc(le), false)
+    @test CC.getStmtClassName(le2) == "LambdaExpr"
+    @test CC.getLambdaClass(le2).ptr == cls.ptr
+    @test CC.getNumCaptures(le2) == CC.getNumCaptures(le)
+    @test CC.getCaptureInit(le2, 0).ptr == inits[1].ptr
+    @test CC.getCaptureDefault(le2) == CC.getCaptureDefault(le)
+    @test CC.getCaptureDefaultLoc(le2).ptr == CC.getCaptureDefaultLoc(le).ptr
+    # the body is copied straight out of the closure's call operator
+    @test CC.getBody(le2).ptr == CC.getBody(le).ptr
+    # the initializer count is checked against the closure's own capture count
+    @test_throws AssertionError CC.LambdaExpr(ctx, cls, CC.getIntroducerRange(le),
+                                              CC.getCaptureDefault(le),
+                                              CC.getCaptureDefaultLoc(le), false, false,
+                                              CC.Expr_[], CC.getEndLoc(le), false)
+
+    # ---- CUDAKernelCallExpr::Create and its configuration call ----------------------
+    @test f(I, "oq_caller")
+    fc = CC.FunctionDecl(get_decl(f).ptr)
+    cfg = _find_node(CC.CallExpr, CC.resolve(CC.getBody(fc)))
+    @test cfg isa CC.CallExpr
+    kce = CC.CUDAKernelCallExpr(ctx, op, cfg, [op], intty, vk, loc, 0, 0)
+    @test CC.getStmtClassName(kce) == "CUDAKernelCallExpr"
+    @test CC.getConfig(kce).ptr == cfg.ptr
+    @test CC.getNumArgs(kce) == 1
+    @test CC.getArg(kce, 0).ptr == op.ptr
+    @test CC.getCallee(kce).ptr == op.ptr
+    @test CC.getRParenLoc(kce).ptr == loc.ptr
+
+    # ---- OverloadExpr::find: the overload set behind an overload-typed expression ----
+    @test f(I, "oq_call")
+    ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
+    body = CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+    ule = _find_node(CC.UnresolvedLookupExpr, body)
+    @test ule isa CC.UnresolvedLookupExpr
+    found, address_of, member_pointer = CC.find(ule)
+    @test found.ptr == ule.ptr
+    @test CC.resolve(found) isa CC.UnresolvedLookupExpr
+    @test address_of == false
+    @test member_pointer == false
+    # only an expression of the overload placeholder type may be searched
+    @test_throws AssertionError CC.find(op)
+
+    # ---- CXXParenListInitExpr::updateDependence -------------------------------------
+    ple = CC.CXXParenListInitExpr(ctx, [op], intty, 1, loc, loc, loc)
+    @test CC.getStmtClassName(ple) == "CXXParenListInitExpr"
+    dependent = CC.isValueDependent(ple)
+    @test CC.updateDependence(ple) === nothing
+    @test CC.isValueDependent(ple) == dependent
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Qualifier source locations: NestedNameSpecifierLoc on the qualified expressions" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    CC.parse(I, """
+    namespace nq_ns { int nq_fn(int); int nq_fn(double); }
+    struct NQBase { int qm; };
+    template <class T> int nq_dsme(T t) { return t.NQBase::qm; }
+    template <class T> int nq_dsdref() { return T::value; }
+    template <class T> int nq_ule(T t) { return nq_ns::nq_fn(t); }
+    typedef int NQInt;
+    void nq_pdtor(NQInt *p) { p->NQInt::~NQInt(); }
+    """)
+
+    function tpl_body(name)
+        @test f(I, name)
+        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+    end
+
+    # ---- a class-typed qualifier carries a TypeLoc: `t.NQBase::qm` ----
+    dsme = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("nq_dsme"))
+    @test dsme isa CC.CXXDependentScopeMemberExpr
+    ql = CC.getQualifierLoc(dsme)
+    @test ql isa CC.NestedNameSpecifierLoc
+    @test ql.ptr != C_NULL
+    @test CC.hasQualifier(ql) == true
+    nns = CC.getNestedNameSpecifier(ql)
+    @test nns isa CC.NestedNameSpecifier
+    @test nns.ptr == CC.getQualifier(dsme).ptr   # the same specifier, now with locations
+    @test CC.getSourceRange(ql) isa CC.SourceRange
+    @test CC.getSourceRange(ql).begin_loc.ptr != C_NULL
+    @test CC.getLocalSourceRange(ql) isa CC.SourceRange
+    @test CC.getBeginLoc(ql) isa CC.SourceLocation
+    @test CC.getBeginLoc(ql).ptr == CC.getSourceRange(ql).begin_loc.ptr
+    @test CC.getEndLoc(ql) isa CC.SourceLocation
+    @test CC.getEndLoc(ql).ptr == CC.getSourceRange(ql).end_loc.ptr
+    @test CC.getLocalBeginLoc(ql) isa CC.SourceLocation
+    @test CC.getLocalBeginLoc(ql).ptr == CC.getLocalSourceRange(ql).begin_loc.ptr
+    @test CC.getLocalEndLoc(ql) isa CC.SourceLocation
+    @test CC.getLocalEndLoc(ql).ptr == CC.getLocalSourceRange(ql).end_loc.ptr
+
+    # `NQBase` is written at global scope, so this one component has an empty prefix
+    pre = CC.getPrefix(ql)
+    @test pre isa CC.NestedNameSpecifierLoc
+    @test CC.hasQualifier(pre) == false
+    @test CC.getNestedNameSpecifier(pre).ptr == C_NULL
+    @test CC.getSourceRange(pre) isa CC.SourceRange   # an empty box is a legal value
+    CC.dispose(pre)
+
+    # getTypeLoc is defined only for the two type-naming kinds, and which kind clang records
+    # for a qualifier inside an uninstantiated template is its business — so branch on the
+    # kind actually present and check that the wrapper's gate agrees with it either way.
+    kq = CC.getKind(nns)
+    @test kq isa CC.LibClangEx.CXNestedNameSpecifierKind
+    if kq == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec ||
+       kq == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpecWithTemplate
+        tl = CC.getTypeLoc(ql)
+        @test tl isa CC.TypeLoc
+        @test tl.ptr != C_NULL
+        @test CC.isNull(tl) isa Bool
+        @test CC.getType(tl) isa CC.QualType
+        CC.dispose(tl)
+    else
+        @test_throws AssertionError CC.getTypeLoc(ql)
+    end
+    CC.dispose(ql)
+
+    # ---- a dependent `T::` qualifier is always written ----
+    ds = _find_node(CC.DependentScopeDeclRefExpr, tpl_body("nq_dsdref"))
+    @test ds isa CC.DependentScopeDeclRefExpr
+    if ds isa CC.DependentScopeDeclRefExpr
+        dql = CC.getQualifierLoc(ds)
+        @test dql isa CC.NestedNameSpecifierLoc
+        @test CC.hasQualifier(dql) == true
+        @test CC.getNestedNameSpecifier(dql).ptr == CC.getQualifier(ds).ptr
+        @test CC.getLocalSourceRange(dql) isa CC.SourceRange
+        CC.dispose(dql)
+    end
+
+    # ---- a namespace qualifier names no type, so getTypeLoc rejects it ----
+    ule = _find_node(CC.UnresolvedLookupExpr, tpl_body("nq_ule"))
+    @test ule isa CC.UnresolvedLookupExpr
+    if ule isa CC.UnresolvedLookupExpr
+        # the OverloadExpr-declared accessor, reached from the subclass carrier
+        uql = CC.getQualifierLoc(ule)
+        @test uql isa CC.NestedNameSpecifierLoc
+        @test CC.hasQualifier(uql) == true
+        ku = CC.getKind(CC.getNestedNameSpecifier(uql))
+        @test ku isa CC.LibClangEx.CXNestedNameSpecifierKind
+        @test ku != CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec
+        @test ku != CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpecWithTemplate
+        @test_throws AssertionError CC.getTypeLoc(uql)
+        CC.dispose(uql)
+    end
+
+    # ---- the pseudo-destructor's own hasQualifier and its location box agree ----
+    @test f(I, "nq_pdtor")
+    pbody = CC.resolve(CC.getBody(CC.FunctionDecl(first(CC.get_decls(f)).ptr)))
+    pd = _find_node(CC.CXXPseudoDestructorExpr, pbody)
+    @test pd isa CC.CXXPseudoDestructorExpr
+    if pd isa CC.CXXPseudoDestructorExpr
+        pql = CC.getQualifierLoc(pd)
+        @test pql isa CC.NestedNameSpecifierLoc
+        @test CC.hasQualifier(pql) == CC.hasQualifier(pd)
+        @test CC.getSourceRange(pql) isa CC.SourceRange
+        if CC.hasQualifier(pql)
+            @test CC.getLocalSourceRange(pql) isa CC.SourceRange
+        else
+            @test_throws AssertionError CC.getLocalSourceRange(pql)
+        end
+        CC.dispose(pql)
+    end
+
+    dispose(f)
+    dispose(I)
+
+    # ---- an unqualified MS property reference yields an empty location ----
+    Ims = create_interpreter(["-fms-extensions"])
+    fms = DeclFinder(Ims)
+    CC.parse(Ims, """
+    struct NQMS {
+      int get_x();
+      void put_x(int);
+      __declspec(property(get = get_x, put = put_x)) int x;
+    };
+    int nq_ms(NQMS *p) { return p->x; }
+    """)
+    @test fms(Ims, "nq_ms")
+    msb = CC.resolve(CC.getBody(CC.FunctionDecl(first(CC.get_decls(fms)).ptr)))
+    mp = _find_node(CC.MSPropertyRefExpr, msb)
+    @test mp isa CC.MSPropertyRefExpr
+    if mp isa CC.MSPropertyRefExpr
+        mql = CC.getQualifierLoc(mp)
+        @test mql isa CC.NestedNameSpecifierLoc
+        @test mql.ptr != C_NULL
+        @test CC.hasQualifier(mql) == false          # `p->x` is written unqualified
+        @test CC.getBeginLoc(mql) isa CC.SourceLocation
+        @test CC.getEndLoc(mql) isa CC.SourceLocation
+        @test_throws AssertionError CC.getLocalBeginLoc(mql)
+        @test_throws AssertionError CC.getLocalEndLoc(mql)
+        @test_throws AssertionError CC.getTypeLoc(mql)
+        mpre = CC.getPrefix(mql)                     # an empty prefix walk terminates
+        @test CC.hasQualifier(mpre) == false
+        CC.dispose(mpre)
+        CC.dispose(mql)
+    end
+
+    dispose(fms)
+    dispose(Ims)
+end
+
+@testset "ExprCXX: dependent-name and overload-set builders" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    CC.parse(I, """
+    struct CCSQ { void sm(int); void sm(double); };
+    int cc_s_free(int);
+    int cc_s_free(double);
+    template <class U> int cc_s_tf(U);
+    template <class T> int cc_s_dsdref() { return T::value; }
+    template <class T> int cc_s_dsdref_t() { return T::template gg<int>(); }
+    template <class T> int cc_s_dsme(T t) { return t.field; }
+    template <class T> int cc_s_dsme_t(T t) { return t.template get<int>(); }
+    template <class T> int cc_s_ule(T t) { return cc_s_free(t); }
+    template <class T> int cc_s_ule_t(T t) { return cc_s_tf<int>(t); }
+    template <class T> void cc_s_ume(T u) { CCSQ q; q.sm(u); }
+    auto cc_s_lambda(int c) { return [c](int y) { return c + y; }; }
+    """)
+    ctx = CC.getASTContext(CC.get_instance(I))
+
+    function tpl_body(name)
+        @test f(I, name)
+        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+    end
+
+    # ---- copyTemplateArgumentsInto on the three dependent-name carriers ----
+    ds_t = _find_node(CC.DependentScopeDeclRefExpr, tpl_body("cc_s_dsdref_t"))
+    @test ds_t isa CC.DependentScopeDeclRefExpr
+    li = CC.TemplateArgumentListInfo(CC.getLAngleLoc(ds_t), CC.getRAngleLoc(ds_t))
+    @test CC.size(li) == 0
+    CC.copyTemplateArgumentsInto(ds_t, li)
+    @test CC.size(li) == CC.getNumTemplateArgs(ds_t)
+    @test CC.size(li) == 1                      # the `<int>` this test wrote
+    CC.dispose(li)
+
+    dsme_t = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("cc_s_dsme_t"))
+    @test dsme_t isa CC.CXXDependentScopeMemberExpr
+    li2 = CC.TemplateArgumentListInfo(CC.getLAngleLoc(dsme_t), CC.getRAngleLoc(dsme_t))
+    CC.copyTemplateArgumentsInto(dsme_t, li2)
+    @test CC.size(li2) == CC.getNumTemplateArgs(dsme_t)
+    CC.dispose(li2)
+
+    ule_t = _find_node(CC.UnresolvedLookupExpr, tpl_body("cc_s_ule_t"))
+    @test ule_t isa CC.UnresolvedLookupExpr
+    li3 = CC.TemplateArgumentListInfo(CC.getLAngleLoc(ule_t), CC.getRAngleLoc(ule_t))
+    CC.copyTemplateArgumentsInto(ule_t, li3)
+    @test CC.size(li3) == CC.getNumTemplateArgs(ule_t)
+
+    # a name written without an explicit `<...>` leaves the builder untouched
+    ule = _find_node(CC.UnresolvedLookupExpr, tpl_body("cc_s_ule"))
+    @test ule isa CC.UnresolvedLookupExpr
+    li4 = CC.TemplateArgumentListInfo(CC.getLAngleLoc(ule), CC.getRAngleLoc(ule))
+    CC.copyTemplateArgumentsInto(ule, li4)
+    @test CC.size(li4) == 0
+    CC.dispose(li4)
+
+    # ---- DependentScopeDeclRefExpr::Create: rebuild `T::value` from its own parts ----
+    ds = _find_node(CC.DependentScopeDeclRefExpr, tpl_body("cc_s_dsdref"))
+    @test ds isa CC.DependentScopeDeclRefExpr
+    q = CC.getQualifierLoc(ds)
+    @test CC.hasQualifier(q)
+    ni = CC.getNameInfo(ds)
+    built = CC.DependentScopeDeclRefExpr(ctx, q, CC.getTemplateKeywordLoc(ds), ni)
+    @test built isa CC.DependentScopeDeclRefExpr
+    @test built.ptr != C_NULL
+    @test CC.getDeclName(built).ptr == CC.getDeclName(ds).ptr
+    @test CC.getQualifier(built).ptr == CC.getQualifier(ds).ptr
+    @test CC.getNumTemplateArgs(built) == 0
+    CC.dispose(ni)
+    CC.dispose(q)
+
+    # ---- CXXDependentScopeMemberExpr::Create: rebuild `t.field` ----
+    dsme = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("cc_s_dsme"))
+    @test dsme isa CC.CXXDependentScopeMemberExpr
+    q2 = CC.getQualifierLoc(dsme)
+    ni2 = CC.getMemberNameInfo(dsme)
+    built2 = CC.CXXDependentScopeMemberExpr(ctx, CC.getBase(dsme), CC.getBaseType(dsme), false,
+                                            CC.getOperatorLoc(dsme), q2,
+                                            CC.getTemplateKeywordLoc(dsme), nothing, ni2)
+    @test built2 isa CC.CXXDependentScopeMemberExpr
+    @test built2.ptr != C_NULL
+    @test CC.isArrow(built2) == false                    # the `false` this call passed
+    @test CC.isImplicitAccess(built2) == false           # a non-null base was passed
+    @test CC.getMember(built2).ptr == CC.getMember(dsme).ptr
+    @test CC.getNumTemplateArgs(built2) == 0
+    CC.dispose(ni2)
+    CC.dispose(q2)
+
+    # ---- UnresolvedLookupExpr::Create: rebuild the lookup of `cc_s_free` ----
+    n = Int(CC.getNumDecls(ule))
+    @test n >= 2                                          # cc_s_free(int) and cc_s_free(double)
+    decls = [CC.getDecl(ule, i) for i = 0:(n - 1)]
+    accs = [CC.getDeclAccess(ule, i) for i = 0:(n - 1)]
+    q3 = CC.getQualifierLoc(ule)
+    ni3 = CC.getNameInfo(ule)
+    built3 = CC.UnresolvedLookupExpr(ctx, nothing, q3, ni3, true, true, decls, accs)
+    @test built3 isa CC.UnresolvedLookupExpr
+    @test built3.ptr != C_NULL
+    @test Int(CC.getNumDecls(built3)) == n
+    @test CC.requiresADL(built3) == true                  # the `true` this call passed
+    @test CC.isOverloaded(built3) isa Bool
+    @test CC.getDecl(built3, 0).ptr == decls[1].ptr
+    @test CC.getNumTemplateArgs(built3) == 0
+    @test_throws AssertionError CC.UnresolvedLookupExpr(ctx, nothing, q3, ni3, true, true,
+                                                        CC.NamedDecl[],
+                                                        CC.LibClangEx.CXAccessSpecifier[])
+    @test_throws AssertionError CC.UnresolvedLookupExpr(ctx, nothing, q3, ni3, true, true,
+                                                        decls,
+                                                        CC.LibClangEx.CXAccessSpecifier[])
+    CC.dispose(ni3)
+    CC.dispose(q3)
+
+    # ---- the same builder with the written `<int>` copied out of `cc_s_tf<int>` ----
+    nt = Int(CC.getNumDecls(ule_t))
+    decls_t = [CC.getDecl(ule_t, i) for i = 0:(nt - 1)]
+    accs_t = [CC.getDeclAccess(ule_t, i) for i = 0:(nt - 1)]
+    q5 = CC.getQualifierLoc(ule_t)
+    ni5 = CC.getNameInfo(ule_t)
+    built5 = CC.UnresolvedLookupExpr(ctx, nothing, q5, CC.getTemplateKeywordLoc(ule_t), ni5,
+                                     true, li3, decls_t, accs_t, true)
+    @test built5 isa CC.UnresolvedLookupExpr
+    @test built5.ptr != C_NULL
+    @test Int(CC.getNumDecls(built5)) == nt
+    @test CC.hasExplicitTemplateArgs(built5) == true
+    @test Int(CC.getNumTemplateArgs(built5)) == Int(CC.size(li3))
+    CC.dispose(ni5)
+    CC.dispose(q5)
+    CC.dispose(li3)
+
+    # ---- UnresolvedMemberExpr::Create: rebuild the callee of `q.sm(u)` ----
+    ume = _find_node(CC.UnresolvedMemberExpr, tpl_body("cc_s_ume"))
+    @test ume isa CC.UnresolvedMemberExpr
+    nm = Int(CC.getNumDecls(ume))
+    @test nm >= 2                                         # sm(int) and sm(double)
+    mdecls = [CC.getDecl(ume, i) for i = 0:(nm - 1)]
+    maccs = [CC.getDeclAccess(ume, i) for i = 0:(nm - 1)]
+    q4 = CC.getQualifierLoc(ume)
+    ni4 = CC.getMemberNameInfo(ume)
+    built4 = CC.UnresolvedMemberExpr(ctx, CC.hasUnresolvedUsing(ume), CC.getBase(ume),
+                                     CC.getBaseType(ume), CC.isArrow(ume),
+                                     CC.getOperatorLoc(ume), q4,
+                                     CC.getTemplateKeywordLoc(ume), ni4, nothing, mdecls,
+                                     maccs)
+    @test built4 isa CC.UnresolvedMemberExpr
+    @test built4.ptr != C_NULL
+    @test Int(CC.getNumDecls(built4)) == nm
+    @test CC.isArrow(built4) == CC.isArrow(ume)
+    @test CC.isImplicitAccess(built4) == false            # a non-null base was passed
+    @test CC.getDecl(built4, 0).ptr == mdecls[1].ptr
+    CC.dispose(ni4)
+    CC.dispose(q4)
+
+    # ---- LambdaExpr capture ranges over the already-bound indexed accessors ----
+    @test f(I, "cc_s_lambda")
+    le = _find_node(CC.LambdaExpr, CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr))))
+    @test le isa CC.LambdaExpr
+    ncap = Int(CC.getNumCaptures(le))
+    nexp = Int(CC.getNumExplicitCaptures(le))
+    @test Int(CC.capture_size(le)) == ncap
+    @test length(CC.captures(le)) == ncap
+    @test all(c -> c isa CC.LambdaCapture, CC.captures(le))
+    @test length(CC.explicit_captures(le)) == nexp
+    @test length(CC.implicit_captures(le)) == ncap - nexp
+    @test [c.ptr for c in vcat(CC.explicit_captures(le), CC.implicit_captures(le))] ==
+          [c.ptr for c in CC.captures(le)]
+
+    dispose(f)
+    dispose(I)
+end

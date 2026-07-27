@@ -14,6 +14,7 @@
 #include "clang-c/Platform.h"
 #include "llvm-c/ExecutionEngine.h"
 #include "clang-ex/Basic/CXIdentifierTable.h"
+#include "clang-ex/AST/CXDeclBase.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
@@ -26,6 +27,11 @@ void clang_TranslationUnitDecl_setAnonymousNamespace(CXTranslationUnitDecl TUD,
                                                      CXNamespaceDecl ND);
 
 CXTranslationUnitDecl clang_TranslationUnitDecl_Create(CXASTContext C);
+
+// The Decl::Kind test behind isa<TranslationUnitDecl>, reading the kind alone with no
+// declaration in hand: pair it with clang_DeclContext_getDeclKind to classify a context
+// before crossing a castFromDeclContext pivot.
+bool clang_TranslationUnitDecl_classofKind(CXDeclKind K);
 
 // TranslationUnitDecl Cast
 CXDeclContext clang_TranslationUnitDecl_castToDeclContext(CXTranslationUnitDecl TUD);
@@ -45,6 +51,9 @@ CXPragmaMSCommentKind clang_PragmaCommentDecl_getCommentKind(CXPragmaCommentDecl
 
 const char *clang_PragmaCommentDecl_getArg(CXPragmaCommentDecl PCD);
 
+// The Decl::Kind test behind isa<PragmaCommentDecl> (as above).
+bool clang_PragmaCommentDecl_classofKind(CXDeclKind K);
+
 // PragmaDetectMismatchDecl
 CXPragmaDetectMismatchDecl clang_PragmaDetectMismatchDecl_Create(CXASTContext C,
                                                                  CXTranslationUnitDecl DC,
@@ -60,9 +69,15 @@ const char *clang_PragmaDetectMismatchDecl_getName(CXPragmaDetectMismatchDecl PD
 
 const char *clang_PragmaDetectMismatchDecl_getValue(CXPragmaDetectMismatchDecl PDMD);
 
+// The Decl::Kind test behind isa<PragmaDetectMismatchDecl> (as above).
+bool clang_PragmaDetectMismatchDecl_classofKind(CXDeclKind K);
+
 // ExternCContextDecl
 CXExternCContextDecl clang_ExternCContextDecl_Create(CXASTContext C,
                                                      CXTranslationUnitDecl TU);
+
+// The Decl::Kind test behind isa<ExternCContextDecl> (as above).
+bool clang_ExternCContextDecl_classofKind(CXDeclKind K);
 
 // ExternCContextDecl Cast
 CXDeclContext clang_ExternCContextDecl_castToDeclContext(CXExternCContextDecl ECD);
@@ -144,6 +159,11 @@ CXNamedDecl clang_NamedDecl_getMostRecentDecl(CXNamedDecl ND);
 // getObjCFStringFormattingFamily
 CXObjCStringFormatFamily clang_NamedDecl_getObjCFStringFormattingFamily(CXNamedDecl ND);
 
+// The Decl::Kind range test behind isa<NamedDecl>, reading the kind alone with no
+// declaration in hand: pair it with clang_DeclContext_getDeclKind to classify a
+// context before crossing a castFromDeclContext pivot.
+bool clang_NamedDecl_classofKind(CXDeclKind K);
+
 // NamedDecl Cast
 CXTypeDecl clang_NamedDecl_castToTypeDecl(CXNamedDecl ND);
 
@@ -176,6 +196,9 @@ void clang_LabelDecl_setMSAsmLabel(CXLabelDecl LD, const char *Name);
 const char *clang_LabelDecl_getMSAsmLabel(CXLabelDecl LD);
 
 void clang_LabelDecl_setMSAsmLabelResolved(CXLabelDecl LD);
+
+// The Decl::Kind test behind isa<LabelDecl> (as above).
+bool clang_LabelDecl_classofKind(CXDeclKind K);
 
 // NamespaceDecl
 // CXNamespaceDecl clang_NamespaceDecl_Create(CXASTContext C, CXDeclContext DC, bool Inline,
@@ -226,6 +249,9 @@ void clang_NamespaceDecl_setLocStart(CXNamespaceDecl ND, CXSourceLocation_ Loc);
 
 void clang_NamespaceDecl_setRBraceLoc(CXNamespaceDecl ND, CXSourceLocation_ Loc);
 
+// The Decl::Kind test behind isa<NamespaceDecl> (as above).
+bool clang_NamespaceDecl_classofKind(CXDeclKind K);
+
 // NamespaceDecl Cast
 CXDeclContext clang_NamespaceDecl_castToDeclContext(CXNamespaceDecl ND);
 
@@ -241,6 +267,9 @@ bool clang_ValueDecl_isWeak(CXValueDecl VD);
 bool clang_ValueDecl_isInitCapture(CXValueDecl VD);
 
 CXVarDecl clang_ValueDecl_getPotentiallyDecomposedVarDecl(CXValueDecl VD);
+
+// The Decl::Kind range test behind isa<ValueDecl> (as above).
+bool clang_ValueDecl_classofKind(CXDeclKind K);
 
 // DeclaratorDecl
 CXTypeSourceInfo clang_DeclaratorDecl_getTypeSourceInfo(CXDeclaratorDecl DD);
@@ -261,6 +290,11 @@ CXNestedNameSpecifier clang_DeclaratorDecl_getQualifier(CXDeclaratorDecl DD);
 
 // getQualifierLoc
 // setQualifierInfo
+
+// The extent of getQualifierLoc(). NestedNameSpecifierLoc has no handle of its
+// own, so it crosses as its two parts (MARSHALLING.md section 7): the qualifier
+// through getQualifier, its source range here. Invalid when unqualified.
+CXSourceRange_ clang_DeclaratorDecl_getQualifierRange(CXDeclaratorDecl DD);
 
 CXExpr clang_DeclaratorDecl_getTrailingRequiresClause(CXDeclaratorDecl DD);
 
@@ -284,6 +318,9 @@ void clang_DeclaratorDecl_setTemplateParameterListsInfo(CXDeclaratorDecl DD, CXA
 CXSourceLocation_ clang_DeclaratorDecl_getTypeSpecStartLoc(CXDeclaratorDecl DD);
 
 CXSourceLocation_ clang_DeclaratorDecl_getTypeSpecEndLoc(CXDeclaratorDecl DD);
+
+// The Decl::Kind range test behind isa<DeclaratorDecl> (as above).
+bool clang_DeclaratorDecl_classofKind(CXDeclKind K);
 
 // VarDecl
 typedef enum CXVarDecl_InitializationStyle {
@@ -518,6 +555,9 @@ bool clang_VarDecl_hasFlexibleArrayInit(CXVarDecl VD, CXASTContext Ctx);
 // CharUnits crossing in bytes.
 int64_t clang_VarDecl_getFlexibleArrayInitChars(CXVarDecl VD, CXASTContext Ctx);
 
+// The Decl::Kind range test behind isa<VarDecl> (as above).
+bool clang_VarDecl_classofKind(CXDeclKind K);
+
 // ImplicitParamDecl
 typedef enum CXImplicitParamKind : unsigned {
   CXImplicitParamKind_ObjCSelf,
@@ -537,6 +577,9 @@ CXImplicitParamDecl clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext
 CXImplicitParamDecl clang_ImplicitParamDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
 CXImplicitParamKind clang_ImplicitParamDecl_getParameterKind(CXImplicitParamDecl IPD);
+
+// The Decl::Kind test behind isa<ImplicitParamDecl> (as above).
+bool clang_ImplicitParamDecl_classofKind(CXDeclKind K);
 
 // ParmVarDecl
 CXParmVarDecl clang_ParmVarDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -623,6 +666,9 @@ void clang_ParmVarDecl_setHasInheritedDefaultArg(CXParmVarDecl PVD, bool I);
 CXQualType clang_ParmVarDecl_getOriginalType(CXParmVarDecl PVD);
 
 void clang_ParmVarDecl_setOwningFunction(CXParmVarDecl PVD, CXDeclContext FD);
+
+// The Decl::Kind test behind isa<ParmVarDecl> (as above).
+bool clang_ParmVarDecl_classofKind(CXDeclKind K);
 
 // MultiVersionKind
 typedef enum CXMultiVersionKind {
@@ -1012,6 +1058,9 @@ unsigned clang_FunctionDecl_getMemoryFunctionKind(CXFunctionDecl FD);
 
 unsigned clang_FunctionDecl_getODRHash(CXFunctionDecl FD);
 
+// The Decl::Kind range test behind isa<FunctionDecl> (as above).
+bool clang_FunctionDecl_classofKind(CXDeclKind K);
+
 // FunctionDecl Cast
 CXDeclContext clang_FunctionDecl_castToDeclContext(CXFunctionDecl FD);
 
@@ -1073,6 +1122,9 @@ CXSourceRange_ clang_FieldDecl_getSourceRange(CXFieldDecl FD);
 
 CXFieldDecl clang_FieldDecl_getCanonicalDecl(CXFieldDecl FD);
 
+// The Decl::Kind range test behind isa<FieldDecl> (as above).
+bool clang_FieldDecl_classofKind(CXDeclKind K);
+
 // EnumConstantDecl
 CXEnumConstantDecl clang_EnumConstantDecl_Create(CXASTContext C, CXEnumDecl DC,
                                                  CXSourceLocation_ L, CXIdentifierInfo Id,
@@ -1106,6 +1158,9 @@ CXEnumConstantDecl clang_EnumConstantDecl_getCanonicalDecl(CXEnumConstantDecl EC
 // helper
 long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD);
 
+// The Decl::Kind test behind isa<EnumConstantDecl> (as above).
+bool clang_EnumConstantDecl_classofKind(CXDeclKind K);
+
 // IndirectFieldDecl
 // The chain is a (buffer, count) pair of CXNamedDecl handles. clang stores the
 // array by reference, so the shim copies it into ASTContext-arena memory first.
@@ -1128,6 +1183,9 @@ CXVarDecl clang_IndirectFieldDecl_getVarDecl(CXIndirectFieldDecl IFD);
 
 CXIndirectFieldDecl clang_IndirectFieldDecl_getCanonicalDecl(CXIndirectFieldDecl IFD);
 
+// The Decl::Kind test behind isa<IndirectFieldDecl> (as above).
+bool clang_IndirectFieldDecl_classofKind(CXDeclKind K);
+
 // TypeDecl
 CXType_ clang_TypeDecl_getTypeForDecl(CXTypeDecl TD);
 
@@ -1138,6 +1196,9 @@ CXSourceLocation_ clang_TypeDecl_getBeginLoc(CXTypeDecl TD);
 void clang_TypeDecl_setLocStart(CXTypeDecl TD, CXSourceLocation_ Loc);
 
 CXSourceRange_ clang_TypeDecl_getSourceRange(CXTypeDecl TD);
+
+// The Decl::Kind range test behind isa<TypeDecl> (as above).
+bool clang_TypeDecl_classofKind(CXDeclKind K);
 
 // TypedefNameDecl
 bool clang_TypedefNameDecl_isModed(CXTypedefNameDecl TND);
@@ -1160,6 +1221,9 @@ CXTagDecl clang_TypedefNameDecl_getAnonDeclWithTypedefName(CXTypedefNameDecl TND
 
 bool clang_TypedefNameDecl_isTransparentTag(CXTypedefNameDecl TND);
 
+// The Decl::Kind range test behind isa<TypedefNameDecl> (as above).
+bool clang_TypedefNameDecl_classofKind(CXDeclKind K);
+
 // TypedefDecl
 CXTypedefDecl clang_TypedefDecl_Create(CXASTContext C, CXDeclContext DC,
                                        CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
@@ -1168,6 +1232,9 @@ CXTypedefDecl clang_TypedefDecl_Create(CXASTContext C, CXDeclContext DC,
 CXTypedefDecl clang_TypedefDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
 CXSourceRange_ clang_TypedefDecl_getSourceRange(CXTypedefDecl TD);
+
+// The Decl::Kind test behind isa<TypedefDecl> (as above).
+bool clang_TypedefDecl_classofKind(CXDeclKind K);
 
 // TypeAliasDecl
 CXTypeAliasDecl clang_TypeAliasDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -1183,6 +1250,9 @@ CXTypeAliasTemplateDecl clang_TypeAliasDecl_getDescribedAliasTemplate(CXTypeAlia
 
 void clang_TypeAliasDecl_setDescribedAliasTemplate(CXTypeAliasDecl TAD,
                                                    CXTypeAliasTemplateDecl TAT);
+
+// The Decl::Kind test behind isa<TypeAliasDecl> (as above).
+bool clang_TypeAliasDecl_classofKind(CXDeclKind K);
 
 // TagDecl
 CXSourceRange_ clang_TagDecl_getBraceRange(CXTagDecl TD);
@@ -1257,6 +1327,10 @@ CXNestedNameSpecifier clang_TagDecl_getQualifier(CXTagDecl TD);
 // getQualifierLoc
 // setQualifierInfo
 
+// The extent of getQualifierLoc() (MARSHALLING.md section 7, as above). Invalid
+// when the tag name is written without a nested-name-specifier.
+CXSourceRange_ clang_TagDecl_getQualifierRange(CXTagDecl TD);
+
 unsigned clang_TagDecl_getNumTemplateParameterLists(CXTagDecl TD);
 
 CXTemplateParameterList clang_TagDecl_getTemplateParameterList(CXTagDecl TD, unsigned i);
@@ -1270,8 +1344,16 @@ void clang_TagDecl_setTemplateParameterListsInfo(CXTagDecl TD, CXASTContext C,
                                                  CXTemplateParameterList *TPLists,
                                                  unsigned NumTPLists);
 
+// The Decl::Kind range test behind isa<TagDecl> (as above); true for every
+// record and enum kind too.
+bool clang_TagDecl_classofKind(CXDeclKind K);
+
 // TagDecl Cast
 CXDeclContext clang_TagDecl_castToDeclContext(CXTagDecl TD);
+
+// castFromDeclContext is not wrapped: clang_DeclContext_castToTagDecl already
+// performs the same pivot with a null-safe dyn_cast_or_null, and two spellings of
+// one cast would collide on the Julia side (both want TagDecl(::DeclContext)).
 
 // EnumDecl
 CXEnumDecl clang_EnumDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -1360,6 +1442,9 @@ void clang_EnumDecl_setInstantiationOfMemberEnum(CXEnumDecl ED, CXEnumDecl ED2,
 unsigned clang_EnumDecl_getNumEnumerators(CXEnumDecl ED);
 
 void clang_EnumDecl_getEnumerators(CXEnumDecl ED, CXEnumConstantDecl *Buf);
+
+// The Decl::Kind test behind isa<EnumDecl> (as above).
+bool clang_EnumDecl_classofKind(CXDeclKind K);
 
 // RecordDecl
 typedef enum CXRecordArgPassingKind : unsigned {
@@ -1470,6 +1555,9 @@ void clang_RecordDecl_getFields(CXRecordDecl RD, CXFieldDecl *Buf);
 // walks the whole decl list; field_empty only compares field_begin/field_end.
 bool clang_RecordDecl_field_empty(CXRecordDecl RD);
 
+// The Decl::Kind range test behind isa<RecordDecl> (as above).
+bool clang_RecordDecl_classofKind(CXDeclKind K);
+
 // RecordDecl Cast
 CXClassTemplateSpecializationDecl
 clang_RecordDecl_castToClassTemplateSpecializationDecl(CXRecordDecl RD);
@@ -1494,6 +1582,9 @@ CXStringLiteral clang_FileScopeAsmDecl_getAsmString(CXFileScopeAsmDecl FSAD);
 
 void clang_FileScopeAsmDecl_setAsmString(CXFileScopeAsmDecl FSAD, CXStringLiteral Asm);
 
+// The Decl::Kind test behind isa<FileScopeAsmDecl> (as above).
+bool clang_FileScopeAsmDecl_classofKind(CXDeclKind K);
+
 // TopLevelStmtDecl
 CXTopLevelStmtDecl clang_TopLevelStmtDecl_Create(CXASTContext C, CXStmt Statement);
 
@@ -1509,6 +1600,9 @@ void clang_TopLevelStmtDecl_setStmt(CXTopLevelStmtDecl TLSD, CXStmt S);
 bool clang_TopLevelStmtDecl_isSemiMissing(CXTopLevelStmtDecl TLSD);
 
 void clang_TopLevelStmtDecl_setSemiMissing(CXTopLevelStmtDecl TLSD, bool Missing);
+
+// The Decl::Kind test behind isa<TopLevelStmtDecl> (as above).
+bool clang_TopLevelStmtDecl_classofKind(CXDeclKind K);
 
 // BlockDecl
 CXBlockDecl clang_BlockDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L);
@@ -1535,6 +1629,14 @@ unsigned clang_BlockDecl_getNumParams(CXBlockDecl BD);
 
 CXParmVarDecl clang_BlockDecl_getParamDecl(CXBlockDecl BD, unsigned i);
 
+// NewParamInfo is a caller buffer of NumParams CXParmVarDecl handles, rebuilt into
+// an ArrayRef and copied into the ASTContext arena; the buffer itself is not
+// retained. Installable exactly once — clang asserts unless the block still has no
+// parameter array, the state getNumParams reports as 0. NewParamInfo is unread when
+// NumParams is 0, and such a call leaves the block installable.
+void clang_BlockDecl_setParams(CXBlockDecl BD, CXParmVarDecl *NewParamInfo,
+                               unsigned NumParams);
+
 // setParams
 
 bool clang_BlockDecl_hasCaptures(CXBlockDecl BD);
@@ -1557,6 +1659,10 @@ bool clang_BlockDecl_isCaptureNonEscapingByref(CXBlockDecl BD, unsigned i);
 bool clang_BlockDecl_captureHasCopyExpr(CXBlockDecl BD, unsigned i);
 
 CXExpr clang_BlockDecl_getCaptureCopyExpr(CXBlockDecl BD, unsigned i);
+
+// BlockDecl::Capture::setCopyExpr on the capture at i < getNumCaptures — the one
+// field of the aggregate that is writable in place. A null E clears it.
+void clang_BlockDecl_setCaptureCopyExpr(CXBlockDecl BD, unsigned i, CXExpr E);
 
 bool clang_BlockDecl_capturesCXXThis(CXBlockDecl BD);
 
@@ -1582,6 +1688,16 @@ bool clang_BlockDecl_capturesVariable(CXBlockDecl BD, CXVarDecl var);
 
 // setCaptures
 
+// Captures cross as four parallel caller buffers of NumCaptures entries read in
+// lockstep — entry i of each builds one BlockDecl::Capture(variable, byRef, nested,
+// copyExpr). A null CopyExprs[i] means that capture has no copy expression. The
+// array is rebuilt in the ASTContext arena, replacing whatever captures BD already
+// had, and CapturesCXXThis is overwritten too. No buffer is read when NumCaptures
+// is 0.
+void clang_BlockDecl_setCaptures(CXBlockDecl BD, CXASTContext C, CXVarDecl *Variables,
+                                 bool *ByRefs, bool *Nesteds, CXExpr *CopyExprs,
+                                 unsigned NumCaptures, bool CapturesCXXThis);
+
 unsigned clang_BlockDecl_getBlockManglingNumber(CXBlockDecl BD);
 
 CXDecl clang_BlockDecl_getBlockManglingContextDecl(CXBlockDecl BD);
@@ -1589,6 +1705,9 @@ CXDecl clang_BlockDecl_getBlockManglingContextDecl(CXBlockDecl BD);
 void clang_BlockDecl_setBlockMangling(CXBlockDecl BD, unsigned Number, CXDecl Ctx);
 
 CXSourceRange_ clang_BlockDecl_getSourceRange(CXBlockDecl BD);
+
+// The Decl::Kind test behind isa<BlockDecl> (as above).
+bool clang_BlockDecl_classofKind(CXDeclKind K);
 
 // BlockDecl Cast
 CXDeclContext clang_BlockDecl_castToDeclContext(CXBlockDecl BD);
@@ -1623,6 +1742,9 @@ void clang_CapturedDecl_setContextParam(CXCapturedDecl CD, unsigned i,
 
 unsigned clang_CapturedDecl_getContextParamPosition(CXCapturedDecl CD);
 
+// The Decl::Kind test behind isa<CapturedDecl> (as above).
+bool clang_CapturedDecl_classofKind(CXDeclKind K);
+
 // CapturedDecl Cast
 CXDeclContext clang_CapturedDecl_castToDeclContext(CXCapturedDecl CD);
 
@@ -1645,6 +1767,9 @@ CXSourceLocation_ clang_ImportDecl_getIdentifierLoc(CXImportDecl ID, unsigned i)
 
 CXSourceRange_ clang_ImportDecl_getSourceRange(CXImportDecl ID);
 
+// The Decl::Kind test behind isa<ImportDecl> (as above).
+bool clang_ImportDecl_classofKind(CXDeclKind K);
+
 // ExportDecl
 CXExportDecl clang_ExportDecl_Create(CXASTContext C, CXDeclContext DC,
                                      CXSourceLocation_ ExportLoc);
@@ -1663,6 +1788,9 @@ CXSourceLocation_ clang_ExportDecl_getEndLoc(CXExportDecl ED);
 
 CXSourceRange_ clang_ExportDecl_getSourceRange(CXExportDecl ED);
 
+// The Decl::Kind test behind isa<ExportDecl> (as above).
+bool clang_ExportDecl_classofKind(CXDeclKind K);
+
 // ExportDecl Cast
 CXDeclContext clang_ExportDecl_castToDeclContext(CXExportDecl ED);
 
@@ -1672,6 +1800,9 @@ CXExportDecl clang_ExportDecl_castFromDeclContext(CXDeclContext DC);
 CXEmptyDecl clang_EmptyDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L);
 
 CXEmptyDecl clang_EmptyDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+
+// The Decl::Kind test behind isa<EmptyDecl> (as above).
+bool clang_EmptyDecl_classofKind(CXDeclKind K);
 
 // HLSLBufferDecl
 // A cbuffer/tbuffer declaration. Both factories allocate in the ASTContext
@@ -1696,6 +1827,9 @@ CXSourceLocation_ clang_HLSLBufferDecl_getRBraceLoc(CXHLSLBufferDecl BD);
 void clang_HLSLBufferDecl_setRBraceLoc(CXHLSLBufferDecl BD, CXSourceLocation_ L);
 
 bool clang_HLSLBufferDecl_isCBuffer(CXHLSLBufferDecl BD);
+
+// The Decl::Kind test behind isa<HLSLBufferDecl> (as above).
+bool clang_HLSLBufferDecl_classofKind(CXDeclKind K);
 
 // HLSLBufferDecl Cast
 CXDeclContext clang_HLSLBufferDecl_castToDeclContext(CXHLSLBufferDecl BD);

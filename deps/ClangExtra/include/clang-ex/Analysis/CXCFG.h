@@ -78,6 +78,15 @@ CXCFGElementKind clang_CFGBlock_getElementKind(CXCFGBlock B, unsigned I); // hel
 // CXXRecordTypedCall) — clang::CFGStmt::getStmt. // helper
 CXStmt clang_CFGBlock_getElementStmt(CXCFGBlock B, unsigned I);
 
+// Constructor / CXXRecordTypedCall kinds — the element's construction context, i.e.
+// where the object it builds is going to live (clang/Analysis/ConstructionContext.h,
+// wrapped in Analysis/CXConstructionContext.h). clang's builder only produces those
+// two element kinds when BuildOptions::AddRichCXXConstructors is set — see
+// clang_CFGBuildOptions_setAddRichCXXConstructors. The context is BORROWED from the
+// graph's arena and dies with clang_CFG_dispose. // helper
+CXConstructionContext clang_CFGBlock_getElementConstructionContext(CXCFGBlock B,
+                                                                   unsigned I);
+
 // Initializer kind — clang::CFGInitializer::getInitializer. // helper
 CXCXXCtorInitializer clang_CFGBlock_getElementInitializer(CXCFGBlock B, unsigned I);
 
@@ -107,6 +116,10 @@ CXCXXNewExpr clang_CFGBlock_getElementAllocatorExpr(CXCFGBlock B, unsigned I);
 
 // clang::CFGElement::dumpToStream rendered into a CXString. // helper
 CXString clang_CFGBlock_printElementAsString(CXCFGBlock B, unsigned I);
+
+// clang::CFGElement::dump — the rendering clang_CFGBlock_printElementAsString returns
+// as a string, written straight to llvm::errs() instead. // helper
+void clang_CFGBlock_dumpElement(CXCFGBlock B, unsigned I);
 
 // DeleteDtor kind — clang::CFGDeleteDtor::getDeleteExpr. // helper
 CXCXXDeleteExpr clang_CFGBlock_getElementDeleteExpr(CXCFGBlock B, unsigned I);
@@ -251,6 +264,13 @@ unsigned clang_CFGBlock_getBlockID(CXCFGBlock B);
 // The parent CFG; BORROWED — never pass it to clang_CFG_dispose.
 CXCFG clang_CFGBlock_getParent(CXCFGBlock B);
 
+// clang::CFGBlock::dump — clang::CFGBlock::print written straight to llvm::errs(),
+// with clang's terminal coloring when ShowColors is set. G labels the block's edges,
+// exactly as in clang_CFGBlock_printAsString. The zero-argument
+// clang::CFGBlock::dump() overload is not wrapped: it renders with a
+// default-constructed LangOptions rather than the translation unit's.
+void clang_CFGBlock_dump(CXCFGBlock B, CXCFG G, CXASTContext Ctx, bool ShowColors);
+
 // dump
 // clang::CFGBlock::print rendered into a CXString (no colors). // helper
 CXString clang_CFGBlock_printAsString(CXCFGBlock B, CXCFG G, CXASTContext Ctx);
@@ -287,6 +307,19 @@ CXString clang_CFGBlock_printAsOperandAsString(CXCFGBlock B);
 void clang_CFGBlock_addSuccessor(CXCFGBlock B, CXCFGBlock Succ, bool IsReachable);
 
 void clang_CFGBlock_appendStmt(CXCFGBlock B, CXStmt S);
+
+// clang::CFGBlock::appendConstructor. The BumpVectorContext is read from
+// B->getParent(), as for every other append in this section. CC must not be NULL —
+// clang's CFGConstructor constructor asserts it.
+void clang_CFGBlock_appendConstructor(CXCFGBlock B, CXCXXConstructExpr CE,
+                                      CXConstructionContext CC);
+
+// clang::CFGBlock::appendCXXRecordTypedCall. PARTIAL: clang's CFGCXXRecordTypedCall
+// constructor asserts that E is an expression the CFG models as such (see
+// clang_CFGCXXRecordTypedCall_isCXXRecordTypedCall) and that CC is non-NULL and of
+// any kind other than NewAllocatedObject; the Julia wrapper restates both.
+void clang_CFGBlock_appendCXXRecordTypedCall(CXCFGBlock B, CXExpr E,
+                                             CXConstructionContext CC);
 
 void clang_CFGBlock_appendInitializer(CXCFGBlock B, CXCXXCtorInitializer Init);
 
@@ -342,6 +375,57 @@ bool clang_CFGBuildOptions_alwaysAdd(CXCFGBuildOptions BO, CXStmt S);
 void clang_CFGBuildOptions_setAlwaysAdd(CXCFGBuildOptions BO, CXStmtClass SC, bool Val);
 
 void clang_CFGBuildOptions_setAllAlwaysAdd(CXCFGBuildOptions BO);
+
+// Two more clang::CFG::BuildOptions fields, exposed as setters on the caller-owned
+// options object rather than as further clang_CFG_buildCFG parameters (that signature
+// is frozen ABI). AddRichCXXConstructors is what makes the builder emit Constructor /
+// CXXRecordTypedCall elements with a construction context attached;
+// MarkElidedCXXConstructors additionally records the elided-copy flavour of those
+// contexts. Both default to false, like every other BuildOptions boolean. // helper
+void clang_CFGBuildOptions_setAddRichCXXConstructors(CXCFGBuildOptions BO, bool Val);
+
+void clang_CFGBuildOptions_setMarkElidedCXXConstructors(CXCFGBuildOptions BO, bool Val);
+
+// The rest of clang::CFG::BuildOptions' booleans, exposed as getter/setter pairs on the
+// caller-owned options object rather than as further clang_CFG_buildCFG parameters (that
+// signature is frozen ABI). clang_CFG_buildCFGWithOptions copies the whole object and
+// then overwrites only the seven booleans it takes as parameters, so every field set
+// through these reaches the builder. Each maps onto the same-named clang field, and the
+// initial values are clang's own defaults: PruneTriviallyFalseEdges true, all the others
+// false. The two getters in the middle of the group (declaration order follows the class)
+// are the read-back for the two setters declared above. // helper
+bool clang_CFGBuildOptions_getPruneTriviallyFalseEdges(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setPruneTriviallyFalseEdges(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddEHEdges(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddEHEdges(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddStaticInitBranches(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddStaticInitBranches(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddCXXDefaultInitExprInCtors(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddCXXDefaultInitExprInCtors(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddCXXDefaultInitExprInAggregates(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddCXXDefaultInitExprInAggregates(CXCFGBuildOptions BO,
+                                                                bool Val);
+
+bool clang_CFGBuildOptions_getAddRichCXXConstructors(CXCFGBuildOptions BO);
+
+bool clang_CFGBuildOptions_getMarkElidedCXXConstructors(CXCFGBuildOptions BO);
+
+bool clang_CFGBuildOptions_getAddVirtualBaseBranches(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddVirtualBaseBranches(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getOmitImplicitValueInitializers(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setOmitImplicitValueInitializers(CXCFGBuildOptions BO, bool Val);
 
 // clang::CFG::buildCFG returns std::unique_ptr<CFG>; the wrapper releases it,
 // so the returned CFG is CALLER-OWNED — pair with clang_CFG_dispose. NULL when
@@ -425,6 +509,28 @@ unsigned clang_CFG_getNumSyntheticDeclStmts(CXCFG G); // helper
 CXDeclStmt clang_CFG_getSyntheticDeclStmtSource(CXCFG G, CXDeclStmt Synthetic); // helper
 // VisitBlockStmts (template callback — MARSHALLING.md §10)
 
+// The whole synthetic-DeclStmt map in one call — clang::CFG::synthetic_stmts as two
+// caller buffers filled in lockstep (MARSHALLING.md §6). SyntheticBuf and SourceBuf must
+// each hold N slots; min(N, clang_CFG_getNumSyntheticDeclStmts) pairs are written, and no
+// slot is ever NULL. llvm::DenseMap has no stable iteration order, so the order of the
+// pairs is unspecified — only the pairing of the two buffers at one index is meaningful,
+// which is why the by-key clang_CFG_getSyntheticDeclStmtSource stays the lookup path.
+// // helper
+void clang_CFG_getSyntheticDeclStmts(CXCFG G, CXDeclStmt *SyntheticBuf,
+                                     CXDeclStmt *SourceBuf, unsigned N);
+
+// clang::CFG::VisitBlockStmts, whose Callback template parameter MARSHALLING.md §10
+// keeps off the C boundary: the whole walk runs here and the visited statements come
+// back as one flat buffer (count+fill, MARSHALLING.md §6). It covers every
+// statement-family CFGElement (Statement, Constructor, CXXRecordTypedCall) of every
+// block, in block order and then element order — the same order a clang_CFG_getBlock /
+// clang_CFGBlock_getElementStmt double loop walks. The count is exact, Buf receives
+// min(N, count) statements, and no slot is ever NULL. One Stmt can appear more than
+// once when two blocks carry it. // helper
+unsigned clang_CFG_getNumBlockStmts(CXCFG G);
+
+void clang_CFG_getBlockStmts(CXCFG G, CXStmt *Buf, unsigned N); // helper
+
 unsigned clang_CFG_getNumBlockIDs(CXCFG G);
 
 // size (a pure renaming of getNumBlockIDs)
@@ -435,6 +541,10 @@ bool clang_CFG_isLinear(CXCFG G);
 
 // clang::CFG::print rendered into a CXString (no colors). // helper
 CXString clang_CFG_printAsString(CXCFG G, CXASTContext Ctx);
+
+// clang::CFG::dump — clang::CFG::print written straight to llvm::errs(), with clang's
+// terminal coloring when ShowColors is set.
+void clang_CFG_dump(CXCFG G, CXASTContext Ctx, bool ShowColors);
 
 // dump
 // getAllocator

@@ -1624,3 +1624,1424 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Expr FP-environment queries and StmtExpr/ChooseExpr/VAArgExpr setters" begin
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I,
+             """
+             double jfp_mix(double a, double b) {
+                 double s = a + b;                          // BinaryOperator (double)
+                 double n = -s;                             // UnaryOperator (double)
+                 int c = __builtin_choose_expr(1, 10, 20);  // ChooseExpr
+                 int g = ({ int t = c; t + 1; });           // StmtExpr
+                 unsigned long z = sizeof(int);             // UnaryExprOrTypeTraitExpr
+                 return s + n + c + g + z;
+             }
+             int jfp_va(int count, ...) {
+                 __builtin_va_list ap;
+                 __builtin_va_start(ap, count);
+                 int x = __builtin_va_arg(ap, int);         // VAArgExpr
+                 __builtin_va_end(ap);
+                 return x;
+             }
+             """)
+    ctx = CC.get_ast_context(I)
+    lo = CC.getLangOpts(ctx)
+
+    lookup = DeclFinder(I)
+    @test lookup(I, "jfp_mix")
+    mixfd = CC.FunctionDecl(get_decl(lookup).ptr)
+    mixnodes = CC.subtree(CC.getBody(mixfd))
+
+    bo = first(filter(n -> n isa CC.BinaryOperator, mixnodes))
+    uo = first(filter(n -> n isa CC.UnaryOperator, mixnodes))
+    uett = first(filter(n -> n isa CC.UnaryExprOrTypeTraitExpr, mixnodes))
+    che = first(filter(n -> n isa CC.ChooseExpr, mixnodes))
+    se = first(filter(n -> n isa CC.StmtExpr, mixnodes))
+
+    # ---- FP-environment queries ---------------------------------------------
+    # The driver decides the default -ffp-contract / FENV_ACCESS state and it differs
+    # across the CI hosts, so only the shape is asserted.
+    @test CC.isFPContractableWithinStatement(bo, lo) isa Bool
+    @test CC.isFEnvAccessOn(bo, lo) isa Bool
+    @test CC.isFPContractableWithinStatement(uo, lo) isa Bool
+    @test CC.isFEnvAccessOn(uo, lo) isa Bool
+
+    # ---- Setters: round-trip through the paired getters ----------------------
+    loc_a = CC.getBuiltinLoc(che)   # location of the __builtin_choose_expr token
+    loc_b = CC.getRParenLoc(che)    # its closing paren — a different valid location
+    @test loc_a.ptr != loc_b.ptr
+
+    # UnaryExprOrTypeTraitExpr::setOperatorLoc / setRParenLoc
+    CC.setOperatorLoc(uett, loc_b)
+    @test CC.getOperatorLoc(uett).ptr == loc_b.ptr
+    CC.setRParenLoc(uett, loc_a)
+    @test CC.getRParenLoc(uett).ptr == loc_a.ptr
+
+    # StmtExpr::setSubStmt / setLParenLoc / setRParenLoc
+    sub = CC.getSubStmt(se)
+    @test sub isa CC.CompoundStmt
+    CC.setSubStmt(se, sub)
+    @test CC.getSubStmt(se).ptr == sub.ptr
+    CC.setLParenLoc(se, loc_a)
+    @test CC.getLParenLoc(se).ptr == loc_a.ptr
+    CC.setRParenLoc(se, loc_b)
+    @test CC.getRParenLoc(se).ptr == loc_b.ptr
+
+    # ChooseExpr::setCond / setLHS / setRHS — swap the two arms, then restore
+    cond = CC.getCond(che)
+    lhs = CC.getLHS(che)
+    rhs = CC.getRHS(che)
+    CC.setLHS(che, rhs)
+    CC.setRHS(che, lhs)
+    @test CC.getLHS(che).ptr == rhs.ptr
+    @test CC.getRHS(che).ptr == lhs.ptr
+    CC.setLHS(che, lhs)
+    CC.setRHS(che, rhs)
+    CC.setCond(che, cond)
+    @test CC.getCond(che).ptr == cond.ptr
+    @test CC.getLHS(che).ptr == lhs.ptr
+
+    # ChooseExpr::setIsConditionTrue — the condition is the literal `1`, not dependent
+    @test !CC.isConditionDependent(che)
+    was = CC.isConditionTrue(che)
+    CC.setIsConditionTrue(che, !was)
+    @test CC.isConditionTrue(che) == !was
+    CC.setIsConditionTrue(che, was)
+    @test CC.isConditionTrue(che) == was
+
+    CC.setBuiltinLoc(che, loc_b)
+    @test CC.getBuiltinLoc(che).ptr == loc_b.ptr
+    CC.setRParenLoc(che, loc_a)
+    @test CC.getRParenLoc(che).ptr == loc_a.ptr
+
+    # ---- VAArgExpr setters ---------------------------------------------------
+    @test lookup(I, "jfp_va")
+    vafd = CC.FunctionDecl(get_decl(lookup).ptr)
+    va = first(filter(n -> n isa CC.VAArgExpr, CC.subtree(CC.getBody(vafd))))
+
+    vsub = CC.getSubExpr(va)
+    CC.setSubExpr(va, vsub)
+    @test CC.getSubExpr(va).ptr == vsub.ptr
+
+    ms = CC.isMicrosoftABI(va)
+    CC.setIsMicrosoftABI(va, !ms)
+    @test CC.isMicrosoftABI(va) == !ms
+    CC.setIsMicrosoftABI(va, ms)
+    @test CC.isMicrosoftABI(va) == ms
+
+    vti = CC.getWrittenTypeInfo(va)
+    CC.setWrittenTypeInfo(va, vti)
+    @test CC.getWrittenTypeInfo(va).ptr == vti.ptr
+    # the flag sharing the packed word survives the pointer write
+    @test CC.isMicrosoftABI(va) == ms
+
+    CC.setBuiltinLoc(va, loc_a)
+    @test CC.getBuiltinLoc(va).ptr == loc_a.ptr
+    CC.setRParenLoc(va, loc_b)
+    @test CC.getRParenLoc(va).ptr == loc_b.ptr
+
+    dispose(lookup)
+    dispose(I)
+end
+
+@testset "Expr subclasses: designated-update/compound-literal/ext-vector setters" begin
+    I = create_interpreter(["-std=gnu++20"])
+    CC.parse(I,
+             """
+             typedef float cc_k_f4 __attribute__((ext_vector_type(4)));
+             typedef int cc_k_i4 __attribute__((ext_vector_type(4)));
+             struct CCKQ { int a, b, c; };
+             struct CCKA { CCKQ q; };
+             struct CCKP { int x, y; };
+             CCKQ *cc_k_getQ();
+             int cc_k_all(int n, cc_k_f4 v) {
+                 CCKA a = { *cc_k_getQ(), .q.b = 3 };   // DesignatedInitUpdateExpr
+                 CCKP p = (CCKP){1, 2};                 // CompoundLiteralExpr
+                 int s = 0;
+                 s += a.q.b;                            // CompoundAssignOperator
+                 void *z = __null;                      // GNUNullExpr
+                 void *q = &&cc_k_lbl;                  // AddrLabelExpr
+                 const char *fn = __func__;             // PredefinedExpr
+                 float e = v.x;                         // ExtVectorElementExpr
+                 cc_k_i4 iv = __builtin_convertvector(v, cc_k_i4);  // ConvertVectorExpr
+                 int b = n ?: 30;                       // BinaryConditionalOperator + OVE
+             cc_k_lbl:
+                 return s + p.x + (int)e + iv.x + b + (int)(long)q + (int)(long)z + fn[0];
+             }
+             """)
+
+    lookup = DeclFinder(I)
+    @test lookup(I, "cc_k_all")
+    fd = CC.FunctionDecl(get_decl(lookup).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+
+    # ---- DesignatedInitUpdateExpr -------------------------------------------
+    # The DIUE lives in the semantic form of the initializer list; sweep the syntactic
+    # forms too so the search does not depend on which form the walk reached.
+    diues = CC.DesignatedInitUpdateExpr[]
+    append!(diues, filter(n -> n isa CC.DesignatedInitUpdateExpr, nodes))
+    for ile in filter(n -> n isa CC.InitListExpr, nodes)
+        syn = CC.getSyntacticForm(ile)
+        syn.ptr == C_NULL && continue
+        append!(diues, filter(n -> n isa CC.DesignatedInitUpdateExpr, CC.subtree(syn)))
+    end
+    @test !isempty(diues)
+    diue = first(diues)
+    diue_base = CC.getBase(diue)
+    @test diue_base isa CC.Expr_
+    @test diue_base.ptr != C_NULL
+    diue_upd = CC.getUpdater(diue)
+    @test diue_upd isa CC.InitListExpr
+    @test diue_upd.ptr != C_NULL
+    CC.setBase(diue, diue_base)
+    @test CC.getBase(diue).ptr == diue_base.ptr
+    CC.setUpdater(diue, diue_upd)
+    @test CC.getUpdater(diue).ptr == diue_upd.ptr
+
+    # ---- CompoundLiteralExpr -------------------------------------------------
+    cle = first(filter(n -> n isa CC.CompoundLiteralExpr, nodes))
+    cle_init = CC.getInitializer(cle)
+    cle_tsi = CC.getTypeSourceInfo(cle)
+    cle_lp = CC.getLParenLoc(cle)
+    cle_fs = CC.isFileScope(cle)
+    CC.setInitializer(cle, cle_init)
+    @test CC.getInitializer(cle).ptr == cle_init.ptr
+    CC.setTypeSourceInfo(cle, cle_tsi)
+    @test CC.getTypeSourceInfo(cle).ptr == cle_tsi.ptr
+    CC.setLParenLoc(cle, cle_lp)
+    @test CC.getLParenLoc(cle).ptr == cle_lp.ptr
+    CC.setFileScope(cle, !cle_fs)
+    @test CC.isFileScope(cle) == !cle_fs
+    CC.setFileScope(cle, cle_fs)
+    @test CC.isFileScope(cle) == cle_fs
+
+    # ---- CompoundAssignOperator ----------------------------------------------
+    cao = first(filter(n -> n isa CC.CompoundAssignOperator, nodes))
+    cao_lhs = CC.getComputationLHSType(cao)
+    cao_res = CC.getComputationResultType(cao)
+    CC.setComputationLHSType(cao, cao_lhs)
+    @test CC.getComputationLHSType(cao).ptr == cao_lhs.ptr
+    CC.setComputationResultType(cao, cao_res)
+    @test CC.getComputationResultType(cao).ptr == cao_res.ptr
+
+    # ---- AddrLabelExpr -------------------------------------------------------
+    al = first(filter(n -> n isa CC.AddrLabelExpr, nodes))
+    al_amp = CC.getAmpAmpLoc(al)
+    al_loc = CC.getLabelLoc(al)
+    al_lbl = CC.getLabel(al)
+    @test al_lbl.ptr != C_NULL
+    CC.setAmpAmpLoc(al, al_amp)
+    @test CC.getAmpAmpLoc(al).ptr == al_amp.ptr
+    CC.setLabelLoc(al, al_loc)
+    @test CC.getLabelLoc(al).ptr == al_loc.ptr
+    CC.setLabel(al, al_lbl)
+    @test CC.getLabel(al).ptr == al_lbl.ptr
+
+    # ---- ConvertVectorExpr ---------------------------------------------------
+    cve = first(filter(n -> n isa CC.ConvertVectorExpr, nodes))
+    cve_tsi = CC.getTypeSourceInfo(cve)
+    @test cve_tsi isa CC.TypeSourceInfo
+    CC.setTypeSourceInfo(cve, cve_tsi)
+    @test CC.getTypeSourceInfo(cve).ptr == cve_tsi.ptr
+
+    # ---- GNUNullExpr ---------------------------------------------------------
+    gn = first(filter(n -> n isa CC.GNUNullExpr, nodes))
+    gn_loc = CC.getTokenLocation(gn)
+    CC.setTokenLocation(gn, gn_loc)
+    @test CC.getTokenLocation(gn).ptr == gn_loc.ptr
+
+    # ---- PredefinedExpr ------------------------------------------------------
+    pde = first(filter(n -> n isa CC.PredefinedExpr, nodes))
+    pde_loc = CC.getLocation(pde)
+    CC.setLocation(pde, pde_loc)
+    @test CC.getLocation(pde).ptr == pde_loc.ptr
+
+    # ---- ExtVectorElementExpr ------------------------------------------------
+    eve = first(filter(n -> n isa CC.ExtVectorElementExpr, nodes))
+    eve_base = CC.getBase(eve)
+    eve_acc = CC.getAccessor(eve)
+    eve_loc = CC.getAccessorLoc(eve)
+    @test eve_base.ptr != C_NULL
+    @test eve_acc.ptr != C_NULL
+    CC.setBase(eve, eve_base)
+    @test CC.getBase(eve).ptr == eve_base.ptr
+    CC.setAccessor(eve, eve_acc)
+    @test CC.getAccessor(eve).ptr == eve_acc.ptr
+    CC.setAccessorLoc(eve, eve_loc)
+    @test CC.getAccessorLoc(eve).ptr == eve_loc.ptr
+
+    # ---- OpaqueValueExpr -----------------------------------------------------
+    # setIsUnique asserts a source expression exists; the `?:` opaque value has one.
+    bco = first(filter(n -> n isa CC.BinaryConditionalOperator, nodes))
+    ove = CC.getOpaqueValue(bco)
+    @test ove isa CC.OpaqueValueExpr
+    @test CC.getSourceExpr(ove).ptr != C_NULL
+    ove_uniq = CC.isUnique(ove)
+    CC.setIsUnique(ove, true)
+    @test CC.isUnique(ove) == true
+    CC.setIsUnique(ove, false)
+    @test CC.isUnique(ove) == false
+    CC.setIsUnique(ove, ove_uniq)
+    @test CC.isUnique(ove) == ove_uniq
+
+    dispose(lookup)
+    dispose(I)
+end
+
+@testset "Expr::Classification and the FP-feature accessors" begin
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I,
+             """
+             double cls_callee(double a);
+             double cls_probe(double a, double b) {
+                 double local = a + b;
+                 local = -local;
+                 return cls_callee(local);
+             }
+             """)
+    ctx = CC.get_ast_context(I)
+
+    lookup = DeclFinder(I)
+    @test lookup(I, "cls_probe")
+    fd = CC.FunctionDecl(get_decl(lookup).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+
+    bo = first(filter(n -> n isa CC.BinaryOperator, nodes))
+    uo = first(filter(n -> n isa CC.UnaryOperator, nodes))
+    ce = first(filter(n -> n isa CC.CallExpr, nodes))
+    dre = first(filter(n -> n isa CC.DeclRefExpr, nodes))
+
+    # ---- Expr::Classify — no modifiability verdict --------------------------
+    cl = CC.Classify(dre, ctx)
+    @test cl isa CC.Classification
+    @test CC.getKind(cl) isa CC.LibClangEx.CXClassification_Kinds
+    # The predicates partition on Kind: glvalue == lvalue|xvalue, prvalue is exactly the
+    # complement of glvalue, rvalue == xvalue|prvalue. Host-independent by construction.
+    @test CC.isGLValue(cl) == (CC.isLValue(cl) || CC.isXValue(cl))
+    @test CC.isPRValue(cl) == !CC.isGLValue(cl)
+    @test CC.isRValue(cl) == (CC.isXValue(cl) || CC.isPRValue(cl))
+    @test !CC.isModifiableTested(cl)
+    @test_throws AssertionError CC.getModifiable(cl)
+    @test_throws AssertionError CC.isModifiable(cl)
+    CC.dispose(cl)
+
+    # ---- Expr::ClassifyModifiable — verdict plus the blame location ---------
+    clm, badloc = CC.ClassifyModifiable(dre, ctx)
+    @test clm isa CC.Classification
+    @test badloc isa CC.SourceLocation
+    @test CC.isModifiableTested(clm)
+    @test CC.getModifiable(clm) isa CC.LibClangEx.CXClassification_ModifiableType
+    @test CC.isModifiable(clm) ==
+          (CC.getModifiable(clm) == CC.LibClangEx.CXClassification_CM_Modifiable)
+    @test CC.isGLValue(clm) == (CC.isLValue(clm) || CC.isXValue(clm))
+    CC.dispose(clm)
+
+    # ---- Classification::makeSimpleLValue — a fixed pair of enumerators -----
+    simple = CC.makeSimpleLValue()
+    @test simple isa CC.Classification
+    @test CC.getKind(simple) == CC.LibClangEx.CXClassification_CL_LValue
+    @test CC.isLValue(simple)
+    @test CC.isGLValue(simple)
+    @test !CC.isXValue(simple)
+    @test !CC.isPRValue(simple)
+    @test !CC.isRValue(simple)
+    @test CC.isModifiableTested(simple)
+    @test CC.getModifiable(simple) == CC.LibClangEx.CXClassification_CM_Modifiable
+    @test CC.isModifiable(simple)
+    CC.dispose(simple)
+
+    @test CC.isOBJCGCCandidate(dre, ctx) isa Bool
+
+    # ---- FPOptionsOverride opaque encodings --------------------------------
+    # Whether a node carries the trailing slot depends on the host's default FP
+    # settings, so both branches are covered and only the zero-encoding invariant is
+    # asserted for the slotless case.
+    @test CC.getFPFeatures(bo) isa Integer
+    if CC.hasStoredFPFeatures(bo)
+        @test CC.getStoredFPFeatures(bo) == CC.getFPFeatures(bo)
+    else
+        @test CC.getFPFeatures(bo) == 0
+        @test_throws AssertionError CC.getStoredFPFeatures(bo)
+    end
+
+    @test CC.getFPFeatures(ce) isa Integer
+    if CC.hasStoredFPFeatures(ce)
+        @test CC.getStoredFPFeatures(ce) == CC.getFPFeatures(ce)
+    else
+        @test CC.getFPFeatures(ce) == 0
+        @test_throws AssertionError CC.getStoredFPFeatures(ce)
+    end
+
+    @test CC.getFPOptionsOverride(uo) isa Integer
+    if CC.hasStoredFPFeatures(uo)
+        @test CC.getStoredFPFeatures(uo) == CC.getFPOptionsOverride(uo)
+    else
+        @test CC.getFPOptionsOverride(uo) == 0
+        @test_throws AssertionError CC.getStoredFPFeatures(uo)
+    end
+
+    dispose(lookup)
+    dispose(I)
+end
+
+@testset "expr-m: FP-in-effect / substituted evaluation / offsetof, init-list, designator setters" begin
+    LX = CC.LibClangEx
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I,
+             """
+             struct cc_m_pt { int x; int y; };
+             struct cc_m_inner { float f; double d; };
+             struct cc_m_outer { int i; cc_m_inner s[4]; };
+             constexpr int cc_m_double(int v) { return v * 2; }
+             constexpr int cc_m_seed = 21;
+             double cc_m_fn(double a, double b) {
+                 double local = a + b;
+                 double cast = (double)(int)local;
+                 int arr[3] = {1, 2, 3};
+                 cc_m_pt p = {.x = 4, .y = 5};
+                 unsigned long off = __builtin_offsetof(cc_m_outer, s[2].d);
+                 return local + cast + arr[0] + p.x + (double)off;
+             }
+             const char *cc_m_file(void) { return __builtin_FILE(); }
+             """)
+    ctx = CC.get_ast_context(I)
+    lookup = DeclFinder(I)
+
+    @test lookup(I, "cc_m_fn")
+    fd = CC.FunctionDecl(get_decl(lookup).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+    lang_opts = CC.getLangOpts(fd)
+
+    bo = first(filter(n -> n isa CC.BinaryOperator, nodes))
+    cse = first(filter(n -> n isa CC.CStyleCastExpr, nodes))
+    dre = first(filter(n -> n isa CC.DeclRefExpr, nodes))
+    il = first(filter(n -> n isa CC.IntegerLiteral, nodes))
+    ase = first(filter(n -> n isa CC.ArraySubscriptExpr, nodes))
+
+    # ---- Expr::getFPFeaturesInEffect — total for every expression -----------
+    @test CC.getFPFeaturesInEffect(bo, lang_opts) isa Integer
+    @test CC.getFPFeaturesInEffect(cse, lang_opts) isa Integer
+    # Nodes with no trailing override slot all read the same LangOptions defaults, so any
+    # two of them agree whatever the host's default FP settings are.
+    @test CC.getFPFeaturesInEffect(il, lang_opts) == CC.getFPFeaturesInEffect(dre, lang_opts)
+
+    # ---- CastExpr FPOptionsOverride ----------------------------------------
+    # Whether a cast carries the trailing slot depends on the host's default FP settings,
+    # so both branches are covered and only the zero-encoding invariant is asserted.
+    @test CC.getFPFeatures(cse) isa Integer
+    if CC.hasStoredFPFeatures(cse)
+        @test CC.getStoredFPFeatures(cse) == CC.getFPFeatures(cse)
+    else
+        @test CC.getFPFeatures(cse) == 0
+        @test_throws AssertionError CC.getStoredFPFeatures(cse)
+    end
+
+    # ---- Expr::ClassifyLValue ----------------------------------------------
+    @test CC.ClassifyLValue(dre, ctx) isa LX.CXExpr_LValueClassification
+    # `arr[0]` is an l-value of scalar type; an integer literal is a prvalue and always
+    # gets a reason instead.
+    @test CC.ClassifyLValue(ase, ctx) == LX.CXExpr_LV_Valid
+    for lit in filter(n -> n isa CC.IntegerLiteral, nodes)
+        @test CC.ClassifyLValue(lit, ctx) != LX.CXExpr_LV_Valid
+    end
+
+    # ---- Expr::EvaluateAsInitializer ---------------------------------------
+    @test lookup(I, "cc_m_seed")
+    seed = CC.VarDecl(get_decl(lookup).ptr)
+    seed_init = CC.getInit(seed)
+    @test seed_init.ptr != C_NULL
+    apv = CC.EvaluateAsInitializer(seed_init, ctx, seed, true)
+    @test apv isa CC.APValue
+    @test apv.ptr != C_NULL
+    @test CC.getKind(apv) == LX.CXAPValueKind_Int
+    gv = CC.LLVM.GenericValue(CC.getInt(apv))
+    @test convert(Int, gv) == 21
+    CC.LLVM.dispose(gv)
+    CC.dispose(apv)
+
+    # ---- Expr::EvaluateWithSubstitution / isPotentialConstantExprUnevaluated -
+    @test lookup(I, "cc_m_double")
+    callee = CC.FunctionDecl(get_decl(lookup).ptr)
+    mul = first(filter(n -> n isa CC.BinaryOperator, CC.subtree(CC.getBody(callee))))
+    seed_lit = first(filter(n -> n isa CC.IntegerLiteral, CC.subtree(seed_init)))
+    @test CC.getNumParams(callee) == 1
+    subst = CC.EvaluateWithSubstitution(mul, ctx, callee, [seed_lit])
+    @test subst isa CC.APValue
+    @test subst.ptr != C_NULL
+    @test CC.getKind(subst) == LX.CXAPValueKind_Int
+    gv2 = CC.LLVM.GenericValue(CC.getInt(subst))
+    @test convert(Int, gv2) == 42
+    CC.LLVM.dispose(gv2)
+    CC.dispose(subst)
+    @test_throws AssertionError CC.EvaluateWithSubstitution(mul, ctx, callee,
+                                                            [seed_lit, seed_lit])
+    @test CC.isPotentialConstantExprUnevaluated(mul, callee) isa Bool
+
+    # ---- CallExpr::setADLCallKind ------------------------------------------
+    calls = filter(n -> n isa CC.CallExpr, nodes)
+    if !isempty(calls)
+        call = first(calls)
+        adl = CC.usesADL(call)
+        CC.setADLCallKind(call, !adl)
+        @test CC.usesADL(call) == !adl
+        CC.setADLCallKind(call, adl)
+        @test CC.usesADL(call) == adl
+    end
+
+    # ---- OffsetOfExpr setters ----------------------------------------------
+    oe = first(filter(n -> n isa CC.OffsetOfExpr, nodes))
+    opl = CC.getOperatorLoc(oe)
+    CC.setOperatorLoc(oe, opl)
+    @test CC.getOperatorLoc(oe).ptr == opl.ptr
+    rpl = CC.getRParenLoc(oe)
+    CC.setRParenLoc(oe, rpl)
+    @test CC.getRParenLoc(oe).ptr == rpl.ptr
+    tsi = CC.getTypeSourceInfo(oe)
+    CC.setTypeSourceInfo(oe, tsi)
+    @test CC.getTypeSourceInfo(oe).ptr == tsi.ptr
+    @test CC.getNumExpressions(oe) >= 1
+    ix = CC.getIndexExpr(oe, 0)
+    CC.setIndexExpr(oe, 0, ix)
+    @test CC.getIndexExpr(oe, 0).ptr == ix.ptr
+    @test_throws AssertionError CC.setIndexExpr(oe, CC.getNumExpressions(oe), ix)
+
+    # ---- InitListExpr mutators ---------------------------------------------
+    ile = first(filter(n -> n isa CC.InitListExpr && CC.getNumInits(n) >= 2, nodes))
+    n0 = CC.getNumInits(ile)
+    CC.reserveInits(ile, ctx, n0 + 4)
+    @test CC.getNumInits(ile) == n0
+    init0 = CC.getInit(ile, 0)
+    init1 = CC.getInit(ile, 1)
+    displaced = CC.updateInit(ile, ctx, 0, init1)
+    @test displaced isa CC.Expr_
+    @test displaced.ptr == init0.ptr
+    @test CC.getInit(ile, 0).ptr == init1.ptr
+    CC.updateInit(ile, ctx, 0, init0)
+    @test CC.getInit(ile, 0).ptr == init0.ptr
+    # markError is asserted on the semantic form only; both branches are covered because
+    # which form `subtree` reaches is a Sema detail.
+    if CC.isSemanticForm(ile)
+        CC.markError(ile)
+        @test CC.containsErrors(ile)
+    else
+        @test_throws AssertionError CC.markError(ile)
+    end
+
+    # ---- DesignatedInitExpr setters ----------------------------------------
+    # the designators live on the syntactic form, which `subtree` does not walk
+    dies = CC.DesignatedInitExpr[]
+    for n in filter(x -> x isa CC.InitListExpr, nodes)
+        syn = CC.getSyntacticForm(n)
+        syn.ptr == C_NULL && continue
+        append!(dies, filter(m -> m isa CC.DesignatedInitExpr, CC.subtree(syn)))
+    end
+    if !isempty(dies)
+        die = first(dies)
+        eloc = CC.getEqualOrColonLoc(die)
+        CC.setEqualOrColonLoc(die, eloc)
+        @test CC.getEqualOrColonLoc(die).ptr == eloc.ptr
+        gnu = CC.usesGNUSyntax(die)
+        CC.setGNUSyntax(die, !gnu)
+        @test CC.usesGNUSyntax(die) == !gnu
+        CC.setGNUSyntax(die, gnu)
+        @test CC.usesGNUSyntax(die) == gnu
+        dinit = CC.getInit(die)
+        CC.setInit(die, dinit)
+        @test CC.getInit(die).ptr == dinit.ptr
+        sub0 = CC.getSubExpr(die, 0)
+        CC.setSubExpr(die, 0, sub0)
+        @test CC.getSubExpr(die, 0).ptr == sub0.ptr
+        @test_throws AssertionError CC.setSubExpr(die, CC.getNumSubExprs(die), sub0)
+    end
+
+    # ---- SourceLocExpr::EvaluateInContext ----------------------------------
+    @test lookup(I, "cc_m_file")
+    slfd = CC.FunctionDecl(get_decl(lookup).ptr)
+    sle = first(filter(n -> n isa CC.SourceLocExpr, CC.subtree(CC.getBody(slfd))))
+    slv = CC.EvaluateInContext(sle, ctx)
+    @test slv isa CC.APValue
+    @test slv.ptr != C_NULL
+    # __builtin_FILE folds to the address of a string literal, never to an integer.
+    @test !CC.isInt(slv)
+    CC.dispose(slv)
+
+    dispose(lookup)
+    dispose(I)
+end
+
+@testset "Expr builders, dependence and setter tail (wl22 expr-n)" begin
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I,
+             """
+             struct WL22S { int x; double y; };
+             int wl22_add(int a, int b) { return a + b; }
+             int wl22_caller(int n) {
+                 int arr[3] = {1, 2, 3};
+                 double d = 1.5;
+                 d += 0.5;
+                 WL22S s;
+                 s.x = 4;
+                 const char *fn = __func__;
+                 (void)fn;
+                 (void)d;
+                 return wl22_add(n, arr[0]) + s.x;
+             }
+             """)
+    ctx = CC.get_ast_context(I)
+    lookup = DeclFinder(I)
+    @test lookup(I, "wl22_caller")
+    fd = CC.FunctionDecl(get_decl(lookup).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+    pick(T) = first(filter(n -> n isa T, nodes))
+
+    il = pick(CC.IntegerLiteral)
+    ity = CC.getType(il)
+    loc = CC.getBeginLoc(il)
+    VKP = LX.CXExprValueKind_VK_PRValue
+    VKL = LX.CXExprValueKind_VK_LValue
+    OKO = LX.CXExprObjectKind_OK_Ordinary
+
+    # ---- CallExpr: dependence maintenance and shrinkNumArgs ------------------
+    ce = pick(CC.CallExpr)
+    nargs = CC.getNumArgs(ce)
+    @test nargs == 2
+    @test !CC.isTypeDependent(ce)
+    CC.markDependentForPostponedNameLookup(ce)
+    @test CC.isTypeDependent(ce)
+    CC.computeDependence(ce)
+    @test !CC.isTypeDependent(ce)
+    # shrinking to the current count is the identity; growing is what upstream forbids
+    CC.shrinkNumArgs(ce, nargs)
+    @test CC.getNumArgs(ce) == nargs
+    @test_throws AssertionError CC.shrinkNumArgs(ce, nargs + 1)
+
+    # ---- InitListExpr::resizeInits ------------------------------------------
+    ile = first(filter(n -> n isa CC.InitListExpr && CC.getNumInits(n) == 3, nodes))
+    n0 = CC.getNumInits(ile)
+    first_init = CC.getInit(ile, 0)
+    CC.resizeInits(ile, ctx, n0 + 2)
+    @test CC.getNumInits(ile) == n0 + 2
+    CC.resizeInits(ile, ctx, n0)
+    @test CC.getNumInits(ile) == n0
+    @test CC.getInit(ile, 0).ptr == first_init.ptr
+
+    # ---- DeclRefExpr::setIsImmediateEscalating ------------------------------
+    dre = pick(CC.DeclRefExpr)
+    esc = CC.isImmediateEscalating(dre)
+    CC.setIsImmediateEscalating(dre, !esc)
+    @test CC.isImmediateEscalating(dre) == !esc
+    CC.setIsImmediateEscalating(dre, esc)
+    @test CC.isImmediateEscalating(dre) == esc
+
+    # ---- FloatingLiteral::setExact ------------------------------------------
+    fl = pick(CC.FloatingLiteral)
+    ex = CC.isExact(fl)
+    CC.setExact(fl, !ex)
+    @test CC.isExact(fl) == !ex
+    CC.setExact(fl, ex)
+    @test CC.isExact(fl) == ex
+
+    # ---- BinaryOperator: the static gate, Create and CreateEmpty ------------
+    @test !CC.isCompoundAssignmentOp(LX.CXBinaryOperatorKind_BO_Add)
+    @test CC.isCompoundAssignmentOp(LX.CXBinaryOperatorKind_BO_AddAssign)
+    bo = CC.BinaryOperator(ctx, il, il, LX.CXBinaryOperatorKind_BO_Add, ity, VKP, OKO, loc,
+                           0)
+    @test bo isa CC.BinaryOperator
+    @test CC.getOpcode(bo) == LX.CXBinaryOperatorKind_BO_Add
+    @test CC.getLHS(bo).ptr == il.ptr
+    @test CC.getRHS(bo).ptr == il.ptr
+    @test CC.getFPFeatures(bo) == 0
+    @test_throws AssertionError CC.BinaryOperator(ctx, il, il,
+                                                  LX.CXBinaryOperatorKind_BO_AddAssign, ity,
+                                                  VKP, OKO, loc, 0)
+
+    boe = CC.BinaryOperator(ctx, false)
+    @test boe isa CC.BinaryOperator
+    # the shell's operand slots are uninitialized: write them before any reader runs
+    CC.setOpcode(boe, LX.CXBinaryOperatorKind_BO_Sub)
+    CC.setLHS(boe, il)
+    CC.setRHS(boe, il)
+    CC.setOperatorLoc(boe, loc)
+    @test CC.getOpcode(boe) == LX.CXBinaryOperatorKind_BO_Sub
+    @test CC.getLHS(boe).ptr == il.ptr
+    @test CC.getRHS(boe).ptr == il.ptr
+
+    # ---- CompoundAssignOperator::Create -------------------------------------
+    cao = CC.CompoundAssignOperator(ctx, il, il, LX.CXBinaryOperatorKind_BO_AddAssign, ity,
+                                    VKL, OKO, loc, 0, ity, ity)
+    @test cao isa CC.CompoundAssignOperator
+    @test CC.getOpcode(cao) == LX.CXBinaryOperatorKind_BO_AddAssign
+    @test CC.getComputationLHSType(cao).ptr == ity.ptr
+    @test CC.getComputationResultType(cao).ptr == ity.ptr
+    @test_throws AssertionError CC.CompoundAssignOperator(ctx, il, il,
+                                                          LX.CXBinaryOperatorKind_BO_Add,
+                                                          ity, VKL, OKO, loc, 0, ity, ity)
+
+    # ---- UnaryOperator::Create ----------------------------------------------
+    uo = CC.UnaryOperator(ctx, il, LX.CXUnaryOperatorKind_UO_Minus, ity, VKP, OKO, loc,
+                          false, 0)
+    @test uo isa CC.UnaryOperator
+    @test CC.getOpcode(uo) == LX.CXUnaryOperatorKind_UO_Minus
+    @test CC.getSubExpr(uo).ptr == il.ptr
+    @test CC.getOperatorLoc(uo).ptr == loc.ptr
+
+    # ---- ImplicitCastExpr::Create / CreateEmpty -----------------------------
+    ice = CC.ImplicitCastExpr(ctx, ity, LX.CXCastKind_CK_NoOp, il, VKP, 0)
+    @test ice isa CC.ImplicitCastExpr
+    @test CC.getCastKind(ice) == LX.CXCastKind_CK_NoOp
+    @test CC.getSubExpr(ice).ptr == il.ptr
+
+    icee = CC.ImplicitCastExpr(ctx, 0, false)
+    @test icee isa CC.ImplicitCastExpr
+    # the shell's operand slot and cast kind are uninitialized: write them first
+    CC.setSubExpr(icee, il)
+    CC.setCastKind(icee, LX.CXCastKind_CK_NoOp)
+    @test CC.getSubExpr(icee).ptr == il.ptr
+    @test CC.getCastKind(icee) == LX.CXCastKind_CK_NoOp
+
+    # ---- MemberExpr::CreateImplicit -----------------------------------------
+    me = pick(CC.MemberExpr)
+    mbase = CC.getBase(me)
+    mdecl = CC.getMemberDecl(me)
+    mimp = CC.MemberExpr(ctx, mbase, CC.isArrow(me), mdecl, CC.getType(me),
+                         CC.getValueKind(me), CC.getObjectKind(me))
+    @test mimp isa CC.MemberExpr
+    @test CC.getMemberDecl(mimp).ptr == mdecl.ptr
+    @test CC.getBase(mimp).ptr == mbase.ptr
+    @test CC.isArrow(mimp) == CC.isArrow(me)
+
+    # ---- PredefinedExpr::Create ---------------------------------------------
+    pe = pick(CC.PredefinedExpr)
+    sl = CC.getFunctionName(pe)
+    @test sl.ptr != C_NULL
+    pe2 = CC.PredefinedExpr(ctx, CC.getBeginLoc(pe), CC.getType(pe), CC.getIdentKind(pe),
+                            false, sl)
+    @test pe2 isa CC.PredefinedExpr
+    @test CC.getIdentKind(pe2) == CC.getIdentKind(pe)
+    @test CC.getFunctionName(pe2).ptr == sl.ptr
+    pe3 = CC.PredefinedExpr(ctx, CC.getBeginLoc(pe), CC.getType(pe), CC.getIdentKind(pe),
+                            false)
+    @test CC.getFunctionName(pe3).ptr == C_NULL
+
+    # ---- ParenListExpr::Create ----------------------------------------------
+    ple = CC.ParenListExpr(ctx, loc, [il, il], loc)
+    @test ple isa CC.ParenListExpr
+    @test CC.getNumExprs(ple) == 2
+    @test CC.getExpr(ple, 0).ptr == il.ptr
+    @test CC.getExpr(ple, 1).ptr == il.ptr
+    @test CC.getNumExprs(CC.ParenListExpr(ctx, loc, CC.IntegerLiteral[], loc)) == 0
+
+    # ---- ConstantExpr::Create / CreateEmpty ---------------------------------
+    apv = CC.EvaluateAsInt(il, ctx)
+    @test apv.ptr != C_NULL
+    ce2 = CC.ConstantExpr(ctx, il, apv)
+    @test ce2 isa CC.ConstantExpr
+    # a small integer folds into the Int64 storage, never the full APValue one
+    @test CC.getResultStorageKind(ce2) != LX.CXConstantResultStorageKind_None
+    @test CC.getSubExpr(ce2).ptr == il.ptr
+    CC.dispose(apv)
+
+    cee = CC.ConstantExpr(ctx, LX.CXConstantResultStorageKind_None)
+    @test cee isa CC.ConstantExpr
+    # the shell's wrapped subexpression is uninitialized until it is written
+    CC.setSubExpr(cee, il)
+    @test CC.getSubExpr(cee).ptr == il.ptr
+    @test CC.getResultStorageKind(cee) == LX.CXConstantResultStorageKind_None
+
+    # ---- RecoveryExpr::Create + subExpressions ------------------------------
+    rec = CC.RecoveryExpr(ctx, ity, loc, loc, [il])
+    @test rec isa CC.RecoveryExpr
+    @test CC.getNumSubExpressions(rec) == 1
+    @test CC.getSubExpression(rec, 0).ptr == il.ptr
+    @test_throws AssertionError CC.getSubExpression(rec, 1)
+    @test CC.getNumSubExpressions(CC.RecoveryExpr(ctx, ity, loc, loc,
+                                                  CC.IntegerLiteral[])) == 0
+    @test_throws AssertionError CC.RecoveryExpr(ctx, CC.QualType(C_NULL), loc, loc, [il])
+
+    dispose(lookup)
+    dispose(I)
+end
+
+@testset "Expr float semantics, imaginary/matrix/block/shuffle setters, raw call operands" begin
+    I = create_interpreter(["-std=gnu++20"])
+    CC.parse(I, """
+    typedef float cc_o_v4f __attribute__((ext_vector_type(4)));
+    struct cc_o_rec { int x; int y; };
+    consteval int cc_o_sq(int n) { return n * n; }
+    int cc_o_id(int n) { return n; }
+    int cc_o_expr(cc_o_v4f v) {
+        double d = 1.25;
+        float g = 2.5f;
+        _Complex double c = 2.0i;
+        cc_o_rec r{.x = 4, .y = 3};
+        cc_o_v4f sh = __builtin_shufflevector(v, v, 3, 2, 1, 0);
+        float p = g * 3.0f;
+        int k = cc_o_sq(3);
+        int m = cc_o_id(7);
+        (void)c;
+        return (int)d + (int)p + r.x + (int)sh.y + k + m;
+    }
+    """)
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+    @test f(I, "cc_o_expr")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+    function pick(T)
+        i = findfirst(n -> n isa T, nodes)
+        return i === nothing ? nothing : nodes[i]
+    end
+
+    # ---- FloatingLiteral: the raw APFloatBase::Semantics enumerator ----------
+    fls = filter(n -> n isa CC.FloatingLiteral, nodes)
+    @test !isempty(fls)
+    sems = [CC.getRawSemantics(fl) for fl in fls]
+    @test all(s -> s isa Integer, sems)
+    # 2.5f/3.0f are IEEE single and 1.25/2.0 IEEE double on every target, so the body
+    # always carries at least two distinct raw semantics
+    @test length(unique(sems)) >= 2
+
+    fl = first(fls)
+    raw = CC.getRawSemantics(fl)
+    CC.setRawSemantics(fl, raw)
+    @test CC.getRawSemantics(fl) == raw
+
+    approx = CC.getValueAsApproximateDouble(fl)
+    bits = CC.getValue(fl)
+    @test bits != C_NULL
+    CC.setValue(fl, ctx, bits)
+    @test CC.getValueAsApproximateDouble(fl) == approx
+    CC.LLVM.API.LLVMDisposeGenericValue(bits)
+
+    # ---- Expr::EvaluateAsFixedPoint -----------------------------------------
+    il = pick(CC.IntegerLiteral)
+    @test il isa CC.IntegerLiteral
+    fp = CC.EvaluateAsFixedPoint(il, ctx)
+    @test fp isa CC.APValue
+    if fp.ptr != C_NULL
+        @test CC.isFixedPoint(fp)
+        dispose(fp)
+    end
+
+    # ---- ImaginaryLiteral: operand round-trip -------------------------------
+    imag = pick(CC.ImaginaryLiteral)
+    @test imag isa CC.ImaginaryLiteral
+    isub = CC.getSubExpr(imag)
+    @test isub.ptr != C_NULL
+    CC.setSubExpr(imag, isub)
+    @test CC.getSubExpr(imag).ptr == isub.ptr
+
+    # ---- CallExpr: the flat raw-operand view --------------------------------
+    call = pick(CC.CallExpr)
+    @test call isa CC.CallExpr
+    nraw = CC.getNumRawSubExprs(call)
+    @test nraw isa Integer
+    @test nraw >= CC.getNumArgs(call) + 1
+    @test CC.getRawSubExpr(call, 0) isa CC.Stmt
+    @test CC.getRawSubExpr(call, 0).ptr == CC.getCallee(call).ptr
+    @test_throws AssertionError CC.getRawSubExpr(call, nraw)
+
+    # ---- setStoredFPFeatures: whether a node carries the trailing slot is a
+    # host FP-default decision, so both branches are covered
+    bo = pick(CC.BinaryOperator)
+    @test bo isa CC.BinaryOperator
+    if CC.hasStoredFPFeatures(bo)
+        bof = CC.getStoredFPFeatures(bo)
+        CC.setStoredFPFeatures(bo, bof)
+        @test CC.getStoredFPFeatures(bo) == bof
+    else
+        @test_throws AssertionError CC.setStoredFPFeatures(bo, 0)
+    end
+    if CC.hasStoredFPFeatures(call)
+        cef = CC.getStoredFPFeatures(call)
+        CC.setStoredFPFeatures(call, cef)
+        @test CC.getStoredFPFeatures(call) == cef
+    else
+        @test_throws AssertionError CC.setStoredFPFeatures(call, 0)
+    end
+
+    # ---- ShuffleVectorExpr: reinstall the operand array ---------------------
+    sve = pick(CC.ShuffleVectorExpr)
+    @test sve isa CC.ShuffleVectorExpr
+    nsub = CC.getNumSubExprs(sve)
+    @test nsub >= 2
+    ops = CC.Expr_[CC.getExpr(sve, i) for i in 0:(nsub - 1)]
+    CC.setExprs(sve, ctx, ops)
+    @test CC.getNumSubExprs(sve) == nsub
+    @test CC.getExpr(sve, 0).ptr == ops[1].ptr
+    @test CC.getExpr(sve, nsub - 1).ptr == ops[end].ptr
+    @test_throws AssertionError CC.setExprs(sve, ctx, CC.Expr_[first(ops)])
+
+    # ---- ConstantExpr: re-cache the folded result ---------------------------
+    cst = pick(CC.ConstantExpr)
+    @test cst isa CC.ConstantExpr
+    if CC.hasAPValueResult(cst)
+        v = CC.getAPValueResult(cst)
+        @test v isa CC.APValue
+        @test v.ptr != C_NULL
+        vkind = CC.getResultAPValueKind(cst)
+        CC.SetResult(cst, v, ctx)
+        @test CC.getResultAPValueKind(cst) == vkind
+        dispose(v)
+    end
+
+    # ---- Designator::setFieldDecl -------------------------------------------
+    # the designators live on the syntactic form, which `subtree` does not walk
+    dies = CC.DesignatedInitExpr[]
+    for n in filter(x -> x isa CC.InitListExpr, nodes)
+        syn = CC.getSyntacticForm(n)
+        syn.ptr == C_NULL && continue
+        append!(dies, filter(m -> m isa CC.DesignatedInitExpr, CC.subtree(syn)))
+    end
+    @test !isempty(dies)
+    d0 = CC.getDesignator(first(dies), 0)
+    @test CC.isFieldDesignator(d0)
+    dfd = CC.getFieldDecl(d0)
+    if dfd.ptr != C_NULL
+        CC.setFieldDecl(d0, dfd)
+        @test CC.getFieldDecl(d0).ptr == dfd.ptr
+    end
+
+    dispose(f)
+    dispose(I)
+
+    # ---- MatrixSubscriptExpr setters (needs -fenable-matrix) ----------------
+    Im = create_interpreter(["-std=gnu++20", "-fenable-matrix"])
+    CC.parse(Im,
+             """
+             typedef float cc_o_mat4 __attribute__((matrix_type(4, 4)));
+             float cc_o_mat_elem(cc_o_mat4 m) { return m[1][2]; }
+             """)
+    lm = DeclFinder(Im)
+    @test lm(Im, "cc_o_mat_elem")
+    mfd = CC.FunctionDecl(get_decl(lm).ptr)
+    mse = first(filter(n -> n isa CC.MatrixSubscriptExpr, CC.subtree(CC.getBody(mfd))))
+    mbase = CC.getBase(mse)
+    mrow = CC.getRowIdx(mse)
+    mcol = CC.getColumnIdx(mse)
+    mrb = CC.getRBracketLoc(mse)
+    @test mbase.ptr != C_NULL
+    @test mrow.ptr != C_NULL
+    @test mcol.ptr != C_NULL
+    CC.setBase(mse, mbase)
+    CC.setRowIdx(mse, mrow)
+    CC.setColumnIdx(mse, mcol)
+    CC.setRBracketLoc(mse, mrb)
+    @test CC.getBase(mse).ptr == mbase.ptr
+    @test CC.getRowIdx(mse).ptr == mrow.ptr
+    @test CC.getColumnIdx(mse).ptr == mcol.ptr
+    @test CC.getRBracketLoc(mse).ptr == mrb.ptr
+    dispose(lm)
+    dispose(Im)
+
+    # ---- BlockExpr::setBlockDecl (needs -fblocks) ---------------------------
+    Ib = create_interpreter(["-std=gnu++20", "-fblocks"])
+    CC.parse(Ib,
+             """
+             void cc_o_block(void) { int (^blk)(void) = ^int(void) { return 7; }; (void)blk; }
+             """)
+    lb = DeclFinder(Ib)
+    @test lb(Ib, "cc_o_block")
+    bfd = CC.FunctionDecl(get_decl(lb).ptr)
+    be = first(filter(n -> n isa CC.BlockExpr, CC.subtree(CC.getBody(bfd))))
+    bd = CC.getBlockDecl(be)
+    @test bd.ptr != C_NULL
+    CC.setBlockDecl(be, bd)
+    @test CC.getBlockDecl(be).ptr == bd.ptr
+    dispose(lb)
+    dispose(Ib)
+end
+
+@testset "Expr dependence, flexible-array query and the deserialization shells" begin
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I,
+             """
+             struct WLPFam { int n; char data[]; };
+             struct WLPPt { int x; int y; };
+             int wlp_add(int a, int b) { return a + b; }
+             int wlp_fn(int a, WLPFam *f) {
+                 WLPPt p = {.x = 1, .y = 2};
+                 int arr[3] = {1, 2, 3};
+                 const char *s = "wlp";
+                 const char *fam = f->data;
+                 return wlp_add(a, p.x) + arr[0] + (int)s[0] + (int)fam[0] + f->n;
+             }
+             """)
+    ctx = CC.get_ast_context(I)
+    lookup = DeclFinder(I)
+    @test lookup(I, "wlp_fn")
+    fd = CC.FunctionDecl(get_decl(lookup).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+    pick(T) = first(filter(n -> n isa T, nodes))
+
+    il = pick(CC.IntegerLiteral)
+    loc = CC.getBeginLoc(il)
+    ce = pick(CC.CallExpr)
+    sl = pick(CC.StringLiteral)
+    mes = filter(n -> n isa CC.MemberExpr, nodes)
+
+    # ---- Expr::getDependence -------------------------------------------------
+    # bits: 1 unexpanded pack, 2 instantiation, 4 type, 8 value, 16 error
+    @test CC.getDependence(il) isa Integer
+    @test CC.getDependence(il) == 0
+    CC.markDependentForPostponedNameLookup(ce)
+    @test CC.getDependence(ce) & 4 != 0
+    CC.computeDependence(ce)
+    @test CC.getDependence(ce) == 0
+
+    # ---- Expr::isFlexibleArrayMemberLike ------------------------------------
+    @test !isempty(mes)
+    fam_like = [CC.isFlexibleArrayMemberLike(m, ctx, LX.CXStrictFlexArraysLevelKind_IncompleteOnly)
+                for m in mes]
+    @test all(v -> v isa Bool, fam_like)
+    # `f->data` has incomplete array type, so it is flexible-array-like at every level
+    @test any(fam_like)
+    @test all(m -> CC.isFlexibleArrayMemberLike(m, ctx,
+                                                LX.CXStrictFlexArraysLevelKind_ZeroOrIncomplete,
+                                                true) isa Bool, mes)
+    # an expression whose type is not an array is never one, whatever the level
+    @test !CC.isFlexibleArrayMemberLike(il, ctx, LX.CXStrictFlexArraysLevelKind_Default)
+
+    # ---- StringLiteral::Create / CreateEmpty --------------------------------
+    sty = CC.getType(sl)
+    made = CC.StringLiteral(ctx, "wlp", LX.CXStringLiteralKind_Ordinary, false, sty, [loc])
+    @test made isa CC.StringLiteral
+    @test CC.getString(made) == "wlp"
+    @test CC.getLength(made) == 3
+    @test CC.getCharByteWidth(made) == 1
+    @test CC.getNumConcatenated(made) == 1
+    @test CC.getKind(made) == LX.CXStringLiteralKind_Ordinary
+    @test_throws AssertionError CC.StringLiteral(ctx, "wlp", LX.CXStringLiteralKind_Ordinary, false,
+                                                 sty, CC.SourceLocation[])
+    # an evaluated string literal's type has to be a constant array type
+    @test_throws AssertionError CC.StringLiteral(ctx, "wlp", LX.CXStringLiteralKind_Ordinary, false,
+                                                 CC.getType(il), [loc])
+
+    sle = CC.StringLiteral(ctx, 1, 4, 1)
+    @test sle isa CC.StringLiteral
+    @test CC.getNumConcatenated(sle) == 1
+    @test CC.getLength(sle) == 4
+    @test CC.getCharByteWidth(sle) == 1
+
+    # ---- the remaining deserialization shells -------------------------------
+    # Only what the shell factory itself stores may be read; everything else is uninitialized.
+    cee = CC.CallExpr(ctx, 2, false)
+    @test cee isa CC.CallExpr
+    @test cee.ptr != C_NULL
+    @test CC.getNumArgs(cee) == 2
+    @test CC.getStmtClassName(cee) == "CallExpr"
+
+    mee = CC.MemberExpr(ctx, false, false, false, 0)
+    @test mee isa CC.MemberExpr
+    @test CC.getStmtClassName(mee) == "MemberExpr"
+
+    pee = CC.PredefinedExpr(ctx, false)
+    @test pee isa CC.PredefinedExpr
+    @test CC.getStmtClassName(pee) == "PredefinedExpr"
+
+    uoe = CC.UnaryOperator(ctx, false)
+    @test uoe isa CC.UnaryOperator
+    @test CC.getStmtClassName(uoe) == "UnaryOperator"
+
+    caoe = CC.CompoundAssignOperator(ctx, false)
+    @test caoe isa CC.CompoundAssignOperator
+    @test CC.getStmtClassName(caoe) == "CompoundAssignOperator"
+
+    ooe = CC.OffsetOfExpr(ctx, 1, 0)
+    @test ooe isa CC.OffsetOfExpr
+    @test CC.getStmtClassName(ooe) == "OffsetOfExpr"
+
+    ple = CC.ParenListExpr(ctx, 3)
+    @test ple isa CC.ParenListExpr
+    @test CC.getNumExprs(ple) == 3
+    @test CC.getStmtClassName(ple) == "ParenListExpr"
+
+    gse = CC.GenericSelectionExpr(ctx, 2)
+    @test gse isa CC.GenericSelectionExpr
+    @test CC.getStmtClassName(gse) == "GenericSelectionExpr"
+
+    rce = CC.RecoveryExpr(ctx, 0)
+    @test rce isa CC.RecoveryExpr
+    @test CC.getStmtClassName(rce) == "RecoveryExpr"
+
+    # ---- Designator factories and DesignatedInitExpr::setDesignators --------
+    ii = CC.getIdentifier(fd)
+    @test ii.ptr != C_NULL
+    dfield = CC.CreateFieldDesignator(ii, loc, loc)
+    @test dfield isa CC.Designator
+    @test CC.isFieldDesignator(dfield)
+    @test !CC.isArrayDesignator(dfield)
+    @test CC.getFieldName(dfield).ptr == ii.ptr
+    @test CC.getDotLoc(dfield).ptr == loc.ptr
+    @test CC.getFieldLoc(dfield).ptr == loc.ptr
+
+    darr = CC.CreateArrayDesignator(2, loc, loc)
+    @test CC.isArrayDesignator(darr)
+    @test !CC.isArrayRangeDesignator(darr)
+    # the index is the slot in the owning node's subexpression array, and round-trips
+    @test CC.getArrayIndex(darr) == 2
+    @test CC.getLBracketLoc(darr).ptr == loc.ptr
+    @test CC.getRBracketLoc(darr).ptr == loc.ptr
+    CC.dispose(darr)
+
+    drange = CC.CreateArrayRangeDesignator(0, loc, loc, loc)
+    @test CC.isArrayRangeDesignator(drange)
+    @test CC.getArrayIndex(drange) == 0
+    @test CC.getEllipsisLoc(drange).ptr == loc.ptr
+    CC.dispose(drange)
+
+    # the empty shell starts with no designators; setDesignators is what fills the list
+    die = CC.DesignatedInitExpr(ctx, 1)
+    @test die isa CC.DesignatedInitExpr
+    @test CC.getStmtClassName(die) == "DesignatedInitExpr"
+    @test CC.size(die) == 0
+    CC.setDesignators(die, ctx, [dfield])
+    @test CC.size(die) == 1
+    d0 = CC.getDesignator(die, 0)
+    @test CC.isFieldDesignator(d0)
+    @test CC.getFieldName(d0).ptr == ii.ptr
+    # the copy is independent of the source, which is still the caller's to dispose
+    CC.dispose(dfield)
+    @test CC.getFieldName(CC.getDesignator(die, 0)).ptr == ii.ptr
+
+    dispose(lookup)
+    dispose(I)
+end
+
+@testset "Expr node factories: call, fixed-point and SYCL stable-name" begin
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I,
+             """
+             int exprq_callee(int x) { return x; }
+             int exprq_use(int n) {
+                 int q = exprq_callee(n);
+                 return q;
+             }
+             """)
+    ctx = CC.get_ast_context(I)
+    lookup = DeclFinder(I)
+    @test lookup(I, "exprq_use")
+    fd = CC.FunctionDecl(get_decl(lookup).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+
+    ce = first(n for n in nodes if n isa CC.CallExpr)
+    dre = first(n for n in nodes if n isa CC.DeclRefExpr)
+    loc = CC.getRParenLoc(ce)
+
+    # ---- CallExpr::Create ---------------------------------------------------
+    callee = CC.getCallee(ce)
+    arg0 = CC.getArg(ce, 0)
+    new_ce = CC.CallExpr(ctx, callee, [arg0], CC.getType(ce),
+                         LX.CXExprValueKind_VK_PRValue, loc, 0, 0, false)
+    @test new_ce isa CC.CallExpr
+    @test CC.getStmtClassName(new_ce) == "CallExpr"
+    @test CC.getNumArgs(new_ce) == 1
+    @test CC.getCallee(new_ce).ptr == callee.ptr
+    @test CC.getArg(new_ce, 0).ptr == arg0.ptr
+    @test CC.getRParenLoc(new_ce).ptr == loc.ptr
+    @test CC.usesADL(new_ce) == false
+    # 0 is the only FPOptionsOverride encoding that leaves the trailing slot off
+    @test CC.hasStoredFPFeatures(new_ce) == false
+
+    # an empty argument list is legal, and the ADL flag round-trips through usesADL
+    adl_ce = CC.CallExpr(ctx, callee, CC.Expr_[], CC.getType(ce),
+                         LX.CXExprValueKind_VK_PRValue, loc, 0, 0, true)
+    @test CC.getNumArgs(adl_ce) == 0
+    @test CC.usesADL(adl_ce)
+
+    # ---- DeclRefExpr: the explicit-object-parameter capture bit --------------
+    @test CC.isCapturedByCopyInLambdaWithExplicitObjectParameter(dre) isa Bool
+    CC.setCapturedByCopyInLambdaWithExplicitObjectParameter(dre, true, ctx)
+    @test CC.isCapturedByCopyInLambdaWithExplicitObjectParameter(dre)
+    CC.setCapturedByCopyInLambdaWithExplicitObjectParameter(dre, false, ctx)
+    @test !CC.isCapturedByCopyInLambdaWithExplicitObjectParameter(dre)
+
+    # ---- FixedPointLiteral (deserialization shell + its written slots) ------
+    fpl = CC.FixedPointLiteral(ctx)
+    @test fpl isa CC.FixedPointLiteral
+    @test CC.getStmtClassName(fpl) == "FixedPointLiteral"
+    # the shell leaves the scale and the location uninitialized: write before reading
+    CC.setScale(fpl, 7)
+    @test CC.getScale(fpl) == 7
+    CC.setLocation(fpl, loc)
+    @test CC.getLocation(fpl).ptr == loc.ptr
+
+    # ---- SYCLUniqueStableNameExpr -------------------------------------------
+    tsi = CC.getTrivialTypeSourceInfo(ctx, CC.getType(dre), loc)
+    @test tsi isa CC.TypeSourceInfo
+    sycl = CC.SYCLUniqueStableNameExpr(ctx, loc, loc, loc, tsi)
+    @test sycl isa CC.SYCLUniqueStableNameExpr
+    @test CC.getStmtClassName(sycl) == "SYCLUniqueStableNameExpr"
+    @test CC.getTypeSourceInfo(sycl).ptr == tsi.ptr
+    @test CC.getLocation(sycl).ptr == loc.ptr
+    @test CC.getLParenLocation(sycl).ptr == loc.ptr
+    @test CC.getRParenLocation(sycl).ptr == loc.ptr
+    # the name is a mangling of the stored type, so only its shape is asserted
+    stable_name = CC.ComputeName(sycl, ctx)
+    @test stable_name isa String
+    @test !isempty(stable_name)
+
+    dispose(lookup)
+    dispose(I)
+end
+
+@testset "Generic-selection associations, qualifier extents, designator expansion, astype" begin
+    I = create_interpreter(["-std=gnu++20"])
+    CC.parse(I,
+             """
+             namespace cc_r_ns {
+             struct Point { int x; int y; };
+             int gval = 5;
+             }
+             struct cc_r_base { int a; };
+             struct cc_r_holder : cc_r_base {
+                 int b;
+                 template <class T> int tget() const { return (int)sizeof(T); }
+             };
+             template <class T> int cc_r_tfn() { return (int)sizeof(T); }
+             int cc_r_fn(cc_r_holder h) {
+                 int n = 1;
+                 int g = _Generic(n, int: 1, default: 2);
+                 cc_r_ns::Point p = { .x = 3, .y = 4 };
+                 int qa = h.cc_r_base::a;
+                 int ub = h.b;
+                 int m = h.tget<int>();
+                 int t = cc_r_tfn<double>();
+                 int v = cc_r_ns::gval;
+                 float fa = 1.5f, fb = 2.5f;
+                 float fp = fa * fb;
+                 unsigned long o = __builtin_offsetof(cc_r_ns::Point, y);
+                 return g + p.x + qa + ub + m + t + v + (int)fp + (int)o;
+             }
+             """)
+    ctx = CC.get_ast_context(I)
+    lookup = DeclFinder(I)
+    @test lookup(I, "cc_r_fn")
+    fd = CC.FunctionDecl(get_decl(lookup).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+
+    # ---- GenericSelectionExpr: the remaining Association fields --------------
+    gse = first(n for n in nodes if n isa CC.GenericSelectionExpr)
+    na = CC.getNumAssocs(gse)
+    @test na == 2
+    @test CC.getAssocType(gse, 0) isa CC.QualType
+    @test CC.getAssocType(gse, 0).ptr != C_NULL
+    @test CC.getAssocType(gse, 1).ptr == C_NULL     # `default:` has no written type
+    @test_throws AssertionError CC.getAssocType(gse, na)
+    sel = [CC.isAssocSelected(gse, i) for i = 0:(na - 1)]
+    @test all(s -> s isa Bool, sel)
+    @test count(identity, sel) == 1
+    @test sel[CC.getResultIndex(gse) + 1]
+    @test_throws AssertionError CC.isAssocSelected(gse, na)
+
+    # ---- the extent of a written nested-name-specifier -----------------------
+    dres = filter(n -> n isa CC.DeclRefExpr, nodes)
+    qdre = first(d for d in dres if CC.hasQualifier(d))
+    qr = CC.getQualifierRange(qdre)
+    @test qr isa CC.SourceRange
+    @test CC.isValid(qr.begin_loc)
+    @test CC.isValid(qr.end_loc)
+    udre = first(d for d in dres if !CC.hasQualifier(d))
+    @test !CC.isValid(CC.getQualifierRange(udre).begin_loc)
+
+    mes = filter(n -> n isa CC.MemberExpr, nodes)
+    qme = first(m for m in mes if CC.hasQualifier(m))
+    @test CC.isValid(CC.getQualifierRange(qme).begin_loc)
+    ume = first(m for m in mes if !CC.hasQualifier(m) && !CC.hasExplicitTemplateArgs(m))
+    @test !CC.isValid(CC.getQualifierRange(ume).begin_loc)
+
+    # ---- copyTemplateArgumentsInto ------------------------------------------
+    loc0 = CC.getBeginLoc(CC.getBody(fd))
+    tme = first(m for m in mes if CC.hasExplicitTemplateArgs(m))
+    li = CC.TemplateArgumentListInfo(loc0, loc0)
+    CC.copyTemplateArgumentsInto(tme, li)
+    @test size(li) == Int(CC.getNumTemplateArgs(tme))
+    @test size(li) >= 1
+    dispose(li)
+
+    tdre = first(d for d in dres if CC.hasExplicitTemplateArgs(d))
+    li2 = CC.TemplateArgumentListInfo(loc0, loc0)
+    CC.copyTemplateArgumentsInto(tdre, li2)
+    @test size(li2) == Int(CC.getNumTemplateArgs(tdre))
+    @test size(li2) >= 1
+    dispose(li2)
+
+    # a reference with no written argument list leaves the list untouched
+    li3 = CC.TemplateArgumentListInfo(loc0, loc0)
+    CC.copyTemplateArgumentsInto(ume, li3)
+    @test size(li3) == 0
+    dispose(li3)
+
+    # ---- BinaryOperator: the stored-FP-features bit -------------------------
+    # only the value the node was allocated with may be written back
+    bo = first(n for n in nodes if n isa CC.BinaryOperator)
+    hs = CC.hasStoredFPFeatures(bo)
+    @test hs isa Bool
+    CC.setHasStoredFPFeatures(bo, hs)
+    @test CC.hasStoredFPFeatures(bo) == hs
+
+    # ---- OffsetOfExpr::setComponent -----------------------------------------
+    oe = first(n for n in nodes if n isa CC.OffsetOfExpr)
+    nc = CC.getNumComponents(oe)
+    @test nc >= 1
+    comp = CC.getComponent(oe, 0)
+    kind = CC.getKind(comp)
+    CC.setComponent(oe, 0, comp)
+    @test CC.getKind(CC.getComponent(oe, 0)) == kind
+    @test_throws AssertionError CC.setComponent(oe, nc, comp)
+
+    # ---- DesignatedInitExpr::ExpandDesignator -------------------------------
+    # the designators live on the syntactic form, which `subtree` does not walk
+    dies = CC.DesignatedInitExpr[]
+    for ile in filter(n -> n isa CC.InitListExpr, nodes)
+        syn = CC.getSyntacticForm(ile)
+        syn.ptr == C_NULL && continue
+        append!(dies, filter(m -> m isa CC.DesignatedInitExpr, CC.subtree(syn)))
+    end
+    @test !isempty(dies)
+    die = first(dies)
+    nd = size(die)
+    @test nd >= 1
+    d0 = CC.getDesignator(die, 0)
+    @test CC.isFieldDesignator(d0)
+    fname = CC.getFieldName(d0)
+    # a one-for-one replacement rewrites the slot in place, so no Designator dangles
+    CC.ExpandDesignator(die, ctx, 0, [d0])
+    @test size(die) == nd
+    @test CC.getFieldName(CC.getDesignator(die, 0)).ptr == fname.ptr
+    @test_throws AssertionError CC.ExpandDesignator(die, ctx, nd, [d0])
+
+    # ---- AsTypeExpr: built by hand, __builtin_astype being OpenCL-only ------
+    il = first(n for n in nodes if n isa CC.IntegerLiteral)
+    ity = CC.getType(il)
+    loc = CC.getBeginLoc(il)
+    ate = CC.AsTypeExpr(ctx, il, ity, CC.getValueKind(il), CC.getObjectKind(il), loc, loc)
+    @test ate isa CC.AsTypeExpr
+    @test CC.getSrcExpr(ate).ptr == il.ptr
+    @test CC.getBuiltinLoc(ate).ptr == loc.ptr
+    @test CC.getRParenLoc(ate).ptr == loc.ptr
+    @test CC.getType(ate).ptr == ity.ptr
+    @test_throws AssertionError CC.AsTypeExpr(ctx, il, CC.QualType(C_NULL),
+                                              CC.getValueKind(il), CC.getObjectKind(il),
+                                              loc, loc)
+
+    # ---- FixedPointLiteral::CreateFromRawInt + getValueAsString -------------
+    fpl = CC.FixedPointLiteral(ctx, 5, 32, ity, loc, 1)
+    @test fpl isa CC.FixedPointLiteral
+    @test CC.getScale(fpl) == 1
+    @test CC.getLocation(fpl).ptr == loc.ptr
+    s = CC.getValueAsString(fpl, 10)
+    @test s isa String
+    @test !isempty(s)
+    @test_throws AssertionError CC.FixedPointLiteral(ctx, 5, 0, ity, loc, 1)
+    @test_throws AssertionError CC.FixedPointLiteral(ctx, 5, 32, CC.QualType(C_NULL), loc, 1)
+
+    dispose(lookup)
+    dispose(I)
+end
+
+@testset "Expr constant-evaluation results, block-var copy init and deserialization shells" begin
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I,
+             """
+             int exprs_global = 7;
+             constexpr char exprs_buf[] = "hello";
+             constexpr const char *exprs_ptr = exprs_buf;
+             constexpr int exprs_len = 5;
+             int exprs_use(int n) { return exprs_global + n; }
+             """)
+    ctx = CC.get_ast_context(I)
+    lookup = DeclFinder(I)
+
+    @test lookup(I, "exprs_use")
+    fd = CC.FunctionDecl(get_decl(lookup).ptr)
+    nodes = CC.subtree(CC.getBody(fd))
+    # select by referent, not by walk order: the body holds two DeclRefExprs
+    dre = first(n for n in nodes
+                if n isa CC.DeclRefExpr && CC.getNameAsString(CC.getDecl(n)) == "exprs_global")
+
+    @test lookup(I, "exprs_len")
+    size_e = CC.getInit(CC.VarDecl(get_decl(lookup).ptr))
+    @test lookup(I, "exprs_ptr")
+    ptr_e = CC.getInit(CC.VarDecl(get_decl(lookup).ptr))
+
+    # ---- Expr::EvalResult: the status a value-only fold discards -------------
+    rres = CC.EvalResult()
+    @test rres isa CC.EvalResult
+    @test CC.getVal(rres) isa CC.APValue
+    # the initializer of a constexpr int is a constant expression by language rule
+    @test CC.EvaluateAsRValue(size_e, ctx, rres, true)
+    @test CC.getKind(CC.getVal(rres)) == LX.CXAPValueKind_Int
+    @test CC.hasSideEffects(rres) isa Bool
+    @test CC.hasUndefinedBehavior(rres) isa Bool
+
+    # ---- Expr::EvalResult::isGlobalLValue ------------------------------------
+    lres = CC.EvalResult()
+    ok_l = CC.EvaluateAsLValue(dre, ctx, lres, false)
+    @test ok_l isa Bool
+    if ok_l
+        # isGlobalLValue asserts on this, so it is checked before the call
+        @test CC.isLValue(CC.getVal(lres))
+        @test CC.isGlobalLValue(lres) isa Bool
+    end
+
+    # ---- Expr::EvaluateCharRangeAsString -------------------------------------
+    sres = CC.EvalResult()
+    ok_s, text = CC.EvaluateCharRangeAsString(ptr_e, size_e, ptr_e, ctx, sres)
+    @test ok_s isa Bool
+    @test text isa String
+    # exprs_len code units read out of exprs_buf spell its contents
+    @test !ok_s || text == "hello"
+    @test CC.hasSideEffects(sres) isa Bool
+
+    dispose(rres)
+    dispose(lres)
+    dispose(sres)
+
+    # ---- deserialization shells ----------------------------------------------
+    fl = CC.FloatingLiteral(ctx)
+    @test fl isa CC.FloatingLiteral
+    @test CC.getStmtClassName(fl) == "FloatingLiteral"
+    # the shell writes no payload: only values this test sets are read back
+    CC.setExact(fl, true)
+    @test CC.isExact(fl)
+    CC.setExact(fl, false)
+    @test !CC.isExact(fl)
+
+    dre_shell = CC.DeclRefExpr(ctx, false, false, false, 0)
+    @test dre_shell isa CC.DeclRefExpr
+    @test CC.getStmtClassName(dre_shell) == "DeclRefExpr"
+
+    sycl_shell = CC.SYCLUniqueStableNameExpr(ctx)
+    @test sycl_shell isa CC.SYCLUniqueStableNameExpr
+    @test CC.getStmtClassName(sycl_shell) == "SYCLUniqueStableNameExpr"
+
+    poe = CC.PseudoObjectExpr(ctx, 2)
+    @test poe isa CC.PseudoObjectExpr
+    @test CC.getStmtClassName(poe) == "PseudoObjectExpr"
+    # the count is the one slot the shell's constructor writes
+    @test CC.getNumSemanticExprs(poe) == 2
+
+    # ---- CallExpr::setNumArgsUnsafe ------------------------------------------
+    ce_shell = CC.CallExpr(ctx, 3, false)
+    @test CC.getNumArgs(ce_shell) == 3
+    CC.shrinkNumArgs(ce_shell, 1)
+    @test CC.getNumArgs(ce_shell) == 1
+    # back up to the count the shell allocated trailing storage for
+    CC.setNumArgsUnsafe(ce_shell, 3)
+    @test CC.getNumArgs(ce_shell) == 3
+
+    # ---- BlockVarCopyInit -----------------------------------------------------
+    bvci = CC.BlockVarCopyInit(dre, true)
+    @test bvci isa CC.BlockVarCopyInit
+    @test CC.getCopyExpr(bvci).ptr == dre.ptr
+    @test CC.canThrow(bvci)
+    CC.setExprAndFlag(bvci, size_e, false)
+    @test CC.getCopyExpr(bvci).ptr == size_e.ptr
+    @test !CC.canThrow(bvci)
+    dispose(bvci)
+
+    dispose(lookup)
+    dispose(I)
+end
