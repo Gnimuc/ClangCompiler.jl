@@ -438,3 +438,166 @@ function getFlagValue(x::AbstractDiagnosticsEngine)
     @check_ptrs x
     return unsafe_string(clang_DiagnosticsEngine_getFlagValue(x))
 end
+
+
+# DiagnosticsEngine (overload display, extension silencing & prior-diagnostic notes)
+"""
+    overloadCandidatesShown(x::AbstractDiagnosticsEngine, n::Integer)
+Record that `n` overload candidates were just shown. Showing more than four permanently lowers
+the number `getNumOverloadCandidatesToShow` reports for this engine.
+"""
+function overloadCandidatesShown(x::AbstractDiagnosticsEngine, n::Integer)
+    @check_ptrs x
+    clang_DiagnosticsEngine_overloadCandidatesShown(x, n)
+    return nothing
+end
+
+"""
+    IncrementAllExtensionsSilenced(x::AbstractDiagnosticsEngine)
+Silence every extension diagnostic until the matching `DecrementAllExtensionsSilenced`, the way
+entering an `__extension__` block does.
+"""
+function IncrementAllExtensionsSilenced(x::AbstractDiagnosticsEngine)
+    @check_ptrs x
+    clang_DiagnosticsEngine_IncrementAllExtensionsSilenced(x)
+    return nothing
+end
+
+"""
+    DecrementAllExtensionsSilenced(x::AbstractDiagnosticsEngine)
+Undo one `IncrementAllExtensionsSilenced`. Clang counts the nesting in an `unsigned char`, so a
+decrement below zero wraps around and silences every extension diagnostic for good; the
+assertion rejects that unpaired call.
+"""
+function DecrementAllExtensionsSilenced(x::AbstractDiagnosticsEngine)
+    @check_ptrs x
+    @assert hasAllExtensionsSilenced(x) "no matching IncrementAllExtensionsSilenced to undo"
+    clang_DiagnosticsEngine_DecrementAllExtensionsSilenced(x)
+    return nothing
+end
+
+function hasAllExtensionsSilenced(x::AbstractDiagnosticsEngine)
+    @check_ptrs x
+    return clang_DiagnosticsEngine_hasAllExtensionsSilenced(x)
+end
+
+"""
+    notePriorDiagnosticFrom(x::AbstractDiagnosticsEngine, other::AbstractDiagnosticsEngine)
+Copy `other`'s last-diagnostic level into `x`, so a note issued on `x` continues at the level of
+the diagnostic `other` emitted.
+"""
+function notePriorDiagnosticFrom(x::AbstractDiagnosticsEngine, other::AbstractDiagnosticsEngine)
+    @check_ptrs x other
+    clang_DiagnosticsEngine_notePriorDiagnosticFrom(x, other)
+    return nothing
+end
+
+# DiagnosticErrorTrap
+"""
+    DiagnosticErrorTrap(engine::AbstractDiagnosticsEngine) -> DiagnosticErrorTrap
+Snapshot `engine`'s error counters so that errors emitted afterwards can be detected.
+
+The trap holds a reference to `engine`, which must outlive it. This function allocates and one
+should call `dispose` to release the resources after using this object.
+"""
+function DiagnosticErrorTrap(engine::AbstractDiagnosticsEngine)
+    @check_ptrs engine
+    trap = clang_DiagnosticErrorTrap_create(engine)
+    @assert trap != C_NULL "Failed to create DiagnosticErrorTrap"
+    return DiagnosticErrorTrap(trap)
+end
+
+function hasErrorOccurred(x::AbstractDiagnosticErrorTrap)
+    @check_ptrs x
+    return clang_DiagnosticErrorTrap_hasErrorOccurred(x)
+end
+
+function hasUnrecoverableErrorOccurred(x::AbstractDiagnosticErrorTrap)
+    @check_ptrs x
+    return clang_DiagnosticErrorTrap_hasUnrecoverableErrorOccurred(x)
+end
+
+"""
+    reset(x::AbstractDiagnosticErrorTrap)
+Re-snapshot the engine's counters, returning the trap to its "no errors occurred" state.
+"""
+function reset(x::AbstractDiagnosticErrorTrap)
+    @check_ptrs x
+    clang_DiagnosticErrorTrap_reset(x)
+    return nothing
+end
+
+dispose(x::AbstractDiagnosticErrorTrap) = clang_DiagnosticErrorTrap_dispose(x)
+
+# StoredDiagnostic
+"""
+    StoredDiagnostic(level::CXDiagnosticsEngine_Level, id::Integer, message::AbstractString)
+Return a `clang::StoredDiagnostic` holding `message` for diagnostic `id` at `level`. The record
+carries no location, ranges or fix-it hints; attach a location with `setLocation`.
+
+This function allocates and one should call `dispose` to release the resources after using this
+object.
+"""
+function StoredDiagnostic(level::CXDiagnosticsEngine_Level, id::Integer, message::AbstractString)
+    sd = clang_StoredDiagnostic_create(level, id, message)
+    @assert sd != C_NULL "Failed to create StoredDiagnostic"
+    return StoredDiagnostic(sd)
+end
+
+function getID(x::AbstractStoredDiagnostic)
+    @check_ptrs x
+    return clang_StoredDiagnostic_getID(x)
+end
+
+function getLevel(x::AbstractStoredDiagnostic)
+    @check_ptrs x
+    return clang_StoredDiagnostic_getLevel(x)
+end
+
+"""
+    getLocation(x::AbstractStoredDiagnostic) -> SourceLocation
+Return the `SourceLocation` half of the stored `FullSourceLoc`. Its `SourceManager` half comes
+from `getLocationManager`.
+"""
+function getLocation(x::AbstractStoredDiagnostic)
+    @check_ptrs x
+    return SourceLocation(clang_StoredDiagnostic_getLocation(x))
+end
+
+"""
+    getLocationManager(x::AbstractStoredDiagnostic) -> SourceManager
+Return the `SourceManager` half of the stored `FullSourceLoc`. The carrier holds `C_NULL` when
+the diagnostic's location was never given a source manager.
+"""
+function getLocationManager(x::AbstractStoredDiagnostic)
+    @check_ptrs x
+    return SourceManager(clang_StoredDiagnostic_getLocationManager(x))
+end
+
+function getMessage(x::AbstractStoredDiagnostic)
+    @check_ptrs x
+    return unsafe_string(clang_StoredDiagnostic_getMessage(x))
+end
+
+"""
+    setLocation(x::AbstractStoredDiagnostic, loc::SourceLocation, src_mgr::AbstractSourceManager)
+Store `loc` together with `src_mgr` as the diagnostic's `FullSourceLoc`. Only the address of
+`src_mgr` is kept, so it must outlive `x`.
+"""
+function setLocation(x::AbstractStoredDiagnostic, loc::SourceLocation, src_mgr::AbstractSourceManager)
+    @check_ptrs x src_mgr
+    clang_StoredDiagnostic_setLocation(x, loc, src_mgr)
+    return nothing
+end
+
+function range_size(x::AbstractStoredDiagnostic)
+    @check_ptrs x
+    return clang_StoredDiagnostic_range_size(x)
+end
+
+function fixit_size(x::AbstractStoredDiagnostic)
+    @check_ptrs x
+    return clang_StoredDiagnostic_fixit_size(x)
+end
+
+dispose(x::AbstractStoredDiagnostic) = clang_StoredDiagnostic_dispose(x)

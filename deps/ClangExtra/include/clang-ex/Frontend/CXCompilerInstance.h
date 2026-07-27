@@ -4,6 +4,7 @@
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
+#include "clang-c/CXString.h"
 #include "llvm-c/Types.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
@@ -117,6 +118,58 @@ CXLangOptions clang_CompilerInstance_getLangOpts(CXCompilerInstance CI);
 
 // Action
 bool clang_CompilerInstance_ExecuteAction(CXCompilerInstance CI, CXFrontendAction Act);
+
+// Forwarding options
+// PRECONDITION for every accessor in this block: the instance must have an
+// invocation (clang_CompilerInstance_hasInvocation) — CompilerInstance forwards
+// through an unchecked `Invocation->` dereference. Returns are borrowed views.
+CXAnalyzerOptions clang_CompilerInstance_getAnalyzerOpts(CXCompilerInstance CI);
+
+CXDependencyOutputOptions
+clang_CompilerInstance_getDependencyOutputOpts(CXCompilerInstance CI);
+
+CXFileSystemOptions clang_CompilerInstance_getFileSystemOpts(CXCompilerInstance CI);
+
+CXPreprocessorOutputOptions
+clang_CompilerInstance_getPreprocessorOutputOpts(CXCompilerInstance CI);
+
+// Module loading
+// PRECONDITION: requires an invocation (reads FrontendOpts through it).
+bool clang_CompilerInstance_shouldBuildGlobalModuleIndex(CXCompilerInstance CI);
+
+void clang_CompilerInstance_setBuildGlobalModuleIndex(CXCompilerInstance CI, bool Build);
+
+bool clang_CompilerInstance_hadModuleLoaderFatalFailure(CXCompilerInstance CI);
+
+// PRECONDITION: requires an invocation (reads HeaderSearchOpts and the module
+// hash through it). Caller frees the string with clang_disposeString.
+CXString clang_CompilerInstance_getSpecificModuleCachePath(CXCompilerInstance CI);
+
+// AuxTarget
+// PRECONDITION: requires an invocation and diagnostics (reads TargetOpts and
+// reports through getDiagnostics()).
+bool clang_CompilerInstance_createTarget(CXCompilerInstance CI);
+
+// Returns NULL when no auxiliary target has been set.
+CXTargetInfo_ clang_CompilerInstance_getAuxTarget(CXCompilerInstance CI);
+
+void clang_CompilerInstance_setAuxTarget(CXCompilerInstance CI, CXTargetInfo_ Info);
+
+// Code completion
+bool clang_CompilerInstance_hasCodeCompletionConsumer(CXCompilerInstance CI);
+
+// Output files
+// The underlying output streams must have been closed beforehand.
+void clang_CompilerInstance_clearOutputFiles(CXCompilerInstance CI, bool EraseFiles);
+
+// Plugins
+// PRECONDITION: requires an invocation (reads FrontendOpts through it).
+void clang_CompilerInstance_LoadRequestedPlugins(CXCompilerInstance CI);
+
+// Frontend timer
+bool clang_CompilerInstance_hasFrontendTimer(CXCompilerInstance CI);
+
+void clang_CompilerInstance_createFrontendTimer(CXCompilerInstance CI);
 
 LLVM_CLANG_C_EXTERN_C_END
 

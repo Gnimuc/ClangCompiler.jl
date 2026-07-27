@@ -10,9 +10,19 @@ CXFileManager clang_SourceManager_getFileManager(CXSourceManager SM) {
   return &static_cast<clang::SourceManager *>(SM)->getFileManager();
 }
 
+bool clang_SourceManager_userFilesAreVolatile(CXSourceManager SM) {
+  return static_cast<clang::SourceManager *>(SM)->userFilesAreVolatile();
+}
+
 bool clang_SourceManager_isMainFile(CXSourceManager SM, CXFileEntry FE) {
   return static_cast<clang::SourceManager *>(SM)->isMainFile(
       *static_cast<clang::FileEntry *>(FE));
+}
+
+CXFileID clang_SourceManager_getPreambleFileID(CXSourceManager SM) {
+  std::unique_ptr<clang::FileID> ptr = std::make_unique<clang::FileID>(
+      static_cast<clang::SourceManager *>(SM)->getPreambleFileID());
+  return ptr.release();
 }
 
 CXFileID clang_SourceManager_getOrCreateFileID(CXSourceManager SM, CXFileEntryRef FER,
@@ -53,6 +63,18 @@ CXFileEntryRef clang_SourceManager_getFileEntryRefForID(CXSourceManager SM, CXFi
   return std::make_unique<clang::FileEntryRef>(*Ref).release();
 }
 
+const char *clang_SourceManager_getNonBuiltinFilenameForID(CXSourceManager SM, CXFileID FID,
+                                                           size_t *Length) {
+  std::optional<llvm::StringRef> Name =
+      static_cast<clang::SourceManager *>(SM)->getNonBuiltinFilenameForID(
+          *static_cast<clang::FileID *>(FID));
+  if (!Name)
+    return nullptr;
+  if (Length)
+    *Length = Name->size();
+  return Name->data();
+}
+
 const char *clang_SourceManager_getBufferData(CXSourceManager SM, CXFileID FID,
                                               size_t *Length, bool *Invalid) {
   llvm::StringRef Data = static_cast<clang::SourceManager *>(SM)->getBufferData(
@@ -60,6 +82,18 @@ const char *clang_SourceManager_getBufferData(CXSourceManager SM, CXFileID FID,
   if (Length)
     *Length = Data.size();
   return Data.data();
+}
+
+const char *clang_SourceManager_getBufferDataOrNone(CXSourceManager SM, CXFileID FID,
+                                                    size_t *Length) {
+  std::optional<llvm::StringRef> Data =
+      static_cast<clang::SourceManager *>(SM)->getBufferDataOrNone(
+          *static_cast<clang::FileID *>(FID));
+  if (!Data)
+    return nullptr;
+  if (Length)
+    *Length = Data->size();
+  return Data->data();
 }
 
 unsigned clang_SourceManager_getNumCreatedFIDsForFileID(CXSourceManager SM, CXFileID FID) {
@@ -380,6 +414,19 @@ bool clang_SourceManager_isInFileID(CXSourceManager SM, CXSourceLocation_ Loc, C
       RelativeOffset);
 }
 
+unsigned clang_SourceManager_getLineTableFilenameID(CXSourceManager SM, const char *Str) {
+  return static_cast<clang::SourceManager *>(SM)->getLineTableFilenameID(
+      llvm::StringRef(Str));
+}
+
+bool clang_SourceManager_hasLineTable(CXSourceManager SM) {
+  return static_cast<clang::SourceManager *>(SM)->hasLineTable();
+}
+
+size_t clang_SourceManager_getContentCacheSize(CXSourceManager SM) {
+  return static_cast<clang::SourceManager *>(SM)->getContentCacheSize();
+}
+
 CXSourceLocation_ clang_SourceManager_translateFileLineCol(CXSourceManager SM,
                                                            CXFileEntry FE, unsigned Line,
                                                            unsigned Col) {
@@ -430,6 +477,55 @@ bool clang_SourceManager_isPointWithin(CXSourceManager SM, CXSourceLocation_ Loc
       clang::SourceLocation::getFromPtrEncoding(Location),
       clang::SourceLocation::getFromPtrEncoding(Start),
       clang::SourceLocation::getFromPtrEncoding(End));
+}
+
+bool clang_SourceManager_hasFileInfo(CXSourceManager SM, CXFileEntry File) {
+  return static_cast<clang::SourceManager *>(SM)->hasFileInfo(
+      static_cast<clang::FileEntry *>(File));
+}
+
+unsigned clang_SourceManager_local_sloc_entry_size(CXSourceManager SM) {
+  return static_cast<clang::SourceManager *>(SM)->local_sloc_entry_size();
+}
+
+CXSLocEntry clang_SourceManager_getLocalSLocEntry(CXSourceManager SM, unsigned Index) {
+  return const_cast<clang::SrcMgr::SLocEntry *>(
+      &static_cast<clang::SourceManager *>(SM)->getLocalSLocEntry(Index));
+}
+
+unsigned clang_SourceManager_loaded_sloc_entry_size(CXSourceManager SM) {
+  return static_cast<clang::SourceManager *>(SM)->loaded_sloc_entry_size();
+}
+
+CXSLocEntry clang_SourceManager_getSLocEntry(CXSourceManager SM, CXFileID FID,
+                                             bool *Invalid) {
+  return const_cast<clang::SrcMgr::SLocEntry *>(
+      &static_cast<clang::SourceManager *>(SM)->getSLocEntry(
+          *static_cast<clang::FileID *>(FID), Invalid));
+}
+
+uint32_t clang_SourceManager_getNextLocalOffset(CXSourceManager SM) {
+  return static_cast<clang::SourceManager *>(SM)->getNextLocalOffset();
+}
+
+bool clang_SourceManager_isLoadedSourceLocation(CXSourceManager SM, CXSourceLocation_ Loc) {
+  return static_cast<clang::SourceManager *>(SM)->isLoadedSourceLocation(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+bool clang_SourceManager_isLocalSourceLocation(CXSourceManager SM, CXSourceLocation_ Loc) {
+  return static_cast<clang::SourceManager *>(SM)->isLocalSourceLocation(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+bool clang_SourceManager_isLoadedFileID(CXSourceManager SM, CXFileID FID) {
+  return static_cast<clang::SourceManager *>(SM)->isLoadedFileID(
+      *static_cast<clang::FileID *>(FID));
+}
+
+bool clang_SourceManager_isLocalFileID(CXSourceManager SM, CXFileID FID) {
+  return static_cast<clang::SourceManager *>(SM)->isLocalFileID(
+      *static_cast<clang::FileID *>(FID));
 }
 
 CXSourceLocation_ clang_SourceManager_getImmediateMacroCallerLoc(CXSourceManager SM,
@@ -517,4 +613,83 @@ CXSourceLocation_ clang_SourceManager_getLocForEndOfFile(CXSourceManager SM, CXF
   return static_cast<clang::SourceManager *>(SM)
       ->getLocForEndOfFile(*static_cast<clang::FileID *>(FID))
       .getPtrEncoding();
+}
+// SrcMgr::FileInfo
+
+CXSourceLocation_ clang_FileInfo_getIncludeLoc(CXFileInfo FI) {
+  return static_cast<clang::SrcMgr::FileInfo *>(FI)->getIncludeLoc().getPtrEncoding();
+}
+
+CXCharacteristicKind clang_FileInfo_getFileCharacteristic(CXFileInfo FI) {
+  return static_cast<CXCharacteristicKind>(
+      static_cast<clang::SrcMgr::FileInfo *>(FI)->getFileCharacteristic());
+}
+
+bool clang_FileInfo_hasLineDirectives(CXFileInfo FI) {
+  return static_cast<clang::SrcMgr::FileInfo *>(FI)->hasLineDirectives();
+}
+
+const char *clang_FileInfo_getName(CXFileInfo FI, size_t *Length) {
+  llvm::StringRef Name = static_cast<clang::SrcMgr::FileInfo *>(FI)->getName();
+  if (Length)
+    *Length = Name.size();
+  return Name.data();
+}
+
+// SrcMgr::ExpansionInfo
+
+CXSourceLocation_ clang_ExpansionInfo_getSpellingLoc(CXExpansionInfo EI) {
+  return static_cast<clang::SrcMgr::ExpansionInfo *>(EI)->getSpellingLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_ExpansionInfo_getExpansionLocStart(CXExpansionInfo EI) {
+  return static_cast<clang::SrcMgr::ExpansionInfo *>(EI)
+      ->getExpansionLocStart()
+      .getPtrEncoding();
+}
+
+CXSourceLocation_ clang_ExpansionInfo_getExpansionLocEnd(CXExpansionInfo EI) {
+  return static_cast<clang::SrcMgr::ExpansionInfo *>(EI)
+      ->getExpansionLocEnd()
+      .getPtrEncoding();
+}
+
+bool clang_ExpansionInfo_isExpansionTokenRange(CXExpansionInfo EI) {
+  return static_cast<clang::SrcMgr::ExpansionInfo *>(EI)->isExpansionTokenRange();
+}
+
+bool clang_ExpansionInfo_isMacroArgExpansion(CXExpansionInfo EI) {
+  return static_cast<clang::SrcMgr::ExpansionInfo *>(EI)->isMacroArgExpansion();
+}
+
+bool clang_ExpansionInfo_isMacroBodyExpansion(CXExpansionInfo EI) {
+  return static_cast<clang::SrcMgr::ExpansionInfo *>(EI)->isMacroBodyExpansion();
+}
+
+bool clang_ExpansionInfo_isFunctionMacroExpansion(CXExpansionInfo EI) {
+  return static_cast<clang::SrcMgr::ExpansionInfo *>(EI)->isFunctionMacroExpansion();
+}
+
+// SrcMgr::SLocEntry
+
+uint32_t clang_SLocEntry_getOffset(CXSLocEntry E) {
+  return static_cast<clang::SrcMgr::SLocEntry *>(E)->getOffset();
+}
+
+bool clang_SLocEntry_isExpansion(CXSLocEntry E) {
+  return static_cast<clang::SrcMgr::SLocEntry *>(E)->isExpansion();
+}
+
+bool clang_SLocEntry_isFile(CXSLocEntry E) {
+  return static_cast<clang::SrcMgr::SLocEntry *>(E)->isFile();
+}
+
+CXFileInfo clang_SLocEntry_getFile(CXSLocEntry E) {
+  return const_cast<clang::SrcMgr::FileInfo *>(
+      &static_cast<clang::SrcMgr::SLocEntry *>(E)->getFile());
+}
+
+CXExpansionInfo clang_SLocEntry_getExpansion(CXSLocEntry E) {
+  return const_cast<clang::SrcMgr::ExpansionInfo *>(
+      &static_cast<clang::SrcMgr::SLocEntry *>(E)->getExpansion());
 }

@@ -555,3 +555,312 @@ function getTopMacroCallerLoc(src_mgr::SourceManager, loc::SourceLocation)
     @check_ptrs src_mgr
     return SourceLocation(clang_SourceManager_getTopMacroCallerLoc(src_mgr, loc))
 end
+
+
+function userFilesAreVolatile(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_userFilesAreVolatile(src_mgr)
+end
+
+"""
+    getPreambleFileID(src_mgr::SourceManager) -> FileID
+Return the `FileID` of the precompiled preamble. The returned ID is invalid (its hash value
+is 0) when no preamble was set.
+
+This function allocates and one should call `dispose` to release the resources after using this object.
+"""
+function getPreambleFileID(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return FileID(clang_SourceManager_getPreambleFileID(src_mgr))
+end
+
+"""
+    getNonBuiltinFilenameForID(src_mgr::SourceManager, id::FileID) -> Union{String,Nothing}
+Return the filename backing `id`, or `nothing` for non-files and built-in buffers.
+"""
+function getNonBuiltinFilenameForID(src_mgr::SourceManager, id::FileID)
+    @check_ptrs src_mgr id
+    len = Ref{Csize_t}(0)
+    ptr = clang_SourceManager_getNonBuiltinFilenameForID(src_mgr, id, len)
+    return ptr == C_NULL ? nothing : unsafe_string(ptr, len[])
+end
+
+"""
+    getBufferDataOrNone(src_mgr::SourceManager, id::FileID) -> Union{String,Nothing}
+Return the source buffer contents for `id`, or `nothing` when the buffer is invalid.
+"""
+function getBufferDataOrNone(src_mgr::SourceManager, id::FileID)
+    @check_ptrs src_mgr id
+    len = Ref{Csize_t}(0)
+    ptr = clang_SourceManager_getBufferDataOrNone(src_mgr, id, len)
+    return ptr == C_NULL ? nothing : unsafe_string(ptr, len[])
+end
+
+"""
+    getLineTableFilenameID(src_mgr::SourceManager, name::AbstractString) -> UInt32
+Return the uniqued line-table ID for `name`, materialising the line table on first use.
+"""
+function getLineTableFilenameID(src_mgr::SourceManager, name::AbstractString)
+    @check_ptrs src_mgr
+    return clang_SourceManager_getLineTableFilenameID(src_mgr, name)
+end
+
+function hasLineTable(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_hasLineTable(src_mgr)
+end
+
+function getContentCacheSize(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_getContentCacheSize(src_mgr)
+end
+
+function hasFileInfo(src_mgr::SourceManager, entry::FileEntry)
+    @check_ptrs src_mgr entry
+    return clang_SourceManager_hasFileInfo(src_mgr, entry)
+end
+
+function local_sloc_entry_size(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_local_sloc_entry_size(src_mgr)
+end
+
+function loaded_sloc_entry_size(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_loaded_sloc_entry_size(src_mgr)
+end
+
+function getNextLocalOffset(src_mgr::SourceManager)
+    @check_ptrs src_mgr
+    return clang_SourceManager_getNextLocalOffset(src_mgr)
+end
+
+"""
+    isLoadedSourceLocation(src_mgr::SourceManager, loc::SourceLocation) -> Bool
+Return `true` iff `loc` came from a PCH/module.
+"""
+function isLoadedSourceLocation(src_mgr::SourceManager, loc::SourceLocation)
+    @check_ptrs src_mgr
+    return clang_SourceManager_isLoadedSourceLocation(src_mgr, loc)
+end
+
+"""
+    isLocalSourceLocation(src_mgr::SourceManager, loc::SourceLocation) -> Bool
+Return `true` iff `loc` did not come from a PCH/module.
+"""
+function isLocalSourceLocation(src_mgr::SourceManager, loc::SourceLocation)
+    @check_ptrs src_mgr
+    return clang_SourceManager_isLocalSourceLocation(src_mgr, loc)
+end
+
+
+# SourceManager: the SLocEntry table
+
+"""
+    getLocalSLocEntry(src_mgr::SourceManager, index::Integer) -> SLocEntry
+Return the local `SLocEntry` at the 0-based `index`; `index` must be less than
+[`local_sloc_entry_size`](@ref).
+
+The returned carrier borrows an interior pointer into the source manager's local SLocEntry
+table. Creating a new `FileID` can reallocate that table and dangle the pointer, so re-fetch
+rather than caching.
+"""
+function getLocalSLocEntry(src_mgr::SourceManager, index::Integer)
+    @check_ptrs src_mgr
+    @assert 0 <= index < local_sloc_entry_size(src_mgr) "SLocEntry index out of range"
+    return SLocEntry(clang_SourceManager_getLocalSLocEntry(src_mgr, index))
+end
+
+"""
+    getSLocEntry(src_mgr::SourceManager, id::FileID) -> (SLocEntry, Bool)
+Return the `SLocEntry` for `id` and whether the lookup was invalid. The flag is `true` for
+the invalid/sentinel `FileID`, in which case local entry 0 is returned instead.
+
+The entry is borrowed with the same lifetime as [`getLocalSLocEntry`](@ref).
+"""
+function getSLocEntry(src_mgr::SourceManager, id::FileID)
+    @check_ptrs src_mgr id
+    invalid = Ref{Bool}(false)
+    e = clang_SourceManager_getSLocEntry(src_mgr, id, invalid)
+    return SLocEntry(e), invalid[]
+end
+
+"""
+    isLoadedFileID(src_mgr::SourceManager, id::FileID) -> Bool
+Return `true` iff `id` came from a PCH/module. `id` must not be the sentinel `FileID` —
+Clang asserts it and the C shim does not check.
+"""
+function isLoadedFileID(src_mgr::SourceManager, id::FileID)
+    @check_ptrs src_mgr id
+    @assert getHashValue(id) != typemax(UInt32) "FileID must not be the sentinel value"
+    return clang_SourceManager_isLoadedFileID(src_mgr, id)
+end
+
+"""
+    isLocalFileID(src_mgr::SourceManager, id::FileID) -> Bool
+Return `true` iff `id` did not come from a PCH/module. `id` must not be the sentinel
+`FileID` — Clang asserts it and the C shim does not check.
+"""
+function isLocalFileID(src_mgr::SourceManager, id::FileID)
+    @check_ptrs src_mgr id
+    @assert getHashValue(id) != typemax(UInt32) "FileID must not be the sentinel value"
+    return clang_SourceManager_isLocalFileID(src_mgr, id)
+end
+
+# SrcMgr::FileInfo
+
+"""
+    getIncludeLoc(x::AbstractFileInfo) -> SourceLocation
+Return the location of the `#include` that brought in this file; invalid for the main file.
+"""
+function getIncludeLoc(x::AbstractFileInfo)
+    @check_ptrs x
+    return SourceLocation(clang_FileInfo_getIncludeLoc(x))
+end
+
+"""
+    getFileCharacteristic(x::AbstractFileInfo) -> CXCharacteristicKind
+Return whether this file is a user header, a system header, and so on.
+"""
+function getFileCharacteristic(x::AbstractFileInfo)
+    @check_ptrs x
+    return clang_FileInfo_getFileCharacteristic(x)
+end
+
+"""
+    hasLineDirectives(x::AbstractFileInfo) -> Bool
+Return `true` iff this FileID has `#line` directives in it.
+"""
+function hasLineDirectives(x::AbstractFileInfo)
+    @check_ptrs x
+    return clang_FileInfo_hasLineDirectives(x)
+end
+
+"""
+    getName(x::AbstractFileInfo) -> String
+Return the name the file was loaded under from the underlying file system.
+"""
+function getName(x::AbstractFileInfo)
+    @check_ptrs x
+    len = Ref{Csize_t}(0)
+    ptr = clang_FileInfo_getName(x, len)
+    return ptr == C_NULL ? "" : unsafe_string(ptr, len[])
+end
+
+# SrcMgr::ExpansionInfo
+
+"""
+    getSpellingLoc(x::AbstractExpansionInfo) -> SourceLocation
+Return where the character data for the token came from, falling back to the expansion
+start when the spelling location is invalid.
+"""
+function getSpellingLoc(x::AbstractExpansionInfo)
+    @check_ptrs x
+    return SourceLocation(clang_ExpansionInfo_getSpellingLoc(x))
+end
+
+"""
+    getExpansionLocStart(x::AbstractExpansionInfo) -> SourceLocation
+Return the start of the expansion range.
+"""
+function getExpansionLocStart(x::AbstractExpansionInfo)
+    @check_ptrs x
+    return SourceLocation(clang_ExpansionInfo_getExpansionLocStart(x))
+end
+
+"""
+    getExpansionLocEnd(x::AbstractExpansionInfo) -> SourceLocation
+Return the end of the expansion range, falling back to the start for a macro-argument
+expansion (whose recorded end is invalid).
+"""
+function getExpansionLocEnd(x::AbstractExpansionInfo)
+    @check_ptrs x
+    return SourceLocation(clang_ExpansionInfo_getExpansionLocEnd(x))
+end
+
+"""
+    isExpansionTokenRange(x::AbstractExpansionInfo) -> Bool
+Return `true` iff the expansion range is a token range rather than a character range.
+"""
+function isExpansionTokenRange(x::AbstractExpansionInfo)
+    @check_ptrs x
+    return clang_ExpansionInfo_isExpansionTokenRange(x)
+end
+
+"""
+    isMacroArgExpansion(x::AbstractExpansionInfo) -> Bool
+Return `true` iff this entry expands a macro argument into a function-like macro's body.
+"""
+function isMacroArgExpansion(x::AbstractExpansionInfo)
+    @check_ptrs x
+    return clang_ExpansionInfo_isMacroArgExpansion(x)
+end
+
+"""
+    isMacroBodyExpansion(x::AbstractExpansionInfo) -> Bool
+Return `true` iff this entry expands a macro body.
+"""
+function isMacroBodyExpansion(x::AbstractExpansionInfo)
+    @check_ptrs x
+    return clang_ExpansionInfo_isMacroBodyExpansion(x)
+end
+
+"""
+    isFunctionMacroExpansion(x::AbstractExpansionInfo) -> Bool
+Return `true` iff this entry expands a function-like macro.
+"""
+function isFunctionMacroExpansion(x::AbstractExpansionInfo)
+    @check_ptrs x
+    return clang_ExpansionInfo_isFunctionMacroExpansion(x)
+end
+
+# SrcMgr::SLocEntry
+
+"""
+    getOffset(x::AbstractSLocEntry) -> UInt32
+Return this entry's offset in the source-location address space.
+"""
+function getOffset(x::AbstractSLocEntry)
+    @check_ptrs x
+    return clang_SLocEntry_getOffset(x)
+end
+
+"""
+    isExpansion(x::AbstractSLocEntry) -> Bool
+Return `true` iff this entry carries an `ExpansionInfo`.
+"""
+function isExpansion(x::AbstractSLocEntry)
+    @check_ptrs x
+    return clang_SLocEntry_isExpansion(x)
+end
+
+"""
+    isFile(x::AbstractSLocEntry) -> Bool
+Return `true` iff this entry carries a `FileInfo`.
+"""
+function isFile(x::AbstractSLocEntry)
+    @check_ptrs x
+    return clang_SLocEntry_isFile(x)
+end
+
+"""
+    getFile(x::AbstractSLocEntry) -> FileInfo
+Return the file payload. `isFile(x)` must hold — Clang asserts it and the C shim does not
+check. The result borrows an interior pointer into `x`.
+"""
+function getFile(x::AbstractSLocEntry)
+    @check_ptrs x
+    @assert isFile(x) "SLocEntry must be a file entry"
+    return FileInfo(clang_SLocEntry_getFile(x))
+end
+
+"""
+    getExpansion(x::AbstractSLocEntry) -> ExpansionInfo
+Return the macro-expansion payload. `isExpansion(x)` must hold — Clang asserts it and the C
+shim does not check. The result borrows an interior pointer into `x`.
+"""
+function getExpansion(x::AbstractSLocEntry)
+    @check_ptrs x
+    @assert isExpansion(x) "SLocEntry must be a macro-expansion entry"
+    return ExpansionInfo(clang_SLocEntry_getExpansion(x))
+end

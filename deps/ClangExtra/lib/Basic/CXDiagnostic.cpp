@@ -1,5 +1,6 @@
 #include "clang-ex/Basic/CXDiagnostic.h"
 #include "clang/Basic/Diagnostic.h"
+#include "clang/Basic/SourceManager.h"
 
 // DiagnosticConsumer
 unsigned clang_DiagnosticConsumer_getNumErrors(CXDiagnosticConsumer DC) {
@@ -200,6 +201,10 @@ unsigned clang_DiagnosticsEngine_getNumOverloadCandidatesToShow(CXDiagnosticsEng
   return static_cast<clang::DiagnosticsEngine *>(DE)->getNumOverloadCandidatesToShow();
 }
 
+void clang_DiagnosticsEngine_overloadCandidatesShown(CXDiagnosticsEngine DE, unsigned N) {
+  static_cast<clang::DiagnosticsEngine *>(DE)->overloadCandidatesShown(N);
+}
+
 void clang_DiagnosticsEngine_setLastDiagnosticIgnored(CXDiagnosticsEngine DE,
                                                       bool Ignored) {
   static_cast<clang::DiagnosticsEngine *>(DE)->setLastDiagnosticIgnored(Ignored);
@@ -219,6 +224,18 @@ CXDiag_Severity
 clang_DiagnosticsEngine_getExtensionHandlingBehavior(CXDiagnosticsEngine DE) {
   return static_cast<CXDiag_Severity>(
       static_cast<clang::DiagnosticsEngine *>(DE)->getExtensionHandlingBehavior());
+}
+
+void clang_DiagnosticsEngine_IncrementAllExtensionsSilenced(CXDiagnosticsEngine DE) {
+  static_cast<clang::DiagnosticsEngine *>(DE)->IncrementAllExtensionsSilenced();
+}
+
+void clang_DiagnosticsEngine_DecrementAllExtensionsSilenced(CXDiagnosticsEngine DE) {
+  static_cast<clang::DiagnosticsEngine *>(DE)->DecrementAllExtensionsSilenced();
+}
+
+bool clang_DiagnosticsEngine_hasAllExtensionsSilenced(CXDiagnosticsEngine DE) {
+  return static_cast<clang::DiagnosticsEngine *>(DE)->hasAllExtensionsSilenced();
 }
 
 void clang_DiagnosticsEngine_setSeverity(CXDiagnosticsEngine DE, unsigned Diag,
@@ -294,6 +311,12 @@ unsigned clang_DiagnosticsEngine_getCustomDiagID(CXDiagnosticsEngine DE,
       static_cast<clang::DiagnosticIDs::Level>(L), FormatString);
 }
 
+void clang_DiagnosticsEngine_notePriorDiagnosticFrom(CXDiagnosticsEngine DE,
+                                                     CXDiagnosticsEngine Other) {
+  static_cast<clang::DiagnosticsEngine *>(DE)->notePriorDiagnosticFrom(
+      *static_cast<clang::DiagnosticsEngine *>(Other));
+}
+
 void clang_DiagnosticsEngine_Reset(CXDiagnosticsEngine DE, bool soft) {
   static_cast<clang::DiagnosticsEngine *>(DE)->Reset(soft);
 }
@@ -349,4 +372,78 @@ void clang_DiagnosticsEngine_dispose(CXDiagnosticsEngine DE) {
 
 void clang_DiagnosticsEngine_setShowColors(CXDiagnosticsEngine DE, bool ShowColors) {
   static_cast<clang::DiagnosticsEngine *>(DE)->setShowColors(ShowColors);
+}
+// DiagnosticErrorTrap
+CXDiagnosticErrorTrap clang_DiagnosticErrorTrap_create(CXDiagnosticsEngine DE) {
+  auto Trap = std::make_unique<clang::DiagnosticErrorTrap>(
+      *static_cast<clang::DiagnosticsEngine *>(DE));
+  return Trap.release();
+}
+
+bool clang_DiagnosticErrorTrap_hasErrorOccurred(CXDiagnosticErrorTrap T) {
+  return static_cast<clang::DiagnosticErrorTrap *>(T)->hasErrorOccurred();
+}
+
+bool clang_DiagnosticErrorTrap_hasUnrecoverableErrorOccurred(CXDiagnosticErrorTrap T) {
+  return static_cast<clang::DiagnosticErrorTrap *>(T)->hasUnrecoverableErrorOccurred();
+}
+
+void clang_DiagnosticErrorTrap_reset(CXDiagnosticErrorTrap T) {
+  static_cast<clang::DiagnosticErrorTrap *>(T)->reset();
+}
+
+void clang_DiagnosticErrorTrap_dispose(CXDiagnosticErrorTrap T) {
+  delete static_cast<clang::DiagnosticErrorTrap *>(T);
+}
+
+// StoredDiagnostic
+CXStoredDiagnostic clang_StoredDiagnostic_create(CXDiagnosticsEngine_Level Level,
+                                                 unsigned ID, const char *Message) {
+  auto SD = std::make_unique<clang::StoredDiagnostic>(
+      static_cast<clang::DiagnosticsEngine::Level>(Level), ID, Message);
+  return SD.release();
+}
+
+unsigned clang_StoredDiagnostic_getID(CXStoredDiagnostic SD) {
+  return static_cast<clang::StoredDiagnostic *>(SD)->getID();
+}
+
+CXDiagnosticsEngine_Level clang_StoredDiagnostic_getLevel(CXStoredDiagnostic SD) {
+  return static_cast<CXDiagnosticsEngine_Level>(
+      static_cast<clang::StoredDiagnostic *>(SD)->getLevel());
+}
+
+CXSourceLocation_ clang_StoredDiagnostic_getLocation(CXStoredDiagnostic SD) {
+  return static_cast<clang::StoredDiagnostic *>(SD)->getLocation().getPtrEncoding();
+}
+
+CXSourceManager clang_StoredDiagnostic_getLocationManager(CXStoredDiagnostic SD) {
+  const clang::FullSourceLoc &Loc =
+      static_cast<clang::StoredDiagnostic *>(SD)->getLocation();
+  if (!Loc.hasManager())
+    return nullptr;
+  return const_cast<clang::SourceManager *>(&Loc.getManager());
+}
+
+const char *clang_StoredDiagnostic_getMessage(CXStoredDiagnostic SD) {
+  return static_cast<clang::StoredDiagnostic *>(SD)->getMessage().data();
+}
+
+void clang_StoredDiagnostic_setLocation(CXStoredDiagnostic SD, CXSourceLocation_ Loc,
+                                        CXSourceManager SM) {
+  static_cast<clang::StoredDiagnostic *>(SD)->setLocation(
+      clang::FullSourceLoc(clang::SourceLocation::getFromPtrEncoding(Loc),
+                           *static_cast<clang::SourceManager *>(SM)));
+}
+
+unsigned clang_StoredDiagnostic_range_size(CXStoredDiagnostic SD) {
+  return static_cast<clang::StoredDiagnostic *>(SD)->range_size();
+}
+
+unsigned clang_StoredDiagnostic_fixit_size(CXStoredDiagnostic SD) {
+  return static_cast<clang::StoredDiagnostic *>(SD)->fixit_size();
+}
+
+void clang_StoredDiagnostic_dispose(CXStoredDiagnostic SD) {
+  delete static_cast<clang::StoredDiagnostic *>(SD);
 }

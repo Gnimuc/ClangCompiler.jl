@@ -255,35 +255,33 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test CC.resolve(CC.UnexposedType(tpof("tmv_int"))) isa CC.UnexposedType  # resolve@101
 
     # -- jlty_to_llvmty --
-    # Every method currently throws MethodError from inside its body: the
-    # installed LLVM.jl dropped the `(ctx)` argument from its type constructors
-    # (`LLVM.Int8Type()` now uses the task-bound context), so `LLVM.Int8Type(ctx)`
-    # etc. no longer match. Each wrapper frame still executes; accept the fixed
-    # behavior too.
+    # `decoy` is created after `llctx` and therefore sits on top of the task-bound
+    # context stack, so these also verify that the explicit `ctx` argument wins
+    # over the innermost active context.
     llctx = CC.LLVM.Context()
+    decoy = CC.LLVM.Context()
     for T in (Bool, Int8, Int16, Int32, Int64, Int128, UInt8, UInt16, UInt32, UInt64,
               UInt128, Float16, Float32, Float64, Nothing, Ptr{Cvoid})
-        r = try
-            CC.jlty_to_llvmty(T, llctx)                            # @169-@190
-        catch err
-            err
-        end
-        @test r isa CC.LLVM.LLVMType || r isa MethodError
+        llty = CC.jlty_to_llvmty(T, llctx)                         # @172-@193
+        @test llty isa CC.LLVM.LLVMType
+        @test CC.LLVM.context(llty) == llctx
     end
+    @test CC.LLVM.width(CC.jlty_to_llvmty(Bool, llctx)) == 8
+    @test CC.LLVM.width(CC.jlty_to_llvmty(UInt128, llctx)) == 128
+    @test CC.jlty_to_llvmty(Float16, llctx) isa CC.LLVM.FloatingPointType
+    @test CC.jlty_to_llvmty(Nothing, llctx) isa CC.LLVM.VoidType
+    @test CC.jlty_to_llvmty(Ptr{Cvoid}, llctx) isa CC.LLVM.PointerType
+    @test_throws ErrorException CC.jlty_to_llvmty(String, llctx)   # fallback @168
+    CC.LLVM.dispose(decoy)
     CC.LLVM.dispose(llctx)
 
     # -- clty_to_llvmty_mem --
-    # Currently throws UndefVarError(:LLVMType): src/types.jl:197 references the
-    # unqualified name `LLVMType`, which is never imported into ClangCompiler
-    # (only `using LLVM: LLVM`). The wrapper body still executes up to the wrap,
-    # so the call is exercised either way; accept the fixed behavior too.
     cgm = CC.get_codegen_module(I)
-    memty = try
-        CC.clty_to_llvmty_mem(qtof("tmv_int"), cgm)                # @196
-    catch err
-        err
-    end
-    @test memty isa CC.LLVM.LLVMType || memty isa UndefVarError
+    memty = CC.clty_to_llvmty_mem(qtof("tmv_int"), cgm)            # @199
+    @test memty isa CC.LLVM.IntegerType
+    @test CC.LLVM.width(memty) == 32
+    # the AbstractType path routes through get_qual_type
+    @test CC.clty_to_llvmty_mem(tpof("tmv_int"), cgm) isa CC.LLVM.IntegerType
 
     dispose(f)
     dispose(I)

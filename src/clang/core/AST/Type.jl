@@ -708,3 +708,48 @@ end
 
 Base.unsafe_convert(::Type{CXTypeSourceInfo}, x::TypeSourceInfo) = x.ptr
 Base.cconvert(::Type{CXTypeSourceInfo}, x::TypeSourceInfo) = x
+
+
+"""
+    struct VectorType <: AbstractVectorType
+Hold a pointer to a `clang::VectorType` object.
+"""
+struct VectorType <: AbstractVectorType
+    ptr::CXVectorType
+end
+
+Base.unsafe_convert(::Type{CXVectorType}, x::VectorType) = x.ptr
+Base.cconvert(::Type{CXVectorType}, x::VectorType) = x
+
+"""
+    struct AttributedType <: AbstractAttributedType
+Hold a pointer to a `clang::AttributedType` object.
+"""
+struct AttributedType <: AbstractAttributedType
+    ptr::CXAttributedType
+end
+
+Base.unsafe_convert(::Type{CXAttributedType}, x::AttributedType) = x.ptr
+Base.cconvert(::Type{CXAttributedType}, x::AttributedType) = x
+
+"""
+    struct PackExpansionType <: AbstractPackExpansionType
+Hold a pointer to a `clang::PackExpansionType` object.
+"""
+struct PackExpansionType <: AbstractPackExpansionType
+    ptr::CXPackExpansionType
+end
+
+Base.unsafe_convert(::Type{CXPackExpansionType}, x::PackExpansionType) = x.ptr
+Base.cconvert(::Type{CXPackExpansionType}, x::PackExpansionType) = x
+
+"""
+    struct AutoType <: AbstractAutoType
+Hold a pointer to a `clang::AutoType` object.
+"""
+struct AutoType <: AbstractAutoType
+    ptr::CXAutoType
+end
+
+Base.unsafe_convert(::Type{CXAutoType}, x::AutoType) = x.ptr
+Base.cconvert(::Type{CXAutoType}, x::AutoType) = x

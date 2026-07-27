@@ -301,3 +301,166 @@ end
     CC.dispose(f)
     CC.dispose(I)
 end
+
+@testset "Coverage | SourceManagerB" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """extern "C" int smb_add(int a) { return a + 1; }""")
+
+    ci = get_instance(I)
+    sm = CC.getSourceManager(ci)
+    fm = CC.getFileManager(sm)
+    langopts = CC.getLangOpts(ci)
+
+    # ---- SourceManager: state and size queries ----
+    @test CC.userFilesAreVolatile(sm) isa Bool
+    @test CC.hasLineTable(sm) isa Bool
+    @test CC.getContentCacheSize(sm) isa Integer
+    @test CC.local_sloc_entry_size(sm) isa Integer
+    @test CC.local_sloc_entry_size(sm) > 0
+    @test CC.loaded_sloc_entry_size(sm) isa Integer
+    @test CC.getNextLocalOffset(sm) isa Integer
+
+    # the line table is materialised on demand by getLineTableFilenameID
+    fnid = CC.getLineTableFilenameID(sm, "sm-batch-b.h")
+    @test fnid isa Integer
+    @test CC.getLineTableFilenameID(sm, "sm-batch-b.h") == fnid
+    @test CC.hasLineTable(sm)
+
+    # ---- SourceManager: preamble and SLoc address-space predicates ----
+    preamble = CC.getPreambleFileID(sm)
+    @test preamble isa CC.FileID
+    @test CC.getHashValue(preamble) == 0    # no preamble was ever set on this manager
+    CC.dispose(preamble)
+
+    mainid = CC.getMainFileID(sm)
+    startloc = CC.getLocForStartOfFile(sm, mainid)
+    @test CC.isLoadedSourceLocation(sm, startloc) isa Bool
+    @test CC.isLocalSourceLocation(sm, startloc) isa Bool
+    @test CC.isLoadedSourceLocation(sm, startloc) != CC.isLocalSourceLocation(sm, startloc)
+    @test CC.getBufferDataOrNone(sm, mainid) isa Union{String,Nothing}
+    @test CC.getNonBuiltinFilenameForID(sm, mainid) isa Union{String,Nothing}
+    CC.dispose(mainid)
+
+    # ---- SourceManager: a real on-disk file ----
+    path, io = mktemp()
+    write(io, "int smb_dummy;\n")
+    close(io)
+    ref = CC.getFileRef(fm, path)
+    entry = CC.getFileEntry(ref)
+    fid = CC.getOrCreateFileID(sm, ref)
+    @test CC.hasFileInfo(sm, entry) isa Bool
+    data = CC.getBufferDataOrNone(sm, fid)
+    @test data !== nothing
+    @test occursin("smb_dummy", data)
+    fname = CC.getNonBuiltinFilenameForID(sm, fid)
+    @test fname !== nothing
+    @test endswith(fname, basename(path))
+    @test CC.hasFileInfo(sm, entry)
+    CC.dispose(fid)
+    CC.dispose(ref)
+    rm(path; force=true)
+
+    # ---- Module ----
+    root = CC.Module_("SmbTopMod"; visibility_id=3)
+    @test CC.getVisibilityID(root) == 3
+    @test CC.isNamedModuleInterfaceHasInit(root) isa Bool
+    @test CC.isForBuilding(root, langopts) isa Bool
+    @test CC.getASTFile(root) === nothing
+    @test CC.addTopHeaderFilename(root, "smb-top.h") === nothing
+
+    # inference is off for a hand-built module, so an unknown name yields a NULL carrier
+    missing_sub = CC.findOrInferSubmodule(root, "NoSuchSubmodule")
+    @test missing_sub isa CC.Module_
+    @test missing_sub.ptr == C_NULL
+
+    child = CC.Module_("SmbChild"; parent=root)   # owned by root — do not dispose
+    found = CC.findOrInferSubmodule(root, "SmbChild")
+    @test found.ptr == child.ptr
+
+    # The initial availability of a hand-built module is host-decided (it tracks the
+    # parent and the host's module requirements), so only the shape and the
+    # round-trip this test performs itself are asserted.
+    @test CC.isAvailable(root) isa Bool
+    @test CC.markUnavailable(root, true) === nothing
+    @test !CC.isAvailable(root)
+    CC.dispose(root)
+
+    CC.dispose(I)
+end
+
+@testset "Coverage | SourceManager SLocEntry table" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             #define SMB_TWICE(x) ((x) + (x))
+             extern "C" int smb_slocentry(int a) { return SMB_TWICE(a); }
+             """)
+    ci = get_instance(I)
+    sm = CC.getSourceManager(ci)
+
+    # ---- SourceManager: FileID locality ----
+    mainid = CC.getMainFileID(sm)
+    @test CC.isLocalFileID(sm, mainid) isa Bool
+    @test CC.isLoadedFileID(sm, mainid) isa Bool
+    @test CC.isLocalFileID(sm, mainid) == !CC.isLoadedFileID(sm, mainid)
+
+    # ---- SourceManager: the SLocEntry table ----
+    n = Int(CC.local_sloc_entry_size(sm))
+    @test n > 0
+
+    entry, invalid = CC.getSLocEntry(sm, mainid)
+    @test entry isa CC.SLocEntry
+    @test invalid isa Bool
+    @test CC.getOffset(entry) isa Integer
+
+    # Which indices hold a file and which a macro expansion is decided by the parse, so the
+    # exemplars are found by scanning instead of being hard-coded.
+    file_idx = -1
+    expansion_idx = -1
+    kinds_consistent = true
+    for i in 0:(n - 1)
+        e = CC.getLocalSLocEntry(sm, i)
+        is_file = CC.isFile(e)
+        kinds_consistent &= (is_file == !CC.isExpansion(e))
+        if is_file
+            file_idx < 0 && (file_idx = i)
+        else
+            expansion_idx < 0 && (expansion_idx = i)
+        end
+    end
+    @test kinds_consistent
+    @test file_idx >= 0
+    @test expansion_idx >= 0
+
+    # ---- SrcMgr::FileInfo ----
+    fe = CC.getLocalSLocEntry(sm, file_idx)
+    @test CC.getOffset(fe) isa Integer
+    fi = CC.getFile(fe)
+    @test fi isa CC.FileInfo
+    @test CC.getIncludeLoc(fi) isa CC.SourceLocation
+    @test CC.getFileCharacteristic(fi) isa CC.CXCharacteristicKind
+    @test CC.hasLineDirectives(fi) isa Bool
+    @test CC.getName(fi) isa String
+
+    # ---- SrcMgr::ExpansionInfo ----
+    ee = CC.getLocalSLocEntry(sm, expansion_idx)
+    ei = CC.getExpansion(ee)
+    @test ei isa CC.ExpansionInfo
+    @test CC.getSpellingLoc(ei) isa CC.SourceLocation
+    @test CC.getExpansionLocStart(ei) isa CC.SourceLocation
+    @test CC.getExpansionLocEnd(ei) isa CC.SourceLocation
+    @test CC.isExpansionTokenRange(ei) isa Bool
+    @test CC.isMacroArgExpansion(ei) isa Bool
+    @test CC.isMacroBodyExpansion(ei) isa Bool
+    @test CC.isFunctionMacroExpansion(ei) isa Bool
+    # a macro-argument expansion records an invalid end location and a macro-body expansion
+    # a valid one, so the two predicates can never hold together
+    @test !(CC.isMacroArgExpansion(ei) && CC.isMacroBodyExpansion(ei))
+
+    # ---- the preconditions the wrappers restate (Clang asserts them) ----
+    @test_throws AssertionError CC.getLocalSLocEntry(sm, n)
+    @test_throws AssertionError CC.getFile(ee)
+    @test_throws AssertionError CC.getExpansion(fe)
+
+    CC.dispose(mainid)
+    CC.dispose(I)
+end

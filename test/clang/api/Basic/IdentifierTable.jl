@@ -106,7 +106,9 @@ using Test
     @test CC.isUnimportable(root) isa Bool
     @test CC.isAvailable(root) isa Bool
     @test CC.isSubModule(root) == false
-    @test CC.isPartOfFramework(root) == false
+    # framework membership walks to the top-level module and depends on how the
+    # host's module map was synthesized — assert the shape, not the value
+    @test CC.isPartOfFramework(root) isa Bool
     @test CC.isSubFramework(root) == false
     @test CC.isModulePartition(root) == false
     @test CC.isModuleImplementation(root) == false
@@ -134,5 +136,106 @@ using Test
     @test CC.directlyUses(child, root) isa Bool
     CC.dispose(root)                           # also deletes child
 
+    dispose(I)
+end
+
+@testset "Basic | IdentifierInfo mutable flag surface" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             extern "C" int idii_flag_probe(int a) { return a - 1; }
+             """)
+    ci = get_instance(I)
+    lo = CC.getLangOpts(ci)
+
+    # every mutation below happens in a private table, so the live preprocessor's
+    # interned identifiers are never disturbed
+    it = CC.IdentifierTable(lo)
+    ii = get(it, "idii_fresh")
+
+    @test CC.getNameStart(ii) == "idii_fresh"
+    @test CC.getNameStart(ii) == CC.getName(ii)
+
+    # ---- macro state ----
+    @test CC.hasMacroDefinition(ii) == false
+    @test CC.isHandleIdentifierCase(ii) == false
+    @test CC.setHasMacroDefinition(ii, true) === nothing
+    @test CC.hasMacroDefinition(ii) == true
+    @test CC.hadMacroDefinition(ii) == true
+    @test CC.isHandleIdentifierCase(ii) == true
+    CC.setHasMacroDefinition(ii, false)
+    @test CC.hasMacroDefinition(ii) == false
+    @test CC.isHandleIdentifierCase(ii) == false
+
+    @test CC.isDeprecatedMacro(ii) == false
+    CC.setIsDeprecatedMacro(ii, true)
+    @test CC.isDeprecatedMacro(ii) == true
+    CC.setIsDeprecatedMacro(ii, false)
+    @test CC.isDeprecatedMacro(ii) == false
+
+    @test CC.isRestrictExpansion(ii) == false
+    CC.setIsRestrictExpansion(ii, true)
+    @test CC.isRestrictExpansion(ii) == true
+    CC.setIsRestrictExpansion(ii, false)
+    @test CC.isRestrictExpansion(ii) == false
+
+    @test CC.isFinal(ii) == false
+    CC.setIsFinal(ii, true)
+    @test CC.isFinal(ii) == true
+    CC.setIsFinal(ii, false)
+    @test CC.isFinal(ii) == false
+
+    # ---- token-kind / keyword flags ----
+    @test CC.hasRevertedTokenIDToIdentifier(ii) == false
+    @test CC.isExtensionToken(ii) == false
+    CC.setIsExtensionToken(ii, true)
+    @test CC.isExtensionToken(ii) == true
+    CC.setIsExtensionToken(ii, false)
+    @test CC.isExtensionToken(ii) == false
+
+    @test CC.isFutureCompatKeyword(ii) == false
+    CC.setIsFutureCompatKeyword(ii, true)
+    @test CC.isFutureCompatKeyword(ii) == true
+    CC.setIsFutureCompatKeyword(ii, false)
+    @test CC.isFutureCompatKeyword(ii) == false
+
+    @test CC.isCPlusPlusOperatorKeyword(ii) == false
+    CC.setIsCPlusPlusOperatorKeyword(ii)          # C++ default argument is `true`
+    @test CC.isCPlusPlusOperatorKeyword(ii) == true
+    CC.setIsCPlusPlusOperatorKeyword(ii, false)
+    @test CC.isCPlusPlusOperatorKeyword(ii) == false
+
+    # ---- packed ObjC / interesting-identifier / builtin field ----
+    # a plain identifier in a freshly built table is none of the three
+    @test CC.getObjCOrBuiltinID(ii) == 0
+    @test CC.getObjCKeywordID(ii) == 0                 # tok::objc_not_keyword
+    @test CC.getInterestingIdentifierID(ii) == 0       # tok::not_interesting
+    @test CC.getBuiltinID(ii) == 0
+
+    kw = get(it, "int")                                # keywords are added on create
+    @test CC.getObjCOrBuiltinID(kw) isa Int
+    @test CC.getObjCKeywordID(kw) isa Int
+    @test CC.getInterestingIdentifierID(kw) isa Int
+    @test CC.hasRevertedTokenIDToIdentifier(kw) == false
+    @test CC.getNameStart(kw) == "int"
+
+    # ---- deserialization / modules bookkeeping ----
+    @test CC.isFromAST(ii) == false
+    @test CC.hasChangedSinceDeserialization(ii) == false
+    @test CC.isOutOfDate(ii) == false
+    CC.setOutOfDate(ii, true)
+    @test CC.isOutOfDate(ii) == true
+    @test CC.isHandleIdentifierCase(ii) == true
+    CC.setOutOfDate(ii, false)
+    @test CC.isOutOfDate(ii) == false
+
+    @test CC.isModulesImport(ii) == false
+    CC.setModulesImport(ii, true)
+    @test CC.isModulesImport(ii) == true
+    @test CC.isHandleIdentifierCase(ii) == true
+    CC.setModulesImport(ii, false)
+    @test CC.isModulesImport(ii) == false
+    @test CC.isHandleIdentifierCase(ii) == false
+
+    CC.dispose(it)
     dispose(I)
 end

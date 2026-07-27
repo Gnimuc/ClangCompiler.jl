@@ -328,3 +328,46 @@ end
 
 Base.unsafe_convert(::Type{CXEmptyDecl}, x::EmptyDecl) = x.ptr
 Base.cconvert(::Type{CXEmptyDecl}, x::EmptyDecl) = x
+
+
+"""
+    struct TopLevelStmtDecl <: AbstractTopLevelStmtDecl
+Hold a pointer to a `clang::TopLevelStmtDecl` object.
+"""
+struct TopLevelStmtDecl <: AbstractTopLevelStmtDecl
+    ptr::CXTopLevelStmtDecl
+end
+
+Base.unsafe_convert(::Type{CXTopLevelStmtDecl}, x::TopLevelStmtDecl) = x.ptr
+Base.cconvert(::Type{CXTopLevelStmtDecl}, x::TopLevelStmtDecl) = x
+
+
+"""
+    struct HLSLBufferDecl <: AbstractHLSLBufferDecl
+Hold a pointer to a `clang::HLSLBufferDecl` object.
+"""
+struct HLSLBufferDecl <: AbstractHLSLBufferDecl
+    ptr::CXHLSLBufferDecl
+end
+
+Base.unsafe_convert(::Type{CXHLSLBufferDecl}, x::HLSLBufferDecl) = x.ptr
+Base.cconvert(::Type{CXHLSLBufferDecl}, x::HLSLBufferDecl) = x
+
+
+
+"""
+    abstract type AbstractDefaultedFunctionInfo end
+Supertype for `DefaultedFunctionInfo`s.
+"""
+abstract type AbstractDefaultedFunctionInfo end
+
+"""
+    struct DefaultedFunctionInfo <: AbstractDefaultedFunctionInfo
+Hold a pointer to a `clang::FunctionDecl::DefaultedFunctionInfo` object.
+"""
+struct DefaultedFunctionInfo <: AbstractDefaultedFunctionInfo
+    ptr::CXFunctionDecl_DefaultedFunctionInfo
+end
+
+Base.unsafe_convert(::Type{CXFunctionDecl_DefaultedFunctionInfo}, x::DefaultedFunctionInfo) = x.ptr
+Base.cconvert(::Type{CXFunctionDecl_DefaultedFunctionInfo}, x::DefaultedFunctionInfo) = x

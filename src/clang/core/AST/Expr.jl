@@ -560,3 +560,39 @@ end
 
 Base.unsafe_convert(::Type{CXRecoveryExpr}, x::RecoveryExpr) = x.ptr
 Base.cconvert(::Type{CXRecoveryExpr}, x::RecoveryExpr) = x
+
+
+"""
+    abstract type AbstractDesignator end
+Supertype for `Designator`s.
+"""
+abstract type AbstractDesignator end
+
+"""
+    struct Designator <: AbstractDesignator
+Hold a pointer to a `clang::DesignatedInitExpr::Designator` object.
+"""
+struct Designator <: AbstractDesignator
+    ptr::CXDesignator
+end
+
+Base.unsafe_convert(::Type{CXDesignator}, x::Designator) = x.ptr
+Base.cconvert(::Type{CXDesignator}, x::Designator) = x
+
+
+"""
+    abstract type AbstractOffsetOfNode end
+Supertype for `OffsetOfNode`s.
+"""
+abstract type AbstractOffsetOfNode end
+
+"""
+    struct OffsetOfNode <: AbstractOffsetOfNode
+Hold a pointer to a `clang::OffsetOfNode` object.
+"""
+struct OffsetOfNode <: AbstractOffsetOfNode
+    ptr::CXOffsetOfNode
+end
+
+Base.unsafe_convert(::Type{CXOffsetOfNode}, x::OffsetOfNode) = x.ptr
+Base.cconvert(::Type{CXOffsetOfNode}, x::OffsetOfNode) = x

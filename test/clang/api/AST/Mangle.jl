@@ -41,3 +41,31 @@ end
     # method surface is checkable here.
     @test hasmethod(CC.getAllManglings, Tuple{CC.ASTNameGenerator,CC.FunctionDecl})
 end
+
+@testset "Coverage | MangleContext tail" begin
+    I = create_interpreter(["-std=c++20"])
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+    CC.parse(I, "constexpr int pv_int = 5;")
+
+    # MangleContext tail. The mangled strings differ between the Itanium and MS
+    # manglers, so only their shape is asserted.
+    mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
+    @test CC.isAux(mc) == false
+    @test CC.startNewFunction(mc) === nothing
+
+    @test f(I, "pv_int")
+    vd_int = CC.VarDecl(get_decl(f).ptr)
+    nd_int = CC.NamedDecl(vd_int.ptr)
+    id = CC.getAnonymousStructId(mc, nd_int)
+    @test CC.getAnonymousStructIdForDebugInfo(mc, nd_int) == id
+
+    int_qt = CC.getType(vd_int)
+    @test !isempty(CC.mangleCanonicalTypeName(mc, int_qt))
+    @test CC.mangleCanonicalTypeName(mc, int_qt, true) isa String
+    @test !isempty(CC.mangleCXXRTTIName(mc, int_qt))
+    @test CC.mangleCXXRTTIName(mc, int_qt, true) isa String
+
+    dispose(f)
+    dispose(I)
+end

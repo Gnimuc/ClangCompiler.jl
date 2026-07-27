@@ -34,6 +34,16 @@ function isNoBuiltinFunc(x::AbstractLangOptions, name::AbstractString)
     return clang_LangOptions_isNoBuiltinFunc(x, name)
 end
 
+"""
+    getBorland(x::AbstractLangOptions) -> Bool
+Whether Borland extensions (`-fborland-extensions`) are enabled. This gates the
+SEH identifier surface — see [`PoisonSEHIdentifiers`](@ref).
+"""
+function getBorland(x::AbstractLangOptions)
+    @check_ptrs x
+    return clang_LangOptions_getBorland(x)
+end
+
 function assumeFunctionsAreConvergent(x::AbstractLangOptions)
     @check_ptrs x
     return clang_LangOptions_assumeFunctionsAreConvergent(x)

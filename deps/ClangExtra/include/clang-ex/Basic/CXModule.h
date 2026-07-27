@@ -56,6 +56,7 @@ bool clang_Module_isModuleMapModule(CXModule M);
 bool clang_Module_isUnimportable(CXModule M);
 
 // isForBuilding
+bool clang_Module_isForBuilding(CXModule M, CXLangOptions LangOpts);
 
 bool clang_Module_isAvailable(CXModule M);
 
@@ -84,6 +85,7 @@ bool clang_Module_isNamedModuleUnit(CXModule M);
 bool clang_Module_isModuleInterfaceUnit(CXModule M);
 
 // isNamedModuleInterfaceHasInit
+bool clang_Module_isNamedModuleInterfaceHasInit(CXModule M);
 
 CXString clang_Module_getPrimaryModuleInterfaceName(CXModule M);
 
@@ -96,28 +98,37 @@ CXModule clang_Module_getTopLevelModule(CXModule M);
 const char *clang_Module_getTopLevelModuleName(CXModule M);
 
 // getASTFile
+// heap-boxes the `clang::FileEntryRef` (call `clang_FileEntryRef_dispose` to release);
+// returns nullptr when the top-level module has no serialized AST file.
+CXFileEntryRef clang_Module_getASTFile(CXModule M);
 // setASTFile
 // getUmbrellaDirAsWritten
 // getUmbrellaHeaderAsWritten
 // getEffectiveUmbrellaDir
 // addTopHeader
 // addTopHeaderFilename
+void clang_Module_addTopHeaderFilename(CXModule M, const char *Filename);
 // getTopHeaders
 
 bool clang_Module_directlyUses(CXModule M, CXModule Requested);
 
 // addRequirement
 // markUnavailable
+void clang_Module_markUnavailable(CXModule M, bool Unimportable);
 
 // returns NULL when no submodule has that name
 CXModule clang_Module_findSubmodule(CXModule M, const char *Name);
 
 // findOrInferSubmodule
+// returns NULL when no submodule has that name and none can be inferred; an inferred
+// submodule is owned by M.
+CXModule clang_Module_findOrInferSubmodule(CXModule M, const char *Name);
 // getGlobalModuleFragment
 // getPrivateModuleFragment
 
 // isModuleVisible
 // getVisibilityID
+unsigned clang_Module_getVisibilityID(CXModule M);
 
 // helper: count+index over Module::submodules() (random-access; count is exact,
 // slots are never null)

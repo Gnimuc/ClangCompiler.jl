@@ -90,3 +90,105 @@ function getRParenLoc(x::AbstractCXXForRangeStmt)
     return SourceLocation(clang_CXXForRangeStmt_getRParenLoc(x))
 end
 
+
+
+# CXXForRangeStmt
+function getInit(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return Stmt(clang_CXXForRangeStmt_getInit(x))
+end
+
+function getRangeStmt(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return DeclStmt(clang_CXXForRangeStmt_getRangeStmt(x))
+end
+
+function getCond(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return Expr_(clang_CXXForRangeStmt_getCond(x))
+end
+
+function getInc(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return Expr_(clang_CXXForRangeStmt_getInc(x))
+end
+
+function getLoopVarStmt(x::AbstractCXXForRangeStmt)
+    @check_ptrs x
+    return DeclStmt(clang_CXXForRangeStmt_getLoopVarStmt(x))
+end
+
+# CoroutineBodyStmt
+function hasDependentPromiseType(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return clang_CoroutineBodyStmt_hasDependentPromiseType(x)
+end
+
+"""
+    getBody(x::AbstractCoroutineBodyStmt)
+Return the body of the coroutine as written (a `CompoundStmt`).
+"""
+function getBody(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return CompoundStmt(clang_CoroutineBodyStmt_getBody(x))
+end
+
+"""
+    getPromiseDecl(x::AbstractCoroutineBodyStmt)
+Return the `VarDecl` of the coroutine promise object.
+"""
+function getPromiseDecl(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return VarDecl(clang_CoroutineBodyStmt_getPromiseDecl(x))
+end
+
+function getInitSuspendStmt(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return Stmt(clang_CoroutineBodyStmt_getInitSuspendStmt(x))
+end
+
+function getFinalSuspendStmt(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return Stmt(clang_CoroutineBodyStmt_getFinalSuspendStmt(x))
+end
+
+function getExceptionHandler(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return Stmt(clang_CoroutineBodyStmt_getExceptionHandler(x))
+end
+
+function getAllocate(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return Expr_(clang_CoroutineBodyStmt_getAllocate(x))
+end
+
+function getDeallocate(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return Expr_(clang_CoroutineBodyStmt_getDeallocate(x))
+end
+
+function getReturnStmt(x::AbstractCoroutineBodyStmt)
+    @check_ptrs x
+    return Stmt(clang_CoroutineBodyStmt_getReturnStmt(x))
+end
+
+# CoreturnStmt
+function getKeywordLoc(x::AbstractCoreturnStmt)
+    @check_ptrs x
+    return SourceLocation(clang_CoreturnStmt_getKeywordLoc(x))
+end
+
+function getOperand(x::AbstractCoreturnStmt)
+    @check_ptrs x
+    return Expr_(clang_CoreturnStmt_getOperand(x))
+end
+
+function getPromiseCall(x::AbstractCoreturnStmt)
+    @check_ptrs x
+    return Expr_(clang_CoreturnStmt_getPromiseCall(x))
+end
+
+function isImplicit(x::AbstractCoreturnStmt)
+    @check_ptrs x
+    return clang_CoreturnStmt_isImplicit(x)
+end

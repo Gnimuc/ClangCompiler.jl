@@ -9,14 +9,28 @@ CXTargetInfo_ clang_TargetInfo_CreateTargetInfo(CXDiagnosticsEngine DE,
       std::shared_ptr<clang::TargetOptions>(static_cast<clang::TargetOptions *>(Opts)));
 }
 
+CXTargetOptions clang_TargetInfo_getTargetOpts(CXTargetInfo_ TI) {
+  return &static_cast<clang::TargetInfo *>(TI)->getTargetOpts();
+}
+
 CXTargetInfo_IntType clang_TargetInfo_getSizeType(CXTargetInfo_ TI) {
   return static_cast<CXTargetInfo_IntType>(
       static_cast<clang::TargetInfo *>(TI)->getSizeType());
 }
 
+CXTargetInfo_IntType clang_TargetInfo_getSignedSizeType(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getSignedSizeType());
+}
+
 CXTargetInfo_IntType clang_TargetInfo_getIntMaxType(CXTargetInfo_ TI) {
   return static_cast<CXTargetInfo_IntType>(
       static_cast<clang::TargetInfo *>(TI)->getIntMaxType());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getUIntMaxType(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getUIntMaxType());
 }
 
 CXTargetInfo_IntType clang_TargetInfo_getPtrDiffType(CXTargetInfo_ TI, CXLangAS AddrSpace) {
@@ -25,9 +39,21 @@ CXTargetInfo_IntType clang_TargetInfo_getPtrDiffType(CXTargetInfo_ TI, CXLangAS 
           static_cast<clang::LangAS>(AddrSpace)));
 }
 
+CXTargetInfo_IntType clang_TargetInfo_getUnsignedPtrDiffType(CXTargetInfo_ TI,
+                                                             CXLangAS AddrSpace) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getUnsignedPtrDiffType(
+          static_cast<clang::LangAS>(AddrSpace)));
+}
+
 CXTargetInfo_IntType clang_TargetInfo_getIntPtrType(CXTargetInfo_ TI) {
   return static_cast<CXTargetInfo_IntType>(
       static_cast<clang::TargetInfo *>(TI)->getIntPtrType());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getUIntPtrType(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getUIntPtrType());
 }
 
 CXTargetInfo_IntType clang_TargetInfo_getWCharType(CXTargetInfo_ TI) {
@@ -35,9 +61,49 @@ CXTargetInfo_IntType clang_TargetInfo_getWCharType(CXTargetInfo_ TI) {
       static_cast<clang::TargetInfo *>(TI)->getWCharType());
 }
 
+CXTargetInfo_IntType clang_TargetInfo_getWIntType(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getWIntType());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getChar16Type(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getChar16Type());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getChar32Type(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getChar32Type());
+}
+
 CXTargetInfo_IntType clang_TargetInfo_getInt64Type(CXTargetInfo_ TI) {
   return static_cast<CXTargetInfo_IntType>(
       static_cast<clang::TargetInfo *>(TI)->getInt64Type());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getUInt64Type(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getUInt64Type());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getInt16Type(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getInt16Type());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getUInt16Type(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getUInt16Type());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getSigAtomicType(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getSigAtomicType());
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getProcessIDType(CXTargetInfo_ TI) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getProcessIDType());
 }
 
 CXTargetInfo_IntType clang_TargetInfo_getCorrespondingUnsignedType(CXTargetInfo_IntType T) {
@@ -54,6 +120,13 @@ CXTargetInfo_IntType clang_TargetInfo_getIntTypeByWidth(CXTargetInfo_ TI, unsign
                                                         bool IsSigned) {
   return static_cast<CXTargetInfo_IntType>(
       static_cast<clang::TargetInfo *>(TI)->getIntTypeByWidth(BitWidth, IsSigned));
+}
+
+CXTargetInfo_IntType clang_TargetInfo_getLeastIntTypeByWidth(CXTargetInfo_ TI,
+                                                             unsigned BitWidth,
+                                                             bool IsSigned) {
+  return static_cast<CXTargetInfo_IntType>(
+      static_cast<clang::TargetInfo *>(TI)->getLeastIntTypeByWidth(BitWidth, IsSigned));
 }
 
 unsigned clang_TargetInfo_getTypeAlign(CXTargetInfo_ TI, CXTargetInfo_IntType T) {
@@ -77,6 +150,11 @@ uint64_t clang_TargetInfo_getPointerAlign(CXTargetInfo_ TI, CXLangAS AddrSpace) 
 
 uint64_t clang_TargetInfo_getMaxPointerWidth(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getMaxPointerWidth();
+}
+
+uint64_t clang_TargetInfo_getNullPointerValue(CXTargetInfo_ TI, CXLangAS AddrSpace) {
+  return static_cast<clang::TargetInfo *>(TI)->getNullPointerValue(
+      static_cast<clang::LangAS>(AddrSpace));
 }
 
 unsigned clang_TargetInfo_getBoolWidth(CXTargetInfo_ TI) {
@@ -187,6 +265,10 @@ unsigned clang_TargetInfo_getDefaultAlignForAttributeAligned(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getDefaultAlignForAttributeAligned();
 }
 
+unsigned clang_TargetInfo_getMinGlobalAlign(CXTargetInfo_ TI, uint64_t Size) {
+  return static_cast<clang::TargetInfo *>(TI)->getMinGlobalAlign(Size);
+}
+
 unsigned clang_TargetInfo_getNewAlign(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getNewAlign();
 }
@@ -263,6 +345,38 @@ unsigned clang_TargetInfo_getFloat128Align(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getFloat128Align();
 }
 
+unsigned clang_TargetInfo_getIbm128Width(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getIbm128Width();
+}
+
+unsigned clang_TargetInfo_getIbm128Align(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getIbm128Align();
+}
+
+const char *clang_TargetInfo_getLongDoubleMangling(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLongDoubleMangling();
+}
+
+const char *clang_TargetInfo_getFloat128Mangling(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getFloat128Mangling();
+}
+
+const char *clang_TargetInfo_getIbm128Mangling(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getIbm128Mangling();
+}
+
+const char *clang_TargetInfo_getBFloat16Mangling(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getBFloat16Mangling();
+}
+
+unsigned clang_TargetInfo_getLargeArrayMinWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLargeArrayMinWidth();
+}
+
+unsigned clang_TargetInfo_getLargeArrayAlign(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLargeArrayAlign();
+}
+
 unsigned clang_TargetInfo_getMaxAtomicPromoteWidth(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getMaxAtomicPromoteWidth();
 }
@@ -285,6 +399,18 @@ unsigned clang_TargetInfo_getExnObjectAlignment(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getExnObjectAlignment();
 }
 
+unsigned clang_TargetInfo_getIntMaxTWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getIntMaxTWidth();
+}
+
+unsigned clang_TargetInfo_getUnwindWordWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnwindWordWidth();
+}
+
+unsigned clang_TargetInfo_getRegisterWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getRegisterWidth();
+}
+
 const char *clang_TargetInfo_getUserLabelPrefix(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getUserLabelPrefix();
 }
@@ -293,8 +419,59 @@ const char *clang_TargetInfo_getMCountName(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getMCountName();
 }
 
+bool clang_TargetInfo_useSignedCharForObjCBool(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->useSignedCharForObjCBool();
+}
+
+bool clang_TargetInfo_useBitFieldTypeAlignment(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->useBitFieldTypeAlignment();
+}
+
+bool clang_TargetInfo_useZeroLengthBitfieldAlignment(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->useZeroLengthBitfieldAlignment();
+}
+
+bool clang_TargetInfo_useLeadingZeroLengthBitfield(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->useLeadingZeroLengthBitfield();
+}
+
+unsigned clang_TargetInfo_getZeroLengthBitfieldBoundary(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getZeroLengthBitfieldBoundary();
+}
+
+unsigned clang_TargetInfo_getMaxAlignedAttribute(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getMaxAlignedAttribute();
+}
+
+bool clang_TargetInfo_useExplicitBitFieldAlignment(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->useExplicitBitFieldAlignment();
+}
+
+bool clang_TargetInfo_hasAlignMac68kSupport(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->hasAlignMac68kSupport();
+}
+
 const char *clang_TargetInfo_getTypeName(CXTargetInfo_IntType T) {
   return clang::TargetInfo::getTypeName(static_cast<clang::TargetInfo::IntType>(T));
+}
+
+const char *clang_TargetInfo_getTypeConstantSuffix(CXTargetInfo_ TI,
+                                                   CXTargetInfo_IntType T) {
+  return static_cast<clang::TargetInfo *>(TI)->getTypeConstantSuffix(
+      static_cast<clang::TargetInfo::IntType>(T));
+}
+
+const char *clang_TargetInfo_getTypeFormatModifier(CXTargetInfo_IntType T) {
+  return clang::TargetInfo::getTypeFormatModifier(
+      static_cast<clang::TargetInfo::IntType>(T));
+}
+
+bool clang_TargetInfo_useFP16ConversionIntrinsics(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->useFP16ConversionIntrinsics();
+}
+
+bool clang_TargetInfo_useAddressSpaceMapMangling(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->useAddressSpaceMapMangling();
 }
 
 bool clang_TargetInfo_getVScaleRange(CXTargetInfo_ TI, CXLangOptions LO, unsigned *Min,
@@ -308,9 +485,17 @@ bool clang_TargetInfo_getVScaleRange(CXTargetInfo_ TI, CXLangOptions LO, unsigne
   return true;
 }
 
+bool clang_TargetInfo_isCLZForZeroUndef(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->isCLZForZeroUndef();
+}
+
 CXTargetInfo_BuiltinVaListKind clang_TargetInfo_getBuiltinVaListKind(CXTargetInfo_ TI) {
   return static_cast<CXTargetInfo_BuiltinVaListKind>(
       static_cast<clang::TargetInfo *>(TI)->getBuiltinVaListKind());
+}
+
+bool clang_TargetInfo_hasBuiltinMSVaList(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->hasBuiltinMSVaList();
 }
 
 bool clang_TargetInfo_hasAArch64SVETypes(CXTargetInfo_ TI) {
@@ -321,9 +506,41 @@ bool clang_TargetInfo_hasRISCVVTypes(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->hasRISCVVTypes();
 }
 
+uint32_t clang_TargetInfo_getARMCDECoprocMask(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getARMCDECoprocMask();
+}
+
+bool clang_TargetInfo_isValidClobber(CXTargetInfo_ TI, const char *Name) {
+  return static_cast<clang::TargetInfo *>(TI)->isValidClobber(Name);
+}
+
+bool clang_TargetInfo_isValidGCCRegisterName(CXTargetInfo_ TI, const char *Name) {
+  return static_cast<clang::TargetInfo *>(TI)->isValidGCCRegisterName(Name);
+}
+
+CXString clang_TargetInfo_getNormalizedGCCRegisterName(CXTargetInfo_ TI, const char *Name,
+                                                       bool ReturnCanonical) {
+  auto *T = static_cast<clang::TargetInfo *>(TI);
+  return extra::makeCXString(T->getNormalizedGCCRegisterName(Name, ReturnCanonical).str());
+}
+
+bool clang_TargetInfo_isSPRegName(CXTargetInfo_ TI, const char *Name) {
+  return static_cast<clang::TargetInfo *>(TI)->isSPRegName(Name);
+}
+
+CXString clang_TargetInfo_getConstraintRegister(CXTargetInfo_ TI, const char *Constraint,
+                                                const char *Expression) {
+  auto *T = static_cast<clang::TargetInfo *>(TI);
+  return extra::makeCXString(T->getConstraintRegister(Constraint, Expression).str());
+}
+
 CXString clang_TargetInfo_getClobbers(CXTargetInfo_ TI) {
   return extra::makeCXString(
       std::string(static_cast<clang::TargetInfo *>(TI)->getClobbers()));
+}
+
+bool clang_TargetInfo_isNan2008(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->isNan2008();
 }
 
 const char *clang_TargetInfo_getTriple(CXTargetInfo_ TI) {
@@ -332,6 +549,14 @@ const char *clang_TargetInfo_getTriple(CXTargetInfo_ TI) {
 
 const char *clang_TargetInfo_getDataLayoutString(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->getDataLayoutString();
+}
+
+bool clang_TargetInfo_hasProtectedVisibility(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->hasProtectedVisibility();
+}
+
+bool clang_TargetInfo_shouldDLLImportComdatSymbols(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->shouldDLLImportComdatSymbols();
 }
 
 CXString clang_TargetInfo_getABI(CXTargetInfo_ TI) {
@@ -385,12 +610,36 @@ bool clang_TargetInfo_getCPUCacheLineSize(CXTargetInfo_ TI, unsigned *Size) {
   return true;
 }
 
+unsigned clang_TargetInfo_getRegParmMax(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getRegParmMax();
+}
+
 bool clang_TargetInfo_isTLSSupported(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->isTLSSupported();
 }
 
+unsigned clang_TargetInfo_getMaxTLSAlign(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getMaxTLSAlign();
+}
+
 bool clang_TargetInfo_isVLASupported(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->isVLASupported();
+}
+
+bool clang_TargetInfo_isSEHTrySupported(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->isSEHTrySupported();
+}
+
+bool clang_TargetInfo_hasNoAsmVariants(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->hasNoAsmVariants();
+}
+
+int clang_TargetInfo_getEHDataRegisterNumber(CXTargetInfo_ TI, unsigned RegNo) {
+  return static_cast<clang::TargetInfo *>(TI)->getEHDataRegisterNumber(RegNo);
+}
+
+const char *clang_TargetInfo_getStaticInitSectionSpecifier(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getStaticInitSectionSpecifier();
 }
 
 unsigned clang_TargetInfo_getTargetAddressSpace(CXTargetInfo_ TI, CXLangAS AS) {
@@ -409,4 +658,19 @@ bool clang_TargetInfo_isBigEndian(CXTargetInfo_ TI) {
 
 bool clang_TargetInfo_isLittleEndian(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->isLittleEndian();
+}
+bool clang_TargetInfo_hasSjLjLowering(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->hasSjLjLowering();
+}
+
+bool clang_TargetInfo_allowsLargerPreferedTypeAlignment(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->allowsLargerPreferedTypeAlignment();
+}
+
+bool clang_TargetInfo_defaultsToAIXPowerAlignment(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->defaultsToAIXPowerAlignment();
+}
+
+unsigned clang_TargetInfo_getVtblPtrAddressSpace(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getVtblPtrAddressSpace();
 }

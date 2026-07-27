@@ -118,3 +118,182 @@ using Test
 
     CC.dispose(I)
 end
+
+@testset "Basic | TargetInfo integer-type and bitfield tail" begin
+    I = CC.create_interpreter(String[])
+    ci = CC.get_instance(I)
+    ti = CC.getTarget(ci)
+
+    # signed/unsigned counterparts of the canonical typedefs
+    sst = CC.getSignedSizeType(ti)
+    @test sst isa CC.CXTargetInfo_IntType
+    @test CC.isTypeSigned(sst)
+    @test CC.getTypeWidth(ti, sst) == CC.getTypeWidth(ti, CC.getSizeType(ti))
+    @test CC.getCorrespondingUnsignedType(sst) == CC.getSizeType(ti)
+
+    uim = CC.getUIntMaxType(ti)
+    @test !CC.isTypeSigned(uim)
+    @test CC.getTypeWidth(ti, uim) == CC.getIntMaxTWidth(ti)
+    @test CC.getIntMaxTWidth(ti) == CC.getTypeWidth(ti, CC.getIntMaxType(ti))
+
+    upd = CC.getUnsignedPtrDiffType(ti)
+    @test !CC.isTypeSigned(upd)
+    @test CC.getTypeWidth(ti, upd) == CC.getTypeWidth(ti, CC.getPtrDiffType(ti))
+
+    uip = CC.getUIntPtrType(ti)
+    @test !CC.isTypeSigned(uip)
+    @test CC.getTypeWidth(ti, uip) == CC.getTypeWidth(ti, CC.getIntPtrType(ti))
+
+    u64 = CC.getUInt64Type(ti)
+    @test !CC.isTypeSigned(u64)
+    @test CC.getTypeWidth(ti, u64) == 64
+
+    i16 = CC.getInt16Type(ti)
+    @test CC.isTypeSigned(i16)
+    @test CC.getTypeWidth(ti, i16) == 16
+    u16 = CC.getUInt16Type(ti)
+    @test !CC.isTypeSigned(u16)
+    @test CC.getTypeWidth(ti, u16) == 16
+    @test CC.getCorrespondingUnsignedType(i16) == u16
+
+    # remaining IntType slots
+    for f in (CC.getWIntType, CC.getChar16Type, CC.getChar32Type, CC.getSigAtomicType,
+              CC.getProcessIDType)
+        @test f(ti) isa CC.CXTargetInfo_IntType
+    end
+    @test CC.getTypeWidth(ti, CC.getChar16Type(ti)) == 16
+    @test CC.getTypeWidth(ti, CC.getChar32Type(ti)) == 32
+
+    # smallest integer type at least as wide as the request
+    @test CC.getLeastIntTypeByWidth(ti, 4096, true) isa CC.CXTargetInfo_IntType
+    l32 = CC.getLeastIntTypeByWidth(ti, 32, true)
+    @test CC.isTypeSigned(l32)
+    @test CC.getTypeWidth(ti, l32) >= 32
+    @test !CC.isTypeSigned(CC.getLeastIntTypeByWidth(ti, 32, false))
+    @test CC.getTypeWidth(ti, CC.getLeastIntTypeByWidth(ti, 8, true)) >= 8
+
+    # spellings (the documented example is target-independent)
+    @test CC.getTypeConstantSuffix(ti, CC.CXTargetInfo_SignedLong) isa String
+    @test CC.getTypeConstantSuffix(ti, CC.CXTargetInfo_UnsignedInt) isa String
+    @test CC.getTypeFormatModifier(CC.CXTargetInfo_SignedLong) == "l"
+    @test CC.getTypeFormatModifier(CC.CXTargetInfo_SignedShort) isa String
+    @test_throws AssertionError CC.getTypeFormatModifier(CC.CXTargetInfo_NoInt)
+
+    # register width and bitfield layout scalars
+    @test CC.getRegisterWidth(ti) in (32, 64)
+    @test CC.useBitFieldTypeAlignment(ti) isa Bool
+    @test CC.getZeroLengthBitfieldBoundary(ti) isa Cuint
+    @test CC.getMaxAlignedAttribute(ti) isa Cuint
+
+    CC.dispose(I)
+end
+
+@testset "Basic | TargetInfo ABI knobs and GCC register names" begin
+    I = CC.create_interpreter(String[])
+    ci = CC.get_instance(I)
+    ti = CC.getTarget(ci)
+
+    # null pointer value, minimum global alignment, large-array thresholds
+    @test CC.getNullPointerValue(ti) isa UInt64
+    @test CC.getNullPointerValue(ti, CC.CXLangAS_Default) == CC.getNullPointerValue(ti)
+    @test CC.getMinGlobalAlign(ti, UInt64(64)) isa Cuint
+    @test CC.getLargeArrayMinWidth(ti) isa Cuint
+    @test CC.getLargeArrayAlign(ti) isa Cuint
+    @test CC.getUnwindWordWidth(ti) in (32, 64)
+
+    # __ibm128: the width is fixed, the mangling only exists where the type does
+    @test CC.getIbm128Width(ti) == 128
+    @test CC.getIbm128Align(ti) isa Cuint
+    if CC.hasIbm128Type(ti)
+        @test !isempty(CC.getIbm128Mangling(ti))
+    else
+        @test_throws AssertionError CC.getIbm128Mangling(ti)
+    end
+
+    # Itanium mangling codes of the other extended floating-point types
+    @test !isempty(CC.getLongDoubleMangling(ti))
+    @test !isempty(CC.getFloat128Mangling(ti))
+    @test !isempty(CC.getBFloat16Mangling(ti))
+
+    # bitfield layout / address-space mangling / builtin predicates
+    @test CC.useZeroLengthBitfieldAlignment(ti) isa Bool
+    @test CC.useLeadingZeroLengthBitfield(ti) isa Bool
+    @test CC.useExplicitBitFieldAlignment(ti) isa Bool
+    @test CC.useAddressSpaceMapMangling(ti) isa Bool
+    @test CC.isCLZForZeroUndef(ti) isa Bool
+    @test CC.hasBuiltinMSVaList(ti) isa Bool
+
+    # inline-asm clobbers and GCC register names
+    @test CC.isValidClobber(ti, "memory")
+    @test CC.isValidClobber(ti, "cc")
+    @test !CC.isValidGCCRegisterName(ti, "not_a_register")
+    @test !CC.isValidClobber(ti, "not_a_register")
+    @test_throws AssertionError CC.getNormalizedGCCRegisterName(ti, "not_a_register")
+
+    # normalization needs a register this host's target actually has
+    candidates = ["ax", "eax", "rax", "x0", "r0", "sp"]
+    i = findfirst(r -> CC.isValidGCCRegisterName(ti, r), candidates)
+    if i !== nothing
+        reg = candidates[i]
+        @test CC.isValidClobber(ti, reg)
+        @test !isempty(CC.getNormalizedGCCRegisterName(ti, reg))
+        @test CC.getNormalizedGCCRegisterName(ti, reg, true) isa String
+    end
+
+    CC.dispose(I)
+end
+
+@testset "Basic | TargetInfo target policy queries" begin
+    I = create_interpreter(String[])
+    ci = get_instance(I)
+    ti = CC.getTarget(ci)
+
+    # the options the target was configured from: borrowed, never disposed here
+    opts = CC.getTargetOpts(ti)
+    @test opts isa CC.TargetOptions
+    @test opts.ptr != C_NULL
+
+    # ObjC BOOL / mac68k pragma / __fp16 conversion intrinsics
+    @test CC.useSignedCharForObjCBool(ti) isa Bool
+    @test CC.hasAlignMac68kSupport(ti) isa Bool
+    @test CC.useFP16ConversionIntrinsics(ti) isa Bool
+
+    # ARM CDE coprocessor mask is an 8-bit bitfield, zero away from ARM
+    @test CC.getARMCDECoprocMask(ti) isa Unsigned
+    @test CC.getARMCDECoprocMask(ti) <= 0xff
+
+    # stack-pointer register names and single-register constraint extraction
+    @test !CC.isSPRegName(ti, "not_a_register")
+    @test all(r -> CC.isSPRegName(ti, r) isa Bool, ["sp", "esp", "rsp", "r1", "x31"])
+    @test CC.getConstraintRegister(ti, "a", "") isa String
+    @test CC.getConstraintRegister(ti, "r", "") isa String
+    @test isempty(CC.getConstraintRegister(ti, "", ""))
+
+    # NaN encoding, ELF protected visibility, MSVC dllimport comdat semantics
+    @test CC.isNan2008(ti) isa Bool
+    @test CC.hasProtectedVisibility(ti) isa Bool
+    @test CC.shouldDLLImportComdatSymbols(ti) isa Bool
+
+    # register-passed arguments (clang itself asserts < 7) and the TLS alignment cap
+    @test CC.getRegParmMax(ti) isa Cuint
+    @test CC.getRegParmMax(ti) < 7
+    @test CC.getMaxTLSAlign(ti) isa Cuint
+
+    # SEH __try, asm variants, EH data registers, static-init section
+    @test CC.isSEHTrySupported(ti) isa Bool
+    @test CC.hasNoAsmVariants(ti) isa Bool
+    @test CC.getEHDataRegisterNumber(ti, 0) isa Cint
+    @test CC.getEHDataRegisterNumber(ti, 0) >= -1
+    @test CC.getEHDataRegisterNumber(ti, 1) >= -1
+    @test CC.getEHDataRegisterNumber(ti, 99) == -1
+    sect = CC.getStaticInitSectionSpecifier(ti)
+    @test sect === nothing || sect isa String
+
+    # setjmp/longjmp lowering, over-alignment policy, vtable pointer address space
+    @test CC.hasSjLjLowering(ti) isa Bool
+    @test CC.allowsLargerPreferedTypeAlignment(ti) isa Bool
+    @test CC.defaultsToAIXPowerAlignment(ti) isa Bool
+    @test CC.getVtblPtrAddressSpace(ti) isa Cuint
+
+    dispose(I)
+end

@@ -120,6 +120,10 @@ CXOverloadsShown clang_DiagnosticsEngine_getShowOverloads(CXDiagnosticsEngine DE
 
 unsigned clang_DiagnosticsEngine_getNumOverloadCandidatesToShow(CXDiagnosticsEngine DE);
 
+// Call after showing N candidates; N > 4 permanently lowers what
+// getNumOverloadCandidatesToShow reports.
+void clang_DiagnosticsEngine_overloadCandidatesShown(CXDiagnosticsEngine DE, unsigned N);
+
 void clang_DiagnosticsEngine_setLastDiagnosticIgnored(CXDiagnosticsEngine DE, bool Ignored);
 
 bool clang_DiagnosticsEngine_isLastDiagnosticIgnored(CXDiagnosticsEngine DE);
@@ -129,6 +133,14 @@ void clang_DiagnosticsEngine_setExtensionHandlingBehavior(CXDiagnosticsEngine DE
 
 CXDiag_Severity
 clang_DiagnosticsEngine_getExtensionHandlingBehavior(CXDiagnosticsEngine DE);
+
+// The silencing counter is an unsigned char: a Decrement with no matching prior Increment
+// wraps it to a nonzero value and silences every extension diagnostic.
+void clang_DiagnosticsEngine_IncrementAllExtensionsSilenced(CXDiagnosticsEngine DE);
+
+void clang_DiagnosticsEngine_DecrementAllExtensionsSilenced(CXDiagnosticsEngine DE);
+
+bool clang_DiagnosticsEngine_hasAllExtensionsSilenced(CXDiagnosticsEngine DE);
 
 void clang_DiagnosticsEngine_setSeverity(CXDiagnosticsEngine DE, unsigned Diag,
                                          CXDiag_Severity Map, CXSourceLocation_ Loc);
@@ -172,6 +184,11 @@ unsigned clang_DiagnosticsEngine_getCustomDiagID(CXDiagnosticsEngine DE,
                                                  CXDiagnosticsEngine_Level L,
                                                  const char *FormatString);
 
+// Copies Other's last-diagnostic level into DE, so a note issued on DE attaches to the
+// diagnostic Other emitted.
+void clang_DiagnosticsEngine_notePriorDiagnosticFrom(CXDiagnosticsEngine DE,
+                                                     CXDiagnosticsEngine Other);
+
 void clang_DiagnosticsEngine_Reset(CXDiagnosticsEngine DE, bool soft);
 
 bool clang_DiagnosticsEngine_isIgnored(CXDiagnosticsEngine DE, unsigned DiagID,
@@ -201,6 +218,47 @@ CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
 void clang_DiagnosticsEngine_dispose(CXDiagnosticsEngine DE);
 
 void clang_DiagnosticsEngine_setShowColors(CXDiagnosticsEngine DE, bool ShowColors);
+
+// DiagnosticErrorTrap
+// The trap holds a reference to DE and snapshots its error counters, so DE must outlive it.
+CXDiagnosticErrorTrap clang_DiagnosticErrorTrap_create(CXDiagnosticsEngine DE);
+
+bool clang_DiagnosticErrorTrap_hasErrorOccurred(CXDiagnosticErrorTrap T);
+
+bool clang_DiagnosticErrorTrap_hasUnrecoverableErrorOccurred(CXDiagnosticErrorTrap T);
+
+void clang_DiagnosticErrorTrap_reset(CXDiagnosticErrorTrap T);
+
+void clang_DiagnosticErrorTrap_dispose(CXDiagnosticErrorTrap T);
+
+// StoredDiagnostic
+// The diagnostic created here carries no location, ranges or fix-it hints.
+CXStoredDiagnostic clang_StoredDiagnostic_create(CXDiagnosticsEngine_Level Level,
+                                                 unsigned ID, const char *Message);
+
+unsigned clang_StoredDiagnostic_getID(CXStoredDiagnostic SD);
+
+CXDiagnosticsEngine_Level clang_StoredDiagnostic_getLevel(CXStoredDiagnostic SD);
+
+// The stored FullSourceLoc crosses as its two parts: the SourceLocation encoding here, and
+// the SourceManager from getLocationManager.
+CXSourceLocation_ clang_StoredDiagnostic_getLocation(CXStoredDiagnostic SD);
+
+// helper: the SourceManager half of the stored FullSourceLoc, nullptr when it has none.
+CXSourceManager clang_StoredDiagnostic_getLocationManager(CXStoredDiagnostic SD);
+
+// Borrowed pointer into the diagnostic's own message storage; valid until SD is disposed.
+const char *clang_StoredDiagnostic_getMessage(CXStoredDiagnostic SD);
+
+// SM is stored by address in the FullSourceLoc and must outlive SD.
+void clang_StoredDiagnostic_setLocation(CXStoredDiagnostic SD, CXSourceLocation_ Loc,
+                                        CXSourceManager SM);
+
+unsigned clang_StoredDiagnostic_range_size(CXStoredDiagnostic SD);
+
+unsigned clang_StoredDiagnostic_fixit_size(CXStoredDiagnostic SD);
+
+void clang_StoredDiagnostic_dispose(CXStoredDiagnostic SD);
 
 LLVM_CLANG_C_EXTERN_C_END
 

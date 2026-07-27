@@ -27,6 +27,10 @@ bool clang_LangOptions_isNoBuiltinFunc(CXLangOptions LO, const char *Name) {
   return static_cast<clang::LangOptions *>(LO)->isNoBuiltinFunc(llvm::StringRef(Name));
 }
 
+bool clang_LangOptions_getBorland(CXLangOptions LO) {
+  return static_cast<clang::LangOptions *>(LO)->Borland;
+}
+
 bool clang_LangOptions_assumeFunctionsAreConvergent(CXLangOptions LO) {
   return static_cast<clang::LangOptions *>(LO)->assumeFunctionsAreConvergent();
 }

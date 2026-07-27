@@ -47,6 +47,44 @@ CXSourceLocation_ clang_CXXForRangeStmt_getColonLoc(CXCXXForRangeStmt S);
 
 CXSourceLocation_ clang_CXXForRangeStmt_getRParenLoc(CXCXXForRangeStmt S);
 
+// CXXForRangeStmt
+CXStmt clang_CXXForRangeStmt_getInit(CXCXXForRangeStmt FRS);
+
+CXDeclStmt clang_CXXForRangeStmt_getRangeStmt(CXCXXForRangeStmt FRS);
+
+CXExpr clang_CXXForRangeStmt_getCond(CXCXXForRangeStmt FRS);
+
+CXExpr clang_CXXForRangeStmt_getInc(CXCXXForRangeStmt FRS);
+
+CXDeclStmt clang_CXXForRangeStmt_getLoopVarStmt(CXCXXForRangeStmt FRS);
+
+// CoroutineBodyStmt
+bool clang_CoroutineBodyStmt_hasDependentPromiseType(CXCoroutineBodyStmt CBS);
+
+CXCompoundStmt clang_CoroutineBodyStmt_getBody(CXCoroutineBodyStmt CBS);
+
+CXVarDecl clang_CoroutineBodyStmt_getPromiseDecl(CXCoroutineBodyStmt CBS);
+
+CXStmt clang_CoroutineBodyStmt_getInitSuspendStmt(CXCoroutineBodyStmt CBS);
+
+CXStmt clang_CoroutineBodyStmt_getFinalSuspendStmt(CXCoroutineBodyStmt CBS);
+
+CXStmt clang_CoroutineBodyStmt_getExceptionHandler(CXCoroutineBodyStmt CBS);
+
+CXExpr clang_CoroutineBodyStmt_getAllocate(CXCoroutineBodyStmt CBS);
+
+CXExpr clang_CoroutineBodyStmt_getDeallocate(CXCoroutineBodyStmt CBS);
+
+CXStmt clang_CoroutineBodyStmt_getReturnStmt(CXCoroutineBodyStmt CBS);
+
+// CoreturnStmt
+CXSourceLocation_ clang_CoreturnStmt_getKeywordLoc(CXCoreturnStmt CRS);
+
+CXExpr clang_CoreturnStmt_getOperand(CXCoreturnStmt CRS);
+
+CXExpr clang_CoreturnStmt_getPromiseCall(CXCoreturnStmt CRS);
+
+bool clang_CoreturnStmt_isImplicit(CXCoreturnStmt CRS);
 
 LLVM_CLANG_C_EXTERN_C_END
 

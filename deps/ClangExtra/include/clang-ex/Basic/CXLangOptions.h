@@ -8,6 +8,15 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+// Mirror of `clang::LangOptions::FPEvalMethodKind` (clang/Basic/LangOptions.h).
+typedef enum CXFPEvalMethodKind {
+  CXFPEvalMethodKind_FEM_Indeterminable = -1,
+  CXFPEvalMethodKind_FEM_Source = 0,
+  CXFPEvalMethodKind_FEM_Double = 1,
+  CXFPEvalMethodKind_FEM_Extended = 2,
+  CXFPEvalMethodKind_FEM_UnsetOnCommandLine = 3
+} CXFPEvalMethodKind;
+
 void clang_LangOptions_PrintStats(CXLangOptions LO);
 
 bool clang_LangOptions_isCompilingModule(CXLangOptions LO);
@@ -21,6 +30,11 @@ bool clang_LangOptions_isSignedOverflowDefined(CXLangOptions LO);
 bool clang_LangOptions_isSubscriptPointerArithmetic(CXLangOptions LO);
 
 bool clang_LangOptions_isNoBuiltinFunc(CXLangOptions LO, const char *Name);
+
+// The Borland-extensions flag (LangOptions.def: LANGOPT(Borland, ...)). Exposed
+// because Preprocessor::PoisonSEHIdentifiers is only safe when it is set — see
+// clang_Preprocessor_PoisonSEHIdentifiers.
+bool clang_LangOptions_getBorland(CXLangOptions LO);
 
 bool clang_LangOptions_assumeFunctionsAreConvergent(CXLangOptions LO);
 

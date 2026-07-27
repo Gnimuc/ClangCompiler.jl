@@ -25,8 +25,13 @@
 #include "clang-ex/Basic/CXTokenKinds.h"
 #include "clang-ex/Basic/CXModule.h"
 #include "clang-ex/AST/CXDecl.h"
+#include "clang-ex/AST/CXDeclBase.h"
+#include "clang-ex/AST/CXDeclarationName.h"
 #include "clang-ex/AST/CXType.h"
 #include "clang-ex/AST/CXTemplateBase.h"
+#include "clang-ex/AST/CXComment.h"
+#include "clang-ex/Sema/CXLookup.h"
+#include "clang-ex/Sema/CXSema.h"
 #include "clang-ex/Analysis/CXCFG.h"
 #include "clang-ex/Basic/CXDiagnostic.h"
 #include "clang-ex/Basic/CXDiagnosticIDs.h"
@@ -36,8 +41,14 @@
 #include "clang-ex/Basic/CXTargetCXXABI.h"
 #include "clang-ex/Basic/CXTargetInfo.h"
 #include "clang-ex/Lex/CXToken.h"
+#include "clang-ex/AST/CXASTContext.h"
+#include "clang-ex/AST/CXComment.h"
+#include "clang-ex/Sema/CXLookup.h"
 
 #include "clang/AST/APValue.h"
+#include "clang/AST/RawCommentList.h"
+#include "clang/Sema/Sema.h"
+#include "clang/Sema/Lookup.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
@@ -56,6 +67,7 @@
 #include "clang/Basic/TokenKinds.h"
 #include "clang/Basic/Module.h"
 #include "clang/AST/Decl.h"
+#include "clang/AST/DeclarationName.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Type.h"
 #include "clang/AST/TemplateBase.h"
@@ -67,6 +79,19 @@
 #include "clang/Basic/AddressSpaces.h"
 #include "clang/Basic/TargetCXXABI.h"
 #include "clang/Basic/TargetInfo.h"
+#include "clang/AST/ASTContext.h"
+#include "clang-ex/Driver/CXDriver.h"
+#include "clang/Driver/Driver.h"
+#include "clang/AST/Comment.h"
+#include "clang-ex/Basic/CXExpressionTraits.h"
+#include "clang/Basic/ExpressionTraits.h"
+#include "clang-ex/AST/CXStmt.h"
+#include "clang/AST/Stmt.h"
+#include "clang-ex/Basic/CXCapturedStmt.h"
+#include "clang/Basic/CapturedStmt.h"
+#include "clang-ex/Basic/CXBuiltins.h"
+#include "clang/Basic/Builtins.h"
+#include "clang-ex/Basic/CXLangOptions.h"
 
 #define ENUM_SYNC(cx, cpp)                                                                 \
   static_assert(static_cast<int>(cx) == static_cast<int>(cpp), #cx " != " #cpp)
@@ -653,5 +678,407 @@ ENUM_SYNC(CXCFGElementKind_CleanupFunction, clang::CFGElement::CleanupFunction);
 ENUM_SYNC(CXCFGTerminatorKind_StmtBranch, clang::CFGTerminator::StmtBranch);
 ENUM_SYNC(CXCFGTerminatorKind_TemporaryDtorsBranch, clang::CFGTerminator::TemporaryDtorsBranch);
 ENUM_SYNC(CXCFGTerminatorKind_VirtualBaseBranch, clang::CFGTerminator::VirtualBaseBranch);
+
+
+// clang/Basic/Specifiers.h: enum ExprObjectKind
+ENUM_SYNC(CXExprObjectKind_OK_Ordinary, clang::OK_Ordinary);
+ENUM_SYNC(CXExprObjectKind_OK_BitField, clang::OK_BitField);
+ENUM_SYNC(CXExprObjectKind_OK_VectorComponent, clang::OK_VectorComponent);
+ENUM_SYNC(CXExprObjectKind_OK_ObjCProperty, clang::OK_ObjCProperty);
+ENUM_SYNC(CXExprObjectKind_OK_ObjCSubscript, clang::OK_ObjCSubscript);
+ENUM_SYNC(CXExprObjectKind_OK_MatrixComponent, clang::OK_MatrixComponent);
+
+// clang/Basic/Specifiers.h: enum NonOdrUseReason
+ENUM_SYNC(CXNonOdrUseReason_NOUR_None, clang::NOUR_None);
+ENUM_SYNC(CXNonOdrUseReason_NOUR_Unevaluated, clang::NOUR_Unevaluated);
+ENUM_SYNC(CXNonOdrUseReason_NOUR_Constant, clang::NOUR_Constant);
+ENUM_SYNC(CXNonOdrUseReason_NOUR_Discarded, clang::NOUR_Discarded);
+
+// clang/AST/Expr.h: enum class ConstantExprKind (nested in clang::Expr)
+ENUM_SYNC(CXExpr_ConstantExprKind_Normal, clang::Expr::ConstantExprKind::Normal);
+ENUM_SYNC(CXExpr_ConstantExprKind_NonClassTemplateArgument, clang::Expr::ConstantExprKind::NonClassTemplateArgument);
+ENUM_SYNC(CXExpr_ConstantExprKind_ClassTemplateArgument, clang::Expr::ConstantExprKind::ClassTemplateArgument);
+ENUM_SYNC(CXExpr_ConstantExprKind_ImmediateInvocation, clang::Expr::ConstantExprKind::ImmediateInvocation);
+
+// clang/AST/Expr.h: enum NullPointerConstantKind (nested in clang::Expr)
+ENUM_SYNC(CXExpr_NPCK_NotNull, clang::Expr::NPCK_NotNull);
+ENUM_SYNC(CXExpr_NPCK_ZeroExpression, clang::Expr::NPCK_ZeroExpression);
+ENUM_SYNC(CXExpr_NPCK_ZeroLiteral, clang::Expr::NPCK_ZeroLiteral);
+ENUM_SYNC(CXExpr_NPCK_CXX11_nullptr, clang::Expr::NPCK_CXX11_nullptr);
+ENUM_SYNC(CXExpr_NPCK_GNUNull, clang::Expr::NPCK_GNUNull);
+
+// clang/AST/Expr.h: enum NullPointerConstantValueDependence (nested in clang::Expr)
+ENUM_SYNC(CXExpr_NPC_NeverValueDependent, clang::Expr::NPC_NeverValueDependent);
+ENUM_SYNC(CXExpr_NPC_ValueDependentIsNull, clang::Expr::NPC_ValueDependentIsNull);
+ENUM_SYNC(CXExpr_NPC_ValueDependentIsNotNull, clang::Expr::NPC_ValueDependentIsNotNull);
+
+ENUM_SYNC(CXAvailabilityResult_AR_Available, clang::AR_Available);
+ENUM_SYNC(CXAvailabilityResult_AR_NotYetIntroduced, clang::AR_NotYetIntroduced);
+ENUM_SYNC(CXAvailabilityResult_AR_Deprecated, clang::AR_Deprecated);
+ENUM_SYNC(CXAvailabilityResult_AR_Unavailable, clang::AR_Unavailable);
+ENUM_SYNC(CXDecl_IDNS_Label, clang::Decl::IDNS_Label);
+ENUM_SYNC(CXDecl_IDNS_Tag, clang::Decl::IDNS_Tag);
+ENUM_SYNC(CXDecl_IDNS_Type, clang::Decl::IDNS_Type);
+ENUM_SYNC(CXDecl_IDNS_Member, clang::Decl::IDNS_Member);
+ENUM_SYNC(CXDecl_IDNS_Namespace, clang::Decl::IDNS_Namespace);
+ENUM_SYNC(CXDecl_IDNS_Ordinary, clang::Decl::IDNS_Ordinary);
+ENUM_SYNC(CXDecl_IDNS_ObjCProtocol, clang::Decl::IDNS_ObjCProtocol);
+ENUM_SYNC(CXDecl_IDNS_OrdinaryFriend, clang::Decl::IDNS_OrdinaryFriend);
+ENUM_SYNC(CXDecl_IDNS_TagFriend, clang::Decl::IDNS_TagFriend);
+ENUM_SYNC(CXDecl_IDNS_Using, clang::Decl::IDNS_Using);
+ENUM_SYNC(CXDecl_IDNS_NonMemberOperator, clang::Decl::IDNS_NonMemberOperator);
+ENUM_SYNC(CXDecl_IDNS_LocalExtern, clang::Decl::IDNS_LocalExtern);
+ENUM_SYNC(CXDecl_IDNS_OMPReduction, clang::Decl::IDNS_OMPReduction);
+ENUM_SYNC(CXDecl_IDNS_OMPMapper, clang::Decl::IDNS_OMPMapper);
+ENUM_SYNC(CXDecl_Unowned, clang::Decl::ModuleOwnershipKind::Unowned);
+ENUM_SYNC(CXDecl_Visible, clang::Decl::ModuleOwnershipKind::Visible);
+ENUM_SYNC(CXDecl_VisibleWhenImported, clang::Decl::ModuleOwnershipKind::VisibleWhenImported);
+ENUM_SYNC(CXDecl_ReachableWhenImported, clang::Decl::ModuleOwnershipKind::ReachableWhenImported);
+ENUM_SYNC(CXDecl_ModulePrivate, clang::Decl::ModuleOwnershipKind::ModulePrivate);
+ENUM_SYNC(CXDecl_FOK_None, clang::Decl::FOK_None);
+ENUM_SYNC(CXDecl_FOK_Declared, clang::Decl::FOK_Declared);
+ENUM_SYNC(CXDecl_FOK_Undeclared, clang::Decl::FOK_Undeclared);
+ENUM_SYNC(CXDeclarationName_Identifier, clang::DeclarationName::Identifier);
+ENUM_SYNC(CXDeclarationName_ObjCZeroArgSelector, clang::DeclarationName::ObjCZeroArgSelector);
+ENUM_SYNC(CXDeclarationName_ObjCOneArgSelector, clang::DeclarationName::ObjCOneArgSelector);
+ENUM_SYNC(CXDeclarationName_CXXConstructorName, clang::DeclarationName::CXXConstructorName);
+ENUM_SYNC(CXDeclarationName_CXXDestructorName, clang::DeclarationName::CXXDestructorName);
+ENUM_SYNC(CXDeclarationName_CXXConversionFunctionName, clang::DeclarationName::CXXConversionFunctionName);
+ENUM_SYNC(CXDeclarationName_CXXOperatorName, clang::DeclarationName::CXXOperatorName);
+ENUM_SYNC(CXDeclarationName_CXXDeductionGuideName, clang::DeclarationName::CXXDeductionGuideName);
+ENUM_SYNC(CXDeclarationName_CXXLiteralOperatorName, clang::DeclarationName::CXXLiteralOperatorName);
+ENUM_SYNC(CXDeclarationName_CXXUsingDirective, clang::DeclarationName::CXXUsingDirective);
+ENUM_SYNC(CXDeclarationName_ObjCMultiArgSelector, clang::DeclarationName::ObjCMultiArgSelector);
+
+ENUM_SYNC(CXVarDecl_CInit, clang::VarDecl::CInit);
+ENUM_SYNC(CXVarDecl_CallInit, clang::VarDecl::CallInit);
+ENUM_SYNC(CXVarDecl_ListInit, clang::VarDecl::ListInit);
+ENUM_SYNC(CXVarDecl_ParenListInit, clang::VarDecl::ParenListInit);
+ENUM_SYNC(CXVarDecl_TLS_None, clang::VarDecl::TLS_None);
+ENUM_SYNC(CXVarDecl_TLS_Static, clang::VarDecl::TLS_Static);
+ENUM_SYNC(CXVarDecl_TLS_Dynamic, clang::VarDecl::TLS_Dynamic);
+ENUM_SYNC(CXVarDecl_DeclarationOnly, clang::VarDecl::DeclarationOnly);
+ENUM_SYNC(CXVarDecl_TentativeDefinition, clang::VarDecl::TentativeDefinition);
+ENUM_SYNC(CXVarDecl_Definition, clang::VarDecl::Definition);
+
+// clang/AST/Type.h: enum QualType::DestructionKind
+ENUM_SYNC(CXDestructionKind_DK_none, clang::QualType::DK_none);
+ENUM_SYNC(CXDestructionKind_DK_cxx_destructor, clang::QualType::DK_cxx_destructor);
+ENUM_SYNC(CXDestructionKind_DK_objc_strong_lifetime, clang::QualType::DK_objc_strong_lifetime);
+ENUM_SYNC(CXDestructionKind_DK_objc_weak_lifetime, clang::QualType::DK_objc_weak_lifetime);
+ENUM_SYNC(CXDestructionKind_DK_nontrivial_c_struct, clang::QualType::DK_nontrivial_c_struct);
+
+// clang/AST/ASTContext.h: enum class AlignRequirementKind
+ENUM_SYNC(CXAlignRequirementKind_None, clang::AlignRequirementKind::None);
+ENUM_SYNC(CXAlignRequirementKind_RequiredByTypedef, clang::AlignRequirementKind::RequiredByTypedef);
+ENUM_SYNC(CXAlignRequirementKind_RequiredByRecord, clang::AlignRequirementKind::RequiredByRecord);
+ENUM_SYNC(CXAlignRequirementKind_RequiredByEnum, clang::AlignRequirementKind::RequiredByEnum);
+
+// clang/AST/Type.h: enum Type::ScalarTypeKind
+ENUM_SYNC(CXScalarTypeKind_STK_CPointer, clang::Type::STK_CPointer);
+ENUM_SYNC(CXScalarTypeKind_STK_BlockPointer, clang::Type::STK_BlockPointer);
+ENUM_SYNC(CXScalarTypeKind_STK_ObjCObjectPointer, clang::Type::STK_ObjCObjectPointer);
+ENUM_SYNC(CXScalarTypeKind_STK_MemberPointer, clang::Type::STK_MemberPointer);
+ENUM_SYNC(CXScalarTypeKind_STK_Bool, clang::Type::STK_Bool);
+ENUM_SYNC(CXScalarTypeKind_STK_Integral, clang::Type::STK_Integral);
+ENUM_SYNC(CXScalarTypeKind_STK_Floating, clang::Type::STK_Floating);
+ENUM_SYNC(CXScalarTypeKind_STK_IntegralComplex, clang::Type::STK_IntegralComplex);
+ENUM_SYNC(CXScalarTypeKind_STK_FloatingComplex, clang::Type::STK_FloatingComplex);
+ENUM_SYNC(CXScalarTypeKind_STK_FixedPoint, clang::Type::STK_FixedPoint);
+
+// clang/AST/RawCommentList.h: enum RawComment::CommentKind
+ENUM_SYNC(CXRawCommentKind_RCK_Invalid, clang::RawComment::RCK_Invalid);
+ENUM_SYNC(CXRawCommentKind_RCK_OrdinaryBCPL, clang::RawComment::RCK_OrdinaryBCPL);
+ENUM_SYNC(CXRawCommentKind_RCK_OrdinaryC, clang::RawComment::RCK_OrdinaryC);
+ENUM_SYNC(CXRawCommentKind_RCK_BCPLSlash, clang::RawComment::RCK_BCPLSlash);
+ENUM_SYNC(CXRawCommentKind_RCK_BCPLExcl, clang::RawComment::RCK_BCPLExcl);
+ENUM_SYNC(CXRawCommentKind_RCK_JavaDoc, clang::RawComment::RCK_JavaDoc);
+ENUM_SYNC(CXRawCommentKind_RCK_Qt, clang::RawComment::RCK_Qt);
+ENUM_SYNC(CXRawCommentKind_RCK_Merged, clang::RawComment::RCK_Merged);
+
+
+// clang/Sema/Sema.h: enum Sema::LookupNameKind
+ENUM_SYNC(CXLookupNameKind_LookupOrdinaryName, clang::Sema::LookupOrdinaryName);
+ENUM_SYNC(CXLookupNameKind_LookupTagName, clang::Sema::LookupTagName);
+ENUM_SYNC(CXLookupNameKind_LookupLabel, clang::Sema::LookupLabel);
+ENUM_SYNC(CXLookupNameKind_LookupMemberName, clang::Sema::LookupMemberName);
+ENUM_SYNC(CXLookupNameKind_LookupOperatorName, clang::Sema::LookupOperatorName);
+ENUM_SYNC(CXLookupNameKind_LookupDestructorName, clang::Sema::LookupDestructorName);
+ENUM_SYNC(CXLookupNameKind_LookupNestedNameSpecifierName, clang::Sema::LookupNestedNameSpecifierName);
+ENUM_SYNC(CXLookupNameKind_LookupNamespaceName, clang::Sema::LookupNamespaceName);
+ENUM_SYNC(CXLookupNameKind_LookupUsingDeclName, clang::Sema::LookupUsingDeclName);
+ENUM_SYNC(CXLookupNameKind_LookupRedeclarationWithLinkage, clang::Sema::LookupRedeclarationWithLinkage);
+ENUM_SYNC(CXLookupNameKind_LookupLocalFriendName, clang::Sema::LookupLocalFriendName);
+ENUM_SYNC(CXLookupNameKind_LookupObjCProtocolName, clang::Sema::LookupObjCProtocolName);
+ENUM_SYNC(CXLookupNameKind_LookupObjCImplicitSelfParam, clang::Sema::LookupObjCImplicitSelfParam);
+ENUM_SYNC(CXLookupNameKind_LookupOMPReductionName, clang::Sema::LookupOMPReductionName);
+ENUM_SYNC(CXLookupNameKind_LookupOMPMapperName, clang::Sema::LookupOMPMapperName);
+ENUM_SYNC(CXLookupNameKind_LookupAnyName, clang::Sema::LookupAnyName);
+
+// clang/Sema/Sema.h: enum class Sema::CompleteTypeKind (alias Default omitted)
+ENUM_SYNC(CXCompleteTypeKind_Normal, clang::Sema::CompleteTypeKind::Normal);
+ENUM_SYNC(CXCompleteTypeKind_AcceptSizeless, clang::Sema::CompleteTypeKind::AcceptSizeless);
+
+// clang/Sema/Sema.h: enum Sema::RedeclarationKind
+ENUM_SYNC(CXRedeclarationKind_NotForRedeclaration, clang::Sema::NotForRedeclaration);
+ENUM_SYNC(CXRedeclarationKind_ForVisibleRedeclaration, clang::Sema::ForVisibleRedeclaration);
+ENUM_SYNC(CXRedeclarationKind_ForExternalRedeclaration, clang::Sema::ForExternalRedeclaration);
+
+
+// clang/Sema/Lookup.h: enum LookupResult::LookupResultKind
+ENUM_SYNC(CXLookupResultKind_NotFound, clang::LookupResult::NotFound);
+ENUM_SYNC(CXLookupResultKind_NotFoundInCurrentInstantiation, clang::LookupResult::NotFoundInCurrentInstantiation);
+ENUM_SYNC(CXLookupResultKind_Found, clang::LookupResult::Found);
+ENUM_SYNC(CXLookupResultKind_FoundOverloaded, clang::LookupResult::FoundOverloaded);
+ENUM_SYNC(CXLookupResultKind_FoundUnresolvedValue, clang::LookupResult::FoundUnresolvedValue);
+ENUM_SYNC(CXLookupResultKind_Ambiguous, clang::LookupResult::Ambiguous);
+
+// clang/Sema/Lookup.h: enum LookupResult::AmbiguityKind
+ENUM_SYNC(CXAmbiguityKind_AmbiguousBaseSubobjectTypes, clang::LookupResult::AmbiguousBaseSubobjectTypes);
+ENUM_SYNC(CXAmbiguityKind_AmbiguousBaseSubobjects, clang::LookupResult::AmbiguousBaseSubobjects);
+ENUM_SYNC(CXAmbiguityKind_AmbiguousReference, clang::LookupResult::AmbiguousReference);
+ENUM_SYNC(CXAmbiguityKind_AmbiguousReferenceToPlaceholderVariable, clang::LookupResult::AmbiguousReferenceToPlaceholderVariable);
+ENUM_SYNC(CXAmbiguityKind_AmbiguousTagHiding, clang::LookupResult::AmbiguousTagHiding);
+
+ENUM_SYNC(CXUserDefinedLiteral_LOK_Raw, clang::UserDefinedLiteral::LOK_Raw);
+ENUM_SYNC(CXUserDefinedLiteral_LOK_Template, clang::UserDefinedLiteral::LOK_Template);
+ENUM_SYNC(CXUserDefinedLiteral_LOK_Integer, clang::UserDefinedLiteral::LOK_Integer);
+ENUM_SYNC(CXUserDefinedLiteral_LOK_Floating, clang::UserDefinedLiteral::LOK_Floating);
+ENUM_SYNC(CXUserDefinedLiteral_LOK_String, clang::UserDefinedLiteral::LOK_String);
+ENUM_SYNC(CXUserDefinedLiteral_LOK_Character, clang::UserDefinedLiteral::LOK_Character);
+
+// clang/Basic/Linkage.h: enum GVALinkage
+ENUM_SYNC(CXGVALinkage_GVA_Internal, clang::GVA_Internal);
+ENUM_SYNC(CXGVALinkage_GVA_AvailableExternally, clang::GVA_AvailableExternally);
+ENUM_SYNC(CXGVALinkage_GVA_DiscardableODR, clang::GVA_DiscardableODR);
+ENUM_SYNC(CXGVALinkage_GVA_StrongExternal, clang::GVA_StrongExternal);
+ENUM_SYNC(CXGVALinkage_GVA_StrongODR, clang::GVA_StrongODR);
+
+// clang/AST/ASTContext.h: enum class ASTContext::InlineVariableDefinitionKind
+ENUM_SYNC(CXInlineVariableDefinitionKind_None,
+          clang::ASTContext::InlineVariableDefinitionKind::None);
+ENUM_SYNC(CXInlineVariableDefinitionKind_Weak,
+          clang::ASTContext::InlineVariableDefinitionKind::Weak);
+ENUM_SYNC(CXInlineVariableDefinitionKind_WeakUnknown,
+          clang::ASTContext::InlineVariableDefinitionKind::WeakUnknown);
+ENUM_SYNC(CXInlineVariableDefinitionKind_Strong,
+          clang::ASTContext::InlineVariableDefinitionKind::Strong);
+
+// clang/Driver/Driver.h: enum clang::driver::LTOKind
+ENUM_SYNC(CXLTOKind_LTOK_None, clang::driver::LTOK_None);
+ENUM_SYNC(CXLTOKind_LTOK_Full, clang::driver::LTOK_Full);
+ENUM_SYNC(CXLTOKind_LTOK_Thin, clang::driver::LTOK_Thin);
+ENUM_SYNC(CXLTOKind_LTOK_Unknown, clang::driver::LTOK_Unknown);
+
+// clang/AST/Type.h: enum class VectorKind
+ENUM_SYNC(CXVectorKind_Generic, clang::VectorKind::Generic);
+ENUM_SYNC(CXVectorKind_AltiVecVector, clang::VectorKind::AltiVecVector);
+ENUM_SYNC(CXVectorKind_AltiVecPixel, clang::VectorKind::AltiVecPixel);
+ENUM_SYNC(CXVectorKind_AltiVecBool, clang::VectorKind::AltiVecBool);
+ENUM_SYNC(CXVectorKind_Neon, clang::VectorKind::Neon);
+ENUM_SYNC(CXVectorKind_NeonPoly, clang::VectorKind::NeonPoly);
+ENUM_SYNC(CXVectorKind_SveFixedLengthData, clang::VectorKind::SveFixedLengthData);
+ENUM_SYNC(CXVectorKind_SveFixedLengthPredicate, clang::VectorKind::SveFixedLengthPredicate);
+ENUM_SYNC(CXVectorKind_RVVFixedLengthData, clang::VectorKind::RVVFixedLengthData);
+ENUM_SYNC(CXVectorKind_RVVFixedLengthMask, clang::VectorKind::RVVFixedLengthMask);
+
+// clang/AST/Comment.h: enum clang::comments::CommandMarkerKind
+ENUM_SYNC(CXCommandMarkerKind_CMK_Backslash, clang::comments::CMK_Backslash);
+ENUM_SYNC(CXCommandMarkerKind_CMK_At, clang::comments::CMK_At);
+
+// clang/AST/Comment.h: enum class clang::comments::ParamCommandPassDirection
+ENUM_SYNC(CXParamCommandPassDirection_In, clang::comments::ParamCommandPassDirection::In);
+ENUM_SYNC(CXParamCommandPassDirection_Out, clang::comments::ParamCommandPassDirection::Out);
+ENUM_SYNC(CXParamCommandPassDirection_InOut,
+          clang::comments::ParamCommandPassDirection::InOut);
+
+// clang/AST/Type.h: enum class AutoTypeKeyword
+ENUM_SYNC(CXAutoTypeKeyword_Auto, clang::AutoTypeKeyword::Auto);
+ENUM_SYNC(CXAutoTypeKeyword_DecltypeAuto, clang::AutoTypeKeyword::DecltypeAuto);
+ENUM_SYNC(CXAutoTypeKeyword_GNUAutoType, clang::AutoTypeKeyword::GNUAutoType);
+
+// clang/Basic/IdentifierTable.h: enum ObjCStringFormatFamily
+ENUM_SYNC(CXObjCStringFormatFamily_SFF_None, clang::SFF_None);
+ENUM_SYNC(CXObjCStringFormatFamily_SFF_NSString, clang::SFF_NSString);
+ENUM_SYNC(CXObjCStringFormatFamily_SFF_CFString, clang::SFF_CFString);
+
+// clang/AST/DeclBase.h: enum clang::Decl::ObjCDeclQualifier
+ENUM_SYNC(CXObjCDeclQualifier_OBJC_TQ_None, clang::Decl::OBJC_TQ_None);
+ENUM_SYNC(CXObjCDeclQualifier_OBJC_TQ_In, clang::Decl::OBJC_TQ_In);
+ENUM_SYNC(CXObjCDeclQualifier_OBJC_TQ_Inout, clang::Decl::OBJC_TQ_Inout);
+ENUM_SYNC(CXObjCDeclQualifier_OBJC_TQ_Out, clang::Decl::OBJC_TQ_Out);
+ENUM_SYNC(CXObjCDeclQualifier_OBJC_TQ_Bycopy, clang::Decl::OBJC_TQ_Bycopy);
+ENUM_SYNC(CXObjCDeclQualifier_OBJC_TQ_Byref, clang::Decl::OBJC_TQ_Byref);
+ENUM_SYNC(CXObjCDeclQualifier_OBJC_TQ_Oneway, clang::Decl::OBJC_TQ_Oneway);
+ENUM_SYNC(CXObjCDeclQualifier_OBJC_TQ_CSNullability, clang::Decl::OBJC_TQ_CSNullability);
+
+// clang/AST/Expr.h: enum clang::OffsetOfNode::Kind
+ENUM_SYNC(CXOffsetOfNode_Kind_Array, clang::OffsetOfNode::Array);
+ENUM_SYNC(CXOffsetOfNode_Kind_Field, clang::OffsetOfNode::Field);
+ENUM_SYNC(CXOffsetOfNode_Kind_Identifier, clang::OffsetOfNode::Identifier);
+ENUM_SYNC(CXOffsetOfNode_Kind_Base, clang::OffsetOfNode::Base);
+
+// clang/Basic/TypeTraits.h: enum ArrayTypeTrait
+ENUM_SYNC(CXArrayTypeTrait_ATT_ArrayRank, clang::ATT_ArrayRank);
+ENUM_SYNC(CXArrayTypeTrait_ATT_ArrayExtent, clang::ATT_ArrayExtent);
+
+// clang/Basic/ExpressionTraits.h: enum ExpressionTrait
+ENUM_SYNC(CXExpressionTrait_ET_IsLValueExpr, clang::ET_IsLValueExpr);
+ENUM_SYNC(CXExpressionTrait_ET_IsRValueExpr, clang::ET_IsRValueExpr);
+
+// clang/AST/Type.h: enum QualType::PrimitiveDefaultInitializeKind
+ENUM_SYNC(CXPrimitiveDefaultInitializeKind_PDIK_Trivial, clang::QualType::PDIK_Trivial);
+ENUM_SYNC(CXPrimitiveDefaultInitializeKind_PDIK_ARCStrong, clang::QualType::PDIK_ARCStrong);
+ENUM_SYNC(CXPrimitiveDefaultInitializeKind_PDIK_ARCWeak, clang::QualType::PDIK_ARCWeak);
+ENUM_SYNC(CXPrimitiveDefaultInitializeKind_PDIK_Struct, clang::QualType::PDIK_Struct);
+
+// clang/AST/Type.h: enum QualType::PrimitiveCopyKind
+ENUM_SYNC(CXPrimitiveCopyKind_PCK_Trivial, clang::QualType::PCK_Trivial);
+ENUM_SYNC(CXPrimitiveCopyKind_PCK_VolatileTrivial, clang::QualType::PCK_VolatileTrivial);
+ENUM_SYNC(CXPrimitiveCopyKind_PCK_ARCStrong, clang::QualType::PCK_ARCStrong);
+ENUM_SYNC(CXPrimitiveCopyKind_PCK_ARCWeak, clang::QualType::PCK_ARCWeak);
+ENUM_SYNC(CXPrimitiveCopyKind_PCK_Struct, clang::QualType::PCK_Struct);
+
+// clang/AST/Type.h: enum RefQualifierKind
+ENUM_SYNC(CXRefQualifierKind_RQ_None, clang::RQ_None);
+ENUM_SYNC(CXRefQualifierKind_RQ_LValue, clang::RQ_LValue);
+ENUM_SYNC(CXRefQualifierKind_RQ_RValue, clang::RQ_RValue);
+
+// clang/Basic/ExceptionSpecificationType.h: enum CanThrowResult
+ENUM_SYNC(CXCanThrowResult_CT_Cannot, clang::CT_Cannot);
+ENUM_SYNC(CXCanThrowResult_CT_Dependent, clang::CT_Dependent);
+ENUM_SYNC(CXCanThrowResult_CT_Can, clang::CT_Can);
+
+// clang/AST/Stmt.h: enum clang::Stmt::Likelihood
+ENUM_SYNC(CXLikelihood_LH_Unlikely, clang::Stmt::LH_Unlikely);
+ENUM_SYNC(CXLikelihood_LH_None, clang::Stmt::LH_None);
+ENUM_SYNC(CXLikelihood_LH_Likely, clang::Stmt::LH_Likely);
+
+// clang/AST/Comment.h: enum class clang::comments::InlineCommandRenderKind
+ENUM_SYNC(CXInlineCommandRenderKind_Normal,
+          clang::comments::InlineCommandRenderKind::Normal);
+ENUM_SYNC(CXInlineCommandRenderKind_Bold, clang::comments::InlineCommandRenderKind::Bold);
+ENUM_SYNC(CXInlineCommandRenderKind_Monospaced,
+          clang::comments::InlineCommandRenderKind::Monospaced);
+ENUM_SYNC(CXInlineCommandRenderKind_Emphasized,
+          clang::comments::InlineCommandRenderKind::Emphasized);
+ENUM_SYNC(CXInlineCommandRenderKind_Anchor,
+          clang::comments::InlineCommandRenderKind::Anchor);
+
+// clang/AST/Expr.h: enum class ConstantResultStorageKind
+ENUM_SYNC(CXConstantResultStorageKind_None, clang::ConstantResultStorageKind::None);
+ENUM_SYNC(CXConstantResultStorageKind_Int64, clang::ConstantResultStorageKind::Int64);
+ENUM_SYNC(CXConstantResultStorageKind_APValue, clang::ConstantResultStorageKind::APValue);
+
+// clang/AST/Expr.h: enum class SourceLocIdentKind
+ENUM_SYNC(CXSourceLocIdentKind_Function, clang::SourceLocIdentKind::Function);
+ENUM_SYNC(CXSourceLocIdentKind_FuncSig, clang::SourceLocIdentKind::FuncSig);
+ENUM_SYNC(CXSourceLocIdentKind_File, clang::SourceLocIdentKind::File);
+ENUM_SYNC(CXSourceLocIdentKind_FileName, clang::SourceLocIdentKind::FileName);
+ENUM_SYNC(CXSourceLocIdentKind_Line, clang::SourceLocIdentKind::Line);
+ENUM_SYNC(CXSourceLocIdentKind_Column, clang::SourceLocIdentKind::Column);
+ENUM_SYNC(CXSourceLocIdentKind_SourceLocStruct, clang::SourceLocIdentKind::SourceLocStruct);
+
+// clang/AST/Expr.h: enum isModifiableLvalueResult (nested in clang::Expr)
+ENUM_SYNC(CXExpr_MLV_Valid, clang::Expr::MLV_Valid);
+ENUM_SYNC(CXExpr_MLV_NotObjectType, clang::Expr::MLV_NotObjectType);
+ENUM_SYNC(CXExpr_MLV_IncompleteVoidType, clang::Expr::MLV_IncompleteVoidType);
+ENUM_SYNC(CXExpr_MLV_DuplicateVectorComponents, clang::Expr::MLV_DuplicateVectorComponents);
+ENUM_SYNC(CXExpr_MLV_InvalidExpression, clang::Expr::MLV_InvalidExpression);
+ENUM_SYNC(CXExpr_MLV_LValueCast, clang::Expr::MLV_LValueCast);
+ENUM_SYNC(CXExpr_MLV_IncompleteType, clang::Expr::MLV_IncompleteType);
+ENUM_SYNC(CXExpr_MLV_ConstQualified, clang::Expr::MLV_ConstQualified);
+ENUM_SYNC(CXExpr_MLV_ConstQualifiedField, clang::Expr::MLV_ConstQualifiedField);
+ENUM_SYNC(CXExpr_MLV_ConstAddrSpace, clang::Expr::MLV_ConstAddrSpace);
+ENUM_SYNC(CXExpr_MLV_ArrayType, clang::Expr::MLV_ArrayType);
+ENUM_SYNC(CXExpr_MLV_NoSetterProperty, clang::Expr::MLV_NoSetterProperty);
+ENUM_SYNC(CXExpr_MLV_MemberFunction, clang::Expr::MLV_MemberFunction);
+ENUM_SYNC(CXExpr_MLV_SubObjCPropertySetting, clang::Expr::MLV_SubObjCPropertySetting);
+ENUM_SYNC(CXExpr_MLV_InvalidMessageExpression, clang::Expr::MLV_InvalidMessageExpression);
+ENUM_SYNC(CXExpr_MLV_ClassTemporary, clang::Expr::MLV_ClassTemporary);
+ENUM_SYNC(CXExpr_MLV_ArrayTemporary, clang::Expr::MLV_ArrayTemporary);
+
+// clang/Basic/CapturedStmt.h: enum CapturedRegionKind
+ENUM_SYNC(CXCapturedRegionKind_CR_Default, clang::CR_Default);
+ENUM_SYNC(CXCapturedRegionKind_CR_ObjCAtFinally, clang::CR_ObjCAtFinally);
+ENUM_SYNC(CXCapturedRegionKind_CR_OpenMP, clang::CR_OpenMP);
+
+// clang/AST/Stmt.h: enum clang::CapturedStmt::VariableCaptureKind
+ENUM_SYNC(CXVariableCaptureKind_VCK_This, clang::CapturedStmt::VCK_This);
+ENUM_SYNC(CXVariableCaptureKind_VCK_ByRef, clang::CapturedStmt::VCK_ByRef);
+ENUM_SYNC(CXVariableCaptureKind_VCK_ByCopy, clang::CapturedStmt::VCK_ByCopy);
+ENUM_SYNC(CXVariableCaptureKind_VCK_VLAType, clang::CapturedStmt::VCK_VLAType);
+
+// clang/Basic/Builtins.h: enum BuiltinTemplateKind : int
+ENUM_SYNC(CXBuiltinTemplateKind_BTK__make_integer_seq, clang::BTK__make_integer_seq);
+ENUM_SYNC(CXBuiltinTemplateKind_BTK__type_pack_element, clang::BTK__type_pack_element);
+
+// clang/Basic/Specifiers.h: enum class IfStatementKind : unsigned
+ENUM_SYNC(CXIfStatementKind_Ordinary, clang::IfStatementKind::Ordinary);
+ENUM_SYNC(CXIfStatementKind_Constexpr, clang::IfStatementKind::Constexpr);
+ENUM_SYNC(CXIfStatementKind_ConstevalNonNegated,
+          clang::IfStatementKind::ConstevalNonNegated);
+ENUM_SYNC(CXIfStatementKind_ConstevalNegated, clang::IfStatementKind::ConstevalNegated);
+
+// clang/Basic/LangOptions.h: enum clang::LangOptions::FPEvalMethodKind
+ENUM_SYNC(CXFPEvalMethodKind_FEM_Indeterminable, clang::LangOptions::FEM_Indeterminable);
+ENUM_SYNC(CXFPEvalMethodKind_FEM_Source, clang::LangOptions::FEM_Source);
+ENUM_SYNC(CXFPEvalMethodKind_FEM_Double, clang::LangOptions::FEM_Double);
+ENUM_SYNC(CXFPEvalMethodKind_FEM_Extended, clang::LangOptions::FEM_Extended);
+ENUM_SYNC(CXFPEvalMethodKind_FEM_UnsetOnCommandLine,
+          clang::LangOptions::FEM_UnsetOnCommandLine);
+
+// clang/AST/Type.h: enum clang::FunctionType::ArmStateValue : unsigned
+ENUM_SYNC(CXArmStateValue_ARM_None, clang::FunctionType::ARM_None);
+ENUM_SYNC(CXArmStateValue_ARM_Preserves, clang::FunctionType::ARM_Preserves);
+ENUM_SYNC(CXArmStateValue_ARM_In, clang::FunctionType::ARM_In);
+ENUM_SYNC(CXArmStateValue_ARM_Out, clang::FunctionType::ARM_Out);
+ENUM_SYNC(CXArmStateValue_ARM_InOut, clang::FunctionType::ARM_InOut);
+
+// clang/AST/Type.h: enum clang::UnaryTransformType::UTTKind
+ENUM_SYNC(CXUTTKind_AddLvalueReference, clang::UnaryTransformType::AddLvalueReference);
+ENUM_SYNC(CXUTTKind_AddPointer, clang::UnaryTransformType::AddPointer);
+ENUM_SYNC(CXUTTKind_AddRvalueReference, clang::UnaryTransformType::AddRvalueReference);
+ENUM_SYNC(CXUTTKind_Decay, clang::UnaryTransformType::Decay);
+ENUM_SYNC(CXUTTKind_MakeSigned, clang::UnaryTransformType::MakeSigned);
+ENUM_SYNC(CXUTTKind_MakeUnsigned, clang::UnaryTransformType::MakeUnsigned);
+ENUM_SYNC(CXUTTKind_RemoveAllExtents, clang::UnaryTransformType::RemoveAllExtents);
+ENUM_SYNC(CXUTTKind_RemoveConst, clang::UnaryTransformType::RemoveConst);
+ENUM_SYNC(CXUTTKind_RemoveCV, clang::UnaryTransformType::RemoveCV);
+ENUM_SYNC(CXUTTKind_RemoveCVRef, clang::UnaryTransformType::RemoveCVRef);
+ENUM_SYNC(CXUTTKind_RemoveExtent, clang::UnaryTransformType::RemoveExtent);
+ENUM_SYNC(CXUTTKind_RemovePointer, clang::UnaryTransformType::RemovePointer);
+ENUM_SYNC(CXUTTKind_RemoveReference, clang::UnaryTransformType::RemoveReference);
+ENUM_SYNC(CXUTTKind_RemoveRestrict, clang::UnaryTransformType::RemoveRestrict);
+ENUM_SYNC(CXUTTKind_RemoveVolatile, clang::UnaryTransformType::RemoveVolatile);
+ENUM_SYNC(CXUTTKind_EnumUnderlyingType, clang::UnaryTransformType::EnumUnderlyingType);
+
+// clang/AST/Type.h: enum clang::UnaryTransformType::UTTKind
+ENUM_SYNC(CXUTTKind_AddLvalueReference, clang::UnaryTransformType::AddLvalueReference);
+ENUM_SYNC(CXUTTKind_AddPointer, clang::UnaryTransformType::AddPointer);
+ENUM_SYNC(CXUTTKind_AddRvalueReference, clang::UnaryTransformType::AddRvalueReference);
+ENUM_SYNC(CXUTTKind_Decay, clang::UnaryTransformType::Decay);
+ENUM_SYNC(CXUTTKind_MakeSigned, clang::UnaryTransformType::MakeSigned);
+ENUM_SYNC(CXUTTKind_MakeUnsigned, clang::UnaryTransformType::MakeUnsigned);
+ENUM_SYNC(CXUTTKind_RemoveAllExtents, clang::UnaryTransformType::RemoveAllExtents);
+ENUM_SYNC(CXUTTKind_RemoveConst, clang::UnaryTransformType::RemoveConst);
+ENUM_SYNC(CXUTTKind_RemoveCV, clang::UnaryTransformType::RemoveCV);
+ENUM_SYNC(CXUTTKind_RemoveCVRef, clang::UnaryTransformType::RemoveCVRef);
+ENUM_SYNC(CXUTTKind_RemoveExtent, clang::UnaryTransformType::RemoveExtent);
+ENUM_SYNC(CXUTTKind_RemovePointer, clang::UnaryTransformType::RemovePointer);
+ENUM_SYNC(CXUTTKind_RemoveReference, clang::UnaryTransformType::RemoveReference);
+ENUM_SYNC(CXUTTKind_RemoveRestrict, clang::UnaryTransformType::RemoveRestrict);
+ENUM_SYNC(CXUTTKind_RemoveVolatile, clang::UnaryTransformType::RemoveVolatile);
+ENUM_SYNC(CXUTTKind_EnumUnderlyingType, clang::UnaryTransformType::EnumUnderlyingType);
+
+// clang/Basic/TargetInfo.h: enum clang::OpenCLTypeKind : uint8_t
+ENUM_SYNC(CXOpenCLTypeKind_OCLTK_Default, clang::OCLTK_Default);
+ENUM_SYNC(CXOpenCLTypeKind_OCLTK_ClkEvent, clang::OCLTK_ClkEvent);
+ENUM_SYNC(CXOpenCLTypeKind_OCLTK_Event, clang::OCLTK_Event);
+ENUM_SYNC(CXOpenCLTypeKind_OCLTK_Image, clang::OCLTK_Image);
+ENUM_SYNC(CXOpenCLTypeKind_OCLTK_Pipe, clang::OCLTK_Pipe);
+ENUM_SYNC(CXOpenCLTypeKind_OCLTK_Queue, clang::OCLTK_Queue);
+ENUM_SYNC(CXOpenCLTypeKind_OCLTK_ReserveID, clang::OCLTK_ReserveID);
+ENUM_SYNC(CXOpenCLTypeKind_OCLTK_Sampler, clang::OCLTK_Sampler);
 
 #undef ENUM_SYNC

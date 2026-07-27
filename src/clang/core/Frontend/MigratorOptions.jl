@@ -1,0 +1,16 @@
+"""
+    abstract type AbstractMigratorOptions <: Any
+Supertype for `clang::MigratorOptions`.
+"""
+abstract type AbstractMigratorOptions end
+
+"""
+    struct MigratorOptions <: AbstractMigratorOptions
+Hold a pointer to a `clang::MigratorOptions` object.
+"""
+struct MigratorOptions <: AbstractMigratorOptions
+    ptr::CXMigratorOptions
+end
+
+Base.unsafe_convert(::Type{CXMigratorOptions}, x::MigratorOptions) = x.ptr
+Base.cconvert(::Type{CXMigratorOptions}, x::MigratorOptions) = x

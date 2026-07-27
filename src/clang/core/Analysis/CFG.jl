@@ -30,3 +30,23 @@ end
 
 Base.unsafe_convert(::Type{CXCFGBlock}, x::CFGBlock) = x.ptr
 Base.cconvert(::Type{CXCFGBlock}, x::CFGBlock) = x
+
+
+abstract type AbstractCFGBuildOptions end
+
+"""
+    struct CFGBuildOptions <: AbstractCFGBuildOptions
+Hold a pointer to a `clang::CFG::BuildOptions` object.
+
+The pointee is caller-owned (`CFGBuildOptions()` heap-allocates it) — call `dispose` after
+use. It carries only the stateful part of the C++ class, the per-`Stmt`-class `alwaysAdd`
+mask; the option booleans stay flattened into `buildCFG` / `buildCFGWithOptions`. It has to
+outlive nothing but the `buildCFGWithOptions` call that reads it — the resulting `CFG` keeps
+no reference to it.
+"""
+struct CFGBuildOptions <: AbstractCFGBuildOptions
+    ptr::CXCFGBuildOptions
+end
+
+Base.unsafe_convert(::Type{CXCFGBuildOptions}, x::CFGBuildOptions) = x.ptr
+Base.cconvert(::Type{CXCFGBuildOptions}, x::CFGBuildOptions) = x

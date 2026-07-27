@@ -4,16 +4,52 @@
 #include "clang-ex/AST/CXType.h"
 #include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-ex/CXTypes.h"
+#include "clang-ex/AST/CXAttr.h"
+#include "clang-ex/Basic/CXAddressSpaces.h"
+#include "clang-ex/Basic/CXLinkage.h"
+#include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
+#include "clang-ex/Basic/CXTargetCXXABI.h"
+#include "clang-ex/Basic/CXTargetInfo.h"
+#include "llvm-c/ExecutionEngine.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
+
+// Mirrors clang::AlignRequirementKind (clang/AST/ASTContext.h) — the third field
+// of TypeInfo/TypeInfoChars, which cross as out-params (MARSHALLING.md §7).
+typedef enum CXAlignRequirementKind {
+  CXAlignRequirementKind_None,
+  CXAlignRequirementKind_RequiredByTypedef,
+  CXAlignRequirementKind_RequiredByRecord,
+  CXAlignRequirementKind_RequiredByEnum
+} CXAlignRequirementKind;
+
+// Mirrors clang::ASTContext::InlineVariableDefinitionKind
+// (clang/AST/ASTContext.h) — the class-local enum returned by
+// getInlineVariableDefinitionKind.
+typedef enum CXInlineVariableDefinitionKind {
+  CXInlineVariableDefinitionKind_None,
+  CXInlineVariableDefinitionKind_Weak,
+  CXInlineVariableDefinitionKind_WeakUnknown,
+  CXInlineVariableDefinitionKind_Strong
+} CXInlineVariableDefinitionKind;
 
 // ASTContext
 
 // getInterpContext
 // getParentMapContext
 // getTraversalScope
+
+// helper — how many decls clang_ASTContext_getTraversalScopeDecls will write
+// (MARSHALLING.md §6, count+fill). The scope defaults to {getTranslationUnitDecl()}, so
+// the count is at least 1 until setTraversalScope narrows it.
+unsigned clang_ASTContext_getNumTraversalScopeDecls(CXASTContext Ctx);
+
+// Fills Buf with exactly clang_ASTContext_getNumTraversalScopeDecls entries; the count is
+// exact and no slot is null. Buf is caller-allocated; the decls it receives are borrowed
+// interior pointers into the ASTContext arena.
+void clang_ASTContext_getTraversalScopeDecls(CXASTContext Ctx, CXDecl *Buf);
 // setTraversalScope
 // getParents
 // getPrintingPolicy
@@ -54,19 +90,50 @@ bool clang_ASTContext_isDependceAllowed(CXASTContext Ctx);
 CXDiagnosticsEngine clang_ASTContext_getDiagnostics(CXASTContext Ctx);
 
 // getFullLoc
+
+// The C++ ABI in effect: -fc++-abi= when it was given, the target's default otherwise.
+CXTargetCXXABI_Kind clang_ASTContext_getCXXABIKind(CXASTContext Ctx);
 // cacheRawCommentForDecl
 // getRawCommentForDeclNoCacheImpl
 // getRawCommentForDeclNoCache
 // addComment
 // getRawCommentForAnyRedecl
+
+// getRawCommentForAnyRedecl is exposed as two composite helpers rather than a
+// CXRawComment handle: the comment text (already resolved against the
+// ASTContext's own SourceManager) and the redeclaration the comment was attached
+// to. Both report "no comment" out of band — an empty string (a RawComment always
+// spans at least its introducer, so empty is unambiguous) and a null handle.
+// clang 18 declares getRawCommentForDeclNoCache private; it cannot be wrapped.
+// The RawComment handle itself, for callers that need more than the text (kind,
+// attachment/trailing flags, range). Returns NULL when no comment is attached.
+CXRawComment clang_ASTContext_getRawCommentForAnyRedecl(CXASTContext Ctx, CXDecl D);
+CXString clang_ASTContext_getRawCommentTextForAnyRedecl(CXASTContext Ctx,
+                                                        CXDecl D); // helper
+
+CXDecl clang_ASTContext_getRawCommentOriginalDeclForAnyRedecl(CXASTContext Ctx,
+                                                              CXDecl D); // helper
 // attachCommentsToJustParsedDecl
 // getCommentForDecl
+// Parsed documentation comment tree for D, or NULL when none is attached. PP may
+// be NULL when no Preprocessor is available.
+CXFullComment clang_ASTContext_getCommentForDecl(CXASTContext Ctx, CXDecl D,
+                                                 CXPreprocessor PP);
 // getLocalCommentForDeclUncached
+
+// The parsed documentation comment attached to D itself — no redeclaration lookup
+// and no cache. NULL when none is attached.
+CXFullComment clang_ASTContext_getLocalCommentForDeclUncached(CXASTContext Ctx, CXDecl D);
 // cloneFullComment
 // getCommentCommandTraits
 // getDeclAttrs
 
 void clang_ASTContext_eraseDeclAttrs(CXASTContext Ctx, CXDecl D);
+
+// Partial (the Julia wrapper restates the precondition): clang asserts Var is a
+// static data member. NULL when Var is not an instantiated one.
+CXMemberSpecializationInfo
+clang_ASTContext_getInstantiatedFromStaticDataMember(CXASTContext Ctx, CXVarDecl Var);
 
 // getTemplateOrSpecializationInfo
 // setInstantiatedFromStaticDataMember
@@ -77,6 +144,15 @@ CXNamedDecl clang_ASTContext_getInstantiatedFromUsingDecl(CXASTContext Ctx,
 
 void clang_ASTContext_setInstantiatedFromUsingDecl(CXASTContext Ctx, CXNamedDecl Inst,
                                                    CXNamedDecl Pattern);
+
+CXUsingEnumDecl clang_ASTContext_getInstantiatedFromUsingEnumDecl(CXASTContext Ctx,
+                                                                  CXUsingEnumDecl Inst);
+
+// PRECONDITION: Inst must not already carry a recorded pattern — clang asserts it. The
+// Julia layer restates this by checking the getter first.
+void clang_ASTContext_setInstantiatedFromUsingEnumDecl(CXASTContext Ctx,
+                                                       CXUsingEnumDecl Inst,
+                                                       CXUsingEnumDecl Pattern);
 
 void clang_ASTContext_setInstantiatedFromUsingShadowDecl(CXASTContext Ctx,
                                                          CXUsingShadowDecl Inst,
@@ -98,9 +174,26 @@ void clang_ASTContext_addOverriddenMethod(CXASTContext Ctx, CXCXXMethodDecl Meth
 
 // getOverriddenMethods
 
+unsigned clang_ASTContext_overridden_methods_size(CXASTContext Ctx, CXCXXMethodDecl Method);
+
+// helper — walks ASTContext::getOverriddenMethods once and reports how many entries
+// clang_ASTContext_getOverriddenMethods will write (MARSHALLING.md §6, count+fill).
+unsigned clang_ASTContext_getNumOverriddenMethods(CXASTContext Ctx, CXNamedDecl Method);
+
+// Fills Buf with exactly clang_ASTContext_getNumOverriddenMethods entries; the count is
+// exact and no slot is null. Buf is caller-allocated; the decls it receives are borrowed
+// interior pointers into the ASTContext arena.
+void clang_ASTContext_getOverriddenMethods(CXASTContext Ctx, CXNamedDecl Method,
+                                           CXNamedDecl *Buf);
+
 void clang_ASTContext_addedLocalImportDecl(CXASTContext Ctx, CXImportDecl Import);
 
 // getNextLocalImport
+
+// Static — ImportDecl's own accessor is private in clang 18, so this ASTContext entry
+// point is the only path to the next link of the translation unit's local import chain.
+// NULL at the end of the chain.
+CXImportDecl clang_ASTContext_getNextLocalImport(CXImportDecl Import);
 
 CXDecl clang_ASTContext_getPrimaryMergedDecl(CXASTContext Ctx, CXDecl D);
 
@@ -112,6 +205,9 @@ void clang_ASTContext_mergeDefinitionIntoModule(CXASTContext Ctx, CXNamedDecl ND
 void clang_ASTContext_deduplicateMergedDefinitonsFor(CXASTContext Ctx, CXNamedDecl ND);
 
 // getModuleInitializers
+
+// The C++20 named module under construction; NULL outside a named-module build.
+CXModule clang_ASTContext_getCurrentNamedModule(CXASTContext Ctx);
 
 CXTranslationUnitDecl clang_ASTContext_getTranslationUnitDecl(CXASTContext Ctx);
 
@@ -129,6 +225,15 @@ CXBuiltinTemplateDecl clang_ASTContext_getTypePackElementDecl(CXASTContext Ctx);
 void clang_ASTContext_PrintStats(CXASTContext Ctx);
 
 // getTypes
+
+// helper — the number of clang::Type nodes this context has created (MARSHALLING.md §6,
+// count+index over ASTContext::getTypes(), which is contiguous storage).
+unsigned clang_ASTContext_getNumTypes(CXASTContext Ctx);
+
+// PRECONDITION: I < clang_ASTContext_getNumTypes(Ctx) — the index is unchecked; restated
+// as an @assert in the Julia layer. The Type is a borrowed pointer into the ASTContext
+// arena.
+CXType_ clang_ASTContext_getType(CXASTContext Ctx, unsigned I);
 // buildBuiltinTemplateDecl
 
 CXRecordDecl clang_ASTContext_buildImplicitRecord(CXASTContext Ctx, const char *Name,
@@ -142,6 +247,10 @@ CXTypedefDecl clang_ASTContext_getInt128Decl(CXASTContext Ctx);
 CXTypedefDecl clang_ASTContext_getUInt128Decl(CXASTContext Ctx);
 
 // getAddrSpaceQualType
+
+// Any address space already on T is silently replaced.
+CXQualType clang_ASTContext_getAddrSpaceQualType(CXASTContext Ctx, CXQualType T,
+                                                 CXLangAS AddressSpace);
 
 CXQualType clang_ASTContext_removeAddrSpaceQualType(CXASTContext Ctx, CXQualType T);
 
@@ -158,6 +267,9 @@ CXQualType clang_ASTContext_getConstType(CXASTContext Ctx, CXQualType T);
 
 // adjustFunctionType
 // getCanonicalFunctionResultType
+
+CXQualType clang_ASTContext_getCanonicalFunctionResultType(CXASTContext Ctx,
+                                                           CXQualType ResultType);
 
 void clang_ASTContext_adjustDeducedFunctionResultType(CXASTContext Ctx, CXFunctionDecl FD,
                                                       CXQualType ResultType);
@@ -185,6 +297,27 @@ CXQualType clang_ASTContext_getDecayedType(CXASTContext Ctx, CXQualType T);
 
 CXQualType clang_ASTContext_getAtomicType(CXASTContext Ctx, CXQualType T);
 
+// Qualifiers cross as their opaque value — the same encoding
+// clang_QualType_getQualifiersAsOpaqueValue produces.
+CXQualType clang_ASTContext_getQualifiedType(CXASTContext Ctx, CXQualType T,
+                                             unsigned Quals);
+
+// Peels the qualifiers off the (possibly nested) array element type; *Quals
+// receives them as the opaque Qualifiers value. Total: on a non-array it yields
+// T.getUnqualifiedType() and the qualifiers it stripped.
+CXQualType clang_ASTContext_getUnqualifiedArrayType(CXASTContext Ctx, CXQualType T,
+                                                    unsigned *Quals);
+
+CXQualType clang_ASTContext_getAttributedType(CXASTContext Ctx, CXAttrKind AttrKind,
+                                              CXQualType ModifiedType,
+                                              CXQualType EquivalentType);
+
+CXQualType clang_ASTContext_getIncompleteArrayType(CXASTContext Ctx, CXQualType EltTy,
+                                                   CXArraySizeModifier ASM,
+                                                   unsigned IndexTypeQuals);
+
+bool clang_ASTContext_isPromotableIntegerType(CXASTContext Ctx, CXQualType T);
+
 CXQualType clang_ASTContext_getBlockPointerType(CXASTContext Ctx, CXQualType T);
 
 CXQualType clang_ASTContext_getBlockDescriptorType(CXASTContext Ctx);
@@ -203,6 +336,15 @@ CXQualType clang_ASTContext_getBlockDescriptorExtendedType(CXASTContext Ctx);
 
 // getOpenCLTypeKind
 // getOpenCLTypeAddrSpace
+
+// The OpenCL type family T belongs to; OCLTK_Default for every type that is not one of
+// OpenCL's opaque builtins (so, for every ordinary C/C++ type).
+CXOpenCLTypeKind clang_ASTContext_getOpenCLTypeKind(CXASTContext Ctx, CXType_ T);
+
+// The address space the target assigns to T's OpenCL type family.
+CXLangAS clang_ASTContext_getOpenCLTypeAddrSpace(CXASTContext Ctx, CXType_ T);
+
+CXLangAS clang_ASTContext_getDefaultOpenCLPointeeAddrSpace(CXASTContext Ctx);
 
 void clang_ASTContext_setcudaConfigureCallDecl(CXASTContext Ctx, CXFunctionDecl FD);
 
@@ -224,6 +366,20 @@ CXQualType clang_ASTContext_getMemberPointerType(CXASTContext Ctx, CXQualType T,
 // getDependentSizedArrayType
 // getIncompleteArrayType
 
+// NumElts is stored on the type, never evaluated; the result is deliberately non-unique
+// (a fresh type node per call), matching the C++ API.
+CXQualType clang_ASTContext_getVariableArrayType(CXASTContext Ctx, CXQualType EltTy,
+                                                 CXExpr NumElts, CXArraySizeModifier ASM,
+                                                 unsigned IndexTypeQuals,
+                                                 CXSourceRange_ Brackets);
+
+// Same shape as getVariableArrayType, for a dependently-sized array; also non-unique.
+CXQualType clang_ASTContext_getDependentSizedArrayType(CXASTContext Ctx, CXQualType EltTy,
+                                                       CXExpr NumElts,
+                                                       CXArraySizeModifier ASM,
+                                                       unsigned IndexTypeQuals,
+                                                       CXSourceRange_ Brackets);
+
 // The APInt size is built inside the shim from `Size` at the target's size_t
 // width; SizeExpr is always null.
 CXQualType clang_ASTContext_getConstantArrayType(CXASTContext Ctx, CXQualType EltTy,
@@ -242,8 +398,16 @@ CXQualType clang_ASTContext_getVariableArrayDecayedType(CXASTContext Ctx, CXQual
 CXQualType clang_ASTContext_getScalableVectorType(CXASTContext Ctx, CXQualType EltTy,
                                                   unsigned NumElts);
 
+CXQualType clang_ASTContext_getVectorType(CXASTContext Ctx, CXQualType VectorType,
+                                          unsigned NumElts, CXVectorKind VecKind);
+
 // getVectorType
 // getDependentVectorType
+
+CXQualType clang_ASTContext_getDependentVectorType(CXASTContext Ctx, CXQualType VectorType,
+                                                   CXExpr SizeExpr,
+                                                   CXSourceLocation_ AttrLoc,
+                                                   CXVectorKind VecKind);
 
 CXQualType clang_ASTContext_getExtVectorType(CXASTContext Ctx, CXQualType VectorType,
                                              unsigned NumElts);
@@ -281,12 +445,24 @@ CXQualType clang_ASTContext_adjustStringLiteralBaseType(CXASTContext Ctx,
 CXQualType clang_ASTContext_getTypeDeclType(CXASTContext Ctx, CXTypeDecl Decl,
                                             CXTypeDecl PrevDecl);
 
+// PRECONDITION (documented in the Julia wrapper; the C API exposes no cheap proxy for
+// it): Found's target declaration must be a TypeDecl — clang casts it unchecked — and
+// Underlying must be unqualified and canonically identical to that declaration's type,
+// both of which clang asserts.
+CXQualType clang_ASTContext_getUsingType(CXASTContext Ctx, CXUsingShadowDecl Found,
+                                         CXQualType Underlying);
+
 CXQualType clang_ASTContext_getTypedefType(CXASTContext Ctx, CXTypedefNameDecl Decl,
                                            CXQualType Underlying);
 
 CXQualType clang_ASTContext_getRecordType(CXASTContext Ctx, CXRecordDecl Decl);
 
 CXQualType clang_ASTContext_getEnumType(CXASTContext Ctx, CXEnumDecl Decl);
+
+// Builds (and caches on the declaration) the UnresolvedUsingType of a dependent
+// `using typename T::x;` declaration.
+CXQualType clang_ASTContext_getUnresolvedUsingType(CXASTContext Ctx,
+                                                   CXUnresolvedUsingTypenameDecl Decl);
 
 CXQualType clang_ASTContext_getInjectedClassNameType(CXASTContext Ctx, CXCXXRecordDecl Decl,
                                                      CXQualType TST);
@@ -320,9 +496,29 @@ CXQualType clang_ASTContext_getParenType(CXASTContext Ctx, CXQualType NamedType)
 CXQualType clang_ASTContext_getMacroQualifiedType(CXASTContext Ctx, CXQualType UnderlyingTy,
                                                   CXIdentifierInfo MacroII);
 
+CXQualType clang_ASTContext_getElaboratedType(CXASTContext Ctx,
+                                              CXElaboratedTypeKeyword Keyword,
+                                              CXNestedNameSpecifier NNS,
+                                              CXQualType NamedType, CXTagDecl OwnedTagDecl);
+
+// NumExpansions crosses as (bool HasNumExpansions, unsigned NumExpansions)
+// (MARSHALLING.md, section 8): pass HasNumExpansions=false for a disengaged optional.
+// When ExpectPackInType is true, Pattern must contain an unexpanded parameter pack.
+CXQualType clang_ASTContext_getPackExpansionType(CXASTContext Ctx, CXQualType Pattern,
+                                                 bool HasNumExpansions,
+                                                 unsigned NumExpansions,
+                                                 bool ExpectPackInType);
+
 // getElaboratedType
 // getDependentNameType
 // getDependentTemplateSpecializationType
+
+// PRECONDITION: ParamDecl must be a template parameter (TemplateTypeParmDecl,
+// NonTypeTemplateParmDecl or TemplateTemplateParmDecl); clang cast<>s it unchecked.
+// Restated as an @assert in the Julia layer. The TemplateArgument is returned as an owned
+// box (it has no pointer encoding); release it with clang_TemplateArgument_dispose.
+CXTemplateArgument clang_ASTContext_getInjectedTemplateArg(CXASTContext Ctx,
+                                                           CXNamedDecl ParamDecl);
 // getInjectedTempalteArgs
 // getPackExpansionType
 // getObjCInterfaceType
@@ -337,15 +533,33 @@ CXQualType clang_ASTContext_getMacroQualifiedType(CXASTContext Ctx, CXQualType U
 
 // CXQualType clang_ASTContext_getTypeOfType(CXASTContext Ctx, CXType_ T);
 
+// Unqualified picks clang::TypeOfKind::Unqualified over ::Qualified; the two-state enum
+// class crosses as a bool.
+CXQualType clang_ASTContext_getTypeOfExprType(CXASTContext Ctx, CXExpr E, bool Unqualified);
+
+CXQualType clang_ASTContext_getTypeOfType(CXASTContext Ctx, CXQualType QT,
+                                          bool Unqualified);
+
+CXQualType clang_ASTContext_getReferenceQualifiedType(CXASTContext Ctx, CXExpr E);
+
 CXQualType clang_ASTContext_getDecltypeType(CXASTContext Ctx, CXExpr Expr,
                                             CXQualType UnderlyingType);
 
 // getUnaryTransformType
 // getAutoType
 
+// The type of a unary type transform (__underlying_type and the __add_*/__remove_*
+// family): BaseType is the operand, UnderlyingType the transformed result. A dependent
+// BaseType yields a DependentUnaryTransformType instead.
+CXQualType clang_ASTContext_getUnaryTransformType(CXASTContext Ctx, CXQualType BaseType,
+                                                  CXQualType UnderlyingType,
+                                                  CXUTTKind UKind);
+
 CXQualType clang_ASTContext_getAutoDeductType(CXASTContext Ctx);
 
 CXQualType clang_ASTContext_getAutoRRefDeductType(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getUnconstrainedType(CXASTContext Ctx, CXQualType T);
 
 CXQualType clang_ASTContext_getDeducedTemplateSpecializationType(CXASTContext Ctx,
                                                                  CXTemplateName Template,
@@ -357,7 +571,15 @@ CXQualType clang_ASTContext_getTagDeclType(CXASTContext Ctx, CXTagDecl Decl);
 // getSizeType
 // getSignedSizeType
 // getIntMaxType
+
+CXQualType clang_ASTContext_getIntMaxType(CXASTContext Ctx);
 // getUIntMaxType
+
+CXQualType clang_ASTContext_getSizeType(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getSignedSizeType(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getUIntMaxType(CXASTContext Ctx);
 
 CXQualType clang_ASTContext_getWCharType(CXASTContext Ctx);
 
@@ -403,7 +625,13 @@ CXQualType clang_ASTContext_getObjCClassRedefinitionType(CXASTContext Ctx);
 
 void clang_ASTContext_setObjCClassRedefinitionType(CXASTContext Ctx, CXQualType T);
 
+CXIdentifierInfo clang_ASTContext_getNSObjectName(CXASTContext Ctx);
+
 CXIdentifierInfo clang_ASTContext_getNSCopyingName(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getNSUIntegerType(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getNSIntegerType(CXASTContext Ctx);
 
 // getNSUIntegerType
 // getNSIntegerType
@@ -421,6 +649,14 @@ CXTypedefDecl clang_ASTContext_getObjCInstanceTypeDecl(CXASTContext Ctx);
 void clang_ASTContext_setFILEDecl(CXASTContext Ctx, CXTypeDecl FILEDecl);
 
 CXQualType clang_ASTContext_getFILEType(CXASTContext Ctx);
+
+// The three C library types below are null QualTypes until the matching setter has run
+// (the decl is looked up by Sema when <setjmp.h>/<ucontext.h> is seen).
+CXQualType clang_ASTContext_getjmp_bufType(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getsigjmp_bufType(CXASTContext Ctx);
+
+CXQualType clang_ASTContext_getucontext_tType(CXASTContext Ctx);
 
 CXQualType clang_ASTContext_getLogicalOperationType(CXASTContext Ctx);
 
@@ -453,6 +689,8 @@ CXQualType clang_ASTContext_getObjCProtoType(CXASTContext Ctx);
 
 CXTypedefDecl clang_ASTContext_getBuiltinVaListDecl(CXASTContext Ctx);
 
+CXQualType clang_ASTContext_getBuiltinVaListType(CXASTContext Ctx);
+
 CXDecl clang_ASTContext_getVaListTagDecl(CXASTContext Ctx);
 
 CXTypedefDecl clang_ASTContext_getBuiltinMSVaListDecl(CXASTContext Ctx);
@@ -480,6 +718,12 @@ unsigned char clang_ASTContext_getFixedPointIBits(CXASTContext Ctx, CXQualType T
 // getFixedPointMax
 // getFixedPointMin
 // getNameForTemplate
+
+// The DeclarationNameInfo is returned as an owned box (the class has no opaque encoding);
+// release it with clang_DeclarationNameInfo_dispose.
+CXDeclarationNameInfo clang_ASTContext_getNameForTemplate(CXASTContext Ctx,
+                                                          CXTemplateName Name,
+                                                          CXSourceLocation_ NameLoc);
 // getOverloadedTemplateName
 
 CXTemplateName clang_ASTContext_getAssumedTemplateName(CXASTContext Ctx,
@@ -489,6 +733,12 @@ CXTemplateName clang_ASTContext_getAssumedTemplateName(CXASTContext Ctx,
 //                                                          CXNestedNameSpecifier NNS,
 //                                                          bool TemplateKeyword,
 //                                                          CXTemplateDecl Template);
+
+// The qualified spelling NNS::[template] Template. NNS must be non-null (clang asserts).
+CXTemplateName clang_ASTContext_getQualifiedTemplateName(CXASTContext Ctx,
+                                                         CXNestedNameSpecifier NNS,
+                                                         bool TemplateKeyword,
+                                                         CXTemplateName Template);
 
 CXTemplateName clang_ASTContext_getDependentTemplateName(CXASTContext Ctx,
                                                          CXNestedNameSpecifier NNS,
@@ -510,6 +760,12 @@ bool clang_ASTContext_areCompatibleSveTypes(CXASTContext Ctx, CXQualType FirstVe
 
 bool clang_ASTContext_areLaxCompatibleSveTypes(CXASTContext Ctx, CXQualType FirstVec,
                                                CXQualType SecondVec);
+
+bool clang_ASTContext_areCompatibleRVVTypes(CXASTContext Ctx, CXQualType FirstType,
+                                            CXQualType SecondType);
+
+bool clang_ASTContext_areLaxCompatibleRVVTypes(CXASTContext Ctx, CXQualType FirstType,
+                                               CXQualType SecondType);
 
 bool clang_ASTContext_hasDirectOwnershipQualifier(CXASTContext Ctx, CXQualType Ty);
 
@@ -551,6 +807,51 @@ unsigned clang_ASTContext_getTargetDefaultAlignForAttributeAligned(CXASTContext 
 
 unsigned clang_ASTContext_getAlignOfGlobalVar(CXASTContext Ctx, CXQualType T);
 
+// TypeInfo / TypeInfoChars cross as out-params (MARSHALLING.md §7). getTypeInfo
+// reports BITS; every other quantity below is a CharUnits value in BYTES.
+// PRECONDITION for this whole family, restated as an @assert in the Julia layer:
+// T must not be a dependent type (ASTContext::getTypeInfoImpl is llvm_unreachable
+// on those) and record/enum types must be complete, because the query lays the
+// record out eagerly. The shim checks neither, by contract.
+void clang_ASTContext_getTypeInfo(CXASTContext Ctx, CXQualType T, uint64_t *Width,
+                                  unsigned *Align,
+                                  CXAlignRequirementKind *AlignRequirement);
+
+void clang_ASTContext_getTypeInfoInChars(CXASTContext Ctx, CXQualType T,
+                                         int64_t *Width, int64_t *Align,
+                                         CXAlignRequirementKind *AlignRequirement);
+
+int64_t clang_ASTContext_getTypeSizeInChars(CXASTContext Ctx, CXQualType T);
+
+int64_t clang_ASTContext_getTypeAlignInChars(CXASTContext Ctx, CXQualType T);
+
+int64_t clang_ASTContext_getPreferredTypeAlignInChars(CXASTContext Ctx, CXQualType T);
+
+int64_t clang_ASTContext_getTypeUnadjustedAlignInChars(CXASTContext Ctx, CXQualType T);
+
+// Returns false and leaves *Size untouched when the size is not known — T incomplete or
+// dependent (MARSHALLING.md §8). Unlike the rest of this family it is total.
+bool clang_ASTContext_getTypeSizeInCharsIfKnown(CXASTContext Ctx, CXQualType T,
+                                                int64_t *Size);
+
+// Data size in BYTES (a record's tail padding is excluded) instead of sizeof; inherits
+// the completeness/non-dependence precondition of the getTypeInfo family above.
+void clang_ASTContext_getTypeInfoDataSizeInChars(CXASTContext Ctx, CXQualType T,
+                                                 int64_t *Width, int64_t *Align,
+                                                 CXAlignRequirementKind *AlignRequirement);
+
+int64_t clang_ASTContext_toCharUnitsFromBits(CXASTContext Ctx, int64_t BitSize);
+
+int64_t clang_ASTContext_toBits(CXASTContext Ctx, int64_t CharSize);
+
+// ForAlignof selects alignof() semantics over the ABI alignment. Routes through
+// getTypeInfo, so it inherits the completeness precondition above.
+int64_t clang_ASTContext_getDeclAlign(CXASTContext Ctx, CXDecl D, bool ForAlignof);
+
+int64_t clang_ASTContext_getAlignOfGlobalVarInChars(CXASTContext Ctx, CXQualType T);
+
+int64_t clang_ASTContext_getExnObjectAlignment(CXASTContext Ctx);
+
 // getAlignOfGlobalVarInChars
 // getDeclAlign
 // getExnObjectAlignment
@@ -560,8 +861,18 @@ unsigned clang_ASTContext_getAlignOfGlobalVar(CXASTContext Ctx, CXQualType T);
 CXASTRecordLayout clang_ASTContext_getASTRecordLayout(CXASTContext Ctx, CXRecordDecl RD);
 // getASTObjCInterfaceLayout
 // DumpRecordLayout
+
+// The layout dump clang writes to a raw_ostream, returned as a CXString (MARSHALLING.md
+// §5). Simple selects the one-line form. PRECONDITION: RD has a complete definition —
+// clang asserts it through getASTRecordLayout; restated as an @assert in the Julia layer.
+CXString clang_ASTContext_DumpRecordLayout(CXASTContext Ctx, CXRecordDecl RD, bool Simple);
 // getASTObjCImplementationLayout
 // getCurrentKeyFunction
+
+// Partial (the Julia wrapper restates the precondition): clang asserts RD has a
+// definition. NULL when the class has no key function.
+CXCXXMethodDecl clang_ASTContext_getCurrentKeyFunction(CXASTContext Ctx,
+                                                       CXCXXRecordDecl RD);
 // setNonKeyFunction
 // getOffsetOfBaseWithVBPtr
 
@@ -570,11 +881,24 @@ uint64_t clang_ASTContext_getFieldOffset(CXASTContext Ctx, CXValueDecl FD);
 // lookupFieldBitOffset
 // getMemberPointerPathAdjustment
 
+// The `this` adjustment a member pointer's inheritance path implies, in bytes (the
+// CharUnits convention of the ASTRecordLayout family). PRECONDITION: MP must hold a
+// member pointer — APValue's accessor asserts on the kind; restated as an @assert in
+// the Julia layer.
+int64_t clang_ASTContext_getMemberPointerPathAdjustment(CXASTContext Ctx, CXAPValue MP);
+
 bool clang_ASTContext_isNearlyEmpty(CXASTContext Ctx, CXCXXRecordDecl RD);
 
 // getVTableContext
 
 CXMangleContext clang_ASTContext_createMangleContext(CXASTContext Ctx, CXTargetInfo_ T);
+
+// PRECONDITION: T's C++ ABI must not be Microsoft — clang asserts it and the mangler
+// switch has no Microsoft arm. Restated as an @assert in the Julia layer.
+// Caller-owned heap object with no dispose entry point (the same known leak as
+// clang_ASTContext_createMangleContext).
+CXMangleContext clang_ASTContext_createDeviceMangleContext(CXASTContext Ctx,
+                                                           CXTargetInfo_ T);
 
 // DeepCollectObjCIvars
 // CountNonClassIvars
@@ -583,9 +907,15 @@ CXMangleContext clang_ASTContext_createMangleContext(CXASTContext Ctx, CXTargetI
 bool clang_ASTContext_hasUniqueObjectRepresentations(CXASTContext Ctx, CXQualType Ty);
 
 // getCanonicalType
+
+CXQualType clang_ASTContext_getCanonicalType(CXASTContext Ctx, CXQualType T);
 // getCanonicalParamType
 
+CXQualType clang_ASTContext_getCanonicalParamType(CXASTContext Ctx, CXQualType T);
+
 bool clang_ASTContext_hasSameType(CXASTContext Ctx, CXQualType T1, CXQualType T2);
+
+bool clang_ASTContext_hasSameExpr(CXASTContext Ctx, CXExpr X, CXExpr Y);
 
 // getUnqualifiedArrayType
 
@@ -599,6 +929,15 @@ bool clang_ASTContext_hasSameNullabilityTypeQualifier(CXASTContext Ctx, CXQualTy
 // UnwrapSimilarTypes
 // UnwrapSimilarArrayTypes
 
+// T1 and T2 are in/out: the C++ methods take them by reference and rewrite them to the
+// unwrapped pointee/element types, so they cross as pointers to the QualType opaque
+// encodings (MARSHALLING.md §7). UnwrapSimilarTypes reports whether a layer was peeled.
+bool clang_ASTContext_UnwrapSimilarTypes(CXASTContext Ctx, CXQualType *T1, CXQualType *T2,
+                                         bool AllowPiMismatch);
+
+void clang_ASTContext_UnwrapSimilarArrayTypes(CXASTContext Ctx, CXQualType *T1,
+                                              CXQualType *T2, bool AllowPiMismatch);
+
 bool clang_ASTContext_hasSimilarType(CXASTContext Ctx, CXQualType T1, CXQualType T2);
 
 bool clang_ASTContext_hasCvrSimilarType(CXASTContext Ctx, CXQualType T1, CXQualType T2);
@@ -609,13 +948,39 @@ clang_ASTContext_getCanonicalNestedNameSpecifier(CXASTContext Ctx,
 
 // getDefaultCallingConvention
 
+CXCallingConv_ clang_ASTContext_getDefaultCallingConvention(CXASTContext Ctx,
+                                                            bool IsVariadic,
+                                                            bool IsCXXMethod,
+                                                            bool IsBuiltin);
+
 CXTemplateName clang_ASTContext_getCanonicalTemplateName(CXASTContext Ctx,
                                                          CXTemplateName TemplateName);
 
 bool clang_ASTContext_hasSameTempalteName(CXASTContext Ctx, CXTemplateName T1,
                                           CXTemplateName T2);
 
+bool clang_ASTContext_isSameEntity(CXASTContext Ctx, CXNamedDecl X, CXNamedDecl Y);
+
+bool clang_ASTContext_isSameTemplateParameterList(CXASTContext Ctx,
+                                                  CXTemplateParameterList X,
+                                                  CXTemplateParameterList Y);
+
+bool clang_ASTContext_isSameTemplateParameter(CXASTContext Ctx, CXNamedDecl X,
+                                              CXNamedDecl Y);
+
+bool clang_ASTContext_isSameConstraintExpr(CXASTContext Ctx, CXExpr XCE, CXExpr YCE);
+
+// PRECONDITION: X and Y must have the same Decl kind (clang asserts it); restated as an
+// @assert in the Julia layer.
+bool clang_ASTContext_isSameDefaultTemplateArgument(CXASTContext Ctx, CXNamedDecl X,
+                                                    CXNamedDecl Y);
+
 // getCanonicalTemplateArgument
+
+// The TemplateArgument is returned as an owned box (it has no pointer encoding); release
+// it with clang_TemplateArgument_dispose.
+CXTemplateArgument clang_ASTContext_getCanonicalTemplateArgument(CXASTContext Ctx,
+                                                                 CXTemplateArgument Arg);
 
 CXArrayType clang_ASTContext_getAsArrayType(CXASTContext Ctx, CXQualType T);
 
@@ -639,6 +1004,11 @@ CXQualType clang_ASTContext_getBaseElementType(CXASTContext Ctx, CXQualType QT);
 
 uint64_t clang_ASTContext_getConstantArrayElementCount(CXASTContext Ctx,
                                                        CXConstantArrayType CAT);
+
+// The number of elements the implicit initialization loop AILE covers — the loop clang
+// synthesizes for array copy-initialization and for array captures of a lambda.
+uint64_t clang_ASTContext_getArrayInitLoopExprElementCount(CXASTContext Ctx,
+                                                           CXArrayInitLoopExpr AILE);
 
 CXQualType clang_ASTContext_getAdjustedParameterType(CXASTContext Ctx, CXQualType T);
 
@@ -667,11 +1037,24 @@ int clang_ASTContext_getFloatingTypeSemanticOrder(CXASTContext Ctx, CXQualType L
 
 // unsigned clang_ASTContext_getTargetAddressSpace(CXASTContext Ctx, CXQualType T);
 
+unsigned clang_ASTContext_getTargetAddressSpace(CXASTContext Ctx, CXLangAS AS);
+
 // getLangASForBuiltinAddressSpace
+
+CXLangAS clang_ASTContext_getLangASForBuiltinAddressSpace(CXASTContext Ctx, unsigned AS);
 
 uint64_t clang_ASTContext_getTargetNullPointerValue(CXASTContext Ctx, CXQualType T);
 
 // clang_ASTContext_addressSpaceMapManglingFor
+
+bool clang_ASTContext_addressSpaceMapManglingFor(CXASTContext Ctx, CXLangAS AS);
+
+// mergeExceptionSpecs
+
+// Partial (the Julia wrapper restates the precondition): X and Y must be the same
+// type — the same unqualified type when Unqualified is true.
+CXQualType clang_ASTContext_getCommonSugaredType(CXASTContext Ctx, CXQualType X,
+                                                 CXQualType Y, bool Unqualified);
 
 bool clang_ASTContext_typesAreCompatible(CXASTContext Ctx, CXQualType T1, CXQualType T2,
                                          bool CompareUnqualified);
@@ -718,6 +1101,10 @@ unsigned clang_ASTContext_getIntWidth(CXASTContext Ctx, CXQualType T);
 
 CXQualType clang_ASTContext_getCorrespondingUnsignedType(CXASTContext Ctx, CXQualType T);
 
+// Partial (the Julia wrapper restates the precondition): T must be an unsigned
+// integer type or an unsigned fixed-point type.
+CXQualType clang_ASTContext_getCorrespondingSignedType(CXASTContext Ctx, CXQualType T);
+
 CXQualType clang_ASTContext_getCorrespondingSaturatedType(CXASTContext Ctx, CXQualType T);
 
 CXQualType clang_ASTContext_getCorrespondingSignedFixedPointType(CXASTContext Ctx,
@@ -726,6 +1113,13 @@ CXQualType clang_ASTContext_getCorrespondingSignedFixedPointType(CXASTContext Ct
 CXIdentifierTable clang_ASTContext_getIdents(CXASTContext Ctx);
 
 // MakeIntValue
+
+// Value as an APSInt of Type's width and signedness, boxed in a caller-owned
+// LLVMGenericValueRef (APSInt in GV->IntVal, released via llvm-c). See MARSHALLING.md §1.
+// PRECONDITION: Type must be a complete integral or enumeration type — getIntWidth
+// reaches getTypeSize, which asserts otherwise; restated as an @assert in the Julia layer.
+LLVMGenericValueRef clang_ASTContext_MakeIntValue(CXASTContext Ctx, uint64_t Value,
+                                                  CXQualType Type);
 
 bool clang_ASTContext_isSentinelNullExpr(CXASTContext Ctx, CXExpr E);
 
@@ -743,6 +1137,12 @@ CXTypeSourceInfo clang_ASTContext_CreateTypeSourceInfo(CXASTContext Ctx, CXQualT
 
 CXTypeSourceInfo clang_ASTContext_getTrivialTypeSourceInfo(CXASTContext Ctx, CXQualType T,
                                                            CXSourceLocation_ Loc);
+
+CXGVALinkage clang_ASTContext_GetGVALinkageForFunction(CXASTContext Ctx, CXFunctionDecl FD);
+
+CXGVALinkage clang_ASTContext_GetGVALinkageForVariable(CXASTContext Ctx, CXVarDecl VD);
+
+bool clang_ASTContext_DeclMustBeEmitted(CXASTContext Ctx, CXDecl D);
 
 CXCXXConstructorDecl
 clang_ASTContext_getCopyConstructorForExceptionObject(CXASTContext Ctx, CXCXXRecordDecl RD);
@@ -793,11 +1193,20 @@ void clang_ASTContext_InitBuiltinTypes(CXASTContext Ctx, CXTargetInfo_ Target,
 
 bool clang_ASTContext_isMSStaticDataMemberInlineDefinition(CXASTContext Ctx, CXVarDecl VD);
 
-// getInlineVariableDefinitionKind
+CXInlineVariableDefinitionKind
+clang_ASTContext_getInlineVariableDefinitionKind(CXASTContext Ctx, CXVarDecl VD);
 
 // bool clang_ASTContext_mayExternalizeStaticVar(CXASTContext Ctx, CXDecl D);
 
 // bool clang_ASTContext_shouldExternalizeStaticVar(CXASTContext Ctx, CXDecl D);
+
+bool clang_ASTContext_mayExternalize(CXASTContext Ctx, CXDecl D);
+
+bool clang_ASTContext_shouldExternalize(CXASTContext Ctx, CXDecl D);
+
+// Hash of the CUDA/HIP compilation-unit ID; the empty string when -fcuid was not
+// given.
+CXString clang_ASTContext_getCUIDHash(CXASTContext Ctx);
 
 // Builtin Types
 CXQualType clang_ASTContext_VoidTy_getAsQualType(CXASTContext Ctx);

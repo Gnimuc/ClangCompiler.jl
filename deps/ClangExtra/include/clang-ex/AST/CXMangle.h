@@ -56,6 +56,27 @@ CXString clang_MangleContext_mangleName(CXMangleContext MC, CXNamedDecl D);
 // mangleSEHFinallyBlock
 // mangleTypeName
 
+// True for the auxiliary-target mangler of an offloading compilation.
+bool clang_MangleContext_isAux(CXMangleContext MC);
+
+// Reset the per-function block numbering before mangling a new function.
+void clang_MangleContext_startNewFunction(CXMangleContext MC);
+
+// The id previously handed out by clang_MangleContext_getAnonymousStructId for
+// this decl; 0 when none was assigned yet.
+uint64_t clang_MangleContext_getAnonymousStructIdForDebugInfo(CXMangleContext MC,
+                                                              CXNamedDecl D);
+
+// The RTTI type-name string for T (Itanium `_ZTS...`). The CXString is
+// caller-owned.
+CXString clang_MangleContext_mangleCXXRTTIName(CXMangleContext MC, CXQualType T,
+                                               bool NormalizeIntegers);
+
+// A unique string for T's canonical form, as used for TBAA and type uniquing.
+// The CXString is caller-owned.
+CXString clang_MangleContext_mangleCanonicalTypeName(CXMangleContext MC, CXQualType T,
+                                                     bool NormalizeIntegers);
+
 // ItaniumMangleContext
 // mangleCXXVTable
 // mangleCXXVTT

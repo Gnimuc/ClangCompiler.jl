@@ -1,6 +1,7 @@
 # the file hierarchy is exactly the same as Clang, please refer to Clang's src for docs.
 # AST
 include("AST/APValue.jl")
+include("AST/Comment.jl")
 include("AST/Attr.jl")
 include("AST/ASTConsumer.jl")
 include("AST/ASTContext.jl")
@@ -72,6 +73,12 @@ include("Lex/Token.jl")
 # Parse
 include("Parse/ParseAST.jl")
 include("Parse/Parser.jl")
+
+# Index
+include("Index/USRGeneration.jl")
+
+# Rewrite
+include("Rewrite/Rewriter.jl")
 
 # Sema
 include("Sema/DeclSpec.jl")

@@ -22,6 +22,22 @@ typedef enum CXExprValueKind {
   CXExprValueKind_VK_XValue,
 } CXExprValueKind;
 
+typedef enum CXExprObjectKind {
+  CXExprObjectKind_OK_Ordinary,
+  CXExprObjectKind_OK_BitField,
+  CXExprObjectKind_OK_VectorComponent,
+  CXExprObjectKind_OK_ObjCProperty,
+  CXExprObjectKind_OK_ObjCSubscript,
+  CXExprObjectKind_OK_MatrixComponent
+} CXExprObjectKind;
+
+typedef enum CXNonOdrUseReason {
+  CXNonOdrUseReason_NOUR_None = 0,
+  CXNonOdrUseReason_NOUR_Unevaluated,
+  CXNonOdrUseReason_NOUR_Constant,
+  CXNonOdrUseReason_NOUR_Discarded
+} CXNonOdrUseReason;
+
 typedef enum CXConstexprSpecKind {
   CXConstexprSpecKind_Unspecified,
   CXConstexprSpecKind_Constexpr,
@@ -95,6 +111,18 @@ typedef enum CXCallingConv_ {
   CXCallingConv_CC_AMDGPUKernelCall,
   CXCallingConv_CC_M68kRTD
 } CXCallingConv_;
+
+// Mirrors clang::IfStatementKind (clang/Basic/Specifiers.h): whether an `if`
+// statement is an ordinary if, an `if constexpr`, an `if consteval` or an
+// `if ! consteval`. Order and values must stay identical to the pinned Clang
+// header; the ENUM_SYNC table in lib/Basic/CXEnumSync.cpp fails the build if an
+// LLVM bump renumbers them.
+typedef enum CXIfStatementKind : unsigned {
+  CXIfStatementKind_Ordinary,
+  CXIfStatementKind_Constexpr,
+  CXIfStatementKind_ConstevalNonNegated,
+  CXIfStatementKind_ConstevalNegated
+} CXIfStatementKind;
 
 LLVM_CLANG_C_EXTERN_C_END
 

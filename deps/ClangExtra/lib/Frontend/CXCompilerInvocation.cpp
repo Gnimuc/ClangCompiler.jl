@@ -1,4 +1,9 @@
 #include "clang-ex/Frontend/CXCompilerInvocation.h"
+#include "utils.h"
+#include "clang/Basic/FileSystemOptions.h"
+#include "clang/Frontend/DependencyOutputOptions.h"
+#include "clang/Frontend/MigratorOptions.h"
+#include "clang/Frontend/PreprocessorOutputOptions.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/Utils.h"
 
@@ -30,6 +35,44 @@ CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
 }
 
 // Options
+CXLangOptions clang_CompilerInvocation_getLangOpts(CXCompilerInvocation CI) {
+  auto &Opts = static_cast<clang::CompilerInvocation *>(CI)->getLangOpts();
+  return &Opts;
+}
+
+CXAnalyzerOptions clang_CompilerInvocation_getAnalyzerOpts(CXCompilerInvocation CI) {
+  auto &Opts = static_cast<clang::CompilerInvocation *>(CI)->getAnalyzerOpts();
+  return &Opts;
+}
+
+CXMigratorOptions clang_CompilerInvocation_getMigratorOpts(CXCompilerInvocation CI) {
+  auto &Opts = static_cast<clang::CompilerInvocation *>(CI)->getMigratorOpts();
+  return &Opts;
+}
+
+CXFileSystemOptions clang_CompilerInvocation_getFileSystemOpts(CXCompilerInvocation CI) {
+  auto &Opts = static_cast<clang::CompilerInvocation *>(CI)->getFileSystemOpts();
+  return &Opts;
+}
+
+CXDependencyOutputOptions
+clang_CompilerInvocation_getDependencyOutputOpts(CXCompilerInvocation CI) {
+  auto &Opts =
+      static_cast<clang::CompilerInvocation *>(CI)->getDependencyOutputOpts();
+  return &Opts;
+}
+
+CXPreprocessorOutputOptions
+clang_CompilerInvocation_getPreprocessorOutputOpts(CXCompilerInvocation CI) {
+  auto &Opts =
+      static_cast<clang::CompilerInvocation *>(CI)->getPreprocessorOutputOpts();
+  return &Opts;
+}
+
+CXString clang_CompilerInvocation_getModuleHash(CXCompilerInvocation CI) {
+  return extra::makeCXString(
+      static_cast<clang::CompilerInvocation *>(CI)->getModuleHash());
+}
 CXCodeGenOptions clang_CompilerInvocation_getCodeGenOpts(CXCompilerInvocation CI) {
   auto &Opts = static_cast<clang::CompilerInvocation *>(CI)->getCodeGenOpts();
   return &Opts;

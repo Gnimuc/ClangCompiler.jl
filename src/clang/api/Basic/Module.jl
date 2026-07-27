@@ -177,3 +177,61 @@ function getSubmodule(x::AbstractModule, i::Integer)
     @check_ptrs x
     return Module_(clang_Module_getSubmodule(x, i))
 end
+
+
+"""
+    isForBuilding(x::AbstractModule, lang_opts::AbstractLangOptions) -> Bool
+Return `true` iff this module can be built in the compilation described by `lang_opts`.
+"""
+function isForBuilding(x::AbstractModule, lang_opts::AbstractLangOptions)
+    @check_ptrs x lang_opts
+    return clang_Module_isForBuilding(x, lang_opts)
+end
+
+function isNamedModuleInterfaceHasInit(x::AbstractModule)
+    @check_ptrs x
+    return clang_Module_isNamedModuleInterfaceHasInit(x)
+end
+
+"""
+    getASTFile(x::AbstractModule) -> Union{FileEntryRef,Nothing}
+Return a heap-boxed `FileEntryRef` for the serialized AST file of `x`'s top-level module,
+or `nothing` when there is none.
+
+This function allocates and one should call `dispose` to release the resources after using this object.
+"""
+function getASTFile(x::AbstractModule)
+    @check_ptrs x
+    ptr = clang_Module_getASTFile(x)
+    return ptr == C_NULL ? nothing : FileEntryRef(ptr)
+end
+
+function addTopHeaderFilename(x::AbstractModule, filename::AbstractString)
+    @check_ptrs x
+    return clang_Module_addTopHeaderFilename(x, filename)
+end
+
+"""
+    markUnavailable(x::AbstractModule, unimportable::Bool)
+Mark this module and all of its submodules as unavailable.
+"""
+function markUnavailable(x::AbstractModule, unimportable::Bool)
+    @check_ptrs x
+    return clang_Module_markUnavailable(x, unimportable)
+end
+
+"""
+    findOrInferSubmodule(x::AbstractModule, name::AbstractString) -> Module_
+Find the submodule with the given name, inferring one when `x` allows submodule inference.
+The returned carrier holds NULL when there is no such submodule and none can be inferred;
+an inferred submodule is owned by `x` and must never be disposed on its own.
+"""
+function findOrInferSubmodule(x::AbstractModule, name::AbstractString)
+    @check_ptrs x
+    return Module_(clang_Module_findOrInferSubmodule(x, name))
+end
+
+function getVisibilityID(x::AbstractModule)
+    @check_ptrs x
+    return clang_Module_getVisibilityID(x)
+end

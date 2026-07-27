@@ -71,6 +71,38 @@ bool clang_MangleContext_shouldMangleStringLiteral(CXMangleContext MC, CXStringL
 // mangleSEHFinallyBlock
 // mangleTypeName
 
+bool clang_MangleContext_isAux(CXMangleContext MC) {
+  return static_cast<clang::MangleContext *>(MC)->isAux();
+}
+
+void clang_MangleContext_startNewFunction(CXMangleContext MC) {
+  static_cast<clang::MangleContext *>(MC)->startNewFunction();
+}
+
+uint64_t clang_MangleContext_getAnonymousStructIdForDebugInfo(CXMangleContext MC,
+                                                              CXNamedDecl D) {
+  return static_cast<clang::MangleContext *>(MC)->getAnonymousStructIdForDebugInfo(
+      static_cast<clang::NamedDecl *>(D));
+}
+
+CXString clang_MangleContext_mangleCXXRTTIName(CXMangleContext MC, CXQualType T,
+                                               bool NormalizeIntegers) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleCXXRTTIName(
+      clang::QualType::getFromOpaquePtr(T), OS, NormalizeIntegers);
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_MangleContext_mangleCanonicalTypeName(CXMangleContext MC, CXQualType T,
+                                                     bool NormalizeIntegers) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::MangleContext *>(MC)->mangleCanonicalTypeName(
+      clang::QualType::getFromOpaquePtr(T), OS, NormalizeIntegers);
+  return extra::makeCXString(OS.str());
+}
+
 // ItaniumMangleContext
 // mangleCXXVTable
 // mangleCXXVTT

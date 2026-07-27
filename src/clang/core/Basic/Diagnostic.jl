@@ -29,3 +29,26 @@ end
 
 Base.unsafe_convert(::Type{CXDiagnosticsEngine}, x::DiagnosticsEngine) = x.ptr
 Base.cconvert(::Type{CXDiagnosticsEngine}, x::DiagnosticsEngine) = x
+
+
+"""
+    struct DiagnosticErrorTrap <: AbstractDiagnosticErrorTrap
+Hold a pointer to a `clang::DiagnosticErrorTrap` object.
+"""
+struct DiagnosticErrorTrap <: AbstractDiagnosticErrorTrap
+    ptr::CXDiagnosticErrorTrap
+end
+
+Base.unsafe_convert(::Type{CXDiagnosticErrorTrap}, x::DiagnosticErrorTrap) = x.ptr
+Base.cconvert(::Type{CXDiagnosticErrorTrap}, x::DiagnosticErrorTrap) = x
+
+"""
+    struct StoredDiagnostic <: AbstractStoredDiagnostic
+Hold a pointer to a `clang::StoredDiagnostic` object.
+"""
+struct StoredDiagnostic <: AbstractStoredDiagnostic
+    ptr::CXStoredDiagnostic
+end
+
+Base.unsafe_convert(::Type{CXStoredDiagnostic}, x::StoredDiagnostic) = x.ptr
+Base.cconvert(::Type{CXStoredDiagnostic}, x::StoredDiagnostic) = x

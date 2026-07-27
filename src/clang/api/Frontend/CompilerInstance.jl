@@ -376,3 +376,171 @@ function PrintStats(ci::CompilerInstance, ::Type{ASTConsumer})
     ctx = getASTConsumer(ci)
     return PrintStats(ctx)
 end
+
+
+# Forwarding options
+# Every accessor here forwards through `CompilerInstance::Invocation` with an
+# unchecked dereference, hence the `hasInvocation` assertion.
+"""
+    getAnalyzerOpts(ci::CompilerInstance) -> AnalyzerOptions
+Return the `clang::AnalyzerOptions` of this instance's invocation (borrowed view).
+"""
+function getAnalyzerOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return AnalyzerOptions(clang_CompilerInstance_getAnalyzerOpts(ci))
+end
+
+"""
+    getDependencyOutputOpts(ci::CompilerInstance) -> DependencyOutputOptions
+Return the `clang::DependencyOutputOptions` of this instance's invocation (borrowed view).
+"""
+function getDependencyOutputOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return DependencyOutputOptions(clang_CompilerInstance_getDependencyOutputOpts(ci))
+end
+
+"""
+    getFileSystemOpts(ci::CompilerInstance) -> FileSystemOptions
+Return the `clang::FileSystemOptions` of this instance's invocation (borrowed view).
+"""
+function getFileSystemOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return FileSystemOptions(clang_CompilerInstance_getFileSystemOpts(ci))
+end
+
+"""
+    getPreprocessorOutputOpts(ci::CompilerInstance) -> PreprocessorOutputOptions
+Return the `clang::PreprocessorOutputOptions` of this instance's invocation (borrowed view).
+"""
+function getPreprocessorOutputOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return PreprocessorOutputOptions(clang_CompilerInstance_getPreprocessorOutputOpts(ci))
+end
+
+# Module loading
+"""
+    shouldBuildGlobalModuleIndex(ci::CompilerInstance) -> Bool
+Return whether the global module index should be (re)built.
+"""
+function shouldBuildGlobalModuleIndex(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return clang_CompilerInstance_shouldBuildGlobalModuleIndex(ci)
+end
+
+"""
+    setBuildGlobalModuleIndex(ci::CompilerInstance, build::Bool)
+Set the flag indicating whether the global module index should be (re)built.
+"""
+function setBuildGlobalModuleIndex(ci::CompilerInstance, build::Bool)
+    @check_ptrs ci
+    return clang_CompilerInstance_setBuildGlobalModuleIndex(ci, build)
+end
+
+"""
+    hadModuleLoaderFatalFailure(ci::CompilerInstance) -> Bool
+Return whether the module loader hit a fatal failure.
+"""
+function hadModuleLoaderFatalFailure(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_hadModuleLoaderFatalFailure(ci)
+end
+
+"""
+    getSpecificModuleCachePath(ci::CompilerInstance) -> String
+Return the module cache path specialized with the invocation's module hash, or an
+empty string when no module cache path is configured.
+"""
+function getSpecificModuleCachePath(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return get_string(clang_CompilerInstance_getSpecificModuleCachePath(ci))
+end
+
+# AuxTarget
+"""
+    createTarget(ci::CompilerInstance) -> Bool
+Create the target and auxiliary target from the current options, reporting problems
+through the instance's diagnostics engine.
+"""
+function createTarget(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    @assert hasDiagnostics(ci) "the compiler instance must have a diagnostics engine"
+    return clang_CompilerInstance_createTarget(ci)
+end
+
+"""
+    getAuxTarget(ci::CompilerInstance) -> TargetInfo
+Return the auxiliary target. The carrier holds a NULL pointer when none is set.
+"""
+function getAuxTarget(ci::CompilerInstance)
+    @check_ptrs ci
+    return TargetInfo(clang_CompilerInstance_getAuxTarget(ci))
+end
+
+"""
+    setAuxTarget(ci::CompilerInstance, tgti::TargetInfo)
+Replace the current auxiliary target.
+"""
+function setAuxTarget(ci::CompilerInstance, tgti::TargetInfo)
+    @check_ptrs ci tgti
+    return clang_CompilerInstance_setAuxTarget(ci, tgti)
+end
+
+# Code completion
+"""
+    hasCodeCompletionConsumer(ci::CompilerInstance) -> Bool
+Return whether a code completion consumer has been set.
+"""
+function hasCodeCompletionConsumer(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_hasCodeCompletionConsumer(ci)
+end
+
+# Output files
+"""
+    clearOutputFiles(ci::CompilerInstance, erase_files::Bool=false)
+Clear the output file list; when `erase_files` is true the files are also erased from
+disk. The underlying output streams must have been closed beforehand.
+"""
+function clearOutputFiles(ci::CompilerInstance, erase_files::Bool=false)
+    @check_ptrs ci
+    return clang_CompilerInstance_clearOutputFiles(ci, erase_files)
+end
+
+
+# Plugins
+"""
+    LoadRequestedPlugins(ci::CompilerInstance)
+Load the frontend plugins named by the invocation's frontend options. `ci` must
+have an invocation.
+"""
+function LoadRequestedPlugins(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return clang_CompilerInstance_LoadRequestedPlugins(ci)
+end
+
+# Frontend timer
+"""
+    hasFrontendTimer(ci::CompilerInstance) -> Bool
+Return whether a frontend timer has been created.
+"""
+function hasFrontendTimer(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_hasFrontendTimer(ci)
+end
+
+"""
+    createFrontendTimer(ci::CompilerInstance)
+Create the frontend timer, replacing any existing one.
+"""
+function createFrontendTimer(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_createFrontendTimer(ci)
+end

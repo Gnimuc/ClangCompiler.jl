@@ -272,6 +272,39 @@ dispose-via-`Release` variant next to the `delete`-based one.
 (`lib/Frontend/CXCompilerInvocation.cpp`) pins the borrowed `DiagnosticsEngine`
 before `clang::createInvocation` runs the driver.
 
+## 13. Uninitialized-state preconditions → export the gate, don't just document it
+
+Some Clang methods read members that carry **no default initializer** and are
+populated only on a configuration path the caller may not have taken. They are
+not fallible and not partial in the `castAs<>` sense — they are plain UB, and the
+symptom is platform-dependent: a garbage enum on one host, a clean zero on
+another, a segfault on a third.
+
+Two found so far:
+
+| method | reads | populated only when |
+| --- | --- | --- |
+| `Driver::getLTOMode` | `LTOMode`, `OffloadLTOMode` | `BuildCompilation` has run `setLTOMode` |
+| `Preprocessor::PoisonSEHIdentifiers` | nine SEH `IdentifierInfo *` members | `-fborland-extensions` (`LangOpts.Borland`) |
+
+**Prefer exporting the gate over writing a warning.** Invariant 3 says restate the
+precondition in the Julia wrapper as an `@assert` — but that only works if the
+condition is *observable* through the C API. When it is not, the fix is usually a
+one-line accessor for the flag that gates it, added alongside the risky wrapper:
+`clang_LangOptions_getBorland` exists purely so `PoisonSEHIdentifiers` can assert
+rather than crash. A wrapper that can reject the bad call is strictly better than
+one whose docstring asks the caller not to make it.
+
+Only fall back to a documented-precondition-with-no-assert when the state truly
+has no observable proxy — `Driver` exposes no "arguments processed" flag, so
+`getLTOMode` documents and cannot check. Say so explicitly in the docstring when
+that happens, so the gap is a known one rather than an oversight.
+
+**How to spot one while wrapping:** read the member declarations, not just the
+method. A member with no `= init` in the class body, assigned only inside an
+`if (LangOpts.X)` or a setter called from one entry point, is the signature. The
+compiler will not warn, and a single-platform test run will often pass.
+
 ---
 
 New value-type or range shapes not covered here should extend this file rather than inventing an

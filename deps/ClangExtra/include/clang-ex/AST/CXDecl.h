@@ -4,13 +4,16 @@
 #include "clang-ex/AST/CXType.h"
 #include "clang-ex/Basic/CXExceptionSpecificationType.h"
 #include "clang-ex/Basic/CXLinkage.h"
+#include "clang-ex/Basic/CXOperatorKinds.h"
 #include "clang-ex/Basic/CXPragmaKinds.h"
 #include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-ex/Basic/CXVisibility.h"
 #include "clang-ex/CXTypes.h"
+#include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 #include "llvm-c/ExecutionEngine.h"
+#include "clang-ex/Basic/CXIdentifierTable.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
@@ -23,6 +26,11 @@ void clang_TranslationUnitDecl_setAnonymousNamespace(CXTranslationUnitDecl TUD,
                                                      CXNamespaceDecl ND);
 
 CXTranslationUnitDecl clang_TranslationUnitDecl_Create(CXASTContext C);
+
+// TranslationUnitDecl Cast
+CXDeclContext clang_TranslationUnitDecl_castToDeclContext(CXTranslationUnitDecl TUD);
+
+CXTranslationUnitDecl clang_TranslationUnitDecl_castFromDeclContext(CXDeclContext DC);
 
 // PragmaCommentDecl
 CXPragmaCommentDecl clang_PragmaCommentDecl_Create(CXASTContext C, CXTranslationUnitDecl DC,
@@ -56,14 +64,32 @@ const char *clang_PragmaDetectMismatchDecl_getValue(CXPragmaDetectMismatchDecl P
 CXExternCContextDecl clang_ExternCContextDecl_Create(CXASTContext C,
                                                      CXTranslationUnitDecl TU);
 
+// ExternCContextDecl Cast
+CXDeclContext clang_ExternCContextDecl_castToDeclContext(CXExternCContextDecl ECD);
+
+CXExternCContextDecl clang_ExternCContextDecl_castFromDeclContext(CXDeclContext DC);
+
 // NamedDecl
 CXIdentifierInfo clang_NamedDecl_getIdentifier(CXNamedDecl ND);
 
 const char *clang_NamedDecl_getName(CXNamedDecl ND);
 
+CXString clang_NamedDecl_getNameAsString(CXNamedDecl ND);
+
+// Pretty-printed unqualified name, with the decl's own ASTContext policy.
+CXString clang_NamedDecl_printName(CXNamedDecl ND);
+
 CXDeclarationName clang_NamedDecl_getDeclName(CXNamedDecl ND);
 
 void clang_NamedDecl_setDeclName(CXNamedDecl ND, CXDeclarationName DN);
+
+// Only the nested-name-specifier part, including the trailing "::".
+CXString clang_NamedDecl_printNestedNameSpecifier(CXNamedDecl ND);
+
+CXString clang_NamedDecl_getQualifiedNameAsString(CXNamedDecl ND);
+
+// Printed with the decl's own ASTContext printing policy.
+CXString clang_NamedDecl_getNameForDiagnostic(CXNamedDecl ND, bool Qualified);
 
 bool clang_NamedDecl_declarationReplaces(CXNamedDecl ND, CXNamedDecl OldD,
                                          bool IsKnownNewer);
@@ -73,6 +99,11 @@ bool clang_NamedDecl_hasLinkage(CXNamedDecl ND);
 bool clang_NamedDecl_isCXXClassMember(CXNamedDecl ND);
 
 bool clang_NamedDecl_isCXXInstanceMember(CXNamedDecl ND);
+
+CXReservedIdentifierStatus clang_NamedDecl_isReserved(CXNamedDecl ND,
+                                                      CXLangOptions LangOpts);
+
+bool clang_NamedDecl_isPlaceholderVar(CXNamedDecl ND, CXLangOptions LangOpts);
 
 CXLinkage clang_NamedDecl_getLinkageInternal(CXNamedDecl ND);
 
@@ -87,7 +118,20 @@ bool clang_NamedDecl_isExternallyDeclarable(CXNamedDecl ND);
 CXVisibility clang_NamedDecl_getVisibility(CXNamedDecl ND);
 
 // getLinkageAndVisibility
+
+// The LinkageInfo aggregate crosses field-by-field: the computed linkage, the
+// computed visibility, and whether that visibility was explicitly specified.
+// All three out-params are written on every call and must be non-NULL.
+void clang_NamedDecl_getLinkageAndVisibility(CXNamedDecl ND, CXLinkage *L, CXVisibility *V,
+                                             bool *VisibilityExplicit);
 // getExplicitVisibility
+
+// std::optional<Visibility> crosses as a bool return plus an out-param: the
+// return is false when the declaration carries no explicit visibility, and *V
+// (must be non-NULL) is written only when it is true.
+// NamedDecl::ExplicitVisibilityKind is two-state, so it is passed as a bool:
+// true = VisibilityForType, false = VisibilityForValue.
+bool clang_NamedDecl_getExplicitVisibility(CXNamedDecl ND, bool ForType, CXVisibility *V);
 
 bool clang_NamedDecl_isLinkageValid(CXNamedDecl ND);
 
@@ -98,6 +142,7 @@ CXNamedDecl clang_NamedDecl_getUnderlyingDecl(CXNamedDecl ND);
 CXNamedDecl clang_NamedDecl_getMostRecentDecl(CXNamedDecl ND);
 
 // getObjCFStringFormattingFamily
+CXObjCStringFormatFamily clang_NamedDecl_getObjCFStringFormattingFamily(CXNamedDecl ND);
 
 // NamedDecl Cast
 CXTypeDecl clang_NamedDecl_castToTypeDecl(CXNamedDecl ND);
@@ -126,6 +171,8 @@ bool clang_LabelDecl_isResolvedMSAsmLabel(CXLabelDecl LD);
 
 // setMSAsmLabel
 
+void clang_LabelDecl_setMSAsmLabel(CXLabelDecl LD, const char *Name);
+
 const char *clang_LabelDecl_getMSAsmLabel(CXLabelDecl LD);
 
 void clang_LabelDecl_setMSAsmLabelResolved(CXLabelDecl LD);
@@ -136,6 +183,14 @@ void clang_LabelDecl_setMSAsmLabelResolved(CXLabelDecl LD);
 //                                            CXSourceLocation_ IdLoc, CXIdentifierInfo Id,
 //                                            CXNamespaceDecl PrevDecl);
 
+// PrevDecl may be NULL when there is no previous declaration; Nested marks a
+// component of a C++20 nested-namespace-definition. The decl is allocated in the
+// ASTContext arena and is NOT added to DC.
+CXNamespaceDecl clang_NamespaceDecl_Create(CXASTContext C, CXDeclContext DC, bool Inline,
+                                           CXSourceLocation_ StartLoc,
+                                           CXSourceLocation_ IdLoc, CXIdentifierInfo Id,
+                                           CXNamespaceDecl PrevDecl, bool Nested);
+
 CXNamespaceDecl clang_NamespaceDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
 bool clang_NamespaceDecl_isAnonymousNamespace(CXNamespaceDecl ND);
@@ -143,6 +198,13 @@ bool clang_NamespaceDecl_isAnonymousNamespace(CXNamespaceDecl ND);
 bool clang_NamespaceDecl_isInline(CXNamespaceDecl ND);
 
 void clang_NamespaceDecl_setInline(CXNamespaceDecl ND, bool Inline);
+
+bool clang_NamespaceDecl_isNested(CXNamespaceDecl ND);
+
+void clang_NamespaceDecl_setNested(CXNamespaceDecl ND, bool Nested);
+
+bool clang_NamespaceDecl_isRedundantInlineQualifierFor(CXNamespaceDecl ND,
+                                                       CXDeclarationName Name);
 
 CXNamespaceDecl clang_NamespaceDecl_getOriginalNamespace(CXNamespaceDecl ND);
 
@@ -164,12 +226,21 @@ void clang_NamespaceDecl_setLocStart(CXNamespaceDecl ND, CXSourceLocation_ Loc);
 
 void clang_NamespaceDecl_setRBraceLoc(CXNamespaceDecl ND, CXSourceLocation_ Loc);
 
+// NamespaceDecl Cast
+CXDeclContext clang_NamespaceDecl_castToDeclContext(CXNamespaceDecl ND);
+
+CXNamespaceDecl clang_NamespaceDecl_castFromDeclContext(CXDeclContext DC);
+
 // ValueDecl
 CXQualType clang_ValueDecl_getType(CXValueDecl VD);
 
 void clang_ValueDecl_setType(CXValueDecl VD, CXQualType OpaquePtr);
 
 bool clang_ValueDecl_isWeak(CXValueDecl VD);
+
+bool clang_ValueDecl_isInitCapture(CXValueDecl VD);
+
+CXVarDecl clang_ValueDecl_getPotentiallyDecomposedVarDecl(CXValueDecl VD);
 
 // DeclaratorDecl
 CXTypeSourceInfo clang_DeclaratorDecl_getTypeSourceInfo(CXDeclaratorDecl DD);
@@ -183,6 +254,8 @@ void clang_DeclaratorDecl_setInnerLocStart(CXDeclaratorDecl DD, CXSourceLocation
 CXSourceLocation_ clang_DeclaratorDecl_getOuterLocStart(CXDeclaratorDecl DD);
 
 CXSourceLocation_ clang_DeclaratorDecl_getBeginLoc(CXDeclaratorDecl DD);
+
+CXSourceRange_ clang_DeclaratorDecl_getSourceRange(CXDeclaratorDecl DD);
 
 CXNestedNameSpecifier clang_DeclaratorDecl_getQualifier(CXDeclaratorDecl DD);
 
@@ -201,11 +274,40 @@ CXTemplateParameterList clang_DeclaratorDecl_getTemplateParameterList(CXDeclarat
 
 // setTemplateParameterListsInfo
 
+// TPLists is a caller buffer of NumTPLists CXTemplateParameterList handles,
+// rebuilt into an ArrayRef on the C++ side; the lists themselves are borrowed.
+// Precondition: NumTPLists > 0.
+void clang_DeclaratorDecl_setTemplateParameterListsInfo(CXDeclaratorDecl DD, CXASTContext C,
+                                                        CXTemplateParameterList *TPLists,
+                                                        unsigned NumTPLists);
+
 CXSourceLocation_ clang_DeclaratorDecl_getTypeSpecStartLoc(CXDeclaratorDecl DD);
 
 CXSourceLocation_ clang_DeclaratorDecl_getTypeSpecEndLoc(CXDeclaratorDecl DD);
 
 // VarDecl
+typedef enum CXVarDecl_InitializationStyle {
+  CXVarDecl_CInit,
+  CXVarDecl_CallInit,
+  CXVarDecl_ListInit,
+  CXVarDecl_ParenListInit
+} CXVarDecl_InitializationStyle;
+
+typedef enum CXVarDecl_TLSKind {
+  CXVarDecl_TLS_None,
+  CXVarDecl_TLS_Static,
+  CXVarDecl_TLS_Dynamic
+} CXVarDecl_TLSKind;
+
+typedef enum CXVarDecl_DefinitionKind {
+  CXVarDecl_DeclarationOnly,
+  CXVarDecl_TentativeDefinition,
+  CXVarDecl_Definition
+} CXVarDecl_DefinitionKind;
+
+// Illegal to call with CXStorageClass_SC_None.
+const char *clang_VarDecl_getStorageClassSpecifierString(CXStorageClass SC);
+
 CXVarDecl clang_VarDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ StartLoc,
                                CXSourceLocation_ IdLoc, CXIdentifierInfo Id, CXQualType T,
                                CXTypeSourceInfo TInfo, CXStorageClass S);
@@ -223,6 +325,8 @@ void clang_VarDecl_setTSCSpec(CXVarDecl VD, CXThreadStorageClassSpecifier TSC);
 CXThreadStorageClassSpecifier clang_VarDecl_getTSCSpec(CXVarDecl VD);
 
 // getTLSKind
+
+CXVarDecl_TLSKind clang_VarDecl_getTLSKind(CXVarDecl VD);
 
 bool clang_VarDecl_hasLocalStorage(CXVarDecl VD);
 
@@ -254,6 +358,11 @@ CXVarDecl clang_VarDecl_getCanonicalDecl(CXVarDecl VD);
 
 // isThisDeclarationADefinition
 // hasDefinition
+
+CXVarDecl_DefinitionKind clang_VarDecl_isThisDeclarationADefinition(CXVarDecl VD,
+                                                                    CXASTContext C);
+
+CXVarDecl_DefinitionKind clang_VarDecl_hasDefinition(CXVarDecl VD, CXASTContext C);
 
 CXVarDecl clang_VarDecl_getActingDefinition(CXVarDecl VD);
 
@@ -288,15 +397,31 @@ CXEvaluatedStmt clang_VarDecl_getEvaluatedStmt(CXVarDecl VD);
 // the initializer is absent or not constant-foldable. See CXAPValue.h.
 CXAPValue clang_VarDecl_evaluateValue(CXVarDecl VD);
 // getEvaluatedValue
+
+// Borrowed: the APValue already cached in the VarDecl (nullptr when the
+// initializer has never been evaluated). Do NOT dispose. See CXAPValue.h.
+CXAPValue clang_VarDecl_getEvaluatedValue(CXVarDecl VD);
+
 // evaluateDestruction
+
+// The PartialDiagnostic notes vector stays on the C++ side; only the bool crosses.
+bool clang_VarDecl_evaluateDestruction(CXVarDecl VD);
 
 bool clang_VarDecl_hasConstantInitialization(CXVarDecl VD);
 
 bool clang_VarDecl_hasICEInitializer(CXVarDecl VD, CXASTContext Context);
 
 // checkForConstantInitialization
+
+// The PartialDiagnostic notes vector stays on the C++ side; only the bool crosses.
+bool clang_VarDecl_checkForConstantInitialization(CXVarDecl VD);
+
 // setInitStyle
 // getInitStyle
+
+void clang_VarDecl_setInitStyle(CXVarDecl VD, CXVarDecl_InitializationStyle Style);
+
+CXVarDecl_InitializationStyle clang_VarDecl_getInitStyle(CXVarDecl VD);
 
 bool clang_VarDecl_isDirectInit(CXVarDecl VD);
 
@@ -365,6 +490,10 @@ CXSourceLocation_ clang_VarDecl_getPointOfInstantiation(CXVarDecl VD);
 
 // getMemberSpecializationInfo
 
+bool clang_VarDecl_hasDependentAlignment(CXVarDecl VD);
+
+CXMemberSpecializationInfo clang_VarDecl_getMemberSpecializationInfo(CXVarDecl VD);
+
 void clang_VarDecl_setTemplateSpecializationKind(CXVarDecl VD,
                                                  CXTemplateSpecializationKind TSK,
                                                  CXSourceLocation_ PointOfInstantiation);
@@ -381,6 +510,13 @@ bool clang_VarDecl_isKnownToBeDefined(CXVarDecl VD);
 bool clang_VarDecl_isNoDestroy(CXVarDecl VD, CXASTContext AST);
 
 // needsDestruction
+
+CXDestructionKind clang_VarDecl_needsDestruction(CXVarDecl VD, CXASTContext Ctx);
+
+bool clang_VarDecl_hasFlexibleArrayInit(CXVarDecl VD, CXASTContext Ctx);
+
+// CharUnits crossing in bytes.
+int64_t clang_VarDecl_getFlexibleArrayInitChars(CXVarDecl VD, CXASTContext Ctx);
 
 // ImplicitParamDecl
 typedef enum CXImplicitParamKind : unsigned {
@@ -411,6 +547,8 @@ CXParmVarDecl clang_ParmVarDecl_Create(CXASTContext C, CXDeclContext DC,
 
 CXParmVarDecl clang_ParmVarDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
+CXSourceRange_ clang_ParmVarDecl_getSourceRange(CXParmVarDecl PVD);
+
 void clang_ParmVarDecl_setObjCMethodScopeInfo(CXParmVarDecl PVD, unsigned parameterIndex);
 
 void clang_ParmVarDecl_setScopeInfo(CXParmVarDecl PVD, unsigned scopeDepth,
@@ -422,14 +560,43 @@ bool clang_ParmVarDecl_isDestroyedInCallee(CXParmVarDecl PVD);
 
 unsigned clang_ParmVarDecl_getFunctionScopeDepth(CXParmVarDecl PVD);
 
+unsigned clang_ParmVarDecl_getMaxFunctionScopeDepth(void);
+
 unsigned clang_ParmVarDecl_getFunctionScopeIndex(CXParmVarDecl PVD);
 
 // getObjCDeclQualifier
+// mirrors clang::Decl::ObjCDeclQualifier (clang/AST/DeclBase.h); bitmask, so the
+// explicit values are preserved. Synced by static_assert in
+// lib/Basic/CXEnumSync.cpp.
+typedef enum CXObjCDeclQualifier {
+  CXObjCDeclQualifier_OBJC_TQ_None = 0x0,
+  CXObjCDeclQualifier_OBJC_TQ_In = 0x1,
+  CXObjCDeclQualifier_OBJC_TQ_Inout = 0x2,
+  CXObjCDeclQualifier_OBJC_TQ_Out = 0x4,
+  CXObjCDeclQualifier_OBJC_TQ_Bycopy = 0x8,
+  CXObjCDeclQualifier_OBJC_TQ_Byref = 0x10,
+  CXObjCDeclQualifier_OBJC_TQ_Oneway = 0x20,
+  CXObjCDeclQualifier_OBJC_TQ_CSNullability = 0x40
+} CXObjCDeclQualifier;
+
+CXObjCDeclQualifier clang_ParmVarDecl_getObjCDeclQualifier(CXParmVarDecl PVD);
 // setObjCDeclQualifier
+
+// Precondition: clang_ParmVarDecl_isObjCMethodParameter(PVD) — the qualifier
+// shares its bitfield with the parameter's scope depth, and clang asserts on a
+// non-ObjC-method parameter.
+void clang_ParmVarDecl_setObjCDeclQualifier(CXParmVarDecl PVD, CXObjCDeclQualifier QTVal);
 
 bool clang_ParmVarDecl_isKNRPromoted(CXParmVarDecl PVD);
 
 void clang_ParmVarDecl_setKNRPromoted(CXParmVarDecl PVD, bool promoted);
+
+bool clang_ParmVarDecl_isExplicitObjectParameter(CXParmVarDecl PVD);
+
+void clang_ParmVarDecl_setExplicitObjectParameterLoc(CXParmVarDecl PVD,
+                                                     CXSourceLocation_ Loc);
+
+CXSourceLocation_ clang_ParmVarDecl_getExplicitObjectParamThisLoc(CXParmVarDecl PVD);
 
 CXExpr clang_ParmVarDecl_getDefaultArg(CXParmVarDecl PVD);
 
@@ -523,6 +690,37 @@ void clang_FunctionDecl_setLazyBody(CXFunctionDecl FD, uint64_t Offset);
 void clang_FunctionDecl_setDefaultedFunctionInfo(CXFunctionDecl FD,
                                                  CXFunctionDecl_DefaultedFunctionInfo Info);
 
+// nullptr when this declaration stores a body rather than stashed
+// defaulted-function info.
+CXFunctionDecl_DefaultedFunctionInfo
+clang_FunctionDecl_getDefaultedFunctionInfo(CXFunctionDecl FD);
+
+// FunctionDecl::DefaultedFunctionInfo
+// Allocated in the ASTContext arena (no dispose). Decls and Accesses are two
+// caller buffers of NumLookups entries read in lockstep — entry i of each builds
+// one DeclAccessPair.
+CXFunctionDecl_DefaultedFunctionInfo clang_FunctionDecl_DefaultedFunctionInfo_Create(
+    CXASTContext C, CXNamedDecl *Decls, CXAccessSpecifier *Accesses, unsigned NumLookups);
+
+// getUnqualifiedLookups as a count+index pair; the DeclAccessPair at position i
+// crosses as its two components. The count is exact and no slot is null.
+unsigned clang_FunctionDecl_DefaultedFunctionInfo_getNumUnqualifiedLookups(
+    CXFunctionDecl_DefaultedFunctionInfo Info);
+
+CXNamedDecl clang_FunctionDecl_DefaultedFunctionInfo_getUnqualifiedLookupDecl(
+    CXFunctionDecl_DefaultedFunctionInfo Info, unsigned i);
+
+CXAccessSpecifier clang_FunctionDecl_DefaultedFunctionInfo_getUnqualifiedLookupAccess(
+    CXFunctionDecl_DefaultedFunctionInfo Info, unsigned i);
+
+CXSourceLocation_ clang_FunctionDecl_getDefaultLoc(CXFunctionDecl FD);
+
+void clang_FunctionDecl_setDefaultLoc(CXFunctionDecl FD, CXSourceLocation_ NewLoc);
+
+bool clang_FunctionDecl_isIneligibleOrNotSelected(CXFunctionDecl FD);
+
+void clang_FunctionDecl_setIneligibleOrNotSelected(CXFunctionDecl FD, bool II);
+
 bool clang_FunctionDecl_isVariadic(CXFunctionDecl FD);
 
 bool clang_FunctionDecl_isVirtualAsWritten(CXFunctionDecl FD);
@@ -579,6 +777,15 @@ bool clang_FunctionDecl_isConstexprSpecified(CXFunctionDecl FD);
 
 bool clang_FunctionDecl_isConsteval(CXFunctionDecl FD);
 
+void clang_FunctionDecl_setBodyContainsImmediateEscalatingExpressions(CXFunctionDecl FD,
+                                                                      bool Set);
+
+bool clang_FunctionDecl_BodyContainsImmediateEscalatingExpressions(CXFunctionDecl FD);
+
+bool clang_FunctionDecl_isImmediateEscalating(CXFunctionDecl FD);
+
+bool clang_FunctionDecl_isImmediateFunction(CXFunctionDecl FD);
+
 bool clang_FunctionDecl_instantiationIsPending(CXFunctionDecl FD);
 
 void clang_FunctionDecl_setInstantiationIsPending(CXFunctionDecl FD, bool IC);
@@ -600,6 +807,15 @@ bool clang_FunctionDecl_isMSVCRTEntryPoint(CXFunctionDecl FD);
 bool clang_FunctionDecl_isReservedGlobalPlacementOperator(CXFunctionDecl FD);
 
 bool clang_FunctionDecl_isReplaceableGlobalAllocationFunction(CXFunctionDecl FD);
+
+// helper
+// isReplaceableGlobalAllocationFunction with its two out-params exposed: the
+// std::optional<unsigned> alignment parameter number crosses as
+// *HasAlignmentParam + *AlignmentParam, and *IsNothrow reports the
+// std::nothrow_t overload. All three out-params are written on every call and
+// must be non-NULL.
+bool clang_FunctionDecl_getReplaceableGlobalAllocationFunctionInfo(
+    CXFunctionDecl FD, bool *HasAlignmentParam, unsigned *AlignmentParam, bool *IsNothrow);
 
 bool clang_FunctionDecl_isInlineBuiltinDeclaration(CXFunctionDecl FD);
 
@@ -625,6 +841,13 @@ bool clang_FunctionDecl_willHaveBody(CXFunctionDecl FD);
 
 void clang_FunctionDecl_setWillHaveBody(CXFunctionDecl FD, bool V);
 
+void clang_FunctionDecl_setFriendConstraintRefersToEnclosingTemplate(CXFunctionDecl FD,
+                                                                     bool V);
+
+bool clang_FunctionDecl_FriendConstraintRefersToEnclosingTemplate(CXFunctionDecl FD);
+
+bool clang_FunctionDecl_isMemberLikeConstrainedFriend(CXFunctionDecl FD);
+
 bool clang_FunctionDecl_isMultiVersion(CXFunctionDecl FD);
 
 void clang_FunctionDecl_setIsMultiVersion(CXFunctionDecl FD, bool V);
@@ -637,7 +860,16 @@ bool clang_FunctionDecl_isCPUSpecificMultiVersion(CXFunctionDecl FD);
 
 bool clang_FunctionDecl_isTargetMultiVersion(CXFunctionDecl FD);
 
+bool clang_FunctionDecl_isTargetClonesMultiVersion(CXFunctionDecl FD);
+
 // getAssociatedConstraints
+
+// associated constraints: two-call protocol (the C++ API fills a SmallVector).
+// getNumAssociatedConstraints counts; getAssociatedConstraints fills a caller
+// buffer of that size. Count is exact; no slot is null.
+unsigned clang_FunctionDecl_getNumAssociatedConstraints(CXFunctionDecl FD);
+
+void clang_FunctionDecl_getAssociatedConstraints(CXFunctionDecl FD, CXExpr *Buf);
 
 void clang_FunctionDecl_setPreviousDeclaration(CXFunctionDecl FD, CXFunctionDecl PrevDecl);
 
@@ -651,13 +883,25 @@ unsigned clang_FunctionDecl_getNumParams(CXFunctionDecl FD);
 
 CXParmVarDecl clang_FunctionDecl_getParamDecl(CXFunctionDecl FD, unsigned i);
 
-// setParams
+// setParams (private in clang 18 — only Sema/deserialization may set params)
 
 unsigned clang_FunctionDecl_getMinRequiredArguments(CXFunctionDecl FD);
 
 bool clang_FunctionDecl_hasOneParamOrDefaultArgs(CXFunctionDecl FD);
 
+unsigned clang_FunctionDecl_getMinRequiredExplicitArguments(CXFunctionDecl FD);
+
+bool clang_FunctionDecl_hasCXXExplicitFunctionObjectParameter(CXFunctionDecl FD);
+
+unsigned clang_FunctionDecl_getNumNonObjectParams(CXFunctionDecl FD);
+
+CXParmVarDecl clang_FunctionDecl_getNonObjectParameter(CXFunctionDecl FD, unsigned I);
+
 // getFunctionTypeLoc
+
+// Returns an OWNED heap box (a TypeLoc is a by-value object); release with
+// clang_TypeLoc_dispose. Null-check with clang_TypeLoc_isNull.
+CXTypeLoc clang_FunctionDecl_getFunctionTypeLoc(CXFunctionDecl FD);
 
 CXQualType clang_FunctionDecl_getReturnType(CXFunctionDecl FD);
 
@@ -693,9 +937,15 @@ bool clang_FunctionDecl_doesDeclarationForceExternallyVisibleDefinition(CXFuncti
 
 bool clang_FunctionDecl_isStatic(CXFunctionDecl FD);
 
+bool clang_FunctionDecl_UsesFPIntrin(CXFunctionDecl FD);
+
+void clang_FunctionDecl_setUsesFPIntrin(CXFunctionDecl FD, bool I);
+
 bool clang_FunctionDecl_isOverloadedOperator(CXFunctionDecl FD);
 
 // getOverloadedOperator
+
+CXOverloadedOperatorKind clang_FunctionDecl_getOverloadedOperator(CXFunctionDecl FD);
 
 CXIdentifierInfo clang_FunctionDecl_getLiteralIdentifier(CXFunctionDecl FD);
 
@@ -714,6 +964,10 @@ void clang_FunctionDecl_setDescribedFunctionTemplate(CXFunctionDecl FD,
                                                      CXFunctionTemplateDecl Template);
 
 CXFunctionDecl clang_FunctionDecl_getInstantiatedFromMemberFunction(CXFunctionDecl FD);
+
+CXFunctionDecl clang_FunctionDecl_getInstantiatedFromDecl(CXFunctionDecl FD);
+
+void clang_FunctionDecl_setInstantiatedFromDecl(CXFunctionDecl FD, CXFunctionDecl FD2);
 
 bool clang_FunctionDecl_isFunctionTemplateSpecialization(CXFunctionDecl FD);
 
@@ -758,6 +1012,11 @@ unsigned clang_FunctionDecl_getMemoryFunctionKind(CXFunctionDecl FD);
 
 unsigned clang_FunctionDecl_getODRHash(CXFunctionDecl FD);
 
+// FunctionDecl Cast
+CXDeclContext clang_FunctionDecl_castToDeclContext(CXFunctionDecl FD);
+
+CXFunctionDecl clang_FunctionDecl_castFromDeclContext(CXDeclContext DC);
+
 // FieldDecl
 CXFieldDecl clang_FieldDecl_Create(CXASTContext C, CXDeclContext DC,
                                    CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
@@ -788,9 +1047,13 @@ bool clang_FieldDecl_isZeroLengthBitField(CXFieldDecl FD, CXASTContext Ctx);
 
 bool clang_FieldDecl_isZeroSize(CXFieldDecl FD, CXASTContext Ctx);
 
+bool clang_FieldDecl_isPotentiallyOverlapping(CXFieldDecl FD);
+
 CXInClassInitStyle clang_FieldDecl_getInClassInitStyle(CXFieldDecl FD);
 
 bool clang_FieldDecl_hasInClassInitializer(CXFieldDecl FD);
+
+bool clang_FieldDecl_hasNonNullInClassInitializer(CXFieldDecl FD);
 
 CXExpr clang_FieldDecl_getInClassInitializer(CXFieldDecl FD);
 
@@ -822,9 +1085,19 @@ CXExpr clang_EnumConstantDecl_getInitExpr(CXEnumConstantDecl ECD);
 
 // getInitVal
 
+// The APSInt crosses on the established GenericValue bridge: a caller-owned
+// LLVMGenericValueRef whose IntVal carries the bits (LLVM-C disposes it).
+LLVMGenericValueRef clang_EnumConstantDecl_getInitVal(CXEnumConstantDecl ECD);
+
 void clang_EnumConstantDecl_setInitExpr(CXEnumConstantDecl ECD, CXExpr E);
 
 // setInitVal
+
+// The APSInt is rebuilt from V's IntVal bits (the same GenericValue bridge
+// clang_EnumConstantDecl_getInitVal returns on) plus the caller-supplied
+// signedness, which that bridge cannot carry. V stays caller-owned.
+void clang_EnumConstantDecl_setInitVal(CXEnumConstantDecl ECD, CXASTContext C,
+                                       LLVMGenericValueRef V, bool IsUnsigned);
 
 CXSourceRange_ clang_EnumConstantDecl_getSourceRange(CXEnumConstantDecl ECD);
 
@@ -834,6 +1107,14 @@ CXEnumConstantDecl clang_EnumConstantDecl_getCanonicalDecl(CXEnumConstantDecl EC
 long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD);
 
 // IndirectFieldDecl
+// The chain is a (buffer, count) pair of CXNamedDecl handles. clang stores the
+// array by reference, so the shim copies it into ASTContext-arena memory first.
+CXIndirectFieldDecl clang_IndirectFieldDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                   CXSourceLocation_ L,
+                                                   CXIdentifierInfo Id, CXQualType T,
+                                                   CXNamedDecl *Chain,
+                                                   unsigned ChainSize);
+
 CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 
 // chain
@@ -940,6 +1221,11 @@ bool clang_TagDecl_mayHaveOutOfDateDef(CXTagDecl TD);
 
 bool clang_TagDecl_isDependentType(CXTagDecl TD);
 
+bool clang_TagDecl_isThisDeclarationADemotedDefinition(CXTagDecl TD);
+
+// Precondition: isCompleteDefinition().
+void clang_TagDecl_demoteThisDefinitionToDeclaration(CXTagDecl TD);
+
 void clang_TagDecl_startDefinition(CXTagDecl TD);
 
 CXTagDecl clang_TagDecl_getDefinition(CXTagDecl TD);
@@ -977,6 +1263,13 @@ CXTemplateParameterList clang_TagDecl_getTemplateParameterList(CXTagDecl TD, uns
 
 // setTemplateParameterListsInfo
 
+// TPLists is a caller buffer of NumTPLists CXTemplateParameterList handles,
+// rebuilt into an ArrayRef on the C++ side; the lists themselves are borrowed.
+// Precondition: NumTPLists > 0.
+void clang_TagDecl_setTemplateParameterListsInfo(CXTagDecl TD, CXASTContext C,
+                                                 CXTemplateParameterList *TPLists,
+                                                 unsigned NumTPLists);
+
 // TagDecl Cast
 CXDeclContext clang_TagDecl_castToDeclContext(CXTagDecl TD);
 
@@ -1002,6 +1295,8 @@ CXEnumDecl clang_EnumDecl_getMostRecentDecl(CXEnumDecl ED);
 
 CXEnumDecl clang_EnumDecl_getDefinition(CXEnumDecl ED);
 
+CXSourceRange_ clang_EnumDecl_getSourceRange(CXEnumDecl ED);
+
 void clang_EnumDecl_completeDefinition(CXEnumDecl ED, CXQualType NewType,
                                        CXQualType PromotionType, unsigned NumPositiveBits,
                                        unsigned NumNegativeBits);
@@ -1023,6 +1318,11 @@ CXSourceRange_ clang_EnumDecl_getIntegerTypeRange(CXEnumDecl ED);
 unsigned clang_EnumDecl_getNumPositiveBits(CXEnumDecl ED);
 
 unsigned clang_EnumDecl_getNumNegativeBits(CXEnumDecl ED);
+
+// The [Min, Max) range the enumeration can store. Both out-params receive a
+// caller-owned LLVMGenericValueRef carrying the APInt bits (LLVM-C disposes).
+void clang_EnumDecl_getValueRange(CXEnumDecl ED, LLVMGenericValueRef *Max,
+                                  LLVMGenericValueRef *Min);
 
 bool clang_EnumDecl_isScoped(CXEnumDecl ED);
 
@@ -1134,6 +1434,10 @@ bool clang_RecordDecl_isParamDestroyedInCallee(CXRecordDecl RD);
 
 void clang_RecordDecl_setParamDestroyedInCallee(CXRecordDecl RD, bool V);
 
+bool clang_RecordDecl_isRandomized(CXRecordDecl RD);
+
+void clang_RecordDecl_setIsRandomized(CXRecordDecl RD, bool V);
+
 bool clang_RecordDecl_isInjectedClassName(CXRecordDecl RD);
 
 bool clang_RecordDecl_isLambda(CXRecordDecl RD);
@@ -1152,11 +1456,19 @@ bool clang_RecordDecl_mayInsertExtraPadding(CXRecordDecl RD, bool EmitRemark);
 
 CXFieldDecl clang_RecordDecl_findFirstNamedDataMember(CXRecordDecl RD);
 
+void clang_RecordDecl_completeDefinition(CXRecordDecl RD);
+
+unsigned clang_RecordDecl_getODRHash(CXRecordDecl RD);
+
 // fields: two-call protocol (field_begin/end is a forward iterator).
 // getNumFields counts; getFields fills a caller buffer of that size.
 unsigned clang_RecordDecl_getNumFields(CXRecordDecl RD);
 
 void clang_RecordDecl_getFields(CXRecordDecl RD, CXFieldDecl *Buf);
+
+// True when the record declares no fields. Cheaper than getNumFields, which
+// walks the whole decl list; field_empty only compares field_begin/field_end.
+bool clang_RecordDecl_field_empty(CXRecordDecl RD);
 
 // RecordDecl Cast
 CXClassTemplateSpecializationDecl
@@ -1182,6 +1494,22 @@ CXStringLiteral clang_FileScopeAsmDecl_getAsmString(CXFileScopeAsmDecl FSAD);
 
 void clang_FileScopeAsmDecl_setAsmString(CXFileScopeAsmDecl FSAD, CXStringLiteral Asm);
 
+// TopLevelStmtDecl
+CXTopLevelStmtDecl clang_TopLevelStmtDecl_Create(CXASTContext C, CXStmt Statement);
+
+CXTopLevelStmtDecl clang_TopLevelStmtDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+
+CXSourceRange_ clang_TopLevelStmtDecl_getSourceRange(CXTopLevelStmtDecl TLSD);
+
+CXStmt clang_TopLevelStmtDecl_getStmt(CXTopLevelStmtDecl TLSD);
+
+// Precondition: isSemiMissing().
+void clang_TopLevelStmtDecl_setStmt(CXTopLevelStmtDecl TLSD, CXStmt S);
+
+bool clang_TopLevelStmtDecl_isSemiMissing(CXTopLevelStmtDecl TLSD);
+
+void clang_TopLevelStmtDecl_setSemiMissing(CXTopLevelStmtDecl TLSD, bool Missing);
+
 // BlockDecl
 CXBlockDecl clang_BlockDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L);
 
@@ -1190,6 +1518,12 @@ CXBlockDecl clang_BlockDecl_CreateDeserialized(CXASTContext C, unsigned ID);
 CXSourceLocation_ clang_BlockDecl_getCaretLocation(CXBlockDecl BD);
 
 bool clang_BlockDecl_isVariadic(CXBlockDecl BD);
+
+void clang_BlockDecl_setIsVariadic(CXBlockDecl BD, bool value);
+
+CXCompoundStmt clang_BlockDecl_getCompoundBody(CXBlockDecl BD);
+
+CXStmt clang_BlockDecl_getBody(CXBlockDecl BD);
 
 void clang_BlockDecl_setBody(CXBlockDecl BD, CXCompoundStmt B);
 
@@ -1206,6 +1540,23 @@ CXParmVarDecl clang_BlockDecl_getParamDecl(CXBlockDecl BD, unsigned i);
 bool clang_BlockDecl_hasCaptures(CXBlockDecl BD);
 
 unsigned clang_BlockDecl_getNumCaptures(CXBlockDecl BD);
+
+// captures: random-access (capture_begin is a contiguous BlockDecl::Capture
+// array). The Capture aggregate is exposed field-by-field at i < getNumCaptures;
+// getCaptureCopyExpr is null unless captureHasCopyExpr.
+CXVarDecl clang_BlockDecl_getCaptureVariable(CXBlockDecl BD, unsigned i);
+
+bool clang_BlockDecl_isCaptureByRef(CXBlockDecl BD, unsigned i);
+
+bool clang_BlockDecl_isCaptureNested(CXBlockDecl BD, unsigned i);
+
+bool clang_BlockDecl_isCaptureEscapingByref(CXBlockDecl BD, unsigned i);
+
+bool clang_BlockDecl_isCaptureNonEscapingByref(CXBlockDecl BD, unsigned i);
+
+bool clang_BlockDecl_captureHasCopyExpr(CXBlockDecl BD, unsigned i);
+
+CXExpr clang_BlockDecl_getCaptureCopyExpr(CXBlockDecl BD, unsigned i);
 
 bool clang_BlockDecl_capturesCXXThis(CXBlockDecl BD);
 
@@ -1239,6 +1590,11 @@ void clang_BlockDecl_setBlockMangling(CXBlockDecl BD, unsigned Number, CXDecl Ct
 
 CXSourceRange_ clang_BlockDecl_getSourceRange(CXBlockDecl BD);
 
+// BlockDecl Cast
+CXDeclContext clang_BlockDecl_castToDeclContext(CXBlockDecl BD);
+
+CXBlockDecl clang_BlockDecl_castFromDeclContext(CXDeclContext DC);
+
 // CapturedDecl
 CXCapturedDecl clang_CapturedDecl_Create(CXASTContext C, CXDeclContext DC,
                                          unsigned NumParams);
@@ -1266,6 +1622,11 @@ void clang_CapturedDecl_setContextParam(CXCapturedDecl CD, unsigned i,
                                         CXImplicitParamDecl P);
 
 unsigned clang_CapturedDecl_getContextParamPosition(CXCapturedDecl CD);
+
+// CapturedDecl Cast
+CXDeclContext clang_CapturedDecl_castToDeclContext(CXCapturedDecl CD);
+
+CXCapturedDecl clang_CapturedDecl_castFromDeclContext(CXDeclContext DC);
 
 // ImportDecl
 CXImportDecl clang_ImportDecl_CreateImplicit(CXASTContext C, CXDeclContext DC,
@@ -1302,10 +1663,44 @@ CXSourceLocation_ clang_ExportDecl_getEndLoc(CXExportDecl ED);
 
 CXSourceRange_ clang_ExportDecl_getSourceRange(CXExportDecl ED);
 
+// ExportDecl Cast
+CXDeclContext clang_ExportDecl_castToDeclContext(CXExportDecl ED);
+
+CXExportDecl clang_ExportDecl_castFromDeclContext(CXDeclContext DC);
+
 // EmptyDecl
 CXEmptyDecl clang_EmptyDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L);
 
 CXEmptyDecl clang_EmptyDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+
+// HLSLBufferDecl
+// A cbuffer/tbuffer declaration. Both factories allocate in the ASTContext
+// arena, so there is no dispose. Create does NOT add the new decl to
+// LexicalParent, and leaves the closing-brace location default-constructed
+// (invalid) until setRBraceLoc runs — getSourceRange reflects that.
+CXHLSLBufferDecl clang_HLSLBufferDecl_Create(CXASTContext C, CXDeclContext LexicalParent,
+                                             bool CBuffer, CXSourceLocation_ KwLoc,
+                                             CXIdentifierInfo ID, CXSourceLocation_ IDLoc,
+                                             CXSourceLocation_ LBrace);
+
+CXHLSLBufferDecl clang_HLSLBufferDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+
+CXSourceRange_ clang_HLSLBufferDecl_getSourceRange(CXHLSLBufferDecl BD);
+
+CXSourceLocation_ clang_HLSLBufferDecl_getLocStart(CXHLSLBufferDecl BD);
+
+CXSourceLocation_ clang_HLSLBufferDecl_getLBraceLoc(CXHLSLBufferDecl BD);
+
+CXSourceLocation_ clang_HLSLBufferDecl_getRBraceLoc(CXHLSLBufferDecl BD);
+
+void clang_HLSLBufferDecl_setRBraceLoc(CXHLSLBufferDecl BD, CXSourceLocation_ L);
+
+bool clang_HLSLBufferDecl_isCBuffer(CXHLSLBufferDecl BD);
+
+// HLSLBufferDecl Cast
+CXDeclContext clang_HLSLBufferDecl_castToDeclContext(CXHLSLBufferDecl BD);
+
+CXHLSLBufferDecl clang_HLSLBufferDecl_castFromDeclContext(CXDeclContext DC);
 
 LLVM_CLANG_C_EXTERN_C_END
 

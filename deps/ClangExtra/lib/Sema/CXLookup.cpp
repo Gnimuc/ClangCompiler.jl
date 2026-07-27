@@ -2,6 +2,41 @@
 #include "clang/Sema/Lookup.h"
 #include <iterator>
 
+CXLookupResultKind clang_LookupResult_getResultKind(CXLookupResult LR) {
+  return static_cast<CXLookupResultKind>(
+      static_cast<clang::LookupResult *>(LR)->getResultKind());
+}
+
+CXAmbiguityKind clang_LookupResult_getAmbiguityKind(CXLookupResult LR) {
+  return static_cast<CXAmbiguityKind>(
+      static_cast<clang::LookupResult *>(LR)->getAmbiguityKind());
+}
+
+CXNamedDecl clang_LookupResult_getFoundDecl(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->getFoundDecl();
+}
+
+CXCXXRecordDecl clang_LookupResult_getNamingClass(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->getNamingClass();
+}
+
+CXLookupNameKind clang_LookupResult_getLookupKind(CXLookupResult LR) {
+  return static_cast<CXLookupNameKind>(
+      static_cast<clang::LookupResult *>(LR)->getLookupKind());
+}
+
+CXSourceLocation_ clang_LookupResult_getNameLoc(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->getNameLoc().getPtrEncoding();
+}
+
+unsigned clang_LookupResult_getIdentifierNamespace(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->getIdentifierNamespace();
+}
+
+void clang_LookupResult_suppressDiagnostics(CXLookupResult LR) {
+  static_cast<clang::LookupResult *>(LR)->suppressDiagnostics();
+}
+
 CXLookupResult clang_LookupResult_create(CXSema S, CXDeclarationName Name,
                                          CXSourceLocation_ NameLoc,
                                          CXLookupNameKind LookupKind) {

@@ -150,3 +150,95 @@ using Test
     CC.dispose(engine)  # the adopted ids/opts/client are released with the engine
     CC.dispose(I)
 end
+
+@testset "Diagnostic | error traps, extension silencing & stored diagnostics" begin
+    # every mutation below lands on this throwaway engine, never on an interpreter's own
+    opts = CC.DiagnosticOptions()
+    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), opts, CC.IgnoringDiagConsumer(), true)
+    warn_id = CC.getCustomDiagID(engine, CC.CXDiagnosticsEngine_Warning, "trap warning")
+    err_id = CC.getCustomDiagID(engine, CC.CXDiagnosticsEngine_Error, "trap error")
+
+    # DiagnosticErrorTrap snapshots the engine's error counters at construction
+    trap = CC.DiagnosticErrorTrap(engine)
+    @test trap isa CC.DiagnosticErrorTrap
+    @test trap.ptr != C_NULL
+    @test !CC.hasErrorOccurred(trap)
+    @test !CC.hasUnrecoverableErrorOccurred(trap)
+    CC.Report(engine, CC.SourceLocation(), warn_id)
+    @test !CC.hasErrorOccurred(trap)                # warnings never trip the trap
+    CC.Report(engine, CC.SourceLocation(), err_id)
+    @test CC.hasErrorOccurred(trap)
+    @test CC.hasUnrecoverableErrorOccurred(trap)    # custom errors are unrecoverable
+    @test CC.reset(trap) === nothing                # re-snapshot: the past error is forgotten
+    @test !CC.hasErrorOccurred(trap)
+    @test !CC.hasUnrecoverableErrorOccurred(trap)
+
+    # a trap layered on the same engine sees only what follows its own snapshot
+    inner = CC.DiagnosticErrorTrap(engine)
+    @test !CC.hasErrorOccurred(inner)
+    CC.Report(engine, CC.SourceLocation(), err_id)
+    @test CC.hasErrorOccurred(inner)
+    @test CC.hasErrorOccurred(trap)
+    CC.dispose(inner)
+    CC.dispose(trap)
+
+    # the extension-silencing counter is an unsigned char, so Increment/Decrement must pair
+    @test !CC.hasAllExtensionsSilenced(engine)
+    CC.IncrementAllExtensionsSilenced(engine)
+    @test CC.hasAllExtensionsSilenced(engine)
+    CC.IncrementAllExtensionsSilenced(engine)
+    CC.DecrementAllExtensionsSilenced(engine)
+    @test CC.hasAllExtensionsSilenced(engine)       # still one level deep
+    CC.DecrementAllExtensionsSilenced(engine)
+    @test !CC.hasAllExtensionsSilenced(engine)
+    @test_throws AssertionError CC.DecrementAllExtensionsSilenced(engine)
+
+    # showing a large overload set permanently lowers the cap; a small one leaves it alone
+    CC.setShowOverloads(engine, CC.CXOverloadsShown_Ovl_Best)
+    ncand = CC.getNumOverloadCandidatesToShow(engine)
+    @test ncand isa Integer
+    @test CC.overloadCandidatesShown(engine, 2) === nothing
+    @test CC.getNumOverloadCandidatesToShow(engine) == ncand
+    CC.overloadCandidatesShown(engine, 5)
+    @test CC.getNumOverloadCandidatesToShow(engine) == 4
+
+    # notePriorDiagnosticFrom copies the other engine's last-diagnostic level
+    other = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
+                                 CC.IgnoringDiagConsumer(), true)
+    CC.setLastDiagnosticIgnored(other, false)
+    CC.setLastDiagnosticIgnored(engine, true)
+    @test CC.isLastDiagnosticIgnored(engine)
+    @test CC.notePriorDiagnosticFrom(engine, other) === nothing
+    @test !CC.isLastDiagnosticIgnored(engine)
+    CC.dispose(other)
+
+    # StoredDiagnostic: a self-contained (level, id, message) record
+    sd = CC.StoredDiagnostic(CC.CXDiagnosticsEngine_Warning, warn_id, "stored message")
+    @test sd isa CC.StoredDiagnostic
+    @test sd.ptr != C_NULL
+    @test CC.getID(sd) == warn_id
+    @test CC.getLevel(sd) == CC.CXDiagnosticsEngine_Warning
+    @test CC.getMessage(sd) == "stored message"
+    @test CC.range_size(sd) == 0
+    @test CC.fixit_size(sd) == 0
+    # this constructor leaves a default FullSourceLoc: invalid location, no SourceManager
+    @test !CC.isValid(CC.getLocation(sd))
+    @test CC.getLocationManager(sd).ptr == C_NULL
+
+    # the FullSourceLoc round-trips as its two halves
+    I = create_interpreter(String[])
+    CC.parse(I, "int stored_diag_probe = 1;")
+    sm = CC.getSourceManager(get_instance(I))
+    f = DeclFinder(I)
+    @test f(I, "stored_diag_probe") isa Bool
+    loc = CC.getLocation(get_decl(f))
+    @test CC.isValid(loc)
+    @test CC.setLocation(sd, loc, sm) === nothing
+    @test CC.getLocation(sd).ptr == loc.ptr
+    @test CC.getLocationManager(sd).ptr == sm.ptr
+    @test CC.getMessage(sd) == "stored message"
+
+    CC.dispose(sd)
+    CC.dispose(engine)   # the adopted ids/opts/client go with it
+    CC.dispose(I)
+end

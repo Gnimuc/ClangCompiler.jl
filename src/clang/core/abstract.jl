@@ -772,3 +772,49 @@ include("Interpreter/AbstractInterpreter.jl")
 # per-carrier leaf abstracts (every hand-written Foo gets an AbstractFoo); last,
 # since these subtype the backbone/subsystem abstracts above.
 include("AbstractExtras.jl")
+
+
+"""
+    abstract type AbstractTopLevelStmtDecl <: AbstractDecl
+Supertype for `TopLevelStmtDecl`s.
+"""
+abstract type AbstractTopLevelStmtDecl <: AbstractDecl end
+
+
+"""
+    abstract type AbstractVectorType <: AbstractType
+Supertype for `VectorType`s.
+"""
+abstract type AbstractVectorType <: AbstractType end
+
+"""
+    abstract type AbstractAttributedType <: AbstractType
+Supertype for `AttributedType`s.
+"""
+abstract type AbstractAttributedType <: AbstractType end
+
+"""
+    abstract type AbstractPackExpansionType <: AbstractType
+Supertype for `PackExpansionType`s.
+"""
+abstract type AbstractPackExpansionType <: AbstractType end
+
+"""
+    abstract type AbstractAutoType <: AbstractDeducedType
+Supertype for `AutoType`s.
+"""
+abstract type AbstractAutoType <: AbstractDeducedType end
+
+
+"""
+    abstract type AbstractHLSLBufferDecl <: AbstractNamedDecl
+Supertype for `HLSLBufferDecl`s.
+"""
+abstract type AbstractHLSLBufferDecl <: AbstractNamedDecl end
+
+
+"""
+    abstract type AbstractUsingEnumDecl <: AbstractBaseUsingDecl
+Supertype for `UsingEnumDecl`s.
+"""
+abstract type AbstractUsingEnumDecl <: AbstractBaseUsingDecl end

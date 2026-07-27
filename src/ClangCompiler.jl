@@ -82,6 +82,7 @@ public AbstractFinder, DeclFinder, reset, get_decl
 
 include("utils.jl")
 
-# include("template.jl")
+include("template.jl")
+public specialize
 
 end

@@ -61,3 +61,69 @@ function getTargetOpts(ci::CompilerInvocation)
 end
 
 dispose(x::CompilerInvocation) = clang_CompilerInvocation_dispose(x)
+
+
+"""
+    getLangOpts(ci::CompilerInvocation) -> LangOptions
+Return the `clang::LangOptions` owned by this invocation. The returned object is
+a borrowed view: do not dispose it.
+"""
+function getLangOpts(ci::CompilerInvocation)
+    @check_ptrs ci
+    return LangOptions(clang_CompilerInvocation_getLangOpts(ci))
+end
+
+"""
+    getAnalyzerOpts(ci::CompilerInvocation) -> AnalyzerOptions
+Return the `clang::AnalyzerOptions` owned by this invocation (borrowed view).
+"""
+function getAnalyzerOpts(ci::CompilerInvocation)
+    @check_ptrs ci
+    return AnalyzerOptions(clang_CompilerInvocation_getAnalyzerOpts(ci))
+end
+
+"""
+    getMigratorOpts(ci::CompilerInvocation) -> MigratorOptions
+Return the `clang::MigratorOptions` owned by this invocation (borrowed view).
+"""
+function getMigratorOpts(ci::CompilerInvocation)
+    @check_ptrs ci
+    return MigratorOptions(clang_CompilerInvocation_getMigratorOpts(ci))
+end
+
+"""
+    getFileSystemOpts(ci::CompilerInvocation) -> FileSystemOptions
+Return the `clang::FileSystemOptions` owned by this invocation (borrowed view).
+"""
+function getFileSystemOpts(ci::CompilerInvocation)
+    @check_ptrs ci
+    return FileSystemOptions(clang_CompilerInvocation_getFileSystemOpts(ci))
+end
+
+"""
+    getDependencyOutputOpts(ci::CompilerInvocation) -> DependencyOutputOptions
+Return the `clang::DependencyOutputOptions` owned by this invocation (borrowed view).
+"""
+function getDependencyOutputOpts(ci::CompilerInvocation)
+    @check_ptrs ci
+    return DependencyOutputOptions(clang_CompilerInvocation_getDependencyOutputOpts(ci))
+end
+
+"""
+    getPreprocessorOutputOpts(ci::CompilerInvocation) -> PreprocessorOutputOptions
+Return the `clang::PreprocessorOutputOptions` owned by this invocation (borrowed view).
+"""
+function getPreprocessorOutputOpts(ci::CompilerInvocation)
+    @check_ptrs ci
+    return PreprocessorOutputOptions(clang_CompilerInvocation_getPreprocessorOutputOpts(ci))
+end
+
+"""
+    getModuleHash(ci::CompilerInvocation) -> String
+Return a hash string that uniquely identifies the conditions under which a module
+built with this invocation would be built.
+"""
+function getModuleHash(ci::CompilerInvocation)
+    @check_ptrs ci
+    return get_string(clang_CompilerInvocation_getModuleHash(ci))
+end

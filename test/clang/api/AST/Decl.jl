@@ -1459,3 +1459,367 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Decl tail: visibility, destruction, allocation-function info" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    try
+        CC.parse(I, """
+        struct DtTailTrivial { int a; };
+        struct DtTailNonTrivial { ~DtTailNonTrivial(); };
+        int dt_tail_plain = 1;
+        DtTailTrivial dt_tail_triv;
+        DtTailNonTrivial dt_tail_nontriv;
+        __attribute__((visibility("hidden"))) int dt_tail_hidden = 2;
+        void dt_tail_fn();
+        """)
+        D(name, T) = (f(I, name); T(get_decl(f).ptr))
+        ctx = CC.get_ast_context(I)
+
+        # VarDecl::needsDestruction — the ASTContext-taking query.
+        @test CC.needsDestruction(D("dt_tail_plain", CC.VarDecl), ctx) ==
+              LX.CXDestructionKind_DK_none
+        @test CC.needsDestruction(D("dt_tail_triv", CC.VarDecl), ctx) ==
+              LX.CXDestructionKind_DK_none
+        @test CC.needsDestruction(D("dt_tail_nontriv", CC.VarDecl), ctx) !=
+              LX.CXDestructionKind_DK_none
+
+        # NamedDecl::getLinkageAndVisibility — the LinkageInfo aggregate.
+        plain = D("dt_tail_plain", CC.VarDecl)
+        linkage, visibility, is_explicit = CC.getLinkageAndVisibility(plain)
+        @test linkage isa LX.CXLinkage
+        @test visibility isa LX.CXVisibility
+        @test is_explicit isa Bool
+        @test visibility == CC.getVisibility(plain)   # same LinkageInfo field
+        @test linkage == CC.getLinkageInternal(plain)
+
+        # NamedDecl::getExplicitVisibility — the std::optional surface.
+        @test CC.getExplicitVisibility(plain) === nothing
+        @test CC.getExplicitVisibility(plain, true) === nothing
+        # The visibility attribute is honoured only on targets that support it
+        # (it is ignored for COFF), so accept either branch of the optional.
+        hidden_vis = CC.getExplicitVisibility(D("dt_tail_hidden", CC.VarDecl))
+        @test hidden_vis === nothing || hidden_vis isa LX.CXVisibility
+
+        # FunctionDecl allocation-function info: an ordinary function is not a
+        # replaceable global allocation function and requests no alignment.
+        fn = D("dt_tail_fn", CC.FunctionDecl)
+        replaceable, alignment_param, is_nothrow = CC.getReplaceableGlobalAllocationFunctionInfo(fn)
+        @test replaceable == CC.isReplaceableGlobalAllocationFunction(fn)
+        @test replaceable === false
+        @test alignment_param === nothing
+        @test is_nothrow isa Bool
+    finally
+        dispose(f)
+        dispose(I)
+    end
+end
+
+@testset "Decl DeclContext pivots (castTo/castFrom)" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    try
+        ctx = CC.get_ast_context(I)
+        tu = CC.getTranslationUnitDecl(ctx)
+
+        CC.parse(I, """
+                 namespace NSpivot {}
+                 void fpivot(int p) {}
+                 """)
+
+        look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
+
+        nd = CC.NamespaceDecl(look("NSpivot").ptr)
+        fd = CC.FunctionDecl(look("fpivot").ptr)
+
+        # Each Decl that is also a DeclContext crosses to its DeclContext subobject
+        # and back; castFrom is the offset-exact inverse, so the pointer round-trips.
+
+        # TranslationUnitDecl <-> DeclContext
+        tu_dc = CC.DeclContext(tu)
+        @test tu_dc isa CC.DeclContext
+        @test CC.TranslationUnitDecl(tu_dc).ptr == tu.ptr
+
+        # NamespaceDecl <-> DeclContext
+        nd_dc = CC.DeclContext(nd)
+        @test nd_dc isa CC.DeclContext
+        @test CC.NamespaceDecl(nd_dc).ptr == nd.ptr
+
+        # FunctionDecl <-> DeclContext
+        fd_dc = CC.DeclContext(fd)
+        @test fd_dc isa CC.DeclContext
+        @test CC.FunctionDecl(fd_dc).ptr == fd.ptr
+
+        # ExternCContextDecl <-> DeclContext (the AST's singleton extern "C" context)
+        ecd = CC.getExternCContextDecl(ctx)
+        ecd_dc = CC.DeclContext(ecd)
+        @test ecd_dc isa CC.DeclContext
+        @test CC.ExternCContextDecl(ecd_dc).ptr == ecd.ptr
+    finally
+        dispose(f)
+        dispose(I)
+    end
+end
+
+@testset "Decl.jl decl-d: reserved/ObjC identifier queries" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    try
+        ctx = CC.get_ast_context(I)
+        lo = CC.getLangOpts(ctx)
+
+        CC.parse(I, """
+            int plain_global = 1;
+            void ddfunc(int p0) { (void)p0; }
+        """)
+
+        look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
+
+        vd = CC.VarDecl(look("plain_global").ptr)
+        fd = CC.FunctionDecl(look("ddfunc").ptr)
+
+        # NamedDecl::isReserved -> ReservedIdentifierStatus; an ordinary global
+        # name obeys no reserved-identifier rule.
+        rs = CC.isReserved(vd, lo)
+        @test rs isa CC.LibClangEx.CXReservedIdentifierStatus
+        @test rs == CC.LibClangEx.CXReservedIdentifierStatus_NotReserved
+
+        # NamedDecl::getObjCFStringFormattingFamily -> SFF_None for a non-ObjC decl.
+        ff = CC.getObjCFStringFormattingFamily(vd)
+        @test ff isa CC.LibClangEx.CXObjCStringFormatFamily
+        @test ff == CC.LibClangEx.CXObjCStringFormatFamily_SFF_None
+
+        # ParmVarDecl::getObjCDeclQualifier -> OBJC_TQ_None for an ordinary
+        # C++ parameter (getter is total; setObjCDeclQualifier is not wrapped
+        # because it asserts IsObjCMethodParam).
+        pvd = CC.getParamDecl(fd, 0)
+        q = CC.getObjCDeclQualifier(pvd)
+        @test q isa CC.LibClangEx.CXObjCDeclQualifier
+        @test q == CC.LibClangEx.CXObjCDeclQualifier_OBJC_TQ_None
+    finally
+        dispose(I)
+    end
+end
+
+@testset "Decl.jl decl-f: HLSLBufferDecl, field_empty, non-escaping byref capture" begin
+    I = create_interpreter(["-fblocks"])
+    f = DeclFinder(I)
+    try
+        ctx = CC.get_ast_context(I)
+        tu = CC.getTranslationUnitDecl(ctx)
+        dc = CC.castToDeclContext(tu)
+
+        CC.parse(I, """
+            int hb_anchor = 1;
+            struct HBEmpty {};
+            struct HBFull { int a; double b; };
+            void hb_host() {
+                int addend = 10;
+                int (^blk)(int) = ^int(int q){ return q + addend; };
+                (void)blk;
+            }
+        """)
+
+        look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
+
+        anchor = CC.VarDecl(look("hb_anchor").ptr)
+        loc = CC.getLocation(anchor)
+        id = CC.getIdentifier(anchor)
+
+        # ---------------- RecordDecl::field_empty ----------------
+        empty_rd = CC.getDefinition(CC.RecordDecl(look("HBEmpty").ptr))
+        full_rd = CC.getDefinition(CC.RecordDecl(look("HBFull").ptr))
+        @test CC.field_empty(empty_rd)
+        @test !CC.field_empty(full_rd)
+        # agrees with the count+fill protocol on the same records
+        @test CC.field_empty(empty_rd) == (CC.getNumFields(empty_rd) == 0)
+        @test CC.field_empty(full_rd) == (CC.getNumFields(full_rd) == 0)
+
+        # ---------------- BlockDecl::Capture::isNonEscapingByref ----------------
+        # A BlockDecl is not a top-level decl: it hangs off the BlockExpr inside
+        # hb_host's body, so reach it through the expression rather than decls(tu).
+        function find_node(::Type{T}, x) where {T}
+            x isa T && return x
+            for c in CC.children(x)
+                r = find_node(T, CC.resolve(c))
+                r === nothing || return r
+            end
+            return nothing
+        end
+        host = CC.FunctionDecl(look("hb_host").ptr)
+        be = find_node(CC.BlockExpr, CC.resolve(CC.getBody(host)))
+        @test be isa CC.BlockExpr
+        blk = CC.getBlockDecl(be)
+        @test blk.ptr != C_NULL
+        @test CC.getNumCaptures(blk) >= 1
+        @test CC.isCaptureNonEscapingByref(blk, 0) isa Bool
+        # `addend` is captured by value, so it is neither an escaping nor a
+        # non-escaping __block byref capture.
+        @test CC.isCaptureByRef(blk, 0) || !CC.isCaptureNonEscapingByref(blk, 0)
+
+        # ---------------- HLSLBufferDecl ----------------
+        hb = CC.HLSLBufferDecl(ctx, dc, true, loc, id, loc, loc)
+        @test hb isa CC.HLSLBufferDecl
+        @test hb.ptr != C_NULL
+        @test CC.isCBuffer(hb)
+        @test CC.getName(hb) == "hb_anchor"
+        # KwLoc and LBraceLoc round-trip the locations passed to Create
+        @test CC.getLocStart(hb) isa CC.SourceLocation
+        @test CC.getLocStart(hb).ptr == loc.ptr
+        @test CC.getLBraceLoc(hb) isa CC.SourceLocation
+        @test CC.getLBraceLoc(hb).ptr == loc.ptr
+        # RBraceLoc is default-constructed by Create, so only a value set here is asserted
+        @test CC.getRBraceLoc(hb) isa CC.SourceLocation
+        CC.setRBraceLoc(hb, loc)
+        @test CC.getRBraceLoc(hb).ptr == loc.ptr
+        @test CC.getSourceRange(hb) isa CC.SourceRange
+
+        tb = CC.HLSLBufferDecl(ctx, dc, false, loc, id, loc, loc)
+        @test !CC.isCBuffer(tb)
+
+        @test CC.HLSLBufferDecl(ctx, 1) isa CC.HLSLBufferDecl
+
+        # Decl <-> DeclContext pivot: offset-correct in both directions
+        hbdc = CC.DeclContext(hb)
+        @test hbdc isa CC.DeclContext
+        @test CC.HLSLBufferDecl(hbdc) isa CC.HLSLBufferDecl
+        @test CC.HLSLBufferDecl(hbdc).ptr == hb.ptr
+    finally
+        dispose(f)
+        dispose(I)
+    end
+end
+
+@testset "Decl.jl decl-g: namespace factory, outer template lists, defaulted-function info" begin
+    LXG = CC.LibClangEx
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    try
+        ctx = CC.get_ast_context(I)
+        tu = CC.getTranslationUnitDecl(ctx)
+        dc = CC.castToDeclContext(tu)
+
+        CC.parse(I, """
+            int dg_anchor = 1;
+            enum DGColor { DGRed = 3, DGBlue = 9 };
+            template <typename T> struct DGTmpl { T v; };
+            void dg_fn(int) {}
+        """)
+
+        look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
+
+        anchor = CC.VarDecl(look("dg_anchor").ptr)
+        loc = CC.getLocation(anchor)
+        id = CC.getIdentifier(anchor)
+        qt_int = CC.getType(anchor)
+        tsi = CC.getTypeSourceInfo(anchor)
+        ed = CC.EnumDecl(look("DGColor").ptr)
+        loc2 = CC.getLocation(ed)
+
+        # ---------------- NamespaceDecl::Create ----------------
+        ns = CC.NamespaceDecl(ctx, dc, true, loc2, loc, id)
+        @test ns isa CC.NamespaceDecl
+        @test ns.ptr != C_NULL
+        @test CC.getName(ns) == "dg_anchor"
+        @test CC.isInline(ns)
+        @test !CC.isNested(ns)
+        # IdLoc (not StartLoc) is what Decl::getLocation reports, so passing two
+        # distinct locations pins down which parameter each argument reached.
+        @test CC.getLocation(ns).ptr == loc.ptr
+        # the trailing Nested flag is a parameter of its own, not an alias of Inline
+        ns2 = CC.NamespaceDecl(ctx, dc, false, loc2, loc, id, CC.NamespaceDecl(C_NULL), true)
+        @test !CC.isInline(ns2)
+        @test CC.isNested(ns2)
+
+        # ---------------- EnumConstantDecl::setInitVal ----------------
+        ecs = CC.getEnumerators(ed)
+        @test length(ecs) == 2
+        v_red = CC.getInitVal(ecs[1])
+        v_blue = CC.getInitVal(ecs[2])
+        @test v_red != C_NULL
+        @test v_blue != C_NULL
+        # the mutation target is a detached enumerator: EnumConstantDecl::Create does not
+        # add it to DGColor, so nothing in the live AST changes value here.
+        fresh = CC.EnumConstantDecl(ctx, ed, loc, id, CC.getType(ecs[1]), CC.Expr_(C_NULL),
+                                    v_red)
+        @test CC.getEnumConstantDeclValue(fresh) == CC.getEnumConstantDeclValue(ecs[1])
+        CC.setInitVal(fresh, ctx, v_blue, false)
+        @test CC.getEnumConstantDeclValue(fresh) == CC.getEnumConstantDeclValue(ecs[2])
+        @test CC.getEnumConstantDeclValue(fresh) != CC.getEnumConstantDeclValue(ecs[1])
+        CC.LLVM.API.LLVMDisposeGenericValue(v_red)
+        CC.LLVM.API.LLVMDisposeGenericValue(v_blue)
+
+        # ---------------- setTemplateParameterListsInfo ----------------
+        ctd = CC.ClassTemplateDecl(look("DGTmpl").ptr)
+        tpl = CC.getTemplateParameters(ctd)
+        @test tpl isa CC.TemplateParameterList
+        @test tpl.ptr != C_NULL
+
+        # TagDecl arm, on a freshly created (detached) record
+        rec = CC.RecordDecl(ctx, LXG.CXTagTypeKind_Struct, dc, loc, loc, id)
+        @test CC.getNumTemplateParameterLists(rec) == 0
+        CC.setTemplateParameterListsInfo(rec, ctx, [tpl])
+        @test CC.getNumTemplateParameterLists(rec) == 1
+        @test CC.getTemplateParameterList(rec, 0).ptr == tpl.ptr
+        @test_throws AssertionError CC.setTemplateParameterListsInfo(rec, ctx,
+                                                                    CC.TemplateParameterList[])
+
+        # DeclaratorDecl arm, on a freshly created (detached) variable
+        vd = CC.VarDecl(ctx, dc, loc, loc, id, qt_int, tsi, LXG.CXStorageClass_SC_None)
+        @test CC.getNumTemplateParameterLists(vd) == 0
+        CC.setTemplateParameterListsInfo(vd, ctx, [tpl])
+        @test CC.getNumTemplateParameterLists(vd) == 1
+        @test CC.getTemplateParameterList(vd, 0).ptr == tpl.ptr
+        @test_throws AssertionError CC.setTemplateParameterListsInfo(vd, ctx,
+                                                                    CC.TemplateParameterList[])
+
+        # ---------------- ParmVarDecl::setObjCDeclQualifier ----------------
+        parm = CC.ParmVarDecl(ctx, dc, loc, loc, id, qt_int, tsi, LXG.CXStorageClass_SC_None)
+        # the qualifier shares a bitfield with the scope depth, so the wrapper refuses a
+        # plain C/C++ parameter until setObjCMethodScopeInfo marks it as an ObjC one
+        @test !CC.isObjCMethodParameter(parm)
+        @test_throws AssertionError CC.setObjCDeclQualifier(parm,
+                                                            LXG.CXObjCDeclQualifier_OBJC_TQ_Byref)
+        CC.setObjCMethodScopeInfo(parm, 0)
+        @test CC.isObjCMethodParameter(parm)
+        CC.setObjCDeclQualifier(parm, LXG.CXObjCDeclQualifier_OBJC_TQ_Byref)
+        @test CC.getObjCDeclQualifier(parm) == LXG.CXObjCDeclQualifier_OBJC_TQ_Byref
+        CC.setObjCDeclQualifier(parm, LXG.CXObjCDeclQualifier_OBJC_TQ_Oneway)
+        @test CC.getObjCDeclQualifier(parm) == LXG.CXObjCDeclQualifier_OBJC_TQ_Oneway
+
+        # ---------------- FunctionDecl::DefaultedFunctionInfo ----------------
+        fn = CC.FunctionDecl(look("dg_fn").ptr)
+        info0 = CC.getDefaultedFunctionInfo(fn)
+        @test info0 isa CC.DefaultedFunctionInfo
+        # an ordinary function stores a body, so the union holds no defaulted info
+        @test info0.ptr == C_NULL
+
+        nd_a = CC.NamedDecl(anchor.ptr)
+        nd_b = CC.NamedDecl(ed.ptr)
+        info = CC.DefaultedFunctionInfo(ctx, [nd_a, nd_b],
+                                        [LXG.CXAccessSpecifier_AS_public,
+                                         LXG.CXAccessSpecifier_AS_private])
+        @test info isa CC.DefaultedFunctionInfo
+        @test info.ptr != C_NULL
+        @test CC.getNumUnqualifiedLookups(info) == 2
+        # decls and accesses are read in lockstep at the same index
+        @test CC.getUnqualifiedLookupDecl(info, 0).ptr == nd_a.ptr
+        @test CC.getUnqualifiedLookupDecl(info, 1).ptr == nd_b.ptr
+        @test CC.getUnqualifiedLookupAccess(info, 0) == LXG.CXAccessSpecifier_AS_public
+        @test CC.getUnqualifiedLookupAccess(info, 1) == LXG.CXAccessSpecifier_AS_private
+        @test_throws AssertionError CC.getUnqualifiedLookupDecl(info, 2)
+        @test_throws AssertionError CC.getUnqualifiedLookupAccess(info, 2)
+        @test_throws AssertionError CC.DefaultedFunctionInfo(ctx, [nd_a],
+                                                             CC.CXAccessSpecifier[])
+
+        # the carrier overload of the existing setter round-trips the info back out
+        info1 = CC.DefaultedFunctionInfo(ctx, [nd_a], [LXG.CXAccessSpecifier_AS_none])
+        fn_hollow = CC.FunctionDecl(ctx, 1)
+        CC.setDefaultedFunctionInfo(fn_hollow, info1)
+        @test CC.getDefaultedFunctionInfo(fn_hollow).ptr == info1.ptr
+        @test CC.getNumUnqualifiedLookups(CC.getDefaultedFunctionInfo(fn_hollow)) == 1
+    finally
+        dispose(f)
+        dispose(I)
+    end
+end

@@ -222,3 +222,16 @@ using Test
     dispose(f)
     dispose(I)
 end
+
+@testset "CompilerInstance | plugins and frontend timer" begin
+    I = create_interpreter(String[])
+
+    # CompilerInstance: no plugins are requested, so loading them is a no-op
+    ci = CC.get_instance(I)
+    @test (CC.LoadRequestedPlugins(ci); true)
+    @test CC.hasFrontendTimer(ci) isa Bool
+    CC.createFrontendTimer(ci)
+    @test CC.hasFrontendTimer(ci)
+
+    dispose(I)
+end

@@ -123,6 +123,36 @@ isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
         @test isempty(unresolved)
     end
 
+    @testset "every declared C function has a definition" begin
+        # extern "C" + void*-typedef signatures mean neither the compiler nor the
+        # linker catches a declaration whose definition was never written: the
+        # generator still emits a binding for it, and the failure surfaces only
+        # when Julia first calls it (dlsym error). Catch it here instead.
+        root = normpath(joinpath(@__DIR__, ".."))
+        inc = joinpath(root, "deps", "ClangExtra", "include", "clang-ex")
+        decl_re = r"^\s*(?:[A-Za-z_][\w:*\s]*?[\s*])(clang_\w+)\s*\("m
+
+        undefined = Dict{String,Vector{String}}()
+        for (r, _, files) in walkdir(inc), f in files
+            endswith(f, ".h") || continue
+            hdr = joinpath(r, f)
+            cpp = replace(replace(hdr, joinpath("include", "clang-ex") => "lib"),
+                          ".h" => ".cpp")
+            isfile(cpp) || continue          # pure-enum headers have no impl
+            htext = replace(read(hdr, String), r"//[^\n]*" => "")
+            ctext = read(cpp, String)
+            for m in eachmatch(decl_re, htext)
+                name = m.captures[1]
+                occursin(Regex("\\b" * name * "\\s*\\("), ctext) && continue
+                push!(get!(Vector{String}, undefined, relpath(hdr, root)), name)
+            end
+        end
+        if !isempty(undefined)
+            @error "C functions declared in a header with no definition in its .cpp" undefined
+        end
+        @test isempty(undefined)
+    end
+
     @testset "every libclangex binding is wrapped or stamped" begin
         # The reverse of the reference-resolution check above: every generated
         # binding must be referenced by the Julia layer (comment-stripped — a

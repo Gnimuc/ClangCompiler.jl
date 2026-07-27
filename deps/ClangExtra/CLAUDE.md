@@ -4,7 +4,10 @@ Guidance for working on the hand-written C API shim over Clang's C++ API. The re
 CLAUDE.md covers the overall package; this file covers the C/C++ wrapper conventions.
 Everything compiles into one shared target `clangex` (C++17, `-fPIC -fno-rtti`, links the
 monolithic `LLVM` + `clang-cpp` shared libs). Format C++ with clang-format (LLVM style,
-ColumnLimit 92 — narrower than the Julia code's 120).
+ColumnLimit 92 — narrower than the Julia code's 120), but always pass
+`--sort-includes=false`: reordering the includes in a CX header changes the order the
+binding generator walks declarations, and one moved `#include` rewrites ~8,000 lines of
+`lib/18/LibClangEx.jl` for no semantic gain.
 
 ## The governing axiom
 
@@ -35,6 +38,23 @@ valid — they are specified and must be preserved in `../../src/clang/CLAUDE.md
 Corollary for writing C here: never add defensive code to protect a hypothetical direct
 caller — there isn't one. Keep the shim dumb and total; the type-checking intelligence lives
 in Julia.
+
+Corollary for *choosing* what to wrap: read the method in the pinned artifact header before
+adding a shim for it. Two things are only visible there — access (`setParams` looks like
+ordinary API but is private in clang 18, and the shim will not compile) and partiality
+(methods reaching a subobject via `castAs<>`, `->getDecl()`, or `*optional` are UB on the
+wrong input). Wrap the partial ones anyway, but say so in a header comment so the Julia
+wrapper can restate the precondition as an `@assert`; that is Invariant 3 in
+`../../src/clang/CLAUDE.md`. Never write a signature from memory — the compiler catches
+arity drift, but nothing catches a precondition you did not notice.
+
+A third thing the header does not tell you: whether the symbol is actually **exported** from
+the monolithic `clang-cpp` this library links against. A method declared in an installed
+header can still be defined in a translation unit whose symbol does not reach the shared
+lib — `clang::CFGImplicitDtor::isNoReturn` is one. Such a wrapper compiles cleanly and fails
+only at link time, after the whole tree has built. When a link error names a `clang::`
+symbol, the fix is to drop that wrapper (leave a placeholder comment in header and .cpp
+saying it is not exported), not to hunt for a missing library.
 
 ## The rule that prevents disasters
 
@@ -171,10 +191,21 @@ regenerate with the bindings.
 - Every mirrored enum MUST have an ENUM_SYNC table in lib/Basic/CXEnumSync.cpp
   covering every enumerator — a partial mirror silently ships missing enumerators
   and wrong numbering.
+- CXEnumSync.cpp ends with a single `#undef ENUM_SYNC`; new tables go **before**
+  it (appending past it expands `ENUM_SYNC` as an undeclared identifier), and the
+  file needs both the new `clang-ex/...` header and the clang header that defines
+  the enum — it includes each explicitly rather than relying on transitivity.
+- Alias enumerators (`First*`/`Last*`/`*_BEGIN`/`NumKinds`) are deliberately
+  omitted from mirrors: they duplicate values, which Julia's `@enum` rejects.
+  Omitting them does not shift numbering, since they are `=` assignments.
 - Mirror as `typedef enum CX<ClangEnumName> { CX<ClangEnumName>_<EnumeratorVerbatim>, ... }`
   in the subsystem header matching the Clang header the enum lives in (shared clang/Basic
   enums → `include/clang-ex/Basic/*.h`; class-local enums inline in the class's CX header).
   CXTypes.h's lone `CXTranslationUnitKind` is a legacy exception, not the pattern.
+  Place a class-local enum **before the first accessor that returns it** — C requires the
+  enum defined ahead of its use, and a later batch adding `getFoo() -> CXFooKind` will not
+  compile if the enum sits further down the header. `-fsyntax-only` catches this; the design
+  agent cannot, since it only sees its own additions, not where a prior batch put the enum.
 - Copy Clang's explicit underlying type when it has one (`: unsigned char` → Julia
   `@enum ...::UInt8`); the default maps to UInt32.
 - Conversion is a blind `static_cast` in both directions — **order and values must match

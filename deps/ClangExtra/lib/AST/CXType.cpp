@@ -3,6 +3,7 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/TemplateBase.h"
 #include "clang/AST/Type.h"
+#include "llvm/ExecutionEngine/GenericValue.h"
 
 // Drift alarm: the vendored TypeNodes.inc must match the pinned LLVM version.
 // One assert per concrete class proves CXTypeClass equals clang's TypeClass
@@ -27,6 +28,240 @@ CXTypeClass clang_Type_getTypeClass(CXType_ T) {
   return static_cast<CXTypeClass>(static_cast<clang::Type *>(T)->getTypeClass());
 }
 
+// Qualifiers
+unsigned clang_Qualifiers_removeCommonQualifiers(unsigned *L, unsigned *R) {
+  clang::Qualifiers LQ = clang::Qualifiers::fromOpaqueValue(*L);
+  clang::Qualifiers RQ = clang::Qualifiers::fromOpaqueValue(*R);
+  clang::Qualifiers Common = clang::Qualifiers::removeCommonQualifiers(LQ, RQ);
+  *L = LQ.getAsOpaqueValue();
+  *R = RQ.getAsOpaqueValue();
+  return Common.getAsOpaqueValue();
+}
+unsigned clang_Qualifiers_fromFastMask(unsigned Mask) {
+  return clang::Qualifiers::fromFastMask(Mask).getAsOpaqueValue();
+}
+unsigned clang_Qualifiers_fromCVRMask(unsigned CVR) {
+  return clang::Qualifiers::fromCVRMask(CVR).getAsOpaqueValue();
+}
+unsigned clang_Qualifiers_fromCVRUMask(unsigned CVRU) {
+  return clang::Qualifiers::fromCVRUMask(CVRU).getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasConst(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasConst();
+}
+
+bool clang_Qualifiers_hasOnlyConst(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasOnlyConst();
+}
+
+unsigned clang_Qualifiers_withConst(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).withConst().getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_removeConst(unsigned Quals) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.removeConst();
+  return Qs.getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasVolatile(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasVolatile();
+}
+
+bool clang_Qualifiers_hasOnlyVolatile(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasOnlyVolatile();
+}
+
+unsigned clang_Qualifiers_withVolatile(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).withVolatile().getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_removeVolatile(unsigned Quals) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.removeVolatile();
+  return Qs.getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasRestrict(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasRestrict();
+}
+
+bool clang_Qualifiers_hasOnlyRestrict(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasOnlyRestrict();
+}
+
+unsigned clang_Qualifiers_withRestrict(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).withRestrict().getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_removeRestrict(unsigned Quals) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.removeRestrict();
+  return Qs.getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasCVRQualifiers(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasCVRQualifiers();
+}
+
+unsigned clang_Qualifiers_getCVRQualifiers(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).getCVRQualifiers();
+}
+
+unsigned clang_Qualifiers_getCVRUQualifiers(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).getCVRUQualifiers();
+}
+
+unsigned clang_Qualifiers_setCVRQualifiers(unsigned Quals, unsigned Mask) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.setCVRQualifiers(Mask);
+  return Qs.getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_addCVRQualifiers(unsigned Quals, unsigned Mask) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.addCVRQualifiers(Mask);
+  return Qs.getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_removeCVRQualifiers(unsigned Quals, unsigned Mask) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.removeCVRQualifiers(Mask);
+  return Qs.getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_addCVRUQualifiers(unsigned Quals, unsigned Mask) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.addCVRUQualifiers(Mask);
+  return Qs.getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasUnaligned(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasUnaligned();
+}
+
+unsigned clang_Qualifiers_setUnaligned(unsigned Quals, bool Flag) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.setUnaligned(Flag);
+  return Qs.getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_withoutAddressSpace(unsigned Quals) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  return Qs.withoutAddressSpace().getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasAddressSpace(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasAddressSpace();
+}
+
+CXLangAS clang_Qualifiers_getAddressSpace(unsigned Quals) {
+  return static_cast<CXLangAS>(clang::Qualifiers::fromOpaqueValue(Quals).getAddressSpace());
+}
+
+bool clang_Qualifiers_hasTargetSpecificAddressSpace(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasTargetSpecificAddressSpace();
+}
+
+unsigned clang_Qualifiers_getAddressSpaceAttributePrintValue(unsigned Quals) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  return Qs.getAddressSpaceAttributePrintValue();
+}
+
+unsigned clang_Qualifiers_setAddressSpace(unsigned Quals, CXLangAS Space) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.setAddressSpace(static_cast<clang::LangAS>(Space));
+  return Qs.getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_addAddressSpace(unsigned Quals, CXLangAS Space) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.addAddressSpace(static_cast<clang::LangAS>(Space));
+  return Qs.getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasFastQualifiers(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasFastQualifiers();
+}
+
+unsigned clang_Qualifiers_getFastQualifiers(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).getFastQualifiers();
+}
+
+unsigned clang_Qualifiers_setFastQualifiers(unsigned Quals, unsigned Mask) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.setFastQualifiers(Mask);
+  return Qs.getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_addFastQualifiers(unsigned Quals, unsigned Mask) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.addFastQualifiers(Mask);
+  return Qs.getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_removeFastQualifiers(unsigned Quals, unsigned Mask) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.removeFastQualifiers(Mask);
+  return Qs.getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasNonFastQualifiers(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasNonFastQualifiers();
+}
+
+unsigned clang_Qualifiers_getNonFastQualifiers(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals)
+      .getNonFastQualifiers()
+      .getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_hasQualifiers(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).hasQualifiers();
+}
+
+bool clang_Qualifiers_empty(unsigned Quals) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).empty();
+}
+
+unsigned clang_Qualifiers_addQualifiers(unsigned Quals, unsigned Other) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.addQualifiers(clang::Qualifiers::fromOpaqueValue(Other));
+  return Qs.getAsOpaqueValue();
+}
+
+unsigned clang_Qualifiers_removeQualifiers(unsigned Quals, unsigned Other) {
+  clang::Qualifiers Qs = clang::Qualifiers::fromOpaqueValue(Quals);
+  Qs.removeQualifiers(clang::Qualifiers::fromOpaqueValue(Other));
+  return Qs.getAsOpaqueValue();
+}
+
+bool clang_Qualifiers_isAddressSpaceSupersetOf(CXLangAS A, CXLangAS B) {
+  clang::LangAS AS_A = static_cast<clang::LangAS>(A);
+  clang::LangAS AS_B = static_cast<clang::LangAS>(B);
+  return clang::Qualifiers::isAddressSpaceSupersetOf(AS_A, AS_B);
+}
+
+bool clang_Qualifiers_compatiblyIncludes(unsigned Quals, unsigned Other) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).compatiblyIncludes(
+      clang::Qualifiers::fromOpaqueValue(Other));
+}
+
+bool clang_Qualifiers_isStrictSupersetOf(unsigned Quals, unsigned Other) {
+  return clang::Qualifiers::fromOpaqueValue(Quals).isStrictSupersetOf(
+      clang::Qualifiers::fromOpaqueValue(Other));
+}
+
+CXString clang_Qualifiers_getAsString(unsigned Quals) {
+  return extra::makeCXString(clang::Qualifiers::fromOpaqueValue(Quals).getAsString());
+}
+
+CXString clang_Qualifiers_getAddrSpaceAsString(CXLangAS AS) {
+  std::string S = clang::Qualifiers::getAddrSpaceAsString(static_cast<clang::LangAS>(AS));
+  return extra::makeCXString(S);
+}
+
 // QualType
 CXQualType clang_QualType_constructFromTypePtr(CXType_ Ptr, unsigned Quals) {
   return clang::QualType(static_cast<clang::Type *>(Ptr), Quals).getAsOpaquePtr();
@@ -42,8 +277,28 @@ CXType_ clang_QualType_getTypePtrOrNull(CXQualType OpaquePtr) {
       clang::QualType::getFromOpaquePtr(OpaquePtr).getTypePtrOrNull());
 }
 
+void clang_QualType_getSplitUnqualifiedType(CXQualType OpaquePtr, CXType_ *Ty,
+                                            unsigned *Quals) {
+  clang::SplitQualType Split =
+      clang::QualType::getFromOpaquePtr(OpaquePtr).getSplitUnqualifiedType();
+  *Ty = const_cast<clang::Type *>(Split.Ty);
+  *Quals = Split.Quals.getAsOpaqueValue();
+}
+
+void clang_QualType_getSplitDesugaredType(CXQualType OpaquePtr, CXType_ *Ty,
+                                          unsigned *Quals) {
+  clang::SplitQualType Split =
+      clang::QualType::getFromOpaquePtr(OpaquePtr).getSplitDesugaredType();
+  *Ty = const_cast<clang::Type *>(Split.Ty);
+  *Quals = Split.Quals.getAsOpaqueValue();
+}
+
 bool clang_QualType_isCanonical(CXQualType OpaquePtr) {
   return clang::QualType::getFromOpaquePtr(OpaquePtr).isCanonical();
+}
+
+bool clang_QualType_isCanonicalAsParam(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isCanonicalAsParam();
 }
 
 bool clang_QualType_isNull(CXQualType OpaquePtr) {
@@ -76,6 +331,12 @@ CXQualType clang_QualType_withVolatile(CXQualType OpaquePtr) {
 
 CXQualType clang_QualType_withRestrict(CXQualType OpaquePtr) {
   return clang::QualType::getFromOpaquePtr(OpaquePtr).withRestrict().getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_withCVRQualifiers(CXQualType OpaquePtr, unsigned CVR) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .withCVRQualifiers(CVR)
+      .getAsOpaquePtr();
 }
 
 CXQualType clang_QualType_addConst(CXQualType OpaquePtr) {
@@ -112,8 +373,174 @@ bool clang_QualType_hasLocalQualifiers(CXQualType OpaquePtr) {
   return clang::QualType::getFromOpaquePtr(OpaquePtr).hasLocalQualifiers();
 }
 
+bool clang_QualType_hasLocalNonFastQualifiers(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).hasLocalNonFastQualifiers();
+}
+
+unsigned clang_QualType_getLocalCVRQualifiers(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).getLocalCVRQualifiers();
+}
+
 unsigned clang_QualType_getCVRQualifiers(CXQualType OpaquePtr) {
   return clang::QualType::getFromOpaquePtr(OpaquePtr).getCVRQualifiers();
+}
+
+unsigned clang_QualType_getQualifiersAsOpaqueValue(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).getQualifiers().getAsOpaqueValue();
+}
+
+unsigned clang_QualType_getLocalFastQualifiers(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).getLocalFastQualifiers();
+}
+
+CXQualType clang_QualType_removeLocalConst(CXQualType OpaquePtr) {
+  clang::QualType T = clang::QualType::getFromOpaquePtr(OpaquePtr);
+  T.removeLocalConst();
+  return T.getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_removeLocalVolatile(CXQualType OpaquePtr) {
+  clang::QualType T = clang::QualType::getFromOpaquePtr(OpaquePtr);
+  T.removeLocalVolatile();
+  return T.getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_removeLocalRestrict(CXQualType OpaquePtr) {
+  clang::QualType T = clang::QualType::getFromOpaquePtr(OpaquePtr);
+  T.removeLocalRestrict();
+  return T.getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_withFastQualifiers(CXQualType OpaquePtr, unsigned TQs) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .withFastQualifiers(TQs)
+      .getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_withExactLocalFastQualifiers(CXQualType OpaquePtr, unsigned TQs) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .withExactLocalFastQualifiers(TQs)
+      .getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_withoutLocalFastQualifiers(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .withoutLocalFastQualifiers()
+      .getAsOpaquePtr();
+}
+
+bool clang_QualType_hasAddressSpace(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).hasAddressSpace();
+}
+
+CXLangAS clang_QualType_getAddressSpace(CXQualType OpaquePtr) {
+  return static_cast<CXLangAS>(
+      clang::QualType::getFromOpaquePtr(OpaquePtr).getAddressSpace());
+}
+
+CXDestructionKind clang_QualType_isDestructedType(CXQualType OpaquePtr) {
+  return static_cast<CXDestructionKind>(
+      clang::QualType::getFromOpaquePtr(OpaquePtr).isDestructedType());
+}
+
+bool clang_QualType_isMoreQualifiedThan(CXQualType OpaquePtr, CXQualType Other) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isMoreQualifiedThan(
+      clang::QualType::getFromOpaquePtr(Other));
+}
+
+bool clang_QualType_isAddressSpaceOverlapping(CXQualType OpaquePtr, CXQualType Other) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isAddressSpaceOverlapping(
+      clang::QualType::getFromOpaquePtr(Other));
+}
+
+bool clang_QualType_isAtLeastAsQualifiedAs(CXQualType OpaquePtr, CXQualType Other) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isAtLeastAsQualifiedAs(
+      clang::QualType::getFromOpaquePtr(Other));
+}
+
+CXQualType clang_QualType_getNonReferenceType(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .getNonReferenceType()
+      .getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_getNonPackExpansionType(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .getNonPackExpansionType()
+      .getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_IgnoreParens(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).IgnoreParens().getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_getDesugaredType(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .getDesugaredType(*static_cast<clang::ASTContext *>(Ctx))
+      .getAsOpaquePtr();
+}
+
+CXQualType clang_QualType_getSingleStepDesugaredType(CXQualType OpaquePtr,
+                                                     CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .getSingleStepDesugaredType(*static_cast<clang::ASTContext *>(Ctx))
+      .getAsOpaquePtr();
+}
+
+bool clang_QualType_isConstant(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isConstant(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+// isConstantStorage is a non-const member, so the QualType is rebuilt into a
+// local lvalue before the call.
+bool clang_QualType_isConstantStorage(CXQualType OpaquePtr, CXASTContext Ctx,
+                                      bool ExcludeCtor, bool ExcludeDtor) {
+  clang::QualType T = clang::QualType::getFromOpaquePtr(OpaquePtr);
+  return T.isConstantStorage(*static_cast<clang::ASTContext *>(Ctx), ExcludeCtor,
+                             ExcludeDtor);
+}
+
+bool clang_QualType_isPODType(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isPODType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_QualType_isCXX98PODType(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isCXX98PODType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_QualType_isCXX11PODType(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isCXX11PODType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_QualType_isTrivialType(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isTrivialType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_QualType_isTriviallyCopyableType(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isTriviallyCopyableType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_QualType_isTriviallyCopyConstructibleType(CXQualType OpaquePtr,
+                                                     CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isTriviallyCopyConstructibleType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_QualType_isTriviallyRelocatableType(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isTriviallyRelocatableType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_QualType_isTriviallyEqualityComparableType(CXQualType OpaquePtr,
+                                                      CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isTriviallyEqualityComparableType(
+      *static_cast<clang::ASTContext *>(Ctx));
 }
 
 CXString clang_QualType_getAsString(CXQualType OpaquePtr) {
@@ -138,6 +565,77 @@ CXQualType clang_QualType_getUnqualifiedType(CXQualType OpaquePtr) {
   return clang::QualType::getFromOpaquePtr(OpaquePtr).getUnqualifiedType().getAsOpaquePtr();
 }
 
+CXIdentifierInfo clang_QualType_getBaseTypeIdentifier(CXQualType OpaquePtr) {
+  return const_cast<clang::IdentifierInfo *>(
+      clang::QualType::getFromOpaquePtr(OpaquePtr).getBaseTypeIdentifier());
+}
+
+bool clang_QualType_isReferenceable(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isReferenceable();
+}
+
+unsigned clang_QualType_getLocalQualifiers(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .getLocalQualifiers()
+      .getAsOpaqueValue();
+}
+
+bool clang_QualType_mayBeDynamicClass(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).mayBeDynamicClass();
+}
+
+bool clang_QualType_mayBeNotDynamicClass(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).mayBeNotDynamicClass();
+}
+
+CXQualType clang_QualType_getAtomicUnqualifiedType(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .getAtomicUnqualifiedType()
+      .getAsOpaquePtr();
+}
+
+CXPrimitiveDefaultInitializeKind
+clang_QualType_isNonTrivialToPrimitiveDefaultInitialize(CXQualType OpaquePtr) {
+  return static_cast<CXPrimitiveDefaultInitializeKind>(
+      clang::QualType::getFromOpaquePtr(OpaquePtr)
+          .isNonTrivialToPrimitiveDefaultInitialize());
+}
+
+CXPrimitiveCopyKind clang_QualType_isNonTrivialToPrimitiveCopy(CXQualType OpaquePtr) {
+  return static_cast<CXPrimitiveCopyKind>(
+      clang::QualType::getFromOpaquePtr(OpaquePtr).isNonTrivialToPrimitiveCopy());
+}
+
+CXPrimitiveCopyKind
+clang_QualType_isNonTrivialToPrimitiveDestructiveMove(CXQualType OpaquePtr) {
+  return static_cast<CXPrimitiveCopyKind>(clang::QualType::getFromOpaquePtr(OpaquePtr)
+                                              .isNonTrivialToPrimitiveDestructiveMove());
+}
+
+bool clang_QualType_hasNonTrivialToPrimitiveDefaultInitializeCUnion(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .hasNonTrivialToPrimitiveDefaultInitializeCUnion();
+}
+
+bool clang_QualType_hasNonTrivialToPrimitiveDestructCUnion(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .hasNonTrivialToPrimitiveDestructCUnion();
+}
+
+bool clang_QualType_hasNonTrivialToPrimitiveCopyCUnion(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).hasNonTrivialToPrimitiveCopyCUnion();
+}
+
+bool clang_QualType_isCForbiddenLValueType(CXQualType OpaquePtr) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr).isCForbiddenLValueType();
+}
+
+CXQualType clang_QualType_getNonLValueExprType(CXQualType OpaquePtr, CXASTContext Ctx) {
+  return clang::QualType::getFromOpaquePtr(OpaquePtr)
+      .getNonLValueExprType(*static_cast<clang::ASTContext *>(Ctx))
+      .getAsOpaquePtr();
+}
+
 // Type
 bool clang_Type_isFromAST(CXType_ T) { return static_cast<clang::Type *>(T)->isFromAST(); }
 
@@ -153,8 +651,45 @@ bool clang_Type_isSizelessBuiltinType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isSizelessBuiltinType();
 }
 
+bool clang_Type_isSizelessVectorType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isSizelessVectorType();
+}
+
+bool clang_Type_isSVESizelessBuiltinType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isSVESizelessBuiltinType();
+}
+
+bool clang_Type_isRVVSizelessBuiltinType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isRVVSizelessBuiltinType();
+}
+
+bool clang_Type_isWebAssemblyExternrefType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isWebAssemblyExternrefType();
+}
+
+bool clang_Type_isWebAssemblyTableType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isWebAssemblyTableType();
+}
+
+bool clang_Type_isLiteralType(CXType_ T, CXASTContext Ctx) {
+  return static_cast<clang::Type *>(T)->isLiteralType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_Type_isStructuralType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isStructuralType();
+}
+
+bool clang_Type_isStandardLayoutType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isStandardLayoutType();
+}
+
 bool clang_Type_isBuiltinType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isBuiltinType();
+}
+
+bool clang_Type_isSpecificBuiltinType(CXType_ T, unsigned K) {
+  return static_cast<clang::Type *>(T)->isSpecificBuiltinType(K);
 }
 
 bool clang_Type_isIntegerType(CXType_ T) {
@@ -239,6 +774,10 @@ bool clang_Type_isBFloat16Type(CXType_ T) {
 
 bool clang_Type_isFloat128Type(CXType_ T) {
   return static_cast<clang::Type *>(T)->isFloat128Type();
+}
+
+bool clang_Type_isIbm128Type(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isIbm128Type();
 }
 
 bool clang_Type_isRealType(CXType_ T) {
@@ -393,6 +932,10 @@ bool clang_Type_isExtVectorType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isExtVectorType();
 }
 
+bool clang_Type_isExtVectorBoolType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isExtVectorBoolType();
+}
+
 bool clang_Type_isMatrixType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isMatrixType();
 }
@@ -405,8 +948,40 @@ bool clang_Type_isDependentAddressSpaceType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isDependentAddressSpaceType();
 }
 
+bool clang_Type_isObjCObjectPointerType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjCObjectPointerType();
+}
+
+bool clang_Type_isObjCRetainableType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjCRetainableType();
+}
+
+bool clang_Type_isObjCObjectType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjCObjectType();
+}
+
+bool clang_Type_isObjCObjectOrInterfaceType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjCObjectOrInterfaceType();
+}
+
+bool clang_Type_isObjCIdType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjCIdType();
+}
+
 bool clang_Type_isDecltypeType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isDecltypeType();
+}
+
+bool clang_Type_isObjCClassType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjCClassType();
+}
+
+bool clang_Type_isObjCSelType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjCSelType();
+}
+
+bool clang_Type_isObjCBuiltinType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjCBuiltinType();
 }
 
 bool clang_Type_isTemplateTypeParmType(CXType_ T) {
@@ -439,6 +1014,34 @@ bool clang_Type_isUndeducedAutoType(CXType_ T) {
 
 bool clang_Type_isTypedefNameType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isTypedefNameType();
+}
+
+bool clang_Type_isImageType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isImageType();
+}
+
+bool clang_Type_isSamplerT(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isSamplerT();
+}
+
+bool clang_Type_isEventT(CXType_ T) { return static_cast<clang::Type *>(T)->isEventT(); }
+
+bool clang_Type_isClkEventT(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isClkEventT();
+}
+
+bool clang_Type_isQueueT(CXType_ T) { return static_cast<clang::Type *>(T)->isQueueT(); }
+
+bool clang_Type_isReserveIDT(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isReserveIDT();
+}
+
+bool clang_Type_isOCLIntelSubgroupAVCType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isOCLIntelSubgroupAVCType();
+}
+
+bool clang_Type_isOCLExtOpaqueType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isOCLExtOpaqueType();
 }
 
 bool clang_Type_isDependentType(CXType_ T) {
@@ -536,6 +1139,10 @@ CXDeducedType clang_Type_getContainedDeducedType(CXType_ T) {
   return static_cast<clang::Type *>(T)->getContainedDeducedType();
 }
 
+CXAutoType clang_Type_getContainedAutoType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->getContainedAutoType();
+}
+
 bool clang_Type_hasAutoForTrailingReturnType(CXType_ T) {
   return static_cast<clang::Type *>(T)->hasAutoForTrailingReturnType();
 }
@@ -611,6 +1218,14 @@ bool clang_Type_isSpecifierType(CXType_ T) {
   return static_cast<clang::Type *>(T)->isSpecifierType();
 }
 
+CXLinkage clang_Type_getLinkage(CXType_ T) {
+  return static_cast<CXLinkage>(static_cast<clang::Type *>(T)->getLinkage());
+}
+
+CXVisibility clang_Type_getVisibility(CXType_ T) {
+  return static_cast<CXVisibility>(static_cast<clang::Type *>(T)->getVisibility());
+}
+
 bool clang_Type_isVisibilityExplicit(CXType_ T) {
   return static_cast<clang::Type *>(T)->isVisibilityExplicit();
 }
@@ -619,11 +1234,109 @@ bool clang_Type_isLinkageValid(CXType_ T) {
   return static_cast<clang::Type *>(T)->isLinkageValid();
 }
 
+bool clang_Type_canHaveNullability(CXType_ T, bool ResultIfUnknown) {
+  return static_cast<clang::Type *>(T)->canHaveNullability(ResultIfUnknown);
+}
+
 CXQualType clang_Type_getCanonicalTypeInternal(CXType_ T) {
   return static_cast<clang::Type *>(T)->getCanonicalTypeInternal().getAsOpaquePtr();
 }
 
 void clang_Type_dump(CXType_ T) { return static_cast<clang::Type *>(T)->dump(); }
+
+// Type: parameterised / ASTContext-taking queries and navigation helpers. Declared
+// interleaved in CXType.h in clang::Type's own method order; grouped here.
+bool clang_Type_containsUnexpandedParameterPack(CXType_ T) {
+  return static_cast<clang::Type *>(T)->containsUnexpandedParameterPack();
+}
+
+CXQualType clang_Type_getLocallyUnqualifiedSingleStepDesugaredType(CXType_ T) {
+  return static_cast<clang::Type *>(T)
+      ->getLocallyUnqualifiedSingleStepDesugaredType()
+      .getAsOpaquePtr();
+}
+
+bool clang_Type_isIncompleteType(CXType_ T, CXNamedDecl *Def) {
+  clang::NamedDecl *D = nullptr;
+  bool R = static_cast<clang::Type *>(T)->isIncompleteType(Def ? &D : nullptr);
+  if (Def)
+    *Def = D;
+  return R;
+}
+
+bool clang_Type_isIncompleteOrObjectType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isIncompleteOrObjectType();
+}
+
+bool clang_Type_isObjectType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isObjectType();
+}
+
+bool clang_Type_isPlaceholderType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isPlaceholderType();
+}
+
+CXBuiltinType clang_Type_getAsPlaceholderType(CXType_ T) {
+  return const_cast<clang::BuiltinType *>(
+      static_cast<clang::Type *>(T)->getAsPlaceholderType());
+}
+
+bool clang_Type_isSpecificPlaceholderType(CXType_ T, unsigned K) {
+  return static_cast<clang::Type *>(T)->isSpecificPlaceholderType(K);
+}
+
+bool clang_Type_isNonOverloadPlaceholderType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isNonOverloadPlaceholderType();
+}
+
+bool clang_Type_isIntegralType(CXType_ T, CXASTContext Ctx) {
+  return static_cast<clang::Type *>(T)->isIntegralType(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+bool clang_Type_isPipeType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isPipeType();
+}
+
+bool clang_Type_isBitIntType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isBitIntType();
+}
+
+bool clang_Type_isOpenCLSpecificType(CXType_ T) {
+  return static_cast<clang::Type *>(T)->isOpenCLSpecificType();
+}
+
+CXScalarTypeKind clang_Type_getScalarTypeKind(CXType_ T) {
+  return static_cast<CXScalarTypeKind>(
+      static_cast<clang::Type *>(T)->getScalarTypeKind());
+}
+
+bool clang_Type_containsErrors(CXType_ T) {
+  return static_cast<clang::Type *>(T)->containsErrors();
+}
+
+CXArrayType clang_Type_getAsArrayTypeUnsafe(CXType_ T) {
+  return const_cast<clang::ArrayType *>(
+      static_cast<clang::Type *>(T)->getAsArrayTypeUnsafe());
+}
+
+CXArrayType clang_Type_castAsArrayTypeUnsafe(CXType_ T) {
+  return const_cast<clang::ArrayType *>(
+      static_cast<clang::Type *>(T)->castAsArrayTypeUnsafe());
+}
+
+bool clang_Type_hasAttr(CXType_ T, CXAttrKind AK) {
+  return static_cast<clang::Type *>(T)->hasAttr(static_cast<clang::attr::Kind>(AK));
+}
+
+CXType_ clang_Type_getBaseElementTypeUnsafe(CXType_ T) {
+  return const_cast<clang::Type *>(
+      static_cast<clang::Type *>(T)->getBaseElementTypeUnsafe());
+}
+
+const char *clang_Type_getTypeClassName(CXType_ T) {
+  return static_cast<clang::Type *>(T)->getTypeClassName();
+}
 
 // isa
 bool clang_isa_ComplexType(CXType_ T) {
@@ -908,6 +1621,55 @@ bool clang_isa_BuiltinType_NullPtr(CXType_ T) {
   return static_cast<clang::BuiltinType *>(T)->getKind() == clang::BuiltinType::NullPtr;
 }
 
+bool clang_BuiltinType_isSugared(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isSugared();
+}
+
+CXQualType clang_BuiltinType_desugar(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->desugar().getAsOpaquePtr();
+}
+
+bool clang_BuiltinType_isInteger(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isInteger();
+}
+
+bool clang_BuiltinType_isSignedInteger(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isSignedInteger();
+}
+
+bool clang_BuiltinType_isUnsignedInteger(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isUnsignedInteger();
+}
+
+bool clang_BuiltinType_isFloatingPoint(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isFloatingPoint();
+}
+
+bool clang_BuiltinType_isSVEBool(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isSVEBool();
+}
+
+bool clang_BuiltinType_isSVECount(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isSVECount();
+}
+
+bool clang_BuiltinType_isPlaceholderTypeKind(unsigned K) {
+  clang::BuiltinType::Kind Kind = static_cast<clang::BuiltinType::Kind>(K);
+  return clang::BuiltinType::isPlaceholderTypeKind(Kind);
+}
+
+unsigned clang_BuiltinType_getKind(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->getKind();
+}
+
+bool clang_BuiltinType_isPlaceholderType(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isPlaceholderType();
+}
+
+bool clang_BuiltinType_isNonOverloadPlaceholderType(CXBuiltinType T) {
+  return static_cast<clang::BuiltinType *>(T)->isNonOverloadPlaceholderType();
+}
+
 // ComplexType
 CXQualType clang_ComplexType_getElementType(CXComplexType T) {
   return static_cast<clang::ComplexType *>(T)->getElementType().getAsOpaquePtr();
@@ -1051,7 +1813,16 @@ unsigned clang_ArrayType_getIndexTypeCVRQualifiers(CXArrayType T) {
   return static_cast<clang::ArrayType *>(T)->getIndexTypeCVRQualifiers();
 }
 
+unsigned clang_ArrayType_getIndexTypeQualifiers(CXArrayType T) {
+  return static_cast<clang::ArrayType *>(T)->getIndexTypeQualifiers().getAsOpaqueValue();
+}
+
 // ConstantArrayType
+LLVMGenericValueRef clang_ConstantArrayType_getSize(CXConstantArrayType T) {
+  auto *GV = new llvm::GenericValue; // NOLINT(*-owning-memory)
+  GV->IntVal = static_cast<clang::ConstantArrayType *>(T)->getSize();
+  return reinterpret_cast<LLVMGenericValueRef>(GV);
+}
 CXExpr clang_ConstantArrayType_getSizeExpr(CXConstantArrayType T) {
   return const_cast<clang::Expr *>(
       static_cast<clang::ConstantArrayType *>(T)->getSizeExpr());
@@ -1071,6 +1842,10 @@ unsigned clang_ConstantArrayType_getNumAddressingBits(CXConstantArrayType T,
       *static_cast<clang::ASTContext *>(C));
 }
 
+unsigned clang_ConstantArrayType_getMaxSizeBits(CXASTContext C) {
+  return clang::ConstantArrayType::getMaxSizeBits(*static_cast<clang::ASTContext *>(C));
+}
+
 // IncompleteArrayType
 bool clang_IncompleteArrayType_isSugared(CXIncompleteArrayType T) {
   return static_cast<clang::IncompleteArrayType *>(T)->isSugared();
@@ -1081,6 +1856,20 @@ CXQualType clang_IncompleteArrayType_desugar(CXIncompleteArrayType T) {
 }
 
 // VariableArrayType
+CXSourceRange_ clang_VariableArrayType_getBracketsRange(CXVariableArrayType T) {
+  auto rng = static_cast<clang::VariableArrayType *>(T)->getBracketsRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+CXSourceLocation_ clang_VariableArrayType_getLBracketLoc(CXVariableArrayType T) {
+  return static_cast<clang::VariableArrayType *>(T)->getLBracketLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_VariableArrayType_getRBracketLoc(CXVariableArrayType T) {
+  return static_cast<clang::VariableArrayType *>(T)->getRBracketLoc().getPtrEncoding();
+}
 CXExpr clang_VariableArrayType_getSizeExpr(CXVariableArrayType T) {
   return const_cast<clang::Expr *>(
       static_cast<clang::VariableArrayType *>(T)->getSizeExpr());
@@ -1095,6 +1884,25 @@ CXQualType clang_VariableArrayType_desugar(CXVariableArrayType T) {
 }
 
 // DependentSizedArrayType
+CXSourceRange_
+clang_DependentSizedArrayType_getBracketsRange(CXDependentSizedArrayType T) {
+  auto rng = static_cast<clang::DependentSizedArrayType *>(T)->getBracketsRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+CXSourceLocation_
+clang_DependentSizedArrayType_getLBracketLoc(CXDependentSizedArrayType T) {
+  auto Loc = static_cast<clang::DependentSizedArrayType *>(T)->getLBracketLoc();
+  return Loc.getPtrEncoding();
+}
+
+CXSourceLocation_
+clang_DependentSizedArrayType_getRBracketLoc(CXDependentSizedArrayType T) {
+  auto Loc = static_cast<clang::DependentSizedArrayType *>(T)->getRBracketLoc();
+  return Loc.getPtrEncoding();
+}
 CXExpr clang_DependentSizedArrayType_getSizeExpr(CXDependentSizedArrayType T) {
   return const_cast<clang::Expr *>(
       static_cast<clang::DependentSizedArrayType *>(T)->getSizeExpr());
@@ -1150,8 +1958,52 @@ CXQualType clang_DependentSizedExtVectorType_desugar(CXDependentSizedExtVectorTy
 }
 
 // FunctionType
+// VectorType
+CXQualType clang_VectorType_getElementType(CXVectorType T) {
+  return static_cast<clang::VectorType *>(T)->getElementType().getAsOpaquePtr();
+}
+
+unsigned clang_VectorType_getNumElements(CXVectorType T) {
+  return static_cast<clang::VectorType *>(T)->getNumElements();
+}
+
+bool clang_VectorType_isSugared(CXVectorType T) {
+  return static_cast<clang::VectorType *>(T)->isSugared();
+}
+
+CXQualType clang_VectorType_desugar(CXVectorType T) {
+  return static_cast<clang::VectorType *>(T)->desugar().getAsOpaquePtr();
+}
+
+CXVectorKind clang_VectorType_getVectorKind(CXVectorType T) {
+  return static_cast<CXVectorKind>(static_cast<clang::VectorType *>(T)->getVectorKind());
+}
+
+// MatrixType
+bool clang_MatrixType_isValidElementType(CXQualType T) {
+  return clang::MatrixType::isValidElementType(clang::QualType::getFromOpaquePtr(T));
+}
+
+// ConstantMatrixType
+unsigned clang_ConstantMatrixType_getMaxElementsPerDimension(void) {
+  return clang::ConstantMatrixType::getMaxElementsPerDimension();
+}
+
+bool clang_ConstantMatrixType_isDimensionValid(size_t NumElements) {
+  return clang::ConstantMatrixType::isDimensionValid(NumElements);
+}
+
+// FunctionType
 CXQualType clang_FunctionType_getReturnType(CXFunctionType T) {
   return static_cast<clang::FunctionType *>(T)->getReturnType().getAsOpaquePtr();
+}
+
+CXArmStateValue clang_FunctionType_getArmZAState(unsigned AttrBits) {
+  return static_cast<CXArmStateValue>(clang::FunctionType::getArmZAState(AttrBits));
+}
+
+CXArmStateValue clang_FunctionType_getArmZT0State(unsigned AttrBits) {
+  return static_cast<CXArmStateValue>(clang::FunctionType::getArmZT0State(AttrBits));
 }
 
 bool clang_FunctionType_getHasRegParm(CXFunctionType T) {
@@ -1187,6 +2039,17 @@ CXCallingConv_ clang_FunctionType_getCallConv(CXFunctionType T) {
       static_cast<clang::FunctionType *>(T)->getCallConv());
 }
 
+CXQualType clang_FunctionType_getCallResultType(CXFunctionType T, CXASTContext Ctx) {
+  return static_cast<clang::FunctionType *>(T)
+      ->getCallResultType(*static_cast<clang::ASTContext *>(Ctx))
+      .getAsOpaquePtr();
+}
+
+CXString clang_FunctionType_getNameForCallConv(CXCallingConv_ CC) {
+  return extra::makeCXString(
+      clang::FunctionType::getNameForCallConv(static_cast<clang::CallingConv>(CC)).str());
+}
+
 // FunctionNoProtoType
 bool clang_FunctionNoProtoType_isSugared(CXFunctionNoProtoType T) {
   return static_cast<clang::FunctionNoProtoType *>(T)->isSugared();
@@ -1197,6 +2060,13 @@ CXQualType clang_FunctionNoProtoType_desugar(CXFunctionNoProtoType T) {
 }
 
 // FunctionProtoType
+unsigned clang_FunctionProtoType_getMethodQuals(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->getMethodQuals().getAsOpaqueValue();
+}
+
+bool clang_FunctionProtoType_isParamConsumed(CXFunctionProtoType T, unsigned I) {
+  return static_cast<clang::FunctionProtoType *>(T)->isParamConsumed(I);
+}
 unsigned clang_FunctionProtoType_getNumParams(CXFunctionProtoType T) {
   return static_cast<clang::FunctionProtoType *>(T)->getNumParams();
 }
@@ -1292,6 +2162,28 @@ CXQualType clang_FunctionProtoType_desugar(CXFunctionProtoType T) {
   return static_cast<clang::FunctionProtoType *>(T)->desugar().getAsOpaquePtr();
 }
 
+CXSourceLocation_ clang_FunctionProtoType_getEllipsisLoc(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->getEllipsisLoc().getPtrEncoding();
+}
+
+bool clang_FunctionProtoType_hasExtParameterInfos(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->hasExtParameterInfos();
+}
+
+CXRefQualifierKind clang_FunctionProtoType_getRefQualifier(CXFunctionProtoType T) {
+  return static_cast<CXRefQualifierKind>(
+      static_cast<clang::FunctionProtoType *>(T)->getRefQualifier());
+}
+
+CXCanThrowResult clang_FunctionProtoType_canThrow(CXFunctionProtoType T) {
+  return static_cast<CXCanThrowResult>(
+      static_cast<clang::FunctionProtoType *>(T)->canThrow());
+}
+
+unsigned clang_FunctionProtoType_getAArch64SMEAttributes(CXFunctionProtoType T) {
+  return static_cast<clang::FunctionProtoType *>(T)->getAArch64SMEAttributes();
+}
+
 // UnresolvedUsingType
 CXUnresolvedUsingTypenameDecl clang_UnresolvedUsingType_getDecl(CXUnresolvedUsingType T) {
   return static_cast<clang::UnresolvedUsingType *>(T)->getDecl();
@@ -1322,6 +2214,10 @@ CXQualType clang_UsingType_desugar(CXUsingType T) {
   return static_cast<clang::UsingType *>(T)->desugar().getAsOpaquePtr();
 }
 
+bool clang_UsingType_typeMatchesDecl(CXUsingType T) {
+  return static_cast<clang::UsingType *>(T)->typeMatchesDecl();
+}
+
 // TypedefType
 CXTypedefNameDecl clang_TypedefType_getDecl(CXTypedefType T) {
   return static_cast<clang::TypedefType *>(T)->getDecl();
@@ -1333,6 +2229,10 @@ bool clang_TypedefType_isSugared(CXTypedefType T) {
 
 CXQualType clang_TypedefType_desugar(CXTypedefType T) {
   return static_cast<clang::TypedefType *>(T)->desugar().getAsOpaquePtr();
+}
+
+bool clang_TypedefType_typeMatchesDecl(CXTypedefType T) {
+  return static_cast<clang::TypedefType *>(T)->typeMatchesDecl();
 }
 
 // MacroQualifiedType
@@ -1400,9 +2300,16 @@ CXQualType clang_UnaryTransformType_getBaseType(CXUnaryTransformType T) {
   return static_cast<clang::UnaryTransformType *>(T)->getBaseType().getAsOpaquePtr();
 }
 
+CXUTTKind clang_UnaryTransformType_getUTTKind(CXUnaryTransformType T) {
+  return static_cast<CXUTTKind>(static_cast<clang::UnaryTransformType *>(T)->getUTTKind());
+}
+
 // DependentUnaryTransformType
 
 // TagType
+bool clang_TagType_isBeingDefined(CXTagType T) {
+  return static_cast<clang::TagType *>(T)->isBeingDefined();
+}
 CXTagDecl clang_TagType_getDecl(CXTagType T) {
   return static_cast<clang::TagType *>(T)->getDecl();
 }
@@ -1438,6 +2345,40 @@ CXQualType clang_EnumType_desugar(CXEnumType T) {
 }
 
 // AttributedType
+CXAttrKind clang_AttributedType_getAttrKind(CXAttributedType T) {
+  return static_cast<CXAttrKind>(static_cast<clang::AttributedType *>(T)->getAttrKind());
+}
+CXQualType clang_AttributedType_getModifiedType(CXAttributedType T) {
+  return static_cast<clang::AttributedType *>(T)->getModifiedType().getAsOpaquePtr();
+}
+
+CXQualType clang_AttributedType_getEquivalentType(CXAttributedType T) {
+  return static_cast<clang::AttributedType *>(T)->getEquivalentType().getAsOpaquePtr();
+}
+
+bool clang_AttributedType_isSugared(CXAttributedType T) {
+  return static_cast<clang::AttributedType *>(T)->isSugared();
+}
+
+CXQualType clang_AttributedType_desugar(CXAttributedType T) {
+  return static_cast<clang::AttributedType *>(T)->desugar().getAsOpaquePtr();
+}
+
+bool clang_AttributedType_isQualifier(CXAttributedType T) {
+  return static_cast<clang::AttributedType *>(T)->isQualifier();
+}
+
+bool clang_AttributedType_isMSTypeSpec(CXAttributedType T) {
+  return static_cast<clang::AttributedType *>(T)->isMSTypeSpec();
+}
+
+bool clang_AttributedType_isWebAssemblyFuncrefSpec(CXAttributedType T) {
+  return static_cast<clang::AttributedType *>(T)->isWebAssemblyFuncrefSpec();
+}
+
+bool clang_AttributedType_isCallingConv(CXAttributedType T) {
+  return static_cast<clang::AttributedType *>(T)->isCallingConv();
+}
 
 // BTFTagAttributedType
 
@@ -1466,6 +2407,10 @@ CXQualType clang_TemplateTypeParmType_desugar(CXTemplateTypeParmType T) {
   return static_cast<clang::TemplateTypeParmType *>(T)->desugar().getAsOpaquePtr();
 }
 
+CXIdentifierInfo clang_TemplateTypeParmType_getIdentifier(CXTemplateTypeParmType T) {
+  return static_cast<clang::TemplateTypeParmType *>(T)->getIdentifier();
+}
+
 // SubstTemplateTypeParmType
 CXQualType
 clang_SubstTemplateTypeParmType_getReplacementType(CXSubstTemplateTypeParmType T) {
@@ -1486,6 +2431,15 @@ clang_SubstTemplateTypeParmType_getReplacedParameter(CXSubstTemplateTypeParmType
 
 unsigned clang_SubstTemplateTypeParmType_getIndex(CXSubstTemplateTypeParmType T) {
   return static_cast<clang::SubstTemplateTypeParmType *>(T)->getIndex();
+}
+
+bool clang_SubstTemplateTypeParmType_getPackIndex(CXSubstTemplateTypeParmType T,
+                                                  unsigned *Out) {
+  if (auto Idx = static_cast<clang::SubstTemplateTypeParmType *>(T)->getPackIndex()) {
+    *Out = *Idx;
+    return true;
+  }
+  return false;
 }
 
 bool clang_SubstTemplateTypeParmType_isSugared(CXSubstTemplateTypeParmType T) {
@@ -1554,6 +2508,29 @@ bool clang_DeducedType_isDeduced(CXDeducedType T) {
 }
 
 // AutoType
+CXArrayRef clang_AutoType_getTypeConstraintArguments(CXAutoType T) {
+  auto arr = static_cast<clang::AutoType *>(T)->getTypeConstraintArguments();
+  return {arr.data(), arr.size()};
+}
+CXConceptDecl clang_AutoType_getTypeConstraintConcept(CXAutoType T) {
+  return static_cast<clang::AutoType *>(T)->getTypeConstraintConcept();
+}
+
+bool clang_AutoType_isConstrained(CXAutoType T) {
+  return static_cast<clang::AutoType *>(T)->isConstrained();
+}
+
+bool clang_AutoType_isDecltypeAuto(CXAutoType T) {
+  return static_cast<clang::AutoType *>(T)->isDecltypeAuto();
+}
+
+bool clang_AutoType_isGNUAutoType(CXAutoType T) {
+  return static_cast<clang::AutoType *>(T)->isGNUAutoType();
+}
+
+CXAutoTypeKeyword clang_AutoType_getKeyword(CXAutoType T) {
+  return static_cast<CXAutoTypeKeyword>(static_cast<clang::AutoType *>(T)->getKeyword());
+}
 
 // DeducedTemplateSpecializationType
 CXTemplateName clang_DeducedTemplateSpecializationType_getTemplateName(
@@ -1717,6 +2694,25 @@ clang_DependentTemplateSpecializationType_desugar(CXDependentTemplateSpecializat
 }
 
 // PackExpansionType
+CXQualType clang_PackExpansionType_getPattern(CXPackExpansionType T) {
+  return static_cast<clang::PackExpansionType *>(T)->getPattern().getAsOpaquePtr();
+}
+
+bool clang_PackExpansionType_getNumExpansions(CXPackExpansionType T, unsigned *N) {
+  if (auto Num = static_cast<clang::PackExpansionType *>(T)->getNumExpansions()) {
+    *N = *Num;
+    return true;
+  }
+  return false;
+}
+
+bool clang_PackExpansionType_isSugared(CXPackExpansionType T) {
+  return static_cast<clang::PackExpansionType *>(T)->isSugared();
+}
+
+CXQualType clang_PackExpansionType_desugar(CXPackExpansionType T) {
+  return static_cast<clang::PackExpansionType *>(T)->desugar().getAsOpaquePtr();
+}
 
 // AtomicType
 CXQualType clang_AtomicType_getValueType(CXAtomicType T) {
@@ -1731,8 +2727,51 @@ CXQualType clang_AtomicType_desugar(CXAtomicType T) {
   return static_cast<clang::AtomicType *>(T)->desugar().getAsOpaquePtr();
 }
 
+CXElaboratedTypeKeyword clang_TypeWithKeyword_getKeyword(CXTypeWithKeyword T) {
+  return static_cast<CXElaboratedTypeKeyword>(
+      static_cast<clang::TypeWithKeyword *>(T)->getKeyword());
+}
+
+CXElaboratedTypeKeyword clang_TypeWithKeyword_getKeywordForTagTypeKind(CXTagTypeKind Tag) {
+  clang::TagTypeKind K = static_cast<clang::TagTypeKind>(Tag);
+  return static_cast<CXElaboratedTypeKeyword>(
+      clang::TypeWithKeyword::getKeywordForTagTypeKind(K));
+}
+
+CXTagTypeKind
+clang_TypeWithKeyword_getTagTypeKindForKeyword(CXElaboratedTypeKeyword Keyword) {
+  clang::ElaboratedTypeKeyword K = static_cast<clang::ElaboratedTypeKeyword>(Keyword);
+  return static_cast<CXTagTypeKind>(clang::TypeWithKeyword::getTagTypeKindForKeyword(K));
+}
+
+bool clang_TypeWithKeyword_KeywordIsTagTypeKind(CXElaboratedTypeKeyword Keyword) {
+  return clang::TypeWithKeyword::KeywordIsTagTypeKind(
+      static_cast<clang::ElaboratedTypeKeyword>(Keyword));
+}
+
+CXString clang_TypeWithKeyword_getKeywordName(CXElaboratedTypeKeyword Keyword) {
+  llvm::StringRef Name = clang::TypeWithKeyword::getKeywordName(
+      static_cast<clang::ElaboratedTypeKeyword>(Keyword));
+  return extra::makeCXString(Name.str());
+}
+
+CXString clang_TypeWithKeyword_getTagTypeKindName(CXTagTypeKind Kind) {
+  llvm::StringRef Name =
+      clang::TypeWithKeyword::getTagTypeKindName(static_cast<clang::TagTypeKind>(Kind));
+  return extra::makeCXString(Name.str());
+}
+
 // PipeType
 
 // BitIntType
 
 // DependentBitIntType
+// TypeSourceInfo
+CXQualType clang_TypeSourceInfo_getType(CXTypeSourceInfo TSI) {
+  return static_cast<clang::TypeSourceInfo *>(TSI)->getType().getAsOpaquePtr();
+}
+
+void clang_TypeSourceInfo_overrideType(CXTypeSourceInfo TSI, CXQualType T) {
+  static_cast<clang::TypeSourceInfo *>(TSI)->overrideType(
+      clang::QualType::getFromOpaquePtr(T));
+}

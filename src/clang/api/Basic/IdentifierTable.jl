@@ -162,3 +162,145 @@ function isPlaceholder(x::AbstractIdentifierInfo)
     @check_ptrs x
     return clang_IdentifierInfo_isPlaceholder(x)
 end
+
+
+"""
+    getNameStart(x::AbstractIdentifierInfo) -> String
+Return the identifier's name read straight from its interned, NUL-terminated storage.
+"""
+function getNameStart(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return unsafe_string(clang_IdentifierInfo_getNameStart(x))
+end
+
+
+"""
+    setHasMacroDefinition(x::AbstractIdentifierInfo, val::Bool)
+Mark the identifier as currently `#define`d. Setting `true` also latches
+`hadMacroDefinition`; setting `false` clears `isDeprecatedMacro`/`isRestrictExpansion`
+unless the identifier is final.
+"""
+function setHasMacroDefinition(x::AbstractIdentifierInfo, val::Bool)
+    @check_ptrs x
+    return clang_IdentifierInfo_setHasMacroDefinition(x, val)
+end
+
+
+function setIsDeprecatedMacro(x::AbstractIdentifierInfo, val::Bool)
+    @check_ptrs x
+    return clang_IdentifierInfo_setIsDeprecatedMacro(x, val)
+end
+
+function isRestrictExpansion(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return clang_IdentifierInfo_isRestrictExpansion(x)
+end
+
+function setIsRestrictExpansion(x::AbstractIdentifierInfo, val::Bool)
+    @check_ptrs x
+    return clang_IdentifierInfo_setIsRestrictExpansion(x, val)
+end
+
+
+function setIsFinal(x::AbstractIdentifierInfo, val::Bool)
+    @check_ptrs x
+    return clang_IdentifierInfo_setIsFinal(x, val)
+end
+
+
+function hasRevertedTokenIDToIdentifier(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return clang_IdentifierInfo_hasRevertedTokenIDToIdentifier(x)
+end
+
+
+"""
+    getObjCKeywordID(x::AbstractIdentifierInfo) -> Int
+Return the raw `clang::tok::ObjCKeywordKind` value for this identifier; `0` is
+`tok::objc_not_keyword`.
+"""
+function getObjCKeywordID(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return Int(clang_IdentifierInfo_getObjCKeywordID(x))
+end
+
+
+"""
+    getInterestingIdentifierID(x::AbstractIdentifierInfo) -> Int
+Return the raw `clang::tok::InterestingIdentifierKind` value for this identifier; `0` is
+`tok::not_interesting`.
+"""
+function getInterestingIdentifierID(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return Int(clang_IdentifierInfo_getInterestingIdentifierID(x))
+end
+
+"""
+    getObjCOrBuiltinID(x::AbstractIdentifierInfo) -> Int
+Return the packed field backing `getObjCKeywordID`, `getInterestingIdentifierID` and
+`getBuiltinID`; `0` means the identifier is none of them.
+"""
+function getObjCOrBuiltinID(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return Int(clang_IdentifierInfo_getObjCOrBuiltinID(x))
+end
+
+
+function setIsExtensionToken(x::AbstractIdentifierInfo, val::Bool)
+    @check_ptrs x
+    return clang_IdentifierInfo_setIsExtensionToken(x, val)
+end
+
+
+function setIsFutureCompatKeyword(x::AbstractIdentifierInfo, val::Bool)
+    @check_ptrs x
+    return clang_IdentifierInfo_setIsFutureCompatKeyword(x, val)
+end
+
+
+function setIsCPlusPlusOperatorKeyword(x::AbstractIdentifierInfo, val::Bool=true)
+    @check_ptrs x
+    return clang_IdentifierInfo_setIsCPlusPlusOperatorKeyword(x, val)
+end
+
+
+"""
+    isHandleIdentifierCase(x::AbstractIdentifierInfo) -> Bool
+Return `true` if `Preprocessor::HandleIdentifier` must run on tokens of this identifier.
+It is the disjunction of `isPoisoned`, `hasMacroDefinition`, `isExtensionToken`,
+`isFutureCompatKeyword`, `isOutOfDate` and `isModulesImport`.
+"""
+function isHandleIdentifierCase(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return clang_IdentifierInfo_isHandleIdentifierCase(x)
+end
+
+function isFromAST(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return clang_IdentifierInfo_isFromAST(x)
+end
+
+function hasChangedSinceDeserialization(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return clang_IdentifierInfo_hasChangedSinceDeserialization(x)
+end
+
+function isOutOfDate(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return clang_IdentifierInfo_isOutOfDate(x)
+end
+
+function setOutOfDate(x::AbstractIdentifierInfo, ood::Bool)
+    @check_ptrs x
+    return clang_IdentifierInfo_setOutOfDate(x, ood)
+end
+
+function isModulesImport(x::AbstractIdentifierInfo)
+    @check_ptrs x
+    return clang_IdentifierInfo_isModulesImport(x)
+end
+
+function setModulesImport(x::AbstractIdentifierInfo, i::Bool)
+    @check_ptrs x
+    return clang_IdentifierInfo_setModulesImport(x, i)
+end

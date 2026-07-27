@@ -14,12 +14,20 @@ julia --project -e 'using Pkg; Pkg.test()'
 
 # Run a single test file — each test file is self-contained (does its own `using`),
 # but needs the test environment (Test/TOML are not deps of the main project).
-# Requires TestEnv installed in the global environment (`julia -e 'using Pkg; Pkg.add("TestEnv")'`):
-julia --project -e 'using TestEnv; TestEnv.activate(); include("test/lookup.jl")'
+# Requires TestEnv installed in the global environment (`julia -e 'using Pkg; Pkg.add("TestEnv")'`).
+# TestEnv.activate() switches to a temp env whose directory has NO LocalPreferences.toml,
+# so ClangCompiler would silently load libclangex_jll instead of your local build (new
+# symbols then fail at call time and look like C-side bugs) — copy the preference across
+# BEFORE `using ClangCompiler`:
+julia --project -e 'using TestEnv; TestEnv.activate();
+  cp("LocalPreferences.toml", joinpath(dirname(Base.active_project()), "LocalPreferences.toml"); force=true);
+  include("test/lookup.jl")'
 
 # Build the C++ shim library (libclangex) locally after modifying deps/ClangExtra.
 # Writes LocalPreferences.toml so the package loads the local build instead of libclangex_jll.
-julia --project=deps deps/build_local.jl
+# Pass a directory to keep an incremental build tree; without one every run recompiles
+# everything in a fresh tempdir.
+julia --project=deps deps/build_local.jl [build_dir]
 
 # CI variant: only rebuilds if deps/ClangExtra changed since the last libclangex_jll release
 julia --project=deps deps/build_ci.jl
@@ -29,6 +37,29 @@ julia --project=gen gen/generator.jl
 ```
 
 Formatting: JuliaFormatter, YAS style, margin 120 (see `.JuliaFormatter.toml`). `lib/` and `examples/` are excluded from formatting.
+
+### Verifying a local build is the one you are testing
+
+`build_local.jl` installs into a **scratchspace shared by every checkout and worktree**
+(`~/.julia/scratchspaces/06fc9500-.../build`), and wipes it at the start of each run. A build
+started from a different checkout therefore replaces your dylib with one compiled from *its*
+sources — silently. The symptom is `test/abi.jl` reporting bound symbols as missing, or a suite
+that passed minutes ago failing. Check the exported symbol count (it only ever grows within a
+branch) and rebuild from your own worktree if it dropped:
+
+```bash
+nm -gU ~/.julia/scratchspaces/06fc9500-c033-43bc-8ca2-e20da63309d9/build/lib/libclangex.dylib | grep -c " _clang_"
+```
+
+Two more traps when running these commands:
+
+- **Piping hides failures.** `julia ... 2>&1 | tail -20; echo $?` reports *tail's* status. Redirect
+  to a file (`julia ... > log 2>&1; echo $?`) and grep the log.
+- **Grep the log for crashes, not just failures.** A segfault prints `signal 11 (2): Segmentation
+  fault` (or `EXCEPTION_ACCESS_VIOLATION` on Windows) and never the word "Fail"; a libstdc++
+  assertion prints `SIGABRT`. Include `signal|Segmentation|SIGABRT|EXCEPTION` in triage greps.
+- A test file can pass standalone and still crash inside the full suite (different AST state from
+  earlier files). Always run `Pkg.test()` before committing.
 
 ## Architecture
 
@@ -71,4 +102,14 @@ The C-side steps (header + impl + CMake + typedef in CXTypes.h) are covered in `
 
 - The package uses `public` declarations (Julia 1.11+) rather than `export` for its API surface — see `src/ClangCompiler.jl`.
 - Objects wrapping C++ resources need explicit `dispose(x)`; tests and examples follow a create → use → dispose pattern.
-- Test files (`test/types.jl`, `parse.jl`, `lookup.jl`, `traversal.jl`, `execution.jl`) are plain `@testset` files included by `test/runtests.jl`.
+- Test files are plain `@testset` files included by `test/runtests.jl`, laid out to mirror the source tree: whole-package checks in `test/*.jl` (`lint.jl` and `abi.jl` are the meta guards), middle-layer helpers in `test/clang/*.jl`, thin wrappers in `test/clang/api/**` alongside the file they exercise. A new test file must be added to `test/runtests.jl` by hand.
+- CI runs macOS, Linux and Windows on x86_64. Assert the *shape* of anything the host decides
+  — `isa Bool`, `isa Integer`, or a round-trip of a value the test itself set. Sizes and
+  alignments, mangled names of std-typed signatures, ABI-specific layout offsets, module
+  provenance (`isPartOfFramework`), a `Driver`'s LTO mode, and a hand-built `Module`'s initial
+  availability all differ across those runners (or read uninitialized memory), and an equality
+  assertion on one of them turns into a red CI on a platform you did not run locally. This class
+  of bug is invisible to a local single-platform run and to `-fsyntax-only`; only the per-file
+  test run against real AST state catches it, so never skip it before committing. A wrapper
+  whose value comes back outside its own enum (Julia prints `<invalid #N>`) is reading a
+  member with no initializer — that is a UB precondition to restate, not a flaky test.

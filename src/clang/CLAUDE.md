@@ -139,6 +139,43 @@ Return marshalling:
 `@check_ptrs` only asserts non-NULL — it is not a type check; Invariants 1 and 2 are what
 keep the type honest.
 
+### Invariant 3 — preconditions of the wrapped C++ method
+
+Dispatch proves the *receiver's* class; it proves nothing about what the method then does
+with its arguments or with types reached from them. Many Clang accessors are partial: they
+reach a subobject through an unchecked `castAs<T>()`, or dereference the result of a
+`getAs*()` that can return null. Those are undefined behaviour on the wrong input, not a
+null return — and UB here is platform-dependent, so it can pass on macOS and Linux and fault
+only on Windows CI. When wrapping such a method, restate its precondition as an `@assert`
+before the ccall and document it:
+
+```julia
+function getBestDynamicClassType(x::AbstractExpr)
+    @check_ptrs x
+    ty = getTypePtr(getType(x))
+    isPointerType(ty) && (ty = getTypePtr(getPointeeType(ty)))
+    @assert isRecordType(ty) "expression must designate an object of class type"
+    return CXXRecordDecl(clang_Expr_getBestDynamicClassType(x))
+end
+```
+
+How to spot one while wrapping: read the method's body in the pinned header (or its .cpp) —
+`castAs<>`, `->getDecl()`, `*optional`, and `assert(...)` all signal a precondition the C
+shim will not check, because the shim is total and unsafe by contract. Encode it here.
+`clang_CastExpr_getTargetFieldForToUnionCast` (union destination type) and
+`clang_Expr_getBestDynamicClassType` (class or pointer-to-class) are the worked examples in
+the tree.
+
+A second, quieter source of preconditions is a method reading members that have **no default
+initializer** and are filled in only on some configuration path — plain UB, whose symptom is
+platform-dependent (a garbage enum on one host, a clean zero on another, a segfault on a
+third). When the gating condition is not observable through the existing C API, **add the
+one-line accessor that makes it observable** rather than settling for a docstring warning:
+`getBorland(getLangOpts(pp))` exists so `PoisonSEHIdentifiers` can `@assert` instead of
+crashing. Fall back to document-only when there is genuinely no proxy (`getLTOMode` — a
+`Driver` exposes no "arguments processed" flag), and say so in the docstring. See
+`MARSHALLING.md` §13.
+
 ## Registration
 
 Adding a file touches three hand-maintained lists (none are auto-synced):

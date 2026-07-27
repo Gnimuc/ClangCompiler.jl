@@ -17,6 +17,7 @@ include("abstract.jl")
 # AST
 include("AST/APValue.jl")
 include("AST/Attr.jl")
+include("AST/Comment.jl")
 include("AST/ASTConsumer.jl")
 include("AST/ASTContext.jl")
 include("AST/Mangle.jl")
@@ -50,6 +51,7 @@ include("Basic/DiagnosticIDs.jl")
 include("Basic/DiagnosticOptions.jl")
 include("Basic/FileEntry.jl")
 include("Basic/FileManager.jl")
+include("Basic/FileSystemOptions.jl")
 include("Basic/IdentifierTable.jl")
 include("Basic/Module.jl")
 include("Basic/LangOptions.jl")
@@ -66,6 +68,9 @@ include("CodeGen/ModuleBuilder.jl")
 # Frontend
 include("Frontend/CompilerInstance.jl")
 include("Frontend/CompilerInvocation.jl")
+include("Frontend/DependencyOutputOptions.jl")
+include("Frontend/MigratorOptions.jl")
+include("Frontend/PreprocessorOutputOptions.jl")
 include("Frontend/FrontendOptions.jl")
 include("Frontend/TextDiagnosticPrinter.jl")
 
@@ -86,8 +91,17 @@ include("Lex/Token.jl")
 include("Parse/ParseAST.jl")
 include("Parse/Parser.jl")
 
+# Rewrite
+include("Rewrite/Rewriter.jl")
+
+# StaticAnalyzer
+include("StaticAnalyzer/AnalyzerOptions.jl")
+
 # Sema
 include("Sema/DeclSpec.jl")
 include("Sema/Lookup.jl")
 include("Sema/Scope.jl")
 include("Sema/Sema.jl")
+
+# Driver
+include("Driver/Driver.jl")

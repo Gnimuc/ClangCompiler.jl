@@ -75,3 +75,77 @@ CXSourceLocation_ clang_CXXForRangeStmt_getRParenLoc(CXCXXForRangeStmt S) {
   return static_cast<clang::CXXForRangeStmt *>(S)->getRParenLoc().getPtrEncoding();
 }
 
+// CXXForRangeStmt
+CXStmt clang_CXXForRangeStmt_getInit(CXCXXForRangeStmt FRS) {
+  return static_cast<clang::CXXForRangeStmt *>(FRS)->getInit();
+}
+
+CXDeclStmt clang_CXXForRangeStmt_getRangeStmt(CXCXXForRangeStmt FRS) {
+  return static_cast<clang::CXXForRangeStmt *>(FRS)->getRangeStmt();
+}
+
+CXExpr clang_CXXForRangeStmt_getCond(CXCXXForRangeStmt FRS) {
+  return static_cast<clang::CXXForRangeStmt *>(FRS)->getCond();
+}
+
+CXExpr clang_CXXForRangeStmt_getInc(CXCXXForRangeStmt FRS) {
+  return static_cast<clang::CXXForRangeStmt *>(FRS)->getInc();
+}
+
+CXDeclStmt clang_CXXForRangeStmt_getLoopVarStmt(CXCXXForRangeStmt FRS) {
+  return static_cast<clang::CXXForRangeStmt *>(FRS)->getLoopVarStmt();
+}
+
+// CoroutineBodyStmt
+bool clang_CoroutineBodyStmt_hasDependentPromiseType(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->hasDependentPromiseType();
+}
+
+CXCompoundStmt clang_CoroutineBodyStmt_getBody(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->getBody();
+}
+
+CXVarDecl clang_CoroutineBodyStmt_getPromiseDecl(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->getPromiseDecl();
+}
+
+CXStmt clang_CoroutineBodyStmt_getInitSuspendStmt(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->getInitSuspendStmt();
+}
+
+CXStmt clang_CoroutineBodyStmt_getFinalSuspendStmt(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->getFinalSuspendStmt();
+}
+
+CXStmt clang_CoroutineBodyStmt_getExceptionHandler(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->getExceptionHandler();
+}
+
+CXExpr clang_CoroutineBodyStmt_getAllocate(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->getAllocate();
+}
+
+CXExpr clang_CoroutineBodyStmt_getDeallocate(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->getDeallocate();
+}
+
+CXStmt clang_CoroutineBodyStmt_getReturnStmt(CXCoroutineBodyStmt CBS) {
+  return static_cast<clang::CoroutineBodyStmt *>(CBS)->getReturnStmt();
+}
+
+// CoreturnStmt
+CXSourceLocation_ clang_CoreturnStmt_getKeywordLoc(CXCoreturnStmt CRS) {
+  return static_cast<clang::CoreturnStmt *>(CRS)->getKeywordLoc().getPtrEncoding();
+}
+
+CXExpr clang_CoreturnStmt_getOperand(CXCoreturnStmt CRS) {
+  return static_cast<clang::CoreturnStmt *>(CRS)->getOperand();
+}
+
+CXExpr clang_CoreturnStmt_getPromiseCall(CXCoreturnStmt CRS) {
+  return static_cast<clang::CoreturnStmt *>(CRS)->getPromiseCall();
+}
+
+bool clang_CoreturnStmt_isImplicit(CXCoreturnStmt CRS) {
+  return static_cast<clang::CoreturnStmt *>(CRS)->isImplicit();
+}

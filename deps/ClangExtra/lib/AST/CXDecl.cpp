@@ -1,8 +1,14 @@
 #include "clang-ex/AST/CXDecl.h"
+#include "utils.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTContextAllocate.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/TypeLoc.h"
+#include "clang/Basic/LangOptions.h"
+#include "clang/Basic/PartialDiagnostic.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 
 // TranslationUnitDecl
@@ -22,6 +28,17 @@ void clang_TranslationUnitDecl_setAnonymousNamespace(CXTranslationUnitDecl TUD,
 
 CXTranslationUnitDecl clang_TranslationUnitDecl_Create(CXASTContext C) {
   return clang::TranslationUnitDecl::Create(*static_cast<clang::ASTContext *>(C));
+}
+
+// TranslationUnitDecl Cast
+CXDeclContext clang_TranslationUnitDecl_castToDeclContext(CXTranslationUnitDecl TUD) {
+  return clang::TranslationUnitDecl::castToDeclContext(
+      static_cast<clang::TranslationUnitDecl *>(TUD));
+}
+
+CXTranslationUnitDecl clang_TranslationUnitDecl_castFromDeclContext(CXDeclContext DC) {
+  return clang::TranslationUnitDecl::castFromDeclContext(
+      static_cast<clang::DeclContext *>(DC));
 }
 
 // PragmaCommentDecl
@@ -84,6 +101,17 @@ CXExternCContextDecl clang_ExternCContextDecl_Create(CXASTContext C,
                                            static_cast<clang::TranslationUnitDecl *>(TU));
 }
 
+// ExternCContextDecl Cast
+CXDeclContext clang_ExternCContextDecl_castToDeclContext(CXExternCContextDecl ECD) {
+  return clang::ExternCContextDecl::castToDeclContext(
+      static_cast<clang::ExternCContextDecl *>(ECD));
+}
+
+CXExternCContextDecl clang_ExternCContextDecl_castFromDeclContext(CXDeclContext DC) {
+  return clang::ExternCContextDecl::castFromDeclContext(
+      static_cast<clang::DeclContext *>(DC));
+}
+
 // NamedDecl
 CXIdentifierInfo clang_NamedDecl_getIdentifier(CXNamedDecl ND) {
   return static_cast<clang::NamedDecl *>(ND)->getIdentifier();
@@ -120,6 +148,13 @@ bool clang_NamedDecl_isCXXInstanceMember(CXNamedDecl ND) {
   return static_cast<clang::NamedDecl *>(ND)->isCXXInstanceMember();
 }
 
+CXReservedIdentifierStatus clang_NamedDecl_isReserved(CXNamedDecl ND,
+                                                      CXLangOptions LangOpts) {
+  return static_cast<CXReservedIdentifierStatus>(
+      static_cast<clang::NamedDecl *>(ND)->isReserved(
+          *static_cast<clang::LangOptions *>(LangOpts)));
+}
+
 CXLinkage clang_NamedDecl_getLinkageInternal(CXNamedDecl ND) {
   return static_cast<CXLinkage>(static_cast<clang::NamedDecl *>(ND)->getLinkageInternal());
 }
@@ -145,7 +180,26 @@ CXVisibility clang_NamedDecl_getVisibility(CXNamedDecl ND) {
 }
 
 // getLinkageAndVisibility
+
+void clang_NamedDecl_getLinkageAndVisibility(CXNamedDecl ND, CXLinkage *L, CXVisibility *V,
+                                             bool *VisibilityExplicit) {
+  clang::LinkageInfo LV = static_cast<clang::NamedDecl *>(ND)->getLinkageAndVisibility();
+  *L = static_cast<CXLinkage>(LV.getLinkage());
+  *V = static_cast<CXVisibility>(LV.getVisibility());
+  *VisibilityExplicit = LV.isVisibilityExplicit();
+}
 // getExplicitVisibility
+
+bool clang_NamedDecl_getExplicitVisibility(CXNamedDecl ND, bool ForType, CXVisibility *V) {
+  std::optional<clang::Visibility> Vis =
+      static_cast<clang::NamedDecl *>(ND)->getExplicitVisibility(
+          ForType ? clang::NamedDecl::VisibilityForType
+                  : clang::NamedDecl::VisibilityForValue);
+  if (!Vis)
+    return false;
+  *V = static_cast<CXVisibility>(*Vis);
+  return true;
+}
 
 bool clang_NamedDecl_isLinkageValid(CXNamedDecl ND) {
   return static_cast<clang::NamedDecl *>(ND)->isLinkageValid();
@@ -164,6 +218,47 @@ CXNamedDecl clang_NamedDecl_getMostRecentDecl(CXNamedDecl ND) {
 }
 
 // getObjCFStringFormattingFamily
+
+CXObjCStringFormatFamily clang_NamedDecl_getObjCFStringFormattingFamily(CXNamedDecl ND) {
+  return static_cast<CXObjCStringFormatFamily>(
+      static_cast<clang::NamedDecl *>(ND)->getObjCFStringFormattingFamily());
+}
+
+CXString clang_NamedDecl_getNameAsString(CXNamedDecl ND) {
+  return extra::makeCXString(static_cast<clang::NamedDecl *>(ND)->getNameAsString());
+}
+
+CXString clang_NamedDecl_printName(CXNamedDecl ND) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::NamedDecl *>(ND)->printName(OS);
+  return extra::makeCXString(S);
+}
+
+CXString clang_NamedDecl_printNestedNameSpecifier(CXNamedDecl ND) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::NamedDecl *>(ND)->printNestedNameSpecifier(OS);
+  return extra::makeCXString(S);
+}
+
+CXString clang_NamedDecl_getQualifiedNameAsString(CXNamedDecl ND) {
+  return extra::makeCXString(
+      static_cast<clang::NamedDecl *>(ND)->getQualifiedNameAsString());
+}
+
+CXString clang_NamedDecl_getNameForDiagnostic(CXNamedDecl ND, bool Qualified) {
+  auto *D = static_cast<clang::NamedDecl *>(ND);
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  D->getNameForDiagnostic(OS, D->getASTContext().getPrintingPolicy(), Qualified);
+  return extra::makeCXString(S);
+}
+
+bool clang_NamedDecl_isPlaceholderVar(CXNamedDecl ND, CXLangOptions LangOpts) {
+  return static_cast<clang::NamedDecl *>(ND)->isPlaceholderVar(
+      *static_cast<clang::LangOptions *>(LangOpts));
+}
 
 // NamedDecl Cast
 CXTypeDecl clang_NamedDecl_castToTypeDecl(CXNamedDecl ND) {
@@ -222,6 +317,10 @@ bool clang_LabelDecl_isResolvedMSAsmLabel(CXLabelDecl LD) {
 
 // setMSAsmLabel
 
+void clang_LabelDecl_setMSAsmLabel(CXLabelDecl LD, const char *Name) {
+  static_cast<clang::LabelDecl *>(LD)->setMSAsmLabel(llvm::StringRef(Name));
+}
+
 const char *clang_LabelDecl_getMSAsmLabel(CXLabelDecl LD) {
   return static_cast<clang::LabelDecl *>(LD)->getMSAsmLabel().data();
 }
@@ -231,6 +330,20 @@ void clang_LabelDecl_setMSAsmLabelResolved(CXLabelDecl LD) {
 }
 
 // NamespaceDecl
+bool clang_NamespaceDecl_isNested(CXNamespaceDecl ND) {
+  return static_cast<clang::NamespaceDecl *>(ND)->isNested();
+}
+
+void clang_NamespaceDecl_setNested(CXNamespaceDecl ND, bool Nested) {
+  static_cast<clang::NamespaceDecl *>(ND)->setNested(Nested);
+}
+
+bool clang_NamespaceDecl_isRedundantInlineQualifierFor(CXNamespaceDecl ND,
+                                                       CXDeclarationName Name) {
+  return static_cast<clang::NamespaceDecl *>(ND)->isRedundantInlineQualifierFor(
+      clang::DeclarationName::getFromOpaquePtr(Name));
+}
+
 // CXNamespaceDecl clang_NamespaceDecl_Create(CXASTContext C, CXDeclContext DC, bool Inline,
 //                                            CXSourceLocation_ StartLoc,
 //                                            CXSourceLocation_ IdLoc, CXIdentifierInfo Id,
@@ -242,6 +355,18 @@ void clang_LabelDecl_setMSAsmLabelResolved(CXLabelDecl LD) {
 //                                       static_cast<clang::IdentifierInfo *>(Id),
 //                                       static_cast<clang::NamespaceDecl *>(PrevDecl));
 // }
+
+CXNamespaceDecl clang_NamespaceDecl_Create(CXASTContext C, CXDeclContext DC, bool Inline,
+                                           CXSourceLocation_ StartLoc,
+                                           CXSourceLocation_ IdLoc, CXIdentifierInfo Id,
+                                           CXNamespaceDecl PrevDecl, bool Nested) {
+  return clang::NamespaceDecl::Create(
+      *static_cast<clang::ASTContext *>(C), static_cast<clang::DeclContext *>(DC), Inline,
+      clang::SourceLocation::getFromPtrEncoding(StartLoc),
+      clang::SourceLocation::getFromPtrEncoding(IdLoc),
+      static_cast<clang::IdentifierInfo *>(Id),
+      static_cast<clang::NamespaceDecl *>(PrevDecl), Nested);
+}
 
 CXNamespaceDecl clang_NamespaceDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
   return clang::NamespaceDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C), ID);
@@ -305,7 +430,24 @@ void clang_NamespaceDecl_setRBraceLoc(CXNamespaceDecl ND, CXSourceLocation_ Loc)
       clang::SourceLocation::getFromPtrEncoding(Loc));
 }
 
+// NamespaceDecl Cast
+CXDeclContext clang_NamespaceDecl_castToDeclContext(CXNamespaceDecl ND) {
+  return clang::NamespaceDecl::castToDeclContext(static_cast<clang::NamespaceDecl *>(ND));
+}
+
+CXNamespaceDecl clang_NamespaceDecl_castFromDeclContext(CXDeclContext DC) {
+  return clang::NamespaceDecl::castFromDeclContext(static_cast<clang::DeclContext *>(DC));
+}
+
 // ValueDecl
+bool clang_ValueDecl_isInitCapture(CXValueDecl VD) {
+  return static_cast<clang::ValueDecl *>(VD)->isInitCapture();
+}
+
+CXVarDecl clang_ValueDecl_getPotentiallyDecomposedVarDecl(CXValueDecl VD) {
+  return static_cast<clang::ValueDecl *>(VD)->getPotentiallyDecomposedVarDecl();
+}
+
 CXQualType clang_ValueDecl_getType(CXValueDecl VD) {
   return static_cast<clang::ValueDecl *>(VD)->getType().getAsOpaquePtr();
 }
@@ -320,6 +462,11 @@ bool clang_ValueDecl_isWeak(CXValueDecl VD) {
 }
 
 // DeclaratorDecl
+CXSourceRange_ clang_DeclaratorDecl_getSourceRange(CXDeclaratorDecl DD) {
+  clang::SourceRange R = static_cast<clang::DeclaratorDecl *>(DD)->getSourceRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
 CXTypeSourceInfo clang_DeclaratorDecl_getTypeSourceInfo(CXDeclaratorDecl DD) {
   return static_cast<clang::DeclaratorDecl *>(DD)->getTypeSourceInfo();
 }
@@ -374,6 +521,17 @@ CXTemplateParameterList clang_DeclaratorDecl_getTemplateParameterList(CXDeclarat
 
 // setTemplateParameterListsInfo
 
+void clang_DeclaratorDecl_setTemplateParameterListsInfo(CXDeclaratorDecl DD, CXASTContext C,
+                                                        CXTemplateParameterList *TPLists,
+                                                        unsigned NumTPLists) {
+  llvm::SmallVector<clang::TemplateParameterList *, 4> Lists;
+  Lists.reserve(NumTPLists);
+  for (unsigned I = 0; I != NumTPLists; ++I)
+    Lists.push_back(static_cast<clang::TemplateParameterList *>(TPLists[I]));
+  static_cast<clang::DeclaratorDecl *>(DD)->setTemplateParameterListsInfo(
+      *static_cast<clang::ASTContext *>(C), Lists);
+}
+
 CXSourceLocation_ clang_DeclaratorDecl_getTypeSpecStartLoc(CXDeclaratorDecl DD) {
   return static_cast<clang::DeclaratorDecl *>(DD)->getTypeSpecStartLoc().getPtrEncoding();
 }
@@ -383,6 +541,11 @@ CXSourceLocation_ clang_DeclaratorDecl_getTypeSpecEndLoc(CXDeclaratorDecl DD) {
 }
 
 // VarDecl
+const char *clang_VarDecl_getStorageClassSpecifierString(CXStorageClass SC) {
+  return clang::VarDecl::getStorageClassSpecifierString(
+      static_cast<clang::StorageClass>(SC));
+}
+
 CXVarDecl clang_VarDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ StartLoc,
                                CXSourceLocation_ IdLoc, CXIdentifierInfo Id, CXQualType T,
                                CXTypeSourceInfo TInfo, CXStorageClass S) {
@@ -424,6 +587,10 @@ CXThreadStorageClassSpecifier clang_VarDecl_getTSCSpec(CXVarDecl VD) {
 }
 
 // getTLSKind
+
+CXVarDecl_TLSKind clang_VarDecl_getTLSKind(CXVarDecl VD) {
+  return static_cast<CXVarDecl_TLSKind>(static_cast<clang::VarDecl *>(VD)->getTLSKind());
+}
 
 bool clang_VarDecl_hasLocalStorage(CXVarDecl VD) {
   return static_cast<clang::VarDecl *>(VD)->hasLocalStorage();
@@ -486,6 +653,19 @@ CXVarDecl clang_VarDecl_getCanonicalDecl(CXVarDecl VD) {
 // isThisDeclarationADefinition
 // hasDefinition
 
+CXVarDecl_DefinitionKind clang_VarDecl_isThisDeclarationADefinition(CXVarDecl VD,
+                                                                    CXASTContext C) {
+  return static_cast<CXVarDecl_DefinitionKind>(
+      static_cast<clang::VarDecl *>(VD)->isThisDeclarationADefinition(
+          *static_cast<clang::ASTContext *>(C)));
+}
+
+CXVarDecl_DefinitionKind clang_VarDecl_hasDefinition(CXVarDecl VD, CXASTContext C) {
+  return static_cast<CXVarDecl_DefinitionKind>(
+      static_cast<clang::VarDecl *>(VD)->hasDefinition(
+          *static_cast<clang::ASTContext *>(C)));
+}
+
 CXVarDecl clang_VarDecl_getActingDefinition(CXVarDecl VD) {
   return static_cast<clang::VarDecl *>(VD)->getActingDefinition();
 }
@@ -547,7 +727,17 @@ CXAPValue clang_VarDecl_evaluateValue(CXVarDecl VD) {
 }
 
 // getEvaluatedValue
+
+CXAPValue clang_VarDecl_getEvaluatedValue(CXVarDecl VD) {
+  return static_cast<clang::VarDecl *>(VD)->getEvaluatedValue();
+}
+
 // evaluateDestruction
+
+bool clang_VarDecl_evaluateDestruction(CXVarDecl VD) {
+  llvm::SmallVector<clang::PartialDiagnosticAt, 8> Notes;
+  return static_cast<clang::VarDecl *>(VD)->evaluateDestruction(Notes);
+}
 
 bool clang_VarDecl_hasConstantInitialization(CXVarDecl VD) {
   return static_cast<clang::VarDecl *>(VD)->hasConstantInitialization();
@@ -559,8 +749,24 @@ bool clang_VarDecl_hasICEInitializer(CXVarDecl VD, CXASTContext Context) {
 }
 
 // checkForConstantInitialization
+
+bool clang_VarDecl_checkForConstantInitialization(CXVarDecl VD) {
+  llvm::SmallVector<clang::PartialDiagnosticAt, 8> Notes;
+  return static_cast<clang::VarDecl *>(VD)->checkForConstantInitialization(Notes);
+}
+
 // setInitStyle
 // getInitStyle
+
+void clang_VarDecl_setInitStyle(CXVarDecl VD, CXVarDecl_InitializationStyle Style) {
+  static_cast<clang::VarDecl *>(VD)->setInitStyle(
+      static_cast<clang::VarDecl::InitializationStyle>(Style));
+}
+
+CXVarDecl_InitializationStyle clang_VarDecl_getInitStyle(CXVarDecl VD) {
+  return static_cast<CXVarDecl_InitializationStyle>(
+      static_cast<clang::VarDecl *>(VD)->getInitStyle());
+}
 
 bool clang_VarDecl_isDirectInit(CXVarDecl VD) {
   return static_cast<clang::VarDecl *>(VD)->isDirectInit();
@@ -695,6 +901,14 @@ CXSourceLocation_ clang_VarDecl_getPointOfInstantiation(CXVarDecl VD) {
 
 // getMemberSpecializationInfo
 
+bool clang_VarDecl_hasDependentAlignment(CXVarDecl VD) {
+  return static_cast<clang::VarDecl *>(VD)->hasDependentAlignment();
+}
+
+CXMemberSpecializationInfo clang_VarDecl_getMemberSpecializationInfo(CXVarDecl VD) {
+  return static_cast<clang::VarDecl *>(VD)->getMemberSpecializationInfo();
+}
+
 void clang_VarDecl_setTemplateSpecializationKind(CXVarDecl VD,
                                                  CXTemplateSpecializationKind TSK,
                                                  CXSourceLocation_ PointOfInstantiation) {
@@ -730,6 +944,23 @@ bool clang_VarDecl_isNoDestroy(CXVarDecl VD, CXASTContext AST) {
 
 // needsDestruction
 
+CXDestructionKind clang_VarDecl_needsDestruction(CXVarDecl VD, CXASTContext Ctx) {
+  return static_cast<CXDestructionKind>(
+      static_cast<clang::VarDecl *>(VD)->needsDestruction(
+          *static_cast<clang::ASTContext *>(Ctx)));
+}
+
+bool clang_VarDecl_hasFlexibleArrayInit(CXVarDecl VD, CXASTContext Ctx) {
+  return static_cast<clang::VarDecl *>(VD)->hasFlexibleArrayInit(
+      *static_cast<clang::ASTContext *>(Ctx));
+}
+
+int64_t clang_VarDecl_getFlexibleArrayInitChars(CXVarDecl VD, CXASTContext Ctx) {
+  return static_cast<clang::VarDecl *>(VD)
+      ->getFlexibleArrayInitChars(*static_cast<clang::ASTContext *>(Ctx))
+      .getQuantity();
+}
+
 // ImplicitParamDecl
 CXImplicitParamDecl clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext DC,
                                                    CXSourceLocation_ IdLoc,
@@ -754,6 +985,11 @@ CXImplicitParamKind clang_ImplicitParamDecl_getParameterKind(CXImplicitParamDecl
 }
 
 // ParmVarDecl
+CXSourceRange_ clang_ParmVarDecl_getSourceRange(CXParmVarDecl PVD) {
+  clang::SourceRange R = static_cast<clang::ParmVarDecl *>(PVD)->getSourceRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
 CXParmVarDecl clang_ParmVarDecl_Create(CXASTContext C, CXDeclContext DC,
                                        CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
                                        CXIdentifierInfo Id, CXQualType T,
@@ -798,7 +1034,37 @@ unsigned clang_ParmVarDecl_getFunctionScopeIndex(CXParmVarDecl PVD) {
 }
 
 // getObjCDeclQualifier
+
+CXObjCDeclQualifier clang_ParmVarDecl_getObjCDeclQualifier(CXParmVarDecl PVD) {
+  return static_cast<CXObjCDeclQualifier>(
+      static_cast<clang::ParmVarDecl *>(PVD)->getObjCDeclQualifier());
+}
 // setObjCDeclQualifier
+
+void clang_ParmVarDecl_setObjCDeclQualifier(CXParmVarDecl PVD, CXObjCDeclQualifier QTVal) {
+  static_cast<clang::ParmVarDecl *>(PVD)->setObjCDeclQualifier(
+      static_cast<clang::Decl::ObjCDeclQualifier>(QTVal));
+}
+
+unsigned clang_ParmVarDecl_getMaxFunctionScopeDepth(void) {
+  return clang::ParmVarDecl::getMaxFunctionScopeDepth();
+}
+
+bool clang_ParmVarDecl_isExplicitObjectParameter(CXParmVarDecl PVD) {
+  return static_cast<clang::ParmVarDecl *>(PVD)->isExplicitObjectParameter();
+}
+
+void clang_ParmVarDecl_setExplicitObjectParameterLoc(CXParmVarDecl PVD,
+                                                     CXSourceLocation_ Loc) {
+  static_cast<clang::ParmVarDecl *>(PVD)->setExplicitObjectParameterLoc(
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+CXSourceLocation_ clang_ParmVarDecl_getExplicitObjectParamThisLoc(CXParmVarDecl PVD) {
+  return static_cast<clang::ParmVarDecl *>(PVD)
+      ->getExplicitObjectParamThisLoc()
+      .getPtrEncoding();
+}
 
 bool clang_ParmVarDecl_isKNRPromoted(CXParmVarDecl PVD) {
   return static_cast<clang::ParmVarDecl *>(PVD)->isKNRPromoted();
@@ -893,6 +1159,81 @@ CXDeclarationNameInfo clang_FunctionDecl_getNameInfo(CXFunctionDecl FD) {
 // getNameInfo
 // getNameForDiagnostic
 
+// helper: isReplaceableGlobalAllocationFunction with its out-params exposed.
+bool clang_FunctionDecl_getReplaceableGlobalAllocationFunctionInfo(
+    CXFunctionDecl FD, bool *HasAlignmentParam, unsigned *AlignmentParam, bool *IsNothrow) {
+  std::optional<unsigned> Alignment;
+  bool Nothrow = false;
+  bool Replaceable = static_cast<clang::FunctionDecl *>(FD)
+                         ->isReplaceableGlobalAllocationFunction(&Alignment, &Nothrow);
+  *HasAlignmentParam = Alignment.has_value();
+  *AlignmentParam = Alignment.value_or(0);
+  *IsNothrow = Nothrow;
+  return Replaceable;
+}
+
+CXSourceLocation_ clang_FunctionDecl_getDefaultLoc(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->getDefaultLoc().getPtrEncoding();
+}
+
+void clang_FunctionDecl_setDefaultLoc(CXFunctionDecl FD, CXSourceLocation_ NewLoc) {
+  static_cast<clang::FunctionDecl *>(FD)->setDefaultLoc(
+      clang::SourceLocation::getFromPtrEncoding(NewLoc));
+}
+
+bool clang_FunctionDecl_isIneligibleOrNotSelected(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->isIneligibleOrNotSelected();
+}
+
+void clang_FunctionDecl_setIneligibleOrNotSelected(CXFunctionDecl FD, bool II) {
+  static_cast<clang::FunctionDecl *>(FD)->setIneligibleOrNotSelected(II);
+}
+
+void clang_FunctionDecl_setBodyContainsImmediateEscalatingExpressions(CXFunctionDecl FD,
+                                                                      bool Set) {
+  static_cast<clang::FunctionDecl *>(FD)
+      ->setBodyContainsImmediateEscalatingExpressions(Set);
+}
+
+bool clang_FunctionDecl_BodyContainsImmediateEscalatingExpressions(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)
+      ->BodyContainsImmediateEscalatingExpressions();
+}
+
+bool clang_FunctionDecl_isImmediateEscalating(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->isImmediateEscalating();
+}
+
+bool clang_FunctionDecl_isImmediateFunction(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->isImmediateFunction();
+}
+
+void clang_FunctionDecl_setFriendConstraintRefersToEnclosingTemplate(CXFunctionDecl FD,
+                                                                     bool V) {
+  static_cast<clang::FunctionDecl *>(FD)->setFriendConstraintRefersToEnclosingTemplate(V);
+}
+
+bool clang_FunctionDecl_FriendConstraintRefersToEnclosingTemplate(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)
+      ->FriendConstraintRefersToEnclosingTemplate();
+}
+
+bool clang_FunctionDecl_isMemberLikeConstrainedFriend(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->isMemberLikeConstrainedFriend();
+}
+
+bool clang_FunctionDecl_isTargetClonesMultiVersion(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->isTargetClonesMultiVersion();
+}
+
+bool clang_FunctionDecl_UsesFPIntrin(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->UsesFPIntrin();
+}
+
+void clang_FunctionDecl_setUsesFPIntrin(CXFunctionDecl FD, bool I) {
+  static_cast<clang::FunctionDecl *>(FD)->setUsesFPIntrin(I);
+}
+
 void clang_FunctionDecl_setRangeEnd(CXFunctionDecl FD, CXSourceLocation_ Loc) {
   static_cast<clang::FunctionDecl *>(FD)->setRangeEnd(
       clang::SourceLocation::getFromPtrEncoding(Loc));
@@ -960,6 +1301,47 @@ void clang_FunctionDecl_setDefaultedFunctionInfo(
     CXFunctionDecl FD, CXFunctionDecl_DefaultedFunctionInfo Info) {
   static_cast<clang::FunctionDecl *>(FD)->setDefaultedFunctionInfo(
       static_cast<clang::FunctionDecl::DefaultedFunctionInfo *>(Info));
+}
+
+CXFunctionDecl_DefaultedFunctionInfo
+clang_FunctionDecl_getDefaultedFunctionInfo(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->getDefaultedFunctionInfo();
+}
+
+// FunctionDecl::DefaultedFunctionInfo
+CXFunctionDecl_DefaultedFunctionInfo clang_FunctionDecl_DefaultedFunctionInfo_Create(
+    CXASTContext C, CXNamedDecl *Decls, CXAccessSpecifier *Accesses, unsigned NumLookups) {
+  llvm::SmallVector<clang::DeclAccessPair, 4> Lookups;
+  Lookups.reserve(NumLookups);
+  for (unsigned I = 0; I != NumLookups; ++I)
+    Lookups.push_back(
+        clang::DeclAccessPair::make(static_cast<clang::NamedDecl *>(Decls[I]),
+                                    static_cast<clang::AccessSpecifier>(Accesses[I])));
+  return clang::FunctionDecl::DefaultedFunctionInfo::Create(
+      *static_cast<clang::ASTContext *>(C), Lookups);
+}
+
+unsigned clang_FunctionDecl_DefaultedFunctionInfo_getNumUnqualifiedLookups(
+    CXFunctionDecl_DefaultedFunctionInfo Info) {
+  return static_cast<unsigned>(
+      static_cast<clang::FunctionDecl::DefaultedFunctionInfo *>(Info)
+          ->getUnqualifiedLookups()
+          .size());
+}
+
+CXNamedDecl clang_FunctionDecl_DefaultedFunctionInfo_getUnqualifiedLookupDecl(
+    CXFunctionDecl_DefaultedFunctionInfo Info, unsigned i) {
+  return static_cast<clang::FunctionDecl::DefaultedFunctionInfo *>(Info)
+      ->getUnqualifiedLookups()[i]
+      .getDecl();
+}
+
+CXAccessSpecifier clang_FunctionDecl_DefaultedFunctionInfo_getUnqualifiedLookupAccess(
+    CXFunctionDecl_DefaultedFunctionInfo Info, unsigned i) {
+  return static_cast<CXAccessSpecifier>(
+      static_cast<clang::FunctionDecl::DefaultedFunctionInfo *>(Info)
+          ->getUnqualifiedLookups()[i]
+          .getAccess());
 }
 
 bool clang_FunctionDecl_isVariadic(CXFunctionDecl FD) {
@@ -1196,6 +1578,19 @@ bool clang_FunctionDecl_isTargetMultiVersion(CXFunctionDecl FD) {
 
 // getAssociatedConstraints
 
+unsigned clang_FunctionDecl_getNumAssociatedConstraints(CXFunctionDecl FD) {
+  llvm::SmallVector<const clang::Expr *, 4> AC;
+  static_cast<clang::FunctionDecl *>(FD)->getAssociatedConstraints(AC);
+  return AC.size();
+}
+
+void clang_FunctionDecl_getAssociatedConstraints(CXFunctionDecl FD, CXExpr *Buf) {
+  llvm::SmallVector<const clang::Expr *, 4> AC;
+  static_cast<clang::FunctionDecl *>(FD)->getAssociatedConstraints(AC);
+  for (unsigned I = 0; I < AC.size(); ++I)
+    Buf[I] = const_cast<clang::Expr *>(AC[I]);
+}
+
 void clang_FunctionDecl_setPreviousDeclaration(CXFunctionDecl FD, CXFunctionDecl PrevDecl) {
   static_cast<clang::FunctionDecl *>(FD)->setPreviousDeclaration(
       static_cast<clang::FunctionDecl *>(PrevDecl));
@@ -1210,6 +1605,24 @@ unsigned clang_FunctionDecl_getBuiltinID(CXFunctionDecl FD) {
 }
 
 // parameters
+
+// setParams (private in clang 18 — only Sema/deserialization may set params)
+
+unsigned clang_FunctionDecl_getMinRequiredExplicitArguments(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->getMinRequiredExplicitArguments();
+}
+
+bool clang_FunctionDecl_hasCXXExplicitFunctionObjectParameter(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->hasCXXExplicitFunctionObjectParameter();
+}
+
+unsigned clang_FunctionDecl_getNumNonObjectParams(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->getNumNonObjectParams();
+}
+
+CXParmVarDecl clang_FunctionDecl_getNonObjectParameter(CXFunctionDecl FD, unsigned I) {
+  return static_cast<clang::FunctionDecl *>(FD)->getNonObjectParameter(I);
+}
 
 unsigned clang_FunctionDecl_getNumParams(CXFunctionDecl FD) {
   return static_cast<clang::FunctionDecl *>(FD)->getNumParams();
@@ -1230,6 +1643,11 @@ bool clang_FunctionDecl_hasOneParamOrDefaultArgs(CXFunctionDecl FD) {
 }
 
 // getFunctionTypeLoc
+
+CXTypeLoc clang_FunctionDecl_getFunctionTypeLoc(CXFunctionDecl FD) {
+  return new clang::TypeLoc( // NOLINT(*-owning-memory)
+      static_cast<clang::FunctionDecl *>(FD)->getFunctionTypeLoc());
+}
 
 CXQualType clang_FunctionDecl_getReturnType(CXFunctionDecl FD) {
   return static_cast<clang::FunctionDecl *>(FD)->getReturnType().getAsOpaquePtr();
@@ -1318,6 +1736,11 @@ bool clang_FunctionDecl_isOverloadedOperator(CXFunctionDecl FD) {
 
 // getOverloadedOperator
 
+CXOverloadedOperatorKind clang_FunctionDecl_getOverloadedOperator(CXFunctionDecl FD) {
+  return static_cast<CXOverloadedOperatorKind>(
+      static_cast<clang::FunctionDecl *>(FD)->getOverloadedOperator());
+}
+
 CXIdentifierInfo clang_FunctionDecl_getLiteralIdentifier(CXFunctionDecl FD) {
   return const_cast<clang::IdentifierInfo *>(
       static_cast<clang::FunctionDecl *>(FD)->getLiteralIdentifier());
@@ -1396,6 +1819,15 @@ clang_FunctionDecl_getTemplateSpecializationArgsAsWritten(CXFunctionDecl FD) {
 // setFunctionTemplateSpecialization
 // setDependentTemplateSpecialization
 
+CXFunctionDecl clang_FunctionDecl_getInstantiatedFromDecl(CXFunctionDecl FD) {
+  return static_cast<clang::FunctionDecl *>(FD)->getInstantiatedFromDecl();
+}
+
+void clang_FunctionDecl_setInstantiatedFromDecl(CXFunctionDecl FD, CXFunctionDecl FD2) {
+  static_cast<clang::FunctionDecl *>(FD)->setInstantiatedFromDecl(
+      static_cast<clang::FunctionDecl *>(FD2));
+}
+
 CXDependentFunctionTemplateSpecializationInfo
 clang_FunctionDecl_getDependentSpecializationInfo(CXFunctionDecl FD) {
   return static_cast<clang::FunctionDecl *>(FD)->getDependentSpecializationInfo();
@@ -1438,7 +1870,24 @@ unsigned clang_FunctionDecl_getODRHash(CXFunctionDecl FD) {
   return static_cast<clang::FunctionDecl *>(FD)->getODRHash();
 }
 
+// FunctionDecl Cast
+CXDeclContext clang_FunctionDecl_castToDeclContext(CXFunctionDecl FD) {
+  return clang::FunctionDecl::castToDeclContext(static_cast<clang::FunctionDecl *>(FD));
+}
+
+CXFunctionDecl clang_FunctionDecl_castFromDeclContext(CXDeclContext DC) {
+  return clang::FunctionDecl::castFromDeclContext(static_cast<clang::DeclContext *>(DC));
+}
+
 // FieldDecl
+bool clang_FieldDecl_isPotentiallyOverlapping(CXFieldDecl FD) {
+  return static_cast<clang::FieldDecl *>(FD)->isPotentiallyOverlapping();
+}
+
+bool clang_FieldDecl_hasNonNullInClassInitializer(CXFieldDecl FD) {
+  return static_cast<clang::FieldDecl *>(FD)->hasNonNullInClassInitializer();
+}
+
 CXFieldDecl clang_FieldDecl_Create(CXASTContext C, CXDeclContext DC,
                                    CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
                                    CXIdentifierInfo I, CXQualType T, CXTypeSourceInfo TInfo,
@@ -1578,11 +2027,24 @@ CXExpr clang_EnumConstantDecl_getInitExpr(CXEnumConstantDecl ECD) {
 
 // getInitVal
 
+LLVMGenericValueRef clang_EnumConstantDecl_getInitVal(CXEnumConstantDecl ECD) {
+  auto *GV = new llvm::GenericValue; // NOLINT(*-owning-memory)
+  GV->IntVal = static_cast<clang::EnumConstantDecl *>(ECD)->getInitVal();
+  return reinterpret_cast<LLVMGenericValueRef>(GV);
+}
+
 void clang_EnumConstantDecl_setInitExpr(CXEnumConstantDecl ECD, CXExpr E) {
   static_cast<clang::EnumConstantDecl *>(ECD)->setInitExpr(static_cast<clang::Expr *>(E));
 }
 
 // setInitVal
+
+void clang_EnumConstantDecl_setInitVal(CXEnumConstantDecl ECD, CXASTContext C,
+                                       LLVMGenericValueRef V, bool IsUnsigned) {
+  auto *GV = reinterpret_cast<llvm::GenericValue *>(V);
+  static_cast<clang::EnumConstantDecl *>(ECD)->setInitVal(
+      *static_cast<const clang::ASTContext *>(C), llvm::APSInt(GV->IntVal, IsUnsigned));
+}
 
 CXSourceRange_ clang_EnumConstantDecl_getSourceRange(CXEnumConstantDecl ECD) {
   auto rng = static_cast<clang::EnumConstantDecl *>(ECD)->getSourceRange();
@@ -1600,6 +2062,24 @@ long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD
 }
 
 // IndirectFieldDecl
+CXIndirectFieldDecl clang_IndirectFieldDecl_Create(CXASTContext C, CXDeclContext DC,
+                                                   CXSourceLocation_ L,
+                                                   CXIdentifierInfo Id, CXQualType T,
+                                                   CXNamedDecl *Chain,
+                                                   unsigned ChainSize) {
+  auto &Ctx = *static_cast<clang::ASTContext *>(C);
+  // IndirectFieldDecl stores the chain by reference (NamedDecl **Chaining), so
+  // it must live in the ASTContext arena, not in a shim-local buffer.
+  auto **CH = new (Ctx) clang::NamedDecl *[ChainSize];
+  for (unsigned I = 0; I < ChainSize; ++I)
+    CH[I] = static_cast<clang::NamedDecl *>(Chain[I]);
+  return clang::IndirectFieldDecl::Create(
+      Ctx, static_cast<clang::DeclContext *>(DC),
+      clang::SourceLocation::getFromPtrEncoding(L),
+      static_cast<clang::IdentifierInfo *>(Id), clang::QualType::getFromOpaquePtr(T),
+      llvm::MutableArrayRef<clang::NamedDecl *>(CH, ChainSize));
+}
+
 CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C,
                                                                unsigned ID) {
   return clang::IndirectFieldDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C),
@@ -1900,12 +2380,49 @@ CXTemplateParameterList clang_TagDecl_getTemplateParameterList(CXTagDecl TD, uns
 
 // setTemplateParameterListsInfo
 
+void clang_TagDecl_setTemplateParameterListsInfo(CXTagDecl TD, CXASTContext C,
+                                                 CXTemplateParameterList *TPLists,
+                                                 unsigned NumTPLists) {
+  llvm::SmallVector<clang::TemplateParameterList *, 4> Lists;
+  Lists.reserve(NumTPLists);
+  for (unsigned I = 0; I != NumTPLists; ++I)
+    Lists.push_back(static_cast<clang::TemplateParameterList *>(TPLists[I]));
+  static_cast<clang::TagDecl *>(TD)->setTemplateParameterListsInfo(
+      *static_cast<clang::ASTContext *>(C), Lists);
+}
+
 // TagDecl Cast
+bool clang_TagDecl_isThisDeclarationADemotedDefinition(CXTagDecl TD) {
+  return static_cast<clang::TagDecl *>(TD)->isThisDeclarationADemotedDefinition();
+}
+
+void clang_TagDecl_demoteThisDefinitionToDeclaration(CXTagDecl TD) {
+  static_cast<clang::TagDecl *>(TD)->demoteThisDefinitionToDeclaration();
+}
+
 CXDeclContext clang_TagDecl_castToDeclContext(CXTagDecl TD) {
   return llvm::dyn_cast_or_null<clang::DeclContext>(static_cast<clang::TagDecl *>(TD));
 }
 
 // EnumDecl
+CXSourceRange_ clang_EnumDecl_getSourceRange(CXEnumDecl ED) {
+  clang::SourceRange R = static_cast<clang::EnumDecl *>(ED)->getSourceRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+void clang_EnumDecl_getValueRange(CXEnumDecl ED, LLVMGenericValueRef *Max,
+                                  LLVMGenericValueRef *Min) {
+  llvm::APInt MaxVal;
+  llvm::APInt MinVal;
+  static_cast<clang::EnumDecl *>(ED)->getValueRange(MaxVal, MinVal);
+  auto *GVMax = new llvm::GenericValue; // NOLINT(*-owning-memory)
+  GVMax->IntVal = MaxVal;
+  auto *GVMin = new llvm::GenericValue; // NOLINT(*-owning-memory)
+  GVMin->IntVal = MinVal;
+  *Max = reinterpret_cast<LLVMGenericValueRef>(GVMax);
+  *Min = reinterpret_cast<LLVMGenericValueRef>(GVMin);
+}
+
 CXEnumDecl clang_EnumDecl_Create(CXASTContext C, CXDeclContext DC,
                                  CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
                                  CXIdentifierInfo Id, CXEnumDecl PrevDecl, bool IsScoped,
@@ -2274,7 +2791,27 @@ void clang_RecordDecl_getFields(CXRecordDecl RD, CXFieldDecl *Buf) {
     Buf[I++] = F;
 }
 
+bool clang_RecordDecl_field_empty(CXRecordDecl RD) {
+  return static_cast<clang::RecordDecl *>(RD)->field_empty();
+}
+
 // RecordDecl Cast
+bool clang_RecordDecl_isRandomized(CXRecordDecl RD) {
+  return static_cast<clang::RecordDecl *>(RD)->isRandomized();
+}
+
+void clang_RecordDecl_setIsRandomized(CXRecordDecl RD, bool V) {
+  static_cast<clang::RecordDecl *>(RD)->setIsRandomized(V);
+}
+
+void clang_RecordDecl_completeDefinition(CXRecordDecl RD) {
+  static_cast<clang::RecordDecl *>(RD)->completeDefinition();
+}
+
+unsigned clang_RecordDecl_getODRHash(CXRecordDecl RD) {
+  return static_cast<clang::RecordDecl *>(RD)->getODRHash();
+}
+
 CXClassTemplateSpecializationDecl
 clang_RecordDecl_castToClassTemplateSpecializationDecl(CXRecordDecl RD) {
   return llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(
@@ -2328,6 +2865,39 @@ void clang_FileScopeAsmDecl_setAsmString(CXFileScopeAsmDecl FSAD, CXStringLitera
 }
 
 // BlockDecl
+// TopLevelStmtDecl
+CXTopLevelStmtDecl clang_TopLevelStmtDecl_Create(CXASTContext C, CXStmt Statement) {
+  return clang::TopLevelStmtDecl::Create(*static_cast<clang::ASTContext *>(C),
+                                         static_cast<clang::Stmt *>(Statement));
+}
+
+CXTopLevelStmtDecl clang_TopLevelStmtDecl_CreateDeserialized(CXASTContext C,
+                                                             unsigned ID) {
+  return clang::TopLevelStmtDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C),
+                                                     ID);
+}
+
+CXSourceRange_ clang_TopLevelStmtDecl_getSourceRange(CXTopLevelStmtDecl TLSD) {
+  clang::SourceRange R = static_cast<clang::TopLevelStmtDecl *>(TLSD)->getSourceRange();
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+CXStmt clang_TopLevelStmtDecl_getStmt(CXTopLevelStmtDecl TLSD) {
+  return static_cast<clang::TopLevelStmtDecl *>(TLSD)->getStmt();
+}
+
+void clang_TopLevelStmtDecl_setStmt(CXTopLevelStmtDecl TLSD, CXStmt S) {
+  static_cast<clang::TopLevelStmtDecl *>(TLSD)->setStmt(static_cast<clang::Stmt *>(S));
+}
+
+bool clang_TopLevelStmtDecl_isSemiMissing(CXTopLevelStmtDecl TLSD) {
+  return static_cast<clang::TopLevelStmtDecl *>(TLSD)->isSemiMissing();
+}
+
+void clang_TopLevelStmtDecl_setSemiMissing(CXTopLevelStmtDecl TLSD, bool Missing) {
+  static_cast<clang::TopLevelStmtDecl *>(TLSD)->setSemiMissing(Missing);
+}
+
 CXBlockDecl clang_BlockDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L) {
   return clang::BlockDecl::Create(*static_cast<clang::ASTContext *>(C),
                                   static_cast<clang::DeclContext *>(DC),
@@ -2424,6 +2994,46 @@ bool clang_BlockDecl_capturesVariable(CXBlockDecl BD, CXVarDecl var) {
 
 // setCaptures
 
+void clang_BlockDecl_setIsVariadic(CXBlockDecl BD, bool value) {
+  static_cast<clang::BlockDecl *>(BD)->setIsVariadic(value);
+}
+
+CXCompoundStmt clang_BlockDecl_getCompoundBody(CXBlockDecl BD) {
+  return static_cast<clang::BlockDecl *>(BD)->getCompoundBody();
+}
+
+CXStmt clang_BlockDecl_getBody(CXBlockDecl BD) {
+  return static_cast<clang::BlockDecl *>(BD)->getBody();
+}
+
+CXVarDecl clang_BlockDecl_getCaptureVariable(CXBlockDecl BD, unsigned i) {
+  return static_cast<clang::BlockDecl *>(BD)->capture_begin()[i].getVariable();
+}
+
+bool clang_BlockDecl_isCaptureByRef(CXBlockDecl BD, unsigned i) {
+  return static_cast<clang::BlockDecl *>(BD)->capture_begin()[i].isByRef();
+}
+
+bool clang_BlockDecl_isCaptureNested(CXBlockDecl BD, unsigned i) {
+  return static_cast<clang::BlockDecl *>(BD)->capture_begin()[i].isNested();
+}
+
+bool clang_BlockDecl_isCaptureEscapingByref(CXBlockDecl BD, unsigned i) {
+  return static_cast<clang::BlockDecl *>(BD)->capture_begin()[i].isEscapingByref();
+}
+
+bool clang_BlockDecl_isCaptureNonEscapingByref(CXBlockDecl BD, unsigned i) {
+  return static_cast<clang::BlockDecl *>(BD)->capture_begin()[i].isNonEscapingByref();
+}
+
+bool clang_BlockDecl_captureHasCopyExpr(CXBlockDecl BD, unsigned i) {
+  return static_cast<clang::BlockDecl *>(BD)->capture_begin()[i].hasCopyExpr();
+}
+
+CXExpr clang_BlockDecl_getCaptureCopyExpr(CXBlockDecl BD, unsigned i) {
+  return static_cast<clang::BlockDecl *>(BD)->capture_begin()[i].getCopyExpr();
+}
+
 unsigned clang_BlockDecl_getBlockManglingNumber(CXBlockDecl BD) {
   return static_cast<clang::BlockDecl *>(BD)->getBlockManglingNumber();
 }
@@ -2442,6 +3052,15 @@ CXSourceRange_ clang_BlockDecl_getSourceRange(CXBlockDecl BD) {
   CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
   CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
   return CXSourceRange_{B, E};
+}
+
+// BlockDecl Cast
+CXDeclContext clang_BlockDecl_castToDeclContext(CXBlockDecl BD) {
+  return clang::BlockDecl::castToDeclContext(static_cast<clang::BlockDecl *>(BD));
+}
+
+CXBlockDecl clang_BlockDecl_castFromDeclContext(CXDeclContext DC) {
+  return clang::BlockDecl::castFromDeclContext(static_cast<clang::DeclContext *>(DC));
 }
 
 // CapturedDecl
@@ -2498,6 +3117,15 @@ void clang_CapturedDecl_setContextParam(CXCapturedDecl CD, unsigned i,
 
 unsigned clang_CapturedDecl_getContextParamPosition(CXCapturedDecl CD) {
   return static_cast<clang::CapturedDecl *>(CD)->getContextParamPosition();
+}
+
+// CapturedDecl Cast
+CXDeclContext clang_CapturedDecl_castToDeclContext(CXCapturedDecl CD) {
+  return clang::CapturedDecl::castToDeclContext(static_cast<clang::CapturedDecl *>(CD));
+}
+
+CXCapturedDecl clang_CapturedDecl_castFromDeclContext(CXDeclContext DC) {
+  return clang::CapturedDecl::castFromDeclContext(static_cast<clang::DeclContext *>(DC));
 }
 
 // ImportDecl
@@ -2577,6 +3205,15 @@ CXSourceRange_ clang_ExportDecl_getSourceRange(CXExportDecl ED) {
   return CXSourceRange_{B, E};
 }
 
+// ExportDecl Cast
+CXDeclContext clang_ExportDecl_castToDeclContext(CXExportDecl ED) {
+  return clang::ExportDecl::castToDeclContext(static_cast<clang::ExportDecl *>(ED));
+}
+
+CXExportDecl clang_ExportDecl_castFromDeclContext(CXDeclContext DC) {
+  return clang::ExportDecl::castFromDeclContext(static_cast<clang::DeclContext *>(DC));
+}
+
 // EmptyDecl
 CXEmptyDecl clang_EmptyDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L) {
   return clang::EmptyDecl::Create(*static_cast<clang::ASTContext *>(C),
@@ -2586,4 +3223,59 @@ CXEmptyDecl clang_EmptyDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLoc
 
 CXEmptyDecl clang_EmptyDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
   return clang::EmptyDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C), ID);
+}
+// HLSLBufferDecl
+CXHLSLBufferDecl clang_HLSLBufferDecl_Create(CXASTContext C, CXDeclContext LexicalParent,
+                                             bool CBuffer, CXSourceLocation_ KwLoc,
+                                             CXIdentifierInfo ID, CXSourceLocation_ IDLoc,
+                                             CXSourceLocation_ LBrace) {
+  return clang::HLSLBufferDecl::Create(*static_cast<clang::ASTContext *>(C),
+                                       static_cast<clang::DeclContext *>(LexicalParent),
+                                       CBuffer,
+                                       clang::SourceLocation::getFromPtrEncoding(KwLoc),
+                                       static_cast<clang::IdentifierInfo *>(ID),
+                                       clang::SourceLocation::getFromPtrEncoding(IDLoc),
+                                       clang::SourceLocation::getFromPtrEncoding(LBrace));
+}
+
+CXHLSLBufferDecl clang_HLSLBufferDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+  return clang::HLSLBufferDecl::CreateDeserialized(*static_cast<clang::ASTContext *>(C),
+                                                   ID);
+}
+
+CXSourceRange_ clang_HLSLBufferDecl_getSourceRange(CXHLSLBufferDecl BD) {
+  auto rng = static_cast<clang::HLSLBufferDecl *>(BD)->getSourceRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+CXSourceLocation_ clang_HLSLBufferDecl_getLocStart(CXHLSLBufferDecl BD) {
+  return static_cast<clang::HLSLBufferDecl *>(BD)->getLocStart().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_HLSLBufferDecl_getLBraceLoc(CXHLSLBufferDecl BD) {
+  return static_cast<clang::HLSLBufferDecl *>(BD)->getLBraceLoc().getPtrEncoding();
+}
+
+CXSourceLocation_ clang_HLSLBufferDecl_getRBraceLoc(CXHLSLBufferDecl BD) {
+  return static_cast<clang::HLSLBufferDecl *>(BD)->getRBraceLoc().getPtrEncoding();
+}
+
+void clang_HLSLBufferDecl_setRBraceLoc(CXHLSLBufferDecl BD, CXSourceLocation_ L) {
+  static_cast<clang::HLSLBufferDecl *>(BD)->setRBraceLoc(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+bool clang_HLSLBufferDecl_isCBuffer(CXHLSLBufferDecl BD) {
+  return static_cast<clang::HLSLBufferDecl *>(BD)->isCBuffer();
+}
+
+// HLSLBufferDecl Cast
+CXDeclContext clang_HLSLBufferDecl_castToDeclContext(CXHLSLBufferDecl BD) {
+  return clang::HLSLBufferDecl::castToDeclContext(static_cast<clang::HLSLBufferDecl *>(BD));
+}
+
+CXHLSLBufferDecl clang_HLSLBufferDecl_castFromDeclContext(CXDeclContext DC) {
+  return clang::HLSLBufferDecl::castFromDeclContext(static_cast<clang::DeclContext *>(DC));
 }

@@ -72,6 +72,44 @@ void clang_LookupResult_getResults(CXLookupResult LR, CXNamedDecl *Decls, size_t
 
 CXNamedDecl clang_LookupResult_getResult(CXLookupResult LR);
 
+typedef enum CXLookupResultKind {
+  CXLookupResultKind_NotFound = 0,
+  CXLookupResultKind_NotFoundInCurrentInstantiation,
+  CXLookupResultKind_Found,
+  CXLookupResultKind_FoundOverloaded,
+  CXLookupResultKind_FoundUnresolvedValue,
+  CXLookupResultKind_Ambiguous
+} CXLookupResultKind;
+
+typedef enum CXAmbiguityKind {
+  CXAmbiguityKind_AmbiguousBaseSubobjectTypes = 0,
+  CXAmbiguityKind_AmbiguousBaseSubobjects,
+  CXAmbiguityKind_AmbiguousReference,
+  CXAmbiguityKind_AmbiguousReferenceToPlaceholderVariable,
+  CXAmbiguityKind_AmbiguousTagHiding
+} CXAmbiguityKind;
+
+CXLookupResultKind clang_LookupResult_getResultKind(CXLookupResult LR);
+
+// Precondition: clang_LookupResult_isAmbiguous(LR) --
+// LookupResult::getAmbiguityKind asserts it.
+CXAmbiguityKind clang_LookupResult_getAmbiguityKind(CXLookupResult LR);
+
+// Precondition: clang_LookupResult_getResultKind(LR) == CXLookupResultKind_Found --
+// LookupResult::getFoundDecl asserts the result is unique before dereferencing begin().
+CXNamedDecl clang_LookupResult_getFoundDecl(CXLookupResult LR);
+
+// Null unless the lookup found its results in a class.
+CXCXXRecordDecl clang_LookupResult_getNamingClass(CXLookupResult LR);
+
+CXLookupNameKind clang_LookupResult_getLookupKind(CXLookupResult LR);
+
+CXSourceLocation_ clang_LookupResult_getNameLoc(CXLookupResult LR);
+
+unsigned clang_LookupResult_getIdentifierNamespace(CXLookupResult LR);
+
+void clang_LookupResult_suppressDiagnostics(CXLookupResult LR);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

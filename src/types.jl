@@ -161,38 +161,41 @@ end
 """
     jlty_to_llvmty(::Type{T}, ctx::LLVM.Context) where {T}
 Interface for mapping a Julia type to the corresponding LLVM type representation.
+
+The type object is created in `ctx`: LLVM.jl's type constructors read the task-bound
+context, so `ctx` is temporarily activated for the duration of the call.
 """
 jlty_to_llvmty(::Type{T}, ctx::LLVM.Context) where {T} = error("no mapping found for $T")
 
 # Julia type to IntegerType <: LLVMType
 # LLVM does not make a distinction between signed and unsigned integer type.
-jlty_to_llvmty(::Type{Bool}, ctx::LLVM.Context) = LLVM.Int8Type(ctx)
-jlty_to_llvmty(::Type{Int8}, ctx::LLVM.Context) = LLVM.Int8Type(ctx)
-jlty_to_llvmty(::Type{Int16}, ctx::LLVM.Context) = LLVM.Int16Type(ctx)
-jlty_to_llvmty(::Type{Int32}, ctx::LLVM.Context) = LLVM.Int32Type(ctx)
-jlty_to_llvmty(::Type{Int64}, ctx::LLVM.Context) = LLVM.Int64Type(ctx)
-jlty_to_llvmty(::Type{Int128}, ctx::LLVM.Context) = LLVM.Int128Type(ctx)
-jlty_to_llvmty(::Type{UInt8}, ctx::LLVM.Context) = LLVM.Int8Type(ctx)
-jlty_to_llvmty(::Type{UInt16}, ctx::LLVM.Context) = LLVM.Int16Type(ctx)
-jlty_to_llvmty(::Type{UInt32}, ctx::LLVM.Context) = LLVM.Int32Type(ctx)
-jlty_to_llvmty(::Type{UInt64}, ctx::LLVM.Context) = LLVM.Int64Type(ctx)
-jlty_to_llvmty(::Type{UInt128}, ctx::LLVM.Context) = LLVM.Int128Type(ctx)
+jlty_to_llvmty(::Type{Bool}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int8Type, ctx)
+jlty_to_llvmty(::Type{Int8}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int8Type, ctx)
+jlty_to_llvmty(::Type{Int16}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int16Type, ctx)
+jlty_to_llvmty(::Type{Int32}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int32Type, ctx)
+jlty_to_llvmty(::Type{Int64}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int64Type, ctx)
+jlty_to_llvmty(::Type{Int128}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int128Type, ctx)
+jlty_to_llvmty(::Type{UInt8}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int8Type, ctx)
+jlty_to_llvmty(::Type{UInt16}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int16Type, ctx)
+jlty_to_llvmty(::Type{UInt32}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int32Type, ctx)
+jlty_to_llvmty(::Type{UInt64}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int64Type, ctx)
+jlty_to_llvmty(::Type{UInt128}, ctx::LLVM.Context) = LLVM.context!(LLVM.Int128Type, ctx)
 
 # Julia type to FloatingPointType <: LLVMType
-jlty_to_llvmty(::Type{Float16}, ctx::LLVM.Context) = LLVM.HalfType(ctx)
-jlty_to_llvmty(::Type{Float32}, ctx::LLVM.Context) = LLVM.FloatType(ctx)
-jlty_to_llvmty(::Type{Float64}, ctx::LLVM.Context) = LLVM.DoubleType(ctx)
+jlty_to_llvmty(::Type{Float16}, ctx::LLVM.Context) = LLVM.context!(LLVM.HalfType, ctx)
+jlty_to_llvmty(::Type{Float32}, ctx::LLVM.Context) = LLVM.context!(LLVM.FloatType, ctx)
+jlty_to_llvmty(::Type{Float64}, ctx::LLVM.Context) = LLVM.context!(LLVM.DoubleType, ctx)
 
 # Julia type to VoidType <: LLVMType
-jlty_to_llvmty(::Type{Nothing}, ctx::LLVM.Context) = LLVM.VoidType(ctx)
+jlty_to_llvmty(::Type{Nothing}, ctx::LLVM.Context) = LLVM.context!(LLVM.VoidType, ctx)
 
-# Julia type to PointerType <: SequentialType <: CompositeType <: LLVMType
-jlty_to_llvmty(::Type{Ptr{Cvoid}}, ctx::LLVM.Context) = LLVM.PointerType(LLVM.VoidType(ctx))
+# Julia type to PointerType <: LLVMType (an opaque pointer in address space 0)
+jlty_to_llvmty(::Type{Ptr{Cvoid}}, ctx::LLVM.Context) = LLVM.context!(LLVM.PointerType, ctx)
 
 """
-    clty_to_llvmty_mem(ty::T, cgm::CodeGenModule) where {T<:AbstractClangType} -> LLVMType
+    clty_to_llvmty_mem(ty::T, cgm::CodeGenModule) where {T<:AbstractClangType} -> LLVM.LLVMType
 Convert a Clang type to the corresponding memory representation of the LLVM type.
 """
 function clty_to_llvmty_mem(ty::T, cgm::CodeGenModule) where {T<:AbstractClangType}
-    return LLVMType(convertTypeForMemory(cgm, ty))
+    return LLVM.LLVMType(convertTypeForMemory(cgm, ty))
 end

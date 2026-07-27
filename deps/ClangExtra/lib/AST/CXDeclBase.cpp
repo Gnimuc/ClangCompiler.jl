@@ -1,4 +1,5 @@
 #include "clang-ex/AST/CXDeclBase.h"
+#include "utils.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclBase.h"
 #include "clang/AST/DeclCXX.h"
@@ -6,6 +7,10 @@
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/DeclOpenMP.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/Support/raw_ostream.h"
 
 // Drift alarm: the vendored DeclNodes.inc must match the pinned LLVM version.
 // One assert per concrete class proves CXDeclKind equals clang's Decl::Kind
@@ -199,6 +204,308 @@ void clang_Decl_EnableStatistics(void) { clang::Decl::EnableStatistics(); }
 
 void clang_Decl_PrintStats(void) { clang::Decl::PrintStats(); }
 
+CXSourceRange_ clang_Decl_getSourceRange(CXDecl D) {
+  auto rng = static_cast<clang::Decl *>(D)->getSourceRange();
+  CXSourceLocation_ B = rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
+
+void clang_Decl_setLocation(CXDecl D, CXSourceLocation_ L) {
+  static_cast<clang::Decl *>(D)->setLocation(
+      clang::SourceLocation::getFromPtrEncoding(L));
+}
+
+CXDeclContext clang_Decl_getNonTransparentDeclContext(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getNonTransparentDeclContext();
+}
+
+bool clang_Decl_isFileContextDecl(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isFileContextDecl();
+}
+
+CXAccessSpecifier clang_Decl_getAccess(CXDecl D) {
+  return static_cast<CXAccessSpecifier>(static_cast<clang::Decl *>(D)->getAccess());
+}
+
+CXAccessSpecifier clang_Decl_getAccessUnsafe(CXDecl D) {
+  return static_cast<CXAccessSpecifier>(static_cast<clang::Decl *>(D)->getAccessUnsafe());
+}
+
+void clang_Decl_setAccess(CXDecl D, CXAccessSpecifier AS) {
+  static_cast<clang::Decl *>(D)->setAccess(static_cast<clang::AccessSpecifier>(AS));
+}
+
+void clang_Decl_addAttr(CXDecl D, CXAttr A) {
+  static_cast<clang::Decl *>(D)->addAttr(static_cast<clang::Attr *>(A));
+}
+
+void clang_Decl_dropAttrs(CXDecl D) { static_cast<clang::Decl *>(D)->dropAttrs(); }
+
+bool clang_Decl_hasAttrOfKind(CXDecl D, CXAttrKind K) {
+  clang::Decl *DD = static_cast<clang::Decl *>(D);
+  if (!DD->hasAttrs())
+    return false;
+  for (const clang::Attr *A : DD->getAttrs())
+    if (static_cast<CXAttrKind>(A->getKind()) == K)
+      return true;
+  return false;
+}
+
+CXAttr clang_Decl_getAttrOfKind(CXDecl D, CXAttrKind K) {
+  clang::Decl *DD = static_cast<clang::Decl *>(D);
+  if (!DD->hasAttrs())
+    return nullptr;
+  for (clang::Attr *A : DD->getAttrs())
+    if (static_cast<CXAttrKind>(A->getKind()) == K)
+      return A;
+  return nullptr;
+}
+
+unsigned clang_Decl_getMaxAlignment(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getMaxAlignment();
+}
+
+bool clang_Decl_isInvalidDecl(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isInvalidDecl();
+}
+
+void clang_Decl_setInvalidDecl(CXDecl D, bool Invalid) {
+  static_cast<clang::Decl *>(D)->setInvalidDecl(Invalid);
+}
+
+bool clang_Decl_isImplicit(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isImplicit();
+}
+
+void clang_Decl_setImplicit(CXDecl D, bool I) {
+  static_cast<clang::Decl *>(D)->setImplicit(I);
+}
+
+bool clang_Decl_isUsed(CXDecl D, bool CheckUsedAttr) {
+  return static_cast<clang::Decl *>(D)->isUsed(CheckUsedAttr);
+}
+
+void clang_Decl_setIsUsed(CXDecl D) { static_cast<clang::Decl *>(D)->setIsUsed(); }
+
+void clang_Decl_markUsed(CXDecl D, CXASTContext C) {
+  static_cast<clang::Decl *>(D)->markUsed(*static_cast<clang::ASTContext *>(C));
+}
+
+bool clang_Decl_isReferenced(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isReferenced();
+}
+
+bool clang_Decl_isThisDeclarationReferenced(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isThisDeclarationReferenced();
+}
+
+void clang_Decl_setReferenced(CXDecl D, bool R) {
+  static_cast<clang::Decl *>(D)->setReferenced(R);
+}
+
+bool clang_Decl_isTopLevelDeclInObjCContainer(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isTopLevelDeclInObjCContainer();
+}
+
+void clang_Decl_setTopLevelDeclInObjCContainer(CXDecl D, bool V) {
+  static_cast<clang::Decl *>(D)->setTopLevelDeclInObjCContainer(V);
+}
+
+CXAttr clang_Decl_getExternalSourceSymbolAttr(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getExternalSourceSymbolAttr();
+}
+
+bool clang_Decl_isModulePrivate(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isModulePrivate();
+}
+
+bool clang_Decl_isInExportDeclContext(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isInExportDeclContext();
+}
+
+bool clang_Decl_isInvisibleOutsideTheOwningModule(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isInvisibleOutsideTheOwningModule();
+}
+
+bool clang_Decl_isInAnotherModuleUnit(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isInAnotherModuleUnit();
+}
+
+bool clang_Decl_isDiscardedInGlobalModuleFragment(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isDiscardedInGlobalModuleFragment();
+}
+
+bool clang_Decl_shouldSkipCheckingODR(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->shouldSkipCheckingODR();
+}
+
+bool clang_Decl_hasDefiningAttr(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->hasDefiningAttr();
+}
+
+CXAttr clang_Decl_getDefiningAttr(CXDecl D) {
+  return const_cast<clang::Attr *>(static_cast<clang::Decl *>(D)->getDefiningAttr());
+}
+
+CXAvailabilityResult clang_Decl_getAvailability(CXDecl D) {
+  return static_cast<CXAvailabilityResult>(
+      static_cast<clang::Decl *>(D)->getAvailability());
+}
+
+CXString clang_Decl_getAvailabilityMessage(CXDecl D) {
+  std::string Message;
+  static_cast<clang::Decl *>(D)->getAvailability(&Message);
+  return extra::makeCXString(Message);
+}
+
+bool clang_Decl_getVersionIntroduced(CXDecl D, unsigned *Major, unsigned *Minor,
+                                     unsigned *Subminor) {
+  llvm::VersionTuple V = static_cast<clang::Decl *>(D)->getVersionIntroduced();
+  if (V.empty())
+    return false;
+  *Major = V.getMajor();
+  *Minor = V.getMinor().value_or(0);
+  *Subminor = V.getSubminor().value_or(0);
+  return true;
+}
+
+bool clang_Decl_isDeprecated(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isDeprecated();
+}
+
+bool clang_Decl_isUnavailable(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isUnavailable();
+}
+
+bool clang_Decl_isWeakImported(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isWeakImported();
+}
+
+bool clang_Decl_canBeWeakImported(CXDecl D, bool *IsDefinition) {
+  bool Def = false;
+  bool R = static_cast<clang::Decl *>(D)->canBeWeakImported(Def);
+  *IsDefinition = Def;
+  return R;
+}
+
+bool clang_Decl_isFromASTFile(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isFromASTFile();
+}
+
+unsigned clang_Decl_getGlobalID(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getGlobalID();
+}
+
+unsigned clang_Decl_getOwningModuleID(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getOwningModuleID();
+}
+
+CXModule clang_Decl_getImportedOwningModule(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getImportedOwningModule();
+}
+
+CXModule clang_Decl_getLocalOwningModule(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getLocalOwningModule();
+}
+
+bool clang_Decl_hasOwningModule(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->hasOwningModule();
+}
+
+CXModule clang_Decl_getOwningModule(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getOwningModule();
+}
+
+CXModule clang_Decl_getOwningModuleForLinkage(CXDecl D, bool IgnoreLinkage) {
+  return static_cast<clang::Decl *>(D)->getOwningModuleForLinkage(IgnoreLinkage);
+}
+
+bool clang_Decl_isUnconditionallyVisible(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isUnconditionallyVisible();
+}
+
+bool clang_Decl_isReachable(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isReachable();
+}
+
+void clang_Decl_setVisibleDespiteOwningModule(CXDecl D) {
+  static_cast<clang::Decl *>(D)->setVisibleDespiteOwningModule();
+}
+
+CXDecl_ModuleOwnershipKind clang_Decl_getModuleOwnershipKind(CXDecl D) {
+  return static_cast<CXDecl_ModuleOwnershipKind>(
+      static_cast<clang::Decl *>(D)->getModuleOwnershipKind());
+}
+
+void clang_Decl_setModuleOwnershipKind(CXDecl D, CXDecl_ModuleOwnershipKind MOK) {
+  static_cast<clang::Decl *>(D)->setModuleOwnershipKind(
+      static_cast<clang::Decl::ModuleOwnershipKind>(MOK));
+}
+
+unsigned clang_Decl_getIdentifierNamespace(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getIdentifierNamespace();
+}
+
+bool clang_Decl_isInIdentifierNamespace(CXDecl D, unsigned NS) {
+  return static_cast<clang::Decl *>(D)->isInIdentifierNamespace(NS);
+}
+
+unsigned clang_Decl_getIdentifierNamespaceForKind(CXDeclKind DK) {
+  return clang::Decl::getIdentifierNamespaceForKind(static_cast<clang::Decl::Kind>(DK));
+}
+
+bool clang_Decl_hasTagIdentifierNamespace(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->hasTagIdentifierNamespace();
+}
+
+bool clang_Decl_isTagIdentifierNamespace(unsigned NS) {
+  return clang::Decl::isTagIdentifierNamespace(NS);
+}
+
+unsigned clang_Decl_getNumRedecls(CXDecl D) {
+  unsigned N = 0;
+  for (clang::Decl *R : static_cast<clang::Decl *>(D)->redecls()) {
+    (void)R;
+    ++N;
+  }
+  return N;
+}
+
+void clang_Decl_getRedecls(CXDecl D, CXDecl *Buf) {
+  for (clang::Decl *R : static_cast<clang::Decl *>(D)->redecls())
+    *Buf++ = R;
+}
+
+CXStmt clang_Decl_getBody(CXDecl D) { return static_cast<clang::Decl *>(D)->getBody(); }
+
+bool clang_Decl_hasBody(CXDecl D) { return static_cast<clang::Decl *>(D)->hasBody(); }
+
+CXSourceLocation_ clang_Decl_getBodyRBrace(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->getBodyRBrace().getPtrEncoding();
+}
+
+bool clang_Decl_isLocalExternDecl(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isLocalExternDecl();
+}
+
+CXDecl_FriendObjectKind clang_Decl_getFriendObjectKind(CXDecl D) {
+  return static_cast<CXDecl_FriendObjectKind>(
+      static_cast<clang::Decl *>(D)->getFriendObjectKind());
+}
+
+CXString clang_Decl_printToString(CXDecl D, unsigned Indentation,
+                                  bool PrintInstantiation) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  static_cast<clang::Decl *>(D)->print(OS, Indentation, PrintInstantiation);
+  return extra::makeCXString(OS.str());
+}
+
+bool clang_Decl_isFunctionPointerType(CXDecl D) {
+  return static_cast<clang::Decl *>(D)->isFunctionPointerType();
+}
+
 CXDeclContext clang_Decl_castToDeclContext(CXDecl D) {
   return clang::Decl::castToDeclContext(static_cast<clang::Decl *>(D));
 }
@@ -327,6 +634,170 @@ void collectRecursiveDecls(clang::DeclContext *DC, CXDecl *&Nodes, CXDeclKind *&
 }
 } // namespace
 
+CXDeclKind clang_DeclContext_getDeclKind(CXDeclContext DC) {
+  return static_cast<CXDeclKind>(static_cast<clang::DeclContext *>(DC)->getDeclKind());
+}
+
+bool clang_DeclContext_hasValidDeclKind(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->hasValidDeclKind();
+}
+
+CXBlockDecl clang_DeclContext_getInnermostBlockDecl(CXDeclContext DC) {
+  return const_cast<clang::BlockDecl *>(
+      static_cast<clang::DeclContext *>(DC)->getInnermostBlockDecl());
+}
+
+bool clang_DeclContext_isObjCContainer(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->isObjCContainer();
+}
+
+CXLinkageSpecDecl clang_DeclContext_getExternCContext(CXDeclContext DC) {
+  return const_cast<clang::LinkageSpecDecl *>(
+      static_cast<clang::DeclContext *>(DC)->getExternCContext());
+}
+
+bool clang_DeclContext_Encloses(CXDeclContext DC, CXDeclContext DC2) {
+  return static_cast<clang::DeclContext *>(DC)->Encloses(
+      static_cast<clang::DeclContext *>(DC2));
+}
+
+CXDecl clang_DeclContext_getNonClosureAncestor(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->getNonClosureAncestor();
+}
+
+CXDeclContext clang_DeclContext_getNonTransparentContext(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->getNonTransparentContext();
+}
+
+CXDeclContext clang_DeclContext_getRedeclContext(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->getRedeclContext();
+}
+
+CXDeclContext clang_DeclContext_getEnclosingNamespaceContext(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->getEnclosingNamespaceContext();
+}
+
+CXRecordDecl clang_DeclContext_getOuterLexicalRecordContext(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->getOuterLexicalRecordContext();
+}
+
+bool clang_DeclContext_InEnclosingNamespaceSetOf(CXDeclContext DC, CXDeclContext NS) {
+  return static_cast<clang::DeclContext *>(DC)->InEnclosingNamespaceSetOf(
+      static_cast<clang::DeclContext *>(NS));
+}
+
+unsigned clang_DeclContext_getNumAllContexts(CXDeclContext DC) {
+  llvm::SmallVector<clang::DeclContext *, 2> Contexts;
+  static_cast<clang::DeclContext *>(DC)->collectAllContexts(Contexts);
+  return Contexts.size();
+}
+
+void clang_DeclContext_collectAllContexts(CXDeclContext DC, CXDeclContext *Buf) {
+  llvm::SmallVector<clang::DeclContext *, 2> Contexts;
+  static_cast<clang::DeclContext *>(DC)->collectAllContexts(Contexts);
+  for (clang::DeclContext *C : Contexts)
+    *Buf++ = C;
+}
+
+bool clang_DeclContext_decls_empty(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->decls_empty();
+}
+
+bool clang_DeclContext_containsDeclAndLoad(CXDeclContext DC, CXDecl D) {
+  return static_cast<clang::DeclContext *>(DC)->containsDeclAndLoad(
+      static_cast<clang::Decl *>(D));
+}
+
+unsigned clang_DeclContext_getNumLookupResults(CXDeclContext DC,
+                                               CXDeclarationName Name) {
+  unsigned N = 0;
+  for (clang::NamedDecl *ND : static_cast<clang::DeclContext *>(DC)->lookup(
+           clang::DeclarationName::getFromOpaquePtr(Name))) {
+    (void)ND;
+    ++N;
+  }
+  return N;
+}
+
+void clang_DeclContext_lookup(CXDeclContext DC, CXDeclarationName Name,
+                              CXNamedDecl *Results) {
+  for (clang::NamedDecl *ND : static_cast<clang::DeclContext *>(DC)->lookup(
+           clang::DeclarationName::getFromOpaquePtr(Name)))
+    *Results++ = ND;
+}
+
+unsigned clang_DeclContext_getNumNoloadLookupResults(CXDeclContext DC,
+                                                     CXDeclarationName Name) {
+  unsigned N = 0;
+  for (clang::NamedDecl *ND : static_cast<clang::DeclContext *>(DC)->noload_lookup(
+           clang::DeclarationName::getFromOpaquePtr(Name))) {
+    (void)ND;
+    ++N;
+  }
+  return N;
+}
+
+void clang_DeclContext_noload_lookup(CXDeclContext DC, CXDeclarationName Name,
+                                     CXNamedDecl *Results) {
+  for (clang::NamedDecl *ND : static_cast<clang::DeclContext *>(DC)->noload_lookup(
+           clang::DeclarationName::getFromOpaquePtr(Name)))
+    *Results++ = ND;
+}
+
+void clang_DeclContext_makeDeclVisibleInContext(CXDeclContext DC, CXNamedDecl D) {
+  static_cast<clang::DeclContext *>(DC)->makeDeclVisibleInContext(
+      static_cast<clang::NamedDecl *>(D));
+}
+
+unsigned clang_DeclContext_getNumUsingDirectives(CXDeclContext DC) {
+  unsigned N = 0;
+  for (clang::UsingDirectiveDecl *UD :
+       static_cast<clang::DeclContext *>(DC)->using_directives()) {
+    (void)UD;
+    ++N;
+  }
+  return N;
+}
+
+void clang_DeclContext_getUsingDirectives(CXDeclContext DC, CXUsingDirectiveDecl *Buf) {
+  for (clang::UsingDirectiveDecl *UD :
+       static_cast<clang::DeclContext *>(DC)->using_directives())
+    *Buf++ = UD;
+}
+
+bool clang_DeclContext_hasExternalLexicalStorage(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->hasExternalLexicalStorage();
+}
+
+void clang_DeclContext_setHasExternalLexicalStorage(CXDeclContext DC, bool ES) {
+  static_cast<clang::DeclContext *>(DC)->setHasExternalLexicalStorage(ES);
+}
+
+bool clang_DeclContext_hasExternalVisibleStorage(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->hasExternalVisibleStorage();
+}
+
+void clang_DeclContext_setHasExternalVisibleStorage(CXDeclContext DC, bool ES) {
+  static_cast<clang::DeclContext *>(DC)->setHasExternalVisibleStorage(ES);
+}
+
+bool clang_DeclContext_isDeclInLexicalTraversal(CXDeclContext DC, CXDecl D) {
+  return static_cast<clang::DeclContext *>(DC)->isDeclInLexicalTraversal(
+      static_cast<clang::Decl *>(D));
+}
+
+void clang_DeclContext_setUseQualifiedLookup(CXDeclContext DC, bool Use) {
+  static_cast<clang::DeclContext *>(DC)->setUseQualifiedLookup(Use);
+}
+
+bool clang_DeclContext_shouldUseQualifiedLookup(CXDeclContext DC) {
+  return static_cast<clang::DeclContext *>(DC)->shouldUseQualifiedLookup();
+}
+
+bool clang_DeclContext_classof(CXDecl D) {
+  return clang::DeclContext::classof(static_cast<clang::Decl *>(D));
+}
+
 size_t clang_DeclContext_getRecursiveDeclCount(CXDeclContext DC) {
   return recursiveDeclCount(static_cast<clang::DeclContext *>(DC));
 }
@@ -355,6 +826,10 @@ void clang_DeclContext_removeDecl(CXDeclContext DC, CXDecl D) {
 bool clang_DeclContext_containsDecl(CXDeclContext DC, CXDecl D) {
   return static_cast<clang::DeclContext *>(DC)->containsDecl(
       static_cast<clang::Decl *>(D));
+}
+
+void clang_DeclContext_dumpAsDecl(CXDeclContext DC) {
+  static_cast<clang::DeclContext *>(DC)->dumpAsDecl();
 }
 
 void clang_DeclContext_dumpDeclContext(CXDeclContext DC) {

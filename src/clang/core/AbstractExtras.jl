@@ -114,3 +114,12 @@ abstract type AbstractWIntTy <: AbstractBuiltinType end
 abstract type AbstractWideCharTy <: AbstractBuiltinType end
 
 abstract type AbstractMacroInfo end
+
+abstract type AbstractDriver end
+
+abstract type AbstractCXXTemporary end
+
+abstract type AbstractDiagnosticErrorTrap end
+abstract type AbstractStoredDiagnostic end
+
+abstract type AbstractCapturedStmtCapture end

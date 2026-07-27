@@ -667,3 +667,487 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "ASTContext | layout, qualifiers, comments" begin
+    I = create_interpreter()
+    ctx = get_ast_context(I)
+
+    int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
+    short_ty = CC.get_qual_type(CC.jlty_to_clty(Int16, ctx))
+
+    # getTypeInfo reports bits, the *InChars family bytes; `int` is 32/4 on every
+    # platform this package supports.
+    w, a, req = CC.getTypeInfo(ctx, int_ty)
+    @test w == 32
+    @test a == 32
+    @test req == CC.LibClangEx.CXAlignRequirementKind_None
+
+    cw, ca, creq = CC.getTypeInfoInChars(ctx, int_ty)
+    @test cw == 4
+    @test ca == 4
+    @test creq == CC.LibClangEx.CXAlignRequirementKind_None
+
+    @test CC.getTypeSizeInChars(ctx, int_ty) == 4
+    @test CC.getTypeAlignInChars(ctx, int_ty) == 4
+    @test CC.getPreferredTypeAlignInChars(ctx, int_ty) >= CC.getTypeAlignInChars(ctx, int_ty)
+    @test CC.getTypeUnadjustedAlignInChars(ctx, int_ty) >= 1
+    @test CC.getAlignOfGlobalVarInChars(ctx, int_ty) >= 1
+    @test CC.getExnObjectAlignment(ctx) >= 1
+
+    # bits <-> bytes round trip through the target's char width.
+    @test CC.toBits(ctx, CC.getTypeSizeInChars(ctx, int_ty)) == CC.getTypeSize(ctx, int_ty)
+    @test CC.toCharUnitsFromBits(ctx, CC.toBits(ctx, 3)) == 3
+
+    # Qualifiers cross as their opaque value; bit 0 is the fast `const` bit.
+    const_int = CC.getQualifiedType(ctx, int_ty, 0x1)
+    @test const_int isa CC.QualType
+    @test CC.isConstQualified(const_int)
+    @test !CC.isConstQualified(int_ty)
+
+    unqualified, stripped = CC.getUnqualifiedArrayType(ctx, const_int)
+    @test unqualified isa CC.QualType
+    @test !CC.isConstQualified(unqualified)
+    @test (stripped & 0x1) != 0
+
+    @test CC.isPromotableIntegerType(ctx, short_ty)
+    @test !CC.isPromotableIntegerType(ctx, int_ty)
+
+    arr = CC.getIncompleteArrayType(ctx, int_ty)
+    @test arr isa CC.QualType
+    @test CC.isIncompleteArrayType(CC.get_type_ptr(arr))
+
+    CC.parse(I, "/// a documented global\nint cc_astctx_probe = 0;")
+    f = DeclFinder(I)
+    @test f(I, "cc_astctx_probe")
+    vd = CC.get_decl(f)
+    @test CC.getDeclAlign(ctx, vd) >= 4
+    @test CC.getDeclAlign(ctx, vd, true) >= 1
+
+    # Comment retention depends on the driver configuration, so only the shape of
+    # the result and the agreement of the two helpers is asserted here.
+    text = CC.getRawCommentTextForAnyRedecl(ctx, vd)
+    original = CC.getRawCommentOriginalDeclForAnyRedecl(ctx, vd)
+    @test text isa AbstractString
+    @test original isa CC.Decl
+    @test isempty(text) == (original.ptr == C_NULL)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Coverage | ASTContext canonical types, GVA linkage, address spaces" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+    uint_qt = CC.get_qual_type(CC.UnsignedIntTy(ctx))
+
+    # ---- canonical-type family: sugar-free and idempotent ----
+    canon = CC.getCanonicalType(ctx, int_qt)
+    @test canon isa CC.QualType
+    @test CC.hasSameType(ctx, canon, int_qt)
+    @test CC.getCanonicalType(ctx, canon).ptr == canon.ptr
+    @test CC.getCanonicalParamType(ctx, int_qt) isa CC.QualType
+    @test CC.getCanonicalFunctionResultType(ctx, int_qt) isa CC.QualType
+
+    # ---- common sugar of a type with itself is that same type ----
+    @test CC.hasSameType(ctx, CC.getCommonSugaredType(ctx, int_qt, int_qt), int_qt)
+    @test CC.getCommonSugaredType(ctx, int_qt, int_qt, true) isa CC.QualType
+
+    # ---- signed counterpart round-trips back through the unsigned one ----
+    signed_qt = CC.getCorrespondingSignedType(ctx, uint_qt)
+    @test signed_qt isa CC.QualType
+    @test CC.hasSignedIntegerRepresentation(CC.get_type_ptr(signed_qt))
+    @test CC.hasSameType(ctx, CC.getCorrespondingUnsignedType(ctx, signed_qt), uint_qt)
+
+    # ---- intmax_t / __builtin_va_list (host-decided: assert the shape) ----
+    imax = CC.getIntMaxType(ctx)
+    @test imax isa CC.QualType
+    @test CC.getTypeSize(ctx, imax) >= 32
+    @test CC.getBuiltinVaListType(ctx).ptr != C_NULL
+
+    # ---- address spaces ----
+    as_qt = CC.getAddrSpaceQualType(ctx, int_qt, CC.CXLangAS_opencl_global)
+    @test as_qt isa CC.QualType
+    @test as_qt.ptr != int_qt.ptr
+    @test CC.getLangASForBuiltinAddressSpace(ctx, 0) isa CC.CXLangAS
+    @test CC.addressSpaceMapManglingFor(ctx, CC.CXLangAS_Default) isa Bool
+
+    # ---- calling convention is target-decided: only the shape is asserted ----
+    @test CC.getDefaultCallingConvention(ctx, false, false) isa CC.CXCallingConv_
+    @test CC.getDefaultCallingConvention(ctx, true, true, true) isa CC.CXCallingConv_
+
+    # ---- context-wide singletons reachable from any translation unit ----
+    @test CC.getNSObjectName(ctx) isa CC.IdentifierInfo
+    @test CC.getCUIDHash(ctx) isa AbstractString
+
+    CC.parse(I, """
+                /// a documented probe
+                int cc_ac_a_var = 3;
+                int cc_ac_a_fun(int p) { return p; }
+                struct cc_ac_a_poly { virtual void m(); virtual ~cc_ac_a_poly(); };
+                struct cc_ac_a_sdm { static int sv; };
+                int cc_ac_a_sdm::sv = 0;
+                """)
+
+    f = DeclFinder(I)
+
+    @test f(I, "cc_ac_a_var")
+    vd = CC.VarDecl(get_decl(f).ptr)
+    @test CC.GetGVALinkageForVariable(ctx, vd) isa CC.CXGVALinkage
+    @test CC.DeclMustBeEmitted(ctx, vd) isa Bool
+    @test CC.getInlineVariableDefinitionKind(ctx, vd) isa CC.CXInlineVariableDefinitionKind
+    @test CC.getLocalCommentForDeclUncached(ctx, vd) isa CC.FullComment
+
+    @test f(I, "cc_ac_a_fun")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    @test CC.GetGVALinkageForFunction(ctx, fd) isa CC.CXGVALinkage
+    @test CC.DeclMustBeEmitted(ctx, fd) isa Bool
+
+    @test f(I, "cc_ac_a_poly")
+    poly = CC.CXXRecordDecl(get_decl(f).ptr)
+    @test CC.isDynamicClass(poly)
+    @test CC.getCurrentKeyFunction(ctx, poly) isa CC.CXXMethodDecl
+
+    @test f(I, "cc_ac_a_sdm")
+    sdm = CC.CXXRecordDecl(get_decl(f).ptr)
+    statics = filter(d -> d isa CC.VarDecl, CC.decls(CC.castToDeclContext(sdm)))
+    @test length(statics) >= 1
+    @test CC.isStaticDataMember(statics[1])
+    @test CC.getInstantiatedFromStaticDataMember(ctx, statics[1]) isa CC.MemberSpecializationInfo
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ASTContext type/identity tail" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+
+    CC.parse(I, "int cc_actxb_gvar = 5;")
+    CC.parse(I, "template <class T, class U = int> struct cc_actxb_tmpl { T v; };")
+    CC.parse(I, "struct cc_actxb_base { virtual int f() { return 0; } };")
+    CC.parse(I, "struct cc_actxb_derived : cc_actxb_base { int f() override { return 1; } };")
+
+    f = DeclFinder(I)
+    @test f(I, "cc_actxb_gvar")
+    vd = CC.VarDecl(get_decl(f).ptr)
+    init = CC.getInit(vd)
+    int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
+
+    # ---- canonical target types ----
+    size_ty = CC.getSizeType(ctx)
+    ssize_ty = CC.getSignedSizeType(ctx)
+    umax_ty = CC.getUIntMaxType(ctx)
+    @test size_ty isa CC.QualType
+    @test ssize_ty isa CC.QualType
+    @test umax_ty isa CC.QualType
+    # size_t and its signed counterpart are the same width by construction; uintmax_t is
+    # never narrower than int. Both hold on every host, unlike the concrete widths.
+    @test CC.getTypeSizeInChars(ctx, size_ty) == CC.getTypeSizeInChars(ctx, ssize_ty)
+    @test CC.getTypeSizeInChars(ctx, umax_ty) >= CC.getTypeSizeInChars(ctx, int_ty)
+
+    # ---- size queries ----
+    @test CC.getTypeSizeInCharsIfKnown(ctx, int_ty) == CC.getTypeSizeInChars(ctx, int_ty)
+    incomplete = CC.getIncompleteArrayType(ctx, int_ty)
+    @test CC.getTypeSizeInCharsIfKnown(ctx, incomplete) === nothing
+
+    w, a, req = CC.getTypeInfoDataSizeInChars(ctx, int_ty)
+    @test w == CC.getTypeSizeInChars(ctx, int_ty)
+    @test a >= 1
+    @test req isa Enum
+
+    # ---- sugar builders ----
+    tot = CC.getTypeOfType(ctx, int_ty)
+    @test tot isa CC.QualType
+    @test CC.hasSameType(ctx, tot, int_ty)
+    @test CC.getTypeOfType(ctx, int_ty, true) isa CC.QualType
+
+    toe = CC.getTypeOfExprType(ctx, init)
+    @test toe isa CC.QualType
+    @test CC.hasSameType(ctx, toe, int_ty)
+
+    @test CC.getReferenceQualifiedType(ctx, init) isa CC.QualType
+    @test CC.hasSameType(ctx, CC.getUnconstrainedType(ctx, int_ty), int_ty)
+
+    # ---- identity predicates ----
+    @test CC.hasSameExpr(ctx, init, init)
+    @test CC.isSameConstraintExpr(ctx, init, init)
+    @test CC.isSameEntity(ctx, vd, vd)
+
+    @test f(I, "cc_actxb_tmpl")
+    ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    params = CC.getTemplateParameters(ctd)
+    p0 = CC.getParam(params, 0)
+    p1 = CC.getParam(params, 1)
+    @test CC.isSameTemplateParameterList(ctx, params, params)
+    @test CC.isSameTemplateParameter(ctx, p0, p0)
+    @test CC.isSameDefaultTemplateArgument(ctx, p1, p1)
+
+    # ---- overridden methods (count + fill agreement) ----
+    @test f(I, "cc_actxb_derived")
+    drd = CC.CXXRecordDecl(get_decl(f).ptr)
+    ms = CC.getMethods(drd)
+    for m in ms
+        n = CC.getNumOverriddenMethods(ctx, m)
+        @test n isa Integer
+        @test CC.overridden_methods_size(ctx, m) == n
+        overs = CC.getOverriddenMethods(ctx, m)
+        @test length(overs) == n
+        @test all(o -> o isa CC.NamedDecl, overs)
+        @test all(o -> o.ptr != C_NULL, overs)
+    end
+    @test any(m -> CC.overridden_methods_size(ctx, m) > 0, ms)
+
+    # ---- target / externalization queries ----
+    @test CC.getTargetAddressSpace(ctx) isa Integer
+    @test CC.mayExternalize(ctx, vd) isa Bool
+    @test CC.shouldExternalize(ctx, vd) isa Bool
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "astcontext-c: type builders and RVV predicates" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+
+    # ---- getVectorType: 4 x float; built-in element precondition satisfied ----
+    flt = CC.get_qual_type(CC.FloatTy(ctx))
+    vec = CC.getVectorType(ctx, flt, 4, CC.LibClangEx.CXVectorKind_Generic)
+    @test vec isa CC.QualType
+    @test occursin("float", CC.get_name(vec))
+
+    # ---- getElaboratedType: "struct ECRec" sugar over a record type ----
+    CC.parse(I, "struct ECRec { int a; };")
+    f = DeclFinder(I)
+    @test f(I, "ECRec")
+    rd = CC.RecordDecl(get_decl(f).ptr)
+    rectype = CC.getRecordType(ctx, rd)
+    elab = CC.getElaboratedType(ctx, CC.LibClangEx.CXElaboratedTypeKeyword_Struct,
+                                CC.NestedNameSpecifier(C_NULL), rectype)
+    @test elab isa CC.QualType
+    @test occursin("ECRec", CC.get_name(elab))
+
+    # ---- getPackExpansionType: non-pack pattern with expect_pack=false (MARSHALLING section 8) ----
+    int_t = CC.get_qual_type(CC.IntTy(ctx))
+    pack = CC.getPackExpansionType(ctx, int_t; expect_pack=false)
+    @test pack isa CC.QualType
+    packn = CC.getPackExpansionType(ctx, int_t; num_expansions=3, expect_pack=false)
+    @test packn isa CC.QualType
+
+    # ---- NSInteger / NSUInteger: target word-integer typedef types ----
+    @test CC.getNSIntegerType(ctx) isa CC.QualType
+    @test CC.getNSUIntegerType(ctx) isa CC.QualType
+
+    # ---- RVV compatibility predicates: shape only (host target decides the value) ----
+    dbl_t = CC.get_qual_type(CC.DoubleTy(ctx))
+    @test CC.areCompatibleRVVTypes(ctx, int_t, dbl_t) isa Integer
+    @test CC.areLaxCompatibleRVVTypes(ctx, int_t, dbl_t) isa Integer
+    @test CC.areCompatibleRVVTypes(ctx, int_t, int_t) isa Integer
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "astcontext-d: traversal scope, type table, ABI kind, template names" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+
+    # ---- getTraversalScope: the TranslationUnitDecl by default (MARSHALLING section 6) ----
+    scope = CC.getTraversalScope(ctx)
+    @test scope isa Vector{CC.Decl}
+    @test length(scope) >= 1
+    @test all(d -> d.ptr != C_NULL, scope)
+
+    # ---- getTypes: count + index over the context's type table ----
+    n = CC.getNumTypes(ctx)
+    @test n isa Integer
+    @test n > 0
+    t0 = CC.getType(ctx, 0)
+    @test t0 isa CC.Type_
+    @test t0.ptr != C_NULL
+    @test_throws AssertionError CC.getType(ctx, n)
+
+    # ---- getCXXABIKind / getDefaultOpenCLPointeeAddrSpace: host-decided, shape only ----
+    abi = CC.getCXXABIKind(ctx)
+    @test abi isa LX.CXTargetCXXABI_Kind
+    @test CC.getDefaultOpenCLPointeeAddrSpace(ctx) isa LX.CXLangAS
+
+    # ---- getCurrentNamedModule: no C++20 named module is under construction here ----
+    m = CC.getCurrentNamedModule(ctx)
+    @test m isa CC.Module_
+    @test m.ptr == C_NULL
+
+    # ---- the C library typedef types: their decls are unset, so the QualTypes are null ----
+    @test CC.getjmp_bufType(ctx) isa CC.QualType
+    @test CC.getsigjmp_bufType(ctx) isa CC.QualType
+    @test CC.getucontext_tType(ctx) isa CC.QualType
+
+    # ---- UnwrapSimilar*Types: in/out QualType references (MARSHALLING section 7) ----
+    int_t = CC.get_qual_type(CC.IntTy(ctx))
+    dbl_t = CC.get_qual_type(CC.DoubleTy(ctx))
+    p1 = CC.getPointerType(ctx, int_t)
+    p2 = CC.getPointerType(ctx, dbl_t)
+    unwrapped, u1, u2 = CC.UnwrapSimilarTypes(ctx, p1, p2)
+    @test unwrapped isa Bool
+    @test u1 isa CC.QualType
+    @test u2 isa CC.QualType
+    a1, a2 = CC.UnwrapSimilarArrayTypes(ctx, p1, p2)
+    @test a1 isa CC.QualType
+    @test a2 isa CC.QualType
+
+    # ---- getCanonicalTemplateArgument: canonicalise a type argument ----
+    arg = CC.TemplateArgument(int_t)
+    canon = CC.getCanonicalTemplateArgument(ctx, arg)
+    @test canon isa CC.TemplateArgument
+    @test canon.ptr != C_NULL
+    @test CC.getKind(canon) == CC.getKind(arg)
+    dispose(canon)
+    dispose(arg)
+
+    # ---- createDeviceMangleContext: skipped where the host ABI is Microsoft ----
+    ti = CC.getTargetInfo(ctx)
+    if CC.getCXXABI(ti) != LX.CXTargetCXXABI_Microsoft
+        dmc = CC.createDeviceMangleContext(ctx, ti)
+        @test dmc isa CC.MangleContext
+        @test dmc.ptr != C_NULL
+    else
+        @test_throws AssertionError CC.createDeviceMangleContext(ctx, ti)
+    end
+
+    # ---- getInjectedTemplateArg: the argument for a class template's own parameter ----
+    CC.parse(I, "template <typename T> struct TDArg { T v; };")
+    ft = DeclFinder(I)
+    @test ft(I, "TDArg")
+    ctd = CC.ClassTemplateDecl(get_decl(ft).ptr)
+    params = CC.getTemplateParameters(ctd)
+    param = CC.getParam(params, 0)
+    @test CC.isTemplateParameter(param)
+    inj = CC.getInjectedTemplateArg(ctx, param)
+    @test inj isa CC.TemplateArgument
+    @test inj.ptr != C_NULL
+    dispose(inj)
+    dispose(ft)
+
+    # ---- getNameForTemplate: name info for an assumed template name ----
+    CC.parse(I, "void tdfun();")
+    fn = DeclFinder(I)
+    @test fn(I, "tdfun")
+    fd = CC.FunctionDecl(get_decl(fn).ptr)
+    dn = CC.DeclarationName(CC.getIdentifier(fd))
+    tn = CC.getAssumedTemplateName(ctx, dn)
+    dni = CC.getNameForTemplate(ctx, tn, CC.getLocation(fd))
+    @test dni isa CC.DeclarationNameInfo
+    @test CC.getAsString(CC.getName(dni)) == "tdfun"
+    dispose(dni)
+    dispose(fn)
+
+    dispose(I)
+end
+
+@testset "ASTContext type builders, layout dump and misc queries" begin
+    LXE = CC.LibClangEx
+    I = create_interpreter(["-std=c++20"])
+    ctx = CC.get_ast_context(I)
+    CC.parse(I, """
+    enum class CtaeColor { red, green };
+    struct CtaeHost { using enum CtaeColor; };
+    template <typename T> struct CtaeDerived : T { using typename T::u_ty; };
+    namespace CtaeNS { template <typename T> struct CtaeTpl { T v; }; }
+    CtaeNS::CtaeTpl<int> ctae_tv;
+    struct CtaePoint { int x; double y; };
+    struct CtaeBase { int b; };
+    struct CtaeMid : CtaeBase { int m; };
+    int ctae_n = 4;
+    constexpr int CtaeMid::*ctae_mp = &CtaeMid::m;
+    void ctae_lambda() { int a[3]; auto l = [a]() { return a[0]; }; (void)l; }
+    """)
+    f = DeclFinder(I)
+    getptr(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f).ptr)
+
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+    n_vd = CC.VarDecl(getptr("ctae_n"))
+    n_init = CC.getInit(n_vd)                       # Expr_ (IntegerLiteral 4)
+    loc = CC.getLocation(n_vd)
+    brackets = CC.SourceRange(loc, loc)
+
+    # ---------- array / vector builders (the size expr is stored, not evaluated) ----------
+    vla = CC.getVariableArrayType(ctx, int_qt, n_init, brackets)
+    @test CC.resolve(CC.getTypePtr(vla)) isa CC.VariableArrayType
+
+    dsa = CC.getDependentSizedArrayType(ctx, int_qt, n_init, brackets)
+    @test CC.getTypePtr(dsa).ptr != C_NULL
+
+    dvt = CC.getDependentVectorType(ctx, int_qt, n_init, loc)
+    @test CC.getTypePtr(dvt).ptr != C_NULL
+
+    # ---------- unary type transform: __underlying_type(CtaeColor) ----------
+    color_qt = CC.getEnumType(ctx, CC.EnumDecl(getptr("CtaeColor")))
+    utt = CC.getUnaryTransformType(ctx, color_qt, int_qt, LXE.CXUTTKind_EnumUnderlyingType)
+    @test CC.isa_UnaryTransformType(CC.getTypePtr(utt))
+
+    # ---------- OpenCL classification: every ordinary C++ type is OCLTK_Default ----------
+    int_tp = CC.getTypePtr(int_qt)
+    @test CC.getOpenCLTypeKind(ctx, int_tp) == LXE.CXOpenCLTypeKind_OCLTK_Default
+    @test CC.getOpenCLTypeAddrSpace(ctx, int_tp) isa LXE.CXLangAS   # host/target decides
+
+    # ---------- qualified template name: CtaeNS::CtaeTpl ----------
+    tv_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.VarDecl(getptr("ctae_tv")))))
+    if tv_ty isa CC.ElaboratedType
+        nns = CC.getQualifier(tv_ty)
+        named = CC.resolve(CC.getTypePtr(CC.getNamedType(tv_ty)))
+        if nns.ptr != C_NULL && named isa CC.TemplateSpecializationType
+            qtn = CC.getQualifiedTemplateName(ctx, nns, false, CC.getTemplateName(named))
+            @test qtn isa CC.TemplateName
+            @test qtn.ptr != C_NULL
+        end
+    end
+
+    # ---------- record layout dump ----------
+    point = CC.CXXRecordDecl(getptr("CtaePoint"))
+    dump = CC.DumpRecordLayout(ctx, point)
+    @test dump isa String
+    @test !isempty(dump)
+    @test CC.DumpRecordLayout(ctx, point, true) isa String
+
+    # ---------- member-pointer path adjustment ----------
+    mp_val = CC.evaluateValue(CC.VarDecl(getptr("ctae_mp")))
+    if mp_val.ptr != C_NULL && CC.getKind(mp_val) == LXE.CXAPValueKind_MemberPointer
+        @test CC.getMemberPointerPathAdjustment(ctx, mp_val) isa Integer
+    end
+
+    # ---------- MakeIntValue: APSInt across the LLVM-C bridge ----------
+    gv = CC.LLVM.GenericValue(CC.MakeIntValue(ctx, 42, int_qt))
+    @test convert(Int, gv) == 42
+    CC.LLVM.dispose(gv)
+
+    # ---------- using-enum / unresolved-using decls (found by kind, they are unnamed) ----------
+    tu_decls = CC.decls(CC.castToDeclContext(CC.getTranslationUnitDecl(ctx)))
+    uei = findfirst(d -> d isa CC.UsingEnumDecl, tu_decls)
+    if uei !== nothing
+        ued = tu_decls[uei]
+        @test CC.getInstantiatedFromUsingEnumDecl(ctx, ued).ptr == C_NULL
+        CC.setInstantiatedFromUsingEnumDecl(ctx, ued, ued)
+        @test CC.getInstantiatedFromUsingEnumDecl(ctx, ued).ptr == ued.ptr
+    end
+    uui = findfirst(d -> d isa CC.UnresolvedUsingTypenameDecl, tu_decls)
+    if uui !== nothing
+        @test CC.getTypePtr(CC.getUnresolvedUsingType(ctx, tu_decls[uui])).ptr != C_NULL
+    end
+
+    # ---------- ArrayInitLoopExpr element count (the lambda's `int a[3]` capture) ----------
+    body = CC.getBody(CC.FunctionDecl(getptr("ctae_lambda")))
+    if body.ptr != C_NULL
+        for e in filter(s -> s isa CC.ArrayInitLoopExpr, CC.subtree(body))
+            @test CC.getArrayInitLoopExprElementCount(ctx, e) == 3
+        end
+    end
+
+    # ---------- signature-only coverage for what a test cannot legally construct ----------
+    @test hasmethod(CC.getUsingType, (CC.ASTContext, CC.UsingShadowDecl, CC.QualType))
+    @test hasmethod(CC.getNextLocalImport, (CC.ImportDecl,))
+
+    dispose(f)
+    dispose(I)
+end

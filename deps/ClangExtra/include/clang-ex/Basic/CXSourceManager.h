@@ -52,7 +52,13 @@ CXDiagnosticsEngine clang_SourceManager_getDiagnostics(CXSourceManager SM);
 
 CXFileManager clang_SourceManager_getFileManager(CXSourceManager SM);
 
+bool clang_SourceManager_userFilesAreVolatile(CXSourceManager SM);
+
 bool clang_SourceManager_isMainFile(CXSourceManager SM, CXFileEntry FE);
+
+// this allocates; call `clang_FileID_dispose` to release. The returned FileID is invalid
+// (hash value 0) when no precompiled preamble was set.
+CXFileID clang_SourceManager_getPreambleFileID(CXSourceManager SM);
 
 // this allocates; call `clang_FileID_dispose` to release.
 CXFileID clang_SourceManager_getOrCreateFileID(CXSourceManager SM, CXFileEntryRef FER,
@@ -72,10 +78,20 @@ CXFileEntry clang_SourceManager_getFileEntryForID(CXSourceManager SM, CXFileID F
 // returns nullptr when the FileID has no file entry.
 CXFileEntryRef clang_SourceManager_getFileEntryRefForID(CXSourceManager SM, CXFileID FID);
 
+// borrowed; *Length is filled when non-null. Returns nullptr for non-files and built-in
+// buffers (the std::nullopt case).
+const char *clang_SourceManager_getNonBuiltinFilenameForID(CXSourceManager SM, CXFileID FID,
+                                                           size_t *Length);
+
 // borrowed pointer into the buffer, exactly *Length bytes; *Length and *Invalid are
 // filled when non-null.
 const char *clang_SourceManager_getBufferData(CXSourceManager SM, CXFileID FID,
                                               size_t *Length, bool *Invalid);
+
+// borrowed; *Length is filled when non-null. Returns nullptr when the buffer is invalid
+// (the std::nullopt case).
+const char *clang_SourceManager_getBufferDataOrNone(CXSourceManager SM, CXFileID FID,
+                                                    size_t *Length);
 
 unsigned clang_SourceManager_getNumCreatedFIDsForFileID(CXSourceManager SM, CXFileID FID);
 
@@ -224,6 +240,12 @@ unsigned clang_SourceManager_getFileIDSize(CXSourceManager SM, CXFileID FID);
 bool clang_SourceManager_isInFileID(CXSourceManager SM, CXSourceLocation_ Loc, CXFileID FID,
                                     unsigned *RelativeOffset);
 
+unsigned clang_SourceManager_getLineTableFilenameID(CXSourceManager SM, const char *Str);
+
+bool clang_SourceManager_hasLineTable(CXSourceManager SM);
+
+size_t clang_SourceManager_getContentCacheSize(CXSourceManager SM);
+
 CXSourceLocation_ clang_SourceManager_translateFileLineCol(CXSourceManager SM,
                                                            CXFileEntry FE, unsigned Line,
                                                            unsigned Col);
@@ -247,11 +269,97 @@ bool clang_SourceManager_isBeforeInSLocAddrSpace(CXSourceManager SM, CXSourceLoc
 bool clang_SourceManager_isPointWithin(CXSourceManager SM, CXSourceLocation_ Location,
                                        CXSourceLocation_ Start, CXSourceLocation_ End);
 
+bool clang_SourceManager_hasFileInfo(CXSourceManager SM, CXFileEntry File);
+
+unsigned clang_SourceManager_local_sloc_entry_size(CXSourceManager SM);
+
+// borrowed; `Index` must be < `clang_SourceManager_local_sloc_entry_size` (Clang asserts).
+// The returned pointer dangles once the SLocEntry table grows.
+CXSLocEntry clang_SourceManager_getLocalSLocEntry(CXSourceManager SM, unsigned Index);
+
+unsigned clang_SourceManager_loaded_sloc_entry_size(CXSourceManager SM);
+
+// borrowed, as `clang_SourceManager_getLocalSLocEntry`. *Invalid is filled when non-null;
+// it is set for the invalid/sentinel FileID, whose local entry 0 is returned instead.
+CXSLocEntry clang_SourceManager_getSLocEntry(CXSourceManager SM, CXFileID FID,
+                                             bool *Invalid);
+
+uint32_t clang_SourceManager_getNextLocalOffset(CXSourceManager SM);
+
+bool clang_SourceManager_isLoadedSourceLocation(CXSourceManager SM, CXSourceLocation_ Loc);
+
+bool clang_SourceManager_isLocalSourceLocation(CXSourceManager SM, CXSourceLocation_ Loc);
+
+// FID must not be the sentinel FileID (hash value 0xFFFFFFFF); Clang asserts it.
+bool clang_SourceManager_isLoadedFileID(CXSourceManager SM, CXFileID FID);
+
+// FID must not be the sentinel FileID (hash value 0xFFFFFFFF); Clang asserts it.
+bool clang_SourceManager_isLocalFileID(CXSourceManager SM, CXFileID FID);
+
 CXSourceLocation_ clang_SourceManager_getImmediateMacroCallerLoc(CXSourceManager SM,
                                                                  CXSourceLocation_ Loc);
 
 CXSourceLocation_ clang_SourceManager_getTopMacroCallerLoc(CXSourceManager SM,
                                                            CXSourceLocation_ Loc);
+
+// clang/Basic/SourceManager.h: SrcMgr::FileInfo. A CXFileInfo is a borrowed interior
+// pointer into the SLocEntry it came from, so it dangles once the SourceManager's
+// SLocEntry table grows (i.e. once a new FileID is created) — re-fetch, don't cache.
+
+CXSourceLocation_ clang_FileInfo_getIncludeLoc(CXFileInfo FI);
+
+// getContentCache
+
+CXCharacteristicKind clang_FileInfo_getFileCharacteristic(CXFileInfo FI);
+
+bool clang_FileInfo_hasLineDirectives(CXFileInfo FI);
+
+// setHasLineDirectives
+
+// borrowed; *Length is filled when non-null. The StringRef is not NUL-terminated.
+const char *clang_FileInfo_getName(CXFileInfo FI, size_t *Length);
+
+// clang/Basic/SourceManager.h: SrcMgr::ExpansionInfo. Same borrowed-interior-pointer
+// lifetime as CXFileInfo.
+
+// getExpansionLocRange
+
+CXSourceLocation_ clang_ExpansionInfo_getSpellingLoc(CXExpansionInfo EI);
+
+CXSourceLocation_ clang_ExpansionInfo_getExpansionLocStart(CXExpansionInfo EI);
+
+CXSourceLocation_ clang_ExpansionInfo_getExpansionLocEnd(CXExpansionInfo EI);
+
+bool clang_ExpansionInfo_isExpansionTokenRange(CXExpansionInfo EI);
+
+bool clang_ExpansionInfo_isMacroArgExpansion(CXExpansionInfo EI);
+
+bool clang_ExpansionInfo_isMacroBodyExpansion(CXExpansionInfo EI);
+
+bool clang_ExpansionInfo_isFunctionMacroExpansion(CXExpansionInfo EI);
+
+// create
+// createForMacroArg
+// createForTokenSplit
+
+// clang/Basic/SourceManager.h: SrcMgr::SLocEntry. A CXSLocEntry is a borrowed interior
+// pointer into the SourceManager's local/loaded SLocEntry table, invalidated when that
+// table grows.
+
+uint32_t clang_SLocEntry_getOffset(CXSLocEntry E);
+
+bool clang_SLocEntry_isExpansion(CXSLocEntry E);
+
+bool clang_SLocEntry_isFile(CXSLocEntry E);
+
+// `clang_SLocEntry_isFile` must hold — Clang asserts it; borrowed.
+CXFileInfo clang_SLocEntry_getFile(CXSLocEntry E);
+
+// `clang_SLocEntry_isExpansion` must hold — Clang asserts it; borrowed.
+CXExpansionInfo clang_SLocEntry_getExpansion(CXSLocEntry E);
+
+// getOffsetOnly
+// get
 
 LLVM_CLANG_C_EXTERN_C_END
 

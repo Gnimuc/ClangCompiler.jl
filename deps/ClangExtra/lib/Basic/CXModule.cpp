@@ -1,6 +1,7 @@
 #include "clang-ex/Basic/CXModule.h"
 #include "utils.h"
 #include "clang/Basic/Module.h"
+#include "clang/Basic/LangOptions.h"
 
 CXModule clang_Module_create(const char *Name, CXSourceLocation_ DefinitionLoc,
                              CXModule Parent, bool IsFramework, bool IsExplicit,
@@ -54,6 +55,10 @@ bool clang_Module_isUnimportable(CXModule M) {
 }
 
 // isForBuilding
+bool clang_Module_isForBuilding(CXModule M, CXLangOptions LangOpts) {
+  return static_cast<clang::Module *>(M)->isForBuilding(
+      *static_cast<clang::LangOptions *>(LangOpts));
+}
 
 bool clang_Module_isAvailable(CXModule M) {
   return static_cast<clang::Module *>(M)->isAvailable();
@@ -107,6 +112,9 @@ bool clang_Module_isModuleInterfaceUnit(CXModule M) {
 }
 
 // isNamedModuleInterfaceHasInit
+bool clang_Module_isNamedModuleInterfaceHasInit(CXModule M) {
+  return static_cast<clang::Module *>(M)->isNamedModuleInterfaceHasInit();
+}
 
 CXString clang_Module_getPrimaryModuleInterfaceName(CXModule M) {
   return extra::makeCXString(
@@ -129,12 +137,21 @@ const char *clang_Module_getTopLevelModuleName(CXModule M) {
 }
 
 // getASTFile
+CXFileEntryRef clang_Module_getASTFile(CXModule M) {
+  clang::OptionalFileEntryRef Ref = static_cast<clang::Module *>(M)->getASTFile();
+  if (!Ref)
+    return nullptr;
+  return std::make_unique<clang::FileEntryRef>(*Ref).release();
+}
 // setASTFile
 // getUmbrellaDirAsWritten
 // getUmbrellaHeaderAsWritten
 // getEffectiveUmbrellaDir
 // addTopHeader
 // addTopHeaderFilename
+void clang_Module_addTopHeaderFilename(CXModule M, const char *Filename) {
+  static_cast<clang::Module *>(M)->addTopHeaderFilename(llvm::StringRef(Filename));
+}
 // getTopHeaders
 
 bool clang_Module_directlyUses(CXModule M, CXModule Requested) {
@@ -144,17 +161,26 @@ bool clang_Module_directlyUses(CXModule M, CXModule Requested) {
 
 // addRequirement
 // markUnavailable
+void clang_Module_markUnavailable(CXModule M, bool Unimportable) {
+  static_cast<clang::Module *>(M)->markUnavailable(Unimportable);
+}
 
 CXModule clang_Module_findSubmodule(CXModule M, const char *Name) {
   return static_cast<clang::Module *>(M)->findSubmodule(llvm::StringRef(Name));
 }
 
 // findOrInferSubmodule
+CXModule clang_Module_findOrInferSubmodule(CXModule M, const char *Name) {
+  return static_cast<clang::Module *>(M)->findOrInferSubmodule(llvm::StringRef(Name));
+}
 // getGlobalModuleFragment
 // getPrivateModuleFragment
 
 // isModuleVisible
 // getVisibilityID
+unsigned clang_Module_getVisibilityID(CXModule M) {
+  return static_cast<clang::Module *>(M)->getVisibilityID();
+}
 
 unsigned clang_Module_getNumSubmodules(CXModule M) {
   return static_cast<unsigned>(

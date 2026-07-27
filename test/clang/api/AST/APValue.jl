@@ -363,3 +363,84 @@ import ClangCompiler as CC
     dispose(f)
     dispose(I)
 end
+
+@testset "Coverage | APValue payload + mangler tail" begin
+    I = create_interpreter(["-std=c++20"])
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+
+    src = """
+    constexpr int pv_int = 5;
+    constexpr int pv_arr[3] = {10, 20, 30};
+    constexpr const int *pv_ptr = &pv_arr[1];
+    constexpr const int *pv_null = nullptr;
+    constexpr _Complex int pv_cint = 3;
+    constexpr _Complex double pv_cdouble = 1.5;
+    struct PvS { int m; };
+    constexpr int PvS::*pv_memptr = &PvS::m;
+    """
+    CC.parse(I, src)
+
+    valueof(name) = (@test f(I, name); CC.evaluateValue(CC.VarDecl(get_decl(f).ptr)))
+
+    # needsCleanup is total: false for a small integer leaf, true for an aggregate.
+    v_int = valueof("pv_int")
+    @test !CC.needsCleanup(v_int)
+    v_arr = valueof("pv_arr")
+    @test CC.isArray(v_arr)
+    @test CC.needsCleanup(v_arr)
+
+    # Complex leaves ride the GenericValue bridge; the float halves carry raw bits.
+    v_ci = valueof("pv_cint")
+    @test CC.isComplexInt(v_ci)
+    gv = CC.LLVM.GenericValue(CC.getComplexIntReal(v_ci))
+    @test convert(Int, gv) == 3
+    CC.LLVM.dispose(gv)
+    gv = CC.LLVM.GenericValue(CC.getComplexIntImag(v_ci))
+    @test convert(Int, gv) == 0
+    CC.LLVM.dispose(gv)
+
+    v_cf = valueof("pv_cdouble")
+    @test CC.isComplexFloat(v_cf)
+    gv = CC.LLVM.GenericValue(CC.getComplexFloatReal(v_cf))
+    @test CC.LLVM.intwidth(gv) == 64
+    @test reinterpret(Float64, convert(UInt64, gv)) == 1.5
+    CC.LLVM.dispose(gv)
+    gv = CC.LLVM.GenericValue(CC.getComplexFloatImag(v_cf))
+    @test reinterpret(Float64, convert(UInt64, gv)) == 0.0
+    CC.LLVM.dispose(gv)
+
+    # LValue payload. Offset/call-index/version are target- and frame-decided, so
+    # only their shape is asserted.
+    v_ptr = valueof("pv_ptr")
+    @test CC.isLValue(v_ptr)
+    @test CC.getLValueOffset(v_ptr) isa Integer
+    @test !CC.isLValueOnePastTheEnd(v_ptr)
+    @test CC.hasLValuePath(v_ptr)
+    @test CC.getLValueCallIndex(v_ptr) isa Integer
+    @test CC.getLValueVersion(v_ptr) isa Integer
+    @test !CC.isNullPointer(v_ptr)
+
+    v_null = valueof("pv_null")
+    @test CC.isLValue(v_null)
+    @test CC.isNullPointer(v_null)
+    @test CC.getLValueOffset(v_null) isa Integer
+
+    # Member-pointer payload.
+    v_mp = valueof("pv_memptr")
+    @test CC.isMemberPointer(v_mp)
+    @test CC.getMemberPointerDecl(v_mp) isa CC.ValueDecl
+    @test CC.getMemberPointerDecl(v_mp).ptr != C_NULL
+    @test !CC.isMemberPointerToDerivedMember(v_mp)
+
+    # No portable source produces an AddrLabelDiff value, so the address-of-label
+    # accessors are exercised through the preconditions they restate instead.
+    @test_throws AssertionError CC.getAddrLabelDiffLHS(v_int)
+    @test_throws AssertionError CC.getAddrLabelDiffRHS(v_int)
+    @test_throws AssertionError CC.getComplexIntReal(v_int)
+    @test_throws AssertionError CC.getLValueOffset(v_int)
+    @test_throws AssertionError CC.getMemberPointerDecl(v_int)
+
+    dispose(f)
+    dispose(I)
+end

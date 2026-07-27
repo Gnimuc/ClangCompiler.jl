@@ -1,4 +1,9 @@
 #include "clang-ex/Frontend/CXCompilerInstance.h"
+#include "utils.h"
+#include "clang/Basic/FileSystemOptions.h"
+#include "clang/Frontend/CompilerInvocation.h"
+#include "clang/Frontend/DependencyOutputOptions.h"
+#include "clang/Frontend/PreprocessorOutputOptions.h"
 #include "clang/Basic/TargetInfo.h"
 #include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -247,6 +252,88 @@ CXTargetOptions clang_CompilerInstance_getTargetOpts(CXCompilerInstance CI) {
 CXLangOptions clang_CompilerInstance_getLangOpts(CXCompilerInstance CI) {
   auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getLangOpts();
   return &Opts;
+}
+
+// Action
+
+// Forwarding options — all of these dereference CompilerInstance::Invocation
+// unchecked; see the header for the precondition.
+CXAnalyzerOptions clang_CompilerInstance_getAnalyzerOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getAnalyzerOpts();
+  return &Opts;
+}
+
+CXDependencyOutputOptions
+clang_CompilerInstance_getDependencyOutputOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getDependencyOutputOpts();
+  return &Opts;
+}
+
+CXFileSystemOptions clang_CompilerInstance_getFileSystemOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getFileSystemOpts();
+  return &Opts;
+}
+
+CXPreprocessorOutputOptions
+clang_CompilerInstance_getPreprocessorOutputOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getPreprocessorOutputOpts();
+  return &Opts;
+}
+
+// Module loading
+bool clang_CompilerInstance_shouldBuildGlobalModuleIndex(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->shouldBuildGlobalModuleIndex();
+}
+
+void clang_CompilerInstance_setBuildGlobalModuleIndex(CXCompilerInstance CI, bool Build) {
+  static_cast<clang::CompilerInstance *>(CI)->setBuildGlobalModuleIndex(Build);
+}
+
+bool clang_CompilerInstance_hadModuleLoaderFatalFailure(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->hadModuleLoaderFatalFailure();
+}
+
+CXString clang_CompilerInstance_getSpecificModuleCachePath(CXCompilerInstance CI) {
+  return extra::makeCXString(
+      static_cast<clang::CompilerInstance *>(CI)->getSpecificModuleCachePath());
+}
+
+// AuxTarget
+bool clang_CompilerInstance_createTarget(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->createTarget();
+}
+
+CXTargetInfo_ clang_CompilerInstance_getAuxTarget(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->getAuxTarget();
+}
+
+void clang_CompilerInstance_setAuxTarget(CXCompilerInstance CI, CXTargetInfo_ Info) {
+  static_cast<clang::CompilerInstance *>(CI)->setAuxTarget(
+      static_cast<clang::TargetInfo *>(Info));
+}
+
+// Code completion
+bool clang_CompilerInstance_hasCodeCompletionConsumer(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->hasCodeCompletionConsumer();
+}
+
+// Output files
+void clang_CompilerInstance_clearOutputFiles(CXCompilerInstance CI, bool EraseFiles) {
+  static_cast<clang::CompilerInstance *>(CI)->clearOutputFiles(EraseFiles);
+}
+
+// Plugins
+void clang_CompilerInstance_LoadRequestedPlugins(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->LoadRequestedPlugins();
+}
+
+// Frontend timer
+bool clang_CompilerInstance_hasFrontendTimer(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->hasFrontendTimer();
+}
+
+void clang_CompilerInstance_createFrontendTimer(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->createFrontendTimer();
 }
 
 // Action

@@ -188,3 +188,47 @@ end
         CC.LLVM.dispose(lctx)
     end
 end
+
+@testset "frontend tail: option views, module and output-file queries" begin
+    # CompilerInvocation option accessors return borrowed interior views; only the
+    # invocation itself is disposed.
+    inv = CC.CompilerInvocation()
+    @test inv.ptr != C_NULL
+    @test CC.getLangOpts(inv) isa CC.LangOptions
+    @test CC.getAnalyzerOpts(inv) isa CC.AnalyzerOptions
+    @test CC.getMigratorOpts(inv) isa CC.MigratorOptions
+    @test CC.getFileSystemOpts(inv) isa CC.FileSystemOptions
+    @test CC.getDependencyOutputOpts(inv) isa CC.DependencyOutputOptions
+    @test CC.getPreprocessorOutputOpts(inv) isa CC.PreprocessorOutputOptions
+    @test CC.getLangOpts(inv).ptr != C_NULL
+    @test CC.getAnalyzerOpts(inv).ptr != C_NULL
+    @test CC.getFileSystemOpts(inv).ptr != C_NULL
+
+    mod_hash = CC.getModuleHash(inv)
+    @test mod_hash isa String
+    @test !isempty(mod_hash)
+    CC.dispose(inv)
+
+    # A default-constructed CompilerInstance already owns an invocation, so the
+    # forwarding accessors' precondition holds.
+    ci = CC.CompilerInstance()
+    @test CC.hasInvocation(ci)
+    @test CC.getAnalyzerOpts(ci) isa CC.AnalyzerOptions
+    @test CC.getDependencyOutputOpts(ci) isa CC.DependencyOutputOptions
+    @test CC.getFileSystemOpts(ci) isa CC.FileSystemOptions
+    @test CC.getPreprocessorOutputOpts(ci) isa CC.PreprocessorOutputOptions
+
+    @test CC.shouldBuildGlobalModuleIndex(ci) isa Bool
+    @test CC.setBuildGlobalModuleIndex(ci, false) === nothing
+    @test CC.shouldBuildGlobalModuleIndex(ci) isa Bool
+    @test CC.hadModuleLoaderFatalFailure(ci) == false
+
+    # no module cache path is configured on a fresh instance
+    @test CC.getSpecificModuleCachePath(ci) isa String
+
+    @test CC.hasCodeCompletionConsumer(ci) == false
+    @test CC.getAuxTarget(ci) isa CC.TargetInfo
+    @test CC.getAuxTarget(ci).ptr == C_NULL
+    @test CC.clearOutputFiles(ci, false) === nothing
+    CC.dispose(ci)
+end
