@@ -115,8 +115,21 @@ end
         hfi = CC.getExistingFileInfo(hs, fer)
         @test hfi isa CC.HeaderFileInfo
         @test hfi.ptr != C_NULL
-        @test CC.getFileInfo(hs, fer).ptr == hfi.ptr
-        @test CC.getExistingFileInfo(hs, fer; want_external=false).ptr == hfi.ptr
+
+        # Each call copies the record out, so two calls are distinct allocations holding
+        # equal contents -- not the same pointer. That is the point: a view would dangle
+        # the moment the search reallocated its record vector.
+        hfi2 = CC.getFileInfo(hs, fer)
+        hfi3 = CC.getExistingFileInfo(hs, fer; want_external=false)
+        @test hfi2.ptr != hfi.ptr
+        @test hfi3.ptr != hfi.ptr
+        for other in (hfi2, hfi3)
+            @test CC.getIsValid(other) == CC.getIsValid(hfi)
+            @test CC.getDirInfo(other) == CC.getDirInfo(hfi)
+            @test CC.getFramework(other) == CC.getFramework(hfi)
+        end
+        dispose(hfi2)
+        dispose(hfi3)
 
         # The exposed fields of the aggregate. IsValid is set by the getFileInfo above.
         @test CC.getIsValid(hfi)
@@ -127,19 +140,26 @@ end
         @test CC.getFramework(hfi) isa String
         @test CC.getControllingMacroRaw(hfi).ptr == C_NULL
 
-        # Marks read back through both the HeaderSearch accessors and the record's fields.
+        # A snapshot does not track later edits: the record taken before the mark still
+        # reads the old flavor, while a freshly taken one sees the new one.
         CC.MarkFileSystemHeader(hs, fer)
         @test CC.getFileDirFlavor(hs, fer) == CC.CXCharacteristicKind_C_System
-        @test CC.getDirInfo(CC.getExistingFileInfo(hs, fer)) ==
-              CC.CXCharacteristicKind_C_System
+        after = CC.getExistingFileInfo(hs, fer)
+        @test CC.getDirInfo(after) == CC.CXCharacteristicKind_C_System
+        dispose(after)
+        dispose(hfi)
 
         CC.MarkFileIncludeOnce(hs, fer)
-        @test CC.getIsPragmaOnce(CC.getExistingFileInfo(hs, fer))
+        once = CC.getExistingFileInfo(hs, fer)
+        @test CC.getIsPragmaOnce(once)
+        dispose(once)
         @test CC.isFileMultipleIncludeGuarded(hs, fer)
 
         guard = CC.getIdentifierInfo(pp, "CLANGCOMPILER_HEADER_SEARCH_PROBE_H")
         CC.SetFileControllingMacro(hs, fer, guard)
-        @test CC.getControllingMacroRaw(CC.getExistingFileInfo(hs, fer)).ptr == guard.ptr
+        guarded = CC.getExistingFileInfo(hs, fer)
+        @test CC.getControllingMacroRaw(guarded).ptr == guard.ptr
+        dispose(guarded)
         @test CC.isFileMultipleIncludeGuarded(hs, fer)
 
         # User-entry usage: one flag per HeaderSearchOptions user entry.

@@ -98,18 +98,6 @@ CXString clang_HeaderSearch_getHeaderMapFileName(CXHeaderSearch HS, unsigned Idx
 
 unsigned clang_HeaderSearch_header_file_size(CXHeaderSearch HS);
 
-// The returned CXHeaderFileInfo is a borrowed interior pointer into the search's
-// HeaderFileInfo vector: a later clang_HeaderSearch_getFileInfo can reallocate that
-// vector and clang_HeaderSearch_ClearFileInfo empties it, so read the fields out before
-// making either call. This form creates an empty record when the header is unknown.
-CXHeaderFileInfo clang_HeaderSearch_getFileInfo(CXHeaderSearch HS, CXFileEntryRef FE);
-
-// Same borrowing rules, but never creates: NULL when no record has ever been filled in
-// for FE, or when the record came from an external source and WantExternal is false.
-CXHeaderFileInfo clang_HeaderSearch_getExistingFileInfo(CXHeaderSearch HS,
-                                                        CXFileEntryRef FE,
-                                                        bool WantExternal);
-
 unsigned clang_HeaderSearch_search_dir_size(CXHeaderSearch HS);
 
 // helper: name of the Idx-th search directory, i.e. `(*HS->search_dir_nth(Idx)).getName()`.
@@ -142,9 +130,9 @@ size_t clang_HeaderSearch_getTotalMemory(CXHeaderSearch HS);
 
 // HeaderFileInfo
 //
-// Field exposure for the aggregate clang_HeaderSearch_getFileInfo and
-// clang_HeaderSearch_getExistingFileInfo hand back. Every CXHeaderFileInfo is borrowed
-// and is invalidated by the calls named on those two functions.
+// Field exposure for the aggregate clang_HeaderSearch_copyFileInfo and
+// clang_HeaderSearch_copyExistingFileInfo hand back. Every CXHeaderFileInfo is an owned
+// copy the caller releases with clang_HeaderFileInfo_dispose.
 
 bool clang_HeaderFileInfo_getIsImport(CXHeaderFileInfo HFI);
 
@@ -163,6 +151,34 @@ bool clang_HeaderFileInfo_getIsValid(CXHeaderFileInfo HFI);
 CXIdentifierInfo clang_HeaderFileInfo_getControllingMacroRaw(CXHeaderFileInfo HFI);
 
 CXString clang_HeaderFileInfo_getFramework(CXHeaderFileInfo HFI);
+
+// --- Owned snapshots of a HeaderFileInfo record ---------------------------------------
+//
+// clang::HeaderSearch::getFileInfo returns a reference into the search's private
+// `std::vector<HeaderFileInfo>`, and getExistingFileInfo a pointer into it. A later
+// getFileInfo for a different header reallocates that vector and ClearFileInfo empties it,
+// after which the earlier pointer dangles -- and because the vector is private, nothing on
+// this side of the boundary can observe that it moved, so the borrow cannot be checked.
+// Only the copying forms below are exposed; the borrowing ones are deliberately absent.
+//
+// The copy is a snapshot: later changes clang makes to the real record are not reflected.
+// Its pointer members stay valid regardless, because the reallocation moves the structs and
+// not what they point at -- ControllingMacro belongs to the identifier table and Framework
+// to the search's own string allocator, both of which outlive the vector.
+
+// The record for File, creating an empty one when the header has never been looked up (the
+// same side effect the borrowing form has). Release with clang_HeaderFileInfo_dispose.
+CXHeaderFileInfo clang_HeaderSearch_copyFileInfo(CXHeaderSearch HS, CXFileEntryRef FE);
+
+// The record for File if one has ever been filled in, or NULL when none has. Release a
+// non-NULL result with clang_HeaderFileInfo_dispose.
+CXHeaderFileInfo clang_HeaderSearch_copyExistingFileInfo(CXHeaderSearch HS,
+                                                         CXFileEntryRef FE,
+                                                         bool WantExternal);
+
+// Release a record obtained from either copy function. This is a plain delete, so it must
+// only ever see a pointer one of those two returned.
+void clang_HeaderFileInfo_dispose(CXHeaderFileInfo HFI);
 
 LLVM_CLANG_C_EXTERN_C_END
 

@@ -1459,3 +1459,309 @@ function getTargetID(x::AbstractTargetInfo)
     @check_ptrs x
     return get_string(clang_TargetInfo_getTargetID(x))
 end
+
+# The fixed-point types (`_Accum`, `_Fract`, and their short/long/unsigned spellings). Every
+# value below is chosen by the target, so tests must assert their shape and their algebraic
+# relationships -- never a particular number.
+
+"""
+    getAccumAlign(x::AbstractTargetInfo) -> Int
+Return the ABI alignment, in bits, of `_Accum`.
+"""
+function getAccumAlign(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getAccumAlign(x)
+end
+
+"""
+    getAccumIBits(x::AbstractTargetInfo) -> Int
+Return the number of integral bits in `_Accum`.
+"""
+function getAccumIBits(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getAccumIBits(x)
+end
+
+"""
+    getAccumScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `_Accum`.
+"""
+function getAccumScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getAccumScale(x)
+end
+
+"""
+    getAccumWidth(x::AbstractTargetInfo) -> Int
+Return the bit width of `_Accum`.
+"""
+function getAccumWidth(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getAccumWidth(x)
+end
+
+"""
+    getFractAlign(x::AbstractTargetInfo) -> Int
+Return the ABI alignment, in bits, of `_Fract`.
+"""
+function getFractAlign(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getFractAlign(x)
+end
+
+"""
+    getFractScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `_Fract`.
+"""
+function getFractScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getFractScale(x)
+end
+
+"""
+    getFractWidth(x::AbstractTargetInfo) -> Int
+Return the bit width of `_Fract`.
+"""
+function getFractWidth(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getFractWidth(x)
+end
+
+"""
+    getLongAccumAlign(x::AbstractTargetInfo) -> Int
+Return the ABI alignment, in bits, of `long _Accum`.
+"""
+function getLongAccumAlign(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getLongAccumAlign(x)
+end
+
+"""
+    getLongAccumIBits(x::AbstractTargetInfo) -> Int
+Return the number of integral bits in `long _Accum`.
+"""
+function getLongAccumIBits(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getLongAccumIBits(x)
+end
+
+"""
+    getLongAccumScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `long _Accum`.
+"""
+function getLongAccumScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getLongAccumScale(x)
+end
+
+"""
+    getLongAccumWidth(x::AbstractTargetInfo) -> Int
+Return the bit width of `long _Accum`.
+"""
+function getLongAccumWidth(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getLongAccumWidth(x)
+end
+
+"""
+    getLongFractAlign(x::AbstractTargetInfo) -> Int
+Return the ABI alignment, in bits, of `long _Fract`.
+"""
+function getLongFractAlign(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getLongFractAlign(x)
+end
+
+"""
+    getLongFractScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `long _Fract`.
+"""
+function getLongFractScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getLongFractScale(x)
+end
+
+"""
+    getLongFractWidth(x::AbstractTargetInfo) -> Int
+Return the bit width of `long _Fract`.
+"""
+function getLongFractWidth(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getLongFractWidth(x)
+end
+
+"""
+    getShortAccumAlign(x::AbstractTargetInfo) -> Int
+Return the ABI alignment, in bits, of `short _Accum`.
+"""
+function getShortAccumAlign(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getShortAccumAlign(x)
+end
+
+"""
+    getShortAccumIBits(x::AbstractTargetInfo) -> Int
+Return the number of integral bits in `short _Accum`.
+"""
+function getShortAccumIBits(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getShortAccumIBits(x)
+end
+
+"""
+    getShortAccumScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `short _Accum`.
+"""
+function getShortAccumScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getShortAccumScale(x)
+end
+
+"""
+    getShortAccumWidth(x::AbstractTargetInfo) -> Int
+Return the bit width of `short _Accum`.
+"""
+function getShortAccumWidth(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getShortAccumWidth(x)
+end
+
+"""
+    getShortFractAlign(x::AbstractTargetInfo) -> Int
+Return the ABI alignment, in bits, of `short _Fract`.
+"""
+function getShortFractAlign(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getShortFractAlign(x)
+end
+
+"""
+    getShortFractScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `short _Fract`.
+"""
+function getShortFractScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getShortFractScale(x)
+end
+
+"""
+    getShortFractWidth(x::AbstractTargetInfo) -> Int
+Return the bit width of `short _Fract`.
+"""
+function getShortFractWidth(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getShortFractWidth(x)
+end
+
+"""
+    getUnsignedAccumIBits(x::AbstractTargetInfo) -> Int
+Return the number of integral bits in `unsigned _Accum`.
+"""
+function getUnsignedAccumIBits(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedAccumIBits(x)
+end
+
+"""
+    getUnsignedAccumScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `unsigned _Accum`.
+"""
+function getUnsignedAccumScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedAccumScale(x)
+end
+
+"""
+    getUnsignedFractScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `unsigned _Fract`.
+"""
+function getUnsignedFractScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedFractScale(x)
+end
+
+"""
+    getUnsignedLongAccumIBits(x::AbstractTargetInfo) -> Int
+Return the number of integral bits in `unsigned long _Accum`.
+"""
+function getUnsignedLongAccumIBits(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedLongAccumIBits(x)
+end
+
+"""
+    getUnsignedLongAccumScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `unsigned long _Accum`.
+"""
+function getUnsignedLongAccumScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedLongAccumScale(x)
+end
+
+"""
+    getUnsignedLongFractScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `unsigned long _Fract`.
+"""
+function getUnsignedLongFractScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedLongFractScale(x)
+end
+
+"""
+    getUnsignedShortAccumIBits(x::AbstractTargetInfo) -> Int
+Return the number of integral bits in `unsigned short _Accum`.
+"""
+function getUnsignedShortAccumIBits(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedShortAccumIBits(x)
+end
+
+"""
+    getUnsignedShortAccumScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `unsigned short _Accum`.
+"""
+function getUnsignedShortAccumScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedShortAccumScale(x)
+end
+
+"""
+    getUnsignedShortFractScale(x::AbstractTargetInfo) -> Int
+Return the number of fractional bits in `unsigned short _Fract`.
+"""
+function getUnsignedShortFractScale(x::AbstractTargetInfo)::Int
+    @check_ptrs x
+    return clang_TargetInfo_getUnsignedShortFractScale(x)
+end
+
+"""
+    doUnsignedFixedPointTypesHavePadding(x::AbstractTargetInfo) -> Bool
+Return whether the unsigned fixed-point types spend a bit on padding so that they keep the
+same scale as their signed counterparts.
+"""
+function doUnsignedFixedPointTypesHavePadding(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_doUnsignedFixedPointTypesHavePadding(x)
+end
+
+"""
+    getFPEvalMethod(x::AbstractTargetInfo) -> CXFPEvalMethodKind
+Return the floating-point evaluation method the target's default excess precision implies.
+"""
+function getFPEvalMethod(x::AbstractTargetInfo)
+    @check_ptrs x
+    return clang_TargetInfo_getFPEvalMethod(x)
+end
+
+"""
+    getRealTypeByWidth(x::AbstractTargetInfo, bit_width::Integer,
+                       explicit_type::CXFloatModeKind) -> CXFloatModeKind
+Return the real floating-point type of the given bit width, or `CXFloatModeKind_NoFloat`
+when the target has none. `explicit_type` selects between the `float` and `__bf16`
+spellings at 16 bits.
+"""
+function getRealTypeByWidth(x::AbstractTargetInfo, bit_width::Integer,
+                            explicit_type::CXFloatModeKind)
+    @check_ptrs x
+    return clang_TargetInfo_getRealTypeByWidth(x, bit_width, explicit_type)
+end

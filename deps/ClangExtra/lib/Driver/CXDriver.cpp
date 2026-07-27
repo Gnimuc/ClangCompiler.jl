@@ -242,3 +242,23 @@ CXString clang_Driver_getDefaultModuleCachePath(void) {
     return extra::makeCXString(std::string());
   return extra::makeCXString(Path.str().str());
 }
+
+CXString clang_Driver_getName(CXDriver D) {
+  return extra::makeCXString(static_cast<clang::driver::Driver *>(D)->Name);
+}
+
+CXString clang_Driver_getSystemConfigDir(CXDriver D) {
+  return extra::makeCXString(static_cast<clang::driver::Driver *>(D)->SystemConfigDir);
+}
+
+CXString clang_Driver_getUserConfigDir(CXDriver D) {
+  return extra::makeCXString(static_cast<clang::driver::Driver *>(D)->UserConfigDir);
+}
+
+unsigned clang_Driver_getNumPrefixDirs(CXDriver D) {
+  return static_cast<clang::driver::Driver *>(D)->PrefixDirs.size();
+}
+
+CXString clang_Driver_getPrefixDir(CXDriver D, unsigned Idx) {
+  return extra::makeCXString(static_cast<clang::driver::Driver *>(D)->PrefixDirs[Idx]);
+}

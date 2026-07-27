@@ -377,3 +377,11 @@ bool clang_CompilerInstance_ExecuteAction(CXCompilerInstance CI, CXFrontendActio
   return static_cast<clang::CompilerInstance *>(CI)->ExecuteAction(
       *static_cast<clang::FrontendAction *>(Act));
 }
+
+bool clang_CompilerInstance_buildingModule(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->buildingModule();
+}
+
+void clang_CompilerInstance_setBuildingModule(CXCompilerInstance CI, bool Flag) {
+  static_cast<clang::CompilerInstance *>(CI)->setBuildingModule(Flag);
+}

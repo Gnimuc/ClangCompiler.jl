@@ -8333,6 +8333,244 @@ end
     CXTargetCXXABI_Microsoft = 10
 end
 
+@enum CXFloatModeKind::UInt32 begin
+    CXFloatModeKind_NoFloat = 0
+    CXFloatModeKind_Half = 1
+    CXFloatModeKind_Float = 2
+    CXFloatModeKind_Double = 4
+    CXFloatModeKind_LongDouble = 8
+    CXFloatModeKind_Float128 = 16
+    CXFloatModeKind_Ibm128 = 32
+end
+
+@enum CXFPEvalMethodKind::Int32 begin
+    CXFPEvalMethodKind_FEM_Indeterminable = -1
+    CXFPEvalMethodKind_FEM_Source = 0
+    CXFPEvalMethodKind_FEM_Double = 1
+    CXFPEvalMethodKind_FEM_Extended = 2
+    CXFPEvalMethodKind_FEM_UnsetOnCommandLine = 3
+end
+
+@enum CXStrictFlexArraysLevelKind::UInt32 begin
+    CXStrictFlexArraysLevelKind_Default = 0
+    CXStrictFlexArraysLevelKind_OneZeroOrIncomplete = 1
+    CXStrictFlexArraysLevelKind_ZeroOrIncomplete = 2
+    CXStrictFlexArraysLevelKind_IncompleteOnly = 3
+end
+
+@enum CXMSVtorDispMode::UInt32 begin
+    CXMSVtorDispMode_Never = 0
+    CXMSVtorDispMode_ForVBaseOverride = 1
+    CXMSVtorDispMode_ForVFTable = 2
+end
+
+@enum CXMSVCMajorVersion::UInt32 begin
+    CXMSVCMajorVersion_MSVC2010 = 1600
+    CXMSVCMajorVersion_MSVC2012 = 1700
+    CXMSVCMajorVersion_MSVC2013 = 1800
+    CXMSVCMajorVersion_MSVC2015 = 1900
+    CXMSVCMajorVersion_MSVC2017 = 1910
+    CXMSVCMajorVersion_MSVC2017_5 = 1912
+    CXMSVCMajorVersion_MSVC2017_7 = 1914
+    CXMSVCMajorVersion_MSVC2019 = 1920
+    CXMSVCMajorVersion_MSVC2019_5 = 1925
+    CXMSVCMajorVersion_MSVC2019_8 = 1928
+    CXMSVCMajorVersion_MSVC2022_3 = 1933
+end
+
+@enum CXFPExceptionModeKind::UInt32 begin
+    CXFPExceptionModeKind_FPE_Ignore = 0
+    CXFPExceptionModeKind_FPE_MayTrap = 1
+    CXFPExceptionModeKind_FPE_Strict = 2
+    CXFPExceptionModeKind_FPE_Default = 3
+end
+
+@enum CXRoundingMode::Int32 begin
+    CXRoundingMode_TowardZero = 0
+    CXRoundingMode_NearestTiesToEven = 1
+    CXRoundingMode_TowardPositive = 2
+    CXRoundingMode_TowardNegative = 3
+    CXRoundingMode_NearestTiesToAway = 4
+    CXRoundingMode_Dynamic = 7
+    CXRoundingMode_Invalid = -1
+end
+
+function clang_LangOptions_PrintStats(LO)
+    @ccall libclangex.clang_LangOptions_PrintStats(LO::CXLangOptions)::Cvoid
+end
+
+function clang_LangOptions_isCompilingModule(LO)
+    @ccall libclangex.clang_LangOptions_isCompilingModule(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isCompilingModuleInterface(LO)
+    @ccall libclangex.clang_LangOptions_isCompilingModuleInterface(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isCompilingModuleImplementation(LO)
+    @ccall libclangex.clang_LangOptions_isCompilingModuleImplementation(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_trackLocalOwningModule(LO)
+    @ccall libclangex.clang_LangOptions_trackLocalOwningModule(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isSignedOverflowDefined(LO)
+    @ccall libclangex.clang_LangOptions_isSignedOverflowDefined(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isSubscriptPointerArithmetic(LO)
+    @ccall libclangex.clang_LangOptions_isSubscriptPointerArithmetic(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isCompatibleWithMSVC(LO, MajorVersion)
+    @ccall libclangex.clang_LangOptions_isCompatibleWithMSVC(LO::CXLangOptions, MajorVersion::CXMSVCMajorVersion)::Bool
+end
+
+function clang_LangOptions_resetNonModularOptions(LO)
+    @ccall libclangex.clang_LangOptions_resetNonModularOptions(LO::CXLangOptions)::Cvoid
+end
+
+function clang_LangOptions_isNoBuiltinFunc(LO, Name)
+    @ccall libclangex.clang_LangOptions_isNoBuiltinFunc(LO::CXLangOptions, Name::Ptr{Cchar})::Bool
+end
+
+function clang_LangOptions_allowsNonTrivialObjCLifetimeQualifiers(LO)
+    @ccall libclangex.clang_LangOptions_allowsNonTrivialObjCLifetimeQualifiers(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_getBorland(LO)
+    @ccall libclangex.clang_LangOptions_getBorland(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_getCPlusPlus(LO)
+    @ccall libclangex.clang_LangOptions_getCPlusPlus(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_getCPlusPlus11(LO)
+    @ccall libclangex.clang_LangOptions_getCPlusPlus11(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasLangStandard(LO)
+    @ccall libclangex.clang_LangOptions_hasLangStandard(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_assumeFunctionsAreConvergent(LO)
+    @ccall libclangex.clang_LangOptions_assumeFunctionsAreConvergent(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_getOpenCLCompatibleVersion(LO)
+    @ccall libclangex.clang_LangOptions_getOpenCLCompatibleVersion(LO::CXLangOptions)::Cuint
+end
+
+function clang_LangOptions_getOpenCLVersionString(LO)
+    @ccall libclangex.clang_LangOptions_getOpenCLVersionString(LO::CXLangOptions)::CXString
+end
+
+function clang_LangOptions_requiresStrictPrototypes(LO)
+    @ccall libclangex.clang_LangOptions_requiresStrictPrototypes(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_implicitFunctionsAllowed(LO)
+    @ccall libclangex.clang_LangOptions_implicitFunctionsAllowed(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasAtExit(LO)
+    @ccall libclangex.clang_LangOptions_hasAtExit(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isImplicitIntRequired(LO)
+    @ccall libclangex.clang_LangOptions_isImplicitIntRequired(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isImplicitIntAllowed(LO)
+    @ccall libclangex.clang_LangOptions_isImplicitIntAllowed(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasSignReturnAddress(LO)
+    @ccall libclangex.clang_LangOptions_hasSignReturnAddress(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isSignReturnAddressWithAKey(LO)
+    @ccall libclangex.clang_LangOptions_isSignReturnAddressWithAKey(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isSignReturnAddressScopeAll(LO)
+    @ccall libclangex.clang_LangOptions_isSignReturnAddressScopeAll(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasSjLjExceptions(LO)
+    @ccall libclangex.clang_LangOptions_hasSjLjExceptions(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasSEHExceptions(LO)
+    @ccall libclangex.clang_LangOptions_hasSEHExceptions(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasDWARFExceptions(LO)
+    @ccall libclangex.clang_LangOptions_hasDWARFExceptions(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasWasmExceptions(LO)
+    @ccall libclangex.clang_LangOptions_hasWasmExceptions(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isSYCL(LO)
+    @ccall libclangex.clang_LangOptions_isSYCL(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasDefaultVisibilityExportMapping(LO)
+    @ccall libclangex.clang_LangOptions_hasDefaultVisibilityExportMapping(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isExplicitDefaultVisibilityExportMapping(LO)
+    @ccall libclangex.clang_LangOptions_isExplicitDefaultVisibilityExportMapping(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_isAllDefaultVisibilityExportMapping(LO)
+    @ccall libclangex.clang_LangOptions_isAllDefaultVisibilityExportMapping(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasGlobalAllocationFunctionVisibility(LO)
+    @ccall libclangex.clang_LangOptions_hasGlobalAllocationFunctionVisibility(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasDefaultGlobalAllocationFunctionVisibility(LO)
+    @ccall libclangex.clang_LangOptions_hasDefaultGlobalAllocationFunctionVisibility(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasProtectedGlobalAllocationFunctionVisibility(LO)
+    @ccall libclangex.clang_LangOptions_hasProtectedGlobalAllocationFunctionVisibility(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_hasHiddenGlobalAllocationFunctionVisibility(LO)
+    @ccall libclangex.clang_LangOptions_hasHiddenGlobalAllocationFunctionVisibility(LO::CXLangOptions)::Bool
+end
+
+function clang_LangOptions_remapPathPrefix(LO, Path)
+    @ccall libclangex.clang_LangOptions_remapPathPrefix(LO::CXLangOptions, Path::Ptr{Cchar})::CXString
+end
+
+function clang_LangOptions_getDefaultRoundingMode(LO)
+    @ccall libclangex.clang_LangOptions_getDefaultRoundingMode(LO::CXLangOptions)::CXRoundingMode
+end
+
+function clang_LangOptions_getDefaultExceptionMode(LO)
+    @ccall libclangex.clang_LangOptions_getDefaultExceptionMode(LO::CXLangOptions)::CXFPExceptionModeKind
+end
+
+function clang_FPOptions_defaultWithoutTrailingStorage(LO)
+    @ccall libclangex.clang_FPOptions_defaultWithoutTrailingStorage(LO::CXLangOptions)::Cuint
+end
+
+function clang_FPOptions_getRoundingMode(FPO)
+    @ccall libclangex.clang_FPOptions_getRoundingMode(FPO::Cuint)::CXRoundingMode
+end
+
+function clang_FPOptions_getExceptionMode(FPO)
+    @ccall libclangex.clang_FPOptions_getExceptionMode(FPO::Cuint)::CXFPExceptionModeKind
+end
+
 @enum CXTargetInfo_IntType::UInt32 begin
     CXTargetInfo_NoInt = 0
     CXTargetInfo_SignedChar = 1
@@ -9219,14 +9457,136 @@ function clang_TargetInfo_hasHIPImageSupport(TI)
     @ccall libclangex.clang_TargetInfo_hasHIPImageSupport(TI::CXTargetInfo_)::Bool
 end
 
-@enum CXFloatModeKind::UInt32 begin
-    CXFloatModeKind_NoFloat = 0
-    CXFloatModeKind_Half = 1
-    CXFloatModeKind_Float = 2
-    CXFloatModeKind_Double = 4
-    CXFloatModeKind_LongDouble = 8
-    CXFloatModeKind_Float128 = 16
-    CXFloatModeKind_Ibm128 = 32
+function clang_TargetInfo_getAccumAlign(TI)
+    @ccall libclangex.clang_TargetInfo_getAccumAlign(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getAccumIBits(TI)
+    @ccall libclangex.clang_TargetInfo_getAccumIBits(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getAccumScale(TI)
+    @ccall libclangex.clang_TargetInfo_getAccumScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getAccumWidth(TI)
+    @ccall libclangex.clang_TargetInfo_getAccumWidth(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getFractAlign(TI)
+    @ccall libclangex.clang_TargetInfo_getFractAlign(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getFractScale(TI)
+    @ccall libclangex.clang_TargetInfo_getFractScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getFractWidth(TI)
+    @ccall libclangex.clang_TargetInfo_getFractWidth(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getLongAccumAlign(TI)
+    @ccall libclangex.clang_TargetInfo_getLongAccumAlign(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getLongAccumIBits(TI)
+    @ccall libclangex.clang_TargetInfo_getLongAccumIBits(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getLongAccumScale(TI)
+    @ccall libclangex.clang_TargetInfo_getLongAccumScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getLongAccumWidth(TI)
+    @ccall libclangex.clang_TargetInfo_getLongAccumWidth(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getLongFractAlign(TI)
+    @ccall libclangex.clang_TargetInfo_getLongFractAlign(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getLongFractScale(TI)
+    @ccall libclangex.clang_TargetInfo_getLongFractScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getLongFractWidth(TI)
+    @ccall libclangex.clang_TargetInfo_getLongFractWidth(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getShortAccumAlign(TI)
+    @ccall libclangex.clang_TargetInfo_getShortAccumAlign(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getShortAccumIBits(TI)
+    @ccall libclangex.clang_TargetInfo_getShortAccumIBits(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getShortAccumScale(TI)
+    @ccall libclangex.clang_TargetInfo_getShortAccumScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getShortAccumWidth(TI)
+    @ccall libclangex.clang_TargetInfo_getShortAccumWidth(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getShortFractAlign(TI)
+    @ccall libclangex.clang_TargetInfo_getShortFractAlign(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getShortFractScale(TI)
+    @ccall libclangex.clang_TargetInfo_getShortFractScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getShortFractWidth(TI)
+    @ccall libclangex.clang_TargetInfo_getShortFractWidth(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedAccumIBits(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedAccumIBits(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedAccumScale(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedAccumScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedFractScale(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedFractScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedLongAccumIBits(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedLongAccumIBits(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedLongAccumScale(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedLongAccumScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedLongFractScale(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedLongFractScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedShortAccumIBits(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedShortAccumIBits(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedShortAccumScale(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedShortAccumScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_getUnsignedShortFractScale(TI)
+    @ccall libclangex.clang_TargetInfo_getUnsignedShortFractScale(TI::CXTargetInfo_)::Cuint
+end
+
+function clang_TargetInfo_doUnsignedFixedPointTypesHavePadding(TI)
+    @ccall libclangex.clang_TargetInfo_doUnsignedFixedPointTypesHavePadding(TI::CXTargetInfo_)::Bool
+end
+
+function clang_TargetInfo_getFPEvalMethod(TI)
+    @ccall libclangex.clang_TargetInfo_getFPEvalMethod(TI::CXTargetInfo_)::CXFPEvalMethodKind
+end
+
+function clang_TargetInfo_getRealTypeByWidth(TI, BitWidth, ExplicitType)
+    @ccall libclangex.clang_TargetInfo_getRealTypeByWidth(TI::CXTargetInfo_, BitWidth::Cuint, ExplicitType::CXFloatModeKind)::CXFloatModeKind
 end
 
 @enum CXBuiltinTemplateKind::UInt32 begin
@@ -11428,234 +11788,6 @@ end
 
 function clang_getOperatorSpelling(Operator)
     @ccall libclangex.clang_getOperatorSpelling(Operator::CXOverloadedOperatorKind)::Ptr{Cchar}
-end
-
-@enum CXFPEvalMethodKind::Int32 begin
-    CXFPEvalMethodKind_FEM_Indeterminable = -1
-    CXFPEvalMethodKind_FEM_Source = 0
-    CXFPEvalMethodKind_FEM_Double = 1
-    CXFPEvalMethodKind_FEM_Extended = 2
-    CXFPEvalMethodKind_FEM_UnsetOnCommandLine = 3
-end
-
-@enum CXStrictFlexArraysLevelKind::UInt32 begin
-    CXStrictFlexArraysLevelKind_Default = 0
-    CXStrictFlexArraysLevelKind_OneZeroOrIncomplete = 1
-    CXStrictFlexArraysLevelKind_ZeroOrIncomplete = 2
-    CXStrictFlexArraysLevelKind_IncompleteOnly = 3
-end
-
-@enum CXMSVtorDispMode::UInt32 begin
-    CXMSVtorDispMode_Never = 0
-    CXMSVtorDispMode_ForVBaseOverride = 1
-    CXMSVtorDispMode_ForVFTable = 2
-end
-
-@enum CXMSVCMajorVersion::UInt32 begin
-    CXMSVCMajorVersion_MSVC2010 = 1600
-    CXMSVCMajorVersion_MSVC2012 = 1700
-    CXMSVCMajorVersion_MSVC2013 = 1800
-    CXMSVCMajorVersion_MSVC2015 = 1900
-    CXMSVCMajorVersion_MSVC2017 = 1910
-    CXMSVCMajorVersion_MSVC2017_5 = 1912
-    CXMSVCMajorVersion_MSVC2017_7 = 1914
-    CXMSVCMajorVersion_MSVC2019 = 1920
-    CXMSVCMajorVersion_MSVC2019_5 = 1925
-    CXMSVCMajorVersion_MSVC2019_8 = 1928
-    CXMSVCMajorVersion_MSVC2022_3 = 1933
-end
-
-@enum CXFPExceptionModeKind::UInt32 begin
-    CXFPExceptionModeKind_FPE_Ignore = 0
-    CXFPExceptionModeKind_FPE_MayTrap = 1
-    CXFPExceptionModeKind_FPE_Strict = 2
-    CXFPExceptionModeKind_FPE_Default = 3
-end
-
-@enum CXRoundingMode::Int32 begin
-    CXRoundingMode_TowardZero = 0
-    CXRoundingMode_NearestTiesToEven = 1
-    CXRoundingMode_TowardPositive = 2
-    CXRoundingMode_TowardNegative = 3
-    CXRoundingMode_NearestTiesToAway = 4
-    CXRoundingMode_Dynamic = 7
-    CXRoundingMode_Invalid = -1
-end
-
-function clang_LangOptions_PrintStats(LO)
-    @ccall libclangex.clang_LangOptions_PrintStats(LO::CXLangOptions)::Cvoid
-end
-
-function clang_LangOptions_isCompilingModule(LO)
-    @ccall libclangex.clang_LangOptions_isCompilingModule(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isCompilingModuleInterface(LO)
-    @ccall libclangex.clang_LangOptions_isCompilingModuleInterface(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isCompilingModuleImplementation(LO)
-    @ccall libclangex.clang_LangOptions_isCompilingModuleImplementation(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_trackLocalOwningModule(LO)
-    @ccall libclangex.clang_LangOptions_trackLocalOwningModule(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isSignedOverflowDefined(LO)
-    @ccall libclangex.clang_LangOptions_isSignedOverflowDefined(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isSubscriptPointerArithmetic(LO)
-    @ccall libclangex.clang_LangOptions_isSubscriptPointerArithmetic(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isCompatibleWithMSVC(LO, MajorVersion)
-    @ccall libclangex.clang_LangOptions_isCompatibleWithMSVC(LO::CXLangOptions, MajorVersion::CXMSVCMajorVersion)::Bool
-end
-
-function clang_LangOptions_resetNonModularOptions(LO)
-    @ccall libclangex.clang_LangOptions_resetNonModularOptions(LO::CXLangOptions)::Cvoid
-end
-
-function clang_LangOptions_isNoBuiltinFunc(LO, Name)
-    @ccall libclangex.clang_LangOptions_isNoBuiltinFunc(LO::CXLangOptions, Name::Ptr{Cchar})::Bool
-end
-
-function clang_LangOptions_allowsNonTrivialObjCLifetimeQualifiers(LO)
-    @ccall libclangex.clang_LangOptions_allowsNonTrivialObjCLifetimeQualifiers(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_getBorland(LO)
-    @ccall libclangex.clang_LangOptions_getBorland(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_getCPlusPlus(LO)
-    @ccall libclangex.clang_LangOptions_getCPlusPlus(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_getCPlusPlus11(LO)
-    @ccall libclangex.clang_LangOptions_getCPlusPlus11(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasLangStandard(LO)
-    @ccall libclangex.clang_LangOptions_hasLangStandard(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_assumeFunctionsAreConvergent(LO)
-    @ccall libclangex.clang_LangOptions_assumeFunctionsAreConvergent(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_getOpenCLCompatibleVersion(LO)
-    @ccall libclangex.clang_LangOptions_getOpenCLCompatibleVersion(LO::CXLangOptions)::Cuint
-end
-
-function clang_LangOptions_getOpenCLVersionString(LO)
-    @ccall libclangex.clang_LangOptions_getOpenCLVersionString(LO::CXLangOptions)::CXString
-end
-
-function clang_LangOptions_requiresStrictPrototypes(LO)
-    @ccall libclangex.clang_LangOptions_requiresStrictPrototypes(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_implicitFunctionsAllowed(LO)
-    @ccall libclangex.clang_LangOptions_implicitFunctionsAllowed(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasAtExit(LO)
-    @ccall libclangex.clang_LangOptions_hasAtExit(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isImplicitIntRequired(LO)
-    @ccall libclangex.clang_LangOptions_isImplicitIntRequired(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isImplicitIntAllowed(LO)
-    @ccall libclangex.clang_LangOptions_isImplicitIntAllowed(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasSignReturnAddress(LO)
-    @ccall libclangex.clang_LangOptions_hasSignReturnAddress(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isSignReturnAddressWithAKey(LO)
-    @ccall libclangex.clang_LangOptions_isSignReturnAddressWithAKey(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isSignReturnAddressScopeAll(LO)
-    @ccall libclangex.clang_LangOptions_isSignReturnAddressScopeAll(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasSjLjExceptions(LO)
-    @ccall libclangex.clang_LangOptions_hasSjLjExceptions(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasSEHExceptions(LO)
-    @ccall libclangex.clang_LangOptions_hasSEHExceptions(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasDWARFExceptions(LO)
-    @ccall libclangex.clang_LangOptions_hasDWARFExceptions(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasWasmExceptions(LO)
-    @ccall libclangex.clang_LangOptions_hasWasmExceptions(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isSYCL(LO)
-    @ccall libclangex.clang_LangOptions_isSYCL(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasDefaultVisibilityExportMapping(LO)
-    @ccall libclangex.clang_LangOptions_hasDefaultVisibilityExportMapping(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isExplicitDefaultVisibilityExportMapping(LO)
-    @ccall libclangex.clang_LangOptions_isExplicitDefaultVisibilityExportMapping(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_isAllDefaultVisibilityExportMapping(LO)
-    @ccall libclangex.clang_LangOptions_isAllDefaultVisibilityExportMapping(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasGlobalAllocationFunctionVisibility(LO)
-    @ccall libclangex.clang_LangOptions_hasGlobalAllocationFunctionVisibility(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasDefaultGlobalAllocationFunctionVisibility(LO)
-    @ccall libclangex.clang_LangOptions_hasDefaultGlobalAllocationFunctionVisibility(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasProtectedGlobalAllocationFunctionVisibility(LO)
-    @ccall libclangex.clang_LangOptions_hasProtectedGlobalAllocationFunctionVisibility(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_hasHiddenGlobalAllocationFunctionVisibility(LO)
-    @ccall libclangex.clang_LangOptions_hasHiddenGlobalAllocationFunctionVisibility(LO::CXLangOptions)::Bool
-end
-
-function clang_LangOptions_remapPathPrefix(LO, Path)
-    @ccall libclangex.clang_LangOptions_remapPathPrefix(LO::CXLangOptions, Path::Ptr{Cchar})::CXString
-end
-
-function clang_LangOptions_getDefaultRoundingMode(LO)
-    @ccall libclangex.clang_LangOptions_getDefaultRoundingMode(LO::CXLangOptions)::CXRoundingMode
-end
-
-function clang_LangOptions_getDefaultExceptionMode(LO)
-    @ccall libclangex.clang_LangOptions_getDefaultExceptionMode(LO::CXLangOptions)::CXFPExceptionModeKind
-end
-
-function clang_FPOptions_defaultWithoutTrailingStorage(LO)
-    @ccall libclangex.clang_FPOptions_defaultWithoutTrailingStorage(LO::CXLangOptions)::Cuint
-end
-
-function clang_FPOptions_getRoundingMode(FPO)
-    @ccall libclangex.clang_FPOptions_getRoundingMode(FPO::Cuint)::CXRoundingMode
-end
-
-function clang_FPOptions_getExceptionMode(FPO)
-    @ccall libclangex.clang_FPOptions_getExceptionMode(FPO::Cuint)::CXFPExceptionModeKind
 end
 
 function clang_AccessSpecDecl_getAccessSpecifierLoc(AS)
@@ -28678,6 +28810,26 @@ function clang_Driver_getDefaultModuleCachePath()
     @ccall libclangex.clang_Driver_getDefaultModuleCachePath()::CXString
 end
 
+function clang_Driver_getName(D)
+    @ccall libclangex.clang_Driver_getName(D::CXDriver)::CXString
+end
+
+function clang_Driver_getSystemConfigDir(D)
+    @ccall libclangex.clang_Driver_getSystemConfigDir(D::CXDriver)::CXString
+end
+
+function clang_Driver_getUserConfigDir(D)
+    @ccall libclangex.clang_Driver_getUserConfigDir(D::CXDriver)::CXString
+end
+
+function clang_Driver_getNumPrefixDirs(D)
+    @ccall libclangex.clang_Driver_getNumPrefixDirs(D::CXDriver)::Cuint
+end
+
+function clang_Driver_getPrefixDir(D, Idx)
+    @ccall libclangex.clang_Driver_getPrefixDir(D::CXDriver, Idx::Cuint)::CXString
+end
+
 function clang_ToolChain_getDriver(TC)
     @ccall libclangex.clang_ToolChain_getDriver(TC::CXToolChain)::CXDriver
 end
@@ -29170,6 +29322,14 @@ end
 
 function clang_CompilerInstance_resetAndLeakSema(CI)
     @ccall libclangex.clang_CompilerInstance_resetAndLeakSema(CI::CXCompilerInstance)::Cvoid
+end
+
+function clang_CompilerInstance_buildingModule(CI)
+    @ccall libclangex.clang_CompilerInstance_buildingModule(CI::CXCompilerInstance)::Bool
+end
+
+function clang_CompilerInstance_setBuildingModule(CI, Flag)
+    @ccall libclangex.clang_CompilerInstance_setBuildingModule(CI::CXCompilerInstance, Flag::Bool)::Cvoid
 end
 
 function clang_CompilerInvocation_create()
@@ -30530,14 +30690,6 @@ function clang_HeaderSearch_header_file_size(HS)
     @ccall libclangex.clang_HeaderSearch_header_file_size(HS::CXHeaderSearch)::Cuint
 end
 
-function clang_HeaderSearch_getFileInfo(HS, FE)
-    @ccall libclangex.clang_HeaderSearch_getFileInfo(HS::CXHeaderSearch, FE::CXFileEntryRef)::CXHeaderFileInfo
-end
-
-function clang_HeaderSearch_getExistingFileInfo(HS, FE, WantExternal)
-    @ccall libclangex.clang_HeaderSearch_getExistingFileInfo(HS::CXHeaderSearch, FE::CXFileEntryRef, WantExternal::Bool)::CXHeaderFileInfo
-end
-
 function clang_HeaderSearch_search_dir_size(HS)
     @ccall libclangex.clang_HeaderSearch_search_dir_size(HS::CXHeaderSearch)::Cuint
 end
@@ -30592,6 +30744,18 @@ end
 
 function clang_HeaderFileInfo_getFramework(HFI)
     @ccall libclangex.clang_HeaderFileInfo_getFramework(HFI::CXHeaderFileInfo)::CXString
+end
+
+function clang_HeaderSearch_copyFileInfo(HS, FE)
+    @ccall libclangex.clang_HeaderSearch_copyFileInfo(HS::CXHeaderSearch, FE::CXFileEntryRef)::CXHeaderFileInfo
+end
+
+function clang_HeaderSearch_copyExistingFileInfo(HS, FE, WantExternal)
+    @ccall libclangex.clang_HeaderSearch_copyExistingFileInfo(HS::CXHeaderSearch, FE::CXFileEntryRef, WantExternal::Bool)::CXHeaderFileInfo
+end
+
+function clang_HeaderFileInfo_dispose(HFI)
+    @ccall libclangex.clang_HeaderFileInfo_dispose(HFI::CXHeaderFileInfo)::Cvoid
 end
 
 function clang_HeaderSearchOptions_GetResourceDirLength(HSO)
@@ -32994,312 +33158,6 @@ end
 
 function clang_Scope_Init(S, Parent, ScopeFlags)
     @ccall libclangex.clang_Scope_Init(S::CXScope, Parent::CXScope, ScopeFlags::Cuint)::Cvoid
-end
-
-@enum CXRedeclarationKind::UInt32 begin
-    CXRedeclarationKind_NotForRedeclaration = 0
-    CXRedeclarationKind_ForVisibleRedeclaration = 1
-    CXRedeclarationKind_ForExternalRedeclaration = 2
-end
-
-@enum CXLookupNameKind::UInt32 begin
-    CXLookupNameKind_LookupOrdinaryName = 0
-    CXLookupNameKind_LookupTagName = 1
-    CXLookupNameKind_LookupLabel = 2
-    CXLookupNameKind_LookupMemberName = 3
-    CXLookupNameKind_LookupOperatorName = 4
-    CXLookupNameKind_LookupDestructorName = 5
-    CXLookupNameKind_LookupNestedNameSpecifierName = 6
-    CXLookupNameKind_LookupNamespaceName = 7
-    CXLookupNameKind_LookupUsingDeclName = 8
-    CXLookupNameKind_LookupRedeclarationWithLinkage = 9
-    CXLookupNameKind_LookupLocalFriendName = 10
-    CXLookupNameKind_LookupObjCProtocolName = 11
-    CXLookupNameKind_LookupObjCImplicitSelfParam = 12
-    CXLookupNameKind_LookupOMPReductionName = 13
-    CXLookupNameKind_LookupOMPMapperName = 14
-    CXLookupNameKind_LookupAnyName = 15
-end
-
-function clang_LookupResult_create(S, Name, NameLoc, LookupKind)
-    @ccall libclangex.clang_LookupResult_create(S::CXSema, Name::CXDeclarationName, NameLoc::CXSourceLocation_, LookupKind::CXLookupNameKind)::CXLookupResult
-end
-
-function clang_LookupResult_dispose(LR)
-    @ccall libclangex.clang_LookupResult_dispose(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_isForRedeclaration(LR)
-    @ccall libclangex.clang_LookupResult_isForRedeclaration(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_isTemplateNameLookup(LR)
-    @ccall libclangex.clang_LookupResult_isTemplateNameLookup(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_isAmbiguous(LR)
-    @ccall libclangex.clang_LookupResult_isAmbiguous(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_isSingleResult(LR)
-    @ccall libclangex.clang_LookupResult_isSingleResult(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_isOverloadedResult(LR)
-    @ccall libclangex.clang_LookupResult_isOverloadedResult(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_isUnresolvableResult(LR)
-    @ccall libclangex.clang_LookupResult_isUnresolvableResult(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_isClassLookup(LR)
-    @ccall libclangex.clang_LookupResult_isClassLookup(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_resolveKind(LR)
-    @ccall libclangex.clang_LookupResult_resolveKind(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_isSingleTagDecl(LR)
-    @ccall libclangex.clang_LookupResult_isSingleTagDecl(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_clear(LR, LookupKind)
-    @ccall libclangex.clang_LookupResult_clear(LR::CXLookupResult, LookupKind::CXLookupNameKind)::Cvoid
-end
-
-function clang_LookupResult_setLookupName(LR, DN)
-    @ccall libclangex.clang_LookupResult_setLookupName(LR::CXLookupResult, DN::CXDeclarationName)::Cvoid
-end
-
-function clang_LookupResult_getLookupName(LR)
-    @ccall libclangex.clang_LookupResult_getLookupName(LR::CXLookupResult)::CXDeclarationName
-end
-
-function clang_LookupResult_dump(LR)
-    @ccall libclangex.clang_LookupResult_dump(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_empty(LR)
-    @ccall libclangex.clang_LookupResult_empty(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_getRepresentativeDecl(LR)
-    @ccall libclangex.clang_LookupResult_getRepresentativeDecl(LR::CXLookupResult)::CXNamedDecl
-end
-
-function clang_LookupResult_getNum(LR)
-    @ccall libclangex.clang_LookupResult_getNum(LR::CXLookupResult)::Csize_t
-end
-
-function clang_LookupResult_getResults(LR, Decls, N)
-    @ccall libclangex.clang_LookupResult_getResults(LR::CXLookupResult, Decls::Ptr{CXNamedDecl}, N::Csize_t)::Cvoid
-end
-
-function clang_LookupResult_getResult(LR)
-    @ccall libclangex.clang_LookupResult_getResult(LR::CXLookupResult)::CXNamedDecl
-end
-
-@enum CXLookupResultKind::UInt32 begin
-    CXLookupResultKind_NotFound = 0
-    CXLookupResultKind_NotFoundInCurrentInstantiation = 1
-    CXLookupResultKind_Found = 2
-    CXLookupResultKind_FoundOverloaded = 3
-    CXLookupResultKind_FoundUnresolvedValue = 4
-    CXLookupResultKind_Ambiguous = 5
-end
-
-@enum CXAmbiguityKind::UInt32 begin
-    CXAmbiguityKind_AmbiguousBaseSubobjectTypes = 0
-    CXAmbiguityKind_AmbiguousBaseSubobjects = 1
-    CXAmbiguityKind_AmbiguousReference = 2
-    CXAmbiguityKind_AmbiguousReferenceToPlaceholderVariable = 3
-    CXAmbiguityKind_AmbiguousTagHiding = 4
-end
-
-function clang_LookupResult_getResultKind(LR)
-    @ccall libclangex.clang_LookupResult_getResultKind(LR::CXLookupResult)::CXLookupResultKind
-end
-
-function clang_LookupResult_getAmbiguityKind(LR)
-    @ccall libclangex.clang_LookupResult_getAmbiguityKind(LR::CXLookupResult)::CXAmbiguityKind
-end
-
-function clang_LookupResult_getFoundDecl(LR)
-    @ccall libclangex.clang_LookupResult_getFoundDecl(LR::CXLookupResult)::CXNamedDecl
-end
-
-function clang_LookupResult_getNamingClass(LR)
-    @ccall libclangex.clang_LookupResult_getNamingClass(LR::CXLookupResult)::CXCXXRecordDecl
-end
-
-function clang_LookupResult_getLookupKind(LR)
-    @ccall libclangex.clang_LookupResult_getLookupKind(LR::CXLookupResult)::CXLookupNameKind
-end
-
-function clang_LookupResult_getNameLoc(LR)
-    @ccall libclangex.clang_LookupResult_getNameLoc(LR::CXLookupResult)::CXSourceLocation_
-end
-
-function clang_LookupResult_getIdentifierNamespace(LR)
-    @ccall libclangex.clang_LookupResult_getIdentifierNamespace(LR::CXLookupResult)::Cuint
-end
-
-function clang_LookupResult_suppressDiagnostics(LR)
-    @ccall libclangex.clang_LookupResult_suppressDiagnostics(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_isForExternalRedeclaration(LR)
-    @ccall libclangex.clang_LookupResult_isForExternalRedeclaration(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_setAllowHidden(LR, AH)
-    @ccall libclangex.clang_LookupResult_setAllowHidden(LR::CXLookupResult, AH::Bool)::Cvoid
-end
-
-function clang_LookupResult_isHiddenDeclarationVisible(LR, ND)
-    @ccall libclangex.clang_LookupResult_isHiddenDeclarationVisible(LR::CXLookupResult, ND::CXNamedDecl)::Bool
-end
-
-function clang_LookupResult_getBaseObjectType(LR)
-    @ccall libclangex.clang_LookupResult_getBaseObjectType(LR::CXLookupResult)::CXQualType
-end
-
-function clang_LookupResult_isShadowed(LR)
-    @ccall libclangex.clang_LookupResult_isShadowed(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_isSuppressingAccessDiagnostics(LR)
-    @ccall libclangex.clang_LookupResult_isSuppressingAccessDiagnostics(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_isSuppressingAmbiguousDiagnostics(LR)
-    @ccall libclangex.clang_LookupResult_isSuppressingAmbiguousDiagnostics(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_getContextRange(LR)
-    @ccall libclangex.clang_LookupResult_getContextRange(LR::CXLookupResult)::CXSourceRange_
-end
-
-function clang_LookupResult_getLookupNameInfo(LR)
-    @ccall libclangex.clang_LookupResult_getLookupNameInfo(LR::CXLookupResult)::CXDeclarationNameInfo
-end
-
-function clang_LookupResult_setLookupNameInfo(LR, NameInfo)
-    @ccall libclangex.clang_LookupResult_setLookupNameInfo(LR::CXLookupResult, NameInfo::CXDeclarationNameInfo)::Cvoid
-end
-
-function clang_LookupResult_setNamingClass(LR, Record)
-    @ccall libclangex.clang_LookupResult_setNamingClass(LR::CXLookupResult, Record::CXCXXRecordDecl)::Cvoid
-end
-
-function clang_LookupResult_setBaseObjectType(LR, T)
-    @ccall libclangex.clang_LookupResult_setBaseObjectType(LR::CXLookupResult, T::CXQualType)::Cvoid
-end
-
-function clang_LookupResult_addDecl(LR, ND)
-    @ccall libclangex.clang_LookupResult_addDecl(LR::CXLookupResult, ND::CXNamedDecl)::Cvoid
-end
-
-function clang_LookupResult_addAllDecls(LR, Other)
-    @ccall libclangex.clang_LookupResult_addAllDecls(LR::CXLookupResult, Other::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_wasNotFoundInCurrentInstantiation(LR)
-    @ccall libclangex.clang_LookupResult_wasNotFoundInCurrentInstantiation(LR::CXLookupResult)::Bool
-end
-
-function clang_LookupResult_setNotFoundInCurrentInstantiation(LR)
-    @ccall libclangex.clang_LookupResult_setNotFoundInCurrentInstantiation(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_setTemplateNameLookup(LR, TemplateName)
-    @ccall libclangex.clang_LookupResult_setTemplateNameLookup(LR::CXLookupResult, TemplateName::Bool)::Cvoid
-end
-
-function clang_LookupResult_setShadowed(LR)
-    @ccall libclangex.clang_LookupResult_setShadowed(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_setContextRange(LR, SR)
-    @ccall libclangex.clang_LookupResult_setContextRange(LR::CXLookupResult, SR::CXSourceRange_)::Cvoid
-end
-
-function clang_LookupResult_setHideTags(LR, Hide)
-    @ccall libclangex.clang_LookupResult_setHideTags(LR::CXLookupResult, Hide::Bool)::Cvoid
-end
-
-function clang_LookupResult_isAvailableForLookup(S, ND)
-    @ccall libclangex.clang_LookupResult_isAvailableForLookup(S::CXSema, ND::CXNamedDecl)::Bool
-end
-
-function clang_LookupResult_getAcceptableDecl(LR, ND)
-    @ccall libclangex.clang_LookupResult_getAcceptableDecl(LR::CXLookupResult, ND::CXNamedDecl)::CXNamedDecl
-end
-
-function clang_LookupResult_resolveKindAfterFilter(LR)
-    @ccall libclangex.clang_LookupResult_resolveKindAfterFilter(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_setAmbiguousQualifiedTagHiding(LR)
-    @ccall libclangex.clang_LookupResult_setAmbiguousQualifiedTagHiding(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_suppressAccessDiagnostics(LR)
-    @ccall libclangex.clang_LookupResult_suppressAccessDiagnostics(LR::CXLookupResult)::Cvoid
-end
-
-function clang_LookupResult_getSema(LR)
-    @ccall libclangex.clang_LookupResult_getSema(LR::CXLookupResult)::CXSema
-end
-
-function clang_LookupResult_makeFilter(LR)
-    @ccall libclangex.clang_LookupResult_makeFilter(LR::CXLookupResult)::CXLookupResult_Filter
-end
-
-function clang_LookupResult_Filter_dispose(F)
-    @ccall libclangex.clang_LookupResult_Filter_dispose(F::CXLookupResult_Filter)::Cvoid
-end
-
-function clang_LookupResult_Filter_hasNext(F)
-    @ccall libclangex.clang_LookupResult_Filter_hasNext(F::CXLookupResult_Filter)::Bool
-end
-
-function clang_LookupResult_Filter_next(F)
-    @ccall libclangex.clang_LookupResult_Filter_next(F::CXLookupResult_Filter)::CXNamedDecl
-end
-
-function clang_LookupResult_Filter_restart(F)
-    @ccall libclangex.clang_LookupResult_Filter_restart(F::CXLookupResult_Filter)::Cvoid
-end
-
-function clang_LookupResult_Filter_erase(F)
-    @ccall libclangex.clang_LookupResult_Filter_erase(F::CXLookupResult_Filter)::Cvoid
-end
-
-function clang_LookupResult_Filter_replace(F, ND)
-    @ccall libclangex.clang_LookupResult_Filter_replace(F::CXLookupResult_Filter, ND::CXNamedDecl)::Cvoid
-end
-
-function clang_LookupResult_Filter_done(F)
-    @ccall libclangex.clang_LookupResult_Filter_done(F::CXLookupResult_Filter)::Cvoid
-end
-
-function clang_LookupResult_setFindLocalExtern(LR, FindLocalExtern)
-    @ccall libclangex.clang_LookupResult_setFindLocalExtern(LR::CXLookupResult, FindLocalExtern::Bool)::Cvoid
-end
-
-function clang_LookupResult_redeclarationKind(LR)
-    @ccall libclangex.clang_LookupResult_redeclarationKind(LR::CXLookupResult)::CXRedeclarationKind
-end
-
-function clang_LookupResult_setRedeclarationKind(LR, RK)
-    @ccall libclangex.clang_LookupResult_setRedeclarationKind(LR::CXLookupResult, RK::CXRedeclarationKind)::Cvoid
-end
-
-function clang_LookupResult_printToString(LR)
-    @ccall libclangex.clang_LookupResult_printToString(LR::CXLookupResult)::CXString
 end
 
 @enum CXAPValueKind::UInt32 begin
@@ -36391,6 +36249,312 @@ end
 
 function clang_PseudoObjectExpr_CreateEmpty(Context, NumSemanticExprs)
     @ccall libclangex.clang_PseudoObjectExpr_CreateEmpty(Context::CXASTContext, NumSemanticExprs::Cuint)::CXPseudoObjectExpr
+end
+
+@enum CXRedeclarationKind::UInt32 begin
+    CXRedeclarationKind_NotForRedeclaration = 0
+    CXRedeclarationKind_ForVisibleRedeclaration = 1
+    CXRedeclarationKind_ForExternalRedeclaration = 2
+end
+
+@enum CXLookupNameKind::UInt32 begin
+    CXLookupNameKind_LookupOrdinaryName = 0
+    CXLookupNameKind_LookupTagName = 1
+    CXLookupNameKind_LookupLabel = 2
+    CXLookupNameKind_LookupMemberName = 3
+    CXLookupNameKind_LookupOperatorName = 4
+    CXLookupNameKind_LookupDestructorName = 5
+    CXLookupNameKind_LookupNestedNameSpecifierName = 6
+    CXLookupNameKind_LookupNamespaceName = 7
+    CXLookupNameKind_LookupUsingDeclName = 8
+    CXLookupNameKind_LookupRedeclarationWithLinkage = 9
+    CXLookupNameKind_LookupLocalFriendName = 10
+    CXLookupNameKind_LookupObjCProtocolName = 11
+    CXLookupNameKind_LookupObjCImplicitSelfParam = 12
+    CXLookupNameKind_LookupOMPReductionName = 13
+    CXLookupNameKind_LookupOMPMapperName = 14
+    CXLookupNameKind_LookupAnyName = 15
+end
+
+function clang_LookupResult_create(S, Name, NameLoc, LookupKind)
+    @ccall libclangex.clang_LookupResult_create(S::CXSema, Name::CXDeclarationName, NameLoc::CXSourceLocation_, LookupKind::CXLookupNameKind)::CXLookupResult
+end
+
+function clang_LookupResult_dispose(LR)
+    @ccall libclangex.clang_LookupResult_dispose(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_isForRedeclaration(LR)
+    @ccall libclangex.clang_LookupResult_isForRedeclaration(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isTemplateNameLookup(LR)
+    @ccall libclangex.clang_LookupResult_isTemplateNameLookup(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isAmbiguous(LR)
+    @ccall libclangex.clang_LookupResult_isAmbiguous(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isSingleResult(LR)
+    @ccall libclangex.clang_LookupResult_isSingleResult(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isOverloadedResult(LR)
+    @ccall libclangex.clang_LookupResult_isOverloadedResult(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isUnresolvableResult(LR)
+    @ccall libclangex.clang_LookupResult_isUnresolvableResult(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isClassLookup(LR)
+    @ccall libclangex.clang_LookupResult_isClassLookup(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_resolveKind(LR)
+    @ccall libclangex.clang_LookupResult_resolveKind(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_isSingleTagDecl(LR)
+    @ccall libclangex.clang_LookupResult_isSingleTagDecl(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_clear(LR, LookupKind)
+    @ccall libclangex.clang_LookupResult_clear(LR::CXLookupResult, LookupKind::CXLookupNameKind)::Cvoid
+end
+
+function clang_LookupResult_setLookupName(LR, DN)
+    @ccall libclangex.clang_LookupResult_setLookupName(LR::CXLookupResult, DN::CXDeclarationName)::Cvoid
+end
+
+function clang_LookupResult_getLookupName(LR)
+    @ccall libclangex.clang_LookupResult_getLookupName(LR::CXLookupResult)::CXDeclarationName
+end
+
+function clang_LookupResult_dump(LR)
+    @ccall libclangex.clang_LookupResult_dump(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_empty(LR)
+    @ccall libclangex.clang_LookupResult_empty(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_getRepresentativeDecl(LR)
+    @ccall libclangex.clang_LookupResult_getRepresentativeDecl(LR::CXLookupResult)::CXNamedDecl
+end
+
+function clang_LookupResult_getNum(LR)
+    @ccall libclangex.clang_LookupResult_getNum(LR::CXLookupResult)::Csize_t
+end
+
+function clang_LookupResult_getResults(LR, Decls, N)
+    @ccall libclangex.clang_LookupResult_getResults(LR::CXLookupResult, Decls::Ptr{CXNamedDecl}, N::Csize_t)::Cvoid
+end
+
+function clang_LookupResult_getResult(LR)
+    @ccall libclangex.clang_LookupResult_getResult(LR::CXLookupResult)::CXNamedDecl
+end
+
+@enum CXLookupResultKind::UInt32 begin
+    CXLookupResultKind_NotFound = 0
+    CXLookupResultKind_NotFoundInCurrentInstantiation = 1
+    CXLookupResultKind_Found = 2
+    CXLookupResultKind_FoundOverloaded = 3
+    CXLookupResultKind_FoundUnresolvedValue = 4
+    CXLookupResultKind_Ambiguous = 5
+end
+
+@enum CXAmbiguityKind::UInt32 begin
+    CXAmbiguityKind_AmbiguousBaseSubobjectTypes = 0
+    CXAmbiguityKind_AmbiguousBaseSubobjects = 1
+    CXAmbiguityKind_AmbiguousReference = 2
+    CXAmbiguityKind_AmbiguousReferenceToPlaceholderVariable = 3
+    CXAmbiguityKind_AmbiguousTagHiding = 4
+end
+
+function clang_LookupResult_getResultKind(LR)
+    @ccall libclangex.clang_LookupResult_getResultKind(LR::CXLookupResult)::CXLookupResultKind
+end
+
+function clang_LookupResult_getAmbiguityKind(LR)
+    @ccall libclangex.clang_LookupResult_getAmbiguityKind(LR::CXLookupResult)::CXAmbiguityKind
+end
+
+function clang_LookupResult_getFoundDecl(LR)
+    @ccall libclangex.clang_LookupResult_getFoundDecl(LR::CXLookupResult)::CXNamedDecl
+end
+
+function clang_LookupResult_getNamingClass(LR)
+    @ccall libclangex.clang_LookupResult_getNamingClass(LR::CXLookupResult)::CXCXXRecordDecl
+end
+
+function clang_LookupResult_getLookupKind(LR)
+    @ccall libclangex.clang_LookupResult_getLookupKind(LR::CXLookupResult)::CXLookupNameKind
+end
+
+function clang_LookupResult_getNameLoc(LR)
+    @ccall libclangex.clang_LookupResult_getNameLoc(LR::CXLookupResult)::CXSourceLocation_
+end
+
+function clang_LookupResult_getIdentifierNamespace(LR)
+    @ccall libclangex.clang_LookupResult_getIdentifierNamespace(LR::CXLookupResult)::Cuint
+end
+
+function clang_LookupResult_suppressDiagnostics(LR)
+    @ccall libclangex.clang_LookupResult_suppressDiagnostics(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_isForExternalRedeclaration(LR)
+    @ccall libclangex.clang_LookupResult_isForExternalRedeclaration(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_setAllowHidden(LR, AH)
+    @ccall libclangex.clang_LookupResult_setAllowHidden(LR::CXLookupResult, AH::Bool)::Cvoid
+end
+
+function clang_LookupResult_isHiddenDeclarationVisible(LR, ND)
+    @ccall libclangex.clang_LookupResult_isHiddenDeclarationVisible(LR::CXLookupResult, ND::CXNamedDecl)::Bool
+end
+
+function clang_LookupResult_getBaseObjectType(LR)
+    @ccall libclangex.clang_LookupResult_getBaseObjectType(LR::CXLookupResult)::CXQualType
+end
+
+function clang_LookupResult_isShadowed(LR)
+    @ccall libclangex.clang_LookupResult_isShadowed(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isSuppressingAccessDiagnostics(LR)
+    @ccall libclangex.clang_LookupResult_isSuppressingAccessDiagnostics(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_isSuppressingAmbiguousDiagnostics(LR)
+    @ccall libclangex.clang_LookupResult_isSuppressingAmbiguousDiagnostics(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_getContextRange(LR)
+    @ccall libclangex.clang_LookupResult_getContextRange(LR::CXLookupResult)::CXSourceRange_
+end
+
+function clang_LookupResult_getLookupNameInfo(LR)
+    @ccall libclangex.clang_LookupResult_getLookupNameInfo(LR::CXLookupResult)::CXDeclarationNameInfo
+end
+
+function clang_LookupResult_setLookupNameInfo(LR, NameInfo)
+    @ccall libclangex.clang_LookupResult_setLookupNameInfo(LR::CXLookupResult, NameInfo::CXDeclarationNameInfo)::Cvoid
+end
+
+function clang_LookupResult_setNamingClass(LR, Record)
+    @ccall libclangex.clang_LookupResult_setNamingClass(LR::CXLookupResult, Record::CXCXXRecordDecl)::Cvoid
+end
+
+function clang_LookupResult_setBaseObjectType(LR, T)
+    @ccall libclangex.clang_LookupResult_setBaseObjectType(LR::CXLookupResult, T::CXQualType)::Cvoid
+end
+
+function clang_LookupResult_addDecl(LR, ND)
+    @ccall libclangex.clang_LookupResult_addDecl(LR::CXLookupResult, ND::CXNamedDecl)::Cvoid
+end
+
+function clang_LookupResult_addAllDecls(LR, Other)
+    @ccall libclangex.clang_LookupResult_addAllDecls(LR::CXLookupResult, Other::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_wasNotFoundInCurrentInstantiation(LR)
+    @ccall libclangex.clang_LookupResult_wasNotFoundInCurrentInstantiation(LR::CXLookupResult)::Bool
+end
+
+function clang_LookupResult_setNotFoundInCurrentInstantiation(LR)
+    @ccall libclangex.clang_LookupResult_setNotFoundInCurrentInstantiation(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_setTemplateNameLookup(LR, TemplateName)
+    @ccall libclangex.clang_LookupResult_setTemplateNameLookup(LR::CXLookupResult, TemplateName::Bool)::Cvoid
+end
+
+function clang_LookupResult_setShadowed(LR)
+    @ccall libclangex.clang_LookupResult_setShadowed(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_setContextRange(LR, SR)
+    @ccall libclangex.clang_LookupResult_setContextRange(LR::CXLookupResult, SR::CXSourceRange_)::Cvoid
+end
+
+function clang_LookupResult_setHideTags(LR, Hide)
+    @ccall libclangex.clang_LookupResult_setHideTags(LR::CXLookupResult, Hide::Bool)::Cvoid
+end
+
+function clang_LookupResult_isAvailableForLookup(S, ND)
+    @ccall libclangex.clang_LookupResult_isAvailableForLookup(S::CXSema, ND::CXNamedDecl)::Bool
+end
+
+function clang_LookupResult_getAcceptableDecl(LR, ND)
+    @ccall libclangex.clang_LookupResult_getAcceptableDecl(LR::CXLookupResult, ND::CXNamedDecl)::CXNamedDecl
+end
+
+function clang_LookupResult_resolveKindAfterFilter(LR)
+    @ccall libclangex.clang_LookupResult_resolveKindAfterFilter(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_setAmbiguousQualifiedTagHiding(LR)
+    @ccall libclangex.clang_LookupResult_setAmbiguousQualifiedTagHiding(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_suppressAccessDiagnostics(LR)
+    @ccall libclangex.clang_LookupResult_suppressAccessDiagnostics(LR::CXLookupResult)::Cvoid
+end
+
+function clang_LookupResult_getSema(LR)
+    @ccall libclangex.clang_LookupResult_getSema(LR::CXLookupResult)::CXSema
+end
+
+function clang_LookupResult_makeFilter(LR)
+    @ccall libclangex.clang_LookupResult_makeFilter(LR::CXLookupResult)::CXLookupResult_Filter
+end
+
+function clang_LookupResult_Filter_dispose(F)
+    @ccall libclangex.clang_LookupResult_Filter_dispose(F::CXLookupResult_Filter)::Cvoid
+end
+
+function clang_LookupResult_Filter_hasNext(F)
+    @ccall libclangex.clang_LookupResult_Filter_hasNext(F::CXLookupResult_Filter)::Bool
+end
+
+function clang_LookupResult_Filter_next(F)
+    @ccall libclangex.clang_LookupResult_Filter_next(F::CXLookupResult_Filter)::CXNamedDecl
+end
+
+function clang_LookupResult_Filter_restart(F)
+    @ccall libclangex.clang_LookupResult_Filter_restart(F::CXLookupResult_Filter)::Cvoid
+end
+
+function clang_LookupResult_Filter_erase(F)
+    @ccall libclangex.clang_LookupResult_Filter_erase(F::CXLookupResult_Filter)::Cvoid
+end
+
+function clang_LookupResult_Filter_replace(F, ND)
+    @ccall libclangex.clang_LookupResult_Filter_replace(F::CXLookupResult_Filter, ND::CXNamedDecl)::Cvoid
+end
+
+function clang_LookupResult_Filter_done(F)
+    @ccall libclangex.clang_LookupResult_Filter_done(F::CXLookupResult_Filter)::Cvoid
+end
+
+function clang_LookupResult_setFindLocalExtern(LR, FindLocalExtern)
+    @ccall libclangex.clang_LookupResult_setFindLocalExtern(LR::CXLookupResult, FindLocalExtern::Bool)::Cvoid
+end
+
+function clang_LookupResult_redeclarationKind(LR)
+    @ccall libclangex.clang_LookupResult_redeclarationKind(LR::CXLookupResult)::CXRedeclarationKind
+end
+
+function clang_LookupResult_setRedeclarationKind(LR, RK)
+    @ccall libclangex.clang_LookupResult_setRedeclarationKind(LR::CXLookupResult, RK::CXRedeclarationKind)::Cvoid
+end
+
+function clang_LookupResult_printToString(LR)
+    @ccall libclangex.clang_LookupResult_printToString(LR::CXLookupResult)::CXString
 end
 
 @enum CXCompleteTypeKind::UInt32 begin

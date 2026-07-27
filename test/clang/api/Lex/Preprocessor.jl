@@ -191,6 +191,15 @@ end
 
         # advancing to the first character of the predefines token stays a valid location
         @test CC.AdvanceToTokenCharacter(pp, loc, 0) isa CC.SourceLocation
+        # clang walks the token with `isObviouslySimpleCharacter`, which is true of a NUL,
+        # so an index past the token reads off the end of the buffer rather than stopping.
+        # The length is measured and the index refused.
+        tok_len = CC.MeasureTokenLength(loc, CC.getSourceManager(pp), CC.getLangOpts(pp))
+        @test tok_len isa Integer
+        @test CC.AdvanceToTokenCharacter(pp, loc, tok_len) isa CC.SourceLocation
+        @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, loc, tok_len + 1)
+        @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, loc, -1)
+        @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, CC.SourceLocation(), 0)
 
         # a location in the predefines buffer is outside any module → borrowed NULL carrier
         @test CC.getModuleForLocation(pp, loc, false) isa CC.Module_

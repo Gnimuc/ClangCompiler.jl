@@ -235,3 +235,18 @@ end
 
     dispose(I)
 end
+
+@testset "CompilerInstance module-building flag" begin
+    # Inherited from clang::ModuleLoader, whose constructor sets the flag, so a bare
+    # instance already answers and the setter round-trips.
+    ci = CC.CompilerInstance()
+
+    @test CC.buildingModule(ci) isa Bool
+    @test !CC.buildingModule(ci)
+    @test CC.setBuildingModule(ci, true) === nothing
+    @test CC.buildingModule(ci)
+    @test CC.setBuildingModule(ci, false) === nothing
+    @test !CC.buildingModule(ci)
+
+    dispose(ci)
+end

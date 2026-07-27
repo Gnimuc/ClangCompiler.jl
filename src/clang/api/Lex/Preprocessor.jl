@@ -567,10 +567,19 @@ end
                             char_no::Integer) -> SourceLocation
 Return the location of the `char_no`-th character within the token that starts at
 `tok_start`.
+
+`char_no` may not run past the end of that token. clang walks the characters with
+`while (CharNo && isObviouslySimpleCharacter(*TokPtr)) ++TokPtr, --CharNo`, and
+`isObviouslySimpleCharacter` is only `C != '?' && C != '\\\\'` — so a NUL counts as simple
+and the walk does not stop at the end of the buffer. The token's length is measured here
+and the index checked against it.
 """
 function AdvanceToTokenCharacter(x::AbstractPreprocessor, tok_start::SourceLocation,
                                  char_no::Integer)
     @check_ptrs x
+    @assert isValid(tok_start) "tok_start must be a valid location"
+    n = MeasureTokenLength(tok_start, getSourceManager(x), getLangOpts(x))
+    @assert 0 <= char_no <= n "char_no must lie within the token that starts at tok_start"
     return SourceLocation(clang_Preprocessor_AdvanceToTokenCharacter(x, tok_start, char_no))
 end
 

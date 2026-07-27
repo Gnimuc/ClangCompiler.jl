@@ -10,6 +10,10 @@ Pick the lightest pattern that fits. Prefer exposing components over marshalling
 prefer a borrowed interior pointer over an owned copy; only heap-box when the value has no
 pointer form and the caller genuinely needs it.
 
+The one exception to preferring a borrow: when what the pointer points into is **private** to
+the owning class, so the boundary cannot observe that the storage moved, the borrow can be
+neither checked nor honestly documented away. Copy instead — see §14.
+
 ## 0. Reuse LLVM's own C types — don't reinvent them
 
 Clang is built on LLVM, so many values crossing the boundary are LLVM-owned, not Clang-owned.
@@ -487,6 +491,33 @@ usual offender, because a null `QualType` asserts rather than returning null.
 A gate is exercised by every valid call, so a defect here fails 100% of the
 time — which is also why it survives only until the first test that calls the
 wrapper at all.
+
+---
+
+## 14. Borrows the boundary cannot observe → copy, don't caveat
+
+MARSHALLING.md §9 boxes a value together with the storage it borrows, which works when the
+storage is something the boundary can hold. When the owner is **private** and the borrow has
+no observable identity, there is nothing to box and nothing to check — and a documented
+caveat is then the weakest possible answer, because the Julia layer is supposed to be where
+that safety gets re-established.
+
+`clang::HeaderSearch::getFileInfo` returns a reference into a private
+`std::vector<HeaderFileInfo>`; a later `getFileInfo` reallocates it and `ClearFileInfo`
+empties it. The shim cannot read the vector's data pointer or size to detect the move, so no
+generation counter is possible. The fix is to stop borrowing: `clang_HeaderSearch_copyFileInfo`
+copies the record into caller-owned storage released by `clang_HeaderFileInfo_dispose`, and
+the borrowing entry points are **deleted** rather than left alongside it.
+
+Two things make this sound rather than merely safer. The record's pointer members survive,
+because reallocation moves the records and not what they point at — `ControllingMacro`
+belongs to the identifier table, `Framework` to the search's string allocator. And every
+accessor over the record is a pure getter, so a snapshot loses nothing a caller could have
+written back. Check both before copying: a snapshot of a type with setters silently drops
+writes, and a copy whose members point into the moved storage fixes nothing.
+
+**In the tree.** `clang_HeaderSearch_copyFileInfo`, `clang_HeaderSearch_copyExistingFileInfo`,
+`clang_HeaderFileInfo_dispose` (`lib/Lex/CXHeaderSearch.cpp`).
 
 ---
 

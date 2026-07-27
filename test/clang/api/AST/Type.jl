@@ -2755,3 +2755,30 @@ end
 
     dispose(I)
 end
+
+@testset "a null QualType is rejected however its qualifier bits are set" begin
+    # A QualType's opaque value is a PointerIntPair of the type pointer and the fast
+    # qualifiers, so comparing it against C_NULL is NOT the same question as asking clang
+    # whether a type is there. `@check_ptrs` goes through `is_null_handle`, which has a
+    # QualType method delegating to isNull, so both spellings of "absent" are refused.
+    I = create_interpreter()
+    ctx = CC.getASTContext(CC.get_sema(I))
+
+    plain = CC.QualType(C_NULL)
+    @test CC.isNull(plain)
+    @test CC.is_null_handle(plain)
+
+    # A null type carrying only qualifier bits: the fast qualifiers live in the opaque
+    # value's low bits, and 0x1 is `const`, so the handle is non-zero with no type behind it.
+    qualified = CC.QualType(Ptr{Cvoid}(UInt(0x1)))
+    @test qualified.ptr != C_NULL          # the raw handle looks non-null ...
+    @test CC.isNull(qualified)             # ... but clang says there is no type
+    @test CC.is_null_handle(qualified)     # so the gate must still refuse it
+
+    # a real type is accepted by both
+    int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
+    @test !CC.isNull(int_ty)
+    @test !CC.is_null_handle(int_ty)
+
+    dispose(I)
+end

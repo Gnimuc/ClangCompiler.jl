@@ -325,14 +325,22 @@ end
 Return the `HeaderFileInfo` record for `file`, creating an empty one when the header has
 never been looked up.
 
-The carrier borrows an interior pointer into the search's `HeaderFileInfo` vector: a later
-`getFileInfo` for a different header can reallocate that vector, and `ClearFileInfo` empties
-it. Read the fields out before making either call.
+The record is a snapshot copied out of the search, so later changes clang makes to the real
+record are not reflected in it. That is the price of not handing back an interior pointer
+into the search's private `HeaderFileInfo` vector, which a later `getFileInfo` reallocates
+and `ClearFileInfo` empties -- and which nothing on this side of the boundary can check,
+because the vector is private. Its `ControllingMacro` and `Framework` stay valid either way:
+reallocation moves the records, not what they point at.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
 """
 function getFileInfo(x::AbstractHeaderSearch, file::AbstractFileEntryRef)
     @check_ptrs x file
-    return HeaderFileInfo(clang_HeaderSearch_getFileInfo(x, file))
+    return HeaderFileInfo(clang_HeaderSearch_copyFileInfo(x, file))
 end
+
+dispose(x::HeaderFileInfo) = clang_HeaderFileInfo_dispose(x)
 
 """
     getExistingFileInfo(x::AbstractHeaderSearch, file::AbstractFileEntryRef;
@@ -342,12 +350,15 @@ holding `NULL` when the header has not been seen. Unlike `getFileInfo` this neve
 record. With `want_external=false` a record supplied by an external source is reported as
 absent.
 
-The same interior-pointer caveat as `getFileInfo` applies.
+Like `getFileInfo` this hands back an owned snapshot rather than a view into the search.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object -- but only when the returned carrier is non-NULL.
 """
 function getExistingFileInfo(x::AbstractHeaderSearch, file::AbstractFileEntryRef;
                              want_external::Bool=true)
     @check_ptrs x file
-    return HeaderFileInfo(clang_HeaderSearch_getExistingFileInfo(x, file, want_external))
+    return HeaderFileInfo(clang_HeaderSearch_copyExistingFileInfo(x, file, want_external))
 end
 
 """
@@ -381,8 +392,8 @@ end
 
 # HeaderFileInfo
 #
-# Every carrier below borrows an interior pointer into the owning HeaderSearch's record
-# vector; see `getFileInfo` for what invalidates it.
+# Every carrier below reads a record obtained from `getFileInfo` or `getExistingFileInfo`,
+# which are owned snapshots the caller disposes -- not views into the search.
 
 """
     getIsImport(x::AbstractHeaderFileInfo) -> Bool

@@ -157,19 +157,6 @@ unsigned clang_HeaderSearch_header_file_size(CXHeaderSearch HS) {
   return static_cast<clang::HeaderSearch *>(HS)->header_file_size();
 }
 
-CXHeaderFileInfo clang_HeaderSearch_getFileInfo(CXHeaderSearch HS, CXFileEntryRef FE) {
-  return &static_cast<clang::HeaderSearch *>(HS)->getFileInfo(
-      *static_cast<clang::FileEntryRef *>(FE));
-}
-
-CXHeaderFileInfo clang_HeaderSearch_getExistingFileInfo(CXHeaderSearch HS,
-                                                        CXFileEntryRef FE,
-                                                        bool WantExternal) {
-  return const_cast<clang::HeaderFileInfo *>(
-      static_cast<clang::HeaderSearch *>(HS)->getExistingFileInfo(
-          *static_cast<clang::FileEntryRef *>(FE), WantExternal));
-}
-
 unsigned clang_HeaderSearch_search_dir_size(CXHeaderSearch HS) {
   return static_cast<clang::HeaderSearch *>(HS)->search_dir_size();
 }
@@ -239,4 +226,22 @@ CXIdentifierInfo clang_HeaderFileInfo_getControllingMacroRaw(CXHeaderFileInfo HF
 
 CXString clang_HeaderFileInfo_getFramework(CXHeaderFileInfo HFI) {
   return extra::makeCXString(static_cast<clang::HeaderFileInfo *>(HFI)->Framework.str());
+}
+
+CXHeaderFileInfo clang_HeaderSearch_copyFileInfo(CXHeaderSearch HS, CXFileEntryRef FE) {
+  return new clang::HeaderFileInfo(static_cast<clang::HeaderSearch *>(HS)->getFileInfo(
+      *static_cast<clang::FileEntryRef *>(FE)));
+}
+
+CXHeaderFileInfo clang_HeaderSearch_copyExistingFileInfo(CXHeaderSearch HS,
+                                                         CXFileEntryRef FE,
+                                                         bool WantExternal) {
+  const clang::HeaderFileInfo *HFI =
+      static_cast<clang::HeaderSearch *>(HS)->getExistingFileInfo(
+          *static_cast<clang::FileEntryRef *>(FE), WantExternal);
+  return HFI ? new clang::HeaderFileInfo(*HFI) : nullptr;
+}
+
+void clang_HeaderFileInfo_dispose(CXHeaderFileInfo HFI) {
+  delete static_cast<clang::HeaderFileInfo *>(HFI);
 }

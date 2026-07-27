@@ -4,11 +4,13 @@
 #include "clang-ex/Basic/CXAddressSpaces.h"
 #include "clang-ex/Basic/CXTargetCXXABI.h"
 
+#include "clang-ex/Basic/CXFloatModeKind.h" // CXFloatModeKind
+#include "clang-ex/Basic/CXLangOptions.h"   // CXFPEvalMethodKind
+#include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-ex/CXTypes.h"
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
-#include "clang-ex/Basic/CXSpecifiers.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
@@ -365,6 +367,57 @@ bool clang_TargetInfo_allowDebugInfoForExternalRef(CXTargetInfo_ TI);
 // owns; NULL when the target names no variant.
 const char *clang_TargetInfo_getDarwinTargetVariantTriple(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasHIPImageSupport(CXTargetInfo_ TI);
+
+// --- The fixed-point types (`_Accum`, `_Fract` and their short/long/unsigned spellings)
+// ---
+//
+// Width is the whole type's bit width, Scale the number of fractional bits, IBits the
+// number of integral bits, and Align the ABI alignment. Every one of these is target-set:
+// assert their shape, never a particular value. Signed types carry a sign bit, so their
+// IBits accessor exists separately from the unsigned one; the unsigned types have no
+// separate width or alignment because they match their signed counterparts.
+unsigned clang_TargetInfo_getAccumAlign(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getAccumIBits(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getAccumScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getAccumWidth(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getFractAlign(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getFractScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getFractWidth(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getLongAccumAlign(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getLongAccumIBits(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getLongAccumScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getLongAccumWidth(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getLongFractAlign(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getLongFractScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getLongFractWidth(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getShortAccumAlign(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getShortAccumIBits(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getShortAccumScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getShortAccumWidth(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getShortFractAlign(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getShortFractScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getShortFractWidth(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedAccumIBits(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedAccumScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedFractScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedLongAccumIBits(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedLongAccumScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedLongFractScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedShortAccumIBits(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedShortAccumScale(CXTargetInfo_ TI);
+unsigned clang_TargetInfo_getUnsignedShortFractScale(CXTargetInfo_ TI);
+
+// Whether the unsigned fixed-point types spend a bit on padding to keep the same scale as
+// their signed counterparts.
+bool clang_TargetInfo_doUnsignedFixedPointTypesHavePadding(CXTargetInfo_ TI);
+
+// The floating-point evaluation method the target's default excess precision implies.
+CXFPEvalMethodKind clang_TargetInfo_getFPEvalMethod(CXTargetInfo_ TI);
+
+// The real floating-point type of the given bit width, or CXFloatModeKind_NoFloat when the
+// target has none. ExplicitType selects between the `float`/`__bf16` spellings at 16 bits.
+CXFloatModeKind clang_TargetInfo_getRealTypeByWidth(CXTargetInfo_ TI, unsigned BitWidth,
+                                                    CXFloatModeKind ExplicitType);
 
 LLVM_CLANG_C_EXTERN_C_END
 

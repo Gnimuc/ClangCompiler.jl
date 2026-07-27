@@ -944,3 +944,139 @@ const char *clang_TargetInfo_getDarwinTargetVariantTriple(CXTargetInfo_ TI) {
 bool clang_TargetInfo_hasHIPImageSupport(CXTargetInfo_ TI) {
   return static_cast<clang::TargetInfo *>(TI)->hasHIPImageSupport();
 }
+
+unsigned clang_TargetInfo_getAccumAlign(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getAccumAlign();
+}
+
+unsigned clang_TargetInfo_getAccumIBits(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getAccumIBits();
+}
+
+unsigned clang_TargetInfo_getAccumScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getAccumScale();
+}
+
+unsigned clang_TargetInfo_getAccumWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getAccumWidth();
+}
+
+unsigned clang_TargetInfo_getFractAlign(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getFractAlign();
+}
+
+unsigned clang_TargetInfo_getFractScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getFractScale();
+}
+
+unsigned clang_TargetInfo_getFractWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getFractWidth();
+}
+
+unsigned clang_TargetInfo_getLongAccumAlign(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLongAccumAlign();
+}
+
+unsigned clang_TargetInfo_getLongAccumIBits(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLongAccumIBits();
+}
+
+unsigned clang_TargetInfo_getLongAccumScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLongAccumScale();
+}
+
+unsigned clang_TargetInfo_getLongAccumWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLongAccumWidth();
+}
+
+unsigned clang_TargetInfo_getLongFractAlign(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLongFractAlign();
+}
+
+unsigned clang_TargetInfo_getLongFractScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLongFractScale();
+}
+
+unsigned clang_TargetInfo_getLongFractWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getLongFractWidth();
+}
+
+unsigned clang_TargetInfo_getShortAccumAlign(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getShortAccumAlign();
+}
+
+unsigned clang_TargetInfo_getShortAccumIBits(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getShortAccumIBits();
+}
+
+unsigned clang_TargetInfo_getShortAccumScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getShortAccumScale();
+}
+
+unsigned clang_TargetInfo_getShortAccumWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getShortAccumWidth();
+}
+
+unsigned clang_TargetInfo_getShortFractAlign(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getShortFractAlign();
+}
+
+unsigned clang_TargetInfo_getShortFractScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getShortFractScale();
+}
+
+unsigned clang_TargetInfo_getShortFractWidth(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getShortFractWidth();
+}
+
+unsigned clang_TargetInfo_getUnsignedAccumIBits(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedAccumIBits();
+}
+
+unsigned clang_TargetInfo_getUnsignedAccumScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedAccumScale();
+}
+
+unsigned clang_TargetInfo_getUnsignedFractScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedFractScale();
+}
+
+unsigned clang_TargetInfo_getUnsignedLongAccumIBits(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedLongAccumIBits();
+}
+
+unsigned clang_TargetInfo_getUnsignedLongAccumScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedLongAccumScale();
+}
+
+unsigned clang_TargetInfo_getUnsignedLongFractScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedLongFractScale();
+}
+
+unsigned clang_TargetInfo_getUnsignedShortAccumIBits(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedShortAccumIBits();
+}
+
+unsigned clang_TargetInfo_getUnsignedShortAccumScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedShortAccumScale();
+}
+
+unsigned clang_TargetInfo_getUnsignedShortFractScale(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->getUnsignedShortFractScale();
+}
+
+bool clang_TargetInfo_doUnsignedFixedPointTypesHavePadding(CXTargetInfo_ TI) {
+  return static_cast<clang::TargetInfo *>(TI)->doUnsignedFixedPointTypesHavePadding();
+}
+
+CXFPEvalMethodKind clang_TargetInfo_getFPEvalMethod(CXTargetInfo_ TI) {
+  return static_cast<CXFPEvalMethodKind>(
+      static_cast<clang::TargetInfo *>(TI)->getFPEvalMethod());
+}
+
+CXFloatModeKind clang_TargetInfo_getRealTypeByWidth(CXTargetInfo_ TI, unsigned BitWidth,
+                                                    CXFloatModeKind ExplicitType) {
+  return static_cast<CXFloatModeKind>(
+      static_cast<clang::TargetInfo *>(TI)->getRealTypeByWidth(
+          BitWidth, static_cast<clang::FloatModeKind>(ExplicitType)));
+}

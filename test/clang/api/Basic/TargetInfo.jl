@@ -488,3 +488,78 @@ end
 
     dispose(I)
 end
+
+@testset "TargetInfo | fixed-point types" begin
+    I = CC.create_interpreter(String[])
+    ti = CC.getTarget(CC.get_instance(I))
+
+    # Every number here is target-chosen, so what is asserted is the shape and the
+    # relationships the fixed-point model guarantees on any target -- not a value.
+    accum = [CC.getShortAccumWidth(ti), CC.getAccumWidth(ti), CC.getLongAccumWidth(ti)]
+    fract = [CC.getShortFractWidth(ti), CC.getFractWidth(ti), CC.getLongFractWidth(ti)]
+    for w in vcat(accum, fract)
+        @test w isa Integer
+        @test w > 0
+    end
+    # widths are non-decreasing from short to long
+    @test issorted(accum)
+    @test issorted(fract)
+
+    aligns = [CC.getShortAccumAlign(ti), CC.getAccumAlign(ti), CC.getLongAccumAlign(ti),
+              CC.getShortFractAlign(ti), CC.getFractAlign(ti), CC.getLongFractAlign(ti)]
+    for a in aligns
+        @test a isa Integer
+        @test a > 0
+    end
+
+    # A signed _Accum is a sign bit, its integral bits and its fractional bits, exactly.
+    for (w, ibits, scale) in
+        [(CC.getShortAccumWidth(ti), CC.getShortAccumIBits(ti), CC.getShortAccumScale(ti)),
+         (CC.getAccumWidth(ti), CC.getAccumIBits(ti), CC.getAccumScale(ti)),
+         (CC.getLongAccumWidth(ti), CC.getLongAccumIBits(ti), CC.getLongAccumScale(ti))]
+        @test ibits > 0
+        @test scale > 0
+        @test 1 + ibits + scale == w
+    end
+
+    # A signed _Fract is a sign bit and its fractional bits: no integral bits at all.
+    for (w, scale) in [(CC.getShortFractWidth(ti), CC.getShortFractScale(ti)),
+                       (CC.getFractWidth(ti), CC.getFractScale(ti)),
+                       (CC.getLongFractWidth(ti), CC.getLongFractScale(ti))]
+        @test scale > 0
+        @test 1 + scale == w
+    end
+
+    # The unsigned spellings reuse their signed counterpart's width, so they only expose
+    # scale and integral bits. Whether they gain the sign bit back or pad it away is what
+    # doUnsignedFixedPointTypesHavePadding reports.
+    padded = CC.doUnsignedFixedPointTypesHavePadding(ti)
+    @test padded isa Bool
+    for (w, uibits, uscale) in
+        [(CC.getShortAccumWidth(ti), CC.getUnsignedShortAccumIBits(ti),
+          CC.getUnsignedShortAccumScale(ti)),
+         (CC.getAccumWidth(ti), CC.getUnsignedAccumIBits(ti), CC.getUnsignedAccumScale(ti)),
+         (CC.getLongAccumWidth(ti), CC.getUnsignedLongAccumIBits(ti),
+          CC.getUnsignedLongAccumScale(ti))]
+        @test uibits > 0
+        @test uscale > 0
+        @test uibits + uscale == (padded ? w - 1 : w)
+    end
+    for (w, uscale) in [(CC.getShortFractWidth(ti), CC.getUnsignedShortFractScale(ti)),
+                        (CC.getFractWidth(ti), CC.getUnsignedFractScale(ti)),
+                        (CC.getLongFractWidth(ti), CC.getUnsignedLongFractScale(ti))]
+        @test uscale == (padded ? w - 1 : w)
+    end
+
+    # --- Floating-point evaluation and the real type of a given width ---
+    @test CC.getFPEvalMethod(ti) isa CC.CXFPEvalMethodKind
+    # every target this package runs on has a 32-bit and a 64-bit real type
+    @test CC.getRealTypeByWidth(ti, 32, CC.CXFloatModeKind_Float) == CC.CXFloatModeKind_Float
+    @test CC.getRealTypeByWidth(ti, 64, CC.CXFloatModeKind_Float) ==
+          CC.CXFloatModeKind_Double
+    # and none has a real type of an absurd width
+    @test CC.getRealTypeByWidth(ti, 3, CC.CXFloatModeKind_Float) ==
+          CC.CXFloatModeKind_NoFloat
+
+    dispose(I)
+end

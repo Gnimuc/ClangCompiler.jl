@@ -243,6 +243,10 @@ end
 function createASTContext(ci::CompilerInstance)
     @check_ptrs ci
     @assert hasPreprocessor(ci) "CompilerInstance has no preprocessor."
+    # The new context is finished with `InitBuiltinTypes(getTarget(), getAuxTarget())`, and
+    # `getTarget` is `assert(Target); return *Target;` -- so a target-less instance aborts
+    # inside clang rather than reporting anything.
+    @assert hasTarget(ci) "CompilerInstance has no target."
     return clang_CompilerInstance_createASTContext(ci)
 end
 
@@ -642,4 +646,24 @@ function isFrontendTimerRunning(ci::CompilerInstance)
     @check_ptrs ci
     @assert hasFrontendTimer(ci) "the compiler instance has no frontend timer"
     return clang_CompilerInstance_isFrontendTimerRunning(ci)
+end
+
+"""
+    buildingModule(ci::CompilerInstance) -> Bool
+Return whether this instance is building a module.
+
+Inherited from `clang::ModuleLoader`, whose constructor sets the flag, so this is total.
+"""
+function buildingModule(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_buildingModule(ci)
+end
+
+"""
+    setBuildingModule(ci::CompilerInstance, flag::Bool) -> Nothing
+Set whether this instance is building a module.
+"""
+function setBuildingModule(ci::CompilerInstance, flag::Bool)
+    @check_ptrs ci
+    return clang_CompilerInstance_setBuildingModule(ci, flag)
 end

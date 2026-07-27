@@ -200,6 +200,17 @@ void clang_CompilerInstance_resetAndLeakASTContext(CXCompilerInstance CI);
 
 void clang_CompilerInstance_resetAndLeakSema(CXCompilerInstance CI);
 
+// --- The module-building flag, inherited from clang::ModuleLoader --------------------
+//
+// BuildingModule is set by the ModuleLoader constructor (clang/Lex/ModuleLoader.h), so
+// both of these are total.
+
+// Whether this instance is building a module.
+bool clang_CompilerInstance_buildingModule(CXCompilerInstance CI);
+
+// Set whether this instance is building a module.
+void clang_CompilerInstance_setBuildingModule(CXCompilerInstance CI, bool Flag);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

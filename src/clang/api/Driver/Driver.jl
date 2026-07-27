@@ -500,3 +500,62 @@ function GetProgramPath(x::AbstractDriver, name::AbstractString, tc::AbstractToo
     @check_ptrs x tc
     return get_string(clang_Driver_GetProgramPath(x, name, tc))
 end
+
+"""
+    getName(x::AbstractDriver) -> String
+Return the name the driver was invoked as -- the stem of `argv[0]`.
+"""
+function getName(x::AbstractDriver)
+    @check_ptrs x
+    return get_string(clang_Driver_getName(x))
+end
+
+"""
+    getSystemConfigDir(x::AbstractDriver) -> String
+Return the system-wide configuration directory the driver searches.
+"""
+function getSystemConfigDir(x::AbstractDriver)
+    @check_ptrs x
+    return get_string(clang_Driver_getSystemConfigDir(x))
+end
+
+"""
+    getUserConfigDir(x::AbstractDriver) -> String
+Return the per-user configuration directory the driver searches.
+"""
+function getUserConfigDir(x::AbstractDriver)
+    @check_ptrs x
+    return get_string(clang_Driver_getUserConfigDir(x))
+end
+
+"""
+    getNumPrefixDirs(x::AbstractDriver) -> Int
+Return how many prefix directories the driver searches ahead of the toolchain's own.
+
+These come from every `-B` on the command line *and* from the `COMPILER_PATH` environment
+variable, so the count is host-dependent.
+"""
+function getNumPrefixDirs(x::AbstractDriver)::Int
+    @check_ptrs x
+    return clang_Driver_getNumPrefixDirs(x)
+end
+
+"""
+    getPrefixDir(x::AbstractDriver, i::Integer) -> String
+Return the `i`-th prefix directory. `i` is 0-based and must be less than
+[`getNumPrefixDirs`](@ref); the underlying container is indexed without a bounds check.
+"""
+function getPrefixDir(x::AbstractDriver, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumPrefixDirs(x) "prefix-directory index out of range"
+    return get_string(clang_Driver_getPrefixDir(x, i))
+end
+
+"""
+    getPrefixDirs(x::AbstractDriver) -> Vector{String}
+Return every prefix directory the driver searches ahead of the toolchain's own.
+"""
+function getPrefixDirs(x::AbstractDriver)
+    @check_ptrs x
+    return String[getPrefixDir(x, i) for i = 0:(getNumPrefixDirs(x) - 1)]
+end

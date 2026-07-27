@@ -236,3 +236,38 @@ end
     CC.dispose(drv)
     CC.dispose(diags)
 end
+
+@testset "Driver identity and prefix directories" begin
+    # A throwaway Driver on a throwaway DiagnosticsEngine; these read members the Driver
+    # constructor sets, so no BuildCompilation is needed.
+    diags = CC.DiagnosticsEngine()
+    exe = joinpath("usr", "bin", "clang")
+    drv = CC.Driver(exe, "x86_64-unknown-linux-gnu", diags)
+
+    # The name is the stem the driver was invoked as, so it round-trips what was passed.
+    name = CC.getName(drv)
+    @test name isa String
+    @test occursin("clang", name)
+
+    for d in (CC.getSystemConfigDir(drv), CC.getUserConfigDir(drv))
+        @test d isa String   # both may legitimately be empty on a bare Driver
+    end
+
+    # PrefixDirs is filled from every -B AND from COMPILER_PATH, so the count is
+    # host-dependent: assert the shape and the index contract, never a number.
+    n = CC.getNumPrefixDirs(drv)
+    @test n isa Integer
+    @test n >= 0
+    dirs = CC.getPrefixDirs(drv)
+    @test dirs isa Vector{String}
+    @test length(dirs) == n
+    for i = 0:(n - 1)
+        @test CC.getPrefixDir(drv, i) == dirs[i + 1]
+    end
+    # the container is indexed without a bounds check, so the wrapper supplies one
+    @test_throws AssertionError CC.getPrefixDir(drv, n)
+    @test_throws AssertionError CC.getPrefixDir(drv, -1)
+
+    dispose(drv)
+    dispose(diags)
+end

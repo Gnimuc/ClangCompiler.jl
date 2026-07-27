@@ -192,6 +192,27 @@ bool clang_Driver_GetReleaseVersionDigits(const char *Str, unsigned *Digits, uns
 // cache directory (the C++ false return; on success the path is never empty).
 CXString clang_Driver_getDefaultModuleCachePath(void);
 
+// --- Driver identity and search-prefix state (public data members) -------------------
+//
+// These read members the Driver constructor sets, so they are total: no BuildCompilation
+// is needed and there is no uninitialized-read window.
+
+// The name the driver was invoked as (argv[0]'s stem).
+CXString clang_Driver_getName(CXDriver D);
+
+// The system-wide configuration directory the driver searches.
+CXString clang_Driver_getSystemConfigDir(CXDriver D);
+
+// The per-user configuration directory the driver searches.
+CXString clang_Driver_getUserConfigDir(CXDriver D);
+
+// The prefix directories searched ahead of the toolchain's own, as a count + index pair
+// (MARSHALLING.md section 6). These come from every -B on the command line AND from the
+// COMPILER_PATH environment variable, so the count is host-dependent -- never assert a
+// particular one. Idx must be < the count; the Julia wrapper restates that.
+unsigned clang_Driver_getNumPrefixDirs(CXDriver D);
+CXString clang_Driver_getPrefixDir(CXDriver D, unsigned Idx);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif
