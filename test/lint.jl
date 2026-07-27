@@ -9,6 +9,7 @@ using Test
 const CLANGEX_DIR = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra"))
 const CLANGEX_INC = joinpath(CLANGEX_DIR, "include", "clang-ex")
 const CLANGEX_LIB = joinpath(CLANGEX_DIR, "lib")
+const SRC_DIR = normpath(joinpath(@__DIR__, "..", "src"))
 
 function clangex_headers()
     headers = String[]
@@ -240,5 +241,44 @@ isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
             @test isempty(pending)
         end
         @test checked >= 20  # guard against the parser silently matching nothing
+    end
+
+    @testset "no unguarded getType read on an arbitrary Expr operand" begin
+        # `Expr::getType()` returns a null `QualType` for an unevaluated string
+        # literal — what the parser builds for a `static_assert` message — and
+        # `QualType::getTypePtr()` asserts rather than returning null. A wrapper
+        # that accepts an `AbstractExpr` and reaches for its type pointer without
+        # first ruling the null out therefore aborts the process on a valid
+        # operand (MARSHALLING.md §13). Wrappers narrowed to a subclass that
+        # always carries a type are exempt, so the receiver spelling is what is
+        # matched here.
+        # The read is matched against the *argument* it is applied to, not merely
+        # against the enclosing signature: a wrapper may legitimately take both an
+        # expression and a `TypeLoc` and read the latter's type directly.
+        direct = r"getTypePtr\(\s*getType\((\w+)\)\s*\)"
+        offenders, scanned = String[], 0
+        for (root, _, files) in walkdir(joinpath(SRC_DIR, "clang", "api")),
+            f in filter(endswith(".jl"), files)
+
+            relf = relpath(joinpath(root, f), SRC_DIR)
+            sig = ""
+            for (n, line) in enumerate(eachline(joinpath(root, f)))
+                if startswith(line, "function ")
+                    sig = line
+                elseif !isempty(sig) && startswith(line, " "^8) && occursin("::", line)
+                    sig *= " " * strip(line)   # continuation of a wrapped parameter list
+                end
+                for m in eachmatch(direct, line)
+                    scanned += 1
+                    ty = match(Regex("\\b$(m.captures[1])::(\\w+)"), sig)
+                    ty !== nothing && occursin("Expr", ty.captures[1]) || continue
+                    push!(offenders, "$relf:$n reads $(m.match)")
+                end
+            end
+        end
+        @test scanned >= 5  # guard against the pattern silently matching nothing
+        isempty(offenders) ||
+            @error "wrapper reads an Expr's type pointer directly; use `expr_type_ptr`" offenders
+        @test isempty(offenders)
     end
 end

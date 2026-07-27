@@ -1,6 +1,46 @@
 #include "clang-ex/Sema/CXLookup.h"
 #include "clang/Sema/Lookup.h"
 #include <iterator>
+#include "clang/AST/DeclCXX.h"
+#include <memory>
+#include "utils.h"
+#include "llvm/Support/raw_ostream.h"
+
+bool clang_LookupResult_isForExternalRedeclaration(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->isForExternalRedeclaration();
+}
+
+void clang_LookupResult_setAllowHidden(CXLookupResult LR, bool AH) {
+  static_cast<clang::LookupResult *>(LR)->setAllowHidden(AH);
+}
+
+bool clang_LookupResult_isHiddenDeclarationVisible(CXLookupResult LR, CXNamedDecl ND) {
+  return static_cast<clang::LookupResult *>(LR)->isHiddenDeclarationVisible(
+      static_cast<clang::NamedDecl *>(ND));
+}
+
+CXQualType clang_LookupResult_getBaseObjectType(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->getBaseObjectType().getAsOpaquePtr();
+}
+
+bool clang_LookupResult_isShadowed(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->isShadowed();
+}
+
+bool clang_LookupResult_isSuppressingAccessDiagnostics(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->isSuppressingAccessDiagnostics();
+}
+
+bool clang_LookupResult_isSuppressingAmbiguousDiagnostics(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->isSuppressingAmbiguousDiagnostics();
+}
+
+CXSourceRange_ clang_LookupResult_getContextRange(CXLookupResult LR) {
+  auto Rng = static_cast<clang::LookupResult *>(LR)->getContextRange();
+  CXSourceLocation_ B = Rng.getBegin().getPtrEncoding();
+  CXSourceLocation_ E = Rng.getEnd().getPtrEncoding();
+  return CXSourceRange_{B, E};
+}
 
 CXLookupResultKind clang_LookupResult_getResultKind(CXLookupResult LR) {
   return static_cast<CXLookupResultKind>(
@@ -128,4 +168,144 @@ void clang_LookupResult_getResults(CXLookupResult LR, CXNamedDecl *Decls, size_t
 CXNamedDecl clang_LookupResult_getResult(CXLookupResult LR) {
   auto It = static_cast<clang::LookupResult *>(LR)->begin();
   return (*It)->getUnderlyingDecl();
+}
+
+CXDeclarationNameInfo clang_LookupResult_getLookupNameInfo(CXLookupResult LR) {
+  return std::make_unique<clang::DeclarationNameInfo>(
+             static_cast<clang::LookupResult *>(LR)->getLookupNameInfo())
+      .release();
+}
+
+void clang_LookupResult_setLookupNameInfo(CXLookupResult LR,
+                                          CXDeclarationNameInfo NameInfo) {
+  static_cast<clang::LookupResult *>(LR)->setLookupNameInfo(
+      *static_cast<clang::DeclarationNameInfo *>(NameInfo));
+}
+
+void clang_LookupResult_setNamingClass(CXLookupResult LR, CXCXXRecordDecl Record) {
+  static_cast<clang::LookupResult *>(LR)->setNamingClass(
+      static_cast<clang::CXXRecordDecl *>(Record));
+}
+
+void clang_LookupResult_setBaseObjectType(CXLookupResult LR, CXQualType T) {
+  static_cast<clang::LookupResult *>(LR)->setBaseObjectType(
+      clang::QualType::getFromOpaquePtr(T));
+}
+
+void clang_LookupResult_addDecl(CXLookupResult LR, CXNamedDecl ND) {
+  static_cast<clang::LookupResult *>(LR)->addDecl(static_cast<clang::NamedDecl *>(ND));
+}
+
+void clang_LookupResult_addAllDecls(CXLookupResult LR, CXLookupResult Other) {
+  static_cast<clang::LookupResult *>(LR)->addAllDecls(
+      *static_cast<clang::LookupResult *>(Other));
+}
+
+bool clang_LookupResult_wasNotFoundInCurrentInstantiation(CXLookupResult LR) {
+  return static_cast<clang::LookupResult *>(LR)->wasNotFoundInCurrentInstantiation();
+}
+
+void clang_LookupResult_setNotFoundInCurrentInstantiation(CXLookupResult LR) {
+  static_cast<clang::LookupResult *>(LR)->setNotFoundInCurrentInstantiation();
+}
+
+void clang_LookupResult_setTemplateNameLookup(CXLookupResult LR, bool TemplateName) {
+  static_cast<clang::LookupResult *>(LR)->setTemplateNameLookup(TemplateName);
+}
+
+void clang_LookupResult_setShadowed(CXLookupResult LR) {
+  static_cast<clang::LookupResult *>(LR)->setShadowed();
+}
+
+void clang_LookupResult_setContextRange(CXLookupResult LR, CXSourceRange_ SR) {
+  static_cast<clang::LookupResult *>(LR)->setContextRange(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(SR.B),
+                         clang::SourceLocation::getFromPtrEncoding(SR.E)));
+}
+
+void clang_LookupResult_setHideTags(CXLookupResult LR, bool Hide) {
+  static_cast<clang::LookupResult *>(LR)->setHideTags(Hide);
+}
+
+bool clang_LookupResult_isAvailableForLookup(CXSema S, CXNamedDecl ND) {
+  return clang::LookupResult::isAvailableForLookup(*static_cast<clang::Sema *>(S),
+                                                   static_cast<clang::NamedDecl *>(ND));
+}
+
+CXNamedDecl clang_LookupResult_getAcceptableDecl(CXLookupResult LR, CXNamedDecl ND) {
+  return static_cast<clang::LookupResult *>(LR)->getAcceptableDecl(
+      static_cast<clang::NamedDecl *>(ND));
+}
+
+void clang_LookupResult_resolveKindAfterFilter(CXLookupResult LR) {
+  static_cast<clang::LookupResult *>(LR)->resolveKindAfterFilter();
+}
+
+void clang_LookupResult_setAmbiguousQualifiedTagHiding(CXLookupResult LR) {
+  static_cast<clang::LookupResult *>(LR)->setAmbiguousQualifiedTagHiding();
+}
+
+void clang_LookupResult_suppressAccessDiagnostics(CXLookupResult LR) {
+  static_cast<clang::LookupResult *>(LR)->suppressAccessDiagnostics();
+}
+
+CXSema clang_LookupResult_getSema(CXLookupResult LR) {
+  return &static_cast<clang::LookupResult *>(LR)->getSema();
+}
+
+CXLookupResult_Filter clang_LookupResult_makeFilter(CXLookupResult LR) {
+  return std::make_unique<clang::LookupResult::Filter>(
+             static_cast<clang::LookupResult *>(LR)->makeFilter())
+      .release();
+}
+
+void clang_LookupResult_Filter_dispose(CXLookupResult_Filter F) {
+  delete static_cast<clang::LookupResult::Filter *>(F);
+}
+
+bool clang_LookupResult_Filter_hasNext(CXLookupResult_Filter F) {
+  return static_cast<clang::LookupResult::Filter *>(F)->hasNext();
+}
+
+CXNamedDecl clang_LookupResult_Filter_next(CXLookupResult_Filter F) {
+  return static_cast<clang::LookupResult::Filter *>(F)->next();
+}
+
+void clang_LookupResult_Filter_restart(CXLookupResult_Filter F) {
+  static_cast<clang::LookupResult::Filter *>(F)->restart();
+}
+
+void clang_LookupResult_Filter_erase(CXLookupResult_Filter F) {
+  static_cast<clang::LookupResult::Filter *>(F)->erase();
+}
+
+void clang_LookupResult_Filter_replace(CXLookupResult_Filter F, CXNamedDecl ND) {
+  static_cast<clang::LookupResult::Filter *>(F)->replace(
+      static_cast<clang::NamedDecl *>(ND));
+}
+
+void clang_LookupResult_Filter_done(CXLookupResult_Filter F) {
+  static_cast<clang::LookupResult::Filter *>(F)->done();
+}
+
+void clang_LookupResult_setFindLocalExtern(CXLookupResult LR, bool FindLocalExtern) {
+  static_cast<clang::LookupResult *>(LR)->setFindLocalExtern(FindLocalExtern);
+}
+
+// LookupResult (redeclaration kind and rendering)
+CXRedeclarationKind clang_LookupResult_redeclarationKind(CXLookupResult LR) {
+  return static_cast<CXRedeclarationKind>(
+      static_cast<clang::LookupResult *>(LR)->redeclarationKind());
+}
+
+void clang_LookupResult_setRedeclarationKind(CXLookupResult LR, CXRedeclarationKind RK) {
+  static_cast<clang::LookupResult *>(LR)->setRedeclarationKind(
+      static_cast<clang::Sema::RedeclarationKind>(RK));
+}
+
+CXString clang_LookupResult_printToString(CXLookupResult LR) {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  static_cast<clang::LookupResult *>(LR)->print(OS);
+  return extra::makeCXString(OS.str());
 }

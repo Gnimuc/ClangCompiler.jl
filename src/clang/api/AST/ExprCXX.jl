@@ -3660,7 +3660,7 @@ clang asserts it and every cast below it is unchecked.
 """
 function find(x::AbstractExpr)
     @check_ptrs x
-    ty = getTypePtr(getType(x))
+    ty = expr_type_ptr(x)
     is_overload = isPlaceholderType(ty) && !isNonOverloadPlaceholderType(ty)
     @assert is_overload "the expression must carry clang's overload placeholder type"
     address_of = Ref{Bool}(false)

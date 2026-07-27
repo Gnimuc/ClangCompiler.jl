@@ -107,6 +107,16 @@ bool clang_LangOptions_allowsNonTrivialObjCLifetimeQualifiers(CXLangOptions LO);
 // clang_Preprocessor_PoisonSEHIdentifiers.
 bool clang_LangOptions_getBorland(CXLangOptions LO);
 
+// The C++ flag (LangOptions.def: LANGOPT(CPlusPlus, ...)). Exposed as a gate:
+// Sema's std:: lookup entry points assert on it — see
+// clang_Sema_isStdInitializerList.
+bool clang_LangOptions_getCPlusPlus(CXLangOptions LO);
+
+// The C++11 flag (LangOptions.def: LANGOPT(CPlusPlus11, ...)). Exposed as a gate:
+// Sema::DeclareGlobalAllocationFunction reaches for std::bad_alloc when it declares an
+// operator new form and this is off - see clang_Sema_DeclareGlobalAllocationFunction.
+bool clang_LangOptions_getCPlusPlus11(CXLangOptions LO);
+
 // helper: whether a language standard has been selected, i.e. LangStd is not
 // LangStandard::lang_unspecified. Exported as a gate: CompilerInvocation::getCC1CommandLine
 // calls getLangStandardForKind, which report_fatal_error's on the unspecified kind, and a

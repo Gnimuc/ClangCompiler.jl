@@ -64,11 +64,14 @@ it, so the sibling gate looks like a valid precondition and is not. Settle it ag
 shipped library, not the header:
 
 ```bash
-nm -C <artifact>/lib/libclang-cpp.dylib | grep '::<method>('
+nm -gU -C <artifact>/lib/libclang-cpp.dylib | grep '::<method>('
 ```
 
-Only the base symbol back means the method is dead — drop the wrapper with a placeholder
-comment. When overrides do exist, the gate must be the flag that selects those targets
+Use `-gU` (external, defined): a symbol can be PRESENT but file-local, which links nowhere.
+`Sema::CheckBitwiseOperands` and `CheckLogicalOperands` are `t` while their sibling
+`CheckAdditionOperands` is `T`, so a plain `nm -C` finds all three and only one of them is
+linkable. No external symbol back means the method is dead — drop the wrapper with a
+placeholder comment. When overrides do exist, the gate must be the flag that selects those targets
 (`hasIbm128Type` for `getIbm128Mangling`, which only PPC implements), asserted in Julia.
 
 ## The rule that prevents disasters

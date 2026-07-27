@@ -262,3 +262,30 @@ Decode the floating-point exception mode out of a `clang::FPOptions` opaque inte
 encoding, resolving the internal `FPE_Default` placeholder.
 """
 getExceptionMode(fp_options::Integer) = clang_FPOptions_getExceptionMode(fp_options)
+
+
+"""
+    getCPlusPlus(x::AbstractLangOptions) -> Bool
+Whether the translation unit is being compiled as C++ (`LangOptions.def`:
+`LANGOPT(CPlusPlus, ...)`). This gates Sema's `std::` lookup entry points — see
+[`isStdInitializerList`](@ref).
+"""
+function getCPlusPlus(x::AbstractLangOptions)
+    @check_ptrs x
+    return clang_LangOptions_getCPlusPlus(x)
+end
+
+
+"""
+    getCPlusPlus11(x::AbstractLangOptions) -> Bool
+Whether C++11 or a later standard is in effect (`LangOptions.def`:
+`LANGOPT(CPlusPlus11, ...)`).
+
+Exposed as a gate: declaring an `operator new` form before C++11 makes Sema reach for
+`std::bad_alloc`, which a translation unit that never parsed `<new>` does not have — see
+[`DeclareGlobalAllocationFunction`](@ref).
+"""
+function getCPlusPlus11(x::AbstractLangOptions)
+    @check_ptrs x
+    return clang_LangOptions_getCPlusPlus11(x)
+end

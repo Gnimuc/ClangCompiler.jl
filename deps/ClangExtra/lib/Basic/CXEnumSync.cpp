@@ -45,64 +45,70 @@
 #include "clang-ex/AST/CXComment.h"
 #include "clang-ex/Sema/CXLookup.h"
 
+#include "clang-ex/AST/CXStmt.h"
+#include "clang-ex/AST/CXTemplateName.h"
+#include "clang-ex/Analysis/CXConstructionContext.h"
+#include "clang-ex/Basic/CXBuiltins.h"
+#include "clang-ex/Basic/CXCapturedStmt.h"
+#include "clang-ex/Basic/CXExpressionTraits.h"
+#include "clang-ex/Basic/CXFloatModeKind.h"
+#include "clang-ex/Basic/CXLangOptions.h"
+#include "clang-ex/Driver/CXDriver.h"
+#include "clang-ex/Lex/CXMacroInfo.h"
+#include "clang-ex/Lex/CXPreprocessingRecord.h"
+#include "clang-ex/Sema/CXOverload.h"
+#include "clang-ex/Sema/CXScope.h"
+#include "clang-ex/Sema/CXTemplate.h"
 #include "clang/AST/APValue.h"
-#include "clang/AST/RawCommentList.h"
-#include "clang/Sema/Sema.h"
-#include "clang/Sema/Lookup.h"
+#include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
+#include "clang/AST/Comment.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/DeclBase.h"
+#include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclarationName.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
-#include "clang/AST/OperationKinds.h"
-#include "clang/Basic/LangOptions.h"
-#include "clang/Lex/Token.h"
-#include "clang/Basic/Linkage.h"
-#include "clang/Basic/Specifiers.h"
-#include "clang/Basic/Visibility.h"
 #include "clang/AST/NestedNameSpecifier.h"
-#include "clang/AST/DeclBase.h"
-#include "clang/Basic/Lambda.h"
-#include "clang/Basic/ExceptionSpecificationType.h"
-#include "clang/Basic/TypeTraits.h"
-#include "clang/Basic/IdentifierTable.h"
-#include "clang/Basic/TokenKinds.h"
-#include "clang/Basic/Module.h"
-#include "clang/AST/Decl.h"
-#include "clang/AST/DeclarationName.h"
-#include "clang/AST/DeclCXX.h"
-#include "clang/AST/Type.h"
+#include "clang/AST/OperationKinds.h"
+#include "clang/AST/RawCommentList.h"
+#include "clang/AST/Stmt.h"
 #include "clang/AST/TemplateBase.h"
+#include "clang/AST/TemplateName.h"
+#include "clang/AST/Type.h"
 #include "clang/Analysis/CFG.h"
+#include "clang/Analysis/ConstructionContext.h"
+#include "clang/Basic/AddressSpaces.h"
+#include "clang/Basic/Builtins.h"
+#include "clang/Basic/CapturedStmt.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/DiagnosticIDs.h"
 #include "clang/Basic/DiagnosticOptions.h"
+#include "clang/Basic/ExceptionSpecificationType.h"
+#include "clang/Basic/ExpressionTraits.h"
+#include "clang/Basic/IdentifierTable.h"
+#include "clang/Basic/Lambda.h"
+#include "clang/Basic/LangOptions.h"
+#include "clang/Basic/Linkage.h"
+#include "clang/Basic/Module.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Basic/AddressSpaces.h"
+#include "clang/Basic/Specifiers.h"
 #include "clang/Basic/TargetCXXABI.h"
 #include "clang/Basic/TargetInfo.h"
-#include "clang/AST/ASTContext.h"
-#include "clang-ex/Driver/CXDriver.h"
+#include "clang/Basic/TokenKinds.h"
+#include "clang/Basic/TypeTraits.h"
+#include "clang/Basic/Visibility.h"
 #include "clang/Driver/Driver.h"
-#include "clang/AST/Comment.h"
-#include "clang-ex/Basic/CXExpressionTraits.h"
-#include "clang/Basic/ExpressionTraits.h"
-#include "clang-ex/AST/CXStmt.h"
-#include "clang/AST/Stmt.h"
-#include "clang-ex/Basic/CXCapturedStmt.h"
-#include "clang/Basic/CapturedStmt.h"
-#include "clang-ex/Basic/CXBuiltins.h"
-#include "clang/Basic/Builtins.h"
-#include "clang-ex/Basic/CXLangOptions.h"
-#include "clang-ex/Analysis/CXConstructionContext.h"
-#include "clang/Analysis/ConstructionContext.h"
-#include "clang-ex/Basic/CXFloatModeKind.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "clang-ex/Lex/CXMacroInfo.h"
 #include "clang/Lex/MacroInfo.h"
-#include "clang-ex/AST/CXTemplateName.h"
-#include "clang/AST/TemplateName.h"
-#include "llvm/ADT/FloatingPointMode.h"
-#include "clang-ex/Lex/CXPreprocessingRecord.h"
 #include "clang/Lex/PreprocessingRecord.h"
+#include "clang/Lex/Token.h"
+#include "clang/Sema/Lookup.h"
+#include "clang/Sema/Overload.h"
+#include "clang/Sema/Scope.h"
+#include "clang/Sema/Sema.h"
+#include "clang/Sema/Template.h"
+#include "llvm/ADT/FloatingPointMode.h"
+#include "llvm/Support/MemoryBuffer.h"
 
 #define ENUM_SYNC(cx, cpp)                                                                 \
   static_assert(static_cast<int>(cx) == static_cast<int>(cpp), #cx " != " #cpp)
@@ -1482,5 +1488,427 @@ ENUM_SYNC(CXObjCInstanceTypeFamily_OIT_Dictionary, clang::OIT_Dictionary);
 ENUM_SYNC(CXObjCInstanceTypeFamily_OIT_Singleton, clang::OIT_Singleton);
 ENUM_SYNC(CXObjCInstanceTypeFamily_OIT_Init, clang::OIT_Init);
 ENUM_SYNC(CXObjCInstanceTypeFamily_OIT_ReturnsSelf, clang::OIT_ReturnsSelf);
+
+// clang/Sema/Sema.h: enum Sema::CXXSpecialMember
+ENUM_SYNC(CXCXXSpecialMember_CXXDefaultConstructor, clang::Sema::CXXDefaultConstructor);
+ENUM_SYNC(CXCXXSpecialMember_CXXCopyConstructor, clang::Sema::CXXCopyConstructor);
+ENUM_SYNC(CXCXXSpecialMember_CXXMoveConstructor, clang::Sema::CXXMoveConstructor);
+ENUM_SYNC(CXCXXSpecialMember_CXXCopyAssignment, clang::Sema::CXXCopyAssignment);
+ENUM_SYNC(CXCXXSpecialMember_CXXMoveAssignment, clang::Sema::CXXMoveAssignment);
+ENUM_SYNC(CXCXXSpecialMember_CXXDestructor, clang::Sema::CXXDestructor);
+ENUM_SYNC(CXCXXSpecialMember_CXXInvalid, clang::Sema::CXXInvalid);
+
+// clang/Sema/Sema.h: enum Sema::SpecialMemberOverloadResult::Kind
+ENUM_SYNC(CXSpecialMemberOverloadResultKind_NoMemberOrDeleted,
+          clang::Sema::SpecialMemberOverloadResult::NoMemberOrDeleted);
+ENUM_SYNC(CXSpecialMemberOverloadResultKind_Ambiguous,
+          clang::Sema::SpecialMemberOverloadResult::Ambiguous);
+ENUM_SYNC(CXSpecialMemberOverloadResultKind_Success,
+          clang::Sema::SpecialMemberOverloadResult::Success);
+
+// clang/Sema/Overload.h: enum BadConversionSequence::FailureKind
+ENUM_SYNC(CXBadConversionSequence_no_conversion,
+          clang::BadConversionSequence::no_conversion);
+ENUM_SYNC(CXBadConversionSequence_unrelated_class,
+          clang::BadConversionSequence::unrelated_class);
+ENUM_SYNC(CXBadConversionSequence_bad_qualifiers,
+          clang::BadConversionSequence::bad_qualifiers);
+ENUM_SYNC(CXBadConversionSequence_lvalue_ref_to_rvalue,
+          clang::BadConversionSequence::lvalue_ref_to_rvalue);
+ENUM_SYNC(CXBadConversionSequence_rvalue_ref_to_lvalue,
+          clang::BadConversionSequence::rvalue_ref_to_lvalue);
+ENUM_SYNC(CXBadConversionSequence_too_few_initializers,
+          clang::BadConversionSequence::too_few_initializers);
+ENUM_SYNC(CXBadConversionSequence_too_many_initializers,
+          clang::BadConversionSequence::too_many_initializers);
+
+// clang/Sema/Overload.h: enum ImplicitConversionSequence::Kind
+ENUM_SYNC(CXImplicitConversionSequence_StandardConversion,
+          clang::ImplicitConversionSequence::StandardConversion);
+ENUM_SYNC(CXImplicitConversionSequence_StaticObjectArgumentConversion,
+          clang::ImplicitConversionSequence::StaticObjectArgumentConversion);
+ENUM_SYNC(CXImplicitConversionSequence_UserDefinedConversion,
+          clang::ImplicitConversionSequence::UserDefinedConversion);
+ENUM_SYNC(CXImplicitConversionSequence_AmbiguousConversion,
+          clang::ImplicitConversionSequence::AmbiguousConversion);
+ENUM_SYNC(CXImplicitConversionSequence_EllipsisConversion,
+          clang::ImplicitConversionSequence::EllipsisConversion);
+ENUM_SYNC(CXImplicitConversionSequence_BadConversion,
+          clang::ImplicitConversionSequence::BadConversion);
+
+// clang/Sema/Overload.h: enum OverloadCandidateSet::CandidateSetKind
+ENUM_SYNC(CXOverloadCandidateSet_CSK_Normal, clang::OverloadCandidateSet::CSK_Normal);
+ENUM_SYNC(CXOverloadCandidateSet_CSK_Operator, clang::OverloadCandidateSet::CSK_Operator);
+ENUM_SYNC(CXOverloadCandidateSet_CSK_InitByUserDefinedConversion,
+          clang::OverloadCandidateSet::CSK_InitByUserDefinedConversion);
+ENUM_SYNC(CXOverloadCandidateSet_CSK_InitByConstructor,
+          clang::OverloadCandidateSet::CSK_InitByConstructor);
+
+// clang/Sema/Template.h: enum class TemplateSubstitutionKind : char
+ENUM_SYNC(CXTemplateSubstitutionKind_Specialization,
+          clang::TemplateSubstitutionKind::Specialization);
+ENUM_SYNC(CXTemplateSubstitutionKind_Rewrite, clang::TemplateSubstitutionKind::Rewrite);
+
+// clang/Sema/Sema.h: enum class Sema::CheckConstexprKind
+ENUM_SYNC(CXCheckConstexprKind_Diagnose, clang::Sema::CheckConstexprKind::Diagnose);
+ENUM_SYNC(CXCheckConstexprKind_CheckValid, clang::Sema::CheckConstexprKind::CheckValid);
+
+// clang/Sema/Sema.h: enum Sema::AssignConvertType
+ENUM_SYNC(CXAssignConvertType_Compatible, clang::Sema::Compatible);
+ENUM_SYNC(CXAssignConvertType_PointerToInt, clang::Sema::PointerToInt);
+ENUM_SYNC(CXAssignConvertType_IntToPointer, clang::Sema::IntToPointer);
+ENUM_SYNC(CXAssignConvertType_FunctionVoidPointer, clang::Sema::FunctionVoidPointer);
+ENUM_SYNC(CXAssignConvertType_IncompatiblePointer, clang::Sema::IncompatiblePointer);
+ENUM_SYNC(CXAssignConvertType_IncompatibleFunctionPointer,
+          clang::Sema::IncompatibleFunctionPointer);
+ENUM_SYNC(CXAssignConvertType_IncompatibleFunctionPointerStrict,
+          clang::Sema::IncompatibleFunctionPointerStrict);
+ENUM_SYNC(CXAssignConvertType_IncompatiblePointerSign,
+          clang::Sema::IncompatiblePointerSign);
+ENUM_SYNC(CXAssignConvertType_CompatiblePointerDiscardsQualifiers,
+          clang::Sema::CompatiblePointerDiscardsQualifiers);
+ENUM_SYNC(CXAssignConvertType_IncompatiblePointerDiscardsQualifiers,
+          clang::Sema::IncompatiblePointerDiscardsQualifiers);
+ENUM_SYNC(CXAssignConvertType_IncompatibleNestedPointerAddressSpaceMismatch,
+          clang::Sema::IncompatibleNestedPointerAddressSpaceMismatch);
+ENUM_SYNC(CXAssignConvertType_IncompatibleNestedPointerQualifiers,
+          clang::Sema::IncompatibleNestedPointerQualifiers);
+ENUM_SYNC(CXAssignConvertType_IncompatibleVectors, clang::Sema::IncompatibleVectors);
+ENUM_SYNC(CXAssignConvertType_IntToBlockPointer, clang::Sema::IntToBlockPointer);
+ENUM_SYNC(CXAssignConvertType_IncompatibleBlockPointer,
+          clang::Sema::IncompatibleBlockPointer);
+ENUM_SYNC(CXAssignConvertType_IncompatibleObjCQualifiedId,
+          clang::Sema::IncompatibleObjCQualifiedId);
+ENUM_SYNC(CXAssignConvertType_IncompatibleObjCWeakRef,
+          clang::Sema::IncompatibleObjCWeakRef);
+ENUM_SYNC(CXAssignConvertType_Incompatible, clang::Sema::Incompatible);
+
+// clang/Sema/Sema.h: enum Sema::AllowFoldKind
+ENUM_SYNC(CXAllowFoldKind_NoFold, clang::Sema::NoFold);
+ENUM_SYNC(CXAllowFoldKind_AllowFold, clang::Sema::AllowFold);
+
+// clang/Sema/Sema.h: enum Sema::AssignmentAction
+ENUM_SYNC(CXAssignmentAction_AA_Assigning, clang::Sema::AA_Assigning);
+ENUM_SYNC(CXAssignmentAction_AA_Passing, clang::Sema::AA_Passing);
+ENUM_SYNC(CXAssignmentAction_AA_Returning, clang::Sema::AA_Returning);
+ENUM_SYNC(CXAssignmentAction_AA_Converting, clang::Sema::AA_Converting);
+ENUM_SYNC(CXAssignmentAction_AA_Initializing, clang::Sema::AA_Initializing);
+ENUM_SYNC(CXAssignmentAction_AA_Sending, clang::Sema::AA_Sending);
+ENUM_SYNC(CXAssignmentAction_AA_Casting, clang::Sema::AA_Casting);
+ENUM_SYNC(CXAssignmentAction_AA_Passing_CFAudited, clang::Sema::AA_Passing_CFAudited);
+
+// clang/Sema/Sema.h: enum Sema::CheckedConversionKind
+ENUM_SYNC(CXCheckedConversionKind_CCK_ImplicitConversion,
+          clang::Sema::CCK_ImplicitConversion);
+ENUM_SYNC(CXCheckedConversionKind_CCK_CStyleCast, clang::Sema::CCK_CStyleCast);
+ENUM_SYNC(CXCheckedConversionKind_CCK_FunctionalCast, clang::Sema::CCK_FunctionalCast);
+ENUM_SYNC(CXCheckedConversionKind_CCK_OtherCast, clang::Sema::CCK_OtherCast);
+ENUM_SYNC(CXCheckedConversionKind_CCK_ForBuiltinOverloadedOp,
+          clang::Sema::CCK_ForBuiltinOverloadedOp);
+
+// clang/Sema/Sema.h: enum Sema::ReferenceCompareResult
+ENUM_SYNC(CXReferenceCompareResult_Ref_Incompatible, clang::Sema::Ref_Incompatible);
+ENUM_SYNC(CXReferenceCompareResult_Ref_Related, clang::Sema::Ref_Related);
+ENUM_SYNC(CXReferenceCompareResult_Ref_Compatible, clang::Sema::Ref_Compatible);
+
+// clang/Sema/Sema.h: enum Sema::ReferenceConversionsScope::ReferenceConversions
+// (the LLVM_MARK_AS_BITMASK_ENUM alias enumerator is omitted)
+ENUM_SYNC(CXReferenceConversions_Qualification,
+          clang::Sema::ReferenceConversionsScope::Qualification);
+ENUM_SYNC(CXReferenceConversions_NestedQualification,
+          clang::Sema::ReferenceConversionsScope::NestedQualification);
+ENUM_SYNC(CXReferenceConversions_Function,
+          clang::Sema::ReferenceConversionsScope::Function);
+ENUM_SYNC(CXReferenceConversions_DerivedToBase,
+          clang::Sema::ReferenceConversionsScope::DerivedToBase);
+ENUM_SYNC(CXReferenceConversions_ObjC, clang::Sema::ReferenceConversionsScope::ObjC);
+ENUM_SYNC(CXReferenceConversions_ObjCLifetime,
+          clang::Sema::ReferenceConversionsScope::ObjCLifetime);
+
+// clang/Sema/Overload.h: enum ImplicitConversionRank
+ENUM_SYNC(CXImplicitConversionRank_ICR_Exact_Match, clang::ICR_Exact_Match);
+ENUM_SYNC(CXImplicitConversionRank_ICR_Promotion, clang::ICR_Promotion);
+ENUM_SYNC(CXImplicitConversionRank_ICR_Conversion, clang::ICR_Conversion);
+ENUM_SYNC(CXImplicitConversionRank_ICR_OCL_Scalar_Widening, clang::ICR_OCL_Scalar_Widening);
+ENUM_SYNC(CXImplicitConversionRank_ICR_Complex_Real_Conversion,
+          clang::ICR_Complex_Real_Conversion);
+ENUM_SYNC(CXImplicitConversionRank_ICR_Writeback_Conversion,
+          clang::ICR_Writeback_Conversion);
+ENUM_SYNC(CXImplicitConversionRank_ICR_C_Conversion, clang::ICR_C_Conversion);
+ENUM_SYNC(CXImplicitConversionRank_ICR_C_Conversion_Extension,
+          clang::ICR_C_Conversion_Extension);
+
+// clang/Sema/Sema.h: enum Sema::VarArgKind
+ENUM_SYNC(CXVarArgKind_VAK_Valid, clang::Sema::VAK_Valid);
+ENUM_SYNC(CXVarArgKind_VAK_ValidInCXX11, clang::Sema::VAK_ValidInCXX11);
+ENUM_SYNC(CXVarArgKind_VAK_Undefined, clang::Sema::VAK_Undefined);
+ENUM_SYNC(CXVarArgKind_VAK_MSVCUndefined, clang::Sema::VAK_MSVCUndefined);
+ENUM_SYNC(CXVarArgKind_VAK_Invalid, clang::Sema::VAK_Invalid);
+
+// clang/Sema/Sema.h: enum Sema::CCEKind
+ENUM_SYNC(CXCCEKind_CCEK_CaseValue, clang::Sema::CCEK_CaseValue);
+ENUM_SYNC(CXCCEKind_CCEK_Enumerator, clang::Sema::CCEK_Enumerator);
+ENUM_SYNC(CXCCEKind_CCEK_TemplateArg, clang::Sema::CCEK_TemplateArg);
+ENUM_SYNC(CXCCEKind_CCEK_ArrayBound, clang::Sema::CCEK_ArrayBound);
+ENUM_SYNC(CXCCEKind_CCEK_ExplicitBool, clang::Sema::CCEK_ExplicitBool);
+ENUM_SYNC(CXCCEKind_CCEK_Noexcept, clang::Sema::CCEK_Noexcept);
+ENUM_SYNC(CXCCEKind_CCEK_StaticAssertMessageSize,
+          clang::Sema::CCEK_StaticAssertMessageSize);
+ENUM_SYNC(CXCCEKind_CCEK_StaticAssertMessageData,
+          clang::Sema::CCEK_StaticAssertMessageData);
+
+ENUM_SYNC(CXAllowedExplicit_None, clang::Sema::AllowedExplicit::None);
+ENUM_SYNC(CXAllowedExplicit_Conversions, clang::Sema::AllowedExplicit::Conversions);
+ENUM_SYNC(CXAllowedExplicit_All, clang::Sema::AllowedExplicit::All);
+
+ENUM_SYNC(CXObjCLiteralKind_LK_Array, clang::Sema::LK_Array);
+ENUM_SYNC(CXObjCLiteralKind_LK_Dictionary, clang::Sema::LK_Dictionary);
+ENUM_SYNC(CXObjCLiteralKind_LK_Numeric, clang::Sema::LK_Numeric);
+ENUM_SYNC(CXObjCLiteralKind_LK_Boxed, clang::Sema::LK_Boxed);
+ENUM_SYNC(CXObjCLiteralKind_LK_String, clang::Sema::LK_String);
+ENUM_SYNC(CXObjCLiteralKind_LK_Block, clang::Sema::LK_Block);
+ENUM_SYNC(CXObjCLiteralKind_LK_None, clang::Sema::LK_None);
+
+// clang/Sema/Sema.h: enum Sema::TemplateParameterListEqualKind
+ENUM_SYNC(CXTemplateParameterListEqualKind_TPL_TemplateMatch,
+          clang::Sema::TPL_TemplateMatch);
+ENUM_SYNC(CXTemplateParameterListEqualKind_TPL_TemplateTemplateParmMatch,
+          clang::Sema::TPL_TemplateTemplateParmMatch);
+ENUM_SYNC(CXTemplateParameterListEqualKind_TPL_TemplateTemplateArgumentMatch,
+          clang::Sema::TPL_TemplateTemplateArgumentMatch);
+ENUM_SYNC(CXTemplateParameterListEqualKind_TPL_TemplateParamsEquivalent,
+          clang::Sema::TPL_TemplateParamsEquivalent);
+
+// clang/Sema/Sema.h: enum Sema::TemplateDeductionResult
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Success, clang::Sema::TDK_Success);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Invalid, clang::Sema::TDK_Invalid);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_InstantiationDepth,
+          clang::Sema::TDK_InstantiationDepth);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Incomplete, clang::Sema::TDK_Incomplete);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_IncompletePack, clang::Sema::TDK_IncompletePack);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Inconsistent, clang::Sema::TDK_Inconsistent);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Underqualified, clang::Sema::TDK_Underqualified);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_SubstitutionFailure,
+          clang::Sema::TDK_SubstitutionFailure);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_DeducedMismatch, clang::Sema::TDK_DeducedMismatch);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_DeducedMismatchNested,
+          clang::Sema::TDK_DeducedMismatchNested);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_NonDeducedMismatch,
+          clang::Sema::TDK_NonDeducedMismatch);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_TooManyArguments,
+          clang::Sema::TDK_TooManyArguments);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_TooFewArguments, clang::Sema::TDK_TooFewArguments);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_InvalidExplicitArguments,
+          clang::Sema::TDK_InvalidExplicitArguments);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_NonDependentConversionFailure,
+          clang::Sema::TDK_NonDependentConversionFailure);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_ConstraintsNotSatisfied,
+          clang::Sema::TDK_ConstraintsNotSatisfied);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_MiscellaneousDeductionFailure,
+          clang::Sema::TDK_MiscellaneousDeductionFailure);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_CUDATargetMismatch,
+          clang::Sema::TDK_CUDATargetMismatch);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_AlreadyDiagnosed,
+          clang::Sema::TDK_AlreadyDiagnosed);
+
+// clang/Sema/Sema.h: enum class Sema::ConditionKind
+ENUM_SYNC(CXConditionKind_Boolean, clang::Sema::ConditionKind::Boolean);
+ENUM_SYNC(CXConditionKind_ConstexprIf, clang::Sema::ConditionKind::ConstexprIf);
+ENUM_SYNC(CXConditionKind_Switch, clang::Sema::ConditionKind::Switch);
+
+// clang/Sema/Sema.h: enum Sema::FormatStringType
+ENUM_SYNC(CXFormatStringType_FST_Scanf, clang::Sema::FST_Scanf);
+ENUM_SYNC(CXFormatStringType_FST_Printf, clang::Sema::FST_Printf);
+ENUM_SYNC(CXFormatStringType_FST_NSString, clang::Sema::FST_NSString);
+ENUM_SYNC(CXFormatStringType_FST_Strftime, clang::Sema::FST_Strftime);
+ENUM_SYNC(CXFormatStringType_FST_Strfmon, clang::Sema::FST_Strfmon);
+ENUM_SYNC(CXFormatStringType_FST_Kprintf, clang::Sema::FST_Kprintf);
+ENUM_SYNC(CXFormatStringType_FST_FreeBSDKPrintf, clang::Sema::FST_FreeBSDKPrintf);
+ENUM_SYNC(CXFormatStringType_FST_OSTrace, clang::Sema::FST_OSTrace);
+ENUM_SYNC(CXFormatStringType_FST_OSLog, clang::Sema::FST_OSLog);
+ENUM_SYNC(CXFormatStringType_FST_Unknown, clang::Sema::FST_Unknown);
+
+// clang/Sema/Overload.h: enum OverloadCandidateRewriteKind
+ENUM_SYNC(CXOverloadCandidateRewriteKind_CRK_None, clang::CRK_None);
+ENUM_SYNC(CXOverloadCandidateRewriteKind_CRK_DifferentOperator,
+          clang::CRK_DifferentOperator);
+ENUM_SYNC(CXOverloadCandidateRewriteKind_CRK_Reversed, clang::CRK_Reversed);
+
+// clang/Sema/Sema.h: enum class Sema::FunctionEmissionStatus
+ENUM_SYNC(CXFunctionEmissionStatus_Emitted, clang::Sema::FunctionEmissionStatus::Emitted);
+ENUM_SYNC(CXFunctionEmissionStatus_CUDADiscarded,
+          clang::Sema::FunctionEmissionStatus::CUDADiscarded);
+ENUM_SYNC(CXFunctionEmissionStatus_OMPDiscarded,
+          clang::Sema::FunctionEmissionStatus::OMPDiscarded);
+ENUM_SYNC(CXFunctionEmissionStatus_TemplateDiscarded,
+          clang::Sema::FunctionEmissionStatus::TemplateDiscarded);
+ENUM_SYNC(CXFunctionEmissionStatus_Unknown, clang::Sema::FunctionEmissionStatus::Unknown);
+
+// clang/Sema/Sema.h: enum Sema::VariadicCallType
+ENUM_SYNC(CXVariadicCallType_VariadicFunction, clang::Sema::VariadicFunction);
+ENUM_SYNC(CXVariadicCallType_VariadicBlock, clang::Sema::VariadicBlock);
+ENUM_SYNC(CXVariadicCallType_VariadicMethod, clang::Sema::VariadicMethod);
+ENUM_SYNC(CXVariadicCallType_VariadicConstructor, clang::Sema::VariadicConstructor);
+ENUM_SYNC(CXVariadicCallType_VariadicDoesNotApply, clang::Sema::VariadicDoesNotApply);
+
+// clang/Sema/Sema.h: enum Sema::ArithConvKind
+ENUM_SYNC(CXArithConvKind_ACK_Arithmetic, clang::Sema::ACK_Arithmetic);
+ENUM_SYNC(CXArithConvKind_ACK_BitwiseOp, clang::Sema::ACK_BitwiseOp);
+ENUM_SYNC(CXArithConvKind_ACK_Comparison, clang::Sema::ACK_Comparison);
+ENUM_SYNC(CXArithConvKind_ACK_Conditional, clang::Sema::ACK_Conditional);
+ENUM_SYNC(CXArithConvKind_ACK_CompAssign, clang::Sema::ACK_CompAssign);
+
+// clang/Sema/Sema.h: enum Sema::TrivialABIHandling
+ENUM_SYNC(CXTrivialABIHandling_TAH_IgnoreTrivialABI, clang::Sema::TAH_IgnoreTrivialABI);
+ENUM_SYNC(CXTrivialABIHandling_TAH_ConsiderTrivialABI, clang::Sema::TAH_ConsiderTrivialABI);
+
+// clang/Sema/Overload.h: enum NarrowingKind
+ENUM_SYNC(CXNarrowingKind_NK_Not_Narrowing, clang::NK_Not_Narrowing);
+ENUM_SYNC(CXNarrowingKind_NK_Type_Narrowing, clang::NK_Type_Narrowing);
+ENUM_SYNC(CXNarrowingKind_NK_Constant_Narrowing, clang::NK_Constant_Narrowing);
+ENUM_SYNC(CXNarrowingKind_NK_Variable_Narrowing, clang::NK_Variable_Narrowing);
+ENUM_SYNC(CXNarrowingKind_NK_Dependent_Narrowing, clang::NK_Dependent_Narrowing);
+
+// clang/Sema/Sema.h: enum Sema::AllocationFunctionScope
+ENUM_SYNC(CXAllocationFunctionScope_AFS_Global, clang::Sema::AFS_Global);
+ENUM_SYNC(CXAllocationFunctionScope_AFS_Class, clang::Sema::AFS_Class);
+ENUM_SYNC(CXAllocationFunctionScope_AFS_Both, clang::Sema::AFS_Both);
+
+// clang/Sema/Sema.h: enum class Sema::FnBodyKind
+ENUM_SYNC(CXFnBodyKind_Other, clang::Sema::FnBodyKind::Other);
+ENUM_SYNC(CXFnBodyKind_Default, clang::Sema::FnBodyKind::Default);
+ENUM_SYNC(CXFnBodyKind_Delete, clang::Sema::FnBodyKind::Delete);
+
+// clang/Sema/Sema.h: enum class Sema::ExpressionEvaluationContext
+ENUM_SYNC(CXExpressionEvaluationContext_Unevaluated,
+          clang::Sema::ExpressionEvaluationContext::Unevaluated);
+ENUM_SYNC(CXExpressionEvaluationContext_UnevaluatedList,
+          clang::Sema::ExpressionEvaluationContext::UnevaluatedList);
+ENUM_SYNC(CXExpressionEvaluationContext_DiscardedStatement,
+          clang::Sema::ExpressionEvaluationContext::DiscardedStatement);
+ENUM_SYNC(CXExpressionEvaluationContext_UnevaluatedAbstract,
+          clang::Sema::ExpressionEvaluationContext::UnevaluatedAbstract);
+ENUM_SYNC(CXExpressionEvaluationContext_ConstantEvaluated,
+          clang::Sema::ExpressionEvaluationContext::ConstantEvaluated);
+ENUM_SYNC(CXExpressionEvaluationContext_ImmediateFunctionContext,
+          clang::Sema::ExpressionEvaluationContext::ImmediateFunctionContext);
+ENUM_SYNC(CXExpressionEvaluationContext_PotentiallyEvaluated,
+          clang::Sema::ExpressionEvaluationContext::PotentiallyEvaluated);
+ENUM_SYNC(CXExpressionEvaluationContext_PotentiallyEvaluatedIfUsed,
+          clang::Sema::ExpressionEvaluationContext::PotentiallyEvaluatedIfUsed);
+
+// clang/Sema/Sema.h: enum Sema::ExpressionEvaluationContextRecord::ExpressionKind
+ENUM_SYNC(CXExpressionKind_EK_Decltype,
+          clang::Sema::ExpressionEvaluationContextRecord::EK_Decltype);
+ENUM_SYNC(CXExpressionKind_EK_TemplateArgument,
+          clang::Sema::ExpressionEvaluationContextRecord::EK_TemplateArgument);
+ENUM_SYNC(CXExpressionKind_EK_Other,
+          clang::Sema::ExpressionEvaluationContextRecord::EK_Other);
+
+// clang/Sema/Sema.h: enum Sema::CUDAFunctionTarget
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_Device, clang::Sema::CFT_Device);
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_Global, clang::Sema::CFT_Global);
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_Host, clang::Sema::CFT_Host);
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_HostDevice, clang::Sema::CFT_HostDevice);
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_InvalidTarget, clang::Sema::CFT_InvalidTarget);
+
+// clang/Sema/Sema.h: enum Sema::CUDAFunctionPreference
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_Never, clang::Sema::CFP_Never);
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_WrongSide, clang::Sema::CFP_WrongSide);
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_HostDevice, clang::Sema::CFP_HostDevice);
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_SameSide, clang::Sema::CFP_SameSide);
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_Native, clang::Sema::CFP_Native);
+
+// clang/Sema/Overload.h: enum OverloadingResult
+ENUM_SYNC(CXOverloadingResult_OR_Success, clang::OR_Success);
+ENUM_SYNC(CXOverloadingResult_OR_No_Viable_Function, clang::OR_No_Viable_Function);
+ENUM_SYNC(CXOverloadingResult_OR_Ambiguous, clang::OR_Ambiguous);
+ENUM_SYNC(CXOverloadingResult_OR_Deleted, clang::OR_Deleted);
+
+// clang/Sema/Sema.h: enum Sema::AlignPackInfo::Mode
+ENUM_SYNC(CXAlignPackInfo_Native, clang::Sema::AlignPackInfo::Native);
+ENUM_SYNC(CXAlignPackInfo_Natural, clang::Sema::AlignPackInfo::Natural);
+ENUM_SYNC(CXAlignPackInfo_Packed, clang::Sema::AlignPackInfo::Packed);
+ENUM_SYNC(CXAlignPackInfo_Mac68k, clang::Sema::AlignPackInfo::Mac68k);
+
+// clang/Sema/Sema.h: enum class Sema::DefaultedComparisonKind
+ENUM_SYNC(CXDefaultedComparisonKind_None, clang::Sema::DefaultedComparisonKind::None);
+ENUM_SYNC(CXDefaultedComparisonKind_Equal, clang::Sema::DefaultedComparisonKind::Equal);
+ENUM_SYNC(CXDefaultedComparisonKind_ThreeWay,
+          clang::Sema::DefaultedComparisonKind::ThreeWay);
+ENUM_SYNC(CXDefaultedComparisonKind_NotEqual,
+          clang::Sema::DefaultedComparisonKind::NotEqual);
+ENUM_SYNC(CXDefaultedComparisonKind_Relational,
+          clang::Sema::DefaultedComparisonKind::Relational);
+
+// clang/Sema/Sema.h: enum class Sema::TemplateNameKindForDiagnostics
+ENUM_SYNC(CXTemplateNameKindForDiagnostics_ClassTemplate,
+          clang::Sema::TemplateNameKindForDiagnostics::ClassTemplate);
+ENUM_SYNC(CXTemplateNameKindForDiagnostics_FunctionTemplate,
+          clang::Sema::TemplateNameKindForDiagnostics::FunctionTemplate);
+ENUM_SYNC(CXTemplateNameKindForDiagnostics_VarTemplate,
+          clang::Sema::TemplateNameKindForDiagnostics::VarTemplate);
+ENUM_SYNC(CXTemplateNameKindForDiagnostics_AliasTemplate,
+          clang::Sema::TemplateNameKindForDiagnostics::AliasTemplate);
+ENUM_SYNC(CXTemplateNameKindForDiagnostics_TemplateTemplateParam,
+          clang::Sema::TemplateNameKindForDiagnostics::TemplateTemplateParam);
+ENUM_SYNC(CXTemplateNameKindForDiagnostics_Concept,
+          clang::Sema::TemplateNameKindForDiagnostics::Concept);
+ENUM_SYNC(CXTemplateNameKindForDiagnostics_DependentTemplate,
+          clang::Sema::TemplateNameKindForDiagnostics::DependentTemplate);
+
+// clang/Sema/Sema.h: enum Sema::NonTagKind
+ENUM_SYNC(CXNonTagKind_NTK_NonStruct, clang::Sema::NTK_NonStruct);
+ENUM_SYNC(CXNonTagKind_NTK_NonClass, clang::Sema::NTK_NonClass);
+ENUM_SYNC(CXNonTagKind_NTK_NonUnion, clang::Sema::NTK_NonUnion);
+ENUM_SYNC(CXNonTagKind_NTK_NonEnum, clang::Sema::NTK_NonEnum);
+ENUM_SYNC(CXNonTagKind_NTK_Typedef, clang::Sema::NTK_Typedef);
+ENUM_SYNC(CXNonTagKind_NTK_TypeAlias, clang::Sema::NTK_TypeAlias);
+ENUM_SYNC(CXNonTagKind_NTK_Template, clang::Sema::NTK_Template);
+ENUM_SYNC(CXNonTagKind_NTK_TypeAliasTemplate, clang::Sema::NTK_TypeAliasTemplate);
+ENUM_SYNC(CXNonTagKind_NTK_TemplateTemplateArgument,
+          clang::Sema::NTK_TemplateTemplateArgument);
+
+// clang/Sema/Sema.h: enum Sema::AccessResult
+ENUM_SYNC(CXAccessResult_AR_accessible, clang::Sema::AR_accessible);
+ENUM_SYNC(CXAccessResult_AR_inaccessible, clang::Sema::AR_inaccessible);
+ENUM_SYNC(CXAccessResult_AR_dependent, clang::Sema::AR_dependent);
+ENUM_SYNC(CXAccessResult_AR_delayed, clang::Sema::AR_delayed);
+
+// clang/Sema/Overload.h: enum OverloadCandidateDisplayKind
+ENUM_SYNC(CXOverloadCandidateDisplayKind_OCD_AllCandidates, clang::OCD_AllCandidates);
+ENUM_SYNC(CXOverloadCandidateDisplayKind_OCD_ViableCandidates, clang::OCD_ViableCandidates);
+ENUM_SYNC(CXOverloadCandidateDisplayKind_OCD_AmbiguousCandidates,
+          clang::OCD_AmbiguousCandidates);
+
+// clang/Sema/Scope.h: enum Scope::ScopeFlags
+ENUM_SYNC(CXScopeFlags_FnScope, clang::Scope::FnScope);
+ENUM_SYNC(CXScopeFlags_BreakScope, clang::Scope::BreakScope);
+ENUM_SYNC(CXScopeFlags_ContinueScope, clang::Scope::ContinueScope);
+ENUM_SYNC(CXScopeFlags_DeclScope, clang::Scope::DeclScope);
+ENUM_SYNC(CXScopeFlags_ControlScope, clang::Scope::ControlScope);
+ENUM_SYNC(CXScopeFlags_ClassScope, clang::Scope::ClassScope);
+ENUM_SYNC(CXScopeFlags_BlockScope, clang::Scope::BlockScope);
+ENUM_SYNC(CXScopeFlags_TemplateParamScope, clang::Scope::TemplateParamScope);
+ENUM_SYNC(CXScopeFlags_FunctionPrototypeScope, clang::Scope::FunctionPrototypeScope);
+ENUM_SYNC(CXScopeFlags_FunctionDeclarationScope, clang::Scope::FunctionDeclarationScope);
+ENUM_SYNC(CXScopeFlags_AtCatchScope, clang::Scope::AtCatchScope);
+ENUM_SYNC(CXScopeFlags_ObjCMethodScope, clang::Scope::ObjCMethodScope);
+ENUM_SYNC(CXScopeFlags_SwitchScope, clang::Scope::SwitchScope);
+ENUM_SYNC(CXScopeFlags_TryScope, clang::Scope::TryScope);
+ENUM_SYNC(CXScopeFlags_FnTryCatchScope, clang::Scope::FnTryCatchScope);
+ENUM_SYNC(CXScopeFlags_OpenMPDirectiveScope, clang::Scope::OpenMPDirectiveScope);
+ENUM_SYNC(CXScopeFlags_OpenMPLoopDirectiveScope, clang::Scope::OpenMPLoopDirectiveScope);
+ENUM_SYNC(CXScopeFlags_OpenMPSimdDirectiveScope, clang::Scope::OpenMPSimdDirectiveScope);
+ENUM_SYNC(CXScopeFlags_EnumScope, clang::Scope::EnumScope);
+ENUM_SYNC(CXScopeFlags_SEHTryScope, clang::Scope::SEHTryScope);
+ENUM_SYNC(CXScopeFlags_SEHExceptScope, clang::Scope::SEHExceptScope);
+ENUM_SYNC(CXScopeFlags_SEHFilterScope, clang::Scope::SEHFilterScope);
+ENUM_SYNC(CXScopeFlags_CompoundStmtScope, clang::Scope::CompoundStmtScope);
+ENUM_SYNC(CXScopeFlags_ClassInheritanceScope, clang::Scope::ClassInheritanceScope);
+ENUM_SYNC(CXScopeFlags_CatchScope, clang::Scope::CatchScope);
+ENUM_SYNC(CXScopeFlags_ConditionVarScope, clang::Scope::ConditionVarScope);
+ENUM_SYNC(CXScopeFlags_OpenMPOrderClauseScope, clang::Scope::OpenMPOrderClauseScope);
+ENUM_SYNC(CXScopeFlags_LambdaScope, clang::Scope::LambdaScope);
 
 #undef ENUM_SYNC

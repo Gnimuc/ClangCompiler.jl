@@ -109,12 +109,14 @@ include("Sema/DeclSpec.jl")
 include("Sema/Lookup.jl")
 include("Sema/Scope.jl")
 include("Sema/Sema.jl")
+include("Sema/Overload.jl")
+include("Sema/Template.jl")
+include("Sema/TemplateDeduction.jl")
 
 # Driver
 include("Driver/Driver.jl")
 include("Driver/Compilation.jl")
 include("Driver/ToolChain.jl")
-
 
 include("Basic/Builtins.jl")
 include("Lex/CodeCompletionHandler.jl")

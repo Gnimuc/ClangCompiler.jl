@@ -607,12 +607,34 @@ typedef void *CXAnnotationValue;
 typedef void *CXParser;
 
 // Sema
+typedef void *CXSFINAETrap;
+typedef void *CXDefaultedFunctionKind;
+typedef void *CXAlignPackInfo;
+typedef void *CXExpressionEvaluationContextRecord;
+typedef void *CXInstantiatingTemplate;
 typedef void *CXSema;
+
+// Overload
+typedef void *CXUserDefinedConversionSequence;
+typedef void *CXOverloadCandidate;
+typedef void *CXAmbiguousConversionSequence;
+typedef void *CXStandardConversionSequence;
+typedef void *CXBadConversionSequence;
+typedef void *CXImplicitConversionSequence;
+typedef void *CXOverloadCandidateSet;
+
+// Template
+typedef void *CXLocalInstantiationScope;
+typedef void *CXMultiLevelTemplateArgumentList;
+
+// TemplateDeduction
+typedef void *CXTemplateDeductionInfo;
 
 // DeclSpec
 typedef void *CXCXXScopeSpec;
 
 // Lookup
+typedef void *CXLookupResult_Filter;
 typedef void *CXLookupResult;
 
 // Scope

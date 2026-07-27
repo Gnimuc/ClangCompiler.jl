@@ -51,6 +51,14 @@ bool clang_LangOptions_getBorland(CXLangOptions LO) {
   return static_cast<clang::LangOptions *>(LO)->Borland;
 }
 
+bool clang_LangOptions_getCPlusPlus(CXLangOptions LO) {
+  return static_cast<clang::LangOptions *>(LO)->CPlusPlus;
+}
+
+bool clang_LangOptions_getCPlusPlus11(CXLangOptions LO) {
+  return static_cast<clang::LangOptions *>(LO)->CPlusPlus11;
+}
+
 bool clang_LangOptions_hasLangStandard(CXLangOptions LO) {
   return static_cast<clang::LangOptions *>(LO)->LangStd !=
          clang::LangStandard::lang_unspecified;

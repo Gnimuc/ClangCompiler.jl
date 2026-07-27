@@ -152,12 +152,19 @@ before the ccall and document it:
 ```julia
 function getBestDynamicClassType(x::AbstractExpr)
     @check_ptrs x
-    ty = getTypePtr(getType(x))
+    ty = expr_type_ptr(x)
     isPointerType(ty) && (ty = getTypePtr(getPointeeType(ty)))
     @assert isRecordType(ty) "expression must designate an object of class type"
     return CXXRecordDecl(clang_Expr_getBestDynamicClassType(x))
 end
 ```
+
+Note that the type of an arbitrary expression is read through `expr_type_ptr`, never
+`getTypePtr(getType(x))` directly. `Expr::getType` is null for an unevaluated string literal
+— what the parser builds for a `static_assert` message — and `QualType::getTypePtr` asserts
+rather than returning null, so the direct spelling aborts the process on a valid operand.
+Only wrappers narrowed to a subclass that always carries a type, or receivers that are decls
+rather than expressions, may read it directly. `test/lint.jl` enforces this.
 
 How to spot one while wrapping: read the method's body in the pinned header (or its .cpp) —
 `castAs<>`, `->getDecl()`, `*optional`, and `assert(...)` all signal a precondition the C

@@ -1014,7 +1014,7 @@ behaviour rather than a null result.
 """
 function getBestDynamicClassType(x::AbstractExpr)
     @check_ptrs x
-    ty = getTypePtr(getType(x))
+    ty = expr_type_ptr(x)
     isPointerType(ty) && (ty = getTypePtr(getPointeeType(ty)))
     @assert isRecordType(ty) "expression must designate an object of class type"
     return CXXRecordDecl(clang_Expr_getBestDynamicClassType(x))
@@ -2322,7 +2322,7 @@ block-pointer half of that precondition is restated here.
 """
 function getFunctionType(x::AbstractBlockExpr)
     @check_ptrs x
-    @assert isBlockPointerType(getTypePtr(getType(x))) "a block literal must have block-pointer type"
+    @assert isBlockPointerType(expr_type_ptr(x)) "a block literal must have block-pointer type"
     return FunctionProtoType(clang_BlockExpr_getFunctionType(x))
 end
 
@@ -2567,7 +2567,7 @@ restated here.
 """
 function getArraySize(x::AbstractArrayInitLoopExpr)
     @check_ptrs x
-    @assert isConstantArrayType(getTypePtr(getType(x))) "the loop's type must be a constant array"
+    @assert isConstantArrayType(expr_type_ptr(x)) "the loop's type must be a constant array"
     return clang_ArrayInitLoopExpr_getArraySize(x)
 end
 

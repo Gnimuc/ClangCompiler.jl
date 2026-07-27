@@ -1,5 +1,21 @@
 # AST
 """
+    expr_type_ptr(e::AbstractExpr) -> Type_
+
+Return the type `e` was given, asserting that it was given one at all.
+
+`Expr::getType` yields a null `QualType` for an unevaluated string literal — which is what
+the parser builds for a `static_assert` message — and `QualType::getTypePtr` asserts rather
+than returning null. A precondition that reaches for the type pointer of an arbitrary
+expression must therefore rule the null out first; this is the one place that does it.
+"""
+function expr_type_ptr(e::AbstractExpr)
+    qty = getType(e)
+    @assert !isNull(qty) "an unevaluated string literal has no type"
+    return getTypePtr(qty)
+end
+
+"""
     get_identifier_table(x::ASTContext)
 Return the [`IdentifierTable`](@ref) in the [`ASTContext`](@ref).
 """

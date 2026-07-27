@@ -168,3 +168,20 @@ abstract type AbstractToolChain end
 
 
 abstract type AbstractImplicitConceptSpecializationDecl <: AbstractDecl end
+
+
+abstract type AbstractStandardConversionSequence end
+
+abstract type AbstractBadConversionSequence end
+
+abstract type AbstractImplicitConversionSequence end
+
+abstract type AbstractOverloadCandidateSet end
+
+
+abstract type AbstractAmbiguousConversionSequence end
+
+abstract type AbstractOverloadCandidate end
+
+
+abstract type AbstractUserDefinedConversionSequence end

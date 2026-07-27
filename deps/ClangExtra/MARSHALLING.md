@@ -377,6 +377,18 @@ Four found so far, each caught by a test run rather than by the compiler:
 | `Preprocessor::PoisonSEHIdentifiers` | nine SEH `IdentifierInfo *` members | `-fborland-extensions` (`LangOpts.Borland`) | segfault |
 | `CXXRecordDecl::nullFieldOffsetIsZero` | the `MSInheritanceAttr` inheritance model | the target uses the Microsoft C++ ABI | segfault |
 | `ASTUnit::getPreprocessor` | `*PP`, an empty `std::shared_ptr` | a parse has installed a preprocessor | SIGABRT — **Windows only** |
+| `Sema::BuildPredefinedExpr` | `getCurFunctionDecl()` | the call is inside a function body | segfault in `DiagnosticRenderer` |
+
+**A Sema entry point that DIAGNOSES on bad input is as dangerous as one that
+reads uninitialised memory.** `BuildPredefinedExpr` outside a function body does
+not misbehave itself — it correctly emits an extension diagnostic, and rendering
+*that* segfaults in `DiagnosticRenderer::emitDiagnostic`. The wrapper's docstring
+already said "outside a function body there is none, so clang emits an extension
+diagnostic", which reads as harmless colour; it is the crash. When a Sema method
+documents a diagnostic for an input, gate the input out — `getCurFunctionDecl`
+was already wrapped, so the assert cost one line. This is the same lesson as the
+"in the X ABI" rule below: prose describing what clang does on bad input is a
+precondition, not context.
 
 **A `*shared_ptr` deref is a Windows-only abort.** The fourth is worth its own
 rule: the Windows build links a libstdc++ compiled with `_GLIBCXX_ASSERTIONS`,
@@ -447,6 +459,34 @@ is a known one rather than an oversight.
 method. A member with no `= init` in the class body, assigned only inside an
 `if (LangOpts.X)` or a setter called from one entry point, is the signature. The
 compiler will not warn, and a single-platform test run will often pass.
+
+### The gate itself must be total over the accepted operands
+
+A gate written as one `@assert` over a disjunction of shapes is only sound if
+every *accessor it calls* is defined for every operand the disjunction accepts.
+Julia evaluates the accessor eagerly if it is hoisted into a local, and even
+inline the arms have to be ordered so that the narrowing test runs first.
+
+`EvaluateStaticAssertMessageAsString` accepts a string literal *or* a class
+object, and its gate opened by reading `getTypePtr(getType(message))` to test
+the class-type arm. But the parser builds a `static_assert` message as an
+**unevaluated** string literal, and an unevaluated string literal carries a null
+`QualType` — so the gate tripped clang's `Cannot retrieve a NULL type pointer`
+assertion on the one operand that is always valid. The wrapper aborted on
+exactly the input it existed to accept, and no C++-side or lint check can see
+it: the shim matched clang's signature exactly.
+
+    ty = getType(message)
+    @assert (resolve(message) isa StringLiteral ||
+             (!isNull(ty) && isRecordType(getTypePtr(ty)))) "..."
+
+**How to spot one while wrapping:** for each arm of a gate's disjunction, ask
+which accessors run *before* that arm short-circuits, and whether each is total
+for the operands the other arms admit. `QualType`-returning accessors are the
+usual offender, because a null `QualType` asserts rather than returning null.
+A gate is exercised by every valid call, so a defect here fails 100% of the
+time — which is also why it survives only until the first test that calls the
+wrapper at all.
 
 ---
 
