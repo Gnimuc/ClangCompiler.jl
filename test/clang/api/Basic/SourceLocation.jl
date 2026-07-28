@@ -21,16 +21,16 @@ using Test
     # ---- PresumedLoc: the boxed #line-aware view SourceManager computes ----
     ploc = CC.PresumedLoc(sm, loc)
     @test ploc isa CC.PresumedLoc
-    @test CC.isValid(ploc) isa Bool
+    @test CC.isValid(ploc)
     @test CC.isInvalid(ploc) == !CC.isValid(ploc)
     if CC.isValid(ploc)
         @test CC.getFilename(ploc) isa String
-        @test CC.getLine(ploc) isa Integer
-        @test CC.getColumn(ploc) isa Integer
-        @test CC.getIncludeLoc(ploc) isa CC.SourceLocation
+        @test CC.getLine(ploc) isa Integer  # shape-only: the target chooses this value
+        @test CC.getColumn(ploc) isa Integer  # shape-only: the target chooses this value
+        @test !CC.is_null_handle(CC.getIncludeLoc(ploc))
         pfid = CC.getFileID(ploc)
         @test pfid isa CC.FileID
-        @test CC.isValid(pfid) isa Bool
+        @test CC.isValid(pfid)
         CC.dispose(pfid)
     else
         # every accessor asserts isValid(), so the wrappers must reject this object
@@ -43,7 +43,7 @@ using Test
     CC.dispose(ploc)
 
     ploc2 = CC.PresumedLoc(sm, loc; use_line_directives=false)
-    @test CC.isValid(ploc2) isa Bool
+    @test CC.isValid(ploc2)
     CC.dispose(ploc2)
 
     # an invalid location has no presumed location at all
@@ -65,7 +65,7 @@ using Test
     @test CC.getAsRange(tr) isa CC.SourceRange
     @test CC.getRawEncoding(CC.getBegin(tr)) == CC.getRawEncoding(CC.getBeginLoc(sr))
     @test CC.getRawEncoding(CC.getEnd(tr)) == CC.getRawEncoding(CC.getEndLoc(sr))
-    @test CC.isValid(tr) isa Bool
+    @test CC.isValid(tr)
     @test CC.isInvalid(tr) == !CC.isValid(tr)
 
     tr2 = CC.getTokenRange(CC.getBeginLoc(sr), CC.getEndLoc(sr))

@@ -24,15 +24,15 @@ end
     drv = CC.Driver(exe, triple, diags)
     @test drv isa CC.Driver
 
-    @test CC.getTargetTriple(drv) isa String
+    @test CC.getTargetTriple(drv) isa String  # shape-only: the host decides this
     @test occursin("x86_64", CC.getTargetTriple(drv))
-    @test CC.getClangProgramPath(drv) isa String
+    @test CC.getClangProgramPath(drv) isa String  # shape-only: the host decides this
     @test occursin("clang", CC.getClangProgramPath(drv))
-    @test CC.getInstalledDir(drv) isa String
+    @test CC.getInstalledDir(drv) isa String  # shape-only: the host decides this
     @test CC.getDir(drv) isa String
-    @test CC.getResourceDir(drv) isa String
-    @test CC.getSysRoot(drv) isa String
-    @test CC.getDyldPrefix(drv) isa String
+    @test CC.getResourceDir(drv) isa String  # shape-only: the host decides this
+    @test CC.getSysRoot(drv) isa String  # shape-only: the host decides this
+    @test CC.getDyldPrefix(drv) isa String  # shape-only: the host decides this
 
     old = CC.getCheckInputsExist(drv)
     @test old isa Bool
@@ -57,8 +57,8 @@ end
     # Driver::Mode is a single enum, so at most one predicate can be true.
     @test count(modes) <= 1
 
-    @test CC.getCCCGenericGCCName(drv) isa String
-    @test CC.getDiags(drv) isa CC.DiagnosticsEngine
+    @test CC.getCCCGenericGCCName(drv) isa String  # shape-only: the host decides this
+    @test CC.getDiags(drv) isa CC.DiagnosticsEngine  # shape-only: the host decides this
 
     img = CC.getDefaultImageName(drv)
     @test img isa String
@@ -128,8 +128,8 @@ end
     # isUsingLTO reads the same uninitialized Driver::LTOMode as getLTOMode, but as a
     # comparison, so it is a valid Bool even on a driver that never processed
     # arguments -- only its meaning depends on that.
-    @test CC.isUsingLTO(drv) isa Bool
-    @test CC.isUsingLTO(drv, true) isa Bool
+    @test CC.isUsingLTO(drv) isa Bool  # shape-only: the host decides this
+    @test CC.isUsingLTO(drv, true) isa Bool  # shape-only: the host decides this
 
     # Both create their entry on disk and hand ownership to the caller.
     tmpfile = CC.GetTemporaryPath(drv, "clangcompiler", "tmp")
@@ -180,13 +180,13 @@ end
     src = "clangcompiler-driver-test.cpp"
     comp = CC.BuildCompilation(drv, ["clang", "-fsyntax-only", src])
     @test comp isa CC.Compilation
-    @test CC.isForDiagnostics(comp) isa Bool
-    @test CC.getActiveOffloadKinds(comp) isa Integer
-    @test CC.getSysRoot(comp) isa String
+    @test CC.isForDiagnostics(comp) isa Bool  # shape-only: the host decides this
+    @test CC.getActiveOffloadKinds(comp) isa Integer  # shape-only: the host decides this
+    @test CC.getSysRoot(comp) isa String  # shape-only: the host decides this
     @test CC.getTempFiles(comp) isa Vector{String}
 
     # setContainsError only ever sets the bit, so this round trip is one-way.
-    @test CC.containsError(comp) isa Bool
+    @test CC.containsError(comp) isa Bool  # shape-only: the host decides this
     CC.setContainsError(comp)
     @test CC.containsError(comp)
 
@@ -196,14 +196,14 @@ end
     tc = CC.getDefaultToolChain(comp)
     @test tc isa CC.ToolChain
     @test occursin("x86_64", CC.getTripleString(tc))
-    @test CC.getArchName(tc) isa String
-    @test CC.getOS(tc) isa String
-    @test CC.isCrossCompiling(tc) isa Bool
+    @test CC.getArchName(tc) isa String  # shape-only: the host decides this
+    @test CC.getOS(tc) isa String  # shape-only: the host decides this
+    @test CC.isCrossCompiling(tc) isa Bool  # shape-only: the host decides this
     @test CC.getTargetTriple(CC.getDriver(tc)) == CC.getTargetTriple(drv)
 
     # Neither lookup has to find anything; both always come back with a path string.
-    @test CC.GetFilePath(drv, "crt1.o", tc) isa String
-    @test CC.GetProgramPath(drv, "ld", tc) isa String
+    @test CC.GetFilePath(drv, "crt1.o", tc) isa String  # shape-only: the host decides this
+    @test CC.GetProgramPath(drv, "ld", tc) isa String  # shape-only: the host decides this
 
     banner = CC.PrintVersion(drv, comp)
     @test banner isa String
@@ -238,8 +238,8 @@ end
 end
 
 @testset "Driver identity and prefix directories" begin
-    # A throwaway Driver on a throwaway DiagnosticsEngine; these read members the Driver
-    # constructor sets, so no BuildCompilation is needed.
+    # A throwaway Driver on a throwaway DiagnosticsEngine; the identity accessors read
+    # members the Driver constructor sets, so no BuildCompilation is needed for them.
     diags = CC.DiagnosticsEngine()
     exe = joinpath("usr", "bin", "clang")
     drv = CC.Driver(exe, "x86_64-unknown-linux-gnu", diags)
@@ -253,21 +253,46 @@ end
         @test d isa String   # both may legitimately be empty on a bare Driver
     end
 
-    # PrefixDirs is filled from every -B AND from COMPILER_PATH, so the count is
-    # host-dependent: assert the shape and the index contract, never a number.
-    n = CC.getNumPrefixDirs(drv)
-    @test n isa Integer
-    @test n >= 0
-    dirs = CC.getPrefixDirs(drv)
-    @test dirs isa Vector{String}
-    @test length(dirs) == n
-    for i = 0:(n - 1)
-        @test CC.getPrefixDir(drv, i) == dirs[i + 1]
-    end
+    # PrefixDirs is filled while a command line is processed -- both the -B options and
+    # COMPILER_PATH are read there -- so a Driver that never built a compilation has none
+    # on every host, whatever the environment holds.
+    @test CC.getNumPrefixDirs(drv) == 0
+    @test CC.getPrefixDirs(drv) == String[]
     # the container is indexed without a bounds check, so the wrapper supplies one
-    @test_throws AssertionError CC.getPrefixDir(drv, n)
+    @test_throws AssertionError CC.getPrefixDir(drv, 0)
     @test_throws AssertionError CC.getPrefixDir(drv, -1)
 
     dispose(drv)
     dispose(diags)
+
+    # Each -B appends one entry, so a compilation built with two of them fills the
+    # container the accessors index. COMPILER_PATH appends its own entries after those, so
+    # the total is host-dependent: assert the two this test passed and the index contract,
+    # never a count. Diagnostics are swallowed: the input file is phony and only argument
+    # processing is exercised.
+    diags2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
+                                  CC.IgnoringDiagConsumer(), true)
+    drv2 = CC.Driver(exe, "x86_64-unknown-linux-gnu", diags2)
+    CC.setCheckInputsExist(drv2, false)
+    prefixes = [joinpath("clangcompiler", "prefix-one"),
+                joinpath("clangcompiler", "prefix-two")]
+    comp = CC.BuildCompilation(drv2, ["clang", "-B", prefixes[1], "-B", prefixes[2],
+                                      "-fsyntax-only", "clangcompiler-driver-test.cpp"])
+
+    n = CC.getNumPrefixDirs(drv2)
+    @test n >= length(prefixes)
+    dirs = CC.getPrefixDirs(drv2)
+    @test dirs isa Vector{String}
+    @test length(dirs) == n
+    @test issubset(prefixes, dirs)
+    for i = 0:(n - 1)
+        @test CC.getPrefixDir(drv2, i) == dirs[i + 1]
+    end
+    @test_throws AssertionError CC.getPrefixDir(drv2, n)
+    @test_throws AssertionError CC.getPrefixDir(drv2, -1)
+
+    # A compilation's destructor reads its driver, and the driver holds the engine.
+    dispose(comp)
+    dispose(drv2)
+    dispose(diags2)
 end

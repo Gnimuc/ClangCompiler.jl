@@ -23,7 +23,7 @@ end
     vd = ClangCompiler.VarDecl(get_decl(f).ptr)
     ty = ClangCompiler.resolve(ClangCompiler.getTypePtr(ClangCompiler.getType(vd)))
     @test ty isa ClangCompiler.AtomicType
-    @test ClangCompiler.getValueType(ty) isa ClangCompiler.QualType
+    @test !CC.is_null_handle(ClangCompiler.getValueType(ty))
     dispose(f)
     dispose(I)
 end

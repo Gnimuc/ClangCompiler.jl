@@ -42,8 +42,19 @@ function getIdentifier(x::AbstractNamedDecl)
     return IdentifierInfo(clang_NamedDecl_getIdentifier(x))
 end
 
+"""
+    getName(x::AbstractNamedDecl) -> String
+Return the declaration's name as a plain identifier.
+
+Not every declaration has one: a constructor, destructor, conversion function or overloaded
+operator carries a `DeclarationName` of another kind, and `NamedDecl::getName` asserts
+`Name.isIdentifier()` rather than returning anything for those. Implicit members make this
+reachable from any struct, so the precondition is restated here. Use
+[`getNameAsString`](@ref) for a spelling that every declaration has.
+"""
 function getName(x::AbstractNamedDecl)
     @check_ptrs x
+    @assert isIdentifier(getDeclName(x)) "this declaration's name is not a simple identifier"
     return unsafe_string(clang_NamedDecl_getName(x))
 end
 

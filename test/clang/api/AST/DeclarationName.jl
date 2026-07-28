@@ -23,9 +23,9 @@ end
     @test ni isa CC.DeclarationNameInfo
     @test CC.getAsString(ni) == "declnameinfo_probe"
     @test CC.getName(ni) isa CC.DeclarationName
-    @test CC.getLoc(ni) isa CC.SourceLocation
-    @test CC.getBeginLoc(ni) isa CC.SourceLocation
-    @test CC.getEndLoc(ni) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLoc(ni))
+    @test !CC.is_null_handle(CC.getBeginLoc(ni))
+    @test !CC.is_null_handle(CC.getEndLoc(ni))
     dispose(ni)                                   # release the box
     dispose(f)
     dispose(I)

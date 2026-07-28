@@ -139,7 +139,7 @@ import ClangCompiler as CC
     if CC.isArray(av_arr)
         @test CC.getKind(av_arr) == CC.LibClangEx.CXAPValueKind_Array
         @test CC.getArraySize(av_arr) isa Integer
-        @test CC.getArrayInitializedElts(av_arr) isa Integer
+        @test CC.getArrayInitializedElts(av_arr) isa Integer  # shape-only: the target chooses this value
         if CC.getArrayInitializedElts(av_arr) > 0
             elt = CC.getArrayInitializedElt(av_arr, 0)
             @test elt isa CC.APValue
@@ -152,7 +152,7 @@ import ClangCompiler as CC
     @test av_struct.ptr != C_NULL
     if CC.isStruct(av_struct)
         @test CC.getKind(av_struct) == CC.LibClangEx.CXAPValueKind_Struct
-        @test CC.getStructNumFields(av_struct) isa Integer
+        @test CC.getStructNumFields(av_struct) isa Integer  # shape-only: the target chooses this value
         if CC.getStructNumFields(av_struct) > 0
             fld = CC.getStructField(av_struct, 0)
             @test fld isa CC.APValue
@@ -168,24 +168,24 @@ import ClangCompiler as CC
     exercise_nns(nns) = begin
         @test nns isa CC.NestedNameSpecifier
         @test CC.getKind(nns) isa CC.LibClangEx.CXNestedNameSpecifierKind
-        @test CC.isDependent(nns) isa Bool
-        @test CC.isInstantiationDependent(nns) isa Bool
-        @test CC.containsUnexpandedParameterPack(nns) isa Bool
-        @test CC.containsErrors(nns) isa Bool
+        @test CC.isDependent(nns) isa Bool  # shape-only
+        @test CC.isInstantiationDependent(nns) isa Bool  # shape-only
+        @test !(CC.containsUnexpandedParameterPack(nns))
+        @test !(CC.containsErrors(nns))
         @test CC.getName(nns) isa AbstractString
         @test CC.getPrefix(nns) isa CC.NestedNameSpecifier
         CC.dump(nns)
         k = CC.getKind(nns)
         if k == CC.LibClangEx.CXNestedNameSpecifierKind_Namespace
-            @test CC.getAsNamespace(nns) isa CC.NamespaceDecl
+            @test !CC.is_null_handle(CC.getAsNamespace(nns))
         elseif k == CC.LibClangEx.CXNestedNameSpecifierKind_NamespaceAlias
-            @test CC.getAsNamespaceAlias(nns) isa CC.NamespaceAliasDecl
+            @test !CC.is_null_handle(CC.getAsNamespaceAlias(nns))
         elseif k == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec ||
                k == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpecWithTemplate
             @test CC.getAsType(nns) isa CC.Type_
             @test CC.getAsRecordDecl(nns) isa CC.CXXRecordDecl
         elseif k == CC.LibClangEx.CXNestedNameSpecifierKind_Identifier
-            @test CC.getAsIdentifier(nns) isa CC.IdentifierInfo
+            @test !CC.is_null_handle(CC.getAsIdentifier(nns))
         end
     end
 
@@ -218,27 +218,27 @@ import ClangCompiler as CC
     @test !isempty(attrs)
     for a in attrs
         @test CC.getKind(a) isa CC.LibClangEx.CXAttrKind
-        @test CC.getSpelling(a) isa AbstractString
-        @test CC.getLocation(a) isa CC.SourceLocation
-        @test CC.isImplicit(a) isa Bool
-        @test CC.isInherited(a) isa Bool
-        @test CC.isPackExpansion(a) isa Bool
+        @test !isempty(CC.getSpelling(a))
+        @test !CC.is_null_handle(CC.getLocation(a))
+        @test !(CC.isImplicit(a))
+        @test !(CC.isInherited(a))
+        @test !(CC.isPackExpansion(a))
     end
 
     # ---------- MangleContext ----------
     mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
     @test mc isa CC.MangleContext
     @test CC.getKind(mc) isa CC.LibClangEx.CXMangleContext_ManglerKind
-    @test CC.getASTContext(mc) isa CC.ASTContext
-    @test CC.getDiags(mc) isa CC.DiagnosticsEngine
+    @test !CC.is_null_handle(CC.getASTContext(mc))
+    @test !CC.is_null_handle(CC.getDiags(mc))
     @test f(I, "add")
     add_nd = CC.NamedDecl(get_decl(f).ptr)
-    @test CC.shouldMangleDeclName(mc, add_nd) isa Bool
-    @test CC.shouldMangleCXXName(mc, add_nd) isa Bool
+    @test CC.shouldMangleDeclName(mc, add_nd) isa Bool  # shape-only: the host decides this
+    @test CC.shouldMangleCXXName(mc, add_nd) isa Bool  # shape-only: the host decides this
     @test CC.mangleName(mc, add_nd) == "_Z3addii"
     @test f(I, "Pt")
     pt_nd = CC.NamedDecl(get_decl(f).ptr)
-    @test CC.getAnonymousStructId(mc, pt_nd) isa Integer
+    @test CC.getAnonymousStructId(mc, pt_nd) isa Integer  # shape-only: the target chooses this value
 
     # ---------- StringLiteral for shouldMangleStringLiteral ----------
     vd_str = varof("g_str")
@@ -247,12 +247,12 @@ import ClangCompiler as CC
         n isa CC.StringLiteral && (sl = n; break)
     end
     @test sl isa CC.StringLiteral
-    @test CC.shouldMangleStringLiteral(mc, sl) isa Bool
+    @test CC.shouldMangleStringLiteral(mc, sl) isa Bool  # shape-only: the host decides this
 
     # ---------- DeclarationName ----------
     dn_empty = CC.DeclarationName()
     @test CC.isEmpty(dn_empty)
-    @test CC.getAsString(dn_empty) isa AbstractString
+    @test isempty(CC.getAsString(dn_empty))
     CC.dump(dn_empty)
 
     dn_add = CC.getDeclName(add_nd)
@@ -270,9 +270,9 @@ import ClangCompiler as CC
     dni = CC.DeclarationNameInfo(dn_add, loc)
     @test dni isa CC.DeclarationNameInfo
     @test CC.getName(dni) isa CC.DeclarationName
-    @test CC.getLoc(dni) isa CC.SourceLocation
-    @test CC.getBeginLoc(dni) isa CC.SourceLocation
-    @test CC.getEndLoc(dni) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLoc(dni))
+    @test !CC.is_null_handle(CC.getBeginLoc(dni))
+    @test !CC.is_null_handle(CC.getEndLoc(dni))
     @test CC.getAsString(dni) == "add"
     CC.dispose(dni)
 
@@ -282,27 +282,27 @@ import ClangCompiler as CC
     @test !CC.isNull(dgr)
     @test CC.isSingleDecl(dgr)
     @test !CC.isDeclGroup(dgr)
-    @test CC.getSingleDecl(dgr) isa CC.Decl
+    @test !CC.is_null_handle(CC.getSingleDecl(dgr))
 
     # ---------- TemplateArgument (real specialisation args) ----------
     exercise_targ(ta) = begin
         @test ta isa CC.TemplateArgument
         k = CC.getKind(ta)
         @test k isa CC.LibClangEx.CXTemplateArgument_ArgKind
-        @test CC.isNull(ta) isa Bool
-        @test CC.isDependent(ta) isa Bool
-        @test CC.isInstantiationDependent(ta) isa Bool
+        @test !(CC.isNull(ta))
+        @test !(CC.isDependent(ta))
+        @test !(CC.isInstantiationDependent(ta))
         CC.dump(ta)
         if k == CC.LibClangEx.CXTemplateArgument_Type
             @test CC.getAsType(ta) isa CC.QualType
         elseif k == CC.LibClangEx.CXTemplateArgument_Integral
-            @test CC.getIntegralType(ta) isa CC.QualType
+            @test !CC.is_null_handle(CC.getIntegralType(ta))
             gv = CC.LLVM.GenericValue(CC.getAsIntegral(ta))
             @test gv isa CC.LLVM.GenericValue
             CC.LLVM.dispose(gv)
         elseif k == CC.LibClangEx.CXTemplateArgument_Template
-            @test CC.getAsTemplate(ta) isa CC.TemplateName
-            @test CC.getAsTemplateOrTemplatePattern(ta) isa CC.TemplateName
+            @test !CC.is_null_handle(CC.getAsTemplate(ta))
+            @test !CC.is_null_handle(CC.getAsTemplateOrTemplatePattern(ta))
         end
     end
 
@@ -312,6 +312,23 @@ import ClangCompiler as CC
     for i in 0:(CC.getNumArgs(tst) - 1)
         exercise_targ(CC.getArg(tst, i))
     end
+
+    # The arguments of a TemplateSpecializationType are the ones as written, so the `3` of
+    # `STempl<int,3>` arrives as an Expression. Clang evaluates it only into the
+    # specialisation's own argument list, which is where the Integral arm is reachable.
+    stempl_rec = CC.resolve(CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(varof("stempl_obj")))))
+    @test stempl_rec isa CC.ClassTemplateSpecializationDecl
+    conv_args = CC.getTemplateArgs(stempl_rec)
+    n_conv = Int(size(conv_args))
+    @test n_conv == 2
+    kinds = CC.LibClangEx.CXTemplateArgument_ArgKind[]
+    for i in 0:(n_conv - 1)
+        arg = get(conv_args, i)
+        push!(kinds, CC.getKind(arg))
+        exercise_targ(arg)
+    end
+    @test CC.LibClangEx.CXTemplateArgument_Integral in kinds
+    @test CC.LibClangEx.CXTemplateArgument_Type in kinds
 
     tst2 = tst_of(varof("usett_obj"))
     if tst2 isa CC.TemplateSpecializationType
@@ -326,9 +343,9 @@ import ClangCompiler as CC
     ta_type = CC.TemplateArgument(int_qt)
     @test CC.getKind(ta_type) == CC.LibClangEx.CXTemplateArgument_Type
     @test CC.getAsType(ta_type) isa CC.QualType
-    @test CC.isNull(ta_type) isa Bool
-    @test CC.isDependent(ta_type) isa Bool
-    @test CC.isInstantiationDependent(ta_type) isa Bool
+    @test !(CC.isNull(ta_type))
+    @test !(CC.isDependent(ta_type))
+    @test !(CC.isInstantiationDependent(ta_type))
     CC.dump(ta_type)
     CC.dispose(ta_type)
 
@@ -338,9 +355,9 @@ import ClangCompiler as CC
     gv_back = CC.LLVM.GenericValue(CC.getAsIntegral(ta_int))
     @test convert(Int, gv_back) == 5
     CC.LLVM.dispose(gv_back)
-    @test CC.getIntegralType(ta_int) isa CC.QualType
+    @test !CC.is_null_handle(CC.getIntegralType(ta_int))
     CC.setIntegralType(ta_int, int_qt)
-    @test CC.getIntegralType(ta_int) isa CC.QualType
+    @test !CC.is_null_handle(CC.getIntegralType(ta_int))
     CC.dispose(ta_int)
     CC.LLVM.dispose(gv_i)
 
@@ -348,7 +365,7 @@ import ClangCompiler as CC
     ptr_qt = CC.getType(vd_str)                   # const char *
     ta_null = CC.TemplateArgument(ptr_qt, true)
     @test CC.getKind(ta_null) == CC.LibClangEx.CXTemplateArgument_NullPtr
-    @test CC.getNullPtrType(ta_null) isa CC.QualType
+    @test !CC.is_null_handle(CC.getNullPtrType(ta_null))
     CC.dispose(ta_null)
 
     # Declaration, via constructFromValueDecl on the `gx` global.
@@ -356,8 +373,8 @@ import ClangCompiler as CC
     vd_gx = CC.VarDecl(get_decl(f).ptr)
     ta_decl = CC.TemplateArgument(CC.ValueDecl(vd_gx.ptr), CC.getType(vd_gx))
     @test CC.getKind(ta_decl) == CC.LibClangEx.CXTemplateArgument_Declaration
-    @test CC.getAsDecl(ta_decl) isa CC.ValueDecl
-    @test CC.getParamTypeForDecl(ta_decl) isa CC.QualType
+    @test !CC.is_null_handle(CC.getAsDecl(ta_decl))
+    @test !CC.is_null_handle(CC.getParamTypeForDecl(ta_decl))
     CC.dispose(ta_decl)
 
     dispose(f)
@@ -414,22 +431,22 @@ end
     # only their shape is asserted.
     v_ptr = valueof("pv_ptr")
     @test CC.isLValue(v_ptr)
-    @test CC.getLValueOffset(v_ptr) isa Integer
+    @test CC.getLValueOffset(v_ptr) isa Integer  # shape-only: the target chooses this value
     @test !CC.isLValueOnePastTheEnd(v_ptr)
     @test CC.hasLValuePath(v_ptr)
-    @test CC.getLValueCallIndex(v_ptr) isa Integer
-    @test CC.getLValueVersion(v_ptr) isa Integer
+    @test CC.getLValueCallIndex(v_ptr) isa Integer  # shape-only: the target chooses this value
+    @test CC.getLValueVersion(v_ptr) isa Integer  # shape-only: the target chooses this value
     @test !CC.isNullPointer(v_ptr)
 
     v_null = valueof("pv_null")
     @test CC.isLValue(v_null)
     @test CC.isNullPointer(v_null)
-    @test CC.getLValueOffset(v_null) isa Integer
+    @test CC.getLValueOffset(v_null) isa Integer  # shape-only: the target chooses this value
 
     # Member-pointer payload.
     v_mp = valueof("pv_memptr")
     @test CC.isMemberPointer(v_mp)
-    @test CC.getMemberPointerDecl(v_mp) isa CC.ValueDecl
+    @test !CC.is_null_handle(CC.getMemberPointerDecl(v_mp))
     @test CC.getMemberPointerDecl(v_mp).ptr != C_NULL
     @test !CC.isMemberPointerToDerivedMember(v_mp)
 
@@ -506,9 +523,9 @@ end
     # the class chain is what the base-to-derived conversion records; clang's
     # IsDerivedMember flag stays false for it, so only the path length distinguishes
     # rv_mp_derived from rv_mp_base
-    @test CC.isMemberPointerToDerivedMember(v_mpd) isa Bool
+    @test !(CC.isMemberPointerToDerivedMember(v_mpd))
     @test CC.getMemberPointerPathSize(v_mpd) == 1
-    @test CC.getMemberPointerPathEntry(v_mpd, 0) isa CC.CXXRecordDecl
+    @test CC.getMemberPointerPathEntry(v_mpd, 0) isa CC.CXXRecordDecl  # shape-only: the host decides this
     @test CC.getMemberPointerPathEntry(v_mpd, 0).ptr != C_NULL
 
     # toIntegralConstant: the integer path ignores src_ty, the null-pointer path runs
@@ -617,7 +634,7 @@ end
     @test CC.getKind(CC.getArgument(tal)) == CC.LibClangEx.CXTemplateArgument_Template
 
     # getTemplateQualifierLoc is total, so the specifier is a carrier for every kind.
-    @test CC.getTemplateQualifier(tal) isa CC.NestedNameSpecifier
+    @test CC.is_null_handle(CC.getTemplateQualifier(tal))
 
     # The builder list starts empty and remembers the two delimiters it was handed.
     lb = CC.getBeginLoc(holder)
@@ -714,7 +731,7 @@ end
 
     av3, av5, av7 = cached("apv_three"), cached("apv_five"), cached("apv_seven")
     @test CC.isInt(av5) && CC.isInt(av7)
-    @test CC.getProfileHash(av5) isa Integer
+    @test CC.getProfileHash(av5) isa Integer  # shape-only: the target chooses this value
 
     # setInt overwrites the leaf in place, so feeding av5 the bits of av7 makes the two
     # profiles identical — equal profiles always hash equal.
@@ -778,8 +795,8 @@ end
     d = CC.getLValuePathAsBaseOrMember(avpn, 0)
     @test d isa CC.Decl
     @test CC.getDeclKindName(d) == "Field"
-    @test CC.isLValuePathBaseOrMemberVirtual(avpn, 0) isa Bool
-    @test CC.getLValuePathEntryProfileHash(avpn, 0) isa Integer
+    @test CC.isLValuePathBaseOrMemberVirtual(avpn, 0) isa Bool  # shape-only: the host decides this
+    @test CC.getLValuePathEntryProfileHash(avpn, 0) isa Integer  # shape-only: the host decides this
 
     # Two pointers written to the same member of the same object have the same profile,
     # the same base and the same path entry; one to a different member shares only the base.

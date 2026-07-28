@@ -15,7 +15,7 @@ using Test
     @test rec.ptr != C_NULL
 
     # the record was constructed with the preprocessor's own source manager
-    @test CC.getSourceManager(rec) isa CC.SourceManager
+    @test !CC.is_null_handle(CC.getSourceManager(rec))
     @test CC.getSourceManager(rec).ptr == CC.getSourceManager(pp).ptr
 
     # the predefines were preprocessed before the record existed, so it starts empty

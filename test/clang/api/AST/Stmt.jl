@@ -203,35 +203,35 @@ end
     # Stmt base wrappers (declared on Stmt)
     @test CC.getStmtClass(body) isa Any
     @test CC.getStmtClassName(body) == "CompoundStmt"
-    @test CC.getBeginLoc(body) isa CC.SourceLocation
-    @test CC.getEndLoc(body) isa CC.SourceLocation
-    @test CC.getSourceRange(body) isa CC.SourceRange
-    @test CC.getNumChildren(body) isa Integer
+    @test !CC.is_null_handle(CC.getBeginLoc(body))
+    @test !CC.is_null_handle(CC.getEndLoc(body))
+    @test CC.getSourceRange(body) isa CC.SourceRange  # shape-only
+    @test CC.getNumChildren(body) isa Integer  # shape-only: the target chooses this value
     @test CC.getChildren(body) isa Vector
 
     # generated predicates + casts (src/clang/api/AST/StmtWrappers.jl)
-    @test CC.isCompoundStmt(body) isa Bool
-    @test CC.isIfStmt(body) isa Bool
-    @test CC.isExpr(body) isa Bool
+    @test CC.isCompoundStmt(body)
+    @test !(CC.isIfStmt(body))
+    @test !(CC.isExpr(body))
     @test CC.CompoundStmt(body) isa CC.CompoundStmt         # castToCompoundStmt
     @test CC.IfStmt(body) isa CC.IfStmt                     # dyn_cast_or_null -> NULL carrier
 
     # CompoundStmt accessors
     @test length(body) isa Integer
-    @test CC.body_front(body) isa CC.Stmt
-    @test CC.body_back(body) isa CC.Stmt
-    @test CC.getLBracLoc(body) isa CC.SourceLocation
-    @test CC.getRBracLoc(body) isa CC.SourceLocation
-    @test CC.body_empty(body) isa Bool
-    @test CC.hasStoredFPFeatures(body) isa Bool
+    @test !CC.is_null_handle(CC.body_front(body))
+    @test !CC.is_null_handle(CC.body_back(body))
+    @test !CC.is_null_handle(CC.getLBracLoc(body))
+    @test !CC.is_null_handle(CC.getRBracLoc(body))
+    @test !(CC.body_empty(body))
+    @test CC.hasStoredFPFeatures(body) isa Bool  # shape-only: the host decides this
 
     # ================= DeclStmt =================
     dss = pick(CC.DeclStmt)
     @test !isempty(dss)
     single = first(filter(d -> CC.isSingleDecl(d), dss))
-    @test CC.isSingleDecl(single) isa Bool
-    @test CC.getSingleDecl(single) isa CC.Decl
-    @test CC.getNumDecls(single) isa Integer
+    @test CC.isSingleDecl(single)
+    @test !CC.is_null_handle(CC.getSingleDecl(single))
+    @test CC.getNumDecls(single) isa Integer  # shape-only: the target chooses this value
     @test CC.getDecls(single) isa Vector
     multi = first(filter(d -> CC.getNumDecls(d) > 1, dss))   # `int a = 1, b = 2;`
     @test CC.getNumDecls(multi) == 2
@@ -240,108 +240,108 @@ end
     ifs = pick(CC.IfStmt)
     @test !isempty(ifs)
     ifi = first(ifs)
-    @test CC.getCond(ifi) isa CC.Expr_
-    @test CC.getThen(ifi) isa CC.Stmt
-    @test CC.getElse(ifi) isa CC.Stmt
+    @test !CC.is_null_handle(CC.getCond(ifi))
+    @test !CC.is_null_handle(CC.getThen(ifi))
+    @test CC.is_null_handle(CC.getElse(ifi))
     @test CC.getInit(ifi) isa CC.Stmt
-    @test CC.getConditionVariable(ifi) isa CC.VarDecl
-    @test CC.hasElseStorage(ifi) isa Bool
-    @test CC.hasInitStorage(ifi) isa Bool
-    @test CC.hasVarStorage(ifi) isa Bool
-    @test CC.getIfLoc(ifi) isa CC.SourceLocation
-    @test CC.getElseLoc(ifi) isa CC.SourceLocation
-    @test CC.isConsteval(ifi) isa Bool
-    @test CC.isNonNegatedConsteval(ifi) isa Bool
-    @test CC.isNegatedConsteval(ifi) isa Bool
-    @test CC.isConstexpr(ifi) isa Bool
-    @test CC.isObjCAvailabilityCheck(ifi) isa Bool
-    @test CC.getLParenLoc(ifi) isa CC.SourceLocation
-    @test CC.getRParenLoc(ifi) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getConditionVariable(ifi))
+    @test !(CC.hasElseStorage(ifi))
+    @test !(CC.hasInitStorage(ifi))
+    @test !(CC.hasVarStorage(ifi))
+    @test !CC.is_null_handle(CC.getIfLoc(ifi))
+    @test CC.is_null_handle(CC.getElseLoc(ifi))
+    @test !(CC.isConsteval(ifi))
+    @test !(CC.isNonNegatedConsteval(ifi))
+    @test !(CC.isNegatedConsteval(ifi))
+    @test !(CC.isConstexpr(ifi))
+    @test !(CC.isObjCAvailabilityCheck(ifi))
+    @test !CC.is_null_handle(CC.getLParenLoc(ifi))
+    @test !CC.is_null_handle(CC.getRParenLoc(ifi))
 
     # ================= SwitchStmt / SwitchCase / CaseStmt / DefaultStmt =================
     sw = first(pick(CC.SwitchStmt))
-    @test CC.getCond(sw) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCond(sw))
     @test CC.getBody(sw) isa CC.Stmt
     scl = CC.getSwitchCaseList(sw)
     @test scl isa CC.SwitchCase
-    @test CC.isAllEnumCasesCovered(sw) isa Bool
-    @test CC.hasInitStorage(sw) isa Bool
-    @test CC.hasVarStorage(sw) isa Bool
-    @test CC.getSwitchLoc(sw) isa CC.SourceLocation
-    @test CC.getLParenLoc(sw) isa CC.SourceLocation
-    @test CC.getRParenLoc(sw) isa CC.SourceLocation
+    @test !(CC.isAllEnumCasesCovered(sw))
+    @test CC.hasInitStorage(sw)
+    @test !(CC.hasVarStorage(sw))
+    @test !CC.is_null_handle(CC.getSwitchLoc(sw))
+    @test !CC.is_null_handle(CC.getLParenLoc(sw))
+    @test !CC.is_null_handle(CC.getRParenLoc(sw))
     # SwitchCase base accessors
-    @test CC.getNextSwitchCase(scl) isa CC.SwitchCase
+    @test !CC.is_null_handle(CC.getNextSwitchCase(scl))
     @test CC.getSubStmt(scl) isa CC.Stmt
-    @test CC.getKeywordLoc(scl) isa CC.SourceLocation
-    @test CC.getColonLoc(scl) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getKeywordLoc(scl))
+    @test !CC.is_null_handle(CC.getColonLoc(scl))
     # CaseStmt
     cs = first(pick(CC.CaseStmt))
-    @test CC.getLHS(cs) isa CC.Expr_
-    @test CC.getRHS(cs) isa CC.Expr_
-    @test CC.caseStmtIsGNURange(cs) isa Bool
-    @test CC.getCaseLoc(cs) isa CC.SourceLocation
-    @test CC.getEllipsisLoc(cs) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLHS(cs))
+    @test CC.is_null_handle(CC.getRHS(cs))
+    @test !(CC.caseStmtIsGNURange(cs))
+    @test !CC.is_null_handle(CC.getCaseLoc(cs))
+    @test CC.is_null_handle(CC.getEllipsisLoc(cs))
     # DefaultStmt
     ds = first(pick(CC.DefaultStmt))
-    @test CC.getDefaultLoc(ds) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getDefaultLoc(ds))
 
     # ================= WhileStmt =================
     ws = first(pick(CC.WhileStmt))
-    @test CC.getCond(ws) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCond(ws))
     @test CC.getBody(ws) isa CC.Stmt
-    @test CC.getConditionVariable(ws) isa CC.VarDecl
-    @test CC.getWhileLoc(ws) isa CC.SourceLocation
-    @test CC.hasVarStorage(ws) isa Bool
-    @test CC.getLParenLoc(ws) isa CC.SourceLocation
-    @test CC.getRParenLoc(ws) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getConditionVariable(ws))
+    @test !CC.is_null_handle(CC.getWhileLoc(ws))
+    @test !(CC.hasVarStorage(ws))
+    @test !CC.is_null_handle(CC.getLParenLoc(ws))
+    @test !CC.is_null_handle(CC.getRParenLoc(ws))
 
     # ================= DoStmt =================
     do_ = first(pick(CC.DoStmt))
-    @test CC.getCond(do_) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCond(do_))
     @test CC.getBody(do_) isa CC.Stmt
-    @test CC.getDoLoc(do_) isa CC.SourceLocation
-    @test CC.getWhileLoc(do_) isa CC.SourceLocation
-    @test CC.getRParenLoc(do_) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getDoLoc(do_))
+    @test !CC.is_null_handle(CC.getWhileLoc(do_))
+    @test !CC.is_null_handle(CC.getRParenLoc(do_))
 
     # ================= ForStmt =================
     fs = first(pick(CC.ForStmt))
     @test CC.getInit(fs) isa CC.Stmt
-    @test CC.getCond(fs) isa CC.Expr_
-    @test CC.getInc(fs) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCond(fs))
+    @test !CC.is_null_handle(CC.getInc(fs))
     @test CC.getBody(fs) isa CC.Stmt
-    @test CC.getConditionVariable(fs) isa CC.VarDecl
-    @test CC.getForLoc(fs) isa CC.SourceLocation
-    @test CC.getLParenLoc(fs) isa CC.SourceLocation
-    @test CC.getRParenLoc(fs) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getConditionVariable(fs))
+    @test !CC.is_null_handle(CC.getForLoc(fs))
+    @test !CC.is_null_handle(CC.getLParenLoc(fs))
+    @test !CC.is_null_handle(CC.getRParenLoc(fs))
 
     # ================= GotoStmt / LabelStmt =================
     gs = first(pick(CC.GotoStmt))
     @test CC.getLabel(gs) isa CC.LabelDecl
-    @test CC.getGotoLoc(gs) isa CC.SourceLocation
-    @test CC.getLabelLoc(gs) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getGotoLoc(gs))
+    @test !CC.is_null_handle(CC.getLabelLoc(gs))
     ls = first(pick(CC.LabelStmt))
     @test CC.getName(ls) == "lbl"
     @test CC.getDecl(ls) isa CC.LabelDecl
     @test CC.getSubStmt(ls) isa CC.Stmt
-    @test CC.getIdentLoc(ls) isa CC.SourceLocation
-    @test CC.isSideEntry(ls) isa Bool
+    @test !CC.is_null_handle(CC.getIdentLoc(ls))
+    @test !(CC.isSideEntry(ls))
 
     # ================= ContinueStmt / BreakStmt =================
     cont = first(pick(CC.ContinueStmt))
-    @test CC.getContinueLoc(cont) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getContinueLoc(cont))
     brk = first(pick(CC.BreakStmt))
-    @test CC.getBreakLoc(brk) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getBreakLoc(brk))
 
     # ================= ReturnStmt =================
     rs = first(pick(CC.ReturnStmt))
-    @test CC.getRetValue(rs) isa CC.Expr_
-    @test CC.getReturnLoc(rs) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getRetValue(rs))
+    @test !CC.is_null_handle(CC.getReturnLoc(rs))
 
     # ================= NullStmt =================
     ns = first(pick(CC.NullStmt))
-    @test CC.getSemiLoc(ns) isa CC.SourceLocation
-    @test CC.hasLeadingEmptyMacro(ns) isa Bool
+    @test !CC.is_null_handle(CC.getSemiLoc(ns))
+    @test !(CC.hasLeadingEmptyMacro(ns))
 
     # ================= ExprCXX.jl =================
 
@@ -349,73 +349,73 @@ end
     ces = pick(CC.AbstractCXXConstructExpr)
     @test !isempty(ces)
     ce = first(ces)
-    @test CC.getConstructor(ce) isa CC.CXXConstructorDecl
-    @test CC.getNumArgs(ce) isa Integer
+    @test !CC.is_null_handle(CC.getConstructor(ce))
+    @test CC.getNumArgs(ce) isa Integer  # shape-only: the target chooses this value
     CC.getNumArgs(ce) > 0 && (@test CC.getArg(ce, 0) isa CC.Expr_)
-    @test CC.isElidable(ce) isa Bool
-    @test CC.getLocation(ce) isa CC.SourceLocation
-    @test CC.hadMultipleCandidates(ce) isa Bool
-    @test CC.isListInitialization(ce) isa Bool
-    @test CC.isStdInitListInitialization(ce) isa Bool
-    @test CC.requiresZeroInitialization(ce) isa Bool
-    @test CC.isImmediateEscalating(ce) isa Bool
+    @test !(CC.isElidable(ce))
+    @test !CC.is_null_handle(CC.getLocation(ce))
+    @test CC.hadMultipleCandidates(ce)
+    @test !(CC.isListInitialization(ce))
+    @test !(CC.isStdInitListInitialization(ce))
+    @test !(CC.requiresZeroInitialization(ce))
+    @test !(CC.isImmediateEscalating(ce))
     @test CC.getConstructionKind(ce) !== nothing
     # CXXTemporaryObjectExpr specifically present (from zero-arg `Vec()`)
     @test !isempty(pick(CC.CXXTemporaryObjectExpr))
 
     # CXXMemberCallExpr — c.get()
     mce = first(pick(CC.CXXMemberCallExpr))
-    @test CC.getImplicitObjectArgument(mce) isa CC.Expr_
-    @test CC.getMethodDecl(mce) isa CC.CXXMethodDecl
-    @test CC.getRecordDecl(mce) isa CC.CXXRecordDecl
+    @test !CC.is_null_handle(CC.getImplicitObjectArgument(mce))
+    @test !CC.is_null_handle(CC.getMethodDecl(mce))
+    @test !CC.is_null_handle(CC.getRecordDecl(mce))
 
     # CXXOperatorCallExpr — a + b
     oce = first(pick(CC.CXXOperatorCallExpr))
     @test CC.getOperator(oce) !== nothing
-    @test CC.getOperatorLoc(oce) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getOperatorLoc(oce))
 
     # CXXBoolLiteralExpr — true
     ble = first(pick(CC.CXXBoolLiteralExpr))
     @test CC.getValue(ble) isa Bool
-    @test CC.getLocation(ble) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocation(ble))
 
     # LambdaExpr — [g](int z){...}
     le = first(pick(CC.LambdaExpr))
-    @test CC.getCallOperator(le) isa CC.CXXMethodDecl
-    @test CC.getLambdaClass(le) isa CC.CXXRecordDecl
+    @test !CC.is_null_handle(CC.getCallOperator(le))
+    @test !CC.is_null_handle(CC.getLambdaClass(le))
     @test CC.getBody(le) isa CC.Stmt
-    @test CC.isMutable(le) isa Bool
-    @test CC.getNumCaptures(le) isa Integer
-    @test CC.isGenericLambda(le) isa Bool
+    @test !(CC.isMutable(le))
+    @test CC.getNumCaptures(le) isa Integer  # shape-only: the target chooses this value
+    @test !(CC.isGenericLambda(le))
     @test CC.getNumCaptures(le) >= 1
     cap = CC.getCapture(le, 0)
     @test cap isa CC.LambdaCapture
     @test CC.getCaptureKind(cap) !== nothing
-    @test CC.capturesThis(cap) isa Bool
-    @test CC.capturesVariable(cap) isa Bool
-    @test CC.capturesVLAType(cap) isa Bool
+    @test !(CC.capturesThis(cap))
+    @test CC.capturesVariable(cap)
+    @test !(CC.capturesVLAType(cap))
     CC.capturesVariable(cap) && (@test CC.getCapturedVar(cap) isa CC.ValueDecl)
 
     # CXXNewExpr — new Vec(4) and new int[n]
     news = pick(CC.CXXNewExpr)
     @test length(news) >= 2
     for ne in news
-        @test CC.getAllocatedType(ne) isa CC.QualType
-        @test CC.isArray(ne) isa Bool
+        @test !CC.is_null_handle(CC.getAllocatedType(ne))
+        @test CC.isArray(ne) isa Bool  # shape-only
         @test CC.getArraySize(ne) isa CC.Expr_
-        @test CC.hasInitializer(ne) isa Bool
-        @test CC.getInitializer(ne) isa CC.Expr_
-        @test CC.shouldNullCheckAllocation(ne) isa Bool
-        @test CC.getNumPlacementArgs(ne) isa Integer
-        @test CC.isParenTypeId(ne) isa Bool
-        @test CC.isGlobalNew(ne) isa Bool
-        @test CC.passAlignment(ne) isa Bool
-        @test CC.doesUsualArrayDeleteWantSize(ne) isa Bool
+        @test CC.hasInitializer(ne) isa Bool  # shape-only
+        @test CC.getInitializer(ne) isa CC.Expr_  # shape-only
+        @test !(CC.shouldNullCheckAllocation(ne))
+        @test CC.getNumPlacementArgs(ne) isa Integer  # shape-only: the target chooses this value
+        @test !(CC.isParenTypeId(ne))
+        @test !(CC.isGlobalNew(ne))
+        @test CC.passAlignment(ne) isa Bool  # shape-only: the host decides this
+        @test CC.doesUsualArrayDeleteWantSize(ne) isa Bool  # shape-only: the host decides this
         @test CC.getInitializationStyle(ne) !== nothing
-        @test CC.getOperatorDelete(ne) isa CC.FunctionDecl
-        @test CC.getOperatorNew(ne) isa CC.FunctionDecl
-        @test CC.getAllocatedTypeSourceInfo(ne) isa CC.TypeSourceInfo
-        @test CC.getConstructExpr(ne) isa CC.CXXConstructExpr
+        @test !CC.is_null_handle(CC.getOperatorDelete(ne))
+        @test !CC.is_null_handle(CC.getOperatorNew(ne))
+        @test !CC.is_null_handle(CC.getAllocatedTypeSourceInfo(ne))
+        @test CC.getConstructExpr(ne) isa CC.CXXConstructExpr  # shape-only
     end
 
     # CXXDeleteExpr — delete p; delete[] arr;
@@ -423,20 +423,20 @@ end
     @test length(dels) >= 2
     for de in dels
         @test CC.getArgument(de) isa CC.Expr_
-        @test CC.isArrayForm(de) isa Bool
-        @test CC.isGlobalDelete(de) isa Bool
-        @test CC.isArrayFormAsWritten(de) isa Bool
-        @test CC.doesUsualArrayDeleteWantSize(de) isa Bool
-        @test CC.getDestroyedType(de) isa CC.QualType
-        @test CC.getOperatorDelete(de) isa CC.FunctionDecl
+        @test CC.isArrayForm(de) isa Bool  # shape-only
+        @test !(CC.isGlobalDelete(de))
+        @test CC.isArrayFormAsWritten(de) isa Bool  # shape-only
+        @test CC.doesUsualArrayDeleteWantSize(de) isa Bool  # shape-only: the host decides this
+        @test !CC.is_null_handle(CC.getDestroyedType(de))
+        @test !CC.is_null_handle(CC.getOperatorDelete(de))
     end
 
     # CastExpr — pick any (implicit or explicit) cast node
     caste = first(pick(CC.AbstractCastExpr))
-    @test CC.path_empty(caste) isa Bool
-    @test CC.path_size(caste) isa Integer
-    @test CC.hasStoredFPFeatures(caste) isa Bool
-    @test CC.changesVolatileQualification(caste) isa Bool
+    @test CC.path_empty(caste)
+    @test CC.path_size(caste) isa Integer  # shape-only: the target chooses this value
+    @test CC.hasStoredFPFeatures(caste) isa Bool  # shape-only: the host decides this
+    @test !(CC.changesVolatileQualification(caste))
     @test CC.getConversionFunction(caste) isa CC.NamedDecl
     # getTargetUnionField is intentionally not called: clang asserts
     # (getCastKind() == CK_ToUnion) inside it, and a CK_ToUnion cast is a C-only
@@ -444,24 +444,24 @@ end
 
     # CXXNamedCastExpr — static_cast<int>(...)
     nce = first(pick(CC.AbstractCXXNamedCastExpr))
-    @test CC.getOperatorLoc(nce) isa CC.SourceLocation
-    @test CC.getRParenLoc(nce) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getOperatorLoc(nce))
+    @test !CC.is_null_handle(CC.getRParenLoc(nce))
 
     # CXXThisExpr — Vec::self() returns this
     tes = pick(CC.CXXThisExpr)
     @test !isempty(tes)
     te = first(tes)
-    @test CC.getLocation(te) isa CC.SourceLocation
-    @test CC.isImplicit(te) isa Bool
+    @test !CC.is_null_handle(CC.getLocation(te))
+    @test CC.isImplicit(te)
 
     # MaterializeTemporaryExpr — const Vec& r = Vec(3)
     mtes = pick(CC.MaterializeTemporaryExpr)
     @test !isempty(mtes)
     mte = first(mtes)
-    @test CC.getManglingNumber(mte) isa Integer
-    @test CC.isBoundToLvalueReference(mte) isa Bool
-    @test CC.getExtendingDecl(mte) isa CC.ValueDecl
-    @test CC.getSubExpr(mte) isa CC.Expr_
+    @test CC.getManglingNumber(mte) isa Integer  # shape-only: the host decides this
+    @test CC.isBoundToLvalueReference(mte)
+    @test !CC.is_null_handle(CC.getExtendingDecl(mte))
+    @test !CC.is_null_handle(CC.getSubExpr(mte))
 
     dispose(finder)
     dispose(I)
@@ -528,7 +528,7 @@ end
     CC.parse(I, "void asmHost(int a, int b) { asm(\"\" : \"=r\"(b) : [in] \"r\"(a)); }")
     asm = findasm("asmHost")
     if asm !== nothing
-        @test CC.getRParenLoc(asm) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getRParenLoc(asm))
         @test CC.getNumLabels(asm) == 0
         @test CC.getNamedOperand(asm, "nosuchoperand") == -1
         @test CC.getNamedOperand(asm, "in") >= 0
@@ -543,7 +543,7 @@ end
     gasm = findasm("asmGotoHost")
     if gasm !== nothing && CC.isAsmGoto(gasm)
         @test CC.getNumLabels(gasm) == 1
-        @test CC.getLabelExpr(gasm, 0) isa CC.AddrLabelExpr
+        @test !CC.is_null_handle(CC.getLabelExpr(gasm, 0))
         @test CC.getLabelExpr(gasm, 0).ptr != C_NULL
         @test CC.getLabelName(gasm, 0) == "Done"
     end
@@ -584,7 +584,7 @@ end
 
     # ReturnStmt::getNRVOCandidate -- shape only (host decides whether NRVO storage exists)
     rs = only(filter(n -> n isa CC.ReturnStmt, nodes))
-    @test CC.getNRVOCandidate(rs) isa CC.VarDecl
+    @test CC.is_null_handle(CC.getNRVOCandidate(rs))
 
     # ValueStmt::getExprStmt -- a bare expression statement returns itself
     e = first(filter(n -> n isa CC.AbstractExpr, nodes))
@@ -621,7 +621,7 @@ end
     if igs !== nothing
         @test CC.getTarget(igs) isa CC.Expr_
         @test CC.getTarget(igs).ptr != C_NULL
-        @test CC.getConstantTarget(igs) isa CC.LabelDecl
+        @test CC.getConstantTarget(igs) isa CC.LabelDecl  # shape-only: the host decides this
     end
 
     CC.dispose(f)
@@ -638,9 +638,9 @@ end
     cnodes = CC.subtree(CC.resolve(CC.getBody(cfd)))
     ws = cnodes[findfirst(n -> n isa CC.WhileStmt, cnodes)]
     fs = cnodes[findfirst(n -> n isa CC.ForStmt, cnodes)]
-    @test CC.getConditionVariableDeclStmt(ws) isa CC.DeclStmt
+    @test !CC.is_null_handle(CC.getConditionVariableDeclStmt(ws))
     @test CC.getConditionVariableDeclStmt(ws).ptr != C_NULL         # while (int w = n)
-    @test CC.getConditionVariableDeclStmt(fs) isa CC.DeclStmt
+    @test !CC.is_null_handle(CC.getConditionVariableDeclStmt(fs))
     @test CC.getConditionVariableDeclStmt(fs).ptr != C_NULL         # for (...; int c = ...; ...)
     dispose(fcv)
     dispose(Icv)
@@ -663,28 +663,28 @@ end
 
     tryX = first(filter(t -> CC.getExceptHandler(t).ptr != C_NULL, tries))   # __except form
     tryF = first(filter(t -> CC.getFinallyHandler(t).ptr != C_NULL, tries))  # __finally form
-    @test CC.getIsCXXTry(tryX) isa Bool
+    @test !(CC.getIsCXXTry(tryX))
     @test !CC.getIsCXXTry(tryX)                                     # __try, not C++ try
-    @test CC.getTryLoc(tryX) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getTryLoc(tryX))
     @test CC.getTryBlock(tryX) isa CC.CompoundStmt
     @test CC.getHandler(tryX) isa CC.Stmt
-    @test CC.getExceptHandler(tryX) isa CC.SEHExceptStmt
+    @test !CC.is_null_handle(CC.getExceptHandler(tryX))
     @test CC.getExceptHandler(tryX).ptr != C_NULL
     @test CC.getFinallyHandler(tryX).ptr == C_NULL
-    @test CC.getFinallyHandler(tryF) isa CC.SEHFinallyStmt
+    @test !CC.is_null_handle(CC.getFinallyHandler(tryF))
     @test CC.getFinallyHandler(tryF).ptr != C_NULL
 
     ex = excepts[1]
-    @test CC.getExceptLoc(ex) isa CC.SourceLocation
-    @test CC.getFilterExpr(ex) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getExceptLoc(ex))
+    @test !CC.is_null_handle(CC.getFilterExpr(ex))
     @test CC.getFilterExpr(ex).ptr != C_NULL
     @test CC.getBlock(ex) isa CC.CompoundStmt
 
     fin = finallys[1]
-    @test CC.getFinallyLoc(fin) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getFinallyLoc(fin))
     @test CC.getBlock(fin) isa CC.CompoundStmt
 
-    @test CC.getLeaveLoc(leaves[1]) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLeaveLoc(leaves[1]))
     dispose(fseh)
     dispose(Iseh)
 
@@ -699,16 +699,16 @@ end
         n isa CC.CapturedStmt && (cs = n; break)
     end
     @test cs isa CC.CapturedStmt
-    @test CC.getCapturedStmt(cs) isa CC.Stmt
+    @test !CC.is_null_handle(CC.getCapturedStmt(cs))
     @test CC.getCapturedStmt(cs).ptr != C_NULL
-    @test CC.getCapturedDecl(cs) isa CC.CapturedDecl
+    @test !CC.is_null_handle(CC.getCapturedDecl(cs))
     @test CC.getCapturedDecl(cs).ptr != C_NULL
-    @test CC.getCapturedRecordDecl(cs) isa CC.RecordDecl
+    @test !CC.is_null_handle(CC.getCapturedRecordDecl(cs))
     @test CC.getCapturedRecordDecl(cs).ptr != C_NULL
-    @test CC.capture_size(cs) isa Integer
+    @test CC.capture_size(cs) isa Integer  # shape-only: the target chooses this value
     @test CC.capture_size(cs) >= 1                                  # captures n
     paramN = CC.getParamDecl(ofd, 0)                               # the `int n` ParmVarDecl
-    @test CC.capturesVariable(cs, paramN) isa Bool
+    @test CC.capturesVariable(cs, paramN)
     @test CC.capturesVariable(cs, paramN)                          # n is captured
     dispose(fomp)
     dispose(Iomp)
@@ -736,21 +736,21 @@ end
     CC.parse(I, "void asmRW(int a, int b) { asm(\"\" : \"+r\"(b) : [in] \"r\"(a) : \"memory\"); }")
     a = findasm("asmRW")
     if a !== nothing
-        @test CC.isOutputPlusConstraint(a, 0) isa Bool
+        @test CC.isOutputPlusConstraint(a, 0)
         @test CC.isOutputPlusConstraint(a, 0)
         @test CC.getNumPlusOperands(a) == 1
-        @test CC.getOutputConstraintLiteral(a, 0) isa CC.StringLiteral
+        @test !CC.is_null_handle(CC.getOutputConstraintLiteral(a, 0))
         @test CC.getOutputConstraintLiteral(a, 0).ptr != C_NULL
-        @test CC.getOutputIdentifier(a, 0) isa CC.IdentifierInfo
+        @test CC.is_null_handle(CC.getOutputIdentifier(a, 0))
         @test CC.getOutputIdentifier(a, 0).ptr == C_NULL              # output has no [name]
         if CC.getNumInputs(a) > 0
-            @test CC.getInputIdentifier(a, 0) isa CC.IdentifierInfo
+            @test !CC.is_null_handle(CC.getInputIdentifier(a, 0))
             @test CC.getInputIdentifier(a, 0).ptr != C_NULL           # named [in]
-            @test CC.getInputConstraintLiteral(a, 0) isa CC.StringLiteral
+            @test !CC.is_null_handle(CC.getInputConstraintLiteral(a, 0))
             @test CC.getInputConstraintLiteral(a, 0).ptr != C_NULL
         end
         if CC.getNumClobbers(a) > 0
-            @test CC.getClobberStringLiteral(a, 0) isa CC.StringLiteral
+            @test !CC.is_null_handle(CC.getClobberStringLiteral(a, 0))
             @test CC.getClobberStringLiteral(a, 0).ptr != C_NULL
         end
     end
@@ -759,7 +759,7 @@ end
     g = findasm("asmGotoLbl")
     if g !== nothing && CC.isAsmGoto(g)
         @test CC.getNumLabels(g) == 1
-        @test CC.getLabelIdentifier(g, 0) isa CC.IdentifierInfo
+        @test !CC.is_null_handle(CC.getLabelIdentifier(g, 0))
         @test CC.getLabelIdentifier(g, 0).ptr != C_NULL              # label `Done`
     end
 
@@ -778,7 +778,7 @@ end
         end
     end
     if astmt !== nothing
-        @test CC.getAttrLoc(astmt) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getAttrLoc(astmt))
         na = CC.getNumAttrs(astmt)
         @test na isa Integer
         @test na >= 1
@@ -827,13 +827,13 @@ end
     @test pp isa String
     @test occursin("switch", pp)
     @test occursin("return", pp)
-    @test CC.printPretty(body, ctx, 2) isa String
+    @test !isempty(CC.printPretty(body, ctx, 2))
 
     # printJson is the pretty-printed text, escaped (and optionally quoted)
     js = CC.printJson(body, ctx)
     @test js isa String
     @test occursin("return", js)
-    @test CC.printJson(body, ctx, false) isa String
+    @test !isempty(CC.printJson(body, ctx, false))
 
     # Stmt: the node identifier is stable per node and distinct between nodes
     id = CC.getID(body, ctx)
@@ -863,7 +863,7 @@ end
     # Stmt: nothing in this function carries [[likely]]/[[unlikely]]
     @test CC.getLikelihood(body) isa CC.LibClangEx.CXLikelihood
     @test CC.getLikelihood(body) == CC.LibClangEx.CXLikelihood_LH_None
-    @test CC.getLikelihoodAttr(body) isa CC.Attr
+    @test CC.is_null_handle(CC.getLikelihoodAttr(body))
     @test CC.getLikelihoodAttr(body).ptr == C_NULL
 
     # DeclStmt: the group behind `int acc = 0;`
@@ -1021,7 +1021,7 @@ end
 
     # The all-enum-cases-covered flag is one-way — clang has no setter for the false
     # state — so only the value this test writes is asserted.
-    @test CC.isAllEnumCasesCovered(sw) isa Bool
+    @test !(CC.isAllEnumCasesCovered(sw))
     CC.setAllEnumCasesCovered(sw)
     @test CC.isAllEnumCasesCovered(sw)
 
@@ -1069,9 +1069,9 @@ end
 
     # CompoundStmt: the trailing FPOptionsOverride slot exists only when the body
     # changed the floating-point options, and getStoredFPFeatures asserts on it.
-    @test CC.hasStoredFPFeatures(body) isa Bool
+    @test CC.hasStoredFPFeatures(body) isa Bool  # shape-only: the host decides this
     if CC.hasStoredFPFeatures(body)
-        @test CC.getStoredFPFeatures(body) isa Integer
+        @test CC.getStoredFPFeatures(body) isa Integer  # shape-only: the host decides this
     else
         @test_throws AssertionError CC.getStoredFPFeatures(body)
     end
@@ -1131,7 +1131,7 @@ end
 
     for c in caps
         @test CC.getCaptureKind(c) isa LibClangEx.CXVariableCaptureKind
-        @test CC.getLocation(c) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getLocation(c))
         # the four forms partition the capture kinds: exactly one of them holds
         forms = [CC.capturesThis(c), CC.capturesVariable(c),
                  CC.capturesVariableByCopy(c), CC.capturesVariableArrayType(c)]
@@ -1658,7 +1658,7 @@ end
     @test ctrl isa String
     @test !isempty(ctrl)
     @test occursin("acc", ctrl)
-    @test CC.printPrettyControlled(CC.getThen(ifs), ctx, 2) isa String
+    @test !isempty(CC.printPrettyControlled(CC.getThen(ifs), ctx, 2))
 
     # Stmt::Profile — the two `if` branches are written identically, so their structural
     # profiles (hence their hashes) must agree, and a node hashes stably against itself.
@@ -1667,7 +1667,7 @@ end
     @test h_then isa Integer
     @test h_then == h_else
     @test CC.getProfileHash(body, ctx) == CC.getProfileHash(body, ctx)
-    @test CC.getProfileHash(body, ctx, true) isa Integer
+    @test CC.getProfileHash(body, ctx, true) isa Integer  # shape-only: the target chooses this value
 
     # ReturnStmt::setNRVOCandidate — only a statement built with a candidate owns the
     # trailing slot; the wrapper's assert restates that against getNRVOCandidate.
@@ -1784,7 +1784,7 @@ end
         ops = filter(CC.isOperand, pieces)
         @test length(ops) == 1                  # the single `%0` reference
         @test CC.getOperandNo(ops[1]) == 0
-        @test CC.getRange(ops[1]) isa CC.SourceRange
+        @test CC.getRange(ops[1]) isa CC.SourceRange  # shape-only
         @test CC.getModifier(ops[1]) isa Char    # '\0' when the reference carries none
         for p in pieces
             dispose(p)
@@ -1798,7 +1798,7 @@ end
     @test shell isa CC.AttributedStmt
     @test shell.ptr != C_NULL
     @test CC.getNumAttrs(shell) == 2
-    @test CC.getAttrLoc(shell) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getAttrLoc(shell))
     @test all(a -> a.ptr == C_NULL, CC.getAttrs(shell))
 
     dispose(f)
@@ -1831,7 +1831,7 @@ end
     @test [CC.getBodyStmt(body, i).ptr for i in 0:(n - 1)] == [k.ptr for k in kids]
     @test CC.getBodyStmt(body, 0).ptr == CC.body_front(body).ptr
     @test CC.getBodyStmt(body, n - 1).ptr == CC.body_back(body).ptr
-    @test CC.getBodyStmt(body, 0) isa CC.Stmt
+    @test !CC.is_null_handle(CC.getBodyStmt(body, 0))
     @test_throws AssertionError CC.getBodyStmt(body, n)
     @test_throws AssertionError CC.getBodyStmt(body, -1)
 
@@ -2125,7 +2125,7 @@ end
     @test CC.hasBraces(ms)                          # lbrace_loc is a valid location
     @test CC.getLBraceLoc(ms).ptr == loc.ptr
     @test CC.getNumAsmToks(ms) == 1
-    @test CC.getAsmTok(ms, 0) isa CC.Token
+    @test !CC.is_null_handle(CC.getAsmTok(ms, 0))
     @test CC.getAsmTok(ms, 0).ptr != tok.ptr        # the token value was copied
     @test CC.getNumOutputs(ms) == 1
     @test CC.getNumInputs(ms) == 1

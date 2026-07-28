@@ -123,3 +123,141 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "linked-chain iterators" begin
+    I = create_interpreter(["-std=c++17"])
+    CC.parse(I, """
+             namespace chainNS { struct ChainRec; struct ChainRec { int f; }; }
+             int chainFn(int n);
+             int chainFn(int n) { return n + 1; }
+             """)
+    ctx = CC.getASTContext(CC.get_sema(I))
+    tu = CC.getTranslationUnitDecl(ctx)
+    tu_dc = CC.castToDeclContext(tu)
+    name(d) = CC.getDeclKindName(d)
+
+    # --- DeclIterator must yield the declaration decls_begin names ---
+    # Walking the chain by hand is the reference: the iterator that advanced before
+    # yielding silently dropped this first element from every context.
+    first_decl = CC.decl_iterator_begin(tu_dc)
+    @test !CC.is_null_handle(first_decl)
+
+    by_hand = CC.AbstractDecl[]
+    s = first_decl
+    while !CC.is_null_handle(s)
+        push!(by_hand, s)
+        s = CC.getNextDeclInContext(s)
+    end
+    @test length(by_hand) >= 2
+
+    via_iter = collect(DeclIterator(tu))
+    @test length(via_iter) == length(by_hand)
+    @test first(via_iter).ptr == first_decl.ptr
+    @test [d.ptr for d in via_iter] == [d.ptr for d in by_hand]
+
+    # decls_in is the same walk expressed as a ChainIterator
+    @test [d.ptr for d in CC.decls_in(tu_dc)] == [d.ptr for d in by_hand]
+
+    # every top-level declaration the bulk extractor sees is in the chain; `decls`
+    # recurses into nested contexts, so it is a superset rather than an equal
+    bulk = Set(d.ptr for d in CC.decls(tu_dc))
+    @test all(d -> d.ptr in bulk, via_iter)
+
+    # --- collect/comprehension work, which needs IteratorSize ---
+    @test eltype(DeclIterator(tu)) == CC.AbstractDecl
+    @test Base.IteratorSize(DeclIterator(tu)) == Base.SizeUnknown()
+    @test length([name(d) for d in DeclIterator(tu)]) == length(by_hand)
+
+    # --- redecls walks the redeclaration chain most-recent-first ---
+    f = DeclFinder(I)
+    @assert f(I, "chainFn") "lookup failed: chainFn"
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    chain = collect(CC.redecls(fd))
+    @test length(chain) >= 2                       # a declaration and a definition
+    @test first(chain).ptr == CC.getMostRecentDecl(fd).ptr
+    @test CC.is_null_handle(CC.getPreviousDecl(last(chain)))   # ends at the first decl
+    @test allunique(d.ptr for d in chain)
+
+    # --- parents climbs out of a nested context to the translation unit ---
+    # Elements are resolved to their concrete carriers, so an `isa` test against a
+    # concrete class means something. Yielding base Decl carriers instead made every such
+    # test silently vacuous, which is the failure this asserts against.
+    @test any(d -> d isa CC.NamespaceDecl, via_iter)
+    @test any(d -> d isa CC.FunctionDecl, via_iter)
+    @test !all(d -> typeof(d) === CC.Decl, via_iter)
+    ns = nothing
+    for d in DeclIterator(tu)
+        d isa CC.NamespaceDecl && (ns = d; break)
+    end
+    @test ns !== nothing
+    if ns !== nothing
+        up = collect(CC.parents(CC.castToDeclContext(ns)))
+        @test !isempty(up)
+        @test last(up).ptr == tu_dc.ptr            # the walk terminates at the TU
+        @test allunique(dc.ptr for dc in up)
+        # the translation unit has no parent, so the chain from it is empty
+        @test isempty(collect(CC.parents(tu_dc)))
+        @test isempty(collect(CC.lexical_parents(tu_dc)))
+    end
+
+    dispose(I)
+end
+
+@testset "chain iterators over scopes, macros and qualifiers" begin
+    I = create_interpreter(["-std=c++17"])
+    CC.parse(I, """
+             #define CHAIN_M 1
+             #undef CHAIN_M
+             #define CHAIN_M 2
+             namespace chainQ { struct R { static int m; }; }
+             int chainQ::R::m = 0;
+             """)
+    sema = CC.get_sema(I)
+    ctx = CC.getASTContext(sema)
+    pp = CC.getPreprocessor(CC.get_instance(I))
+
+    # --- enclosing walks a hand-built scope chain outward and terminates ---
+    diag = CC.getDiagnostics(sema)
+    outer = CC.Scope(nothing, UInt32(CC.CXScopeFlags_DeclScope), diag)
+    inner = CC.Scope(outer, UInt32(CC.CXScopeFlags_DeclScope), diag)
+    chain = collect(CC.enclosing(inner))
+    @test length(chain) == 2
+    @test chain[1].ptr == inner.ptr
+    @test chain[2].ptr == outer.ptr
+    @test isempty(collect(CC.enclosing(CC.Scope(CC.CXScope(C_NULL)))))
+    dispose(inner)
+    dispose(outer)
+
+    # --- macro_history walks the #define/#undef chain, most recent first ---
+    ii = CC.getIdentifierInfo(pp, "CHAIN_M")
+    md = CC.getLocalMacroDirective(pp, ii)
+    if !CC.is_null_handle(md)
+        hist = collect(CC.macro_history(md))
+        @test length(hist) >= 2          # the redefinition, then the #undef, then the first
+        @test hist[1].ptr == md.ptr
+        @test allunique(d.ptr for d in hist)
+        @test CC.is_null_handle(CC.getPrevious(last(hist)))
+    end
+
+    # --- qualifiers walks a nested-name-specifier outward ---
+    # The out-of-line definition `int chainQ::R::m` is a top-level Var whose declarator
+    # carries the qualifier. Its kind establishes the class, so the carrier is sound.
+    tu_dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
+    vd = nothing
+    for d in CC.decls_in(tu_dc)
+        CC.getDeclKindName(d) == "Var" && (vd = CC.VarDecl(d.ptr); break)
+    end
+    @test vd !== nothing
+    if vd !== nothing
+        nns = CC.getQualifier(vd)
+        if !CC.is_null_handle(nns)
+            quals = collect(CC.qualifiers(nns))
+            @test !isempty(quals)
+            @test quals[1].ptr == nns.ptr
+            @test allunique(q.ptr for q in quals)
+            @test CC.is_null_handle(CC.getPrefix(last(quals)))
+        end
+    end
+
+    dispose(I)
+end

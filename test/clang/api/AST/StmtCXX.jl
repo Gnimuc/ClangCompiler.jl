@@ -31,8 +31,8 @@ using Test
     if frs isa CC.CXXForRangeStmt
         # no init-statement in this form -> a null carrier, still an AbstractStmt
         @test CC.getInit(frs) isa CC.AbstractStmt
-        @test CC.getRangeStmt(frs) isa CC.DeclStmt
-        @test CC.getLoopVarStmt(frs) isa CC.DeclStmt
+        @test !CC.is_null_handle(CC.getRangeStmt(frs))
+        @test !CC.is_null_handle(CC.getLoopVarStmt(frs))
         @test CC.getCond(frs) isa CC.Expr_   # implicit __begin != __end
         @test CC.getInc(frs) isa CC.Expr_    # implicit ++__begin
     end
@@ -87,25 +87,25 @@ using Test
     cbs = find_node(CC.CoroutineBodyStmt, root)
     @test cbs isa CC.CoroutineBodyStmt
     if cbs isa CC.CoroutineBodyStmt
-        @test CC.hasDependentPromiseType(cbs) isa Bool
+        @test !(CC.hasDependentPromiseType(cbs))
         @test CC.hasDependentPromiseType(cbs) == false
         @test CC.resolve(CC.getBody(cbs)) isa CC.CompoundStmt
-        @test CC.getPromiseDecl(cbs) isa CC.VarDecl
+        @test !CC.is_null_handle(CC.getPromiseDecl(cbs))
         @test CC.getInitSuspendStmt(cbs) isa CC.AbstractStmt
         @test CC.getFinalSuspendStmt(cbs) isa CC.AbstractStmt
         @test CC.getExceptionHandler(cbs) isa CC.AbstractStmt
-        @test CC.getAllocate(cbs) isa CC.Expr_
-        @test CC.getDeallocate(cbs) isa CC.Expr_
+        @test !CC.is_null_handle(CC.getAllocate(cbs))
+        @test !CC.is_null_handle(CC.getDeallocate(cbs))
         @test CC.getReturnStmt(cbs) isa CC.AbstractStmt
 
         crs = find_node(CC.CoreturnStmt, root)
         @test crs isa CC.CoreturnStmt
         if crs isa CC.CoreturnStmt
-            @test CC.getKeywordLoc(crs) isa CC.SourceLocation
-            @test CC.isImplicit(crs) isa Bool
+            @test !CC.is_null_handle(CC.getKeywordLoc(crs))
+            @test !(CC.isImplicit(crs))
             # `co_return;` has no operand -> null carrier
-            @test CC.getOperand(crs) isa CC.Expr_
-            @test CC.getPromiseCall(crs) isa CC.Expr_
+            @test CC.is_null_handle(CC.getOperand(crs))
+            @test !CC.is_null_handle(CC.getPromiseCall(crs))
         end
     end
     dispose(J)
@@ -125,15 +125,15 @@ end
     # the ParagraphComment refinement wherever it applies. Returns the paragraph count.
     function walk_comment(c, n)
         c.ptr == C_NULL && return n
-        @test CC.isInlineContentComment(c) isa Bool
-        @test CC.isBlockContentComment(c) isa Bool
-        @test CC.isHTMLTagComment(c) isa Bool
+        @test CC.isInlineContentComment(c) isa Bool  # shape-only
+        @test CC.isBlockContentComment(c) isa Bool  # shape-only
+        @test !(CC.isHTMLTagComment(c))
         pc = CC.ParagraphComment(c)
         if pc.ptr != C_NULL
             n += 1
             @test CC.getCommentKind(pc) == CC.CXCommentKind_ParagraphComment
             @test CC.isBlockContentComment(c)
-            @test CC.isWhitespace(pc) isa Bool
+            @test !(CC.isWhitespace(pc))
         end
         for j = 0:(CC.child_count(c) - 1)
             n = walk_comment(CC.getChild(c, j), n)
@@ -326,7 +326,7 @@ end
         @test n isa Integer
         @test n > 0
         for i = 0:(Int(n) - 1)
-            @test CC.getChildExclBody(cbs, i) isa CC.Stmt
+            @test CC.getChildExclBody(cbs, i) isa CC.Stmt  # shape-only
         end
         # The coroutine body is slot 0 of the full child list and the promise
         # declaration slot 1, so the body-excluded view starts at the promise.
@@ -350,17 +350,17 @@ end
                          CC.MSDependentExistsStmt[])
     @test length(mses) == 2
     for m in mses
-        @test CC.getKeywordLoc(m) isa CC.SourceLocation
-        @test CC.isIfExists(m) isa Bool
+        @test !CC.is_null_handle(CC.getKeywordLoc(m))
+        @test CC.isIfExists(m) isa Bool  # shape-only
         @test CC.isIfNotExists(m) == !CC.isIfExists(m)
-        @test CC.getQualifierRange(m) isa CC.SourceRange
-        @test CC.getQualifier(m) isa CC.NestedNameSpecifier
+        @test CC.getQualifierRange(m) isa CC.SourceRange  # shape-only
+        @test !CC.is_null_handle(CC.getQualifier(m))
         @test CC.getSubStmt(m) isa CC.CompoundStmt
         @test CC.getSubStmt(m).ptr != C_NULL
         ni = CC.getNameInfo(m)
         @test ni isa CC.DeclarationNameInfo
         @test ni.ptr != C_NULL
-        @test CC.getAsString(ni) isa String
+        @test !isempty(CC.getAsString(ni))
         dispose(ni)
     end
     @test any(CC.isIfExists, mses)

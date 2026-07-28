@@ -47,7 +47,7 @@ using Test
 
     # Mutating reset lands on the throwaway and leaves it readable
     CC.resetNonModularOptions(lo)
-    @test CC.trackLocalOwningModule(lo) isa Bool
+    @test !(CC.trackLocalOwningModule(lo))
     @test CC.getDefaultExceptionMode(lo) == CC.CXFPExceptionModeKind_FPE_Ignore
 
     dispose(inv)

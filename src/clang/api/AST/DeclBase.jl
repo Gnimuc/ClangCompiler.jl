@@ -222,8 +222,19 @@ function PrintStats(x::AbstractDecl)
 end
 
 # Decl Cast
+"""
+    castToDeclContext(x::AbstractDecl) -> DeclContext
+Cross from a declaration to the `DeclContext` base it also inherits.
+
+`x` must be a declaration that *is* a context. `Decl::castToDeclContext` switches on the
+declaration's kind and ends in `llvm_unreachable` for every other kind, so on a build
+without assertions it falls through and hands back a pointer that is neither null nor
+meaningful -- a `VarDecl` crossed and crossed back yields a different address. The kind is
+checked here with [`classof`](@ref), which is `DeclContext::classof`.
+"""
 function castToDeclContext(x::AbstractDecl)
     @check_ptrs x
+    @assert classof(x) "this declaration is not also a DeclContext"
     return DeclContext(clang_Decl_castToDeclContext(x))
 end
 

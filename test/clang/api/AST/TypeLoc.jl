@@ -158,7 +158,7 @@ end
     tl = tl_of("tbox")
     el = CC.resolve(tl)
     @test el isa CC.ElaboratedTypeLoc
-    @test CC.getElaboratedKeywordLoc(el) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getElaboratedKeywordLoc(el))
     nxt2 = CC.getNextTypeLoc(el)
     ts = CC.resolve(nxt2)
     @test ts isa CC.TemplateSpecializationTypeLoc
@@ -196,7 +196,7 @@ end
     attr = CC.getAttr(at)
     @test attr isa CC.Attr
     @test attr.ptr != C_NULL
-    @test CC.getSpelling(attr) isa String
+    @test !isempty(CC.getSpelling(attr))
     mloc = CC.getModifiedLoc(at)
     @test CC.getTypeLocClass(mloc) == TLX.CXTypeLocClass_Pointer
     CC.dispose(mloc)
@@ -217,8 +217,8 @@ end
     @test tl isa CC.TypeLoc
     @test !CC.isNull(tl)
     @test CC.resolve(CC.getTypePtr(CC.getType(tl))) isa CC.PointerType
-    @test CC.getSourceRange(tl) isa CC.SourceRange
-    @test CC.getBeginLoc(tl) isa CC.SourceLocation
+    @test CC.getSourceRange(tl) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getBeginLoc(tl))
 
     nxt = CC.getNextTypeLoc(tl)                     # the pointee (int) loc; owned box
     @test CC.resolve(CC.getTypePtr(CC.getType(nxt))) isa CC.BuiltinType

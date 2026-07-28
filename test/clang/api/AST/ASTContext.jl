@@ -136,7 +136,7 @@ end
     @test tsi isa CC.TypeSourceInfo
 
     # ---- getPredefinedStringLiteralFromCache (cache lookup) ----
-    @test CC.getPredefinedStringLiteralFromCache(ctx, "no_such_key") isa CC.StringLiteral
+    @test !CC.is_null_handle(CC.getPredefinedStringLiteralFromCache(ctx, "no_such_key"))
 
     dispose(f)
     dispose(I)
@@ -217,12 +217,12 @@ using ClangCompiler: get_tag
 
     aes = pick(CC.AtomicExpr)
     @test !isempty(aes)
-    @test CC.AtomicUsesUnsupportedLibcall(ctx, first(aes)) isa Bool
+    @test !(CC.AtomicUsesUnsupportedLibcall(ctx, first(aes)))
 
     igs = pick(CC.IndirectGotoStmt)
     @test !isempty(igs)
-    @test CC.getGotoLoc(first(igs)) isa CC.SourceLocation
-    @test CC.getStarLoc(first(igs)) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getGotoLoc(first(igs)))
+    @test !CC.is_null_handle(CC.getStarLoc(first(igs)))
 
     # ---------- template-pattern nodes: TemplateName / dependent exprs ----------
     @assert f(I, "CtaST")
@@ -245,13 +245,13 @@ using ClangCompiler: get_tag
     @test dsaty isa CC.DependentSizedArrayType
 
     tn = CC.getTemplateName(injt)
-    @test CC.getCanonicalTemplateName(ctx, tn) isa CC.TemplateName
+    @test !CC.is_null_handle(CC.getCanonicalTemplateName(ctx, tn))
     @test CC.hasSameTempalteName(ctx, tn, tn)
-    @test CC.getDeducedTemplateSpecializationType(ctx, tn, int_qt, false) isa CC.QualType
+    @test !CC.is_null_handle(CC.getDeducedTemplateSpecializationType(ctx, tn, int_qt, false))
 
     prd = CC.getDecl(injt)   # the pattern CXXRecordDecl; its TypeForDecl is the injected-class-name type
     tst_qt = CC.getInjectedSpecializationType(injt)
-    @test CC.getInjectedClassNameType(ctx, prd, tst_qt) isa CC.QualType
+    @test !CC.is_null_handle(CC.getInjectedClassNameType(ctx, prd, tst_qt))
 
     ttpd = CC.getDecl(ttpt)
     @test CC.getTemplateTypeParmType(ctx, CC.getDepth(ttpd), CC.getIndex(ttpd),
@@ -259,29 +259,29 @@ using ClangCompiler: get_tag
 
     dep_e = CC.getSizeExpr(dsaty)   # value-dependent DeclRefExpr to the N parameter
     loc = CC.getLocation(patt)
-    @test CC.getDependentAddressSpaceType(ctx, int_qt, dep_e, loc) isa CC.QualType
-    @test CC.getDependentBitIntType(ctx, false, dep_e) isa CC.QualType
-    @test CC.getDependentSizedExtVectorType(ctx, int_qt, dep_e, loc) isa CC.QualType
-    @test CC.getDependentSizedMatrixType(ctx, int_qt, dep_e, dep_e, loc) isa CC.QualType
+    @test !CC.is_null_handle(CC.getDependentAddressSpaceType(ctx, int_qt, dep_e, loc))
+    @test !CC.is_null_handle(CC.getDependentBitIntType(ctx, false, dep_e))
+    @test CC.getDependentSizedExtVectorType(ctx, int_qt, dep_e, loc) isa CC.QualType  # shape-only
+    @test CC.getDependentSizedMatrixType(ctx, int_qt, dep_e, dep_e, loc) isa CC.QualType  # shape-only
 
     # dependent NNS + identifier from `typename T::foo::type`
     @assert f(I, "CtaDep")
     patt2 = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
     dnty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt2)))))
     @test dnty isa CC.DependentNameType
-    @test CC.getDependentTemplateName(ctx, CC.getQualifier(dnty), CC.getIdentifier(dnty)) isa CC.TemplateName
+    @test !CC.is_null_handle(CC.getDependentTemplateName(ctx, CC.getQualifier(dnty), CC.getIdentifier(dnty)))
 
     # namespace-qualified NNS from `cta_ns::S cta_ns_sv;`
     ety = CC.resolve(CC.getTypePtr(CC.getType(CC.VarDecl(getptr("cta_ns_sv")))))
     @test ety isa CC.ElaboratedType
     nns = CC.getQualifier(ety)
-    @test CC.getCanonicalNestedNameSpecifier(ctx, nns) isa CC.NestedNameSpecifier
+    @test !CC.is_null_handle(CC.getCanonicalNestedNameSpecifier(ctx, nns))
 
     # ---------- DeclarationName / IdentifierInfo consumers ----------
     plain_fd = CC.FunctionDecl(getptr("cta_plain"))
-    @test CC.getAssumedTemplateName(ctx, CC.getDeclName(plain_fd)) isa CC.TemplateName
+    @test !CC.is_null_handle(CC.getAssumedTemplateName(ctx, CC.getDeclName(plain_fd)))
     ii = Base.get(CC.getIdents(ctx), "cta_macro_name")
-    @test CC.getMacroQualifiedType(ctx, int_qt, ii) isa CC.QualType
+    @test !CC.is_null_handle(CC.getMacroQualifiedType(ctx, int_qt, ii))
 
     # ---------- side-table registrations (throwaway TU state) ----------
     @assert f(I, "CtaVB")
@@ -300,20 +300,20 @@ using ClangCompiler: get_tag
     # NOTE: this family is backed by the C++ ABI object; under the Itanium ABI the
     # add* entry points are no-ops and the getters return NULL, so only isa-check.
     @test CC.addCopyConstructorForExceptionObject(ctx, exrd, copyc) === nothing
-    @test CC.getCopyConstructorForExceptionObject(ctx, exrd) isa CC.CXXConstructorDecl
+    @test CC.is_null_handle(CC.getCopyConstructorForExceptionObject(ctx, exrd))
 
     # typedef'd unnamed struct
     @assert f(I, "CtaUT")
     td = CC.TypedefDecl(get_decl(f).ptr)
     ut_tag = CC.getAsTagDecl(CC.getTypePtr(CC.getUnderlyingType(td)))
     @test CC.addTypedefNameForUnnamedTagDecl(ctx, ut_tag, td) === nothing
-    @test CC.getTypedefNameForUnnamedTagDecl(ctx, ut_tag) isa CC.TypedefNameDecl
+    @test CC.is_null_handle(CC.getTypedefNameForUnnamedTagDecl(ctx, ut_tag))
 
     # unnamed struct with a declarator
     uv = CC.VarDecl(getptr("cta_unnamed_var"))
     uv_tag = CC.getAsTagDecl(CC.getTypePtr(CC.getType(uv)))
     @test CC.addDeclaratorForUnnamedTagDecl(ctx, uv_tag, uv) === nothing
-    @test CC.getDeclaratorForUnnamedTagDecl(ctx, uv_tag) isa CC.DeclaratorDecl
+    @test CC.is_null_handle(CC.getDeclaratorForUnnamedTagDecl(ctx, uv_tag))
 
     ded_fd = CC.FunctionDecl(getptr("cta_dedret"))
     @test CC.adjustDeducedFunctionResultType(ctx, ded_fd, CC.getReturnType(ded_fd)) === nothing
@@ -325,7 +325,7 @@ using ClangCompiler: get_tag
     booltd = CC.buildImplicitTypedef(ctx, int_qt, "cta_BOOL")
     CC.setBOOLDecl(ctx, booltd)
     @test CC.getBOOLDecl(ctx).ptr != C_NULL
-    @test CC.getBOOLType(ctx) isa CC.QualType
+    @test !CC.is_null_handle(CC.getBOOLType(ctx))
 
     # implicit ImportDecl (null module) + addedLocalImportDecl
     tud = CC.getTranslationUnitDecl(ctx)
@@ -344,7 +344,7 @@ end
     I = create_interpreter(["-fms-extensions"])
     ctx = CC.get_ast_context(I)
     @test CC.getMSGuidTagDecl(ctx).ptr != C_NULL
-    @test CC.getMSGuidType(ctx) isa CC.TagType
+    @test !CC.is_null_handle(CC.getMSGuidType(ctx))
     CC.dispose(I)
 end
 
@@ -444,66 +444,66 @@ end
     @test block_qt isa CC.QualType
 
     # ---- sizes / alignments / widths ----
-    @test CC.getTypeSize(ctx, int_qt) isa Integer
-    @test CC.getSizeOf(ctx, int_qt) isa Integer
-    @test CC.getTypeAlign(ctx, int_qt) isa Integer
-    @test CC.getTypeUnadjustedAlign(ctx, int_qt) isa Integer
-    @test CC.getTypeAlignIfKnown(ctx, int_qt, 0) isa Integer
-    @test CC.getPreferredTypeAlign(ctx, int_qt) isa Integer
-    @test CC.getAlignOfGlobalVar(ctx, int_qt) isa Integer
-    @test CC.getIntWidth(ctx, int_qt) isa Integer
-    @test CC.getOpenMPDefaultSimdAlign(ctx, int_qt) isa Integer
-    @test CC.getTargetNullPointerValue(ctx, ptr_qt) isa Integer
-    @test CC.getCharWidth(ctx) isa Integer
-    @test CC.getASTAllocatedMemory(ctx) isa Integer
-    @test CC.getSideTableAllocatedMemory(ctx) isa Integer
-    @test CC.getTargetDefaultAlignForAttributeAligned(ctx) isa Integer
+    @test CC.getTypeSize(ctx, int_qt) isa Integer  # shape-only: the host decides this
+    @test CC.getSizeOf(ctx, int_qt) isa Integer  # shape-only: the host decides this
+    @test CC.getTypeAlign(ctx, int_qt) isa Integer  # shape-only: the host decides this
+    @test CC.getTypeUnadjustedAlign(ctx, int_qt) isa Integer  # shape-only: the host decides this
+    @test CC.getTypeAlignIfKnown(ctx, int_qt, 0) isa Integer  # shape-only: the host decides this
+    @test CC.getPreferredTypeAlign(ctx, int_qt) isa Integer  # shape-only: the host decides this
+    @test CC.getAlignOfGlobalVar(ctx, int_qt) isa Integer  # shape-only: the host decides this
+    @test CC.getIntWidth(ctx, int_qt) isa Integer  # shape-only: the target chooses this value
+    @test CC.getOpenMPDefaultSimdAlign(ctx, int_qt) isa Integer  # shape-only: the host decides this
+    @test CC.getTargetNullPointerValue(ctx, ptr_qt) isa Integer  # shape-only: the host decides this
+    @test CC.getCharWidth(ctx) isa Integer  # shape-only: the target chooses this value
+    @test CC.getASTAllocatedMemory(ctx) isa Integer  # shape-only: the target chooses this value
+    @test CC.getSideTableAllocatedMemory(ctx) isa Integer  # shape-only: the target chooses this value
+    @test CC.getTargetDefaultAlignForAttributeAligned(ctx) isa Integer  # shape-only: the host decides this
     @test CC.isDependceAllowed(ctx) isa Integer
 
     # ---- type builders taking one QualType ----
-    @test CC.getLValueReferenceType(ctx, int_qt) isa CC.QualType
-    @test CC.getRValueReferenceType(ctx, int_qt) isa CC.QualType
-    @test CC.getMemberPointerType(ctx, int_qt, CC.get_type_ptr(record_qt).ptr) isa CC.QualType
-    @test CC.getComplexType(ctx, float_qt) isa CC.QualType
-    @test CC.getConstType(ctx, int_qt) isa CC.QualType
-    @test CC.getVolatileType(ctx, int_qt) isa CC.QualType
-    @test CC.getRestrictType(ctx, ptr_qt) isa CC.QualType
-    @test CC.getAtomicType(ctx, int_qt) isa CC.QualType
-    @test CC.getParenType(ctx, int_qt) isa CC.QualType
-    @test CC.getCVRQualifiedType(ctx, int_qt, 1) isa CC.QualType
-    @test CC.getBaseElementType(ctx, array_qt) isa CC.QualType
-    @test CC.getArrayDecayedType(ctx, array_qt) isa CC.QualType
-    @test CC.getVariableArrayDecayedType(ctx, array_qt) isa CC.QualType
-    @test CC.getDecayedType(ctx, array_qt) isa CC.QualType
-    @test CC.getAdjustedParameterType(ctx, int_qt) isa CC.QualType
-    @test CC.getSignatureParameterType(ctx, int_qt) isa CC.QualType
-    @test CC.getExceptionObjectType(ctx, int_qt) isa CC.QualType
-    @test CC.getComplexType(ctx, int_qt) isa CC.QualType
-    @test CC.getExtVectorType(ctx, float_qt, 4) isa CC.QualType
-    @test CC.getConstantMatrixType(ctx, float_qt, 2, 2) isa CC.QualType
-    @test CC.getReadPipeType(ctx, int_qt) isa CC.QualType
-    @test CC.getWritePipeType(ctx, int_qt) isa CC.QualType
-    @test CC.getBitIntType(ctx, 0, 32) isa CC.QualType
-    @test CC.getIntTypeForBitwidth(ctx, 32, 1) isa CC.QualType
-    @test CC.getPromotedIntegerType(ctx, bool_qt) isa CC.QualType
-    @test CC.getCorrespondingUnsignedType(ctx, int_qt) isa CC.QualType
-    @test CC.getFunctionTypeWithoutPtrSizes(ctx, func_qt) isa CC.QualType
-    @test CC.getAdjustedType(ctx, int_qt, int_qt) isa CC.QualType
-    @test CC.getBlockDescriptorType(ctx) isa CC.QualType
-    @test CC.getBlockDescriptorExtendedType(ctx) isa CC.QualType
-    @test CC.removeAddrSpaceQualType(ctx, int_qt) isa CC.QualType
-    @test CC.removePtrSizeAddrSpace(ctx, int_qt) isa CC.QualType
-    @test CC.adjustStringLiteralBaseType(ctx, array_qt) isa CC.QualType
-    @test CC.getStringLiteralArrayType(ctx, char_qt, 5) isa CC.QualType
+    @test !CC.is_null_handle(CC.getLValueReferenceType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getRValueReferenceType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getMemberPointerType(ctx, int_qt, CC.get_type_ptr(record_qt).ptr))
+    @test !CC.is_null_handle(CC.getComplexType(ctx, float_qt))
+    @test !CC.is_null_handle(CC.getConstType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getVolatileType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getRestrictType(ctx, ptr_qt))
+    @test !CC.is_null_handle(CC.getAtomicType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getParenType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getCVRQualifiedType(ctx, int_qt, 1))
+    @test !CC.is_null_handle(CC.getBaseElementType(ctx, array_qt))
+    @test !CC.is_null_handle(CC.getArrayDecayedType(ctx, array_qt))
+    @test !CC.is_null_handle(CC.getVariableArrayDecayedType(ctx, array_qt))
+    @test !CC.is_null_handle(CC.getDecayedType(ctx, array_qt))
+    @test !CC.is_null_handle(CC.getAdjustedParameterType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getSignatureParameterType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getExceptionObjectType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getComplexType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getExtVectorType(ctx, float_qt, 4))
+    @test !CC.is_null_handle(CC.getConstantMatrixType(ctx, float_qt, 2, 2))
+    @test !CC.is_null_handle(CC.getReadPipeType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getWritePipeType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getBitIntType(ctx, 0, 32))
+    @test !CC.is_null_handle(CC.getIntTypeForBitwidth(ctx, 32, 1))
+    @test !CC.is_null_handle(CC.getPromotedIntegerType(ctx, bool_qt))
+    @test !CC.is_null_handle(CC.getCorrespondingUnsignedType(ctx, int_qt))
+    @test CC.getFunctionTypeWithoutPtrSizes(ctx, func_qt) isa CC.QualType  # shape-only: the host decides this
+    @test !CC.is_null_handle(CC.getAdjustedType(ctx, int_qt, int_qt))
+    @test !CC.is_null_handle(CC.getBlockDescriptorType(ctx))
+    @test !CC.is_null_handle(CC.getBlockDescriptorExtendedType(ctx))
+    @test !CC.is_null_handle(CC.removeAddrSpaceQualType(ctx, int_qt))
+    @test CC.removePtrSizeAddrSpace(ctx, int_qt) isa CC.QualType  # shape-only: the host decides this
+    @test !CC.is_null_handle(CC.adjustStringLiteralBaseType(ctx, array_qt))
+    @test !CC.is_null_handle(CC.getStringLiteralArrayType(ctx, char_qt, 5))
 
     # ---- array-type views ----
-    @test CC.getAsArrayType(ctx, array_qt) isa CC.ArrayType
+    @test !CC.is_null_handle(CC.getAsArrayType(ctx, array_qt))
     cat = CC.getAsConstantArrayType(ctx, array_qt)
     @test cat isa CC.ConstantArrayType
-    @test CC.getAsIncompleteArrayType(ctx, array_qt) isa CC.IncompleteArrayType
-    @test CC.getAsVariableArrayType(ctx, array_qt) isa CC.VariableArrayType
-    @test CC.getAsDependentSizedArrayType(ctx, array_qt) isa CC.DependentSizedArrayType
-    @test CC.getConstantArrayElementCount(ctx, cat) isa Integer
+    @test CC.is_null_handle(CC.getAsIncompleteArrayType(ctx, array_qt))
+    @test CC.is_null_handle(CC.getAsVariableArrayType(ctx, array_qt))
+    @test CC.getAsDependentSizedArrayType(ctx, array_qt) isa CC.DependentSizedArrayType  # shape-only
+    @test CC.getConstantArrayElementCount(ctx, cat) isa Integer  # shape-only: the target chooses this value
 
     # ---- predicates on QualTypes ----
     @test CC.hasUniqueObjectRepresentations(ctx, int_qt) isa Integer
@@ -511,9 +511,9 @@ end
     @test CC.hasDirectOwnershipQualifier(ctx, int_qt) isa Integer
 
     # ---- type ordering ----
-    @test CC.getFloatingTypeOrder(ctx, float_qt, double_qt) isa Integer
-    @test CC.getFloatingTypeSemanticOrder(ctx, float_qt, double_qt) isa Integer
-    @test CC.getIntegerTypeOrder(ctx, int_qt, uint_qt) isa Integer
+    @test CC.getFloatingTypeOrder(ctx, float_qt, double_qt) isa Integer  # shape-only: the target chooses this value
+    @test CC.getFloatingTypeSemanticOrder(ctx, float_qt, double_qt) isa Integer  # shape-only
+    @test CC.getIntegerTypeOrder(ctx, int_qt, uint_qt) isa Integer  # shape-only: the target chooses this value
 
     # ---- two-QualType comparisons ----
     @test CC.hasSameType(ctx, int_qt, int_qt) isa Integer
@@ -531,103 +531,105 @@ end
     @test CC.propertyTypesAreCompatible(ctx, int_qt, int_qt) isa Integer
 
     # ---- merge* builders ----
-    @test CC.mergeTypes(ctx, int_qt, int_qt, 0, 0, 0) isa CC.QualType
-    @test CC.mergeFunctionTypes(ctx, func_qt, func_qt, 0, 0, 0) isa CC.QualType
-    @test CC.mergeFunctionParameterTypes(ctx, int_qt, int_qt, 0, 0) isa CC.QualType
-    @test CC.mergeTransparentUnionType(ctx, int_qt, int_qt, 0, 0) isa CC.QualType
-    @test CC.mergeObjCGCQualifiers(ctx, int_qt, int_qt) isa CC.QualType
+    @test !CC.is_null_handle(CC.mergeTypes(ctx, int_qt, int_qt, 0, 0, 0))
+    @test !CC.is_null_handle(CC.mergeFunctionTypes(ctx, func_qt, func_qt, 0, 0, 0))
+    @test !CC.is_null_handle(CC.mergeFunctionParameterTypes(ctx, int_qt, int_qt, 0, 0))
+    @test CC.is_null_handle(CC.mergeTransparentUnionType(ctx, int_qt, int_qt, 0, 0))
+    @test !CC.is_null_handle(CC.mergeObjCGCQualifiers(ctx, int_qt, int_qt))
 
     # ---- no-argument QualType getters ----
-    @test CC.getAutoDeductType(ctx) isa CC.QualType
-    @test CC.getAutoRRefDeductType(ctx) isa CC.QualType
+    @test !CC.is_null_handle(CC.getAutoDeductType(ctx))
+    @test !CC.is_null_handle(CC.getAutoRRefDeductType(ctx))
     if CC.getBOOLDecl(ctx).ptr != C_NULL        # getBOOLType aborts on a null (ObjC) BOOL decl
-        @test CC.getBOOLType(ctx) isa CC.QualType
+        @test CC.getBOOLType(ctx) isa CC.QualType  # shape-only
     end
-    @test CC.getCFConstantStringType(ctx) isa CC.QualType
-    @test CC.getRawCFConstantStringType(ctx) isa CC.QualType
-    @test CC.getFILEType(ctx) isa CC.QualType
-    @test CC.getObjCClassRedefinitionType(ctx) isa CC.QualType
-    @test CC.getObjCIdRedefinitionType(ctx) isa CC.QualType
-    @test CC.getObjCInstanceType(ctx) isa CC.QualType
-    @test CC.getObjCProtoType(ctx) isa CC.QualType
-    @test CC.getObjCSuperType(ctx) isa CC.QualType
-    @test CC.getBuiltinMSVaListType(ctx) isa CC.QualType
-    @test CC.getSignedWCharType(ctx) isa CC.QualType
-    @test CC.getUnsignedWCharType(ctx) isa CC.QualType
+    @test !CC.is_null_handle(CC.getCFConstantStringType(ctx))
+    @test !CC.is_null_handle(CC.getRawCFConstantStringType(ctx))
+    @test CC.is_null_handle(CC.getFILEType(ctx))
+    @test !CC.is_null_handle(CC.getObjCClassRedefinitionType(ctx))
+    @test !CC.is_null_handle(CC.getObjCIdRedefinitionType(ctx))
+    @test !CC.is_null_handle(CC.getObjCInstanceType(ctx))
+    @test !CC.is_null_handle(CC.getObjCProtoType(ctx))
+    @test !CC.is_null_handle(CC.getObjCSuperType(ctx))
+    @test !CC.is_null_handle(CC.getBuiltinMSVaListType(ctx))
+    @test !CC.is_null_handle(CC.getSignedWCharType(ctx))
+    @test !CC.is_null_handle(CC.getUnsignedWCharType(ctx))
     @test CC.getWCharType(ctx) isa CC.QualType
-    @test CC.getWideCharType(ctx) isa CC.QualType
+    @test !CC.is_null_handle(CC.getWideCharType(ctx))
     @test CC.getWIntType(ctx) isa CC.QualType
     @test CC.getIntPtrType(ctx) isa CC.QualType
     @test CC.getUIntPtrType(ctx) isa CC.QualType
-    @test CC.getPointerDiffType(ctx) isa CC.QualType
-    @test CC.getUnsignedPointerDiffType(ctx) isa CC.QualType
+    @test !CC.is_null_handle(CC.getPointerDiffType(ctx))
+    @test !CC.is_null_handle(CC.getUnsignedPointerDiffType(ctx))
     @test CC.getProcessIDType(ctx) isa CC.QualType
-    @test CC.getLogicalOperationType(ctx) isa CC.QualType
+    @test !CC.is_null_handle(CC.getLogicalOperationType(ctx))
 
     # ---- singleton object / table getters ----
-    @test CC.getIdents(ctx) isa CC.IdentifierTable
-    @test CC.getDiagnostics(ctx) isa CC.DiagnosticsEngine
-    @test CC.getSourceManager(ctx) isa CC.SourceManager
-    @test CC.getTargetInfo(ctx) isa CC.TargetInfo
-    @test CC.getAuxTargetInfo(ctx) isa CC.TargetInfo
-    @test CC.getLangOpts(ctx) isa CC.LangOptions
-    @test CC.getTranslationUnitDecl(ctx) isa CC.TranslationUnitDecl
-    @test CC.getExternCContextDecl(ctx) isa CC.ExternCContextDecl
+    @test !CC.is_null_handle(CC.getIdents(ctx))
+    @test !CC.is_null_handle(CC.getDiagnostics(ctx))
+    @test !CC.is_null_handle(CC.getSourceManager(ctx))
+    @test CC.getTargetInfo(ctx) isa CC.TargetInfo  # shape-only: the host decides this
+    @test CC.getAuxTargetInfo(ctx) isa CC.TargetInfo  # shape-only: the host decides this
+    @test !CC.is_null_handle(CC.getLangOpts(ctx))
+    @test !CC.is_null_handle(CC.getTranslationUnitDecl(ctx))
+    @test !CC.is_null_handle(CC.getExternCContextDecl(ctx))
 
     # ---- decl getters (no arg) ----
-    @test CC.getBuiltinVaListDecl(ctx) isa CC.TypedefDecl
-    @test CC.getBuiltinMSVaListDecl(ctx) isa CC.TypedefDecl
-    @test CC.getVaListTagDecl(ctx) isa CC.Decl
-    @test CC.getBOOLDecl(ctx) isa CC.TypedefDecl
-    @test CC.getInt128Decl(ctx) isa CC.TypedefDecl
-    @test CC.getUInt128Decl(ctx) isa CC.TypedefDecl
-    @test CC.getObjCInstanceTypeDecl(ctx) isa CC.TypedefDecl
-    @test CC.getCFContantStringDecl(ctx) isa CC.TypedefDecl
-    @test CC.getCFConstantStringTagDecl(ctx) isa CC.RecordDecl
-    @test CC.getMakeIntegerSeqDecl(ctx) isa CC.BuiltinTemplateDecl
-    @test CC.getTypePackElementDecl(ctx) isa CC.BuiltinTemplateDecl
+    @test !CC.is_null_handle(CC.getBuiltinVaListDecl(ctx))
+    @test !CC.is_null_handle(CC.getBuiltinMSVaListDecl(ctx))
+    # target-decided: __va_list_tag is the SysV x86_64 spelling of va_list and does not
+    # exist on every target this suite runs on, so only the carrier shape is assertable
+    @test CC.getVaListTagDecl(ctx) isa CC.Decl  # shape-only: the host decides this
+    @test CC.is_null_handle(CC.getBOOLDecl(ctx))
+    @test !CC.is_null_handle(CC.getInt128Decl(ctx))
+    @test !CC.is_null_handle(CC.getUInt128Decl(ctx))
+    @test !CC.is_null_handle(CC.getObjCInstanceTypeDecl(ctx))
+    @test !CC.is_null_handle(CC.getCFContantStringDecl(ctx))
+    @test !CC.is_null_handle(CC.getCFConstantStringTagDecl(ctx))
+    @test !CC.is_null_handle(CC.getMakeIntegerSeqDecl(ctx))
+    @test !CC.is_null_handle(CC.getTypePackElementDecl(ctx))
     msgt = CC.getMSGuidTagDecl(ctx)
     @test msgt isa CC.TagDecl
     if msgt.ptr != C_NULL                       # getMSGuidType aborts on a null MSGuidTagDecl
-        @test CC.getMSGuidType(ctx) isa CC.TagType
+        @test CC.getMSGuidType(ctx) isa CC.TagType  # shape-only
     end
-    @test CC.getcudaConfigureCallDecl(ctx) isa CC.FunctionDecl
+    @test CC.is_null_handle(CC.getcudaConfigureCallDecl(ctx))
 
     # ---- identifier-name getters ----
-    @test CC.getBoolName(ctx) isa CC.IdentifierInfo
-    @test CC.getMakeIntegerSeqName(ctx) isa CC.IdentifierInfo
-    @test CC.getTypePackElementName(ctx) isa CC.IdentifierInfo
-    @test CC.getNSCopyingName(ctx) isa CC.IdentifierInfo
+    @test !CC.is_null_handle(CC.getBoolName(ctx))
+    @test !CC.is_null_handle(CC.getMakeIntegerSeqName(ctx))
+    @test !CC.is_null_handle(CC.getTypePackElementName(ctx))
+    @test !CC.is_null_handle(CC.getNSCopyingName(ctx))
 
     # ---- decl-argument accessors ----
-    @test CC.getTypeDeclType(ctx, mytypedef) isa CC.QualType
-    @test CC.getRecordType(ctx, CC.RecordDecl(point.ptr)) isa CC.QualType
-    @test CC.getTagDeclType(ctx, point) isa CC.QualType
-    @test CC.getTagDeclType(ctx, color) isa CC.QualType
+    @test !CC.is_null_handle(CC.getTypeDeclType(ctx, mytypedef))
+    @test !CC.is_null_handle(CC.getRecordType(ctx, CC.RecordDecl(point.ptr)))
+    @test !CC.is_null_handle(CC.getTagDeclType(ctx, point))
+    @test !CC.is_null_handle(CC.getTagDeclType(ctx, color))
     @test CC.getEnumType(ctx, color) isa CC.QualType
-    @test CC.getTypedefType(ctx, mytypedef, int_qt) isa CC.QualType
-    @test CC.getFieldOffset(ctx, field) isa Integer
-    @test CC.getInstantiatedFromUnnamedFieldDecl(ctx, field) isa CC.FieldDecl
-    @test CC.getManglingNumber(ctx, add_nd) isa Integer
-    @test CC.getStaticLocalNumber(ctx, gv_vd) isa Integer
-    @test CC.getInstantiatedFromUsingDecl(ctx, add_nd) isa CC.NamedDecl
-    @test CC.getPrimaryMergedDecl(ctx, add_nd) isa CC.Decl
-    @test CC.getCopyConstructorForExceptionObject(ctx, point) isa CC.CXXConstructorDecl
-    @test CC.getDeclaratorForUnnamedTagDecl(ctx, point) isa CC.DeclaratorDecl
-    @test CC.getTypedefNameForUnnamedTagDecl(ctx, point) isa CC.TypedefNameDecl
+    @test !CC.is_null_handle(CC.getTypedefType(ctx, mytypedef, int_qt))
+    @test CC.getFieldOffset(ctx, field) isa Integer  # shape-only: the target chooses this value
+    @test CC.is_null_handle(CC.getInstantiatedFromUnnamedFieldDecl(ctx, field))
+    @test CC.getManglingNumber(ctx, add_nd) isa Integer  # shape-only: the host decides this
+    @test CC.getStaticLocalNumber(ctx, gv_vd) isa Integer  # shape-only: the target chooses this value
+    @test CC.is_null_handle(CC.getInstantiatedFromUsingDecl(ctx, add_nd))
+    @test !CC.is_null_handle(CC.getPrimaryMergedDecl(ctx, add_nd))
+    @test CC.is_null_handle(CC.getCopyConstructorForExceptionObject(ctx, point))
+    @test CC.is_null_handle(CC.getDeclaratorForUnnamedTagDecl(ctx, point))
+    @test CC.is_null_handle(CC.getTypedefNameForUnnamedTagDecl(ctx, point))
     @test CC.canBuiltinBeRedeclared(ctx, add_fd) isa Integer
     @test CC.isMSStaticDataMemberInlineDefinition(ctx, gv_vd) isa Integer
     @test CC.isNearlyEmpty(ctx, point) isa Integer
     @test CC.BlockRequiresCopying(ctx, int_qt, gv_vd) isa Integer
 
     # ---- expr-argument accessors ----
-    @test CC.getDecltypeType(ctx, expr, int_qt) isa CC.QualType
-    @test CC.isPromotableBitField(ctx, expr) isa CC.QualType
+    @test !CC.is_null_handle(CC.getDecltypeType(ctx, expr, int_qt))
+    @test CC.is_null_handle(CC.isPromotableBitField(ctx, expr))
     @test CC.isSentinelNullExpr(ctx, expr) isa Integer
 
     # ---- TypeSourceInfo builders ----
-    @test CC.CreateTypeSourceInfo(ctx, int_qt, 0) isa CC.TypeSourceInfo
-    @test CC.getTrivialTypeSourceInfo(ctx, int_qt, CC.getLocation(add_fd)) isa CC.TypeSourceInfo
+    @test !CC.is_null_handle(CC.CreateTypeSourceInfo(ctx, int_qt, 0))
+    @test !CC.is_null_handle(CC.getTrivialTypeSourceInfo(ctx, int_qt, CC.getLocation(add_fd)))
 
     # ---- misc void return ----
     @test (CC.PrintStats(ctx); true)
@@ -747,12 +749,12 @@ end
     @test canon isa CC.QualType
     @test CC.hasSameType(ctx, canon, int_qt)
     @test CC.getCanonicalType(ctx, canon).ptr == canon.ptr
-    @test CC.getCanonicalParamType(ctx, int_qt) isa CC.QualType
-    @test CC.getCanonicalFunctionResultType(ctx, int_qt) isa CC.QualType
+    @test !CC.is_null_handle(CC.getCanonicalParamType(ctx, int_qt))
+    @test !CC.is_null_handle(CC.getCanonicalFunctionResultType(ctx, int_qt))
 
     # ---- common sugar of a type with itself is that same type ----
     @test CC.hasSameType(ctx, CC.getCommonSugaredType(ctx, int_qt, int_qt), int_qt)
-    @test CC.getCommonSugaredType(ctx, int_qt, int_qt, true) isa CC.QualType
+    @test !CC.is_null_handle(CC.getCommonSugaredType(ctx, int_qt, int_qt, true))
 
     # ---- signed counterpart round-trips back through the unsigned one ----
     signed_qt = CC.getCorrespondingSignedType(ctx, uint_qt)
@@ -771,15 +773,15 @@ end
     @test as_qt isa CC.QualType
     @test as_qt.ptr != int_qt.ptr
     @test CC.getLangASForBuiltinAddressSpace(ctx, 0) isa CC.CXLangAS
-    @test CC.addressSpaceMapManglingFor(ctx, CC.CXLangAS_Default) isa Bool
+    @test CC.addressSpaceMapManglingFor(ctx, CC.CXLangAS_Default) isa Bool  # shape-only: the host decides this
 
     # ---- calling convention is target-decided: only the shape is asserted ----
     @test CC.getDefaultCallingConvention(ctx, false, false) isa CC.CXCallingConv_
     @test CC.getDefaultCallingConvention(ctx, true, true, true) isa CC.CXCallingConv_
 
     # ---- context-wide singletons reachable from any translation unit ----
-    @test CC.getNSObjectName(ctx) isa CC.IdentifierInfo
-    @test CC.getCUIDHash(ctx) isa AbstractString
+    @test !CC.is_null_handle(CC.getNSObjectName(ctx))
+    @test isempty(CC.getCUIDHash(ctx))
 
     CC.parse(I, """
                 /// a documented probe
@@ -795,19 +797,19 @@ end
     @test f(I, "cc_ac_a_var")
     vd = CC.VarDecl(get_decl(f).ptr)
     @test CC.GetGVALinkageForVariable(ctx, vd) isa CC.CXGVALinkage
-    @test CC.DeclMustBeEmitted(ctx, vd) isa Bool
+    @test CC.DeclMustBeEmitted(ctx, vd)
     @test CC.getInlineVariableDefinitionKind(ctx, vd) isa CC.CXInlineVariableDefinitionKind
-    @test CC.getLocalCommentForDeclUncached(ctx, vd) isa CC.FullComment
+    @test !CC.is_null_handle(CC.getLocalCommentForDeclUncached(ctx, vd))
 
     @test f(I, "cc_ac_a_fun")
     fd = CC.FunctionDecl(get_decl(f).ptr)
     @test CC.GetGVALinkageForFunction(ctx, fd) isa CC.CXGVALinkage
-    @test CC.DeclMustBeEmitted(ctx, fd) isa Bool
+    @test CC.DeclMustBeEmitted(ctx, fd)
 
     @test f(I, "cc_ac_a_poly")
     poly = CC.CXXRecordDecl(get_decl(f).ptr)
     @test CC.isDynamicClass(poly)
-    @test CC.getCurrentKeyFunction(ctx, poly) isa CC.CXXMethodDecl
+    @test !CC.is_null_handle(CC.getCurrentKeyFunction(ctx, poly))
 
     @test f(I, "cc_ac_a_sdm")
     sdm = CC.CXXRecordDecl(get_decl(f).ptr)
@@ -861,13 +863,13 @@ end
     tot = CC.getTypeOfType(ctx, int_ty)
     @test tot isa CC.QualType
     @test CC.hasSameType(ctx, tot, int_ty)
-    @test CC.getTypeOfType(ctx, int_ty, true) isa CC.QualType
+    @test !CC.is_null_handle(CC.getTypeOfType(ctx, int_ty, true))
 
     toe = CC.getTypeOfExprType(ctx, init)
     @test toe isa CC.QualType
     @test CC.hasSameType(ctx, toe, int_ty)
 
-    @test CC.getReferenceQualifiedType(ctx, init) isa CC.QualType
+    @test !CC.is_null_handle(CC.getReferenceQualifiedType(ctx, init))
     @test CC.hasSameType(ctx, CC.getUnconstrainedType(ctx, int_ty), int_ty)
 
     # ---- identity predicates ----
@@ -900,9 +902,9 @@ end
     @test any(m -> CC.overridden_methods_size(ctx, m) > 0, ms)
 
     # ---- target / externalization queries ----
-    @test CC.getTargetAddressSpace(ctx) isa Integer
-    @test CC.mayExternalize(ctx, vd) isa Bool
-    @test CC.shouldExternalize(ctx, vd) isa Bool
+    @test CC.getTargetAddressSpace(ctx) isa Integer  # shape-only: the host decides this
+    @test !(CC.mayExternalize(ctx, vd))
+    @test !(CC.shouldExternalize(ctx, vd))
 
     dispose(f)
     dispose(I)
@@ -937,8 +939,8 @@ end
     @test packn isa CC.QualType
 
     # ---- NSInteger / NSUInteger: target word-integer typedef types ----
-    @test CC.getNSIntegerType(ctx) isa CC.QualType
-    @test CC.getNSUIntegerType(ctx) isa CC.QualType
+    @test !CC.is_null_handle(CC.getNSIntegerType(ctx))
+    @test !CC.is_null_handle(CC.getNSUIntegerType(ctx))
 
     # ---- RVV compatibility predicates: shape only (host target decides the value) ----
     dbl_t = CC.get_qual_type(CC.DoubleTy(ctx))
@@ -980,9 +982,9 @@ end
     @test m.ptr == C_NULL
 
     # ---- the C library typedef types: their decls are unset, so the QualTypes are null ----
-    @test CC.getjmp_bufType(ctx) isa CC.QualType
-    @test CC.getsigjmp_bufType(ctx) isa CC.QualType
-    @test CC.getucontext_tType(ctx) isa CC.QualType
+    @test CC.is_null_handle(CC.getjmp_bufType(ctx))
+    @test CC.is_null_handle(CC.getsigjmp_bufType(ctx))
+    @test CC.is_null_handle(CC.getucontext_tType(ctx))
 
     # ---- UnwrapSimilar*Types: in/out QualType references (MARSHALLING section 7) ----
     int_t = CC.get_qual_type(CC.IntTy(ctx))
@@ -1109,12 +1111,12 @@ end
     dump = CC.DumpRecordLayout(ctx, point)
     @test dump isa String
     @test !isempty(dump)
-    @test CC.DumpRecordLayout(ctx, point, true) isa String
+    @test !isempty(CC.DumpRecordLayout(ctx, point, true))
 
     # ---------- member-pointer path adjustment ----------
     mp_val = CC.evaluateValue(CC.VarDecl(getptr("ctae_mp")))
     if mp_val.ptr != C_NULL && CC.getKind(mp_val) == LXE.CXAPValueKind_MemberPointer
-        @test CC.getMemberPointerPathAdjustment(ctx, mp_val) isa Integer
+        @test CC.getMemberPointerPathAdjustment(ctx, mp_val) isa Integer  # shape-only: the host decides this
     end
 
     # ---------- MakeIntValue: APSInt across the LLVM-C bridge ----------
@@ -1169,7 +1171,7 @@ end
               LX.CXFloatModeKind_Float, LX.CXFloatModeKind_Double,
               LX.CXFloatModeKind_LongDouble, LX.CXFloatModeKind_Float128,
               LX.CXFloatModeKind_Ibm128)
-        @test CC.getRealTypeForBitwidth(ctx, 64, k) isa CC.QualType
+        @test !CC.is_null_handle(CC.getRealTypeForBitwidth(ctx, 64, k))
     end
     f32 = CC.getRealTypeForBitwidth(ctx, 32, LX.CXFloatModeKind_Float)
     @test f32.ptr != C_NULL
@@ -1183,7 +1185,7 @@ end
     @test imp.ptr == C_NULL
 
     # ---- ObjC side-table QualTypes: plain fields, unset in a C++ translation unit ----
-    @test CC.getObjCConstantStringInterface(ctx) isa CC.QualType
+    @test CC.is_null_handle(CC.getObjCConstantStringInterface(ctx))
     @test CC.getObjCNSStringType(ctx).ptr == C_NULL
     CC.setObjCNSStringType(ctx, int_qt)
     @test CC.getObjCNSStringType(ctx).ptr == int_qt.ptr
@@ -1296,11 +1298,11 @@ end
     @test CC.getLegacyIntegralTypeEncoding(ctx, int_qt).ptr == int_qt.ptr
 
     # ---- ObjC predicates over a C++ translation unit ----
-    @test CC.isObjCNSObjectType(int_qt) isa Bool
+    @test !(CC.isObjCNSObjectType(int_qt))
     @test !CC.isObjCNSObjectType(int_qt)
     @test CC.isObjCNSObjectType(int_qt) == CC.isObjCNSObjectType(CC.getTypePtr(int_qt))
     @test !CC.areComparableObjCPointerTypes(ctx, int_qt, int_qt)
-    @test CC.AnyObjCImplementation(ctx) isa Bool
+    @test !(CC.AnyObjCImplementation(ctx))
     @test !CC.AnyObjCImplementation(ctx)
 
     # ---- getAutoType: a deduced `auto` canonicalises to what it was deduced as ----
@@ -1674,7 +1676,7 @@ end
     # ---- ExtInfo rewrites on a freshly built function type ----
     fnty = CC.getFunctionType(ctx, int_qt, [int_qt])
     fpt = CC.FunctionProtoType(CC.getTypePtr(fnty).ptr)
-    @test CC.getNoReturnAttr(fpt) isa Bool
+    @test !(CC.getNoReturnAttr(fpt))
     adj = CC.adjustFunctionType(ctx, fpt, CC.CXCallingConv_CC_C, true, false)
     @test adj isa CC.Type_
     adj_fpt = CC.FunctionProtoType(adj.ptr)

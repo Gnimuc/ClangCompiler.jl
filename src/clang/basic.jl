@@ -34,3 +34,9 @@ function get_main_file_end_loc(src_mgr::SourceManager)
     dispose(id)
     return loc
 end
+
+"""
+    module_ancestors(x::AbstractModule) -> ChainIterator
+Iterate `x` and the modules containing it, outward to its top-level module.
+"""
+module_ancestors(x::AbstractModule) = ChainIterator(x, getParent)

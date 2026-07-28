@@ -14,20 +14,20 @@ using Test
     g = CC.resolve(nd)
 
     # source range / location
-    @test CC.getSourceRange(g) isa CC.SourceRange
-    @test CC.getBodyRBrace(g) isa CC.SourceLocation
+    @test CC.getSourceRange(g) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getBodyRBrace(g))
 
     # flags
     @test CC.isInvalidDecl(g) == false
     @test CC.isImplicit(g) == false
     @test CC.isFromASTFile(g) == false
     @test CC.isFileContextDecl(g) == false
-    @test CC.isFunctionPointerType(g) isa Bool
+    @test !(CC.isFunctionPointerType(g))
     @test CC.isLocalExternDecl(g) == false
     @test CC.getAccessUnsafe(g) isa CC.LibClangEx.CXAccessSpecifier
-    @test CC.isUsed(g) isa Bool
-    @test CC.isReferenced(g) isa Bool
-    @test CC.isThisDeclarationReferenced(g) isa Bool
+    @test !(CC.isUsed(g))
+    @test !(CC.isReferenced(g))
+    @test !(CC.isThisDeclarationReferenced(g))
 
     # identifier namespaces: a function is an ordinary name, never a tag
     ns = CC.getIdentifierNamespace(g)
@@ -38,20 +38,20 @@ using Test
 
     # availability / module ownership of a plain decl parsed from source
     @test CC.getAvailability(g) == CC.LibClangEx.CXAvailabilityResult_AR_Available
-    @test CC.getAvailabilityMessage(g) isa String
+    @test isempty(CC.getAvailabilityMessage(g))
     @test CC.isDeprecated(g) == false
     @test CC.isUnavailable(g) == false
-    @test CC.isWeakImported(g) isa Bool
+    @test !(CC.isWeakImported(g))
     @test CC.canBeWeakImported(g) isa Tuple{Bool,Bool}
     @test CC.getVersionIntroduced(g) === nothing
-    @test CC.hasOwningModule(g) isa Bool
+    @test !(CC.hasOwningModule(g))
     @test CC.getModuleOwnershipKind(g) isa CC.LibClangEx.CXDecl_ModuleOwnershipKind
-    @test CC.isUnconditionallyVisible(g) isa Bool
-    @test CC.isReachable(g) isa Bool
-    @test CC.isModulePrivate(g) isa Bool
-    @test CC.isInExportDeclContext(g) isa Bool
-    @test CC.isInvisibleOutsideTheOwningModule(g) isa Bool
-    @test CC.isInAnotherModuleUnit(g) isa Bool
+    @test CC.isUnconditionallyVisible(g)
+    @test CC.isReachable(g)
+    @test !(CC.isModulePrivate(g))
+    @test !(CC.isInExportDeclContext(g))
+    @test !(CC.isInvisibleOutsideTheOwningModule(g))
+    @test !(CC.isInAnotherModuleUnit(g))
 
     # body + redeclaration chain
     @test CC.hasBody(g)
@@ -61,7 +61,7 @@ using Test
     @test length(CC.getRedecls(g)) == n
 
     # attributes: none written, so the kind-indexed queries answer negatively
-    @test CC.getMaxAlignment(g) isa Integer
+    @test CC.getMaxAlignment(g) isa Integer  # shape-only: the host decides this
     @test CC.hasAttrOfKind(g, CC.LibClangEx.CXAttrKind_Deprecated) == false
     @test CC.getAttrOfKind(g, CC.LibClangEx.CXAttrKind_Deprecated).ptr == C_NULL
     @test CC.hasDefiningAttr(g) == false
@@ -76,19 +76,19 @@ using Test
     @test CC.isNamespace(dc)
     @test CC.decls_empty(dc) == false
     @test CC.Encloses(dc, dc)
-    @test CC.InEnclosingNamespaceSetOf(dc, dc) isa Bool
-    @test CC.getRedeclContext(dc) isa CC.DeclContext
-    @test CC.getEnclosingNamespaceContext(dc) isa CC.DeclContext
-    @test CC.getNonTransparentContext(dc) isa CC.DeclContext
-    @test CC.getNonTransparentDeclContext(g) isa CC.DeclContext
+    @test CC.InEnclosingNamespaceSetOf(dc, dc)
+    @test !CC.is_null_handle(CC.getRedeclContext(dc))
+    @test !CC.is_null_handle(CC.getEnclosingNamespaceContext(dc))
+    @test !CC.is_null_handle(CC.getNonTransparentContext(dc))
+    @test !CC.is_null_handle(CC.getNonTransparentDeclContext(g))
     @test CC.containsDecl(dc, g)
     @test CC.containsDeclAndLoad(dc, g)
     @test CC.isDeclInLexicalTraversal(dc, g)
     @test length(CC.collectAllContexts(dc)) == CC.getNumAllContexts(dc)
     @test length(CC.getUsingDirectives(dc)) == CC.getNumUsingDirectives(dc)
-    @test CC.hasExternalLexicalStorage(dc) isa Bool
-    @test CC.hasExternalVisibleStorage(dc) isa Bool
-    @test CC.shouldUseQualifiedLookup(dc) isa Bool
+    @test !(CC.hasExternalLexicalStorage(dc))
+    @test !(CC.hasExternalVisibleStorage(dc))
+    @test !(CC.shouldUseQualifiedLookup(dc))
 
     # lookup by DeclarationName round-trips back to the decl we started from
     name = CC.getDeclName(nd)
@@ -101,9 +101,9 @@ using Test
     @test CC.getNameKind(name) == CC.LibClangEx.CXDeclarationName_Identifier
     @test CC.isIdentifier(name)
     @test CC.isDependentName(name) == false
-    @test CC.getAsIdentifierInfo(name) isa CC.IdentifierInfo
+    @test !CC.is_null_handle(CC.getAsIdentifierInfo(name))
     @test CC.compare(name, name) == 0
-    @test CC.getAsString(CC.getUsingDirectiveName()) isa String
+    @test !isempty(CC.getAsString(CC.getUsingDirectiveName()))
     @test CC.getCXXOverloadedOperator(name) ==
           CC.LibClangEx.CXOverloadedOperatorKind_OO_None
 
@@ -118,12 +118,12 @@ using Test
 
     # DeclarationNameInfo: owned box, mutated and read back
     ni = CC.DeclarationNameInfo(name, CC.getLocation(nd))
-    @test CC.getSourceRange(ni) isa CC.SourceRange
+    @test CC.getSourceRange(ni) isa CC.SourceRange  # shape-only
     @test CC.isInstantiationDependent(ni) == false
     @test CC.containsUnexpandedParameterPack(ni) == false
     @test CC.getNamedTypeInfo(ni).ptr == C_NULL
-    @test CC.getCXXOperatorNameRange(ni) isa CC.SourceRange
-    @test CC.getCXXLiteralOperatorNameLoc(ni) isa CC.SourceLocation
+    @test CC.getCXXOperatorNameRange(ni) isa CC.SourceRange  # shape-only
+    @test CC.is_null_handle(CC.getCXXLiteralOperatorNameLoc(ni))
     CC.setName(ni, name)
     CC.setLoc(ni, CC.getLocation(nd))
     @test CC.getName(ni) == name
@@ -150,7 +150,7 @@ end
     # deserialization identity of a decl parsed from source
     @test CC.isFromASTFile(nd) == false
     @test CC.isDiscardedInGlobalModuleFragment(nd) == false
-    @test CC.shouldSkipCheckingODR(nd) isa Bool
+    @test !(CC.shouldSkipCheckingODR(nd))
     @test CC.getGlobalID(nd) == 0
     @test CC.getOwningModuleID(nd) == 0
 
@@ -216,7 +216,7 @@ end
     tail = flds[end]
     @test CC.getName(tail) == "tail"
     lvl = CC.LibClangEx.CXStrictFlexArraysLevelKind_Default
-    @test CC.isFlexibleArrayMemberLike(ctx, tail, CC.getType(tail), lvl) isa Bool
+    @test CC.isFlexibleArrayMemberLike(ctx, tail, CC.getType(tail), lvl)
     @test CC.isFlexibleArrayMemberLike(ctx, CC.Decl(C_NULL), CC.getType(tail), lvl,
                                        true) isa Bool
 
@@ -232,7 +232,7 @@ end
 
     # the DeclContext corners that bypass the cached lookup table
     dc = CC.getDeclContext(ga)
-    @test CC.noload_decls_begin(dc) isa CC.Decl
+    @test !CC.is_null_handle(CC.noload_decls_begin(dc))
     @test CC.noload_decls_begin(dc).ptr != C_NULL
     gname = CC.getDeclName(ga)
     uncached = CC.localUncachedLookup(dc, gname)
@@ -342,8 +342,8 @@ end
     lp = get_decl(f)
     dc = CC.getDeclContext(lp)
     prim = CC.getPrimaryContext(dc)
-    @test CC.buildLookup(prim) isa Bool
-    @test CC.hasLookupTable(prim) isa Bool
+    @test CC.buildLookup(prim)
+    @test CC.hasLookupTable(prim)
 
     # lookups(): one entry per name, every entry a usable lookup key
     names = CC.getLookupNames(dc)

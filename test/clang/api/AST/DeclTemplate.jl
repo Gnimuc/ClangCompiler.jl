@@ -72,26 +72,26 @@ import ClangCompiler as CC
     @test tpl isa CC.TemplateParameterList
     @test size(tpl) isa Integer                         # TemplateParameterList size
     @test CC.getDepth(tpl) isa Integer
-    @test CC.getMinRequiredArguments(tpl) isa Integer
-    @test CC.hasParameterPack(tpl) isa Bool
+    @test CC.getMinRequiredArguments(tpl) isa Integer  # shape-only: the target chooses this value
+    @test !(CC.hasParameterPack(tpl))
 
     p0 = CC.getParam(tpl, 0)                            # NamedDecl (T)
     @test p0 isa CC.NamedDecl
     ttp = CC.TemplateTypeParmDecl(p0.ptr)
     @test CC.getDepth(ttp) isa Integer
-    @test CC.getIndex(ttp) isa Integer
-    @test CC.isParameterPack(ttp) isa Bool
+    @test CC.getIndex(ttp) isa Integer  # shape-only: the target chooses this value
+    @test !(CC.isParameterPack(ttp))
 
     p1 = CC.getParam(tpl, 1)                            # NonTypeTemplateParmDecl (N)
     nttp = CC.NonTypeTemplateParmDecl(p1.ptr)
     @test CC.getDepth(nttp) isa Integer
-    @test CC.getIndex(nttp) isa Integer
-    @test CC.isParameterPack(nttp) isa Bool
+    @test CC.getIndex(nttp) isa Integer  # shape-only: the target chooses this value
+    @test !(CC.isParameterPack(nttp))
 
     # RedeclarableTemplateDecl / ClassTemplateDecl accessors on ctd
     trec = CC.getTemplatedDecl(ctd)                    # Redeclarable -> CXXRecordDecl
     @test trec isa CC.CXXRecordDecl
-    @test CC.isMemberSpecialization(ctd) isa Bool
+    @test !(CC.isMemberSpecialization(ctd))
     @test CC.isThisDeclarationADefinition(ctd) isa Bool
     @test CC.getCanonicalDecl(ctd) isa CC.ClassTemplateDecl
     @test CC.getMostRecentDecl(ctd) isa CC.ClassTemplateDecl
@@ -103,7 +103,7 @@ import ClangCompiler as CC
     if dt.ptr != C_NULL
         @test CC.getTemplatedDecl(dt) isa CC.NamedDecl # AbstractTemplateDecl path
     end
-    @test CC.getDescribedTemplateParams(trec) isa CC.TemplateParameterList
+    @test !CC.is_null_handle(CC.getDescribedTemplateParams(trec))
 
     # ---------- FunctionTemplateDecl (identity) ----------
     # A function-template name lookup yields an overload-set result, so pull the
@@ -117,11 +117,11 @@ import ClangCompiler as CC
         end
     end
     @test ftd isa CC.FunctionTemplateDecl
-    @test CC.getTemplateParameters(ftd) isa CC.TemplateParameterList
+    @test !CC.is_null_handle(CC.getTemplateParameters(ftd))
     # FunctionTemplateDecl overrides getCanonicalDecl to return FunctionTemplateDecl*,
     # so the wrapper carries the precise class rather than the Redeclarable base.
     @test CC.getCanonicalDecl(ftd) isa CC.FunctionTemplateDecl
-    @test CC.isMemberSpecialization(ftd) isa Bool
+    @test !(CC.isMemberSpecialization(ftd))
 
     # ---------- ClassTemplateSpecializationDecl (S<int,5>) ----------
     @test f(I, "s_inst")
@@ -136,7 +136,7 @@ import ClangCompiler as CC
         args = CC.getTemplateArgs(spec)                # TemplateArgumentList
         @test args isa CC.TemplateArgumentList
         @test size(args) isa Integer
-        @test CC.data(args) isa CC.TemplateArgument
+        @test !CC.is_null_handle(CC.data(args))
         if size(args) > 0
             @test get(args, 0) isa CC.TemplateArgument
         end
@@ -146,85 +146,85 @@ import ClangCompiler as CC
     # ---------- Decl base accessors (freefn) ----------
     @test f(I, "freefn")
     fd = CC.FunctionDecl(get_decl(f).ptr)
-    @test CC.getLocation(fd) isa CC.SourceLocation
-    @test CC.getBeginLoc(fd) isa CC.SourceLocation
-    @test CC.getEndLoc(fd) isa CC.SourceLocation
-    @test CC.getDeclKindName(fd) isa String
+    @test !CC.is_null_handle(CC.getLocation(fd))
+    @test !CC.is_null_handle(CC.getBeginLoc(fd))
+    @test !CC.is_null_handle(CC.getEndLoc(fd))
+    @test !isempty(CC.getDeclKindName(fd))
     @test (CC.getKind(fd); true)
-    @test CC.hasAttrs(fd) isa Bool
-    @test CC.getNumAttrs(fd) isa Integer
+    @test !(CC.hasAttrs(fd))
+    @test CC.getNumAttrs(fd) isa Integer  # shape-only: the target chooses this value
     @test CC.getAttrs(fd) isa Vector
-    @test CC.getNextDeclInContext(fd) isa CC.Decl
-    @test CC.getDeclContext(fd) isa CC.DeclContext
-    @test CC.getNonClosureContext(fd) isa CC.Decl
+    @test !CC.is_null_handle(CC.getNextDeclInContext(fd))
+    @test !CC.is_null_handle(CC.getDeclContext(fd))
+    @test !CC.is_null_handle(CC.getNonClosureContext(fd))
     tu = CC.getTranslationUnitDecl(fd)
     @test tu isa CC.TranslationUnitDecl
-    @test CC.isInAnonymousNamespace(fd) isa Bool
-    @test CC.isInStdNamespace(fd) isa Bool
-    @test CC.getASTContext(fd) isa CC.ASTContext
-    @test CC.getLangOpts(fd) isa CC.LangOptions
-    @test CC.getLexicalDeclContext(fd) isa CC.DeclContext
-    @test CC.isOutOfLine(fd) isa Bool
-    @test CC.isTemplated(fd) isa Bool
+    @test !(CC.isInAnonymousNamespace(fd))
+    @test !(CC.isInStdNamespace(fd))
+    @test !CC.is_null_handle(CC.getASTContext(fd))
+    @test !CC.is_null_handle(CC.getLangOpts(fd))
+    @test !CC.is_null_handle(CC.getLexicalDeclContext(fd))
+    @test !(CC.isOutOfLine(fd))
+    @test !(CC.isTemplated(fd))
     @test CC.getTemplateDepth(fd) isa Integer
-    @test CC.isDefinedOutsideFunctionOrMethod(fd) isa Bool
-    @test CC.isInLocalScopeForInstantiation(fd) isa Bool
-    @test CC.getParentFunctionOrMethod(fd) isa CC.DeclContext
+    @test CC.isDefinedOutsideFunctionOrMethod(fd)
+    @test !(CC.isInLocalScopeForInstantiation(fd))
+    @test CC.is_null_handle(CC.getParentFunctionOrMethod(fd))
     # getCanonicalDecl/getMostRecentDecl on AbstractDecl are shadowed for named
     # decls; the non-named TranslationUnitDecl reaches the DeclBase fallbacks.
     @test CC.getCanonicalDecl(tu) isa CC.Decl
-    @test CC.isCanonicalDecl(fd) isa Bool
+    @test CC.isCanonicalDecl(fd)
     @test CC.getPreviousDecl(fd) isa CC.Decl
-    @test CC.isFirstDecl(fd) isa Bool
+    @test CC.isFirstDecl(fd)
     @test CC.getMostRecentDecl(tu) isa CC.Decl
-    @test CC.isTemplateParameter(fd) isa Bool
-    @test CC.isTemplateParameterPack(fd) isa Bool
+    @test !(CC.isTemplateParameter(fd))
+    @test !(CC.isTemplateParameterPack(fd))
     @test CC.isParameterPack(fd) isa Bool               # AbstractDecl path
-    @test CC.isTemplateDecl(fd) isa Bool
-    @test CC.getDescribedTemplate(fd) isa CC.TemplateDecl
-    @test CC.getDescribedTemplateParams(fd) isa CC.TemplateParameterList
-    @test CC.getAsFunction(fd) isa CC.FunctionDecl
-    @test CC.getID(fd) isa Integer
+    @test !(CC.isTemplateDecl(fd))
+    @test CC.is_null_handle(CC.getDescribedTemplate(fd))
+    @test CC.is_null_handle(CC.getDescribedTemplateParams(fd))
+    @test !CC.is_null_handle(CC.getAsFunction(fd))
+    @test CC.getID(fd) isa Integer  # shape-only: the target chooses this value
     @test CC.getFunctionType(fd) isa CC.FunctionType
     @test (CC.dumpColor(fd); true)
 
     # castTo helpers off a Decl
-    @test CC.ValueDecl(fd) isa CC.ValueDecl
-    @test CC.CXXConstructorDecl(fd) isa CC.CXXConstructorDecl
+    @test !CC.is_null_handle(CC.ValueDecl(fd))
+    @test CC.is_null_handle(CC.CXXConstructorDecl(fd))
 
     # ---------- attributed decl (depvar) ----------
     @test f(I, "depvar")
     dv = CC.VarDecl(get_decl(f).ptr)
-    @test CC.hasAttrs(dv) isa Bool
+    @test CC.hasAttrs(dv)
     if CC.getNumAttrs(dv) > 0
-        @test CC.getAttr(dv, 0) isa CC.Attr
+        @test !CC.is_null_handle(CC.getAttr(dv, 0))
     end
 
     # ---------- Decl <-> DeclContext pivot + DeclContext accessors ----------
     tudc = CC.castToDeclContext(tu)
     @test tudc isa CC.DeclContext
-    @test CC.castFromDeclContext(tudc) isa CC.Decl
-    @test CC.getParentASTContext(tudc) isa CC.ASTContext
-    @test CC.getDeclKindName(tudc) isa String
+    @test !CC.is_null_handle(CC.castFromDeclContext(tudc))
+    @test !CC.is_null_handle(CC.getParentASTContext(tudc))
+    @test !isempty(CC.getDeclKindName(tudc))
     @test CC.getParent(tudc) isa CC.DeclContext
-    @test CC.getLexicalParent(tudc) isa CC.DeclContext
-    @test CC.getLookupParent(tudc) isa CC.DeclContext
-    @test CC.isClosure(tudc) isa Bool
-    @test CC.isFunctionOrMethod(tudc) isa Bool
-    @test CC.isLookupContext(tudc) isa Bool
-    @test CC.isFileContext(tudc) isa Bool
-    @test CC.isTranslationUnit(tudc) isa Bool
-    @test CC.isRecord(tudc) isa Bool
-    @test CC.isNamespace(tudc) isa Bool
-    @test CC.isStdNamespace(tudc) isa Bool
-    @test CC.isInlineNamespace(tudc) isa Bool
-    @test CC.is_dependent_context(tudc) isa Bool
-    @test CC.isTransparentContext(tudc) isa Bool
-    @test CC.isExternCContext(tudc) isa Bool
-    @test CC.isExternCXXContext(tudc) isa Bool
-    @test CC.Equals(tudc, tudc) isa Bool
-    @test CC.getPrimaryContext(tudc) isa CC.DeclContext
-    @test CC.decl_iterator_begin(tudc) isa CC.Decl
+    @test CC.is_null_handle(CC.getLexicalParent(tudc))
+    @test CC.is_null_handle(CC.getLookupParent(tudc))
+    @test !(CC.isClosure(tudc))
+    @test !(CC.isFunctionOrMethod(tudc))
+    @test CC.isLookupContext(tudc)
+    @test CC.isFileContext(tudc)
+    @test CC.isTranslationUnit(tudc)
+    @test !(CC.isRecord(tudc))
+    @test !(CC.isNamespace(tudc))
+    @test !(CC.isStdNamespace(tudc))
+    @test !(CC.isInlineNamespace(tudc))
+    @test !(CC.is_dependent_context(tudc))
+    @test !(CC.isTransparentContext(tudc))
+    @test !(CC.isExternCContext(tudc))
+    @test !(CC.isExternCXXContext(tudc))
+    @test CC.Equals(tudc, tudc)
+    @test !CC.is_null_handle(CC.getPrimaryContext(tudc))
+    @test !CC.is_null_handle(CC.decl_iterator_begin(tudc))
     @test CC.containsDecl(tudc, fd) isa Bool            # returns the membership bool, not nothing
     @test (CC.dumpDeclContext(tudc); true)
     @test (CC.dumpLookups(tudc); true)
@@ -232,10 +232,10 @@ import ClangCompiler as CC
     # record DeclContext casts
     recdc = CC.castToDeclContext(trec)
     @test recdc isa CC.DeclContext
-    @test CC.isRecord(recdc) isa Bool
-    @test CC.TagDecl(recdc) isa CC.TagDecl
-    @test CC.RecordDecl(recdc) isa CC.RecordDecl
-    @test CC.CXXRecordDecl(recdc) isa CC.CXXRecordDecl
+    @test CC.isRecord(recdc)
+    @test !CC.is_null_handle(CC.TagDecl(recdc))
+    @test !CC.is_null_handle(CC.RecordDecl(recdc))
+    @test !CC.is_null_handle(CC.CXXRecordDecl(recdc))
 
     dispose(f)
     dispose(I)
@@ -262,9 +262,9 @@ end
     # class, so the wrapper carries ClassTemplateDecl, not the Redeclarable base.
     @test CC.getInstantiatedFromMemberTemplate(ctd) isa CC.ClassTemplateDecl
     tpl = CC.getTemplateParameters(ctd)
-    @test CC.getTemplateLoc(tpl) isa CC.SourceLocation
-    @test CC.getLAngleLoc(tpl) isa CC.SourceLocation
-    @test CC.getRAngleLoc(tpl) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getTemplateLoc(tpl))
+    @test !CC.is_null_handle(CC.getLAngleLoc(tpl))
+    @test !CC.is_null_handle(CC.getRAngleLoc(tpl))
 
     # ---------- FunctionTemplateDecl (identity) ----------
     @test f(I, "identity")
@@ -278,7 +278,7 @@ end
     @test ftd isa CC.FunctionTemplateDecl
     @test CC.getTemplatedDecl(ftd) isa CC.FunctionDecl
     @test CC.isThisDeclarationADefinition(ftd) isa Bool
-    @test CC.isAbbreviated(ftd) isa Bool
+    @test !(CC.isAbbreviated(ftd))
     @test CC.getInstantiatedFromMemberTemplate(ftd) isa CC.FunctionTemplateDecl
 
     # ---------- VarTemplateDecl (vtmpl) ----------
@@ -310,9 +310,9 @@ end
     @test CC.specializedOnPartial(spec)
     partial = CC.getSpecializedTemplateOrPartial(spec)
     @test partial isa CC.ClassTemplatePartialSpecializationDecl
-    @test CC.getTemplateParameters(partial) isa CC.TemplateParameterList
-    @test CC.hasAssociatedConstraints(partial) isa Bool
-    @test CC.isMemberSpecialization(partial) isa Bool
+    @test !CC.is_null_handle(CC.getTemplateParameters(partial))
+    @test !(CC.hasAssociatedConstraints(partial))
+    @test !(CC.isMemberSpecialization(partial))
     @test CC.getInstantiatedFromMember(partial) isa CC.ClassTemplatePartialSpecializationDecl
 
     dispose(f)
@@ -341,9 +341,9 @@ end
     if CC.getDeclKindName(specrec) == "ClassTemplateSpecialization"
         cspec = CC.ClassTemplateSpecializationDecl(specrec.ptr)
         @test CC.getMostRecentDecl(cspec) isa CC.ClassTemplateSpecializationDecl
-        @test CC.getPointOfInstantiation(cspec) isa CC.SourceLocation
-        @test CC.isExplicitSpecialization(cspec) isa Bool
-        @test CC.isExplicitInstantiationOrSpecialization(cspec) isa Bool
+        @test !CC.is_null_handle(CC.getPointOfInstantiation(cspec))
+        @test !(CC.isExplicitSpecialization(cspec))
+        @test !(CC.isExplicitInstantiationOrSpecialization(cspec))
     end
 
     # ---------- VarTemplateSpecializationDecl (vpi<int>) ----------
@@ -360,11 +360,11 @@ end
         @test CC.getMostRecentDecl(vtsd) isa CC.VarTemplateSpecializationDecl
         @test CC.getSpecializedTemplate(vtsd) isa CC.VarTemplateDecl
         @test (CC.getSpecializationKind(vtsd); true)
-        @test CC.isExplicitSpecialization(vtsd) isa Bool
-        @test CC.isExplicitInstantiationOrSpecialization(vtsd) isa Bool
-        @test CC.getPointOfInstantiation(vtsd) isa CC.SourceLocation
-        @test CC.getExternLoc(vtsd) isa CC.SourceLocation
-        @test CC.getTemplateKeywordLoc(vtsd) isa CC.SourceLocation
+        @test CC.isExplicitSpecialization(vtsd)
+        @test CC.isExplicitInstantiationOrSpecialization(vtsd)
+        @test CC.is_null_handle(CC.getPointOfInstantiation(vtsd))
+        @test CC.is_null_handle(CC.getExternLoc(vtsd))
+        @test !CC.is_null_handle(CC.getTemplateKeywordLoc(vtsd))
         on_partial = CC.specializedOnPartial(vtsd)
         @test on_partial isa Bool
         arm = CC.getSpecializedTemplateOrPartial(vtsd)
@@ -376,10 +376,10 @@ end
         cnd = get_decl(f)
         if CC.getDeclKindName(cnd) == "Concept"
             cd = CC.ConceptDecl(cnd.ptr)
-            @test CC.getConstraintExpr(cd) isa CC.Expr_
-            @test CC.isTypeConcept(cd) isa Bool
+            @test !CC.is_null_handle(CC.getConstraintExpr(cd))
+            @test CC.isTypeConcept(cd)
             @test CC.getCanonicalDecl(cd) isa CC.ConceptDecl
-            @test CC.getSourceRange(cd) isa CC.SourceRange
+            @test CC.getSourceRange(cd) isa CC.SourceRange  # shape-only
         end
     end
 
@@ -405,7 +405,7 @@ end
     @test f(I, "CT")
     ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
     @test CC.hasAssociatedConstraints(ctd) isa Bool   # AbstractTemplateDecl path
-    @test CC.isTypeAlias(ctd) isa Bool
+    @test !(CC.isTypeAlias(ctd))
     @test !CC.isTypeAlias(ctd)                         # a class template is not an alias
 
     # ---------- ClassTemplateSpecializationDecl (CT<int>) ----------
@@ -415,12 +415,12 @@ end
     @test specrec isa CC.CXXRecordDecl
     if CC.getDeclKindName(specrec) == "ClassTemplateSpecialization"
         cspec = CC.ClassTemplateSpecializationDecl(specrec.ptr)
-        @test CC.isClassScopeExplicitSpecialization(cspec) isa Bool
-        @test CC.getTemplateInstantiationArgs(cspec) isa CC.TemplateArgumentList
+        @test !(CC.isClassScopeExplicitSpecialization(cspec))
+        @test !CC.is_null_handle(CC.getTemplateInstantiationArgs(cspec))
         @test CC.getTypeAsWritten(cspec) isa CC.TypeSourceInfo
-        @test CC.getExternLoc(cspec) isa CC.SourceLocation
-        @test CC.getTemplateKeywordLoc(cspec) isa CC.SourceLocation
-        @test CC.getSourceRange(cspec) isa CC.SourceRange
+        @test CC.is_null_handle(CC.getExternLoc(cspec))
+        @test CC.is_null_handle(CC.getTemplateKeywordLoc(cspec))
+        @test CC.getSourceRange(cspec) isa CC.SourceRange  # shape-only
     end
 
     # ---------- VarTemplateSpecializationDecl + its partial specialization ----------
@@ -443,17 +443,17 @@ end
 
     @test vtsd isa CC.VarTemplateSpecializationDecl
     if vtsd isa CC.VarTemplateSpecializationDecl
-        @test CC.isClassScopeExplicitSpecialization(vtsd) isa Bool
-        @test CC.getTemplateInstantiationArgs(vtsd) isa CC.TemplateArgumentList
+        @test !(CC.isClassScopeExplicitSpecialization(vtsd))
+        @test !CC.is_null_handle(CC.getTemplateInstantiationArgs(vtsd))
         @test CC.getTypeAsWritten(vtsd) isa CC.TypeSourceInfo
-        @test CC.getSourceRange(vtsd) isa CC.SourceRange
+        @test CC.getSourceRange(vtsd) isa CC.SourceRange  # shape-only
     end
 
     @test vtpsd isa CC.VarTemplatePartialSpecializationDecl
     if vtpsd isa CC.VarTemplatePartialSpecializationDecl
-        @test CC.getTemplateParameters(vtpsd) isa CC.TemplateParameterList
-        @test CC.hasAssociatedConstraints(vtpsd) isa Bool
-        @test CC.isMemberSpecialization(vtpsd) isa Bool
+        @test !CC.is_null_handle(CC.getTemplateParameters(vtpsd))
+        @test !(CC.hasAssociatedConstraints(vtpsd))
+        @test !(CC.isMemberSpecialization(vtpsd))
         @test CC.getInstantiatedFromMember(vtpsd) isa CC.VarTemplatePartialSpecializationDecl
     end
 
@@ -495,9 +495,9 @@ end
             @test CC.getInstantiatedFrom(msi) isa CC.NamedDecl
             @test CC.getName(CC.getInstantiatedFrom(msi)) == "DtInner"
             @test CC.getTemplateSpecializationKind(msi) isa CC.CXTemplateSpecializationKind
-            @test CC.isExplicitSpecialization(msi) isa Bool
+            @test !(CC.isExplicitSpecialization(msi))
             @test !CC.isExplicitSpecialization(msi)   # implicitly instantiated member
-            @test CC.getPointOfInstantiation(msi) isa CC.SourceLocation
+            @test !CC.is_null_handle(CC.getPointOfInstantiation(msi))
         end
     end
 
@@ -513,16 +513,16 @@ end
     end
     @test ftsi isa CC.FunctionTemplateSpecializationInfo
     if ftsi isa CC.FunctionTemplateSpecializationInfo
-        @test CC.getFunction(ftsi) isa CC.FunctionDecl
+        @test !CC.is_null_handle(CC.getFunction(ftsi))
         @test CC.getName(CC.getFunction(ftsi)) == "dt_ident"
-        @test CC.getTemplate(ftsi) isa CC.FunctionTemplateDecl
+        @test !CC.is_null_handle(CC.getTemplate(ftsi))
         @test CC.getName(CC.getTemplate(ftsi)) == "dt_ident"
         @test CC.getTemplateSpecializationKind(ftsi) isa CC.CXTemplateSpecializationKind
-        @test CC.isExplicitSpecialization(ftsi) isa Bool
-        @test CC.isExplicitInstantiationOrSpecialization(ftsi) isa Bool
-        @test CC.getPointOfInstantiation(ftsi) isa CC.SourceLocation
+        @test CC.isExplicitSpecialization(ftsi)
+        @test CC.isExplicitInstantiationOrSpecialization(ftsi)
+        @test CC.is_null_handle(CC.getPointOfInstantiation(ftsi))
         # NULL unless the specialization is also a class-template member specialization
-        @test CC.getMemberSpecializationInfo(ftsi) isa CC.MemberSpecializationInfo
+        @test CC.is_null_handle(CC.getMemberSpecializationInfo(ftsi))
     end
 
     # ---------- TemplateTemplateParmDecl (DtTtpBox's C) ----------
@@ -531,14 +531,14 @@ end
     p0 = CC.getParam(CC.getTemplateParameters(ttpbox), 0)
     @test CC.getDeclKindName(p0) == "TemplateTemplateParm"
     ttp = CC.TemplateTemplateParmDecl(p0.ptr)
-    @test CC.isPackExpansion(ttp) isa Bool
+    @test !(CC.isPackExpansion(ttp))
     @test !CC.isPackExpansion(ttp)
-    @test CC.isExpandedParameterPack(ttp) isa Bool
+    @test !(CC.isExpandedParameterPack(ttp))
     @test !CC.isExpandedParameterPack(ttp)
     @test CC.hasDefaultArgument(ttp)
-    @test CC.getDefaultArgumentLoc(ttp) isa CC.SourceLocation
-    @test CC.isValid(CC.getDefaultArgumentLoc(ttp)) isa Bool
-    @test CC.defaultArgumentWasInherited(ttp) isa Bool
+    @test !CC.is_null_handle(CC.getDefaultArgumentLoc(ttp))
+    @test CC.isValid(CC.getDefaultArgumentLoc(ttp))
+    @test !(CC.defaultArgumentWasInherited(ttp))
     @test !CC.defaultArgumentWasInherited(ttp)   # written on this very declaration
     # both expansion accessors restate the isExpandedParameterPack precondition
     @test_throws AssertionError CC.getNumExpansionTemplateParameters(ttp)
@@ -550,11 +550,11 @@ end
     n0 = CC.getParam(CC.getTemplateParameters(nttbox), 0)
     @test CC.getDeclKindName(n0) == "NonTypeTemplateParm"
     nttp = CC.NonTypeTemplateParmDecl(n0.ptr)
-    @test CC.defaultArgumentWasInherited(nttp) isa Bool
+    @test !(CC.defaultArgumentWasInherited(nttp))
     @test !CC.defaultArgumentWasInherited(nttp)
-    @test CC.isPackExpansion(nttp) isa Bool
+    @test !(CC.isPackExpansion(nttp))
     @test !CC.isPackExpansion(nttp)
-    @test CC.getPlaceholderTypeConstraint(nttp) isa CC.Expr_
+    @test CC.is_null_handle(CC.getPlaceholderTypeConstraint(nttp))
     @test CC.getPlaceholderTypeConstraint(nttp).ptr == C_NULL   # plain `int` parameter
 
     # a constrained placeholder (`DtAny auto V`) carries the constraint expression
@@ -562,7 +562,7 @@ end
         c0 = CC.getParam(CC.getTemplateParameters(CC.ClassTemplateDecl(get_decl(f).ptr)), 0)
         if CC.getDeclKindName(c0) == "NonTypeTemplateParm"
             cnttp = CC.NonTypeTemplateParmDecl(c0.ptr)
-            @test CC.getPlaceholderTypeConstraint(cnttp) isa CC.Expr_
+            @test !CC.is_null_handle(CC.getPlaceholderTypeConstraint(cnttp))
             @test CC.hasPlaceholderTypeConstraint(cnttp) ==
                   (CC.getPlaceholderTypeConstraint(cnttp).ptr != C_NULL)
         end
@@ -606,12 +606,12 @@ end
     @test length(ps) == 2
     @test all(p -> p isa CC.ClassTemplatePartialSpecializationDecl, ps)
     @test all(p -> p.ptr != C_NULL, ps)
-    @test CC.getInjectedClassNameSpecialization(ctd) isa CC.QualType
+    @test !CC.is_null_handle(CC.getInjectedClassNameSpecialization(ctd))
 
     p0 = ps[1]
     @test CC.getMostRecentDecl(p0) isa CC.ClassTemplatePartialSpecializationDecl
     @test CC.getMostRecentDecl(p0).ptr != C_NULL
-    @test CC.getTemplateArgsAsWritten(p0) isa CC.ASTTemplateArgumentListInfo
+    @test !CC.is_null_handle(CC.getTemplateArgsAsWritten(p0))
     tfd = CC.getTypeForDecl(p0)
     if tfd != C_NULL && CC.is_injected_class_name_type(CC.Type_(tfd))
         ist = CC.getInjectedSpecializationType(p0)
@@ -678,7 +678,7 @@ end
         @test length(vps) == 1
         @test vps[1] isa CC.VarTemplatePartialSpecializationDecl
         @test vps[1].ptr != C_NULL
-        @test CC.getTemplateArgsAsWritten(vps[1]) isa CC.ASTTemplateArgumentListInfo
+        @test !CC.is_null_handle(CC.getTemplateArgsAsWritten(vps[1]))
     end
 
     # ---------- VarTemplateSpecializationDecl as-written arguments ----------
@@ -692,7 +692,7 @@ end
     end
     @test vspec isa CC.VarTemplateSpecializationDecl
     if vspec isa CC.VarTemplateSpecializationDecl
-        @test CC.getTemplateArgsInfo(vspec) isa CC.ASTTemplateArgumentListInfo
+        @test !CC.is_null_handle(CC.getTemplateArgsInfo(vspec))
     end
 
     dispose(f)
@@ -727,7 +727,7 @@ end
     @test f(I, "DtfCon")
     ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
     tpl = CC.getTemplateParameters(ctd)
-    @test CC.containsUnexpandedParameterPack(tpl) isa Bool
+    @test !(CC.containsUnexpandedParameterPack(tpl))
     @test !CC.containsUnexpandedParameterPack(tpl)
     @test CC.hasAssociatedConstraints(tpl)
     plc = CC.getAssociatedConstraints(tpl)
@@ -750,14 +750,14 @@ end
     dtd = CC.ClassTemplateDecl(get_decl(f).ptr)
     dpl = CC.getTemplateParameters(dtd)
     ttp = CC.TemplateTypeParmDecl(CC.getParam(dpl, 0).ptr)
-    @test CC.isPackExpansion(ttp) isa Bool
+    @test !(CC.isPackExpansion(ttp))
     @test !CC.isPackExpansion(ttp)
     @test CC.hasDefaultArgument(ttp)
-    @test CC.getDefaultArgumentLoc(ttp) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getDefaultArgumentLoc(ttp))
     @test CC.isValid(CC.getDefaultArgumentLoc(ttp))
     nttp = CC.NonTypeTemplateParmDecl(CC.getParam(dpl, 1).ptr)
     @test CC.hasDefaultArgument(nttp)
-    @test CC.getDefaultArgumentLoc(nttp) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getDefaultArgumentLoc(nttp))
     @test CC.isValid(CC.getDefaultArgumentLoc(nttp))
     ttpp = CC.TemplateTemplateParmDecl(CC.getParam(dpl, 2).ptr)
     @test CC.hasDefaultArgument(ttpp)
@@ -791,9 +791,9 @@ end
         @test CC.getValue(tpo).ptr != C_NULL
         @test CC.getCanonicalDecl(tpo) isa CC.TemplateParamObjectDecl
         @test CC.getCanonicalDecl(tpo).ptr != C_NULL
-        @test CC.printAsExpr(tpo) isa String
         @test !isempty(CC.printAsExpr(tpo))
-        @test CC.printAsInit(tpo) isa String
+        @test !isempty(CC.printAsExpr(tpo))
+        @test !isempty(CC.printAsInit(tpo))
         @test !isempty(CC.printAsInit(tpo))
     end
 
@@ -1265,15 +1265,15 @@ end
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     @test CC.getSourceRange(ctd) isa CC.SourceRange           # AbstractTemplateDecl path
     tpl = CC.getTemplateParameters(ctd)
-    @test CC.shouldIncludeTypeForArgument(tpl, ctx, 0) isa Bool
-    @test CC.shouldIncludeTypeForArgument(tpl, ctx, 1) isa Bool
+    @test !(CC.shouldIncludeTypeForArgument(tpl, ctx, 0))
+    @test !(CC.shouldIncludeTypeForArgument(tpl, ctx, 1))
     # the predicate is total: an index past the end of the list answers true
     @test CC.shouldIncludeTypeForArgument(tpl, ctx, 99)
 
     # ---------- TemplateTypeParmDecl (constrained by DtiAny) ----------
     ttp = CC.resolve(CC.getParam(tpl, 0))
     @test ttp isa CC.TemplateTypeParmDecl
-    @test CC.getSourceRange(ttp) isa CC.SourceRange
+    @test CC.getSourceRange(ttp) isa CC.SourceRange  # shape-only
     tac = CC.getAssociatedConstraints(ttp)
     @test tac isa Vector{CC.Expr_}
     @test length(tac) == (CC.hasTypeConstraint(ttp) ? 1 : 0)
@@ -1284,7 +1284,7 @@ end
     # ---------- NonTypeTemplateParmDecl (plain `int N`, no placeholder) ----------
     nttp = CC.resolve(CC.getParam(tpl, 1))
     @test nttp isa CC.NonTypeTemplateParmDecl
-    @test CC.getSourceRange(nttp) isa CC.SourceRange
+    @test CC.getSourceRange(nttp) isa CC.SourceRange  # shape-only
     nac = CC.getAssociatedConstraints(nttp)
     @test nac isa Vector{CC.Expr_}
     @test length(nac) == (CC.hasPlaceholderTypeConstraint(nttp) ? 1 : 0)
@@ -1294,12 +1294,12 @@ end
     tt_ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
     ttparm = CC.resolve(CC.getParam(CC.getTemplateParameters(tt_ctd), 0))
     @test ttparm isa CC.TemplateTemplateParmDecl
-    @test CC.getSourceRange(ttparm) isa CC.SourceRange
+    @test CC.getSourceRange(ttparm) isa CC.SourceRange  # shape-only
 
     # ---------- BuiltinTemplateDecl ----------
     btd = CC.getMakeIntegerSeqDecl(ctx)
     @test btd isa CC.BuiltinTemplateDecl
-    @test CC.getSourceRange(btd) isa CC.SourceRange
+    @test CC.getSourceRange(btd) isa CC.SourceRange  # shape-only
 
     # ---------- ClassTemplatePartialSpecializationDecl ----------
     cpss = CC.getPartialSpecializations(ctd)
@@ -1346,7 +1346,7 @@ end
            CC.VarTemplatePartialSpecializationDecl[]
     @test length(vpss) == 1
     for p in vpss
-        @test CC.getSourceRange(p) isa CC.SourceRange
+        @test CC.getSourceRange(p) isa CC.SourceRange  # shape-only
         vac = CC.getAssociatedConstraints(p)
         @test vac isa Vector{CC.Expr_}
         @test CC.hasAssociatedConstraints(p) == !isempty(vac)
@@ -1566,7 +1566,7 @@ end
     @test CC.structurallyEquals(e0, e0) == true
     @test CC.structurallyEquals(e0, e1) == false
     @test occursin("int", CC.print(e0, ctx, false))
-    @test CC.print(pack, ctx, true) isa AbstractString
+    @test !isempty(CC.print(pack, ctx, true))
     @test_throws AssertionError CC.getPackElement(pack, 2)
     @test_throws AssertionError CC.pack_size(e0)
 
@@ -1580,7 +1580,7 @@ end
     @test fty isa CC.TemplateSpecializationType
     earg = CC.getArg(fty, 0)
     @test CC.getKind(earg) == CC.LibClangEx.CXTemplateArgument_Expression
-    @test CC.getAsExpr(earg) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getAsExpr(earg))
     @test CC.getAsExpr(earg).ptr != C_NULL
     @test CC.containsUnexpandedParameterPack(earg) == false
     @test CC.isPackExpansion(earg) == false
@@ -1595,11 +1595,11 @@ end
     targ_t = CC.getArgument(tal_t)
     @test targ_t isa CC.TemplateArgument
     @test CC.getKind(targ_t) == CC.LibClangEx.CXTemplateArgument_Template
-    @test CC.getLocation(tal_t) isa CC.SourceLocation
-    @test CC.getSourceRange(tal_t) isa CC.SourceRange
-    @test CC.getTemplateNameLoc(tal_t) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocation(tal_t))
+    @test CC.getSourceRange(tal_t) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getTemplateNameLoc(tal_t))
     # a plain Template argument carries no ellipsis, so that location stays invalid
-    @test CC.getTemplateEllipsisLoc(tal_t) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getTemplateEllipsisLoc(tal_t))
     # getTypeSourceInfo is NULL for every kind other than Type
     @test CC.getTypeSourceInfo(tal_t).ptr == C_NULL
     @test_throws AssertionError CC.getSourceExpression(tal_t)
@@ -1616,17 +1616,17 @@ end
     li = CC.getTemplateArgsAsWritten(partial)
     @test li.ptr != C_NULL
     @test CC.getNumTemplateArgs(li) == 2
-    @test CC.getLAngleLoc(li) isa CC.SourceLocation
-    @test CC.getRAngleLoc(li) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLAngleLoc(li))
+    @test !CC.is_null_handle(CC.getRAngleLoc(li))
     tal0 = CC.getTemplateArg(li, 0)
     @test tal0 isa CC.TemplateArgumentLoc
     @test CC.getKind(CC.getArgument(tal0)) == CC.LibClangEx.CXTemplateArgument_Type
     @test CC.getTypeSourceInfo(tal0).ptr != C_NULL
-    @test CC.getLocation(tal0) isa CC.SourceLocation
-    @test CC.getSourceRange(tal0) isa CC.SourceRange
+    @test !CC.is_null_handle(CC.getLocation(tal0))
+    @test CC.getSourceRange(tal0) isa CC.SourceRange  # shape-only
     tal1 = CC.getTemplateArg(li, 1)
     @test CC.getKind(CC.getArgument(tal1)) == CC.LibClangEx.CXTemplateArgument_Expression
-    @test CC.getSourceExpression(tal1) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getSourceExpression(tal1))
     @test CC.getSourceExpression(tal1).ptr != C_NULL
     @test_throws AssertionError CC.getTemplateArg(li, 2)
 
@@ -1747,7 +1747,7 @@ end
     fr_t = CC.FriendTemplateDecl(ctx, tu_dc, box_loc, [box_params], tsi, friend_loc)
     @test CC.getFriendType(fr_t).ptr == tsi.ptr
     @test CC.getFriendDecl(fr_t).ptr == C_NULL
-    @test CC.getFriendLoc(fr_t) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getFriendLoc(fr_t))
 
     # ---------------- inherited default arguments, one per parameter kind ----------------
     @test f(I, "FacInhType")
@@ -1891,11 +1891,11 @@ end
     cparm = CC.TemplateTypeParmDecl(CC.getParam(CC.getTemplateParameters(ctd_c), 0).ptr)
     @test CC.hasTypeConstraint(cparm)
     @test CC.hasInitializedTypeConstraint(cparm)
-    @test CC.getTypeConstraintConcept(cparm) isa CC.ConceptDecl
+    @test !CC.is_null_handle(CC.getTypeConstraintConcept(cparm))
     @test CC.getName(CC.getTypeConstraintConcept(cparm)) == "TpConcept"
-    @test CC.getTypeConstraintImmediatelyDeclaredConstraint(cparm) isa CC.Expr_
-    @test CC.getTypeConstraintConceptNameLoc(cparm) isa CC.SourceLocation
-    @test CC.getTypeConstraintTemplateArgsAsWritten(cparm) isa CC.ASTTemplateArgumentListInfo
+    @test !CC.is_null_handle(CC.getTypeConstraintImmediatelyDeclaredConstraint(cparm))
+    @test !CC.is_null_handle(CC.getTypeConstraintConceptNameLoc(cparm))
+    @test CC.is_null_handle(CC.getTypeConstraintTemplateArgsAsWritten(cparm))
     # an unconstrained parameter has no slot to read, and every accessor refuses it
     @test_throws AssertionError CC.getTypeConstraintConcept(ttp)
     @test_throws AssertionError CC.getTypeConstraintImmediatelyDeclaredConstraint(ttp)

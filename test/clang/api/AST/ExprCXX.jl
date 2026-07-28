@@ -59,16 +59,16 @@ end
     le = find_node(CC.LambdaExpr, CC.resolve(CC.getBody(fn)))
     @test le isa CC.LambdaExpr
     @test CC.getCaptureDefault(le) == CC.LibClangEx.CXLambdaCaptureDefault_LCD_None
-    @test CC.getCaptureDefaultLoc(le) isa CC.SourceLocation
-    @test CC.getIntroducerRange(le) isa CC.SourceRange
-    @test CC.hasExplicitParameters(le) isa Bool
+    @test CC.is_null_handle(CC.getCaptureDefaultLoc(le))
+    @test CC.getIntroducerRange(le) isa CC.SourceRange  # shape-only
+    @test CC.hasExplicitParameters(le)
     @test CC.hasExplicitResultType(le) == false
-    @test CC.getCompoundStmtBody(le) isa CC.CompoundStmt
-    @test CC.getTemplateParameterList(le) isa CC.TemplateParameterList
-    @test CC.getDependentCallOperator(le) isa CC.FunctionTemplateDecl
-    @test CC.getTrailingRequiresClause(le) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCompoundStmtBody(le))
+    @test CC.is_null_handle(CC.getTemplateParameterList(le))
+    @test CC.is_null_handle(CC.getDependentCallOperator(le))
+    @test CC.is_null_handle(CC.getTrailingRequiresClause(le))
     @test CC.getNumCaptures(le) == 1
-    @test CC.getCaptureInit(le, 0) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCaptureInit(le, 0))
     @test CC.isInitCapture(le, CC.getCapture(le, 0)) == false
 
     @test f(I, "use_default")
@@ -89,10 +89,10 @@ end
     fn2 = CC.FunctionDecl(get_decl(f).ptr)
     ce = find_node(CC.AbstractCXXConstructExpr, CC.resolve(CC.getBody(fn2)))
     @test ce isa CC.AbstractCXXConstructExpr
-    @test CC.getParenOrBraceRange(ce) isa CC.SourceRange
+    @test CC.getParenOrBraceRange(ce) isa CC.SourceRange  # shape-only
     @test CC.getNumArgs(ce) >= 1
     if ce isa CC.CXXTemporaryObjectExpr
-        @test CC.getTypeSourceInfo(ce) isa CC.TypeSourceInfo
+        @test CC.getTypeSourceInfo(ce) isa CC.TypeSourceInfo  # shape-only
     end
 
     @test f(I, "make_new")
@@ -100,8 +100,8 @@ end
     ne = find_node(CC.CXXNewExpr, CC.resolve(CC.getBody(fn3)))
     @test ne isa CC.CXXNewExpr
     @test CC.getNumPlacementArgs(ne) == 0
-    @test CC.getDirectInitRange(ne) isa CC.SourceRange
-    @test CC.getTypeIdParens(ne) isa CC.SourceRange
+    @test CC.getDirectInitRange(ne) isa CC.SourceRange  # shape-only
+    @test CC.getTypeIdParens(ne) isa CC.SourceRange  # shape-only
 
     dispose(f)
     dispose(I)
@@ -159,7 +159,7 @@ end
     th = find_node(CC.CXXThrowExpr, fn_body("cc_throw"))
     @test th isa CC.CXXThrowExpr
     if th !== nothing
-        @test CC.getThrowLoc(th) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getThrowLoc(th))
         sub = CC.getSubExpr(th)
         @test sub isa CC.Expr_
         @test sub.ptr != C_NULL          # `throw 42;` has an operand
@@ -196,8 +196,8 @@ end
     end
     ewc = find_node(CC.ExprWithCleanups, tmpb)
     if ewc !== nothing
-        @test CC.getNumObjects(ewc) isa Integer
-        @test CC.cleanupsHaveSideEffects(ewc) isa Bool
+        @test CC.getNumObjects(ewc) isa Integer  # shape-only: the target chooses this value
+        @test CC.cleanupsHaveSideEffects(ewc)
     end
 
     # CXXDefaultInitExpr (aggregate init filling in the default member initializer)
@@ -214,7 +214,7 @@ end
     @test sp isa CC.SizeOfPackExpr
     if sp !== nothing
         @test CC.getPack(sp).ptr != C_NULL
-        @test CC.isPartiallySubstituted(sp) isa Bool
+        @test !(CC.isPartiallySubstituted(sp))
     end
 
     fe = find_node(CC.CXXFoldExpr, tpl_body("cc_fold"))
@@ -252,7 +252,7 @@ end
     udl = find_node(CC.UserDefinedLiteral, CC.resolve(CC.getBody(fn)))
     @test udl isa CC.UserDefinedLiteral
     @test CC.getLiteralOperatorKind(udl) == CC.LibClangEx.CXUserDefinedLiteral_LOK_Integer
-    @test CC.getCookedLiteral(udl) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCookedLiteral(udl))
     ii = CC.getUDSuffix(udl)
     @test ii isa CC.IdentifierInfo
     @test CC.isStr(ii, "_k")
@@ -261,14 +261,14 @@ end
     fn2 = CC.FunctionDecl(CC.get_decl(f).ptr)
     svi = find_node(CC.CXXScalarValueInitExpr, CC.resolve(CC.getBody(fn2)))
     @test svi isa CC.CXXScalarValueInitExpr
-    @test CC.getTypeSourceInfo(svi) isa CC.TypeSourceInfo
-    @test CC.getRParenLoc(svi) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getTypeSourceInfo(svi))
+    @test !CC.is_null_handle(CC.getRParenLoc(svi))
 
     @test f(I, "use_null")
     fn3 = CC.FunctionDecl(CC.get_decl(f).ptr)
     np = find_node(CC.CXXNullPtrLiteralExpr, CC.resolve(CC.getBody(fn3)))
     @test np isa CC.CXXNullPtrLiteralExpr
-    @test CC.getLocation(np) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocation(np))
     @test CC.isValid(CC.getLocation(np))
 
     CC.dispose(f)
@@ -317,10 +317,10 @@ end
     @test pd isa CC.CXXPseudoDestructorExpr
     @test CC.getBase(pd).ptr != C_NULL
     @test CC.isArrow(pd) == true
-    @test CC.hasQualifier(pd) isa Bool
-    @test CC.getOperatorLoc(pd) isa CC.SourceLocation
-    @test CC.getTildeLoc(pd) isa CC.SourceLocation
-    @test CC.getDestroyedType(pd) isa CC.QualType
+    @test !(CC.hasQualifier(pd))
+    @test !CC.is_null_handle(CC.getOperatorLoc(pd))
+    @test !CC.is_null_handle(CC.getTildeLoc(pd))
+    @test !CC.is_null_handle(CC.getDestroyedType(pd))
 
     # CXXUnresolvedConstructExpr - dependent T(a) in an uninstantiated template
     uc = find_node(CC.CXXUnresolvedConstructExpr, tpl_body("cc_uctor"))
@@ -330,13 +330,13 @@ end
     @test_throws AssertionError CC.getArg(uc, 1)   # Invariant 3: index bounds
     @test CC.getTypeAsWritten(uc) isa CC.QualType
     @test CC.isListInitialization(uc) == false
-    @test CC.getLParenLoc(uc) isa CC.SourceLocation
-    @test CC.getRParenLoc(uc) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLParenLoc(uc))
+    @test !CC.is_null_handle(CC.getRParenLoc(uc))
 
     # DependentScopeDeclRefExpr - T::value in an uninstantiated template
     ds = find_node(CC.DependentScopeDeclRefExpr, tpl_body("cc_dsdre"))
     @test ds isa CC.DependentScopeDeclRefExpr
-    @test CC.getLocation(ds) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocation(ds))
     @test CC.hasTemplateKeyword(ds) == false
     @test CC.hasExplicitTemplateArgs(ds) == false
     @test CC.getNumTemplateArgs(ds) == 0
@@ -345,7 +345,7 @@ end
     pe = find_node(CC.PackExpansionExpr, tpl_body("cc_pexp"))
     @test pe isa CC.PackExpansionExpr
     @test CC.getPattern(pe).ptr != C_NULL
-    @test CC.getEllipsisLoc(pe) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getEllipsisLoc(pe))
 
     CC.dispose(f)
     CC.dispose(I)
@@ -389,34 +389,34 @@ end
     ule = find_node(CC.UnresolvedLookupExpr, tpl_body("cc_ule"))
     @test ule isa CC.UnresolvedLookupExpr
     @test CC.isOverloaded(ule) == true
-    @test CC.requiresADL(ule) isa Bool
+    @test CC.requiresADL(ule)
     # OverloadExpr base surface dispatches on the UnresolvedLookupExpr carrier
     @test CC.getNumDecls(ule) >= 1
     @test CC.getName(ule) isa CC.DeclarationName
-    @test CC.getNameLoc(ule) isa CC.SourceLocation
-    @test CC.getQualifier(ule) isa CC.NestedNameSpecifier
-    @test CC.getTemplateKeywordLoc(ule) isa CC.SourceLocation
-    @test CC.getLAngleLoc(ule) isa CC.SourceLocation
-    @test CC.getRAngleLoc(ule) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getNameLoc(ule))
+    @test CC.is_null_handle(CC.getQualifier(ule))
+    @test CC.is_null_handle(CC.getTemplateKeywordLoc(ule))
+    @test CC.is_null_handle(CC.getLAngleLoc(ule))
+    @test CC.is_null_handle(CC.getRAngleLoc(ule))
     @test CC.hasTemplateKeyword(ule) == false
     @test CC.hasExplicitTemplateArgs(ule) == false
     @test CC.getNumTemplateArgs(ule) == 0
-    @test CC.getNamingClass(ule) isa CC.CXXRecordDecl
+    @test CC.is_null_handle(CC.getNamingClass(ule))
 
     # ---- UnresolvedMemberExpr, explicit access: `s.m(u)` in cc_gg ----
     ume = find_node(CC.UnresolvedMemberExpr, tpl_body("cc_gg"))
     @test ume isa CC.UnresolvedMemberExpr
     @test CC.isImplicitAccess(ume) == false
     @test CC.isArrow(ume) == false          # accessed with `.`, not `->`
-    @test CC.getBaseType(ume) isa CC.QualType
-    @test CC.hasUnresolvedUsing(ume) isa Bool
-    @test CC.getOperatorLoc(ume) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getBaseType(ume))
+    @test !(CC.hasUnresolvedUsing(ume))
+    @test !CC.is_null_handle(CC.getOperatorLoc(ume))
     @test CC.getBase(ume) isa CC.Expr_
     @test CC.getBase(ume).ptr != C_NULL
     # OverloadExpr base surface still dispatches on the UnresolvedMemberExpr carrier
     @test CC.getNumDecls(ume) >= 1
     @test CC.getName(ume) isa CC.DeclarationName
-    @test CC.getNamingClass(ume) isa CC.CXXRecordDecl
+    @test !CC.is_null_handle(CC.getNamingClass(ume))
 
     # ---- UnresolvedMemberExpr, implicit access: bare `m(u)` in CCS::icall ----
     # getBase()'s precondition must fail (Invariant 3).
@@ -498,16 +498,16 @@ end
     th = find_node(CC.CXXThrowExpr, fn_body("ccd_throw"))
     @test th isa CC.CXXThrowExpr
     if th !== nothing
-        @test CC.isThrownVariableInScope(th) isa Bool
+        @test !(CC.isThrownVariableInScope(th))
     end
 
     # SizeOfPackExpr: source locations + the value-dependent precondition guard
     sp = find_node(CC.SizeOfPackExpr, tpl_body("ccd_pack"))
     @test sp isa CC.SizeOfPackExpr
     if sp !== nothing
-        @test CC.getOperatorLoc(sp) isa CC.SourceLocation
-        @test CC.getPackLoc(sp) isa CC.SourceLocation
-        @test CC.getRParenLoc(sp) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getOperatorLoc(sp))
+        @test !CC.is_null_handle(CC.getPackLoc(sp))
+        @test !CC.is_null_handle(CC.getRParenLoc(sp))
         # uninstantiated => value-dependent => getPackLength precondition fires
         @test CC.isValueDependent(sp) == true
         @test_throws AssertionError CC.getPackLength(sp)
@@ -524,9 +524,9 @@ end
         @test CC.getLHS(fe).ptr != C_NULL          # init operand `0`
         @test CC.getRHS(fe).ptr != C_NULL          # pattern operand `ts`
         @test CC.getInit(fe).ptr != C_NULL         # left fold => init is the LHS
-        @test CC.getLParenLoc(fe) isa CC.SourceLocation
-        @test CC.getRParenLoc(fe) isa CC.SourceLocation
-        @test CC.getEllipsisLoc(fe) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getLParenLoc(fe))
+        @test !CC.is_null_handle(CC.getRParenLoc(fe))
+        @test !CC.is_null_handle(CC.getEllipsisLoc(fe))
     end
 
     CC.dispose(f)
@@ -572,7 +572,7 @@ end
     da = find_node(CC.CXXDefaultArgExpr, fn_body("ex_use_default"))
     @test da isa CC.CXXDefaultArgExpr
     if da !== nothing
-        @test CC.hasRewrittenInit(da) isa Bool
+        @test !(CC.hasRewrittenInit(da))
         rw = CC.getRewrittenExpr(da)
         @test rw isa CC.Expr_
         @test (rw.ptr != C_NULL) == CC.hasRewrittenInit(da)
@@ -585,8 +585,8 @@ end
     di = find_node(CC.CXXDefaultInitExpr, fn_body("ex_agg"))
     @test di isa CC.CXXDefaultInitExpr
     if di !== nothing
-        @test CC.hasRewrittenInit(di) isa Bool
-        @test CC.getUsedContext(di) isa CC.DeclContext
+        @test CC.hasRewrittenInit(di)
+        @test !CC.is_null_handle(CC.getUsedContext(di))
         @test CC.getUsedContext(di).ptr != C_NULL
         if CC.hasRewrittenInit(di)
             @test CC.getRewrittenExpr(di).ptr != C_NULL
@@ -612,8 +612,8 @@ end
     @test fc isa CC.CXXFunctionalCastExpr
     if fc !== nothing
         @test CC.isListInitialization(fc) == false
-        @test CC.getLParenLoc(fc) isa CC.SourceLocation
-        @test CC.getRParenLoc(fc) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getLParenLoc(fc))
+        @test !CC.is_null_handle(CC.getRParenLoc(fc))
         @test CC.getLParenLoc(fc).ptr != C_NULL
     end
 
@@ -636,7 +636,7 @@ end
     @test ar isa CC.ArrayTypeTraitExpr
     if ar !== nothing
         @test CC.getTrait(ar) == CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayRank
-        @test CC.getQueriedType(ar) isa CC.QualType
+        @test !CC.is_null_handle(CC.getQueriedType(ar))
         @test CC.getValue(ar) == 2
         @test CC.getDimensionExpression(ar).ptr == C_NULL
     end
@@ -712,8 +712,8 @@ end
     tt = find_node(CC.CXXTypeidExpr, fn_body("tid_type"))
     @test tt isa CC.CXXTypeidExpr
     @test CC.isTypeOperand(tt) == true
-    @test CC.isPotentiallyEvaluated(tt) isa Bool
-    @test CC.getTypeOperand(tt, ctx) isa CC.QualType
+    @test !(CC.isPotentiallyEvaluated(tt))
+    @test !CC.is_null_handle(CC.getTypeOperand(tt, ctx))
     @test CC.getTypeOperand(tt, ctx).ptr != C_NULL
     @test_throws AssertionError CC.isMostDerived(tt, ctx)   # Invariant 3
 
@@ -721,8 +721,8 @@ end
     te = find_node(CC.CXXTypeidExpr, fn_body("tid_expr"))
     @test te isa CC.CXXTypeidExpr
     @test CC.isTypeOperand(te) == false
-    @test CC.isPotentiallyEvaluated(te) isa Bool
-    @test CC.isMostDerived(te, ctx) isa Bool
+    @test CC.isPotentiallyEvaluated(te)
+    @test !(CC.isMostDerived(te, ctx))
     @test_throws AssertionError CC.getTypeOperand(te, ctx)  # Invariant 3
 
     # CXXPseudoDestructorExpr - unqualified p->~PdInt() on a scalar typedef
@@ -731,21 +731,21 @@ end
     @test CC.hasQualifier(pp) == false
     @test CC.getQualifier(pp).ptr == C_NULL
     @test CC.getScopeTypeInfo(pp).ptr == C_NULL
-    @test CC.getColonColonLoc(pp) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getColonColonLoc(pp))
     # the destroyed-type storage is a union: resolved -> TypeSourceInfo, dependent
     # and unresolved -> identifier. PdInt resolves, so the identifier arm is NULL.
     @test CC.getDestroyedTypeInfo(pp).ptr != C_NULL
     @test CC.getDestroyedTypeIdentifier(pp).ptr == C_NULL
-    @test CC.getDestroyedTypeLoc(pp) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getDestroyedTypeLoc(pp))
 
     # CXXPseudoDestructorExpr - p->PdInt::~PdInt(): a scalar cannot be part of a
     # nested-name-specifier, so the qualification lands in the scope type instead.
     pq = find_node(CC.CXXPseudoDestructorExpr, fn_body("pd_qual"))
     @test pq isa CC.CXXPseudoDestructorExpr
     @test CC.hasQualifier(pq) == false
-    @test CC.getScopeTypeInfo(pq) isa CC.TypeSourceInfo
-    @test CC.getColonColonLoc(pq) isa CC.SourceLocation
-    @test CC.getQualifier(pq) isa CC.NestedNameSpecifier
+    @test !CC.is_null_handle(CC.getScopeTypeInfo(pq))
+    @test !CC.is_null_handle(CC.getColonColonLoc(pq))
+    @test CC.is_null_handle(CC.getQualifier(pq))
 
     # CXXInheritedCtorInitExpr - reached through the inheriting constructor's
     # sole ctor-initializer
@@ -759,8 +759,8 @@ end
     @test CC.constructsVBase(ice) == false
     @test CC.getConstructionKind(ice) ==
           CC.LibClangEx.CXCXXConstructionKind_NonVirtualBase
-    @test CC.inheritedFromVBase(ice) isa Bool
-    @test CC.getLocation(ice) isa CC.SourceLocation
+    @test !(CC.inheritedFromVBase(ice))
+    @test !CC.is_null_handle(CC.getLocation(ice))
 
     # SubstNonTypeTemplateParmExpr - only the *instantiated* callee body holds one,
     # so cross from the call site through getDirectCallee.
@@ -776,16 +776,16 @@ end
     end
     @test sort(collect(keys(seen))) == ["nttp_one", "nttp_pack"]
     for (_, s) in seen
-        @test CC.getNameLoc(s) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getNameLoc(s))
         @test CC.getReplacement(s) isa CC.Expr_
         @test CC.getReplacement(s).ptr != C_NULL
-        @test CC.getAssociatedDecl(s) isa CC.Decl
+        @test !CC.is_null_handle(CC.getAssociatedDecl(s))
         @test CC.getAssociatedDecl(s).ptr != C_NULL
         @test CC.getIndex(s) == 0            # the sole template parameter
-        @test CC.getParameter(s) isa CC.NonTypeTemplateParmDecl
+        @test !CC.is_null_handle(CC.getParameter(s))
         @test CC.getParameter(s).ptr != C_NULL
         @test CC.isReferenceParameter(s) == false
-        @test CC.getParameterType(s, ctx) isa CC.QualType
+        @test !CC.is_null_handle(CC.getParameterType(s, ctx))
         @test CC.getParameterType(s, ctx).ptr != C_NULL
         pi = CC.getPackIndex(s)
         @test pi === nothing || pi isa Unsigned
@@ -859,7 +859,7 @@ end
         @test CC.getOpcode(rb) == CC.LibClangEx.CXBinaryOperatorKind_BO_NE
         @test CC.isComparisonOp(rb) == true
         @test CC.isAssignmentOp(rb) == false
-        @test CC.getOperatorLoc(rb) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getOperatorLoc(rb))
         @test CC.getOperatorLoc(rb).ptr != C_NULL
     end
 
@@ -868,7 +868,7 @@ end
     dp = find_node(CC.CXXDefaultArgExpr, fn_body("g_use_plain"))
     @test dp isa CC.CXXDefaultArgExpr
     if dp !== nothing
-        @test CC.getUsedLocation(dp) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getUsedLocation(dp))
         @test CC.getUsedLocation(dp).ptr != C_NULL
         if CC.hasRewrittenInit(dp)
             @test CC.getAdjustedRewrittenExpr(dp).ptr != C_NULL
@@ -890,7 +890,7 @@ end
     di = find_node(CC.CXXDefaultInitExpr, fn_body("g_agg"))
     @test di isa CC.CXXDefaultInitExpr
     if di !== nothing
-        @test CC.getUsedLocation(di) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getUsedLocation(di))
         @test CC.getUsedLocation(di).ptr != C_NULL
     end
 
@@ -898,7 +898,7 @@ end
     udl = find_node(CC.UserDefinedLiteral, fn_body("g_udl"))
     @test udl isa CC.UserDefinedLiteral
     if udl !== nothing
-        @test CC.getUDSuffixLoc(udl) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getUDSuffixLoc(udl))
         @test CC.getUDSuffixLoc(udl).ptr != C_NULL
     end
 
@@ -922,7 +922,7 @@ end
         letd = CC.getLifetimeExtendedTemporaryDecl(mt)
         @test letd isa CC.LifetimeExtendedTemporaryDecl
         @test letd.ptr != C_NULL
-        @test CC.isUsableInConstantExpressions(mt, ctx) isa Bool
+        @test CC.isUsableInConstantExpressions(mt, ctx)
         v = CC.getOrCreateValue(mt, true)
         @test v isa CC.APValue
         @test v.ptr != C_NULL
@@ -1005,8 +1005,8 @@ end
     ca = find_node(CC.CoawaitExpr, croot)
     @test ca isa CC.CoawaitExpr
     if ca !== nothing
-        @test CC.isImplicit(ca) isa Bool
-        @test CC.getOpaqueValue(ca) isa CC.OpaqueValueExpr
+        @test !(CC.isImplicit(ca))
+        @test !CC.is_null_handle(CC.getOpaqueValue(ca))
     end
 
     # DependentCoawaitExpr: `co_await a` on a dependent operand keeps the operand
@@ -1017,12 +1017,12 @@ end
     dca = find_node(CC.DependentCoawaitExpr, tbody)
     @test dca isa CC.DependentCoawaitExpr
     if dca !== nothing
-        @test CC.getOperand(dca) isa CC.Expr_
+        @test !CC.is_null_handle(CC.getOperand(dca))
         @test CC.getOperand(dca).ptr != C_NULL
         lookup = CC.getOperatorCoawaitLookup(dca)
         @test lookup isa CC.UnresolvedLookupExpr
         @test lookup.ptr != C_NULL
-        @test CC.getKeywordLoc(dca) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getKeywordLoc(dca))
         @test CC.getKeywordLoc(dca).ptr != C_NULL
     end
 
@@ -1053,26 +1053,26 @@ end
     @test CC.isImplicitAccess(dsme) == false
     @test CC.getBase(dsme) isa CC.Expr_
     @test CC.getBase(dsme).ptr != C_NULL
-    @test CC.getBaseType(dsme) isa CC.QualType
+    @test !CC.is_null_handle(CC.getBaseType(dsme))
     @test CC.isArrow(dsme) == false          # accessed with `.`, not `->`
-    @test CC.getOperatorLoc(dsme) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getOperatorLoc(dsme))
     @test CC.getMember(dsme) isa CC.DeclarationName
-    @test CC.getMemberLoc(dsme) isa CC.SourceLocation
-    @test CC.getQualifier(dsme) isa CC.NestedNameSpecifier
+    @test !CC.is_null_handle(CC.getMemberLoc(dsme))
+    @test CC.is_null_handle(CC.getQualifier(dsme))
     @test CC.getQualifier(dsme).ptr == C_NULL   # `t.value` carries no `::`
-    @test CC.getFirstQualifierFoundInScope(dsme) isa CC.NamedDecl
+    @test CC.is_null_handle(CC.getFirstQualifierFoundInScope(dsme))
     @test CC.hasTemplateKeyword(dsme) == false
     @test CC.hasExplicitTemplateArgs(dsme) == false
     @test CC.getNumTemplateArgs(dsme) == 0
-    @test CC.getTemplateKeywordLoc(dsme) isa CC.SourceLocation
-    @test CC.getLAngleLoc(dsme) isa CC.SourceLocation
-    @test CC.getRAngleLoc(dsme) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getTemplateKeywordLoc(dsme))
+    @test CC.is_null_handle(CC.getLAngleLoc(dsme))
+    @test CC.is_null_handle(CC.getRAngleLoc(dsme))
 
     # ---- qualified dependent member access: `t.CCDQB::qm` ----
     dsme_q = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("cc_dsme_q"))
     @test dsme_q isa CC.CXXDependentScopeMemberExpr
     @test CC.getQualifier(dsme_q).ptr != C_NULL
-    @test CC.getFirstQualifierFoundInScope(dsme_q) isa CC.NamedDecl
+    @test !CC.is_null_handle(CC.getFirstQualifierFoundInScope(dsme_q))
 
     # ---- `template`-keyword member access: `t.template get<int>()` ----
     dsme_t = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("cc_dsme_tpl"))
@@ -1084,12 +1084,12 @@ end
     # ---- DependentScopeDeclRefExpr tail: `T::value` ----
     ds = _find_node(CC.DependentScopeDeclRefExpr, tpl_body("cc_dsdref"))
     @test ds isa CC.DependentScopeDeclRefExpr
-    @test CC.getDeclName(ds) isa CC.DeclarationName
-    @test CC.getQualifier(ds) isa CC.NestedNameSpecifier
+    @test !CC.is_null_handle(CC.getDeclName(ds))
+    @test !CC.is_null_handle(CC.getQualifier(ds))
     @test CC.getQualifier(ds).ptr != C_NULL     # the `T::` is always written
-    @test CC.getTemplateKeywordLoc(ds) isa CC.SourceLocation
-    @test CC.getLAngleLoc(ds) isa CC.SourceLocation
-    @test CC.getRAngleLoc(ds) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getTemplateKeywordLoc(ds))
+    @test CC.is_null_handle(CC.getLAngleLoc(ds))
+    @test CC.is_null_handle(CC.getRAngleLoc(ds))
 
     CC.dispose(f)
     CC.dispose(I)
@@ -1225,7 +1225,7 @@ end
     @test ule_t isa CC.UnresolvedLookupExpr
     @test CC.hasExplicitTemplateArgs(ule_t) == true
     @test CC.getNumTemplateArgs(ule_t) == 1
-    @test CC.getTemplateArg(ule_t, 0) isa CC.TemplateArgumentLoc
+    @test !CC.is_null_handle(CC.getTemplateArg(ule_t, 0))
     @test CC.getTemplateArg(ule_t, 0).ptr != C_NULL
     @test_throws AssertionError CC.getTemplateArg(ule_t, 1)
 
@@ -1233,7 +1233,7 @@ end
     dsme = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("cci_dsme_tpl"))
     @test dsme isa CC.CXXDependentScopeMemberExpr
     @test CC.getNumTemplateArgs(dsme) == 1
-    @test CC.getTemplateArg(dsme, 0) isa CC.TemplateArgumentLoc
+    @test !CC.is_null_handle(CC.getTemplateArg(dsme, 0))
     @test CC.getTemplateArg(dsme, 0).ptr != C_NULL
     @test_throws AssertionError CC.getTemplateArg(dsme, 1)
 
@@ -1242,7 +1242,7 @@ end
     @test ds isa CC.DependentScopeDeclRefExpr
     @test CC.hasTemplateKeyword(ds) == true
     @test CC.getNumTemplateArgs(ds) == 1
-    @test CC.getTemplateArg(ds, 0) isa CC.TemplateArgumentLoc
+    @test !CC.is_null_handle(CC.getTemplateArg(ds, 0))
     @test CC.getTemplateArg(ds, 0).ptr != C_NULL
     @test_throws AssertionError CC.getTemplateArg(ds, 1)
 
@@ -1291,16 +1291,16 @@ end
         @test n >= 1
         nu = CC.getNumUserSpecifiedInitExprs(pl)
         @test nu <= n
-        @test CC.getInitExpr(pl, 0) isa CC.Expr_
+        @test !CC.is_null_handle(CC.getInitExpr(pl, 0))
         @test CC.getInitExpr(pl, 0).ptr != C_NULL
-        @test CC.getInitLoc(pl) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getInitLoc(pl))
         if nu > 0
             @test CC.getUserSpecifiedInitExpr(pl, 0).ptr == CC.getInitExpr(pl, 0).ptr
         end
         # a struct initializer engages neither arm of ArrayFillerOrUnionFieldInit
         @test CC.getArrayFiller(pl) isa CC.Expr_
         @test CC.getArrayFiller(pl).ptr == C_NULL
-        @test CC.getInitializedFieldInUnion(pl) isa CC.FieldDecl
+        @test CC.is_null_handle(CC.getInitializedFieldInUnion(pl))
         @test CC.getInitializedFieldInUnion(pl).ptr == C_NULL
         # both index accessors restate Clang's bounds precondition
         @test_throws AssertionError CC.getInitExpr(pl, n)
@@ -1375,12 +1375,12 @@ end
     if pr isa CC.MSPropertyRefExpr
         @test CC.isArrow(pr) == true          # written `p->x`, not `p.x`
         @test CC.isImplicitAccess(pr) == false
-        @test CC.getBaseExpr(pr) isa CC.Expr_
+        @test !CC.is_null_handle(CC.getBaseExpr(pr))
         @test CC.getBaseExpr(pr).ptr != C_NULL
         pd = CC.getPropertyDecl(pr)
         @test pd isa CC.MSPropertyDecl
         @test CC.get_name(pd) == "x"
-        @test CC.getMemberLoc(pr) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getMemberLoc(pr))
     end
 
     ps = find_node(CC.MSPropertySubscriptExpr, ms_body("jms_sub"))
@@ -1388,7 +1388,7 @@ end
     if ps isa CC.MSPropertySubscriptExpr
         @test CC.getBase(ps) isa CC.Expr_
         @test CC.getBase(ps).ptr != C_NULL
-        @test CC.getIdx(ps) isa CC.Expr_
+        @test !CC.is_null_handle(CC.getIdx(ps))
         @test CC.getIdx(ps).ptr != C_NULL
         rbl = CC.getRBracketLoc(ps)
         @test rbl isa CC.SourceLocation
@@ -1437,9 +1437,9 @@ end
     @test ut isa CC.CXXUuidofExpr
     if ut isa CC.CXXUuidofExpr
         @test CC.isTypeOperand(ut) == true
-        @test CC.getTypeOperandSourceInfo(ut) isa CC.TypeSourceInfo
+        @test !CC.is_null_handle(CC.getTypeOperandSourceInfo(ut))
         @test CC.getTypeOperandSourceInfo(ut).ptr != C_NULL
-        @test CC.getTypeOperand(ut, ctx_ms) isa CC.QualType
+        @test !CC.is_null_handle(CC.getTypeOperand(ut, ctx_ms))
         @test CC.getTypeOperand(ut, ctx_ms).ptr != C_NULL
         @test_throws AssertionError CC.getExprOperand(ut)          # Invariant 3
         gd = CC.getGuidDecl(ut)
@@ -1455,9 +1455,9 @@ end
     @test ue isa CC.CXXUuidofExpr
     if ue isa CC.CXXUuidofExpr
         @test CC.isTypeOperand(ue) == false
-        @test CC.getExprOperand(ue) isa CC.Expr_
+        @test !CC.is_null_handle(CC.getExprOperand(ue))
         @test CC.getExprOperand(ue).ptr != C_NULL
-        @test CC.getGuidDecl(ue) isa CC.MSGuidDecl
+        @test !CC.is_null_handle(CC.getGuidDecl(ue))
         @test_throws AssertionError CC.getTypeOperandSourceInfo(ue)  # Invariant 3
         @test_throws AssertionError CC.getTypeOperand(ue, ctx_ms)    # Invariant 3
     end
@@ -1546,7 +1546,7 @@ end
         @test CC.getLParenLoc(fc).ptr == rp.ptr
         CC.setLParenLoc(fc, lp)
         @test CC.getLParenLoc(fc).ptr == lp.ptr
-        @test CC.isListInitialization(fc) isa Bool
+        @test !(CC.isListInitialization(fc))
         CC.setRParenLoc(fc, rp)
         @test CC.getRParenLoc(fc).ptr == rp.ptr
     end
@@ -1674,7 +1674,7 @@ end
     @test CC.getCastName(cce) == "const_cast"
     @test CC.getSubExpr(cce).ptr == defarg.ptr
     @test CC.getRParenLoc(cce).ptr == loc.ptr
-    @test CC.getAngleBrackets(cce) isa CC.SourceRange
+    @test CC.getAngleBrackets(cce) isa CC.SourceRange  # shape-only
 
     # ---- CXXDefaultArgExpr::Create, with and without a rewritten initializer -----
     dae = CC.CXXDefaultArgExpr(ctx, loc, param, nothing, aggdc)
@@ -1727,7 +1727,7 @@ end
     pd = _find_node(CC.CXXPseudoDestructorExpr, fn_body("ll_pd"))
     @test pd isa CC.CXXPseudoDestructorExpr
     @test CC.hasQualifier(pd) == false
-    @test CC.getQualifierRange(pd) isa CC.SourceRange
+    @test CC.getQualifierRange(pd) isa CC.SourceRange  # shape-only
 
     # ---- OverloadExpr name info / qualifier extent -------------------------------
     ule = _find_node(CC.UnresolvedLookupExpr, tpl_body("ll_ule"))
@@ -1816,7 +1816,7 @@ end
     @test CC.getCastName(sce) == "static_cast"
     @test CC.getSubExpr(sce).ptr == op.ptr
     @test CC.getRParenLoc(sce).ptr == loc.ptr
-    @test CC.getAngleBrackets(sce) isa CC.SourceRange
+    @test CC.getAngleBrackets(sce) isa CC.SourceRange  # shape-only
 
     dce = CC.CXXDynamicCastExpr(ctx, intty, vk, noop, op, tsi, loc, loc, angles)
     @test dce isa CC.CXXDynamicCastExpr
@@ -2029,7 +2029,7 @@ end
     sp = _find_node(CC.SizeOfPackExpr, tpl_body("oo_pack"))
     @test sp isa CC.SizeOfPackExpr
     if sp !== nothing
-        @test CC.isPartiallySubstituted(sp) isa Bool
+        @test !(CC.isPartiallySubstituted(sp))
         if CC.isPartiallySubstituted(sp)
             n = CC.getNumPartialArguments(sp)
             @test n isa Integer
@@ -2419,16 +2419,16 @@ end
     nns = CC.getNestedNameSpecifier(ql)
     @test nns isa CC.NestedNameSpecifier
     @test nns.ptr == CC.getQualifier(dsme).ptr   # the same specifier, now with locations
-    @test CC.getSourceRange(ql) isa CC.SourceRange
+    @test CC.getSourceRange(ql) isa CC.SourceRange  # shape-only
     @test CC.getSourceRange(ql).begin_loc.ptr != C_NULL
-    @test CC.getLocalSourceRange(ql) isa CC.SourceRange
-    @test CC.getBeginLoc(ql) isa CC.SourceLocation
+    @test CC.getLocalSourceRange(ql) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getBeginLoc(ql))
     @test CC.getBeginLoc(ql).ptr == CC.getSourceRange(ql).begin_loc.ptr
-    @test CC.getEndLoc(ql) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getEndLoc(ql))
     @test CC.getEndLoc(ql).ptr == CC.getSourceRange(ql).end_loc.ptr
-    @test CC.getLocalBeginLoc(ql) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocalBeginLoc(ql))
     @test CC.getLocalBeginLoc(ql).ptr == CC.getLocalSourceRange(ql).begin_loc.ptr
-    @test CC.getLocalEndLoc(ql) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocalEndLoc(ql))
     @test CC.getLocalEndLoc(ql).ptr == CC.getLocalSourceRange(ql).end_loc.ptr
 
     # `NQBase` is written at global scope, so this one component has an empty prefix
@@ -2449,7 +2449,7 @@ end
         tl = CC.getTypeLoc(ql)
         @test tl isa CC.TypeLoc
         @test tl.ptr != C_NULL
-        @test CC.isNull(tl) isa Bool
+        @test CC.isNull(tl) isa Bool  # shape-only
         @test CC.getType(tl) isa CC.QualType
         CC.dispose(tl)
     else
@@ -2465,7 +2465,7 @@ end
         @test dql isa CC.NestedNameSpecifierLoc
         @test CC.hasQualifier(dql) == true
         @test CC.getNestedNameSpecifier(dql).ptr == CC.getQualifier(ds).ptr
-        @test CC.getLocalSourceRange(dql) isa CC.SourceRange
+        @test CC.getLocalSourceRange(dql) isa CC.SourceRange  # shape-only
         CC.dispose(dql)
     end
 
@@ -2494,9 +2494,9 @@ end
         pql = CC.getQualifierLoc(pd)
         @test pql isa CC.NestedNameSpecifierLoc
         @test CC.hasQualifier(pql) == CC.hasQualifier(pd)
-        @test CC.getSourceRange(pql) isa CC.SourceRange
+        @test CC.getSourceRange(pql) isa CC.SourceRange  # shape-only
         if CC.hasQualifier(pql)
-            @test CC.getLocalSourceRange(pql) isa CC.SourceRange
+            @test CC.getLocalSourceRange(pql) isa CC.SourceRange  # shape-only
         else
             @test_throws AssertionError CC.getLocalSourceRange(pql)
         end
@@ -2526,8 +2526,8 @@ end
         @test mql isa CC.NestedNameSpecifierLoc
         @test mql.ptr != C_NULL
         @test CC.hasQualifier(mql) == false          # `p->x` is written unqualified
-        @test CC.getBeginLoc(mql) isa CC.SourceLocation
-        @test CC.getEndLoc(mql) isa CC.SourceLocation
+        @test CC.is_null_handle(CC.getBeginLoc(mql))
+        @test CC.is_null_handle(CC.getEndLoc(mql))
         @test_throws AssertionError CC.getLocalBeginLoc(mql)
         @test_throws AssertionError CC.getLocalEndLoc(mql)
         @test_throws AssertionError CC.getTypeLoc(mql)
@@ -2641,7 +2641,7 @@ end
     @test built3.ptr != C_NULL
     @test Int(CC.getNumDecls(built3)) == n
     @test CC.requiresADL(built3) == true                  # the `true` this call passed
-    @test CC.isOverloaded(built3) isa Bool
+    @test CC.isOverloaded(built3)
     @test CC.getDecl(built3, 0).ptr == decls[1].ptr
     @test CC.getNumTemplateArgs(built3) == 0
     @test_throws AssertionError CC.UnresolvedLookupExpr(ctx, nothing, q3, ni3, true, true,

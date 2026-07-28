@@ -22,13 +22,13 @@ end
     I = create_interpreter(["-include", "cstddef"])
     pp = CC.getPreprocessor(get_instance(I))
 
-    @test CC.getPreprocessorOpts(pp) isa CC.PreprocessorOptions
-    @test CC.getNumDirectives(pp) isa Integer
+    @test !CC.is_null_handle(CC.getPreprocessorOpts(pp))
+    @test CC.getNumDirectives(pp) isa Integer  # shape-only: the target chooses this value
     @test CC.isParsingIfOrElifDirective(pp) == false
-    @test CC.isPreprocessedOutput(pp) isa Bool
-    @test CC.isInPrimaryFile(pp) isa Bool
-    @test CC.SawDateOrTime(pp) isa Bool
-    @test CC.getTotalMemory(pp) isa Integer
+    @test !(CC.isPreprocessedOutput(pp))
+    @test CC.isInPrimaryFile(pp)
+    @test !(CC.SawDateOrTime(pp))
+    @test CC.getTotalMemory(pp) isa Integer  # shape-only: the target chooses this value
     @test CC.getTotalMemory(pp) > 0
     @test CC.isInNamedModule(pp) == false
 
@@ -63,7 +63,7 @@ end
     fid = CC.getPredefinesFileID(pp)
     loc = CC.getLocForStartOfFile(sm, fid)
     if CC.isValid(loc)
-        @test CC.getMacroInfoAtLoc(pp, ii, loc) isa CC.MacroInfo
+        @test CC.is_null_handle(CC.getMacroInfoAtLoc(pp, ii, loc))
     end
     CC.dispose(fid)
 
@@ -89,11 +89,11 @@ end
     pp = CC.getPreprocessor(get_instance(I))
 
     # module-loader and PCH-mode state: shape only, the driver configuration decides these
-    @test CC.hadModuleLoaderFatalFailure(pp) isa Bool
-    @test CC.creatingPCHWithThroughHeader(pp) isa Bool
-    @test CC.usingPCHWithThroughHeader(pp) isa Bool
-    @test CC.creatingPCHWithPragmaHdrStop(pp) isa Bool
-    @test CC.usingPCHWithPragmaHdrStop(pp) isa Bool
+    @test !(CC.hadModuleLoaderFatalFailure(pp))
+    @test !(CC.creatingPCHWithThroughHeader(pp))
+    @test !(CC.usingPCHWithThroughHeader(pp))
+    @test !(CC.creatingPCHWithPragmaHdrStop(pp))
+    @test !(CC.usingPCHWithPragmaHdrStop(pp))
 
     # missing-#include suppression round-trip
     old_suppress = CC.GetSuppressIncludeNotFoundError(pp)
@@ -106,14 +106,14 @@ end
     # no code-completion point was requested, so the whole family stays unset
     @test CC.isCodeCompletionEnabled(pp) == false
     @test CC.isCodeCompletionReached(pp) == false
-    @test CC.getCodeCompletionLoc(pp) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getCodeCompletionLoc(pp))
     @test CC.isValid(CC.getCodeCompletionLoc(pp)) == false
-    @test CC.getCodeCompletionFileLoc(pp) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getCodeCompletionFileLoc(pp))
     @test CC.isValid(CC.getCodeCompletionFileLoc(pp)) == false
 
     # the interpreter compiles a plain translation unit, not a C++20 module
-    @test CC.getCurrentModule(pp) isa CC.Module_
-    @test CC.getCurrentModuleImplementation(pp) isa CC.Module_
+    @test CC.is_null_handle(CC.getCurrentModule(pp))
+    @test CC.is_null_handle(CC.getCurrentModuleImplementation(pp))
     @test CC.isInNamedInterfaceUnit(pp) == false
     @test CC.isInImplementationUnit(pp) == false
 
@@ -123,9 +123,9 @@ end
     loc = CC.getLocForStartOfFile(sm, fid)
     if CC.isValid(loc)
         tok = CC.Token()
-        @test CC.getRawToken(pp, loc, tok) isa Bool
-        @test CC.getLocForEndOfToken(pp, loc) isa CC.SourceLocation
-        @test CC.getLocForEndOfToken(pp, loc, 1) isa CC.SourceLocation
+        @test !(CC.getRawToken(pp, loc, tok))
+        @test !CC.is_null_handle(CC.getLocForEndOfToken(pp, loc))
+        @test !CC.is_null_handle(CC.getLocForEndOfToken(pp, loc, 1))
         dispose(tok)
     end
     CC.dispose(fid)
@@ -153,22 +153,22 @@ end
     pp = CC.getPreprocessor(get_instance(I))
 
     # pure preamble / safe-buffer / module state — shape only, the driver decides these
-    @test CC.isRecordingPreamble(pp) isa Bool
-    @test CC.hasRecordedPreamble(pp) isa Bool
-    @test CC.isPPInSafeBufferOptOutRegion(pp) isa Bool
+    @test !(CC.isRecordingPreamble(pp))
+    @test !(CC.hasRecordedPreamble(pp))
+    @test !(CC.isPPInSafeBufferOptOutRegion(pp))
     @test CC.isInImportingCXXNamedModules(pp) == false
-    @test CC.mightHavePendingAnnotationTokens(pp) isa Bool
+    @test CC.mightHavePendingAnnotationTokens(pp)
 
     # pragma-location accessors are invalid outside their pragma regions
-    @test CC.getPragmaAssumeNonNullLoc(pp) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getPragmaAssumeNonNullLoc(pp))
     @test CC.isValid(CC.getPragmaAssumeNonNullLoc(pp)) == false
-    @test CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp) isa CC.SourceLocation
-    @test CC.getLastFPEvalPragmaLocation(pp) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp))
+    @test CC.is_null_handle(CC.getLastFPEvalPragmaLocation(pp))
 
     # aux target and current-lexer submodule are borrowed and NULL for a single-target,
     # non-modular translation unit
-    @test CC.getAuxTargetInfo(pp) isa CC.TargetInfo
-    @test CC.getCurrentLexerSubmodule(pp) isa CC.Module_
+    @test CC.getAuxTargetInfo(pp) isa CC.TargetInfo  # shape-only: the host decides this
+    @test CC.is_null_handle(CC.getCurrentLexerSubmodule(pp))
 
     sm = CC.getSourceManager(pp)
     fid = CC.getPredefinesFileID(pp)
@@ -190,20 +190,20 @@ end
         @test CC.isValid(rng.begin_loc) == true
 
         # advancing to the first character of the predefines token stays a valid location
-        @test CC.AdvanceToTokenCharacter(pp, loc, 0) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.AdvanceToTokenCharacter(pp, loc, 0))
         # clang walks the token with `isObviouslySimpleCharacter`, which is true of a NUL,
         # so an index past the token reads off the end of the buffer rather than stopping.
         # The length is measured and the index refused.
         tok_len = CC.MeasureTokenLength(loc, CC.getSourceManager(pp), CC.getLangOpts(pp))
         @test tok_len isa Integer
-        @test CC.AdvanceToTokenCharacter(pp, loc, tok_len) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.AdvanceToTokenCharacter(pp, loc, tok_len))
         @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, loc, tok_len + 1)
         @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, loc, -1)
         @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, CC.SourceLocation(), 0)
 
         # a location in the predefines buffer is outside any module → borrowed NULL carrier
-        @test CC.getModuleForLocation(pp, loc, false) isa CC.Module_
-        @test CC.getModuleForLocation(pp, loc, true) isa CC.Module_
+        @test CC.is_null_handle(CC.getModuleForLocation(pp, loc, false))
+        @test CC.is_null_handle(CC.getModuleForLocation(pp, loc, true))
     end
 
     # macro-loc forwarders reject a non-macro location before the ccall
@@ -244,7 +244,7 @@ end
     fid = CC.getPredefinesFileID(pp)
     loc = CC.getLocForStartOfFile(sm, fid)
     if CC.isValid(loc)
-        @test CC.isSafeBufferOptOut(pp, sm, loc) isa Bool
+        @test !(CC.isSafeBufferOptOut(pp, sm, loc))
         # a stray exit while not inside any region is reported as invalid, leaving no state
         @test CC.enterOrExitSafeBufferOptOutRegion(pp, false, loc) == true
         end_loc = CC.getLocForEndOfToken(pp, loc)
@@ -304,7 +304,7 @@ end
     @test_throws AssertionError CC.setCodeCompletionReached(pp)
 
     # #pragma clang arc_cf_code_audited: inactive, then active, then ended by an invalid loc
-    @test CC.getPragmaARCCFCodeAuditedIdent(pp) isa CC.IdentifierInfo
+    @test CC.is_null_handle(CC.getPragmaARCCFCodeAuditedIdent(pp))
     @test CC.isValid(CC.getPragmaARCCFCodeAuditedLoc(pp)) == false
     if CC.isValid(loc)
         CC.setPragmaARCCFCodeAuditedInfo(pp, ii, loc)
@@ -321,7 +321,7 @@ end
         @test CC.isValid(CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp)) == false
 
         # splitting the first character off a real token yields a location carrier
-        @test CC.SplitToken(pp, loc, 1) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.SplitToken(pp, loc, 1))
     end
     @test_throws AssertionError CC.SplitToken(pp, CC.SourceLocation(), 1)
 
@@ -424,7 +424,7 @@ end
         @test CC.isCurrentLexer(pp, lexer) == true
     end
     if file_lexer.ptr != C_NULL
-        @test CC.isCurrentLexer(pp, file_lexer) isa Bool
+        @test CC.isCurrentLexer(pp, file_lexer)
     end
 
     # macro annotation tables are write-only through the C API: assert they do not throw
@@ -472,7 +472,7 @@ end
     # LookAhead consumes nothing: the next Lex hands back the token peeked at index 0
     CC.Lex(ppj, tok)
     @test CC.getKind(tok) == first_kind
-    @test CC.getLastCachedTokenLocation(ppj) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLastCachedTokenLocation(ppj))
 
     # re-inject the token just consumed, lex it again, then rewind the whole scope
     @test CC.EnterToken(ppj, tok, true) === nothing
@@ -511,7 +511,7 @@ end
     pp = CC.getPreprocessor(get_instance(I))
 
     # the selector table is an interior reference the preprocessor always owns
-    @test CC.getSelectorTable(pp) isa CC.SelectorTable
+    @test !CC.is_null_handle(CC.getSelectorTable(pp))
 
     # the macro history table always holds the builtin macros Clang registers itself
     n = CC.getNumMacros(pp)
@@ -600,9 +600,9 @@ end
     pp = CC.getPreprocessor(get_instance(I))
 
     # interior references the preprocessor always owns
-    @test CC.getBuiltinInfo(pp) isa CC.BuiltinContext
+    @test !CC.is_null_handle(CC.getBuiltinInfo(pp))
     @test CC.getBuiltinInfo(pp).ptr != C_NULL
-    @test CC.getModuleLoader(pp) isa CC.ModuleLoader
+    @test !CC.is_null_handle(CC.getModuleLoader(pp))
     @test CC.getModuleLoader(pp).ptr != C_NULL
 
     # the external macro source is borrowed, so reinstalling whatever is already attached
@@ -619,7 +619,7 @@ end
     @test CC.getEmptylineHandler(pp).ptr == handler.ptr
 
     # no code completion is running here, so clearing the slot leaves it empty
-    @test CC.getCodeCompletionHandler(pp) isa CC.CodeCompletionHandler
+    @test !CC.is_null_handle(CC.getCodeCompletionHandler(pp))
     @test CC.clearCodeCompletionHandler(pp) === nothing
     @test CC.getCodeCompletionHandler(pp).ptr == C_NULL
 
@@ -646,7 +646,7 @@ end
     # the location defaults to the one the MacroInfo was allocated at
     ii2 = CC.getIdentifierInfo(pp, "PP_BATCH_AUTHORED_2")
     mi2 = CC.AllocateMacroInfo(pp, loc)
-    @test CC.appendDefMacroDirective(pp, ii2, mi2) isa CC.MacroDirective
+    @test !CC.is_null_handle(CC.appendDefMacroDirective(pp, ii2, mi2))
     @test CC.isMacroDefined(pp, "PP_BATCH_AUTHORED_2") == true
     dispose(fid)
 
@@ -681,7 +681,7 @@ end
 
     # a preprocessing record registers itself on the callback chain, so the chain is
     # non-empty afterwards; the installation cannot be undone, so it runs last
-    @test CC.getPPCallbacks(pp) isa CC.PPCallbacks
+    @test !CC.is_null_handle(CC.getPPCallbacks(pp))
     @test (CC.createPreprocessingRecord(pp); true)
     @test CC.getPPCallbacks(pp).ptr != C_NULL
 
@@ -736,7 +736,7 @@ end
 
     # creating Sema installs it as the preprocessor's code-completion handler, and only the
     # detach half of that pairing is wrapped, so this is a one-way transition
-    @test CC.getCodeCompletionHandler(pp) isa CC.CodeCompletionHandler
+    @test !CC.is_null_handle(CC.getCodeCompletionHandler(pp))
     @test CC.getCodeCompletionHandler(pp).ptr != C_NULL
     CC.clearCodeCompletionHandler(pp)
     @test CC.getCodeCompletionHandler(pp).ptr == C_NULL
@@ -804,9 +804,9 @@ end
     @test CC.getMacroFinalAnnotationLoc(pp, aii) === nothing
     CC.addRestrictExpansionMsg(pp, aii, "not outside this header", main_loc)
     CC.addFinalLoc(pp, aii, main_loc)
-    @test CC.getMacroRestrictExpansionLoc(pp, aii) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getMacroRestrictExpansionLoc(pp, aii))
     @test CC.getMacroRestrictExpansionMsg(pp, aii) == "not outside this header"
-    @test CC.getMacroFinalAnnotationLoc(pp, aii) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getMacroFinalAnnotationLoc(pp, aii))
     # an identifier that was never annotated is rejected before the unguarded lookup runs
     plain = CC.getIdentifierInfo(pp, "PP_UNANNOTATED_MACRO_PROBE")
     @test_throws AssertionError CC.getMacroDeprecationLoc(pp, plain)
@@ -822,9 +822,9 @@ end
     @test CC.isLiteral(0) == false
     @test CC.isAnnotation(0) == false
     file_ii = CC.getIdentifierInfo(pp, "__FILE__")
-    @test CC.getLastMacroWithSpelling(pp, main_loc, [file_ii]) isa String
-    @test CC.getLastMacroWithSpelling(pp, main_loc, Any[]) isa String
-    @test CC.getLastMacroWithSpelling(pp, main_loc, [0]) isa String
+    @test isempty(CC.getLastMacroWithSpelling(pp, main_loc, [file_ii]))
+    @test !isempty(CC.getLastMacroWithSpelling(pp, main_loc, Any[]))
+    @test isempty(CC.getLastMacroWithSpelling(pp, main_loc, [0]))
     @test_throws AssertionError CC.getLastMacroWithSpelling(pp, CC.SourceLocation(), [0])
     @test_throws AssertionError CC.getLastMacroWithSpelling(pp, main_loc, [file_ii.ptr])
 

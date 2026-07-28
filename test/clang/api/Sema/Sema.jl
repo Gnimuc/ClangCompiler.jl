@@ -15,9 +15,9 @@ using Test
     @test ctx isa CC.ASTContext
     @test sm isa CC.SourceManager
     @test pp isa CC.Preprocessor
-    @test CC.getDiagnostics(sema) isa CC.DiagnosticsEngine
-    @test CC.getLangOpts(sema) isa CC.LangOptions
-    @test CC.getCurScope(sema) isa CC.Scope
+    @test !CC.is_null_handle(CC.getDiagnostics(sema))
+    @test !CC.is_null_handle(CC.getLangOpts(sema))
+    @test !CC.is_null_handle(CC.getCurScope(sema))
     @test ctx.ptr != C_NULL
     @test sm.ptr != C_NULL
     @test pp.ptr != C_NULL
@@ -53,7 +53,7 @@ using Test
     # A complete/literal type short-circuits before the diagnoser is consulted,
     # so no diagnostic is emitted for these two.
     @test CC.RequireCompleteType(sema, loc, complete, 1) == false
-    @test CC.RequireLiteralType(sema, loc, complete, 1) isa Bool
+    @test !(CC.RequireLiteralType(sema, loc, complete, 1))
 
     # a zero diag id is rejected by the wrapper, not by clang
     @test_throws AssertionError CC.RequireCompleteType(sema, loc, complete, 0)
@@ -64,7 +64,7 @@ using Test
     @test CC.RequireCompleteDeclContext(sema, CC.CXXScopeSpec(), dc) == false
 
     ss = CC.CXXScopeSpec()
-    @test CC.computeDeclContext(sema, ss) isa CC.DeclContext
+    @test CC.is_null_handle(CC.computeDeclContext(sema, ss))
     @test CC.isDependentScopeSpecifier(sema, ss) == false
     CC.dispose(ss)
 
@@ -97,9 +97,9 @@ end
     found = CC.getFoundDecl(lr)
     @test found isa CC.NamedDecl
     @test found.ptr == get_decl(f).ptr
-    @test CC.getNamingClass(lr) isa CC.CXXRecordDecl
-    @test CC.getNameLoc(lr) isa CC.SourceLocation
-    @test CC.getIdentifierNamespace(lr) isa Integer
+    @test CC.is_null_handle(CC.getNamingClass(lr))
+    @test !CC.is_null_handle(CC.getNameLoc(lr))
+    @test CC.getIdentifierNamespace(lr) isa Integer  # shape-only: the target chooses this value
     @test CC.getIdentifierNamespace(lr) > 0
     @test CC.suppressDiagnostics(lr) === nothing
     # getAmbiguityKind asserts isAmbiguous(); this lookup is unique
@@ -109,11 +109,11 @@ end
     # --- Scope accessors ---
     sc = CC.getCurScope(CC.get_parser(I))
     @test sc isa CC.Scope
-    @test CC.getFlags(sc) isa Integer
-    @test CC.getFnParent(sc) isa CC.Scope
-    @test CC.getEntity(sc) isa CC.DeclContext
-    @test CC.isTemplateParamScope(sc) isa Bool
-    @test CC.isDeclScope(sc, found) isa Bool
+    @test CC.getFlags(sc) isa Integer  # shape-only: the target chooses this value
+    @test CC.is_null_handle(CC.getFnParent(sc))
+    @test !CC.is_null_handle(CC.getEntity(sc))
+    @test !(CC.isTemplateParamScope(sc))
+    @test CC.isDeclScope(sc, found)
 
     # --- forced template instantiation, then inspect the result ---
     @test f(I, "Box")
@@ -122,7 +122,7 @@ end
     spec = CC.specialize(llctx, ctx, box_ctd, CC.jlty_to_clty(Float64, ctx))
     @test spec isa CC.ClassTemplateSpecializationDecl
     @test spec.ptr != C_NULL
-    @test CC.usesPartialOrExplicitSpecialization(sema, loc, spec) isa Bool
+    @test !(CC.usesPartialOrExplicitSpecialization(sema, loc, spec))
     # returns true only when instantiation errored
     @test CC.InstantiateClassTemplateSpecialization(sema, loc, spec,
                                                     CC.CXTemplateSpecializationKind_TSK_ImplicitInstantiation,
@@ -169,9 +169,9 @@ end
     copy_ctor = CC.LookupCopyingConstructor(sema, rd, 0x1)
     @test copy_ctor isa CC.CXXConstructorDecl
     @test copy_ctor.ptr != C_NULL
-    @test CC.LookupMovingConstructor(sema, rd) isa CC.CXXConstructorDecl
-    @test CC.LookupCopyingAssignment(sema, rd, 0x1) isa CC.CXXMethodDecl
-    @test CC.LookupMovingAssignment(sema, rd) isa CC.CXXMethodDecl
+    @test !CC.is_null_handle(CC.LookupMovingConstructor(sema, rd))
+    @test !CC.is_null_handle(CC.LookupCopyingAssignment(sema, rd, 0x1))
+    @test !CC.is_null_handle(CC.LookupMovingAssignment(sema, rd))
     @test_throws AssertionError CC.LookupCopyingConstructor(sema, rd, 0x2)
     @test_throws AssertionError CC.LookupCopyingAssignment(sema, rd, 0, false, 0x2)
     @test_throws AssertionError CC.LookupMovingConstructor(sema, rd, 0x8)
@@ -252,34 +252,34 @@ end
     f = DeclFinder(I)
 
     # error state and the token-end helper
-    @test CC.hasUncompilableErrorOccurred(sema) isa Bool
-    @test CC.getLocForEndOfToken(sema, loc) isa CC.SourceLocation
-    @test CC.getLocForEndOfToken(sema, loc, 1) isa CC.SourceLocation
+    @test !(CC.hasUncompilableErrorOccurred(sema))
+    @test !CC.is_null_handle(CC.getLocForEndOfToken(sema, loc))
+    @test !CC.is_null_handle(CC.getLocForEndOfToken(sema, loc, 1))
 
     # `int` is scalar, so both fix-it spellings accept it
     int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
-    @test CC.getFixItZeroInitializerForType(sema, int_ty, loc) isa String
-    @test CC.getFixItZeroLiteralForType(sema, int_ty, loc) isa String
+    @test !isempty(CC.getFixItZeroInitializerForType(sema, int_ty, loc))
+    @test !isempty(CC.getFixItZeroLiteralForType(sema, int_ty, loc))
 
     # current-context queries; at the top level Sema sits in the translation unit
-    @test CC.getCurLexicalContext(sema) isa CC.DeclContext
+    @test !CC.is_null_handle(CC.getCurLexicalContext(sema))
     @test CC.getCurLexicalContext(sema).ptr != C_NULL
-    @test CC.getFunctionLevelDeclContext(sema) isa CC.DeclContext
-    @test CC.getFunctionLevelDeclContext(sema, true) isa CC.DeclContext
-    @test CC.getCurFunctionDecl(sema) isa CC.FunctionDecl
-    @test CC.getCurFunctionDecl(sema, true) isa CC.FunctionDecl
-    @test CC.getCurFunctionOrMethodDecl(sema) isa CC.NamedDecl
+    @test !CC.is_null_handle(CC.getFunctionLevelDeclContext(sema))
+    @test !CC.is_null_handle(CC.getFunctionLevelDeclContext(sema, true))
+    @test CC.is_null_handle(CC.getCurFunctionDecl(sema))
+    @test CC.is_null_handle(CC.getCurFunctionDecl(sema, true))
+    @test CC.is_null_handle(CC.getCurFunctionOrMethodDecl(sema))
 
     # the std entities Sema caches, NULL until the corresponding header is seen
-    @test CC.getStdNamespace(sema) isa CC.NamespaceDecl
-    @test CC.getStdBadAlloc(sema) isa CC.CXXRecordDecl
+    @test !CC.is_null_handle(CC.getStdNamespace(sema))
+    @test CC.is_null_handle(CC.getStdBadAlloc(sema))
 
     @test f(I, "SemaQBase")
     base_nd = get_decl(f)
-    @test CC.isVisible(sema, base_nd) isa Bool
-    @test CC.isReachable(sema, base_nd) isa Bool
-    @test CC.hasVisibleMergedDefinition(sema, base_nd) isa Bool
-    @test CC.isEquivalentInternalLinkageDeclaration(sema, base_nd, base_nd) isa Bool
+    @test CC.isVisible(sema, base_nd)
+    @test CC.isReachable(sema, base_nd)
+    @test !(CC.hasVisibleMergedDefinition(sema, base_nd))
+    @test !(CC.isEquivalentInternalLinkageDeclaration(sema, base_nd, base_nd))
     base_ty = CC.getTypeDeclType(ctx, CC.TypeDecl(base_nd))
 
     @test f(I, "SemaQDerived")
@@ -303,13 +303,13 @@ end
     methods = CC.getMethods(rd)
     @test !isempty(methods)
     for m in methods
-        @test CC.isUsualDeallocationFunction(sema, m) isa Bool
+        @test CC.isUsualDeallocationFunction(sema, m) isa Bool  # shape-only
     end
 
     @test f(I, "sema_q_fn")
     fd = CC.FunctionDecl(get_decl(f).ptr)
-    @test CC.isInitListConstructor(sema, fd) isa Bool
-    @test CC.isImplicitlyDeleted(sema, fd) isa Bool
+    @test !(CC.isInitListConstructor(sema, fd))
+    @test !(CC.isImplicitlyDeleted(sema, fd))
     body = CC.getBody(fd)
     @test body.ptr != C_NULL
     @test CC.canThrow(sema, body) isa CC.CXCanThrowResult
@@ -385,7 +385,7 @@ end
 
     # --- a template type argument is checked against the language rules ---
     int_tsi = CC.getTrivialTypeSourceInfo(ctx, int_qt, loc)
-    @test CC.CheckTemplateArgument(sema, int_tsi) isa Bool
+    @test !(CC.CheckTemplateArgument(sema, int_tsi))
 
     # --- which template parameters are deducible from the function parameters ---
     deduced = CC.MarkDeducedTemplateParameters(sema, ftd)
@@ -405,7 +405,7 @@ end
     undeduced = CC.isUndeducedType(CC.getTypePtr(CC.getReturnType(fd)))
     @test undeduced isa Bool
     if undeduced
-        @test CC.DeduceReturnType(sema, fd, loc, false) isa Bool
+        @test !(CC.DeduceReturnType(sema, fd, loc, false))
     else
         @test_throws AssertionError CC.DeduceReturnType(sema, fd, loc, false)
     end
@@ -415,7 +415,7 @@ end
     param = CC.getParamDecl(fd, 1)  # 0-based: the `int b = sizeof(T)` parameter
     @test param isa CC.ParmVarDecl
     if CC.hasUninstantiatedDefaultArg(param)
-        @test CC.InstantiateDefaultArgument(sema, loc, fd, param) isa Bool
+        @test !(CC.InstantiateDefaultArgument(sema, loc, fd, param))
     else
         @test_throws AssertionError CC.InstantiateDefaultArgument(sema, loc, fd, param)
     end
@@ -590,8 +590,8 @@ end
     # type-level checks whose well-formed input short-circuits before any diagnostic
     int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
     @test CC.CheckFunctionReturnType(sema, int_ty, loc) == false
-    @test CC.CheckDistantExceptionSpec(sema, int_ty) isa Bool
-    @test CC.CheckTypeTraitArity(sema, 2, loc, 2) isa Bool
+    @test !(CC.CheckDistantExceptionSpec(sema, int_ty))
+    @test CC.CheckTypeTraitArity(sema, 2, loc, 2)
 
     # an already-parsed exception specification resolves to a FunctionProtoType
     @test f(I, "SemaChkFn")
@@ -606,7 +606,7 @@ end
     @test f(I, "SemaChkVar")
     init = CC.getInit(CC.VarDecl(get_decl(f).ptr))
     @test init isa CC.Expr_
-    @test CC.CheckCaseExpression(sema, init) isa Bool
+    @test CC.CheckCaseExpression(sema, init)
 
     # A freshly parsed aggregate has declared none of its special members, so each
     # Declare* below is the first call — and, since the gate closes behind it, the only
@@ -621,22 +621,22 @@ end
     @test CC.needsImplicitDestructor(plain)
 
     if CC.needsImplicitDefaultConstructor(plain)
-        @test CC.DeclareImplicitDefaultConstructor(sema, plain) isa CC.CXXConstructorDecl
+        @test !CC.is_null_handle(CC.DeclareImplicitDefaultConstructor(sema, plain))
     end
     if CC.needsImplicitCopyConstructor(plain)
-        @test CC.DeclareImplicitCopyConstructor(sema, plain) isa CC.CXXConstructorDecl
+        @test !CC.is_null_handle(CC.DeclareImplicitCopyConstructor(sema, plain))
     end
     if CC.needsImplicitMoveConstructor(plain)
-        @test CC.DeclareImplicitMoveConstructor(sema, plain) isa CC.CXXConstructorDecl
+        @test !CC.is_null_handle(CC.DeclareImplicitMoveConstructor(sema, plain))
     end
     if CC.needsImplicitCopyAssignment(plain)
-        @test CC.DeclareImplicitCopyAssignment(sema, plain) isa CC.CXXMethodDecl
+        @test !CC.is_null_handle(CC.DeclareImplicitCopyAssignment(sema, plain))
     end
     if CC.needsImplicitMoveAssignment(plain)
-        @test CC.DeclareImplicitMoveAssignment(sema, plain) isa CC.CXXMethodDecl
+        @test !CC.is_null_handle(CC.DeclareImplicitMoveAssignment(sema, plain))
     end
     if CC.needsImplicitDestructor(plain)
-        @test CC.DeclareImplicitDestructor(sema, plain) isa CC.CXXDestructorDecl
+        @test !CC.is_null_handle(CC.DeclareImplicitDestructor(sema, plain))
     end
 
     # the gate is closed now, so the wrapper rejects the second call clang would assert on
@@ -649,14 +649,14 @@ end
                                      CC.CXOverloadedOperatorKind_OO_Delete)
     usual_del = CC.FindUsualDeallocationFunction(sema, loc, false, false, del_name)
     @test usual_del isa CC.FunctionDecl
-    @test CC.FindDeallocationFunctionForDestructor(sema, loc, plain) isa CC.FunctionDecl
+    @test !CC.is_null_handle(CC.FindDeallocationFunctionForDestructor(sema, loc, plain))
 
     # the leading identifier of a nested-name-specifier, looked up in the current scope
     scope = CC.getCurScope(CC.get_parser(I))
     nns = CC.NestedNameSpecifier(ctx, CC.NestedNameSpecifier(C_NULL),
                                  CC.getIdentifierInfo(pp, "SemaChkNS"))
     @test nns isa CC.NestedNameSpecifier
-    @test CC.FindFirstQualifierInScope(sema, scope, nns) isa CC.NamedDecl
+    @test !CC.is_null_handle(CC.FindFirstQualifierInScope(sema, scope, nns))
 
     # derived-to-base conversion over an unambiguous public base
     @test f(I, "SemaChkBase")
@@ -710,19 +710,19 @@ end
     # context is the potentially-evaluated one Sema's constructor pushed.
     @test CC.inTemplateInstantiation(sema) == false
     @test CC.isUnevaluatedContext(sema) == false
-    @test CC.isConstantEvaluatedContext(sema) isa Bool
-    @test CC.isAlwaysConstantEvaluatedContext(sema) isa Bool
-    @test CC.isImmediateFunctionContext(sema) isa Bool
-    @test CC.isCheckingDefaultArgumentOrInitializer(sema) isa Bool
-    @test CC.isUnexpandedParameterPackPermitted(sema) isa Bool
-    @test CC.isPreciseFPEnabled(sema) isa Bool
+    @test !(CC.isConstantEvaluatedContext(sema))
+    @test !(CC.isAlwaysConstantEvaluatedContext(sema))
+    @test !(CC.isImmediateFunctionContext(sema))
+    @test !(CC.isCheckingDefaultArgumentOrInitializer(sema))
+    @test !(CC.isUnexpandedParameterPackPermitted(sema))
+    @test CC.isPreciseFPEnabled(sema)
 
     # no module scope is open in a translation unit that declares no module
-    @test CC.getCurrentModule(sema) isa CC.Module_
+    @test CC.is_null_handle(CC.getCurrentModule(sema))
 
     # `this` has no type outside a member function, but the walk up to the
     # function-level declaration context still runs
-    @test CC.getCurrentThisType(sema) isa CC.QualType
+    @test CC.is_null_handle(CC.getCurrentThisType(sema))
 
     int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
     float_ty = CC.get_qual_type(CC.jlty_to_clty(Float32, ctx))
@@ -761,7 +761,7 @@ end
     # comparing a declaration with itself keeps the equivalence walk from
     # reporting a mismatch through Sema's diagnostics
     rec = CC.CXXRecordDecl(rec_nd.ptr)
-    @test CC.hasStructuralCompatLayout(sema, rec, rec) isa Bool
+    @test CC.hasStructuralCompatLayout(sema, rec, rec)
 
     # the name is deliberately non-unique, so select the two functions by kind
     @test f(I, "SemaQ2Ovl")
@@ -769,7 +769,7 @@ end
             for d in CC.get_decls(f) if CC.getDeclKindName(d) == "Function"]
     @test length(ovls) >= 2
     @test CC.IsOverload(sema, ovls[1], ovls[2])
-    @test CC.IsOverload(sema, ovls[1], ovls[1]) isa Bool
+    @test !(CC.IsOverload(sema, ovls[1], ovls[1]))
 
     @test f(I, "SemaQ2Base")
     base = CC.CXXRecordDecl(get_decl(f).ptr)
@@ -778,9 +778,9 @@ end
     base_vf = first(d for d in CC.decls(CC.castToDeclContext(base)) if d isa CC.CXXMethodDecl)
     derived_vf = first(d for d in CC.decls(CC.castToDeclContext(derived))
                        if d isa CC.CXXMethodDecl)
-    @test CC.IsOverride(sema, derived_vf, base_vf) isa Bool
-    @test CC.IsOverride(sema, derived_vf, base_vf, true) isa Bool
-    @test CC.IsOverload(sema, derived_vf, base_vf) isa Bool
+    @test !(CC.IsOverride(sema, derived_vf, base_vf))
+    @test !(CC.IsOverride(sema, derived_vf, base_vf, true))
+    @test !(CC.IsOverload(sema, derived_vf, base_vf))
 
     # the four declared special members plus one ordinary method
     @test f(I, "SemaQ2Special")
@@ -1014,8 +1014,8 @@ end
     @test f(I, "SemaChk2Cx")
     cx = CC.FunctionDecl(get_decl(f).ptr)
     @test CC.hasBody(cx)
-    @test CC.CheckConstexprFunctionDefinition(sema, cx) isa Bool
-    @test CC.CheckConstexprFunctionDefinition(sema, cx, CC.CXCheckConstexprKind_CheckValid) isa Bool
+    @test CC.CheckConstexprFunctionDefinition(sema, cx)
+    @test CC.CheckConstexprFunctionDefinition(sema, cx, CC.CXCheckConstexprKind_CheckValid)
     @test_throws AssertionError CC.CheckConstexprFunctionDefinition(sema, fn)
 
     # the two operator declarations, reached through the namespace's own decl context
@@ -1245,7 +1245,7 @@ end
     @test !CC.needsImplicitMoveAssignment(agg)
     @test !CC.needsImplicitDestructor(agg)
 
-    @test CC.DefineUsedVTables(sema) isa Bool
+    @test !(CC.DefineUsedVTables(sema))
 
     # with no previous declaration the lexical specifier wins outright
     fld = first(d for d in CC.decls(CC.castToDeclContext(agg)) if d isa CC.FieldDecl)
@@ -1316,7 +1316,7 @@ end
     # this translation unit declares nothing at block scope with C language linkage,
     # so the side table is empty and the carrier comes back holding NULL
     extc_name = CC.DeclarationName(CC.getIdentifierInfo(pp, "sema_misc_one"))
-    @test CC.findLocallyScopedExternCDecl(sema, extc_name) isa CC.NamedDecl
+    @test CC.is_null_handle(CC.findLocallyScopedExternCDecl(sema, extc_name))
 
     # a handler always matches an exception object of its own type
     @test CC.handlerCanCatch(sema, int_ty, int_ty)
@@ -1348,8 +1348,8 @@ end
     @test CC.FunctionNonObjectParamTypesAreEqual(sema, one_fd, three_fd)[1] == false
 
     # a plain function declaration, queried without letting clang diagnose
-    @test CC.checkAddressOfFunctionIsAvailable(sema, one_fd) isa Bool
-    @test CC.shouldLinkDependentDeclWithPrevious(sema, one_fd, two_fd) isa Bool
+    @test CC.checkAddressOfFunctionIsAvailable(sema, one_fd)
+    @test CC.shouldLinkDependentDeclWithPrevious(sema, one_fd, two_fd)
 
     # an already-unqualified non-function type is returned unchanged
     @test CC.ExtractUnqualifiedFunctionType(sema, int_ty).ptr == int_ty.ptr
@@ -1411,7 +1411,7 @@ end
     fmt = CC.resolve(CC.IgnoreParenImpCasts(CC.getInit(CC.VarDecl(get_decl(f).ptr))))
     @test fmt isa CC.StringLiteral
     @test CC.getCharByteWidth(fmt) == 1
-    @test CC.FormatStringHasSArg(sema, fmt) isa Bool
+    @test CC.FormatStringHasSArg(sema, fmt)
 
     # the arity check is the pure arithmetic spelled out in Sema.h's in-class body
     @test CC.TooManyArguments(1, 2)
@@ -1457,8 +1457,8 @@ end
 
     # visibility and reachability of a declaration, and of its definition; the
     # answers depend on the module state of the host build, so assert the shape
-    @test CC.hasVisibleDeclaration(sema, var_nd) isa Bool
-    @test CC.hasReachableDeclaration(sema, var_nd) isa Bool
+    @test CC.hasVisibleDeclaration(sema, var_nd)
+    @test CC.hasReachableDeclaration(sema, var_nd)
     vis, vis_sugg = CC.hasVisibleDefinition(sema, var_nd)
     @test vis isa Bool
     @test vis_sugg isa CC.NamedDecl
@@ -1473,7 +1473,7 @@ end
     @test CC.IsIntegralPromotion(sema, nothing, short_ty, int_ty)
     init = CC.getInit(var_d)
     @test init isa CC.Expr_
-    @test CC.IsIntegralPromotion(sema, init, int_ty, int_ty) isa Bool
+    @test !(CC.IsIntegralPromotion(sema, init, int_ty, int_ty))
 
     # int is not a block pointer, so no block-pointer conversion exists
     okb, convb = CC.IsBlockPointerConversion(sema, int_ty, int_ty)
@@ -1498,7 +1498,7 @@ end
     @test CC.isSameOrCompatibleFunctionType(sema, CC.getType(one_fd),
                                             CC.getType(three_fd)) == false
 
-    @test CC.getExprRange(sema, init) isa CC.SourceRange
+    @test CC.getExprRange(sema, init) isa CC.SourceRange  # shape-only
 
     # no <initializer_list> is reachable here, so int is certainly not one
     is_ilist, ilist_elt = CC.isStdInitializerList(sema, int_ty)
@@ -1512,7 +1512,7 @@ end
     @test CC.getAsTemplateNameDecl(var_nd).ptr == C_NULL
 
     # nothing in this translation unit turns optimization off
-    @test CC.getOptimizeOffPragmaLocation(sema) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getOptimizeOffPragmaLocation(sema))
 
     # int is a POD, hence always valid through an ellipsis
     @test CC.isValidVarArgType(sema, int_ty) == CC.CXVarArgKind_VAK_Valid
@@ -1525,8 +1525,8 @@ end
     v2 = CC.getVectorType(ctx, int_ty, 2, CC.CXVectorKind_Generic)
     @test CC.areVectorTypesSameSize(sema, v4, v4)
     @test CC.areVectorTypesSameSize(sema, v4, v2) == false
-    @test CC.areLaxCompatibleVectorTypes(sema, v4, v4) isa Bool
-    @test CC.isLaxVectorConversion(sema, v4, v2) isa Bool
+    @test CC.areLaxCompatibleVectorTypes(sema, v4, v4)
+    @test !(CC.isLaxVectorConversion(sema, v4, v2))
     # the three vector predicates all restate clang's "one operand is a vector" assert
     @test_throws AssertionError CC.areVectorTypesSameSize(sema, int_ty, int_ty)
     @test_throws AssertionError CC.areLaxCompatibleVectorTypes(sema, int_ty, int_ty)
@@ -1537,7 +1537,7 @@ end
     str = CC.resolve(CC.IgnoreParenImpCasts(CC.getInit(CC.VarDecl(get_decl(f).ptr))))
     @test str isa CC.StringLiteral
     @test CC.getCharByteWidth(str) == 1
-    @test CC.getLocationOfStringLiteralByte(sema, str, 0) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocationOfStringLiteralByte(sema, str, 0))
     @test_throws AssertionError CC.getLocationOfStringLiteralByte(sema, str,
                                                                   CC.getByteLength(str))
 
@@ -1642,7 +1642,7 @@ end
     @test rebuilt_tsi isa CC.TypeSourceInfo
     @test rebuilt_tsi.ptr != C_NULL
     # an unset scope specifier carries no qualifier to rebuild
-    @test CC.RebuildNestedNameSpecifierInCurrentInstantiation(sema, ss) isa Bool
+    @test CC.RebuildNestedNameSpecifierInCurrentInstantiation(sema, ss)
 
     rebuilt_expr = CC.RebuildExprInCurrentInstantiation(sema, eight)
     @test rebuilt_expr isa CC.Expr_
@@ -1654,7 +1654,7 @@ end
                                         if CC.getDeclKindName(d) == "FunctionTemplate").ptr)
     tpl = CC.getTemplateParameters(ftd)
     @test tpl isa CC.TemplateParameterList
-    @test CC.RebuildTemplateParamsInCurrentInstantiation(sema, tpl) isa Bool
+    @test !(CC.RebuildTemplateParamsInCurrentInstantiation(sema, tpl))
 
     # --- last, the two builders that let Sema diagnose: `throw` reports disabled C++
     #     exceptions and __func__ reports being outside a function body ---
@@ -1733,10 +1733,10 @@ end
     @test uconverted isa Union{Nothing,CC.Expr_}
 
     # --- a target type that is not a function carries no exception specification ---
-    @test CC.CheckExceptionSpecCompatibility(sema, eight, int_ty) isa Bool
+    @test !(CC.CheckExceptionSpecCompatibility(sema, eight, int_ty))
 
     # --- the ARC weak rule is a plain comparison of two canonicalized types ---
-    @test CC.CheckObjCARCUnavailableWeakConversion(sema, int_ty, int_ty) isa Bool
+    @test CC.CheckObjCARCUnavailableWeakConversion(sema, int_ty, int_ty)
 
     # --- literal classification is total: an integer literal is no ObjC literal form ---
     @test CC.CheckLiteralKind(sema, eight) isa CC.LibClangEx.CXObjCLiteralKind
@@ -1746,7 +1746,7 @@ end
     @test CC.CheckLValueToRValueConversionOperand(sema, eight) isa Union{Nothing,CC.Expr_}
     uett = CC.LibClangEx.CXUnaryExprOrTypeTrait_UETT_SizeOf
     @test CC.CheckUnaryExprOrTypeTraitOperand(sema, eight, uett) == false
-    @test CC.CheckLoopHintExpr(sema, eight, loc) isa Bool
+    @test !(CC.CheckLoopHintExpr(sema, eight, loc))
     @test CC.CheckSwitchCondition(sema, loc, eight) isa Union{Nothing,CC.Expr_}
     @test CC.CheckCXXBooleanCondition(sema, eight) isa Union{Nothing,CC.Expr_}
     @test CC.CheckCXXBooleanCondition(sema, eight, true) isa Union{Nothing,CC.Expr_}
@@ -1967,7 +1967,7 @@ end
     @test rem_ptr.ptr != C_NULL
     @test !CC.isPointerType(CC.getTypePtr(rem_ptr))
     @test CC.isIntegerType(CC.getTypePtr(rem_ptr))
-    @test CC.BuiltinRemovePointer(sema, int_qt, loc) isa CC.QualType
+    @test !CC.is_null_handle(CC.BuiltinRemovePointer(sema, int_qt, loc))
 
     decayed = CC.BuiltinDecay(sema, arr_qt, loc)
     @test decayed.ptr != C_NULL
@@ -2093,38 +2093,38 @@ end
     @test consumer isa CC.ASTConsumer
     @test consumer.ptr != C_NULL
 
-    @test CC.getScopeForContext(sema, tu) isa CC.Scope
+    @test !CC.is_null_handle(CC.getScopeForContext(sema, tu))
 
     lex = CC.getCurObjCLexicalContext(sema)
     @test lex isa CC.DeclContext
     @test lex.ptr != C_NULL
 
-    @test CC.IsInsideALocalClassWithinATemplateFunction(sema) isa Bool
+    @test !(CC.IsInsideALocalClassWithinATemplateFunction(sema))
     @test CC.getDefaultCXXMethodAddrSpace(sema) == CC.CXLangAS_Default
-    @test CC.getStdAlignValT(sema) isa CC.EnumDecl
+    @test CC.getStdAlignValT(sema) isa CC.EnumDecl  # shape-only: the host decides this
 
     # The error-trap query dereferences Sema's current function scope, which is null
     # whenever the scope stack is empty, so the wrapper gates on the stack instead.
-    @test CC.hasCurFunction(sema) isa Bool
+    @test !(CC.hasCurFunction(sema))
     if CC.hasCurFunction(sema)
-        @test CC.hasAnyUnrecoverableErrorsInThisFunction(sema) isa Bool
+        @test CC.hasAnyUnrecoverableErrorsInThisFunction(sema) isa Bool  # shape-only
     else
         @test_throws AssertionError CC.hasAnyUnrecoverableErrorsInThisFunction(sema)
     end
 
     # --- Module visibility: a hand-built module is not one of this TU's imports ---
     mod = CC.Module_("SemaQ4Mod"; visibility_id=4100)
-    @test CC.isModuleVisible(sema, mod) isa Bool
+    @test !(CC.isModuleVisible(sema, mod))
     CC.dispose(mod)
 
     gi = q4_vardecl("sema_q4_gi")
-    @test CC.hasMergedDefinitionInCurrentModule(sema, gi) isa Bool
+    @test !(CC.hasMergedDefinitionInCurrentModule(sema, gi))
 
     # --- Declaration scoping ---
     # a decl is by construction in its own declaration context
     @test CC.isDeclInScope(sema, gi, CC.getDeclContext(gi))
-    @test CC.isDeclInScope(sema, gi, tu) isa Bool
-    @test CC.isDeclInScope(sema, gi, tu, nothing, true) isa Bool
+    @test CC.isDeclInScope(sema, gi, tu)
+    @test CC.isDeclInScope(sema, gi, tu, nothing, true)
 
     @assert f(I, "sema_q4_fn") "lookup failed: sema_q4_fn"
     fd = CC.FunctionDecl(get_decl(f).ptr)
@@ -2134,7 +2134,7 @@ end
     # --- Function-level queries ---
     @test CC.getEmissionStatus(sema, fd) isa CC.CXFunctionEmissionStatus
     @test CC.getEmissionStatus(sema, fd, true) isa CC.CXFunctionEmissionStatus
-    @test CC.isUnavailableAlignedAllocationFunction(sema, fd) isa Bool
+    @test CC.isUnavailableAlignedAllocationFunction(sema, fd) isa Bool  # shape-only: the host decides this
     # the coroutine heuristic matches on the name `get_return_object`
     @test CC.CanBeGetReturnObject(fd) == false
 
@@ -2151,14 +2151,14 @@ end
     @test arr_ty isa CC.AbstractArrayType
     str = CC.resolve(CC.IgnoreParenImpCasts(CC.getInit(carr)))
     @test str isa CC.StringLiteral
-    @test CC.IsStringInit(sema, str, arr_ty) isa Bool
+    @test CC.IsStringInit(sema, str, arr_ty)
 
     gi_init = CC.getInit(gi)
     # an integer literal is not a string literal, whatever the array's element type
     @test CC.IsStringInit(sema, gi_init, arr_ty) == false
 
     cptr_ty = CC.getType(q4_vardecl("sema_q4_cptr"))
-    @test CC.IsStringLiteralToNonConstPointerConversion(sema, str, cptr_ty) isa Bool
+    @test CC.IsStringLiteralToNonConstPointerConversion(sema, str, cptr_ty)
     @test CC.IsStringLiteralToNonConstPointerConversion(sema, gi_init, cptr_ty) == false
 
     # --- decltype without the sugar: a prvalue keeps its own type ---
@@ -2170,13 +2170,13 @@ end
     # --- `this` outside a member function body ---
     @assert f(I, "SemaQ4S") "lookup failed: SemaQ4S"
     rec_ty = CC.getTypeDeclType(ctx, CC.TypeDecl(get_decl(f)))
-    @test CC.isThisOutsideMemberFunctionBody(sema, rec_ty) isa Bool
+    @test !(CC.isThisOutsideMemberFunctionBody(sema, rec_ty))
 
     # --- Scalable-vector bitcasts, and the "one operand is a vector" assert they share
     # with areVectorTypesSameSize ---
     v4 = CC.getVectorType(ctx, int_ty, 4, CC.CXVectorKind_Generic)
-    @test CC.isValidSveBitcast(sema, v4, int_ty) isa Bool
-    @test CC.isValidRVVBitcast(sema, v4, int_ty) isa Bool
+    @test !(CC.isValidSveBitcast(sema, v4, int_ty))
+    @test !(CC.isValidRVVBitcast(sema, v4, int_ty))
     @test_throws AssertionError CC.isValidSveBitcast(sema, int_ty, int_ty)
     @test_throws AssertionError CC.isValidRVVBitcast(sema, int_ty, int_ty)
 
@@ -2461,7 +2461,7 @@ end
     @test inst isa CC.InstantiatingTemplate
     @test inst.ptr != C_NULL
     @test CC.isInvalid(inst) == false
-    @test CC.isAlreadyInstantiating(inst) isa Bool
+    @test !(CC.isAlreadyInstantiating(inst))
     @test CC.getNumCodeSynthesisContexts(sema) == base + 1
     @test CC.inTemplateInstantiation(sema)
 
@@ -2482,7 +2482,7 @@ end
         e = substitute(sema, dependent_expr, ml)
         @test e isa CC.Expr_
         @test e.ptr != C_NULL
-        @test CC.isValueDependent(e) isa Bool
+        @test !(CC.isValueDependent(e))
     end
 
     init = CC.SubstInitializer(sema, dependent_expr, ml, false)
@@ -2514,7 +2514,7 @@ end
     subst_qloc = CC.SubstNestedNameSpecifierLoc(sema, qloc, ml)
     @test subst_qloc isa CC.NestedNameSpecifierLoc
     @test subst_qloc.ptr != C_NULL
-    @test CC.hasQualifier(subst_qloc) isa Bool
+    @test CC.hasQualifier(subst_qloc)
     dispose(subst_qloc)
     dispose(qloc)
 
@@ -2707,7 +2707,7 @@ end
     @test count(is_op_new, CC.decls(tu_dc)) > before
 
     op_new = first(d for d in CC.decls(tu_dc) if is_op_new(d))
-    @test CC.isReplaceableGlobalAllocationFunction(op_new) isa Bool
+    @test !(CC.isReplaceableGlobalAllocationFunction(op_new))
     @test_throws AssertionError CC.AddKnownFunctionAttributesForReplaceableGlobalAllocationFunction(sema,
                                                                                                     fns[1])
     @test_throws AssertionError CC.DeclareGlobalAllocationFunction(sema,
@@ -2783,7 +2783,7 @@ end
     nweak = CC.getNumWeakTopLevelDecls(sema)
     @test nweak isa Integer
     for i = 0:(Int(nweak) - 1)
-        @test CC.getWeakTopLevelDecl(sema, i) isa CC.Decl
+        @test CC.getWeakTopLevelDecl(sema, i) isa CC.Decl  # shape-only
     end
     @test_throws AssertionError CC.getWeakTopLevelDecl(sema, nweak)
 
@@ -2811,14 +2811,14 @@ end
     @test fn_adjusted === nothing || fn_adjusted isa CC.DeclContext
 
     # --- Capture and ADL queries ---
-    @test CC.NeedToCaptureVariable(sema, global_var, loc) isa Bool
+    @test !(CC.NeedToCaptureVariable(sema, global_var, loc))
 
     ss = CC.CXXScopeSpec()
     r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaMiscCallee")),
                         loc, CC.CXLookupNameKind_LookupOrdinaryName)
-    @test CC.LookupQualifiedName(sema, r, tu) isa Bool
-    @test CC.UseArgumentDependentLookup(sema, ss, r, true) isa Bool
-    @test CC.UseArgumentDependentLookup(sema, ss, r, false) isa Bool
+    @test CC.LookupQualifiedName(sema, r, tu)
+    @test CC.UseArgumentDependentLookup(sema, ss, r, true)
+    @test !(CC.UseArgumentDependentLookup(sema, ss, r, false))
     CC.dispose(r)
     CC.dispose(ss)
 
@@ -2827,10 +2827,10 @@ end
     @test all(d -> d isa CC.NamedDecl && d.ptr != C_NULL, ops)
 
     # --- Pragma-driven floating-point state ---
-    @test CC.CurFPFeatureOverrides(sema) isa Integer
+    @test CC.CurFPFeatureOverrides(sema) isa Integer  # shape-only: the host decides this
 
     # --- The vector predicate family's remaining member ---
-    @test CC.anyAltivecTypes(sema, vec_qt, int_qt) isa Bool
+    @test !(CC.anyAltivecTypes(sema, vec_qt, int_qt))
     @test_throws AssertionError CC.anyAltivecTypes(sema, int_qt, int_qt)
 
     # --- Standard conversions ---
@@ -2919,26 +2919,26 @@ end
     @test CC.getName(field) == "q5PublicField"
 
     # --- Module ownership and access from Sema's current context ---
-    @test CC.IsRedefinitionInModule(sema, field, field) isa Bool
-    @test CC.IsSimplyAccessible(sema, field, rec, rec_ty) isa Bool
+    @test CC.IsRedefinitionInModule(sema, field, field)
+    @test CC.IsSimplyAccessible(sema, field, rec, rec_ty)
 
     # --- Decl-shaped predicates ---
     @test f(I, "semaQ5Plain")
     plain_fd = CC.FunctionDecl(get_decl(f).ptr)
     # the clang method is `D && isa<ObjCMethodDecl>(D)`, so a C++ function is never one
     @test CC.isObjCMethodDecl(sema, plain_fd) == false
-    @test CC.canSkipFunctionBody(sema, plain_fd) isa Bool
-    @test CC.ShouldWarnIfUnusedFileScopedDecl(sema, rec_var) isa Bool
+    @test CC.canSkipFunctionBody(sema, plain_fd)
+    @test !(CC.ShouldWarnIfUnusedFileScopedDecl(sema, rec_var))
     @test CC.getNonOdrUseReasonInCurrentContext(sema, rec_var) isa CC.CXNonOdrUseReason
-    @test CC.getTopMostPointOfInstantiation(sema, plain_fd) isa CC.SourceLocation
-    @test CC.CanBeGetReturnTypeOnAllocFailure(plain_fd) isa Bool
-    @test CC.isCUDAImplicitHostDeviceFunction(plain_fd) isa Bool
+    @test !CC.is_null_handle(CC.getTopMostPointOfInstantiation(sema, plain_fd))
+    @test !(CC.CanBeGetReturnTypeOnAllocFailure(plain_fd))
+    @test CC.isCUDAImplicitHostDeviceFunction(plain_fd) isa Bool  # shape-only: the host decides this
 
     # --- Expression-shaped predicates ---
     @test f(I, "semaQ5Init")
     init = CC.getInit(CC.VarDecl(get_decl(f).ptr))
     @test init isa CC.Expr_
-    @test CC.isQualifiedMemberAccess(sema, init) isa Bool
+    @test !(CC.isQualifiedMemberAccess(sema, init))
 
     # --- Function prototypes: variadic classification and the lambda invoker type ---
     @test f(I, "semaQ5Varargs")
@@ -2973,8 +2973,10 @@ end
     @test CC.isCast(CC.CXCheckedConversionKind_CCK_ForBuiltinOverloadedOp) == false
 
     # --- Target- and dialect-decided answers (never a specific value: CI is three hosts) ---
-    @test CC.isValidSectionSpecifier(sema, "__TEXT,__text") isa Bool
-    @test CC.isValidSectionSpecifier(sema, "not a section specifier") isa Bool
+    @test CC.isValidSectionSpecifier(sema, "__TEXT,__text")
+    # target-decided: what counts as a valid section specifier follows the object
+    # file format, so only the shape of the answer holds across the CI runners
+    @test CC.isValidSectionSpecifier(sema, "not a section specifier") isa Bool  # shape-only: the host decides this
     cuda_name = CC.getCudaConfigureFuncName(sema)
     @test cuda_name isa String
     @test !isempty(cuda_name)
@@ -3294,7 +3296,7 @@ end
                    if CC.getNameAsString(m) == "semaChkVirt")
     der_m = first(m for m in CC.getMethods(vder) if CC.getNameAsString(m) == "semaChkVirt")
     # neither overrider has an explicit object parameter, so nothing is diagnosed
-    @test CC.CheckExplicitObjectOverride(sema, der_m, base_m) isa Bool
+    @test CC.CheckExplicitObjectOverride(sema, der_m, base_m)
 
     @test f(I, "semaChkPlain")
     plain_fd = CC.FunctionDecl(get_decl(f).ptr)
@@ -3571,7 +3573,7 @@ end
     @test CC.setExceptionMode(sema, loc, other_mode) === nothing
     @test CC.CurFPFeatureOverrides(sema) != before      # the mode this call set
     @test CC.setExceptionMode(sema, loc, default_mode) === nothing
-    @test CC.CurFPFeatureOverrides(sema) isa Integer
+    @test CC.CurFPFeatureOverrides(sema) isa Integer  # shape-only: the host decides this
 
     # --- the extern-"C" side table round-trips through its own reader ---
     gi_name = CC.getDeclName(gi)
@@ -3651,10 +3653,10 @@ end
     ctx_kind = CC.getContext(rec)
     @test ctx_kind isa CC.CXExpressionEvaluationContext
     @test CC.getExprContext(rec) isa CC.CXExpressionKind
-    @test CC.getNumCleanupObjects(rec) isa Integer
-    @test CC.getNumTypos(rec) isa Integer
-    @test CC.getManglingContextDecl(rec) isa CC.Decl
-    @test CC.isDiscardedStatementContext(rec) isa Bool
+    @test CC.getNumCleanupObjects(rec) isa Integer  # shape-only: the target chooses this value
+    @test CC.getNumTypos(rec) isa Integer  # shape-only: the target chooses this value
+    @test CC.getManglingContextDecl(rec) isa CC.Decl  # shape-only: the host decides this
+    @test !(CC.isDiscardedStatementContext(rec))
     # The Sema-level predicate reads this very record, so the two must agree whatever the
     # host left on the stack.
     @test CC.isUnevaluatedContext(sema) ==
@@ -3710,9 +3712,13 @@ end
     f = DeclFinder(I)
 
     # --- the odr-used-but-never-defined list (count, then parallel component arrays) ---
+    # Empty here, and deliberately left so: an entry only appears once something is marked
+    # odr-used without a definition, and clang's only consumer of that state is the
+    # end-of-parse diagnostic renderer -- leaving one pending takes the process down rather
+    # than failing a test. The shape of the empty result is what this pins.
     undefined = CC.getUndefinedButUsed(sema)
     @test undefined isa Vector{Tuple{CC.NamedDecl,CC.SourceLocation}}
-    @test all(row -> row[1].ptr != C_NULL, undefined)
+    @test isempty(undefined)
 
     # --- whether the callee of a call can throw ---
     @test f(I, "semaQ6NoThrow")
@@ -3756,11 +3762,11 @@ end
     @test altivec isa CC.VectorType
     @test CC.ShouldSplatAltivecScalarInCast(sema, altivec)   # true for every AltiVecVector
     generic = CC.resolve(CC.getTypePtr(CC.getVectorType(ctx, int_qt, 4, CC.CXVectorKind_Generic)))
-    @test CC.ShouldSplatAltivecScalarInCast(sema, generic) isa Bool
+    @test !(CC.ShouldSplatAltivecScalarInCast(sema, generic))
 
     # --- SME call-conversion validity, which only a function prototype can answer ---
     fn_qt = CC.getType(plain_fd)
-    @test CC.IsInvalidSMECallConversion(sema, fn_qt, fn_qt) isa Bool
+    @test !(CC.IsInvalidSMECallConversion(sema, fn_qt, fn_qt))
     @test_throws AssertionError CC.IsInvalidSMECallConversion(sema, int_qt, fn_qt)
 
     # --- a lookup result that holds a template name ---
@@ -3768,7 +3774,7 @@ end
                         CC.CXLookupNameKind_LookupOrdinaryName)
     @test CC.LookupQualifiedName(sema, r, tu)
     @test CC.hasAnyAcceptableTemplateNames(sema, r)
-    @test CC.hasAnyAcceptableTemplateNames(sema, r; allow_dependent=false) isa Bool
+    @test CC.hasAnyAcceptableTemplateNames(sema, r; allow_dependent=false)
     CC.dispose(r)
 
     # --- the written return type's TypeLoc ---
@@ -3786,7 +3792,7 @@ end
     # deduction runs under a trap so a substitution failure is counted, not rendered
     trap = CC.SFINAETrap(sema)
     info = CC.TemplateDeductionInfo(loc)
-    @test CC.isMoreSpecializedThanPrimary(sema, specs[1], info) isa Bool
+    @test CC.isMoreSpecializedThanPrimary(sema, specs[1], info)
     winner = CC.getMoreSpecializedPartialSpecialization(sema, specs[1], specs[2], loc)
     @test winner isa CC.ClassTemplatePartialSpecializationDecl
     CC.dispose(info)
@@ -3800,7 +3806,7 @@ end
     keyword = CC.getNullabilityKeyword(sema, CC.CXNullabilityKind_NonNull)
     @test keyword isa CC.IdentifierInfo
     @test !isempty(CC.getName(keyword))
-    @test CC.getNullabilityKeyword(sema, CC.CXNullabilityKind_Nullable) isa CC.IdentifierInfo
+    @test !CC.is_null_handle(CC.getNullabilityKeyword(sema, CC.CXNullabilityKind_Nullable))
     @test f(I, "SemaQ6Rec")
     @test CC.isCFError(sema, CC.CXXRecordDecl(get_decl(f).ptr)) == false
 
@@ -3925,7 +3931,7 @@ end
     # --- The two builders needing a scope the parser only has mid-parse ---
     # Both stacks are empty between parses, so each wrapper rejects the call itself; the
     # other polarity is covered without reading a value this test did not set.
-    @test CC.hasCurFunction(sema) isa Bool
+    @test !(CC.hasCurFunction(sema))
     if CC.hasCurFunction(sema)
         @test CC.BuildStmtExpr(sema, loc, body, loc) isa Union{Nothing,CC.Expr_}
     else
@@ -3983,9 +3989,9 @@ end
     @test all(a -> a isa CC.Expr_, ph_args)
 
     tsi = CC.getTrivialTypeSourceInfo(ctx, int_qt, loc)
-    @test CC.CheckAlignasTypeArgument(sema, "alignas", tsi, loc, rng) isa Bool
+    @test CC.CheckAlignasTypeArgument(sema, "alignas", tsi, loc, rng) isa Bool  # shape-only: the host decides this
 
-    @test CC.CheckCXXThrowOperand(sema, loc, int_qt, eight) isa Bool
+    @test !(CC.CheckCXXThrowOperand(sema, loc, int_qt, eight))
 
     # semaChk6Plain carries no enable_if attribute, so the loop over them is empty and
     # every condition succeeds vacuously.
@@ -4487,7 +4493,7 @@ end
     @test CC.LoadExternalVTableUses(sema) === nothing
 
     # --- Host/device discarding, which is defined for a non-CUDA translation unit too ---
-    @test CC.shouldIgnoreInHostDeviceCheck(sema, fd) isa Bool
+    @test CC.shouldIgnoreInHostDeviceCheck(sema, fd) isa Bool  # shape-only: the host decides this
 
     # --- The member-function calling convention, asked for a plain function type ---
     adjusted = CC.adjustMemberFunctionCC(sema, fn_ty, false, false, loc)
@@ -4516,10 +4522,10 @@ end
     @test_throws AssertionError CC.PrepareScalarCast(sema, lit, fn_ty)
 
     # --- Cleanup wrapping: nothing is pending here, so both hand the node straight back ---
-    @test CC.MaybeCreateExprWithCleanups(sema, lit) isa CC.Expr_
+    @test !CC.is_null_handle(CC.MaybeCreateExprWithCleanups(sema, lit))
     body = CC.getBody(fd)
     @test body isa CC.AbstractStmt
-    @test CC.MaybeCreateStmtWithCleanups(sema, body) isa CC.Stmt
+    @test !CC.is_null_handle(CC.MaybeCreateStmtWithCleanups(sema, body))
 
     # --- The static_assert message, round-tripped against the text the test wrote ---
     tu = CC.getTranslationUnitDecl(ctx)
@@ -4551,7 +4557,7 @@ end
     # --- Constraint-expression equality, which profiles the two expressions ---
     @test CC.AreConstraintExpressionsEqual(sema, nothing, lit, nothing, lit)
     @test CC.AreConstraintExpressionsEqual(sema, nothing, lit, nothing, lit7) == false
-    @test CC.AreConstraintExpressionsEqual(sema, fd, lit, fd, lit) isa Bool
+    @test CC.AreConstraintExpressionsEqual(sema, fd, lit, fd, lit)
 
     # --- The implicit cast builder, and the two value-category preconditions ---
     icast = CC.ImpCastExprToType(sema, lit, double_ty, CC.CXCastKind_CK_IntegralToFloating)
@@ -4627,19 +4633,16 @@ end
     @test CC.PopExpressionEvaluationContext(sema) === nothing
 
     # --- The CUDA host/device stack reports an unbalanced pop instead of underflowing ---
-    @test CC.PopForceCUDAHostDevice(sema) isa Bool
+    @test CC.PopForceCUDAHostDevice(sema) isa Bool  # shape-only: the host decides this
     @test CC.PushForceCUDAHostDevice(sema) === nothing
     @test CC.PopForceCUDAHostDevice(sema)
 
     # --- A compound scope needs a function scope under it, and says so ---
-    @test CC.hasCurFunction(sema) isa Bool
-    if CC.hasCurFunction(sema)
-        CC.PushCompoundScope(sema, false)
-        @test CC.PopCompoundScope(sema) === nothing
-    else
-        @test_throws AssertionError CC.PushCompoundScope(sema, false)
-        @test_throws AssertionError CC.PopCompoundScope(sema)
-    end
+    # Nothing has pushed a function scope yet, so both halves of the pair refuse. The
+    # accepting case is exercised below, after PushFunctionScope supplies one.
+    @test !CC.hasCurFunction(sema)
+    @test_throws AssertionError CC.PushCompoundScope(sema, false)
+    @test_throws AssertionError CC.PopCompoundScope(sema)
     # pushing a function scope gives the compound scope somewhere to sit
     CC.PushFunctionScope(sema)
     @test CC.hasCurFunction(sema)
@@ -4660,12 +4663,12 @@ end
 
     # --- Scope chains ---
     @test CC.PushOnScopeChains(sema, rec, scope, false) === nothing
-    @test CC.getNonFieldDeclScope(sema, scope) isa CC.Scope
+    @test !CC.is_null_handle(CC.getNonFieldDeclScope(sema, scope))
     # a chain with no declaration scope in it is refused rather than walked off the end
     bare = CC.Scope(nothing, 0, diag)
     @test_throws AssertionError CC.getNonFieldDeclScope(sema, bare)
     dispose(bare)
-    @test CC.getScopeForDeclContext(scope, tu_dc) isa CC.Scope
+    @test CC.is_null_handle(CC.getScopeForDeclContext(scope, tu_dc))
     @test CC.getTemplateDepth(sema, scope) isa Integer
 
     ud = nothing
@@ -4705,8 +4708,8 @@ end
     @test CC.getName(std_ns) == "std"
 
     # Nothing here is owned by a module, but the accessor must answer with a carrier.
-    @test CC.getOwningModule(sema, fd) isa CC.Module_
-    @test CC.getModuleLoader(sema) isa CC.ModuleLoader
+    @test CC.is_null_handle(CC.getOwningModule(sema, fd))
+    @test !CC.is_null_handle(CC.getModuleLoader(sema))
 
     # The implicit code-seg/section attribute: absent on a plain function.
     a = CC.getImplicitCodeSegOrSectionAttrForFunction(sema, fd, true)

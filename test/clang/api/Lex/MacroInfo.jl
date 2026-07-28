@@ -9,13 +9,13 @@ using Test
     pp = CC.getPreprocessor(ci)
 
     # Preprocessor accessors
-    @test CC.getDiagnostics(pp) isa CC.DiagnosticsEngine
-    @test CC.getLangOpts(pp) isa CC.LangOptions
-    @test CC.getTargetInfo(pp) isa CC.TargetInfo
-    @test CC.getFileManager(pp) isa CC.FileManager
-    @test CC.getSourceManager(pp) isa CC.SourceManager
-    @test CC.getIdentifierTable(pp) isa CC.IdentifierTable
-    @test CC.getCommentRetentionState(pp) isa Bool
+    @test !CC.is_null_handle(CC.getDiagnostics(pp))
+    @test !CC.is_null_handle(CC.getLangOpts(pp))
+    @test CC.getTargetInfo(pp) isa CC.TargetInfo  # shape-only: the host decides this
+    @test !CC.is_null_handle(CC.getFileManager(pp))
+    @test !CC.is_null_handle(CC.getSourceManager(pp))
+    @test !CC.is_null_handle(CC.getIdentifierTable(pp))
+    @test !(CC.getCommentRetentionState(pp))
     CC.SetCommentRetentionState(pp, false, false)
     @test !CC.getCommentRetentionState(pp)
     @test CC.getPragmasEnabled(pp)
@@ -55,10 +55,10 @@ using Test
     @test !CC.isBuiltinMacro(mi_obj)
     @test !CC.hasCommaPasting(mi_obj)
     @test CC.isEnabled(mi_obj)
-    @test CC.isUsed(mi_obj) isa Bool
-    @test CC.isAllowRedefinitionsWithoutWarning(mi_obj) isa Bool
-    @test CC.isWarnIfUnused(mi_obj) isa Bool
-    @test CC.isUsedForHeaderGuard(mi_obj) isa Bool
+    @test CC.isUsed(mi_obj)
+    @test !(CC.isAllowRedefinitionsWithoutWarning(mi_obj))
+    @test !(CC.isWarnIfUnused(mi_obj))
+    @test !(CC.isUsedForHeaderGuard(mi_obj))
     @test CC.param_empty(mi_obj)
     @test CC.getNumParams(mi_obj) == 0
     @test CC.getNumTokens(mi_obj) == 1
@@ -78,7 +78,7 @@ using Test
     @test !CC.isNot(tok42, k)
     # whether the definition records a leading space on the replacement token
     # is a lexer detail — assert flag/predicate consistency, not the value
-    @test CC.hasLeadingSpace(tok42) isa Bool
+    @test !(CC.hasLeadingSpace(tok42))
     @test !CC.isAtStartOfLine(tok42)
     @test CC.getFlag(tok42, CC.LibClangEx.CXTokenFlags_LeadingSpace) ==
           CC.hasLeadingSpace(tok42)
@@ -88,10 +88,10 @@ using Test
     @test !CC.hasLeadingEmptyMacro(tok42) && !CC.hasUDSuffix(tok42) && !CC.hasUCN(tok42)
     @test !CC.stringifiedInMacro(tok42) && !CC.commaAfterElided(tok42)
     @test !CC.isEditorPlaceholder(tok42)
-    @test CC.hasPtrData(tok42) isa Bool
+    @test CC.hasPtrData(tok42)
     @test CC.isValid(CC.getLocation(tok42))
-    @test CC.getEndLoc(tok42) isa CC.SourceLocation
-    @test CC.getLastLoc(tok42) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getEndLoc(tok42))
+    @test !CC.is_null_handle(CC.getLastLoc(tok42))
 
     # MacroInfo read surface (function-like) + params count+index
     ii_fn = CC.getIdentifierInfo(pp, "CC_LEX_FN")
@@ -152,8 +152,8 @@ using Test
     lex = CC.Lexer(fid, lex_buf, sm2, lang_opts)
     @test !CC.isPragmaLexer(lex)
     @test !CC.isKeepWhitespaceMode(lex)
-    @test CC.inKeepCommentMode(lex) isa Bool
-    @test CC.isFirstTimeLexingFile(lex) isa Bool
+    @test !(CC.inKeepCommentMode(lex))
+    @test CC.isFirstTimeLexingFile(lex)
     @test CC.getFileLoc(lex) isa CC.SourceLocation
     CC.SetCommentRetentionState(lex, true)
     @test CC.inKeepCommentMode(lex)
@@ -204,7 +204,7 @@ end
     @test md.ptr != C_NULL
     @test CC.getKind(md) == CC.LibClangEx.CXMacroDirectiveKind_MD_Define
     @test CC.isDefined(md)
-    @test CC.isFromPCH(md) isa Bool
+    @test !(CC.isFromPCH(md))
     @test CC.isValid(CC.getLocation(md))
     @test CC.getPrevious(md).ptr == C_NULL
     mi = CC.getMacroInfo(md)
@@ -322,7 +322,7 @@ end
     @test !CC.isUndefined(def)
     @test !CC.isValid(CC.getUndefLocation(def))
     @test CC.isValid(CC.getLocation(def))
-    @test CC.isPublic(def) isa Bool
+    @test CC.isPublic(def)
     dmd = CC.getDirective(def)
     @test dmd isa CC.DefMacroDirective
     @test dmd.ptr == md.ptr  # the newest directive is itself the active #define
@@ -356,7 +356,7 @@ end
     # how the host laid the snippet out in the source manager, so assert the shape
     at = CC.findDirectiveAtLoc(md, CC.getDefinitionLoc(mi), sm)
     @test at isa CC.DefInfo
-    @test CC.isValid(at) isa Bool
+    @test !(CC.isValid(at))
     dispose(at)
     @test_throws AssertionError CC.findDirectiveAtLoc(md, CC.SourceLocation(), sm)
 
@@ -373,7 +373,7 @@ end
     # setIsFromPCH is one-way, so only the post-state is assertable
     first_def = CC.getPrevious(undef_md)
     @test first_def.ptr != C_NULL
-    @test CC.isFromPCH(first_def) isa Bool
+    @test !(CC.isFromPCH(first_def))
     CC.setIsFromPCH(first_def)
     @test CC.isFromPCH(first_def)
 

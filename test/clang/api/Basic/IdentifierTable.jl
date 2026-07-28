@@ -14,23 +14,25 @@ using Test
 
     # ---- LangOptions read surface (C++ TU defaults) ----
     @test CC.isCompilingModule(lo) == false
-    @test CC.isCompilingModuleInterface(lo) isa Bool
-    @test CC.isCompilingModuleImplementation(lo) isa Bool
-    @test CC.isSignedOverflowDefined(lo) isa Bool
-    @test CC.isSubscriptPointerArithmetic(lo) isa Bool
-    @test CC.isNoBuiltinFunc(lo, "memcpy") isa Bool
-    @test CC.assumeFunctionsAreConvergent(lo) isa Bool
+    @test !(CC.isCompilingModuleInterface(lo))
+    @test !(CC.isCompilingModuleImplementation(lo))
+    @test !(CC.isSignedOverflowDefined(lo))
+    @test !(CC.isSubscriptPointerArithmetic(lo))
+    @test !(CC.isNoBuiltinFunc(lo, "memcpy"))
+    @test !(CC.assumeFunctionsAreConvergent(lo))
     @test CC.getOpenCLCompatibleVersion(lo) isa Int
-    @test CC.getOpenCLVersionString(lo) isa String
+    @test !isempty(CC.getOpenCLVersionString(lo))
     @test CC.requiresStrictPrototypes(lo) == true
     @test CC.implicitFunctionsAllowed(lo) == false
     @test CC.hasAtExit(lo) == true
     @test CC.isImplicitIntRequired(lo) == false
     @test CC.isImplicitIntAllowed(lo) == false
-    @test CC.hasSjLjExceptions(lo) isa Bool
-    @test CC.hasSEHExceptions(lo) isa Bool
-    @test CC.hasDWARFExceptions(lo) isa Bool
-    @test CC.hasWasmExceptions(lo) isa Bool
+    @test !(CC.hasSjLjExceptions(lo))
+    # target-decided: structured exception handling is a Windows construct, so the
+    # default this LangOptions carries depends on the runner
+    @test CC.hasSEHExceptions(lo) isa Bool  # shape-only: the host decides this
+    @test !(CC.hasDWARFExceptions(lo))
+    @test !(CC.hasWasmExceptions(lo))
     @test CC.isSYCL(lo) == false
 
     # ---- IdentifierInfo predicates and IDs ----
@@ -40,7 +42,7 @@ using Test
     @test CC.isStr(ii, "other") == false
     @test CC.getLength(ii) == length("idlm_probe")
     @test CC.hasMacroDefinition(ii) == false
-    @test CC.hadMacroDefinition(ii) isa Bool
+    @test !(CC.hadMacroDefinition(ii))
     @test CC.isDeprecatedMacro(ii) == false
     @test CC.isFinal(ii) == false
     @test CC.isExtensionToken(ii) == false
@@ -103,12 +105,17 @@ using Test
     @test CC.isExplicitGlobalModule(root) == false
     @test CC.isImplicitGlobalModule(root) == false
     @test CC.isPrivateModule(root) == false
-    @test CC.isUnimportable(root) isa Bool
-    @test CC.isAvailable(root) isa Bool
+    # last of the synthetic-module bits: a module built without a module map has no
+    # unimportable reason recorded either, so the answer is the runner's, not clang's
+    @test CC.isUnimportable(root) isa Bool  # shape-only: the host decides this
+    # A synthetic module has no module map, so isAvailable reads bits that were never
+    # set and the answer differs per runner (CLAUDE.md records this); only the shape
+    # of it is assertable here.
+    @test CC.isAvailable(root) isa Bool  # shape-only: the host decides this
     @test CC.isSubModule(root) == false
     # framework membership walks to the top-level module and depends on how the
     # host's module map was synthesized — assert the shape, not the value
-    @test CC.isPartOfFramework(root) isa Bool
+    @test CC.isPartOfFramework(root) isa Bool  # shape-only: the host decides this
     @test CC.isSubFramework(root) == false
     @test CC.isModulePartition(root) == false
     @test CC.isModuleImplementation(root) == false
@@ -133,7 +140,7 @@ using Test
     @test CC.getSubmodule(root, 0).ptr == child.ptr
     @test CC.findSubmodule(root, "Child").ptr == child.ptr
     @test CC.findSubmodule(root, "Nope").ptr == C_NULL
-    @test CC.directlyUses(child, root) isa Bool
+    @test CC.directlyUses(child, root)
     CC.dispose(root)                           # also deletes child
 
     dispose(I)
@@ -354,7 +361,7 @@ end
     @test CC.getNumArgs(nul) == 0
     @test CC.isKeywordSelector(nul) isa Bool
     @test CC.isUnarySelector(nul) isa Bool
-    @test CC.getAsString(nul) isa String
+    @test !isempty(CC.getAsString(nul))
     @test CC.getNameForSlot(nul, 0) == ""
     @test CC.getIdentifierInfoForSlot(nul, 0).ptr == C_NULL
 
@@ -384,7 +391,7 @@ end
     @test CC.getNameForSlot(multi, 0) == "width"
     @test CC.getNameForSlot(multi, 1) == "height"
     @test CC.getSelector(selt, 2, [width, height]).ptr == multi.ptr
-    @test CC.getTotalMemory(selt) isa Integer
+    @test CC.getTotalMemory(selt) isa Integer  # shape-only: the target chooses this value
 
     # ---- ObjC family classification: a plain C++ identifier vs a family name ----
     @test CC.getMethodFamily(nullary) == CC.CXObjCMethodFamily_OMF_None

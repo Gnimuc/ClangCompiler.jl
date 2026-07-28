@@ -67,7 +67,7 @@ using Test
                 @test ts.ptr != C_NULL
                 @test CC.resolve(ts) isa CC.AbstractStmt
                 @test CC.getTerminatorCondition(b).ptr != C_NULL
-                @test CC.getLastCondition(b) isa CC.Expr_
+                @test !CC.is_null_handle(CC.getLastCondition(b))
                 for j in 0:(Int(CC.succ_size(b)) - 1)
                     @test CC.isSuccReachable(b, j)
                     @test CC.getSucc(b, j).ptr != C_NULL
@@ -164,7 +164,7 @@ end
         try
             # CFG tail: try-dispatch blocks and the synthetic-DeclStmt map
             @test CC.getNumTryBlocks(cfg) == 0
-            @test CC.getNumSyntheticDeclStmts(cfg) isa Integer
+            @test CC.getNumSyntheticDeclStmts(cfg) isa Integer  # shape-only: the target chooses this value
 
             entry = CC.getEntry(cfg)
             exit_ = CC.getExit(cfg)
@@ -173,12 +173,12 @@ end
             @test !CC.succ_empty(entry)
             @test CC.succ_empty(exit_)
             @test !CC.pred_empty(exit_)
-            @test CC.FilterEdge(entry, exit_) isa Bool
-            @test CC.FilterEdge(entry, exit_, false, false) isa Bool
+            @test !(CC.FilterEdge(entry, exit_))
+            @test !(CC.FilterEdge(entry, exit_, false, false))
 
             for j in 0:(Int(CC.pred_size(exit_)) - 1)
-                @test CC.isPredReachable(exit_, j) isa Bool
-                @test CC.getPredPossiblyUnreachableBlock(exit_, j) isa CC.CFGBlock
+                @test CC.isPredReachable(exit_, j)
+                @test CC.is_null_handle(CC.getPredPossiblyUnreachableBlock(exit_, j))
             end
 
             n = Int(CC.getNumBlocks(cfg))
@@ -191,8 +191,8 @@ end
                 if CC.hasTerminator(b)
                     found_terminator = true
                     @test !isempty(CC.printTerminatorAsString(b, ctx))
-                    @test CC.printTerminatorJsonAsString(b, ctx) isa String
-                    @test CC.printTerminatorJsonAsString(b, ctx, true) isa String
+                    @test !isempty(CC.printTerminatorJsonAsString(b, ctx))
+                    @test !isempty(CC.printTerminatorJsonAsString(b, ctx, true))
                 end
                 for j in 0:(Int(CC.size(b)) - 1)
                     k = CC.getElementKind(b, j)
@@ -624,7 +624,7 @@ end
             # round-trip the mask through the body's own statement class, so nothing here
             # depends on which class the host's parser produced
             sc = CC.getStmtClass(body)
-            @test CC.alwaysAdd(opts, body) isa Bool
+            @test !(CC.alwaysAdd(opts, body))
             @test !CC.alwaysAdd(opts, body)
             CC.setAlwaysAdd(opts, sc)
             @test CC.alwaysAdd(opts, body)
@@ -641,8 +641,8 @@ end
                 @test n >= 4
 
                 # front/back are the two ends of the very list getBlock indexes
-                @test CC.front(cfg) isa CC.CFGBlock
-                @test CC.back(cfg) isa CC.CFGBlock
+                @test !CC.is_null_handle(CC.front(cfg))
+                @test !CC.is_null_handle(CC.back(cfg))
                 @test CC.front(cfg).ptr == CC.getBlock(cfg, 0).ptr
                 @test CC.back(cfg).ptr == CC.getBlock(cfg, n - 1).ptr
 
@@ -662,7 +662,7 @@ end
                     @test length(fs) <= Int(CC.succ_size(b))
                     @test length(fp) <= Int(CC.pred_size(b))
                     # non-default FilterOptions still return a well-formed count
-                    @test CC.getNumFilteredSuccs(b, false, false) isa Integer
+                    @test CC.getNumFilteredSuccs(b, false, false) isa Integer  # shape-only
                 end
 
                 # a successor walk filters nothing here: its source block is never null
@@ -733,6 +733,7 @@ end
                 ctor_ctx = nothing
                 typed_call = nothing
                 seen = K.CXConstructionContextKind[]
+                elided = CC.ConstructionContext[]
                 for i in 0:(n - 1)
                     b = CC.getBlock(cfg, i)
                     for j in 0:(Int(CC.size(b)) - 1)
@@ -755,18 +756,18 @@ end
                         push!(seen, ck)
                         # every payload accessor is total: it answers a carrier of its
                         # own type, NULL-valued unless the kind matches
-                        @test CC.getDeclStmt(cc) isa CC.DeclStmt
-                        @test CC.getCXXCtorInitializer(cc) isa CC.CXXCtorInitializer
-                        @test CC.getCXXNewExpr(cc) isa CC.CXXNewExpr
-                        @test CC.getCXXBindTemporaryExpr(cc) isa CC.CXXBindTemporaryExpr
-                        @test CC.getMaterializedTemporaryExpr(cc) isa CC.MaterializeTemporaryExpr
-                        @test CC.getConstructorAfterElision(cc) isa CC.CXXConstructExpr
-                        @test CC.getConstructionContextAfterElision(cc) isa CC.ConstructionContext
+                        @test CC.getDeclStmt(cc) isa CC.DeclStmt  # shape-only
+                        @test CC.is_null_handle(CC.getCXXCtorInitializer(cc))
+                        @test CC.getCXXNewExpr(cc) isa CC.CXXNewExpr  # shape-only
+                        @test CC.getCXXBindTemporaryExpr(cc) isa CC.CXXBindTemporaryExpr  # shape-only
+                        @test CC.is_null_handle(CC.getMaterializedTemporaryExpr(cc))
+                        @test CC.is_null_handle(CC.getConstructorAfterElision(cc))
+                        @test CC.is_null_handle(CC.getConstructionContextAfterElision(cc))
                         @test CC.getReturnStmt(cc) isa CC.ReturnStmt
-                        @test CC.getCallLikeExpr(cc) isa CC.Expr_
-                        @test CC.getLambdaExpr(cc) isa CC.LambdaExpr
-                        @test CC.getInitializer(cc) isa CC.Expr_
-                        @test CC.getFieldDecl(cc) isa CC.FieldDecl
+                        @test CC.getCallLikeExpr(cc) isa CC.Expr_  # shape-only
+                        @test CC.getLambdaExpr(cc) isa CC.LambdaExpr  # shape-only
+                        @test CC.getInitializer(cc) isa CC.Expr_  # shape-only
+                        @test CC.getFieldDecl(cc) isa CC.FieldDecl  # shape-only
                         if ck == K.CXConstructionContextKind_SimpleVariableKind ||
                            ck == K.CXConstructionContextKind_CXX17ElidedCopyVariableKind
                             @test CC.getDeclStmt(cc).ptr != C_NULL
@@ -778,17 +779,16 @@ end
                         elseif ck == K.CXConstructionContextKind_NewAllocatedObjectKind
                             @test CC.getCXXNewExpr(cc).ptr != C_NULL
                         elseif ck == K.CXConstructionContextKind_ElidedTemporaryObjectKind
-                            @test CC.getConstructorAfterElision(cc).ptr != C_NULL
-                            @test CC.getConstructionContextAfterElision(cc).ptr != C_NULL
+                            push!(elided, cc)
                         elseif ck == K.CXConstructionContextKind_SimpleReturnedValueKind ||
                                ck == K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind
                             @test CC.getReturnStmt(cc).ptr != C_NULL
                         elseif ck == K.CXConstructionContextKind_ArgumentKind
                             @test CC.getCallLikeExpr(cc).ptr != C_NULL
-                            @test CC.getIndex(cc) isa Integer
+                            @test CC.getIndex(cc) isa Integer  # shape-only: the target chooses this value
                         elseif ck == K.CXConstructionContextKind_LambdaCaptureKind
                             @test CC.getLambdaExpr(cc).ptr != C_NULL
-                            @test CC.getIndex(cc) isa Integer
+                            @test CC.getIndex(cc) isa Integer  # shape-only: the target chooses this value
                             @test CC.getInitializer(cc).ptr != C_NULL
                             @test CC.getFieldDecl(cc).ptr != C_NULL
                         end
@@ -797,6 +797,11 @@ end
                 # `CfgCCObj local(x);` is a direct-initialised local of class type, so the
                 # rich builder always yields a variable-kind Constructor element for it
                 @test !isempty(seen)
+                # Under C++17 the temporary in a copy-initialisation is not merely elided
+                # but never materialised, so no element carries an elided-temporary
+                # context here and the two after-elision accessors have nothing to read.
+                @test isempty(elided)
+                @test !(K.CXConstructionContextKind_ElidedTemporaryObjectKind in seen)
                 @test ctor_ctx !== nothing
                 @test ctor_expr !== nothing
 
@@ -856,7 +861,7 @@ end
         try
             # a freshly created BuildOptions carries clang's own defaults: only
             # PruneTriviallyFalseEdges starts on
-            @test CC.getPruneTriviallyFalseEdges(opts) isa Bool
+            @test CC.getPruneTriviallyFalseEdges(opts)
             @test CC.getPruneTriviallyFalseEdges(opts)
             @test !CC.getAddEHEdges(opts)
             @test !CC.getAddStaticInitBranches(opts)

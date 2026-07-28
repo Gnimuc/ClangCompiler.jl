@@ -32,11 +32,11 @@ using Test
     info = CC.TemplateDeductionInfo(loc)
     @test info isa CC.TemplateDeductionInfo
     @test info.ptr != C_NULL
-    @test CC.getLocation(info) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocation(info))
     @test CC.getDeducedDepth(info) == 0
-    @test CC.getNumExplicitArgs(info) isa Integer
-    @test CC.hasSFINAEDiagnostic(info) isa Bool
-    @test CC.getCallArgIndex(info) isa Integer
+    @test CC.getNumExplicitArgs(info) isa Integer  # shape-only: the target chooses this value
+    @test !(CC.hasSFINAEDiagnostic(info))
+    @test CC.getCallArgIndex(info) isa Integer  # shape-only: the target chooses this value
     @test CC.takeCanonical(info).ptr == C_NULL
 
     # --- matching a class template partial specialization against an argument list ---

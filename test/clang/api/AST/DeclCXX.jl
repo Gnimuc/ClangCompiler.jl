@@ -106,7 +106,7 @@ end
     @test Base.get(tal, 0) isa CC.TemplateArgument
     ctsd = CC.ClassTemplateSpecializationDecl(ctx, s1, tal)
     @test ctsd isa CC.ClassTemplateSpecializationDecl
-    @test CC.getTemplateArgs(ctsd) isa CC.TemplateArgumentList
+    @test !CC.is_null_handle(CC.getTemplateArgs(ctsd))
     tal2 = CC.TemplateArgumentList(ctx, [targ])
     CC.setTemplateArgs(ctsd, tal2)
     @test size(CC.getTemplateArgs(ctsd)) == 1
@@ -160,7 +160,7 @@ end
     @test all(x -> x isa CC.CXXCtorInitializer, inits)
     @test CC.isBaseInitializer(inits[1])
     @test !CC.isMemberInitializer(inits[1])
-    @test CC.getBaseClass(inits[1]) isa CC.Type_
+    @test !CC.is_null_handle(CC.getBaseClass(inits[1]))
     @test CC.isMemberInitializer(inits[2])
     @test CC.getName(CC.getMember(inits[2])) == "m"
     @test CC.getInit(inits[2]) isa CC.Expr_
@@ -268,7 +268,7 @@ end
     @test CC.getCanonicalDecl(baseRD) isa CC.CXXRecordDecl
     @test CC.getPreviousDecl(baseRD) isa CC.CXXRecordDecl
     @test CC.getMostRecentDecl(baseRD) isa CC.CXXRecordDecl
-    @test CC.getMostRecentNonInjectedDecl(baseRD) isa CC.CXXRecordDecl
+    @test !CC.is_null_handle(CC.getMostRecentNonInjectedDecl(baseRD))
     @test CC.getDefinition(baseRD) isa CC.CXXRecordDecl
 
     # ---- CXXRecordDecl: Bool-returning trait predicates (~90) ----
@@ -326,14 +326,14 @@ end
     # so exercise them on a trivial struct.
     @test f(I, "Plain")
     plainRD = CC.CXXRecordDecl(get_decl(f).ptr)
-    @test CC.defaultedCopyConstructorIsDeleted(plainRD) isa Bool
-    @test CC.defaultedDefaultConstructorIsConstexpr(plainRD) isa Bool
-    @test CC.defaultedDestructorIsConstexpr(plainRD) isa Bool
-    @test CC.defaultedDestructorIsDeleted(plainRD) isa Bool
-    @test CC.defaultedMoveConstructorIsDeleted(plainRD) isa Bool
+    @test !(CC.defaultedCopyConstructorIsDeleted(plainRD))
+    @test CC.defaultedDefaultConstructorIsConstexpr(plainRD)
+    @test CC.defaultedDestructorIsConstexpr(plainRD)
+    @test !(CC.defaultedDestructorIsDeleted(plainRD))
+    @test !(CC.defaultedMoveConstructorIsDeleted(plainRD))
 
     # generic-lambda template parameter list (nullptr-safe on a non-lambda)
-    @test CC.getGenericLambdaTemplateParameterList(baseRD) isa CC.TemplateParameterList
+    @test CC.is_null_handle(CC.getGenericLambdaTemplateParameterList(baseRD))
     glamClass = nothing
     for d in alldecls
         if d isa CC.CXXRecordDecl && CC.isGenericLambda(d)
@@ -342,15 +342,15 @@ end
         end
     end
     if glamClass !== nothing
-        @test CC.getGenericLambdaTemplateParameterList(glamClass) isa CC.TemplateParameterList
-        @test CC.hasKnownLambdaInternalLinkage(glamClass) isa Bool
+        @test !CC.is_null_handle(CC.getGenericLambdaTemplateParameterList(glamClass))
+        @test !(CC.hasKnownLambdaInternalLinkage(glamClass))
     end
 
     # ---- CXXRecordDecl: bases / methods / ctors counts + collections ----
-    @test CC.getNumBases(derivedRD) isa Integer
-    @test CC.getNumVBases(diamondRD) isa Integer
-    @test CC.getNumMethods(baseRD) isa Integer
-    @test CC.getNumCtors(baseRD) isa Integer
+    @test CC.getNumBases(derivedRD) isa Integer  # shape-only: the target chooses this value
+    @test CC.getNumVBases(diamondRD) isa Integer  # shape-only: the target chooses this value
+    @test CC.getNumMethods(baseRD) isa Integer  # shape-only: the target chooses this value
+    @test CC.getNumCtors(baseRD) isa Integer  # shape-only: the target chooses this value
 
     bases = CC.getBases(derivedRD)
     @test all(x -> x isa CC.CXXBaseSpecifier, bases)
@@ -359,7 +359,7 @@ end
     vbases = CC.getVBases(diamondRD)
     @test all(x -> x isa CC.CXXBaseSpecifier, vbases)
     if CC.getNumVBases(diamondRD) > 0
-        @test CC.getVBase(diamondRD, 0) isa CC.CXXBaseSpecifier
+        @test !CC.is_null_handle(CC.getVBase(diamondRD, 0))
     end
 
     methods = CC.getMethods(baseRD)
@@ -371,16 +371,16 @@ end
     b0 = bases[1]
     @test CC.getAccessSpecifier(b0) isa Integer || CC.getAccessSpecifier(b0) isa Enum
     @test CC.getAccessSpecifierAsWritten(b0) isa Integer || CC.getAccessSpecifierAsWritten(b0) isa Enum
-    @test CC.getBaseTypeLoc(b0) isa CC.SourceLocation
-    @test CC.getEllipsisLoc(b0) isa CC.SourceLocation
-    @test CC.getEndLoc(b0) isa CC.SourceLocation
-    @test CC.getInheritConstructors(b0) isa Bool
-    @test CC.getSourceRange(b0) isa CC.SourceRange
+    @test !CC.is_null_handle(CC.getBaseTypeLoc(b0))
+    @test CC.is_null_handle(CC.getEllipsisLoc(b0))
+    @test !CC.is_null_handle(CC.getEndLoc(b0))
+    @test !(CC.getInheritConstructors(b0))
+    @test CC.getSourceRange(b0) isa CC.SourceRange  # shape-only
     @test CC.getType(b0) isa CC.QualType
-    @test CC.getTypeSourceInfo(b0) isa CC.TypeSourceInfo
-    @test CC.isBaseOfClass(b0) isa Bool
-    @test CC.isPackExpansion(b0) isa Bool
-    @test CC.isVirtual(b0) isa Bool
+    @test !CC.is_null_handle(CC.getTypeSourceInfo(b0))
+    @test !(CC.isBaseOfClass(b0))
+    @test !(CC.isPackExpansion(b0))
+    @test !(CC.isVirtual(b0))
     # a virtual base specifier
     if !isempty(vbases)
         @test CC.isVirtual(vbases[1])
@@ -391,17 +391,17 @@ end
         @test CC.getCanonicalDecl(m) isa CC.CXXMethodDecl
         @test CC.getMostRecentDecl(m) isa CC.CXXMethodDecl
         @test CC.getParent(m) isa CC.CXXRecordDecl
-        @test CC.hasInlineBody(m) isa Bool
-        @test CC.isConst(m) isa Bool
-        @test CC.isCopyAssignmentOperator(m) isa Bool
-        @test CC.isInstance(m) isa Bool
-        @test CC.isLambdaStaticInvoker(m) isa Bool
-        @test CC.isMoveAssignmentOperator(m) isa Bool
-        @test CC.isStatic(m) isa Bool
-        @test CC.isVirtual(m) isa Bool
-        @test CC.isVolatile(m) isa Bool
+        @test CC.hasInlineBody(m) isa Bool  # shape-only
+        @test CC.isConst(m) isa Bool  # shape-only
+        @test CC.isCopyAssignmentOperator(m) isa Bool  # shape-only
+        @test CC.isInstance(m)
+        @test !(CC.isLambdaStaticInvoker(m))
+        @test !(CC.isMoveAssignmentOperator(m))
+        @test !(CC.isStatic(m))
+        @test CC.isVirtual(m) isa Bool  # shape-only
+        @test !(CC.isVolatile(m))
         if CC.isInstance(m)
-            @test CC.getThisType(m) isa CC.QualType
+            @test !CC.is_null_handle(CC.getThisType(m))
         end
     end
 
@@ -415,7 +415,7 @@ end
         for p in ctorPreds
             @test p(c) isa Bool
         end
-        @test CC.getNumCtorInitializers(c) isa Integer
+        @test CC.getNumCtorInitializers(c) isa Integer  # shape-only: the target chooses this value
     end
     @test any(CC.isDefaultConstructor, ctors)
     @test any(CC.isCopyConstructor, ctors)
@@ -424,12 +424,12 @@ end
     @test any(CC.isExplicit, ctors)
 
     dtor = first(m for m in resolved if m isa CC.CXXDestructorDecl)
-    @test CC.getOperatorDelete(dtor) isa CC.FunctionDecl
+    @test !CC.is_null_handle(CC.getOperatorDelete(dtor))
 
     conv = first(m for m in resolved if m isa CC.CXXConversionDecl)
-    @test CC.getConversionType(conv) isa CC.QualType
-    @test CC.isExplicit(conv) isa Bool
-    @test CC.isLambdaToBlockPointerConversion(conv) isa Bool
+    @test !CC.is_null_handle(CC.getConversionType(conv))
+    @test !(CC.isExplicit(conv))
+    @test !(CC.isLambdaToBlockPointerConversion(conv))
 
     # ---- CXXCtorInitializer via Derived's ctors ----
     dctors = CC.getCtors(derivedRD)
@@ -439,11 +439,11 @@ end
     baseInit = first(i for i in inits if CC.isBaseInitializer(i))
     memInit = first(i for i in inits if CC.isMemberInitializer(i))
     @test CC.isBaseInitializer(baseInit)
-    @test CC.isAnyMemberInitializer(baseInit) isa Bool
-    @test CC.isDelegatingInitializer(baseInit) isa Bool
-    @test CC.getBaseClass(baseInit) isa CC.Type_
+    @test !(CC.isAnyMemberInitializer(baseInit))
+    @test !(CC.isDelegatingInitializer(baseInit))
+    @test !CC.is_null_handle(CC.getBaseClass(baseInit))
     @test CC.getInit(baseInit) isa CC.Expr_
-    @test CC.getSourceLocation(baseInit) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getSourceLocation(baseInit))
     @test CC.isMemberInitializer(memInit)
     @test CC.isAnyMemberInitializer(memInit)
     @test CC.getMember(memInit) isa CC.FieldDecl
@@ -451,36 +451,36 @@ end
 
     # delegating constructor + its target + delegating initializer
     delegCtor = first(c for c in dctors if CC.isDelegatingConstructor(c))
-    @test CC.getTargetConstructor(delegCtor) isa CC.CXXConstructorDecl
+    @test CC.getTargetConstructor(delegCtor) isa CC.CXXConstructorDecl  # shape-only: the host decides this
     dinits = CC.getCtorInitializers(delegCtor)
     @test any(CC.isDelegatingInitializer, dinits)
 
     # ---- AccessSpecDecl ----
     asd = first(d for d in alldecls if d isa CC.AccessSpecDecl)
-    @test CC.getAccessSpecifierLoc(asd) isa CC.SourceLocation
-    @test CC.getColonLoc(asd) isa CC.SourceLocation
-    @test CC.getSourceRange(asd) isa CC.SourceRange
+    @test !CC.is_null_handle(CC.getAccessSpecifierLoc(asd))
+    @test !CC.is_null_handle(CC.getColonLoc(asd))
+    @test CC.getSourceRange(asd) isa CC.SourceRange  # shape-only
 
     # ---- LinkageSpecDecl (extern "C" { ... }) ----
     lsd = first(d for d in alldecls if d isa CC.LinkageSpecDecl)
-    @test CC.getEndLoc(lsd) isa CC.SourceLocation
-    @test CC.getExternLoc(lsd) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getEndLoc(lsd))
+    @test !CC.is_null_handle(CC.getExternLoc(lsd))
     @test CC.getLanguage(lsd) isa Integer || CC.getLanguage(lsd) isa Enum
-    @test CC.getRBraceLoc(lsd) isa CC.SourceLocation
-    @test CC.getSourceRange(lsd) isa CC.SourceRange
-    @test CC.hasBraces(lsd) isa Bool
+    @test !CC.is_null_handle(CC.getRBraceLoc(lsd))
+    @test CC.getSourceRange(lsd) isa CC.SourceRange  # shape-only
+    @test CC.hasBraces(lsd)
 
     # ---- UsingDirectiveDecl (using namespace NS2;) ----
     udir = first(d for d in alldecls if d isa CC.UsingDirectiveDecl)
-    @test CC.getNominatedNamespace(udir) isa CC.NamespaceDecl
+    @test !CC.is_null_handle(CC.getNominatedNamespace(udir))
 
     # ---- UsingDecl / BaseUsingDecl / UsingShadowDecl (using Base::bar;) ----
     usingD = first(d for d in alldecls if d isa CC.UsingDecl)
-    @test CC.shadow_size(usingD) isa Integer
+    @test CC.shadow_size(usingD) isa Integer  # shape-only: the target chooses this value
     shadows = CC.getShadows(usingD)
     @test all(s -> s isa CC.UsingShadowDecl, shadows)
     if !isempty(shadows)
-        @test CC.getTargetDecl(shadows[1]) isa CC.NamedDecl
+        @test CC.getTargetDecl(shadows[1]) isa CC.NamedDecl  # shape-only: the host decides this
     end
 
     # ---- CXXDeductionGuideDecl (templated decl of a FunctionTemplateDecl) ----
@@ -492,9 +492,9 @@ end
     end
     @test !isempty(dgs)
     for dg in dgs
-        @test CC.isExplicit(dg) isa Bool
-        @test CC.getCorrespondingConstructor(dg) isa CC.CXXConstructorDecl
-        @test CC.getDeducedTemplate(dg) isa CC.TemplateDecl
+        @test !(CC.isExplicit(dg))
+        @test CC.getCorrespondingConstructor(dg) isa CC.CXXConstructorDecl  # shape-only
+        @test !CC.is_null_handle(CC.getDeducedTemplate(dg))
         @test CC.getDeductionCandidateKind(dg) isa Integer ||
               CC.getDeductionCandidateKind(dg) isa Enum
     end
@@ -532,10 +532,10 @@ end
         # --- NamedDecl printing surface ---
         @test CC.getNameAsString(gv) == "dtl_gv"
         @test CC.getQualifiedNameAsString(gv) == "dtl_gv"
-        @test CC.printName(gv) isa String
-        @test CC.printNestedNameSpecifier(gv) isa String
-        @test CC.getNameForDiagnostic(gv, true) isa String
-        @test CC.getNameForDiagnostic(gv, false) isa String
+        @test !isempty(CC.printName(gv))
+        @test isempty(CC.printNestedNameSpecifier(gv))
+        @test !isempty(CC.getNameForDiagnostic(gv, true))
+        @test !isempty(CC.getNameForDiagnostic(gv, false))
         @test occursin("nsvar", CC.getQualifiedNameAsString(nsvar))
         @test occursin("NSA", CC.printNestedNameSpecifier(nsvar))
 
@@ -550,32 +550,32 @@ end
         @test CC.getInitStyle(sv) == CC.LibClangEx.CXVarDecl_ListInit
         CC.setInitStyle(sv, CC.LibClangEx.CXVarDecl_CInit)
         @test CC.getInitStyle(sv) == CC.LibClangEx.CXVarDecl_CInit
-        @test CC.hasDependentAlignment(gv) isa Bool
-        @test CC.checkForConstantInitialization(gv) isa Bool
-        @test CC.evaluateDestruction(gv) isa Bool
-        @test CC.hasFlexibleArrayInit(gv, ctx) isa Bool
-        @test CC.getFlexibleArrayInitChars(gv, ctx) isa Integer
-        @test CC.getMemberSpecializationInfo(gv) isa CC.MemberSpecializationInfo
+        @test CC.hasDependentAlignment(gv) isa Bool  # shape-only: the host decides this
+        @test CC.checkForConstantInitialization(gv)
+        @test CC.evaluateDestruction(gv)
+        @test !(CC.hasFlexibleArrayInit(gv, ctx))
+        @test CC.getFlexibleArrayInitChars(gv, ctx) isa Integer  # shape-only: the target chooses this value
+        @test CC.is_null_handle(CC.getMemberSpecializationInfo(gv))
         @test CC.getStorageClassSpecifierString(CC.LibClangEx.CXStorageClass_SC_Static) ==
               "static"
         # evaluateValue populates the cache that getEvaluatedValue reads back.
         CC.evaluateValue(gv)
-        @test CC.getEvaluatedValue(gv) isa CC.APValue
+        @test !CC.is_null_handle(CC.getEvaluatedValue(gv))
 
         # --- ValueDecl / DeclaratorDecl levels reached through their carriers ---
-        @test CC.isInitCapture(CC.ValueDecl(gv.ptr)) isa Bool
-        @test CC.getPotentiallyDecomposedVarDecl(CC.ValueDecl(gv.ptr)) isa CC.VarDecl
-        @test CC.getSourceRange(CC.DeclaratorDecl(gv.ptr)) isa CC.SourceRange
+        @test !(CC.isInitCapture(CC.ValueDecl(gv.ptr)))
+        @test !CC.is_null_handle(CC.getPotentiallyDecomposedVarDecl(CC.ValueDecl(gv.ptr)))
+        @test CC.getSourceRange(CC.DeclaratorDecl(gv.ptr)) isa CC.SourceRange  # shape-only
 
         # --- ParmVarDecl ---
         p0 = CC.getParamDecl(fd, 0)
-        @test CC.getSourceRange(p0) isa CC.SourceRange
+        @test CC.getSourceRange(p0) isa CC.SourceRange  # shape-only
         @test CC.getMaxFunctionScopeDepth() isa Integer
         @test CC.isExplicitObjectParameter(p0) == false
-        @test CC.getExplicitObjectParamThisLoc(p0) isa CC.SourceLocation
+        @test CC.is_null_handle(CC.getExplicitObjectParamThisLoc(p0))
 
         # --- FunctionDecl bit-flag round-trips (restore what we flip) ---
-        @test CC.getDefaultLoc(fd) isa CC.SourceLocation
+        @test CC.is_null_handle(CC.getDefaultLoc(fd))
         for (getter, setter) in ((CC.isIneligibleOrNotSelected,
                                   CC.setIneligibleOrNotSelected),
                                  (CC.BodyContainsImmediateEscalatingExpressions,
@@ -590,16 +590,16 @@ end
             setter(fd, old)
             @test getter(fd) == old
         end
-        @test CC.isImmediateEscalating(fd) isa Bool
-        @test CC.isImmediateFunction(fd) isa Bool
-        @test CC.isMemberLikeConstrainedFriend(fd) isa Bool
-        @test CC.isTargetClonesMultiVersion(fd) isa Bool
+        @test !(CC.isImmediateEscalating(fd))
+        @test !(CC.isImmediateFunction(fd))
+        @test !(CC.isMemberLikeConstrainedFriend(fd))
+        @test CC.isTargetClonesMultiVersion(fd) isa Bool  # shape-only: the host decides this
 
         # --- FunctionDecl parameter arithmetic ---
         @test CC.getNumParams(fd) == 2
         @test CC.hasCXXExplicitFunctionObjectParameter(fd) == false
         @test CC.getNumNonObjectParams(fd) == 2
-        @test CC.getNonObjectParameter(fd, 0) isa CC.ParmVarDecl
+        @test !CC.is_null_handle(CC.getNonObjectParameter(fd, 0))
         @test CC.getMinRequiredExplicitArguments(fd) == 1
         # FunctionDecl::setParams is private in clang 18, so the parameter list
         # is read-only here — check indexed access agrees with the count.
@@ -615,20 +615,20 @@ end
         CC.dispose(tl)
         @test CC.getOverloadedOperator(fd) ==
               CC.LibClangEx.CXOverloadedOperatorKind_OO_None
-        @test CC.getInstantiatedFromDecl(fd) isa CC.FunctionDecl
+        @test CC.is_null_handle(CC.getInstantiatedFromDecl(fd))
 
         # --- FieldDecl ---
         flds = CC.getFields(rd)
         @test length(flds) == 3
-        @test CC.isPotentiallyOverlapping(flds[1]) isa Bool
+        @test !(CC.isPotentiallyOverlapping(flds[1]))
         @test CC.hasNonNullInClassInitializer(flds[1]) == false
         @test CC.hasNonNullInClassInitializer(flds[3]) == true
 
         # --- TagDecl / EnumDecl / RecordDecl ---
         @test CC.isThisDeclarationADemotedDefinition(rd) == false
-        @test CC.getSourceRange(ed) isa CC.SourceRange
-        @test CC.getODRHash(rd) isa Integer
-        @test CC.isRandomized(rd) isa Bool
+        @test CC.getSourceRange(ed) isa CC.SourceRange  # shape-only
+        @test CC.getODRHash(rd) isa Integer  # shape-only: the target chooses this value
+        @test !(CC.isRandomized(rd))
         old_rnd = CC.isRandomized(rd)
         CC.setIsRandomized(rd, !old_rnd)
         @test CC.isRandomized(rd) == !old_rnd
@@ -656,10 +656,10 @@ end
         @test sad !== nothing
         if sad !== nothing
             @test CC.isFailed(sad) == false
-            @test CC.getAssertExpr(sad) isa CC.Expr_
+            @test !CC.is_null_handle(CC.getAssertExpr(sad))
             @test CC.getMessage(sad) isa CC.Expr_
-            @test CC.getRParenLoc(sad) isa CC.SourceLocation
-            @test CC.getSourceRange(sad) isa CC.SourceRange
+            @test !CC.is_null_handle(CC.getRParenLoc(sad))
+            @test CC.getSourceRange(sad) isa CC.SourceRange  # shape-only
         end
 
         # --- TopLevelStmtDecl factory + accessors ---
@@ -673,7 +673,7 @@ end
         @test CC.getStmt(tls) isa CC.AbstractStmt
         CC.setSemiMissing(tls, false)
         @test CC.isSemiMissing(tls) == false
-        @test CC.getSourceRange(tls) isa CC.SourceRange
+        @test CC.getSourceRange(tls) isa CC.SourceRange  # shape-only
     finally
         dispose(f)
         dispose(I)
@@ -714,16 +714,16 @@ end
     lam = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd)))
     @test lam isa CC.CXXRecordDecl
     if lam.ptr != C_NULL && CC.isLambda(lam)
-        @test CC.getLambdaCallOperator(lam) isa CC.CXXMethodDecl
+        @test !CC.is_null_handle(CC.getLambdaCallOperator(lam))
         @test CC.getLambdaCallOperator(lam).ptr != C_NULL
-        @test CC.getLambdaStaticInvoker(lam) isa CC.CXXMethodDecl
+        @test !CC.is_null_handle(CC.getLambdaStaticInvoker(lam))
         # a non-generic lambda has no templated call operator
         @test CC.getDependentLambdaCallOperator(lam).ptr == C_NULL
         @test Int(CC.getLambdaCaptureDefault(lam)) == 0  # LCD_None
-        @test CC.getLambdaManglingNumber(lam) isa Integer
-        @test CC.getLambdaIndexInContext(lam) isa Integer
-        @test CC.getLambdaContextDecl(lam) isa CC.Decl
-        @test CC.getLambdaTypeInfo(lam) isa CC.TypeSourceInfo
+        @test CC.getLambdaManglingNumber(lam) isa Integer  # shape-only: the host decides this
+        @test CC.getLambdaIndexInContext(lam) isa Integer  # shape-only: the target chooses this value
+        @test CC.is_null_handle(CC.getLambdaContextDecl(lam))
+        @test !CC.is_null_handle(CC.getLambdaTypeInfo(lam))
     end
 
     CC.dispose(f)
@@ -760,8 +760,8 @@ end
     @test h isa Integer
     @test CC.getODRHash(host) == h
 
-    @test CC.implicitCopyConstructorHasConstParam(host) isa Bool
-    @test CC.implicitCopyAssignmentHasConstParam(host) isa Bool
+    @test CC.implicitCopyConstructorHasConstParam(host)
+    @test CC.implicitCopyAssignmentHasConstParam(host)
 
     # base walk: MemDerived IS derived from MemHost, provably not from MemUnrelated
     @test !CC.isProvablyNotDerivedFrom(derived, host)
@@ -796,7 +796,7 @@ end
     @test dct isa CC.ClassTemplateDecl
     @test dct.ptr != C_NULL
     @test CC.getDescribedClassTemplate(host).ptr == C_NULL
-    @test CC.getMemberSpecializationInfo(host) isa CC.MemberSpecializationInfo
+    @test CC.is_null_handle(CC.getMemberSpecializationInfo(host))
     @test CC.getMemberSpecializationInfo(host).ptr == C_NULL
     pdc = CC.castToDeclContext(pattern)
     @test CC.is_dependent_context(pdc)
@@ -817,14 +817,14 @@ end
         @test lam isa CC.CXXRecordDecl
         (lam.ptr == C_NULL || !CC.isLambda(lam)) && continue
         @test CC.capture_size(lam) == ncap
-        @test CC.getDeviceLambdaManglingNumber(lam) isa Integer
-        @test CC.lambdaIsDefaultConstructibleAndAssignable(lam) isa Bool
+        @test CC.getDeviceLambdaManglingNumber(lam) isa Integer  # shape-only: the host decides this
+        @test !(CC.lambdaIsDefaultConstructibleAndAssignable(lam))
         @test Int(CC.getLambdaDependencyKind(lam)) in (0, 1, 2)
         for i in 0:(CC.capture_size(lam) - 1)
             cap = CC.getCapture(lam, i)
             @test cap isa CC.LambdaCapture
             @test cap.ptr != C_NULL
-            @test CC.capturesVariable(cap) isa Bool
+            @test CC.capturesVariable(cap)
         end
     end
 
@@ -874,27 +874,27 @@ end
     @test all(x -> x isa CC.CXXCtorInitializer, inits)
 
     baseInit = first(i for i in inits if CC.isBaseInitializer(i))
-    @test CC.isBaseVirtual(baseInit) isa Bool
+    @test !(CC.isBaseVirtual(baseInit))
     @test CC.isBaseVirtual(baseInit) == false
-    @test CC.getTypeSourceInfo(baseInit) isa CC.TypeSourceInfo
-    @test CC.getSourceRange(baseInit) isa CC.SourceRange
-    @test CC.getMemberLocation(baseInit) isa CC.SourceLocation
-    @test CC.getEllipsisLoc(baseInit) isa CC.SourceLocation
-    @test CC.getLParenLoc(baseInit) isa CC.SourceLocation
-    @test CC.getRParenLoc(baseInit) isa CC.SourceLocation
-    @test CC.isPackExpansion(baseInit) isa Bool
-    @test CC.isInClassMemberInitializer(baseInit) isa Bool
-    @test CC.isWritten(baseInit) isa Bool
-    @test CC.getSourceOrder(baseInit) isa Integer
+    @test !CC.is_null_handle(CC.getTypeSourceInfo(baseInit))
+    @test CC.getSourceRange(baseInit) isa CC.SourceRange  # shape-only
+    @test CC.is_null_handle(CC.getMemberLocation(baseInit))
+    @test CC.is_null_handle(CC.getEllipsisLoc(baseInit))
+    @test !CC.is_null_handle(CC.getLParenLoc(baseInit))
+    @test !CC.is_null_handle(CC.getRParenLoc(baseInit))
+    @test !(CC.isPackExpansion(baseInit))
+    @test !(CC.isInClassMemberInitializer(baseInit))
+    @test CC.isWritten(baseInit)
+    @test CC.getSourceOrder(baseInit) isa Integer  # shape-only: the target chooses this value
 
     memInit = first(i for i in inits if CC.isMemberInitializer(i))
     @test CC.isIndirectMemberInitializer(memInit) == false
-    @test CC.getAnyMember(memInit) isa CC.FieldDecl
+    @test !CC.is_null_handle(CC.getAnyMember(memInit))
     @test CC.getName(CC.getAnyMember(memInit)) == "m"
 
     indInit = first(i for i in inits if CC.isIndirectMemberInitializer(i))
-    @test CC.getIndirectMember(indInit) isa CC.IndirectFieldDecl
-    @test CC.getAnyMember(indInit) isa CC.FieldDecl
+    @test !CC.is_null_handle(CC.getIndirectMember(indInit))
+    @test !CC.is_null_handle(CC.getAnyMember(indInit))
     @test CC.getName(CC.getAnyMember(indInit)) == "aa"
 
     # ---- isBaseVirtual true for a virtual-base initializer ----
@@ -907,11 +907,11 @@ end
     # ---- NamespaceAliasDecl (namespace alias = ns;) ----
     nad = first(d for d in alldecls if d isa CC.NamespaceAliasDecl)
     @test CC.getCanonicalDecl(nad) isa CC.NamespaceAliasDecl
-    @test CC.getNamespace(nad) isa CC.NamespaceDecl
-    @test CC.getAliasedNamespace(nad) isa CC.NamedDecl
-    @test CC.getAliasLoc(nad) isa CC.SourceLocation
-    @test CC.getNamespaceLoc(nad) isa CC.SourceLocation
-    @test CC.getTargetNameLoc(nad) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getNamespace(nad))
+    @test !CC.is_null_handle(CC.getAliasedNamespace(nad))
+    @test !CC.is_null_handle(CC.getAliasLoc(nad))
+    @test !CC.is_null_handle(CC.getNamespaceLoc(nad))
+    @test CC.getTargetNameLoc(nad) isa CC.SourceLocation  # shape-only: the host decides this
     @test CC.getName(nad) == "alias"
     @test CC.getName(CC.getNamespace(nad)) == "ns"
 
@@ -936,24 +936,24 @@ end
         @test f(I, "MMd")
         mmd_rec = CC.CXXRecordDecl(get_decl(f).ptr)
         mmd = first(m for m in CC.getMethods(mmd_rec) if CC.getNameAsString(m) == "mmd")
-        @test CC.isImplicitObjectMemberFunction(mmd) isa Bool
+        @test CC.isImplicitObjectMemberFunction(mmd)
         @test CC.isImplicitObjectMemberFunction(mmd) == true
-        @test CC.isExplicitObjectMemberFunction(mmd) isa Bool
+        @test !(CC.isExplicitObjectMemberFunction(mmd))
         @test CC.isExplicitObjectMemberFunction(mmd) == false
-        @test CC.size_overridden_methods(mmd) isa Integer
+        @test CC.size_overridden_methods(mmd) isa Integer  # shape-only: the target chooses this value
         @test CC.size_overridden_methods(mmd) == 0
-        @test CC.getNumExplicitParams(mmd) isa Integer
+        @test CC.getNumExplicitParams(mmd) isa Integer  # shape-only: the target chooses this value
         @test CC.getNumExplicitParams(mmd) == 1
 
         # ---- UsingDecl (from `using MBd::MBd;`) ----
         usingD = first(d for d in alldecls if d isa CC.UsingDecl)
-        @test CC.getUsingLoc(usingD) isa CC.SourceLocation
-        @test CC.getQualifier(usingD) isa CC.NestedNameSpecifier
-        @test CC.isAccessDeclaration(usingD) isa Bool
+        @test !CC.is_null_handle(CC.getUsingLoc(usingD))
+        @test !CC.is_null_handle(CC.getQualifier(usingD))
+        @test !(CC.isAccessDeclaration(usingD))
         @test CC.isAccessDeclaration(usingD) == false
-        @test CC.hasTypename(usingD) isa Bool
+        @test !(CC.hasTypename(usingD))
         @test CC.hasTypename(usingD) == false
-        @test CC.getSourceRange(usingD) isa CC.SourceRange
+        @test CC.getSourceRange(usingD) isa CC.SourceRange  # shape-only
         @test CC.getCanonicalDecl(usingD).ptr == usingD.ptr
 
         # ---- ConstructorUsingShadowDecl (the shadow of that using) ----
@@ -962,13 +962,13 @@ end
         @test intro isa CC.UsingDecl
         @test intro.ptr == usingD.ptr
         @test CC.getParent(cusd) isa CC.CXXRecordDecl
-        @test CC.getNominatedBaseClass(cusd) isa CC.CXXRecordDecl
-        @test CC.getConstructedBaseClass(cusd) isa CC.CXXRecordDecl
-        @test CC.constructsVirtualBase(cusd) isa Bool
+        @test !CC.is_null_handle(CC.getNominatedBaseClass(cusd))
+        @test !CC.is_null_handle(CC.getConstructedBaseClass(cusd))
+        @test !(CC.constructsVirtualBase(cusd))
         @test CC.constructsVirtualBase(cusd) == false
         # Direct-base inheritance: both shadow links are null, so assert only the carrier type.
-        @test CC.getNominatedBaseClassShadowDecl(cusd) isa CC.ConstructorUsingShadowDecl
-        @test CC.getConstructedBaseClassShadowDecl(cusd) isa CC.ConstructorUsingShadowDecl
+        @test CC.is_null_handle(CC.getNominatedBaseClassShadowDecl(cusd))
+        @test CC.is_null_handle(CC.getConstructedBaseClassShadowDecl(cusd))
     finally
         dispose(f)
         dispose(I)
@@ -994,13 +994,13 @@ end
 
         # ---- UsingDirectiveDecl (using namespace NSEOuter::NSEInner;) ----
         udir = first(d for d in alldecls if d isa CC.UsingDirectiveDecl)
-        @test CC.getQualifier(udir) isa CC.NestedNameSpecifier
-        @test CC.getNominatedNamespaceAsWritten(udir) isa CC.NamedDecl
-        @test CC.getCommonAncestor(udir) isa CC.DeclContext
-        @test CC.getUsingLoc(udir) isa CC.SourceLocation
-        @test CC.getNamespaceKeyLocation(udir) isa CC.SourceLocation
-        @test CC.getIdentLocation(udir) isa CC.SourceLocation
-        @test CC.getSourceRange(udir) isa CC.SourceRange
+        @test !CC.is_null_handle(CC.getQualifier(udir))
+        @test !CC.is_null_handle(CC.getNominatedNamespaceAsWritten(udir))
+        @test !CC.is_null_handle(CC.getCommonAncestor(udir))
+        @test !CC.is_null_handle(CC.getUsingLoc(udir))
+        @test !CC.is_null_handle(CC.getNamespaceKeyLocation(udir))
+        @test !CC.is_null_handle(CC.getIdentLocation(udir))
+        @test CC.getSourceRange(udir) isa CC.SourceRange  # shape-only
 
         # ---- UsingShadowDecl (the shadow of `using BaseE::be;`) ----
         usingD = first(d for d in alldecls if d isa CC.UsingDecl)
@@ -1012,7 +1012,7 @@ end
         @test CC.getIntroducer(shadow) isa CC.BaseUsingDecl
         @test CC.getIntroducer(shadow).ptr == usingD.ptr
         # Only one shadow in the chain, so the link is null: assert the carrier type only.
-        @test CC.getNextUsingShadowDecl(shadow) isa CC.UsingShadowDecl
+        @test CC.is_null_handle(CC.getNextUsingShadowDecl(shadow))
 
         # ---- UnresolvedUsing{Value,Typename}Decl (using-decls over a dependent base) ----
         ctd = first(d for d in alldecls
@@ -1020,21 +1020,21 @@ end
         members = CC.decls(CC.castToDeclContext(CC.getTemplatedDecl(ctd)))
 
         uuv = first(d for d in members if d isa CC.UnresolvedUsingValueDecl)
-        @test CC.getUsingLoc(uuv) isa CC.SourceLocation
-        @test CC.isAccessDeclaration(uuv) isa Bool
+        @test !CC.is_null_handle(CC.getUsingLoc(uuv))
+        @test !(CC.isAccessDeclaration(uuv))
         @test CC.isAccessDeclaration(uuv) == false
-        @test CC.getQualifier(uuv) isa CC.NestedNameSpecifier
-        @test CC.isPackExpansion(uuv) isa Bool
+        @test !CC.is_null_handle(CC.getQualifier(uuv))
+        @test !(CC.isPackExpansion(uuv))
         @test CC.isPackExpansion(uuv) == false
-        @test CC.getEllipsisLoc(uuv) isa CC.SourceLocation
+        @test CC.is_null_handle(CC.getEllipsisLoc(uuv))
 
         uut = first(d for d in members if d isa CC.UnresolvedUsingTypenameDecl)
-        @test CC.getUsingLoc(uut) isa CC.SourceLocation
-        @test CC.getTypenameLoc(uut) isa CC.SourceLocation
-        @test CC.getQualifier(uut) isa CC.NestedNameSpecifier
-        @test CC.isPackExpansion(uut) isa Bool
+        @test !CC.is_null_handle(CC.getUsingLoc(uut))
+        @test !CC.is_null_handle(CC.getTypenameLoc(uut))
+        @test !CC.is_null_handle(CC.getQualifier(uut))
+        @test !(CC.isPackExpansion(uut))
         @test CC.isPackExpansion(uut) == false
-        @test CC.getEllipsisLoc(uut) isa CC.SourceLocation
+        @test CC.is_null_handle(CC.getEllipsisLoc(uut))
     finally
         dispose(I)
     end
@@ -1085,7 +1085,7 @@ end
         @test CC.getRefQualifier(cref) == CC.LibClangEx.CXRefQualifierKind_RQ_LValue
         @test CC.getRefQualifier(rref) == CC.LibClangEx.CXRefQualifierKind_RQ_RValue
         @test CC.getRefQualifier(vf) == CC.LibClangEx.CXRefQualifierKind_RQ_None
-        @test CC.getMethodQualifiers(cref) isa Integer
+        @test CC.getMethodQualifiers(cref) isa Integer  # shape-only: the target chooses this value
         @test CC.hasConst(CC.getMethodQualifiers(cref))
         @test !CC.hasConst(CC.getMethodQualifiers(rref))
         objref = CC.getFunctionObjectParameterReferenceType(cref)
@@ -1134,7 +1134,7 @@ end
 
         # ---- CXXDestructorDecl ----
         dtor = first(d for d in members if d isa CC.CXXDestructorDecl)
-        @test CC.getOperatorDeleteThisArg(dtor) isa CC.Expr_
+        @test CC.is_null_handle(CC.getOperatorDeleteThisArg(dtor))
 
         # ---- CXXDeductionGuideDecl ----
         guide = nothing
@@ -1170,7 +1170,7 @@ end
             @test vd isa CC.ValueDecl
             CC.setDecomposedDecl(b, vd)
             @test CC.getDecomposedDecl(b).ptr == vd.ptr
-            @test CC.getHoldingVar(b) isa CC.VarDecl
+            @test CC.is_null_handle(CC.getHoldingVar(b))
             bind = CC.getBinding(b)
             @test bind isa CC.Expr_
             if bind.ptr != C_NULL
@@ -1215,56 +1215,56 @@ end
 
         # ---- UsingEnumDecl (`using enum UEGColor;`) ----
         ued = first(d for d in alldecls if d isa CC.UsingEnumDecl)
-        @test CC.getUsingLoc(ued) isa CC.SourceLocation
-        @test CC.getEnumLoc(ued) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getUsingLoc(ued))
+        @test !CC.is_null_handle(CC.getEnumLoc(ued))
         # 'using' and 'enum' are distinct tokens, so their encodings differ.
         @test CC.getUsingLoc(ued).ptr != CC.getEnumLoc(ued).ptr
         # The enumeration is named unqualified here: NULL-pointer carrier.
-        @test CC.getQualifier(ued) isa CC.NestedNameSpecifier
+        @test CC.is_null_handle(CC.getQualifier(ued))
         @test CC.getEnumType(ued) isa CC.TypeSourceInfo
         @test CC.getEnumType(ued).ptr != C_NULL
-        @test CC.getEnumDecl(ued) isa CC.EnumDecl
+        @test !CC.is_null_handle(CC.getEnumDecl(ued))
         @test CC.getNameAsString(CC.getEnumDecl(ued)) == "UEGColor"
-        @test CC.getSourceRange(ued) isa CC.SourceRange
+        @test CC.getSourceRange(ued) isa CC.SourceRange  # shape-only
         @test CC.getCanonicalDecl(ued) isa CC.UsingEnumDecl
         @test CC.getCanonicalDecl(ued).ptr == ued.ptr
 
         # ---- UsingPackDecl (the instantiated `using Ts::pfg...;`) ----
         upd = first(d for d in CC.decls(CC.castToDeclContext(record_of("pxg_inst")))
                     if d isa CC.UsingPackDecl)
-        @test CC.getInstantiatedFromUsingDecl(upd) isa CC.NamedDecl
+        @test !CC.is_null_handle(CC.getInstantiatedFromUsingDecl(upd))
         @test CC.getInstantiatedFromUsingDecl(upd).ptr != C_NULL
         @test CC.getNumExpansions(upd) == 2
         @test CC.getExpansion(upd, 0) isa CC.NamedDecl
         exps = CC.getExpansions(upd)
         @test length(exps) == 2
         @test all(e -> e isa CC.NamedDecl && e.ptr != C_NULL, exps)
-        @test CC.getSourceRange(upd) isa CC.SourceRange
+        @test CC.getSourceRange(upd) isa CC.SourceRange  # shape-only
         @test CC.getCanonicalDecl(upd) isa CC.UsingPackDecl
         @test CC.getCanonicalDecl(upd).ptr == upd.ptr
 
         # ---- MSPropertyDecl (`__declspec(property(...))`) ----
         msp = first(d for d in alldecls if d isa CC.MSPropertyDecl)
-        @test CC.hasGetter(msp) isa Bool
         @test CC.hasGetter(msp)
-        @test CC.hasSetter(msp) isa Bool
+        @test CC.hasGetter(msp)
         @test CC.hasSetter(msp)
-        @test CC.getGetterId(msp) isa CC.IdentifierInfo
+        @test CC.hasSetter(msp)
+        @test !CC.is_null_handle(CC.getGetterId(msp))
         @test CC.getName(CC.getGetterId(msp)) == "GetXG"
-        @test CC.getSetterId(msp) isa CC.IdentifierInfo
+        @test !CC.is_null_handle(CC.getSetterId(msp))
         @test CC.getName(CC.getSetterId(msp)) == "PutXG"
 
         # ---- CXXBaseSpecifier::getBeginLoc ----
         derg = record_of("derg_inst")
         @test CC.getNumBases(derg) == 1
         b0 = CC.getBase(derg, 0)
-        @test CC.getBeginLoc(b0) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getBeginLoc(b0))
         @test CC.getBeginLoc(b0).ptr == CC.getSourceRange(b0).begin_loc.ptr
 
         # ---- CXXCtorInitializer::getID (reproducible, per-object) ----
         dctor = first(c for c in CC.getCtors(derg) if CC.getNumCtorInitializers(c) >= 2)
         inits = CC.getCtorInitializers(dctor)
-        @test CC.getID(inits[1], ctx) isa Integer
+        @test CC.getID(inits[1], ctx) isa Integer  # shape-only: the target chooses this value
         @test CC.getID(inits[1], ctx) == CC.getID(inits[1], ctx)
         @test CC.getID(inits[1], ctx) != CC.getID(inits[2], ctx)
 
@@ -1323,7 +1323,7 @@ end
         end
 
         # ---- CXXMethodDecl::isStaticOverloadedOperator (static, enum in) ----
-        @test CC.isStaticOverloadedOperator(LXG.CXOverloadedOperatorKind_OO_New) isa Bool
+        @test CC.isStaticOverloadedOperator(LXG.CXOverloadedOperatorKind_OO_New)
         @test CC.isStaticOverloadedOperator(LXG.CXOverloadedOperatorKind_OO_New) == true
         @test CC.isStaticOverloadedOperator(LXG.CXOverloadedOperatorKind_OO_Array_Delete) == true
         @test CC.isStaticOverloadedOperator(LXG.CXOverloadedOperatorKind_OO_Plus) == false
@@ -1333,7 +1333,7 @@ end
                         if d isa CC.CXXRecordDecl && CC.getNameAsString(d) == "DeallocG")
         methods = CC.getMethods(dealloc)
         opdel = first(m for m in methods if CC.getNameAsString(m) == "operator delete")
-        @test CC.isUsualDeallocationFunction(opdel) isa Bool
+        @test CC.isUsualDeallocationFunction(opdel)
         plain = first(m for m in methods if CC.getNameAsString(m) == "plain")
         @test CC.isUsualDeallocationFunction(plain) == false
 
@@ -1348,7 +1348,7 @@ end
             if CC.isInheritingConstructor(c)
                 @test sh.ptr != C_NULL
                 @test bc.ptr != C_NULL
-                @test CC.getTargetDecl(sh) isa CC.NamedDecl
+                @test CC.getTargetDecl(sh) isa CC.NamedDecl  # shape-only: the host decides this
             else
                 @test sh.ptr == C_NULL
                 @test bc.ptr == C_NULL
@@ -1357,10 +1357,10 @@ end
 
         # ---- NamespaceAliasDecl: qualifier + own source range ----
         nad = first(d for d in alldecls if d isa CC.NamespaceAliasDecl)
-        @test CC.getQualifier(nad) isa CC.NestedNameSpecifier
+        @test !CC.is_null_handle(CC.getQualifier(nad))
         # `namespace nsg_alias = NSGOuter::NSGInner;` names the target with a qualifier.
         @test CC.getQualifier(nad).ptr != C_NULL
-        @test CC.getSourceRange(nad) isa CC.SourceRange
+        @test CC.getSourceRange(nad) isa CC.SourceRange  # shape-only
 
         # ---- LifetimeExtendedTemporaryDecl (namespace-scope const reference) ----
         f = DeclFinder(I)
@@ -1372,13 +1372,13 @@ end
             letd = CC.getLifetimeExtendedTemporaryDecl(mt)
             @test letd isa CC.LifetimeExtendedTemporaryDecl
             @test letd.ptr != C_NULL
-            @test CC.getExtendingDecl(letd) isa CC.ValueDecl
+            @test !CC.is_null_handle(CC.getExtendingDecl(letd))
             @test CC.getExtendingDecl(letd).ptr != C_NULL
             @test CC.getStorageDuration(letd) == LXG.CXStorageDuration_SD_Static
             @test CC.hasTemporaryExpr(letd) == true
-            @test CC.getTemporaryExpr(letd) isa CC.Expr_
+            @test !CC.is_null_handle(CC.getTemporaryExpr(letd))
             @test CC.getTemporaryExpr(letd).ptr != C_NULL
-            @test CC.getManglingNumber(letd) isa Integer
+            @test CC.getManglingNumber(letd) isa Integer  # shape-only: the host decides this
             cached = CC.getOrCreateValue(letd, true)
             @test cached isa CC.APValue
             @test cached.ptr != C_NULL
@@ -1392,7 +1392,7 @@ end
         members = CC.decls(CC.castToDeclContext(CC.getTemplatedDecl(ctd)))
 
         uuv = first(d for d in members if d isa CC.UnresolvedUsingValueDecl)
-        @test CC.getSourceRange(uuv) isa CC.SourceRange
+        @test CC.getSourceRange(uuv) isa CC.SourceRange  # shape-only
         @test CC.getCanonicalDecl(uuv) isa CC.UnresolvedUsingValueDecl
         @test CC.getCanonicalDecl(uuv).ptr == uuv.ptr
 
@@ -1423,6 +1423,10 @@ end
             struct MidI1 : virtual VBaseI { int m1; };
             struct MidI2 : virtual VBaseI { int m2; };
             struct MostI : MidI1, MidI2 { int md; };
+            struct NEBaseI { virtual void nvfi(); };
+            struct NEMidI1 : virtual NEBaseI { int nm1; };
+            struct NEMidI2 : virtual NEBaseI { int nm2; };
+            struct NEMostI : NEMidI1, NEMidI2 { int nmd; };
             struct BaseCI { int bc; BaseCI(int v) : bc(v) {} };
             struct DerCI : BaseCI { int dc; DerCI(int v) : BaseCI(v), dc(v) {} };
             struct ConvI { operator int() const { return 0; } };
@@ -1438,14 +1442,22 @@ end
                           if d isa CC.CXXRecordDecl && CC.getNameAsString(d) == name)
 
         # ---- CXXRecordDecl::getIndirectPrimaryBases (count + fill) ----
-        # Whether MostI actually has one is an ABI decision (Itanium vs MS), so only the
-        # shape is asserted; the empty case below is guaranteed on every ABI.
-        most = rec("MostI")
-        n = CC.getNumIndirectPrimaryBases(most)
+        # NEBaseI is nearly empty, so NEMidI1 and NEMidI2 each take it as their primary
+        # base and NEMostI carries it as an indirect primary one. Every triple in JLLEnvs'
+        # target table is Itanium, so this set is non-empty on all three CI hosts and the
+        # element check below runs rather than passing vacuously.
+        nemost = rec("NEMostI")
+        n = CC.getNumIndirectPrimaryBases(nemost)
         @test n isa Integer
-        ipb = CC.getIndirectPrimaryBases(most)
+        ipb = CC.getIndirectPrimaryBases(nemost)
         @test length(ipb) == n
+        @test !isempty(ipb)
         @test all(b -> b isa CC.CXXRecordDecl && b.ptr != C_NULL, ipb)
+        @test rec("NEBaseI").ptr in [b.ptr for b in ipb]
+        # VBaseI carries a data member, so it is nobody's primary base and the same walk
+        # over MostI comes back empty.
+        @test CC.getNumIndirectPrimaryBases(rec("MostI")) == 0
+        @test isempty(CC.getIndirectPrimaryBases(rec("MostI")))
         # VBaseI has no virtual bases at all, so clang takes its early exit.
         @test CC.getNumIndirectPrimaryBases(rec("VBaseI")) == 0
         @test isempty(CC.getIndirectPrimaryBases(rec("VBaseI")))
@@ -1458,7 +1470,7 @@ end
         rdc = CC.DeclContext(rebd)
         @test rdc isa CC.DeclContext
         @test rdc.ptr != C_NULL
-        @test CC.RequiresExprBodyDecl(rdc) isa CC.RequiresExprBodyDecl
+        @test !CC.is_null_handle(CC.RequiresExprBodyDecl(rdc))
         @test CC.RequiresExprBodyDecl(rdc).ptr == rebd.ptr
 
         # ---- CXXCtorInitializer::getBaseClassLoc ----
@@ -1491,19 +1503,19 @@ end
         udirs = [d for d in alldecls if d isa CC.UsingDirectiveDecl]
         qual_udir = first(d for d in udirs if CC.getQualifier(d).ptr != C_NULL)
         plain_udir = first(d for d in udirs if CC.getQualifier(d).ptr == C_NULL)
-        @test CC.getQualifierRange(qual_udir) isa CC.SourceRange
+        @test CC.getQualifierRange(qual_udir) isa CC.SourceRange  # shape-only
         @test CC.getQualifierRange(qual_udir).begin_loc.ptr != C_NULL
         # `using namespace NSITop;` writes no nested-name-specifier: an invalid range.
-        @test CC.getQualifierRange(plain_udir) isa CC.SourceRange
+        @test CC.getQualifierRange(plain_udir) isa CC.SourceRange  # shape-only
         @test CC.getQualifierRange(plain_udir).begin_loc.ptr == C_NULL
 
         # ---- NamespaceAliasDecl::getQualifierRange ----
-        @test CC.getQualifierRange(nad) isa CC.SourceRange
+        @test CC.getQualifierRange(nad) isa CC.SourceRange  # shape-only
         @test CC.getQualifierRange(nad).begin_loc.ptr != C_NULL
 
         # ---- UsingDecl: qualifier range + name info ----
         ud = first(d for d in alldecls if d isa CC.UsingDecl)
-        @test CC.getQualifierRange(ud) isa CC.SourceRange
+        @test CC.getQualifierRange(ud) isa CC.SourceRange  # shape-only
         @test CC.getQualifierRange(ud).begin_loc.ptr != C_NULL
         ni = CC.getNameInfo(ud)
         try
@@ -1533,7 +1545,7 @@ end
         members = CC.decls(CC.castToDeclContext(CC.getTemplatedDecl(ctd)))
 
         uuv = first(d for d in members if d isa CC.UnresolvedUsingValueDecl)
-        @test CC.getQualifierRange(uuv) isa CC.SourceRange
+        @test CC.getQualifierRange(uuv) isa CC.SourceRange  # shape-only
         @test CC.getQualifierRange(uuv).begin_loc.ptr != C_NULL
         niv = CC.getNameInfo(uuv)
         try
@@ -1545,7 +1557,7 @@ end
         end
 
         uut = first(d for d in members if d isa CC.UnresolvedUsingTypenameDecl)
-        @test CC.getQualifierRange(uut) isa CC.SourceRange
+        @test CC.getQualifierRange(uut) isa CC.SourceRange  # shape-only
         @test CC.getQualifierRange(uut).begin_loc.ptr != C_NULL
         nit = CC.getNameInfo(uut)
         try
@@ -1626,17 +1638,17 @@ end
         @test usd2 isa CC.UsingShadowDecl
         @test CC.getTargetDecl(usd2).ptr == vj_a.ptr
         @test CC.getIntroducer(usd2).ptr == method_using.ptr
-        @test CC.UsingShadowDecl(ctx, UInt(1)) isa CC.UsingShadowDecl
+        @test !CC.is_null_handle(CC.UsingShadowDecl(ctx, UInt(1)))
 
         cusd2 = CC.ConstructorUsingShadowDecl(ctx, dc, loc_b, ctor_using,
                                               CC.getTargetDecl(cusd), false)
         @test cusd2 isa CC.ConstructorUsingShadowDecl
         @test CC.getIntroducer(cusd2).ptr == ctor_using.ptr
         @test CC.constructsVirtualBase(cusd2) == false
-        @test CC.ConstructorUsingShadowDecl(ctx, UInt(1)) isa CC.ConstructorUsingShadowDecl
+        @test !CC.is_null_handle(CC.ConstructorUsingShadowDecl(ctx, UInt(1)))
 
         # ---- UsingDecl / UsingEnumDecl factories ----
-        @test CC.UsingDecl(ctx, UInt(1)) isa CC.UsingDecl
+        @test !CC.is_null_handle(CC.UsingDecl(ctx, UInt(1)))
 
         ued = first(d for d in alldecls if d isa CC.UsingEnumDecl)
         ued2 = CC.UsingEnumDecl(ctx, dc, loc_a, loc_b, loc_a, CC.getEnumType(ued))
@@ -1644,7 +1656,7 @@ end
         @test CC.getUsingLoc(ued2).ptr == loc_a.ptr
         @test CC.getEnumLoc(ued2).ptr == loc_b.ptr
         @test CC.getNameAsString(CC.getEnumDecl(ued2)) == "EJColor"
-        @test CC.UsingEnumDecl(ctx, UInt(1)) isa CC.UsingEnumDecl
+        @test !CC.is_null_handle(CC.UsingEnumDecl(ctx, UInt(1)))
 
         # ---- UsingPackDecl factory (the (buffer, count) array input) ----
         pj_var = first(d for d in alldecls
@@ -1657,13 +1669,13 @@ end
         @test upd2 isa CC.UsingPackDecl
         @test CC.getNumExpansions(upd2) == length(exps)
         @test CC.getExpansion(upd2, 0).ptr == exps[1].ptr
-        @test CC.UsingPackDecl(ctx, UInt(1), UInt(0)) isa CC.UsingPackDecl
+        @test !CC.is_null_handle(CC.UsingPackDecl(ctx, UInt(1), UInt(0)))
 
         # ---- BindingDecl / MSPropertyDecl factories ----
         bd = CC.BindingDecl(ctx, dc, loc_a, id_a)
         @test bd isa CC.BindingDecl
         @test CC.getNameAsString(bd) == "vj_a"
-        @test CC.BindingDecl(ctx, UInt(1)) isa CC.BindingDecl
+        @test !CC.is_null_handle(CC.BindingDecl(ctx, UInt(1)))
 
         msp = CC.MSPropertyDecl(ctx, dc, loc_a, name_a, CC.getType(vj_a),
                                 CC.getTypeSourceInfo(vj_a), loc_b, id_a, id_a)
@@ -1672,15 +1684,15 @@ end
         @test CC.hasSetter(msp)
         @test CC.getName(CC.getGetterId(msp)) == "vj_a"
         @test CC.getName(CC.getSetterId(msp)) == "vj_a"
-        @test CC.MSPropertyDecl(ctx, UInt(1)) isa CC.MSPropertyDecl
+        @test !CC.is_null_handle(CC.MSPropertyDecl(ctx, UInt(1)))
 
         # ---- The remaining CreateDeserialized placeholders ----
-        @test CC.CXXRecordDecl(ctx, UInt(1)) isa CC.CXXRecordDecl
-        @test CC.CXXDeductionGuideDecl(ctx, UInt(1)) isa CC.CXXDeductionGuideDecl
-        @test CC.CXXConstructorDecl(ctx, UInt(1)) isa CC.CXXConstructorDecl
-        @test CC.CXXConstructorDecl(ctx, UInt(1), 0) isa CC.CXXConstructorDecl
-        @test CC.CXXDestructorDecl(ctx, UInt(1)) isa CC.CXXDestructorDecl
-        @test CC.CXXConversionDecl(ctx, UInt(1)) isa CC.CXXConversionDecl
+        @test !CC.is_null_handle(CC.CXXRecordDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.CXXDeductionGuideDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.CXXConstructorDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.CXXConstructorDecl(ctx, UInt(1), 0))
+        @test !CC.is_null_handle(CC.CXXDestructorDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.CXXConversionDecl(ctx, UInt(1)))
     finally
         dispose(f)
         dispose(I)
@@ -1855,12 +1867,12 @@ end
         end
 
         # ---- The CreateDeserialized placeholders ----
-        @test CC.UsingDirectiveDecl(ctx, UInt(1)) isa CC.UsingDirectiveDecl
-        @test CC.NamespaceAliasDecl(ctx, UInt(1)) isa CC.NamespaceAliasDecl
-        @test CC.LifetimeExtendedTemporaryDecl(ctx, UInt(1)) isa CC.LifetimeExtendedTemporaryDecl
-        @test CC.UnresolvedUsingValueDecl(ctx, UInt(1)) isa CC.UnresolvedUsingValueDecl
-        @test CC.UnresolvedUsingTypenameDecl(ctx, UInt(1)) isa CC.UnresolvedUsingTypenameDecl
-        @test CC.DecompositionDecl(ctx, UInt(1), UInt(0)) isa CC.DecompositionDecl
+        @test !CC.is_null_handle(CC.UsingDirectiveDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.NamespaceAliasDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.LifetimeExtendedTemporaryDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.UnresolvedUsingValueDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.UnresolvedUsingTypenameDecl(ctx, UInt(1)))
+        @test !CC.is_null_handle(CC.DecompositionDecl(ctx, UInt(1), UInt(0)))
     finally
         dispose(I)
     end
@@ -1895,7 +1907,7 @@ end
         @test CC.getPart3(gd) == 0xdef0
         # A memcpy of the last eight UUID bytes, so the integer is byte-order dependent:
         # only its shape and its non-emptiness are host-independent.
-        @test CC.getPart4And5AsUint64(gd) isa Integer
+        @test CC.getPart4And5AsUint64(gd) isa Integer  # shape-only: the target chooses this value
         @test CC.getPart4And5AsUint64(gd) != 0
         apv = CC.getAsAPValue(gd)
         @test apv isa CC.APValue
@@ -2076,9 +2088,9 @@ end
              "struct MDM2 { MDM2(MDM2&&); MDM2& operator=(MDM2&&); ~MDM2(); }; struct MDM3 { MDM2 m; };")
     @test f(I, "MDM3")
     mdm3 = CC.CXXRecordDecl(get_decl(f).ptr)
-    @test CC.needsOverloadResolutionForMoveConstructor(mdm3) isa Bool
-    @test CC.needsOverloadResolutionForMoveAssignment(mdm3) isa Bool
-    @test CC.needsOverloadResolutionForDestructor(mdm3) isa Bool
+    @test CC.needsOverloadResolutionForMoveConstructor(mdm3)
+    @test CC.needsOverloadResolutionForMoveAssignment(mdm3)
+    @test CC.needsOverloadResolutionForDestructor(mdm3)
     if CC.needsOverloadResolutionForMoveConstructor(mdm3)
         @test CC.setImplicitMoveConstructorIsDeleted(mdm3) === nothing
     end
@@ -2109,7 +2121,7 @@ end
     for c in ctors
         @test CC.setTrivialForCallFlags(mdm5, c) === nothing
     end
-    @test CC.hasTrivialCopyConstructorForCall(mdm5) isa Bool
+    @test CC.hasTrivialCopyConstructorForCall(mdm5)
     for c in ctors
         if !CC.isImplicit(c) && !CC.isUserProvided(c)
             @test CC.finishedDefaultedOrDeletedMember(mdm5, c) === nothing
@@ -2130,7 +2142,7 @@ end
     @test CC.getLambdaManglingNumber(lam) == 7
     @test CC.getLambdaContextDecl(lam).ptr == mdmv.ptr
     @test CC.hasKnownLambdaInternalLinkage(lam)
-    @test CC.getDeviceLambdaManglingNumber(lam) isa Integer
+    @test CC.getDeviceLambdaManglingNumber(lam) isa Integer  # shape-only: the host decides this
     CC.setLambdaIsGeneric(lam, true)
     @test CC.isGenericLambda(lam)
     CC.setLambdaIsGeneric(lam, false)
@@ -2156,7 +2168,7 @@ end
         # clang keeps a previously recorded operator delete, so accept either outcome
         @test CC.getOperatorDelete(dtor).ptr ==
               (before.ptr == C_NULL ? opdel.ptr : before.ptr)
-        @test CC.getOperatorDeleteThisArg(dtor) isa CC.Expr_
+        @test CC.is_null_handle(CC.getOperatorDeleteThisArg(dtor))
     end
 
     # ---- BaseUsingDecl: the shadow list round-trips through remove/add ----
@@ -2286,7 +2298,7 @@ end
     @test CC.getDeclKindName(uue) == "UnresolvedUsingIfExists"
     @test CC.getName(uue) == "uifv"
     @test CC.getDeclName(uue).ptr == name.ptr
-    @test CC.UnresolvedUsingIfExistsDecl(ctx, UInt(1)) isa CC.UnresolvedUsingIfExistsDecl
+    @test !CC.is_null_handle(CC.UnresolvedUsingIfExistsDecl(ctx, UInt(1)))
 
     dispose(f)
     dispose(I)
@@ -2450,7 +2462,7 @@ end
         plain_udir = first(d for d in udirs if CC.getQualifier(d).ptr == C_NULL)
         check_qualifier_loc(qual_udir)
         check_qualifier_loc(plain_udir)
-        @test CC.getCommonAncestor(qual_udir) isa CC.DeclContext
+        @test !CC.is_null_handle(CC.getCommonAncestor(qual_udir))
 
         qual_q = CC.getQualifierLoc(qual_udir)
         plain_q = CC.getQualifierLoc(plain_udir)

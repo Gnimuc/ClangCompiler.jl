@@ -22,34 +22,34 @@ using Test
     parser = CC.get_parser(I)
 
     # ---- CompilerInstance: has*/get* query accessors ----
-    @test CC.hasDiagnostics(ci) isa Bool
-    @test CC.getDiagnostics(ci) isa CC.DiagnosticsEngine
-    @test CC.getDiagnosticClient(ci) isa CC.DiagnosticConsumer
-    @test CC.hasFileManager(ci) isa Bool
-    @test CC.getFileManager(ci) isa CC.FileManager
-    @test CC.hasSourceManager(ci) isa Bool
-    @test CC.getSourceManager(ci) isa CC.SourceManager
-    @test CC.hasInvocation(ci) isa Bool
-    @test CC.getInvocation(ci) isa CC.CompilerInvocation
-    @test CC.hasTarget(ci) isa Bool
+    @test CC.hasDiagnostics(ci) isa Bool  # shape-only: the host decides this
+    @test CC.getDiagnostics(ci) isa CC.DiagnosticsEngine  # shape-only: the host decides this
+    @test CC.getDiagnosticClient(ci) isa CC.DiagnosticConsumer  # shape-only: the host decides this
+    @test CC.hasFileManager(ci) isa Bool  # shape-only: the host decides this
+    @test CC.getFileManager(ci) isa CC.FileManager  # shape-only: the host decides this
+    @test CC.hasSourceManager(ci) isa Bool  # shape-only: the host decides this
+    @test CC.getSourceManager(ci) isa CC.SourceManager  # shape-only: the host decides this
+    @test CC.hasInvocation(ci) isa Bool  # shape-only: the host decides this
+    @test CC.getInvocation(ci) isa CC.CompilerInvocation  # shape-only: the host decides this
+    @test CC.hasTarget(ci) isa Bool  # shape-only: the host decides this
     @test CC.getTarget(ci) isa CC.TargetInfo
-    @test CC.hasPreprocessor(ci) isa Bool
-    @test CC.getPreprocessor(ci) isa CC.Preprocessor
-    @test CC.hasSema(ci) isa Bool
-    @test CC.getSema(ci) isa CC.Sema
-    @test CC.hasASTContext(ci) isa Bool
-    @test CC.getASTContext(ci) isa CC.ASTContext
-    @test CC.hasASTConsumer(ci) isa Bool
-    @test CC.getASTConsumer(ci) isa CC.ASTConsumer
+    @test CC.hasPreprocessor(ci) isa Bool  # shape-only: the host decides this
+    @test CC.getPreprocessor(ci) isa CC.Preprocessor  # shape-only: the host decides this
+    @test CC.hasSema(ci) isa Bool  # shape-only: the host decides this
+    @test CC.getSema(ci) isa CC.Sema  # shape-only: the host decides this
+    @test CC.hasASTContext(ci) isa Bool  # shape-only: the host decides this
+    @test CC.getASTContext(ci) isa CC.ASTContext  # shape-only: the host decides this
+    @test CC.hasASTConsumer(ci) isa Bool  # shape-only: the host decides this
+    @test CC.getASTConsumer(ci) isa CC.ASTConsumer  # shape-only: the host decides this
 
     # ---- CompilerInstance: option accessors ----
-    @test CC.getCodeGenOpts(ci) isa CC.CodeGenOptions
-    @test CC.getDiagnosticOpts(ci) isa CC.DiagnosticOptions
-    @test CC.getFrontendOpts(ci) isa CC.FrontendOptions
-    @test CC.getHeaderSearchOpts(ci) isa CC.HeaderSearchOptions
-    @test CC.getPreprocessorOpts(ci) isa CC.PreprocessorOptions
-    @test CC.getTargetOpts(ci) isa CC.TargetOptions
-    @test CC.getLangOpts(ci) isa CC.LangOptions
+    @test CC.getCodeGenOpts(ci) isa CC.CodeGenOptions  # shape-only: the host decides this
+    @test CC.getDiagnosticOpts(ci) isa CC.DiagnosticOptions  # shape-only: the host decides this
+    @test CC.getFrontendOpts(ci) isa CC.FrontendOptions  # shape-only: the host decides this
+    @test CC.getHeaderSearchOpts(ci) isa CC.HeaderSearchOptions  # shape-only: the host decides this
+    @test CC.getPreprocessorOpts(ci) isa CC.PreprocessorOptions  # shape-only: the host decides this
+    @test CC.getTargetOpts(ci) isa CC.TargetOptions  # shape-only: the host decides this
+    @test CC.getLangOpts(ci) isa CC.LangOptions  # shape-only: the host decides this
 
     # main file id (allocates -> dispose)
     fid = CC.getMainFileID(ci)
@@ -69,7 +69,7 @@ using Test
     hs = CC.getHeaderSearchInfo(pp)
     @test hs isa CC.HeaderSearch
     @test (CC.PrintStats(pp); true)
-    @test CC.isIncrementalProcessingEnabled(pp) isa Bool
+    @test CC.isIncrementalProcessingEnabled(pp) isa Bool  # shape-only: the host decides this
     @test (CC.enableIncrementalProcessing(pp); CC.isIncrementalProcessingEnabled(pp)) isa Bool
 
     # ---- HeaderSearch / HeaderSearchOptions / PreprocessorOptions ----
@@ -95,38 +95,38 @@ using Test
     @test (CC.PrintStats(sema); true)
 
     ss_tn = CC.CXXScopeSpec()
-    @test CC.getTypeName(sema, widget_ii, widget_loc, scope, ss_tn) isa CC.QualType
+    @test CC.getTypeName(sema, widget_ii, widget_loc, scope, ss_tn) isa CC.QualType  # shape-only: the host decides this
 
-    @test CC.LookupDefaultConstructor(sema, widget_rd) isa CC.CXXConstructorDecl
-    @test CC.LookupDestructor(sema, widget_rd) isa CC.CXXDestructorDecl
+    @test CC.LookupDefaultConstructor(sema, widget_rd) isa CC.CXXConstructorDecl  # shape-only: the host decides this
+    @test CC.LookupDestructor(sema, widget_rd) isa CC.CXXDestructorDecl  # shape-only: the host decides this
 
     # LookupResult construction + unqualified LookupName
     nm = CC.DeclarationName(CC.get_name(ctx, "compute"))
     lr = CC.LookupResult(sema, nm, widget_loc, CC.CXLookupNameKind_LookupOrdinaryName)
-    @test CC.LookupName(sema, lr, scope, true) isa Bool
+    @test CC.LookupName(sema, lr, scope, true) isa Bool  # shape-only: the host decides this
 
     # LookupParsedName on a fresh result + scope spec
     ss_lp = CC.CXXScopeSpec()
     lr2 = CC.LookupResult(sema, nm, widget_loc, CC.CXLookupNameKind_LookupOrdinaryName)
-    @test CC.LookupParsedName(sema, lr2, scope, ss_lp, true, true) isa Bool
+    @test CC.LookupParsedName(sema, lr2, scope, ss_lp, true, true) isa Bool  # shape-only: the host decides this
 
     # ---- LookupResult query surface (Sema/Lookup.jl) on the populated `lr` ----
     @test (CC.resolveKind(lr); true)
-    @test CC.isForRedeclaration(lr) isa Bool
-    @test CC.isTemplateNameLookup(lr) isa Bool
+    @test CC.isForRedeclaration(lr) isa Bool  # shape-only: the host decides this
+    @test CC.isTemplateNameLookup(lr) isa Bool  # shape-only: the host decides this
     @test CC.isAmbiguous(lr) isa Bool
-    @test CC.isSingleResult(lr) isa Bool
-    @test CC.isOverloadedResult(lr) isa Bool
-    @test CC.isUnresolvableResult(lr) isa Bool
-    @test CC.isClassLookup(lr) isa Bool
-    @test CC.isSingleTagDecl(lr) isa Bool
-    @test CC.empty(lr) isa Bool
-    @test CC.getNum(lr) isa Integer
+    @test CC.isSingleResult(lr) isa Bool  # shape-only: the host decides this
+    @test CC.isOverloadedResult(lr) isa Bool  # shape-only: the host decides this
+    @test CC.isUnresolvableResult(lr) isa Bool  # shape-only: the host decides this
+    @test CC.isClassLookup(lr) isa Bool  # shape-only: the host decides this
+    @test CC.isSingleTagDecl(lr) isa Bool  # shape-only: the host decides this
+    @test CC.empty(lr) isa Bool  # shape-only: the host decides this
+    @test CC.getNum(lr) isa Integer  # shape-only: the host decides this
     @test CC.getResults(lr) isa Vector
-    @test CC.getRepresentativeDecl(lr) isa CC.NamedDecl
-    @test CC.getLookupName(lr) isa CC.DeclarationName
+    @test CC.getRepresentativeDecl(lr) isa CC.NamedDecl  # shape-only: the host decides this
+    @test CC.getLookupName(lr) isa CC.DeclarationName  # shape-only: the host decides this
     if CC.isSingleResult(lr)
-        @test CC.getResult(lr) isa CC.NamedDecl
+        @test CC.getResult(lr) isa CC.NamedDecl  # shape-only: the host decides this
     end
     @test (CC.dump(lr); true)
     @test (CC.setLookupName(lr, CC.getLookupName(lr)); true)
@@ -146,11 +146,11 @@ using Test
     dss = CC.CXXScopeSpec()
     tail = CC.parse_cxx_scope_spec(I, dss, "NS::Inner")
     @test tail isa AbstractString
-    @test CC.isValid(dss) isa Bool
-    @test CC.isInvalid(dss) isa Bool
-    @test CC.isEmpty(dss) isa Bool
-    @test CC.isNotEmpty(dss) isa Bool
-    @test CC.getScopeRep(dss) isa CC.NestedNameSpecifier
+    @test CC.isValid(dss) isa Bool  # shape-only: the host decides this
+    @test CC.isInvalid(dss) isa Bool  # shape-only: the host decides this
+    @test CC.isEmpty(dss) isa Bool  # shape-only: the host decides this
+    @test CC.isNotEmpty(dss) isa Bool  # shape-only: the host decides this
+    @test CC.getScopeRep(dss) isa CC.NestedNameSpecifier  # shape-only: the host decides this
     bloc = CC.getBeginLoc(dss)
     eloc = CC.getEndLoc(dss)
     @test bloc isa CC.SourceLocation
@@ -158,19 +158,19 @@ using Test
     @test (CC.setBeginLoc(dss, bloc); true)
     @test (CC.setEndLoc(dss, eloc); true)
     sr = CC.SourceRange(bloc, eloc)
-    @test CC.getRange(dss, sr) isa CC.SourceRange
+    @test CC.getRange(dss, sr) isa CC.SourceRange  # shape-only: the host decides this
     @test (CC.setRange(dss, sr); true)
     @test (CC.clear(dss); true)
     dispose(dss)
 
     # ---- Parser: read-only queries (Parse/Parser.jl) ----
-    @test CC.getLangOpts(parser) isa CC.LangOptions
-    @test CC.getTargetInfo(parser) isa CC.TargetInfo
-    @test CC.getPreprocessor(parser) isa CC.Preprocessor
-    @test CC.getActions(parser) isa CC.Sema
+    @test CC.getLangOpts(parser) isa CC.LangOptions  # shape-only: the host decides this
+    @test CC.getTargetInfo(parser) isa CC.TargetInfo  # shape-only: the host decides this
+    @test CC.getPreprocessor(parser) isa CC.Preprocessor  # shape-only: the host decides this
+    @test CC.getActions(parser) isa CC.Sema  # shape-only: the host decides this
     tok = CC.getCurToken(parser)
     @test tok isa CC.Token
-    @test CC.NextToken(parser) isa CC.Token
+    @test CC.NextToken(parser) isa CC.Token  # shape-only: the host decides this
 
     # pure helper functions over the parser context enums
     @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_Member) isa CC.CXDeclSpecContext
@@ -180,11 +180,11 @@ using Test
     @test CC.shouldEnterContext(CC.CXDeclSpecContext_DSC_normal) isa Bool
 
     # ---- Token query surface (Lex/Token.jl) ----
-    @test CC.getLocation(tok) isa CC.SourceLocation
+    @test CC.getLocation(tok) isa CC.SourceLocation  # shape-only: the host decides this
     @test CC.getAnnotationEndLoc(tok) isa CC.SourceLocation
     @test CC.getAnnotationRange(tok) isa CC.SourceRange
     @test CC.getName(tok) isa String
-    @test CC.getAnnotationValue(tok) isa CC.AnnotationValue
+    @test CC.getAnnotationValue(tok) isa CC.AnnotationValue  # shape-only: the host decides this
     @test CC.is_eof(tok) isa Bool
     @test CC.is_annot_repl_input_end(tok) isa Bool
     @test CC.is_identifier(tok) isa Bool
@@ -194,13 +194,27 @@ using Test
     @test CC.is_annot_template_id(tok) isa Bool
     @test CC.is_kw_enum(tok) isa Bool
     @test CC.is_kw_typename(tok) isa Bool
-    # getIdentifierInfo aborts on annotation tokens; only call on a real identifier.
-    if CC.is_identifier(tok)
-        @test CC.getIdentifierInfo(tok) isa CC.IdentifierInfo
+    # getIdentifierInfo aborts on annotation tokens, and a finished incremental parse leaves
+    # the parser sitting on annot_repl_input_end. Pushing a one-identifier buffer under the
+    # parser and consuming that end-of-input annotation puts a real `identifier` in
+    # `Parser::Tok`, which `tok` is a live view of. Draining back to annot_repl_input_end
+    # restores the token stream for the assertions below.
+    ident_fid = CC.FileID(CC.getSourceManager(ci), CC.get_buffer("Widget"))
+    CC.begin_diag(ci)
+    CC.EnterSourceFile(pp, ident_fid)
+    CC.is_annot_repl_input_end(tok) && CC.ConsumeAnyToken(parser)
+    @test CC.is_identifier(tok)
+    @test CC.getIdentifierInfo(tok) isa CC.IdentifierInfo  # shape-only: the host decides this
+    @test CC.getName(CC.getIdentifierInfo(tok)) == "Widget"
+    while !CC.is_annot_repl_input_end(tok)
+        CC.ConsumeAnyToken(parser)
     end
+    CC.EndSourceFile(pp)
+    CC.end_diag(ci)
+    dispose(ident_fid)
 
     # QualType annotation read off a token (Parse/Parser.jl)
-    @test CC.getTypeAnnotation(tok) isa CC.QualType
+    @test CC.getTypeAnnotation(tok) isa CC.QualType  # shape-only: the host decides this
 
     # ---- Preprocessor dump helpers (need a token / a location) ----
     @test (CC.DumpToken(pp, tok); true)
@@ -213,11 +227,11 @@ using Test
     @test CC.TryAnnotateOptionalCXXScopeToken(parser, false) isa Bool
     @test CC.TryAnnotateOptionalCXXScopeToken(parser, CC.CXDeclSpecContext_DSC_class) isa Bool
     @test CC.TryAnnotateOptionalCXXScopeToken(parser, CC.CXDeclaratorContext_Member) isa Bool
-    @test CC.TryAnnotateTypeOrScopeToken(parser) isa Bool
+    @test CC.TryAnnotateTypeOrScopeToken(parser) isa Bool  # shape-only: the host decides this
     ss_af = CC.CXXScopeSpec()
-    @test CC.TryAnnotateTypeOrScopeTokenAfterScopeSpec(parser, ss_af) isa Bool
+    @test CC.TryAnnotateTypeOrScopeTokenAfterScopeSpec(parser, ss_af) isa Bool  # shape-only: the host decides this
     dispose(ss_af)
-    @test CC.ConsumeAnyToken(parser) isa CC.SourceLocation
+    @test CC.ConsumeAnyToken(parser) isa CC.SourceLocation  # shape-only: the host decides this
 
     dispose(f)
     dispose(I)
@@ -229,7 +243,7 @@ end
     # CompilerInstance: no plugins are requested, so loading them is a no-op
     ci = CC.get_instance(I)
     @test (CC.LoadRequestedPlugins(ci); true)
-    @test CC.hasFrontendTimer(ci) isa Bool
+    @test CC.hasFrontendTimer(ci) isa Bool  # shape-only: the host decides this
     CC.createFrontendTimer(ci)
     @test CC.hasFrontendTimer(ci)
 
@@ -241,7 +255,7 @@ end
     # instance already answers and the setter round-trips.
     ci = CC.CompilerInstance()
 
-    @test CC.buildingModule(ci) isa Bool
+    @test CC.buildingModule(ci) isa Bool  # shape-only: the host decides this
     @test !CC.buildingModule(ci)
     @test CC.setBuildingModule(ci, true) === nothing
     @test CC.buildingModule(ci)

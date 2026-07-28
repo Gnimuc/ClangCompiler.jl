@@ -38,16 +38,16 @@ using Test
     @test inv isa CC.SourceLocation
     @test CC.isFileID(loc) isa Bool
     @test CC.isMacroID(loc) isa Bool
-    @test CC.isValid(loc) isa Bool
-    @test CC.isInvalid(inv) isa Bool
+    @test CC.isValid(loc)
+    @test CC.isInvalid(inv)
     @test CC.getHashValue(loc) isa Integer
     b = CC.getBeginLoc(sr)
     e = CC.getEndLoc(sr)
     @test b isa CC.SourceLocation
     @test e isa CC.SourceLocation
-    @test CC.isPairOfFileLocations(b, e) isa Bool
-    @test CC.getLocWithOffset(loc, 3) isa CC.SourceLocation
-    @test CC.printToString(loc, sm) isa String
+    @test CC.isPairOfFileLocations(b, e)
+    @test !CC.is_null_handle(CC.getLocWithOffset(loc, 3))
+    @test !isempty(CC.printToString(loc, sm))
     CC.dispose(fid)
 
     # ---- IdentifierTable.jl ----
@@ -102,7 +102,7 @@ using Test
     @test cgm isa CC.CodeGenModule
     mod = CC.GetModule(cg)
     @test mod isa CC.LLVM.Module
-    @test CC.GetDeclForMangledName(cg, "add_two") isa CC.Decl
+    @test CC.GetDeclForMangledName(cg, "add_two") isa CC.Decl  # shape-only: the host decides this
 
     # ReleaseModule / StartModule mutate the codegen's module ownership; run them on a
     # throwaway interpreter and leave it undisposed to avoid an ownership double-free.
@@ -136,7 +136,7 @@ end
     @test CC.isFileID(loc)
 
     # borrowed accessors
-    @test CC.getDiagnostics(sm) isa CC.DiagnosticsEngine
+    @test !CC.is_null_handle(CC.getDiagnostics(sm))
     fm = CC.getFileManager(sm)
     @test fm isa CC.FileManager
 
@@ -147,7 +147,7 @@ end
     @test CC.getHashValue(fid2) == CC.getHashValue(fid)
     @test CC.getFileOffset(sm, loc) == off
     @test CC.getFileIDSize(sm, fid) > 0
-    @test CC.getNumCreatedFIDsForFileID(sm, fid) isa Integer
+    @test CC.getNumCreatedFIDsForFileID(sm, fid) isa Integer  # shape-only: the target chooses this value
     inside, rel = CC.isInFileID(sm, loc, fid)
     @test inside
     @test rel == off
@@ -156,7 +156,7 @@ end
     @test CC.getRawEncoding(CC.getFromRawEncoding(raw)) == raw
     loc2 = CC.getComposedLoc(sm, fid, off)
     @test CC.getRawEncoding(loc2) == raw
-    @test CC.getIncludeLoc(sm, fid) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getIncludeLoc(sm, fid))
 
     # buffer access
     data = CC.getBufferData(sm, fid)
@@ -200,9 +200,9 @@ end
     # predicates on a plain user location
     @test !CC.isInSystemHeader(sm, loc)
     @test !CC.isInExternCSystemHeader(sm, loc)
-    @test CC.isInMainFile(sm, loc) isa Bool
+    @test !(CC.isInMainFile(sm, loc))
     @test CC.isWrittenInSameFile(sm, loc, loc)
-    @test CC.isWrittenInMainFile(sm, loc) isa Bool
+    @test !(CC.isWrittenInMainFile(sm, loc))
     @test !CC.isWrittenInBuiltinFile(sm, loc)
     @test !CC.isWrittenInCommandLineFile(sm, loc)
     @test !CC.isWrittenInScratchSpace(sm, loc)
@@ -246,7 +246,7 @@ end
         @test CC.isValid(CC.getImmediateMacroCallerLoc(sm, mloc))
         @test CC.isValid(CC.getTopMacroCallerLoc(sm, mloc))
         @test !CC.isInSystemMacro(sm, mloc)
-        @test CC.getMacroArgExpandedLocation(sm, spelling) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getMacroArgExpandedLocation(sm, spelling))
         sfid, soff = CC.getDecomposedSpellingLoc(sm, mloc)
         @test sfid isa CC.FileID
         CC.dispose(sfid)
@@ -260,7 +260,7 @@ end
     @test CC.isValid(sr)
     @test !CC.isInvalid(sr)
     @test CC.fullyContains(sr, sr)
-    @test CC.printToString(sr, sm) isa String
+    @test !isempty(CC.printToString(sr, sm))
     @test CC.dump(sr, sm) === nothing
 
     # file-entry-backed queries on a real file
@@ -280,7 +280,7 @@ end
     fer = CC.getFileEntryRefForID(sm, nfid)
     @test fer isa CC.FileEntryRef
     @test !CC.isFileOverridden(sm, entry)
-    @test CC.isMainFile(sm, entry) isa Bool
+    @test !(CC.isMainFile(sm, entry))
     @test CC.setFileIsTransient(sm, ref) === nothing
     @test CC.setAllFilesAreTransient(sm, false) === nothing
     tfid = CC.translateFile(sm, entry)
@@ -312,13 +312,13 @@ end
     langopts = CC.getLangOpts(ci)
 
     # ---- SourceManager: state and size queries ----
-    @test CC.userFilesAreVolatile(sm) isa Bool
-    @test CC.hasLineTable(sm) isa Bool
-    @test CC.getContentCacheSize(sm) isa Integer
-    @test CC.local_sloc_entry_size(sm) isa Integer
+    @test !(CC.userFilesAreVolatile(sm))
+    @test CC.hasLineTable(sm)
+    @test CC.getContentCacheSize(sm) isa Integer  # shape-only: the host decides this
+    @test CC.local_sloc_entry_size(sm) isa Integer  # shape-only: the target chooses this value
     @test CC.local_sloc_entry_size(sm) > 0
-    @test CC.loaded_sloc_entry_size(sm) isa Integer
-    @test CC.getNextLocalOffset(sm) isa Integer
+    @test CC.loaded_sloc_entry_size(sm) isa Integer  # shape-only: the target chooses this value
+    @test CC.getNextLocalOffset(sm) isa Integer  # shape-only: the target chooses this value
 
     # the line table is materialised on demand by getLineTableFilenameID
     fnid = CC.getLineTableFilenameID(sm, "sm-batch-b.h")
@@ -334,8 +334,8 @@ end
 
     mainid = CC.getMainFileID(sm)
     startloc = CC.getLocForStartOfFile(sm, mainid)
-    @test CC.isLoadedSourceLocation(sm, startloc) isa Bool
-    @test CC.isLocalSourceLocation(sm, startloc) isa Bool
+    @test !(CC.isLoadedSourceLocation(sm, startloc))
+    @test CC.isLocalSourceLocation(sm, startloc)
     @test CC.isLoadedSourceLocation(sm, startloc) != CC.isLocalSourceLocation(sm, startloc)
     @test CC.getBufferDataOrNone(sm, mainid) isa Union{String,Nothing}
     @test CC.getNonBuiltinFilenameForID(sm, mainid) isa Union{String,Nothing}
@@ -348,7 +348,7 @@ end
     ref = CC.getFileRef(fm, path)
     entry = CC.getFileEntry(ref)
     fid = CC.getOrCreateFileID(sm, ref)
-    @test CC.hasFileInfo(sm, entry) isa Bool
+    @test CC.hasFileInfo(sm, entry)
     data = CC.getBufferDataOrNone(sm, fid)
     @test data !== nothing
     @test occursin("smb_dummy", data)
@@ -363,8 +363,10 @@ end
     # ---- Module ----
     root = CC.Module_("SmbTopMod"; visibility_id=3)
     @test CC.getVisibilityID(root) == 3
-    @test CC.isNamedModuleInterfaceHasInit(root) isa Bool
-    @test CC.isForBuilding(root, langopts) isa Bool
+    # another bit a synthetic module never had a module map to set, so the answer is
+    # the runner's rather than clang's -- only its shape is assertable
+    @test CC.isNamedModuleInterfaceHasInit(root) isa Bool  # shape-only: the host decides this
+    @test !(CC.isForBuilding(root, langopts))
     @test CC.getASTFile(root) === nothing
     @test CC.addTopHeaderFilename(root, "smb-top.h") === nothing
 
@@ -383,9 +385,14 @@ end
     # real module map or requirement list to set. Windows CI observed isAvailable still
     # true after the call while macOS and Linux observed false. Only the shape is
     # asserted; the call itself still exercises the wrapper.
-    @test CC.isAvailable(root) isa Bool
+    # A synthetic module has no module map, so isAvailable reads bits that were never
+    # set and the answer differs per runner (CLAUDE.md records this); only the shape
+    # of it is assertable here.
+    @test CC.isAvailable(root) isa Bool  # shape-only: the host decides this
     @test CC.markUnavailable(root, true) === nothing
-    @test CC.isAvailable(root) isa Bool
+    # same synthetic-module caveat: the markUnavailable transition is gated on bits a
+    # module built without a module map never had
+    @test CC.isAvailable(root) isa Bool  # shape-only: the host decides this
     CC.dispose(root)
 
     CC.dispose(I)
@@ -402,8 +409,8 @@ end
 
     # ---- SourceManager: FileID locality ----
     mainid = CC.getMainFileID(sm)
-    @test CC.isLocalFileID(sm, mainid) isa Bool
-    @test CC.isLoadedFileID(sm, mainid) isa Bool
+    @test CC.isLocalFileID(sm, mainid)
+    @test !(CC.isLoadedFileID(sm, mainid))
     @test CC.isLocalFileID(sm, mainid) == !CC.isLoadedFileID(sm, mainid)
 
     # ---- SourceManager: the SLocEntry table ----
@@ -413,7 +420,7 @@ end
     entry, invalid = CC.getSLocEntry(sm, mainid)
     @test entry isa CC.SLocEntry
     @test invalid isa Bool
-    @test CC.getOffset(entry) isa Integer
+    @test CC.getOffset(entry) isa Integer  # shape-only: the target chooses this value
 
     # Which indices hold a file and which a macro expansion is decided by the parse, so the
     # exemplars are found by scanning instead of being hard-coded.
@@ -436,12 +443,12 @@ end
 
     # ---- SrcMgr::FileInfo ----
     fe = CC.getLocalSLocEntry(sm, file_idx)
-    @test CC.getOffset(fe) isa Integer
+    @test CC.getOffset(fe) isa Integer  # shape-only: the target chooses this value
     fi = CC.getFile(fe)
     @test fi isa CC.FileInfo
-    @test CC.getIncludeLoc(fi) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getIncludeLoc(fi))
     @test CC.getFileCharacteristic(fi) isa CC.CXCharacteristicKind
-    @test CC.hasLineDirectives(fi) isa Bool
+    @test !(CC.hasLineDirectives(fi))
     @test CC.getName(fi) isa String
 
     # ---- SrcMgr::ExpansionInfo ----
@@ -449,12 +456,12 @@ end
     ei = CC.getExpansion(ee)
     @test ei isa CC.ExpansionInfo
     @test CC.getSpellingLoc(ei) isa CC.SourceLocation
-    @test CC.getExpansionLocStart(ei) isa CC.SourceLocation
-    @test CC.getExpansionLocEnd(ei) isa CC.SourceLocation
-    @test CC.isExpansionTokenRange(ei) isa Bool
+    @test CC.is_null_handle(CC.getExpansionLocStart(ei))
+    @test CC.is_null_handle(CC.getExpansionLocEnd(ei))
+    @test CC.isExpansionTokenRange(ei)
     @test CC.isMacroArgExpansion(ei) isa Bool
-    @test CC.isMacroBodyExpansion(ei) isa Bool
-    @test CC.isFunctionMacroExpansion(ei) isa Bool
+    @test !(CC.isMacroBodyExpansion(ei))
+    @test !(CC.isFunctionMacroExpansion(ei))
     # a macro-argument expansion records an invalid end location and a macro-body expansion
     # a valid one, so the two predicates can never hold together
     @test !(CC.isMacroArgExpansion(ei) && CC.isMacroBodyExpansion(ei))
@@ -499,7 +506,7 @@ end
 
     # ---- SourceManager: configuration and memory accounting ----
     @test CC.setOverridenFilesKeepOriginalName(sm, true) === nothing
-    @test CC.getDataStructureSizes(sm) isa Integer
+    @test CC.getDataStructureSizes(sm) isa Integer  # shape-only: the host decides this
     malloc_bytes, mmap_bytes = CC.getMemoryBufferSizes(sm)
     @test malloc_bytes isa Integer
     @test mmap_bytes isa Integer
@@ -545,8 +552,8 @@ end
     fi = CC.getFile(entry)
     cc = CC.getContentCache(fi)
     @test cc isa CC.ContentCache
-    @test CC.isBufferLoaded(cc) isa Bool
-    @test CC.getSizeBytesMapped(cc) isa Integer
+    @test CC.isBufferLoaded(cc)
+    @test CC.getSizeBytesMapped(cc) isa Integer  # shape-only: the host decides this
     ccdata = CC.getBufferDataIfLoaded(cc)
     @test ccdata === nothing || ccdata isa String
     if CC.isBufferLoaded(cc)
@@ -604,7 +611,7 @@ end
     @test modname == ""
 
     # the interpreter's main file is a synthetic buffer, so only the shape is asserted
-    @test CC.getBufferDataOrFake(sm, mainid) isa String
+    @test isempty(CC.getBufferDataOrFake(sm, mainid))
     @test CC.getBufferDataOrFake(sm, mainid, startloc) ==
           CC.getBufferDataOrFake(sm, mainid)
 
@@ -801,7 +808,7 @@ end
         @test CC.setForceEmit(b) === b
 
         d = CC.Diagnostic(engine)
-        @test CC.getDiags(d) isa CC.DiagnosticsEngine
+        @test !CC.is_null_handle(CC.getDiags(d))
         @test CC.getDiags(d).ptr == engine.ptr
         @test CC.getNumArgs(d) == 1
         @test CC.getArgKind(d, 0) == CC.CXDiagnosticsEngine_ak_c_string
@@ -856,10 +863,10 @@ end
 
     ploc = CC.getPresumedLoc(fsl)
     @test ploc isa CC.PresumedLoc
-    @test CC.isValid(ploc) isa Bool
+    @test CC.isValid(ploc)
     CC.dispose(ploc)
     ploc2 = CC.getPresumedLoc(fsl; use_line_directives=false)
-    @test CC.isValid(ploc2) isa Bool
+    @test CC.isValid(ploc2)
     CC.dispose(ploc2)
 
     caller = CC.getImmediateMacroCallerLoc(fsl)
@@ -923,7 +930,7 @@ end
         @test e isa CC.FileEntry
         @test cache isa CC.ContentCache
         @test CC.hasFileInfo(old, e)         # every key is a file the manager knows about
-        @test CC.isBufferLoaded(cache) isa Bool
+        @test !(CC.isBufferLoaded(cache))
     end
 
     @test !CC.isFileOverridden(old, entry)

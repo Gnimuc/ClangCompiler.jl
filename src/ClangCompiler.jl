@@ -58,6 +58,8 @@ include("clang/typeloc.jl")
 public getStmtClass, getChildren, children, subtree, resolve, dump_ast
 include("clang/decl.jl")
 public getKind, decls
+public ChainIterator, DeclIterator, decls_in, redecls, qualifiers, parents, lexical_parents
+public enclosing, module_ancestors, macro_history
 include("clang/attr.jl")
 public getAttrs, get_attr_kind, get_attr_spelling
 

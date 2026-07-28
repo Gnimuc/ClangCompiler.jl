@@ -57,10 +57,10 @@ end
     @test CC.getSpelling(dep) == "deprecated"
     @test CC.get_attr_spelling(dep) == "deprecated"
     @test !CC.isImplicit(dep)
-    @test CC.isInherited(dep) isa Bool
+    @test !(CC.isInherited(dep))
     @test !CC.isPackExpansion(dep)
-    @test CC.getLocation(dep) isa CC.SourceLocation
-    @test CC.getRange(dep) isa CC.SourceRange
+    @test !CC.is_null_handle(CC.getLocation(dep))
+    @test CC.getRange(dep) isa CC.SourceRange  # shape-only
 
     # stamped predicates and casts (base carrier in, dyn_cast_or_null semantics out)
     base = CC.getAttrs(look("gdep"))[1]
@@ -93,7 +93,7 @@ end
     # AsmLabelAttr
     asml = findattr(look("fasm"), CC.AsmLabelAttr)
     @test CC.getLabel(asml) == "real_fasm"
-    @test CC.getIsLiteralLabel(asml) isa Bool
+    @test CC.getIsLiteralLabel(asml)
 
     # AnnotateAttr
     ann = findattr(look("gann"), CC.AnnotateAttr)
@@ -171,7 +171,7 @@ end
     @test "deprecated" in spellings
     @test CC.getKind(attrs[1]) == CC.LibClangEx.CXAttrKind_Aligned
     @test !CC.isImplicit(attrs[1])
-    @test CC.getLocation(attrs[1]) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocation(attrs[1]))
 
     @test f(I, "gattr")   # a decl with no attrs
     CC.parse(I, "int noattr;")

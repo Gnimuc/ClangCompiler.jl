@@ -84,7 +84,7 @@ using Test
     @test cs isa CC.OverloadCandidateSet
     @test cs.ptr != C_NULL
     @test CC.getKind(cs) == CC.CXOverloadCandidateSet_CSK_Normal
-    @test CC.getLocation(cs) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocation(cs))
     @test CC.getLocation(cs).ptr == loc.ptr
     @test CC.empty(cs)
     @test size(cs) == 0
@@ -132,8 +132,8 @@ end
     CC.setAsIdentityConversion(scs)
     @test CC.isIdentityConversion(scs)
     @test CC.getRank(scs) in instances(CC.CXImplicitConversionRank)
-    @test CC.isPointerConversionToBool(scs) isa Bool
-    @test CC.isPointerConversionToVoidPointer(scs, ctx) isa Bool
+    @test CC.isPointerConversionToBool(scs)
+    @test !(CC.isPointerConversionToVoidPointer(scs, ctx))
 
     # The kind setters that carry no payload of their own.
     CC.setStaticObjectArgument(ics)
@@ -152,7 +152,7 @@ end
     CC.setBad(ics, CC.CXBadConversionSequence_bad_qualifiers, int_ptr, ptr_ty)
     bad = CC.getBad(ics)
     @test CC.getFailureKind(bad) == CC.CXBadConversionSequence_bad_qualifiers
-    @test CC.getFromExpr(bad) isa CC.Expr_
+    @test CC.is_null_handle(CC.getFromExpr(bad))
     @test CC.getFromExpr(bad).ptr == C_NULL
     CC.setFromExpr(bad, e)
     @test CC.getFromExpr(bad).ptr == e.ptr
@@ -239,7 +239,7 @@ end
 
     CC.addConversion(amb, found, fn)
     @test CC.getNumConversions(amb) == 1
-    @test CC.getConversionFound(amb, 0) isa CC.NamedDecl
+    @test !CC.is_null_handle(CC.getConversionFound(amb, 0))
     @test CC.getConversionFound(amb, 0).ptr == found.ptr
     @test CC.getConversionFunction(amb, 0) isa CC.FunctionDecl
     @test CC.getConversionFunction(amb, 0).ptr == fn.ptr
@@ -271,7 +271,7 @@ end
     plain = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Normal)
     @test CC.getRewriteInfoOriginalOperator(plain) == CC.CXOverloadedOperatorKind_OO_None
     @test CC.getRewriteInfoAllowRewrittenCandidates(plain) == false
-    @test CC.getRewriteInfoOpLoc(plain) isa CC.SourceLocation
+    @test CC.is_null_handle(CC.getRewriteInfoOpLoc(plain))
     CC.dispose(plain)
 
     cs = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator,
@@ -426,8 +426,8 @@ end
     @test !CC.isInitialized(slots[3])
 
     # Deferred diagnostics are a CUDA/HIP notion, so the answer here is host-decided.
-    @test CC.shouldDeferDiags(cs, sema, CC.Expr_[], loc) isa Bool
-    @test CC.shouldDeferDiags(cs, sema, [e], loc) isa Bool
+    @test !(CC.shouldDeferDiags(cs, sema, CC.Expr_[], loc))
+    @test !(CC.shouldDeferDiags(cs, sema, [e], loc))
 
     # The fix-it repair path reads the conversion's bad arm directly, so an unresolved slot
     # is rejected before the ccall.
@@ -436,7 +436,7 @@ end
     @test_throws AssertionError CC.TryToFixBadConversion(cand, 0, sema)
     CC.setBad(slot, CC.CXBadConversionSequence_no_conversion, bool_ty, bool_ty)
     CC.setFromExpr(CC.getBad(slot), e)
-    @test CC.TryToFixBadConversion(cand, 0, sema) isa Bool
+    @test !(CC.TryToFixBadConversion(cand, 0, sema))
 
     CC.dispose(cs)
     dispose(I)
@@ -463,7 +463,7 @@ end
           CC.CXOverloadCandidateRewriteKind_CRK_Reversed
     # isReversible's first conjunct is AllowRewrittenCandidates, which this set leaves false.
     @test CC.rewriteInfoIsReversible(plain) == false
-    @test CC.rewriteInfoAllowsReversed(plain, CC.CXOverloadedOperatorKind_OO_EqualEqual) isa Bool
+    @test !(CC.rewriteInfoAllowsReversed(plain, CC.CXOverloadedOperatorKind_OO_EqualEqual))
 
     # An empty set has nothing viable to pick, and the one-past-the-end iterator clang parks on
     # that outcome is reported as no candidate at all.
@@ -484,8 +484,8 @@ end
     @test Int(CC.rewriteInfoGetRewriteKind(op, fn, true)) ==
           (Int(CC.CXOverloadCandidateRewriteKind_CRK_DifferentOperator) |
            Int(CC.CXOverloadCandidateRewriteKind_CRK_Reversed))
-    @test CC.rewriteInfoIsReversible(op) isa Bool
-    @test CC.rewriteInfoAllowsReversed(op, CC.CXOverloadedOperatorKind_OO_EqualEqual) isa Bool
+    @test CC.rewriteInfoIsReversible(op)
+    @test CC.rewriteInfoAllowsReversed(op, CC.CXOverloadedOperatorKind_OO_EqualEqual)
 
     # One candidate: nothing to compare it against, so resolution never reaches the conversion
     # slots addCandidate leaves uninitialized.
@@ -531,9 +531,9 @@ end
     # member below reads storage the shim wrote rather than indeterminate bits; the values
     # asserted are exactly the ones that call writes.
     cand = CC.addCandidate(cs, 1)
-    @test CC.getFunction(cand) isa CC.FunctionDecl
+    @test CC.is_null_handle(CC.getFunction(cand))
     @test CC.getFunction(cand).ptr == C_NULL
-    @test CC.getSurrogate(cand) isa CC.CXXConversionDecl
+    @test CC.is_null_handle(CC.getSurrogate(cand))
     @test CC.getSurrogate(cand).ptr == C_NULL
     @test CC.getViable(cand) == true
     @test CC.getBest(cand) == false

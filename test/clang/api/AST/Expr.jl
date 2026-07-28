@@ -155,30 +155,30 @@ end
     anyexpr = first(filter(n -> n isa CC.AbstractExpr, nodes))
     @test CC.getType(anyexpr) isa CC.QualType
     @test CC.getValueKind(anyexpr) isa CC.LibClangEx.CXExprValueKind
-    @test CC.isLValue(anyexpr) isa Bool
-    @test CC.isPRValue(anyexpr) isa Bool
-    @test CC.isXValue(anyexpr) isa Bool
-    @test CC.isGLValue(anyexpr) isa Bool
-    @test CC.IgnoreImpCasts(anyexpr) isa CC.Expr_
-    @test CC.IgnoreCasts(anyexpr) isa CC.Expr_
+    @test !(CC.isLValue(anyexpr))
+    @test CC.isPRValue(anyexpr)
+    @test !(CC.isXValue(anyexpr))
+    @test !(CC.isGLValue(anyexpr))
+    @test !CC.is_null_handle(CC.IgnoreImpCasts(anyexpr))
+    @test !CC.is_null_handle(CC.IgnoreCasts(anyexpr))
     @test CC.IgnoreParens(anyexpr) isa CC.Expr_
-    @test CC.IgnoreParenCasts(anyexpr) isa CC.Expr_
-    @test CC.IgnoreParenImpCasts(anyexpr) isa CC.Expr_
-    @test CC.containsErrors(anyexpr) isa Bool
-    @test CC.containsUnexpandedParameterPack(anyexpr) isa Bool
-    @test CC.hasPlaceholderType(anyexpr) isa Bool
-    @test CC.isDefaultArgument(anyexpr) isa Bool
-    @test CC.isImplicitCXXThis(anyexpr) isa Bool
-    @test CC.isInstantiationDependent(anyexpr) isa Bool
-    @test CC.isObjCSelfExpr(anyexpr) isa Bool
-    @test CC.isOrdinaryOrBitFieldObject(anyexpr) isa Bool
-    @test CC.isTypeDependent(anyexpr) isa Bool
-    @test CC.isValueDependent(anyexpr) isa Bool
-    @test CC.refersToBitField(anyexpr) isa Bool
-    @test CC.refersToGlobalRegisterVar(anyexpr) isa Bool
-    @test CC.refersToMatrixElement(anyexpr) isa Bool
-    @test CC.refersToVectorElement(anyexpr) isa Bool
-    @test CC.getExprLoc(anyexpr) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.IgnoreParenCasts(anyexpr))
+    @test !CC.is_null_handle(CC.IgnoreParenImpCasts(anyexpr))
+    @test !(CC.containsErrors(anyexpr))
+    @test !(CC.containsUnexpandedParameterPack(anyexpr))
+    @test !(CC.hasPlaceholderType(anyexpr))
+    @test !(CC.isDefaultArgument(anyexpr))
+    @test !(CC.isImplicitCXXThis(anyexpr))
+    @test !(CC.isInstantiationDependent(anyexpr))
+    @test !(CC.isObjCSelfExpr(anyexpr))
+    @test CC.isOrdinaryOrBitFieldObject(anyexpr)
+    @test !(CC.isTypeDependent(anyexpr))
+    @test !(CC.isValueDependent(anyexpr))
+    @test !(CC.refersToBitField(anyexpr))
+    @test !(CC.refersToGlobalRegisterVar(anyexpr))
+    @test !(CC.refersToMatrixElement(anyexpr))
+    @test !(CC.refersToVectorElement(anyexpr))
+    @test !CC.is_null_handle(CC.getExprLoc(anyexpr))
 
     # ---- Expr constant folding (needs an ASTContext) -------------------------
     il = first_of(CC.IntegerLiteral)
@@ -186,24 +186,24 @@ end
     apr = CC.EvaluateAsRValue(il, ctx)
     @test apr isa CC.APValue
     apr.ptr != C_NULL && dispose(apr)
-    @test CC.isEvaluatable(il, ctx) isa Bool
-    @test CC.isIntegerConstantExpr(il, ctx) isa Bool
-    @test CC.isCXX11ConstantExpr(il, ctx) isa Bool
-    @test CC.EvaluateAsBooleanCondition(il, ctx) isa Integer
+    @test CC.isEvaluatable(il, ctx)
+    @test CC.isIntegerConstantExpr(il, ctx)
+    @test CC.isCXX11ConstantExpr(il, ctx)
+    @test CC.EvaluateAsBooleanCondition(il, ctx) isa Integer  # shape-only: the target chooses this value
     api_ = CC.EvaluateAsInt(il, ctx)
     @test api_ isa CC.APValue
     api_.ptr != C_NULL && dispose(api_)
 
     # ---- IntegerLiteral ------------------------------------------------------
     @test CC.getValue(il) !== nothing
-    @test CC.getBeginLoc(il) isa CC.SourceLocation
-    @test CC.getEndLoc(il) isa CC.SourceLocation
-    @test CC.getLocation(il) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getBeginLoc(il))
+    @test !CC.is_null_handle(CC.getEndLoc(il))
+    @test !CC.is_null_handle(CC.getLocation(il))
 
     # ---- FloatingLiteral -----------------------------------------------------
     fl = first_of(CC.FloatingLiteral)
     @test fl !== nothing
-    @test CC.getValueAsApproximateDouble(fl) isa AbstractFloat
+    @test CC.getValueAsApproximateDouble(fl) isa AbstractFloat  # shape-only: the target chooses this value
     @test CC.EvaluateAsFloat(fl, ctx) !== nothing
 
     # ---- CharacterLiteral ----------------------------------------------------
@@ -211,197 +211,197 @@ end
     @test chl !== nothing
     @test CC.getValue(chl) isa Integer
     @test CC.getKind(chl) isa CC.LibClangEx.CXCharacterLiteralKind
-    @test CC.getLocation(chl) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocation(chl))
 
     # ---- StringLiteral -------------------------------------------------------
     sl = first_of(CC.StringLiteral)
     @test sl !== nothing
-    @test CC.getBytes(sl) isa String
-    @test CC.getString(sl) isa String
-    @test CC.getByteLength(sl) isa Integer
-    @test CC.getLength(sl) isa Integer
-    @test CC.getCharByteWidth(sl) isa Integer
+    @test !isempty(CC.getBytes(sl))
+    @test !isempty(CC.getString(sl))
+    @test CC.getByteLength(sl) isa Integer  # shape-only: the target chooses this value
+    @test CC.getLength(sl) isa Integer  # shape-only: the target chooses this value
+    @test CC.getCharByteWidth(sl) isa Integer  # shape-only: the target chooses this value
     @test CC.getKind(sl) isa CC.LibClangEx.CXStringLiteralKind
-    @test CC.isOrdinary(sl) isa Bool
-    @test CC.isWide(sl) isa Bool
-    @test CC.isUTF8(sl) isa Bool
-    @test CC.isUTF16(sl) isa Bool
-    @test CC.isUTF32(sl) isa Bool
-    @test CC.isUnevaluated(sl) isa Bool
-    @test CC.isPascal(sl) isa Bool
-    @test CC.containsNonAscii(sl) isa Bool
-    @test CC.containsNonAsciiOrNull(sl) isa Bool
-    @test CC.getNumConcatenated(sl) isa Integer
-    @test CC.getBeginLoc(sl) isa CC.SourceLocation
-    @test CC.getEndLoc(sl) isa CC.SourceLocation
+    @test CC.isOrdinary(sl)
+    @test !(CC.isWide(sl))
+    @test !(CC.isUTF8(sl))
+    @test !(CC.isUTF16(sl))
+    @test !(CC.isUTF32(sl))
+    @test !(CC.isUnevaluated(sl))
+    @test !(CC.isPascal(sl))
+    @test !(CC.containsNonAscii(sl))
+    @test !(CC.containsNonAsciiOrNull(sl))
+    @test CC.getNumConcatenated(sl) isa Integer  # shape-only: the target chooses this value
+    @test !CC.is_null_handle(CC.getBeginLoc(sl))
+    @test !CC.is_null_handle(CC.getEndLoc(sl))
 
     # ---- ParenExpr -----------------------------------------------------------
     pe = first_of(CC.ParenExpr)
     @test pe !== nothing
-    @test CC.getSubExpr(pe) isa CC.Expr_
-    @test CC.getLParen(pe) isa CC.SourceLocation
-    @test CC.getRParen(pe) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getSubExpr(pe))
+    @test !CC.is_null_handle(CC.getLParen(pe))
+    @test !CC.is_null_handle(CC.getRParen(pe))
 
     # ---- UnaryOperator -------------------------------------------------------
     uo = first_of(CC.UnaryOperator)
     @test uo !== nothing
     @test CC.getOpcode(uo) isa CC.LibClangEx.CXUnaryOperatorKind
-    @test CC.getSubExpr(uo) isa CC.Expr_
-    @test CC.getOperatorLoc(uo) isa CC.SourceLocation
-    @test CC.isPrefix(uo) isa Bool
-    @test CC.isPostfix(uo) isa Bool
-    @test CC.isIncrementOp(uo) isa Bool
-    @test CC.isDecrementOp(uo) isa Bool
-    @test CC.canOverflow(uo) isa Bool
-    @test CC.isIncrementDecrementOp(uo) isa Bool
-    @test CC.isArithmeticOp(uo) isa Bool
-    @test CC.hasStoredFPFeatures(uo) isa Bool
+    @test !CC.is_null_handle(CC.getSubExpr(uo))
+    @test !CC.is_null_handle(CC.getOperatorLoc(uo))
+    @test CC.isPrefix(uo)
+    @test !(CC.isPostfix(uo))
+    @test CC.isIncrementOp(uo)
+    @test !(CC.isDecrementOp(uo))
+    @test CC.canOverflow(uo)
+    @test CC.isIncrementDecrementOp(uo)
+    @test !(CC.isArithmeticOp(uo))
+    @test CC.hasStoredFPFeatures(uo) isa Bool  # shape-only: the host decides this
 
     # ---- ArraySubscriptExpr --------------------------------------------------
     ase = first_of(CC.ArraySubscriptExpr)
     @test ase !== nothing
-    @test CC.getLHS(ase) isa CC.Expr_
-    @test CC.getRHS(ase) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getLHS(ase))
+    @test !CC.is_null_handle(CC.getRHS(ase))
     @test CC.getBase(ase) isa CC.Expr_
-    @test CC.getIdx(ase) isa CC.Expr_
-    @test CC.getRBracketLoc(ase) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getIdx(ase))
+    @test !CC.is_null_handle(CC.getRBracketLoc(ase))
 
     # ---- CallExpr ------------------------------------------------------------
     ce = first_of(CC.CallExpr)
     @test ce !== nothing
     @test CC.getCallee(ce) isa CC.Expr_
-    @test CC.getCalleeDecl(ce) isa CC.Decl
-    @test CC.getDirectCallee(ce) isa CC.FunctionDecl
+    @test !CC.is_null_handle(CC.getCalleeDecl(ce))
+    @test !CC.is_null_handle(CC.getDirectCallee(ce))
     nargs = CC.getNumArgs(ce)
     @test nargs isa Integer
     @test CC.getArg(ce, 0) isa CC.Expr_
-    @test CC.getRParenLoc(ce) isa CC.SourceLocation
-    @test CC.usesADL(ce) isa Bool
-    @test CC.hasStoredFPFeatures(ce) isa Bool
-    @test CC.getBuiltinCallee(ce) isa Integer
-    @test CC.isCallToStdMove(ce) isa Bool
+    @test !CC.is_null_handle(CC.getRParenLoc(ce))
+    @test !(CC.usesADL(ce))
+    @test CC.hasStoredFPFeatures(ce) isa Bool  # shape-only: the host decides this
+    @test CC.getBuiltinCallee(ce) isa Integer  # shape-only: the target chooses this value
+    @test !(CC.isCallToStdMove(ce))
 
     # ---- MemberExpr ----------------------------------------------------------
     me = first_of(CC.MemberExpr)
     @test me !== nothing
     @test CC.getBase(me) isa CC.Expr_
-    @test CC.getMemberDecl(me) isa CC.ValueDecl
-    @test CC.isArrow(me) isa Bool
-    @test CC.getMemberLoc(me) isa CC.SourceLocation
-    @test CC.isImplicitAccess(me) isa Bool
-    @test CC.getMemberNameInfo(me) isa CC.DeclarationNameInfo
-    @test CC.hasQualifier(me) isa Bool
-    @test CC.getTemplateKeywordLoc(me) isa CC.SourceLocation
-    @test CC.getLAngleLoc(me) isa CC.SourceLocation
-    @test CC.getRAngleLoc(me) isa CC.SourceLocation
-    @test CC.hasTemplateKeyword(me) isa Bool
-    @test CC.hasExplicitTemplateArgs(me) isa Bool
-    @test CC.getNumTemplateArgs(me) isa Integer
-    @test CC.getOperatorLoc(me) isa CC.SourceLocation
-    @test CC.hadMultipleCandidates(me) isa Bool
-    @test CC.getQualifier(me) isa CC.NestedNameSpecifier
+    @test !CC.is_null_handle(CC.getMemberDecl(me))
+    @test !(CC.isArrow(me))
+    @test !CC.is_null_handle(CC.getMemberLoc(me))
+    @test !(CC.isImplicitAccess(me))
+    @test !CC.is_null_handle(CC.getMemberNameInfo(me))
+    @test !(CC.hasQualifier(me))
+    @test CC.is_null_handle(CC.getTemplateKeywordLoc(me))
+    @test CC.is_null_handle(CC.getLAngleLoc(me))
+    @test CC.is_null_handle(CC.getRAngleLoc(me))
+    @test !(CC.hasTemplateKeyword(me))
+    @test !(CC.hasExplicitTemplateArgs(me))
+    @test CC.getNumTemplateArgs(me) isa Integer  # shape-only: the target chooses this value
+    @test !CC.is_null_handle(CC.getOperatorLoc(me))
+    @test !(CC.hadMultipleCandidates(me))
+    @test CC.is_null_handle(CC.getQualifier(me))
 
     # ---- CastExpr / ImplicitCastExpr / ExplicitCastExpr ----------------------
     ice = first_of(CC.ImplicitCastExpr)
     @test ice !== nothing
     @test CC.getCastKind(ice) isa CC.LibClangEx.CXCastKind
-    @test CC.getCastKindName(ice) isa String
-    @test CC.getSubExpr(ice) isa CC.Expr_
-    @test CC.getSubExprAsWritten(ice) isa CC.Expr_
-    @test CC.isPartOfExplicitCast(ice) isa Bool
+    @test !isempty(CC.getCastKindName(ice))
+    @test !CC.is_null_handle(CC.getSubExpr(ice))
+    @test !CC.is_null_handle(CC.getSubExprAsWritten(ice))
+    @test !(CC.isPartOfExplicitCast(ice))
 
     # CStyleCastExpr is an ExplicitCastExpr — covers getTypeAsWritten + own locs
     csc = first_of(CC.CStyleCastExpr)
     @test csc !== nothing
     @test CC.getTypeAsWritten(csc) isa CC.QualType
-    @test CC.getLParenLoc(csc) isa CC.SourceLocation
-    @test CC.getRParenLoc(csc) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLParenLoc(csc))
+    @test !CC.is_null_handle(CC.getRParenLoc(csc))
 
     # getPathElement needs a cast whose inheritance path is non-empty
     dtb = first(filter(n -> n isa CC.AbstractCastExpr &&
                             CC.getCastKindName(n) == "DerivedToBase", nodes))
-    @test CC.getPathElement(dtb, 0) isa CC.CXXBaseSpecifier
+    @test CC.getPathElement(dtb, 0) isa CC.CXXBaseSpecifier  # shape-only: the host decides this
 
     # ---- BinaryOperator ------------------------------------------------------
     bo = first_of(CC.BinaryOperator)
     @test bo !== nothing
     @test CC.getOpcode(bo) isa CC.LibClangEx.CXBinaryOperatorKind
-    @test CC.getLHS(bo) isa CC.Expr_
-    @test CC.getRHS(bo) isa CC.Expr_
-    @test CC.getOperatorLoc(bo) isa CC.SourceLocation
-    @test CC.getOpcodeStr(bo) isa String
-    @test CC.isAssignmentOp(bo) isa Bool
-    @test CC.isCompoundAssignmentOp(bo) isa Bool
-    @test CC.isComparisonOp(bo) isa Bool
+    @test !CC.is_null_handle(CC.getLHS(bo))
+    @test !CC.is_null_handle(CC.getRHS(bo))
+    @test !CC.is_null_handle(CC.getOperatorLoc(bo))
+    @test !isempty(CC.getOpcodeStr(bo))
+    @test !(CC.isAssignmentOp(bo))
+    @test !(CC.isCompoundAssignmentOp(bo))
+    @test !(CC.isComparisonOp(bo))
 
     # ---- CompoundAssignOperator ----------------------------------------------
     cao = first_of(CC.CompoundAssignOperator)
     @test cao !== nothing
-    @test CC.getComputationLHSType(cao) isa CC.QualType
-    @test CC.getComputationResultType(cao) isa CC.QualType
+    @test !CC.is_null_handle(CC.getComputationLHSType(cao))
+    @test !CC.is_null_handle(CC.getComputationResultType(cao))
 
     # ---- ConditionalOperator -------------------------------------------------
     co = first_of(CC.ConditionalOperator)
     @test co !== nothing
-    @test CC.getCond(co) isa CC.Expr_
-    @test CC.getTrueExpr(co) isa CC.Expr_
-    @test CC.getFalseExpr(co) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCond(co))
+    @test !CC.is_null_handle(CC.getTrueExpr(co))
+    @test !CC.is_null_handle(CC.getFalseExpr(co))
 
     # ---- InitListExpr --------------------------------------------------------
     ile = first_of(CC.InitListExpr)
     @test ile !== nothing
-    @test CC.getNumInits(ile) isa Integer
+    @test CC.getNumInits(ile) isa Integer  # shape-only: the target chooses this value
     @test CC.getInit(ile, 0) isa CC.Expr_
-    @test CC.isSemanticForm(ile) isa Bool
+    @test CC.isSemanticForm(ile)
     @test CC.getSyntacticForm(ile) isa CC.InitListExpr
     @test CC.getSemanticForm(ile) isa CC.InitListExpr
-    @test CC.hasArrayFiller(ile) isa Bool
-    @test CC.hasDesignatedInit(ile) isa Bool
-    @test CC.isExplicit(ile) isa Bool
-    @test CC.isStringLiteralInit(ile) isa Bool
-    @test CC.isTransparent(ile) isa Bool
-    @test CC.getLBraceLoc(ile) isa CC.SourceLocation
-    @test CC.getRBraceLoc(ile) isa CC.SourceLocation
-    @test CC.isSyntacticForm(ile) isa Bool
-    @test CC.hadArrayRangeDesignator(ile) isa Bool
+    @test !(CC.hasArrayFiller(ile))
+    @test !(CC.hasDesignatedInit(ile))
+    @test CC.isExplicit(ile)
+    @test !(CC.isStringLiteralInit(ile))
+    @test !(CC.isTransparent(ile))
+    @test !CC.is_null_handle(CC.getLBraceLoc(ile))
+    @test !CC.is_null_handle(CC.getRBraceLoc(ile))
+    @test !(CC.isSyntacticForm(ile))
+    @test !(CC.hadArrayRangeDesignator(ile))
     @test CC.getArrayFiller(ile) isa CC.Expr_
-    @test CC.getInitializedFieldInUnion(ile) isa CC.FieldDecl
+    @test CC.is_null_handle(CC.getInitializedFieldInUnion(ile))
 
     # ---- DeclRefExpr ---------------------------------------------------------
     dre = first_of(CC.DeclRefExpr)
     @test dre !== nothing
     @test CC.getDecl(dre) isa CC.ValueDecl
     @test CC.getFoundDecl(dre) isa CC.NamedDecl
-    @test CC.hasQualifier(dre) isa Bool
-    @test CC.getLocation(dre) isa CC.SourceLocation
-    @test CC.getNameInfo(dre) isa CC.DeclarationNameInfo
-    @test CC.hasTemplateKWAndArgsInfo(dre) isa Bool
-    @test CC.getTemplateKeywordLoc(dre) isa CC.SourceLocation
-    @test CC.getLAngleLoc(dre) isa CC.SourceLocation
-    @test CC.getRAngleLoc(dre) isa CC.SourceLocation
-    @test CC.hasTemplateKeyword(dre) isa Bool
-    @test CC.hasExplicitTemplateArgs(dre) isa Bool
-    @test CC.getNumTemplateArgs(dre) isa Integer
-    @test CC.hadMultipleCandidates(dre) isa Bool
-    @test CC.refersToEnclosingVariableOrCapture(dre) isa Bool
-    @test CC.isImmediateEscalating(dre) isa Bool
-    @test CC.isCapturedByCopyInLambdaWithExplicitObjectParameter(dre) isa Bool
-    @test CC.getQualifier(dre) isa CC.NestedNameSpecifier
+    @test !(CC.hasQualifier(dre))
+    @test !CC.is_null_handle(CC.getLocation(dre))
+    @test !CC.is_null_handle(CC.getNameInfo(dre))
+    @test !(CC.hasTemplateKWAndArgsInfo(dre))
+    @test CC.is_null_handle(CC.getTemplateKeywordLoc(dre))
+    @test CC.is_null_handle(CC.getLAngleLoc(dre))
+    @test CC.is_null_handle(CC.getRAngleLoc(dre))
+    @test !(CC.hasTemplateKeyword(dre))
+    @test !(CC.hasExplicitTemplateArgs(dre))
+    @test CC.getNumTemplateArgs(dre) isa Integer  # shape-only: the target chooses this value
+    @test !(CC.hadMultipleCandidates(dre))
+    @test !(CC.refersToEnclosingVariableOrCapture(dre))
+    @test !(CC.isImmediateEscalating(dre))
+    @test !(CC.isCapturedByCopyInLambdaWithExplicitObjectParameter(dre))
+    @test CC.is_null_handle(CC.getQualifier(dre))
 
     # ---- UnaryExprOrTypeTraitExpr (sizeof) -----------------------------------
     uetts = byT(CC.UnaryExprOrTypeTraitExpr)
     @test !isempty(uetts)
     for u in uetts
-        @test CC.isArgumentType(u) isa Bool
-        @test CC.getTypeOfArgument(u) isa CC.QualType
+        @test CC.isArgumentType(u) isa Bool  # shape-only
+        @test !CC.is_null_handle(CC.getTypeOfArgument(u))
         @test CC.getKind(u) isa CC.LibClangEx.CXUnaryExprOrTypeTrait
-        @test CC.getOperatorLoc(u) isa CC.SourceLocation
-        @test CC.getRParenLoc(u) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getOperatorLoc(u))
+        @test !CC.is_null_handle(CC.getRParenLoc(u))
         if CC.isArgumentType(u)
-            @test CC.getArgumentType(u) isa CC.QualType
-            @test CC.getArgumentTypeInfo(u) isa CC.TypeSourceInfo
+            @test !CC.is_null_handle(CC.getArgumentType(u))
+            @test !CC.is_null_handle(CC.getArgumentTypeInfo(u))
         else
-            @test CC.getArgumentExpr(u) isa CC.Expr_
+            @test !CC.is_null_handle(CC.getArgumentExpr(u))
         end
     end
 
@@ -409,30 +409,30 @@ end
     pde = first_of(CC.PredefinedExpr)
     @test pde !== nothing
     @test CC.getIdentKind(pde) isa CC.LibClangEx.CXPredefinedIdentKind
-    @test CC.getFunctionName(pde) isa CC.StringLiteral
-    @test CC.getIdentKindName(pde) isa String
+    @test !CC.is_null_handle(CC.getFunctionName(pde))
+    @test !isempty(CC.getIdentKindName(pde))
 
     # ---- StmtExpr ({ ...; }) -------------------------------------------------
     se = first_of(CC.StmtExpr)
     @test se !== nothing
-    @test CC.getLParenLoc(se) isa CC.SourceLocation
-    @test CC.getRParenLoc(se) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLParenLoc(se))
+    @test !CC.is_null_handle(CC.getRParenLoc(se))
     @test CC.getTemplateDepth(se) isa Integer
     @test CC.getSubStmt(se) isa CC.CompoundStmt
 
     # ---- CompoundLiteralExpr ((PointT){1,2}) ---------------------------------
     cle = first_of(CC.CompoundLiteralExpr)
     @test cle !== nothing
-    @test CC.isFileScope(cle) isa Bool
-    @test CC.getLParenLoc(cle) isa CC.SourceLocation
-    @test CC.getInitializer(cle) isa CC.Expr_
-    @test CC.getTypeSourceInfo(cle) isa CC.TypeSourceInfo
+    @test !(CC.isFileScope(cle))
+    @test !CC.is_null_handle(CC.getLParenLoc(cle))
+    @test !CC.is_null_handle(CC.getInitializer(cle))
+    @test !CC.is_null_handle(CC.getTypeSourceInfo(cle))
 
     # ---- ConstantExpr (immediate consteval invocation) -----------------------
     cst = first_of(CC.ConstantExpr)
     @test cst !== nothing
-    @test CC.isImmediateInvocation(cst) isa Bool
-    @test CC.hasAPValueResult(cst) isa Bool
+    @test CC.isImmediateInvocation(cst)
+    @test CC.hasAPValueResult(cst)
 
     dispose(lookup)
     dispose(I)
@@ -500,28 +500,28 @@ end
     il = first(ils)
 
     @test CC.getObjectKind(il) isa LX.CXExprObjectKind
-    @test CC.isKnownToHaveBooleanValue(il, true) isa Bool
-    @test CC.isCXX98IntegralConstantExpr(il, ctx) isa Bool
-    @test CC.isConstantInitializer(il, ctx, false) isa Bool
+    @test !(CC.isKnownToHaveBooleanValue(il, true))
+    @test CC.isCXX98IntegralConstantExpr(il, ctx)
+    @test CC.isConstantInitializer(il, ctx, false)
     @test CC.HasSideEffects(il, ctx, true) == false
     @test CC.hasNonTrivialCall(il, ctx) == false
     @test CC.isBoundMemberFunction(il, ctx) == false
-    @test CC.isSameComparisonOperand(il, il) isa Bool
-    @test CC.findBoundMemberType(il) isa CC.QualType
+    @test !(CC.isSameComparisonOperand(il, il))
+    @test CC.is_null_handle(CC.findBoundMemberType(il))
     @test CC.getValueKindForType(CC.getType(il)) isa LX.CXExprValueKind
-    @test CC.getSourceBitField(il) isa CC.FieldDecl
-    @test CC.getReferencedDeclOfCallee(il) isa CC.Decl
+    @test CC.is_null_handle(CC.getSourceBitField(il))
+    @test CC.is_null_handle(CC.getReferencedDeclOfCallee(il))
     # only meaningful for class / pointer-to-class expressions; the wrapper's
     # precondition rejects an int literal instead of letting clang's unchecked
     # castAs<RecordType> run (crashed on Windows CI)
     @test_throws AssertionError CC.getBestDynamicClassType(il)
-    @test CC.getAsBuiltinConstantDeclRef(il, ctx) isa CC.ValueDecl
+    @test CC.is_null_handle(CC.getAsBuiltinConstantDeclRef(il, ctx))
 
     for f in (CC.IgnoreImplicit, CC.IgnoreImplicitAsWritten, CC.IgnoreParenBaseCasts,
               CC.IgnoreParenLValueCasts, CC.IgnoreUnlessSpelledInSource)
         @test f(il) isa CC.Expr_
     end
-    @test CC.IgnoreParenNoopCasts(il, ctx) isa CC.Expr_
+    @test !CC.is_null_handle(CC.IgnoreParenNoopCasts(il, ctx))
 
     # integer folding: the three APSInt bridges all hand back an owned GenericValue
     @test CC.isIntegerConstantExpr(il, ctx)
@@ -554,11 +554,11 @@ end
     ces = filter(n -> n isa CC.CallExpr, nodes)
     @test !isempty(ces)
     ce = first(ces)
-    @test CC.getCallReturnType(ce, ctx) isa CC.QualType
-    @test CC.hasUnusedResultAttr(ce, ctx) isa Bool
+    @test !CC.is_null_handle(CC.getCallReturnType(ce, ctx))
+    @test !(CC.hasUnusedResultAttr(ce, ctx))
     @test CC.isUnevaluatedBuiltinCall(ce, ctx) == false
     @test CC.isBuiltinAssumeFalse(ce, ctx) == false
-    @test CC.getUnusedResultAttr(ce, ctx) isa CC.Attr
+    @test CC.is_null_handle(CC.getUnusedResultAttr(ce, ctx))
     rp = CC.getRParenLoc(ce)
     CC.setRParenLoc(ce, rp)
     @test CC.getRParenLoc(ce).ptr == rp.ptr
@@ -570,7 +570,7 @@ end
     @test CC.getFoundDecl(me) isa CC.NamedDecl
     @test CC.getFoundDeclAccess(me) isa LX.CXAccessSpecifier
     @test CC.isNonOdrUse(me) isa LX.CXNonOdrUseReason
-    @test CC.performsVirtualDispatch(me, lang_opts) isa Bool
+    @test CC.performsVirtualDispatch(me, lang_opts)
     @test CC.getNumTemplateArgs(me) == 0
     ml = CC.getMemberLoc(me)
     CC.setMemberLoc(me, ml)
@@ -589,7 +589,7 @@ end
     # ---- ExplicitCastExpr / CastExpr ---------------------------------------
     css = filter(n -> n isa CC.CStyleCastExpr, nodes)
     @test !isempty(css)
-    @test CC.getTypeInfoAsWritten(first(css)) isa CC.TypeSourceInfo
+    @test !CC.is_null_handle(CC.getTypeInfoAsWritten(first(css)))
     # only valid for union destination types; the wrapper's precondition
     # rejects anything else instead of letting clang dereference a null record
     @test_throws AssertionError CC.getTargetFieldForToUnionCast(CC.getType(first(css)),
@@ -598,15 +598,15 @@ end
     # ---- ConditionalOperator ------------------------------------------------
     cos = filter(n -> n isa CC.ConditionalOperator, nodes)
     @test !isempty(cos)
-    @test CC.getQuestionLoc(first(cos)) isa CC.SourceLocation
-    @test CC.getColonLoc(first(cos)) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getQuestionLoc(first(cos)))
+    @test !CC.is_null_handle(CC.getColonLoc(first(cos)))
 
     # ---- FloatingLiteral ----------------------------------------------------
     fls = filter(n -> n isa CC.FloatingLiteral, nodes)
     @test !isempty(fls)
     fl = first(fls)
     @test CC.getValue(fl) != C_NULL
-    @test CC.isExact(fl) isa Bool
+    @test CC.isExact(fl)
     flloc = CC.getLocation(fl)
     CC.setLocation(fl, flloc)
     @test CC.getLocation(fl).ptr == flloc.ptr
@@ -616,14 +616,14 @@ end
     @test !isempty(sls)
     sl = first(sls)
     @test CC.getNumConcatenated(sl) >= 1
-    @test CC.getStrTokenLoc(sl, 0) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getStrTokenLoc(sl, 0))
     @test CC.getCodeUnit(sl, 0) == UInt32('a')
 
     # ---- InitListExpr -------------------------------------------------------
     iles = filter(n -> n isa CC.InitListExpr, nodes)
     @test !isempty(iles)
     ile = first(iles)
-    @test CC.isIdiomaticZeroInitializer(ile, lang_opts) isa Bool
+    @test !(CC.isIdiomaticZeroInitializer(ile, lang_opts))
     lb = CC.getLBraceLoc(ile)
     CC.setLBraceLoc(ile, lb)
     @test CC.getLBraceLoc(ile).ptr == lb.ptr
@@ -644,28 +644,28 @@ end
         @test CC.size(die) >= 1
         @test CC.getNumSubExprs(die) >= 1
         @test CC.getInit(die) isa CC.Expr_
-        @test CC.getSubExpr(die, 0) isa CC.Expr_
-        @test CC.isDirectInit(die) isa Bool
-        @test CC.usesGNUSyntax(die) isa Bool
-        @test CC.getEqualOrColonLoc(die) isa CC.SourceLocation
-        @test CC.getDesignatorsSourceRange(die) isa CC.SourceRange
+        @test !CC.is_null_handle(CC.getSubExpr(die, 0))
+        @test !(CC.isDirectInit(die))
+        @test !(CC.usesGNUSyntax(die))
+        @test !CC.is_null_handle(CC.getEqualOrColonLoc(die))
+        @test CC.getDesignatorsSourceRange(die) isa CC.SourceRange  # shape-only
 
         d = CC.getDesignator(die, 0)
         @test d isa CC.Designator
-        @test CC.isFieldDesignator(d) isa Bool
-        @test CC.isArrayDesignator(d) isa Bool
-        @test CC.isArrayRangeDesignator(d) isa Bool
-        @test CC.getBeginLoc(d) isa CC.SourceLocation
-        @test CC.getEndLoc(d) isa CC.SourceLocation
+        @test CC.isFieldDesignator(d)
+        @test !(CC.isArrayDesignator(d))
+        @test !(CC.isArrayRangeDesignator(d))
+        @test !CC.is_null_handle(CC.getBeginLoc(d))
+        @test !CC.is_null_handle(CC.getEndLoc(d))
         if CC.isFieldDesignator(d)
-            @test CC.getFieldName(d) isa CC.IdentifierInfo
-            @test CC.getFieldDecl(d) isa CC.FieldDecl
-            @test CC.getDotLoc(d) isa CC.SourceLocation
-            @test CC.getFieldLoc(d) isa CC.SourceLocation
+            @test !CC.is_null_handle(CC.getFieldName(d))
+            @test !CC.is_null_handle(CC.getFieldDecl(d))
+            @test !CC.is_null_handle(CC.getDotLoc(d))
+            @test !CC.is_null_handle(CC.getFieldLoc(d))
         elseif CC.isArrayDesignator(d) || CC.isArrayRangeDesignator(d)
             @test CC.getArrayIndex(d) isa Unsigned
-            @test CC.getLBracketLoc(d) isa CC.SourceLocation
-            @test CC.getRBracketLoc(d) isa CC.SourceLocation
+            @test CC.getLBracketLoc(d) isa CC.SourceLocation  # shape-only
+            @test CC.getRBracketLoc(d) isa CC.SourceLocation  # shape-only
             @test CC.getArrayIndex(die, d) isa CC.Expr_
         end
     end
@@ -699,10 +699,10 @@ end
     # AtomicExpr — __atomic_load_n(p, seq_cst)
     ae = pick(CC.AtomicExpr)
     @test ae isa CC.AtomicExpr
-    @test CC.getOp(ae) isa Integer
+    @test CC.getOp(ae) isa Integer  # shape-only: the target chooses this value
     @test occursin("atomic_load", CC.getOpAsString(ae))
     @test CC.getNumSubExprs(ae) >= 2
-    @test CC.getSubExpr(ae, 0) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getSubExpr(ae, 0))
     @test CC.getSubExpr(ae, 0).ptr != C_NULL
     @test CC.getSubExpr(ae, CC.getNumSubExprs(ae) - 1).ptr != C_NULL
     @test CC.isCmpXChg(ae) == false
@@ -714,7 +714,7 @@ end
     @test CC.isExprPredicate(gse) == true
     @test CC.isResultDependent(gse) == false
     @test 0 <= CC.getResultIndex(gse) < CC.getNumAssocs(gse)
-    @test CC.getControllingExpr(gse) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getControllingExpr(gse))
     @test CC.getControllingExpr(gse).ptr != C_NULL
     @test CC.getAssocExpr(gse, 0).ptr != C_NULL
     @test CC.getAssocExpr(gse, CC.getNumAssocs(gse) - 1).ptr != C_NULL
@@ -724,7 +724,7 @@ end
     @test ce isa CC.ChooseExpr
     @test CC.isConditionDependent(ce) == false
     @test CC.isConditionTrue(ce) == true
-    @test CC.getCond(ce) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getCond(ce))
     @test CC.getCond(ce).ptr != C_NULL
     @test CC.getLHS(ce).ptr != C_NULL
     @test CC.getRHS(ce).ptr != C_NULL
@@ -733,7 +733,7 @@ end
     sve = pick(CC.ShuffleVectorExpr)
     @test sve isa CC.ShuffleVectorExpr
     @test CC.getNumSubExprs(sve) >= 2
-    @test CC.getExpr(sve, 0) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getExpr(sve, 0))
     @test CC.getExpr(sve, 0).ptr != C_NULL
     @test CC.getExpr(sve, CC.getNumSubExprs(sve) - 1).ptr != C_NULL
 
@@ -790,18 +790,18 @@ end
     ove = CC.getOpaqueValue(bco)
     @test ove isa CC.OpaqueValueExpr
     @test CC.getSourceExpr(ove).ptr == common.ptr
-    @test CC.isUnique(ove) isa Bool
-    @test CC.getLocation(ove) isa CC.SourceLocation
+    @test !(CC.isUnique(ove))
+    @test !CC.is_null_handle(CC.getLocation(ove))
 
     # GNUNullExpr
     gn = first(filter(n -> n isa CC.GNUNullExpr, cnodes))
-    @test CC.getTokenLocation(gn) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getTokenLocation(gn))
 
     # AddrLabelExpr
     al = first(filter(n -> n isa CC.AddrLabelExpr, cnodes))
     @test CC.getLabel(al) isa CC.LabelDecl
-    @test CC.getAmpAmpLoc(al) isa CC.SourceLocation
-    @test CC.getLabelLoc(al) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getAmpAmpLoc(al))
+    @test !CC.is_null_handle(CC.getLabelLoc(al))
 
     # VAArgExpr
     @test lookup(I, "va_fn")
@@ -809,10 +809,10 @@ end
     vnodes = CC.subtree(CC.getBody(va_fd))
     va = first(filter(n -> n isa CC.VAArgExpr, vnodes))
     @test CC.getSubExpr(va) isa CC.AbstractExpr
-    @test CC.isMicrosoftABI(va) isa Bool
-    @test CC.getWrittenTypeInfo(va) isa CC.TypeSourceInfo
-    @test CC.getBuiltinLoc(va) isa CC.SourceLocation
-    @test CC.getRParenLoc(va) isa CC.SourceLocation
+    @test CC.isMicrosoftABI(va) isa Bool  # shape-only: the host decides this
+    @test !CC.is_null_handle(CC.getWrittenTypeInfo(va))
+    @test !CC.is_null_handle(CC.getBuiltinLoc(va))
+    @test !CC.is_null_handle(CC.getRParenLoc(va))
 
     dispose(I)
 end
@@ -829,13 +829,13 @@ end
     @test lm(Im, "cc_mat_elem")
     mfd = CC.FunctionDecl(get_decl(lm).ptr)
     mse = first(filter(n -> n isa CC.MatrixSubscriptExpr, CC.subtree(CC.getBody(mfd))))
-    @test CC.isIncomplete(mse) isa Bool
+    @test !(CC.isIncomplete(mse))
     @test CC.getBase(mse) isa CC.Expr_
     @test CC.getBase(mse).ptr != C_NULL
-    @test CC.getRowIdx(mse) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getRowIdx(mse))
     @test CC.getRowIdx(mse).ptr != C_NULL
-    @test CC.getColumnIdx(mse) isa CC.Expr_
-    @test CC.getRBracketLoc(mse) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getColumnIdx(mse))
+    @test !CC.is_null_handle(CC.getRBracketLoc(mse))
     dispose(lm)
     dispose(Im)
 
@@ -855,35 +855,35 @@ end
     @test lookup(I, "cc_cv")
     cvfd = CC.FunctionDecl(get_decl(lookup).ptr)
     cve = first(filter(n -> n isa CC.ConvertVectorExpr, CC.subtree(CC.getBody(cvfd))))
-    @test CC.getSrcExpr(cve) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getSrcExpr(cve))
     @test CC.getSrcExpr(cve).ptr != C_NULL
-    @test CC.getTypeSourceInfo(cve) isa CC.TypeSourceInfo
-    @test CC.getBuiltinLoc(cve) isa CC.SourceLocation
-    @test CC.getRParenLoc(cve) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getTypeSourceInfo(cve))
+    @test !CC.is_null_handle(CC.getBuiltinLoc(cve))
+    @test !CC.is_null_handle(CC.getRParenLoc(cve))
 
     @test lookup(I, "cc_imag")
     imfd = CC.FunctionDecl(get_decl(lookup).ptr)
     il = first(filter(n -> n isa CC.ImaginaryLiteral, CC.subtree(CC.getBody(imfd))))
-    @test CC.getSubExpr(il) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getSubExpr(il))
     @test CC.getSubExpr(il).ptr != C_NULL
 
     @test lookup(I, "cc_file")
     slfd = CC.FunctionDecl(get_decl(lookup).ptr)
     sle = first(filter(n -> n isa CC.SourceLocExpr, CC.subtree(CC.getBody(slfd))))
-    @test CC.getBuiltinStr(sle) isa AbstractString
+    @test !isempty(CC.getBuiltinStr(sle))
     @test occursin("FILE", CC.getBuiltinStr(sle))
-    @test CC.isIntType(sle) isa Bool
-    @test CC.getParentContext(sle) isa CC.DeclContext
-    @test CC.getLocation(sle) isa CC.SourceLocation
+    @test !(CC.isIntType(sle))
+    @test !CC.is_null_handle(CC.getParentContext(sle))
+    @test !CC.is_null_handle(CC.getLocation(sle))
 
     @test lookup(I, "cc_choose")
     chfd = CC.FunctionDecl(get_decl(lookup).ptr)
     ce = first(filter(n -> n isa CC.ChooseExpr, CC.subtree(CC.getBody(chfd))))
     @test CC.isConditionDependent(ce) == false
-    @test CC.getChosenSubExpr(ce) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getChosenSubExpr(ce))
     @test CC.getChosenSubExpr(ce).ptr == CC.getLHS(ce).ptr
-    @test CC.getBuiltinLoc(ce) isa CC.SourceLocation
-    @test CC.getRParenLoc(ce) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getBuiltinLoc(ce))
+    @test !CC.is_null_handle(CC.getRParenLoc(ce))
 
     dispose(lookup)
     dispose(I)
@@ -898,9 +898,9 @@ end
     @test lb(Ib, "cc_block")
     bfd = CC.FunctionDecl(get_decl(lb).ptr)
     be = first(filter(n -> n isa CC.BlockExpr, CC.subtree(CC.getBody(bfd))))
-    @test CC.getBlockDecl(be) isa CC.BlockDecl
+    @test !CC.is_null_handle(CC.getBlockDecl(be))
     @test CC.getBlockDecl(be).ptr != C_NULL
-    @test CC.getCaretLocation(be) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getCaretLocation(be))
     @test CC.getBody(be) isa CC.AbstractStmt
     dispose(lb)
     dispose(Ib)
@@ -931,30 +931,30 @@ end
     @test ae isa CC.AtomicExpr
     @test CC.getPtr(ae) isa CC.Expr_
     @test CC.getPtr(ae).ptr != C_NULL
-    @test CC.getOrder(ae) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getOrder(ae))
     @test CC.getOrder(ae).ptr != C_NULL
-    @test CC.getValueType(ae) isa CC.QualType
+    @test !CC.is_null_handle(CC.getValueType(ae))
     @test CC.isVolatile(ae) == false           # pointee `int` is not volatile-qualified
     @test CC.isOpenCL(ae) == false             # not an __opencl_atomic_* builtin
-    @test CC.getBuiltinLoc(ae) isa CC.SourceLocation
-    @test CC.getRParenLoc(ae) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getBuiltinLoc(ae))
+    @test !CC.is_null_handle(CC.getRParenLoc(ae))
 
     # GenericSelectionExpr — _Generic(n, ...): expression-predicated, concrete result
     gse = pick(CC.GenericSelectionExpr)
     @test gse isa CC.GenericSelectionExpr
     @test CC.isTypePredicate(gse) == false
-    @test CC.getResultExpr(gse) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getResultExpr(gse))
     @test CC.getResultExpr(gse).ptr != C_NULL
-    @test CC.getGenericLoc(gse) isa CC.SourceLocation
-    @test CC.getDefaultLoc(gse) isa CC.SourceLocation
-    @test CC.getRParenLoc(gse) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getGenericLoc(gse))
+    @test !CC.is_null_handle(CC.getDefaultLoc(gse))
+    @test !CC.is_null_handle(CC.getRParenLoc(gse))
 
     # ArrayInitLoopExpr — array-by-value lambda capture copies element-wise
     ail = pick(CC.ArrayInitLoopExpr)
     @test ail isa CC.ArrayInitLoopExpr
     @test CC.getCommonExpr(ail) isa CC.OpaqueValueExpr
     @test CC.getCommonExpr(ail).ptr != C_NULL
-    @test CC.getSubExpr(ail) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getSubExpr(ail))
     @test CC.getSubExpr(ail).ptr != C_NULL
 
     dispose(f)
@@ -984,12 +984,12 @@ end
     @test poe isa CC.PseudoObjectExpr
     @test CC.getSyntacticForm(poe) isa CC.Expr_
     @test CC.getSyntacticForm(poe).ptr != C_NULL
-    @test CC.getNumSemanticExprs(poe) isa Integer
+    @test CC.getNumSemanticExprs(poe) isa Integer  # shape-only: the target chooses this value
     @test CC.getNumSemanticExprs(poe) >= 1
-    @test CC.getResultExprIndex(poe) isa Integer
+    @test CC.getResultExprIndex(poe) isa Integer  # shape-only: the target chooses this value
     @test CC.getResultExpr(poe) isa CC.Expr_        # property read has a result
     @test CC.getResultExpr(poe).ptr != C_NULL
-    @test CC.getSemanticExpr(poe, 0) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getSemanticExpr(poe, 0))
     @test CC.getSemanticExpr(poe, 0).ptr != C_NULL
 
     dispose(f2)
@@ -1044,8 +1044,8 @@ end
             @test comp.ptr != C_NULL
             k = CC.getKind(comp)
             @test k isa CC.LibClangEx.CXOffsetOfNode_Kind
-            @test CC.getBeginLoc(comp) isa CC.SourceLocation
-            @test CC.getEndLoc(comp) isa CC.SourceLocation
+            @test CC.getBeginLoc(comp) isa CC.SourceLocation  # shape-only
+            @test CC.getEndLoc(comp) isa CC.SourceLocation  # shape-only
             rng = CC.getSourceRange(comp)
             @test rng isa CC.SourceRange
             @test CC.getRawEncoding(CC.getBeginLoc(rng)) ==
@@ -1091,7 +1091,7 @@ end
 
     # Expr::IgnoreConversionOperatorSingleStep — identity off a conversion-operator call
     il = first(filter(n -> n isa CC.IntegerLiteral, nodes))
-    @test CC.IgnoreConversionOperatorSingleStep(il) isa CC.Expr_
+    @test !CC.is_null_handle(CC.IgnoreConversionOperatorSingleStep(il))
     @test CC.IgnoreConversionOperatorSingleStep(il).ptr == il.ptr
     mces = filter(n -> n isa CC.CXXMemberCallExpr, nodes)
     if !isempty(mces)
@@ -1148,10 +1148,10 @@ end
     @test CC.getObjectKind(il) == okind
 
     # ---- Expr: the total walkers ----
-    @test CC.isReadIfDiscardedInCPlusPlus11(il) isa Bool
-    @test CC.getBestDynamicClassTypeExpr(il) isa CC.Expr_
+    @test !(CC.isReadIfDiscardedInCPlusPlus11(il))
+    @test !CC.is_null_handle(CC.getBestDynamicClassTypeExpr(il))
     @test CC.getBestDynamicClassTypeExpr(il).ptr != C_NULL
-    @test CC.skipRValueSubobjectAdjustments(il) isa CC.Expr_
+    @test !CC.is_null_handle(CC.skipRValueSubobjectAdjustments(il))
     @test CC.skipRValueSubobjectAdjustments(il).ptr != C_NULL
 
     # ---- FullExpr / ConstantExpr (immediate consteval invocation) ----
@@ -1193,13 +1193,13 @@ end
     @test ae isa CC.AtomicExpr
     @test CC.isCmpXChg(ae)
     @test CC.getNumSubExprs(ae) >= 6   # ptr, order, val1, order_fail, val2, weak
-    @test CC.getVal1(ae) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getVal1(ae))
     @test CC.getVal1(ae).ptr != C_NULL
-    @test CC.getOrderFail(ae) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getOrderFail(ae))
     @test CC.getOrderFail(ae).ptr != C_NULL
-    @test CC.getVal2(ae) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getVal2(ae))
     @test CC.getVal2(ae).ptr != C_NULL
-    @test CC.getWeak(ae) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getWeak(ae))
     @test CC.getWeak(ae).ptr != C_NULL
     @test CC.getVal1(ae).ptr == CC.getSubExpr(ae, 2).ptr
     @test CC.getWeak(ae).ptr == CC.getSubExpr(ae, 5).ptr
@@ -1268,12 +1268,12 @@ end
     il = pick(CC.IntegerLiteral)
     @test il isa CC.IntegerLiteral
     @test CC.EvaluateForOverflow(il, ctx) === nothing
-    @test CC.isUnusedResultAWarning(il, ctx) isa Bool
+    @test CC.isUnusedResultAWarning(il, ctx)
 
     # ---- Expr::isPotentialConstantExpr (static, over a definition) -----------
     @test f(I, "cc_g_pce")
     pce = CC.FunctionDecl(get_decl(f).ptr)
-    @test CC.isPotentialConstantExpr(pce) isa Bool
+    @test CC.isPotentialConstantExpr(pce)
 
     # ---- Expr::hasAnyTypeDependentArguments (static, over an array) ----------
     @test CC.hasAnyTypeDependentArguments(CC.AbstractExpr[il, ci_ref]) == false
@@ -1285,14 +1285,14 @@ end
     sm = CC.getSourceManager(ctx)
     lopts = CC.getLangOpts(ctx)
     ti = CC.getTargetInfo(ctx)
-    @test CC.getLocationOfByte(sl, 0, sm, lopts, ti) isa CC.SourceLocation
+    @test !CC.is_null_handle(CC.getLocationOfByte(sl, 0, sm, lopts, ti))
     @test_throws AssertionError CC.getLocationOfByte(sl, 99, sm, lopts, ti)
 
     # ---- PredefinedExpr: __func__ -------------------------------------------
     pe = pick(CC.PredefinedExpr)
     @test pe isa CC.PredefinedExpr
-    @test CC.isTransparent(pe) isa Bool
-    @test CC.getLocation(pe) isa CC.SourceLocation
+    @test !(CC.isTransparent(pe))
+    @test !CC.is_null_handle(CC.getLocation(pe))
     @test CC.getIdentKind(pe) == CC.LibClangEx.CXPredefinedIdentKind_Func
     @test CC.ComputeName(CC.getIdentKind(pe), fd) == "cc_g_expr"
 
@@ -1328,7 +1328,7 @@ end
     gse = pick(CC.GenericSelectionExpr)
     @test gse isa CC.GenericSelectionExpr
     @test CC.getNumAssocs(gse) == 2
-    @test CC.getAssocTypeSourceInfo(gse, 0) isa CC.TypeSourceInfo
+    @test !CC.is_null_handle(CC.getAssocTypeSourceInfo(gse, 0))
     @test CC.getAssocTypeSourceInfo(gse, 0).ptr != C_NULL
     @test CC.getAssocTypeSourceInfo(gse, 1).ptr == C_NULL   # `default:` has no written type
     @test_throws AssertionError CC.getAssocTypeSourceInfo(gse, 2)
@@ -1458,9 +1458,9 @@ end
     # ---- AtomicExpr: the scope operand and the gate that guards it -----------
     ae = pick(CC.AtomicExpr)
     @test ae isa CC.AtomicExpr
-    @test CC.hasScopeModel(ae) isa Bool
+    @test CC.hasScopeModel(ae)
     if CC.hasScopeModel(ae)
-        @test CC.getScope(ae) isa CC.Expr_
+        @test !CC.is_null_handle(CC.getScope(ae))
     end
 
     # ---- GenericSelectionExpr: the controlling type of a type predicate ------
@@ -1471,7 +1471,7 @@ end
         tnodes = CC.subtree(CC.getBody(tfd))
         ti = findfirst(n -> n isa CC.GenericSelectionExpr && CC.isTypePredicate(n), tnodes)
         if ti !== nothing
-            @test CC.getControllingType(tnodes[ti]) isa CC.TypeSourceInfo
+            @test !CC.is_null_handle(CC.getControllingType(tnodes[ti]))
         end
     end
 
@@ -1662,10 +1662,10 @@ end
     # ---- FP-environment queries ---------------------------------------------
     # The driver decides the default -ffp-contract / FENV_ACCESS state and it differs
     # across the CI hosts, so only the shape is asserted.
-    @test CC.isFPContractableWithinStatement(bo, lo) isa Bool
-    @test CC.isFEnvAccessOn(bo, lo) isa Bool
-    @test CC.isFPContractableWithinStatement(uo, lo) isa Bool
-    @test CC.isFEnvAccessOn(uo, lo) isa Bool
+    @test CC.isFPContractableWithinStatement(bo, lo)
+    @test !(CC.isFEnvAccessOn(bo, lo))
+    @test CC.isFPContractableWithinStatement(uo, lo)
+    @test !(CC.isFEnvAccessOn(uo, lo))
 
     # ---- Setters: round-trip through the paired getters ----------------------
     loc_a = CC.getBuiltinLoc(che)   # location of the __builtin_choose_expr token
@@ -1951,13 +1951,13 @@ end
     @test CC.isModifiable(simple)
     CC.dispose(simple)
 
-    @test CC.isOBJCGCCandidate(dre, ctx) isa Bool
+    @test !(CC.isOBJCGCCandidate(dre, ctx))
 
     # ---- FPOptionsOverride opaque encodings --------------------------------
     # Whether a node carries the trailing slot depends on the host's default FP
     # settings, so both branches are covered and only the zero-encoding invariant is
     # asserted for the slotless case.
-    @test CC.getFPFeatures(bo) isa Integer
+    @test CC.getFPFeatures(bo) isa Integer  # shape-only: the host decides this
     if CC.hasStoredFPFeatures(bo)
         @test CC.getStoredFPFeatures(bo) == CC.getFPFeatures(bo)
     else
@@ -1965,7 +1965,7 @@ end
         @test_throws AssertionError CC.getStoredFPFeatures(bo)
     end
 
-    @test CC.getFPFeatures(ce) isa Integer
+    @test CC.getFPFeatures(ce) isa Integer  # shape-only: the host decides this
     if CC.hasStoredFPFeatures(ce)
         @test CC.getStoredFPFeatures(ce) == CC.getFPFeatures(ce)
     else
@@ -1973,7 +1973,7 @@ end
         @test_throws AssertionError CC.getStoredFPFeatures(ce)
     end
 
-    @test CC.getFPOptionsOverride(uo) isa Integer
+    @test CC.getFPOptionsOverride(uo) isa Integer  # shape-only: the target chooses this value
     if CC.hasStoredFPFeatures(uo)
         @test CC.getStoredFPFeatures(uo) == CC.getFPOptionsOverride(uo)
     else
@@ -2020,8 +2020,8 @@ end
     ase = first(filter(n -> n isa CC.ArraySubscriptExpr, nodes))
 
     # ---- Expr::getFPFeaturesInEffect — total for every expression -----------
-    @test CC.getFPFeaturesInEffect(bo, lang_opts) isa Integer
-    @test CC.getFPFeaturesInEffect(cse, lang_opts) isa Integer
+    @test CC.getFPFeaturesInEffect(bo, lang_opts) isa Integer  # shape-only: the host decides this
+    @test CC.getFPFeaturesInEffect(cse, lang_opts) isa Integer  # shape-only: the host decides this
     # Nodes with no trailing override slot all read the same LangOptions defaults, so any
     # two of them agree whatever the host's default FP settings are.
     @test CC.getFPFeaturesInEffect(il, lang_opts) == CC.getFPFeaturesInEffect(dre, lang_opts)
@@ -2029,7 +2029,7 @@ end
     # ---- CastExpr FPOptionsOverride ----------------------------------------
     # Whether a cast carries the trailing slot depends on the host's default FP settings,
     # so both branches are covered and only the zero-encoding invariant is asserted.
-    @test CC.getFPFeatures(cse) isa Integer
+    @test CC.getFPFeatures(cse) isa Integer  # shape-only: the host decides this
     if CC.hasStoredFPFeatures(cse)
         @test CC.getStoredFPFeatures(cse) == CC.getFPFeatures(cse)
     else
@@ -2076,7 +2076,7 @@ end
     CC.dispose(subst)
     @test_throws AssertionError CC.EvaluateWithSubstitution(mul, ctx, callee,
                                                             [seed_lit, seed_lit])
-    @test CC.isPotentialConstantExprUnevaluated(mul, callee) isa Bool
+    @test CC.isPotentialConstantExprUnevaluated(mul, callee)
 
     # ---- CallExpr::setADLCallKind ------------------------------------------
     calls = filter(n -> n isa CC.CallExpr, nodes)
@@ -2438,7 +2438,7 @@ end
     nraw = CC.getNumRawSubExprs(call)
     @test nraw isa Integer
     @test nraw >= CC.getNumArgs(call) + 1
-    @test CC.getRawSubExpr(call, 0) isa CC.Stmt
+    @test !CC.is_null_handle(CC.getRawSubExpr(call, 0))
     @test CC.getRawSubExpr(call, 0).ptr == CC.getCallee(call).ptr
     @test_throws AssertionError CC.getRawSubExpr(call, nraw)
 
@@ -2583,7 +2583,7 @@ end
 
     # ---- Expr::getDependence -------------------------------------------------
     # bits: 1 unexpanded pack, 2 instantiation, 4 type, 8 value, 16 error
-    @test CC.getDependence(il) isa Integer
+    @test CC.getDependence(il) isa Integer  # shape-only: the target chooses this value
     @test CC.getDependence(il) == 0
     CC.markDependentForPostponedNameLookup(ce)
     @test CC.getDependence(ce) & 4 != 0
@@ -2751,7 +2751,7 @@ end
     @test CC.usesADL(adl_ce)
 
     # ---- DeclRefExpr: the explicit-object-parameter capture bit --------------
-    @test CC.isCapturedByCopyInLambdaWithExplicitObjectParameter(dre) isa Bool
+    @test !(CC.isCapturedByCopyInLambdaWithExplicitObjectParameter(dre))
     CC.setCapturedByCopyInLambdaWithExplicitObjectParameter(dre, true, ctx)
     @test CC.isCapturedByCopyInLambdaWithExplicitObjectParameter(dre)
     CC.setCapturedByCopyInLambdaWithExplicitObjectParameter(dre, false, ctx)
@@ -2825,7 +2825,7 @@ end
     gse = first(n for n in nodes if n isa CC.GenericSelectionExpr)
     na = CC.getNumAssocs(gse)
     @test na == 2
-    @test CC.getAssocType(gse, 0) isa CC.QualType
+    @test !CC.is_null_handle(CC.getAssocType(gse, 0))
     @test CC.getAssocType(gse, 0).ptr != C_NULL
     @test CC.getAssocType(gse, 1).ptr == C_NULL     # `default:` has no written type
     @test_throws AssertionError CC.getAssocType(gse, na)
@@ -2969,12 +2969,12 @@ end
     # ---- Expr::EvalResult: the status a value-only fold discards -------------
     rres = CC.EvalResult()
     @test rres isa CC.EvalResult
-    @test CC.getVal(rres) isa CC.APValue
+    @test !CC.is_null_handle(CC.getVal(rres))
     # the initializer of a constexpr int is a constant expression by language rule
     @test CC.EvaluateAsRValue(size_e, ctx, rres, true)
     @test CC.getKind(CC.getVal(rres)) == LX.CXAPValueKind_Int
-    @test CC.hasSideEffects(rres) isa Bool
-    @test CC.hasUndefinedBehavior(rres) isa Bool
+    @test !(CC.hasSideEffects(rres))
+    @test !(CC.hasUndefinedBehavior(rres))
 
     # ---- Expr::EvalResult::isGlobalLValue ------------------------------------
     lres = CC.EvalResult()
@@ -2983,7 +2983,7 @@ end
     if ok_l
         # isGlobalLValue asserts on this, so it is checked before the call
         @test CC.isLValue(CC.getVal(lres))
-        @test CC.isGlobalLValue(lres) isa Bool
+        @test CC.isGlobalLValue(lres)
     end
 
     # ---- Expr::EvaluateCharRangeAsString -------------------------------------
@@ -2993,7 +2993,7 @@ end
     @test text isa String
     # exprs_len code units read out of exprs_buf spell its contents
     @test !ok_s || text == "hello"
-    @test CC.hasSideEffects(sres) isa Bool
+    @test !(CC.hasSideEffects(sres))
 
     dispose(rres)
     dispose(lres)

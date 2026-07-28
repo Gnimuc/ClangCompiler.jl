@@ -78,13 +78,13 @@ end
     poly = layof("RltPoly")
     @test CC.hasOwnVFPtr(poly) == true
     @test CC.hasExtendableVFPtr(poly) == true
-    @test CC.hasOwnVBPtr(poly) isa Bool
+    @test !(CC.hasOwnVBPtr(poly))
 
     virt = layof("RltV")
     # vbptr is an MS-ABI construct; on Itanium the queries answer false with a
     # negative sentinel offset — assert shape, not ABI specifics
-    @test CC.hasVBPtr(virt) isa Bool
-    @test CC.getVBPtrOffset(virt) isa Integer
+    @test !(CC.hasVBPtr(virt))
+    @test CC.getVBPtrOffset(virt) isa Integer  # shape-only: the target chooses this value
     @test CC.getNonVirtualSize(virt) <= CC.getSize(virt)
 
     dispose(f)

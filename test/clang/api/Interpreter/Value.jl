@@ -35,7 +35,7 @@ using ClangCompiler: get_tag
     @testset "value kind and primitive round-trips" begin
         v = CC.create_value()
         @test v isa CC.Value
-        @test CC.isManuallyAlloc(v) isa Bool
+        @test !(CC.isManuallyAlloc(v))
         @test CC.hasValue(v) == false
         @test CC.isVoid(v) == false
 
@@ -226,15 +226,15 @@ end
     qt = CC.getType(CC.VarDecl(get_decl(f).ptr))
 
     v = CC.createValueFromType(I.interp, qt)
-    @test CC.getInterpreter(v) isa CC.Interpreter
+    @test !CC.is_null_handle(CC.getInterpreter(v))
     @test CC.getInterpreter(v).ptr == I.interp.ptr
-    @test CC.getASTContext(v) isa CC.ASTContext
+    @test !CC.is_null_handle(CC.getASTContext(v))
     @test CC.getASTContext(v).ptr != C_NULL
 
     # clang 18 ships placeholder bodies for these three, so only the shape is stable
-    @test CC.print(v) isa String
-    @test CC.printData(v) isa String
-    @test CC.printType(v) isa String
+    @test !isempty(CC.print(v))
+    @test !isempty(CC.printData(v))
+    @test !isempty(CC.printType(v))
     @test CC.dump(v) === nothing
 
     # clear() resets the kind, the opaque type and the owning interpreter
@@ -253,7 +253,7 @@ end
 
 @testset "default-constructed value carries no interpreter" begin
     v = CC.create_value()
-    @test CC.getInterpreter(v) isa CC.Interpreter
+    @test CC.is_null_handle(CC.getInterpreter(v))
     @test CC.getInterpreter(v).ptr == C_NULL
     @test_throws AssertionError CC.getASTContext(v)
     dispose(v)

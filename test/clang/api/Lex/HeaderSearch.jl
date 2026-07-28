@@ -18,32 +18,59 @@ using Test
 end
 
 @testset "HeaderSearch: reached through the interpreter's preprocessor" begin
-    I = CC.create_interpreter()
+    # A header map is registered only for an include argument naming a *file* in Apple's
+    # hmap format, and every default argument names a directory, so the testset writes one
+    # and hands it to the interpreter. The map is valid and empty: magic 'hmap' in the
+    # host's byte order, version 1, a single empty bucket, and a one-byte string pool,
+    # because offset zero into the pool is the reserved empty-bucket key.
+    hmap_dir = mktempdir()
+    hmap = joinpath(hmap_dir, "clangcompiler-probe.hmap")
+    open(hmap, "w") do io
+        write(io, UInt32(0x686d6170))              # magic
+        write(io, UInt16(1))                       # version
+        write(io, UInt16(0))                       # reserved, must be zero
+        write(io, UInt32(36))                      # string pool offset: header + 1 bucket
+        write(io, UInt32(0))                       # entry count
+        write(io, UInt32(1))                       # bucket count, a power of two
+        write(io, UInt32(0))                       # longest value length
+        write(io, UInt32(0), UInt32(0), UInt32(0)) # the one bucket, key zero = empty
+        write(io, UInt8(0))                        # string pool
+    end
+
+    I = CC.create_interpreter(["-I" * hmap])
     ci = CC.get_instance(I)
     pp = CC.getPreprocessor(ci)
     hs = CC.getHeaderSearchInfo(pp)
     @test hs isa CC.HeaderSearch
 
-    @test CC.getHeaderSearchOpts(hs) isa CC.HeaderSearchOptions
-    @test CC.getFileMgr(hs) isa CC.FileManager
-    @test CC.HasIncludeAliasMap(hs) isa Bool
-    @test CC.getModuleHash(hs) isa String
-    @test CC.getModuleCachePath(hs) isa String
+    @test CC.getHeaderSearchOpts(hs) isa CC.HeaderSearchOptions  # shape-only: the host decides this
+    @test CC.getFileMgr(hs) isa CC.FileManager  # shape-only: the host decides this
+    @test CC.HasIncludeAliasMap(hs) isa Bool  # shape-only: the host decides this
+    @test CC.getModuleHash(hs) isa String  # shape-only: the host decides this
+    @test CC.getModuleCachePath(hs) isa String  # shape-only: the host decides this
 
     n = Int(CC.search_dir_size(hs))
     @test n >= 0
     if n > 0
-        @test CC.getSearchDirName(hs, 0) isa String
-        @test CC.getSearchDirName(hs, n - 1) isa String
+        @test CC.getSearchDirName(hs, 0) isa String  # shape-only: the host decides this
+        @test CC.getSearchDirName(hs, n - 1) isa String  # shape-only: the host decides this
     end
 
+    # The enumeration names the file the testset handed the interpreter, spelled as the
+    # include argument spelled it -- only the basename is compared, so a host free to
+    # normalize the directory part cannot turn this into a false failure.
     m = Int(CC.getNumHeaderMapFileNames(hs))
-    @test m >= 0
+    @test m >= 1
+    hmap_names = String[]
     for i in 0:(m - 1)
-        @test CC.getHeaderMapFileName(hs, i) isa String
+        name = CC.getHeaderMapFileName(hs, i)
+        @test name isa String
+        push!(hmap_names, name)
     end
+    @test basename(hmap) in basename.(hmap_names)
 
     CC.dispose(I)
+    rm(hmap_dir; recursive=true, force=true)
 end
 
 @testset "HeaderSearch aliases, hashes and sizes" begin
@@ -52,10 +79,10 @@ end
     hs = CC.getHeaderSearchInfo(CC.getPreprocessor(CC.get_instance(I)))
     @test hs isa CC.HeaderSearch
 
-    @test CC.getDiags(hs) isa CC.DiagnosticsEngine
-    @test CC.header_file_size(hs) isa Integer
+    @test CC.getDiags(hs) isa CC.DiagnosticsEngine  # shape-only: the host decides this
+    @test CC.header_file_size(hs) isa Integer  # shape-only: the host decides this
     @test CC.header_file_size(hs) >= 0
-    @test CC.getTotalMemory(hs) isa Integer
+    @test CC.getTotalMemory(hs) isa Integer  # shape-only: the host decides this
     @test CC.getTotalMemory(hs) >= 0
 
     @test CC.getUniqueFrameworkName(hs, "ClangCompilerFakeFramework") ==
@@ -133,11 +160,11 @@ end
 
         # The exposed fields of the aggregate. IsValid is set by the getFileInfo above.
         @test CC.getIsValid(hfi)
-        @test CC.getIsImport(hfi) isa Bool
-        @test CC.getIsPragmaOnce(hfi) isa Bool
-        @test CC.getIsModuleHeader(hfi) isa Bool
+        @test CC.getIsImport(hfi) isa Bool  # shape-only: the host decides this
+        @test CC.getIsPragmaOnce(hfi) isa Bool  # shape-only: the host decides this
+        @test CC.getIsModuleHeader(hfi) isa Bool  # shape-only: the host decides this
         @test CC.getDirInfo(hfi) isa CC.CXCharacteristicKind
-        @test CC.getFramework(hfi) isa String
+        @test CC.getFramework(hfi) isa String  # shape-only: the host decides this
         @test CC.getControllingMacroRaw(hfi).ptr == C_NULL
 
         # A snapshot does not track later edits: the record taken before the mark still
@@ -172,7 +199,7 @@ end
         dir = CC.getDir(fe)
         @test dir isa CC.DirectoryEntry
         @test CC.setDirectoryHasModuleMap(hs, dir) === nothing
-        @test CC.hasModuleMap(hs, path, dir, false) isa Bool
+        @test CC.hasModuleMap(hs, path, dir, false) isa Bool  # shape-only: the host decides this
 
         # No prebuilt module paths are configured, so both forms come back empty.
         @test CC.getPrebuiltModuleFileName(hs, "ClangCompilerNoSuchModule") == ""
@@ -180,7 +207,7 @@ end
                                            file_map_only=true) == ""
 
         # Include-name / diagnostic-path suggestions.
-        @test CC.getIncludeNameForHeader(hs, fe) isa String
+        @test CC.getIncludeNameForHeader(hs, fe) isa String  # shape-only: the host decides this
         suggested, angled = CC.suggestPathToFileForDiagnostics(hs, fer, path)
         @test suggested isa String
         @test angled isa Bool

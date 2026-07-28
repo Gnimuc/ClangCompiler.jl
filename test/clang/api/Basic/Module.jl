@@ -25,7 +25,7 @@ using Test
 
     # a module is always visible to itself; anything else depends on its imports
     @test CC.isModuleVisible(root, root)
-    @test CC.isModuleVisible(root, child) isa Bool
+    @test !(CC.isModuleVisible(root, child))
 
     # non-explicit submodules are exported
     n = CC.getNumExportedModules(root)
@@ -48,14 +48,40 @@ using Test
     # failing requirement would drive: markUnavailable reads bits a synthetic module
     # never had a module map to set. Only the shape is asserted.
     @test CC.addRequirement(root, "cplusplus", true, lang_opts, target) === nothing
-    @test CC.isAvailable(root) isa Bool
+    # A synthetic module has no module map, so isAvailable reads bits that were never
+    # set and the answer differs per runner (CLAUDE.md records this); only the shape
+    # of it is assertable here.
+    @test CC.isAvailable(root) isa Bool  # shape-only: the host decides this
 
     text = CC.print(root, 0, false)
     @test text isa String
     @test occursin("MvTopMod", text)
-    @test CC.print(root, 2, true) isa String
+    @test !isempty(CC.print(root, 2, true))
     @test CC.dump(root) === nothing
 
     CC.dispose(root)   # deletes child along with it
     dispose(I)
+end
+
+@testset "module_ancestors walks a submodule chain outward" begin
+    # A hand-built module tree, which is what makes the walk testable without a
+    # module-enabled translation unit: Module_ takes its parent directly.
+    root = CC.Module_("MaTop")
+    mid = CC.Module_("MaMid"; parent=root)
+    leaf = CC.Module_("MaLeaf"; parent=mid)
+
+    @test CC.getParent(leaf).ptr == mid.ptr
+    @test CC.getParent(mid).ptr == root.ptr
+    @test CC.is_null_handle(CC.getParent(root))
+
+    chain = collect(CC.module_ancestors(leaf))
+    @test length(chain) == 3
+    @test [m.ptr for m in chain] == [leaf.ptr, mid.ptr, root.ptr]
+    @test CC.getName(first(chain)) == "MaLeaf"
+    @test CC.getName(last(chain)) == "MaTop"
+
+    # a top-level module is its own whole chain
+    @test [m.ptr for m in CC.module_ancestors(root)] == [root.ptr]
+
+    CC.dispose(root)   # deletes the submodules along with it
 end

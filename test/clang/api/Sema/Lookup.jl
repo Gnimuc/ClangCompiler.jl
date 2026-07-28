@@ -22,19 +22,19 @@ using Test
     # carrier shape is asserted for them.
     sc = CC.getCurScope(CC.get_parser(I))
     @test sc isa CC.Scope
-    @test CC.isBlockScope(sc) isa Bool
-    @test CC.isFunctionScope(sc) isa Bool
-    @test CC.isClassScope(sc) isa Bool
-    @test CC.containedInPrototypeScope(sc) isa Bool
-    @test CC.getFunctionPrototypeDepth(sc) isa Integer
-    @test CC.getContinueParent(sc) isa CC.Scope
-    @test CC.getBreakParent(sc) isa CC.Scope
-    @test CC.getBlockParent(sc) isa CC.Scope
-    @test CC.getTemplateParamParent(sc) isa CC.Scope
+    @test !(CC.isBlockScope(sc))
+    @test !(CC.isFunctionScope(sc))
+    @test !(CC.isClassScope(sc))
+    @test !(CC.containedInPrototypeScope(sc))
+    @test CC.getFunctionPrototypeDepth(sc) isa Integer  # shape-only: the target chooses this value
+    @test CC.is_null_handle(CC.getContinueParent(sc))
+    @test CC.is_null_handle(CC.getBreakParent(sc))
+    @test CC.is_null_handle(CC.getBlockParent(sc))
+    @test CC.is_null_handle(CC.getTemplateParamParent(sc))
 
     # getLookupEntity is getEntity without the template-parameter-scope masking, so the
     # two agree on every scope that is not a template parameter scope.
-    @test CC.getLookupEntity(sc) isa CC.DeclContext
+    @test !CC.is_null_handle(CC.getLookupEntity(sc))
     if !CC.isTemplateParamScope(sc)
         @test CC.getLookupEntity(sc).ptr == CC.getEntity(sc).ptr
     end
@@ -54,8 +54,8 @@ using Test
     @test !CC.isShadowed(r)
     @test !CC.isSuppressingAccessDiagnostics(r)
     @test !CC.isSuppressingAmbiguousDiagnostics(r)
-    @test CC.getBaseObjectType(r) isa CC.QualType
-    @test CC.getContextRange(r) isa CC.SourceRange
+    @test CC.is_null_handle(CC.getBaseObjectType(r))
+    @test CC.getContextRange(r) isa CC.SourceRange  # shape-only
 
     found = CC.LookupQualifiedName(sema, r, tu)
     @test found
@@ -95,18 +95,18 @@ end
     # the driver has left set there is host-decided, so only the shape is asserted.
     sc = CC.getCurScope(CC.get_parser(I))
     @test sc isa CC.Scope
-    @test CC.isConditionVarScope(sc) isa Bool
-    @test CC.hasUnrecoverableErrorOccurred(sc) isa Bool
-    @test CC.isClassInheritanceScope(sc) isa Bool
-    @test CC.isInCXXInlineMethodScope(sc) isa Bool
-    @test CC.isFunctionPrototypeScope(sc) isa Bool
-    @test CC.isFunctionDeclarationScope(sc) isa Bool
-    @test CC.isCatchScope(sc) isa Bool
-    @test CC.isSwitchScope(sc) isa Bool
-    @test CC.isContinueScope(sc) isa Bool
-    @test CC.isTryScope(sc) isa Bool
-    @test CC.isCompoundStmtScope(sc) isa Bool
-    @test CC.isControlScope(sc) isa Bool
+    @test !(CC.isConditionVarScope(sc))
+    @test !(CC.hasUnrecoverableErrorOccurred(sc))
+    @test !(CC.isClassInheritanceScope(sc))
+    @test !(CC.isInCXXInlineMethodScope(sc))
+    @test !(CC.isFunctionPrototypeScope(sc))
+    @test !(CC.isFunctionDeclarationScope(sc))
+    @test !(CC.isCatchScope(sc))
+    @test !(CC.isSwitchScope(sc))
+    @test !(CC.isContinueScope(sc))
+    @test !(CC.isTryScope(sc))
+    @test !(CC.isCompoundStmtScope(sc))
+    @test !(CC.isControlScope(sc))
 
     # containedInPrototypeScope starts its walk at this scope, so a prototype scope is
     # always contained in one.
@@ -205,27 +205,27 @@ end
     # kinds are set there is decided by the driver and the host, so only shapes are asserted.
     sc = CC.getCurScope(CC.get_parser(I))
     @test sc isa CC.Scope
-    @test CC.isInObjcMethodScope(sc) isa Bool
-    @test CC.isInObjcMethodOuterScope(sc) isa Bool
-    @test CC.isAtCatchScope(sc) isa Bool
-    @test CC.isFnTryCatchScope(sc) isa Bool
-    @test CC.isSEHTryScope(sc) isa Bool
-    @test CC.isSEHExceptScope(sc) isa Bool
-    @test CC.isOpenMPDirectiveScope(sc) isa Bool
-    @test CC.isOpenMPLoopDirectiveScope(sc) isa Bool
-    @test CC.isOpenMPSimdDirectiveScope(sc) isa Bool
-    @test CC.isOpenMPOrderClauseScope(sc) isa Bool
-    @test CC.isOpenMPLoopScope(sc) isa Bool
+    @test !(CC.isInObjcMethodScope(sc))
+    @test !(CC.isInObjcMethodOuterScope(sc))
+    @test !(CC.isAtCatchScope(sc))
+    @test !(CC.isFnTryCatchScope(sc))
+    @test !(CC.isSEHTryScope(sc))
+    @test !(CC.isSEHExceptScope(sc))
+    @test !(CC.isOpenMPDirectiveScope(sc))
+    @test !(CC.isOpenMPLoopDirectiveScope(sc))
+    @test !(CC.isOpenMPSimdDirectiveScope(sc))
+    @test !(CC.isOpenMPOrderClauseScope(sc))
+    @test !(CC.isOpenMPLoopScope(sc))
 
     # Microsoft mangling numbering. getMSLastManglingNumber falls back to 1 when the scope
     # has no mangling parent, which is the only value this test can pin down on every host.
     ms_parent = CC.getMSLastManglingParent(sc)
     @test ms_parent isa CC.Scope
-    @test CC.getMSCurManglingNumber(sc) isa Integer
+    @test CC.getMSCurManglingNumber(sc) isa Integer  # shape-only: the host decides this
     if ms_parent.ptr == C_NULL
         @test CC.getMSLastManglingNumber(sc) == 1
     else
-        @test CC.getMSLastManglingNumber(sc) isa Integer
+        @test CC.getMSLastManglingNumber(sc) isa Integer  # shape-only: the host decides this
     end
 
     # Contains compares scope depths, so a scope never contains itself and a parent always
@@ -238,17 +238,17 @@ end
         @test !CC.Contains(sc, parent)
     end
 
-    # using-directives: whether the parser's resting scope still holds the directive parsed
-    # above is a host decision, so only count/index agreement and element kind are asserted.
+    # A parsed using-directive is filed in the translation-unit DeclContext, not in the
+    # scope the parser comes to rest in, so this scope carries none. The populated case is
+    # exercised where PushUsingDirective puts one on a scratch scope.
     n_ud = CC.getNumUsingDirectives(sc)
-    @test n_ud isa Integer
+    @test n_ud == 0
     uds = CC.getUsingDirectives(sc)
     @test uds isa Vector{CC.UsingDirectiveDecl}
-    @test length(uds) == n_ud
-    @test all(u -> CC.getDeclKindName(u) == "UsingDirective", uds)
+    @test isempty(uds)
 
     # dumpImplToString renders into a string what dump writes to stderr
-    @test CC.dumpImplToString(sc) isa String
+    @test !isempty(CC.dumpImplToString(sc))
 
     # --- LookupResult state that has a matching reader ---
     r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "scope_kind_fn")),
@@ -291,7 +291,7 @@ end
 
     r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "lookup_filter_fn")),
                         loc, CC.CXLookupNameKind_LookupOrdinaryName)
-    @test CC.getSema(r) isa CC.Sema
+    @test !CC.is_null_handle(CC.getSema(r))
     @test CC.getSema(r).ptr == sema.ptr
 
     # suppressAccessDiagnostics turns off only the access half; suppressDiagnostics both.
@@ -310,7 +310,7 @@ end
     @test CC.getNum(r) == 3
 
     nd = first(CC.getResults(r))
-    @test CC.isAvailableForLookup(sema, nd) isa Bool
+    @test CC.isAvailableForLookup(sema, nd)
     acc = CC.getAcceptableDecl(r, nd)
     @test acc isa CC.NamedDecl
     if CC.isAvailableForLookup(sema, nd)
@@ -410,7 +410,7 @@ end
     @test CC.getAlignMode(aligned) == CC.CXAlignPackInfo_Natural
     @test CC.IsXLStack(aligned)
     @test !CC.IsPackSet(aligned)
-    @test CC.getPackNumber(aligned) isa Integer
+    @test CC.getPackNumber(aligned) isa Integer  # shape-only: the target chooses this value
     dispose(aligned)
 
     # Sema::DefaultedFunctionKind over a record declaring four special members and one
@@ -443,7 +443,7 @@ end
         @test CC.isComparison(dfk) == (comparison != CC.CXDefaultedComparisonKind_None)
         # getSpecialMember is the already-bound spelling of the same query
         @test special == CC.getSpecialMember(sema, m)
-        @test CC.getDiagnosticIndex(dfk) isa Integer
+        @test CC.getDiagnosticIndex(dfk) isa Integer  # shape-only: the target chooses this value
         any_special |= CC.isSpecialMember(dfk)
         dispose(dfk)
     end
@@ -475,7 +475,7 @@ end
     dispose(trap)
 
     access_trap = CC.SFINAETrap(sema, true)
-    @test CC.hasErrorOccurred(access_trap) isa Bool
+    @test !(CC.hasErrorOccurred(access_trap))
     dispose(access_trap)
 
     dispose(f)
@@ -543,6 +543,10 @@ end
     CC.PushUsingDirective(s, ud)
     @test CC.getNumUsingDirectives(s) == n_ud + 1
     @test CC.getUsingDirective(s, n_ud).ptr == ud.ptr
+    # the vector accessor agrees with the indexed one, and reports the element's real kind
+    pushed = CC.getUsingDirectives(s)
+    @test length(pushed) == n_ud + 1
+    @test all(u -> CC.getDeclKindName(u) == "UsingDirective", pushed)
 
     # --- The mangling number and its parent's move together, so the two calls cancel ---
     ms0 = CC.getMSCurManglingNumber(s)
@@ -576,7 +580,7 @@ end
     lis = CC.LocalInstantiationScope(sema)
     @test CC.hasCurrentInstantiationScope(sema)
     @test CC.getSema(lis).ptr == sema.ptr
-    @test CC.isLocalPackExpansion(lis, fd) isa Bool
+    @test !(CC.isLocalPackExpansion(lis, fd))
     CC.Exit(lis)
     @test CC.hasCurrentInstantiationScope(sema) == before
     CC.Exit(lis)   # idempotent
@@ -588,7 +592,7 @@ end
     inst = CC.InstantiatingTemplate(sema, loc, fd)
     @test CC.getNumCodeSynthesisContexts(sema) >= n0
     CC.Clear(inst)
-    @test CC.isInvalid(inst) isa Bool
+    @test CC.isInvalid(inst)
     @test CC.getNumCodeSynthesisContexts(sema) == n0
     CC.Clear(inst)   # idempotent
     @test CC.getNumCodeSynthesisContexts(sema) == n0

@@ -34,12 +34,28 @@ using Test
     # regenerated bindings until the next JLL bump — report only.
     is_jll = isdefined(libclangex_jll, :libclangex) &&
              libclangex == libclangex_jll.libclangex
+    # The symbols on the package's own create → use → dispose path. They are
+    # the floor the "report only" branch still holds the artifact to: a library
+    # that cannot resolve these is not a lagging libclangex, it is the wrong
+    # library or a load that silently produced nothing, and the loop above then
+    # reports every bound name as missing while the branch stays quiet.
+    core_syms = ["clang_IncrementalCompilerBuilder_create",
+                 "clang_Interpreter_create",
+                 "clang_Interpreter_getCompilerInstance",
+                 "clang_Interpreter_ParseAndExecute",
+                 "clang_Interpreter_getSymbolAddress",
+                 "clang_Interpreter_dispose"]
+    @test issubset(core_syms, binding_names)
+    # The core symbols are the ones the package's own startup path calls, so whichever
+    # library is loaded must export them. Asserting that outside the branch keeps
+    # "bindings ahead of the release" distinguishable from "wrong library at this path",
+    # and keeps the check alive on a local build where the is_jll arm never runs.
+    @test isdisjoint(core_syms, missing_syms)
     if is_jll
         if !isempty(missing_syms)
             @info "bindings ahead of the released libclangex_jll (expected until the next JLL bump)" count =
                 length(missing_syms)
         end
-        @test true
     else
         if !isempty(missing_syms)
             @error "locally-built libclangex is missing bound symbols" missing_syms

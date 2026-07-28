@@ -22,7 +22,7 @@ using Test
     @test CC.getUnderlying(tn) isa CC.TemplateName
     @test CC.getNameToSubstitute(tn) isa CC.TemplateName
     @test CC.isDependent(tn) == false
-    @test CC.isInstantiationDependent(tn) isa Bool
+    @test !(CC.isInstantiationDependent(tn))
     @test CC.containsUnexpandedParameterPack(tn) == false
     redirect_stdio(; stderr=devnull) do
         @test CC.dump(tn) === nothing
@@ -61,7 +61,7 @@ end
     @test CC.getKind(qarg) == CC.LibClangEx.CXTemplateArgument_Template
     tn_q = CC.getAsTemplate(qarg)
     @test CC.getKind(tn_q) == CC.LibClangEx.CXTemplateName_QualifiedTemplate
-    @test CC.getDependence(tn_q) isa Integer
+    @test CC.getDependence(tn_q) isa Integer  # shape-only: the target chooses this value
     @test occursin("TnBox", CC.getAsString(tn_q, ctx))
     @test occursin("TnBox", CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_None))
     @test occursin("TnBox", CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_Fully))
@@ -69,7 +69,7 @@ end
     qtn = CC.getAsQualifiedTemplateName(tn_q)
     @test qtn isa CC.QualifiedTemplateName
     @test qtn.ptr != C_NULL
-    @test CC.hasTemplateKeyword(qtn) isa Bool
+    @test !(CC.hasTemplateKeyword(qtn))
     nns = CC.getQualifier(qtn)
     @test nns isa CC.NestedNameSpecifier
     @test CC.getName(nns) isa AbstractString
@@ -98,8 +98,8 @@ end
     sub = CC.getAsSubstTemplateTemplateParm(tn_s)
     @test sub isa CC.SubstTemplateTemplateParmStorage
     @test sub.ptr != C_NULL
-    @test CC.getIndex(sub) isa Integer
-    @test CC.getAssociatedDecl(sub) isa CC.Decl
+    @test CC.getIndex(sub) isa Integer  # shape-only: the target chooses this value
+    @test !CC.is_null_handle(CC.getAssociatedDecl(sub))
     repl = CC.getReplacement(sub)
     @test repl isa CC.TemplateName
     @test CC.isNull(repl) == false
@@ -118,7 +118,7 @@ end
     dtn = CC.getAsDependentTemplateName(tn_d)
     @test dtn isa CC.DependentTemplateName
     @test dtn.ptr != C_NULL
-    @test CC.getQualifier(dtn) isa CC.NestedNameSpecifier
+    @test !CC.is_null_handle(CC.getQualifier(dtn))
     @test CC.isIdentifier(dtn)
     @test CC.isOverloadedOperator(dtn) == false
     @test CC.getName(CC.getIdentifier(dtn)) == "Inner"

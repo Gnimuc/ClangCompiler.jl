@@ -14,7 +14,7 @@ using Test
     # setCompilerInstance stores a raw, non-owning pointer, so the round trip hands back
     # the very same instance and `ci` still owns itself.
     @test CC.setCompilerInstance(act, ci) === nothing
-    @test CC.getCompilerInstance(act) isa CC.CompilerInstance
+    @test CC.getCompilerInstance(act) isa CC.CompilerInstance  # shape-only: the host decides this
     @test CC.getCompilerInstance(act).ptr == ci.ptr
 
     # The supported-mode predicates are plain virtual dispatch and are valid before any
@@ -23,7 +23,7 @@ using Test
     @test CC.usesPreprocessorOnly(act) == false
     @test CC.hasPCHSupport(act) == true
     @test CC.hasASTFileSupport(act) == true
-    @test CC.hasIRSupport(act) isa Bool
+    @test CC.hasIRSupport(act) isa Bool  # shape-only: the host decides this
     @test CC.hasCodeCompletionSupport(act) == false
     @test CC.getTranslationUnitKind(act) == CC.LibClangEx.CXTranslationUnitKind_TU_Complete
 
@@ -60,7 +60,7 @@ using Test
     inv = CC.CompilerInvocation()
     @test CC.resetNonModularOptions(inv) === nothing
     @test CC.clearImplicitModuleBuildOptions(inv) === nothing
-    @test CC.getModuleHash(inv) isa String
+    @test CC.getModuleHash(inv) isa String  # shape-only: the host decides this
     @test !isempty(CC.getModuleHash(inv))
     dispose(inv)
 end

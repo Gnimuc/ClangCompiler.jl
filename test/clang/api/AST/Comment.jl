@@ -25,13 +25,13 @@ using Test
     @test rc isa CC.RawComment
     if rc.ptr != C_NULL
         @test CC.getKind(rc) isa Enum
-        @test CC.isAttached(rc) isa Bool
-        @test CC.isTrailingComment(rc) isa Bool
-        @test CC.isDocumentation(rc) isa Bool
+        @test !(CC.isAttached(rc))
+        @test !(CC.isTrailingComment(rc))
+        @test CC.isDocumentation(rc)
         txt = CC.getRawText(rc, sm)
         @test txt isa String
         @test occursin("brief", txt)
-        @test CC.getBriefText(rc, ctx) isa String
+        @test !isempty(CC.getBriefText(rc, ctx))
         rng = CC.getSourceRange(rc)
         @test rng isa CC.SourceRange
         @test rng.begin_loc isa CC.SourceLocation
@@ -41,7 +41,7 @@ using Test
     @test fc isa CC.FullComment
     if fc.ptr != C_NULL
         @test CC.getCommentKindName(fc) == "FullComment"
-        @test CC.getSourceRange(fc) isa CC.SourceRange
+        @test CC.getSourceRange(fc) isa CC.SourceRange  # shape-only
         n = CC.child_count(fc)
         @test n isa Integer
         @test n >= 0
@@ -50,11 +50,11 @@ using Test
         for i in 0:(n - 1)
             c = CC.getChild(fc, i)
             @test c isa CC.Comment
-            @test CC.getCommentKindName(c) isa String
+            @test !isempty(CC.getCommentKindName(c))
             for j in 0:(CC.child_count(c) - 1)
                 gc = CC.getChild(c, j)
                 tc = CC.TextComment(gc)
-                tc.ptr != C_NULL && @test CC.getText(tc) isa String
+                tc.ptr != C_NULL && @test CC.getText(tc) isa String  # shape-only
             end
             bcc = CC.BlockCommandComment(c)
             if bcc.ptr != C_NULL
@@ -95,50 +95,50 @@ end
     fc = CC.getCommentForDecl(ctx, d, pp)
     @test fc isa CC.FullComment
     if fc.ptr != C_NULL
-        @test CC.getBeginLoc(fc) isa CC.SourceLocation
-        @test CC.getEndLoc(fc) isa CC.SourceLocation
-        @test CC.getLocation(fc) isa CC.SourceLocation
+        @test !CC.is_null_handle(CC.getBeginLoc(fc))
+        @test !CC.is_null_handle(CC.getEndLoc(fc))
+        @test !CC.is_null_handle(CC.getLocation(fc))
 
         for i in 0:(CC.child_count(fc) - 1)
             c = CC.getChild(fc, i)
-            @test CC.getBeginLoc(c) isa CC.SourceLocation
+            @test !CC.is_null_handle(CC.getBeginLoc(c))
 
             for j in 0:(CC.child_count(c) - 1)
                 gc = CC.getChild(c, j)
                 tc = CC.TextComment(gc)
                 if tc.ptr != C_NULL
-                    @test CC.getText(tc) isa String
-                    @test CC.isWhitespace(tc) isa Bool
-                    @test CC.hasTrailingNewline(tc) isa Bool
+                    @test !isempty(CC.getText(tc))
+                    @test CC.isWhitespace(tc)
+                    @test !(CC.hasTrailingNewline(tc))
                 end
             end
 
             bcc = CC.BlockCommandComment(c)
             if bcc.ptr != C_NULL
-                @test CC.getCommandID(bcc) isa Integer
-                @test CC.getCommandNameBeginLoc(bcc) isa CC.SourceLocation
+                @test CC.getCommandID(bcc) isa Integer  # shape-only: the target chooses this value
+                @test !CC.is_null_handle(CC.getCommandNameBeginLoc(bcc))
                 @test CC.getCommandMarker(bcc) isa Enum
-                @test CC.hasNonWhitespaceParagraph(bcc) isa Bool
+                @test CC.hasNonWhitespaceParagraph(bcc)
                 n = CC.getNumArgs(bcc)
                 @test n isa Integer
                 for k in 0:(n - 1)
-                    @test CC.getArgText(bcc, k) isa String
-                    @test CC.getArgRange(bcc, k) isa CC.SourceRange
+                    @test !isempty(CC.getArgText(bcc, k))
+                    @test CC.getArgRange(bcc, k) isa CC.SourceRange  # shape-only
                 end
                 para = CC.getParagraph(bcc)
                 @test para isa CC.ParagraphComment
-                para.ptr != C_NULL && @test CC.isWhitespace(para) isa Bool
+                para.ptr != C_NULL && @test CC.isWhitespace(para) isa Bool  # shape-only
             end
 
             pcc = CC.ParamCommandComment(c)
             if pcc.ptr != C_NULL
                 @test CC.getDirection(pcc) isa Enum
-                @test CC.isDirectionExplicit(pcc) isa Bool
-                @test CC.isParamIndexValid(pcc) isa Bool
-                @test CC.isVarArgParam(pcc) isa Bool
-                CC.hasParamName(pcc) && @test CC.getParamNameRange(pcc) isa CC.SourceRange
+                @test CC.isDirectionExplicit(pcc) isa Bool  # shape-only
+                @test CC.isParamIndexValid(pcc)
+                @test !(CC.isVarArgParam(pcc))
+                CC.hasParamName(pcc) && @test CC.getParamNameRange(pcc) isa CC.SourceRange  # shape-only
                 if CC.isParamIndexValid(pcc) && !CC.isVarArgParam(pcc)
-                    @test CC.getParamIndex(pcc) isa Integer
+                    @test CC.getParamIndex(pcc) isa Integer  # shape-only: the target chooses this value
                 end
             end
         end
@@ -154,7 +154,7 @@ end
              /// \\brief Adds <b class="lead">two</b> \\c int values.
              /// \\tparam T the element type
              /// \\param a the first addend
-             int cc_doc_rich(int a) { return a; }
+             template <typename T> T cc_doc_rich(T a) { return a; }
              """)
 
     ci = get_instance(I)
@@ -163,7 +163,10 @@ end
 
     f = DeclFinder(I)
     @test f(I, "cc_doc_rich")
-    d = get_decl(f)
+    # Comment Sema resolves a \tparam name against the template parameter list that
+    # DeclInfo carries, and only the FunctionTemplateDecl has one — the FunctionDecl it
+    # templates does not, so its \tparam stays unresolved.
+    d = first(x for x in CC.get_decls(f) if CC.getDeclKindName(x) == "FunctionTemplate")
 
     fc = CC.getCommentForDecl(ctx, d, pp)
     @test fc isa CC.FullComment
@@ -191,54 +194,58 @@ end
         for c in nodes
             icc = CC.InlineCommandComment(c)
             if icc.ptr != C_NULL
-                @test CC.getCommandID(icc) isa Integer
-                @test CC.getCommandNameRange(icc) isa CC.SourceRange
+                @test CC.getCommandID(icc) isa Integer  # shape-only: the target chooses this value
+                @test CC.getCommandNameRange(icc) isa CC.SourceRange  # shape-only
                 @test CC.getRenderKind(icc) isa Enum
                 push!(inline_names, CC.getCommandName(icc, ctx))
                 na = CC.getNumArgs(icc)
                 @test na isa Integer
                 for k in 0:(na - 1)
-                    @test CC.getArgText(icc, k) isa String
-                    @test CC.getArgRange(icc, k) isa CC.SourceRange
+                    @test !isempty(CC.getArgText(icc, k))
+                    @test CC.getArgRange(icc, k) isa CC.SourceRange  # shape-only
                 end
             end
 
             hst = CC.HTMLStartTagComment(c)
             if hst.ptr != C_NULL
-                @test CC.getTagNameSourceRange(hst) isa CC.SourceRange
-                @test CC.isMalformed(hst) isa Bool
-                @test CC.isSelfClosing(hst) isa Bool
+                @test CC.getTagNameSourceRange(hst) isa CC.SourceRange  # shape-only
+                @test !(CC.isMalformed(hst))
+                @test !(CC.isSelfClosing(hst))
                 push!(tag_names, CC.getTagName(hst))
                 nattr = CC.getNumAttrs(hst)
                 @test nattr isa Integer
                 for k in 0:(nattr - 1)
                     push!(attr_names, CC.getAttrName(hst, k))
-                    @test CC.getAttrValue(hst, k) isa String
+                    @test !isempty(CC.getAttrValue(hst, k))
                 end
             end
 
             het = CC.HTMLEndTagComment(c)
             if het.ptr != C_NULL
                 n_end_tags += 1
-                @test CC.isMalformed(het) isa Bool
+                @test !(CC.isMalformed(het))
                 push!(tag_names, CC.getTagName(het))
             end
 
             tpc = CC.TParamCommandComment(c)
             if tpc.ptr != C_NULL
-                @test CC.isPositionValid(tpc) isa Bool
+                @test CC.isPositionValid(tpc)
                 if CC.hasParamName(tpc)
                     push!(tparam_names, CC.getParamNameAsWritten(tpc))
-                    @test CC.getParamNameRange(tpc) isa CC.SourceRange
+                    @test CC.getParamNameRange(tpc) isa CC.SourceRange  # shape-only
                 end
-                if CC.isPositionValid(tpc)
-                    dep = CC.getDepth(tpc)
-                    @test dep isa Integer
-                    @test dep > 0
-                    for k in 0:(dep - 1)
-                        @test CC.getIndex(tpc, k) isa Integer
-                    end
+                # `T` is the sole parameter of the sole template parameter list of
+                # cc_doc_rich, so Sema resolves the \tparam to position {0} and the
+                # depth/index accessors are in range.
+                @test CC.isPositionValid(tpc)
+                dep = CC.getDepth(tpc)
+                @test dep isa Integer
+                @test dep > 0
+                @test dep == 1
+                for k in 0:(dep - 1)
+                    @test CC.getIndex(tpc, k) isa Integer  # shape-only: the target chooses this value
                 end
+                @test CC.getIndex(tpc, 0) == 0
             end
         end
 
@@ -330,7 +337,7 @@ end
         param_names = String[]
         for c in collect_nodes(fc)
             bcc = CC.BlockCommandComment(c)
-            bcc.ptr != C_NULL && @test CC.getCommandNameRange(bcc, ctx) isa CC.SourceRange
+            bcc.ptr != C_NULL && @test CC.getCommandNameRange(bcc, ctx) isa CC.SourceRange  # shape-only
 
             vbc = CC.VerbatimBlockComment(c)
             if vbc.ptr != C_NULL
@@ -348,7 +355,7 @@ end
             vlc = CC.VerbatimLineComment(c)
             if vlc.ptr != C_NULL
                 push!(verbatim_lines, CC.getText(vlc))
-                @test CC.getTextRange(vlc) isa CC.SourceRange
+                @test CC.getTextRange(vlc) isa CC.SourceRange  # shape-only
             end
 
             pcc = CC.ParamCommandComment(c)
@@ -383,8 +390,8 @@ end
             if hst.ptr != C_NULL
                 for k in 0:(CC.getNumAttrs(hst) - 1)
                     n_attrs += 1
-                    @test CC.getAttrNameRange(hst, k) isa CC.SourceRange
-                    @test CC.getAttrNameLocEnd(hst, k) isa CC.SourceLocation
+                    @test CC.getAttrNameRange(hst, k) isa CC.SourceRange  # shape-only
+                    @test !CC.is_null_handle(CC.getAttrNameLocEnd(hst, k))
                 end
             end
 
@@ -442,7 +449,7 @@ end
     @test !isempty(texts)
     if !isempty(texts)
         tc = first(texts)
-        @test CC.hasTrailingNewline(tc) isa Bool
+        @test !(CC.hasTrailingNewline(tc))
         CC.addTrailingNewline(tc)
         @test CC.hasTrailingNewline(tc)
     end
@@ -455,10 +462,10 @@ end
         e = CC.getSourceRange(h).end_loc
         CC.setGreaterLoc(h, e)
         @test CC.getSourceRange(h).end_loc.ptr == e.ptr
-        @test CC.isSelfClosing(h) isa Bool
+        @test !(CC.isSelfClosing(h))
         CC.setSelfClosing(h)
         @test CC.isSelfClosing(h)
-        @test CC.isMalformed(h) isa Bool
+        @test !(CC.isMalformed(h))
         CC.setIsMalformed(h)
         @test CC.isMalformed(h)
     end
@@ -566,9 +573,9 @@ end
         @test CC.getFallthroughHandler(cbs) isa CC.AbstractStmt
         @test CC.getResultDecl(cbs) isa CC.AbstractStmt
         @test CC.getReturnStmtOnAllocFailure(cbs) isa CC.AbstractStmt
-        @test CC.getReturnValueInit(cbs) isa CC.Expr_
+        @test !CC.is_null_handle(CC.getReturnValueInit(cbs))
         # `co_return;` yields nothing, so the return value may be a null carrier
-        @test CC.getReturnValue(cbs) isa CC.Expr_
+        @test CC.is_null_handle(CC.getReturnValue(cbs))
         n = Int(CC.getNumParamMoves(cbs))
         @test n >= 0
         for i in 0:(n - 1)

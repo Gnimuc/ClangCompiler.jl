@@ -98,6 +98,13 @@ established, by exactly one of:
 - **A getter whose C++ return type is statically that class** — e.g. `getRetValue` returns
   an `Expr`, so wrapping its result directly as `Expr` is sound.
 
+The traversal helpers resolve for you: `DeclIterator`, `decls_in` and `redecls` map `resolve`
+over the chain, and `decls` gets the same for free because its bulk extraction returns each
+node's kind alongside it. They did not always, and the consequence is worth remembering — a
+base `Decl` carrier makes `d isa NamespaceDecl` silently false, so every such test passed by
+never matching anything. Documenting that trap did not stop it recurring; resolving at the
+source did.
+
 Never wrap a raw pointer into a concrete carrier whose class you have not established. When
 a C method returns a *base* handle — `getChildren` yields `Stmt`, `getDeclContext` yields
 `DeclContext` — wrap it at that base type and let the caller `resolve` to refine; do not

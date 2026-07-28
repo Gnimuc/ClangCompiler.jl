@@ -125,10 +125,17 @@ end
     decl_lookup = DeclFinder(I)
     @test decl_lookup(I, "Node")
     decl = get_decl(decl_lookup)
+    # A C++ class's declaration context opens with the implicit injected-class-name --
+    # the CXXRecord naming the class from inside itself -- and the fields follow it.
+    kinds = [getDeclKindName(d) for d in DeclIterator(decl)]
+    @test kinds[1] == "CXXRecord"
+    @test ClangCompiler.isImplicit(first(DeclIterator(decl)))
     for field in DeclIterator(decl)
+        ClangCompiler.isImplicit(field) && continue
         ClangCompiler.dump(field)
         @test getDeclKindName(field) == "Field"
     end
+    @test count(==("Field"), kinds) == 2
 
     @test decl_lookup(I, "Foo")
     decl = get_decl(decl_lookup)

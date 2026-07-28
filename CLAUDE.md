@@ -34,7 +34,84 @@ julia --project=deps deps/build_ci.jl
 
 # Regenerate the raw Julia bindings in lib/<llvm_major>/LibClangEx.jl after changing ClangExtra headers
 julia --project=gen gen/generator.jl
+
+# Report @test lines that never executed. A green suite says nothing about assertions that
+# did not run, and those read as coverage while proving nothing. Delete stale .cov files
+# first — coverage counts accumulate across runs.
+find . -name '*.cov' -delete
+julia --project -e 'using Pkg; Pkg.test(coverage=true)'
+julia gen/deadtests.jl
 ```
+
+A dead `@test` is not a cosmetic problem. `DeclIterator` advanced before yielding, so it
+dropped the first declaration of every context; the test that should have caught it looped
+over the elements the iterator *did* yield, so its assertions passed on a truncated list and
+the bug survived. Run `gen/deadtests.jl` after adding tests that iterate anything, and either
+construct the state that makes the assertion run or assert the empty case explicitly — never
+leave a loop whose body is the only thing asserting.
+
+### Assertions that run but cannot fail
+
+```bash
+julia gen/tautologies.jl
+```
+
+`@test f(x) isa T` is worthless when `T` is fixed by the wrapper's own return expression —
+`isa Bool` on a `::Bool` ccall, `isa Integer` on `Int(...)`, `isa SomeCarrier` on
+`return SomeCarrier(...)`. It restates this repo's source rather than anything Clang decided,
+so it cannot tell a correct shim from one returning a null, a stale value, or another
+argument's payload. Whether carriers wrap at all is already owned by `test/abi.jl`.
+
+2,235 of these predate the check (16.7% of the suite); 1,698 were converted and 538 remain
+because their value genuinely is not assertable. Each of those carries `# shape-only` and its
+reason at the site, and `test/lint.jl` fails on any that does not. Three reasons are legitimate
+and no others are: the host decides the value (a triple, ABI, mangling, path, size or
+alignment), it varies across the objects the test walks, or it is an integer the target
+chooses. For anything else, assert what Clang decided — a value, a round trip, or a
+relationship the shim could get wrong.
+
+The marker is at the site rather than in a baseline file on purpose. A per-file count recorded
+the same information three directories from the code, went stale the moment a file was cleaned
+up, and made two branches conflict over a generated artifact.
+
+### Does the suite actually catch anything?
+
+```bash
+julia --project gen/mutants.jl          # break wrappers on purpose, see what goes red
+```
+
+Assertion counts measure nothing. The only way to know a suite detects faults is to inject
+one. Each mutant redefines a single wrapper — an accessor returning a sibling member, a
+predicate inverted, an index ignored — and runs the tests that exercise it. A mutant that
+**survives** is a precise gap: some wrapper can return the wrong thing and nothing notices.
+
+The tool reports "caught by an assertion" separately from "crash", because a fault that only
+shows up as a clang abort was noticed by luck; a subtler version of it would pass.
+
+Two limits worth knowing. Pinning an observed value catches a *regression* away from what the
+shim returns today, but says nothing about whether today's answer is right — if a shim has
+always been wrong, the pin freezes the bug. And no `isa` or null check can separate two
+results of the same type: `getBeginLoc` returning the end location passes every one of them.
+
+`test/clang/invariants.jl` is the first answer. It asserts relationships that hold over any
+AST whatever the values are — a parent's source range contains its children's, a binary
+operator's two operands are distinct nodes, distinct argument indices name distinct children
+— so it needs no captured values and no per-platform care. Those five testsets took the
+mutation score from **28.6% to 85.7%**. Adding an invariant is worth more than adding a
+hundred value assertions; when you add one, put the mutant it kills in the catalogue.
+
+Invariants have their own ceiling: they check the shim's answers against each other, so a
+*consistently* wrong shim satisfies them. Swap `getBeginLoc` and `getEndLoc` together and
+containment still holds, because containment is symmetric — measured, not assumed:
+invariants report 0 failures for that mutant and the differential test reports 3.
+
+`test/clang/differential.jl` closes it by comparing against something that is not the shim.
+It runs clang's own `-ast-dump` over the same source in a separate process and checks the
+signature, parameter count and source lines of every function both readings see. That is the
+only guard here able to find a wrapper that has been wrong since the day it was written,
+rather than one that has drifted. Compare like with like when extending it: `printAsString`
+prints under the context's `PrintingPolicy`, which is what the dump uses, while `getAsString`
+uses clang's default and spells an empty parameter list `(void)` where C++ spells it `()`.
 
 Formatting: JuliaFormatter, YAS style, margin 120 (see `.JuliaFormatter.toml`). `lib/` and `examples/` are excluded from formatting.
 

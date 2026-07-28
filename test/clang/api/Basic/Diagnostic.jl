@@ -9,9 +9,9 @@ using Test
     engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), opts, client, true)  # engine adopts all three
 
     # borrowed accessors
-    @test CC.getDiagnosticIDs(engine) isa CC.DiagnosticIDs
+    @test !CC.is_null_handle(CC.getDiagnosticIDs(engine))
     @test CC.getDiagnosticIDs(engine).ptr != C_NULL
-    @test CC.getDiagnosticOptions(engine) isa CC.DiagnosticOptions
+    @test !CC.is_null_handle(CC.getDiagnosticOptions(engine))
     @test CC.getDiagnosticOptions(engine).ptr != C_NULL
     consumer = CC.getClient(engine)
     @test consumer isa CC.DiagnosticConsumer
@@ -422,7 +422,7 @@ end
     @test CC.getArgUInt(d, 2) == 42
     @test CC.getRawArg(d, 2) == 42
     @test CC.getArgKind(d, 3) == CC.CXDiagnosticsEngine_ak_identifierinfo
-    @test CC.getArgIdentifier(d, 3) isa CC.IdentifierInfo
+    @test !CC.is_null_handle(CC.getArgIdentifier(d, 3))
     @test CC.getNameStart(CC.getArgIdentifier(d, 3)) == "diag_probe"
     @test CC.getRawArg(d, 3) == UInt64(UInt(ident.ptr))
     @test_throws AssertionError CC.getArgStdStr(d, 1)

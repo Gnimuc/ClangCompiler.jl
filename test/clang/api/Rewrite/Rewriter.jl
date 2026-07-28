@@ -14,9 +14,9 @@ using Test
     rw = CC.Rewriter(sm, lo)
     @test rw isa CC.Rewriter
     @test rw.ptr != C_NULL
-    @test CC.getSourceMgr(rw) isa CC.SourceManager
+    @test !CC.is_null_handle(CC.getSourceMgr(rw))
     # nothing has been edited yet, so there is no buffer to write back to disk
-    @test CC.overwriteChangedFiles(rw) isa Bool
+    @test !(CC.overwriteChangedFiles(rw))
 
     f = DeclFinder(I)
     @test f(I, "CCRwTag")
@@ -27,7 +27,7 @@ using Test
     if CC.isValid(r) && CC.isRewritable(CC.getBeginLoc(r)) && CC.isRewritable(CC.getEndLoc(r))
         n = CC.getRangeSize(rw, r)
         @test n isa Integer
-        @test CC.getRewrittenText(rw, r) isa String
+        @test !isempty(CC.getRewrittenText(rw, r))
 
         # the Clang convention is inverted: `true` means the edit was rejected
         failed = CC.InsertTextBefore(rw, CC.getBeginLoc(r), "/*ccrw*/")

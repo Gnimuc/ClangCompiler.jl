@@ -23,8 +23,8 @@ using Test
     # A unit from ASTUnit::create is parse-based, not loaded from a serialized AST file.
     @test CC.isMainFileAST(au) == false
     @test CC.getDiagnostics(au).ptr == CC.getDiagnostics(ci).ptr
-    @test CC.getSourceManager(au) isa CC.SourceManager
-    @test CC.getFileManager(au) isa CC.FileManager
+    @test CC.getSourceManager(au) isa CC.SourceManager  # shape-only: the host decides this
+    @test CC.getFileManager(au) isa CC.FileManager  # shape-only: the host decides this
     # nothing has parsed into this unit, so it holds neither a preprocessor nor a Sema
     @test CC.hasPreprocessor(au) == false
     @test CC.getPreprocessor(au).ptr == C_NULL
@@ -35,7 +35,7 @@ using Test
     CC.setASTContext(au, ctx)
     @test CC.getASTContext(au).ptr == ctx.ptr
 
-    @test CC.getOnlyLocalDecls(au) isa Bool
+    @test CC.getOnlyLocalDecls(au) isa Bool  # shape-only: the host decides this
 
     owns = CC.getOwnsRemappedFileBuffers(au)
     @test owns isa Bool
@@ -44,8 +44,8 @@ using Test
     CC.setOwnsRemappedFileBuffers(au, owns)
 
     # No frontend input and no main file registered, so both names come back empty.
-    @test CC.getMainFileName(au) isa String
-    @test CC.getOriginalSourceFileName(au) isa String
+    @test CC.getMainFileName(au) isa String  # shape-only: the host decides this
+    @test CC.getOriginalSourceFileName(au) isa String  # shape-only: the host decides this
 
     # The top-level list starts empty and tracks exactly what addTopLevelDecl appends.
     @test CC.top_level_empty(au) == true
@@ -54,7 +54,7 @@ using Test
     @test CC.addTopLevelDecl(au, tu) === nothing
     @test CC.top_level_empty(au) == false
     @test CC.top_level_size(au) == 1
-    @test CC.getTopLevelDecl(au, 0) isa CC.Decl
+    @test CC.getTopLevelDecl(au, 0) isa CC.Decl  # shape-only: the host decides this
     @test CC.getTopLevelDecl(au, 0).ptr == tu.ptr
 
     CC.dispose(au)
@@ -95,10 +95,10 @@ end
 
     # Neither file ID exists on a unit that has never parsed, so both predicates
     # short-circuit; only the shape is the library's business here.
-    @test CC.isInMainFileID(au, loc) isa Bool
-    @test CC.isInPreambleFileID(au, loc) isa Bool
-    @test CC.getStartOfMainFileID(au) isa CC.SourceLocation
-    @test CC.getEndOfPreambleFileID(au) isa CC.SourceLocation
+    @test CC.isInMainFileID(au, loc) isa Bool  # shape-only: the host decides this
+    @test CC.isInPreambleFileID(au, loc) isa Bool  # shape-only: the host decides this
+    @test CC.getStartOfMainFileID(au) isa CC.SourceLocation  # shape-only: the host decides this
+    @test CC.getEndOfPreambleFileID(au) isa CC.SourceLocation  # shape-only: the host decides this
 
     # A file the unit's own file manager knows but its source manager has never entered:
     # the file:line:col translation has no file ID to resolve against.
@@ -106,7 +106,7 @@ end
     write(io, "int in_a_file = 1;\n")
     close(io)
     entry = CC.getFileEntry(CC.getFileManager(au), path)
-    @test CC.getLocation(au, entry, 1, 1) isa CC.SourceLocation
+    @test CC.getLocation(au, entry, 1, 1) isa CC.SourceLocation  # shape-only: the host decides this
 
     buf = CC.getBufferForFile(au, path)
     @test buf !== nothing
@@ -153,7 +153,7 @@ end
 
     # The unsafe-to-free bit is a bit-field with no in-class initializer, so only a value the
     # test itself wrote is asserted.
-    @test CC.isUnsafeToFree(au) isa Bool
+    @test CC.isUnsafeToFree(au) isa Bool  # shape-only: the host decides this
     @test CC.setUnsafeToFree(au, true) === nothing
     @test CC.isUnsafeToFree(au) == true
     @test CC.setUnsafeToFree(au, false) === nothing
@@ -166,12 +166,12 @@ end
 
     # C++ hands the top-level name hash back as a mutable reference; round-trip it through
     # the read/write pair the C surface splits it into.
-    @test CC.getCurrentTopLevelHashValue(au) isa Integer
+    @test CC.getCurrentTopLevelHashValue(au) isa Integer  # shape-only: the host decides this
     @test CC.setCurrentTopLevelHashValue(au, 0x1234) === nothing
     @test CC.getCurrentTopLevelHashValue(au) == 0x1234
 
     # Nothing has built a preamble and nothing has cached completion results.
-    @test CC.getPreambleCounterForTests(au) isa Integer
+    @test CC.getPreambleCounterForTests(au) isa Integer  # shape-only: the host decides this
     @test CC.cached_completion_size(au) == 0
 
     # No parse has run, so the unit captured no diagnostics and the driver split sits at the
@@ -186,8 +186,8 @@ end
     # accessors on the instance that owns it.
     CC.createFrontendTimer(ci)
     @test CC.hasFrontendTimer(ci)
-    @test CC.getFrontendTimerName(ci) isa String
-    @test CC.isFrontendTimerRunning(ci) isa Bool
+    @test CC.getFrontendTimerName(ci) isa String  # shape-only: the host decides this
+    @test CC.isFrontendTimerRunning(ci) isa Bool  # shape-only: the host decides this
 
     dispose(I)
 end

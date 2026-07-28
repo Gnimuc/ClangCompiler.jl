@@ -36,7 +36,7 @@ using Test
     @test CC.hasTemplateArgument(ml, 0, 7) == false
     @test CC.getKind(CC.getArgument(ml, 0, 0)) == CC.CXTemplateArgument_Type
     @test CC.getKind(CC.getArgument(ml, 0, 1)) == CC.CXTemplateArgument_NullPtr
-    @test CC.isAnyArgInstantiationDependent(ml) isa Bool
+    @test !(CC.isAnyArgInstantiationDependent(ml))
 
     # the associated decl is stored canonicalised, and the Final bit round-trips
     assoc = CC.getAssociatedDecl(ml, 0)

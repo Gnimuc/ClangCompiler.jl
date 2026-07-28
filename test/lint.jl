@@ -243,6 +243,26 @@ isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
         @test checked >= 20  # guard against the parser silently matching nothing
     end
 
+    @testset "every statically-true `isa` assertion is marked" begin
+        # `@test f(x) isa T` where the wrapper's own return expression fixes T cannot fail:
+        # it restates the source, not anything Clang decided, and `test/abi.jl` already owns
+        # the question of whether carriers wrap. Where the value genuinely is not assertable
+        # -- the host decides it, it varies across the objects the test walks, or it is an
+        # integer the target chooses -- the line carries `# shape-only` and its reason.
+        #
+        # The marker sits at the site on purpose. A per-file baseline recorded the same
+        # information three directories from the code, went stale the moment a file was
+        # cleaned up, and made two branches conflict over a generated artifact.
+        script = joinpath(@__DIR__, "..", "gen", "tautologies.jl")
+        @test isfile(script)
+        # the script exits 1 whenever it reports anything
+        out = read(ignorestatus(`$(Base.julia_cmd()) $script`), String)
+        unmarked = [m.captures[1] for m in eachmatch(r"^    (\S+:\d+)"m, out)]
+        isempty(unmarked) ||
+            @error "assertions that cannot fail and are not marked `# shape-only`" unmarked
+        @test isempty(unmarked)
+    end
+
     @testset "no unguarded getType read on an arbitrary Expr operand" begin
         # `Expr::getType()` returns a null `QualType` for an unevaluated string
         # literal — what the parser builds for a `static_assert` message — and

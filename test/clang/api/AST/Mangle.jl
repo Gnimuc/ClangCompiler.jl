@@ -62,9 +62,9 @@ end
 
     int_qt = CC.getType(vd_int)
     @test !isempty(CC.mangleCanonicalTypeName(mc, int_qt))
-    @test CC.mangleCanonicalTypeName(mc, int_qt, true) isa String
+    @test !isempty(CC.mangleCanonicalTypeName(mc, int_qt, true))
     @test !isempty(CC.mangleCXXRTTIName(mc, int_qt))
-    @test CC.mangleCXXRTTIName(mc, int_qt, true) isa String
+    @test !isempty(CC.mangleCXXRTTIName(mc, int_qt, true))
 
     dispose(f)
     dispose(I)
@@ -90,7 +90,7 @@ end
     @test CC.needsUniqueInternalLinkageNames(mc) === nothing
     # An externally visible function never needs a uniqued name; the flag the call
     # above sets is what makes the Itanium mangler answer the query at all.
-    @test CC.isUniqueInternalLinkageDecl(mc, fn_nd) isa Bool
+    @test !(CC.isUniqueInternalLinkageDecl(mc, fn_nd))
 
     @test f(I, "mangle_gv")
     gv = CC.VarDecl(get_decl(f).ptr)
@@ -146,7 +146,7 @@ end
     tv = CC.VarDecl(get_decl(f).ptr)
     @test !isempty(CC.mangleCXXName(mc, tv))
     @test !isempty(CC.mangleReferenceTemporary(mc, tv))
-    @test CC.mangleReferenceTemporary(mc, tv, 2) isa String
+    @test !isempty(CC.mangleReferenceTemporary(mc, tv, 2))
     @test !isempty(CC.mangleDynamicAtExitDestructor(mc, tv))
 
     # The Itanium-only surface. The cast is the gate: it yields a NULL carrier under the
