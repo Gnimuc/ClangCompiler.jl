@@ -1,7 +1,7 @@
 # Gap map via libclang: extracts the public method surface of frequently-used
 # clang-cpp headers (real access/nesting fidelity) for diffing against the
 # libclangex bindings. Self-contained: activates a temp env with Clang.jl.
-# Usage: julia gen/gapmap.jl <out.json>   (then diff class methods against
+# Usage: julia .claude/skills/api-coverage/gapmap.jl <out.json>   (then diff class methods against
 # `function clang_<Class>_<method>` names in lib/<major>/LibClangEx.jl)
 import Pkg
 Pkg.activate(temp=true, io=devnull)

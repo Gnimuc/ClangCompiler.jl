@@ -1,6 +1,6 @@
 # Report `@test x isa T` assertions that cannot fail.
 #
-# `gen/deadtests.jl` finds assertions that never run. This finds the ones that run and prove
+# The `suite-audit` skill's `deadtests.jl` finds assertions that never run. This finds the ones that run and prove
 # nothing: an `isa` whose truth is fixed by the wrapper's own return expression rather than
 # by anything Clang decided.
 #
@@ -15,9 +15,14 @@
 # provably returns a subtype of the asserted type, so dispatch that could widen the result
 # is left alone. That keeps false positives near zero at the cost of missing some.
 #
-#     julia gen/tautologies.jl
+#     julia test/tautologies.jl
 #
 # Exit status is 1 when anything is reported.
+#
+# This lives in test/ next to its consumer: test/lint.jl executes it and asserts on its output,
+# so it runs in CI on every platform and is part of the suite. It is not a testset and
+# runtests.jl does not include it -- the same shape as test/util.jl. The audit scripts that
+# nothing executes are in .claude/skills/suite-audit/ instead.
 
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 

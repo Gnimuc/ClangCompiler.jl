@@ -253,7 +253,7 @@ isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
         # The marker sits at the site on purpose. A per-file baseline recorded the same
         # information three directories from the code, went stale the moment a file was
         # cleaned up, and made two branches conflict over a generated artifact.
-        script = joinpath(@__DIR__, "..", "gen", "tautologies.jl")
+        script = joinpath(@__DIR__, "tautologies.jl")
         @test isfile(script)
         # the script exits 1 whenever it reports anything
         out = read(ignorestatus(`$(Base.julia_cmd()) $script`), String)

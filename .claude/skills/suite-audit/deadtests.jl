@@ -11,14 +11,33 @@
 # Line coverage answers the question exactly, with no parsing of `@testset` nesting:
 #
 #     julia --project -e 'using Pkg; Pkg.test(coverage=true)'
-#     julia gen/deadtests.jl
+#     julia .claude/skills/suite-audit/deadtests.jl
 #
 # Coverage counts accumulate across runs, so delete stale `.cov` files first
 # (`find . -name '*.cov' -delete`) or a line that ran in an earlier run looks live.
 #
 # Exit status is 1 when anything is dead, so this can gate a CI job.
 
-const TEST_DIR = normpath(joinpath(@__DIR__, "..", "test"))
+"""
+    repo_root() -> String
+
+The ClangCompiler repository root, found by walking up from this file.
+
+Resolved rather than spelled as a fixed number of `".."` steps so the script keeps working
+wherever it lives; `gen/` also has a Project.toml, so the marker is Project.toml *and*
+src/clang together.
+"""
+function repo_root()
+    d = @__DIR__
+    while !(isfile(joinpath(d, "Project.toml")) && isdir(joinpath(d, "src", "clang")))
+        p = dirname(d)
+        p == d && error("could not locate the ClangCompiler repository root from $(@__DIR__)")
+        d = p
+    end
+    return d
+end
+
+const TEST_DIR = joinpath(repo_root(), "test")
 
 """
     cov_files(dir) -> Vector{String}
@@ -72,7 +91,7 @@ function main()
         println("every @test line executed at least once ($(length(covs)) coverage files)")
         return 0
     end
-    root = normpath(joinpath(@__DIR__, ".."))
+    root = repo_root()
     println("@test lines that NEVER executed: $total across $(length(dead)) files\n")
     for f in sort!(collect(keys(dead)); by=k -> -length(dead[k]))
         rel = replace(relpath(f, root), '\\' => '/')   # stable across platforms

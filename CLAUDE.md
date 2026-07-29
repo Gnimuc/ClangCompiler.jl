@@ -40,20 +40,20 @@ julia --project=gen gen/generator.jl
 # first — coverage counts accumulate across runs.
 find . -name '*.cov' -delete
 julia --project -e 'using Pkg; Pkg.test(coverage=true)'
-julia gen/deadtests.jl
+julia .claude/skills/suite-audit/deadtests.jl
 ```
 
 A dead `@test` is not a cosmetic problem. `DeclIterator` advanced before yielding, so it
 dropped the first declaration of every context; the test that should have caught it looped
 over the elements the iterator *did* yield, so its assertions passed on a truncated list and
-the bug survived. Run `gen/deadtests.jl` after adding tests that iterate anything, and either
+the bug survived. Run the `suite-audit` skill's `deadtests.jl` after adding tests that iterate anything, and either
 construct the state that makes the assertion run or assert the empty case explicitly — never
 leave a loop whose body is the only thing asserting.
 
 ### Assertions that run but cannot fail
 
 ```bash
-julia gen/tautologies.jl
+julia test/tautologies.jl
 ```
 
 `@test f(x) isa T` is worthless when `T` is fixed by the wrapper's own return expression —
@@ -77,7 +77,7 @@ up, and made two branches conflict over a generated artifact.
 ### Does the suite actually catch anything?
 
 ```bash
-julia --project gen/mutants.jl          # break wrappers on purpose, see what goes red
+julia --project .claude/skills/suite-audit/mutants.jl          # break wrappers on purpose, see what goes red
 ```
 
 Assertion counts measure nothing. The only way to know a suite detects faults is to inject

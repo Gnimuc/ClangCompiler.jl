@@ -1,7 +1,7 @@
 # Diff the clang-cpp method surface (gen/gapmap.jl output) against the bindings we actually
 # have, and rank what is left.
 #
-#     julia gen/gapmap.jl gap.json && julia gen/gapdiff.jl gap.json [--class Sema]
+#     julia .claude/skills/api-coverage/gapmap.jl gap.json && julia .claude/skills/api-coverage/gapdiff.jl gap.json [--class Sema]
 #
 # The comparison this performs used to be done by hand at each call site, and twice reported
 # a class as unwrapped when it was fully covered. Both misses had the same two causes, so
@@ -34,7 +34,26 @@
 # wrapper surface and its type hierarchy -- never against header text. The last is a
 # classification (`covered_otherwise`), because those methods are real but must not be wrapped.
 
-const ROOT = normpath(joinpath(@__DIR__, ".."))
+"""
+    repo_root() -> String
+
+The ClangCompiler repository root, found by walking up from this file.
+
+Resolved rather than spelled as a fixed number of `".."` steps so the script keeps working
+wherever it lives; `gen/` also has a Project.toml, so the marker is Project.toml *and*
+src/clang together.
+"""
+function repo_root()
+    d = @__DIR__
+    while !(isfile(joinpath(d, "Project.toml")) && isdir(joinpath(d, "src", "clang")))
+        p = dirname(d)
+        p == d && error("could not locate the ClangCompiler repository root from $(@__DIR__)")
+        d = p
+    end
+    return d
+end
+
+const ROOT = repo_root()
 
 "Signatures whose marshalling is out of scope for a thin wrapper: C++ types with no C ABI."
 const BLOCKED = r"ArrayRef|MultiExpr|SmallVector|function_ref|std::function|LookupResult|

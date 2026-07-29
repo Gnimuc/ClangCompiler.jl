@@ -12,7 +12,7 @@ using Test
 # These assertions are what does separate them, and none of them depends on the host: they
 # are statements about clang's own model, not about a target.
 #
-# `gen/mutants.jl` is the acceptance test. Each testset below names the mutant it kills.
+# `.claude/skills/suite-audit/mutants.jl` is the acceptance test. Each testset below names the mutant it kills.
 
 const INV_SRC = """
 struct InvB { int b; virtual ~InvB() {} };

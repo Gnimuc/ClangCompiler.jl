@@ -4,8 +4,8 @@
 # and free of tautologies while still failing to notice that an accessor returns the wrong
 # member. The only way to know is to inject the fault and see whether anything goes red.
 #
-#     julia --project gen/mutants.jl            # run the whole catalogue
-#     julia --project gen/mutants.jl swap       # only mutants whose label matches
+#     julia --project .claude/skills/suite-audit/mutants.jl            # run the whole catalogue
+#     julia --project .claude/skills/suite-audit/mutants.jl swap       # only mutants whose label matches
 #
 # Each mutant redefines one wrapper in the ClangCompiler module, then runs the test files
 # that exercise it. A mutant that SURVIVES is a precise, addressable gap: some wrapper can
@@ -18,7 +18,26 @@
 #
 # Exit status is 1 when any mutant survives.
 
-const ROOT = normpath(joinpath(@__DIR__, ".."))
+"""
+    repo_root() -> String
+
+The ClangCompiler repository root, found by walking up from this file.
+
+Resolved rather than spelled as a fixed number of `".."` steps so the script keeps working
+wherever it lives; `gen/` also has a Project.toml, so the marker is Project.toml *and*
+src/clang together.
+"""
+function repo_root()
+    d = @__DIR__
+    while !(isfile(joinpath(d, "Project.toml")) && isdir(joinpath(d, "src", "clang")))
+        p = dirname(d)
+        p == d && error("could not locate the ClangCompiler repository root from $(@__DIR__)")
+        d = p
+    end
+    return d
+end
+
+const ROOT = repo_root()
 
 struct Mutant
     label::String
