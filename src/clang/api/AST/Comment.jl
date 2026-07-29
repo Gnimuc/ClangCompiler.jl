@@ -134,7 +134,6 @@ function getParamNameAsWritten(x::AbstractParamCommandComment)
     return get_string(clang_ParamCommandComment_getParamNameAsWritten(x))
 end
 
-
 # Comment
 function getBeginLoc(x::AbstractComment)
     @check_ptrs x
@@ -277,7 +276,6 @@ function getParamIndex(x::AbstractParamCommandComment)
     @assert isParamIndexValid(x) && !isVarArgParam(x) "parameter index is not valid"
     return clang_ParamCommandComment_getParamIndex(x)
 end
-
 
 # Comment Cast
 function InlineCommandComment(x::AbstractComment)
@@ -493,7 +491,6 @@ function getDecl(x::AbstractFullComment)
     @check_ptrs x
     return Decl(clang_FullComment_getDecl(x))
 end
-
 
 # Comment Cast
 function VerbatimBlockLineComment(x::AbstractComment)
@@ -729,7 +726,6 @@ function getBlock(x::AbstractFullComment, i::Integer)
     return Comment(clang_FullComment_getBlock(x, i))
 end
 
-
 # Comment (cont.)
 """
     getCommentKind(x::AbstractComment) -> CXCommentKind_
@@ -840,7 +836,6 @@ function setParamIndex(x::AbstractParamCommandComment, i::Integer)
     return clang_ParamCommandComment_setParamIndex(x, i)
 end
 
-
 # Comment (cont.)
 """
     dump(x::AbstractComment)
@@ -918,7 +913,6 @@ function isHTMLTagComment(x::AbstractComment)
     return clang_Comment_isHTMLTagComment(x)
 end
 
-
 # VerbatimBlockComment (cont.)
 """
     setCloseName(x::AbstractVerbatimBlockComment, ctx::ASTContext, name::AbstractString,
@@ -972,7 +966,6 @@ function setPosition(x::AbstractTParamCommandComment, ctx::ASTContext,
     buf = Cuint[p for p in position]
     return clang_TParamCommandComment_setPosition(x, ctx, buf, length(buf))
 end
-
 
 """
     getAttrEqualsLoc(x::AbstractHTMLStartTagComment, i::Integer) -> SourceLocation
@@ -1049,4 +1042,30 @@ function setArgs(x::AbstractBlockCommandComment, ctx::ASTContext,
     @assert length(texts) == length(ranges) "argument texts and ranges must have the same length"
     rs = CXSourceRange_[CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr) for r in ranges]
     return clang_BlockCommandComment_setArgs(x, ctx, String[t for t in texts], rs, length(rs))
+end
+
+"""
+    getFormattedText(x::AbstractRawComment, src_mgr::AbstractSourceManager,
+                     diags::AbstractDiagnosticsEngine) -> String
+Return the comment's text with its decoration removed — the leading `///`, the `*` column and
+the block delimiters — as a documentation tool would present it.
+
+`diags` receives any warning raised while parsing the comment. Compare
+[`getRawText`](@ref), which returns the bytes exactly as written.
+"""
+function getFormattedText(x::AbstractRawComment, src_mgr::AbstractSourceManager,
+                          diags::AbstractDiagnosticsEngine)
+    @check_ptrs x src_mgr diags
+    return get_string(clang_RawComment_getFormattedText(x, src_mgr, diags))
+end
+
+"""
+    isAlmostTrailingComment(x::AbstractRawComment) -> Bool
+Return whether `x` is a `//` or `/* */` comment sitting where a trailing documentation comment
+would go but lacking the `<` that would make it one — a comment clang suspects was meant to
+document the preceding declaration but is not spelled so.
+"""
+function isAlmostTrailingComment(x::AbstractRawComment)
+    @check_ptrs x
+    return clang_RawComment_isAlmostTrailingComment(x)
 end

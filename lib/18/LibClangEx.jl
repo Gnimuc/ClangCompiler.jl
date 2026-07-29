@@ -8583,6 +8583,22 @@ function clang_FPOptions_getExceptionMode(FPO)
     @ccall libclangex.clang_FPOptions_getExceptionMode(FPO::Cuint)::CXFPExceptionModeKind
 end
 
+function clang_FPOptions_allowFPContractWithinStatement(FPO)
+    @ccall libclangex.clang_FPOptions_allowFPContractWithinStatement(FPO::Cuint)::Bool
+end
+
+function clang_FPOptions_allowFPContractAcrossStatement(FPO)
+    @ccall libclangex.clang_FPOptions_allowFPContractAcrossStatement(FPO::Cuint)::Bool
+end
+
+function clang_FPOptions_isFPConstrained(FPO)
+    @ccall libclangex.clang_FPOptions_isFPConstrained(FPO::Cuint)::Bool
+end
+
+function clang_FPOptions_getChangesFrom(FPO, Base)
+    @ccall libclangex.clang_FPOptions_getChangesFrom(FPO::Cuint, Base::Cuint)::UInt64
+end
+
 @enum CXTargetInfo_IntType::UInt32 begin
     CXTargetInfo_NoInt = 0
     CXTargetInfo_SignedChar = 1
@@ -11334,6 +11350,14 @@ function clang_RawComment_getBriefText(RC, Ctx)
     @ccall libclangex.clang_RawComment_getBriefText(RC::CXRawComment, Ctx::CXASTContext)::Ptr{Cchar}
 end
 
+function clang_RawComment_getFormattedText(RC, SM, Diags)
+    @ccall libclangex.clang_RawComment_getFormattedText(RC::CXRawComment, SM::CXSourceManager, Diags::CXDiagnosticsEngine)::CXString
+end
+
+function clang_RawComment_isAlmostTrailingComment(RC)
+    @ccall libclangex.clang_RawComment_isAlmostTrailingComment(RC::CXRawComment)::Bool
+end
+
 function clang_Comment_getCommentKindName(C)
     @ccall libclangex.clang_Comment_getCommentKindName(C::CXComment)::Ptr{Cchar}
 end
@@ -13918,6 +13942,10 @@ end
 
 function clang_IdentifierTable_AddKeywords(IT, LO)
     @ccall libclangex.clang_IdentifierTable_AddKeywords(IT::CXIdentifierTable, LO::CXLangOptions)::Cvoid
+end
+
+function clang_IdentifierTable_getFutureCompatDiagKind(IT, II, LangOpts)
+    @ccall libclangex.clang_IdentifierTable_getFutureCompatDiagKind(IT::CXIdentifierTable, II::CXIdentifierInfo, LangOpts::CXLangOptions)::Cuint
 end
 
 function clang_IdentifierInfo_getName(II)
@@ -22371,6 +22399,14 @@ function clang_ASTRecordLayout_hasVBPtr(RL)
     @ccall libclangex.clang_ASTRecordLayout_hasVBPtr(RL::CXASTRecordLayout)::Bool
 end
 
+function clang_ASTRecordLayout_getPrimaryBase(RL)
+    @ccall libclangex.clang_ASTRecordLayout_getPrimaryBase(RL::CXASTRecordLayout)::CXCXXRecordDecl
+end
+
+function clang_ASTRecordLayout_isPrimaryBaseVirtual(RL)
+    @ccall libclangex.clang_ASTRecordLayout_isPrimaryBaseVirtual(RL::CXASTRecordLayout)::Bool
+end
+
 function clang_CXXCatchStmt_getExceptionDecl(CS)
     @ccall libclangex.clang_CXXCatchStmt_getExceptionDecl(CS::CXCXXCatchStmt)::CXVarDecl
 end
@@ -28259,6 +28295,26 @@ function clang_FileEntryRef_getFileEntry(FER)
     @ccall libclangex.clang_FileEntryRef_getFileEntry(FER::CXFileEntryRef)::CXFileEntry
 end
 
+function clang_FileEntryRef_getName(FER)
+    @ccall libclangex.clang_FileEntryRef_getName(FER::CXFileEntryRef)::Ptr{Cchar}
+end
+
+function clang_FileEntryRef_getDir(FER)
+    @ccall libclangex.clang_FileEntryRef_getDir(FER::CXFileEntryRef)::CXDirectoryEntryRef
+end
+
+function clang_FileEntryRef_isSameRef(FER, RHS)
+    @ccall libclangex.clang_FileEntryRef_isSameRef(FER::CXFileEntryRef, RHS::CXFileEntryRef)::Bool
+end
+
+function clang_FileManager_getNumUniqueRealFiles(FM)
+    @ccall libclangex.clang_FileManager_getNumUniqueRealFiles(FM::CXFileManager)::Csize_t
+end
+
+function clang_FileEntry_getSize(FE)
+    @ccall libclangex.clang_FileEntry_getSize(FE::CXFileEntry)::Int64
+end
+
 function clang_FileManager_getOptionalDirectoryRef(FM, DirName, CacheFailure)
     @ccall libclangex.clang_FileManager_getOptionalDirectoryRef(FM::CXFileManager, DirName::Ptr{Cchar}, CacheFailure::Bool)::CXDirectoryEntryRef
 end
@@ -29758,6 +29814,10 @@ end
 
 function clang_Interpreter_getCompilerInstance(Interp)
     @ccall libclangex.clang_Interpreter_getCompilerInstance(Interp::CXInterpreter)::CXCompilerInstance
+end
+
+function clang_Interpreter_getASTContext(Interp)
+    @ccall libclangex.clang_Interpreter_getASTContext(Interp::CXInterpreter)::CXASTContext
 end
 
 function clang_Interpreter_getExecutionEngine(Interp)
@@ -31362,6 +31422,10 @@ function clang_PreprocessingRecord_getNumSkippedRanges(PR)
     @ccall libclangex.clang_PreprocessingRecord_getNumSkippedRanges(PR::CXPreprocessingRecord)::Cuint
 end
 
+function clang_PreprocessingRecord_getTotalMemory(PR)
+    @ccall libclangex.clang_PreprocessingRecord_getTotalMemory(PR::CXPreprocessingRecord)::Csize_t
+end
+
 function clang_PreprocessingRecord_getSkippedRange(PR, Index)
     @ccall libclangex.clang_PreprocessingRecord_getSkippedRange(PR::CXPreprocessingRecord, Index::Cuint)::CXSourceRange_
 end
@@ -32426,6 +32490,10 @@ function clang_Rewriter_create(SM, LO)
     @ccall libclangex.clang_Rewriter_create(SM::CXSourceManager, LO::CXLangOptions)::CXRewriter
 end
 
+function clang_Rewriter_getLangOpts(R)
+    @ccall libclangex.clang_Rewriter_getLangOpts(R::CXRewriter)::CXLangOptions
+end
+
 function clang_Rewriter_dispose(R)
     @ccall libclangex.clang_Rewriter_dispose(R::CXRewriter)::Cvoid
 end
@@ -33290,6 +33358,10 @@ end
 
 function clang_Scope_setFlags(S, F)
     @ccall libclangex.clang_Scope_setFlags(S::CXScope, F::Cuint)::Cvoid
+end
+
+function clang_Scope_AddFlags(S, Flags)
+    @ccall libclangex.clang_Scope_AddFlags(S::CXScope, Flags::Cuint)::Cvoid
 end
 
 function clang_Scope_setIsConditionVarScope(S, InConditionVarScope)

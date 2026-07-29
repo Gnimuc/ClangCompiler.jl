@@ -14,7 +14,6 @@ function getDepth(x::Scope)::Int
     return clang_Scope_getDepth(x)
 end
 
-
 function getFlags(x::AbstractScope)
     @check_ptrs x
     return clang_Scope_getFlags(x)
@@ -44,7 +43,6 @@ function isDeclScope(x::AbstractScope, d::AbstractDecl)
     @check_ptrs x d
     return clang_Scope_isDeclScope(x, d)
 end
-
 
 function isBlockScope(x::AbstractScope)
     @check_ptrs x
@@ -146,7 +144,6 @@ function containedInPrototypeScope(x::AbstractScope)
     @check_ptrs x
     return clang_Scope_containedInPrototypeScope(x)
 end
-
 
 # Scope (statement-kind and error-state predicates)
 """
@@ -263,7 +260,6 @@ function isControlScope(x::AbstractScope)
     @check_ptrs x
     return clang_Scope_isControlScope(x)
 end
-
 
 # Scope (Microsoft mangling numbers, ObjC/OpenMP/SEH scope kinds, using-directives)
 """
@@ -455,7 +451,6 @@ function dumpImplToString(x::AbstractScope)
     return get_string(clang_Scope_dumpImplToString(x))
 end
 
-
 """
     Scope(parent::Union{AbstractScope,Nothing}, flags::Integer,
           diag::AbstractDiagnosticsEngine) -> Scope
@@ -615,4 +610,20 @@ function Init(x::AbstractScope, parent::Union{AbstractScope,Nothing}, flags::Int
     p = parent === nothing ? CXScope(C_NULL) : parent.ptr
     clang_Scope_Init(x, p, UInt32(flags))
     return nothing
+end
+
+"""
+    AddFlags(x::AbstractScope, flags::Integer)
+OR `flags` into `x`'s flags and update its break/continue parent links to match.
+
+This preserves what is already set, where [`setFlags`](@ref) overwrites. `flags` may only be
+`CXScopeFlags_BreakScope` and/or `CXScopeFlags_ContinueScope`, and neither may already be set —
+clang asserts both, and both are read back here through [`getFlags`](@ref).
+"""
+function AddFlags(x::AbstractScope, flags::Integer)
+    @check_ptrs x
+    allowed = UInt32(CXScopeFlags_BreakScope) | UInt32(CXScopeFlags_ContinueScope)
+    @assert (UInt32(flags) & ~allowed) == 0 "only the break and continue flags may be added"
+    @assert (UInt32(getFlags(x)) & UInt32(flags)) == 0 "the flags to add must not already be set"
+    return clang_Scope_AddFlags(x, flags)
 end

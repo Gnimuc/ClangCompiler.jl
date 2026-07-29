@@ -85,3 +85,12 @@ bool clang_ASTRecordLayout_hasOwnVBPtr(CXASTRecordLayout RL) {
 bool clang_ASTRecordLayout_hasVBPtr(CXASTRecordLayout RL) {
   return static_cast<clang::ASTRecordLayout *>(RL)->hasVBPtr();
 }
+
+CXCXXRecordDecl clang_ASTRecordLayout_getPrimaryBase(CXASTRecordLayout RL) {
+  return const_cast<clang::CXXRecordDecl *>(
+      static_cast<clang::ASTRecordLayout *>(RL)->getPrimaryBase());
+}
+
+bool clang_ASTRecordLayout_isPrimaryBaseVirtual(CXASTRecordLayout RL) {
+  return static_cast<clang::ASTRecordLayout *>(RL)->isPrimaryBaseVirtual();
+}

@@ -123,3 +123,16 @@ function LoadDynamicLibrary(x::AbstractInterpreter, name::AbstractString)
     @check_ptrs x
     return clang_Interpreter_LoadDynamicLibrary(x, name)
 end
+
+"""
+    getASTContext(x::AbstractInterpreter) -> ASTContext
+Return the interpreter's `ASTContext`, borrowed — never `dispose` it through this carrier.
+
+This is the same context [`getASTContext`](@ref) reaches through the compiler instance, which
+is what clang's own body does; it is here so the context can be had without naming the
+instance.
+"""
+function getASTContext(x::AbstractInterpreter)
+    @check_ptrs x
+    return ASTContext(clang_Interpreter_getASTContext(x))
+end

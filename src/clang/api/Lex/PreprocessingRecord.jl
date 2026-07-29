@@ -240,3 +240,13 @@ function getSkippedRanges(x::AbstractPreprocessingRecord)
     @check_ptrs x
     return [getSkippedRange(x, i) for i = 0:(getNumSkippedRanges(x) - 1)]
 end
+
+"""
+    getTotalMemory(x::AbstractPreprocessingRecord) -> Csize_t
+Return the bytes `x`'s own allocations occupy — a measure of how much preprocessing history has
+accumulated, which grows as more entities are recorded.
+"""
+function getTotalMemory(x::AbstractPreprocessingRecord)
+    @check_ptrs x
+    return clang_PreprocessingRecord_getTotalMemory(x)
+end

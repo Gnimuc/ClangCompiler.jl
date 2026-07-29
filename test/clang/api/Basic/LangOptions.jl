@@ -52,3 +52,56 @@ using Test
 
     dispose(inv)
 end
+
+@testset "LangOptions | FPOptions contraction modes and overrides" begin
+    # the three contraction modes are reached with `#pragma clang fp contract`, which is only
+    # legal at the head of a compound statement -- so each mode gets its own nested block
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             extern "C" float fpo_probe(float a, float b, float c) {
+                 float d = a * b + c;
+                 float e, f;
+                 { 
+             #pragma clang fp contract(fast)
+                     e = a * b + c;
+                 }
+                 { 
+             #pragma clang fp contract(off)
+                     f = a * b + c;
+                 }
+                 return d + e + f;
+             }
+             """)
+    lo = CC.getLangOpts(CC.get_instance(I))
+    base = CC.defaultWithoutTrailingStorage(lo)
+
+    f = DeclFinder(I)
+    @test f(I, "fpo_probe")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    binops = [s for s in (CC.resolve(x) for x in CC.subtree(CC.getBody(fd)))
+              if s isa CC.BinaryOperator]
+    words = unique([CC.getFPFeaturesInEffect(b, lo) for b in binops])
+
+    # whatever the modes present, the two contraction predicates are mutually exclusive on
+    # every word -- that is the invariant, independent of which pragma reached which node
+    for w in words
+        @test !(CC.allowFPContractWithinStatement(w) && CC.allowFPContractAcrossStatement(w))
+        # a word is constrained exactly when it departs from ignored exceptions / default rounding
+        @test CC.isFPConstrained(w) ==
+              (CC.getExceptionMode(w) != CC.CXFPExceptionModeKind_FPE_Ignore ||
+               CC.getRoundingMode(w) != CC.CXRoundingMode_NearestTiesToEven)
+    end
+    # the pragmas produced more than one distinct mode, so the predicates discriminate
+    @test length(words) > 1
+    @test any(CC.allowFPContractAcrossStatement, words)
+
+    # a word differs from itself by nothing, and from the default by something once a pragma
+    # has moved it
+    for w in words
+        @test CC.getChangesFrom(w, w) == 0
+    end
+    @test any(w -> CC.getChangesFrom(w, base) != 0, words)
+
+    dispose(f)
+    dispose(I)
+end

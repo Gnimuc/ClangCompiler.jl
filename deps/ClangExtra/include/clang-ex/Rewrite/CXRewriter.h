@@ -15,6 +15,11 @@ LLVM_CLANG_C_EXTERN_C_BEGIN
 /// SourceManager it was built from.
 CXRewriter clang_Rewriter_create(CXSourceManager SM, CXLangOptions LO);
 
+// The language options the rewriter was created with, borrowed. Every Rewriter this API can
+// build comes from clang_Rewriter_create, which always stores a non-null LangOptions; clang's
+// own default-constructed Rewriter leaves it null, and that one is unreachable from here.
+CXLangOptions clang_Rewriter_getLangOpts(CXRewriter R);
+
 void clang_Rewriter_dispose(CXRewriter R);
 
 CXSourceManager clang_Rewriter_getSourceMgr(CXRewriter R);

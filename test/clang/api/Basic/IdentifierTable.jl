@@ -423,3 +423,37 @@ end
 
     dispose(I)
 end
+
+@testset "IdentifierTable | future-compatibility diagnostic ids" begin
+    I = create_interpreter(String[])
+    ci = CC.get_instance(I)
+    it = CC.getIdents(CC.get_ast_context(I))
+    opts = CC.getLangOpts(ci)
+    diags = CC.getDiagnostics(ci)
+
+    # which identifiers are future-compat keywords depends on the standard the interpreter
+    # defaults to, so the one to test with is found rather than assumed
+    candidates = ["char8_t", "concept", "requires", "co_await", "co_return", "co_yield",
+                  "consteval", "constinit", "static_assert", "thread_local"]
+    future = filter(n -> CC.isFutureCompatKeyword(get(it, n)), candidates)
+    @test !isempty(future)
+
+    ii = get(it, first(future))
+    k = CC.getFutureCompatDiagKind(it, ii, opts)
+    # a real diagnostic id: non-zero, and one the engine maps to a level inside its own enum
+    # rather than the garbage an out-of-range id decodes to
+    @test k > 0
+    lvl = CC.getDiagnosticLevel(diags, k, CC.SourceLocation())
+    @test lvl in instances(CC.CXDiagnosticsEngine_Level)
+    # isIgnored is the Ignored level by another name, so the two must agree -- a cross-check of
+    # two independent shims against the same id
+    @test CC.isIgnored(diags, k, CC.SourceLocation()) ==
+          (lvl == CC.CXDiagnosticsEngine_Ignored)
+    # every future-compat keyword in this table maps to the same warning family, and a
+    # plain identifier is rejected by the gate rather than answered
+    @test all(n -> CC.getFutureCompatDiagKind(it, get(it, n), opts) == k, future)
+    @test !CC.isFutureCompatKeyword(get(it, "ident_probe_not_a_keyword"))
+    @test_throws AssertionError CC.getFutureCompatDiagKind(it, get(it, "ident_probe_not_a_keyword"), opts)
+
+    dispose(I)
+end

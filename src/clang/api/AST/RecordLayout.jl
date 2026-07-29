@@ -102,3 +102,27 @@ function hasVBPtr(x::AbstractASTRecordLayout)
     @check_ptrs x
     return clang_ASTRecordLayout_hasVBPtr(x)
 end
+
+"""
+    getPrimaryBase(x::AbstractASTRecordLayout) -> CXXRecordDecl
+Return the primary base class — the one whose vtable this class shares — or a carrier holding
+`NULL` when there is none.
+
+The layout must have been obtained for a `CXXRecordDecl`; clang asserts that internally and the
+layout handle exposes no proxy for it, so it is stated here rather than checked, exactly as for
+[`getNonVirtualSize`](@ref) and [`hasOwnVFPtr`](@ref).
+"""
+function getPrimaryBase(x::AbstractASTRecordLayout)
+    @check_ptrs x
+    return CXXRecordDecl(clang_ASTRecordLayout_getPrimaryBase(x))
+end
+
+"""
+    isPrimaryBaseVirtual(x::AbstractASTRecordLayout) -> Bool
+Return whether the primary base is virtually inherited. Same documented C++-layout precondition
+as [`getPrimaryBase`](@ref).
+"""
+function isPrimaryBaseVirtual(x::AbstractASTRecordLayout)
+    @check_ptrs x
+    return clang_ASTRecordLayout_isPrimaryBaseVirtual(x)
+end

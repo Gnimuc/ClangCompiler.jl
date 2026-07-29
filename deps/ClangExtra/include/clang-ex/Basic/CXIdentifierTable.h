@@ -87,6 +87,15 @@ bool clang_IdentifierTable_contains(CXIdentifierTable IT, const char *Name);
 
 void clang_IdentifierTable_AddKeywords(CXIdentifierTable IT, CXLangOptions LO);
 
+// The diagnostic id warning that II will become a keyword in a future standard. Returns a
+// plain diag id, the same currency clang_DiagnosticsEngine_isIgnored and _getDiagnosticLevel
+// take. PRECONDITION: II is a future-compatible keyword -- clang's own comment says the
+// identifier must already have been determined to be one; gate with
+// clang_IdentifierInfo_isFutureCompatKeyword.
+unsigned clang_IdentifierTable_getFutureCompatDiagKind(CXIdentifierTable IT,
+                                                       CXIdentifierInfo II,
+                                                       CXLangOptions LangOpts);
+
 const char *clang_IdentifierInfo_getName(CXIdentifierInfo II);
 
 bool clang_IdentifierInfo_isStr(CXIdentifierInfo II, const char *Str);

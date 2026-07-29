@@ -276,3 +276,7 @@ void clang_Scope_PushUsingDirective(CXScope S, CXUsingDirectiveDecl UDir) {
 void clang_Scope_Init(CXScope S, CXScope Parent, unsigned ScopeFlags) {
   static_cast<clang::Scope *>(S)->Init(static_cast<clang::Scope *>(Parent), ScopeFlags);
 }
+
+void clang_Scope_AddFlags(CXScope S, unsigned Flags) {
+  static_cast<clang::Scope *>(S)->AddFlags(Flags);
+}

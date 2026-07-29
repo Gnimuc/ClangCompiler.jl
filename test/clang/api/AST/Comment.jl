@@ -47,11 +47,11 @@ using Test
         @test n >= 0
         names = String[]
         params = String[]
-        for i in 0:(n - 1)
+        for i = 0:(n - 1)
             c = CC.getChild(fc, i)
             @test c isa CC.Comment
             @test !isempty(CC.getCommentKindName(c))
-            for j in 0:(CC.child_count(c) - 1)
+            for j = 0:(CC.child_count(c) - 1)
                 gc = CC.getChild(c, j)
                 tc = CC.TextComment(gc)
                 tc.ptr != C_NULL && @test CC.getText(tc) isa String  # shape-only
@@ -99,11 +99,11 @@ end
         @test !CC.is_null_handle(CC.getEndLoc(fc))
         @test !CC.is_null_handle(CC.getLocation(fc))
 
-        for i in 0:(CC.child_count(fc) - 1)
+        for i = 0:(CC.child_count(fc) - 1)
             c = CC.getChild(fc, i)
             @test !CC.is_null_handle(CC.getBeginLoc(c))
 
-            for j in 0:(CC.child_count(c) - 1)
+            for j = 0:(CC.child_count(c) - 1)
                 gc = CC.getChild(c, j)
                 tc = CC.TextComment(gc)
                 if tc.ptr != C_NULL
@@ -121,7 +121,7 @@ end
                 @test CC.hasNonWhitespaceParagraph(bcc)
                 n = CC.getNumArgs(bcc)
                 @test n isa Integer
-                for k in 0:(n - 1)
+                for k = 0:(n - 1)
                     @test !isempty(CC.getArgText(bcc, k))
                     @test CC.getArgRange(bcc, k) isa CC.SourceRange  # shape-only
                 end
@@ -176,11 +176,11 @@ end
         @test owner.ptr != C_NULL
 
         nodes = CC.Comment[]
-        queue = CC.Comment[CC.getChild(fc, i) for i in 0:(CC.child_count(fc) - 1)]
+        queue = CC.Comment[CC.getChild(fc, i) for i = 0:(CC.child_count(fc) - 1)]
         while !isempty(queue)
             c = popfirst!(queue)
             push!(nodes, c)
-            for i in 0:(CC.child_count(c) - 1)
+            for i = 0:(CC.child_count(c) - 1)
                 push!(queue, CC.getChild(c, i))
             end
         end
@@ -200,7 +200,7 @@ end
                 push!(inline_names, CC.getCommandName(icc, ctx))
                 na = CC.getNumArgs(icc)
                 @test na isa Integer
-                for k in 0:(na - 1)
+                for k = 0:(na - 1)
                     @test !isempty(CC.getArgText(icc, k))
                     @test CC.getArgRange(icc, k) isa CC.SourceRange  # shape-only
                 end
@@ -214,7 +214,7 @@ end
                 push!(tag_names, CC.getTagName(hst))
                 nattr = CC.getNumAttrs(hst)
                 @test nattr isa Integer
-                for k in 0:(nattr - 1)
+                for k = 0:(nattr - 1)
                     push!(attr_names, CC.getAttrName(hst, k))
                     @test !isempty(CC.getAttrValue(hst, k))
                 end
@@ -242,7 +242,7 @@ end
                 @test dep isa Integer
                 @test dep > 0
                 @test dep == 1
-                for k in 0:(dep - 1)
+                for k = 0:(dep - 1)
                     @test CC.getIndex(tpc, k) isa Integer  # shape-only: the target chooses this value
                 end
                 @test CC.getIndex(tpc, 0) == 0
@@ -294,11 +294,11 @@ end
 
     function collect_nodes(root)
         nodes = CC.Comment[]
-        queue = CC.Comment[CC.getChild(root, i) for i in 0:(CC.child_count(root) - 1)]
+        queue = CC.Comment[CC.getChild(root, i) for i = 0:(CC.child_count(root) - 1)]
         while !isempty(queue)
             c = popfirst!(queue)
             push!(nodes, c)
-            for i in 0:(CC.child_count(c) - 1)
+            for i = 0:(CC.child_count(c) - 1)
                 push!(queue, CC.getChild(c, i))
             end
         end
@@ -317,7 +317,7 @@ end
         nb = CC.getNumBlocks(fc)
         @test nb isa Integer
         @test nb == CC.child_count(fc)
-        for i in 0:(nb - 1)
+        for i = 0:(nb - 1)
             b = CC.getBlock(fc, i)
             @test b isa CC.Comment
             @test b.ptr == CC.getChild(fc, i).ptr
@@ -344,7 +344,7 @@ end
                 push!(close_names, CC.getCloseName(vbc))
                 nl = CC.getNumLines(vbc)
                 @test nl isa Integer
-                for k in 0:(nl - 1)
+                for k = 0:(nl - 1)
                     push!(block_lines, CC.getText(vbc, k))
                 end
             end
@@ -388,7 +388,7 @@ end
         for c in collect_nodes(tfc)
             hst = CC.HTMLStartTagComment(c)
             if hst.ptr != C_NULL
-                for k in 0:(CC.getNumAttrs(hst) - 1)
+                for k = 0:(CC.getNumAttrs(hst) - 1)
                     n_attrs += 1
                     @test CC.getAttrNameRange(hst, k) isa CC.SourceRange  # shape-only
                     @test !CC.is_null_handle(CC.getAttrNameLocEnd(hst, k))
@@ -429,11 +429,11 @@ end
     # childless node turns `0:(n - 1)` into a 2^32-long loop.
     nchild(c) = Int(CC.child_count(c))
     nodes = CC.Comment[]
-    queue = CC.Comment[CC.getChild(fc, i) for i in 0:(nchild(fc) - 1)]
+    queue = CC.Comment[CC.getChild(fc, i) for i = 0:(nchild(fc) - 1)]
     while !isempty(queue)
         c = popfirst!(queue)
         push!(nodes, c)
-        append!(queue, CC.Comment[CC.getChild(c, i) for i in 0:(nchild(c) - 1)])
+        append!(queue, CC.Comment[CC.getChild(c, i) for i = 0:(nchild(c) - 1)])
     end
     @test !isempty(nodes)
 
@@ -578,7 +578,7 @@ end
         @test CC.is_null_handle(CC.getReturnValue(cbs))
         n = Int(CC.getNumParamMoves(cbs))
         @test n >= 0
-        for i in 0:(n - 1)
+        for i = 0:(n - 1)
             @test CC.getParamMove(cbs, i) isa CC.AbstractStmt
         end
 
@@ -605,4 +605,40 @@ end
         @test CC.getCond(frs).ptr == cond.ptr
     end
     dispose(J)
+end
+
+@testset "RawComment | formatted text and almost-trailing comments" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             /// a documented function
+             /// spanning two lines
+             int rc_documented(int a);
+             int rc_plain(int b); // not a trailing doc comment
+             """)
+    ci = CC.get_instance(I)
+    ctx = CC.get_ast_context(I)
+    sm = CC.getSourceManager(ci)
+    diags = CC.getDiagnostics(ci)
+
+    f = DeclFinder(I)
+    @test f(I, "rc_documented")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    rc = CC.getRawCommentForDeclNoCache(ctx, fd)
+    @test !CC.is_null_handle(rc)
+
+    raw = CC.getRawText(rc, sm)
+    fmt = CC.getFormattedText(rc, sm, diags)
+    # the decoration is present in the raw bytes and gone from the formatted text, while the
+    # words survive both
+    @test occursin("///", raw)
+    @test !occursin("///", fmt)
+    @test occursin("a documented function", fmt)
+    @test occursin("spanning two lines", fmt)
+    @test fmt != raw
+
+    # a `///` comment above a declaration is a real doc comment, not an almost-trailing one
+    @test !CC.isAlmostTrailingComment(rc)
+
+    dispose(f)
+    dispose(I)
 end

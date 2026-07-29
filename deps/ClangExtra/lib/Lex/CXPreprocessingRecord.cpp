@@ -107,3 +107,7 @@ CXSourceRange_ clang_PreprocessingRecord_getSkippedRange(CXPreprocessingRecord P
   auto rng = static_cast<clang::PreprocessingRecord *>(PR)->getSkippedRanges()[Index];
   return CXSourceRange_{rng.getBegin().getPtrEncoding(), rng.getEnd().getPtrEncoding()};
 }
+
+size_t clang_PreprocessingRecord_getTotalMemory(CXPreprocessingRecord PR) {
+  return static_cast<clang::PreprocessingRecord *>(PR)->getTotalMemory();
+}

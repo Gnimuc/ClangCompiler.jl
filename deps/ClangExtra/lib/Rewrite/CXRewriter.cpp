@@ -116,3 +116,7 @@ bool clang_Rewriter_overwriteChangedFiles(CXRewriter R) {
 // getRewriteBufferFor
 // buffer_begin
 // buffer_end
+
+CXLangOptions clang_Rewriter_getLangOpts(CXRewriter R) {
+  return const_cast<clang::LangOptions *>(&static_cast<clang::Rewriter *>(R)->getLangOpts());
+}

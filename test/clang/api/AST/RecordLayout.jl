@@ -1,6 +1,6 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_tag
+using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_tag
 using Test
 
 @testset "ASTRecordLayout" begin
@@ -86,6 +86,45 @@ end
     @test !(CC.hasVBPtr(virt))
     @test CC.getVBPtrOffset(virt) isa Integer  # shape-only: the target chooses this value
     @test CC.getNonVirtualSize(virt) <= CC.getSize(virt)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ASTRecordLayout | primary base selection" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             struct PBNone { int a; };
+             struct PBPoly { virtual ~PBPoly(); int b; };
+             struct PBDerived : PBPoly { int c; };
+             struct PBVirt : virtual PBPoly { int d; };
+             """)
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+
+    layout(name) = (@test f(I, name); CC.getASTRecordLayout(ctx, CC.CXXRecordDecl(get_decl(f).ptr)))
+
+    # a non-polymorphic class shares no vtable, so it has no primary base
+    l_none = layout("PBNone")
+    @test CC.is_null_handle(CC.getPrimaryBase(l_none))
+    @test !CC.isPrimaryBaseVirtual(l_none)
+
+    # a polymorphic class with no bases introduces its own vtable, so still none
+    @test CC.is_null_handle(CC.getPrimaryBase(layout("PBPoly")))
+
+    # deriving non-virtually from a polymorphic base shares that base's vtable
+    @test f(I, "PBPoly")
+    poly = CC.CXXRecordDecl(get_decl(f).ptr)
+    l_der = layout("PBDerived")
+    pb = CC.getPrimaryBase(l_der)
+    @test !CC.is_null_handle(pb)
+    @test CC.getName(CC.NamedDecl(pb.ptr)) == "PBPoly"
+    @test !CC.isPrimaryBaseVirtual(l_der)
+
+    # a virtual base that becomes primary is reported as virtual
+    l_virt = layout("PBVirt")
+    pbv = CC.getPrimaryBase(l_virt)
+    @test CC.is_null_handle(pbv) || CC.isPrimaryBaseVirtual(l_virt)
 
     dispose(f)
     dispose(I)

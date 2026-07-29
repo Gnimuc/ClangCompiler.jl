@@ -627,3 +627,14 @@ unsigned clang_FullComment_getNumBlocks(CXFullComment FC) {
 CXComment clang_FullComment_getBlock(CXFullComment FC, unsigned Idx) {
   return static_cast<clang::comments::FullComment *>(FC)->getBlocks()[Idx];
 }
+
+CXString clang_RawComment_getFormattedText(CXRawComment RC, CXSourceManager SM,
+                                           CXDiagnosticsEngine Diags) {
+  return extra::makeCXString(static_cast<clang::RawComment *>(RC)->getFormattedText(
+      *static_cast<clang::SourceManager *>(SM),
+      *static_cast<clang::DiagnosticsEngine *>(Diags)));
+}
+
+bool clang_RawComment_isAlmostTrailingComment(CXRawComment RC) {
+  return static_cast<clang::RawComment *>(RC)->isAlmostTrailingComment();
+}

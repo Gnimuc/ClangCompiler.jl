@@ -387,3 +387,11 @@ CXString clang_SelectorTable_getPropertyNameFromSetterSelector(CXSelector Sel) {
   return extra::makeCXString(
       clang::SelectorTable::getPropertyNameFromSetterSelector(toSelector(Sel)));
 }
+
+unsigned clang_IdentifierTable_getFutureCompatDiagKind(CXIdentifierTable IT,
+                                                       CXIdentifierInfo II,
+                                                       CXLangOptions LangOpts) {
+  return static_cast<clang::IdentifierTable *>(IT)->getFutureCompatDiagKind(
+      *static_cast<clang::IdentifierInfo *>(II),
+      *static_cast<clang::LangOptions *>(LangOpts));
+}

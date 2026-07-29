@@ -194,6 +194,22 @@ CXRoundingMode clang_FPOptions_getRoundingMode(unsigned FPO);
 
 CXFPExceptionModeKind clang_FPOptions_getExceptionMode(unsigned FPO);
 
+// Whether contraction of a*b+c is allowed within a single statement, and whether it is
+// allowed across statements. The two are mutually exclusive: FPM_On answers true/false,
+// FPM_Fast false/true, FPM_Off false/false. Both are pure bitfield reads of the FPContractMode
+// field, so every 32-bit word decodes (MARSHALLING.md §7).
+bool clang_FPOptions_allowFPContractWithinStatement(unsigned FPO);
+bool clang_FPOptions_allowFPContractAcrossStatement(unsigned FPO);
+
+// Whether the word describes constrained floating point -- non-default rounding, non-ignored
+// exceptions, or FEnv access. A pure read of three fields the package already decodes
+// piecemeal through getRoundingMode/getExceptionMode.
+bool clang_FPOptions_isFPConstrained(unsigned FPO);
+
+// The FPOptionsOverride describing how FPO differs from Base, as the uint64 opaque encoding
+// that is already this package's currency for stored FP features.
+uint64_t clang_FPOptions_getChangesFrom(unsigned FPO, unsigned Base);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

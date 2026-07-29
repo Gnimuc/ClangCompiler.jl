@@ -295,3 +295,38 @@ function getModules(x::AbstractLangOptions)
     @check_ptrs x
     return clang_LangOptions_getModules(x)
 end
+
+"""
+    allowFPContractWithinStatement(fp_options::Integer) -> Bool
+Return whether `a * b + c` may be contracted into a fused operation *within* one statement.
+
+This and [`allowFPContractAcrossStatement`](@ref) are mutually exclusive and together name the
+contraction mode: `on` answers `true, false`, `fast` answers `false, true`, and `off` answers
+`false, false`.
+"""
+allowFPContractWithinStatement(fp_options::Integer) = clang_FPOptions_allowFPContractWithinStatement(fp_options)
+
+"""
+    allowFPContractAcrossStatement(fp_options::Integer) -> Bool
+Return whether contraction may cross statement boundaries — the `fast` mode. See
+[`allowFPContractWithinStatement`](@ref) for how the pair encodes the three modes.
+"""
+allowFPContractAcrossStatement(fp_options::Integer) = clang_FPOptions_allowFPContractAcrossStatement(fp_options)
+
+"""
+    isFPConstrained(fp_options::Integer) -> Bool
+Return whether the word describes constrained floating point: a non-default rounding mode,
+non-ignored exceptions, or FEnv access. It is the single summary of state
+[`getRoundingMode`](@ref) and [`getExceptionMode`](@ref) read piecemeal.
+"""
+isFPConstrained(fp_options::Integer) = clang_FPOptions_isFPConstrained(fp_options)
+
+"""
+    getChangesFrom(fp_options::Integer, base::Integer) -> UInt64
+Return the `FPOptionsOverride` describing how `fp_options` differs from `base`, as the opaque
+encoding this package already uses for stored FP features.
+
+`getChangesFrom(w, w)` is `0` — no difference — which is what an expression with no FP pragma
+in effect stores.
+"""
+getChangesFrom(fp_options::Integer, base::Integer) = clang_FPOptions_getChangesFrom(fp_options, base)

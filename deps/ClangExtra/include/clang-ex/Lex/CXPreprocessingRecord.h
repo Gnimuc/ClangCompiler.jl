@@ -100,6 +100,10 @@ clang_PreprocessingRecord_findMacroDefinition(CXPreprocessingRecord PR, CXMacroI
 // source's skipped ranges to be loaded first.
 unsigned clang_PreprocessingRecord_getNumSkippedRanges(CXPreprocessingRecord PR);
 
+// The bytes the record's own allocations occupy. A monotone measure of how much preprocessing
+// history has accumulated, not a value to pin.
+size_t clang_PreprocessingRecord_getTotalMemory(CXPreprocessingRecord PR);
+
 // helper: `Index` < clang_PreprocessingRecord_getNumSkippedRanges — unchecked.
 CXSourceRange_ clang_PreprocessingRecord_getSkippedRange(CXPreprocessingRecord PR,
                                                          unsigned Index);

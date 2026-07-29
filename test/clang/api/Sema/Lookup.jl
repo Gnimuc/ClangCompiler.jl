@@ -607,3 +607,32 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Scope | AddFlags preserves what setFlags overwrites" begin
+    diag = CC.DiagnosticsEngine()
+    s = CC.Scope(nothing, UInt32(CC.CXScopeFlags_ContinueScope), diag)
+
+    # the scope starts as a continue scope and nothing else: it is its own continue parent and
+    # has no break parent
+    @test UInt32(CC.getFlags(s)) == UInt32(CC.CXScopeFlags_ContinueScope)
+    @test CC.getContinueParent(s).ptr == s.ptr
+    @test CC.is_null_handle(CC.getBreakParent(s))
+
+    # AddFlags ORs, so the pre-existing continue flag survives and the parent links update
+    CC.AddFlags(s, UInt32(CC.CXScopeFlags_BreakScope))
+    @test UInt32(CC.getFlags(s)) ==
+          (UInt32(CC.CXScopeFlags_ContinueScope) | UInt32(CC.CXScopeFlags_BreakScope))
+    @test CC.getBreakParent(s).ptr == s.ptr
+    @test CC.getContinueParent(s).ptr == s.ptr
+
+    # the gates: only break/continue may be added, and never one already set
+    @test_throws AssertionError CC.AddFlags(s, UInt32(CC.CXScopeFlags_BreakScope))
+    @test_throws AssertionError CC.AddFlags(s, UInt32(CC.CXScopeFlags_FnScope))
+
+    # setFlags is the destructive counterpart -- it overwrites rather than ORs
+    CC.setFlags(s, UInt32(CC.CXScopeFlags_FnScope))
+    @test UInt32(CC.getFlags(s)) == UInt32(CC.CXScopeFlags_FnScope)
+
+    CC.dispose(s)
+    CC.dispose(diag)
+end

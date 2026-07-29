@@ -41,3 +41,15 @@ using Test
     dispose(rw)
     dispose(I)
 end
+
+@testset "Rewriter | language options accessor" begin
+    I = CC.create_interpreter(String[])
+    ci = CC.get_instance(I)
+    sm = CC.getSourceManager(ci)
+    lo = CC.getLangOpts(ci)
+    rw = CC.Rewriter(sm, lo)
+    # the rewriter hands back the very options it was created with, not a copy
+    @test CC.getLangOpts(rw).ptr == lo.ptr
+    CC.dispose(rw)
+    CC.dispose(I)
+end

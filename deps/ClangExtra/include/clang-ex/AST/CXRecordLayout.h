@@ -56,6 +56,15 @@ bool clang_ASTRecordLayout_hasOwnVBPtr(CXASTRecordLayout RL);
 
 bool clang_ASTRecordLayout_hasVBPtr(CXASTRecordLayout RL);
 
+// The primary base class -- the one whose vtable this class shares -- or NULL when there is
+// none. PRECONDITION: the layout was obtained for a CXXRecordDecl; clang asserts CXXInfo.
+// Not observable from the layout handle, so it is documented rather than asserted, matching
+// the existing getNonVirtualSize / hasOwnVFPtr tail.
+CXCXXRecordDecl clang_ASTRecordLayout_getPrimaryBase(CXASTRecordLayout RL);
+
+// Whether the primary base is virtually inherited. Same documented CXXInfo precondition.
+bool clang_ASTRecordLayout_isPrimaryBaseVirtual(CXASTRecordLayout RL);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

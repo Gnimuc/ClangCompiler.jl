@@ -195,3 +195,13 @@ function overwriteChangedFiles(x::AbstractRewriter)
     @check_ptrs x
     return clang_Rewriter_overwriteChangedFiles(x)
 end
+
+"""
+    getLangOpts(x::AbstractRewriter) -> LangOptions
+Return the language options `x` was created with, borrowed — never `dispose` it through this
+carrier.
+"""
+function getLangOpts(x::AbstractRewriter)
+    @check_ptrs x
+    return LangOptions(clang_Rewriter_getLangOpts(x))
+end

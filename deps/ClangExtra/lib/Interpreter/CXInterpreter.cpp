@@ -183,3 +183,7 @@ CXCodeGenerator clang_Interpreter_getCodeGen(CXInterpreter Interp) {
 CXParser clang_Interpreter_getParser(CXInterpreter Interp) {
   return static_cast<clang::Interpreter *>(Interp)->IncrParser->P.get();
 }
+
+CXASTContext clang_Interpreter_getASTContext(CXInterpreter Interp) {
+  return &static_cast<clang::Interpreter *>(Interp)->getASTContext();
+}

@@ -13,7 +13,6 @@ function getName(x::IdentifierInfo)
     return unsafe_string(clang_IdentifierInfo_getName(x))
 end
 
-
 """
     IdentifierTable(langopts::AbstractLangOptions) -> IdentifierTable
 Create an identifier table populated with info about the language keywords for `langopts`.
@@ -163,7 +162,6 @@ function isPlaceholder(x::AbstractIdentifierInfo)
     return clang_IdentifierInfo_isPlaceholder(x)
 end
 
-
 """
     getNameStart(x::AbstractIdentifierInfo) -> String
 Return the identifier's name read straight from its interned, NUL-terminated storage.
@@ -172,7 +170,6 @@ function getNameStart(x::AbstractIdentifierInfo)
     @check_ptrs x
     return unsafe_string(clang_IdentifierInfo_getNameStart(x))
 end
-
 
 """
     setHasMacroDefinition(x::AbstractIdentifierInfo, val::Bool)
@@ -184,7 +181,6 @@ function setHasMacroDefinition(x::AbstractIdentifierInfo, val::Bool)
     @check_ptrs x
     return clang_IdentifierInfo_setHasMacroDefinition(x, val)
 end
-
 
 function setIsDeprecatedMacro(x::AbstractIdentifierInfo, val::Bool)
     @check_ptrs x
@@ -201,18 +197,15 @@ function setIsRestrictExpansion(x::AbstractIdentifierInfo, val::Bool)
     return clang_IdentifierInfo_setIsRestrictExpansion(x, val)
 end
 
-
 function setIsFinal(x::AbstractIdentifierInfo, val::Bool)
     @check_ptrs x
     return clang_IdentifierInfo_setIsFinal(x, val)
 end
 
-
 function hasRevertedTokenIDToIdentifier(x::AbstractIdentifierInfo)
     @check_ptrs x
     return clang_IdentifierInfo_hasRevertedTokenIDToIdentifier(x)
 end
-
 
 """
     getObjCKeywordID(x::AbstractIdentifierInfo) -> Int
@@ -223,7 +216,6 @@ function getObjCKeywordID(x::AbstractIdentifierInfo)
     @check_ptrs x
     return Int(clang_IdentifierInfo_getObjCKeywordID(x))
 end
-
 
 """
     getInterestingIdentifierID(x::AbstractIdentifierInfo) -> Int
@@ -245,24 +237,20 @@ function getObjCOrBuiltinID(x::AbstractIdentifierInfo)
     return Int(clang_IdentifierInfo_getObjCOrBuiltinID(x))
 end
 
-
 function setIsExtensionToken(x::AbstractIdentifierInfo, val::Bool)
     @check_ptrs x
     return clang_IdentifierInfo_setIsExtensionToken(x, val)
 end
-
 
 function setIsFutureCompatKeyword(x::AbstractIdentifierInfo, val::Bool)
     @check_ptrs x
     return clang_IdentifierInfo_setIsFutureCompatKeyword(x, val)
 end
 
-
 function setIsCPlusPlusOperatorKeyword(x::AbstractIdentifierInfo, val::Bool=true)
     @check_ptrs x
     return clang_IdentifierInfo_setIsCPlusPlusOperatorKeyword(x, val)
 end
-
 
 """
     isHandleIdentifierCase(x::AbstractIdentifierInfo) -> Bool
@@ -304,7 +292,6 @@ function setModulesImport(x::AbstractIdentifierInfo, i::Bool)
     @check_ptrs x
     return clang_IdentifierInfo_setModulesImport(x, i)
 end
-
 
 """
     revertTokenIDToIdentifier(x::AbstractIdentifierInfo)
@@ -471,7 +458,6 @@ function getOwn(x::AbstractIdentifierTable, name::AbstractString)
     @check_ptrs x
     return IdentifierInfo(clang_IdentifierTable_getOwn(x, name))
 end
-
 
 # Selector
 """
@@ -654,4 +640,20 @@ function getPropertyNameFromSetterSelector(x::AbstractSelector)
     name = getNameForSlot(x, 0)
     @assert startswith(name, "set") && length(name) > 3 "not a setter selector"
     return get_string(clang_SelectorTable_getPropertyNameFromSetterSelector(x))
+end
+
+"""
+    getFutureCompatDiagKind(x::AbstractIdentifierTable, ii::AbstractIdentifierInfo,
+                            opts::AbstractLangOptions) -> Cuint
+Return the diagnostic id warning that `ii` will become a keyword in a future standard.
+
+`ii` must already be a future-compatible keyword — clang's own comment says the caller must
+have determined that — so the gate is [`isFutureCompatKeyword`](@ref). The result is a plain
+diagnostic id, the currency [`isIgnored`](@ref) and [`getDiagnosticLevel`](@ref) take.
+"""
+function getFutureCompatDiagKind(x::AbstractIdentifierTable, ii::AbstractIdentifierInfo,
+                                 opts::AbstractLangOptions)
+    @check_ptrs x ii opts
+    @assert isFutureCompatKeyword(ii) "identifier must be a future-compatible keyword"
+    return clang_IdentifierTable_getFutureCompatDiagKind(x, ii, opts)
 end

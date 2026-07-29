@@ -214,3 +214,21 @@ void clang_LangOptions_PrintStats(CXLangOptions LO) {
 bool clang_LangOptions_getModules(CXLangOptions LO) {
   return static_cast<clang::LangOptions *>(LO)->Modules;
 }
+
+bool clang_FPOptions_allowFPContractWithinStatement(unsigned FPO) {
+  return clang::FPOptions::getFromOpaqueInt(FPO).allowFPContractWithinStatement();
+}
+
+bool clang_FPOptions_allowFPContractAcrossStatement(unsigned FPO) {
+  return clang::FPOptions::getFromOpaqueInt(FPO).allowFPContractAcrossStatement();
+}
+
+bool clang_FPOptions_isFPConstrained(unsigned FPO) {
+  return clang::FPOptions::getFromOpaqueInt(FPO).isFPConstrained();
+}
+
+uint64_t clang_FPOptions_getChangesFrom(unsigned FPO, unsigned Base) {
+  return clang::FPOptions::getFromOpaqueInt(FPO)
+      .getChangesFrom(clang::FPOptions::getFromOpaqueInt(Base))
+      .getAsOpaqueInt();
+}

@@ -106,3 +106,65 @@ function getOptionalDirectoryRef(filemgr::FileManager, dirname::AbstractString;
 end
 
 dispose(x::DirectoryEntryRef) = clang_DirectoryEntryRef_dispose(x)
+
+"""
+    getName(x::AbstractFileEntryRef) -> String
+Return the name the reference was looked up under, following redirects to the base entry.
+
+The bytes are borrowed from the file manager's string map — individually allocated with a
+trailing NUL and never erased for the manager's lifetime.
+"""
+function getName(x::AbstractFileEntryRef)
+    @check_ptrs x
+    return unsafe_string(clang_FileEntryRef_getName(x))
+end
+
+"""
+    getDir(x::AbstractFileEntryRef) -> DirectoryEntryRef
+Return the directory holding the referenced file.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+function getDir(x::AbstractFileEntryRef)
+    @check_ptrs x
+    return DirectoryEntryRef(clang_FileEntryRef_getDir(x))
+end
+
+"""
+    isSameRef(x::AbstractFileEntryRef, rhs::AbstractFileEntryRef) -> Bool
+Return whether the two references name the same map entry.
+
+This is *reference* identity, which is finer than file identity: two names for one file — a
+path and a symlink to it — compare unequal here while their `FileEntry`s are identical.
+"""
+function isSameRef(x::AbstractFileEntryRef, rhs::AbstractFileEntryRef)
+    @check_ptrs x rhs
+    return clang_FileEntryRef_isSameRef(x, rhs)
+end
+
+"""
+    getNumUniqueRealFiles(filemgr::FileManager) -> Csize_t
+Return the number of unique real files `filemgr` has opened. A virtual file does not count:
+its contents are never read.
+"""
+function getNumUniqueRealFiles(filemgr::FileManager)
+    @check_ptrs filemgr
+    return clang_FileManager_getNumUniqueRealFiles(filemgr)
+end
+
+"""
+    getOptionalFileRef(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
+                       cache_failure::Bool=true) -> Union{FileEntryRef,Nothing}
+Return a reference to `filename`, or `nothing` when it cannot be opened.
+
+This is the total form of [`getFileRef`](@ref) — the error is consumed rather than reported —
+and mirrors [`getOptionalDirectoryRef`](@ref). A non-`nothing` result allocates and one should
+call `dispose` to release the resources after using this object.
+"""
+function getOptionalFileRef(filemgr::FileManager, filename::AbstractString;
+                            open_file::Bool=false, cache_failure::Bool=true)
+    @check_ptrs filemgr
+    ref = clang_FileManager_getFileRef(filemgr, filename, open_file, cache_failure)
+    return ref == C_NULL ? nothing : FileEntryRef(ref)
+end

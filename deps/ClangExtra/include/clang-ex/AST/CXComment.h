@@ -87,6 +87,17 @@ CXSourceRange_ clang_RawComment_getSourceRange(CXRawComment RC);
 // Precondition: Ctx is the ASTContext that owns RC.
 const char *clang_RawComment_getBriefText(CXRawComment RC, CXASTContext Ctx);
 
+// The comment's text with the decoration removed -- leading `///`, `*` and the block
+// delimiters -- as a documentation tool would present it. Diags receives any warning raised
+// while parsing the comment.
+CXString clang_RawComment_getFormattedText(CXRawComment RC, CXSourceManager SM,
+                                           CXDiagnosticsEngine Diags);
+
+// Whether the comment is `/* */` or `//` immediately after a declaration but WITHOUT the `<`
+// that would make it a trailing documentation comment -- i.e. a comment clang suspects was
+// meant to document the preceding declaration but is not spelled so.
+bool clang_RawComment_isAlmostTrailingComment(CXRawComment RC);
+
 // hasUnsupportedSplice
 // getRawTextSlow
 

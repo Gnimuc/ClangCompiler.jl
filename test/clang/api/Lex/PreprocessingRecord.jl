@@ -114,3 +114,24 @@ using Test
     dispose(I)
     rm(hdr; force=true)
 end
+
+@testset "PreprocessingRecord | accumulated memory" begin
+    I = create_interpreter(String[])
+    pp = CC.getPreprocessor(CC.get_instance(I))
+    CC.createPreprocessingRecord(pp)
+    rec = CC.getPreprocessingRecord(pp)
+    @test !CC.is_null_handle(rec)
+
+    before = CC.getTotalMemory(rec)
+    CC.parse(I, """
+             #define PPREC_MEM_A 1
+             #define PPREC_MEM_B 2
+             #define PPREC_MEM_C 3
+             int pprec_mem_probe = PPREC_MEM_A + PPREC_MEM_B + PPREC_MEM_C;
+             """)
+    after = CC.getTotalMemory(rec)
+    # recording more preprocessing history cannot shrink the record
+    @test after >= before
+
+    dispose(I)
+end

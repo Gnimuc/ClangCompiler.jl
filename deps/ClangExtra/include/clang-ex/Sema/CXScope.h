@@ -198,6 +198,12 @@ void clang_Scope_dispose(CXScope S);
 // mangling parent.
 void clang_Scope_setFlags(CXScope S, unsigned F);
 
+// ORs Flags into the scope's flags and updates the break/continue parent links accordingly.
+// Unlike clang_Scope_setFlags, which overwrites, this preserves what is already set.
+// PRECONDITION: Flags may only be BreakScope and/or ContinueScope, and none of them may
+// already be set -- clang asserts both.
+void clang_Scope_AddFlags(CXScope S, unsigned Flags);
+
 void clang_Scope_setIsConditionVarScope(CXScope S, bool InConditionVarScope);
 
 // Returns the number of parameters declared in this prototype so far and increments it.
