@@ -218,3 +218,23 @@ function getOperator(x::AbstractDependentTemplateName)
     @assert isOverloadedOperator(x) "dependent template name must refer to an overloaded operator"
     return clang_DependentTemplateName_getOperator(x)
 end
+
+"""
+    getPackIndex(x::AbstractSubstTemplateTemplateParmStorage) -> Union{Cuint,Nothing}
+Return the pack index of the substitution when it came from a pack expansion, or `nothing`
+when it did not.
+"""
+function getPackIndex(x::AbstractSubstTemplateTemplateParmStorage)
+    @check_ptrs x
+    out = Ref{Cuint}(0)
+    return clang_SubstTemplateTemplateParmStorage_getPackIndex(x, out) ? out[] : nothing
+end
+
+"""
+    getParameter(x::AbstractSubstTemplateTemplateParmStorage) -> TemplateTemplateParmDecl
+Return the template template parameter the substitution replaced.
+"""
+function getParameter(x::AbstractSubstTemplateTemplateParmStorage)
+    @check_ptrs x
+    return TemplateTemplateParmDecl(clang_SubstTemplateTemplateParmStorage_getParameter(x))
+end

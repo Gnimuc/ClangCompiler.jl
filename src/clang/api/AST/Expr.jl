@@ -500,7 +500,6 @@ function getLocation(x::IntegerLiteral)
     return SourceLocation(clang_IntegerLiteral_getLocation(x))
 end
 
-
 # UnaryExprOrTypeTraitExpr
 function isArgumentType(x::AbstractUnaryExprOrTypeTraitExpr)
     @check_ptrs x
@@ -932,7 +931,6 @@ function getPathElement(x::AbstractCastExpr, i::Integer)
     return CXXBaseSpecifier(clang_CastExpr_getPathElement(x, i))
 end
 
-
 # CStyleCastExpr — the parenthesized cast's own paren locations and its
 # class-declared begin/end locations.
 function getLParenLoc(x::CStyleCastExpr)
@@ -986,7 +984,6 @@ function setRParenLoc(x::CStyleCastExpr, loc::SourceLocation)
     @check_ptrs x
     return clang_CStyleCastExpr_setRParenLoc(x, loc)
 end
-
 
 # Expr — the ASTContext-taking classification/evaluation tail
 function getObjectKind(x::AbstractExpr)
@@ -1615,7 +1612,6 @@ function getEndLoc(x::AbstractDesignator)
     return SourceLocation(clang_Designator_getEndLoc(x))
 end
 
-
 # AtomicExpr
 function getOp(x::AbstractAtomicExpr)
     @check_ptrs x
@@ -1727,7 +1723,6 @@ function getNumElements(x::AbstractExtVectorElementExpr)
     return clang_ExtVectorElementExpr_getNumElements(x)
 end
 
-
 # OpaqueValueExpr
 function getLocation(x::AbstractOpaqueValueExpr)
     @check_ptrs x
@@ -1816,7 +1811,6 @@ function getRParenLoc(x::AbstractVAArgExpr)
     @check_ptrs x
     return SourceLocation(clang_VAArgExpr_getRParenLoc(x))
 end
-
 
 # ImaginaryLiteral
 function getSubExpr(x::AbstractImaginaryLiteral)
@@ -1926,7 +1920,6 @@ function getBody(x::AbstractBlockExpr)
     return Stmt(clang_BlockExpr_getBody(x))
 end
 
-
 # AtomicExpr
 function getPtr(x::AbstractAtomicExpr)
     @check_ptrs x
@@ -2027,7 +2020,6 @@ function getSemanticExpr(x::AbstractPseudoObjectExpr, i::Integer)
     @assert 0 <= i < getNumSemanticExprs(x) "semantic expression index out of range"
     return Expr_(clang_PseudoObjectExpr_getSemanticExpr(x, i))
 end
-
 
 # OffsetOfNode
 function getKind(x::AbstractOffsetOfNode)
@@ -2193,7 +2185,6 @@ function IgnoreConversionOperatorSingleStep(x::AbstractExpr)
     @check_ptrs x
     return Expr_(clang_Expr_IgnoreConversionOperatorSingleStep(x))
 end
-
 
 # Expr
 """
@@ -2366,7 +2357,6 @@ function getWeak(x::AbstractAtomicExpr)
     @assert getNumSubExprs(x) > 5 "this atomic builtin has no WEAK operand slot"
     return Expr_(clang_AtomicExpr_getWeak(x))
 end
-
 
 # Expr
 """
@@ -2578,8 +2568,6 @@ function getSourceRange(x::AbstractDesignator)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
-
-
 # ParenExpr
 function setSubExpr(x::AbstractParenExpr, val::AbstractExpr)
     @check_ptrs x val
@@ -2729,7 +2717,6 @@ function getScope(x::AbstractAtomicExpr)
     @assert hasScopeModel(x) "the atomic operation carries no scope operand"
     return Expr_(clang_AtomicExpr_getScope(x))
 end
-
 
 # FullExpr
 """
@@ -2899,7 +2886,6 @@ function sawArrayRangeDesignator(x::AbstractInitListExpr, ard::Bool)
     @check_ptrs x
     return clang_InitListExpr_sawArrayRangeDesignator(x, ard)
 end
-
 
 # UnaryOperator
 """
@@ -3084,7 +3070,6 @@ function setRParenLoc(x::AbstractVAArgExpr, loc::SourceLocation)
     return clang_VAArgExpr_setRParenLoc(x, loc)
 end
 
-
 # OpaqueValueExpr
 """
     setIsUnique(x::AbstractOpaqueValueExpr, v::Bool)
@@ -3254,7 +3239,6 @@ function setAccessorLoc(x::AbstractExtVectorElementExpr, loc::SourceLocation)
     return clang_ExtVectorElementExpr_setAccessorLoc(x, loc)
 end
 
-
 # Expr
 """
     Classify(x::AbstractExpr, ctx::ASTContext) -> Classification
@@ -3268,7 +3252,7 @@ one should call `dispose` to release the resources after using this object.
 function Classify(x::AbstractExpr, ctx::ASTContext)
     @check_ptrs x ctx
     return Classification(clang_Expr_Classify(x, ctx))
- end
+end
 
 """
     ClassifyModifiable(x::AbstractExpr, ctx::ASTContext) -> (Classification, SourceLocation)
@@ -3466,7 +3450,6 @@ function getStoredFPFeatures(x::AbstractUnaryOperator)
     @assert hasStoredFPFeatures(x) "unary operator carries no stored FP features"
     return clang_UnaryOperator_getStoredFPFeatures(x)
 end
-
 
 # Expr
 """
@@ -3732,7 +3715,6 @@ function EvaluateInContext(x::AbstractSourceLocExpr, ctx::ASTContext,
     default_ptr = default === nothing ? C_NULL : default.ptr
     return APValue(clang_SourceLocExpr_EvaluateInContext(x, ctx, default_ptr))
 end
-
 
 # CallExpr — dependence maintenance and the argument-count shrink
 """
@@ -4054,7 +4036,6 @@ function getSubExpression(x::AbstractRecoveryExpr, i::Integer)
     return Expr_(clang_RecoveryExpr_getSubExpression(x, i))
 end
 
-
 # Expr
 """
     EvaluateAsFixedPoint(x::AbstractExpr, ctx::ASTContext) -> APValue
@@ -4281,7 +4262,6 @@ function setBlockDecl(x::AbstractBlockExpr, bd::AbstractBlockDecl)
     @check_ptrs x bd
     return clang_BlockExpr_setBlockDecl(x, bd)
 end
-
 
 # Expr (cont.)
 """
@@ -4548,7 +4528,6 @@ function RecoveryExpr(ctx::ASTContext, num_sub_exprs::Integer)
     return RecoveryExpr(clang_RecoveryExpr_CreateEmpty(ctx, num_sub_exprs))
 end
 
-
 # CallExpr (cont.)
 """
     CallExpr(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:AbstractExpr}, ty::QualType,
@@ -4717,7 +4696,6 @@ function ComputeName(x::AbstractSYCLUniqueStableNameExpr, ctx::ASTContext)
     @check_ptrs x ctx
     return get_string(clang_SYCLUniqueStableNameExpr_ComputeName(x, ctx))
 end
-
 
 # DeclRefExpr
 """
@@ -4933,7 +4911,6 @@ function getRParenLoc(x::AbstractAsTypeExpr)
     @check_ptrs x
     return SourceLocation(clang_AsTypeExpr_getRParenLoc(x))
 end
-
 
 # Expr::EvalStatus / Expr::EvalResult
 """
@@ -5172,4 +5149,16 @@ slot, the semantic slots and the result index are left uninitialized.
 function PseudoObjectExpr(ctx::ASTContext, num_semantic_exprs::Integer)
     @check_ptrs ctx
     return PseudoObjectExpr(clang_PseudoObjectExpr_CreateEmpty(ctx, num_semantic_exprs))
+end
+
+"""
+    setArgumentTypeInfo(x::AbstractUnaryExprOrTypeTraitExpr, tinfo::TypeSourceInfo)
+Replace the operand of `x` with the type `tinfo` denotes, making it a type operand.
+
+`tinfo` must be non-NULL: once the is-type bit is set,
+[`getArgumentType`](@ref) dereferences the stored `TypeSourceInfo` without checking.
+"""
+function setArgumentTypeInfo(x::AbstractUnaryExprOrTypeTraitExpr, tinfo::TypeSourceInfo)
+    @check_ptrs x tinfo
+    return clang_UnaryExprOrTypeTraitExpr_setArgumentTypeInfo(x, tinfo)
 end

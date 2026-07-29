@@ -222,6 +222,15 @@ CXASTTemplateArgumentListInfo
 clang_ASTTemplateArgumentListInfo_Create(CXASTContext Context,
                                          CXTemplateArgumentListInfo Info);
 
+// The qualifier written before a template-name argument, heap-boxed and OWNED. The accessor is
+// kind-gated inside clang: any other argument kind yields a default-constructed (empty) box.
+CXNestedNameSpecifierLoc clang_TemplateArgumentLoc_getTemplateQualifierLoc(
+    CXTemplateArgumentLoc TAL);
+
+// The dependence bits of the argument, as the CXTemplateArgumentDependence bitmask.
+// PRECONDITION: TA is not the null argument -- clang's `case Null` is unreachable-by-contract.
+unsigned clang_TemplateArgument_getDependence(CXTemplateArgument TA);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

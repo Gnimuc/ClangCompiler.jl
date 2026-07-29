@@ -213,6 +213,16 @@ CXString clang_Driver_getUserConfigDir(CXDriver D);
 unsigned clang_Driver_getNumPrefixDirs(CXDriver D);
 CXString clang_Driver_getPrefixDir(CXDriver D, unsigned Idx);
 
+// Creates a temporary file on disk and returns its path, registered with the compilation --
+// the pointer is BORROWED from the compilation's allocator and dies with it. NULL on failure,
+// which the driver also reports through its DiagnosticsEngine.
+const char *clang_Driver_CreateTempFile(CXDriver D, CXCompilation C, const char *Prefix,
+                                        const char *Suffix, bool MultipleArchs,
+                                        const char *BoundArch, bool NeedUniqueDirectory);
+
+// The path clang-cl would use for the precompiled header of BaseName.
+CXString clang_Driver_GetClPchPath(CXDriver D, CXCompilation C, const char *BaseName);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

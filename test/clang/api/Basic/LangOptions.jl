@@ -102,6 +102,31 @@ end
     end
     @test any(w -> CC.getChangesFrom(w, base) != 0, words)
 
+    # an override round-trips: applying the difference back to the base reproduces the word.
+    # This is exact even though getChangesFrom may leave junk in non-overridden value bits,
+    # because applyOverrides masks them off -- and it fails for a shim that ignores the base,
+    # swaps its arguments, or truncates the 64-bit word.
+    for w in words
+        @test CC.applyOverrides(CC.getChangesFrom(w, base), base) == w
+    end
+    # an empty override changes nothing and needs no trailing storage
+    @test CC.applyOverrides(0, base) == base
+    @test !CC.requiresTrailingStorage(0)
+    # a word that differs from the base does need it
+    @test all(w -> CC.requiresTrailingStorage(CC.getChangesFrom(w, base)) ==
+                   (CC.applyOverrides(CC.getChangesFrom(w, base), base) != base), words)
+
+    # the three setters name the three modes, and each is visible through the decoders once
+    # applied to the base
+    on = CC.applyOverrides(CC.setAllowFPContractWithinStatement(0), base)
+    fast = CC.applyOverrides(CC.setAllowFPContractAcrossStatement(0), base)
+    off = CC.applyOverrides(CC.setDisallowFPContract(0), base)
+    @test CC.allowFPContractWithinStatement(on) && !CC.allowFPContractAcrossStatement(on)
+    @test CC.allowFPContractAcrossStatement(fast) && !CC.allowFPContractWithinStatement(fast)
+    @test !CC.allowFPContractWithinStatement(off) && !CC.allowFPContractAcrossStatement(off)
+    # three distinct modes, so the setters are not aliases of one another
+    @test length(unique([on, fast, off])) == 3
+
     dispose(f)
     dispose(I)
 end

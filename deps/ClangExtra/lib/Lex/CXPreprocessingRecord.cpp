@@ -111,3 +111,10 @@ CXSourceRange_ clang_PreprocessingRecord_getSkippedRange(CXPreprocessingRecord P
 size_t clang_PreprocessingRecord_getTotalMemory(CXPreprocessingRecord PR) {
   return static_cast<clang::PreprocessingRecord *>(PR)->getTotalMemory();
 }
+
+CXFileEntryRef clang_InclusionDirective_getFile(CXInclusionDirective ID) {
+  auto F = static_cast<clang::InclusionDirective *>(ID)->getFile();
+  if (!F)
+    return nullptr;
+  return std::make_unique<clang::FileEntryRef>(*F).release();
+}

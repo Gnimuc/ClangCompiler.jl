@@ -2388,6 +2388,11 @@ void clang_BlockVarCopyInit_setExprAndFlag(CXBlockVarCopyInit BVCI, CXExpr CopyE
 CXPseudoObjectExpr clang_PseudoObjectExpr_CreateEmpty(CXASTContext Context,
                                                       unsigned NumSemanticExprs);
 
+// Replaces the operand with a type operand. TInfo must be non-null: once the is-type bit is
+// set, clang_UnaryExprOrTypeTraitExpr_getArgumentType dereferences it unchecked.
+void clang_UnaryExprOrTypeTraitExpr_setArgumentTypeInfo(CXUnaryExprOrTypeTraitExpr E,
+                                                        CXTypeSourceInfo TInfo);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

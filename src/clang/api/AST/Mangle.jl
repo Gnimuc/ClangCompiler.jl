@@ -69,7 +69,6 @@ function getAllManglings(x::ASTNameGenerator, d::AbstractDecl)
     return get_string(clang_ASTNameGenerator_getAllManglings(x, d))
 end
 
-
 # True only for the auxiliary-target mangler of an offloading compilation.
 function isAux(x::MangleContext)
     @check_ptrs x
@@ -110,7 +109,6 @@ function mangleCanonicalTypeName(x::MangleContext, ty::QualType, normalize_integ
     return get_string(clang_MangleContext_mangleCanonicalTypeName(x, ty, normalize_integers))
 end
 
-
 """
     createDeviceMangleContext(x::ASTContext, ti::TargetInfo) -> MangleContext
 Create the device-side name mangler used to mangle lambdas in a mixed host/device
@@ -125,7 +123,6 @@ function createDeviceMangleContext(x::ASTContext, ti::TargetInfo)
     @assert getCXXABI(ti) != CXTargetCXXABI_Microsoft "device mangling needs a non-Microsoft C++ ABI"
     return MangleContext(clang_ASTContext_createDeviceMangleContext(x, ti))
 end
-
 
 """
     isUniqueInternalLinkageDecl(x::MangleContext, d::AbstractNamedDecl) -> Bool
@@ -195,7 +192,6 @@ function mangleDynamicInitializer(x::MangleContext, d::AbstractVarDecl)
     @check_ptrs x d
     return get_string(clang_MangleContext_mangleDynamicInitializer(x, d))
 end
-
 
 # The mangler entry points that write straight into a raw_ostream. Every string below is
 # target-ABI specific, so callers must not compare one across hosts.
@@ -381,4 +377,17 @@ Return the symbol name of the module-initializer function of the named module `m
 function mangleModuleInitializer(x::AbstractItaniumMangleContext, m::AbstractModule)
     @check_ptrs x m
     return get_string(clang_ItaniumMangleContext_mangleModuleInitializer(x, m))
+end
+
+"""
+    getBlockId(x::AbstractMangleContext, bd::AbstractBlockDecl, local_id::Bool) -> Cuint
+Return the mangling id of `bd`.
+
+This *mutates* the context: the id is assigned on the first query and is stable afterwards, so
+two contexts can answer differently for the same block, and the answer depends on how many
+blocks this context has already numbered.
+"""
+function getBlockId(x::AbstractMangleContext, bd::AbstractBlockDecl, local_id::Bool)
+    @check_ptrs x bd
+    return clang_MangleContext_getBlockId(x, bd, local_id)
 end

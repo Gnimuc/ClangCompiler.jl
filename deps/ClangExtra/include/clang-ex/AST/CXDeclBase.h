@@ -630,6 +630,14 @@ bool clang_DeclContext_hasLookupTable(CXDeclContext DC);
 // (clang_DeclContext_getPrimaryContext returns DC itself); clang asserts on the rest.
 bool clang_DeclContext_buildLookup(CXDeclContext DC);
 
+// Marks D as the object of a friend declaration, moving its identifier namespace into the
+// *Friend variants. PerformFriendInjection also keeps the ordinary namespace bits, which is
+// what makes the decl findable by ordinary lookup as well.
+// PRECONDITION: D's identifier namespace must include Ordinary or Tag and nothing outside
+// {Tag, Ordinary, Type, TagFriend, OrdinaryFriend, LocalExtern, NonMemberOperator} -- clang
+// asserts both. IRREVERSIBLE: clang exposes no setIdentifierNamespace.
+void clang_Decl_setObjectOfFriendDecl(CXDecl D, bool PerformFriendInjection);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

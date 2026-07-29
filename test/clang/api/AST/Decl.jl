@@ -153,112 +153,112 @@ end
         @test CC.isModed(tnd)
 
         # EnumDecl setters
-        CC.setScoped(ed, true);
+        CC.setScoped(ed, true)
         @test CC.isScoped(ed)
-        CC.setScopedUsingClassTag(ed, true);
+        CC.setScopedUsingClassTag(ed, true)
         @test CC.isScopedUsingClassTag(ed)
-        CC.setFixed(ed, true);
+        CC.setFixed(ed, true)
         @test CC.isFixed(ed)
-        CC.setIntegerType(ed, ty2);
+        CC.setIntegerType(ed, ty2)
         @test CC.getIntegerType(ed).ptr == ty2.ptr
-        CC.setPromotionType(ed, ty);
+        CC.setPromotionType(ed, ty)
         @test CC.getPromotionType(ed).ptr == ty.ptr
-        CC.setIntegerTypeSourceInfo(ed, tsi);
+        CC.setIntegerTypeSourceInfo(ed, tsi)
         @test CC.getIntegerTypeSourceInfo(ed).ptr == tsi.ptr
 
         # TagDecl setters (on the complete SFoo record)
-        CC.setTagKind(rd, LX.CXTagTypeKind_Union);
+        CC.setTagKind(rd, LX.CXTagTypeKind_Union)
         @test CC.getTagKind(rd) == LX.CXTagTypeKind_Union
         CC.setBraceRange(rd, CC.SourceRange(loc, loc2))
         br = CC.getBraceRange(rd)
         @test br.begin_loc == loc && br.end_loc == loc2
-        CC.setCompleteDefinitionRequired(rd, true);
+        CC.setCompleteDefinitionRequired(rd, true)
         @test CC.isCompleteDefinitionRequired(rd)
-        CC.setEmbeddedInDeclarator(rd, true);
+        CC.setEmbeddedInDeclarator(rd, true)
         @test CC.isEmbeddedInDeclarator(rd)
-        CC.setFreeStanding(rd, true);
+        CC.setFreeStanding(rd, true)
         @test CC.isFreeStanding(rd)
-        CC.setTypedefNameForAnonDecl(rd, tnd);
+        CC.setTypedefNameForAnonDecl(rd, tnd)
         @test CC.getTypedefNameForAnonDecl(rd).ptr == tnd.ptr
 
         # RecordDecl flag setters (data() is valid — SFoo is complete)
-        CC.setHasFlexibleArrayMember(rd, true);
+        CC.setHasFlexibleArrayMember(rd, true)
         @test CC.hasFlexibleArrayMember(rd)
-        CC.setAnonymousStructOrUnion(rd, true);
+        CC.setAnonymousStructOrUnion(rd, true)
         @test CC.isAnonymousStructOrUnion(rd)
-        CC.setHasObjectMember(rd, true);
+        CC.setHasObjectMember(rd, true)
         @test CC.hasObjectMember(rd)
-        CC.setHasVolatileMember(rd, true);
+        CC.setHasVolatileMember(rd, true)
         @test CC.hasVolatileMember(rd)
-        CC.setHasLoadedFieldsFromExternalStorage(rd, true);
+        CC.setHasLoadedFieldsFromExternalStorage(rd, true)
         @test CC.hasLoadedFieldsFromExternalStorage(rd)
-        CC.setNonTrivialToPrimitiveDefaultInitialize(rd, true);
+        CC.setNonTrivialToPrimitiveDefaultInitialize(rd, true)
         @test CC.isNonTrivialToPrimitiveDefaultInitialize(rd)
-        CC.setNonTrivialToPrimitiveCopy(rd, true);
+        CC.setNonTrivialToPrimitiveCopy(rd, true)
         @test CC.isNonTrivialToPrimitiveCopy(rd)
-        CC.setNonTrivialToPrimitiveDestroy(rd, true);
+        CC.setNonTrivialToPrimitiveDestroy(rd, true)
         @test CC.isNonTrivialToPrimitiveDestroy(rd)
-        CC.setHasNonTrivialToPrimitiveDefaultInitializeCUnion(rd, true);
+        CC.setHasNonTrivialToPrimitiveDefaultInitializeCUnion(rd, true)
         @test CC.hasNonTrivialToPrimitiveDefaultInitializeCUnion(rd)
-        CC.setHasNonTrivialToPrimitiveDestructCUnion(rd, true);
+        CC.setHasNonTrivialToPrimitiveDestructCUnion(rd, true)
         @test CC.hasNonTrivialToPrimitiveDestructCUnion(rd)
-        CC.setHasNonTrivialToPrimitiveCopyCUnion(rd, true);
+        CC.setHasNonTrivialToPrimitiveCopyCUnion(rd, true)
         @test CC.hasNonTrivialToPrimitiveCopyCUnion(rd)
-        CC.setParamDestroyedInCallee(rd, true);
+        CC.setParamDestroyedInCallee(rd, true)
         @test CC.isParamDestroyedInCallee(rd)
         CC.setArgPassingRestrictions(rd, LX.CXRecordDecl_APK_CannotPassInRegs)
         @test CC.getArgPassingRestrictions(rd) == LX.CXRecordDecl_APK_CannotPassInRegs
-        CC.setCapturedRecord(rd);
+        CC.setCapturedRecord(rd)
         @test CC.isCapturedRecord(rd)
 
         # BlockDecl (fresh) setters
         bd = CC.BlockDecl(ctx, dc, loc)
         @test bd isa CC.BlockDecl
         @test !CC.is_null_handle(CC.BlockDecl(ctx, 1))
-        CC.setSignatureAsWritten(bd, ftsi);
+        CC.setSignatureAsWritten(bd, ftsi)
         @test CC.getSignatureAsWritten(bd).ptr == ftsi.ptr
         @test (CC.setBody(bd, cs); true)
-        CC.setCapturesCXXThis(bd, true);
+        CC.setCapturesCXXThis(bd, true)
         @test CC.capturesCXXThis(bd)
-        CC.setBlockMissingReturnType(bd, false);
+        CC.setBlockMissingReturnType(bd, false)
         @test !CC.blockMissingReturnType(bd)
-        CC.setIsConversionFromLambda(bd, true);
+        CC.setIsConversionFromLambda(bd, true)
         @test CC.isConversionFromLambda(bd)
-        CC.setDoesNotEscape(bd, true);
+        CC.setDoesNotEscape(bd, true)
         @test CC.doesNotEscape(bd)
-        CC.setCanAvoidCopyToHeap(bd, true);
+        CC.setCanAvoidCopyToHeap(bd, true)
         @test CC.canAvoidCopyToHeap(bd)
-        CC.setBlockMangling(bd, 7, tu);
+        CC.setBlockMangling(bd, 7, tu)
         @test CC.getBlockManglingNumber(bd) == 7
 
         # CapturedDecl (fresh) setters
         cd = CC.CapturedDecl(ctx, dc, 1)
         @test cd isa CC.CapturedDecl
         @test !CC.is_null_handle(CC.CapturedDecl(ctx, 1, 1))
-        CC.setNothrow(cd, true);
+        CC.setNothrow(cd, true)
         @test CC.isNothrow(cd)
-        CC.setBody(cd, body);
+        CC.setBody(cd, body)
         @test CC.getBody(cd).ptr == body.ptr
         ipd = CC.ImplicitParamDecl(ctx, dc, loc, id, ty, LX.CXImplicitParamKind_CapturedContext)
-        CC.setParam(cd, 0, ipd);
+        CC.setParam(cd, 0, ipd)
         @test CC.getParam(cd, 0).ptr == ipd.ptr
-        CC.setContextParam(cd, 0, ipd);
+        CC.setContextParam(cd, 0, ipd)
         @test CC.getContextParam(cd).ptr == ipd.ptr
 
         # ExportDecl (fresh) setter
         exd = CC.ExportDecl(ctx, dc, loc)
         @test exd isa CC.ExportDecl
         @test !CC.is_null_handle(CC.ExportDecl(ctx, 1))
-        CC.setRBraceLoc(exd, loc2);
+        CC.setRBraceLoc(exd, loc2)
         @test CC.getRBraceLoc(exd) == loc2
 
         # FileScopeAsmDecl (needs a StringLiteral)
         if sl isa CC.StringLiteral
             fsad = CC.FileScopeAsmDecl(ctx, dc, sl, loc, loc)
             @test fsad isa CC.FileScopeAsmDecl
-            CC.setRParenLoc(fsad, loc2);
+            CC.setRParenLoc(fsad, loc2)
             @test CC.getRParenLoc(fsad) == loc2
-            CC.setAsmString(fsad, sl);
+            CC.setAsmString(fsad, sl)
             @test CC.getAsmString(fsad).ptr == sl.ptr
         end
         @test !CC.is_null_handle(CC.FileScopeAsmDecl(ctx, 1))
@@ -267,20 +267,20 @@ end
         asd = CC.AccessSpecDecl(ctx, LX.CXAccessSpecifier_AS_public, dc, loc, loc)
         @test asd isa CC.AccessSpecDecl
         @test !CC.is_null_handle(CC.AccessSpecDecl(ctx, 1))
-        CC.setColonLoc(asd, loc2);
+        CC.setColonLoc(asd, loc2)
         @test CC.getColonLoc(asd) == loc2
-        CC.setAccessSpecifierLoc(asd, loc2);
+        CC.setAccessSpecifierLoc(asd, loc2)
         @test CC.getAccessSpecifierLoc(asd) == loc2
 
         # LinkageSpecDecl (fresh) setters
         lsd = CC.LinkageSpecDecl(ctx, dc, loc, loc, LX.CXLinkageSpecDecl_lang_c, true)
         @test lsd isa CC.LinkageSpecDecl
         @test !CC.is_null_handle(CC.LinkageSpecDecl(ctx, 1))
-        CC.setLanguage(lsd, LX.CXLinkageSpecDecl_lang_cxx);
+        CC.setLanguage(lsd, LX.CXLinkageSpecDecl_lang_cxx)
         @test CC.getLanguage(lsd) == LX.CXLinkageSpecDecl_lang_cxx
-        CC.setExternLoc(lsd, loc2);
+        CC.setExternLoc(lsd, loc2)
         @test CC.getExternLoc(lsd) == loc2
-        CC.setRBraceLoc(lsd, loc2);
+        CC.setRBraceLoc(lsd, loc2)
         @test CC.getRBraceLoc(lsd) == loc2
 
         # =========================================================
@@ -288,66 +288,66 @@ end
         # =========================================================
 
         # VarDecl
-        CC.setStorageClass(vd, LX.CXStorageClass_SC_Static);
+        CC.setStorageClass(vd, LX.CXStorageClass_SC_Static)
         @test CC.getStorageClass(vd) == LX.CXStorageClass_SC_Static
-        CC.setTSCSpec(vd, LX.CXThreadStorageClassSpecifier_TSCS_thread_local);
+        CC.setTSCSpec(vd, LX.CXThreadStorageClassSpecifier_TSCS_thread_local)
         @test CC.getTSCSpec(vd) == LX.CXThreadStorageClassSpecifier_TSCS_thread_local
-        CC.setConstexpr(vd, true);
+        CC.setConstexpr(vd, true)
         @test CC.isConstexpr(vd)
-        CC.setInitCapture(vd, true);
+        CC.setInitCapture(vd, true)
         @test CC.isInitCapture(vd)
-        CC.setNRVOVariable(vd, true);
+        CC.setNRVOVariable(vd, true)
         @test CC.isNRVOVariable(vd)
-        CC.setExceptionVariable(vd, true);
+        CC.setExceptionVariable(vd, true)
         @test CC.isExceptionVariable(vd)
-        CC.setCXXForRangeDecl(vd, true);
+        CC.setCXXForRangeDecl(vd, true)
         @test CC.isCXXForRangeDecl(vd)
-        CC.setObjCForDecl(vd, true);
+        CC.setObjCForDecl(vd, true)
         @test CC.isObjCForDecl(vd)
-        CC.setARCPseudoStrong(vd, true);
+        CC.setARCPseudoStrong(vd, true)
         @test CC.isARCPseudoStrong(vd)
-        CC.setPreviousDeclInSameBlockScope(vd, true);
+        CC.setPreviousDeclInSameBlockScope(vd, true)
         @test CC.isPreviousDeclInSameBlockScope(vd)
-        CC.setInlineSpecified(vd);
+        CC.setInlineSpecified(vd)
         @test CC.isInlineSpecified(vd)
         @test (CC.setImplicitlyInline(vd); true)
         @test (CC.setEscapingByref(vd); true)
 
         # FunctionDecl
-        CC.setStorageClass(fd, LX.CXStorageClass_SC_Static);
+        CC.setStorageClass(fd, LX.CXStorageClass_SC_Static)
         @test CC.getStorageClass(fd) == LX.CXStorageClass_SC_Static
-        CC.setConstexprKind(fd, LX.CXConstexprSpecKind_Constexpr);
+        CC.setConstexprKind(fd, LX.CXConstexprSpecKind_Constexpr)
         @test CC.getConstexprKind(fd) == LX.CXConstexprSpecKind_Constexpr
         # isDeletedAsWritten() == IsDeleted && !isDefaulted, so probe it before setDefaulted
-        CC.setDeletedAsWritten(fd, true);
+        CC.setDeletedAsWritten(fd, true)
         @test CC.isDeletedAsWritten(fd)
-        CC.setTrivial(fd, true);
+        CC.setTrivial(fd, true)
         @test CC.isTrivial(fd)
-        CC.setTrivialForCall(fd, true);
+        CC.setTrivialForCall(fd, true)
         @test CC.isTrivialForCall(fd)
-        CC.setDefaulted(fd, true);
+        CC.setDefaulted(fd, true)
         @test CC.isDefaulted(fd)
-        CC.setExplicitlyDefaulted(fd, true);
+        CC.setExplicitlyDefaulted(fd, true)
         @test CC.isExplicitlyDefaulted(fd)
-        CC.setHasWrittenPrototype(fd, true);
+        CC.setHasWrittenPrototype(fd, true)
         @test CC.hasWrittenPrototype(fd)
-        CC.setHasInheritedPrototype(fd, true);
+        CC.setHasInheritedPrototype(fd, true)
         @test CC.hasInheritedPrototype(fd)
-        CC.setHasImplicitReturnZero(fd, true);
+        CC.setHasImplicitReturnZero(fd, true)
         @test CC.hasImplicitReturnZero(fd)
-        CC.setLateTemplateParsed(fd, true);
+        CC.setLateTemplateParsed(fd, true)
         @test CC.isLateTemplateParsed(fd)
-        CC.setInstantiationIsPending(fd, true);
+        CC.setInstantiationIsPending(fd, true)
         @test CC.instantiationIsPending(fd)
-        CC.setUsesSEHTry(fd, true);
+        CC.setUsesSEHTry(fd, true)
         @test CC.usesSEHTry(fd)
-        CC.setHasSkippedBody(fd, true);
+        CC.setHasSkippedBody(fd, true)
         @test CC.hasSkippedBody(fd)
-        CC.setWillHaveBody(fd, true);
+        CC.setWillHaveBody(fd, true)
         @test CC.willHaveBody(fd)
-        CC.setIsMultiVersion(fd, true);
+        CC.setIsMultiVersion(fd, true)
         @test CC.isMultiVersion(fd)
-        CC.setInlineSpecified(fd, true);
+        CC.setInlineSpecified(fd, true)
         @test CC.isInlineSpecified(fd)
         @test (CC.setImplicitlyInline(fd, true); true)
         @test (CC.setRangeEnd(fd, loc); true)
@@ -362,9 +362,8 @@ end
     # Str param) to StringLiteral, so getAsmString returned garbage. A content
     # round-trip (not just isa) catches it.
     _fnd(::Type{T}, x) where {T} = x isa T ? x : (for c in CC.children(x)
-                                                      ;
-                                                      r = _fnd(T, CC.resolve(c));
-                                                      r === nothing || return r;
+                                                      r = _fnd(T, CC.resolve(c))
+                                                      r === nothing || return r
                                                   end; nothing)
     I = create_interpreter(String[])
     CC.parse(I, "const char *asmstr = \"roundtrip_asm\";")
@@ -1443,7 +1442,8 @@ end
     # Regression for three wrappers whose Julia arity/name had drifted from the
     # binding so any call errored (never covered before).
     I = create_interpreter(String[])
-    CC.parse(I, "int gvfix = 0; int plainfix(int a){ return a; } struct Afix { virtual void p() = 0; virtual void q(); };")
+    CC.parse(I,
+             "int gvfix = 0; int plainfix(int a){ return a; } struct Afix { virtual void p() = 0; virtual void q(); };")
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
 
@@ -1764,7 +1764,7 @@ end
         @test CC.getNumTemplateParameterLists(rec) == 1
         @test CC.getTemplateParameterList(rec, 0).ptr == tpl.ptr
         @test_throws AssertionError CC.setTemplateParameterListsInfo(rec, ctx,
-                                                                    CC.TemplateParameterList[])
+                                                                     CC.TemplateParameterList[])
 
         # DeclaratorDecl arm, on a freshly created (detached) variable
         vd = CC.VarDecl(ctx, dc, loc, loc, id, qt_int, tsi, LXG.CXStorageClass_SC_None)
@@ -1773,7 +1773,7 @@ end
         @test CC.getNumTemplateParameterLists(vd) == 1
         @test CC.getTemplateParameterList(vd, 0).ptr == tpl.ptr
         @test_throws AssertionError CC.setTemplateParameterListsInfo(vd, ctx,
-                                                                    CC.TemplateParameterList[])
+                                                                     CC.TemplateParameterList[])
 
         # ---------------- ParmVarDecl::setObjCDeclQualifier ----------------
         parm = CC.ParmVarDecl(ctx, dc, loc, loc, id, qt_int, tsi, LXG.CXStorageClass_SC_None)
@@ -2139,4 +2139,51 @@ end
         dispose(f)
         dispose(I)
     end
+end
+
+@testset "Decl | setObjectOfFriendDecl moves the identifier namespace" begin
+    # Built on standalone FunctionDecls that are never added to the DeclContext, because the
+    # change is irreversible -- clang exposes no setIdentifierNamespace -- and must not touch
+    # a declaration the live interpreter's lookup depends on.
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
+    CC.parse(I, "void friend_seed(int p) {}")
+    f = DeclFinder(I)
+    @test f(I, "friend_seed")
+    seed = CC.FunctionDecl(get_decl(f).ptr)
+    name = CC.getDeclName(seed)
+    fty = CC.getType(seed)
+    loc = CC.getLocation(seed)
+    tsi = CC.getTrivialTypeSourceInfo(ctx, fty, loc)
+    mk() = CC.FunctionDecl(ctx, dc, loc, loc, name, fty, tsi, LX.CXStorageClass_SC_None,
+                           false, true)
+
+    ordinary = UInt32(CC.CXDecl_IDNS_Ordinary)
+    ofriend = UInt32(CC.CXDecl_IDNS_OrdinaryFriend)
+
+    fd0 = mk()
+    @test (UInt32(CC.getIdentifierNamespace(fd0)) & ordinary) != 0
+    @test CC.getFriendObjectKind(fd0) == CC.CXDecl_FOK_None
+
+    # without injection the decl leaves the ordinary namespace for the friend one
+    fd1 = mk()
+    CC.setObjectOfFriendDecl(fd1)
+    ns1 = UInt32(CC.getIdentifierNamespace(fd1))
+    @test (ns1 & ofriend) != 0
+    @test (ns1 & ordinary) == 0
+    @test CC.getFriendObjectKind(fd1) == CC.CXDecl_FOK_Undeclared
+
+    # with injection it keeps the ordinary bits too, and clang reports it as declared --
+    # so the argument changes the observed result, not just the path taken
+    fd2 = mk()
+    CC.setObjectOfFriendDecl(fd2; perform_friend_injection=true)
+    ns2 = UInt32(CC.getIdentifierNamespace(fd2))
+    @test (ns2 & ofriend) != 0
+    @test (ns2 & ordinary) != 0
+    @test CC.getFriendObjectKind(fd2) == CC.CXDecl_FOK_Declared
+    @test ns1 != ns2
+
+    dispose(f)
+    dispose(I)
 end

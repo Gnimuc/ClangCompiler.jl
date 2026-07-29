@@ -2886,3 +2886,7 @@ void clang_ASTContext_setPrintingPolicy(CXASTContext Ctx, CXPrintingPolicy Polic
   static_cast<clang::ASTContext *>(Ctx)->setPrintingPolicy(
       *static_cast<clang::PrintingPolicy *>(Policy));
 }
+
+CXRawCommentList clang_ASTContext_getComments(CXASTContext Ctx) {
+  return &static_cast<clang::ASTContext *>(Ctx)->Comments;
+}

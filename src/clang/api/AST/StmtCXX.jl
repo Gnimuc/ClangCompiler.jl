@@ -90,8 +90,6 @@ function getRParenLoc(x::AbstractCXXForRangeStmt)
     return SourceLocation(clang_CXXForRangeStmt_getRParenLoc(x))
 end
 
-
-
 # CXXForRangeStmt
 function getInit(x::AbstractCXXForRangeStmt)
     @check_ptrs x
@@ -192,7 +190,6 @@ function isImplicit(x::AbstractCoreturnStmt)
     @check_ptrs x
     return clang_CoreturnStmt_isImplicit(x)
 end
-
 
 # CXXForRangeStmt (cont.)
 function setCond(x::AbstractCXXForRangeStmt, cond::AbstractExpr)
@@ -309,7 +306,6 @@ function setIsImplicit(x::AbstractCoreturnStmt, value::Bool=true)
     return clang_CoreturnStmt_setIsImplicit(x, value)
 end
 
-
 # CXXForRangeStmt (cont.)
 """
     setInit(x::AbstractCXXForRangeStmt, s::AbstractStmt)
@@ -378,7 +374,6 @@ function setLoopVarStmt(x::AbstractCXXForRangeStmt, s::AbstractDeclStmt)
     @check_ptrs x s
     return clang_CXXForRangeStmt_setLoopVarStmt(x, s)
 end
-
 
 """
     setRangeInit(x::AbstractCXXForRangeStmt, e::AbstractExpr)
@@ -496,4 +491,17 @@ the tested name matches the introducing keyword.
 function getSubStmt(x::AbstractMSDependentExistsStmt)
     @check_ptrs x
     return CompoundStmt(clang_MSDependentExistsStmt_getSubStmt(x))
+end
+
+"""
+    getQualifierLoc(x::AbstractMSDependentExistsStmt) -> NestedNameSpecifierLoc
+Return the nested-name-specifier written before the name, with its component locations.
+
+An unqualified name yields an *empty* specifier rather than a NULL one, so test
+[`hasQualifier`](@ref) rather than the handle. This function allocates and one should call
+`dispose` to release the resources after using this object.
+"""
+function getQualifierLoc(x::AbstractMSDependentExistsStmt)
+    @check_ptrs x
+    return NestedNameSpecifierLoc(clang_MSDependentExistsStmt_getQualifierLoc(x))
 end

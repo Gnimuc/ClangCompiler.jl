@@ -953,3 +953,7 @@ void clang_DeclContext_dumpDeclContext(CXDeclContext DC) {
 void clang_DeclContext_dumpLookups(CXDeclContext DC) {
   static_cast<clang::DeclContext *>(DC)->dumpLookups();
 }
+
+void clang_Decl_setObjectOfFriendDecl(CXDecl D, bool PerformFriendInjection) {
+  static_cast<clang::Decl *>(D)->setObjectOfFriendDecl(PerformFriendInjection);
+}

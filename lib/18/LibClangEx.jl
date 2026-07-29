@@ -56,6 +56,8 @@ const CXComment = Ptr{Cvoid}
 
 const CXRawComment = Ptr{Cvoid}
 
+const CXRawCommentList = Ptr{Cvoid}
+
 const CXASTContext = Ptr{Cvoid}
 
 const CXHLSLBufferDecl = Ptr{Cvoid}
@@ -8599,6 +8601,26 @@ function clang_FPOptions_getChangesFrom(FPO, Base)
     @ccall libclangex.clang_FPOptions_getChangesFrom(FPO::Cuint, Base::Cuint)::UInt64
 end
 
+function clang_FPOptionsOverride_applyOverrides(FPO, Base)
+    @ccall libclangex.clang_FPOptionsOverride_applyOverrides(FPO::UInt64, Base::Cuint)::Cuint
+end
+
+function clang_FPOptionsOverride_requiresTrailingStorage(FPO)
+    @ccall libclangex.clang_FPOptionsOverride_requiresTrailingStorage(FPO::UInt64)::Bool
+end
+
+function clang_FPOptionsOverride_setAllowFPContractWithinStatement(FPO)
+    @ccall libclangex.clang_FPOptionsOverride_setAllowFPContractWithinStatement(FPO::UInt64)::UInt64
+end
+
+function clang_FPOptionsOverride_setAllowFPContractAcrossStatement(FPO)
+    @ccall libclangex.clang_FPOptionsOverride_setAllowFPContractAcrossStatement(FPO::UInt64)::UInt64
+end
+
+function clang_FPOptionsOverride_setDisallowFPContract(FPO)
+    @ccall libclangex.clang_FPOptionsOverride_setDisallowFPContract(FPO::UInt64)::UInt64
+end
+
 @enum CXTargetInfo_IntType::UInt32 begin
     CXTargetInfo_NoInt = 0
     CXTargetInfo_SignedChar = 1
@@ -9870,6 +9892,10 @@ end
 
 function clang_ASTContext_getTranslationUnitKind(Ctx)
     @ccall libclangex.clang_ASTContext_getTranslationUnitKind(Ctx::CXASTContext)::CXTranslationUnitKind
+end
+
+function clang_ASTContext_getComments(Ctx)
+    @ccall libclangex.clang_ASTContext_getComments(Ctx::CXASTContext)::CXRawCommentList
 end
 
 function clang_ASTContext_addTranslationUnitDecl(Ctx)
@@ -11781,6 +11807,18 @@ end
 
 function clang_FullComment_getBlock(FC, Idx)
     @ccall libclangex.clang_FullComment_getBlock(FC::CXFullComment, Idx::Cuint)::CXComment
+end
+
+function clang_RawCommentList_empty(RCL)
+    @ccall libclangex.clang_RawCommentList_empty(RCL::CXRawCommentList)::Bool
+end
+
+function clang_RawCommentList_getNumCommentsInFile(RCL, File)
+    @ccall libclangex.clang_RawCommentList_getNumCommentsInFile(RCL::CXRawCommentList, File::CXFileID)::Cuint
+end
+
+function clang_RawCommentList_getCommentsInFile(RCL, File, Comments)
+    @ccall libclangex.clang_RawCommentList_getCommentsInFile(RCL::CXRawCommentList, File::CXFileID, Comments::Ptr{CXRawComment})::Cvoid
 end
 
 @enum CXLambdaCaptureDefault::UInt32 begin
@@ -15975,6 +16013,10 @@ end
 
 function clang_DeclContext_buildLookup(DC)
     @ccall libclangex.clang_DeclContext_buildLookup(DC::CXDeclContext)::Bool
+end
+
+function clang_Decl_setObjectOfFriendDecl(D, PerformFriendInjection)
+    @ccall libclangex.clang_Decl_setObjectOfFriendDecl(D::CXDecl, PerformFriendInjection::Bool)::Cvoid
 end
 
 function clang_TranslationUnitDecl_getASTContext(TUD)
@@ -22169,6 +22211,10 @@ function clang_ASTNameGenerator_getAllManglings(G, D)
     @ccall libclangex.clang_ASTNameGenerator_getAllManglings(G::CXASTNameGenerator, D::CXDecl)::Ptr{CXStringSet}
 end
 
+function clang_MangleContext_getBlockId(MC, BD, Local)
+    @ccall libclangex.clang_MangleContext_getBlockId(MC::CXMangleContext, BD::CXBlockDecl, Local::Bool)::Cuint
+end
+
 @enum CXNestedNameSpecifierKind::UInt32 begin
     CXNestedNameSpecifierKind_Identifier = 0
     CXNestedNameSpecifierKind_Namespace = 1
@@ -22655,6 +22701,10 @@ function clang_MSDependentExistsStmt_getSubStmt(MSS)
     @ccall libclangex.clang_MSDependentExistsStmt_getSubStmt(MSS::CXMSDependentExistsStmt)::CXCompoundStmt
 end
 
+function clang_MSDependentExistsStmt_getQualifierLoc(MSS)
+    @ccall libclangex.clang_MSDependentExistsStmt_getQualifierLoc(MSS::CXMSDependentExistsStmt)::CXNestedNameSpecifierLoc
+end
+
 function clang_OMPExecutableDirective_getNumClauses(S)
     @ccall libclangex.clang_OMPExecutableDirective_getNumClauses(S::CXStmt)::Cuint
 end
@@ -22924,6 +22974,14 @@ function clang_ASTTemplateArgumentListInfo_Create(Context, Info)
     @ccall libclangex.clang_ASTTemplateArgumentListInfo_Create(Context::CXASTContext, Info::CXTemplateArgumentListInfo)::CXASTTemplateArgumentListInfo
 end
 
+function clang_TemplateArgumentLoc_getTemplateQualifierLoc(TAL)
+    @ccall libclangex.clang_TemplateArgumentLoc_getTemplateQualifierLoc(TAL::CXTemplateArgumentLoc)::CXNestedNameSpecifierLoc
+end
+
+function clang_TemplateArgument_getDependence(TA)
+    @ccall libclangex.clang_TemplateArgument_getDependence(TA::CXTemplateArgument)::Cuint
+end
+
 @enum CXTemplateName_NameKind::UInt32 begin
     CXTemplateName_Template = 0
     CXTemplateName_OverloadedTemplate = 1
@@ -23055,6 +23113,14 @@ end
 
 function clang_DependentTemplateName_getOperator(DTN)
     @ccall libclangex.clang_DependentTemplateName_getOperator(DTN::CXDependentTemplateName)::CXOverloadedOperatorKind
+end
+
+function clang_SubstTemplateTemplateParmStorage_getPackIndex(S, Out)
+    @ccall libclangex.clang_SubstTemplateTemplateParmStorage_getPackIndex(S::CXSubstTemplateTemplateParmStorage, Out::Ptr{Cuint})::Bool
+end
+
+function clang_SubstTemplateTemplateParmStorage_getParameter(S)
+    @ccall libclangex.clang_SubstTemplateTemplateParmStorage_getParameter(S::CXSubstTemplateTemplateParmStorage)::CXTemplateTemplateParmDecl
 end
 
 function clang_TypeSourceInfo_getTypeLoc(TSI)
@@ -28966,6 +29032,14 @@ function clang_Driver_getPrefixDir(D, Idx)
     @ccall libclangex.clang_Driver_getPrefixDir(D::CXDriver, Idx::Cuint)::CXString
 end
 
+function clang_Driver_CreateTempFile(D, C, Prefix, Suffix, MultipleArchs, BoundArch, NeedUniqueDirectory)
+    @ccall libclangex.clang_Driver_CreateTempFile(D::CXDriver, C::CXCompilation, Prefix::Ptr{Cchar}, Suffix::Ptr{Cchar}, MultipleArchs::Bool, BoundArch::Ptr{Cchar}, NeedUniqueDirectory::Bool)::Ptr{Cchar}
+end
+
+function clang_Driver_GetClPchPath(D, C, BaseName)
+    @ccall libclangex.clang_Driver_GetClPchPath(D::CXDriver, C::CXCompilation, BaseName::Ptr{Cchar})::CXString
+end
+
 function clang_ToolChain_getDriver(TC)
     @ccall libclangex.clang_ToolChain_getDriver(TC::CXToolChain)::CXDriver
 end
@@ -31428,6 +31502,10 @@ end
 
 function clang_PreprocessingRecord_getSkippedRange(PR, Index)
     @ccall libclangex.clang_PreprocessingRecord_getSkippedRange(PR::CXPreprocessingRecord, Index::Cuint)::CXSourceRange_
+end
+
+function clang_InclusionDirective_getFile(ID)
+    @ccall libclangex.clang_InclusionDirective_getFile(ID::CXInclusionDirective)::CXFileEntryRef
 end
 
 function clang_Preprocessor_getHeaderSearchInfo(PP)
@@ -36493,6 +36571,10 @@ end
 
 function clang_PseudoObjectExpr_CreateEmpty(Context, NumSemanticExprs)
     @ccall libclangex.clang_PseudoObjectExpr_CreateEmpty(Context::CXASTContext, NumSemanticExprs::Cuint)::CXPseudoObjectExpr
+end
+
+function clang_UnaryExprOrTypeTraitExpr_setArgumentTypeInfo(E, TInfo)
+    @ccall libclangex.clang_UnaryExprOrTypeTraitExpr_setArgumentTypeInfo(E::CXUnaryExprOrTypeTraitExpr, TInfo::CXTypeSourceInfo)::Cvoid
 end
 
 @enum CXRedeclarationKind::UInt32 begin

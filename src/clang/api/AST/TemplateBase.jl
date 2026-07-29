@@ -100,7 +100,6 @@ function TemplateArgument(ctx::ASTContext, v::LLVM.GenericValue, ty::QualType)
     return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx, v, ty))
 end
 
-
 function containsUnexpandedParameterPack(x::TemplateArgument)
     @check_ptrs x
     return clang_TemplateArgument_containsUnexpandedParameterPack(x)
@@ -263,7 +262,6 @@ function getTemplateArg(x::ASTTemplateArgumentListInfo, i::Integer)
     return TemplateArgumentLoc(clang_ASTTemplateArgumentListInfo_getTemplateArg(x, i))
 end
 
-
 """
     getEmptyPack() -> TemplateArgument
 Return a freshly heap-boxed empty pack argument. The result is owned: release it with
@@ -369,7 +367,6 @@ function getSourceStructuralValueExpression(x::TemplateArgumentLoc)
     return Expr_(clang_TemplateArgumentLoc_getSourceStructuralValueExpression(x))
 end
 
-
 """
     getTemplateQualifier(x::TemplateArgumentLoc) -> NestedNameSpecifier
 Return the nested-name-specifier written in front of a `Template`/`TemplateExpansion`
@@ -450,4 +447,32 @@ the result, so it is never disposed.
 function ASTTemplateArgumentListInfo(ctx::ASTContext, info::TemplateArgumentListInfo)
     @check_ptrs ctx info
     return ASTTemplateArgumentListInfo(clang_ASTTemplateArgumentListInfo_Create(ctx, info))
+end
+
+"""
+    getTemplateQualifierLoc(x::TemplateArgumentLoc) -> NestedNameSpecifierLoc
+Return the qualifier written before a template-name argument, with its component locations.
+
+The accessor is kind-gated inside clang: an argument of any other kind yields an *empty*
+specifier, which answers `hasQualifier` false. This function allocates and one should call
+`dispose` to release the resources after using this object.
+"""
+function getTemplateQualifierLoc(x::TemplateArgumentLoc)
+    @check_ptrs x
+    return NestedNameSpecifierLoc(clang_TemplateArgumentLoc_getTemplateQualifierLoc(x))
+end
+
+"""
+    getDependence(x::AbstractTemplateArgument) -> Cuint
+Return the argument's dependence bits as a `CXTemplateArgumentDependence` bitmask — the
+combined form of [`isDependent`](@ref), [`isInstantiationDependent`](@ref) and
+[`containsUnexpandedParameterPack`](@ref).
+
+`x` must not be the null argument: clang's `Null` case is unreachable-by-contract rather than
+returning an empty mask.
+"""
+function getDependence(x::AbstractTemplateArgument)
+    @check_ptrs x
+    @assert !isNull(x) "a null template argument has no dependence"
+    return clang_TemplateArgument_getDependence(x)
 end

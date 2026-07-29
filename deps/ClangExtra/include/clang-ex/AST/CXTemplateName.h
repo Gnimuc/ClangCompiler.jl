@@ -117,6 +117,15 @@ bool clang_DependentTemplateName_isOverloadedOperator(CXDependentTemplateName DT
 CXOverloadedOperatorKind
 clang_DependentTemplateName_getOperator(CXDependentTemplateName DTN);
 
+// The pack index of the substitution, when it came from a pack expansion. Returns false and
+// leaves *Out untouched when there is none (MARSHALLING.md §8).
+bool clang_SubstTemplateTemplateParmStorage_getPackIndex(
+    CXSubstTemplateTemplateParmStorage S, unsigned *Out);
+
+// The template template parameter the substitution replaced.
+CXTemplateTemplateParmDecl clang_SubstTemplateTemplateParmStorage_getParameter(
+    CXSubstTemplateTemplateParmStorage S);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

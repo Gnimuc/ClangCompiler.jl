@@ -210,6 +210,25 @@ bool clang_FPOptions_isFPConstrained(unsigned FPO);
 // that is already this package's currency for stored FP features.
 uint64_t clang_FPOptions_getChangesFrom(unsigned FPO, unsigned Base);
 
+// FPOptionsOverride crosses as its uint64 opaque encoding, the same currency every
+// *_getFPFeatures / *_getStoredFPFeatures reader already hands out; there is no carrier,
+// because the class is two 32-bit words and a handle would make @check_ptrs assert on the
+// legitimate zero that means "no override" (MARSHALLING.md §7).
+
+// Applies the override to Base and returns the resulting FPOptions word. This is what turns a
+// stored uint64 back into something the FPOptions decoders can read.
+unsigned clang_FPOptionsOverride_applyOverrides(uint64_t FPO, unsigned Base);
+
+// Whether the override sets anything, i.e. whether an AST node carrying it needs trailing
+// storage. Reads the mask half without the caller having to know the 32/32 split.
+bool clang_FPOptionsOverride_requiresTrailingStorage(uint64_t FPO);
+
+// The three contraction-mode setters. A value crossing has no C-side object to mutate, so each
+// takes the word and returns the modified one rather than writing through a handle.
+uint64_t clang_FPOptionsOverride_setAllowFPContractWithinStatement(uint64_t FPO);
+uint64_t clang_FPOptionsOverride_setAllowFPContractAcrossStatement(uint64_t FPO);
+uint64_t clang_FPOptionsOverride_setDisallowFPContract(uint64_t FPO);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

@@ -262,3 +262,17 @@ unsigned clang_Driver_getNumPrefixDirs(CXDriver D) {
 CXString clang_Driver_getPrefixDir(CXDriver D, unsigned Idx) {
   return extra::makeCXString(static_cast<clang::driver::Driver *>(D)->PrefixDirs[Idx]);
 }
+
+const char *clang_Driver_CreateTempFile(CXDriver D, CXCompilation C, const char *Prefix,
+                                        const char *Suffix, bool MultipleArchs,
+                                        const char *BoundArch, bool NeedUniqueDirectory) {
+  return static_cast<clang::driver::Driver *>(D)->CreateTempFile(
+      *static_cast<clang::driver::Compilation *>(C), llvm::StringRef(Prefix),
+      llvm::StringRef(Suffix), MultipleArchs, llvm::StringRef(BoundArch),
+      NeedUniqueDirectory);
+}
+
+CXString clang_Driver_GetClPchPath(CXDriver D, CXCompilation C, const char *BaseName) {
+  return extra::makeCXString(static_cast<clang::driver::Driver *>(D)->GetClPchPath(
+      *static_cast<clang::driver::Compilation *>(C), llvm::StringRef(BaseName)));
+}

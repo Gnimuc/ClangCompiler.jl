@@ -498,6 +498,18 @@ unsigned clang_FullComment_getNumBlocks(CXFullComment FC);
 // Reads Blocks[Idx] unchecked; Idx < getNumBlocks required.
 CXComment clang_FullComment_getBlock(CXFullComment FC, unsigned Idx);
 
+// RawCommentList
+bool clang_RawCommentList_empty(CXRawCommentList RCL);
+
+// The comments attached to File, as a count+fill snapshot (MARSHALLING.md §6). The std::map
+// clang returns is an interior pointer into a private DenseMap's bucket array -- a later
+// insertion rehashes and moves it -- so the map itself deliberately never crosses (§14): the
+// caller receives copies of the RawComment pointers, which are arena-owned and stable.
+unsigned clang_RawCommentList_getNumCommentsInFile(CXRawCommentList RCL, CXFileID File);
+
+void clang_RawCommentList_getCommentsInFile(CXRawCommentList RCL, CXFileID File,
+                                            CXRawComment *Comments);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

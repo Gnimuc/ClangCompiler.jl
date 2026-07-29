@@ -211,6 +211,10 @@ CXString clang_ASTNameGenerator_getName(CXASTNameGenerator G, CXDecl D);
 
 CXStringSet *clang_ASTNameGenerator_getAllManglings(CXASTNameGenerator G, CXDecl D);
 
+// The mangling id of a block. MUTATES the context: the id is assigned on first query and is
+// stable thereafter, so two contexts can answer differently for the same block.
+unsigned clang_MangleContext_getBlockId(CXMangleContext MC, CXBlockDecl BD, bool Local);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

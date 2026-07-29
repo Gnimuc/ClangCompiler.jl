@@ -278,3 +278,10 @@ CXDeclarationNameInfo clang_MSDependentExistsStmt_getNameInfo(CXMSDependentExist
 CXCompoundStmt clang_MSDependentExistsStmt_getSubStmt(CXMSDependentExistsStmt MSS) {
   return static_cast<clang::MSDependentExistsStmt *>(MSS)->getSubStmt();
 }
+
+CXNestedNameSpecifierLoc clang_MSDependentExistsStmt_getQualifierLoc(
+    CXMSDependentExistsStmt MSS) {
+  return std::make_unique<clang::NestedNameSpecifierLoc>(
+             static_cast<clang::MSDependentExistsStmt *>(MSS)->getQualifierLoc())
+      .release();
+}

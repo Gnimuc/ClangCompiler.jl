@@ -20,6 +20,16 @@
 #     inflated the tail by 682 methods -- 53% of it.
 #   * A different mechanism. `classof` is answered by the `resolve` table, not by 288 shims.
 #
+# One cause is NOT handled here and has to be checked by hand, because no mechanical rule
+# separates it from a real gap: FLATTENING. Clang's small nested value types are routinely
+# wrapped by hoisting their accessors onto the owner rather than giving the type a handle, so
+# the nested class reports as having no bindings at all while every question it answers is
+# already reachable. `clang::APValue::LValueBase` has no `clang_LValueBase_*` symbol and 15
+# `clang_APValue_getLValueBase*` ones; `FunctionType::ExtInfo` has none and its bits are on
+# `clang_FunctionType_getCallConv`, `_getProducesResult`, `_getNoCfCheck`; all four
+# `CFGTerminator` queries are `clang_CFGBlock_getTerminator*`. Before treating any nested or
+# value type in the "no bindings" list as a gap, grep the OWNER's prefix for its accessors.
+#
 # The first four are avoided by comparing against the *generated bindings* plus the Julia
 # wrapper surface and its type hierarchy -- never against header text. The last is a
 # classification (`covered_otherwise`), because those methods are real but must not be wrapped.

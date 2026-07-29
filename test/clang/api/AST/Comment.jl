@@ -642,3 +642,45 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "RawCommentList | comments attached to a file" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             /// first documented declaration
+             int rcl_one(int a);
+             /// second documented declaration
+             int rcl_two(int b);
+             """)
+    ci = CC.get_instance(I)
+    ctx = CC.get_ast_context(I)
+    sm = CC.getSourceManager(ci)
+
+    rcl = CC.getComments(ctx)
+    @test rcl isa CC.RawCommentList
+    # the parse attached comments, so the list is not empty
+    @test !CC.empty(rcl)
+
+    f = DeclFinder(I)
+    @test f(I, "rcl_one")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fid = CC.getFileID(sm, CC.getLocation(fd))
+    comments = CC.getCommentsInFile(rcl, fid)
+    @test comments isa Vector{CC.RawComment}
+    # both comments the source declares are present, and their texts are the ones written
+    @test length(comments) >= 2
+    texts = [CC.getRawText(c, sm) for c in comments]
+    @test any(t -> occursin("first documented declaration", t), texts)
+    @test any(t -> occursin("second documented declaration", t), texts)
+    # they come back in source order
+    offsets = [CC.getFileOffset(sm, CC.getBeginLoc(CC.getSourceRange(c))) for c in comments]
+    @test issorted(offsets)
+
+    # a file with no comments in it answers with an empty snapshot, not an error
+    other = CC.getMainFileID(sm)
+    @test CC.getCommentsInFile(rcl, other) isa Vector{CC.RawComment}
+    CC.dispose(other)
+
+    CC.dispose(fid)
+    dispose(f)
+    dispose(I)
+end

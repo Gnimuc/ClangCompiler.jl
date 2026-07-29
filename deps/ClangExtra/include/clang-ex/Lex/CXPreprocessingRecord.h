@@ -108,6 +108,10 @@ size_t clang_PreprocessingRecord_getTotalMemory(CXPreprocessingRecord PR);
 CXSourceRange_ clang_PreprocessingRecord_getSkippedRange(CXPreprocessingRecord PR,
                                                          unsigned Index);
 
+// The file the #include resolved to, heap-boxed and OWNED -- release with
+// clang_FileEntryRef_dispose. NULL when the include did not resolve.
+CXFileEntryRef clang_InclusionDirective_getFile(CXInclusionDirective ID);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

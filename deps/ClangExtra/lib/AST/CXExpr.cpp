@@ -3460,3 +3460,9 @@ CXPseudoObjectExpr clang_PseudoObjectExpr_CreateEmpty(CXASTContext Context,
   return clang::PseudoObjectExpr::Create(*static_cast<clang::ASTContext *>(Context),
                                          clang::Stmt::EmptyShell(), NumSemanticExprs);
 }
+
+void clang_UnaryExprOrTypeTraitExpr_setArgumentTypeInfo(CXUnaryExprOrTypeTraitExpr E,
+                                                        CXTypeSourceInfo TInfo) {
+  static_cast<clang::UnaryExprOrTypeTraitExpr *>(E)->setArgument(
+      static_cast<clang::TypeSourceInfo *>(TInfo));
+}

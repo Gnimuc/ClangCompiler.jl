@@ -3222,3 +3222,12 @@ function setPrintingPolicy(x::ASTContext, policy::AbstractPrintingPolicy)
     @check_ptrs x policy
     return clang_ASTContext_setPrintingPolicy(x, policy)
 end
+
+"""
+    getComments(x::ASTContext) -> RawCommentList
+Return the context's comment list, borrowed — never `dispose` it through this carrier.
+"""
+function getComments(x::ASTContext)
+    @check_ptrs x
+    return RawCommentList(clang_ASTContext_getComments(x))
+end

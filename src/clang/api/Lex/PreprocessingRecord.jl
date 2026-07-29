@@ -250,3 +250,16 @@ function getTotalMemory(x::AbstractPreprocessingRecord)
     @check_ptrs x
     return clang_PreprocessingRecord_getTotalMemory(x)
 end
+
+"""
+    getFile(x::AbstractInclusionDirective) -> Union{FileEntryRef,Nothing}
+Return the file the `#include` resolved to, or `nothing` when it did not resolve.
+
+A non-`nothing` result allocates and one should call `dispose` to release the resources after
+using this object.
+"""
+function getFile(x::AbstractInclusionDirective)
+    @check_ptrs x
+    ref = clang_InclusionDirective_getFile(x)
+    return ref == C_NULL ? nothing : FileEntryRef(ref)
+end

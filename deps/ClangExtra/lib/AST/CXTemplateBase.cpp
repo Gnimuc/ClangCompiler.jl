@@ -352,3 +352,15 @@ clang_ASTTemplateArgumentListInfo_Create(CXASTContext Context,
           *static_cast<clang::ASTContext *>(Context),
           *static_cast<clang::TemplateArgumentListInfo *>(Info)));
 }
+
+CXNestedNameSpecifierLoc clang_TemplateArgumentLoc_getTemplateQualifierLoc(
+    CXTemplateArgumentLoc TAL) {
+  return std::make_unique<clang::NestedNameSpecifierLoc>(
+             static_cast<clang::TemplateArgumentLoc *>(TAL)->getTemplateQualifierLoc())
+      .release();
+}
+
+unsigned clang_TemplateArgument_getDependence(CXTemplateArgument TA) {
+  return static_cast<unsigned>(
+      static_cast<clang::TemplateArgument *>(TA)->getDependence());
+}

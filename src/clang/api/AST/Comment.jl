@@ -1069,3 +1069,30 @@ function isAlmostTrailingComment(x::AbstractRawComment)
     @check_ptrs x
     return clang_RawComment_isAlmostTrailingComment(x)
 end
+
+# RawCommentList
+"""
+    empty(x::AbstractRawCommentList) -> Bool
+Return whether the list holds no comments at all.
+"""
+function empty(x::AbstractRawCommentList)
+    @check_ptrs x
+    return clang_RawCommentList_empty(x)
+end
+
+"""
+    getCommentsInFile(x::AbstractRawCommentList, id::FileID) -> Vector{RawComment}
+Return the comments attached to the file `id`, in source order.
+
+This is a *snapshot*. clang hands back a pointer into a private hash table's bucket array, so a
+later comment would rehash and move it; the pointers copied out here are arena-owned and stay
+valid, but the vector does not grow with the context.
+"""
+function getCommentsInFile(x::AbstractRawCommentList, id::FileID)
+    @check_ptrs x id
+    n = Int(clang_RawCommentList_getNumCommentsInFile(x, id))
+    n == 0 && return RawComment[]
+    buf = Vector{CXRawComment}(undef, n)
+    clang_RawCommentList_getCommentsInFile(x, id, buf)
+    return [RawComment(p) for p in buf]
+end

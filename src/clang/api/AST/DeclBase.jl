@@ -43,7 +43,7 @@ end
 # All attributes on `x`, each a borrowed `Attr`.
 function getAttrs(x::AbstractDecl)
     @check_ptrs x
-    return Attr[getAttr(x, i) for i in 0:(getNumAttrs(x) - 1)]
+    return Attr[getAttr(x, i) for i = 0:(getNumAttrs(x) - 1)]
 end
 
 function getNextDeclInContext(x::AbstractDecl)
@@ -414,7 +414,6 @@ function CXXRecordDecl(x::DeclContext)
     @check_ptrs x
     return CXXRecordDecl(clang_DeclContext_castToCXXRecordDecl(x))
 end
-
 
 # Decl (argument-taking and value-returning surface)
 function getSourceRange(x::AbstractDecl)
@@ -916,7 +915,6 @@ function shouldUseQualifiedLookup(x::DeclContext)
     return clang_DeclContext_shouldUseQualifiedLookup(x)
 end
 
-
 # Decl (Objective-C container flag, deserialization IDs, identifier-namespace statics)
 """
     isTopLevelDeclInObjCContainer(x::AbstractDecl) -> Bool
@@ -1081,7 +1079,6 @@ function setHasExternalVisibleStorage(x::DeclContext, es::Bool=true)
     return clang_DeclContext_setHasExternalVisibleStorage(x, es)
 end
 
-
 # The static entry points and identifier-namespace mutators of clang::Decl
 """
     isFlexibleArrayMemberLike(ctx::ASTContext, d::AbstractDecl, ty::QualType,
@@ -1196,7 +1193,6 @@ function setMustBuildLookupTable(x::DeclContext)
     return clang_DeclContext_setMustBuildLookupTable(x)
 end
 
-
 # The attribute-list assignment on clang::Decl, and the lookup-table surface of
 # clang::DeclContext.
 
@@ -1298,4 +1294,30 @@ function buildLookup(x::DeclContext)
     @check_ptrs x
     @assert x.ptr == getPrimaryContext(x).ptr "only a primary context has a lookup table"
     return clang_DeclContext_buildLookup(x)
+end
+
+"""
+    setObjectOfFriendDecl(x::AbstractDecl; perform_friend_injection::Bool=false)
+Mark `x` as the object of a friend declaration, moving its identifier namespace into the
+`*Friend` variants. With `perform_friend_injection` the ordinary namespace bits are kept as
+well, which is what leaves the declaration findable by ordinary lookup;
+[`getFriendObjectKind`](@ref) reports `FOK_Declared` rather than `FOK_Undeclared`.
+
+`x`'s identifier namespace must include `Ordinary` or `Tag` and nothing outside
+`{Tag, Ordinary, Type, TagFriend, OrdinaryFriend, LocalExtern, NonMemberOperator}` — clang
+asserts both, and both are read here through [`getIdentifierNamespace`](@ref).
+
+This is irreversible: clang exposes no `setIdentifierNamespace`, so it belongs on declarations
+the caller constructed rather than on one the live interpreter's lookup still depends on.
+"""
+function setObjectOfFriendDecl(x::AbstractDecl; perform_friend_injection::Bool=false)
+    @check_ptrs x
+    ns = UInt32(getIdentifierNamespace(x))
+    required = UInt32(CXDecl_IDNS_Tag) | UInt32(CXDecl_IDNS_Ordinary) |
+               UInt32(CXDecl_IDNS_TagFriend) | UInt32(CXDecl_IDNS_OrdinaryFriend) |
+               UInt32(CXDecl_IDNS_LocalExtern) | UInt32(CXDecl_IDNS_NonMemberOperator)
+    permitted = required | UInt32(CXDecl_IDNS_Type)
+    @assert (ns & required) != 0 "declaration must be in the ordinary or tag namespace"
+    @assert (ns & ~permitted) == 0 "declaration is in a namespace that cannot become a friend"
+    return clang_Decl_setObjectOfFriendDecl(x, perform_friend_injection)
 end

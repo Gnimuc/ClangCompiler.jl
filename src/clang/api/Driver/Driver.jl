@@ -11,7 +11,6 @@ function GetResourcesPath(binary_path::AbstractString)
     return String(path)
 end
 
-
 """
     Driver(clang_executable::AbstractString, target_triple::AbstractString, diags::AbstractDiagnosticsEngine) -> Driver
 Create a `clang::driver::Driver` for the given compiler executable path and target triple.
@@ -90,7 +89,6 @@ function getDyldPrefix(x::AbstractDriver)
     @check_ptrs x
     return unsafe_string(clang_Driver_getDyldPrefix(x))
 end
-
 
 """
     CCCIsCXX(x::AbstractDriver) -> Bool
@@ -206,7 +204,6 @@ function getLTOMode(x::AbstractDriver, is_offload::Bool=false)
     return clang_Driver_getLTOMode(x, is_offload)
 end
 
-
 """
     getConfigFiles(x::AbstractDriver) -> Vector{String}
 Return the paths of the configuration files the driver loaded. Empty until the driver has
@@ -215,7 +212,7 @@ processed a command line.
 function getConfigFiles(x::AbstractDriver)
     @check_ptrs x
     n = Int(clang_Driver_getNumConfigFiles(x))
-    return String[unsafe_string(clang_Driver_getConfigFile(x, i)) for i in 0:(n - 1)]
+    return String[unsafe_string(clang_Driver_getConfigFile(x, i)) for i = 0:(n - 1)]
 end
 
 """
@@ -366,7 +363,6 @@ function hasHeaderMode(x::AbstractDriver)
     return clang_Driver_hasHeaderMode(x)
 end
 
-
 """
     isUsingLTO(x::AbstractDriver, is_offload::Bool=false) -> Bool
 Return whether the driver performs any kind of LTO. `is_offload` asks about the offload
@@ -449,7 +445,6 @@ directory at all.
 function getDefaultModuleCachePath()
     return get_string(clang_Driver_getDefaultModuleCachePath())
 end
-
 
 """
     BuildCompilation(x::AbstractDriver, args::Vector{String}) -> Compilation
@@ -558,4 +553,34 @@ Return every prefix directory the driver searches ahead of the toolchain's own.
 function getPrefixDirs(x::AbstractDriver)
     @check_ptrs x
     return String[getPrefixDir(x, i) for i = 0:(getNumPrefixDirs(x) - 1)]
+end
+
+"""
+    CreateTempFile(x::AbstractDriver, c::Compilation, prefix::AbstractString,
+                   suffix::AbstractString; multiple_archs::Bool=false,
+                   bound_arch::AbstractString="",
+                   need_unique_directory::Bool=false) -> Union{String,Nothing}
+Create a temporary file on disk and return its path, or `nothing` when it could not be created
+— a failure the driver also reports through its diagnostics engine.
+
+The file really appears on disk and the path is registered with `c`, so it shows up in
+[`getTempFile`](@ref) and is removed when the compilation cleans up. Dispose `c` before the
+driver.
+"""
+function CreateTempFile(x::AbstractDriver, c::Compilation, prefix::AbstractString,
+                        suffix::AbstractString; multiple_archs::Bool=false,
+                        bound_arch::AbstractString="", need_unique_directory::Bool=false)
+    @check_ptrs x c
+    p = clang_Driver_CreateTempFile(x, c, prefix, suffix, multiple_archs, bound_arch,
+                                    need_unique_directory)
+    return p == C_NULL ? nothing : unsafe_string(p)
+end
+
+"""
+    GetClPchPath(x::AbstractDriver, c::Compilation, base_name::AbstractString) -> String
+Return the path clang-cl would use for the precompiled header of `base_name`.
+"""
+function GetClPchPath(x::AbstractDriver, c::Compilation, base_name::AbstractString)
+    @check_ptrs x c
+    return get_string(clang_Driver_GetClPchPath(x, c, base_name))
 end

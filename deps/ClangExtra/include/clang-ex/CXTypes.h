@@ -44,6 +44,7 @@ typedef void *CXBlockCommandComment;
 typedef void *CXTextComment;
 typedef void *CXComment;
 typedef void *CXRawComment;
+typedef void *CXRawCommentList;
 typedef void *CXASTContext;
 
 // Decl

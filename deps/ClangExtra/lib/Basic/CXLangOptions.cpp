@@ -232,3 +232,31 @@ uint64_t clang_FPOptions_getChangesFrom(unsigned FPO, unsigned Base) {
       .getChangesFrom(clang::FPOptions::getFromOpaqueInt(Base))
       .getAsOpaqueInt();
 }
+
+unsigned clang_FPOptionsOverride_applyOverrides(uint64_t FPO, unsigned Base) {
+  return clang::FPOptionsOverride::getFromOpaqueInt(FPO)
+      .applyOverrides(clang::FPOptions::getFromOpaqueInt(Base))
+      .getAsOpaqueInt();
+}
+
+bool clang_FPOptionsOverride_requiresTrailingStorage(uint64_t FPO) {
+  return clang::FPOptionsOverride::getFromOpaqueInt(FPO).requiresTrailingStorage();
+}
+
+uint64_t clang_FPOptionsOverride_setAllowFPContractWithinStatement(uint64_t FPO) {
+  clang::FPOptionsOverride O = clang::FPOptionsOverride::getFromOpaqueInt(FPO);
+  O.setAllowFPContractWithinStatement();
+  return O.getAsOpaqueInt();
+}
+
+uint64_t clang_FPOptionsOverride_setAllowFPContractAcrossStatement(uint64_t FPO) {
+  clang::FPOptionsOverride O = clang::FPOptionsOverride::getFromOpaqueInt(FPO);
+  O.setAllowFPContractAcrossStatement();
+  return O.getAsOpaqueInt();
+}
+
+uint64_t clang_FPOptionsOverride_setDisallowFPContract(uint64_t FPO) {
+  clang::FPOptionsOverride O = clang::FPOptionsOverride::getFromOpaqueInt(FPO);
+  O.setDisallowFPContract();
+  return O.getAsOpaqueInt();
+}

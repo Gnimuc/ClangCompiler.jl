@@ -638,3 +638,24 @@ CXString clang_RawComment_getFormattedText(CXRawComment RC, CXSourceManager SM,
 bool clang_RawComment_isAlmostTrailingComment(CXRawComment RC) {
   return static_cast<clang::RawComment *>(RC)->isAlmostTrailingComment();
 }
+
+bool clang_RawCommentList_empty(CXRawCommentList RCL) {
+  return static_cast<clang::RawCommentList *>(RCL)->empty();
+}
+
+unsigned clang_RawCommentList_getNumCommentsInFile(CXRawCommentList RCL, CXFileID File) {
+  const auto *M = static_cast<clang::RawCommentList *>(RCL)->getCommentsInFile(
+      *static_cast<clang::FileID *>(File));
+  return M ? static_cast<unsigned>(M->size()) : 0;
+}
+
+void clang_RawCommentList_getCommentsInFile(CXRawCommentList RCL, CXFileID File,
+                                            CXRawComment *Comments) {
+  const auto *M = static_cast<clang::RawCommentList *>(RCL)->getCommentsInFile(
+      *static_cast<clang::FileID *>(File));
+  if (!M)
+    return;
+  unsigned I = 0;
+  for (const auto &E : *M)
+    Comments[I++] = E.second;
+}

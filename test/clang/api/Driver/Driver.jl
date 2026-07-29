@@ -276,8 +276,9 @@ end
     CC.setCheckInputsExist(drv2, false)
     prefixes = [joinpath("clangcompiler", "prefix-one"),
                 joinpath("clangcompiler", "prefix-two")]
-    comp = CC.BuildCompilation(drv2, ["clang", "-B", prefixes[1], "-B", prefixes[2],
-                                      "-fsyntax-only", "clangcompiler-driver-test.cpp"])
+    comp = CC.BuildCompilation(drv2,
+                               ["clang", "-B", prefixes[1], "-B", prefixes[2],
+                                "-fsyntax-only", "clangcompiler-driver-test.cpp"])
 
     n = CC.getNumPrefixDirs(drv2)
     @test n >= length(prefixes)
@@ -295,4 +296,37 @@ end
     dispose(comp)
     dispose(drv2)
     dispose(diags2)
+end
+
+@testset "Driver | temp files and the clang-cl PCH path" begin
+    diags = CC.DiagnosticsEngine()
+    drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
+    comp = CC.BuildCompilation(drv, ["clang", "-c", "cctemp_probe.cpp"])
+    @test comp isa CC.Compilation
+
+    before = length(CC.getTempFiles(comp))
+    path = CC.CreateTempFile(drv, comp, "cctest", "o")
+    @test path !== nothing
+    # the name carries both halves the caller chose, and the file really exists on disk
+    @test occursin("cctest", path)
+    @test endswith(path, ".o")
+    @test isfile(path)
+    # and it was registered with the compilation, which is what cleans it up
+    after = CC.getTempFiles(comp)
+    @test length(after) == before + 1
+    @test path in after
+
+    # a second call is a distinct file, so the suffix is not being reused as the whole name
+    path2 = CC.CreateTempFile(drv, comp, "cctest", "o")
+    @test path2 != path
+    @test length(CC.getTempFiles(comp)) == before + 2
+
+    pch = CC.GetClPchPath(drv, comp, "pchbase")
+    @test !isempty(pch)
+    @test occursin("pchbase", pch)
+    @test endswith(pch, ".pch")
+
+    CC.dispose(comp)
+    CC.dispose(drv)
+    CC.dispose(diags)
 end

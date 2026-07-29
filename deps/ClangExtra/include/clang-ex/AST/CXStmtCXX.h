@@ -182,6 +182,10 @@ CXDeclarationNameInfo clang_MSDependentExistsStmt_getNameInfo(CXMSDependentExist
 
 CXCompoundStmt clang_MSDependentExistsStmt_getSubStmt(CXMSDependentExistsStmt MSS);
 
+// The nested-name-specifier written before the name, heap-boxed and OWNED -- release with
+// clang_NestedNameSpecifierLoc_dispose. An unqualified name yields an EMPTY box, not NULL.
+CXNestedNameSpecifierLoc clang_MSDependentExistsStmt_getQualifierLoc(CXMSDependentExistsStmt MSS);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

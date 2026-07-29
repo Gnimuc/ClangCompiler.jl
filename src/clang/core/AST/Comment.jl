@@ -79,7 +79,6 @@ end
 Base.unsafe_convert(::Type{CXFullComment}, x::FullComment) = x.ptr
 Base.cconvert(::Type{CXFullComment}, x::FullComment) = x
 
-
 # clang::comments::ParagraphComment (clang/AST/Comment.h). Wrapped so
 # BlockCommandComment::getParagraph can hand its paragraph back at its static type.
 abstract type AbstractParagraphComment <: AbstractBlockContentComment end
@@ -94,7 +93,6 @@ end
 
 Base.unsafe_convert(::Type{CXParagraphComment}, x::ParagraphComment) = x.ptr
 Base.cconvert(::Type{CXParagraphComment}, x::ParagraphComment) = x
-
 
 # The inline-content tail of the clang::comments hierarchy plus TParamCommandComment
 # (clang/AST/Comment.h). `HTMLTagComment` is abstract in Clang, so it contributes an
@@ -149,7 +147,6 @@ end
 Base.unsafe_convert(::Type{CXTParamCommandComment}, x::TParamCommandComment) = x.ptr
 Base.cconvert(::Type{CXTParamCommandComment}, x::TParamCommandComment) = x
 
-
 # The verbatim tail of the clang::comments hierarchy (clang/AST/Comment.h).
 # `VerbatimBlockComment` (\code…\endcode) and `VerbatimLineComment` (\defgroup,
 # \fn, …) are block commands; the individual lines a verbatim block owns are plain
@@ -191,7 +188,6 @@ end
 Base.unsafe_convert(::Type{CXVerbatimLineComment}, x::VerbatimLineComment) = x.ptr
 Base.cconvert(::Type{CXVerbatimLineComment}, x::VerbatimLineComment) = x
 
-
 # clang::comments::DeclInfo (clang/AST/Comment.h). A plain struct rather than a node
 # of the Comment hierarchy: it is a `FullComment`'s simplified description of the
 # declaration the comment documents. The pointee lives in the `ASTContext` arena —
@@ -208,3 +204,18 @@ end
 
 Base.unsafe_convert(::Type{CXDeclInfo}, x::DeclInfo) = x.ptr
 Base.cconvert(::Type{CXDeclInfo}, x::DeclInfo) = x
+
+abstract type AbstractRawCommentList end
+
+"""
+    struct RawCommentList <: AbstractRawCommentList
+Hold a pointer to a `clang::RawCommentList` object.
+
+The list is a member of its `ASTContext`, so it is borrowed: there is no `dispose`.
+"""
+struct RawCommentList <: AbstractRawCommentList
+    ptr::CXRawCommentList
+end
+
+Base.unsafe_convert(::Type{CXRawCommentList}, x::RawCommentList) = x.ptr
+Base.cconvert(::Type{CXRawCommentList}, x::RawCommentList) = x

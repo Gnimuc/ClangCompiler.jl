@@ -323,3 +323,8 @@ CXStringSet *clang_ASTNameGenerator_getAllManglings(CXASTNameGenerator G, CXDecl
   return extra::makeCXStringSet(static_cast<clang::ASTNameGenerator *>(G)->getAllManglings(
       static_cast<clang::Decl *>(D)));
 }
+
+unsigned clang_MangleContext_getBlockId(CXMangleContext MC, CXBlockDecl BD, bool Local) {
+  return static_cast<clang::MangleContext *>(MC)->getBlockId(
+      static_cast<clang::BlockDecl *>(BD), Local);
+}

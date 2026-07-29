@@ -317,6 +317,10 @@ CXTranslationUnitDecl clang_ASTContext_getTranslationUnitDecl(CXASTContext Ctx);
 // on it (MARSHALLING.md §13, "export the gate").
 CXTranslationUnitKind clang_ASTContext_getTranslationUnitKind(CXASTContext Ctx);
 
+// The context's comment list, borrowed -- an interior pointer to a member, exactly like
+// clang_ASTContext_getIdents. No dispose.
+CXRawCommentList clang_ASTContext_getComments(CXASTContext Ctx);
+
 // Pushes a fresh, empty TranslationUnitDecl onto the context's redeclaration chain and makes
 // it the one clang_ASTContext_getTranslationUnitDecl returns; the previous TU stays reachable
 // through getPreviousDecl. This is the operation clang's own IncrementalParser performs

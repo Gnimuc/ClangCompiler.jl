@@ -148,3 +148,17 @@ clang_DependentTemplateName_getOperator(CXDependentTemplateName DTN) {
   return static_cast<CXOverloadedOperatorKind>(
       static_cast<clang::DependentTemplateName *>(DTN)->getOperator());
 }
+
+bool clang_SubstTemplateTemplateParmStorage_getPackIndex(
+    CXSubstTemplateTemplateParmStorage S, unsigned *Out) {
+  auto I = static_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getPackIndex();
+  if (!I)
+    return false;
+  *Out = *I;
+  return true;
+}
+
+CXTemplateTemplateParmDecl clang_SubstTemplateTemplateParmStorage_getParameter(
+    CXSubstTemplateTemplateParmStorage S) {
+  return static_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getParameter();
+}

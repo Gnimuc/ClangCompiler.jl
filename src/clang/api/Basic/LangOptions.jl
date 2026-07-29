@@ -330,3 +330,53 @@ encoding this package already uses for stored FP features.
 in effect stores.
 """
 getChangesFrom(fp_options::Integer, base::Integer) = clang_FPOptions_getChangesFrom(fp_options, base)
+
+# FPOptionsOverride
+# The class crosses as its uint64 opaque encoding — the currency every `getFPFeatures` and
+# `getStoredFPFeatures` reader already hands out — rather than as a carrier: it is two 32-bit
+# words, and a handle would make `@check_ptrs` reject the legitimate zero meaning "no
+# override" (MARSHALLING.md §7).
+"""
+    applyOverrides(fp_override::Integer, base::Integer) -> UInt32
+Apply `fp_override` to the `FPOptions` word `base` and return the resulting word.
+
+This is what turns a stored override — everything [`getStoredFPFeatures`](@ref) and
+[`getFPFeaturesInEffect`](@ref) hand back — into a word the `FPOptions` decoders read:
+[`getRoundingMode`](@ref), [`getExceptionMode`](@ref),
+[`allowFPContractWithinStatement`](@ref) and the rest. An empty override returns `base`
+unchanged.
+"""
+applyOverrides(fp_override::Integer, base::Integer) = clang_FPOptionsOverride_applyOverrides(fp_override, base)
+
+"""
+    requiresTrailingStorage(fp_override::Integer) -> Bool
+Return whether `fp_override` sets anything at all — equivalently, whether an AST node carrying
+it needs trailing storage for it. This reads the override's mask without the caller having to
+know how the encoding splits into value and mask halves.
+"""
+requiresTrailingStorage(fp_override::Integer) = clang_FPOptionsOverride_requiresTrailingStorage(fp_override)
+
+"""
+    setAllowFPContractWithinStatement(fp_override::Integer) -> UInt64
+Return `fp_override` with the contraction mode overridden to `on`.
+
+A value crossing has no object to mutate, so the three contraction setters take a word and
+return the modified one rather than writing through a handle.
+"""
+function setAllowFPContractWithinStatement(fp_override::Integer)
+    clang_FPOptionsOverride_setAllowFPContractWithinStatement(fp_override)
+end
+
+"""
+    setAllowFPContractAcrossStatement(fp_override::Integer) -> UInt64
+Return `fp_override` with the contraction mode overridden to `fast`.
+"""
+function setAllowFPContractAcrossStatement(fp_override::Integer)
+    clang_FPOptionsOverride_setAllowFPContractAcrossStatement(fp_override)
+end
+
+"""
+    setDisallowFPContract(fp_override::Integer) -> UInt64
+Return `fp_override` with the contraction mode overridden to `off`.
+"""
+setDisallowFPContract(fp_override::Integer) = clang_FPOptionsOverride_setDisallowFPContract(fp_override)
