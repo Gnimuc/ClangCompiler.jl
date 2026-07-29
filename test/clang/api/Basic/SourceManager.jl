@@ -427,7 +427,7 @@ end
     file_idx = -1
     expansion_idx = -1
     kinds_consistent = true
-    for i in 0:(n - 1)
+    for i = 0:(n - 1)
         e = CC.getLocalSLocEntry(sm, i)
         is_file = CC.isFile(e)
         kinds_consistent &= (is_file == !CC.isExpansion(e))
@@ -887,8 +887,34 @@ end
     @test loc_ref === nothing || loc_ref isa CC.FileEntryRef
     loc_ref !== nothing && CC.dispose(loc_ref)
 
+    # the file entry reached through the pair is the one the manager gives for the same ID
+    fid = CC.getFileID(fsl)
+    entry = CC.getFileEntry(fsl)
+    direct = CC.getFileEntryForID(sm, fid)
+    @test entry === nothing ? direct === nothing : entry.ptr == direct.ptr
+    CC.dispose(fid)
+
+    # decomposition agrees with the manager, and the offset re-composes to the location
+    dec_id, dec_off = CC.getDecomposedLoc(fsl)
+    sm_id, sm_off = CC.getDecomposedLoc(sm, loc)
+    @test dec_off == sm_off
+    @test CC.getLocForStartOfFile(sm, dec_id).ptr == CC.getLocForStartOfFile(sm, sm_id).ptr
+    CC.dispose(dec_id)
+    CC.dispose(sm_id)
+
+    exp_id, exp_off = CC.getDecomposedExpansionLoc(fsl)
+    sm_exp_id, sm_exp_off = CC.getDecomposedExpansionLoc(sm, loc)
+    @test exp_off == sm_exp_off
+    @test CC.getLocForStartOfFile(sm, exp_id).ptr == CC.getLocForStartOfFile(sm, sm_exp_id).ptr
+    CC.dispose(exp_id)
+    CC.dispose(sm_exp_id)
+
     empty_fsl = CC.FullSourceLoc()
     @test_throws AssertionError CC.getPresumedLoc(empty_fsl)
+    @test_throws AssertionError CC.getFileEntry(empty_fsl)
+    @test_throws AssertionError CC.getDecomposedLoc(empty_fsl)
+    @test_throws AssertionError CC.getDecomposedExpansionLoc(empty_fsl)
+    @test_throws AssertionError CC.dump(empty_fsl)
     @test_throws AssertionError CC.isMacroArgExpansion(empty_fsl)
     @test_throws AssertionError CC.getImmediateMacroCallerLoc(empty_fsl)
     @test_throws AssertionError CC.getModuleImportLoc(empty_fsl)

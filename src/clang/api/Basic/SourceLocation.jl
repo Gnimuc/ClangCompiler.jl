@@ -29,7 +29,6 @@ end
 getBeginLoc(x::SourceRange) = x.begin_loc
 getEndLoc(x::SourceRange) = x.end_loc
 
-
 getRawEncoding(x::SourceLocation) = clang_SourceLocation_getRawEncoding(x)
 
 getFromRawEncoding(encoding::Integer) = SourceLocation(clang_SourceLocation_getFromRawEncoding(encoding))
@@ -58,7 +57,6 @@ function dump(x::SourceRange, src_mgr::SourceManager)
     return clang_SourceRange_dump(CXSourceRange_(x.begin_loc.ptr, x.end_loc.ptr), src_mgr)
 end
 
-
 """
     isValid(x::FileID) -> Bool
 Return `true` iff `x` designates a source file, i.e. is not the null `FileID`.
@@ -85,7 +83,6 @@ not the null `FileID`: the sentinel compares as valid and hashes to `typemax(UIn
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
 getSentinel() = FileID(clang_FileID_getSentinel())
-
 
 # CharSourceRange
 """
@@ -247,7 +244,6 @@ function getIncludeLoc(x::PresumedLoc)
     return SourceLocation(clang_PresumedLoc_getIncludeLoc(x))
 end
 
-
 # FullSourceLoc
 # Every accessor forwards to the manager the location was paired with, so the family is
 # written against the existing SourceManager bindings rather than against new C functions.
@@ -396,7 +392,6 @@ function isBeforeInTranslationUnitThan(x::FullSourceLoc, other::FullSourceLoc)
     return isBeforeInTranslationUnitThan(x, other.loc)
 end
 
-
 """
     getPresumedLoc(x::FullSourceLoc; use_line_directives::Bool=true) -> PresumedLoc
 Return the `#line`-aware presumed location of `x` as a `clang::PresumedLoc` object.
@@ -536,4 +531,59 @@ function getFileEntryRef(x::FullSourceLoc)
     ref = getFileEntryRefForID(x.src_mgr, id)
     dispose(id)
     return ref
+end
+
+"""
+    getFileEntry(x::FullSourceLoc) -> Union{FileEntry,Nothing}
+Return the borrowed `FileEntry` for the file `x` lives in, or `nothing` when that file ID has
+no file entry (e.g. it was created from a memory buffer).
+
+`clang::FullSourceLoc` asserts that a manager is present; the precondition is restated here.
+"""
+function getFileEntry(x::FullSourceLoc)
+    @assert hasManager(x) "full source location must carry a source manager"
+    id = getFileID(x)
+    entry = getFileEntryForID(x.src_mgr, id)
+    dispose(id)
+    return entry
+end
+
+"""
+    getDecomposedLoc(x::FullSourceLoc) -> (FileID, UInt32)
+Split the location into the `FileID` holding it and its offset within that file's buffer.
+
+`clang::FullSourceLoc` asserts that a manager is present; the precondition is restated here.
+
+The returned `FileID` allocates and one should call `dispose` to release the resources after
+using this object.
+"""
+function getDecomposedLoc(x::FullSourceLoc)
+    @assert hasManager(x) "full source location must carry a source manager"
+    return getDecomposedLoc(x.src_mgr, x.loc)
+end
+
+"""
+    getDecomposedExpansionLoc(x::FullSourceLoc) -> (FileID, UInt32)
+Split the location's expansion location into its `FileID` and the offset within that file's
+buffer.
+
+`clang::FullSourceLoc` asserts that a manager is present; the precondition is restated here.
+
+The returned `FileID` allocates and one should call `dispose` to release the resources after
+using this object.
+"""
+function getDecomposedExpansionLoc(x::FullSourceLoc)
+    @assert hasManager(x) "full source location must carry a source manager"
+    return getDecomposedExpansionLoc(x.src_mgr, x.loc)
+end
+
+"""
+    dump(x::FullSourceLoc)
+Print the location to `stderr` through the manager it is paired with.
+
+`clang::FullSourceLoc` asserts that a manager is present; the precondition is restated here.
+"""
+function dump(x::FullSourceLoc)
+    @assert hasManager(x) "full source location must carry a source manager"
+    return dump(x.loc, x.src_mgr)
 end
