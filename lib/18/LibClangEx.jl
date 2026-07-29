@@ -36577,6 +36577,133 @@ function clang_UnaryExprOrTypeTraitExpr_setArgumentTypeInfo(E, TInfo)
     @ccall libclangex.clang_UnaryExprOrTypeTraitExpr_setArgumentTypeInfo(E::CXUnaryExprOrTypeTraitExpr, TInfo::CXTypeSourceInfo)::Cvoid
 end
 
+@enum CXTPOC::UInt32 begin
+    CXTPOC_TPOC_Call = 0
+    CXTPOC_TPOC_Conversion = 1
+    CXTPOC_TPOC_Other = 2
+end
+
+@enum CXTemplateSubstitutionKind::UInt32 begin
+    CXTemplateSubstitutionKind_Specialization = 0
+    CXTemplateSubstitutionKind_Rewrite = 1
+end
+
+function clang_MultiLevelTemplateArgumentList_create()
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_create()::CXMultiLevelTemplateArgumentList
+end
+
+function clang_MultiLevelTemplateArgumentList_dispose(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_dispose(ML::CXMultiLevelTemplateArgumentList)::Cvoid
+end
+
+function clang_MultiLevelTemplateArgumentList_setKind(ML, K)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_setKind(ML::CXMultiLevelTemplateArgumentList, K::CXTemplateSubstitutionKind)::Cvoid
+end
+
+function clang_MultiLevelTemplateArgumentList_getKind(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getKind(ML::CXMultiLevelTemplateArgumentList)::CXTemplateSubstitutionKind
+end
+
+function clang_MultiLevelTemplateArgumentList_isRewrite(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_isRewrite(ML::CXMultiLevelTemplateArgumentList)::Bool
+end
+
+function clang_MultiLevelTemplateArgumentList_getNumLevels(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumLevels(ML::CXMultiLevelTemplateArgumentList)::Cuint
+end
+
+function clang_MultiLevelTemplateArgumentList_getNumSubstitutedLevels(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumSubstitutedLevels(ML::CXMultiLevelTemplateArgumentList)::Cuint
+end
+
+function clang_MultiLevelTemplateArgumentList_getNumSubsitutedArgs(ML, Depth)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumSubsitutedArgs(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint)::Cuint
+end
+
+function clang_MultiLevelTemplateArgumentList_getNumRetainedOuterLevels(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumRetainedOuterLevels(ML::CXMultiLevelTemplateArgumentList)::Cuint
+end
+
+function clang_MultiLevelTemplateArgumentList_getNewDepth(ML, OldDepth)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNewDepth(ML::CXMultiLevelTemplateArgumentList, OldDepth::Cuint)::Cuint
+end
+
+function clang_MultiLevelTemplateArgumentList_getArgument(ML, Depth, Index)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getArgument(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint, Index::Cuint)::CXTemplateArgument
+end
+
+function clang_MultiLevelTemplateArgumentList_getAssociatedDecl(ML, Depth)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getAssociatedDecl(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint)::CXDecl
+end
+
+function clang_MultiLevelTemplateArgumentList_isAssociatedDeclFinal(ML, Depth)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_isAssociatedDeclFinal(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint)::Bool
+end
+
+function clang_MultiLevelTemplateArgumentList_hasTemplateArgument(ML, Depth, Index)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_hasTemplateArgument(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint, Index::Cuint)::Bool
+end
+
+function clang_MultiLevelTemplateArgumentList_isAnyArgInstantiationDependent(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_isAnyArgInstantiationDependent(ML::CXMultiLevelTemplateArgumentList)::Bool
+end
+
+function clang_MultiLevelTemplateArgumentList_setArgument(ML, Depth, Index, Arg)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_setArgument(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint, Index::Cuint, Arg::CXTemplateArgument)::Cvoid
+end
+
+function clang_MultiLevelTemplateArgumentList_addOuterTemplateArguments(ML, AssociatedDecl, Args, NumArgs, Final)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_addOuterTemplateArguments(ML::CXMultiLevelTemplateArgumentList, AssociatedDecl::CXDecl, Args::CXTemplateArgument, NumArgs::Cuint, Final::Bool)::Cvoid
+end
+
+function clang_MultiLevelTemplateArgumentList_replaceInnermostTemplateArguments(ML, AssociatedDecl, Args, NumArgs)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_replaceInnermostTemplateArguments(ML::CXMultiLevelTemplateArgumentList, AssociatedDecl::CXDecl, Args::CXTemplateArgument, NumArgs::Cuint)::Cvoid
+end
+
+function clang_MultiLevelTemplateArgumentList_addOuterRetainedLevel(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_addOuterRetainedLevel(ML::CXMultiLevelTemplateArgumentList)::Cvoid
+end
+
+function clang_MultiLevelTemplateArgumentList_addOuterRetainedLevels(ML, Num)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_addOuterRetainedLevels(ML::CXMultiLevelTemplateArgumentList, Num::Cuint)::Cvoid
+end
+
+function clang_MultiLevelTemplateArgumentList_getNumInnermostArgs(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumInnermostArgs(ML::CXMultiLevelTemplateArgumentList)::Cuint
+end
+
+function clang_MultiLevelTemplateArgumentList_getInnermostArg(ML, I)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getInnermostArg(ML::CXMultiLevelTemplateArgumentList, I::Cuint)::CXTemplateArgument
+end
+
+function clang_MultiLevelTemplateArgumentList_getNumOutermostArgs(ML)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumOutermostArgs(ML::CXMultiLevelTemplateArgumentList)::Cuint
+end
+
+function clang_MultiLevelTemplateArgumentList_getOutermostArg(ML, I)
+    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getOutermostArg(ML::CXMultiLevelTemplateArgumentList, I::Cuint)::CXTemplateArgument
+end
+
+function clang_LocalInstantiationScope_create(S, CombineWithOuterScope)
+    @ccall libclangex.clang_LocalInstantiationScope_create(S::CXSema, CombineWithOuterScope::Bool)::CXLocalInstantiationScope
+end
+
+function clang_LocalInstantiationScope_dispose(Scope)
+    @ccall libclangex.clang_LocalInstantiationScope_dispose(Scope::CXLocalInstantiationScope)::Cvoid
+end
+
+function clang_LocalInstantiationScope_getSema(Scope)
+    @ccall libclangex.clang_LocalInstantiationScope_getSema(Scope::CXLocalInstantiationScope)::CXSema
+end
+
+function clang_LocalInstantiationScope_Exit(Scope)
+    @ccall libclangex.clang_LocalInstantiationScope_Exit(Scope::CXLocalInstantiationScope)::Cvoid
+end
+
+function clang_LocalInstantiationScope_isLocalPackExpansion(Scope, D)
+    @ccall libclangex.clang_LocalInstantiationScope_isLocalPackExpansion(Scope::CXLocalInstantiationScope, D::CXDecl)::Bool
+end
+
 @enum CXRedeclarationKind::UInt32 begin
     CXRedeclarationKind_NotForRedeclaration = 0
     CXRedeclarationKind_ForVisibleRedeclaration = 1
@@ -39591,125 +39718,54 @@ function clang_Sema_getFullyPackExpandedSize(S, Arg, Size)
     @ccall libclangex.clang_Sema_getFullyPackExpandedSize(S::CXSema, Arg::CXTemplateArgument, Size::Ptr{Cuint})::Bool
 end
 
-@enum CXTemplateSubstitutionKind::UInt32 begin
-    CXTemplateSubstitutionKind_Specialization = 0
-    CXTemplateSubstitutionKind_Rewrite = 1
+function clang_Sema_getCurFPFeatures(S)
+    @ccall libclangex.clang_Sema_getCurFPFeatures(S::CXSema)::Cuint
 end
 
-function clang_MultiLevelTemplateArgumentList_create()
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_create()::CXMultiLevelTemplateArgumentList
+function clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S, PParam, AArg, Loc)
+    @ccall libclangex.clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S::CXSema, PParam::CXTemplateParameterList, AArg::CXTemplateDecl, Loc::CXSourceLocation_)::Bool
 end
 
-function clang_MultiLevelTemplateArgumentList_dispose(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_dispose(ML::CXMultiLevelTemplateArgumentList)::Cvoid
+function clang_Sema_getIdentityTemplateArgumentLoc(S, Param, Location)
+    @ccall libclangex.clang_Sema_getIdentityTemplateArgumentLoc(S::CXSema, Param::CXNamedDecl, Location::CXSourceLocation_)::CXTemplateArgumentLoc
 end
 
-function clang_MultiLevelTemplateArgumentList_setKind(ML, K)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_setKind(ML::CXMultiLevelTemplateArgumentList, K::CXTemplateSubstitutionKind)::Cvoid
+function clang_Sema_getTemplateArgumentPackExpansionPattern(S, OrigLoc, Ellipsis, HasNumExpansions, NumExpansions)
+    @ccall libclangex.clang_Sema_getTemplateArgumentPackExpansionPattern(S::CXSema, OrigLoc::CXTemplateArgumentLoc, Ellipsis::Ptr{CXSourceLocation_}, HasNumExpansions::Ptr{Bool}, NumExpansions::Ptr{Cuint})::CXTemplateArgumentLoc
 end
 
-function clang_MultiLevelTemplateArgumentList_getKind(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getKind(ML::CXMultiLevelTemplateArgumentList)::CXTemplateSubstitutionKind
+function clang_TemplateArgumentLoc_dispose(TAL)
+    @ccall libclangex.clang_TemplateArgumentLoc_dispose(TAL::CXTemplateArgumentLoc)::Cvoid
 end
 
-function clang_MultiLevelTemplateArgumentList_isRewrite(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_isRewrite(ML::CXMultiLevelTemplateArgumentList)::Bool
+function clang_Sema_IsPointerConversion(S, From, FromType, ToType, InOverloadResolution, ConvertedType, IncompatibleObjC)
+    @ccall libclangex.clang_Sema_IsPointerConversion(S::CXSema, From::CXExpr, FromType::CXQualType, ToType::CXQualType, InOverloadResolution::Bool, ConvertedType::Ptr{CXQualType}, IncompatibleObjC::Ptr{Bool})::Bool
 end
 
-function clang_MultiLevelTemplateArgumentList_getNumLevels(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumLevels(ML::CXMultiLevelTemplateArgumentList)::Cuint
+@enum CXFormatArgumentPassingKind::UInt32 begin
+    CXFormatArgumentPassingKind_FAPK_Fixed = 0
+    CXFormatArgumentPassingKind_FAPK_Variadic = 1
+    CXFormatArgumentPassingKind_FAPK_VAList = 2
 end
 
-function clang_MultiLevelTemplateArgumentList_getNumSubstitutedLevels(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumSubstitutedLevels(ML::CXMultiLevelTemplateArgumentList)::Cuint
+function clang_Sema_getMoreSpecializedTemplate(S, FT1, FT2, Loc, TPOC, NumCallArguments1, NumCallArguments2, Reversed)
+    @ccall libclangex.clang_Sema_getMoreSpecializedTemplate(S::CXSema, FT1::CXFunctionTemplateDecl, FT2::CXFunctionTemplateDecl, Loc::CXSourceLocation_, TPOC::CXTPOC, NumCallArguments1::Cuint, NumCallArguments2::Cuint, Reversed::Bool)::CXFunctionTemplateDecl
 end
 
-function clang_MultiLevelTemplateArgumentList_getNumSubsitutedArgs(ML, Depth)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumSubsitutedArgs(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint)::Cuint
+function clang_Sema_getFormatStringInfo(Format, IsCXXMember, IsVariadic, FormatIdx, FirstDataArg, ArgPassingKind)
+    @ccall libclangex.clang_Sema_getFormatStringInfo(Format::CXFormatAttr, IsCXXMember::Bool, IsVariadic::Bool, FormatIdx::Ptr{Cuint}, FirstDataArg::Ptr{Cuint}, ArgPassingKind::Ptr{CXFormatArgumentPassingKind})::Bool
 end
 
-function clang_MultiLevelTemplateArgumentList_getNumRetainedOuterLevels(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumRetainedOuterLevels(ML::CXMultiLevelTemplateArgumentList)::Cuint
+function clang_Sema_DefineDefaultedComparison(S, Loc, FD, DCK)
+    @ccall libclangex.clang_Sema_DefineDefaultedComparison(S::CXSema, Loc::CXSourceLocation_, FD::CXFunctionDecl, DCK::CXDefaultedComparisonKind)::Cvoid
 end
 
-function clang_MultiLevelTemplateArgumentList_getNewDepth(ML, OldDepth)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNewDepth(ML::CXMultiLevelTemplateArgumentList, OldDepth::Cuint)::Cuint
+function clang_Sema_getTemplateInstantiationArgs(S, D, DC, Final, Innermost, RelativeToPrimary, Pattern, ForConstraintInstantiation, SkipForSpecialization)
+    @ccall libclangex.clang_Sema_getTemplateInstantiationArgs(S::CXSema, D::CXNamedDecl, DC::CXDeclContext, Final::Bool, Innermost::CXTemplateArgumentList, RelativeToPrimary::Bool, Pattern::CXFunctionDecl, ForConstraintInstantiation::Bool, SkipForSpecialization::Bool)::CXMultiLevelTemplateArgumentList
 end
 
-function clang_MultiLevelTemplateArgumentList_getArgument(ML, Depth, Index)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getArgument(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint, Index::Cuint)::CXTemplateArgument
-end
-
-function clang_MultiLevelTemplateArgumentList_getAssociatedDecl(ML, Depth)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getAssociatedDecl(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint)::CXDecl
-end
-
-function clang_MultiLevelTemplateArgumentList_isAssociatedDeclFinal(ML, Depth)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_isAssociatedDeclFinal(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint)::Bool
-end
-
-function clang_MultiLevelTemplateArgumentList_hasTemplateArgument(ML, Depth, Index)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_hasTemplateArgument(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint, Index::Cuint)::Bool
-end
-
-function clang_MultiLevelTemplateArgumentList_isAnyArgInstantiationDependent(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_isAnyArgInstantiationDependent(ML::CXMultiLevelTemplateArgumentList)::Bool
-end
-
-function clang_MultiLevelTemplateArgumentList_setArgument(ML, Depth, Index, Arg)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_setArgument(ML::CXMultiLevelTemplateArgumentList, Depth::Cuint, Index::Cuint, Arg::CXTemplateArgument)::Cvoid
-end
-
-function clang_MultiLevelTemplateArgumentList_addOuterTemplateArguments(ML, AssociatedDecl, Args, NumArgs, Final)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_addOuterTemplateArguments(ML::CXMultiLevelTemplateArgumentList, AssociatedDecl::CXDecl, Args::CXTemplateArgument, NumArgs::Cuint, Final::Bool)::Cvoid
-end
-
-function clang_MultiLevelTemplateArgumentList_replaceInnermostTemplateArguments(ML, AssociatedDecl, Args, NumArgs)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_replaceInnermostTemplateArguments(ML::CXMultiLevelTemplateArgumentList, AssociatedDecl::CXDecl, Args::CXTemplateArgument, NumArgs::Cuint)::Cvoid
-end
-
-function clang_MultiLevelTemplateArgumentList_addOuterRetainedLevel(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_addOuterRetainedLevel(ML::CXMultiLevelTemplateArgumentList)::Cvoid
-end
-
-function clang_MultiLevelTemplateArgumentList_addOuterRetainedLevels(ML, Num)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_addOuterRetainedLevels(ML::CXMultiLevelTemplateArgumentList, Num::Cuint)::Cvoid
-end
-
-function clang_MultiLevelTemplateArgumentList_getNumInnermostArgs(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumInnermostArgs(ML::CXMultiLevelTemplateArgumentList)::Cuint
-end
-
-function clang_MultiLevelTemplateArgumentList_getInnermostArg(ML, I)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getInnermostArg(ML::CXMultiLevelTemplateArgumentList, I::Cuint)::CXTemplateArgument
-end
-
-function clang_MultiLevelTemplateArgumentList_getNumOutermostArgs(ML)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getNumOutermostArgs(ML::CXMultiLevelTemplateArgumentList)::Cuint
-end
-
-function clang_MultiLevelTemplateArgumentList_getOutermostArg(ML, I)
-    @ccall libclangex.clang_MultiLevelTemplateArgumentList_getOutermostArg(ML::CXMultiLevelTemplateArgumentList, I::Cuint)::CXTemplateArgument
-end
-
-function clang_LocalInstantiationScope_create(S, CombineWithOuterScope)
-    @ccall libclangex.clang_LocalInstantiationScope_create(S::CXSema, CombineWithOuterScope::Bool)::CXLocalInstantiationScope
-end
-
-function clang_LocalInstantiationScope_dispose(Scope)
-    @ccall libclangex.clang_LocalInstantiationScope_dispose(Scope::CXLocalInstantiationScope)::Cvoid
-end
-
-function clang_LocalInstantiationScope_getSema(Scope)
-    @ccall libclangex.clang_LocalInstantiationScope_getSema(Scope::CXLocalInstantiationScope)::CXSema
-end
-
-function clang_LocalInstantiationScope_Exit(Scope)
-    @ccall libclangex.clang_LocalInstantiationScope_Exit(Scope::CXLocalInstantiationScope)::Cvoid
-end
-
-function clang_LocalInstantiationScope_isLocalPackExpansion(Scope, D)
-    @ccall libclangex.clang_LocalInstantiationScope_isLocalPackExpansion(Scope::CXLocalInstantiationScope, D::CXDecl)::Bool
+function clang_Sema_resolveAddressOfSingleOverloadCandidate(S, E, FoundDecl, FoundAccess)
+    @ccall libclangex.clang_Sema_resolveAddressOfSingleOverloadCandidate(S::CXSema, E::CXExpr, FoundDecl::Ptr{CXNamedDecl}, FoundAccess::Ptr{CXAccessSpecifier})::CXFunctionDecl
 end
 
 function clang_TemplateDeductionInfo_create(Loc, DeducedDepth)

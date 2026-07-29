@@ -12,6 +12,7 @@
 #include "clang-ex/Basic/CXSpecifiers.h"
 #include "clang-ex/Basic/CXTypeTraits.h" // CXUnaryExprOrTypeTrait
 #include "clang-ex/CXTypes.h"
+#include "clang-ex/Sema/CXTemplate.h" // CXTPOC
 #include "clang-ex/Sema/CXLookup.h" // CXLookupNameKind
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
@@ -3966,6 +3967,86 @@ CXString clang_Sema_getTemplateArgumentBindingsText(CXSema S, CXTemplateParamete
 // is not yet known (the pack is still dependent), leaving *Size untouched -- this is the
 // std::optional the C++ method returns. Size must be non-null.
 bool clang_Sema_getFullyPackExpandedSize(CXSema S, CXTemplateArgument Arg, unsigned *Size);
+
+// The FP options in effect at the current point of the parse, as the unsigned FPOptions word
+// the clang_FPOptions_* decoders read.
+unsigned clang_Sema_getCurFPFeatures(CXSema S);
+
+// Whether the template template parameter list PParam is at least as specialized as AArg.
+bool clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(
+    CXSema S, CXTemplateParameterList PParam, CXTemplateDecl AArg, CXSourceLocation_ Loc);
+
+// A template argument mapping Param to itself -- the injected self-argument, e.g. T for
+// `template <typename T>`. Returned BY VALUE and heap-boxed, so unlike every other
+// CXTemplateArgumentLoc in this API (all borrowed interior pointers) this one is OWNED:
+// release it with clang_TemplateArgumentLoc_dispose.
+// PRECONDITION: Param is a template type, non-type or template template parameter -- the
+// dispatch ends in an unchecked cast for anything else.
+CXTemplateArgumentLoc clang_Sema_getIdentityTemplateArgumentLoc(CXSema S, CXNamedDecl Param,
+                                                                CXSourceLocation_ Location);
+
+// The pattern of a pack-expansion template argument, with the ellipsis location and the
+// expansion count when it is known (MARSHALLING.md §8 for the optional count). The result is
+// heap-boxed and OWNED -- release it with clang_TemplateArgumentLoc_dispose.
+// PRECONDITION: OrigLoc's argument is a pack expansion.
+CXTemplateArgumentLoc clang_Sema_getTemplateArgumentPackExpansionPattern(
+    CXSema S, CXTemplateArgumentLoc OrigLoc, CXSourceLocation_ *Ellipsis,
+    bool *HasNumExpansions, unsigned *NumExpansions);
+
+// Releases a TemplateArgumentLoc box produced by the two owning functions above. Never call it
+// on a borrowed one from clang_MemberExpr_getTemplateArg or its siblings.
+void clang_TemplateArgumentLoc_dispose(CXTemplateArgumentLoc TAL);
+
+// Whether From (of FromType) converts to ToType by a pointer conversion. On true *ConvertedType
+// receives the converted type. *IncompatibleObjC is set when the conversion is only valid as an
+// incompatible Objective-C pointer conversion; this package does not carry ObjC, so it is
+// reported for completeness rather than acted on.
+bool clang_Sema_IsPointerConversion(CXSema S, CXExpr From, CXQualType FromType,
+                                    CXQualType ToType, bool InOverloadResolution,
+                                    CXQualType *ConvertedType, bool *IncompatibleObjC);
+
+// Mirrors clang::Sema::FormatArgumentPassingKind: how the values a format string describes
+// reach the callee.
+typedef enum CXFormatArgumentPassingKind {
+  CXFormatArgumentPassingKind_FAPK_Fixed,
+  CXFormatArgumentPassingKind_FAPK_Variadic,
+  CXFormatArgumentPassingKind_FAPK_VAList,
+} CXFormatArgumentPassingKind;
+
+// Which of FT1 and FT2 is more specialized, or NULL when neither is. Reversed selects the
+// reversed-parameter-order form, which is defined only for TPOC_Call.
+CXFunctionTemplateDecl clang_Sema_getMoreSpecializedTemplate(
+    CXSema S, CXFunctionTemplateDecl FT1, CXFunctionTemplateDecl FT2, CXSourceLocation_ Loc,
+    CXTPOC TPOC, unsigned NumCallArguments1, unsigned NumCallArguments2, bool Reversed);
+
+// Decodes a format attribute into the format-string index, the first data argument, and how
+// those arguments are passed. Static: it has no Sema receiver and therefore no reachable
+// DiagnosticsEngine, so unlike the rest of this header it structurally cannot diagnose.
+bool clang_Sema_getFormatStringInfo(CXFormatAttr Format, bool IsCXXMember, bool IsVariadic,
+                                    unsigned *FormatIdx, unsigned *FirstDataArg,
+                                    CXFormatArgumentPassingKind *ArgPassingKind);
+
+// Defines the body of a defaulted comparison operator.
+// PRECONDITION: FD is a defaulted, non-deleted comparison whose kind is DCK -- gate with
+// clang_Sema_getDefaultedComparisonKind.
+void clang_Sema_DefineDefaultedComparison(CXSema S, CXSourceLocation_ Loc,
+                                          CXFunctionDecl FD, CXDefaultedComparisonKind DCK);
+
+// The template argument lists in scope for D (or DC), heap-boxed and OWNED -- release with
+// clang_MultiLevelTemplateArgumentList_dispose. The box is a copy of the by-value result, so
+// its retained-outer-level count travels with it. PRECONDITION: at least one of D and DC is
+// non-null; Innermost and Pattern are legitimately nullable.
+CXMultiLevelTemplateArgumentList clang_Sema_getTemplateInstantiationArgs(
+    CXSema S, CXNamedDecl D, CXDeclContext DC, bool Final, CXTemplateArgumentList Innermost,
+    bool RelativeToPrimary, CXFunctionDecl Pattern, bool ForConstraintInstantiation,
+    bool SkipForSpecialization);
+
+// The single function an overload-set expression names, or NULL when it names none or more
+// than one. *FoundDecl and *FoundAccess receive the found declaration and its access.
+// PRECONDITION: E carries the overload placeholder type.
+CXFunctionDecl clang_Sema_resolveAddressOfSingleOverloadCandidate(CXSema S, CXExpr E,
+                                                                  CXNamedDecl *FoundDecl,
+                                                                  CXAccessSpecifier *FoundAccess);
 
 LLVM_CLANG_C_EXTERN_C_END
 

@@ -8816,3 +8816,209 @@ function getFullyPackExpandedSize(x::AbstractSema, arg::TemplateArgument)
     size = Ref{Cuint}(0)
     return clang_Sema_getFullyPackExpandedSize(x, arg, size) ? size[] : nothing
 end
+
+"""
+    getCurFPFeatures(x::AbstractSema) -> UInt32
+Return the floating-point options in effect at the parser's current point, as the `FPOptions`
+word the decoders read — [`getRoundingMode`](@ref), [`getExceptionMode`](@ref),
+[`allowFPContractWithinStatement`](@ref) and [`isFPConstrained`](@ref).
+"""
+function getCurFPFeatures(x::AbstractSema)
+    @check_ptrs x
+    return clang_Sema_getCurFPFeatures(x)
+end
+
+"""
+    isTemplateTemplateParameterAtLeastAsSpecializedAs(x::AbstractSema,
+        pparam::TemplateParameterList, aarg::AbstractTemplateDecl,
+        loc::SourceLocation) -> Bool
+Return whether the parameter list `pparam` is at least as specialized as the template `aarg`,
+the partial-ordering test for template template parameters.
+"""
+function isTemplateTemplateParameterAtLeastAsSpecializedAs(x::AbstractSema,
+                                                           pparam::TemplateParameterList,
+                                                           aarg::AbstractTemplateDecl,
+                                                           loc::SourceLocation)
+    @check_ptrs x pparam aarg
+    return clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(x, pparam, aarg, loc)
+end
+
+"""
+    getIdentityTemplateArgumentLoc(x::AbstractSema, param::AbstractNamedDecl,
+                                   loc::SourceLocation) -> TemplateArgumentLoc
+Return the template argument that maps `param` to itself — the injected self-argument, `T` for
+`template <typename T>` — which is the input template-substitution queries take.
+
+`param` must be a template type, non-type or template template parameter: the dispatch ends in
+an unchecked cast for anything else.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object. Unlike every `TemplateArgumentLoc` reached through a getter, this one is owned.
+"""
+function getIdentityTemplateArgumentLoc(x::AbstractSema, param::AbstractNamedDecl,
+                                        loc::SourceLocation)
+    @check_ptrs x param
+    k = getKind(param)
+    @assert k in (CXDeclKind_TemplateTypeParm, CXDeclKind_NonTypeTemplateParm,
+                  CXDeclKind_TemplateTemplateParm) "expected a template parameter declaration"
+    return TemplateArgumentLoc(clang_Sema_getIdentityTemplateArgumentLoc(x, param, loc))
+end
+
+"""
+    getTemplateArgumentPackExpansionPattern(x::AbstractSema, orig::TemplateArgumentLoc)
+        -> (TemplateArgumentLoc, SourceLocation, Union{UInt32,Nothing})
+Return the pattern of the pack-expansion argument `orig`, together with the location of its
+ellipsis and the number of expansions when that is already known.
+
+`orig`'s argument must be a pack expansion. The returned pattern allocates and one should call
+`dispose` to release the resources after using this object.
+"""
+function getTemplateArgumentPackExpansionPattern(x::AbstractSema, orig::TemplateArgumentLoc)
+    @check_ptrs x orig
+    @assert isPackExpansion(getArgument(orig)) "template argument must be a pack expansion"
+    ellipsis = Ref{CXSourceLocation_}(C_NULL)
+    has_n = Ref{Bool}(false)
+    n = Ref{Cuint}(0)
+    pat = clang_Sema_getTemplateArgumentPackExpansionPattern(x, orig, ellipsis, has_n, n)
+    return TemplateArgumentLoc(pat), SourceLocation(ellipsis[]), has_n[] ? n[] : nothing
+end
+
+"""
+    IsPointerConversion(x::AbstractSema, from::AbstractExpr, from_ty::QualType,
+                        to_ty::QualType; in_overload_resolution::Bool=false)
+        -> (Bool, QualType)
+Return whether `from`, of type `from_ty`, converts to `to_ty` by a pointer conversion, together
+with the converted type when it does.
+
+The converted type is a null `QualType` when the answer is `false`, so test the flag rather
+than the type.
+"""
+function IsPointerConversion(x::AbstractSema, from::AbstractExpr, from_ty::QualType,
+                             to_ty::QualType; in_overload_resolution::Bool=false)
+    @check_ptrs x from from_ty to_ty
+    converted = Ref{CXQualType}(C_NULL)
+    incompatible = Ref{Bool}(false)
+    ok = clang_Sema_IsPointerConversion(x, from, from_ty, to_ty, in_overload_resolution,
+                                        converted, incompatible)
+    return ok, QualType(converted[])
+end
+
+"""
+    getMoreSpecializedTemplate(x::AbstractSema, ft1::AbstractFunctionTemplateDecl,
+                               ft2::AbstractFunctionTemplateDecl, loc::SourceLocation,
+                               tpoc::CXTPOC, num_call_arguments1::Integer,
+                               num_call_arguments2::Integer;
+                               reversed::Bool=false) -> Union{FunctionTemplateDecl,Nothing}
+Return whichever of `ft1` and `ft2` is more specialized under partial ordering, or `nothing`
+when neither is.
+
+`tpoc` says which context the ordering is for. `reversed` selects the reversed-parameter-order
+form, which is defined only for `CXTPOC_TPOC_Call`.
+"""
+function getMoreSpecializedTemplate(x::AbstractSema, ft1::AbstractFunctionTemplateDecl,
+                                    ft2::AbstractFunctionTemplateDecl, loc::SourceLocation,
+                                    tpoc::CXTPOC, num_call_arguments1::Integer,
+                                    num_call_arguments2::Integer; reversed::Bool=false)
+    @check_ptrs x ft1 ft2
+    @assert !reversed || tpoc == CXTPOC_TPOC_Call "the reversed form is only defined for call-context ordering"
+    p = clang_Sema_getMoreSpecializedTemplate(x, ft1, ft2, loc, tpoc, num_call_arguments1,
+                                              num_call_arguments2, reversed)
+    return p == C_NULL ? nothing : FunctionTemplateDecl(p)
+end
+
+"""
+    getFormatStringInfo(attr::AbstractFormatAttr, is_cxx_member::Bool,
+                        is_variadic::Bool) -> Union{NamedTuple,Nothing}
+Decode a `format` attribute into `(format_idx, first_data_arg, arg_passing_kind)`, or `nothing`
+when the attribute does not describe a usable format string.
+
+Static: it takes no `Sema`, so unlike the rest of this file it has no reachable diagnostics
+engine and structurally cannot diagnose. The indices it returns are adjusted for
+`is_cxx_member` (an implicit `this` shifts them) and `is_variadic`.
+"""
+function getFormatStringInfo(attr::AbstractFormatAttr, is_cxx_member::Bool,
+                             is_variadic::Bool)
+    @check_ptrs attr
+    idx = Ref{Cuint}(0)
+    first = Ref{Cuint}(0)
+    kind = Ref{CXFormatArgumentPassingKind}(CXFormatArgumentPassingKind_FAPK_Fixed)
+    ok = clang_Sema_getFormatStringInfo(attr, is_cxx_member, is_variadic, idx, first, kind)
+    ok || return nothing
+    return (format_idx=idx[], first_data_arg=first[], arg_passing_kind=kind[])
+end
+
+"""
+    DefineDefaultedComparison(x::AbstractSema, loc::SourceLocation,
+                              fd::AbstractFunctionDecl, dck::CXDefaultedComparisonKind)
+Define the body of the defaulted comparison operator `fd`.
+
+`fd` must be a defaulted, non-deleted comparison whose kind really is `dck` — the kind is read
+back here with [`getDefaultedComparisonKind`](@ref) rather than trusted from the caller, since
+passing the wrong one would have clang synthesize the wrong body.
+"""
+function DefineDefaultedComparison(x::AbstractSema, loc::SourceLocation,
+                                   fd::AbstractFunctionDecl,
+                                   dck::CXDefaultedComparisonKind)
+    @check_ptrs x fd
+    @assert dck != CXDefaultedComparisonKind_None "a defaulted comparison kind is required"
+    @assert getDefaultedComparisonKind(x, fd) == dck "dck must be the declaration's own comparison kind"
+    @assert isDefaulted(fd) "the function must be defaulted"
+    @assert !isDeleted(fd) "a deleted function has no body to define"
+    return clang_Sema_DefineDefaultedComparison(x, loc, fd, dck)
+end
+
+"""
+    getTemplateInstantiationArgs(x::AbstractSema, d::AbstractNamedDecl,
+        dc::Union{DeclContext,Nothing}=nothing; final::Bool=false,
+        innermost::Union{TemplateArgumentList,Nothing}=nothing,
+        relative_to_primary::Bool=false, pattern::Union{AbstractFunctionDecl,Nothing}=nothing,
+        for_constraint_instantiation::Bool=false,
+        skip_for_specialization::Bool=false) -> MultiLevelTemplateArgumentList
+Return the template argument lists in scope for `d`, outermost level last.
+
+At least one of `d` and `dc` must be present. The result is a copy of clang's by-value list, so
+its retained-outer-level count travels with it; this function allocates and one should call
+`dispose` to release the resources after using this object.
+"""
+function getTemplateInstantiationArgs(x::AbstractSema, d::AbstractNamedDecl,
+                                      dc::Union{DeclContext,Nothing}=nothing;
+                                      final::Bool=false,
+                                      innermost::Union{TemplateArgumentList,Nothing}=nothing,
+                                      relative_to_primary::Bool=false,
+                                      pattern::Union{AbstractFunctionDecl,Nothing}=nothing,
+                                      for_constraint_instantiation::Bool=false,
+                                      skip_for_specialization::Bool=false)
+    @check_ptrs x
+    @assert !is_null_handle(d) || dc !== nothing "at least one of d and dc must be given"
+    return MultiLevelTemplateArgumentList(clang_Sema_getTemplateInstantiationArgs(x, d,
+                                                                                  dc === nothing ? C_NULL : dc,
+                                                                                  final,
+                                                                                  innermost === nothing ? C_NULL :
+                                                                                  innermost,
+                                                                                  relative_to_primary,
+                                                                                  pattern === nothing ? C_NULL :
+                                                                                  pattern,
+                                                                                  for_constraint_instantiation,
+                                                                                  skip_for_specialization))
+end
+
+"""
+    resolveAddressOfSingleOverloadCandidate(x::AbstractSema, e::AbstractExpr)
+        -> Union{Tuple{FunctionDecl,NamedDecl,CXAccessSpecifier},Nothing}
+Return the single function the overload-set expression `e` names, together with the declaration
+found and its access, or `nothing` when `e` names none or more than one.
+
+`e` must carry the overload placeholder type — the same precondition
+[`ResolveAddressOfOverloadedFunction`](@ref) restates, since both route through
+`OverloadExpr::find`.
+"""
+function resolveAddressOfSingleOverloadCandidate(x::AbstractSema, e::AbstractExpr)
+    @check_ptrs x e
+    ety = expr_type_ptr(e)
+    @assert isPlaceholderType(ety) && !isNonOverloadPlaceholderType(ety) "the expression must name an overload set"
+    found = Ref{CXNamedDecl}(C_NULL)
+    access = Ref{CXAccessSpecifier}(CXAccessSpecifier_AS_none)
+    p = clang_Sema_resolveAddressOfSingleOverloadCandidate(x, e, found, access)
+    p == C_NULL && return nothing
+    return FunctionDecl(p), NamedDecl(found[]), access[]
+end

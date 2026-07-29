@@ -1911,4 +1911,12 @@ ENUM_SYNC(CXScopeFlags_ConditionVarScope, clang::Scope::ConditionVarScope);
 ENUM_SYNC(CXScopeFlags_OpenMPOrderClauseScope, clang::Scope::OpenMPOrderClauseScope);
 ENUM_SYNC(CXScopeFlags_LambdaScope, clang::Scope::LambdaScope);
 
+ENUM_SYNC(CXTPOC_TPOC_Call, clang::TPOC_Call);
+ENUM_SYNC(CXTPOC_TPOC_Conversion, clang::TPOC_Conversion);
+ENUM_SYNC(CXTPOC_TPOC_Other, clang::TPOC_Other);
+
+ENUM_SYNC(CXFormatArgumentPassingKind_FAPK_Fixed, clang::Sema::FAPK_Fixed);
+ENUM_SYNC(CXFormatArgumentPassingKind_FAPK_Variadic, clang::Sema::FAPK_Variadic);
+ENUM_SYNC(CXFormatArgumentPassingKind_FAPK_VAList, clang::Sema::FAPK_VAList);
+
 #undef ENUM_SYNC

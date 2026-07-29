@@ -4924,3 +4924,124 @@ bool clang_Sema_getFullyPackExpandedSize(CXSema S, CXTemplateArgument Arg, unsig
   *Size = *N;
   return true;
 }
+
+unsigned clang_Sema_getCurFPFeatures(CXSema S) {
+  return static_cast<clang::Sema *>(S)->getCurFPFeatures().getAsOpaqueInt();
+}
+
+bool clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(
+    CXSema S, CXTemplateParameterList PParam, CXTemplateDecl AArg,
+    CXSourceLocation_ Loc) {
+  return static_cast<clang::Sema *>(S)->isTemplateTemplateParameterAtLeastAsSpecializedAs(
+      static_cast<clang::TemplateParameterList *>(PParam),
+      static_cast<clang::TemplateDecl *>(AArg),
+      clang::SourceLocation::getFromPtrEncoding(Loc));
+}
+
+CXTemplateArgumentLoc clang_Sema_getIdentityTemplateArgumentLoc(CXSema S, CXNamedDecl Param,
+                                                                CXSourceLocation_ Location) {
+  return std::make_unique<clang::TemplateArgumentLoc>(
+             static_cast<clang::Sema *>(S)->getIdentityTemplateArgumentLoc(
+                 static_cast<clang::NamedDecl *>(Param),
+                 clang::SourceLocation::getFromPtrEncoding(Location)))
+      .release();
+}
+
+CXTemplateArgumentLoc clang_Sema_getTemplateArgumentPackExpansionPattern(
+    CXSema S, CXTemplateArgumentLoc OrigLoc, CXSourceLocation_ *Ellipsis,
+    bool *HasNumExpansions, unsigned *NumExpansions) {
+  clang::SourceLocation E;
+  std::optional<unsigned> N;
+  clang::TemplateArgumentLoc R =
+      static_cast<clang::Sema *>(S)->getTemplateArgumentPackExpansionPattern(
+          *static_cast<clang::TemplateArgumentLoc *>(OrigLoc), E, N);
+  if (Ellipsis)
+    *Ellipsis = E.getPtrEncoding();
+  if (HasNumExpansions)
+    *HasNumExpansions = N.has_value();
+  if (NumExpansions && N)
+    *NumExpansions = *N;
+  return std::make_unique<clang::TemplateArgumentLoc>(R).release();
+}
+
+void clang_TemplateArgumentLoc_dispose(CXTemplateArgumentLoc TAL) {
+  delete static_cast<clang::TemplateArgumentLoc *>(TAL);
+}
+
+bool clang_Sema_IsPointerConversion(CXSema S, CXExpr From, CXQualType FromType,
+                                    CXQualType ToType, bool InOverloadResolution,
+                                    CXQualType *ConvertedType, bool *IncompatibleObjC) {
+  clang::QualType Converted;
+  bool Incompatible = false;
+  bool R = static_cast<clang::Sema *>(S)->IsPointerConversion(
+      static_cast<clang::Expr *>(From), clang::QualType::getFromOpaquePtr(FromType),
+      clang::QualType::getFromOpaquePtr(ToType), InOverloadResolution, Converted,
+      Incompatible);
+  if (ConvertedType)
+    *ConvertedType = Converted.getAsOpaquePtr();
+  if (IncompatibleObjC)
+    *IncompatibleObjC = Incompatible;
+  return R;
+}
+
+CXFunctionTemplateDecl clang_Sema_getMoreSpecializedTemplate(
+    CXSema S, CXFunctionTemplateDecl FT1, CXFunctionTemplateDecl FT2, CXSourceLocation_ Loc,
+    CXTPOC TPOC, unsigned NumCallArguments1, unsigned NumCallArguments2, bool Reversed) {
+  return static_cast<clang::Sema *>(S)->getMoreSpecializedTemplate(
+      static_cast<clang::FunctionTemplateDecl *>(FT1),
+      static_cast<clang::FunctionTemplateDecl *>(FT2),
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      clang::TemplatePartialOrderingContext(static_cast<clang::TPOC>(TPOC)),
+      NumCallArguments1, NumCallArguments2, Reversed);
+}
+
+bool clang_Sema_getFormatStringInfo(CXFormatAttr Format, bool IsCXXMember, bool IsVariadic,
+                                    unsigned *FormatIdx, unsigned *FirstDataArg,
+                                    CXFormatArgumentPassingKind *ArgPassingKind) {
+  clang::Sema::FormatStringInfo FSI;
+  bool R = clang::Sema::getFormatStringInfo(static_cast<clang::FormatAttr *>(Format),
+                                            IsCXXMember, IsVariadic, &FSI);
+  if (FormatIdx)
+    *FormatIdx = FSI.FormatIdx;
+  if (FirstDataArg)
+    *FirstDataArg = FSI.FirstDataArg;
+  if (ArgPassingKind)
+    *ArgPassingKind = static_cast<CXFormatArgumentPassingKind>(FSI.ArgPassingKind);
+  return R;
+}
+
+void clang_Sema_DefineDefaultedComparison(CXSema S, CXSourceLocation_ Loc,
+                                          CXFunctionDecl FD,
+                                          CXDefaultedComparisonKind DCK) {
+  static_cast<clang::Sema *>(S)->DefineDefaultedComparison(
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      static_cast<clang::FunctionDecl *>(FD),
+      static_cast<clang::Sema::DefaultedComparisonKind>(DCK));
+}
+
+CXMultiLevelTemplateArgumentList clang_Sema_getTemplateInstantiationArgs(
+    CXSema S, CXNamedDecl D, CXDeclContext DC, bool Final, CXTemplateArgumentList Innermost,
+    bool RelativeToPrimary, CXFunctionDecl Pattern, bool ForConstraintInstantiation,
+    bool SkipForSpecialization) {
+  return std::make_unique<clang::MultiLevelTemplateArgumentList>(
+             static_cast<clang::Sema *>(S)->getTemplateInstantiationArgs(
+                 static_cast<clang::NamedDecl *>(D),
+                 static_cast<clang::DeclContext *>(DC), Final,
+                 static_cast<clang::TemplateArgumentList *>(Innermost), RelativeToPrimary,
+                 static_cast<clang::FunctionDecl *>(Pattern), ForConstraintInstantiation,
+                 SkipForSpecialization))
+      .release();
+}
+
+CXFunctionDecl clang_Sema_resolveAddressOfSingleOverloadCandidate(
+    CXSema S, CXExpr E, CXNamedDecl *FoundDecl, CXAccessSpecifier *FoundAccess) {
+  clang::DeclAccessPair Found;
+  clang::FunctionDecl *R =
+      static_cast<clang::Sema *>(S)->resolveAddressOfSingleOverloadCandidate(
+          static_cast<clang::Expr *>(E), Found);
+  if (FoundDecl)
+    *FoundDecl = Found.getDecl();
+  if (FoundAccess)
+    *FoundAccess = static_cast<CXAccessSpecifier>(Found.getAccess());
+  return R;
+}

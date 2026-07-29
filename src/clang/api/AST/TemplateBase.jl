@@ -476,3 +476,13 @@ function getDependence(x::AbstractTemplateArgument)
     @assert !isNull(x) "a null template argument has no dependence"
     return clang_TemplateArgument_getDependence(x)
 end
+
+"""
+    dispose(x::TemplateArgumentLoc)
+Release a `TemplateArgumentLoc` box produced by [`getIdentityTemplateArgumentLoc`](@ref) or
+[`getTemplateArgumentPackExpansionPattern`](@ref).
+
+Never call this on one obtained from a getter such as [`getTemplateArg`](@ref): those are
+borrowed interior pointers into AST-owned storage, and freeing one is a double free.
+"""
+dispose(x::TemplateArgumentLoc) = clang_TemplateArgumentLoc_dispose(x)

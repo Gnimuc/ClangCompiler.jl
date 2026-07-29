@@ -4794,3 +4794,100 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "Sema | identity template arguments and FP state" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             template <typename IdT, int IdN> struct IdS {};
+             template <typename... IdPack> struct IdPk {};
+             """)
+    sema = CC.get_sema(I)
+    ctx = CC.get_ast_context(I)
+    sm = CC.getSourceManager(CC.get_instance(I))
+    loc = CC.getLocForStartOfFile(sm, CC.getMainFileID(sm))
+
+    f = DeclFinder(I)
+    @test f(I, "IdS")
+    td = CC.ClassTemplateDecl(get_decl(f).ptr)
+    params = CC.getTemplateParameters(td)
+
+    # the two parameters of the SAME template produce DIFFERENT argument kinds, so neither
+    # answer is fixed by the wrapper's return type
+    p0 = CC.getParam(params, 0)
+    p1 = CC.getParam(params, 1)
+    tal0 = CC.getIdentityTemplateArgumentLoc(sema, p0, loc)
+    tal1 = CC.getIdentityTemplateArgumentLoc(sema, p1, loc)
+    k0 = CC.getKind(CC.getArgument(tal0))
+    k1 = CC.getKind(CC.getArgument(tal1))
+    @test k0 == CC.CXTemplateArgument_Type
+    @test k1 == CC.CXTemplateArgument_Expression
+    @test k0 != k1
+    # and the type argument spells the parameter's own name, a value clang decided
+    @test CC.printAsString(CC.getAsType(CC.getArgument(tal0)), ctx) == "IdT"
+    CC.dispose(tal0)
+    CC.dispose(tal1)
+
+    # the gate rejects a declaration that is not a template parameter
+    @test_throws AssertionError CC.getIdentityTemplateArgumentLoc(sema,
+                                                                  CC.NamedDecl(td.ptr), loc)
+
+    # the FP state is a word the decoders read, and it agrees with the context's default
+    w = CC.getCurFPFeatures(sema)
+    @test !(CC.allowFPContractWithinStatement(w) && CC.allowFPContractAcrossStatement(w))
+    @test CC.isFPConstrained(w) ==
+          (CC.getExceptionMode(w) != CC.CXFPExceptionModeKind_FPE_Ignore ||
+           CC.getRoundingMode(w) != CC.CXRoundingMode_NearestTiesToEven)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Sema | partial ordering, format attributes and overload resolution" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             template <typename A> void po_fn(A);
+             template <typename A> void po_fn(A *);
+             __attribute__((format(printf, 2, 3))) void fmt_fn(int x, const char *f, ...);
+             void ovl_one(int);
+             """)
+    sema = CC.get_sema(I)
+    sm = CC.getSourceManager(CC.get_instance(I))
+    loc = CC.getLocForStartOfFile(sm, CC.getMainFileID(sm))
+
+    f = DeclFinder(I)
+
+    # partial ordering: `po_fn(A*)` is more specialized than `po_fn(A)`, and asking the
+    # question the other way round gives the SAME winner -- so the answer is a property of
+    # the pair, not of argument order
+    @test f(I, "po_fn")
+    fts = [CC.FunctionTemplateDecl(d.ptr)
+           for d in CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(CC.get_ast_context(I))))
+           if d isa CC.FunctionTemplateDecl]
+    @test length(fts) >= 2
+    a, b = fts[1], fts[2]
+    w1 = CC.getMoreSpecializedTemplate(sema, a, b, loc, CC.CXTPOC_TPOC_Call, 1, 1)
+    w2 = CC.getMoreSpecializedTemplate(sema, b, a, loc, CC.CXTPOC_TPOC_Call, 1, 1)
+    @test w1 !== nothing
+    @test w2 !== nothing
+    @test w1.ptr == w2.ptr
+    # the reversed form is only defined for call-context ordering
+    @test_throws AssertionError CC.getMoreSpecializedTemplate(sema, a, b, loc,
+                                                              CC.CXTPOC_TPOC_Other, 1, 1;
+                                                              reversed=true)
+
+    # the format attribute decodes to the indices actually written in the source
+    @test f(I, "fmt_fn")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fattrs = [x for x in CC.getAttrs(fd) if CC.get_attr_kind(x) == CC.CXAttrKind_Format]
+    @test length(fattrs) == 1
+    info = CC.getFormatStringInfo(CC.FormatAttr(only(fattrs).ptr), false, true)
+    @test info !== nothing
+    # `format(printf, 2, 3)` is 1-based over the written parameters; the decoded indices name
+    # the format string and the first vararg
+    @test info.format_idx == 1
+    @test info.first_data_arg == 2
+    @test info.arg_passing_kind == CC.CXFormatArgumentPassingKind_FAPK_Variadic
+
+    dispose(f)
+    dispose(I)
+end

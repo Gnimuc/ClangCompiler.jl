@@ -7,6 +7,15 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+// Mirrors clang::TPOC (clang/Sema/Template.h): which context a partial ordering of function
+// templates is being performed for.
+typedef enum CXTPOC {
+  CXTPOC_TPOC_Call,
+  CXTPOC_TPOC_Conversion,
+  CXTPOC_TPOC_Other,
+} CXTPOC;
+
+
 // clang spells this `enum class TemplateSubstitutionKind : char`. The underlying type is
 // deliberately not copied: plain `char` has implementation-defined signedness, so pinning
 // it here would make the generated Julia @enum's integer type platform-dependent. The
