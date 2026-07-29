@@ -2,6 +2,8 @@
 #include "utils.h"
 #include "clang/Lex/Lexer.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include <algorithm>
+#include <cstring>
 
 CXLexer clang_Lexer_create(CXFileID FID, LLVMMemoryBufferRef FromFile, CXSourceManager SM,
                            CXLangOptions langOpts) {
@@ -155,4 +157,88 @@ bool clang_Lexer_findNextToken(CXSourceLocation_ Loc, CXSourceManager SM,
 
 bool clang_Lexer_isFirstTimeLexingFile(CXLexer Lex) {
   return static_cast<clang::Lexer *>(Lex)->isFirstTimeLexingFile();
+}
+
+size_t clang_Lexer_getBufferLength(CXLexer Lex) {
+  return static_cast<clang::Lexer *>(Lex)->getBuffer().size();
+}
+
+void clang_Lexer_getBuffer(CXLexer Lex, char *Out, size_t N) {
+  llvm::StringRef B = static_cast<clang::Lexer *>(Lex)->getBuffer();
+  std::memcpy(Out, B.data(), std::min(N, B.size()));
+}
+
+CXSourceLocation_ clang_Lexer_getSourceLocation(CXLexer Lex) {
+  return static_cast<clang::Lexer *>(Lex)->getSourceLocation().getPtrEncoding();
+}
+
+void clang_Lexer_seek(CXLexer Lex, unsigned Offset, bool IsAtStartOfLine) {
+  static_cast<clang::Lexer *>(Lex)->seek(Offset, IsAtStartOfLine);
+}
+
+CXString clang_Lexer_Stringify(const char *Str, size_t Len, bool Charify) {
+  return extra::makeCXString(clang::Lexer::Stringify(llvm::StringRef(Str, Len), Charify));
+}
+
+unsigned clang_Lexer_getTokenPrefixLength(CXSourceLocation_ TokStart, unsigned CharNo,
+                                          CXSourceManager SM, CXLangOptions LangOpts) {
+  return clang::Lexer::getTokenPrefixLength(
+      clang::SourceLocation::getFromPtrEncoding(TokStart), CharNo,
+      *static_cast<clang::SourceManager *>(SM),
+      *static_cast<clang::LangOptions *>(LangOpts));
+}
+
+CXSourceRange_ clang_Lexer_makeFileCharRange(CXSourceRange_ Range, bool IsTokenRange,
+                                             CXSourceManager SM, CXLangOptions LangOpts) {
+  clang::CharSourceRange CSR(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(Range.B),
+                         clang::SourceLocation::getFromPtrEncoding(Range.E)),
+      IsTokenRange);
+  clang::CharSourceRange R =
+      clang::Lexer::makeFileCharRange(CSR, *static_cast<clang::SourceManager *>(SM),
+                                      *static_cast<clang::LangOptions *>(LangOpts));
+  return CXSourceRange_{R.getBegin().getPtrEncoding(), R.getEnd().getPtrEncoding()};
+}
+
+CXString clang_Lexer_getImmediateMacroNameForDiagnostics(CXSourceLocation_ Loc,
+                                                         CXSourceManager SM,
+                                                         CXLangOptions LangOpts) {
+  return extra::makeCXString(clang::Lexer::getImmediateMacroNameForDiagnostics(
+                                 clang::SourceLocation::getFromPtrEncoding(Loc),
+                                 *static_cast<clang::SourceManager *>(SM),
+                                 *static_cast<clang::LangOptions *>(LangOpts))
+                                 .str());
+}
+
+CXString clang_Lexer_getIndentationForLine(CXSourceLocation_ Loc, CXSourceManager SM) {
+  return extra::makeCXString(
+      clang::Lexer::getIndentationForLine(clang::SourceLocation::getFromPtrEncoding(Loc),
+                                          *static_cast<clang::SourceManager *>(SM))
+          .str());
+}
+
+unsigned clang_Lexer_ComputePreamble(const char *Buffer, CXLangOptions LangOpts,
+                                     unsigned MaxLines, bool *PreambleEndsAtStartOfLine) {
+  clang::PreambleBounds PB = clang::Lexer::ComputePreamble(
+      llvm::StringRef(Buffer), *static_cast<clang::LangOptions *>(LangOpts), MaxLines);
+  if (PreambleEndsAtStartOfLine)
+    *PreambleEndsAtStartOfLine = PB.PreambleEndsAtStartOfLine;
+  return PB.Size;
+}
+
+CXSourceLocation_ clang_Lexer_findLocationAfterToken(
+    CXSourceLocation_ Loc, unsigned TKind, CXSourceManager SM, CXLangOptions LangOpts,
+    bool SkipTrailingWhitespaceAndNewLine) {
+  return clang::Lexer::findLocationAfterToken(
+             clang::SourceLocation::getFromPtrEncoding(Loc),
+             static_cast<clang::tok::TokenKind>(TKind),
+             *static_cast<clang::SourceManager *>(SM),
+             *static_cast<clang::LangOptions *>(LangOpts),
+             SkipTrailingWhitespaceAndNewLine)
+      .getPtrEncoding();
+}
+
+bool clang_Lexer_isAsciiIdentifierContinueChar(char C, CXLangOptions LangOpts) {
+  return clang::Lexer::isAsciiIdentifierContinueChar(
+      C, *static_cast<clang::LangOptions *>(LangOpts));
 }

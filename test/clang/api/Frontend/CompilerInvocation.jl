@@ -142,6 +142,17 @@ end
         # ASTConsumer donation from the donor interpreter unblocks
         # createSema on this instance
         @test (CC.setASTConsumer(ci, CC.getASTConsumer(sci)); CC.hasASTConsumer(ci))
+
+        # takeASTConsumer undoes that adoption: the same object comes back and the instance
+        # is left with none, which is what lets `ci` be dropped without freeing a consumer
+        # the donor interpreter still owns. Re-install it so createSema below still works.
+        donated = CC.getASTConsumer(sci)
+        taken = CC.takeASTConsumer(ci)
+        @test taken.ptr == donated.ptr
+        @test !CC.hasASTConsumer(ci)
+        @test_throws AssertionError CC.takeASTConsumer(ci)
+        @test (CC.setASTConsumer(ci, taken); CC.hasASTConsumer(ci))
+
         @test (CC.createSema(ci); CC.hasSema(ci))
 
         # Parser: first (and only) parser over this fresh preprocessor —

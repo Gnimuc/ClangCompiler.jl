@@ -117,7 +117,11 @@ CXDiagnosticsEngine clang_ASTContext_getDiagnostics(CXASTContext Ctx);
 CXTargetCXXABI_Kind clang_ASTContext_getCXXABIKind(CXASTContext Ctx);
 // cacheRawCommentForDecl
 // getRawCommentForDeclNoCacheImpl
-// getRawCommentForDeclNoCache
+// The documentation comment attached to D itself: no cache consultation and no
+// redeclaration walk, unlike clang_ASTContext_getRawCommentForAnyRedecl. NULL when nothing is
+// attached to D -- which is the normal answer for every redeclaration but the one the comment
+// was written above. Borrowed: RawComments live in the context's arena.
+CXRawComment clang_ASTContext_getRawCommentForDeclNoCache(CXASTContext Ctx, CXDecl D);
 // addComment
 // getRawCommentForAnyRedecl
 
@@ -126,7 +130,6 @@ CXTargetCXXABI_Kind clang_ASTContext_getCXXABIKind(CXASTContext Ctx);
 // ASTContext's own SourceManager) and the redeclaration the comment was attached
 // to. Both report "no comment" out of band — an empty string (a RawComment always
 // spans at least its introducer, so empty is unambiguous) and a null handle.
-// clang 18 declares getRawCommentForDeclNoCache private; it cannot be wrapped.
 // The RawComment handle itself, for callers that need more than the text (kind,
 // attachment/trailing flags, range). Returns NULL when no comment is attached.
 CXRawComment clang_ASTContext_getRawCommentForAnyRedecl(CXASTContext Ctx, CXDecl D);
@@ -300,6 +303,19 @@ CXDecl clang_ASTContext_getModuleInitializer(CXASTContext Ctx, CXModule M, unsig
 CXModule clang_ASTContext_getCurrentNamedModule(CXASTContext Ctx);
 
 CXTranslationUnitDecl clang_ASTContext_getTranslationUnitDecl(CXASTContext Ctx);
+
+// The TUKind the context was built with. TUKind is a public const data member with no
+// accessor in clang; it is exported because clang_ASTContext_addTranslationUnitDecl asserts
+// on it (MARSHALLING.md §13, "export the gate").
+CXTranslationUnitKind clang_ASTContext_getTranslationUnitKind(CXASTContext Ctx);
+
+// Pushes a fresh, empty TranslationUnitDecl onto the context's redeclaration chain and makes
+// it the one clang_ASTContext_getTranslationUnitDecl returns; the previous TU stays reachable
+// through getPreviousDecl. This is the operation clang's own IncrementalParser performs
+// before each incremental parse.
+// PRECONDITION: the context is TU_Incremental -- clang asserts `!TUDecl || TUKind ==
+// TU_Incremental`, and TUDecl is non-null for every context this API hands out.
+void clang_ASTContext_addTranslationUnitDecl(CXASTContext Ctx);
 
 CXExternCContextDecl clang_ASTContext_getExternCContextDecl(CXASTContext Ctx);
 
@@ -1482,7 +1498,16 @@ bool clang_ASTContext_AnyObjCImplementation(CXASTContext Ctx);
 // setObjCMethodRedeclaration
 // getObjContainingInterface
 // setBlockVarCopyInit
-// getBlockVarCopyInit
+// The copy-initialization record clang recorded for the __block variable VD: the expression
+// that copies it into an escaping block plus whether that copy can throw. A variable with no
+// entry -- a scalar __block variable, or one no escaping block captures -- yields a
+// default-constructed record whose clang_BlockVarCopyInit_getCopyExpr is NULL.
+// PRECONDITION: VD carries the Blocks attribute. ASTContext.cpp does not ship in the pinned
+// artifact, so the assert could not be read; the gate is the conservative reading of clang's
+// symmetric API.
+// The returned record is a heap-boxed copy of a by-value value: release it with
+// clang_BlockVarCopyInit_dispose. The Expr inside it is AST-owned and outlives the box.
+CXBlockVarCopyInit clang_ASTContext_getBlockVarCopyInit(CXASTContext Ctx, CXVarDecl VD);
 
 CXTypeSourceInfo clang_ASTContext_CreateTypeSourceInfo(CXASTContext Ctx, CXQualType T,
                                                        unsigned Size);

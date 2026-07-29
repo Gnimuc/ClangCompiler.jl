@@ -264,3 +264,39 @@ end
 
     dispose(ci)
 end
+
+@testset "CompilerInstance | InitializeSourceManagerFromFile" begin
+    ci = CC.CompilerInstance()
+    CC.createDiagnostics(ci)
+    CC.createFileManager(ci)
+    CC.createSourceManager(ci, CC.getFileManager(ci))
+    sm = CC.getSourceManager(ci)
+
+    path = joinpath(mktempdir(), "ismff_probe.cpp")
+    write(path, "int g = 1;\n")
+
+    @test CC.InitializeSourceManagerFromFile(ci, path)
+    fid = CC.getMainFileID(sm)
+    @test CC.isValid(fid)
+    # the content round-trips, so the file really became the main file
+    @test CC.getBufferData(sm, fid) == "int g = 1;\n"
+    @test CC.getFileCharacteristic(sm, CC.getLocForStartOfFile(sm, fid)) ==
+          CC.CXCharacteristicKind_C_User
+    CC.dispose(fid)
+
+    # is_system selects the other characteristic for the same bytes
+    @test CC.InitializeSourceManagerFromFile(ci, path, true)
+    sfid = CC.getMainFileID(sm)
+    @test CC.getFileCharacteristic(sm, CC.getLocForStartOfFile(sm, sfid)) ==
+          CC.CXCharacteristicKind_C_System
+    CC.dispose(sfid)
+
+    # an unreadable path is a counted diagnostic, not a silent false
+    before = CC.getNumErrors(CC.getDiagnostics(ci))
+    @test !CC.InitializeSourceManagerFromFile(ci, joinpath(dirname(path), "no_such_file.cpp"))
+    @test CC.getNumErrors(CC.getDiagnostics(ci)) > before
+
+    @test_throws AssertionError CC.InitializeSourceManagerFromFile(ci, "-")
+
+    CC.dispose(ci)
+end

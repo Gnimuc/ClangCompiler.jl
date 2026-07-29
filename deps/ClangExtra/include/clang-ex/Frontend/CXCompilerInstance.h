@@ -101,6 +101,29 @@ CXASTConsumer clang_CompilerInstance_getASTConsumer(CXCompilerInstance CI);
 
 void clang_CompilerInstance_setASTConsumer(CXCompilerInstance CI, CXASTConsumer CG);
 
+// Removes the current AST consumer and hands ownership to the caller: the instance's
+// unique_ptr is emptied, so clang_CompilerInstance_hasASTConsumer is false afterwards.
+// Returns NULL when none was set. There is deliberately no clang_ASTConsumer_dispose: the
+// only consumer this API can produce is an Interpreter's CodeGenerator, which that
+// interpreter still owns, so a taken handle must be re-installed with setASTConsumer or
+// dropped -- never deleted.
+CXASTConsumer clang_CompilerInstance_takeASTConsumer(CXCompilerInstance CI);
+
+// helper. Builds a FrontendInputFile for Path -- InputKind(Language::Unknown,
+// InputKind::Source), not preprocessed, not a header unit -- and initializes the instance's
+// source manager with it as the main file, so getMainFileID names it afterwards. IsSystem
+// selects the FileID's CharacteristicKind (C_System rather than C_User). Only the input
+// kind's *format* is read, which is why the language is left unspecified.
+// Returns false and reports err_fe_error_reading through the instance's diagnostics engine
+// when the file cannot be read; that diagnostic is an error, not a fatal one, so the engine
+// stays usable. Path of "-" would read the process's standard input (FileManager::getSTDIN);
+// the Julia wrapper rejects it.
+// PRECONDITION: the instance must have diagnostics, a file manager and a source manager --
+// the member overload forwards through getDiagnostics()/getFileManager()/getSourceManager(),
+// each of which asserts on a null member.
+bool clang_CompilerInstance_InitializeSourceManagerFromFile(CXCompilerInstance CI,
+                                                            const char *Path, bool IsSystem);
+
 // Options
 CXCodeGenOptions clang_CompilerInstance_getCodeGenOpts(CXCompilerInstance CI);
 

@@ -1732,3 +1732,74 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "ASTContext | incremental TU chain, uncached comments, block copy-init" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             /// documented on the first declaration
+             int astctx_probe(int a);
+             int astctx_probe(int a);
+             """)
+    ctx = CC.get_ast_context(I)
+
+    # an interpreter's context is incremental -- that is the gate addTranslationUnitDecl asserts
+    @test CC.getTranslationUnitKind(ctx) == CC.CXTranslationUnitKind_TU_Incremental
+
+    # getRawCommentForDeclNoCache attaches the comment to the declaration it was written above
+    # and to no other, where getRawCommentForAnyRedecl answers the same comment for both
+    f = DeclFinder(I)
+    @test f(I, "astctx_probe")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    chain = collect(CC.redecls(fd))
+    @test length(chain) == 2
+    direct = [CC.getRawCommentForDeclNoCache(ctx, d) for d in chain]
+    @test count(c -> !CC.is_null_handle(c), direct) == 1
+    anyredecl = [CC.getRawCommentForAnyRedecl(ctx, d) for d in chain]
+    @test all(c -> !CC.is_null_handle(c), anyredecl)
+
+    # pushing a translation unit replaces the one getTranslationUnitDecl returns; the previous
+    # one stays reachable through the redeclaration chain, and the new one starts empty
+    old_tu = CC.getTranslationUnitDecl(ctx)
+    CC.addTranslationUnitDecl(ctx)
+    new_tu = CC.getTranslationUnitDecl(ctx)
+    @test new_tu.ptr != old_tu.ptr
+    @test CC.getPreviousDecl(new_tu).ptr == old_tu.ptr
+    @test isempty(collect(CC.decls_in(CC.castToDeclContext(new_tu))))
+    @test !isempty(collect(CC.decls_in(CC.castToDeclContext(old_tu))))
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ASTContext | getBlockVarCopyInit" begin
+    J = create_interpreter(["-fblocks"])
+    CC.parse(J, """
+             extern "C" void bvci_probe() {
+                 __block int counter = 0;
+                 ++counter;
+             }
+             """)
+    jctx = CC.get_ast_context(J)
+
+    f = DeclFinder(J)
+    @test f(J, "bvci_probe")
+    fd = CC.FunctionDecl(get_decl(f).ptr)
+    body = CC.getBody(fd)
+    declstmts = [s for s in (CC.resolve(x) for x in CC.subtree(body)) if s isa CC.DeclStmt]
+    singles = [CC.getSingleDecl(s) for s in declstmts if CC.isSingleDecl(s)]
+    blockvars = [d for d in singles if CC.hasAttrOfKind(d, CC.CXAttrKind_Blocks)]
+    @test length(blockvars) == 1
+    vd = CC.VarDecl(only(blockvars).ptr)
+
+    init = CC.getBlockVarCopyInit(jctx, vd)
+    @test init isa CC.BlockVarCopyInit
+    # a scalar __block variable has no recorded copy expression
+    @test CC.is_null_handle(CC.getCopyExpr(init))
+    CC.dispose(init)
+
+    # the gate: a plain local is not a __block variable
+    @test_throws AssertionError CC.getBlockVarCopyInit(jctx, CC.VarDecl(fd.ptr))
+
+    dispose(f)
+    dispose(J)
+end

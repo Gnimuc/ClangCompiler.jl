@@ -877,7 +877,8 @@ function getDependentSizedExtVectorType(x::ASTContext, a2::QualType, a3::Abstrac
     return QualType(clang_ASTContext_getDependentSizedExtVectorType(x, a2, a3, a4))
 end
 
-function getDependentSizedMatrixType(x::ASTContext, a2::QualType, a3::AbstractExpr, a4::AbstractExpr, a5::SourceLocation)
+function getDependentSizedMatrixType(x::ASTContext, a2::QualType, a3::AbstractExpr, a4::AbstractExpr,
+                                     a5::SourceLocation)
     @check_ptrs x
     return QualType(clang_ASTContext_getDependentSizedMatrixType(x, a2, a3, a4, a5))
 end
@@ -1015,13 +1016,13 @@ function mergeDefinitionIntoModule(x::ASTContext, a2::AbstractNamedDecl, a3::Mod
     return clang_ASTContext_mergeDefinitionIntoModule(x, a2, a3, a4)
 end
 
-
 function setInstantiatedFromUsingDecl(x::ASTContext, Inst::AbstractNamedDecl, Pattern::AbstractNamedDecl)
     @check_ptrs x Inst Pattern
     return clang_ASTContext_setInstantiatedFromUsingDecl(x, Inst, Pattern)
 end
 
-function setInstantiatedFromUsingShadowDecl(x::ASTContext, Inst::AbstractUsingShadowDecl, Pattern::AbstractUsingShadowDecl)
+function setInstantiatedFromUsingShadowDecl(x::ASTContext, Inst::AbstractUsingShadowDecl,
+                                            Pattern::AbstractUsingShadowDecl)
     @check_ptrs x Inst Pattern
     return clang_ASTContext_setInstantiatedFromUsingShadowDecl(x, Inst, Pattern)
 end
@@ -1095,7 +1096,6 @@ function getPredefinedStringLiteralFromCache(x::ASTContext, key::AbstractString)
     @check_ptrs x
     return StringLiteral(clang_ASTContext_getPredefinedStringLiteralFromCache(x, key))
 end
-
 
 """
     getTypeInfo(x::ASTContext, ty::QualType) -> (width, align, align_requirement)
@@ -1297,7 +1297,6 @@ function getRawCommentOriginalDeclForAnyRedecl(x::ASTContext, decl::AbstractDecl
     return Decl(clang_ASTContext_getRawCommentOriginalDeclForAnyRedecl(x, decl))
 end
 
-
 """
     getRawCommentForAnyRedecl(x::ASTContext, decl::AbstractDecl) -> RawComment
 Return the documentation comment attached to `decl` or to any of its
@@ -1321,7 +1320,6 @@ function getCommentForDecl(x::ASTContext, decl::AbstractDecl, pp::Preprocessor)
     @check_ptrs x decl pp
     return FullComment(clang_ASTContext_getCommentForDecl(x, decl, pp))
 end
-
 
 """
     getCanonicalType(x::ASTContext, ty::QualType) -> QualType
@@ -1539,7 +1537,6 @@ function getCUIDHash(x::ASTContext)
     return get_string(clang_ASTContext_getCUIDHash(x))
 end
 
-
 """
     getSizeType(x::ASTContext) -> QualType
 Return the canonical type of `size_t` (C99 7.17) for the target.
@@ -1754,7 +1751,6 @@ function shouldExternalize(x::ASTContext, decl::AbstractDecl)
     return clang_ASTContext_shouldExternalize(x, decl)
 end
 
-
 """
     getVectorType(x::ASTContext, elt::QualType, num_elts::Integer, kind::CXVectorKind) -> QualType
 Build the GCC/target vector type of `num_elts` elements of built-in element type `elt`.
@@ -1831,7 +1827,6 @@ function areLaxCompatibleRVVTypes(x::ASTContext, t1::QualType, t2::QualType)
     @check_ptrs x t1 t2
     return clang_ASTContext_areLaxCompatibleRVVTypes(x, t1, t2)
 end
-
 
 """
     getTraversalScope(x::ASTContext) -> Vector{Decl}
@@ -2002,7 +1997,7 @@ when `inst` is not an instantiation of one.
 function getInstantiatedFromUsingEnumDecl(x::ASTContext, inst::AbstractUsingEnumDecl)
     @check_ptrs x inst
     return UsingEnumDecl(clang_ASTContext_getInstantiatedFromUsingEnumDecl(x, inst))
- end
+end
 
 """
     setInstantiatedFromUsingEnumDecl(x::ASTContext, inst::AbstractUsingEnumDecl,
@@ -2191,7 +2186,6 @@ function MakeIntValue(x::ASTContext, value::Integer, ty::QualType)
     return clang_ASTContext_MakeIntValue(x, value, ty)
 end
 
-
 """
     setTraversalScope(x::ASTContext, decls::AbstractVector{<:AbstractDecl})
 Narrow the AST traversal scope to `decls` — the top-level declarations `getTraversalScope`
@@ -2241,7 +2235,7 @@ function getCanonicalTemplateSpecializationType(x::ASTContext, name::TemplateNam
     @assert getCanonicalTemplateName(x, name).ptr == name.ptr "the template name must be canonical"
     ptrs = CXTemplateArgument[a.ptr for a in args]
     return QualType(clang_ASTContext_getCanonicalTemplateSpecializationType(x, name, ptrs,
-                                                                           length(ptrs)))
+                                                                            length(ptrs)))
 end
 
 """
@@ -2409,7 +2403,6 @@ function isObjCSelType(x::ASTContext, T::QualType)
     return clang_ASTContext_isObjCSelType(x, T)
 end
 
-
 """
     getNumModulesWithMergedDefinition(x::ASTContext, def::AbstractNamedDecl) -> Integer
 Return how many additional modules the definition `def` has been merged into. Always 0
@@ -2556,7 +2549,6 @@ function AnyObjCImplementation(x::ASTContext)
     return clang_ASTContext_AnyObjCImplementation(x)
 end
 
-
 """
     cloneFullComment(x::ASTContext, fc::AbstractFullComment, d::AbstractDecl) -> FullComment
 Return a copy of `fc`'s comment blocks attached to `d`, carrying `d`'s own `DeclInfo`. The
@@ -2688,7 +2680,6 @@ function getInnerObjCOwnership(x::ASTContext, ty::QualType)
     return clang_ASTContext_getInnerObjCOwnership(x, ty)
 end
 
-
 """
     addModuleInitializer(x::ASTContext, m::AbstractModule, init::AbstractDecl)
 Record `init` as a declaration to run when module `m` is initialized -- typically a
@@ -2719,7 +2710,7 @@ for a module that has none. The carriers are base `Decl`s borrowed from the cont
 function getModuleInitializers(x::ASTContext, m::AbstractModule)
     @check_ptrs x m
     n = clang_ASTContext_getNumModuleInitializers(x, m)
-    return [Decl(clang_ASTContext_getModuleInitializer(x, m, i)) for i in 0:(n - 1)]
+    return [Decl(clang_ASTContext_getModuleInitializer(x, m, i)) for i = 0:(n - 1)]
 end
 
 """
@@ -2814,7 +2805,6 @@ function setucontext_tDecl(x::ASTContext, D::AbstractTypeDecl)
     @check_ptrs x D
     return clang_ASTContext_setucontext_tDecl(x, D)
 end
-
 
 """
     getTemplateOrSpecializationInfoAsVarTemplate(x::ASTContext, var::AbstractVarDecl) -> VarTemplateDecl
@@ -2921,7 +2911,6 @@ This is the accessor `clang::TypeInfo` and `clang::TypeInfoChars` both spell
 return, so one method over the shared enum covers the pair.
 """
 isAlignRequired(kind::CXAlignRequirementKind) = kind != CXAlignRequirementKind_None
-
 
 """
     setTemplateOrSpecializationInfoAsVarTemplate(x::ASTContext, inst::AbstractVarDecl,
@@ -3146,4 +3135,65 @@ function getFunctionFeature(x::ASTContext, fd::AbstractFunctionDecl, i::Integer)
     enabled = Ref{Bool}(false)
     name = get_string(clang_ASTContext_getFunctionFeature(x, fd, i, enabled))
     return name, enabled[]
+end
+
+"""
+    getTranslationUnitKind(x::ASTContext) -> CXTranslationUnitKind
+Return the translation-unit kind `x` was built with. An interpreter's context is
+`CXTranslationUnitKind_TU_Incremental`, which is what makes [`addTranslationUnitDecl`](@ref)
+legal on it.
+"""
+function getTranslationUnitKind(x::ASTContext)
+    @check_ptrs x
+    return clang_ASTContext_getTranslationUnitKind(x)
+end
+
+"""
+    addTranslationUnitDecl(x::ASTContext)
+Push a fresh, empty `TranslationUnitDecl` onto `x`'s redeclaration chain and make it the one
+[`getTranslationUnitDecl`](@ref) returns; the previous translation unit remains reachable
+through [`getPreviousDecl`](@ref).
+
+Only an incremental context accepts this — clang asserts `TUKind == TU_Incremental` — and the
+effect is visible immediately: until the next parse populates it, the context's translation
+unit is empty, so a traversal taken right after the call sees no declarations.
+"""
+function addTranslationUnitDecl(x::ASTContext)
+    @check_ptrs x
+    @assert getTranslationUnitKind(x) == CXTranslationUnitKind_TU_Incremental "a new translation unit may only be pushed on an incremental context"
+    return clang_ASTContext_addTranslationUnitDecl(x)
+end
+
+"""
+    getRawCommentForDeclNoCache(x::ASTContext, decl::AbstractDecl) -> RawComment
+Return the documentation comment attached to `decl` itself, or a carrier holding `NULL` when
+none is.
+
+This consults no cache and walks no redeclaration chain, which is what separates it from
+[`getRawCommentForAnyRedecl`](@ref): given two declarations of one entity with the comment
+written above the first, this answers non-NULL for that one and NULL for the other, while
+`getRawCommentForAnyRedecl` answers the same comment for both. The result is borrowed from the
+context's arena — never dispose it.
+"""
+function getRawCommentForDeclNoCache(x::ASTContext, decl::AbstractDecl)
+    @check_ptrs x decl
+    return RawComment(clang_ASTContext_getRawCommentForDeclNoCache(x, decl))
+end
+
+"""
+    getBlockVarCopyInit(x::ASTContext, vd::AbstractVarDecl) -> BlockVarCopyInit
+Return the copy-initialization record `x` holds for the `__block` variable `vd`: the
+expression that copies it into an escaping block, plus whether that copy can throw.
+
+`vd` must be a `__block` variable. A variable with no entry — a scalar one, or one no escaping
+block captures — comes back as a record whose [`getCopyExpr`](@ref) is NULL, so check that
+before using it.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object; the boxed expression is AST-owned and outlives the box.
+"""
+function getBlockVarCopyInit(x::ASTContext, vd::AbstractVarDecl)
+    @check_ptrs x vd
+    @assert hasAttrOfKind(vd, CXAttrKind_Blocks) "expected a __block variable"
+    return BlockVarCopyInit(clang_ASTContext_getBlockVarCopyInit(x, vd))
 end

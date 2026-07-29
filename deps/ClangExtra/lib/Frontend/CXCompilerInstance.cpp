@@ -1,4 +1,5 @@
 #include "clang-ex/Frontend/CXCompilerInstance.h"
+#include "clang/Frontend/FrontendOptions.h"
 #include "utils.h"
 #include "clang/Basic/FileSystemOptions.h"
 #include "clang/Frontend/CompilerInvocation.h"
@@ -384,4 +385,16 @@ bool clang_CompilerInstance_buildingModule(CXCompilerInstance CI) {
 
 void clang_CompilerInstance_setBuildingModule(CXCompilerInstance CI, bool Flag) {
   static_cast<clang::CompilerInstance *>(CI)->setBuildingModule(Flag);
+}
+
+CXASTConsumer clang_CompilerInstance_takeASTConsumer(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->takeASTConsumer().release();
+}
+
+bool clang_CompilerInstance_InitializeSourceManagerFromFile(CXCompilerInstance CI,
+                                                            const char *Path,
+                                                            bool IsSystem) {
+  clang::FrontendInputFile Input(
+      Path, clang::InputKind(clang::Language::Unknown, clang::InputKind::Source), IsSystem);
+  return static_cast<clang::CompilerInstance *>(CI)->InitializeSourceManager(Input);
 }

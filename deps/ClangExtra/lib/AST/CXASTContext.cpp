@@ -129,7 +129,6 @@ CXTargetCXXABI_Kind clang_ASTContext_getCXXABIKind(CXASTContext Ctx) {
 }
 // cacheRawCommentForDecl
 // getRawCommentForDeclNoCacheImpl
-// getRawCommentForDeclNoCache
 // addComment
 
 CXRawComment clang_ASTContext_getRawCommentForAnyRedecl(CXASTContext Ctx, CXDecl D) {
@@ -2527,7 +2526,6 @@ bool clang_ASTContext_AnyObjCImplementation(CXASTContext Ctx) {
 // setObjCMethodRedeclaration
 // getObjContainingInterface
 // setBlockVarCopyInit
-// getBlockVarCopyInit
 
 CXTypeSourceInfo clang_ASTContext_CreateTypeSourceInfo(CXASTContext Ctx, CXQualType T,
                                                        unsigned Size) {
@@ -2857,4 +2855,24 @@ CXQualType clang_ASTContext_VoidPtrTy_getAsQualType(CXASTContext Ctx) {
 
 CXQualType clang_ASTContext_NullPtrTy_getAsQualType(CXASTContext Ctx) {
   return static_cast<clang::ASTContext *>(Ctx)->NullPtrTy.getAsOpaquePtr();
+}
+
+CXTranslationUnitKind clang_ASTContext_getTranslationUnitKind(CXASTContext Ctx) {
+  return static_cast<CXTranslationUnitKind>(static_cast<clang::ASTContext *>(Ctx)->TUKind);
+}
+
+void clang_ASTContext_addTranslationUnitDecl(CXASTContext Ctx) {
+  static_cast<clang::ASTContext *>(Ctx)->addTranslationUnitDecl();
+}
+
+CXRawComment clang_ASTContext_getRawCommentForDeclNoCache(CXASTContext Ctx, CXDecl D) {
+  return static_cast<clang::ASTContext *>(Ctx)->getRawCommentForDeclNoCache(
+      static_cast<clang::Decl *>(D));
+}
+
+CXBlockVarCopyInit clang_ASTContext_getBlockVarCopyInit(CXASTContext Ctx, CXVarDecl VD) {
+  return std::make_unique<clang::BlockVarCopyInit>(
+             static_cast<clang::ASTContext *>(Ctx)->getBlockVarCopyInit(
+                 static_cast<clang::VarDecl *>(VD)))
+      .release();
 }

@@ -381,7 +381,6 @@ function PrintStats(ci::CompilerInstance, ::Type{ASTConsumer})
     return PrintStats(ctx)
 end
 
-
 # Forwarding options
 # Every accessor here forwards through `CompilerInstance::Invocation` with an
 # unchecked dereference, hence the `hasInvocation` assertion.
@@ -517,7 +516,6 @@ function clearOutputFiles(ci::CompilerInstance, erase_files::Bool=false)
     return clang_CompilerInstance_clearOutputFiles(ci, erase_files)
 end
 
-
 # Plugins
 """
     LoadRequestedPlugins(ci::CompilerInstance)
@@ -548,7 +546,6 @@ function createFrontendTimer(ci::CompilerInstance)
     @check_ptrs ci
     return clang_CompilerInstance_createFrontendTimer(ci)
 end
-
 
 # Ownership transfer
 """
@@ -606,7 +603,6 @@ function resetAndLeakSema(ci::CompilerInstance)
     return clang_CompilerInstance_resetAndLeakSema(ci)
 end
 
-
 """
     getAPINotesOpts(ci::CompilerInstance) -> APINotesOptions
 Return the `clang::APINotesOptions` of this instance's invocation (borrowed view — the
@@ -623,7 +619,6 @@ function getAPINotesOpts(ci::CompilerInstance)
     @assert hasInvocation(ci) "the compiler instance must have an invocation"
     return APINotesOptions(clang_CompilerInstance_getAPINotesOpts(ci))
 end
-
 
 """
     getFrontendTimerName(ci::CompilerInstance) -> String
@@ -666,4 +661,44 @@ Set whether this instance is building a module.
 function setBuildingModule(ci::CompilerInstance, flag::Bool)
     @check_ptrs ci
     return clang_CompilerInstance_setBuildingModule(ci, flag)
+end
+
+"""
+    takeASTConsumer(ci::CompilerInstance) -> ASTConsumer
+Remove `ci`'s AST consumer and hand it back, leaving `ci` with none —
+[`hasASTConsumer`](@ref) is `false` afterwards. This is how an adoption performed by
+[`setASTConsumer`](@ref) is undone before disposing an instance whose consumer another owner
+still holds.
+
+There is no `dispose` for an `ASTConsumer` and none is wanted: the consumer this package can
+obtain belongs to an interpreter, so re-install it or drop the handle, never free it. The
+consumer was also `Initialize`d against the donor's `ASTContext`, which this call cannot
+undo; a donor that will be used again must have its own pipeline re-run.
+"""
+function takeASTConsumer(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasASTConsumer(ci) "CompilerInstance has no AST consumer."
+    return ASTConsumer(clang_CompilerInstance_takeASTConsumer(ci))
+end
+
+"""
+    InitializeSourceManagerFromFile(ci::CompilerInstance, path::AbstractString,
+                                    is_system::Bool=false) -> Bool
+Make the file at `path` the main file of `ci`'s source manager and return whether it could be
+read. On failure clang reports through `ci`'s diagnostics engine, which is what distinguishes
+this from hand-rolling `getFileRef` + `setMainFileID`: a missing file becomes a counted
+diagnostic instead of a NULL `FileEntryRef` fed into the setter.
+
+`is_system=true` marks the file's locations as system rather than user code, which
+[`getFileCharacteristic`](@ref) reads back. `path` may not be `"-"`, which clang would read as
+the calling process's standard input.
+"""
+function InitializeSourceManagerFromFile(ci::CompilerInstance, path::AbstractString,
+                                         is_system::Bool=false)
+    @check_ptrs ci
+    @assert hasDiagnostics(ci) "CompilerInstance has no diagnostics engine."
+    @assert hasFileManager(ci) "CompilerInstance has no file manager."
+    @assert hasSourceManager(ci) "CompilerInstance has no source manager."
+    @assert path != "-" "path must name a file, not standard input"
+    return clang_CompilerInstance_InitializeSourceManagerFromFile(ci, path, is_system)
 end

@@ -291,6 +291,16 @@ void clang_Preprocessor_LexUnexpandedToken(CXPreprocessor PP, CXToken_ Result);
 
 void clang_Preprocessor_LexUnexpandedNonComment(CXPreprocessor PP, CXToken_ Result);
 
+// Parses Tok's spelling as a plain integer literal and writes it to *Value, returning true;
+// a floating-point literal, a user-defined-suffix literal or an unreadable spelling returns
+// false and leaves *Value untouched. PRECONDITION: Tok is a tok::numeric_constant
+// (clang_Token_isKind_numeric_constant); clang asserts.
+// NOTE: on success clang lexes the FOLLOWING token into Tok, so Tok is overwritten and the
+// preprocessor's token stream advances by one -- read the answer out of *Value, never out of
+// Tok, and expect the live stream to have moved.
+bool clang_Preprocessor_parseSimpleIntegerLiteral(CXPreprocessor PP, CXToken_ Tok,
+                                                  uint64_t *Value);
+
 bool clang_Preprocessor_isCodeCompletionEnabled(CXPreprocessor PP);
 
 CXSourceLocation_ clang_Preprocessor_getCodeCompletionLoc(CXPreprocessor PP);

@@ -49,7 +49,6 @@ function DumpLocation(x::Preprocessor, loc::SourceLocation)
     return clang_Preprocessor_DumpLocation(x, loc)
 end
 
-
 function getDiagnostics(x::AbstractPreprocessor)
     @check_ptrs x
     return DiagnosticsEngine(clang_Preprocessor_getDiagnostics(x))
@@ -163,7 +162,6 @@ function getSpelling(x::AbstractPreprocessor, tok::AbstractToken)
     @check_ptrs x tok
     return get_string(clang_Preprocessor_getSpelling(x, tok))
 end
-
 
 function getPreprocessorOpts(x::AbstractPreprocessor)
     @check_ptrs x
@@ -300,7 +298,6 @@ function getMacroInfoAtLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
     @assert isValid(loc) "macro lookup location must be valid"
     return MacroInfo(clang_Preprocessor_getMacroInfoAtLoc(x, ii, loc))
 end
-
 
 function hadModuleLoaderFatalFailure(x::AbstractPreprocessor)
     @check_ptrs x
@@ -455,7 +452,6 @@ function isInImplementationUnit(x::AbstractPreprocessor)
     return clang_Preprocessor_isInImplementationUnit(x)
 end
 
-
 """
     getAuxTargetInfo(x::AbstractPreprocessor) -> TargetInfo
 Return the auxiliary target of the preprocessor. The result is borrowed and holds a NULL
@@ -568,17 +564,19 @@ end
 Return the location of the `char_no`-th character within the token that starts at
 `tok_start`.
 
-`char_no` may not run past the end of that token. clang walks the characters with
+`char_no` counts characters of that token's *cleaned* spelling and may not run past it. clang
+walks the characters with
 `while (CharNo && isObviouslySimpleCharacter(*TokPtr)) ++TokPtr, --CharNo`, and
 `isObviouslySimpleCharacter` is only `C != '?' && C != '\\\\'` — so a NUL counts as simple
-and the walk does not stop at the end of the buffer. The token's length is measured here
-and the index checked against it.
+and the walk does not stop at the end of the buffer. The bound is
+[`cleaned_token_length`](@ref); `MeasureTokenLength` is the token's physical extent and
+admits indices that walk past its characters.
 """
 function AdvanceToTokenCharacter(x::AbstractPreprocessor, tok_start::SourceLocation,
                                  char_no::Integer)
     @check_ptrs x
     @assert isValid(tok_start) "tok_start must be a valid location"
-    n = MeasureTokenLength(tok_start, getSourceManager(x), getLangOpts(x))
+    n = cleaned_token_length(tok_start, getSourceManager(x), getLangOpts(x))
     @assert 0 <= char_no <= n "char_no must lie within the token that starts at tok_start"
     return SourceLocation(clang_Preprocessor_AdvanceToTokenCharacter(x, tok_start, char_no))
 end
@@ -619,7 +617,6 @@ function isPPInSafeBufferOptOutRegion(x::AbstractPreprocessor)
     @check_ptrs x
     return clang_Preprocessor_isPPInSafeBufferOptOutRegion(x)
 end
-
 
 function setPreprocessToken(x::AbstractPreprocessor, preprocess::Bool)
     @check_ptrs x
@@ -704,7 +701,6 @@ function enterOrExitSafeBufferOptOutRegion(x::AbstractPreprocessor, is_enter::Bo
     @check_ptrs x
     return clang_Preprocessor_enterOrExitSafeBufferOptOutRegion(x, is_enter, loc)
 end
-
 
 """
     markIncluded(x::AbstractPreprocessor, file::FileEntryRef) -> Bool
@@ -952,7 +948,6 @@ function GetIncludeFilenameSpelling(x::AbstractPreprocessor, loc::SourceLocation
     return s, is_angled[]
 end
 
-
 """
     setDiagnostics(x::AbstractPreprocessor, diags::AbstractDiagnosticsEngine)
 Point the preprocessor at `diags`.
@@ -1174,7 +1169,6 @@ function processPathForFileMacro(path::AbstractString, lang_opts::AbstractLangOp
     return get_string(clang_Preprocessor_processPathForFileMacro(path, lang_opts, target))
 end
 
-
 """
     getSelectorTable(x::AbstractPreprocessor) -> SelectorTable
 Return the Objective-C selector table this preprocessor owns. The result is borrowed.
@@ -1338,7 +1332,6 @@ function getModuleImportLoc(x::AbstractPreprocessor, m::AbstractModule)
     return SourceLocation(clang_Preprocessor_getModuleImportLoc(x, m))
 end
 
-
 """
     getBuiltinInfo(x::AbstractPreprocessor) -> BuiltinContext
 Return the builtin-function table this preprocessor owns. The result is borrowed and is
@@ -1469,7 +1462,6 @@ function emitMacroExpansionWarnings(x::AbstractPreprocessor, tok::AbstractToken,
     return clang_Preprocessor_emitMacroExpansionWarnings(x, tok, is_ifndef)
 end
 
-
 """
     getNumBuildingSubmodules(x::AbstractPreprocessor) -> Integer
 Return the number of submodules currently being built.
@@ -1493,7 +1485,7 @@ function getBuildingSubmodules(x::AbstractPreprocessor)
     locs = Vector{CXSourceLocation_}(undef, n)
     pragmas = Vector{Bool}(undef, n)
     n > 0 && clang_Preprocessor_getBuildingSubmodules(x, mods, locs, pragmas)
-    return [(Module_(mods[i]), SourceLocation(locs[i]), pragmas[i]) for i in 1:n]
+    return [(Module_(mods[i]), SourceLocation(locs[i]), pragmas[i]) for i = 1:n]
 end
 
 """
@@ -1558,7 +1550,7 @@ function getPreambleConditionalStack(x::AbstractPreprocessor)
     n > 0 && clang_Preprocessor_getPreambleConditionalStack(x, locs, was_skipping,
                                                             found_non_skip, found_else)
     return [(SourceLocation(locs[i]), was_skipping[i], found_non_skip[i], found_else[i])
-            for i in 1:n]
+            for i = 1:n]
 end
 
 """
@@ -1618,7 +1610,6 @@ function setCodeCompletionHandler(x::AbstractPreprocessor, h::AbstractCodeComple
     @check_ptrs x h
     return clang_Preprocessor_setCodeCompletionHandler(x, h)
 end
-
 
 """
     addModuleMacro(x::AbstractPreprocessor, m::AbstractModule, ii::AbstractIdentifierInfo,
@@ -1813,4 +1804,22 @@ function getMacroFinalAnnotationLoc(x::AbstractPreprocessor, ii::AbstractIdentif
     loc = Ref{CXSourceLocation_}(C_NULL)
     clang_Preprocessor_getMacroFinalAnnotationLoc(x, ii, loc) || return nothing
     return SourceLocation(loc[])
+end
+
+"""
+    parseSimpleIntegerLiteral(x::AbstractPreprocessor, tok::AbstractToken) ->
+        Union{UInt64,Nothing}
+Return the value of the integer literal `tok` is spelled with, or `nothing` when it is a
+floating-point literal, carries a user-defined suffix, or its spelling cannot be read.
+
+`tok` must be a `numeric_constant` — clang asserts it. On success clang lexes the next token
+from the preprocessor into `tok`, so `tok` is overwritten and the live token stream advances
+by one: read the value from the return, and call this only where consuming a token is
+acceptable.
+"""
+function parseSimpleIntegerLiteral(x::AbstractPreprocessor, tok::AbstractToken)
+    @check_ptrs x tok
+    @assert is_numeric_constant(tok) "expected a numeric constant"
+    out = Ref{UInt64}(0)
+    return clang_Preprocessor_parseSimpleIntegerLiteral(x, tok, out) ? out[] : nothing
 end

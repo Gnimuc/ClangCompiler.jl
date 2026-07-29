@@ -344,7 +344,7 @@ end
     saw_digit = false
     if CC.isValid(loc)
         cur = loc
-        for _ in 1:400
+        for _ = 1:400
             (CC.isValid(cur) && !(saw_ident && saw_digit)) || break
             CC.getRawToken(pp, cur, tok, true) && break
             CC.getLength(tok) == 0 && break
@@ -846,4 +846,36 @@ end
     # the preprocessor holds borrowed pointers to the module: it must die first
     dispose(I)
     dispose(m)
+end
+
+@testset "Preprocessor | parseSimpleIntegerLiteral consumes the stream" begin
+    Q = CC.create_interpreter()
+    qci = CC.get_instance(Q)
+    qpp = CC.getPreprocessor(qci)
+    qfid = CC.FileID(CC.getSourceManager(qci), CC.get_buffer("12345 1.5"))
+    CC.begin_diag(qci)
+    CC.EnterSourceFile(qpp, qfid)
+
+    qtok = CC.Token()
+    CC.Lex(qpp, qtok)
+    @test CC.is_numeric_constant(qtok)
+    # the value is clang's NumericLiteralParser's, not the test's
+    @test CC.parseSimpleIntegerLiteral(qpp, qtok) == 0x3039
+    # the successful call lexed the FOLLOWING token into qtok -- the float literal -- which is
+    # both the proof that qtok was clobbered and the negative arm
+    @test CC.is_numeric_constant(qtok)
+    @test CC.parseSimpleIntegerLiteral(qpp, qtok) === nothing
+
+    while !CC.is_annot_repl_input_end(qtok)
+        CC.Lex(qpp, qtok)
+    end
+    CC.EndSourceFile(qpp)
+    CC.end_diag(qci)
+
+    # the gate: a default-constructed token is not a numeric constant
+    @test_throws AssertionError CC.parseSimpleIntegerLiteral(qpp, CC.Token())
+
+    CC.dispose(qtok)
+    CC.dispose(qfid)
+    CC.dispose(Q)
 end

@@ -1068,3 +1068,9 @@ CXString clang_Preprocessor_processPathForFileMacro(const char *Path,
                                                *static_cast<clang::TargetInfo *>(TI));
   return extra::makeCXString(Buffer.str().str());
 }
+
+bool clang_Preprocessor_parseSimpleIntegerLiteral(CXPreprocessor PP, CXToken_ Tok,
+                                                  uint64_t *Value) {
+  return static_cast<clang::Preprocessor *>(PP)->parseSimpleIntegerLiteral(
+      *static_cast<clang::Token *>(Tok), *Value);
+}

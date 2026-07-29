@@ -9676,6 +9676,10 @@ function clang_ASTContext_getCXXABIKind(Ctx)
     @ccall libclangex.clang_ASTContext_getCXXABIKind(Ctx::CXASTContext)::CXTargetCXXABI_Kind
 end
 
+function clang_ASTContext_getRawCommentForDeclNoCache(Ctx, D)
+    @ccall libclangex.clang_ASTContext_getRawCommentForDeclNoCache(Ctx::CXASTContext, D::CXDecl)::CXRawComment
+end
+
 function clang_ASTContext_getRawCommentForAnyRedecl(Ctx, D)
     @ccall libclangex.clang_ASTContext_getRawCommentForAnyRedecl(Ctx::CXASTContext, D::CXDecl)::CXRawComment
 end
@@ -9826,6 +9830,14 @@ end
 
 function clang_ASTContext_getTranslationUnitDecl(Ctx)
     @ccall libclangex.clang_ASTContext_getTranslationUnitDecl(Ctx::CXASTContext)::CXTranslationUnitDecl
+end
+
+function clang_ASTContext_getTranslationUnitKind(Ctx)
+    @ccall libclangex.clang_ASTContext_getTranslationUnitKind(Ctx::CXASTContext)::CXTranslationUnitKind
+end
+
+function clang_ASTContext_addTranslationUnitDecl(Ctx)
+    @ccall libclangex.clang_ASTContext_addTranslationUnitDecl(Ctx::CXASTContext)::Cvoid
 end
 
 function clang_ASTContext_getExternCContextDecl(Ctx)
@@ -10994,6 +11006,10 @@ end
 
 function clang_ASTContext_AnyObjCImplementation(Ctx)
     @ccall libclangex.clang_ASTContext_AnyObjCImplementation(Ctx::CXASTContext)::Bool
+end
+
+function clang_ASTContext_getBlockVarCopyInit(Ctx, VD)
+    @ccall libclangex.clang_ASTContext_getBlockVarCopyInit(Ctx::CXASTContext, VD::CXVarDecl)::CXBlockVarCopyInit
 end
 
 function clang_ASTContext_CreateTypeSourceInfo(Ctx, T, Size)
@@ -29196,6 +29212,14 @@ function clang_CompilerInstance_setASTConsumer(CI, CG)
     @ccall libclangex.clang_CompilerInstance_setASTConsumer(CI::CXCompilerInstance, CG::CXASTConsumer)::Cvoid
 end
 
+function clang_CompilerInstance_takeASTConsumer(CI)
+    @ccall libclangex.clang_CompilerInstance_takeASTConsumer(CI::CXCompilerInstance)::CXASTConsumer
+end
+
+function clang_CompilerInstance_InitializeSourceManagerFromFile(CI, Path, IsSystem)
+    @ccall libclangex.clang_CompilerInstance_InitializeSourceManagerFromFile(CI::CXCompilerInstance, Path::Ptr{Cchar}, IsSystem::Bool)::Bool
+end
+
 function clang_CompilerInstance_getCodeGenOpts(CI)
     @ccall libclangex.clang_CompilerInstance_getCodeGenOpts(CI::CXCompilerInstance)::CXCodeGenOptions
 end
@@ -30862,6 +30886,54 @@ function clang_Lexer_isFirstTimeLexingFile(Lex)
     @ccall libclangex.clang_Lexer_isFirstTimeLexingFile(Lex::CXLexer)::Bool
 end
 
+function clang_Lexer_getBufferLength(Lex)
+    @ccall libclangex.clang_Lexer_getBufferLength(Lex::CXLexer)::Csize_t
+end
+
+function clang_Lexer_getBuffer(Lex, Out, N)
+    @ccall libclangex.clang_Lexer_getBuffer(Lex::CXLexer, Out::Ptr{Cchar}, N::Csize_t)::Cvoid
+end
+
+function clang_Lexer_getSourceLocation(Lex)
+    @ccall libclangex.clang_Lexer_getSourceLocation(Lex::CXLexer)::CXSourceLocation_
+end
+
+function clang_Lexer_seek(Lex, Offset, IsAtStartOfLine)
+    @ccall libclangex.clang_Lexer_seek(Lex::CXLexer, Offset::Cuint, IsAtStartOfLine::Bool)::Cvoid
+end
+
+function clang_Lexer_Stringify(Str, Len, Charify)
+    @ccall libclangex.clang_Lexer_Stringify(Str::Ptr{Cchar}, Len::Csize_t, Charify::Bool)::CXString
+end
+
+function clang_Lexer_getTokenPrefixLength(TokStart, CharNo, SM, LangOpts)
+    @ccall libclangex.clang_Lexer_getTokenPrefixLength(TokStart::CXSourceLocation_, CharNo::Cuint, SM::CXSourceManager, LangOpts::CXLangOptions)::Cuint
+end
+
+function clang_Lexer_makeFileCharRange(Range, IsTokenRange, SM, LangOpts)
+    @ccall libclangex.clang_Lexer_makeFileCharRange(Range::CXSourceRange_, IsTokenRange::Bool, SM::CXSourceManager, LangOpts::CXLangOptions)::CXSourceRange_
+end
+
+function clang_Lexer_getImmediateMacroNameForDiagnostics(Loc, SM, LangOpts)
+    @ccall libclangex.clang_Lexer_getImmediateMacroNameForDiagnostics(Loc::CXSourceLocation_, SM::CXSourceManager, LangOpts::CXLangOptions)::CXString
+end
+
+function clang_Lexer_getIndentationForLine(Loc, SM)
+    @ccall libclangex.clang_Lexer_getIndentationForLine(Loc::CXSourceLocation_, SM::CXSourceManager)::CXString
+end
+
+function clang_Lexer_ComputePreamble(Buffer, LangOpts, MaxLines, PreambleEndsAtStartOfLine)
+    @ccall libclangex.clang_Lexer_ComputePreamble(Buffer::Ptr{Cchar}, LangOpts::CXLangOptions, MaxLines::Cuint, PreambleEndsAtStartOfLine::Ptr{Bool})::Cuint
+end
+
+function clang_Lexer_findLocationAfterToken(Loc, TKind, SM, LangOpts, SkipTrailingWhitespaceAndNewLine)
+    @ccall libclangex.clang_Lexer_findLocationAfterToken(Loc::CXSourceLocation_, TKind::Cuint, SM::CXSourceManager, LangOpts::CXLangOptions, SkipTrailingWhitespaceAndNewLine::Bool)::CXSourceLocation_
+end
+
+function clang_Lexer_isAsciiIdentifierContinueChar(C, LangOpts)
+    @ccall libclangex.clang_Lexer_isAsciiIdentifierContinueChar(C::Cchar, LangOpts::CXLangOptions)::Bool
+end
+
 function clang_MacroInfo_getDefinitionLoc(MI)
     @ccall libclangex.clang_MacroInfo_getDefinitionLoc(MI::CXMacroInfo)::CXSourceLocation_
 end
@@ -31564,6 +31636,10 @@ end
 
 function clang_Preprocessor_LexUnexpandedNonComment(PP, Result)
     @ccall libclangex.clang_Preprocessor_LexUnexpandedNonComment(PP::CXPreprocessor, Result::CXToken_)::Cvoid
+end
+
+function clang_Preprocessor_parseSimpleIntegerLiteral(PP, Tok, Value)
+    @ccall libclangex.clang_Preprocessor_parseSimpleIntegerLiteral(PP::CXPreprocessor, Tok::CXToken_, Value::Ptr{UInt64})::Bool
 end
 
 function clang_Preprocessor_isCodeCompletionEnabled(PP)
