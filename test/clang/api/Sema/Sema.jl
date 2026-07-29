@@ -131,7 +131,8 @@ end
     qt = CC.getTypeDeclType(ctx, spec)
     @test CC.isCompleteType(sema, loc, qt)
     @test CC.InstantiateClassTemplateSpecializationMembers(sema, loc, spec,
-                                                           CC.CXTemplateSpecializationKind_TSK_ImplicitInstantiation) === nothing
+                                                           CC.CXTemplateSpecializationKind_TSK_ImplicitInstantiation) ===
+          nothing
     @test CC.PerformPendingInstantiations(sema) === nothing
 
     dispose(f)
@@ -4603,7 +4604,7 @@ end
     # back where it started; pushing the translation unit itself would pop to nothing. ---
     ns = nothing
     for d in CC.decls(tu_dc)
-        d isa CC.NamespaceDecl && (ns = d; break)
+        d isa CC.NamespaceDecl && (ns=d; break)
     end
     @test ns !== nothing
     before = CC.getCurLexicalContext(sema)
@@ -4673,7 +4674,7 @@ end
 
     ud = nothing
     for d in CC.decls(tu_dc)
-        d isa CC.UsingDirectiveDecl && (ud = d; break)
+        d isa CC.UsingDirectiveDecl && (ud=d; break)
     end
     @test ud !== nothing
     ud !== nothing && @test CC.PushUsingDirective(sema, scope, ud) === nothing
@@ -4722,5 +4723,74 @@ end
     @test qt isa CC.QualType
     @test CC.isNull(qt)
 
+    # A declaration parsed into this TU is both visible and reachable, and its definition is
+    # acceptable — so there is nothing to suggest in its place.
+    @test CC.isAcceptable(sema, fd, CC.CXAcceptableKind_Visible)
+    @test CC.isAcceptable(sema, fd, CC.CXAcceptableKind_Reachable)
+    ok, suggested = CC.hasAcceptableDefinition(sema, fd, CC.CXAcceptableKind_Visible)
+    @test ok
+    @test suggested === nothing
+
+    dispose(I)
+end
+
+@testset "Sema | matrix dimensions" begin
+    I = create_interpreter(["-fenable-matrix"])
+    CC.parse(I, """
+             typedef int m2x3_t __attribute__((matrix_type(2, 3)));
+             typedef int n2x3_t __attribute__((matrix_type(2, 3)));
+             typedef int m3x2_t __attribute__((matrix_type(3, 2)));
+             extern "C" void mat_probe(m2x3_t a, n2x3_t b, m3x2_t c, int d) {}
+             """)
+    sema = CC.get_sema(I)
+
+    f = DeclFinder(I)
+    @test f(I, "mat_probe")
+    mfd = CC.FunctionDecl(get_decl(f).ptr)
+    a = CC.getType(CC.getParamDecl(mfd, 0))
+    b = CC.getType(CC.getParamDecl(mfd, 1))
+    c = CC.getType(CC.getParamDecl(mfd, 2))
+    @test CC.isConstantMatrixType(CC.getTypePtr(a))
+
+    # 2x3 matches another 2x3 reached through a distinct typedef, and does not match 3x2 —
+    # the comparison is on dimensions, not on type identity.
+    @test CC.areMatrixTypesOfTheSameDimension(sema, a, b)
+    @test !CC.areMatrixTypesOfTheSameDimension(sema, a, c)
+    @test CC.areMatrixTypesOfTheSameDimension(sema, a, a)
+
+    # a non-matrix operand is the restated precondition, not an answer
+    int_ty = CC.getType(CC.getParamDecl(mfd, 3))
+    @test !CC.isConstantMatrixType(CC.getTypePtr(int_ty))
+    @test_throws AssertionError CC.areMatrixTypesOfTheSameDimension(sema, a, int_ty)
+    @test_throws AssertionError CC.areMatrixTypesOfTheSameDimension(sema, int_ty, a)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Sema | template argument bindings text and pack size" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "template <class T> struct SemaBox { T value; };")
+    sema = CC.get_sema(I)
+    ctx = CC.get_ast_context(I)
+    llctx = CC.LLVM.Context()
+
+    f = DeclFinder(I)
+    @test f(I, "SemaBox")
+    ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    spec = CC.specialize(llctx, ctx, ctd, CC.jlty_to_clty(Int32, ctx))
+    @test spec isa CC.ClassTemplateSpecializationDecl
+
+    params = CC.getTemplateParameters(ctd)
+    args = CC.getTemplateArgs(spec)
+    text = CC.getTemplateArgumentBindingsText(sema, params, args)
+    # the text names the parameter and the argument it was bound to
+    @test occursin("T", text)
+    @test occursin("int", text)
+
+    # a non-pack argument has no fully-expanded size
+    @test CC.getFullyPackExpandedSize(sema, CC.get(args, 0)) === nothing
+
+    dispose(f)
     dispose(I)
 end

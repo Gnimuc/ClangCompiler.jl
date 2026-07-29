@@ -4884,3 +4884,43 @@ CXAttr clang_Sema_getImplicitCodeSegOrSectionAttrForFunction(CXSema S, CXFunctio
   return static_cast<clang::Sema *>(S)->getImplicitCodeSegOrSectionAttrForFunction(
       static_cast<clang::FunctionDecl *>(FD), IsDefinition);
 }
+
+bool clang_Sema_isAcceptable(CXSema S, CXNamedDecl D, CXAcceptableKind Kind) {
+  return static_cast<clang::Sema *>(S)->isAcceptable(
+      static_cast<clang::NamedDecl *>(D), static_cast<clang::Sema::AcceptableKind>(Kind));
+}
+
+bool clang_Sema_hasAcceptableDefinition(CXSema S, CXNamedDecl D, CXNamedDecl *Suggested,
+                                        CXAcceptableKind Kind, bool OnlyNeedComplete) {
+  clang::NamedDecl *Hidden = nullptr;
+  bool Result = static_cast<clang::Sema *>(S)->hasAcceptableDefinition(
+      static_cast<clang::NamedDecl *>(D), &Hidden,
+      static_cast<clang::Sema::AcceptableKind>(Kind), OnlyNeedComplete);
+  // Hidden is only written on the false path; zero it otherwise so the out-parameter is
+  // never a stale stack value the caller could mistake for a suggestion.
+  *Suggested = Result ? nullptr : Hidden;
+  return Result;
+}
+
+bool clang_Sema_areMatrixTypesOfTheSameDimension(CXSema S, CXQualType SrcTy,
+                                                 CXQualType DestTy) {
+  return static_cast<clang::Sema *>(S)->areMatrixTypesOfTheSameDimension(
+      clang::QualType::getFromOpaquePtr(SrcTy), clang::QualType::getFromOpaquePtr(DestTy));
+}
+
+CXString clang_Sema_getTemplateArgumentBindingsText(CXSema S, CXTemplateParameterList Params,
+                                                    CXTemplateArgumentList Args) {
+  return extra::makeCXString(
+      static_cast<clang::Sema *>(S)->getTemplateArgumentBindingsText(
+          static_cast<clang::TemplateParameterList *>(Params),
+          *static_cast<clang::TemplateArgumentList *>(Args)));
+}
+
+bool clang_Sema_getFullyPackExpandedSize(CXSema S, CXTemplateArgument Arg, unsigned *Size) {
+  std::optional<unsigned> N = static_cast<clang::Sema *>(S)->getFullyPackExpandedSize(
+      *static_cast<clang::TemplateArgument *>(Arg));
+  if (!N)
+    return false;
+  *Size = *N;
+  return true;
+}

@@ -3935,6 +3935,38 @@ CXQualType clang_Sema_getCapturedDeclRefType(CXSema S, CXValueDecl Var,
 CXAttr clang_Sema_getImplicitCodeSegOrSectionAttrForFunction(CXSema S, CXFunctionDecl FD,
                                                              bool IsDefinition);
 
+// Whether a declaration counts as available to name lookup: `Visible` requires it to be
+// visible, `Reachable` also accepts a declaration reachable through a module dependency.
+typedef enum CXAcceptableKind {
+  CXAcceptableKind_Visible = 0,
+  CXAcceptableKind_Reachable = 1,
+} CXAcceptableKind;
+
+// Whether D is acceptable to lookup under Kind. D must be non-null.
+bool clang_Sema_isAcceptable(CXSema S, CXNamedDecl D, CXAcceptableKind Kind);
+
+// Whether D has an acceptable definition under Kind. When it does not and a different
+// declaration would be worth suggesting, *Suggested is set to it; it is set to null
+// otherwise, so it is only meaningful when this returns false. OnlyNeedComplete asks about a
+// complete type rather than a full definition. D must be non-null; Suggested must not be.
+bool clang_Sema_hasAcceptableDefinition(CXSema S, CXNamedDecl D, CXNamedDecl *Suggested,
+                                        CXAcceptableKind Kind, bool OnlyNeedComplete);
+
+// Whether the two matrix types have the same number of rows and columns. Both must be
+// matrix types.
+bool clang_Sema_areMatrixTypesOfTheSameDimension(CXSema S, CXQualType SrcTy,
+                                                 CXQualType DestTy);
+
+// The "with T = int, U = float" text describing how Params were bound to Args, as
+// diagnostics spell it. Both must be non-null.
+CXString clang_Sema_getTemplateArgumentBindingsText(CXSema S, CXTemplateParameterList Params,
+                                                    CXTemplateArgumentList Args);
+
+// The number of elements a fully-expanded pack argument holds. Returns false when the size
+// is not yet known (the pack is still dependent), leaving *Size untouched -- this is the
+// std::optional the C++ method returns. Size must be non-null.
+bool clang_Sema_getFullyPackExpandedSize(CXSema S, CXTemplateArgument Arg, unsigned *Size);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

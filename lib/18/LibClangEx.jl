@@ -39240,6 +39240,31 @@ function clang_Sema_getImplicitCodeSegOrSectionAttrForFunction(S, FD, IsDefiniti
     @ccall libclangex.clang_Sema_getImplicitCodeSegOrSectionAttrForFunction(S::CXSema, FD::CXFunctionDecl, IsDefinition::Bool)::CXAttr
 end
 
+@enum CXAcceptableKind::UInt32 begin
+    CXAcceptableKind_Visible = 0
+    CXAcceptableKind_Reachable = 1
+end
+
+function clang_Sema_isAcceptable(S, D, Kind)
+    @ccall libclangex.clang_Sema_isAcceptable(S::CXSema, D::CXNamedDecl, Kind::CXAcceptableKind)::Bool
+end
+
+function clang_Sema_hasAcceptableDefinition(S, D, Suggested, Kind, OnlyNeedComplete)
+    @ccall libclangex.clang_Sema_hasAcceptableDefinition(S::CXSema, D::CXNamedDecl, Suggested::Ptr{CXNamedDecl}, Kind::CXAcceptableKind, OnlyNeedComplete::Bool)::Bool
+end
+
+function clang_Sema_areMatrixTypesOfTheSameDimension(S, SrcTy, DestTy)
+    @ccall libclangex.clang_Sema_areMatrixTypesOfTheSameDimension(S::CXSema, SrcTy::CXQualType, DestTy::CXQualType)::Bool
+end
+
+function clang_Sema_getTemplateArgumentBindingsText(S, Params, Args)
+    @ccall libclangex.clang_Sema_getTemplateArgumentBindingsText(S::CXSema, Params::CXTemplateParameterList, Args::CXTemplateArgumentList)::CXString
+end
+
+function clang_Sema_getFullyPackExpandedSize(S, Arg, Size)
+    @ccall libclangex.clang_Sema_getFullyPackExpandedSize(S::CXSema, Arg::CXTemplateArgument, Size::Ptr{Cuint})::Bool
+end
+
 @enum CXTemplateSubstitutionKind::UInt32 begin
     CXTemplateSubstitutionKind_Specialization = 0
     CXTemplateSubstitutionKind_Rewrite = 1

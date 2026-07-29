@@ -66,7 +66,6 @@ function LookupDestructor(sema::Sema, cxxrd::CXXRecordDecl)
     return CXXDestructorDecl(clang_Sema_LookupDestructor(sema, cxxrd))
 end
 
-
 function getASTContext(x::AbstractSema)
     @check_ptrs x
     return ASTContext(clang_Sema_getASTContext(x))
@@ -198,7 +197,6 @@ function LookupInSuper(x::AbstractSema, r::AbstractLookupResult, cls::AbstractCX
     return clang_Sema_LookupInSuper(x, r, cls)
 end
 
-
 function usesPartialOrExplicitSpecialization(x::AbstractSema, loc::SourceLocation,
                                              spec::AbstractClassTemplateSpecializationDecl)
     @check_ptrs x spec
@@ -250,7 +248,6 @@ function PerformPendingInstantiations(x::AbstractSema, local_only::Bool=false)
     clang_Sema_PerformPendingInstantiations(x, local_only)
     return nothing
 end
-
 
 # Special-member lookup, visible-decl enumeration and the remaining type requirements
 
@@ -428,7 +425,6 @@ function RequireStructuralType(x::AbstractSema, ty::AbstractQualType, loc::Sourc
     @check_ptrs x ty
     return clang_Sema_RequireStructuralType(x, ty, loc)
 end
-
 
 # --- Sema state queries ---
 
@@ -640,7 +636,6 @@ function getCurLexicalContext(x::AbstractSema)
     @check_ptrs x
     return DeclContext(clang_Sema_getCurLexicalContext(x))
 end
-
 
 # ODR-use marking, `auto` substitution and template-parameter deduction. These are the
 # Sema entry points that can be driven without an active instantiation context; the
@@ -871,7 +866,6 @@ function InstantiateFunctionDeclaration(x::AbstractSema, ftd::AbstractFunctionTe
     @assert size(args) == size(getTemplateParameters(ftd)) "one template argument per template parameter is required"
     return FunctionDecl(clang_Sema_InstantiateFunctionDeclaration(x, ftd, args, loc))
 end
-
 
 # --- Type builders (Sema's checked counterparts of the ASTContext type factories) ---
 # Each one diagnoses the ill-formed cases through Sema and returns a NULL-carrying
@@ -1143,7 +1137,6 @@ function BuildCXXNoexceptExpr(x::AbstractSema, key_loc::SourceLocation,
     return invalid[] ? nothing : Expr_(e)
 end
 
-
 """
     CheckFunctionReturnType(x::AbstractSema, ty::AbstractQualType, loc::SourceLocation) -> Bool
 Return `true` when `ty` cannot be used as a function return type — an array or function
@@ -1363,7 +1356,6 @@ function CheckIfOverriddenFunctionIsMarkedFinal(x::AbstractSema,
     @check_ptrs x new_md old_md
     return clang_Sema_CheckIfOverriddenFunctionIsMarkedFinal(x, new_md, old_md)
 end
-
 
 """
     getCurrentModule(x::AbstractSema) -> Module_
@@ -1601,7 +1593,6 @@ function isPreciseFPEnabled(x::AbstractSema)
     @check_ptrs x
     return clang_Sema_isPreciseFPEnabled(x)
 end
-
 
 # --- Declaration, expression and trait node builders ---
 # The `ExprResult` convention of the expression builders above holds here too: `nothing` is
@@ -1920,7 +1911,6 @@ function BuildCXXFunctionalCastExpr(x::AbstractSema, tinfo::AbstractTypeSourceIn
     return invalid[] ? nothing : Expr_(e)
 end
 
-
 """
     CheckQualifiedFunctionForTypeId(x::AbstractSema, t::QualType, loc::SourceLocation) -> Bool
 Return `true` when `t` is a function type carrying cv-qualifiers or a ref-qualifier, which
@@ -2191,7 +2181,6 @@ function VerifyIntegerConstantExpression(x::AbstractSema, e::AbstractExpr,
     return invalid[] ? nothing : Expr_(r)
 end
 
-
 # --- Expression conversions and the remaining ODR-use marking ---
 #
 # `clang::ExprResult` crosses the C boundary split (MARSHALLING.md §8), so every conversion
@@ -2401,7 +2390,6 @@ function PerformQualificationConversion(x::AbstractSema, e::AbstractExpr,
     r = clang_Sema_PerformQualificationConversion(x, e, ty, vk, cck, invalid)
     return invalid[] ? nothing : Expr_(r)
 end
-
 
 """
     AddOverriddenMethods(x::AbstractSema, rd::AbstractCXXRecordDecl, md::AbstractCXXMethodDecl) -> Bool
@@ -2616,7 +2604,6 @@ function AddImplicitMSFunctionNoBuiltinAttr(x::AbstractSema, fd::AbstractFunctio
     @check_ptrs x fd
     return clang_Sema_AddImplicitMSFunctionNoBuiltinAttr(x, fd)
 end
-
 
 """
     findLocallyScopedExternCDecl(x::AbstractSema, name::DeclarationName) -> NamedDecl
@@ -2850,7 +2837,6 @@ function TooManyArguments(num_params::Integer, num_args::Integer,
                           partial_overloading::Bool=false)
     return clang_Sema_TooManyArguments(num_params, num_args, partial_overloading)
 end
-
 
 """
     isExternalWithNoLinkageType(x::AbstractSema, vd::AbstractValueDecl) -> Bool
@@ -3107,7 +3093,6 @@ function getLocationOfStringLiteralByte(x::AbstractSema, sl::AbstractStringLiter
     return SourceLocation(clang_Sema_getLocationOfStringLiteralByte(x, sl, byte_no))
 end
 
-
 # --- Name, offsetof and instantiation-rebuild node builders ---
 
 """
@@ -3346,7 +3331,6 @@ function RebuildTemplateParamsInCurrentInstantiation(x::AbstractSema,
     return clang_Sema_RebuildTemplateParamsInCurrentInstantiation(x, params)
 end
 
-
 # --- Conversion and operand checks ---------------------------------------------------------
 # Each wrapper below runs one Sema check over an expression or a pair of types that already
 # exist. None of them drives the parser; the ones that rewrite their operand return the
@@ -3584,7 +3568,6 @@ function VerifyBitField(x::AbstractSema, field_loc::SourceLocation,
     return invalid[] ? nothing : Expr_(r)
 end
 
-
 # --- Declaration groups, default-argument conversion and template deduction ---
 #
 # None of these needs the parser to be running. The two `Convert*` conversions run real
@@ -3686,7 +3669,6 @@ function DeduceAutoType(x::AbstractSema, auto_type_loc::TypeLoc, initializer::Ab
                                   dependent_deduction, ignore_constraints)
     return r, (result[] == C_NULL ? nothing : QualType(result[]))
 end
-
 
 # --- Defining the implicitly-declared special members ---
 #
@@ -3892,7 +3874,6 @@ function AddPragmaAttributes(x::AbstractSema, sp::AbstractScope, d::AbstractDecl
     clang_Sema_AddPragmaAttributes(x, sp, d)
     return nothing
 end
-
 
 # --- Unary type-transform trait implementations ---
 # The individual transforms `BuildUnaryTransformType` dispatches to. A transform that
@@ -4149,7 +4130,6 @@ function GetFormatNSStringIdx(attr::AbstractFormatAttr)
     return clang_Sema_GetFormatNSStringIdx(attr, idx) ? idx[] : nothing
 end
 
-
 # --- Sema state queries: current context, modules and type classification ---
 
 """
@@ -4387,7 +4367,6 @@ function getCurObjCLexicalContext(x::AbstractSema)
     return DeclContext(clang_Sema_getCurObjCLexicalContext(x))
 end
 
-
 """
     BuildDeclaratorGroup(x::AbstractSema, group) -> DeclGroupRef
 Package `group` into the `DeclGroupRef` a declarator list produces, after checking that
@@ -4570,7 +4549,6 @@ function BuildExpressionFromDeclTemplateArgument(x::AbstractSema, arg::TemplateA
     e = clang_Sema_BuildExpressionFromDeclTemplateArgument(x, arg, param_type, loc, invalid)
     return invalid[] ? nothing : Expr_(e)
 end
-
 
 """
     CheckDelegatingCtorCycles(x::AbstractSema) -> Nothing
@@ -4797,7 +4775,6 @@ function CheckFloatComparison(x::AbstractSema, loc::SourceLocation, lhs::Abstrac
     return nothing
 end
 
-
 # --- Driving a substitution from outside the parser ---
 
 """
@@ -5009,7 +4986,6 @@ function SubstDeclarationNameInfo(x::AbstractSema, name_info::AbstractDeclaratio
     @assert getNumCodeSynthesisContexts(x) > 0 "substitution needs a live InstantiatingTemplate"
     return DeclarationNameInfo(clang_Sema_SubstDeclarationNameInfo(x, name_info, template_args))
 end
-
 
 """
     FindHiddenVirtualMethods(x::AbstractSema, md::AbstractCXXMethodDecl) -> Vector{CXXMethodDecl}
@@ -5313,7 +5289,6 @@ function FindDeallocationFunction(x::AbstractSema, loc::SourceLocation,
     return failed, FunctionDecl(op[])
 end
 
-
 # Weak top-level declarations, capture and ADL queries, and the remaining standard
 # conversions
 
@@ -5546,7 +5521,6 @@ function SpecialMemberIsTrivial(x::AbstractSema, md::AbstractCXXMethodDecl,
     @assert !isUserProvided(md) "the member must not be user-provided"
     return clang_Sema_SpecialMemberIsTrivial(x, md, csm, tah, diagnose)
 end
-
 
 """
     isObjCMethodDecl(x::AbstractSema, d::AbstractDecl) -> Bool
@@ -5783,7 +5757,6 @@ function getSuperIdentifier(x::AbstractSema)
     return IdentifierInfo(clang_Sema_getSuperIdentifier(x))
 end
 
-
 """
     CreateOverloadedArraySubscriptExpr(x::AbstractSema, lloc, rloc, base, args)
 Build `base[args...]` by overload resolution over `base`'s `operator[]` members.
@@ -5986,7 +5959,6 @@ function BuildMemberInitializer(x::AbstractSema,
     ci = clang_Sema_BuildMemberInitializer(x, member, init, id_loc, invalid)
     return invalid[] ? nothing : CXXCtorInitializer(ci)
 end
-
 
 # --- Per-operator operand type checking ---
 # The checks `CreateBuiltinBinOp` dispatches to once it knows the opcode. Each answers the
@@ -6271,7 +6243,6 @@ function CheckCoroutineWrapper(x::AbstractSema, fd::AbstractFunctionDecl)
     return nothing
 end
 
-
 # --- Rebuilding declarations, parameters and template names ---
 
 """
@@ -6527,7 +6498,6 @@ function PerformDependentDiagnostics(x::AbstractSema, pattern::AbstractDeclConte
     return clang_Sema_PerformDependentDiagnostics(x, pattern, template_args)
 end
 
-
 """
     FindAllocationFunctions(x::AbstractSema, start_loc::SourceLocation, range::SourceRange,
                             new_scope::CXAllocationFunctionScope,
@@ -6757,7 +6727,6 @@ function MergeVarDeclExceptionSpecs(x::AbstractSema, new_vd::AbstractVarDecl,
     return nothing
 end
 
-
 """
     LookupOverloadedOperatorName(x::AbstractSema, op::CXOverloadedOperatorKind,
                                  sc::Scope) -> Vector{NamedDecl}
@@ -6976,7 +6945,6 @@ function IdentifyCUDAPreference(x::AbstractSema,
     return clang_Sema_IdentifyCUDAPreference(x, c, callee)
 end
 
-
 """
     AlignPackInfo(mode::CXAlignPackInfo_Mode, num::Integer, is_xl::Bool) -> AlignPackInfo
 Build the `#pragma pack` form of an alignment-stack slot: `mode` together with an explicit
@@ -7180,7 +7148,6 @@ function hasErrorOccurred(x::AbstractSFINAETrap)
     @check_ptrs x
     return clang_SFINAETrap_hasErrorOccurred(x)
 end
-
 
 """
     getUndefinedButUsed(x::AbstractSema) -> Vector{Tuple{NamedDecl,SourceLocation}}
@@ -7398,7 +7365,6 @@ function isCFError(x::AbstractSema, d::AbstractRecordDecl)
     return clang_Sema_isCFError(x, d)
 end
 
-
 """
     CreateBuiltin(x::AbstractSema, ii, ty, id, loc) -> FunctionDecl
 Create the implicit declaration of the builtin `id` under the name `ii` with the function
@@ -7558,7 +7524,6 @@ function BuildCXXThisExpr(x::AbstractSema, loc::SourceLocation, ty::AbstractQual
     return Expr_(clang_Sema_BuildCXXThisExpr(x, loc, ty, is_implicit))
 end
 
-
 """
     CheckArgsForPlaceholders(x::AbstractSema, args::AbstractVector{<:AbstractExpr}) -> Tuple{Bool,Vector{Expr_}}
 Check an argument list for placeholder types clang will not handle later, returning whether
@@ -7654,8 +7619,6 @@ function CheckStructuredBindingMemberAccess(x::AbstractSema, use_loc::SourceLoca
     return clang_Sema_CheckStructuredBindingMemberAccess(x, use_loc, decomposed_class, field,
                                                          field_access)
 end
-
-
 
 """
     CheckConditionalOperands(x::AbstractSema, cond, lhs, rhs, question_loc::SourceLocation) -> Union{Nothing,Tuple{QualType,Expr_,Expr_,Expr_,CXExprValueKind,CXExprObjectKind}}
@@ -7791,7 +7754,6 @@ function CheckVectorLogicalOperands(x::AbstractSema, lhs::AbstractExpr, rhs::Abs
     return QualType(t), Expr_(lhs_io[]), Expr_(rhs_io[])
 end
 
-
 """
     SubstParmTypes(x::AbstractSema, loc::SourceLocation, params,
                    template_args) -> Union{Nothing,Tuple{Vector{QualType},Vector{ParmVarDecl}}}
@@ -7899,7 +7861,6 @@ function SubstBaseSpecifiers(x::AbstractSema, instantiation::AbstractCXXRecordDe
     @assert hasDefinition(pattern) "the pattern must have a definition"
     return clang_Sema_SubstBaseSpecifiers(x, instantiation, pattern, template_args)
 end
-
 
 """
     AddMethodTemplateCandidate(x::AbstractSema, ftd::AbstractFunctionTemplateDecl,
@@ -8233,7 +8194,6 @@ function GatherArgumentsForCall(x::AbstractSema, call_loc::SourceLocation,
     return invalid, [Expr_(p) for p in view(out, 1:Int(n[]))]
 end
 
-
 # --- External-source loads, cleanup wrapping and the remaining conversion helpers ---
 
 """
@@ -8461,7 +8421,6 @@ function ImpCastExprToType(x::AbstractSema, e::AbstractExpr, ty::QualType, ck::C
     r = clang_Sema_ImpCastExprToType(x, e, ty, ck, vk, cck, invalid)
     return invalid[] ? nothing : Expr_(r)
 end
-
 
 """
     Clear(x::AbstractInstantiatingTemplate)
@@ -8787,4 +8746,73 @@ function getImplicitCodeSegOrSectionAttrForFunction(x::AbstractSema,
                                                     is_definition::Bool)
     @check_ptrs x fd
     return Attr(clang_Sema_getImplicitCodeSegOrSectionAttrForFunction(x, fd, is_definition))
+end
+
+"""
+    isAcceptable(x::AbstractSema, d::AbstractNamedDecl, kind::CXAcceptableKind) -> Bool
+Return `true` iff `d` is acceptable to name lookup under `kind` —
+`CXAcceptableKind_Visible` requires it to be visible, `CXAcceptableKind_Reachable` also
+accepts a declaration reachable through a module dependency.
+"""
+function isAcceptable(x::AbstractSema, d::AbstractNamedDecl, kind::CXAcceptableKind)
+    @check_ptrs x d
+    return clang_Sema_isAcceptable(x, d, kind)
+end
+
+"""
+    hasAcceptableDefinition(x::AbstractSema, d::AbstractNamedDecl, kind::CXAcceptableKind;
+                            only_need_complete::Bool=false) -> (Bool, Union{NamedDecl,Nothing})
+
+Return whether `d` has an acceptable definition under `kind`, together with the declaration
+worth suggesting instead when it does not.
+
+The suggestion is `nothing` whenever the definition *is* acceptable — Clang only writes the
+out-parameter on the failing path, so there is no second declaration to report on success.
+Pass `only_need_complete` to ask about a complete type rather than a full definition.
+"""
+function hasAcceptableDefinition(x::AbstractSema, d::AbstractNamedDecl,
+                                 kind::CXAcceptableKind; only_need_complete::Bool=false)
+    @check_ptrs x d
+    suggested = Ref{CXNamedDecl}(C_NULL)
+    ok = clang_Sema_hasAcceptableDefinition(x, d, suggested, kind, only_need_complete)
+    return ok, suggested[] == C_NULL ? nothing : NamedDecl(suggested[])
+end
+
+"""
+    areMatrixTypesOfTheSameDimension(x::AbstractSema, src::QualType, dest::QualType) -> Bool
+Return `true` iff the two matrix types have the same number of rows and columns.
+
+Both operands must be *constant* matrix types. `clang::ConstantMatrixType` is the only matrix
+type carrying dimensions to compare — a dependent-sized one, as written inside an
+uninstantiated template, has none — so the dimensions are read through a cast this wrapper
+has to establish rather than the callee. Matrix types need `-fenable-matrix`.
+"""
+function areMatrixTypesOfTheSameDimension(x::AbstractSema, src::QualType, dest::QualType)
+    @check_ptrs x src dest
+    @assert isConstantMatrixType(getTypePtr(src)) "source must be a constant matrix type"
+    @assert isConstantMatrixType(getTypePtr(dest)) "destination must be a constant matrix type"
+    return clang_Sema_areMatrixTypesOfTheSameDimension(x, src, dest)
+end
+
+"""
+    getTemplateArgumentBindingsText(x::AbstractSema, params::TemplateParameterList,
+                                    args::TemplateArgumentList) -> String
+Return the `[with T = int]` text describing how `params` were bound to `args`, as
+diagnostics spell it.
+"""
+function getTemplateArgumentBindingsText(x::AbstractSema, params::TemplateParameterList,
+                                         args::TemplateArgumentList)
+    @check_ptrs x params args
+    return get_string(clang_Sema_getTemplateArgumentBindingsText(x, params, args))
+end
+
+"""
+    getFullyPackExpandedSize(x::AbstractSema, arg::TemplateArgument) -> Union{UInt32,Nothing}
+Return the number of elements the fully-expanded pack `arg` holds, or `nothing` when that
+size is not yet known because the pack is still dependent.
+"""
+function getFullyPackExpandedSize(x::AbstractSema, arg::TemplateArgument)
+    @check_ptrs x arg
+    size = Ref{Cuint}(0)
+    return clang_Sema_getFullyPackExpandedSize(x, arg, size) ? size[] : nothing
 end
