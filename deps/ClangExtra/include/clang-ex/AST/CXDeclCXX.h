@@ -603,7 +603,6 @@ CXExpr clang_ExplicitSpecifier_getExpr(CXExplicitSpecifier ES);
 
 bool clang_ExplicitSpecifier_isSpecified(CXExplicitSpecifier ES);
 
-// isEquivalent
 bool clang_ExplicitSpecifier_isEquivalent(CXExplicitSpecifier ES,
                                           CXExplicitSpecifier Other);
 
@@ -687,7 +686,6 @@ bool clang_CXXMethodDecl_isStatic(CXCXXMethodDecl CXXMD);
 
 bool clang_CXXMethodDecl_isInstance(CXCXXMethodDecl CXXMD);
 
-// isStaticOverloadedOperator
 
 // Static; true for the allocation and deallocation operators, which are implicitly
 // static members when declared in a class.
@@ -702,7 +700,6 @@ bool clang_CXXMethodDecl_isVirtual(CXCXXMethodDecl CXXMD);
 CXCXXMethodDecl clang_CXXMethodDecl_getDevirtualizedMethod(CXCXXMethodDecl CXXMD,
                                                            CXExpr Base, bool IsAppleKext);
 
-// isUsualDeallocationFunction
 
 // helper: runs clang::CXXMethodDecl::isUsualDeallocationFunction with a throw-away
 // PreventedBy buffer, so the declarations that prevented a false answer are dropped.

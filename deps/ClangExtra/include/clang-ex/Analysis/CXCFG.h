@@ -63,7 +63,6 @@ size_t clang_CFGBlock_getIndexInCFG(CXCFGBlock B);
 // Number of CFGElements in the block.
 unsigned clang_CFGBlock_size(CXCFGBlock B);
 
-// empty
 
 bool clang_CFGBlock_empty(CXCFGBlock B);
 
@@ -149,7 +148,6 @@ CXCXXDestructorDecl clang_CFGBlock_getElementDestructorDecl(CXCFGBlock B, unsign
 
 unsigned clang_CFGBlock_succ_size(CXCFGBlock B);
 
-// succ_empty
 
 bool clang_CFGBlock_succ_empty(CXCFGBlock B);
 
@@ -167,7 +165,6 @@ CXCFGBlock clang_CFGBlock_getSuccPossiblyUnreachableBlock(CXCFGBlock B, unsigned
 
 unsigned clang_CFGBlock_pred_size(CXCFGBlock B);
 
-// pred_empty
 
 bool clang_CFGBlock_pred_empty(CXCFGBlock B);
 

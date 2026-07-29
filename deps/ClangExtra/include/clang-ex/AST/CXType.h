@@ -581,13 +581,11 @@ CXQualType clang_QualType_getNonLValueExprType(CXQualType OpaquePtr, CXASTContex
 // Type
 bool clang_Type_isFromAST(CXType_ T);
 
-// containsUnexpandedParameterPack
 
 bool clang_Type_containsUnexpandedParameterPack(CXType_ T);
 
 bool clang_Type_isCanonicalUnqualified(CXType_ T);
 
-// getLocallyUnqualifiedSingleStepDesugaredType
 
 CXQualType clang_Type_getLocallyUnqualifiedSingleStepDesugaredType(CXType_ T);
 
@@ -597,40 +595,31 @@ bool clang_Type_isSizelessBuiltinType(CXType_ T);
 
 bool clang_Type_isSizelessVectorType(CXType_ T);
 
-// isSVESizelessBuiltinType
 bool clang_Type_isSVESizelessBuiltinType(CXType_ T);
 
-// isRVVSizelessBuiltinType
 bool clang_Type_isRVVSizelessBuiltinType(CXType_ T);
 
-// isWebAssemblyExternrefType
 bool clang_Type_isWebAssemblyExternrefType(CXType_ T);
 
-// isWebAssemblyTableType
 bool clang_Type_isWebAssemblyTableType(CXType_ T);
 
-// isSveVLSBuiltinType
 bool clang_Type_isSveVLSBuiltinType(CXType_ T);
 
 // isVLSTBuiltinType
 
-// getSveEltType
 // PRECONDITION (Invariant 3): T must satisfy Type::isSveVLSBuiltinType(). getSveEltType
 // reaches the BuiltinType subobject through an unchecked getAs<BuiltinType>() and
 // dereferences it, so any other type is undefined behaviour. The gate is
 // clang_Type_isSveVLSBuiltinType above; the Julia wrapper restates it.
 CXQualType clang_Type_getSveEltType(CXType_ T, CXASTContext Ctx);
 
-// isRVVVLSBuiltinType
 bool clang_Type_isRVVVLSBuiltinType(CXType_ T);
 
-// getRVVEltType
 // PRECONDITION (Invariant 3): T must satisfy Type::isRVVVLSBuiltinType(), for the same
 // unchecked getAs<BuiltinType>() reason as getSveEltType. The gate is
 // clang_Type_isRVVVLSBuiltinType above; the Julia wrapper restates it.
 CXQualType clang_Type_getRVVEltType(CXType_ T, CXASTContext Ctx);
 
-// isIncompleteType
 
 // Def is the optional `NamedDecl **` out-parameter of Type::isIncompleteType: pass NULL
 // to ignore it, otherwise it receives the completable declaration (C struct, C++ class,
@@ -659,13 +648,11 @@ bool clang_Type_isStandardLayoutType(CXType_ T);
 
 bool clang_Type_isBuiltinType(CXType_ T);
 
-// isSpecificBuiltinType
 
 // K is a clang::BuiltinType::Kind value. The comparison is total, so a K
 // outside the enumeration simply never matches.
 bool clang_Type_isSpecificBuiltinType(CXType_ T, unsigned K);
 
-// isPlaceholderType
 
 bool clang_Type_isPlaceholderType(CXType_ T);
 
@@ -673,7 +660,6 @@ CXBuiltinType clang_Type_getAsPlaceholderType(CXType_ T);
 
 // getAsPlaceholderType
 
-// isSpecificPlaceholderType
 
 // PRECONDITION (Invariant 3): K must name a placeholder BuiltinType::Kind;
 // Type::isSpecificPlaceholderType asserts BuiltinType::isPlaceholderTypeKind(K).
@@ -681,7 +667,6 @@ CXBuiltinType clang_Type_getAsPlaceholderType(CXType_ T);
 // wrapper restates it.
 bool clang_Type_isSpecificPlaceholderType(CXType_ T, unsigned K);
 
-// isNonOverloadPlaceholderType
 
 bool clang_Type_isNonOverloadPlaceholderType(CXType_ T);
 
@@ -705,7 +690,6 @@ bool clang_Type_isChar32Type(CXType_ T);
 
 bool clang_Type_isAnyCharacterType(CXType_ T);
 
-// isIntegralType
 
 bool clang_Type_isIntegralType(CXType_ T, CXASTContext Ctx);
 
@@ -731,7 +715,6 @@ bool clang_Type_isBFloat16Type(CXType_ T);
 
 bool clang_Type_isFloat128Type(CXType_ T);
 
-// isIbm128Type
 
 bool clang_Type_isIbm128Type(CXType_ T);
 
@@ -811,7 +794,6 @@ bool clang_Type_isVectorType(CXType_ T);
 
 bool clang_Type_isExtVectorType(CXType_ T);
 
-// isExtVectorBoolType
 bool clang_Type_isExtVectorBoolType(CXType_ T);
 
 bool clang_Type_isMatrixType(CXType_ T);
@@ -820,48 +802,34 @@ bool clang_Type_isConstantMatrixType(CXType_ T);
 
 bool clang_Type_isDependentAddressSpaceType(CXType_ T);
 
-// isObjCObjectPointerType
 bool clang_Type_isObjCObjectPointerType(CXType_ T);
 
-// isObjCRetainableType
 bool clang_Type_isObjCRetainableType(CXType_ T);
 
-// isObjCLifetimeType
 bool clang_Type_isObjCLifetimeType(CXType_ T);
 
-// isObjCIndirectLifetimeType
 bool clang_Type_isObjCIndirectLifetimeType(CXType_ T);
 
-// isObjCNSObjectType
 bool clang_Type_isObjCNSObjectType(CXType_ T);
 
-// isObjCIndependentClassType
 bool clang_Type_isObjCIndependentClassType(CXType_ T);
 
-// isObjCObjectType
 bool clang_Type_isObjCObjectType(CXType_ T);
 
-// isObjCQualifiedInterfaceType
 bool clang_Type_isObjCQualifiedInterfaceType(CXType_ T);
 
-// isObjCQualifiedIdType
 bool clang_Type_isObjCQualifiedIdType(CXType_ T);
 
-// isObjCQualifiedClassType
 bool clang_Type_isObjCQualifiedClassType(CXType_ T);
 
-// isObjCObjectOrInterfaceType
 bool clang_Type_isObjCObjectOrInterfaceType(CXType_ T);
 
-// isObjCIdType
 bool clang_Type_isObjCIdType(CXType_ T);
 
 bool clang_Type_isDecltypeType(CXType_ T);
 
-// isObjCInertUnsafeUnretainedType
 bool clang_Type_isObjCInertUnsafeUnretainedType(CXType_ T);
 
-// isObjCIdOrObjectKindOfType
 // Bound is an out-param and may be NULL when only the predicate is wanted. The shim clears
 // its own local before the call, so a non-NULL Bound always receives a defined value: the
 // (possibly specialized) Objective-C class type bounding a __kindof type, or NULL both for
@@ -869,29 +837,22 @@ bool clang_Type_isObjCInertUnsafeUnretainedType(CXType_ T);
 bool clang_Type_isObjCIdOrObjectKindOfType(CXType_ T, CXASTContext Ctx,
                                            CXObjCObjectType *Bound);
 
-// isObjCClassType
 bool clang_Type_isObjCClassType(CXType_ T);
 
-// isObjCClassOrClassKindOfType
 bool clang_Type_isObjCClassOrClassKindOfType(CXType_ T);
 
-// isBlockCompatibleObjCPointerType
 // clang takes the ASTContext by non-const reference here; Ctx may not be NULL. The
 // predicate answers false for every type that is not an Objective-C object pointer, so a
 // C++ translation unit always reads false.
 bool clang_Type_isBlockCompatibleObjCPointerType(CXType_ T, CXASTContext Ctx);
 
-// isObjCSelType
 bool clang_Type_isObjCSelType(CXType_ T);
 
-// isObjCBuiltinType
 // The disjunction of isObjCIdType, isObjCClassType and isObjCSelType.
 bool clang_Type_isObjCBuiltinType(CXType_ T);
 
-// isObjCARCBridgableType
 bool clang_Type_isObjCARCBridgableType(CXType_ T);
 
-// isCARCBridgableType
 bool clang_Type_isCARCBridgableType(CXType_ T);
 
 bool clang_Type_isTemplateTypeParmType(CXType_ T);
@@ -912,57 +873,42 @@ bool clang_Type_isTypedefNameType(CXType_ T);
 
 // clang/Basic/OpenCLImageTypes.def
 
-// isImageType
 bool clang_Type_isImageType(CXType_ T);
 
-// isSamplerT
 bool clang_Type_isSamplerT(CXType_ T);
 
-// isEventT
 bool clang_Type_isEventT(CXType_ T);
 
-// isClkEventT
 bool clang_Type_isClkEventT(CXType_ T);
 
-// isQueueT
 bool clang_Type_isQueueT(CXType_ T);
 
-// isReserveIDT
 bool clang_Type_isReserveIDT(CXType_ T);
 
 // clang/Basic/OpenCLExtensionTypes.def
 
-// isOCLIntelSubgroupAVCType
 bool clang_Type_isOCLIntelSubgroupAVCType(CXType_ T);
 
-// isOCLExtOpaqueType
 bool clang_Type_isOCLExtOpaqueType(CXType_ T);
 
-// isPipeType
 bool clang_Type_isPipeType(CXType_ T);
 
-// isBitIntType
 
 bool clang_Type_isBitIntType(CXType_ T);
 
-// isOpenCLSpecificType
 // The union of isSamplerT, isEventT, isImageType, isClkEventT, isQueueT,
 // isReserveIDT, isPipeType and isOCLExtOpaqueType.
 bool clang_Type_isOpenCLSpecificType(CXType_ T);
 
-// isObjCARCImplicitlyUnretainedType
 // PRECONDITION (Invariant 3): T must satisfy Type::isObjCLifetimeType();
 // Type::isObjCARCImplicitlyUnretainedType asserts it on entry. The gate is
 // clang_Type_isObjCLifetimeType above; the Julia wrapper restates it.
 bool clang_Type_isObjCARCImplicitlyUnretainedType(CXType_ T);
 
-// isCUDADeviceBuiltinSurfaceType
 bool clang_Type_isCUDADeviceBuiltinSurfaceType(CXType_ T);
 
-// isCUDADeviceBuiltinTextureType
 bool clang_Type_isCUDADeviceBuiltinTextureType(CXType_ T);
 
-// getObjCARCImplicitLifetime
 // PRECONDITION (Invariant 3): T must satisfy Type::isObjCLifetimeType();
 // Type::getObjCARCImplicitLifetime asserts it on entry. The gate is
 // clang_Type_isObjCLifetimeType above; the Julia wrapper restates it.
@@ -1075,7 +1021,6 @@ CXCXXRecordDecl clang_Type_getPointeeCXXRecordDecl(CXType_ T);
 
 CXDeducedType clang_Type_getContainedDeducedType(CXType_ T);
 
-// getContainedAutoType
 
 // Null-safe: dyn_cast_or_null of the contained DeducedType, so a non-auto type
 // yields NULL rather than a bad cast.
@@ -1083,7 +1028,6 @@ CXAutoType clang_Type_getContainedAutoType(CXType_ T);
 
 bool clang_Type_hasAutoForTrailingReturnType(CXType_ T);
 
-// getAsArrayTypeUnsafe
 
 CXArrayType clang_Type_getAsArrayTypeUnsafe(CXType_ T);
 
@@ -1101,7 +1045,6 @@ bool clang_Type_hasAttr(CXType_ T, CXAttrKind AK);
 
 // hasAttr
 
-// getBaseElementTypeUnsafe
 
 CXType_ clang_Type_getBaseElementTypeUnsafe(CXType_ T);
 
@@ -1147,7 +1090,6 @@ CXVisibility clang_Type_getVisibility(CXType_ T);
 
 bool clang_Type_isVisibilityExplicit(CXType_ T);
 
-// getLinkageAndVisibility
 // The LinkageInfo aggregate crosses field-by-field, exactly as
 // clang_NamedDecl_getLinkageAndVisibility does (MARSHALLING.md §7): the computed linkage,
 // the computed visibility, and whether that visibility was explicitly specified. All three
@@ -1157,19 +1099,16 @@ void clang_Type_getLinkageAndVisibility(CXType_ T, CXLinkage *L, CXVisibility *V
 
 bool clang_Type_isLinkageValid(CXType_ T);
 
-// getNullability
 // clang::Type::getNullability returns std::optional<NullabilityKind>: engaged -> fills
 // *Out and returns true; disengaged (the type carries no nullability sugar) -> returns
 // false with *Out untouched (MARSHALLING.md §8). Out may not be NULL. Nullability is
 // recorded only as sugar, so a canonicalised or desugared type always answers false.
 bool clang_Type_getNullability(CXType_ T, CXNullabilityKind *Out);
 
-// canHaveNullability
 // ResultIfUnknown is what clang answers for a dependent type whose nullability
 // admissibility is not yet decidable; clang's own default for it is true.
 bool clang_Type_canHaveNullability(CXType_ T, bool ResultIfUnknown);
 
-// acceptsObjCTypeParams
 bool clang_Type_acceptsObjCTypeParams(CXType_ T);
 
 // Borrowed pointer into clang's static TypeClass name table.
@@ -1615,7 +1554,6 @@ CXQualType clang_ExtVectorType_desugar(CXExtVectorType T);
 // PRECONDITION (Invariant 3): T must be non-null; MatrixType::isValidElementType reaches
 // the type with operator->. The Julia wrapper restates it.
 bool clang_MatrixType_isValidElementType(CXQualType T);
-// getElementType
 
 CXQualType clang_MatrixType_getElementType(CXMatrixType T);
 
@@ -1695,12 +1633,10 @@ bool clang_FunctionType_isRestrict(CXFunctionType T);
 
 bool clang_FunctionType_isVolatile(CXFunctionType T);
 
-// getCallConv
 CXCallingConv_ clang_FunctionType_getCallConv(CXFunctionType T);
 
 CXQualType clang_FunctionType_getCallResultType(CXFunctionType T, CXASTContext Ctx);
 // getCallResultType
-// getNameForCallConv
 CXString clang_FunctionType_getNameForCallConv(CXCallingConv_ CC);
 
 // FunctionType::ExtParameterInfo
@@ -1983,7 +1919,6 @@ bool clang_AttributedType_isCallingConv(CXAttributedType T);
 // isQualifier
 // isMSTypeSpec
 // isCallingConv
-// getImmediateNullability
 // clang::AttributedType::getImmediateNullability returns std::optional<NullabilityKind>:
 // engaged -> fills *Out and returns true; disengaged (this attribute is not a nullability
 // attribute) -> returns false with *Out untouched (MARSHALLING.md §8). Out may not be
@@ -2224,7 +2159,6 @@ CXQualType clang_BitIntType_desugar(CXBitIntType T);
 
 // DependentBitIntType
 bool clang_DependentBitIntType_isUnsigned(CXDependentBitIntType T);
-// isSigned
 bool clang_DependentBitIntType_isSigned(CXDependentBitIntType T);
 
 CXExpr clang_DependentBitIntType_getNumBitsExpr(CXDependentBitIntType T);

@@ -56,7 +56,6 @@ bool clang_Module_isUnimportable(CXModule M) {
   return static_cast<clang::Module *>(M)->isUnimportable();
 }
 
-// isForBuilding
 bool clang_Module_isForBuilding(CXModule M, CXLangOptions LangOpts) {
   return static_cast<clang::Module *>(M)->isForBuilding(
       *static_cast<clang::LangOptions *>(LangOpts));
@@ -83,7 +82,6 @@ bool clang_Module_isSubFramework(CXModule M) {
   return static_cast<clang::Module *>(M)->isSubFramework();
 }
 
-// setParent
 void clang_Module_setParent(CXModule M, CXModule Parent) {
   static_cast<clang::Module *>(M)->setParent(static_cast<clang::Module *>(Parent));
 }
@@ -116,7 +114,6 @@ bool clang_Module_isModuleInterfaceUnit(CXModule M) {
   return static_cast<clang::Module *>(M)->isModuleInterfaceUnit();
 }
 
-// isNamedModuleInterfaceHasInit
 bool clang_Module_isNamedModuleInterfaceHasInit(CXModule M) {
   return static_cast<clang::Module *>(M)->isNamedModuleInterfaceHasInit();
 }
@@ -131,7 +128,6 @@ CXString clang_Module_getFullModuleName(CXModule M, bool AllowStringLiterals) {
       static_cast<clang::Module *>(M)->getFullModuleName(AllowStringLiterals));
 }
 
-// fullModuleNameIs
 bool clang_Module_fullModuleNameIs(CXModule M, const char **NameParts, unsigned NumParts) {
   llvm::SmallVector<llvm::StringRef, 8> Parts;
   Parts.reserve(NumParts);
@@ -148,7 +144,6 @@ const char *clang_Module_getTopLevelModuleName(CXModule M) {
   return static_cast<clang::Module *>(M)->getTopLevelModuleName().data();
 }
 
-// getASTFile
 CXFileEntryRef clang_Module_getASTFile(CXModule M) {
   clang::OptionalFileEntryRef Ref = static_cast<clang::Module *>(M)->getASTFile();
   if (!Ref)
@@ -160,7 +155,6 @@ CXFileEntryRef clang_Module_getASTFile(CXModule M) {
 // getUmbrellaHeaderAsWritten
 // getEffectiveUmbrellaDir
 // addTopHeader
-// addTopHeaderFilename
 void clang_Module_addTopHeaderFilename(CXModule M, const char *Filename) {
   static_cast<clang::Module *>(M)->addTopHeaderFilename(llvm::StringRef(Filename));
 }
@@ -171,14 +165,12 @@ bool clang_Module_directlyUses(CXModule M, CXModule Requested) {
       static_cast<clang::Module *>(Requested));
 }
 
-// addRequirement
 void clang_Module_addRequirement(CXModule M, const char *Feature, bool RequiredState,
                                  CXLangOptions LangOpts, CXTargetInfo_ Target) {
   static_cast<clang::Module *>(M)->addRequirement(
       llvm::StringRef(Feature), RequiredState, *static_cast<clang::LangOptions *>(LangOpts),
       *static_cast<clang::TargetInfo *>(Target));
 }
-// markUnavailable
 void clang_Module_markUnavailable(CXModule M, bool Unimportable) {
   static_cast<clang::Module *>(M)->markUnavailable(Unimportable);
 }
@@ -187,25 +179,20 @@ CXModule clang_Module_findSubmodule(CXModule M, const char *Name) {
   return static_cast<clang::Module *>(M)->findSubmodule(llvm::StringRef(Name));
 }
 
-// findOrInferSubmodule
 CXModule clang_Module_findOrInferSubmodule(CXModule M, const char *Name) {
   return static_cast<clang::Module *>(M)->findOrInferSubmodule(llvm::StringRef(Name));
 }
-// getGlobalModuleFragment
 CXModule clang_Module_getGlobalModuleFragment(CXModule M) {
   return static_cast<clang::Module *>(M)->getGlobalModuleFragment();
 }
-// getPrivateModuleFragment
 CXModule clang_Module_getPrivateModuleFragment(CXModule M) {
   return static_cast<clang::Module *>(M)->getPrivateModuleFragment();
 }
 
-// isModuleVisible
 bool clang_Module_isModuleVisible(CXModule M, CXModule Other) {
   return static_cast<clang::Module *>(M)->isModuleVisible(
       static_cast<clang::Module *>(Other));
 }
-// getVisibilityID
 unsigned clang_Module_getVisibilityID(CXModule M) {
   return static_cast<clang::Module *>(M)->getVisibilityID();
 }
@@ -233,16 +220,13 @@ void clang_Module_getExportedModules(CXModule M, CXModule *Buf) {
   for (clang::Module *E : Exported)
     Buf[I++] = E;
 }
-// getModuleInputBufferName
 const char *clang_Module_getModuleInputBufferName(void) {
   return clang::Module::getModuleInputBufferName().data();
 }
-// print
 CXString clang_Module_print(CXModule M, unsigned Indent, bool Dump) {
   std::string S;
   llvm::raw_string_ostream OS(S);
   static_cast<clang::Module *>(M)->print(OS, Indent, Dump);
   return extra::makeCXString(S);
 }
-// dump
 void clang_Module_dump(CXModule M) { static_cast<clang::Module *>(M)->dump(); }

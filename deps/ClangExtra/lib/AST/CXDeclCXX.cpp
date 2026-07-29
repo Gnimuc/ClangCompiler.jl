@@ -992,7 +992,6 @@ bool clang_ExplicitSpecifier_isSpecified(CXExplicitSpecifier ES) {
   return static_cast<clang::ExplicitSpecifier *>(ES)->isSpecified();
 }
 
-// isEquivalent
 bool clang_ExplicitSpecifier_isEquivalent(CXExplicitSpecifier ES,
                                           CXExplicitSpecifier Other) {
   return static_cast<clang::ExplicitSpecifier *>(ES)->isEquivalent(
@@ -1141,7 +1140,6 @@ bool clang_CXXMethodDecl_isInstance(CXCXXMethodDecl CXXMD) {
   return static_cast<clang::CXXMethodDecl *>(CXXMD)->isInstance();
 }
 
-// isStaticOverloadedOperator
 
 bool clang_CXXMethodDecl_isStaticOverloadedOperator(CXOverloadedOperatorKind OOK) {
   return clang::CXXMethodDecl::isStaticOverloadedOperator(
@@ -1166,7 +1164,6 @@ CXCXXMethodDecl clang_CXXMethodDecl_getDevirtualizedMethod(CXCXXMethodDecl CXXMD
       static_cast<clang::Expr *>(Base), IsAppleKext);
 }
 
-// isUsualDeallocationFunction
 
 bool clang_CXXMethodDecl_isUsualDeallocationFunction(CXCXXMethodDecl CXXMD) {
   llvm::SmallVector<const clang::FunctionDecl *, 4> PreventedBy;

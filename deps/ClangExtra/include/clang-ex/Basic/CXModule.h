@@ -55,7 +55,6 @@ bool clang_Module_isModuleMapModule(CXModule M);
 
 bool clang_Module_isUnimportable(CXModule M);
 
-// isForBuilding
 bool clang_Module_isForBuilding(CXModule M, CXLangOptions LangOpts);
 
 bool clang_Module_isAvailable(CXModule M);
@@ -68,7 +67,6 @@ bool clang_Module_isPartOfFramework(CXModule M);
 
 bool clang_Module_isSubFramework(CXModule M);
 
-// setParent
 // asserts that M has no parent yet, then registers M as a submodule of Parent, which
 // from then on owns M (disposing Parent deletes M too).
 void clang_Module_setParent(CXModule M, CXModule Parent);
@@ -87,14 +85,12 @@ bool clang_Module_isNamedModuleUnit(CXModule M);
 
 bool clang_Module_isModuleInterfaceUnit(CXModule M);
 
-// isNamedModuleInterfaceHasInit
 bool clang_Module_isNamedModuleInterfaceHasInit(CXModule M);
 
 CXString clang_Module_getPrimaryModuleInterfaceName(CXModule M);
 
 CXString clang_Module_getFullModuleName(CXModule M, bool AllowStringLiterals);
 
-// fullModuleNameIs
 // NameParts is an array of NUL-terminated name components joined with "."s; the
 // strings are only read for the duration of the call.
 bool clang_Module_fullModuleNameIs(CXModule M, const char **NameParts, unsigned NumParts);
@@ -103,7 +99,6 @@ CXModule clang_Module_getTopLevelModule(CXModule M);
 
 const char *clang_Module_getTopLevelModuleName(CXModule M);
 
-// getASTFile
 // heap-boxes the `clang::FileEntryRef` (call `clang_FileEntryRef_dispose` to release);
 // returns nullptr when the top-level module has no serialized AST file.
 CXFileEntryRef clang_Module_getASTFile(CXModule M);
@@ -112,7 +107,6 @@ CXFileEntryRef clang_Module_getASTFile(CXModule M);
 // getUmbrellaHeaderAsWritten
 // getEffectiveUmbrellaDir
 // addTopHeader
-// addTopHeaderFilename
 void clang_Module_addTopHeaderFilename(CXModule M, const char *Filename);
 // getTopHeaders
 
@@ -123,30 +117,24 @@ bool clang_Module_directlyUses(CXModule M, CXModule Requested);
 // unimportable
 void clang_Module_addRequirement(CXModule M, const char *Feature, bool RequiredState,
                                  CXLangOptions LangOpts, CXTargetInfo_ Target);
-// markUnavailable
 void clang_Module_markUnavailable(CXModule M, bool Unimportable);
 
 // returns NULL when no submodule has that name
 CXModule clang_Module_findSubmodule(CXModule M, const char *Name);
 
-// findOrInferSubmodule
 // returns NULL when no submodule has that name and none can be inferred; an inferred
 // submodule is owned by M.
 CXModule clang_Module_findOrInferSubmodule(CXModule M, const char *Name);
-// getGlobalModuleFragment
 // asserts that M is a C++20 named module unit (clang_Module_isNamedModuleUnit);
 // returns NULL when M has no global module fragment.
 CXModule clang_Module_getGlobalModuleFragment(CXModule M);
-// getPrivateModuleFragment
 // asserts that M is a C++20 named module unit (clang_Module_isNamedModuleUnit);
 // returns NULL when M has no private module fragment.
 CXModule clang_Module_getPrivateModuleFragment(CXModule M);
 
-// isModuleVisible
 // builds and caches M's visible-module set on the first call; imports added afterwards
 // are not reflected
 bool clang_Module_isModuleVisible(CXModule M, CXModule Other);
-// getVisibilityID
 unsigned clang_Module_getVisibilityID(CXModule M);
 
 // helper: count+index over Module::submodules() (random-access; count is exact,
@@ -161,12 +149,9 @@ CXModule clang_Module_getSubmodule(CXModule M, unsigned Index);
 unsigned clang_Module_getNumExportedModules(CXModule M);
 
 void clang_Module_getExportedModules(CXModule M, CXModule *Buf);
-// getModuleInputBufferName
 // static; borrowed pointer into a string literal
 const char *clang_Module_getModuleInputBufferName(void);
-// print
 CXString clang_Module_print(CXModule M, unsigned Indent, bool Dump);
-// dump
 // writes the module map to llvm::errs()
 void clang_Module_dump(CXModule M);
 

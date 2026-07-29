@@ -195,7 +195,6 @@ CXVisibility clang_NamedDecl_getVisibility(CXNamedDecl ND) {
   return static_cast<CXVisibility>(static_cast<clang::NamedDecl *>(ND)->getVisibility());
 }
 
-// getLinkageAndVisibility
 
 void clang_NamedDecl_getLinkageAndVisibility(CXNamedDecl ND, CXLinkage *L, CXVisibility *V,
                                              bool *VisibilityExplicit) {
@@ -204,7 +203,6 @@ void clang_NamedDecl_getLinkageAndVisibility(CXNamedDecl ND, CXLinkage *L, CXVis
   *V = static_cast<CXVisibility>(LV.getVisibility());
   *VisibilityExplicit = LV.isVisibilityExplicit();
 }
-// getExplicitVisibility
 
 bool clang_NamedDecl_getExplicitVisibility(CXNamedDecl ND, bool ForType, CXVisibility *V) {
   std::optional<clang::Visibility> Vis =
@@ -233,7 +231,6 @@ CXNamedDecl clang_NamedDecl_getMostRecentDecl(CXNamedDecl ND) {
   return static_cast<clang::NamedDecl *>(ND)->getMostRecentDecl();
 }
 
-// getObjCFStringFormattingFamily
 
 CXObjCStringFormatFamily clang_NamedDecl_getObjCFStringFormattingFamily(CXNamedDecl ND) {
   return static_cast<CXObjCStringFormatFamily>(
@@ -335,7 +332,6 @@ bool clang_LabelDecl_isResolvedMSAsmLabel(CXLabelDecl LD) {
   return static_cast<clang::LabelDecl *>(LD)->isResolvedMSAsmLabel();
 }
 
-// setMSAsmLabel
 
 void clang_LabelDecl_setMSAsmLabel(CXLabelDecl LD, const char *Name) {
   static_cast<clang::LabelDecl *>(LD)->setMSAsmLabel(llvm::StringRef(Name));
@@ -557,7 +553,6 @@ CXTemplateParameterList clang_DeclaratorDecl_getTemplateParameterList(CXDeclarat
   return static_cast<clang::DeclaratorDecl *>(DD)->getTemplateParameterList(index);
 }
 
-// setTemplateParameterListsInfo
 
 void clang_DeclaratorDecl_setTemplateParameterListsInfo(CXDeclaratorDecl DD, CXASTContext C,
                                                         CXTemplateParameterList *TPLists,
@@ -628,7 +623,6 @@ CXThreadStorageClassSpecifier clang_VarDecl_getTSCSpec(CXVarDecl VD) {
       static_cast<clang::VarDecl *>(VD)->getTSCSpec());
 }
 
-// getTLSKind
 
 CXVarDecl_TLSKind clang_VarDecl_getTLSKind(CXVarDecl VD) {
   return static_cast<CXVarDecl_TLSKind>(static_cast<clang::VarDecl *>(VD)->getTLSKind());
@@ -768,13 +762,11 @@ CXAPValue clang_VarDecl_evaluateValue(CXVarDecl VD) {
   return static_cast<clang::VarDecl *>(VD)->evaluateValue();
 }
 
-// getEvaluatedValue
 
 CXAPValue clang_VarDecl_getEvaluatedValue(CXVarDecl VD) {
   return static_cast<clang::VarDecl *>(VD)->getEvaluatedValue();
 }
 
-// evaluateDestruction
 
 bool clang_VarDecl_evaluateDestruction(CXVarDecl VD) {
   llvm::SmallVector<clang::PartialDiagnosticAt, 8> Notes;
@@ -790,7 +782,6 @@ bool clang_VarDecl_hasICEInitializer(CXVarDecl VD, CXASTContext Context) {
       *static_cast<clang::ASTContext *>(Context));
 }
 
-// checkForConstantInitialization
 
 bool clang_VarDecl_checkForConstantInitialization(CXVarDecl VD) {
   llvm::SmallVector<clang::PartialDiagnosticAt, 8> Notes;
@@ -984,7 +975,6 @@ bool clang_VarDecl_isNoDestroy(CXVarDecl VD, CXASTContext AST) {
       *static_cast<clang::ASTContext *>(AST));
 }
 
-// needsDestruction
 
 CXDestructionKind clang_VarDecl_needsDestruction(CXVarDecl VD, CXASTContext Ctx) {
   return static_cast<CXDestructionKind>(
@@ -1083,13 +1073,11 @@ unsigned clang_ParmVarDecl_getFunctionScopeIndex(CXParmVarDecl PVD) {
   return static_cast<clang::ParmVarDecl *>(PVD)->getFunctionScopeIndex();
 }
 
-// getObjCDeclQualifier
 
 CXObjCDeclQualifier clang_ParmVarDecl_getObjCDeclQualifier(CXParmVarDecl PVD) {
   return static_cast<CXObjCDeclQualifier>(
       static_cast<clang::ParmVarDecl *>(PVD)->getObjCDeclQualifier());
 }
-// setObjCDeclQualifier
 
 void clang_ParmVarDecl_setObjCDeclQualifier(CXParmVarDecl PVD, CXObjCDeclQualifier QTVal) {
   static_cast<clang::ParmVarDecl *>(PVD)->setObjCDeclQualifier(
@@ -1696,7 +1684,6 @@ bool clang_FunctionDecl_hasOneParamOrDefaultArgs(CXFunctionDecl FD) {
   return static_cast<clang::FunctionDecl *>(FD)->hasOneParamOrDefaultArgs();
 }
 
-// getFunctionTypeLoc
 
 CXTypeLoc clang_FunctionDecl_getFunctionTypeLoc(CXFunctionDecl FD) {
   return new clang::TypeLoc( // NOLINT(*-owning-memory)
@@ -1788,7 +1775,6 @@ bool clang_FunctionDecl_isOverloadedOperator(CXFunctionDecl FD) {
   return static_cast<clang::FunctionDecl *>(FD)->isOverloadedOperator();
 }
 
-// getOverloadedOperator
 
 CXOverloadedOperatorKind clang_FunctionDecl_getOverloadedOperator(CXFunctionDecl FD) {
   return static_cast<CXOverloadedOperatorKind>(
@@ -2087,7 +2073,6 @@ CXExpr clang_EnumConstantDecl_getInitExpr(CXEnumConstantDecl ECD) {
   return static_cast<clang::EnumConstantDecl *>(ECD)->getInitExpr();
 }
 
-// getInitVal
 
 LLVMGenericValueRef clang_EnumConstantDecl_getInitVal(CXEnumConstantDecl ECD) {
   auto *GV = new llvm::GenericValue; // NOLINT(*-owning-memory)
@@ -2099,7 +2084,6 @@ void clang_EnumConstantDecl_setInitExpr(CXEnumConstantDecl ECD, CXExpr E) {
   static_cast<clang::EnumConstantDecl *>(ECD)->setInitExpr(static_cast<clang::Expr *>(E));
 }
 
-// setInitVal
 
 void clang_EnumConstantDecl_setInitVal(CXEnumConstantDecl ECD, CXASTContext C,
                                        LLVMGenericValueRef V, bool IsUnsigned) {
@@ -2470,7 +2454,6 @@ CXTemplateParameterList clang_TagDecl_getTemplateParameterList(CXTagDecl TD, uns
   return static_cast<clang::TagDecl *>(TD)->getTemplateParameterList(i);
 }
 
-// setTemplateParameterListsInfo
 
 void clang_TagDecl_setTemplateParameterListsInfo(CXTagDecl TD, CXASTContext C,
                                                  CXTemplateParameterList *TPLists,
@@ -3113,7 +3096,6 @@ bool clang_BlockDecl_capturesVariable(CXBlockDecl BD, CXVarDecl var) {
       static_cast<clang::VarDecl *>(var));
 }
 
-// setCaptures
 
 void clang_BlockDecl_setCaptures(CXBlockDecl BD, CXASTContext C, CXVarDecl *Variables,
                                  bool *ByRefs, bool *Nesteds, CXExpr *CopyExprs,

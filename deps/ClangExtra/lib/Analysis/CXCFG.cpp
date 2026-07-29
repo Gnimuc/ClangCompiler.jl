@@ -30,7 +30,6 @@ unsigned clang_CFGBlock_size(CXCFGBlock B) {
   return static_cast<clang::CFGBlock *>(B)->size();
 }
 
-// empty
 
 bool clang_CFGBlock_empty(CXCFGBlock B) {
   return static_cast<clang::CFGBlock *>(B)->empty();
@@ -183,7 +182,6 @@ unsigned clang_CFGBlock_succ_size(CXCFGBlock B) {
   return static_cast<clang::CFGBlock *>(B)->succ_size();
 }
 
-// succ_empty
 
 bool clang_CFGBlock_succ_empty(CXCFGBlock B) {
   return static_cast<clang::CFGBlock *>(B)->succ_empty();
@@ -206,7 +204,6 @@ unsigned clang_CFGBlock_pred_size(CXCFGBlock B) {
   return static_cast<clang::CFGBlock *>(B)->pred_size();
 }
 
-// pred_empty
 
 bool clang_CFGBlock_pred_empty(CXCFGBlock B) {
   return static_cast<clang::CFGBlock *>(B)->pred_empty();

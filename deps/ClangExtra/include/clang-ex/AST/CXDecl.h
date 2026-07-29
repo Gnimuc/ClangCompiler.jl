@@ -132,14 +132,12 @@ bool clang_NamedDecl_isExternallyDeclarable(CXNamedDecl ND);
 
 CXVisibility clang_NamedDecl_getVisibility(CXNamedDecl ND);
 
-// getLinkageAndVisibility
 
 // The LinkageInfo aggregate crosses field-by-field: the computed linkage, the
 // computed visibility, and whether that visibility was explicitly specified.
 // All three out-params are written on every call and must be non-NULL.
 void clang_NamedDecl_getLinkageAndVisibility(CXNamedDecl ND, CXLinkage *L, CXVisibility *V,
                                              bool *VisibilityExplicit);
-// getExplicitVisibility
 
 // std::optional<Visibility> crosses as a bool return plus an out-param: the
 // return is false when the declaration carries no explicit visibility, and *V
@@ -156,7 +154,6 @@ CXNamedDecl clang_NamedDecl_getUnderlyingDecl(CXNamedDecl ND);
 
 CXNamedDecl clang_NamedDecl_getMostRecentDecl(CXNamedDecl ND);
 
-// getObjCFStringFormattingFamily
 CXObjCStringFormatFamily clang_NamedDecl_getObjCFStringFormattingFamily(CXNamedDecl ND);
 
 // The Decl::Kind range test behind isa<NamedDecl>, reading the kind alone with no
@@ -189,7 +186,6 @@ bool clang_LabelDecl_isMSAsmLabel(CXLabelDecl LD);
 
 bool clang_LabelDecl_isResolvedMSAsmLabel(CXLabelDecl LD);
 
-// setMSAsmLabel
 
 void clang_LabelDecl_setMSAsmLabel(CXLabelDecl LD, const char *Name);
 
@@ -306,7 +302,6 @@ unsigned clang_DeclaratorDecl_getNumTemplateParameterLists(CXDeclaratorDecl DD);
 CXTemplateParameterList clang_DeclaratorDecl_getTemplateParameterList(CXDeclaratorDecl DD,
                                                                       unsigned index);
 
-// setTemplateParameterListsInfo
 
 // TPLists is a caller buffer of NumTPLists CXTemplateParameterList handles,
 // rebuilt into an ArrayRef on the C++ side; the lists themselves are borrowed.
@@ -361,7 +356,6 @@ void clang_VarDecl_setTSCSpec(CXVarDecl VD, CXThreadStorageClassSpecifier TSC);
 
 CXThreadStorageClassSpecifier clang_VarDecl_getTSCSpec(CXVarDecl VD);
 
-// getTLSKind
 
 CXVarDecl_TLSKind clang_VarDecl_getTLSKind(CXVarDecl VD);
 
@@ -433,13 +427,11 @@ CXEvaluatedStmt clang_VarDecl_getEvaluatedStmt(CXVarDecl VD);
 // in the VarDecl (do NOT dispose; invalidated with the VarDecl), or nullptr if
 // the initializer is absent or not constant-foldable. See CXAPValue.h.
 CXAPValue clang_VarDecl_evaluateValue(CXVarDecl VD);
-// getEvaluatedValue
 
 // Borrowed: the APValue already cached in the VarDecl (nullptr when the
 // initializer has never been evaluated). Do NOT dispose. See CXAPValue.h.
 CXAPValue clang_VarDecl_getEvaluatedValue(CXVarDecl VD);
 
-// evaluateDestruction
 
 // The PartialDiagnostic notes vector stays on the C++ side; only the bool crosses.
 bool clang_VarDecl_evaluateDestruction(CXVarDecl VD);
@@ -448,7 +440,6 @@ bool clang_VarDecl_hasConstantInitialization(CXVarDecl VD);
 
 bool clang_VarDecl_hasICEInitializer(CXVarDecl VD, CXASTContext Context);
 
-// checkForConstantInitialization
 
 // The PartialDiagnostic notes vector stays on the C++ side; only the bool crosses.
 bool clang_VarDecl_checkForConstantInitialization(CXVarDecl VD);
@@ -546,7 +537,6 @@ bool clang_VarDecl_isKnownToBeDefined(CXVarDecl VD);
 
 bool clang_VarDecl_isNoDestroy(CXVarDecl VD, CXASTContext AST);
 
-// needsDestruction
 
 CXDestructionKind clang_VarDecl_needsDestruction(CXVarDecl VD, CXASTContext Ctx);
 
@@ -607,7 +597,6 @@ unsigned clang_ParmVarDecl_getMaxFunctionScopeDepth(void);
 
 unsigned clang_ParmVarDecl_getFunctionScopeIndex(CXParmVarDecl PVD);
 
-// getObjCDeclQualifier
 // mirrors clang::Decl::ObjCDeclQualifier (clang/AST/DeclBase.h); bitmask, so the
 // explicit values are preserved. Synced by static_assert in
 // lib/Basic/CXEnumSync.cpp.
@@ -943,7 +932,6 @@ unsigned clang_FunctionDecl_getNumNonObjectParams(CXFunctionDecl FD);
 
 CXParmVarDecl clang_FunctionDecl_getNonObjectParameter(CXFunctionDecl FD, unsigned I);
 
-// getFunctionTypeLoc
 
 // Returns an OWNED heap box (a TypeLoc is a by-value object); release with
 // clang_TypeLoc_dispose. Null-check with clang_TypeLoc_isNull.
@@ -989,7 +977,6 @@ void clang_FunctionDecl_setUsesFPIntrin(CXFunctionDecl FD, bool I);
 
 bool clang_FunctionDecl_isOverloadedOperator(CXFunctionDecl FD);
 
-// getOverloadedOperator
 
 CXOverloadedOperatorKind clang_FunctionDecl_getOverloadedOperator(CXFunctionDecl FD);
 
@@ -1135,7 +1122,6 @@ CXEnumConstantDecl clang_EnumConstantDecl_CreateDeserialized(CXASTContext C, uns
 
 CXExpr clang_EnumConstantDecl_getInitExpr(CXEnumConstantDecl ECD);
 
-// getInitVal
 
 // The APSInt crosses on the established GenericValue bridge: a caller-owned
 // LLVMGenericValueRef whose IntVal carries the bits (LLVM-C disposes it).
@@ -1143,7 +1129,6 @@ LLVMGenericValueRef clang_EnumConstantDecl_getInitVal(CXEnumConstantDecl ECD);
 
 void clang_EnumConstantDecl_setInitExpr(CXEnumConstantDecl ECD, CXExpr E);
 
-// setInitVal
 
 // The APSInt is rebuilt from V's IntVal bits (the same GenericValue bridge
 // clang_EnumConstantDecl_getInitVal returns on) plus the caller-supplied
@@ -1335,7 +1320,6 @@ unsigned clang_TagDecl_getNumTemplateParameterLists(CXTagDecl TD);
 
 CXTemplateParameterList clang_TagDecl_getTemplateParameterList(CXTagDecl TD, unsigned i);
 
-// setTemplateParameterListsInfo
 
 // TPLists is a caller buffer of NumTPLists CXTemplateParameterList handles,
 // rebuilt into an ArrayRef on the C++ side; the lists themselves are borrowed.
@@ -1686,7 +1670,6 @@ void clang_BlockDecl_setCanAvoidCopyToHeap(CXBlockDecl BD, bool B);
 
 bool clang_BlockDecl_capturesVariable(CXBlockDecl BD, CXVarDecl var);
 
-// setCaptures
 
 // Captures cross as four parallel caller buffers of NumCaptures entries read in
 // lockstep — entry i of each builds one BlockDecl::Capture(variable, byRef, nested,

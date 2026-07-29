@@ -164,7 +164,6 @@ bool clang_InlineContentComment_hasTrailingNewline(CXInlineContentComment ICC);
 // The text is a slice of the comment buffer and is NOT NUL-terminated.
 CXString clang_TextComment_getText(CXTextComment TC);
 
-// isWhitespace
 bool clang_TextComment_isWhitespace(CXTextComment TC);
 
 // clang/AST/Comment.h: enum class clang::comments::InlineCommandRenderKind
@@ -208,7 +207,6 @@ CXSourceRange_ clang_HTMLTagComment_getTagNameSourceRange(CXHTMLTagComment HTC);
 
 bool clang_HTMLTagComment_isMalformed(CXHTMLTagComment HTC);
 
-// setIsMalformed
 void clang_HTMLTagComment_setIsMalformed(CXHTMLTagComment HTC);
 
 // HTMLStartTagComment
@@ -241,7 +239,6 @@ CXSourceLocation_ clang_HTMLStartTagComment_getAttrEqualsLoc(CXHTMLStartTagComme
 CXSourceRange_ clang_HTMLStartTagComment_getAttrValueRange(CXHTMLStartTagComment HSTC,
                                                            unsigned Idx);
 
-// setAttrs
 // helper: setAttrs(ArrayRef<Attribute>) with the attributes rebuilt from their component
 // fields and copied into Ctx's arena — the C++ setter stores the ArrayRef itself and each
 // Attribute holds StringRefs, so the array and both strings are copied. Ctx must be the
@@ -254,13 +251,11 @@ void clang_HTMLStartTagComment_setAttrs(CXHTMLStartTagComment HSTC, CXASTContext
                                         const CXSourceLocation_ *EqualsLocs,
                                         const CXSourceRange_ *ValueRanges,
                                         const char **Values, unsigned N);
-// setGreaterLoc
 void clang_HTMLStartTagComment_setGreaterLoc(CXHTMLStartTagComment HSTC,
                                              CXSourceLocation_ GreaterLoc);
 
 bool clang_HTMLStartTagComment_isSelfClosing(CXHTMLStartTagComment HSTC);
 
-// setSelfClosing
 void clang_HTMLStartTagComment_setSelfClosing(CXHTMLStartTagComment HSTC);
 
 // ParagraphComment
@@ -299,7 +294,6 @@ CXString clang_BlockCommandComment_getArgText(CXBlockCommandComment BCC, unsigne
 CXSourceRange_ clang_BlockCommandComment_getArgRange(CXBlockCommandComment BCC,
                                                      unsigned Idx);
 
-// setArgs
 // helper: setArgs(ArrayRef<Argument>) with the arguments rebuilt from their component
 // fields and copied into Ctx's arena — the C++ setter stores the ArrayRef itself and each
 // Argument holds a StringRef, so the array and the texts are copied. Ctx must be the
@@ -398,7 +392,6 @@ unsigned clang_TParamCommandComment_getDepth(CXTParamCommandComment TPCC);
 // Depth < clang_TParamCommandComment_getDepth(TPCC) is also required.
 unsigned clang_TParamCommandComment_getIndex(CXTParamCommandComment TPCC, unsigned Depth);
 
-// setPosition
 // helper: setPosition(ArrayRef<unsigned>) with the array copied into Ctx's arena —
 // the C++ setter stores the ArrayRef itself. Ctx must be the ASTContext that owns
 // TPCC, and N must be non-zero: the setter asserts isPositionValid(). The position is
@@ -418,7 +411,6 @@ CXString clang_VerbatimBlockLineComment_getText(CXVerbatimBlockLineComment VBLC)
 // dangle. Ctx must be the ASTContext that owns VBC.
 void clang_VerbatimBlockComment_setCloseName(CXVerbatimBlockComment VBC, CXASTContext Ctx,
                                              const char *Name, CXSourceLocation_ LocBegin);
-// setLines
 // helper: setLines(ArrayRef<VerbatimBlockLineComment *>) with the array copied into
 // Ctx's arena — the C++ setter stores the ArrayRef itself. Ctx must be the ASTContext
 // that owns VBC. The array becomes the node's child list, so no slot may be null.

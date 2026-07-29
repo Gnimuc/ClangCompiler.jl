@@ -59,7 +59,6 @@ CXQualType clang_StandardConversionSequence_getFromType(CXStandardConversionSequ
 CXQualType clang_StandardConversionSequence_getToType(CXStandardConversionSequence SCS,
                                                       unsigned Idx);
 
-// setAsIdentityConversion
 
 // Resets the three conversion kinds to ICK_Identity and clears the binding flags. It does
 // NOT touch the from/to types.
@@ -69,7 +68,6 @@ void clang_StandardConversionSequence_setAsIdentityConversion(
 bool clang_StandardConversionSequence_isIdentityConversion(
     CXStandardConversionSequence SCS);
 
-// getRank
 
 // Reads only the three ImplicitConversionKind fields. Every sequence reachable through
 // clang_ImplicitConversionSequence_getStandard has them, because the owning sequence's
@@ -105,7 +103,6 @@ bool clang_StandardConversionSequence_isPointerConversionToBool(
 
 bool clang_StandardConversionSequence_isPointerConversionToVoidPointer(
     CXStandardConversionSequence SCS, CXASTContext Ctx);
-// dump
 
 // Writes a one-line description of the three conversion kinds to llvm::errs(). It reads
 // only those kinds and the binding flags, which
@@ -355,7 +352,6 @@ void clang_ImplicitConversionSequence_setEllipsis(CXImplicitConversionSequence I
 void clang_ImplicitConversionSequence_setUserDefined(CXImplicitConversionSequence ICS);
 
 // setUserDefined
-// setAmbiguous
 
 // Makes this an AmbiguousConversion and constructs its (empty) conversion set in place. The
 // set is destroyed by clang_ImplicitConversionSequence_dispose or by the next kind change.
@@ -379,7 +375,6 @@ bool clang_ImplicitConversionSequence_isInitializerListOfIncompleteArray(
 CXQualType clang_ImplicitConversionSequence_getInitializerListContainerType(
     CXImplicitConversionSequence ICS);
 
-// getNullptrToBool
 
 // Forms the implicit conversion sequence from nullptr_t to bool used when
 // direct-initializing a bool object. A static member function, so it takes no receiver; the
@@ -389,7 +384,6 @@ CXImplicitConversionSequence
 clang_ImplicitConversionSequence_getNullptrToBool(CXQualType SourceType,
                                                   CXQualType DestType, bool NeedLValToRVal);
 // DiagnoseAmbiguousConversion
-// dump
 
 // Writes the sequence to llvm::errs(). Every kind but UserDefinedConversion prints from
 // state this shim guarantees; for UserDefinedConversion it dumps the UserDefined arm, whose

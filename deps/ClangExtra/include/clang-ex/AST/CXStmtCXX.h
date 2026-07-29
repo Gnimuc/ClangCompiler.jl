@@ -60,7 +60,6 @@ CXDeclStmt clang_CXXForRangeStmt_getLoopVarStmt(CXCXXForRangeStmt FRS);
 
 void clang_CXXForRangeStmt_setInit(CXCXXForRangeStmt FRS, CXStmt S);
 
-// setRangeInit
 // Writes the same slot as setRangeStmt. While it holds an expression,
 // getRangeStmt()/getRangeInit() would cast that slot to DeclStmt unchecked, so the
 // __range declaration statement must be restored before either is called again.

@@ -3413,7 +3413,6 @@ CXQualType clang_BitIntType_desugar(CXBitIntType T) {
 bool clang_DependentBitIntType_isUnsigned(CXDependentBitIntType T) {
   return static_cast<clang::DependentBitIntType *>(T)->isUnsigned();
 }
-// isSigned
 bool clang_DependentBitIntType_isSigned(CXDependentBitIntType T) {
   return static_cast<clang::DependentBitIntType *>(T)->isSigned();
 }

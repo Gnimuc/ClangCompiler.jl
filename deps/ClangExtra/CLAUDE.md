@@ -101,6 +101,11 @@ Corollaries:
   and .cpp (most files keep both sides in sync; a few are header-only); rejected
   experiments stay as commented-out code. Preserve this discipline — it makes diffing
   against upstream after LLVM bumps possible.
+- A bare `// methodName` line means exactly one thing: **that method is not wrapped**. Never
+  write one directly above the wrapper it names — the declaration already says the name, and
+  a marker that sometimes means "absent" and sometimes means "here it is" cannot be read or
+  counted. A `// ClassName` line heading a block of that class's wrappers is the one other
+  use, and it names a class rather than a method.
 - ALL opaque handles are `typedef void *CX<ClangClassName>;` in the central
   `include/clang-ex/CXTypes.h`, grouped under `// <Library>` / `// <ClangHeader>` comments
   in upstream declaration order. Don't typedef handles in per-class headers (one legacy
