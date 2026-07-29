@@ -210,3 +210,7 @@ void clang_LangOptions_PrintStats(CXLangOptions LO) {
   llvm::errs() << "    CPlusPlus20: " << Opts->CPlusPlus20 << "\n";
   llvm::errs() << "    ObjC: " << Opts->ObjC << "\n";
 }
+
+bool clang_LangOptions_getModules(CXLangOptions LO) {
+  return static_cast<clang::LangOptions *>(LO)->Modules;
+}

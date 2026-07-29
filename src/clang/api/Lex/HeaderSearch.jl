@@ -4,7 +4,6 @@ function PrintStats(x::HeaderSearch)
     return clang_HeaderSearch_PrintStats(x)
 end
 
-
 function getHeaderSearchOpts(x::AbstractHeaderSearch)
     @check_ptrs x
     return HeaderSearchOptions(clang_HeaderSearch_getHeaderSearchOpts(x))
@@ -66,7 +65,6 @@ function getSearchDirName(x::AbstractHeaderSearch, idx::Integer)
     @assert 0 <= idx < search_dir_size(x) "search directory index out of range"
     return get_string(clang_HeaderSearch_getSearchDirName(x, idx))
 end
-
 
 function getDiags(x::AbstractHeaderSearch)
     @check_ptrs x
@@ -143,7 +141,6 @@ function getTotalMemory(x::AbstractHeaderSearch)
     @check_ptrs x
     return clang_HeaderSearch_getTotalMemory(x)
 end
-
 
 """
     setDirectoryHasModuleMap(x::AbstractHeaderSearch, dir::AbstractDirectoryEntry)
@@ -466,4 +463,106 @@ come from a framework include.
 function getFramework(x::AbstractHeaderFileInfo)
     @check_ptrs x
     return get_string(clang_HeaderFileInfo_getFramework(x))
+end
+
+"""
+    AddSearchPath(x::AbstractHeaderSearch, dir::AbstractDirectoryLookup, is_angled::Bool)
+Insert `dir` into `x`'s search-path list at the boundary between the quoted/angled paths and
+the system paths: before the first system directory when `is_angled` is true, before the first
+angled one otherwise. `dir` is copied, so it may be disposed right after this call.
+
+Add search paths before any `#include` has been resolved through this search. The insertion
+shifts every existing index at or after the insertion point, while the search's private lookup
+caches keep the old ones; those caches are unreachable from here, so the staleness can be
+avoided but not repaired. [`AddSystemSearchPath`](@ref) appends instead and has no such
+ordering rule.
+"""
+function AddSearchPath(x::AbstractHeaderSearch, dir::AbstractDirectoryLookup,
+                       is_angled::Bool)
+    @check_ptrs x dir
+    return clang_HeaderSearch_AddSearchPath(x, dir, is_angled)
+end
+
+"""
+    AddSystemSearchPath(x::AbstractHeaderSearch, dir::AbstractDirectoryLookup)
+Append `dir` after every existing search path of `x`, as a system directory searched last.
+
+`dir` is copied, so it may be disposed right after this call. No existing search-path index
+moves, which is what makes this the safe half of the pair.
+"""
+function AddSystemSearchPath(x::AbstractHeaderSearch, dir::AbstractDirectoryLookup)
+    @check_ptrs x dir
+    return clang_HeaderSearch_AddSystemSearchPath(x, dir)
+end
+
+"""
+    CreateHeaderMap(x::AbstractHeaderSearch, file::AbstractFileEntryRef) -> HeaderMap
+Open `file` as an Apple header map and register it with `x`, returning a carrier holding
+`NULL` when `file` is not a valid header map.
+
+The search uniques its maps by file, so a second call for the same file returns the same
+pointer rather than a second map, and the registration shows up in
+[`getNumHeaderMapFileNames`](@ref). The result is borrowed from the search — there is no
+`dispose`.
+"""
+function CreateHeaderMap(x::AbstractHeaderSearch, file::AbstractFileEntryRef)
+    @check_ptrs x file
+    return HeaderMap(clang_HeaderSearch_CreateHeaderMap(x, file))
+end
+
+"""
+    getCachedModuleFileName(x::AbstractHeaderSearch, module_name::AbstractString,
+                            module_map_path::AbstractString) -> String
+Return the path the module cache would use for the module named `module_name` declared in
+`module_map_path`, or `""` when there is none.
+
+The result is empty in two cases: the search has no module cache path
+([`setModuleCachePath`](@ref) sets it, and a relative one is made absolute against the
+process's working directory), or `module_map_path`'s parent directory cannot be resolved.
+Nothing here requires modules to be enabled.
+"""
+function getCachedModuleFileName(x::AbstractHeaderSearch, module_name::AbstractString,
+                                 module_map_path::AbstractString)
+    @check_ptrs x
+    return get_string(clang_HeaderSearch_getCachedModuleFileName(x, module_name,
+                                                                 module_map_path))
+end
+
+"""
+    ShouldEnterIncludeFile(x::AbstractHeaderSearch, pp::Preprocessor,
+                           file::AbstractFileEntryRef, is_import::Bool=false;
+                           modules_enabled::Bool=false, mod=nothing) -> Tuple{Bool,Bool}
+Return clang's multiple-include decision for `file` — whether the preprocessor should enter it
+— together with whether this is the first time `pp` has seen it.
+
+`is_import` records the `#import` bit on the file's record, so this call mutates the search's
+state as well as reading it. `mod` names the module being built and stays `nothing` unless
+modules are on; `modules_enabled` must agree with the invocation, which is why it is checked
+against `getModules(getLangOpts(pp))`.
+
+`x` must be `pp`'s own header search: the `#import` path reaches back through `pp` to the
+search *it* holds, so a mismatched pair records the bit on the wrong one. The file's
+controlling-macro identifier must also not be out of date unless an external lookup source is
+installed, because clang resolves it through that source's vtable without checking for null.
+"""
+function ShouldEnterIncludeFile(x::AbstractHeaderSearch, pp::Preprocessor,
+                                file::AbstractFileEntryRef, is_import::Bool=false;
+                                modules_enabled::Bool=false,
+                                mod::Union{AbstractModule,Nothing}=nothing)
+    @check_ptrs x pp file
+    @assert getHeaderSearchInfo(pp).ptr == x.ptr "x must be pp's own header search"
+    @assert modules_enabled == getModules(getLangOpts(pp)) "modules_enabled must match the invocation"
+    if is_null_handle(getExternalLookup(x))
+        hfi = getExistingFileInfo(x, file)
+        if !is_null_handle(hfi)
+            ii = getControllingMacroRaw(hfi)
+            stale = !is_null_handle(ii) && isOutOfDate(ii)
+            dispose(hfi)
+            @assert !stale "the file's controlling macro is out of date and no external lookup source is installed"
+        end
+    end
+    first = Ref{Bool}(false)
+    enter = clang_HeaderSearch_ShouldEnterIncludeFile(x, pp, file, is_import, modules_enabled,
+                                                      mod === nothing ? C_NULL : mod, first)
+    return enter, first[]
 end

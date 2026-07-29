@@ -6,3 +6,4 @@ target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXPreprocessorOptions.c
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXToken.cpp)
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXMacroInfo.cpp)
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXPreprocessingRecord.cpp)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXDirectoryLookup.cpp)

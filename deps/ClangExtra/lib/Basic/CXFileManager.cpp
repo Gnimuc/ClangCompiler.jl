@@ -67,3 +67,17 @@ CXFileEntry clang_FileEntryRef_getFileEntry(CXFileEntryRef FER) {
       static_cast<clang::FileEntryRef *>(FER)->getFileEntry());
   return &FE;
 }
+
+CXDirectoryEntryRef clang_FileManager_getOptionalDirectoryRef(CXFileManager FM,
+                                                              const char *DirName,
+                                                              bool CacheFailure) {
+  auto D = static_cast<clang::FileManager *>(FM)->getOptionalDirectoryRef(
+      llvm::StringRef(DirName), CacheFailure);
+  if (!D)
+    return nullptr;
+  return std::make_unique<clang::DirectoryEntryRef>(*D).release();
+}
+
+void clang_DirectoryEntryRef_dispose(CXDirectoryEntryRef DER) {
+  delete static_cast<clang::DirectoryEntryRef *>(DER);
+}

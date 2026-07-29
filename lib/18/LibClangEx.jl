@@ -18,6 +18,8 @@ end
 
 const CXAPINotesOptions = Ptr{Cvoid}
 
+const CXPrintingPolicy = Ptr{Cvoid}
+
 const CXASTConsumer = Ptr{Cvoid}
 
 const CXDeclInfo = Ptr{Cvoid}
@@ -794,6 +796,8 @@ const CXFileEntry = Ptr{Cvoid}
 
 const CXDirectoryEntry = Ptr{Cvoid}
 
+const CXDirectoryEntryRef = Ptr{Cvoid}
+
 const CXFileEntryRef = Ptr{Cvoid}
 
 const CXFileManager = Ptr{Cvoid}
@@ -880,6 +884,10 @@ const CXInterpreter = Ptr{Cvoid}
 const CXPartialTranslationUnit = Ptr{Cvoid}
 
 const CXValue = Ptr{Cvoid}
+
+const CXDirectoryLookup = Ptr{Cvoid}
+
+const CXHeaderMap = Ptr{Cvoid}
 
 const CXHeaderFileInfo = Ptr{Cvoid}
 
@@ -8443,6 +8451,10 @@ function clang_LangOptions_getBorland(LO)
     @ccall libclangex.clang_LangOptions_getBorland(LO::CXLangOptions)::Bool
 end
 
+function clang_LangOptions_getModules(LO)
+    @ccall libclangex.clang_LangOptions_getModules(LO::CXLangOptions)::Bool
+end
+
 function clang_LangOptions_getCPlusPlus(LO)
     @ccall libclangex.clang_LangOptions_getCPlusPlus(LO::CXLangOptions)::Bool
 end
@@ -9626,6 +9638,14 @@ end
 
 function clang_ASTContext_setTraversalScope(Ctx, Decls, NumDecls)
     @ccall libclangex.clang_ASTContext_setTraversalScope(Ctx::CXASTContext, Decls::Ptr{CXDecl}, NumDecls::Cuint)::Cvoid
+end
+
+function clang_ASTContext_getPrintingPolicy(Ctx)
+    @ccall libclangex.clang_ASTContext_getPrintingPolicy(Ctx::CXASTContext)::CXPrintingPolicy
+end
+
+function clang_ASTContext_setPrintingPolicy(Ctx, Policy)
+    @ccall libclangex.clang_ASTContext_setPrintingPolicy(Ctx::CXASTContext, Policy::CXPrintingPolicy)::Cvoid
 end
 
 function clang_ASTContext_getSourceManager(Ctx)
@@ -22239,6 +22259,42 @@ function clang_NestedNameSpecifierLoc_dispose(NNSL)
     @ccall libclangex.clang_NestedNameSpecifierLoc_dispose(NNSL::CXNestedNameSpecifierLoc)::Cvoid
 end
 
+function clang_PrintingPolicy_create(LO)
+    @ccall libclangex.clang_PrintingPolicy_create(LO::CXLangOptions)::CXPrintingPolicy
+end
+
+function clang_PrintingPolicy_copy(PP)
+    @ccall libclangex.clang_PrintingPolicy_copy(PP::CXPrintingPolicy)::CXPrintingPolicy
+end
+
+function clang_PrintingPolicy_dispose(PP)
+    @ccall libclangex.clang_PrintingPolicy_dispose(PP::CXPrintingPolicy)::Cvoid
+end
+
+function clang_PrintingPolicy_getSuppressTagKeyword(PP)
+    @ccall libclangex.clang_PrintingPolicy_getSuppressTagKeyword(PP::CXPrintingPolicy)::Bool
+end
+
+function clang_PrintingPolicy_setSuppressTagKeyword(PP, Value)
+    @ccall libclangex.clang_PrintingPolicy_setSuppressTagKeyword(PP::CXPrintingPolicy, Value::Bool)::Cvoid
+end
+
+function clang_PrintingPolicy_getSuppressScope(PP)
+    @ccall libclangex.clang_PrintingPolicy_getSuppressScope(PP::CXPrintingPolicy)::Bool
+end
+
+function clang_PrintingPolicy_setSuppressScope(PP, Value)
+    @ccall libclangex.clang_PrintingPolicy_setSuppressScope(PP::CXPrintingPolicy, Value::Bool)::Cvoid
+end
+
+function clang_PrintingPolicy_getBool(PP)
+    @ccall libclangex.clang_PrintingPolicy_getBool(PP::CXPrintingPolicy)::Bool
+end
+
+function clang_PrintingPolicy_setBool(PP, Value)
+    @ccall libclangex.clang_PrintingPolicy_setBool(PP::CXPrintingPolicy, Value::Bool)::Cvoid
+end
+
 function clang_ASTRecordLayout_getAlignment(RL)
     @ccall libclangex.clang_ASTRecordLayout_getAlignment(RL::CXASTRecordLayout)::Int64
 end
@@ -28203,6 +28259,14 @@ function clang_FileEntryRef_getFileEntry(FER)
     @ccall libclangex.clang_FileEntryRef_getFileEntry(FER::CXFileEntryRef)::CXFileEntry
 end
 
+function clang_FileManager_getOptionalDirectoryRef(FM, DirName, CacheFailure)
+    @ccall libclangex.clang_FileManager_getOptionalDirectoryRef(FM::CXFileManager, DirName::Ptr{Cchar}, CacheFailure::Bool)::CXDirectoryEntryRef
+end
+
+function clang_DirectoryEntryRef_dispose(DER)
+    @ccall libclangex.clang_DirectoryEntryRef_dispose(DER::CXDirectoryEntryRef)::Cvoid
+end
+
 @enum CXModuleKind::UInt32 begin
     CXModuleKind_ModuleMapModule = 0
     CXModuleKind_ModuleHeaderUnit = 1
@@ -30602,6 +30666,18 @@ function clang_SourceManagerForFile_get(SMF)
     @ccall libclangex.clang_SourceManagerForFile_get(SMF::CXSourceManagerForFile)::CXSourceManager
 end
 
+function clang_DirectoryLookup_create(Dir, DT, isFramework)
+    @ccall libclangex.clang_DirectoryLookup_create(Dir::CXDirectoryEntryRef, DT::CXCharacteristicKind, isFramework::Bool)::CXDirectoryLookup
+end
+
+function clang_DirectoryLookup_dispose(DL)
+    @ccall libclangex.clang_DirectoryLookup_dispose(DL::CXDirectoryLookup)::Cvoid
+end
+
+function clang_DirectoryLookup_getName(DL)
+    @ccall libclangex.clang_DirectoryLookup_getName(DL::CXDirectoryLookup)::CXString
+end
+
 function clang_HeaderSearch_getHeaderSearchOpts(HS)
     @ccall libclangex.clang_HeaderSearch_getHeaderSearchOpts(HS::CXHeaderSearch)::CXHeaderSearchOptions
 end
@@ -30644,6 +30720,26 @@ end
 
 function clang_HeaderSearch_setDirectoryHasModuleMap(HS, Dir)
     @ccall libclangex.clang_HeaderSearch_setDirectoryHasModuleMap(HS::CXHeaderSearch, Dir::CXDirectoryEntry)::Cvoid
+end
+
+function clang_HeaderSearch_AddSearchPath(HS, Dir, isAngled)
+    @ccall libclangex.clang_HeaderSearch_AddSearchPath(HS::CXHeaderSearch, Dir::CXDirectoryLookup, isAngled::Bool)::Cvoid
+end
+
+function clang_HeaderSearch_AddSystemSearchPath(HS, Dir)
+    @ccall libclangex.clang_HeaderSearch_AddSystemSearchPath(HS::CXHeaderSearch, Dir::CXDirectoryLookup)::Cvoid
+end
+
+function clang_HeaderSearch_CreateHeaderMap(HS, FE)
+    @ccall libclangex.clang_HeaderSearch_CreateHeaderMap(HS::CXHeaderSearch, FE::CXFileEntryRef)::CXHeaderMap
+end
+
+function clang_HeaderSearch_getCachedModuleFileName(HS, ModuleName, ModuleMapPath)
+    @ccall libclangex.clang_HeaderSearch_getCachedModuleFileName(HS::CXHeaderSearch, ModuleName::Ptr{Cchar}, ModuleMapPath::Ptr{Cchar})::CXString
+end
+
+function clang_HeaderSearch_ShouldEnterIncludeFile(HS, PP, File, isImport, ModulesEnabled, M, IsFirstIncludeOfFile)
+    @ccall libclangex.clang_HeaderSearch_ShouldEnterIncludeFile(HS::CXHeaderSearch, PP::CXPreprocessor, File::CXFileEntryRef, isImport::Bool, ModulesEnabled::Bool, M::CXModule, IsFirstIncludeOfFile::Ptr{Bool})::Bool
 end
 
 function clang_HeaderSearch_ClearFileInfo(HS)

@@ -38,6 +38,55 @@ CXString clang_HeaderSearch_getModuleCachePath(CXHeaderSearch HS);
 
 void clang_HeaderSearch_setDirectoryHasModuleMap(CXHeaderSearch HS, CXDirectoryEntry Dir);
 
+// Inserts Dir at the boundary between the quoted/angled and the system search paths -- before
+// the first system directory when isAngled is true, before the first angled one otherwise --
+// so every SearchDirs index at or after that point shifts by one. The search's
+// LookupFileCache, SearchDirHeaderMapIndex and SearchDirToHSEntry keep the old indices, and
+// all three are private, so nothing on this side can observe or repair the staleness: add
+// search paths before any #include has been resolved through this search. Dir is COPIED.
+void clang_HeaderSearch_AddSearchPath(CXHeaderSearch HS, CXDirectoryLookup Dir,
+                                      bool isAngled);
+
+// Appends Dir after every existing search path and does not move SystemDirIdx, so the entry
+// lands inside [SystemDirIdx, size) and is searched last, as a system directory. A pure
+// push_back: no existing index moves, so AddSearchPath's staleness caveat does not apply.
+// Dir is COPIED.
+void clang_HeaderSearch_AddSystemSearchPath(CXHeaderSearch HS, CXDirectoryLookup Dir);
+
+// Opens File as an Apple header map and registers it with the search, returning NULL when it
+// is not a valid one. The result is BORROWED -- the map is owned by the search's HeaderMaps
+// vector, which uniques by file, so a second call for the same file returns the same pointer.
+// MARSHALLING.md §14 does not apply: reallocating that vector moves the pairs, not the
+// heap-allocated HeaderMap behind each unique_ptr.
+CXHeaderMap clang_HeaderSearch_CreateHeaderMap(CXHeaderSearch HS, CXFileEntryRef FE);
+
+// The path the module cache would use for the module named ModuleName declared in
+// ModuleMapPath. Empty when the module cache path is empty, and empty when ModuleMapPath's
+// parent directory cannot be resolved. A relative cache path is made absolute against the
+// process's working directory. This name claims the verbatim spelling for the
+// (StringRef, StringRef) overload; the Module * overload needs a disambiguated symbol.
+CXString clang_HeaderSearch_getCachedModuleFileName(CXHeaderSearch HS,
+                                                    const char *ModuleName,
+                                                    const char *ModuleMapPath);
+
+// The multiple-include optimization decision for File: whether the preprocessor should enter
+// it. *IsFirstIncludeOfFile, when non-null, receives whether this is the first time PP has
+// seen the file. M may be NULL and must be when modules are off -- the module-macro test is
+// guarded by a null check on it. isImport records the #import bit on the file's record.
+// PRECONDITION 1: HS must be PP's own header search (clang_Preprocessor_getHeaderSearchInfo)
+//   -- the isImport path reaches back through PP to *its* HeaderSearch, so a mismatched pair
+//   writes the import bit onto a different search's record.
+// PRECONDITION 2: the file's controlling macro identifier must not be out of date unless an
+//   external lookup source is installed -- the controlling-macro path calls
+//   ExternalLookup->updateOutOfDateIdentifier through the vtable with no null check, and the
+//   clang assert that would have caught it is compiled out of the release artifact.
+// PRECONDITION 3: ModulesEnabled must match the invocation's -fmodules state
+//   (clang_LangOptions_getModules).
+bool clang_HeaderSearch_ShouldEnterIncludeFile(CXHeaderSearch HS, CXPreprocessor PP,
+                                               CXFileEntryRef File, bool isImport,
+                                               bool ModulesEnabled, CXModule M,
+                                               bool *IsFirstIncludeOfFile);
+
 // Drops every HeaderFileInfo recorded so far, including the #pragma once / controlling
 // macro state a still-running preprocessor relies on.
 void clang_HeaderSearch_ClearFileInfo(CXHeaderSearch HS);

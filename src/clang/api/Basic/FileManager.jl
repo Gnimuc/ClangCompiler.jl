@@ -87,3 +87,22 @@ function getDirectory(filemgr::FileManager, dirname::AbstractString; cache_failu
     @check_ptrs filemgr
     return DirectoryEntry(clang_FileManager_getDirectory(filemgr, dirname, cache_failure))
 end
+
+"""
+    getOptionalDirectoryRef(filemgr::FileManager, dirname::AbstractString;
+                            cache_failure::Bool=true) -> Union{DirectoryEntryRef,Nothing}
+Return a heap-boxed `clang::DirectoryEntryRef` for `dirname`, or `nothing` when no such
+directory exists. With `cache_failure=true` a failed lookup is remembered.
+
+This is the reference form [`DirectoryLookup`](@ref) needs; [`getDirectory`](@ref) hands back
+a bare `DirectoryEntry`, which cannot be turned back into one. A non-`nothing` result allocates
+and one should call `dispose` to release the resources after using this object.
+"""
+function getOptionalDirectoryRef(filemgr::FileManager, dirname::AbstractString;
+                                 cache_failure::Bool=true)
+    @check_ptrs filemgr
+    ref = clang_FileManager_getOptionalDirectoryRef(filemgr, dirname, cache_failure)
+    return ref == C_NULL ? nothing : DirectoryEntryRef(ref)
+end
+
+dispose(x::DirectoryEntryRef) = clang_DirectoryEntryRef_dispose(x)

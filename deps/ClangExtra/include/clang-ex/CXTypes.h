@@ -20,6 +20,9 @@ typedef struct {
 typedef void *CXAPINotesOptions;
 
 // AST
+
+// PrettyPrinter
+typedef void *CXPrintingPolicy;
 // ASTConsumer
 typedef void *CXASTConsumer;
 
@@ -470,6 +473,7 @@ typedef void *CXFileEntry;
 
 // FileManager
 typedef void *CXDirectoryEntry;
+typedef void *CXDirectoryEntryRef;
 typedef void *CXFileEntryRef;
 typedef void *CXFileManager;
 
@@ -555,6 +559,12 @@ typedef void *CXPartialTranslationUnit;
 typedef void *CXValue;
 
 // Lex
+// DirectoryLookup
+typedef void *CXDirectoryLookup;
+
+// HeaderMap
+typedef void *CXHeaderMap;
+
 // HeaderSearch
 typedef void *CXHeaderFileInfo;
 typedef void *CXHeaderSearch;

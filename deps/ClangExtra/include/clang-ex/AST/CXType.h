@@ -252,7 +252,8 @@ CXString clang_Qualifiers_getAddrSpaceAsString(CXLangAS AS);
 
 // The two printing entry points below take a CXASTContext and use its own
 // getPrintingPolicy(), the way clang_Stmt_printPretty does: clang::PrintingPolicy is a
-// by-value options bag with no handle of its own. isEmptyWhenPrinted answers whether print
+// by-value options bag; policies passed as arguments have no handle, and a policy
+// with a handle of its own lives in AST/CXPrettyPrinter.h. isEmptyWhenPrinted answers whether print
 // would write nothing at all.
 bool clang_Qualifiers_isEmptyWhenPrinted(unsigned Quals, CXASTContext Ctx);
 

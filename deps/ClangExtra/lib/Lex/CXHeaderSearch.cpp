@@ -245,3 +245,40 @@ CXHeaderFileInfo clang_HeaderSearch_copyExistingFileInfo(CXHeaderSearch HS,
 void clang_HeaderFileInfo_dispose(CXHeaderFileInfo HFI) {
   delete static_cast<clang::HeaderFileInfo *>(HFI);
 }
+
+void clang_HeaderSearch_AddSearchPath(CXHeaderSearch HS, CXDirectoryLookup Dir,
+                                      bool isAngled) {
+  static_cast<clang::HeaderSearch *>(HS)->AddSearchPath(
+      *static_cast<clang::DirectoryLookup *>(Dir), isAngled);
+}
+
+void clang_HeaderSearch_AddSystemSearchPath(CXHeaderSearch HS, CXDirectoryLookup Dir) {
+  static_cast<clang::HeaderSearch *>(HS)->AddSystemSearchPath(
+      *static_cast<clang::DirectoryLookup *>(Dir));
+}
+
+CXHeaderMap clang_HeaderSearch_CreateHeaderMap(CXHeaderSearch HS, CXFileEntryRef FE) {
+  return const_cast<clang::HeaderMap *>(
+      static_cast<clang::HeaderSearch *>(HS)->CreateHeaderMap(
+          *static_cast<clang::FileEntryRef *>(FE)));
+}
+
+CXString clang_HeaderSearch_getCachedModuleFileName(CXHeaderSearch HS,
+                                                    const char *ModuleName,
+                                                    const char *ModuleMapPath) {
+  return extra::makeCXString(static_cast<clang::HeaderSearch *>(HS)->getCachedModuleFileName(
+      llvm::StringRef(ModuleName), llvm::StringRef(ModuleMapPath)));
+}
+
+bool clang_HeaderSearch_ShouldEnterIncludeFile(CXHeaderSearch HS, CXPreprocessor PP,
+                                               CXFileEntryRef File, bool isImport,
+                                               bool ModulesEnabled, CXModule M,
+                                               bool *IsFirstIncludeOfFile) {
+  bool First = false;
+  bool Res = static_cast<clang::HeaderSearch *>(HS)->ShouldEnterIncludeFile(
+      *static_cast<clang::Preprocessor *>(PP), *static_cast<clang::FileEntryRef *>(File),
+      isImport, ModulesEnabled, static_cast<clang::Module *>(M), First);
+  if (IsFirstIncludeOfFile)
+    *IsFirstIncludeOfFile = First;
+  return Res;
+}

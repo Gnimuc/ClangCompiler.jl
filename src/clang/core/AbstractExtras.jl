@@ -28,6 +28,7 @@ abstract type AbstractDiagnosticIDs end
 abstract type AbstractDiagnosticOptions end
 abstract type AbstractDiagnosticsEngine end
 abstract type AbstractDirectoryEntry end
+abstract type AbstractDirectoryEntryRef end
 abstract type AbstractDoubleComplexTy <: AbstractBuiltinType end
 abstract type AbstractDoubleTy <: AbstractBuiltinType end
 abstract type AbstractEmitAssemblyAction <: AbstractCodeGenAction end
@@ -124,9 +125,7 @@ abstract type AbstractStoredDiagnostic end
 
 abstract type AbstractCapturedStmtCapture end
 
-
 abstract type AbstractGCCAsmStmtAsmStringPiece end
-
 
 abstract type AbstractSelectorTable end
 
@@ -134,14 +133,11 @@ abstract type AbstractMacroDirective end
 
 abstract type AbstractPreprocessingRecord end
 
-
 abstract type AbstractFixItHint end
 
 abstract type AbstractForwardingDiagnosticConsumer <: AbstractDiagnosticConsumer end
 
-
 abstract type AbstractPresumedLoc end
-
 
 abstract type AbstractPreprocessedEntity end
 abstract type AbstractPreprocessingDirective <: AbstractPreprocessedEntity end
@@ -149,26 +145,20 @@ abstract type AbstractMacroDefinitionRecord <: AbstractPreprocessingDirective en
 abstract type AbstractMacroExpansion <: AbstractPreprocessedEntity end
 abstract type AbstractInclusionDirective <: AbstractPreprocessingDirective end
 
-
 abstract type AbstractStreamingDiagnostic end
 abstract type AbstractDiagnosticBuilder <: AbstractStreamingDiagnostic end
 
 abstract type AbstractDiagnostic end
 
-
 abstract type AbstractSelector end
 
-
 abstract type AbstractItaniumMangleContext <: AbstractMangleContext end
-
 
 abstract type AbstractCompilation end
 
 abstract type AbstractToolChain end
 
-
 abstract type AbstractImplicitConceptSpecializationDecl <: AbstractDecl end
-
 
 abstract type AbstractStandardConversionSequence end
 
@@ -178,10 +168,8 @@ abstract type AbstractImplicitConversionSequence end
 
 abstract type AbstractOverloadCandidateSet end
 
-
 abstract type AbstractAmbiguousConversionSequence end
 
 abstract type AbstractOverloadCandidate end
-
 
 abstract type AbstractUserDefinedConversionSequence end

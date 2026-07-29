@@ -2876,3 +2876,13 @@ CXBlockVarCopyInit clang_ASTContext_getBlockVarCopyInit(CXASTContext Ctx, CXVarD
                  static_cast<clang::VarDecl *>(VD)))
       .release();
 }
+
+CXPrintingPolicy clang_ASTContext_getPrintingPolicy(CXASTContext Ctx) {
+  return const_cast<clang::PrintingPolicy *>(
+      &static_cast<clang::ASTContext *>(Ctx)->getPrintingPolicy());
+}
+
+void clang_ASTContext_setPrintingPolicy(CXASTContext Ctx, CXPrintingPolicy Policy) {
+  static_cast<clang::ASTContext *>(Ctx)->setPrintingPolicy(
+      *static_cast<clang::PrintingPolicy *>(Policy));
+}

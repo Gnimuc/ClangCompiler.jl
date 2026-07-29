@@ -3,7 +3,6 @@ function PrintStats(x::LangOptions)
     return clang_LangOptions_PrintStats(x)
 end
 
-
 function isCompilingModule(x::AbstractLangOptions)
     @check_ptrs x
     return clang_LangOptions_isCompilingModule(x)
@@ -122,7 +121,6 @@ function isSYCL(x::AbstractLangOptions)
     @check_ptrs x
     return clang_LangOptions_isSYCL(x)
 end
-
 
 function trackLocalOwningModule(x::AbstractLangOptions)
     @check_ptrs x
@@ -263,7 +261,6 @@ encoding, resolving the internal `FPE_Default` placeholder.
 """
 getExceptionMode(fp_options::Integer) = clang_FPOptions_getExceptionMode(fp_options)
 
-
 """
     getCPlusPlus(x::AbstractLangOptions) -> Bool
 Whether the translation unit is being compiled as C++ (`LangOptions.def`:
@@ -274,7 +271,6 @@ function getCPlusPlus(x::AbstractLangOptions)
     @check_ptrs x
     return clang_LangOptions_getCPlusPlus(x)
 end
-
 
 """
     getCPlusPlus11(x::AbstractLangOptions) -> Bool
@@ -288,4 +284,14 @@ Exposed as a gate: declaring an `operator new` form before C++11 makes Sema reac
 function getCPlusPlus11(x::AbstractLangOptions)
     @check_ptrs x
     return clang_LangOptions_getCPlusPlus11(x)
+end
+
+"""
+    getModules(x::AbstractLangOptions) -> Bool
+Return whether modules (`-fmodules`) are enabled. This gates the `modules_enabled` argument of
+[`ShouldEnterIncludeFile`](@ref), which has no other way to be checked against the invocation.
+"""
+function getModules(x::AbstractLangOptions)
+    @check_ptrs x
+    return clang_LangOptions_getModules(x)
 end

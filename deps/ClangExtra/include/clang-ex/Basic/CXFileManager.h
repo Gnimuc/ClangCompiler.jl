@@ -34,6 +34,17 @@ void clang_FileEntryRef_dispose(CXFileEntryRef FER);
 
 CXFileEntry clang_FileEntryRef_getFileEntry(CXFileEntryRef FER);
 
+// DirectoryEntryRef
+// Heap-boxes the by-value clang::DirectoryEntryRef for DirName, or returns NULL when the
+// directory does not exist (MARSHALLING.md §8, nullptr sentinel). Release a non-NULL result
+// with clang_DirectoryEntryRef_dispose. Unlike clang_FileManager_getDirectory, whose bare
+// const DirectoryEntry * cannot be turned back into a ref, this is what DirectoryLookup needs.
+CXDirectoryEntryRef clang_FileManager_getOptionalDirectoryRef(CXFileManager FM,
+                                                              const char *DirName,
+                                                              bool CacheFailure);
+
+void clang_DirectoryEntryRef_dispose(CXDirectoryEntryRef DER);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

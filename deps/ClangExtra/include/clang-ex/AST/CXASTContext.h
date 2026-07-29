@@ -68,8 +68,16 @@ void clang_ASTContext_getTraversalScopeDecls(CXASTContext Ctx, CXDecl *Buf);
 // cached parent map.
 void clang_ASTContext_setTraversalScope(CXASTContext Ctx, CXDecl *Decls, unsigned NumDecls);
 // getParents
-// getPrintingPolicy
-// setPrintingPolicy
+// The context's own policy -- the one every printer taking a CXASTContext reads. This is a
+// BORROWED interior pointer into a by-value member (MARSHALLING.md §14 does not apply: it is
+// a plain member, not an element of a container clang can reallocate), so it has no dispose,
+// and passing it to clang_PrintingPolicy_dispose deletes into the ASTContext. Mutating it
+// changes what every one of those printers produces for the rest of the context's life.
+CXPrintingPolicy clang_ASTContext_getPrintingPolicy(CXASTContext Ctx);
+
+// Copy-assigns Policy into the context. The handle is NOT adopted: the caller keeps ownership
+// and must still dispose a policy it created.
+void clang_ASTContext_setPrintingPolicy(CXASTContext Ctx, CXPrintingPolicy Policy);
 
 CXSourceManager clang_ASTContext_getSourceManager(CXASTContext Ctx);
 

@@ -3197,3 +3197,28 @@ function getBlockVarCopyInit(x::ASTContext, vd::AbstractVarDecl)
     @assert hasAttrOfKind(vd, CXAttrKind_Blocks) "expected a __block variable"
     return BlockVarCopyInit(clang_ASTContext_getBlockVarCopyInit(x, vd))
 end
+
+"""
+    getPrintingPolicy(x::ASTContext) -> PrintingPolicy
+Return the context's own printing policy — the one every printer taking an `ASTContext`
+reads, [`printAsString`](@ref) and [`printPretty`](@ref) among them.
+
+The result is borrowed from `x` and must never be disposed; mutating it changes what all of
+those printers produce for the rest of the context's life. Pass it to the `PrintingPolicy` copy
+constructor to experiment without that consequence.
+"""
+function getPrintingPolicy(x::ASTContext)
+    @check_ptrs x
+    return PrintingPolicy(clang_ASTContext_getPrintingPolicy(x))
+end
+
+"""
+    setPrintingPolicy(x::ASTContext, policy::AbstractPrintingPolicy)
+Copy-assign `policy` into `x`, changing what every printer taking this context produces.
+
+The handle is not adopted: a policy the caller created still has to be disposed by the caller.
+"""
+function setPrintingPolicy(x::ASTContext, policy::AbstractPrintingPolicy)
+    @check_ptrs x policy
+    return clang_ASTContext_setPrintingPolicy(x, policy)
+end
