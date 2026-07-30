@@ -6,30 +6,32 @@ using ClangCompiler: get_ast_context, get_codegen_module, convertTypeForMemory
 using Test
 import ClangCompiler as CC
 
-CC.clty_to_jlty(x::CC.VoidTy) = Cvoid
-CC.clty_to_jlty(x::CC.BoolTy) = Bool
-CC.clty_to_jlty(x::CC.CharTy) = Cuchar
-CC.clty_to_jlty(x::CC.WCharTy) = Cwchar_t
-CC.clty_to_jlty(x::CC.WideCharTy) = Cwchar_t
-CC.clty_to_jlty(x::CC.SignedCharTy) = Cchar
-CC.clty_to_jlty(x::CC.ShortTy) = Cshort
-CC.clty_to_jlty(x::CC.IntTy) = Cint
-CC.clty_to_jlty(x::CC.LongTy) = Clong
-CC.clty_to_jlty(x::CC.LongLongTy) = Clonglong
-CC.clty_to_jlty(x::CC.Int128Ty) = Int128
-CC.clty_to_jlty(x::CC.UnsignedCharTy) = Cuchar
-CC.clty_to_jlty(x::CC.UnsignedShortTy) = Cushort
-CC.clty_to_jlty(x::CC.UnsignedIntTy) = Cuint
-CC.clty_to_jlty(x::CC.UnsignedLongTy) = Culong
-CC.clty_to_jlty(x::CC.UnsignedLongLongTy) = Culonglong
-CC.clty_to_jlty(x::CC.UnsignedInt128Ty) = UInt128
-CC.clty_to_jlty(x::CC.FloatTy) = Cfloat
-CC.clty_to_jlty(x::CC.DoubleTy) = Cdouble
-CC.clty_to_jlty(x::CC.Float16Ty) = Float16
-CC.clty_to_jlty(x::CC.HalfTy) = Float16
-CC.clty_to_jlty(x::CC.BFloat16Ty) = Float16
-CC.clty_to_jlty(x::CC.NullPtrTy) = Ptr{Cvoid}
-CC.clty_to_jlty(x::CC.VoidPtrTy) = Ptr{Cvoid}
+if !hasmethod(CC.clty_to_jlty, Tuple{CC.VoidTy})
+    CC.clty_to_jlty(x::CC.VoidTy) = Cvoid
+    CC.clty_to_jlty(x::CC.BoolTy) = Bool
+    CC.clty_to_jlty(x::CC.CharTy) = Cuchar
+    CC.clty_to_jlty(x::CC.WCharTy) = Cwchar_t
+    CC.clty_to_jlty(x::CC.WideCharTy) = Cwchar_t
+    CC.clty_to_jlty(x::CC.SignedCharTy) = Cchar
+    CC.clty_to_jlty(x::CC.ShortTy) = Cshort
+    CC.clty_to_jlty(x::CC.IntTy) = Cint
+    CC.clty_to_jlty(x::CC.LongTy) = Clong
+    CC.clty_to_jlty(x::CC.LongLongTy) = Clonglong
+    CC.clty_to_jlty(x::CC.Int128Ty) = Int128
+    CC.clty_to_jlty(x::CC.UnsignedCharTy) = Cuchar
+    CC.clty_to_jlty(x::CC.UnsignedShortTy) = Cushort
+    CC.clty_to_jlty(x::CC.UnsignedIntTy) = Cuint
+    CC.clty_to_jlty(x::CC.UnsignedLongTy) = Culong
+    CC.clty_to_jlty(x::CC.UnsignedLongLongTy) = Culonglong
+    CC.clty_to_jlty(x::CC.UnsignedInt128Ty) = UInt128
+    CC.clty_to_jlty(x::CC.FloatTy) = Cfloat
+    CC.clty_to_jlty(x::CC.DoubleTy) = Cdouble
+    CC.clty_to_jlty(x::CC.Float16Ty) = Float16
+    CC.clty_to_jlty(x::CC.HalfTy) = Float16
+    CC.clty_to_jlty(x::CC.BFloat16Ty) = Float16
+    CC.clty_to_jlty(x::CC.NullPtrTy) = Ptr{Cvoid}
+    CC.clty_to_jlty(x::CC.VoidPtrTy) = Ptr{Cvoid}
+end
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl
 # Skiplist-drain tail (AST half): dyn_cast probes, ArrayRef views, decl
 # factories, DeclContext pivots, and the process-global stats toggles.
@@ -38,13 +40,15 @@ using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl
 const LX = CC.LibClangEx
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, DeclIterator
 # Depth-first search for the first resolved child node whose carrier is `T`.
-function _find_node(::Type{T}, x) where {T}
-    x isa T && return x
-    for c in CC.children(x)
-        r = _find_node(T, CC.resolve(c))
-        r === nothing || return r
+if !@isdefined(_find_node)
+    function _find_node(::Type{T}, x) where {T}
+        x isa T && return x
+        for c in CC.subtree(x)
+            r = _find_node(T, CC.resolve(c))
+            r !== nothing && return r
+        end
+        return nothing
     end
-    return nothing
 end
 
 @testset "qualifier and predicate exercise" begin

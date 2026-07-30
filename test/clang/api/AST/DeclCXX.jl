@@ -8,13 +8,15 @@ using Test
 const LX = CC.LibClangEx
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, DeclIterator
 # Depth-first search for the first resolved child node whose carrier is `T`.
-function _find_node(::Type{T}, x) where {T}
-    x isa T && return x
-    for c in CC.children(x)
-        r = _find_node(T, CC.resolve(c))
-        r === nothing || return r
+if !@isdefined(_find_node)
+    function _find_node(::Type{T}, x) where {T}
+        x isa T && return x
+        for c in CC.children(x)
+            r = _find_node(T, CC.resolve(c))
+            r === nothing || return r
+        end
+        return nothing
     end
-    return nothing
 end
 
 @testset "DeclCXX/DeclTemplate setters and factories" begin
