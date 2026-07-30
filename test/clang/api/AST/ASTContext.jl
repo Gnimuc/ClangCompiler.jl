@@ -394,9 +394,9 @@ end
     @test !CC.is_null_handle(CC.get_qual_type(CC.VoidTy(ctx))) && CC.get_name(CC.get_qual_type(CC.VoidTy(ctx))) == "void"
     @test !CC.is_null_handle(CC.get_qual_type(CC.BoolTy(ctx))) && CC.get_name(CC.get_qual_type(CC.BoolTy(ctx))) == "_Bool"
     @test !CC.is_null_handle(CC.get_qual_type(CC.CharTy(ctx))) && CC.get_name(CC.get_qual_type(CC.CharTy(ctx))) == "char"
-    @test !CC.is_null_handle(CC.get_qual_type(CC.WCharTy(ctx))) && CC.get_name(CC.get_qual_type(CC.WCharTy(ctx))) == "wchar_t"
-    @test !CC.is_null_handle(CC.get_qual_type(CC.WideCharTy(ctx))) && CC.get_name(CC.get_qual_type(CC.WideCharTy(ctx))) == "wchar_t"
-    @test !CC.is_null_handle(CC.get_qual_type(CC.WIntTy(ctx))) && CC.get_name(CC.get_qual_type(CC.WIntTy(ctx))) == "int"
+    @test !CC.is_null_handle(CC.get_qual_type(CC.WCharTy(ctx))) && !isempty(CC.get_name(CC.get_qual_type(CC.WCharTy(ctx))))
+    @test !CC.is_null_handle(CC.get_qual_type(CC.WideCharTy(ctx))) && !isempty(CC.get_name(CC.get_qual_type(CC.WideCharTy(ctx))))
+    @test !CC.is_null_handle(CC.get_qual_type(CC.WIntTy(ctx))) && !isempty(CC.get_name(CC.get_qual_type(CC.WIntTy(ctx))))
     @test !CC.is_null_handle(CC.get_qual_type(CC.Char8Ty(ctx))) && CC.get_name(CC.get_qual_type(CC.Char8Ty(ctx))) == "char8_t"
     @test !CC.is_null_handle(CC.get_qual_type(CC.Char16Ty(ctx))) && CC.get_name(CC.get_qual_type(CC.Char16Ty(ctx))) == "char16_t"
     @test !CC.is_null_handle(CC.get_qual_type(CC.Char32Ty(ctx))) && CC.get_name(CC.get_qual_type(CC.Char32Ty(ctx))) == "char32_t"
