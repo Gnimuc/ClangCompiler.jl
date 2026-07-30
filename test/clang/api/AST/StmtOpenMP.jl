@@ -7,7 +7,7 @@ using Test
 if !@isdefined(_find_node)
     function _find_node(::Type{T}, x) where {T}
         x isa T && return x
-        for c in CC.subtree(x)
+        for c in CC.children(x)
             r = _find_node(T, CC.resolve(c))
             r !== nothing && return r
         end
