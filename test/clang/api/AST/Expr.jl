@@ -822,7 +822,7 @@ end
     vnodes = CC.subtree(CC.getBody(va_fd))
     va = first(filter(n -> n isa CC.VAArgExpr, vnodes))
     @test CC.getSubExpr(va) isa CC.AbstractExpr
-    @test CC.isMicrosoftABI(va) == false
+    @test CC.isMicrosoftABI(va) == Sys.iswindows()
     @test !CC.is_null_handle(CC.getWrittenTypeInfo(va))
     @test !CC.is_null_handle(CC.getBuiltinLoc(va))
     @test !CC.is_null_handle(CC.getRParenLoc(va))
