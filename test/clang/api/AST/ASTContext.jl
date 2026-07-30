@@ -204,7 +204,7 @@ using ClangCompiler: get_tag
     @test CC.getTypeSize(ctx, CC.getTypePtr(int_qt)) == 32   # AbstractType overload
     pt_qt = CC.getType(CC.VarDecl(getptr("cta_pt_var")))
     @test CC.get_name(CC.getMemberPointerType(ctx, int_qt, pt_qt)) == "int CtaPt::*"   # QualType-class overload
-    @test !CC.is_null_handle(CC.getScalableVectorType(ctx, int_qt, 4))   # null QualType off SVE/RVV targets
+    @test CC.getScalableVectorType(ctx, int_qt, 4) isa CC.QualType   # null QualType off SVE/RVV targets
 
     # ---------- stmt-tree carriers: AtomicExpr / IndirectGotoStmt ----------
     nodes = CC.AbstractStmt[]
