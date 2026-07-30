@@ -579,7 +579,8 @@ end
     @test !CC.is_null_handle(CC.getBuiltinMSVaListDecl(ctx))
     # target-decided: __va_list_tag is the SysV x86_64 spelling of va_list and does not
     # exist on every target this suite runs on, so only the carrier shape is assertable
-    @test CC.getVaListTagDecl(ctx) isa CC.Decl && (CC.is_null_handle(CC.getVaListTagDecl(ctx)) || CC.get_name(CC.getVaListTagDecl(ctx)) == "__va_list_tag")
+    vat_decl = CC.getVaListTagDecl(ctx)
+    @test vat_decl isa CC.Decl && (CC.is_null_handle(vat_decl) || CC.get_name(CC.NamedDecl(vat_decl.ptr)) == "__va_list_tag")
     @test CC.is_null_handle(CC.getBOOLDecl(ctx))
     @test !CC.is_null_handle(CC.getInt128Decl(ctx))
     @test !CC.is_null_handle(CC.getUInt128Decl(ctx))
