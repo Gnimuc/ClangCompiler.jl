@@ -22,34 +22,35 @@ using Test
     parser = CC.get_parser(I)
 
     # ---- CompilerInstance: has*/get* query accessors ----
-    @test CC.hasDiagnostics(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getDiagnostics(ci) isa CC.DiagnosticsEngine  # shape-only: the host decides this
-    @test CC.getDiagnosticClient(ci) isa CC.DiagnosticConsumer  # shape-only: the host decides this
-    @test CC.hasFileManager(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getFileManager(ci) isa CC.FileManager  # shape-only: the host decides this
-    @test CC.hasSourceManager(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getSourceManager(ci) isa CC.SourceManager  # shape-only: the host decides this
-    @test CC.hasInvocation(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getInvocation(ci) isa CC.CompilerInvocation  # shape-only: the host decides this
-    @test CC.hasTarget(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getTarget(ci) isa CC.TargetInfo
-    @test CC.hasPreprocessor(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getPreprocessor(ci) isa CC.Preprocessor  # shape-only: the host decides this
-    @test CC.hasSema(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getSema(ci) isa CC.Sema  # shape-only: the host decides this
-    @test CC.hasASTContext(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getASTContext(ci) isa CC.ASTContext  # shape-only: the host decides this
-    @test CC.hasASTConsumer(ci) isa Bool  # shape-only: the host decides this
-    @test CC.getASTConsumer(ci) isa CC.ASTConsumer  # shape-only: the host decides this
+    @test CC.hasDiagnostics(ci) == true
+    @test CC.getDiagnostics(ci).ptr != C_NULL
+    @test CC.getDiagnosticClient(ci).ptr != C_NULL
+    @test CC.hasFileManager(ci) == true
+    @test CC.getFileManager(ci).ptr != C_NULL
+    @test CC.hasSourceManager(ci) == true
+    @test CC.getSourceManager(ci).ptr != C_NULL
+    @test CC.hasInvocation(ci) == true
+    @test CC.getInvocation(ci).ptr != C_NULL
+    @test CC.hasTarget(ci) == true
+    @test CC.getTarget(ci).ptr != C_NULL
+    @test CC.hasPreprocessor(ci) == true
+    @test CC.getPreprocessor(ci).ptr != C_NULL
+    @test CC.hasSema(ci) == true
+    @test CC.getSema(ci).ptr == CC.get_sema(I).ptr
+    @test CC.hasASTContext(ci) == true
+    @test CC.getASTContext(ci).ptr == ctx.ptr
+    @test CC.hasASTConsumer(ci) == true
+    @test CC.getASTConsumer(ci).ptr != C_NULL
 
     # ---- CompilerInstance: option accessors ----
-    @test CC.getCodeGenOpts(ci) isa CC.CodeGenOptions  # shape-only: the host decides this
-    @test CC.getDiagnosticOpts(ci) isa CC.DiagnosticOptions  # shape-only: the host decides this
-    @test CC.getFrontendOpts(ci) isa CC.FrontendOptions  # shape-only: the host decides this
-    @test CC.getHeaderSearchOpts(ci) isa CC.HeaderSearchOptions  # shape-only: the host decides this
-    @test CC.getPreprocessorOpts(ci) isa CC.PreprocessorOptions  # shape-only: the host decides this
-    @test CC.getTargetOpts(ci) isa CC.TargetOptions  # shape-only: the host decides this
-    @test CC.getLangOpts(ci) isa CC.LangOptions  # shape-only: the host decides this
+    @test CC.getCodeGenOpts(ci).ptr != C_NULL
+    @test CC.getDiagnosticOpts(ci).ptr != C_NULL
+    @test CC.getFrontendOpts(ci).ptr != C_NULL
+    @test CC.getHeaderSearchOpts(ci).ptr != C_NULL
+    @test !isempty(CC.GetResourceDir(CC.getHeaderSearchOpts(ci)))
+    @test CC.getPreprocessorOpts(ci).ptr != C_NULL
+    @test CC.getTargetOpts(ci).ptr != C_NULL
+    @test CC.getLangOpts(ci).ptr != C_NULL
 
     # main file id (allocates -> dispose)
     fid = CC.getMainFileID(ci)

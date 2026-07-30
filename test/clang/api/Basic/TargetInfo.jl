@@ -11,11 +11,12 @@ using Test
     # identity strings
     @test !isempty(CC.getTriple(ti))
     @test !isempty(CC.getDataLayoutString(ti))
-    @test CC.getABI(ti) isa String  # shape-only: the host decides this
-    @test CC.getPlatformName(ti) isa String  # shape-only: the host decides this
-    @test CC.getUserLabelPrefix(ti) isa String  # shape-only: the host decides this
-    @test CC.getMCountName(ti) isa String  # shape-only: the host decides this
+    @test CC.getABI(ti) isa String  # shape-only: target ABI string
+    @test !isempty(CC.getPlatformName(ti))
+    @test CC.getUserLabelPrefix(ti) in ("", "_")
+    @test !isempty(CC.getMCountName(ti))
     @test CC.getClobbers(ti) isa String
+
 
     # endianness: exactly one of the two
     @test CC.isBigEndian(ti) != CC.isLittleEndian(ti)
@@ -75,11 +76,15 @@ using Test
     @test CC.getTypeAlign(ti, CC.CXTargetInfo_SignedChar) == 8
 
     # presence/support predicates
-    for f in (CC.hasInt128Type, CC.hasBitIntType, CC.hasLegalHalfType, CC.hasFloat16Type,
-              CC.hasBFloat16Type, CC.hasFullBFloat16Type, CC.hasFloat128Type, CC.hasIbm128Type,
-              CC.hasLongDoubleType, CC.hasFPReturn, CC.hasStrictFP, CC.hasAArch64SVETypes,
-              CC.hasRISCVVTypes, CC.supportsMultiVersioning, CC.supportsIFunc,
-              CC.isTLSSupported, CC.isVLASupported)
+    @test CC.hasInt128Type(ti) == true
+    @test CC.hasBitIntType(ti) == true
+    @test CC.hasLongDoubleType(ti) == true
+    @test CC.hasFPReturn(ti) == true
+    @test CC.isTLSSupported(ti) == true
+    @test CC.isVLASupported(ti) == true
+    for f in (CC.hasLegalHalfType, CC.hasFloat16Type, CC.hasBFloat16Type, CC.hasFullBFloat16Type,
+              CC.hasFloat128Type, CC.hasIbm128Type, CC.hasStrictFP, CC.hasAArch64SVETypes,
+              CC.hasRISCVVTypes, CC.supportsMultiVersioning, CC.supportsIFunc)
         @test f(ti) isa Bool
     end
 
@@ -96,7 +101,7 @@ using Test
     # feature/CPU validity
     @test CC.hasFeature(ti, "definitely-not-a-feature") == false
     @test CC.isValidCPUName(ti, "this-cpu-does-not-exist") == false
-    @test CC.isValidTuneCPUName(ti, "this-cpu-does-not-exist") isa Bool  # shape-only: the host decides this
+    @test CC.isValidTuneCPUName(ti, "this-cpu-does-not-exist") == false
     @test CC.isValidFeatureName(ti, "not-a-real-feature-name") isa Bool  # shape-only: the host decides this
     cpus = CC.fillValidCPUList(ti)
     @test cpus isa Vector{String}
@@ -173,15 +178,15 @@ end
     @test CC.getTypeWidth(ti, CC.getLeastIntTypeByWidth(ti, 8, true)) >= 8
 
     # spellings (the documented example is target-independent)
-    @test CC.getTypeConstantSuffix(ti, CC.CXTargetInfo_SignedLong) isa String  # shape-only: the host decides this
-    @test CC.getTypeConstantSuffix(ti, CC.CXTargetInfo_UnsignedInt) isa String  # shape-only: the host decides this
+    @test CC.getTypeConstantSuffix(ti, CC.CXTargetInfo_SignedLong) in ("L", "LL")
+    @test CC.getTypeConstantSuffix(ti, CC.CXTargetInfo_UnsignedInt) == "U"
     @test CC.getTypeFormatModifier(CC.CXTargetInfo_SignedLong) == "l"
-    @test CC.getTypeFormatModifier(CC.CXTargetInfo_SignedShort) isa String  # shape-only: the host decides this
+    @test CC.getTypeFormatModifier(CC.CXTargetInfo_SignedShort) == "h"
     @test_throws AssertionError CC.getTypeFormatModifier(CC.CXTargetInfo_NoInt)
 
     # register width and bitfield layout scalars
     @test CC.getRegisterWidth(ti) in (32, 64)
-    @test CC.useBitFieldTypeAlignment(ti) isa Bool  # shape-only: the host decides this
+    @test CC.useBitFieldTypeAlignment(ti) == true
     @test CC.getZeroLengthBitfieldBoundary(ti) isa Cuint
     @test CC.getMaxAlignedAttribute(ti) isa Cuint
 

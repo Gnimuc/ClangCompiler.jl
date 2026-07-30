@@ -201,20 +201,24 @@ end
     @test body isa CC.CompoundStmt
 
     # Stmt base wrappers (declared on Stmt)
-    @test CC.getStmtClass(body) isa Any
+    @test CC.getStmtClass(body) == LibClangEx.CXStmtClass_CompoundStmtClass
     @test CC.getStmtClassName(body) == "CompoundStmt"
     @test !CC.is_null_handle(CC.getBeginLoc(body))
     @test !CC.is_null_handle(CC.getEndLoc(body))
-    @test CC.getSourceRange(body) isa CC.SourceRange  # shape-only
-    @test CC.getNumChildren(body) isa Integer  # shape-only: the target chooses this value
-    @test CC.getChildren(body) isa Vector
+    sr = CC.getSourceRange(body)
+    @test sr.begin_loc.ptr == CC.getBeginLoc(body).ptr
+    @test sr.end_loc.ptr == CC.getEndLoc(body).ptr
+    @test !CC.is_null_handle(sr.begin_loc)
+    @test !CC.is_null_handle(sr.end_loc)
+    @test CC.getNumChildren(body) == 11
+    @test length(CC.getChildren(body)) == 11
 
     # generated predicates + casts (src/clang/api/AST/StmtWrappers.jl)
     @test CC.isCompoundStmt(body)
     @test !(CC.isIfStmt(body))
     @test !(CC.isExpr(body))
     @test CC.CompoundStmt(body) isa CC.CompoundStmt         # castToCompoundStmt
-    @test CC.IfStmt(body) isa CC.IfStmt                     # dyn_cast_or_null -> NULL carrier
+    @test CC.is_null_handle(CC.IfStmt(body))                # dyn_cast_or_null -> NULL carrier
 
     # CompoundStmt accessors
     @test length(body) isa Integer
@@ -223,7 +227,7 @@ end
     @test !CC.is_null_handle(CC.getLBracLoc(body))
     @test !CC.is_null_handle(CC.getRBracLoc(body))
     @test !(CC.body_empty(body))
-    @test CC.hasStoredFPFeatures(body) isa Bool  # shape-only: the host decides this
+    @test CC.hasStoredFPFeatures(body) == false
 
     # ================= DeclStmt =================
     dss = pick(CC.DeclStmt)
@@ -231,8 +235,8 @@ end
     single = first(filter(d -> CC.isSingleDecl(d), dss))
     @test CC.isSingleDecl(single)
     @test !CC.is_null_handle(CC.getSingleDecl(single))
-    @test CC.getNumDecls(single) isa Integer  # shape-only: the target chooses this value
-    @test CC.getDecls(single) isa Vector
+    @test CC.getNumDecls(single) == 1
+    @test length(CC.getDecls(single)) == 1
     multi = first(filter(d -> CC.getNumDecls(d) > 1, dss))   # `int a = 1, b = 2;`
     @test CC.getNumDecls(multi) == 2
 
@@ -243,7 +247,7 @@ end
     @test !CC.is_null_handle(CC.getCond(ifi))
     @test !CC.is_null_handle(CC.getThen(ifi))
     @test CC.is_null_handle(CC.getElse(ifi))
-    @test CC.getInit(ifi) isa CC.Stmt
+    @test CC.is_null_handle(CC.getInit(ifi))
     @test CC.is_null_handle(CC.getConditionVariable(ifi))
     @test !(CC.hasElseStorage(ifi))
     @test !(CC.hasInitStorage(ifi))
@@ -261,9 +265,10 @@ end
     # ================= SwitchStmt / SwitchCase / CaseStmt / DefaultStmt =================
     sw = first(pick(CC.SwitchStmt))
     @test !CC.is_null_handle(CC.getCond(sw))
-    @test CC.getBody(sw) isa CC.Stmt
+    @test CC.resolve(CC.getBody(sw)) isa CC.CompoundStmt
     scl = CC.getSwitchCaseList(sw)
     @test scl isa CC.SwitchCase
+    @test CC.resolve(scl) isa CC.DefaultStmt
     @test !(CC.isAllEnumCasesCovered(sw))
     @test CC.hasInitStorage(sw)
     @test !(CC.hasVarStorage(sw))
@@ -350,7 +355,7 @@ end
     @test !isempty(ces)
     ce = first(ces)
     @test !CC.is_null_handle(CC.getConstructor(ce))
-    @test CC.getNumArgs(ce) isa Integer  # shape-only: the target chooses this value
+    @test CC.getNumArgs(ce) == 1
     CC.getNumArgs(ce) > 0 && (@test CC.getArg(ce, 0) isa CC.Expr_)
     @test !(CC.isElidable(ce))
     @test !CC.is_null_handle(CC.getLocation(ce))
@@ -359,7 +364,7 @@ end
     @test !(CC.isStdInitListInitialization(ce))
     @test !(CC.requiresZeroInitialization(ce))
     @test !(CC.isImmediateEscalating(ce))
-    @test CC.getConstructionKind(ce) !== nothing
+    @test CC.getConstructionKind(ce) == LibClangEx.CXCXXConstructionKind_Complete
     # CXXTemporaryObjectExpr specifically present (from zero-arg `Vec()`)
     @test !isempty(pick(CC.CXXTemporaryObjectExpr))
 
@@ -371,7 +376,7 @@ end
 
     # CXXOperatorCallExpr — a + b
     oce = first(pick(CC.CXXOperatorCallExpr))
-    @test CC.getOperator(oce) !== nothing
+    @test CC.getOperator(oce) == LibClangEx.CXOverloadedOperatorKind_OO_Plus
     @test !CC.is_null_handle(CC.getOperatorLoc(oce))
 
     # CXXBoolLiteralExpr — true
@@ -385,48 +390,48 @@ end
     @test !CC.is_null_handle(CC.getLambdaClass(le))
     @test CC.getBody(le) isa CC.Stmt
     @test !(CC.isMutable(le))
-    @test CC.getNumCaptures(le) isa Integer  # shape-only: the target chooses this value
+    @test CC.getNumCaptures(le) == 1
     @test !(CC.isGenericLambda(le))
     @test CC.getNumCaptures(le) >= 1
     cap = CC.getCapture(le, 0)
     @test cap isa CC.LambdaCapture
-    @test CC.getCaptureKind(cap) !== nothing
+    @test CC.getCaptureKind(cap) == LibClangEx.CXLambdaCaptureKind_LCK_ByCopy
     @test !(CC.capturesThis(cap))
     @test CC.capturesVariable(cap)
     @test !(CC.capturesVLAType(cap))
-    CC.capturesVariable(cap) && (@test CC.getCapturedVar(cap) isa CC.ValueDecl)
+    CC.capturesVariable(cap) && (@test CC.getCapturedVar(cap) isa CC.ValueDecl && get_name(CC.getCapturedVar(cap)) == "g")
 
     # CXXNewExpr — new Vec(4) and new int[n]
     news = pick(CC.CXXNewExpr)
     @test length(news) >= 2
     for ne in news
         @test !CC.is_null_handle(CC.getAllocatedType(ne))
-        @test CC.isArray(ne) isa Bool  # shape-only
+        @test CC.isArray(ne) == (CC.getArraySize(ne).ptr != C_NULL)
         @test CC.getArraySize(ne) isa CC.Expr_
-        @test CC.hasInitializer(ne) isa Bool  # shape-only
-        @test CC.getInitializer(ne) isa CC.Expr_  # shape-only
+        @test CC.hasInitializer(ne) == (CC.getInitializer(ne).ptr != C_NULL)
+        @test (CC.getInitializer(ne).ptr != C_NULL) == CC.hasInitializer(ne)
         @test !(CC.shouldNullCheckAllocation(ne))
-        @test CC.getNumPlacementArgs(ne) isa Integer  # shape-only: the target chooses this value
+        @test CC.getNumPlacementArgs(ne) == 0
         @test !(CC.isParenTypeId(ne))
         @test !(CC.isGlobalNew(ne))
-        @test CC.passAlignment(ne) isa Bool  # shape-only: the host decides this
-        @test CC.doesUsualArrayDeleteWantSize(ne) isa Bool  # shape-only: the host decides this
-        @test CC.getInitializationStyle(ne) !== nothing
+        @test CC.passAlignment(ne) == false
+        @test CC.doesUsualArrayDeleteWantSize(ne) == false
+        @test CC.getInitializationStyle(ne) in (LibClangEx.CXCXXNewInitializationStyle_Parens, LibClangEx.CXCXXNewInitializationStyle_None)
         @test !CC.is_null_handle(CC.getOperatorDelete(ne))
         @test !CC.is_null_handle(CC.getOperatorNew(ne))
         @test !CC.is_null_handle(CC.getAllocatedTypeSourceInfo(ne))
-        @test CC.getConstructExpr(ne) isa CC.CXXConstructExpr  # shape-only
+        @test (CC.getConstructExpr(ne).ptr != C_NULL) == (!CC.isArray(ne) && CC.hasInitializer(ne))
     end
 
     # CXXDeleteExpr — delete p; delete[] arr;
     dels = pick(CC.CXXDeleteExpr)
     @test length(dels) >= 2
     for de in dels
-        @test CC.getArgument(de) isa CC.Expr_
-        @test CC.isArrayForm(de) isa Bool  # shape-only
+        @test !CC.is_null_handle(CC.getArgument(de))
+        @test CC.isArrayForm(de) == CC.isArrayFormAsWritten(de)
         @test !(CC.isGlobalDelete(de))
-        @test CC.isArrayFormAsWritten(de) isa Bool  # shape-only
-        @test CC.doesUsualArrayDeleteWantSize(de) isa Bool  # shape-only: the host decides this
+        @test CC.isArrayFormAsWritten(de) in (true, false)
+        @test CC.doesUsualArrayDeleteWantSize(de) == false
         @test !CC.is_null_handle(CC.getDestroyedType(de))
         @test !CC.is_null_handle(CC.getOperatorDelete(de))
     end
@@ -434,10 +439,10 @@ end
     # CastExpr — pick any (implicit or explicit) cast node
     caste = first(pick(CC.AbstractCastExpr))
     @test CC.path_empty(caste)
-    @test CC.path_size(caste) isa Integer  # shape-only: the target chooses this value
-    @test CC.hasStoredFPFeatures(caste) isa Bool  # shape-only: the host decides this
+    @test CC.path_size(caste) == 0
+    @test CC.hasStoredFPFeatures(caste) == false
     @test !(CC.changesVolatileQualification(caste))
-    @test CC.getConversionFunction(caste) isa CC.NamedDecl
+    @test CC.is_null_handle(CC.getConversionFunction(caste))
     # getTargetUnionField is intentionally not called: clang asserts
     # (getCastKind() == CK_ToUnion) inside it, and a CK_ToUnion cast is a C-only
     # (GNU cast-to-union) construct unreachable from this C++ sample.
@@ -458,7 +463,7 @@ end
     mtes = pick(CC.MaterializeTemporaryExpr)
     @test !isempty(mtes)
     mte = first(mtes)
-    @test CC.getManglingNumber(mte) isa Integer  # shape-only: the host decides this
+    @test CC.getManglingNumber(mte) == 1
     @test CC.isBoundToLvalueReference(mte)
     @test !CC.is_null_handle(CC.getExtendingDecl(mte))
     @test !CC.is_null_handle(CC.getSubExpr(mte))
@@ -621,7 +626,10 @@ end
     if igs !== nothing
         @test CC.getTarget(igs) isa CC.Expr_
         @test CC.getTarget(igs).ptr != C_NULL
-        @test CC.getConstantTarget(igs) isa CC.LabelDecl  # shape-only: the host decides this
+        tgt_lbl = CC.getConstantTarget(igs)
+        @test tgt_lbl isa CC.LabelDecl
+        @test !CC.is_null_handle(tgt_lbl)
+        @test get_name(tgt_lbl) == "done"
     end
 
     CC.dispose(f)
@@ -705,7 +713,7 @@ end
     @test CC.getCapturedDecl(cs).ptr != C_NULL
     @test !CC.is_null_handle(CC.getCapturedRecordDecl(cs))
     @test CC.getCapturedRecordDecl(cs).ptr != C_NULL
-    @test CC.capture_size(cs) isa Integer  # shape-only: the target chooses this value
+    @test CC.capture_size(cs) == 1
     @test CC.capture_size(cs) >= 1                                  # captures n
     paramN = CC.getParamDecl(ofd, 0)                               # the `int n` ParmVarDecl
     @test CC.capturesVariable(cs, paramN)
@@ -780,11 +788,9 @@ end
     if astmt !== nothing
         @test !CC.is_null_handle(CC.getAttrLoc(astmt))
         na = CC.getNumAttrs(astmt)
-        @test na isa Integer
-        @test na >= 1
+        @test na == 1
         attrs = CC.getAttrs(astmt)
-        @test attrs isa Vector
-        @test length(attrs) == na
+        @test length(attrs) == na == 1
         @test all(x -> x isa CC.Attr, attrs)
         @test all(x -> x.ptr != C_NULL, attrs)
     end
@@ -837,8 +843,7 @@ end
 
     # Stmt: the node identifier is stable per node and distinct between nodes
     id = CC.getID(body, ctx)
-    @test id isa Integer
-    @test CC.getID(body, ctx) == id
+    @test CC.getID(body, ctx) == id && id != 0
     ret = only(pick(CC.ReturnStmt))
     @test CC.getID(ret, ctx) != id
 
@@ -861,7 +866,7 @@ end
     @test CC.resolve(stripped) isa CC.NullStmt
 
     # Stmt: nothing in this function carries [[likely]]/[[unlikely]]
-    @test CC.getLikelihood(body) isa CC.LibClangEx.CXLikelihood
+    @test CC.getLikelihood(body) == LibClangEx.CXLikelihood_LH_None
     @test CC.getLikelihood(body) == CC.LibClangEx.CXLikelihood_LH_None
     @test CC.is_null_handle(CC.getLikelihoodAttr(body))
     @test CC.getLikelihoodAttr(body).ptr == C_NULL
@@ -1069,9 +1074,9 @@ end
 
     # CompoundStmt: the trailing FPOptionsOverride slot exists only when the body
     # changed the floating-point options, and getStoredFPFeatures asserts on it.
-    @test CC.hasStoredFPFeatures(body) isa Bool  # shape-only: the host decides this
+    @test CC.hasStoredFPFeatures(body) == false
     if CC.hasStoredFPFeatures(body)
-        @test CC.getStoredFPFeatures(body) isa Integer  # shape-only: the host decides this
+        @test CC.getStoredFPFeatures(body) != 0
     else
         @test_throws AssertionError CC.getStoredFPFeatures(body)
     end
@@ -1090,7 +1095,7 @@ end
             fpcs = CC.resolve(fpbody)
             if fpcs isa CC.CompoundStmt && CC.hasStoredFPFeatures(fpcs)
                 fpv = CC.getStoredFPFeatures(fpcs)
-                @test fpv isa Integer
+                @test fpv != 0
                 # The slot exists exactly when the override mask is nonzero, and that
                 # mask is the low half of the encoding.
                 @test fpv != 0
@@ -1117,7 +1122,7 @@ end
     @test cs isa CC.CapturedStmt
 
     # region kind, written back with the value the test itself read
-    @test CC.getCapturedRegionKind(cs) isa LibClangEx.CXCapturedRegionKind
+    @test CC.getCapturedRegionKind(cs) == LibClangEx.CXCapturedRegionKind_CR_OpenMP
     @test CC.getCapturedRegionKind(cs) == LibClangEx.CXCapturedRegionKind_CR_OpenMP
     CC.setCapturedRegionKind(cs, CC.getCapturedRegionKind(cs))
     @test CC.getCapturedRegionKind(cs) == LibClangEx.CXCapturedRegionKind_CR_OpenMP
@@ -1135,7 +1140,7 @@ end
         # the four forms partition the capture kinds: exactly one of them holds
         forms = [CC.capturesThis(c), CC.capturesVariable(c),
                  CC.capturesVariableByCopy(c), CC.capturesVariableArrayType(c)]
-        @test all(f -> f isa Bool, forms)
+        @test count(forms) == 1
         @test count(forms) == 1
     end
 
@@ -1181,7 +1186,7 @@ end
     CC.setDecl(ls, ld)
     @test CC.getDecl(ls).ptr == ld.ptr
     se = CC.isSideEntry(ls)
-    @test se isa Bool
+    @test se == false
     CC.setSideEntry(ls, true)
     @test CC.isSideEntry(ls)
     CC.setSideEntry(ls, se)                                     # restore
@@ -1250,7 +1255,9 @@ end
     # --- IfStmt: statement kind + condition-variable DeclStmt ---
     ifs = pick(CC.IfStmt)
     @test length(ifs) == 3
-    @test all(k -> k isa CC.LibClangEx.CXIfStatementKind, map(CC.getStatementKind, ifs))
+    @test map(CC.getStatementKind, ifs) == [CC.LibClangEx.CXIfStatementKind_Ordinary, CC.LibClangEx.CXIfStatementKind_Constexpr, CC.LibClangEx.CXIfStatementKind_Ordinary]
+    @test length(filter(i -> CC.getStatementKind(i) ==
+                             CC.LibClangEx.CXIfStatementKind_Constexpr, ifs)) == 1
     @test length(filter(i -> CC.getStatementKind(i) ==
                              CC.LibClangEx.CXIfStatementKind_Constexpr, ifs)) == 1
     withvar = only(filter(CC.hasVarStorage, ifs))
@@ -1667,7 +1674,9 @@ end
     @test h_then isa Integer
     @test h_then == h_else
     @test CC.getProfileHash(body, ctx) == CC.getProfileHash(body, ctx)
-    @test CC.getProfileHash(body, ctx, true) isa Integer  # shape-only: the target chooses this value
+    h_canon = CC.getProfileHash(body, ctx, true)
+    @test h_canon == CC.getProfileHash(body, ctx, true)
+    @test h_canon != 0
 
     # ReturnStmt::setNRVOCandidate — only a statement built with a candidate owns the
     # trailing slot; the wrapper's assert restates that against getNRVOCandidate.
@@ -1775,7 +1784,7 @@ end
         n, diag_id, diag_offs = CC.getNumAsmStringPieces(gasm, ctx)
         @test n >= 1
         @test diag_id == 0                      # clang accepted the string at parse time
-        @test diag_offs isa Integer
+        @test diag_offs >= 0
         pieces = CC.getAsmStringPieces(gasm, ctx)
         @test length(pieces) == n
         @test all(p -> p.ptr != C_NULL, pieces)
@@ -1784,7 +1793,10 @@ end
         ops = filter(CC.isOperand, pieces)
         @test length(ops) == 1                  # the single `%0` reference
         @test CC.getOperandNo(ops[1]) == 0
-        @test CC.getRange(ops[1]) isa CC.SourceRange  # shape-only
+        op_r = CC.getRange(ops[1])
+        @test op_r isa CC.SourceRange
+        @test !CC.is_null_handle(op_r.begin_loc)
+        @test !CC.is_null_handle(op_r.end_loc)
         @test CC.getModifier(ops[1]) isa Char    # '\0' when the reference carries none
         for p in pieces
             dispose(p)
@@ -1941,8 +1953,8 @@ end
     # one initializer per capture is clang's own precondition
     @test_throws AssertionError CC.CapturedStmt(ctx, body, kind, caps, CC.Expr_[init], cd, rd)
     @test_throws AssertionError CC.CapturedStmt(ctx, body, kind,
-                                                CC.CapturedStmtCapture[CC.CapturedStmtCapture(C_NULL)],
-                                                CC.Expr_[init], cd, rd)
+                                                 CC.CapturedStmtCapture[CC.CapturedStmtCapture(C_NULL)],
+                                                 CC.Expr_[init], cd, rd)
 
     # the boxes are ours; the statement kept copies, so it stays readable afterwards
     dispose(byref)
@@ -1999,11 +2011,9 @@ end
     @test plain isa CC.IfStmt
     pthen, pelse = CC.getThen(plain), CC.getElse(plain)
     # Neither branch is attributed: no likelihood, and nothing to conflict.
-    @test CC.getLikelihood(pthen, pelse) isa LH.CXLikelihood
     @test CC.getLikelihood(pthen, pelse) == LH.CXLikelihood_LH_None
     pc, pta, pea = CC.determineLikelihoodConflict(pthen, pelse)
-    @test pc isa Bool
-    @test !pc
+    @test pc == false
     @test pta isa CC.Attr
     @test pta.ptr == C_NULL
     @test pea isa CC.Attr
@@ -2012,7 +2022,7 @@ end
     lif = findif("likelihoodProbe")
     @test lif isa CC.IfStmt
     lthen, lelse = CC.getThen(lif), CC.getElse(lif)
-    @test CC.getLikelihood(lthen, lelse) isa LH.CXLikelihood
+    @test CC.getLikelihood(lthen, lelse) in (LH.CXLikelihood_LH_None, LH.CXLikelihood_LH_Likely)
     c, ta, ea = CC.determineLikelihoodConflict(lthen, lelse)
     @test c isa Bool
     @test ta isa CC.Attr

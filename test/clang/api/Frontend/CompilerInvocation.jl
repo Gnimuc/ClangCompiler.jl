@@ -35,7 +35,8 @@ end
     src = normpath(joinpath(@__DIR__, "..", "..", "..", "cxx", "main.cpp"))
     diag = CC.DiagnosticsEngine()
     invok = CC.createFromCommandLine(src, ["-std=c++17", "-O2"], diag)
-    @test invok isa CC.CompilerInvocation
+    @test invok.ptr != C_NULL
+    @test CC.hasLangStandard(CC.getLangOpts(invok))
 
     # CodeGenOptions::CommandLineArgs holds the cc1 line the driver produced
     cgo = CC.getCodeGenOpts(invok)
@@ -73,10 +74,10 @@ end
         # CompilerInvocation: default create + option getters
         inv0 = CC.CompilerInvocation()
         @test inv0.ptr != C_NULL
-        @test CC.getDiagnosticOpts(inv0) isa CC.DiagnosticOptions  # shape-only: the host decides this
-        @test CC.getHeaderSearchOpts(inv0) isa CC.HeaderSearchOptions  # shape-only: the host decides this
-        @test CC.getPreprocessorOpts(inv0) isa CC.PreprocessorOptions  # shape-only: the host decides this
-        @test CC.getTargetOpts(inv0) isa CC.TargetOptions  # shape-only: the host decides this
+        @test CC.getDiagnosticOpts(inv0).ptr != C_NULL
+        @test CC.getHeaderSearchOpts(inv0).ptr != C_NULL
+        @test CC.getPreprocessorOpts(inv0).ptr != C_NULL
+        @test CC.getTargetOpts(inv0).ptr != C_NULL
         dispose(inv0)
 
         ci = CC.CompilerInstance()
@@ -103,19 +104,17 @@ end
         # FileEntry: UID of a real on-disk file (no open handle — Windows
         # must be able to delete the temp dir afterwards)
         fe = CC.getFileEntry(CC.getFileManager(ci), src)
-        @test fe isa CC.FileEntry
-        @test CC.getUID(fe) isa Int
+        @test fe.ptr != C_NULL
         @test CC.getUID(fe) >= 0
 
         # SourceManager: buffer-backed main file + start/end locations
         src_mgr = CC.getSourceManager(ci)
         CC.setMainFileID(src_mgr, CC.get_buffer("int cefp_buf = 1;\n"))
         fid = CC.getMainFileID(src_mgr)
-        @test fid isa CC.FileID
+        @test fid.ptr != C_NULL
         locb = CC.getLocForStartOfFile(src_mgr, fid)
         loce = CC.getLocForEndOfFile(src_mgr, fid)
-        @test locb isa CC.SourceLocation
-        @test loce isa CC.SourceLocation
+        @test CC.isValid(locb)
         @test CC.isValid(loce)
         dispose(fid)
 
@@ -128,7 +127,8 @@ end
 
         # CodeGenOptions: Argv0 recorded by the command-line invocation
         cgo = CC.getCodeGenOpts(ci)
-        @test CC.getArgv0(cgo) isa String  # shape-only: the host decides this
+        @test cgo.ptr != C_NULL
+        @test CC.getArgv0(cgo) isa String  # shape-only: host-decided executable path
 
         # Preprocessor: builtin identifiers + entering the main file
         CC.createPreprocessor(ci)
@@ -159,9 +159,9 @@ end
         # create, prime with the entered main-file buffer, dispose (which
         # detaches its pragma handlers from the preprocessor again)
         p2 = CC.Parser(pp, CC.getSema(ci), false)
-        @test p2 isa CC.Parser
+        @test p2.ptr != C_NULL
         @test (CC.Initialize(p2); true)
-        @test CC.getCurToken(p2) isa CC.Token  # shape-only: the host decides this
+        @test CC.getCurToken(p2).ptr != C_NULL
         dispose(p2)
 
         # adopting-setter round-trips, canonical teardown order: each one
@@ -192,8 +192,7 @@ end
         lctx = CC.LLVM.Context()
         act = CC.LLVMOnlyAction(lctx)
         ok = CC.ExecuteAction(ci, act)
-        @test ok isa Bool
-        @test ok
+        @test ok === true
         dispose(ci)
         dispose(act)
         CC.LLVM.dispose(lctx)
@@ -205,18 +204,14 @@ end
     # invocation itself is disposed.
     inv = CC.CompilerInvocation()
     @test inv.ptr != C_NULL
-    @test CC.getLangOpts(inv) isa CC.LangOptions  # shape-only: the host decides this
-    @test CC.getAnalyzerOpts(inv) isa CC.AnalyzerOptions  # shape-only: the host decides this
-    @test CC.getMigratorOpts(inv) isa CC.MigratorOptions  # shape-only: the host decides this
-    @test CC.getFileSystemOpts(inv) isa CC.FileSystemOptions  # shape-only: the host decides this
-    @test CC.getDependencyOutputOpts(inv) isa CC.DependencyOutputOptions  # shape-only: the host decides this
-    @test CC.getPreprocessorOutputOpts(inv) isa CC.PreprocessorOutputOptions  # shape-only: the host decides this
     @test CC.getLangOpts(inv).ptr != C_NULL
     @test CC.getAnalyzerOpts(inv).ptr != C_NULL
+    @test CC.getMigratorOpts(inv).ptr != C_NULL
     @test CC.getFileSystemOpts(inv).ptr != C_NULL
+    @test CC.getDependencyOutputOpts(inv).ptr != C_NULL
+    @test CC.getPreprocessorOutputOpts(inv).ptr != C_NULL
 
     mod_hash = CC.getModuleHash(inv)
-    @test mod_hash isa String
     @test !isempty(mod_hash)
     CC.dispose(inv)
 
@@ -224,21 +219,22 @@ end
     # forwarding accessors' precondition holds.
     ci = CC.CompilerInstance()
     @test CC.hasInvocation(ci)
-    @test CC.getAnalyzerOpts(ci) isa CC.AnalyzerOptions  # shape-only: the host decides this
-    @test CC.getDependencyOutputOpts(ci) isa CC.DependencyOutputOptions  # shape-only: the host decides this
-    @test CC.getFileSystemOpts(ci) isa CC.FileSystemOptions  # shape-only: the host decides this
-    @test CC.getPreprocessorOutputOpts(ci) isa CC.PreprocessorOutputOptions  # shape-only: the host decides this
+    @test CC.getAnalyzerOpts(ci).ptr != C_NULL
+    @test CC.getDependencyOutputOpts(ci).ptr != C_NULL
+    @test CC.getFileSystemOpts(ci).ptr != C_NULL
+    @test CC.getPreprocessorOutputOpts(ci).ptr != C_NULL
 
-    @test CC.shouldBuildGlobalModuleIndex(ci) isa Bool  # shape-only: the host decides this
-    @test CC.setBuildGlobalModuleIndex(ci, false) === nothing
-    @test CC.shouldBuildGlobalModuleIndex(ci) isa Bool  # shape-only: the host decides this
+    @test CC.shouldBuildGlobalModuleIndex(ci) == false
+    CC.setBuildGlobalModuleIndex(ci, true)
+    @test CC.shouldBuildGlobalModuleIndex(ci) == true
+    CC.setBuildGlobalModuleIndex(ci, false)
+    @test CC.shouldBuildGlobalModuleIndex(ci) == false
     @test CC.hadModuleLoaderFatalFailure(ci) == false
 
     # no module cache path is configured on a fresh instance
-    @test CC.getSpecificModuleCachePath(ci) isa String  # shape-only: the host decides this
+    @test CC.getSpecificModuleCachePath(ci) == ""
 
     @test CC.hasCodeCompletionConsumer(ci) == false
-    @test CC.getAuxTarget(ci) isa CC.TargetInfo  # shape-only: the host decides this
     @test CC.getAuxTarget(ci).ptr == C_NULL
     @test CC.clearOutputFiles(ci, false) === nothing
     CC.dispose(ci)
@@ -249,7 +245,6 @@ end
     # views are safe on it — but it has selected no language standard, and generating a
     # cc1 line reaches getLangStandardForKind, which report_fatal_errors on that.
     inv = CC.CompilerInvocation()
-    @test CC.getAPINotesOpts(inv) isa CC.APINotesOptions  # shape-only: the host decides this
     @test CC.getAPINotesOpts(inv).ptr != C_NULL
     @test CC.hasLangStandard(CC.getLangOpts(inv)) == false
     @test_throws AssertionError CC.getCC1CommandLine(inv)
@@ -260,41 +255,41 @@ end
     args = ["-x", "c++", "-std=c++17", "cc1_probe.cpp"]
     diag = CC.DiagnosticsEngine()
     inv2 = CC.CompilerInvocation()
-    @test CC.CreateFromArgs(inv2, args, diag) isa Bool  # shape-only: the host decides this
+    @test CC.CreateFromArgs(inv2, args, diag) === true
     @test CC.hasLangStandard(CC.getLangOpts(inv2))
     line = CC.getCC1CommandLine(inv2)
-    @test line isa Vector{String}
     @test !isempty(line)
-    @test CC.checkCC1RoundTrip(args, diag) isa Bool  # shape-only: the host decides this
+    @test "-std=c++17" in line
+    @test "-cc1" in line
+    @test CC.checkCC1RoundTrip(args, diag) == false
 
     # Pure path arithmetic over the located executable — nothing on disk is touched,
-    # and the path itself is the runner's julia binary, so only the type is asserted.
-    @test CC.GetResourcesPath("clang", C_NULL) isa String  # shape-only: the host decides this
+    # and the path itself is the runner's julia binary.
+    @test !isempty(CC.GetResourcesPath("clang", C_NULL))
+    @test occursin("clang", CC.GetResourcesPath("clang", C_NULL))
 
     # The instance forwards to the invocation it already owns.
     ci = CC.CompilerInstance()
     @test CC.hasInvocation(ci)
-    @test CC.getAPINotesOpts(ci) isa CC.APINotesOptions  # shape-only: the host decides this
+    @test CC.getAPINotesOpts(ci).ptr != C_NULL
     dispose(ci)
 
     # CowCompilerInvocation: create, every mutable option view, dispose.
     cow = CC.CowCompilerInvocation()
     @test cow.ptr != C_NULL
-    @test CC.getMutLangOpts(cow) isa CC.LangOptions  # shape-only: the host decides this
-    @test CC.getMutTargetOpts(cow) isa CC.TargetOptions  # shape-only: the host decides this
-    @test CC.getMutDiagnosticOpts(cow) isa CC.DiagnosticOptions  # shape-only: the host decides this
-    @test CC.getMutHeaderSearchOpts(cow) isa CC.HeaderSearchOptions  # shape-only: the host decides this
-    @test CC.getMutPreprocessorOpts(cow) isa CC.PreprocessorOptions  # shape-only: the host decides this
-    @test CC.getMutAnalyzerOpts(cow) isa CC.AnalyzerOptions  # shape-only: the host decides this
-    @test CC.getMutMigratorOpts(cow) isa CC.MigratorOptions  # shape-only: the host decides this
-    @test CC.getMutAPINotesOpts(cow) isa CC.APINotesOptions  # shape-only: the host decides this
-    @test CC.getMutCodeGenOpts(cow) isa CC.CodeGenOptions  # shape-only: the host decides this
-    @test CC.getMutFileSystemOpts(cow) isa CC.FileSystemOptions  # shape-only: the host decides this
-    @test CC.getMutFrontendOpts(cow) isa CC.FrontendOptions  # shape-only: the host decides this
-    @test CC.getMutDependencyOutputOpts(cow) isa CC.DependencyOutputOptions  # shape-only: the host decides this
-    @test CC.getMutPreprocessorOutputOpts(cow) isa CC.PreprocessorOutputOptions  # shape-only: the host decides this
     @test CC.getMutLangOpts(cow).ptr != C_NULL
+    @test CC.getMutTargetOpts(cow).ptr != C_NULL
+    @test CC.getMutDiagnosticOpts(cow).ptr != C_NULL
+    @test CC.getMutHeaderSearchOpts(cow).ptr != C_NULL
+    @test CC.getMutPreprocessorOpts(cow).ptr != C_NULL
+    @test CC.getMutAnalyzerOpts(cow).ptr != C_NULL
+    @test CC.getMutMigratorOpts(cow).ptr != C_NULL
+    @test CC.getMutAPINotesOpts(cow).ptr != C_NULL
+    @test CC.getMutCodeGenOpts(cow).ptr != C_NULL
+    @test CC.getMutFileSystemOpts(cow).ptr != C_NULL
     @test CC.getMutFrontendOpts(cow).ptr != C_NULL
+    @test CC.getMutDependencyOutputOpts(cow).ptr != C_NULL
+    @test CC.getMutPreprocessorOutputOpts(cow).ptr != C_NULL
     # a fresh Cow invocation has selected no standard either, so the same gate applies
     @test CC.hasLangStandard(CC.getLangOpts(cow)) == false
     @test_throws AssertionError CC.getCC1CommandLine(cow)
