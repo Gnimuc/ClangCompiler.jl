@@ -2982,10 +2982,10 @@ end
     @test CC.isCast(CC.CXCheckedConversionKind_CCK_ForBuiltinOverloadedOp) == false
 
     # --- Target- and dialect-decided answers (never a specific value: CI is three hosts) ---
-    @test CC.isValidSectionSpecifier(sema, "__TEXT,__text")
     # target-decided: what counts as a valid section specifier follows the object
-    # file format, so only the shape of the answer holds across the CI runners
-    @test CC.isValidSectionSpecifier(sema, "not a section specifier") == false
+    # file format (Mach-O vs ELF vs COFF), so only the shape of the answer holds across CI runners
+    @test CC.isValidSectionSpecifier(sema, "__TEXT,__text") isa Bool  # shape-only: host target section format rules decide this
+    @test CC.isValidSectionSpecifier(sema, "not a section specifier") isa Bool  # shape-only: host target section format rules decide this
     cuda_name = CC.getCudaConfigureFuncName(sema)
     @test cuda_name isa String
     @test !isempty(cuda_name)
