@@ -99,8 +99,7 @@ end
     @test found.ptr == get_decl(f).ptr
     @test CC.is_null_handle(CC.getNamingClass(lr))
     @test !CC.is_null_handle(CC.getNameLoc(lr))
-    @test CC.getIdentifierNamespace(lr) isa Integer  # shape-only: the target chooses this value
-    @test CC.getIdentifierNamespace(lr) > 0
+    @test CC.getIdentifierNamespace(lr) == 58
     @test CC.suppressDiagnostics(lr) === nothing
     # getAmbiguityKind asserts isAmbiguous(); this lookup is unique
     @test !CC.isAmbiguous(lr)
@@ -109,7 +108,7 @@ end
     # --- Scope accessors ---
     sc = CC.getCurScope(CC.get_parser(I))
     @test sc isa CC.Scope
-    @test CC.getFlags(sc) isa Integer  # shape-only: the target chooses this value
+    @test CC.getFlags(sc) == 8
     @test CC.is_null_handle(CC.getFnParent(sc))
     @test !CC.is_null_handle(CC.getEntity(sc))
     @test !(CC.isTemplateParamScope(sc))
@@ -303,9 +302,10 @@ end
     @test rd isa CC.CXXRecordDecl
     methods = CC.getMethods(rd)
     @test !isempty(methods)
-    for m in methods
-        @test CC.isUsualDeallocationFunction(sema, m) isa Bool  # shape-only
-    end
+    mem_m = first(m for m in methods if CC.getNameAsString(m) == "mem")
+    del_m = first(m for m in methods if CC.getNameAsString(m) == "operator delete")
+    @test !CC.isUsualDeallocationFunction(sema, mem_m)
+    @test CC.isUsualDeallocationFunction(sema, del_m)
 
     @test f(I, "sema_q_fn")
     fd = CC.FunctionDecl(get_decl(f).ptr)
@@ -1499,7 +1499,10 @@ end
     @test CC.isSameOrCompatibleFunctionType(sema, CC.getType(one_fd),
                                             CC.getType(three_fd)) == false
 
-    @test CC.getExprRange(sema, init) isa CC.SourceRange  # shape-only
+    rng = CC.getExprRange(sema, init)
+    @test rng isa CC.SourceRange
+    @test !CC.is_null_handle(rng.begin_loc)
+    @test !CC.is_null_handle(rng.end_loc)
 
     # no <initializer_list> is reachable here, so int is certainly not one
     is_ilist, ilist_elt = CC.isStdInitializerList(sema, int_ty)
@@ -2102,13 +2105,16 @@ end
 
     @test !(CC.IsInsideALocalClassWithinATemplateFunction(sema))
     @test CC.getDefaultCXXMethodAddrSpace(sema) == CC.CXLangAS_Default
-    @test CC.getStdAlignValT(sema) isa CC.EnumDecl  # shape-only: the host decides this
+    std_align = CC.getStdAlignValT(sema)
+    @test std_align isa CC.EnumDecl
+    @test !CC.is_null_handle(std_align)
+    @test CC.getName(std_align) == "align_val_t"
 
     # The error-trap query dereferences Sema's current function scope, which is null
     # whenever the scope stack is empty, so the wrapper gates on the stack instead.
     @test !(CC.hasCurFunction(sema))
     if CC.hasCurFunction(sema)
-        @test CC.hasAnyUnrecoverableErrorsInThisFunction(sema) isa Bool  # shape-only
+        @test CC.hasAnyUnrecoverableErrorsInThisFunction(sema) == false
     else
         @test_throws AssertionError CC.hasAnyUnrecoverableErrorsInThisFunction(sema)
     end
@@ -2135,7 +2141,7 @@ end
     # --- Function-level queries ---
     @test CC.getEmissionStatus(sema, fd) isa CC.CXFunctionEmissionStatus
     @test CC.getEmissionStatus(sema, fd, true) isa CC.CXFunctionEmissionStatus
-    @test CC.isUnavailableAlignedAllocationFunction(sema, fd) isa Bool  # shape-only: the host decides this
+    @test CC.isUnavailableAlignedAllocationFunction(sema, fd) == false
     # the coroutine heuristic matches on the name `get_return_object`
     @test CC.CanBeGetReturnObject(fd) == false
 
@@ -2782,9 +2788,11 @@ end
 
     # --- Weak top-level declarations (count + index) ---
     nweak = CC.getNumWeakTopLevelDecls(sema)
-    @test nweak isa Integer
+    @test nweak == 0
     for i = 0:(Int(nweak) - 1)
-        @test CC.getWeakTopLevelDecl(sema, i) isa CC.Decl  # shape-only
+        d = CC.getWeakTopLevelDecl(sema, i)
+        @test d isa CC.Decl
+        @test !CC.is_null_handle(d)
     end
     @test_throws AssertionError CC.getWeakTopLevelDecl(sema, nweak)
 
@@ -2828,7 +2836,7 @@ end
     @test all(d -> d isa CC.NamedDecl && d.ptr != C_NULL, ops)
 
     # --- Pragma-driven floating-point state ---
-    @test CC.CurFPFeatureOverrides(sema) isa Integer  # shape-only: the host decides this
+    @test CC.CurFPFeatureOverrides(sema) == 0
 
     # --- The vector predicate family's remaining member ---
     @test !(CC.anyAltivecTypes(sema, vec_qt, int_qt))
@@ -2933,7 +2941,7 @@ end
     @test CC.getNonOdrUseReasonInCurrentContext(sema, rec_var) isa CC.CXNonOdrUseReason
     @test !CC.is_null_handle(CC.getTopMostPointOfInstantiation(sema, plain_fd))
     @test !(CC.CanBeGetReturnTypeOnAllocFailure(plain_fd))
-    @test CC.isCUDAImplicitHostDeviceFunction(plain_fd) isa Bool  # shape-only: the host decides this
+    @test CC.isCUDAImplicitHostDeviceFunction(plain_fd) == false
 
     # --- Expression-shaped predicates ---
     @test f(I, "semaQ5Init")
@@ -2977,7 +2985,7 @@ end
     @test CC.isValidSectionSpecifier(sema, "__TEXT,__text")
     # target-decided: what counts as a valid section specifier follows the object
     # file format, so only the shape of the answer holds across the CI runners
-    @test CC.isValidSectionSpecifier(sema, "not a section specifier") isa Bool  # shape-only: the host decides this
+    @test CC.isValidSectionSpecifier(sema, "not a section specifier") == false
     cuda_name = CC.getCudaConfigureFuncName(sema)
     @test cuda_name isa String
     @test !isempty(cuda_name)
@@ -3574,7 +3582,7 @@ end
     @test CC.setExceptionMode(sema, loc, other_mode) === nothing
     @test CC.CurFPFeatureOverrides(sema) != before      # the mode this call set
     @test CC.setExceptionMode(sema, loc, default_mode) === nothing
-    @test CC.CurFPFeatureOverrides(sema) isa Integer  # shape-only: the host decides this
+    @test CC.CurFPFeatureOverrides(sema) == 192
 
     # --- the extern-"C" side table round-trips through its own reader ---
     gi_name = CC.getDeclName(gi)
@@ -3654,9 +3662,9 @@ end
     ctx_kind = CC.getContext(rec)
     @test ctx_kind isa CC.CXExpressionEvaluationContext
     @test CC.getExprContext(rec) isa CC.CXExpressionKind
-    @test CC.getNumCleanupObjects(rec) isa Integer  # shape-only: the target chooses this value
-    @test CC.getNumTypos(rec) isa Integer  # shape-only: the target chooses this value
-    @test CC.getManglingContextDecl(rec) isa CC.Decl  # shape-only: the host decides this
+    @test CC.getNumCleanupObjects(rec) == 0
+    @test CC.getNumTypos(rec) == 0
+    @test CC.is_null_handle(CC.getManglingContextDecl(rec))
     @test !(CC.isDiscardedStatementContext(rec))
     # The Sema-level predicate reads this very record, so the two must agree whatever the
     # host left on the stack.
@@ -3990,7 +3998,7 @@ end
     @test all(a -> a isa CC.Expr_, ph_args)
 
     tsi = CC.getTrivialTypeSourceInfo(ctx, int_qt, loc)
-    @test CC.CheckAlignasTypeArgument(sema, "alignas", tsi, loc, rng) isa Bool  # shape-only: the host decides this
+    @test CC.CheckAlignasTypeArgument(sema, "alignas", tsi, loc, rng) == false
 
     @test !(CC.CheckCXXThrowOperand(sema, loc, int_qt, eight))
 
@@ -4494,7 +4502,7 @@ end
     @test CC.LoadExternalVTableUses(sema) === nothing
 
     # --- Host/device discarding, which is defined for a non-CUDA translation unit too ---
-    @test CC.shouldIgnoreInHostDeviceCheck(sema, fd) isa Bool  # shape-only: the host decides this
+    @test CC.shouldIgnoreInHostDeviceCheck(sema, fd) == false
 
     # --- The member-function calling convention, asked for a plain function type ---
     adjusted = CC.adjustMemberFunctionCC(sema, fn_ty, false, false, loc)
@@ -4634,7 +4642,7 @@ end
     @test CC.PopExpressionEvaluationContext(sema) === nothing
 
     # --- The CUDA host/device stack reports an unbalanced pop instead of underflowing ---
-    @test CC.PopForceCUDAHostDevice(sema) isa Bool  # shape-only: the host decides this
+    @test CC.PopForceCUDAHostDevice(sema) == false
     @test CC.PushForceCUDAHostDevice(sema) === nothing
     @test CC.PopForceCUDAHostDevice(sema)
 

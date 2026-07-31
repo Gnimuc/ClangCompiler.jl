@@ -41,20 +41,18 @@ end
     ci = CC.get_instance(I)
     pp = CC.getPreprocessor(ci)
     hs = CC.getHeaderSearchInfo(pp)
-    @test hs isa CC.HeaderSearch
+    @test hs isa CC.HeaderSearch && hs.ptr != C_NULL
 
-    @test CC.getHeaderSearchOpts(hs) isa CC.HeaderSearchOptions  # shape-only: the host decides this
-    @test CC.getFileMgr(hs) isa CC.FileManager  # shape-only: the host decides this
-    @test CC.HasIncludeAliasMap(hs) isa Bool  # shape-only: the host decides this
-    @test CC.getModuleHash(hs) isa String  # shape-only: the host decides this
-    @test CC.getModuleCachePath(hs) isa String  # shape-only: the host decides this
+    @test CC.getHeaderSearchOpts(hs).ptr == CC.getHeaderSearchOpts(ci).ptr != C_NULL
+    @test CC.getFileMgr(hs).ptr == CC.getFileManager(ci).ptr != C_NULL
+    @test CC.HasIncludeAliasMap(hs) == false
+    @test CC.getModuleHash(hs) == ""
+    @test CC.getModuleCachePath(hs) == ""
 
     n = Int(CC.search_dir_size(hs))
-    @test n >= 0
-    if n > 0
-        @test CC.getSearchDirName(hs, 0) isa String  # shape-only: the host decides this
-        @test CC.getSearchDirName(hs, n - 1) isa String  # shape-only: the host decides this
-    end
+    @test n > 0
+    @test CC.getSearchDirName(hs, 0) == hmap
+    @test !isempty(CC.getSearchDirName(hs, n - 1)) && ispath(CC.getSearchDirName(hs, n - 1))
 
     # The enumeration names the file the testset handed the interpreter, spelled as the
     # include argument spelled it -- only the basename is compared, so a host free to
@@ -64,7 +62,7 @@ end
     hmap_names = String[]
     for i in 0:(m - 1)
         name = CC.getHeaderMapFileName(hs, i)
-        @test name isa String
+        @test !isempty(name) && isfile(name)
         push!(hmap_names, name)
     end
     @test basename(hmap) in basename.(hmap_names)
@@ -77,13 +75,12 @@ end
     # HeaderSearch half: a throwaway interpreter owns the state being mutated.
     I = CC.create_interpreter()
     hs = CC.getHeaderSearchInfo(CC.getPreprocessor(CC.get_instance(I)))
-    @test hs isa CC.HeaderSearch
+    @test hs isa CC.HeaderSearch && hs.ptr != C_NULL
 
-    @test CC.getDiags(hs) isa CC.DiagnosticsEngine  # shape-only: the host decides this
-    @test CC.header_file_size(hs) isa Integer  # shape-only: the host decides this
+    ci = CC.get_instance(I)
+    @test CC.getDiags(hs).ptr == CC.getDiagnostics(ci).ptr != C_NULL
     @test CC.header_file_size(hs) >= 0
-    @test CC.getTotalMemory(hs) isa Integer  # shape-only: the host decides this
-    @test CC.getTotalMemory(hs) >= 0
+    @test CC.getTotalMemory(hs) > 0
 
     @test CC.getUniqueFrameworkName(hs, "ClangCompilerFakeFramework") ==
           "ClangCompilerFakeFramework"
@@ -127,9 +124,9 @@ end
     write(io, "int header_search_probe;\n")
     close(io)
     fer = CC.getFileRef(fm, path)
-    @test fer isa CC.FileEntryRef
+    @test fer isa CC.FileEntryRef && fer.ptr != C_NULL
     fe = CC.getFileEntry(fer)
-    @test fe isa CC.FileEntry
+    @test fe isa CC.FileEntry && fe.ptr != C_NULL
 
     try
         # Nothing is recorded until something asks for a record.
@@ -138,10 +135,9 @@ end
         @test CC.isFileMultipleIncludeGuarded(hs, fer) == false
 
         # getFileDirFlavor goes through getFileInfo, which creates the record.
-        @test CC.getFileDirFlavor(hs, fer) isa CC.CXCharacteristicKind
+        @test CC.getFileDirFlavor(hs, fer) == CC.CXCharacteristicKind_C_User
         hfi = CC.getExistingFileInfo(hs, fer)
-        @test hfi isa CC.HeaderFileInfo
-        @test hfi.ptr != C_NULL
+        @test hfi isa CC.HeaderFileInfo && hfi.ptr != C_NULL
 
         # Each call copies the record out, so two calls are distinct allocations holding
         # equal contents -- not the same pointer. That is the point: a view would dangle
@@ -159,12 +155,12 @@ end
         dispose(hfi3)
 
         # The exposed fields of the aggregate. IsValid is set by the getFileInfo above.
-        @test CC.getIsValid(hfi)
-        @test CC.getIsImport(hfi) isa Bool  # shape-only: the host decides this
-        @test CC.getIsPragmaOnce(hfi) isa Bool  # shape-only: the host decides this
-        @test CC.getIsModuleHeader(hfi) isa Bool  # shape-only: the host decides this
-        @test CC.getDirInfo(hfi) isa CC.CXCharacteristicKind
-        @test CC.getFramework(hfi) isa String  # shape-only: the host decides this
+        @test CC.getIsValid(hfi) == true
+        @test CC.getIsImport(hfi) == false
+        @test CC.getIsPragmaOnce(hfi) == false
+        @test CC.getIsModuleHeader(hfi) == false
+        @test CC.getDirInfo(hfi) == CC.CXCharacteristicKind_C_User
+        @test CC.getFramework(hfi) == ""
         @test CC.getControllingMacroRaw(hfi).ptr == C_NULL
 
         # A snapshot does not track later edits: the record taken before the mark still
@@ -194,12 +190,11 @@ end
         @test usage isa Vector{Bool}
         @test length(usage) == Int(CC.getNumUserEntryUsage(hs))
 
-        # Module-map bookkeeping. Implicit module maps are off by default, so hasModuleMap
-        # only has to answer in shape.
+        # Module-map bookkeeping. Implicit module maps are off by default.
         dir = CC.getDir(fe)
-        @test dir isa CC.DirectoryEntry
+        @test dir isa CC.DirectoryEntry && dir.ptr != C_NULL
         @test CC.setDirectoryHasModuleMap(hs, dir) === nothing
-        @test CC.hasModuleMap(hs, path, dir, false) isa Bool  # shape-only: the host decides this
+        @test CC.hasModuleMap(hs, path, dir, false) == false
 
         # No prebuilt module paths are configured, so both forms come back empty.
         @test CC.getPrebuiltModuleFileName(hs, "ClangCompilerNoSuchModule") == ""
@@ -207,14 +202,14 @@ end
                                            file_map_only=true) == ""
 
         # Include-name / diagnostic-path suggestions.
-        @test CC.getIncludeNameForHeader(hs, fe) isa String  # shape-only: the host decides this
+        @test CC.getIncludeNameForHeader(hs, fe) == ""
         suggested, angled = CC.suggestPathToFileForDiagnostics(hs, fer, path)
-        @test suggested isa String
-        @test angled isa Bool
+        @test suggested == basename(path)
+        @test angled == false
 
         # External lookup round-trips the value the testset itself put back.
         eps = CC.getExternalLookup(hs)
-        @test eps isa CC.ExternalPreprocessorSource
+        @test eps isa CC.ExternalPreprocessorSource && eps.ptr == C_NULL
         CC.SetExternalLookup(hs, eps)
         @test CC.getExternalLookup(hs).ptr == eps.ptr
 

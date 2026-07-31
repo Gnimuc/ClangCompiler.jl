@@ -62,7 +62,11 @@ end
     @test le isa CC.LambdaExpr
     @test CC.getCaptureDefault(le) == CC.LibClangEx.CXLambdaCaptureDefault_LCD_None
     @test CC.is_null_handle(CC.getCaptureDefaultLoc(le))
-    @test CC.getIntroducerRange(le) isa CC.SourceRange  # shape-only
+    let r = CC.getIntroducerRange(le)
+        @test CC.isValid(r)
+        @test r.begin_loc.ptr != C_NULL
+        @test r.end_loc.ptr != C_NULL
+    end
     @test CC.hasExplicitParameters(le)
     @test CC.hasExplicitResultType(le) == false
     @test !CC.is_null_handle(CC.getCompoundStmtBody(le))
@@ -91,10 +95,18 @@ end
     fn2 = CC.FunctionDecl(get_decl(f).ptr)
     ce = find_node(CC.AbstractCXXConstructExpr, CC.resolve(CC.getBody(fn2)))
     @test ce isa CC.AbstractCXXConstructExpr
-    @test CC.getParenOrBraceRange(ce) isa CC.SourceRange  # shape-only
-    @test CC.getNumArgs(ce) >= 1
+    let r = CC.getParenOrBraceRange(ce)
+        @test CC.isValid(r)
+        @test r.begin_loc.ptr != C_NULL
+        @test r.end_loc.ptr != C_NULL
+    end
+    @test CC.getNumArgs(ce) == 1
     if ce isa CC.CXXTemporaryObjectExpr
-        @test CC.getTypeSourceInfo(ce) isa CC.TypeSourceInfo  # shape-only
+        let tsi = CC.getTypeSourceInfo(ce)
+            @test tsi isa CC.TypeSourceInfo
+            @test tsi.ptr != C_NULL
+            @test CC.getAsString(CC.getType(tsi)) == "struct Pt" || CC.getAsString(CC.getType(tsi)) == "Pt"
+        end
     end
 
     @test f(I, "make_new")
@@ -102,8 +114,15 @@ end
     ne = find_node(CC.CXXNewExpr, CC.resolve(CC.getBody(fn3)))
     @test ne isa CC.CXXNewExpr
     @test CC.getNumPlacementArgs(ne) == 0
-    @test CC.getDirectInitRange(ne) isa CC.SourceRange  # shape-only
-    @test CC.getTypeIdParens(ne) isa CC.SourceRange  # shape-only
+    let r = CC.getDirectInitRange(ne)
+        @test CC.isValid(r)
+        @test r.begin_loc.ptr != C_NULL
+        @test r.end_loc.ptr != C_NULL
+    end
+    let r = CC.getTypeIdParens(ne)
+        @test !CC.isValid(r)
+        @test CC.is_null_handle(r.begin_loc)
+    end
 
     dispose(f)
     dispose(I)
@@ -152,9 +171,11 @@ end
     @test sc isa CC.CXXStaticCastExpr
     if sc !== nothing
         @test CC.getCastName(sc) == "static_cast"
-        ab = CC.getAngleBrackets(sc)
-        @test ab isa CC.SourceRange
-        @test ab.begin_loc.ptr != C_NULL
+        let ab = CC.getAngleBrackets(sc)
+            @test CC.isValid(ab)
+            @test ab.begin_loc.ptr != C_NULL
+            @test ab.end_loc.ptr != C_NULL
+        end
     end
 
     # CXXThrowExpr
@@ -163,7 +184,7 @@ end
     if th !== nothing
         @test !CC.is_null_handle(CC.getThrowLoc(th))
         sub = CC.getSubExpr(th)
-        @test sub isa CC.Expr_
+        @test CC.getStmtClassName(sub) == "IntegerLiteral"
         @test sub.ptr != C_NULL          # `throw 42;` has an operand
     end
 
@@ -172,10 +193,11 @@ end
     @test tt isa CC.TypeTraitExpr
     if tt !== nothing
         @test CC.getNumArgs(tt) == 1
-        @test CC.getValue(tt) isa Bool
+        @test CC.getValue(tt) == true
         arg = CC.getArg(tt, 0)
         @test arg isa CC.TypeSourceInfo
         @test arg.ptr != C_NULL
+        @test CC.getAsString(CC.getType(arg)) == "int"
         @test_throws AssertionError CC.getArg(tt, 1)   # Invariant 3: bounds
     end
 
@@ -185,6 +207,7 @@ end
     if da !== nothing
         p = CC.getParam(da)
         @test p isa CC.ParmVarDecl
+        @test p.ptr != C_NULL
         @test CC.get_name(p) == "a"
         @test CC.getExpr(da).ptr != C_NULL
     end
@@ -198,7 +221,7 @@ end
     end
     ewc = find_node(CC.ExprWithCleanups, tmpb)
     if ewc !== nothing
-        @test CC.getNumObjects(ewc) isa Integer  # shape-only: the target chooses this value
+        @test CC.getNumObjects(ewc) == 0
         @test CC.cleanupsHaveSideEffects(ewc)
     end
 
@@ -311,7 +334,7 @@ end
     # CXXNoexceptExpr - the noexcept(expr) operator
     ne = find_node(CC.CXXNoexceptExpr, fn_body("cc_noexcept"))
     @test ne isa CC.CXXNoexceptExpr
-    @test CC.getValue(ne) isa Bool
+    @test CC.getValue(ne) == true
     @test CC.getOperand(ne).ptr != C_NULL
 
     # CXXPseudoDestructorExpr - p->~CCInt() on a scalar typedef
@@ -330,7 +353,7 @@ end
     @test CC.getNumArgs(uc) == 1
     @test CC.getArg(uc, 0).ptr != C_NULL
     @test_throws AssertionError CC.getArg(uc, 1)   # Invariant 3: index bounds
-    @test CC.getTypeAsWritten(uc) isa CC.QualType
+    @test CC.getAsString(CC.getTypeAsWritten(uc)) == "T"
     @test CC.isListInitialization(uc) == false
     @test !CC.is_null_handle(CC.getLParenLoc(uc))
     @test !CC.is_null_handle(CC.getRParenLoc(uc))
@@ -393,8 +416,8 @@ end
     @test CC.isOverloaded(ule) == true
     @test CC.requiresADL(ule)
     # OverloadExpr base surface dispatches on the UnresolvedLookupExpr carrier
-    @test CC.getNumDecls(ule) >= 1
-    @test CC.getName(ule) isa CC.DeclarationName
+    @test CC.getNumDecls(ule) == 2
+    @test CC.getAsString(CC.getName(ule)) == "cc_oo"
     @test !CC.is_null_handle(CC.getNameLoc(ule))
     @test CC.is_null_handle(CC.getQualifier(ule))
     @test CC.is_null_handle(CC.getTemplateKeywordLoc(ule))
@@ -413,11 +436,11 @@ end
     @test !CC.is_null_handle(CC.getBaseType(ume))
     @test !(CC.hasUnresolvedUsing(ume))
     @test !CC.is_null_handle(CC.getOperatorLoc(ume))
-    @test CC.getBase(ume) isa CC.Expr_
+    @test CC.getStmtClassName(CC.getBase(ume)) == "DeclRefExpr"
     @test CC.getBase(ume).ptr != C_NULL
     # OverloadExpr base surface still dispatches on the UnresolvedMemberExpr carrier
-    @test CC.getNumDecls(ume) >= 1
-    @test CC.getName(ume) isa CC.DeclarationName
+    @test CC.getNumDecls(ume) == 2
+    @test CC.getAsString(CC.getName(ume)) == "m"
     @test !CC.is_null_handle(CC.getNamingClass(ume))
 
     # ---- UnresolvedMemberExpr, implicit access: bare `m(u)` in CCS::icall ----
@@ -492,8 +515,8 @@ end
     @test mc isa CC.CXXMemberCallExpr
     if mc !== nothing
         ot = CC.getObjectType(mc)
-        @test ot isa CC.QualType
         @test ot.ptr != C_NULL
+        @test CC.getAsString(ot) == "const struct CCS3" || CC.getAsString(ot) == "struct CCS3"
     end
 
     # CXXThrowExpr: NRVO scope flag (host-decided; assert shape only)
@@ -522,7 +545,7 @@ end
         @test CC.isLeftFold(fe) == true
         @test CC.isRightFold(fe) == false
         @test CC.getOperator(fe) == CC.LibClangEx.CXBinaryOperatorKind_BO_Add
-        @test CC.getCallee(fe) isa CC.UnresolvedLookupExpr
+        @test CC.is_null_handle(CC.getCallee(fe))
         @test CC.getLHS(fe).ptr != C_NULL          # init operand `0`
         @test CC.getRHS(fe).ptr != C_NULL          # pattern operand `ts`
         @test CC.getInit(fe).ptr != C_NULL         # left fold => init is the LHS
@@ -576,10 +599,9 @@ end
     if da !== nothing
         @test !(CC.hasRewrittenInit(da))
         rw = CC.getRewrittenExpr(da)
-        @test rw isa CC.Expr_
+        @test rw.ptr == C_NULL
         @test (rw.ptr != C_NULL) == CC.hasRewrittenInit(da)
         uc = CC.getUsedContext(da)
-        @test uc isa CC.DeclContext
         @test uc.ptr != C_NULL
     end
 
@@ -602,11 +624,10 @@ end
     @test bt isa CC.CXXBindTemporaryExpr
     if bt !== nothing
         tmp = CC.getTemporary(bt)
-        @test tmp isa CC.CXXTemporary
         @test tmp.ptr != C_NULL
         dtor = CC.getDestructor(tmp)
-        @test dtor isa CC.CXXDestructorDecl
         @test dtor.ptr != C_NULL
+        @test CC.getNameAsString(dtor) == "~EXTmp"
     end
 
     # CXXFunctionalCastExpr: `double(x)` is paren-written, not list-initialized
@@ -630,7 +651,7 @@ end
     mt = find_node(CC.MaterializeTemporaryExpr, fn_body("ex_materialize"))
     @test mt isa CC.MaterializeTemporaryExpr
     if mt !== nothing
-        @test CC.getStorageDuration(mt) isa CC.LibClangEx.CXStorageDuration
+        @test CC.getStorageDuration(mt) == CC.LibClangEx.CXStorageDuration_SD_FullExpression
     end
 
     # ArrayTypeTraitExpr: __array_rank has no dimension operand
@@ -650,8 +671,8 @@ end
         @test CC.getTrait(ae) == CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayExtent
         @test CC.getValue(ae) == 4
         dim = CC.getDimensionExpression(ae)
-        @test dim isa CC.Expr_
         @test dim.ptr != C_NULL
+        @test CC.getStmtClassName(dim) == "IntegerLiteral"
     end
 
     # ExpressionTraitExpr: a named parameter is an lvalue
@@ -779,7 +800,7 @@ end
     @test sort(collect(keys(seen))) == ["nttp_one", "nttp_pack"]
     for (_, s) in seen
         @test !CC.is_null_handle(CC.getNameLoc(s))
-        @test CC.getReplacement(s) isa CC.Expr_
+        @test CC.getStmtClassName(CC.getReplacement(s)) == "IntegerLiteral"
         @test CC.getReplacement(s).ptr != C_NULL
         @test !CC.is_null_handle(CC.getAssociatedDecl(s))
         @test CC.getAssociatedDecl(s).ptr != C_NULL
@@ -789,11 +810,10 @@ end
         @test CC.isReferenceParameter(s) == false
         @test !CC.is_null_handle(CC.getParameterType(s, ctx))
         @test CC.getParameterType(s, ctx).ptr != C_NULL
-        pi = CC.getPackIndex(s)
-        @test pi === nothing || pi isa Unsigned
     end
     # `template <int N>` is not a pack, so its substitution carries no pack index
     @test CC.getPackIndex(seen["nttp_one"]) === nothing
+    @test CC.getPackIndex(seen["nttp_pack"]) isa Unsigned
 
     dispose(f)
     dispose(I)
@@ -884,7 +904,7 @@ end
     @test da isa CC.CXXDefaultArgExpr
     if da !== nothing && CC.hasRewrittenInit(da)
         adj = CC.getAdjustedRewrittenExpr(da)
-        @test adj isa CC.Expr_
+        @test CC.getStmtClassName(adj) == "ConstantExpr"
         @test adj.ptr != C_NULL
     end
 
@@ -909,9 +929,8 @@ end
     @test at isa CC.ArrayTypeTraitExpr
     if at !== nothing
         tsi = CC.getQueriedTypeSourceInfo(at)
-        @test tsi isa CC.TypeSourceInfo
         @test tsi.ptr != C_NULL
-        @test CC.getType(tsi) isa CC.QualType
+        @test CC.getAsString(CC.getType(tsi)) == "int[3][4]"
     end
 
     # MaterializeTemporaryExpr: a namespace-scope const reference extends the
@@ -922,11 +941,9 @@ end
     @test mt isa CC.MaterializeTemporaryExpr
     if mt !== nothing
         letd = CC.getLifetimeExtendedTemporaryDecl(mt)
-        @test letd isa CC.LifetimeExtendedTemporaryDecl
         @test letd.ptr != C_NULL
         @test CC.isUsableInConstantExpressions(mt, ctx)
         v = CC.getOrCreateValue(mt, true)
-        @test v isa CC.APValue
         @test v.ptr != C_NULL
     end
 
@@ -935,15 +952,13 @@ end
     pe = find_node(CC.PackExpansionExpr, tpl_body("g_pexp"))
     @test pe isa CC.PackExpansionExpr
     if pe !== nothing
-        npe = CC.getNumExpansions(pe)
-        @test npe === nothing || npe isa Unsigned
+        @test CC.getNumExpansions(pe) === nothing
     end
 
     fe = find_node(CC.CXXFoldExpr, tpl_body("g_fold"))
     @test fe isa CC.CXXFoldExpr
     if fe !== nothing
-        nfe = CC.getNumExpansions(fe)
-        @test nfe === nothing || nfe isa Unsigned
+        @test CC.getNumExpansions(fe) === nothing
     end
 
     # CXXUnresolvedConstructExpr: the dependent `T(a)` names its type through a
@@ -952,8 +967,8 @@ end
     @test uc isa CC.CXXUnresolvedConstructExpr
     if uc !== nothing
         utsi = CC.getTypeSourceInfo(uc)
-        @test utsi isa CC.TypeSourceInfo
         @test utsi.ptr != C_NULL
+        @test CC.getAsString(CC.getType(utsi)) == "T"
     end
 
     dispose(f)
@@ -1022,8 +1037,8 @@ end
         @test !CC.is_null_handle(CC.getOperand(dca))
         @test CC.getOperand(dca).ptr != C_NULL
         lookup = CC.getOperatorCoawaitLookup(dca)
-        @test lookup isa CC.UnresolvedLookupExpr
         @test lookup.ptr != C_NULL
+        @test CC.getAsString(CC.getName(lookup)) == "operator co_await"
         @test !CC.is_null_handle(CC.getKeywordLoc(dca))
         @test CC.getKeywordLoc(dca).ptr != C_NULL
     end
@@ -1053,12 +1068,12 @@ end
     dsme = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("cc_dsme"))
     @test dsme isa CC.CXXDependentScopeMemberExpr
     @test CC.isImplicitAccess(dsme) == false
-    @test CC.getBase(dsme) isa CC.Expr_
+    @test CC.getStmtClassName(CC.getBase(dsme)) == "DeclRefExpr"
     @test CC.getBase(dsme).ptr != C_NULL
     @test !CC.is_null_handle(CC.getBaseType(dsme))
     @test CC.isArrow(dsme) == false          # accessed with `.`, not `->`
     @test !CC.is_null_handle(CC.getOperatorLoc(dsme))
-    @test CC.getMember(dsme) isa CC.DeclarationName
+    @test CC.getAsString(CC.getMember(dsme)) == "value"
     @test !CC.is_null_handle(CC.getMemberLoc(dsme))
     @test CC.is_null_handle(CC.getQualifier(dsme))
     @test CC.getQualifier(dsme).ptr == C_NULL   # `t.value` carries no `::`
@@ -1630,7 +1645,7 @@ end
     rbo = _find_node(CC.CXXRewrittenBinaryOperator, fn_body("ll_rewritten"))
     @test rbo isa CC.CXXRewrittenBinaryOperator
     inner = CC.getInnerBinOp(rbo)
-    @test inner isa CC.Expr_
+    @test CC.getStmtClassName(inner) == "CXXOperatorCallExpr"
     @test inner.ptr != C_NULL
 
     # ---- the pieces the synthesis factories need --------------------------------
@@ -1676,7 +1691,11 @@ end
     @test CC.getCastName(cce) == "const_cast"
     @test CC.getSubExpr(cce).ptr == defarg.ptr
     @test CC.getRParenLoc(cce).ptr == loc.ptr
-    @test CC.getAngleBrackets(cce) isa CC.SourceRange  # shape-only
+    let r = CC.getAngleBrackets(cce)
+        @test CC.isValid(r)
+        @test r.begin_loc.ptr != C_NULL
+        @test r.end_loc.ptr != C_NULL
+    end
 
     # ---- CXXDefaultArgExpr::Create, with and without a rewritten initializer -----
     dae = CC.CXXDefaultArgExpr(ctx, loc, param, nothing, aggdc)
@@ -1729,7 +1748,10 @@ end
     pd = _find_node(CC.CXXPseudoDestructorExpr, fn_body("ll_pd"))
     @test pd isa CC.CXXPseudoDestructorExpr
     @test CC.hasQualifier(pd) == false
-    @test CC.getQualifierRange(pd) isa CC.SourceRange  # shape-only
+    let r = CC.getQualifierRange(pd)
+        @test !CC.isValid(r)
+        @test CC.is_null_handle(r.begin_loc)
+    end
 
     # ---- OverloadExpr name info / qualifier extent -------------------------------
     ule = _find_node(CC.UnresolvedLookupExpr, tpl_body("ll_ule"))
@@ -1818,7 +1840,11 @@ end
     @test CC.getCastName(sce) == "static_cast"
     @test CC.getSubExpr(sce).ptr == op.ptr
     @test CC.getRParenLoc(sce).ptr == loc.ptr
-    @test CC.getAngleBrackets(sce) isa CC.SourceRange  # shape-only
+    let r = CC.getAngleBrackets(sce)
+        @test CC.isValid(r)
+        @test r.begin_loc.ptr != C_NULL
+        @test r.end_loc.ptr != C_NULL
+    end
 
     dce = CC.CXXDynamicCastExpr(ctx, intty, vk, noop, op, tsi, loc, loc, angles)
     @test dce isa CC.CXXDynamicCastExpr
@@ -2016,7 +2042,7 @@ end
     @test ume isa CC.UnresolvedMemberExpr
     if ume !== nothing
         mn = CC.getMemberName(ume)
-        @test mn isa CC.DeclarationName
+        @test CC.getAsString(mn) == "m"
         @test mn.ptr == CC.getName(ume).ptr          # forwards to OverloadExpr::getName
         @test CC.getMemberLoc(ume).ptr == CC.getNameLoc(ume).ptr
         mni = CC.getMemberNameInfo(ume)
@@ -2034,7 +2060,6 @@ end
         @test !(CC.isPartiallySubstituted(sp))
         if CC.isPartiallySubstituted(sp)
             n = CC.getNumPartialArguments(sp)
-            @test n isa Integer
             @test n > 0
             ta = CC.getPartialArgument(sp, 0)
             @test ta isa CC.TemplateArgument
@@ -2052,10 +2077,10 @@ end
     @test ewc isa CC.ExprWithCleanups
     if ewc !== nothing
         n = CC.getNumObjects(ewc)
-        @test n isa Integer
+        @test n == 0
         for i in 0:(n - 1)
             isblk = CC.objectIsBlockDecl(ewc, i)
-            @test isblk isa Bool
+            @test isblk == false
             obj = CC.getObject(ewc, i)
             @test isblk ? obj isa CC.BlockDecl : obj isa CC.CompoundLiteralExpr
             @test obj.ptr != C_NULL
@@ -2148,7 +2173,7 @@ end
     @test ca isa CC.CoawaitExpr
     if ca !== nothing
         before = CC.isImplicit(ca)
-        @test before isa Bool
+        @test before == false
         CC.setIsImplicit(ca, !before)
         @test CC.isImplicit(ca) == !before
         CC.setIsImplicit(ca, before)
@@ -2421,9 +2446,16 @@ end
     nns = CC.getNestedNameSpecifier(ql)
     @test nns isa CC.NestedNameSpecifier
     @test nns.ptr == CC.getQualifier(dsme).ptr   # the same specifier, now with locations
-    @test CC.getSourceRange(ql) isa CC.SourceRange  # shape-only
-    @test CC.getSourceRange(ql).begin_loc.ptr != C_NULL
-    @test CC.getLocalSourceRange(ql) isa CC.SourceRange  # shape-only
+    let sr = CC.getSourceRange(ql)
+        @test CC.isValid(sr)
+        @test sr.begin_loc.ptr != C_NULL
+        @test sr.end_loc.ptr != C_NULL
+    end
+    let lsr = CC.getLocalSourceRange(ql)
+        @test CC.isValid(lsr)
+        @test lsr.begin_loc.ptr != C_NULL
+        @test lsr.end_loc.ptr != C_NULL
+    end
     @test !CC.is_null_handle(CC.getBeginLoc(ql))
     @test CC.getBeginLoc(ql).ptr == CC.getSourceRange(ql).begin_loc.ptr
     @test !CC.is_null_handle(CC.getEndLoc(ql))
@@ -2451,8 +2483,8 @@ end
         tl = CC.getTypeLoc(ql)
         @test tl isa CC.TypeLoc
         @test tl.ptr != C_NULL
-        @test CC.isNull(tl) isa Bool  # shape-only
-        @test CC.getType(tl) isa CC.QualType
+        @test CC.isNull(tl) == false
+        @test CC.getAsString(CC.getType(tl)) == "struct NQBase" || CC.getAsString(CC.getType(tl)) == "NQBase"
         CC.dispose(tl)
     else
         @test_throws AssertionError CC.getTypeLoc(ql)
@@ -2467,7 +2499,10 @@ end
         @test dql isa CC.NestedNameSpecifierLoc
         @test CC.hasQualifier(dql) == true
         @test CC.getNestedNameSpecifier(dql).ptr == CC.getQualifier(ds).ptr
-        @test CC.getLocalSourceRange(dql) isa CC.SourceRange  # shape-only
+        let lsr = CC.getLocalSourceRange(dql)
+            @test CC.isValid(lsr)
+            @test lsr.begin_loc.ptr != C_NULL
+        end
         CC.dispose(dql)
     end
 
@@ -2496,9 +2531,15 @@ end
         pql = CC.getQualifierLoc(pd)
         @test pql isa CC.NestedNameSpecifierLoc
         @test CC.hasQualifier(pql) == CC.hasQualifier(pd)
-        @test CC.getSourceRange(pql) isa CC.SourceRange  # shape-only
+        let sr = CC.getSourceRange(pql)
+            @test !CC.isValid(sr)
+            @test CC.is_null_handle(sr.begin_loc)
+        end
         if CC.hasQualifier(pql)
-            @test CC.getLocalSourceRange(pql) isa CC.SourceRange  # shape-only
+            let lsr = CC.getLocalSourceRange(pql)
+                @test CC.isValid(lsr)
+                @test lsr.begin_loc.ptr != C_NULL
+            end
         else
             @test_throws AssertionError CC.getLocalSourceRange(pql)
         end
