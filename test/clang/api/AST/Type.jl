@@ -335,7 +335,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test !CC.is_null_handle(CC.getReplacementType(sttp))
     @test !CC.is_null_handle(CC.desugar(sttp))
     @test !CC.is_null_handle(CC.getAssociatedDecl(sttp))
-    @test CC.getIndex(sttp) isa Integer  # shape-only: the target chooses this value
+    @test CC.getIndex(sttp) == 0
     @test !CC.is_null_handle(CC.getReplacedParameter(sttp))
     @test CC.isSugared(sttp) == true
 
@@ -369,7 +369,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test !CC.is_null_handle(CC.getAssociatedDecl(pk))
     @test CC.getArgumentPack(pk) !== nothing
     @test !(CC.getFinal(pk))
-    @test CC.getIndex(pk) isa Integer  # shape-only: the target chooses this value
+    @test CC.getIndex(pk) == 0
     @test CC.getNumArgs(pk) == 2
     @test !CC.is_null_handle(CC.getReplacedParameter(pk))
     @test !(CC.isSugared(pk))
@@ -428,7 +428,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test devt isa CC.DependentSizedExtVectorType
     @test !CC.is_null_handle(CC.desugar(devt))
     @test !CC.is_null_handle(CC.getElementType(devt))
-    @test CC.getSizeExpr(devt) isa CC.Expr_  # shape-only: the host decides this
+    @test !CC.is_null_handle(CC.getSizeExpr(devt))
     @test !(CC.isSugared(devt))
 
     # ---------------- MacroQualifiedType (built via ASTContext with a borrowed IdentifierInfo) ----------------
@@ -461,13 +461,15 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     gx_vd = vdecl("tapi_gx")
     tl = CC.getTypeLoc(CC.getTypeSourceInfo(gx_vd))
     @test !CC.is_null_handle(CC.getEndLoc(tl))
-    @test CC.getLocalSourceRange(tl) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getBeginLoc(tl))
+    @test !CC.is_null_handle(CC.getEndLoc(tl))
     btl = CC.BuiltinTypeLoc(tl)
     @test btl isa CC.BuiltinTypeLoc
     @test CC.getType(btl) isa CC.QualType
     @test !CC.is_null_handle(CC.getBeginLoc(btl))
     @test !CC.is_null_handle(CC.getEndLoc(btl))
-    @test CC.getLocalSourceRange(btl) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getBeginLoc(btl))
+    @test !CC.is_null_handle(CC.getEndLoc(btl))
     dispose(btl)
     dispose(tl)
 
@@ -577,30 +579,30 @@ end
 
     # ---------------- QualType ----------------
     cq = qtof("ci")
-    @test CC.getTypePtr(cq) isa CC.Type_
-    @test CC.getTypePtrOrNull(cq) isa CC.Type_
-    @test CC.isCanonical(cq) isa Bool
+    @test !CC.is_null_handle(CC.getTypePtr(cq))
+    @test !CC.is_null_handle(CC.getTypePtrOrNull(cq))
+    @test CC.isCanonical(cq) == true
     @test !(CC.isNull(cq))
-    @test CC.isConstQualified(cq) isa Bool
-    @test CC.isRestrictQualified(cq) isa Bool
-    @test CC.isVolatileQualified(cq) isa Bool
-    @test CC.hasQualifiers(cq) isa Bool
-    @test CC.withConst(cq) isa CC.QualType
-    @test CC.withRestrict(cq) isa CC.QualType
-    @test CC.withVolatile(cq) isa CC.QualType
-    @test CC.addConst(cq) isa CC.QualType
-    @test CC.addRestrict(cq) isa CC.QualType
-    @test CC.addVolatile(cq) isa CC.QualType
-    @test CC.isLocalConstQualified(cq) isa Bool
-    @test CC.isLocalRestrictQualified(cq) isa Bool
-    @test CC.isLocalVolatileQualified(cq) isa Bool
-    @test CC.hasLocalQualifiers(cq) isa Bool
-    @test CC.getCVRQualifiers(cq) isa Integer
+    @test CC.isConstQualified(cq) == true
+    @test CC.isRestrictQualified(cq) == false
+    @test CC.isVolatileQualified(cq) == false
+    @test CC.hasQualifiers(cq) == true
+    @test !CC.isNull(CC.withConst(cq))
+    @test !CC.isNull(CC.withRestrict(cq))
+    @test !CC.isNull(CC.withVolatile(cq))
+    @test !CC.isNull(CC.addConst(cq))
+    @test !CC.isNull(CC.addRestrict(cq))
+    @test !CC.isNull(CC.addVolatile(cq))
+    @test CC.isLocalConstQualified(cq) == true
+    @test CC.isLocalRestrictQualified(cq) == false
+    @test CC.isLocalVolatileQualified(cq) == false
+    @test CC.hasLocalQualifiers(cq) == true
+    @test CC.getCVRQualifiers(cq) == 1
     @test !isempty(CC.getAsString(cq))
     @test (CC.dump(cq); true)
     @test !CC.is_null_handle(CC.getCanonicalType(cq))
-    @test CC.getLocalUnqualifiedType(cq) isa CC.QualType
-    @test CC.getUnqualifiedType(cq) isa CC.QualType
+    @test !CC.isNull(CC.getLocalUnqualifiedType(cq))
+    @test !CC.isNull(CC.getUnqualifiedType(cq))
 
     # ---------------- Type (predicate/accessor block on a plain Type_) ----------------
     ty = tpof("gx")
@@ -643,11 +645,19 @@ end
         CC.isa_MacroQualifiedType, CC.isa_UnaryTransformType, CC.isa_ParenType,
         CC.isa_DependentAddressSpaceType, CC.isa_DependentSizedExtVectorType,
         CC.isa_DecltypeType, CC.isa_DeducedType, CC.isa_DeducedTemplateSpecializationType]
+    true_preds = Set{Function}([
+        CC.hasIntegerRepresentation, CC.hasSignedIntegerRepresentation, CC.isArithmeticType,
+        CC.isCanonicalUnqualified, CC.isConstantSizeType, CC.isFixedPointOrIntegerType,
+        CC.isFundamentalType, CC.isIntegerType, CC.isIntegralOrEnumerationType,
+        CC.isIntegralOrUnscopedEnumerationType, CC.isLinkageValid, CC.isRealType,
+        CC.isScalarType, CC.isSignedIntegerOrEnumerationType, CC.isSignedIntegerType,
+        CC.isSpecifierType, CC.isBuiltinType
+    ])
     for fn in preds
-        @test fn(ty) isa Bool
+        @test fn(ty) == (fn in true_preds)
     end
 
-    @test CC.getTypeClass(ty) !== nothing
+    @test CC.getTypeClass(ty) == CC.LibClangEx.CXTypeClass_Builtin
     @test !CC.is_null_handle(CC.getCanonicalTypeInternal(ty))
     @test CC.is_null_handle(CC.getArrayElementTypeNoTypeQual(ty))
     @test !CC.is_null_handle(CC.getPointeeOrArrayElementType(ty))
@@ -677,14 +687,14 @@ end
         CC.isa_BuiltinType_Float128, CC.isa_BuiltinType_Half, CC.isa_BuiltinType_BFloat16,
         CC.isa_BuiltinType_Float16, CC.isa_BuiltinType_NullPtr]
     for fn in bpreds
-        @test fn(bt) isa Bool
+        @test fn(bt) == (fn === CC.isa_BuiltinType_Int)
     end
 
     # ---------------- ComplexType ----------------
     cty = rty("cd")
     @test cty isa CC.ComplexType
-    @test !CC.is_null_handle(CC.desugar(cty))
     @test !CC.is_null_handle(CC.getElementType(cty))
+    @test !CC.is_null_handle(CC.desugar(cty))
     @test !(CC.isSugared(cty))
 
     # ---------------- PointerType ----------------
@@ -725,10 +735,10 @@ end
     aty = rty("arr")
     @test aty isa CC.ConstantArrayType
     @test !CC.is_null_handle(CC.getElementType(aty))
-    @test CC.getIndexTypeCVRQualifiers(aty) isa Integer  # shape-only: the target chooses this value
+    @test CC.getIndexTypeCVRQualifiers(aty) == 0
     @test CC.getSizeModifier(aty) !== nothing
     @test !CC.is_null_handle(CC.desugar(aty))
-    @test CC.getSizeExpr(aty) isa CC.Expr_  # shape-only: the host decides this
+    @test CC.is_null_handle(CC.getSizeExpr(aty))
     @test !(CC.isSugared(aty))
 
     # ---------------- IncompleteArrayType ----------------
@@ -754,7 +764,7 @@ end
     end
     @test vaty isa CC.VariableArrayType
     @test !CC.is_null_handle(CC.desugar(vaty))
-    @test CC.getSizeExpr(vaty) isa CC.Expr_  # shape-only: the host decides this
+    @test !CC.is_null_handle(CC.getSizeExpr(vaty))
     @test !(CC.isSugared(vaty))
 
     # ---------------- FunctionType + FunctionProtoType ----------------
@@ -765,7 +775,7 @@ end
     @test !(CC.getCmseNSCallAttr(fpt))
     @test !(CC.getHasRegParm(fpt))
     @test !(CC.getNoReturnAttr(fpt))
-    @test CC.getRegParmType(fpt) isa Integer  # shape-only: the target chooses this value
+    @test CC.getRegParmType(fpt) == 0
     @test !(CC.isConst(fpt))
     @test !(CC.isRestrict(fpt))
     @test !(CC.isVolatile(fpt))
@@ -775,7 +785,7 @@ end
     @test !CC.is_null_handle(CC.desugar(fpt))
     @test CC.is_null_handle(CC.getExceptionSpecDecl(fpt))
     @test CC.is_null_handle(CC.getExceptionSpecTemplate(fpt))
-    @test CC.getNumExceptions(fpt) isa Integer  # shape-only: the target chooses this value
+    @test CC.getNumExceptions(fpt) == 0
     @test CC.getExceptionSpecType(fpt) !== nothing
     @test !(CC.hasDependentExceptionSpec(fpt))
     @test !(CC.hasDynamicExceptionSpec(fpt))
@@ -787,7 +797,7 @@ end
     @test !(CC.isTemplateVariadic(fpt))
     @test !(CC.isVariadic(fpt))
     if CC.getNumExceptions(fpt) > 0
-        @test CC.getExceptionType(fpt, 0) isa CC.QualType  # shape-only
+        @test !CC.isNull(CC.getExceptionType(fpt, 0))
     end
     # a noexcept(expr) function reaches getNoexceptExpr
     fptne = fpt_of("fnne")
@@ -907,7 +917,7 @@ end
     @test !CC.is_null_handle(CC.desugar(ttpt))
     @test CC.getDecl(ttpt) isa CC.TemplateTypeParmDecl
     @test CC.getDepth(ttpt) isa Integer
-    @test CC.getIndex(ttpt) isa Integer  # shape-only: the target chooses this value
+    @test CC.getIndex(ttpt) == 0
     @test !(CC.isParameterPack(ttpt))
     @test !(CC.isSugared(ttpt))
 
@@ -926,7 +936,7 @@ end
     dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(p2)))))
     @test dsaty isa CC.DependentSizedArrayType
     @test !CC.is_null_handle(CC.desugar(dsaty))
-    @test CC.getSizeExpr(dsaty) isa CC.Expr_  # shape-only: the host decides this
+    @test !CC.is_null_handle(CC.getSizeExpr(dsaty))
     @test !(CC.isSugared(dsaty))
     @test !CC.is_null_handle(CC.getElementType(dsaty))
 
@@ -1147,14 +1157,16 @@ end
         end
     end
     @test vaty isa CC.VariableArrayType
-    @test CC.getBracketsRange(vaty) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getBeginLoc(CC.getBracketsRange(vaty)))
+    @test !CC.is_null_handle(CC.getRBracketLoc(vaty))
 
     # DependentSizedArrayType::getBracketsRange (template pattern field)
     f(I, "TsubS2")
     p2 = CC.getTemplatedDecl(CC.resolve(get_decl(f)))
     dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(p2)))))
     @test dsaty isa CC.DependentSizedArrayType
-    @test CC.getBracketsRange(dsaty) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getBeginLoc(CC.getBracketsRange(dsaty)))
+    @test !CC.is_null_handle(CC.getRBracketLoc(dsaty))
 
     # PackExpansionType: the parameter type `Ts... zs` of the member function
     f(I, "TsubHold")
@@ -1296,7 +1308,7 @@ end
     @test CC.hasConst(CC.fromFastMask(constmask))
     @test CC.getLocalCVRQualifiers(qt("wl9i")) == 0x0
     @test !CC.hasLocalNonFastQualifiers(qt("wl9i"))
-    @test CC.hasLocalNonFastQualifiers(qt("wl9ci")) isa Bool
+    @test CC.hasLocalNonFastQualifiers(qt("wl9ci")) == false
 
     # QualType: canonical-as-param, storage constness, trivial equality comparison.
     @test CC.isCanonicalAsParam(CC.getCanonicalType(qt("wl9i")))
@@ -1337,7 +1349,7 @@ end
     @test !CC.isNonOverloadPlaceholderType(ity)
     @test !CC.isIbm128Type(ity)
     @test !CC.isSizelessVectorType(ity)
-    @test CC.isSizelessVectorType(tp("wl9pod")) isa Bool  # shape-only: the host decides this
+    @test CC.isSizelessVectorType(tp("wl9pod")) == false
     @test CC.is_null_handle(CC.getContainedAutoType(ity))
     @test CC.getContainedAutoType(ity).ptr == C_NULL
     @test CC.getContainedDeducedType(ity).ptr == C_NULL
@@ -1593,7 +1605,6 @@ end
     @test fpt isa CC.FunctionProtoType
     @test CC.getRefQualifier(fpt) == CC.LibClangEx.CXRefQualifierKind_RQ_None
     @test CC.canThrow(fpt) == CC.LibClangEx.CXCanThrowResult_CT_Can
-    @test CC.getAArch64SMEAttributes(fpt) isa Integer  # shape-only: the target chooses this value
     @test CC.getAArch64SMEAttributes(fpt) == 0
 
     f(I, "TeQ")

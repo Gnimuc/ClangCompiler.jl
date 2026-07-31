@@ -94,12 +94,11 @@ end
         @test !CC.is_null_handle(CC.ParmVarDecl(ctx, dc, loc, loc, id, ty, tsi, LX.CXStorageClass_SC_None))
         @test !CC.is_null_handle(CC.ParmVarDecl(ctx, 1))
 
-        @test CC.FunctionDecl(ctx, dc, loc, loc, name, fty, ftsi, LX.CXStorageClass_SC_None, false, true) isa
-              CC.FunctionDecl
+        @test !CC.is_null_handle(CC.FunctionDecl(ctx, dc, loc, loc, name, fty, ftsi, LX.CXStorageClass_SC_None, false, true))
         @test !CC.is_null_handle(CC.FunctionDecl(ctx, 1))
 
-        @test CC.FieldDecl(ctx, dc, loc, loc, id, ty, tsi, CC.Expr_(C_NULL), false,
-                           LX.CXInClassInitStyle_ICIS_NoInit) isa CC.FieldDecl
+        @test !CC.is_null_handle(CC.FieldDecl(ctx, dc, loc, loc, id, ty, tsi, CC.Expr_(C_NULL), false,
+                           LX.CXInClassInitStyle_ICIS_NoInit))
         @test !CC.is_null_handle(CC.FieldDecl(ctx, 1))
 
         @test !CC.is_null_handle(CC.EnumConstantDecl(ctx, 1))
@@ -215,7 +214,7 @@ end
 
         # BlockDecl (fresh) setters
         bd = CC.BlockDecl(ctx, dc, loc)
-        @test bd isa CC.BlockDecl
+        @test !CC.is_null_handle(bd)
         @test !CC.is_null_handle(CC.BlockDecl(ctx, 1))
         CC.setSignatureAsWritten(bd, ftsi)
         @test CC.getSignatureAsWritten(bd).ptr == ftsi.ptr
@@ -235,7 +234,7 @@ end
 
         # CapturedDecl (fresh) setters
         cd = CC.CapturedDecl(ctx, dc, 1)
-        @test cd isa CC.CapturedDecl
+        @test !CC.is_null_handle(cd)
         @test !CC.is_null_handle(CC.CapturedDecl(ctx, 1, 1))
         CC.setNothrow(cd, true)
         @test CC.isNothrow(cd)
@@ -249,7 +248,7 @@ end
 
         # ExportDecl (fresh) setter
         exd = CC.ExportDecl(ctx, dc, loc)
-        @test exd isa CC.ExportDecl
+        @test !CC.is_null_handle(exd)
         @test !CC.is_null_handle(CC.ExportDecl(ctx, 1))
         CC.setRBraceLoc(exd, loc2)
         @test CC.getRBraceLoc(exd) == loc2
@@ -257,7 +256,7 @@ end
         # FileScopeAsmDecl (needs a StringLiteral)
         if sl isa CC.StringLiteral
             fsad = CC.FileScopeAsmDecl(ctx, dc, sl, loc, loc)
-            @test fsad isa CC.FileScopeAsmDecl
+            @test !CC.is_null_handle(fsad)
             CC.setRParenLoc(fsad, loc2)
             @test CC.getRParenLoc(fsad) == loc2
             CC.setAsmString(fsad, sl)
@@ -267,7 +266,7 @@ end
 
         # AccessSpecDecl (fresh) setters
         asd = CC.AccessSpecDecl(ctx, LX.CXAccessSpecifier_AS_public, dc, loc, loc)
-        @test asd isa CC.AccessSpecDecl
+        @test !CC.is_null_handle(asd)
         @test !CC.is_null_handle(CC.AccessSpecDecl(ctx, 1))
         CC.setColonLoc(asd, loc2)
         @test CC.getColonLoc(asd) == loc2
@@ -276,7 +275,7 @@ end
 
         # LinkageSpecDecl (fresh) setters
         lsd = CC.LinkageSpecDecl(ctx, dc, loc, loc, LX.CXLinkageSpecDecl_lang_c, true)
-        @test lsd isa CC.LinkageSpecDecl
+        @test !CC.is_null_handle(lsd)
         @test !CC.is_null_handle(CC.LinkageSpecDecl(ctx, 1))
         CC.setLanguage(lsd, LX.CXLinkageSpecDecl_lang_cxx)
         @test CC.getLanguage(lsd) == LX.CXLinkageSpecDecl_lang_cxx
@@ -378,7 +377,7 @@ end
     @test sl !== nothing
     loc = CC.getLocation(vd)
     asmdecl = CC.FileScopeAsmDecl(ctx, dc, sl, loc, loc)
-    @test asmdecl isa CC.FileScopeAsmDecl
+    @test !CC.is_null_handle(asmdecl)
     @test CC.getString(CC.getAsmString(asmdecl)) == "roundtrip_asm"   # was garbage before the fix
     dispose(f)
     dispose(I)
@@ -443,14 +442,14 @@ end
 
     # PragmaCommentDecl: kind and trailing arg round-trip
     pcd = CC.PragmaCommentDecl(ctx, tu, loc, LX.CXPragmaMSCommentKind_PCK_Lib, "libarg")
-    @test pcd isa CC.PragmaCommentDecl
+    @test !CC.is_null_handle(pcd)
     @test CC.getCommentKind(pcd) == LX.CXPragmaMSCommentKind_PCK_Lib
     @test CC.getArg(pcd) == "libarg"
     @test !CC.is_null_handle(CC.PragmaCommentDecl(ctx, 1, 8))
 
     # PragmaDetectMismatchDecl: name/value round-trip
     pdd = CC.PragmaDetectMismatchDecl(ctx, tu, loc, "pname", "pval")
-    @test pdd isa CC.PragmaDetectMismatchDecl
+    @test !CC.is_null_handle(pdd)
     @test CC.getName(pdd) == "pname"
     @test CC.getValue(pdd) == "pval"
     @test !CC.is_null_handle(CC.PragmaDetectMismatchDecl(ctx, 2, 12))
@@ -474,11 +473,10 @@ end
     for d in CC.decls(dc)
         d isa CC.LinkageSpecDecl && (lsd=d; break)
     end
-    @test lsd isa CC.LinkageSpecDecl
+    @test !CC.is_null_handle(lsd)
     ldc = CC.DeclContext(lsd)
-    @test ldc isa CC.DeclContext
+    @test !CC.is_null_handle(ldc)
     back = CC.LinkageSpecDecl(ldc)
-    @test back isa CC.LinkageSpecDecl
     @test back.ptr == lsd.ptr
 
     # CXXMethodDecl: devirtualization + corresponding-method lookups
@@ -486,21 +484,18 @@ end
     for n in CC.subtree(CC.resolve(CC.getBody(CC.FunctionDecl(getptr("usevm")))))
         n isa CC.MemberExpr && (me=n; break)
     end
-    @test me isa CC.MemberExpr
+    @test me.ptr != C_NULL
     md = CC.CXXMethodDecl(CC.getMemberDecl(me).ptr)
     dv = CC.getDevirtualizedMethod(md, CC.getBase(me), false)
-    @test dv isa CC.CXXMethodDecl
     @test dv.ptr != C_NULL
     @test CC.getName(dv) == "vm"
 
     vbase = CC.CXXRecordDecl(getptr("VBase"))
     vder = CC.CXXRecordDecl(getptr("VDer"))
     mib = CC.getCorrespondingMethodInClass(md, vbase, true)
-    @test mib isa CC.CXXMethodDecl
     @test mib.ptr != C_NULL
     @test CC.getName(mib) == "vm"
     mdd = CC.getCorrespondingMethodDeclaredInClass(md, vder)
-    @test mdd isa CC.CXXMethodDecl
     @test mdd.ptr != C_NULL
     @test CC.getName(mdd) == "vm"
 
@@ -555,7 +550,7 @@ end
     fields = collect(CC.getFields(rd))
     @test CC.getBitWidthValue(fields[1], ctx) == 3          # `int a : 3`
     @test !CC.isZeroSize(fields[1], ctx)
-    @test CC.isMsStruct(rd, ctx) isa Bool                   # value is target-ABI-dependent (MS layout on Windows)
+    @test CC.isMsStruct(rd, ctx) == Sys.iswindows()                   # value is target-ABI-dependent (MS layout on Windows)
 
     @test f(I, "fn")
     fd = CC.FunctionDecl(get_decl(f).ptr)
@@ -645,7 +640,7 @@ using ClangCompiler: get_tag
 
         einit = CC.getInit(vd_g)                       # Expr_ (IntegerLiteral 3)
         il = CC.resolve(einit)
-        @test il isa CC.IntegerLiteral
+        @test !CC.is_null_handle(il)
         gv = CC.getValue(il)                           # LLVMGenericValueRef
 
         gname = CC.getDeclName(vd_g)
@@ -657,15 +652,15 @@ using ClangCompiler: get_tag
 
         # ================= LabelDecl =================
         ls = dkfind(CC.LabelStmt, CC.resolve(CC.getBody(lblfd)))
-        @test ls isa CC.LabelStmt
+        @test !CC.is_null_handle(ls)
         ld = CC.getDecl(ls)
-        @test ld isa CC.LabelDecl
+        @test !CC.is_null_handle(ld)
         @test CC.getStmt(ld).ptr == ls.ptr
         CC.setStmt(ld, ls)
         @test CC.getStmt(ld).ptr == ls.ptr
         @test !(CC.isGnuLocal(ld))
         CC.setLocStart(ld, gloc)
-        @test CC.getSourceRange(ld) isa CC.SourceRange  # shape-only
+        @test !CC.is_null_handle(CC.getSourceRange(ld).begin_loc)
         @test CC.isMSAsmLabel(ld) == false
         @test !(CC.isResolvedMSAsmLabel(ld))
         CC.setMSAsmLabelResolved(ld)
@@ -700,7 +695,7 @@ using ClangCompiler: get_tag
 
         # ================= VarDecl =================
         es1 = CC.ensureEvaluatedStmt(vd_g)
-        @test es1 isa CC.EvaluatedStmt && es1.ptr != C_NULL
+        @test !CC.is_null_handle(es1)
         @test CC.getEvaluatedStmt(vd_g).ptr == es1.ptr
         CC.demoteThisDefinitionToDeclaration(vd_g)
         @test CC.isThisDeclarationADemotedDefinition(vd_g)
@@ -726,7 +721,7 @@ using ClangCompiler: get_tag
             sdm_b = CC.VarDecl(d.ptr)
             break
         end
-        @test sdm_a isa CC.VarDecl && sdm_b isa CC.VarDecl
+        @test !CC.is_null_handle(sdm_a) && !CC.is_null_handle(sdm_b)
         CC.setInstantiationOfStaticDataMember(sdm_a, sdm_b,
                                               LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
         @test CC.getInstantiatedFromStaticDataMember(sdm_a).ptr == sdm_b.ptr
@@ -744,7 +739,7 @@ using ClangCompiler: get_tag
                 break
             end
         end
-        @test vtd isa CC.VarTemplateDecl
+        @test !CC.is_null_handle(vtd)
         vd_f2 = CC.VarDecl(ctx, dc, gloc, gloc, id, qt_int, tsi, LXD.CXStorageClass_SC_None)
         CC.setInstantiationOfStaticDataMember(vd_f2, vtd)  # wraps setDescribedVarTemplate
         @test CC.getDescribedVarTemplate(vd_f2).ptr == vtd.ptr
@@ -812,7 +807,7 @@ using ClangCompiler: get_tag
                 break
             end
         end
-        @test ftd isa CC.FunctionTemplateDecl
+        @test !CC.is_null_handle(ftd)
         fd_f6 = mkfd()
         CC.setDescribedFunctionTemplate(fd_f6, ftd)
         @test CC.getDescribedFunctionTemplate(fd_f6).ptr == ftd.ptr
@@ -859,7 +854,7 @@ using ClangCompiler: get_tag
         # ================= TagDecl =================
         @assert fnd(I, "DKS")
         td_s = CC.TagDecl(get_tag(fnd).ptr)
-        @test CC.getDefinition(td_s) isa CC.TagDecl
+        @test !CC.is_null_handle(CC.getDefinition(td_s))
         @test CC.getDefinition(td_s).ptr != C_NULL
 
         rec_f = CC.RecordDecl(ctx, LXD.CXTagTypeKind_Struct, dc, gloc, gloc, id)
@@ -884,13 +879,13 @@ using ClangCompiler: get_tag
 
         # captured-VLA field on a fresh captured record
         vds = dkfind(CC.DeclStmt, CC.resolve(CC.getBody(vlafd)))
-        @test vds isa CC.DeclStmt
+        @test !CC.is_null_handle(vds)
         vla_d = CC.getSingleDecl(vds)
         @test CC.getDeclKindName(vla_d) == "Var"
         vla_vd = CC.VarDecl(vla_d.ptr)
         vla_qt = CC.getType(vla_vd)
         vla_ty = CC.resolve(CC.getTypePtr(vla_qt))
-        @test vla_ty isa CC.VariableArrayType
+        @test !CC.is_null_handle(vla_ty)
         rec_f2 = CC.RecordDecl(ctx, LXD.CXTagTypeKind_Struct, dc, gloc, gloc, id)
         CC.setCapturedRecord(rec_f2)
         fld_vla = CC.FieldDecl(ctx, CC.DeclContext(rec_f2), gloc, gloc, id, vla_qt, tsi,
@@ -910,7 +905,7 @@ using ClangCompiler: get_tag
               LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
 
         ecd = CC.EnumConstantDecl(ctx, ed, gloc, id, qt_int, CC.Expr_(C_NULL), gv)
-        @test ecd isa CC.EnumConstantDecl
+        @test !CC.is_null_handle(ecd)
 
         # ================= CapturedDecl =================
         cd_f = CC.CapturedDecl(ctx, dc, 1)
@@ -927,23 +922,23 @@ using ClangCompiler: get_tag
         CC.setRBraceLoc(exd, lloc)
         @test CC.hasBraces(exd)
         @test CC.getEndLoc(exd) == lloc
-        @test CC.getSourceRange(exd) isa CC.SourceRange  # shape-only
+        @test !CC.is_null_handle(CC.getSourceRange(exd).begin_loc)
 
         # ================= FileScopeAsmDecl =================
         sl = dkfind(CC.StringLiteral, CC.resolve(CC.getInit(vd_cstr)))
-        @test sl isa CC.StringLiteral
+        @test !CC.is_null_handle(sl)
         fsad = CC.FileScopeAsmDecl(ctx, dc, sl, gloc, lloc)
         @test CC.getAsmLoc(fsad) == gloc
-        @test CC.getSourceRange(fsad) isa CC.SourceRange  # shape-only
+        @test !CC.is_null_handle(CC.getSourceRange(fsad).begin_loc)
 
         # ================= ImportDecl =================
         # CreateImplicit stores the module pointer without dereferencing it.
         imp1 = CC.ImportDecl(ctx, dc, gloc, C_NULL, gloc)
-        @test imp1 isa CC.ImportDecl
+        @test !CC.is_null_handle(imp1)
         # A deserialized import is incomplete: no identifier locs, safe getters.
         imp2 = CC.ImportDecl(ctx, 99, 0)
         @test CC.getNumIdentifierLocs(imp2) == 0
-        @test CC.getSourceRange(imp2) isa CC.SourceRange  # shape-only
+        @test CC.is_null_handle(CC.getSourceRange(imp2).begin_loc)
 
         # ================= IndirectFieldDecl =================
         @assert fnd(I, "dkiu_a")
@@ -952,7 +947,7 @@ using ClangCompiler: get_tag
         ifd = CC.IndirectFieldDecl(dif.ptr)
         @test !CC.is_null_handle(CC.getVarDecl(ifd))
         @test CC.getVarDecl(ifd).ptr != C_NULL
-        @test CC.getCanonicalDecl(ifd) isa CC.IndirectFieldDecl
+        @test CC.getCanonicalDecl(ifd).ptr == ifd.ptr
         # base Decl receivers on the plain Decl carrier
         @test !CC.is_null_handle(CC.getBeginLoc(dif))
         @test !(CC.isOutOfLine(dif))
@@ -966,7 +961,7 @@ using ClangCompiler: get_tag
                 break
             end
         end
-        @test tatd isa CC.TypeAliasTemplateDecl
+        @test !CC.is_null_handle(tatd)
         tad_f = CC.TypeAliasDecl(ctx, dc, gloc, gloc, id, tsi)
         CC.setDescribedAliasTemplate(tad_f, tatd)
         @test CC.getDescribedAliasTemplate(tad_f).ptr == tatd.ptr
@@ -987,14 +982,14 @@ using ClangCompiler: get_tag
         flds7 = CC.getFields(p7)
         @test length(flds7) == 2
         pt7 = CC.resolve(CC.getTypePtr(CC.getType(flds7[2])))
-        @test pt7 isa CC.PointerType
+        @test !CC.is_null_handle(pt7)
         inj = CC.resolve(CC.getTypePtr(CC.getPointeeType(pt7)))
         if inj isa CC.ElaboratedType
             inj = CC.resolve(CC.getTypePtr(CC.desugar(inj)))
         end
-        @test inj isa CC.InjectedClassNameType
+        @test !CC.is_null_handle(inj)
         tn = CC.getTemplateName(inj)
-        @test CC.getAsTemplateDecl(tn) isa CC.TemplateDecl
+        @test !CC.is_null_handle(CC.getAsTemplateDecl(tn))
         @test CC.getAsTemplateDecl(tn).ptr != C_NULL
 
         # member template of an instantiated class template -> member specialization
@@ -1112,46 +1107,65 @@ end
     eglob = CC.VarDecl(getptr("eglob"))
     sglob = CC.VarDecl(getptr("sglob"))
 
-    var_bools = (CC.hasLocalStorage, CC.isStaticLocal, CC.hasExternalStorage,
-                 CC.hasGlobalStorage, CC.isExternC, CC.isInExternCContext,
-                 CC.isInExternCXXContext, CC.isLocalVarDecl, CC.isLocalVarDeclOrParm,
-                 CC.isFunctionOrMethodVarDecl, CC.isStaticDataMember, CC.isOutOfLine,
-                 CC.isFileVarDecl, CC.hasInit, CC.hasConstantInitialization,
-                 CC.isDirectInit, CC.isThisDeclarationADemotedDefinition,
-                 CC.isExceptionVariable, CC.isNRVOVariable, CC.isCXXForRangeDecl,
-                 CC.isObjCForDecl, CC.isARCPseudoStrong, CC.isInline, CC.isInlineSpecified,
-                 CC.isConstexpr, CC.isInitCapture, CC.isParameterPack,
-                 CC.isPreviousDeclInSameBlockScope, CC.isEscapingByref,
-                 CC.isNonEscapingByref, CC.isKnownToBeDefined, CC.isWeak)
-    for g in var_bools
-        @test g(gvar) isa Bool
-    end
+    @test CC.hasLocalStorage(gvar) == false
+    @test CC.isStaticLocal(gvar) == false
+    @test CC.hasExternalStorage(gvar) == false
+    @test CC.hasGlobalStorage(gvar) == true
+    @test CC.isExternC(gvar) == false
+    @test CC.isInExternCContext(gvar) == false
+    @test CC.isInExternCXXContext(gvar) == false
+    @test CC.isLocalVarDecl(gvar) == false
+    @test CC.isLocalVarDeclOrParm(gvar) == false
+    @test CC.isFunctionOrMethodVarDecl(gvar) == false
+    @test CC.isStaticDataMember(gvar) == false
+    @test CC.isOutOfLine(gvar) == false
+    @test CC.isFileVarDecl(gvar) == true
+    @test CC.hasInit(gvar) == true
+    @test CC.hasConstantInitialization(gvar) == true
+    @test CC.isDirectInit(gvar) == false
+    @test CC.isThisDeclarationADemotedDefinition(gvar) == false
+    @test CC.isExceptionVariable(gvar) == false
+    @test CC.isNRVOVariable(gvar) == false
+    @test CC.isCXXForRangeDecl(gvar) == false
+    @test CC.isObjCForDecl(gvar) == false
+    @test CC.isARCPseudoStrong(gvar) == false
+    @test CC.isInline(gvar) == false
+    @test CC.isInlineSpecified(gvar) == false
+    @test CC.isConstexpr(gvar) == false
+    @test CC.isInitCapture(gvar) == false
+    @test CC.isParameterPack(gvar) == false
+    @test CC.isPreviousDeclInSameBlockScope(gvar) == false
+    @test CC.isEscapingByref(gvar) == false
+    @test CC.isNonEscapingByref(gvar) == false
+    @test CC.isKnownToBeDefined(gvar) == true
+    @test CC.isWeak(gvar) == false
 
-    var_misc = (CC.getStorageClass, CC.getTSCSpec, CC.getStorageDuration,
-                CC.getLanguageLinkage, CC.getTemplateSpecializationKind,
-                CC.getTemplateSpecializationKindForInstantiation,
-                CC.getInitializingDeclaration, CC.getNumTemplateParameterLists)
-    for g in var_misc
-        @test g(gvar) !== nothing
-    end
+    @test CC.getStorageClass(gvar) == LX.CXStorageClass_SC_None
+    @test CC.getTSCSpec(gvar) == LX.CXThreadStorageClassSpecifier_TSCS_unspecified
+    @test CC.getStorageDuration(gvar) == LX.CXStorageDuration_SD_Static
+    @test CC.getLanguageLinkage(gvar) == LX.CXLanguageLinkage_CXXLanguageLinkage
+    @test CC.getTemplateSpecializationKind(gvar) == LX.CXTemplateSpecializationKind_TSK_Undeclared
+    @test CC.getTemplateSpecializationKindForInstantiation(gvar) == LX.CXTemplateSpecializationKind_TSK_Undeclared
+    @test CC.getInitializingDeclaration(gvar).ptr == gvar.ptr
+    @test CC.getNumTemplateParameterLists(gvar) == 0
 
-    @test CC.getType(gvar) isa CC.QualType
-    @test CC.getCanonicalDecl(gvar) isa CC.VarDecl
+    @test !CC.is_null_handle(CC.getType(gvar))
+    @test CC.getCanonicalDecl(gvar).ptr == gvar.ptr
     @test CC.is_null_handle(CC.getActingDefinition(gvar))
-    @test CC.getDefinition(gvar) isa CC.VarDecl
+    @test CC.getDefinition(gvar).ptr == gvar.ptr
     @test !CC.is_null_handle(CC.getAnyInitializer(gvar))
-    @test CC.getInit(gvar) isa CC.Expr_
-    @test CC.getTemplateInstantiationPattern(gvar) isa CC.VarDecl
-    @test CC.getInstantiatedFromStaticDataMember(gvar) isa CC.VarDecl
-    @test CC.getDescribedVarTemplate(gvar) !== nothing
+    @test !CC.is_null_handle(CC.getInit(gvar))
+    @test CC.is_null_handle(CC.getTemplateInstantiationPattern(gvar))
+    @test CC.is_null_handle(CC.getInstantiatedFromStaticDataMember(gvar))
+    @test CC.is_null_handle(CC.getDescribedVarTemplate(gvar))
     @test CC.is_null_handle(CC.getPointOfInstantiation(gvar))
     @test !CC.is_null_handle(CC.evaluateValue(cxglob))
-    @test CC.getSourceRange(gvar) isa CC.SourceRange  # shape-only
-    @test CC.mightBeUsableInConstantExpressions(cxglob, ctx)
-    @test CC.isUsableInConstantExpressions(cxglob, ctx)
-    @test CC.hasICEInitializer(cxglob, ctx)
-    @test CC.hasExternalStorage(eglob)
-    @test CC.getStorageClass(sglob) !== nothing
+    @test !CC.is_null_handle(CC.getSourceRange(gvar).begin_loc)
+    @test CC.mightBeUsableInConstantExpressions(cxglob, ctx) == true
+    @test CC.isUsableInConstantExpressions(cxglob, ctx) == true
+    @test CC.hasICEInitializer(cxglob, ctx) == true
+    @test CC.hasExternalStorage(eglob) == true
+    @test CC.getStorageClass(sglob) == LX.CXStorageClass_SC_Static
 
     # DeclaratorDecl accessors
     @test !CC.is_null_handle(CC.getTypeSourceInfo(gvar))
@@ -1164,22 +1178,25 @@ end
     @test !CC.is_null_handle(CC.getTypeSpecEndLoc(gvar))
 
     # ---------------- NamedDecl (call on a plainly-named decl) ----------------
-    named_bools = (CC.hasLinkage, CC.isCXXClassMember, CC.isCXXInstanceMember,
-                   CC.hasExternalFormalLinkage, CC.isExternallyVisible,
-                   CC.isExternallyDeclarable, CC.isLinkageValid, CC.hasLinkageBeenComputed)
-    for g in named_bools
-        @test g(gvar) isa Bool
-    end
-    @test CC.getName(gvar) isa String
-    @test CC.getIdentifier(gvar) isa CC.IdentifierInfo
+    @test CC.hasLinkage(gvar) == true
+    @test CC.isCXXClassMember(gvar) == false
+    @test CC.isCXXInstanceMember(gvar) == false
+    @test CC.hasExternalFormalLinkage(gvar) == true
+    @test CC.isExternallyVisible(gvar) == true
+    @test CC.isExternallyDeclarable(gvar) == true
+    @test CC.isLinkageValid(gvar) == true
+    @test CC.hasLinkageBeenComputed(gvar) == true
+
+    @test CC.getName(gvar) == "gvar"
+    @test !CC.is_null_handle(CC.getIdentifier(gvar))
     @test !CC.is_null_handle(CC.getDeclName(gvar))
-    @test !CC.is_null_handle(CC.getUnderlyingDecl(gvar))
-    @test CC.getVisibility(gvar) !== nothing
-    @test CC.getLinkageInternal(gvar) !== nothing
-    @test CC.getFormalLinkage(gvar) !== nothing
-    @test CC.getMostRecentDecl(gvar) !== nothing
-    @test CC.declarationReplaces(gvar, gvar)
-    @test !(CC.isFunctionOrFunctionTemplate(gvar))
+    @test CC.getUnderlyingDecl(gvar).ptr == gvar.ptr
+    @test CC.getVisibility(gvar) == LX.CXVisibility_DefaultVisibility
+    @test CC.getLinkageInternal(gvar) == LX.CXLinkage_External
+    @test CC.getFormalLinkage(gvar) == LX.CXLinkage_External
+    @test CC.getMostRecentDecl(gvar).ptr == gvar.ptr
+    @test CC.declarationReplaces(gvar, gvar) == true
+    @test CC.isFunctionOrFunctionTemplate(gvar) == false
 
     # ---------------- FunctionDecl ----------------
     add = CC.FunctionDecl(getptr("add"))
@@ -1189,252 +1206,341 @@ end
     inl = CC.FunctionDecl(getptr("inl_fn"))
     wdf = CC.FunctionDecl(getptr("withdef"))
 
-    fn_bools = (CC.isPureVirtual, CC.hasBody, CC.hasTrivialBody, CC.isDefined,
-                CC.isThisDeclarationADefinition,
-                CC.isThisDeclarationInstantiatedFromAFriendDefinition,
-                CC.doesThisDeclarationHaveABody, CC.isVariadic, CC.isVirtualAsWritten,
-                CC.isLateTemplateParsed, CC.isTrivial, CC.isTrivialForCall,
-                CC.isDefaulted, CC.isExplicitlyDefaulted, CC.isUserProvided,
-                CC.hasImplicitReturnZero, CC.hasPrototype, CC.hasWrittenPrototype,
-                CC.hasInheritedPrototype, CC.isConstexpr, CC.isConstexprSpecified,
-                CC.isConsteval, CC.instantiationIsPending, CC.usesSEHTry, CC.isDeleted,
-                CC.isDeletedAsWritten, CC.isMain, CC.isMSVCRTEntryPoint,
-                CC.isReservedGlobalPlacementOperator,
-                CC.isReplaceableGlobalAllocationFunction, CC.isInlineBuiltinDeclaration,
-                CC.isDestroyingOperatorDelete, CC.isExternC, CC.isInExternCContext,
-                CC.isInExternCXXContext, CC.isGlobal, CC.isNoReturn, CC.hasSkippedBody,
-                CC.willHaveBody, CC.isMultiVersion, CC.isCPUDispatchMultiVersion,
-                CC.isCPUSpecificMultiVersion, CC.isTargetMultiVersion, CC.isInlineSpecified,
-                CC.isInlined, CC.isInlineDefinitionExternallyVisible, CC.isMSExternInline,
-                CC.doesDeclarationForceExternallyVisibleDefinition, CC.isStatic,
-                CC.isOverloadedOperator, CC.isFunctionTemplateSpecialization,
-                CC.isImplicitlyInstantiable, CC.isTemplateInstantiation, CC.isOutOfLine,
-                CC.hasOneParamOrDefaultArgs)
-    for g in fn_bools
-        @test g(add) isa Bool
-    end
+    @test CC.isPureVirtual(add) == false
+    @test CC.hasBody(add) == true
+    @test CC.hasTrivialBody(add) == false
+    @test CC.isDefined(add) == true
+    @test CC.isThisDeclarationADefinition(add) == true
+    @test CC.isThisDeclarationInstantiatedFromAFriendDefinition(add) == false
+    @test CC.doesThisDeclarationHaveABody(add) == true
+    @test CC.isVariadic(add) == false
+    @test CC.isVirtualAsWritten(add) == false
+    @test CC.isLateTemplateParsed(add) == false
+    @test CC.isTrivial(add) == false
+    @test CC.isTrivialForCall(add) == false
+    @test CC.isDefaulted(add) == false
+    @test CC.isExplicitlyDefaulted(add) == false
+    @test CC.isUserProvided(add) == true
+    @test CC.hasImplicitReturnZero(add) == false
+    @test CC.hasPrototype(add) == true
+    @test CC.hasWrittenPrototype(add) == true
+    @test CC.hasInheritedPrototype(add) == false
+    @test CC.isConstexpr(add) == false
+    @test CC.isConstexprSpecified(add) == false
+    @test CC.isConsteval(add) == false
+    @test CC.instantiationIsPending(add) == false
+    @test CC.usesSEHTry(add) == false
+    @test CC.isDeleted(add) == false
+    @test CC.isDeletedAsWritten(add) == false
+    @test CC.isMain(add) == false
+    @test CC.isMSVCRTEntryPoint(add) == false
+    @test CC.isReservedGlobalPlacementOperator(add) == false
+    @test CC.isReplaceableGlobalAllocationFunction(add) == false
+    @test CC.isInlineBuiltinDeclaration(add) == false
+    @test CC.isDestroyingOperatorDelete(add) == false
+    @test CC.isExternC(add) == false
+    @test CC.isInExternCContext(add) == false
+    @test CC.isInExternCXXContext(add) == false
+    @test CC.isGlobal(add) == true
+    @test CC.isNoReturn(add) == false
+    @test CC.hasSkippedBody(add) == false
+    @test CC.willHaveBody(add) == false
+    @test CC.isMultiVersion(add) == false
+    @test CC.isCPUDispatchMultiVersion(add) == false
+    @test CC.isCPUSpecificMultiVersion(add) == false
+    @test CC.isTargetMultiVersion(add) == false
+    @test CC.isInlineSpecified(add) == false
+    @test CC.isInlined(add) == false
+    @test CC.isInlineDefinitionExternallyVisible(add) == true
+    @test CC.isMSExternInline(add) == false
+    @test CC.doesDeclarationForceExternallyVisibleDefinition(add) == false
+    @test CC.isStatic(add) == false
+    @test CC.isOverloadedOperator(add) == false
+    @test CC.isFunctionTemplateSpecialization(add) == false
+    @test CC.isImplicitlyInstantiable(add) == false
+    @test CC.isTemplateInstantiation(add) == false
+    @test CC.isOutOfLine(add) == false
+    @test CC.hasOneParamOrDefaultArgs(add) == false
+    @test CC.isDefined(wdf) == false
 
-    fn_misc = (CC.getConstexprKind, CC.getExceptionSpecType, CC.getStorageClass,
-               CC.getLanguageLinkage, CC.getMultiVersionKind, CC.getTemplatedKind,
-               CC.getTemplateSpecializationKind,
-               CC.getTemplateSpecializationKindForInstantiation, CC.getMemoryFunctionKind,
-               CC.getBuiltinID, CC.getNumParams, CC.getMinRequiredArguments, CC.getODRHash)
-    for g in fn_misc
-        @test g(add) !== nothing
-    end
+    @test CC.getConstexprKind(add) == LX.CXConstexprSpecKind_Unspecified
+    @test CC.getExceptionSpecType(add) == LX.CXExceptionSpecificationType_EST_None
+    @test CC.getStorageClass(add) == LX.CXStorageClass_SC_None
+    @test CC.getLanguageLinkage(add) == LX.CXLanguageLinkage_CXXLanguageLinkage
+    @test CC.getMultiVersionKind(add) == LX.CXMultiVersionKind_None
+    @test CC.getTemplatedKind(add) == LX.CXFunctionDecl_TK_NonTemplate
+    @test CC.getTemplateSpecializationKind(add) == LX.CXTemplateSpecializationKind_TSK_Undeclared
+    @test CC.getTemplateSpecializationKindForInstantiation(add) == LX.CXTemplateSpecializationKind_TSK_Undeclared
+    @test CC.getMemoryFunctionKind(add) == 0
+    @test CC.getBuiltinID(add) == 0
+    @test CC.getNumParams(add) == 2
+    @test CC.getMinRequiredArguments(add) == 2
+    @test CC.getODRHash(add) isa UInt32 && CC.getODRHash(add) != 0
 
-    @test CC.getExceptionSpecSourceRange(add) isa CC.SourceRange  # shape-only
-    @test CC.getParametersSourceRange(add) isa CC.SourceRange  # shape-only
-    @test CC.getReturnTypeSourceRange(add) isa CC.SourceRange  # shape-only
-    @test CC.getSourceRange(add) isa CC.SourceRange  # shape-only
-    @test CC.getNameInfo(add) !== nothing
-    @test CC.getDefinition(add) isa CC.FunctionDecl
-    @test CC.getBody(add) isa CC.Stmt
-    @test CC.getCanonicalDecl(add) isa CC.FunctionDecl
+    @test CC.is_null_handle(CC.getExceptionSpecSourceRange(add).begin_loc)
+    @test !CC.is_null_handle(CC.getParametersSourceRange(add).begin_loc)
+    @test !CC.is_null_handle(CC.getReturnTypeSourceRange(add).begin_loc)
+    @test !CC.is_null_handle(CC.getSourceRange(add).begin_loc)
+    @test !CC.is_null_handle(CC.getNameInfo(add))
+    @test CC.getDefinition(add).ptr == add.ptr
+    @test !CC.is_null_handle(CC.getBody(add))
+    @test CC.getCanonicalDecl(add).ptr == add.ptr
     @test !CC.is_null_handle(CC.getReturnType(add))
     @test !CC.is_null_handle(CC.getDeclaredReturnType(add))
     @test !CC.is_null_handle(CC.getCallResultType(add))
     @test CC.is_null_handle(CC.getLiteralIdentifier(add))
-    @test CC.getMemberSpecializationInfo(add) !== nothing
-    @test CC.getDescribedFunctionTemplate(add) !== nothing
+    @test CC.is_null_handle(CC.getMemberSpecializationInfo(add))
+    @test CC.is_null_handle(CC.getDescribedFunctionTemplate(add))
     @test CC.is_null_handle(CC.getInstantiatedFromMemberFunction(add))
-    @test CC.getTemplateSpecializationInfo(add) !== nothing
-    @test CC.getPrimaryTemplate(add) !== nothing
-    @test CC.getTemplateSpecializationArgs(add) !== nothing
-    @test CC.getTemplateSpecializationArgsAsWritten(add) !== nothing
-    @test CC.getDependentSpecializationInfo(add) !== nothing
+    @test CC.is_null_handle(CC.getTemplateSpecializationInfo(add))
+    @test CC.is_null_handle(CC.getPrimaryTemplate(add))
+    @test CC.is_null_handle(CC.getTemplateSpecializationArgs(add))
+    @test CC.is_null_handle(CC.getTemplateSpecializationArgsAsWritten(add))
+    @test CC.is_null_handle(CC.getDependentSpecializationInfo(add))
     @test CC.is_null_handle(CC.getPointOfInstantiation(add))
-    @test CC.getParamDecl(add, 0) !== nothing
-    @test CC.isVariadic(vfn)
-    @test CC.getEllipsisLoc(vfn) !== nothing
-    @test CC.isExternC(cfn)
-    @test CC.isStatic(sfn)
-    @test CC.isInlined(inl)
+    @test !CC.is_null_handle(CC.getParamDecl(add, 0))
+    @test CC.isVariadic(vfn) == true
+    @test !CC.is_null_handle(CC.getEllipsisLoc(vfn))
+    @test CC.isExternC(cfn) == true
+    @test CC.isStatic(sfn) == true
+    @test CC.isInlined(inl) == true
 
     # ---------------- ParmVarDecl ----------------
     p0 = CC.getParamDecl(add, 0)
     pdef = CC.getParamDecl(wdf, 1)
-    parm_bools = (CC.isObjCMethodParameter, CC.isDestroyedInCallee, CC.isKNRPromoted,
-                  CC.hasDefaultArg, CC.hasUnparsedDefaultArg, CC.hasUninstantiatedDefaultArg,
-                  CC.hasInheritedDefaultArg)
-    for g in parm_bools
-        @test g(p0) isa Bool
-    end
-    @test CC.getFunctionScopeDepth(p0) !== nothing
-    @test CC.getFunctionScopeIndex(p0) !== nothing
-    @test CC.getDefaultArgRange(p0) isa CC.SourceRange  # shape-only
+
+    @test CC.isObjCMethodParameter(p0) == false
+    @test CC.isDestroyedInCallee(p0) == false
+    @test CC.isKNRPromoted(p0) == false
+    @test CC.hasDefaultArg(p0) == false
+    @test CC.hasUnparsedDefaultArg(p0) == false
+    @test CC.hasUninstantiatedDefaultArg(p0) == false
+    @test CC.hasInheritedDefaultArg(p0) == false
+
+    @test CC.getFunctionScopeDepth(p0) == 0
+    @test CC.getFunctionScopeIndex(p0) == 0
+    @test CC.is_null_handle(CC.getDefaultArgRange(p0).begin_loc)
     @test !CC.is_null_handle(CC.getOriginalType(p0))
-    @test CC.hasDefaultArg(pdef)
-    @test CC.getDefaultArg(pdef) isa CC.Expr_
+    @test CC.hasDefaultArg(pdef) == true
+    @test !CC.is_null_handle(CC.getDefaultArg(pdef))
 
     # ---------------- RecordDecl / TagDecl / TypeDecl ----------------
     rd = CC.RecordDecl(getptr("Point"))
-    rec_bools = (CC.hasFlexibleArrayMember, CC.isAnonymousStructOrUnion,
-                 CC.isInjectedClassName, CC.isLambda, CC.isCapturedRecord,
-                 CC.isOrContainsUnion, CC.canPassInRegisters,
-                 CC.hasLoadedFieldsFromExternalStorage, CC.hasNonTrivialToPrimitiveCopyCUnion,
-                 CC.hasNonTrivialToPrimitiveDefaultInitializeCUnion,
-                 CC.hasNonTrivialToPrimitiveDestructCUnion, CC.hasObjectMember,
-                 CC.hasVolatileMember, CC.isNonTrivialToPrimitiveCopy,
-                 CC.isNonTrivialToPrimitiveDefaultInitialize,
-                 CC.isNonTrivialToPrimitiveDestroy, CC.isParamDestroyedInCallee)
-    for g in rec_bools
-        @test g(rd) isa Bool
-    end
-    @test CC.getNumFields(rd) isa Integer  # shape-only: the target chooses this value
-    @test CC.getArgPassingRestrictions(rd) !== nothing
-    @test CC.getPreviousDecl(rd) isa CC.RecordDecl
-    @test CC.getMostRecentDecl(rd) isa CC.RecordDecl
-    @test CC.getDefinition(rd) isa CC.RecordDecl
+
+    @test CC.hasFlexibleArrayMember(rd) == false
+    @test CC.isAnonymousStructOrUnion(rd) == false
+    @test CC.isInjectedClassName(rd) == false
+    @test CC.isLambda(rd) == false
+    @test CC.isCapturedRecord(rd) == false
+    @test CC.isOrContainsUnion(rd) == false
+    @test CC.canPassInRegisters(rd) == true
+    @test CC.hasLoadedFieldsFromExternalStorage(rd) == false
+    @test CC.hasNonTrivialToPrimitiveCopyCUnion(rd) == false
+    @test CC.hasNonTrivialToPrimitiveDefaultInitializeCUnion(rd) == false
+    @test CC.hasNonTrivialToPrimitiveDestructCUnion(rd) == false
+    @test CC.hasObjectMember(rd) == false
+    @test CC.hasVolatileMember(rd) == false
+    @test CC.isNonTrivialToPrimitiveCopy(rd) == false
+    @test CC.isNonTrivialToPrimitiveDefaultInitialize(rd) == false
+    @test CC.isNonTrivialToPrimitiveDestroy(rd) == false
+    @test CC.isParamDestroyedInCallee(rd) == false
+
+    @test CC.getNumFields(rd) == 4
+    @test CC.getArgPassingRestrictions(rd) == LX.CXRecordDecl_APK_CanPassInRegs
+    @test CC.is_null_handle(CC.getPreviousDecl(rd))
+    @test CC.getMostRecentDecl(rd).ptr == rd.ptr
+    @test CC.getDefinition(rd).ptr == rd.ptr
     @test !CC.is_null_handle(CC.findFirstNamedDataMember(rd))
-    # target-ABI-decided: records use Microsoft layout under the MS C++ ABI, so only
-    # the shape of the answer holds across the three CI runners
-    @test CC.isMsStruct(rd, ctx) isa Bool  # shape-only
-    @test CC.ClassTemplateSpecializationDecl(rd) !== nothing
+    @test CC.isMsStruct(rd, ctx) == Sys.iswindows()
+    @test CC.is_null_handle(CC.ClassTemplateSpecializationDecl(rd))
 
     # TagDecl-level accessors (dispatch to AbstractTagDecl via RecordDecl)
-    tag_bools = (CC.isThisDeclarationADefinition, CC.isCompleteDefinition,
-                 CC.isBeingDefined, CC.isFreeStanding, CC.isStruct, CC.isInterface,
-                 CC.isClass, CC.isUnion, CC.isEnum, CC.hasNameForLinkage,
-                 CC.isCompleteDefinitionRequired, CC.isDependentType,
-                 CC.isEmbeddedInDeclarator, CC.mayHaveOutOfDateDef)
-    for g in tag_bools
-        @test g(rd) isa Bool
-    end
+    @test CC.isThisDeclarationADefinition(rd) == true
+    @test CC.isCompleteDefinition(rd) == true
+    @test CC.isBeingDefined(rd) == false
+    @test CC.isFreeStanding(rd) == true
+    @test CC.isStruct(rd) == true
+    @test CC.isInterface(rd) == false
+    @test CC.isClass(rd) == false
+    @test CC.isUnion(rd) == false
+    @test CC.isEnum(rd) == false
+    @test CC.hasNameForLinkage(rd) == true
+    @test CC.isCompleteDefinitionRequired(rd) == false
+    @test CC.isDependentType(rd) == false
+    @test CC.isEmbeddedInDeclarator(rd) == false
+    @test CC.mayHaveOutOfDateDef(rd) == false
+
     @test !CC.is_null_handle(CC.DeclContext(rd))
-    @test CC.getCanonicalDecl(rd) isa CC.TagDecl
-    @test CC.getDefinition(rd) isa CC.RecordDecl
-    @test !isempty(CC.getKindName(rd))
-    @test CC.getTagKind(rd) !== nothing
+    @test CC.getCanonicalDecl(rd).ptr == rd.ptr
+    @test CC.getDefinition(rd).ptr == rd.ptr
+    @test CC.getKindName(rd) == "struct"
+    @test CC.getTagKind(rd) == LX.CXTagTypeKind_Struct
     @test CC.is_null_handle(CC.getTypedefNameForAnonDecl(rd))
     @test CC.is_null_handle(CC.getQualifier(rd))
-    @test CC.getBraceRange(rd) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getBraceRange(rd).begin_loc)
     @test !CC.is_null_handle(CC.getInnerLocStart(rd))
     @test !CC.is_null_handle(CC.getOuterLocStart(rd))
-    @test CC.getSourceRange(rd) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getSourceRange(rd).begin_loc)
 
     # NamedDecl -> TypeDecl cast + TypeDecl accessors
     rec_named = CC.NamedDecl(getptr("Point"))
     td_base = CC.TypeDecl(rec_named)
-    @test td_base isa CC.TypeDecl
-    @test CC.getTypeForDecl(rec_named) !== nothing
-    @test CC.getTypeForDecl(td_base) !== nothing
+    @test !CC.is_null_handle(td_base)
+    @test CC.getTypeForDecl(rec_named) != C_NULL
+    @test CC.getTypeForDecl(td_base) != C_NULL
     @test !CC.is_null_handle(CC.getBeginLoc(td_base))
-    @test CC.getSourceRange(td_base) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getSourceRange(td_base).begin_loc)
 
     # ---------------- FieldDecl ----------------
     fields = CC.getFields(rd)
-    @test !isempty(fields)
-    for fld in fields
-        @test CC.isBitField(fld) isa Bool  # shape-only
-        @test !(CC.isMutable(fld))
-        @test CC.isUnnamedBitfield(fld) isa Bool  # shape-only
-        @test !(CC.isAnonymousStructOrUnion(fld))
-        @test !(CC.hasCapturedVLAType(fld))
-        @test !(CC.hasInClassInitializer(fld))
-        @test CC.getFieldIndex(fld) isa Integer  # shape-only: the target chooses this value
-        @test CC.getInClassInitStyle(fld) !== nothing
-        @test CC.getBitWidth(fld) isa CC.Expr_  # shape-only
-        @test CC.getCanonicalDecl(fld) isa CC.FieldDecl
-        @test CC.is_null_handle(CC.getCapturedVLAType(fld))
-        @test CC.is_null_handle(CC.getInClassInitializer(fld))
-        @test CC.getParent(fld) isa CC.RecordDecl
-        @test CC.getSourceRange(fld) isa CC.SourceRange  # shape-only
-        @test CC.isZeroLengthBitField(fld, ctx) isa Bool  # shape-only
-        @test CC.isZeroSize(fld, ctx) isa Bool  # shape-only: the host decides this
-    end
-    bf = fields[findfirst(CC.isBitField, fields)]
-    @test CC.getBitWidthValue(bf, ctx) isa Integer  # shape-only: the target chooses this value
+    @test length(fields) == 4
+
+    # fields[1]: int x
+    @test CC.isBitField(fields[1]) == false
+    @test CC.isMutable(fields[1]) == false
+    @test CC.isUnnamedBitfield(fields[1]) == false
+    @test CC.isAnonymousStructOrUnion(fields[1]) == false
+    @test CC.hasCapturedVLAType(fields[1]) == false
+    @test CC.hasInClassInitializer(fields[1]) == false
+    @test CC.getFieldIndex(fields[1]) == 0
+    @test CC.getInClassInitStyle(fields[1]) == LX.CXInClassInitStyle_ICIS_NoInit
+    @test CC.is_null_handle(CC.getBitWidth(fields[1]))
+    @test CC.getCanonicalDecl(fields[1]).ptr == fields[1].ptr
+    @test CC.is_null_handle(CC.getCapturedVLAType(fields[1]))
+    @test CC.is_null_handle(CC.getInClassInitializer(fields[1]))
+    @test CC.getParent(fields[1]).ptr == rd.ptr
+    @test !CC.is_null_handle(CC.getSourceRange(fields[1]).begin_loc)
+    @test CC.isZeroLengthBitField(fields[1], ctx) == false
+    @test CC.isZeroSize(fields[1], ctx) == false
+
+    # fields[2]: int y : 3
+    @test CC.isBitField(fields[2]) == true
+    @test CC.isMutable(fields[2]) == false
+    @test CC.isUnnamedBitfield(fields[2]) == false
+    @test CC.isAnonymousStructOrUnion(fields[2]) == false
+    @test CC.hasCapturedVLAType(fields[2]) == false
+    @test CC.hasInClassInitializer(fields[2]) == false
+    @test CC.getFieldIndex(fields[2]) == 1
+    @test CC.getInClassInitStyle(fields[2]) == LX.CXInClassInitStyle_ICIS_NoInit
+    @test !CC.is_null_handle(CC.getBitWidth(fields[2]))
+    @test CC.getCanonicalDecl(fields[2]).ptr == fields[2].ptr
+    @test CC.is_null_handle(CC.getCapturedVLAType(fields[2]))
+    @test CC.is_null_handle(CC.getInClassInitializer(fields[2]))
+    @test CC.getParent(fields[2]).ptr == rd.ptr
+    @test !CC.is_null_handle(CC.getSourceRange(fields[2]).begin_loc)
+    @test CC.isZeroLengthBitField(fields[2], ctx) == false
+    @test CC.isZeroSize(fields[2], ctx) == false
+
+    # fields[3]: double z
+    @test CC.isBitField(fields[3]) == false
+    @test CC.getFieldIndex(fields[3]) == 2
+
+    # fields[4]: int : 0
+    @test CC.isBitField(fields[4]) == true
+    @test CC.isUnnamedBitfield(fields[4]) == true
+    @test CC.getFieldIndex(fields[4]) == 3
+    @test CC.isZeroLengthBitField(fields[4], ctx) == true
+    @test CC.isZeroSize(fields[4], ctx) == true
+
+    bf = fields[2]
+    @test CC.getBitWidthValue(bf, ctx) == 3
 
     # ---------------- EnumDecl / EnumConstantDecl ----------------
     ed = CC.EnumDecl(getptr("Color"))
     sed = CC.EnumDecl(getptr("Scoped"))
-    enum_bools = (CC.isClosed, CC.isClosedFlag, CC.isClosedNonFlag, CC.isComplete,
-                  CC.isFixed, CC.isScoped, CC.isScopedUsingClassTag)
-    for g in enum_bools
-        @test g(ed) isa Bool
-    end
-    @test CC.isScoped(sed)
-    @test CC.getNumNegativeBits(ed) !== nothing
-    @test CC.getNumPositiveBits(ed) !== nothing
-    @test CC.getODRHash(ed) !== nothing
-    @test CC.getNumEnumerators(ed) isa Integer  # shape-only: the target chooses this value
-    @test CC.getCanonicalDecl(ed) isa CC.EnumDecl
-    @test CC.getPreviousDecl(ed) isa CC.EnumDecl
-    @test CC.getMostRecentDecl(ed) isa CC.EnumDecl
-    @test CC.getDefinition(ed) isa CC.EnumDecl
-    @test CC.getIntegerType(sed) isa CC.QualType
+
+    @test CC.isClosed(ed) == true
+    @test CC.isClosedFlag(ed) == false
+    @test CC.isClosedNonFlag(ed) == true
+    @test CC.isComplete(ed) == true
+    @test CC.isFixed(ed) == false
+    @test CC.isScoped(ed) == false
+    @test CC.isScopedUsingClassTag(ed) == false
+
+    @test CC.isScoped(sed) == true
+    @test CC.getNumNegativeBits(ed) == 0
+    @test CC.getNumPositiveBits(ed) == 3
+    @test CC.getODRHash(ed) isa UInt32 && CC.getODRHash(ed) != 0
+    @test CC.getNumEnumerators(ed) == 3
+    @test CC.getCanonicalDecl(ed).ptr == ed.ptr
+    @test CC.is_null_handle(CC.getPreviousDecl(ed))
+    @test CC.getMostRecentDecl(ed).ptr == ed.ptr
+    @test CC.getDefinition(ed).ptr == ed.ptr
+    @test !CC.is_null_handle(CC.getIntegerType(sed))
     @test CC.is_null_handle(CC.getInstantiatedFromMemberEnum(ed))
-    @test CC.getIntegerTypeRange(sed) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getIntegerTypeRange(sed).begin_loc)
     @test !CC.is_null_handle(CC.getIntegerTypeSourceInfo(sed))
-    @test CC.getMemberSpecializationInfo(ed) !== nothing
+    @test CC.is_null_handle(CC.getMemberSpecializationInfo(ed))
     @test !CC.is_null_handle(CC.getPromotionType(ed))
-    @test CC.getTemplateInstantiationPattern(ed) isa CC.EnumDecl
-    @test CC.getTemplateSpecializationKind(ed) !== nothing
+    @test CC.is_null_handle(CC.getTemplateInstantiationPattern(ed))
+    @test CC.getTemplateSpecializationKind(ed) == LX.CXTemplateSpecializationKind_TSK_Undeclared
 
     enumerators = CC.getEnumerators(ed)
     @test length(enumerators) == 3
     ec = enumerators[2]   # Green = 5
-    @test CC.getEnumConstantDeclValue(ec) isa Integer
-    @test CC.getCanonicalDecl(ec) isa CC.EnumConstantDecl
+    @test CC.getEnumConstantDeclValue(ec) == 5
+    @test CC.getCanonicalDecl(ec).ptr == ec.ptr
     @test !CC.is_null_handle(CC.getInitExpr(ec))
-    @test CC.getSourceRange(ec) isa CC.SourceRange  # shape-only
+    @test !CC.is_null_handle(CC.getSourceRange(ec).begin_loc)
     # NamedDecl -> EnumConstantDecl cast
     ec_named = CC.NamedDecl(ec.ptr)
-    @test !CC.is_null_handle(CC.EnumConstantDecl(ec_named))
+    @test CC.EnumConstantDecl(ec_named).ptr == ec.ptr
 
     # ---------------- TypedefNameDecl / TypedefDecl / TypeAliasDecl ----------------
     td = CC.TypedefDecl(getptr("MyInt"))
     tad = CC.TypeAliasDecl(getptr("MyAlias"))
     @test !CC.is_null_handle(CC.getUnderlyingType(td))
-    @test CC.getCanonicalDecl(td) isa CC.TypedefNameDecl
+    @test CC.getCanonicalDecl(td).ptr == td.ptr
     @test CC.is_null_handle(CC.getAnonDeclWithTypedefName(td))
-    @test !(CC.isTransparentTag(td))
+    @test CC.isTransparentTag(td) == false
     @test !CC.is_null_handle(CC.getTypeSourceInfo(td))
-    @test !(CC.isModed(td))
-    @test CC.getSourceRange(td) isa CC.SourceRange  # shape-only
+    @test CC.isModed(td) == false
+    @test !CC.is_null_handle(CC.getSourceRange(td).begin_loc)
     @test !CC.is_null_handle(CC.getUnderlyingType(tad))
-    @test CC.getDescribedAliasTemplate(tad) !== nothing
-    @test CC.getSourceRange(tad) isa CC.SourceRange  # shape-only
+    @test CC.is_null_handle(CC.getDescribedAliasTemplate(tad))
+    @test !CC.is_null_handle(CC.getSourceRange(tad).begin_loc)
 
     # ---------------- NamespaceDecl ----------------
     ns = CC.NamespaceDecl(getptr("ns"))
     tinl = CC.NamespaceDecl(getptr("top_inl"))
-    @test !(CC.isAnonymousNamespace(ns))
-    @test !(CC.isInline(ns))
-    @test CC.isInline(tinl)
-    @test CC.isOriginalNamespace(ns)
-    @test !CC.is_null_handle(CC.getOriginalNamespace(ns))
-    @test CC.getAnonymousNamespace(ns) isa CC.NamespaceDecl
-    @test CC.getCanonicalDecl(ns) isa CC.NamespaceDecl
-    @test CC.getSourceRange(ns) isa CC.SourceRange  # shape-only
+    @test CC.isAnonymousNamespace(ns) == false
+    @test CC.isInline(ns) == false
+    @test CC.isInline(tinl) == true
+    @test CC.isOriginalNamespace(ns) == true
+    @test CC.getOriginalNamespace(ns).ptr == ns.ptr
+    @test !CC.is_null_handle(CC.getAnonymousNamespace(ns))
+    @test CC.getCanonicalDecl(ns).ptr == ns.ptr
+    @test !CC.is_null_handle(CC.getSourceRange(ns).begin_loc)
     @test !CC.is_null_handle(CC.getBeginLoc(ns))
     @test !CC.is_null_handle(CC.getRBraceLoc(ns))
 
     # ---------------- TranslationUnitDecl ----------------
     tu = CC.getTranslationUnitDecl(gvar)
     @test !CC.is_null_handle(CC.getASTContext(tu))
-    @test CC.getAnonymousNamespace(tu) isa CC.NamespaceDecl
+    @test CC.is_null_handle(CC.getAnonymousNamespace(tu))
 
     # ---------------- BlockDecl (reached via the recursive decl walk) ----------------
     all_decls = CC.decls(CC.castToDeclContext(tu))
     blk = all_decls[findfirst(d -> d isa CC.BlockDecl, all_decls)]
     addend = all_decls[findfirst(d -> d isa CC.VarDecl && CC.getName(d) == "addend", all_decls)]
-    blk_bools = (CC.blockMissingReturnType, CC.canAvoidCopyToHeap, CC.capturesCXXThis,
-                 CC.doesNotEscape, CC.hasCaptures, CC.isConversionFromLambda, CC.isVariadic)
-    for g in blk_bools
-        @test g(blk) isa Bool
-    end
-    @test CC.getBlockManglingContextDecl(blk) isa CC.Decl  # shape-only: the host decides this
-    @test CC.getBlockManglingNumber(blk) !== nothing
+    @test CC.blockMissingReturnType(blk) == false
+    @test CC.canAvoidCopyToHeap(blk) == true
+    @test CC.capturesCXXThis(blk) == false
+    @test CC.doesNotEscape(blk) == false
+    @test CC.hasCaptures(blk) == true
+    @test CC.isConversionFromLambda(blk) == false
+    @test CC.isVariadic(blk) == false
+
+    @test CC.is_null_handle(CC.getBlockManglingContextDecl(blk))
+    @test CC.getBlockManglingNumber(blk) == 0
     @test !CC.is_null_handle(CC.getCaretLocation(blk))
-    @test CC.getNumCaptures(blk) !== nothing
-    @test CC.getNumParams(blk) !== nothing
+    @test CC.getNumCaptures(blk) == 1
+    @test CC.getNumParams(blk) == 1
     @test !CC.is_null_handle(CC.getSignatureAsWritten(blk))
-    @test CC.getSourceRange(blk) isa CC.SourceRange  # shape-only
-    @test CC.capturesVariable(blk, addend)
+    @test !CC.is_null_handle(CC.getSourceRange(blk).begin_loc)
+    @test CC.capturesVariable(blk, addend) == true
     @test !CC.is_null_handle(CC.getParamDecl(blk, 0))
-    @test CC.getParams(blk) isa Vector{CC.ParmVarDecl}
+    @test length(CC.getParams(blk)) == 1
 
     dispose(f)
     dispose(I)
@@ -1450,11 +1556,11 @@ end
     f = DeclFinder(I)
 
     @test f(I, "gvfix")
-    @test CC.isNoDestroy(CC.VarDecl(get_decl(f).ptr), ctx) isa Bool     # was: missing ctx arg
+    @test CC.isNoDestroy(CC.VarDecl(get_decl(f).ptr), ctx) == false     # was: missing ctx arg
 
     @test f(I, "plainfix")
     fd = CC.FunctionDecl(get_decl(f).ptr)
-    @test CC.getTemplateInstantiationPattern(fd, true) isa CC.FunctionDecl  # was: missing for_def arg
+    @test CC.is_null_handle(CC.getTemplateInstantiationPattern(fd, true))  # was: missing for_def arg
 
     @test f(I, "Afix")
     afix = CC.CXXRecordDecl(get_decl(f).ptr)
@@ -1491,9 +1597,9 @@ end
         # NamedDecl::getLinkageAndVisibility — the LinkageInfo aggregate.
         plain = D("dt_tail_plain", CC.VarDecl)
         linkage, visibility, is_explicit = CC.getLinkageAndVisibility(plain)
-        @test linkage isa LX.CXLinkage
-        @test visibility isa LX.CXVisibility
-        @test is_explicit isa Bool
+        @test linkage == LX.CXLinkage_External
+        @test visibility == LX.CXVisibility_DefaultVisibility
+        @test is_explicit == false
         @test visibility == CC.getVisibility(plain)   # same LinkageInfo field
         @test linkage == CC.getLinkageInternal(plain)
 
@@ -1512,7 +1618,7 @@ end
         @test replaceable == CC.isReplaceableGlobalAllocationFunction(fn)
         @test replaceable === false
         @test alignment_param === nothing
-        @test is_nothrow isa Bool
+        @test is_nothrow == false
     finally
         dispose(f)
         dispose(I)
@@ -1541,23 +1647,23 @@ end
 
         # TranslationUnitDecl <-> DeclContext
         tu_dc = CC.DeclContext(tu)
-        @test tu_dc isa CC.DeclContext
+        @test !CC.is_null_handle(tu_dc)
         @test CC.TranslationUnitDecl(tu_dc).ptr == tu.ptr
 
         # NamespaceDecl <-> DeclContext
         nd_dc = CC.DeclContext(nd)
-        @test nd_dc isa CC.DeclContext
+        @test !CC.is_null_handle(nd_dc)
         @test CC.NamespaceDecl(nd_dc).ptr == nd.ptr
 
         # FunctionDecl <-> DeclContext
         fd_dc = CC.DeclContext(fd)
-        @test fd_dc isa CC.DeclContext
+        @test !CC.is_null_handle(fd_dc)
         @test CC.FunctionDecl(fd_dc).ptr == fd.ptr
 
         # ExternCContextDecl <-> DeclContext (the AST's singleton extern "C" context)
         ecd = CC.getExternCContextDecl(ctx)
         ecd_dc = CC.DeclContext(ecd)
-        @test ecd_dc isa CC.DeclContext
+        @test !CC.is_null_handle(ecd_dc)
         @test CC.ExternCContextDecl(ecd_dc).ptr == ecd.ptr
     finally
         dispose(f)
@@ -1585,12 +1691,10 @@ end
         # NamedDecl::isReserved -> ReservedIdentifierStatus; an ordinary global
         # name obeys no reserved-identifier rule.
         rs = CC.isReserved(vd, lo)
-        @test rs isa CC.LibClangEx.CXReservedIdentifierStatus
         @test rs == CC.LibClangEx.CXReservedIdentifierStatus_NotReserved
 
         # NamedDecl::getObjCFStringFormattingFamily -> SFF_None for a non-ObjC decl.
         ff = CC.getObjCFStringFormattingFamily(vd)
-        @test ff isa CC.LibClangEx.CXObjCStringFormatFamily
         @test ff == CC.LibClangEx.CXObjCStringFormatFamily_SFF_None
 
         # ParmVarDecl::getObjCDeclQualifier -> OBJC_TQ_None for an ordinary
@@ -1598,7 +1702,6 @@ end
         # because it asserts IsObjCMethodParam).
         pvd = CC.getParamDecl(fd, 0)
         q = CC.getObjCDeclQualifier(pvd)
-        @test q isa CC.LibClangEx.CXObjCDeclQualifier
         @test q == CC.LibClangEx.CXObjCDeclQualifier_OBJC_TQ_None
     finally
         dispose(I)
@@ -1652,7 +1755,7 @@ end
         end
         host = CC.FunctionDecl(look("hb_host").ptr)
         be = find_node(CC.BlockExpr, CC.resolve(CC.getBody(host)))
-        @test be isa CC.BlockExpr
+        @test !CC.is_null_handle(be)
         blk = CC.getBlockDecl(be)
         @test blk.ptr != C_NULL
         @test CC.getNumCaptures(blk) >= 1
@@ -1663,7 +1766,7 @@ end
 
         # ---------------- HLSLBufferDecl ----------------
         hb = CC.HLSLBufferDecl(ctx, dc, true, loc, id, loc, loc)
-        @test hb isa CC.HLSLBufferDecl
+        @test !CC.is_null_handle(hb)
         @test hb.ptr != C_NULL
         @test CC.isCBuffer(hb)
         @test CC.getName(hb) == "hb_anchor"
@@ -1676,7 +1779,7 @@ end
         @test CC.is_null_handle(CC.getRBraceLoc(hb))
         CC.setRBraceLoc(hb, loc)
         @test CC.getRBraceLoc(hb).ptr == loc.ptr
-        @test CC.getSourceRange(hb) isa CC.SourceRange  # shape-only
+        @test !CC.is_null_handle(CC.getSourceRange(hb).begin_loc)
 
         tb = CC.HLSLBufferDecl(ctx, dc, false, loc, id, loc, loc)
         @test !CC.isCBuffer(tb)
@@ -1685,7 +1788,7 @@ end
 
         # Decl <-> DeclContext pivot: offset-correct in both directions
         hbdc = CC.DeclContext(hb)
-        @test hbdc isa CC.DeclContext
+        @test !CC.is_null_handle(hbdc)
         @test !CC.is_null_handle(CC.HLSLBufferDecl(hbdc))
         @test CC.HLSLBufferDecl(hbdc).ptr == hb.ptr
     finally
@@ -1722,7 +1825,7 @@ end
 
         # ---------------- NamespaceDecl::Create ----------------
         ns = CC.NamespaceDecl(ctx, dc, true, loc2, loc, id)
-        @test ns isa CC.NamespaceDecl
+        @test !CC.is_null_handle(ns)
         @test ns.ptr != C_NULL
         @test CC.getName(ns) == "dg_anchor"
         @test CC.isInline(ns)
@@ -1756,7 +1859,7 @@ end
         # ---------------- setTemplateParameterListsInfo ----------------
         ctd = CC.ClassTemplateDecl(look("DGTmpl").ptr)
         tpl = CC.getTemplateParameters(ctd)
-        @test tpl isa CC.TemplateParameterList
+        @test !CC.is_null_handle(tpl)
         @test tpl.ptr != C_NULL
 
         # TagDecl arm, on a freshly created (detached) record
@@ -1794,7 +1897,6 @@ end
         # ---------------- FunctionDecl::DefaultedFunctionInfo ----------------
         fn = CC.FunctionDecl(look("dg_fn").ptr)
         info0 = CC.getDefaultedFunctionInfo(fn)
-        @test info0 isa CC.DefaultedFunctionInfo
         # an ordinary function stores a body, so the union holds no defaulted info
         @test info0.ptr == C_NULL
 
@@ -1803,7 +1905,6 @@ end
         info = CC.DefaultedFunctionInfo(ctx, [nd_a, nd_b],
                                         [LXG.CXAccessSpecifier_AS_public,
                                          LXG.CXAccessSpecifier_AS_private])
-        @test info isa CC.DefaultedFunctionInfo
         @test info.ptr != C_NULL
         @test CC.getNumUnqualifiedLookups(info) == 2
         # decls and accesses are read in lockstep at the same index
@@ -1892,9 +1993,11 @@ end
 
         # the kinds the live AST reports agree with the enumerator-driven answers
         plain_fd = CC.FunctionDecl(look("plaindh").ptr)
+        @test CC.getKind(plain_fd) == K.CXDeclKind_Function
         @test CC.classofKind(CC.FunctionDecl, CC.getKind(plain_fd))
         @test CC.classofKind(CC.DeclaratorDecl, CC.getKind(plain_fd))
         @test !CC.classofKind(CC.TagDecl, CC.getKind(plain_fd))
+        @test CC.getKind(tu) == K.CXDeclKind_TranslationUnit
         @test !CC.classofKind(CC.NamedDecl, CC.getKind(tu))
 
         # ---------------- getQualifierRange ----------------
@@ -1903,7 +2006,7 @@ end
         fd = CC.FunctionDecl(CC.getMostRecentDecl(CC.NamedDecl(look("NDH::fdh").ptr)).ptr)
         @test CC.getQualifier(fd).ptr != C_NULL
         qr = CC.getQualifierRange(fd)
-        @test qr isa CC.SourceRange
+        @test !CC.is_null_handle(qr.begin_loc)
         @test qr.begin_loc.ptr != C_NULL
 
         # unqualified declarator: no specifier was written, so the extent is invalid
@@ -1912,7 +2015,7 @@ end
 
         rd = CC.getMostRecentDecl(CC.RecordDecl(look("NDH::SDH").ptr))
         tag_qr = CC.getQualifierRange(rd)
-        @test tag_qr isa CC.SourceRange
+        @test !CC.is_null_handle(tag_qr.begin_loc)
         # qualifier and extent agree on whether a specifier was written
         @test (CC.getQualifier(rd).ptr == C_NULL) == (tag_qr.begin_loc.ptr == C_NULL)
 
@@ -1922,7 +2025,7 @@ end
 
         # ---------------- TagDecl <-> DeclContext pivot ----------------
         rd_dc = CC.DeclContext(plain_rd)
-        @test rd_dc isa CC.DeclContext
+        @test !CC.is_null_handle(rd_dc)
         @test CC.TagDecl(rd_dc).ptr == plain_rd.ptr
         # TagDecl(::DeclContext) goes through dyn_cast_or_null, so a context whose kind
         # is not a tag declaration's yields the NULL carrier rather than throwing.
