@@ -3,20 +3,25 @@ import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_tag, get_instance
 using Test
 
+# Pinned so every TargetInfo answer below is a fact about this target rather than about the
+# runner. Without it, each predicate could only be asserted `isa Bool`.
+const PIN = "x86_64-linux-gnu"
+
 @testset "Basic | TargetInfo target queries" begin
-    I = CC.create_interpreter(String[])
+    I = CC.create_interpreter(String[]; triple=PIN)
     ci = CC.get_instance(I)
     ti = CC.getTarget(ci)
 
     # identity strings
     @test !isempty(CC.getTriple(ti))
     @test !isempty(CC.getDataLayoutString(ti))
-    @test CC.getABI(ti) isa String  # shape-only: target ABI string
+    # the SysV x86_64 target names no ABI variant, so this is empty -- a value that
+    # still fails for a shim handing back another member's string
+    @test CC.getABI(ti) == ""
     @test !isempty(CC.getPlatformName(ti))
     @test CC.getUserLabelPrefix(ti) in ("", "_")
     @test !isempty(CC.getMCountName(ti))
     @test CC.getClobbers(ti) isa String
-
 
     # endianness: exactly one of the two
     @test CC.isBigEndian(ti) != CC.isLittleEndian(ti)
@@ -79,7 +84,7 @@ using Test
     @test CC.hasInt128Type(ti) == true
     @test CC.hasBitIntType(ti) == true
     @test CC.hasLongDoubleType(ti) == true
-    @test CC.hasFPReturn(ti) isa Bool  # shape-only: the host decides this
+    @test CC.hasFPReturn(ti) == true
     @test CC.isTLSSupported(ti) == true
     @test CC.isVLASupported(ti) == true
     for f in (CC.hasLegalHalfType, CC.hasFloat16Type, CC.hasBFloat16Type, CC.hasFullBFloat16Type,
@@ -102,7 +107,7 @@ using Test
     @test CC.hasFeature(ti, "definitely-not-a-feature") == false
     @test CC.isValidCPUName(ti, "this-cpu-does-not-exist") == false
     @test CC.isValidTuneCPUName(ti, "this-cpu-does-not-exist") == false
-    @test CC.isValidFeatureName(ti, "not-a-real-feature-name") isa Bool  # shape-only: the host decides this
+    @test CC.isValidFeatureName(ti, "not-a-real-feature-name") == false
     cpus = CC.fillValidCPUList(ti)
     @test cpus isa Vector{String}
     @test !isempty(cpus)
@@ -125,7 +130,7 @@ using Test
 end
 
 @testset "Basic | TargetInfo integer-type and bitfield tail" begin
-    I = CC.create_interpreter(String[])
+    I = CC.create_interpreter(String[]; triple=PIN)
     ci = CC.get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -194,7 +199,7 @@ end
 end
 
 @testset "Basic | TargetInfo ABI knobs and GCC register names" begin
-    I = CC.create_interpreter(String[])
+    I = CC.create_interpreter(String[]; triple=PIN)
     ci = CC.get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -221,12 +226,12 @@ end
     @test !isempty(CC.getBFloat16Mangling(ti))
 
     # bitfield layout / address-space mangling / builtin predicates
-    @test CC.useZeroLengthBitfieldAlignment(ti) isa Bool  # shape-only: the host decides this
-    @test CC.useLeadingZeroLengthBitfield(ti) isa Bool  # shape-only: the host decides this
-    @test CC.useExplicitBitFieldAlignment(ti) isa Bool  # shape-only: the host decides this
-    @test CC.useAddressSpaceMapMangling(ti) isa Bool  # shape-only: the host decides this
-    @test CC.isCLZForZeroUndef(ti) isa Bool  # shape-only: the host decides this
-    @test CC.hasBuiltinMSVaList(ti) isa Bool  # shape-only: the host decides this
+    @test CC.useZeroLengthBitfieldAlignment(ti) == false
+    @test CC.useLeadingZeroLengthBitfield(ti) == true
+    @test CC.useExplicitBitFieldAlignment(ti) == true
+    @test CC.useAddressSpaceMapMangling(ti) == false
+    @test CC.isCLZForZeroUndef(ti) == true
+    @test CC.hasBuiltinMSVaList(ti) == true
 
     # inline-asm clobbers and GCC register names
     @test CC.isValidClobber(ti, "memory")
@@ -242,14 +247,14 @@ end
         reg = candidates[i]
         @test CC.isValidClobber(ti, reg)
         @test !isempty(CC.getNormalizedGCCRegisterName(ti, reg))
-        @test CC.getNormalizedGCCRegisterName(ti, reg, true) isa String  # shape-only: the host decides this
+        @test CC.getNormalizedGCCRegisterName(ti, reg, true) == "ax"
     end
 
     CC.dispose(I)
 end
 
 @testset "Basic | TargetInfo target policy queries" begin
-    I = create_interpreter(String[])
+    I = create_interpreter(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -259,9 +264,9 @@ end
     @test opts.ptr != C_NULL
 
     # ObjC BOOL / mac68k pragma / __fp16 conversion intrinsics
-    @test CC.useSignedCharForObjCBool(ti) isa Bool  # shape-only: the host decides this
-    @test CC.hasAlignMac68kSupport(ti) isa Bool  # shape-only: the host decides this
-    @test CC.useFP16ConversionIntrinsics(ti) isa Bool  # shape-only: the host decides this
+    @test CC.useSignedCharForObjCBool(ti) == true
+    @test CC.hasAlignMac68kSupport(ti) == false
+    @test CC.useFP16ConversionIntrinsics(ti) == false
 
     # ARM CDE coprocessor mask is an 8-bit bitfield, zero away from ARM
     @test CC.getARMCDECoprocMask(ti) isa Unsigned
@@ -270,14 +275,14 @@ end
     # stack-pointer register names and single-register constraint extraction
     @test !CC.isSPRegName(ti, "not_a_register")
     @test all(r -> CC.isSPRegName(ti, r) isa Bool, ["sp", "esp", "rsp", "r1", "x31"])
-    @test CC.getConstraintRegister(ti, "a", "") isa String  # shape-only: the host decides this
-    @test CC.getConstraintRegister(ti, "r", "") isa String  # shape-only: the host decides this
+    @test CC.getConstraintRegister(ti, "a", "") == "ax"
+    @test CC.getConstraintRegister(ti, "r", "") == ""
     @test isempty(CC.getConstraintRegister(ti, "", ""))
 
     # NaN encoding, ELF protected visibility, MSVC dllimport comdat semantics
-    @test CC.isNan2008(ti) isa Bool  # shape-only: the host decides this
-    @test CC.hasProtectedVisibility(ti) isa Bool  # shape-only: the host decides this
-    @test CC.shouldDLLImportComdatSymbols(ti) isa Bool  # shape-only: the host decides this
+    @test CC.isNan2008(ti) == true
+    @test CC.hasProtectedVisibility(ti) == true
+    @test CC.shouldDLLImportComdatSymbols(ti) == false
 
     # register-passed arguments (clang itself asserts < 7) and the TLS alignment cap
     @test CC.getRegParmMax(ti) isa Cuint
@@ -285,8 +290,8 @@ end
     @test CC.getMaxTLSAlign(ti) isa Cuint
 
     # SEH __try, asm variants, EH data registers, static-init section
-    @test CC.isSEHTrySupported(ti) isa Bool  # shape-only: the host decides this
-    @test CC.hasNoAsmVariants(ti) isa Bool  # shape-only: the host decides this
+    @test CC.isSEHTrySupported(ti) == false
+    @test CC.hasNoAsmVariants(ti) == false
     @test CC.getEHDataRegisterNumber(ti, 0) isa Cint
     @test CC.getEHDataRegisterNumber(ti, 0) >= -1
     @test CC.getEHDataRegisterNumber(ti, 1) >= -1
@@ -295,16 +300,16 @@ end
     @test sect === nothing || sect isa String
 
     # setjmp/longjmp lowering, over-alignment policy, vtable pointer address space
-    @test CC.hasSjLjLowering(ti) isa Bool  # shape-only: the host decides this
-    @test CC.allowsLargerPreferedTypeAlignment(ti) isa Bool  # shape-only: the host decides this
-    @test CC.defaultsToAIXPowerAlignment(ti) isa Bool  # shape-only: the host decides this
+    @test CC.hasSjLjLowering(ti) == true
+    @test CC.allowsLargerPreferedTypeAlignment(ti) == true
+    @test CC.defaultsToAIXPowerAlignment(ti) == false
     @test CC.getVtblPtrAddressSpace(ti) isa Cuint
 
     dispose(I)
 end
 
 @testset "Basic | TargetInfo::ConstraintInfo" begin
-    I = CC.create_interpreter(String[])
+    I = CC.create_interpreter(String[]; triple=PIN)
     ci = CC.get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -385,40 +390,40 @@ end
 end
 
 @testset "Basic | TargetInfo feature, tuning and multiversioning queries" begin
-    I = create_interpreter(String[])
+    I = create_interpreter(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
 
     # Plain target predicates: the host triple decides every value, so assert only the shape.
-    @test CC.allowHalfArgsAndReturns(ti) isa Bool  # shape-only: the host decides this
-    @test CC.supportSourceEvalMethod(ti) isa Bool  # shape-only: the host decides this
-    @test CC.useObjCFP2RetForComplexLongDouble(ti) isa Bool  # shape-only: the host decides this
-    @test CC.allowAMDGPUUnsafeFPAtomics(ti) isa Bool  # shape-only: the host decides this
-    @test CC.hasPS4DLLImportExport(ti) isa Bool  # shape-only: the host decides this
-    @test CC.supportsTargetAttributeTune(ti) isa Bool  # shape-only: the host decides this
-    @test CC.supportsExtendIntArgs(ti) isa Bool  # shape-only: the host decides this
-    @test CC.checkArithmeticFenceSupported(ti) isa Bool  # shape-only: the host decides this
-    @test CC.allowDebugInfoForExternalRef(ti) isa Bool  # shape-only: the host decides this
-    @test CC.getMaxOpenCLWorkGroupSize(ti) isa Integer  # shape-only: the host decides this
+    @test CC.allowHalfArgsAndReturns(ti) == false
+    @test CC.supportSourceEvalMethod(ti) == true
+    @test CC.useObjCFP2RetForComplexLongDouble(ti) == true
+    @test CC.allowAMDGPUUnsafeFPAtomics(ti) == false
+    @test CC.hasPS4DLLImportExport(ti) == false
+    @test CC.supportsTargetAttributeTune(ti) == true
+    @test CC.supportsExtendIntArgs(ti) == true
+    @test CC.checkArithmeticFenceSupported(ti) == true
+    @test CC.allowDebugInfoForExternalRef(ti) == false
+    @test CC.getMaxOpenCLWorkGroupSize(ti) == 0x00000400
     # not host-decided: an interpreter built from an empty command line never targets
     # RenderScript on any of the CI platforms
     @test CC.isRenderScriptTarget(ti) == false
 
     # Feature-name queries are total for any string.
-    @test CC.doesFeatureAffectCodeGen(ti, "sse2") isa Bool  # shape-only: the host decides this
-    @test CC.isReadOnlyFeature(ti, "sse2") isa Bool  # shape-only: the host decides this
-    @test CC.getFeatureDependencies(ti, "sse2") isa String  # shape-only: the host decides this
+    @test CC.doesFeatureAffectCodeGen(ti, "sse2") == true
+    @test CC.isReadOnlyFeature(ti, "sse2") == false
+    @test CC.getFeatureDependencies(ti, "sse2") == ""
     @test isempty(CC.getFeatureDependencies(ti, "no-such-feature"))
-    @test CC.isBranchProtectionSupportedArch(ti, "x86-64") isa Bool  # shape-only: the host decides this
+    @test CC.isBranchProtectionSupportedArch(ti, "x86-64") == false
 
     # __builtin_cpu_supports / __builtin_cpu_is / cpu_dispatch argument validation: these
     # are the functions Sema calls on raw user strings, so they are total.
-    @test CC.validateCpuSupports(ti, "sse2") isa Bool  # shape-only: the host decides this
-    @test CC.validateCpuIs(ti, "atom") isa Bool  # shape-only: the host decides this
-    @test CC.validateCPUSpecificCPUDispatch(ti, "generic") isa Bool  # shape-only: the host decides this
+    @test CC.validateCpuSupports(ti, "sse2") == true
+    @test CC.validateCpuIs(ti, "atom") == true
+    @test CC.validateCPUSpecificCPUDispatch(ti, "generic") == true
     @test CC.validateCpuSupports(ti, "definitely-not-a-feature") == false
     @test CC.validateCpuIs(ti, "definitely-not-a-cpu") == false
-    @test CC.multiVersionFeatureCost(ti) isa Integer  # shape-only: the host decides this
+    @test CC.multiVersionFeatureCost(ti) == 0x00000000
 
     # multiVersionSortPriority indexes a target-specific priority table, so it is only
     # defined for a name the same target already validated -- clang itself only reaches it
@@ -432,7 +437,7 @@ end
 end
 
 @testset "Basic | TargetInfo address spaces, calling conventions, target identity" begin
-    I = create_interpreter(String[])
+    I = create_interpreter(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
     lo = CC.getLangOpts(ci)
@@ -458,21 +463,21 @@ end
     @test CC.checkCallingConvention(ti, CC.CXCallingConv_CC_C) == CC.CXTargetInfo_CCCR_OK
     @test CC.getCallingConvKind(ti, false) isa CC.CXTargetInfo_CallingConvKind
     @test CC.getCallingConvKind(ti, true) isa CC.CXTargetInfo_CallingConvKind
-    @test CC.areDefaultedSMFStillPOD(ti, lo) isa Bool  # shape-only: the host decides this
+    @test CC.areDefaultedSMFStillPOD(ti, lo) == true
 
     # VersionTuples cross as their printed form; the digits are the target's business, but
     # VersionTuple always prints at least a major number.
-    @test CC.getPlatformMinVersion(ti) isa String  # shape-only: the host decides this
+    @test CC.getPlatformMinVersion(ti) == "0"
     @test !isempty(CC.getPlatformMinVersion(ti))
-    @test CC.getSDKVersion(ti) isa String  # shape-only: the host decides this
+    @test CC.getSDKVersion(ti) == "0"
 
     # Target identity. Both the target ID and the Darwin variant triple are absent on the
     # ordinary host targets CI runs on, so only the shape is asserted.
-    @test CC.getTargetID(ti) isa String  # shape-only: the host decides this
+    @test CC.getTargetID(ti) == ""
     variant = CC.getDarwinTargetVariantTriple(ti)
     @test variant === nothing || variant isa String
-    @test CC.hasHIPImageSupport(ti) isa Bool  # shape-only: the host decides this
-    @test CC.validateTarget(ti, diag) isa Bool  # shape-only: the host decides this
+    @test CC.hasHIPImageSupport(ti) == true
+    @test CC.validateTarget(ti, diag) == true
 
     # Tune-CPU names: the list is target-decided (and empty on targets that model none),
     # but no entry is ever an empty string.
@@ -505,7 +510,7 @@ end
 end
 
 @testset "TargetInfo | fixed-point types" begin
-    I = CC.create_interpreter(String[])
+    I = CC.create_interpreter(String[]; triple=PIN)
     ti = CC.getTarget(CC.get_instance(I))
 
     # Every number here is target-chosen, so what is asserted is the shape and the
