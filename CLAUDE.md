@@ -174,15 +174,31 @@ The full step-by-step workflow (core type → API wrapper → registration → l
 - The package uses `public` declarations (Julia 1.11+) rather than `export` for its API surface — see `src/ClangCompiler.jl`.
 - Objects wrapping C++ resources need explicit `dispose(x)`; tests and examples follow a create → use → dispose pattern.
 - Test files are plain `@testset` files included by `test/runtests.jl`, laid out to mirror the source tree: whole-package checks in `test/*.jl` (`lint.jl` and `abi.jl` are the meta guards), middle-layer helpers in `test/clang/*.jl`, thin wrappers in `test/clang/api/**` alongside the file they exercise. A new test file must be added to `test/runtests.jl` by hand.
-- CI runs macOS, Linux and Windows on x86_64. Assert the *shape* of anything the host decides
-  — `isa Bool`, `isa Integer`, or a round-trip of a value the test itself set. Sizes and
-  alignments, mangled names of std-typed signatures, ABI-specific layout offsets, module
-  provenance (`isPartOfFramework`), a `Driver`'s LTO mode, and a hand-built `Module`'s
-  availability — both its initial value and the `markUnavailable` transition, whose gating
-  predicate reads bits a synthetic module never had a module map to set — all differ across
-  those runners (or read uninitialized memory), and an equality
-  assertion on one of them turns into a red CI on a platform you did not run locally. This class
-  of bug is invisible to a local single-platform run and to `-fsyntax-only`; only the per-file
-  test run against real AST state catches it, so never skip it before committing. A wrapper
-  whose value comes back outside its own enum (Julia prints `<invalid #N>`) is reading a
-  member with no initializer — that is a UB precondition to restate, not a flaky test.
+- CI runs macOS, Linux and Windows on x86_64, and an equality assertion on something the
+  runner decides turns into a red CI on a platform you did not run locally. This class of bug
+  is invisible to a local single-platform run and to `-fsyntax-only`; only the per-file test
+  run against real AST state catches it, so never skip it before committing. The link failure
+  that removed `getVirtualFileRef` — `off_t` is `long` on mingw and `long long` elsewhere —
+  reached CI exactly this way.
+
+  Two kinds of value hide behind that, and they need opposite treatment:
+
+  - **The target decides it** — sizes and alignments, ABI-specific layout offsets, mangled
+    names, endianness, integer widths. These are *not* unassertable, only unpinned. Build the
+    interpreter with `create_interpreter(...; triple="x86_64-linux-gnu")` and every one becomes
+    an equality that reads the same on all three runners; `test/clang/pinned_target.jl` is the
+    worked example. Only parsing and AST inspection can cross-target — the JIT still emits for
+    the host — and pinning downloads that target's GCC shard, so keep it to one target and one
+    file rather than pinning at every site.
+  - **Nothing decides it** — module provenance (`isPartOfFramework`), a `Driver`'s LTO mode
+    before argument processing, and a hand-built `Module`'s availability, including the
+    `markUnavailable` transition whose gating predicate reads bits a synthetic module never had
+    a module map to set. These read uninitialized memory. Pinning a triple does not help and
+    would only make the answer look trustworthy; restate the precondition instead, or leave the
+    site `# shape-only` with that as its reason. A wrapper whose value comes back outside its
+    own enum (Julia prints `<invalid #N>`) is this case — a UB precondition to restate, not a
+    flaky test.
+
+  Anything genuinely host-decided that is neither of those — a sysroot, an executable path —
+  still takes the shape assertion: `isa Bool`, `isa Integer`, or a round-trip of a value the
+  test itself set.
