@@ -154,3 +154,58 @@ end
         dispose(I)
     end
 end
+
+# The testsets above pin a target so every runner reads the same answers. This one is the
+# complement: it uses the interpreter the package builds by DEFAULT and asserts what the host's
+# own target says, so each runner exercises its native path rather than a pinned stand-in.
+#
+# The expected values are not written from knowledge. Each row was read back from an
+# explicitly pinned interpreter (`triple=`) on one machine, which is what makes a Windows
+# expectation checkable without a Windows machine -- normally the reason per-platform branches
+# are risky.
+#
+# Two rules keep this honest:
+#   * Key on architecture as well as OS. CI is x86_64 everywhere, but a developer machine may
+#     not be -- this one is aarch64 Darwin, where `long` is still 64 but a bare `iswindows()`
+#     split would have said nothing about which arch it assumed.
+#   * Never pin the interpreter in this testset. `Sys` describes the HOST; the moment a triple
+#     is pinned the values come from the target instead, and the two disagree silently.
+#
+# Only `long` and `wchar_t` actually diverge across the three CI targets. Mangling does not:
+# mingw uses the Itanium ABI, so `_Z2pmid` is the answer on all three, and it is asserted
+# unguarded above rather than split three ways for nothing.
+"Expected (long, wchar_t) widths for the host, by (arch, OS). Each read from a pinned run."
+const HOST_WIDTHS = Dict((:x86_64, :Windows) => (32, 16),   # mingw: the LLP64 outlier
+                         (:x86_64, :Linux) => (64, 32),
+                         (:x86_64, :Darwin) => (64, 32),
+                         (:aarch64, :Darwin) => (64, 32),   # developer machines; not a CI runner
+                         (:aarch64, :Linux) => (64, 32))
+
+@testset "host target | the default interpreter reads this machine's target" begin
+    I = create_interpreter(String[])          # deliberately NOT pinned -- see the note above
+    ti = CC.getTarget(CC.get_instance(I))
+    key = (Sys.ARCH, Symbol(Sys.KERNEL))
+
+    # every platform this suite runs on is in the table; an unknown one is a failure rather
+    # than a silent skip, so a new runner cannot quietly assert nothing
+    @test haskey(HOST_WIDTHS, key)
+    if haskey(HOST_WIDTHS, key)
+        long_bits, wchar_bits = HOST_WIDTHS[key]
+        @test CC.getLongWidth(ti) == long_bits
+        @test CC.getWCharWidth(ti) == wchar_bits
+    end
+
+    # true on every target the package supports, so asserted once rather than per platform
+    @test CC.getCharWidth(ti) == 8
+    @test CC.getIntWidth(ti) == 32
+    @test CC.getLongLongWidth(ti) == 64
+    @test CC.getPointerWidth(ti) == 64
+    @test CC.isLittleEndian(ti)
+
+    # `long` is either the LLP64 32 or the LP64 64 -- never anything else -- and it agrees
+    # with pointer width exactly when the target is LP64
+    @test CC.getLongWidth(ti) in (32, 64)
+    @test (CC.getLongWidth(ti) == CC.getPointerWidth(ti)) == (CC.getLongWidth(ti) == 64)
+
+    dispose(I)
+end
