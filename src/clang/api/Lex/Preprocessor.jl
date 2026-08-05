@@ -158,6 +158,24 @@ function Lex(x::AbstractPreprocessor, result::AbstractToken)
     return clang_Preprocessor_Lex(x, result)
 end
 
+"""
+    LexTokensUntilEOF(x::AbstractPreprocessor)
+Lex and discard tokens until the stream ends, stopping on the first token whose kind is
+`unknown`, `eof`, `eod` or `annot_repl_input_end`.
+
+This is Clang's own drain, and the reason to prefer it to a hand-rolled `Lex` loop: of
+those four stop kinds only two are exposed as predicates here ([`is_eof`](@ref) and
+[`is_annot_repl_input_end`](@ref)), so a Julia loop can spin on an `unknown` token where
+Clang would stop. At least one token is always lexed, and the walk terminates at end of
+input because Clang keeps handing back `eof` there.
+
+Destructive: it consumes the live token stream exactly as [`Lex`](@ref) does.
+"""
+function LexTokensUntilEOF(x::AbstractPreprocessor)
+    @check_ptrs x
+    return clang_Preprocessor_LexTokensUntilEOF(x)
+end
+
 function getSpelling(x::AbstractPreprocessor, tok::AbstractToken)
     @check_ptrs x tok
     return get_string(clang_Preprocessor_getSpelling(x, tok))
@@ -877,6 +895,44 @@ function LookUpIdentifierInfo(x::AbstractPreprocessor, tok::AbstractToken)
     @check_ptrs x tok
     @assert is_raw_identifier(tok) && getLength(tok) > 0 "expected a raw identifier token"
     return IdentifierInfo(clang_Preprocessor_LookUpIdentifierInfo(x, tok))
+end
+
+"""
+    CheckMacroName(x::AbstractPreprocessor, tok::AbstractToken,
+                   use::CXMacroUse=CXMacroUse_MU_Other) -> Tuple{Bool,Bool}
+Ask Clang whether `tok` may name a macro in a `#define` (`CXMacroUse_MU_Define`), in a
+`#undef` (`CXMacroUse_MU_Undef`), or in neither (`CXMacroUse_MU_Other`), and return
+`(rejected, shadows_keyword)`.
+
+`rejected` is Clang's own composed verdict, `true` when the name may **not** be used: an
+end-of-directive, literal, end-of-file or identifier-less token, or `defined` under
+`MU_Define` / `MU_Undef`. `shadows_keyword` reports that the name hides a keyword — or
+`override` / `final` in C++11 — which Clang computes on the same pass and then leaves to
+its caller to warn about, so this flag is the only route to it. It is meaningful only when
+`rejected` is `false`: a rejected name never reaches the shadow check and comes back
+`false`, and so does every name checked under `MU_Other`.
+
+`tok` must carry an identifier slot, i.e. be neither a raw identifier
+([`is_raw_identifier`](@ref)) nor an annotation ([`isAnnotation`](@ref)) — for those two
+shapes `PtrData` holds the spelling pointer or the annotation payload, which Clang would
+read as an `IdentifierInfo`. Run [`LookUpIdentifierInfo`](@ref) over a raw identifier
+first. No lexer is touched and no token is consumed, so this is safe to call outside a
+parse; Clang takes the token by non-const reference, so no promise is made that it comes
+back unmodified.
+
+!!! warning
+    A rejection is reported through the preprocessor's `DiagnosticsEngine`, so checking a
+    bad name raises the translation unit's error count, and an accepted name that is a
+    reserved identifier warns. Call it on a throwaway interpreter, or wrap it in
+    [`setSuppressAllDiagnostics`](@ref).
+"""
+function CheckMacroName(x::AbstractPreprocessor, tok::AbstractToken,
+                        use::CXMacroUse=CXMacroUse_MU_Other)
+    @check_ptrs x tok
+    @assert !is_raw_identifier(tok) && !isAnnotation(tok) "token must carry an identifier slot"
+    shadow = Ref{Bool}(false)
+    rejected = clang_Preprocessor_CheckMacroName(x, tok, use, shadow)
+    return rejected, shadow[]
 end
 
 """

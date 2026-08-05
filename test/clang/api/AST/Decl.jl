@@ -44,13 +44,13 @@ end
 
         look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
 
-        vd = CC.downcast(CC.VarDecl, look("gvar").ptr)
-        lvd = CC.downcast(CC.VarDecl, look("lvar").ptr)
-        fd = CC.downcast(CC.FunctionDecl, look("gfunc").ptr)
-        rd = CC.getDefinition(CC.downcast(CC.RecordDecl, look("SFoo").ptr))
-        ed = CC.getDefinition(CC.downcast(CC.EnumDecl, look("EFoo").ptr))
-        tnd = CC.downcast(CC.TypedefDecl, look("MyInt").ptr)
-        csv = CC.downcast(CC.VarDecl, look("cstr").ptr)
+        vd = CC.VarDecl(look("gvar"))
+        lvd = CC.VarDecl(look("lvar"))
+        fd = CC.FunctionDecl(look("gfunc"))
+        rd = CC.getDefinition(CC.RecordDecl(look("SFoo")))
+        ed = CC.getDefinition(CC.EnumDecl(look("EFoo")))
+        tnd = CC.TypedefDecl(look("MyInt"))
+        csv = CC.VarDecl(look("cstr"))
 
         # --- shared args (captured before any mutation) ---
         loc = CC.getLocation(vd)
@@ -372,7 +372,7 @@ end
     dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
     f = DeclFinder(I)
     @test f(I, "asmstr")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     sl = _fnd(CC.StringLiteral, CC.resolve(CC.getInit(vd)))
     @test sl !== nothing
     loc = CC.getLocation(vd)
@@ -395,7 +395,7 @@ end
     CC.parse(I, "void ffn_seed(int p) {}")
     f = DeclFinder(I)
     @test f(I, "ffn_seed")
-    seed = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    seed = CC.FunctionDecl(get_decl(f))
     name = CC.getDeclName(seed)
     fty = CC.getType(seed)
     loc = CC.getLocation(seed)
@@ -433,9 +433,9 @@ end
     tu = CC.getTranslationUnitDecl(ctx)
     dc = CC.castToDeclContext(tu)
     f = DeclFinder(I)
-    getptr(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f).ptr)
+    getdecl(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
 
-    vd = CC.downcast(CC.VarDecl, getptr("gint"))
+    vd = CC.VarDecl(getdecl("gint"))
     loc = CC.getLocation(vd)
     id = CC.getIdentifier(vd)
     int_qt = CC.getType(vd)
@@ -481,17 +481,17 @@ end
 
     # CXXMethodDecl: devirtualization + corresponding-method lookups
     local me = nothing
-    for n in CC.subtree(CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, getptr("usevm")))))
+    for n in CC.subtree(CC.resolve(CC.getBody(CC.FunctionDecl(getdecl("usevm")))))
         n isa CC.MemberExpr && (me=n; break)
     end
     @test me.ptr != C_NULL
-    md = CC.downcast(CC.CXXMethodDecl, CC.getMemberDecl(me).ptr)
+    md = CC.CXXMethodDecl(CC.getMemberDecl(me))
     dv = CC.getDevirtualizedMethod(md, CC.getBase(me), false)
     @test dv.ptr != C_NULL
     @test CC.getName(dv) == "vm"
 
-    vbase = CC.downcast(CC.CXXRecordDecl, getptr("VBase"))
-    vder = CC.downcast(CC.CXXRecordDecl, getptr("VDer"))
+    vbase = CC.CXXRecordDecl(getdecl("VBase"))
+    vder = CC.CXXRecordDecl(getdecl("VDer"))
     mib = CC.getCorrespondingMethodInClass(md, vbase, true)
     @test mib.ptr != C_NULL
     @test CC.getName(mib) == "vm"
@@ -499,12 +499,12 @@ end
     @test mdd.ptr != C_NULL
     @test CC.getName(mdd) == "vm"
 
-    mes = [n for n in CC.subtree(CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, getptr("useo")))))
+    mes = [n for n in CC.subtree(CC.resolve(CC.getBody(CC.FunctionDecl(getdecl("useo")))))
            if n isa CC.MemberExpr]
     @test length(mes) == 2
     byname = Dict(CC.getName(CC.getMemberDecl(m)) => m for m in mes)
-    md_om2 = CC.getCanonicalDecl(CC.downcast(CC.CXXMethodDecl, CC.getMemberDecl(byname["om2"]).ptr))
-    md_om = CC.getCanonicalDecl(CC.downcast(CC.CXXMethodDecl, CC.getMemberDecl(byname["om"]).ptr))
+    md_om2 = CC.getCanonicalDecl(CC.CXXMethodDecl(CC.getMemberDecl(byname["om2"])))
+    md_om = CC.getCanonicalDecl(CC.CXXMethodDecl(CC.getMemberDecl(byname["om"])))
     @test CC.addOverriddenMethod(md_om2, md_om) === nothing
 
     # Process-global stats toggles (PrintStats writes a summary to stderr). The class is a
@@ -530,7 +530,7 @@ end
     host = get_decl(f)
     ifds = CC.IndirectFieldDecl[]
     for d in DeclIterator(host)
-        CC.getDeclKindName(d) == "IndirectField" && push!(ifds, CC.downcast(CC.IndirectFieldDecl, d.ptr))
+        CC.getDeclKindName(d) == "IndirectField" && push!(ifds, CC.IndirectFieldDecl(d))
     end
     @test length(ifds) == 2
     for ifd in ifds
@@ -549,14 +549,14 @@ end
     ctx = CC.get_ast_context(I)
 
     @test f(I, "S")
-    rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    rd = CC.CXXRecordDecl(get_decl(f))
     fields = collect(CC.getFields(rd))
     @test CC.getBitWidthValue(fields[1], ctx) == 3          # `int a : 3`
     @test !CC.isZeroSize(fields[1], ctx)
     @test CC.isMsStruct(rd, ctx) == Sys.iswindows()                   # value is target-ABI-dependent (MS layout on Windows)
 
     @test f(I, "fn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     @test CC.isFunctionOrFunctionTemplate(get_decl(f))
     csce = nothing
     for n in CC.subtree(CC.resolve(CC.getBody(fd)))
@@ -625,15 +625,15 @@ using ClangCompiler: get_tag
         # its DeclContext) must be captured after `parse`.
         tu = CC.getTranslationUnitDecl(ctx)
         dc = CC.castToDeclContext(tu)
-        vd_g = CC.downcast(CC.VarDecl, look("dk_gvar").ptr)
-        vd_l = CC.downcast(CC.VarDecl, look("dk_lvar").ptr)
-        vd_n = CC.downcast(CC.VarDecl, look("dk_noinit").ptr)
-        gfd = CC.downcast(CC.FunctionDecl, look("dk_gfunc").ptr)
-        lblfd = CC.downcast(CC.FunctionDecl, look("dk_lblfn").ptr)
-        vlafd = CC.downcast(CC.FunctionDecl, look("dk_vlafn").ptr)
-        tnd = CC.downcast(CC.TypedefDecl, look("DKMyInt").ptr)
-        nsd = CC.downcast(CC.NamespaceDecl, look("DKNS").ptr)
-        vd_cstr = CC.downcast(CC.VarDecl, look("dk_cstr").ptr)
+        vd_g = CC.VarDecl(look("dk_gvar"))
+        vd_l = CC.VarDecl(look("dk_lvar"))
+        vd_n = CC.VarDecl(look("dk_noinit"))
+        gfd = CC.FunctionDecl(look("dk_gfunc"))
+        lblfd = CC.FunctionDecl(look("dk_lblfn"))
+        vlafd = CC.FunctionDecl(look("dk_vlafn"))
+        tnd = CC.TypedefDecl(look("DKMyInt"))
+        nsd = CC.NamespaceDecl(look("DKNS"))
+        vd_cstr = CC.VarDecl(look("dk_cstr"))
 
         gloc = CC.getLocation(vd_g)
         lloc = CC.getLocation(vd_l)
@@ -709,19 +709,19 @@ using ClangCompiler: get_tag
 
         # static data members: DKA::dka_s gets member-specialization info from DKB::dkb_s
         @assert fnd(I, "DKA")
-        rd_a = CC.getDefinition(CC.downcast(CC.RecordDecl, get_tag(fnd).ptr))
+        rd_a = CC.getDefinition(CC.RecordDecl(get_tag(fnd)))
         sdm_a = nothing
         for d in CC.DeclIterator(rd_a)
             CC.getDeclKindName(d) == "Var" || continue
-            sdm_a = CC.downcast(CC.VarDecl, d.ptr)
+            sdm_a = CC.VarDecl(d)
             break
         end
         @assert fnd(I, "DKB")
-        rd_b = CC.getDefinition(CC.downcast(CC.RecordDecl, get_tag(fnd).ptr))
+        rd_b = CC.getDefinition(CC.RecordDecl(get_tag(fnd)))
         sdm_b = nothing
         for d in CC.DeclIterator(rd_b)
             CC.getDeclKindName(d) == "Var" || continue
-            sdm_b = CC.downcast(CC.VarDecl, d.ptr)
+            sdm_b = CC.VarDecl(d)
             break
         end
         @test !CC.is_null_handle(sdm_a) && !CC.is_null_handle(sdm_b)
@@ -738,7 +738,7 @@ using ClangCompiler: get_tag
         vtd = nothing
         for d in CC.get_decls(fnd)
             if CC.getDeclKindName(d) == "VarTemplate"
-                vtd = CC.downcast(CC.VarTemplateDecl, d.ptr)
+                vtd = CC.VarTemplateDecl(d)
                 break
             end
         end
@@ -806,7 +806,7 @@ using ClangCompiler: get_tag
         ftd = nothing
         for d in CC.get_decls(fnd)
             if CC.getDeclKindName(d) == "FunctionTemplate"
-                ftd = CC.downcast(CC.FunctionTemplateDecl, d.ptr)
+                ftd = CC.FunctionTemplateDecl(d)
                 break
             end
         end
@@ -826,13 +826,13 @@ using ClangCompiler: get_tag
         for d in CC.DeclIterator(tu)
             k = CC.getDeclKindName(d)
             if k == "Var"
-                cand = CC.downcast(CC.VarDecl, d.ptr)
+                cand = CC.VarDecl(d)
                 if CC.getNumTemplateParameterLists(cand) > 0
                     tplh = cand
                     break
                 end
             elseif k == "CXXMethod"
-                cand = CC.downcast(CC.CXXMethodDecl, d.ptr)
+                cand = CC.CXXMethodDecl(d)
                 if CC.getNumTemplateParameterLists(cand) > 0
                     tplh = cand
                     break
@@ -857,7 +857,7 @@ using ClangCompiler: get_tag
 
         # ================= TagDecl =================
         @assert fnd(I, "DKS")
-        td_s = CC.downcast(CC.TagDecl, get_tag(fnd).ptr)
+        td_s = CC.TagDecl(get_tag(fnd))
         @test !CC.is_null_handle(CC.getDefinition(td_s))
         @test CC.getDefinition(td_s).ptr != C_NULL
 
@@ -868,7 +868,7 @@ using ClangCompiler: get_tag
         @test CC.isCompleteDefinition(rec_f)
 
         # ================= FieldDecl =================
-        rd_s = CC.getDefinition(CC.downcast(CC.RecordDecl, td_s.ptr))
+        rd_s = CC.getDefinition(CC.RecordDecl(td_s))
         flds = CC.getFields(rd_s)
         fb = flds[1]
         @test CC.isBitField(fb)
@@ -886,7 +886,7 @@ using ClangCompiler: get_tag
         @test !CC.is_null_handle(vds)
         vla_d = CC.getSingleDecl(vds)
         @test CC.getDeclKindName(vla_d) == "Var"
-        vla_vd = CC.downcast(CC.VarDecl, vla_d.ptr)
+        vla_vd = CC.VarDecl(vla_d)
         vla_qt = CC.getType(vla_vd)
         vla_ty = CC.resolve(CC.getTypePtr(vla_qt))
         @test !CC.is_null_handle(vla_ty)
@@ -899,7 +899,7 @@ using ClangCompiler: get_tag
         @test !CC.is_null_handle(CC.getCapturedVLAType(fld_vla))
 
         # ================= EnumDecl / EnumConstantDecl =================
-        ed = CC.getDefinition(CC.downcast(CC.EnumDecl, look("DKE").ptr))
+        ed = CC.getDefinition(CC.EnumDecl(look("DKE")))
         enum_f = CC.EnumDecl(ctx, dc, gloc, gloc, id)
         CC.setInstantiationOfMemberEnum(enum_f, ed,
                                         LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
@@ -948,7 +948,7 @@ using ClangCompiler: get_tag
         @assert fnd(I, "dkiu_a")
         dif = get_decl(fnd)
         @test CC.getDeclKindName(dif) == "IndirectField"
-        ifd = CC.downcast(CC.IndirectFieldDecl, dif.ptr)
+        ifd = CC.IndirectFieldDecl(dif)
         @test !CC.is_null_handle(CC.getVarDecl(ifd))
         @test CC.getVarDecl(ifd).ptr != C_NULL
         @test CC.getCanonicalDecl(ifd).ptr == ifd.ptr
@@ -961,7 +961,7 @@ using ClangCompiler: get_tag
         tatd = nothing
         for d in CC.get_decls(fnd)
             if CC.getDeclKindName(d) == "TypeAliasTemplate"
-                tatd = CC.downcast(CC.TypeAliasTemplateDecl, d.ptr)
+                tatd = CC.TypeAliasTemplateDecl(d)
                 break
             end
         end
@@ -971,10 +971,10 @@ using ClangCompiler: get_tag
         @test CC.getDescribedAliasTemplate(tad_f).ptr == tatd.ptr
 
         # ================= DeclTemplate =================
-        vd7 = CC.downcast(CC.VarDecl, look("dk7_var").ptr)
+        vd7 = CC.VarDecl(look("dk7_var"))
         specrec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd7)))
         @test CC.getDeclKindName(specrec) == "ClassTemplateSpecialization"
-        spec = CC.downcast(CC.ClassTemplateSpecializationDecl, specrec.ptr)
+        spec = CC.ClassTemplateSpecializationDecl(specrec)
         stpl = CC.getSpecializedTemplate(spec)
         args = CC.getTemplateArgs(spec)
         newspec = CC.ClassTemplateSpecializationDecl(ctx, stpl, args)
@@ -997,10 +997,10 @@ using ClangCompiler: get_tag
         @test CC.getAsTemplateDecl(tn).ptr != C_NULL
 
         # member template of an instantiated class template -> member specialization
-        vd8 = CC.downcast(CC.VarDecl, look("dk8_var").ptr)
+        vd8 = CC.VarDecl(look("dk8_var"))
         rec8 = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd8)))
         @test CC.getDeclKindName(rec8) == "ClassTemplateSpecialization"
-        spec8 = CC.downcast(CC.ClassTemplateSpecializationDecl, rec8.ptr)
+        spec8 = CC.ClassTemplateSpecializationDecl(rec8)
         stpl8 = CC.getSpecializedTemplate(spec8)
         CC.setMemberSpecialization(stpl8)
         @test CC.isMemberSpecialization(stpl8)
@@ -1009,7 +1009,7 @@ using ClangCompiler: get_tag
         vtsd = nothing
         for d in CC.DeclIterator(tu)
             if CC.getDeclKindName(d) == "VarTemplateSpecialization"
-                vtsd = CC.downcast(CC.VarTemplateSpecializationDecl, d.ptr)
+                vtsd = CC.VarTemplateSpecializationDecl(d)
                 break
             end
         end
@@ -1103,13 +1103,13 @@ end
     """)
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
-    getptr(name) = (@assert f(I, name); get_decl(f).ptr)
+    getdecl(name) = (@assert f(I, name); get_decl(f))
 
     # ---------------- VarDecl / ValueDecl / DeclaratorDecl ----------------
-    gvar = CC.downcast(CC.VarDecl, getptr("gvar"))
-    cxglob = CC.downcast(CC.VarDecl, getptr("cxglob"))
-    eglob = CC.downcast(CC.VarDecl, getptr("eglob"))
-    sglob = CC.downcast(CC.VarDecl, getptr("sglob"))
+    gvar = CC.VarDecl(getdecl("gvar"))
+    cxglob = CC.VarDecl(getdecl("cxglob"))
+    eglob = CC.VarDecl(getdecl("eglob"))
+    sglob = CC.VarDecl(getdecl("sglob"))
 
     @test CC.hasLocalStorage(gvar) == false
     @test CC.isStaticLocal(gvar) == false
@@ -1203,12 +1203,12 @@ end
     @test CC.isFunctionOrFunctionTemplate(gvar) == false
 
     # ---------------- FunctionDecl ----------------
-    add = CC.downcast(CC.FunctionDecl, getptr("add"))
-    vfn = CC.downcast(CC.FunctionDecl, getptr("variadic_fn"))
-    cfn = CC.downcast(CC.FunctionDecl, getptr("cfunc"))
-    sfn = CC.downcast(CC.FunctionDecl, getptr("sfunc"))
-    inl = CC.downcast(CC.FunctionDecl, getptr("inl_fn"))
-    wdf = CC.downcast(CC.FunctionDecl, getptr("withdef"))
+    add = CC.FunctionDecl(getdecl("add"))
+    vfn = CC.FunctionDecl(getdecl("variadic_fn"))
+    cfn = CC.FunctionDecl(getdecl("cfunc"))
+    sfn = CC.FunctionDecl(getdecl("sfunc"))
+    inl = CC.FunctionDecl(getdecl("inl_fn"))
+    wdf = CC.FunctionDecl(getdecl("withdef"))
 
     @test CC.isPureVirtual(add) == false
     @test CC.hasBody(add) == true
@@ -1329,7 +1329,7 @@ end
     @test !CC.is_null_handle(CC.getDefaultArg(pdef))
 
     # ---------------- RecordDecl / TagDecl / TypeDecl ----------------
-    rd = CC.downcast(CC.RecordDecl, getptr("Point"))
+    rd = CC.RecordDecl(getdecl("Point"))
 
     @test CC.hasFlexibleArrayMember(rd) == false
     @test CC.isAnonymousStructOrUnion(rd) == false
@@ -1356,7 +1356,8 @@ end
     @test CC.getDefinition(rd).ptr == rd.ptr
     @test !CC.is_null_handle(CC.findFirstNamedDataMember(rd))
     @test CC.isMsStruct(rd, ctx) == Sys.iswindows()
-    @test CC.is_null_handle(CC.ClassTemplateSpecializationDecl(rd))
+    # a plain struct is no template specialization, and the cast says which class it is
+    @test_throws CC.CastError CC.ClassTemplateSpecializationDecl(rd)
 
     # TagDecl-level accessors (dispatch to AbstractTagDecl via RecordDecl)
     @test CC.isThisDeclarationADefinition(rd) == true
@@ -1387,7 +1388,7 @@ end
     @test !CC.is_null_handle(CC.getSourceRange(rd).begin_loc)
 
     # NamedDecl -> TypeDecl cast + TypeDecl accessors
-    rec_named = CC.upcast(CC.NamedDecl, getptr("Point"))
+    rec_named = CC.NamedDecl(getdecl("Point"))
     td_base = CC.TypeDecl(rec_named)
     @test !CC.is_null_handle(td_base)
     @test !CC.is_null_handle(CC.getTypeForDecl(rec_named))
@@ -1450,8 +1451,8 @@ end
     @test CC.getBitWidthValue(bf, ctx) == 3
 
     # ---------------- EnumDecl / EnumConstantDecl ----------------
-    ed = CC.downcast(CC.EnumDecl, getptr("Color"))
-    sed = CC.downcast(CC.EnumDecl, getptr("Scoped"))
+    ed = CC.EnumDecl(getdecl("Color"))
+    sed = CC.EnumDecl(getdecl("Scoped"))
 
     @test CC.isClosed(ed) == true
     @test CC.isClosedFlag(ed) == false
@@ -1487,12 +1488,12 @@ end
     @test !CC.is_null_handle(CC.getInitExpr(ec))
     @test !CC.is_null_handle(CC.getSourceRange(ec).begin_loc)
     # NamedDecl -> EnumConstantDecl cast
-    ec_named = CC.upcast(CC.NamedDecl, ec.ptr)
+    ec_named = CC.NamedDecl(ec)
     @test CC.EnumConstantDecl(ec_named).ptr == ec.ptr
 
     # ---------------- TypedefNameDecl / TypedefDecl / TypeAliasDecl ----------------
-    td = CC.downcast(CC.TypedefDecl, getptr("MyInt"))
-    tad = CC.downcast(CC.TypeAliasDecl, getptr("MyAlias"))
+    td = CC.TypedefDecl(getdecl("MyInt"))
+    tad = CC.TypeAliasDecl(getdecl("MyAlias"))
     @test !CC.is_null_handle(CC.getUnderlyingType(td))
     @test CC.getCanonicalDecl(td).ptr == td.ptr
     @test CC.is_null_handle(CC.getAnonDeclWithTypedefName(td))
@@ -1505,8 +1506,8 @@ end
     @test !CC.is_null_handle(CC.getSourceRange(tad).begin_loc)
 
     # ---------------- NamespaceDecl ----------------
-    ns = CC.downcast(CC.NamespaceDecl, getptr("ns"))
-    tinl = CC.downcast(CC.NamespaceDecl, getptr("top_inl"))
+    ns = CC.NamespaceDecl(getdecl("ns"))
+    tinl = CC.NamespaceDecl(getdecl("top_inl"))
     @test CC.isAnonymousNamespace(ns) == false
     @test CC.isInline(ns) == false
     @test CC.isInline(tinl) == true
@@ -1560,14 +1561,14 @@ end
     f = DeclFinder(I)
 
     @test f(I, "gvfix")
-    @test CC.isNoDestroy(CC.downcast(CC.VarDecl, get_decl(f).ptr), ctx) == false     # was: missing ctx arg
+    @test CC.isNoDestroy(CC.VarDecl(get_decl(f)), ctx) == false     # was: missing ctx arg
 
     @test f(I, "plainfix")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     @test CC.is_null_handle(CC.getTemplateInstantiationPattern(fd, true))  # was: missing for_def arg
 
     @test f(I, "Afix")
-    afix = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    afix = CC.CXXRecordDecl(get_decl(f))
     @test any(m -> CC.isPureVirtual(m), CC.getMethods(afix))            # isPure removed; isPureVirtual is the live one
 
     dispose(f)
@@ -1588,7 +1589,7 @@ end
         void dt_tail_fn();
         """)
         # the lookup hands back a NamedDecl; each probe names the class it expects
-        D(name, T) = (f(I, name); CC.downcast(T, get_decl(f).ptr))
+        D(name, T) = (f(I, name); T(get_decl(f)))
         ctx = CC.get_ast_context(I)
 
         # VarDecl::needsDestruction — the ASTContext-taking query.
@@ -1644,8 +1645,8 @@ end
 
         look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
 
-        nd = CC.downcast(CC.NamespaceDecl, look("NSpivot").ptr)
-        fd = CC.downcast(CC.FunctionDecl, look("fpivot").ptr)
+        nd = CC.NamespaceDecl(look("NSpivot"))
+        fd = CC.FunctionDecl(look("fpivot"))
 
         # Each Decl that is also a DeclContext crosses to its DeclContext subobject
         # and back; castFrom is the offset-exact inverse, so the pointer round-trips.
@@ -1690,8 +1691,8 @@ end
 
         look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
 
-        vd = CC.downcast(CC.VarDecl, look("plain_global").ptr)
-        fd = CC.downcast(CC.FunctionDecl, look("ddfunc").ptr)
+        vd = CC.VarDecl(look("plain_global"))
+        fd = CC.FunctionDecl(look("ddfunc"))
 
         # NamedDecl::isReserved -> ReservedIdentifierStatus; an ordinary global
         # name obeys no reserved-identifier rule.
@@ -1734,13 +1735,13 @@ end
 
         look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
 
-        anchor = CC.downcast(CC.VarDecl, look("hb_anchor").ptr)
+        anchor = CC.VarDecl(look("hb_anchor"))
         loc = CC.getLocation(anchor)
         id = CC.getIdentifier(anchor)
 
         # ---------------- RecordDecl::field_empty ----------------
-        empty_rd = CC.getDefinition(CC.downcast(CC.RecordDecl, look("HBEmpty").ptr))
-        full_rd = CC.getDefinition(CC.downcast(CC.RecordDecl, look("HBFull").ptr))
+        empty_rd = CC.getDefinition(CC.RecordDecl(look("HBEmpty")))
+        full_rd = CC.getDefinition(CC.RecordDecl(look("HBFull")))
         @test CC.field_empty(empty_rd)
         @test !CC.field_empty(full_rd)
         # agrees with the count+fill protocol on the same records
@@ -1758,7 +1759,7 @@ end
             end
             return nothing
         end
-        host = CC.downcast(CC.FunctionDecl, look("hb_host").ptr)
+        host = CC.FunctionDecl(look("hb_host"))
         be = find_node(CC.BlockExpr, CC.resolve(CC.getBody(host)))
         @test !CC.is_null_handle(be)
         blk = CC.getBlockDecl(be)
@@ -1820,12 +1821,12 @@ end
 
         look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
 
-        anchor = CC.downcast(CC.VarDecl, look("dg_anchor").ptr)
+        anchor = CC.VarDecl(look("dg_anchor"))
         loc = CC.getLocation(anchor)
         id = CC.getIdentifier(anchor)
         qt_int = CC.getType(anchor)
         tsi = CC.getTypeSourceInfo(anchor)
-        ed = CC.downcast(CC.EnumDecl, look("DGColor").ptr)
+        ed = CC.EnumDecl(look("DGColor"))
         loc2 = CC.getLocation(ed)
 
         # ---------------- NamespaceDecl::Create ----------------
@@ -1862,7 +1863,7 @@ end
         CC.LLVM.API.LLVMDisposeGenericValue(v_blue)
 
         # ---------------- setTemplateParameterListsInfo ----------------
-        ctd = CC.downcast(CC.ClassTemplateDecl, look("DGTmpl").ptr)
+        ctd = CC.ClassTemplateDecl(look("DGTmpl"))
         tpl = CC.getTemplateParameters(ctd)
         @test !CC.is_null_handle(tpl)
         @test tpl.ptr != C_NULL
@@ -1900,13 +1901,13 @@ end
         @test CC.getObjCDeclQualifier(parm) == LXG.CXObjCDeclQualifier_OBJC_TQ_Oneway
 
         # ---------------- FunctionDecl::DefaultedFunctionInfo ----------------
-        fn = CC.downcast(CC.FunctionDecl, look("dg_fn").ptr)
+        fn = CC.FunctionDecl(look("dg_fn"))
         info0 = CC.getDefaultedFunctionInfo(fn)
         # an ordinary function stores a body, so the union holds no defaulted info
         @test info0.ptr == C_NULL
 
-        nd_a = CC.upcast(CC.NamedDecl, anchor.ptr)
-        nd_b = CC.upcast(CC.NamedDecl, ed.ptr)
+        nd_a = CC.NamedDecl(anchor)
+        nd_b = CC.NamedDecl(ed)
         info = CC.DefaultedFunctionInfo(ctx, [nd_a, nd_b],
                                         [LXG.CXAccessSpecifier_AS_public,
                                          LXG.CXAccessSpecifier_AS_private])
@@ -1997,7 +1998,7 @@ end
         @test !CC.classofKind(CC.RecordDecl, K.CXDeclKind_Enum)
 
         # the kinds the live AST reports agree with the enumerator-driven answers
-        plain_fd = CC.downcast(CC.FunctionDecl, look("plaindh").ptr)
+        plain_fd = CC.FunctionDecl(look("plaindh"))
         @test CC.getKind(plain_fd) == K.CXDeclKind_Function
         @test CC.classofKind(CC.FunctionDecl, CC.getKind(plain_fd))
         @test CC.classofKind(CC.DeclaratorDecl, CC.getKind(plain_fd))
@@ -2008,7 +2009,7 @@ end
         # ---------------- getQualifierRange ----------------
         # `void NDH::fdh() {}` redeclares the in-namespace `fdh`, and only the
         # out-of-line redeclaration carries the written `NDH::`.
-        fd = CC.downcast(CC.FunctionDecl, CC.getMostRecentDecl(CC.upcast(CC.NamedDecl, look("NDH::fdh").ptr)).ptr)
+        fd = CC.FunctionDecl(CC.getMostRecentDecl(CC.NamedDecl(look("NDH::fdh"))))
         @test CC.getQualifier(fd).ptr != C_NULL
         qr = CC.getQualifierRange(fd)
         @test !CC.is_null_handle(qr.begin_loc)
@@ -2018,13 +2019,13 @@ end
         @test CC.getQualifier(plain_fd).ptr == C_NULL
         @test CC.getQualifierRange(plain_fd).begin_loc.ptr == C_NULL
 
-        rd = CC.getMostRecentDecl(CC.downcast(CC.RecordDecl, look("NDH::SDH").ptr))
+        rd = CC.getMostRecentDecl(CC.RecordDecl(look("NDH::SDH")))
         tag_qr = CC.getQualifierRange(rd)
         @test !CC.is_null_handle(tag_qr.begin_loc)
         # qualifier and extent agree on whether a specifier was written
         @test (CC.getQualifier(rd).ptr == C_NULL) == (tag_qr.begin_loc.ptr == C_NULL)
 
-        plain_rd = CC.downcast(CC.RecordDecl, look("PlainDH").ptr)
+        plain_rd = CC.RecordDecl(look("PlainDH"))
         @test CC.getQualifier(plain_rd).ptr == C_NULL
         @test CC.getQualifierRange(plain_rd).begin_loc.ptr == C_NULL
 
@@ -2032,8 +2033,9 @@ end
         rd_dc = CC.DeclContext(plain_rd)
         @test !CC.is_null_handle(rd_dc)
         @test CC.TagDecl(rd_dc).ptr == plain_rd.ptr
-        # TagDecl(::DeclContext) goes through dyn_cast_or_null, so a context whose kind
-        # is not a tag declaration's yields the NULL carrier rather than throwing.
+        # `TagDecl(::DeclContext)` crosses the two hierarchies rather than narrowing within
+        # one, so unlike the Decl-rooted casts it reports a miss as the NULL carrier: there is
+        # no `CastError` to raise about a context that is simply not also a tag declaration.
         @test CC.TagDecl(CC.DeclContext(tu)).ptr == C_NULL
     finally
         dispose(f)
@@ -2136,7 +2138,7 @@ end
         @test CC.classofKind(CC.TypedefDecl, CC.getKind(look("TDI")))
         @test CC.classofKind(CC.TypeAliasDecl, CC.getKind(look("TAI")))
 
-        fdi = CC.downcast(CC.FunctionDecl, look("fdi").ptr)
+        fdi = CC.FunctionDecl(look("fdi"))
         @test CC.classofKind(CC.ParmVarDecl, CC.getKind(CC.getParamDecl(fdi, 0)))
         @test !CC.classofKind(CC.NamespaceDecl, CC.getKind(fdi))
         @test !CC.classofKind(CC.TranslationUnitDecl, CC.getKind(fdi))
@@ -2162,8 +2164,8 @@ end
 
         # every lookup runs before the synthetic decls below are minted, so no name
         # this testset creates can make get_decl ambiguous
-        first_vd = CC.downcast(CC.VarDecl, look("bpc_first").ptr)
-        second_vd = CC.downcast(CC.VarDecl, look("bpc_second").ptr)
+        first_vd = CC.VarDecl(look("bpc_first"))
+        second_vd = CC.VarDecl(look("bpc_second"))
         loc = CC.getLocation(first_vd)
         id = CC.getIdentifier(first_vd)
         ty = CC.getType(first_vd)
@@ -2261,7 +2263,7 @@ end
     CC.parse(I, "void friend_seed(int p) {}")
     f = DeclFinder(I)
     @test f(I, "friend_seed")
-    seed = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    seed = CC.FunctionDecl(get_decl(f))
     name = CC.getDeclName(seed)
     fty = CC.getType(seed)
     loc = CC.getLocation(seed)

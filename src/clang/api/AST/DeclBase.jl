@@ -171,10 +171,9 @@ function isParameterPack(x::AbstractDecl)
     return clang_Decl_isParameterPack(x)
 end
 
-function isTemplateDecl(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isTemplateDecl(x)
-end
+# `Decl::isTemplateDecl` is spelled `isa<TemplateDecl>(this)` in clang, so it is the same
+# question the stamped predicate answers and shares its symbol; `isTemplateDecl` comes from
+# api/AST/DeclWrappers.jl with the rest of the family.
 
 function getDescribedTemplate(x::AbstractDecl)
     @check_ptrs x
@@ -245,20 +244,10 @@ function castFromDeclContext(x::DeclContext)
     return Decl(clang_Decl_castFromDeclContext(x))
 end
 
-function ClassTemplateDecl(x::AbstractDecl)
-    @check_ptrs x
-    return ClassTemplateDecl(clang_Decl_castToClassTemplateDecl(x))
-end
-
-function ValueDecl(x::AbstractDecl)
-    @check_ptrs x
-    return ValueDecl(clang_Decl_castToValueDecl(x))
-end
-
-function CXXConstructorDecl(x::AbstractDecl)
-    @check_ptrs x
-    return CXXConstructorDecl(clang_Decl_castToCXXConstructorDecl(x))
-end
+# The rest of the family -- one checked cast and one predicate per class, abstract bases
+# included -- is generated from DeclNodes.inc, so narrowing a declaration is `cast<T>`/`isa<T>`
+# and never a reinterpretation.
+include("DeclWrappers.jl")
 
 # DeclContext
 function getParentASTContext(x::AnyDeclContext)
@@ -482,7 +471,7 @@ end
 """
     getAttrOfKind(x::AbstractDecl, k::CXAttrKind) -> Attr
 The first attribute of kind `k` on `x`, or a NULL-pointer `Attr` when there is
-none. Refine it with the `Attr` downcasts.
+none. Refine it with the `Attr` casts.
 """
 function getAttrOfKind(x::AbstractDecl, k::CXAttrKind)
     @check_ptrs x

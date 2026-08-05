@@ -10,6 +10,7 @@ const CLANGEX_DIR = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra"))
 const CLANGEX_INC = joinpath(CLANGEX_DIR, "include", "clang-ex")
 const CLANGEX_LIB = joinpath(CLANGEX_DIR, "lib")
 const SRC_DIR = normpath(joinpath(@__DIR__, "..", "src"))
+const PKG_ROOT = normpath(joinpath(@__DIR__, ".."))
 
 function clangex_headers()
     headers = String[]
@@ -22,6 +23,10 @@ end
 strip_line_comment(line) = first(split(line, "//"; limit=2))
 
 isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
+
+# This file names `unchecked_cast` in its own prose and skiplist; the scan below must not
+# report itself.
+const LINT_FILE = @__FILE__
 
 @testset "ClangExtra layout lint" begin
     @testset "no duplicate typedefs in CXTypes.h" begin
@@ -157,9 +162,9 @@ isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
     @testset "every libclangex binding is wrapped or stamped" begin
         # The reverse of the reference-resolution check above: every generated
         # binding must be referenced by the Julia layer (comment-stripped — a
-        # clang_* token in a comment is not a wrapper), or belong to a downcast
-        # helper family reached indirectly through resolve()/getKind table
-        # lookups rather than per-class calls.
+        # clang_* token in a comment is not a wrapper), or belong to one of the
+        # per-class cast families, which the generators stamp wholesale rather
+        # than naming one call at a time.
         root = normpath(joinpath(@__DIR__, ".."))
         llvm_major = string(Base.libllvm_version.major)
         binding_names = Set{String}()
@@ -337,5 +342,74 @@ isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
         isempty(offenders) ||
             @error "wrapper hands a raw `.ptr` to a binding; pass the carrier instead" offenders
         @test isempty(offenders)
+    end
+
+    @testset "the unchecked narrowing stays in the places that earned it" begin
+        # `unchecked_cast` is the one crossing clang is not asked about, so its whole safety
+        # argument is that each caller established the class some other way -- from the very
+        # field `classof` reads. That argument is per-site and cannot be inferred, so the
+        # sites are enumerated here: a new file reaching for it is a new argument someone
+        # has to write down, and everywhere else the checked casts are what to use.
+        #
+        # Not a ratchet on the count. Adding one more `resolve` branch to an existing table
+        # is the same argument again; adding the first one in a new file is not.
+        allowed = Set([
+            # the resolve machinery: `T` comes from a table keyed on the class clang reported
+            joinpath("clang", "casts.jl"),          # the definition itself
+            joinpath("clang", "decl.jl"),
+            joinpath("clang", "stmt.jl"),
+            joinpath("clang", "attr.jl"),
+            "types.jl",
+            # wrapper bodies where the C function's declared return handle is not the
+            # carrier's: a discriminated `PointerUnion`, or a result typed at a base
+            joinpath("clang", "api", "AST", "DeclTemplate.jl"),
+            joinpath("clang", "api", "AST", "ASTContext.jl"),
+            joinpath("clang", "api", "AST", "ExprCXX.jl"),
+            joinpath("clang", "api", "AST", "Type.jl"),
+            joinpath("clang", "api", "Sema", "Sema.jl"),
+        ])
+        found, offenders = String[], String[]
+        for (root, _, files) in walkdir(SRC_DIR), f in files
+            endswith(f, ".jl") || continue
+            relf = relpath(joinpath(root, f), SRC_DIR)
+            src = strip_jl_comments(read(joinpath(root, f), String))
+            occursin("unchecked_cast(", src) || continue
+            push!(found, relf)
+            relf in allowed || push!(offenders, relf)
+        end
+        # every enumerated file still uses it -- an entry that stopped being true is a
+        # licence nobody is holding any more, and should be deleted rather than left
+        stale = sort!(collect(setdiff(allowed, found)))
+        isempty(stale) || @error "these files no longer need `unchecked_cast`" stale
+        @test isempty(stale)
+        isempty(offenders) ||
+            @error "`unchecked_cast` outside the sites that argue for it; use the checked \
+                    cast for the class you mean, or add the file with its reason" offenders
+        @test isempty(offenders)
+
+        # and it never leaves the package: it is not `public`, and a test or example reaching
+        # past that is reaching for undefined behaviour rather than a `CastError`. The name is
+        # matched wherever it is not in backticks, so taking the function as a value counts
+        # while naming it inside a diagnostic string does not.
+        #
+        # test/clang/casts.jl is exempt, and has to be. It pins which crossings the four
+        # per-hierarchy methods refuse, and a guard whose refusals no test may name is a guard
+        # that rots the first time someone widens a signature to make an error go away.
+        reach = r"(?<!`)\bunchecked_cast\b(?!`)"
+        pins = joinpath(PKG_ROOT, "test", "clang", "casts.jl")
+        outside = String[]
+        for dir in ("test", "examples"), (root, _, files) in walkdir(joinpath(PKG_ROOT, dir))
+            for f in files
+                endswith(f, ".jl") || continue
+                path = joinpath(root, f)
+                (path == LINT_FILE || path == pins) && continue
+                occursin(reach, strip_jl_comments(read(path, String))) &&
+                    push!(outside, relpath(path, PKG_ROOT))
+            end
+        end
+        isempty(outside) || @error "`unchecked_cast` reached from outside src/" outside
+        @test isempty(outside)
+        # the exemption is only worth its cost while the file actually uses it
+        @test occursin(reach, strip_jl_comments(read(pins, String)))
     end
 end

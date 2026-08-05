@@ -65,6 +65,7 @@ let ctx = CC.get_ast_context(I)
     mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
     @printf("   with C linkage    -> %s\n", "stats_of")
     @printf("   without it        -> %s\n", CC.mangleName(mc, CC.find_decl(I, "stats_of_cxx")))
+    CC.dispose(mc)          # a mangle context is caller-owned, unlike most things off an ASTContext
 end
 
 hdr("3. calling it from Julia")

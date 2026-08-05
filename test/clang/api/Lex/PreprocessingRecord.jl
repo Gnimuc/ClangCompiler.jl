@@ -3,7 +3,7 @@ import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_instance
 using Test
 
-@testset "preprocessing record entities, downcasts and skipped ranges" begin
+@testset "preprocessing record entities, casts and skipped ranges" begin
     # A preprocessing record installs itself on the callback chain for good and records
     # every directive the preprocessor sees afterwards, so the interpreter is a throwaway
     # this testset owns.
@@ -75,7 +75,7 @@ using Test
     @test CC.getName(def) isa CC.IdentifierInfo
     @test CC.getName(CC.getName(def)) == "CC_PPREC_OBJ"
     @test CC.isValid(CC.getLocation(def))
-    # the downcasts are dyn_cast: a wrong one yields a NULL carrier instead of a lie
+    # the PreprocessedEntity casts are dyn_cast: a wrong one yields a NULL carrier, not a lie
     @test CC.MacroExpansion(def_ent).ptr == C_NULL
     @test CC.InclusionDirective(def_ent).ptr == C_NULL
 

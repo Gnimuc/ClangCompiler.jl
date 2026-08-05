@@ -265,6 +265,40 @@ unsigned clang_Sema_LookupVisibleDeclsInContext(
 
 // True when T is (an array of) an abstract class type, diagnosing at Loc.
 // Precondition: DiagID != 0 (the same BoundTypeDiagnoser assert as RequireCompleteType).
+// Mirror of `clang::Sema::NamedReturnInfo::Status` (clang/Sema/Sema.h). The three-valued
+// answer to [class.copy.elision]p3 for a local variable: not eligible, implicit-move eligible,
+// or additionally copy-elidable (NRVO).
+typedef enum CXNamedReturnInfo_Status {
+  CXNamedReturnInfo_None = 0,
+  CXNamedReturnInfo_MoveEligible = 1,
+  CXNamedReturnInfo_MoveEligibleAndCopyElidable = 2
+} CXNamedReturnInfo_Status;
+
+// The elision status clang computes for VD considered as a named return operand. Finer than
+// the bound clang_VarDecl_isNRVOVariable, which is a single bool Sema only sets for a variable
+// that actually was returned: this answers for any local, so it distinguishes why elision is
+// unavailable (parameter, static storage, volatile, over-aligned, plain rvalue reference).
+// Only the Status is exposed; the Candidate pointer is the VarDecl the caller already has.
+// PRECONDITION: VD's type must be complete -- the body reaches getTypeAlignInChars for a
+// non-volatile object type, which asserts inside getASTRecordLayout on an incomplete one.
+CXNamedReturnInfo_Status clang_Sema_getNamedReturnInfo(CXSema S, CXVarDecl VD);
+
+// NOT WRAPPABLE: `CheckFunctionConstraints`. It looks like a pure query on a finished AST -- ask
+// whether a function's requires-clause is satisfied -- and its symbol is exported. It is not: it
+// segfaults in Expr::IgnoreParenImpCasts, under calculateConstraintSatisfaction, on a plain
+// non-template function with no requires-clause at all, which is the most benign input there is.
+// Measured against a live interpreter between parses. Constraint satisfaction needs the
+// instantiation state a parse sets up, so this belongs with the ActOn* family however much its
+// signature suggests otherwise.
+
+// Whether T is, or is an array of, a class with an unoverridden pure virtual member. The
+// question clang_Sema_RequireNonAbstractType answers, minus the diagnostic it emits -- that one
+// raises S's error count, which this package's parse()/execute() read afterwards, so it cannot
+// be used as a query. More total than CXXRecordDecl::isAbstract, which reads data().Abstract and
+// so requires a definition: this peels array element types and answers false for an incomplete
+// record, a non-record and non-C++. Loc is unused by the body. PRECONDITION: T is not null.
+bool clang_Sema_isAbstractType(CXSema S, CXSourceLocation_ Loc, CXQualType T);
+
 bool clang_Sema_RequireNonAbstractType(CXSema S, CXSourceLocation_ Loc, CXQualType T,
                                        unsigned DiagID);
 
@@ -876,6 +910,13 @@ CXExpr clang_Sema_BuildCXXNamedCast(CXSema S, CXSourceLocation_ OpLoc, unsigned 
 CXExpr clang_Sema_BuildCXXTypeId(CXSema S, CXQualType TypeInfoType,
                                  CXSourceLocation_ TypeidLoc, CXTypeSourceInfo Operand,
                                  CXSourceLocation_ RParenLoc, bool *IsInvalid);
+
+// `__uuidof(T)`. Mirrors BuildCXXTypeId's protocol exactly. PRECONDITION: the language options
+// must enable Microsoft extensions (or Borland) -- ASTContext only creates the MSGuidTagDecl
+// this needs under LangOpts.MicrosoftExt || LangOpts.Borland, and the body reaches it unchecked.
+CXExpr clang_Sema_BuildCXXUuidof(CXSema S, CXQualType TypeInfoType, CXSourceLocation_ TypeidLoc,
+                                 CXTypeSourceInfo Operand, CXSourceLocation_ RParenLoc,
+                                 bool *IsInvalid);
 
 // Re-expresses the template argument Arg as the expression that denotes the declaration it
 // names, converted to ParamType. Precondition: Arg's kind is Declaration — clang asserts
@@ -1907,6 +1948,22 @@ typedef enum CXTemplateDeductionResult {
 CXTemplateDeductionResult clang_Sema_DeduceTemplateArguments(
     CXSema S, CXClassTemplatePartialSpecializationDecl Partial,
     CXTemplateArgumentList TemplateArgs, CXTemplateDeductionInfo Info);
+
+// The variable-template twin of the call above. C has no overloading, so the distinguishing
+// parameter is spelled into the name; the Julia wrappers share one name and dispatch.
+CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsVarPartial(
+    CXSema S, CXVarTemplatePartialSpecializationDecl Partial,
+    CXTemplateArgumentList TemplateArgs, CXTemplateDeductionInfo Info);
+
+// Deduce a specialization of FunctionTemplate from explicit template arguments and/or a target
+// function type. Both are optional: pass NULL for ExplicitTemplateArgs and a null CXQualType for
+// ArgFunctionType. *Specialization is written only on TDK_Success and left alone otherwise.
+// PRECONDITION: ArgFunctionType, when not null, must be a FunctionProtoType -- clang reaches
+// through it with an unchecked castAs in Sema::adjustCCAndNoReturn.
+CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsFunctionTemplate(
+    CXSema S, CXFunctionTemplateDecl FunctionTemplate,
+    CXTemplateArgumentListInfo ExplicitTemplateArgs, CXQualType ArgFunctionType,
+    CXFunctionDecl *Specialization, CXTemplateDeductionInfo Info, bool IsAddressOfFunction);
 
 // Deduces the type the `auto` in AutoTypeLoc stands for from Initializer, writing it
 // through Result on success and leaving *Result untouched otherwise. PRECONDITION:
@@ -3157,6 +3214,12 @@ CXQualType clang_Sema_CheckSubtractionOperands(CXSema S, CXExpr *LHS, CXExpr *RH
 CXQualType clang_Sema_CheckShiftOperands(CXSema S, CXExpr *LHS, CXExpr *RHS,
                                          CXSourceLocation_ Loc, CXBinaryOperatorKind Opc,
                                          bool IsCompAssign);
+
+// NOT WRAPPABLE: `CheckBitwiseOperands` and `CheckLogicalOperands`. Every other member of this
+// family is bound, and these two look like the last gap -- but libclang-cpp exports no symbol
+// for either (`nm -gU libclang-cpp.dylib | grep CheckBitwiseOperands` is empty, while the
+// siblings above are all present), so a shim calling them fails to link. Their absence here is
+// a property of the shipped library, not an oversight. See also getVirtualFileRef.
 
 // Warn about comparing a pointer against a '\0' character literal. Neither operand being
 // a pointer returns before the warning, so this is a no-op on arithmetic operands.

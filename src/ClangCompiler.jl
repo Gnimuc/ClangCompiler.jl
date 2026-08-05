@@ -29,7 +29,7 @@ include(joinpath(libdir, llvm_version, "LibClangEx.jl"))
 using .LibClangEx
 
 # The Attr/Stmt/Decl/Type hierarchies are emitted as explicit source (carriers,
-# wrappers, and downcast maps) from the vendored *.inc files by gen/*_nodes.jl
+# wrappers, and resolve maps) from the vendored *.inc files by gen/*_nodes.jl
 # into lib/<major>/, and included where each subsystem is defined — there is no
 # runtime node-table mirror.
 
@@ -44,6 +44,10 @@ public get_compiler_flags, get_default_args
 include("clang/handles.jl")
 include("clang/utils.jl")
 include("clang/core/core.jl")
+# how a carrier crosses the hierarchy: implicit widening, checked narrowing, and the one
+# unchecked reinterpretation the resolve machinery is built from
+include("clang/casts.jl")
+public CastError
 include("clang/api/api.jl")
 # what a DeclContext parameter accepts: a context, or a decl that is also one
 public AnyDeclContext, AbstractDeclContextDecl

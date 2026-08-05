@@ -44,7 +44,7 @@ end
 
     function tl_of(name)
         @assert f(I, name) "lookup failed: $name"
-        return CC.getTypeLoc(CC.getTypeSourceInfo(CC.downcast(CC.DeclaratorDecl, get_decl(f).ptr)))
+        return CC.getTypeLoc(CC.getTypeSourceInfo(CC.DeclaratorDecl(get_decl(f))))
     end
 
     # pointer declarator: star loc + pointee chain
@@ -55,8 +55,9 @@ end
     @test ptl isa CC.PointerTypeLoc
     @test CC.isValid(CC.getStarLoc(ptl))
     @test CC.getSourceRange(ptl) isa CC.SourceRange    # base method on a carrier
-    miss = CC.ArrayTypeLoc(ptl)                        # class mismatch -> NULL carrier
-    @test miss.ptr == C_NULL
+    # a pointer location is no array location, and the cast names both classes rather than
+    # handing back a box over nothing — nothing to dispose on the failing path
+    @test_throws CC.CastError CC.ArrayTypeLoc(ptl)
     nxt = CC.getNextTypeLoc(ptl)
     btl = CC.resolve(nxt)
     @test btl isa CC.BuiltinTypeLoc
@@ -105,7 +106,7 @@ end
 
     # function: params + parens + local range
     @assert f(I, "gfn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     tl = CC.getTypeLoc(CC.getTypeSourceInfo(fd))
     fn = CC.resolve(tl)
     @test fn isa CC.FunctionTypeLoc
@@ -214,7 +215,7 @@ end
     CC.parse(I, "int *tlp;")
     f = DeclFinder(I)
     @test f(I, "tlp")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     tl = CC.getTypeLoc(CC.getTypeSourceInfo(vd))   # owned box
     @test tl isa CC.TypeLoc
     @test !CC.isNull(tl)

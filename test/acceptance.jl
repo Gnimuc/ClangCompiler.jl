@@ -52,7 +52,7 @@ using Test
         CC.parse(I, src)
         f = DeclFinder(I)
         @test f(I, "deref_demo")
-        fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+        fd = CC.FunctionDecl(get_decl(f))
 
         sites = find_deref_sites(fd)
         kinds = first.(sites)
@@ -123,7 +123,7 @@ end
         CC.parse(I, src)
         f = DeclFinder(I)
         @test f(I, "compute")
-        fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+        fd = CC.FunctionDecl(get_decl(f))
 
         unused = find_unused_locals(fd)
 
@@ -171,7 +171,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "caller")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
 
     edges = direct_call_edges(fd)
     @test edges == ["bar", "foo"]          # sorted, unique
@@ -203,7 +203,7 @@ end
         f = DeclFinder(I)
         try
             @test f(I, "S")
-            rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+            rd = CC.CXXRecordDecl(get_decl(f))
             layout = dump_layout(rd)
 
             @test length(layout) == 3

@@ -6,6 +6,7 @@
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 #include "clang-ex/Basic/CXSourceManager.h" // CXCharacteristicKind
+#include "clang-ex/Lex/CXModuleMap.h"       // CXModuleHeaderRole
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
@@ -38,6 +39,10 @@ CXString clang_HeaderSearch_getModuleCachePath(CXHeaderSearch HS);
 
 void clang_HeaderSearch_setDirectoryHasModuleMap(CXHeaderSearch HS, CXDirectoryEntry Dir);
 
+// SetSearchPaths
+// SetSystemHeaderPrefixes
+// SetExternalSource
+
 // Inserts Dir at the boundary between the quoted/angled and the system search paths -- before
 // the first system directory when isAngled is true, before the first angled one otherwise --
 // so every SearchDirs index at or after that point shifts by one. The search's
@@ -68,6 +73,36 @@ CXHeaderMap clang_HeaderSearch_CreateHeaderMap(CXHeaderSearch HS, CXFileEntryRef
 CXString clang_HeaderSearch_getCachedModuleFileName(CXHeaderSearch HS,
                                                     const char *ModuleName,
                                                     const char *ModuleMapPath);
+
+// helper (MARSHALLING.md §10, narrow composite): resolve Filename against this search
+// exactly as the preprocessor would, with no #include_next start directory, no includers
+// and no module suggestion. Calls clang::HeaderSearch::LookupFile with IncludeLoc =
+// SourceLocation(), FromDir = ConstSearchDirIterator(nullptr), an empty Includers list,
+// CurDir = SearchPath = RelativePath = RequestingModule = SuggestedModule = nullptr,
+// BuildSystemModule = false and OpenFile = true, forwarding only the four flags below. The
+// full method stays unwrapped: its SearchPath / RelativePath / SuggestedModule / CurDir
+// out-parameters have no marshalling scheme, and the Includers ArrayRef is a
+// pair-of-optionals with no pointer form. With RequestingModule and SuggestedModule both
+// null, HeaderSearch::needModuleLookup is false and no module machinery runs at all, which
+// is what makes the narrowing total. Returns NULL when the file is not found; otherwise a
+// heap-boxed FileEntryRef the caller releases with clang_FileEntryRef_dispose. *IsMapped /
+// *IsFrameworkFound may be NULL. CacheFailures is forwarded to FileManager::getFileRef, so
+// with it true a probe for a path that does not exist yet makes the file manager remember
+// that -- and a later lookup still misses even once the file has been created. False is
+// therefore the sane default for a query against a live interpreter. It does NOT control
+// HeaderSearch's own LookupFileCache, and that cache DOES make a miss sticky: it records the
+// position the next search for this filename resumes from, and a search that found nothing
+// leaves that past the end of the list. So a name that missed once keeps missing even after a
+// directory containing it joins the search path. SkipCache=true bypasses that and finds it; a
+// different filename in the same new directory is found unaided, the cache being per-filename.
+// Measured against a live interpreter, not inferred from the source.
+CXFileEntryRef clang_HeaderSearch_LookupFile(CXHeaderSearch HS, const char *Filename,
+                                             bool isAngled, bool SkipCache,
+                                             bool CacheFailures, bool *IsMapped,
+                                             bool *IsFrameworkFound);
+
+// LookupSubframeworkHeader
+// LookupFrameworkCache
 
 // The multiple-include optimization decision for File: whether the preprocessor should enter
 // it. *IsFirstIncludeOfFile, when non-null, receives whether this is the first time PP has
@@ -111,6 +146,17 @@ void clang_HeaderSearch_MarkFileIncludeOnce(CXHeaderSearch HS, CXFileEntryRef Fi
 
 void clang_HeaderSearch_MarkFileSystemHeader(CXHeaderSearch HS, CXFileEntryRef File);
 
+// Marks FE as belonging to a module. RoleBits is a BITMASK of CXModuleHeaderRole values,
+// not a single enumerator: clang tests it with ModuleMap::isModular(Role) == !(Role &
+// (TextualHeader | ExcludedHeader)), so a textual or excluded role on its own records
+// nothing unless isCompilingModuleHeader is true. The two bits it writes are OR-ed into the
+// record and never cleared -- clang_HeaderSearch_ClearFileInfo is the only way back.
+// Creates the HeaderFileInfo record for FE when there is none yet, and only then: the early
+// return for a role that changes nothing leaves a header with no record still without one.
+void clang_HeaderSearch_MarkFileModuleHeader(CXHeaderSearch HS, CXFileEntryRef FE,
+                                             unsigned RoleBits,
+                                             bool isCompilingModuleHeader);
+
 void clang_HeaderSearch_SetFileControllingMacro(CXHeaderSearch HS, CXFileEntryRef File,
                                                 CXIdentifierInfo ControllingMacro);
 
@@ -132,10 +178,93 @@ CXString clang_HeaderSearch_getPrebuiltModuleFileName(CXHeaderSearch HS,
                                                       const char *ModuleName,
                                                       bool FileMapOnly);
 
+// getCachedModuleFileName / getPrebuiltImplicitModuleFileName: the Module * overloads are
+// not wrapped. Each only looks the module's name and module-map path up off the Module
+// before delegating to the (StringRef, StringRef) / (StringRef, bool) form already bound
+// above, so they add no capability a caller of those lacks.
+
+// The module named ModuleName, or NULL when none is known. Consults the search's ModuleMap
+// first, so a module registered by clang_HeaderSearch_loadModuleMapFile is found regardless
+// of configuration; only the fallback directory search is gated on
+// HeaderSearchOptions::ImplicitModuleMaps, and AllowSearch = false skips it entirely.
+// ImportLoc is only used to locate diagnostics from that fallback search and may be an
+// invalid location. The result is BORROWED -- it is owned by the search's ModuleMap, so it
+// must never be passed to clang_Module_dispose, which would also delete every submodule.
+CXModule_ clang_HeaderSearch_lookupModule(CXHeaderSearch HS, const char *ModuleName,
+                                          CXSourceLocation_ ImportLoc, bool AllowSearch,
+                                          bool AllowExtraModuleMapSearch);
+
+// lookupModuleMapFile
+
 // The upward walk from Filename's directory stops at Root. Always false when implicit
 // module maps are disabled.
 bool clang_HeaderSearch_hasModuleMap(CXHeaderSearch HS, const char *Filename,
                                      CXDirectoryEntry Root, bool IsSystem);
+
+// The module that owns File, or NULL when no module map assigns it to one. MARSHALLING.md
+// §7: the KnownHeader value aggregate is not marshalled -- its two components are.
+// *RoleBits, when non-NULL, receives the header's role as a BITMASK of CXModuleHeaderRole
+// values (see CXModuleMap.h), so it may hold a combination such as
+// PrivateHeader|TextualHeader and must never be read as a single enumerator. When the
+// result is NULL the role is clang's default-constructed 0 and carries no information. NOT
+// a pure query, despite being declared const: HeaderSearch holds a `mutable ModuleMap`, and
+// when no module map mentions File this INFERS ownership from any enclosing umbrella
+// directory (ModuleMap::findOrCreateModuleForHeaderInUmbrellaDir), which can create modules
+// and submodules as a side effect. clang_HeaderSearch_getNumResolvedModulesForHeader below
+// is the inference-free enumerator. The module is BORROWED from the search's ModuleMap.
+// KnownHeader::isAvailable() is deliberately not exposed: it dereferences getModule() with
+// no null check, so the caller composes it from the module and the role instead.
+CXModule_ clang_HeaderSearch_findModuleForHeader(CXHeaderSearch HS, CXFileEntryRef File,
+                                                 bool AllowTextual, bool AllowExcluded,
+                                                 unsigned *RoleBits);
+
+// findAllModulesForHeader
+
+// helper: number of (module, role) pairs clang::HeaderSearch::findResolvedModulesForHeader
+// reports for File. Zero when no module map claims it.
+unsigned clang_HeaderSearch_getNumResolvedModulesForHeader(CXHeaderSearch HS,
+                                                           CXFileEntryRef File);
+
+// helper: the Idx-th pair. *RoleBits, when non-NULL, receives the role BITMASK (see
+// clang_HeaderSearch_findModuleForHeader). The module is BORROWED. PRECONDITION: Idx <
+// clang_HeaderSearch_getNumResolvedModulesForHeader(HS, File) -- the shim indexes the
+// ArrayRef unchecked. Both calls redo the query (MARSHALLING.md §6 count+index, §10
+// rebuild-per-call). Unlike findModuleForHeader this one infers nothing, so it is
+// idempotent and the count and the indices agree.
+CXModule_ clang_HeaderSearch_getResolvedModuleForHeader(CXHeaderSearch HS,
+                                                        CXFileEntryRef File, unsigned Idx,
+                                                        unsigned *RoleBits);
+
+// Parses File as a module map and registers its modules with the search's ModuleMap.
+// Returns TRUE on FAILURE -- clang's own inverted polarity: false means the map was parsed
+// now or had already been parsed. The ID / Offset / OriginalModuleMapFile parameters are
+// left at their clang defaults; they exist only for preprocessed module maps, which nothing
+// here produces. Not gated on -fmodules or -fimplicit-module-maps:
+// ModuleMap::parseModuleMapFile consults neither. It does assert(Target) on the ModuleMap's
+// TargetInfo, which holds for every HeaderSearch reachable from here, because
+// Preprocessor::Initialize calls setTarget unconditionally and
+// CompilerInstance::createPreprocessor always calls it -- which is also why the
+// HeaderSearch constructor stays unwrapped. Side effects: the map is entered into the
+// SourceManager as a new FileID, and parse errors are reported through the search's
+// DiagnosticsEngine.
+bool clang_HeaderSearch_loadModuleMapFile(CXHeaderSearch HS, CXFileEntryRef File,
+                                          bool IsSystem);
+
+// helper: number of top-level modules clang::HeaderSearch::collectAllModules reports.
+unsigned clang_HeaderSearch_getNumAllModules(CXHeaderSearch HS);
+
+// Fills Buf with those modules. Buf must hold clang_HeaderSearch_getNumAllModules(HS)
+// elements; the count is exact and no slot is NULL. Every module is BORROWED from the
+// search's ModuleMap. Both calls redo the whole walk (MARSHALLING.md §10,
+// rebuild-per-call): the order is the ModuleMap's llvm::StringMap iteration order, a pure
+// function of its insertion sequence, so index I names the same module on both calls. Side
+// effect: when HeaderSearchOptions::ImplicitModuleMaps is on, the walk loads module maps
+// off disk for every search directory and its immediate subdirectories, so the FIRST call
+// may register modules that were not there before. It is idempotent from then on, which is
+// what makes count+fill sound here.
+void clang_HeaderSearch_collectAllModules(CXHeaderSearch HS, CXModule_ *Buf);
+
+// loadTopLevelSystemModules
 
 // helper: number of names `HeaderSearch::getHeaderMapFileNames` produces.
 unsigned clang_HeaderSearch_getNumHeaderMapFileNames(CXHeaderSearch HS);
@@ -154,6 +283,24 @@ unsigned clang_HeaderSearch_search_dir_size(CXHeaderSearch HS);
 // only asserts this, so an out-of-range index is UB in a release build.
 CXString clang_HeaderSearch_getSearchDirName(CXHeaderSearch HS, unsigned Idx);
 
+// helper: index of the first angled (-I) search directory, i.e. the number of quoted-only
+// entries. Walks from quoted_dir_begin() to angled_dir_begin() on the const overloads. That
+// walk never dereferences an iterator, so it is defined even when the range is empty --
+// unlike searchDirIdx(*angled_dir_begin()), which would.
+unsigned clang_HeaderSearch_getAngledDirIdx(CXHeaderSearch HS);
+
+// helper: index of the first system search directory, the same way. Together with
+// clang_HeaderSearch_search_dir_size these partition the flat search-path list into [0,
+// angled) quoted-only, [angled, system) angled and [system, size) system -- the same
+// boundary clang_HeaderSearch_AddSearchPath's isAngled flag inserts at, and the only
+// observable consequence of that flag.
+unsigned clang_HeaderSearch_getSystemDirIdx(CXHeaderSearch HS);
+
+// searchDirIdx: not wrapped. Its body is `&DL - &*SearchDirs.begin()`, pointer arithmetic
+// against the search's private vector, and the only DirectoryLookup this API can produce is
+// clang_DirectoryLookup_create's heap-boxed copy, which is not in that vector -- so every
+// reachable call would be undefined behaviour returning a garbage index.
+
 // Uniques Framework into the search's framework-name set and returns the uniqued
 // spelling; idempotent.
 CXString clang_HeaderSearch_getUniqueFrameworkName(CXHeaderSearch HS,
@@ -169,9 +316,11 @@ CXString clang_HeaderSearch_suggestPathToFileForDiagnostics(CXHeaderSearch HS,
                                                             const char *MainFile,
                                                             bool *IsAngled);
 
-// LookupFile / LookupSubframeworkHeader are not wrapped: they need out-parameters
-// (SmallVectorImpl<char>*, ModuleMap::KnownHeader*, ConstSearchDirIterator*) that
-// have no marshalling scheme yet.
+// getModuleMap: not wrapped. It would need a CXModuleMap handle for a class with a
+// ~60-method surface of its own, and yields no capability on its own -- the three queries a
+// caller actually wants from it (findModule, findModuleForHeader,
+// findResolvedModulesForHeader) are all reachable through the HeaderSearch forwarders
+// above.
 
 void clang_HeaderSearch_PrintStats(CXHeaderSearch HS);
 
@@ -189,7 +338,15 @@ bool clang_HeaderFileInfo_getIsPragmaOnce(CXHeaderFileInfo HFI);
 
 CXCharacteristicKind clang_HeaderFileInfo_getDirInfo(CXHeaderFileInfo HFI);
 
+// Whether this record was supplied by an external source and has not changed since -- the
+// bit clang_HeaderSearch_copyExistingFileInfo's WantExternal parameter filters on.
+bool clang_HeaderFileInfo_getExternal(CXHeaderFileInfo HFI);
+
 bool clang_HeaderFileInfo_getIsModuleHeader(CXHeaderFileInfo HFI);
+
+// Whether the header is part of the module currently being built, as set by
+// clang_HeaderSearch_MarkFileModuleHeader's isCompilingModuleHeader argument.
+bool clang_HeaderFileInfo_getIsCompilingModuleHeader(CXHeaderFileInfo HFI);
 
 bool clang_HeaderFileInfo_getIsValid(CXHeaderFileInfo HFI);
 

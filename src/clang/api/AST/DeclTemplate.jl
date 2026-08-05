@@ -200,8 +200,8 @@ collapsing the `PointerUnion`: a `ClassTemplatePartialSpecializationDecl` when
 function getSpecializedTemplateOrPartial(x::AbstractClassTemplateSpecializationDecl)
     @check_ptrs x
     ptr = clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial(x)
-    return specializedOnPartial(x) ? downcast(ClassTemplatePartialSpecializationDecl, ptr) :
-           downcast(ClassTemplateDecl, ptr)
+    return specializedOnPartial(x) ? unchecked_cast(ClassTemplatePartialSpecializationDecl, ptr) :
+           unchecked_cast(ClassTemplateDecl, ptr)
 end
 
 # VarTemplateSpecializationDecl
@@ -531,8 +531,8 @@ collapsing the `PointerUnion`: a `VarTemplatePartialSpecializationDecl` when
 function getSpecializedTemplateOrPartial(x::AbstractVarTemplateSpecializationDecl)
     @check_ptrs x
     ptr = clang_VarTemplateSpecializationDecl_getSpecializedTemplateOrPartial(x)
-    return specializedOnPartial(x) ? downcast(VarTemplatePartialSpecializationDecl, ptr) :
-           downcast(VarTemplateDecl, ptr)
+    return specializedOnPartial(x) ? unchecked_cast(VarTemplatePartialSpecializationDecl, ptr) :
+           unchecked_cast(VarTemplateDecl, ptr)
 end
 
 function getExternLoc(x::AbstractVarTemplateSpecializationDecl)
@@ -2430,8 +2430,8 @@ function getInstantiatedFrom(x::AbstractClassTemplateSpecializationDecl)
     @check_ptrs x
     ptr = clang_ClassTemplateSpecializationDecl_getInstantiatedFrom(x)
     ptr == C_NULL && return Decl(ptr)
-    return specializedOnPartial(x) ? downcast(ClassTemplatePartialSpecializationDecl, ptr) :
-           downcast(ClassTemplateDecl, ptr)
+    return specializedOnPartial(x) ? unchecked_cast(ClassTemplatePartialSpecializationDecl, ptr) :
+           unchecked_cast(ClassTemplateDecl, ptr)
 end
 
 # VarTemplateSpecializationDecl
@@ -2445,8 +2445,8 @@ function getInstantiatedFrom(x::AbstractVarTemplateSpecializationDecl)
     @check_ptrs x
     ptr = clang_VarTemplateSpecializationDecl_getInstantiatedFrom(x)
     ptr == C_NULL && return Decl(ptr)
-    return specializedOnPartial(x) ? downcast(VarTemplatePartialSpecializationDecl, ptr) :
-           downcast(VarTemplateDecl, ptr)
+    return specializedOnPartial(x) ? unchecked_cast(VarTemplatePartialSpecializationDecl, ptr) :
+           unchecked_cast(VarTemplateDecl, ptr)
 end
 
 # ImplicitConceptSpecializationDecl

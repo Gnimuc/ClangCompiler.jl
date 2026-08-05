@@ -90,8 +90,9 @@ end
 
 function emit_wrappers(io, nodes)
     println(io, GEN_NOTE)
-    println(io, "# Per-attribute downcast: the `is<Name>Attr` predicate and the `<Name>Attr`")
-    println(io, "# constructor-shaped cast (NULL carrier when the attribute is another class).")
+    println(io, "# Per-attribute checked cast: the `<Name>Attr` constructor is C++'s `cast<T>` and")
+    println(io, "# the `is<Name>Attr` predicate beside it is `isa<T>`. Clang's own `classof` decides,")
+    println(io, "# so an attribute can never become a carrier that names another class.")
     for n in nodes
         sym = attr_carrier(n.name)
         println(io, """
@@ -102,7 +103,9 @@ function emit_wrappers(io, nodes)
 
         function $sym(x::AbstractAttr)
             @check_ptrs x
-            return $sym(clang_Attr_castTo$sym(x))
+            p = clang_Attr_castTo$sym(x)
+            p == C_NULL && _cast_failed($sym, x)
+            return $sym(p)
         end
         """)
     end

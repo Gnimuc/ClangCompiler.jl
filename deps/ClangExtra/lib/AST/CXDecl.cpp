@@ -277,16 +277,6 @@ bool clang_NamedDecl_isPlaceholderVar(CXNamedDecl ND, CXLangOptions LangOpts) {
       *reinterpret_cast<clang::LangOptions *>(LangOpts));
 }
 
-// NamedDecl Cast
-CXTypeDecl clang_NamedDecl_castToTypeDecl(CXNamedDecl ND) {
-  return reinterpret_cast<CXTypeDecl>(llvm::dyn_cast_or_null<clang::TypeDecl>(reinterpret_cast<clang::NamedDecl *>(ND)));
-}
-
-CXEnumConstantDecl clang_NamedDecl_castToEnumConstantDecl(CXNamedDecl ND) {
-  return reinterpret_cast<CXEnumConstantDecl>(llvm::dyn_cast_or_null<clang::EnumConstantDecl>(
-      reinterpret_cast<clang::NamedDecl *>(ND)));
-}
-
 // LabelDecl
 CXLabelDecl clang_LabelDecl_Create(CXASTContext C, CXDeclContext DC,
                                    CXSourceLocation_ IdentL, CXIdentifierInfo II) {
@@ -2897,12 +2887,6 @@ void clang_RecordDecl_completeDefinition(CXRecordDecl RD) {
 
 unsigned clang_RecordDecl_getODRHash(CXRecordDecl RD) {
   return reinterpret_cast<clang::RecordDecl *>(RD)->getODRHash();
-}
-
-CXClassTemplateSpecializationDecl
-clang_RecordDecl_castToClassTemplateSpecializationDecl(CXRecordDecl RD) {
-  return reinterpret_cast<CXClassTemplateSpecializationDecl>(llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(
-      reinterpret_cast<clang::RecordDecl *>(RD)));
 }
 
 // FileScopeAsmDecl

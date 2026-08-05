@@ -217,7 +217,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "ovl_amb_fn")
-    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fn = CC.FunctionDecl(get_decl(f))
     found = get_decl(f)
 
     # The ambiguous arm is reachable only while the sequence's kind says so.
@@ -329,7 +329,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "ovl4_target_fn")
-    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fn = CC.FunctionDecl(get_decl(f))
     found = get_decl(f)
 
     # The standard arm dumps only its three conversion kinds, which the owning sequence's
@@ -451,7 +451,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "ovl5_plain_fn")
-    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fn = CC.FunctionDecl(get_decl(f))
 
     # The two-argument create leaves clang's default rewrite info: no original operator, so no
     # candidate is a rewrite and every candidate is acceptable, whatever its name.

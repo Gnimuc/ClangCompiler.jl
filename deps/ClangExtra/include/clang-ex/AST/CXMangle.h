@@ -14,6 +14,13 @@ typedef enum CXMangleContext_ManglerKind {
 } CXMangleContext_ManglerKind;
 
 // MangleContext
+//
+// `clang_ASTContext_createMangleContext` and its device twin both forward to
+// `ASTContext::createMangleContext`, which returns a `new`ed MangleContext the caller owns --
+// unlike almost everything else reachable from an ASTContext, which is arena memory. This is
+// the matching dispose.
+void clang_MangleContext_dispose(CXMangleContext MC);
+
 CXMangleContext_ManglerKind clang_MangleContext_getKind(CXMangleContext MC);
 
 CXASTContext clang_MangleContext_getASTContext(CXMangleContext MC);

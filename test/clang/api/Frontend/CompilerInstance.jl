@@ -1,6 +1,7 @@
 using ClangCompiler
 import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_instance
+using Clang_jll
 using Test
 
 @testset "Coverage | CompilerSemaParseLex" begin
@@ -86,7 +87,7 @@ using Test
     @test f(I, "Widget")
     widget = get_decl(f)
     @test widget isa CC.NamedDecl
-    widget_rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    widget_rd = CC.CXXRecordDecl(get_decl(f))
     widget_ii = CC.getIdentifier(widget)
     widget_loc = CC.getLocation(widget)
 
@@ -305,5 +306,95 @@ end
 
     @test_throws AssertionError CC.InitializeSourceManagerFromFile(ci, "-")
 
+    CC.dispose(ci)
+end
+
+@testset "CompilerInstance | PCH loading" begin
+    # createPCHExternalASTSource returns void, so `hasASTReader` and the diagnostics engine's
+    # error count are the only things that tell a loaded PCH from a rejected one. Both halves
+    # below assert that pair -- once on a file clang accepts, once on a file it does not.
+    args = ["-nostdinc", "-nostdlib", "-std=c++17"]
+
+    # Everything createPCHExternalASTSource reads, and deliberately nothing that parses into
+    # the AST context: no consumer and no Sema, so the translation unit stays empty until a
+    # PCH fills it.
+    function pch_instance(src)
+        ci = CC.CompilerInstance()
+        CC.setShowColors(ci, false)
+        CC.createDiagnostics(ci)
+        diag = CC.getDiagnostics(ci)
+        CC.setInvocation(ci, CC.createFromCommandLine(src, args, diag))  # adopted, no dispose
+        CC.setTargetAndLangOpts(ci)
+        CC.createFileManager(ci)
+        CC.createSourceManager(ci)
+        CC.setMainFileID(ci, src)
+        CC.createPreprocessor(ci)
+        CC.createASTContext(ci)
+        return ci
+    end
+
+    mktempdir() do dir
+        hdr = joinpath(dir, "pch_probe.h")
+        write(hdr, "int pch_probe_g = 7;\n")
+        pch = joinpath(dir, "pch_probe.pch")
+        src = joinpath(dir, "pch_main.cpp")
+        write(src, "int pch_main_v = 1;\n")
+
+        # The positive input has to come from outside: this package can construct no
+        # GeneratePCHAction (only the clang_Emit*Action_create CodeGen family exists), so the
+        # PCH is emitted by the clang binary Clang_jll already ships.
+        @test success(pipeline(`$(clang()) -x c++-header -std=c++17 -nostdinc
+                                -o $pch $hdr`; stdout=devnull, stderr=devnull))
+
+        # ---- a real PCH loads, and its declarations reach the AST context ----
+        ci = pch_instance(src)
+        diag = CC.getDiagnostics(ci)
+        @test !CC.hasASTReader(ci)
+        before = CC.getNumErrors(diag)
+        # The PCH comes from a separate clang process driven by a different command line, so
+        # its language options, target triple and version string are all compared against
+        # this instance's unless validation is off. Disabling it keeps the assertion about
+        # the loading path rather than about two command lines agreeing; the enumerator's
+        # numbering is pinned C-side by the ENUM_SYNC table, not here.
+        CC.createPCHExternalASTSource(ci, pch, CC.CXDisableValidationForModuleKind_All, true)
+        @test CC.hasASTReader(ci)
+        # a load that "succeeded" while reporting errors would be a rejected PCH
+        @test CC.getNumErrors(diag) == before
+
+        # Nothing parsed the main file, so the PCH is the only route this name has into the
+        # translation unit -- which is also what pins `path` to the right C parameter.
+        # Iterating the context is what pulls the decls across: the reader leaves the
+        # translation unit with external lexical storage, and `decls_begin` loads it.
+        tu = CC.getTranslationUnitDecl(CC.getASTContext(ci))
+        names = [CC.getNameAsString(d)
+                 for d in CC.decls_in(CC.castToDeclContext(tu)) if d isa CC.AbstractNamedDecl]
+        @test "pch_probe_g" in names
+        @test !("pch_main_v" in names)
+        CC.dispose(ci)
+
+        # ---- a file that is not a PCH is refused, and says why ----
+        ci2 = pch_instance(src)
+        diag2 = CC.getDiagnostics(ci2)
+        before2 = CC.getNumErrors(diag2)
+        CC.createPCHExternalASTSource(ci2, hdr)
+        @test !CC.hasASTReader(ci2)
+        @test CC.getNumErrors(diag2) > before2
+        CC.dispose(ci2)
+    end
+end
+
+@testset "CompilerInstance | PCH loading preconditions" begin
+    # The three members the C++ body reaches unchecked -- invocation, preprocessor, AST
+    # context -- are restated as assertions, so a caller who skipped a pipeline step gets an
+    # AssertionError instead of clang's abort.
+    ci = CC.CompilerInstance()
+    # CompilerInstance's constructor default-constructs an invocation, so that gate is
+    # already satisfied on a bare instance and the preprocessor is the first one that bites.
+    @test CC.hasInvocation(ci)
+    @test !CC.hasPreprocessor(ci)
+    @test !CC.hasASTContext(ci)
+    @test_throws AssertionError CC.createPCHExternalASTSource(ci, "no_such.pch")
+    # the reader predicate is total, and answers on an instance with nothing built
+    @test !CC.hasASTReader(ci)
     CC.dispose(ci)
 end

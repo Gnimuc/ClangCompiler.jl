@@ -383,6 +383,10 @@ void clang_Preprocessor_Lex(CXPreprocessor PP, CXToken_ Result) {
   reinterpret_cast<clang::Preprocessor *>(PP)->Lex(*reinterpret_cast<clang::Token *>(Result));
 }
 
+void clang_Preprocessor_LexTokensUntilEOF(CXPreprocessor PP) {
+  reinterpret_cast<clang::Preprocessor *>(PP)->LexTokensUntilEOF();
+}
+
 CXString clang_Preprocessor_getSpelling(CXPreprocessor PP, CXToken_ Tok) {
   return extra::makeCXString(reinterpret_cast<clang::Preprocessor *>(PP)->getSpelling(
       *reinterpret_cast<clang::Token *>(Tok)));
@@ -873,6 +877,13 @@ CXIdentifierInfo clang_Preprocessor_LookUpIdentifierInfo(CXPreprocessor PP,
                                                          CXToken_ Identifier) {
   return reinterpret_cast<CXIdentifierInfo>(reinterpret_cast<clang::Preprocessor *>(PP)->LookUpIdentifierInfo(
       *reinterpret_cast<clang::Token *>(Identifier)));
+}
+
+bool clang_Preprocessor_CheckMacroName(CXPreprocessor PP, CXToken_ MacroNameTok,
+                                       CXMacroUse isDefineUndef, bool *ShadowFlag) {
+  return reinterpret_cast<clang::Preprocessor *>(PP)->CheckMacroName(
+      *reinterpret_cast<clang::Token *>(MacroNameTok),
+      static_cast<clang::MacroUse>(isDefineUndef), ShadowFlag);
 }
 
 CXFPEvalMethodKind clang_Preprocessor_getCurrentFPEvalMethod(CXPreprocessor PP) {

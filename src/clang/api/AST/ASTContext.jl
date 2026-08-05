@@ -449,8 +449,17 @@ function getMSGuidTagDecl(x::ASTContext)
     return TagDecl(clang_ASTContext_getMSGuidTagDecl(x))
 end
 
+"""
+    getMSGuidType(x::ASTContext) -> TagType
+Return the implicit `_GUID` record type a `__uuidof` expression has.
+
+Clang builds that record only under Microsoft extensions and asserts on its absence, so this
+carries the same guard [`getMSGuidDecl`](@ref) does — without it the process aborts inside
+`ASTContext::getMSGuidType` rather than returning anything.
+"""
 function getMSGuidType(x::ASTContext)
     @check_ptrs x
+    @assert getMSGuidTagDecl(x).ptr != C_NULL "the translation unit has no `_GUID` record"
     return TagType(clang_ASTContext_getMSGuidType(x))
 end
 
@@ -1876,6 +1885,90 @@ function getTraversalScope(x::ASTContext)
 end
 
 """
+    getParentMapContext(x::ASTContext) -> ParentMapContext
+Return the context's dynamic-parent map: the object holding the cached parent edges that
+[`getNumParents`](@ref) and the `getParentAs*` family read, and the traversal kind that
+decides which nodes those edges step through.
+
+Borrowed from `x` — the context owns it through a `std::unique_ptr` member and builds it on
+this call, so it must never be disposed.
+"""
+function getParentMapContext(x::ASTContext)
+    @check_ptrs x
+    return ParentMapContext(clang_ASTContext_getParentMapContext(x))
+end
+
+"""
+    getNumParents(x::ASTContext, node::Union{AbstractStmt,AbstractDecl}) -> UInt32
+Return how many parents `node` has within the current traversal scope. Upward navigation is
+the one direction clang's AST nodes do not carry themselves — there is no `Stmt::getParent` —
+so this map is the only route from a node back to what encloses it.
+
+A statement inside a template pattern can have more than one parent; every other node has one,
+and the translation unit has none. Read the parents with [`getParentAsStmt`](@ref) and
+[`getParentAsDecl`](@ref).
+
+The map is built on the first call and cached on `x`. That cache is a correctness hazard in an
+incremental session: nodes produced by a *later* parse are simply absent from it and answer
+`0` with no error. [`clear`](@ref) on [`getParentMapContext`](@ref)`(x)` drops it, and so does
+[`setTraversalScope`](@ref).
+"""
+function getNumParents(x::ASTContext, s::AbstractStmt)
+    @check_ptrs x s
+    return clang_ASTContext_getNumParentsOfStmt(x, s)
+end
+
+function getNumParents(x::ASTContext, d::AbstractDecl)
+    @check_ptrs x d
+    return clang_ASTContext_getNumParentsOfDecl(x, d)
+end
+
+"""
+    getParentAsStmt(x::ASTContext, node, i::Integer) -> AbstractStmt
+Return `node`'s `i`-th parent when that parent is a statement, and a NULL-pointer carrier when
+it is not — the parent is a discriminated node, so for a given `i` at most one of this and
+[`getParentAsDecl`](@ref) answers, and both answer NULL for a parent that is neither (a type,
+a type location or a nested-name-specifier). The result is resolved to its concrete class.
+
+`i` must be less than [`getNumParents`](@ref).
+"""
+function getParentAsStmt(x::ASTContext, s::AbstractStmt, i::Integer)
+    @check_ptrs x s
+    @assert 0 <= i < getNumParents(x, s) "parent index out of range"
+    p = Stmt(clang_ASTContext_getParentOfStmtAsStmt(x, s, i))
+    return is_null_handle(p) ? p : resolve(p)
+end
+
+function getParentAsStmt(x::ASTContext, d::AbstractDecl, i::Integer)
+    @check_ptrs x d
+    @assert 0 <= i < getNumParents(x, d) "parent index out of range"
+    p = Stmt(clang_ASTContext_getParentOfDeclAsStmt(x, d, i))
+    return is_null_handle(p) ? p : resolve(p)
+end
+
+"""
+    getParentAsDecl(x::ASTContext, node, i::Integer) -> AbstractDecl
+Return `node`'s `i`-th parent when that parent is a declaration, and a NULL-pointer carrier
+when it is not; see [`getParentAsStmt`](@ref) for the discrimination. The result is resolved
+to its concrete class.
+
+`i` must be less than [`getNumParents`](@ref).
+"""
+function getParentAsDecl(x::ASTContext, s::AbstractStmt, i::Integer)
+    @check_ptrs x s
+    @assert 0 <= i < getNumParents(x, s) "parent index out of range"
+    p = Decl(clang_ASTContext_getParentOfStmtAsDecl(x, s, i))
+    return is_null_handle(p) ? p : resolve(p)
+end
+
+function getParentAsDecl(x::ASTContext, d::AbstractDecl, i::Integer)
+    @check_ptrs x d
+    @assert 0 <= i < getNumParents(x, d) "parent index out of range"
+    p = Decl(clang_ASTContext_getParentOfDeclAsDecl(x, d, i))
+    return is_null_handle(p) ? p : resolve(p)
+end
+
+"""
     getCXXABIKind(x::ASTContext) -> CXTargetCXXABI_Kind
 Return the C++ ABI that should be used: the one given with `-fc++-abi=` when present, the
 target's default otherwise.
@@ -2978,7 +3071,7 @@ so it comes back at the `Type_` base — `resolve` it to refine the carrier.
 function adjustFunctionType(x::ASTContext, fn::AbstractFunctionType, cc::CXCallingConv_,
                             noreturn::Bool, produces_result::Bool)
     @check_ptrs x fn
-    return upcast(Type_, clang_ASTContext_adjustFunctionType(x, fn, cc, noreturn, produces_result))
+    return unchecked_cast(Type_, clang_ASTContext_adjustFunctionType(x, fn, cc, noreturn, produces_result))
 end
 
 """
@@ -3148,6 +3241,52 @@ function getSubstTemplateTemplateParmPack(x::ASTContext, argpack::TemplateArgume
 end
 
 """
+    getNumFilteredFunctionTargetFeatures(x::ASTContext, td::AbstractTargetAttr) -> UInt32
+Return how many feature names survive parsing the `target(...)` attribute `td` against `x`'s
+target: the spelling split on commas, minus its `arch=` / `tune=` / `branch-protection=`
+components, minus every name the target rejects.
+
+This is what the attribute *asked for*; [`getNumFunctionFeatures`](@ref) is what the target
+resolved it to, with the command-line baseline merged in and every implied feature expanded.
+The parse is rebuilt on every call and is a pure function of the spelling and the target, so
+index `i` names the same feature in [`getFilteredFunctionTargetFeature`](@ref).
+"""
+function getNumFilteredFunctionTargetFeatures(x::ASTContext, td::AbstractTargetAttr)
+    @check_ptrs x td
+    return clang_ASTContext_getNumFilteredFunctionTargetFeatures(x, td)
+end
+
+"""
+    getFilteredFunctionTargetFeature(x::ASTContext, td::AbstractTargetAttr, i::Integer) -> String
+Return the `i`-th surviving feature name of `td`, keeping clang's leading sign: a component
+spelled `avx2` comes back as `"+avx2"` and one spelled `no-sse3` as `"-sse3"`. `i` must be less
+than [`getNumFilteredFunctionTargetFeatures`](@ref).
+"""
+function getFilteredFunctionTargetFeature(x::ASTContext, td::AbstractTargetAttr, i::Integer)
+    @check_ptrs x td
+    @assert 0 <= i < getNumFilteredFunctionTargetFeatures(x, td) "feature index out of range"
+    return get_string(clang_ASTContext_getFilteredFunctionTargetFeature(x, td, i))
+end
+
+"""
+    getFilteredFunctionTargetCPU(x::ASTContext, td::AbstractTargetAttr) -> String
+Return the CPU `td`'s `arch=` component named, or `""` when it named none.
+"""
+function getFilteredFunctionTargetCPU(x::ASTContext, td::AbstractTargetAttr)
+    @check_ptrs x td
+    return get_string(clang_ASTContext_getFilteredFunctionTargetCPU(x, td))
+end
+
+"""
+    getFilteredFunctionTargetTune(x::ASTContext, td::AbstractTargetAttr) -> String
+Return the CPU `td`'s `tune=` component named, or `""` when it named none.
+"""
+function getFilteredFunctionTargetTune(x::ASTContext, td::AbstractTargetAttr)
+    @check_ptrs x td
+    return get_string(clang_ASTContext_getFilteredFunctionTargetTune(x, td))
+end
+
+"""
     getNumFunctionFeatures(x::ASTContext, fd::AbstractFunctionDecl) -> UInt32
 Return the size of the target feature map clang computes for `fd` — the target's baseline
 features adjusted by `fd`'s own `target` / `target_clones` attributes. The map is rebuilt on
@@ -3212,6 +3351,27 @@ context's arena — never dispose it.
 function getRawCommentForDeclNoCache(x::ASTContext, decl::AbstractDecl)
     @check_ptrs x decl
     return RawComment(clang_ASTContext_getRawCommentForDeclNoCache(x, decl))
+end
+
+"""
+    setBlockVarCopyInit(x::ASTContext, vd::AbstractVarDecl, copy_expr::AbstractExpr,
+                        can_throw::Bool)
+Record `copy_expr` as the expression that copies the `__block` variable `vd` into an escaping
+block, and `can_throw` as whether that copy can throw — the write half of
+[`getBlockVarCopyInit`](@ref).
+
+`vd` must be a `__block` variable. Nothing in this package's pipeline populates the side table
+otherwise — only Sema does, for an escaping block capture — so this is what makes the getter
+answer anything but its default record.
+
+Neither handle is adopted, and the expression is borrowed rather than copied: pass one the AST
+arena owns, not one the caller may free.
+"""
+function setBlockVarCopyInit(x::ASTContext, vd::AbstractVarDecl, copy_expr::AbstractExpr,
+                             can_throw::Bool)
+    @check_ptrs x vd copy_expr
+    @assert hasAttrOfKind(vd, CXAttrKind_Blocks) "expected a __block variable"
+    return clang_ASTContext_setBlockVarCopyInit(x, vd, copy_expr, can_throw)
 end
 
 """

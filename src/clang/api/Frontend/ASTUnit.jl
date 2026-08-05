@@ -28,6 +28,51 @@ function ASTUnit(inv::CompilerInvocation, diag::DiagnosticsEngine;
 end
 
 """
+    LoadFromCompilerInvocation(inv::CompilerInvocation, diag::DiagnosticsEngine,
+                               fm::FileManager; kwargs...) -> Union{ASTUnit,Nothing}
+Run a whole frontend parse of the single input file `inv` names and return the resulting
+`ASTUnit`, or `nothing` when the parse could not be set up (a missing input file, a target
+that cannot be created, a fatal error before the AST exists). Unlike a unit from
+[`ASTUnit`](@ref), the result carries a preprocessor, an AST context, a `Sema` and the
+file's top-level declarations, and it outlives any `CompilerInstance`.
+
+`inv` is **adopted** — on the success path *and* on the failure path, where the unit is
+destroyed before this returns — so calling `dispose` on it afterwards is a double free.
+`diag` and `fm` stay the caller's: the unit holds each in an `IntrusiveRefCntPtr` and the
+shim pins both with an explicit `Retain` (MARSHALLING.md §12), so the unit's release cannot
+delete them. Both must still outlive the unit, which points at them — `dispose` the unit
+first.
+
+`inv` must carry exactly one input, of source kind and not LLVM IR: Clang reads `Inputs[0]`
+unconditionally and asserts on the rest, so an invocation built for no input file is out of
+bounds rather than a `nothing` return. `createFromCommandLine` produces exactly one.
+
+Keyword arguments mirror the C++ parameters. `precompile_preamble_after_n_parses` above `0`
+builds a precompiled preamble, which writes temporary PCH files; leave it at `0`, as this
+package wraps no `Reparse` for a preamble to serve.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+function LoadFromCompilerInvocation(inv::CompilerInvocation, diag::DiagnosticsEngine,
+                                    fm::FileManager; only_local_decls::Bool=false,
+                                    capture_diagnostics::CXCaptureDiagsKind=CXCaptureDiagsKind_None,
+                                    precompile_preamble_after_n_parses::Integer=0,
+                                    tu_kind::CXTranslationUnitKind=CXTranslationUnitKind_TU_Complete,
+                                    cache_code_completion_results::Bool=false,
+                                    include_brief_comments_in_code_completion::Bool=false,
+                                    user_files_are_volatile::Bool=false)
+    @check_ptrs inv diag fm
+    unit = clang_ASTUnit_LoadFromCompilerInvocation(inv, diag, fm, only_local_decls,
+                                                    capture_diagnostics,
+                                                    precompile_preamble_after_n_parses,
+                                                    tu_kind, cache_code_completion_results,
+                                                    include_brief_comments_in_code_completion,
+                                                    user_files_are_volatile)
+    return unit == C_NULL ? nothing : ASTUnit(unit)
+end
+
+"""
     isMainFileAST(x::AbstractASTUnit) -> Bool
 Return whether the unit was loaded from a serialized AST file rather than parsed from
 source. The top-level declaration accessors are only valid when this is `false`.
@@ -546,4 +591,33 @@ unit was built for code completion, in which case this is 0.
 function cached_completion_size(x::AbstractASTUnit)
     @check_ptrs x
     return clang_ASTUnit_cached_completion_size(x)
+end
+
+"""
+    Save(x::AbstractASTUnit, file::AbstractString) -> Bool
+Serialize the translation unit to `file` as a Clang AST file and return whether the save
+**failed**.
+
+The polarity is Clang's, and it is the opposite of the usual one: `true` means an error and
+`false` means success, so `Save(u, path) && handle_success()` reads backwards. Every failure
+looks alike — a unit whose module loader failed fatally refuses to write, as does a
+temporary that cannot be created, written or renamed. Diagnostics are not a failure: a
+translation unit with errors is written out, carrying its uncompilable-error bit.
+
+The write goes through `llvm::writeToOutput`, so the bytes land in a
+`"<file>.temp-stream-%%%%%%"` temporary that is renamed over `file` once complete; the
+parent directory has to exist and be writable.
+
+The unit must have parsed ([`hasSema`](@ref)): serialization builds its `ASTWriter` over
+`ASTUnit::getSema`, which asserts on a unit that holds no `Sema` — the state every unit
+[`ASTUnit`](@ref) creates is in. It must also have parsed without an unrecoverable error:
+writing an AST that holds invalid nodes can crash the writer, which is why libclang runs
+this same call inside a `CrashRecoveryContext`. This package has no such net, so the
+condition is refused instead (MARSHALLING.md §13).
+"""
+function Save(x::AbstractASTUnit, file::AbstractString)
+    @check_ptrs x
+    @assert hasSema(x) "ASTUnit must have parsed before it can be serialized"
+    @assert !hasUnrecoverableErrorOccurred(getDiagnostics(x)) "ASTUnit holds invalid nodes"
+    return clang_ASTUnit_Save(x, file)
 end

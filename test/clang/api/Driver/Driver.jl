@@ -330,3 +330,120 @@ end
     CC.dispose(drv)
     CC.dispose(diags)
 end
+
+@testset "Driver: the C++20 header-unit mode" begin
+    # Driver::CXX20HeaderType is one of the members the sole constructor's mem-init list
+    # covers -- `CXX20HeaderType(HeaderMode_None)` -- so unlike OffloadLTOMode it can be
+    # asserted before any command line is processed, and the answer is the same on every
+    # host. Diagnostics are swallowed: the input files are phony and only argument
+    # processing is exercised.
+    src = "clangcompiler-header-mode-test.cpp"
+    function newdriver()
+        diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
+                                     CC.IgnoringDiagConsumer(), true)
+        drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
+        CC.setCheckInputsExist(drv, false)
+        return drv, diags
+    end
+
+    drv, diags = newdriver()
+    @test CC.getModuleHeaderMode(drv) == CC.CXModuleHeaderMode_HeaderMode_None
+    # clang *defines* hasHeaderMode as `CXX20HeaderType != HeaderMode_None`, so the two
+    # wrappers have to agree about that one member on every driver, before and after a
+    # command line. A shim reading the wrong member passes the equality above and fails
+    # this once the mode moves.
+    @test CC.hasHeaderMode(drv) ==
+          (CC.getModuleHeaderMode(drv) != CC.CXModuleHeaderMode_HeaderMode_None)
+    CC.dispose(drv)
+    CC.dispose(diags)
+
+    # A Driver is built for one command line, so each spelling gets its own. -fmodule-header
+    # is processed while the arguments are, well before the Compilation is created, so the
+    # member has moved by the time BuildCompilation returns whatever the inputs were.
+    for (flag, expected) in (("-fmodule-header", CC.CXModuleHeaderMode_HeaderMode_Default),
+                             ("-fmodule-header=user", CC.CXModuleHeaderMode_HeaderMode_User),
+                             ("-fmodule-header=system",
+                              CC.CXModuleHeaderMode_HeaderMode_System))
+        d, dg = newdriver()
+        comp = CC.BuildCompilation(d, ["clang", flag, "-fsyntax-only", src])
+        # This is the whole point of the accessor: hasHeaderMode cannot tell the three
+        # spellings apart, and each one decides how a header-unit input is looked up.
+        @test CC.getModuleHeaderMode(d) == expected
+        @test CC.hasHeaderMode(d)
+        CC.dispose(comp)
+        CC.dispose(d)
+        CC.dispose(dg)
+    end
+
+    # An unrelated flag leaves the constructor default in place, so the transition above is
+    # the flag's doing and not something every BuildCompilation performs.
+    d, dg = newdriver()
+    comp = CC.BuildCompilation(d, ["clang", "-fsyntax-only", src])
+    @test CC.getModuleHeaderMode(d) == CC.CXModuleHeaderMode_HeaderMode_None
+    @test !CC.hasHeaderMode(d)
+    CC.dispose(comp)
+    CC.dispose(d)
+    CC.dispose(dg)
+end
+
+@testset "Driver: the driver mode a program name or command line selects" begin
+    # clang::driver::getDriverMode is a free function -- no receiver, no Driver, no
+    # toolchain. Every answer below is decided by clang's own suffix table and by the
+    # `--driver-mode=` option name, so none of it varies with the host.
+
+    # The mode a program name implies, stripped of the `--driver-mode=` prefix clang's
+    # suffix table stores it with: returning the whole "--driver-mode=g++" would fail here.
+    @test CC.getDriverMode("clang++") == "g++"
+    @test CC.getDriverMode("clang-cl") == "cl"
+    @test CC.getDriverMode("clang-cpp") == "cpp"
+    @test CC.getDriverMode("flang") == "flang"
+    # "clang" is in the suffix table with no mode flag at all, and an unrecognised name is
+    # not in it: both yield the empty string rather than echoing the name back.
+    @test CC.getDriverMode("clang") == ""
+    @test CC.getDriverMode("julia") == ""
+    # Spelling the empty list out is the NumArgs == 0 path, which the default argument
+    # takes too, and an empty argument list leaves the program name to decide.
+    @test CC.getDriverMode("clang++", String[]) == "g++"
+
+    # An explicit --driver-mode= in the arguments overrides what the program name implies,
+    @test CC.getDriverMode("clang++", ["--driver-mode=cl"]) == "cl"
+    # and the LAST one wins, because clang keeps overwriting as it scans.
+    @test CC.getDriverMode("clang", ["--driver-mode=cpp", "--driver-mode=flang"]) == "flang"
+    # Arguments that are not --driver-mode= are ignored, leaving the program name to decide.
+    @test CC.getDriverMode("clang++", ["-fsyntax-only", "a.cpp", "-O2"]) == "g++"
+    # `args` carries no program name of its own: the driver-mode-bearing argv[0] spelling is
+    # just another non-matching argument here.
+    @test CC.getDriverMode("clang", ["clang++"]) == ""
+
+    # And it agrees with the Driver: BuildCompilation feeds the driver's own executable
+    # path through this same function to pick Driver::Mode, so a "g++" answer is exactly
+    # what CCCIsCXX goes on to report. Diagnostics are swallowed; the input is phony.
+    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
+                                 CC.IgnoringDiagConsumer(), true)
+    drv = CC.Driver(joinpath("usr", "bin", "clang++"), "x86_64-unknown-linux-gnu", diags)
+    CC.setCheckInputsExist(drv, false)
+    # Driver::Mode starts at GCCMode and only argument processing consults the mode, so the
+    # free function knows the answer strictly before the Driver does.
+    @test CC.getDriverMode("clang++") == "g++"
+    @test !CC.CCCIsCXX(drv)
+    comp = CC.BuildCompilation(drv, ["clang++", "-fsyntax-only", "cc-driver-mode-test.cpp"])
+    @test CC.CCCIsCXX(drv)
+
+    # A --driver-mode= on the command line beats the executable name for the Driver too, so
+    # a plain "clang" reaches the same g++ mode the name-derived case did above.
+    diags2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
+                                  CC.IgnoringDiagConsumer(), true)
+    drv2 = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags2)
+    CC.setCheckInputsExist(drv2, false)
+    args2 = ["-fsyntax-only", "cc-driver-mode-test.cpp"]
+    @test CC.getDriverMode("clang", ["--driver-mode=g++"; args2]) == "g++"
+    comp2 = CC.BuildCompilation(drv2, ["clang"; "--driver-mode=g++"; args2])
+    @test CC.CCCIsCXX(drv2)
+
+    CC.dispose(comp2)
+    CC.dispose(drv2)
+    CC.dispose(diags2)
+    CC.dispose(comp)
+    CC.dispose(drv)
+    CC.dispose(diags)
+end

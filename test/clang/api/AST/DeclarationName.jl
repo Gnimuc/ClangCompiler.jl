@@ -20,7 +20,7 @@ end
     CC.parse(I, "int declnameinfo_probe(int a) { return a; }")
     f = DeclFinder(I)
     @test f(I, "declnameinfo_probe")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     ni = CC.getNameInfo(fd)                       # owned box
     @test ni isa CC.DeclarationNameInfo
     @test CC.getAsString(ni) == "declnameinfo_probe"

@@ -1,13 +1,26 @@
 # MangleContext
 """
     createMangleContext(x::ASTContext, ti::TargetInfo) -> MangleContext
-Create a name mangler for the target. The result is a caller-owned heap object
-with no dispose entry point (a known leak in the C shim).
+Create a name mangler for the target. **The result is caller-owned — `dispose` it.**
+
+This is the odd one out in the AST area: nearly everything reachable from an `ASTContext` is
+arena memory that dies with the context, so it needs no release. `ASTContext::createMangleContext`
+instead returns a `new`ed object, and until `clang_MangleContext_dispose` existed there was no way
+to free it.
 """
 function createMangleContext(x::ASTContext, ti::TargetInfo)
     @check_ptrs x ti
     return MangleContext(clang_ASTContext_createMangleContext(x, ti))
 end
+
+"""
+    dispose(x::MangleContext)
+Release a mangle context created by [`createMangleContext`](@ref).
+
+`clang::MangleContext` has a virtual destructor, so deleting through the base runs the Itanium or
+Microsoft subclass's own.
+"""
+dispose(x::MangleContext) = clang_MangleContext_dispose(x)
 
 function getKind(x::MangleContext)
     @check_ptrs x

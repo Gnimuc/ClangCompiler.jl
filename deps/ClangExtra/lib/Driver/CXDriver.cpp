@@ -170,6 +170,11 @@ bool clang_Driver_hasHeaderMode(CXDriver D) {
   return reinterpret_cast<clang::driver::Driver *>(D)->hasHeaderMode();
 }
 
+CXModuleHeaderMode clang_Driver_getModuleHeaderMode(CXDriver D) {
+  return static_cast<CXModuleHeaderMode>(
+      reinterpret_cast<clang::driver::Driver *>(D)->getModuleHeaderMode());
+}
+
 bool clang_Driver_isUsingLTO(CXDriver D, bool IsOffload) {
   return reinterpret_cast<clang::driver::Driver *>(D)->isUsingLTO(IsOffload);
 }
@@ -276,3 +281,21 @@ CXString clang_Driver_GetClPchPath(CXDriver D, CXCompilation C, const char *Base
   return extra::makeCXString(reinterpret_cast<clang::driver::Driver *>(D)->GetClPchPath(
       *reinterpret_cast<clang::driver::Compilation *>(C), llvm::StringRef(BaseName)));
 }
+
+// --- clang::driver, namespace-level ---------------------------------------------------
+
+// isOptimizationLevelFast
+// willEmitRemarks
+
+CXString clang_driver_getDriverMode(const char *ProgName, const char **Args,
+                                    unsigned NumArgs) {
+  // The result is a slice of one of the Args strings (or of a static mode literal)
+  // delimited only by its length, so it crosses as a copy rather than as a borrowed
+  // const char * -- MARSHALLING.md section 5.
+  llvm::StringRef Mode = clang::driver::getDriverMode(
+      llvm::StringRef(ProgName), llvm::ArrayRef<const char *>(Args, NumArgs));
+  return extra::makeCXString(Mode.str());
+}
+
+// IsClangCL
+// expandResponseFiles

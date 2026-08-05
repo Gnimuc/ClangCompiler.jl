@@ -71,7 +71,7 @@ end
 Return the `i`-th child node (0-based, `i < child_count(x)`).
 
 The result is wrapped at the base `Comment` type — refine it with one of the
-`TextComment`/`BlockCommandComment`/`ParamCommandComment` downcasts.
+`TextComment`/`BlockCommandComment`/`ParamCommandComment` casts.
 """
 function getChild(x::AbstractComment, i::Integer)
     @check_ptrs x

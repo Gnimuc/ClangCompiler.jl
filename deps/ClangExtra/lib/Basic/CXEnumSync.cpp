@@ -55,7 +55,11 @@
 #include "clang-ex/Basic/CXLangOptions.h"
 #include "clang-ex/Driver/CXDriver.h"
 #include "clang-ex/Lex/CXMacroInfo.h"
+#include "clang-ex/AST/CXParentMapContext.h"
+#include "clang-ex/Lex/CXModuleMap.h"
 #include "clang-ex/Lex/CXPreprocessingRecord.h"
+#include "clang-ex/Lex/CXPreprocessor.h"
+#include "clang-ex/Lex/CXPreprocessorOptions.h"
 #include "clang-ex/Sema/CXOverload.h"
 #include "clang-ex/Sema/CXScope.h"
 #include "clang-ex/Sema/CXTemplate.h"
@@ -100,7 +104,11 @@
 #include "clang/Basic/Visibility.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Lex/MacroInfo.h"
+#include "clang/AST/ASTTypeTraits.h"
+#include "clang/Lex/ModuleMap.h"
 #include "clang/Lex/PreprocessingRecord.h"
+#include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Lex/Token.h"
 #include "clang/Sema/Lookup.h"
 #include "clang/Sema/Overload.h"
@@ -1918,5 +1926,40 @@ ENUM_SYNC(CXTPOC_TPOC_Other, clang::TPOC_Other);
 ENUM_SYNC(CXFormatArgumentPassingKind_FAPK_Fixed, clang::Sema::FAPK_Fixed);
 ENUM_SYNC(CXFormatArgumentPassingKind_FAPK_Variadic, clang::Sema::FAPK_Variadic);
 ENUM_SYNC(CXFormatArgumentPassingKind_FAPK_VAList, clang::Sema::FAPK_VAList);
+
+// clang/Driver/Driver.h: enum clang::driver::ModuleHeaderMode
+ENUM_SYNC(CXModuleHeaderMode_HeaderMode_None, clang::driver::HeaderMode_None);
+ENUM_SYNC(CXModuleHeaderMode_HeaderMode_Default, clang::driver::HeaderMode_Default);
+ENUM_SYNC(CXModuleHeaderMode_HeaderMode_User, clang::driver::HeaderMode_User);
+ENUM_SYNC(CXModuleHeaderMode_HeaderMode_System, clang::driver::HeaderMode_System);
+
+// clang/AST/ASTTypeTraits.h: enum TraversalKind
+ENUM_SYNC(CXTraversalKind_TK_AsIs, clang::TK_AsIs);
+ENUM_SYNC(CXTraversalKind_TK_IgnoreUnlessSpelledInSource,
+          clang::TK_IgnoreUnlessSpelledInSource);
+
+// clang/Lex/ModuleMap.h: enum clang::ModuleMap::ModuleHeaderRole
+ENUM_SYNC(CXModuleHeaderRole_NormalHeader, clang::ModuleMap::NormalHeader);
+ENUM_SYNC(CXModuleHeaderRole_PrivateHeader, clang::ModuleMap::PrivateHeader);
+ENUM_SYNC(CXModuleHeaderRole_TextualHeader, clang::ModuleMap::TextualHeader);
+ENUM_SYNC(CXModuleHeaderRole_ExcludedHeader, clang::ModuleMap::ExcludedHeader);
+
+// clang/Lex/Preprocessor.h: enum clang::MacroUse
+ENUM_SYNC(CXMacroUse_MU_Other, clang::MU_Other);
+ENUM_SYNC(CXMacroUse_MU_Define, clang::MU_Define);
+ENUM_SYNC(CXMacroUse_MU_Undef, clang::MU_Undef);
+
+// clang/Lex/PreprocessorOptions.h: enum class DisableValidationForModuleKind
+ENUM_SYNC(CXDisableValidationForModuleKind_None, clang::DisableValidationForModuleKind::None);
+ENUM_SYNC(CXDisableValidationForModuleKind_PCH, clang::DisableValidationForModuleKind::PCH);
+ENUM_SYNC(CXDisableValidationForModuleKind_Module,
+          clang::DisableValidationForModuleKind::Module);
+ENUM_SYNC(CXDisableValidationForModuleKind_All, clang::DisableValidationForModuleKind::All);
+
+// clang/Sema/Sema.h: enum clang::Sema::NamedReturnInfo::Status
+ENUM_SYNC(CXNamedReturnInfo_None, clang::Sema::NamedReturnInfo::None);
+ENUM_SYNC(CXNamedReturnInfo_MoveEligible, clang::Sema::NamedReturnInfo::MoveEligible);
+ENUM_SYNC(CXNamedReturnInfo_MoveEligibleAndCopyElidable,
+          clang::Sema::NamedReturnInfo::MoveEligibleAndCopyElidable);
 
 #undef ENUM_SYNC

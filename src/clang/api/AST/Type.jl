@@ -1946,7 +1946,7 @@ end
 
 function getAsPlaceholderType(x::AbstractType)
     @check_ptrs x
-    return upcast(BuiltinType, clang_Type_getAsPlaceholderType(x))
+    return unchecked_cast(BuiltinType, clang_Type_getAsPlaceholderType(x))
 end
 
 function isIntegralType(x::AbstractType, ctx::ASTContext)
@@ -4900,3 +4900,9 @@ function isObjCIdOrObjectKindOfType(x::AbstractType, ctx::ASTContext)
     matched = clang_Type_isObjCIdOrObjectKindOfType(x, ctx, bound)
     return matched, ObjCObjectType(bound[])
 end
+
+# Type Cast -- one checked cast per class, abstract bases included, so narrowing a type node is
+# `cast<T>` and never a reinterpretation. These are exact-class, unlike the `is<Name>Type`
+# predicates above: those are clang's own and desugar, so `isRecordType` is true of a typedef
+# for a struct that `RecordType` rejects. Generated from TypeNodes.inc into TypeWrappers.jl.
+include("TypeWrappers.jl")

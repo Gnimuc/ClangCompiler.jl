@@ -80,8 +80,8 @@ end
         ctx = CC.get_ast_context(I)
         f = DeclFinder(I)
 
-        vwidth(n) = (@test f(I, n); CC.getTypeSize(ctx, CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))))
-        rec(n) = (@test f(I, n); CC.getTypeDeclType(ctx, CC.downcast(CC.TypeDecl, get_decl(f).ptr)))
+        vwidth(n) = (@test f(I, n); CC.getTypeSize(ctx, CC.getType(CC.VarDecl(get_decl(f)))))
+        rec(n) = (@test f(I, n); CC.getTypeDeclType(ctx, CC.TypeDecl(get_decl(f))))
 
         # the context agrees with the target about the scalar it was pinned to
         @test vwidth("pin_long") == PIN_LONG_BITS
@@ -148,9 +148,8 @@ end
         # The pinned target uses the Itanium ABI, which spells the parameter types into the
         # symbol -- so this is an exact expectation, not a shape.
         @test name == "_Z10pin_mangleid"
-        # createMangleContext hands back a caller-owned object with no dispose function --
-        # a known leak recorded in deps/ClangExtra/CLAUDE.md, not an omission here.
         dispose(f)
+        CC.dispose(mc)
         dispose(I)
     end
 end

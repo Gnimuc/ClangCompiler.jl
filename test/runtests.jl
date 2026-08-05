@@ -18,6 +18,7 @@ include("platform.jl")
 include("acceptance.jl")
 
 # middle-level (src/clang/*.jl)
+include("clang/casts.jl")
 include("clang/type.jl")
 include("clang/stmt.jl")
 include("clang/decl.jl")

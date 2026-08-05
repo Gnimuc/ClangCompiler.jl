@@ -469,6 +469,55 @@ function getSpecificModuleCachePath(ci::CompilerInstance)
     return get_string(clang_CompilerInstance_getSpecificModuleCachePath(ci))
 end
 
+"""
+    createPCHExternalASTSource(ci::CompilerInstance, path::AbstractString,
+                               disable_validation=CXDisableValidationForModuleKind_None,
+                               allow_pch_with_compiler_errors::Bool=false) -> Nothing
+Read the precompiled header at `path` and attach it to `ci`'s AST context as an external AST
+source, so lookups into that context see the PCH's declarations instead of re-parsing the
+headers they came from. This is the loading half of the PCH workflow whose other half is
+[`createFileManagerWithVOFS4PCH`](@ref).
+
+Nothing is returned — clang reports a rejected file through `ci`'s diagnostics engine, so
+[`hasASTReader`](@ref) is the success signal and the engine's error count is the reason.
+
+`disable_validation` selects which of the consistency checks between the PCH and this
+instance (language options, target, clang version) are skipped. Skipping them does more than
+make a mismatch non-fatal: with the PCH kind disabled clang builds the reader with a listener
+that does not diagnose either, so a mismatched PCH loads silently.
+`allow_pch_with_compiler_errors` accepts a PCH whose own compilation reported errors.
+
+`ci` must have an invocation, a preprocessor and an AST context. One further precondition
+cannot be asserted, because nothing publishes it: the reader is attached to the AST context,
+so this must run before anything parses into that context.
+"""
+function createPCHExternalASTSource(ci::CompilerInstance, path::AbstractString,
+                                    disable_validation=CXDisableValidationForModuleKind_None,
+                                    allow_pch_with_compiler_errors::Bool=false)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "CompilerInstance has no invocation"
+    @assert hasPreprocessor(ci) "CompilerInstance has no preprocessor"
+    @assert hasASTContext(ci) "CompilerInstance has no AST context"
+    # The two trailing parameters are clang's deserialization-listener hook. Nothing in this
+    # package can build an `ASTDeserializationListener`, so they are never exposed.
+    return clang_CompilerInstance_createPCHExternalASTSource(ci, path, disable_validation,
+                                                             allow_pch_with_compiler_errors,
+                                                             C_NULL, false)
+end
+
+"""
+    hasASTReader(ci::CompilerInstance) -> Bool
+Return whether a PCH or module file has been loaded into `ci` — that is, whether
+[`createPCHExternalASTSource`](@ref) succeeded. False on a fresh instance.
+
+The reader itself is deliberately not exposed as a carrier: `clang::ASTReader` has no wrapped
+accessors, so the handle would be a value with nothing to ask it.
+"""
+function hasASTReader(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_hasASTReader(ci)
+end
+
 # AuxTarget
 """
     createTarget(ci::CompilerInstance) -> Bool

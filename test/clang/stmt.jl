@@ -116,7 +116,7 @@ end
             """)
     lookup = DeclFinder(I)
     @test lookup(I, "fact")
-    fd = ClangCompiler.downcast(FunctionDecl, get_decl(lookup).ptr)
+    fd = FunctionDecl(get_decl(lookup))
 
     body = getBody(fd)
     @test getStmtClassName(body) == "CompoundStmt"
@@ -192,7 +192,7 @@ end
     CC.parse(I, "int fn(int a){ int s=0; for(int i=0;i<a;i++){ s+=i*2; if(s>10) break; } return s; }")
     f = DeclFinder(I)
     @test f(I, "fn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     body = CC.resolve(CC.getBody(fd))
 
     # bulk subtree must match a manual recursive children walk, node-for-node.

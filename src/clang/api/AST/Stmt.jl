@@ -53,7 +53,7 @@ end
 function PrintStats(::Type{Stmt})
     return clang_Stmt_PrintStats()
 end
-# Stmt Cast — one constructor-shaped downcast and one predicate per class in the
+# Stmt Cast — one checked cast and one predicate per class in the
 # hierarchy (abstract bases included; NULL carrier when the node is another
 # class, dyn_cast_or_null semantics). Classes clang itself names `Abstract*`
 # have no carrier, so they get only the predicate. Generated from StmtNodes.inc
@@ -1925,7 +1925,7 @@ end
                try_block::AbstractCompoundStmt, handler::AbstractStmt) -> SEHTryStmt
 Build a `__try`/`try` statement. `try_block` is typed as a compound statement because
 `getTryBlock` casts it unconditionally, and `handler` must be an `SEHExceptStmt` or an
-`SEHFinallyStmt`: `getEndLoc` dereferences it and the handler accessors downcast it.
+`SEHFinallyStmt`: `getEndLoc` dereferences it and the handler accessors cast it.
 """
 function SEHTryStmt(ctx::ASTContext, is_cxx_try::Bool, try_loc::SourceLocation,
                     try_block::AbstractCompoundStmt, handler::AbstractStmt)

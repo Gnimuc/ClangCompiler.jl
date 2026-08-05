@@ -140,6 +140,9 @@ typedef struct CXASTNameGeneratorImpl *CXASTNameGenerator;
 typedef struct CXNestedNameSpecifierLocImpl *CXNestedNameSpecifierLoc;
 typedef struct CXNestedNameSpecifierImpl *CXNestedNameSpecifier;
 
+// ParentMapContext
+typedef struct CXParentMapContextImpl *CXParentMapContext;
+
 // RecordLayout
 typedef struct CXASTRecordLayoutImpl *CXASTRecordLayout;
 

@@ -3966,6 +3966,57 @@ CXQualType clang_Sema_CheckShiftOperands(CXSema S, CXExpr *LHS, CXExpr *RHS,
   return reinterpret_cast<CXQualType>(T.getAsOpaquePtr());
 }
 
+CXNamedReturnInfo_Status clang_Sema_getNamedReturnInfo(CXSema S, CXVarDecl VD) {
+  clang::Sema::NamedReturnInfo NRI = reinterpret_cast<clang::Sema *>(S)->getNamedReturnInfo(
+      reinterpret_cast<clang::VarDecl *>(VD));
+  return static_cast<CXNamedReturnInfo_Status>(NRI.S);
+}
+
+
+CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsVarPartial(
+    CXSema S, CXVarTemplatePartialSpecializationDecl Partial,
+    CXTemplateArgumentList TemplateArgs, CXTemplateDeductionInfo Info) {
+  return static_cast<CXTemplateDeductionResult>(
+      reinterpret_cast<clang::Sema *>(S)->DeduceTemplateArguments(
+          reinterpret_cast<clang::VarTemplatePartialSpecializationDecl *>(Partial),
+          *reinterpret_cast<clang::TemplateArgumentList *>(TemplateArgs),
+          *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)));
+}
+
+CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsFunctionTemplate(
+    CXSema S, CXFunctionTemplateDecl FunctionTemplate,
+    CXTemplateArgumentListInfo ExplicitTemplateArgs, CXQualType ArgFunctionType,
+    CXFunctionDecl *Specialization, CXTemplateDeductionInfo Info, bool IsAddressOfFunction) {
+  clang::FunctionDecl *Spec =
+      Specialization ? reinterpret_cast<clang::FunctionDecl *>(*Specialization) : nullptr;
+  auto R = reinterpret_cast<clang::Sema *>(S)->DeduceTemplateArguments(
+          reinterpret_cast<clang::FunctionTemplateDecl *>(FunctionTemplate),
+          reinterpret_cast<clang::TemplateArgumentListInfo *>(ExplicitTemplateArgs),
+          clang::QualType::getFromOpaquePtr(ArgFunctionType), Spec,
+          *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info), IsAddressOfFunction);
+  if (Specialization && R == clang::Sema::TDK_Success)
+    *Specialization = reinterpret_cast<CXFunctionDecl>(Spec);
+  return static_cast<CXTemplateDeductionResult>(R);
+}
+
+CXExpr clang_Sema_BuildCXXUuidof(CXSema S, CXQualType TypeInfoType, CXSourceLocation_ TypeidLoc,
+                                 CXTypeSourceInfo Operand, CXSourceLocation_ RParenLoc,
+                                 bool *IsInvalid) {
+  clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->BuildCXXUuidof(
+      clang::QualType::getFromOpaquePtr(TypeInfoType),
+      clang::SourceLocation::getFromPtrEncoding(TypeidLoc),
+      reinterpret_cast<clang::TypeSourceInfo *>(Operand),
+      clang::SourceLocation::getFromPtrEncoding(RParenLoc));
+  *IsInvalid = R.isInvalid();
+  return reinterpret_cast<CXExpr>(R.isInvalid() ? nullptr : R.get());
+}
+
+bool clang_Sema_isAbstractType(CXSema S, CXSourceLocation_ Loc, CXQualType T) {
+  return reinterpret_cast<clang::Sema *>(S)->isAbstractType(
+      clang::SourceLocation::getFromPtrEncoding(Loc),
+      clang::QualType::getFromOpaquePtr(T));
+}
+
 void clang_Sema_CheckPtrComparisonWithNullChar(CXSema S, CXExpr *E, CXExpr *NullE) {
   clang::ExprResult L = reinterpret_cast<clang::Expr *>(*E);
   clang::ExprResult R = reinterpret_cast<clang::Expr *>(*NullE);

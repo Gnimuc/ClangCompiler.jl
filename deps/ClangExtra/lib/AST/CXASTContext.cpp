@@ -16,6 +16,9 @@
 #include "clang/Basic/Builtins.h"
 #include "llvm/ADT/APFloat.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/ASTTypeTraits.h"
+#include "clang/AST/ParentMapContext.h"
+#include "clang/AST/Attr.h"
 
 #include <memory>
 #include <vector>
@@ -23,7 +26,12 @@
 // ASTContext
 
 // getInterpContext
-// getParentMapContext
+
+CXParentMapContext clang_ASTContext_getParentMapContext(CXASTContext Ctx) {
+  return reinterpret_cast<CXParentMapContext>(
+      &reinterpret_cast<clang::ASTContext *>(Ctx)->getParentMapContext());
+}
+
 // getTraversalScope
 
 unsigned clang_ASTContext_getNumTraversalScopeDecls(CXASTContext Ctx) {
@@ -46,7 +54,59 @@ void clang_ASTContext_setTraversalScope(CXASTContext Ctx, CXDecl *Decls,
     Scope.push_back(reinterpret_cast<clang::Decl *>(Decls[I]));
   reinterpret_cast<clang::ASTContext *>(Ctx)->setTraversalScope(Scope);
 }
-// getParents
+
+unsigned clang_ASTContext_getNumParentsOfStmt(CXASTContext Ctx, CXStmt S) {
+  return static_cast<unsigned>(reinterpret_cast<clang::ASTContext *>(Ctx)
+                                   ->getParents(*reinterpret_cast<clang::Stmt *>(S))
+                                   .size());
+}
+
+CXStmt clang_ASTContext_getParentOfStmtAsStmt(CXASTContext Ctx, CXStmt S, unsigned I) {
+  clang::DynTypedNodeList Parents =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->getParents(
+          *reinterpret_cast<clang::Stmt *>(S));
+  if (I >= Parents.size())
+    return nullptr;
+  return reinterpret_cast<CXStmt>(
+      const_cast<clang::Stmt *>(Parents[I].get<clang::Stmt>()));
+}
+
+CXDecl clang_ASTContext_getParentOfStmtAsDecl(CXASTContext Ctx, CXStmt S, unsigned I) {
+  clang::DynTypedNodeList Parents =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->getParents(
+          *reinterpret_cast<clang::Stmt *>(S));
+  if (I >= Parents.size())
+    return nullptr;
+  return reinterpret_cast<CXDecl>(
+      const_cast<clang::Decl *>(Parents[I].get<clang::Decl>()));
+}
+
+unsigned clang_ASTContext_getNumParentsOfDecl(CXASTContext Ctx, CXDecl D) {
+  return static_cast<unsigned>(reinterpret_cast<clang::ASTContext *>(Ctx)
+                                   ->getParents(*reinterpret_cast<clang::Decl *>(D))
+                                   .size());
+}
+
+CXStmt clang_ASTContext_getParentOfDeclAsStmt(CXASTContext Ctx, CXDecl D, unsigned I) {
+  clang::DynTypedNodeList Parents =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->getParents(
+          *reinterpret_cast<clang::Decl *>(D));
+  if (I >= Parents.size())
+    return nullptr;
+  return reinterpret_cast<CXStmt>(
+      const_cast<clang::Stmt *>(Parents[I].get<clang::Stmt>()));
+}
+
+CXDecl clang_ASTContext_getParentOfDeclAsDecl(CXASTContext Ctx, CXDecl D, unsigned I) {
+  clang::DynTypedNodeList Parents =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->getParents(
+          *reinterpret_cast<clang::Decl *>(D));
+  if (I >= Parents.size())
+    return nullptr;
+  return reinterpret_cast<CXDecl>(
+      const_cast<clang::Decl *>(Parents[I].get<clang::Decl>()));
+}
+
 // getPrintingPolicy
 // setPrintingPolicy
 
@@ -2525,7 +2585,13 @@ bool clang_ASTContext_AnyObjCImplementation(CXASTContext Ctx) {
 // getObjCMethodRedeclaration
 // setObjCMethodRedeclaration
 // getObjContainingInterface
-// setBlockVarCopyInit
+
+void clang_ASTContext_setBlockVarCopyInit(CXASTContext Ctx, CXVarDecl VD, CXExpr CopyExpr,
+                                          bool CanThrow) {
+  reinterpret_cast<clang::ASTContext *>(Ctx)->setBlockVarCopyInit(
+      reinterpret_cast<clang::VarDecl *>(VD), reinterpret_cast<clang::Expr *>(CopyExpr),
+      CanThrow);
+}
 
 CXTypeSourceInfo clang_ASTContext_CreateTypeSourceInfo(CXASTContext Ctx, CXQualType T,
                                                        unsigned Size) {
@@ -2664,7 +2730,40 @@ clang_ASTContext_getTemplateParamObjectDecl(CXASTContext Ctx, CXQualType T, CXAP
   return reinterpret_cast<CXTemplateParamObjectDecl>(reinterpret_cast<clang::ASTContext *>(Ctx)->getTemplateParamObjectDecl(
       clang::QualType::getFromOpaquePtr(T), *reinterpret_cast<clang::APValue *>(V)));
 }
-// filterFunctionTargetAttrs
+
+unsigned clang_ASTContext_getNumFilteredFunctionTargetFeatures(CXASTContext Ctx,
+                                                               CXTargetAttr TD) {
+  clang::ParsedTargetAttr Parsed =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->filterFunctionTargetAttrs(
+          reinterpret_cast<clang::TargetAttr *>(TD));
+  return static_cast<unsigned>(Parsed.Features.size());
+}
+
+CXString clang_ASTContext_getFilteredFunctionTargetFeature(CXASTContext Ctx,
+                                                           CXTargetAttr TD, unsigned I) {
+  clang::ParsedTargetAttr Parsed =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->filterFunctionTargetAttrs(
+          reinterpret_cast<clang::TargetAttr *>(TD));
+  if (I >= Parsed.Features.size())
+    return extra::makeCXString(std::string());
+  return extra::makeCXString(Parsed.Features[I]);
+}
+
+CXString clang_ASTContext_getFilteredFunctionTargetCPU(CXASTContext Ctx, CXTargetAttr TD) {
+  clang::ParsedTargetAttr Parsed =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->filterFunctionTargetAttrs(
+          reinterpret_cast<clang::TargetAttr *>(TD));
+  return extra::makeCXString(Parsed.CPU.str());
+}
+
+CXString clang_ASTContext_getFilteredFunctionTargetTune(CXASTContext Ctx, CXTargetAttr TD) {
+  clang::ParsedTargetAttr Parsed =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->filterFunctionTargetAttrs(
+          reinterpret_cast<clang::TargetAttr *>(TD));
+  return extra::makeCXString(Parsed.Tune.str());
+}
+
+// filterFunctionTargetVersionAttrs
 // getFunctionFeatureMap
 
 unsigned clang_ASTContext_getNumFunctionFeatures(CXASTContext Ctx, CXFunctionDecl FD) {

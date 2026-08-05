@@ -98,8 +98,8 @@ end
 end
 
 @testset "handle types keep the hierarchies apart" begin
-    # What the opaque CX handles buy: an upcast to a base is spelled by a method, so the
-    # absence of a method is a real statement about C++. `Decl` and `Stmt` are unrelated
+    # What the opaque CX handles buy: widening to a base is spelled by a marshalling method,
+    # so the absence of a method is a real statement about C++. `Decl` and `Stmt` are unrelated
     # in clang, so no carrier of one may marshal through the other's handle -- the two
     # ccalls that would then receive a pointer to the wrong class are unreachable.
     #
@@ -125,10 +125,11 @@ end
     # A carrier's field type is the handle of the class it stands for, so building one
     # straight out of a ccall whose declared return is a *different* handle is a crossing.
     # Julia will not object -- `Base.convert` bitcasts between `Ptr` types -- so the crossing
-    # has to be spelled, and `downcast`/`upcast` are the two spellings. Each carries its own
-    # soundness argument: a prior `dyn_cast_or_null` for the narrowing direction, offset-zero
-    # single inheritance for the widening one. Anything else is a carrier whose Julia type no
-    # longer describes its pointee, which is Invariant 1 broken at the source.
+    # has to be spelled, and `unchecked_cast` is the spelling. Its soundness argument is that
+    # its callers established the class first, from the field clang's own `classof` reads: the
+    # `resolve` tables, and the bulk walks that carry each node's kind back beside the node.
+    # Anything else is a carrier whose Julia type no longer describes its pointee, which is
+    # Invariant 1 broken at the source.
     root = pkgdir(CC)
     returns = Dict{String,String}()
     for line in eachline(joinpath(root, "lib", string(Base.libllvm_version.major), "LibClangEx.jl"))
@@ -179,7 +180,7 @@ end
     end
     @test scanned >= 2000               # the pattern matches the bulk of the wrapper layer
     isempty(offenders) ||
-        @error "carrier built from a foreign handle; wrap it in `downcast` or `upcast`" offenders
+        @error "carrier built from a foreign handle; wrap it in `unchecked_cast`" offenders
     @test isempty(offenders)
 end
 

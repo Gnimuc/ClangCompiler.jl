@@ -24,10 +24,29 @@ CXTemplateArgument clang_TemplateArgument_constructFromValueDecl(CXValueDecl VD,
 CXTemplateArgument clang_TemplateArgument_constructFromIntegral(CXASTContext Ctx,
                                                                 LLVMGenericValueRef Val,
                                                                 CXQualType OpaquePtr) {
-  std::unique_ptr<clang::TemplateArgument> ptr = std::make_unique<clang::TemplateArgument>(
-      *reinterpret_cast<clang::ASTContext *>(Ctx),
-      llvm::APSInt(reinterpret_cast<llvm::GenericValue *>(Val)->IntVal),
-      clang::QualType::getFromOpaquePtr(OpaquePtr));
+  clang::QualType T = clang::QualType::getFromOpaquePtr(OpaquePtr);
+  // The signedness has to come from the parameter type. `APSInt(APInt)` defaults to UNSIGNED,
+  // and TemplateArgument::Profile folds that flag into the FoldingSetNodeID ahead of the value
+  // (APSInt::Profile adds IsUnsigned first) -- so an argument built unsigned for a signed
+  // parameter profiles differently from the one Sema builds for the same C++ specialization,
+  // findSpecialization never unifies them, and the ASTContext ends up holding two
+  // ClassTemplateSpecializationDecls for one type.
+  // Both the signedness and the WIDTH have to come from the parameter type, because
+  // TemplateArgument::Profile folds the whole APSInt into the FoldingSetNodeID -- APSInt::Profile
+  // adds IsUnsigned first, then APInt::Profile adds the bit width and the value. Get either wrong
+  // and the argument profiles differently from the one Sema builds for the same C++
+  // specialization: findSpecialization never unifies them, and the ASTContext ends up holding two
+  // ClassTemplateSpecializationDecls for one type.
+  //   signedness: `APSInt(APInt)` defaults to UNSIGNED, so `template <int N>` was mis-signed.
+  //   width:      clang stores a bool argument as ONE bit (Context.getIntWidth), while the
+  //               GenericValue carrying it from Julia is eight.
+  clang::ASTContext &C = *reinterpret_cast<clang::ASTContext *>(Ctx);
+  const llvm::APInt &Raw = reinterpret_cast<llvm::GenericValue *>(Val)->IntVal;
+  bool Unsigned = T->isUnsignedIntegerOrEnumerationType();
+  unsigned Width = C.getIntWidth(T);
+  llvm::APSInt V(Unsigned ? Raw.zextOrTrunc(Width) : Raw.sextOrTrunc(Width), Unsigned);
+  std::unique_ptr<clang::TemplateArgument> ptr =
+      std::make_unique<clang::TemplateArgument>(C, V, T);
   return reinterpret_cast<CXTemplateArgument>(ptr.release());
 }
 

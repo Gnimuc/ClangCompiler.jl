@@ -127,13 +127,13 @@ end
 
 function emit_wrappers(io, nodes)
     println(io, GEN_NOTE)
-    println(io, "# Per-node downcast: `is<Name>` predicate and `<carrier>` constructor-shaped")
-    println(io, "# cast for every class, abstract bases included — the C shim stamps both from")
-    println(io, "# the same table, and clang's own `classof` makes the dyn_cast sound.")
+    println(io, "# Per-class checked cast: the `<carrier>` constructor is C++'s `cast<T>` and the")
+    println(io, "# `is<Name>` predicate beside it is `isa<T>`, for every class in the hierarchy with")
+    println(io, "# abstract bases included. The C shim stamps both from the same table and clang's")
+    println(io, "# own `classof` decides, so a node can never become a carrier naming another class.")
     println(io, "#")
-    println(io, "# The shim stamps each cast to return that class's own handle, so the carrier it")
-    println(io, "# feeds is checked by the compiler -- pairing a cast with the wrong carrier is a")
-    println(io, "# type error here rather than a pointer of the wrong class reaching clang.")
+    println(io, "# The shim types each cast at that class's own handle, so pairing a cast with the")
+    println(io, "# wrong carrier is a Julia type error here rather than a bad pointer reaching clang.")
     for n in nodes
         println(io, """
         function is$(n.name)(x::AbstractStmt)
@@ -146,13 +146,15 @@ function emit_wrappers(io, nodes)
         is_unmirrored(n.name) && continue
         sym = stmt_carrier_name(n.name)
         # the OpenMP directive names run past the margin on one line
-        body = "return $sym(clang_Stmt_castTo$(n.name)(x))"
-        length(body) + 4 <= 120 ||
-            (body = "return $sym(\n        clang_Stmt_castTo$(n.name)(x))")
+        call = "p = clang_Stmt_castTo$(n.name)(x)"
+        length(call) + 4 <= 120 ||
+            (call = "p = clang_Stmt_castTo$(n.name)(\n        x)")
         println(io, """
         function $sym(x::AbstractStmt)
             @check_ptrs x
-            $body
+            $call
+            p == C_NULL && _cast_failed($sym, x)
+            return $sym(p)
         end
         """)
     end

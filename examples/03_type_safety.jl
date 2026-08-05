@@ -342,35 +342,55 @@ function main()
         # ============================================================================
         #
         # A layer that refused every crossing would be unusable: clang's hierarchies exist
-        # to be walked up and down. Two functions do it, and both make you *name the class
-        # you are asserting* — which is what makes every deliberate crossing greppable.
+        # to be walked up and down. Both directions are one spelling — the carrier's own
+        # constructor — and neither is ever a bare reinterpretation.
         #
-        # upcast(T, x): widen to a base. Sound wherever the hierarchy is singly inherited —
-        # a base subobject then shares its address with the object — which is every hierarchy
-        # in the AST but the one §5 is about. Here is that fact measured rather than asserted:
-        as_stmt = CC.upcast(CC.Stmt, ifs)
-        println("  upcast(Stmt, if_stmt)")
+        # Widening first. In C++ this is written nothing at all: a `IfStmt *` converts to a
+        # `Stmt *` implicitly, and it is sound because these hierarchies are singly inherited,
+        # so the base subobject shares its address with the object. Here is that measured
+        # rather than asserted:
+        as_stmt = CC.Stmt(ifs)
+        println("  Stmt(if_stmt)")
         println("       IfStmt  @ ", addr(ifs))
         println("       Stmt    @ ", addr(as_stmt), "     delta = ", delta(as_stmt, ifs), " bytes")
         println()
-        # The widening is lossy in Julia exactly as it is in C++: with the carrier typed at
-        # the base, the derived class's methods are gone again.
+        # And the widening is usually not written here either — a wrapper declared on
+        # `AbstractStmt` accepts an `IfStmt` directly, because marshalling is keyed on the
+        # abstract types rather than per carrier. What the base carrier costs you is the same
+        # thing it costs in C++: with the static type at the base, the derived methods are gone.
+        allowed("getBeginLoc(if_stmt) — no widening written, the Stmt-level method applies",
+                () -> nameof(typeof(CC.getBeginLoc(ifs))))
         refused("getElseLoc(::Stmt) — the base carrier no longer names an IfStmt",
                 () -> CC.getElseLoc(as_stmt))
         println()
-        # downcast(T, x): narrow. NOT sound in general — it is the one place the package
-        # narrows a handle at all — so it is only ever reached after something else has
-        # established the class. Two things do: clang's own `dyn_cast_or_null` behind every
-        # `castTo<Derived>` wrapper, which returns null rather than a mismatched pointer,
-        # and `resolve`, which reads the class from clang and looks the carrier up in a
-        # table keyed on it. Re-checking here would be a second ccall per node, per walk.
-        back = CC.downcast(CC.IfStmt, as_stmt)
-        println("  downcast(IfStmt, as_stmt) -> ", nameof(typeof(back)),
+        # Narrowing is C++'s `cast<T>`, and it is checked: the shim runs clang's own `classof`
+        # through `dyn_cast_or_null`, so the carrier that comes back cannot be lying about its
+        # pointee. This is the whole of the difference from a `reinterpret_cast` — the cast
+        # asks clang, every time, and costs one ccall.
+        back = CC.IfStmt(as_stmt)
+        println("  IfStmt(as_stmt) -> ", nameof(typeof(back)),
                 "   same address: ", addr(back) == addr(ifs))
-        # `resolve` is the same narrowing with the class question asked out loud, and is
-        # what you should reach for when you did not already know the answer.
+        # Ask for a class the node is not and it says so, naming both:
+        refused("WhileStmt(as_stmt) — this node is an if, not a while",
+                () -> CC.WhileStmt(as_stmt))
+        println()
+        # The predicate beside it is `isa<T>`, for when you want the question without the
+        # exception; and `resolve` asks clang which class it is rather than proposing one.
+        println("  isIfStmt(as_stmt)         -> ", CC.isIfStmt(as_stmt))
+        println("  isWhileStmt(as_stmt)      -> ", CC.isWhileStmt(as_stmt))
         println("  resolve(as_stmt)          -> ", nameof(typeof(CC.resolve(as_stmt))),
-                "   (clang was asked; nothing was assumed)")
+                "   (clang was asked; nothing was proposed)")
+        println()
+        # Most code should need none of the three. `resolve` hands back the concrete carrier,
+        # and from there Julia's own subtype relation IS the cast — against the *abstract*
+        # type, which is where clang's hierarchy lives. A carrier is a leaf: `CXXMethodDecl`
+        # is not a subtype of `FunctionDecl`, but both are `AbstractFunctionDecl`, exactly as
+        # `dyn_cast<FunctionDecl>` accepts both.
+        wrapped("resolve(x) isa AbstractIfStmt  is  isa<IfStmt>(x)  — no ccall, no API. " *
+                "x::AbstractIfStmt  is  cast<IfStmt>(x), and raises on a mismatch. Better " *
+                "still, write the method: a function declared on AbstractIfStmt is reached " *
+                "by dispatch, and the check happens before the call rather than inside it.",
+                indent="  ", width=86)
 
         # ============================================================================
         banner("§5  The exception: a Decl that is also a DeclContext")
@@ -433,7 +453,7 @@ function main()
         # spelling §1 and §2 used, naming the target handle type outright. `CXDeclContext(p)`
         # is Julia's own `Ptr{T}(::Ptr)` constructor, which bitcasts by definition. You cannot
         # reach it by accident (you had to write the class you were asserting), and it is the
-        # mechanism `downcast`/`upcast` are built from. Used wrongly, it is precisely the
+        # mechanism the checked casts in §4 are built from. Used wrongly, it is precisely the
         # old `void *` behaviour:
         forced = CC.DeclContext(CXDeclContext(ns.ptr))   # the pivot skipped; off by the delta above
         println("  forcing the crossing anyway, with the pivot skipped:")
@@ -460,10 +480,12 @@ function main()
                 "on every traversal in every program. So the class discipline lives in Julia, " *
                 "where it costs nothing at runtime: one handle type per clang class, three " *
                 "conversion methods that refuse a mismatch, dispatch that admits only the " *
-                "classes a method is declared on, and two named functions for the crossings " *
-                "that are genuinely intended. What used to be a silent wrong answer is now an " *
-                "ArgumentError with both class names in it, thrown before anything reaches " *
-                "the shim.", indent="  ", width=86)
+                "classes a method is declared on, and one checked cast per class for the " *
+                "crossings that are genuinely intended. What used to be a silent wrong answer " *
+                "is an exception with both class names in it, thrown before anything reaches " *
+                "the shim — and most walks never write a cast at all, because `resolve` plus " *
+                "dispatch on the abstract types is the same question asked for free.",
+                indent="  ", width=86)
         println()
     finally
         # Create -> use -> dispose. The interpreter owns the ASTContext every carrier above

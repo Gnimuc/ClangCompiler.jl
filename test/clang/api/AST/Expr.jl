@@ -34,7 +34,7 @@ end
 
     lookup = DeclFinder(I)
     @test lookup(I, "compute")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
 
     il = first(filter(n -> n isa CC.IntegerLiteral, nodes))
@@ -92,7 +92,7 @@ end
 
     CC.parse(I, "const char *g_str = \"abc\";")
     @test f(I, "g_str")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     sl = _find_node(CC.StringLiteral, CC.resolve(CC.getInit(vd)))
     @test sl !== nothing
     @test sl.ptr != C_NULL
@@ -107,7 +107,7 @@ end
 
     CC.parse(I, "unsigned long g_sz = sizeof(int);")
     @test f(I, "g_sz")
-    vd2 = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd2 = CC.VarDecl(get_decl(f))
     uett = _find_node(CC.UnaryExprOrTypeTraitExpr, CC.resolve(CC.getInit(vd2)))
     @test uett !== nothing
     @test uett.ptr != C_NULL
@@ -160,7 +160,7 @@ end
 
     lookup = DeclFinder(I)
     @test lookup(I, "compute")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     body = CC.getBody(fd)
     nodes = CC.subtree(body)
     byT(T) = filter(n -> n isa T, nodes)
@@ -506,7 +506,7 @@ end
 
     lookup = DeclFinder(I)
     @test lookup(I, "exprcore_use")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
 
     # ---- Expr: ASTContext-taking classification -----------------------------
@@ -704,7 +704,7 @@ end
     """)
     f = CC.DeclFinder(I)
     @test f(I, "cc_expr_tail")
-    fd = CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)
+    fd = CC.FunctionDecl(CC.get_decl(f))
     nodes = CC.subtree(CC.getBody(fd))
     function pick(T)
         i = findfirst(n -> n isa T, nodes)
@@ -787,7 +787,7 @@ end
     lookup = DeclFinder(I)
 
     @test lookup(I, "cond_fn")
-    cond_fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    cond_fd = CC.FunctionDecl(get_decl(lookup))
     cnodes = CC.subtree(CC.getBody(cond_fd))
 
     # ConditionalOperator: getLHS/getRHS coincide with getTrueExpr/getFalseExpr.
@@ -848,7 +848,7 @@ end
 
     # VAArgExpr
     @test lookup(I, "va_fn")
-    va_fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    va_fd = CC.FunctionDecl(get_decl(lookup))
     vnodes = CC.subtree(CC.getBody(va_fd))
     va = first(filter(n -> n isa CC.VAArgExpr, vnodes))
     @test CC.isMicrosoftABI(va) isa Bool  # shape-only: the target ABI decides this (MSVC vs MinGW)
@@ -869,7 +869,7 @@ end
              """)
     lm = DeclFinder(Im)
     @test lm(Im, "cc_mat_elem")
-    mfd = CC.downcast(CC.FunctionDecl, get_decl(lm).ptr)
+    mfd = CC.FunctionDecl(get_decl(lm))
     mse = first(filter(n -> n isa CC.MatrixSubscriptExpr, CC.subtree(CC.getBody(mfd))))
     @test !(CC.isIncomplete(mse))
     @test CC.getBase(mse) isa CC.Expr_
@@ -895,7 +895,7 @@ end
     lookup = DeclFinder(I)
 
     @test lookup(I, "cc_cv")
-    cvfd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    cvfd = CC.FunctionDecl(get_decl(lookup))
     cve = first(filter(n -> n isa CC.ConvertVectorExpr, CC.subtree(CC.getBody(cvfd))))
     @test !CC.is_null_handle(CC.getSrcExpr(cve))
     @test CC.getSrcExpr(cve).ptr != C_NULL
@@ -904,13 +904,13 @@ end
     @test !CC.is_null_handle(CC.getRParenLoc(cve))
 
     @test lookup(I, "cc_imag")
-    imfd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    imfd = CC.FunctionDecl(get_decl(lookup))
     il = first(filter(n -> n isa CC.ImaginaryLiteral, CC.subtree(CC.getBody(imfd))))
     @test !CC.is_null_handle(CC.getSubExpr(il))
     @test CC.getSubExpr(il).ptr != C_NULL
 
     @test lookup(I, "cc_file")
-    slfd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    slfd = CC.FunctionDecl(get_decl(lookup))
     sle = first(filter(n -> n isa CC.SourceLocExpr, CC.subtree(CC.getBody(slfd))))
     @test !isempty(CC.getBuiltinStr(sle))
     @test occursin("FILE", CC.getBuiltinStr(sle))
@@ -919,7 +919,7 @@ end
     @test !CC.is_null_handle(CC.getLocation(sle))
 
     @test lookup(I, "cc_choose")
-    chfd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    chfd = CC.FunctionDecl(get_decl(lookup))
     ce = first(filter(n -> n isa CC.ChooseExpr, CC.subtree(CC.getBody(chfd))))
     @test CC.isConditionDependent(ce) == false
     @test !CC.is_null_handle(CC.getChosenSubExpr(ce))
@@ -938,7 +938,7 @@ end
              """)
     lb = DeclFinder(Ib)
     @test lb(Ib, "cc_block")
-    bfd = CC.downcast(CC.FunctionDecl, get_decl(lb).ptr)
+    bfd = CC.FunctionDecl(get_decl(lb))
     be = first(filter(n -> n isa CC.BlockExpr, CC.subtree(CC.getBody(bfd))))
     @test !CC.is_null_handle(CC.getBlockDecl(be))
     @test CC.getBlockDecl(be).ptr != C_NULL
@@ -961,7 +961,7 @@ end
     """)
     f = DeclFinder(I)
     @test f(I, "cc_exprd")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     nodes = CC.subtree(CC.getBody(fd))
     function pick(T)
         i = findfirst(n -> n isa T, nodes)
@@ -1015,7 +1015,7 @@ end
     """)
     f2 = DeclFinder(I2)
     @test f2(I2, "cc_use_prop")
-    fd2 = CC.downcast(CC.FunctionDecl, get_decl(f2).ptr)
+    fd2 = CC.FunctionDecl(get_decl(f2))
     poe = nothing
     for n in CC.subtree(CC.getBody(fd2))
         if n isa CC.PseudoObjectExpr
@@ -1060,7 +1060,7 @@ end
              """)
     lookup = DeclFinder(I)
     @test lookup(I, "cc_e_fn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
 
     # OffsetOfExpr / OffsetOfNode
@@ -1162,7 +1162,7 @@ end
     """)
     f = DeclFinder(I)
     @test f(I, "cc_exprf")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     nodes = CC.subtree(CC.getBody(fd))
     function pick(T)
         i = findfirst(n -> n isa T, nodes)
@@ -1256,7 +1256,7 @@ end
              """)
     lb = DeclFinder(Ib)
     @test lb(Ib, "cc_exprf_blk")
-    bfd = CC.downcast(CC.FunctionDecl, get_decl(lb).ptr)
+    bfd = CC.FunctionDecl(get_decl(lb))
     be = first(filter(n -> n isa CC.BlockExpr, CC.subtree(CC.getBody(bfd))))
     fpt = CC.getFunctionType(be)
     @test fpt isa CC.FunctionProtoType
@@ -1287,7 +1287,7 @@ end
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
     @test f(I, "cc_g_expr")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     nodes = CC.subtree(CC.getBody(fd))
     function pick(T)
         i = findfirst(n -> n isa T, nodes)
@@ -1313,7 +1313,7 @@ end
 
     # ---- Expr::isPotentialConstantExpr (static, over a definition) -----------
     @test f(I, "cc_g_pce")
-    pce = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    pce = CC.FunctionDecl(get_decl(f))
     @test CC.isPotentialConstantExpr(pce)
 
     # ---- Expr::hasAnyTypeDependentArguments (static, over an array) ----------
@@ -1419,7 +1419,7 @@ end
              """)
     lookup = DeclFinder(I)
     @test lookup(I, "cc_wl16_expr")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
     function pick(T)
         i = findfirst(n -> n isa T, nodes)
@@ -1508,7 +1508,7 @@ end
     # `_Generic` with a type operand is a clang extension; skip where unavailable.
     CC.parse(I, "int cc_wl16_tg() { return _Generic(int, int: 1, default: 2); }")
     if lookup(I, "cc_wl16_tg")
-        tfd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+        tfd = CC.FunctionDecl(get_decl(lookup))
         tnodes = CC.subtree(CC.getBody(tfd))
         ti = findfirst(n -> n isa CC.GenericSelectionExpr && CC.isTypePredicate(n), tnodes)
         if ti !== nothing
@@ -1542,7 +1542,7 @@ end
     """)
     f = DeclFinder(I)
     @test f(I, "cc_expri")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     nodes = CC.subtree(CC.getBody(fd))
 
     # ---- CallExpr: callee / argument slots (round-tripped, values restored) ----
@@ -1691,7 +1691,7 @@ end
 
     lookup = DeclFinder(I)
     @test lookup(I, "jfp_mix")
-    mixfd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    mixfd = CC.FunctionDecl(get_decl(lookup))
     mixnodes = CC.subtree(CC.getBody(mixfd))
 
     bo = first(filter(n -> n isa CC.BinaryOperator, mixnodes))
@@ -1758,7 +1758,7 @@ end
 
     # ---- VAArgExpr setters ---------------------------------------------------
     @test lookup(I, "jfp_va")
-    vafd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    vafd = CC.FunctionDecl(get_decl(lookup))
     va = first(filter(n -> n isa CC.VAArgExpr, CC.subtree(CC.getBody(vafd))))
 
     vsub = CC.getSubExpr(va)
@@ -1814,7 +1814,7 @@ end
 
     lookup = DeclFinder(I)
     @test lookup(I, "cc_k_all")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
 
     # ---- DesignatedInitUpdateExpr -------------------------------------------
@@ -1945,7 +1945,7 @@ end
 
     lookup = DeclFinder(I)
     @test lookup(I, "cls_probe")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
 
     bo = first(filter(n -> n isa CC.BinaryOperator, nodes))
@@ -2050,7 +2050,7 @@ end
     lookup = DeclFinder(I)
 
     @test lookup(I, "cc_m_fn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
     lang_opts = CC.getLangOpts(fd)
 
@@ -2089,7 +2089,7 @@ end
 
     # ---- Expr::EvaluateAsInitializer ---------------------------------------
     @test lookup(I, "cc_m_seed")
-    seed = CC.downcast(CC.VarDecl, get_decl(lookup).ptr)
+    seed = CC.VarDecl(get_decl(lookup))
     seed_init = CC.getInit(seed)
     @test seed_init.ptr != C_NULL
     apv = CC.EvaluateAsInitializer(seed_init, ctx, seed, true)
@@ -2103,7 +2103,7 @@ end
 
     # ---- Expr::EvaluateWithSubstitution / isPotentialConstantExprUnevaluated -
     @test lookup(I, "cc_m_double")
-    callee = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    callee = CC.FunctionDecl(get_decl(lookup))
     mul = first(filter(n -> n isa CC.BinaryOperator, CC.subtree(CC.getBody(callee))))
     seed_lit = first(filter(n -> n isa CC.IntegerLiteral, CC.subtree(seed_init)))
     @test CC.getNumParams(callee) == 1
@@ -2198,7 +2198,7 @@ end
 
     # ---- SourceLocExpr::EvaluateInContext ----------------------------------
     @test lookup(I, "cc_m_file")
-    slfd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    slfd = CC.FunctionDecl(get_decl(lookup))
     sle = first(filter(n -> n isa CC.SourceLocExpr, CC.subtree(CC.getBody(slfd))))
     slv = CC.EvaluateInContext(sle, ctx)
     @test slv isa CC.APValue
@@ -2232,7 +2232,7 @@ end
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
     @test lookup(I, "wl22_caller")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
     pick(T) = first(filter(n -> n isa T, nodes))
 
@@ -2427,7 +2427,7 @@ end
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
     @test f(I, "cc_o_expr")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     nodes = CC.subtree(CC.getBody(fd))
     function pick(T)
         i = findfirst(n -> n isa T, nodes)
@@ -2556,7 +2556,7 @@ end
              """)
     lm = DeclFinder(Im)
     @test lm(Im, "cc_o_mat_elem")
-    mfd = CC.downcast(CC.FunctionDecl, get_decl(lm).ptr)
+    mfd = CC.FunctionDecl(get_decl(lm))
     mse = first(filter(n -> n isa CC.MatrixSubscriptExpr, CC.subtree(CC.getBody(mfd))))
     mbase = CC.getBase(mse)
     mrow = CC.getRowIdx(mse)
@@ -2584,7 +2584,7 @@ end
              """)
     lb = DeclFinder(Ib)
     @test lb(Ib, "cc_o_block")
-    bfd = CC.downcast(CC.FunctionDecl, get_decl(lb).ptr)
+    bfd = CC.FunctionDecl(get_decl(lb))
     be = first(filter(n -> n isa CC.BlockExpr, CC.subtree(CC.getBody(bfd))))
     bd = CC.getBlockDecl(be)
     @test bd.ptr != C_NULL
@@ -2612,7 +2612,7 @@ end
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
     @test lookup(I, "wlp_fn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
     pick(T) = first(filter(n -> n isa T, nodes))
 
@@ -2762,7 +2762,7 @@ end
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
     @test lookup(I, "exprq_use")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
 
     ce = first(n for n in nodes if n isa CC.CallExpr)
@@ -2858,7 +2858,7 @@ end
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
     @test lookup(I, "cc_r_fn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
 
     # ---- GenericSelectionExpr: the remaining Association fields --------------
@@ -2995,16 +2995,16 @@ end
     lookup = DeclFinder(I)
 
     @test lookup(I, "exprs_use")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(lookup).ptr)
+    fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
     # select by referent, not by walk order: the body holds two DeclRefExprs
     dre = first(n for n in nodes
                 if n isa CC.DeclRefExpr && CC.getNameAsString(CC.getDecl(n)) == "exprs_global")
 
     @test lookup(I, "exprs_len")
-    size_e = CC.getInit(CC.downcast(CC.VarDecl, get_decl(lookup).ptr))
+    size_e = CC.getInit(CC.VarDecl(get_decl(lookup)))
     @test lookup(I, "exprs_ptr")
-    ptr_e = CC.getInit(CC.downcast(CC.VarDecl, get_decl(lookup).ptr))
+    ptr_e = CC.getInit(CC.VarDecl(get_decl(lookup)))
 
     # ---- Expr::EvalResult: the status a value-only fold discards -------------
     rres = CC.EvalResult()

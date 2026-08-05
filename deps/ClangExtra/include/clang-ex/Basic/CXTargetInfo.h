@@ -187,9 +187,21 @@ const char *clang_TargetInfo_getTypeConstantSuffix(CXTargetInfo_ TI,
                                                    CXTargetInfo_IntType T);
 // Precondition: T is not CXTargetInfo_NoInt; llvm_unreachable otherwise.
 const char *clang_TargetInfo_getTypeFormatModifier(CXTargetInfo_IntType T);
+// Whether the real type T should use the "fpret" flavour of Objective-C message passing on
+// this target. A bitmask test against RealTypeUsesObjCFPRetMask, which the target's own
+// constructor sets whether or not Objective-C is being compiled; total for every
+// enumerator, CXFloatModeKind_NoFloat included.
+bool clang_TargetInfo_useObjCFPRetForRealType(CXTargetInfo_ TI, CXFloatModeKind T);
 bool clang_TargetInfo_useObjCFP2RetForComplexLongDouble(CXTargetInfo_ TI);
 bool clang_TargetInfo_useFP16ConversionIntrinsics(CXTargetInfo_ TI);
 bool clang_TargetInfo_useAddressSpaceMapMangling(CXTargetInfo_ TI);
+// The target's own `#define` block, as the text a MacroBuilder would emit -- the same text
+// clang folds into the predefines buffer during InitializePreprocessor, reachable here from
+// a TargetInfo alone because the shim materialises the raw_ostream sink (MARSHALLING.md
+// §5). Pure virtual, so TI must be a concrete target; some targets read getTargetOpts(), so
+// the same TargetOpts precondition as clang_TargetInfo_getTargetOpts applies. Targets read
+// the LangOptions they are handed, and clang always calls this after adjust().
+CXString clang_TargetInfo_getTargetDefines(CXTargetInfo_ TI, CXLangOptions LO);
 bool clang_TargetInfo_getVScaleRange(CXTargetInfo_ TI, CXLangOptions LO, unsigned *Min,
                                      unsigned *Max);
 bool clang_TargetInfo_isCLZForZeroUndef(CXTargetInfo_ TI);
@@ -231,6 +243,13 @@ bool clang_ConstraintInfo_hasTiedOperand(CXConstraintInfo CI);
 // Precondition: hasTiedOperand(CI); asserts "Has no tied operand!" otherwise.
 unsigned clang_ConstraintInfo_getTiedOperand(CXConstraintInfo CI);
 bool clang_ConstraintInfo_requiresImmediateConstant(CXConstraintInfo CI);
+// Whether Value satisfies the immediate constraint recorded by setRequiresImmediate; true
+// on a ConstraintInfo that records none. Deliberately NOT the LLVMGenericValueRef bridge of
+// MARSHALLING.md §1: the bounds a ConstraintInfo can hold are `int` (ImmRange.Min/Max) and
+// its exact-value set is SmallSet<int, 4>, so a signed 64-bit argument is already wider
+// than any constraint this receiver can express, and the shim rebuilds it as a signed
+// 64-bit APInt without loss.
+bool clang_ConstraintInfo_isValidAsmImmediate(CXConstraintInfo CI, int64_t Value);
 void clang_ConstraintInfo_setIsReadWrite(CXConstraintInfo CI);
 void clang_ConstraintInfo_setEarlyClobber(CXConstraintInfo CI);
 void clang_ConstraintInfo_setAllowsMemory(CXConstraintInfo CI);
@@ -242,6 +261,14 @@ void clang_ConstraintInfo_setRequiresImmediate(CXConstraintInfo CI, int Min, int
 // constraint string and name are left alone.
 void clang_ConstraintInfo_setTiedOperand(CXConstraintInfo CI, unsigned N,
                                          CXConstraintInfo Output);
+
+// Whether RegName may back a global register variable of RegSize bits on this target.
+// *HasSizeMismatch receives whether the register's own width differs from RegSize, and is
+// written on both the true and the false return. Total for any string, the empty one
+// included.
+bool clang_TargetInfo_validateGlobalRegisterVariable(CXTargetInfo_ TI, const char *RegName,
+                                                     unsigned RegSize,
+                                                     bool *HasSizeMismatch);
 
 // Parses Info's constraint string as an output constraint and updates Info's flags in
 // place; false when it is not a valid output constraint for this target.
@@ -258,6 +285,14 @@ const char *clang_TargetInfo_getDataLayoutString(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasProtectedVisibility(CXTargetInfo_ TI);
 bool clang_TargetInfo_shouldDLLImportComdatSymbols(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasPS4DLLImportExport(CXTargetInfo_ TI);
+// Applies the language options to the target and, in the other direction, lets the target
+// force language options. Mutates BOTH operands and reports through Diags. Clang calls it
+// exactly once, between CreateTargetInfo and the target's first use;
+// clang_CompilerInstance_createTarget and clang_CompilerInstance_setTargetAndLangOpts
+// already do so for the target they build. Idempotent in the fields it sets, but not in its
+// diagnostics -- a second call re-emits them.
+void clang_TargetInfo_adjust(CXTargetInfo_ TI, CXDiagnosticsEngine Diags,
+                             CXLangOptions Opts);
 CXString clang_TargetInfo_getABI(CXTargetInfo_ TI);
 CXTargetCXXABI_Kind clang_TargetInfo_getCXXABI(CXTargetInfo_ TI);
 // The caller owns the returned set (freed via libclang's clang_disposeStringSet).
@@ -296,6 +331,17 @@ bool clang_TargetInfo_validateCPUSpecificCPUDispatch(CXTargetInfo_ TI, const cha
 char clang_TargetInfo_CPUSpecificManglingCharacter(CXTargetInfo_ TI, const char *Name);
 // getCPUSpecificTuneName -- not wrapped. No target in clang 18 overrides it, so the base
 // llvm_unreachable is the only implementation and every call aborts the process.
+
+// The features making up a cpu_specific/cpu_dispatch CPU option. The caller owns the
+// returned set (freed via libclang's clang_disposeStringSet); the StringRefs it is built
+// from point into static target-description literals and are copied out (MARSHALLING.md
+// §6, count+fill realised as this file's CXStringSet form).
+// Precondition: clang_TargetInfo_validateCPUSpecificCPUDispatch(TI, Name). TargetInfo's own
+// implementation is an llvm_unreachable, so a target that does not implement cpu_specific
+// multiversioning aborts instead of returning. An empty set is a valid answer: the gate
+// also accepts the CPU_SPECIFIC_ALIAS names, which carry no features of their own.
+CXStringSet *clang_TargetInfo_getCPUSpecificCPUDispatchFeatures(CXTargetInfo_ TI,
+                                                                const char *Name);
 bool clang_TargetInfo_getCPUCacheLineSize(CXTargetInfo_ TI, unsigned *Size);
 unsigned clang_TargetInfo_getRegParmMax(CXTargetInfo_ TI);
 bool clang_TargetInfo_isTLSSupported(CXTargetInfo_ TI);
@@ -348,6 +394,13 @@ CXTargetInfo_CallingConvKind clang_TargetInfo_getCallingConvKind(CXTargetInfo_ T
 
 bool clang_TargetInfo_areDefaultedSMFStillPOD(CXTargetInfo_ TI, CXLangOptions LO);
 bool clang_TargetInfo_hasSjLjLowering(CXTargetInfo_ TI);
+// Whether -fcf-protection=branch / =return is supported on this target. Both report through
+// Diags -- a false answer *emits* err_opt_not_valid_on_target, so the engine's error count
+// moves -- which is why they take a live engine rather than answering silently.
+bool clang_TargetInfo_checkCFProtectionBranchSupported(CXTargetInfo_ TI,
+                                                       CXDiagnosticsEngine Diags);
+bool clang_TargetInfo_checkCFProtectionReturnSupported(CXTargetInfo_ TI,
+                                                       CXDiagnosticsEngine Diags);
 bool clang_TargetInfo_allowsLargerPreferedTypeAlignment(CXTargetInfo_ TI);
 bool clang_TargetInfo_defaultsToAIXPowerAlignment(CXTargetInfo_ TI);
 CXLangAS clang_TargetInfo_getOpenCLTypeAddrSpace(CXTargetInfo_ TI, CXOpenCLTypeKind TK);

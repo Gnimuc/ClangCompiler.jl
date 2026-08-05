@@ -3690,6 +3690,10 @@ mutable struct CXNestedNameSpecifierImpl <: AbstractCXImpl end
 
 const CXNestedNameSpecifier = Ptr{CXNestedNameSpecifierImpl}
 
+mutable struct CXParentMapContextImpl <: AbstractCXImpl end
+
+const CXParentMapContext = Ptr{CXParentMapContextImpl}
+
 mutable struct CXASTRecordLayoutImpl <: AbstractCXImpl end
 
 const CXASTRecordLayout = Ptr{CXASTRecordLayoutImpl}
@@ -11703,6 +11707,10 @@ function clang_LangOptions_getBorland(LO)
     @ccall libclangex.clang_LangOptions_getBorland(LO::CXLangOptions)::Bool
 end
 
+function clang_LangOptions_getMicrosoftExt(LO)
+    @ccall libclangex.clang_LangOptions_getMicrosoftExt(LO::CXLangOptions)::Bool
+end
+
 function clang_LangOptions_getModules(LO)
     @ccall libclangex.clang_LangOptions_getModules(LO::CXLangOptions)::Bool
 end
@@ -12344,6 +12352,10 @@ function clang_TargetInfo_getTypeFormatModifier(T)
     @ccall libclangex.clang_TargetInfo_getTypeFormatModifier(T::CXTargetInfo_IntType)::Ptr{Cchar}
 end
 
+function clang_TargetInfo_useObjCFPRetForRealType(TI, T)
+    @ccall libclangex.clang_TargetInfo_useObjCFPRetForRealType(TI::CXTargetInfo_, T::CXFloatModeKind)::Bool
+end
+
 function clang_TargetInfo_useObjCFP2RetForComplexLongDouble(TI)
     @ccall libclangex.clang_TargetInfo_useObjCFP2RetForComplexLongDouble(TI::CXTargetInfo_)::Bool
 end
@@ -12354,6 +12366,10 @@ end
 
 function clang_TargetInfo_useAddressSpaceMapMangling(TI)
     @ccall libclangex.clang_TargetInfo_useAddressSpaceMapMangling(TI::CXTargetInfo_)::Bool
+end
+
+function clang_TargetInfo_getTargetDefines(TI, LO)
+    @ccall libclangex.clang_TargetInfo_getTargetDefines(TI::CXTargetInfo_, LO::CXLangOptions)::CXString
 end
 
 function clang_TargetInfo_getVScaleRange(TI, LO, Min, Max)
@@ -12460,6 +12476,10 @@ function clang_ConstraintInfo_requiresImmediateConstant(CI)
     @ccall libclangex.clang_ConstraintInfo_requiresImmediateConstant(CI::CXConstraintInfo)::Bool
 end
 
+function clang_ConstraintInfo_isValidAsmImmediate(CI, Value)
+    @ccall libclangex.clang_ConstraintInfo_isValidAsmImmediate(CI::CXConstraintInfo, Value::Int64)::Bool
+end
+
 function clang_ConstraintInfo_setIsReadWrite(CI)
     @ccall libclangex.clang_ConstraintInfo_setIsReadWrite(CI::CXConstraintInfo)::Cvoid
 end
@@ -12486,6 +12506,10 @@ end
 
 function clang_ConstraintInfo_setTiedOperand(CI, N, Output)
     @ccall libclangex.clang_ConstraintInfo_setTiedOperand(CI::CXConstraintInfo, N::Cuint, Output::CXConstraintInfo)::Cvoid
+end
+
+function clang_TargetInfo_validateGlobalRegisterVariable(TI, RegName, RegSize, HasSizeMismatch)
+    @ccall libclangex.clang_TargetInfo_validateGlobalRegisterVariable(TI::CXTargetInfo_, RegName::Ptr{Cchar}, RegSize::Cuint, HasSizeMismatch::Ptr{Bool})::Bool
 end
 
 function clang_TargetInfo_validateOutputConstraint(TI, Info)
@@ -12522,6 +12546,10 @@ end
 
 function clang_TargetInfo_hasPS4DLLImportExport(TI)
     @ccall libclangex.clang_TargetInfo_hasPS4DLLImportExport(TI::CXTargetInfo_)::Bool
+end
+
+function clang_TargetInfo_adjust(TI, Diags, Opts)
+    @ccall libclangex.clang_TargetInfo_adjust(TI::CXTargetInfo_, Diags::CXDiagnosticsEngine, Opts::CXLangOptions)::Cvoid
 end
 
 function clang_TargetInfo_getABI(TI)
@@ -12606,6 +12634,10 @@ end
 
 function clang_TargetInfo_CPUSpecificManglingCharacter(TI, Name)
     @ccall libclangex.clang_TargetInfo_CPUSpecificManglingCharacter(TI::CXTargetInfo_, Name::Ptr{Cchar})::Cchar
+end
+
+function clang_TargetInfo_getCPUSpecificCPUDispatchFeatures(TI, Name)
+    @ccall libclangex.clang_TargetInfo_getCPUSpecificCPUDispatchFeatures(TI::CXTargetInfo_, Name::Ptr{Cchar})::Ptr{CXStringSet}
 end
 
 function clang_TargetInfo_getCPUCacheLineSize(TI, Size)
@@ -12715,6 +12747,14 @@ end
 
 function clang_TargetInfo_hasSjLjLowering(TI)
     @ccall libclangex.clang_TargetInfo_hasSjLjLowering(TI::CXTargetInfo_)::Bool
+end
+
+function clang_TargetInfo_checkCFProtectionBranchSupported(TI, Diags)
+    @ccall libclangex.clang_TargetInfo_checkCFProtectionBranchSupported(TI::CXTargetInfo_, Diags::CXDiagnosticsEngine)::Bool
+end
+
+function clang_TargetInfo_checkCFProtectionReturnSupported(TI, Diags)
+    @ccall libclangex.clang_TargetInfo_checkCFProtectionReturnSupported(TI::CXTargetInfo_, Diags::CXDiagnosticsEngine)::Bool
 end
 
 function clang_TargetInfo_allowsLargerPreferedTypeAlignment(TI)
@@ -12916,6 +12956,10 @@ end
     CXGetBuiltinTypeError_GE_Missing_ucontext = 4
 end
 
+function clang_ASTContext_getParentMapContext(Ctx)
+    @ccall libclangex.clang_ASTContext_getParentMapContext(Ctx::CXASTContext)::CXParentMapContext
+end
+
 function clang_ASTContext_getNumTraversalScopeDecls(Ctx)
     @ccall libclangex.clang_ASTContext_getNumTraversalScopeDecls(Ctx::CXASTContext)::Cuint
 end
@@ -12926,6 +12970,30 @@ end
 
 function clang_ASTContext_setTraversalScope(Ctx, Decls, NumDecls)
     @ccall libclangex.clang_ASTContext_setTraversalScope(Ctx::CXASTContext, Decls::Ptr{CXDecl}, NumDecls::Cuint)::Cvoid
+end
+
+function clang_ASTContext_getNumParentsOfStmt(Ctx, S)
+    @ccall libclangex.clang_ASTContext_getNumParentsOfStmt(Ctx::CXASTContext, S::CXStmt)::Cuint
+end
+
+function clang_ASTContext_getParentOfStmtAsStmt(Ctx, S, I)
+    @ccall libclangex.clang_ASTContext_getParentOfStmtAsStmt(Ctx::CXASTContext, S::CXStmt, I::Cuint)::CXStmt
+end
+
+function clang_ASTContext_getParentOfStmtAsDecl(Ctx, S, I)
+    @ccall libclangex.clang_ASTContext_getParentOfStmtAsDecl(Ctx::CXASTContext, S::CXStmt, I::Cuint)::CXDecl
+end
+
+function clang_ASTContext_getNumParentsOfDecl(Ctx, D)
+    @ccall libclangex.clang_ASTContext_getNumParentsOfDecl(Ctx::CXASTContext, D::CXDecl)::Cuint
+end
+
+function clang_ASTContext_getParentOfDeclAsStmt(Ctx, D, I)
+    @ccall libclangex.clang_ASTContext_getParentOfDeclAsStmt(Ctx::CXASTContext, D::CXDecl, I::Cuint)::CXStmt
+end
+
+function clang_ASTContext_getParentOfDeclAsDecl(Ctx, D, I)
+    @ccall libclangex.clang_ASTContext_getParentOfDeclAsDecl(Ctx::CXASTContext, D::CXDecl, I::Cuint)::CXDecl
 end
 
 function clang_ASTContext_getPrintingPolicy(Ctx)
@@ -14320,6 +14388,10 @@ function clang_ASTContext_AnyObjCImplementation(Ctx)
     @ccall libclangex.clang_ASTContext_AnyObjCImplementation(Ctx::CXASTContext)::Bool
 end
 
+function clang_ASTContext_setBlockVarCopyInit(Ctx, VD, CopyExpr, CanThrow)
+    @ccall libclangex.clang_ASTContext_setBlockVarCopyInit(Ctx::CXASTContext, VD::CXVarDecl, CopyExpr::CXExpr, CanThrow::Bool)::Cvoid
+end
+
 function clang_ASTContext_getBlockVarCopyInit(Ctx, VD)
     @ccall libclangex.clang_ASTContext_getBlockVarCopyInit(Ctx::CXASTContext, VD::CXVarDecl)::CXBlockVarCopyInit
 end
@@ -14406,6 +14478,22 @@ end
 
 function clang_ASTContext_getTemplateParamObjectDecl(Ctx, T, V)
     @ccall libclangex.clang_ASTContext_getTemplateParamObjectDecl(Ctx::CXASTContext, T::CXQualType, V::CXAPValue)::CXTemplateParamObjectDecl
+end
+
+function clang_ASTContext_getNumFilteredFunctionTargetFeatures(Ctx, TD)
+    @ccall libclangex.clang_ASTContext_getNumFilteredFunctionTargetFeatures(Ctx::CXASTContext, TD::CXTargetAttr)::Cuint
+end
+
+function clang_ASTContext_getFilteredFunctionTargetFeature(Ctx, TD, I)
+    @ccall libclangex.clang_ASTContext_getFilteredFunctionTargetFeature(Ctx::CXASTContext, TD::CXTargetAttr, I::Cuint)::CXString
+end
+
+function clang_ASTContext_getFilteredFunctionTargetCPU(Ctx, TD)
+    @ccall libclangex.clang_ASTContext_getFilteredFunctionTargetCPU(Ctx::CXASTContext, TD::CXTargetAttr)::CXString
+end
+
+function clang_ASTContext_getFilteredFunctionTargetTune(Ctx, TD)
+    @ccall libclangex.clang_ASTContext_getFilteredFunctionTargetTune(Ctx::CXASTContext, TD::CXTargetAttr)::CXString
 end
 
 function clang_ASTContext_getNumFunctionFeatures(Ctx, FD)
@@ -17043,6 +17131,18 @@ function clang_UnresolvedUsingTypenameDecl_Create(C, DC, UsingLoc, TypenameLoc, 
     @ccall libclangex.clang_UnresolvedUsingTypenameDecl_Create(C::CXASTContext, DC::CXDeclContext, UsingLoc::CXSourceLocation_, TypenameLoc::CXSourceLocation_, QualifierLoc::CXNestedNameSpecifierLoc, TargetNameLoc::CXSourceLocation_, TargetName::CXDeclarationName, EllipsisLoc::CXSourceLocation_)::CXUnresolvedUsingTypenameDecl
 end
 
+function clang_CXXRecordDecl_getNumBasePathElements(CXXRD, Base)
+    @ccall libclangex.clang_CXXRecordDecl_getNumBasePathElements(CXXRD::CXCXXRecordDecl, Base::CXCXXRecordDecl)::Cuint
+end
+
+function clang_CXXRecordDecl_getBasePathElements(CXXRD, Base, PathBuf, AccessBuf, BaseBuf, ClassBuf, SubobjectBuf)
+    @ccall libclangex.clang_CXXRecordDecl_getBasePathElements(CXXRD::CXCXXRecordDecl, Base::CXCXXRecordDecl, PathBuf::Ptr{Cuint}, AccessBuf::Ptr{CXAccessSpecifier}, BaseBuf::Ptr{CXCXXBaseSpecifier}, ClassBuf::Ptr{CXCXXRecordDecl}, SubobjectBuf::Ptr{Cint})::Cvoid
+end
+
+function clang_CXXRecordDecl_addedSelectedDestructor(CXXRD, DD)
+    @ccall libclangex.clang_CXXRecordDecl_addedSelectedDestructor(CXXRD::CXCXXRecordDecl, DD::CXCXXDestructorDecl)::Cvoid
+end
+
 function clang_DeclGroupRef_fromDecl(D)
     @ccall libclangex.clang_DeclGroupRef_fromDecl(D::CXDecl)::CXDeclGroupRef
 end
@@ -19469,14 +19569,6 @@ function clang_NamedDecl_classofKind(K)
     @ccall libclangex.clang_NamedDecl_classofKind(K::CXDeclKind)::Bool
 end
 
-function clang_NamedDecl_castToTypeDecl(ND)
-    @ccall libclangex.clang_NamedDecl_castToTypeDecl(ND::CXNamedDecl)::CXTypeDecl
-end
-
-function clang_NamedDecl_castToEnumConstantDecl(ND)
-    @ccall libclangex.clang_NamedDecl_castToEnumConstantDecl(ND::CXNamedDecl)::CXEnumConstantDecl
-end
-
 function clang_LabelDecl_Create(C, DC, IdentL, II)
     @ccall libclangex.clang_LabelDecl_Create(C::CXASTContext, DC::CXDeclContext, IdentL::CXSourceLocation_, II::CXIdentifierInfo)::CXLabelDecl
 end
@@ -21675,10 +21767,6 @@ end
 
 function clang_RecordDecl_classofKind(K)
     @ccall libclangex.clang_RecordDecl_classofKind(K::CXDeclKind)::Bool
-end
-
-function clang_RecordDecl_castToClassTemplateSpecializationDecl(RD)
-    @ccall libclangex.clang_RecordDecl_castToClassTemplateSpecializationDecl(RD::CXRecordDecl)::CXClassTemplateSpecializationDecl
 end
 
 function clang_FileScopeAsmDecl_Create(C, DC, Str, AsmLoc, RParenLoc)
@@ -25315,6 +25403,10 @@ end
     CXMangleContext_MK_Microsoft = 1
 end
 
+function clang_MangleContext_dispose(MC)
+    @ccall libclangex.clang_MangleContext_dispose(MC::CXMangleContext)::Cvoid
+end
+
 function clang_MangleContext_getKind(MC)
     @ccall libclangex.clang_MangleContext_getKind(MC::CXMangleContext)::CXMangleContext_ManglerKind
 end
@@ -25583,6 +25675,27 @@ end
 
 function clang_NestedNameSpecifierLoc_dispose(NNSL)
     @ccall libclangex.clang_NestedNameSpecifierLoc_dispose(NNSL::CXNestedNameSpecifierLoc)::Cvoid
+end
+
+@enum CXTraversalKind::UInt32 begin
+    CXTraversalKind_TK_AsIs = 0
+    CXTraversalKind_TK_IgnoreUnlessSpelledInSource = 1
+end
+
+function clang_ParentMapContext_clear(PMC)
+    @ccall libclangex.clang_ParentMapContext_clear(PMC::CXParentMapContext)::Cvoid
+end
+
+function clang_ParentMapContext_getTraversalKind(PMC)
+    @ccall libclangex.clang_ParentMapContext_getTraversalKind(PMC::CXParentMapContext)::CXTraversalKind
+end
+
+function clang_ParentMapContext_setTraversalKind(PMC, TK)
+    @ccall libclangex.clang_ParentMapContext_setTraversalKind(PMC::CXParentMapContext, TK::CXTraversalKind)::Cvoid
+end
+
+function clang_ParentMapContext_traverseIgnored(PMC, E)
+    @ccall libclangex.clang_ParentMapContext_traverseIgnored(PMC::CXParentMapContext, E::CXExpr)::CXExpr
 end
 
 function clang_PrintingPolicy_create(LO)
@@ -32060,6 +32173,13 @@ end
     CXLTOKind_LTOK_Unknown = 3
 end
 
+@enum CXModuleHeaderMode::UInt32 begin
+    CXModuleHeaderMode_HeaderMode_None = 0
+    CXModuleHeaderMode_HeaderMode_Default = 1
+    CXModuleHeaderMode_HeaderMode_User = 2
+    CXModuleHeaderMode_HeaderMode_System = 3
+end
+
 function clang_Driver_create(ClangExecutable, TargetTriple, Diags)
     @ccall libclangex.clang_Driver_create(ClangExecutable::Ptr{Cchar}, TargetTriple::Ptr{Cchar}, Diags::CXDiagnosticsEngine)::CXDriver
 end
@@ -32212,6 +32332,10 @@ function clang_Driver_hasHeaderMode(D)
     @ccall libclangex.clang_Driver_hasHeaderMode(D::CXDriver)::Bool
 end
 
+function clang_Driver_getModuleHeaderMode(D)
+    @ccall libclangex.clang_Driver_getModuleHeaderMode(D::CXDriver)::CXModuleHeaderMode
+end
+
 function clang_Driver_isUsingLTO(D, IsOffload)
     @ccall libclangex.clang_Driver_isUsingLTO(D::CXDriver, IsOffload::Bool)::Bool
 end
@@ -32286,6 +32410,10 @@ end
 
 function clang_Driver_GetClPchPath(D, C, BaseName)
     @ccall libclangex.clang_Driver_GetClPchPath(D::CXDriver, C::CXCompilation, BaseName::Ptr{Cchar})::CXString
+end
+
+function clang_driver_getDriverMode(ProgName, Args, NumArgs)
+    @ccall libclangex.clang_driver_getDriverMode(ProgName::Ptr{Cchar}, Args::Ptr{Ptr{Cchar}}, NumArgs::Cuint)::CXString
 end
 
 function clang_ToolChain_getDriver(TC)
@@ -32500,6 +32628,33 @@ end
 
 function clang_ASTUnit_dispose(AU)
     @ccall libclangex.clang_ASTUnit_dispose(AU::CXASTUnit)::Cvoid
+end
+
+function clang_ASTUnit_LoadFromCompilerInvocation(CI, Diags, FileMgr, OnlyLocalDecls, CaptureDiagnostics, PrecompilePreambleAfterNParses, TUKind, CacheCodeCompletionResults, IncludeBriefCommentsInCodeCompletion, UserFilesAreVolatile)
+    @ccall libclangex.clang_ASTUnit_LoadFromCompilerInvocation(CI::CXCompilerInvocation, Diags::CXDiagnosticsEngine, FileMgr::CXFileManager, OnlyLocalDecls::Bool, CaptureDiagnostics::CXCaptureDiagsKind, PrecompilePreambleAfterNParses::Cuint, TUKind::CXTranslationUnitKind, CacheCodeCompletionResults::Bool, IncludeBriefCommentsInCodeCompletion::Bool, UserFilesAreVolatile::Bool)::CXASTUnit
+end
+
+function clang_ASTUnit_Save(AU, File)
+    @ccall libclangex.clang_ASTUnit_Save(AU::CXASTUnit, File::Ptr{Cchar})::Bool
+end
+
+@enum CXDisableValidationForModuleKind::UInt32 begin
+    CXDisableValidationForModuleKind_None = 0
+    CXDisableValidationForModuleKind_PCH = 1
+    CXDisableValidationForModuleKind_Module = 2
+    CXDisableValidationForModuleKind_All = 3
+end
+
+function clang_PreprocessorOptions_getIncludesNum(PPO)
+    @ccall libclangex.clang_PreprocessorOptions_getIncludesNum(PPO::CXPreprocessorOptions)::Csize_t
+end
+
+function clang_PreprocessorOptions_getIncludes(PPO, IncsOut, Num)
+    @ccall libclangex.clang_PreprocessorOptions_getIncludes(PPO::CXPreprocessorOptions, IncsOut::Ptr{Ptr{Cchar}}, Num::Csize_t)::Cvoid
+end
+
+function clang_PreprocessorOptions_PrintStats(PPO)
+    @ccall libclangex.clang_PreprocessorOptions_PrintStats(PPO::CXPreprocessorOptions)::Cvoid
 end
 
 function clang_CompilerInstance_create()
@@ -32728,6 +32883,14 @@ end
 
 function clang_CompilerInstance_getSpecificModuleCachePath(CI)
     @ccall libclangex.clang_CompilerInstance_getSpecificModuleCachePath(CI::CXCompilerInstance)::CXString
+end
+
+function clang_CompilerInstance_createPCHExternalASTSource(CI, Path, DisableValidation, AllowPCHWithCompilerErrors, DeserializationListener, OwnDeserializationListener)
+    @ccall libclangex.clang_CompilerInstance_createPCHExternalASTSource(CI::CXCompilerInstance, Path::Ptr{Cchar}, DisableValidation::CXDisableValidationForModuleKind, AllowPCHWithCompilerErrors::Bool, DeserializationListener::Ptr{Cvoid}, OwnDeserializationListener::Bool)::Cvoid
+end
+
+function clang_CompilerInstance_hasASTReader(CI)
+    @ccall libclangex.clang_CompilerInstance_hasASTReader(CI::CXCompilerInstance)::Bool
 end
 
 function clang_CompilerInstance_createTarget(CI)
@@ -34060,6 +34223,13 @@ function clang_DirectoryLookup_getName(DL)
     @ccall libclangex.clang_DirectoryLookup_getName(DL::CXDirectoryLookup)::CXString
 end
 
+@enum CXModuleHeaderRole::UInt32 begin
+    CXModuleHeaderRole_NormalHeader = 0
+    CXModuleHeaderRole_PrivateHeader = 1
+    CXModuleHeaderRole_TextualHeader = 2
+    CXModuleHeaderRole_ExcludedHeader = 4
+end
+
 function clang_HeaderSearch_getHeaderSearchOpts(HS)
     @ccall libclangex.clang_HeaderSearch_getHeaderSearchOpts(HS::CXHeaderSearch)::CXHeaderSearchOptions
 end
@@ -34120,6 +34290,10 @@ function clang_HeaderSearch_getCachedModuleFileName(HS, ModuleName, ModuleMapPat
     @ccall libclangex.clang_HeaderSearch_getCachedModuleFileName(HS::CXHeaderSearch, ModuleName::Ptr{Cchar}, ModuleMapPath::Ptr{Cchar})::CXString
 end
 
+function clang_HeaderSearch_LookupFile(HS, Filename, isAngled, SkipCache, CacheFailures, IsMapped, IsFrameworkFound)
+    @ccall libclangex.clang_HeaderSearch_LookupFile(HS::CXHeaderSearch, Filename::Ptr{Cchar}, isAngled::Bool, SkipCache::Bool, CacheFailures::Bool, IsMapped::Ptr{Bool}, IsFrameworkFound::Ptr{Bool})::CXFileEntryRef
+end
+
 function clang_HeaderSearch_ShouldEnterIncludeFile(HS, PP, File, isImport, ModulesEnabled, M, IsFirstIncludeOfFile)
     @ccall libclangex.clang_HeaderSearch_ShouldEnterIncludeFile(HS::CXHeaderSearch, PP::CXPreprocessor, File::CXFileEntryRef, isImport::Bool, ModulesEnabled::Bool, M::CXModule_, IsFirstIncludeOfFile::Ptr{Bool})::Bool
 end
@@ -34152,6 +34326,10 @@ function clang_HeaderSearch_MarkFileSystemHeader(HS, File)
     @ccall libclangex.clang_HeaderSearch_MarkFileSystemHeader(HS::CXHeaderSearch, File::CXFileEntryRef)::Cvoid
 end
 
+function clang_HeaderSearch_MarkFileModuleHeader(HS, FE, RoleBits, isCompilingModuleHeader)
+    @ccall libclangex.clang_HeaderSearch_MarkFileModuleHeader(HS::CXHeaderSearch, FE::CXFileEntryRef, RoleBits::Cuint, isCompilingModuleHeader::Bool)::Cvoid
+end
+
 function clang_HeaderSearch_SetFileControllingMacro(HS, File, ControllingMacro)
     @ccall libclangex.clang_HeaderSearch_SetFileControllingMacro(HS::CXHeaderSearch, File::CXFileEntryRef, ControllingMacro::CXIdentifierInfo)::Cvoid
 end
@@ -34176,8 +34354,36 @@ function clang_HeaderSearch_getPrebuiltModuleFileName(HS, ModuleName, FileMapOnl
     @ccall libclangex.clang_HeaderSearch_getPrebuiltModuleFileName(HS::CXHeaderSearch, ModuleName::Ptr{Cchar}, FileMapOnly::Bool)::CXString
 end
 
+function clang_HeaderSearch_lookupModule(HS, ModuleName, ImportLoc, AllowSearch, AllowExtraModuleMapSearch)
+    @ccall libclangex.clang_HeaderSearch_lookupModule(HS::CXHeaderSearch, ModuleName::Ptr{Cchar}, ImportLoc::CXSourceLocation_, AllowSearch::Bool, AllowExtraModuleMapSearch::Bool)::CXModule_
+end
+
 function clang_HeaderSearch_hasModuleMap(HS, Filename, Root, IsSystem)
     @ccall libclangex.clang_HeaderSearch_hasModuleMap(HS::CXHeaderSearch, Filename::Ptr{Cchar}, Root::CXDirectoryEntry, IsSystem::Bool)::Bool
+end
+
+function clang_HeaderSearch_findModuleForHeader(HS, File, AllowTextual, AllowExcluded, RoleBits)
+    @ccall libclangex.clang_HeaderSearch_findModuleForHeader(HS::CXHeaderSearch, File::CXFileEntryRef, AllowTextual::Bool, AllowExcluded::Bool, RoleBits::Ptr{Cuint})::CXModule_
+end
+
+function clang_HeaderSearch_getNumResolvedModulesForHeader(HS, File)
+    @ccall libclangex.clang_HeaderSearch_getNumResolvedModulesForHeader(HS::CXHeaderSearch, File::CXFileEntryRef)::Cuint
+end
+
+function clang_HeaderSearch_getResolvedModuleForHeader(HS, File, Idx, RoleBits)
+    @ccall libclangex.clang_HeaderSearch_getResolvedModuleForHeader(HS::CXHeaderSearch, File::CXFileEntryRef, Idx::Cuint, RoleBits::Ptr{Cuint})::CXModule_
+end
+
+function clang_HeaderSearch_loadModuleMapFile(HS, File, IsSystem)
+    @ccall libclangex.clang_HeaderSearch_loadModuleMapFile(HS::CXHeaderSearch, File::CXFileEntryRef, IsSystem::Bool)::Bool
+end
+
+function clang_HeaderSearch_getNumAllModules(HS)
+    @ccall libclangex.clang_HeaderSearch_getNumAllModules(HS::CXHeaderSearch)::Cuint
+end
+
+function clang_HeaderSearch_collectAllModules(HS, Buf)
+    @ccall libclangex.clang_HeaderSearch_collectAllModules(HS::CXHeaderSearch, Buf::Ptr{CXModule_})::Cvoid
 end
 
 function clang_HeaderSearch_getNumHeaderMapFileNames(HS)
@@ -34198,6 +34404,14 @@ end
 
 function clang_HeaderSearch_getSearchDirName(HS, Idx)
     @ccall libclangex.clang_HeaderSearch_getSearchDirName(HS::CXHeaderSearch, Idx::Cuint)::CXString
+end
+
+function clang_HeaderSearch_getAngledDirIdx(HS)
+    @ccall libclangex.clang_HeaderSearch_getAngledDirIdx(HS::CXHeaderSearch)::Cuint
+end
+
+function clang_HeaderSearch_getSystemDirIdx(HS)
+    @ccall libclangex.clang_HeaderSearch_getSystemDirIdx(HS::CXHeaderSearch)::Cuint
 end
 
 function clang_HeaderSearch_getUniqueFrameworkName(HS, Framework)
@@ -34232,8 +34446,16 @@ function clang_HeaderFileInfo_getDirInfo(HFI)
     @ccall libclangex.clang_HeaderFileInfo_getDirInfo(HFI::CXHeaderFileInfo)::CXCharacteristicKind
 end
 
+function clang_HeaderFileInfo_getExternal(HFI)
+    @ccall libclangex.clang_HeaderFileInfo_getExternal(HFI::CXHeaderFileInfo)::Bool
+end
+
 function clang_HeaderFileInfo_getIsModuleHeader(HFI)
     @ccall libclangex.clang_HeaderFileInfo_getIsModuleHeader(HFI::CXHeaderFileInfo)::Bool
+end
+
+function clang_HeaderFileInfo_getIsCompilingModuleHeader(HFI)
+    @ccall libclangex.clang_HeaderFileInfo_getIsCompilingModuleHeader(HFI::CXHeaderFileInfo)::Bool
 end
 
 function clang_HeaderFileInfo_getIsValid(HFI)
@@ -34996,6 +35218,10 @@ function clang_Preprocessor_Lex(PP, Result)
     @ccall libclangex.clang_Preprocessor_Lex(PP::CXPreprocessor, Result::CXToken_)::Cvoid
 end
 
+function clang_Preprocessor_LexTokensUntilEOF(PP)
+    @ccall libclangex.clang_Preprocessor_LexTokensUntilEOF(PP::CXPreprocessor)::Cvoid
+end
+
 function clang_Preprocessor_getSpelling(PP, Tok)
     @ccall libclangex.clang_Preprocessor_getSpelling(PP::CXPreprocessor, Tok::CXToken_)::CXString
 end
@@ -35384,6 +35610,16 @@ function clang_Preprocessor_LookUpIdentifierInfo(PP, Identifier)
     @ccall libclangex.clang_Preprocessor_LookUpIdentifierInfo(PP::CXPreprocessor, Identifier::CXToken_)::CXIdentifierInfo
 end
 
+@enum CXMacroUse::UInt32 begin
+    CXMacroUse_MU_Other = 0
+    CXMacroUse_MU_Define = 1
+    CXMacroUse_MU_Undef = 2
+end
+
+function clang_Preprocessor_CheckMacroName(PP, MacroNameTok, isDefineUndef, ShadowFlag)
+    @ccall libclangex.clang_Preprocessor_CheckMacroName(PP::CXPreprocessor, MacroNameTok::CXToken_, isDefineUndef::CXMacroUse, ShadowFlag::Ptr{Bool})::Bool
+end
+
 function clang_Preprocessor_getCurrentFPEvalMethod(PP)
     @ccall libclangex.clang_Preprocessor_getCurrentFPEvalMethod(PP::CXPreprocessor)::CXFPEvalMethodKind
 end
@@ -35498,18 +35734,6 @@ end
 
 function clang_Preprocessor_processPathForFileMacro(Path, LangOpts, TI)
     @ccall libclangex.clang_Preprocessor_processPathForFileMacro(Path::Ptr{Cchar}, LangOpts::CXLangOptions, TI::CXTargetInfo_)::CXString
-end
-
-function clang_PreprocessorOptions_getIncludesNum(PPO)
-    @ccall libclangex.clang_PreprocessorOptions_getIncludesNum(PPO::CXPreprocessorOptions)::Csize_t
-end
-
-function clang_PreprocessorOptions_getIncludes(PPO, IncsOut, Num)
-    @ccall libclangex.clang_PreprocessorOptions_getIncludes(PPO::CXPreprocessorOptions, IncsOut::Ptr{Ptr{Cchar}}, Num::Csize_t)::Cvoid
-end
-
-function clang_PreprocessorOptions_PrintStats(PPO)
-    @ccall libclangex.clang_PreprocessorOptions_PrintStats(PPO::CXPreprocessorOptions)::Cvoid
 end
 
 function clang_Token_getAnnotationValue(Tok)
@@ -40507,6 +40731,20 @@ function clang_Sema_LookupVisibleDeclsInContext(S, Ctx, Kind, IncludeGlobalScope
     @ccall libclangex.clang_Sema_LookupVisibleDeclsInContext(S::CXSema, Ctx::CXDeclContext, Kind::CXLookupNameKind, IncludeGlobalScope::Bool, IncludeDependentBases::Bool, LoadExternal::Bool, Buf::Ptr{CXNamedDecl}, BufSize::Cuint)::Cuint
 end
 
+@enum CXNamedReturnInfo_Status::UInt32 begin
+    CXNamedReturnInfo_None = 0
+    CXNamedReturnInfo_MoveEligible = 1
+    CXNamedReturnInfo_MoveEligibleAndCopyElidable = 2
+end
+
+function clang_Sema_getNamedReturnInfo(S, VD)
+    @ccall libclangex.clang_Sema_getNamedReturnInfo(S::CXSema, VD::CXVarDecl)::CXNamedReturnInfo_Status
+end
+
+function clang_Sema_isAbstractType(S, Loc, T)
+    @ccall libclangex.clang_Sema_isAbstractType(S::CXSema, Loc::CXSourceLocation_, T::CXQualType)::Bool
+end
+
 function clang_Sema_RequireNonAbstractType(S, Loc, T, DiagID)
     @ccall libclangex.clang_Sema_RequireNonAbstractType(S::CXSema, Loc::CXSourceLocation_, T::CXQualType, DiagID::Cuint)::Bool
 end
@@ -40941,6 +41179,10 @@ end
 
 function clang_Sema_BuildCXXTypeId(S, TypeInfoType, TypeidLoc, Operand, RParenLoc, IsInvalid)
     @ccall libclangex.clang_Sema_BuildCXXTypeId(S::CXSema, TypeInfoType::CXQualType, TypeidLoc::CXSourceLocation_, Operand::CXTypeSourceInfo, RParenLoc::CXSourceLocation_, IsInvalid::Ptr{Bool})::CXExpr
+end
+
+function clang_Sema_BuildCXXUuidof(S, TypeInfoType, TypeidLoc, Operand, RParenLoc, IsInvalid)
+    @ccall libclangex.clang_Sema_BuildCXXUuidof(S::CXSema, TypeInfoType::CXQualType, TypeidLoc::CXSourceLocation_, Operand::CXTypeSourceInfo, RParenLoc::CXSourceLocation_, IsInvalid::Ptr{Bool})::CXExpr
 end
 
 function clang_Sema_BuildExpressionFromDeclTemplateArgument(S, Arg, ParamType, Loc, IsInvalid)
@@ -41701,6 +41943,14 @@ end
 
 function clang_Sema_DeduceTemplateArguments(S, Partial, TemplateArgs, Info)
     @ccall libclangex.clang_Sema_DeduceTemplateArguments(S::CXSema, Partial::CXClassTemplatePartialSpecializationDecl, TemplateArgs::CXTemplateArgumentList, Info::CXTemplateDeductionInfo)::CXTemplateDeductionResult
+end
+
+function clang_Sema_DeduceTemplateArgumentsVarPartial(S, Partial, TemplateArgs, Info)
+    @ccall libclangex.clang_Sema_DeduceTemplateArgumentsVarPartial(S::CXSema, Partial::CXVarTemplatePartialSpecializationDecl, TemplateArgs::CXTemplateArgumentList, Info::CXTemplateDeductionInfo)::CXTemplateDeductionResult
+end
+
+function clang_Sema_DeduceTemplateArgumentsFunctionTemplate(S, FunctionTemplate, ExplicitTemplateArgs, ArgFunctionType, Specialization, Info, IsAddressOfFunction)
+    @ccall libclangex.clang_Sema_DeduceTemplateArgumentsFunctionTemplate(S::CXSema, FunctionTemplate::CXFunctionTemplateDecl, ExplicitTemplateArgs::CXTemplateArgumentListInfo, ArgFunctionType::CXQualType, Specialization::Ptr{CXFunctionDecl}, Info::CXTemplateDeductionInfo, IsAddressOfFunction::Bool)::CXTemplateDeductionResult
 end
 
 function clang_Sema_DeduceAutoType(S, AutoTypeLoc, Initializer, Result, Info, DependentDeduction, IgnoreConstraints)

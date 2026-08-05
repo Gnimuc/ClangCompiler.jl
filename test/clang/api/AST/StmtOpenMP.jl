@@ -20,7 +20,7 @@ end
     CC.parse(I, "void ompf(int n){\n#pragma omp parallel num_threads(4)\n{ int x = n; }\n}")
     f = DeclFinder(I)
     @test f(I, "ompf")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     dir = nothing
     for n in CC.subtree(CC.resolve(CC.getBody(fd)))
         n isa CC.AbstractOMPExecutableDirective && (dir=n; break)

@@ -20,7 +20,7 @@ end
     CC.parse(I, "namespace N { struct S {}; } N::S obj;")
     f = DeclFinder(I)
     @test f(I, "obj")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     ety = CC.resolve(CC.getTypePtr(CC.getType(vd)))
     @test ety isa CC.ElaboratedType
     nns = CC.getQualifier(ety)

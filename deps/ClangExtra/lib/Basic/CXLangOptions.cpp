@@ -51,6 +51,10 @@ bool clang_LangOptions_getBorland(CXLangOptions LO) {
   return reinterpret_cast<clang::LangOptions *>(LO)->Borland;
 }
 
+bool clang_LangOptions_getMicrosoftExt(CXLangOptions LO) {
+  return reinterpret_cast<clang::LangOptions *>(LO)->MicrosoftExt;
+}
+
 bool clang_LangOptions_getCPlusPlus(CXLangOptions LO) {
   return reinterpret_cast<clang::LangOptions *>(LO)->CPlusPlus;
 }
