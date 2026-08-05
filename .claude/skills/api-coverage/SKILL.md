@@ -34,6 +34,39 @@ JSON round trip to produce a worse version of this, and their one distinctive pa
 signature string, now `shape_of` in `candidates.jl` running over a real parameter list instead
 of text that happened to contain the word.
 
+## An unwrapped row may already be wrapped: three sections rename
+
+This is the trap that has cost the most, and it survived a 44-agent audit — the audit's
+top-priority, lowest-risk batch proposed writing `clang_Stmt_getProfileHash`, which has been in
+`CXStmt.h` and tested for some time.
+
+**§5, §6 and §7 all cross a value by changing the name.** `child_begin`/`child_end` becomes
+`getNumChildren` + `getChild(i)`. `printQualifiedName(raw_ostream&)` becomes
+`getQualifiedNameAsString`. `Stmt::Profile` becomes `getProfileHash`. Coverage was decided by
+asking whether `clang_<Class>_<method>` was bound, so **every method those sections cover was
+reported unwrapped forever, no matter how much got wrapped.** A fourth mechanism compounds it:
+a wrapper sits on the class that *declares* the method, so `FunctionDecl::getNameForDiagnostic`
+is served by the one bound on `NamedDecl` and looked like a gap too.
+
+`is_wrapped` now tests the mechanical renames across the whole base chain (`base_chain`), and
+that alone moved 28 rows. It stays deliberately conservative: it derives only renames that
+follow from the C++ name, so a §7 decomposition sharing no noun with its method — `Profile` ->
+`getProfileHash`, `getFloatTypeSemantics` -> `getFloatTypeSemanticsPrecision` — is *still*
+reported as a gap. That asymmetry is the point. A false "wrapped" hides work permanently; a
+false "gap" only wastes a reader's time, and `selfcheck.jl` pins both directions.
+
+**So: before wrapping anything this tool calls a gap, grep the shim for the noun.** The tool
+narrows the field; it does not certify a row.
+
+`:range` is its own shape for the same reason. Deleting `iterator` from `BLOCKED` without it
+would have moved 79 rows into `viable` — a to-do list of methods that must never be wrapped
+one-to-one. A range is also spelled two to eight times (begin/end, const overloads, rbegin/rend,
+the `iterator_range` accessor) for what is one crossing.
+
+Correcting all of this moved the non-Sema `blocked` count from **185 to 25**, and the 25 that
+remain are coherent: allocators, `vfs::`, the profiling accumulators, target feature maps, and
+two callback sinks.
+
 ## Invariant 2 was checked, and does not need a lint
 
 Every wrapper types its receiver at the abstract of the class that *declares* the method. The C
@@ -61,16 +94,21 @@ deliverable; re-run it by hand if the wrapper layer ever changes shape.
 
 ## Read the output before believing it
 
-`viable` is **not** a to-do list. It is what remains after five mechanical exclusions, and the
+`viable` is **not** a to-do list. It is what remains after six mechanical exclusions, and the
 number has been wrong in both directions. Every count below was measured on this repo:
 
 | category | meaning |
 |---|---|
 | `viable` | no *mechanical* blocker found — still needs judgement |
-| `blocked` | C++ types with no C ABI in the signature (`ArrayRef`, `SmallVector`, …) |
+| `range` | a begin/end accessor; §6 crosses it under a different name, so coverage-by-name says nothing |
+| `blocked` | C++ types with no C ABI *and no pattern*: allocators, `StringMap`, `FoldingSetNodeID`, `vfs::`, the parser's in-flight state |
 | `parser_action` | `ActOn*`, needs an in-flight parse |
-| `out_of_scope` | OpenMP / ObjC / code completion — deliberately not carried |
+| `out_of_scope` | OpenMP / ObjC / OpenCL / code completion — deliberately not carried |
 | `covered_otherwise` | real methods that must NOT be wrapped (see below) |
+
+`blocked` deliberately excludes `ArrayRef`, `SmallVector`, `raw_ostream` and bare `llvm::`:
+§11, §6 and §5 *are* the patterns for those, and listing them made 158 of 185 non-Sema rows
+classifier artifacts rather than findings.
 
 ## The traps this measurement has fallen into
 

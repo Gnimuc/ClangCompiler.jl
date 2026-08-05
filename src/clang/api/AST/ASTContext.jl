@@ -436,6 +436,18 @@ function getLangOpts(x::ASTContext)
     return LangOptions(clang_ASTContext_getLangOpts(x))
 end
 
+"""
+    isDependenceAllowed(x::ASTContext) -> Bool
+
+Whether this context admits dependent types at all — clang computes it as
+`LangOpts.CPlusPlus || LangOpts.RecoveryAST`. A property of the language mode the context was
+created with, so it reads the same on every target.
+"""
+function isDependenceAllowed(x::ASTContext)
+    @check_ptrs x
+    return clang_ASTContext_isDependenceAllowed(x)
+end
+
 function getLogicalOperationType(x::ASTContext)
     @check_ptrs x
     return QualType(clang_ASTContext_getLogicalOperationType(x))
@@ -872,6 +884,18 @@ end
 function getCanonicalTemplateName(x::ASTContext, a2::TemplateName)
     @check_ptrs x
     return TemplateName(clang_ASTContext_getCanonicalTemplateName(x, a2))
+end
+
+"""
+    hasSameTemplateName(x::ASTContext, a::TemplateName, b::TemplateName) -> Bool
+
+Whether `a` and `b` name the same template, through the sugar that comparing the two handles
+cannot see — a `QualifiedTemplateName` and the bare `TemplateDecl` it wraps are equal here
+and distinct as pointers. Agrees with comparing [`getCanonicalTemplateName`](@ref) of each.
+"""
+function hasSameTemplateName(x::ASTContext, a::TemplateName, b::TemplateName)
+    @check_ptrs x
+    return clang_ASTContext_hasSameTemplateName(x, a, b)
 end
 
 function getConstantArrayElementCount(x::ASTContext, a2::AbstractConstantArrayType)

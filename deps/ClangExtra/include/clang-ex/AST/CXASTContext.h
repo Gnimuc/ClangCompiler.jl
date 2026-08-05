@@ -1752,6 +1752,19 @@ CXQualType clang_ASTContext_Float16Ty_getAsQualType(CXASTContext Ctx);
 CXQualType clang_ASTContext_VoidPtrTy_getAsQualType(CXASTContext Ctx);
 CXQualType clang_ASTContext_NullPtrTy_getAsQualType(CXASTContext Ctx);
 
+// Whether this context admits dependent types at all, i.e. `LangOpts.CPlusPlus ||
+// LangOpts.RecoveryAST`. A property of the language mode the context was built with, not of
+// the host, so it is an equality on every target.
+bool clang_ASTContext_isDependenceAllowed(CXASTContext Ctx);
+
+// Whether two template names denote the same template, comparing through the sugar that
+// `==` on the handles cannot see: X and Y may be a QualifiedTemplateName and the underlying
+// TemplateDecl, or two substitutions reaching the same declaration. Equivalent to comparing
+// clang_ASTContext_getCanonicalTemplateName of each, and clang implements it that way for
+// the simple cases while also handling the dependent ones.
+bool clang_ASTContext_hasSameTemplateName(CXASTContext Ctx, CXTemplateName X,
+                                          CXTemplateName Y);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

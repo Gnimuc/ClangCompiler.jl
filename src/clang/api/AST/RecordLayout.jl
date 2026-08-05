@@ -56,8 +56,37 @@ function getVBaseClassOffset(x::AbstractASTRecordLayout, vbase::AbstractCXXRecor
     return clang_ASTRecordLayout_getVBaseClassOffset(x, vbase)
 end
 
+"""
+    endsWithZeroSizedObject(x::AbstractASTRecordLayout) -> Bool
+
+Whether the record ends with a zero-sized subobject.
+
+Total over any layout, unlike the C++-side queries below: clang spells this one
+`CXXInfo && CXXInfo->EndsWithZeroSizedObject`, so a layout with no C++ information
+answers `false` rather than aborting.
+"""
+function endsWithZeroSizedObject(x::AbstractASTRecordLayout)
+    @check_ptrs x
+    return clang_ASTRecordLayout_endsWithZeroSizedObject(x)
+end
+
 # The queries below read the layout's C++ side table — call them only on a
 # layout obtained from a CXXRecordDecl (the C side asserts CXXInfo).
+"""
+    leadsWithZeroSizedBase(x::AbstractASTRecordLayout) -> Bool
+
+Whether the record begins with a zero-sized base class.
+
+PRECONDITION: `x` was obtained for a `CXXRecordDecl`. clang asserts `CXXInfo` here, where
+[`endsWithZeroSizedObject`](@ref) checks it — the two are adjacent in clang's header and
+differ in exactly that. `CXXInfo` is private with no predicate over it, so the condition is
+not observable from the layout and is restated rather than asserted.
+"""
+function leadsWithZeroSizedBase(x::AbstractASTRecordLayout)
+    @check_ptrs x
+    return clang_ASTRecordLayout_leadsWithZeroSizedBase(x)
+end
+
 function getNonVirtualSize(x::AbstractASTRecordLayout)
     @check_ptrs x
     return clang_ASTRecordLayout_getNonVirtualSize(x)

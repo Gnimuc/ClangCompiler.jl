@@ -129,3 +129,36 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "ASTRecordLayout | zero-sized object flags" begin
+    # Both flags are, in clang's own words, "Only used for MS-ABI" -- the Microsoft layout
+    # builder is the only thing that ever sets them. All three CI targets lay records out
+    # with the Itanium ABI (mingw included), so `false` is a real equality holding on every
+    # one of them rather than a shape assertion: a shim reading the neighbouring bit of the
+    # same bitfield, or another record's CXXInfo, fails it. The records below are exactly
+    # the shapes that WOULD set the flags under the MS ABI.
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             struct ZEmpty {};
+             struct ZLeadsWithEmptyBase : ZEmpty { int x; };
+             struct ZEndsWithEmptyMember { int x; ZEmpty e; };
+             struct ZNeither { int x; double y; };
+             """)
+    ctx = CC.get_ast_context(I)
+    f = DeclFinder(I)
+    layout(name) = (@test f(I, name); CC.getASTRecordLayout(ctx, CC.CXXRecordDecl(get_decl(f))))
+
+    for name in ("ZEmpty", "ZLeadsWithEmptyBase", "ZEndsWithEmptyMember", "ZNeither")
+        @test !CC.endsWithZeroSizedObject(layout(name))
+        @test !CC.leadsWithZeroSizedBase(layout(name))
+    end
+
+    # endsWithZeroSizedObject is TOTAL where its neighbour asserts -- clang spells it
+    # `CXXInfo && ...`, so it answers rather than aborting. Only this one can be exercised
+    # that way: calling the asserting sibling on a layout carrying no CXXInfo would take the
+    # process down rather than fail a test.
+    @test CC.endsWithZeroSizedObject(layout("ZNeither")) === false
+
+    dispose(f)
+    dispose(I)
+end

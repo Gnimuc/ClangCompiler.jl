@@ -2989,3 +2989,13 @@ void clang_ASTContext_setPrintingPolicy(CXASTContext Ctx, CXPrintingPolicy_ Poli
 CXRawCommentList clang_ASTContext_getComments(CXASTContext Ctx) {
   return reinterpret_cast<CXRawCommentList>(&reinterpret_cast<clang::ASTContext *>(Ctx)->Comments);
 }
+
+bool clang_ASTContext_isDependenceAllowed(CXASTContext Ctx) {
+  return reinterpret_cast<clang::ASTContext *>(Ctx)->isDependenceAllowed();
+}
+
+bool clang_ASTContext_hasSameTemplateName(CXASTContext Ctx, CXTemplateName X,
+                                          CXTemplateName Y) {
+  return reinterpret_cast<clang::ASTContext *>(Ctx)->hasSameTemplateName(
+      clang::TemplateName::getFromVoidPointer(X), clang::TemplateName::getFromVoidPointer(Y));
+}

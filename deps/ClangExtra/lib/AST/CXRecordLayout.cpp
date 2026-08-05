@@ -94,3 +94,11 @@ CXCXXRecordDecl clang_ASTRecordLayout_getPrimaryBase(CXASTRecordLayout RL) {
 bool clang_ASTRecordLayout_isPrimaryBaseVirtual(CXASTRecordLayout RL) {
   return reinterpret_cast<clang::ASTRecordLayout *>(RL)->isPrimaryBaseVirtual();
 }
+
+bool clang_ASTRecordLayout_endsWithZeroSizedObject(CXASTRecordLayout RL) {
+  return reinterpret_cast<clang::ASTRecordLayout *>(RL)->endsWithZeroSizedObject();
+}
+
+bool clang_ASTRecordLayout_leadsWithZeroSizedBase(CXASTRecordLayout RL) {
+  return reinterpret_cast<clang::ASTRecordLayout *>(RL)->leadsWithZeroSizedBase();
+}
