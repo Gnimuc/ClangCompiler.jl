@@ -18,6 +18,12 @@ typedef enum CXExceptionSpecificationType {
   CXExceptionSpecificationType_EST_Unparsed
 } CXExceptionSpecificationType;
 
+typedef enum CXCanThrowResult {
+  CXCanThrowResult_CT_Cannot,
+  CXCanThrowResult_CT_Dependent,
+  CXCanThrowResult_CT_Can
+} CXCanThrowResult;
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

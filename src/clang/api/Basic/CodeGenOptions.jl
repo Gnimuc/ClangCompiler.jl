@@ -20,9 +20,9 @@ end
 function getCommandLineArgs(x::CodeGenOptions)
     @check_ptrs x
     n = clang_CodeGenOptions_getCommandLineArgsNum(x)
-    files = Vector{Ptr{Cuchar}}(undef, n)
-    clang_CodeGenOptions_getCommandLineArgs(x, files, n)
-    return unsafe_string.(files)
+    args = Vector{Ptr{Cchar}}(undef, n)
+    clang_CodeGenOptions_getCommandLineArgs(x, args, n)
+    return [unsafe_string(p) for p in args]
 end
 
 function PrintStats(x::CodeGenOptions)

@@ -7,12 +7,12 @@ end
 
 end_diag(ci::CompilerInstance) = EndSourceFile(getDiagnosticClient(ci))
 
-get_codegen(ci::CompilerInstance) = CodeGenerator(getASTConsumer(ci).ptr)
-
-get_llvm_module(ci::CompilerInstance) = get_llvm_module(get_codegen(ci))
-
-get_builtin_clang_type(ci::CompilerInstance, ty) = getBuiltinClangType(getASTContext(ci), ty)
-
+# NOTE: there is deliberately no get_codegen(::CompilerInstance): the only
+# reachable instance is the interpreter's, whose consumer's dynamic class is
+# clang::IncrementalASTConsumer — wrapping it in a CodeGenerator carrier would
+# violate the faithful-carrier invariant (src/clang/CLAUDE.md). Use
+# getASTConsumer(ci) for the consumer, or getCodeGen(x::Interpreter) for the
+# interpreter's real CodeGenerator.
 get_ast_context(ci::CompilerInstance) = getASTContext(ci)
 
 # status

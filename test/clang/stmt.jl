@@ -18,13 +18,15 @@ using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
 import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, DeclIterator
 # Depth-first search for the first resolved child node whose carrier is `T`.
-function _find_node(::Type{T}, x) where {T}
-    x isa T && return x
-    for c in CC.children(x)
-        r = _find_node(T, CC.resolve(c))
-        r === nothing || return r
+if !@isdefined(_find_node)
+    function _find_node(::Type{T}, x) where {T}
+        x isa T && return x
+        for c in CC.children(x)
+            r = _find_node(T, CC.resolve(c))
+            r !== nothing && return r
+        end
+        return nothing
     end
-    return nothing
 end
 
 @testset "Stmt hierarchy table" begin
@@ -33,34 +35,49 @@ end
     # subtypes its parent's abstract, and every concrete class has a carrier
     # subtyping its abstract. Same source gen/stmt_nodes.jl reads, parsed here
     # separately so a generator mistake can't validate itself.
-    stmt_abstract_name(name) = startswith(String(name), "Abstract") ? Symbol(name) : Symbol("Abstract", name)
     stmt_carrier_name(name) = name === :Expr ? :Expr_ : Symbol(name)
     inc = joinpath(pkgdir(ClangCompiler), "deps", "ClangExtra", "include", "clang-ex", "AST", "StmtNodes.inc")
     abstract_re = r"^ABSTRACT_STMT\([A-Z][A-Z0-9_]*\((\w+),\s*(\w+)\)\)$"
     concrete_re = r"^([A-Z][A-Z0-9_]*)\((\w+),\s*(\w+)\)$"
-    nconcrete = 0
+    nodes = NamedTuple{(:name, :parent, :isabstract),Tuple{Symbol,Symbol,Bool}}[]
     for line in eachline(inc)
         line = strip(line)
         ma = match(abstract_re, line)
         mc = ma === nothing ? match(concrete_re, line) : nothing
         if ma !== nothing
-            name, parent, isabstract = Symbol(ma.captures[1]), Symbol(ma.captures[2]), true
+            push!(nodes, (name=Symbol(ma.captures[1]), parent=Symbol(ma.captures[2]), isabstract=true))
         elseif mc !== nothing
             mc.captures[1] in ("STMT_RANGE", "LAST_STMT_RANGE", "ABSTRACT_STMT") && continue
-            name, parent, isabstract = Symbol(mc.captures[2]), Symbol(mc.captures[3]), false
-        else
-            continue
+            push!(nodes, (name=Symbol(mc.captures[2]), parent=Symbol(mc.captures[3]), isabstract=false))
         end
-        A = getfield(ClangCompiler, stmt_abstract_name(name))
-        P = parent === :Stmt ? ClangCompiler.AbstractStmt : getfield(ClangCompiler, stmt_abstract_name(parent))
-        @test A <: P
-        if !startswith(String(name), "Abstract")
-            @test getfield(ClangCompiler, stmt_carrier_name(name)) <: A
-        end
-        isabstract || (nconcrete += 1)
     end
+    @test !isempty(nodes)
+
+    # A name cannot be both a carrier and an abstract type. Where `AbstractX` is itself a
+    # clang class the carrier keeps the plain name and the abstract takes a trailing
+    # underscore, so every class still has exactly one of each.
+    carriers = Set(stmt_carrier_name(n.name) for n in nodes)
+    stmt_abstract_name(name) = (a = Symbol("Abstract", name); a in carriers ? Symbol(a, "_") : a)
+    abstract_of(name) = name === :Stmt ? ClangCompiler.AbstractStmt :
+                        getfield(ClangCompiler, stmt_abstract_name(name))
+
+    for n in nodes
+        # every class -- abstract C++ bases included -- has a carrier subtyping its own
+        # abstract, and that abstract subtypes its parent's
+        @test getfield(ClangCompiler, stmt_carrier_name(n.name)) <: abstract_of(n.name)
+        @test abstract_of(n.name) <: abstract_of(n.parent)
+    end
+
+    # the one colliding pair, pinned by name so the sweep above cannot go vacuous on it
+    @test isconcretetype(ClangCompiler.AbstractConditionalOperator)
+    @test ClangCompiler.AbstractConditionalOperator <: ClangCompiler.AbstractAbstractConditionalOperator
+    @test ClangCompiler.ConditionalOperator <: ClangCompiler.AbstractConditionalOperator_
+    @test ClangCompiler.AbstractConditionalOperator_ <: ClangCompiler.AbstractAbstractConditionalOperator
+    # the two spellings are siblings, so a ConditionalOperator-only method cannot reach the other
+    @test !(ClangCompiler.BinaryConditionalOperator <: ClangCompiler.AbstractConditionalOperator_)
+
     # every concrete class has an enum value and a carrier in the resolve map
-    @test length(STMT_CLASS_TO_TYPE) == nconcrete
+    @test length(STMT_CLASS_TO_TYPE) == count(n -> !n.isabstract, nodes)
 end
 
 @testset "Stmt traversal & classification" begin
@@ -125,10 +142,17 @@ end
     decl_lookup = DeclFinder(I)
     @test decl_lookup(I, "Node")
     decl = get_decl(decl_lookup)
+    # A C++ class's declaration context opens with the implicit injected-class-name --
+    # the CXXRecord naming the class from inside itself -- and the fields follow it.
+    kinds = [getDeclKindName(d) for d in DeclIterator(decl)]
+    @test kinds[1] == "CXXRecord"
+    @test ClangCompiler.isImplicit(first(DeclIterator(decl)))
     for field in DeclIterator(decl)
+        ClangCompiler.isImplicit(field) && continue
         ClangCompiler.dump(field)
         @test getDeclKindName(field) == "Field"
     end
+    @test count(==("Field"), kinds) == 2
 
     @test decl_lookup(I, "Foo")
     decl = get_decl(decl_lookup)

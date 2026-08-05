@@ -39,6 +39,10 @@ void clang_Interpreter_dispose(CXInterpreter Interp);
 
 CXCompilerInstance clang_Interpreter_getCompilerInstance(CXInterpreter Interp);
 
+// The interpreter's ASTContext, borrowed. Equivalent to going through the compiler instance,
+// which is what clang's own body does.
+CXASTContext clang_Interpreter_getASTContext(CXInterpreter Interp);
+
 LLVMOrcLLJITRef clang_Interpreter_getExecutionEngine(CXInterpreter Interp);
 
 CXPartialTranslationUnit clang_Interpreter_Parse(CXInterpreter Interp, const char *Code);

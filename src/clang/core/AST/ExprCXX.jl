@@ -602,3 +602,14 @@ end
 
 Base.unsafe_convert(::Type{CXLambdaCapture}, x::LambdaCapture) = x.ptr
 Base.cconvert(::Type{CXLambdaCapture}, x::LambdaCapture) = x
+
+"""
+    struct CXXTemporary <: AbstractCXXTemporary
+Hold a pointer to a `clang::CXXTemporary` object.
+"""
+struct CXXTemporary <: AbstractCXXTemporary
+    ptr::CXCXXTemporary
+end
+
+Base.unsafe_convert(::Type{CXCXXTemporary}, x::CXXTemporary) = x.ptr
+Base.cconvert(::Type{CXCXXTemporary}, x::CXXTemporary) = x

@@ -733,10 +733,16 @@ Supertype for `AddrLabelExpr`s.
 abstract type AbstractAddrLabelExpr <: AbstractExpr end
 
 """
-    abstract type AbstractBinaryConditionalOperator <: AbstractConditionalOperator
+    abstract type AbstractConditionalOperator_ <: AbstractAbstractConditionalOperator
+Supertype for `ConditionalOperator`s.
+"""
+abstract type AbstractConditionalOperator_ <: AbstractAbstractConditionalOperator end
+
+"""
+    abstract type AbstractBinaryConditionalOperator <: AbstractAbstractConditionalOperator
 Supertype for `BinaryConditionalOperator`s.
 """
-abstract type AbstractBinaryConditionalOperator <: AbstractConditionalOperator end
+abstract type AbstractBinaryConditionalOperator <: AbstractAbstractConditionalOperator end
 
 """
     abstract type AbstractAttributedStmt <: AbstractValueStmt

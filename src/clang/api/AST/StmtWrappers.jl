@@ -1,6 +1,7 @@
 # Generated from deps/ClangExtra/include/clang-ex/AST/StmtNodes.inc by gen/stmt_nodes.jl — do not edit.
-# Per-node downcast: `is<Name>` predicate for every class (abstract bases
-# included) and `<carrier>` constructor-shaped cast for concrete classes.
+# Per-node downcast: `is<Name>` predicate and `<carrier>` constructor-shaped
+# cast for every class, abstract bases included — the C shim stamps both from
+# the same table, and clang's own `classof` makes the dyn_cast sound.
 function isWhileStmt(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isWhileStmt(x)
@@ -1324,6 +1325,11 @@ end
 function isAbstractConditionalOperator(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isAbstractConditionalOperator(x)
+end
+
+function AbstractConditionalOperator(x::AbstractStmt)
+    @check_ptrs x
+    return AbstractConditionalOperator(clang_Stmt_castToAbstractConditionalOperator(x))
 end
 
 function isConditionalOperator(x::AbstractStmt)

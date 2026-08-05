@@ -26,3 +26,25 @@ end
 
 Base.unsafe_convert(::Type{CXDeclarationNameInfo}, x::DeclarationNameInfo) = x.ptr
 Base.cconvert(::Type{CXDeclarationNameInfo}, x::DeclarationNameInfo) = x
+
+
+# DeclarationNameTable
+"""
+    abstract type AbstractDeclarationNameTable <: Any
+Supertype for `DeclarationNameTable`s.
+"""
+abstract type AbstractDeclarationNameTable end
+
+"""
+    struct DeclarationNameTable <: AbstractDeclarationNameTable
+Hold a pointer to a `clang::DeclarationNameTable` object.
+
+The table is the `DeclarationNames` member of an `ASTContext`, so it is borrowed:
+it is neither created nor disposed here, and it lives as long as its context.
+"""
+struct DeclarationNameTable <: AbstractDeclarationNameTable
+    ptr::CXDeclarationNameTable
+end
+
+Base.unsafe_convert(::Type{CXDeclarationNameTable}, x::DeclarationNameTable) = x.ptr
+Base.cconvert(::Type{CXDeclarationNameTable}, x::DeclarationNameTable) = x

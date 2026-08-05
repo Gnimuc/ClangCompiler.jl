@@ -2,12 +2,232 @@
 #define LLVM_CLANG_C_EXTRA_CXHEADERSEARCH_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
+#include "clang-ex/Basic/CXSourceManager.h" // CXCharacteristicKind
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+CXHeaderSearchOptions clang_HeaderSearch_getHeaderSearchOpts(CXHeaderSearch HS);
+
+CXFileManager clang_HeaderSearch_getFileMgr(CXHeaderSearch HS);
+
+CXDiagnosticsEngine clang_HeaderSearch_getDiags(CXHeaderSearch HS);
+
+bool clang_HeaderSearch_HasIncludeAliasMap(CXHeaderSearch HS);
+
+// Source must carry its angle brackets or quotes, Dest must not. Creates the
+// alias map on first use.
+void clang_HeaderSearch_AddIncludeAlias(CXHeaderSearch HS, const char *Source,
+                                        const char *Dest);
+
+// PRECONDITION: clang_HeaderSearch_HasIncludeAliasMap(HS) — the Clang method only
+// asserts the map exists and then dereferences it, so calling this without an alias
+// map is a null dereference in a release build. Returns the empty string when
+// Source has no alias.
+CXString clang_HeaderSearch_MapHeaderToIncludeAlias(CXHeaderSearch HS, const char *Source);
+
+void clang_HeaderSearch_setModuleHash(CXHeaderSearch HS, const char *Hash);
+
+void clang_HeaderSearch_setModuleCachePath(CXHeaderSearch HS, const char *CachePath);
+
+CXString clang_HeaderSearch_getModuleHash(CXHeaderSearch HS);
+
+CXString clang_HeaderSearch_getModuleCachePath(CXHeaderSearch HS);
+
+void clang_HeaderSearch_setDirectoryHasModuleMap(CXHeaderSearch HS, CXDirectoryEntry Dir);
+
+// Inserts Dir at the boundary between the quoted/angled and the system search paths -- before
+// the first system directory when isAngled is true, before the first angled one otherwise --
+// so every SearchDirs index at or after that point shifts by one. The search's
+// LookupFileCache, SearchDirHeaderMapIndex and SearchDirToHSEntry keep the old indices, and
+// all three are private, so nothing on this side can observe or repair the staleness: add
+// search paths before any #include has been resolved through this search. Dir is COPIED.
+void clang_HeaderSearch_AddSearchPath(CXHeaderSearch HS, CXDirectoryLookup Dir,
+                                      bool isAngled);
+
+// Appends Dir after every existing search path and does not move SystemDirIdx, so the entry
+// lands inside [SystemDirIdx, size) and is searched last, as a system directory. A pure
+// push_back: no existing index moves, so AddSearchPath's staleness caveat does not apply.
+// Dir is COPIED.
+void clang_HeaderSearch_AddSystemSearchPath(CXHeaderSearch HS, CXDirectoryLookup Dir);
+
+// Opens File as an Apple header map and registers it with the search, returning NULL when it
+// is not a valid one. The result is BORROWED -- the map is owned by the search's HeaderMaps
+// vector, which uniques by file, so a second call for the same file returns the same pointer.
+// MARSHALLING.md §14 does not apply: reallocating that vector moves the pairs, not the
+// heap-allocated HeaderMap behind each unique_ptr.
+CXHeaderMap clang_HeaderSearch_CreateHeaderMap(CXHeaderSearch HS, CXFileEntryRef FE);
+
+// The path the module cache would use for the module named ModuleName declared in
+// ModuleMapPath. Empty when the module cache path is empty, and empty when ModuleMapPath's
+// parent directory cannot be resolved. A relative cache path is made absolute against the
+// process's working directory. This name claims the verbatim spelling for the
+// (StringRef, StringRef) overload; the Module * overload needs a disambiguated symbol.
+CXString clang_HeaderSearch_getCachedModuleFileName(CXHeaderSearch HS,
+                                                    const char *ModuleName,
+                                                    const char *ModuleMapPath);
+
+// The multiple-include optimization decision for File: whether the preprocessor should enter
+// it. *IsFirstIncludeOfFile, when non-null, receives whether this is the first time PP has
+// seen the file. M may be NULL and must be when modules are off -- the module-macro test is
+// guarded by a null check on it. isImport records the #import bit on the file's record.
+// PRECONDITION 1: HS must be PP's own header search (clang_Preprocessor_getHeaderSearchInfo)
+//   -- the isImport path reaches back through PP to *its* HeaderSearch, so a mismatched pair
+//   writes the import bit onto a different search's record.
+// PRECONDITION 2: the file's controlling macro identifier must not be out of date unless an
+//   external lookup source is installed -- the controlling-macro path calls
+//   ExternalLookup->updateOutOfDateIdentifier through the vtable with no null check, and the
+//   clang assert that would have caught it is compiled out of the release artifact.
+// PRECONDITION 3: ModulesEnabled must match the invocation's -fmodules state
+//   (clang_LangOptions_getModules).
+bool clang_HeaderSearch_ShouldEnterIncludeFile(CXHeaderSearch HS, CXPreprocessor PP,
+                                               CXFileEntryRef File, bool isImport,
+                                               bool ModulesEnabled, CXModule M,
+                                               bool *IsFirstIncludeOfFile);
+
+// Drops every HeaderFileInfo recorded so far, including the #pragma once / controlling
+// macro state a still-running preprocessor relies on.
+void clang_HeaderSearch_ClearFileInfo(CXHeaderSearch HS);
+
+// EPS is borrowed, not adopted; NULL detaches the current source.
+void clang_HeaderSearch_SetExternalLookup(CXHeaderSearch HS,
+                                          CXExternalPreprocessorSource EPS);
+
+CXExternalPreprocessorSource clang_HeaderSearch_getExternalLookup(CXHeaderSearch HS);
+
+// PRECONDITION: the module map owned by HS either has no target yet or already holds
+// exactly this TargetInfo object — clang::ModuleMap::setTarget asserts that a target is
+// never replaced by a different one, and nothing in this API can observe the stored one.
+void clang_HeaderSearch_setTarget(CXHeaderSearch HS, CXTargetInfo_ Target);
+
+// Goes through HeaderSearch::getFileInfo, so it creates the HeaderFileInfo record for
+// File when there is none yet.
+CXCharacteristicKind clang_HeaderSearch_getFileDirFlavor(CXHeaderSearch HS,
+                                                         CXFileEntryRef File);
+
+void clang_HeaderSearch_MarkFileIncludeOnce(CXHeaderSearch HS, CXFileEntryRef File);
+
+void clang_HeaderSearch_MarkFileSystemHeader(CXHeaderSearch HS, CXFileEntryRef File);
+
+void clang_HeaderSearch_SetFileControllingMacro(CXHeaderSearch HS, CXFileEntryRef File,
+                                                CXIdentifierInfo ControllingMacro);
+
+bool clang_HeaderSearch_isFileMultipleIncludeGuarded(CXHeaderSearch HS,
+                                                     CXFileEntryRef File);
+
+bool clang_HeaderSearch_hasFileBeenImported(CXHeaderSearch HS, CXFileEntryRef File);
+
+// helper: number of flags `HeaderSearch::computeUserEntryUsage` produces, i.e. the number
+// of HeaderSearchOptions user entries.
+unsigned clang_HeaderSearch_getNumUserEntryUsage(CXHeaderSearch HS);
+
+// Fills Out with one flag per HeaderSearchOptions user entry, true when a lookup has used
+// that entry so far. Out must hold clang_HeaderSearch_getNumUserEntryUsage(HS) elements;
+// the count is exact and every slot is written.
+void clang_HeaderSearch_computeUserEntryUsage(CXHeaderSearch HS, bool *Out);
+
+CXString clang_HeaderSearch_getPrebuiltModuleFileName(CXHeaderSearch HS,
+                                                      const char *ModuleName,
+                                                      bool FileMapOnly);
+
+// The upward walk from Filename's directory stops at Root. Always false when implicit
+// module maps are disabled.
+bool clang_HeaderSearch_hasModuleMap(CXHeaderSearch HS, const char *Filename,
+                                     CXDirectoryEntry Root, bool IsSystem);
+
+// helper: number of names `HeaderSearch::getHeaderMapFileNames` produces.
+unsigned clang_HeaderSearch_getNumHeaderMapFileNames(CXHeaderSearch HS);
+
+// helper: Idx-th name from `HeaderSearch::getHeaderMapFileNames`.
+// PRECONDITION: Idx < clang_HeaderSearch_getNumHeaderMapFileNames(HS) — the shim
+// indexes the vector unchecked.
+CXString clang_HeaderSearch_getHeaderMapFileName(CXHeaderSearch HS, unsigned Idx);
+
+unsigned clang_HeaderSearch_header_file_size(CXHeaderSearch HS);
+
+unsigned clang_HeaderSearch_search_dir_size(CXHeaderSearch HS);
+
+// helper: name of the Idx-th search directory, i.e. `(*HS->search_dir_nth(Idx)).getName()`.
+// PRECONDITION: Idx < clang_HeaderSearch_search_dir_size(HS) — `search_dir_nth`
+// only asserts this, so an out-of-range index is UB in a release build.
+CXString clang_HeaderSearch_getSearchDirName(CXHeaderSearch HS, unsigned Idx);
+
+// Uniques Framework into the search's framework-name set and returns the uniqued
+// spelling; idempotent.
+CXString clang_HeaderSearch_getUniqueFrameworkName(CXHeaderSearch HS,
+                                                   const char *Framework);
+
+// Empty when the search never recorded an include spelling for File.
+CXString clang_HeaderSearch_getIncludeNameForHeader(CXHeaderSearch HS, CXFileEntry File);
+
+// IsAngled, when non-NULL, is filled in with whether the suggestion should be spelled
+// <Header.h> rather than "Header.h".
+CXString clang_HeaderSearch_suggestPathToFileForDiagnostics(CXHeaderSearch HS,
+                                                            CXFileEntryRef File,
+                                                            const char *MainFile,
+                                                            bool *IsAngled);
+
+// LookupFile / LookupSubframeworkHeader are not wrapped: they need out-parameters
+// (SmallVectorImpl<char>*, ModuleMap::KnownHeader*, ConstSearchDirIterator*) that
+// have no marshalling scheme yet.
+
 void clang_HeaderSearch_PrintStats(CXHeaderSearch HS);
+
+size_t clang_HeaderSearch_getTotalMemory(CXHeaderSearch HS);
+
+// HeaderFileInfo
+//
+// Field exposure for the aggregate clang_HeaderSearch_copyFileInfo and
+// clang_HeaderSearch_copyExistingFileInfo hand back. Every CXHeaderFileInfo is an owned
+// copy the caller releases with clang_HeaderFileInfo_dispose.
+
+bool clang_HeaderFileInfo_getIsImport(CXHeaderFileInfo HFI);
+
+bool clang_HeaderFileInfo_getIsPragmaOnce(CXHeaderFileInfo HFI);
+
+CXCharacteristicKind clang_HeaderFileInfo_getDirInfo(CXHeaderFileInfo HFI);
+
+bool clang_HeaderFileInfo_getIsModuleHeader(CXHeaderFileInfo HFI);
+
+bool clang_HeaderFileInfo_getIsValid(CXHeaderFileInfo HFI);
+
+// helper: the ControllingMacro member exactly as stored, with no external-source
+// resolution. HeaderFileInfo::getControllingMacro itself is not wrapped: it asserts that
+// an ExternalPreprocessorSource was supplied whenever the stored identifier is out of
+// date, and no entry point in this API can produce one.
+CXIdentifierInfo clang_HeaderFileInfo_getControllingMacroRaw(CXHeaderFileInfo HFI);
+
+CXString clang_HeaderFileInfo_getFramework(CXHeaderFileInfo HFI);
+
+// --- Owned snapshots of a HeaderFileInfo record ---------------------------------------
+//
+// clang::HeaderSearch::getFileInfo returns a reference into the search's private
+// `std::vector<HeaderFileInfo>`, and getExistingFileInfo a pointer into it. A later
+// getFileInfo for a different header reallocates that vector and ClearFileInfo empties it,
+// after which the earlier pointer dangles -- and because the vector is private, nothing on
+// this side of the boundary can observe that it moved, so the borrow cannot be checked.
+// Only the copying forms below are exposed; the borrowing ones are deliberately absent.
+//
+// The copy is a snapshot: later changes clang makes to the real record are not reflected.
+// Its pointer members stay valid regardless, because the reallocation moves the structs and
+// not what they point at -- ControllingMacro belongs to the identifier table and Framework
+// to the search's own string allocator, both of which outlive the vector.
+
+// The record for File, creating an empty one when the header has never been looked up (the
+// same side effect the borrowing form has). Release with clang_HeaderFileInfo_dispose.
+CXHeaderFileInfo clang_HeaderSearch_copyFileInfo(CXHeaderSearch HS, CXFileEntryRef FE);
+
+// The record for File if one has ever been filled in, or NULL when none has. Release a
+// non-NULL result with clang_HeaderFileInfo_dispose.
+CXHeaderFileInfo clang_HeaderSearch_copyExistingFileInfo(CXHeaderSearch HS,
+                                                         CXFileEntryRef FE,
+                                                         bool WantExternal);
+
+// Release a record obtained from either copy function. This is a plain delete, so it must
+// only ever see a pointer one of those two returned.
+void clang_HeaderFileInfo_dispose(CXHeaderFileInfo HFI);
 
 LLVM_CLANG_C_EXTERN_C_END
 

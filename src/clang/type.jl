@@ -204,8 +204,7 @@ is_sugared(x::TemplateSpecializationType) = isSugared(x)
 get_name(x::TemplateSpecializationType) = getName(x)
 
 function get_template_args(x::TemplateSpecializationType)
-    arr = getTemplateArguments(x)
-    return [TemplateArgument(Ptr{CXTemplateArgument}(arr.Data) + i) for i in 0:arr.Length-1]
+    return [getArg(x, i) for i in 0:(getNumArgs(x) - 1)]
 end
 
 # ElaboratedType
@@ -256,3 +255,18 @@ is_deduced_type(x::AbstractDeducedType) = true
 
 is_deduced_template_specialization_type(x::AbstractType) = isa_DeducedTemplateSpecializationType(x)
 is_deduced_template_specialization_type(x::DeducedTemplateSpecializationType) = true
+
+
+"""
+    get_definition_if_incomplete(x::AbstractType) -> Union{Nothing,NamedDecl}
+Return the declaration that would complete `x` when `x` is an incomplete type that refers
+to a completable declaration (C struct, C++ class, enum), and `nothing` otherwise.
+Wraps the optional `NamedDecl **` out-parameter of `Type::isIncompleteType`.
+"""
+function get_definition_if_incomplete(x::AbstractType)
+    @check_ptrs x
+    ref = Ref{CXNamedDecl}(C_NULL)
+    isIncompleteType(x, ref) || return nothing
+    ref[] == C_NULL && return nothing
+    return NamedDecl(ref[])
+end

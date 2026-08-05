@@ -28,3 +28,26 @@ using Test
     dispose(f)
     dispose(I)
 end
+
+@testset "undo" begin
+    I = create_interpreter(String[])
+    f = DeclFinder(I)
+    CC.parse(I, "int cii_gone = 2;")
+    @test f(I, "cii_gone")
+    # retract the most recent partial translation unit
+    @test CC.undo(I.interp) === nothing
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Interpreter | direct ASTContext accessor" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "int interp_ctx_probe = 1;")
+    # the context reached directly is the same object the compiler instance holds
+    direct = CC.getASTContext(I.interp)
+    viaci = CC.getASTContext(CC.getCompilerInstance(I.interp))
+    @test direct.ptr == viaci.ptr
+    # and it is the one the package's own helper returns
+    @test direct.ptr == CC.get_ast_context(I).ptr
+    dispose(I)
+end

@@ -16,12 +16,13 @@ Create a C/C++ interpreter.
 - `is_cxx::Bool`: Whether to use the C++ compiler build environment.
 - `version::String`: The compiler version.
 """
-function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER)
+function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER,
+                            triple=nothing)
     LLVM.InitializeNativeTarget()
     LLVM.InitializeAllTargetInfos()
     LLVM.InitializeAllTargetMCs()
     LLVM.InitializeNativeAsmPrinter()
-    default_args = get_default_args(; is_cxx, version)
+    default_args = get_default_args(; is_cxx, version, triple)
     builder = IncrementalCompilerBuilder()
     SetCompilerArgs(builder, [default_args..., args...])
     ci = CreateCpp(builder)

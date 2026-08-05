@@ -37,3 +37,13 @@ function isNamedPipe(x::FileEntry)::Bool
     @check_ptrs x
     return clang_FileEntry_isNamedPipe(x)
 end
+
+"""
+    getSize(x::AbstractFileEntry) -> Int64
+Return the file's size in bytes, as the file manager recorded it — for a virtual file, the size
+it was registered with rather than anything read from disk.
+"""
+function getSize(x::AbstractFileEntry)
+    @check_ptrs x
+    return clang_FileEntry_getSize(x)
+end

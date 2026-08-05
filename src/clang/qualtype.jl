@@ -1,4 +1,10 @@
 # QualType
+
+# A QualType's opaque value is a PointerIntPair of the type pointer and the fast
+# qualifiers, so it is non-zero whenever a qualifier is set even if no type is there.
+# `@check_ptrs` must therefore ask clang, not compare against C_NULL.
+is_null_handle(x::QualType) = isNull(x)
+
 """
     get_qual_type(x::AbstractType) -> QualType
 Return a `QualType`.

@@ -1,0 +1,28 @@
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # GitHub Copilot cloud agent recognizes this exact job name.
+  copilot-setup-steps:
+    runs-on: windows-latest
+    timeout-minutes: 59
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+          arch: x64
+      - name: Instantiate Julia environment
+        run: julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+      - name: Install focused-test tooling
+        run: julia -e 'using Pkg; Pkg.add(["TestEnv", "JuliaFormatter"])'

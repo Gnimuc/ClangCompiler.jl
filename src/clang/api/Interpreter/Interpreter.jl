@@ -67,9 +67,9 @@ function getExecutionEngine(x::AbstractInterpreter)
     return LLVM.LLJIT(clang_Interpreter_getExecutionEngine(x))
 end
 
-function undo(x::AbstractInterpreter)
+function undo(x::AbstractInterpreter, n::Integer=1)
     @check_ptrs x
-    return clang_Interpreter_Undo(x)
+    return clang_Interpreter_Undo(x, n)
 end
 
 function getSymbolAddress(x::AbstractInterpreter, name::AbstractString)
@@ -122,4 +122,17 @@ end
 function LoadDynamicLibrary(x::AbstractInterpreter, name::AbstractString)
     @check_ptrs x
     return clang_Interpreter_LoadDynamicLibrary(x, name)
+end
+
+"""
+    getASTContext(x::AbstractInterpreter) -> ASTContext
+Return the interpreter's `ASTContext`, borrowed — never `dispose` it through this carrier.
+
+This is the same context [`getASTContext`](@ref) reaches through the compiler instance, which
+is what clang's own body does; it is here so the context can be had without naming the
+instance.
+"""
+function getASTContext(x::AbstractInterpreter)
+    @check_ptrs x
+    return ASTContext(clang_Interpreter_getASTContext(x))
 end

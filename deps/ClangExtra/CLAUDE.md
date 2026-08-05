@@ -4,7 +4,10 @@ Guidance for working on the hand-written C API shim over Clang's C++ API. The re
 CLAUDE.md covers the overall package; this file covers the C/C++ wrapper conventions.
 Everything compiles into one shared target `clangex` (C++17, `-fPIC -fno-rtti`, links the
 monolithic `LLVM` + `clang-cpp` shared libs). Format C++ with clang-format (LLVM style,
-ColumnLimit 92 — narrower than the Julia code's 120).
+ColumnLimit 92 — narrower than the Julia code's 120), but always pass
+`--sort-includes=false`: reordering the includes in a CX header changes the order the
+binding generator walks declarations, and one moved `#include` rewrites ~8,000 lines of
+`lib/18/LibClangEx.jl` for no semantic gain.
 
 ## The governing axiom
 
@@ -36,6 +39,41 @@ Corollary for writing C here: never add defensive code to protect a hypothetical
 caller — there isn't one. Keep the shim dumb and total; the type-checking intelligence lives
 in Julia.
 
+Corollary for *choosing* what to wrap: read the method in the pinned artifact header before
+adding a shim for it. Two things are only visible there — access (`setParams` looks like
+ordinary API but is private in clang 18, and the shim will not compile) and partiality
+(methods reaching a subobject via `castAs<>`, `->getDecl()`, or `*optional` are UB on the
+wrong input). Wrap the partial ones anyway, but say so in a header comment so the Julia
+wrapper can restate the precondition as an `@assert`; that is Invariant 3 in
+`../../src/clang/CLAUDE.md`. Never write a signature from memory — the compiler catches
+arity drift, but nothing catches a precondition you did not notice.
+
+A third thing the header does not tell you: whether the symbol is actually **exported** from
+the monolithic `clang-cpp` this library links against. A method declared in an installed
+header can still be defined in a translation unit whose symbol does not reach the shared
+lib — `clang::CFGImplicitDtor::isNoReturn` is one. Such a wrapper compiles cleanly and fails
+only at link time, after the whole tree has built. When a link error names a `clang::`
+symbol, the fix is to drop that wrapper (leave a placeholder comment in header and .cpp
+saying it is not exported), not to hunt for a missing library.
+
+A fourth: a `virtual` whose in-class body is `llvm_unreachable` may have **no override at
+all** in this LLVM version, which makes every call to it abort the process (SIGILL,
+`Unreachable reached at 0x...`). `TargetInfo::getCPUSpecificTuneName` is one — X86 overrides
+its two siblings `validateCPUSpecificCPUDispatch` and `CPUSpecificManglingCharacter` but not
+it, so the sibling gate looks like a valid precondition and is not. Settle it against the
+shipped library, not the header:
+
+```bash
+nm -gU -C <artifact>/lib/libclang-cpp.dylib | grep '::<method>('
+```
+
+Use `-gU` (external, defined): a symbol can be PRESENT but file-local, which links nowhere.
+`Sema::CheckBitwiseOperands` and `CheckLogicalOperands` are `t` while their sibling
+`CheckAdditionOperands` is `T`, so a plain `nm -C` finds all three and only one of them is
+linkable. No external symbol back means the method is dead — drop the wrapper with a
+placeholder comment. When overrides do exist, the gate must be the flag that selects those targets
+(`hasIbm128Type` for `getIbm128Mangling`, which only PPC implements), asserted in Julia.
+
 ## The rule that prevents disasters
 
 **Header and .cpp must change in lockstep.** The Julia bindings are generated from the
@@ -48,10 +86,14 @@ Corollaries:
 - A .cpp missing from its `CMakeLists.txt` compiles into nothing — the symbol is missing
   only when Julia first calls it (the shared lib has no link-time consumer of its own
   symbols).
-- Renaming any existing symbol (including frozen typos like `clang_DeclGroupRef_fromeDecl`
-  and `clang_ASTContext_getCFContantStringDecl`, and the lowercase outliers
-  `clang_value_*` / `clang_sema_getTypeName`) is an ABI break: regenerated bindings, Julia
-  callers, and a libclangex_jll release are all implicated. Don't fix spellings in passing.
+- Renaming any existing symbol is an ABI change: the regenerated bindings, the Julia callers
+  and the shipped binary all have to move together, so a rename is only correct as a
+  deliberate, self-contained commit — never as a drive-by inside a change about something
+  else, which silently widens what that change requires to ship.
+
+  *Which* names may be renamed follows from Naming below: the segments copied from Clang track
+  Clang, oddities included, so "correcting" one desynchronises the shim from the header it
+  wraps. Only the invented spellings are ours, and a defect in one of those is ours to fix.
 
 ## Layout and registration
 
@@ -63,6 +105,11 @@ Corollaries:
   and .cpp (most files keep both sides in sync; a few are header-only); rejected
   experiments stay as commented-out code. Preserve this discipline — it makes diffing
   against upstream after LLVM bumps possible.
+- A bare `// methodName` line means exactly one thing: **that method is not wrapped**. Never
+  write one directly above the wrapper it names — the declaration already says the name, and
+  a marker that sometimes means "absent" and sometimes means "here it is" cannot be read or
+  counted. A `// ClassName` line heading a block of that class's wrappers is the one other
+  use, and it names a class rather than a method.
 - ALL opaque handles are `typedef void *CX<ClangClassName>;` in the central
   `include/clang-ex/CXTypes.h`, grouped under `// <Library>` / `// <ClangHeader>` comments
   in upstream declaration order. Don't typedef handles in per-class headers (one legacy
@@ -71,9 +118,10 @@ Corollaries:
   already duplicated inside CXTypes.h itself). A typedef existing does not mean wrapper
   functions exist.
 - On a name collision with libclang, the **type** gets a trailing underscore — currently
-  exactly five: `CXType_`, `CXSourceLocation_`, `CXSourceRange_`, `CXTargetInfo_`,
-  `CXToken_`. Function names never get the underscore. Using the un-underscored name in a
-  new signature silently binds to libclang's unrelated type in the generated bindings.
+  exactly six: `CXType_`, `CXSourceLocation_`, `CXSourceRange_`, `CXTargetInfo_`,
+  `CXToken_`, `CXDiagnostic_`. Function names never get the underscore. Using the
+  un-underscored name in a new signature silently binds to libclang's unrelated type in
+  the generated bindings.
 - Header skeleton: guard `LLVM_CLANG_C_EXTRA_<NAME>_H` (watch for copy-paste guard
   collisions — a colliding guard silently drops the header from the generated bindings); include
   `clang-ex/CXTypes.h`, `clang-c/ExternC.h`, `clang-c/Platform.h` (+ `clang-c/CXString.h`
@@ -171,12 +219,28 @@ regenerate with the bindings.
 - Every mirrored enum MUST have an ENUM_SYNC table in lib/Basic/CXEnumSync.cpp
   covering every enumerator — a partial mirror silently ships missing enumerators
   and wrong numbering.
+- CXEnumSync.cpp ends with a single `#undef ENUM_SYNC`; new tables go **before**
+  it (appending past it expands `ENUM_SYNC` as an undeclared identifier), and the
+  file needs both the new `clang-ex/...` header and the clang header that defines
+  the enum — it includes each explicitly rather than relying on transitivity.
+- Alias enumerators (`First*`/`Last*`/`*_BEGIN`/`NumKinds`) are deliberately
+  omitted from mirrors: they duplicate values, which Julia's `@enum` rejects.
+  Omitting them does not shift numbering, since they are `=` assignments.
 - Mirror as `typedef enum CX<ClangEnumName> { CX<ClangEnumName>_<EnumeratorVerbatim>, ... }`
   in the subsystem header matching the Clang header the enum lives in (shared clang/Basic
   enums → `include/clang-ex/Basic/*.h`; class-local enums inline in the class's CX header).
   CXTypes.h's lone `CXTranslationUnitKind` is a legacy exception, not the pattern.
+  Place a class-local enum **before the first accessor that returns it** — C requires the
+  enum defined ahead of its use, and a later batch adding `getFoo() -> CXFooKind` will not
+  compile if the enum sits further down the header. `-fsyntax-only` catches this; the design
+  agent cannot, since it only sees its own additions, not where a prior batch put the enum.
 - Copy Clang's explicit underlying type when it has one (`: unsigned char` → Julia
-  `@enum ...::UInt8`); the default maps to UInt32.
+  `@enum ...::UInt8`); the default maps to UInt32. The one type NOT to copy is
+  `signed char`/`int8_t` (`llvm::RoundingMode`): the binding generator dies on it with
+  "Unknown EnumConstantDecl type: CXType_SChar" — Clang.jl reads `CXType_Char_S` but not
+  `CXType_SChar`. Mirror those with no explicit underlying type and say why in a comment;
+  the value crosses by value through a `static_cast`, never by pointer and never inside a
+  struct, so the widths need not agree.
 - Conversion is a blind `static_cast` in both directions — **order and values must match
   the pinned LLVM version's header exactly**, verified against the actual artifact header
   (`~/.julia/artifacts/<LLVM_full_jll>/include/clang/...`), not memory. A mirror that lags
@@ -278,8 +342,8 @@ are never installed.
    deterministic symbol mode keeps the lib diff minimal. The `bindings` CI job reruns the
    generator and fails on any diff under `lib/`, and the test suite enforces the rest:
    test/abi.jl (every binding's symbol resolves), test/lint.jl (layout/guards/CMake
-   parity/collision names), test/coverage.jl (every binding wrapped, stamped, or
-   skiplisted — and the skiplist only shrinks).
+   parity/collision names, every binding wrapped or stamped, and every
+   `clang_*` reference in src/ resolving to a binding).
 4. Note: any commit touching deps/ClangExtra makes every CI job compile libclangex from
    source (build_ci.jl timestamp check), and a ClangCompiler.jl release then requires a
    libclangex_jll rebuild on Yggdrasil + a compat bump in the top-level Project.toml —

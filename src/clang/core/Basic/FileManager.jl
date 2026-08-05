@@ -30,3 +30,17 @@ end
 
 Base.unsafe_convert(::Type{CXFileEntryRef}, x::FileEntryRef) = x.ptr
 Base.cconvert(::Type{CXFileEntryRef}, x::FileEntryRef) = x
+
+"""
+    struct DirectoryEntryRef <: AbstractDirectoryEntryRef
+Hold a pointer to an owned `clang::DirectoryEntryRef` value.
+
+The value is a heap-boxed copy of a by-value C++ object, so it is caller-owned: release it
+with `dispose`.
+"""
+struct DirectoryEntryRef <: AbstractDirectoryEntryRef
+    ptr::CXDirectoryEntryRef
+end
+
+Base.unsafe_convert(::Type{CXDirectoryEntryRef}, x::DirectoryEntryRef) = x.ptr
+Base.cconvert(::Type{CXDirectoryEntryRef}, x::DirectoryEntryRef) = x

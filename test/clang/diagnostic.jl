@@ -2,6 +2,7 @@ using ClangCompiler
 using Test
 
 const CC = ClangCompiler
+using ClangCompiler: dispose
 
 @testset "Diagnostic" begin
     @testset "Engine" begin

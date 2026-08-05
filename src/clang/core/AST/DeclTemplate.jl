@@ -253,3 +253,18 @@ end
 
 Base.unsafe_convert(::Type{CXTemplateParamObjectDecl}, x::TemplateParamObjectDecl) = x.ptr
 Base.cconvert(::Type{CXTemplateParamObjectDecl}, x::TemplateParamObjectDecl) = x
+
+
+"""
+    struct ImplicitConceptSpecializationDecl <: AbstractImplicitConceptSpecializationDecl
+Hold a pointer to a `clang::ImplicitConceptSpecializationDecl` object.
+"""
+struct ImplicitConceptSpecializationDecl <: AbstractImplicitConceptSpecializationDecl
+    ptr::CXImplicitConceptSpecializationDecl
+end
+
+function Base.unsafe_convert(::Type{CXImplicitConceptSpecializationDecl},
+                             x::ImplicitConceptSpecializationDecl)
+    return x.ptr
+end
+Base.cconvert(::Type{CXImplicitConceptSpecializationDecl}, x::ImplicitConceptSpecializationDecl) = x

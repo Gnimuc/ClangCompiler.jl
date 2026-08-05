@@ -41,10 +41,25 @@ function parse_stmt_nodes(inc_path)
     return nodes
 end
 
-# clang class `X` -> `AbstractX`, except classes clang itself names `Abstract*`.
-stmt_abstract_name(name) = startswith(String(name), "Abstract") ? String(name) : "Abstract" * String(name)
 # `Expr` is carried by `Expr_` (Base.Expr clash); every other class keeps its name.
 stmt_carrier_name(name) = name === :Expr ? "Expr_" : String(name)
+
+# clang class `X` -> `AbstractX` + carrier `X`, with no exception for classes clang itself
+# names `Abstract*`: `AbstractConditionalOperator` is a real class with its own state and its
+# own `classof`, so it carries like any other.
+#
+# One name cannot be both, and `AbstractX` collides whenever clang also has a class named
+# `AbstractX` — `ConditionalOperator` vs `AbstractConditionalOperator` is the only such pair
+# here. The carrier keeps the plain name because it mirrors clang's, so the abstract takes a
+# trailing underscore: the same tiebreak `Expr_` uses against `Base.Expr`.
+function stmt_abstract_name(name, carriers)
+    a = "Abstract" * String(name)
+    return a in carriers ? a * "_" : a
+end
+
+"The abstract type a class's carrier subtypes, and that its children hang off."
+stmt_abstract_of(name, carriers) = name === :Stmt ? "AbstractStmt" :
+                                   stmt_abstract_name(name, carriers)
 
 # names matching `regex`'s first capture across the given files (col-0 anchored)
 function collect_names(files, regex)
@@ -58,13 +73,13 @@ end
 
 const GEN_NOTE = "# Generated from deps/ClangExtra/include/clang-ex/AST/StmtNodes.inc by gen/stmt_nodes.jl — do not edit."
 
-function emit_abstract(io, nodes, predefined)
+function emit_abstract(io, nodes, predefined, carriers)
     println(io, GEN_NOTE)
     println(io, "# Abstract-type skeleton for the Stmt hierarchy not already defined in abstract.jl.")
     for n in nodes
-        asym = stmt_abstract_name(n.name)
+        asym = stmt_abstract_name(n.name, carriers)
         asym in predefined && continue
-        psym = n.parent === :Stmt ? "AbstractStmt" : stmt_abstract_name(n.parent)
+        psym = stmt_abstract_of(n.parent, carriers)
         println(io, """
         \"\"\"
             abstract type $asym <: $psym
@@ -75,14 +90,13 @@ function emit_abstract(io, nodes, predefined)
     end
 end
 
-function emit_carriers(io, nodes, hand)
+function emit_carriers(io, nodes, hand, carriers)
     println(io, GEN_NOTE)
     println(io, "# Fill-in carriers (ptr::CXStmt) for Stmt classes the hand-written files omit.")
     for n in nodes
-        startswith(String(n.name), "Abstract") && continue
         sym = stmt_carrier_name(n.name)
         sym in hand && continue
-        asym = stmt_abstract_name(n.name)
+        asym = stmt_abstract_name(n.name, carriers)
         println(io, """
         \"\"\"
             struct $sym <: $asym
@@ -100,8 +114,9 @@ end
 
 function emit_wrappers(io, nodes)
     println(io, GEN_NOTE)
-    println(io, "# Per-node downcast: `is<Name>` predicate for every class (abstract bases")
-    println(io, "# included) and `<carrier>` constructor-shaped cast for concrete classes.")
+    println(io, "# Per-node downcast: `is<Name>` predicate and `<carrier>` constructor-shaped")
+    println(io, "# cast for every class, abstract bases included — the C shim stamps both from")
+    println(io, "# the same table, and clang's own `classof` makes the dyn_cast sound.")
     for n in nodes
         println(io, """
         function is$(n.name)(x::AbstractStmt)
@@ -109,7 +124,6 @@ function emit_wrappers(io, nodes)
             return clang_Stmt_is$(n.name)(x)
         end
         """)
-        startswith(String(n.name), "Abstract") && continue
         sym = stmt_carrier_name(n.name)
         println(io, """
         function $sym(x::AbstractStmt)
@@ -138,10 +152,12 @@ function emit_stmt_sources()
     hand = collect_names([joinpath(SRC_AST, "AST", f) for f in
                                                           ("Stmt.jl", "StmtCXX.jl", "Expr.jl", "ExprCXX.jl")],
                          r"^struct (\w+)")
+    carriers = Set(stmt_carrier_name(n.name) for n in nodes)
     @info "Stmt sources" total = length(nodes) concrete = count(!, getindex.(nodes, :isabstract)) predefined = length(predefined) hand = length(hand)
-    open(io -> emit_abstract(io, nodes, predefined), joinpath(STMT_SRC, "clang", "core", "AST", "StmtAbstractGen.jl"),
-         "w")
-    open(io -> emit_carriers(io, nodes, hand), joinpath(STMT_SRC, "clang", "core", "AST", "StmtCarriers.jl"), "w")
+    open(io -> emit_abstract(io, nodes, predefined, carriers),
+         joinpath(STMT_SRC, "clang", "core", "AST", "StmtAbstractGen.jl"), "w")
+    open(io -> emit_carriers(io, nodes, hand, carriers),
+         joinpath(STMT_SRC, "clang", "core", "AST", "StmtCarriers.jl"), "w")
     open(io -> emit_wrappers(io, nodes), joinpath(STMT_SRC, "clang", "api", "AST", "StmtWrappers.jl"), "w")
     open(io -> emit_classmap(io, nodes), joinpath(STMT_SRC, "clang", "StmtClassMap.jl"), "w")
     @info "wrote Stmt sources into src/"

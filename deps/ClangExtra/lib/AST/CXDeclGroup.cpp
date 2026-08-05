@@ -1,7 +1,7 @@
 #include "clang-ex/AST/CXDeclGroup.h"
 #include "clang/AST/DeclGroup.h"
 
-CXDeclGroupRef clang_DeclGroupRef_fromeDecl(CXDecl D) {
+CXDeclGroupRef clang_DeclGroupRef_fromDecl(CXDecl D) {
   return clang::DeclGroupRef(static_cast<clang::Decl *>(D)).getAsOpaquePtr();
 }
 
