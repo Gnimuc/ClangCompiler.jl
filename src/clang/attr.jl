@@ -1,6 +1,6 @@
 # Higher-level helpers over the Attr hierarchy.
 
-# CXAttrKind value -> concrete Julia carrier type, so downcasting an attribute
+# CXAttrKind value -> concrete Julia carrier type, so resolving an attribute
 # is one ccall (getKind) + one lookup instead of a per-class predicate chain.
 # The kinds and carriers both derive from AttrList.inc, so the map is generated
 # from it into lib/<major>/AttrKindMap.jl (defines `ATTR_KIND_TO_TYPE`).
@@ -13,7 +13,7 @@ Falls back to returning `x` unchanged for unknown kinds.
 """
 function resolve(x::AbstractAttr)
     T = get(ATTR_KIND_TO_TYPE, getKind(x), nothing)
-    return T === nothing ? x : downcast(T, x)
+    return T === nothing ? x : unchecked_cast(T, x)
 end
 
 get_attr_kind(x::AbstractAttr) = getKind(x)

@@ -7,6 +7,10 @@
 #include "clang/Basic/Module.h"
 
 // MangleContext
+void clang_MangleContext_dispose(CXMangleContext MC) {
+  delete reinterpret_cast<clang::MangleContext *>(MC);
+}
+
 CXMangleContext_ManglerKind clang_MangleContext_getKind(CXMangleContext MC) {
   return static_cast<CXMangleContext_ManglerKind>(
       reinterpret_cast<clang::MangleContext *>(MC)->getKind());

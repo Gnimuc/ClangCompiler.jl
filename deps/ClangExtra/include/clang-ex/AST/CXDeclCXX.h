@@ -585,8 +585,6 @@ CXMSInheritanceModel clang_CXXRecordDecl_getMSInheritanceModel(CXCXXRecordDecl C
 // Julia wrapper gates it on the ABI.
 CXMSVtorDispMode clang_CXXRecordDecl_getMSVtorDispMode(CXCXXRecordDecl CXXRD);
 
-// getMSInheritanceModel
-// getMSVtorDispMode
 // True when a null data member pointer to this class may use a zero field offset
 // under the Microsoft C++ ABI. PARTIAL: runs calculateInheritanceModel, so a
 // definition is required (as above) AND the target must use the Microsoft C++ ABI
@@ -1531,6 +1529,49 @@ CXUnresolvedUsingTypenameDecl clang_UnresolvedUsingTypenameDecl_Create(
     CXSourceLocation_ TypenameLoc, CXNestedNameSpecifierLoc QualifierLoc,
     CXSourceLocation_ TargetNameLoc, CXDeclarationName TargetName,
     CXSourceLocation_ EllipsisLoc);
+
+// CXXRecordDecl (base paths)
+// isDerivedFrom's CXXBasePaths overload, as a two-call protocol over five buffers filled in
+// lockstep. CXXBasePaths is an in/out parameter whose storage dies with the call, so the
+// shim constructs it with clang's own defaults (FindAmbiguities, RecordPaths and
+// DetectVirtual all on - recording is what computes each path's access), runs the search,
+// and flattens the recorded paths to rows: one row per clang::CXXBasePathElement
+// (MARSHALLING.md section 10, "Out-parameter parallel component arrays" - the same shape as
+// clang_CXXRecordDecl_getFinalOverriders, which likewise flattens a container destroyed
+// with the call). Both calls re-run the same search, clang's depth-first walk of bases() in
+// declaration order, so the rows come back in the same order and the two walks agree. The
+// count is 0 when CXXRD is not derived from Base; the bool the C++ overload returns is
+// exactly clang_CXXRecordDecl_isDerivedFrom. PARTIAL: the walk reads the definition data of
+// the receiver and of every base it visits, so clang_CXXRecordDecl_hasDefinition must hold.
+unsigned clang_CXXRecordDecl_getNumBasePathElements(CXCXXRecordDecl CXXRD,
+                                                    CXCXXRecordDecl Base);
+
+// Fills each buffer with clang_CXXRecordDecl_getNumBasePathElements entries, in lockstep.
+// PathBuf[i] numbers the path row i belongs to: rows of one path are contiguous and paths
+// are numbered from 0, so more than one path number means Base is an ambiguous base.
+// AccessBuf[i] is that path's clang::CXXBasePath::Access - the access merged along the
+// whole chain, repeated on every row of the path - and CXAccessSpecifier_AS_none is clang's
+// marker for a path that permits no legal access. BaseBuf[i] is the base specifier followed
+// at that step, ClassBuf[i] the class the specifier is written on. SubobjectBuf[i] is
+// CXXBasePathElement::SubobjectNumber, which clang documents as valid only when
+// clang_CXXBaseSpecifier_isVirtual(BaseBuf[i]) is false; it is 0 on a virtual edge and
+// counts the non-virtual subobjects of that base type from 1 otherwise.
+void clang_CXXRecordDecl_getBasePathElements(CXCXXRecordDecl CXXRD, CXCXXRecordDecl Base,
+                                             unsigned *PathBuf,
+                                             CXAccessSpecifier *AccessBuf,
+                                             CXCXXBaseSpecifier *BaseBuf,
+                                             CXCXXRecordDecl *ClassBuf, int *SubobjectBuf);
+
+// CXXRecordDecl (selected destructor)
+// Notify the class that DD is now its selected destructor, recomputing the triviality and
+// destructor-derived flags from it; clang defers this past addedMember to class completion.
+// It also clears DD's own ineligible-or-not-selected bit
+// (clang_FunctionDecl_setIneligibleOrNotSelected). PARTIAL: it writes the class's
+// definition data through data(), whose accessor asserts a complete definition, so
+// clang_CXXRecordDecl_hasDefinition must hold; DD must be a destructor of this class, which
+// nothing checks - any other destructor silently contributes its own flags.
+void clang_CXXRecordDecl_addedSelectedDestructor(CXCXXRecordDecl CXXRD,
+                                                 CXCXXDestructorDecl DD);
 
 LLVM_CLANG_C_EXTERN_C_END
 

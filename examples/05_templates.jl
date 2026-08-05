@@ -325,22 +325,18 @@ try
     println("  body        : ", length(CC.subtree(body)), " AST nodes, integer literals ", vals)
     println("                 the `4` is the loop bound `N`, substituted into the body itself")
 
-    # THE BOUNDARY, and the reason this section comes last.
+    # This section used to end with a warning that hand-instantiating a member body and then
+    # JIT-compiling source calling that same member killed the process. It did, and the cause
+    # was a bug rather than a law: `CC.specialize` built its integral arguments with the wrong
+    # signedness (and, for `bool`, the wrong bit width), so the specialization it registered
+    # never unified with the one Sema builds for source-written `Buffer<double, 4>`.
+    # `TemplateArgument::Profile` folds both into the folding-set key, so the ASTContext held
+    # two declarations for one C++ type, and CodeGen was later handed two definitions competing
+    # for a single mangled name.
     #
-    # Sema-driven instantiation and JIT codegen do not compose freely in this direction. The
-    # specialization `CC.specialize` registers is a distinct AST node from the one Sema builds
-    # when C++ *source* names `Buffer<double, 4>`; the two agree on everything observable
-    # (same layout, same field types, as the previous section confirmed against machine code), but
-    # they are two declarations. Give a member of the hand-built one a body, then JIT source
-    # that calls that same member, and CodeGen is handed two definitions competing for one
-    # mangled name — which it reports as an error, through a diagnostic renderer that then
-    # faults on the synthetic source locations involved. The process dies, with no Julia-level
-    # exception to catch.
-    #
-    # So: instantiate member bodies to *inspect* them, which is what this section does and
-    # what the AST is for. Let ordinary `CC.compile` drive instantiation for anything you
-    # intend to execute — as section 6 did, where `b.sum()` worked precisely because Sema was
-    # left to instantiate it itself.
+    # Both are taken from the parameter's own declared type now, the two decls are one, and the
+    # round trip completes: `specialize` -> instantiate the class -> instantiate the member ->
+    # `CC.compile` source that calls it -> execute. Nothing here forbids that ordering any more.
 
     banner("Recap")
     println("""
@@ -355,9 +351,10 @@ try
       * Instantiation is memoised on the argument list, so repeat requests share one decl —
         which is why you must check `isCompleteDefinition` before instantiating. Sema's
         instantiation entry points assume an incomplete input and are not idempotent.
-      * Hand-built specializations are for *inspection*. They are separate AST nodes from the
-        ones Sema builds for source-written instantiations, so do not give one a member body
-        and then JIT source that calls the same member — see the note at the end of 7.
+      * A hand-built specialization IS the one Sema builds for the same C++ type — the
+        arguments profile identically, so the folding set returns the existing declaration
+        rather than a second one. That makes it safe to instantiate a member body and then JIT
+        source that calls it; see the note at the end of 7 for the bug that made it unsafe.
       * Because the arguments are ordinary Julia values, the set of instantiations a program
         needs can be computed at runtime — from a config file, a benchmark sweep, a set of
         Julia types — instead of being written out by hand in C++.""")

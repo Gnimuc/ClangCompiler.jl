@@ -1698,6 +1698,10 @@ function Base.unsafe_convert(::Type{CXNestedNameSpecifierLoc},
 end
 Base.cconvert(::Type{CXNestedNameSpecifierLoc}, x::AbstractNestedNameSpecifierLoc) = x
 
+# core/AST/ParentMapContext.jl
+Base.unsafe_convert(::Type{CXParentMapContext}, x::AbstractParentMapContext) = CXParentMapContext(x.ptr)
+Base.cconvert(::Type{CXParentMapContext}, x::AbstractParentMapContext) = x
+
 # core/AST/PrettyPrinter.jl
 Base.unsafe_convert(::Type{CXPrintingPolicy_}, x::AbstractPrintingPolicy) = CXPrintingPolicy_(x.ptr)
 Base.cconvert(::Type{CXPrintingPolicy_}, x::AbstractPrintingPolicy) = x

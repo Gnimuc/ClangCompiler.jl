@@ -33,6 +33,7 @@ include("AST/DeclTemplate.jl")
 include("AST/Expr.jl")
 include("AST/ExprCXX.jl")
 include("AST/NestedNameSpecifier.jl")
+include("AST/ParentMapContext.jl")
 include("AST/PrettyPrinter.jl")
 include("AST/RecordLayout.jl")
 include("AST/Stmt.jl")
@@ -60,8 +61,11 @@ include("Basic/FileSystemOptions.jl")
 include("Basic/IdentifierTable.jl")
 include("Basic/Module.jl")
 include("Basic/LangOptions.jl")
-include("Basic/SourceLocation.jl")
+# SourceManager precedes SourceLocation: `FullSourceLoc` is reproduced structurally in Julia and
+# stores a borrowed `SourceManager` by value, so the concrete carrier has to exist first. The
+# reverse order costs an abstractly-typed field and, with it, inference through every accessor.
 include("Basic/SourceManager.jl")
+include("Basic/SourceLocation.jl")
 include("Basic/TargetInfo.jl")
 include("Basic/TargetOptions.jl")
 

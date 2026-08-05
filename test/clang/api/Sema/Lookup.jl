@@ -169,9 +169,9 @@ end
     # --- LookupResult: naming class and base object type ---
     fnd = DeclFinder(I)
     @test fnd(I, "ScopeFlagWidget")
-    rec = CC.downcast(CC.CXXRecordDecl, get_decl(fnd).ptr)
+    rec = CC.CXXRecordDecl(get_decl(fnd))
     @test fnd(I, "scope_flag_fn")
-    qt = CC.getType(CC.downcast(CC.FunctionDecl, get_decl(fnd).ptr))
+    qt = CC.getType(CC.FunctionDecl(get_decl(fnd)))
 
     r5 = CC.LookupResult(sema, dn, loc, CC.CXLookupNameKind_LookupOrdinaryName)
     @test !CC.isClassLookup(r5)
@@ -426,7 +426,7 @@ end
              """)
     f = DeclFinder(I)
     @test f(I, "SemaDFKRec")
-    rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    rec = CC.CXXRecordDecl(get_decl(f))
     methods = CC.getMethods(rec)
     @test !isempty(methods)
 
@@ -499,10 +499,9 @@ end
     f = DeclFinder(I)
 
     @assert f(I, "scopeFn") "lookup failed: scopeFn"
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     # A using-directive never comes back from a name lookup, so reach it through the context.
-    ud = CC.downcast(CC.UsingDirectiveDecl, first(d for d in CC.decls(tu_dc)
-                                     if CC.getDeclKindName(d) == "UsingDirective").ptr)
+    ud = CC.UsingDirectiveDecl(first(d for d in CC.decls(tu_dc) if CC.getDeclKindName(d) == "UsingDirective"))
 
     decl_flags = UInt32(CC.CXScopeFlags_DeclScope)
     fn_flags = UInt32(CC.CXScopeFlags_FnScope) | decl_flags

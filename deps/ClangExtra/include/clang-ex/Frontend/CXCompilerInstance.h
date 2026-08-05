@@ -2,6 +2,7 @@
 #define LLVM_CLANG_C_EXTRA_CXCOMPILERINSTANCE_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-ex/Lex/CXPreprocessorOptions.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 #include "clang-c/CXString.h"
@@ -169,6 +170,41 @@ bool clang_CompilerInstance_hadModuleLoaderFatalFailure(CXCompilerInstance CI);
 // PRECONDITION: requires an invocation (reads HeaderSearchOpts and the module
 // hash through it). Caller frees the string with clang_disposeString.
 CXString clang_CompilerInstance_getSpecificModuleCachePath(CXCompilerInstance CI);
+
+// Attach an external AST source that reads the precompiled header at Path to this
+// instance's AST context. Nothing is returned: on failure nothing is attached and the
+// reason is reported through the instance's diagnostics engine, so
+// clang_CompilerInstance_hasASTReader is the success signal.
+// DisableValidation does more than pick which checks are fatal: with its PCH bit set the
+// ASTReader is built with a SimpleASTReaderListener instead of a PCHValidator, so a
+// language-option, target or version mismatch is neither diagnosed nor a failure. A
+// structurally invalid file is still refused and still diagnosed either way.
+// DeserializationListener is clang's own `void *` -- clang casts it to
+// ASTDeserializationListener * internally. This package can construct no listener, so the
+// Julia wrapper always passes NULL and false.
+// PRECONDITION: requires an invocation (the body reads HeaderSearchOpts, PreprocessorOpts
+// and FrontendOpts through the unchecked `Invocation->` forwarders), a preprocessor and an
+// AST context (getPreprocessor() and getASTContext() each assert on a null member). One
+// more precondition has no flag to gate on and is documented instead: the reader is
+// attached to the AST context, so this must run before anything parses into that context.
+// The body also reaches getPCHContainerReader(), which calls
+// llvm::report_fatal_error("unknown module format") when HeaderSearchOptions::ModuleFormat
+// names a format PCHContainerOperations never registered. Latent today because nothing
+// here exposes ModuleFormat, so it keeps its "raw" default; a ModuleFormat setter must
+// arrive together with a gate on this.
+void clang_CompilerInstance_createPCHExternalASTSource(
+    CXCompilerInstance CI, const char *Path,
+    CXDisableValidationForModuleKind DisableValidation,
+    bool AllowPCHWithCompilerErrors, void *DeserializationListener,
+    bool OwnDeserializationListener);
+
+// helper. Whether a PCH or module file has been loaded into this instance -- that is,
+// whether clang_CompilerInstance_createPCHExternalASTSource succeeded -- the gate that a
+// void loader has to export rather than document (MARSHALLING.md section 13). Total: the
+// C++ getter returns the member, which is null until something loads it.
+// Deliberately a predicate rather than a CXASTReader handle: clang::ASTReader has no
+// wrapped accessors, so a handle would be a type a caller could hold and do nothing with.
+bool clang_CompilerInstance_hasASTReader(CXCompilerInstance CI);
 
 // AuxTarget
 // PRECONDITION: requires an invocation and diagnostics (reads TargetOpts and

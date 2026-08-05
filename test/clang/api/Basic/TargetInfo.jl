@@ -583,3 +583,164 @@ end
 
     dispose(I)
 end
+
+@testset "Basic | TargetInfo predefined macros and LangOptions adjustment" begin
+    I = create_interpreter(String[]; triple=PIN)
+    ci = get_instance(I)
+    ti = CC.getTarget(ci)
+    lo = CC.getLangOpts(ci)
+    diag = CC.getDiagnostics(ci)
+
+    # The target's own `#define` block. The pinned triple turns the arch and OS macros into
+    # facts about x86_64-linux-gnu instead of facts about the runner; the *number* of lines
+    # is not pinned, because that drifts with every LLVM bump.
+    defines = CC.getTargetDefines(ti, lo)
+    lines = split(defines, '\n'; keepempty=false)
+    @test count(l -> startswith(l, "#define "), lines) > 10
+    @test any(l -> startswith(l, "#define __x86_64__ "), lines)
+    @test any(l -> startswith(l, "#define __amd64__ "), lines)
+    @test any(l -> startswith(l, "#define __linux__ "), lines)
+    @test any(l -> startswith(l, "#define __gnu_linux__ "), lines)
+    # ... and it really is the *target's* set, not the whole predefines buffer: the macros
+    # around it -- __cplusplus, __ELF__, __LP64__ -- come from InitializePreprocessor.
+    @test !any(l -> startswith(l, "#define __cplusplus "), lines)
+    @test !any(l -> startswith(l, "#define __ELF__ "), lines)
+
+    # `adjust` is idempotent in the fields it sets, and the interpreter already applied it
+    # with these very options -- so re-running it must move nothing and report nothing.
+    before = (CC.getWCharType(ti), CC.getWCharWidth(ti), CC.getDoubleAlign(ti),
+              CC.getLongDoubleWidth(ti), CC.getLongDoubleAlign(ti), CC.getNewAlign(ti),
+              CC.useBitFieldTypeAlignment(ti), CC.getFPEvalMethod(ti))
+    nerrors = CC.getNumErrors(diag)
+    CC.adjust(ti, diag, lo)
+    after = (CC.getWCharType(ti), CC.getWCharWidth(ti), CC.getDoubleAlign(ti),
+             CC.getLongDoubleWidth(ti), CC.getLongDoubleAlign(ti), CC.getNewAlign(ti),
+             CC.useBitFieldTypeAlignment(ti), CC.getFPEvalMethod(ti))
+    @test after == before
+    @test CC.getNumErrors(diag) == nerrors
+    @test CC.validateTarget(ti, diag)            # the target is still coherent afterwards
+    @test CC.getTargetDefines(ti, lo) == defines # so its macro set is unchanged too
+
+    dispose(I)
+end
+
+@testset "Basic | TargetInfo control-flow protection support" begin
+    I = create_interpreter(String[]; triple=PIN)
+    ci = get_instance(I)
+    ti = CC.getTarget(ci)
+    diag = CC.getDiagnostics(ci)
+
+    # x86 implements control-flow enforcement, so both answers are true here -- and a true
+    # answer reports nothing, which is the half of the contract an error count witnesses.
+    nerrors = CC.getNumErrors(diag)
+    @test CC.checkCFProtectionBranchSupported(ti, diag) == true
+    @test CC.checkCFProtectionReturnSupported(ti, diag) == true
+    @test CC.getNumErrors(diag) == nerrors
+
+    # The other half needs a target that does not implement it: only X86 overrides these
+    # two, so an AArch64 target description takes `TargetInfo`'s own implementation, which
+    # answers false *and emits* err_opt_not_valid_on_target. The engine below swallows the
+    # text but still counts the error, so the side effect is asserted rather than printed.
+    quiet = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
+                                 CC.IgnoringDiagConsumer(), true)
+    arm_ci = CC.CompilerInstance()
+    arm_opts = CC.TargetOptions()
+    CC.setTriple(arm_opts, "aarch64-unknown-linux-gnu")
+    arm = CC.TargetInfo(arm_opts, quiet)  # absorbs arm_opts
+    CC.setTarget(arm_ci, arm)             # adopts arm
+    base = CC.getNumErrors(quiet)
+    @test CC.checkCFProtectionBranchSupported(arm, quiet) == false
+    @test CC.getNumErrors(quiet) == base + 1
+    @test CC.checkCFProtectionReturnSupported(arm, quiet) == false
+    @test CC.getNumErrors(quiet) == base + 2
+
+    # The same standalone target describes *itself*, which is what makes the x86_64 macro
+    # block in the testset above a fact about the triple and not about the host.
+    arm_defines = CC.getTargetDefines(arm, CC.getLangOpts(ci))
+    @test occursin("#define __aarch64__ ", arm_defines)
+    @test !occursin("#define __x86_64__ ", arm_defines)
+
+    dispose(arm_ci)                       # releases the adopted target
+    CC.dispose(quiet)
+    dispose(I)
+end
+
+@testset "Basic | TargetInfo global registers, cpu_specific features and fpret" begin
+    I = create_interpreter(String[]; triple=PIN)
+    ci = get_instance(I)
+    ti = CC.getTarget(ci)
+
+    # Global register variables are a strictly smaller set than the GCC register names --
+    # which is the whole reason this question has an accessor of its own.
+    named = ["rsp", "rax", "rbx", "rcx", "rdx"]
+    @test all(r -> CC.isValidGCCRegisterName(ti, r), named)
+    globals = filter(r -> CC.validateGlobalRegisterVariable(ti, r, 64) !== nothing, named)
+    @test "rsp" in globals
+    @test isempty(intersect(globals, ["rax", "rbx", "rcx", "rdx"]))
+    # ... and the width answer is a separate answer from the validity one
+    @test CC.validateGlobalRegisterVariable(ti, "rsp", 64) == false
+    @test CC.validateGlobalRegisterVariable(ti, "rsp", 32) == true
+    # total for any string, the empty one included
+    @test CC.validateGlobalRegisterVariable(ti, "", 64) === nothing
+    @test CC.validateGlobalRegisterVariable(ti, "not_a_register", 64) === nothing
+
+    # cpu_specific feature lists, behind the same llvm_unreachable gate as the mangling
+    # character. The pinned triple makes these exact: even `generic` carries the two features
+    # every x86_64 baseline has, so an empty answer would be wrong rather than merely unusual.
+    @test_throws AssertionError CC.getCPUSpecificCPUDispatchFeatures(ti, "definitely-not-a-cpu")
+    @test CC.validateCPUSpecificCPUDispatch(ti, "generic")
+    @test CC.getCPUSpecificCPUDispatchFeatures(ti, "generic") == ["+cx8", "+x87"]
+    @test CC.validateCPUSpecificCPUDispatch(ti, "core_2_duo_ssse3")
+    ssse3 = CC.getCPUSpecificCPUDispatchFeatures(ti, "core_2_duo_ssse3")
+    @test !isempty(ssse3)
+    @test all(!isempty, ssse3)
+    @test any(f -> occursin("ssse3", f), ssse3)
+    # two different cpu_specific variants describe two different feature sets
+    @test CC.validateCPUSpecificCPUDispatch(ti, "pentium_4")
+    @test CC.getCPUSpecificCPUDispatchFeatures(ti, "pentium_4") != ssse3
+
+    # useObjCFPRetForRealType is a bitmask test against a mask the target's own constructor
+    # fills in, so the pinned triple turns it into an equality rather than a shape. On x86_64
+    # exactly one bit is set: `long double` returns in st(0), which is why an ObjC message send
+    # returning one has to go through objc_msgSend_fpret instead of objc_msgSend. NoFloat is the
+    # empty bit pattern and is false on every target.
+    @test CC.useObjCFPRetForRealType(ti, CC.CXFloatModeKind_NoFloat) == false
+    @test CC.useObjCFPRetForRealType(ti, CC.CXFloatModeKind_LongDouble) == true
+    for m in (CC.CXFloatModeKind_Half, CC.CXFloatModeKind_Float, CC.CXFloatModeKind_Double,
+              CC.CXFloatModeKind_Float128, CC.CXFloatModeKind_Ibm128)
+        @test CC.useObjCFPRetForRealType(ti, m) == false
+    end
+
+    dispose(I)
+end
+
+@testset "Basic | TargetInfo::ConstraintInfo immediate ranges" begin
+    # A fresh ConstraintInfo records no immediate range, so it accepts every value. What
+    # follows is the round trip of a range this test itself set through setRequiresImmediate,
+    # which until now was write-only -- nothing read the ImmRange back.
+    imm = CC.ConstraintInfo("=r", "")
+    @test CC.requiresImmediateConstant(imm) == false
+    @test CC.isValidAsmImmediate(imm, 0)
+    @test CC.isValidAsmImmediate(imm, typemax(Int64))
+    @test CC.isValidAsmImmediate(imm, typemin(Int64))
+
+    CC.setRequiresImmediate(imm, -8, 7)
+    @test CC.requiresImmediateConstant(imm)
+    @test CC.isValidAsmImmediate(imm, -8)              # the range is inclusive at both ends
+    @test CC.isValidAsmImmediate(imm, 0)
+    @test CC.isValidAsmImmediate(imm, 7)
+    @test CC.isValidAsmImmediate(imm, -9) == false
+    @test CC.isValidAsmImmediate(imm, 8) == false
+    @test CC.isValidAsmImmediate(imm, typemax(Int64)) == false
+    @test CC.isValidAsmImmediate(imm, typemin(Int64)) == false
+
+    # widening the range accepts what the narrow one rejected: the flag is sticky, the
+    # bounds are replaced
+    CC.setRequiresImmediate(imm, -128, 127)
+    @test CC.requiresImmediateConstant(imm)
+    @test CC.isValidAsmImmediate(imm, 8)
+    @test CC.isValidAsmImmediate(imm, 127)
+    @test CC.isValidAsmImmediate(imm, 128) == false
+
+    dispose(imm)
+end

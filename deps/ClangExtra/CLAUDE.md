@@ -290,9 +290,10 @@ new code by:
 - C++ objects returned **by value** with no pointer encoding (FileEntryRef, FileID,
   TemplateArgument) are heap-boxed with make_unique/release and get an explicit dispose —
   flag this in a header comment. TemplateArgument is the only AST-area family with a
-  dispose; nearly everything else in AST wrappers is ASTContext-arena memory (one leak to
-  know about: `clang_ASTContext_createMangleContext` returns a caller-owned heap object
-  with no dispose function).
+  dispose; nearly everything else in AST wrappers is ASTContext-arena memory. The one exception
+  is `clang_ASTContext_createMangleContext` and its device twin, which forward to a clang factory
+  that `new`s — `clang_MangleContext_dispose` is the matching release, and `clang::MangleContext`
+  has a virtual destructor, so deleting through the base runs the subclass's.
 - Lifetime traps documented in code, keep them true: `clang_SourceManager_create` stores
   references (dispose SourceManager before its FileManager/DiagnosticsEngine);
   `clang_Interpreter_Parse` returns a pointer into the interpreter's PTU list (invalidated

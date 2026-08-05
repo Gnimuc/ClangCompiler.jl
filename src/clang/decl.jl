@@ -1,6 +1,6 @@
 # Higher-level helpers over the Decl hierarchy.
 
-# CXDeclKind value -> concrete Julia carrier type, so downcasting a Decl is one
+# CXDeclKind value -> concrete Julia carrier type, so resolving a Decl is one
 # ccall (getKind) + one lookup instead of a string-compare on getDeclKindName.
 # Kinds whose carrier struct is not wrapped (many ObjC/OpenMP decls) are simply
 # absent — resolve falls back to the base. The kinds derive from DeclNodes.inc,
@@ -13,12 +13,12 @@ include("DeclKindMap.jl")
 Return `x` rewrapped as the concrete Decl type reported by `getKind`. Falls back
 to returning `x` unchanged for kinds without a wrapped carrier (e.g. many
 ObjC/OpenMP decls). Because `clang::Decl` is the primary base, the pointer is
-identical across the downcast — no offset pivot is needed (contrast the
+identical across the narrowing — no offset pivot is needed (contrast the
 Decl/DeclContext boundary, which must go through `castToDeclContext`).
 """
 function resolve(x::AbstractDecl)
     T = get(DECL_KIND_TO_TYPE, getKind(x), nothing)
-    return T === nothing ? x : downcast(T, x)
+    return T === nothing ? x : unchecked_cast(T, x)
 end
 
 get_decl_kind(x::AbstractDecl) = getKind(x)
@@ -42,5 +42,5 @@ function decls(x::DeclContext)
     clang_DeclContext_collectRecursiveDecls(x, nodes, kinds)
     # the kind travels with each node, so the narrowing is established before it happens;
     # a kind with no wrapped carrier stays at the base `Decl`
-    return AbstractDecl[downcast(get(DECL_KIND_TO_TYPE, kinds[i], Decl), nodes[i]) for i = 1:n]
+    return AbstractDecl[unchecked_cast(get(DECL_KIND_TO_TYPE, kinds[i], Decl), nodes[i]) for i = 1:n]
 end

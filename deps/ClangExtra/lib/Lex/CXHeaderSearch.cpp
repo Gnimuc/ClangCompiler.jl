@@ -9,6 +9,12 @@
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/TargetInfo.h"
+#include "clang/Basic/Module.h"
+#include "clang/Basic/SourceLocation.h"
+#include "clang/Lex/ModuleMap.h"
+#include "llvm/ADT/ArrayRef.h"
+#include <memory>
+#include <utility>
 #include <vector>
 
 CXHeaderSearchOptions clang_HeaderSearch_getHeaderSearchOpts(CXHeaderSearch HS) {
@@ -98,6 +104,14 @@ void clang_HeaderSearch_MarkFileSystemHeader(CXHeaderSearch HS, CXFileEntryRef F
       *reinterpret_cast<clang::FileEntryRef *>(File));
 }
 
+void clang_HeaderSearch_MarkFileModuleHeader(CXHeaderSearch HS, CXFileEntryRef FE,
+                                             unsigned RoleBits,
+                                             bool isCompilingModuleHeader) {
+  reinterpret_cast<clang::HeaderSearch *>(HS)->MarkFileModuleHeader(
+      *reinterpret_cast<clang::FileEntryRef *>(FE),
+      static_cast<clang::ModuleMap::ModuleHeaderRole>(RoleBits), isCompilingModuleHeader);
+}
+
 void clang_HeaderSearch_SetFileControllingMacro(CXHeaderSearch HS, CXFileEntryRef File,
                                                 CXIdentifierInfo ControllingMacro) {
   reinterpret_cast<clang::HeaderSearch *>(HS)->SetFileControllingMacro(
@@ -134,11 +148,69 @@ CXString clang_HeaderSearch_getPrebuiltModuleFileName(CXHeaderSearch HS,
           llvm::StringRef(ModuleName), FileMapOnly));
 }
 
+CXModule_ clang_HeaderSearch_lookupModule(CXHeaderSearch HS, const char *ModuleName,
+                                          CXSourceLocation_ ImportLoc, bool AllowSearch,
+                                          bool AllowExtraModuleMapSearch) {
+  return reinterpret_cast<CXModule_>(
+      reinterpret_cast<clang::HeaderSearch *>(HS)->lookupModule(
+          llvm::StringRef(ModuleName),
+          clang::SourceLocation::getFromPtrEncoding(ImportLoc), AllowSearch,
+          AllowExtraModuleMapSearch));
+}
+
 bool clang_HeaderSearch_hasModuleMap(CXHeaderSearch HS, const char *Filename,
                                      CXDirectoryEntry Root, bool IsSystem) {
   return reinterpret_cast<clang::HeaderSearch *>(HS)->hasModuleMap(
       llvm::StringRef(Filename), reinterpret_cast<const clang::DirectoryEntry *>(Root),
       IsSystem);
+}
+
+CXModule_ clang_HeaderSearch_findModuleForHeader(CXHeaderSearch HS, CXFileEntryRef File,
+                                                 bool AllowTextual, bool AllowExcluded,
+                                                 unsigned *RoleBits) {
+  clang::ModuleMap::KnownHeader KH =
+      reinterpret_cast<clang::HeaderSearch *>(HS)->findModuleForHeader(
+          *reinterpret_cast<clang::FileEntryRef *>(File), AllowTextual, AllowExcluded);
+  if (RoleBits)
+    *RoleBits = static_cast<unsigned>(KH.getRole());
+  return reinterpret_cast<CXModule_>(KH.getModule());
+}
+
+unsigned clang_HeaderSearch_getNumResolvedModulesForHeader(CXHeaderSearch HS,
+                                                           CXFileEntryRef File) {
+  return reinterpret_cast<clang::HeaderSearch *>(HS)
+      ->findResolvedModulesForHeader(*reinterpret_cast<clang::FileEntryRef *>(File))
+      .size();
+}
+
+CXModule_ clang_HeaderSearch_getResolvedModuleForHeader(CXHeaderSearch HS,
+                                                        CXFileEntryRef File, unsigned Idx,
+                                                        unsigned *RoleBits) {
+  llvm::ArrayRef<clang::ModuleMap::KnownHeader> KHs =
+      reinterpret_cast<clang::HeaderSearch *>(HS)->findResolvedModulesForHeader(
+          *reinterpret_cast<clang::FileEntryRef *>(File));
+  if (RoleBits)
+    *RoleBits = static_cast<unsigned>(KHs[Idx].getRole());
+  return reinterpret_cast<CXModule_>(KHs[Idx].getModule());
+}
+
+bool clang_HeaderSearch_loadModuleMapFile(CXHeaderSearch HS, CXFileEntryRef File,
+                                          bool IsSystem) {
+  return reinterpret_cast<clang::HeaderSearch *>(HS)->loadModuleMapFile(
+      *reinterpret_cast<clang::FileEntryRef *>(File), IsSystem);
+}
+
+unsigned clang_HeaderSearch_getNumAllModules(CXHeaderSearch HS) {
+  llvm::SmallVector<clang::Module *, 8> Modules;
+  reinterpret_cast<clang::HeaderSearch *>(HS)->collectAllModules(Modules);
+  return Modules.size();
+}
+
+void clang_HeaderSearch_collectAllModules(CXHeaderSearch HS, CXModule_ *Buf) {
+  llvm::SmallVector<clang::Module *, 8> Modules;
+  reinterpret_cast<clang::HeaderSearch *>(HS)->collectAllModules(Modules);
+  for (size_t I = 0, E = Modules.size(); I != E; ++I)
+    Buf[I] = reinterpret_cast<CXModule_>(Modules[I]);
 }
 
 unsigned clang_HeaderSearch_getNumHeaderMapFileNames(CXHeaderSearch HS) {
@@ -165,6 +237,27 @@ CXString clang_HeaderSearch_getSearchDirName(CXHeaderSearch HS, unsigned Idx) {
   auto *hs = reinterpret_cast<clang::HeaderSearch *>(HS);
   const clang::DirectoryLookup &DL = *hs->search_dir_nth(Idx);
   return extra::makeCXString(std::string(DL.getName()));
+}
+
+unsigned clang_HeaderSearch_getAngledDirIdx(CXHeaderSearch HS) {
+  // Bind const so both calls pick the const overloads and the two iterators have the same
+  // type. The walk only increments and compares; it never dereferences, so an empty range
+  // is fine.
+  const clang::HeaderSearch &hs = *reinterpret_cast<clang::HeaderSearch *>(HS);
+  unsigned N = 0;
+  for (clang::ConstSearchDirIterator It = hs.quoted_dir_begin(), E = hs.angled_dir_begin();
+       It != E; ++It)
+    ++N;
+  return N;
+}
+
+unsigned clang_HeaderSearch_getSystemDirIdx(CXHeaderSearch HS) {
+  const clang::HeaderSearch &hs = *reinterpret_cast<clang::HeaderSearch *>(HS);
+  unsigned N = 0;
+  for (clang::ConstSearchDirIterator It = hs.quoted_dir_begin(), E = hs.system_dir_begin();
+       It != E; ++It)
+    ++N;
+  return N;
 }
 
 CXString clang_HeaderSearch_getUniqueFrameworkName(CXHeaderSearch HS,
@@ -211,8 +304,16 @@ CXCharacteristicKind clang_HeaderFileInfo_getDirInfo(CXHeaderFileInfo HFI) {
       reinterpret_cast<clang::HeaderFileInfo *>(HFI)->DirInfo);
 }
 
+bool clang_HeaderFileInfo_getExternal(CXHeaderFileInfo HFI) {
+  return reinterpret_cast<clang::HeaderFileInfo *>(HFI)->External;
+}
+
 bool clang_HeaderFileInfo_getIsModuleHeader(CXHeaderFileInfo HFI) {
   return reinterpret_cast<clang::HeaderFileInfo *>(HFI)->isModuleHeader;
+}
+
+bool clang_HeaderFileInfo_getIsCompilingModuleHeader(CXHeaderFileInfo HFI) {
+  return reinterpret_cast<clang::HeaderFileInfo *>(HFI)->isCompilingModuleHeader;
 }
 
 bool clang_HeaderFileInfo_getIsValid(CXHeaderFileInfo HFI) {
@@ -268,6 +369,26 @@ CXString clang_HeaderSearch_getCachedModuleFileName(CXHeaderSearch HS,
                                                     const char *ModuleMapPath) {
   return extra::makeCXString(reinterpret_cast<clang::HeaderSearch *>(HS)->getCachedModuleFileName(
       llvm::StringRef(ModuleName), llvm::StringRef(ModuleMapPath)));
+}
+
+CXFileEntryRef clang_HeaderSearch_LookupFile(CXHeaderSearch HS, const char *Filename,
+                                             bool isAngled, bool SkipCache,
+                                             bool CacheFailures, bool *IsMapped,
+                                             bool *IsFrameworkFound) {
+  using IncluderEntry = std::pair<clang::OptionalFileEntryRef, clang::DirectoryEntryRef>;
+  llvm::ArrayRef<IncluderEntry> Includers;
+  clang::OptionalFileEntryRef File =
+      reinterpret_cast<clang::HeaderSearch *>(HS)->LookupFile(
+          llvm::StringRef(Filename), clang::SourceLocation(), isAngled,
+          /*FromDir=*/nullptr, /*CurDir=*/nullptr, Includers, /*SearchPath=*/nullptr,
+          /*RelativePath=*/nullptr, /*RequestingModule=*/nullptr,
+          /*SuggestedModule=*/nullptr, IsMapped, IsFrameworkFound, SkipCache,
+          /*BuildSystemModule=*/false, /*OpenFile=*/true, CacheFailures);
+  if (!File)
+    return nullptr;
+  std::unique_ptr<clang::FileEntryRef> ptr =
+      std::make_unique<clang::FileEntryRef>(*File);
+  return reinterpret_cast<CXFileEntryRef>(ptr.release());
 }
 
 bool clang_HeaderSearch_ShouldEnterIncludeFile(CXHeaderSearch HS, CXPreprocessor PP,

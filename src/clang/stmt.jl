@@ -1,6 +1,6 @@
 # Higher-level helpers over the Stmt hierarchy.
 
-# CXStmtClass value -> concrete Julia carrier type, so downcasting is one ccall
+# CXStmtClass value -> concrete Julia carrier type, so resolving is one ccall
 # + one lookup instead of a per-class predicate chain. The classes and carriers
 # both derive from StmtNodes.inc, so the map is generated from it into
 # lib/<major>/StmtClassMap.jl (defines `STMT_CLASS_TO_TYPE`).
@@ -13,7 +13,7 @@ Return `x` rewrapped as the concrete statement/expression type reported by
 """
 function resolve(x::AbstractStmt)
     T = get(STMT_CLASS_TO_TYPE, getStmtClass(x), nothing)
-    return T === nothing ? x : downcast(T, x)
+    return T === nothing ? x : unchecked_cast(T, x)
 end
 
 """
@@ -43,7 +43,7 @@ function subtree(x::AbstractStmt)
     clang_Stmt_collectSubtree(x, nodes, classes)
     # the collector reports each node's class alongside it, which is what establishes the
     # narrowing from the `CXStmt` it handed back
-    return AbstractStmt[downcast(STMT_CLASS_TO_TYPE[classes[i]], nodes[i]) for i = 1:n]
+    return AbstractStmt[unchecked_cast(STMT_CLASS_TO_TYPE[classes[i]], nodes[i]) for i = 1:n]
 end
 
 get_stmt_class(x::AbstractStmt) = getStmtClass(x)

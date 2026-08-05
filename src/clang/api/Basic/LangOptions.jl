@@ -44,6 +44,17 @@ function getBorland(x::AbstractLangOptions)
 end
 
 """
+    getMicrosoftExt(x::AbstractLangOptions) -> Bool
+Whether Microsoft extensions are enabled. A gate, like [`getBorland`](@ref): the `MSGuidTagDecl`
+that `__uuidof` resolves against exists only when one of the two is set, and clang reaches for it
+unchecked — see [`BuildCXXUuidof`](@ref).
+"""
+function getMicrosoftExt(x::AbstractLangOptions)
+    @check_ptrs x
+    return clang_LangOptions_getMicrosoftExt(x)
+end
+
+"""
     hasLangStandard(x::LangOptions) -> Bool
 Return whether a language standard has been selected, i.e. whether `LangStd` is something
 other than `lang_unspecified`.

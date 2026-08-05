@@ -30,9 +30,9 @@ end
     CC.parse(I, "int aa = 1; int bb = 2;")
     f = DeclFinder(I)
     @test f(I, "aa")
-    aa = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    aa = CC.VarDecl(get_decl(f))
     @test f(I, "bb")
-    bb = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    bb = CC.VarDecl(get_decl(f))
     loc_a = CC.getLocation(aa)
     loc_b = CC.getLocation(bb)
     id_a = CC.getIdentifier(aa)
@@ -80,7 +80,7 @@ end
     # ---- CXXBaseSpecifier: setInheritConstructors round-trip ----
     CC.parse(I, "struct BB0 { BB0(int); }; struct DD0 : BB0 { using BB0::BB0; };")
     @test f(I, "DD0")
-    dd0 = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    dd0 = CC.CXXRecordDecl(get_decl(f))
     @test CC.getNumBases(dd0) == 1
     base = CC.getBase(dd0, 0)
     @test base.ptr != C_NULL
@@ -94,7 +94,7 @@ end
     # ---- CXXMethodDecl: Create (from a parsed method) + CreateDeserialized ----
     CC.parse(I, "struct Foo0 { void bar0(int); };")
     @test f(I, "Foo0")
-    foo0 = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    foo0 = CC.CXXRecordDecl(get_decl(f))
     bar0 = first(m for m in CC.getMethods(foo0) if CC.getName(m) == "bar0")
     ni = CC.getNameInfo(bar0)
     mty = CC.getType(bar0)
@@ -113,7 +113,7 @@ end
     # ---- Template factories/setters (already wrapped) reachable safely ----
     CC.parse(I, "template<class TT> struct S1 { TT x; };")
     @test f(I, "S1")
-    s1 = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    s1 = CC.ClassTemplateDecl(get_decl(f))
     targ = CC.TemplateArgument(CC.getType(aa))        # an `int` template argument
     tal = CC.TemplateArgumentList(ctx, [targ])
     @test size(tal) == 1
@@ -139,14 +139,14 @@ end
 @testset "CXXMethodDecl_Create bool round-trip" begin
     # Regression: clang_CXXMethodDecl_Create forwarded (isInline, UsesFPIntrin) in
     # reversed order, so a method created inline read back non-inline. isInlineSpecified
-    # is inherited from FunctionDecl; reach it through the free primary-base upcast.
+    # is inherited from FunctionDecl; the base-level method applies with no widening written.
     I = create_interpreter(String[])
     ctx = CC.get_ast_context(I)
     dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
     CC.parse(I, "struct MFoo { void mbar(int); };")
     f = DeclFinder(I)
     @test f(I, "MFoo")
-    mfoo = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    mfoo = CC.CXXRecordDecl(get_decl(f))
     mbar = first(m for m in CC.getMethods(mfoo) if CC.getName(m) == "mbar")
     ni = CC.getNameInfo(mbar)
     mty = CC.getType(mbar)
@@ -158,12 +158,12 @@ end
     md = CC.CXXMethodDecl(ctx, mfoo, sloc, ni, mty, mtsi, LX.CXStorageClass_SC_None,
                           false, true, LX.CXConstexprSpecKind_Unspecified, eloc)
     @test md.ptr != C_NULL
-    @test CC.isInlineSpecified(CC.downcast(CC.FunctionDecl, md.ptr)) == true    # was false before the fix
+    @test CC.isInlineSpecified(CC.FunctionDecl(md)) == true    # was false before the fix
 
     # complementary: uses_fp_intrin=false, is_inline=false
     md2 = CC.CXXMethodDecl(ctx, mfoo, sloc, ni, mty, mtsi, LX.CXStorageClass_SC_None,
                            false, false, LX.CXConstexprSpecKind_Unspecified, eloc)
-    @test CC.isInlineSpecified(CC.downcast(CC.FunctionDecl, md2.ptr)) == false
+    @test CC.isInlineSpecified(CC.FunctionDecl(md2)) == false
 
     dispose(f)
     dispose(I)
@@ -174,7 +174,7 @@ end
     f = DeclFinder(I)
     CC.parse(I, "struct Base { int b; }; struct Wid : Base { int m; Wid(int x) : Base(), m(x) {} };")
     @test f(I, "Wid")
-    wid = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    wid = CC.CXXRecordDecl(get_decl(f))
     ctor = first(c for c in CC.getCtors(wid) if CC.getNumCtorInitializers(c) == 2)
     inits = CC.getCtorInitializers(ctor)
     @test length(inits) == 2
@@ -203,13 +203,13 @@ end
     """)
     f = DeclFinder(I)
     @test f(I, "IdfB1")
-    b1 = CC.downcast(CC.CXXRecordDecl, CC.get_tag(f).ptr)
+    b1 = CC.CXXRecordDecl(CC.get_tag(f))
     @test f(I, "IdfB2")
-    b2 = CC.downcast(CC.CXXRecordDecl, CC.get_tag(f).ptr)
+    b2 = CC.CXXRecordDecl(CC.get_tag(f))
     @test f(I, "IdfD")
-    d = CC.downcast(CC.CXXRecordDecl, CC.get_tag(f).ptr)
+    d = CC.CXXRecordDecl(CC.get_tag(f))
     @test f(I, "IdfV")
-    v = CC.downcast(CC.CXXRecordDecl, CC.get_tag(f).ptr)
+    v = CC.CXXRecordDecl(CC.get_tag(f))
 
     @test CC.isDerivedFrom(d, b2)
     @test CC.isDerivedFrom(d, b1)      # transitive
@@ -283,11 +283,11 @@ end
 
     f = DeclFinder(I)
     @test f(I, "Base")
-    baseRD = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    baseRD = CC.CXXRecordDecl(get_decl(f))
     @test f(I, "Derived")
-    derivedRD = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    derivedRD = CC.CXXRecordDecl(get_decl(f))
     @test f(I, "Diamond")
-    diamondRD = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    diamondRD = CC.CXXRecordDecl(get_decl(f))
 
     # ---- CXXRecordDecl: decl-chain accessors ----
     @test CC.getCanonicalDecl(baseRD) isa CC.CXXRecordDecl
@@ -350,7 +350,7 @@ end
     # special members do not need overload resolution (Clang asserts otherwise),
     # so exercise them on a trivial struct.
     @test f(I, "Plain")
-    plainRD = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    plainRD = CC.CXXRecordDecl(get_decl(f))
     @test !(CC.defaultedCopyConstructorIsDeleted(plainRD))
     @test CC.defaultedDefaultConstructorIsConstexpr(plainRD)
     @test CC.defaultedDestructorIsConstexpr(plainRD)
@@ -546,12 +546,12 @@ end
 
         look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
 
-        gv = CC.downcast(CC.VarDecl, look("dtl_gv").ptr)
-        sv = CC.downcast(CC.VarDecl, look("dtl_sv").ptr)
-        fd = CC.downcast(CC.FunctionDecl, look("dtl_fn").ptr)
-        rd = CC.getDefinition(CC.downcast(CC.RecordDecl, look("DtlRec").ptr))
-        ed = CC.getDefinition(CC.downcast(CC.EnumDecl, look("DtlEnum").ptr))
-        nsvar = CC.downcast(CC.VarDecl, look("NSA::INL::nsvar").ptr)
+        gv = CC.VarDecl(look("dtl_gv"))
+        sv = CC.VarDecl(look("dtl_sv"))
+        fd = CC.FunctionDecl(look("dtl_fn"))
+        rd = CC.getDefinition(CC.RecordDecl(look("DtlRec")))
+        ed = CC.getDefinition(CC.EnumDecl(look("DtlEnum")))
+        nsvar = CC.VarDecl(look("NSA::INL::nsvar"))
 
         # --- NamedDecl printing surface ---
         @test CC.getNameAsString(gv) == "dtl_gv"
@@ -587,9 +587,9 @@ end
         @test !CC.is_null_handle(CC.getEvaluatedValue(gv))
 
         # --- ValueDecl / DeclaratorDecl levels reached through their carriers ---
-        @test !(CC.isInitCapture(CC.upcast(CC.ValueDecl, gv.ptr)))
-        @test !CC.is_null_handle(CC.getPotentiallyDecomposedVarDecl(CC.upcast(CC.ValueDecl, gv.ptr)))
-        @test !CC.is_null_handle(CC.getSourceRange(CC.upcast(CC.DeclaratorDecl, gv.ptr)).begin_loc)
+        @test !(CC.isInitCapture(CC.ValueDecl(gv)))
+        @test !CC.is_null_handle(CC.getPotentiallyDecomposedVarDecl(CC.ValueDecl(gv)))
+        @test !CC.is_null_handle(CC.getSourceRange(CC.DeclaratorDecl(gv)).begin_loc)
 
         # --- ParmVarDecl ---
         p0 = CC.getParamDecl(fd, 0)
@@ -714,7 +714,7 @@ end
 
     # CXXRecordDecl: destructor / conversion / instantiation tail
     @test f(I, "DtorHost")
-    rd = CC.downcast(CC.CXXRecordDecl, CC.get_decl(f).ptr)
+    rd = CC.CXXRecordDecl(CC.get_decl(f))
     @test CC.hasDefinition(rd)
     @test !CC.isLambda(rd)
     dtor = CC.getDestructor(rd)
@@ -734,7 +734,7 @@ end
 
     # CXXRecordDecl: closure-type accessors, reached through the variable's type
     @test f(I, "LamV")
-    vd = CC.downcast(CC.VarDecl, CC.get_decl(f).ptr)
+    vd = CC.VarDecl(CC.get_decl(f))
     lam = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd)))
     @test lam isa CC.CXXRecordDecl
     if lam.ptr != C_NULL && CC.isLambda(lam)
@@ -771,11 +771,11 @@ end
     f = DeclFinder(I)
 
     @test f(I, "MemHost")
-    host = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    host = CC.CXXRecordDecl(get_decl(f))
     @test f(I, "MemDerived")
-    derived = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    derived = CC.CXXRecordDecl(get_decl(f))
     @test f(I, "MemUnrelated")
-    unrelated = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    unrelated = CC.CXXRecordDecl(get_decl(f))
     @test CC.hasDefinition(host)
     @test CC.hasDefinition(derived)
 
@@ -794,9 +794,9 @@ end
     # hasMemberName, directly and through a base; DeclarationNames are uniqued per
     # ASTContext, so the global `probe`'s name is the member's name too.
     @test f(I, "probe")
-    nprobe = CC.getDeclName(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    nprobe = CC.getDeclName(CC.VarDecl(get_decl(f)))
     @test f(I, "stranger")
-    nstranger = CC.getDeclName(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    nstranger = CC.getDeclName(CC.VarDecl(get_decl(f)))
     @test CC.hasMemberName(host, nprobe)
     @test CC.hasMemberName(derived, nprobe)
     @test !CC.hasMemberName(host, nstranger)
@@ -813,7 +813,7 @@ end
 
     # described class template, member specialization info, current instantiation
     @test f(I, "TmplHost")
-    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    ctd = CC.ClassTemplateDecl(get_decl(f))
     pattern = CC.getTemplatedDecl(ctd)
     @test pattern isa CC.CXXRecordDecl
     dct = CC.getDescribedClassTemplate(pattern)
@@ -836,7 +836,7 @@ end
     # closure types, reached through each variable's deduced type
     for (nm, ncap) in (("LamPlain", 0), ("LamInit", 1))
         @test f(I, nm)
-        vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+        vd = CC.VarDecl(get_decl(f))
         lam = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd)))
         @test lam isa CC.CXXRecordDecl
         (lam.ptr == C_NULL || !CC.isLambda(lam)) && continue
@@ -855,7 +855,7 @@ end
     # a generic lambda has an invented template parameter list; before C++20 none
     # of its parameters are explicitly written
     @test f(I, "LamGeneric")
-    gvd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    gvd = CC.VarDecl(get_decl(f))
     glam = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(gvd)))
     if glam.ptr != C_NULL && CC.isGenericLambda(glam)
         n = CC.getNumLambdaExplicitTemplateParameters(glam)
@@ -892,7 +892,7 @@ end
 
     # ---- CXXCtorInitializer: Wid's ctor has base + member + indirect-member inits ----
     @test f(I, "Wid")
-    wid = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    wid = CC.CXXRecordDecl(get_decl(f))
     widCtor = first(c for c in CC.getCtors(wid) if CC.getNumCtorInitializers(c) >= 3)
     inits = CC.getCtorInitializers(widCtor)
     @test all(x -> x isa CC.CXXCtorInitializer, inits)
@@ -923,7 +923,7 @@ end
 
     # ---- isBaseVirtual true for a virtual-base initializer ----
     @test f(I, "Der")
-    der = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    der = CC.CXXRecordDecl(get_decl(f))
     derCtor = first(c for c in CC.getCtors(der) if CC.getNumCtorInitializers(c) >= 1)
     derBaseInit = first(i for i in CC.getCtorInitializers(derCtor) if CC.isBaseInitializer(i))
     @test CC.isBaseVirtual(derBaseInit) == true
@@ -958,7 +958,7 @@ end
 
         # ---- CXXMethodDecl: explicit/implicit object-parameter surface ----
         @test f(I, "MMd")
-        mmd_rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+        mmd_rec = CC.CXXRecordDecl(get_decl(f))
         mmd = first(m for m in CC.getMethods(mmd_rec) if CC.getNameAsString(m) == "mmd")
         @test CC.isImplicitObjectMemberFunction(mmd)
         @test CC.isImplicitObjectMemberFunction(mmd) == true
@@ -1387,7 +1387,7 @@ end
         # ---- LifetimeExtendedTemporaryDecl (namespace-scope const reference) ----
         f = DeclFinder(I)
         @test f(I, "g_refg")
-        gref = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+        gref = CC.VarDecl(get_decl(f))
         mt = findg(CC.MaterializeTemporaryExpr, CC.resolve(CC.getInit(gref)))
         @test mt isa CC.MaterializeTemporaryExpr
         if mt !== nothing
@@ -1618,9 +1618,9 @@ end
 
         # Two real, distinct locations plus a name/identifier to feed the factories.
         @test f(I, "vj_a")
-        vj_a = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+        vj_a = CC.VarDecl(get_decl(f))
         @test f(I, "vj_b")
-        vj_b = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+        vj_b = CC.VarDecl(get_decl(f))
         loc_a = CC.getLocation(vj_a)
         loc_b = CC.getLocation(vj_b)
         id_a = CC.getIdentifier(vj_a)
@@ -1629,7 +1629,7 @@ end
 
         # ---- CXXRecordDecl: the conversions declared directly in the class ----
         @test f(I, "CVJ")
-        cvj = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+        cvj = CC.CXXRecordDecl(get_decl(f))
         @test CC.getNumConversions(cvj) == 2
         @test CC.getConversion(cvj, 0) isa CC.NamedDecl
         convs = CC.getConversions(cvj)
@@ -1641,13 +1641,13 @@ end
         @test CC.getNumConversions(cvj) <= CC.getNumVisibleConversionFunctions(cvj)
         # A class with no conversion operator has an empty declared set.
         @test f(I, "BJ")
-        bj = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+        bj = CC.CXXRecordDecl(get_decl(f))
         @test CC.getNumConversions(bj) == 0
         @test isempty(CC.getConversions(bj))
 
         # ---- UsingShadowDecl / ConstructorUsingShadowDecl factories ----
         @test f(I, "DJ")
-        dj = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+        dj = CC.CXXRecordDecl(get_decl(f))
         djdecls = CC.decls(CC.castToDeclContext(dj))
         cusd = first(d for d in djdecls if d isa CC.ConstructorUsingShadowDecl)
         ctor_using = CC.getIntroducer(cusd)
@@ -1917,7 +1917,7 @@ end
     const GUID *lg_uuid() { return &__uuidof(LGuid); }
     """)
     @test fms(Ims, "lg_uuid")
-    lgbody = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(fms).ptr)))
+    lgbody = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms))))
     ue = _find_node(CC.CXXUuidofExpr, lgbody)
     @test ue isa CC.CXXUuidofExpr
     if ue isa CC.CXXUuidofExpr
@@ -1945,7 +1945,7 @@ end
 
     CC.parse(I, "int la = 5;")
     @test f(I, "la")
-    la = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    la = CC.VarDecl(get_decl(f))
     loc = CC.getLocation(la)
     id = CC.getIdentifier(la)
     ity = CC.getType(la)
@@ -1979,7 +1979,7 @@ end
     # ---- ctor / dtor / conversion / deduction-guide factories ----
     CC.parse(I, "struct LKA { LKA(); ~LKA(); operator int() const; };")
     @test f(I, "LKA")
-    lka = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    lka = CC.CXXRecordDecl(get_decl(f))
 
     c0 = first(CC.getCtors(lka))
     ces = CC.ExplicitSpecifier(c0)
@@ -2019,7 +2019,7 @@ end
     @test !isempty(cvs)
     # getMethods hands back CXXMethodDecl carriers; the conversion-only accessors need
     # the precise class.
-    cv0 = CC.downcast(CC.CXXConversionDecl, first(cvs).ptr)
+    cv0 = CC.CXXConversionDecl(first(cvs))
     ves = CC.ExplicitSpecifier(cv0)
     cvd = CC.CXXConversionDecl(ctx, lka, CC.getBeginLoc(cv0), CC.getNameInfo(cv0),
                                CC.getType(cv0), CC.getTypeSourceInfo(cv0), false, false,
@@ -2049,7 +2049,7 @@ end
     # ---- CXXRecordDecl::setIsParsingBaseSpecifiers: needs a definition (Invariant 3) ----
     CC.parse(I, "struct LKFwd;")
     @test f(I, "LKFwd")
-    fwd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    fwd = CC.CXXRecordDecl(get_decl(f))
     @test CC.hasDefinition(fwd) == false
     @test_throws AssertionError CC.setIsParsingBaseSpecifiers(fwd)
     # Applied last: the flag only ever goes false -> true, so it is set on a class no later
@@ -2072,7 +2072,7 @@ end
     # ---- CXXRecordDecl: flags that live in the definition data ----
     CC.parse(I, "struct MDM0 { int x; };")
     @test f(I, "MDM0")
-    mdm0 = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    mdm0 = CC.CXXRecordDecl(get_decl(f))
     @test CC.hasDefinition(mdm0)
     CC.markEmpty(mdm0)
     @test CC.isEmpty(mdm0)
@@ -2086,7 +2086,7 @@ end
     # a forward declaration carries no definition data: the setters reject it (Invariant 3)
     CC.parse(I, "struct MDMFwd;")
     @test f(I, "MDMFwd")
-    mdmfwd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    mdmfwd = CC.CXXRecordDecl(get_decl(f))
     @test CC.hasDefinition(mdmfwd) == false
     @test_throws AssertionError CC.markEmpty(mdmfwd)
     @test_throws AssertionError CC.markAbstract(mdmfwd)
@@ -2098,7 +2098,7 @@ end
     # has declared it, so the round-trip stops at the setter here.
     CC.parse(I, "struct MDM1 { MDM1(MDM1&&); MDM1& operator=(MDM1&&); };")
     @test f(I, "MDM1")
-    mdm1 = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    mdm1 = CC.CXXRecordDecl(get_decl(f))
     @test CC.needsOverloadResolutionForCopyConstructor(mdm1)
     @test CC.needsOverloadResolutionForCopyAssignment(mdm1)
     @test CC.setImplicitCopyConstructorIsDeleted(mdm1) === nothing
@@ -2109,7 +2109,7 @@ end
     CC.parse(I,
              "struct MDM2 { MDM2(MDM2&&); MDM2& operator=(MDM2&&); ~MDM2(); }; struct MDM3 { MDM2 m; };")
     @test f(I, "MDM3")
-    mdm3 = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    mdm3 = CC.CXXRecordDecl(get_decl(f))
     @test CC.needsOverloadResolutionForMoveConstructor(mdm3)
     @test CC.needsOverloadResolutionForMoveAssignment(mdm3)
     @test CC.needsOverloadResolutionForDestructor(mdm3)
@@ -2126,7 +2126,7 @@ end
     # ---- CXXRecordDecl: removeConversion ----
     CC.parse(I, "struct MDM4 { operator int(); };")
     @test f(I, "MDM4")
-    mdm4 = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    mdm4 = CC.CXXRecordDecl(get_decl(f))
     @test CC.getNumConversions(mdm4) == 1
     conv = CC.getConversion(mdm4, 0)
     CC.removeConversion(mdm4, conv)
@@ -2137,7 +2137,7 @@ end
     # ---- CXXRecordDecl: the two CXXMethodDecl-taking definition-data updates ----
     CC.parse(I, "struct MDM5 { MDM5() = default; MDM5(const MDM5&) = default; };")
     @test f(I, "MDM5")
-    mdm5 = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    mdm5 = CC.CXXRecordDecl(get_decl(f))
     ctors = CC.getCtors(mdm5)
     @test !isempty(ctors)
     for c in ctors
@@ -2153,7 +2153,7 @@ end
     # ---- CXXRecordDecl: lambda numbering and the generic-lambda flag ----
     CC.parse(I, "int mdmv = 1;")
     @test f(I, "mdmv")
-    mdmv = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    mdmv = CC.VarDecl(get_decl(f))
     loc = CC.getLocation(mdmv)
     tsi = CC.getTypeSourceInfo(mdmv)
     lam = CC.CXXRecordDecl(ctx, dc, tsi, loc, LCE.CXLambdaDependencyKind_Unknown, false,
@@ -2176,7 +2176,7 @@ end
     # ---- CXXDestructorDecl: setOperatorDelete ----
     CC.parse(I, "struct MDM6 { ~MDM6(); void operator delete(void*); };")
     @test f(I, "MDM6")
-    mdm6 = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    mdm6 = CC.CXXRecordDecl(get_decl(f))
     dtor = CC.getDestructor(mdm6)
     @test dtor.ptr != C_NULL
     opdel = nothing
@@ -2198,8 +2198,7 @@ end
     # Name lookup for "mdmfn" resolves THROUGH the shadow to the Function, so the
     # UsingDecl itself never appears in the result -- walk the TU for it instead.
     tu_dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
-    ud = CC.downcast(CC.UsingDecl, first(d for d in CC.decls(tu_dc)
-                            if CC.getDeclKindName(d) == "Using").ptr)
+    ud = CC.UsingDecl(first(d for d in CC.decls(tu_dc) if CC.getDeclKindName(d) == "Using"))
     sh = CC.getShadows(ud)
     @test length(sh) == 1
     CC.removeShadowDecl(ud, sh[1])
@@ -2225,7 +2224,7 @@ end
     # ---- CXXRecordDecl: the friend declarations of a class ----
     CC.parse(I, "struct UIFA; struct UIFB { friend void uiffn(); friend struct UIFA; };")
     @test f(I, "UIFB")
-    uifb = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    uifb = CC.CXXRecordDecl(get_decl(f))
     @test CC.hasFriends(uifb)
     @test CC.getNumFriends(uifb) == 2
     fr = CC.getFriends(uifb)
@@ -2235,7 +2234,7 @@ end
 
     CC.parse(I, "struct UIFC { int uifcx; };")
     @test f(I, "UIFC")
-    uifc = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    uifc = CC.CXXRecordDecl(get_decl(f))
     @test CC.hasFriends(uifc) == false
     @test CC.getNumFriends(uifc) == 0
     @test isempty(CC.getFriends(uifc))
@@ -2248,7 +2247,7 @@ end
     @test CC.calculateInheritanceModel(uifc) in models
     CC.parse(I, "struct UIFD { virtual void uifdm() {} }; struct UIFE : virtual UIFD {};")
     @test f(I, "UIFE")
-    uife = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    uife = CC.CXXRecordDecl(get_decl(f))
     @test CC.calculateInheritanceModel(uife) in models
 
     # nullFieldOffsetIsZero is Microsoft-ABI only: the inheritance model it reads lives
@@ -2262,7 +2261,7 @@ end
     # ---- every definition-data reader rejects a class with no definition ----
     CC.parse(I, "int uifv = 1;")
     @test f(I, "uifv")
-    uifv = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    uifv = CC.VarDecl(get_decl(f))
     loc = CC.getLocation(uifv)
     id = CC.getIdentifier(uifv)
     tsi = CC.getTypeSourceInfo(uifv)
@@ -2276,7 +2275,7 @@ end
     # ---- CXXRecordDecl: setLambdaTypeInfo round-trips on a closure type ----
     CC.parse(I, "double uifw = 2;")
     @test f(I, "uifw")
-    uifw = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    uifw = CC.VarDecl(get_decl(f))
     tsi2 = CC.getTypeSourceInfo(uifw)
     @test tsi2.ptr != tsi.ptr
     lam = CC.CXXRecordDecl(ctx, dc, tsi, loc, LCE.CXLambdaDependencyKind_Unknown, false,
@@ -2353,7 +2352,7 @@ end
     # storage duration), so the capturing closure is reached through a member function's
     # deduced return type.
     @test f(I, "CapVar")
-    capvar = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    capvar = CC.VarDecl(get_decl(f))
     lam = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(capvar)))
     @test lam isa CC.CXXRecordDecl
     if lam.ptr != C_NULL && CC.isLambda(lam)
@@ -2371,7 +2370,7 @@ end
     end
 
     @test f(I, "CapNone")
-    capnone = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    capnone = CC.VarDecl(get_decl(f))
     nolam = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(capnone)))
     if nolam.ptr != C_NULL && CC.isLambda(nolam)
         @test CC.getNumCaptureFields(nolam) == 0
@@ -2383,7 +2382,7 @@ end
 
     # a class that is not a closure type has no lambda definition data to reach
     @test f(I, "CapHost")
-    caphost = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    caphost = CC.CXXRecordDecl(get_decl(f))
     @test CC.isLambda(caphost) == false
     @test_throws AssertionError CC.getNumCaptureFields(caphost)
     @test_throws AssertionError CC.getCaptureFields(caphost)
@@ -2392,14 +2391,14 @@ end
     # DeclarationNames are uniqued per ASTContext, so the global `ldnprobe`'s name is the
     # member's name too.
     @test f(I, "ldnprobe")
-    probe = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    probe = CC.VarDecl(get_decl(f))
     nprobe = CC.getDeclName(probe)
     @test f(I, "ldnstranger")
-    nstranger = CC.getDeclName(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    nstranger = CC.getDeclName(CC.VarDecl(get_decl(f)))
     @test f(I, "LdnBase")
-    ldnbase = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    ldnbase = CC.CXXRecordDecl(get_decl(f))
     @test f(I, "LdnDerived")
-    ldnderived = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    ldnderived = CC.CXXRecordDecl(get_decl(f))
 
     @test CC.getNumDependentNameLookupResults(ldnbase, nprobe) == 1
     direct = CC.lookupDependentName(ldnbase, nprobe)
@@ -2635,6 +2634,117 @@ end
             @test CC.getNameAsString(overrider[i]) == "fo_f"
             @test CC.getNameAsString(CC.getParent(overrider[i])) == "FOMid"
         end
+    finally
+        dispose(I)
+    end
+end
+
+@testset "CXXRecordDecl | base paths and the selected destructor" begin
+    I = create_interpreter(["-std=c++20"])
+    try
+        ctx = CC.get_ast_context(I)
+        CC.parse(I, """
+            struct BPBase { int bp; };
+            struct BPPriv : private BPBase {};
+            struct BPProt : protected BPBase {};
+            struct BPMid : private BPBase {};
+            struct BPLeaf : BPMid {};
+            struct BPLeft : BPBase {};
+            struct BPRight : BPBase {};
+            struct BPAmbig : BPLeft, BPRight {};
+            struct BPVLeft : virtual BPBase {};
+            struct BPVRight : virtual BPBase {};
+            struct BPVirt : BPVLeft, BPVRight {};
+            struct BPUnrelated { int u; };
+            struct BPVDtor { virtual ~BPVDtor(); };
+        """)
+        tu = CC.getTranslationUnitDecl(ctx)
+        alldecls = CC.decls(CC.castToDeclContext(tu))
+        rec(name) = first(d for d in alldecls
+                          if d isa CC.CXXRecordDecl && CC.getNameAsString(d) == name)
+        base = rec("BPBase")
+
+        # Rows exist exactly when the derivation does, which is the question `isDerivedFrom`
+        # already answers — including the two clang answers `false` for outright (a class is
+        # not derived from itself, and derivation does not run backwards).
+        for (d, b) in ((rec("BPPriv"), base), (rec("BPLeaf"), base), (rec("BPAmbig"), base),
+                       (rec("BPVirt"), base), (base, rec("BPPriv")), (base, base),
+                       (rec("BPUnrelated"), base))
+            @test (CC.getNumBasePathElements(d, b) > 0) == CC.isDerivedFrom(d, b)
+        end
+        @test CC.getNumBasePathElements(base, base) == 0
+        @test all(isempty, CC.getBasePathElements(base, rec("BPUnrelated")))
+
+        # A one-step path merges to the specifier's own access, and its single row names the
+        # class the specifier is written on plus the specifier itself.
+        function one_step_access(x)
+            p, a, s, c, sub = CC.getBasePathElements(x, base)
+            @test p == [0]
+            @test [e.ptr for e in s] == [b.ptr for b in CC.getBases(x)]
+            @test [e.ptr for e in c] == [x.ptr]
+            @test sub == [1]   # the first non-virtual BPBase subobject; clang counts from 1
+            return only(a)
+        end
+        @test one_step_access(rec("BPLeft")) == LX.CXAccessSpecifier_AS_public
+        @test one_step_access(rec("BPPriv")) == LX.CXAccessSpecifier_AS_private
+        @test one_step_access(rec("BPProt")) == LX.CXAccessSpecifier_AS_protected
+
+        # `private` past the first step is what produces AS_none: BPLeaf is derived from
+        # BPBase, and no path permits the conversion.
+        leaf, mid = rec("BPLeaf"), rec("BPMid")
+        @test CC.getNumBasePathElements(leaf, base) == 2
+        p, a, s, c, sub = CC.getBasePathElements(leaf, base)
+        @test p == [0, 0]
+        @test a == fill(LX.CXAccessSpecifier_AS_none, 2)
+        @test [e.ptr for e in c] == [leaf.ptr, mid.ptr]
+        @test [e.ptr for e in s] == [only(CC.getBases(leaf)).ptr, only(CC.getBases(mid)).ptr]
+        @test CC.MergeAccess(LX.CXAccessSpecifier_AS_public,
+                             LX.CXAccessSpecifier_AS_private) == LX.CXAccessSpecifier_AS_none
+
+        # Two paths to two distinct subobjects of one base type: what tells them apart is the
+        # subobject number on the terminal step, not the path number.
+        ambig = rec("BPAmbig")
+        @test CC.getNumBasePathElements(ambig, base) == 4
+        p, a, s, c, sub = CC.getBasePathElements(ambig, base)
+        @test p == [0, 0, 1, 1]
+        @test all(==(LX.CXAccessSpecifier_AS_public), a)
+        terminal = [findlast(==(i), p) for i in unique(p)]
+        @test [c[i].ptr for i in terminal] == [rec("BPLeft").ptr, rec("BPRight").ptr]
+        @test length(unique(sub[terminal])) == 2
+        @test !any(i -> CC.isVirtual(s[i]), terminal)
+        # Every step follows a specifier written on that step's own class, and every path
+        # terminates at the base the search asked for.
+        target(e) = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(e)))
+        for i in eachindex(s)
+            @test s[i].ptr in [b.ptr for b in CC.getBases(c[i])]
+            @test (i in terminal) == (target(s[i]).ptr == base.ptr)
+        end
+
+        # The virtual diamond reaches one shared subobject, which is why clang numbers a
+        # virtual edge 0 instead of counting it.
+        virt = rec("BPVirt")
+        @test CC.isVirtuallyDerivedFrom(virt, base)
+        @test CC.getNumBasePathElements(virt, base) == 4
+        p, a, s, c, sub = CC.getBasePathElements(virt, base)
+        @test p == [0, 0, 1, 1]
+        vrows = [i for i in eachindex(s) if CC.isVirtual(s[i])]
+        @test vrows == [2, 4]
+        @test all(==(0), sub[vrows])
+        @test all(!=(0), sub[setdiff(eachindex(s), vrows)])
+
+        # addedSelectedDestructor is observable twice over: it clears the destructor's own
+        # ineligible-or-not-selected bit, and, the destructor being virtual, it clears the
+        # class's trivial-for-call bit that the setter above had just turned on.
+        vd = rec("BPVDtor")
+        dtor = CC.getDestructor(vd)
+        @test CC.isVirtual(dtor)
+        CC.setIneligibleOrNotSelected(dtor, true)
+        CC.setHasTrivialSpecialMemberForCall(vd)
+        @test CC.isIneligibleOrNotSelected(dtor)
+        @test CC.hasTrivialDestructorForCall(vd)
+        @test CC.addedSelectedDestructor(vd, dtor) === nothing
+        @test !CC.isIneligibleOrNotSelected(dtor)
+        @test !CC.hasTrivialDestructorForCall(vd)
     finally
         dispose(I)
     end

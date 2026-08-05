@@ -881,3 +881,148 @@ end
     CC.dispose(qfid)
     CC.dispose(Q)
 end
+
+@testset "Preprocessor | LexTokensUntilEOF drains as far as a hand-rolled loop" begin
+    # Both interpreters are throwaways: draining consumes the live token stream. The pair
+    # is the assertion -- clang's own drain and a hand-rolled `Lex` loop over the same
+    # input must move the token counter by the same amount. Neither side is a value this
+    # test chose, and neither depends on the host.
+    src = "int lex_until_eof_probe = 12345;"
+
+    A = create_interpreter()
+    aci = get_instance(A)
+    app = CC.getPreprocessor(aci)
+    afid = CC.FileID(CC.getSourceManager(aci), CC.get_buffer(src))
+    CC.begin_diag(aci)
+    CC.EnterSourceFile(app, afid)
+    a0 = CC.getTokenCount(app)
+    atok = CC.Token()
+    CC.Lex(app, atok)
+    while !CC.is_annot_repl_input_end(atok)
+        CC.Lex(app, atok)
+    end
+    manual = CC.getTokenCount(app) - a0
+    CC.EndSourceFile(app)
+    CC.end_diag(aci)
+    CC.dispose(atok)
+    CC.dispose(afid)
+    CC.dispose(A)
+
+    B = create_interpreter()
+    bci = get_instance(B)
+    bpp = CC.getPreprocessor(bci)
+    bfid = CC.FileID(CC.getSourceManager(bci), CC.get_buffer(src))
+    CC.begin_diag(bci)
+    CC.EnterSourceFile(bpp, bfid)
+    b0 = CC.getTokenCount(bpp)
+    CC.LexTokensUntilEOF(bpp)
+    drained = CC.getTokenCount(bpp) - b0
+    CC.EndSourceFile(bpp)
+    CC.end_diag(bci)
+    CC.dispose(bfid)
+    CC.dispose(B)
+
+    # the five tokens of `int lex_until_eof_probe = 12345 ;` all had to be lexed before
+    # either loop could reach its stop token, so neither counter can have stood still
+    @test manual >= 5
+    @test drained == manual
+end
+
+@testset "Preprocessor | CheckMacroName is clang's composed macro-name verdict" begin
+    # A rejection is reported through the DiagnosticsEngine, so the interpreter is a
+    # throwaway this testset owns and diagnostics are suppressed while the rejecting calls
+    # run. Nothing here consumes the live token stream: every token is relexed out of a
+    # scratch file with getRawToken, which never advances the lexer.
+    I = create_interpreter()
+    ci = get_instance(I)
+    pp = CC.getPreprocessor(ci)
+    sm = CC.getSourceManager(pp)
+    # a rejection renders through the diagnostic client, which needs to be inside a source
+    # file to have a TextDiagnostic to render with
+    CC.begin_diag(ci)
+
+    names = ["PP_CHECK_PLAIN_NAME", "defined", "int"]
+    toks = CC.Token[]
+    fids = CC.FileID[]
+    refs = CC.FileEntryRef[]
+    paths = String[]
+    for name in names
+        path, io = mktemp()
+        write(io, name * "\n")
+        close(io)
+        ref = CC.getFileRef(CC.getFileManager(pp), path)
+        fid = CC.FileID(sm, ref)
+        tok = CC.Token()
+        # getRawToken reports failure, not success
+        @test CC.getRawToken(pp, CC.getLocForStartOfFile(sm, fid), tok, false) == false
+        @test CC.getRawIdentifier(tok) == name
+        # while the token is still raw its PtrData is the spelling pointer, not an
+        # IdentifierInfo -- the gate has to reject it before clang reads flag bits out of
+        # the source text
+        @test_throws AssertionError CC.CheckMacroName(pp, tok, CC.CXMacroUse_MU_Define)
+        # installs the identifier info -- and the real token kind -- CheckMacroName reads
+        CC.LookUpIdentifierInfo(pp, tok)
+        @test CC.is_raw_identifier(tok) == false
+        push!(toks, tok)
+        push!(fids, fid)
+        push!(refs, ref)
+        push!(paths, path)
+    end
+    @test length(toks) == length(names)
+    plain, defined_tok, keyword = toks
+
+    # `int` came back as a keyword token and `PP_CHECK_PLAIN_NAME` did not, so the two
+    # arms below really do differ in what clang knows about the name
+    @test CC.getKind(keyword) != CC.getKind(plain)
+    @test CC.is_identifier(plain) == true
+    @test CC.is_identifier(keyword) == false
+
+    # an ordinary identifier is accepted for every use and shadows nothing
+    @test CC.CheckMacroName(pp, plain, CC.CXMacroUse_MU_Define) == (false, false)
+    @test CC.CheckMacroName(pp, plain, CC.CXMacroUse_MU_Undef) == (false, false)
+    @test CC.CheckMacroName(pp, plain) == (false, false)
+
+    # a keyword is an accepted macro name, but clang reports that defining it shadows the
+    # keyword. It hands that verdict back only through this flag -- it leaves the warning
+    # to its caller -- and it computes it only for a `#define`, never for `#undef` or for
+    # a name outside a directive
+    @test CC.CheckMacroName(pp, keyword, CC.CXMacroUse_MU_Define) == (false, true)
+    @test CC.CheckMacroName(pp, keyword, CC.CXMacroUse_MU_Undef) == (false, false)
+    @test CC.CheckMacroName(pp, keyword) == (false, false)
+
+    # `defined` may name neither a `#define` nor a `#undef` (C99 6.10.8/4), yet it is an
+    # ordinary identifier outside a directive. Same token all three times, so the verdict
+    # turns on the MacroUse argument alone
+    diags = CC.getDiagnostics(pp)
+    old_suppress = CC.getSuppressAllDiagnostics(diags)
+    CC.setSuppressAllDiagnostics(diags, true)
+    @test CC.CheckMacroName(pp, defined_tok, CC.CXMacroUse_MU_Define)[1] == true
+    @test CC.CheckMacroName(pp, defined_tok, CC.CXMacroUse_MU_Undef)[1] == true
+    # a token carrying no identifier at all is rejected -- by clang, not by the gate --
+    # whatever the use
+    blank = CC.Token()
+    @test CC.is_raw_identifier(blank) == false
+    @test CC.isAnnotation(blank) == false
+    @test CC.CheckMacroName(pp, blank, CC.CXMacroUse_MU_Define)[1] == true
+    @test CC.CheckMacroName(pp, blank)[1] == true
+    CC.setSuppressAllDiagnostics(diags, old_suppress)
+    @test CC.getSuppressAllDiagnostics(diags) == old_suppress
+    @test CC.CheckMacroName(pp, defined_tok) == (false, false)
+
+    # the second arm of the gate: after its startup parse the incremental parser is parked
+    # on the annotation that ends REPL input, whose PtrData is the annotation payload --
+    # borrowed from the parser, so it is read and never disposed here
+    annot = CC.getCurToken(CC.get_parser(I))
+    @test CC.isAnnotation(annot) == true
+    @test_throws AssertionError CC.CheckMacroName(pp, annot)
+
+    CC.dispose(blank)
+    for (tok, fid, ref, path) in zip(toks, fids, refs, paths)
+        CC.dispose(tok)
+        CC.dispose(fid)
+        CC.dispose(ref)
+        rm(path; force=true)
+    end
+    CC.end_diag(ci)
+    dispose(I)
+end

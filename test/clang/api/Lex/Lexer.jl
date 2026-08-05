@@ -118,12 +118,12 @@ end
     # field is indented four spaces. The field is reached through the record rather than by
     # name, since a member is not a top-level lookup result.
     @test f(I, "IndentProbe")
-    rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
-    rloc = CC.getLocation(CC.upcast(CC.NamedDecl, rd.ptr))
+    rd = CC.CXXRecordDecl(get_decl(f))
+    rloc = CC.getLocation(CC.NamedDecl(rd))
     @test CC.getIndentationForLine(CC.getFileLoc(sm, rloc), sm) == ""
     members = collect(CC.decls_in(CC.castToDeclContext(rd)))
     fld = only(filter(d -> d isa CC.FieldDecl, members))
-    floc = CC.getLocation(CC.upcast(CC.NamedDecl, fld.ptr))
+    floc = CC.getLocation(CC.NamedDecl(fld))
     @test CC.getIndentationForLine(CC.getFileLoc(sm, floc), sm) == "    "
     @test_throws AssertionError CC.getIndentationForLine(CC.SourceLocation(), sm)
 

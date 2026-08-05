@@ -63,11 +63,9 @@ reproduced structurally in Julia instead of crossing the C boundary, the same wa
 `SourceRange` and `CharSourceRange` are. A default-constructed value carries a NULL manager
 and answers `hasManager` with `false`.
 
-The manager field is typed at `AbstractSourceManager` because the concrete `SourceManager`
-carrier is defined in a file this one precedes; the manager is borrowed and must never be
-disposed through this struct.
+The manager is borrowed and must never be disposed through this struct.
 """
 struct FullSourceLoc
     loc::SourceLocation
-    src_mgr::AbstractSourceManager
+    src_mgr::SourceManager
 end

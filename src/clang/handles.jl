@@ -18,9 +18,9 @@
 # definition, and `reinterpret`. Neither is reachable by accident -- you cannot arrive at
 # either without writing the class you are asserting -- and the first is the mechanism the
 # marshalling layer is built from: every entry in `converts.jl` is one, and so is
-# `downcast`/`upcast`. Closing them would leave the layer no way to express the upcast that
-# single inheritance makes correct. What the three methods below remove is the *implicit*
-# crossing, the one no call site had to ask for.
+# `unchecked_cast`. Closing them would leave the resolve machinery no way to express the
+# widening that single inheritance makes correct. What the three methods below remove is the
+# *implicit* crossing, the one no call site had to ask for.
 #
 # This is not piracy despite extending Base functions on `Ptr`: `A` and `B` are this package's
 # own phantoms, so no call in any program that does not use this package can dispatch here.
@@ -29,12 +29,13 @@
 #
 # `Ptr{Cvoid}` is deliberately outside all of this. It is not a `CX` handle, it is what
 # `C_NULL` is, and a null carrier is a legal value throughout the layer -- so those
-# conversions keep going to Base and keep working. Deliberate crossings between two real
-# handles go through `downcast`/`upcast`, which name the class they are asserting.
+# conversions keep going to Base and keep working. A deliberate crossing between two real
+# handles is a checked cast -- `FunctionDecl(d)`, `IfStmt(s)` -- which names the class it is
+# asserting and has clang confirm it.
 
 @noinline function _wrong_handle(want, got)
     throw(ArgumentError("expected a $want, got a $got -- these name different clang classes. " *
-                        "Use `downcast`/`upcast` if the crossing is intended."))
+                        "Use the checked cast for the class you mean if the crossing is intended."))
 end
 
 Base.convert(::Type{Ptr{A}}, p::Ptr{B}) where {A<:AbstractCXImpl,B<:AbstractCXImpl} =

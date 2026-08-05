@@ -258,7 +258,7 @@ FullSourceLoc() = FullSourceLoc(SourceLocation(), SourceManager(C_NULL))
 Return `true` iff `x` carries a source manager. Every accessor that has to interpret the
 location needs one, so this is their shared precondition.
 """
-hasManager(x::FullSourceLoc) = x.src_mgr.ptr != C_NULL
+hasManager(x::FullSourceLoc) = !is_null_handle(x.src_mgr)
 
 """
     getManager(x::FullSourceLoc) -> AbstractSourceManager

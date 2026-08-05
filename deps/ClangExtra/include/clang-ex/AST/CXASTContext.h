@@ -50,7 +50,14 @@ typedef enum CXGetBuiltinTypeError {
 // ASTContext
 
 // getInterpContext
-// getParentMapContext
+
+// The context's dynamic-parent map — the object that owns the cached parent edges every
+// clang_ASTContext_getNumParentsOf*/getParentOf* call below reads, and the traversal kind
+// that decides whether those edges step through nodes clang did not spell in the source.
+// BORROWED: the ASTContext owns it through a std::unique_ptr member and builds it on the
+// first call, so it lives exactly as long as the context and has no dispose.
+CXParentMapContext clang_ASTContext_getParentMapContext(CXASTContext Ctx);
+
 // getTraversalScope
 
 // helper — how many decls clang_ASTContext_getTraversalScopeDecls will write
@@ -67,7 +74,33 @@ void clang_ASTContext_getTraversalScopeDecls(CXASTContext Ctx, CXDecl *Buf);
 // the call; Decls may be NULL when NumDecls is 0. Narrowing the scope also clears the
 // cached parent map.
 void clang_ASTContext_setTraversalScope(CXASTContext Ctx, CXDecl *Decls, unsigned NumDecls);
-// getParents
+
+// helper — the parents of S within the current traversal scope (MARSHALLING.md §6
+// count+index, §8 arm split on the parent node's kind). A statement inside a template
+// pattern can have more than one parent; every other node has 0 or 1, and only the
+// translation unit has none. The map is built lazily on the first call and CACHED on the
+// ASTContext, so nodes produced by a LATER incremental parse are absent from it until the
+// cache is dropped — clang_ASTContext_setTraversalScope and clang_ParentMapContext_clear
+// are the two ways to drop it.
+unsigned clang_ASTContext_getNumParentsOfStmt(CXASTContext Ctx, CXStmt S);
+
+// PRECONDITION: I < clang_ASTContext_getNumParentsOfStmt(Ctx, S), restated as an @assert in
+// the Julia layer. Out of range the shim answers NULL rather than tripping
+// DynTypedNodeList::operator[]'s own assert, which aborts the process under an
+// assertion-enabled LLVM (MARSHALLING.md §13). The parent is a discriminated node
+// (MARSHALLING.md §8): for a given I at most one of the two accessors answers non-NULL,
+// and both answer NULL when the parent is neither a Stmt nor a Decl (a Type, TypeLoc or
+// NestedNameSpecifier parent). Only the pointer-identity node kinds are exposed, because
+// DynTypedNode::get<T>() on a by-value kind points into the DynTypedNodeList temporary.
+// Borrowed AST-arena pointers.
+CXStmt clang_ASTContext_getParentOfStmtAsStmt(CXASTContext Ctx, CXStmt S, unsigned I);
+CXDecl clang_ASTContext_getParentOfStmtAsDecl(CXASTContext Ctx, CXStmt S, unsigned I);
+
+// The same pair over a declaration; the caveats above apply unchanged.
+unsigned clang_ASTContext_getNumParentsOfDecl(CXASTContext Ctx, CXDecl D);
+CXStmt clang_ASTContext_getParentOfDeclAsStmt(CXASTContext Ctx, CXDecl D, unsigned I);
+CXDecl clang_ASTContext_getParentOfDeclAsDecl(CXASTContext Ctx, CXDecl D, unsigned I);
+
 // The context's own policy -- the one every printer taking a CXASTContext reads. This is a
 // BORROWED interior pointer into a by-value member (MARSHALLING.md §14 does not apply: it is
 // a plain member, not an element of a container clang can reallocate), so it has no dispose,
@@ -81,9 +114,12 @@ void clang_ASTContext_setPrintingPolicy(CXASTContext Ctx, CXPrintingPolicy_ Poli
 
 CXSourceManager clang_ASTContext_getSourceManager(CXASTContext Ctx);
 
+// cleanup
 // getAllocator
 // Allocate
 // Deallocate
+// AllocateDeclListNode
+// DeallocateDeclListNode
 
 size_t clang_ASTContext_getASTAllocatedMemory(CXASTContext Ctx);
 
@@ -307,6 +343,8 @@ unsigned clang_ASTContext_getNumModuleInitializers(CXASTContext Ctx, CXModule_ M
 // unchecked; restated as an @assert in the Julia layer. The CXDecls are borrowed.
 CXDecl clang_ASTContext_getModuleInitializer(CXASTContext Ctx, CXModule_ M, unsigned I);
 
+// setCurrentNamedModule
+
 // The C++20 named module under construction; NULL outside a named-module build.
 CXModule_ clang_ASTContext_getCurrentNamedModule(CXASTContext Ctx);
 
@@ -466,6 +504,8 @@ CXQualType clang_ASTContext_getAttributedType(CXASTContext Ctx, CXAttrKind AttrK
                                               CXQualType ModifiedType,
                                               CXQualType EquivalentType);
 
+// getBTFTagAttributedType
+
 CXQualType clang_ASTContext_getIncompleteArrayType(CXASTContext Ctx, CXQualType EltTy,
                                                    CXArraySizeModifier ASM,
                                                    unsigned IndexTypeQuals);
@@ -558,6 +598,8 @@ CXQualType clang_ASTContext_getVariableArrayDecayedType(CXASTContext Ctx, CXQual
 
 CXQualType clang_ASTContext_getScalableVectorType(CXASTContext Ctx, CXQualType EltTy,
                                                   unsigned NumElts);
+
+// getWebAssemblyExternrefType
 
 CXQualType clang_ASTContext_getVectorType(CXASTContext Ctx, CXQualType VectorType,
                                           unsigned NumElts, CXVectorKind VecKind);
@@ -1332,6 +1374,8 @@ bool clang_ASTContext_isSameTemplateParameter(CXASTContext Ctx, CXNamedDecl X,
 
 bool clang_ASTContext_isSameConstraintExpr(CXASTContext Ctx, CXExpr XCE, CXExpr YCE);
 
+// isSameTypeConstraint
+
 // PRECONDITION: X and Y must have the same Decl kind (clang asserts it); restated as an
 // @assert in the Julia layer.
 bool clang_ASTContext_isSameDefaultTemplateArgument(CXASTContext Ctx, CXNamedDecl X,
@@ -1509,7 +1553,18 @@ bool clang_ASTContext_AnyObjCImplementation(CXASTContext Ctx);
 // getObjCMethodRedeclaration
 // setObjCMethodRedeclaration
 // getObjContainingInterface
-// setBlockVarCopyInit
+
+// Records CopyExpr as the expression that copies the __block variable VD into an escaping
+// block, and whether that copy can throw — the write half of
+// clang_ASTContext_getBlockVarCopyInit. The record is kept in a side table keyed on VD;
+// neither handle is adopted, and CopyExpr must outlive the context's use of it (an
+// AST-arena expression does).
+// PRECONDITION: VD carries the Blocks attribute — the same gate the getter documents. The
+// symmetric reading of clang's own API; ASTContext.cpp does not ship in the pinned
+// artifact, so the assert text could not be read.
+void clang_ASTContext_setBlockVarCopyInit(CXASTContext Ctx, CXVarDecl VD, CXExpr CopyExpr,
+                                          bool CanThrow);
+
 // The copy-initialization record clang recorded for the __block variable VD: the expression
 // that copies it into an escaping block plus whether that copy can throw. A variable with no
 // entry -- a scalar __block variable, or one no escaping block captures -- yields a
@@ -1526,6 +1581,9 @@ CXTypeSourceInfo clang_ASTContext_CreateTypeSourceInfo(CXASTContext Ctx, CXQualT
 
 CXTypeSourceInfo clang_ASTContext_getTrivialTypeSourceInfo(CXASTContext Ctx, CXQualType T,
                                                            CXSourceLocation_ Loc);
+
+// AddDeallocation
+// addDestruction
 
 CXGVALinkage clang_ASTContext_GetGVALinkageForFunction(CXASTContext Ctx, CXFunctionDecl FD);
 
@@ -1561,7 +1619,7 @@ void clang_ASTContext_setStaticLocalNumber(CXASTContext Ctx, CXVarDecl ND, unsig
 unsigned clang_ASTContext_getStaticLocalNumber(CXASTContext Ctx, CXVarDecl ND);
 
 // getManglingNumberContext
-// createManglingNumberingContext
+// createMangleNumberingContext
 
 void clang_ASTContext_setParameterIndex(CXASTContext Ctx, CXParmVarDecl D, unsigned index);
 
@@ -1595,7 +1653,33 @@ CXUnnamedGlobalConstantDecl clang_ASTContext_getUnnamedGlobalConstantDecl(CXASTC
 // Julia layer.
 CXTemplateParamObjectDecl
 clang_ASTContext_getTemplateParamObjectDecl(CXASTContext Ctx, CXQualType T, CXAPValue V);
-// filterFunctionTargetAttrs
+
+// helper — how many feature names survive parsing TD against this context's target: the
+// `target(...)` spelling split on commas, minus the arch=/tune=/branch-protection=
+// components, minus every name the target rejects. ParsedTargetAttr is a by-value aggregate
+// holding a std::vector<std::string> whose storage dies with the call, so it crosses as its
+// parts (MARSHALLING.md §7) with the parse rebuilt on every call (§10, the same scheme as
+// clang_ASTContext_getNumFunctionFeatures): no StringRef escapes and the shim stays
+// stateless. The parse is a pure function of TD's spelling and the target, so index I names
+// the same feature in both functions.
+// This is what the attribute ASKED for, not what the target resolved it to — the resolved
+// map, with implied features expanded, is clang_ASTContext_getNumFunctionFeatures.
+unsigned clang_ASTContext_getNumFilteredFunctionTargetFeatures(CXASTContext Ctx,
+                                                               CXTargetAttr TD);
+
+// PRECONDITION: I < clang_ASTContext_getNumFilteredFunctionTargetFeatures(Ctx, TD),
+// restated as an @assert in the Julia layer. Out of range the shim answers the empty string
+// rather than indexing a std::vector past its end, which aborts outright under mingw's
+// assertion-enabled libstdc++ (MARSHALLING.md §13). The name keeps clang's leading '+'/'-'
+// sign, so a `no-sse3` component comes back as "-sse3". The CXString is caller-owned.
+CXString clang_ASTContext_getFilteredFunctionTargetFeature(CXASTContext Ctx,
+                                                           CXTargetAttr TD, unsigned I);
+
+// The `arch=` and `tune=` spellings TD named, or an empty string when it named neither.
+CXString clang_ASTContext_getFilteredFunctionTargetCPU(CXASTContext Ctx, CXTargetAttr TD);
+CXString clang_ASTContext_getFilteredFunctionTargetTune(CXASTContext Ctx, CXTargetAttr TD);
+
+// filterFunctionTargetVersionAttrs
 // getFunctionFeatureMap
 
 // helper — the size of the target feature map clang computes for FD (the target's baseline

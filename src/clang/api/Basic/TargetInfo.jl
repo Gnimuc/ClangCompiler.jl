@@ -338,6 +338,20 @@ end
 getTypeName(T::CXTargetInfo_IntType) = unsafe_string(clang_TargetInfo_getTypeName(T))
 
 """
+    getTargetDefines(x::AbstractTargetInfo, lo::LangOptions) -> String
+Return the target-specific `#define` block for `x`: the text Clang folds into the predefines
+buffer while initialising a preprocessor, one newline-terminated directive per line.
+
+`lo` is read, never written. The answer therefore reflects the language options exactly as
+they stand, so reading it before [`adjust`](@ref) gives the faithful pre-adjust picture
+rather than the one the preprocessor would eventually see.
+"""
+function getTargetDefines(x::AbstractTargetInfo, lo::LangOptions)
+    @check_ptrs x lo
+    return get_string(clang_TargetInfo_getTargetDefines(x, lo))
+end
+
+"""
     getVScaleRange(x::AbstractTargetInfo, lo::LangOptions) -> Union{Tuple{Cuint,Cuint},Nothing}
 Return the target-specific `(min, max)` vscale range, or `nothing` when the target defines
 none (the C++ optional is disengaged).
@@ -874,6 +888,32 @@ function hasSjLjLowering(x::AbstractTargetInfo)
     return clang_TargetInfo_hasSjLjLowering(x)
 end
 
+"""
+    checkCFProtectionBranchSupported(x::AbstractTargetInfo, diag::DiagnosticsEngine) -> Bool
+Whether `-fcf-protection=branch` -- control-flow enforcement on indirect branches -- is
+supported on this target.
+
+A `false` answer *emits* an error into `diag` rather than returning quietly, so the engine's
+error count moves; pass a throwaway engine when that matters.
+"""
+function checkCFProtectionBranchSupported(x::AbstractTargetInfo, diag::DiagnosticsEngine)
+    @check_ptrs x diag
+    return clang_TargetInfo_checkCFProtectionBranchSupported(x, diag)
+end
+
+"""
+    checkCFProtectionReturnSupported(x::AbstractTargetInfo, diag::DiagnosticsEngine) -> Bool
+Whether `-fcf-protection=return` -- control-flow enforcement on returns -- is supported on
+this target.
+
+A `false` answer *emits* an error into `diag` rather than returning quietly, so the engine's
+error count moves; pass a throwaway engine when that matters.
+"""
+function checkCFProtectionReturnSupported(x::AbstractTargetInfo, diag::DiagnosticsEngine)
+    @check_ptrs x diag
+    return clang_TargetInfo_checkCFProtectionReturnSupported(x, diag)
+end
+
 function allowsLargerPreferedTypeAlignment(x::AbstractTargetInfo)
     @check_ptrs x
     return clang_TargetInfo_allowsLargerPreferedTypeAlignment(x)
@@ -1009,6 +1049,19 @@ function requiresImmediateConstant(x::AbstractConstraintInfo)
 end
 
 """
+    isValidAsmImmediate(x::AbstractConstraintInfo, value::Integer) -> Bool
+Whether `value` satisfies the immediate-constant constraint recorded on `x`.
+
+A `ConstraintInfo` that records no immediate range accepts every value, so this is `true`
+until [`setRequiresImmediate`](@ref) narrows it. The bounds a `ConstraintInfo` can hold are
+C `int`s, so no `value` is ever too wide to compare against them.
+"""
+function isValidAsmImmediate(x::AbstractConstraintInfo, value::Integer)
+    @check_ptrs x
+    return clang_ConstraintInfo_isValidAsmImmediate(x, value)
+end
+
+"""
     setIsReadWrite(x::AbstractConstraintInfo)
 Mark `x` as a read-write (`"+"`) output constraint.
 """
@@ -1075,6 +1128,25 @@ function setTiedOperand(x::AbstractConstraintInfo, n::Integer, output::AbstractC
 end
 
 """
+    validateGlobalRegisterVariable(x::AbstractTargetInfo, reg_name::AbstractString,
+                                   reg_size::Integer) -> Union{Bool,Nothing}
+Whether `reg_name` may back a global register variable (`register long x asm("rsp")`) of
+`reg_size` bits on this target: `nothing` when the register cannot back one at all,
+otherwise whether the register's own width differs from `reg_size`.
+
+This asks a different question from [`isValidGCCRegisterName`](@ref) -- x86 accepts every
+GCC register name there but only a subset here, and reports the width mismatch separately.
+Total for any string, the empty one included.
+"""
+function validateGlobalRegisterVariable(x::AbstractTargetInfo, reg_name::AbstractString,
+                                        reg_size::Integer)
+    @check_ptrs x
+    mismatch = Ref{Bool}(false)
+    ok = clang_TargetInfo_validateGlobalRegisterVariable(x, reg_name, reg_size, mismatch)
+    return ok ? mismatch[] : nothing
+end
+
+"""
     validateOutputConstraint(x::AbstractTargetInfo, info::AbstractConstraintInfo) -> Bool
 Parse `info`'s constraint string as an inline-asm *output* constraint for target `x`,
 returning `false` when it is not a valid one (an output constraint must start with `=` or
@@ -1117,6 +1189,20 @@ function getMaxOpenCLWorkGroupSize(x::AbstractTargetInfo)
 end
 
 """
+    useObjCFPRetForRealType(x::AbstractTargetInfo, t::CXFloatModeKind) -> Bool
+Whether the real floating-point type `t` uses the `fpret` flavour of Objective-C message
+passing on this target.
+
+The mask this reads is set by the target's own constructor whether or not Objective-C is
+being compiled, so the answer is a plain ABI fact about the triple. It is a bitmask test and
+is total for every enumerator, `CXFloatModeKind_NoFloat` included.
+"""
+function useObjCFPRetForRealType(x::AbstractTargetInfo, t::CXFloatModeKind)
+    @check_ptrs x
+    return clang_TargetInfo_useObjCFPRetForRealType(x, t)
+end
+
+"""
     useObjCFP2RetForComplexLongDouble(x::AbstractTargetInfo) -> Bool
 Whether `_Complex long double` uses the `fp2ret` flavour of Objective-C message passing on
 this target.
@@ -1151,6 +1237,26 @@ Whether this target uses the PS4 flavour of `dllimport`/`dllexport` handling.
 function hasPS4DLLImportExport(x::AbstractTargetInfo)
     @check_ptrs x
     return clang_TargetInfo_hasPS4DLLImportExport(x)
+end
+
+"""
+    adjust(x::AbstractTargetInfo, diag::DiagnosticsEngine, lo::LangOptions)
+Apply the language options `lo` to the target `x` and, in the other direction, let the target
+force language options back into `lo`, reporting any conflict through `diag`. Both `x` and
+`lo` are mutated.
+
+This is the only call that makes the `LangOptions`-dependent target properties reflect the
+language options at all: plain `char` signedness under `-fno-signed-char`, `getWCharType`
+under `-fshort-wchar`, `allowHalfArgsAndReturns`, `getFPEvalMethod`, and the long-double
+format under `-mlong-double-64`. Clang runs it exactly once, between building a target and
+its first use; `createTarget` and `setTargetAndLangOpts` already do so for the target they
+build, so this is for a [`TargetInfo`](@ref) constructed directly. It is idempotent in the
+fields it sets, but not in its diagnostics -- a second call re-emits them.
+"""
+function adjust(x::AbstractTargetInfo, diag::DiagnosticsEngine, lo::LangOptions)
+    @check_ptrs x diag lo
+    clang_TargetInfo_adjust(x, diag, lo)
+    return nothing
 end
 
 """
@@ -1447,6 +1553,23 @@ function CPUSpecificManglingCharacter(x::AbstractTargetInfo, name::AbstractStrin
     @check_ptrs x
     @assert validateCPUSpecificCPUDispatch(x, name) "target rejects this cpu_specific CPU name"
     return clang_TargetInfo_CPUSpecificManglingCharacter(x, name)
+end
+
+"""
+    getCPUSpecificCPUDispatchFeatures(x::AbstractTargetInfo,
+                                      name::AbstractString) -> Vector{String}
+Return the target features the `cpu_specific`/`cpu_dispatch` CPU option `name` turns on --
+the answer to why one multiversioned variant differs from another.
+
+Precondition: `validateCPUSpecificCPUDispatch(x, name)`. `TargetInfo`'s own implementation
+is an `llvm_unreachable`, so a target that does not implement `cpu_specific` multiversioning
+aborts instead of returning. An empty result is a valid answer, not a failure: the gate also
+accepts the alias CPU names, which carry no features of their own.
+"""
+function getCPUSpecificCPUDispatchFeatures(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    @assert validateCPUSpecificCPUDispatch(x, name) "target rejects this cpu_specific CPU name"
+    return get_string(clang_TargetInfo_getCPUSpecificCPUDispatchFeatures(x, name))
 end
 
 """

@@ -58,9 +58,9 @@ end
 
     f = DeclFinder(I)
     @test f(I, "scf_gvar")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     @test f(I, "scf_gfunc")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     pvd = CC.getParamDecl(fd, 0)
 
     # ---- per-decl map setters: round-trip against the paired getters ----
@@ -82,7 +82,7 @@ end
     # ---- FieldDecl map: two real FieldDecls reached via getFields ----
     CC.parse(I, "struct SCFRec { int fa; int fb; };")
     @test f(I, "SCFRec")
-    rd = CC.downcast(CC.RecordDecl, get_decl(f).ptr)
+    rd = CC.RecordDecl(get_decl(f))
     flds = CC.getFields(rd)
     @test length(flds) == 2
     CC.setInstantiatedFromUnnamedFieldDecl(ctx, flds[1], flds[2])
@@ -197,21 +197,21 @@ using ClangCompiler: get_tag
     """)
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
-    getptr(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f).ptr)
+    getdecl(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
     unwrap(t) = t isa CC.ElaboratedType ? CC.resolve(CC.getTypePtr(CC.getNamedType(t))) : t
 
     int_qt = CC.get_qual_type(CC.IntTy(ctx))
 
     # ---------- simple type-query overloads ----------
     @test CC.getTypeSize(ctx, CC.getTypePtr(int_qt)) == 32   # AbstractType overload
-    pt_qt = CC.getType(CC.downcast(CC.VarDecl, getptr("cta_pt_var")))
+    pt_qt = CC.getType(CC.VarDecl(getdecl("cta_pt_var")))
     @test CC.get_name(CC.getMemberPointerType(ctx, int_qt, pt_qt)) == "int CtaPt::*"   # QualType-class overload
     @test CC.getScalableVectorType(ctx, int_qt, 4) isa CC.QualType   # null QualType off SVE/RVV targets
 
     # ---------- stmt-tree carriers: AtomicExpr / IndirectGotoStmt ----------
     nodes = CC.AbstractStmt[]
     for fname in ("cta_atomic_fn", "cta_igoto")
-        fd = CC.downcast(CC.FunctionDecl, getptr(fname))
+        fd = CC.FunctionDecl(getdecl(fname))
         body = CC.getBody(fd)
         body.ptr == C_NULL || append!(nodes, CC.subtree(body))
     end
@@ -228,7 +228,7 @@ using ClangCompiler: get_tag
 
     # ---------- template-pattern nodes: TemplateName / dependent exprs ----------
     @assert f(I, "CtaST")
-    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    ctd = CC.ClassTemplateDecl(get_decl(f))
     patt = CC.getTemplatedDecl(ctd)
     local ttpt = nothing
     local injt = nothing
@@ -268,28 +268,28 @@ using ClangCompiler: get_tag
 
     # dependent NNS + identifier from `typename T::foo::type`
     @assert f(I, "CtaDep")
-    patt2 = CC.getTemplatedDecl(CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr))
+    patt2 = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f)))
     dnty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt2)))))
     @test dnty isa CC.DependentNameType
     @test !CC.is_null_handle(CC.getDependentTemplateName(ctx, CC.getQualifier(dnty), CC.getIdentifier(dnty)))
 
     # namespace-qualified NNS from `cta_ns::S cta_ns_sv;`
-    ety = CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.VarDecl, getptr("cta_ns_sv")))))
+    ety = CC.resolve(CC.getTypePtr(CC.getType(CC.VarDecl(getdecl("cta_ns_sv")))))
     @test ety isa CC.ElaboratedType
     nns = CC.getQualifier(ety)
     @test !CC.is_null_handle(CC.getCanonicalNestedNameSpecifier(ctx, nns))
 
     # ---------- DeclarationName / IdentifierInfo consumers ----------
-    plain_fd = CC.downcast(CC.FunctionDecl, getptr("cta_plain"))
+    plain_fd = CC.FunctionDecl(getdecl("cta_plain"))
     @test !CC.is_null_handle(CC.getAssumedTemplateName(ctx, CC.getDeclName(plain_fd)))
     ii = Base.get(CC.getIdents(ctx), "cta_macro_name")
     @test !CC.is_null_handle(CC.getMacroQualifiedType(ctx, int_qt, ii))
 
     # ---------- side-table registrations (throwaway TU state) ----------
     @assert f(I, "CtaVB")
-    vb = CC.downcast(CC.CXXRecordDecl, get_tag(f).ptr)
+    vb = CC.CXXRecordDecl(get_tag(f))
     @assert f(I, "CtaVD")
-    vd = CC.downcast(CC.CXXRecordDecl, get_tag(f).ptr)
+    vd = CC.CXXRecordDecl(get_tag(f))
     # pick the virtual `cta_vf` method; go through resolve to skip (virtual)
     # destructors — getName aborts on non-identifier declaration names
     vf_of(rd) = first(filter(m -> CC.isVirtual(m) && !(CC.resolve(m) isa CC.CXXDestructorDecl),
@@ -297,7 +297,7 @@ using ClangCompiler: get_tag
     @test CC.addOverriddenMethod(ctx, vf_of(vd), vf_of(vb)) === nothing
 
     @assert f(I, "CtaEx")
-    exrd = CC.downcast(CC.CXXRecordDecl, get_tag(f).ptr)
+    exrd = CC.CXXRecordDecl(get_tag(f))
     copyc = first(filter(CC.isCopyConstructor, CC.getCtors(exrd)))
     # NOTE: this family is backed by the C++ ABI object; under the Itanium ABI the
     # add* entry points are no-ops and the getters return NULL, so only isa-check.
@@ -306,18 +306,18 @@ using ClangCompiler: get_tag
 
     # typedef'd unnamed struct
     @assert f(I, "CtaUT")
-    td = CC.downcast(CC.TypedefDecl, get_decl(f).ptr)
+    td = CC.TypedefDecl(get_decl(f))
     ut_tag = CC.getAsTagDecl(CC.getTypePtr(CC.getUnderlyingType(td)))
     @test CC.addTypedefNameForUnnamedTagDecl(ctx, ut_tag, td) === nothing
     @test CC.is_null_handle(CC.getTypedefNameForUnnamedTagDecl(ctx, ut_tag))
 
     # unnamed struct with a declarator
-    uv = CC.downcast(CC.VarDecl, getptr("cta_unnamed_var"))
+    uv = CC.VarDecl(getdecl("cta_unnamed_var"))
     uv_tag = CC.getAsTagDecl(CC.getTypePtr(CC.getType(uv)))
     @test CC.addDeclaratorForUnnamedTagDecl(ctx, uv_tag, uv) === nothing
     @test CC.is_null_handle(CC.getDeclaratorForUnnamedTagDecl(ctx, uv_tag))
 
-    ded_fd = CC.downcast(CC.FunctionDecl, getptr("cta_dedret"))
+    ded_fd = CC.FunctionDecl(getdecl("cta_dedret"))
     @test CC.adjustDeducedFunctionResultType(ctx, ded_fd, CC.getReturnType(ded_fd)) === nothing
 
     @test CC.deduplicateMergedDefinitonsFor(ctx, plain_fd) === nothing
@@ -375,17 +375,17 @@ end
 
     f = DeclFinder(I)
     @test f(I, "Point")
-    point = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    point = CC.CXXRecordDecl(get_decl(f))
     @test f(I, "Color")
-    color = CC.downcast(CC.EnumDecl, get_decl(f).ptr)
+    color = CC.EnumDecl(get_decl(f))
     @test f(I, "MyInt")
-    mytypedef = CC.downcast(CC.TypedefDecl, get_decl(f).ptr)
+    mytypedef = CC.TypedefDecl(get_decl(f))
     @test f(I, "arr")
-    arr_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    arr_vd = CC.VarDecl(get_decl(f))
     @test f(I, "gv")
-    gv_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    gv_vd = CC.VarDecl(get_decl(f))
     @test f(I, "add")
-    add_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    add_fd = CC.FunctionDecl(get_decl(f))
     add_nd = get_decl(f)
 
     field = CC.getFields(point)[1]
@@ -437,7 +437,7 @@ end
     ptr_qt = CC.getPointerType(ctx, int_qt)
     array_qt = CC.getType(arr_vd)                       # int[5]
     func_qt = CC.getType(add_fd)                        # int(int,int)
-    record_qt = CC.getRecordType(ctx, CC.downcast(CC.RecordDecl, point.ptr))
+    record_qt = CC.getRecordType(ctx, CC.RecordDecl(point))
     noproto_qt = CC.getFunctionNoProtoType(ctx, int_qt) # int()
     block_qt = CC.getBlockPointerType(ctx, func_qt)
     @test !CC.is_null_handle(ptr_qt)
@@ -582,7 +582,8 @@ end
     # target-decided: __va_list_tag is the SysV x86_64 spelling of va_list and does not
     # exist on every target this suite runs on, so only the carrier shape is assertable
     vat_decl = CC.getVaListTagDecl(ctx)
-    @test vat_decl isa CC.Decl && (CC.is_null_handle(vat_decl) || CC.get_name(CC.upcast(CC.NamedDecl, vat_decl.ptr)) == "__va_list_tag")
+    @test vat_decl isa CC.Decl &&
+          (CC.is_null_handle(vat_decl) || CC.get_name(CC.NamedDecl(vat_decl)) == "__va_list_tag")
     @test CC.is_null_handle(CC.getBOOLDecl(ctx))
     @test !CC.is_null_handle(CC.getInt128Decl(ctx))
     @test !CC.is_null_handle(CC.getUInt128Decl(ctx))
@@ -606,7 +607,7 @@ end
 
     # ---- decl-argument accessors ----
     @test !CC.is_null_handle(CC.getTypeDeclType(ctx, mytypedef))
-    @test !CC.is_null_handle(CC.getRecordType(ctx, CC.downcast(CC.RecordDecl, point.ptr)))
+    @test !CC.is_null_handle(CC.getRecordType(ctx, CC.RecordDecl(point)))
     @test !CC.is_null_handle(CC.getTagDeclType(ctx, point))
     @test !CC.is_null_handle(CC.getTagDeclType(ctx, color))
     @test !CC.is_null_handle(CC.getEnumType(ctx, color))
@@ -648,7 +649,7 @@ end
     f = DeclFinder(I)
 
     @test f(I, "tstb_v")
-    qt = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    qt = CC.getType(CC.VarDecl(get_decl(f)))
     t0 = CC.resolve(CC.getTypePtr(qt))
     t0 isa CC.ElaboratedType && (t0 = CC.resolve(CC.getTypePtr(CC.desugar(t0))))
     @test t0 isa CC.TemplateSpecializationType
@@ -798,24 +799,24 @@ end
     f = DeclFinder(I)
 
     @test f(I, "cc_ac_a_var")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     @test CC.GetGVALinkageForVariable(ctx, vd) == CC.LibClangEx.CXGVALinkage_GVA_StrongExternal
     @test CC.DeclMustBeEmitted(ctx, vd)
     @test CC.getInlineVariableDefinitionKind(ctx, vd) == CC.LibClangEx.CXInlineVariableDefinitionKind_None
     @test !CC.is_null_handle(CC.getLocalCommentForDeclUncached(ctx, vd))
 
     @test f(I, "cc_ac_a_fun")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     @test CC.GetGVALinkageForFunction(ctx, fd) == CC.LibClangEx.CXGVALinkage_GVA_StrongExternal
     @test CC.DeclMustBeEmitted(ctx, fd)
 
     @test f(I, "cc_ac_a_poly")
-    poly = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    poly = CC.CXXRecordDecl(get_decl(f))
     @test CC.isDynamicClass(poly)
     @test !CC.is_null_handle(CC.getCurrentKeyFunction(ctx, poly))
 
     @test f(I, "cc_ac_a_sdm")
-    sdm = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    sdm = CC.CXXRecordDecl(get_decl(f))
     statics = filter(d -> d isa CC.VarDecl, CC.decls(CC.castToDeclContext(sdm)))
     @test length(statics) >= 1
     @test CC.isStaticDataMember(statics[1])
@@ -836,7 +837,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "cc_actxb_gvar")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     init = CC.getInit(vd)
     int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
 
@@ -881,7 +882,7 @@ end
     @test CC.isSameEntity(ctx, vd, vd)
 
     @test f(I, "cc_actxb_tmpl")
-    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    ctd = CC.ClassTemplateDecl(get_decl(f))
     params = CC.getTemplateParameters(ctd)
     p0 = CC.getParam(params, 0)
     p1 = CC.getParam(params, 1)
@@ -891,7 +892,7 @@ end
 
     # ---- overridden methods (count + fill agreement) ----
     @test f(I, "cc_actxb_derived")
-    drd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    drd = CC.CXXRecordDecl(get_decl(f))
     ms = CC.getMethods(drd)
     for m in ms
         n = CC.getNumOverriddenMethods(ctx, m)
@@ -927,7 +928,7 @@ end
     CC.parse(I, "struct ECRec { int a; };")
     f = DeclFinder(I)
     @test f(I, "ECRec")
-    rd = CC.downcast(CC.RecordDecl, get_decl(f).ptr)
+    rd = CC.RecordDecl(get_decl(f))
     rectype = CC.getRecordType(ctx, rd)
     elab = CC.getElaboratedType(ctx, CC.LibClangEx.CXElaboratedTypeKeyword_Struct,
                                 CC.NestedNameSpecifier(C_NULL), rectype)
@@ -1025,7 +1026,7 @@ end
     CC.parse(I, "template <typename T> struct TDArg { T v; };")
     ft = DeclFinder(I)
     @test ft(I, "TDArg")
-    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(ft).ptr)
+    ctd = CC.ClassTemplateDecl(get_decl(ft))
     params = CC.getTemplateParameters(ctd)
     param = CC.getParam(params, 0)
     @test CC.isTemplateParameter(param)
@@ -1039,7 +1040,7 @@ end
     CC.parse(I, "void tdfun();")
     fn = DeclFinder(I)
     @test fn(I, "tdfun")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(fn).ptr)
+    fd = CC.FunctionDecl(get_decl(fn))
     dn = CC.DeclarationName(CC.getIdentifier(fd))
     tn = CC.getAssumedTemplateName(ctx, dn)
     dni = CC.getNameForTemplate(ctx, tn, CC.getLocation(fd))
@@ -1048,6 +1049,7 @@ end
     dispose(dni)
     dispose(fn)
 
+    CC.dispose(dmc)
     dispose(I)
 end
 
@@ -1069,10 +1071,10 @@ end
     void ctae_lambda() { int a[3]; auto l = [a]() { return a[0]; }; (void)l; }
     """)
     f = DeclFinder(I)
-    getptr(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f).ptr)
+    getdecl(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
 
     int_qt = CC.get_qual_type(CC.IntTy(ctx))
-    n_vd = CC.downcast(CC.VarDecl, getptr("ctae_n"))
+    n_vd = CC.VarDecl(getdecl("ctae_n"))
     n_init = CC.getInit(n_vd)                       # Expr_ (IntegerLiteral 4)
     loc = CC.getLocation(n_vd)
     brackets = CC.SourceRange(loc, loc)
@@ -1088,7 +1090,7 @@ end
     @test CC.getTypePtr(dvt).ptr != C_NULL
 
     # ---------- unary type transform: __underlying_type(CtaeColor) ----------
-    color_qt = CC.getEnumType(ctx, CC.downcast(CC.EnumDecl, getptr("CtaeColor")))
+    color_qt = CC.getEnumType(ctx, CC.EnumDecl(getdecl("CtaeColor")))
     utt = CC.getUnaryTransformType(ctx, color_qt, int_qt, LXE.CXUTTKind_EnumUnderlyingType)
     @test CC.isa_UnaryTransformType(CC.getTypePtr(utt))
 
@@ -1098,7 +1100,7 @@ end
     @test CC.getOpenCLTypeAddrSpace(ctx, int_tp) == LXE.CXLangAS_Default
 
     # ---------- qualified template name: CtaeNS::CtaeTpl ----------
-    tv_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.VarDecl, getptr("ctae_tv")))))
+    tv_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.VarDecl(getdecl("ctae_tv")))))
     if tv_ty isa CC.ElaboratedType
         nns = CC.getQualifier(tv_ty)
         named = CC.resolve(CC.getTypePtr(CC.getNamedType(tv_ty)))
@@ -1110,14 +1112,14 @@ end
     end
 
     # ---------- record layout dump ----------
-    point = CC.downcast(CC.CXXRecordDecl, getptr("CtaePoint"))
+    point = CC.CXXRecordDecl(getdecl("CtaePoint"))
     dump = CC.DumpRecordLayout(ctx, point)
     @test dump isa String
     @test !isempty(dump)
     @test !isempty(CC.DumpRecordLayout(ctx, point, true))
 
     # ---------- member-pointer path adjustment ----------
-    mp_val = CC.evaluateValue(CC.downcast(CC.VarDecl, getptr("ctae_mp")))
+    mp_val = CC.evaluateValue(CC.VarDecl(getdecl("ctae_mp")))
     if mp_val.ptr != C_NULL && CC.getKind(mp_val) == LXE.CXAPValueKind_MemberPointer
         @test CC.getMemberPointerPathAdjustment(ctx, mp_val) == 0
     end
@@ -1142,7 +1144,7 @@ end
     end
 
     # ---------- ArrayInitLoopExpr element count (the lambda's `int a[3]` capture) ----------
-    body = CC.getBody(CC.downcast(CC.FunctionDecl, getptr("ctae_lambda")))
+    body = CC.getBody(CC.FunctionDecl(getdecl("ctae_lambda")))
     if body.ptr != C_NULL
         for e in filter(s -> s isa CC.ArrayInitLoopExpr, CC.subtree(body))
             @test CC.getArrayInitLoopExprElementCount(ctx, e) == 3
@@ -1233,7 +1235,7 @@ end
     f = DeclFinder(I)
 
     @test f(I, "AcfDep")
-    dep_patt = CC.getTemplatedDecl(CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr))
+    dep_patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f)))
     fld_qt = CC.getType(first(CC.getFields(dep_patt)))
     dnty = CC.resolve(CC.getTypePtr(fld_qt))
     @test dnty isa CC.DependentNameType
@@ -1244,7 +1246,7 @@ end
     @test CC.getTypePtr(rebuilt).ptr == CC.getTypePtr(fld_qt).ptr
 
     @test f(I, "acf_box_v")
-    box_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))))
+    box_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.VarDecl(get_decl(f)))))
     box_ty isa CC.ElaboratedType && (box_ty = CC.resolve(CC.getTypePtr(CC.desugar(box_ty))))
     @test box_ty isa CC.TemplateSpecializationType
     canon_tn = CC.getCanonicalTemplateName(ctx, CC.getTemplateName(box_ty))
@@ -1272,9 +1274,9 @@ end
 
     f = DeclFinder(I)
     @test f(I, "acg_gvar")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     @test f(I, "acg_gfunc")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
 
     # ---- @encode strings: the encoder is not ObjC-specific, and the letters for the
     #      builtin types are fixed by the runtime ABI, not by the host ----
@@ -1388,9 +1390,9 @@ end
     f = DeclFinder(I)
 
     @test f(I, "cc_actx_doc_var")
-    doc_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    doc_vd = CC.VarDecl(get_decl(f))
     @test f(I, "cc_actx_other_var")
-    other_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    other_vd = CC.VarDecl(get_decl(f))
 
     # ---- cloning a parsed comment onto another decl ----
     fc = CC.getLocalCommentForDeclUncached(ctx, doc_vd)
@@ -1404,7 +1406,7 @@ end
 
     # ---- recording an instantiation pattern for a static data member ----
     @test f(I, "cc_actx_sdm")
-    rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    rd = CC.CXXRecordDecl(get_decl(f))
     statics = filter(d -> d isa CC.VarDecl, CC.decls(CC.castToDeclContext(rd)))
     @test length(statics) == 2
     inst, tmpl = statics[1], statics[2]
@@ -1442,7 +1444,7 @@ end
 
     # ---- module initializers: the context keys the list on the clang::Module pointer ----
     @test f(I, "aci_box_v")
-    var = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    var = CC.VarDecl(get_decl(f))
     m = CC.Module_("AciSyntheticModule")
     @test CC.getNumModuleInitializers(ctx, m) == 0
     @test isempty(CC.getModuleInitializers(ctx, m))
@@ -1469,7 +1471,7 @@ end
 
     # ---- a dependent specialization built from a dependent name's own pieces ----
     @test f(I, "AciDep")
-    dep_patt = CC.getTemplatedDecl(CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr))
+    dep_patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f)))
     dnty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(dep_patt)))))
     @test dnty isa CC.DependentNameType
     arg = CC.TemplateArgument(int_qt, false)
@@ -1488,17 +1490,17 @@ end
     # ---- the three C library types stay null until their setter has run ----
     @test CC.getjmp_bufType(ctx).ptr == C_NULL
     @test f(I, "aci_jmp_buf")
-    CC.setjmp_bufDecl(ctx, CC.downcast(CC.TypedefDecl, get_decl(f).ptr))
+    CC.setjmp_bufDecl(ctx, CC.TypedefDecl(get_decl(f)))
     @test CC.get_name(CC.getjmp_bufType(ctx)) == "aci_jmp_buf"
 
     @test CC.getsigjmp_bufType(ctx).ptr == C_NULL
     @test f(I, "aci_sigjmp_buf")
-    CC.setsigjmp_bufDecl(ctx, CC.downcast(CC.TypedefDecl, get_decl(f).ptr))
+    CC.setsigjmp_bufDecl(ctx, CC.TypedefDecl(get_decl(f)))
     @test CC.get_name(CC.getsigjmp_bufType(ctx)) == "aci_sigjmp_buf"
 
     @test CC.getucontext_tType(ctx).ptr == C_NULL
     @test f(I, "aci_ucontext_t")
-    CC.setucontext_tDecl(ctx, CC.downcast(CC.TypedefDecl, get_decl(f).ptr))
+    CC.setucontext_tDecl(ctx, CC.TypedefDecl(get_decl(f)))
     @test CC.get_name(CC.getucontext_tType(ctx)) == "aci_ucontext_t"
 
     dispose(m)
@@ -1523,7 +1525,7 @@ end
     # ---- the raw PointerUnion behind a variable template's pattern ----
     @test f(I, "acj_tvar")
     vtd = first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "VarTemplate")
-    patt = CC.downcast(CC.VarDecl, CC.getTemplatedDecl(CC.downcast(CC.VarTemplateDecl, vtd.ptr)).ptr)
+    patt = CC.VarDecl(CC.getTemplatedDecl(CC.VarTemplateDecl(vtd)))
     arm = CC.getTemplateOrSpecializationInfoAsVarTemplate(ctx, patt)
     @test arm isa CC.VarTemplateDecl
     @test arm.ptr == vtd.ptr
@@ -1533,14 +1535,14 @@ end
     @test msi.ptr == C_NULL
     # a plain global sits in neither arm, and both accessors are total on it
     @test f(I, "acj_plain")
-    plain = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    plain = CC.VarDecl(get_decl(f))
     @test CC.getTemplateOrSpecializationInfoAsVarTemplate(ctx, plain).ptr == C_NULL
     @test CC.getTemplateOrSpecializationInfoAsMemberSpecialization(ctx, plain).ptr == C_NULL
 
     # ---- one injected argument per template parameter, owned boxes ----
     @test f(I, "AcjBox")
     ctd = first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "ClassTemplate")
-    tpl = CC.getTemplateParameters(CC.downcast(CC.ClassTemplateDecl, ctd.ptr))
+    tpl = CC.getTemplateParameters(CC.ClassTemplateDecl(ctd))
     args = CC.getInjectedTemplateArgs(ctx, tpl)
     @test length(args) == size(tpl)
     @test all(a -> a isa CC.TemplateArgument, args)
@@ -1549,7 +1551,7 @@ end
 
     # ---- anonymous global constants are uniqued on (type, value) ----
     @test f(I, "acj_int_val")
-    ival = CC.evaluateValue(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    ival = CC.evaluateValue(CC.VarDecl(get_decl(f)))
     @test ival isa CC.APValue
     @test ival.ptr != C_NULL
     ugc = CC.getUnnamedGlobalConstantDecl(ctx, int_qt, ival)
@@ -1559,7 +1561,7 @@ end
 
     # ---- template parameter objects need a class-type value ----
     @test f(I, "acj_nttp_val")
-    nttp = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    nttp = CC.VarDecl(get_decl(f))
     sval = CC.evaluateValue(nttp)
     @test sval.ptr != C_NULL
     sqt = CC.getType(nttp)
@@ -1612,7 +1614,7 @@ end
 
     # the template name and the decl that owns its parameter list
     @test f(I, "ack_box_v")
-    box_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))))
+    box_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.VarDecl(get_decl(f)))))
     box_ty isa CC.ElaboratedType && (box_ty = CC.resolve(CC.getTypePtr(CC.desugar(box_ty))))
     @test box_ty isa CC.TemplateSpecializationType
     tn = CC.getTemplateName(box_ty)
@@ -1623,7 +1625,7 @@ end
     subst = CC.getSubstTemplateTypeParmType(ctx, int_qt, assoc, 0)
     @test subst isa CC.QualType
     @test subst.ptr != C_NULL
-    stp = CC.downcast(CC.SubstTemplateTypeParmType, CC.getTypePtr(subst).ptr)
+    stp = CC.SubstTemplateTypeParmType(CC.getTypePtr(subst))
     @test CC.getReplacementType(stp).ptr == int_qt.ptr
     @test CC.getSubstTemplateTypeParmType(ctx, int_qt, assoc, 0).ptr == subst.ptr
     # engaging the pack index takes the std::optional arm of the builder; whether clang
@@ -1668,7 +1670,7 @@ end
 
     # ---- an unresolved set of overloaded template candidates ----
     @test f(I, "ack_ovl")
-    ovls = [CC.upcast(CC.NamedDecl, d.ptr) for d in CC.get_decls(f) if CC.getDeclKindName(d) == "FunctionTemplate"]
+    ovls = [CC.NamedDecl(d) for d in CC.get_decls(f) if CC.getDeclKindName(d) == "FunctionTemplate"]
     @test length(ovls) == 2
     ovl_name = CC.getOverloadedTemplateName(ctx, ovls)
     @test ovl_name isa CC.TemplateName
@@ -1678,11 +1680,11 @@ end
 
     # ---- ExtInfo rewrites on a freshly built function type ----
     fnty = CC.getFunctionType(ctx, int_qt, [int_qt])
-    fpt = CC.downcast(CC.FunctionProtoType, CC.getTypePtr(fnty).ptr)
+    fpt = CC.FunctionProtoType(CC.getTypePtr(fnty))
     @test !(CC.getNoReturnAttr(fpt))
     adj = CC.adjustFunctionType(ctx, fpt, CC.CXCallingConv_CC_C, true, false)
     @test adj isa CC.Type_
-    adj_fpt = CC.downcast(CC.FunctionProtoType, adj.ptr)
+    adj_fpt = CC.FunctionProtoType(adj)
     @test CC.getNoReturnAttr(adj_fpt)
     @test CC.getCallConv(adj_fpt) == CC.CXCallingConv_CC_C
     # asking for the ExtInfo the type already carries hands the very same node back
@@ -1692,7 +1694,7 @@ end
     ne_qt = CC.getFunctionTypeWithExceptionSpec(ctx, fnty,
                                                 CC.CXExceptionSpecificationType_EST_BasicNoexcept)
     @test ne_qt isa CC.QualType
-    ne_fpt = CC.downcast(CC.FunctionProtoType, CC.getTypePtr(ne_qt).ptr)
+    ne_fpt = CC.FunctionProtoType(CC.getTypePtr(ne_qt))
     @test CC.getExceptionSpecType(ne_fpt) == CC.CXExceptionSpecificationType_EST_BasicNoexcept
     # the kinds that need a payload this entry point cannot carry are rejected
     @test_throws AssertionError CC.getFunctionTypeWithExceptionSpec(ctx, fnty,
@@ -1701,9 +1703,9 @@ end
                                                                     CC.CXExceptionSpecificationType_EST_BasicNoexcept)
 
     @test f(I, "ack_fn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     CC.adjustExceptionSpec(ctx, fd, CC.CXExceptionSpecificationType_EST_BasicNoexcept)
-    fd_fpt = CC.downcast(CC.FunctionProtoType, CC.getTypePtr(CC.getType(fd)).ptr)
+    fd_fpt = CC.FunctionProtoType(CC.getTypePtr(CC.getType(fd)))
     @test CC.getExceptionSpecType(fd_fpt) == CC.CXExceptionSpecificationType_EST_BasicNoexcept
 
     # ---- the target feature map is entirely host-decided, so only its shape is asserted ----
@@ -1722,10 +1724,9 @@ end
 
     # ---- recording the variable template a plain variable is the pattern of ----
     @test f(I, "ack_tvar")
-    vtd = CC.downcast(CC.VarTemplateDecl, first(d for d in CC.get_decls(f)
-                                   if CC.getDeclKindName(d) == "VarTemplate").ptr)
+    vtd = CC.VarTemplateDecl(first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "VarTemplate"))
     @test f(I, "ack_plain")
-    plain = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    plain = CC.VarDecl(get_decl(f))
     @test CC.getTemplateOrSpecializationInfoAsVarTemplate(ctx, plain).ptr == C_NULL
     CC.setTemplateOrSpecializationInfoAsVarTemplate(ctx, plain, vtd)
     @test CC.getTemplateOrSpecializationInfoAsVarTemplate(ctx, plain).ptr == vtd.ptr
@@ -1752,7 +1753,7 @@ end
     # and to no other, where getRawCommentForAnyRedecl answers the same comment for both
     f = DeclFinder(I)
     @test f(I, "astctx_probe")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     chain = collect(CC.redecls(fd))
     @test length(chain) == 2
     direct = [CC.getRawCommentForDeclNoCache(ctx, d) for d in chain]
@@ -1779,20 +1780,21 @@ end
     CC.parse(J, """
              extern "C" void bvci_probe() {
                  __block int counter = 0;
-                 ++counter;
+                 int plain = 0;
+                 counter += plain;
              }
              """)
     jctx = CC.get_ast_context(J)
 
     f = DeclFinder(J)
     @test f(J, "bvci_probe")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     body = CC.getBody(fd)
     declstmts = [s for s in (CC.resolve(x) for x in CC.subtree(body)) if s isa CC.DeclStmt]
     singles = [CC.getSingleDecl(s) for s in declstmts if CC.isSingleDecl(s)]
     blockvars = [d for d in singles if CC.hasAttrOfKind(d, CC.CXAttrKind_Blocks)]
     @test length(blockvars) == 1
-    vd = CC.downcast(CC.VarDecl, only(blockvars).ptr)
+    vd = CC.VarDecl(only(blockvars))
 
     init = CC.getBlockVarCopyInit(jctx, vd)
     @test init isa CC.BlockVarCopyInit
@@ -1800,9 +1802,239 @@ end
     @test CC.is_null_handle(CC.getCopyExpr(init))
     CC.dispose(init)
 
-    # the gate: a plain local is not a __block variable
-    @test_throws AssertionError CC.getBlockVarCopyInit(jctx, CC.downcast(CC.VarDecl, fd.ptr))
+    # the gate: a plain local IS a VarDecl and still is not a __block variable, which is the
+    # only way to reach the gate with an argument clang would accept
+    plain = only(CC.VarDecl(d) for d in singles if !CC.hasAttrOfKind(d, CC.CXAttrKind_Blocks))
+    @test CC.getNameAsString(plain) == "plain"
+    @test_throws AssertionError CC.getBlockVarCopyInit(jctx, plain)
 
     dispose(f)
     dispose(J)
+end
+
+@testset "ASTContext | dynamic parents" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             int pm_probe(int a) {
+                 return a;
+             }
+             """)
+    ctx = CC.get_ast_context(I)
+
+    # the parent map is built over the traversal scope and then cached, and every incremental
+    # parse adds a translation unit the cached map never saw -- so pin the scope to the newest
+    # one (which also drops the cache) before asking anything about parents
+    tu = CC.getTranslationUnitDecl(ctx)
+    CC.setTraversalScope(ctx, [tu])
+
+    f = DeclFinder(I)
+    @test f(I, "pm_probe")
+    fd = CC.FunctionDecl(get_decl(f))
+    body = CC.getBody(fd)
+    @test !CC.is_null_handle(body)
+
+    # the body's one parent is the function that owns it: the Decl arm answers and the Stmt
+    # arm is NULL, which is the whole point of splitting the discriminated node into two
+    # accessors rather than handing back one untyped pointer
+    @test CC.getNumParents(ctx, body) == 1
+    @test CC.is_null_handle(CC.getParentAsStmt(ctx, body, 0))
+    @test CC.getParentAsDecl(ctx, body, 0).ptr == fd.ptr
+    # the parent comes back resolved, not as a bare Decl carrier
+    @test CC.getParentAsDecl(ctx, body, 0) isa CC.FunctionDecl
+
+    # one level down the arms swap over: a statement's parent is the compound statement
+    ret = only(s for s in CC.subtree(body) if s isa CC.ReturnStmt)
+    @test CC.getNumParents(ctx, ret) == 1
+    @test CC.getParentAsStmt(ctx, ret, 0).ptr == body.ptr
+    @test CC.getParentAsStmt(ctx, ret, 0) isa CC.CompoundStmt
+    @test CC.is_null_handle(CC.getParentAsDecl(ctx, ret, 0))
+
+    # climbing terminates at the translation unit, and exactly one arm answers at every step.
+    # This is an invariant over any AST rather than a pinned value: the count below is the
+    # depth of this particular function, but the shape of the chain is not target-decided.
+    node = ret
+    climbed = 0
+    while CC.getNumParents(ctx, node) != 0
+        @test CC.getNumParents(ctx, node) == 1
+        as_stmt = CC.getParentAsStmt(ctx, node, 0)
+        as_decl = CC.getParentAsDecl(ctx, node, 0)
+        @test CC.is_null_handle(as_stmt) != CC.is_null_handle(as_decl)
+        node = CC.is_null_handle(as_stmt) ? as_decl : as_stmt
+        climbed += 1
+        climbed > 8 && break
+    end
+    # ReturnStmt -> CompoundStmt -> FunctionDecl -> TranslationUnitDecl
+    @test climbed == 3
+    @test node isa CC.TranslationUnitDecl
+    @test node.ptr == tu.ptr
+
+    # the root has no parents at all, so every index is out of range
+    @test CC.getNumParents(ctx, tu) == 0
+    @test_throws AssertionError CC.getParentAsDecl(ctx, tu, 0)
+    @test_throws AssertionError CC.getParentAsStmt(ctx, body, 1)
+
+    # the map is a member of the context, not a fresh box per call
+    pmc = CC.getParentMapContext(ctx)
+    @test !CC.is_null_handle(pmc)
+    @test CC.getParentMapContext(ctx).ptr == pmc.ptr
+
+    # dropping the cache is transparent: the rebuilt map answers exactly what the first one did
+    CC.clear(pmc)
+    @test CC.getNumParents(ctx, body) == 1
+    @test CC.getParentAsDecl(ctx, body, 0).ptr == fd.ptr
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ParentMapContext | traversal kind and traverseIgnored" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             int tk_probe(int a) {
+                 return a;
+             }
+             """)
+    ctx = CC.get_ast_context(I)
+    pmc = CC.getParentMapContext(ctx)
+
+    f = DeclFinder(I)
+    @test f(I, "tk_probe")
+    fd = CC.FunctionDecl(get_decl(f))
+    # `return a;` reads an int lvalue, so clang inserts exactly one implicit cast -- a node
+    # spelled nowhere in the source, which is precisely what the two kinds disagree about
+    implicit = only(s for s in CC.subtree(CC.getBody(fd)) if s isa CC.ImplicitCastExpr)
+
+    @test CC.getTraversalKind(pmc) == LX.CXTraversalKind_TK_AsIs
+    @test CC.traverseIgnored(pmc, implicit).ptr == implicit.ptr
+
+    CC.setTraversalKind(pmc, LX.CXTraversalKind_TK_IgnoreUnlessSpelledInSource)
+    @test CC.getTraversalKind(pmc) == LX.CXTraversalKind_TK_IgnoreUnlessSpelledInSource
+    skipped = CC.traverseIgnored(pmc, implicit)
+    # the kind took effect: the implicit node is stepped over, and to exactly where
+    # Expr::IgnoreUnlessSpelledInSource lands
+    @test skipped.ptr != implicit.ptr
+    @test skipped.ptr == CC.IgnoreUnlessSpelledInSource(implicit).ptr
+    @test CC.resolve(skipped) isa CC.DeclRefExpr
+
+    CC.setTraversalKind(pmc, LX.CXTraversalKind_TK_AsIs)
+    @test CC.getTraversalKind(pmc) == LX.CXTraversalKind_TK_AsIs
+    @test CC.traverseIgnored(pmc, implicit).ptr == implicit.ptr
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "ASTContext | setBlockVarCopyInit" begin
+    J = create_interpreter(["-fblocks"])
+    CC.parse(J, """
+             extern "C" void sbvci_probe() {
+                 __block int counter = 0;
+                 int plain = 0;
+                 counter += plain;
+             }
+             """)
+    jctx = CC.get_ast_context(J)
+
+    f = DeclFinder(J)
+    @test f(J, "sbvci_probe")
+    fd = CC.FunctionDecl(get_decl(f))
+    body = CC.getBody(fd)
+    declstmts = [s for s in CC.subtree(body) if s isa CC.DeclStmt]
+    singles = [CC.getSingleDecl(s) for s in declstmts if CC.isSingleDecl(s)]
+    blockvars = [d for d in singles if CC.hasAttrOfKind(d, CC.CXAttrKind_Blocks)]
+    plainvars = [d for d in singles if !CC.hasAttrOfKind(d, CC.CXAttrKind_Blocks)]
+    # `__block` is what puts the attribute there, so the two declarations differ by exactly
+    # the bit the gate below reads
+    @test length(blockvars) == 1
+    @test length(plainvars) == 1
+    vd = CC.VarDecl(only(blockvars))
+    plain = CC.VarDecl(only(plainvars))
+
+    # nothing in this pipeline populates the side table -- only Sema does, for an escaping
+    # block capture -- so until the setter runs the getter can answer only its default record
+    let rec = CC.getBlockVarCopyInit(jctx, vd)
+        @test CC.is_null_handle(CC.getCopyExpr(rec))
+        CC.dispose(rec)
+    end
+
+    # an AST-owned expression to record: the variable's own initializer
+    init_expr = CC.getInit(vd)
+    @test !CC.is_null_handle(init_expr)
+
+    CC.setBlockVarCopyInit(jctx, vd, init_expr, true)
+    let rec = CC.getBlockVarCopyInit(jctx, vd)
+        @test CC.getCopyExpr(rec).ptr == init_expr.ptr
+        @test CC.canThrow(rec)
+        CC.dispose(rec)
+    end
+
+    # the record packs the flag beside the pointer, so writing the same expression with the
+    # other flag must still be observable on both components
+    CC.setBlockVarCopyInit(jctx, vd, init_expr, false)
+    let rec = CC.getBlockVarCopyInit(jctx, vd)
+        @test CC.getCopyExpr(rec).ptr == init_expr.ptr
+        @test !CC.canThrow(rec)
+        CC.dispose(rec)
+    end
+
+    # the gate: clang asserts VD->hasAttr<BlocksAttr>() inside setBlockVarCopyInit, so the
+    # variable declared without __block must be rejected here rather than in clang
+    # (the same `init_expr` was accepted above, so the rejection is the receiver's)
+    @test_throws AssertionError CC.setBlockVarCopyInit(jctx, plain, init_expr, false)
+
+    dispose(f)
+    dispose(J)
+end
+
+@testset "ASTContext | filterFunctionTargetAttrs" begin
+    # `target(...)` only parses against a target that accepts the CPU and feature names it
+    # spells -- an aarch64 runner would reject `arch=haswell` and clang would then attach no
+    # attribute at all. Pinning the triple makes every assertion below a value clang decided
+    # rather than one the CI runner decided; see test/clang/pinned_target.jl.
+    P = create_interpreter(String[]; triple="x86_64-linux-gnu")
+    CC.parse(P, """
+             __attribute__((target("arch=haswell,tune=skylake,avx2,no-sse3")))
+             int fta_probe(int a) { return a; }
+             """)
+    pctx = CC.get_ast_context(P)
+
+    f = DeclFinder(P)
+    @test f(P, "fta_probe")
+    fd = CC.FunctionDecl(get_decl(f))
+    attr = CC.getAttrOfKind(fd, CC.CXAttrKind_Target)
+    @test !CC.is_null_handle(attr)
+    td = CC.TargetAttr(attr)
+
+    # arch= and tune= are lifted out of the spelling and are not features
+    @test CC.getFilteredFunctionTargetCPU(pctx, td) == "haswell"
+    @test CC.getFilteredFunctionTargetTune(pctx, td) == "skylake"
+
+    # everything else is a feature, signed by the way it was spelled
+    n = CC.getNumFilteredFunctionTargetFeatures(pctx, td)
+    @test n == 2
+    feats = [CC.getFilteredFunctionTargetFeature(pctx, td, i) for i in 0:(n - 1)]
+    @test Set(feats) == Set(["+avx2", "-sse3"])
+    # the parse is re-run on every call, so index i must keep naming the same feature
+    @test [CC.getFilteredFunctionTargetFeature(pctx, td, i) for i in 0:(n - 1)] == feats
+    @test_throws AssertionError CC.getFilteredFunctionTargetFeature(pctx, td, n)
+
+    # this is what the attribute asked for, not what the target resolved it to: the resolved
+    # map expands implied features, so it is strictly larger
+    @test CC.getNumFunctionFeatures(pctx, fd) > n
+
+    # an attribute naming no CPU: the two spellings come back empty rather than absent
+    CC.parse(P, """
+             __attribute__((target("avx")))
+             int fta_plain(int a) { return a; }
+             """)
+    @test f(P, "fta_plain")
+    fd2 = CC.FunctionDecl(get_decl(f))
+    td2 = CC.TargetAttr(CC.getAttrOfKind(fd2, CC.CXAttrKind_Target))
+    @test CC.getFilteredFunctionTargetCPU(pctx, td2) == ""
+    @test CC.getFilteredFunctionTargetTune(pctx, td2) == ""
+    @test CC.getNumFilteredFunctionTargetFeatures(pctx, td2) == 1
+    @test CC.getFilteredFunctionTargetFeature(pctx, td2, 0) == "+avx"
+
+    dispose(f)
+    dispose(P)
 end

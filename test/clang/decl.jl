@@ -22,13 +22,13 @@ end
     f = DeclFinder(I)
 
     @test f(I, "Node")
-    node = ClangCompiler.downcast(ClangCompiler.CXXRecordDecl, get_decl(f).ptr)
+    node = ClangCompiler.CXXRecordDecl(get_decl(f))
     @test ClangCompiler.getNumFields(node) == 2
     @test [ClangCompiler.getName(x) for x in ClangCompiler.getFields(node)] == ["x", "y"]
 
     ClangCompiler.parse(I, "struct BaseA { int a; }; struct BaseB { int b; }; struct Der : BaseA, BaseB { int c; };")
     @test f(I, "Der")
-    der = ClangCompiler.downcast(ClangCompiler.CXXRecordDecl, get_decl(f).ptr)
+    der = ClangCompiler.CXXRecordDecl(get_decl(f))
     @test ClangCompiler.getNumFields(der) == 1
     @test ClangCompiler.getNumBases(der) == 2
     @test ClangCompiler.getNumVBases(der) == 0
@@ -38,7 +38,7 @@ end
     @test basenames == ["BaseA", "BaseB"]
 
     @test f(I, "Foo")
-    foo = ClangCompiler.downcast(ClangCompiler.CXXRecordDecl, get_decl(f).ptr)
+    foo = ClangCompiler.CXXRecordDecl(get_decl(f))
     @test ClangCompiler.getNumCtors(foo) == 2                     # Foo() and Foo(int)
     @test length(ClangCompiler.getMethods(foo)) == ClangCompiler.getNumMethods(foo)
     @test all(c -> c isa ClangCompiler.CXXConstructorDecl, ClangCompiler.getCtors(foo))
@@ -58,7 +58,7 @@ end
     """)
     f = DeclFinder(I)
     # the lookup hands back a NamedDecl; each probe names the class it expects
-    D(name, T) = (f(I, name); ClangCompiler.downcast(T, get_decl(f).ptr))
+    D(name, T) = (f(I, name); T(get_decl(f)))
 
     gv = D("gv", ClangCompiler.VarDecl)
     @test ClangCompiler.hasGlobalStorage(gv)
@@ -119,7 +119,7 @@ end
         d = get_decl(f)                       # base Decl carrier
         @test CC.getKind(d) == kind
         @test CC.getDeclKindName(d) == kindname
-        r = CC.resolve(d)                     # O(1) downcast via getKind
+        r = CC.resolve(d)                     # O(1) narrowing via getKind
         @test r isa carrier
         @test r.ptr == d.ptr                  # Decl is the primary base: identity
     end
@@ -176,7 +176,7 @@ end
     # --- redecls walks the redeclaration chain most-recent-first ---
     f = DeclFinder(I)
     @assert f(I, "chainFn") "lookup failed: chainFn"
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     chain = collect(CC.redecls(fd))
     @test length(chain) >= 2                       # a declaration and a definition
     @test first(chain).ptr == CC.getMostRecentDecl(fd).ptr
@@ -250,7 +250,7 @@ end
     tu_dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
     vd = nothing
     for d in CC.decls_in(tu_dc)
-        CC.getDeclKindName(d) == "Var" && (vd = CC.downcast(CC.VarDecl, d.ptr); break)
+        CC.getDeclKindName(d) == "Var" && (vd = CC.VarDecl(d); break)
     end
     @test vd !== nothing
     if vd !== nothing

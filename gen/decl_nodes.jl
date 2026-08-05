@@ -4,7 +4,8 @@
 # carrier exists; the wrapped set is read from the hand-written core/AST files,
 # the same way the old runtime `isdefined` guard did. Regenerate on an LLVM bump.
 #
-# Emits src/clang/DeclKindMap.jl defining `DECL_KIND_TO_TYPE`.
+# Emits src/clang/DeclKindMap.jl defining `DECL_KIND_TO_TYPE`, and
+# src/clang/api/AST/DeclWrappers.jl carrying the checked `cast`/`isa` pair per class.
 
 const DECL_NODES_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include",
                                          "clang-ex", "AST", "DeclNodes.inc"))
@@ -26,6 +27,29 @@ function parse_decl_names(inc_path)
     return names
 end
 
+# Every Decl class name the shim stamps a cast for — abstract bases included, since
+# CXDeclBase.cpp expands ABSTRACT_DECL to its inner macro. `ABSTRACT_DECL(NAMED(Named, Decl))`
+# is one line with the payload nested, so it needs its own pattern.
+function parse_all_decl_names(inc_path)
+    names = Symbol[]
+    concrete_re = r"^([A-Z][A-Z0-9_]*)\((\w+),\s*(\w+)\)$"
+    abstract_re = r"^ABSTRACT_DECL\([A-Z][A-Z0-9_]*\((\w+),\s*(\w+)\)\)$"
+    for line in eachline(inc_path)
+        line = strip(line)
+        m = match(abstract_re, line)
+        if m !== nothing
+            push!(names, Symbol(m.captures[1]))
+            continue
+        end
+        m = match(concrete_re, line)
+        m === nothing && continue
+        m.captures[1] in ("DECL_RANGE", "LAST_DECL_RANGE", "DECL_CONTEXT",
+                          "DECL_CONTEXT_BASE") && continue
+        push!(names, Symbol(m.captures[2]))
+    end
+    return unique(names)
+end
+
 # carrier struct names defined across the hand-written core/AST/*.jl files
 function wrapped_carriers()
     s = Set{String}()
@@ -37,6 +61,29 @@ function wrapped_carriers()
         end
     end
     return s
+end
+
+# Each wrapped carrier's `ptr` field type. Almost always `CX<Carrier>`, but a class whose
+# family shares one handle stores that instead -- `BuiltinType` holds a `CXType_`, because the
+# per-kind singletons beside it (`IntTy`, `BoolTy`, ...) are kinds of one class and have no
+# handle of their own. The cast has to fill the field the carrier actually declares.
+function carrier_handles(dir)
+    h = Dict{String,String}()
+    for f in readdir(dir; join=true)
+        endswith(f, ".jl") || continue
+        name = ""
+        for line in eachline(f)
+            m = match(r"^struct (\w+)", line)
+            if m !== nothing
+                name = m.captures[1]
+                continue
+            end
+            isempty(name) && continue
+            m = match(r"^\s+ptr::(\w+)", line)
+            m === nothing || (h[name] = m.captures[1]; name = "")
+        end
+    end
+    return h
 end
 
 function emit_decl_kindmap()
@@ -61,6 +108,56 @@ function emit_decl_kindmap()
 end
 
 emit_decl_kindmap()
+
+# ---------------------------------------------------------------------------
+# The checked Decl casts.
+#
+# CXDeclBase.cpp stamps `clang_Decl_castTo<Name>Decl` (dyn_cast_or_null) and
+# `clang_Decl_is<Name>Decl` (isa_and_nonnull) for every class in DeclNodes.inc, abstract bases
+# included. This turns each pair into the Julia spelling: a constructor that is C++'s
+# `cast<T>` and a predicate that is `isa<T>`, for the classes this package carries.
+
+function emit_decl_wrappers()
+    names = parse_all_decl_names(DECL_NODES_INC)
+    wrapped = wrapped_carriers()
+    n = 0
+    open(joinpath(DECL_SRC, "clang", "api", "AST", "DeclWrappers.jl"), "w") do io
+        println(io,
+                "# Generated from deps/ClangExtra/include/clang-ex/AST/DeclNodes.inc by gen/decl_nodes.jl — do not edit.")
+        println(io, "# Per-class checked cast: the `<Name>Decl` constructor is C++'s `cast<T>` and the")
+        println(io, "# `is<Name>Decl` predicate beside it is `isa<T>`. Both come from clang's own")
+        println(io, "# `classof`, so a declaration can never become a carrier that names another class.")
+        println(io, "#")
+        println(io, "# The shim types each cast at that class's own handle, so pairing a cast with the")
+        println(io, "# wrong carrier is a Julia type error here rather than a bad pointer reaching clang.")
+        handles = carrier_handles(DECL_SRC_AST)
+        for name in names
+            carrier = string(name, "Decl")
+            carrier in wrapped || continue
+            # `CX<Carrier>(p)` is a no-op the compiler elides when the carrier declares its own
+            # handle; it is the widening to the shared family handle where it does not.
+            h = get(handles, carrier, "CX" * carrier)
+            wrap = h == "CX" * carrier ? "p" : "$h(p)"
+            println(io, """
+
+            function is$carrier(x::AbstractDecl)
+                @check_ptrs x
+                return clang_Decl_is$carrier(x)
+            end
+
+            function $carrier(x::AbstractDecl)
+                @check_ptrs x
+                p = clang_Decl_castTo$carrier(x)
+                p == C_NULL && _cast_failed($carrier, x)
+                return $carrier($wrap)
+            end""")
+            n += 1
+        end
+    end
+    @info "wrote DeclWrappers into src/" casts = n skipped = length(names) - n
+end
+
+emit_decl_wrappers()
 
 # ---------------------------------------------------------------------------
 # The DeclContext union.

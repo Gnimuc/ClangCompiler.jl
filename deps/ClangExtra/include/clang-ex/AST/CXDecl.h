@@ -161,10 +161,10 @@ CXObjCStringFormatFamily clang_NamedDecl_getObjCFStringFormattingFamily(CXNamedD
 // context before crossing a castFromDeclContext pivot.
 bool clang_NamedDecl_classofKind(CXDeclKind K);
 
-// NamedDecl Cast
-CXTypeDecl clang_NamedDecl_castToTypeDecl(CXNamedDecl ND);
-
-CXEnumConstantDecl clang_NamedDecl_castToEnumConstantDecl(CXNamedDecl ND);
+// No cast family here. `classof` reads the same kind field however the pointer is typed,
+// so a NamedDecl- or RecordDecl-rooted cast would answer exactly what the Decl-rooted
+// family in CXDeclBase.h answers, and a second entry point for one question is a second
+// thing to keep in step. Narrow from `CXDecl` with clang_Decl_castTo<Name>Decl.
 
 // LabelDecl
 CXLabelDecl clang_LabelDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -1541,10 +1541,6 @@ bool clang_RecordDecl_field_empty(CXRecordDecl RD);
 
 // The Decl::Kind range test behind isa<RecordDecl> (as above).
 bool clang_RecordDecl_classofKind(CXDeclKind K);
-
-// RecordDecl Cast
-CXClassTemplateSpecializationDecl
-clang_RecordDecl_castToClassTemplateSpecializationDecl(CXRecordDecl RD);
 
 // FileScopeAsmDecl
 CXFileScopeAsmDecl clang_FileScopeAsmDecl_Create(CXASTContext C, CXDeclContext DC,

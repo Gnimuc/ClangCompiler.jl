@@ -36,7 +36,7 @@ function isPackExpansion(x::AbstractAttr)
     return clang_Attr_isPackExpansion(x)
 end
 
-# Attr Cast — one constructor-shaped downcast and one predicate per attribute
+# Attr Cast — one checked cast and one predicate per attribute
 # class (NULL carrier when the attribute is another class; dyn_cast_or_null
 # semantics). Generated from AttrList.inc into lib/<major>/AttrWrappers.jl.
 include("AttrWrappers.jl")

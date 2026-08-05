@@ -7,6 +7,7 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Frontend/CompilerInvocation.h"
+#include "clang/Frontend/PCHContainerOperations.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Sema/Sema.h"
 #include "llvm/ADT/SmallVector.h"
@@ -309,10 +310,40 @@ void clang_ASTUnit_dispose(CXASTUnit AU) { delete reinterpret_cast<clang::ASTUni
 
 // LoadFromASTFile
 // LoadFromCompilerInvocationAction
-// LoadFromCompilerInvocation
+
+CXASTUnit clang_ASTUnit_LoadFromCompilerInvocation(
+    CXCompilerInvocation CI, CXDiagnosticsEngine Diags, CXFileManager FileMgr,
+    bool OnlyLocalDecls, CXCaptureDiagsKind CaptureDiagnostics,
+    unsigned PrecompilePreambleAfterNParses, CXTranslationUnitKind TUKind,
+    bool CacheCodeCompletionResults, bool IncludeBriefCommentsInCodeCompletion,
+    bool UserFilesAreVolatile) {
+  // Both objects land in an IntrusiveRefCntPtr member of the unit, while the C surface
+  // hands them over as caller-owned raw pointers it never refcounts, so each is pinned
+  // with an explicit Retain first (MARSHALLING.md section 12): without it the unit's
+  // release drops the last reference and deletes an object the caller still disposes.
+  auto *DE = reinterpret_cast<clang::DiagnosticsEngine *>(Diags);
+  DE->Retain();
+  auto *FM = reinterpret_cast<clang::FileManager *>(FileMgr);
+  FM->Retain();
+  auto AU = clang::ASTUnit::LoadFromCompilerInvocation(
+      std::shared_ptr<clang::CompilerInvocation>(
+          reinterpret_cast<clang::CompilerInvocation *>(CI)),
+      std::make_shared<clang::PCHContainerOperations>(),
+      llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(DE), FM, OnlyLocalDecls,
+      static_cast<clang::CaptureDiagsKind>(CaptureDiagnostics),
+      PrecompilePreambleAfterNParses, static_cast<clang::TranslationUnitKind>(TUKind),
+      CacheCodeCompletionResults, IncludeBriefCommentsInCodeCompletion,
+      UserFilesAreVolatile);
+  return reinterpret_cast<CXASTUnit>(AU.release());
+}
+
 // LoadFromCommandLine
 // Reparse
 // ResetForParse
 // CodeComplete
-// Save
+
+bool clang_ASTUnit_Save(CXASTUnit AU, const char *File) {
+  return reinterpret_cast<clang::ASTUnit *>(AU)->Save(llvm::StringRef(File));
+}
+
 // serialize

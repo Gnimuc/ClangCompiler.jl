@@ -72,7 +72,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "astunit_region_probe")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     loc = CC.getLocation(fd)
     rng = CC.getSourceRange(fd)
 
@@ -193,4 +193,109 @@ end
     @test CC.isFrontendTimerRunning(ci) isa Bool  # shape-only: the host decides this
 
     dispose(I)
+end
+
+@testset "Coverage | ASTUnit parse entry point and AST serialization" begin
+    mktempdir() do dir
+        src = joinpath(dir, "astunit_load.cpp")
+        write(src, """
+              int astunit_loaded_fn(int a) { return a + 2; }
+              struct astunit_loaded_type { int m; };
+              """)
+
+        # LoadFromCompilerInvocation adopts the invocation on the success path *and* on the
+        # failure path, so no invocation built here is ever disposed. `diag` and `fm` are
+        # only pinned with a Retain, so both stay ours -- and both must outlive every unit
+        # built from them, which is why they are disposed last.
+        diag = CC.DiagnosticsEngine()
+        fm = CC.FileManager()
+        inv = CC.createFromCommandLine(src, CC.get_default_args(), diag)
+
+        au = CC.LoadFromCompilerInvocation(inv, diag, fm)
+        @test au !== nothing
+
+        # Everything a unit from ASTUnit::create leaves empty is filled in here, which is
+        # the whole point of this entry point: this unit has actually parsed. The three
+        # objects are one parse's and not three unrelated ones -- the Sema sits over the
+        # unit's own context and preprocessor, and that preprocessor reads the unit's own
+        # source manager.
+        @test CC.hasSema(au)
+        @test CC.hasPreprocessor(au)
+        sema = CC.getSema(au)
+        @test CC.getASTContext(sema).ptr == CC.getASTContext(au).ptr
+        @test CC.getPreprocessor(sema).ptr == CC.getPreprocessor(au).ptr
+        @test CC.getSourceManager(CC.getPreprocessor(au)).ptr == CC.getSourceManager(au).ptr
+        @test CC.isMainFileAST(au) == false
+        @test basename(CC.getMainFileName(au)) == "astunit_load.cpp"
+        @test basename(CC.getOriginalSourceFileName(au)) == "astunit_load.cpp"
+
+        # The top-level list is this file's and not another unit's: both declarations the
+        # source writes are in it, under the kind names clang gave them.
+        n = Int(CC.top_level_size(au))
+        @test n >= 2
+        kinds = [CC.getDeclKindName(CC.getTopLevelDecl(au, i)) for i = 0:(n - 1)]
+        @test "Function" in kinds
+        @test "CXXRecord" in kinds
+
+        # The kind clang reported establishes each carrier's class, so the same handles
+        # read back as NamedDecls: the list holds this source's declarations, under the
+        # names it wrote them with, and not the same slot twice.
+        top_names = String[]
+        for i = 0:(n - 1)
+            d = CC.getTopLevelDecl(au, i)
+            CC.getDeclKindName(d) in ("Function", "CXXRecord") || continue
+            push!(top_names, CC.getNameAsString(CC.NamedDecl(d)))
+        end
+        @test "astunit_loaded_fn" in top_names
+        @test "astunit_loaded_type" in top_names
+
+        # ... and the unit's own AST context holds them under the source's own names.
+        tu = CC.getTranslationUnitDecl(CC.getASTContext(au))
+        names = [CC.getNameAsString(d)
+                 for d in CC.decls(CC.castToDeclContext(tu)) if d isa CC.AbstractNamedDecl]
+        @test "astunit_loaded_fn" in names
+        @test "astunit_loaded_type" in names
+
+        # A parsed unit serializes. `false` is the SUCCESS return -- clang's polarity, and
+        # the trap this wrapper exists to document.
+        out = joinpath(dir, "astunit_loaded.ast")
+        @test CC.Save(au, out) == false
+        @test isfile(out)
+        # a clang AST file opens with the four-byte 'CPCH' magic
+        @test open(io -> read(io, 4), out) == b"CPCH"
+        # a serialized translation unit carries far more than the source it came from, so
+        # a truncated or magic-only write is caught rather than passing on the magic alone
+        @test filesize(out) > filesize(src)
+        # llvm::writeToOutput renames its temporary into place; nothing is left beside it
+        @test !any(startswith("astunit_loaded.ast.temp-stream-"), readdir(dir))
+
+        # The inverted polarity is observable rather than merely documented: a destination
+        # whose parent directory does not exist comes back as `true`, not as an exception.
+        @test CC.Save(au, joinpath(dir, "no_such_dir", "out.ast")) == true
+
+        # Serialization asserts inside ASTUnit::getSema, so a unit that never parsed is
+        # refused by the wrapper before it gets there -- and nothing is written.
+        never = joinpath(dir, "never_written.ast")
+        empty_unit = CC.ASTUnit(CC.CompilerInvocation(), diag)  # adopts the invocation
+        @test CC.hasSema(empty_unit) == false
+        @test_throws AssertionError CC.Save(empty_unit, never)
+        @test !ispath(never)
+        CC.dispose(empty_unit)
+
+        # The nullptr return: the invocation still names the file, but it is gone by the
+        # time the parse opens it, so the unit is destroyed inside the shim (taking the
+        # adopted invocation with it) and `nothing` comes back.
+        gone = joinpath(dir, "astunit_gone.cpp")
+        write(gone, "int astunit_gone_v = 1;\n")
+        inv_gone = CC.createFromCommandLine(gone, CC.get_default_args(), diag)
+        rm(gone)
+        failed = redirect_stdio(; stderr=devnull) do
+            CC.LoadFromCompilerInvocation(inv_gone, diag, fm)
+        end
+        @test failed === nothing
+
+        CC.dispose(au)
+        CC.dispose(fm)
+        CC.dispose(diag)
+    end
 end

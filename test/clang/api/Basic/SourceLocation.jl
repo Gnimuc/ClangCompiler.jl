@@ -14,7 +14,7 @@ using Test
 
     f = DeclFinder(I)
     @test f(I, "presumed_probe") isa Bool
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     loc = CC.getLocation(fd)
     sr = CC.getSourceRange(fd)
 

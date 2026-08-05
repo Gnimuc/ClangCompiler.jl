@@ -25,7 +25,7 @@ using Test
     """)
     finder = DeclFinder(I)
     @test finder(I, "sum_range")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(finder).ptr)
+    fd = CC.FunctionDecl(get_decl(finder))
     frs = find_node(CC.CXXForRangeStmt, CC.resolve(CC.getBody(fd)))
     @test frs isa CC.CXXForRangeStmt
     if frs isa CC.CXXForRangeStmt
@@ -82,7 +82,7 @@ using Test
     """)
     cfinder = DeclFinder(J)
     @test cfinder(J, "coro")
-    cfd = CC.downcast(CC.FunctionDecl, get_decl(cfinder).ptr)
+    cfd = CC.FunctionDecl(get_decl(cfinder))
     root = CC.resolve(CC.getBody(cfd))
     cbs = find_node(CC.CoroutineBodyStmt, root)
     @test cbs isa CC.CoroutineBodyStmt
@@ -157,7 +157,7 @@ end
     finder = DeclFinder(I)
     @test finder(I, "cc_doc_sum")
     decl = get_decl(finder)
-    fd = CC.downcast(CC.FunctionDecl, decl.ptr)
+    fd = CC.FunctionDecl(decl)
 
     frs = find_node(CC.CXXForRangeStmt, CC.resolve(CC.getBody(fd)))
     @test frs isa CC.CXXForRangeStmt
@@ -255,7 +255,7 @@ end
     """)
     f = DeclFinder(I)
     @test f(I, "cc_rangeinit_sum")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     frs = find_node(CC.CXXForRangeStmt, CC.resolve(CC.getBody(fd)))
     @test frs isa CC.CXXForRangeStmt
     if frs isa CC.CXXForRangeStmt
@@ -318,7 +318,7 @@ end
     """)
     cf = DeclFinder(J)
     @test cf(J, "cc_excl_coro")
-    cfd = CC.downcast(CC.FunctionDecl, get_decl(cf).ptr)
+    cfd = CC.FunctionDecl(get_decl(cf))
     cbs = find_node(CC.CoroutineBodyStmt, CC.resolve(CC.getBody(cfd)))
     @test cbs isa CC.CoroutineBodyStmt
     if cbs isa CC.CoroutineBodyStmt
@@ -345,7 +345,7 @@ end
     mf = DeclFinder(K)
     @test mf(K, "cc_mse_probe")
     mtd = first(d for d in CC.get_decls(mf) if CC.getDeclKindName(d) == "FunctionTemplate")
-    mfd = CC.getTemplatedDecl(CC.downcast(CC.FunctionTemplateDecl, mtd.ptr))
+    mfd = CC.getTemplatedDecl(CC.FunctionTemplateDecl(mtd))
     mses = collect_stmts(CC.MSDependentExistsStmt, CC.resolve(CC.getBody(mfd)),
                          CC.MSDependentExistsStmt[])
     @test length(mses) == 2

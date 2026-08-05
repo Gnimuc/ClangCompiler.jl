@@ -32,8 +32,10 @@ Everything below is how these two invariants are maintained.
 - **`api/`** — one thin wrapper per C function: check preconditions, emit the ccall, wrap
   the return in a carrier. Registered in `api/api.jl`. File tree mirrors the Clang headers.
 - **`src/clang/*.jl`** (`ast.jl`, `stmt.jl`, `type.jl`, `qualtype.jl`, `sema.jl`,
-  `basic.jl`, …) — snake_case convenience helpers and the downcast machinery (`resolve`,
-  `children`, `is_*` predicates) built on top of `api/`.
+  `basic.jl`, …) — snake_case convenience helpers and the resolve machinery (`resolve`,
+  `children`, `is_*` predicates) built on top of `api/`. `casts.jl` is the one file about
+  crossing the hierarchy: `CastError`, and the single unchecked reinterpretation the resolve
+  tables are built from.
 
 ## Reproducing single inheritance
 
@@ -110,10 +112,9 @@ members linearly during method lookup.
 Two spellings stay open, and must. `CXWhileStmt(p)` is Julia's own `Ptr{T}(::Ptr)` constructor,
 which bitcasts by definition and never consults `convert`; `reinterpret` is the same thing said
 outright. Neither is reachable without naming the class being asserted, and the first is what
-every entry in `converts.jl` and both of [`downcast`](@ref)/[`upcast`](@ref) are built from —
-closing it would leave the layer no way to spell the upcast single inheritance makes correct.
-What `handles.jl` removes is the *implicit* crossing, the one no call site had to ask for. So
-deliberate crossings go through `downcast`/`upcast`, which take the carrier and name the target.
+every entry in `converts.jl` and `unchecked_cast` are built from — closing it would leave the
+resolve machinery no way to spell the widening single inheritance makes correct. What
+`handles.jl` removes is the *implicit* crossing, the one no call site had to ask for.
 
 `Ptr{Cvoid}` stays outside all of it. It is not a `CX` handle — it is what `C_NULL` is, and a
 null carrier is a legal value throughout this layer — so those conversions still go to Base.
@@ -198,10 +199,12 @@ established, by exactly one of:
   predicates for types) and returns the matching concrete carrier. Stmt resolution is an
   O(1) table lookup (`STMT_CLASS_TO_TYPE`, `stmt.jl`); Type resolution is an order-sensitive
   predicate chain (`resolve(::AbstractType)`, `src/types.jl` — the ordering comment there is
-  load-bearing); Decl has no generic resolve and refines through explicit `castTo*`. Unknown
+  load-bearing); Decl is an O(1) lookup on `getKind` (`DECL_KIND_TO_TYPE`, `decl.jl`). Unknown
   kinds fall back to the value unchanged (Type falls back to `UnexposedType`).
-- **A downcast** — `castTo<Derived>` / the stamped `clang_Stmt_castTo*`, which use
-  `dyn_cast_or_null` and yield a NULL-pointer carrier on the wrong kind.
+- **A checked cast** — `FunctionDecl(d)`, `IfStmt(s)`, `RecordType(t)`, one per class in each
+  hierarchy, generated from the vendored `*.inc` files. These are C++'s `cast<T>`: the shim
+  runs clang's own `classof` through `dyn_cast_or_null`, and a node of another class raises
+  `CastError` naming both. The `is<Name>` predicate beside each is `isa<T>`.
 - **A getter whose C++ return type is statically that class** — e.g. `getRetValue` returns
   an `Expr`, so wrapping its result directly as `Expr` is sound.
 
@@ -216,6 +219,17 @@ Never wrap a raw pointer into a concrete carrier whose class you have not establ
 a C method returns a *base* handle — `getChildren` yields `Stmt`, `getDeclContext` yields
 `DeclContext` — wrap it at that base type and let the caller `resolve` to refine; do not
 guess a concrete type.
+
+**On the API surface, none of this should be spelled.** Widening needs no cast at all —
+`converts.jl` is keyed on the abstract types, so a `CXXRecordDecl` reaches every `AbstractDecl`
+wrapper with nothing written, exactly as a derived pointer converts to a base pointer in C++.
+And narrowing is usually not what a caller wants either: `resolve` hands back the concrete
+carrier, and from there Julia's own subtype relation *is* the cast, against the **abstract**
+type. `d isa AbstractFunctionDecl` is `isa<FunctionDecl>(d)`, `d::AbstractFunctionDecl` is
+`cast<FunctionDecl>(d)`, and a method declared on `AbstractFunctionDecl` is both, checked by
+dispatch before the call. The `Abstract` prefix is load-bearing: carriers are leaves, so
+`CXXMethodDecl` is not a subtype of `FunctionDecl` and the concrete spelling rejects every
+subclass `dyn_cast` accepts.
 
 ## Invariant 2 — receivers, and dispatch as the type check
 

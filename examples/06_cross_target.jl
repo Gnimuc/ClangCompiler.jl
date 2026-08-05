@@ -143,15 +143,17 @@ function abi_facts(I)
     end
 
     # The mangler is picked by the ABI the triple selects: Itanium for ELF, Mach-O and MinGW,
-    # Microsoft for an `-msvc` triple. `createMangleContext` returns a caller-owned object with no
-    # dispose entry point -- a known gap in the C shim, not an omission here.
+    # Microsoft for an `-msvc` triple. A mangle context is caller-owned -- nearly everything else
+    # reachable from an ASTContext is arena memory, so this one really does need `dispose`.
     mangler = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
     itanium = CC.getKind(mangler) === CC.CXMangleContext_MK_Itanium
     push!(facts, "C++ mangling ABI" => itanium ? "Itanium" : "Microsoft")
+    mangled_name = CC.mangleName(mangler, CC.find_decl(I, "abi::checksum"))
+    CC.dispose(mangler)
 
     return (; clang_triple=CC.getTriple(ti),
             facts=facts,
-            mangled=CC.mangleName(mangler, CC.find_decl(I, "abi::checksum")),
+            mangled=mangled_name,
             # What the object format prepends to every symbol on top of the mangled name; "" on ELF,
             # "_" on Mach-O. Asked of clang rather than assumed, because it is a target decision too.
             label_prefix=CC.getUserLabelPrefix(ti),

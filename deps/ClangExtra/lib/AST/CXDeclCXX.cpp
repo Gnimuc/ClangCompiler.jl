@@ -2546,3 +2546,47 @@ CXUnresolvedUsingTypenameDecl clang_UnresolvedUsingTypenameDecl_Create(
       clang::DeclarationName::getFromOpaquePtr(TargetName),
       clang::SourceLocation::getFromPtrEncoding(EllipsisLoc)));
 }
+
+// CXXRecordDecl (base paths)
+unsigned clang_CXXRecordDecl_getNumBasePathElements(CXCXXRecordDecl CXXRD,
+                                                    CXCXXRecordDecl Base) {
+  clang::CXXBasePaths Paths;
+  reinterpret_cast<clang::CXXRecordDecl *>(CXXRD)->isDerivedFrom(
+      reinterpret_cast<clang::CXXRecordDecl *>(Base), Paths);
+  unsigned N = 0;
+  for (const clang::CXXBasePath &Path : Paths)
+    N += static_cast<unsigned>(Path.size());
+  return N;
+}
+
+void clang_CXXRecordDecl_getBasePathElements(CXCXXRecordDecl CXXRD, CXCXXRecordDecl Base,
+                                             unsigned *PathBuf,
+                                             CXAccessSpecifier *AccessBuf,
+                                             CXCXXBaseSpecifier *BaseBuf,
+                                             CXCXXRecordDecl *ClassBuf, int *SubobjectBuf) {
+  clang::CXXBasePaths Paths;
+  reinterpret_cast<clang::CXXRecordDecl *>(CXXRD)->isDerivedFrom(
+      reinterpret_cast<clang::CXXRecordDecl *>(Base), Paths);
+  unsigned I = 0;
+  unsigned PathNumber = 0;
+  for (const clang::CXXBasePath &Path : Paths) {
+    for (const clang::CXXBasePathElement &Element : Path) {
+      PathBuf[I] = PathNumber;
+      AccessBuf[I] = static_cast<CXAccessSpecifier>(Path.Access);
+      BaseBuf[I] = reinterpret_cast<CXCXXBaseSpecifier>(
+          const_cast<clang::CXXBaseSpecifier *>(Element.Base));
+      ClassBuf[I] = reinterpret_cast<CXCXXRecordDecl>(
+          const_cast<clang::CXXRecordDecl *>(Element.Class));
+      SubobjectBuf[I] = Element.SubobjectNumber;
+      ++I;
+    }
+    ++PathNumber;
+  }
+}
+
+// CXXRecordDecl (selected destructor)
+void clang_CXXRecordDecl_addedSelectedDestructor(CXCXXRecordDecl CXXRD,
+                                                 CXCXXDestructorDecl DD) {
+  reinterpret_cast<clang::CXXRecordDecl *>(CXXRD)->addedSelectedDestructor(
+      reinterpret_cast<clang::CXXDestructorDecl *>(DD));
+}

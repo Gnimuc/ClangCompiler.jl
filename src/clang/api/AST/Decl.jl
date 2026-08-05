@@ -143,16 +143,10 @@ end
 
 # TODO: getObjCFStringFormattingFamily
 
-# NamedDecl Cast
-function TypeDecl(x::NamedDecl)
-    @check_ptrs x
-    return TypeDecl(clang_NamedDecl_castToTypeDecl(x))
-end
-
-function EnumConstantDecl(x::NamedDecl)
-    @check_ptrs x
-    return EnumConstantDecl(clang_NamedDecl_castToEnumConstantDecl(x))
-end
+# A `NamedDecl`-rooted cast answers exactly what the `Decl`-rooted one in
+# api/AST/DeclWrappers.jl answers -- `classof` reads the same kind field however the pointer is
+# typed -- and a narrower receiver would only shadow the checked cast for callers who happen to
+# hold a `NamedDecl`. So `TypeDecl(x)` and `EnumConstantDecl(x)` live there.
 
 # LabelDecl
 function getStmt(x::LabelDecl)
@@ -1983,11 +1977,8 @@ function getFields(x::AbstractRecordDecl)
     return [FieldDecl(p) for p in buf]
 end
 
-# RecordDecl Cast
-function ClassTemplateSpecializationDecl(x::RecordDecl)
-    @check_ptrs x
-    return ClassTemplateSpecializationDecl(clang_RecordDecl_castToClassTemplateSpecializationDecl(x))
-end
+# `ClassTemplateSpecializationDecl(x)` is likewise the `Decl`-rooted cast in
+# api/AST/DeclWrappers.jl; a `RecordDecl` receiver would shadow it with the same answer.
 
 # BlockDecl
 function blockMissingReturnType(x::AbstractBlockDecl)

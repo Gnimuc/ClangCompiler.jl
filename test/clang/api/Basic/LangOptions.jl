@@ -77,7 +77,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "fpo_probe")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     binops = [s for s in (CC.resolve(x) for x in CC.subtree(CC.getBody(fd)))
               if s isa CC.BinaryOperator]
     words = unique([CC.getFPFeaturesInEffect(b, lo) for b in binops])
@@ -129,4 +129,23 @@ end
 
     dispose(f)
     dispose(I)
+end
+
+@testset "LangOptions | the Microsoft-extensions gate" begin
+    # Exposed for the same reason as getBorland: it gates a wrapper that would otherwise
+    # reach unchecked into state clang only builds under these options. Two interpreters
+    # differing only in the flag give an equality rather than a shape assertion.
+    off = create_interpreter(["-std=c++17"])
+    on = create_interpreter(["-std=c++17", "-fms-extensions"])
+    @test CC.getMicrosoftExt(CC.getLangOpts(CC.get_sema(off))) == false
+    @test CC.getMicrosoftExt(CC.getLangOpts(CC.get_sema(on))) == true
+    # Without the flag clang never builds the implicit `_GUID` record, and asking for its type
+    # aborts inside ASTContext rather than returning anything -- so the wrapper asserts first.
+    # This assertion is what the gate is for; it fired for real before the guard was added.
+    @test CC.getMSGuidTagDecl(CC.get_ast_context(off)).ptr == C_NULL
+    @test_throws AssertionError CC.getMSGuidType(CC.get_ast_context(off))
+    @test CC.getMSGuidTagDecl(CC.get_ast_context(on)).ptr != C_NULL
+    @test !CC.is_null_handle(CC.get_qual_type(CC.getMSGuidType(CC.get_ast_context(on))))
+    dispose(off)
+    dispose(on)
 end

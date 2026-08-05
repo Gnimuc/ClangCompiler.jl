@@ -16,6 +16,15 @@ typedef enum CXLTOKind {
   CXLTOKind_LTOK_Unknown
 } CXLTOKind;
 
+// clang/Driver/Driver.h: enum clang::driver::ModuleHeaderMode, mirrored in declaration
+// order.
+typedef enum CXModuleHeaderMode {
+  CXModuleHeaderMode_HeaderMode_None,
+  CXModuleHeaderMode_HeaderMode_Default,
+  CXModuleHeaderMode_HeaderMode_User,
+  CXModuleHeaderMode_HeaderMode_System
+} CXModuleHeaderMode;
+
 // The Driver stores `DiagnosticsEngine &Diags`: dispose the Driver BEFORE the
 // DiagnosticsEngine it was created with.
 CXDriver clang_Driver_create(const char *ClangExecutable, const char *TargetTriple,
@@ -71,11 +80,13 @@ const char *clang_Driver_getDefaultImageName(CXDriver D);
 // IsOffload selects the offload LTO mode instead of the host one; the C++ default
 // is false.
 //
-// PRECONDITION: the Driver must already have processed arguments. Driver::LTOMode
-// and Driver::OffloadLTOMode are plain members with NO default initializer, written
-// only by the private setLTOMode() during BuildCompilation — reading them before
-// that is undefined behaviour and has been observed returning a value outside the
-// enum. The Julia wrapper restates this.
+// PRECONDITION, on the IsOffload=true arm only: Driver::OffloadLTOMode has no
+// in-class initializer AND is the one member of its group absent from the sole
+// constructor's mem-init list, so nothing writes it until the private setLTOMode()
+// runs during BuildCompilation — reading it before that is undefined behaviour and
+// has been observed returning a value outside the enum. The host arm reads
+// Driver::LTOMode, which that mem-init list does cover (LTOK_None). The Julia
+// wrapper restates this.
 CXLTOKind clang_Driver_getLTOMode(CXDriver D, bool IsOffload);
 
 // Paths to the configuration files the driver loaded, as a count + index pair. The
@@ -98,10 +109,10 @@ void clang_Driver_setPrependArg(CXDriver D, const char *Value);
 void clang_Driver_setInstalledDir(CXDriver D, const char *Value);
 
 // The predicates below read Driver::SaveTemps / BitcodeEmbed / Offload /
-// CXX20HeaderType -- plain members with no in-class initializer that command-line
-// processing refines. Each of them is a comparison, so the answer is always a valid
-// bool (unlike getLTOMode, which hands the raw enum out), but it is only meaningful
-// once the driver has processed arguments.
+// CXX20HeaderType. None of those four has an in-class initializer, but the Driver's sole
+// constructor lists all four (SaveTempsNone, EmbedNone, OffloadHostDevice,
+// HeaderMode_None), so reading them is defined on any Driver: before a command line has
+// been processed they report those defaults.
 bool clang_Driver_isSaveTempsEnabled(CXDriver D);
 
 bool clang_Driver_isSaveTempsObj(CXDriver D);
@@ -119,15 +130,15 @@ bool clang_Driver_offloadDeviceOnly(CXDriver D);
 // True when -fmodule-header selected a C++20 header-unit mode.
 bool clang_Driver_hasHeaderMode(CXDriver D);
 
-// getModuleHeaderMode -- deliberately not wrapped: unlike hasHeaderMode it hands the
-// raw Driver::CXX20HeaderType out, and that member has no in-class initializer, so
-// reading it is the getLTOMode problem with no observable gate to assert on.
+// Which C++20 header-unit mode -fmodule-header{=user,=system} selected, i.e. how the
+// headers a header unit is built from are looked up. Finer-grained than
+// clang_Driver_hasHeaderMode, which reports only None vs not-None.
+CXModuleHeaderMode clang_Driver_getModuleHeaderMode(CXDriver D);
 
-// Reads the same uninitialized Driver::LTOMode / OffloadLTOMode members as
-// clang_Driver_getLTOMode, but compares them instead of returning the raw enum, so the
-// result is always a valid bool; it is only meaningful once the driver has processed
-// arguments. IsOffload selects the offload mode instead of the host one (the C++
-// default is false).
+// Reads the same Driver::LTOMode / OffloadLTOMode members as clang_Driver_getLTOMode, but
+// compares them instead of returning the raw enum, so the result is a valid bool even on
+// the IsOffload=true arm, whose member stays uninitialized until BuildCompilation runs.
+// IsOffload selects the offload mode instead of the host one (the C++ default is false).
 bool clang_Driver_isUsingLTO(CXDriver D, bool IsOffload);
 
 // BuildCompilation / BuildActions / the Compilation and ActionList accessors are
@@ -222,6 +233,24 @@ const char *clang_Driver_CreateTempFile(CXDriver D, CXCompilation C, const char 
 
 // The path clang-cl would use for the precompiled header of BaseName.
 CXString clang_Driver_GetClPchPath(CXDriver D, CXCompilation C, const char *BaseName);
+
+// --- clang::driver, namespace-level ---------------------------------------------------
+//
+// Free functions, so no receiver: the lowercase `driver` segment is the namespace.
+
+// isOptimizationLevelFast
+// willEmitRemarks
+
+// The value of --driver-mode= in Args, or the mode ProgName implies when Args names none;
+// empty when neither yields one. Common values are "gcc", "g++", "cpp", "cl" and "flang",
+// but the result need not be one of those. Args is the argument list WITHOUT argv[0] --
+// clang's own callers pass ArgList.slice(1). Total: an unrecognised ProgName yields "",
+// and NumArgs may be 0.
+CXString clang_driver_getDriverMode(const char *ProgName, const char **Args,
+                                    unsigned NumArgs);
+
+// IsClangCL -- `DriverMode == "cl"`, which the caller can spell itself.
+// expandResponseFiles
 
 LLVM_CLANG_C_EXTERN_C_END
 

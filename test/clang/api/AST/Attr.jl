@@ -64,13 +64,14 @@ end
     @test !CC.is_null_handle(CC.getLocation(dep))
     @test CC.getRange(dep) isa CC.SourceRange  # shape-only
 
-    # stamped predicates and casts (base carrier in, dyn_cast_or_null semantics out)
+    # stamped predicates and casts: `isa<T>` beside `cast<T>`, and the cast names both
+    # classes when it refuses rather than handing back a carrier over nothing
     base = CC.getAttrs(look("gdep"))[1]
     @test base isa CC.Attr
     @test CC.isDeprecatedAttr(base)
     @test !CC.isSectionAttr(base)
-    @test CC.DeprecatedAttr(base).ptr != C_NULL
-    @test CC.SectionAttr(base).ptr == C_NULL
+    @test CC.DeprecatedAttr(base) == dep
+    @test_throws CC.CastError CC.SectionAttr(base)
 
     # DeprecatedAttr payload round-trip
     @test CC.getMessage(dep) == "dep-msg"
@@ -125,14 +126,14 @@ end
     @test CC.getMessage(findattr(look("mustuse"), CC.WarnUnusedResultAttr)) == "check-me"
 
     # PackedAttr on the record definition (marker attribute; classification only)
-    rd = CC.getDefinition(CC.downcast(CC.RecordDecl, look("SPacked").ptr))
+    rd = CC.getDefinition(CC.RecordDecl(look("SPacked")))
     @test any(a -> a isa CC.PackedAttr, resolved_attrs(rd))
 
     # UsedAttr (marker attribute; classification only)
     @test any(a -> a isa CC.UsedAttr, resolved_attrs(look("gused")))
 
     # CleanupAttr lives on a local variable: walk the function body to it
-    fd = CC.downcast(CC.FunctionDecl, look("cfn").ptr)
+    fd = CC.FunctionDecl(look("cfn"))
     body = CC.resolve(CC.getBody(fd))
     ds = nothing
     for k in CC.children(body)
@@ -190,12 +191,16 @@ end
     CC.parse(I, "[[noreturn]] void ce2_f();")
     f = DeclFinder(I)
     @test f(I, "ce2_f")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
     attrs = CC.getAttrs(fd)
     @test length(attrs) == 1
     a = attrs[1]
+    # `getAttrs` hands out base-typed carriers, so `a`'s Julia type says nothing about the
+    # node's class; `resolve` is what asks clang which class it is.
+    r = CC.resolve(a)
+    @test r isa CC.CXX11NoReturnAttr
 
-    npred = ncast = 0
+    npred = ncast = nmatch = 0
     for nm in names(CC; all=true)
         isdefined(CC, nm) || continue
         v = getproperty(CC, nm)
@@ -207,15 +212,30 @@ end
                # exact stamped-cast signature — every struct also has the
                # implicit converting constructor, whose sig is (::Type, ::Any)
                which(v, Tuple{CC.Attr}).sig <: Tuple{Type,CC.AbstractAttr}
-            c = v(a)
-            @test c isa v
-            # dyn_cast_or_null: exactly the one matching class casts non-null
-            c.ptr == C_NULL || @test c isa CC.CXX11NoReturnAttr
+            # The predicate and the cast are one question asked twice, `isa<T>` and `cast<T>`
+            # off the same `classof` — and the Julia abstract mirroring that class is a third
+            # spelling of it. Holding all three against each other for every attribute class
+            # is what says the generated hierarchy matches the one clang actually has.
+            absT = isdefined(CC, Symbol("Abstract", nm)) ? getproperty(CC, Symbol("Abstract", nm)) :
+                   nothing
+            if getproperty(CC, Symbol("is", nm))(a)
+                absT === nothing || @test r isa absT
+                @test v(a) == a                  # narrows to the same clang::Attr
+                nmatch += 1
+            else
+                absT === nothing || @test !(r isa absT)
+                @test_throws CC.CastError v(a)   # refused by name, not by a null carrier
+            end
             ncast += 1
         end
     end
     @test npred >= 390
     @test ncast >= 390
+    # exactly one of the 396 stamped classes accepts it. AttrList.inc names only the leaves,
+    # so the abstract bases carry no stamped cast to match — the Julia mirror still has them,
+    # which is what the second assertion says.
+    @test nmatch == 1
+    @test r isa CC.AbstractInheritableAttr
 
     dispose(f)
     dispose(I)

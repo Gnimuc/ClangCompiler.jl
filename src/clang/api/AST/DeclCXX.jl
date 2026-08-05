@@ -3819,3 +3819,86 @@ function UnresolvedUsingTypenameDecl(ctx::ASTContext, dc::AnyDeclContext,
                                                     target_name, ellipsis_loc)
     return UnresolvedUsingTypenameDecl(uutd)
 end
+
+# --- Base paths, and the selected-destructor notification ---
+
+# `isDerivedFrom` answers whether a class derives from a base; these answer how. clang records
+# the search into a `CXXBasePaths` whose storage dies with the call, so the shim runs the
+# search and flattens the recorded paths to one row per `CXXBasePathElement`, the same
+# count+fill-over-parallel-buffers shape as `getFinalOverriders`.
+
+"""
+    getNumBasePathElements(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl) -> Integer
+Return how many derived-to-base steps `getBasePathElements(x, base)` will report, summed over
+every path clang records from `x` to `base` (`clang::CXXRecordDecl::isDerivedFrom`'s
+`CXXBasePaths` overload). It is 0 exactly when `isDerivedFrom(x, base)` is `false`, a class
+being neither derived from itself nor from an unrelated class.
+
+PARTIAL: the walk reads the definition data of `x` and of every base it visits, so
+`hasDefinition(x)` must hold.
+"""
+function getNumBasePathElements(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl)
+    @check_ptrs x base
+    @assert hasDefinition(x) "the class must have a definition"
+    return clang_CXXRecordDecl_getNumBasePathElements(x, base)
+end
+
+"""
+    getBasePathElements(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl)
+        -> Tuple{Vector{UInt32},Vector{CXAccessSpecifier},Vector{CXXBaseSpecifier},
+                 Vector{CXXRecordDecl},Vector{Int32}}
+Resolve every inheritance path from `x` to `base`, under the same precondition as
+`getNumBasePathElements`. The five vectors are in lockstep, one entry per step of a path;
+destructured as `paths, accesses, specifiers, classes, subobjects`, entry `i` reads:
+
+  - `paths[i]` numbers the path entry `i` belongs to. Entries of one path are contiguous and
+    paths are numbered from 0, so more than one path number means `base` is an *ambiguous*
+    base of `x`;
+  - `accesses[i]` is that path's merged access, repeated on every entry of the path.
+    `CXAccessSpecifier_AS_none` is clang's marker for a path that permits no legal
+    derived-to-base conversion, which is what a private base reached past the first step
+    produces (see [`MergeAccess`](@ref));
+  - `specifiers[i]` is the base specifier this step follows and `classes[i]` the class that
+    specifier is written on: from `classes[i]`, follow `specifiers[i]`;
+  - `subobjects[i]` is the base subobject the step designates. clang defines it only when
+    `isVirtual(specifiers[i])` is `false` — it is 0 on a virtual edge, since a type has at
+    most one virtual base subobject — and numbers the non-virtual subobjects of a base type
+    from 1 otherwise, which is what distinguishes two same-typed base subobjects of one class.
+
+The order is clang's depth-first walk of `bases()` in declaration order, so it is the order
+the base specifiers are written in.
+"""
+function getBasePathElements(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl)
+    @check_ptrs x base
+    @assert hasDefinition(x) "the class must have a definition"
+    n = Int(clang_CXXRecordDecl_getNumBasePathElements(x, base))
+    paths = Vector{Cuint}(undef, n)
+    accesses = Vector{CXAccessSpecifier}(undef, n)
+    specifiers = Vector{CXCXXBaseSpecifier}(undef, n)
+    classes = Vector{CXCXXRecordDecl}(undef, n)
+    subobjects = Vector{Cint}(undef, n)
+    n > 0 && clang_CXXRecordDecl_getBasePathElements(x, base, paths, accesses, specifiers,
+                                                     classes, subobjects)
+    return (paths, accesses, [CXXBaseSpecifier(p) for p in specifiers],
+            [CXXRecordDecl(p) for p in classes], subobjects)
+end
+
+"""
+    addedSelectedDestructor(x::AbstractCXXRecordDecl, dd::AbstractCXXDestructorDecl)
+Tell the class that `dd` is now its selected destructor
+(`clang::CXXRecordDecl::addedSelectedDestructor`), recomputing the triviality and
+destructor-derived flags — `hasTrivialDestructor`, `hasNonTrivialDestructorForCall`,
+`hasIrrelevantDestructor`, `isAnyDestructorNoReturn` — from it. Since C++20 a class may
+declare several destructors of which one is selected at the end, which is why clang defers
+this past `addedMember` to class completion. It also clears `dd`'s own
+`isIneligibleOrNotSelected` bit.
+
+PARTIAL: the flags live in the class's definition data, so `hasDefinition(x)` must hold.
+Nothing checks that `dd` is a destructor *of this class*: another class's destructor does not
+crash, it silently folds its own triviality into `x`'s flags.
+"""
+function addedSelectedDestructor(x::AbstractCXXRecordDecl, dd::AbstractCXXDestructorDecl)
+    @check_ptrs x dd
+    @assert hasDefinition(x) "the class must have a definition"
+    return clang_CXXRecordDecl_addedSelectedDestructor(x, dd)
+end

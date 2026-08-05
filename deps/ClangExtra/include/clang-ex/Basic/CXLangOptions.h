@@ -107,6 +107,11 @@ bool clang_LangOptions_allowsNonTrivialObjCLifetimeQualifiers(CXLangOptions LO);
 // clang_Preprocessor_PoisonSEHIdentifiers.
 bool clang_LangOptions_getBorland(CXLangOptions LO);
 
+// The Microsoft-extensions flag (LangOptions.def: LANGOPT(MicrosoftExt, ...)). Exposed for the
+// same reason as Borland above: ASTContext only creates the MSGuidTagDecl that
+// clang_Sema_BuildCXXUuidof reaches for when one of the two is set, and it reaches unchecked.
+bool clang_LangOptions_getMicrosoftExt(CXLangOptions LO);
+
 // The modules flag (LangOptions.def: LANGOPT(Modules, ...)). Exposed as a gate:
 // clang_HeaderSearch_ShouldEnterIncludeFile takes a ModulesEnabled argument that must match
 // the invocation, and nothing else can observe it.

@@ -8,7 +8,7 @@ using Test
     ClangCompiler.parse(I, "constexpr int cx = 2 + 3;")
     f = DeclFinder(I)
     @test f(I, "cx")
-    vd = ClangCompiler.downcast(ClangCompiler.VarDecl, get_decl(f).ptr)
+    vd = ClangCompiler.VarDecl(get_decl(f))
 
     # VarDecl::evaluateValue — borrowed, cached in the VarDecl (never disposed).
     av = ClangCompiler.evaluateValue(vd)
@@ -43,11 +43,11 @@ using Test
 
     ClangCompiler.parse(I, "constexpr bool cb = (2 > 1); constexpr float cf = 1.5f;")
     @test f(I, "cb")
-    cb_init = ClangCompiler.getInit(ClangCompiler.downcast(ClangCompiler.VarDecl, get_decl(f).ptr))
+    cb_init = ClangCompiler.getInit(ClangCompiler.VarDecl(get_decl(f)))
     @test ClangCompiler.EvaluateAsBooleanCondition(cb_init, ctx) == 1
 
     @test f(I, "cf")
-    cf_init = ClangCompiler.getInit(ClangCompiler.downcast(ClangCompiler.VarDecl, get_decl(f).ptr))
+    cf_init = ClangCompiler.getInit(ClangCompiler.VarDecl(get_decl(f)))
     gvf = ClangCompiler.LLVM.GenericValue(ClangCompiler.EvaluateAsFloat(cf_init, ctx))
     @test ClangCompiler.LLVM.intwidth(gvf) == 32                  # APFloat bits (bitcastToAPInt)
     @test reinterpret(Float32, convert(UInt32, gvf)) == 1.5f0
@@ -56,7 +56,7 @@ using Test
     # A non-constant expression yields the null/-1 sentinels.
     ClangCompiler.parse(I, "int nc_fn(); int nc = nc_fn();")
     @test f(I, "nc")
-    nc_init = ClangCompiler.getInit(ClangCompiler.downcast(ClangCompiler.VarDecl, get_decl(f).ptr))
+    nc_init = ClangCompiler.getInit(ClangCompiler.VarDecl(get_decl(f)))
     @test !ClangCompiler.isEvaluatable(nc_init, ctx)
     @test ClangCompiler.EvaluateAsInt(nc_init, ctx).ptr == C_NULL
     @test ClangCompiler.EvaluateAsBooleanCondition(nc_init, ctx) == -1
@@ -106,7 +106,7 @@ import ClangCompiler as CC
     """
     CC.parse(I, src)
 
-    varof(name) = (@test f(I, name); CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    varof(name) = (@test f(I, name); CC.VarDecl(get_decl(f)))
     tst_of(vd) = begin
         t = CC.resolve(CC.getTypePtr(CC.getType(vd)))
         t isa CC.ElaboratedType && (t = CC.resolve(CC.getTypePtr(CC.getNamedType(t))))
@@ -218,7 +218,7 @@ import ClangCompiler as CC
 
     # Dependent identifier NNS from `typename T::foo::type`.
     @test f(I, "Dep")
-    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    ctd = CC.ClassTemplateDecl(get_decl(f))
     patt = CC.getTemplatedDecl(ctd)
     for fld in CC.getFields(patt)
         dnt = CC.resolve(CC.getTypePtr(CC.getType(fld)))
@@ -293,7 +293,7 @@ import ClangCompiler as CC
 
     # ---------- DeclGroupRef ----------
     @test f(I, "add")
-    dgr = CC.DeclGroupRef(CC.upcast(CC.Decl, get_decl(f).ptr))   # DeclGroupRef(x::Decl) wants the exact Decl carrier
+    dgr = CC.DeclGroupRef(CC.Decl(get_decl(f)))   # DeclGroupRef(x::Decl) wants the exact Decl carrier
     @test !CC.isNull(dgr)
     @test CC.isSingleDecl(dgr)
     @test !CC.isDeclGroup(dgr)
@@ -385,14 +385,15 @@ import ClangCompiler as CC
 
     # Declaration, via constructFromValueDecl on the `gx` global.
     @test f(I, "gx")
-    vd_gx = CC.downcast(CC.VarDecl, get_decl(f).ptr)
-    ta_decl = CC.TemplateArgument(CC.upcast(CC.ValueDecl, vd_gx.ptr), CC.getType(vd_gx))
+    vd_gx = CC.VarDecl(get_decl(f))
+    ta_decl = CC.TemplateArgument(CC.ValueDecl(vd_gx), CC.getType(vd_gx))
     @test CC.getKind(ta_decl) == CC.LibClangEx.CXTemplateArgument_Declaration
     @test !CC.is_null_handle(CC.getAsDecl(ta_decl))
     @test !CC.is_null_handle(CC.getParamTypeForDecl(ta_decl))
     CC.dispose(ta_decl)
 
     dispose(f)
+    CC.dispose(mc)
     dispose(I)
 end
 
@@ -413,7 +414,7 @@ end
     """
     CC.parse(I, src)
 
-    valueof(name) = (@test f(I, name); CC.evaluateValue(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
+    valueof(name) = (@test f(I, name); CC.evaluateValue(CC.VarDecl(get_decl(f))))
 
     # needsCleanup is total: false for a small integer leaf, true for an aggregate.
     v_int = valueof("pv_int")
@@ -497,7 +498,7 @@ end
     """
     CC.parse(I, src)
 
-    vardecl(name) = (@test f(I, name); CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    vardecl(name) = (@test f(I, name); CC.VarDecl(get_decl(f)))
 
     # The lvalue base designator: &rv_arr[2] is based on the rv_arr VarDecl arm.
     vd_ptr = vardecl("rv_ptr")
@@ -594,8 +595,8 @@ end
 
     # RPack<RUs...> inside the RFwd pattern carries a pack-expansion type argument.
     @test f(I, "RFwd")
-    rfwd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
-    rfwd_patt = CC.downcast(CC.CXXRecordDecl, CC.getTemplatedDecl(rfwd).ptr)
+    rfwd = CC.ClassTemplateDecl(get_decl(f))
+    rfwd_patt = CC.CXXRecordDecl(CC.getTemplatedDecl(rfwd))
     fld = first(CC.getFields(rfwd_patt))
     fty = CC.resolve(CC.getTypePtr(CC.getType(fld)))
     fty isa CC.ElaboratedType && (fty = CC.resolve(CC.getTypePtr(CC.getNamedType(fty))))
@@ -610,8 +611,8 @@ end
     # The remaining TemplateArgumentLoc source-expression accessors: a Template-kind
     # argument satisfies none of their kind preconditions.
     @test f(I, "RHolder")
-    rholder = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
-    rttp = CC.downcast(CC.TemplateTemplateParmDecl, CC.getParam(CC.getTemplateParameters(rholder), 0).ptr)
+    rholder = CC.ClassTemplateDecl(get_decl(f))
+    rttp = CC.TemplateTemplateParmDecl(CC.getParam(CC.getTemplateParameters(rholder), 0))
     @test CC.hasDefaultArgument(rttp)
     tal = CC.getDefaultArgument(rttp)
     @test CC.getKind(CC.getArgument(tal)) == CC.LibClangEx.CXTemplateArgument_Template
@@ -639,9 +640,8 @@ end
     # A Template-kind TemplateArgumentLoc to feed the builder with. Selecting by kind
     # keeps the lookup unambiguous even though the testset instantiates a template.
     @test f(I, "TLIHolder")
-    holder = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
-                                        if getDeclKindName(d) == "ClassTemplate").ptr)
-    ttp = CC.downcast(CC.TemplateTemplateParmDecl, CC.getParam(CC.getTemplateParameters(holder), 0).ptr)
+    holder = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f) if getDeclKindName(d) == "ClassTemplate"))
+    ttp = CC.TemplateTemplateParmDecl(CC.getParam(CC.getTemplateParameters(holder), 0))
     @test CC.hasDefaultArgument(ttp)
     tal = CC.getDefaultArgument(ttp)
     @test tal isa CC.TemplateArgumentLoc
@@ -693,7 +693,7 @@ end
     # constant designates neither, so both predicates read false and every payload
     # accessor rejects the call through the precondition it restates.
     @test f(I, "tli_ptr")
-    v_ptr = CC.evaluateValue(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    v_ptr = CC.evaluateValue(CC.VarDecl(get_decl(f)))
     @test CC.isLValue(v_ptr)
     @test CC.isLValueBaseTypeInfo(v_ptr) == false
     @test CC.isLValueBaseDynamicAlloc(v_ptr) == false
@@ -704,7 +704,7 @@ end
 
     # ... and the arm predicates are themselves lvalue-only.
     @test f(I, "tli_int")
-    v_int = CC.evaluateValue(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    v_int = CC.evaluateValue(CC.VarDecl(get_decl(f)))
     @test CC.isInt(v_int)
     @test_throws AssertionError CC.isLValueBaseTypeInfo(v_int)
     @test_throws AssertionError CC.isLValueBaseDynamicAlloc(v_int)
@@ -740,7 +740,7 @@ end
              """)
     # VarDecl::evaluateValue caches its result in the decl, so every value here is
     # borrowed and none is disposed; the mutators below rewrite those cached leaves.
-    cached(name) = (@test f(I, name); CC.evaluateValue(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
+    cached(name) = (@test f(I, name); CC.evaluateValue(CC.VarDecl(get_decl(f))))
 
     av3, av5, av7 = cached("apv_three"), cached("apv_five"), cached("apv_seven")
     @test CC.isInt(av5) && CC.isInt(av7)

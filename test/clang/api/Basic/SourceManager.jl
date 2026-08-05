@@ -18,7 +18,7 @@ using Test
     f = DeclFinder(I)
     @test f(I, "add_two") isa Bool
     d = get_decl(f)
-    fd = CC.downcast(CC.FunctionDecl, d.ptr)
+    fd = CC.FunctionDecl(d)
     loc = CC.getLocation(fd)
     sr = CC.getSourceRange(fd)
 
@@ -130,7 +130,7 @@ end
     f = CC.DeclFinder(I)
     @test f(I, "sm_batch_fn")
     d = CC.get_decl(f)
-    fd = CC.downcast(CC.FunctionDecl, d.ptr)
+    fd = CC.FunctionDecl(d)
     loc = CC.getLocation(fd)
     @test CC.isValid(loc)
     @test CC.isFileID(loc)

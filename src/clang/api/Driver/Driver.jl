@@ -192,12 +192,16 @@ Return the specific kind of LTO being performed. Pass `is_offload=true` for the 
 LTO mode instead of the host one.
 
 !!! warning
-    The driver must already have processed arguments. `Driver::LTOMode` and
-    `Driver::OffloadLTOMode` carry no default initializer and are written only by
-    `setLTOMode` during `BuildCompilation`, so calling this on a freshly constructed
-    `Driver` reads uninitialized memory — it has been seen returning a value outside
-    `CXLTOKind` altogether. This wrapper cannot check the precondition: there is no
-    observable "arguments processed" flag on the driver.
+    With `is_offload=true` the driver must already have processed arguments.
+    `Driver::OffloadLTOMode` is the one member of its group that the driver's only
+    constructor does not initialize, so `setLTOMode` during [`BuildCompilation`](@ref) is
+    the first thing to write it and reading it before that is uninitialized memory — it
+    has been seen returning a value outside `CXLTOKind` altogether. This wrapper cannot
+    check the precondition: there is no observable "arguments processed" flag on the
+    driver.
+
+The host mode is not affected: `Driver::LTOMode` is set to `LTOK_None` by that constructor,
+so `is_offload=false` reads an initialized member on any driver.
 """
 function getLTOMode(x::AbstractDriver, is_offload::Bool=false)
     @check_ptrs x
@@ -273,11 +277,9 @@ end
 Return whether the driver was asked to keep temporary compilation artefacts
 (`-save-temps`).
 
-!!! note
-    `Driver::SaveTemps` has no in-class initializer and is refined by command-line
-    processing, so the answer is only meaningful once the driver has processed
-    arguments. Unlike `getLTOMode` the result is a comparison, so it is always a valid
-    `Bool` rather than a value outside its enum.
+`Driver::SaveTemps` is set to `SaveTempsNone` by the driver's only constructor and refined
+while a command line is processed, so a driver that has not run [`BuildCompilation`](@ref)
+answers `false` rather than reading uninitialized memory.
 """
 function isSaveTempsEnabled(x::AbstractDriver)
     @check_ptrs x
@@ -298,9 +300,9 @@ end
     embedBitcodeEnabled(x::AbstractDriver) -> Bool
 Return whether the driver embeds bitcode in the output at all (`-fembed-bitcode`).
 
-!!! note
-    `Driver::BitcodeEmbed` has no in-class initializer and is refined by command-line
-    processing, so the answer is only meaningful once the driver has processed arguments.
+`Driver::BitcodeEmbed` is set to `EmbedNone` by the driver's only constructor and refined
+while a command line is processed, so a driver that has not run [`BuildCompilation`](@ref)
+answers `false` rather than reading uninitialized memory.
 """
 function embedBitcodeEnabled(x::AbstractDriver)
     @check_ptrs x
@@ -331,9 +333,9 @@ end
     offloadHostOnly(x::AbstractDriver) -> Bool
 Return whether the driver builds only the host side of an offloading compilation.
 
-!!! note
-    `Driver::Offload` has no in-class initializer and is refined by command-line
-    processing, so the answer is only meaningful once the driver has processed arguments.
+`Driver::Offload` is set to `OffloadHostDevice` by the driver's only constructor and refined
+while a command line is processed, so a driver that has not run [`BuildCompilation`](@ref)
+answers `false` rather than reading uninitialized memory.
 """
 function offloadHostOnly(x::AbstractDriver)
     @check_ptrs x
@@ -352,15 +354,31 @@ end
 
 """
     hasHeaderMode(x::AbstractDriver) -> Bool
-Return whether `-fmodule-header` selected a C++20 header-unit mode.
+Return whether `-fmodule-header` selected a C++20 header-unit mode, i.e. whether
+[`getModuleHeaderMode`](@ref) is anything but `CXModuleHeaderMode_HeaderMode_None`.
 
-!!! note
-    `Driver::CXX20HeaderType` has no in-class initializer and is refined by command-line
-    processing, so the answer is only meaningful once the driver has processed arguments.
+`Driver::CXX20HeaderType` is set to `HeaderMode_None` by the driver's only constructor and
+refined while a command line is processed, so a driver that has not run
+[`BuildCompilation`](@ref) answers `false` rather than reading uninitialized memory.
 """
 function hasHeaderMode(x::AbstractDriver)
     @check_ptrs x
     return clang_Driver_hasHeaderMode(x)
+end
+
+"""
+    getModuleHeaderMode(x::AbstractDriver) -> CXModuleHeaderMode
+Return how the headers a C++20 header unit is built from are looked up: by the path given
+on the command line (`-fmodule-header`), or in the user (`-fmodule-header=user`) or system
+(`-fmodule-header=system`) search paths.
+
+Finer-grained than [`hasHeaderMode`](@ref), which collapses the three selected modes into
+one answer. It reads the same `Driver::CXX20HeaderType` and carries the same constructor
+default, so it is defined on any driver.
+"""
+function getModuleHeaderMode(x::AbstractDriver)
+    @check_ptrs x
+    return clang_Driver_getModuleHeaderMode(x)
 end
 
 """
@@ -370,10 +388,11 @@ LTO mode instead of the host one.
 
 !!! note
     This reads the same `Driver::LTOMode` / `OffloadLTOMode` members as
-    [`getLTOMode`](@ref), neither of which has an in-class initializer, but it compares
-    them instead of handing the raw enum out, so the result is always a valid `Bool`.
-    It is only meaningful once the driver has processed arguments, and — as for
-    `getLTOMode` — there is no observable \"arguments processed\" flag to assert on.
+    [`getLTOMode`](@ref), but it compares them instead of handing the raw enum out, so the
+    result is a valid `Bool` even on the `is_offload=true` arm, whose member stays
+    uninitialized until [`BuildCompilation`](@ref) runs. That arm is still only meaningful
+    afterwards, and — as for `getLTOMode` — there is no observable \"arguments processed\"
+    flag to assert on.
 """
 function isUsingLTO(x::AbstractDriver, is_offload::Bool=false)
     @check_ptrs x
@@ -583,4 +602,24 @@ Return the path clang-cl would use for the precompiled header of `base_name`.
 function GetClPchPath(x::AbstractDriver, c::Compilation, base_name::AbstractString)
     @check_ptrs x c
     return get_string(clang_Driver_GetClPchPath(x, c, base_name))
+end
+
+"""
+    getDriverMode(prog_name::AbstractString, args::Vector{String}=String[]) -> String
+Return the value of `--driver-mode=` in `args` — the `X` in `--driver-mode=X`, with the last
+occurrence winning — or, when `args` names none, the mode `prog_name` implies. `""` when
+neither yields one. Common values are `"gcc"`, `"g++"`, `"cpp"`, `"cl"` and `"flang"`, but
+the result need not be one of those.
+
+`args` is the argument list *without* the program name: clang's own driver passes everything
+after `argv[0]`.
+
+This is the free function `clang::driver::getDriverMode`, not a `Driver` method, so it takes
+no receiver — which is the point of it. [`CCCIsCXX`](@ref), [`IsCLMode`](@ref) and the other
+mode predicates read `Driver::Mode`, which stays `GCCMode` until [`BuildCompilation`](@ref)
+has processed `--driver-mode`, and that needs a real toolchain and real inputs; this answers
+the same question before any `Driver` exists.
+"""
+function getDriverMode(prog_name::AbstractString, args::Vector{String}=String[])
+    return get_string(clang_driver_getDriverMode(prog_name, args, length(args)))
 end

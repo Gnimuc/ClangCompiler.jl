@@ -8,24 +8,26 @@ Each argument is either a Julia `Bool`/`Integer` (a non-type template argument) 
 """
 function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::ClassTemplateDecl, args...)
     arg_vec = Vector{TemplateArgument}(undef, length(args))
+    params = getTemplateParameters(template_decl)
+    # The parameter's own type, when the template has one at this position and it is a non-type
+    # parameter. Guessing the C type from the Julia one instead cannot work: `jlty_to_clty` maps
+    # `Int64` to `long long`, so a `template <long N>` argument built that way carries a
+    # different QualType from the one Sema uses -- and `TemplateArgument::Profile` folds the
+    # integral type, so the two never unify in the folding set.
+    function param_type(i)
+        i <= size(params) || return nothing
+        p = resolve(getParam(params, i - 1))
+        return p isa NonTypeTemplateParmDecl ? getType(p) : nothing
+    end
     for (i, arg) in enumerate(args)
-        if arg isa Bool
+        if arg isa Union{Bool,Integer}
+            declared = param_type(i)
             jlty = typeof(arg)
-            clty = jlty_to_clty(jlty, ctx)
-            bitwidth_clty = getTypeSize(ctx, clty)
-            # this assumes Bool is lowered to int8
-            @assert bitwidth_clty == 8
+            clty = declared === nothing ? get_qual_type(jlty_to_clty(jlty, ctx)) : declared
+            # The GenericValue only carries the bits; the shim takes the width and the
+            # signedness of the argument from `clty`, exactly as clang does.
             v = LLVM.GenericValue(jlty_to_llvmty(jlty, llvm_ctx), Int(arg))
-            @assert LLVM.intwidth(v) == bitwidth_clty
-            arg_vec[i] = TemplateArgument(ctx, v, get_qual_type(clty))
-            LLVM.dispose(v)
-        elseif arg isa Integer
-            int_jlty = typeof(arg)
-            int_clty = jlty_to_clty(int_jlty, ctx)
-            bitwidth_clty = getTypeSize(ctx, int_clty)
-            v = LLVM.GenericValue(jlty_to_llvmty(int_jlty, llvm_ctx), arg)
-            @assert LLVM.intwidth(v) == bitwidth_clty
-            arg_vec[i] = TemplateArgument(ctx, v, get_qual_type(int_clty))
+            arg_vec[i] = TemplateArgument(ctx, v, clty)
             LLVM.dispose(v)
         elseif arg isa AbstractType
             arg_vec[i] = TemplateArgument(get_qual_type(arg))

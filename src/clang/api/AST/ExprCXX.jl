@@ -3667,7 +3667,7 @@ function find(x::AbstractExpr)
     member_pointer = Ref{Bool}(false)
     p = clang_OverloadExpr_find(x, address_of, member_pointer)
     # the shim hands back the overload expression it found; `Expr_` is its base
-    return upcast(Expr_, p), address_of[], member_pointer[]
+    return unchecked_cast(Expr_, p), address_of[], member_pointer[]
 end
 
 # CXXParenListInitExpr (cont.)

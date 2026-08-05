@@ -12,7 +12,7 @@ end
 
 # clang::comments::Comment hierarchy (clang/AST/Comment.h). Only the classes this
 # layer can construct faithfully are mirrored; `Comment` is the base carrier that
-# `getChild` hands back before a downcast refines it.
+# `getChild` hands back before a cast refines it.
 abstract type AbstractComment end
 abstract type AbstractInlineContentComment <: AbstractComment end
 abstract type AbstractTextComment <: AbstractInlineContentComment end

@@ -22,7 +22,7 @@ using Test
     f = DeclFinder(I)
 
     @test f(I, "semaDedSeven")
-    seven = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    seven = CC.getInit(CC.VarDecl(get_decl(f)))
     @test seven isa CC.Expr_
 
     int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
@@ -43,8 +43,7 @@ using Test
     # The name reaches both the primary template and its partial specialization, so select
     # by kind rather than through get_decl.
     @test f(I, "SemaDedBox")
-    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
-                                     if CC.getDeclKindName(d) == "ClassTemplate").ptr)
+    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "ClassTemplate"))
     partials = CC.getPartialSpecializations(ctd)
     @test length(partials) == 1
     partial = partials[1]
@@ -95,8 +94,7 @@ using Test
                                             CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch,
                                             loc)
     @test f(I, "SemaDedPair")
-    pair = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
-                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
+    pair = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "ClassTemplate"))
     @test CC.TemplateParameterListsAreEqual(sema, box_params,
                                             CC.getTemplateParameters(pair), false,
                                             CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch,
@@ -104,14 +102,14 @@ using Test
 
     # --- default member initializer and default argument conversion ---
     @test f(I, "SemaDedRec")
-    rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    rec = CC.CXXRecordDecl(get_decl(f))
     fld = first(CC.getFields(rec))
     @test fld isa CC.FieldDecl
     @test CC.ConvertMemberDefaultInitExpression(sema, fld, seven, loc) isa
           Union{Nothing,CC.Expr_}
 
     @test f(I, "semaDedFn")
-    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fn = CC.FunctionDecl(get_decl(f))
     @test CC.getNumParams(fn) == 1
     param = CC.getParamDecl(fn, 0)
     @test CC.ConvertParamDefaultArgument(sema, param, seven, loc) isa Union{Nothing,CC.Expr_}
@@ -125,5 +123,72 @@ using Test
     @test dg2.ptr != C_NULL
 
     CC.dispose(info)
+    dispose(I)
+end
+
+@testset "TemplateDeduction | variable-template partials and function templates" begin
+    I = create_interpreter(["-std=c++17"])
+    CC.parse(I, """
+              template <class T> constexpr int SemaVBox = 1;
+              template <class T> constexpr int SemaVBox<T *> = 2;
+              template <class T> void sema_ident(T) {}
+              """)
+    sema = CC.get_sema(I)
+    ctx = CC.get_ast_context(I)
+    loc = CC.SourceLocation()
+    int_ty = CC.get_qual_type(CC.IntTy(ctx))
+    ptr_ty = CC.getPointerType(ctx, int_ty)
+    f = DeclFinder(I)
+
+    @testset "a variable template's partial specialization deduces like a class's" begin
+        @test f(I, "SemaVBox")
+        vtd = CC.VarTemplateDecl(first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "VarTemplate"))
+        partials = CC.getPartialSpecializations(vtd)
+        @test length(partials) == 1
+
+        info = CC.TemplateDeductionInfo(loc)
+        arg = CC.TemplateArgument(ptr_ty)
+        args = CC.TemplateArgumentList(ctx, [arg])
+        # `SemaVBox<int *>` matches the `SemaVBox<T *>` pattern
+        @test CC.DeduceTemplateArguments(sema, partials[1], args, info) ==
+              CC.CXTemplateDeductionResult_TDK_Success
+        @test CC.size(CC.takeSugared(info)) == 1
+        CC.dispose(arg)
+        CC.dispose(info)
+
+        # ...and a plain `int` does not, which is what makes the success above mean something
+        info2 = CC.TemplateDeductionInfo(loc)
+        arg2 = CC.TemplateArgument(int_ty)
+        args2 = CC.TemplateArgumentList(ctx, [arg2])
+        @test CC.DeduceTemplateArguments(sema, partials[1], args2, info2) ==
+              CC.CXTemplateDeductionResult_TDK_NonDeducedMismatch
+        CC.dispose(arg2)
+        CC.dispose(info2)
+    end
+
+    @testset "a function template deduces from a target function type" begin
+        CC.reset(f)
+        @test f(I, "sema_ident")
+        ft = CC.FunctionTemplateDecl(first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "FunctionTemplate"))
+        void_ty = CC.get_qual_type(CC.VoidTy(ctx))
+
+        info = CC.TemplateDeductionInfo(loc)
+        proto = CC.getFunctionType(ctx, void_ty, CC.QualType[int_ty])
+        r, spec = CC.DeduceTemplateArguments(sema, ft, info; arg_function_type=proto)
+        @test r == CC.CXTemplateDeductionResult_TDK_Success
+        @test spec !== nothing
+        @test CC.getName(spec) == "sema_ident"
+        CC.dispose(info)
+
+        # With neither explicit arguments nor a target type there is nothing to deduce from,
+        # so the specialization stays `nothing` -- the out-parameter is written on success only.
+        info2 = CC.TemplateDeductionInfo(loc)
+        r2, spec2 = CC.DeduceTemplateArguments(sema, ft, info2)
+        @test r2 != CC.CXTemplateDeductionResult_TDK_Success
+        @test spec2 === nothing
+        CC.dispose(info2)
+    end
+
+    CC.dispose(f)
     dispose(I)
 end

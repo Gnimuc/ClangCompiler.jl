@@ -212,6 +212,16 @@ CXIdentifierInfo clang_Preprocessor_getIdentifierInfo(CXPreprocessor PP,
 
 void clang_Preprocessor_Lex(CXPreprocessor PP, CXToken_ Result);
 
+// Lexes and discards tokens until the stream ends: Clang stops on the first token whose
+// kind is `unknown`, `eof`, `eod` or `annot_repl_input_end`. It always lexes at least one
+// token, and it terminates at end of input because Clang keeps handing back `eof` there.
+// Destructive — it consumes the live token stream exactly like clang_Preprocessor_Lex.
+// The collecting overload (the `std::vector<Token> *` argument) is deliberately not
+// exposed: the walk is destructive, so a count+fill cannot repeat the count, and an owned
+// token-buffer handle would buy FFI round trips over the wrapped `Lex` loop, not a
+// capability.
+void clang_Preprocessor_LexTokensUntilEOF(CXPreprocessor PP);
+
 CXString clang_Preprocessor_getSpelling(CXPreprocessor PP, CXToken_ Tok);
 
 CXPreprocessorOptions clang_Preprocessor_getPreprocessorOpts(CXPreprocessor PP);
@@ -446,6 +456,16 @@ void clang_Preprocessor_clearCodeCompletionHandler(CXPreprocessor PP);
 
 void clang_Preprocessor_recomputeCurLexerKind(CXPreprocessor PP);
 
+// setMainFileDir is deliberately NOT wrapped. Setting it arms a null dereference:
+// Preprocessor::LookupFile is the only reader, and the branch that consumes MainFileDir
+// (reached when a quoted #include is resolved from a main file with no FileEntry, which is
+// every translation unit this package builds) continues with
+// `BuildSystemModule = getCurrentModule()->IsSystem`, with no null check. Verified in the
+// pinned libclang-cpp, where the `bl getCurrentModule` is followed immediately by
+// `ldrh w8, [x0, #0x500]`. getCurrentModule returns null unless a module is being
+// compiled, which this package never does. Nothing else reads the member either: clang has
+// no getMainFileDir, so the setting is also unobservable from here.
+
 void clang_Preprocessor_setSkipMainFilePreamble(CXPreprocessor PP, unsigned Bytes,
                                                 bool StartOfLine);
 
@@ -532,6 +552,33 @@ CXSourceLocation_ clang_Preprocessor_SplitToken(CXPreprocessor PP, CXSourceLocat
 // it. Precondition: `Identifier` is a non-empty `tok::raw_identifier`; Clang asserts.
 CXIdentifierInfo clang_Preprocessor_LookUpIdentifierInfo(CXPreprocessor PP,
                                                          CXToken_ Identifier);
+
+// Mirror of `clang::MacroUse` (clang/Lex/Preprocessor.h): the context a macro name is
+// being checked in.
+typedef enum CXMacroUse {
+  CXMacroUse_MU_Other = 0,
+  CXMacroUse_MU_Define = 1,
+  CXMacroUse_MU_Undef = 2
+} CXMacroUse;
+
+// Clang's own composed verdict on whether `MacroNameTok` may name a macro in a `#define`
+// or `#undef`: true when it may NOT. `*ShadowFlag` (when non-NULL) receives whether the
+// name shadows a keyword; Clang writes it only on the paths that reach the shadow check,
+// so a rejected name leaves it untouched. PRECONDITION: `MacroNameTok` is neither a
+// `tok::raw_identifier` nor an annotation token — `Token::getIdentifierInfo` asserts both,
+// and with assertions off it reinterprets `PtrData` (the raw spelling pointer, or the
+// annotation payload) as an `IdentifierInfo *` and reads flag bits out of it. Every other
+// token shape is fine: a `tok::eod`, a literal, a `tok::eof` or a token whose identifier
+// slot is null diagnoses and returns true. Total over locations — the only SourceManager
+// queries are getFileCharacteristic (skipped outright on an invalid location) and
+// getBufferName (which answers "<invalid loc>"). It reads the token, the LangOptions and
+// the SourceManager only: no lexer is touched and no token is consumed.
+// NOTE: a rejection is reported through the preprocessor's DiagnosticsEngine, so a failed
+// check raises the translation unit's error count; an accepted name that is a reserved
+// identifier additionally warns. The keyword-shadow case reports nothing and is
+// observable only through `*ShadowFlag`.
+bool clang_Preprocessor_CheckMacroName(CXPreprocessor PP, CXToken_ MacroNameTok,
+                                       CXMacroUse isDefineUndef, bool *ShadowFlag);
 
 // Precondition: the current evaluation method has been set — `Preprocessor::Initialize`
 // does that from the target or the command line, and Clang asserts it is no longer

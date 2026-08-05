@@ -9,7 +9,7 @@ using Test
     f = DeclFinder(I)
 
     @test f(I, "ctn_b")
-    qt = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
+    qt = CC.getType(CC.VarDecl(get_decl(f)))
     t0 = CC.resolve(CC.getTypePtr(qt))
     t0 isa CC.ElaboratedType && (t0 = CC.resolve(CC.getTypePtr(CC.desugar(t0))))
     @test t0 isa CC.TemplateSpecializationType
@@ -52,7 +52,7 @@ end
     end
 
     @test f(I, "tn_qual_v")
-    outer = tst_of(CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
+    outer = tst_of(CC.getType(CC.VarDecl(get_decl(f))))
     @test outer isa CC.TemplateSpecializationType
 
     # A template template argument has no ElaboratedType to hold its qualifier, so
@@ -107,7 +107,7 @@ end
     # "T::template Inner" as a template template argument is a DependentTemplateName.
     @test f(I, "tn_dep_probe")
     ftd = first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "FunctionTemplate")
-    fd = CC.getTemplatedDecl(CC.downcast(CC.FunctionTemplateDecl, ftd.ptr))
+    fd = CC.getTemplatedDecl(CC.FunctionTemplateDecl(ftd))
     dtst = tst_of(CC.getReturnType(fd))
     @test dtst isa CC.TemplateSpecializationType
     darg = CC.getArg(dtst, 0)

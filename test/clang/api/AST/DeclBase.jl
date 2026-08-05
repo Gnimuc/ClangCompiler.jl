@@ -206,7 +206,7 @@ end
     f = DeclFinder(I)
 
     @test f(I, "declbase_a::FlexTail")
-    rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    rd = CC.CXXRecordDecl(get_decl(f))
     ctx = CC.getASTContext(rd)
 
     # Decl::isFlexibleArrayMemberLike is static: the trailing member, then the same
@@ -388,7 +388,7 @@ end
     @test !CC.isRecord(tu)
 
     @test f(I, "FwdNS")
-    ns = CC.downcast(CC.NamespaceDecl, get_decl(f).ptr)
+    ns = CC.NamespaceDecl(get_decl(f))
     @test CC.isNamespace(ns)
     @test !CC.isTranslationUnit(ns)
     # the offset really was applied: the namespace's parent context is the TU's context,
@@ -404,7 +404,7 @@ end
     # A decl that is not a DeclContext is refused by dispatch, so the pivot's assert is
     # unreachable from here -- that is what the Union buys over a runtime check.
     @test f(I, "fwd_gvar")
-    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    vd = CC.VarDecl(get_decl(f))
     @test !(vd isa CC.AbstractDeclContextDecl)
     @test_throws MethodError CC.isNamespace(vd)
     @test_throws MethodError CC.decls_empty(vd)

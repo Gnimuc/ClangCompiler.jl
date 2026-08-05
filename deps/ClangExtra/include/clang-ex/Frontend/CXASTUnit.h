@@ -251,12 +251,52 @@ void clang_ASTUnit_dispose(CXASTUnit AU);
 
 // LoadFromASTFile
 // LoadFromCompilerInvocationAction
-// LoadFromCompilerInvocation
+
+// Runs a whole frontend parse of the invocation's single input file and returns the
+// resulting unit, or nullptr when the parse could not be set up. Caller-owned: release it
+// with clang_ASTUnit_dispose. Unlike a unit from clang_ASTUnit_create, the result carries
+// a Preprocessor, an ASTContext, a Sema and the file's top-level declarations.
+// ADOPTION: CI is rewrapped in a fresh shared_ptr and freed with the unit -- including on
+// the failure path, where the unit is destroyed before this returns -- so calling
+// clang_CompilerInvocation_dispose on it afterwards is a double free.
+// Diags and FileMgr stay the caller's: the unit holds each in an IntrusiveRefCntPtr, so
+// both are pinned with an explicit Retain (MARSHALLING.md section 12) and the unit's
+// release cannot delete them. Both must still outlive the unit, which points at them.
+// PRECONDITION: FileMgr must be non-null -- its file-system options are copied before the
+// parse -- and the invocation must carry exactly one input, of source kind and not LLVM
+// IR: clang reads Inputs[0] unconditionally and asserts on the rest.
+// PCHContainerOperations is not part of the C surface; the shim supplies a
+// default-constructed one, which registers the raw PCH container reader and writer.
+// PrecompilePreambleAfterNParses > 0 builds a precompiled preamble, writing temporary PCH
+// files; 0 disables preambles, and this library wraps no Reparse.
+CXASTUnit clang_ASTUnit_LoadFromCompilerInvocation(
+    CXCompilerInvocation CI, CXDiagnosticsEngine Diags, CXFileManager FileMgr,
+    bool OnlyLocalDecls, CXCaptureDiagsKind CaptureDiagnostics,
+    unsigned PrecompilePreambleAfterNParses, CXTranslationUnitKind TUKind,
+    bool CacheCodeCompletionResults, bool IncludeBriefCommentsInCodeCompletion,
+    bool UserFilesAreVolatile);
+
 // LoadFromCommandLine
 // Reparse
 // ResetForParse
 // CodeComplete
-// Save
+
+// Serializes the translation unit to File as a Clang AST file, through
+// llvm::writeToOutput: a "<File>.temp-stream-%%%%%%" temporary renamed into place once it
+// is written ("-" writes to stdout and "/dev/null" discards, as everywhere in LLVM).
+// Returns TRUE on error and false on success -- clang's sense, not the usual one.
+// PRECONDITION: clang_ASTUnit_hasSema. Serialization builds its ASTWriter over
+// ASTUnit::getSema(), which asserts when the unit holds no Sema -- the state every unit
+// clang_ASTUnit_create produces is in. Second precondition, from libclang's own gate
+// around this call: serializing an AST that holds invalid nodes can crash the writer, so
+// clang_DiagnosticsEngine_hasUnrecoverableErrorOccurred must be false on the unit's
+// engine. libclang covers that case with a CrashRecoveryContext instead; this library has
+// no such net.
+// Every failure reports the same flag: a unit whose module loader failed fatally refuses
+// to write, as does a temporary that cannot be created, written or renamed. Diagnostics
+// are not a failure -- an AST with errors is written, carrying its uncompilable-error bit.
+bool clang_ASTUnit_Save(CXASTUnit AU, const char *File);
+
 // serialize
 
 LLVM_CLANG_C_EXTERN_C_END

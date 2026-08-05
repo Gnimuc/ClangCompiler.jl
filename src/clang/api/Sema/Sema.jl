@@ -401,6 +401,42 @@ function LookupVisibleDecls(x::AbstractSema, ctx::AbstractDeclContext,
 end
 
 """
+    isAbstractType(x::AbstractSema, loc::SourceLocation, ty::AbstractQualType) -> Bool
+Return whether `ty` is, or is an array of, a class with an unoverridden pure virtual member.
+
+This is the question [`RequireNonAbstractType`](@ref) answers, without the diagnostic it emits —
+and that difference is what makes it usable as a query, because the diagnostic raises the
+interpreter's error count, which `parse`/`execute` consult afterwards.
+
+It is also more total than [`isAbstract`](@ref) on a `CXXRecordDecl`: that one reads the record's
+definition data and so needs a definition, whereas this peels array element types and answers
+`false` for an incomplete record, a non-record, and non-C++. `loc` is not read by clang.
+"""
+function isAbstractType(x::AbstractSema, loc::SourceLocation, ty::AbstractQualType)
+    @check_ptrs x ty
+    return clang_Sema_isAbstractType(x, loc, ty)
+end
+
+"""
+    getNamedReturnInfo(x::AbstractSema, vd::AbstractVarDecl) -> CXNamedReturnInfo_Status
+Return the copy-elision status clang computes for `vd` considered as a named return operand:
+`None`, `MoveEligible`, or `MoveEligibleAndCopyElidable` ([class.copy.elision]p3).
+
+Finer than [`isNRVOVariable`](@ref), which is one bool that Sema sets only for a variable that
+actually *was* returned. This answers for any local, so it distinguishes why elision is
+unavailable — a parameter, static storage, `volatile`, over-alignment, a plain rvalue reference.
+
+`vd`'s type must be complete: clang reaches `getTypeAlignInChars` for a non-volatile object type,
+which asserts inside the record-layout builder on an incomplete one.
+"""
+function getNamedReturnInfo(x::AbstractSema, vd::AbstractVarDecl)
+    @check_ptrs x vd
+    @assert !isIncompleteType(getTypePtr(getType(vd))) "vd's type must be complete"
+    return clang_Sema_getNamedReturnInfo(x, vd)
+end
+
+
+"""
     RequireNonAbstractType(x::AbstractSema, loc, ty, diag_id) -> Bool
 Return true when `ty` is (an array of) an abstract class type, emitting diagnostic `diag_id` at
 `loc`.
@@ -3652,6 +3688,54 @@ function DeduceTemplateArguments(x::AbstractSema,
 end
 
 """
+    DeduceTemplateArguments(x::AbstractSema, partial::AbstractVarTemplatePartialSpecializationDecl,
+                            args, info) -> CXTemplateDeductionResult
+The variable-template twin of the call above, with the same protocol. C has no overloading so the
+two reach different bindings, but on this side they are one name and dispatch picks.
+"""
+function DeduceTemplateArguments(x::AbstractSema,
+                                 partial::AbstractVarTemplatePartialSpecializationDecl,
+                                 args::TemplateArgumentList, info::TemplateDeductionInfo)
+    @check_ptrs x partial args info
+    return clang_Sema_DeduceTemplateArgumentsVarPartial(x, partial, args, info)
+end
+
+"""
+    DeduceTemplateArguments(x::AbstractSema, ft::AbstractFunctionTemplateDecl,
+                            info::TemplateDeductionInfo;
+                            explicit_args=nothing, arg_function_type=nothing,
+                            is_address_of_function::Bool=false)
+        -> Tuple{CXTemplateDeductionResult,Union{FunctionDecl,Nothing}}
+Deduce a specialization of `ft` from explicit template arguments and/or a target function type.
+
+Both inputs are optional; omitting both is [temp.arg.explicit]p3's form, which reports
+`TDK_Incomplete` unless every parameter has a default. The specialization comes back only on
+`TDK_Success`, and is `nothing` otherwise.
+
+`arg_function_type`, when given, must be a function *prototype* type — clang casts to one
+unchecked while adjusting the calling convention.
+"""
+function DeduceTemplateArguments(x::AbstractSema, ft::AbstractFunctionTemplateDecl,
+                                 info::TemplateDeductionInfo;
+                                 explicit_args::Union{TemplateArgumentListInfo,Nothing}=nothing,
+                                 arg_function_type::Union{AbstractQualType,Nothing}=nothing,
+                                 is_address_of_function::Bool=false)
+    @check_ptrs x ft info
+    if arg_function_type !== nothing
+        @assert isFunctionProtoType(getTypePtr(arg_function_type)) "arg_function_type must be a function prototype type"
+    end
+    ea = explicit_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+         Base.unsafe_convert(CXTemplateArgumentListInfo, explicit_args)
+    aft = arg_function_type === nothing ? CXQualType(C_NULL) :
+          Base.unsafe_convert(CXQualType, arg_function_type)
+    spec = Ref{CXFunctionDecl}(CXFunctionDecl(C_NULL))
+    r = clang_Sema_DeduceTemplateArgumentsFunctionTemplate(x, ft, ea, aft, spec, info,
+                                                           is_address_of_function)
+    got = spec[] == CXFunctionDecl(C_NULL) ? nothing : FunctionDecl(spec[])
+    return r, got
+end
+
+"""
     DeduceAutoType(x::AbstractSema, auto_type_loc, initializer, info, dependent_deduction=false,
                    ignore_constraints=false) -> (CXTemplateDeductionResult, Union{Nothing,QualType})
 Deduce the type the `auto` in `auto_type_loc` stands for from `initializer`, returning the
@@ -4531,6 +4615,27 @@ function BuildCXXTypeId(x::AbstractSema, type_info_type::AbstractQualType,
     @check_ptrs x type_info_type operand
     invalid = Ref{Bool}(false)
     e = clang_Sema_BuildCXXTypeId(x, type_info_type, typeid_loc, operand, rparen_loc, invalid)
+    return invalid[] ? nothing : Expr_(e)
+end
+
+"""
+    BuildCXXUuidof(x::AbstractSema, type_info_type, typeid_loc, operand, rparen_loc)
+Build `__uuidof(T)` for the type `operand` names, the Microsoft extension that yields the GUID
+attached to a type. Same protocol as [`BuildCXXTypeId`](@ref); returns `nothing` when the operand
+was rejected.
+
+The interpreter must have been built with Microsoft extensions enabled (`-fms-extensions`, or
+Borland mode). Clang only creates the `MSGuidTagDecl` this needs under those language options and
+reaches for it unchecked, so calling this without them is undefined rather than merely fruitless.
+"""
+function BuildCXXUuidof(x::AbstractSema, type_info_type::AbstractQualType,
+                        typeid_loc::SourceLocation, operand::AbstractTypeSourceInfo,
+                        rparen_loc::SourceLocation)
+    @check_ptrs x type_info_type operand
+    lo = getLangOpts(x)
+    @assert getMicrosoftExt(lo) || getBorland(lo) "__uuidof needs -fms-extensions (or Borland mode)"
+    invalid = Ref{Bool}(false)
+    e = clang_Sema_BuildCXXUuidof(x, type_info_type, typeid_loc, operand, rparen_loc, invalid)
     return invalid[] ? nothing : Expr_(e)
 end
 
@@ -7572,7 +7677,7 @@ function CheckEnableIf(x::AbstractSema, func::AbstractFunctionDecl,
     p = clang_Sema_CheckEnableIf(x, func, call_loc, buf, length(buf), missing_implicit_this)
     p == C_NULL && return nothing
     # CheckEnableIf answers with the enable_if attribute that failed, typed at the base
-    return downcast(EnableIfAttr, p)
+    return unchecked_cast(EnableIfAttr, p)
 end
 
 """

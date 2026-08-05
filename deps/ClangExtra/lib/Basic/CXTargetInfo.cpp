@@ -2,6 +2,10 @@
 #include "utils.h"
 #include "clang/Basic/TargetInfo.h"
 
+#include "clang/Basic/MacroBuilder.h"
+#include "llvm/ADT/APInt.h"
+#include "llvm/Support/raw_ostream.h"
+
 CXTargetInfo_ clang_TargetInfo_CreateTargetInfo(CXDiagnosticsEngine DE,
                                                 CXTargetOptions Opts) {
   return reinterpret_cast<CXTargetInfo_>(clang::TargetInfo::CreateTargetInfo(
@@ -478,6 +482,11 @@ const char *clang_TargetInfo_getTypeFormatModifier(CXTargetInfo_IntType T) {
       static_cast<clang::TargetInfo::IntType>(T));
 }
 
+bool clang_TargetInfo_useObjCFPRetForRealType(CXTargetInfo_ TI, CXFloatModeKind T) {
+  return reinterpret_cast<clang::TargetInfo *>(TI)->useObjCFPRetForRealType(
+      static_cast<clang::FloatModeKind>(T));
+}
+
 bool clang_TargetInfo_useObjCFP2RetForComplexLongDouble(CXTargetInfo_ TI) {
   return reinterpret_cast<clang::TargetInfo *>(TI)->useObjCFP2RetForComplexLongDouble();
 }
@@ -488,6 +497,15 @@ bool clang_TargetInfo_useFP16ConversionIntrinsics(CXTargetInfo_ TI) {
 
 bool clang_TargetInfo_useAddressSpaceMapMangling(CXTargetInfo_ TI) {
   return reinterpret_cast<clang::TargetInfo *>(TI)->useAddressSpaceMapMangling();
+}
+
+CXString clang_TargetInfo_getTargetDefines(CXTargetInfo_ TI, CXLangOptions LO) {
+  std::string S;
+  llvm::raw_string_ostream OS(S);
+  clang::MacroBuilder Builder(OS);
+  reinterpret_cast<clang::TargetInfo *>(TI)->getTargetDefines(
+      *reinterpret_cast<clang::LangOptions *>(LO), Builder);
+  return extra::makeCXString(S);
 }
 
 bool clang_TargetInfo_getVScaleRange(CXTargetInfo_ TI, CXLangOptions LO, unsigned *Min,
@@ -611,6 +629,12 @@ bool clang_ConstraintInfo_requiresImmediateConstant(CXConstraintInfo CI) {
   return C->requiresImmediateConstant();
 }
 
+bool clang_ConstraintInfo_isValidAsmImmediate(CXConstraintInfo CI, int64_t Value) {
+  auto *C = reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(CI);
+  return C->isValidAsmImmediate(
+      llvm::APInt(64, static_cast<uint64_t>(Value), /*isSigned=*/true));
+}
+
 void clang_ConstraintInfo_setIsReadWrite(CXConstraintInfo CI) {
   reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setIsReadWrite();
 }
@@ -639,6 +663,13 @@ void clang_ConstraintInfo_setTiedOperand(CXConstraintInfo CI, unsigned N,
                                          CXConstraintInfo Output) {
   reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(CI)->setTiedOperand(
       N, *reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(Output));
+}
+
+bool clang_TargetInfo_validateGlobalRegisterVariable(CXTargetInfo_ TI, const char *RegName,
+                                                     unsigned RegSize,
+                                                     bool *HasSizeMismatch) {
+  return reinterpret_cast<clang::TargetInfo *>(TI)->validateGlobalRegisterVariable(
+      RegName, RegSize, *HasSizeMismatch);
 }
 
 bool clang_TargetInfo_validateOutputConstraint(CXTargetInfo_ TI, CXConstraintInfo Info) {
@@ -678,6 +709,13 @@ bool clang_TargetInfo_shouldDLLImportComdatSymbols(CXTargetInfo_ TI) {
 
 bool clang_TargetInfo_hasPS4DLLImportExport(CXTargetInfo_ TI) {
   return reinterpret_cast<clang::TargetInfo *>(TI)->hasPS4DLLImportExport();
+}
+
+void clang_TargetInfo_adjust(CXTargetInfo_ TI, CXDiagnosticsEngine Diags,
+                             CXLangOptions Opts) {
+  reinterpret_cast<clang::TargetInfo *>(TI)->adjust(
+      *reinterpret_cast<clang::DiagnosticsEngine *>(Diags),
+      *reinterpret_cast<clang::LangOptions *>(Opts));
 }
 
 CXString clang_TargetInfo_getABI(CXTargetInfo_ TI) {
@@ -779,6 +817,18 @@ char clang_TargetInfo_CPUSpecificManglingCharacter(CXTargetInfo_ TI, const char 
 }
 
 // getCPUSpecificTuneName -- not wrapped, see the header.
+
+CXStringSet *clang_TargetInfo_getCPUSpecificCPUDispatchFeatures(CXTargetInfo_ TI,
+                                                                const char *Name) {
+  llvm::SmallVector<llvm::StringRef, 32> Features;
+  auto *T = reinterpret_cast<clang::TargetInfo *>(TI);
+  T->getCPUSpecificCPUDispatchFeatures(Name, Features);
+  std::vector<std::string> Strs;
+  Strs.reserve(Features.size());
+  for (llvm::StringRef S : Features)
+    Strs.push_back(S.str());
+  return extra::makeCXStringSet(Strs);
+}
 
 bool clang_TargetInfo_getCPUCacheLineSize(CXTargetInfo_ TI, unsigned *Size) {
   auto LineSize = reinterpret_cast<clang::TargetInfo *>(TI)->getCPUCacheLineSize();
@@ -893,6 +943,18 @@ bool clang_TargetInfo_areDefaultedSMFStillPOD(CXTargetInfo_ TI, CXLangOptions LO
 }
 bool clang_TargetInfo_hasSjLjLowering(CXTargetInfo_ TI) {
   return reinterpret_cast<clang::TargetInfo *>(TI)->hasSjLjLowering();
+}
+
+bool clang_TargetInfo_checkCFProtectionBranchSupported(CXTargetInfo_ TI,
+                                                       CXDiagnosticsEngine Diags) {
+  return reinterpret_cast<clang::TargetInfo *>(TI)->checkCFProtectionBranchSupported(
+      *reinterpret_cast<clang::DiagnosticsEngine *>(Diags));
+}
+
+bool clang_TargetInfo_checkCFProtectionReturnSupported(CXTargetInfo_ TI,
+                                                       CXDiagnosticsEngine Diags) {
+  return reinterpret_cast<clang::TargetInfo *>(TI)->checkCFProtectionReturnSupported(
+      *reinterpret_cast<clang::DiagnosticsEngine *>(Diags));
 }
 
 bool clang_TargetInfo_allowsLargerPreferedTypeAlignment(CXTargetInfo_ TI) {

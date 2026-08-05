@@ -34,7 +34,7 @@ using Test
     # ---- reach a FunctionDecl ----
     f = DeclFinder(I)
     @test f(I, "covhelp_fn")
-    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    fd = CC.FunctionDecl(get_decl(f))
 
     # ---- src/clang/sema.jl: LookupResult predicates on the finder's populated result ----
     lr = f.result
@@ -79,7 +79,7 @@ using Test
     @test sz isa Int && sz > 0
 
     @test f(I, "CovHelpRec")
-    rd = CC.downcast(CC.CXXRecordDecl, get_tag(f).ptr)
+    rd = CC.CXXRecordDecl(get_tag(f))
     @test CC.get_decl_type(ctx, rd) isa CC.QualType
     @test CC.get_decl_type(ctx, rd, rd) isa CC.QualType  # prev's TypeForDecl set by the call above
 

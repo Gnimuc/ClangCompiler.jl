@@ -121,7 +121,7 @@ end
 Return which spelling of the directive was used: `#include`, `#import`, `#include_next` or
 `#__include_macros`. `InclusionDirective::getKind` hides `PreprocessedEntity::getKind` in
 C++ and this method hides `getKind(::AbstractPreprocessedEntity)` the same way — read the
-entity kind off the `PreprocessedEntity` the record handed out, before the downcast.
+entity kind off the `PreprocessedEntity` the record handed out, before the cast.
 """
 function getKind(x::AbstractInclusionDirective)
     @check_ptrs x

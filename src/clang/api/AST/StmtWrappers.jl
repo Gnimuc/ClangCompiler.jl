@@ -1,11 +1,11 @@
 # Generated from deps/ClangExtra/include/clang-ex/AST/StmtNodes.inc by gen/stmt_nodes.jl — do not edit.
-# Per-node downcast: `is<Name>` predicate and `<carrier>` constructor-shaped
-# cast for every class, abstract bases included — the C shim stamps both from
-# the same table, and clang's own `classof` makes the dyn_cast sound.
+# Per-class checked cast: the `<carrier>` constructor is C++'s `cast<T>` and the
+# `is<Name>` predicate beside it is `isa<T>`, for every class in the hierarchy with
+# abstract bases included. The C shim stamps both from the same table and clang's
+# own `classof` decides, so a node can never become a carrier naming another class.
 #
-# The shim stamps each cast to return that class's own handle, so the carrier it
-# feeds is checked by the compiler -- pairing a cast with the wrong carrier is a
-# type error here rather than a pointer of the wrong class reaching clang.
+# The shim types each cast at that class's own handle, so pairing a cast with the
+# wrong carrier is a Julia type error here rather than a bad pointer reaching clang.
 function isWhileStmt(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isWhileStmt(x)
@@ -13,7 +13,9 @@ end
 
 function WhileStmt(x::AbstractStmt)
     @check_ptrs x
-    return WhileStmt(clang_Stmt_castToWhileStmt(x))
+    p = clang_Stmt_castToWhileStmt(x)
+    p == C_NULL && _cast_failed(WhileStmt, x)
+    return WhileStmt(p)
 end
 
 function isValueStmt(x::AbstractStmt)
@@ -23,7 +25,9 @@ end
 
 function ValueStmt(x::AbstractStmt)
     @check_ptrs x
-    return ValueStmt(clang_Stmt_castToValueStmt(x))
+    p = clang_Stmt_castToValueStmt(x)
+    p == C_NULL && _cast_failed(ValueStmt, x)
+    return ValueStmt(p)
 end
 
 function isLabelStmt(x::AbstractStmt)
@@ -33,7 +37,9 @@ end
 
 function LabelStmt(x::AbstractStmt)
     @check_ptrs x
-    return LabelStmt(clang_Stmt_castToLabelStmt(x))
+    p = clang_Stmt_castToLabelStmt(x)
+    p == C_NULL && _cast_failed(LabelStmt, x)
+    return LabelStmt(p)
 end
 
 function isExpr(x::AbstractStmt)
@@ -43,7 +49,9 @@ end
 
 function Expr_(x::AbstractStmt)
     @check_ptrs x
-    return Expr_(clang_Stmt_castToExpr(x))
+    p = clang_Stmt_castToExpr(x)
+    p == C_NULL && _cast_failed(Expr_, x)
+    return Expr_(p)
 end
 
 function isVAArgExpr(x::AbstractStmt)
@@ -53,7 +61,9 @@ end
 
 function VAArgExpr(x::AbstractStmt)
     @check_ptrs x
-    return VAArgExpr(clang_Stmt_castToVAArgExpr(x))
+    p = clang_Stmt_castToVAArgExpr(x)
+    p == C_NULL && _cast_failed(VAArgExpr, x)
+    return VAArgExpr(p)
 end
 
 function isUnaryOperator(x::AbstractStmt)
@@ -63,7 +73,9 @@ end
 
 function UnaryOperator(x::AbstractStmt)
     @check_ptrs x
-    return UnaryOperator(clang_Stmt_castToUnaryOperator(x))
+    p = clang_Stmt_castToUnaryOperator(x)
+    p == C_NULL && _cast_failed(UnaryOperator, x)
+    return UnaryOperator(p)
 end
 
 function isUnaryExprOrTypeTraitExpr(x::AbstractStmt)
@@ -73,7 +85,9 @@ end
 
 function UnaryExprOrTypeTraitExpr(x::AbstractStmt)
     @check_ptrs x
-    return UnaryExprOrTypeTraitExpr(clang_Stmt_castToUnaryExprOrTypeTraitExpr(x))
+    p = clang_Stmt_castToUnaryExprOrTypeTraitExpr(x)
+    p == C_NULL && _cast_failed(UnaryExprOrTypeTraitExpr, x)
+    return UnaryExprOrTypeTraitExpr(p)
 end
 
 function isTypoExpr(x::AbstractStmt)
@@ -83,7 +97,9 @@ end
 
 function TypoExpr(x::AbstractStmt)
     @check_ptrs x
-    return TypoExpr(clang_Stmt_castToTypoExpr(x))
+    p = clang_Stmt_castToTypoExpr(x)
+    p == C_NULL && _cast_failed(TypoExpr, x)
+    return TypoExpr(p)
 end
 
 function isTypeTraitExpr(x::AbstractStmt)
@@ -93,7 +109,9 @@ end
 
 function TypeTraitExpr(x::AbstractStmt)
     @check_ptrs x
-    return TypeTraitExpr(clang_Stmt_castToTypeTraitExpr(x))
+    p = clang_Stmt_castToTypeTraitExpr(x)
+    p == C_NULL && _cast_failed(TypeTraitExpr, x)
+    return TypeTraitExpr(p)
 end
 
 function isSubstNonTypeTemplateParmPackExpr(x::AbstractStmt)
@@ -103,7 +121,9 @@ end
 
 function SubstNonTypeTemplateParmPackExpr(x::AbstractStmt)
     @check_ptrs x
-    return SubstNonTypeTemplateParmPackExpr(clang_Stmt_castToSubstNonTypeTemplateParmPackExpr(x))
+    p = clang_Stmt_castToSubstNonTypeTemplateParmPackExpr(x)
+    p == C_NULL && _cast_failed(SubstNonTypeTemplateParmPackExpr, x)
+    return SubstNonTypeTemplateParmPackExpr(p)
 end
 
 function isSubstNonTypeTemplateParmExpr(x::AbstractStmt)
@@ -113,7 +133,9 @@ end
 
 function SubstNonTypeTemplateParmExpr(x::AbstractStmt)
     @check_ptrs x
-    return SubstNonTypeTemplateParmExpr(clang_Stmt_castToSubstNonTypeTemplateParmExpr(x))
+    p = clang_Stmt_castToSubstNonTypeTemplateParmExpr(x)
+    p == C_NULL && _cast_failed(SubstNonTypeTemplateParmExpr, x)
+    return SubstNonTypeTemplateParmExpr(p)
 end
 
 function isStringLiteral(x::AbstractStmt)
@@ -123,7 +145,9 @@ end
 
 function StringLiteral(x::AbstractStmt)
     @check_ptrs x
-    return StringLiteral(clang_Stmt_castToStringLiteral(x))
+    p = clang_Stmt_castToStringLiteral(x)
+    p == C_NULL && _cast_failed(StringLiteral, x)
+    return StringLiteral(p)
 end
 
 function isStmtExpr(x::AbstractStmt)
@@ -133,7 +157,9 @@ end
 
 function StmtExpr(x::AbstractStmt)
     @check_ptrs x
-    return StmtExpr(clang_Stmt_castToStmtExpr(x))
+    p = clang_Stmt_castToStmtExpr(x)
+    p == C_NULL && _cast_failed(StmtExpr, x)
+    return StmtExpr(p)
 end
 
 function isSourceLocExpr(x::AbstractStmt)
@@ -143,7 +169,9 @@ end
 
 function SourceLocExpr(x::AbstractStmt)
     @check_ptrs x
-    return SourceLocExpr(clang_Stmt_castToSourceLocExpr(x))
+    p = clang_Stmt_castToSourceLocExpr(x)
+    p == C_NULL && _cast_failed(SourceLocExpr, x)
+    return SourceLocExpr(p)
 end
 
 function isSizeOfPackExpr(x::AbstractStmt)
@@ -153,7 +181,9 @@ end
 
 function SizeOfPackExpr(x::AbstractStmt)
     @check_ptrs x
-    return SizeOfPackExpr(clang_Stmt_castToSizeOfPackExpr(x))
+    p = clang_Stmt_castToSizeOfPackExpr(x)
+    p == C_NULL && _cast_failed(SizeOfPackExpr, x)
+    return SizeOfPackExpr(p)
 end
 
 function isShuffleVectorExpr(x::AbstractStmt)
@@ -163,7 +193,9 @@ end
 
 function ShuffleVectorExpr(x::AbstractStmt)
     @check_ptrs x
-    return ShuffleVectorExpr(clang_Stmt_castToShuffleVectorExpr(x))
+    p = clang_Stmt_castToShuffleVectorExpr(x)
+    p == C_NULL && _cast_failed(ShuffleVectorExpr, x)
+    return ShuffleVectorExpr(p)
 end
 
 function isSYCLUniqueStableNameExpr(x::AbstractStmt)
@@ -173,7 +205,9 @@ end
 
 function SYCLUniqueStableNameExpr(x::AbstractStmt)
     @check_ptrs x
-    return SYCLUniqueStableNameExpr(clang_Stmt_castToSYCLUniqueStableNameExpr(x))
+    p = clang_Stmt_castToSYCLUniqueStableNameExpr(x)
+    p == C_NULL && _cast_failed(SYCLUniqueStableNameExpr, x)
+    return SYCLUniqueStableNameExpr(p)
 end
 
 function isRequiresExpr(x::AbstractStmt)
@@ -183,7 +217,9 @@ end
 
 function RequiresExpr(x::AbstractStmt)
     @check_ptrs x
-    return RequiresExpr(clang_Stmt_castToRequiresExpr(x))
+    p = clang_Stmt_castToRequiresExpr(x)
+    p == C_NULL && _cast_failed(RequiresExpr, x)
+    return RequiresExpr(p)
 end
 
 function isRecoveryExpr(x::AbstractStmt)
@@ -193,7 +229,9 @@ end
 
 function RecoveryExpr(x::AbstractStmt)
     @check_ptrs x
-    return RecoveryExpr(clang_Stmt_castToRecoveryExpr(x))
+    p = clang_Stmt_castToRecoveryExpr(x)
+    p == C_NULL && _cast_failed(RecoveryExpr, x)
+    return RecoveryExpr(p)
 end
 
 function isPseudoObjectExpr(x::AbstractStmt)
@@ -203,7 +241,9 @@ end
 
 function PseudoObjectExpr(x::AbstractStmt)
     @check_ptrs x
-    return PseudoObjectExpr(clang_Stmt_castToPseudoObjectExpr(x))
+    p = clang_Stmt_castToPseudoObjectExpr(x)
+    p == C_NULL && _cast_failed(PseudoObjectExpr, x)
+    return PseudoObjectExpr(p)
 end
 
 function isPredefinedExpr(x::AbstractStmt)
@@ -213,7 +253,9 @@ end
 
 function PredefinedExpr(x::AbstractStmt)
     @check_ptrs x
-    return PredefinedExpr(clang_Stmt_castToPredefinedExpr(x))
+    p = clang_Stmt_castToPredefinedExpr(x)
+    p == C_NULL && _cast_failed(PredefinedExpr, x)
+    return PredefinedExpr(p)
 end
 
 function isParenListExpr(x::AbstractStmt)
@@ -223,7 +265,9 @@ end
 
 function ParenListExpr(x::AbstractStmt)
     @check_ptrs x
-    return ParenListExpr(clang_Stmt_castToParenListExpr(x))
+    p = clang_Stmt_castToParenListExpr(x)
+    p == C_NULL && _cast_failed(ParenListExpr, x)
+    return ParenListExpr(p)
 end
 
 function isParenExpr(x::AbstractStmt)
@@ -233,7 +277,9 @@ end
 
 function ParenExpr(x::AbstractStmt)
     @check_ptrs x
-    return ParenExpr(clang_Stmt_castToParenExpr(x))
+    p = clang_Stmt_castToParenExpr(x)
+    p == C_NULL && _cast_failed(ParenExpr, x)
+    return ParenExpr(p)
 end
 
 function isPackExpansionExpr(x::AbstractStmt)
@@ -243,7 +289,9 @@ end
 
 function PackExpansionExpr(x::AbstractStmt)
     @check_ptrs x
-    return PackExpansionExpr(clang_Stmt_castToPackExpansionExpr(x))
+    p = clang_Stmt_castToPackExpansionExpr(x)
+    p == C_NULL && _cast_failed(PackExpansionExpr, x)
+    return PackExpansionExpr(p)
 end
 
 function isOverloadExpr(x::AbstractStmt)
@@ -253,7 +301,9 @@ end
 
 function OverloadExpr(x::AbstractStmt)
     @check_ptrs x
-    return OverloadExpr(clang_Stmt_castToOverloadExpr(x))
+    p = clang_Stmt_castToOverloadExpr(x)
+    p == C_NULL && _cast_failed(OverloadExpr, x)
+    return OverloadExpr(p)
 end
 
 function isUnresolvedMemberExpr(x::AbstractStmt)
@@ -263,7 +313,9 @@ end
 
 function UnresolvedMemberExpr(x::AbstractStmt)
     @check_ptrs x
-    return UnresolvedMemberExpr(clang_Stmt_castToUnresolvedMemberExpr(x))
+    p = clang_Stmt_castToUnresolvedMemberExpr(x)
+    p == C_NULL && _cast_failed(UnresolvedMemberExpr, x)
+    return UnresolvedMemberExpr(p)
 end
 
 function isUnresolvedLookupExpr(x::AbstractStmt)
@@ -273,7 +325,9 @@ end
 
 function UnresolvedLookupExpr(x::AbstractStmt)
     @check_ptrs x
-    return UnresolvedLookupExpr(clang_Stmt_castToUnresolvedLookupExpr(x))
+    p = clang_Stmt_castToUnresolvedLookupExpr(x)
+    p == C_NULL && _cast_failed(UnresolvedLookupExpr, x)
+    return UnresolvedLookupExpr(p)
 end
 
 function isOpaqueValueExpr(x::AbstractStmt)
@@ -283,7 +337,9 @@ end
 
 function OpaqueValueExpr(x::AbstractStmt)
     @check_ptrs x
-    return OpaqueValueExpr(clang_Stmt_castToOpaqueValueExpr(x))
+    p = clang_Stmt_castToOpaqueValueExpr(x)
+    p == C_NULL && _cast_failed(OpaqueValueExpr, x)
+    return OpaqueValueExpr(p)
 end
 
 function isOffsetOfExpr(x::AbstractStmt)
@@ -293,7 +349,9 @@ end
 
 function OffsetOfExpr(x::AbstractStmt)
     @check_ptrs x
-    return OffsetOfExpr(clang_Stmt_castToOffsetOfExpr(x))
+    p = clang_Stmt_castToOffsetOfExpr(x)
+    p == C_NULL && _cast_failed(OffsetOfExpr, x)
+    return OffsetOfExpr(p)
 end
 
 function isObjCSubscriptRefExpr(x::AbstractStmt)
@@ -303,7 +361,9 @@ end
 
 function ObjCSubscriptRefExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCSubscriptRefExpr(clang_Stmt_castToObjCSubscriptRefExpr(x))
+    p = clang_Stmt_castToObjCSubscriptRefExpr(x)
+    p == C_NULL && _cast_failed(ObjCSubscriptRefExpr, x)
+    return ObjCSubscriptRefExpr(p)
 end
 
 function isObjCStringLiteral(x::AbstractStmt)
@@ -313,7 +373,9 @@ end
 
 function ObjCStringLiteral(x::AbstractStmt)
     @check_ptrs x
-    return ObjCStringLiteral(clang_Stmt_castToObjCStringLiteral(x))
+    p = clang_Stmt_castToObjCStringLiteral(x)
+    p == C_NULL && _cast_failed(ObjCStringLiteral, x)
+    return ObjCStringLiteral(p)
 end
 
 function isObjCSelectorExpr(x::AbstractStmt)
@@ -323,7 +385,9 @@ end
 
 function ObjCSelectorExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCSelectorExpr(clang_Stmt_castToObjCSelectorExpr(x))
+    p = clang_Stmt_castToObjCSelectorExpr(x)
+    p == C_NULL && _cast_failed(ObjCSelectorExpr, x)
+    return ObjCSelectorExpr(p)
 end
 
 function isObjCProtocolExpr(x::AbstractStmt)
@@ -333,7 +397,9 @@ end
 
 function ObjCProtocolExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCProtocolExpr(clang_Stmt_castToObjCProtocolExpr(x))
+    p = clang_Stmt_castToObjCProtocolExpr(x)
+    p == C_NULL && _cast_failed(ObjCProtocolExpr, x)
+    return ObjCProtocolExpr(p)
 end
 
 function isObjCPropertyRefExpr(x::AbstractStmt)
@@ -343,7 +409,9 @@ end
 
 function ObjCPropertyRefExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCPropertyRefExpr(clang_Stmt_castToObjCPropertyRefExpr(x))
+    p = clang_Stmt_castToObjCPropertyRefExpr(x)
+    p == C_NULL && _cast_failed(ObjCPropertyRefExpr, x)
+    return ObjCPropertyRefExpr(p)
 end
 
 function isObjCMessageExpr(x::AbstractStmt)
@@ -353,7 +421,9 @@ end
 
 function ObjCMessageExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCMessageExpr(clang_Stmt_castToObjCMessageExpr(x))
+    p = clang_Stmt_castToObjCMessageExpr(x)
+    p == C_NULL && _cast_failed(ObjCMessageExpr, x)
+    return ObjCMessageExpr(p)
 end
 
 function isObjCIvarRefExpr(x::AbstractStmt)
@@ -363,7 +433,9 @@ end
 
 function ObjCIvarRefExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCIvarRefExpr(clang_Stmt_castToObjCIvarRefExpr(x))
+    p = clang_Stmt_castToObjCIvarRefExpr(x)
+    p == C_NULL && _cast_failed(ObjCIvarRefExpr, x)
+    return ObjCIvarRefExpr(p)
 end
 
 function isObjCIsaExpr(x::AbstractStmt)
@@ -373,7 +445,9 @@ end
 
 function ObjCIsaExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCIsaExpr(clang_Stmt_castToObjCIsaExpr(x))
+    p = clang_Stmt_castToObjCIsaExpr(x)
+    p == C_NULL && _cast_failed(ObjCIsaExpr, x)
+    return ObjCIsaExpr(p)
 end
 
 function isObjCIndirectCopyRestoreExpr(x::AbstractStmt)
@@ -383,7 +457,9 @@ end
 
 function ObjCIndirectCopyRestoreExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCIndirectCopyRestoreExpr(clang_Stmt_castToObjCIndirectCopyRestoreExpr(x))
+    p = clang_Stmt_castToObjCIndirectCopyRestoreExpr(x)
+    p == C_NULL && _cast_failed(ObjCIndirectCopyRestoreExpr, x)
+    return ObjCIndirectCopyRestoreExpr(p)
 end
 
 function isObjCEncodeExpr(x::AbstractStmt)
@@ -393,7 +469,9 @@ end
 
 function ObjCEncodeExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCEncodeExpr(clang_Stmt_castToObjCEncodeExpr(x))
+    p = clang_Stmt_castToObjCEncodeExpr(x)
+    p == C_NULL && _cast_failed(ObjCEncodeExpr, x)
+    return ObjCEncodeExpr(p)
 end
 
 function isObjCDictionaryLiteral(x::AbstractStmt)
@@ -403,7 +481,9 @@ end
 
 function ObjCDictionaryLiteral(x::AbstractStmt)
     @check_ptrs x
-    return ObjCDictionaryLiteral(clang_Stmt_castToObjCDictionaryLiteral(x))
+    p = clang_Stmt_castToObjCDictionaryLiteral(x)
+    p == C_NULL && _cast_failed(ObjCDictionaryLiteral, x)
+    return ObjCDictionaryLiteral(p)
 end
 
 function isObjCBoxedExpr(x::AbstractStmt)
@@ -413,7 +493,9 @@ end
 
 function ObjCBoxedExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCBoxedExpr(clang_Stmt_castToObjCBoxedExpr(x))
+    p = clang_Stmt_castToObjCBoxedExpr(x)
+    p == C_NULL && _cast_failed(ObjCBoxedExpr, x)
+    return ObjCBoxedExpr(p)
 end
 
 function isObjCBoolLiteralExpr(x::AbstractStmt)
@@ -423,7 +505,9 @@ end
 
 function ObjCBoolLiteralExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCBoolLiteralExpr(clang_Stmt_castToObjCBoolLiteralExpr(x))
+    p = clang_Stmt_castToObjCBoolLiteralExpr(x)
+    p == C_NULL && _cast_failed(ObjCBoolLiteralExpr, x)
+    return ObjCBoolLiteralExpr(p)
 end
 
 function isObjCAvailabilityCheckExpr(x::AbstractStmt)
@@ -433,7 +517,9 @@ end
 
 function ObjCAvailabilityCheckExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCAvailabilityCheckExpr(clang_Stmt_castToObjCAvailabilityCheckExpr(x))
+    p = clang_Stmt_castToObjCAvailabilityCheckExpr(x)
+    p == C_NULL && _cast_failed(ObjCAvailabilityCheckExpr, x)
+    return ObjCAvailabilityCheckExpr(p)
 end
 
 function isObjCArrayLiteral(x::AbstractStmt)
@@ -443,7 +529,9 @@ end
 
 function ObjCArrayLiteral(x::AbstractStmt)
     @check_ptrs x
-    return ObjCArrayLiteral(clang_Stmt_castToObjCArrayLiteral(x))
+    p = clang_Stmt_castToObjCArrayLiteral(x)
+    p == C_NULL && _cast_failed(ObjCArrayLiteral, x)
+    return ObjCArrayLiteral(p)
 end
 
 function isOMPIteratorExpr(x::AbstractStmt)
@@ -453,7 +541,9 @@ end
 
 function OMPIteratorExpr(x::AbstractStmt)
     @check_ptrs x
-    return OMPIteratorExpr(clang_Stmt_castToOMPIteratorExpr(x))
+    p = clang_Stmt_castToOMPIteratorExpr(x)
+    p == C_NULL && _cast_failed(OMPIteratorExpr, x)
+    return OMPIteratorExpr(p)
 end
 
 function isOMPArrayShapingExpr(x::AbstractStmt)
@@ -463,7 +553,9 @@ end
 
 function OMPArrayShapingExpr(x::AbstractStmt)
     @check_ptrs x
-    return OMPArrayShapingExpr(clang_Stmt_castToOMPArrayShapingExpr(x))
+    p = clang_Stmt_castToOMPArrayShapingExpr(x)
+    p == C_NULL && _cast_failed(OMPArrayShapingExpr, x)
+    return OMPArrayShapingExpr(p)
 end
 
 function isOMPArraySectionExpr(x::AbstractStmt)
@@ -473,7 +565,9 @@ end
 
 function OMPArraySectionExpr(x::AbstractStmt)
     @check_ptrs x
-    return OMPArraySectionExpr(clang_Stmt_castToOMPArraySectionExpr(x))
+    p = clang_Stmt_castToOMPArraySectionExpr(x)
+    p == C_NULL && _cast_failed(OMPArraySectionExpr, x)
+    return OMPArraySectionExpr(p)
 end
 
 function isNoInitExpr(x::AbstractStmt)
@@ -483,7 +577,9 @@ end
 
 function NoInitExpr(x::AbstractStmt)
     @check_ptrs x
-    return NoInitExpr(clang_Stmt_castToNoInitExpr(x))
+    p = clang_Stmt_castToNoInitExpr(x)
+    p == C_NULL && _cast_failed(NoInitExpr, x)
+    return NoInitExpr(p)
 end
 
 function isMemberExpr(x::AbstractStmt)
@@ -493,7 +589,9 @@ end
 
 function MemberExpr(x::AbstractStmt)
     @check_ptrs x
-    return MemberExpr(clang_Stmt_castToMemberExpr(x))
+    p = clang_Stmt_castToMemberExpr(x)
+    p == C_NULL && _cast_failed(MemberExpr, x)
+    return MemberExpr(p)
 end
 
 function isMatrixSubscriptExpr(x::AbstractStmt)
@@ -503,7 +601,9 @@ end
 
 function MatrixSubscriptExpr(x::AbstractStmt)
     @check_ptrs x
-    return MatrixSubscriptExpr(clang_Stmt_castToMatrixSubscriptExpr(x))
+    p = clang_Stmt_castToMatrixSubscriptExpr(x)
+    p == C_NULL && _cast_failed(MatrixSubscriptExpr, x)
+    return MatrixSubscriptExpr(p)
 end
 
 function isMaterializeTemporaryExpr(x::AbstractStmt)
@@ -513,7 +613,9 @@ end
 
 function MaterializeTemporaryExpr(x::AbstractStmt)
     @check_ptrs x
-    return MaterializeTemporaryExpr(clang_Stmt_castToMaterializeTemporaryExpr(x))
+    p = clang_Stmt_castToMaterializeTemporaryExpr(x)
+    p == C_NULL && _cast_failed(MaterializeTemporaryExpr, x)
+    return MaterializeTemporaryExpr(p)
 end
 
 function isMSPropertySubscriptExpr(x::AbstractStmt)
@@ -523,7 +625,9 @@ end
 
 function MSPropertySubscriptExpr(x::AbstractStmt)
     @check_ptrs x
-    return MSPropertySubscriptExpr(clang_Stmt_castToMSPropertySubscriptExpr(x))
+    p = clang_Stmt_castToMSPropertySubscriptExpr(x)
+    p == C_NULL && _cast_failed(MSPropertySubscriptExpr, x)
+    return MSPropertySubscriptExpr(p)
 end
 
 function isMSPropertyRefExpr(x::AbstractStmt)
@@ -533,7 +637,9 @@ end
 
 function MSPropertyRefExpr(x::AbstractStmt)
     @check_ptrs x
-    return MSPropertyRefExpr(clang_Stmt_castToMSPropertyRefExpr(x))
+    p = clang_Stmt_castToMSPropertyRefExpr(x)
+    p == C_NULL && _cast_failed(MSPropertyRefExpr, x)
+    return MSPropertyRefExpr(p)
 end
 
 function isLambdaExpr(x::AbstractStmt)
@@ -543,7 +649,9 @@ end
 
 function LambdaExpr(x::AbstractStmt)
     @check_ptrs x
-    return LambdaExpr(clang_Stmt_castToLambdaExpr(x))
+    p = clang_Stmt_castToLambdaExpr(x)
+    p == C_NULL && _cast_failed(LambdaExpr, x)
+    return LambdaExpr(p)
 end
 
 function isIntegerLiteral(x::AbstractStmt)
@@ -553,7 +661,9 @@ end
 
 function IntegerLiteral(x::AbstractStmt)
     @check_ptrs x
-    return IntegerLiteral(clang_Stmt_castToIntegerLiteral(x))
+    p = clang_Stmt_castToIntegerLiteral(x)
+    p == C_NULL && _cast_failed(IntegerLiteral, x)
+    return IntegerLiteral(p)
 end
 
 function isInitListExpr(x::AbstractStmt)
@@ -563,7 +673,9 @@ end
 
 function InitListExpr(x::AbstractStmt)
     @check_ptrs x
-    return InitListExpr(clang_Stmt_castToInitListExpr(x))
+    p = clang_Stmt_castToInitListExpr(x)
+    p == C_NULL && _cast_failed(InitListExpr, x)
+    return InitListExpr(p)
 end
 
 function isImplicitValueInitExpr(x::AbstractStmt)
@@ -573,7 +685,9 @@ end
 
 function ImplicitValueInitExpr(x::AbstractStmt)
     @check_ptrs x
-    return ImplicitValueInitExpr(clang_Stmt_castToImplicitValueInitExpr(x))
+    p = clang_Stmt_castToImplicitValueInitExpr(x)
+    p == C_NULL && _cast_failed(ImplicitValueInitExpr, x)
+    return ImplicitValueInitExpr(p)
 end
 
 function isImaginaryLiteral(x::AbstractStmt)
@@ -583,7 +697,9 @@ end
 
 function ImaginaryLiteral(x::AbstractStmt)
     @check_ptrs x
-    return ImaginaryLiteral(clang_Stmt_castToImaginaryLiteral(x))
+    p = clang_Stmt_castToImaginaryLiteral(x)
+    p == C_NULL && _cast_failed(ImaginaryLiteral, x)
+    return ImaginaryLiteral(p)
 end
 
 function isGenericSelectionExpr(x::AbstractStmt)
@@ -593,7 +709,9 @@ end
 
 function GenericSelectionExpr(x::AbstractStmt)
     @check_ptrs x
-    return GenericSelectionExpr(clang_Stmt_castToGenericSelectionExpr(x))
+    p = clang_Stmt_castToGenericSelectionExpr(x)
+    p == C_NULL && _cast_failed(GenericSelectionExpr, x)
+    return GenericSelectionExpr(p)
 end
 
 function isGNUNullExpr(x::AbstractStmt)
@@ -603,7 +721,9 @@ end
 
 function GNUNullExpr(x::AbstractStmt)
     @check_ptrs x
-    return GNUNullExpr(clang_Stmt_castToGNUNullExpr(x))
+    p = clang_Stmt_castToGNUNullExpr(x)
+    p == C_NULL && _cast_failed(GNUNullExpr, x)
+    return GNUNullExpr(p)
 end
 
 function isFunctionParmPackExpr(x::AbstractStmt)
@@ -613,7 +733,9 @@ end
 
 function FunctionParmPackExpr(x::AbstractStmt)
     @check_ptrs x
-    return FunctionParmPackExpr(clang_Stmt_castToFunctionParmPackExpr(x))
+    p = clang_Stmt_castToFunctionParmPackExpr(x)
+    p == C_NULL && _cast_failed(FunctionParmPackExpr, x)
+    return FunctionParmPackExpr(p)
 end
 
 function isFullExpr(x::AbstractStmt)
@@ -623,7 +745,9 @@ end
 
 function FullExpr(x::AbstractStmt)
     @check_ptrs x
-    return FullExpr(clang_Stmt_castToFullExpr(x))
+    p = clang_Stmt_castToFullExpr(x)
+    p == C_NULL && _cast_failed(FullExpr, x)
+    return FullExpr(p)
 end
 
 function isExprWithCleanups(x::AbstractStmt)
@@ -633,7 +757,9 @@ end
 
 function ExprWithCleanups(x::AbstractStmt)
     @check_ptrs x
-    return ExprWithCleanups(clang_Stmt_castToExprWithCleanups(x))
+    p = clang_Stmt_castToExprWithCleanups(x)
+    p == C_NULL && _cast_failed(ExprWithCleanups, x)
+    return ExprWithCleanups(p)
 end
 
 function isConstantExpr(x::AbstractStmt)
@@ -643,7 +769,9 @@ end
 
 function ConstantExpr(x::AbstractStmt)
     @check_ptrs x
-    return ConstantExpr(clang_Stmt_castToConstantExpr(x))
+    p = clang_Stmt_castToConstantExpr(x)
+    p == C_NULL && _cast_failed(ConstantExpr, x)
+    return ConstantExpr(p)
 end
 
 function isFloatingLiteral(x::AbstractStmt)
@@ -653,7 +781,9 @@ end
 
 function FloatingLiteral(x::AbstractStmt)
     @check_ptrs x
-    return FloatingLiteral(clang_Stmt_castToFloatingLiteral(x))
+    p = clang_Stmt_castToFloatingLiteral(x)
+    p == C_NULL && _cast_failed(FloatingLiteral, x)
+    return FloatingLiteral(p)
 end
 
 function isFixedPointLiteral(x::AbstractStmt)
@@ -663,7 +793,9 @@ end
 
 function FixedPointLiteral(x::AbstractStmt)
     @check_ptrs x
-    return FixedPointLiteral(clang_Stmt_castToFixedPointLiteral(x))
+    p = clang_Stmt_castToFixedPointLiteral(x)
+    p == C_NULL && _cast_failed(FixedPointLiteral, x)
+    return FixedPointLiteral(p)
 end
 
 function isExtVectorElementExpr(x::AbstractStmt)
@@ -673,7 +805,9 @@ end
 
 function ExtVectorElementExpr(x::AbstractStmt)
     @check_ptrs x
-    return ExtVectorElementExpr(clang_Stmt_castToExtVectorElementExpr(x))
+    p = clang_Stmt_castToExtVectorElementExpr(x)
+    p == C_NULL && _cast_failed(ExtVectorElementExpr, x)
+    return ExtVectorElementExpr(p)
 end
 
 function isExpressionTraitExpr(x::AbstractStmt)
@@ -683,7 +817,9 @@ end
 
 function ExpressionTraitExpr(x::AbstractStmt)
     @check_ptrs x
-    return ExpressionTraitExpr(clang_Stmt_castToExpressionTraitExpr(x))
+    p = clang_Stmt_castToExpressionTraitExpr(x)
+    p == C_NULL && _cast_failed(ExpressionTraitExpr, x)
+    return ExpressionTraitExpr(p)
 end
 
 function isDesignatedInitUpdateExpr(x::AbstractStmt)
@@ -693,7 +829,9 @@ end
 
 function DesignatedInitUpdateExpr(x::AbstractStmt)
     @check_ptrs x
-    return DesignatedInitUpdateExpr(clang_Stmt_castToDesignatedInitUpdateExpr(x))
+    p = clang_Stmt_castToDesignatedInitUpdateExpr(x)
+    p == C_NULL && _cast_failed(DesignatedInitUpdateExpr, x)
+    return DesignatedInitUpdateExpr(p)
 end
 
 function isDesignatedInitExpr(x::AbstractStmt)
@@ -703,7 +841,9 @@ end
 
 function DesignatedInitExpr(x::AbstractStmt)
     @check_ptrs x
-    return DesignatedInitExpr(clang_Stmt_castToDesignatedInitExpr(x))
+    p = clang_Stmt_castToDesignatedInitExpr(x)
+    p == C_NULL && _cast_failed(DesignatedInitExpr, x)
+    return DesignatedInitExpr(p)
 end
 
 function isDependentScopeDeclRefExpr(x::AbstractStmt)
@@ -713,7 +853,9 @@ end
 
 function DependentScopeDeclRefExpr(x::AbstractStmt)
     @check_ptrs x
-    return DependentScopeDeclRefExpr(clang_Stmt_castToDependentScopeDeclRefExpr(x))
+    p = clang_Stmt_castToDependentScopeDeclRefExpr(x)
+    p == C_NULL && _cast_failed(DependentScopeDeclRefExpr, x)
+    return DependentScopeDeclRefExpr(p)
 end
 
 function isDependentCoawaitExpr(x::AbstractStmt)
@@ -723,7 +865,9 @@ end
 
 function DependentCoawaitExpr(x::AbstractStmt)
     @check_ptrs x
-    return DependentCoawaitExpr(clang_Stmt_castToDependentCoawaitExpr(x))
+    p = clang_Stmt_castToDependentCoawaitExpr(x)
+    p == C_NULL && _cast_failed(DependentCoawaitExpr, x)
+    return DependentCoawaitExpr(p)
 end
 
 function isDeclRefExpr(x::AbstractStmt)
@@ -733,7 +877,9 @@ end
 
 function DeclRefExpr(x::AbstractStmt)
     @check_ptrs x
-    return DeclRefExpr(clang_Stmt_castToDeclRefExpr(x))
+    p = clang_Stmt_castToDeclRefExpr(x)
+    p == C_NULL && _cast_failed(DeclRefExpr, x)
+    return DeclRefExpr(p)
 end
 
 function isCoroutineSuspendExpr(x::AbstractStmt)
@@ -743,7 +889,9 @@ end
 
 function CoroutineSuspendExpr(x::AbstractStmt)
     @check_ptrs x
-    return CoroutineSuspendExpr(clang_Stmt_castToCoroutineSuspendExpr(x))
+    p = clang_Stmt_castToCoroutineSuspendExpr(x)
+    p == C_NULL && _cast_failed(CoroutineSuspendExpr, x)
+    return CoroutineSuspendExpr(p)
 end
 
 function isCoyieldExpr(x::AbstractStmt)
@@ -753,7 +901,9 @@ end
 
 function CoyieldExpr(x::AbstractStmt)
     @check_ptrs x
-    return CoyieldExpr(clang_Stmt_castToCoyieldExpr(x))
+    p = clang_Stmt_castToCoyieldExpr(x)
+    p == C_NULL && _cast_failed(CoyieldExpr, x)
+    return CoyieldExpr(p)
 end
 
 function isCoawaitExpr(x::AbstractStmt)
@@ -763,7 +913,9 @@ end
 
 function CoawaitExpr(x::AbstractStmt)
     @check_ptrs x
-    return CoawaitExpr(clang_Stmt_castToCoawaitExpr(x))
+    p = clang_Stmt_castToCoawaitExpr(x)
+    p == C_NULL && _cast_failed(CoawaitExpr, x)
+    return CoawaitExpr(p)
 end
 
 function isConvertVectorExpr(x::AbstractStmt)
@@ -773,7 +925,9 @@ end
 
 function ConvertVectorExpr(x::AbstractStmt)
     @check_ptrs x
-    return ConvertVectorExpr(clang_Stmt_castToConvertVectorExpr(x))
+    p = clang_Stmt_castToConvertVectorExpr(x)
+    p == C_NULL && _cast_failed(ConvertVectorExpr, x)
+    return ConvertVectorExpr(p)
 end
 
 function isConceptSpecializationExpr(x::AbstractStmt)
@@ -783,7 +937,9 @@ end
 
 function ConceptSpecializationExpr(x::AbstractStmt)
     @check_ptrs x
-    return ConceptSpecializationExpr(clang_Stmt_castToConceptSpecializationExpr(x))
+    p = clang_Stmt_castToConceptSpecializationExpr(x)
+    p == C_NULL && _cast_failed(ConceptSpecializationExpr, x)
+    return ConceptSpecializationExpr(p)
 end
 
 function isCompoundLiteralExpr(x::AbstractStmt)
@@ -793,7 +949,9 @@ end
 
 function CompoundLiteralExpr(x::AbstractStmt)
     @check_ptrs x
-    return CompoundLiteralExpr(clang_Stmt_castToCompoundLiteralExpr(x))
+    p = clang_Stmt_castToCompoundLiteralExpr(x)
+    p == C_NULL && _cast_failed(CompoundLiteralExpr, x)
+    return CompoundLiteralExpr(p)
 end
 
 function isChooseExpr(x::AbstractStmt)
@@ -803,7 +961,9 @@ end
 
 function ChooseExpr(x::AbstractStmt)
     @check_ptrs x
-    return ChooseExpr(clang_Stmt_castToChooseExpr(x))
+    p = clang_Stmt_castToChooseExpr(x)
+    p == C_NULL && _cast_failed(ChooseExpr, x)
+    return ChooseExpr(p)
 end
 
 function isCharacterLiteral(x::AbstractStmt)
@@ -813,7 +973,9 @@ end
 
 function CharacterLiteral(x::AbstractStmt)
     @check_ptrs x
-    return CharacterLiteral(clang_Stmt_castToCharacterLiteral(x))
+    p = clang_Stmt_castToCharacterLiteral(x)
+    p == C_NULL && _cast_failed(CharacterLiteral, x)
+    return CharacterLiteral(p)
 end
 
 function isCastExpr(x::AbstractStmt)
@@ -823,7 +985,9 @@ end
 
 function CastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CastExpr(clang_Stmt_castToCastExpr(x))
+    p = clang_Stmt_castToCastExpr(x)
+    p == C_NULL && _cast_failed(CastExpr, x)
+    return CastExpr(p)
 end
 
 function isImplicitCastExpr(x::AbstractStmt)
@@ -833,7 +997,9 @@ end
 
 function ImplicitCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return ImplicitCastExpr(clang_Stmt_castToImplicitCastExpr(x))
+    p = clang_Stmt_castToImplicitCastExpr(x)
+    p == C_NULL && _cast_failed(ImplicitCastExpr, x)
+    return ImplicitCastExpr(p)
 end
 
 function isExplicitCastExpr(x::AbstractStmt)
@@ -843,7 +1009,9 @@ end
 
 function ExplicitCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return ExplicitCastExpr(clang_Stmt_castToExplicitCastExpr(x))
+    p = clang_Stmt_castToExplicitCastExpr(x)
+    p == C_NULL && _cast_failed(ExplicitCastExpr, x)
+    return ExplicitCastExpr(p)
 end
 
 function isObjCBridgedCastExpr(x::AbstractStmt)
@@ -853,7 +1021,9 @@ end
 
 function ObjCBridgedCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return ObjCBridgedCastExpr(clang_Stmt_castToObjCBridgedCastExpr(x))
+    p = clang_Stmt_castToObjCBridgedCastExpr(x)
+    p == C_NULL && _cast_failed(ObjCBridgedCastExpr, x)
+    return ObjCBridgedCastExpr(p)
 end
 
 function isCXXNamedCastExpr(x::AbstractStmt)
@@ -863,7 +1033,9 @@ end
 
 function CXXNamedCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXNamedCastExpr(clang_Stmt_castToCXXNamedCastExpr(x))
+    p = clang_Stmt_castToCXXNamedCastExpr(x)
+    p == C_NULL && _cast_failed(CXXNamedCastExpr, x)
+    return CXXNamedCastExpr(p)
 end
 
 function isCXXStaticCastExpr(x::AbstractStmt)
@@ -873,7 +1045,9 @@ end
 
 function CXXStaticCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXStaticCastExpr(clang_Stmt_castToCXXStaticCastExpr(x))
+    p = clang_Stmt_castToCXXStaticCastExpr(x)
+    p == C_NULL && _cast_failed(CXXStaticCastExpr, x)
+    return CXXStaticCastExpr(p)
 end
 
 function isCXXReinterpretCastExpr(x::AbstractStmt)
@@ -883,7 +1057,9 @@ end
 
 function CXXReinterpretCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXReinterpretCastExpr(clang_Stmt_castToCXXReinterpretCastExpr(x))
+    p = clang_Stmt_castToCXXReinterpretCastExpr(x)
+    p == C_NULL && _cast_failed(CXXReinterpretCastExpr, x)
+    return CXXReinterpretCastExpr(p)
 end
 
 function isCXXDynamicCastExpr(x::AbstractStmt)
@@ -893,7 +1069,9 @@ end
 
 function CXXDynamicCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXDynamicCastExpr(clang_Stmt_castToCXXDynamicCastExpr(x))
+    p = clang_Stmt_castToCXXDynamicCastExpr(x)
+    p == C_NULL && _cast_failed(CXXDynamicCastExpr, x)
+    return CXXDynamicCastExpr(p)
 end
 
 function isCXXConstCastExpr(x::AbstractStmt)
@@ -903,7 +1081,9 @@ end
 
 function CXXConstCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXConstCastExpr(clang_Stmt_castToCXXConstCastExpr(x))
+    p = clang_Stmt_castToCXXConstCastExpr(x)
+    p == C_NULL && _cast_failed(CXXConstCastExpr, x)
+    return CXXConstCastExpr(p)
 end
 
 function isCXXAddrspaceCastExpr(x::AbstractStmt)
@@ -913,7 +1093,9 @@ end
 
 function CXXAddrspaceCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXAddrspaceCastExpr(clang_Stmt_castToCXXAddrspaceCastExpr(x))
+    p = clang_Stmt_castToCXXAddrspaceCastExpr(x)
+    p == C_NULL && _cast_failed(CXXAddrspaceCastExpr, x)
+    return CXXAddrspaceCastExpr(p)
 end
 
 function isCXXFunctionalCastExpr(x::AbstractStmt)
@@ -923,7 +1105,9 @@ end
 
 function CXXFunctionalCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXFunctionalCastExpr(clang_Stmt_castToCXXFunctionalCastExpr(x))
+    p = clang_Stmt_castToCXXFunctionalCastExpr(x)
+    p == C_NULL && _cast_failed(CXXFunctionalCastExpr, x)
+    return CXXFunctionalCastExpr(p)
 end
 
 function isCStyleCastExpr(x::AbstractStmt)
@@ -933,7 +1117,9 @@ end
 
 function CStyleCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return CStyleCastExpr(clang_Stmt_castToCStyleCastExpr(x))
+    p = clang_Stmt_castToCStyleCastExpr(x)
+    p == C_NULL && _cast_failed(CStyleCastExpr, x)
+    return CStyleCastExpr(p)
 end
 
 function isBuiltinBitCastExpr(x::AbstractStmt)
@@ -943,7 +1129,9 @@ end
 
 function BuiltinBitCastExpr(x::AbstractStmt)
     @check_ptrs x
-    return BuiltinBitCastExpr(clang_Stmt_castToBuiltinBitCastExpr(x))
+    p = clang_Stmt_castToBuiltinBitCastExpr(x)
+    p == C_NULL && _cast_failed(BuiltinBitCastExpr, x)
+    return BuiltinBitCastExpr(p)
 end
 
 function isCallExpr(x::AbstractStmt)
@@ -953,7 +1141,9 @@ end
 
 function CallExpr(x::AbstractStmt)
     @check_ptrs x
-    return CallExpr(clang_Stmt_castToCallExpr(x))
+    p = clang_Stmt_castToCallExpr(x)
+    p == C_NULL && _cast_failed(CallExpr, x)
+    return CallExpr(p)
 end
 
 function isUserDefinedLiteral(x::AbstractStmt)
@@ -963,7 +1153,9 @@ end
 
 function UserDefinedLiteral(x::AbstractStmt)
     @check_ptrs x
-    return UserDefinedLiteral(clang_Stmt_castToUserDefinedLiteral(x))
+    p = clang_Stmt_castToUserDefinedLiteral(x)
+    p == C_NULL && _cast_failed(UserDefinedLiteral, x)
+    return UserDefinedLiteral(p)
 end
 
 function isCXXOperatorCallExpr(x::AbstractStmt)
@@ -973,7 +1165,9 @@ end
 
 function CXXOperatorCallExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXOperatorCallExpr(clang_Stmt_castToCXXOperatorCallExpr(x))
+    p = clang_Stmt_castToCXXOperatorCallExpr(x)
+    p == C_NULL && _cast_failed(CXXOperatorCallExpr, x)
+    return CXXOperatorCallExpr(p)
 end
 
 function isCXXMemberCallExpr(x::AbstractStmt)
@@ -983,7 +1177,9 @@ end
 
 function CXXMemberCallExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXMemberCallExpr(clang_Stmt_castToCXXMemberCallExpr(x))
+    p = clang_Stmt_castToCXXMemberCallExpr(x)
+    p == C_NULL && _cast_failed(CXXMemberCallExpr, x)
+    return CXXMemberCallExpr(p)
 end
 
 function isCUDAKernelCallExpr(x::AbstractStmt)
@@ -993,7 +1189,9 @@ end
 
 function CUDAKernelCallExpr(x::AbstractStmt)
     @check_ptrs x
-    return CUDAKernelCallExpr(clang_Stmt_castToCUDAKernelCallExpr(x))
+    p = clang_Stmt_castToCUDAKernelCallExpr(x)
+    p == C_NULL && _cast_failed(CUDAKernelCallExpr, x)
+    return CUDAKernelCallExpr(p)
 end
 
 function isCXXUuidofExpr(x::AbstractStmt)
@@ -1003,7 +1201,9 @@ end
 
 function CXXUuidofExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXUuidofExpr(clang_Stmt_castToCXXUuidofExpr(x))
+    p = clang_Stmt_castToCXXUuidofExpr(x)
+    p == C_NULL && _cast_failed(CXXUuidofExpr, x)
+    return CXXUuidofExpr(p)
 end
 
 function isCXXUnresolvedConstructExpr(x::AbstractStmt)
@@ -1013,7 +1213,9 @@ end
 
 function CXXUnresolvedConstructExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXUnresolvedConstructExpr(clang_Stmt_castToCXXUnresolvedConstructExpr(x))
+    p = clang_Stmt_castToCXXUnresolvedConstructExpr(x)
+    p == C_NULL && _cast_failed(CXXUnresolvedConstructExpr, x)
+    return CXXUnresolvedConstructExpr(p)
 end
 
 function isCXXTypeidExpr(x::AbstractStmt)
@@ -1023,7 +1225,9 @@ end
 
 function CXXTypeidExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXTypeidExpr(clang_Stmt_castToCXXTypeidExpr(x))
+    p = clang_Stmt_castToCXXTypeidExpr(x)
+    p == C_NULL && _cast_failed(CXXTypeidExpr, x)
+    return CXXTypeidExpr(p)
 end
 
 function isCXXThrowExpr(x::AbstractStmt)
@@ -1033,7 +1237,9 @@ end
 
 function CXXThrowExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXThrowExpr(clang_Stmt_castToCXXThrowExpr(x))
+    p = clang_Stmt_castToCXXThrowExpr(x)
+    p == C_NULL && _cast_failed(CXXThrowExpr, x)
+    return CXXThrowExpr(p)
 end
 
 function isCXXThisExpr(x::AbstractStmt)
@@ -1043,7 +1249,9 @@ end
 
 function CXXThisExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXThisExpr(clang_Stmt_castToCXXThisExpr(x))
+    p = clang_Stmt_castToCXXThisExpr(x)
+    p == C_NULL && _cast_failed(CXXThisExpr, x)
+    return CXXThisExpr(p)
 end
 
 function isCXXStdInitializerListExpr(x::AbstractStmt)
@@ -1053,7 +1261,9 @@ end
 
 function CXXStdInitializerListExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXStdInitializerListExpr(clang_Stmt_castToCXXStdInitializerListExpr(x))
+    p = clang_Stmt_castToCXXStdInitializerListExpr(x)
+    p == C_NULL && _cast_failed(CXXStdInitializerListExpr, x)
+    return CXXStdInitializerListExpr(p)
 end
 
 function isCXXScalarValueInitExpr(x::AbstractStmt)
@@ -1063,7 +1273,9 @@ end
 
 function CXXScalarValueInitExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXScalarValueInitExpr(clang_Stmt_castToCXXScalarValueInitExpr(x))
+    p = clang_Stmt_castToCXXScalarValueInitExpr(x)
+    p == C_NULL && _cast_failed(CXXScalarValueInitExpr, x)
+    return CXXScalarValueInitExpr(p)
 end
 
 function isCXXRewrittenBinaryOperator(x::AbstractStmt)
@@ -1073,7 +1285,9 @@ end
 
 function CXXRewrittenBinaryOperator(x::AbstractStmt)
     @check_ptrs x
-    return CXXRewrittenBinaryOperator(clang_Stmt_castToCXXRewrittenBinaryOperator(x))
+    p = clang_Stmt_castToCXXRewrittenBinaryOperator(x)
+    p == C_NULL && _cast_failed(CXXRewrittenBinaryOperator, x)
+    return CXXRewrittenBinaryOperator(p)
 end
 
 function isCXXPseudoDestructorExpr(x::AbstractStmt)
@@ -1083,7 +1297,9 @@ end
 
 function CXXPseudoDestructorExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXPseudoDestructorExpr(clang_Stmt_castToCXXPseudoDestructorExpr(x))
+    p = clang_Stmt_castToCXXPseudoDestructorExpr(x)
+    p == C_NULL && _cast_failed(CXXPseudoDestructorExpr, x)
+    return CXXPseudoDestructorExpr(p)
 end
 
 function isCXXParenListInitExpr(x::AbstractStmt)
@@ -1093,7 +1309,9 @@ end
 
 function CXXParenListInitExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXParenListInitExpr(clang_Stmt_castToCXXParenListInitExpr(x))
+    p = clang_Stmt_castToCXXParenListInitExpr(x)
+    p == C_NULL && _cast_failed(CXXParenListInitExpr, x)
+    return CXXParenListInitExpr(p)
 end
 
 function isCXXNullPtrLiteralExpr(x::AbstractStmt)
@@ -1103,7 +1321,9 @@ end
 
 function CXXNullPtrLiteralExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXNullPtrLiteralExpr(clang_Stmt_castToCXXNullPtrLiteralExpr(x))
+    p = clang_Stmt_castToCXXNullPtrLiteralExpr(x)
+    p == C_NULL && _cast_failed(CXXNullPtrLiteralExpr, x)
+    return CXXNullPtrLiteralExpr(p)
 end
 
 function isCXXNoexceptExpr(x::AbstractStmt)
@@ -1113,7 +1333,9 @@ end
 
 function CXXNoexceptExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXNoexceptExpr(clang_Stmt_castToCXXNoexceptExpr(x))
+    p = clang_Stmt_castToCXXNoexceptExpr(x)
+    p == C_NULL && _cast_failed(CXXNoexceptExpr, x)
+    return CXXNoexceptExpr(p)
 end
 
 function isCXXNewExpr(x::AbstractStmt)
@@ -1123,7 +1345,9 @@ end
 
 function CXXNewExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXNewExpr(clang_Stmt_castToCXXNewExpr(x))
+    p = clang_Stmt_castToCXXNewExpr(x)
+    p == C_NULL && _cast_failed(CXXNewExpr, x)
+    return CXXNewExpr(p)
 end
 
 function isCXXInheritedCtorInitExpr(x::AbstractStmt)
@@ -1133,7 +1357,9 @@ end
 
 function CXXInheritedCtorInitExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXInheritedCtorInitExpr(clang_Stmt_castToCXXInheritedCtorInitExpr(x))
+    p = clang_Stmt_castToCXXInheritedCtorInitExpr(x)
+    p == C_NULL && _cast_failed(CXXInheritedCtorInitExpr, x)
+    return CXXInheritedCtorInitExpr(p)
 end
 
 function isCXXFoldExpr(x::AbstractStmt)
@@ -1143,7 +1369,9 @@ end
 
 function CXXFoldExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXFoldExpr(clang_Stmt_castToCXXFoldExpr(x))
+    p = clang_Stmt_castToCXXFoldExpr(x)
+    p == C_NULL && _cast_failed(CXXFoldExpr, x)
+    return CXXFoldExpr(p)
 end
 
 function isCXXDependentScopeMemberExpr(x::AbstractStmt)
@@ -1153,7 +1381,9 @@ end
 
 function CXXDependentScopeMemberExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXDependentScopeMemberExpr(clang_Stmt_castToCXXDependentScopeMemberExpr(x))
+    p = clang_Stmt_castToCXXDependentScopeMemberExpr(x)
+    p == C_NULL && _cast_failed(CXXDependentScopeMemberExpr, x)
+    return CXXDependentScopeMemberExpr(p)
 end
 
 function isCXXDeleteExpr(x::AbstractStmt)
@@ -1163,7 +1393,9 @@ end
 
 function CXXDeleteExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXDeleteExpr(clang_Stmt_castToCXXDeleteExpr(x))
+    p = clang_Stmt_castToCXXDeleteExpr(x)
+    p == C_NULL && _cast_failed(CXXDeleteExpr, x)
+    return CXXDeleteExpr(p)
 end
 
 function isCXXDefaultInitExpr(x::AbstractStmt)
@@ -1173,7 +1405,9 @@ end
 
 function CXXDefaultInitExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXDefaultInitExpr(clang_Stmt_castToCXXDefaultInitExpr(x))
+    p = clang_Stmt_castToCXXDefaultInitExpr(x)
+    p == C_NULL && _cast_failed(CXXDefaultInitExpr, x)
+    return CXXDefaultInitExpr(p)
 end
 
 function isCXXDefaultArgExpr(x::AbstractStmt)
@@ -1183,7 +1417,9 @@ end
 
 function CXXDefaultArgExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXDefaultArgExpr(clang_Stmt_castToCXXDefaultArgExpr(x))
+    p = clang_Stmt_castToCXXDefaultArgExpr(x)
+    p == C_NULL && _cast_failed(CXXDefaultArgExpr, x)
+    return CXXDefaultArgExpr(p)
 end
 
 function isCXXConstructExpr(x::AbstractStmt)
@@ -1193,7 +1429,9 @@ end
 
 function CXXConstructExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXConstructExpr(clang_Stmt_castToCXXConstructExpr(x))
+    p = clang_Stmt_castToCXXConstructExpr(x)
+    p == C_NULL && _cast_failed(CXXConstructExpr, x)
+    return CXXConstructExpr(p)
 end
 
 function isCXXTemporaryObjectExpr(x::AbstractStmt)
@@ -1203,7 +1441,9 @@ end
 
 function CXXTemporaryObjectExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXTemporaryObjectExpr(clang_Stmt_castToCXXTemporaryObjectExpr(x))
+    p = clang_Stmt_castToCXXTemporaryObjectExpr(x)
+    p == C_NULL && _cast_failed(CXXTemporaryObjectExpr, x)
+    return CXXTemporaryObjectExpr(p)
 end
 
 function isCXXBoolLiteralExpr(x::AbstractStmt)
@@ -1213,7 +1453,9 @@ end
 
 function CXXBoolLiteralExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXBoolLiteralExpr(clang_Stmt_castToCXXBoolLiteralExpr(x))
+    p = clang_Stmt_castToCXXBoolLiteralExpr(x)
+    p == C_NULL && _cast_failed(CXXBoolLiteralExpr, x)
+    return CXXBoolLiteralExpr(p)
 end
 
 function isCXXBindTemporaryExpr(x::AbstractStmt)
@@ -1223,7 +1465,9 @@ end
 
 function CXXBindTemporaryExpr(x::AbstractStmt)
     @check_ptrs x
-    return CXXBindTemporaryExpr(clang_Stmt_castToCXXBindTemporaryExpr(x))
+    p = clang_Stmt_castToCXXBindTemporaryExpr(x)
+    p == C_NULL && _cast_failed(CXXBindTemporaryExpr, x)
+    return CXXBindTemporaryExpr(p)
 end
 
 function isBlockExpr(x::AbstractStmt)
@@ -1233,7 +1477,9 @@ end
 
 function BlockExpr(x::AbstractStmt)
     @check_ptrs x
-    return BlockExpr(clang_Stmt_castToBlockExpr(x))
+    p = clang_Stmt_castToBlockExpr(x)
+    p == C_NULL && _cast_failed(BlockExpr, x)
+    return BlockExpr(p)
 end
 
 function isBinaryOperator(x::AbstractStmt)
@@ -1243,7 +1489,9 @@ end
 
 function BinaryOperator(x::AbstractStmt)
     @check_ptrs x
-    return BinaryOperator(clang_Stmt_castToBinaryOperator(x))
+    p = clang_Stmt_castToBinaryOperator(x)
+    p == C_NULL && _cast_failed(BinaryOperator, x)
+    return BinaryOperator(p)
 end
 
 function isCompoundAssignOperator(x::AbstractStmt)
@@ -1253,7 +1501,9 @@ end
 
 function CompoundAssignOperator(x::AbstractStmt)
     @check_ptrs x
-    return CompoundAssignOperator(clang_Stmt_castToCompoundAssignOperator(x))
+    p = clang_Stmt_castToCompoundAssignOperator(x)
+    p == C_NULL && _cast_failed(CompoundAssignOperator, x)
+    return CompoundAssignOperator(p)
 end
 
 function isAtomicExpr(x::AbstractStmt)
@@ -1263,7 +1513,9 @@ end
 
 function AtomicExpr(x::AbstractStmt)
     @check_ptrs x
-    return AtomicExpr(clang_Stmt_castToAtomicExpr(x))
+    p = clang_Stmt_castToAtomicExpr(x)
+    p == C_NULL && _cast_failed(AtomicExpr, x)
+    return AtomicExpr(p)
 end
 
 function isAsTypeExpr(x::AbstractStmt)
@@ -1273,7 +1525,9 @@ end
 
 function AsTypeExpr(x::AbstractStmt)
     @check_ptrs x
-    return AsTypeExpr(clang_Stmt_castToAsTypeExpr(x))
+    p = clang_Stmt_castToAsTypeExpr(x)
+    p == C_NULL && _cast_failed(AsTypeExpr, x)
+    return AsTypeExpr(p)
 end
 
 function isArrayTypeTraitExpr(x::AbstractStmt)
@@ -1283,7 +1537,9 @@ end
 
 function ArrayTypeTraitExpr(x::AbstractStmt)
     @check_ptrs x
-    return ArrayTypeTraitExpr(clang_Stmt_castToArrayTypeTraitExpr(x))
+    p = clang_Stmt_castToArrayTypeTraitExpr(x)
+    p == C_NULL && _cast_failed(ArrayTypeTraitExpr, x)
+    return ArrayTypeTraitExpr(p)
 end
 
 function isArraySubscriptExpr(x::AbstractStmt)
@@ -1293,7 +1549,9 @@ end
 
 function ArraySubscriptExpr(x::AbstractStmt)
     @check_ptrs x
-    return ArraySubscriptExpr(clang_Stmt_castToArraySubscriptExpr(x))
+    p = clang_Stmt_castToArraySubscriptExpr(x)
+    p == C_NULL && _cast_failed(ArraySubscriptExpr, x)
+    return ArraySubscriptExpr(p)
 end
 
 function isArrayInitLoopExpr(x::AbstractStmt)
@@ -1303,7 +1561,9 @@ end
 
 function ArrayInitLoopExpr(x::AbstractStmt)
     @check_ptrs x
-    return ArrayInitLoopExpr(clang_Stmt_castToArrayInitLoopExpr(x))
+    p = clang_Stmt_castToArrayInitLoopExpr(x)
+    p == C_NULL && _cast_failed(ArrayInitLoopExpr, x)
+    return ArrayInitLoopExpr(p)
 end
 
 function isArrayInitIndexExpr(x::AbstractStmt)
@@ -1313,7 +1573,9 @@ end
 
 function ArrayInitIndexExpr(x::AbstractStmt)
     @check_ptrs x
-    return ArrayInitIndexExpr(clang_Stmt_castToArrayInitIndexExpr(x))
+    p = clang_Stmt_castToArrayInitIndexExpr(x)
+    p == C_NULL && _cast_failed(ArrayInitIndexExpr, x)
+    return ArrayInitIndexExpr(p)
 end
 
 function isAddrLabelExpr(x::AbstractStmt)
@@ -1323,7 +1585,9 @@ end
 
 function AddrLabelExpr(x::AbstractStmt)
     @check_ptrs x
-    return AddrLabelExpr(clang_Stmt_castToAddrLabelExpr(x))
+    p = clang_Stmt_castToAddrLabelExpr(x)
+    p == C_NULL && _cast_failed(AddrLabelExpr, x)
+    return AddrLabelExpr(p)
 end
 
 function isAbstractConditionalOperator(x::AbstractStmt)
@@ -1338,7 +1602,9 @@ end
 
 function ConditionalOperator(x::AbstractStmt)
     @check_ptrs x
-    return ConditionalOperator(clang_Stmt_castToConditionalOperator(x))
+    p = clang_Stmt_castToConditionalOperator(x)
+    p == C_NULL && _cast_failed(ConditionalOperator, x)
+    return ConditionalOperator(p)
 end
 
 function isBinaryConditionalOperator(x::AbstractStmt)
@@ -1348,7 +1614,9 @@ end
 
 function BinaryConditionalOperator(x::AbstractStmt)
     @check_ptrs x
-    return BinaryConditionalOperator(clang_Stmt_castToBinaryConditionalOperator(x))
+    p = clang_Stmt_castToBinaryConditionalOperator(x)
+    p == C_NULL && _cast_failed(BinaryConditionalOperator, x)
+    return BinaryConditionalOperator(p)
 end
 
 function isAttributedStmt(x::AbstractStmt)
@@ -1358,7 +1626,9 @@ end
 
 function AttributedStmt(x::AbstractStmt)
     @check_ptrs x
-    return AttributedStmt(clang_Stmt_castToAttributedStmt(x))
+    p = clang_Stmt_castToAttributedStmt(x)
+    p == C_NULL && _cast_failed(AttributedStmt, x)
+    return AttributedStmt(p)
 end
 
 function isSwitchStmt(x::AbstractStmt)
@@ -1368,7 +1638,9 @@ end
 
 function SwitchStmt(x::AbstractStmt)
     @check_ptrs x
-    return SwitchStmt(clang_Stmt_castToSwitchStmt(x))
+    p = clang_Stmt_castToSwitchStmt(x)
+    p == C_NULL && _cast_failed(SwitchStmt, x)
+    return SwitchStmt(p)
 end
 
 function isSwitchCase(x::AbstractStmt)
@@ -1378,7 +1650,9 @@ end
 
 function SwitchCase(x::AbstractStmt)
     @check_ptrs x
-    return SwitchCase(clang_Stmt_castToSwitchCase(x))
+    p = clang_Stmt_castToSwitchCase(x)
+    p == C_NULL && _cast_failed(SwitchCase, x)
+    return SwitchCase(p)
 end
 
 function isDefaultStmt(x::AbstractStmt)
@@ -1388,7 +1662,9 @@ end
 
 function DefaultStmt(x::AbstractStmt)
     @check_ptrs x
-    return DefaultStmt(clang_Stmt_castToDefaultStmt(x))
+    p = clang_Stmt_castToDefaultStmt(x)
+    p == C_NULL && _cast_failed(DefaultStmt, x)
+    return DefaultStmt(p)
 end
 
 function isCaseStmt(x::AbstractStmt)
@@ -1398,7 +1674,9 @@ end
 
 function CaseStmt(x::AbstractStmt)
     @check_ptrs x
-    return CaseStmt(clang_Stmt_castToCaseStmt(x))
+    p = clang_Stmt_castToCaseStmt(x)
+    p == C_NULL && _cast_failed(CaseStmt, x)
+    return CaseStmt(p)
 end
 
 function isSEHTryStmt(x::AbstractStmt)
@@ -1408,7 +1686,9 @@ end
 
 function SEHTryStmt(x::AbstractStmt)
     @check_ptrs x
-    return SEHTryStmt(clang_Stmt_castToSEHTryStmt(x))
+    p = clang_Stmt_castToSEHTryStmt(x)
+    p == C_NULL && _cast_failed(SEHTryStmt, x)
+    return SEHTryStmt(p)
 end
 
 function isSEHLeaveStmt(x::AbstractStmt)
@@ -1418,7 +1698,9 @@ end
 
 function SEHLeaveStmt(x::AbstractStmt)
     @check_ptrs x
-    return SEHLeaveStmt(clang_Stmt_castToSEHLeaveStmt(x))
+    p = clang_Stmt_castToSEHLeaveStmt(x)
+    p == C_NULL && _cast_failed(SEHLeaveStmt, x)
+    return SEHLeaveStmt(p)
 end
 
 function isSEHFinallyStmt(x::AbstractStmt)
@@ -1428,7 +1710,9 @@ end
 
 function SEHFinallyStmt(x::AbstractStmt)
     @check_ptrs x
-    return SEHFinallyStmt(clang_Stmt_castToSEHFinallyStmt(x))
+    p = clang_Stmt_castToSEHFinallyStmt(x)
+    p == C_NULL && _cast_failed(SEHFinallyStmt, x)
+    return SEHFinallyStmt(p)
 end
 
 function isSEHExceptStmt(x::AbstractStmt)
@@ -1438,7 +1722,9 @@ end
 
 function SEHExceptStmt(x::AbstractStmt)
     @check_ptrs x
-    return SEHExceptStmt(clang_Stmt_castToSEHExceptStmt(x))
+    p = clang_Stmt_castToSEHExceptStmt(x)
+    p == C_NULL && _cast_failed(SEHExceptStmt, x)
+    return SEHExceptStmt(p)
 end
 
 function isReturnStmt(x::AbstractStmt)
@@ -1448,7 +1734,9 @@ end
 
 function ReturnStmt(x::AbstractStmt)
     @check_ptrs x
-    return ReturnStmt(clang_Stmt_castToReturnStmt(x))
+    p = clang_Stmt_castToReturnStmt(x)
+    p == C_NULL && _cast_failed(ReturnStmt, x)
+    return ReturnStmt(p)
 end
 
 function isObjCForCollectionStmt(x::AbstractStmt)
@@ -1458,7 +1746,9 @@ end
 
 function ObjCForCollectionStmt(x::AbstractStmt)
     @check_ptrs x
-    return ObjCForCollectionStmt(clang_Stmt_castToObjCForCollectionStmt(x))
+    p = clang_Stmt_castToObjCForCollectionStmt(x)
+    p == C_NULL && _cast_failed(ObjCForCollectionStmt, x)
+    return ObjCForCollectionStmt(p)
 end
 
 function isObjCAutoreleasePoolStmt(x::AbstractStmt)
@@ -1468,7 +1758,9 @@ end
 
 function ObjCAutoreleasePoolStmt(x::AbstractStmt)
     @check_ptrs x
-    return ObjCAutoreleasePoolStmt(clang_Stmt_castToObjCAutoreleasePoolStmt(x))
+    p = clang_Stmt_castToObjCAutoreleasePoolStmt(x)
+    p == C_NULL && _cast_failed(ObjCAutoreleasePoolStmt, x)
+    return ObjCAutoreleasePoolStmt(p)
 end
 
 function isObjCAtTryStmt(x::AbstractStmt)
@@ -1478,7 +1770,9 @@ end
 
 function ObjCAtTryStmt(x::AbstractStmt)
     @check_ptrs x
-    return ObjCAtTryStmt(clang_Stmt_castToObjCAtTryStmt(x))
+    p = clang_Stmt_castToObjCAtTryStmt(x)
+    p == C_NULL && _cast_failed(ObjCAtTryStmt, x)
+    return ObjCAtTryStmt(p)
 end
 
 function isObjCAtThrowStmt(x::AbstractStmt)
@@ -1488,7 +1782,9 @@ end
 
 function ObjCAtThrowStmt(x::AbstractStmt)
     @check_ptrs x
-    return ObjCAtThrowStmt(clang_Stmt_castToObjCAtThrowStmt(x))
+    p = clang_Stmt_castToObjCAtThrowStmt(x)
+    p == C_NULL && _cast_failed(ObjCAtThrowStmt, x)
+    return ObjCAtThrowStmt(p)
 end
 
 function isObjCAtSynchronizedStmt(x::AbstractStmt)
@@ -1498,7 +1794,9 @@ end
 
 function ObjCAtSynchronizedStmt(x::AbstractStmt)
     @check_ptrs x
-    return ObjCAtSynchronizedStmt(clang_Stmt_castToObjCAtSynchronizedStmt(x))
+    p = clang_Stmt_castToObjCAtSynchronizedStmt(x)
+    p == C_NULL && _cast_failed(ObjCAtSynchronizedStmt, x)
+    return ObjCAtSynchronizedStmt(p)
 end
 
 function isObjCAtFinallyStmt(x::AbstractStmt)
@@ -1508,7 +1806,9 @@ end
 
 function ObjCAtFinallyStmt(x::AbstractStmt)
     @check_ptrs x
-    return ObjCAtFinallyStmt(clang_Stmt_castToObjCAtFinallyStmt(x))
+    p = clang_Stmt_castToObjCAtFinallyStmt(x)
+    p == C_NULL && _cast_failed(ObjCAtFinallyStmt, x)
+    return ObjCAtFinallyStmt(p)
 end
 
 function isObjCAtCatchStmt(x::AbstractStmt)
@@ -1518,7 +1818,9 @@ end
 
 function ObjCAtCatchStmt(x::AbstractStmt)
     @check_ptrs x
-    return ObjCAtCatchStmt(clang_Stmt_castToObjCAtCatchStmt(x))
+    p = clang_Stmt_castToObjCAtCatchStmt(x)
+    p == C_NULL && _cast_failed(ObjCAtCatchStmt, x)
+    return ObjCAtCatchStmt(p)
 end
 
 function isOMPExecutableDirective(x::AbstractStmt)
@@ -1528,7 +1830,9 @@ end
 
 function OMPExecutableDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPExecutableDirective(clang_Stmt_castToOMPExecutableDirective(x))
+    p = clang_Stmt_castToOMPExecutableDirective(x)
+    p == C_NULL && _cast_failed(OMPExecutableDirective, x)
+    return OMPExecutableDirective(p)
 end
 
 function isOMPTeamsDirective(x::AbstractStmt)
@@ -1538,7 +1842,9 @@ end
 
 function OMPTeamsDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTeamsDirective(clang_Stmt_castToOMPTeamsDirective(x))
+    p = clang_Stmt_castToOMPTeamsDirective(x)
+    p == C_NULL && _cast_failed(OMPTeamsDirective, x)
+    return OMPTeamsDirective(p)
 end
 
 function isOMPTaskyieldDirective(x::AbstractStmt)
@@ -1548,7 +1854,9 @@ end
 
 function OMPTaskyieldDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTaskyieldDirective(clang_Stmt_castToOMPTaskyieldDirective(x))
+    p = clang_Stmt_castToOMPTaskyieldDirective(x)
+    p == C_NULL && _cast_failed(OMPTaskyieldDirective, x)
+    return OMPTaskyieldDirective(p)
 end
 
 function isOMPTaskwaitDirective(x::AbstractStmt)
@@ -1558,7 +1866,9 @@ end
 
 function OMPTaskwaitDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTaskwaitDirective(clang_Stmt_castToOMPTaskwaitDirective(x))
+    p = clang_Stmt_castToOMPTaskwaitDirective(x)
+    p == C_NULL && _cast_failed(OMPTaskwaitDirective, x)
+    return OMPTaskwaitDirective(p)
 end
 
 function isOMPTaskgroupDirective(x::AbstractStmt)
@@ -1568,7 +1878,9 @@ end
 
 function OMPTaskgroupDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTaskgroupDirective(clang_Stmt_castToOMPTaskgroupDirective(x))
+    p = clang_Stmt_castToOMPTaskgroupDirective(x)
+    p == C_NULL && _cast_failed(OMPTaskgroupDirective, x)
+    return OMPTaskgroupDirective(p)
 end
 
 function isOMPTaskDirective(x::AbstractStmt)
@@ -1578,7 +1890,9 @@ end
 
 function OMPTaskDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTaskDirective(clang_Stmt_castToOMPTaskDirective(x))
+    p = clang_Stmt_castToOMPTaskDirective(x)
+    p == C_NULL && _cast_failed(OMPTaskDirective, x)
+    return OMPTaskDirective(p)
 end
 
 function isOMPTargetUpdateDirective(x::AbstractStmt)
@@ -1588,7 +1902,9 @@ end
 
 function OMPTargetUpdateDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetUpdateDirective(clang_Stmt_castToOMPTargetUpdateDirective(x))
+    p = clang_Stmt_castToOMPTargetUpdateDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetUpdateDirective, x)
+    return OMPTargetUpdateDirective(p)
 end
 
 function isOMPTargetTeamsDirective(x::AbstractStmt)
@@ -1598,7 +1914,9 @@ end
 
 function OMPTargetTeamsDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetTeamsDirective(clang_Stmt_castToOMPTargetTeamsDirective(x))
+    p = clang_Stmt_castToOMPTargetTeamsDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetTeamsDirective, x)
+    return OMPTargetTeamsDirective(p)
 end
 
 function isOMPTargetParallelForDirective(x::AbstractStmt)
@@ -1608,7 +1926,9 @@ end
 
 function OMPTargetParallelForDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetParallelForDirective(clang_Stmt_castToOMPTargetParallelForDirective(x))
+    p = clang_Stmt_castToOMPTargetParallelForDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetParallelForDirective, x)
+    return OMPTargetParallelForDirective(p)
 end
 
 function isOMPTargetParallelDirective(x::AbstractStmt)
@@ -1618,7 +1938,9 @@ end
 
 function OMPTargetParallelDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetParallelDirective(clang_Stmt_castToOMPTargetParallelDirective(x))
+    p = clang_Stmt_castToOMPTargetParallelDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetParallelDirective, x)
+    return OMPTargetParallelDirective(p)
 end
 
 function isOMPTargetExitDataDirective(x::AbstractStmt)
@@ -1628,7 +1950,9 @@ end
 
 function OMPTargetExitDataDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetExitDataDirective(clang_Stmt_castToOMPTargetExitDataDirective(x))
+    p = clang_Stmt_castToOMPTargetExitDataDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetExitDataDirective, x)
+    return OMPTargetExitDataDirective(p)
 end
 
 function isOMPTargetEnterDataDirective(x::AbstractStmt)
@@ -1638,7 +1962,9 @@ end
 
 function OMPTargetEnterDataDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetEnterDataDirective(clang_Stmt_castToOMPTargetEnterDataDirective(x))
+    p = clang_Stmt_castToOMPTargetEnterDataDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetEnterDataDirective, x)
+    return OMPTargetEnterDataDirective(p)
 end
 
 function isOMPTargetDirective(x::AbstractStmt)
@@ -1648,7 +1974,9 @@ end
 
 function OMPTargetDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetDirective(clang_Stmt_castToOMPTargetDirective(x))
+    p = clang_Stmt_castToOMPTargetDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetDirective, x)
+    return OMPTargetDirective(p)
 end
 
 function isOMPTargetDataDirective(x::AbstractStmt)
@@ -1658,7 +1986,9 @@ end
 
 function OMPTargetDataDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetDataDirective(clang_Stmt_castToOMPTargetDataDirective(x))
+    p = clang_Stmt_castToOMPTargetDataDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetDataDirective, x)
+    return OMPTargetDataDirective(p)
 end
 
 function isOMPSingleDirective(x::AbstractStmt)
@@ -1668,7 +1998,9 @@ end
 
 function OMPSingleDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPSingleDirective(clang_Stmt_castToOMPSingleDirective(x))
+    p = clang_Stmt_castToOMPSingleDirective(x)
+    p == C_NULL && _cast_failed(OMPSingleDirective, x)
+    return OMPSingleDirective(p)
 end
 
 function isOMPSectionsDirective(x::AbstractStmt)
@@ -1678,7 +2010,9 @@ end
 
 function OMPSectionsDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPSectionsDirective(clang_Stmt_castToOMPSectionsDirective(x))
+    p = clang_Stmt_castToOMPSectionsDirective(x)
+    p == C_NULL && _cast_failed(OMPSectionsDirective, x)
+    return OMPSectionsDirective(p)
 end
 
 function isOMPSectionDirective(x::AbstractStmt)
@@ -1688,7 +2022,9 @@ end
 
 function OMPSectionDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPSectionDirective(clang_Stmt_castToOMPSectionDirective(x))
+    p = clang_Stmt_castToOMPSectionDirective(x)
+    p == C_NULL && _cast_failed(OMPSectionDirective, x)
+    return OMPSectionDirective(p)
 end
 
 function isOMPScopeDirective(x::AbstractStmt)
@@ -1698,7 +2034,9 @@ end
 
 function OMPScopeDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPScopeDirective(clang_Stmt_castToOMPScopeDirective(x))
+    p = clang_Stmt_castToOMPScopeDirective(x)
+    p == C_NULL && _cast_failed(OMPScopeDirective, x)
+    return OMPScopeDirective(p)
 end
 
 function isOMPScanDirective(x::AbstractStmt)
@@ -1708,7 +2046,9 @@ end
 
 function OMPScanDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPScanDirective(clang_Stmt_castToOMPScanDirective(x))
+    p = clang_Stmt_castToOMPScanDirective(x)
+    p == C_NULL && _cast_failed(OMPScanDirective, x)
+    return OMPScanDirective(p)
 end
 
 function isOMPParallelSectionsDirective(x::AbstractStmt)
@@ -1718,7 +2058,9 @@ end
 
 function OMPParallelSectionsDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelSectionsDirective(clang_Stmt_castToOMPParallelSectionsDirective(x))
+    p = clang_Stmt_castToOMPParallelSectionsDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelSectionsDirective, x)
+    return OMPParallelSectionsDirective(p)
 end
 
 function isOMPParallelMasterDirective(x::AbstractStmt)
@@ -1728,7 +2070,9 @@ end
 
 function OMPParallelMasterDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelMasterDirective(clang_Stmt_castToOMPParallelMasterDirective(x))
+    p = clang_Stmt_castToOMPParallelMasterDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelMasterDirective, x)
+    return OMPParallelMasterDirective(p)
 end
 
 function isOMPParallelMaskedDirective(x::AbstractStmt)
@@ -1738,7 +2082,9 @@ end
 
 function OMPParallelMaskedDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelMaskedDirective(clang_Stmt_castToOMPParallelMaskedDirective(x))
+    p = clang_Stmt_castToOMPParallelMaskedDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelMaskedDirective, x)
+    return OMPParallelMaskedDirective(p)
 end
 
 function isOMPParallelDirective(x::AbstractStmt)
@@ -1748,7 +2094,9 @@ end
 
 function OMPParallelDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelDirective(clang_Stmt_castToOMPParallelDirective(x))
+    p = clang_Stmt_castToOMPParallelDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelDirective, x)
+    return OMPParallelDirective(p)
 end
 
 function isOMPOrderedDirective(x::AbstractStmt)
@@ -1758,7 +2106,9 @@ end
 
 function OMPOrderedDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPOrderedDirective(clang_Stmt_castToOMPOrderedDirective(x))
+    p = clang_Stmt_castToOMPOrderedDirective(x)
+    p == C_NULL && _cast_failed(OMPOrderedDirective, x)
+    return OMPOrderedDirective(p)
 end
 
 function isOMPMetaDirective(x::AbstractStmt)
@@ -1768,7 +2118,9 @@ end
 
 function OMPMetaDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPMetaDirective(clang_Stmt_castToOMPMetaDirective(x))
+    p = clang_Stmt_castToOMPMetaDirective(x)
+    p == C_NULL && _cast_failed(OMPMetaDirective, x)
+    return OMPMetaDirective(p)
 end
 
 function isOMPMasterDirective(x::AbstractStmt)
@@ -1778,7 +2130,9 @@ end
 
 function OMPMasterDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPMasterDirective(clang_Stmt_castToOMPMasterDirective(x))
+    p = clang_Stmt_castToOMPMasterDirective(x)
+    p == C_NULL && _cast_failed(OMPMasterDirective, x)
+    return OMPMasterDirective(p)
 end
 
 function isOMPMaskedDirective(x::AbstractStmt)
@@ -1788,7 +2142,9 @@ end
 
 function OMPMaskedDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPMaskedDirective(clang_Stmt_castToOMPMaskedDirective(x))
+    p = clang_Stmt_castToOMPMaskedDirective(x)
+    p == C_NULL && _cast_failed(OMPMaskedDirective, x)
+    return OMPMaskedDirective(p)
 end
 
 function isOMPLoopBasedDirective(x::AbstractStmt)
@@ -1798,7 +2154,9 @@ end
 
 function OMPLoopBasedDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPLoopBasedDirective(clang_Stmt_castToOMPLoopBasedDirective(x))
+    p = clang_Stmt_castToOMPLoopBasedDirective(x)
+    p == C_NULL && _cast_failed(OMPLoopBasedDirective, x)
+    return OMPLoopBasedDirective(p)
 end
 
 function isOMPLoopTransformationDirective(x::AbstractStmt)
@@ -1808,7 +2166,9 @@ end
 
 function OMPLoopTransformationDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPLoopTransformationDirective(clang_Stmt_castToOMPLoopTransformationDirective(x))
+    p = clang_Stmt_castToOMPLoopTransformationDirective(x)
+    p == C_NULL && _cast_failed(OMPLoopTransformationDirective, x)
+    return OMPLoopTransformationDirective(p)
 end
 
 function isOMPUnrollDirective(x::AbstractStmt)
@@ -1818,7 +2178,9 @@ end
 
 function OMPUnrollDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPUnrollDirective(clang_Stmt_castToOMPUnrollDirective(x))
+    p = clang_Stmt_castToOMPUnrollDirective(x)
+    p == C_NULL && _cast_failed(OMPUnrollDirective, x)
+    return OMPUnrollDirective(p)
 end
 
 function isOMPTileDirective(x::AbstractStmt)
@@ -1828,7 +2190,9 @@ end
 
 function OMPTileDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTileDirective(clang_Stmt_castToOMPTileDirective(x))
+    p = clang_Stmt_castToOMPTileDirective(x)
+    p == C_NULL && _cast_failed(OMPTileDirective, x)
+    return OMPTileDirective(p)
 end
 
 function isOMPLoopDirective(x::AbstractStmt)
@@ -1838,7 +2202,9 @@ end
 
 function OMPLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPLoopDirective(clang_Stmt_castToOMPLoopDirective(x))
+    p = clang_Stmt_castToOMPLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPLoopDirective, x)
+    return OMPLoopDirective(p)
 end
 
 function isOMPTeamsGenericLoopDirective(x::AbstractStmt)
@@ -1848,7 +2214,9 @@ end
 
 function OMPTeamsGenericLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTeamsGenericLoopDirective(clang_Stmt_castToOMPTeamsGenericLoopDirective(x))
+    p = clang_Stmt_castToOMPTeamsGenericLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPTeamsGenericLoopDirective, x)
+    return OMPTeamsGenericLoopDirective(p)
 end
 
 function isOMPTeamsDistributeSimdDirective(x::AbstractStmt)
@@ -1858,7 +2226,9 @@ end
 
 function OMPTeamsDistributeSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTeamsDistributeSimdDirective(clang_Stmt_castToOMPTeamsDistributeSimdDirective(x))
+    p = clang_Stmt_castToOMPTeamsDistributeSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPTeamsDistributeSimdDirective, x)
+    return OMPTeamsDistributeSimdDirective(p)
 end
 
 function isOMPTeamsDistributeParallelForSimdDirective(x::AbstractStmt)
@@ -1868,7 +2238,9 @@ end
 
 function OMPTeamsDistributeParallelForSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTeamsDistributeParallelForSimdDirective(clang_Stmt_castToOMPTeamsDistributeParallelForSimdDirective(x))
+    p = clang_Stmt_castToOMPTeamsDistributeParallelForSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPTeamsDistributeParallelForSimdDirective, x)
+    return OMPTeamsDistributeParallelForSimdDirective(p)
 end
 
 function isOMPTeamsDistributeParallelForDirective(x::AbstractStmt)
@@ -1878,7 +2250,9 @@ end
 
 function OMPTeamsDistributeParallelForDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTeamsDistributeParallelForDirective(clang_Stmt_castToOMPTeamsDistributeParallelForDirective(x))
+    p = clang_Stmt_castToOMPTeamsDistributeParallelForDirective(x)
+    p == C_NULL && _cast_failed(OMPTeamsDistributeParallelForDirective, x)
+    return OMPTeamsDistributeParallelForDirective(p)
 end
 
 function isOMPTeamsDistributeDirective(x::AbstractStmt)
@@ -1888,7 +2262,9 @@ end
 
 function OMPTeamsDistributeDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTeamsDistributeDirective(clang_Stmt_castToOMPTeamsDistributeDirective(x))
+    p = clang_Stmt_castToOMPTeamsDistributeDirective(x)
+    p == C_NULL && _cast_failed(OMPTeamsDistributeDirective, x)
+    return OMPTeamsDistributeDirective(p)
 end
 
 function isOMPTaskLoopSimdDirective(x::AbstractStmt)
@@ -1898,7 +2274,9 @@ end
 
 function OMPTaskLoopSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTaskLoopSimdDirective(clang_Stmt_castToOMPTaskLoopSimdDirective(x))
+    p = clang_Stmt_castToOMPTaskLoopSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPTaskLoopSimdDirective, x)
+    return OMPTaskLoopSimdDirective(p)
 end
 
 function isOMPTaskLoopDirective(x::AbstractStmt)
@@ -1908,7 +2286,9 @@ end
 
 function OMPTaskLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTaskLoopDirective(clang_Stmt_castToOMPTaskLoopDirective(x))
+    p = clang_Stmt_castToOMPTaskLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPTaskLoopDirective, x)
+    return OMPTaskLoopDirective(p)
 end
 
 function isOMPTargetTeamsGenericLoopDirective(x::AbstractStmt)
@@ -1918,7 +2298,9 @@ end
 
 function OMPTargetTeamsGenericLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetTeamsGenericLoopDirective(clang_Stmt_castToOMPTargetTeamsGenericLoopDirective(x))
+    p = clang_Stmt_castToOMPTargetTeamsGenericLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetTeamsGenericLoopDirective, x)
+    return OMPTargetTeamsGenericLoopDirective(p)
 end
 
 function isOMPTargetTeamsDistributeSimdDirective(x::AbstractStmt)
@@ -1928,7 +2310,9 @@ end
 
 function OMPTargetTeamsDistributeSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetTeamsDistributeSimdDirective(clang_Stmt_castToOMPTargetTeamsDistributeSimdDirective(x))
+    p = clang_Stmt_castToOMPTargetTeamsDistributeSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetTeamsDistributeSimdDirective, x)
+    return OMPTargetTeamsDistributeSimdDirective(p)
 end
 
 function isOMPTargetTeamsDistributeParallelForSimdDirective(x::AbstractStmt)
@@ -1938,8 +2322,9 @@ end
 
 function OMPTargetTeamsDistributeParallelForSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetTeamsDistributeParallelForSimdDirective(
-        clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(x))
+    p = clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetTeamsDistributeParallelForSimdDirective, x)
+    return OMPTargetTeamsDistributeParallelForSimdDirective(p)
 end
 
 function isOMPTargetTeamsDistributeParallelForDirective(x::AbstractStmt)
@@ -1949,8 +2334,9 @@ end
 
 function OMPTargetTeamsDistributeParallelForDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetTeamsDistributeParallelForDirective(
-        clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(x))
+    p = clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetTeamsDistributeParallelForDirective, x)
+    return OMPTargetTeamsDistributeParallelForDirective(p)
 end
 
 function isOMPTargetTeamsDistributeDirective(x::AbstractStmt)
@@ -1960,7 +2346,9 @@ end
 
 function OMPTargetTeamsDistributeDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetTeamsDistributeDirective(clang_Stmt_castToOMPTargetTeamsDistributeDirective(x))
+    p = clang_Stmt_castToOMPTargetTeamsDistributeDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetTeamsDistributeDirective, x)
+    return OMPTargetTeamsDistributeDirective(p)
 end
 
 function isOMPTargetSimdDirective(x::AbstractStmt)
@@ -1970,7 +2358,9 @@ end
 
 function OMPTargetSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetSimdDirective(clang_Stmt_castToOMPTargetSimdDirective(x))
+    p = clang_Stmt_castToOMPTargetSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetSimdDirective, x)
+    return OMPTargetSimdDirective(p)
 end
 
 function isOMPTargetParallelGenericLoopDirective(x::AbstractStmt)
@@ -1980,7 +2370,9 @@ end
 
 function OMPTargetParallelGenericLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetParallelGenericLoopDirective(clang_Stmt_castToOMPTargetParallelGenericLoopDirective(x))
+    p = clang_Stmt_castToOMPTargetParallelGenericLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetParallelGenericLoopDirective, x)
+    return OMPTargetParallelGenericLoopDirective(p)
 end
 
 function isOMPTargetParallelForSimdDirective(x::AbstractStmt)
@@ -1990,7 +2382,9 @@ end
 
 function OMPTargetParallelForSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetParallelForSimdDirective(clang_Stmt_castToOMPTargetParallelForSimdDirective(x))
+    p = clang_Stmt_castToOMPTargetParallelForSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPTargetParallelForSimdDirective, x)
+    return OMPTargetParallelForSimdDirective(p)
 end
 
 function isOMPSimdDirective(x::AbstractStmt)
@@ -2000,7 +2394,9 @@ end
 
 function OMPSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPSimdDirective(clang_Stmt_castToOMPSimdDirective(x))
+    p = clang_Stmt_castToOMPSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPSimdDirective, x)
+    return OMPSimdDirective(p)
 end
 
 function isOMPParallelMasterTaskLoopSimdDirective(x::AbstractStmt)
@@ -2010,7 +2406,9 @@ end
 
 function OMPParallelMasterTaskLoopSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelMasterTaskLoopSimdDirective(clang_Stmt_castToOMPParallelMasterTaskLoopSimdDirective(x))
+    p = clang_Stmt_castToOMPParallelMasterTaskLoopSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelMasterTaskLoopSimdDirective, x)
+    return OMPParallelMasterTaskLoopSimdDirective(p)
 end
 
 function isOMPParallelMasterTaskLoopDirective(x::AbstractStmt)
@@ -2020,7 +2418,9 @@ end
 
 function OMPParallelMasterTaskLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelMasterTaskLoopDirective(clang_Stmt_castToOMPParallelMasterTaskLoopDirective(x))
+    p = clang_Stmt_castToOMPParallelMasterTaskLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelMasterTaskLoopDirective, x)
+    return OMPParallelMasterTaskLoopDirective(p)
 end
 
 function isOMPParallelMaskedTaskLoopSimdDirective(x::AbstractStmt)
@@ -2030,7 +2430,9 @@ end
 
 function OMPParallelMaskedTaskLoopSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelMaskedTaskLoopSimdDirective(clang_Stmt_castToOMPParallelMaskedTaskLoopSimdDirective(x))
+    p = clang_Stmt_castToOMPParallelMaskedTaskLoopSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelMaskedTaskLoopSimdDirective, x)
+    return OMPParallelMaskedTaskLoopSimdDirective(p)
 end
 
 function isOMPParallelMaskedTaskLoopDirective(x::AbstractStmt)
@@ -2040,7 +2442,9 @@ end
 
 function OMPParallelMaskedTaskLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelMaskedTaskLoopDirective(clang_Stmt_castToOMPParallelMaskedTaskLoopDirective(x))
+    p = clang_Stmt_castToOMPParallelMaskedTaskLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelMaskedTaskLoopDirective, x)
+    return OMPParallelMaskedTaskLoopDirective(p)
 end
 
 function isOMPParallelGenericLoopDirective(x::AbstractStmt)
@@ -2050,7 +2454,9 @@ end
 
 function OMPParallelGenericLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelGenericLoopDirective(clang_Stmt_castToOMPParallelGenericLoopDirective(x))
+    p = clang_Stmt_castToOMPParallelGenericLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelGenericLoopDirective, x)
+    return OMPParallelGenericLoopDirective(p)
 end
 
 function isOMPParallelForSimdDirective(x::AbstractStmt)
@@ -2060,7 +2466,9 @@ end
 
 function OMPParallelForSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelForSimdDirective(clang_Stmt_castToOMPParallelForSimdDirective(x))
+    p = clang_Stmt_castToOMPParallelForSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelForSimdDirective, x)
+    return OMPParallelForSimdDirective(p)
 end
 
 function isOMPParallelForDirective(x::AbstractStmt)
@@ -2070,7 +2478,9 @@ end
 
 function OMPParallelForDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPParallelForDirective(clang_Stmt_castToOMPParallelForDirective(x))
+    p = clang_Stmt_castToOMPParallelForDirective(x)
+    p == C_NULL && _cast_failed(OMPParallelForDirective, x)
+    return OMPParallelForDirective(p)
 end
 
 function isOMPMasterTaskLoopSimdDirective(x::AbstractStmt)
@@ -2080,7 +2490,9 @@ end
 
 function OMPMasterTaskLoopSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPMasterTaskLoopSimdDirective(clang_Stmt_castToOMPMasterTaskLoopSimdDirective(x))
+    p = clang_Stmt_castToOMPMasterTaskLoopSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPMasterTaskLoopSimdDirective, x)
+    return OMPMasterTaskLoopSimdDirective(p)
 end
 
 function isOMPMasterTaskLoopDirective(x::AbstractStmt)
@@ -2090,7 +2502,9 @@ end
 
 function OMPMasterTaskLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPMasterTaskLoopDirective(clang_Stmt_castToOMPMasterTaskLoopDirective(x))
+    p = clang_Stmt_castToOMPMasterTaskLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPMasterTaskLoopDirective, x)
+    return OMPMasterTaskLoopDirective(p)
 end
 
 function isOMPMaskedTaskLoopSimdDirective(x::AbstractStmt)
@@ -2100,7 +2514,9 @@ end
 
 function OMPMaskedTaskLoopSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPMaskedTaskLoopSimdDirective(clang_Stmt_castToOMPMaskedTaskLoopSimdDirective(x))
+    p = clang_Stmt_castToOMPMaskedTaskLoopSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPMaskedTaskLoopSimdDirective, x)
+    return OMPMaskedTaskLoopSimdDirective(p)
 end
 
 function isOMPMaskedTaskLoopDirective(x::AbstractStmt)
@@ -2110,7 +2526,9 @@ end
 
 function OMPMaskedTaskLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPMaskedTaskLoopDirective(clang_Stmt_castToOMPMaskedTaskLoopDirective(x))
+    p = clang_Stmt_castToOMPMaskedTaskLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPMaskedTaskLoopDirective, x)
+    return OMPMaskedTaskLoopDirective(p)
 end
 
 function isOMPGenericLoopDirective(x::AbstractStmt)
@@ -2120,7 +2538,9 @@ end
 
 function OMPGenericLoopDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPGenericLoopDirective(clang_Stmt_castToOMPGenericLoopDirective(x))
+    p = clang_Stmt_castToOMPGenericLoopDirective(x)
+    p == C_NULL && _cast_failed(OMPGenericLoopDirective, x)
+    return OMPGenericLoopDirective(p)
 end
 
 function isOMPForSimdDirective(x::AbstractStmt)
@@ -2130,7 +2550,9 @@ end
 
 function OMPForSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPForSimdDirective(clang_Stmt_castToOMPForSimdDirective(x))
+    p = clang_Stmt_castToOMPForSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPForSimdDirective, x)
+    return OMPForSimdDirective(p)
 end
 
 function isOMPForDirective(x::AbstractStmt)
@@ -2140,7 +2562,9 @@ end
 
 function OMPForDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPForDirective(clang_Stmt_castToOMPForDirective(x))
+    p = clang_Stmt_castToOMPForDirective(x)
+    p == C_NULL && _cast_failed(OMPForDirective, x)
+    return OMPForDirective(p)
 end
 
 function isOMPDistributeSimdDirective(x::AbstractStmt)
@@ -2150,7 +2574,9 @@ end
 
 function OMPDistributeSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPDistributeSimdDirective(clang_Stmt_castToOMPDistributeSimdDirective(x))
+    p = clang_Stmt_castToOMPDistributeSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPDistributeSimdDirective, x)
+    return OMPDistributeSimdDirective(p)
 end
 
 function isOMPDistributeParallelForSimdDirective(x::AbstractStmt)
@@ -2160,7 +2586,9 @@ end
 
 function OMPDistributeParallelForSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPDistributeParallelForSimdDirective(clang_Stmt_castToOMPDistributeParallelForSimdDirective(x))
+    p = clang_Stmt_castToOMPDistributeParallelForSimdDirective(x)
+    p == C_NULL && _cast_failed(OMPDistributeParallelForSimdDirective, x)
+    return OMPDistributeParallelForSimdDirective(p)
 end
 
 function isOMPDistributeParallelForDirective(x::AbstractStmt)
@@ -2170,7 +2598,9 @@ end
 
 function OMPDistributeParallelForDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPDistributeParallelForDirective(clang_Stmt_castToOMPDistributeParallelForDirective(x))
+    p = clang_Stmt_castToOMPDistributeParallelForDirective(x)
+    p == C_NULL && _cast_failed(OMPDistributeParallelForDirective, x)
+    return OMPDistributeParallelForDirective(p)
 end
 
 function isOMPDistributeDirective(x::AbstractStmt)
@@ -2180,7 +2610,9 @@ end
 
 function OMPDistributeDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPDistributeDirective(clang_Stmt_castToOMPDistributeDirective(x))
+    p = clang_Stmt_castToOMPDistributeDirective(x)
+    p == C_NULL && _cast_failed(OMPDistributeDirective, x)
+    return OMPDistributeDirective(p)
 end
 
 function isOMPInteropDirective(x::AbstractStmt)
@@ -2190,7 +2622,9 @@ end
 
 function OMPInteropDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPInteropDirective(clang_Stmt_castToOMPInteropDirective(x))
+    p = clang_Stmt_castToOMPInteropDirective(x)
+    p == C_NULL && _cast_failed(OMPInteropDirective, x)
+    return OMPInteropDirective(p)
 end
 
 function isOMPFlushDirective(x::AbstractStmt)
@@ -2200,7 +2634,9 @@ end
 
 function OMPFlushDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPFlushDirective(clang_Stmt_castToOMPFlushDirective(x))
+    p = clang_Stmt_castToOMPFlushDirective(x)
+    p == C_NULL && _cast_failed(OMPFlushDirective, x)
+    return OMPFlushDirective(p)
 end
 
 function isOMPErrorDirective(x::AbstractStmt)
@@ -2210,7 +2646,9 @@ end
 
 function OMPErrorDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPErrorDirective(clang_Stmt_castToOMPErrorDirective(x))
+    p = clang_Stmt_castToOMPErrorDirective(x)
+    p == C_NULL && _cast_failed(OMPErrorDirective, x)
+    return OMPErrorDirective(p)
 end
 
 function isOMPDispatchDirective(x::AbstractStmt)
@@ -2220,7 +2658,9 @@ end
 
 function OMPDispatchDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPDispatchDirective(clang_Stmt_castToOMPDispatchDirective(x))
+    p = clang_Stmt_castToOMPDispatchDirective(x)
+    p == C_NULL && _cast_failed(OMPDispatchDirective, x)
+    return OMPDispatchDirective(p)
 end
 
 function isOMPDepobjDirective(x::AbstractStmt)
@@ -2230,7 +2670,9 @@ end
 
 function OMPDepobjDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPDepobjDirective(clang_Stmt_castToOMPDepobjDirective(x))
+    p = clang_Stmt_castToOMPDepobjDirective(x)
+    p == C_NULL && _cast_failed(OMPDepobjDirective, x)
+    return OMPDepobjDirective(p)
 end
 
 function isOMPCriticalDirective(x::AbstractStmt)
@@ -2240,7 +2682,9 @@ end
 
 function OMPCriticalDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPCriticalDirective(clang_Stmt_castToOMPCriticalDirective(x))
+    p = clang_Stmt_castToOMPCriticalDirective(x)
+    p == C_NULL && _cast_failed(OMPCriticalDirective, x)
+    return OMPCriticalDirective(p)
 end
 
 function isOMPCancellationPointDirective(x::AbstractStmt)
@@ -2250,7 +2694,9 @@ end
 
 function OMPCancellationPointDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPCancellationPointDirective(clang_Stmt_castToOMPCancellationPointDirective(x))
+    p = clang_Stmt_castToOMPCancellationPointDirective(x)
+    p == C_NULL && _cast_failed(OMPCancellationPointDirective, x)
+    return OMPCancellationPointDirective(p)
 end
 
 function isOMPCancelDirective(x::AbstractStmt)
@@ -2260,7 +2706,9 @@ end
 
 function OMPCancelDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPCancelDirective(clang_Stmt_castToOMPCancelDirective(x))
+    p = clang_Stmt_castToOMPCancelDirective(x)
+    p == C_NULL && _cast_failed(OMPCancelDirective, x)
+    return OMPCancelDirective(p)
 end
 
 function isOMPBarrierDirective(x::AbstractStmt)
@@ -2270,7 +2718,9 @@ end
 
 function OMPBarrierDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPBarrierDirective(clang_Stmt_castToOMPBarrierDirective(x))
+    p = clang_Stmt_castToOMPBarrierDirective(x)
+    p == C_NULL && _cast_failed(OMPBarrierDirective, x)
+    return OMPBarrierDirective(p)
 end
 
 function isOMPAtomicDirective(x::AbstractStmt)
@@ -2280,7 +2730,9 @@ end
 
 function OMPAtomicDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPAtomicDirective(clang_Stmt_castToOMPAtomicDirective(x))
+    p = clang_Stmt_castToOMPAtomicDirective(x)
+    p == C_NULL && _cast_failed(OMPAtomicDirective, x)
+    return OMPAtomicDirective(p)
 end
 
 function isOMPCanonicalLoop(x::AbstractStmt)
@@ -2290,7 +2742,9 @@ end
 
 function OMPCanonicalLoop(x::AbstractStmt)
     @check_ptrs x
-    return OMPCanonicalLoop(clang_Stmt_castToOMPCanonicalLoop(x))
+    p = clang_Stmt_castToOMPCanonicalLoop(x)
+    p == C_NULL && _cast_failed(OMPCanonicalLoop, x)
+    return OMPCanonicalLoop(p)
 end
 
 function isNullStmt(x::AbstractStmt)
@@ -2300,7 +2754,9 @@ end
 
 function NullStmt(x::AbstractStmt)
     @check_ptrs x
-    return NullStmt(clang_Stmt_castToNullStmt(x))
+    p = clang_Stmt_castToNullStmt(x)
+    p == C_NULL && _cast_failed(NullStmt, x)
+    return NullStmt(p)
 end
 
 function isMSDependentExistsStmt(x::AbstractStmt)
@@ -2310,7 +2766,9 @@ end
 
 function MSDependentExistsStmt(x::AbstractStmt)
     @check_ptrs x
-    return MSDependentExistsStmt(clang_Stmt_castToMSDependentExistsStmt(x))
+    p = clang_Stmt_castToMSDependentExistsStmt(x)
+    p == C_NULL && _cast_failed(MSDependentExistsStmt, x)
+    return MSDependentExistsStmt(p)
 end
 
 function isIndirectGotoStmt(x::AbstractStmt)
@@ -2320,7 +2778,9 @@ end
 
 function IndirectGotoStmt(x::AbstractStmt)
     @check_ptrs x
-    return IndirectGotoStmt(clang_Stmt_castToIndirectGotoStmt(x))
+    p = clang_Stmt_castToIndirectGotoStmt(x)
+    p == C_NULL && _cast_failed(IndirectGotoStmt, x)
+    return IndirectGotoStmt(p)
 end
 
 function isIfStmt(x::AbstractStmt)
@@ -2330,7 +2790,9 @@ end
 
 function IfStmt(x::AbstractStmt)
     @check_ptrs x
-    return IfStmt(clang_Stmt_castToIfStmt(x))
+    p = clang_Stmt_castToIfStmt(x)
+    p == C_NULL && _cast_failed(IfStmt, x)
+    return IfStmt(p)
 end
 
 function isGotoStmt(x::AbstractStmt)
@@ -2340,7 +2802,9 @@ end
 
 function GotoStmt(x::AbstractStmt)
     @check_ptrs x
-    return GotoStmt(clang_Stmt_castToGotoStmt(x))
+    p = clang_Stmt_castToGotoStmt(x)
+    p == C_NULL && _cast_failed(GotoStmt, x)
+    return GotoStmt(p)
 end
 
 function isForStmt(x::AbstractStmt)
@@ -2350,7 +2814,9 @@ end
 
 function ForStmt(x::AbstractStmt)
     @check_ptrs x
-    return ForStmt(clang_Stmt_castToForStmt(x))
+    p = clang_Stmt_castToForStmt(x)
+    p == C_NULL && _cast_failed(ForStmt, x)
+    return ForStmt(p)
 end
 
 function isDoStmt(x::AbstractStmt)
@@ -2360,7 +2826,9 @@ end
 
 function DoStmt(x::AbstractStmt)
     @check_ptrs x
-    return DoStmt(clang_Stmt_castToDoStmt(x))
+    p = clang_Stmt_castToDoStmt(x)
+    p == C_NULL && _cast_failed(DoStmt, x)
+    return DoStmt(p)
 end
 
 function isDeclStmt(x::AbstractStmt)
@@ -2370,7 +2838,9 @@ end
 
 function DeclStmt(x::AbstractStmt)
     @check_ptrs x
-    return DeclStmt(clang_Stmt_castToDeclStmt(x))
+    p = clang_Stmt_castToDeclStmt(x)
+    p == C_NULL && _cast_failed(DeclStmt, x)
+    return DeclStmt(p)
 end
 
 function isCoroutineBodyStmt(x::AbstractStmt)
@@ -2380,7 +2850,9 @@ end
 
 function CoroutineBodyStmt(x::AbstractStmt)
     @check_ptrs x
-    return CoroutineBodyStmt(clang_Stmt_castToCoroutineBodyStmt(x))
+    p = clang_Stmt_castToCoroutineBodyStmt(x)
+    p == C_NULL && _cast_failed(CoroutineBodyStmt, x)
+    return CoroutineBodyStmt(p)
 end
 
 function isCoreturnStmt(x::AbstractStmt)
@@ -2390,7 +2862,9 @@ end
 
 function CoreturnStmt(x::AbstractStmt)
     @check_ptrs x
-    return CoreturnStmt(clang_Stmt_castToCoreturnStmt(x))
+    p = clang_Stmt_castToCoreturnStmt(x)
+    p == C_NULL && _cast_failed(CoreturnStmt, x)
+    return CoreturnStmt(p)
 end
 
 function isContinueStmt(x::AbstractStmt)
@@ -2400,7 +2874,9 @@ end
 
 function ContinueStmt(x::AbstractStmt)
     @check_ptrs x
-    return ContinueStmt(clang_Stmt_castToContinueStmt(x))
+    p = clang_Stmt_castToContinueStmt(x)
+    p == C_NULL && _cast_failed(ContinueStmt, x)
+    return ContinueStmt(p)
 end
 
 function isCompoundStmt(x::AbstractStmt)
@@ -2410,7 +2886,9 @@ end
 
 function CompoundStmt(x::AbstractStmt)
     @check_ptrs x
-    return CompoundStmt(clang_Stmt_castToCompoundStmt(x))
+    p = clang_Stmt_castToCompoundStmt(x)
+    p == C_NULL && _cast_failed(CompoundStmt, x)
+    return CompoundStmt(p)
 end
 
 function isCapturedStmt(x::AbstractStmt)
@@ -2420,7 +2898,9 @@ end
 
 function CapturedStmt(x::AbstractStmt)
     @check_ptrs x
-    return CapturedStmt(clang_Stmt_castToCapturedStmt(x))
+    p = clang_Stmt_castToCapturedStmt(x)
+    p == C_NULL && _cast_failed(CapturedStmt, x)
+    return CapturedStmt(p)
 end
 
 function isCXXTryStmt(x::AbstractStmt)
@@ -2430,7 +2910,9 @@ end
 
 function CXXTryStmt(x::AbstractStmt)
     @check_ptrs x
-    return CXXTryStmt(clang_Stmt_castToCXXTryStmt(x))
+    p = clang_Stmt_castToCXXTryStmt(x)
+    p == C_NULL && _cast_failed(CXXTryStmt, x)
+    return CXXTryStmt(p)
 end
 
 function isCXXForRangeStmt(x::AbstractStmt)
@@ -2440,7 +2922,9 @@ end
 
 function CXXForRangeStmt(x::AbstractStmt)
     @check_ptrs x
-    return CXXForRangeStmt(clang_Stmt_castToCXXForRangeStmt(x))
+    p = clang_Stmt_castToCXXForRangeStmt(x)
+    p == C_NULL && _cast_failed(CXXForRangeStmt, x)
+    return CXXForRangeStmt(p)
 end
 
 function isCXXCatchStmt(x::AbstractStmt)
@@ -2450,7 +2934,9 @@ end
 
 function CXXCatchStmt(x::AbstractStmt)
     @check_ptrs x
-    return CXXCatchStmt(clang_Stmt_castToCXXCatchStmt(x))
+    p = clang_Stmt_castToCXXCatchStmt(x)
+    p == C_NULL && _cast_failed(CXXCatchStmt, x)
+    return CXXCatchStmt(p)
 end
 
 function isBreakStmt(x::AbstractStmt)
@@ -2460,7 +2946,9 @@ end
 
 function BreakStmt(x::AbstractStmt)
     @check_ptrs x
-    return BreakStmt(clang_Stmt_castToBreakStmt(x))
+    p = clang_Stmt_castToBreakStmt(x)
+    p == C_NULL && _cast_failed(BreakStmt, x)
+    return BreakStmt(p)
 end
 
 function isAsmStmt(x::AbstractStmt)
@@ -2470,7 +2958,9 @@ end
 
 function AsmStmt(x::AbstractStmt)
     @check_ptrs x
-    return AsmStmt(clang_Stmt_castToAsmStmt(x))
+    p = clang_Stmt_castToAsmStmt(x)
+    p == C_NULL && _cast_failed(AsmStmt, x)
+    return AsmStmt(p)
 end
 
 function isMSAsmStmt(x::AbstractStmt)
@@ -2480,7 +2970,9 @@ end
 
 function MSAsmStmt(x::AbstractStmt)
     @check_ptrs x
-    return MSAsmStmt(clang_Stmt_castToMSAsmStmt(x))
+    p = clang_Stmt_castToMSAsmStmt(x)
+    p == C_NULL && _cast_failed(MSAsmStmt, x)
+    return MSAsmStmt(p)
 end
 
 function isGCCAsmStmt(x::AbstractStmt)
@@ -2490,6 +2982,8 @@ end
 
 function GCCAsmStmt(x::AbstractStmt)
     @check_ptrs x
-    return GCCAsmStmt(clang_Stmt_castToGCCAsmStmt(x))
+    p = clang_Stmt_castToGCCAsmStmt(x)
+    p == C_NULL && _cast_failed(GCCAsmStmt, x)
+    return GCCAsmStmt(p)
 end
 

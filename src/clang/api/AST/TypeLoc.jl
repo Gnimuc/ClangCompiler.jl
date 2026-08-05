@@ -113,93 +113,120 @@ function IgnoreParens(x::AnyTypeLoc)
     return TypeLoc(clang_TypeLoc_IgnoreParens(x))
 end
 
-# TypeLoc Cast — constructor-shaped checked downcasts. TypeLoc casting is
-# value-based with exact-class semantics; the Qualified/TypeSpec/Function/Array
-# targets accept their whole subfamily. The wrapped pointer is NULL when the
-# location is not of that class; a non-NULL result is a NEW owned heap box,
-# `dispose` it independently of its source.
+# TypeLoc Cast — the checked casts, each C++'s `cast<T>`. TypeLoc casting is value-based and
+# goes through `getAs`, so the Qualified/TypeSpec/Function/Array targets accept their whole
+# subfamily and every other target is exact. A location of another class raises `CastError`;
+# a result is a NEW owned heap box, `dispose` it independently of its source.
 function QualifiedTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return QualifiedTypeLoc(clang_TypeLoc_castToQualifiedTypeLoc(x))
+    p = clang_TypeLoc_castToQualifiedTypeLoc(x)
+    p == C_NULL && _cast_failed(QualifiedTypeLoc, x)
+    return QualifiedTypeLoc(p)
 end
 
 function TypeSpecTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return TypeSpecTypeLoc(clang_TypeLoc_castToTypeSpecTypeLoc(x))
+    p = clang_TypeLoc_castToTypeSpecTypeLoc(x)
+    p == C_NULL && _cast_failed(TypeSpecTypeLoc, x)
+    return TypeSpecTypeLoc(p)
 end
 
 function BuiltinTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return BuiltinTypeLoc(clang_TypeLoc_castToBuiltinTypeLoc(x))
+    p = clang_TypeLoc_castToBuiltinTypeLoc(x)
+    p == C_NULL && _cast_failed(BuiltinTypeLoc, x)
+    return BuiltinTypeLoc(p)
 end
 
 function AttributedTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return AttributedTypeLoc(clang_TypeLoc_castToAttributedTypeLoc(x))
+    p = clang_TypeLoc_castToAttributedTypeLoc(x)
+    p == C_NULL && _cast_failed(AttributedTypeLoc, x)
+    return AttributedTypeLoc(p)
 end
 
 function ParenTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return ParenTypeLoc(clang_TypeLoc_castToParenTypeLoc(x))
+    p = clang_TypeLoc_castToParenTypeLoc(x)
+    p == C_NULL && _cast_failed(ParenTypeLoc, x)
+    return ParenTypeLoc(p)
 end
 
 function AdjustedTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return AdjustedTypeLoc(clang_TypeLoc_castToAdjustedTypeLoc(x))
+    p = clang_TypeLoc_castToAdjustedTypeLoc(x)
+    p == C_NULL && _cast_failed(AdjustedTypeLoc, x)
+    return AdjustedTypeLoc(p)
 end
 
 function PointerTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return PointerTypeLoc(clang_TypeLoc_castToPointerTypeLoc(x))
+    p = clang_TypeLoc_castToPointerTypeLoc(x)
+    p == C_NULL && _cast_failed(PointerTypeLoc, x)
+    return PointerTypeLoc(p)
 end
 
 function MemberPointerTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return MemberPointerTypeLoc(clang_TypeLoc_castToMemberPointerTypeLoc(x))
+    p = clang_TypeLoc_castToMemberPointerTypeLoc(x)
+    p == C_NULL && _cast_failed(MemberPointerTypeLoc, x)
+    return MemberPointerTypeLoc(p)
 end
 
 function LValueReferenceTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return LValueReferenceTypeLoc(clang_TypeLoc_castToLValueReferenceTypeLoc(x))
+    p = clang_TypeLoc_castToLValueReferenceTypeLoc(x)
+    p == C_NULL && _cast_failed(LValueReferenceTypeLoc, x)
+    return LValueReferenceTypeLoc(p)
 end
 
 function RValueReferenceTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return RValueReferenceTypeLoc(clang_TypeLoc_castToRValueReferenceTypeLoc(x))
+    p = clang_TypeLoc_castToRValueReferenceTypeLoc(x)
+    p == C_NULL && _cast_failed(RValueReferenceTypeLoc, x)
+    return RValueReferenceTypeLoc(p)
 end
 
 function FunctionTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return FunctionTypeLoc(clang_TypeLoc_castToFunctionTypeLoc(x))
+    p = clang_TypeLoc_castToFunctionTypeLoc(x)
+    p == C_NULL && _cast_failed(FunctionTypeLoc, x)
+    return FunctionTypeLoc(p)
 end
 
 function ArrayTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return ArrayTypeLoc(clang_TypeLoc_castToArrayTypeLoc(x))
+    p = clang_TypeLoc_castToArrayTypeLoc(x)
+    p == C_NULL && _cast_failed(ArrayTypeLoc, x)
+    return ArrayTypeLoc(p)
 end
 
 function TemplateSpecializationTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return TemplateSpecializationTypeLoc(clang_TypeLoc_castToTemplateSpecializationTypeLoc(x))
+    p = clang_TypeLoc_castToTemplateSpecializationTypeLoc(x)
+    p == C_NULL && _cast_failed(TemplateSpecializationTypeLoc, x)
+    return TemplateSpecializationTypeLoc(p)
 end
 
 function ElaboratedTypeLoc(x::AnyTypeLoc)
     @check_ptrs x
     @assert !isNull(x) "cannot cast a null TypeLoc"
-    return ElaboratedTypeLoc(clang_TypeLoc_castToElaboratedTypeLoc(x))
+    p = clang_TypeLoc_castToElaboratedTypeLoc(x)
+    p == C_NULL && _cast_failed(ElaboratedTypeLoc, x)
+    return ElaboratedTypeLoc(p)
 end
 
 # QualifiedTypeLoc

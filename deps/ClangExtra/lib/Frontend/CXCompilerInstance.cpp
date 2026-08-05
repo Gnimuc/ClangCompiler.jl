@@ -11,6 +11,8 @@
 #include "clang/Lex/Preprocessor.h"
 #include "llvm/Support/Timer.h"
 #include "llvm/Support/VirtualFileSystem.h"
+#include "clang/Lex/PreprocessorOptions.h"
+#include "clang/Serialization/ASTReader.h"
 
 CXCompilerInstance clang_CompilerInstance_create(void) {
   auto CI = std::make_unique<clang::CompilerInstance>();
@@ -303,6 +305,24 @@ bool clang_CompilerInstance_hadModuleLoaderFatalFailure(CXCompilerInstance CI) {
 CXString clang_CompilerInstance_getSpecificModuleCachePath(CXCompilerInstance CI) {
   return extra::makeCXString(
       reinterpret_cast<clang::CompilerInstance *>(CI)->getSpecificModuleCachePath());
+}
+
+void clang_CompilerInstance_createPCHExternalASTSource(
+    CXCompilerInstance CI, const char *Path,
+    CXDisableValidationForModuleKind DisableValidation,
+    bool AllowPCHWithCompilerErrors, void *DeserializationListener,
+    bool OwnDeserializationListener) {
+  reinterpret_cast<clang::CompilerInstance *>(CI)->createPCHExternalASTSource(
+      llvm::StringRef(Path),
+      static_cast<clang::DisableValidationForModuleKind>(DisableValidation),
+      AllowPCHWithCompilerErrors, DeserializationListener,
+      OwnDeserializationListener);
+}
+
+bool clang_CompilerInstance_hasASTReader(CXCompilerInstance CI) {
+  // The IntrusiveRefCntPtr temporary retains and releases a live object, so no refcount
+  // crosses the boundary.
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->getASTReader() != nullptr;
 }
 
 // AuxTarget
