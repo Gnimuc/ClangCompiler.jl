@@ -9,7 +9,7 @@ unsigned clang_FileEntry_getUID(CXFileEntry FE) {
   return reinterpret_cast<clang::FileEntry *>(FE)->getUID();
 }
 
-time_t clang_FileEntry_getModificationTime(CXFileEntry FE) {
+int64_t clang_FileEntry_getModificationTime(CXFileEntry FE) {
   return reinterpret_cast<clang::FileEntry *>(FE)->getModificationTime();
 }
 

@@ -913,6 +913,12 @@ end
 
 function getTargetConstructor(x::AbstractCXXConstructorDecl)
     @check_ptrs x
+    # `CXXConstructorDecl::getTargetConstructor` opens with `assert(isDelegatingConstructor())`
+    # and then dereferences `*init_begin()`. The assert is compiled out of the release
+    # libclang-cpp, so an ordinary constructor -- which has a null initializer array -- faults
+    # rather than returning anything. The predicate is total over any constructor: clang tests
+    # the initializer count before it reads the list.
+    @assert isDelegatingConstructor(x) "the constructor does not delegate, so it targets nothing"
     return CXXConstructorDecl(clang_CXXConstructorDecl_getTargetConstructor(x))
 end
 

@@ -44,11 +44,13 @@ using Test
         @test CC.getLocation(rd) == CC.getLocation(CC.NamedDecl(rd))
         @test CC.getBeginLoc(fd) == CC.getBeginLoc(CC.Decl(fd))
 
-        # And the root carriers designate the very same node, at the very same address.
-        @test CC.Decl(rd) == rd
-        @test CC.Stmt(CC.getBody(fd)) == CC.getBody(fd)
-        @test Base.unsafe_convert(CC.CXDecl, CC.Decl(rd)) ==
-              Base.unsafe_convert(CC.CXDecl, rd)
+        # The root carriers are a widening, so what they must preserve is the node's identity
+        # *and* what clang then says about it. `== rd` alone would be an identity by
+        # construction — `Decl(x)` is `Decl(unsafe_convert(CXDecl, x))` and `==` on
+        # AbstractDecl is that same conversion — so ask clang instead.
+        @test CC.getDeclKindName(CC.Decl(rd)) == "CXXRecord"
+        @test CC.getNameAsString(CC.NamedDecl(rd)) == CC.getNameAsString(rd)
+        @test CC.getStmtClassName(CC.Stmt(CC.getBody(fd))) == "CompoundStmt"
     end
 
     @testset "narrowing is checked, and names what it found" begin
@@ -100,9 +102,13 @@ using Test
         # cast, against the *abstract* type. A carrier is a leaf, so the concrete spelling
         # rejects the very subclasses `dyn_cast` accepts — that difference is the trap this
         # says out loud.
+        # `method` came out of a comprehension filtered on `isa CXXMethodDecl`, so asserting
+        # that again would restate the filter. What is not free is that clang and the mirror
+        # agree: the shim's own predicate, and the abstract the generator placed it under.
         @test CC.resolve(CC.Decl(fd)) isa CC.AbstractFunctionDecl
-        @test method isa CC.AbstractFunctionDecl
-        @test !(method isa CC.FunctionDecl)
+        @test CC.isFunctionDecl(method) == (method isa CC.AbstractFunctionDecl)
+        @test CC.isCXXMethodDecl(method) && !CC.isVarDecl(method)
+        @test !(method isa CC.FunctionDecl)   # a carrier is a leaf; the abstract is the hierarchy
 
         # the typeassert form, which raises for the same reason and with no ccall
         let x::CC.AbstractFunctionDecl = method

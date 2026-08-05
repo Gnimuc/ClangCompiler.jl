@@ -134,9 +134,26 @@ Quick reference. `CONTRIBUTING.md` states these fully; `src/clang/CLAUDE.md` cov
 - CI runs macOS, Linux and Windows on x86_64, and an equality assertion on something the
   runner decides turns into a red CI on a platform you did not run locally. This class of bug
   is invisible to a local single-platform run and to `-fsyntax-only`; only the per-file test
-  run against real AST state catches it, so never skip it before committing. The link failure
-  that removed `getVirtualFileRef` — `off_t` is `long` on mingw and `long long` elsewhere —
-  reached CI exactly this way.
+  run against real AST state catches it, so never skip it before committing.
+
+  A C type whose *width* is platform-dependent is the sharpest version of this, because a
+  mismatch is a misread register rather than an error. `time_t` is 64 bits on every target but
+  is `long long` on mingw where the other two spell `long`, so the entry points taking one spell
+  `int64_t` and no alias tracks it — `const time_t = Clong` is what this package used to say, and
+  it read half a value on Windows alone. `off_t` is 64 bits on Darwin and Linux and 32 on mingw.
+  `shim_type_width` asks the shim its own widths and `test/abi.jl` asserts both, so a toolchain
+  flag change fails a test instead of corrupting a value.
+
+  There is a harder version. A C type's width is part of the *mangled name* of every C++ function
+  taking one, and on Windows the two sides of that name come from different toolchains: the shim
+  is compiled on the runner by msys2's mingw gcc, clang-cpp arrives prebuilt from BinaryBuilder.
+  `getVirtualFileRef(StringRef, off_t, time_t)` failed to link there for exactly that reason —
+  mingw's `off_t` is `long` under LLP64, 32 bits, where the prebuilt library had 64. No signature
+  on our side fixes it, because the mangling comes from clang's declaration; the fix is to make
+  the two agree, which `deps/ClangExtra/CMakeLists.txt` now does with `_FILE_OFFSET_BITS=64`.
+  `time_t` never had the problem — the `addFile` call in `createFileManagerWithVOFS4PCH` takes
+  one and always linked — which is what isolated the cause to `off_t` rather than to the
+  toolchains in general.
 
   Two kinds of value hide behind that, and they need opposite treatment:
 

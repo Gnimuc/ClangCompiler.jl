@@ -214,6 +214,15 @@ CXString clang_ItaniumMangleContext_mangleModuleInitializer(CXItaniumMangleConte
 // ASTNameGenerator
 // writeName
 
+// Owns an ASTContext-bound name generator. `getAllManglings` is the only way to ask for a
+// constructor's or destructor's symbols -- those have several (complete-object, base-object,
+// and for a ctor allocating), which is why MangleContext::mangleName asserts on them.
+//
+// FIXME: allocates; release with `clang_ASTNameGenerator_dispose`.
+CXASTNameGenerator clang_ASTNameGenerator_create(CXASTContext Ctx);
+
+void clang_ASTNameGenerator_dispose(CXASTNameGenerator G);
+
 CXString clang_ASTNameGenerator_getName(CXASTNameGenerator G, CXDecl D);
 
 CXStringSet *clang_ASTNameGenerator_getAllManglings(CXASTNameGenerator G, CXDecl D);

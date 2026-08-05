@@ -26,7 +26,7 @@ abstract type AbstractCXImpl end
 # the generator's auto-export covers only the `CX`/`clang` prefixes, so say this one outright
 export AbstractCXImpl
 
-const time_t = Clong
+
 
 
 mutable struct CXValueImpl <: AbstractCXImpl end
@@ -25547,6 +25547,14 @@ function clang_ItaniumMangleContext_mangleModuleInitializer(MC, M)
     @ccall libclangex.clang_ItaniumMangleContext_mangleModuleInitializer(MC::CXItaniumMangleContext, M::CXModule_)::CXString
 end
 
+function clang_ASTNameGenerator_create(Ctx)
+    @ccall libclangex.clang_ASTNameGenerator_create(Ctx::CXASTContext)::CXASTNameGenerator
+end
+
+function clang_ASTNameGenerator_dispose(G)
+    @ccall libclangex.clang_ASTNameGenerator_dispose(G::CXASTNameGenerator)::Cvoid
+end
+
 function clang_ASTNameGenerator_getName(G, D)
     @ccall libclangex.clang_ASTNameGenerator_getName(G::CXASTNameGenerator, D::CXDecl)::CXString
 end
@@ -31679,7 +31687,7 @@ function clang_FileEntry_getUID(FE)
 end
 
 function clang_FileEntry_getModificationTime(FE)
-    @ccall libclangex.clang_FileEntry_getModificationTime(FE::CXFileEntry)::time_t
+    @ccall libclangex.clang_FileEntry_getModificationTime(FE::CXFileEntry)::Int64
 end
 
 function clang_FileEntry_getDir(FE)
@@ -31736,6 +31744,18 @@ end
 
 function clang_FileManager_getNumUniqueRealFiles(FM)
     @ccall libclangex.clang_FileManager_getNumUniqueRealFiles(FM::CXFileManager)::Csize_t
+end
+
+function clang_FileManager_getVirtualFileRef(FM, Filename, Size, ModificationTime)
+    @ccall libclangex.clang_FileManager_getVirtualFileRef(FM::CXFileManager, Filename::Ptr{Cchar}, Size::Int64, ModificationTime::Int64)::CXFileEntryRef
+end
+
+function clang_sizeof_off_t()
+    @ccall libclangex.clang_sizeof_off_t()::Csize_t
+end
+
+function clang_sizeof_time_t()
+    @ccall libclangex.clang_sizeof_time_t()::Csize_t
 end
 
 function clang_FileEntry_getSize(FE)
@@ -32702,7 +32722,7 @@ function clang_CompilerInstance_createFileManager(CI)
 end
 
 function clang_CompilerInstance_createFileManagerWithVOFS4PCH(CI, Path, ModificationTime, PCHBuffer)
-    @ccall libclangex.clang_CompilerInstance_createFileManagerWithVOFS4PCH(CI::CXCompilerInstance, Path::Ptr{Cchar}, ModificationTime::time_t, PCHBuffer::LLVMMemoryBufferRef)::CXFileManager
+    @ccall libclangex.clang_CompilerInstance_createFileManagerWithVOFS4PCH(CI::CXCompilerInstance, Path::Ptr{Cchar}, ModificationTime::Int64, PCHBuffer::LLVMMemoryBufferRef)::CXFileManager
 end
 
 function clang_CompilerInstance_hasSourceManager(CI)

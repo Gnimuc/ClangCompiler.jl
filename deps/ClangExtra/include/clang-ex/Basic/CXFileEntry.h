@@ -17,7 +17,11 @@ const char *clang_FileEntry_tryGetRealPathName(CXFileEntry FE);
 
 unsigned clang_FileEntry_getUID(CXFileEntry FE);
 
-time_t clang_FileEntry_getModificationTime(CXFileEntry FE);
+// Widened to int64_t so no time_t alias is needed, for the same reason getSize is: `time_t`
+// spells different underlying types across the builds this package links, and the generated
+// Julia alias resolves per-platform. Clang's own time_t is 64-bit on all three, so the widening
+// is lossless everywhere and the binding no longer has to guess.
+int64_t clang_FileEntry_getModificationTime(CXFileEntry FE);
 
 CXDirectoryEntry clang_FileEntry_getDir(CXFileEntry FE);
 

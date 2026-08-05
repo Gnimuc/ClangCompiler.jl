@@ -26,6 +26,18 @@ using Test
     fer = CC.getFileRef(fm, file)
     @test fer isa CC.FileEntryRef
     @test occursin("FileManager", CC.getName(fer))   # the name is the ref's, not the entry's
+
+    # A virtual file is never touched on disk, so the manager hands back exactly what it was
+    # told — which makes this a round trip through the two numbers whose width the shim and the
+    # prebuilt clang-cpp have to agree on. A size past 2^32 is the one that would show a mingw
+    # `off_t` narrowing, so it is the one asserted.
+    vfer = CC.getVirtualFileRef(fm, joinpath(@__DIR__, "no_such_file.h"), 5_000_000_000, 987654321)
+    @test vfer isa CC.FileEntryRef
+    @test occursin("no_such_file.h", CC.getName(vfer))
+    vfe = CC.getFileEntry(vfer)
+    @test CC.getSize(vfe) == 5_000_000_000
+    @test CC.getModificationTime(vfe) == 987654321
+    CC.dispose(vfer)
     buf = CC.getBufferForFile(fm, fer)
     @test buf isa CC.LLVM.MemoryBuffer
     @test length(buf) == filesize(file)

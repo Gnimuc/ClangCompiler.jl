@@ -367,7 +367,8 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test pk isa CC.SubstTemplateTypeParmPackType
     @test !CC.is_null_handle(CC.desugar(pk))
     @test !CC.is_null_handle(CC.getAssociatedDecl(pk))
-    @test CC.getArgumentPack(pk) !== nothing
+    # the pack's own arity, cross-checked against the args of the specialization it came from
+    @test CC.getArgumentPack(pk).Length == CC.getNumArgs(pair_tst)
     @test !(CC.getFinal(pk))
     @test CC.getIndex(pk) == 0
     @test CC.getNumArgs(pk) == 2
@@ -455,7 +456,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     # a `Ts...` expansion written without a fixed count has a disengaged
     # optional on the C++ side — the wrapper surfaces that as `nothing`
     nexp = CC.getNumTemplateExpansions(ta)
-    @test nexp === nothing || nexp isa UInt32
+    @test nexp === nothing
 
     # ---------------- TypeLoc base + AbstractTypeLoc carriers ----------------
     gx_vd = vdecl("tapi_gx")
@@ -740,7 +741,7 @@ end
     @test aty isa CC.ConstantArrayType
     @test !CC.is_null_handle(CC.getElementType(aty))
     @test CC.getIndexTypeCVRQualifiers(aty) == 0
-    @test CC.getSizeModifier(aty) !== nothing
+    @test CC.getSizeModifier(aty) == CC.LibClangEx.CXArraySizeModifier_Normal
     @test !CC.is_null_handle(CC.desugar(aty))
     @test CC.is_null_handle(CC.getSizeExpr(aty))
     @test !(CC.isSugared(aty))
@@ -775,7 +776,8 @@ end
     fpt = fpt_of("fn5")
     @test fpt isa CC.FunctionProtoType
     @test !CC.is_null_handle(CC.getReturnType(fpt))
-    @test CC.getCallConv(fpt) !== nothing
+    # CC_C is the default on every x86_64 target CI runs; an explicit convention is an attribute
+    @test CC.getCallConv(fpt) == CC.LibClangEx.CXCallingConv_CC_C
     @test !(CC.getCmseNSCallAttr(fpt))
     @test !(CC.getHasRegParm(fpt))
     @test !(CC.getNoReturnAttr(fpt))
@@ -790,7 +792,7 @@ end
     @test CC.is_null_handle(CC.getExceptionSpecDecl(fpt))
     @test CC.is_null_handle(CC.getExceptionSpecTemplate(fpt))
     @test CC.getNumExceptions(fpt) == 0
-    @test CC.getExceptionSpecType(fpt) !== nothing
+    @test CC.getExceptionSpecType(fpt) == CC.LibClangEx.CXExceptionSpecificationType_EST_None
     @test !(CC.hasDependentExceptionSpec(fpt))
     @test !(CC.hasDynamicExceptionSpec(fpt))
     @test !(CC.hasExceptionSpec(fpt))
@@ -800,9 +802,11 @@ end
     @test !(CC.isSugared(fpt))
     @test !(CC.isTemplateVariadic(fpt))
     @test !(CC.isVariadic(fpt))
-    if CC.getNumExceptions(fpt) > 0
-        @test !CC.isNull(CC.getExceptionType(fpt, 0))
-    end
+    # `fpt` (`int fn5(double, char)`) has no exception spec, so the guard `if
+    # getNumExceptions(fpt) > 0` that used to stand here was a branch that never ran — and
+    # coverage cannot see that, it marks the line executed anyway. The empty case is asserted
+    # outright above; the non-empty one needs a dynamic exception spec, which C++17 removed, so
+    # it lives in its own C++14 interpreter in the getExceptionType block near the top.
     # a noexcept(expr) function reaches getNoexceptExpr
     fptne = fpt_of("fnne")
     @test !CC.is_null_handle(CC.getNoexceptExpr(fptne))
@@ -891,7 +895,8 @@ end
     @test tst isa CC.TemplateSpecializationType
     @test !(CC.isCurrentInstantiation(tst))
     @test !(CC.isTypeAlias(tst))
-    @test CC.getTemplateArguments(tst) !== nothing
+    # the ArrayRef and the count accessor are two readings of one list
+    @test CC.getTemplateArguments(tst).Length == CC.getNumArgs(tst)
     @test CC.getNumArgs(tst) >= 1
     @test CC.getArg(tst, 0) isa CC.TemplateArgument
     @test CC.isSugared(tst)
@@ -2631,8 +2636,9 @@ end
 
     # isNonConstantStorage carries the reason isConstantStorage drops; the two must stay
     # exact complements for both a non-const and a const-qualified receiver.
+    # a plain `int` is not constant storage, and the reason says which of the three it is
     reason = CC.isNonConstantStorage(int_qt, ctx, false, false)
-    @test reason === nothing || reason isa CC.LibClangEx.CXNonConstantStorageReason
+    @test reason === CC.LibClangEx.CXNonConstantStorageReason_NonConstNonReferenceType
     @test CC.isConstantStorage(int_qt, ctx, false, false) === (reason === nothing)
     const_qt = CC.withConst(int_qt)
     const_reason = CC.isNonConstantStorage(const_qt, ctx, false, false)

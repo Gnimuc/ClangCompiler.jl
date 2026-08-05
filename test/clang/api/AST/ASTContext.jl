@@ -37,6 +37,32 @@ using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl
 # factories for the AST surface (built + self-verified by subagents).
 const LX = CC.LibClangEx
 
+@testset "layout queries reject a null type instead of aborting in the gate" begin
+    # Each of these reads its QualType with `getTypePtr` inside its own precondition, and
+    # `QualType::getTypePtr` asserts `!isNull()` in the release libclang-cpp. Without the
+    # QualType in `@check_ptrs` the gate aborts the process rather than rejecting the input --
+    # and a null QualType is ordinary: `getPointeeType` of a non-pointer returns one.
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    CC.parse(I, "int nlq_gi = 3;")
+
+    nul = CC.getPointeeType(CC.getTypePtr(CC.getType(CC.VarDecl(CC.find_decl(I, "nlq_gi")))))
+    @test CC.isNull(nul)          # the route a caller actually arrives by
+
+    for f in (CC.getTypeInfo, CC.getTypeInfoInChars, CC.getTypeSizeInChars,
+              CC.getTypeAlignInChars, CC.getPreferredTypeAlignInChars,
+              CC.getTypeUnadjustedAlignInChars, CC.getAlignOfGlobalVarInChars,
+              CC.getTypeInfoDataSizeInChars, CC.getCorrespondingSignedType)
+        @test_throws AssertionError f(ctx, nul)
+        @test_throws AssertionError f(ctx, CC.QualType(C_NULL))
+    end
+
+    # the gates still admit what they are for
+    @test CC.getTypeSizeInChars(ctx, CC.get_qual_type(CC.IntTy(ctx))) == 4
+
+    dispose(I)
+end
+
 @testset "convertTypeForMemory" begin
     I = create_interpreter()
     ctx = get_ast_context(I)

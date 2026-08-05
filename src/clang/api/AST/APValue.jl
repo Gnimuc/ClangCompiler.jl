@@ -27,40 +27,53 @@ end
 # Integer/float leaves come back as an LLVM GenericValue (the APInt is in its
 # IntVal field; getFloat stores the exact float bits via APFloat::bitcastToAPInt).
 # The GenericValue is caller-owned — release it via LLVM-C after use.
+#
+# Every accessor below gates on the kind, because clang's own `assert(isInt())` and its
+# siblings are compiled out of the release libclang-cpp: an APValue is a tagged union, so a
+# mismatched read does not fail, it interprets one member's bytes as another's.
 function getInt(x::APValue)
     @check_ptrs x
+    @assert isInt(x) "getInt requires an integer value"
     return clang_APValue_getInt(x)
 end
 
 function getFloat(x::APValue)
     @check_ptrs x
+    @assert isFloat(x) "getFloat requires a floating-point value"
     return clang_APValue_getFloat(x)
 end
 
 function getArraySize(x::APValue)
     @check_ptrs x
+    @assert isArray(x) "getArraySize requires an array value"
     return clang_APValue_getArraySize(x)
 end
 
 function getArrayInitializedElts(x::APValue)
     @check_ptrs x
+    @assert isArray(x) "getArrayInitializedElts requires an array value"
     return clang_APValue_getArrayInitializedElts(x)
 end
 
 # The returned element is borrowed (interior to `x`); never `dispose` it.
 function getArrayInitializedElt(x::APValue, i::Integer)
     @check_ptrs x
+    @assert isArray(x) "getArrayInitializedElt requires an array value"
+    @assert 0 <= i < getArrayInitializedElts(x) "array element index out of range"
     return APValue(clang_APValue_getArrayInitializedElt(x, i))
 end
 
 function getStructNumFields(x::APValue)
     @check_ptrs x
+    @assert isStruct(x) "getStructNumFields requires a struct value"
     return clang_APValue_getStructNumFields(x)
 end
 
 # The returned field is borrowed (interior to `x`); never `dispose` it.
 function getStructField(x::APValue, i::Integer)
     @check_ptrs x
+    @assert isStruct(x) "getStructField requires a struct value"
+    @assert 0 <= i < getStructNumFields(x) "struct field index out of range"
     return APValue(clang_APValue_getStructField(x, i))
 end
 

@@ -56,6 +56,29 @@ function getFileRef(filemgr::FileManager, filename::AbstractString; open_file::B
     return FileEntryRef(ref)
 end
 
+"""
+    getVirtualFileRef(filemgr::FileManager, filename::AbstractString, size::Integer,
+                      modification_time::Integer) -> FileEntryRef
+Return a heap-boxed `clang::FileEntryRef` for a *virtual* file: one that behaves as if a file of
+that name, size and modification time were on disk. The file itself is never accessed.
+
+Both numbers cross as 64 bits on every platform — `deps/ClangExtra/CMakeLists.txt` sets
+`_FILE_OFFSET_BITS=64` so clang's `off_t` is 64 bits even on mingw, where it would otherwise be
+`long` under LLP64 — so there is nothing to truncate.
+
+This function allocates and one should call `dispose` to release the resources after using this
+object.
+"""
+function getVirtualFileRef(filemgr::FileManager, filename::AbstractString, size::Integer,
+                           modification_time::Integer)
+    @check_ptrs filemgr
+    ref = GC.@preserve filename clang_FileManager_getVirtualFileRef(filemgr, filename,
+                                                                    Int64(size),
+                                                                    Int64(modification_time))
+    @assert ref != C_NULL "failed to create a virtual FileEntryRef for $filename."
+    return FileEntryRef(ref)
+end
+
 dispose(x::FileEntryRef) = clang_FileEntryRef_dispose(x)
 
 function getFileEntry(x::FileEntryRef)

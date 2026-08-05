@@ -60,6 +60,28 @@ Map each source file to the `@test` lines coverage recorded as executed zero tim
 A `.cov` line is a count (or `-` for a line carrying no code) followed by the source text.
 `0` means the line was compiled and never reached, which is exactly the case of interest; `-`
 means there was nothing to run there.
+
+WHAT THIS SEES, AND WHAT IT DOES NOT. Measured on Julia 1.12 with a three-case probe:
+
+    @testset "probe" begin
+        @test 1 + 1 == 2          # -> count 2
+        for x in Int[]            # -> count 1
+            @test x == 999        # -> count 0   CAUGHT
+        end
+        if false                  # -> count 1
+            @test 2 + 2 == 5      # -> count 1   MISSED
+        end
+    end
+
+The empty-loop case — the one CLAUDE.md's first rule about tests is written for, and the one
+that hid the `DeclIterator` off-by-one — is caught. A `@test` inside a branch that is never
+taken is NOT: Julia attributes the line as executed anyway, so it comes back with a positive
+count and looks live. A clean run here therefore means "no assertion sits in an empty loop",
+not "every assertion ran".
+
+The branch case needs a different instrument. Until there is one, read a guarded assertion in
+a test file as unproven: `if cond; @test ...; end` asserts nothing whenever `cond` is false,
+and nothing here will tell you it was.
 """
 function dead_assertions(dir=TEST_DIR)
     dead = Dict{String,Vector{Tuple{Int,String}}}()

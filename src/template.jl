@@ -7,34 +7,48 @@ Each argument is either a Julia `Bool`/`Integer` (a non-type template argument) 
 `AbstractType` (a type template argument).
 """
 function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::ClassTemplateDecl, args...)
-    arg_vec = Vector{TemplateArgument}(undef, length(args))
     params = getTemplateParameters(template_decl)
-    # The parameter's own type, when the template has one at this position and it is a non-type
-    # parameter. Guessing the C type from the Julia one instead cannot work: `jlty_to_clty` maps
-    # `Int64` to `long long`, so a `template <long N>` argument built that way carries a
-    # different QualType from the one Sema uses -- and `TemplateArgument::Profile` folds the
-    # integral type, so the two never unify in the folding set.
-    function param_type(i)
-        i <= size(params) || return nothing
-        p = resolve(getParam(params, i - 1))
-        return p isa NonTypeTemplateParmDecl ? getType(p) : nothing
-    end
-    for (i, arg) in enumerate(args)
+
+    # One TemplateArgument from one Julia value, at the type the parameter declares.
+    function build(arg, declared)
         if arg isa Union{Bool,Integer}
-            declared = param_type(i)
             jlty = typeof(arg)
             clty = declared === nothing ? get_qual_type(jlty_to_clty(jlty, ctx)) : declared
             # The GenericValue only carries the bits; the shim takes the width and the
             # signedness of the argument from `clty`, exactly as clang does.
             v = LLVM.GenericValue(jlty_to_llvmty(jlty, llvm_ctx), Int(arg))
-            arg_vec[i] = TemplateArgument(ctx, v, clty)
+            ta = TemplateArgument(ctx, v, clty)
             LLVM.dispose(v)
+            return ta
         elseif arg isa AbstractType
-            arg_vec[i] = TemplateArgument(get_qual_type(arg))
+            return TemplateArgument(get_qual_type(arg))
         else
             error("failed to specialize $arg")
         end
     end
+
+    # Walk the PARAMETERS, not the arguments, because the two are not one-to-one: a parameter
+    # pack takes all the arguments left. Sema folds a pack into a single `Pack` argument, and
+    # `ClassTemplateSpecializationDecl::Profile` folds the argument count before anything else,
+    # so `Pk<1,2,3>` built as three arguments can never unify with Sema's one.
+    arg_vec = TemplateArgument[]
+    next = 1
+    pi = 1
+    while next <= length(args)
+        p = pi <= size(params) ? resolve(getParam(params, pi - 1)) : nothing
+        declared = p isa NonTypeTemplateParmDecl ? getCanonicalType(ctx, getType(p)) : nothing
+        if p !== nothing && isParameterPack(p)
+            push!(arg_vec,
+                  CreatePackCopy(ctx, TemplateArgument[build(args[j], declared)
+                                                       for j = next:length(args)]))
+            next = length(args) + 1
+        else
+            push!(arg_vec, build(args[next], declared))
+            next += 1
+        end
+        pi += 1
+    end
+
     arg_list = TemplateArgumentList(ctx, arg_vec)
     specialization_decl = findSpecialization(template_decl, arg_list)
 

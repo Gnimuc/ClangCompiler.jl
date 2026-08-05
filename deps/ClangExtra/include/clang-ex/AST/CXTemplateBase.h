@@ -28,6 +28,10 @@ CXTemplateArgument clang_TemplateArgument_constructFromQualType(CXQualType Opaqu
 CXTemplateArgument clang_TemplateArgument_constructFromValueDecl(CXValueDecl VD,
                                                                  CXQualType OpaquePtr);
 
+// PRECONDITION: OpaquePtr is a non-null, non-dependent integral or enumeration type. The body
+// reads its signedness and its width -- Profile folds both -- and clang answers neither for a
+// null type (assert in QualType::operator->) or a dependent one (llvm_unreachable in
+// getTypeSize, which a release build falls through). Restated in the Julia wrapper.
 CXTemplateArgument clang_TemplateArgument_constructFromIntegral(CXASTContext Ctx,
                                                                 LLVMGenericValueRef Val,
                                                                 CXQualType OpaquePtr);

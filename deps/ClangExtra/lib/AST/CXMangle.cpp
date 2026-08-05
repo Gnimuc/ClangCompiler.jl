@@ -318,6 +318,15 @@ CXString clang_ItaniumMangleContext_mangleModuleInitializer(CXItaniumMangleConte
 // ASTNameGenerator
 // writeName
 
+CXASTNameGenerator clang_ASTNameGenerator_create(CXASTContext Ctx) {
+  return reinterpret_cast<CXASTNameGenerator>(
+      new clang::ASTNameGenerator(*reinterpret_cast<clang::ASTContext *>(Ctx)));
+}
+
+void clang_ASTNameGenerator_dispose(CXASTNameGenerator G) {
+  delete reinterpret_cast<clang::ASTNameGenerator *>(G);
+}
+
 CXString clang_ASTNameGenerator_getName(CXASTNameGenerator G, CXDecl D) {
   return extra::makeCXString(
       reinterpret_cast<clang::ASTNameGenerator *>(G)->getName(reinterpret_cast<clang::Decl *>(D)));

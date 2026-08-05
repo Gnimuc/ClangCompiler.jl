@@ -58,6 +58,18 @@ CXFileEntryRef clang_FileManager_getFileRef(CXFileManager FM, const char *Filena
   return reinterpret_cast<CXFileEntryRef>(ptr.release());
 }
 
+CXFileEntryRef clang_FileManager_getVirtualFileRef(CXFileManager FM, const char *Filename,
+                                                   int64_t Size, int64_t ModificationTime) {
+  auto FER = reinterpret_cast<clang::FileManager *>(FM)->getVirtualFileRef(
+      llvm::StringRef(Filename), Size, ModificationTime);
+  std::unique_ptr<clang::FileEntryRef> ptr = std::make_unique<clang::FileEntryRef>(FER);
+  return reinterpret_cast<CXFileEntryRef>(ptr.release());
+}
+
+size_t clang_sizeof_off_t(void) { return sizeof(off_t); }
+
+size_t clang_sizeof_time_t(void) { return sizeof(time_t); }
+
 void clang_FileEntryRef_dispose(CXFileEntryRef FER) {
   delete reinterpret_cast<clang::FileEntryRef *>(FER);
 }

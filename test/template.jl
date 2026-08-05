@@ -5,6 +5,93 @@ using ClangCompiler: DeclFinder, get_decl
 using Test
 import ClangCompiler as CC
 
+@testset "specialize unifies through sugar" begin
+    # `TemplateArgument::Profile` folds the integral type, and Sema runs its arguments through
+    # `getCanonicalTemplateArgument` before the folding set sees them. So a parameter written
+    # through a typedef -- which is every `template <std::size_t N>` -- or as an enum keys on the
+    # sugar-free type, and building the argument with the type as written yields a SECOND
+    # ClassTemplateSpecializationDecl for a type clang already has.
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    llctx = LLVM.Context()
+    CC.parse(I, """
+             typedef int MyInt;
+             enum Color : int { Red = 0, Blue = 1 };
+             template <int N>   struct SugPlain { int a[N]; };
+             template <MyInt N> struct SugTypedef { int a[N]; };
+             template <Color C> struct SugEnum { int a[2]; };
+             SugPlain<4>   sug_plain_obj;
+             SugTypedef<4> sug_typedef_obj;
+             SugEnum<Blue> sug_enum_obj;
+             """)
+    # the decl clang itself built for a source-written variable of that specialization
+    sema_spec(name) = CC.resolve(CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(CC.VarDecl(CC.find_decl(I,
+                                                                                                        name))))))
+    for (tmpl, var, arg) in (("SugPlain", "sug_plain_obj", Int32(4)),
+                             ("SugTypedef", "sug_typedef_obj", Int32(4)),
+                             ("SugEnum", "sug_enum_obj", Int32(1)))
+        ctd = CC.ClassTemplateDecl(CC.find_decl(I, tmpl))
+        mine = CC.specialize(llctx, ctx, ctd, arg)
+        theirs = sema_spec(var)
+        @test mine isa CC.ClassTemplateSpecializationDecl
+        # the same decl, not merely one of the same class
+        @test Base.unsafe_convert(CC.CXDecl, mine) == Base.unsafe_convert(CC.CXDecl, theirs)
+    end
+    LLVM.dispose(llctx)
+    dispose(I)
+end
+
+@testset "specialize packs a variadic non-type parameter as Sema does" begin
+    # Sema folds `Pk<1,2,3>` into ONE `Pack` argument, and
+    # `ClassTemplateSpecializationDecl::Profile` folds the argument count first, so a
+    # three-argument list can never unify with it however right each argument is.
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    llctx = LLVM.Context()
+    CC.parse(I, """
+             template <int... Ns> struct Pk { int a[sizeof...(Ns)]; };
+             Pk<1, 2, 3> pk_obj;
+             """)
+    ctd = CC.ClassTemplateDecl(CC.find_decl(I, "Pk"))
+    theirs = CC.resolve(CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(CC.VarDecl(CC.find_decl(I,
+                                                                                              "pk_obj"))))))
+    mine = CC.specialize(llctx, ctx, ctd, Int32(1), Int32(2), Int32(3))
+    @test Base.unsafe_convert(CC.CXDecl, mine) == Base.unsafe_convert(CC.CXDecl, theirs)
+    # and the shape is a pack, not three loose arguments
+    built = CC.getTemplateArgs(mine)
+    @test size(built) == 1
+    @test CC.getKind(get(built, 0)) == CC.LibClangEx.CXTemplateArgument_Pack
+    LLVM.dispose(llctx)
+    dispose(I)
+end
+
+@testset "a non-type template argument needs a type clang can measure" begin
+    # The shim reads the type's signedness and width, so it has an answer only for a
+    # non-dependent integral or enumeration type. Before these gates a null type reached
+    # `QualType::operator->` and took SIGABRT, and a dependent one reached `getTypeSize`'s
+    # `llvm_unreachable`, which a release build falls through.
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    llctx = LLVM.Context()
+    CC.parse(I, "struct NtaRec { int m; };")
+    v = LLVM.GenericValue(LLVM.IntType(32), 4)
+
+    # null: `QualType::operator->` asserts, and the assert is compiled into the release build
+    @test_throws AssertionError CC.TemplateArgument(ctx, v, CC.QualType(C_NULL))
+    # non-integral: a record type has no signedness and no integer width
+    rec = CC.getTypeDeclType(ctx, CC.TypeDecl(CC.find_decl(I, "NtaRec")))
+    @test !CC.isIntegralOrEnumerationType(CC.getTypePtr(rec))
+    @test_throws AssertionError CC.TemplateArgument(ctx, v, rec)
+    # and the shape that still works, so the gates are not simply refusing everything
+    int_qt = CC.get_qual_type(CC.IntTy(ctx))
+    ta = CC.TemplateArgument(ctx, v, int_qt)
+    @test CC.getKind(ta) == CC.LibClangEx.CXTemplateArgument_Integral
+    CC.dispose(ta)
+    LLVM.dispose(v)
+    LLVM.dispose(llctx)
+    dispose(I)
+end
+
 @testset "specialize" begin
     I = create_interpreter(String[])
     CC.parse(I, """

@@ -5,18 +5,59 @@ description: Measure which clang-cpp APIs this package does not wrap yet, and de
 
 # Measuring the clang-cpp API gap
 
-Two scripts. `gapmap.jl` extracts the public method surface of the pinned Clang headers with
-libclang; `gapdiff.jl` diffs that against what this package actually reaches and ranks the
-remainder.
+**Start with `candidates.jl`.** It uses *this package* to parse clang's own headers, so every
+answer comes from a real `clang::CXXMethodDecl` rather than from libclang's cursor model — the
+C API this package exists to reach past.
 
 ```bash
-julia .claude/skills/api-coverage/gapmap.jl /tmp/gap.json
-julia .claude/skills/api-coverage/gapdiff.jl /tmp/gap.json
-julia .claude/skills/api-coverage/gapdiff.jl /tmp/gap.json --class Sema   # names, per class
+julia --project .claude/skills/api-coverage/candidates.jl              # sweep the wrapped classes
+julia --project .claude/skills/api-coverage/candidates.jl Sema Decl    # named classes
+julia --project .claude/skills/api-coverage/candidates.jl --json out.json
+julia --project .claude/skills/api-coverage/selfcheck.jl               # is the oracle still right?
 ```
 
-`gapmap.jl` activates its own temp environment and needs network on first run. Regenerate the
-map after landing wrappers — the diff is only as current as the map.
+It answers the question that otherwise waits for a build: **would a wrapper for this LINK.**
+Two methods on this branch were written and dropped because libclang-cpp exports neither
+(`Sema::CheckBitwiseOperands`, `CheckLogicalOperands`), and `FileManager::getVirtualFileRef`
+failed on Windows alone over a mangled name. Both were decidable up front.
+
+Linkability is **not** "is the symbol exported". A method with a body in the header has no
+out-of-line symbol at all — `Decl::getLocation` is `{ return Loc; }` — and a shim compiles its
+own copy, so it links with nothing exported. The rule is *body-in-header OR exported symbol*,
+and `selfcheck.jl` pins it against eight methods whose real outcome this branch already knows.
+Run that after any change to the oracle; a tool that says "not linkable" about a working
+accessor is worse than no tool.
+
+`gapmap.jl` and `gapdiff.jl` are gone. They drove libclang through a temp environment and a
+JSON round trip to produce a worse version of this, and their one distinctive part — the
+`blocked` / `parser_action` / `out_of_scope` classifier — was fifteen lines of regex over a
+signature string, now `shape_of` in `candidates.jl` running over a real parameter list instead
+of text that happened to contain the word.
+
+## Invariant 2 was checked, and does not need a lint
+
+Every wrapper types its receiver at the abstract of the class that *declares* the method. The C
+symbol names that class — `clang_NamedDecl_getName` — so it looked checkable, and it was worth
+knowing whether the review dimension that keeps coming back clean was actually seeing anything.
+
+**It holds.** Measured over `src/clang/api`: 8651 wrapper blocks, 6554 instance-method
+receiver/symbol pairs, **zero mismatches**.
+
+The check itself is not worth keeping, and the reason is the useful part. Four passes each
+removed one family of false positives and revealed the next:
+
+| looked like a mismatch | actually |
+|---|---|
+| `PrintStats(::Type{Decl})` | a static C++ method — no receiver at all; 971 of them |
+| `clang_index_generateUSRFor*` | a namespace function, naming no class |
+| `LookupResult_Filter` | a nested class, spelled `LookupResultFilter` as a carrier |
+| `setCVRQualifiers(::Integer, ::Integer)` | `Qualifiers` is a value type marshalled as its opaque `unsigned` |
+| `Decl::castFromDeclContext` | a static crossing the two hierarchies |
+
+Text alone cannot separate these from a real defect; `isStatic` needs the AST. And a version
+carrying six exemption families would be one more hand-maintained mirror that nothing pins —
+the objection this repo already levelled at a proposed `_base` table. The measurement is the
+deliverable; re-run it by hand if the wrapper layer ever changes shape.
 
 ## Read the output before believing it
 

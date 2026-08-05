@@ -34,8 +34,9 @@ every call site, and clang's own `dump_ast` of nodes you just walked by hand.
 file here. The C shim is check-free by contract: it takes a pointer and asserts what it is. The
 example quotes the shim verbatim, then walks six sections — dispatch rejecting a method that
 belongs to another class, a carrier refusing a foreign handle, an integer refusing to be a
-pointer, the two crossings that *are* legal (`downcast` and `upcast`) with the argument for why
-each is sound, and `DeclContext`, the one base that is not at offset zero.
+pointer, the crossings that *are* legal — widening, which is not spelled at all, and the checked
+cast, which asks clang and raises `CastError` when the answer is no — and `DeclContext`, the one
+base that is not at offset zero.
 
 Two things it does rather than asserts. It forces the wrong call — `clang_WhileStmt_getCond` on
 an `IfStmt` — and reports that it returns the *correct* condition for an `if` with no

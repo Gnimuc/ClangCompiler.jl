@@ -35,6 +35,15 @@ Run it after adding any test that iterates. Then either construct the state that
 assertion run, or assert the empty case explicitly — never leave a loop whose body is the only
 thing asserting.
 
+**A clean run means "no assertion sits in an empty loop", not "every assertion ran."** Julia's
+coverage marks a `@test` inside a never-taken `if` as executed anyway, so this tool cannot see
+that case — verified on 1.12 with a three-case probe recorded in `deadtests.jl`'s own docstring.
+An assertion guarded by a runtime condition is therefore unproven by default: `if cond; @test
+...; end` asserts nothing whenever `cond` is false, and nothing in this skill will tell you so.
+Grep for the shape by hand (`grep -rn 'if .*$' test/ -A 2 | grep @test`) and, when you find one,
+construct the state instead of guarding on it — `test/clang/api/AST/Type.jl`'s exception-spec
+block was exactly this, guarded on a count that was always zero.
+
 ## Does the suite detect faults at all?
 
 ```bash
