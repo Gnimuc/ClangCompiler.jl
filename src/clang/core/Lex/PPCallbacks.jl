@@ -7,4 +7,3 @@ Hold a pointer to a `clang::PPCallbacks` object.
 struct PPCallbacks <: AbstractPPCallbacks
     ptr::CXPPCallbacks
 end
-

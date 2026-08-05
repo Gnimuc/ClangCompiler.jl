@@ -7,4 +7,3 @@ Hold a pointer to a `clang::ModuleLoader` object.
 struct ModuleLoader <: AbstractModuleLoader
     ptr::CXModuleLoader
 end
-

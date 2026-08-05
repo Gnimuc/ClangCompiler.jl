@@ -14,4 +14,3 @@ handle is an owned heap box: `dispose` it after use.
 struct TemplateDeductionInfo <: AbstractTemplateDeductionInfo
     ptr::CXTemplateDeductionInfo
 end
-

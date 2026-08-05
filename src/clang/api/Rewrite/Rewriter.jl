@@ -70,8 +70,7 @@ rewritable) and `false` on success — the Clang convention is preserved verbati
 
 `loc` must be a valid source location (`clang::Rewriter` asserts on an invalid one).
 """
-function InsertText(x::AbstractRewriter, loc::SourceLocation, str::AbstractString,
-                    insert_after::Bool=true, indent_new_lines::Bool=false)
+function InsertText(x::AbstractRewriter, loc::SourceLocation, str::AbstractString, insert_after::Bool=true, indent_new_lines::Bool=false)
     @check_ptrs x
     @assert isValid(loc) "insertion location must be a valid source location"
     return clang_Rewriter_InsertText(x, loc, str, insert_after, indent_new_lines)
@@ -137,8 +136,7 @@ end
 Replace `orig_length` bytes at `start` with `new_str`. Returns `true` on failure. `start`
 must be valid.
 """
-function ReplaceText(x::AbstractRewriter, start::SourceLocation, orig_length::Integer,
-                     new_str::AbstractString)
+function ReplaceText(x::AbstractRewriter, start::SourceLocation, orig_length::Integer, new_str::AbstractString)
     @check_ptrs x
     @assert isValid(start) "replacement location must be a valid source location"
     return clang_Rewriter_ReplaceText(x, start, orig_length, new_str)
@@ -177,8 +175,7 @@ indented one degree less than `range` — as the reference. Returns `true` on fa
 
 Every location involved must be valid.
 """
-function IncreaseIndentation(x::AbstractRewriter, range::SourceRange,
-                             parent_indent::SourceLocation)
+function IncreaseIndentation(x::AbstractRewriter, range::SourceRange, parent_indent::SourceLocation)
     @check_ptrs x
     @assert isValid(range) "source range endpoints must be valid source locations"
     @assert isValid(parent_indent) "parent indentation location must be valid"

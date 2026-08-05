@@ -741,8 +741,7 @@ end
     printToString(x::AbstractDecl, indentation=0, print_instantiation=false) -> String
 Pretty-print `x` the way `clang::Decl::print` would.
 """
-function printToString(x::AbstractDecl, indentation::Integer=0,
-                       print_instantiation::Bool=false)
+function printToString(x::AbstractDecl, indentation::Integer=0, print_instantiation::Bool=false)
     @check_ptrs x
     return get_string(clang_Decl_printToString(x, indentation, print_instantiation))
 end
@@ -1082,12 +1081,9 @@ Return whether a member declared by `d` with type `ty` behaves as a flexible arr
 and `level`. `level` selects the rule to apply instead of being read out of `ctx`, so the answer does
 not depend on how the interpreter was configured.
 """
-function isFlexibleArrayMemberLike(ctx::ASTContext, d::AbstractDecl, ty::QualType,
-                                   level::CXStrictFlexArraysLevelKind,
-                                   ignore_template_or_macro_substitution::Bool=false)
+function isFlexibleArrayMemberLike(ctx::ASTContext, d::AbstractDecl, ty::QualType, level::CXStrictFlexArraysLevelKind, ignore_template_or_macro_substitution::Bool=false)
     @check_ptrs ctx ty
-    return clang_Decl_isFlexibleArrayMemberLike(ctx, d, ty, level,
-                                                ignore_template_or_macro_substitution)
+    return clang_Decl_isFlexibleArrayMemberLike(ctx, d, ty, level, ignore_template_or_macro_substitution)
 end
 
 """
@@ -1099,8 +1095,7 @@ is left, so `x` must currently live in no namespace outside those three.
 """
 function setLocalExternDecl(x::AbstractDecl)
     @check_ptrs x
-    allowed = UInt32(CXDecl_IDNS_Ordinary) | UInt32(CXDecl_IDNS_OrdinaryFriend) |
-              UInt32(CXDecl_IDNS_Tag)
+    allowed = UInt32(CXDecl_IDNS_Ordinary) | UInt32(CXDecl_IDNS_OrdinaryFriend) | UInt32(CXDecl_IDNS_Tag)
     ns = getIdentifierNamespace(x)
     @assert ns & ~allowed == 0 "the declaration must live only in the ordinary, friend or tag namespace"
     return clang_Decl_setLocalExternDecl(x)
@@ -1304,9 +1299,7 @@ the caller constructed rather than on one the live interpreter's lookup still de
 function setObjectOfFriendDecl(x::AbstractDecl; perform_friend_injection::Bool=false)
     @check_ptrs x
     ns = UInt32(getIdentifierNamespace(x))
-    required = UInt32(CXDecl_IDNS_Tag) | UInt32(CXDecl_IDNS_Ordinary) |
-               UInt32(CXDecl_IDNS_TagFriend) | UInt32(CXDecl_IDNS_OrdinaryFriend) |
-               UInt32(CXDecl_IDNS_LocalExtern) | UInt32(CXDecl_IDNS_NonMemberOperator)
+    required = UInt32(CXDecl_IDNS_Tag) | UInt32(CXDecl_IDNS_Ordinary) | UInt32(CXDecl_IDNS_TagFriend) | UInt32(CXDecl_IDNS_OrdinaryFriend) | UInt32(CXDecl_IDNS_LocalExtern) | UInt32(CXDecl_IDNS_NonMemberOperator)
     permitted = required | UInt32(CXDecl_IDNS_Type)
     @assert (ns & required) != 0 "declaration must be in the ordinary or tag namespace"
     @assert (ns & ~permitted) == 0 "declaration is in a namespace that cannot become a friend"

@@ -70,8 +70,7 @@ process aborts rather than returning. Ask [`getAllManglings`](@ref) for those.
 """
 function mangleName(x::MangleContext, d::AbstractNamedDecl)
     @check_ptrs x d
-    @assert !(d isa AbstractCXXConstructorDecl) && !(d isa AbstractCXXDestructorDecl) "a " *
-            "constructor or destructor has several mangled names; use `getAllManglings`"
+    @assert !(d isa AbstractCXXConstructorDecl) && !(d isa AbstractCXXDestructorDecl) "a " * "constructor or destructor has several mangled names; use `getAllManglings`"
     return get_string(clang_MangleContext_mangleName(x, d))
 end
 
@@ -341,8 +340,7 @@ end
 Return the symbol name of the construction vtable emitted for `base` sitting at byte
 `offset` inside `rd`.
 """
-function mangleCXXCtorVTable(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl,
-                             offset::Integer, base::AbstractCXXRecordDecl)
+function mangleCXXCtorVTable(x::AbstractItaniumMangleContext, rd::AbstractCXXRecordDecl, offset::Integer, base::AbstractCXXRecordDecl)
     @check_ptrs x rd base
     return get_string(clang_ItaniumMangleContext_mangleCXXCtorVTable(x, rd, offset, base))
 end

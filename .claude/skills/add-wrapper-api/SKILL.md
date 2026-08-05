@@ -1,6 +1,6 @@
 ---
 name: add-wrapper-api
-description: End-to-end steps for adding a new Clang wrapper API to ClangCompiler.jl — the Julia side after rebuilding and regenerating bindings (core type, API wrapper, registration, lifetime/dispose, resolve-chain). Use when wrapping a new Clang C++ class or method, adding a `clang_<Class>_<method>` binding, or exposing a new AST/Type/Sema class.
+description: End-to-end steps for adding a new Clang wrapper API to ClangCompiler.jl — the Julia side after rebuilding and regenerating bindings (core type, API wrapper, registration, lifetime/dispose, resolve-chain), and the precondition rules a wrapper needs so a partial clang method cannot abort the process. Use when wrapping a new Clang C++ class or method, adding a `clang_<Class>_<method>` binding, exposing a new AST/Type/Sema class, or writing or auditing an `@assert` gate on an existing wrapper.
 ---
 
 # Adding a new wrapper API (end-to-end)
@@ -8,7 +8,65 @@ description: End-to-end steps for adding a new Clang wrapper API to ClangCompile
 The C-side steps (header + impl + CMake + typedef in CXTypes.h) are covered in `deps/ClangExtra/CLAUDE.md`. After rebuilding (`deps/build_local.jl`) and regenerating (`gen/generator.jl`), the Julia side is:
 
 1. **Core type** (skip if the class is already wrapped): add `abstract type AbstractFoo <: Abstract<ClangBase> end` mirroring Clang's inheritance — the AST/Type/Frontend hierarchies live in `src/clang/core/abstract.jl`, while Interpreter/CodeGen/Basic classes define their abstract types locally next to the struct (follow whichever the target file already does). Then in `src/clang/core/<Dir>/<ClangHeader>.jl` add `struct Foo <: AbstractFoo; ptr::CXFoo; end` plus `Base.unsafe_convert(::Type{CXFoo}, x::Foo) = x.ptr` and `Base.cconvert(::Type{CXFoo}, x::Foo) = x` (many files stamp sibling classes out in a `for sym in [...] @eval` loop — append to it rather than writing a standalone struct). Docstring format: "Hold a pointer to a `clang::Foo` object." The field must be named `ptr` (`@check_ptrs` depends on it). Underscore-suffixed collision types drop both the `CX` prefix and the underscore in Julia (`CXToken_` → `Token`), unless the bare name clashes with Base (`CXType_` → `Type_`).
-2. **API wrapper** in `src/clang/api/<Dir>/<ClangHeader>.jl`: `function methodName(x::AbstractFoo, ...)` — type the receiver as the abstract supertype of the class that declares the C++ method so subclasses dispatch; start with `@check_ptrs` on every wrapper argument; wrap pointer returns in their Julia struct — never return a raw `Ptr` (test/lint.jl cannot catch this class; review for it); `unsafe_string` for `const char*` returns, `get_string` for `CXString`/`CXStringSet` returns (it disposes them — plain `unsafe_string` leaks), bare returns for Bool/int/enum. `castTo` C functions surface as constructor-shaped methods named after the target type (`CXXRecordDecl(x::DeclContext)`), except the Decl↔DeclContext pivot which keeps its C names `castToDeclContext`/`castFromDeclContext`.
+2. **API wrapper** in `src/clang/api/<Dir>/<ClangHeader>.jl`: `function methodName(x::AbstractFoo, ...)` — type the receiver as the abstract supertype of the class that declares the C++ method so subclasses dispatch; start with `@check_ptrs` on every wrapper argument, then its precondition (see below); wrap pointer returns in their Julia struct — never return a raw `Ptr` (test/lint.jl cannot catch this class; review for it); `unsafe_string` for `const char*` returns, `get_string` for `CXString`/`CXStringSet` returns (it disposes them — plain `unsafe_string` leaks), bare returns for Bool/int/enum. `castTo` C functions surface as constructor-shaped methods named after the target type (`CXXRecordDecl(x::DeclContext)`), except the Decl↔DeclContext pivot which keeps its C names `castToDeclContext`/`castFromDeclContext`.
 3. **Registration**: new files must be added to both include lists by hand — `src/clang/core/core.jl` and `src/clang/api/api.jl` (they are not kept in sync automatically).
 4. **Lifetime**: pair every `clang_Foo_create` binding with a Julia constructor and a `dispose(x::Foo) = clang_Foo_dispose(x)` method; there are no finalizers, disposal is always manual (create → use → dispose). Allocating getters carry the docstring sentence "This function allocates and one should call `dispose` to release the resources after using this object."
 5. Optionally add a snake_case helper in the matching high-level file (`src/clang/ast.jl`, `basic.jl`, `sema.jl`, …) and a `public` declaration in `src/ClangCompiler.jl` if user-facing. New Clang `Type` subclasses that participate in runtime downcasting also need an `is_foo_type` predicate pair in `src/clang/type.jl` and an entry in the **ordered** `resolve()` chain in `src/types.jl` (sugared types are tested before canonical ones — placement matters).
+
+## Preconditions: the part the ccall does not carry
+
+`src/clang/api/` holds more `@assert` gates than it has anything else hand-written — count them
+with
+
+```bash
+grep -rc "@assert" --include="*.jl" src/clang/api/ | awk -F: '{s+=$2} END {print s}'
+```
+
+Beyond the ccall itself, that is most of what the hand-written layer *is* — and it has to be,
+because the C shim is check-free by contract and the release `libclang-cpp` has its own asserts
+compiled out. A partial clang method reached
+without its precondition does not fail; it dereferences a null array, reads one union member's
+bytes as another's, or falls through an `llvm_unreachable`. **Each missing gate is a process
+abort, not an exception.** Every rule below is anchored to one this repo actually shipped.
+
+1. **If clang's method asserts, restate the assert.** `CXXConstructorDecl::getTargetConstructor`
+   opens `assert(isDelegatingConstructor())` and then reads `*init_begin()`. On an ordinary
+   constructor that array is null. The predicate was already wrapped one screen above, so the
+   gate was one line — and its own file already establishes the pattern in dozens of places
+   (`@assert isLambda(x)`, `@assert hasDefinition(x)`).
+
+2. **Every accessor the gate itself calls must be total over the arguments the gate accepts.**
+   This is the one that recurs. Nine `ASTContext` layout wrappers wrote `@check_ptrs x` for the
+   context alone and then read the QualType with `getTypePtr` *inside* the `@assert` — so a null
+   QualType aborted while clang was evaluating the gate's condition, and the `AssertionError` the
+   layer promises was never reached. Before writing a gate, ask what each call in it does with
+   the worst argument that gets past dispatch.
+
+3. **Value types go in `@check_ptrs` too.** `is_null_handle(::QualType)` is `isNull`, not a
+   `C_NULL` compare — a `QualType` is a `PointerIntPair`, so a qualifier on a null type makes the
+   opaque value non-zero while the type is still absent (`src/clang/qualtype.jl`). One word covers
+   it, and omitting it is exactly how rule 2 got broken. `getPointeeType` of a non-pointer and
+   `Expr::getType` of an unevaluated string literal both hand you one.
+
+4. **A tagged union needs a kind gate on every accessor, not most of them.** `APValue`'s
+   `getVectorElt` and `getStructBase` had one; `getInt`, `getFloat`, `getArraySize`,
+   `getArrayInitializedElt*`, `getStructNumFields` and `getStructField` did not. A mismatched read
+   there does not fail — it interprets one member's bytes as another's. Indexed accessors need the
+   bounds check as well.
+
+5. **Prose is not enforcement.** `mangleName`'s docstring said "non-constructor/destructor
+   declaration" and nothing stopped one: a constructor has several mangled names, so clang's entry
+   point wants to be told which and asserts on a bare decl. If the docstring states a
+   precondition, the body must too — and point the caller at what does work
+   (`getAllManglings` here).
+
+6. **An unbounded walk needs its loop-exit condition restated, not an argument null-check.** A
+   method that climbs a parent chain with no null test (`Scope`'s `isInside*` family,
+   `Sema.jl:4313`) is safe only while the chain terminates. Say which invariant guarantees that.
+   Related: never wrap half a push/pop pair.
+
+**How to find the precondition.** Read clang's body. Inline methods are visible in the header, and
+the interpreter can parse them (`.claude/skills/api-coverage/candidates.jl` does). Out-of-line
+bodies are *not* shipped — LLVM's artifact carries headers only — so for those the precondition
+cannot be looked up, and the conservative gate is the right default. When the value genuinely
+cannot be checked, say so at the site rather than leaving it implied.

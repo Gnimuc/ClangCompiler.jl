@@ -5,4 +5,3 @@ Hold a pointer to a `clang::CXXScopeSpec` object.
 struct CXXScopeSpec <: AbstractCXXScopeSpec
     ptr::CXCXXScopeSpec
 end
-

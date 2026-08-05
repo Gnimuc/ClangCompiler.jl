@@ -4,7 +4,8 @@ Guidance for the hand-written Julia layer that wraps the `libclangex` C shim. Th
 CLAUDE.md covers the whole package and the end-to-end recipe for adding one wrapper;
 `deps/ClangExtra/CLAUDE.md` covers the C side. This file covers the one job this layer
 exists to do: **reproduce Clang's C++ type system in Julia and be the sole safety boundary
-in front of a deliberately unsafe C API.** Format with JuliaFormatter (YAS, margin 120).
+in front of a deliberately unsafe C API.** Format with JuliaFormatter (YAS, margin 1000): it
+never splits a line, but it does join, so place breaks to match the surrounding layout.
 
 ## The governing axiom
 

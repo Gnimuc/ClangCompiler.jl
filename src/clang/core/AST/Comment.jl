@@ -171,4 +171,3 @@ The list is a member of its `ASTContext`, so it is borrowed: there is no `dispos
 struct RawCommentList <: AbstractRawCommentList
     ptr::CXRawCommentList
 end
-

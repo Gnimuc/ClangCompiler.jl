@@ -37,4 +37,3 @@ Hold a pointer to a `clang::ASTTemplateArgumentListInfo` object.
 struct ASTTemplateArgumentListInfo <: AbstractASTTemplateArgumentListInfo
     ptr::CXASTTemplateArgumentListInfo
 end
-

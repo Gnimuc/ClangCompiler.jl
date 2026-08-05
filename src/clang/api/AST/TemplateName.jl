@@ -103,8 +103,7 @@ name (`CXTemplateName_Qualified_None`), the qualifier as written
 (`CXTemplateName_Qualified_AsWritten`) or the fully qualified name
 (`CXTemplateName_Qualified_Fully`).
 """
-function getAsString(x::TemplateName, ctx::ASTContext,
-                     qual::CXTemplateName_Qualified=CXTemplateName_Qualified_AsWritten)
+function getAsString(x::TemplateName, ctx::ASTContext, qual::CXTemplateName_Qualified=CXTemplateName_Qualified_AsWritten)
     @check_ptrs ctx
     return get_string(clang_TemplateName_getAsString(x, ctx, qual))
 end

@@ -37,4 +37,3 @@ Hold a pointer to a `clang::InclusionDirective` object.
 struct InclusionDirective <: AbstractInclusionDirective
     ptr::CXInclusionDirective
 end
-

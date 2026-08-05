@@ -53,4 +53,3 @@ Hold a pointer to a `clang::UserDefinedConversionSequence` object.
 struct UserDefinedConversionSequence <: AbstractUserDefinedConversionSequence
     ptr::CXUserDefinedConversionSequence
 end
-

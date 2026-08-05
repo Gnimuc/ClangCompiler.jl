@@ -40,4 +40,3 @@ no reference to it.
 struct CFGBuildOptions <: AbstractCFGBuildOptions
     ptr::CXCFGBuildOptions
 end
-

@@ -11,4 +11,3 @@ copy it into the search, so it may be disposed as soon as either has been called
 struct DirectoryLookup <: AbstractDirectoryLookup
     ptr::CXDirectoryLookup
 end
-

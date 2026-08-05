@@ -84,7 +84,6 @@ function dispose(x::APValue)
     return clang_APValue_dispose(x)
 end
 
-
 # Kind predicates — the same information `getKind` returns, one enumerator each.
 function isAbsent(x::APValue)
     @check_ptrs x
@@ -211,7 +210,6 @@ function getVectorElt(x::APValue, i::Integer)
     return APValue(clang_APValue_getVectorElt(x, i))
 end
 
-
 # Total over every kind — aggregates own heap storage, small scalars do not.
 function needsCleanup(x::APValue)
     @check_ptrs x
@@ -310,7 +308,6 @@ function getAddrLabelDiffRHS(x::APValue)
     @assert isAddrLabelDiff(x) "getAddrLabelDiffRHS requires an address-of-label difference"
     return AddrLabelExpr(clang_APValue_getAddrLabelDiffRHS(x))
 end
-
 
 """
     IndeterminateValue() -> APValue
@@ -420,7 +417,6 @@ function getMemberPointerPathEntry(x::APValue, i::Integer)
     return CXXRecordDecl(clang_APValue_getMemberPointerPathEntry(x, i))
 end
 
-
 """
     isLValueBaseTypeInfo(x::APValue) -> Bool
 Return whether the lvalue's base designator is a `typeid(T)` expression. Such a base only
@@ -501,7 +497,6 @@ carrier — every dynamic-allocation lvalue reachable from here lives inside an 
 lvalue base and is read through `getLValueBaseDynamicAllocIndex`.
 """
 getMaxIndex() = clang_DynamicAllocLValue_getMaxIndex()
-
 
 """
     getProfileHash(x::APValue) -> UInt32
@@ -607,8 +602,7 @@ Overwrite both halves of a complex integer value with the bits of `real` and `im
 `APValue::setComplexInt` asserts that the halves share a bit width, so both are normalized
 to the width of the value's current real half. `real` and `imag` stay caller-owned.
 """
-function setComplexInt(x::APValue, real::LibClangEx.LLVMGenericValueRef,
-                       imag::LibClangEx.LLVMGenericValueRef, is_unsigned::Bool)
+function setComplexInt(x::APValue, real::LibClangEx.LLVMGenericValueRef, imag::LibClangEx.LLVMGenericValueRef, is_unsigned::Bool)
     @check_ptrs x
     @assert isComplexInt(x) "setComplexInt requires a complex integer value"
     return clang_APValue_setComplexInt(x, real, imag, is_unsigned)
@@ -624,8 +618,7 @@ Both halves take the semantics of the value's current real half, which is also w
 `APValue::setComplexFloat`'s same-semantics assertion wants. `real` and `imag` stay
 caller-owned.
 """
-function setComplexFloat(x::APValue, real::LibClangEx.LLVMGenericValueRef,
-                         imag::LibClangEx.LLVMGenericValueRef)
+function setComplexFloat(x::APValue, real::LibClangEx.LLVMGenericValueRef, imag::LibClangEx.LLVMGenericValueRef)
     @check_ptrs x
     @assert isComplexFloat(x) "setComplexFloat requires a complex floating-point value"
     return clang_APValue_setComplexFloat(x, real, imag)

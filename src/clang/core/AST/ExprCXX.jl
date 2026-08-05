@@ -445,4 +445,3 @@ Hold a pointer to a `clang::CXXTemporary` object.
 struct CXXTemporary <: AbstractCXXTemporary
     ptr::CXCXXTemporary
 end
-

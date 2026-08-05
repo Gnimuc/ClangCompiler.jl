@@ -18,9 +18,7 @@ marks user files as volatile in the source manager.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function ASTUnit(inv::CompilerInvocation, diag::DiagnosticsEngine;
-                 capture_diagnostics::CXCaptureDiagsKind=CXCaptureDiagsKind_None,
-                 user_files_are_volatile::Bool=false)
+function ASTUnit(inv::CompilerInvocation, diag::DiagnosticsEngine; capture_diagnostics::CXCaptureDiagsKind=CXCaptureDiagsKind_None, user_files_are_volatile::Bool=false)
     @check_ptrs inv diag
     unit = clang_ASTUnit_create(inv, diag, capture_diagnostics, user_files_are_volatile)
     @assert unit != C_NULL "Failed to create ASTUnit"
@@ -54,21 +52,9 @@ package wraps no `Reparse` for a preamble to serve.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function LoadFromCompilerInvocation(inv::CompilerInvocation, diag::DiagnosticsEngine,
-                                    fm::FileManager; only_local_decls::Bool=false,
-                                    capture_diagnostics::CXCaptureDiagsKind=CXCaptureDiagsKind_None,
-                                    precompile_preamble_after_n_parses::Integer=0,
-                                    tu_kind::CXTranslationUnitKind=CXTranslationUnitKind_TU_Complete,
-                                    cache_code_completion_results::Bool=false,
-                                    include_brief_comments_in_code_completion::Bool=false,
-                                    user_files_are_volatile::Bool=false)
+function LoadFromCompilerInvocation(inv::CompilerInvocation, diag::DiagnosticsEngine, fm::FileManager; only_local_decls::Bool=false, capture_diagnostics::CXCaptureDiagsKind=CXCaptureDiagsKind_None, precompile_preamble_after_n_parses::Integer=0, tu_kind::CXTranslationUnitKind=CXTranslationUnitKind_TU_Complete, cache_code_completion_results::Bool=false, include_brief_comments_in_code_completion::Bool=false, user_files_are_volatile::Bool=false)
     @check_ptrs inv diag fm
-    unit = clang_ASTUnit_LoadFromCompilerInvocation(inv, diag, fm, only_local_decls,
-                                                    capture_diagnostics,
-                                                    precompile_preamble_after_n_parses,
-                                                    tu_kind, cache_code_completion_results,
-                                                    include_brief_comments_in_code_completion,
-                                                    user_files_are_volatile)
+    unit = clang_ASTUnit_LoadFromCompilerInvocation(inv, diag, fm, only_local_decls, capture_diagnostics, precompile_preamble_after_n_parses, tu_kind, cache_code_completion_results, include_brief_comments_in_code_completion, user_files_are_volatile)
     return unit == C_NULL ? nothing : ASTUnit(unit)
 end
 
@@ -282,7 +268,6 @@ end
 
 dispose(x::ASTUnit) = clang_ASTUnit_dispose(x)
 
-
 """
     addFileLevelDecl(x::AbstractASTUnit, d::AbstractDecl)
 Record `d` in the unit's file-level declaration table, the index `findFileRegionDecls`
@@ -481,7 +466,6 @@ function getTranslationUnitKind(x::AbstractASTUnit)
     @check_ptrs x
     return clang_ASTUnit_getTranslationUnitKind(x)
 end
-
 
 """
     isUnsafeToFree(x::AbstractASTUnit) -> Bool

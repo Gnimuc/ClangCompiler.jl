@@ -1,6 +1,5 @@
 # SourceManager
-function SourceManager(file_mgr::FileManager, diag::DiagnosticsEngine=DiagnosticsEngine(),
-                       volatile::Bool=false)
+function SourceManager(file_mgr::FileManager, diag::DiagnosticsEngine=DiagnosticsEngine(), volatile::Bool=false)
     mgr = clang_SourceManager_create(diag, file_mgr, volatile)
     @assert mgr != C_NULL "Failed to create SourceManager"
     return SourceManager(mgr)
@@ -32,8 +31,7 @@ accepted.
 
 See also [`get_file`](@ref).
 """
-function FileID(src_mgr::SourceManager, ref::FileEntryRef,
-                loc::SourceLocation=SourceLocation())
+function FileID(src_mgr::SourceManager, ref::FileEntryRef, loc::SourceLocation=SourceLocation())
     @check_ptrs src_mgr ref
     return FileID(clang_SourceManager_createFileIDFromFileEntry(src_mgr, ref, loc))
 end
@@ -96,8 +94,7 @@ Override the contents of the given source file with the buffer.
 
 This function takes ownership of the memory buffer.
 """
-function overrideFileContents(src_mgr::SourceManager, entry::FileEntryRef,
-                              buffer::LLVM.MemoryBuffer)
+function overrideFileContents(src_mgr::SourceManager, entry::FileEntryRef, buffer::LLVM.MemoryBuffer)
     @check_ptrs src_mgr entry
     return clang_SourceManager_overrideFileContents(src_mgr, entry, buffer)
 end
@@ -105,7 +102,6 @@ function dump(x::SourceLocation, src_mgr::SourceManager)
     @check_ptrs src_mgr
     return clang_SourceLocation_dump(x, src_mgr)
 end
-
 
 function getDiagnostics(src_mgr::SourceManager)
     @check_ptrs src_mgr
@@ -128,8 +124,7 @@ Return the `FileID` for the given file, creating one if necessary.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function getOrCreateFileID(src_mgr::SourceManager, ref::FileEntryRef,
-                           kind::CXCharacteristicKind=CXCharacteristicKind_C_User)
+function getOrCreateFileID(src_mgr::SourceManager, ref::FileEntryRef, kind::CXCharacteristicKind=CXCharacteristicKind_C_User)
     @check_ptrs src_mgr ref
     return FileID(clang_SourceManager_getOrCreateFileID(src_mgr, ref, kind))
 end
@@ -424,15 +419,13 @@ end
 Return the presumed `(filename, line, column, include_loc)` for `loc`, or `nothing` when
 the presumed location cannot be computed.
 """
-function getPresumedLoc(src_mgr::SourceManager, loc::SourceLocation;
-                        use_line_directives::Bool=true)
+function getPresumedLoc(src_mgr::SourceManager, loc::SourceLocation; use_line_directives::Bool=true)
     @check_ptrs src_mgr
     fname = Ref{Ptr{Cchar}}(C_NULL)
     line = Ref{Cuint}(0)
     col = Ref{Cuint}(0)
     iloc = Ref{CXSourceLocation_}(C_NULL)
-    ok = clang_SourceManager_getPresumedLoc(src_mgr, loc, use_line_directives, fname, line,
-                                            col, iloc)
+    ok = clang_SourceManager_getPresumedLoc(src_mgr, loc, use_line_directives, fname, line, col, iloc)
     ok || return nothing
     return unsafe_string(fname[]), line[], col[], SourceLocation(iloc[])
 end
@@ -442,8 +435,7 @@ function isInMainFile(src_mgr::SourceManager, loc::SourceLocation)
     return clang_SourceManager_isInMainFile(src_mgr, loc)
 end
 
-function isWrittenInSameFile(src_mgr::SourceManager, loc1::SourceLocation,
-                             loc2::SourceLocation)
+function isWrittenInSameFile(src_mgr::SourceManager, loc1::SourceLocation, loc2::SourceLocation)
     @check_ptrs src_mgr
     return clang_SourceManager_isWrittenInSameFile(src_mgr, loc1, loc2)
 end
@@ -500,11 +492,9 @@ function isInFileID(src_mgr::SourceManager, loc::SourceLocation, id::FileID)
     return ret, offset[]
 end
 
-function translateFileLineCol(src_mgr::SourceManager, entry::FileEntry, line::Integer,
-                              col::Integer)
+function translateFileLineCol(src_mgr::SourceManager, entry::FileEntry, line::Integer, col::Integer)
     @check_ptrs src_mgr entry
-    return SourceLocation(clang_SourceManager_translateFileLineCol(src_mgr, entry, line,
-                                                                   col))
+    return SourceLocation(clang_SourceManager_translateFileLineCol(src_mgr, entry, line, col))
 end
 
 """
@@ -528,20 +518,17 @@ function getMacroArgExpandedLocation(src_mgr::SourceManager, loc::SourceLocation
     return SourceLocation(clang_SourceManager_getMacroArgExpandedLocation(src_mgr, loc))
 end
 
-function isBeforeInTranslationUnit(src_mgr::SourceManager, lhs::SourceLocation,
-                                   rhs::SourceLocation)
+function isBeforeInTranslationUnit(src_mgr::SourceManager, lhs::SourceLocation, rhs::SourceLocation)
     @check_ptrs src_mgr
     return clang_SourceManager_isBeforeInTranslationUnit(src_mgr, lhs, rhs)
 end
 
-function isBeforeInSLocAddrSpace(src_mgr::SourceManager, lhs::SourceLocation,
-                                 rhs::SourceLocation)
+function isBeforeInSLocAddrSpace(src_mgr::SourceManager, lhs::SourceLocation, rhs::SourceLocation)
     @check_ptrs src_mgr
     return clang_SourceManager_isBeforeInSLocAddrSpace(src_mgr, lhs, rhs)
 end
 
-function isPointWithin(src_mgr::SourceManager, loc::SourceLocation, b::SourceLocation,
-                       e::SourceLocation)
+function isPointWithin(src_mgr::SourceManager, loc::SourceLocation, b::SourceLocation, e::SourceLocation)
     @check_ptrs src_mgr
     return clang_SourceManager_isPointWithin(src_mgr, loc, b, e)
 end
@@ -555,7 +542,6 @@ function getTopMacroCallerLoc(src_mgr::SourceManager, loc::SourceLocation)
     @check_ptrs src_mgr
     return SourceLocation(clang_SourceManager_getTopMacroCallerLoc(src_mgr, loc))
 end
-
 
 function userFilesAreVolatile(src_mgr::SourceManager)
     @check_ptrs src_mgr
@@ -652,7 +638,6 @@ function isLocalSourceLocation(src_mgr::SourceManager, loc::SourceLocation)
     @check_ptrs src_mgr
     return clang_SourceManager_isLocalSourceLocation(src_mgr, loc)
 end
-
 
 # SourceManager: the SLocEntry table
 
@@ -865,7 +850,6 @@ function getExpansion(x::AbstractSLocEntry)
     return ExpansionInfo(clang_SLocEntry_getExpansion(x))
 end
 
-
 # SourceManager: configuration, sizes and the loaded SLocEntry table
 
 """
@@ -1059,7 +1043,6 @@ function getInvalidBOM(str::AbstractString)
     return ptr == C_NULL ? nothing : unsafe_string(ptr)
 end
 
-
 # SourceManager: the whole-manager dump, ID tables and the module build stack
 
 """
@@ -1126,8 +1109,7 @@ Push `name` onto the module build stack, recording `import_loc` as the location 
 triggered the build. Clang stores it as a `clang::FullSourceLoc`, which the C shim builds by
 pairing `import_loc` with `src_mgr` itself.
 """
-function pushModuleBuildStack(src_mgr::SourceManager, name::AbstractString,
-                              import_loc::SourceLocation)
+function pushModuleBuildStack(src_mgr::SourceManager, name::AbstractString, import_loc::SourceLocation)
     @check_ptrs src_mgr
     return clang_SourceManager_pushModuleBuildStack(src_mgr, name, import_loc)
 end
@@ -1143,11 +1125,9 @@ return the start of the expansion. The argument was written at `spelling_loc` an
 This grows the manager's SLocEntry table, so every borrowed `SLocEntry`, `FileInfo` and
 `ExpansionInfo` fetched before the call dangles afterwards — re-fetch instead of caching.
 """
-function createMacroArgExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation,
-                                    expansion_loc::SourceLocation, len::Integer)
+function createMacroArgExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation, expansion_loc::SourceLocation, len::Integer)
     @check_ptrs src_mgr
-    loc = clang_SourceManager_createMacroArgExpansionLoc(src_mgr, spelling_loc,
-                                                         expansion_loc, len)
+    loc = clang_SourceManager_createMacroArgExpansionLoc(src_mgr, spelling_loc, expansion_loc, len)
     return SourceLocation(loc)
 end
 
@@ -1161,12 +1141,10 @@ written in the same file; the precondition is restated here. Like
 [`createMacroArgExpansionLoc`](@ref) this grows the SLocEntry table and dangles every
 borrowed entry fetched earlier.
 """
-function createTokenSplitLoc(src_mgr::SourceManager, spelling_loc::SourceLocation,
-                             token_start::SourceLocation, token_end::SourceLocation)
+function createTokenSplitLoc(src_mgr::SourceManager, spelling_loc::SourceLocation, token_start::SourceLocation, token_end::SourceLocation)
     @check_ptrs src_mgr
     @assert isWrittenInSameFile(src_mgr, token_start, token_end) "a split token's start and end must be in one file"
-    loc = clang_SourceManager_createTokenSplitLoc(src_mgr, spelling_loc, token_start,
-                                                  token_end)
+    loc = clang_SourceManager_createTokenSplitLoc(src_mgr, spelling_loc, token_start, token_end)
     return SourceLocation(loc)
 end
 
@@ -1199,8 +1177,7 @@ end
 Return the source buffer contents for `id`, falling back to Clang's fake recovery buffer
 when the buffer is invalid. `loc` is where a "cannot open file" diagnostic is reported.
 """
-function getBufferDataOrFake(src_mgr::SourceManager, id::FileID,
-                             loc::SourceLocation=SourceLocation())
+function getBufferDataOrFake(src_mgr::SourceManager, id::FileID, loc::SourceLocation=SourceLocation())
     @check_ptrs src_mgr id
     len = Ref{Csize_t}(0)
     ptr = clang_SourceManager_getBufferDataOrFake(src_mgr, id, loc, len)
@@ -1231,8 +1208,7 @@ Clang asserts that `[start, start + len)` is a valid chunk of one half of the ad
 so pass a `start` obtained from this manager together with a `len` that does not run past
 the end of its file — [`getFileIDSize`](@ref) is the usual source of both.
 """
-function isInSLocAddrSpace(src_mgr::SourceManager, loc::SourceLocation,
-                           start::SourceLocation, len::Integer)
+function isInSLocAddrSpace(src_mgr::SourceManager, loc::SourceLocation, start::SourceLocation, len::Integer)
     @check_ptrs src_mgr
     offset = Ref{UInt32}(0)
     inside = clang_SourceManager_isInSLocAddrSpace(src_mgr, loc, start, len, offset)
@@ -1249,12 +1225,9 @@ Clang asserts that notes are added to one file in strictly increasing offset ord
 call also flips that file's `hasLineDirectives` flag, so every later presumed location in it
 is resolved through the line table.
 """
-function AddLineNote(src_mgr::SourceManager, loc::SourceLocation, line::Integer,
-                     filename_id::Integer, is_file_entry::Bool, is_file_exit::Bool,
-                     kind::CXCharacteristicKind=CXCharacteristicKind_C_User)
+function AddLineNote(src_mgr::SourceManager, loc::SourceLocation, line::Integer, filename_id::Integer, is_file_entry::Bool, is_file_exit::Bool, kind::CXCharacteristicKind=CXCharacteristicKind_C_User)
     @check_ptrs src_mgr
-    return clang_SourceManager_AddLineNote(src_mgr, loc, line, filename_id, is_file_entry,
-                                           is_file_exit, kind)
+    return clang_SourceManager_AddLineNote(src_mgr, loc, line, filename_id, is_file_entry, is_file_exit, kind)
 end
 
 # SrcMgr::ContentCache, SrcMgr::FileInfo and SrcMgr::ExpansionInfo tails
@@ -1267,8 +1240,7 @@ error is reported through `diag` at `loc`.
 Unlike [`getBufferDataIfLoaded`](@ref) this forces the buffer to be loaded, so it is also
 what makes [`isBufferLoaded`](@ref) start returning `true`.
 """
-function getBufferDataOrNone(x::AbstractContentCache, diag::DiagnosticsEngine,
-                             file_mgr::FileManager, loc::SourceLocation=SourceLocation())
+function getBufferDataOrNone(x::AbstractContentCache, diag::DiagnosticsEngine, file_mgr::FileManager, loc::SourceLocation=SourceLocation())
     @check_ptrs x diag file_mgr
     len = Ref{Csize_t}(0)
     ptr = clang_ContentCache_getBufferDataOrNone(x, diag, file_mgr, loc, len)
@@ -1298,7 +1270,6 @@ function getExpansionLocRange(x::AbstractExpansionInfo)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E)), is_token[]
 end
 
-
 """
     createExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation,
                        expansion_start::SourceLocation, expansion_end::SourceLocation,
@@ -1312,14 +1283,9 @@ body begins at `spelling_loc` and runs for `len` bytes; the use spans
 than its last character. `loaded_id`/`loaded_offset` place the entry in the loaded half of
 the source-location address space and are `0` for a locally created expansion.
 """
-function createExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation,
-                            expansion_start::SourceLocation, expansion_end::SourceLocation,
-                            len::Integer; is_token_range::Bool=true, loaded_id::Integer=0,
-                            loaded_offset::Integer=0)
+function createExpansionLoc(src_mgr::SourceManager, spelling_loc::SourceLocation, expansion_start::SourceLocation, expansion_end::SourceLocation, len::Integer; is_token_range::Bool=true, loaded_id::Integer=0, loaded_offset::Integer=0)
     @check_ptrs src_mgr
-    loc = clang_SourceManager_createExpansionLoc(src_mgr, spelling_loc, expansion_start,
-                                                 expansion_end, len, is_token_range,
-                                                 loaded_id, loaded_offset)
+    loc = clang_SourceManager_createExpansionLoc(src_mgr, spelling_loc, expansion_start, expansion_end, len, is_token_range, loaded_id, loaded_offset)
     return SourceLocation(loc)
 end
 
@@ -1335,15 +1301,12 @@ Both decomposed locations are walked up to their common ancestor file, so `lhs_i
 the walked ones. The two `FileID` boxes stay caller-owned and are still released with
 `dispose`.
 """
-function isInTheSameTranslationUnit(src_mgr::SourceManager, lhs_id::FileID,
-                                    lhs_offset::Integer, rhs_id::FileID,
-                                    rhs_offset::Integer)
+function isInTheSameTranslationUnit(src_mgr::SourceManager, lhs_id::FileID, lhs_offset::Integer, rhs_id::FileID, rhs_offset::Integer)
     @check_ptrs src_mgr lhs_id rhs_id
     loff = Ref{Cuint}(lhs_offset)
     roff = Ref{Cuint}(rhs_offset)
     before = Ref{Bool}(false)
-    same = clang_SourceManager_isInTheSameTranslationUnit(src_mgr, lhs_id, loff, rhs_id,
-                                                          roff, before)
+    same = clang_SourceManager_isInTheSameTranslationUnit(src_mgr, lhs_id, loff, rhs_id, roff, before)
     return same, before[], loff[], roff[]
 end
 
@@ -1353,14 +1316,10 @@ end
 Return `true` iff the two decomposed locations live in the same translation unit, leaving
 both of them untouched.
 """
-function isInTheSameTranslationUnitImpl(src_mgr::SourceManager, lhs_id::FileID,
-                                        lhs_offset::Integer, rhs_id::FileID,
-                                        rhs_offset::Integer)
+function isInTheSameTranslationUnitImpl(src_mgr::SourceManager, lhs_id::FileID, lhs_offset::Integer, rhs_id::FileID, rhs_offset::Integer)
     @check_ptrs src_mgr lhs_id rhs_id
-    return clang_SourceManager_isInTheSameTranslationUnitImpl(src_mgr, lhs_id, lhs_offset,
-                                                              rhs_id, rhs_offset)
+    return clang_SourceManager_isInTheSameTranslationUnitImpl(src_mgr, lhs_id, lhs_offset, rhs_id, rhs_offset)
 end
-
 
 # SourceManager: replay, the fileinfo map and address-space notes
 
@@ -1430,12 +1389,10 @@ end
 Report through `diag` how much of the source location address space each file occupies.
 `max_notes` caps how many files are named; pass `nothing` to report every one of them.
 """
-function noteSLocAddressSpaceUsage(src_mgr::SourceManager, diag::DiagnosticsEngine;
-                                   max_notes::Union{Integer,Nothing}=32)
+function noteSLocAddressSpaceUsage(src_mgr::SourceManager, diag::DiagnosticsEngine; max_notes::Union{Integer,Nothing}=32)
     @check_ptrs src_mgr diag
     has_max = max_notes !== nothing
-    return clang_SourceManager_noteSLocAddressSpaceUsage(src_mgr, diag, has_max,
-                                                         has_max ? max_notes : 0)
+    return clang_SourceManager_noteSLocAddressSpaceUsage(src_mgr, diag, has_max, has_max ? max_notes : 0)
 end
 
 # LineOffsetMapping

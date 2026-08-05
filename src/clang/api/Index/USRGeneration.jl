@@ -28,21 +28,16 @@ end
     generateUSRForObjCClass(cls; ext_symbol_defined_in="", category_context_ext_symbol_defined_in="") -> String
 Generate a USR *fragment* for an Objective-C class.
 """
-function generateUSRForObjCClass(cls::AbstractString; ext_symbol_defined_in::AbstractString="",
-                                 category_context_ext_symbol_defined_in::AbstractString="")
-    return get_string(clang_index_generateUSRForObjCClass(cls, ext_symbol_defined_in,
-                                                          category_context_ext_symbol_defined_in))
+function generateUSRForObjCClass(cls::AbstractString; ext_symbol_defined_in::AbstractString="", category_context_ext_symbol_defined_in::AbstractString="")
+    return get_string(clang_index_generateUSRForObjCClass(cls, ext_symbol_defined_in, category_context_ext_symbol_defined_in))
 end
 
 """
     generateUSRForObjCCategory(cls, cat; cls_ext_symbol_defined_in="", cat_ext_symbol_defined_in="") -> String
 Generate a USR fragment for an Objective-C class category.
 """
-function generateUSRForObjCCategory(cls::AbstractString, cat::AbstractString;
-                                    cls_ext_symbol_defined_in::AbstractString="",
-                                    cat_ext_symbol_defined_in::AbstractString="")
-    return get_string(clang_index_generateUSRForObjCCategory(cls, cat, cls_ext_symbol_defined_in,
-                                                             cat_ext_symbol_defined_in))
+function generateUSRForObjCCategory(cls::AbstractString, cat::AbstractString; cls_ext_symbol_defined_in::AbstractString="", cat_ext_symbol_defined_in::AbstractString="")
+    return get_string(clang_index_generateUSRForObjCCategory(cls, cat, cls_ext_symbol_defined_in, cat_ext_symbol_defined_in))
 end
 
 """
@@ -74,8 +69,7 @@ end
     generateUSRForObjCProtocol(prot; ext_symbol_defined_in="") -> String
 Generate a USR fragment for an Objective-C protocol.
 """
-function generateUSRForObjCProtocol(prot::AbstractString;
-                                    ext_symbol_defined_in::AbstractString="")
+function generateUSRForObjCProtocol(prot::AbstractString; ext_symbol_defined_in::AbstractString="")
     return get_string(clang_index_generateUSRForObjCProtocol(prot, ext_symbol_defined_in))
 end
 
@@ -83,8 +77,7 @@ end
     generateUSRForGlobalEnum(enum_name; ext_symbol_defined_in="") -> String
 Generate a USR fragment for a global (non-nested) enum.
 """
-function generateUSRForGlobalEnum(enum_name::AbstractString;
-                                  ext_symbol_defined_in::AbstractString="")
+function generateUSRForGlobalEnum(enum_name::AbstractString; ext_symbol_defined_in::AbstractString="")
     return get_string(clang_index_generateUSRForGlobalEnum(enum_name, ext_symbol_defined_in))
 end
 
@@ -107,8 +100,7 @@ owned by `sm` — the wrapped function calls `SourceManager::isInSystemHeader(lo
 the decomposed location, both of which index `sm`'s own tables and are undefined for a
 foreign location.
 """
-function generateUSRForMacro(macro_name::AbstractString, loc::SourceLocation,
-                             sm::AbstractSourceManager)
+function generateUSRForMacro(macro_name::AbstractString, loc::SourceLocation, sm::AbstractSourceManager)
     @check_ptrs sm
     return get_string(clang_index_generateUSRForMacro(macro_name, loc, sm))
 end

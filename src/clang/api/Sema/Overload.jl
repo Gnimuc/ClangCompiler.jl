@@ -163,8 +163,7 @@ Make `x` a bad conversion from `from` to `to` for the given failure kind.
 
 This is clang's implicit-argument overload, which records no source expression.
 """
-function setBad(x::AbstractImplicitConversionSequence,
-                failure::CXBadConversionSequence_FailureKind, from::QualType, to::QualType)
+function setBad(x::AbstractImplicitConversionSequence, failure::CXBadConversionSequence_FailureKind, from::QualType, to::QualType)
     @check_ptrs x
     return clang_ImplicitConversionSequence_setBad(x, failure, from, to)
 end
@@ -188,11 +187,9 @@ function hasInitializerListContainerType(x::AbstractImplicitConversionSequence)
     return clang_ImplicitConversionSequence_hasInitializerListContainerType(x)
 end
 
-function setInitializerListContainerType(x::AbstractImplicitConversionSequence, ty::QualType,
-                                         incomplete_array::Bool)
+function setInitializerListContainerType(x::AbstractImplicitConversionSequence, ty::QualType, incomplete_array::Bool)
     @check_ptrs x
-    return clang_ImplicitConversionSequence_setInitializerListContainerType(x, ty,
-                                                                            incomplete_array)
+    return clang_ImplicitConversionSequence_setInitializerListContainerType(x, ty, incomplete_array)
 end
 
 function isInitializerListOfIncompleteArray(x::AbstractImplicitConversionSequence)
@@ -257,7 +254,6 @@ function empty(x::AbstractOverloadCandidateSet)
     @check_ptrs x
     return clang_OverloadCandidateSet_empty(x)
 end
-
 
 # StandardConversionSequence (cont.)
 
@@ -469,12 +465,10 @@ Only defined while the set's kind is `CSK_InitByConstructor` or
 function setDestAS(x::AbstractOverloadCandidateSet, as::CXLangAS)
     @check_ptrs x
     kind = getKind(x)
-    ok = kind == CXOverloadCandidateSet_CSK_InitByConstructor ||
-         kind == CXOverloadCandidateSet_CSK_InitByUserDefinedConversion
+    ok = kind == CXOverloadCandidateSet_CSK_InitByConstructor || kind == CXOverloadCandidateSet_CSK_InitByUserDefinedConversion
     @assert ok "candidate set is not constructing an object"
     return clang_OverloadCandidateSet_setDestAS(x, as)
 end
-
 
 # AmbiguousConversionSequence
 #
@@ -555,8 +549,7 @@ Append the `(found declaration, function)` pair to this sequence's conversion se
 The set may reallocate its storage, so indices taken before the call stay valid but nothing
 borrowing that storage does.
 """
-function addConversion(x::AbstractAmbiguousConversionSequence, found::AbstractNamedDecl,
-                       d::AbstractFunctionDecl)
+function addConversion(x::AbstractAmbiguousConversionSequence, found::AbstractNamedDecl, d::AbstractFunctionDecl)
     @check_ptrs x found d
     return clang_AmbiguousConversionSequence_addConversion(x, found, d)
 end
@@ -601,8 +594,7 @@ Record `failure` on `x`, with `e` as the source expression and `to` as the desti
 This is clang's expression overload, which takes the from-type from `e`; the type-only form
 is reached through `setBad(::AbstractImplicitConversionSequence, ...)`.
 """
-function init(x::AbstractBadConversionSequence,
-              failure::CXBadConversionSequence_FailureKind, e::AbstractExpr, to::QualType)
+function init(x::AbstractBadConversionSequence, failure::CXBadConversionSequence_FailureKind, e::AbstractExpr, to::QualType)
     @check_ptrs x e
     return clang_BadConversionSequence_init(x, failure, e, to)
 end
@@ -617,12 +609,8 @@ considered while candidates are added to it.
 The two-argument form uses clang's default (empty) rewrite info instead. This function
 allocates and one should call `dispose` to release the resources after using this object.
 """
-function OverloadCandidateSet(loc::SourceLocation,
-                              kind::CXOverloadCandidateSet_CandidateSetKind,
-                              op::CXOverloadedOperatorKind, op_loc::SourceLocation,
-                              allow_rewritten::Bool)
-    cs = clang_OverloadCandidateSet_createWithRewriteInfo(loc, kind, op, op_loc,
-                                                          allow_rewritten)
+function OverloadCandidateSet(loc::SourceLocation, kind::CXOverloadCandidateSet_CandidateSetKind, op::CXOverloadedOperatorKind, op_loc::SourceLocation, allow_rewritten::Bool)
+    cs = clang_OverloadCandidateSet_createWithRewriteInfo(loc, kind, op, op_loc, allow_rewritten)
     @assert cs != C_NULL "Failed to create OverloadCandidateSet"
     return OverloadCandidateSet(cs)
 end
@@ -769,7 +757,6 @@ function getConversion(x::AbstractOverloadCandidate, i::Integer)
     return ImplicitConversionSequence(clang_OverloadCandidate_getConversion(x, i))
 end
 
-
 """
     getNarrowingKind(x::AbstractStandardConversionSequence, ctx::ASTContext,
                      converted::AbstractExpr, value::APValue,
@@ -788,14 +775,11 @@ to-types must already be set, because the method reads `getToType(0)` and derefe
 normally establishes them; on a sequence whose types no setter has touched they are
 indeterminate and reading them is undefined.
 """
-function getNarrowingKind(x::AbstractStandardConversionSequence, ctx::ASTContext,
-                          converted::AbstractExpr, value::APValue,
-                          ignore_float_to_integral::Bool=false)
+function getNarrowingKind(x::AbstractStandardConversionSequence, ctx::ASTContext, converted::AbstractExpr, value::APValue, ignore_float_to_integral::Bool=false)
     @check_ptrs x ctx converted value
     @assert getCPlusPlus(getLangOpts(ctx)) "narrowing is a C++ notion; ctx is not a C++ context"
     ty = Ref{CXQualType}(C_NULL)
-    kind = clang_StandardConversionSequence_getNarrowingKind(x, ctx, converted, value, ty,
-                                                             ignore_float_to_integral)
+    kind = clang_StandardConversionSequence_getNarrowingKind(x, ctx, converted, value, ty, ignore_float_to_integral)
     return kind, QualType(ty[])
 end
 
@@ -898,8 +882,7 @@ end
     setConversionFunction(x::AbstractUserDefinedConversionSequence, fd::AbstractFunctionDecl)
 Record `fd` as the function performing the user-defined conversion.
 """
-function setConversionFunction(x::AbstractUserDefinedConversionSequence,
-                               fd::AbstractFunctionDecl)
+function setConversionFunction(x::AbstractUserDefinedConversionSequence, fd::AbstractFunctionDecl)
     @check_ptrs x fd
     return clang_UserDefinedConversionSequence_setConversionFunction(x, fd)
 end
@@ -951,8 +934,7 @@ clang constructs the set in place rather than assigning to it — this is what
 `x`'s set must not be live: run `destruct` first. `other`'s set must be live and both of its
 types must have been set.
 """
-function copyFrom(x::AbstractAmbiguousConversionSequence,
-                  other::AbstractAmbiguousConversionSequence)
+function copyFrom(x::AbstractAmbiguousConversionSequence, other::AbstractAmbiguousConversionSequence)
     @check_ptrs x other
     return clang_AmbiguousConversionSequence_copyFrom(x, other)
 end
@@ -1009,8 +991,7 @@ Return whether diagnostics for this candidate set should be deferred.
 Only the CUDA/HIP deferred-diagnostic path answers anything but `false`, and that path walks
 both the candidates and `args`, which is the argument list the set was built for.
 """
-function shouldDeferDiags(x::AbstractOverloadCandidateSet, sema::AbstractSema,
-                          args::AbstractVector{<:AbstractExpr}, op_loc::SourceLocation)
+function shouldDeferDiags(x::AbstractOverloadCandidateSet, sema::AbstractSema, args::AbstractVector{<:AbstractExpr}, op_loc::SourceLocation)
     @check_ptrs x sema
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_OverloadCandidateSet_shouldDeferDiags(x, sema, buf, length(buf), op_loc)
@@ -1033,7 +1014,6 @@ function allocateConversionSequences(x::AbstractOverloadCandidateSet, n::Integer
     clang_OverloadCandidateSet_allocateConversionSequences(x, n, buf)
     return [ImplicitConversionSequence(p) for p in buf]
 end
-
 
 # OverloadCandidateSet::OperatorRewriteInfo
 #
@@ -1074,8 +1054,7 @@ The value is a bitmask as well as a rank: a candidate that is both a different o
 reversed carries `CRK_DifferentOperator | CRK_Reversed`, which is not itself an enumerator and
 prints as an invalid instance.
 """
-function rewriteInfoGetRewriteKind(x::AbstractOverloadCandidateSet, fd::AbstractFunctionDecl,
-                                   reversed::Bool=false)
+function rewriteInfoGetRewriteKind(x::AbstractOverloadCandidateSet, fd::AbstractFunctionDecl, reversed::Bool=false)
     @check_ptrs x fd
     return clang_OverloadCandidateSet_rewriteInfoGetRewriteKind(x, fd, reversed)
 end
@@ -1116,14 +1095,13 @@ candidate is only resolvable once every slot has been given a kind, which is ass
 Resolution also flips each candidate's internal best-so-far flag: handles into `x` stay valid,
 but their state changes.
 """
-function BestViableFunction(x::AbstractOverloadCandidateSet, sema::AbstractSema,
-                            loc::SourceLocation)
+function BestViableFunction(x::AbstractOverloadCandidateSet, sema::AbstractSema, loc::SourceLocation)
     @check_ptrs x sema
     n = Int(size(x))
     if n > 1
-        for i in 0:(n - 1)
+        for i = 0:(n - 1)
             c = getCandidate(x, i)
-            for j in 0:(Int(getNumConversions(c)) - 1)
+            for j = 0:(Int(getNumConversions(c)) - 1)
                 @assert isInitialized(getConversion(c, j)) "candidate $i has no conversion $j yet"
             end
         end
@@ -1132,8 +1110,6 @@ function BestViableFunction(x::AbstractOverloadCandidateSet, sema::AbstractSema,
     res = clang_OverloadCandidateSet_BestViableFunction(x, sema, loc, best)
     return res, best[] == C_NULL ? nothing : OverloadCandidate(best[])
 end
-
-
 
 # OverloadCandidate public members
 #
@@ -1237,15 +1213,13 @@ candidate is only usable here once every slot has been given a kind, which is as
 The returned carriers borrow `x`'s candidate vector: `addCandidate` invalidates them, and
 `clear` and `dispose` destroy them.
 """
-function CompleteCandidates(x::AbstractOverloadCandidateSet, sema::AbstractSema,
-                            kind::CXOverloadCandidateDisplayKind,
-                            args::AbstractVector{<:AbstractExpr}, loc::SourceLocation)
+function CompleteCandidates(x::AbstractOverloadCandidateSet, sema::AbstractSema, kind::CXOverloadCandidateDisplayKind, args::AbstractVector{<:AbstractExpr}, loc::SourceLocation)
     @check_ptrs x sema
     n = Int(size(x))
     if n > 1
-        for i in 0:(n - 1)
+        for i = 0:(n - 1)
             c = getCandidate(x, i)
-            for j in 0:(Int(getNumConversions(c)) - 1)
+            for j = 0:(Int(getNumConversions(c)) - 1)
                 @assert isInitialized(getConversion(c, j)) "candidate $i has no conversion $j yet"
             end
         end
@@ -1254,7 +1228,6 @@ function CompleteCandidates(x::AbstractOverloadCandidateSet, sema::AbstractSema,
     # The selection is a subset of the set, so one capacity-bounded call both sizes and fills
     # it; a count-then-fill pair would run the non-viable completion walk twice.
     out = Vector{CXOverloadCandidate}(undef, n)
-    total = clang_OverloadCandidateSet_CompleteCandidates(x, sema, kind, argv, length(argv),
-                                                          loc, out, n)
-    return [OverloadCandidate(out[i]) for i in 1:Int(total)]
+    total = clang_OverloadCandidateSet_CompleteCandidates(x, sema, kind, argv, length(argv), loc, out, n)
+    return [OverloadCandidate(out[i]) for i = 1:Int(total)]
 end

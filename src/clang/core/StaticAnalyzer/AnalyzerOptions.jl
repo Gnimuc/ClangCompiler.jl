@@ -11,4 +11,3 @@ Hold a pointer to a `clang::AnalyzerOptions` object.
 struct AnalyzerOptions <: AbstractAnalyzerOptions
     ptr::CXAnalyzerOptions
 end
-

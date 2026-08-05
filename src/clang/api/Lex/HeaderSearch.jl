@@ -270,9 +270,7 @@ This is `clang::ModuleMap::isModular` restated over the mirrored enumerators rat
 crossed as a call, and it is the predicate [`MarkFileModuleHeader`](@ref) uses to decide
 whether to set the module-header bit.
 """
-isModular(role_bits::Union{Integer,CXModuleHeaderRole}) =
-    (UInt32(role_bits) &
-     (UInt32(CXModuleHeaderRole_TextualHeader) | UInt32(CXModuleHeaderRole_ExcludedHeader))) == 0
+isModular(role_bits::Union{Integer,CXModuleHeaderRole}) = (UInt32(role_bits) & (UInt32(CXModuleHeaderRole_TextualHeader) | UInt32(CXModuleHeaderRole_ExcludedHeader))) == 0
 
 """
     isPrivateHeaderRole(role_bits) -> Bool
@@ -284,22 +282,19 @@ legal and matches no enumerator on its own. That is why every role crosses the b
 `UInt32` and is read with these predicates. The normal role is the absence of all three bits,
 i.e. `role_bits == 0`.
 """
-isPrivateHeaderRole(role_bits::Union{Integer,CXModuleHeaderRole}) =
-    (UInt32(role_bits) & UInt32(CXModuleHeaderRole_PrivateHeader)) != 0
+isPrivateHeaderRole(role_bits::Union{Integer,CXModuleHeaderRole}) = (UInt32(role_bits) & UInt32(CXModuleHeaderRole_PrivateHeader)) != 0
 
 """
     isTextualHeaderRole(role_bits) -> Bool
 Return whether `role_bits` has the textual-header bit set. See [`isPrivateHeaderRole`](@ref).
 """
-isTextualHeaderRole(role_bits::Union{Integer,CXModuleHeaderRole}) =
-    (UInt32(role_bits) & UInt32(CXModuleHeaderRole_TextualHeader)) != 0
+isTextualHeaderRole(role_bits::Union{Integer,CXModuleHeaderRole}) = (UInt32(role_bits) & UInt32(CXModuleHeaderRole_TextualHeader)) != 0
 
 """
     isExcludedHeaderRole(role_bits) -> Bool
 Return whether `role_bits` has the excluded-header bit set. See [`isPrivateHeaderRole`](@ref).
 """
-isExcludedHeaderRole(role_bits::Union{Integer,CXModuleHeaderRole}) =
-    (UInt32(role_bits) & UInt32(CXModuleHeaderRole_ExcludedHeader)) != 0
+isExcludedHeaderRole(role_bits::Union{Integer,CXModuleHeaderRole}) = (UInt32(role_bits) & UInt32(CXModuleHeaderRole_ExcludedHeader)) != 0
 
 """
     MarkFileModuleHeader(x::AbstractHeaderSearch, file::AbstractFileEntryRef, role_bits,
@@ -316,12 +311,9 @@ When the call would change nothing — a non-modular role with `is_compiling_mod
 false — clang returns before touching the record, so unlike the other `MarkFile*` functions
 this one does *not* always create a `HeaderFileInfo` for `file`.
 """
-function MarkFileModuleHeader(x::AbstractHeaderSearch, file::AbstractFileEntryRef,
-                              role_bits::Union{Integer,CXModuleHeaderRole},
-                              is_compiling_module_header::Bool)
+function MarkFileModuleHeader(x::AbstractHeaderSearch, file::AbstractFileEntryRef, role_bits::Union{Integer,CXModuleHeaderRole}, is_compiling_module_header::Bool)
     @check_ptrs x file
-    return clang_HeaderSearch_MarkFileModuleHeader(x, file, UInt32(role_bits),
-                                                   is_compiling_module_header)
+    return clang_HeaderSearch_MarkFileModuleHeader(x, file, UInt32(role_bits), is_compiling_module_header)
 end
 
 """
@@ -331,8 +323,7 @@ Record `controlling_macro` as the include guard protecting the whole of `file`, 
 what lets the multiple-include optimization skip a repeated `#include`. Creates the
 `HeaderFileInfo` record for `file` when there is none yet.
 """
-function SetFileControllingMacro(x::AbstractHeaderSearch, file::AbstractFileEntryRef,
-                                 controlling_macro::AbstractIdentifierInfo)
+function SetFileControllingMacro(x::AbstractHeaderSearch, file::AbstractFileEntryRef, controlling_macro::AbstractIdentifierInfo)
     @check_ptrs x file controlling_macro
     return clang_HeaderSearch_SetFileControllingMacro(x, file, controlling_macro)
 end
@@ -387,11 +378,9 @@ or an empty string when no prebuilt module file corresponds to it. With
 `file_map_only=true` only the explicit module-name-to-file map is consulted and the
 prebuilt-module-path search is skipped.
 """
-function getPrebuiltModuleFileName(x::AbstractHeaderSearch, module_name::AbstractString;
-                                   file_map_only::Bool=false)
+function getPrebuiltModuleFileName(x::AbstractHeaderSearch, module_name::AbstractString; file_map_only::Bool=false)
     @check_ptrs x
-    return get_string(clang_HeaderSearch_getPrebuiltModuleFileName(x, module_name,
-                                                                   file_map_only))
+    return get_string(clang_HeaderSearch_getPrebuiltModuleFileName(x, module_name, file_map_only))
 end
 
 """
@@ -401,8 +390,7 @@ Return whether a module map may map `filename` to a (sub)module. The search walk
 from `filename`'s directory and stops at `root`. Always false when implicit module maps are
 disabled, which is the default for an interpreter built without `-fimplicit-module-maps`.
 """
-function hasModuleMap(x::AbstractHeaderSearch, filename::AbstractString,
-                      root::AbstractDirectoryEntry, is_system::Bool)
+function hasModuleMap(x::AbstractHeaderSearch, filename::AbstractString, root::AbstractDirectoryEntry, is_system::Bool)
     @check_ptrs x root
     return clang_HeaderSearch_hasModuleMap(x, filename, root, is_system)
 end
@@ -428,8 +416,7 @@ unwrapped: a standalone one would have no target and no search paths.
 The map is entered into the interpreter's `SourceManager` as a new `FileID`, and any parse
 error is reported through `x`'s `DiagnosticsEngine`, so this mutates a running interpreter.
 """
-function loadModuleMapFile(x::AbstractHeaderSearch, file::AbstractFileEntryRef,
-                           is_system::Bool)
+function loadModuleMapFile(x::AbstractHeaderSearch, file::AbstractFileEntryRef, is_system::Bool)
     @check_ptrs x file
     return clang_HeaderSearch_loadModuleMapFile(x, file, is_system)
 end
@@ -450,12 +437,9 @@ search is gated on implicit module maps, and `allow_search=false` skips it entir
     modules built by `Module_(name, ...)`, and calling it here is a double free that also
     deletes every submodule.
 """
-function lookupModule(x::AbstractHeaderSearch, module_name::AbstractString;
-                      import_loc::SourceLocation=SourceLocation(), allow_search::Bool=true,
-                      allow_extra_module_map_search::Bool=false)
+function lookupModule(x::AbstractHeaderSearch, module_name::AbstractString; import_loc::SourceLocation=SourceLocation(), allow_search::Bool=true, allow_extra_module_map_search::Bool=false)
     @check_ptrs x
-    return Module_(clang_HeaderSearch_lookupModule(x, module_name, import_loc, allow_search,
-                                                   allow_extra_module_map_search))
+    return Module_(clang_HeaderSearch_lookupModule(x, module_name, import_loc, allow_search, allow_extra_module_map_search))
 end
 
 """
@@ -482,8 +466,7 @@ Compose it here instead: a non-NULL module, a role without the excluded bit, and
 
 The module is **borrowed** from `x`'s module map; never `dispose` it.
 """
-function findModuleForHeader(x::AbstractHeaderSearch, file::AbstractFileEntryRef;
-                             allow_textual::Bool=false, allow_excluded::Bool=false)
+function findModuleForHeader(x::AbstractHeaderSearch, file::AbstractFileEntryRef; allow_textual::Bool=false, allow_excluded::Bool=false)
     @check_ptrs x file
     role = Ref{UInt32}(0)
     mod = clang_HeaderSearch_findModuleForHeader(x, file, allow_textual, allow_excluded, role)
@@ -501,8 +484,7 @@ header shared by two — which is what this enumerates and [`findModuleForHeader
 collapses to a single best answer. Unlike that function this one infers nothing, so it neither
 creates modules nor changes its own answer between calls.
 """
-function getNumResolvedModulesForHeader(x::AbstractHeaderSearch,
-                                        file::AbstractFileEntryRef)
+function getNumResolvedModulesForHeader(x::AbstractHeaderSearch, file::AbstractFileEntryRef)
     @check_ptrs x file
     return clang_HeaderSearch_getNumResolvedModulesForHeader(x, file)
 end
@@ -517,8 +499,7 @@ shim indexes the array unchecked.
 The role is a bitmask — see [`isPrivateHeaderRole`](@ref). The module is **borrowed** from
 `x`'s module map; never `dispose` it.
 """
-function getResolvedModuleForHeader(x::AbstractHeaderSearch, file::AbstractFileEntryRef,
-                                    idx::Integer)
+function getResolvedModuleForHeader(x::AbstractHeaderSearch, file::AbstractFileEntryRef, idx::Integer)
     @check_ptrs x file
     @assert 0 <= idx < getNumResolvedModulesForHeader(x, file) "resolved module index out of range"
     role = Ref{UInt32}(0)
@@ -591,14 +572,11 @@ no module machinery at all.
 
 A non-`NULL` result allocates and one should call `dispose` to release it.
 """
-function LookupFile(x::AbstractHeaderSearch, filename::AbstractString;
-                    is_angled::Bool=false, skip_cache::Bool=false,
-                    cache_failures::Bool=false)
+function LookupFile(x::AbstractHeaderSearch, filename::AbstractString; is_angled::Bool=false, skip_cache::Bool=false, cache_failures::Bool=false)
     @check_ptrs x
     is_mapped = Ref{Bool}(false)
     is_framework_found = Ref{Bool}(false)
-    fer = clang_HeaderSearch_LookupFile(x, filename, is_angled, skip_cache, cache_failures,
-                                        is_mapped, is_framework_found)
+    fer = clang_HeaderSearch_LookupFile(x, filename, is_angled, skip_cache, cache_failures, is_mapped, is_framework_found)
     return FileEntryRef(fer), is_mapped[], is_framework_found[]
 end
 
@@ -637,8 +615,7 @@ Like `getFileInfo` this hands back an owned snapshot rather than a view into the
 This function allocates and one should call `dispose` to release the resources after using
 this object -- but only when the returned carrier is non-NULL.
 """
-function getExistingFileInfo(x::AbstractHeaderSearch, file::AbstractFileEntryRef;
-                             want_external::Bool=true)
+function getExistingFileInfo(x::AbstractHeaderSearch, file::AbstractFileEntryRef; want_external::Bool=true)
     @check_ptrs x file
     return HeaderFileInfo(clang_HeaderSearch_copyExistingFileInfo(x, file, want_external))
 end
@@ -662,13 +639,10 @@ of the file the diagnostic is generated for; it is used to shorten the suggestio
 search directory is a prefix of `file`. The returned path uses forward slashes on every
 platform.
 """
-function suggestPathToFileForDiagnostics(x::AbstractHeaderSearch,
-                                         file::AbstractFileEntryRef,
-                                         main_file::AbstractString)
+function suggestPathToFileForDiagnostics(x::AbstractHeaderSearch, file::AbstractFileEntryRef, main_file::AbstractString)
     @check_ptrs x file
     is_angled = Ref{Bool}(false)
-    path = get_string(clang_HeaderSearch_suggestPathToFileForDiagnostics(x, file, main_file,
-                                                                         is_angled))
+    path = get_string(clang_HeaderSearch_suggestPathToFileForDiagnostics(x, file, main_file, is_angled))
     return path, is_angled[]
 end
 
@@ -787,8 +761,7 @@ caches keep the old ones; those caches are unreachable from here, so the stalene
 avoided but not repaired. [`AddSystemSearchPath`](@ref) appends instead and has no such
 ordering rule.
 """
-function AddSearchPath(x::AbstractHeaderSearch, dir::AbstractDirectoryLookup,
-                       is_angled::Bool)
+function AddSearchPath(x::AbstractHeaderSearch, dir::AbstractDirectoryLookup, is_angled::Bool)
     @check_ptrs x dir
     return clang_HeaderSearch_AddSearchPath(x, dir, is_angled)
 end
@@ -831,11 +804,9 @@ The result is empty in two cases: the search has no module cache path
 process's working directory), or `module_map_path`'s parent directory cannot be resolved.
 Nothing here requires modules to be enabled.
 """
-function getCachedModuleFileName(x::AbstractHeaderSearch, module_name::AbstractString,
-                                 module_map_path::AbstractString)
+function getCachedModuleFileName(x::AbstractHeaderSearch, module_name::AbstractString, module_map_path::AbstractString)
     @check_ptrs x
-    return get_string(clang_HeaderSearch_getCachedModuleFileName(x, module_name,
-                                                                 module_map_path))
+    return get_string(clang_HeaderSearch_getCachedModuleFileName(x, module_name, module_map_path))
 end
 
 """
@@ -855,10 +826,7 @@ search *it* holds, so a mismatched pair records the bit on the wrong one. The fi
 controlling-macro identifier must also not be out of date unless an external lookup source is
 installed, because clang resolves it through that source's vtable without checking for null.
 """
-function ShouldEnterIncludeFile(x::AbstractHeaderSearch, pp::Preprocessor,
-                                file::AbstractFileEntryRef, is_import::Bool=false;
-                                modules_enabled::Bool=false,
-                                mod::Union{AbstractModule,Nothing}=nothing)
+function ShouldEnterIncludeFile(x::AbstractHeaderSearch, pp::Preprocessor, file::AbstractFileEntryRef, is_import::Bool=false; modules_enabled::Bool=false, mod::Union{AbstractModule,Nothing}=nothing)
     @check_ptrs x pp file
     @assert getHeaderSearchInfo(pp).ptr == x.ptr "x must be pp's own header search"
     @assert modules_enabled == getModules(getLangOpts(pp)) "modules_enabled must match the invocation"
@@ -872,7 +840,6 @@ function ShouldEnterIncludeFile(x::AbstractHeaderSearch, pp::Preprocessor,
         end
     end
     first = Ref{Bool}(false)
-    enter = clang_HeaderSearch_ShouldEnterIncludeFile(x, pp, file, is_import, modules_enabled,
-                                                      mod === nothing ? C_NULL : mod, first)
+    enter = clang_HeaderSearch_ShouldEnterIncludeFile(x, pp, file, is_import, modules_enabled, mod === nothing ? C_NULL : mod, first)
     return enter, first[]
 end

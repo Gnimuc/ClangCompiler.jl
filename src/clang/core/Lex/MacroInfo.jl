@@ -47,4 +47,3 @@ Hold a pointer to a `clang::ModuleMacro` object.
 struct ModuleMacro <: AbstractModuleMacro
     ptr::CXModuleMacro
 end
-

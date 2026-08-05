@@ -35,9 +35,7 @@ function getDiagnosticClient(ci::CompilerInstance)
     return DiagnosticConsumer(clang_CompilerInstance_getDiagnosticClient(ci))
 end
 
-function createDiagnostics(ci::CompilerInstance,
-                           client::DiagnosticConsumer=DiagnosticConsumer(C_NULL),
-                           should_own_client=true)
+function createDiagnostics(ci::CompilerInstance, client::DiagnosticConsumer=DiagnosticConsumer(C_NULL), should_own_client=true)
     @check_ptrs ci
     return clang_CompilerInstance_createDiagnostics(ci, client, should_own_client)
 end
@@ -87,11 +85,9 @@ keeps ownership of the returned file manager.
 
 This function takes ownership of the memory buffer.
 """
-function createFileManagerWithVOFS4PCH(ci::CompilerInstance, path::AbstractString,
-                                       mtime::Integer, pch_buffer::LLVM.MemoryBuffer)
+function createFileManagerWithVOFS4PCH(ci::CompilerInstance, path::AbstractString, mtime::Integer, pch_buffer::LLVM.MemoryBuffer)
     @check_ptrs ci
-    return FileManager(clang_CompilerInstance_createFileManagerWithVOFS4PCH(ci, path, mtime,
-                                                                            pch_buffer))
+    return FileManager(clang_CompilerInstance_createFileManagerWithVOFS4PCH(ci, path, mtime, pch_buffer))
 end
 function getFileEntry(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
     file_mgr = getFileManager(ci)
@@ -491,18 +487,14 @@ that does not diagnose either, so a mismatched PCH loads silently.
 cannot be asserted, because nothing publishes it: the reader is attached to the AST context,
 so this must run before anything parses into that context.
 """
-function createPCHExternalASTSource(ci::CompilerInstance, path::AbstractString,
-                                    disable_validation=CXDisableValidationForModuleKind_None,
-                                    allow_pch_with_compiler_errors::Bool=false)
+function createPCHExternalASTSource(ci::CompilerInstance, path::AbstractString, disable_validation=CXDisableValidationForModuleKind_None, allow_pch_with_compiler_errors::Bool=false)
     @check_ptrs ci
     @assert hasInvocation(ci) "CompilerInstance has no invocation"
     @assert hasPreprocessor(ci) "CompilerInstance has no preprocessor"
     @assert hasASTContext(ci) "CompilerInstance has no AST context"
     # The two trailing parameters are clang's deserialization-listener hook. Nothing in this
     # package can build an `ASTDeserializationListener`, so they are never exposed.
-    return clang_CompilerInstance_createPCHExternalASTSource(ci, path, disable_validation,
-                                                             allow_pch_with_compiler_errors,
-                                                             C_NULL, false)
+    return clang_CompilerInstance_createPCHExternalASTSource(ci, path, disable_validation, allow_pch_with_compiler_errors, C_NULL, false)
 end
 
 """
@@ -747,8 +739,7 @@ diagnostic instead of a NULL `FileEntryRef` fed into the setter.
 [`getFileCharacteristic`](@ref) reads back. `path` may not be `"-"`, which clang would read as
 the calling process's standard input.
 """
-function InitializeSourceManagerFromFile(ci::CompilerInstance, path::AbstractString,
-                                         is_system::Bool=false)
+function InitializeSourceManagerFromFile(ci::CompilerInstance, path::AbstractString, is_system::Bool=false)
     @check_ptrs ci
     @assert hasDiagnostics(ci) "CompilerInstance has no diagnostics engine."
     @assert hasFileManager(ci) "CompilerInstance has no file manager."

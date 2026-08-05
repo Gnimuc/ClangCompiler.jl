@@ -59,9 +59,7 @@ _cxx_name(::Type{T}) where {T} = rstrip(String(nameof(T)), '_')
 # `Base.print` in full: this module defines its own `print` (clang's `TemplateArgument::print`),
 # which shadows Base's for everything inside the module.
 function Base.showerror(io::IO, e::CastError)
-    Base.print(io, "CastError: this node is a clang::", e.got, ", not a clang::",
-               _cxx_name(e.want),
-               ". Test with the matching `is…` predicate, or call `resolve` for the class it is.")
+    Base.print(io, "CastError: this node is a clang::", e.got, ", not a clang::", _cxx_name(e.want), ". Test with the matching `is…` predicate, or call `resolve` for the class it is.")
     return nothing
 end
 

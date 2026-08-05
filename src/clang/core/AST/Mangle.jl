@@ -21,4 +21,3 @@ Hold a pointer to a `clang::ItaniumMangleContext` object.
 struct ItaniumMangleContext <: AbstractItaniumMangleContext
     ptr::CXItaniumMangleContext
 end
-

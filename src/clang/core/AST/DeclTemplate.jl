@@ -189,4 +189,3 @@ Hold a pointer to a `clang::ImplicitConceptSpecializationDecl` object.
 struct ImplicitConceptSpecializationDecl <: AbstractImplicitConceptSpecializationDecl
     ptr::CXImplicitConceptSpecializationDecl
 end
-

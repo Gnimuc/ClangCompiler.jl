@@ -33,4 +33,3 @@ pointer is the null selector rather than an invalid handle.
 struct Selector <: AbstractSelector
     ptr::CXSelector
 end
-

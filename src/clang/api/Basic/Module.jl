@@ -9,9 +9,7 @@ then owns it — never `dispose` a parent-owned submodule. This function allocat
 should call `dispose` to release the resources after using this object (parentless
 modules only; disposing a module also deletes all of its submodules).
 """
-function Module_(name::AbstractString, loc::SourceLocation=SourceLocation();
-                 parent::Module_=Module_(C_NULL), is_framework::Bool=false,
-                 is_explicit::Bool=false, visibility_id::Integer=0)
+function Module_(name::AbstractString, loc::SourceLocation=SourceLocation(); parent::Module_=Module_(C_NULL), is_framework::Bool=false, is_explicit::Bool=false, visibility_id::Integer=0)
     ptr = clang_Module_create(name, loc, parent, is_framework, is_explicit, visibility_id)
     @assert ptr != C_NULL "Failed to create clang::Module"
     return Module_(ptr)
@@ -267,8 +265,7 @@ Record that the module requires `feature` to be present (`required_state === tru
 absent, evaluated against `lang_opts` and `target`. A requirement that does not hold
 marks the module and all of its submodules unavailable and unimportable.
 """
-function addRequirement(x::AbstractModule, feature::AbstractString, required_state::Bool,
-                        lang_opts::AbstractLangOptions, target::AbstractTargetInfo)
+function addRequirement(x::AbstractModule, feature::AbstractString, required_state::Bool, lang_opts::AbstractLangOptions, target::AbstractTargetInfo)
     @check_ptrs x lang_opts target
     return clang_Module_addRequirement(x, feature, required_state, lang_opts, target)
 end

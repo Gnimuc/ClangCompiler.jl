@@ -32,4 +32,3 @@ with `dispose`.
 struct DirectoryEntryRef <: AbstractDirectoryEntryRef
     ptr::CXDirectoryEntryRef
 end
-

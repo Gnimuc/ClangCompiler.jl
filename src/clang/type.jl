@@ -204,7 +204,7 @@ is_sugared(x::TemplateSpecializationType) = isSugared(x)
 get_name(x::TemplateSpecializationType) = getName(x)
 
 function get_template_args(x::TemplateSpecializationType)
-    return [getArg(x, i) for i in 0:(getNumArgs(x) - 1)]
+    return [getArg(x, i) for i = 0:(getNumArgs(x) - 1)]
 end
 
 # ElaboratedType

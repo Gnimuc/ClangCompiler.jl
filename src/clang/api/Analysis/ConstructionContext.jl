@@ -121,8 +121,7 @@ than read back as a sentinel (Invariant 3).
 function getIndex(x::AbstractConstructionContext)
     @check_ptrs x
     k = getKind(x)
-    @assert k == CXConstructionContextKind_ArgumentKind ||
-            k == CXConstructionContextKind_LambdaCaptureKind "context must carry an index"
+    @assert k == CXConstructionContextKind_ArgumentKind || k == CXConstructionContextKind_LambdaCaptureKind "context must carry an index"
     return clang_ConstructionContext_getIndex(x)
 end
 

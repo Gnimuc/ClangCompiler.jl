@@ -11,4 +11,3 @@ Hold a pointer to a `clang::DependencyOutputOptions` object.
 struct DependencyOutputOptions <: AbstractDependencyOutputOptions
     ptr::CXDependencyOutputOptions
 end
-

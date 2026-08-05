@@ -621,8 +621,7 @@ end
 Return the default setter selector for `name`, i.e. the one-argument selector spelled
 [`constructSetterName`](@ref). `name`'s spelling must be non-empty.
 """
-function constructSetterSelector(idents::AbstractIdentifierTable, seltab::AbstractSelectorTable,
-                                 name::AbstractIdentifierInfo)
+function constructSetterSelector(idents::AbstractIdentifierTable, seltab::AbstractSelectorTable, name::AbstractIdentifierInfo)
     @check_ptrs idents seltab name
     @assert getLength(name) > 0 "a setter name needs a non-empty property name"
     return Selector(clang_SelectorTable_constructSetterSelector(idents, seltab, name))
@@ -651,8 +650,7 @@ Return the diagnostic id warning that `ii` will become a keyword in a future sta
 have determined that — so the gate is [`isFutureCompatKeyword`](@ref). The result is a plain
 diagnostic id, the currency [`isIgnored`](@ref) and [`getDiagnosticLevel`](@ref) take.
 """
-function getFutureCompatDiagKind(x::AbstractIdentifierTable, ii::AbstractIdentifierInfo,
-                                 opts::AbstractLangOptions)
+function getFutureCompatDiagKind(x::AbstractIdentifierTable, ii::AbstractIdentifierInfo, opts::AbstractLangOptions)
     @check_ptrs x ii opts
     @assert isFutureCompatKeyword(ii) "identifier must be a future-compatible keyword"
     return clang_IdentifierTable_getFutureCompatDiagKind(x, ii, opts)

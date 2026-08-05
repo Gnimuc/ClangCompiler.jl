@@ -18,13 +18,11 @@ file goes last). Parse problems are reported through `diag`. This function
 allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function createFromCommandLine(src::String, args::Vector{String}=String[],
-                               diag::DiagnosticsEngine=DiagnosticsEngine())
+function createFromCommandLine(src::String, args::Vector{String}=String[], diag::DiagnosticsEngine=DiagnosticsEngine())
     @check_ptrs diag
     args_with_src = copy(args)
     push!(args_with_src, src)
-    invocation = clang_CompilerInvocation_createFromCommandLine(args_with_src,
-                                                                length(args_with_src), diag)
+    invocation = clang_CompilerInvocation_createFromCommandLine(args_with_src, length(args_with_src), diag)
     @assert invocation != C_NULL "Failed to create CompilerInvocation"
     return CompilerInvocation(invocation)
 end
@@ -61,7 +59,6 @@ function getTargetOpts(ci::CompilerInvocation)
 end
 
 dispose(x::CompilerInvocation) = clang_CompilerInvocation_dispose(x)
-
 
 """
     getLangOpts(ci::CompilerInvocation) -> LangOptions
@@ -128,7 +125,6 @@ function getModuleHash(ci::CompilerInvocation)
     return get_string(clang_CompilerInvocation_getModuleHash(ci))
 end
 
-
 """
     resetNonModularOptions(ci::CompilerInvocation)
 Reset every option that is not considered when building a module, so that invocations
@@ -149,7 +145,6 @@ function clearImplicitModuleBuildOptions(ci::CompilerInvocation)
     @check_ptrs ci
     return clang_CompilerInvocation_clearImplicitModuleBuildOptions(ci)
 end
-
 
 """
     getAPINotesOpts(ci::CompilerInvocation) -> APINotesOptions
@@ -187,9 +182,7 @@ either way. `argv0`, when given, is the program path the default resource direct
 derived from. Neither `ci` nor `diag` is adopted — both are still owned, and disposed, by
 the caller.
 """
-function CreateFromArgs(ci::CompilerInvocation, args::Vector{String},
-                        diag::DiagnosticsEngine,
-                        argv0::Union{Nothing,AbstractString}=nothing)
+function CreateFromArgs(ci::CompilerInvocation, args::Vector{String}, diag::DiagnosticsEngine, argv0::Union{Nothing,AbstractString}=nothing)
     @check_ptrs ci diag
     prog = argv0 === nothing ? C_NULL : String(argv0)
     return clang_CompilerInvocation_CreateFromArgs(ci, args, length(args), diag, prog)
@@ -216,8 +209,7 @@ Check that the `-cc1` argument list `args` parses and re-serializes unchanged, r
 every difference through the borrowed `diag`. Only meaningful for command lines that are
 already canonical, such as one `getCC1CommandLine` produced. `diag` is not adopted.
 """
-function checkCC1RoundTrip(args::Vector{String}, diag::DiagnosticsEngine,
-                           argv0::Union{Nothing,AbstractString}=nothing)
+function checkCC1RoundTrip(args::Vector{String}, diag::DiagnosticsEngine, argv0::Union{Nothing,AbstractString}=nothing)
     @check_ptrs diag
     prog = argv0 === nothing ? C_NULL : String(argv0)
     return clang_CompilerInvocation_checkCC1RoundTrip(args, length(args), diag, prog)

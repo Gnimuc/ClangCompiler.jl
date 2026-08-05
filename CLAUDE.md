@@ -67,7 +67,28 @@ violations, and the measurements for why each rule earns its place.
   independent oracle in `test/clang/differential.jl` closes. When you add an invariant, add
   the mutant it kills to the catalogue in `.claude/skills/suite-audit/`.
 
-Formatting: JuliaFormatter, YAS style, margin 120 (see `.JuliaFormatter.toml`). `lib/` and `examples/` are excluded from formatting.
+Formatting: JuliaFormatter, YAS style, margin 1000 (see `.JuliaFormatter.toml`); `lib/` and
+`examples/` are excluded. The margin is set past the longest line here, so the formatter never
+*splits* a line — the wrapper signatures carry identifiers with no good break point, and its
+choices there were worse than a hand-placed break.
+
+`join_lines_based_on_source=false` is the other half, and the margin does almost nothing
+without it. YAS turns that setting *on* by default, which means "keep whatever breaks the
+source already had" — so raising the margin only removes the obligation to split and never
+asks it to join. The two together say: put a definition on one line unless it physically
+cannot go there.
+
+The cost is a tail of very long lines — in `src/clang`, a few dozen over 300 characters, the
+worst near 900 where a `for (cls, T) in [...]` dispatch table collapses. Where a table is
+meant to be read vertically, fence it rather than widening the margin back:
+
+```julia
+#! format: off
+... the table ...
+#! format: on
+```
+
+Nothing in CI runs the formatter, so none of this happens on its own.
 
 ### Verifying a local build is the one you are testing
 

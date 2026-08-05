@@ -9,4 +9,3 @@ The pointee is owned by the `ASTContext` arena — there is no `dispose`.
 struct ASTRecordLayout <: AbstractASTRecordLayout
     ptr::CXASTRecordLayout
 end
-

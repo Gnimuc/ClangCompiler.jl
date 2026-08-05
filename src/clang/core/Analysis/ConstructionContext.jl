@@ -20,4 +20,3 @@ are total at the base and Invariant 2 holds without a carrier per subclass. Bran
 struct ConstructionContext <: AbstractConstructionContext
     ptr::CXConstructionContext
 end
-

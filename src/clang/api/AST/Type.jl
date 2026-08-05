@@ -51,8 +51,7 @@ Return the kind of cleanup objects of this type require, or
 isDestructedType(x::QualType) = clang_QualType_isDestructedType(x)
 
 isMoreQualifiedThan(x::QualType, other::QualType) = clang_QualType_isMoreQualifiedThan(x, other)
-isAtLeastAsQualifiedAs(x::QualType, other::QualType) = clang_QualType_isAtLeastAsQualifiedAs(x,
-                                                                                             other)
+isAtLeastAsQualifiedAs(x::QualType, other::QualType) = clang_QualType_isAtLeastAsQualifiedAs(x, other)
 
 getNonReferenceType(x::QualType) = QualType(clang_QualType_getNonReferenceType(x))
 IgnoreParens(x::QualType) = QualType(clang_QualType_IgnoreParens(x))
@@ -1594,7 +1593,6 @@ function isSugared(x::AbstractDependentTemplateSpecializationType)
     return clang_DependentTemplateSpecializationType_isSugared(x)
 end
 
-
 # ArrayType
 # ---- Increment 1a: generated accessors for existing-carrier type classes ----
 
@@ -1628,7 +1626,6 @@ function isSugared(x::AbstractUnresolvedUsingType)
     @check_ptrs x
     return clang_UnresolvedUsingType_isSugared(x)
 end
-
 
 # Sugar-type classification predicates (dyn_cast-based isa over clang::Type).
 isa_AtomicType(x::AbstractType) = (@check_ptrs x; clang_isa_AtomicType(x))
@@ -1894,8 +1891,6 @@ function isSugared(x::AbstractUnaryTransformType)
     return clang_UnaryTransformType_isSugared(x)
 end
 
-
-
 # Type -- parameterised / ASTContext-taking queries and navigation helpers
 function containsUnexpandedParameterPack(x::AbstractType)
     @check_ptrs x
@@ -1995,7 +1990,6 @@ function getTypeClassName(x::AbstractType)
     @check_ptrs x
     return unsafe_string(clang_Type_getTypeClassName(x))
 end
-
 
 # VectorType
 function getElementType(x::AbstractVectorType)
@@ -2135,7 +2129,6 @@ function getNumExpansions(x::AbstractPackExpansionType)
     return clang_PackExpansionType_getNumExpansions(x, n) ? n[] : nothing
 end
 
-
 # Qualifiers
 # The Qualifiers value type has no carrier struct: it crosses as its opaque
 # unsigned encoding (MARSHALLING.md §7), the same encoding
@@ -2268,7 +2261,6 @@ function getAtomicUnqualifiedType(x::QualType)
     @assert !isNull(x) "QualType must not be null"
     return QualType(clang_QualType_getAtomicUnqualifiedType(x))
 end
-
 
 # Qualifiers -- the fast/non-fast split over the opaque encoding (MARSHALLING.md §7)
 """
@@ -2405,7 +2397,6 @@ function getContainedAutoType(x::AbstractType)
     return AutoType(clang_Type_getContainedAutoType(x))
 end
 
-
 # BuiltinType
 function isSugared(x::AbstractBuiltinType)
     @check_ptrs x
@@ -2498,8 +2489,6 @@ function getKeyword(x::AbstractAutoType)
     return clang_AutoType_getKeyword(x)
 end
 
-
-
 # --- type-d: payload accessors on already-wrapped Type carriers ---
 
 # Type
@@ -2580,7 +2569,6 @@ function getKeyword(x::AbstractTypeWithKeyword)
     @check_ptrs x
     return clang_TypeWithKeyword_getKeyword(x)
 end
-
 
 # Type -- the sizeless-builtin, WebAssembly and OpenCL/ext-vector probes
 function isSVESizelessBuiltinType(x::AbstractType)
@@ -2775,7 +2763,6 @@ function overrideType(x::AbstractTypeSourceInfo, ty::QualType)
     return clang_TypeSourceInfo_overrideType(x, ty)
 end
 
-
 # Qualifiers -- the exact-set / unaligned / address-space tail over the opaque encoding
 # (MARSHALLING.md §7). These dispatch on `Integer` like the rest of the family: the value
 # type has no carrier struct and there is no pointer to check.
@@ -2832,8 +2819,7 @@ the default or target-specific, so a language-specific one is undefined behaviou
 shim; the precondition is restated here.
 """
 function getAddressSpaceAttributePrintValue(quals::Integer)
-    @assert getAddressSpace(quals) == CXLangAS_Default || hasTargetSpecificAddressSpace(quals) \
-            "address space must be the default or a target-specific one"
+    @assert getAddressSpace(quals) == CXLangAS_Default || hasTargetSpecificAddressSpace(quals) \ "address space must be the default or a target-specific one"
     return clang_Qualifiers_getAddressSpaceAttributePrintValue(quals)
 end
 
@@ -2929,7 +2915,6 @@ getKeywordName(kw::CXElaboratedTypeKeyword) = get_string(clang_TypeWithKeyword_g
 Return the source spelling of a tag kind, e.g. `"class"` for `CXTagTypeKind_Class`.
 """
 getTagTypeKindName(tag::CXTagTypeKind) = get_string(clang_TypeWithKeyword_getTagTypeKindName(tag))
-
 
 # Type -- the ObjC classification family. Each of these is declared on clang::Type, is
 # total (the ones that reach a subobject do it through a guarded `getAs`), and answers
@@ -3055,7 +3040,6 @@ Return `x` with its local `restrict` fast qualifier cleared; sugar-acquired qual
 not local and stay in place.
 """
 removeLocalRestrict(x::QualType) = QualType(clang_QualType_removeLocalRestrict(x))
-
 
 # Qualifiers -- the mutator tail over the opaque encoding (MARSHALLING.md §7). A
 # `Qualifiers` value has no carrier struct and crosses as an `Integer`, so clang's in-place
@@ -3263,7 +3247,6 @@ function isSpecificPlaceholderType(x::AbstractType, k::Integer)
     @assert isPlaceholderTypeKind(k) "k must name a placeholder BuiltinType kind"
     return clang_Type_isSpecificPlaceholderType(x, k)
 end
-
 
 # type-i -- the attribute/nullability probes on Type, the SplitQualType pair, the
 # BuiltinType kind surface, the matrix-type statics, the AArch64 SME state decoders and the
@@ -3483,7 +3466,6 @@ function getTypeConstraintArguments(x::AbstractAutoType)
     @check_ptrs x
     return clang_AutoType_getTypeConstraintArguments(x)
 end
-
 
 # Type -- the ObjC lifetime/ARC classification tail. Every one of these is declared on
 # clang::Type, is total over any type (the ones that reach a subobject do it through a
@@ -3713,7 +3695,6 @@ function isWebAssemblyFuncrefType(x::QualType)
     return clang_QualType_isWebAssemblyFuncrefType(x)
 end
 
-
 """
     getNullability(x::AbstractType) -> Union{CXNullabilityKind,Nothing}
 Return the nullability `x` carries (`CXNullabilityKind_NonNull`, `CXNullabilityKind_Nullable`,
@@ -3728,7 +3709,6 @@ function getNullability(x::AbstractType)
     k = Ref{CXNullabilityKind}(CXNullabilityKind_NonNull)
     return clang_Type_getNullability(x, k) ? k[] : nothing
 end
-
 
 """
     getImmediateNullability(x::AbstractAttributedType) -> Union{CXNullabilityKind,Nothing}
@@ -3769,7 +3749,6 @@ function stripOuterNullability(x::QualType)
     found = clang_AttributedType_stripOuterNullability(ty, k)
     return (QualType(ty[]), found ? k[] : nothing)
 end
-
 
 """
     getExtParameterInfo(x::AbstractFunctionProtoType, i::Integer) -> UInt8
@@ -3869,7 +3848,6 @@ function withIsNoEscape(info::Integer, noescape::Bool)
     return clang_ExtParameterInfo_withIsNoEscape(info, noescape)
 end
 
-
 """
     isEmptyWhenPrinted(quals::Integer, ctx::ASTContext) -> Bool
 Return whether the opaque `clang::Qualifiers` encoding `quals` prints as nothing at all under
@@ -3899,8 +3877,7 @@ printed inside the type -- `"p"` on an `int *` gives `"int *p"` -- and `""` yiel
 type spelling; `indentation` is the base indent used when a record body is printed inline. A
 null `QualType` prints `"NULL TYPE"`, matching [`getAsString`](@ref).
 """
-function printAsString(x::QualType, ctx::ASTContext, placeholder::AbstractString="",
-                       indentation::Integer=0)
+function printAsString(x::QualType, ctx::ASTContext, placeholder::AbstractString="", indentation::Integer=0)
     @check_ptrs ctx
     return get_string(clang_QualType_printAsString(x, ctx, placeholder, indentation))
 end
@@ -4043,7 +4020,6 @@ function getTagTypeKindForTypeSpec(spec::Integer)
     @assert getKeywordForTypeSpec(spec) != CXElaboratedTypeKeyword_None "type specifier must name a tag kind"
     return clang_TypeWithKeyword_getTagTypeKindForTypeSpec(spec)
 end
-
 
 # Qualifiers -- the Objective-C garbage-collection attribute and the ARC lifetime. Both live
 # inside the same opaque unsigned encoding as the CVR set (MARSHALLING.md 7), so these
@@ -4258,7 +4234,6 @@ function getObjCARCImplicitLifetime(x::AbstractType)
     return clang_Type_getObjCARCImplicitLifetime(x)
 end
 
-
 # TypeOfExprType
 """
     getUnderlyingExpr(x::AbstractTypeOfExprType) -> Expr_
@@ -4426,15 +4401,11 @@ attribute and ObjC lifetime, that the two values are equal or that at least one 
 the field unset; the three preconditions are restated here (Invariant 3).
 """
 function addConsistentQualifiers(quals::Integer, other::Integer)
-    @assert getAddressSpace(quals) == getAddressSpace(other) || !hasAddressSpace(quals) ||
-            !hasAddressSpace(other) "address spaces conflict"
-    @assert getObjCGCAttr(quals) == getObjCGCAttr(other) || !hasObjCGCAttr(quals) ||
-            !hasObjCGCAttr(other) "ObjC GC attributes conflict"
-    @assert getObjCLifetime(quals) == getObjCLifetime(other) || !hasObjCLifetime(quals) ||
-            !hasObjCLifetime(other) "ObjC lifetimes conflict"
+    @assert getAddressSpace(quals) == getAddressSpace(other) || !hasAddressSpace(quals) || !hasAddressSpace(other) "address spaces conflict"
+    @assert getObjCGCAttr(quals) == getObjCGCAttr(other) || !hasObjCGCAttr(quals) || !hasObjCGCAttr(other) "ObjC GC attributes conflict"
+    @assert getObjCLifetime(quals) == getObjCLifetime(other) || !hasObjCLifetime(quals) || !hasObjCLifetime(other) "ObjC lifetimes conflict"
     return clang_Qualifiers_addConsistentQualifiers(quals, other)
 end
-
 
 # BlockPointerType
 """
@@ -4594,7 +4565,6 @@ function getNumBitsExpr(x::AbstractDependentBitIntType)
     return Expr_(clang_DependentBitIntType_getNumBitsExpr(x))
 end
 
-
 # QualType
 
 """
@@ -4619,8 +4589,7 @@ negation of whether a reason exists. `exclude_ctor` and `exclude_dtor` drop the 
 and destruction windows from consideration; the caller is then responsible for proving the
 object is not written to during them.
 """
-function isNonConstantStorage(x::QualType, ctx::ASTContext, exclude_ctor::Bool,
-                              exclude_dtor::Bool)
+function isNonConstantStorage(x::QualType, ctx::ASTContext, exclude_ctor::Bool, exclude_dtor::Bool)
     @check_ptrs ctx
     reason = Ref{CXNonConstantStorageReason}(CXNonConstantStorageReason_MutableField)
     found = clang_QualType_isNonConstantStorage(x, ctx, exclude_ctor, exclude_dtor, reason)
@@ -4709,8 +4678,7 @@ Return whether `c` names a component this vector actually has -- the index
 `is_numeric` selects the numeric spelling (`v.s0`) over the point spelling (`v.x`), and a
 character naming no component at all answers false.
 """
-function isAccessorWithinNumElements(x::AbstractExtVectorType, c::AbstractChar,
-                                     is_numeric::Bool)
+function isAccessorWithinNumElements(x::AbstractExtVectorType, c::AbstractChar, is_numeric::Bool)
     @check_ptrs x
     return clang_ExtVectorType_isAccessorWithinNumElements(x, Cchar(c), is_numeric)
 end
@@ -4745,7 +4713,6 @@ function desugar(x::AbstractDependentBitIntType)
     @check_ptrs x
     return QualType(clang_DependentBitIntType_desugar(x))
 end
-
 
 """
     getSingleStepDesugaredType(ty::AbstractType, quals::Integer) -> Tuple{Type_,UInt32}
@@ -4822,7 +4789,6 @@ function getAsObjCQualifiedInterfaceType(x::AbstractType)
     @check_ptrs x
     return ObjCObjectType(clang_Type_getAsObjCQualifiedInterfaceType(x))
 end
-
 
 # The ExtVectorType sugar pair. An extended vector is a canonical leaf, so both answers are
 # fixed by construction.

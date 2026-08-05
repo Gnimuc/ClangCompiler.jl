@@ -67,4 +67,3 @@ Hold a pointer to a `clang::DependentTemplateName` object.
 struct DependentTemplateName <: AbstractDependentTemplateName
     ptr::CXDependentTemplateName
 end
-

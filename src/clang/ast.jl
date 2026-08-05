@@ -61,7 +61,7 @@ Return the offset of each field of the record in **bits**, in declaration order.
 """
 function field_offsets(x::ASTContext, decl::AbstractRecordDecl)
     layout = get_record_layout(x, decl)
-    return [getFieldOffset(layout, i) for i in 0:(getFieldCount(layout) - 1)]
+    return [getFieldOffset(layout, i) for i = 0:(getFieldCount(layout) - 1)]
 end
 
 is_derived_from(x::AbstractCXXRecordDecl, base::AbstractCXXRecordDecl) = isDerivedFrom(x, base)
@@ -136,8 +136,7 @@ Elements are resolved to their concrete carriers, so `d isa NamespaceDecl` works
 `ChainIterator(decl_iterator_begin(x), getNextDeclInContext)` directly for the unresolved
 walk when the extra ccall per node matters and the kind does not.
 """
-decls_in(x::DeclContext) =
-    Iterators.map(resolve, ChainIterator(decl_iterator_begin(x), getNextDeclInContext))
+decls_in(x::DeclContext) = Iterators.map(resolve, ChainIterator(decl_iterator_begin(x), getNextDeclInContext))
 
 """
     redecls(x::AbstractDecl) -> ChainIterator
@@ -146,8 +145,7 @@ Iterate `x`'s redeclaration chain from the most recent declaration back to the f
 A declaration split across a forward declaration and a definition appears once per
 declaration; `getMostRecentDecl` and `getPreviousDecl` are the ends Clang exposes.
 """
-redecls(x::AbstractDecl) =
-    Iterators.map(resolve, ChainIterator(getMostRecentDecl(x), getPreviousDecl))
+redecls(x::AbstractDecl) = Iterators.map(resolve, ChainIterator(getMostRecentDecl(x), getPreviousDecl))
 
 """
     qualifiers(x::AbstractNestedNameSpecifier) -> ChainIterator

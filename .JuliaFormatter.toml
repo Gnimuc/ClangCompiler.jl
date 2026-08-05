@@ -1,6 +1,6 @@
 style = "yas"
 
-margin=120
+margin=1000
 always_for_in=false
 whitespace_in_kwargs=false
 whitespace_typedefs=false
@@ -15,3 +15,4 @@ ignore = ["lib", "examples",
           "StmtAbstractGen.jl", "StmtCarriers.jl", "StmtWrappers.jl", "StmtClassMap.jl",
           "DeclKindMap.jl", "DeclContextUnion.jl", "TypeClassMap.jl",
           "converts.jl"]
+join_lines_based_on_source=false

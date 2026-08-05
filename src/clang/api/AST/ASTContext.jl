@@ -14,8 +14,7 @@ function getSizeOf(x::ASTContext, ty::QualType)
     return clang_ASTContext_getSizeOf(x, ty)
 end
 
-function getTypeDeclType(x::ASTContext, decl::AbstractTypeDecl,
-                         prev::AbstractTypeDecl=TypeDecl(C_NULL))
+function getTypeDeclType(x::ASTContext, decl::AbstractTypeDecl, prev::AbstractTypeDecl=TypeDecl(C_NULL))
     @check_ptrs x decl
     return QualType(clang_ASTContext_getTypeDeclType(x, decl, prev))
 end
@@ -391,12 +390,10 @@ end
 Build a `FunctionProtoType` from a return type and parameter types. The
 remaining `ExtProtoInfo` fields keep their defaults.
 """
-function getFunctionType(x::ASTContext, ret::QualType, args::Vector{QualType}=QualType[];
-                         variadic::Bool=false, cc::CXCallingConv_=CXCallingConv_CC_C)
+function getFunctionType(x::ASTContext, ret::QualType, args::Vector{QualType}=QualType[]; variadic::Bool=false, cc::CXCallingConv_=CXCallingConv_CC_C)
     @check_ptrs x
     ptrs = CXQualType[Base.unsafe_convert(CXQualType, a) for a in args]
-    return QualType(clang_ASTContext_getFunctionType(x, ret, ptrs, length(ptrs), variadic,
-                                                     cc))
+    return QualType(clang_ASTContext_getFunctionType(x, ret, ptrs, length(ptrs), variadic, cc))
 end
 
 function getFunctionNoProtoType(x::ASTContext, a2::QualType)
@@ -582,12 +579,9 @@ end
     getConstantArrayType(x::ASTContext, elt::QualType, size::Integer) -> QualType
 Build a `ConstantArrayType` of `size` elements of `elt`.
 """
-function getConstantArrayType(x::ASTContext, elt::QualType, size::Integer,
-                              asm::CXArraySizeModifier=CXArraySizeModifier_Normal,
-                              index_type_quals::Integer=0)
+function getConstantArrayType(x::ASTContext, elt::QualType, size::Integer, asm::CXArraySizeModifier=CXArraySizeModifier_Normal, index_type_quals::Integer=0)
     @check_ptrs x
-    return QualType(clang_ASTContext_getConstantArrayType(x, elt, size, asm,
-                                                          index_type_quals))
+    return QualType(clang_ASTContext_getConstantArrayType(x, elt, size, asm, index_type_quals))
 end
 
 function getStringLiteralArrayType(x::ASTContext, a2::QualType, a3::Integer)
@@ -920,8 +914,7 @@ function getDependentSizedExtVectorType(x::ASTContext, a2::QualType, a3::Abstrac
     return QualType(clang_ASTContext_getDependentSizedExtVectorType(x, a2, a3, a4))
 end
 
-function getDependentSizedMatrixType(x::ASTContext, a2::QualType, a3::AbstractExpr, a4::AbstractExpr,
-                                     a5::SourceLocation)
+function getDependentSizedMatrixType(x::ASTContext, a2::QualType, a3::AbstractExpr, a4::AbstractExpr, a5::SourceLocation)
     @check_ptrs x
     return QualType(clang_ASTContext_getDependentSizedMatrixType(x, a2, a3, a4, a5))
 end
@@ -1004,14 +997,10 @@ Build a `TemplateSpecializationType` from a template name and arguments. The
 arguments cross as a handle buffer (MARSHALLING.md §11); `underlying` is only
 consulted for alias templates and may stay null otherwise.
 """
-function getTemplateSpecializationType(x::ASTContext, name::TemplateName,
-                                       args::Vector{TemplateArgument},
-                                       underlying::QualType=QualType(C_NULL))
+function getTemplateSpecializationType(x::ASTContext, name::TemplateName, args::Vector{TemplateArgument}, underlying::QualType=QualType(C_NULL))
     @check_ptrs x name
     ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
-    return QualType(clang_ASTContext_getTemplateSpecializationType(x, name, ptrs,
-                                                                   length(ptrs),
-                                                                   underlying))
+    return QualType(clang_ASTContext_getTemplateSpecializationType(x, name, ptrs, length(ptrs), underlying))
 end
 
 function getTrivialTypeSourceInfo(x::ASTContext, a2::QualType, a3::SourceLocation)
@@ -1064,8 +1053,7 @@ function setInstantiatedFromUsingDecl(x::ASTContext, Inst::AbstractNamedDecl, Pa
     return clang_ASTContext_setInstantiatedFromUsingDecl(x, Inst, Pattern)
 end
 
-function setInstantiatedFromUsingShadowDecl(x::ASTContext, Inst::AbstractUsingShadowDecl,
-                                            Pattern::AbstractUsingShadowDecl)
+function setInstantiatedFromUsingShadowDecl(x::ASTContext, Inst::AbstractUsingShadowDecl, Pattern::AbstractUsingShadowDecl)
     @check_ptrs x Inst Pattern
     return clang_ASTContext_setInstantiatedFromUsingShadowDecl(x, Inst, Pattern)
 end
@@ -1298,8 +1286,7 @@ end
 Build the `AttributedType` that sugars `equivalent` with the attribute `kind` written
 on `modified`.
 """
-function getAttributedType(x::ASTContext, kind::CXAttrKind, modified::QualType,
-                           equivalent::QualType)
+function getAttributedType(x::ASTContext, kind::CXAttrKind, modified::QualType, equivalent::QualType)
     @check_ptrs x
     return QualType(clang_ASTContext_getAttributedType(x, kind, modified, equivalent))
 end
@@ -1308,9 +1295,7 @@ end
     getIncompleteArrayType(x::ASTContext, elt::QualType) -> QualType
 Build an `IncompleteArrayType` (`elt[]`) with element type `elt`.
 """
-function getIncompleteArrayType(x::ASTContext, elt::QualType,
-                                asm::CXArraySizeModifier=CXArraySizeModifier_Normal,
-                                index_type_quals::Integer=0)
+function getIncompleteArrayType(x::ASTContext, elt::QualType, asm::CXArraySizeModifier=CXArraySizeModifier_Normal, index_type_quals::Integer=0)
     @check_ptrs x
     return QualType(clang_ASTContext_getIncompleteArrayType(x, elt, asm, index_type_quals))
 end
@@ -1489,11 +1474,9 @@ end
                                 is_builtin::Bool=false) -> CXCallingConv_
 Return the target's default calling convention for a function of that shape.
 """
-function getDefaultCallingConvention(x::ASTContext, is_variadic::Bool, is_cxx_method::Bool,
-                                     is_builtin::Bool=false)
+function getDefaultCallingConvention(x::ASTContext, is_variadic::Bool, is_cxx_method::Bool, is_builtin::Bool=false)
     @check_ptrs x
-    return clang_ASTContext_getDefaultCallingConvention(x, is_variadic, is_cxx_method,
-                                                        is_builtin)
+    return clang_ASTContext_getDefaultCallingConvention(x, is_variadic, is_cxx_method, is_builtin)
 end
 
 """
@@ -1817,8 +1800,7 @@ Build the elaborated-type sugar `keyword nns named` wrapping `named`. `nns` (a
 `NestedNameSpecifier`, may wrap `C_NULL`) and `owned` (the owning `TagDecl` of an inline tag
 definition, may be `C_NULL`) are optional.
 """
-function getElaboratedType(x::ASTContext, keyword::CXElaboratedTypeKeyword,
-                           nns::NestedNameSpecifier, named::QualType, owned=C_NULL)
+function getElaboratedType(x::ASTContext, keyword::CXElaboratedTypeKeyword, nns::NestedNameSpecifier, named::QualType, owned=C_NULL)
     @check_ptrs x named
     return QualType(clang_ASTContext_getElaboratedType(x, keyword, nns, named, owned))
 end
@@ -1830,8 +1812,7 @@ Build the pack-expansion type `pattern...`. `num_expansions` is the fixed expans
 known (`nothing` leaves the `std::optional` disengaged, MARSHALLING.md section 8). When
 `expect_pack` is `true`, `pattern` must contain an unexpanded parameter pack.
 """
-function getPackExpansionType(x::ASTContext, pattern::QualType; num_expansions=nothing,
-                              expect_pack::Bool=true)
+function getPackExpansionType(x::ASTContext, pattern::QualType; num_expansions=nothing, expect_pack::Bool=true)
     @check_ptrs x pattern
     has_num = num_expansions !== nothing
     num = has_num ? UInt32(num_expansions) : UInt32(0)
@@ -2086,8 +2067,7 @@ Peel one matching layer of pointer / member-pointer / array / object-pointer str
 both types. The C++ method takes `T1` and `T2` by reference, so the rewritten types are
 returned alongside the flag saying whether a layer was peeled.
 """
-function UnwrapSimilarTypes(x::ASTContext, t1::QualType, t2::QualType,
-                            allow_pi_mismatch::Bool=true)
+function UnwrapSimilarTypes(x::ASTContext, t1::QualType, t2::QualType, allow_pi_mismatch::Bool=true)
     @check_ptrs x t1 t2
     r1 = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t1))
     r2 = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t2))
@@ -2101,8 +2081,7 @@ end
 Peel matching array layers off both types and return the rewritten types (the C++ method
 takes `T1` and `T2` by reference).
 """
-function UnwrapSimilarArrayTypes(x::ASTContext, t1::QualType, t2::QualType,
-                                 allow_pi_mismatch::Bool=true)
+function UnwrapSimilarArrayTypes(x::ASTContext, t1::QualType, t2::QualType, allow_pi_mismatch::Bool=true)
     @check_ptrs x t1 t2
     r1 = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t1))
     r2 = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t2))
@@ -2137,8 +2116,7 @@ end
 Record that the using-enum declaration `inst` is an instantiation of `pattern`. `inst`
 must not already carry a pattern — clang asserts it, so the getter is checked first.
 """
-function setInstantiatedFromUsingEnumDecl(x::ASTContext, inst::AbstractUsingEnumDecl,
-                                          pattern::AbstractUsingEnumDecl)
+function setInstantiatedFromUsingEnumDecl(x::ASTContext, inst::AbstractUsingEnumDecl, pattern::AbstractUsingEnumDecl)
     @check_ptrs x inst pattern
     @assert getInstantiatedFromUsingEnumDecl(x, inst).ptr == C_NULL "`inst` already has an instantiation pattern"
     return clang_ASTContext_setInstantiatedFromUsingEnumDecl(x, inst, pattern)
@@ -2181,14 +2159,10 @@ Build a `VariableArrayType` of `elt` sized by `num_elts`. The size expression is
 the type, never evaluated, and the result is deliberately non-unique — one fresh type node
 per call, matching the C++ API.
 """
-function getVariableArrayType(x::ASTContext, elt::QualType, num_elts::AbstractExpr,
-                              brackets::SourceRange,
-                              asm::CXArraySizeModifier=CXArraySizeModifier_Normal,
-                              index_type_quals::Integer=0)
+function getVariableArrayType(x::ASTContext, elt::QualType, num_elts::AbstractExpr, brackets::SourceRange, asm::CXArraySizeModifier=CXArraySizeModifier_Normal, index_type_quals::Integer=0)
     @check_ptrs x num_elts
     r = CXSourceRange_(brackets.begin_loc.ptr, brackets.end_loc.ptr)
-    return QualType(clang_ASTContext_getVariableArrayType(x, elt, num_elts, asm,
-                                                          index_type_quals, r))
+    return QualType(clang_ASTContext_getVariableArrayType(x, elt, num_elts, asm, index_type_quals, r))
 end
 
 """
@@ -2197,14 +2171,10 @@ end
 Build a `DependentSizedArrayType` of `elt` sized by the dependent expression `num_elts`.
 Also non-unique — one fresh type node per call.
 """
-function getDependentSizedArrayType(x::ASTContext, elt::QualType, num_elts::AbstractExpr,
-                                    brackets::SourceRange,
-                                    asm::CXArraySizeModifier=CXArraySizeModifier_Normal,
-                                    index_type_quals::Integer=0)
+function getDependentSizedArrayType(x::ASTContext, elt::QualType, num_elts::AbstractExpr, brackets::SourceRange, asm::CXArraySizeModifier=CXArraySizeModifier_Normal, index_type_quals::Integer=0)
     @check_ptrs x num_elts
     r = CXSourceRange_(brackets.begin_loc.ptr, brackets.end_loc.ptr)
-    return QualType(clang_ASTContext_getDependentSizedArrayType(x, elt, num_elts, asm,
-                                                                index_type_quals, r))
+    return QualType(clang_ASTContext_getDependentSizedArrayType(x, elt, num_elts, asm, index_type_quals, r))
 end
 
 """
@@ -2213,12 +2183,9 @@ end
 Build a `DependentVectorType`: a vector of `vec` whose element count is the dependent
 expression `size_expr`, spelled at `attr_loc`.
 """
-function getDependentVectorType(x::ASTContext, vec::QualType, size_expr::AbstractExpr,
-                                attr_loc::SourceLocation,
-                                kind::CXVectorKind=CXVectorKind_Generic)
+function getDependentVectorType(x::ASTContext, vec::QualType, size_expr::AbstractExpr, attr_loc::SourceLocation, kind::CXVectorKind=CXVectorKind_Generic)
     @check_ptrs x size_expr
-    return QualType(clang_ASTContext_getDependentVectorType(x, vec, size_expr, attr_loc,
-                                                            kind))
+    return QualType(clang_ASTContext_getDependentVectorType(x, vec, size_expr, attr_loc, kind))
 end
 
 """
@@ -2254,8 +2221,7 @@ Build the type of a unary type transform (`__underlying_type` and the
 `__add_*`/`__remove_*` family): `base` is the operand, `underlying` the transformed
 result. A dependent `base` yields a `DependentUnaryTransformType` instead.
 """
-function getUnaryTransformType(x::ASTContext, base::QualType, underlying::QualType,
-                               kind::CXUTTKind)
+function getUnaryTransformType(x::ASTContext, base::QualType, underlying::QualType, kind::CXUTTKind)
     @check_ptrs x
     return QualType(clang_ASTContext_getUnaryTransformType(x, base, underlying, kind))
 end
@@ -2266,11 +2232,9 @@ end
 Build the qualified spelling `nns::[template] name`. `template_keyword` records whether
 the `template` keyword was written.
 """
-function getQualifiedTemplateName(x::ASTContext, nns::NestedNameSpecifier,
-                                  template_keyword::Bool, name::TemplateName)
+function getQualifiedTemplateName(x::ASTContext, nns::NestedNameSpecifier, template_keyword::Bool, name::TemplateName)
     @check_ptrs x nns
-    return TemplateName(clang_ASTContext_getQualifiedTemplateName(x, nns, template_keyword,
-                                                                  name))
+    return TemplateName(clang_ASTContext_getQualifiedTemplateName(x, nns, template_keyword, name))
 end
 
 """
@@ -2361,13 +2325,11 @@ Build the canonical `name<args...>` specialization type. `name` must already be 
 of `args` — canonicalise them with `getCanonicalTemplateArgument` first, since this entry
 point builds the canonical node directly and does not canonicalise its inputs.
 """
-function getCanonicalTemplateSpecializationType(x::ASTContext, name::TemplateName,
-                                                args::Vector{TemplateArgument})
+function getCanonicalTemplateSpecializationType(x::ASTContext, name::TemplateName, args::Vector{TemplateArgument})
     @check_ptrs x name
     @assert getCanonicalTemplateName(x, name).ptr == name.ptr "the template name must be canonical"
     ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
-    return QualType(clang_ASTContext_getCanonicalTemplateSpecializationType(x, name, ptrs,
-                                                                            length(ptrs)))
+    return QualType(clang_ASTContext_getCanonicalTemplateSpecializationType(x, name, ptrs, length(ptrs)))
 end
 
 """
@@ -2378,9 +2340,7 @@ Build the dependent type `keyword nns::name` — the node behind `typename T::ty
 relatives. `canon` is the canonical type when it is already known; leave it null to let clang
 compute it.
 """
-function getDependentNameType(x::ASTContext, keyword::CXElaboratedTypeKeyword,
-                              nns::NestedNameSpecifier, name::IdentifierInfo,
-                              canon::QualType=QualType(C_NULL))
+function getDependentNameType(x::ASTContext, keyword::CXElaboratedTypeKeyword, nns::NestedNameSpecifier, name::IdentifierInfo, canon::QualType=QualType(C_NULL))
     @check_ptrs x nns name
     return QualType(clang_ASTContext_getDependentNameType(x, keyword, nns, name, canon))
 end
@@ -2567,15 +2527,11 @@ placeholder; `concept_decl` may wrap `C_NULL` for an unconstrained `auto`, and `
 carries the type constraint's template arguments as a handle buffer (MARSHALLING.md §11).
 AutoTypes are uniqued, so the same arguments always hand back the same node.
 """
-function getAutoType(x::ASTContext, deduced::QualType, keyword::CXAutoTypeKeyword,
-                     is_dependent::Bool, is_pack::Bool=false,
-                     concept_decl::ConceptDecl=ConceptDecl(C_NULL),
-                     args::Vector{TemplateArgument}=TemplateArgument[])
+function getAutoType(x::ASTContext, deduced::QualType, keyword::CXAutoTypeKeyword, is_dependent::Bool, is_pack::Bool=false, concept_decl::ConceptDecl=ConceptDecl(C_NULL), args::Vector{TemplateArgument}=TemplateArgument[])
     @check_ptrs x
     @assert !is_pack || is_dependent "a pack `auto` is inherently dependent"
     ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
-    return QualType(clang_ASTContext_getAutoType(x, deduced, keyword, is_dependent, is_pack,
-                                                 concept_decl, ptrs, length(ptrs)))
+    return QualType(clang_ASTContext_getAutoType(x, deduced, keyword, is_dependent, is_pack, concept_decl, ptrs, length(ptrs)))
 end
 
 """
@@ -2706,18 +2662,14 @@ members, `inst` must not already carry a recorded pattern (neither arm of the un
 `CXTemplateSpecializationKind_TSK_Undeclared`, which `MemberSpecializationInfo` cannot
 encode.
 """
-function setInstantiatedFromStaticDataMember(x::ASTContext, inst::AbstractVarDecl,
-                                             tmpl::AbstractVarDecl,
-                                             tsk::CXTemplateSpecializationKind,
-                                             point_of_instantiation::SourceLocation=SourceLocation(C_NULL))
+function setInstantiatedFromStaticDataMember(x::ASTContext, inst::AbstractVarDecl, tmpl::AbstractVarDecl, tsk::CXTemplateSpecializationKind, point_of_instantiation::SourceLocation=SourceLocation(C_NULL))
     @check_ptrs x inst tmpl
     @assert isStaticDataMember(inst) "inst must be a static data member"
     @assert isStaticDataMember(tmpl) "tmpl must be a static data member"
     @assert tsk != CXTemplateSpecializationKind_TSK_Undeclared "tsk must name a specialization kind, not TSK_Undeclared"
     @assert getInstantiatedFromStaticDataMember(x, inst).ptr == C_NULL "inst already has a recorded instantiation pattern"
     @assert getDescribedVarTemplate(inst).ptr == C_NULL "inst already describes a variable template"
-    return clang_ASTContext_setInstantiatedFromStaticDataMember(x, inst, tmpl, tsk,
-                                                                point_of_instantiation)
+    return clang_ASTContext_setInstantiatedFromStaticDataMember(x, inst, tmpl, tsk, point_of_instantiation)
 end
 
 """
@@ -2727,8 +2679,7 @@ Build the `BuiltinTemplateDecl` for `btk` under the name `ii` and add it to the 
 unit — the same construction `getMakeIntegerSeqDecl` and `getTypePackElementDecl` use for
 theirs. The decl is `ASTContext` arena memory, so there is no `dispose`.
 """
-function buildBuiltinTemplateDecl(x::ASTContext, btk::CXBuiltinTemplateKind,
-                                  ii::AbstractIdentifierInfo)
+function buildBuiltinTemplateDecl(x::ASTContext, btk::CXBuiltinTemplateKind, ii::AbstractIdentifierInfo)
     @check_ptrs x ii
     return BuiltinTemplateDecl(clang_ASTContext_buildBuiltinTemplateDecl(x, btk, ii))
 end
@@ -2758,8 +2709,7 @@ Return `ty` with the ARC lifetime qualifier `lifetime` added.
 `lifetime` must not be `CXQualifiers_OCL_None` and `ty` must not already carry a lifetime —
 clang asserts both, and both are restated as assertions here.
 """
-function getLifetimeQualifiedType(x::ASTContext, ty::QualType,
-                                  lifetime::CXQualifiers_ObjCLifetime)
+function getLifetimeQualifiedType(x::ASTContext, ty::QualType, lifetime::CXQualifiers_ObjCLifetime)
     @check_ptrs x
     @assert !isNull(ty) "QualType must not be null"
     @assert lifetime != CXQualifiers_OCL_None "lifetime must name a lifetime to add, not CXQualifiers_OCL_None"
@@ -2855,8 +2805,7 @@ function getByrefLifetime(x::ASTContext, ty::QualType)
     @check_ptrs x ty
     lifetime = Ref{CXQualifiers_ObjCLifetime}(CXQualifiers_OCL_None)
     extended = Ref{Bool}(false)
-    return clang_ASTContext_getByrefLifetime(x, ty, lifetime, extended) ?
-           (lifetime[], extended[]) : nothing
+    return clang_ASTContext_getByrefLifetime(x, ty, lifetime, extended) ? (lifetime[], extended[]) : nothing
 end
 
 """
@@ -2867,16 +2816,10 @@ Build the dependent type `keyword nns::name<args...>` -- the node behind
 `typename T::template X<int>` and its relatives. The node is uniqued on the whole quadruple,
 so rebuilding it from the same pieces hands back the same type.
 """
-function getDependentTemplateSpecializationType(x::ASTContext,
-                                                keyword::CXElaboratedTypeKeyword,
-                                                nns::NestedNameSpecifier,
-                                                name::IdentifierInfo,
-                                                args::Vector{TemplateArgument})
+function getDependentTemplateSpecializationType(x::ASTContext, keyword::CXElaboratedTypeKeyword, nns::NestedNameSpecifier, name::IdentifierInfo, args::Vector{TemplateArgument})
     @check_ptrs x nns name
     ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
-    return QualType(clang_ASTContext_getDependentTemplateSpecializationType(x, keyword, nns,
-                                                                            name, ptrs,
-                                                                            length(ptrs)))
+    return QualType(clang_ASTContext_getDependentTemplateSpecializationType(x, keyword, nns, name, ptrs, length(ptrs)))
 end
 
 """
@@ -2962,8 +2905,7 @@ This is the other arm of the `PointerUnion`
 [`getTemplateOrSpecializationInfoAsVarTemplate`](@ref) reads; it is total, where
 [`getInstantiatedFromStaticDataMember`](@ref) requires `var` to be a static data member.
 """
-function getTemplateOrSpecializationInfoAsMemberSpecialization(x::ASTContext,
-                                                               var::AbstractVarDecl)
+function getTemplateOrSpecializationInfoAsMemberSpecialization(x::ASTContext, var::AbstractVarDecl)
     @check_ptrs x var
     msi = clang_ASTContext_getTemplateOrSpecializationInfoAsMemberSpecialization(x, var)
     return MemberSpecializationInfo(msi)
@@ -2996,14 +2938,12 @@ a `__uuidof` expression designates. `part4and5` must supply exactly 8 bytes.
 The translation unit must carry the implicit `_GUID` record, which clang builds only under
 Microsoft extensions; the assertion below is what keeps this off a null tag declaration.
 """
-function getMSGuidDecl(x::ASTContext, part1::Integer, part2::Integer, part3::Integer,
-                       part4and5::AbstractVector{UInt8})
+function getMSGuidDecl(x::ASTContext, part1::Integer, part2::Integer, part3::Integer, part4and5::AbstractVector{UInt8})
     @check_ptrs x
     @assert length(part4and5) == 8 "a GUID's fourth and fifth parts are eight bytes"
     @assert getMSGuidTagDecl(x).ptr != C_NULL "the translation unit has no `_GUID` record"
     buf = collect(UInt8, part4and5)
-    return MSGuidDecl(clang_ASTContext_getMSGuidDecl(x, UInt32(part1), UInt16(part2),
-                                                     UInt16(part3), buf))
+    return MSGuidDecl(clang_ASTContext_getMSGuidDecl(x, UInt32(part1), UInt16(part2), UInt16(part3), buf))
 end
 
 """
@@ -3055,8 +2995,7 @@ reads; the `MemberSpecializationInfo` arm is written by
 `inst` must not already carry either arm — clang asserts it, so both getters are checked
 here first.
 """
-function setTemplateOrSpecializationInfoAsVarTemplate(x::ASTContext, inst::AbstractVarDecl,
-                                                      tmpl::AbstractVarTemplateDecl)
+function setTemplateOrSpecializationInfoAsVarTemplate(x::ASTContext, inst::AbstractVarDecl, tmpl::AbstractVarTemplateDecl)
     @check_ptrs x inst tmpl
     @assert getTemplateOrSpecializationInfoAsVarTemplate(x, inst).ptr == C_NULL "inst already describes a variable template"
     @assert getTemplateOrSpecializationInfoAsMemberSpecialization(x, inst).ptr == C_NULL "inst already has a recorded instantiation pattern"
@@ -3073,8 +3012,7 @@ from `fn` itself. Asking for the `ExtInfo` `fn` already has hands `fn` back unch
 The result is a `FunctionProtoType` or a `FunctionNoProtoType` mirroring `fn`'s own class,
 so it comes back at the `Type_` base — `resolve` it to refine the carrier.
 """
-function adjustFunctionType(x::ASTContext, fn::AbstractFunctionType, cc::CXCallingConv_,
-                            noreturn::Bool, produces_result::Bool)
+function adjustFunctionType(x::ASTContext, fn::AbstractFunctionType, cc::CXCallingConv_, noreturn::Bool, produces_result::Bool)
     @check_ptrs x fn
     return unchecked_cast(Type_, clang_ASTContext_adjustFunctionType(x, fn, cc, noreturn, produces_result))
 end
@@ -3092,14 +3030,9 @@ cannot carry. `orig` must also be a function prototype type: clang reaches its
 `FunctionProtoType` through an unchecked `castAs` once the "already matches" fast path
 misses.
 """
-function getFunctionTypeWithExceptionSpec(x::ASTContext, orig::QualType,
-                                          est::CXExceptionSpecificationType)
+function getFunctionTypeWithExceptionSpec(x::ASTContext, orig::QualType, est::CXExceptionSpecificationType)
     @check_ptrs x orig
-    @assert est in (CXExceptionSpecificationType_EST_None,
-                    CXExceptionSpecificationType_EST_DynamicNone,
-                    CXExceptionSpecificationType_EST_MSAny,
-                    CXExceptionSpecificationType_EST_NoThrow,
-                    CXExceptionSpecificationType_EST_BasicNoexcept) "est must be an exception specification that carries no expression, type list or source declaration"
+    @assert est in (CXExceptionSpecificationType_EST_None, CXExceptionSpecificationType_EST_DynamicNone, CXExceptionSpecificationType_EST_MSAny, CXExceptionSpecificationType_EST_NoThrow, CXExceptionSpecificationType_EST_BasicNoexcept) "est must be an exception specification that carries no expression, type list or source declaration"
     @assert isFunctionProtoType(getTypePtr(orig)) "orig must be a function prototype type"
     return QualType(clang_ASTContext_getFunctionTypeWithExceptionSpec(x, orig, est))
 end
@@ -3112,14 +3045,9 @@ too when `as_written` is true. Same restriction on `est` as
 [`getFunctionTypeWithExceptionSpec`](@ref), which this runs on `fd`'s own type — so `fd`
 must have a function prototype type.
 """
-function adjustExceptionSpec(x::ASTContext, fd::AbstractFunctionDecl,
-                             est::CXExceptionSpecificationType, as_written::Bool=false)
+function adjustExceptionSpec(x::ASTContext, fd::AbstractFunctionDecl, est::CXExceptionSpecificationType, as_written::Bool=false)
     @check_ptrs x fd
-    @assert est in (CXExceptionSpecificationType_EST_None,
-                    CXExceptionSpecificationType_EST_DynamicNone,
-                    CXExceptionSpecificationType_EST_MSAny,
-                    CXExceptionSpecificationType_EST_NoThrow,
-                    CXExceptionSpecificationType_EST_BasicNoexcept) "est must be an exception specification that carries no expression, type list or source declaration"
+    @assert est in (CXExceptionSpecificationType_EST_None, CXExceptionSpecificationType_EST_DynamicNone, CXExceptionSpecificationType_EST_MSAny, CXExceptionSpecificationType_EST_NoThrow, CXExceptionSpecificationType_EST_BasicNoexcept) "est must be an exception specification that carries no expression, type list or source declaration"
     @assert isFunctionProtoType(getTypePtr(getType(fd))) "fd must have a function prototype type"
     return clang_ASTContext_adjustExceptionSpec(x, fd, est, as_written)
 end
@@ -3136,14 +3064,10 @@ substituted by `replacement`". `pack_index` is the `std::optional<unsigned>` cla
 replaced parameter is fetched from it unchecked by later accessors. The C API exposes no
 cheap proxy for that, so it is documented rather than asserted.
 """
-function getSubstTemplateTypeParmType(x::ASTContext, replacement::QualType,
-                                      associated::AbstractDecl, index::Integer,
-                                      pack_index::Union{Nothing,Integer}=nothing)
+function getSubstTemplateTypeParmType(x::ASTContext, replacement::QualType, associated::AbstractDecl, index::Integer, pack_index::Union{Nothing,Integer}=nothing)
     @check_ptrs x replacement associated
     has_pack_index = pack_index !== nothing
-    return QualType(clang_ASTContext_getSubstTemplateTypeParmType(x, replacement, associated,
-                                                                  index, has_pack_index,
-                                                                  has_pack_index ? pack_index : 0))
+    return QualType(clang_ASTContext_getSubstTemplateTypeParmType(x, replacement, associated, index, has_pack_index, has_pack_index ? pack_index : 0))
 end
 
 """
@@ -3156,15 +3080,12 @@ are all type arguments; the resulting type borrows the pack's element array, whi
 the context's own memory. `associated` carries the same documented precondition as
 [`getSubstTemplateTypeParmType`](@ref).
 """
-function getSubstTemplateTypeParmPackType(x::ASTContext, associated::AbstractDecl,
-                                          index::Integer, final::Bool,
-                                          argpack::TemplateArgument)
+function getSubstTemplateTypeParmPackType(x::ASTContext, associated::AbstractDecl, index::Integer, final::Bool, argpack::TemplateArgument)
     @check_ptrs x associated argpack
     @assert getKind(argpack) == CXTemplateArgument_Pack "argpack must be a pack argument"
     n = Int(pack_size(argpack))
     @assert all(i -> getKind(getPackElement(argpack, i)) == CXTemplateArgument_Type, 0:(n - 1)) "every element of argpack must be a type argument"
-    return QualType(clang_ASTContext_getSubstTemplateTypeParmPackType(x, associated, index,
-                                                                      final, argpack))
+    return QualType(clang_ASTContext_getSubstTemplateTypeParmPackType(x, associated, index, final, argpack))
 end
 
 """
@@ -3180,17 +3101,13 @@ be given for a type alias template.
 `name` must resolve to a single template: a dependent or unresolved (overloaded / assumed)
 template name cannot be canonicalised here.
 """
-function getTemplateSpecializationTypeInfo(x::ASTContext, name::TemplateName,
-                                           loc::SourceLocation,
-                                           args::TemplateArgumentListInfo,
-                                           canon::QualType=QualType(C_NULL))
+function getTemplateSpecializationTypeInfo(x::ASTContext, name::TemplateName, loc::SourceLocation, args::TemplateArgumentListInfo, canon::QualType=QualType(C_NULL))
     @check_ptrs x name args
     @assert getAsDependentTemplateName(name).ptr == C_NULL "name must not be a dependent template name"
     td = getAsTemplateDecl(name)
     @assert td.ptr != C_NULL "name must resolve to a single template declaration"
     @assert canon.ptr != C_NULL || getDeclKindName(td) != "TypeAliasTemplate" "an alias template needs its underlying type as canon"
-    return TypeSourceInfo(clang_ASTContext_getTemplateSpecializationTypeInfo(x, name, loc,
-                                                                             args, canon))
+    return TypeSourceInfo(clang_ASTContext_getTemplateSpecializationTypeInfo(x, name, loc, args, canon))
 end
 
 """
@@ -3216,15 +3133,10 @@ for "template template parameter `index` of `associated`, substituted by `replac
 `pack_index` is the optional pack index, `nothing` leaving it disengaged, and `associated`
 carries the same documented precondition.
 """
-function getSubstTemplateTemplateParm(x::ASTContext, replacement::TemplateName,
-                                      associated::AbstractDecl, index::Integer,
-                                      pack_index::Union{Nothing,Integer}=nothing)
+function getSubstTemplateTemplateParm(x::ASTContext, replacement::TemplateName, associated::AbstractDecl, index::Integer, pack_index::Union{Nothing,Integer}=nothing)
     @check_ptrs x replacement associated
     has_pack_index = pack_index !== nothing
-    return TemplateName(clang_ASTContext_getSubstTemplateTemplateParm(x, replacement,
-                                                                      associated, index,
-                                                                      has_pack_index,
-                                                                      has_pack_index ? pack_index : 0))
+    return TemplateName(clang_ASTContext_getSubstTemplateTemplateParm(x, replacement, associated, index, has_pack_index, has_pack_index ? pack_index : 0))
 end
 
 """
@@ -3235,14 +3147,10 @@ The template-name counterpart of [`getSubstTemplateTypeParmPackType`](@ref). `ar
 be a pack argument — its size and element pointer are read unchecked — and the resulting
 name borrows that element array.
 """
-function getSubstTemplateTemplateParmPack(x::ASTContext, argpack::TemplateArgument,
-                                          associated::AbstractDecl, index::Integer,
-                                          final::Bool)
+function getSubstTemplateTemplateParmPack(x::ASTContext, argpack::TemplateArgument, associated::AbstractDecl, index::Integer, final::Bool)
     @check_ptrs x argpack associated
     @assert getKind(argpack) == CXTemplateArgument_Pack "argpack must be a pack argument"
-    return TemplateName(clang_ASTContext_getSubstTemplateTemplateParmPack(x, argpack,
-                                                                          associated, index,
-                                                                          final))
+    return TemplateName(clang_ASTContext_getSubstTemplateTemplateParmPack(x, argpack, associated, index, final))
 end
 
 """
@@ -3372,8 +3280,7 @@ answer anything but its default record.
 Neither handle is adopted, and the expression is borrowed rather than copied: pass one the AST
 arena owns, not one the caller may free.
 """
-function setBlockVarCopyInit(x::ASTContext, vd::AbstractVarDecl, copy_expr::AbstractExpr,
-                             can_throw::Bool)
+function setBlockVarCopyInit(x::ASTContext, vd::AbstractVarDecl, copy_expr::AbstractExpr, can_throw::Bool)
     @check_ptrs x vd copy_expr
     @assert hasAttrOfKind(vd, CXAttrKind_Blocks) "expected a __block variable"
     return clang_ASTContext_setBlockVarCopyInit(x, vd, copy_expr, can_throw)

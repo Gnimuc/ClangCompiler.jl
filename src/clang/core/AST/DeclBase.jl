@@ -13,4 +13,3 @@ Hold a pointer to a `clang::DeclContext` object.
 struct DeclContext <: AbstractDeclContext
     ptr::CXDeclContext
 end
-
