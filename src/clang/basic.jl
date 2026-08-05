@@ -1,3 +1,25 @@
+"""
+    shim_type_width(name::Symbol) -> Int
+
+The size in bytes the *shim* was compiled with for a C type whose width is platform-dependent.
+`name` is `:off_t` or `:time_t`.
+
+This layer mirrors `off_t` with the alias `off_t = Clong`, which is the same width as the C type
+on every target this package builds for — but only while the shim is built as it is now.
+`_FILE_OFFSET_BITS=64` in a future toolchain would make mingw's `off_t` 64 bits and leave the
+alias half a value wide, with nothing to say so: an ABI mismatch is a misread register, not an
+error. `time_t` needs no alias for the opposite reason, being 64 bits everywhere, and the two
+shim entry points taking one spell `int64_t`.
+
+Asking the shim is what turns either assumption into something `test/abi.jl` can check.
+"""
+function shim_type_width(name::Symbol)
+    name === :off_t && return Int(clang_sizeof_off_t())
+    name === :time_t && return Int(clang_sizeof_time_t())
+    throw(ArgumentError("no width is recorded for $name; :off_t and :time_t are the " *
+                        "platform-dependent C types this layer mirrors"))
+end
+
 # IdentifierTable
 get_name(x::IdentifierTable, s::String) = get(x, s)
 

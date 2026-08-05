@@ -66,7 +66,7 @@ The following example demonstrates how to compile and invoke function:
 julia> import ClangCompiler as CC
 
 julia> I = CC.create_interpreter(["-I", normpath(joinpath(Sys.BINDIR, "..", "include", "julia"))])
-ClangCompiler.CxxInterpreter(ClangCompiler.Interpreter(Ptr{Nothing}(0x000000012ce70500)))
+ClangCompiler.CxxInterpreter(ClangCompiler.Interpreter(Ptr{ClangCompiler.LibClangEx.CXInterpreterImpl}(0x000000012ce70500)))
 
 julia> CC.compile(I, 
        """
@@ -115,10 +115,10 @@ julia> CC.dispose(I)
 ```
 ## More
 
-[`examples/`](examples/) has six worked programs that run — a JIT'd C++ function called from
-Julia, an AST tour, record layout, template instantiation, cross-target ABI inspection, and the
-type-safety guarantees the handle layer provides. They are executed by CI, so they cannot drift
-away from the API:
+[`examples/`](examples/) has seven worked programs that run — a JIT'd C++ function called from
+Julia, an AST tour, record layout, template instantiation, cross-target ABI inspection, the
+type-safety guarantees the handle layer provides, and JIT'd C++ calling back into the hosting
+Julia session. They are executed by CI, so they cannot drift away from the API:
 
 ```
 julia --project examples/runall.jl

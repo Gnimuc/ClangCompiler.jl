@@ -609,6 +609,10 @@ end
     # rejects anything else instead of letting clang dereference a null record
     @test_throws AssertionError CC.getTargetFieldForToUnionCast(CC.getType(first(css)),
                                                                 CC.getType(il))
+    # a null QualType is rejected before the gate reads it -- `getTypePtr` asserts, so the
+    # gate would otherwise abort the process instead of raising
+    @test_throws AssertionError CC.getTargetFieldForToUnionCast(CC.QualType(C_NULL),
+                                                                CC.getType(il))
 
     # ---- ConditionalOperator ------------------------------------------------
     cos = filter(n -> n isa CC.ConditionalOperator, nodes)

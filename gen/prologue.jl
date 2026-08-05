@@ -24,4 +24,4 @@ abstract type AbstractCXImpl end
 # the generator's auto-export covers only the `CX`/`clang` prefixes, so say this one outright
 export AbstractCXImpl
 
-const time_t = Clong
+

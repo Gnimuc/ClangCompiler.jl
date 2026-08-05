@@ -46,6 +46,14 @@ if (WIN32)
     target_compile_definitions(clangex PUBLIC "_CINDEX_LIB_")
 endif(WIN32)
 
+# `off_t` is 64 bits on Darwin and Linux already; on mingw it is `long` -- 32 bits under LLP64 --
+# unless this is set. That matters because it is part of the mangled name of every clang function
+# taking one, and this shim is compiled here while clang-cpp arrives prebuilt from a different
+# toolchain: if the two disagree, the symbol this shim asks for is not the one that library
+# exports and the link fails. Setting it makes the type 64 bits on all three, which is also what
+# lets the shim spell `int64_t` at its own boundary with no truncation anywhere.
+target_compile_definitions(clangex PUBLIC "_FILE_OFFSET_BITS=64")
+
 target_link_libraries(clangex LINK_PUBLIC LLVM clang-cpp)
 
 include(cmake/install_config.cmake)

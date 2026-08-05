@@ -56,6 +56,7 @@ include("clang/identity.jl")
 # node identity: `==`/`hash` on carriers, and the raw base pointer behind them
 public decl_id, stmt_id, type_id, attr_id
 public get_record_layout, field_offsets, is_derived_from
+public shim_type_width
 include("clang/basic.jl")
 include("clang/codegen.jl")
 include("clang/frontend.jl")
@@ -96,6 +97,7 @@ public AbstractFinder, DeclFinder, reset, get_decl
 # the chants every caller writes before it can ask clang anything
 include("highlevel.jl")
 public translation_unit, top_level_decls, find_decl, find_decls, source_location
+public definition, members, signature, mangled_name
 
 include("utils.jl")
 

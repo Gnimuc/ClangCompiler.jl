@@ -1347,6 +1347,9 @@ union type: clang dereferences its record decl unconditionally, so a
 non-union argument crashes rather than returning null.
 """
 function getTargetFieldForToUnionCast(union_ty::QualType, op_ty::QualType)
+    # both before the gate: it reads `union_ty` with `getTypePtr`, which asserts on a null
+    # QualType, and clang's own body then reads `op_ty` the same way
+    @check_ptrs union_ty op_ty
     @assert isUnionType(getTypePtr(union_ty)) "union_ty must be a union type"
     return FieldDecl(clang_CastExpr_getTargetFieldForToUnionCast(union_ty, op_ty))
 end

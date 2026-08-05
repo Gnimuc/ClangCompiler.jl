@@ -688,8 +688,12 @@ using ClangCompiler: get_tag
         CC.setDeclName(vd_f1, gname)
         @test CC.getName(vd_f1) == "dk_gvar"
 
-        CC.setType(vd_l, CC.getType(vd_l))
-        @test CC.getType(vd_l).ptr == CC.getType(vd_l).ptr
+        # capture the value first: comparing the getter to itself passes whatever setType
+        # writes, including null or another argument's payload
+        newty = CC.get_qual_type(CC.DoubleTy(ctx))
+        @test CC.getType(vd_l) != newty
+        CC.setType(vd_l, newty)
+        @test CC.getType(vd_l) == newty
 
         CC.setTypeSourceInfo(vd_g, tsi)
         @test CC.getTypeSourceInfo(vd_g).ptr == tsi.ptr

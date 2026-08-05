@@ -119,3 +119,113 @@ namespace app {
 
     dispose(I)
 end
+
+@testset "definition, members, signature, mangled_name" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    CC.parse(I, """
+             struct Fwd;
+             namespace hl {
+             struct Widget {
+                 int w;
+                 double area() const;
+                 static int count();
+                 virtual ~Widget();
+                 Widget();
+             };
+             int twice(int v, double s);
+             }
+             struct Fwd { int f; };
+             """)
+
+    @testset "definition completes a forward declaration" begin
+        # Which redeclaration a lookup lands on depends on the translation unit, so take the
+        # forward one outright rather than assuming: it is the definition's previous decl.
+        found = CC.find_decl(I, "Fwd")
+        d = CC.definition(found)
+        @test d !== nothing
+        @test CC.isCompleteDefinition(d)
+        @test CC.definition(d) == d                     # already the definition
+
+        fwd = CC.resolve(CC.getPreviousDecl(d))
+        @test fwd isa CC.CXXRecordDecl
+        @test !CC.isCompleteDefinition(fwd)             # the one with no members
+        # two redeclarations of one type are two nodes, so `==` (which is node identity) is
+        # false between them -- what ties them together is that both reach one definition
+        @test fwd != d
+        @test CC.definition(fwd) == d
+
+        # a type only ever declared has no definition to reach
+        CC.parse(I, "struct NeverDefined;")
+        @test CC.definition(CC.find_decl(I, "NeverDefined")) === nothing
+    end
+
+    @testset "members goes through the definition, whichever decl it is handed" begin
+        # This is a dispatch question and it got the wrong answer once: a record is both an
+        # AbstractTagDecl and one of the decls that is also a DeclContext, so a second method on
+        # the union won by specificity and walked the forward declaration.
+        fwd = CC.resolve(CC.getPreviousDecl(CC.definition(CC.find_decl(I, "Fwd"))))
+        @test !CC.isCompleteDefinition(fwd)
+        ms = CC.members(fwd)                            # NOT empty — the definition's members
+        @test "f" in Set(CC.getNameAsString(m) for m in ms if m isa CC.AbstractNamedDecl)
+        # and `members` reports what clang has, implicit declarations included: every class
+        # gets an injected-class-name, so a one-field struct has two members
+        @test any(m -> m isa CC.CXXRecordDecl && CC.isImplicit(m), ms)
+
+        w = CC.find_decl(I, "hl::Widget")
+        names = Set(CC.getNameAsString(m) for m in CC.members(w))
+        @test "area" in names && "count" in names && "w" in names
+        # direct members only, and each resolved to its concrete class
+        @test any(m -> m isa CC.CXXMethodDecl, CC.members(w))
+        @test any(m -> m isa CC.FieldDecl, CC.members(w))
+
+        # a namespace is a context too, and reaches the same function
+        ns = CC.find_decl(I, "hl")
+        @test "twice" in Set(CC.getNameAsString(m) for m in CC.members(ns)
+                             if m isa CC.AbstractNamedDecl)
+    end
+
+    @testset "signature reports what clang parsed" begin
+        fd = CC.find_decl(I, "hl::twice")
+        s = CC.signature(fd)
+        @test s.name == "twice"
+        @test s.return_type == "int"
+        @test s.parameters == ["int", "double"]
+        @test !s.is_const && !s.is_static && !s.is_virtual && !s.is_deleted && !s.is_variadic
+
+        w = CC.find_decl(I, "hl::Widget")
+        area = only(m for m in CC.members(w)
+                    if m isa CC.CXXMethodDecl && CC.getNameAsString(m) == "area")
+        @test CC.signature(area).is_const
+        cnt = only(m for m in CC.members(w)
+                   if m isa CC.CXXMethodDecl && CC.getNameAsString(m) == "count")
+        @test CC.signature(cnt).is_static
+        @test CC.signature(cnt).return_type == "int"
+    end
+
+    @testset "mangled_name, and the two declarations it refuses" begin
+        fd = CC.find_decl(I, "hl::twice")
+        sym = CC.mangled_name(I, fd)
+        # Itanium encodes the namespace, the name and the parameter types
+        @test occursin("twice", sym) && occursin("hl", sym)
+        @test sym == CC.mangleName(CC.createMangleContext(ctx, CC.getTargetInfo(ctx)), fd)
+
+        # a constructor and a destructor have several symbols each, so clang's entry point
+        # wants to be told which — a bare decl trips an assert compiled into the release build
+        w = CC.find_decl(I, "hl::Widget")
+        ctor = only(m for m in CC.members(w) if m isa CC.CXXConstructorDecl)
+        dtor = only(m for m in CC.members(w) if m isa CC.CXXDestructorDecl)
+        @test_throws AssertionError CC.mangled_name(I, ctor)
+        @test_throws AssertionError CC.mangled_name(I, dtor)
+
+        # getAllManglings is the one that answers for those, and it needs a generator that
+        # nothing could construct until now
+        ng = CC.ASTNameGenerator(ctx)
+        @test length(CC.getAllManglings(ng, ctor)) >= 2      # base-object and complete-object
+        @test all(s -> occursin("Widget", s), CC.getAllManglings(ng, ctor))
+        @test length(CC.getAllManglings(ng, dtor)) >= 2
+        CC.dispose(ng)
+    end
+
+    dispose(I)
+end

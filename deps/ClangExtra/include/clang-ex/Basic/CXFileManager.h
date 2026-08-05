@@ -1,6 +1,8 @@
 #ifndef LLVM_CLANG_C_EXTRA_CXFILEMANAGER_H
 #define LLVM_CLANG_C_EXTRA_CXFILEMANAGER_H
 
+#include <sys/types.h>   // off_t, whose width is the point of this file
+#include <time.h>
 #include "clang-ex/CXTypes.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -50,11 +52,30 @@ bool clang_FileEntryRef_isSameRef(CXFileEntryRef FER, CXFileEntryRef RHS);
 // The number of unique real files the manager has opened.
 size_t clang_FileManager_getNumUniqueRealFiles(CXFileManager FM);
 
-// getVirtualFileRef is deliberately NOT wrapped. Its C++ signature is
-// (StringRef, off_t, time_t), and those two spell different underlying types across the
-// clang-cpp builds this package links: off_t is `long long` on Darwin/Linux but `long` on
-// mingw, so the overload a fixed-width shim resolves to does not exist in the Windows import
-// library and the link fails there while succeeding everywhere else.
+// A virtual file: one that behaves as if a file of this name, size and mtime were on disk,
+// without the file being accessed.
+//
+// The C++ callee is (StringRef, off_t, time_t), and both of those are spelled differently per
+// platform, so its mangled name differs on all three -- `Exl` on Darwin, `Ell` on Linux, `Exx`
+// on mingw once _FILE_OFFSET_BITS=64 is set. That resolves at compile time from clang's own
+// header, which this file includes.
+//
+// What it does NOT resolve by itself is that on Windows the two sides come from different
+// toolchains: this shim is compiled on the runner by msys2's mingw gcc, while clang-cpp arrives
+// prebuilt from LLVM_full_jll. They must agree on off_t or the link fails with
+//
+//   undefined reference to `clang::FileManager::getVirtualFileRef(llvm::StringRef, long, long long)'
+//
+// which is what happened before CMakeLists.txt set _FILE_OFFSET_BITS=64. With it set, off_t is
+// 64 bits on all three and the shim can spell int64_t at its own boundary with nothing to
+// truncate. `clang_sizeof_off_t` below is what keeps that agreement checkable.
+//
+// FIXME: allocates; release with `clang_FileEntryRef_dispose`.
+CXFileEntryRef clang_FileManager_getVirtualFileRef(CXFileManager FM, const char *Filename,
+                                                   int64_t Size, int64_t ModificationTime);
+
+size_t clang_sizeof_off_t(void);
+size_t clang_sizeof_time_t(void);
 
 // The file's size in bytes, widened to int64_t so no off_t alias is needed.
 int64_t clang_FileEntry_getSize(CXFileEntry FE);

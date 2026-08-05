@@ -477,6 +477,10 @@ end
     # delegating constructor + its target + delegating initializer
     delegCtor = first(c for c in dctors if CC.isDelegatingConstructor(c))
     @test !CC.is_null_handle(CC.getTargetConstructor(delegCtor))
+    # and the shape that has no target: clang's own assert is compiled out of the release
+    # build, so an ordinary constructor would dereference a null initializer array
+    plainCtor = first(c for c in dctors if !CC.isDelegatingConstructor(c))
+    @test_throws AssertionError CC.getTargetConstructor(plainCtor)
     dinits = CC.getCtorInitializers(delegCtor)
     @test any(CC.isDelegatingInitializer, dinits)
 

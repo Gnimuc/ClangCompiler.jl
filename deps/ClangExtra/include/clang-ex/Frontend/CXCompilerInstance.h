@@ -38,7 +38,7 @@ void clang_CompilerInstance_setFileManager(CXCompilerInstance CI, CXFileManager 
 CXFileManager clang_CompilerInstance_createFileManager(CXCompilerInstance CI);
 
 CXFileManager clang_CompilerInstance_createFileManagerWithVOFS4PCH(
-    CXCompilerInstance CI, const char *Path, time_t ModificationTime,
+    CXCompilerInstance CI, const char *Path, int64_t ModificationTime,
     LLVMMemoryBufferRef PCHBuffer);
 
 // SourceManager

@@ -7588,7 +7588,8 @@ Build the pack of using-declarations `expansions` that the pack expansion
 `instantiated_from`'s access.
 
 The carrier is the declared return type, `NamedDecl`; the node clang builds is a
-`UsingPackDecl`, so refine with `UsingPackDecl(d.ptr)` once `getDeclKindName` confirms it.
+`UsingPackDecl`, so refine with the checked cast `UsingPackDecl(d)`, which asks clang and
+raises `CastError` if the node is anything else.
 Requires [`getCurLexicalContext`](@ref) to be non-null — the new declaration is added to it
 without a null check. The expansions are copied into the node's trailing storage, so the
 vector need not outlive the call.

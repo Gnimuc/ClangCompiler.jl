@@ -1148,8 +1148,13 @@ required (`CXAlignRequirementKind_None` when nothing forced it).
 `ty` must be non-dependent and, for record/enum types, complete: Clang's
 `getTypeInfoImpl` is `llvm_unreachable` on dependent types and lays records out eagerly.
 """
+# `ty` goes through `@check_ptrs` with the context, not just alongside it: the gate below reads
+# it with `getTypePtr`, whose `assert(!isNull())` is compiled into the release libclang-cpp, so a
+# null QualType would abort inside the gate rather than being rejected by it. `getPointeeType` of
+# a non-pointer and `Expr::getType` of an unevaluated string literal both return one.
+# `is_null_handle(::QualType)` is `isNull`, so one word covers it.
 function getTypeInfo(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     @assert !isDependentType(getTypePtr(ty)) "type layout queries require a non-dependent type"
     width = Ref{UInt64}(0)
     align = Ref{Cuint}(0)
@@ -1164,7 +1169,7 @@ Same as [`getTypeInfo`](@ref) but with `width`/`align` in **bytes**. Carries the
 non-dependent/complete precondition on `ty`.
 """
 function getTypeInfoInChars(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     @assert !isDependentType(getTypePtr(ty)) "type layout queries require a non-dependent type"
     width = Ref{Int64}(0)
     align = Ref{Int64}(0)
@@ -1178,7 +1183,7 @@ end
 Return the size of `ty` in bytes. `ty` must be non-dependent and complete.
 """
 function getTypeSizeInChars(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     @assert !isDependentType(getTypePtr(ty)) "type layout queries require a non-dependent type"
     return clang_ASTContext_getTypeSizeInChars(x, ty)
 end
@@ -1188,7 +1193,7 @@ end
 Return the ABI alignment of `ty` in bytes. `ty` must be non-dependent and complete.
 """
 function getTypeAlignInChars(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     @assert !isDependentType(getTypePtr(ty)) "type layout queries require a non-dependent type"
     return clang_ASTContext_getTypeAlignInChars(x, ty)
 end
@@ -1199,7 +1204,7 @@ Return the target's preferred alignment of `ty` in bytes. `ty` must be non-depen
 and complete.
 """
 function getPreferredTypeAlignInChars(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     @assert !isDependentType(getTypePtr(ty)) "type layout queries require a non-dependent type"
     return clang_ASTContext_getPreferredTypeAlignInChars(x, ty)
 end
@@ -1210,7 +1215,7 @@ Return the ABI alignment of `ty` in bytes, ignoring alignment attributes applied
 the typedef. `ty` must be non-dependent and complete.
 """
 function getTypeUnadjustedAlignInChars(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     @assert !isDependentType(getTypePtr(ty)) "type layout queries require a non-dependent type"
     return clang_ASTContext_getTypeUnadjustedAlignInChars(x, ty)
 end
@@ -1250,7 +1255,7 @@ Return the alignment in bytes a global variable of type `ty` gets. `ty` must be
 non-dependent and complete.
 """
 function getAlignOfGlobalVarInChars(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     @assert !isDependentType(getTypePtr(ty)) "type layout queries require a non-dependent type"
     return clang_ASTContext_getAlignOfGlobalVarInChars(x, ty)
 end
@@ -1417,7 +1422,7 @@ fixed-point types by ISO N1169).
 type.
 """
 function getCorrespondingSignedType(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     ptr = getTypePtr(ty)
     @assert hasUnsignedIntegerRepresentation(ptr) || isUnsignedFixedPointType(ptr) "type must be unsigned"
     return QualType(clang_ASTContext_getCorrespondingSignedType(x, ty))
@@ -1664,7 +1669,7 @@ padding a derived class may reuse is excluded. Carries the same non-dependent/co
 precondition on `ty`.
 """
 function getTypeInfoDataSizeInChars(x::ASTContext, ty::QualType)
-    @check_ptrs x
+    @check_ptrs x ty
     @assert !isDependentType(getTypePtr(ty)) "type layout queries require a non-dependent type"
     width = Ref{Int64}(0)
     align = Ref{Int64}(0)

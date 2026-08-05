@@ -59,14 +59,37 @@ end
 
 """
     mangleName(x::MangleContext, d::AbstractNamedDecl) -> String
-Return the mangled linkage name of a non-constructor/destructor declaration.
+Return the mangled linkage name of `d`.
+
+`d` must not be a constructor or a destructor. Those have *several* mangled names — for a
+constructor the complete-object, base-object and allocating variants — so clang's entry point
+takes a `GlobalDecl` carrying which one is meant, and building one from a bare
+`CXXConstructorDecl` trips `assert(!isa<CXXConstructorDecl>(D) && "Use other ctor with ctor
+decls!")` in GlobalDecl.h. That assert is compiled into the release libclang-cpp, so the
+process aborts rather than returning. Ask [`getAllManglings`](@ref) for those.
 """
 function mangleName(x::MangleContext, d::AbstractNamedDecl)
     @check_ptrs x d
+    @assert !(d isa AbstractCXXConstructorDecl) && !(d isa AbstractCXXDestructorDecl) "a " *
+            "constructor or destructor has several mangled names; use `getAllManglings`"
     return get_string(clang_MangleContext_mangleName(x, d))
 end
 
 # ASTNameGenerator
+"""
+    ASTNameGenerator(ctx::ASTContext) -> ASTNameGenerator
+Build a name generator bound to `ctx`.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+function ASTNameGenerator(ctx::ASTContext)
+    @check_ptrs ctx
+    return ASTNameGenerator(clang_ASTNameGenerator_create(ctx))
+end
+
+dispose(x::ASTNameGenerator) = (@check_ptrs x; clang_ASTNameGenerator_dispose(x))
+
 function getName(x::ASTNameGenerator, d::AbstractDecl)
     @check_ptrs x d
     return get_string(clang_ASTNameGenerator_getName(x, d))

@@ -97,6 +97,20 @@ end
     end
 end
 
+@testset "the C widths this layer assumes match the build" begin
+    # `time_t` is 64 bits on every target — that is why the two shim entry points taking one
+    # spell `int64_t` and there is no alias to keep in step. It is an assumption, so pin it:
+    # `const time_t = Clong` is what this package used to say, and it read 32 bits of a 64-bit
+    # value on Windows alone until a review found it.
+    @test CC.shim_type_width(:time_t) == 8
+
+    # `off_t` would be 32 bits on mingw, where it is `long` under LLP64 — and a shim compiled
+    # with a different width from the prebuilt clang-cpp asks for a C++ symbol that library does
+    # not export. CMakeLists.txt sets `_FILE_OFFSET_BITS=64` so all three agree at 64; this is
+    # the assertion that says the flag is actually reaching the compiler.
+    @test CC.shim_type_width(:off_t) == 8
+end
+
 @testset "handle types keep the hierarchies apart" begin
     # What the opaque CX handles buy: widening to a base is spelled by a marshalling method,
     # so the absence of a method is a real statement about C++. `Decl` and `Stmt` are unrelated

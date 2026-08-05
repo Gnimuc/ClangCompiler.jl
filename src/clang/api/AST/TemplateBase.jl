@@ -95,8 +95,23 @@ function TemplateArgument(decl::ValueDecl, ty::QualType)
     return TemplateArgument(clang_TemplateArgument_constructFromValueDecl(decl, ty))
 end
 
+"""
+    TemplateArgument(ctx::ASTContext, v::LLVM.GenericValue, ty::QualType) -> TemplateArgument
+
+Build the non-type template argument of type `ty` whose value is the integer `v` carries.
+
+`ty` must be a non-dependent integral or enumeration type. The shim reads its signedness and
+its width — `TemplateArgument::Profile` folds both, so an argument built without them cannot
+unify with the one Sema builds for the same specialization — and neither question has an
+answer for a null, non-integral, or dependent type. Clang answers the last of those with an
+`llvm_unreachable`, which in a release build is not a stop.
+"""
 function TemplateArgument(ctx::ASTContext, v::LLVM.GenericValue, ty::QualType)
-    @check_ptrs ctx
+    @check_ptrs ctx ty
+    tp = getTypePtr(ty)
+    @assert isIntegralOrEnumerationType(tp) "a non-type template argument's type must be " *
+                                            "integral or an enumeration, got $(getAsString(ty))"
+    @assert !isDependentType(tp) "the type must not be dependent; clang has no width for it"
     return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx, v, ty))
 end
 
