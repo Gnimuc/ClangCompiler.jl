@@ -5,42 +5,42 @@
 
 CXTemplateDeductionInfo clang_TemplateDeductionInfo_create(CXSourceLocation_ Loc,
                                                            unsigned DeducedDepth) {
-  return new clang::sema::TemplateDeductionInfo( // NOLINT(*-owning-memory)
-      clang::SourceLocation::getFromPtrEncoding(Loc), DeducedDepth);
+  return reinterpret_cast<CXTemplateDeductionInfo>(new clang::sema::TemplateDeductionInfo( // NOLINT(*-owning-memory)
+      clang::SourceLocation::getFromPtrEncoding(Loc), DeducedDepth));
 }
 
 void clang_TemplateDeductionInfo_dispose(CXTemplateDeductionInfo Info) {
-  delete static_cast<clang::sema::TemplateDeductionInfo *>(Info); // NOLINT(*-owning-memory)
+  delete reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info); // NOLINT(*-owning-memory)
 }
 
 CXSourceLocation_ clang_TemplateDeductionInfo_getLocation(CXTemplateDeductionInfo Info) {
-  return static_cast<clang::sema::TemplateDeductionInfo *>(Info)
+  return reinterpret_cast<CXSourceLocation_>(reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)
       ->getLocation()
-      .getPtrEncoding();
+      .getPtrEncoding());
 }
 
 unsigned clang_TemplateDeductionInfo_getDeducedDepth(CXTemplateDeductionInfo Info) {
-  return static_cast<clang::sema::TemplateDeductionInfo *>(Info)->getDeducedDepth();
+  return reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)->getDeducedDepth();
 }
 
 unsigned clang_TemplateDeductionInfo_getNumExplicitArgs(CXTemplateDeductionInfo Info) {
-  return static_cast<clang::sema::TemplateDeductionInfo *>(Info)->getNumExplicitArgs();
+  return reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)->getNumExplicitArgs();
 }
 
 bool clang_TemplateDeductionInfo_hasSFINAEDiagnostic(CXTemplateDeductionInfo Info) {
-  return static_cast<clang::sema::TemplateDeductionInfo *>(Info)->hasSFINAEDiagnostic();
+  return reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)->hasSFINAEDiagnostic();
 }
 
 CXTemplateArgumentList
 clang_TemplateDeductionInfo_takeSugared(CXTemplateDeductionInfo Info) {
-  return static_cast<clang::sema::TemplateDeductionInfo *>(Info)->takeSugared();
+  return reinterpret_cast<CXTemplateArgumentList>(reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)->takeSugared());
 }
 
 CXTemplateArgumentList
 clang_TemplateDeductionInfo_takeCanonical(CXTemplateDeductionInfo Info) {
-  return static_cast<clang::sema::TemplateDeductionInfo *>(Info)->takeCanonical();
+  return reinterpret_cast<CXTemplateArgumentList>(reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)->takeCanonical());
 }
 
 unsigned clang_TemplateDeductionInfo_getCallArgIndex(CXTemplateDeductionInfo Info) {
-  return static_cast<clang::sema::TemplateDeductionInfo *>(Info)->CallArgIndex;
+  return reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)->CallArgIndex;
 }

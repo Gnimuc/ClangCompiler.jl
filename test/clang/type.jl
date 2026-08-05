@@ -22,7 +22,7 @@ end
     ClangCompiler.parse(I, "_Atomic int av;")
     f = DeclFinder(I)
     @test f(I, "av")
-    vd = ClangCompiler.VarDecl(get_decl(f).ptr)
+    vd = ClangCompiler.downcast(ClangCompiler.VarDecl, get_decl(f).ptr)
     ty = ClangCompiler.resolve(ClangCompiler.getTypePtr(ClangCompiler.getType(vd)))
     @test ty isa ClangCompiler.AtomicType
     @test !CC.is_null_handle(ClangCompiler.getValueType(ty))
@@ -41,7 +41,7 @@ end
              ("tc_r", CC.LValueReferenceType, CC.LibClangEx.CXTypeClass_LValueReference)]
     for (name, carrier, cls) in cases
         @test f(I, name)
-        typtr = CC.getTypePtr(CC.getType(CC.VarDecl(get_decl(f).ptr)))
+        typtr = CC.getTypePtr(CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
         @test CC.getTypeClass(typtr) == cls
         @test CC.resolve(typtr) isa carrier
     end
@@ -57,7 +57,7 @@ end
     """)
     f = DeclFinder(I)
     @test f(I, "gta_v")
-    qt = ClangCompiler.getType(ClangCompiler.VarDecl(get_decl(f).ptr))
+    qt = ClangCompiler.getType(ClangCompiler.downcast(ClangCompiler.VarDecl, get_decl(f).ptr))
     ty = ClangCompiler.resolve(ClangCompiler.getTypePtr(qt))
     ty isa ClangCompiler.ElaboratedType &&
         (ty = ClangCompiler.resolve(ClangCompiler.getTypePtr(ClangCompiler.desugar(ty))))
@@ -125,7 +125,7 @@ using ClangCompiler: get_tag
     f = DeclFinder(I)
 
     getdecl(name) = (r = f(I, name); @assert r "lookup failed: $name"; get_decl(f))
-    qtof(name) = CC.getType(CC.VarDecl(getdecl(name).ptr))
+    qtof(name) = CC.getType(CC.downcast(CC.VarDecl, getdecl(name).ptr))
     tpof(name) = CC.getTypePtr(qtof(name))
     canon(tp) = CC.getTypePtr(CC.get_qual_type(tp))
     unwrap(tp) = (r = CC.resolve(tp); r isa CC.ElaboratedType ? CC.getTypePtr(CC.getNamedType(r)) : tp)
@@ -165,7 +165,7 @@ using ClangCompiler: get_tag
     for (T, pred) in builtin_pairs
         conc = T(ctx)
         @test pred(conc) === true                     # concrete singleton method
-        @test pred(CC.BuiltinType(conc.ptr)) === true # AbstractType method via base carrier
+        @test pred(CC.upcast(CC.BuiltinType, conc.ptr)) === true # AbstractType method via base carrier
     end
     @test CC.is_builtin_type(CC.IntTy(ctx)) === true  # AbstractBuiltinType method
     @test CC.is_builtin_type(tpof("tmid_g")) === true # AbstractType method
@@ -216,10 +216,10 @@ using ClangCompiler: get_tag
     @test CC.is_incomplete_array_type(CC.resolve(itp)) === true
 
     # VariableArrayType via a VLA local
-    vfd = CC.FunctionDecl(getdecl("tmid_vla_fn").ptr)
+    vfd = CC.downcast(CC.FunctionDecl, getdecl("tmid_vla_fn").ptr)
     ds = tmid_find_node(CC.DeclStmt, CC.resolve(CC.getBody(vfd)))
     @test ds isa CC.DeclStmt
-    vvd = CC.VarDecl(CC.getSingleDecl(ds).ptr)
+    vvd = CC.downcast(CC.VarDecl, CC.getSingleDecl(ds).ptr)
     vtp = CC.getTypePtr(CC.getType(vvd))
     @test CC.is_variable_array_type(vtp) === true
     vat = CC.resolve(vtp)
@@ -234,7 +234,7 @@ using ClangCompiler: get_tag
     @test CC.is_dependent_size_array_type(dsat) === true
 
     # FunctionType / FunctionProtoType / FunctionNoProtoType
-    ftp = CC.getTypePtr(CC.getType(CC.FunctionDecl(getdecl("tmid_fn").ptr)))
+    ftp = CC.getTypePtr(CC.getType(CC.downcast(CC.FunctionDecl, getdecl("tmid_fn").ptr)))
     @test CC.is_function_type(ftp) === true
     fpt = CC.resolve(CC.resolve(ftp))
     @test fpt isa CC.FunctionProtoType
@@ -328,7 +328,7 @@ using ClangCompiler: get_tag
     @test CC.is_atomic_type(art) === true
 
     # AdjustedType / DecayedType via a decayed array parameter
-    dfd = CC.FunctionDecl(getdecl("tmid_decay_fn").ptr)
+    dfd = CC.downcast(CC.FunctionDecl, getdecl("tmid_decay_fn").ptr)
     dtp = CC.getTypePtr(CC.getType(CC.getParamDecl(dfd, 0)))
     @test CC.is_adjusted_type(dtp) === true
     @test CC.is_decayed_type(dtp) === true

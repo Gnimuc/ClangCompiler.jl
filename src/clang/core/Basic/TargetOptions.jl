@@ -6,5 +6,3 @@ struct TargetOptions <: AbstractTargetOptions
     ptr::CXTargetOptions
 end
 
-Base.unsafe_convert(::Type{CXTargetOptions}, x::TargetOptions) = x.ptr
-Base.cconvert(::Type{CXTargetOptions}, x::TargetOptions) = x

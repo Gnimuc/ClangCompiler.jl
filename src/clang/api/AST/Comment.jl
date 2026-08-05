@@ -941,7 +941,7 @@ arena first — `ctx` must be the `ASTContext` that owns `x`. No line may be nul
 function setLines(x::AbstractVerbatimBlockComment, ctx::ASTContext,
                   lines::AbstractVector{<:AbstractVerbatimBlockLineComment})
     @check_ptrs x ctx
-    buf = CXVerbatimBlockLineComment[l.ptr for l in lines]
+    buf = CXVerbatimBlockLineComment[Base.unsafe_convert(CXVerbatimBlockLineComment, l) for l in lines]
     @assert all(p -> p != C_NULL, buf) "every verbatim-block line must be non-NULL"
     return clang_VerbatimBlockComment_setLines(x, ctx, buf, length(buf))
 end
@@ -1017,8 +1017,8 @@ function setAttrs(x::AbstractHTMLStartTagComment, ctx::ASTContext,
     n = length(names)
     @assert length(name_loc_begins) == n && length(equals_locs) == n &&
             length(value_ranges) == n && length(values) == n "every attribute component collection must have the same length"
-    nb = CXSourceLocation_[l.ptr for l in name_loc_begins]
-    el = CXSourceLocation_[l.ptr for l in equals_locs]
+    nb = CXSourceLocation_[Base.unsafe_convert(CXSourceLocation_, l) for l in name_loc_begins]
+    el = CXSourceLocation_[Base.unsafe_convert(CXSourceLocation_, l) for l in equals_locs]
     vr = CXSourceRange_[CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr) for r in value_ranges]
     return clang_HTMLStartTagComment_setAttrs(x, ctx, nb, String[s for s in names], el, vr,
                                               String[s for s in values], n)

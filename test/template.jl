@@ -17,7 +17,7 @@ import ClangCompiler as CC
 
     # non-type (integer) template argument
     @test f(I, "TplArr")
-    arr_ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    arr_ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     spec = CC.specialize(llctx, ctx, arr_ctd, Int32(4))
     @test spec isa CC.ClassTemplateSpecializationDecl
     @test spec.ptr != C_NULL
@@ -28,7 +28,7 @@ import ClangCompiler as CC
 
     # bool + type template arguments
     @test f(I, "TplOpt")
-    opt_ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    opt_ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     spec2 = CC.specialize(llctx, ctx, opt_ctd, true, CC.jlty_to_clty(Float64, ctx))
     @test spec2 isa CC.ClassTemplateSpecializationDecl
     @test spec2.ptr != C_NULL

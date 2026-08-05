@@ -281,7 +281,7 @@ function CreatePackCopy(ctx::ASTContext, args::Vector{CXTemplateArgument})
 end
 
 function CreatePackCopy(ctx::ASTContext, args::Vector{TemplateArgument})
-    return CreatePackCopy(ctx, CXTemplateArgument[arg.ptr for arg in args])
+    return CreatePackCopy(ctx, CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, arg) for arg in args])
 end
 
 """

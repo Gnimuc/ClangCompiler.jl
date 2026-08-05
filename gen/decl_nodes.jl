@@ -61,3 +61,104 @@ function emit_decl_kindmap()
 end
 
 emit_decl_kindmap()
+
+# ---------------------------------------------------------------------------
+# The DeclContext union.
+#
+# A clang decl that is also a DeclContext holds the two base subobjects at
+# different addresses — a NamespaceDecl's DeclContext* sits 48 bytes past its
+# Decl*, a TagDecl's 64, a TranslationUnitDecl's 40 — so the two hierarchies are
+# disjoint here and crossing them means calling the pivot. Julia's abstract types
+# are single-inheritance, so no carrier can subtype both and the relation cannot
+# be expressed directly.
+#
+# What CAN be expressed is the SET: DeclNodes.inc marks each such class
+# DECL_CONTEXT, and a Union over those admits exactly them. Typing a parameter at
+# that union lets a decl be passed where a context is wanted; the marshalling
+# entry emitted beside it calls clang_Decl_castToDeclContext — a switch over the
+# decl kind, which is what recovers the per-class offset — as the argument is
+# converted. A decl that is not a context fails at dispatch instead of reaching
+# the pivot's assert.
+#
+# Emits src/clang/core/AST/DeclContextUnion.jl.
+
+const DECL_API = normpath(joinpath(@__DIR__, "..", "src", "clang", "api"))
+const DECL_CORE = normpath(joinpath(@__DIR__, "..", "src", "clang", "core"))
+const DECL_CLANG = normpath(joinpath(@__DIR__, "..", "src", "clang"))
+
+"Bare names marked `DECL_CONTEXT` — the decls that are also DeclContexts."
+function parse_decl_contexts(inc_path)
+    names = String[]
+    for line in eachline(inc_path)
+        m = match(r"^DECL_CONTEXT\((\w+)\)$", strip(line))
+        m === nothing || push!(names, m.captures[1])
+    end
+    return unique(names)
+end
+
+"Names matching `regex`'s first capture across every .jl file under `dir`."
+function scan_names(dir, regex)
+    s = Set{String}()
+    for (root, _, files) in walkdir(dir), f in files
+        endswith(f, ".jl") || continue
+        for line in eachline(joinpath(root, f))
+            m = match(regex, line)
+            m === nothing || push!(s, m.captures[1])
+        end
+    end
+    return s
+end
+
+function emit_declcontext_union()
+    contexts = parse_decl_contexts(DECL_NODES_INC)
+    absts = scan_names(DECL_CORE, r"^abstract type (\w+)")
+    have = [n for n in contexts if "Abstract$(n)Decl" in absts]
+    indent = " " ^ length("const AbstractDeclContextDecl = Union{")
+
+    open(joinpath(DECL_CORE, "AST", "DeclContextUnion.jl"), "w") do io
+        println(io,
+                "# Generated from deps/ClangExtra/include/clang-ex/AST/DeclNodes.inc by gen/decl_nodes.jl — do not edit.")
+        println(io, """
+
+        \"\"\"
+            const AbstractDeclContextDecl
+        The decls clang marks `DECL_CONTEXT` — those that are also `DeclContext`s, and so may be
+        passed wherever a [`DeclContext`](@ref) is wanted. Dispatch admits exactly these, which is
+        what stops a decl that is not a context from ever reaching `castToDeclContext`'s assert.
+        \"\"\"""")
+        println(io, "const AbstractDeclContextDecl = Union{",
+                join(("Abstract$(n)Decl" for n in have), ",\n" * indent), "}\n")
+        println(io, """
+        # `DeclContext` is the one base in this package that is not at offset zero, so unlike
+        # every entry in converts.jl this one cannot reinterpret: it calls the pivot, and
+        # the per-class adjustment (+48 from a NamespaceDecl, +64 from a TagDecl) happens as the
+        # argument is marshalled. A decl reaching a `CXDeclContext` parameter therefore arrives
+        # as a `DeclContext *` however it got there, and no call site can forget the cast.
+        #
+        # No check here: the Union is exactly the classes clang marks `DECL_CONTEXT`, so dispatch
+        # has already established what `castToDeclContext`'s assert would test, and the wrapper's
+        # own `@check_ptrs` runs before the ccall marshals its arguments.
+        Base.unsafe_convert(::Type{CXDeclContext}, x::AbstractDeclContextDecl) = clang_Decl_castToDeclContext(x)
+        Base.cconvert(::Type{CXDeclContext}, x::AbstractDeclContextDecl) = x
+
+        \"\"\"
+            const AnyDeclContext
+        What a `DeclContext` parameter accepts: a context, or a declaration that is also one.
+        This is the signature C++ writes as `DeclContext *`, where a `NamespaceDecl *` converts
+        implicitly — here the same call marshals through the pivot above, so `RecordDecl(ctx, ns,
+        ...)` reaches clang with the adjusted pointer and needs no `castToDeclContext` spelled at
+        the call site.
+
+        Two kinds of signature keep the narrower `DeclContext`. A method clang declares on both
+        `Decl` and `DeclContext` is ambiguous over this union — `getDeclKindName` is the one such
+        pair, and the same call needs qualifying in C++ too. So is a wrapper that reads `dc.ptr`
+        rather than passing the carrier, since that spelling takes the raw pointer and bypasses
+        the pivot.
+        \"\"\"
+        const AnyDeclContext = Union{AbstractDeclContext,AbstractDeclContextDecl}""")
+    end
+
+    @info "wrote DeclContextUnion into src/" union_members = length(have) not_wrapped = setdiff(contexts, have)
+end
+
+emit_declcontext_union()

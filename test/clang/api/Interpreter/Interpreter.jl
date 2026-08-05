@@ -20,10 +20,10 @@ using Test
     """)
     f = DeclFinder(I)
     @test f(I, "FtTrivial")
-    triv = CC.CXXRecordDecl(get_decl(f).ptr)
+    triv = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test CC.CompileDtorCall(I.interp, triv) == 0  # irrelevant destructor -> null address
     @test f(I, "FtNontrivial")
-    nontriv = CC.CXXRecordDecl(get_decl(f).ptr)
+    nontriv = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test CC.CompileDtorCall(I.interp, nontriv) isa UInt64
     dispose(f)
     dispose(I)

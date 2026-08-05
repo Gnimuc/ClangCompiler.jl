@@ -294,7 +294,7 @@ end
 
             # the record-shaped payloads come from the AST, not from the graph
             @assert f(I, "CfgMutDerived")
-            rd = CC.CXXRecordDecl(CC.get_tag(f).ptr)
+            rd = CC.downcast(CC.CXXRecordDecl, CC.get_tag(f).ptr)
             @test CC.hasDefinition(rd)
             @test CC.getNumBases(rd) >= 1
             base_spec = CC.getBase(rd, 0)
@@ -529,7 +529,7 @@ end
                         # a CleanupAttr's only subject is a local variable, so the decl
                         # carrying one is a VarDecl
                         if CC.hasAttrOfKind(d, CC.LibClangEx.CXAttrKind_Cleanup)
-                            vd = CC.VarDecl(d.ptr)
+                            vd = CC.downcast(CC.VarDecl, d.ptr)
                         end
                     elseif s isa CC.CallExpr
                         callee = CC.getDirectCallee(s)

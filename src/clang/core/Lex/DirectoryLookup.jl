@@ -12,5 +12,3 @@ struct DirectoryLookup <: AbstractDirectoryLookup
     ptr::CXDirectoryLookup
 end
 
-Base.unsafe_convert(::Type{CXDirectoryLookup}, x::DirectoryLookup) = x.ptr
-Base.cconvert(::Type{CXDirectoryLookup}, x::DirectoryLookup) = x

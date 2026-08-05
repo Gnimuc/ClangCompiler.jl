@@ -12,8 +12,14 @@ using ClangCompiler: dispose
         p = joinpath(@__DIR__, "..", "cxx", "main.cpp") |> normpath
         f = CC.getFileEntry(fm, p)
         @test f.ptr != C_NULL
-        @test CC.get_name(f) == p == CC.real_path_name(f)
+        @test CC.real_path_name(f) == p
         @test !CC.isNamedPipe(f)
+        # the name is asked of the ref, not the entry: `FileEntry::getName` forwards to
+        # whichever ref touched the file last, so it answers about lookup history
+        ref = CC.getFileRef(fm, p)
+        @test CC.getName(ref) == p
+        @test CC.getFileEntry(ref).ptr == f.ptr      # and it is the same entry
+        CC.dispose(ref)
     end
 
     dispose(fm)

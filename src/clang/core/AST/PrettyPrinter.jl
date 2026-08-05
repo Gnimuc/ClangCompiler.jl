@@ -9,8 +9,6 @@ A policy from `PrintingPolicy(opts)` or `PrintingPolicy(other)` is caller-owned 
 must never be disposed.
 """
 struct PrintingPolicy <: AbstractPrintingPolicy
-    ptr::CXPrintingPolicy
+    ptr::CXPrintingPolicy_
 end
 
-Base.unsafe_convert(::Type{CXPrintingPolicy}, x::PrintingPolicy) = x.ptr
-Base.cconvert(::Type{CXPrintingPolicy}, x::PrintingPolicy) = x

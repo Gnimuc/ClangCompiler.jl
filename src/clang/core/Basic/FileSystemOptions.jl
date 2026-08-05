@@ -12,5 +12,3 @@ struct FileSystemOptions <: AbstractFileSystemOptions
     ptr::CXFileSystemOptions
 end
 
-Base.unsafe_convert(::Type{CXFileSystemOptions}, x::FileSystemOptions) = x.ptr
-Base.cconvert(::Type{CXFileSystemOptions}, x::FileSystemOptions) = x

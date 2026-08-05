@@ -7,7 +7,9 @@ the resources after using this object.
 """
 function createValueFromType(interp::AbstractInterpreter, ty::QualType)
     @check_ptrs interp ty
-    return Value(clang_createValueFromType(interp, ty))
+    # `Value` stores the type as clang's own opaque `void *`, so the shim's parameter is
+    # `void *` and the QualType handle is unwrapped here rather than marshalled.
+    return Value(clang_createValueFromType(interp, Ptr{Cvoid}(ty.ptr)))
 end
 
 dispose(x::AbstractValue) = clang_Value_dispose(x)
@@ -34,7 +36,8 @@ end
 
 function setOpaqueType(x::AbstractValue, ty::QualType)
     @check_ptrs x ty
-    return clang_Value_setOpaqueType(x, ty)
+    # see `createValueFromType`: the opaque type is a `void *` on both sides of the shim
+    return clang_Value_setOpaqueType(x, Ptr{Cvoid}(ty.ptr))
 end
 function getPtr(x::AbstractValue)
     @check_ptrs x
@@ -210,7 +213,6 @@ function getLongDouble(x::AbstractValue)
     @check_ptrs x
     return clang_Value_getLongDouble(x)
 end
-
 
 """
     printType(x::AbstractValue) -> String

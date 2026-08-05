@@ -441,12 +441,6 @@ Supertype for `BinaryOperator`s.
 """
 abstract type AbstractBinaryOperator <: AbstractExpr end
 
-"""
-    abstract type AbstractAbstractConditionalOperator <: AbstractExpr
-Supertype for `AbstractConditionalOperator`s.
-"""
-abstract type AbstractAbstractConditionalOperator <: AbstractExpr end
-
 # ExprCXX
 """
     abstract type AbstractCallExpr <: AbstractExpr
@@ -773,13 +767,11 @@ include("Interpreter/AbstractInterpreter.jl")
 # since these subtype the backbone/subsystem abstracts above.
 include("AbstractExtras.jl")
 
-
 """
     abstract type AbstractTopLevelStmtDecl <: AbstractDecl
 Supertype for `TopLevelStmtDecl`s.
 """
 abstract type AbstractTopLevelStmtDecl <: AbstractDecl end
-
 
 """
     abstract type AbstractVectorType <: AbstractType
@@ -805,20 +797,17 @@ Supertype for `AutoType`s.
 """
 abstract type AbstractAutoType <: AbstractDeducedType end
 
-
 """
     abstract type AbstractHLSLBufferDecl <: AbstractNamedDecl
 Supertype for `HLSLBufferDecl`s.
 """
 abstract type AbstractHLSLBufferDecl <: AbstractNamedDecl end
 
-
 """
     abstract type AbstractUsingEnumDecl <: AbstractBaseUsingDecl
 Supertype for `UsingEnumDecl`s.
 """
 abstract type AbstractUsingEnumDecl <: AbstractBaseUsingDecl end
-
 
 """
     abstract type AbstractTypeOfExprType <: AbstractType
@@ -838,13 +827,11 @@ Supertype for `BitIntType`s.
 """
 abstract type AbstractBitIntType <: AbstractType end
 
-
 """
     abstract type AbstractUnresolvedUsingIfExistsDecl <: AbstractNamedDecl
 Supertype for `UnresolvedUsingIfExistsDecl`s.
 """
 abstract type AbstractUnresolvedUsingIfExistsDecl <: AbstractNamedDecl end
-
 
 """
     abstract type AbstractBlockPointerType <: AbstractType
@@ -882,20 +869,17 @@ Supertype for `DependentBitIntType`s.
 """
 abstract type AbstractDependentBitIntType <: AbstractType end
 
-
 """
     abstract type AbstractExtVectorType <: AbstractVectorType
 Supertype for `ExtVectorType`s.
 """
 abstract type AbstractExtVectorType <: AbstractVectorType end
 
-
 """
     abstract type AbstractUnnamedGlobalConstantDecl <: AbstractValueDecl
 Supertype for `UnnamedGlobalConstantDecl`s.
 """
 abstract type AbstractUnnamedGlobalConstantDecl <: AbstractValueDecl end
-
 
 """
     abstract type AbstractObjCObjectType <: AbstractType
@@ -908,7 +892,6 @@ abstract type AbstractObjCObjectType <: AbstractType end
 Supertype for `ObjCObjectPointerType`s.
 """
 abstract type AbstractObjCObjectPointerType <: AbstractType end
-
 
 """
     abstract type AbstractPipeType <: AbstractType

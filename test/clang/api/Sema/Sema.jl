@@ -116,7 +116,7 @@ end
 
     # --- forced template instantiation, then inspect the result ---
     @test f(I, "Box")
-    box_ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    box_ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     loc = CC.getLocation(box_ctd)
     spec = CC.specialize(llctx, ctx, box_ctd, CC.jlty_to_clty(Float64, ctx))
     @test spec isa CC.ClassTemplateSpecializationDecl
@@ -154,7 +154,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "SemaSpecial")
-    rd = CC.CXXRecordDecl(get_decl(f).ptr)
+    rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test CC.hasDefinition(rd)
 
     # The lookup declares the implicit constructors before reporting, so the two written
@@ -197,7 +197,7 @@ end
                         CC.CXLookupNameKind_LookupTagName)
     tu = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
     @test CC.LookupQualifiedName(sema, r, tu)
-    opaque = CC.CXXRecordDecl(CC.getResult(r).ptr)
+    opaque = CC.downcast(CC.CXXRecordDecl, CC.getResult(r).ptr)
     CC.dispose(r)
     @test !CC.hasDefinition(opaque)
     @test_throws AssertionError CC.LookupConstructors(sema, opaque)
@@ -216,9 +216,11 @@ end
     visible = CC.LookupVisibleDecls(sema, rd_dc, CC.CXLookupNameKind_LookupOrdinaryName, false)
     @test visible isa Vector{CC.NamedDecl}
     @test !isempty(visible)
-    @test all(d -> d.ptr != C_NULL, visible)
-    member_ptrs = Set(d.ptr for d in CC.decls(rd_dc))
-    @test any(d -> d.ptr in member_ptrs, visible)
+    @test all(d -> !CC.is_null_handle(d), visible)
+    # `decls` resolves each member to its own class while the lookup hands back `NamedDecl`s;
+    # carrier equality is the `Decl *` they share, so the two sides compare directly
+    members = Set(CC.decls(rd_dc))
+    @test any(in(members), visible)
 
     # A non-abstract type returns before the diagnoser is consulted, so neither call below
     # emits anything; a zero diag id is rejected by the wrapper, not by clang.
@@ -308,7 +310,7 @@ end
     @test CC.isUsualDeallocationFunction(sema, del_m)
 
     @test f(I, "sema_q_fn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test !(CC.isInitListConstructor(sema, fd))
     @test !(CC.isImplicitlyDeleted(sema, fd))
     body = CC.getBody(fd)
@@ -346,11 +348,11 @@ end
         @test f(I, name)
         return first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == kind)
     end
-    ftd = CC.FunctionTemplateDecl(by_kind("sema_subst_add", "FunctionTemplate").ptr)
-    plain_fn = CC.FunctionDecl(by_kind("sema_subst_fn", "Function").ptr)
-    global_var = CC.VarDecl(by_kind("sema_subst_global", "Var").ptr)
-    poly = CC.CXXRecordDecl(by_kind("SemaSubstPoly", "CXXRecord").ptr)
-    agg = CC.CXXRecordDecl(by_kind("SemaSubstAgg", "CXXRecord").ptr)
+    ftd = CC.downcast(CC.FunctionTemplateDecl, by_kind("sema_subst_add", "FunctionTemplate").ptr)
+    plain_fn = CC.downcast(CC.FunctionDecl, by_kind("sema_subst_fn", "Function").ptr)
+    global_var = CC.downcast(CC.VarDecl, by_kind("sema_subst_global", "Var").ptr)
+    poly = CC.downcast(CC.CXXRecordDecl, by_kind("SemaSubstPoly", "CXXRecord").ptr)
+    agg = CC.downcast(CC.CXXRecordDecl, by_kind("SemaSubstAgg", "CXXRecord").ptr)
 
     # --- ODR-use marking ---
     @test CC.MarkUnusedFileScopedDecl(sema, plain_fn) === nothing
@@ -445,13 +447,13 @@ end
     # Operands taken from the parse: two integer-literal initializers, a record type, a
     # function type, and a subscript expression whose base has already decayed.
     @test f(I, "semaBuildEight")
-    eight = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    eight = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "semaBuildTwo")
-    two = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    two = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "SemaBuildRec")
     recty = CC.getTypeDeclType(ctx, CC.TypeDecl(get_decl(f)))
     @test f(I, "semaBuildFn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     fnty = CC.getType(fd)
     ase = first(filter(n -> n isa CC.ArraySubscriptExpr, CC.subtree(CC.getBody(fd))))
 
@@ -596,7 +598,7 @@ end
 
     # an already-parsed exception specification resolves to a FunctionProtoType
     @test f(I, "SemaChkFn")
-    fn_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f).ptr))))
+    fn_ty = CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.FunctionDecl, get_decl(f).ptr))))
     @test fn_ty isa CC.FunctionProtoType
     @test CC.getExceptionSpecType(fn_ty) != CC.CXExceptionSpecificationType_EST_Unparsed
     resolved = CC.ResolveExceptionSpec(sema, loc, fn_ty)
@@ -605,7 +607,7 @@ end
 
     # the `case` label check runs over a real integer initializer
     @test f(I, "SemaChkVar")
-    init = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    init = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test init isa CC.Expr_
     @test CC.CheckCaseExpression(sema, init)
 
@@ -613,7 +615,7 @@ end
     # Declare* below is the first call — and, since the gate closes behind it, the only
     # call that may run.
     @test f(I, "SemaChkPlain")
-    plain = CC.CXXRecordDecl(get_decl(f).ptr)
+    plain = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test CC.needsImplicitDefaultConstructor(plain)
     @test CC.needsImplicitCopyConstructor(plain)
     @test CC.needsImplicitMoveConstructor(plain)
@@ -661,9 +663,9 @@ end
 
     # derived-to-base conversion over an unambiguous public base
     @test f(I, "SemaChkBase")
-    base = CC.CXXRecordDecl(get_decl(f).ptr)
+    base = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaChkDerived")
-    derived = CC.CXXRecordDecl(get_decl(f).ptr)
+    derived = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     base_ty = CC.getTypeDeclType(ctx, base)
     derived_ty = CC.getTypeDeclType(ctx, derived)
     rng = CC.getSourceRange(derived)
@@ -761,21 +763,21 @@ end
 
     # comparing a declaration with itself keeps the equivalence walk from
     # reporting a mismatch through Sema's diagnostics
-    rec = CC.CXXRecordDecl(rec_nd.ptr)
+    rec = CC.downcast(CC.CXXRecordDecl, rec_nd.ptr)
     @test CC.hasStructuralCompatLayout(sema, rec, rec)
 
     # the name is deliberately non-unique, so select the two functions by kind
     @test f(I, "SemaQ2Ovl")
-    ovls = [CC.FunctionDecl(d.ptr)
+    ovls = [CC.downcast(CC.FunctionDecl, d.ptr)
             for d in CC.get_decls(f) if CC.getDeclKindName(d) == "Function"]
     @test length(ovls) >= 2
     @test CC.IsOverload(sema, ovls[1], ovls[2])
     @test !(CC.IsOverload(sema, ovls[1], ovls[1]))
 
     @test f(I, "SemaQ2Base")
-    base = CC.CXXRecordDecl(get_decl(f).ptr)
+    base = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaQ2Derived")
-    derived = CC.CXXRecordDecl(get_decl(f).ptr)
+    derived = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     base_vf = first(d for d in CC.decls(CC.castToDeclContext(base)) if d isa CC.CXXMethodDecl)
     derived_vf = first(d for d in CC.decls(CC.castToDeclContext(derived))
                        if d isa CC.CXXMethodDecl)
@@ -785,7 +787,7 @@ end
 
     # the four declared special members plus one ordinary method
     @test f(I, "SemaQ2Special")
-    special = CC.CXXRecordDecl(get_decl(f).ptr)
+    special = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     kinds = [CC.getSpecialMember(sema, m) for m in CC.getMethods(special)]
     @test !isempty(kinds)
     @test all(k isa CC.CXCXXSpecialMember for k in kinds)
@@ -813,14 +815,14 @@ end
     f = DeclFinder(I)
 
     @test f(I, "semaNodeEight")
-    eight_vd = CC.VarDecl(get_decl(f).ptr)
+    eight_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     eight = CC.getInit(eight_vd)
     @test f(I, "semaNodeTwo")
-    two = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    two = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "semaNodeArr")
-    arrty = CC.getType(CC.VarDecl(get_decl(f).ptr))
+    arrty = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "semaNodeFn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
     intty = CC.getType(eight)
     int_tsi = CC.getTrivialTypeSourceInfo(ctx, intty, loc)
@@ -993,9 +995,9 @@ end
 
     # clang itself ran all three override checks while parsing and accepted the override
     @test f(I, "SemaChk2Base")
-    base = CC.CXXRecordDecl(get_decl(f).ptr)
+    base = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaChk2Derived")
-    derived = CC.CXXRecordDecl(get_decl(f).ptr)
+    derived = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     base_vf = first(d for d in CC.decls(CC.castToDeclContext(base)) if d isa CC.CXXMethodDecl)
     derived_vf = first(d for d in CC.decls(CC.castToDeclContext(derived)) if d isa CC.CXXMethodDecl)
     @test CC.CheckOverridingFunctionReturnType(sema, derived_vf, base_vf) == false
@@ -1004,7 +1006,7 @@ end
 
     # nothing is attached to a named module, and a declaration matches its own spec
     @test f(I, "SemaChk2Fn")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.CheckRedeclarationModuleOwnership(sema, fn, fn) == false
     @test CC.CheckRedeclarationExported(sema, fn, fn) == false
     @test CC.CheckRedeclarationInModule(sema, fn, fn) == false
@@ -1013,7 +1015,7 @@ end
     # CheckValid is the non-diagnosing mode; the wrapper rejects the bodyless declaration
     # clang would assert on
     @test f(I, "SemaChk2Cx")
-    cx = CC.FunctionDecl(get_decl(f).ptr)
+    cx = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.hasBody(cx)
     @test CC.CheckConstexprFunctionDefinition(sema, cx)
     @test CC.CheckConstexprFunctionDefinition(sema, cx, CC.CXCheckConstexprKind_CheckValid)
@@ -1037,7 +1039,7 @@ end
 
     # expression-level checks over a real integer-literal initializer
     @test f(I, "semaChk2Eight")
-    eight = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    eight = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test eight isa CC.Expr_
     @test CC.CheckPlaceholderExpr(sema, eight) isa CC.Expr_
     @test CC.CheckForConstantInitializer(sema, eight, int_ty) == false
@@ -1068,13 +1070,13 @@ end
     f = DeclFinder(I)
 
     @test f(I, "semaConvFn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test f(I, "SemaConvRec")
-    rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaConvVirt")
-    virt = CC.CXXRecordDecl(get_decl(f).ptr)
+    virt = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "semaConvEight")
-    eight = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    eight = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
 
     # Operands taken straight out of the parsed body: a field access, a member-function
     # access, the object expression they share, and a reference to a namespace-scope
@@ -1090,7 +1092,7 @@ end
     field = CC.getMemberDecl(field_ref)
     # a container accessor types its carrier at the container's element class, so the
     # method has to be re-carried before a CXXMethodDecl-level wrapper accepts it
-    method = CC.CXXMethodDecl(CC.getMemberDecl(method_ref).ptr)
+    method = CC.downcast(CC.CXXMethodDecl, CC.getMemberDecl(method_ref).ptr)
     global_ref = first(n for n in nodes
                        if n isa CC.DeclRefExpr && CC.getDeclKindName(CC.getDecl(n)) == "Var")
 
@@ -1175,22 +1177,22 @@ end
     # every lookup runs before the first mutation: declaring implicit members and deduction
     # guides below adds names this same finder would otherwise have to disambiguate
     @test f(I, "SemaDclDerived")
-    derived = CC.CXXRecordDecl(get_decl(f).ptr)
+    derived = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaDclAgg")
-    agg = CC.CXXRecordDecl(get_decl(f).ptr)
+    agg = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaDclDtor")
-    dtor_rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    dtor_rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaDclDefault")
-    default_rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    default_rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaDclDelete")
-    delete_rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    delete_rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaDclGuide")
     guide_named = first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "ClassTemplate")
-    guide_tmpl = CC.ClassTemplateDecl(guide_named.ptr)
+    guide_tmpl = CC.downcast(CC.ClassTemplateDecl, guide_named.ptr)
     @test f(I, "SemaDclFn")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test f(I, "SemaDclInit")
-    init = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    init = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test init isa CC.Expr_
 
     # `plain` names nothing in the base, so no overridden method is wired up. Its override
@@ -1324,13 +1326,13 @@ end
 
     # prototypes with identical parameter lists compare equal; a differing one does not
     @test f(I, "sema_misc_one")
-    one_fd = CC.FunctionDecl(get_decl(f).ptr)
+    one_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     one_ty = CC.resolve(CC.getTypePtr(CC.getType(one_fd)))
     @test f(I, "sema_misc_two")
-    two_fd = CC.FunctionDecl(get_decl(f).ptr)
+    two_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     two_ty = CC.resolve(CC.getTypePtr(CC.getType(two_fd)))
     @test f(I, "sema_misc_three")
-    three_fd = CC.FunctionDecl(get_decl(f).ptr)
+    three_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     three_ty = CC.resolve(CC.getTypePtr(CC.getType(three_fd)))
     @test one_ty isa CC.FunctionProtoType
     @test three_ty isa CC.FunctionProtoType
@@ -1361,7 +1363,7 @@ end
 
     # the unique field of a record, reached by identifier
     @test f(I, "SemaMiscRec")
-    rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     fld = CC.tryLookupUnambiguousFieldDecl(sema, rec, CC.getIdentifierInfo(pp, "fld"))
     @test fld isa CC.ValueDecl
     missing_fld = CC.tryLookupUnambiguousFieldDecl(sema, rec,
@@ -1379,7 +1381,7 @@ end
     # int -> bool is the integral-to-boolean conversion
     @test CC.ScalarTypeToBooleanCastKind(int_ty) == CC.CXCastKind_CK_IntegralToBoolean
     @test f(I, "SemaMiscBase")
-    base = CC.CXXRecordDecl(get_decl(f).ptr)
+    base = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     base_ty = CC.getTypeDeclType(ctx, base)
     # a class type is not scalar, and the wrapper rejects it before clang's assert
     @test_throws AssertionError CC.ScalarTypeToBooleanCastKind(base_ty)
@@ -1396,7 +1398,7 @@ end
     @test same_res == CC.CXReferenceCompareResult_Ref_Compatible
     @test same_conv isa Integer
     @test f(I, "SemaMiscDerived")
-    derived_ty = CC.getTypeDeclType(ctx, CC.CXXRecordDecl(get_decl(f).ptr))
+    derived_ty = CC.getTypeDeclType(ctx, CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr))
     bd_res, bd_conv = CC.CompareReferenceRelationship(sema, loc, base_ty, derived_ty)
     @test bd_res in (CC.CXReferenceCompareResult_Ref_Incompatible,
                      CC.CXReferenceCompareResult_Ref_Related,
@@ -1409,7 +1411,7 @@ end
 
     # a narrow format-string literal, reached through the initializer's implicit cast
     @test f(I, "sema_misc_fmt")
-    fmt = CC.resolve(CC.IgnoreParenImpCasts(CC.getInit(CC.VarDecl(get_decl(f).ptr))))
+    fmt = CC.resolve(CC.IgnoreParenImpCasts(CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))))
     @test fmt isa CC.StringLiteral
     @test CC.getCharByteWidth(fmt) == 1
     @test CC.FormatStringHasSArg(sema, fmt)
@@ -1450,10 +1452,10 @@ end
     # a plain int variable and a plain function both have types that carry linkage
     @test f(I, "sema_q3_var")
     var_nd = get_decl(f)
-    var_d = CC.VarDecl(var_nd.ptr)
+    var_d = CC.downcast(CC.VarDecl, var_nd.ptr)
     @test CC.isExternalWithNoLinkageType(sema, var_d) == false
     @test f(I, "sema_q3_one")
-    one_fd = CC.FunctionDecl(get_decl(f).ptr)
+    one_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.isExternalWithNoLinkageType(sema, one_fd) == false
 
     # visibility and reachability of a declaration, and of its definition; the
@@ -1492,9 +1494,9 @@ end
 
     # two prototypes spelled the same have the same canonical function type
     @test f(I, "sema_q3_two")
-    two_fd = CC.FunctionDecl(get_decl(f).ptr)
+    two_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test f(I, "sema_q3_three")
-    three_fd = CC.FunctionDecl(get_decl(f).ptr)
+    three_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.isSameOrCompatibleFunctionType(sema, CC.getType(one_fd), CC.getType(two_fd))
     @test CC.isSameOrCompatibleFunctionType(sema, CC.getType(one_fd),
                                             CC.getType(three_fd)) == false
@@ -1538,7 +1540,7 @@ end
 
     # the initializer's string literal, reached through its implicit cast
     @test f(I, "sema_q3_str")
-    str = CC.resolve(CC.IgnoreParenImpCasts(CC.getInit(CC.VarDecl(get_decl(f).ptr))))
+    str = CC.resolve(CC.IgnoreParenImpCasts(CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))))
     @test str isa CC.StringLiteral
     @test CC.getCharByteWidth(str) == 1
     @test !CC.is_null_handle(CC.getLocationOfStringLiteralByte(sema, str, 0))
@@ -1572,7 +1574,7 @@ end
     int_tsi = CC.getTrivialTypeSourceInfo(ctx, int_ty, loc)
 
     @test f(I, "semaB3Eight")
-    eight = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    eight = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
 
     # --- a Sema-checked prototype, whose parameter list comes back adjusted ---
     fn_ty, adjusted = CC.BuildFunctionType(sema, int_ty, CC.QualType[int_ty], loc)
@@ -1597,7 +1599,7 @@ end
 
     # --- __builtin_offsetof(SemaB3Rec, b) ---
     @test f(I, "SemaB3Rec")
-    rec_ty = CC.getTypeDeclType(ctx, CC.CXXRecordDecl(get_decl(f).ptr))
+    rec_ty = CC.getTypeDeclType(ctx, CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr))
     rec_tsi = CC.getTrivialTypeSourceInfo(ctx, rec_ty, loc)
     b_ii = CC.getIdentifierInfo(pp, "b")
     no_index = CC.Expr_(C_NULL)
@@ -1654,7 +1656,7 @@ end
     # the function template's own parameter list — selected by kind, since the name also
     # resolves to the templated function
     @test f(I, "semaB3Tmpl")
-    ftd = CC.FunctionTemplateDecl(first(d for d in CC.get_decls(f)
+    ftd = CC.downcast(CC.FunctionTemplateDecl, first(d for d in CC.get_decls(f)
                                         if CC.getDeclKindName(d) == "FunctionTemplate").ptr)
     tpl = CC.getTemplateParameters(ftd)
     @test tpl isa CC.TemplateParameterList
@@ -1700,7 +1702,7 @@ end
     double_ty = CC.get_qual_type(CC.jlty_to_clty(Float64, ctx))
 
     @test f(I, "semaChk3Eight")
-    eight = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    eight = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test eight isa CC.Expr_
 
     # --- the implicit conversion sequence int -> double, into a caller-owned box ---
@@ -1716,7 +1718,7 @@ end
 
     # --- pointer conversion, over a pointer initializer taken from the parsed AST ---
     @test f(I, "semaChk3Ptr")
-    pvd = CC.VarDecl(get_decl(f).ptr)
+    pvd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     pinit = CC.getInit(pvd)
     @test pinit isa CC.Expr_
     failed, ckind = CC.CheckPointerConversion(sema, pinit, CC.getType(pvd), false, false)
@@ -1806,8 +1808,8 @@ end
         @test f(I, name)
         return first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == kind)
     end
-    rd = CC.CXXRecordDecl(by_kind("SemaDefImpl", "CXXRecord").ptr)
-    alias = CC.TypedefDecl(by_kind("SemaDefAlias", "Typedef").ptr)
+    rd = CC.downcast(CC.CXXRecordDecl, by_kind("SemaDefImpl", "CXXRecord").ptr)
+    alias = CC.downcast(CC.TypedefDecl, by_kind("SemaDefAlias", "Typedef").ptr)
     @test CC.hasDefinition(rd)
 
     # Declare all six special members first, so that defining one cannot change which of
@@ -1936,7 +1938,7 @@ end
 
     function vartype(name)
         @assert f(I, name) "lookup failed: $name"
-        return CC.getType(CC.VarDecl(get_decl(f).ptr))
+        return CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     end
 
     int_qt = vartype("semaXfInt")
@@ -1950,7 +1952,7 @@ end
     # The array and integer operands come out of the parsed function body: `a` is a
     # DeclRefExpr of array type, `n`/`b` are integer-typed lvalues.
     @assert f(I, "semaXfFn") "lookup failed: semaXfFn"
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     nodes = CC.subtree(CC.getBody(fd))
     arr_ref = first(n for n in nodes
                     if n isa CC.DeclRefExpr && CC.isa_ArrayType(CC.getTypePtr(CC.getType(n))))
@@ -2086,7 +2088,7 @@ end
     f = DeclFinder(I)
     function q4_vardecl(name)
         @assert f(I, name) "lookup failed: $name"
-        return CC.VarDecl(get_decl(f).ptr)
+        return CC.downcast(CC.VarDecl, get_decl(f).ptr)
     end
 
     tu = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
@@ -2134,7 +2136,7 @@ end
     @test CC.isDeclInScope(sema, gi, tu, nothing, true)
 
     @assert f(I, "sema_q4_fn") "lookup failed: sema_q4_fn"
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     # a function context needs a Scope; without one clang would walk a null parent chain
     @test_throws AssertionError CC.isDeclInScope(sema, gi, CC.castToDeclContext(fd))
 
@@ -2211,12 +2213,12 @@ end
     f = DeclFinder(I)
 
     @test f(I, "semaB4Eight")
-    eight_vd = CC.VarDecl(get_decl(f).ptr)
+    eight_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     eight = CC.getInit(eight_vd)
     @test f(I, "semaB4Obj")
-    obj_vd = CC.VarDecl(get_decl(f).ptr)
+    obj_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     @test f(I, "semaB4Args")
-    args_vd = CC.VarDecl(get_decl(f).ptr)
+    args_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
 
     int_ty = CC.getType(eight)
     int_tsi = CC.getTrivialTypeSourceInfo(ctx, int_ty, loc)
@@ -2297,7 +2299,7 @@ end
 
     # --- a declaration template argument re-expressed as `&semaB4Eight` ---
     const_int = CC.getType(eight_vd)
-    decl_arg = CC.TemplateArgument(CC.ValueDecl(eight_vd.ptr), const_int)
+    decl_arg = CC.TemplateArgument(CC.upcast(CC.ValueDecl, eight_vd.ptr), const_int)
     @test CC.getKind(decl_arg) == CC.CXTemplateArgument_Declaration
     from_decl = CC.BuildExpressionFromDeclTemplateArgument(sema, decl_arg,
                                                            CC.getPointerType(ctx, const_int),
@@ -2343,14 +2345,14 @@ end
 
     # --- a field of trivial type is legal in a union, so nothing is diagnosed ---
     @test f(I, "SemaCk4Rec")
-    rec = CC.CXXRecordDecl(CC.get_decl(f).ptr)
+    rec = CC.downcast(CC.CXXRecordDecl, CC.get_decl(f).ptr)
     fld = first(CC.getFields(rec))
     @test fld isa CC.FieldDecl
     @test CC.CheckNontrivialField(sema, fld) == false
 
     # --- an enum redeclared exactly as it stands contradicts nothing ---
     @test f(I, "SemaCk4Enum")
-    ed = CC.EnumDecl(CC.get_decl(f).ptr)
+    ed = CC.downcast(CC.EnumDecl, CC.get_decl(f).ptr)
     @test CC.isScoped(ed)
     @test CC.isFixed(ed)
     @test CC.CheckEnumRedeclaration(sema, loc, CC.isScoped(ed), CC.getIntegerType(ed),
@@ -2361,29 +2363,29 @@ end
 
     # --- the one default argument is trailing, and no override control is written ---
     @test f(I, "semaCk4Fn")
-    fn = CC.FunctionDecl(CC.get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)
     @test CC.CheckCXXDefaultArguments(sema, fn) === nothing
     @test CC.CheckOverrideControl(sema, fn) === nothing
 
     # --- alignas(8) is stricter than either declaration's type requires ---
     @test f(I, "semaCk4Aligned")
-    aligned_var = CC.VarDecl(CC.get_decl(f).ptr)
+    aligned_var = CC.downcast(CC.VarDecl, CC.get_decl(f).ptr)
     @test CC.hasAttrs(aligned_var)
     @test CC.CheckAlignasUnderalignment(sema, aligned_var) === nothing
     @test f(I, "SemaCk4AlRec")
-    aligned_rec = CC.CXXRecordDecl(CC.get_decl(f).ptr)
+    aligned_rec = CC.downcast(CC.CXXRecordDecl, CC.get_decl(f).ptr)
     @test CC.hasAttrs(aligned_rec)
     @test CC.CheckAlignasUnderalignment(sema, aligned_rec) === nothing
 
     # --- a constructor taking `int` is not the by-value copy [class.copy]p3 bans ---
     @test f(I, "SemaCk4Ctor")
-    ctors = CC.getCtors(CC.CXXRecordDecl(CC.get_decl(f).ptr))
+    ctors = CC.getCtors(CC.downcast(CC.CXXRecordDecl, CC.get_decl(f).ptr))
     @test !isempty(ctors)
     @test CC.CheckConstructor(sema, first(ctors)) === nothing
 
     # --- expression checks whose warnings are all off by default ---
     @test f(I, "semaCk4Var")
-    int_init = CC.getInit(CC.VarDecl(CC.get_decl(f).ptr))
+    int_init = CC.getInit(CC.downcast(CC.VarDecl, CC.get_decl(f).ptr))
     int_range = CC.getSourceRange(int_init)
     @test CC.CheckVecStepExpr(sema, int_init) == false
     @test CC.CheckUnusedVolatileAssignment(sema, int_init) === nothing
@@ -2398,7 +2400,7 @@ end
 
     # --- two references to the same declaration short-circuit the float-equality warning ---
     @test f(I, "semaCk4Dbl")
-    dbl_vd = CC.VarDecl(CC.get_decl(f).ptr)
+    dbl_vd = CC.downcast(CC.VarDecl, CC.get_decl(f).ptr)
     dbl_ref = CC.BuildDeclRefExpr(sema, dbl_vd, CC.getType(dbl_vd),
                                   CC.LibClangEx.CXExprValueKind_VK_LValue, loc)
     @test dbl_ref isa CC.DeclRefExpr
@@ -2407,7 +2409,7 @@ end
 
     # --- a bool atomic constraint is valid; an int one is rejected by the wrapper ---
     @test f(I, "semaCk4Flag")
-    flag_init = CC.getInit(CC.VarDecl(CC.get_decl(f).ptr))
+    flag_init = CC.getInit(CC.downcast(CC.VarDecl, CC.get_decl(f).ptr))
     ok, non_primary = CC.CheckConstraintExpression(sema, flag_init)
     @test ok
     @test !non_primary
@@ -2441,7 +2443,7 @@ end
     # Select by kind rather than by uniqueness: a template's own name stops resolving to a
     # single decl as soon as anything specialises it, and get_decl throws on that.
     @test f(I, "SemaSubstPattern")
-    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     rd = CC.getTemplatedDecl(ctd)
     rd_dc = CC.castToDeclContext(rd)
@@ -2514,7 +2516,7 @@ end
 
     # a using-declaration never appears in a name lookup — the lookup resolves through its
     # shadow — so the UsingDecl is reached by walking the translation unit
-    using_decl = CC.UsingDecl(first(d for d in CC.decls(tu_dc)
+    using_decl = CC.downcast(CC.UsingDecl, first(d for d in CC.decls(tu_dc)
                                     if CC.getDeclKindName(d) == "Using").ptr)
     qloc = CC.getQualifierLoc(using_decl)
     @test CC.hasQualifier(qloc)
@@ -2584,31 +2586,31 @@ end
     # Every lookup happens before the first mutating call: a name that is unique now can
     # stop being unique once a candidate collector deduces a specialization.
     @assert f(I, "SemaD4Derived") "lookup failed: SemaD4Derived"
-    derived = CC.CXXRecordDecl(get_decl(f).ptr)
+    derived = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     dmethods = CC.getMethods(derived)
     hidden_md = first(m for m in dmethods if CC.getNameAsString(m) == "hidden")
     member_md = first(m for m in dmethods if CC.getNameAsString(m) == "member")
 
     @assert f(I, "SemaD4Rec") "lookup failed: SemaD4Rec"
-    rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     del_md = first(m for m in CC.getMethods(rec)
                    if CC.getNameAsString(m) == "operator delete")
     del_name = CC.getDeclName(del_md)
 
     @assert f(I, "semaD4Fn") "lookup failed: semaD4Fn"
-    fns = [CC.FunctionDecl(d.ptr) for d in CC.get_decls(f)
+    fns = [CC.downcast(CC.FunctionDecl, d.ptr) for d in CC.get_decls(f)
            if CC.getDeclKindName(d) == "Function"]
     @test length(fns) == 2
 
     @assert f(I, "semaD4Tmpl") "lookup failed: semaD4Tmpl"
-    tmpl = CC.FunctionTemplateDecl(first(d for d in CC.get_decls(f)
+    tmpl = CC.downcast(CC.FunctionTemplateDecl, first(d for d in CC.get_decls(f)
                                          if CC.getDeclKindName(d) ==
                                             "FunctionTemplate").ptr)
 
     # The argument expressions come out of a parsed body: `n` is an int lvalue, `d` a class
     # lvalue usable as an implicit object argument, `t` the ADL-associating argument.
     @assert f(I, "semaD4Body") "lookup failed: semaD4Body"
-    refs = [n for n in CC.subtree(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    refs = [n for n in CC.subtree(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
             if n isa CC.DeclRefExpr]
     int_arg = first(r for r in refs if CC.getNameAsString(CC.getDecl(r)) == "n")
     obj_arg = first(r for r in refs if CC.getNameAsString(CC.getDecl(r)) == "d")
@@ -2761,21 +2763,21 @@ end
     # All name lookups happen up front: the special-member work below declares implicit
     # members, and get_decl throws once a name resolves to more than one declaration.
     @assert f(I, "semaMiscGlobal") "lookup failed: semaMiscGlobal"
-    global_var = CC.VarDecl(get_decl(f).ptr)
+    global_var = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     int_qt = CC.getType(global_var)
 
     @assert f(I, "SemaMiscVec4") "lookup failed: SemaMiscVec4"
-    vec_qt = CC.getTypeDeclType(ctx, CC.TypeDecl(get_decl(f).ptr))
+    vec_qt = CC.getTypeDeclType(ctx, CC.downcast(CC.TypeDecl, get_decl(f).ptr))
     @test CC.isVectorType(CC.getTypePtr(vec_qt))
 
     @assert f(I, "semaMiscVarArgs") "lookup failed: semaMiscVarArgs"
-    varargs_fn = CC.FunctionDecl(get_decl(f).ptr)
+    varargs_fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
     @assert f(I, "SemaMiscTrivial") "lookup failed: SemaMiscTrivial"
-    trivial_cls = CC.CXXRecordDecl(get_decl(f).ptr)
+    trivial_cls = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
 
     @assert f(I, "semaMiscFn") "lookup failed: semaMiscFn"
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     nodes = CC.subtree(CC.getBody(fd))
     fn_ref = first(n for n in nodes
                    if n isa CC.DeclRefExpr &&
@@ -2916,7 +2918,7 @@ end
 
     # --- The record, its type and its one public field ---
     @test f(I, "semaQ5RecVar")
-    rec_var = CC.VarDecl(get_decl(f).ptr)
+    rec_var = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     rec_ty = CC.getType(rec_var)
     @test rec_ty isa CC.QualType
     @test rec_ty.ptr != C_NULL
@@ -2933,7 +2935,7 @@ end
 
     # --- Decl-shaped predicates ---
     @test f(I, "semaQ5Plain")
-    plain_fd = CC.FunctionDecl(get_decl(f).ptr)
+    plain_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     # the clang method is `D && isa<ObjCMethodDecl>(D)`, so a C++ function is never one
     @test CC.isObjCMethodDecl(sema, plain_fd) == false
     @test CC.canSkipFunctionBody(sema, plain_fd)
@@ -2945,13 +2947,13 @@ end
 
     # --- Expression-shaped predicates ---
     @test f(I, "semaQ5Init")
-    init = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    init = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test init isa CC.Expr_
     @test !(CC.isQualifiedMemberAccess(sema, init))
 
     # --- Function prototypes: variadic classification and the lambda invoker type ---
     @test f(I, "semaQ5Varargs")
-    va_fd = CC.FunctionDecl(get_decl(f).ptr)
+    va_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     va_proto = CC.resolve(CC.getTypePtr(CC.getType(va_fd)))
     @test va_proto isa CC.FunctionProtoType
     @test CC.getVariadicCallType(sema, va_proto) isa CC.CXVariadicCallType
@@ -3035,13 +3037,13 @@ end
     # Every lookup happens up front: the builders below declare implicit special members,
     # and get_decl throws once a name resolves to more than one declaration.
     @assert f(I, "SemaB5Ops") "lookup failed: SemaB5Ops"
-    ops_rd = CC.CXXRecordDecl(get_decl(f).ptr)
+    ops_rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @assert f(I, "SemaB5Field") "lookup failed: SemaB5Field"
-    field_rd = CC.CXXRecordDecl(get_decl(f).ptr)
+    field_rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @assert f(I, "semaB5Callee") "lookup failed: semaB5Callee"
-    callee = CC.FunctionDecl(get_decl(f).ptr)
+    callee = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @assert f(I, "semaB5Probe") "lookup failed: semaB5Probe"
-    probe = CC.FunctionDecl(get_decl(f).ptr)
+    probe = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
     nodes = CC.subtree(CC.getBody(probe))
     drefs = filter(n -> n isa CC.DeclRefExpr, nodes)
@@ -3073,7 +3075,7 @@ end
 
     # --- Conversion-function call: `o` converted through operator int() const
     conv = first(m for m in CC.getMethods(ops_rd) if CC.getDeclKindName(m) == "CXXConversion")
-    conv_decl = CC.CXXConversionDecl(conv.ptr)
+    conv_decl = CC.downcast(CC.CXXConversionDecl, conv.ptr)
     mcall = CC.BuildCXXMemberCallExpr(sema, obj_ref, conv_decl, conv_decl)
     @test mcall isa CC.Expr_
     @test CC.isIntegerType(CC.getTypePtr(CC.getType(mcall)))
@@ -3175,9 +3177,9 @@ end
     # Two integer-literal prvalues taken from the parse, so every operand below is a node
     # clang built and accepted itself.
     @test f(I, "semaChkEight")
-    eight = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    eight = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "semaChkTwo")
-    two = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    two = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     int_qt = CC.getType(eight)
     @test CC.isIntegerType(CC.getTypePtr(int_qt))
 
@@ -3236,7 +3238,7 @@ end
 
     # --- Assignment and address-of, over a modifiable global lvalue --------------------
     @test f(I, "semaChkAddr")
-    addr_init = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    addr_init = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     addr_of = first(n for n in CC.subtree(addr_init) if n isa CC.UnaryOperator)
     g_ref = CC.getSubExpr(addr_of)
     @test g_ref isa CC.Expr_
@@ -3260,7 +3262,7 @@ end
 
     # --- .* operands, taken from the `r.*p` clang itself built -------------------------
     @test f(I, "semaChkPtmFn")
-    ptm_fd = CC.FunctionDecl(get_decl(f).ptr)
+    ptm_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     ptm = first(n
                 for n in CC.subtree(CC.getBody(ptm_fd))
                 if n isa CC.BinaryOperator &&
@@ -3287,7 +3289,7 @@ end
 
     # --- Member-pointer conversion: the base -> derived step clang already performed ---
     @test f(I, "semaChkPmDer")
-    pm_vd = CC.VarDecl(get_decl(f).ptr)
+    pm_vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     pm_to = CC.getType(pm_vd)
     pm_from = first(n for n in CC.subtree(CC.getInit(pm_vd)) if n isa CC.UnaryOperator)
     @test CC.isMemberPointerType(CC.getTypePtr(CC.getType(pm_from)))
@@ -3298,9 +3300,9 @@ end
 
     # --- Declaration-level checks -----------------------------------------------------
     @test f(I, "SemaChkVBase")
-    vbase = CC.CXXRecordDecl(get_decl(f).ptr)
+    vbase = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "SemaChkVDer")
-    vder = CC.CXXRecordDecl(get_decl(f).ptr)
+    vder = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     base_m = first(m for m in CC.getMethods(vbase)
                    if CC.getNameAsString(m) == "semaChkVirt")
     der_m = first(m for m in CC.getMethods(vder) if CC.getNameAsString(m) == "semaChkVirt")
@@ -3308,7 +3310,7 @@ end
     @test CC.CheckExplicitObjectOverride(sema, der_m, base_m)
 
     @test f(I, "semaChkPlain")
-    plain_fd = CC.FunctionDecl(get_decl(f).ptr)
+    plain_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     # `int` is not a coroutine-return record type, so this returns before any diagnostic
     @test CC.CheckCoroutineWrapper(sema, plain_fd) === nothing
 
@@ -3344,7 +3346,7 @@ end
     # Select by kind rather than by uniqueness: a template's own name stops resolving to a
     # single decl as soon as anything specialises it, and get_decl throws on that.
     @test f(I, "SemaTmplPattern")
-    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     rd = CC.getTemplatedDecl(ctd)
     rd_dc = CC.castToDeclContext(rd)
@@ -3360,7 +3362,7 @@ end
     inst = CC.InstantiatingTemplate(sema, loc, ctd)
     @test CC.isInvalid(inst) == false
 
-    method = CC.CXXMethodDecl(first(d for d in CC.decls(rd_dc)
+    method = CC.downcast(CC.CXXMethodDecl, first(d for d in CC.decls(rd_dc)
                                     if CC.getDeclKindName(d) == "CXXMethod").ptr)
 
     # Rebuilding a declaration, unlike rebuilding a type, also writes the pattern-to-instance
@@ -3410,7 +3412,7 @@ end
     @test new_params.ptr != C_NULL
     @test size(new_params) == size(params)
 
-    typedef_pattern = CC.TypedefDecl(first(d for d in CC.decls(rd_dc)
+    typedef_pattern = CC.downcast(CC.TypedefDecl, first(d for d in CC.decls(rd_dc)
                                            if CC.getDeclKindName(d) == "Typedef").ptr)
     substituted_decl = CC.SubstDecl(sema, typedef_pattern, tu_dc, ml)
     @test substituted_decl isa CC.Decl
@@ -3482,7 +3484,7 @@ end
     f = DeclFinder(I)
     function sd5_var(name)
         @assert f(I, name) "lookup failed: $name"
-        return CC.VarDecl(get_decl(f).ptr)
+        return CC.downcast(CC.VarDecl, get_decl(f).ptr)
     end
 
     tu = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
@@ -3534,7 +3536,7 @@ end
     @test ictx.ptr != C_NULL
 
     @assert f(I, "sd5_pick") "lookup failed: sd5_pick"
-    ftd = CC.FunctionTemplateDecl(first(d for d in CC.get_decls(f)
+    ftd = CC.downcast(CC.FunctionTemplateDecl, first(d for d in CC.get_decls(f)
                                         if CC.getDeclKindName(d) == "FunctionTemplate").ptr)
     tfd = CC.getTemplatedDecl(ftd)
     # a function parameter would be looked up in a local instantiation scope this call
@@ -3565,7 +3567,7 @@ end
 
     # --- installing a `= delete;` body on a bodyless first declaration ---
     @assert f(I, "sd5_todelete") "lookup failed: sd5_todelete"
-    del_fd = CC.FunctionDecl(get_decl(f).ptr)
+    del_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.isDeleted(del_fd) == false
     @test CC.SetFunctionBodyKind(sema, del_fd, loc, CC.CXFnBodyKind_Delete) === nothing
     @test CC.isDeleted(del_fd)                     # the body kind this call set
@@ -3625,7 +3627,7 @@ end
     f = DeclFinder(I)
 
     @assert f(I, "semaCtxFn") "lookup failed: semaCtxFn"
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     nodes = CC.subtree(CC.getBody(fd))
     obj_ref = first(n for n in nodes
                     if n isa CC.DeclRefExpr && CC.isRecordType(CC.getTypePtr(CC.getType(n))))
@@ -3731,13 +3733,13 @@ end
 
     # --- whether the callee of a call can throw ---
     @test f(I, "semaQ6NoThrow")
-    nothrow_fd = CC.FunctionDecl(get_decl(f).ptr)
+    nothrow_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.canCalleeThrow(sema, nothing, nothrow_fd, loc) == CC.CXCanThrowResult_CT_Cannot
     @test CC.canCalleeThrow(sema, nothing, nothing, loc) isa CC.CXCanThrowResult
 
     # --- classifying the template name a written template-id carries ---
     @test f(I, "semaQ6Var")
-    var_decl = CC.VarDecl(get_decl(f).ptr)
+    var_decl = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     written = CC.resolve(CC.getTypePtr(CC.getType(var_decl)))
     # a type written in source carries an ElaboratedType wrapper, so peel it first
     written isa CC.ElaboratedType && (written = CC.resolve(CC.getTypePtr(CC.getNamedType(written))))
@@ -3759,7 +3761,7 @@ end
 
     # --- whether a declaration may be referenced at all ---
     @test f(I, "semaQ6Plain")
-    plain_fd = CC.FunctionDecl(get_decl(f).ptr)
+    plain_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.CanUseDecl(sema, plain_fd)
     @test f(I, "semaQ6Deleted")
     @test CC.CanUseDecl(sema, get_decl(f)) == false
@@ -3794,7 +3796,7 @@ end
 
     # --- partial ordering of the two partial specializations ---
     @test f(I, "SemaQ6Tpl")
-    ctd = first(CC.ClassTemplateDecl(d.ptr)
+    ctd = first(CC.downcast(CC.ClassTemplateDecl, d.ptr)
                 for d in CC.get_decls(f) if CC.getDeclKindName(d) == "ClassTemplate")
     specs = CC.getPartialSpecializations(ctd)
     @test length(specs) == 2
@@ -3817,7 +3819,7 @@ end
     @test !isempty(CC.getName(keyword))
     @test !CC.is_null_handle(CC.getNullabilityKeyword(sema, CC.CXNullabilityKind_Nullable))
     @test f(I, "SemaQ6Rec")
-    @test CC.isCFError(sema, CC.CXXRecordDecl(get_decl(f).ptr)) == false
+    @test CC.isCFError(sema, CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)) == false
 
     dispose(f)
     dispose(I)
@@ -3850,9 +3852,9 @@ end
     f = DeclFinder(I)
 
     @test f(I, "semaB6One")
-    one = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    one = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "semaB6Fn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     body = CC.resolve(CC.getBody(fd))
     @test body isa CC.CompoundStmt
     int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
@@ -3891,7 +3893,7 @@ end
     @test upd isa CC.NamedDecl
     @test upd.ptr != C_NULL
     @test CC.getDeclKindName(upd) == "UsingPack"
-    pack = CC.UsingPackDecl(upd.ptr)
+    pack = CC.downcast(CC.UsingPackDecl, upd.ptr)
     @test CC.getNumExpansions(pack) == 1
     @test CC.getExpansion(pack, 0).ptr == fd.ptr
     @test CC.getInstantiatedFromUsingDecl(pack).ptr == fd.ptr
@@ -3983,11 +3985,11 @@ end
     # Three integer-literal prvalues taken from the parse, so every operand below is a
     # node clang built and accepted itself.
     @test f(I, "semaChk6Eight")
-    eight = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    eight = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "semaChk6Two")
-    two = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    two = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "semaChk6One")
-    one = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    one = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     int_qt = CC.getType(eight)
     @test CC.isIntegerType(CC.getTypePtr(int_qt))
 
@@ -4005,12 +4007,12 @@ end
     # semaChk6Plain carries no enable_if attribute, so the loop over them is empty and
     # every condition succeeds vacuously.
     @test f(I, "semaChk6Plain")
-    plain_fd = CC.FunctionDecl(get_decl(f).ptr)
+    plain_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.CheckEnableIf(sema, plain_fd, loc, [eight]) === nothing
 
     # --- C++ access control over a public data member ---------------------------------
     @test f(I, "SemaChk6Rec")
-    rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     fld = first(CC.getFields(rec))
     fld_access = CC.getAccess(fld)
     @test fld_access isa CC.LibClangEx.CXAccessSpecifier
@@ -4115,22 +4117,22 @@ end
     # Select the templates by kind, since a template's own name resolves to more than one
     # declaration as soon as anything specialises it.
     @test f(I, "SemaSP6Pattern")
-    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     @test f(I, "SemaSP6Box")
-    box_ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    box_ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                          if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     @test f(I, "SemaSP6Plain")
-    plain = CC.CXXRecordDecl(get_decl(f).ptr)
+    plain = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     @test f(I, "semaSP6Seed")
-    seed_init = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    seed_init = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "semaSP6Fn")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
     rd = CC.getTemplatedDecl(ctd)
     rd_dc = CC.castToDeclContext(rd)
     loc = CC.getLocation(ctd)
-    method = CC.CXXMethodDecl(first(d for d in CC.decls(rd_dc)
+    method = CC.downcast(CC.CXXMethodDecl, first(d for d in CC.decls(rd_dc)
                                     if CC.getDeclKindName(d) == "CXXMethod").ptr)
 
     # one substituted level, SemaSP6T -> int, owned by the class template itself
@@ -4271,10 +4273,10 @@ end
     # Every lookup happens before the first collector runs: deducing a specialization makes
     # a name that is unique now stop being unique.
     @assert f(I, "SemaD6Conv") "lookup failed: SemaD6Conv"
-    conv_rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    conv_rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     # A template's pattern is excluded explicitly: `operator T *` would answer the pointer
     # predicate below just as `operator SemaD6FnPtr` does.
-    convs = [CC.CXXConversionDecl(m.ptr)
+    convs = [CC.downcast(CC.CXXConversionDecl, m.ptr)
              for m in CC.getMethods(conv_rec)
              if CC.getDeclKindName(m) == "CXXConversion" &&
         CC.getDescribedFunctionTemplate(m).ptr == C_NULL]
@@ -4288,7 +4290,7 @@ end
     surrogate_proto = CC.resolve(CC.getTypePtr(CC.getPointeeType(CC.getTypePtr(fnptr_target))))
     @test surrogate_proto isa CC.FunctionProtoType
 
-    conv_tmpls = [CC.FunctionTemplateDecl(d.ptr)
+    conv_tmpls = [CC.downcast(CC.FunctionTemplateDecl, d.ptr)
                   for d in CC.decls(CC.castToDeclContext(conv_rec))
                   if CC.getDeclKindName(d) == "FunctionTemplate"]
     tmpl_conv = first(t for t in conv_tmpls
@@ -4297,35 +4299,35 @@ end
                         if CC.getDeclKindName(CC.getTemplatedDecl(t)) == "CXXMethod")
 
     @assert f(I, "semaD6Tmpl") "lookup failed: semaD6Tmpl"
-    free_tmpl = CC.FunctionTemplateDecl(first(d for d in CC.get_decls(f)
+    free_tmpl = CC.downcast(CC.FunctionTemplateDecl, first(d for d in CC.get_decls(f)
                                               if CC.getDeclKindName(d) ==
                                                  "FunctionTemplate").ptr)
 
     @assert f(I, "SemaD6Ctor") "lookup failed: SemaD6Ctor"
-    ctor_rec = CC.CXXRecordDecl(get_decl(f).ptr)
-    ctor = CC.CXXConstructorDecl(first(m
+    ctor_rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    ctor = CC.downcast(CC.CXXConstructorDecl, first(m
                                        for m in CC.getMethods(ctor_rec)
                                        if CC.getDeclKindName(m) == "CXXConstructor" &&
                                      CC.getNumParams(m) == 2).ptr)
     ctor_ty = CC.getTypeDeclType(ctx, ctor_rec)
 
     @assert f(I, "semaD6Fn") "lookup failed: semaD6Fn"
-    fns = [CC.FunctionDecl(d.ptr) for d in CC.get_decls(f)
+    fns = [CC.downcast(CC.FunctionDecl, d.ptr) for d in CC.get_decls(f)
            if CC.getDeclKindName(d) == "Function"]
     @test length(fns) == 2
 
     @assert f(I, "semaD6Call") "lookup failed: semaD6Call"
-    callee = CC.FunctionDecl(get_decl(f).ptr)
+    callee = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     callee_proto = CC.resolve(CC.getTypePtr(CC.getType(callee)))
     @test callee_proto isa CC.FunctionProtoType
 
-    plus_fns = [CC.FunctionDecl(d.ptr)
+    plus_fns = [CC.downcast(CC.FunctionDecl, d.ptr)
                 for d in CC.decls(tu)
                 if d isa CC.FunctionDecl && CC.getNameAsString(d) == "operator+"]
     @test length(plus_fns) == 2
 
     @assert f(I, "semaD6Body") "lookup failed: semaD6Body"
-    refs = [n for n in CC.subtree(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    refs = [n for n in CC.subtree(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
             if n isa CC.DeclRefExpr]
     int_arg = first(r for r in refs if CC.getNameAsString(CC.getDecl(r)) == "n")
     dbl_arg = first(r for r in refs if CC.getNameAsString(CC.getDecl(r)) == "d")
@@ -4485,7 +4487,7 @@ end
     double_ty = CC.get_qual_type(CC.jlty_to_clty(Float64, ctx))
 
     @assert f(I, "semaMisc6Fn") "lookup failed: semaMisc6Fn"
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     fn_ty = CC.getType(fd)
 
     # IntegerLiteral::Create takes the APInt through the LLVMGenericValueRef bridge
@@ -4703,7 +4705,7 @@ end
     f = DeclFinder(I)
 
     @assert f(I, "semaAcc7Fn") "lookup failed: semaAcc7Fn"
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
     # A plain function defaults no comparison; the enum still answers.
     k = CC.getDefaultedComparisonKind(sema, fd)
@@ -4754,7 +4756,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "mat_probe")
-    mfd = CC.FunctionDecl(get_decl(f).ptr)
+    mfd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     a = CC.getType(CC.getParamDecl(mfd, 0))
     b = CC.getType(CC.getParamDecl(mfd, 1))
     c = CC.getType(CC.getParamDecl(mfd, 2))
@@ -4785,7 +4787,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "SemaBox")
-    ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     spec = CC.specialize(llctx, ctx, ctd, CC.jlty_to_clty(Int32, ctx))
     @test spec isa CC.ClassTemplateSpecializationDecl
 
@@ -4816,7 +4818,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "IdS")
-    td = CC.ClassTemplateDecl(get_decl(f).ptr)
+    td = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     params = CC.getTemplateParameters(td)
 
     # the two parameters of the SAME template produce DIFFERENT argument kinds, so neither
@@ -4837,7 +4839,7 @@ end
 
     # the gate rejects a declaration that is not a template parameter
     @test_throws AssertionError CC.getIdentityTemplateArgumentLoc(sema,
-                                                                  CC.NamedDecl(td.ptr), loc)
+                                                                  CC.upcast(CC.NamedDecl, td.ptr), loc)
 
     # the FP state is a word the decoders read, and it agrees with the context's default
     w = CC.getCurFPFeatures(sema)
@@ -4868,7 +4870,7 @@ end
     # question the other way round gives the SAME winner -- so the answer is a property of
     # the pair, not of argument order
     @test f(I, "po_fn")
-    fts = [CC.FunctionTemplateDecl(d.ptr)
+    fts = [CC.downcast(CC.FunctionTemplateDecl, d.ptr)
            for d in CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(CC.get_ast_context(I))))
            if d isa CC.FunctionTemplateDecl]
     @test length(fts) >= 2
@@ -4885,10 +4887,10 @@ end
 
     # the format attribute decodes to the indices actually written in the source
     @test f(I, "fmt_fn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     fattrs = [x for x in CC.getAttrs(fd) if CC.get_attr_kind(x) == CC.CXAttrKind_Format]
     @test length(fattrs) == 1
-    info = CC.getFormatStringInfo(CC.FormatAttr(only(fattrs).ptr), false, true)
+    info = CC.getFormatStringInfo(CC.downcast(CC.FormatAttr, only(fattrs).ptr), false, true)
     @test info !== nothing
     # `format(printf, 2, 3)` is 1-based over the written parameters; the decoded indices name
     # the format string and the first vararg

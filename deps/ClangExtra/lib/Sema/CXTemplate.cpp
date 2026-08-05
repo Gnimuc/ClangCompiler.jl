@@ -17,28 +17,28 @@
 
 CXLocalInstantiationScope clang_LocalInstantiationScope_create(CXSema S,
                                                                bool CombineWithOuterScope) {
-  return std::make_unique<clang::LocalInstantiationScope>(*static_cast<clang::Sema *>(S),
+  return reinterpret_cast<CXLocalInstantiationScope>(std::make_unique<clang::LocalInstantiationScope>(*reinterpret_cast<clang::Sema *>(S),
                                                           CombineWithOuterScope)
-      .release();
+      .release());
 }
 
 void clang_LocalInstantiationScope_dispose(CXLocalInstantiationScope Scope) {
-  delete static_cast<clang::LocalInstantiationScope *>(Scope);
+  delete reinterpret_cast<clang::LocalInstantiationScope *>(Scope);
 }
 
 CXSema clang_LocalInstantiationScope_getSema(CXLocalInstantiationScope Scope) {
-  return const_cast<clang::Sema *>(
-      &static_cast<clang::LocalInstantiationScope *>(Scope)->getSema());
+  return reinterpret_cast<CXSema>(const_cast<clang::Sema *>(
+      &reinterpret_cast<clang::LocalInstantiationScope *>(Scope)->getSema()));
 }
 
 void clang_LocalInstantiationScope_Exit(CXLocalInstantiationScope Scope) {
-  static_cast<clang::LocalInstantiationScope *>(Scope)->Exit();
+  reinterpret_cast<clang::LocalInstantiationScope *>(Scope)->Exit();
 }
 
 bool clang_LocalInstantiationScope_isLocalPackExpansion(CXLocalInstantiationScope Scope,
                                                         CXDecl D) {
-  return static_cast<clang::LocalInstantiationScope *>(Scope)->isLocalPackExpansion(
-      static_cast<clang::Decl *>(D));
+  return reinterpret_cast<clang::LocalInstantiationScope *>(Scope)->isLocalPackExpansion(
+      reinterpret_cast<clang::Decl *>(D));
 }
 
 namespace {
@@ -57,7 +57,7 @@ struct MultiLevelTemplateArgumentListBox {
 };
 
 MultiLevelTemplateArgumentListBox *unbox(CXMultiLevelTemplateArgumentList ML) {
-  return static_cast<MultiLevelTemplateArgumentListBox *>(ML);
+  return reinterpret_cast<MultiLevelTemplateArgumentListBox *>(ML);
 }
 
 /// Copy a caller buffer of CXTemplateArgument handles into a fresh level of Box's storage
@@ -67,7 +67,7 @@ MultiLevelTemplateArgumentListBox *unbox(CXMultiLevelTemplateArgumentList ML) {
 llvm::ArrayRef<clang::TemplateArgument> storeLevel(MultiLevelTemplateArgumentListBox *Box,
                                                    CXTemplateArgument Args,
                                                    unsigned NumArgs) {
-  auto **Handles = static_cast<clang::TemplateArgument **>(Args);
+  auto **Handles = reinterpret_cast<clang::TemplateArgument **>(Args);
   Box->Storage.emplace_back();
   std::vector<clang::TemplateArgument> &Level = Box->Storage.back();
   Level.reserve(NumArgs);
@@ -79,7 +79,7 @@ llvm::ArrayRef<clang::TemplateArgument> storeLevel(MultiLevelTemplateArgumentLis
 } // namespace
 
 CXMultiLevelTemplateArgumentList clang_MultiLevelTemplateArgumentList_create(void) {
-  return std::make_unique<MultiLevelTemplateArgumentListBox>().release();
+  return reinterpret_cast<CXMultiLevelTemplateArgumentList>(std::make_unique<MultiLevelTemplateArgumentListBox>().release());
 }
 
 void clang_MultiLevelTemplateArgumentList_dispose(CXMultiLevelTemplateArgumentList ML) {
@@ -129,13 +129,13 @@ clang_MultiLevelTemplateArgumentList_getNewDepth(CXMultiLevelTemplateArgumentLis
 CXTemplateArgument
 clang_MultiLevelTemplateArgumentList_getArgument(CXMultiLevelTemplateArgumentList ML,
                                                  unsigned Depth, unsigned Index) {
-  return const_cast<clang::TemplateArgument *>(&unbox(ML)->Value(Depth, Index));
+  return reinterpret_cast<CXTemplateArgument>(const_cast<clang::TemplateArgument *>(&unbox(ML)->Value(Depth, Index)));
 }
 
 CXDecl
 clang_MultiLevelTemplateArgumentList_getAssociatedDecl(CXMultiLevelTemplateArgumentList ML,
                                                        unsigned Depth) {
-  return unbox(ML)->Value.getAssociatedDecl(Depth).first;
+  return reinterpret_cast<CXDecl>(unbox(ML)->Value.getAssociatedDecl(Depth).first);
 }
 
 bool clang_MultiLevelTemplateArgumentList_isAssociatedDeclFinal(
@@ -156,7 +156,7 @@ bool clang_MultiLevelTemplateArgumentList_isAnyArgInstantiationDependent(
 void clang_MultiLevelTemplateArgumentList_setArgument(CXMultiLevelTemplateArgumentList ML,
                                                       unsigned Depth, unsigned Index,
                                                       CXTemplateArgument Arg) {
-  unbox(ML)->Value.setArgument(Depth, Index, *static_cast<clang::TemplateArgument *>(Arg));
+  unbox(ML)->Value.setArgument(Depth, Index, *reinterpret_cast<clang::TemplateArgument *>(Arg));
 }
 
 void clang_MultiLevelTemplateArgumentList_addOuterTemplateArguments(
@@ -164,7 +164,7 @@ void clang_MultiLevelTemplateArgumentList_addOuterTemplateArguments(
     unsigned NumArgs, bool Final) {
   MultiLevelTemplateArgumentListBox *Box = unbox(ML);
   llvm::ArrayRef<clang::TemplateArgument> Level = storeLevel(Box, Args, NumArgs);
-  Box->Value.addOuterTemplateArguments(static_cast<clang::Decl *>(AssociatedDecl), Level,
+  Box->Value.addOuterTemplateArguments(reinterpret_cast<clang::Decl *>(AssociatedDecl), Level,
                                        Final);
 }
 
@@ -173,7 +173,7 @@ void clang_MultiLevelTemplateArgumentList_replaceInnermostTemplateArguments(
     unsigned NumArgs) {
   MultiLevelTemplateArgumentListBox *Box = unbox(ML);
   llvm::ArrayRef<clang::TemplateArgument> Level = storeLevel(Box, Args, NumArgs);
-  Box->Value.replaceInnermostTemplateArguments(static_cast<clang::Decl *>(AssociatedDecl),
+  Box->Value.replaceInnermostTemplateArguments(reinterpret_cast<clang::Decl *>(AssociatedDecl),
                                                Level);
 }
 
@@ -195,7 +195,7 @@ unsigned clang_MultiLevelTemplateArgumentList_getNumInnermostArgs(
 CXTemplateArgument
 clang_MultiLevelTemplateArgumentList_getInnermostArg(CXMultiLevelTemplateArgumentList ML,
                                                      unsigned I) {
-  return const_cast<clang::TemplateArgument *>(&unbox(ML)->Value.getInnermost()[I]);
+  return reinterpret_cast<CXTemplateArgument>(const_cast<clang::TemplateArgument *>(&unbox(ML)->Value.getInnermost()[I]));
 }
 
 unsigned clang_MultiLevelTemplateArgumentList_getNumOutermostArgs(
@@ -206,7 +206,7 @@ unsigned clang_MultiLevelTemplateArgumentList_getNumOutermostArgs(
 CXTemplateArgument
 clang_MultiLevelTemplateArgumentList_getOutermostArg(CXMultiLevelTemplateArgumentList ML,
                                                      unsigned I) {
-  return const_cast<clang::TemplateArgument *>(&unbox(ML)->Value.getOutermost()[I]);
+  return reinterpret_cast<CXTemplateArgument>(const_cast<clang::TemplateArgument *>(&unbox(ML)->Value.getOutermost()[I]));
 }
 
 // begin

@@ -1,5 +1,7 @@
 # Generated from deps/ClangExtra/include/clang-ex/AST/StmtNodes.inc by gen/stmt_nodes.jl — do not edit.
 # Abstract-type skeleton for the Stmt hierarchy not already defined in abstract.jl.
+# Classes clang names `Abstract*` are not mirrored; their children hang off the
+# nearest ancestor that is.
 """
     abstract type AbstractWhileStmt <: AbstractStmt
 Supertype for `WhileStmt`s.
@@ -733,16 +735,16 @@ Supertype for `AddrLabelExpr`s.
 abstract type AbstractAddrLabelExpr <: AbstractExpr end
 
 """
-    abstract type AbstractConditionalOperator_ <: AbstractAbstractConditionalOperator
+    abstract type AbstractConditionalOperator <: AbstractExpr
 Supertype for `ConditionalOperator`s.
 """
-abstract type AbstractConditionalOperator_ <: AbstractAbstractConditionalOperator end
+abstract type AbstractConditionalOperator <: AbstractExpr end
 
 """
-    abstract type AbstractBinaryConditionalOperator <: AbstractAbstractConditionalOperator
+    abstract type AbstractBinaryConditionalOperator <: AbstractExpr
 Supertype for `BinaryConditionalOperator`s.
 """
-abstract type AbstractBinaryConditionalOperator <: AbstractAbstractConditionalOperator end
+abstract type AbstractBinaryConditionalOperator <: AbstractExpr end
 
 """
     abstract type AbstractAttributedStmt <: AbstractValueStmt

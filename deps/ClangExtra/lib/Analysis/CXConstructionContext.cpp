@@ -30,30 +30,30 @@ using CC_LambdaCapture = clang::LambdaCaptureConstructionContext;
 // ConstructionContext
 
 CXConstructionContextKind clang_ConstructionContext_getKind(CXConstructionContext CC) {
-  return static_cast<CXConstructionContextKind>(static_cast<CC_Base *>(CC)->getKind());
+  return static_cast<CXConstructionContextKind>(reinterpret_cast<CC_Base *>(CC)->getKind());
 }
 
 // getArrayInitLoop
 
 CXDeclStmt clang_ConstructionContext_getDeclStmt(CXConstructionContext CC) {
-  const auto *V = llvm::dyn_cast_or_null<CC_Variable>(static_cast<CC_Base *>(CC));
-  return V ? const_cast<clang::DeclStmt *>(V->getDeclStmt()) : nullptr;
+  const auto *V = llvm::dyn_cast_or_null<CC_Variable>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXDeclStmt>(V ? const_cast<clang::DeclStmt *>(V->getDeclStmt()) : nullptr);
 }
 
 CXCXXCtorInitializer
 clang_ConstructionContext_getCXXCtorInitializer(CXConstructionContext CC) {
-  const auto *I = llvm::dyn_cast_or_null<CC_CtorInitializer>(static_cast<CC_Base *>(CC));
-  return I ? const_cast<clang::CXXCtorInitializer *>(I->getCXXCtorInitializer()) : nullptr;
+  const auto *I = llvm::dyn_cast_or_null<CC_CtorInitializer>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXCXXCtorInitializer>(I ? const_cast<clang::CXXCtorInitializer *>(I->getCXXCtorInitializer()) : nullptr);
 }
 
 CXCXXNewExpr clang_ConstructionContext_getCXXNewExpr(CXConstructionContext CC) {
-  const auto *N = llvm::dyn_cast_or_null<CC_NewAllocatedObject>(static_cast<CC_Base *>(CC));
-  return N ? const_cast<clang::CXXNewExpr *>(N->getCXXNewExpr()) : nullptr;
+  const auto *N = llvm::dyn_cast_or_null<CC_NewAllocatedObject>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXCXXNewExpr>(N ? const_cast<clang::CXXNewExpr *>(N->getCXXNewExpr()) : nullptr);
 }
 
 CXCXXBindTemporaryExpr
 clang_ConstructionContext_getCXXBindTemporaryExpr(CXConstructionContext CC) {
-  auto *C = static_cast<CC_Base *>(CC);
+  auto *C = reinterpret_cast<CC_Base *>(CC);
   const clang::CXXBindTemporaryExpr *BTE = nullptr;
   if (const auto *V = llvm::dyn_cast_or_null<CC_ElidedCopyVariable>(C))
     BTE = V->getCXXBindTemporaryExpr();
@@ -65,44 +65,44 @@ clang_ConstructionContext_getCXXBindTemporaryExpr(CXConstructionContext CC) {
     BTE = R->getCXXBindTemporaryExpr();
   else if (const auto *A = llvm::dyn_cast_or_null<CC_Argument>(C))
     BTE = A->getCXXBindTemporaryExpr();
-  return const_cast<clang::CXXBindTemporaryExpr *>(BTE);
+  return reinterpret_cast<CXCXXBindTemporaryExpr>(const_cast<clang::CXXBindTemporaryExpr *>(BTE));
 }
 
 CXMaterializeTemporaryExpr
 clang_ConstructionContext_getMaterializedTemporaryExpr(CXConstructionContext CC) {
-  const auto *T = llvm::dyn_cast_or_null<CC_TemporaryObject>(static_cast<CC_Base *>(CC));
-  return T ? const_cast<clang::MaterializeTemporaryExpr *>(
+  const auto *T = llvm::dyn_cast_or_null<CC_TemporaryObject>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXMaterializeTemporaryExpr>(T ? const_cast<clang::MaterializeTemporaryExpr *>(
                  T->getMaterializedTemporaryExpr())
-           : nullptr;
+           : nullptr);
 }
 
 CXCXXConstructExpr
 clang_ConstructionContext_getConstructorAfterElision(CXConstructionContext CC) {
   const auto *E =
-      llvm::dyn_cast_or_null<CC_ElidedTemporaryObject>(static_cast<CC_Base *>(CC));
-  return E ? const_cast<clang::CXXConstructExpr *>(E->getConstructorAfterElision())
-           : nullptr;
+      llvm::dyn_cast_or_null<CC_ElidedTemporaryObject>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXCXXConstructExpr>(E ? const_cast<clang::CXXConstructExpr *>(E->getConstructorAfterElision())
+           : nullptr);
 }
 
 CXConstructionContext
 clang_ConstructionContext_getConstructionContextAfterElision(CXConstructionContext CC) {
   const auto *E =
-      llvm::dyn_cast_or_null<CC_ElidedTemporaryObject>(static_cast<CC_Base *>(CC));
-  return E ? const_cast<CC_Base *>(E->getConstructionContextAfterElision()) : nullptr;
+      llvm::dyn_cast_or_null<CC_ElidedTemporaryObject>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXConstructionContext>(E ? const_cast<CC_Base *>(E->getConstructionContextAfterElision()) : nullptr);
 }
 
 CXReturnStmt clang_ConstructionContext_getReturnStmt(CXConstructionContext CC) {
-  const auto *R = llvm::dyn_cast_or_null<CC_ReturnedValue>(static_cast<CC_Base *>(CC));
-  return R ? const_cast<clang::ReturnStmt *>(R->getReturnStmt()) : nullptr;
+  const auto *R = llvm::dyn_cast_or_null<CC_ReturnedValue>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXReturnStmt>(R ? const_cast<clang::ReturnStmt *>(R->getReturnStmt()) : nullptr);
 }
 
 CXExpr clang_ConstructionContext_getCallLikeExpr(CXConstructionContext CC) {
-  const auto *A = llvm::dyn_cast_or_null<CC_Argument>(static_cast<CC_Base *>(CC));
-  return A ? const_cast<clang::Expr *>(A->getCallLikeExpr()) : nullptr;
+  const auto *A = llvm::dyn_cast_or_null<CC_Argument>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXExpr>(A ? const_cast<clang::Expr *>(A->getCallLikeExpr()) : nullptr);
 }
 
 unsigned clang_ConstructionContext_getIndex(CXConstructionContext CC) {
-  auto *C = static_cast<CC_Base *>(CC);
+  auto *C = reinterpret_cast<CC_Base *>(CC);
   if (const auto *A = llvm::dyn_cast_or_null<CC_Argument>(C))
     return A->getIndex();
   if (const auto *L = llvm::dyn_cast_or_null<CC_LambdaCapture>(C))
@@ -111,16 +111,16 @@ unsigned clang_ConstructionContext_getIndex(CXConstructionContext CC) {
 }
 
 CXLambdaExpr clang_ConstructionContext_getLambdaExpr(CXConstructionContext CC) {
-  const auto *L = llvm::dyn_cast_or_null<CC_LambdaCapture>(static_cast<CC_Base *>(CC));
-  return L ? const_cast<clang::LambdaExpr *>(L->getLambdaExpr()) : nullptr;
+  const auto *L = llvm::dyn_cast_or_null<CC_LambdaCapture>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXLambdaExpr>(L ? const_cast<clang::LambdaExpr *>(L->getLambdaExpr()) : nullptr);
 }
 
 CXExpr clang_ConstructionContext_getInitializer(CXConstructionContext CC) {
-  const auto *L = llvm::dyn_cast_or_null<CC_LambdaCapture>(static_cast<CC_Base *>(CC));
-  return L ? const_cast<clang::Expr *>(L->getInitializer()) : nullptr;
+  const auto *L = llvm::dyn_cast_or_null<CC_LambdaCapture>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXExpr>(L ? const_cast<clang::Expr *>(L->getInitializer()) : nullptr);
 }
 
 CXFieldDecl clang_ConstructionContext_getFieldDecl(CXConstructionContext CC) {
-  const auto *L = llvm::dyn_cast_or_null<CC_LambdaCapture>(static_cast<CC_Base *>(CC));
-  return L ? const_cast<clang::FieldDecl *>(L->getFieldDecl()) : nullptr;
+  const auto *L = llvm::dyn_cast_or_null<CC_LambdaCapture>(reinterpret_cast<CC_Base *>(CC));
+  return reinterpret_cast<CXFieldDecl>(L ? const_cast<clang::FieldDecl *>(L->getFieldDecl()) : nullptr);
 }

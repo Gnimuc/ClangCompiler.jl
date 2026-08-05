@@ -16,7 +16,7 @@ pkg> add ClangCompiler
 
 ### Decl Lookup
 
-The following example demonstrates how to perform a declaration lookup:
+Look a C++ declaration up by its qualified name:
 
 ```julia-repl
 import ClangCompiler as CC
@@ -24,20 +24,17 @@ import ClangCompiler as CC
 # Create an interpreter
 I = CC.create_interpreter(["-include", "vector"])
 
-# Initialize a declaration lookup instance
-decl_lookup = CC.DeclFinder(I)
-
-# Perform a lookup for the declaration of std::vector
-@assert decl_lookup(I, "std::vector")
-
-# Retrieve lookup results and dump AST
-decl = CC.get_decl(decl_lookup)
+# Run a real C++ name lookup. The result is resolved to the class clang built
+# for it -- here a `ClassTemplateDecl` -- so `isa` tests on it mean what they say.
+decl = CC.find_decl(I, "std::vector")
 CC.dump(decl)
 
 # Clean up resources
-CC.dispose(decl_lookup)
 CC.dispose(I)
 ```
+
+`find_decl` returns `nothing` when the name is not found, and `find_decls` returns the whole
+overload set. `CC.DeclFinder` is still there if you want to drive the lookup yourself.
 
 ### AST Traversal
 
@@ -49,25 +46,15 @@ import ClangCompiler as CC
 # Create an interpreter
 I = CC.create_interpreter(["-include", "vector"])
 
-# Initialize a declaration lookup instance
-decl_lookup = CC.DeclFinder(I)
+# `std::vector` is a template; step from the template to the class it describes
+record = CC.getTemplatedDecl(CC.find_decl(I, "std::vector"))
 
-# Perform a lookup for the declaration of std::vector
-@assert decl_lookup(I, "std::vector")
-
-# Retrieve lookup results
-decl = CC.get_decl(decl_lookup)
-
-# Extract the `CXXRecordDecl` from `ClassTemplateDecl`
-record = CC.getTemplatedDecl(CC.ClassTemplateDecl(decl.ptr))
-
-# AST Traversal
+# AST Traversal -- 119 members, each resolved to its own concrete type
 for x in CC.DeclIterator(record)
     CC.dump(x)
 end
 
 # Clean up resources
-CC.dispose(decl_lookup)
 CC.dispose(I)
 ```
 
@@ -125,4 +112,14 @@ julia> v
  10.0
 
 julia> CC.dispose(I)
+```
+## More
+
+[`examples/`](examples/) has six worked programs that run — a JIT'd C++ function called from
+Julia, an AST tour, record layout, template instantiation, cross-target ABI inspection, and the
+type-safety guarantees the handle layer provides. They are executed by CI, so they cannot drift
+away from the API:
+
+```
+julia --project examples/runall.jl
 ```

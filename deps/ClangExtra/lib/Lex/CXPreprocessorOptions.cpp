@@ -3,12 +3,12 @@
 #include "llvm/Support/raw_ostream.h"
 
 size_t clang_PreprocessorOptions_getIncludesNum(CXPreprocessorOptions PPO) {
-  return static_cast<clang::PreprocessorOptions *>(PPO)->Includes.size();
+  return reinterpret_cast<clang::PreprocessorOptions *>(PPO)->Includes.size();
 }
 
 void clang_PreprocessorOptions_getIncludes(CXPreprocessorOptions PPO, const char **IncsOut,
                                            size_t Num) {
-  auto &Incs = static_cast<clang::PreprocessorOptions *>(PPO)->Includes;
+  auto &Incs = reinterpret_cast<clang::PreprocessorOptions *>(PPO)->Includes;
   for (auto &Inc : Incs) {
     auto i = &Inc - &Incs[0];
     if (i < Num)
@@ -17,7 +17,7 @@ void clang_PreprocessorOptions_getIncludes(CXPreprocessorOptions PPO, const char
 }
 
 void clang_PreprocessorOptions_PrintStats(CXPreprocessorOptions PPO) {
-  auto Opts = static_cast<clang::PreprocessorOptions *>(PPO);
+  auto Opts = reinterpret_cast<clang::PreprocessorOptions *>(PPO);
   llvm::errs() << "\n*** PreprocessorOptions Stats:\n";
   llvm::errs() << "  Macros: \n";
   for (const auto &M : Opts->Macros)

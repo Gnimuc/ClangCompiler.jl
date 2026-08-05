@@ -472,7 +472,7 @@ function Scope(parent::Union{AbstractScope,Nothing}, flags::Integer,
     if parent !== nothing
         @check_ptrs parent
     end
-    p = parent === nothing ? CXScope(C_NULL) : parent.ptr
+    p = parent === nothing ? CXScope(C_NULL) : Base.unsafe_convert(CXScope, parent)
     return Scope(clang_Scope_create(p, UInt32(flags), diag))
 end
 
@@ -607,7 +607,7 @@ function Init(x::AbstractScope, parent::Union{AbstractScope,Nothing}, flags::Int
     if parent !== nothing
         @check_ptrs parent
     end
-    p = parent === nothing ? CXScope(C_NULL) : parent.ptr
+    p = parent === nothing ? CXScope(C_NULL) : Base.unsafe_convert(CXScope, parent)
     clang_Scope_Init(x, p, UInt32(flags))
     return nothing
 end

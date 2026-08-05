@@ -6,5 +6,3 @@ struct CXXScopeSpec <: AbstractCXXScopeSpec
     ptr::CXCXXScopeSpec
 end
 
-Base.unsafe_convert(::Type{CXCXXScopeSpec}, x::CXXScopeSpec) = x.ptr
-Base.cconvert(::Type{CXCXXScopeSpec}, x::CXXScopeSpec) = x

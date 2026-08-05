@@ -18,7 +18,7 @@ Decl/DeclContext boundary, which must go through `castToDeclContext`).
 """
 function resolve(x::AbstractDecl)
     T = get(DECL_KIND_TO_TYPE, getKind(x), nothing)
-    return T === nothing ? x : T(x.ptr)
+    return T === nothing ? x : downcast(T, x)
 end
 
 get_decl_kind(x::AbstractDecl) = getKind(x)
@@ -40,5 +40,7 @@ function decls(x::DeclContext)
     nodes = Vector{CXDecl}(undef, n)
     kinds = Vector{CXDeclKind}(undef, n)
     clang_DeclContext_collectRecursiveDecls(x, nodes, kinds)
-    return AbstractDecl[get(DECL_KIND_TO_TYPE, kinds[i], Decl)(nodes[i]) for i = 1:n]
+    # the kind travels with each node, so the narrowing is established before it happens;
+    # a kind with no wrapped carrier stays at the base `Decl`
+    return AbstractDecl[downcast(get(DECL_KIND_TO_TYPE, kinds[i], Decl), nodes[i]) for i = 1:n]
 end

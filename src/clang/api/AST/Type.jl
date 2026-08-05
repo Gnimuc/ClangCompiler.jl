@@ -1946,7 +1946,7 @@ end
 
 function getAsPlaceholderType(x::AbstractType)
     @check_ptrs x
-    return BuiltinType(clang_Type_getAsPlaceholderType(x))
+    return upcast(BuiltinType, clang_Type_getAsPlaceholderType(x))
 end
 
 function isIntegralType(x::AbstractType, ctx::ASTContext)
@@ -3764,7 +3764,7 @@ shim; the precondition is restated here.
 """
 function stripOuterNullability(x::QualType)
     @assert !isNull(x) "QualType must be non-null"
-    ty = Ref{CXQualType}(x.ptr)
+    ty = Ref{CXQualType}(Base.unsafe_convert(CXQualType, x))
     k = Ref{CXNullabilityKind}(CXNullabilityKind_NonNull)
     found = clang_AttributedType_stripOuterNullability(ty, k)
     return (QualType(ty[]), found ? k[] : nothing)

@@ -3,23 +3,23 @@
 #include "llvm/Support/raw_ostream.h"
 
 size_t clang_HeaderSearchOptions_GetResourceDirLength(CXHeaderSearchOptions HSO) {
-  return static_cast<clang::HeaderSearchOptions *>(HSO)->ResourceDir.size();
+  return reinterpret_cast<clang::HeaderSearchOptions *>(HSO)->ResourceDir.size();
 }
 
 void clang_HeaderSearchOptions_GetResourceDir(CXHeaderSearchOptions HSO, char *ResourcesDir,
                                               size_t N) {
-  auto s = static_cast<clang::HeaderSearchOptions *>(HSO)->ResourceDir;
+  auto s = reinterpret_cast<clang::HeaderSearchOptions *>(HSO)->ResourceDir;
   std::copy_n(s.begin(), N, ResourcesDir);
 }
 
 void clang_HeaderSearchOptions_SetResourceDir(CXHeaderSearchOptions HSO,
                                               const char *ResourcesDir, size_t N) {
-  static_cast<clang::HeaderSearchOptions *>(HSO)->ResourceDir =
+  reinterpret_cast<clang::HeaderSearchOptions *>(HSO)->ResourceDir =
       std::string(ResourcesDir, N);
 }
 
 void clang_HeaderSearchOptions_PrintStats(CXHeaderSearchOptions HSO) {
-  auto Opts = static_cast<clang::HeaderSearchOptions *>(HSO);
+  auto Opts = reinterpret_cast<clang::HeaderSearchOptions *>(HSO);
   llvm::errs() << "\n*** HeaderSearchOptions Stats:\n";
   llvm::errs() << "  Sysroot: " << Opts->Sysroot << "\n";
 

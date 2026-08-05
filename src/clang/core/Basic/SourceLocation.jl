@@ -8,9 +8,6 @@ struct FileID <: AbstractFileID
     ptr::CXFileID
 end
 
-Base.unsafe_convert(::Type{CXFileID}, x::FileID) = x.ptr
-Base.cconvert(::Type{CXFileID}, x::FileID) = x
-
 """
     struct SourceLocation <: AbstractSourceLocation
 Represent a Clang source location.
@@ -22,9 +19,6 @@ struct SourceLocation <: AbstractSourceLocation
     ptr::CXSourceLocation_
 end
 
-Base.unsafe_convert(::Type{CXSourceLocation_}, x::SourceLocation) = x.ptr
-Base.cconvert(::Type{CXSourceLocation_}, x::SourceLocation) = x
-
 """
     struct SourceRange <: Any
 Hold two `SourceLocation`s.
@@ -33,7 +27,6 @@ struct SourceRange
     begin_loc::SourceLocation
     end_loc::SourceLocation
 end
-
 
 """
     mutable struct CharSourceRange <: Any
@@ -59,10 +52,6 @@ with `dispose`.
 struct PresumedLoc <: AbstractPresumedLoc
     ptr::CXPresumedLoc
 end
-
-Base.unsafe_convert(::Type{CXPresumedLoc}, x::PresumedLoc) = x.ptr
-Base.cconvert(::Type{CXPresumedLoc}, x::PresumedLoc) = x
-
 
 """
     struct FullSourceLoc <: Any

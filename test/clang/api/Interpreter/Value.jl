@@ -14,9 +14,9 @@ using Test
     CC.parse(I, "int ft_value_probe = 0; double ft_value_probe2 = 0.0;")
     f = DeclFinder(I)
     @test f(I, "ft_value_probe")
-    qt_int = CC.getType(CC.VarDecl(get_decl(f).ptr))
+    qt_int = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test f(I, "ft_value_probe2")
-    qt_double = CC.getType(CC.VarDecl(get_decl(f).ptr))
+    qt_double = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
 
     v = CC.createValueFromType(I.interp, qt_int)
     @test v isa CC.Value
@@ -223,7 +223,7 @@ end
     CC.parse(I, "int mv_value_probe = 7;")
     f = DeclFinder(I)
     @test f(I, "mv_value_probe")
-    qt = CC.getType(CC.VarDecl(get_decl(f).ptr))
+    qt = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
 
     v = CC.createValueFromType(I.interp, qt)
     @test !CC.is_null_handle(CC.getInterpreter(v))

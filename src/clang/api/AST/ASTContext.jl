@@ -51,12 +51,14 @@ function getRValueReferenceType(x::ASTContext, ty::QualType)
     return QualType(clang_ASTContext_getRValueReferenceType(x, ty))
 end
 
-function getMemberPointerType(x::ASTContext, ty::QualType, class_ptr::CXType_)
-    @check_ptrs x
-    return QualType(clang_ASTContext_getMemberPointerType(x, ty, class_ptr))
+function getMemberPointerType(x::ASTContext, ty::QualType, class::AbstractType)
+    @check_ptrs x class
+    return QualType(clang_ASTContext_getMemberPointerType(x, ty, class))
 end
+# the class may be named by its QualType; the pivot to the type node is the same one
+# `getTypePtr` performs, so the qualifiers are dropped here rather than reinterpreted
 function getMemberPointerType(x::ASTContext, ty::QualType, class::QualType)
-    getMemberPointerType(x, ty, get_type_ptr(class).ptr)
+    return getMemberPointerType(x, ty, get_type_ptr(class))
 end
 
 function getIdents(x::ASTContext)
@@ -64,36 +66,68 @@ function getIdents(x::ASTContext)
     return IdentifierTable(clang_ASTContext_getIdents(x))
 end
 
-VoidTy(ctx::ASTContext) = VoidTy(clang_ASTContext_VoidTy_getAsQualType(ctx))
-BoolTy(ctx::ASTContext) = BoolTy(clang_ASTContext_BoolTy_getAsQualType(ctx))
-CharTy(ctx::ASTContext) = CharTy(clang_ASTContext_CharTy_getAsQualType(ctx))
-WCharTy(ctx::ASTContext) = WCharTy(clang_ASTContext_WCharTy_getAsQualType(ctx))  # [C++ 3.9.1p5].
-WideCharTy(ctx::ASTContext) = WideCharTy(clang_ASTContext_WideCharTy_getAsQualType(ctx))
-WIntTy(ctx::ASTContext) = WIntTy(clang_ASTContext_WIntTy_getAsQualType(ctx))  # [C99 7.24.1], integer type unchanged by default promotions.
-Char8Ty(ctx::ASTContext) = Char8Ty(clang_ASTContext_Char8Ty_getAsQualType(ctx))  # [C++20 proposal]
-Char16Ty(ctx::ASTContext) = Char16Ty(clang_ASTContext_Char16Ty_getAsQualType(ctx))  # [C++0x 3.9.1p5], integer type in C99.
-Char32Ty(ctx::ASTContext) = Char32Ty(clang_ASTContext_Char32Ty_getAsQualType(ctx))  # [C++0x 3.9.1p5], integer type in C99.
-SignedCharTy(ctx::ASTContext) = SignedCharTy(clang_ASTContext_SignedCharTy_getAsQualType(ctx))
-ShortTy(ctx::ASTContext) = ShortTy(clang_ASTContext_ShortTy_getAsQualType(ctx))
-IntTy(ctx::ASTContext) = IntTy(clang_ASTContext_IntTy_getAsQualType(ctx))
-LongTy(ctx::ASTContext) = LongTy(clang_ASTContext_LongTy_getAsQualType(ctx))
-LongLongTy(ctx::ASTContext) = LongLongTy(clang_ASTContext_LongLongTy_getAsQualType(ctx))
-Int128Ty(ctx::ASTContext) = Int128Ty(clang_ASTContext_Int128Ty_getAsQualType(ctx))
-UnsignedCharTy(ctx::ASTContext) = UnsignedCharTy(clang_ASTContext_UnsignedCharTy_getAsQualType(ctx))
-UnsignedShortTy(ctx::ASTContext) = UnsignedShortTy(clang_ASTContext_UnsignedShortTy_getAsQualType(ctx))
-UnsignedIntTy(ctx::ASTContext) = UnsignedIntTy(clang_ASTContext_UnsignedIntTy_getAsQualType(ctx))
-UnsignedLongTy(ctx::ASTContext) = UnsignedLongTy(clang_ASTContext_UnsignedLongTy_getAsQualType(ctx))
-UnsignedLongLongTy(ctx::ASTContext) = UnsignedLongLongTy(clang_ASTContext_UnsignedLongLongTy_getAsQualType(ctx))
-UnsignedInt128Ty(ctx::ASTContext) = UnsignedInt128Ty(clang_ASTContext_UnsignedInt128Ty_getAsQualType(ctx))
-FloatTy(ctx::ASTContext) = FloatTy(clang_ASTContext_FloatTy_getAsQualType(ctx))
-DoubleTy(ctx::ASTContext) = DoubleTy(clang_ASTContext_DoubleTy_getAsQualType(ctx))
-LongDoubleTy(ctx::ASTContext) = LongDoubleTy(clang_ASTContext_LongDoubleTy_getAsQualType(ctx))
-Float128Ty(ctx::ASTContext) = Float128Ty(clang_ASTContext_Float128Ty_getAsQualType(ctx))
-HalfTy(ctx::ASTContext) = HalfTy(clang_ASTContext_HalfTy_getAsQualType(ctx))  # [OpenCL 6.1.1.1], ARM NEON
-BFloat16Ty(ctx::ASTContext) = BFloat16Ty(clang_ASTContext_BFloat16Ty_getAsQualType(ctx))
-Float16Ty(ctx::ASTContext) = Float16Ty(clang_ASTContext_Float16Ty_getAsQualType(ctx))  # C11 extension ISO/IEC TS 18661-3
-VoidPtrTy(ctx::ASTContext) = VoidPtrTy(clang_ASTContext_VoidPtrTy_getAsQualType(ctx))
-NullPtrTy(ctx::ASTContext) = NullPtrTy(clang_ASTContext_NullPtrTy_getAsQualType(ctx))  # C++11 nullptr
+"""
+    predefined_type(::Type{T}, qt) -> T
+
+Wrap one of `ASTContext`'s predefined types as its singleton carrier.
+
+The shim hands these back as `CXQualType`, and a `QualType` is a `PointerIntPair` of a type
+pointer with the fast qualifiers, not a pointer -- so the type pointer comes out through
+`getTypePtr` rather than by reusing the opaque value. None of the predefined types carries a
+qualifier, which is exactly why reusing it has always looked right; the pivot is what keeps
+that an observation about clang rather than an assumption this file depends on.
+"""
+predefined_type(::Type{T}, qt) where {T} = T(get_type_ptr(QualType(qt)).ptr)
+
+VoidTy(ctx::ASTContext) = predefined_type(VoidTy, clang_ASTContext_VoidTy_getAsQualType(ctx))
+BoolTy(ctx::ASTContext) = predefined_type(BoolTy, clang_ASTContext_BoolTy_getAsQualType(ctx))
+CharTy(ctx::ASTContext) = predefined_type(CharTy, clang_ASTContext_CharTy_getAsQualType(ctx))
+WCharTy(ctx::ASTContext) = predefined_type(WCharTy, clang_ASTContext_WCharTy_getAsQualType(ctx))  # [C++ 3.9.1p5].
+WideCharTy(ctx::ASTContext) = predefined_type(WideCharTy, clang_ASTContext_WideCharTy_getAsQualType(ctx))
+# [C99 7.24.1], integer type unchanged by default promotions.
+function WIntTy(ctx::ASTContext)
+    return predefined_type(WIntTy, clang_ASTContext_WIntTy_getAsQualType(ctx))
+end
+Char8Ty(ctx::ASTContext) = predefined_type(Char8Ty, clang_ASTContext_Char8Ty_getAsQualType(ctx))  # [C++20 proposal]
+# [C++0x 3.9.1p5], integer type in C99.
+function Char16Ty(ctx::ASTContext)
+    return predefined_type(Char16Ty, clang_ASTContext_Char16Ty_getAsQualType(ctx))
+end
+# [C++0x 3.9.1p5], integer type in C99.
+function Char32Ty(ctx::ASTContext)
+    return predefined_type(Char32Ty, clang_ASTContext_Char32Ty_getAsQualType(ctx))
+end
+SignedCharTy(ctx::ASTContext) = predefined_type(SignedCharTy, clang_ASTContext_SignedCharTy_getAsQualType(ctx))
+ShortTy(ctx::ASTContext) = predefined_type(ShortTy, clang_ASTContext_ShortTy_getAsQualType(ctx))
+IntTy(ctx::ASTContext) = predefined_type(IntTy, clang_ASTContext_IntTy_getAsQualType(ctx))
+LongTy(ctx::ASTContext) = predefined_type(LongTy, clang_ASTContext_LongTy_getAsQualType(ctx))
+LongLongTy(ctx::ASTContext) = predefined_type(LongLongTy, clang_ASTContext_LongLongTy_getAsQualType(ctx))
+Int128Ty(ctx::ASTContext) = predefined_type(Int128Ty, clang_ASTContext_Int128Ty_getAsQualType(ctx))
+UnsignedCharTy(ctx::ASTContext) = predefined_type(UnsignedCharTy, clang_ASTContext_UnsignedCharTy_getAsQualType(ctx))
+UnsignedShortTy(ctx::ASTContext) = predefined_type(UnsignedShortTy, clang_ASTContext_UnsignedShortTy_getAsQualType(ctx))
+UnsignedIntTy(ctx::ASTContext) = predefined_type(UnsignedIntTy, clang_ASTContext_UnsignedIntTy_getAsQualType(ctx))
+UnsignedLongTy(ctx::ASTContext) = predefined_type(UnsignedLongTy, clang_ASTContext_UnsignedLongTy_getAsQualType(ctx))
+function UnsignedLongLongTy(ctx::ASTContext)
+    return predefined_type(UnsignedLongLongTy, clang_ASTContext_UnsignedLongLongTy_getAsQualType(ctx))
+end
+function UnsignedInt128Ty(ctx::ASTContext)
+    return predefined_type(UnsignedInt128Ty, clang_ASTContext_UnsignedInt128Ty_getAsQualType(ctx))
+end
+FloatTy(ctx::ASTContext) = predefined_type(FloatTy, clang_ASTContext_FloatTy_getAsQualType(ctx))
+DoubleTy(ctx::ASTContext) = predefined_type(DoubleTy, clang_ASTContext_DoubleTy_getAsQualType(ctx))
+LongDoubleTy(ctx::ASTContext) = predefined_type(LongDoubleTy, clang_ASTContext_LongDoubleTy_getAsQualType(ctx))
+Float128Ty(ctx::ASTContext) = predefined_type(Float128Ty, clang_ASTContext_Float128Ty_getAsQualType(ctx))
+# [OpenCL 6.1.1.1], ARM NEON
+function HalfTy(ctx::ASTContext)
+    return predefined_type(HalfTy, clang_ASTContext_HalfTy_getAsQualType(ctx))
+end
+BFloat16Ty(ctx::ASTContext) = predefined_type(BFloat16Ty, clang_ASTContext_BFloat16Ty_getAsQualType(ctx))
+# C11 extension ISO/IEC TS 18661-3
+function Float16Ty(ctx::ASTContext)
+    return predefined_type(Float16Ty, clang_ASTContext_Float16Ty_getAsQualType(ctx))
+end
+VoidPtrTy(ctx::ASTContext) = predefined_type(VoidPtrTy, clang_ASTContext_VoidPtrTy_getAsQualType(ctx))
+NullPtrTy(ctx::ASTContext) = predefined_type(NullPtrTy, clang_ASTContext_NullPtrTy_getAsQualType(ctx))  # C++11 nullptr
 
 # ASTContext
 function CreateTypeSourceInfo(x::ASTContext, a2::QualType, a3::Integer)
@@ -360,7 +394,7 @@ remaining `ExtProtoInfo` fields keep their defaults.
 function getFunctionType(x::ASTContext, ret::QualType, args::Vector{QualType}=QualType[];
                          variadic::Bool=false, cc::CXCallingConv_=CXCallingConv_CC_C)
     @check_ptrs x
-    ptrs = CXQualType[a.ptr for a in args]
+    ptrs = CXQualType[Base.unsafe_convert(CXQualType, a) for a in args]
     return QualType(clang_ASTContext_getFunctionType(x, ret, ptrs, length(ptrs), variadic,
                                                      cc))
 end
@@ -965,7 +999,7 @@ function getTemplateSpecializationType(x::ASTContext, name::TemplateName,
                                        args::Vector{TemplateArgument},
                                        underlying::QualType=QualType(C_NULL))
     @check_ptrs x name
-    ptrs = CXTemplateArgument[a.ptr for a in args]
+    ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
     return QualType(clang_ASTContext_getTemplateSpecializationType(x, name, ptrs,
                                                                    length(ptrs),
                                                                    underlying))
@@ -1011,7 +1045,7 @@ function isSentinelNullExpr(x::ASTContext, a2::AbstractExpr)
     return clang_ASTContext_isSentinelNullExpr(x, a2)
 end
 
-function mergeDefinitionIntoModule(x::ASTContext, a2::AbstractNamedDecl, a3::Module, a4::Integer)
+function mergeDefinitionIntoModule(x::ASTContext, a2::AbstractNamedDecl, a3::AbstractModule, a4::Integer)
     @check_ptrs x
     return clang_ASTContext_mergeDefinitionIntoModule(x, a2, a3, a4)
 end
@@ -1957,8 +1991,8 @@ returned alongside the flag saying whether a layer was peeled.
 function UnwrapSimilarTypes(x::ASTContext, t1::QualType, t2::QualType,
                             allow_pi_mismatch::Bool=true)
     @check_ptrs x t1 t2
-    r1 = Ref{CXQualType}(t1.ptr)
-    r2 = Ref{CXQualType}(t2.ptr)
+    r1 = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t1))
+    r2 = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t2))
     unwrapped = clang_ASTContext_UnwrapSimilarTypes(x, r1, r2, allow_pi_mismatch)
     return unwrapped, QualType(r1[]), QualType(r2[])
 end
@@ -1972,8 +2006,8 @@ takes `T1` and `T2` by reference).
 function UnwrapSimilarArrayTypes(x::ASTContext, t1::QualType, t2::QualType,
                                  allow_pi_mismatch::Bool=true)
     @check_ptrs x t1 t2
-    r1 = Ref{CXQualType}(t1.ptr)
-    r2 = Ref{CXQualType}(t2.ptr)
+    r1 = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t1))
+    r2 = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t2))
     clang_ASTContext_UnwrapSimilarArrayTypes(x, r1, r2, allow_pi_mismatch)
     return QualType(r1[]), QualType(r2[])
 end
@@ -2195,7 +2229,7 @@ cached parent map is cleared. Passing `[getTranslationUnitDecl(x)]` restores the
 function setTraversalScope(x::ASTContext, decls::AbstractVector{<:AbstractDecl})
     @check_ptrs x
     @assert all(d -> d.ptr != C_NULL, decls) "every declaration in the scope must be non-NULL"
-    buf = CXDecl[d.ptr for d in decls]
+    buf = CXDecl[Base.unsafe_convert(CXDecl, d) for d in decls]
     return clang_ASTContext_setTraversalScope(x, buf, length(buf))
 end
 
@@ -2233,7 +2267,7 @@ function getCanonicalTemplateSpecializationType(x::ASTContext, name::TemplateNam
                                                 args::Vector{TemplateArgument})
     @check_ptrs x name
     @assert getCanonicalTemplateName(x, name).ptr == name.ptr "the template name must be canonical"
-    ptrs = CXTemplateArgument[a.ptr for a in args]
+    ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
     return QualType(clang_ASTContext_getCanonicalTemplateSpecializationType(x, name, ptrs,
                                                                             length(ptrs)))
 end
@@ -2441,7 +2475,7 @@ function getAutoType(x::ASTContext, deduced::QualType, keyword::CXAutoTypeKeywor
                      args::Vector{TemplateArgument}=TemplateArgument[])
     @check_ptrs x
     @assert !is_pack || is_dependent "a pack `auto` is inherently dependent"
-    ptrs = CXTemplateArgument[a.ptr for a in args]
+    ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
     return QualType(clang_ASTContext_getAutoType(x, deduced, keyword, is_dependent, is_pack,
                                                  concept_decl, ptrs, length(ptrs)))
 end
@@ -2741,7 +2775,7 @@ function getDependentTemplateSpecializationType(x::ASTContext,
                                                 name::IdentifierInfo,
                                                 args::Vector{TemplateArgument})
     @check_ptrs x nns name
-    ptrs = CXTemplateArgument[a.ptr for a in args]
+    ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
     return QualType(clang_ASTContext_getDependentTemplateSpecializationType(x, keyword, nns,
                                                                             name, ptrs,
                                                                             length(ptrs)))
@@ -2944,7 +2978,7 @@ so it comes back at the `Type_` base — `resolve` it to refine the carrier.
 function adjustFunctionType(x::ASTContext, fn::AbstractFunctionType, cc::CXCallingConv_,
                             noreturn::Bool, produces_result::Bool)
     @check_ptrs x fn
-    return Type_(clang_ASTContext_adjustFunctionType(x, fn, cc, noreturn, produces_result))
+    return upcast(Type_, clang_ASTContext_adjustFunctionType(x, fn, cc, noreturn, produces_result))
 end
 
 """
@@ -3071,7 +3105,7 @@ function getOverloadedTemplateName(x::ASTContext, decls::Vector{<:AbstractNamedD
     @check_ptrs x
     @assert length(decls) > 1 "an overloaded template name needs at least two candidates"
     @assert all(d -> d.ptr != C_NULL, decls) "every candidate must be non-NULL"
-    ptrs = CXNamedDecl[d.ptr for d in decls]
+    ptrs = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
     return TemplateName(clang_ASTContext_getOverloadedTemplateName(x, ptrs, length(ptrs)))
 end
 

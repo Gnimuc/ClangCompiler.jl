@@ -96,12 +96,12 @@ function isOutOfLine(x::AbstractDecl)
     return clang_Decl_isOutOfLine(x)
 end
 
-function setDeclContext(x::AbstractDecl, ctx::DeclContext)
+function setDeclContext(x::AbstractDecl, ctx::AnyDeclContext)
     @check_ptrs x ctx
     return clang_Decl_setDeclContext(x, ctx)
 end
 
-function setLexicalDeclContext(x::AbstractDecl, ctx::DeclContext)
+function setLexicalDeclContext(x::AbstractDecl, ctx::AnyDeclContext)
     @check_ptrs x ctx
     return clang_Decl_setLexicalDeclContext(x, ctx)
 end
@@ -211,14 +211,16 @@ function getFunctionType(x::AbstractDecl, BlocksToo=true)
     return FunctionType(clang_Decl_getFunctionType(x, BlocksToo))
 end
 
-function EnableStatistics(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_EnableStatistics(x)
+# `Decl::EnableStatistics` and `Decl::PrintStats` are static: they report on every declaration
+# the process has allocated, not on one. So the class is named by a `::Type` tag rather than
+# carried by a receiver — `PrintStats(Decl)` is what C++ spells `Decl::PrintStats()`, and the
+# tag is what keeps this pair apart from `Stmt`'s two of the same name.
+function EnableStatistics(::Type{Decl})
+    return clang_Decl_EnableStatistics()
 end
 
-function PrintStats(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_PrintStats(x)
+function PrintStats(::Type{Decl})
+    return clang_Decl_PrintStats()
 end
 
 # Decl Cast
@@ -259,32 +261,32 @@ function CXXConstructorDecl(x::AbstractDecl)
 end
 
 # DeclContext
-function getParentASTContext(x::DeclContext)
+function getParentASTContext(x::AnyDeclContext)
     @check_ptrs x
     return ASTContext(clang_DeclContext_getParentASTContext(x))
 end
 
-function addDecl(x::DeclContext, decl::AbstractDecl)
+function addDecl(x::AnyDeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_addDecl(x, decl)
 end
 
-function addDeclInternal(x::DeclContext, decl::AbstractDecl)
+function addDeclInternal(x::AnyDeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_addDeclInternal(x, decl)
 end
 
-function addHiddenDecl(x::DeclContext, decl::AbstractDecl)
+function addHiddenDecl(x::AnyDeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_addHiddenDecl(x, decl)
 end
 
-function removeDecl(x::DeclContext, decl::AbstractDecl)
+function removeDecl(x::AnyDeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_removeDecl(x, decl)
 end
 
-function containsDecl(x::DeclContext, decl::AbstractDecl)
+function containsDecl(x::AnyDeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_containsDecl(x, decl)
 end
@@ -294,107 +296,107 @@ function getDeclKindName(x::DeclContext)
     return unsafe_string(clang_DeclContext_getDeclKindName(x))
 end
 
-function getParent(x::DeclContext)
+function getParent(x::AnyDeclContext)
     @check_ptrs x
     return DeclContext(clang_DeclContext_getParent(x))
 end
 
-function getLexicalParent(x::DeclContext)
+function getLexicalParent(x::AnyDeclContext)
     @check_ptrs x
     return DeclContext(clang_DeclContext_getLexicalParent(x))
 end
 
-function getLookupParent(x::DeclContext)
+function getLookupParent(x::AnyDeclContext)
     @check_ptrs x
     return DeclContext(clang_DeclContext_getLookupParent(x))
 end
 
-function isClosure(x::DeclContext)
+function isClosure(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isClosure(x)
 end
 
-function isFunctionOrMethod(x::DeclContext)
+function isFunctionOrMethod(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isFunctionOrMethod(x)
 end
 
-function isLookupContext(x::DeclContext)
+function isLookupContext(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isLookupContext(x)
 end
 
-function isFileContext(x::DeclContext)
+function isFileContext(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isFileContext(x)
 end
 
-function isTranslationUnit(x::DeclContext)
+function isTranslationUnit(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isTranslationUnit(x)
 end
 
-function isRecord(x::DeclContext)
+function isRecord(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isRecord(x)
 end
 
-function isNamespace(x::DeclContext)
+function isNamespace(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isNamespace(x)
 end
 
-function isStdNamespace(x::DeclContext)
+function isStdNamespace(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isStdNamespace(x)
 end
 
-function isInlineNamespace(x::DeclContext)
+function isInlineNamespace(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isInlineNamespace(x)
 end
 
-function is_dependent_context(x::DeclContext)
+function is_dependent_context(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isDependentContext(x)
 end
 
-function isTransparentContext(x::DeclContext)
+function isTransparentContext(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isTransparentContext(x)
 end
 
-function isExternCContext(x::DeclContext)
+function isExternCContext(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isExternCContext(x)
 end
 
-function isExternCXXContext(x::DeclContext)
+function isExternCXXContext(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isExternCXXContext(x)
 end
 
-function Equals(x::DeclContext, y::DeclContext)
+function Equals(x::AnyDeclContext, y::AnyDeclContext)
     @check_ptrs x y
     return clang_DeclContext_Equals(x, y)
 end
 
-function getPrimaryContext(x::DeclContext)
+function getPrimaryContext(x::AnyDeclContext)
     @check_ptrs x
     return DeclContext(clang_DeclContext_getPrimaryContext(x))
 end
 
-function dumpDeclContext(x::DeclContext)
+function dumpDeclContext(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_dumpDeclContext(x)
 end
 
-function dumpLookups(x::DeclContext)
+function dumpLookups(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_dumpLookups(x)
 end
 
-function decl_iterator_begin(x::DeclContext)
+function decl_iterator_begin(x::AnyDeclContext)
     @check_ptrs x
     return Decl(clang_DeclContext_decl_iterator_begin(x))
 end
@@ -771,57 +773,57 @@ function classof(x::AbstractDecl)
 end
 
 # DeclContext (argument-taking and value-returning surface)
-function getDeclKind(x::DeclContext)
+function getDeclKind(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_getDeclKind(x)
 end
 
-function getInnermostBlockDecl(x::DeclContext)
+function getInnermostBlockDecl(x::AnyDeclContext)
     @check_ptrs x
     return BlockDecl(clang_DeclContext_getInnermostBlockDecl(x))
 end
 
-function getExternCContext(x::DeclContext)
+function getExternCContext(x::AnyDeclContext)
     @check_ptrs x
     return LinkageSpecDecl(clang_DeclContext_getExternCContext(x))
 end
 
-function Encloses(x::DeclContext, y::DeclContext)
+function Encloses(x::AnyDeclContext, y::AnyDeclContext)
     @check_ptrs x y
     return clang_DeclContext_Encloses(x, y)
 end
 
-function getNonClosureAncestor(x::DeclContext)
+function getNonClosureAncestor(x::AnyDeclContext)
     @check_ptrs x
     return Decl(clang_DeclContext_getNonClosureAncestor(x))
 end
 
-function getNonTransparentContext(x::DeclContext)
+function getNonTransparentContext(x::AnyDeclContext)
     @check_ptrs x
     return DeclContext(clang_DeclContext_getNonTransparentContext(x))
 end
 
-function getRedeclContext(x::DeclContext)
+function getRedeclContext(x::AnyDeclContext)
     @check_ptrs x
     return DeclContext(clang_DeclContext_getRedeclContext(x))
 end
 
-function getEnclosingNamespaceContext(x::DeclContext)
+function getEnclosingNamespaceContext(x::AnyDeclContext)
     @check_ptrs x
     return DeclContext(clang_DeclContext_getEnclosingNamespaceContext(x))
 end
 
-function getOuterLexicalRecordContext(x::DeclContext)
+function getOuterLexicalRecordContext(x::AnyDeclContext)
     @check_ptrs x
     return RecordDecl(clang_DeclContext_getOuterLexicalRecordContext(x))
 end
 
-function InEnclosingNamespaceSetOf(x::DeclContext, ns::DeclContext)
+function InEnclosingNamespaceSetOf(x::AnyDeclContext, ns::AnyDeclContext)
     @check_ptrs x ns
     return clang_DeclContext_InEnclosingNamespaceSetOf(x, ns)
 end
 
-function getNumAllContexts(x::DeclContext)
+function getNumAllContexts(x::AnyDeclContext)
     @check_ptrs x
     return Int(clang_DeclContext_getNumAllContexts(x))
 end
@@ -831,7 +833,7 @@ end
 Every semantic context connected to `x` — the reopenings of a namespace, in
 source order — or just `x` itself for a non-namespace context.
 """
-function collectAllContexts(x::DeclContext)
+function collectAllContexts(x::AnyDeclContext)
     @check_ptrs x
     n = clang_DeclContext_getNumAllContexts(x)
     buf = Vector{CXDeclContext}(undef, n)
@@ -839,17 +841,17 @@ function collectAllContexts(x::DeclContext)
     return [DeclContext(p) for p in buf]
 end
 
-function decls_empty(x::DeclContext)
+function decls_empty(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_decls_empty(x)
 end
 
-function containsDeclAndLoad(x::DeclContext, decl::AbstractDecl)
+function containsDeclAndLoad(x::AnyDeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_containsDeclAndLoad(x, decl)
 end
 
-function getNumLookupResults(x::DeclContext, name::DeclarationName)
+function getNumLookupResults(x::AnyDeclContext, name::DeclarationName)
     @check_ptrs x
     return Int(clang_DeclContext_getNumLookupResults(x, name))
 end
@@ -860,7 +862,7 @@ The declarations named `name` in `x`. Only this context is searched — parent
 contexts are not. Object, function, member and enumerator names precede any tag
 name, matching `clang::DeclContext::lookup`.
 """
-function lookup(x::DeclContext, name::DeclarationName)
+function lookup(x::AnyDeclContext, name::DeclarationName)
     @check_ptrs x
     n = clang_DeclContext_getNumLookupResults(x, name)
     buf = Vector{CXNamedDecl}(undef, n)
@@ -868,12 +870,12 @@ function lookup(x::DeclContext, name::DeclarationName)
     return [NamedDecl(p) for p in buf]
 end
 
-function makeDeclVisibleInContext(x::DeclContext, decl::AbstractNamedDecl)
+function makeDeclVisibleInContext(x::AnyDeclContext, decl::AbstractNamedDecl)
     @check_ptrs x decl
     return clang_DeclContext_makeDeclVisibleInContext(x, decl)
 end
 
-function getNumUsingDirectives(x::DeclContext)
+function getNumUsingDirectives(x::AnyDeclContext)
     @check_ptrs x
     return Int(clang_DeclContext_getNumUsingDirectives(x))
 end
@@ -882,7 +884,7 @@ end
     getUsingDirectives(x::DeclContext) -> Vector{UsingDirectiveDecl}
 The `using namespace` directives written directly in `x`.
 """
-function getUsingDirectives(x::DeclContext)
+function getUsingDirectives(x::AnyDeclContext)
     @check_ptrs x
     n = clang_DeclContext_getNumUsingDirectives(x)
     buf = Vector{CXUsingDirectiveDecl}(undef, n)
@@ -890,27 +892,27 @@ function getUsingDirectives(x::DeclContext)
     return [UsingDirectiveDecl(p) for p in buf]
 end
 
-function hasExternalLexicalStorage(x::DeclContext)
+function hasExternalLexicalStorage(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_hasExternalLexicalStorage(x)
 end
 
-function hasExternalVisibleStorage(x::DeclContext)
+function hasExternalVisibleStorage(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_hasExternalVisibleStorage(x)
 end
 
-function isDeclInLexicalTraversal(x::DeclContext, decl::AbstractDecl)
+function isDeclInLexicalTraversal(x::AnyDeclContext, decl::AbstractDecl)
     @check_ptrs x decl
     return clang_DeclContext_isDeclInLexicalTraversal(x, decl)
 end
 
-function setUseQualifiedLookup(x::DeclContext, use::Bool=true)
+function setUseQualifiedLookup(x::AnyDeclContext, use::Bool=true)
     @check_ptrs x
     return clang_DeclContext_setUseQualifiedLookup(x, use)
 end
 
-function shouldUseQualifiedLookup(x::DeclContext)
+function shouldUseQualifiedLookup(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_shouldUseQualifiedLookup(x)
 end
@@ -1007,7 +1009,7 @@ end
 Whether `x` carries a valid declaration kind. True for any correctly constructed
 context within its lifetime; it exists for debugging.
 """
-function hasValidDeclKind(x::DeclContext)
+function hasValidDeclKind(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_hasValidDeclKind(x)
 end
@@ -1016,7 +1018,7 @@ end
     isObjCContainer(x::DeclContext) -> Bool
 Whether `x` is an Objective-C interface, protocol, category or implementation.
 """
-function isObjCContainer(x::DeclContext)
+function isObjCContainer(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_isObjCContainer(x)
 end
@@ -1025,7 +1027,7 @@ end
     dumpAsDecl(x::DeclContext)
 Dump the declaration owning `x` to stderr.
 """
-function dumpAsDecl(x::DeclContext)
+function dumpAsDecl(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_dumpAsDecl(x)
 end
@@ -1036,7 +1038,7 @@ The number of declarations named `name` already present in `x`'s lookup table.
 No external AST source is consulted, so the count is `0` while the table is
 unbuilt. `x` must not be a transparent context.
 """
-function getNumNoloadLookupResults(x::DeclContext, name::DeclarationName)
+function getNumNoloadLookupResults(x::AnyDeclContext, name::DeclarationName)
     @check_ptrs x
     k = getDeclKind(x)
     @assert k != CXDeclKind_LinkageSpec && k != CXDeclKind_Export "transparent context"
@@ -1049,7 +1051,7 @@ The declarations named `name` already present in `x`'s lookup table, without
 consulting an external AST source. Only this context is searched — parent
 contexts are not. `x` must not be a transparent context.
 """
-function noload_lookup(x::DeclContext, name::DeclarationName)
+function noload_lookup(x::AnyDeclContext, name::DeclarationName)
     @check_ptrs x
     n = getNumNoloadLookupResults(x, name)
     buf = Vector{CXNamedDecl}(undef, n)
@@ -1063,7 +1065,7 @@ State whether `x`'s lexical declarations come from an external AST source.
 Passing `true` commits the next traversal of `x` to loading from that source, so
 the parent `ASTContext` must have one.
 """
-function setHasExternalLexicalStorage(x::DeclContext, es::Bool=true)
+function setHasExternalLexicalStorage(x::AnyDeclContext, es::Bool=true)
     @check_ptrs x
     return clang_DeclContext_setHasExternalLexicalStorage(x, es)
 end
@@ -1074,7 +1076,7 @@ State whether `x`'s visible declarations come from an external AST source.
 Passing `true` commits the next lookup in `x` to loading from that source, so the
 parent `ASTContext` must have one.
 """
-function setHasExternalVisibleStorage(x::DeclContext, es::Bool=true)
+function setHasExternalVisibleStorage(x::AnyDeclContext, es::Bool=true)
     @check_ptrs x
     return clang_DeclContext_setHasExternalVisibleStorage(x, es)
 end
@@ -1151,7 +1153,7 @@ Pretty-print `decls` as one declaration group the way `clang::Decl::printGroup` 
 """
 function printGroupToString(decls::AbstractVector{<:AbstractDecl}, indentation::Integer=0)
     @assert !isempty(decls) "a declaration group holds at least one declaration"
-    buf = CXDecl[d.ptr for d in decls]
+    buf = CXDecl[Base.unsafe_convert(CXDecl, d) for d in decls]
     @assert all(!=(C_NULL), buf) "every declaration in the group must be non-NULL"
     return get_string(clang_Decl_printGroupToString(buf, length(buf), indentation))
 end
@@ -1162,7 +1164,7 @@ end
 The first declaration lexically stored in `x`, obtained without asking an external AST source for
 anything. A NULL-pointer `Decl` when `x` stores none; walk the rest with `getNextDeclInContext`.
 """
-function noload_decls_begin(x::DeclContext)
+function noload_decls_begin(x::AnyDeclContext)
     @check_ptrs x
     return Decl(clang_DeclContext_noload_decls_begin(x))
 end
@@ -1173,7 +1175,7 @@ The declarations named `name` in `x` alone, found without relying on a cached lo
 
 Clang reserves this for AST-importer-style callers; `lookup` is the normal entry point.
 """
-function localUncachedLookup(x::DeclContext, name::DeclarationName)
+function localUncachedLookup(x::AnyDeclContext, name::DeclarationName)
     @check_ptrs x
     n = clang_DeclContext_getNumLocalUncachedLookupResults(x, name)
     buf = Vector{CXNamedDecl}(undef, n)
@@ -1187,7 +1189,7 @@ Mark `x` as having external lexical declarations that its next lookup must fold 
 
 `x` must be its own primary context (`getPrimaryContext`); clang asserts on any other.
 """
-function setMustBuildLookupTable(x::DeclContext)
+function setMustBuildLookupTable(x::AnyDeclContext)
     @check_ptrs x
     @assert x.ptr == getPrimaryContext(x).ptr "only a primary declaration context can be marked"
     return clang_DeclContext_setMustBuildLookupTable(x)
@@ -1207,7 +1209,7 @@ AST allocated them, so the same attribute may end up on two declarations.
 function setAttrs(x::AbstractDecl, attrs::AbstractVector{<:AbstractAttr})
     @check_ptrs x
     @assert !hasAttrs(x) "the declaration already carries an attribute list"
-    buf = CXAttr[a.ptr for a in attrs]
+    buf = CXAttr[Base.unsafe_convert(CXAttr, a) for a in attrs]
     @assert all(!=(C_NULL), buf) "every attribute in the list must be non-NULL"
     return clang_Decl_setAttrs(x, buf, length(buf))
 end
@@ -1216,7 +1218,7 @@ end
     getNumLookupNames(x::DeclContext) -> Int
 The number of distinct names `x` can look up, building its lookup table first.
 """
-function getNumLookupNames(x::DeclContext)
+function getNumLookupNames(x::AnyDeclContext)
     @check_ptrs x
     return Int(clang_DeclContext_getNumLookupNames(x))
 end
@@ -1228,7 +1230,7 @@ Every name `x` can look up, one entry per name — the declarations behind a nam
 filters its internal using-directive name only while advancing the iterator, so that name can
 still appear as the first entry.
 """
-function getLookupNames(x::DeclContext)
+function getLookupNames(x::AnyDeclContext)
     @check_ptrs x
     n = clang_DeclContext_getNumLookupNames(x)
     buf = Vector{CXDeclarationName}(undef, n)
@@ -1241,7 +1243,7 @@ end
 The number of names already present in `x`'s lookup table, without consulting an external AST
 source. `preserve` additionally suppresses loading lazily-stored lexical lookups.
 """
-function getNumNoloadLookupNames(x::DeclContext, preserve::Bool)
+function getNumNoloadLookupNames(x::AnyDeclContext, preserve::Bool)
     @check_ptrs x
     return Int(clang_DeclContext_getNumNoloadLookupNames(x, preserve))
 end
@@ -1252,7 +1254,7 @@ The names already present in `x`'s lookup table, without consulting an external 
 empty when no lookup has built that table. `preserve` additionally suppresses loading
 lazily-stored lexical lookups, leaving `x` untouched.
 """
-function getNoloadLookupNames(x::DeclContext, preserve::Bool)
+function getNoloadLookupNames(x::AnyDeclContext, preserve::Bool)
     @check_ptrs x
     n = clang_DeclContext_getNumNoloadLookupNames(x, preserve)
     buf = Vector{CXDeclarationName}(undef, n)
@@ -1266,7 +1268,7 @@ The one declaration named `name` in `x`, or a NULL-pointer `NamedDecl` when the 
 nothing or an overload set. Only this context is searched — parent contexts are not. `x` must
 not be a transparent context.
 """
-function lookupSingleResult(x::DeclContext, name::DeclarationName)
+function lookupSingleResult(x::AnyDeclContext, name::DeclarationName)
     @check_ptrs x
     k = getDeclKind(x)
     @assert k != CXDeclKind_LinkageSpec && k != CXDeclKind_Export "transparent context"
@@ -1278,7 +1280,7 @@ end
 Whether a lookup table has been built for `x` yet. Name lookup builds the table on the primary
 context, so ask `getPrimaryContext(x)` to learn whether the no-load enumerations see anything.
 """
-function hasLookupTable(x::DeclContext)
+function hasLookupTable(x::AnyDeclContext)
     @check_ptrs x
     return clang_DeclContext_hasLookupTable(x)
 end
@@ -1290,7 +1292,7 @@ nothing still has none.
 
 `x` must be its own primary context (`getPrimaryContext`); clang asserts on any other.
 """
-function buildLookup(x::DeclContext)
+function buildLookup(x::AnyDeclContext)
     @check_ptrs x
     @assert x.ptr == getPrimaryContext(x).ptr "only a primary context has a lookup table"
     return clang_DeclContext_buildLookup(x)

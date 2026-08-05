@@ -22,7 +22,7 @@ using Test
     f = DeclFinder(I)
 
     @test f(I, "semaDedSeven")
-    seven = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    seven = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test seven isa CC.Expr_
 
     int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
@@ -43,7 +43,7 @@ using Test
     # The name reaches both the primary template and its partial specialization, so select
     # by kind rather than through get_decl.
     @test f(I, "SemaDedBox")
-    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     partials = CC.getPartialSpecializations(ctd)
     @test length(partials) == 1
@@ -95,7 +95,7 @@ using Test
                                             CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch,
                                             loc)
     @test f(I, "SemaDedPair")
-    pair = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    pair = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                       if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     @test CC.TemplateParameterListsAreEqual(sema, box_params,
                                             CC.getTemplateParameters(pair), false,
@@ -104,14 +104,14 @@ using Test
 
     # --- default member initializer and default argument conversion ---
     @test f(I, "SemaDedRec")
-    rec = CC.CXXRecordDecl(get_decl(f).ptr)
+    rec = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     fld = first(CC.getFields(rec))
     @test fld isa CC.FieldDecl
     @test CC.ConvertMemberDefaultInitExpression(sema, fld, seven, loc) isa
           Union{Nothing,CC.Expr_}
 
     @test f(I, "semaDedFn")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test CC.getNumParams(fn) == 1
     param = CC.getParamDecl(fn, 0)
     @test CC.ConvertParamDefaultArgument(sema, param, seven, loc) isa Union{Nothing,CC.Expr_}

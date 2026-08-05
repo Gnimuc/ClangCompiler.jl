@@ -33,9 +33,10 @@ typedef enum CXStmtClass {
 // Null-safe downcast (dyn_cast_or_null: nullptr on wrong kind or null input)
 // and kind predicate for every class in the hierarchy, ABSTRACT bases
 // included (clang_Stmt_castToExpr is the most-used downcast in any tool).
-// Stamped functions take and return plain CXStmt.
+// Each cast returns the class's own handle, so narrowing is checked by the compiler at
+// every call site rather than asserted by the caller.
 #define STMT(CLASS, PARENT)                                                                \
-  CXStmt clang_Stmt_castTo##CLASS(CXStmt S);                                               \
+  CX##CLASS clang_Stmt_castTo##CLASS(CXStmt S);                                            \
   bool clang_Stmt_is##CLASS(CXStmt S);
 #define ABSTRACT_STMT(STMT) STMT
 #include "clang-ex/AST/StmtNodes.inc"

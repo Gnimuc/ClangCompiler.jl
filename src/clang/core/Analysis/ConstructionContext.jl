@@ -21,5 +21,3 @@ struct ConstructionContext <: AbstractConstructionContext
     ptr::CXConstructionContext
 end
 
-Base.unsafe_convert(::Type{CXConstructionContext}, x::ConstructionContext) = x.ptr
-Base.cconvert(::Type{CXConstructionContext}, x::ConstructionContext) = x

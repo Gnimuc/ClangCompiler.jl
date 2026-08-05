@@ -11,5 +11,3 @@ struct HeaderMap <: AbstractHeaderMap
     ptr::CXHeaderMap
 end
 
-Base.unsafe_convert(::Type{CXHeaderMap}, x::HeaderMap) = x.ptr
-Base.cconvert(::Type{CXHeaderMap}, x::HeaderMap) = x

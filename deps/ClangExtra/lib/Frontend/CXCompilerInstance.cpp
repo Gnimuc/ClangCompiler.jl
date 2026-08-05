@@ -14,58 +14,58 @@
 
 CXCompilerInstance clang_CompilerInstance_create(void) {
   auto CI = std::make_unique<clang::CompilerInstance>();
-  return CI.release();
+  return reinterpret_cast<CXCompilerInstance>(CI.release());
 }
 
 void clang_CompilerInstance_dispose(CXCompilerInstance CI) {
-  delete static_cast<clang::CompilerInstance *>(CI);
+  delete reinterpret_cast<clang::CompilerInstance *>(CI);
 }
 
 // Diagnostics
 bool clang_CompilerInstance_hasDiagnostics(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasDiagnostics();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasDiagnostics();
 }
 
 CXDiagnosticsEngine clang_CompilerInstance_getDiagnostics(CXCompilerInstance CI) {
-  auto &Diag = static_cast<clang::CompilerInstance *>(CI)->getDiagnostics();
-  return &Diag;
+  auto &Diag = reinterpret_cast<clang::CompilerInstance *>(CI)->getDiagnostics();
+  return reinterpret_cast<CXDiagnosticsEngine>(&Diag);
 }
 
 void clang_CompilerInstance_setDiagnostics(CXCompilerInstance CI,
                                            CXDiagnosticsEngine Value) {
-  static_cast<clang::CompilerInstance *>(CI)->setDiagnostics(
-      static_cast<clang::DiagnosticsEngine *>(Value));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setDiagnostics(
+      reinterpret_cast<clang::DiagnosticsEngine *>(Value));
 }
 
 CXDiagnosticConsumer clang_CompilerInstance_getDiagnosticClient(CXCompilerInstance CI) {
-  auto &DC = static_cast<clang::CompilerInstance *>(CI)->getDiagnosticClient();
-  return &DC;
+  auto &DC = reinterpret_cast<clang::CompilerInstance *>(CI)->getDiagnosticClient();
+  return reinterpret_cast<CXDiagnosticConsumer>(&DC);
 }
 
 void clang_CompilerInstance_createDiagnostics(CXCompilerInstance CI,
                                               CXDiagnosticConsumer DC,
                                               bool ShouldOwnClient) {
-  return static_cast<clang::CompilerInstance *>(CI)->createDiagnostics(
-      static_cast<clang::DiagnosticConsumer *>(DC), ShouldOwnClient);
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->createDiagnostics(
+      reinterpret_cast<clang::DiagnosticConsumer *>(DC), ShouldOwnClient);
 }
 
 // FileManager
 bool clang_CompilerInstance_hasFileManager(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasFileManager();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasFileManager();
 }
 
 CXFileManager clang_CompilerInstance_getFileManager(CXCompilerInstance CI) {
-  auto &FileMgr = static_cast<clang::CompilerInstance *>(CI)->getFileManager();
-  return &FileMgr;
+  auto &FileMgr = reinterpret_cast<clang::CompilerInstance *>(CI)->getFileManager();
+  return reinterpret_cast<CXFileManager>(&FileMgr);
 }
 
 void clang_CompilerInstance_setFileManager(CXCompilerInstance CI, CXFileManager FM) {
-  static_cast<clang::CompilerInstance *>(CI)->setFileManager(
-      static_cast<clang::FileManager *>(FM));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setFileManager(
+      reinterpret_cast<clang::FileManager *>(FM));
 }
 
 CXFileManager clang_CompilerInstance_createFileManager(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->createFileManager();
+  return reinterpret_cast<CXFileManager>(reinterpret_cast<clang::CompilerInstance *>(CI)->createFileManager());
 }
 
 CXFileManager clang_CompilerInstance_createFileManagerWithVOFS4PCH(
@@ -81,64 +81,64 @@ CXFileManager clang_CompilerInstance_createFileManagerWithVOFS4PCH(
                    std::move(std::unique_ptr<llvm::MemoryBuffer>(llvm::unwrap(PCHBuffer))));
   Overlay->pushOverlay(PCHIMFS);
 
-  return static_cast<clang::CompilerInstance *>(CI)->createFileManager(Overlay);
+  return reinterpret_cast<CXFileManager>(reinterpret_cast<clang::CompilerInstance *>(CI)->createFileManager(Overlay));
 }
 
 // SourceManager
 bool clang_CompilerInstance_hasSourceManager(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasSourceManager();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasSourceManager();
 }
 
 CXSourceManager clang_CompilerInstance_getSourceManager(CXCompilerInstance CI) {
-  auto &SrcMgr = static_cast<clang::CompilerInstance *>(CI)->getSourceManager();
-  return &SrcMgr;
+  auto &SrcMgr = reinterpret_cast<clang::CompilerInstance *>(CI)->getSourceManager();
+  return reinterpret_cast<CXSourceManager>(&SrcMgr);
 }
 
 void clang_CompilerInstance_setSourceManager(CXCompilerInstance CI, CXSourceManager SM) {
-  static_cast<clang::CompilerInstance *>(CI)->setSourceManager(
-      static_cast<clang::SourceManager *>(SM));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setSourceManager(
+      reinterpret_cast<clang::SourceManager *>(SM));
 }
 
 void clang_CompilerInstance_createSourceManager(CXCompilerInstance CI,
                                                 CXFileManager FileMgr) {
-  auto FM = static_cast<clang::FileManager *>(FileMgr);
-  static_cast<clang::CompilerInstance *>(CI)->createSourceManager(*FM);
+  auto FM = reinterpret_cast<clang::FileManager *>(FileMgr);
+  reinterpret_cast<clang::CompilerInstance *>(CI)->createSourceManager(*FM);
 }
 
 // Invocation
 bool clang_CompilerInstance_hasInvocation(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasInvocation();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasInvocation();
 }
 
 void clang_CompilerInstance_setInvocation(CXCompilerInstance CI,
                                           CXCompilerInvocation CInv) {
   std::shared_ptr<clang::CompilerInvocation> Invocation(
-      static_cast<clang::CompilerInvocation *>(CInv));
-  static_cast<clang::CompilerInstance *>(CI)->setInvocation(Invocation);
+      reinterpret_cast<clang::CompilerInvocation *>(CInv));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setInvocation(Invocation);
 }
 
 CXCompilerInvocation clang_CompilerInstance_getInvocation(CXCompilerInstance CI) {
-  auto &Invocation = static_cast<clang::CompilerInstance *>(CI)->getInvocation();
-  return &Invocation;
+  auto &Invocation = reinterpret_cast<clang::CompilerInstance *>(CI)->getInvocation();
+  return reinterpret_cast<CXCompilerInvocation>(&Invocation);
 }
 
 // Target
 bool clang_CompilerInstance_hasTarget(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasTarget();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasTarget();
 }
 
 CXTargetInfo_ clang_CompilerInstance_getTarget(CXCompilerInstance CI) {
-  auto &Tgt = static_cast<clang::CompilerInstance *>(CI)->getTarget();
-  return &Tgt;
+  auto &Tgt = reinterpret_cast<clang::CompilerInstance *>(CI)->getTarget();
+  return reinterpret_cast<CXTargetInfo_>(&Tgt);
 }
 
 void clang_CompilerInstance_setTarget(CXCompilerInstance CI, CXTargetInfo_ Info) {
-  static_cast<clang::CompilerInstance *>(CI)->setTarget(
-      static_cast<clang::TargetInfo *>(Info));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setTarget(
+      reinterpret_cast<clang::TargetInfo *>(Info));
 }
 
 void clang_CompilerInstance_setTargetAndLangOpts(CXCompilerInstance CI) {
-  auto compiler = static_cast<clang::CompilerInstance *>(CI);
+  auto compiler = reinterpret_cast<clang::CompilerInstance *>(CI);
   compiler->setTarget(clang::TargetInfo::CreateTargetInfo(
       compiler->getDiagnostics(),
       std::make_shared<clang::TargetOptions>(compiler->getTargetOpts())));
@@ -147,113 +147,113 @@ void clang_CompilerInstance_setTargetAndLangOpts(CXCompilerInstance CI) {
 
 // Preprocessor
 bool clang_CompilerInstance_hasPreprocessor(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasPreprocessor();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasPreprocessor();
 }
 
 CXPreprocessor clang_CompilerInstance_getPreprocessor(CXCompilerInstance CI) {
-  auto &PP = static_cast<clang::CompilerInstance *>(CI)->getPreprocessor();
-  return &PP;
+  auto &PP = reinterpret_cast<clang::CompilerInstance *>(CI)->getPreprocessor();
+  return reinterpret_cast<CXPreprocessor>(&PP);
 }
 
 void clang_CompilerInstance_setPreprocessor(CXCompilerInstance CI, CXPreprocessor PP) {
-  std::shared_ptr<clang::Preprocessor> PProc(static_cast<clang::Preprocessor *>(PP));
-  static_cast<clang::CompilerInstance *>(CI)->setPreprocessor(PProc);
+  std::shared_ptr<clang::Preprocessor> PProc(reinterpret_cast<clang::Preprocessor *>(PP));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setPreprocessor(PProc);
 }
 
 void clang_CompilerInstance_createPreprocessor(CXCompilerInstance CI,
                                                CXTranslationUnitKind TUKind) {
-  static_cast<clang::CompilerInstance *>(CI)->createPreprocessor(
+  reinterpret_cast<clang::CompilerInstance *>(CI)->createPreprocessor(
       static_cast<clang::TranslationUnitKind>(TUKind));
 }
 
 // Sema
 bool clang_CompilerInstance_hasSema(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasSema();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasSema();
 }
 
 CXSema clang_CompilerInstance_getSema(CXCompilerInstance CI) {
-  auto &Sema = static_cast<clang::CompilerInstance *>(CI)->getSema();
-  return &Sema;
+  auto &Sema = reinterpret_cast<clang::CompilerInstance *>(CI)->getSema();
+  return reinterpret_cast<CXSema>(&Sema);
 }
 
 void clang_CompilerInstance_setSema(CXCompilerInstance CI, CXSema S) {
-  static_cast<clang::CompilerInstance *>(CI)->setSema(static_cast<clang::Sema *>(S));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setSema(reinterpret_cast<clang::Sema *>(S));
 }
 
 void clang_CompilerInstance_createSema(CXCompilerInstance CI,
                                        CXTranslationUnitKind TUKind) {
-  static_cast<clang::CompilerInstance *>(CI)->createSema(
+  reinterpret_cast<clang::CompilerInstance *>(CI)->createSema(
       static_cast<clang::TranslationUnitKind>(TUKind), nullptr);
 }
 
 // ASTContext
 bool clang_CompilerInstance_hasASTContext(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasASTContext();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasASTContext();
 }
 
 CXASTContext clang_CompilerInstance_getASTContext(CXCompilerInstance CI) {
-  auto &Ctx = static_cast<clang::CompilerInstance *>(CI)->getASTContext();
-  return &Ctx;
+  auto &Ctx = reinterpret_cast<clang::CompilerInstance *>(CI)->getASTContext();
+  return reinterpret_cast<CXASTContext>(&Ctx);
 }
 
 void clang_CompilerInstance_setASTContext(CXCompilerInstance CI, CXASTContext Ctx) {
-  static_cast<clang::CompilerInstance *>(CI)->setASTContext(
-      static_cast<clang::ASTContext *>(Ctx));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setASTContext(
+      reinterpret_cast<clang::ASTContext *>(Ctx));
 }
 
 void clang_CompilerInstance_createASTContext(CXCompilerInstance CI) {
-  static_cast<clang::CompilerInstance *>(CI)->createASTContext();
+  reinterpret_cast<clang::CompilerInstance *>(CI)->createASTContext();
 }
 
 // ASTConsumer
 bool clang_CompilerInstance_hasASTConsumer(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasASTConsumer();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasASTConsumer();
 }
 
 CXASTConsumer clang_CompilerInstance_getASTConsumer(CXCompilerInstance CI) {
-  auto &Csr = static_cast<clang::CompilerInstance *>(CI)->getASTConsumer();
-  return &Csr;
+  auto &Csr = reinterpret_cast<clang::CompilerInstance *>(CI)->getASTConsumer();
+  return reinterpret_cast<CXASTConsumer>(&Csr);
 }
 
 void clang_CompilerInstance_setASTConsumer(CXCompilerInstance CI, CXASTConsumer CG) {
-  static_cast<clang::CompilerInstance *>(CI)->setASTConsumer(
-      std::unique_ptr<clang::ASTConsumer>(static_cast<clang::ASTConsumer *>(CG)));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setASTConsumer(
+      std::unique_ptr<clang::ASTConsumer>(reinterpret_cast<clang::ASTConsumer *>(CG)));
 }
 
 // Options
 CXCodeGenOptions clang_CompilerInstance_getCodeGenOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getCodeGenOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getCodeGenOpts();
+  return reinterpret_cast<CXCodeGenOptions>(&Opts);
 }
 
 CXDiagnosticOptions clang_CompilerInstance_getDiagnosticOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getDiagnosticOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getDiagnosticOpts();
+  return reinterpret_cast<CXDiagnosticOptions>(&Opts);
 }
 
 CXFrontendOptions clang_CompilerInstance_getFrontendOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getFrontendOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getFrontendOpts();
+  return reinterpret_cast<CXFrontendOptions>(&Opts);
 }
 
 CXHeaderSearchOptions clang_CompilerInstance_getHeaderSearchOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getHeaderSearchOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getHeaderSearchOpts();
+  return reinterpret_cast<CXHeaderSearchOptions>(&Opts);
 }
 
 CXPreprocessorOptions clang_CompilerInstance_getPreprocessorOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getPreprocessorOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getPreprocessorOpts();
+  return reinterpret_cast<CXPreprocessorOptions>(&Opts);
 }
 
 CXTargetOptions clang_CompilerInstance_getTargetOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getTargetOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getTargetOpts();
+  return reinterpret_cast<CXTargetOptions>(&Opts);
 }
 
 CXLangOptions clang_CompilerInstance_getLangOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getLangOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getLangOpts();
+  return reinterpret_cast<CXLangOptions>(&Opts);
 }
 
 // Action
@@ -261,134 +261,134 @@ CXLangOptions clang_CompilerInstance_getLangOpts(CXCompilerInstance CI) {
 // Forwarding options — all of these dereference CompilerInstance::Invocation
 // unchecked; see the header for the precondition.
 CXAnalyzerOptions clang_CompilerInstance_getAnalyzerOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getAnalyzerOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getAnalyzerOpts();
+  return reinterpret_cast<CXAnalyzerOptions>(&Opts);
 }
 
 CXDependencyOutputOptions
 clang_CompilerInstance_getDependencyOutputOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getDependencyOutputOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getDependencyOutputOpts();
+  return reinterpret_cast<CXDependencyOutputOptions>(&Opts);
 }
 
 CXFileSystemOptions clang_CompilerInstance_getFileSystemOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getFileSystemOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getFileSystemOpts();
+  return reinterpret_cast<CXFileSystemOptions>(&Opts);
 }
 
 CXPreprocessorOutputOptions
 clang_CompilerInstance_getPreprocessorOutputOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getPreprocessorOutputOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getPreprocessorOutputOpts();
+  return reinterpret_cast<CXPreprocessorOutputOptions>(&Opts);
 }
 
 CXAPINotesOptions clang_CompilerInstance_getAPINotesOpts(CXCompilerInstance CI) {
-  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getAPINotesOpts();
-  return &Opts;
+  auto &Opts = reinterpret_cast<clang::CompilerInstance *>(CI)->getAPINotesOpts();
+  return reinterpret_cast<CXAPINotesOptions>(&Opts);
 }
 
 // Module loading
 bool clang_CompilerInstance_shouldBuildGlobalModuleIndex(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->shouldBuildGlobalModuleIndex();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->shouldBuildGlobalModuleIndex();
 }
 
 void clang_CompilerInstance_setBuildGlobalModuleIndex(CXCompilerInstance CI, bool Build) {
-  static_cast<clang::CompilerInstance *>(CI)->setBuildGlobalModuleIndex(Build);
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setBuildGlobalModuleIndex(Build);
 }
 
 bool clang_CompilerInstance_hadModuleLoaderFatalFailure(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hadModuleLoaderFatalFailure();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hadModuleLoaderFatalFailure();
 }
 
 CXString clang_CompilerInstance_getSpecificModuleCachePath(CXCompilerInstance CI) {
   return extra::makeCXString(
-      static_cast<clang::CompilerInstance *>(CI)->getSpecificModuleCachePath());
+      reinterpret_cast<clang::CompilerInstance *>(CI)->getSpecificModuleCachePath());
 }
 
 // AuxTarget
 bool clang_CompilerInstance_createTarget(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->createTarget();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->createTarget();
 }
 
 CXTargetInfo_ clang_CompilerInstance_getAuxTarget(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->getAuxTarget();
+  return reinterpret_cast<CXTargetInfo_>(reinterpret_cast<clang::CompilerInstance *>(CI)->getAuxTarget());
 }
 
 void clang_CompilerInstance_setAuxTarget(CXCompilerInstance CI, CXTargetInfo_ Info) {
-  static_cast<clang::CompilerInstance *>(CI)->setAuxTarget(
-      static_cast<clang::TargetInfo *>(Info));
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setAuxTarget(
+      reinterpret_cast<clang::TargetInfo *>(Info));
 }
 
 // Code completion
 bool clang_CompilerInstance_hasCodeCompletionConsumer(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasCodeCompletionConsumer();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasCodeCompletionConsumer();
 }
 
 // Output files
 void clang_CompilerInstance_clearOutputFiles(CXCompilerInstance CI, bool EraseFiles) {
-  static_cast<clang::CompilerInstance *>(CI)->clearOutputFiles(EraseFiles);
+  reinterpret_cast<clang::CompilerInstance *>(CI)->clearOutputFiles(EraseFiles);
 }
 
 // Plugins
 void clang_CompilerInstance_LoadRequestedPlugins(CXCompilerInstance CI) {
-  static_cast<clang::CompilerInstance *>(CI)->LoadRequestedPlugins();
+  reinterpret_cast<clang::CompilerInstance *>(CI)->LoadRequestedPlugins();
 }
 
 // Frontend timer
 bool clang_CompilerInstance_hasFrontendTimer(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->hasFrontendTimer();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasFrontendTimer();
 }
 
 CXString clang_CompilerInstance_getFrontendTimerName(CXCompilerInstance CI) {
   return extra::makeCXString(
-      static_cast<clang::CompilerInstance *>(CI)->getFrontendTimer().getName());
+      reinterpret_cast<clang::CompilerInstance *>(CI)->getFrontendTimer().getName());
 }
 
 bool clang_CompilerInstance_isFrontendTimerRunning(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->getFrontendTimer().isRunning();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->getFrontendTimer().isRunning();
 }
 
 void clang_CompilerInstance_createFrontendTimer(CXCompilerInstance CI) {
-  static_cast<clang::CompilerInstance *>(CI)->createFrontendTimer();
+  reinterpret_cast<clang::CompilerInstance *>(CI)->createFrontendTimer();
 }
 
 // Ownership transfer
 void clang_CompilerInstance_resetAndLeakFileManager(CXCompilerInstance CI) {
-  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakFileManager();
+  reinterpret_cast<clang::CompilerInstance *>(CI)->resetAndLeakFileManager();
 }
 
 void clang_CompilerInstance_resetAndLeakSourceManager(CXCompilerInstance CI) {
-  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakSourceManager();
+  reinterpret_cast<clang::CompilerInstance *>(CI)->resetAndLeakSourceManager();
 }
 
 void clang_CompilerInstance_resetAndLeakPreprocessor(CXCompilerInstance CI) {
-  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakPreprocessor();
+  reinterpret_cast<clang::CompilerInstance *>(CI)->resetAndLeakPreprocessor();
 }
 
 void clang_CompilerInstance_resetAndLeakASTContext(CXCompilerInstance CI) {
-  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakASTContext();
+  reinterpret_cast<clang::CompilerInstance *>(CI)->resetAndLeakASTContext();
 }
 
 void clang_CompilerInstance_resetAndLeakSema(CXCompilerInstance CI) {
-  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakSema();
+  reinterpret_cast<clang::CompilerInstance *>(CI)->resetAndLeakSema();
 }
 
 // Action
 bool clang_CompilerInstance_ExecuteAction(CXCompilerInstance CI, CXFrontendAction Act) {
-  return static_cast<clang::CompilerInstance *>(CI)->ExecuteAction(
-      *static_cast<clang::FrontendAction *>(Act));
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->ExecuteAction(
+      *reinterpret_cast<clang::FrontendAction *>(Act));
 }
 
 bool clang_CompilerInstance_buildingModule(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->buildingModule();
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->buildingModule();
 }
 
 void clang_CompilerInstance_setBuildingModule(CXCompilerInstance CI, bool Flag) {
-  static_cast<clang::CompilerInstance *>(CI)->setBuildingModule(Flag);
+  reinterpret_cast<clang::CompilerInstance *>(CI)->setBuildingModule(Flag);
 }
 
 CXASTConsumer clang_CompilerInstance_takeASTConsumer(CXCompilerInstance CI) {
-  return static_cast<clang::CompilerInstance *>(CI)->takeASTConsumer().release();
+  return reinterpret_cast<CXASTConsumer>(reinterpret_cast<clang::CompilerInstance *>(CI)->takeASTConsumer().release());
 }
 
 bool clang_CompilerInstance_InitializeSourceManagerFromFile(CXCompilerInstance CI,
@@ -396,5 +396,5 @@ bool clang_CompilerInstance_InitializeSourceManagerFromFile(CXCompilerInstance C
                                                             bool IsSystem) {
   clang::FrontendInputFile Input(
       Path, clang::InputKind(clang::Language::Unknown, clang::InputKind::Source), IsSystem);
-  return static_cast<clang::CompilerInstance *>(CI)->InitializeSourceManager(Input);
+  return reinterpret_cast<clang::CompilerInstance *>(CI)->InitializeSourceManager(Input);
 }

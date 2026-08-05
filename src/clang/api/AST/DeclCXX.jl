@@ -1036,7 +1036,7 @@ end
 # --- SetFactory sweep: skiplisted set*/Create*/CreateDeserialized ---
 
 # AccessSpecDecl
-function AccessSpecDecl(ctx::ASTContext, as::CXAccessSpecifier, dc::DeclContext,
+function AccessSpecDecl(ctx::ASTContext, as::CXAccessSpecifier, dc::AnyDeclContext,
                         as_loc::SourceLocation, colon_loc::SourceLocation)
     @check_ptrs ctx dc
     return AccessSpecDecl(clang_AccessSpecDecl_Create(ctx, as, dc, as_loc, colon_loc))
@@ -1058,7 +1058,7 @@ function setColonLoc(x::AbstractAccessSpecDecl, loc::SourceLocation)
 end
 
 # LinkageSpecDecl
-function LinkageSpecDecl(ctx::ASTContext, dc::DeclContext, extern_loc::SourceLocation,
+function LinkageSpecDecl(ctx::ASTContext, dc::AnyDeclContext, extern_loc::SourceLocation,
                          lang_loc::SourceLocation, lang::CXLinkageSpecLanguageIDs, has_braces::Bool)
     @check_ptrs ctx dc
     return LinkageSpecDecl(clang_LinkageSpecDecl_Create(ctx, dc, extern_loc, lang_loc, lang, has_braces))
@@ -1091,7 +1091,7 @@ end
 
 
 # CXXRecordDecl factories
-function CXXRecordDecl(ctx::ASTContext, tk::CXTagTypeKind, dc::DeclContext,
+function CXXRecordDecl(ctx::ASTContext, tk::CXTagTypeKind, dc::AnyDeclContext,
                       start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo,
                       prev_decl::AbstractCXXRecordDecl=CXXRecordDecl(C_NULL),
                       delay_type_creation::Bool=false)
@@ -1101,7 +1101,7 @@ function CXXRecordDecl(ctx::ASTContext, tk::CXTagTypeKind, dc::DeclContext,
     return CXXRecordDecl(rd)
 end
 
-function CXXRecordDecl(ctx::ASTContext, dc::DeclContext, info::TypeSourceInfo,
+function CXXRecordDecl(ctx::ASTContext, dc::AnyDeclContext, info::TypeSourceInfo,
                       loc::SourceLocation, dependency_kind::CXLambdaDependencyKind,
                       is_generic::Bool, capture_default::CXLambdaCaptureDefault)
     @check_ptrs ctx dc info
@@ -1151,7 +1151,7 @@ end
 # LinkageSpecDecl setters
 
 # RequiresExprBodyDecl factories
-function RequiresExprBodyDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation)
+function RequiresExprBodyDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation)
     @check_ptrs ctx dc
     return RequiresExprBodyDecl(clang_RequiresExprBodyDecl_Create(ctx, dc, start_loc))
 end
@@ -1163,7 +1163,7 @@ end
 
 
 # StaticAssertDecl
-function StaticAssertDecl(ctx::ASTContext, dc::DeclContext,
+function StaticAssertDecl(ctx::ASTContext, dc::AnyDeclContext,
                           static_assert_loc::SourceLocation, assert_expr::AbstractExpr,
                           message::AbstractExpr, rparen_loc::SourceLocation,
                           failed::Bool)
@@ -1432,11 +1432,11 @@ function getDescribedClassTemplate(x::AbstractCXXRecordDecl)
 end
 
 """
-    isCurrentInstantiation(x::AbstractCXXRecordDecl, ctx::DeclContext) -> Bool
+    isCurrentInstantiation(x::AbstractCXXRecordDecl, ctx::AnyDeclContext) -> Bool
 Return whether this dependent class is the current instantiation as seen from
 `ctx`. Clang asserts that the receiver is itself a dependent context.
 """
-function isCurrentInstantiation(x::AbstractCXXRecordDecl, ctx::DeclContext)
+function isCurrentInstantiation(x::AbstractCXXRecordDecl, ctx::AnyDeclContext)
     @check_ptrs x ctx
     @assert is_dependent_context(castToDeclContext(x)) "the record must be a dependent context"
     return clang_CXXRecordDecl_isCurrentInstantiation(x, ctx)
@@ -2560,14 +2560,14 @@ function CXXConversionDecl(ctx::ASTContext, id::Integer)
 end
 
 """
-    UsingShadowDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+    UsingShadowDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation, name::DeclarationName,
                     introducer::AbstractBaseUsingDecl, target::AbstractNamedDecl) -> UsingShadowDecl
 Build the shadow declaration that makes `target` visible under `name` through `introducer`.
 
 `clang::UsingShadowDecl`'s constructor asserts that the target is not itself a shadow
 declaration, so that case is rejected here rather than reaching the shim (Invariant 3).
 """
-function UsingShadowDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function UsingShadowDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                          name::DeclarationName, introducer::AbstractBaseUsingDecl,
                          target::AbstractNamedDecl)
     @check_ptrs ctx dc introducer target
@@ -2588,7 +2588,7 @@ function UsingDecl(ctx::ASTContext, id::Integer)
 end
 
 """
-    ConstructorUsingShadowDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+    ConstructorUsingShadowDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                                using_decl::AbstractUsingDecl, target::AbstractNamedDecl,
                                is_virtual::Bool) -> ConstructorUsingShadowDecl
 Build the shadow declaration an inheriting `using Base::Base;` introduces for `target`.
@@ -2596,7 +2596,7 @@ Build the shadow declaration an inheriting `using Base::Base;` introduces for `t
 The clang constructor dereferences `using_decl` (for the shadow's name) and `target` (for its
 underlying declaration) with no null check, so both are asserted non-NULL here (Invariant 3).
 """
-function ConstructorUsingShadowDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function ConstructorUsingShadowDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                                     using_decl::AbstractUsingDecl, target::AbstractNamedDecl,
                                     is_virtual::Bool)
     @check_ptrs ctx dc using_decl target
@@ -2610,7 +2610,7 @@ function ConstructorUsingShadowDecl(ctx::ASTContext, id::Integer)
 end
 
 """
-    UsingEnumDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
+    UsingEnumDecl(ctx::ASTContext, dc::AnyDeclContext, using_loc::SourceLocation,
                   enum_loc::SourceLocation, name_loc::SourceLocation,
                   enum_type::TypeSourceInfo) -> UsingEnumDecl
 Build a `using enum E;` declaration for the enumeration `enum_type` designates.
@@ -2618,7 +2618,7 @@ Build a `using enum E;` declaration for the enumeration `enum_type` designates.
 `clang::UsingEnumDecl::Create` reads the declaration's name straight out of `enum_type`, so it
 must be non-NULL and must designate a tag type (Invariant 3).
 """
-function UsingEnumDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
+function UsingEnumDecl(ctx::ASTContext, dc::AnyDeclContext, using_loc::SourceLocation,
                        enum_loc::SourceLocation, name_loc::SourceLocation,
                        enum_type::TypeSourceInfo)
     @check_ptrs ctx dc enum_type
@@ -2632,17 +2632,17 @@ function UsingEnumDecl(ctx::ASTContext, id::Integer)
 end
 
 """
-    UsingPackDecl(ctx::ASTContext, dc::DeclContext, instantiated_from::AbstractNamedDecl,
+    UsingPackDecl(ctx::ASTContext, dc::AnyDeclContext, instantiated_from::AbstractNamedDecl,
                   using_decls::AbstractVector{<:AbstractNamedDecl}) -> UsingPackDecl
 Build the declaration a pack-expanded `using Ts::f...;` instantiates to. `using_decls` crosses
 as a (buffer, count) pair and clang copies it into the declaration's trailing-object array.
 
 `instantiated_from` is asserted non-NULL because `getSourceRange` forwards through it.
 """
-function UsingPackDecl(ctx::ASTContext, dc::DeclContext, instantiated_from::AbstractNamedDecl,
+function UsingPackDecl(ctx::ASTContext, dc::AnyDeclContext, instantiated_from::AbstractNamedDecl,
                        using_decls::AbstractVector{<:AbstractNamedDecl})
     @check_ptrs ctx dc instantiated_from
-    buf = CXNamedDecl[d.ptr for d in using_decls]
+    buf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in using_decls]
     upd = clang_UsingPackDecl_Create(ctx, dc, instantiated_from, buf, length(buf))
     return UsingPackDecl(upd)
 end
@@ -2653,7 +2653,7 @@ function UsingPackDecl(ctx::ASTContext, id::Integer, num_expansions::Integer)
 end
 
 # BindingDecl
-function BindingDecl(ctx::ASTContext, dc::DeclContext, id_loc::SourceLocation,
+function BindingDecl(ctx::ASTContext, dc::AnyDeclContext, id_loc::SourceLocation,
                      id::IdentifierInfo)
     @check_ptrs ctx dc id
     return BindingDecl(clang_BindingDecl_Create(ctx, dc, id_loc, id))
@@ -2665,14 +2665,14 @@ function BindingDecl(ctx::ASTContext, id::Integer)
 end
 
 """
-    MSPropertyDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+    MSPropertyDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation, name::DeclarationName,
                    ty::QualType, tinfo::TypeSourceInfo, start_loc::SourceLocation,
                    getter::IdentifierInfo, setter::IdentifierInfo) -> MSPropertyDecl
 Build a `__declspec(property(...))` data member. `getter` and `setter` are the accessor names
 and may each wrap `C_NULL` — that is how a write-only or read-only property is spelled, and it
 is what `hasGetter`/`hasSetter` report on.
 """
-function MSPropertyDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function MSPropertyDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                         name::DeclarationName, ty::QualType, tinfo::TypeSourceInfo,
                         start_loc::SourceLocation, getter::IdentifierInfo,
                         setter::IdentifierInfo)
@@ -2891,7 +2891,7 @@ function setDescribedClassTemplate(x::AbstractCXXRecordDecl, tmpl::AbstractClass
 end
 
 """
-    CXXDeductionGuideDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+    CXXDeductionGuideDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation,
                           es::ExplicitSpecifier, name_info::DeclarationNameInfo,
                           ty::QualType, tinfo::TypeSourceInfo, end_loc::SourceLocation,
                           ctor::AbstractCXXConstructorDecl, kind::CXDeductionCandidate)
@@ -2899,7 +2899,7 @@ Build a deduction guide (`clang::CXXDeductionGuideDecl::Create`). `es` is read, 
 adopted - the guide keeps its own copy - and must be non-NULL. `ctor` is the constructor an
 implicit guide was generated from and may wrap `C_NULL`.
 """
-function CXXDeductionGuideDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+function CXXDeductionGuideDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation,
                                es::ExplicitSpecifier, name_info::DeclarationNameInfo,
                                ty::QualType, tinfo::TypeSourceInfo, end_loc::SourceLocation,
                                ctor::AbstractCXXConstructorDecl=CXXConstructorDecl(C_NULL),
@@ -3011,7 +3011,7 @@ function LifetimeExtendedTemporaryDecl(temp::AbstractExpr, extending::AbstractVa
 end
 
 """
-    DecompositionDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+    DecompositionDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation,
                       lsquare_loc::SourceLocation, ty::QualType, tinfo::TypeSourceInfo,
                       sc::CXStorageClass,
                       bindings::AbstractVector{<:AbstractBindingDecl}) -> DecompositionDecl
@@ -3019,12 +3019,12 @@ Build the variable behind a structured binding (`clang::DecompositionDecl::Creat
 `bindings` crosses as a (buffer, count) pair and clang copies it into the declaration's
 trailing-object array.
 """
-function DecompositionDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+function DecompositionDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation,
                            lsquare_loc::SourceLocation, ty::QualType,
                            tinfo::TypeSourceInfo, sc::CXStorageClass,
                            bindings::AbstractVector{<:AbstractBindingDecl})
     @check_ptrs ctx dc tinfo
-    buf = CXBindingDecl[b.ptr for b in bindings]
+    buf = CXBindingDecl[Base.unsafe_convert(CXBindingDecl, b) for b in bindings]
     dd = clang_DecompositionDecl_Create(ctx, dc, start_loc, lsquare_loc, ty, tinfo, sc, buf,
                                         length(buf))
     return DecompositionDecl(dd)
@@ -3458,14 +3458,14 @@ end
 
 # UnresolvedUsingIfExistsDecl
 """
-    UnresolvedUsingIfExistsDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+    UnresolvedUsingIfExistsDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                                 name::DeclarationName) -> UnresolvedUsingIfExistsDecl
 Build the marker declaration Sema uses when a using-declaration marked
 `__attribute__((using_if_exists))` fails to resolve
 (`clang::UnresolvedUsingIfExistsDecl::Create`). The declaration is allocated in `ctx` and is
 not added to `dc`.
 """
-function UnresolvedUsingIfExistsDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function UnresolvedUsingIfExistsDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                                      name::DeclarationName)
     @check_ptrs ctx dc
     d = clang_UnresolvedUsingIfExistsDecl_Create(ctx, dc, loc, name)
@@ -3720,7 +3720,7 @@ end
 # without a nested-name-specifier. None of these register the new declaration with `dc`.
 
 """
-    UsingDirectiveDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
+    UsingDirectiveDecl(ctx::ASTContext, dc::AnyDeclContext, using_loc::SourceLocation,
                        namespace_loc::SourceLocation,
                        qualifier_loc::AbstractNestedNameSpecifierLoc,
                        ident_loc::SourceLocation, nominated::AbstractNamedDecl,
@@ -3728,7 +3728,7 @@ end
 Build a `using namespace N;` directive naming `nominated`, whose innermost context shared
 with the directive is `common_ancestor`.
 """
-function UsingDirectiveDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
+function UsingDirectiveDecl(ctx::ASTContext, dc::AnyDeclContext, using_loc::SourceLocation,
                             namespace_loc::SourceLocation,
                             qualifier_loc::AbstractNestedNameSpecifierLoc,
                             ident_loc::SourceLocation, nominated::AbstractNamedDecl,
@@ -3740,13 +3740,13 @@ function UsingDirectiveDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceL
 end
 
 """
-    NamespaceAliasDecl(ctx::ASTContext, dc::DeclContext, namespace_loc::SourceLocation,
+    NamespaceAliasDecl(ctx::ASTContext, dc::AnyDeclContext, namespace_loc::SourceLocation,
                        alias_loc::SourceLocation, alias::IdentifierInfo,
                        qualifier_loc::AbstractNestedNameSpecifierLoc,
                        ident_loc::SourceLocation, ns::AbstractNamedDecl) -> NamespaceAliasDecl
 Build a `namespace A = N;` alias introducing the identifier `alias` for the namespace `ns`.
 """
-function NamespaceAliasDecl(ctx::ASTContext, dc::DeclContext, namespace_loc::SourceLocation,
+function NamespaceAliasDecl(ctx::ASTContext, dc::AnyDeclContext, namespace_loc::SourceLocation,
                             alias_loc::SourceLocation, alias::IdentifierInfo,
                             qualifier_loc::AbstractNestedNameSpecifierLoc,
                             ident_loc::SourceLocation, ns::AbstractNamedDecl)
@@ -3757,13 +3757,13 @@ function NamespaceAliasDecl(ctx::ASTContext, dc::DeclContext, namespace_loc::Sou
 end
 
 """
-    UsingDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
+    UsingDecl(ctx::ASTContext, dc::AnyDeclContext, using_loc::SourceLocation,
               qualifier_loc::AbstractNestedNameSpecifierLoc,
               name_info::DeclarationNameInfo, has_typename::Bool) -> UsingDecl
 Build a `using N::f;` declaration. `has_typename` spells the `typename` keyword a
 dependent using-declaration may carry. `name_info` is read, not adopted.
 """
-function UsingDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
+function UsingDecl(ctx::ASTContext, dc::AnyDeclContext, using_loc::SourceLocation,
                    qualifier_loc::AbstractNestedNameSpecifierLoc,
                    name_info::DeclarationNameInfo, has_typename::Bool)
     @check_ptrs ctx dc qualifier_loc name_info
@@ -3772,7 +3772,7 @@ function UsingDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
 end
 
 """
-    UnresolvedUsingValueDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
+    UnresolvedUsingValueDecl(ctx::ASTContext, dc::AnyDeclContext, using_loc::SourceLocation,
                              qualifier_loc::AbstractNestedNameSpecifierLoc,
                              name_info::DeclarationNameInfo,
                              ellipsis_loc::SourceLocation) -> UnresolvedUsingValueDecl
@@ -3780,7 +3780,7 @@ Build the declaration a `using T::v;` over a dependent base names. A valid `elli
 what makes the declaration a pack expansion; pass an invalid one for the ordinary case.
 `name_info` is read, not adopted.
 """
-function UnresolvedUsingValueDecl(ctx::ASTContext, dc::DeclContext,
+function UnresolvedUsingValueDecl(ctx::ASTContext, dc::AnyDeclContext,
                                   using_loc::SourceLocation,
                                   qualifier_loc::AbstractNestedNameSpecifierLoc,
                                   name_info::DeclarationNameInfo,
@@ -3792,7 +3792,7 @@ function UnresolvedUsingValueDecl(ctx::ASTContext, dc::DeclContext,
 end
 
 """
-    UnresolvedUsingTypenameDecl(ctx::ASTContext, dc::DeclContext, using_loc::SourceLocation,
+    UnresolvedUsingTypenameDecl(ctx::ASTContext, dc::AnyDeclContext, using_loc::SourceLocation,
                                 typename_loc::SourceLocation,
                                 qualifier_loc::AbstractNestedNameSpecifierLoc,
                                 target_name_loc::SourceLocation,
@@ -3805,7 +3805,7 @@ clang stores `target_name` reduced to its `IdentifierInfo`, so a name that is no
 identifier would produce an unnamed declaration; the wrapper rejects it instead
 (Invariant 3).
 """
-function UnresolvedUsingTypenameDecl(ctx::ASTContext, dc::DeclContext,
+function UnresolvedUsingTypenameDecl(ctx::ASTContext, dc::AnyDeclContext,
                                      using_loc::SourceLocation,
                                      typename_loc::SourceLocation,
                                      qualifier_loc::AbstractNestedNameSpecifierLoc,

@@ -20,7 +20,7 @@ end
     f = DeclFinder(I)
     CC.parse(I, "auto get_lambda(int cap) { return [cap]() { return cap; }; }")
     @test f(I, "get_lambda")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     le = _find_node(CC.LambdaExpr, CC.resolve(CC.getBody(fn)))
     @test le isa CC.LambdaExpr
     @test CC.isGenericLambda(le) == false
@@ -57,7 +57,7 @@ end
     CC.parse(I, src)
 
     @test f(I, "use_capture")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     le = find_node(CC.LambdaExpr, CC.resolve(CC.getBody(fn)))
     @test le isa CC.LambdaExpr
     @test CC.getCaptureDefault(le) == CC.LibClangEx.CXLambdaCaptureDefault_LCD_None
@@ -78,13 +78,13 @@ end
     @test CC.isInitCapture(le, CC.getCapture(le, 0)) == false
 
     @test f(I, "use_default")
-    fn_d = CC.FunctionDecl(get_decl(f).ptr)
+    fn_d = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     le_d = find_node(CC.LambdaExpr, CC.resolve(CC.getBody(fn_d)))
     @test le_d isa CC.LambdaExpr
     @test CC.getCaptureDefault(le_d) == CC.LibClangEx.CXLambdaCaptureDefault_LCD_ByCopy
 
     @test f(I, "use_explicit")
-    fn_e = CC.FunctionDecl(get_decl(f).ptr)
+    fn_e = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     le_e = find_node(CC.LambdaExpr, CC.resolve(CC.getBody(fn_e)))
     @test le_e isa CC.LambdaExpr
     @test CC.hasExplicitParameters(le_e) == true
@@ -92,7 +92,7 @@ end
     @test CC.getNumCaptures(le_e) == 0
 
     @test f(I, "make_pt")
-    fn2 = CC.FunctionDecl(get_decl(f).ptr)
+    fn2 = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     ce = find_node(CC.AbstractCXXConstructExpr, CC.resolve(CC.getBody(fn2)))
     @test ce isa CC.AbstractCXXConstructExpr
     let r = CC.getParenOrBraceRange(ce)
@@ -110,7 +110,7 @@ end
     end
 
     @test f(I, "make_new")
-    fn3 = CC.FunctionDecl(get_decl(f).ptr)
+    fn3 = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     ne = find_node(CC.CXXNewExpr, CC.resolve(CC.getBody(fn3)))
     @test ne isa CC.CXXNewExpr
     @test CC.getNumPlacementArgs(ne) == 0
@@ -156,14 +156,14 @@ end
     end
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)))
     end
     function tpl_body(name)
         @test f(I, name)
         # a function-template name can resolve to several decls (the template
         # plus any instantiation), so take the template explicitly
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # CXXNamedCastExpr: cast keyword spelling + angle-bracket range
@@ -273,7 +273,7 @@ end
     CC.parse(I, src)
 
     @test f(I, "use_udl")
-    fn = CC.FunctionDecl(CC.get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)
     udl = find_node(CC.UserDefinedLiteral, CC.resolve(CC.getBody(fn)))
     @test udl isa CC.UserDefinedLiteral
     @test CC.getLiteralOperatorKind(udl) == CC.LibClangEx.CXUserDefinedLiteral_LOK_Integer
@@ -283,14 +283,14 @@ end
     @test CC.isStr(ii, "_k")
 
     @test f(I, "use_svi")
-    fn2 = CC.FunctionDecl(CC.get_decl(f).ptr)
+    fn2 = CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)
     svi = find_node(CC.CXXScalarValueInitExpr, CC.resolve(CC.getBody(fn2)))
     @test svi isa CC.CXXScalarValueInitExpr
     @test !CC.is_null_handle(CC.getTypeSourceInfo(svi))
     @test !CC.is_null_handle(CC.getRParenLoc(svi))
 
     @test f(I, "use_null")
-    fn3 = CC.FunctionDecl(CC.get_decl(f).ptr)
+    fn3 = CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)
     np = find_node(CC.CXXNullPtrLiteralExpr, CC.resolve(CC.getBody(fn3)))
     @test np isa CC.CXXNullPtrLiteralExpr
     @test !CC.is_null_handle(CC.getLocation(np))
@@ -323,12 +323,12 @@ end
 
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)))
     end
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # CXXNoexceptExpr - the noexcept(expr) operator
@@ -406,8 +406,8 @@ end
 
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # ---- UnresolvedLookupExpr: overloaded free-function call with a dependent arg ----
@@ -446,7 +446,7 @@ end
     # ---- UnresolvedMemberExpr, implicit access: bare `m(u)` in CCS::icall ----
     # getBase()'s precondition must fail (Invariant 3).
     @test f(I, "CCS")
-    ct = CC.ClassTemplateDecl(CC.get_decl(f).ptr)
+    ct = CC.downcast(CC.ClassTemplateDecl, CC.get_decl(f).ptr)
     rec = CC.getTemplatedDecl(ct)
     icall = nothing
     for d in CC.decls(CC.castToDeclContext(rec))
@@ -487,13 +487,13 @@ end
     end
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     end
     function tpl_body(name)
         @test f(I, name)
         # a function-template name can resolve to several decls; take the template
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # CXXOperatorCallExpr: assignment vs comparison classification
@@ -590,7 +590,7 @@ end
     end
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)))
     end
 
     # CXXDefaultArgExpr: rewritten-init flag + the context the default was used in
@@ -728,7 +728,7 @@ end
 
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     end
 
     # CXXTypeidExpr - typeid(int): the type-operand arm of the operand union
@@ -858,12 +858,12 @@ end
 
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     end
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # CXXOperatorCallExpr: `a == b` on a non-member operator== is written infix
@@ -936,7 +936,7 @@ end
     # MaterializeTemporaryExpr: a namespace-scope const reference extends the
     # temporary's lifetime, so the state holds a LifetimeExtendedTemporaryDecl
     @test f(I, "g_ref")
-    ginit = CC.resolve(CC.getInit(CC.VarDecl(get_decl(f).ptr)))
+    ginit = CC.resolve(CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
     mt = find_node(CC.MaterializeTemporaryExpr, ginit)
     @test mt isa CC.MaterializeTemporaryExpr
     if mt !== nothing
@@ -1018,7 +1018,7 @@ end
 
     # CoawaitExpr / CoroutineSuspendExpr in a resolved coroutine
     @test g(J, "g_coro")
-    croot = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(g).ptr)))
+    croot = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(g).ptr)))
     ca = find_node(CC.CoawaitExpr, croot)
     @test ca isa CC.CoawaitExpr
     if ca !== nothing
@@ -1029,8 +1029,8 @@ end
     # DependentCoawaitExpr: `co_await a` on a dependent operand keeps the operand
     # and the operator co_await lookup side by side
     @test g(J, "g_tcoro")
-    tftd = CC.FunctionTemplateDecl(first(CC.get_decls(g)).ptr)
-    tbody = CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(tftd).ptr)))
+    tftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(g)).ptr)
+    tbody = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(tftd).ptr)))
     dca = find_node(CC.DependentCoawaitExpr, tbody)
     @test dca isa CC.DependentCoawaitExpr
     if dca !== nothing
@@ -1060,8 +1060,8 @@ end
 
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # ---- plain dependent member access: `t.value` ----
@@ -1133,13 +1133,13 @@ end
 
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)))
     end
 
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # ---- CXXConstructExpr setters, each round-tripped against its own getter ----
@@ -1185,7 +1185,7 @@ end
 
     # ---- CXXThisExpr setters: `this->w` inside CCIB::get ----
     @test f(I, "CCIB")
-    rd = CC.CXXRecordDecl(CC.get_decl(f).ptr)
+    rd = CC.downcast(CC.CXXRecordDecl, CC.get_decl(f).ptr)
     getter_method = nothing
     for d in CC.decls(CC.castToDeclContext(rd))
         d isa CC.CXXMethodDecl && CC.get_name(d) == "get" && (getter_method = d)
@@ -1292,12 +1292,12 @@ end
 
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     end
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # ---- CXXParenListInitExpr: `JAgg p(1)` fills `b` from its default initializer --
@@ -1384,7 +1384,7 @@ end
 
     function ms_body(name)
         @test fms(Ims, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(fms).ptr)))
     end
 
     pr = find_node(CC.MSPropertyRefExpr, ms_body("jms_read"))
@@ -1447,7 +1447,7 @@ end
 
     function ms_body(name)
         @test fms(Ims, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(fms).ptr)))
     end
 
     ut = find_node(CC.CXXUuidofExpr, ms_body("jk_uuid_type"))
@@ -1495,7 +1495,7 @@ end
 
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     end
 
     # CXXBindTemporaryExpr / CXXTemporary: both halves of `JKT();`
@@ -1582,7 +1582,7 @@ end
 
     function body20(name)
         @test f20(I20, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f20).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f20).ptr)))
     end
 
     ul = find_node(CC.CXXParenListInitExpr, body20("k_union"))
@@ -1633,12 +1633,12 @@ end
 
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     end
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # ---- CXXRewrittenBinaryOperator: `a != b` rewrites to !(a == b) in C++20 ------
@@ -1650,7 +1650,7 @@ end
 
     # ---- the pieces the synthesis factories need --------------------------------
     @test f(I, "ll_free")
-    free_fd = CC.FunctionDecl(get_decl(f).ptr)
+    free_fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     param = CC.getParamDecl(free_fd, 0)
     @test param isa CC.ParmVarDecl
     @test CC.hasDefaultArg(param) == true
@@ -1660,11 +1660,11 @@ end
     loc = CC.getBeginLoc(defarg)
 
     @test f(I, "ll_rewritten")
-    boolty = CC.getReturnType(CC.FunctionDecl(get_decl(f).ptr))
+    boolty = CC.getReturnType(CC.downcast(CC.FunctionDecl, get_decl(f).ptr))
     @test boolty isa CC.QualType
 
     @test f(I, "LLAgg")
-    agg = CC.CXXRecordDecl(get_decl(f).ptr)
+    agg = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     aggdc = CC.castToDeclContext(agg)
     fld_a, fld_b = nothing, nothing
     for d in CC.decls(aggdc)
@@ -1721,7 +1721,7 @@ end
 
     # ---- CXXBindTemporaryExpr::Create -------------------------------------------
     @test f(I, "LLDtor")
-    dtor = CC.getDestructor(CC.CXXRecordDecl(get_decl(f).ptr))
+    dtor = CC.getDestructor(CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr))
     @test dtor isa CC.CXXDestructorDecl
     if dtor.ptr != C_NULL
         tmp = CC.CXXTemporary(ctx, dtor)
@@ -1801,7 +1801,7 @@ end
     int lms_read(LMS *p) { return p->x; }
     """)
     @test fms(Ims, "lms_read")
-    ms_body = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms).ptr)))
+    ms_body = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(fms).ptr)))
     mp = _find_node(CC.MSPropertyRefExpr, ms_body)
     @test mp isa CC.MSPropertyRefExpr
     @test CC.getQualifierRange(mp) isa CC.SourceRange   # `p->x` is unqualified
@@ -1817,7 +1817,7 @@ end
     ctx = CC.getASTContext(CC.get_instance(I))
 
     @test f(I, "mm_free")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     param = CC.getParamDecl(fd, 0)
     @test param isa CC.ParmVarDecl
     @test CC.hasDefaultArg(param) == true
@@ -1907,7 +1907,7 @@ end
     ctx = CC.getASTContext(CC.get_instance(I))
 
     @test f(I, "nn_free")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     param = CC.getParamDecl(fd, 0)
     @test CC.hasDefaultArg(param) == true
     op = CC.getDefaultArg(param)
@@ -1922,7 +1922,7 @@ end
     # Select the class template by kind: a bare lookup of "NNPack" is unique here, but the
     # kind filter keeps the testset safe if a later edit instantiates the template.
     @test f(I, "NNPack")
-    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     tpl = CC.getTemplateParameters(ctd)
     nttp = CC.resolve(CC.getParam(tpl, 0))
@@ -2007,12 +2007,12 @@ end
 
     function fn_body(name)
         @test f(I, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     end
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # ---- TypeTraitExpr::getTrait: which trait `__is_trivial(int)` spells -----------
@@ -2102,7 +2102,7 @@ end
     @test pd isa CC.CXXPseudoDestructorExpr
     if pd !== nothing
         @test f(I, "OOInt")
-        ii = CC.getIdentifier(CC.NamedDecl(get_decl(f).ptr))
+        ii = CC.getIdentifier(get_decl(f))
         @test ii isa CC.IdentifierInfo
         @test CC.isStr(ii, "OOInt")
         loc = CC.getBeginLoc(pd)
@@ -2114,12 +2114,12 @@ end
 
     # ---- MaterializeTemporaryExpr::setExtendingDecl -------------------------------
     @test f(I, "oo_ref")
-    ref_init = CC.resolve(CC.getInit(CC.VarDecl(get_decl(f).ptr)))
+    ref_init = CC.resolve(CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
     mt = _find_node(CC.MaterializeTemporaryExpr, ref_init)
     @test mt isa CC.MaterializeTemporaryExpr
     if mt !== nothing
         @test f(I, "oo_other")
-        other = CC.VarDecl(get_decl(f).ptr)
+        other = CC.downcast(CC.VarDecl, get_decl(f).ptr)
         CC.setExtendingDecl(mt, other, 7)
         @test CC.getExtendingDecl(mt).ptr == other.ptr
         @test CC.getManglingNumber(mt) == 7
@@ -2168,7 +2168,7 @@ end
     """)
 
     @test g(J, "oo_coro")
-    croot = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(g).ptr)))
+    croot = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(g).ptr)))
     ca = _find_node(CC.CoawaitExpr, croot)
     @test ca isa CC.CoawaitExpr
     if ca !== nothing
@@ -2200,7 +2200,7 @@ end
 
     # A parsed, non-dependent int expression, reused below as a callee and as an argument.
     @test f(I, "fac_use")
-    fu = CC.FunctionDecl(get_decl(f).ptr)
+    fu = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     param = CC.getParamDecl(fu, 0)
     @test CC.hasDefaultArg(param) == true
     op = CC.getDefaultArg(param)
@@ -2233,7 +2233,7 @@ end
 
     # ---- CXXConstructExpr::Create / CXXTemporaryObjectExpr::Create ------------------
     @test f(I, "fac_make")
-    fm = CC.FunctionDecl(get_decl(f).ptr)
+    fm = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     ce = _find_node(CC.AbstractCXXConstructExpr, CC.resolve(CC.getBody(fm)))
     @test ce isa CC.AbstractCXXConstructExpr
     ctor = CC.getConstructor(ce)
@@ -2260,7 +2260,7 @@ end
 
     # ---- CXXNewExpr::Create, round-tripped through a parsed `new int(3)` ------------
     @test f(I, "fac_new")
-    fnw = CC.FunctionDecl(get_decl(f).ptr)
+    fnw = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     ne = _find_node(CC.CXXNewExpr, CC.resolve(CC.getBody(fnw)))
     @test ne isa CC.CXXNewExpr
     @test CC.isArray(ne) == false
@@ -2288,7 +2288,7 @@ end
 
     # ---- SizeOfPackExpr::Create, in both its known-length and partial forms ---------
     @test f(I, "FacPack")
-    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     pk = CC.getParam(CC.getTemplateParameters(ctd), 0)
     @test CC.getName(pk) == "FacTs"
@@ -2347,7 +2347,7 @@ end
 
     # A parsed, non-dependent int expression, reused below as a callee and as an argument.
     @test f(I, "oq_use")
-    fu = CC.FunctionDecl(get_decl(f).ptr)
+    fu = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     param = CC.getParamDecl(fu, 0)
     @test CC.hasDefaultArg(param) == true
     op = CC.getDefaultArg(param)
@@ -2357,7 +2357,7 @@ end
 
     # ---- LambdaExpr::Create, round-tripped through a parsed lambda ------------------
     @test f(I, "oq_lambda")
-    fl = CC.FunctionDecl(get_decl(f).ptr)
+    fl = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     le = _find_node(CC.LambdaExpr, CC.resolve(CC.getBody(fl)))
     @test le isa CC.LambdaExpr
     cls = CC.getLambdaClass(le)
@@ -2381,7 +2381,7 @@ end
 
     # ---- CUDAKernelCallExpr::Create and its configuration call ----------------------
     @test f(I, "oq_caller")
-    fc = CC.FunctionDecl(get_decl(f).ptr)
+    fc = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     cfg = _find_node(CC.CallExpr, CC.resolve(CC.getBody(fc)))
     @test cfg isa CC.CallExpr
     kce = CC.CUDAKernelCallExpr(ctx, op, cfg, [op], intty, vk, loc, 0, 0)
@@ -2394,8 +2394,8 @@ end
 
     # ---- OverloadExpr::find: the overload set behind an overload-typed expression ----
     @test f(I, "oq_call")
-    ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-    body = CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+    ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+    body = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     ule = _find_node(CC.UnresolvedLookupExpr, body)
     @test ule isa CC.UnresolvedLookupExpr
     found, address_of, member_pointer = CC.find(ule)
@@ -2432,8 +2432,8 @@ end
 
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # ---- a class-typed qualifier carries a TypeLoc: `t.NQBase::qm` ----
@@ -2524,7 +2524,7 @@ end
 
     # ---- the pseudo-destructor's own hasQualifier and its location box agree ----
     @test f(I, "nq_pdtor")
-    pbody = CC.resolve(CC.getBody(CC.FunctionDecl(first(CC.get_decls(f)).ptr)))
+    pbody = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, first(CC.get_decls(f)).ptr)))
     pd = _find_node(CC.CXXPseudoDestructorExpr, pbody)
     @test pd isa CC.CXXPseudoDestructorExpr
     if pd isa CC.CXXPseudoDestructorExpr
@@ -2561,7 +2561,7 @@ end
     int nq_ms(NQMS *p) { return p->x; }
     """)
     @test fms(Ims, "nq_ms")
-    msb = CC.resolve(CC.getBody(CC.FunctionDecl(first(CC.get_decls(fms)).ptr)))
+    msb = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, first(CC.get_decls(fms)).ptr)))
     mp = _find_node(CC.MSPropertyRefExpr, msb)
     @test mp isa CC.MSPropertyRefExpr
     if mp isa CC.MSPropertyRefExpr
@@ -2605,8 +2605,8 @@ end
 
     function tpl_body(name)
         @test f(I, name)
-        ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr)))
+        ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
+        return CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr)))
     end
 
     # ---- copyTemplateArgumentsInto on the three dependent-name carriers ----
@@ -2738,7 +2738,7 @@ end
 
     # ---- LambdaExpr capture ranges over the already-bound indexed accessors ----
     @test f(I, "cc_s_lambda")
-    le = _find_node(CC.LambdaExpr, CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr))))
+    le = _find_node(CC.LambdaExpr, CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr))))
     @test le isa CC.LambdaExpr
     ncap = Int(CC.getNumCaptures(le))
     nexp = Int(CC.getNumExplicitCaptures(le))

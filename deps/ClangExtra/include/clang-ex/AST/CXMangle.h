@@ -188,7 +188,7 @@ CXString clang_ItaniumMangleContext_mangleDynamicStermFinalizer(CXItaniumMangleC
 // The module-initializer symbol name of the named module M. Only M's name, kind and
 // parent chain are read, so a Module built with clang_Module_create works.
 CXString clang_ItaniumMangleContext_mangleModuleInitializer(CXItaniumMangleContext MC,
-                                                            CXModule M);
+                                                            CXModule_ M);
 
 // MicrosoftMangleContext
 // mangleCXXVFTable

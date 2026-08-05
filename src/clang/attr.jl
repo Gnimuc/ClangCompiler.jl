@@ -13,7 +13,7 @@ Falls back to returning `x` unchanged for unknown kinds.
 """
 function resolve(x::AbstractAttr)
     T = get(ATTR_KIND_TO_TYPE, getKind(x), nothing)
-    return T === nothing ? x : T(x.ptr)
+    return T === nothing ? x : downcast(T, x)
 end
 
 get_attr_kind(x::AbstractAttr) = getKind(x)

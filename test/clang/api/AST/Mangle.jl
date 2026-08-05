@@ -24,12 +24,12 @@ using Libdl
     ClangCompiler.parse(I, "int add(int a, int b) { return a + b; } void ref(int &r) { r = 0; }")
 
     @test f(I, "add")
-    add_nd = ClangCompiler.NamedDecl(get_decl(f).ptr)
+    add_nd = get_decl(f)
     @test ClangCompiler.shouldMangleDeclName(mc, add_nd)
     @test ClangCompiler.mangleName(mc, add_nd) == "_Z3addii"
 
     @test f(I, "ref")
-    ref_nd = ClangCompiler.NamedDecl(get_decl(f).ptr)
+    ref_nd = get_decl(f)
     @test ClangCompiler.mangleName(mc, ref_nd) == "_Z3refRi"
 
     dispose(f)
@@ -55,8 +55,8 @@ end
     @test CC.startNewFunction(mc) === nothing
 
     @test f(I, "pv_int")
-    vd_int = CC.VarDecl(get_decl(f).ptr)
-    nd_int = CC.NamedDecl(vd_int.ptr)
+    vd_int = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    nd_int = CC.upcast(CC.NamedDecl, vd_int.ptr)
     id = CC.getAnonymousStructId(mc, nd_int)
     @test CC.getAnonymousStructIdForDebugInfo(mc, nd_int) == id
 
@@ -85,7 +85,7 @@ end
              """)
 
     @test f(I, "mangle_fn")
-    fn_nd = CC.NamedDecl(get_decl(f).ptr)
+    fn_nd = get_decl(f)
     @test CC.isUniqueInternalLinkageDecl(mc, fn_nd) == false
     @test CC.needsUniqueInternalLinkageNames(mc) === nothing
     # An externally visible function never needs a uniqued name; the flag the call
@@ -93,7 +93,7 @@ end
     @test !(CC.isUniqueInternalLinkageDecl(mc, fn_nd))
 
     @test f(I, "mangle_gv")
-    gv = CC.VarDecl(get_decl(f).ptr)
+    gv = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     @test !isempty(CC.mangleStaticGuardVariable(mc, gv))
     @test !isempty(CC.mangleDynamicInitializer(mc, gv))
 
@@ -102,7 +102,7 @@ end
     @test !isempty(CC.mangleCXXRTTI(mc, gv_ty))
 
     @test f(I, "mangle_lam")
-    lam = CC.VarDecl(get_decl(f).ptr)
+    lam = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     closure = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(lam)))
     @test CC.isLambda(closure)
     # Itanium spells it `<lambdaN>` and MSVC `<lambda_N>`: only the prefix is shared.
@@ -136,14 +136,14 @@ end
              """)
 
     @test f(I, "mangle_seh_host")
-    seh_fn = CC.FunctionDecl(get_decl(f).ptr)
+    seh_fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test !isempty(CC.mangleCXXName(mc, seh_fn))
     @test !isempty(CC.mangleSEHFilterExpression(mc, seh_fn))
     @test !isempty(CC.mangleSEHFinallyBlock(mc, seh_fn))
     @test CC.mangleSEHFilterExpression(mc, seh_fn) != CC.mangleSEHFinallyBlock(mc, seh_fn)
 
     @test f(I, "mangle_temp_var")
-    tv = CC.VarDecl(get_decl(f).ptr)
+    tv = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     @test !isempty(CC.mangleCXXName(mc, tv))
     @test !isempty(CC.mangleReferenceTemporary(mc, tv))
     @test !isempty(CC.mangleReferenceTemporary(mc, tv, 2))
@@ -155,9 +155,9 @@ end
     @test (imc.ptr != C_NULL) == (CC.getKind(mc) == CC.CXMangleContext_MK_Itanium)
     if imc.ptr != C_NULL
         @test f(I, "MangleVtblBase")
-        base = CC.CXXRecordDecl(get_decl(f).ptr)
+        base = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
         @test f(I, "MangleVtblDerived")
-        derived = CC.CXXRecordDecl(get_decl(f).ptr)
+        derived = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
 
         vt = CC.mangleCXXVTable(imc, base)
         @test occursin("MangleVtblBase", vt)
@@ -181,7 +181,7 @@ end
         @test occursin("mangle_temp_var", CC.mangleDynamicStermFinalizer(imc, tv))
 
         @test f(I, "mangle_sig_lam")
-        lam = CC.VarDecl(get_decl(f).ptr)
+        lam = CC.downcast(CC.VarDecl, get_decl(f).ptr)
         closure = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(lam)))
         @test CC.isLambda(closure)
         @test !isempty(CC.mangleLambdaSig(imc, closure))

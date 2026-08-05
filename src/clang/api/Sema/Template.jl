@@ -149,7 +149,8 @@ end
 
 function addOuterTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl,
                                    args::Vector{TemplateArgument}, final::Bool)
-    return addOuterTemplateArguments(x, decl, CXTemplateArgument[arg.ptr for arg in args], final)
+    return addOuterTemplateArguments(x, decl, CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, arg)
+                                                    for arg in args], final)
 end
 
 """
@@ -170,7 +171,8 @@ end
 
 function replaceInnermostTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl,
                                            args::Vector{TemplateArgument})
-    return replaceInnermostTemplateArguments(x, decl, CXTemplateArgument[arg.ptr for arg in args])
+    return replaceInnermostTemplateArguments(x, decl, CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, arg)
+                                                            for arg in args])
 end
 
 function addOuterRetainedLevel(x::AbstractMultiLevelTemplateArgumentList)

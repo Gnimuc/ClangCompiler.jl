@@ -12,7 +12,3 @@ struct PreprocessorOutputOptions <: AbstractPreprocessorOutputOptions
     ptr::CXPreprocessorOutputOptions
 end
 
-function Base.unsafe_convert(::Type{CXPreprocessorOutputOptions}, x::PreprocessorOutputOptions)
-    return x.ptr
-end
-Base.cconvert(::Type{CXPreprocessorOutputOptions}, x::PreprocessorOutputOptions) = x

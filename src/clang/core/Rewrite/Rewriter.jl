@@ -12,5 +12,3 @@ struct Rewriter <: AbstractRewriter
     ptr::CXRewriter
 end
 
-Base.unsafe_convert(::Type{CXRewriter}, x::Rewriter) = x.ptr
-Base.cconvert(::Type{CXRewriter}, x::Rewriter) = x

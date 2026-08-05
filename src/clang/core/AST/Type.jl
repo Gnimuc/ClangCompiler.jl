@@ -6,9 +6,6 @@ struct ComplexType <: AbstractComplexType
     ptr::CXComplexType
 end
 
-Base.unsafe_convert(::Type{CXComplexType}, x::ComplexType) = x.ptr
-Base.cconvert(::Type{CXComplexType}, x::ComplexType) = x
-
 """
     struct PointerType <: AbstractPointerType
 Hold a pointer to a `clang::PointerType` object.
@@ -16,9 +13,6 @@ Hold a pointer to a `clang::PointerType` object.
 struct PointerType <: AbstractPointerType
     ptr::CXPointerType
 end
-
-Base.unsafe_convert(::Type{CXPointerType}, x::PointerType) = x.ptr
-Base.cconvert(::Type{CXPointerType}, x::PointerType) = x
 
 """
     struct ReferenceType <: AbstractReferenceType
@@ -28,9 +22,6 @@ struct ReferenceType <: AbstractReferenceType
     ptr::CXReferenceType
 end
 
-Base.unsafe_convert(::Type{CXReferenceType}, x::ReferenceType) = x.ptr
-Base.cconvert(::Type{CXReferenceType}, x::ReferenceType) = x
-
 """
     struct LValueReferenceType <: AbstractLValueReferenceType
 Hold a pointer to a `clang::LValueReferenceType` object.
@@ -38,9 +29,6 @@ Hold a pointer to a `clang::LValueReferenceType` object.
 struct LValueReferenceType <: AbstractLValueReferenceType
     ptr::CXLValueReferenceType
 end
-
-Base.unsafe_convert(::Type{CXLValueReferenceType}, x::LValueReferenceType) = x.ptr
-Base.cconvert(::Type{CXLValueReferenceType}, x::LValueReferenceType) = x
 
 """
     struct RValueReferenceType <: AbstractRValueReferenceType
@@ -50,9 +38,6 @@ struct RValueReferenceType <: AbstractRValueReferenceType
     ptr::CXRValueReferenceType
 end
 
-Base.unsafe_convert(::Type{CXRValueReferenceType}, x::RValueReferenceType) = x.ptr
-Base.cconvert(::Type{CXRValueReferenceType}, x::RValueReferenceType) = x
-
 """
     struct MemberPointerType <: AbstractMemberPointerType
 Hold a pointer to a `clang::MemberPointerType` object.
@@ -60,9 +45,6 @@ Hold a pointer to a `clang::MemberPointerType` object.
 struct MemberPointerType <: AbstractMemberPointerType
     ptr::CXMemberPointerType
 end
-
-Base.unsafe_convert(::Type{CXMemberPointerType}, x::MemberPointerType) = x.ptr
-Base.cconvert(::Type{CXMemberPointerType}, x::MemberPointerType) = x
 
 """
     struct ArrayType <: AbstractArrayType
@@ -72,9 +54,6 @@ struct ArrayType <: AbstractArrayType
     ptr::CXArrayType
 end
 
-Base.unsafe_convert(::Type{CXArrayType}, x::ArrayType) = x.ptr
-Base.cconvert(::Type{CXArrayType}, x::ArrayType) = x
-
 """
     struct ConstantArrayType <: AbstractConstantArrayType
 Hold a pointer to a `clang::ConstantArrayType` object.
@@ -82,9 +61,6 @@ Hold a pointer to a `clang::ConstantArrayType` object.
 struct ConstantArrayType <: AbstractConstantArrayType
     ptr::CXConstantArrayType
 end
-
-Base.unsafe_convert(::Type{CXConstantArrayType}, x::ConstantArrayType) = x.ptr
-Base.cconvert(::Type{CXConstantArrayType}, x::ConstantArrayType) = x
 
 """
     struct IncompleteArrayType <: AbstractIncompleteArrayType
@@ -94,9 +70,6 @@ struct IncompleteArrayType <: AbstractIncompleteArrayType
     ptr::CXIncompleteArrayType
 end
 
-Base.unsafe_convert(::Type{CXIncompleteArrayType}, x::IncompleteArrayType) = x.ptr
-Base.cconvert(::Type{CXIncompleteArrayType}, x::IncompleteArrayType) = x
-
 """
     struct VariableArrayType <: AbstractVariableArrayType
 Hold a pointer to a `clang::VariableArrayType` object.
@@ -104,9 +77,6 @@ Hold a pointer to a `clang::VariableArrayType` object.
 struct VariableArrayType <: AbstractVariableArrayType
     ptr::CXVariableArrayType
 end
-
-Base.unsafe_convert(::Type{CXVariableArrayType}, x::VariableArrayType) = x.ptr
-Base.cconvert(::Type{CXVariableArrayType}, x::VariableArrayType) = x
 
 """
     struct DependentSizedArrayType <: AbstractDependentSizedArrayType
@@ -116,9 +86,6 @@ struct DependentSizedArrayType <: AbstractDependentSizedArrayType
     ptr::CXDependentSizedArrayType
 end
 
-Base.unsafe_convert(::Type{CXDependentSizedArrayType}, x::DependentSizedArrayType) = x.ptr
-Base.cconvert(::Type{CXDependentSizedArrayType}, x::DependentSizedArrayType) = x
-
 """
     struct FunctionType <: AbstractFunctionType
 Hold a pointer to a `clang::FunctionType` object.
@@ -126,9 +93,6 @@ Hold a pointer to a `clang::FunctionType` object.
 struct FunctionType <: AbstractFunctionType
     ptr::CXFunctionType
 end
-
-Base.unsafe_convert(::Type{CXFunctionType}, x::FunctionType) = x.ptr
-Base.cconvert(::Type{CXFunctionType}, x::FunctionType) = x
 
 """
     struct FunctionNoProtoType <: AbstractFunctionNoProtoType
@@ -138,9 +102,6 @@ struct FunctionNoProtoType <: AbstractFunctionNoProtoType
     ptr::CXFunctionNoProtoType
 end
 
-Base.unsafe_convert(::Type{CXFunctionNoProtoType}, x::FunctionNoProtoType) = x.ptr
-Base.cconvert(::Type{CXFunctionNoProtoType}, x::FunctionNoProtoType) = x
-
 """
     struct FunctionProtoType <: AbstractFunctionProtoType
 Hold a pointer to a `clang::FunctionProtoType` object.
@@ -148,9 +109,6 @@ Hold a pointer to a `clang::FunctionProtoType` object.
 struct FunctionProtoType <: AbstractFunctionProtoType
     ptr::CXFunctionProtoType
 end
-
-Base.unsafe_convert(::Type{CXFunctionProtoType}, x::FunctionProtoType) = x.ptr
-Base.cconvert(::Type{CXFunctionProtoType}, x::FunctionProtoType) = x
 
 """
     struct UnresolvedUsingType <: AbstractUnresolvedUsingType
@@ -160,9 +118,6 @@ struct UnresolvedUsingType <: AbstractUnresolvedUsingType
     ptr::CXUnresolvedUsingType
 end
 
-Base.unsafe_convert(::Type{CXUnresolvedUsingType}, x::UnresolvedUsingType) = x.ptr
-Base.cconvert(::Type{CXUnresolvedUsingType}, x::UnresolvedUsingType) = x
-
 """
     struct UsingType <: AbstractUsingType
 Hold a pointer to a `clang::UsingType` object.
@@ -170,9 +125,6 @@ Hold a pointer to a `clang::UsingType` object.
 struct UsingType <: AbstractUsingType
     ptr::CXUsingType
 end
-
-Base.unsafe_convert(::Type{CXUsingType}, x::UsingType) = x.ptr
-Base.cconvert(::Type{CXUsingType}, x::UsingType) = x
 
 """
     struct TypedefType <: AbstractTypedefType
@@ -182,9 +134,6 @@ struct TypedefType <: AbstractTypedefType
     ptr::CXTypedefType
 end
 
-Base.unsafe_convert(::Type{CXTypedefType}, x::TypedefType) = x.ptr
-Base.cconvert(::Type{CXTypedefType}, x::TypedefType) = x
-
 """
     struct TagType <: AbstractTagType
 Hold a pointer to a `clang::TagType` object.
@@ -192,9 +141,6 @@ Hold a pointer to a `clang::TagType` object.
 struct TagType <: AbstractTagType
     ptr::CXTagType
 end
-
-Base.unsafe_convert(::Type{CXTagType}, x::TagType) = x.ptr
-Base.cconvert(::Type{CXTagType}, x::TagType) = x
 
 """
     struct RecordType <: AbstractRecordType
@@ -204,9 +150,6 @@ struct RecordType <: AbstractRecordType
     ptr::CXRecordType
 end
 
-Base.unsafe_convert(::Type{CXRecordType}, x::RecordType) = x.ptr
-Base.cconvert(::Type{CXRecordType}, x::RecordType) = x
-
 """
     struct EnumType <: AbstractEnumType
 Hold a pointer to a `clang::EnumType` object.
@@ -214,9 +157,6 @@ Hold a pointer to a `clang::EnumType` object.
 struct EnumType <: AbstractEnumType
     ptr::CXEnumType
 end
-
-Base.unsafe_convert(::Type{CXEnumType}, x::EnumType) = x.ptr
-Base.cconvert(::Type{CXEnumType}, x::EnumType) = x
 
 """
     struct TemplateTypeParmType <: AbstractTemplateTypeParmType
@@ -226,9 +166,6 @@ struct TemplateTypeParmType <: AbstractTemplateTypeParmType
     ptr::CXTemplateTypeParmType
 end
 
-Base.unsafe_convert(::Type{CXTemplateTypeParmType}, x::TemplateTypeParmType) = x.ptr
-Base.cconvert(::Type{CXTemplateTypeParmType}, x::TemplateTypeParmType) = x
-
 """
     struct SubstTemplateTypeParmType <: AbstractSubstTemplateTypeParmType
 Hold a pointer to a `clang::SubstTemplateTypeParmType` object.
@@ -236,9 +173,6 @@ Hold a pointer to a `clang::SubstTemplateTypeParmType` object.
 struct SubstTemplateTypeParmType <: AbstractSubstTemplateTypeParmType
     ptr::CXSubstTemplateTypeParmType
 end
-
-Base.unsafe_convert(::Type{CXSubstTemplateTypeParmType}, x::SubstTemplateTypeParmType) = x.ptr
-Base.cconvert(::Type{CXSubstTemplateTypeParmType}, x::SubstTemplateTypeParmType) = x
 
 """
     struct SubstTemplateTypeParmPackType <: AbstractSubstTemplateTypeParmPackType
@@ -248,9 +182,6 @@ struct SubstTemplateTypeParmPackType <: AbstractSubstTemplateTypeParmPackType
     ptr::CXSubstTemplateTypeParmPackType
 end
 
-Base.unsafe_convert(::Type{CXSubstTemplateTypeParmPackType}, x::SubstTemplateTypeParmPackType) = x.ptr
-Base.cconvert(::Type{CXSubstTemplateTypeParmPackType}, x::SubstTemplateTypeParmPackType) = x
-
 """
     struct TemplateSpecializationType <: AbstractTemplateSpecializationType
 Hold a pointer to a `clang::TemplateSpecializationType` object.
@@ -258,9 +189,6 @@ Hold a pointer to a `clang::TemplateSpecializationType` object.
 struct TemplateSpecializationType <: AbstractTemplateSpecializationType
     ptr::CXTemplateSpecializationType
 end
-
-Base.unsafe_convert(::Type{CXTemplateSpecializationType}, x::TemplateSpecializationType) = x.ptr
-Base.cconvert(::Type{CXTemplateSpecializationType}, x::TemplateSpecializationType) = x
 
 """
     struct TypeWithKeyword <: AbstractTypeWithKeyword
@@ -270,9 +198,6 @@ struct TypeWithKeyword <: AbstractTypeWithKeyword
     ptr::CXTypeWithKeyword
 end
 
-Base.unsafe_convert(::Type{CXTypeWithKeyword}, x::TypeWithKeyword) = x.ptr
-Base.cconvert(::Type{CXTypeWithKeyword}, x::TypeWithKeyword) = x
-
 """
     struct ElaboratedType <: AbstractElaboratedType
 Hold a pointer to a `clang::ElaboratedType` object.
@@ -280,9 +205,6 @@ Hold a pointer to a `clang::ElaboratedType` object.
 struct ElaboratedType <: AbstractElaboratedType
     ptr::CXElaboratedType
 end
-
-Base.unsafe_convert(::Type{CXElaboratedType}, x::ElaboratedType) = x.ptr
-Base.cconvert(::Type{CXElaboratedType}, x::ElaboratedType) = x
 
 """
     struct DependentNameType <: AbstractDependentNameType
@@ -292,9 +214,6 @@ struct DependentNameType <: AbstractDependentNameType
     ptr::CXDependentNameType
 end
 
-Base.unsafe_convert(::Type{CXDependentNameType}, x::DependentNameType) = x.ptr
-Base.cconvert(::Type{CXDependentNameType}, x::DependentNameType) = x
-
 """
     struct DependentTemplateSpecializationType <: AbstractDependentTemplateSpecializationType
 Hold a pointer to a `clang::DependentTemplateSpecializationType` object.
@@ -302,9 +221,6 @@ Hold a pointer to a `clang::DependentTemplateSpecializationType` object.
 struct DependentTemplateSpecializationType <: AbstractDependentTemplateSpecializationType
     ptr::CXDependentTemplateSpecializationType
 end
-
-Base.unsafe_convert(::Type{CXDependentTemplateSpecializationType}, x::DependentTemplateSpecializationType) = x.ptr
-Base.cconvert(::Type{CXDependentTemplateSpecializationType}, x::DependentTemplateSpecializationType) = x
 
 """
     struct AtomicType <: AbstractAtomicType
@@ -314,9 +230,6 @@ struct AtomicType <: AbstractAtomicType
     ptr::CXAtomicType
 end
 
-Base.unsafe_convert(::Type{CXAtomicType}, x::AtomicType) = x.ptr
-Base.cconvert(::Type{CXAtomicType}, x::AtomicType) = x
-
 """
     struct AdjustedType <: AbstractAdjustedType
 Hold a pointer to a `clang::AdjustedType` object.
@@ -324,9 +237,6 @@ Hold a pointer to a `clang::AdjustedType` object.
 struct AdjustedType <: AbstractAdjustedType
     ptr::CXAdjustedType
 end
-
-Base.unsafe_convert(::Type{CXAdjustedType}, x::AdjustedType) = x.ptr
-Base.cconvert(::Type{CXAdjustedType}, x::AdjustedType) = x
 
 """
     struct DecayedType <: AbstractDecayedType
@@ -336,9 +246,6 @@ struct DecayedType <: AbstractDecayedType
     ptr::CXDecayedType
 end
 
-Base.unsafe_convert(::Type{CXDecayedType}, x::DecayedType) = x.ptr
-Base.cconvert(::Type{CXDecayedType}, x::DecayedType) = x
-
 """
     struct InjectedClassNameType <: AbstractInjectedClassNameType
 Hold a pointer to a `clang::InjectedClassNameType` object.
@@ -346,9 +253,6 @@ Hold a pointer to a `clang::InjectedClassNameType` object.
 struct InjectedClassNameType <: AbstractInjectedClassNameType
     ptr::CXInjectedClassNameType
 end
-
-Base.unsafe_convert(::Type{CXInjectedClassNameType}, x::InjectedClassNameType) = x.ptr
-Base.cconvert(::Type{CXInjectedClassNameType}, x::InjectedClassNameType) = x
 
 """
     struct MacroQualifiedType <: AbstractMacroQualifiedType
@@ -358,9 +262,6 @@ struct MacroQualifiedType <: AbstractMacroQualifiedType
     ptr::CXMacroQualifiedType
 end
 
-Base.unsafe_convert(::Type{CXMacroQualifiedType}, x::MacroQualifiedType) = x.ptr
-Base.cconvert(::Type{CXMacroQualifiedType}, x::MacroQualifiedType) = x
-
 """
     struct UnaryTransformType <: AbstractUnaryTransformType
 Hold a pointer to a `clang::UnaryTransformType` object.
@@ -368,9 +269,6 @@ Hold a pointer to a `clang::UnaryTransformType` object.
 struct UnaryTransformType <: AbstractUnaryTransformType
     ptr::CXUnaryTransformType
 end
-
-Base.unsafe_convert(::Type{CXUnaryTransformType}, x::UnaryTransformType) = x.ptr
-Base.cconvert(::Type{CXUnaryTransformType}, x::UnaryTransformType) = x
 
 """
     struct ParenType <: AbstractParenType
@@ -380,9 +278,6 @@ struct ParenType <: AbstractParenType
     ptr::CXParenType
 end
 
-Base.unsafe_convert(::Type{CXParenType}, x::ParenType) = x.ptr
-Base.cconvert(::Type{CXParenType}, x::ParenType) = x
-
 """
     struct DependentAddressSpaceType <: AbstractDependentAddressSpaceType
 Hold a pointer to a `clang::DependentAddressSpaceType` object.
@@ -390,9 +285,6 @@ Hold a pointer to a `clang::DependentAddressSpaceType` object.
 struct DependentAddressSpaceType <: AbstractDependentAddressSpaceType
     ptr::CXDependentAddressSpaceType
 end
-
-Base.unsafe_convert(::Type{CXDependentAddressSpaceType}, x::DependentAddressSpaceType) = x.ptr
-Base.cconvert(::Type{CXDependentAddressSpaceType}, x::DependentAddressSpaceType) = x
 
 """
     struct DependentSizedExtVectorType <: AbstractDependentSizedExtVectorType
@@ -402,9 +294,6 @@ struct DependentSizedExtVectorType <: AbstractDependentSizedExtVectorType
     ptr::CXDependentSizedExtVectorType
 end
 
-Base.unsafe_convert(::Type{CXDependentSizedExtVectorType}, x::DependentSizedExtVectorType) = x.ptr
-Base.cconvert(::Type{CXDependentSizedExtVectorType}, x::DependentSizedExtVectorType) = x
-
 """
     struct DecltypeType <: AbstractDecltypeType
 Hold a pointer to a `clang::DecltypeType` object.
@@ -412,9 +301,6 @@ Hold a pointer to a `clang::DecltypeType` object.
 struct DecltypeType <: AbstractDecltypeType
     ptr::CXDecltypeType
 end
-
-Base.unsafe_convert(::Type{CXDecltypeType}, x::DecltypeType) = x.ptr
-Base.cconvert(::Type{CXDecltypeType}, x::DecltypeType) = x
 
 """
     struct DeducedType <: AbstractDeducedType
@@ -424,9 +310,6 @@ struct DeducedType <: AbstractDeducedType
     ptr::CXDeducedType
 end
 
-Base.unsafe_convert(::Type{CXDeducedType}, x::DeducedType) = x.ptr
-Base.cconvert(::Type{CXDeducedType}, x::DeducedType) = x
-
 """
     struct DeducedTemplateSpecializationType <: AbstractDeducedTemplateSpecializationType
 Hold a pointer to a `clang::DeducedTemplateSpecializationType` object.
@@ -434,9 +317,6 @@ Hold a pointer to a `clang::DeducedTemplateSpecializationType` object.
 struct DeducedTemplateSpecializationType <: AbstractDeducedTemplateSpecializationType
     ptr::CXDeducedTemplateSpecializationType
 end
-
-Base.unsafe_convert(::Type{CXDeducedTemplateSpecializationType}, x::DeducedTemplateSpecializationType) = x.ptr
-Base.cconvert(::Type{CXDeducedTemplateSpecializationType}, x::DeducedTemplateSpecializationType) = x
 
 """
     QualType <: AbstractQualType
@@ -448,9 +328,6 @@ it's the opaque pointer representation of the `clang::QualType` itself.
 struct QualType <: AbstractQualType
     ptr::CXQualType
 end
-
-Base.unsafe_convert(::Type{CXQualType}, x::QualType) = x.ptr
-Base.cconvert(::Type{CXQualType}, x::QualType) = x
 
 # FIXME: find a use case
 # """
@@ -470,9 +347,6 @@ struct Type_ <: AbstractType_
     ptr::CXType_
 end
 
-Base.unsafe_convert(::Type{CXQualType}, x::Type_) = x.ptr
-Base.cconvert(::Type{CXQualType}, x::Type_) = x
-
 """
     BuiltinType <: AbstractBuiltinType
 A builtin `QualType`.
@@ -482,9 +356,6 @@ struct BuiltinType <: AbstractBuiltinType
 end
 
 BuiltinType(x::QualType) = BuiltinType(get_type_ptr(x).ptr)
-
-Base.unsafe_convert(::Type{CXType_}, x::T) where {T<:AbstractBuiltinType} = x.ptr
-Base.cconvert(::Type{CXType_}, x::T) where {T<:AbstractBuiltinType} = x
 
 struct VoidTy <: AbstractVoidTy
     ptr::CXType_
@@ -706,10 +577,6 @@ struct TypeSourceInfo <: AbstractTypeSourceInfo
     ptr::CXTypeSourceInfo
 end
 
-Base.unsafe_convert(::Type{CXTypeSourceInfo}, x::TypeSourceInfo) = x.ptr
-Base.cconvert(::Type{CXTypeSourceInfo}, x::TypeSourceInfo) = x
-
-
 """
     struct VectorType <: AbstractVectorType
 Hold a pointer to a `clang::VectorType` object.
@@ -717,9 +584,6 @@ Hold a pointer to a `clang::VectorType` object.
 struct VectorType <: AbstractVectorType
     ptr::CXVectorType
 end
-
-Base.unsafe_convert(::Type{CXVectorType}, x::VectorType) = x.ptr
-Base.cconvert(::Type{CXVectorType}, x::VectorType) = x
 
 """
     struct AttributedType <: AbstractAttributedType
@@ -729,9 +593,6 @@ struct AttributedType <: AbstractAttributedType
     ptr::CXAttributedType
 end
 
-Base.unsafe_convert(::Type{CXAttributedType}, x::AttributedType) = x.ptr
-Base.cconvert(::Type{CXAttributedType}, x::AttributedType) = x
-
 """
     struct PackExpansionType <: AbstractPackExpansionType
 Hold a pointer to a `clang::PackExpansionType` object.
@@ -739,9 +600,6 @@ Hold a pointer to a `clang::PackExpansionType` object.
 struct PackExpansionType <: AbstractPackExpansionType
     ptr::CXPackExpansionType
 end
-
-Base.unsafe_convert(::Type{CXPackExpansionType}, x::PackExpansionType) = x.ptr
-Base.cconvert(::Type{CXPackExpansionType}, x::PackExpansionType) = x
 
 """
     struct AutoType <: AbstractAutoType
@@ -751,10 +609,6 @@ struct AutoType <: AbstractAutoType
     ptr::CXAutoType
 end
 
-Base.unsafe_convert(::Type{CXAutoType}, x::AutoType) = x.ptr
-Base.cconvert(::Type{CXAutoType}, x::AutoType) = x
-
-
 """
     struct TypeOfExprType <: AbstractTypeOfExprType
 Hold a pointer to a `clang::TypeOfExprType` object.
@@ -762,9 +616,6 @@ Hold a pointer to a `clang::TypeOfExprType` object.
 struct TypeOfExprType <: AbstractTypeOfExprType
     ptr::CXTypeOfExprType
 end
-
-Base.unsafe_convert(::Type{CXTypeOfExprType}, x::TypeOfExprType) = x.ptr
-Base.cconvert(::Type{CXTypeOfExprType}, x::TypeOfExprType) = x
 
 """
     struct TypeOfType <: AbstractTypeOfType
@@ -774,9 +625,6 @@ struct TypeOfType <: AbstractTypeOfType
     ptr::CXTypeOfType
 end
 
-Base.unsafe_convert(::Type{CXTypeOfType}, x::TypeOfType) = x.ptr
-Base.cconvert(::Type{CXTypeOfType}, x::TypeOfType) = x
-
 """
     struct BitIntType <: AbstractBitIntType
 Hold a pointer to a `clang::BitIntType` object.
@@ -784,10 +632,6 @@ Hold a pointer to a `clang::BitIntType` object.
 struct BitIntType <: AbstractBitIntType
     ptr::CXBitIntType
 end
-
-Base.unsafe_convert(::Type{CXBitIntType}, x::BitIntType) = x.ptr
-Base.cconvert(::Type{CXBitIntType}, x::BitIntType) = x
-
 
 """
     struct BlockPointerType <: AbstractBlockPointerType
@@ -797,9 +641,6 @@ struct BlockPointerType <: AbstractBlockPointerType
     ptr::CXBlockPointerType
 end
 
-Base.unsafe_convert(::Type{CXBlockPointerType}, x::BlockPointerType) = x.ptr
-Base.cconvert(::Type{CXBlockPointerType}, x::BlockPointerType) = x
-
 """
     struct DependentVectorType <: AbstractDependentVectorType
 Hold a pointer to a `clang::DependentVectorType` object.
@@ -807,9 +648,6 @@ Hold a pointer to a `clang::DependentVectorType` object.
 struct DependentVectorType <: AbstractDependentVectorType
     ptr::CXDependentVectorType
 end
-
-Base.unsafe_convert(::Type{CXDependentVectorType}, x::DependentVectorType) = x.ptr
-Base.cconvert(::Type{CXDependentVectorType}, x::DependentVectorType) = x
 
 """
     struct MatrixType <: AbstractMatrixType
@@ -819,9 +657,6 @@ struct MatrixType <: AbstractMatrixType
     ptr::CXMatrixType
 end
 
-Base.unsafe_convert(::Type{CXMatrixType}, x::MatrixType) = x.ptr
-Base.cconvert(::Type{CXMatrixType}, x::MatrixType) = x
-
 """
     struct ConstantMatrixType <: AbstractConstantMatrixType
 Hold a pointer to a `clang::ConstantMatrixType` object.
@@ -829,9 +664,6 @@ Hold a pointer to a `clang::ConstantMatrixType` object.
 struct ConstantMatrixType <: AbstractConstantMatrixType
     ptr::CXConstantMatrixType
 end
-
-Base.unsafe_convert(::Type{CXConstantMatrixType}, x::ConstantMatrixType) = x.ptr
-Base.cconvert(::Type{CXConstantMatrixType}, x::ConstantMatrixType) = x
 
 """
     struct DependentSizedMatrixType <: AbstractDependentSizedMatrixType
@@ -841,9 +673,6 @@ struct DependentSizedMatrixType <: AbstractDependentSizedMatrixType
     ptr::CXDependentSizedMatrixType
 end
 
-Base.unsafe_convert(::Type{CXDependentSizedMatrixType}, x::DependentSizedMatrixType) = x.ptr
-Base.cconvert(::Type{CXDependentSizedMatrixType}, x::DependentSizedMatrixType) = x
-
 """
     struct DependentBitIntType <: AbstractDependentBitIntType
 Hold a pointer to a `clang::DependentBitIntType` object.
@@ -851,10 +680,6 @@ Hold a pointer to a `clang::DependentBitIntType` object.
 struct DependentBitIntType <: AbstractDependentBitIntType
     ptr::CXDependentBitIntType
 end
-
-Base.unsafe_convert(::Type{CXDependentBitIntType}, x::DependentBitIntType) = x.ptr
-Base.cconvert(::Type{CXDependentBitIntType}, x::DependentBitIntType) = x
-
 
 """
     struct ExtVectorType <: AbstractExtVectorType
@@ -864,10 +689,6 @@ struct ExtVectorType <: AbstractExtVectorType
     ptr::CXExtVectorType
 end
 
-Base.unsafe_convert(::Type{CXExtVectorType}, x::ExtVectorType) = x.ptr
-Base.cconvert(::Type{CXExtVectorType}, x::ExtVectorType) = x
-
-
 """
     struct ObjCObjectType <: AbstractObjCObjectType
 Hold a pointer to a `clang::ObjCObjectType` object.
@@ -875,9 +696,6 @@ Hold a pointer to a `clang::ObjCObjectType` object.
 struct ObjCObjectType <: AbstractObjCObjectType
     ptr::CXObjCObjectType
 end
-
-Base.unsafe_convert(::Type{CXObjCObjectType}, x::ObjCObjectType) = x.ptr
-Base.cconvert(::Type{CXObjCObjectType}, x::ObjCObjectType) = x
 
 """
     struct ObjCObjectPointerType <: AbstractObjCObjectPointerType
@@ -887,10 +705,6 @@ struct ObjCObjectPointerType <: AbstractObjCObjectPointerType
     ptr::CXObjCObjectPointerType
 end
 
-Base.unsafe_convert(::Type{CXObjCObjectPointerType}, x::ObjCObjectPointerType) = x.ptr
-Base.cconvert(::Type{CXObjCObjectPointerType}, x::ObjCObjectPointerType) = x
-
-
 """
     struct PipeType <: AbstractPipeType
 Hold a pointer to a `clang::PipeType` object.
@@ -899,5 +713,3 @@ struct PipeType <: AbstractPipeType
     ptr::CXPipeType
 end
 
-Base.unsafe_convert(::Type{CXPipeType}, x::PipeType) = x.ptr
-Base.cconvert(::Type{CXPipeType}, x::PipeType) = x

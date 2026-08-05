@@ -86,7 +86,7 @@ using Test
     @test f(I, "Widget")
     widget = get_decl(f)
     @test widget isa CC.NamedDecl
-    widget_rd = CC.CXXRecordDecl(get_decl(f).ptr)
+    widget_rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     widget_ii = CC.getIdentifier(widget)
     widget_loc = CC.getLocation(widget)
 
@@ -269,7 +269,13 @@ end
 @testset "CompilerInstance | InitializeSourceManagerFromFile" begin
     ci = CC.CompilerInstance()
     CC.createDiagnostics(ci)
-    CC.createFileManager(ci)
+    fm = CC.createFileManager(ci)
+    # `createFileManager` hands back the manager it installed, not a fresh one -- the instance
+    # then reports the same object. Asserting the identity rather than the Julia type is what
+    # makes this about clang: the wrapper's own `return FileManager(...)` fixes the type, so
+    # `isa` could not tell a correct wrapper from one handing back some other file manager.
+    H = CC.LibClangEx.CXFileManager
+    @test Base.unsafe_convert(H, fm) == Base.unsafe_convert(H, CC.getFileManager(ci))
     CC.createSourceManager(ci, CC.getFileManager(ci))
     sm = CC.getSourceManager(ci)
 

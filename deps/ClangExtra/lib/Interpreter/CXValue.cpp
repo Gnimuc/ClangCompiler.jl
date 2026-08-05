@@ -8,96 +8,96 @@
 
 CXValue clang_Value_create(void) {
   auto V = std::make_unique<clang::Value>();
-  return V.release();
+  return reinterpret_cast<CXValue>(V.release());
 }
 
-void clang_Value_dispose(CXValue V) { delete static_cast<clang::Value *>(V); }
+void clang_Value_dispose(CXValue V) { delete reinterpret_cast<clang::Value *>(V); }
 
 CXValue clang_createValueFromType(CXInterpreter I, void *Ty) {
-  auto V = std::make_unique<clang::Value>(static_cast<clang::Interpreter *>(I), Ty);
-  return V.release();
+  auto V = std::make_unique<clang::Value>(reinterpret_cast<clang::Interpreter *>(I), Ty);
+  return reinterpret_cast<CXValue>(V.release());
 }
 
 CXString clang_Value_printType(CXValue V) {
   std::string S;
   llvm::raw_string_ostream OS(S);
-  static_cast<clang::Value *>(V)->printType(OS);
+  reinterpret_cast<clang::Value *>(V)->printType(OS);
   return extra::makeCXString(S);
 }
 
 CXString clang_Value_printData(CXValue V) {
   std::string S;
   llvm::raw_string_ostream OS(S);
-  static_cast<clang::Value *>(V)->printData(OS);
+  reinterpret_cast<clang::Value *>(V)->printData(OS);
   return extra::makeCXString(S);
 }
 
 CXString clang_Value_print(CXValue V) {
   std::string S;
   llvm::raw_string_ostream OS(S);
-  static_cast<clang::Value *>(V)->print(OS);
+  reinterpret_cast<clang::Value *>(V)->print(OS);
   return extra::makeCXString(S);
 }
 
-void clang_Value_dump(CXValue V) { static_cast<clang::Value *>(V)->dump(); }
+void clang_Value_dump(CXValue V) { reinterpret_cast<clang::Value *>(V)->dump(); }
 
-void clang_Value_clear(CXValue V) { static_cast<clang::Value *>(V)->clear(); }
+void clang_Value_clear(CXValue V) { reinterpret_cast<clang::Value *>(V)->clear(); }
 
 CXASTContext clang_Value_getASTContext(CXValue V) {
-  return &static_cast<clang::Value *>(V)->getASTContext();
+  return reinterpret_cast<CXASTContext>(&reinterpret_cast<clang::Value *>(V)->getASTContext());
 }
 
 CXInterpreter clang_Value_getInterpreter(CXValue V) {
-  return &static_cast<clang::Value *>(V)->getInterpreter();
+  return reinterpret_cast<CXInterpreter>(&reinterpret_cast<clang::Value *>(V)->getInterpreter());
 }
 
 void *clang_Value_getType(CXValue V) {
-  return static_cast<clang::Value *>(V)->getType().getAsOpaquePtr();
+  return reinterpret_cast<clang::Value *>(V)->getType().getAsOpaquePtr();
 }
 
-bool clang_Value_isValid(CXValue V) { return static_cast<clang::Value *>(V)->isValid(); }
+bool clang_Value_isValid(CXValue V) { return reinterpret_cast<clang::Value *>(V)->isValid(); }
 
-bool clang_Value_isVoid(CXValue V) { return static_cast<clang::Value *>(V)->isVoid(); }
+bool clang_Value_isVoid(CXValue V) { return reinterpret_cast<clang::Value *>(V)->isVoid(); }
 
-bool clang_Value_hasValue(CXValue V) { return static_cast<clang::Value *>(V)->hasValue(); }
+bool clang_Value_hasValue(CXValue V) { return reinterpret_cast<clang::Value *>(V)->hasValue(); }
 
 bool clang_Value_isManuallyAlloc(CXValue V) {
-  return static_cast<clang::Value *>(V)->isManuallyAlloc();
+  return reinterpret_cast<clang::Value *>(V)->isManuallyAlloc();
 }
 
 CXValueKind clang_Value_getKind(CXValue V) {
-  return static_cast<CXValueKind>(static_cast<clang::Value *>(V)->getKind());
+  return static_cast<CXValueKind>(reinterpret_cast<clang::Value *>(V)->getKind());
 }
 
 void clang_Value_setKind(CXValue V, CXValueKind K) {
-  static_cast<clang::Value *>(V)->setKind(static_cast<clang::Value::Kind>(K));
+  reinterpret_cast<clang::Value *>(V)->setKind(static_cast<clang::Value::Kind>(K));
 }
 
 void clang_Value_setOpaqueType(CXValue V, void *Ty) {
-  static_cast<clang::Value *>(V)->setOpaqueType(Ty);
+  reinterpret_cast<clang::Value *>(V)->setOpaqueType(Ty);
 }
 
-void *clang_Value_getPtr(CXValue V) { return static_cast<clang::Value *>(V)->getPtr(); }
+void *clang_Value_getPtr(CXValue V) { return reinterpret_cast<clang::Value *>(V)->getPtr(); }
 
-void clang_Value_setPtr(CXValue V, void *P) { static_cast<clang::Value *>(V)->setPtr(P); }
+void clang_Value_setPtr(CXValue V, void *P) { reinterpret_cast<clang::Value *>(V)->setPtr(P); }
 
 // Expand the CX table (CXVALUE_ABI_TYPES), not clang's REPL_BUILTIN_TYPES:
 // clang/Interpreter/Value.h redefines the latter with a long double entry,
 // which must not cross the C boundary (see the header note).
 #define X(type, name)                                                                      \
   void clang_Value_set##name(CXValue V, type Val) {                                        \
-    static_cast<clang::Value *>(V)->set##name(Val);                                        \
+    reinterpret_cast<clang::Value *>(V)->set##name(Val);                                   \
   }                                                                                        \
   type clang_Value_get##name(CXValue V) {                                                  \
-    return static_cast<clang::Value *>(V)->get##name();                                    \
+    return reinterpret_cast<clang::Value *>(V)->get##name();                               \
   }
 CXVALUE_ABI_TYPES
 #undef X
 
 void clang_Value_setLongDouble(CXValue V, double Val) {
-  static_cast<clang::Value *>(V)->setLongDouble(static_cast<long double>(Val));
+  reinterpret_cast<clang::Value *>(V)->setLongDouble(static_cast<long double>(Val));
 }
 
 double clang_Value_getLongDouble(CXValue V) {
-  return static_cast<double>(static_cast<clang::Value *>(V)->getLongDouble());
+  return static_cast<double>(reinterpret_cast<clang::Value *>(V)->getLongDouble());
 }

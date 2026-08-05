@@ -85,10 +85,10 @@ typedef enum CXDecl_FriendObjectKind {
 
 // Null-safe downcast (dyn_cast_or_null) and kind predicate for every class in
 // the hierarchy, ABSTRACT bases included. The wrapper name carries the full
-// class spelling (DeclNodes name + "Decl"); stamped functions take and return
-// plain CXDecl.
+// class spelling (DeclNodes name + "Decl"). Each cast returns that class's own
+// handle, so narrowing is checked by the compiler rather than asserted.
 #define DECL(DERIVED, BASE)                                                                \
-  CXDecl clang_Decl_castTo##DERIVED##Decl(CXDecl D);                                        \
+  CX##DERIVED##Decl clang_Decl_castTo##DERIVED##Decl(CXDecl D);                             \
   bool clang_Decl_is##DERIVED##Decl(CXDecl D);
 #define ABSTRACT_DECL(DECL) DECL
 #include "clang-ex/AST/DeclNodes.inc"
@@ -301,15 +301,15 @@ unsigned clang_Decl_getGlobalID(CXDecl D);
 
 unsigned clang_Decl_getOwningModuleID(CXDecl D);
 
-CXModule clang_Decl_getImportedOwningModule(CXDecl D);
+CXModule_ clang_Decl_getImportedOwningModule(CXDecl D);
 
-CXModule clang_Decl_getLocalOwningModule(CXDecl D);
+CXModule_ clang_Decl_getLocalOwningModule(CXDecl D);
 
 bool clang_Decl_hasOwningModule(CXDecl D);
 
-CXModule clang_Decl_getOwningModule(CXDecl D);
+CXModule_ clang_Decl_getOwningModule(CXDecl D);
 
-CXModule clang_Decl_getOwningModuleForLinkage(CXDecl D, bool IgnoreLinkage);
+CXModule_ clang_Decl_getOwningModuleForLinkage(CXDecl D, bool IgnoreLinkage);
 
 bool clang_Decl_isUnconditionallyVisible(CXDecl D);
 

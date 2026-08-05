@@ -8,10 +8,10 @@ using Test
     ClangCompiler.parse(I, "template<typename T, int N> struct S { T x; };")
     f = DeclFinder(I)
     @test f(I, "S")
-    ctd = ClangCompiler.ClassTemplateDecl(get_decl(f).ptr)
+    ctd = ClangCompiler.downcast(ClangCompiler.ClassTemplateDecl, get_decl(f).ptr)
     tpl = ClangCompiler.getTemplateParameters(ctd)
     @test ClangCompiler.getMinRequiredArguments(tpl) == 2
-    ttp = ClangCompiler.TemplateTypeParmDecl(ClangCompiler.getParam(tpl, 0).ptr)
+    ttp = ClangCompiler.downcast(ClangCompiler.TemplateTypeParmDecl, ClangCompiler.getParam(tpl, 0).ptr)
     @test ClangCompiler.getDepth(ttp) == 0
     @test ClangCompiler.getIndex(ttp) == 0
     @test !ClangCompiler.isParameterPack(ttp)
@@ -34,10 +34,10 @@ end
         (("pu_bi", false, ClangCompiler.ClassTemplateDecl),
          ("pu_bp", true, ClangCompiler.ClassTemplatePartialSpecializationDecl))
         @test f(I, var)
-        qt = ClangCompiler.getType(ClangCompiler.VarDecl(get_decl(f).ptr))
+        qt = ClangCompiler.getType(ClangCompiler.downcast(ClangCompiler.VarDecl, get_decl(f).ptr))
         canon = ClangCompiler.get_qual_type(ClangCompiler.getTypePtr(qt))
         rt = ClangCompiler.resolve(ClangCompiler.getTypePtr(canon))
-        spec = ClangCompiler.ClassTemplateSpecializationDecl(ClangCompiler.getDecl(rt).ptr)
+        spec = ClangCompiler.downcast(ClangCompiler.ClassTemplateSpecializationDecl, ClangCompiler.getDecl(rt).ptr)
         @test ClangCompiler.specializedOnPartial(spec) == on_partial
         arm = ClangCompiler.getSpecializedTemplateOrPartial(spec)
         @test arm isa armty
@@ -77,13 +77,13 @@ import ClangCompiler as CC
 
     p0 = CC.getParam(tpl, 0)                            # NamedDecl (T)
     @test p0.ptr != C_NULL && CC.getName(p0) == "T"
-    ttp = CC.TemplateTypeParmDecl(p0.ptr)
+    ttp = CC.downcast(CC.TemplateTypeParmDecl, p0.ptr)
     @test CC.getDepth(ttp) == 0
     @test CC.getIndex(ttp) == 0
     @test CC.isParameterPack(ttp) == false
 
     p1 = CC.getParam(tpl, 1)                            # NonTypeTemplateParmDecl (N)
-    nttp = CC.NonTypeTemplateParmDecl(p1.ptr)
+    nttp = CC.downcast(CC.NonTypeTemplateParmDecl, p1.ptr)
     @test CC.getDepth(nttp) == 0
     @test CC.getIndex(nttp) == 1
     @test CC.isParameterPack(nttp) == false
@@ -112,7 +112,7 @@ import ClangCompiler as CC
     ftd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "FunctionTemplate"
-            ftd = CC.FunctionTemplateDecl(d.ptr)
+            ftd = CC.downcast(CC.FunctionTemplateDecl, d.ptr)
             break
         end
     end
@@ -125,11 +125,11 @@ import ClangCompiler as CC
 
     # ---------- ClassTemplateSpecializationDecl (S<int,5>) ----------
     @test f(I, "s_inst")
-    vd = CC.VarDecl(get_decl(f).ptr)
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     specrec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd)))
     @test specrec.ptr != C_NULL && CC.getName(specrec) == "S"
     if CC.getDeclKindName(specrec) == "ClassTemplateSpecialization"
-        spec = CC.ClassTemplateSpecializationDecl(specrec.ptr)
+        spec = CC.downcast(CC.ClassTemplateSpecializationDecl, specrec.ptr)
         @test (CC.getSpecializationKind(spec); true)
         stpl = CC.getSpecializedTemplate(spec)
         @test stpl.ptr == ctd.ptr
@@ -145,7 +145,7 @@ import ClangCompiler as CC
 
     # ---------- Decl base accessors (freefn) ----------
     @test f(I, "freefn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     @test !CC.is_null_handle(CC.getLocation(fd))
     @test !CC.is_null_handle(CC.getBeginLoc(fd))
     @test !CC.is_null_handle(CC.getEndLoc(fd))
@@ -194,7 +194,7 @@ import ClangCompiler as CC
 
     # ---------- attributed decl (depvar) ----------
     @test f(I, "depvar")
-    dv = CC.VarDecl(get_decl(f).ptr)
+    dv = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     @test CC.hasAttrs(dv)
     if CC.getNumAttrs(dv) > 0
         @test !CC.is_null_handle(CC.getAttr(dv, 0))
@@ -257,7 +257,7 @@ end
 
     # ---------- ClassTemplateDecl (S): base + TemplateParameterList locs ----------
     @test f(I, "S")
-    ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     # ClassTemplateDecl overrides getInstantiatedFromMemberTemplate to return its own
     # class, so the wrapper carries ClassTemplateDecl, not the Redeclarable base.
     @test CC.getInstantiatedFromMemberTemplate(ctd).ptr == C_NULL
@@ -271,7 +271,7 @@ end
     ftd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "FunctionTemplate"
-            ftd = CC.FunctionTemplateDecl(d.ptr)
+            ftd = CC.downcast(CC.FunctionTemplateDecl, d.ptr)
             break
         end
     end
@@ -285,7 +285,7 @@ end
     if f(I, "vtmpl")
         vnd = get_decl(f)
         if CC.getDeclKindName(vnd) == "VarTemplate"
-            vtd = CC.VarTemplateDecl(vnd.ptr)
+            vtd = CC.downcast(CC.VarTemplateDecl, vnd.ptr)
             @test CC.getTemplatedDecl(vtd).ptr != C_NULL && CC.getName(CC.getTemplatedDecl(vtd)) == "vtmpl"
             @test CC.isThisDeclarationADefinition(vtd) == true
         end
@@ -295,18 +295,18 @@ end
     if f(I, "AliasT")
         atd_nd = get_decl(f)
         if CC.getDeclKindName(atd_nd) == "TypeAliasTemplate"
-            tatd = CC.TypeAliasTemplateDecl(atd_nd.ptr)
+            tatd = CC.downcast(CC.TypeAliasTemplateDecl, atd_nd.ptr)
             @test CC.getTemplatedDecl(tatd).ptr != C_NULL && CC.getName(CC.getTemplatedDecl(tatd)) == "AliasT"
         end
     end
 
     # ---------- ClassTemplatePartialSpecializationDecl (PB<T*>) ----------
     @test f(I, "pb_use")
-    vd = CC.VarDecl(get_decl(f).ptr)
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     qt = CC.getType(vd)
     canon = CC.get_qual_type(CC.getTypePtr(qt))
     rt = CC.resolve(CC.getTypePtr(canon))
-    spec = CC.ClassTemplateSpecializationDecl(CC.getDecl(rt).ptr)
+    spec = CC.downcast(CC.ClassTemplateSpecializationDecl, CC.getDecl(rt).ptr)
     @test CC.specializedOnPartial(spec)
     partial = CC.getSpecializedTemplateOrPartial(spec)
     @test partial.ptr != C_NULL && CC.getName(partial) == "PB"
@@ -335,11 +335,11 @@ end
 
     # ---------- ClassTemplateSpecializationDecl (CT<int>) ----------
     @test f(I, "ct_use")
-    vd = CC.VarDecl(get_decl(f).ptr)
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     specrec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd)))
     @test specrec.ptr != C_NULL && CC.getName(specrec) == "CT"
     if CC.getDeclKindName(specrec) == "ClassTemplateSpecialization"
-        cspec = CC.ClassTemplateSpecializationDecl(specrec.ptr)
+        cspec = CC.downcast(CC.ClassTemplateSpecializationDecl, specrec.ptr)
         @test CC.getMostRecentDecl(cspec).ptr == cspec.ptr
         @test !CC.is_null_handle(CC.getPointOfInstantiation(cspec))
         @test !(CC.isExplicitSpecialization(cspec))
@@ -375,7 +375,7 @@ end
     if f(I, "Small")
         cnd = get_decl(f)
         if CC.getDeclKindName(cnd) == "Concept"
-            cd = CC.ConceptDecl(cnd.ptr)
+            cd = CC.downcast(CC.ConceptDecl, cnd.ptr)
             @test !CC.is_null_handle(CC.getConstraintExpr(cd))
             @test CC.isTypeConcept(cd)
             @test CC.getCanonicalDecl(cd).ptr == cd.ptr
@@ -403,18 +403,18 @@ end
 
     # ---------- TemplateDecl base methods (via the ClassTemplateDecl CT) ----------
     @test f(I, "CT")
-    ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     @test CC.hasAssociatedConstraints(ctd) == false   # AbstractTemplateDecl path
     @test !(CC.isTypeAlias(ctd))
     @test !CC.isTypeAlias(ctd)                         # a class template is not an alias
 
     # ---------- ClassTemplateSpecializationDecl (CT<int>) ----------
     @test f(I, "ct_use")
-    vd = CC.VarDecl(get_decl(f).ptr)
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     specrec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd)))
     @test specrec.ptr != C_NULL && CC.getName(specrec) == "CT"
     if CC.getDeclKindName(specrec) == "ClassTemplateSpecialization"
-        cspec = CC.ClassTemplateSpecializationDecl(specrec.ptr)
+        cspec = CC.downcast(CC.ClassTemplateSpecializationDecl, specrec.ptr)
         @test !(CC.isClassScopeExplicitSpecialization(cspec))
         @test !CC.is_null_handle(CC.getTemplateInstantiationArgs(cspec))
         @test CC.getTypeAsWritten(cspec).ptr == C_NULL
@@ -485,7 +485,7 @@ end
 
     # ---------- MemberSpecializationInfo (DtOuter<int>::DtInner) ----------
     @test f(I, "dt_inner_use")
-    ivd = CC.VarDecl(get_decl(f).ptr)
+    ivd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     innerrec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(ivd)))
     @test innerrec.ptr != C_NULL && CC.getName(innerrec) == "DtInner"
     if innerrec.ptr != C_NULL
@@ -526,10 +526,10 @@ end
 
     # ---------- TemplateTemplateParmDecl (DtTtpBox's C) ----------
     @test f(I, "DtTtpBox")
-    ttpbox = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ttpbox = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     p0 = CC.getParam(CC.getTemplateParameters(ttpbox), 0)
     @test CC.getDeclKindName(p0) == "TemplateTemplateParm"
-    ttp = CC.TemplateTemplateParmDecl(p0.ptr)
+    ttp = CC.downcast(CC.TemplateTemplateParmDecl, p0.ptr)
     @test !(CC.isPackExpansion(ttp))
     @test !CC.isPackExpansion(ttp)
     @test !(CC.isExpandedParameterPack(ttp))
@@ -545,10 +545,10 @@ end
 
     # ---------- NonTypeTemplateParmDecl (DtNttBox's N) ----------
     @test f(I, "DtNttBox")
-    nttbox = CC.ClassTemplateDecl(get_decl(f).ptr)
+    nttbox = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     n0 = CC.getParam(CC.getTemplateParameters(nttbox), 0)
     @test CC.getDeclKindName(n0) == "NonTypeTemplateParm"
-    nttp = CC.NonTypeTemplateParmDecl(n0.ptr)
+    nttp = CC.downcast(CC.NonTypeTemplateParmDecl, n0.ptr)
     @test !(CC.defaultArgumentWasInherited(nttp))
     @test !CC.defaultArgumentWasInherited(nttp)
     @test !(CC.isPackExpansion(nttp))
@@ -558,9 +558,9 @@ end
 
     # a constrained placeholder (`DtAny auto V`) carries the constraint expression
     if f(I, "DtNttC")
-        c0 = CC.getParam(CC.getTemplateParameters(CC.ClassTemplateDecl(get_decl(f).ptr)), 0)
+        c0 = CC.getParam(CC.getTemplateParameters(CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)), 0)
         if CC.getDeclKindName(c0) == "NonTypeTemplateParm"
-            cnttp = CC.NonTypeTemplateParmDecl(c0.ptr)
+            cnttp = CC.downcast(CC.NonTypeTemplateParmDecl, c0.ptr)
             @test !CC.is_null_handle(CC.getPlaceholderTypeConstraint(cnttp))
             @test CC.hasPlaceholderTypeConstraint(cnttp) ==
                   (CC.getPlaceholderTypeConstraint(cnttp).ptr != C_NULL)
@@ -612,7 +612,7 @@ end
     @test CC.getMostRecentDecl(p0).ptr != C_NULL
     @test !CC.is_null_handle(CC.getTemplateArgsAsWritten(p0))
     tfd = CC.getTypeForDecl(p0)
-    if tfd != C_NULL && CC.is_injected_class_name_type(CC.Type_(tfd))
+    if !CC.is_null_handle(tfd) && CC.is_injected_class_name_type(tfd)
         ist = CC.getInjectedSpecializationType(p0)
         @test ist.ptr != C_NULL
         # round trip: the injected specialization type finds its own partial spec
@@ -626,7 +626,7 @@ end
     tatd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "TypeAliasTemplate"
-            tatd = CC.TypeAliasTemplateDecl(d.ptr)
+            tatd = CC.downcast(CC.TypeAliasTemplateDecl, d.ptr)
             break
         end
     end
@@ -642,7 +642,7 @@ end
     ftd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "FunctionTemplate"
-            ftd = CC.FunctionTemplateDecl(d.ptr)
+            ftd = CC.downcast(CC.FunctionTemplateDecl, d.ptr)
             break
         end
     end
@@ -660,7 +660,7 @@ end
     vtd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "VarTemplate"
-            vtd = CC.VarTemplateDecl(d.ptr)
+            vtd = CC.downcast(CC.VarTemplateDecl, d.ptr)
             break
         end
     end
@@ -724,7 +724,7 @@ end
 
     # ---------- associated constraints: parameter list and template ----------
     @test f(I, "DtfCon")
-    ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     tpl = CC.getTemplateParameters(ctd)
     @test !(CC.containsUnexpandedParameterPack(tpl))
     @test !CC.containsUnexpandedParameterPack(tpl)
@@ -746,19 +746,19 @@ end
 
     # ---------- default arguments of the three parameter kinds ----------
     @test f(I, "DtfDefaults")
-    dtd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    dtd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     dpl = CC.getTemplateParameters(dtd)
-    ttp = CC.TemplateTypeParmDecl(CC.getParam(dpl, 0).ptr)
+    ttp = CC.downcast(CC.TemplateTypeParmDecl, CC.getParam(dpl, 0).ptr)
     @test !(CC.isPackExpansion(ttp))
     @test !CC.isPackExpansion(ttp)
     @test CC.hasDefaultArgument(ttp)
     @test !CC.is_null_handle(CC.getDefaultArgumentLoc(ttp))
     @test CC.isValid(CC.getDefaultArgumentLoc(ttp))
-    nttp = CC.NonTypeTemplateParmDecl(CC.getParam(dpl, 1).ptr)
+    nttp = CC.downcast(CC.NonTypeTemplateParmDecl, CC.getParam(dpl, 1).ptr)
     @test CC.hasDefaultArgument(nttp)
     @test !CC.is_null_handle(CC.getDefaultArgumentLoc(nttp))
     @test CC.isValid(CC.getDefaultArgumentLoc(nttp))
-    ttpp = CC.TemplateTemplateParmDecl(CC.getParam(dpl, 2).ptr)
+    ttpp = CC.downcast(CC.TemplateTemplateParmDecl, CC.getParam(dpl, 2).ptr)
     @test CC.hasDefaultArgument(ttpp)
     tal = CC.getDefaultArgument(ttpp)
     @test tal.ptr != C_NULL
@@ -776,10 +776,10 @@ end
 
     # ---------- TemplateParamObjectDecl reached through its template argument ----------
     @test f(I, "dtf_obj")
-    oqt = CC.getType(CC.VarDecl(get_decl(f).ptr))
+    oqt = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     ocanon = CC.get_qual_type(CC.getTypePtr(oqt))
     ort = CC.resolve(CC.getTypePtr(ocanon))
-    ospec = CC.ClassTemplateSpecializationDecl(CC.getDecl(ort).ptr)
+    ospec = CC.downcast(CC.ClassTemplateSpecializationDecl, CC.getDecl(ort).ptr)
     oargs = CC.getTemplateArgs(ospec)
     ta = Base.get(oargs, 0)
     @test CC.getKind(ta) == CC.LibClangEx.CXTemplateArgument_Declaration
@@ -801,7 +801,7 @@ end
     tatd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "TypeAliasTemplate"
-            tatd = CC.TypeAliasTemplateDecl(d.ptr)
+            tatd = CC.downcast(CC.TypeAliasTemplateDecl, d.ptr)
             break
         end
     end
@@ -814,7 +814,7 @@ end
     ftd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "FunctionTemplate"
-            ftd = CC.FunctionTemplateDecl(d.ptr)
+            ftd = CC.downcast(CC.FunctionTemplateDecl, d.ptr)
             break
         end
     end
@@ -828,7 +828,7 @@ end
     vtd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "VarTemplate"
-            vtd = CC.VarTemplateDecl(d.ptr)
+            vtd = CC.downcast(CC.VarTemplateDecl, d.ptr)
             break
         end
     end
@@ -845,7 +845,7 @@ end
     ptd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "ClassTemplate"
-            ptd = CC.ClassTemplateDecl(d.ptr)
+            ptd = CC.downcast(CC.ClassTemplateDecl, d.ptr)
             break
         end
     end
@@ -880,7 +880,7 @@ end
 
     # ---------- ClassTemplateDecl: the specialization set ----------
     @test f(I, "SgBox")
-    ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     CC.LoadLazySpecializations(ctd)          # no external AST source: a no-op
     n = CC.getNumSpecializations(ctd)
     @test n == 2
@@ -904,7 +904,7 @@ end
     # ---------- TemplateTypeParmDecl: default-argument info + typename flag ----------
     p0 = CC.getParam(tpl, 0)
     @test CC.getDeclKindName(p0) == "TemplateTypeParm"
-    ttp = CC.TemplateTypeParmDecl(p0.ptr)
+    ttp = CC.downcast(CC.TemplateTypeParmDecl, p0.ptr)
     @test !CC.hasDefaultArgument(ttp)
     tsi = CC.getDefaultArgumentInfo(ttp)
     @test tsi.ptr == C_NULL                  # `typename T` carries no default
@@ -917,8 +917,8 @@ end
     @test CC.wasDeclaredWithTypename(ttp) == was
 
     @test f(I, "SgDef")
-    dtd = CC.ClassTemplateDecl(get_decl(f).ptr)
-    d0 = CC.TemplateTypeParmDecl(CC.getParam(CC.getTemplateParameters(dtd), 0).ptr)
+    dtd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    d0 = CC.downcast(CC.TemplateTypeParmDecl, CC.getParam(CC.getTemplateParameters(dtd), 0).ptr)
     @test CC.hasDefaultArgument(d0)
     dtsi = CC.getDefaultArgumentInfo(d0)
     @test dtsi.ptr != C_NULL                 # `typename T = int`
@@ -926,7 +926,7 @@ end
     # ---------- NonTypeTemplateParmDecl: position + expansion-type guard ----------
     n1 = CC.getParam(tpl, 1)
     @test CC.getDeclKindName(n1) == "NonTypeTemplateParm"
-    nttp = CC.NonTypeTemplateParmDecl(n1.ptr)
+    nttp = CC.downcast(CC.NonTypeTemplateParmDecl, n1.ptr)
     @test CC.getPosition(nttp) == CC.getIndex(nttp)   # one stored field, two names
     @test CC.getPosition(nttp) == 1
     @test !CC.isExpandedParameterPack(nttp)
@@ -934,10 +934,10 @@ end
 
     # ---------- TemplateTemplateParmDecl: position ----------
     @test f(I, "SgTT")
-    ttd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ttd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     t0 = CC.getParam(CC.getTemplateParameters(ttd), 0)
     @test CC.getDeclKindName(t0) == "TemplateTemplateParm"
-    ttpp = CC.TemplateTemplateParmDecl(t0.ptr)
+    ttpp = CC.downcast(CC.TemplateTemplateParmDecl, t0.ptr)
     @test CC.getPosition(ttpp) == CC.getIndex(ttpp)
     @test CC.getPosition(ttpp) == 0
 
@@ -946,7 +946,7 @@ end
     ftd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "FunctionTemplate"
-            ftd = CC.FunctionTemplateDecl(d.ptr)
+            ftd = CC.downcast(CC.FunctionTemplateDecl, d.ptr)
             break
         end
     end
@@ -967,7 +967,7 @@ end
     vtd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "VarTemplate"
-            vtd = CC.VarTemplateDecl(d.ptr)
+            vtd = CC.downcast(CC.VarTemplateDecl, d.ptr)
             break
         end
     end
@@ -1010,7 +1010,7 @@ end
 
     # ---------- TemplateDecl: re-seating the parameter list ----------
     @test f(I, "MtBox")
-    ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     tpl = CC.getTemplateParameters(ctd)
     @test !CC.is_null_handle(tpl) && size(tpl) == 2
     CC.setTemplateParameters(ctd, tpl)          # re-seating the same list is a no-op
@@ -1059,7 +1059,7 @@ end
     puctd = nothing
     for d in CC.get_decls(f)
         CC.getDeclKindName(d) == "ClassTemplate" || continue
-        puctd = CC.ClassTemplateDecl(d.ptr)
+        puctd = CC.downcast(CC.ClassTemplateDecl, d.ptr)
         break
     end
     @test puctd !== nothing && puctd.ptr != C_NULL && CC.getName(puctd) == "MtPu"
@@ -1081,7 +1081,7 @@ end
     vtd = nothing
     for d in CC.get_decls(f)
         CC.getDeclKindName(d) == "VarTemplate" || continue
-        vtd = CC.VarTemplateDecl(d.ptr)
+        vtd = CC.downcast(CC.VarTemplateDecl, d.ptr)
         break
     end
     @test vtd !== nothing && vtd.ptr != C_NULL && CC.getName(vtd) == "mt_var"
@@ -1120,7 +1120,7 @@ end
 
     # ---------- MemberSpecializationInfo: the setter pair ----------
     @test f(I, "mt_inner_use")
-    ivd = CC.VarDecl(get_decl(f).ptr)
+    ivd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     innerrec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(ivd)))
     @test innerrec.ptr != C_NULL && CC.getName(innerrec) == "MtInner"
     if innerrec isa CC.CXXRecordDecl && innerrec.ptr != C_NULL
@@ -1177,8 +1177,8 @@ end
 
     # ---------- TemplateTypeParmDecl: default-argument remove/set round-trip ----------
     @test f(I, "MtDef")
-    dtd = CC.ClassTemplateDecl(get_decl(f).ptr)
-    d0 = CC.TemplateTypeParmDecl(CC.getParam(CC.getTemplateParameters(dtd), 0).ptr)
+    dtd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    d0 = CC.downcast(CC.TemplateTypeParmDecl, CC.getParam(CC.getTemplateParameters(dtd), 0).ptr)
     @test CC.hasDefaultArgument(d0)
     dtsi = CC.getDefaultArgumentInfo(d0)
     @test dtsi.ptr != C_NULL
@@ -1195,7 +1195,7 @@ end
     # ---------- NonTypeTemplateParmDecl: default-argument remove/set round-trip ----------
     n1 = CC.getParam(tpl, 1)
     @test CC.getDeclKindName(n1) == "NonTypeTemplateParm"
-    nttp = CC.NonTypeTemplateParmDecl(n1.ptr)
+    nttp = CC.downcast(CC.NonTypeTemplateParmDecl, n1.ptr)
     @test CC.hasDefaultArgument(nttp)
     darg = CC.getDefaultArgument(nttp)
     @test darg.ptr != C_NULL
@@ -1209,10 +1209,10 @@ end
 
     # ---------- TemplateTemplateParmDecl: default-argument remove/set round-trip ----------
     @test f(I, "MtTT")
-    ttd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    ttd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     t0 = CC.getParam(CC.getTemplateParameters(ttd), 0)
     @test CC.getDeclKindName(t0) == "TemplateTemplateParm"
-    ttp = CC.TemplateTemplateParmDecl(t0.ptr)
+    ttp = CC.downcast(CC.TemplateTemplateParmDecl, t0.ptr)
     @test CC.hasDefaultArgument(ttp)
     tal = CC.getDefaultArgument(ttp)
     @test tal.ptr != C_NULL
@@ -1253,7 +1253,7 @@ end
     # DtiBox names both the primary template and its partial specialization, so the
     # lookup result is not unique -- pick the ClassTemplateDecl out of the full list.
     @test f(I, "DtiBox")
-    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     @test CC.isValid(CC.getSourceRange(ctd))           # AbstractTemplateDecl path
     tpl = CC.getTemplateParameters(ctd)
@@ -1283,7 +1283,7 @@ end
 
     # ---------- TemplateTemplateParmDecl ----------
     @test f(I, "DtiTT")
-    tt_ctd = CC.ClassTemplateDecl(get_decl(f).ptr)
+    tt_ctd = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
     ttparm = CC.resolve(CC.getParam(CC.getTemplateParameters(tt_ctd), 0))
     @test ttparm.ptr != C_NULL && CC.getName(ttparm) == "TT"
     @test CC.isValid(CC.getSourceRange(ttparm))
@@ -1302,11 +1302,11 @@ end
 
     # ---------- setTypeAsWritten round-trip (class) ----------
     @test f(I, "dti_many")
-    vd = CC.VarDecl(get_decl(f).ptr)
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     rec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd)))
     @test rec.ptr != C_NULL && CC.getName(rec) == "DtiBox"
     if CC.getDeclKindName(rec) == "ClassTemplateSpecialization"
-        cspec = CC.ClassTemplateSpecializationDecl(rec.ptr)
+        cspec = CC.downcast(CC.ClassTemplateSpecializationDecl, rec.ptr)
         tsi = CC.getTrivialTypeSourceInfo(ctx, CC.getType(vd), CC.getLocation(vd))
         CC.setTypeAsWritten(cspec, tsi)
         @test CC.getTypeAsWritten(cspec).ptr == tsi.ptr
@@ -1465,7 +1465,7 @@ end
     ftd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "FunctionTemplate"
-            ftd = CC.FunctionTemplateDecl(d.ptr)
+            ftd = CC.downcast(CC.FunctionTemplateDecl, d.ptr)
             break
         end
     end
@@ -1490,7 +1490,7 @@ end
     vtd = nothing
     for d in CC.get_decls(f)
         if CC.getDeclKindName(d) == "VarTemplate"
-            vtd = CC.VarTemplateDecl(d.ptr)
+            vtd = CC.downcast(CC.VarTemplateDecl, d.ptr)
             break
         end
     end
@@ -1540,9 +1540,9 @@ end
 
     # ---------------- Pack argument: KPack<int, char> collapses to one Pack ----------------
     @test f(I, "k_pack_obj")
-    pack_qt = CC.getType(CC.VarDecl(get_decl(f).ptr))
+    pack_qt = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     pack_rt = CC.resolve(CC.getTypePtr(CC.get_qual_type(CC.getTypePtr(pack_qt))))
-    pack_spec = CC.ClassTemplateSpecializationDecl(CC.getDecl(pack_rt).ptr)
+    pack_spec = CC.downcast(CC.ClassTemplateSpecializationDecl, CC.getDecl(pack_rt).ptr)
     pack_args = CC.getTemplateArgs(pack_spec)
     @test CC.size(pack_args) == 1
     pack = Base.get(pack_args, 0)
@@ -1564,8 +1564,8 @@ end
 
     # ---------------- Expression argument: KNum<KM + 1> inside the KDep pattern ----------------
     @test f(I, "KDep")
-    kdep = CC.ClassTemplateDecl(get_decl(f).ptr)
-    kdep_patt = CC.CXXRecordDecl(CC.getTemplatedDecl(kdep).ptr)
+    kdep = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    kdep_patt = CC.downcast(CC.CXXRecordDecl, CC.getTemplatedDecl(kdep).ptr)
     fld = first(CC.getFields(kdep_patt))
     fty = CC.resolve(CC.getTypePtr(CC.getType(fld)))
     fty isa CC.ElaboratedType && (fty = CC.resolve(CC.getTypePtr(CC.getNamedType(fty))))
@@ -1579,8 +1579,8 @@ end
 
     # ---------------- TemplateArgumentLoc from a template-template default argument ----------------
     @test f(I, "KHolder")
-    kholder = CC.ClassTemplateDecl(get_decl(f).ptr)
-    ttp = CC.TemplateTemplateParmDecl(CC.getParam(CC.getTemplateParameters(kholder), 0).ptr)
+    kholder = CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr)
+    ttp = CC.downcast(CC.TemplateTemplateParmDecl, CC.getParam(CC.getTemplateParameters(kholder), 0).ptr)
     @test CC.hasDefaultArgument(ttp)
     tal_t = CC.getDefaultArgument(ttp)
     @test tal_t.ptr != C_NULL
@@ -1599,9 +1599,9 @@ end
 
     # ---------------- ASTTemplateArgumentListInfo: the args written on KPart<KT *, KN2> ----------------
     @test f(I, "k_part_obj")
-    part_qt = CC.getType(CC.VarDecl(get_decl(f).ptr))
+    part_qt = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     part_rt = CC.resolve(CC.getTypePtr(CC.get_qual_type(CC.getTypePtr(part_qt))))
-    part_spec = CC.ClassTemplateSpecializationDecl(CC.getDecl(part_rt).ptr)
+    part_spec = CC.downcast(CC.ClassTemplateSpecializationDecl, CC.getDecl(part_rt).ptr)
     @test CC.specializedOnPartial(part_spec)
     partial = CC.getSpecializedTemplateOrPartial(part_spec)
     @test partial.ptr != C_NULL && CC.getName(partial) == "KPart"
@@ -1659,7 +1659,7 @@ end
 
     # ---------------- ClassTemplateDecl::Create ----------------
     @test f(I, "FacBox")
-    ctd = CC.ClassTemplateDecl(first(CC.get_decls(f)).ptr)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(CC.get_decls(f)).ptr)
     tu_dc = CC.getDeclContext(ctd)
     box_params = CC.getTemplateParameters(ctd)
     box_patt = CC.getTemplatedDecl(ctd)
@@ -1674,7 +1674,7 @@ end
 
     # ---------------- FunctionTemplateDecl::Create ----------------
     @test f(I, "fac_identity")
-    ftd = CC.FunctionTemplateDecl(first(CC.get_decls(f)).ptr)
+    ftd = CC.downcast(CC.FunctionTemplateDecl, first(CC.get_decls(f)).ptr)
     ftd2 = CC.FunctionTemplateDecl(ctx, CC.getDeclContext(ftd), CC.getLocation(ftd),
                                    CC.getDeclName(ftd), CC.getTemplateParameters(ftd),
                                    CC.getTemplatedDecl(ftd))
@@ -1684,7 +1684,7 @@ end
 
     # ---------------- VarTemplateDecl::Create ----------------
     @test f(I, "fac_var")
-    vtd = CC.VarTemplateDecl(first(CC.get_decls(f)).ptr)
+    vtd = CC.downcast(CC.VarTemplateDecl, first(CC.get_decls(f)).ptr)
     vtd2 = CC.VarTemplateDecl(ctx, CC.getDeclContext(vtd), CC.getLocation(vtd),
                               CC.getDeclName(vtd), CC.getTemplateParameters(vtd),
                               CC.getTemplatedDecl(vtd))
@@ -1694,7 +1694,7 @@ end
 
     # ---------------- TypeAliasTemplateDecl::Create ----------------
     @test f(I, "FacAlias")
-    tatd = CC.TypeAliasTemplateDecl(first(CC.get_decls(f)).ptr)
+    tatd = CC.downcast(CC.TypeAliasTemplateDecl, first(CC.get_decls(f)).ptr)
     tatd2 = CC.TypeAliasTemplateDecl(ctx, CC.getDeclContext(tatd), CC.getLocation(tatd),
                                      CC.getDeclName(tatd), CC.getTemplateParameters(tatd),
                                      CC.getTemplatedDecl(tatd))
@@ -1706,7 +1706,7 @@ end
 
     # ---------------- ConceptDecl::Create ----------------
     @test f(I, "FacConcept")
-    cd = CC.ConceptDecl(first(CC.get_decls(f)).ptr)
+    cd = CC.downcast(CC.ConceptDecl, first(CC.get_decls(f)).ptr)
     cd2 = CC.ConceptDecl(ctx, CC.getDeclContext(cd), CC.getLocation(cd), CC.getDeclName(cd),
                          CC.getTemplateParameters(cd), CC.getConstraintExpr(cd))
     @test cd2.ptr != C_NULL && CC.getName(cd2) == "FacConcept"
@@ -1743,9 +1743,9 @@ end
 
     # ---------------- inherited default arguments, one per parameter kind ----------------
     @test f(I, "FacInhType")
-    tps = CC.getTemplateParameters(CC.ClassTemplateDecl(first(CC.get_decls(f)).ptr))
-    p0 = CC.TemplateTypeParmDecl(CC.getParam(tps, 0).ptr)
-    p1 = CC.TemplateTypeParmDecl(CC.getParam(tps, 1).ptr)
+    tps = CC.getTemplateParameters(CC.downcast(CC.ClassTemplateDecl, first(CC.get_decls(f)).ptr))
+    p0 = CC.downcast(CC.TemplateTypeParmDecl, CC.getParam(tps, 0).ptr)
+    p1 = CC.downcast(CC.TemplateTypeParmDecl, CC.getParam(tps, 1).ptr)
     @test !CC.hasDefaultArgument(p0)
     @test CC.hasDefaultArgument(p1)
     @test_throws AssertionError CC.setInheritedDefaultArgument(p1, ctx, p0)
@@ -1758,9 +1758,9 @@ end
     @test !CC.hasDefaultArgument(p0)
 
     @test f(I, "FacInhNonType")
-    nps = CC.getTemplateParameters(CC.ClassTemplateDecl(first(CC.get_decls(f)).ptr))
-    n0 = CC.NonTypeTemplateParmDecl(CC.getParam(nps, 0).ptr)
-    n1 = CC.NonTypeTemplateParmDecl(CC.getParam(nps, 1).ptr)
+    nps = CC.getTemplateParameters(CC.downcast(CC.ClassTemplateDecl, first(CC.get_decls(f)).ptr))
+    n0 = CC.downcast(CC.NonTypeTemplateParmDecl, CC.getParam(nps, 0).ptr)
+    n1 = CC.downcast(CC.NonTypeTemplateParmDecl, CC.getParam(nps, 1).ptr)
     CC.setInheritedDefaultArgument(n0, ctx, n1)
     @test CC.defaultArgumentWasInherited(n0)
     @test CC.getDefaultArgument(n0).ptr == CC.getDefaultArgument(n1).ptr
@@ -1768,9 +1768,9 @@ end
     @test !CC.hasDefaultArgument(n0)
 
     @test f(I, "FacInhTemplate")
-    pps = CC.getTemplateParameters(CC.ClassTemplateDecl(first(CC.get_decls(f)).ptr))
-    q0 = CC.TemplateTemplateParmDecl(CC.getParam(pps, 0).ptr)
-    q1 = CC.TemplateTemplateParmDecl(CC.getParam(pps, 1).ptr)
+    pps = CC.getTemplateParameters(CC.downcast(CC.ClassTemplateDecl, first(CC.get_decls(f)).ptr))
+    q0 = CC.downcast(CC.TemplateTemplateParmDecl, CC.getParam(pps, 0).ptr)
+    q1 = CC.downcast(CC.TemplateTemplateParmDecl, CC.getParam(pps, 1).ptr)
     @test CC.hasDefaultArgument(q1)
     CC.setInheritedDefaultArgument(q0, ctx, q1)
     @test CC.hasDefaultArgument(q0)
@@ -1802,13 +1802,13 @@ end
     # An instantiated template's name resolves to more than one declaration, so every lookup
     # below selects by kind instead of calling get_decl.
     @test f(I, "TpBox")
-    ctd = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                      if CC.getDeclKindName(d) == "ClassTemplate").ptr)
     tpl = CC.getTemplateParameters(ctd)
     dc = CC.getDeclContext(ctd)
     loc = CC.getLocation(ctd)
-    ttp = CC.TemplateTypeParmDecl(CC.getParam(tpl, 0).ptr)
-    nttp = CC.NonTypeTemplateParmDecl(CC.getParam(tpl, 1).ptr)
+    ttp = CC.downcast(CC.TemplateTypeParmDecl, CC.getParam(tpl, 0).ptr)
+    nttp = CC.downcast(CC.NonTypeTemplateParmDecl, CC.getParam(tpl, 1).ptr)
 
     ttp2 = CC.TemplateTypeParmDecl(ctx, dc, loc, loc, 0, 0, CC.getIdentifier(ttp), true, false)
     @test ttp2.ptr != C_NULL && CC.getName(ttp2) == "TpT"
@@ -1878,9 +1878,9 @@ end
 
     # ---------- reaching through a constrained parameter's TypeConstraint ----------
     @test f(I, "TpConstrained")
-    ctd_c = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f)
+    ctd_c = CC.downcast(CC.ClassTemplateDecl, first(d for d in CC.get_decls(f)
                                        if CC.getDeclKindName(d) == "ClassTemplate").ptr)
-    cparm = CC.TemplateTypeParmDecl(CC.getParam(CC.getTemplateParameters(ctd_c), 0).ptr)
+    cparm = CC.downcast(CC.TemplateTypeParmDecl, CC.getParam(CC.getTemplateParameters(ctd_c), 0).ptr)
     @test CC.hasTypeConstraint(cparm)
     @test CC.hasInitializedTypeConstraint(cparm)
     @test !CC.is_null_handle(CC.getTypeConstraintConcept(cparm))
@@ -1896,11 +1896,11 @@ end
 
     # ---------- what a specialization was instantiated from ----------
     @test f(I, "tp_box_use")
-    boxvar = CC.VarDecl(get_decl(f).ptr)
+    boxvar = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     specrec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(boxvar)))
     @test specrec.ptr != C_NULL && CC.getName(specrec) == "TpBox"
     if CC.getDeclKindName(specrec) == "ClassTemplateSpecialization"
-        cspec = CC.ClassTemplateSpecializationDecl(specrec.ptr)
+        cspec = CC.downcast(CC.ClassTemplateSpecializationDecl, specrec.ptr)
         cfrom = CC.getInstantiatedFrom(cspec)
         # null for an explicit specialization, the specialized-template union otherwise
         @test cfrom.ptr == C_NULL || cfrom.ptr == CC.getSpecializedTemplateOrPartial(cspec).ptr

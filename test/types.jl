@@ -124,40 +124,40 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     # -- TagType family --
     rrt = unwrap(rty("tmv_rec"))
     @test rrt isa CC.RecordType
-    @test CC.clty_to_jlty(CC.TagType(rrt.ptr)) isa CC.RecordType   # @48 -> resolve@135 -> @49
+    @test CC.clty_to_jlty(CC.upcast(CC.TagType, rrt.ptr)) isa CC.RecordType   # @48 -> resolve@135 -> @49
     @test CC.clty_to_jlty(rrt) isa CC.RecordType                   # @49
     ety = unwrap(rty("tmv_ev"))
     @test ety isa CC.EnumType
     @test CC.clty_to_jlty(ety) isa CC.EnumType                     # @50
-    @test CC.resolve(CC.TagType(ety.ptr)) isa CC.EnumType          # resolve@135 (enum branch)
+    @test CC.resolve(CC.upcast(CC.TagType, ety.ptr)) isa CC.EnumType          # resolve@135 (enum branch)
 
     # -- FunctionType family --
     f(I, "tmv_fn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     fpt = CC.resolve(CC.getTypePtr(CC.getType(fd)))
     @test fpt isa CC.FunctionProtoType
-    @test CC.clty_to_jlty(CC.FunctionType(fpt.ptr)) isa CC.FunctionProtoType  # @53
+    @test CC.clty_to_jlty(CC.upcast(CC.FunctionType, fpt.ptr)) isa CC.FunctionProtoType  # @53
     @test CC.clty_to_jlty(fpt) isa CC.FunctionProtoType            # @54
     fnp_qt = CC.getFunctionNoProtoType(ctx, CC.get_qual_type(CC.IntTy(ctx)))
     fnpty = CC.resolve(CC.getTypePtr(fnp_qt))
     @test fnpty isa CC.FunctionNoProtoType
     @test CC.clty_to_jlty(fnpty) isa CC.FunctionNoProtoType        # @55
-    @test CC.clty_to_jlty(CC.FunctionType(fnpty.ptr)) isa CC.FunctionNoProtoType
+    @test CC.clty_to_jlty(CC.upcast(CC.FunctionType, fnpty.ptr)) isa CC.FunctionNoProtoType
 
     # -- ReferenceType family --
     lref = rty("tmv_lref")
     @test lref isa CC.LValueReferenceType
-    @test CC.clty_to_jlty(CC.ReferenceType(lref.ptr)) isa CC.LValueReferenceType  # @58 -> resolve@147 -> @59
+    @test CC.clty_to_jlty(CC.upcast(CC.ReferenceType, lref.ptr)) isa CC.LValueReferenceType  # @58 -> resolve@147 -> @59
     @test CC.clty_to_jlty(lref) isa CC.LValueReferenceType         # @59
     rref = rty("tmv_rref")
     @test rref isa CC.RValueReferenceType
     @test CC.clty_to_jlty(rref) isa CC.RValueReferenceType         # @60
-    @test CC.resolve(CC.ReferenceType(rref.ptr)) isa CC.RValueReferenceType
+    @test CC.resolve(CC.upcast(CC.ReferenceType, rref.ptr)) isa CC.RValueReferenceType
 
     # -- ArrayType family --
     aty = rty("tmv_arr")
     @test aty isa CC.ConstantArrayType
-    @test CC.clty_to_jlty(CC.ArrayType(aty.ptr)) isa CC.ConstantArrayType  # @63 -> resolve@153 -> @64
+    @test CC.clty_to_jlty(CC.upcast(CC.ArrayType, aty.ptr)) isa CC.ConstantArrayType  # @63 -> resolve@153 -> @64
     @test CC.clty_to_jlty(aty) isa CC.ConstantArrayType            # @64
     ity = rty("tmv_iarr")
     @test ity isa CC.IncompleteArrayType
@@ -165,7 +165,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
 
     # VariableArrayType (VLA in a function body)
     f(I, "tmv_vla")
-    vlabody = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    vlabody = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     local vaty = nothing
     for n in CC.subtree(vlabody)
         if n isa CC.DeclStmt
@@ -238,7 +238,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
         d isa CC.FunctionTemplateDecl && (ftd = d)
     end
     @test ftd isa CC.FunctionTemplateDecl
-    parm = CC.getParamDecl(CC.FunctionDecl(CC.getTemplatedDecl(ftd).ptr), 0)
+    parm = CC.getParamDecl(CC.downcast(CC.FunctionDecl, CC.getTemplatedDecl(ftd).ptr), 0)
     @test parm isa CC.ParmVarDecl
     tsi = CC.getTypeSourceInfo(parm)
     tl = CC.getTypeLoc(tsi)          # PackExpansionTypeLoc

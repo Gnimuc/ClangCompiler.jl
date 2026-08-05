@@ -3,9 +3,9 @@
 
 CXDiagnosticIDs clang_DiagnosticIDs_create(void) {
   auto DIDs = std::make_unique<clang::DiagnosticIDs>();
-  return DIDs.release();
+  return reinterpret_cast<CXDiagnosticIDs>(DIDs.release());
 }
 
 void clang_DiagnosticIDs_dispose(CXDiagnosticIDs ID) {
-  delete static_cast<clang::DiagnosticIDs *>(ID);
+  delete reinterpret_cast<clang::DiagnosticIDs *>(ID);
 }

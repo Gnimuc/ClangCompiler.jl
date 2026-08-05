@@ -99,7 +99,7 @@ CXMacroInfo clang_Preprocessor_getMacroInfo(CXPreprocessor PP, CXIdentifierInfo 
 // True when `II` is #define'd inside the already-preprocessed module `M`; macros merely
 // imported into `M` do not count.
 bool clang_Preprocessor_isMacroDefinedInLocalModule(CXPreprocessor PP, CXIdentifierInfo II,
-                                                    CXModule M);
+                                                    CXModule_ M);
 
 // Borrowed; NULL when `II` is not currently #define'd in this translation unit.
 CXMacroDirective clang_Preprocessor_getLocalMacroDirective(CXPreprocessor PP,
@@ -123,13 +123,13 @@ CXMacroDirective clang_Preprocessor_appendDefMacroDirective(CXPreprocessor PP,
 // an identical (module, name, macro, overrides) registration folds onto the node that
 // already exists instead of creating a second one, and `*IsNew` (when non-NULL) reports
 // which of the two happened.
-CXModuleMacro clang_Preprocessor_addModuleMacro(CXPreprocessor PP, CXModule Mod,
+CXModuleMacro clang_Preprocessor_addModuleMacro(CXPreprocessor PP, CXModule_ Mod,
                                                 CXIdentifierInfo II, CXMacroInfo Macro,
                                                 const CXModuleMacro *Overrides,
                                                 unsigned NumOverrides, bool *IsNew);
 
 // Borrowed; NULL when `Mod` exports no macro named `II`.
-CXModuleMacro clang_Preprocessor_getModuleMacro(CXPreprocessor PP, CXModule Mod,
+CXModuleMacro clang_Preprocessor_getModuleMacro(CXPreprocessor PP, CXModule_ Mod,
                                                 CXIdentifierInfo II);
 
 // Count + fill over the leaf (non-overridden) module macros visible for the name `II`. The
@@ -155,19 +155,19 @@ void clang_Preprocessor_getMacros(CXPreprocessor PP, bool IncludeExternalMacros,
 // rather than an import. All three buffers must have room for the full count.
 unsigned clang_Preprocessor_getNumBuildingSubmodules(CXPreprocessor PP);
 
-void clang_Preprocessor_getBuildingSubmodules(CXPreprocessor PP, CXModule *Modules,
+void clang_Preprocessor_getBuildingSubmodules(CXPreprocessor PP, CXModule_ *Modules,
                                               CXSourceLocation_ *ImportLocs,
                                               bool *IsPragma);
 
 // Precondition: `M` is a module-map module (`clang_Module_isModuleMapModule`); Clang
 // asserts. The preprocessor keeps a borrowed pointer to `M`, so `M` must outlive it.
-void clang_Preprocessor_markClangModuleAsAffecting(CXPreprocessor PP, CXModule M);
+void clang_Preprocessor_markClangModuleAsAffecting(CXPreprocessor PP, CXModule_ M);
 
 // Count + fill over the top-level clang modules that affected preprocessing without being
 // imported. The count is exact and no slot is NULL; the order is the underlying set's.
 unsigned clang_Preprocessor_getNumAffectingClangModules(CXPreprocessor PP);
 
-void clang_Preprocessor_getAffectingClangModules(CXPreprocessor PP, CXModule *Buffer);
+void clang_Preprocessor_getAffectingClangModules(CXPreprocessor PP, CXModule_ *Buffer);
 
 // Count + fill over the set of files already #include'd. The count is exact and no slot is
 // NULL; the order is the underlying hash set's and carries no meaning.
@@ -197,11 +197,11 @@ void clang_Preprocessor_createPreprocessingRecord(CXPreprocessor PP);
 
 // Precondition: `M` is a global module fragment or `Loc` is valid; Clang asserts. The
 // preprocessor keeps a borrowed pointer to `M`, so `M` must outlive it.
-void clang_Preprocessor_makeModuleVisible(CXPreprocessor PP, CXModule M,
+void clang_Preprocessor_makeModuleVisible(CXPreprocessor PP, CXModule_ M,
                                           CXSourceLocation_ Loc);
 
 // The location `M` was made visible at; an invalid location when it never was.
-CXSourceLocation_ clang_Preprocessor_getModuleImportLoc(CXPreprocessor PP, CXModule M);
+CXSourceLocation_ clang_Preprocessor_getModuleImportLoc(CXPreprocessor PP, CXModule_ M);
 
 CXString clang_Preprocessor_getPredefines(CXPreprocessor PP);
 
@@ -319,10 +319,10 @@ CXSourceLocation_ clang_Preprocessor_getLocForEndOfToken(CXPreprocessor PP,
                                                          unsigned Offset);
 
 // Borrowed; NULL unless a module is currently being built.
-CXModule clang_Preprocessor_getCurrentModule(CXPreprocessor PP);
+CXModule_ clang_Preprocessor_getCurrentModule(CXPreprocessor PP);
 
 // Borrowed; NULL unless a module implementation is currently being compiled.
-CXModule clang_Preprocessor_getCurrentModuleImplementation(CXPreprocessor PP);
+CXModule_ clang_Preprocessor_getCurrentModuleImplementation(CXPreprocessor PP);
 
 bool clang_Preprocessor_isInNamedInterfaceUnit(CXPreprocessor PP);
 
@@ -332,7 +332,7 @@ bool clang_Preprocessor_isInImplementationUnit(CXPreprocessor PP);
 CXTargetInfo_ clang_Preprocessor_getAuxTargetInfo(CXPreprocessor PP);
 
 // Borrowed; NULL when the current lexer is not in a submodule.
-CXModule clang_Preprocessor_getCurrentLexerSubmodule(CXPreprocessor PP);
+CXModule_ clang_Preprocessor_getCurrentLexerSubmodule(CXPreprocessor PP);
 
 void clang_Preprocessor_setCodeCompletionTokenRange(CXPreprocessor PP,
                                                     CXSourceLocation_ Start,
@@ -371,7 +371,7 @@ CXSourceLocation_ clang_Preprocessor_getLastFPEvalPragmaLocation(CXPreprocessor 
 bool clang_Preprocessor_isInImportingCXXNamedModules(CXPreprocessor PP);
 
 // Borrowed; NULL when `Loc` is outside any module.
-CXModule clang_Preprocessor_getModuleForLocation(CXPreprocessor PP, CXSourceLocation_ Loc,
+CXModule_ clang_Preprocessor_getModuleForLocation(CXPreprocessor PP, CXSourceLocation_ Loc,
                                                  bool AllowTextual);
 
 // Static: true when the check FAILED, i.e. `M` is not usable — a diagnostic naming the
@@ -379,7 +379,7 @@ CXModule clang_Preprocessor_getModuleForLocation(CXPreprocessor PP, CXSourceLoca
 // in that case. A module built by hand has no module map behind it, so whether it counts as
 // available is host-decided.
 bool clang_Preprocessor_checkModuleIsAvailable(CXLangOptions LangOpts, CXTargetInfo_ TI,
-                                               CXModule M, CXDiagnosticsEngine Diags);
+                                               CXModule_ M, CXDiagnosticsEngine Diags);
 
 // The header to #include at `IncLoc` so that the entity at `MLoc` becomes reachable, or
 // NULL when no such header exists or when importing a module is the right answer instead.

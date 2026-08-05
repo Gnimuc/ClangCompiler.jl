@@ -7,7 +7,11 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
-const char *clang_FileEntry_getName(CXFileEntry FE);
+// No getName here. `FileEntry::getName()` is deprecated in clang because it forwards to
+// whichever `FileEntryRef` last referred to the file, so the answer depends on lookup history
+// rather than on the entry: one file reached under two spellings (a VFS remapping, a symlink)
+// answers with whichever was used most recently. `clang_FileEntryRef_getName` is the stable
+// question and is already wrapped -- reach a name through the ref, not the entry.
 
 const char *clang_FileEntry_tryGetRealPathName(CXFileEntry FE);
 

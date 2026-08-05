@@ -9,9 +9,6 @@ struct DeclarationName <: AbstractDeclarationName
     ptr::CXDeclarationName
 end
 
-Base.unsafe_convert(::Type{CXDeclarationName}, x::DeclarationName) = x.ptr
-Base.cconvert(::Type{CXDeclarationName}, x::DeclarationName) = x
-
 """
     struct DeclarationNameInfo <: AbstractDeclarationNameInfo
 Hold a pointer to a `clang::DeclarationNameInfo` object.
@@ -23,10 +20,6 @@ the resources after using this object.
 struct DeclarationNameInfo <: AbstractDeclarationNameInfo
     ptr::CXDeclarationNameInfo
 end
-
-Base.unsafe_convert(::Type{CXDeclarationNameInfo}, x::DeclarationNameInfo) = x.ptr
-Base.cconvert(::Type{CXDeclarationNameInfo}, x::DeclarationNameInfo) = x
-
 
 # DeclarationNameTable
 """
@@ -46,5 +39,3 @@ struct DeclarationNameTable <: AbstractDeclarationNameTable
     ptr::CXDeclarationNameTable
 end
 
-Base.unsafe_convert(::Type{CXDeclarationNameTable}, x::DeclarationNameTable) = x.ptr
-Base.cconvert(::Type{CXDeclarationNameTable}, x::DeclarationNameTable) = x

@@ -1,5 +1,3 @@
-Base.unsafe_convert(::Type{CXCodeGenAction}, x::T) where {T<:AbstractCodeGenAction} = x.ptr
-Base.cconvert(::Type{CXCodeGenAction}, x::T) where {T<:AbstractCodeGenAction} = x
 
 struct LLVMOnlyAction <: AbstractLLVMOnlyAction
     ptr::CXCodeGenAction

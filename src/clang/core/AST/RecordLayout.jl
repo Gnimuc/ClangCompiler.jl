@@ -10,5 +10,3 @@ struct ASTRecordLayout <: AbstractASTRecordLayout
     ptr::CXASTRecordLayout
 end
 
-Base.unsafe_convert(::Type{CXASTRecordLayout}, x::ASTRecordLayout) = x.ptr
-Base.cconvert(::Type{CXASTRecordLayout}, x::ASTRecordLayout) = x

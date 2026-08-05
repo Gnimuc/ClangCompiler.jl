@@ -44,7 +44,7 @@ end
 
     function tl_of(name)
         @assert f(I, name) "lookup failed: $name"
-        return CC.getTypeLoc(CC.getTypeSourceInfo(CC.DeclaratorDecl(get_decl(f).ptr)))
+        return CC.getTypeLoc(CC.getTypeSourceInfo(CC.downcast(CC.DeclaratorDecl, get_decl(f).ptr)))
     end
 
     # pointer declarator: star loc + pointee chain
@@ -105,7 +105,7 @@ end
 
     # function: params + parens + local range
     @assert f(I, "gfn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     tl = CC.getTypeLoc(CC.getTypeSourceInfo(fd))
     fn = CC.resolve(tl)
     @test fn isa CC.FunctionTypeLoc
@@ -214,7 +214,7 @@ end
     CC.parse(I, "int *tlp;")
     f = DeclFinder(I)
     @test f(I, "tlp")
-    vd = CC.VarDecl(get_decl(f).ptr)
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     tl = CC.getTypeLoc(CC.getTypeSourceInfo(vd))   # owned box
     @test tl isa CC.TypeLoc
     @test !CC.isNull(tl)

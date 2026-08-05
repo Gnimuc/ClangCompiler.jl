@@ -2,54 +2,54 @@
 #include "clang/Parse/Parser.h"
 
 CXParser clang_Parser_create(CXPreprocessor PP, CXSema Actions, bool SkipFunctionBodies) {
-  auto P = std::make_unique<clang::Parser>(*static_cast<clang::Preprocessor *>(PP),
-                                           *static_cast<clang::Sema *>(Actions),
+  auto P = std::make_unique<clang::Parser>(*reinterpret_cast<clang::Preprocessor *>(PP),
+                                           *reinterpret_cast<clang::Sema *>(Actions),
                                            SkipFunctionBodies);
-  return P.release();
+  return reinterpret_cast<CXParser>(P.release());
 }
 
-void clang_Parser_dispose(CXParser P) { delete static_cast<clang::Parser *>(P); }
+void clang_Parser_dispose(CXParser P) { delete reinterpret_cast<clang::Parser *>(P); }
 
-void clang_Parser_Initialize(CXParser P) { static_cast<clang::Parser *>(P)->Initialize(); }
+void clang_Parser_Initialize(CXParser P) { reinterpret_cast<clang::Parser *>(P)->Initialize(); }
 
 CXLangOptions clang_Parser_getLangOpts(CXParser P) {
-  return const_cast<clang::LangOptions *>(&static_cast<clang::Parser *>(P)->getLangOpts());
+  return reinterpret_cast<CXLangOptions>(const_cast<clang::LangOptions *>(&reinterpret_cast<clang::Parser *>(P)->getLangOpts()));
 }
 
 CXTargetInfo_ clang_Parser_getTargetInfo(CXParser P) {
-  return const_cast<clang::TargetInfo *>(&static_cast<clang::Parser *>(P)->getTargetInfo());
+  return reinterpret_cast<CXTargetInfo_>(const_cast<clang::TargetInfo *>(&reinterpret_cast<clang::Parser *>(P)->getTargetInfo()));
 }
 
 CXPreprocessor clang_Parser_getPreprocessor(CXParser P) {
-  return &static_cast<clang::Parser *>(P)->getPreprocessor();
+  return reinterpret_cast<CXPreprocessor>(&reinterpret_cast<clang::Parser *>(P)->getPreprocessor());
 }
 
 CXSema clang_Parser_getActions(CXParser P) {
-  return &static_cast<clang::Parser *>(P)->getActions();
+  return reinterpret_cast<CXSema>(&reinterpret_cast<clang::Parser *>(P)->getActions());
 }
 
 CXToken_ clang_Parser_getCurToken(CXParser P) {
-  return const_cast<clang::Token *>(&static_cast<clang::Parser *>(P)->getCurToken());
+  return reinterpret_cast<CXToken_>(const_cast<clang::Token *>(&reinterpret_cast<clang::Parser *>(P)->getCurToken()));
 }
 
 CXToken_ clang_Parser_NextToken(CXParser P) {
-  return const_cast<clang::Token *>(&static_cast<clang::Parser *>(P)->NextToken());
+  return reinterpret_cast<CXToken_>(const_cast<clang::Token *>(&reinterpret_cast<clang::Parser *>(P)->NextToken()));
 }
 
 CXScope clang_Parser_getCurScope(CXParser P) {
-  return static_cast<clang::Parser *>(P)->getCurScope();
+  return reinterpret_cast<CXScope>(reinterpret_cast<clang::Parser *>(P)->getCurScope());
 }
 
 CXSourceLocation_ clang_Parser_ConsumeToken(CXParser P) {
-  return static_cast<clang::Parser *>(P)->ConsumeToken().getPtrEncoding();
+  return reinterpret_cast<CXSourceLocation_>(reinterpret_cast<clang::Parser *>(P)->ConsumeToken().getPtrEncoding());
 }
 
 CXSourceLocation_ clang_Parser_ConsumeAnyToken(CXParser P) {
-  return static_cast<clang::Parser *>(P)->ConsumeAnyToken(true).getPtrEncoding();
+  return reinterpret_cast<CXSourceLocation_>(reinterpret_cast<clang::Parser *>(P)->ConsumeAnyToken(true).getPtrEncoding());
 }
 
 bool clang_Parser_TryAnnotateTypeOrScopeToken(CXParser P, bool AllowImplicitTypename) {
-  return static_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeToken(
+  return reinterpret_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeToken(
       AllowImplicitTypename ? clang::ImplicitTypenameContext::Yes
                             : clang::ImplicitTypenameContext::No);
 }
@@ -57,24 +57,24 @@ bool clang_Parser_TryAnnotateTypeOrScopeToken(CXParser P, bool AllowImplicitType
 bool clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(CXParser P, CXCXXScopeSpec SS,
                                                             bool IsNewScope,
                                                             bool AllowImplicitTypename) {
-  return static_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeTokenAfterScopeSpec(
-      *static_cast<clang::CXXScopeSpec *>(SS), IsNewScope,
+  return reinterpret_cast<clang::Parser *>(P)->TryAnnotateTypeOrScopeTokenAfterScopeSpec(
+      *reinterpret_cast<clang::CXXScopeSpec *>(SS), IsNewScope,
       AllowImplicitTypename ? clang::ImplicitTypenameContext::Yes
                             : clang::ImplicitTypenameContext::No);
 }
 
 bool clang_Parser_TryAnnotateCXXScopeToken(CXParser P, bool EnteringContext) {
-  return static_cast<clang::Parser *>(P)->TryAnnotateCXXScopeToken(EnteringContext);
+  return reinterpret_cast<clang::Parser *>(P)->TryAnnotateCXXScopeToken(EnteringContext);
 }
 
 bool clang_Parser_TryAnnotateOptionalCXXScopeToken(CXParser P, bool EnteringContext) {
-  return static_cast<clang::Parser *>(P)->TryAnnotateOptionalCXXScopeToken(EnteringContext);
+  return reinterpret_cast<clang::Parser *>(P)->TryAnnotateOptionalCXXScopeToken(EnteringContext);
 }
 
 CXQualType clang_Parser_getTypeAnnotation(CXToken_ Tok) {
-  return clang::Parser::getTypeAnnotation(*static_cast<clang::Token *>(Tok))
+  return reinterpret_cast<CXQualType>(clang::Parser::getTypeAnnotation(*reinterpret_cast<clang::Token *>(Tok))
       .get()
-      .getAsOpaquePtr();
+      .getAsOpaquePtr());
 }
 
 // CXDeclGroupRef clang_Parser_parseOneTopLevelDecl(CXParser Parser, bool IsFirstDecl) {

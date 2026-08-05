@@ -10,7 +10,6 @@ value(id::FileID) = Int(getHashValue(id))
 
 # FileEntry
 real_path_name(x::FileEntry) = tryGetRealPathName(x)
-get_name(x::FileEntry) = getName(x)
 
 # SourceLocation
 value(x::SourceLocation) = getHashValue(x)

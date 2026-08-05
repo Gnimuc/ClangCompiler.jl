@@ -5,10 +5,11 @@
 # abstract types.
 #
 # Naming (mirrored in gen/stmt_nodes.jl): clang class `X` gets `AbstractX` and a
-# carrier `X`, with no exception for classes clang itself names `Abstract*`. A name
-# cannot be both, so where `AbstractX` is also a clang class the carrier keeps the
-# plain name and the abstract takes a trailing underscore: `AbstractConditionalOperator`
-# is the carrier for clang's class of that name, `AbstractAbstractConditionalOperator`
-# is its abstract, and `ConditionalOperator` hangs off `AbstractConditionalOperator_`.
-# Carrier `Expr` is spelled `Expr_` on the same tiebreak (Base.Expr clash).
+# carrier `X`. A class clang itself names `Abstract*` is not mirrored at all -- no
+# carrier, no abstract, children hung off its parent -- because `Abstract` + `X` and
+# the mirror of `AbstractX` are the same string, and only one of the two classes can
+# have it. `AbstractConditionalOperator` is the sole case in StmtNodes.inc, and it is
+# the one dropped: it cannot be instantiated, `resolve` never yields it, and what it
+# declares is exposed on `ConditionalOperator` and `BinaryConditionalOperator`.
+# Carrier `Expr` is spelled `Expr_` on a different tiebreak (Base.Expr clash).
 include("StmtAbstractGen.jl")

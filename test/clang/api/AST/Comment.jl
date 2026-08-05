@@ -560,7 +560,7 @@ end
 
     cf = DeclFinder(J)
     @test cf(J, "coro_with_param")
-    cfd = CC.FunctionDecl(get_decl(cf).ptr)
+    cfd = CC.downcast(CC.FunctionDecl, get_decl(cf).ptr)
     croot = CC.resolve(CC.getBody(cfd))
     cbs = find_node(CC.CoroutineBodyStmt, croot)
     @test cbs isa CC.CoroutineBodyStmt
@@ -593,7 +593,7 @@ end
 
     rf = DeclFinder(J)
     @test rf(J, "sum_over_array")
-    rfd = CC.FunctionDecl(get_decl(rf).ptr)
+    rfd = CC.downcast(CC.FunctionDecl, get_decl(rf).ptr)
     frs = find_node(CC.CXXForRangeStmt, CC.resolve(CC.getBody(rfd)))
     @test frs isa CC.CXXForRangeStmt
     if frs isa CC.CXXForRangeStmt
@@ -622,7 +622,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "rc_documented")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     rc = CC.getRawCommentForDeclNoCache(ctx, fd)
     @test !CC.is_null_handle(rc)
 
@@ -662,7 +662,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "rcl_one")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     fid = CC.getFileID(sm, CC.getLocation(fd))
     comments = CC.getCommentsInFile(rcl, fid)
     @test comments isa Vector{CC.RawComment}

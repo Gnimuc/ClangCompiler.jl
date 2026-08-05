@@ -13,7 +13,7 @@ Return `x` rewrapped as the concrete statement/expression type reported by
 """
 function resolve(x::AbstractStmt)
     T = get(STMT_CLASS_TO_TYPE, getStmtClass(x), nothing)
-    return T === nothing ? x : T(x.ptr)
+    return T === nothing ? x : downcast(T, x)
 end
 
 """
@@ -41,7 +41,9 @@ function subtree(x::AbstractStmt)
     nodes = Vector{CXStmt}(undef, n)
     classes = Vector{CXStmtClass}(undef, n)
     clang_Stmt_collectSubtree(x, nodes, classes)
-    return AbstractStmt[STMT_CLASS_TO_TYPE[classes[i]](nodes[i]) for i = 1:n]
+    # the collector reports each node's class alongside it, which is what establishes the
+    # narrowing from the `CXStmt` it handed back
+    return AbstractStmt[downcast(STMT_CLASS_TO_TYPE[classes[i]], nodes[i]) for i = 1:n]
 end
 
 get_stmt_class(x::AbstractStmt) = getStmtClass(x)

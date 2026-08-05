@@ -40,10 +40,17 @@ include("env.jl")
 public get_compiler_flags, get_default_args
 
 # clang
+# refuse a conversion between two different CX handles, once, for the whole layer
+include("clang/handles.jl")
 include("clang/utils.jl")
 include("clang/core/core.jl")
 include("clang/api/api.jl")
+# what a DeclContext parameter accepts: a context, or a decl that is also one
+public AnyDeclContext, AbstractDeclContextDecl
 include("clang/ast.jl")
+include("clang/identity.jl")
+# node identity: `==`/`hash` on carriers, and the raw base pointer behind them
+public decl_id, stmt_id, type_id, attr_id
 public get_record_layout, field_offsets, is_derived_from
 include("clang/basic.jl")
 include("clang/codegen.jl")
@@ -81,6 +88,10 @@ public parse_cxx_scope_spec
 
 include("lookup.jl")
 public AbstractFinder, DeclFinder, reset, get_decl
+
+# the chants every caller writes before it can ask clang anything
+include("highlevel.jl")
+public translation_unit, top_level_decls, find_decl, find_decls, source_location
 
 include("utils.jl")
 

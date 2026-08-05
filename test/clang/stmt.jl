@@ -53,28 +53,51 @@ end
     end
     @test !isempty(nodes)
 
-    # A name cannot be both a carrier and an abstract type. Where `AbstractX` is itself a
-    # clang class the carrier keeps the plain name and the abstract takes a trailing
-    # underscore, so every class still has exactly one of each.
-    carriers = Set(stmt_carrier_name(n.name) for n in nodes)
-    stmt_abstract_name(name) = (a = Symbol("Abstract", name); a in carriers ? Symbol(a, "_") : a)
-    abstract_of(name) = name === :Stmt ? ClangCompiler.AbstractStmt :
-                        getfield(ClangCompiler, stmt_abstract_name(name))
+    # A name cannot be both a carrier and an abstract type, and `Abstract` + `X` collides with
+    # the mirror of a clang class already named `AbstractX`. Such a class is not mirrored at
+    # all: no carrier, no abstract, children hung off its parent. Every other class has
+    # exactly one of each.
+    unmirrored(name) = startswith(String(name), "Abstract")
+    parent_of = Dict(n.name => n.parent for n in nodes)
+    function abstract_of(name)
+        while unmirrored(name)
+            name = parent_of[name]
+        end
+        return name === :Stmt ? ClangCompiler.AbstractStmt :
+               getfield(ClangCompiler, Symbol("Abstract", name))
+    end
 
+    swept = 0
     for n in nodes
-        # every class -- abstract C++ bases included -- has a carrier subtyping its own
+        if unmirrored(n.name)
+            # its doubled mirror does not exist, which is the whole point
+            @test !isdefined(ClangCompiler, Symbol("Abstract", n.name))
+            # the plain name may well be defined -- freeing it is why the class was dropped,
+            # and it now names the abstract over `ConditionalOperator` -- but never as a
+            # carrier for *this* class
+            sym = stmt_carrier_name(n.name)
+            @test !isdefined(ClangCompiler, sym) || !isstructtype(getfield(ClangCompiler, sym))
+            continue
+        end
+        # every other class -- abstract C++ bases included -- has a carrier subtyping its own
         # abstract, and that abstract subtypes its parent's
         @test getfield(ClangCompiler, stmt_carrier_name(n.name)) <: abstract_of(n.name)
         @test abstract_of(n.name) <: abstract_of(n.parent)
+        swept += 1
     end
+    @test swept > 200                     # the sweep really covered the hierarchy
 
-    # the one colliding pair, pinned by name so the sweep above cannot go vacuous on it
-    @test isconcretetype(ClangCompiler.AbstractConditionalOperator)
-    @test ClangCompiler.AbstractConditionalOperator <: ClangCompiler.AbstractAbstractConditionalOperator
-    @test ClangCompiler.ConditionalOperator <: ClangCompiler.AbstractConditionalOperator_
-    @test ClangCompiler.AbstractConditionalOperator_ <: ClangCompiler.AbstractAbstractConditionalOperator
-    # the two spellings are siblings, so a ConditionalOperator-only method cannot reach the other
-    @test !(ClangCompiler.BinaryConditionalOperator <: ClangCompiler.AbstractConditionalOperator_)
+    # The one unmirrored class, pinned by name so the sweep above cannot go vacuous on it.
+    # `AbstractConditionalOperator` names the abstract type over clang's `ConditionalOperator`
+    # -- the spelling freed by dropping the class clang gave that name to.
+    @test !isdefined(ClangCompiler, :AbstractAbstractConditionalOperator)
+    @test isabstracttype(ClangCompiler.AbstractConditionalOperator)
+    @test ClangCompiler.ConditionalOperator <: ClangCompiler.AbstractConditionalOperator
+    # both spellings hang off Expr directly now, and are siblings, so a ConditionalOperator-only
+    # method cannot reach the other
+    @test ClangCompiler.AbstractConditionalOperator <: ClangCompiler.AbstractExpr
+    @test ClangCompiler.AbstractBinaryConditionalOperator <: ClangCompiler.AbstractExpr
+    @test !(ClangCompiler.BinaryConditionalOperator <: ClangCompiler.AbstractConditionalOperator)
 
     # every concrete class has an enum value and a carrier in the resolve map
     @test length(STMT_CLASS_TO_TYPE) == count(n -> !n.isabstract, nodes)
@@ -93,7 +116,7 @@ end
             """)
     lookup = DeclFinder(I)
     @test lookup(I, "fact")
-    fd = FunctionDecl(get_decl(lookup).ptr)
+    fd = ClangCompiler.downcast(FunctionDecl, get_decl(lookup).ptr)
 
     body = getBody(fd)
     @test getStmtClassName(body) == "CompoundStmt"
@@ -169,7 +192,7 @@ end
     CC.parse(I, "int fn(int a){ int s=0; for(int i=0;i<a;i++){ s+=i*2; if(s>10) break; } return s; }")
     f = DeclFinder(I)
     @test f(I, "fn")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     body = CC.resolve(CC.getBody(fd))
 
     # bulk subtree must match a manual recursive children walk, node-for-node.

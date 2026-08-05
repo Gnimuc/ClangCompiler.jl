@@ -16,7 +16,7 @@ using Test
     f = DeclFinder(I)
 
     @test f(I, "Plain")
-    rd = CC.RecordDecl(get_tag(f).ptr)
+    rd = CC.downcast(CC.RecordDecl, get_tag(f).ptr)
     lay = CC.getASTRecordLayout(ctx, rd)
     @test lay isa CC.ASTRecordLayout
     @test CC.getSize(lay) == 16
@@ -31,18 +31,18 @@ using Test
     @test_throws AssertionError CC.getFieldOffset(lay, 3)
 
     @test f(I, "D")
-    drd = CC.CXXRecordDecl(get_tag(f).ptr)
+    drd = CC.downcast(CC.CXXRecordDecl, get_tag(f).ptr)
     @test f(I, "B1")
-    b1 = CC.CXXRecordDecl(get_tag(f).ptr)
+    b1 = CC.downcast(CC.CXXRecordDecl, get_tag(f).ptr)
     @test f(I, "B2")
-    b2 = CC.CXXRecordDecl(get_tag(f).ptr)
-    dlay = CC.get_record_layout(ctx, CC.RecordDecl(drd.ptr))
+    b2 = CC.downcast(CC.CXXRecordDecl, get_tag(f).ptr)
+    dlay = CC.get_record_layout(ctx, CC.downcast(CC.RecordDecl, drd.ptr))
     @test CC.getBaseClassOffset(dlay, b1) == 0
     @test CC.getBaseClassOffset(dlay, b2) == 8
 
     @test f(I, "V")
-    v = CC.CXXRecordDecl(get_tag(f).ptr)
-    vlay = CC.get_record_layout(ctx, CC.RecordDecl(v.ptr))
+    v = CC.downcast(CC.CXXRecordDecl, get_tag(f).ptr)
+    vlay = CC.get_record_layout(ctx, CC.downcast(CC.RecordDecl, v.ptr))
     # the exact virtual-base offset is ABI-dependent; it must land after the
     # vtable/vbase pointer
     @test CC.getVBaseClassOffset(vlay, b1) >= 8
@@ -63,7 +63,7 @@ end
     f = DeclFinder(I)
     layof(name) = begin
         @assert f(I, name)
-        CC.get_record_layout(ctx, CC.RecordDecl(get_tag(f).ptr))
+        CC.get_record_layout(ctx, CC.downcast(CC.RecordDecl, get_tag(f).ptr))
     end
 
     plain = layof("RltPlain")
@@ -102,7 +102,7 @@ end
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
 
-    layout(name) = (@test f(I, name); CC.getASTRecordLayout(ctx, CC.CXXRecordDecl(get_decl(f).ptr)))
+    layout(name) = (@test f(I, name); CC.getASTRecordLayout(ctx, CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)))
 
     # a non-polymorphic class shares no vtable, so it has no primary base
     l_none = layout("PBNone")
@@ -114,11 +114,11 @@ end
 
     # deriving non-virtually from a polymorphic base shares that base's vtable
     @test f(I, "PBPoly")
-    poly = CC.CXXRecordDecl(get_decl(f).ptr)
+    poly = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     l_der = layout("PBDerived")
     pb = CC.getPrimaryBase(l_der)
     @test !CC.is_null_handle(pb)
-    @test CC.getName(CC.NamedDecl(pb.ptr)) == "PBPoly"
+    @test CC.getName(CC.upcast(CC.NamedDecl, pb.ptr)) == "PBPoly"
     @test !CC.isPrimaryBaseVirtual(l_der)
 
     # a virtual base that becomes primary is reported as virtual

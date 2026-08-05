@@ -113,26 +113,30 @@ wrappers keep Clang's camelCase method names rather than Julia style.
   `Type_`); `CXToken_` becomes `Token`. **Every** class gets one, abstract C++ bases included —
   `Stmt`, `Expr_` and `Decl` are all abstract in C++ and all carry, because a base-typed handle
   has to land somewhere before the caller resolves it.
-* One name cannot be both a carrier and an abstract type, and `AbstractX` collides wherever
-  clang also has a class literally named `AbstractX`. The carrier keeps the plain name, since
-  that is the one mirroring clang, and the abstract takes a trailing underscore — the same
-  tiebreak `Expr_` uses. `clang::AbstractConditionalOperator` is the only such case: carrier
-  `AbstractConditionalOperator` under `AbstractAbstractConditionalOperator`, with
-  `ConditionalOperator` under `AbstractConditionalOperator_` and `BinaryConditionalOperator`
-  under `AbstractBinaryConditionalOperator`.
+* One name cannot be both a carrier and an abstract type, and `Abstract` + `X` collides
+  wherever clang also has a class literally named `AbstractX` — both want that spelling, and
+  only one can have it. Such a class is **not mirrored**: no carrier, no abstract type, and its
+  children hang off its parent, so the subclass keeps the natural name. What the dropped class
+  declared is written out on each of its children, whose receivers then name classes clang
+  actually builds.
 * Clang's **single** inheritance is reproduced with abstract types and subtyping, class for
   class: the derived→primary-base conversion is a no-op, so one `unsafe_convert` per carrier is
   correct for every base method it reaches.
-* Its **multiple** inheritance is deliberately not, because the second base's conversion is not
-  a no-op. A `NamespaceDecl`'s `DeclContext*` sits 48 bytes past its `Decl*`, a `TagDecl`'s 64,
-  a `TranslationUnitDecl`'s 40 — and a carrier has one `ptr`. So `AbstractDecl` and
-  `AbstractDeclContext` are disjoint hierarchies crossed only through the pivot casts, which
-  call the C functions that apply the adjustment. Dispatch refusing a `Decl` where a
-  `DeclContext` is wanted *is* the check; widening a signature to accept both (a `Union`, say)
-  removes it and the shim then reads `DeclContext` fields out of `Decl`'s storage. Fixing it at
-  the marshalling boundary instead is not available either: every `CX*` handle is the same Julia
-  type (`Ptr{Cvoid}`), so a carrier has exactly one `unsafe_convert` and it cannot know which
-  base the callee wants.
+* Its **multiple** inheritance cannot be, because the second base's conversion is not a no-op.
+  A `NamespaceDecl`'s `DeclContext*` sits 48 bytes past its `Decl*`, a `TagDecl`'s 64, a
+  `TranslationUnitDecl`'s 40 — and a carrier has one `ptr`. Julia's abstract types are
+  single-inheritance too, so no carrier can subtype both hierarchies. They stay disjoint and
+  are crossed by the pivot casts, which call the C functions that apply the adjustment.
+* What *can* be expressed is the **set**. `DeclNodes.inc` marks each dual-role class
+  `DECL_CONTEXT`, and `AbstractDeclContextDecl` is a generated `Union` over exactly those, so a
+  decl may be passed straight to the `DeclContext` API — `isNamespace(ns)` rather than
+  `isNamespace(castToDeclContext(ns))`. The forwarding applies the pivot before the ccall, and
+  a decl that is not a context fails at dispatch rather than at the pivot's assert.
+  Two things this does **not** license: the cast cannot move into the C entry points, since a
+  `void *` there cannot tell a `Decl *` from a real `DeclContext *`; and a name declared on both
+  `Decl` and `DeclContext` is left unforwarded, because the `Union` is the more specific
+  signature and would shadow the `Decl` one (`getDeclKindName` is the case, and that call is
+  ambiguous in C++ too).
 * Wrappers drop both the `clang_` prefix and the class segment, so
   `clang_CompilerInstance_hasDiagnostics` becomes `hasDiagnostics`. The receiver becomes the
   first argument, typed at the abstract supertype of the class that *declares* the method and no
@@ -187,10 +191,16 @@ round trip:
   header from the generated bindings), unregistered `.cpp` files, declared-but-undefined
   functions, bindings that are neither wrapped nor stamped, and unguarded `getType` reads on an
   arbitrary `Expr`.
-* **`test/abi.jl`** — that every bound symbol resolves in the shipped library, and that carriers
-  are single-field structs carrying their converts.
+* **`test/abi.jl`** — that every bound symbol resolves in the shipped library, that carriers are
+  single-field structs carrying their converts, that no carrier accepts a foreign handle, and —
+  by inferring every method in the package — that no wrapper can *never* return. A body that
+  always throws infers to `Union{}`, which is the shape a latent wrapper bug takes once handles
+  have distinct types, and it is the only check here that sees code no test exercises.
 * **`test/tautologies.jl`** — assertions that cannot fail. `@test f(x) isa Bool` on a `::Bool`
   ccall restates this repo's own source rather than anything Clang decided.
+* **the `Examples run` CI job** — every script under `examples/`. They rotted silently once,
+  referencing an API generation removed years earlier, because nothing ran them. If you change a
+  public API and that job reddens, the example is telling you the change reached users.
 
 CI runs macOS, Linux and Windows on x86_64, and an assertion on something the *runner* decides —
 an integer width, a mangled name, a layout offset — passes locally and reddens on a platform you

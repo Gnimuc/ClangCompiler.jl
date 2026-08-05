@@ -741,11 +741,11 @@ bool clang_CXXMethodDecl_hasInlineBody(CXCXXMethodDecl CXXMD);
 
 bool clang_CXXMethodDecl_isLambdaStaticInvoker(CXCXXMethodDecl CXXMD);
 
-CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodInClass(CXCXXMethodDecl CXXMD,
+CXCXXMethodDecl clang_CXXMethodDecl_getCorrespondingMethodInClass(CXCXXMethodDecl CXXMD,
                                                                   CXCXXRecordDecl RD,
                                                                   bool MayBeBase);
 
-CXCXXRecordDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
+CXCXXMethodDecl clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(
     CXCXXMethodDecl CXXMD, CXCXXRecordDecl RD, bool MayBeBase);
 
 bool clang_CXXMethodDecl_isExplicitObjectMemberFunction(CXCXXMethodDecl CXXMD);

@@ -15,5 +15,3 @@ struct TemplateDeductionInfo <: AbstractTemplateDeductionInfo
     ptr::CXTemplateDeductionInfo
 end
 
-Base.unsafe_convert(::Type{CXTemplateDeductionInfo}, x::TemplateDeductionInfo) = x.ptr
-Base.cconvert(::Type{CXTemplateDeductionInfo}, x::TemplateDeductionInfo) = x
