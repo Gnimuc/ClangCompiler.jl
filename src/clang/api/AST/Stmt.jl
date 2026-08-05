@@ -509,7 +509,6 @@ function getDecls(x::AbstractDeclStmt)
     return [Decl(p) for p in buf]
 end
 
-
 # AsmStmt
 function getAsmLoc(x::AbstractAsmStmt)
     @check_ptrs x
@@ -636,7 +635,6 @@ function getLBraceLoc(x::AbstractMSAsmStmt)
     @check_ptrs x
     return SourceLocation(clang_MSAsmStmt_getLBraceLoc(x))
 end
-
 
 # IfStmt
 """
@@ -782,7 +780,6 @@ function getSubStmt(x::AbstractAttributedStmt)
     return Stmt(clang_AttributedStmt_getSubStmt(x))
 end
 
-
 function getRParenLoc(x::AbstractGCCAsmStmt)
     @check_ptrs x
     return SourceLocation(clang_GCCAsmStmt_getRParenLoc(x))
@@ -818,7 +815,6 @@ function setInputExpr(x::AbstractGCCAsmStmt, i::Integer, e::AbstractExpr)
     @assert 0 <= i < getNumInputs(x) "input operand index out of range"
     return clang_GCCAsmStmt_setInputExpr(x, i, e)
 end
-
 
 # ValueStmt
 """
@@ -872,7 +868,6 @@ function getNRVOCandidate(x::AbstractReturnStmt)
     @check_ptrs x
     return VarDecl(clang_ReturnStmt_getNRVOCandidate(x))
 end
-
 
 # SEHTryStmt
 function getIsCXXTry(x::AbstractSEHTryStmt)
@@ -1000,7 +995,6 @@ function capturesVariable(x::AbstractCapturedStmt, Var::AbstractVarDecl)
     return clang_CapturedStmt_capturesVariable(x, Var)
 end
 
-
 # AsmStmt (plus-constraint operands)
 function isOutputPlusConstraint(x::AbstractAsmStmt, i::Integer)
     @check_ptrs x
@@ -1086,7 +1080,6 @@ function getAttrs(x::AbstractAttributedStmt)
     n > 0 && clang_AttributedStmt_getAttrs(x, buf)
     return [Attr(p) for p in buf]
 end
-
 
 # Stmt (likelihood, node identity, pretty/JSON printing, container skipping)
 """
@@ -1250,7 +1243,6 @@ function setRetValue(x::AbstractReturnStmt, e::AbstractExpr)
     return clang_ReturnStmt_setRetValue(x, e)
 end
 
-
 # DeclStmt
 function setStartLoc(x::AbstractDeclStmt, loc::SourceLocation)
     @check_ptrs x
@@ -1380,7 +1372,6 @@ function setRParenLoc(x::AbstractForStmt, loc::SourceLocation)
     return clang_ForStmt_setRParenLoc(x, loc)
 end
 
-
 # CapturedStmt
 function getCapturedRegionKind(x::AbstractCapturedStmt)
     @check_ptrs x
@@ -1506,7 +1497,6 @@ function setTarget(x::AbstractIndirectGotoStmt, e::AbstractExpr)
     @check_ptrs x e
     return clang_IndirectGotoStmt_setTarget(x, e)
 end
-
 
 # DeclStmt
 function setDeclGroup(x::AbstractDeclStmt, dg::AbstractDeclGroupRef)
@@ -1662,7 +1652,6 @@ function setCapturedRecordDecl(x::AbstractCapturedStmt, d::AbstractRecordDecl)
     return clang_CapturedStmt_setCapturedRecordDecl(x, d)
 end
 
-
 # --- Statement factories (clang/AST/Stmt.h) ---
 # Every node built below lives in the ASTContext arena, so none of them is disposed.
 # The `CreateEmpty` shells leave their sub-statement slots uninitialized (clang fills
@@ -1690,9 +1679,7 @@ Build a `case lhs:` statement, or the GNU range form `case lhs ... rhs:` when `r
 a non-null pointer. Only the range form allocates the ellipsis slot, so `ellipsis_loc` is
 ignored otherwise; pass `Expr_(C_NULL)` as `rhs` for the ordinary form.
 """
-function CaseStmt(ctx::ASTContext, lhs::AbstractExpr, rhs::AbstractExpr,
-                  case_loc::SourceLocation, ellipsis_loc::SourceLocation,
-                  colon_loc::SourceLocation)
+function CaseStmt(ctx::ASTContext, lhs::AbstractExpr, rhs::AbstractExpr, case_loc::SourceLocation, ellipsis_loc::SourceLocation, colon_loc::SourceLocation)
     @check_ptrs ctx lhs
     return CaseStmt(clang_CaseStmt_Create(ctx, lhs, rhs, case_loc, ellipsis_loc, colon_loc))
 end
@@ -1721,13 +1708,9 @@ allocates its trailing slot, which is exactly what `hasInitStorage`, `hasVarStor
 `hasElseStorage` report afterwards, and `else_loc` is stored only when `else_stmt` is
 non-null.
 """
-function IfStmt(ctx::ASTContext, if_loc::SourceLocation, kind::CXIfStatementKind,
-                init::AbstractStmt, var::AbstractVarDecl, cond::AbstractExpr,
-                lparen_loc::SourceLocation, rparen_loc::SourceLocation,
-                then_stmt::AbstractStmt, else_loc::SourceLocation, else_stmt::AbstractStmt)
+function IfStmt(ctx::ASTContext, if_loc::SourceLocation, kind::CXIfStatementKind, init::AbstractStmt, var::AbstractVarDecl, cond::AbstractExpr, lparen_loc::SourceLocation, rparen_loc::SourceLocation, then_stmt::AbstractStmt, else_loc::SourceLocation, else_stmt::AbstractStmt)
     @check_ptrs ctx cond then_stmt
-    return IfStmt(clang_IfStmt_Create(ctx, if_loc, kind, init, var, cond, lparen_loc,
-                                      rparen_loc, then_stmt, else_loc, else_stmt))
+    return IfStmt(clang_IfStmt_Create(ctx, if_loc, kind, init, var, cond, lparen_loc, rparen_loc, then_stmt, else_loc, else_stmt))
 end
 
 """
@@ -1763,9 +1746,7 @@ Build a `switch` statement. `init` and `var` are optional: pass a carrier holdin
 to leave one out. The body is not an argument — store it with `setBody` before `getBody`
 reads it.
 """
-function SwitchStmt(ctx::ASTContext, init::AbstractStmt, var::AbstractVarDecl,
-                    cond::AbstractExpr, lparen_loc::SourceLocation,
-                    rparen_loc::SourceLocation)
+function SwitchStmt(ctx::ASTContext, init::AbstractStmt, var::AbstractVarDecl, cond::AbstractExpr, lparen_loc::SourceLocation, rparen_loc::SourceLocation)
     @check_ptrs ctx cond
     return SwitchStmt(clang_SwitchStmt_Create(ctx, init, var, cond, lparen_loc, rparen_loc))
 end
@@ -1824,12 +1805,9 @@ end
 Build a `while` statement. `var` is optional: pass `VarDecl(C_NULL)` to leave it out — a
 non-null one allocates the trailing condition-variable slot that `hasVarStorage` reports.
 """
-function WhileStmt(ctx::ASTContext, var::AbstractVarDecl, cond::AbstractExpr,
-                   body::AbstractStmt, while_loc::SourceLocation,
-                   lparen_loc::SourceLocation, rparen_loc::SourceLocation)
+function WhileStmt(ctx::ASTContext, var::AbstractVarDecl, cond::AbstractExpr, body::AbstractStmt, while_loc::SourceLocation, lparen_loc::SourceLocation, rparen_loc::SourceLocation)
     @check_ptrs ctx cond body
-    return WhileStmt(clang_WhileStmt_Create(ctx, var, cond, body, while_loc, lparen_loc,
-                                            rparen_loc))
+    return WhileStmt(clang_WhileStmt_Create(ctx, var, cond, body, while_loc, lparen_loc, rparen_loc))
 end
 
 """
@@ -1874,8 +1852,7 @@ Build a `return` statement. Both `e` and `nrvo_candidate` are optional: pass a c
 holding `C_NULL` to leave one out. Only a non-null `nrvo_candidate` allocates the trailing
 slot that `getNRVOCandidate` reads.
 """
-function ReturnStmt(ctx::ASTContext, return_loc::SourceLocation, e::AbstractExpr,
-                    nrvo_candidate::AbstractVarDecl)
+function ReturnStmt(ctx::ASTContext, return_loc::SourceLocation, e::AbstractExpr, nrvo_candidate::AbstractVarDecl)
     @check_ptrs ctx
     return ReturnStmt(clang_ReturnStmt_Create(ctx, return_loc, e, nrvo_candidate))
 end
@@ -1900,8 +1877,7 @@ end
 Build an `__except (filter) block` handler. `block` is typed as a compound statement
 because `getBlock` casts it unconditionally.
 """
-function SEHExceptStmt(ctx::ASTContext, except_loc::SourceLocation, filter::AbstractExpr,
-                       block::AbstractCompoundStmt)
+function SEHExceptStmt(ctx::ASTContext, except_loc::SourceLocation, filter::AbstractExpr, block::AbstractCompoundStmt)
     @check_ptrs ctx filter block
     return SEHExceptStmt(clang_SEHExceptStmt_Create(ctx, except_loc, filter, block))
 end
@@ -1913,8 +1889,7 @@ end
 Build a `__finally block` handler. `block` is typed as a compound statement because
 `getBlock` casts it unconditionally.
 """
-function SEHFinallyStmt(ctx::ASTContext, finally_loc::SourceLocation,
-                        block::AbstractCompoundStmt)
+function SEHFinallyStmt(ctx::ASTContext, finally_loc::SourceLocation, block::AbstractCompoundStmt)
     @check_ptrs ctx block
     return SEHFinallyStmt(clang_SEHFinallyStmt_Create(ctx, finally_loc, block))
 end
@@ -1927,15 +1902,12 @@ Build a `__try`/`try` statement. `try_block` is typed as a compound statement be
 `getTryBlock` casts it unconditionally, and `handler` must be an `SEHExceptStmt` or an
 `SEHFinallyStmt`: `getEndLoc` dereferences it and the handler accessors cast it.
 """
-function SEHTryStmt(ctx::ASTContext, is_cxx_try::Bool, try_loc::SourceLocation,
-                    try_block::AbstractCompoundStmt, handler::AbstractStmt)
+function SEHTryStmt(ctx::ASTContext, is_cxx_try::Bool, try_loc::SourceLocation, try_block::AbstractCompoundStmt, handler::AbstractStmt)
     @check_ptrs ctx try_block handler
     @assert handler isa AbstractSEHExceptStmt || handler isa AbstractSEHFinallyStmt "handler \
                                                  must be a __except or __finally statement"
     return SEHTryStmt(clang_SEHTryStmt_Create(ctx, is_cxx_try, try_loc, try_block, handler))
 end
-
-
 
 # Stmt (colour dump, controlled pretty-printing, structural profile)
 """
@@ -1968,8 +1940,7 @@ collision — so this decides "definitely different", not "definitely the same".
 `canonical` the profile compares declarations through their canonical declaration rather
 than by pointer identity.
 """
-function getProfileHash(x::AbstractStmt, ctx::ASTContext, canonical::Bool=false,
-                        profile_lambda_expr::Bool=false)
+function getProfileHash(x::AbstractStmt, ctx::ASTContext, canonical::Bool=false, profile_lambda_expr::Bool=false)
     @check_ptrs x ctx
     return clang_Stmt_getProfileHash(x, ctx, canonical, profile_lambda_expr)
 end
@@ -2047,13 +2018,11 @@ Build `{ stmts... }`. The statements are copied into the node's trailing storage
 `FPOptionsOverride` opaque encoding `getStoredFPFeatures` reads back: pass `0` for "no
 override", the only value that leaves `hasStoredFPFeatures` false.
 """
-function CompoundStmt(ctx::ASTContext, stmts::Vector{<:AbstractStmt}, fp_features::Integer,
-                      lbrace_loc::SourceLocation, rbrace_loc::SourceLocation)
+function CompoundStmt(ctx::ASTContext, stmts::Vector{<:AbstractStmt}, fp_features::Integer, lbrace_loc::SourceLocation, rbrace_loc::SourceLocation)
     @check_ptrs ctx
     @assert all(s -> s.ptr != C_NULL, stmts) "a compound statement body holds no null slot"
     buf = CXStmt[Base.unsafe_convert(CXStmt, s) for s in stmts]
-    return CompoundStmt(clang_CompoundStmt_Create(ctx, buf, length(buf), fp_features,
-                                                  lbrace_loc, rbrace_loc))
+    return CompoundStmt(clang_CompoundStmt_Create(ctx, buf, length(buf), fp_features, lbrace_loc, rbrace_loc))
 end
 
 # AttributedStmt
@@ -2064,15 +2033,13 @@ Build the attributed statement `[[attrs...]] sub_stmt`, with `loc` as the locati
 leading attribute. The attributes are copied into the node's trailing storage, so `attrs`
 need not outlive the call. clang requires a non-empty attribute list, which this restates.
 """
-function AttributedStmt(ctx::ASTContext, loc::SourceLocation, attrs::Vector{<:AbstractAttr},
-                        sub_stmt::AbstractStmt)
+function AttributedStmt(ctx::ASTContext, loc::SourceLocation, attrs::Vector{<:AbstractAttr}, sub_stmt::AbstractStmt)
     @check_ptrs ctx sub_stmt
     @assert !isempty(attrs) "an AttributedStmt needs at least one attribute"
     @assert all(a -> a.ptr != C_NULL, attrs) "attribute list holds no null slot"
     buf = CXAttr[Base.unsafe_convert(CXAttr, a) for a in attrs]
     return AttributedStmt(clang_AttributedStmt_Create(ctx, loc, buf, length(buf), sub_stmt))
 end
-
 
 """
     AttributedStmt(ctx::ASTContext, num_attrs::Integer) -> AttributedStmt
@@ -2176,7 +2143,6 @@ function getModifier(x::GCCAsmStmtAsmStringPiece)
     return Char(clang_GCCAsmStmtAsmStringPiece_getModifier(x) % UInt8)
 end
 
-
 """
     getBodyStmt(x::AbstractCompoundStmt, i) -> Stmt
 Return the `i`-th body statement (0-based). A `CompoundStmt` keeps its body in a
@@ -2188,7 +2154,7 @@ function getBodyStmt(x::AbstractCompoundStmt, i::Integer)
     @check_ptrs x
     @assert 0 <= i < length(x) "compound statement body index out of range"
     return Stmt(clang_CompoundStmt_getBodyStmt(x, i))
- end
+end
 
 """
     getDecl(x::AbstractDeclStmt, i) -> Decl
@@ -2225,7 +2191,6 @@ function getODRHash(x::AbstractStmt)
     return clang_Stmt_getODRHash(x)
 end
 
-
 # CapturedStmt::Capture
 """
     CapturedStmtCapture(loc::SourceLocation, kind::CXVariableCaptureKind,
@@ -2241,12 +2206,11 @@ allocates and one should call `dispose` to release the resources after using thi
 the statement is built. A capture obtained from `getCapture` borrows into its statement
 instead and must not be disposed.
 """
-function CapturedStmtCapture(loc::SourceLocation, kind::CXVariableCaptureKind,
-                             var::AbstractVarDecl=VarDecl(C_NULL))
+function CapturedStmtCapture(loc::SourceLocation, kind::CXVariableCaptureKind, var::AbstractVarDecl=VarDecl(C_NULL))
     named = kind == CXVariableCaptureKind_VCK_ByRef || kind == CXVariableCaptureKind_VCK_ByCopy
     @assert named == (var.ptr != C_NULL) "by-ref/by-copy captures name a variable, 'this'/VLA ones do not"
     return CapturedStmtCapture(clang_CapturedStmtCapture_create(loc, kind, var))
- end
+end
 
 dispose(x::CapturedStmtCapture) = clang_CapturedStmtCapture_dispose(x)
 
@@ -2261,9 +2225,7 @@ stores exactly one initializer per capture — and both are copied into the node
 storage, so neither need outlive the call and the caller still owns its
 `CapturedStmtCapture` boxes. An `inits` slot may be null; a `captures` slot may not.
 """
-function CapturedStmt(ctx::ASTContext, s::AbstractStmt, kind::CXCapturedRegionKind,
-                      captures::Vector{CapturedStmtCapture}, inits::Vector{<:AbstractExpr},
-                      cd::AbstractCapturedDecl, rd::AbstractRecordDecl)
+function CapturedStmt(ctx::ASTContext, s::AbstractStmt, kind::CXCapturedRegionKind, captures::Vector{CapturedStmtCapture}, inits::Vector{<:AbstractExpr}, cd::AbstractCapturedDecl, rd::AbstractRecordDecl)
     @check_ptrs ctx s cd rd
     @assert length(captures) == length(inits) "each capture needs exactly one initializer"
     @assert all(c -> c.ptr != C_NULL, captures) "a capture list holds no null slot"
@@ -2283,7 +2245,6 @@ function CapturedStmt(ctx::ASTContext, num_captures::Integer)
     @check_ptrs ctx
     return CapturedStmt(clang_CapturedStmt_CreateDeserialized(ctx, num_captures))
 end
-
 
 """
     getLikelihood(attrs::Vector{<:AbstractAttr}) -> CXLikelihood
@@ -2325,7 +2286,6 @@ function determineLikelihoodConflict(then_stmt::AbstractStmt, else_stmt::Abstrac
     return conflict, Attr(then_attr[]), Attr(else_attr[])
 end
 
-
 # GCCAsmStmt
 """
     GCCAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, is_simple::Bool, is_volatile::Bool,
@@ -2345,11 +2305,7 @@ holds one literal per output and input. Everything is copied into the statement'
 storage, so no vector need outlive the call, and the node is arena-allocated: there is no
 `dispose`.
 """
-function GCCAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, is_simple::Bool, is_volatile::Bool,
-                    num_outputs::Integer, num_inputs::Integer, names::Vector{IdentifierInfo},
-                    constraints::Vector{StringLiteral}, exprs::Vector{<:AbstractExpr},
-                    asm_str::StringLiteral, clobbers::Vector{StringLiteral},
-                    rparen_loc::SourceLocation)
+function GCCAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, is_simple::Bool, is_volatile::Bool, num_outputs::Integer, num_inputs::Integer, names::Vector{IdentifierInfo}, constraints::Vector{StringLiteral}, exprs::Vector{<:AbstractExpr}, asm_str::StringLiteral, clobbers::Vector{StringLiteral}, rparen_loc::SourceLocation)
     @check_ptrs ctx asm_str
     @assert num_outputs >= 0 && num_inputs >= 0 "operand counts are non-negative"
     num_operands = Int(num_outputs) + Int(num_inputs)
@@ -2363,9 +2319,7 @@ function GCCAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, is_simple::Bool, i
     cbuf = CXStringLiteral[Base.unsafe_convert(CXStringLiteral, c) for c in constraints]
     ebuf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
     lbuf = CXStringLiteral[Base.unsafe_convert(CXStringLiteral, c) for c in clobbers]
-    return GCCAsmStmt(clang_GCCAsmStmt_Create(ctx, asm_loc, is_simple, is_volatile, num_outputs,
-                                              num_inputs, nbuf, cbuf, ebuf, asm_str, length(lbuf),
-                                              lbuf, length(exprs) - num_operands, rparen_loc))
+    return GCCAsmStmt(clang_GCCAsmStmt_Create(ctx, asm_loc, is_simple, is_volatile, num_outputs, num_inputs, nbuf, cbuf, ebuf, asm_str, length(lbuf), lbuf, length(exprs) - num_operands, rparen_loc))
 end
 
 # MSAsmStmt
@@ -2384,11 +2338,7 @@ is what [`hasBraces`](@ref) reads: an invalid location means the block had none.
 string, token and expression is copied into the statement's own arena storage, so nothing
 passed here need outlive the call, and the node is arena-allocated: there is no `dispose`.
 """
-function MSAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, lbrace_loc::SourceLocation,
-                   is_simple::Bool, is_volatile::Bool, asm_toks::Vector{Token},
-                   num_outputs::Integer, num_inputs::Integer, constraints::Vector{String},
-                   exprs::Vector{<:AbstractExpr}, asm_str::AbstractString,
-                   clobbers::Vector{String}, end_loc::SourceLocation)
+function MSAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, lbrace_loc::SourceLocation, is_simple::Bool, is_volatile::Bool, asm_toks::Vector{Token}, num_outputs::Integer, num_inputs::Integer, constraints::Vector{String}, exprs::Vector{<:AbstractExpr}, asm_str::AbstractString, clobbers::Vector{String}, end_loc::SourceLocation)
     @check_ptrs ctx
     @assert num_outputs >= 0 && num_inputs >= 0 "operand counts are non-negative"
     num_operands = Int(num_outputs) + Int(num_inputs)
@@ -2398,10 +2348,7 @@ function MSAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, lbrace_loc::SourceL
     @assert all(t -> t.ptr != C_NULL, asm_toks) "a token list holds no null slot"
     tbuf = CXToken_[Base.unsafe_convert(CXToken_, t) for t in asm_toks]
     ebuf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
-    return MSAsmStmt(clang_MSAsmStmt_Create(ctx, asm_loc, lbrace_loc, is_simple, is_volatile, tbuf,
-                                            length(tbuf), num_outputs, num_inputs, constraints,
-                                            ebuf, String(asm_str), clobbers, length(clobbers),
-                                            end_loc))
+    return MSAsmStmt(clang_MSAsmStmt_Create(ctx, asm_loc, lbrace_loc, is_simple, is_volatile, tbuf, length(tbuf), num_outputs, num_inputs, constraints, ebuf, String(asm_str), clobbers, length(clobbers), end_loc))
 end
 
 """
@@ -2413,8 +2360,7 @@ into, so it needs no binding of its own.
 function getAllConstraints(x::AbstractMSAsmStmt)
     @check_ptrs x
     n_out, n_in = Int(getNumOutputs(x)), Int(getNumInputs(x))
-    return String[i < n_out ? getOutputConstraint(x, i) : getInputConstraint(x, i - n_out)
-                  for i = 0:(n_out + n_in - 1)]
+    return String[i < n_out ? getOutputConstraint(x, i) : getInputConstraint(x, i - n_out) for i = 0:(n_out + n_in - 1)]
 end
 
 """
@@ -2425,8 +2371,7 @@ Return every operand expression, outputs first and inputs after -- the same arra
 function getAllExprs(x::AbstractMSAsmStmt)
     @check_ptrs x
     n_out, n_in = Int(getNumOutputs(x)), Int(getNumInputs(x))
-    return Expr_[i < n_out ? getOutputExpr(x, i) : getInputExpr(x, i - n_out)
-                 for i = 0:(n_out + n_in - 1)]
+    return Expr_[i < n_out ? getOutputExpr(x, i) : getInputExpr(x, i - n_out) for i = 0:(n_out + n_in - 1)]
 end
 
 """

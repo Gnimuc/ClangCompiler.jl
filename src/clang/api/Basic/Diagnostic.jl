@@ -1,6 +1,5 @@
 # DiagnosticConsumer
-function BeginSourceFile(consumer::AbstractDiagnosticConsumer, lang::LangOptions,
-                         pp::Preprocessor)
+function BeginSourceFile(consumer::AbstractDiagnosticConsumer, lang::LangOptions, pp::Preprocessor)
     @check_ptrs consumer lang pp
     clang_DiagnosticConsumer_BeginSourceFile(consumer, lang, pp)
     return nothing
@@ -30,18 +29,14 @@ end
 # DiagnosticsEngine
 DiagnosticsEngine() = DiagnosticsEngine(create_diagnostics_engine())
 
-function DiagnosticsEngine(opts::DiagnosticOptions,
-                           client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts),
-                           should_own_client=true)
+function DiagnosticsEngine(opts::DiagnosticOptions, client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts), should_own_client=true)
     ids = create_diagnostic_ids()
     engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client)
     @assert engine != C_NULL "Failed to create DiagnosticsEngine"
     return DiagnosticsEngine(engine)
 end
 
-function DiagnosticsEngine(ids::DiagnosticIDs, opts::DiagnosticOptions,
-                           client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts),
-                           should_own_client=true)
+function DiagnosticsEngine(ids::DiagnosticIDs, opts::DiagnosticOptions, client::AbstractDiagnosticConsumer=TextDiagnosticPrinter(opts), should_own_client=true)
     engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client)
     @assert engine != C_NULL "Failed to create DiagnosticsEngine"
     return DiagnosticsEngine(engine)
@@ -67,7 +62,6 @@ function setShowColors(x::DiagnosticsEngine, should_show::Bool)
     @check_ptrs x
     return clang_DiagnosticsEngine_setShowColors(x, should_show)
 end
-
 
 # DiagnosticConsumer (counts & lifecycle)
 function getNumErrors(x::AbstractDiagnosticConsumer)
@@ -147,8 +141,7 @@ end
 Set the diagnostic client. When `should_own_client` is `true` the engine adopts `client` and one
 should NOT call `dispose` on it afterwards.
 """
-function setClient(x::AbstractDiagnosticsEngine, client::AbstractDiagnosticConsumer,
-                   should_own_client::Bool=true)
+function setClient(x::AbstractDiagnosticsEngine, client::AbstractDiagnosticConsumer, should_own_client::Bool=true)
     @check_ptrs x client
     return clang_DiagnosticsEngine_setClient(x, client, should_own_client)
 end
@@ -308,8 +301,7 @@ function getExtensionHandlingBehavior(x::AbstractDiagnosticsEngine)
     return clang_DiagnosticsEngine_getExtensionHandlingBehavior(x)
 end
 
-function setSeverity(x::AbstractDiagnosticsEngine, diag_id::Integer, severity::CXDiag_Severity,
-                     loc::SourceLocation=SourceLocation())
+function setSeverity(x::AbstractDiagnosticsEngine, diag_id::Integer, severity::CXDiag_Severity, loc::SourceLocation=SourceLocation())
     @check_ptrs x
     return clang_DiagnosticsEngine_setSeverity(x, diag_id, severity, loc)
 end
@@ -318,9 +310,7 @@ end
     setSeverityForGroup(x::AbstractDiagnosticsEngine, flavor, group, severity, loc=SourceLocation()) -> Bool
 Return `true` (and ignore the request) if `group` is unknown, `false` otherwise.
 """
-function setSeverityForGroup(x::AbstractDiagnosticsEngine, flavor::CXDiag_Flavor,
-                             group::AbstractString, severity::CXDiag_Severity,
-                             loc::SourceLocation=SourceLocation())
+function setSeverityForGroup(x::AbstractDiagnosticsEngine, flavor::CXDiag_Flavor, group::AbstractString, severity::CXDiag_Severity, loc::SourceLocation=SourceLocation())
     @check_ptrs x
     return clang_DiagnosticsEngine_setSeverityForGroup(x, flavor, group, severity, loc)
 end
@@ -329,8 +319,7 @@ end
     setDiagnosticGroupWarningAsError(x::AbstractDiagnosticsEngine, group, enabled) -> Bool
 Return `true` if `group` is unknown, `false` otherwise.
 """
-function setDiagnosticGroupWarningAsError(x::AbstractDiagnosticsEngine, group::AbstractString,
-                                          enabled::Bool)
+function setDiagnosticGroupWarningAsError(x::AbstractDiagnosticsEngine, group::AbstractString, enabled::Bool)
     @check_ptrs x
     return clang_DiagnosticsEngine_setDiagnosticGroupWarningAsError(x, group, enabled)
 end
@@ -339,14 +328,12 @@ end
     setDiagnosticGroupErrorAsFatal(x::AbstractDiagnosticsEngine, group, enabled) -> Bool
 Return `true` if `group` is unknown, `false` otherwise.
 """
-function setDiagnosticGroupErrorAsFatal(x::AbstractDiagnosticsEngine, group::AbstractString,
-                                        enabled::Bool)
+function setDiagnosticGroupErrorAsFatal(x::AbstractDiagnosticsEngine, group::AbstractString, enabled::Bool)
     @check_ptrs x
     return clang_DiagnosticsEngine_setDiagnosticGroupErrorAsFatal(x, group, enabled)
 end
 
-function setSeverityForAll(x::AbstractDiagnosticsEngine, flavor::CXDiag_Flavor,
-                           severity::CXDiag_Severity, loc::SourceLocation=SourceLocation())
+function setSeverityForAll(x::AbstractDiagnosticsEngine, flavor::CXDiag_Flavor, severity::CXDiag_Severity, loc::SourceLocation=SourceLocation())
     @check_ptrs x
     return clang_DiagnosticsEngine_setSeverityForAll(x, flavor, severity, loc)
 end
@@ -391,8 +378,7 @@ end
 Return an ID for a custom diagnostic with the given level and format string; the diagnostic is
 registered on the first request.
 """
-function getCustomDiagID(x::AbstractDiagnosticsEngine, level::CXDiagnosticsEngine_Level,
-                         format::AbstractString)
+function getCustomDiagID(x::AbstractDiagnosticsEngine, level::CXDiagnosticsEngine_Level, format::AbstractString)
     @check_ptrs x
     return clang_DiagnosticsEngine_getCustomDiagID(x, level, format)
 end
@@ -402,14 +388,12 @@ function Reset(x::AbstractDiagnosticsEngine, soft::Bool=false)
     return clang_DiagnosticsEngine_Reset(x, soft)
 end
 
-function isIgnored(x::AbstractDiagnosticsEngine, diag_id::Integer,
-                   loc::SourceLocation=SourceLocation())
+function isIgnored(x::AbstractDiagnosticsEngine, diag_id::Integer, loc::SourceLocation=SourceLocation())
     @check_ptrs x
     return clang_DiagnosticsEngine_isIgnored(x, diag_id, loc)
 end
 
-function getDiagnosticLevel(x::AbstractDiagnosticsEngine, diag_id::Integer,
-                            loc::SourceLocation=SourceLocation())
+function getDiagnosticLevel(x::AbstractDiagnosticsEngine, diag_id::Integer, loc::SourceLocation=SourceLocation())
     @check_ptrs x
     return clang_DiagnosticsEngine_getDiagnosticLevel(x, diag_id, loc)
 end
@@ -438,7 +422,6 @@ function getFlagValue(x::AbstractDiagnosticsEngine)
     @check_ptrs x
     return unsafe_string(clang_DiagnosticsEngine_getFlagValue(x))
 end
-
 
 # DiagnosticsEngine (overload display, extension silencing & prior-diagnostic notes)
 """
@@ -602,7 +585,6 @@ end
 
 dispose(x::AbstractStoredDiagnostic) = clang_StoredDiagnostic_dispose(x)
 
-
 # ForwardingDiagnosticConsumer
 """
     ForwardingDiagnosticConsumer(target::AbstractDiagnosticConsumer) -> ForwardingDiagnosticConsumer
@@ -646,20 +628,13 @@ into the record. Only the address of `src_mgr` is kept, so it must outlive the r
 This function allocates and one should call `dispose` to release the resources after using this
 object.
 """
-function StoredDiagnostic(level::CXDiagnosticsEngine_Level, id::Integer, message::AbstractString,
-                          loc::SourceLocation, src_mgr::AbstractSourceManager,
-                          ranges::AbstractVector{SourceRange},
-                          range_is_token::AbstractVector{Bool},
-                          fixits::AbstractVector{<:AbstractFixItHint})
+function StoredDiagnostic(level::CXDiagnosticsEngine_Level, id::Integer, message::AbstractString, loc::SourceLocation, src_mgr::AbstractSourceManager, ranges::AbstractVector{SourceRange}, range_is_token::AbstractVector{Bool}, fixits::AbstractVector{<:AbstractFixItHint})
     @check_ptrs src_mgr
     @assert length(ranges) == length(range_is_token) "each range needs a token-range flag"
     raw_ranges = CXSourceRange_[CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr) for r in ranges]
     raw_flags = collect(Bool, range_is_token)
     raw_fixits = CXFixItHint[Base.unsafe_convert(CXFixItHint, h) for h in fixits]
-    sd = clang_StoredDiagnostic_createWithRangesAndFixIts(level, id, message, loc, src_mgr,
-                                                          raw_ranges, raw_flags,
-                                                          length(raw_ranges), raw_fixits,
-                                                          length(raw_fixits))
+    sd = clang_StoredDiagnostic_createWithRangesAndFixIts(level, id, message, loc, src_mgr, raw_ranges, raw_flags, length(raw_ranges), raw_fixits, length(raw_fixits))
     @assert sd != C_NULL "Failed to create StoredDiagnostic"
     return StoredDiagnostic(sd)
 end
@@ -748,8 +723,7 @@ Return a hint that inserts, at `loc`, the text already spelled at `from_range`.
 This function allocates and one should call `dispose` to release the resources after using this
 object.
 """
-function CreateInsertionFromRange(loc::SourceLocation, from_range::SourceRange,
-                                  is_token_range::Bool, before::Bool=false)
+function CreateInsertionFromRange(loc::SourceLocation, from_range::SourceRange, is_token_range::Bool, before::Bool=false)
     r = CXSourceRange_(from_range.begin_loc.ptr, from_range.end_loc.ptr)
     hint = clang_FixItHint_CreateInsertionFromRange(loc, r, is_token_range, before)
     @assert hint != C_NULL "Failed to create FixItHint"
@@ -830,7 +804,6 @@ end
 
 dispose(x::AbstractFixItHint) = clang_FixItHint_dispose(x)
 
-
 # DiagnosticBuilder
 """
     DiagnosticBuilder(x::AbstractDiagnosticsEngine, loc::SourceLocation, diag_id::Integer) -> DiagnosticBuilder
@@ -871,8 +844,7 @@ At most ten arguments fit in one diagnostic; `clang::StreamingDiagnostic` assert
 eleventh and a builder exposes no count to check against, so that bound stays a documented
 precondition.
 """
-function AddTaggedVal(x::AbstractStreamingDiagnostic, val::Integer,
-                      kind::CXDiagnosticsEngine_ArgumentKind)
+function AddTaggedVal(x::AbstractStreamingDiagnostic, val::Integer, kind::CXDiagnosticsEngine_ArgumentKind)
     @check_ptrs x
     @assert kind != CXDiagnosticsEngine_ak_std_string "use AddString for a string argument"
     return clang_StreamingDiagnostic_AddTaggedVal(x, val % UInt64, kind)
@@ -897,8 +869,7 @@ end
 Attach `range` to the diagnostic. `is_token_range` says whether it ends at the start of its
 last token rather than at its last character.
 """
-function AddSourceRange(x::AbstractStreamingDiagnostic, range::SourceRange,
-                        is_token_range::Bool)
+function AddSourceRange(x::AbstractStreamingDiagnostic, range::SourceRange, is_token_range::Bool)
     @check_ptrs x
     r = CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr)
     return clang_StreamingDiagnostic_AddSourceRange(x, r, is_token_range)
@@ -1111,7 +1082,6 @@ end
 
 dispose(x::AbstractDiagnostic) = clang_Diagnostic_dispose(x)
 
-
 # DiagnosticsEngine (state dump & delayed diagnostics)
 """
     dump(x::AbstractDiagnosticsEngine)
@@ -1139,9 +1109,7 @@ Only one delayed diagnostic fits at a time: a second call before the queued one 
 reported is silently dropped, and a diagnostic emitted through `setForceEmit` does not flush
 the queue.
 """
-function SetDelayedDiagnostic(x::AbstractDiagnosticsEngine, diag_id::Integer,
-                              arg1::AbstractString="", arg2::AbstractString="",
-                              arg3::AbstractString="")
+function SetDelayedDiagnostic(x::AbstractDiagnosticsEngine, diag_id::Integer, arg1::AbstractString="", arg2::AbstractString="", arg3::AbstractString="")
     @check_ptrs x
     clang_DiagnosticsEngine_SetDelayedDiagnostic(x, diag_id, arg1, arg2, arg3)
     return nothing

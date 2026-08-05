@@ -96,4 +96,3 @@ construction order.
 struct SFINAETrap <: AbstractSFINAETrap
     ptr::CXSFINAETrap
 end
-

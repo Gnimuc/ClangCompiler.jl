@@ -230,5 +230,7 @@ sounds. Three rules, the first two enforced by `test/lint.jl` and `test/tautolog
 
 Test files mirror the source tree, and a new one must be added to `test/runtests.jl` by hand.
 
-Format with JuliaFormatter, YAS style, margin 120 (`.JuliaFormatter.toml`); `lib/` and
-`examples/` are excluded.
+Format with JuliaFormatter, YAS style, margin 1000 (`.JuliaFormatter.toml`); `lib/` and
+`examples/` are excluded. The margin sits past the longest line in the repo, so the formatter
+never splits one — but it will still *join* anything that now fits, hand-placed breaks
+included, so don't run it over the tree. Match the file you are editing.

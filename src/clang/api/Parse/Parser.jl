@@ -63,7 +63,6 @@ function getCurScope(x::Parser)
     return Scope(clang_Parser_getCurScope(x))
 end
 
-
 # should be sync to Clang's implementation
 function getDeclSpecContextFromDeclaratorContext(ctx::CXDeclaratorContext)
     if ctx == CXDeclaratorContext_Member
@@ -76,8 +75,7 @@ function getDeclSpecContextFromDeclaratorContext(ctx::CXDeclaratorContext)
         return CXDeclSpecContext_DSC_template_arg
     elseif ctx == CXDeclaratorContext_TemplateTypeArg
         return CXDeclSpecContext_DSC_template_type_arg
-    elseif ctx == CXDeclaratorContext_TrailingReturn ||
-           ctx == CXDeclaratorContext_TrailingReturnVar
+    elseif ctx == CXDeclaratorContext_TrailingReturn || ctx == CXDeclaratorContext_TrailingReturnVar
         return CXDeclSpecContext_DSC_trailing
     elseif ctx == CXDeclaratorContext_AliasDecl || ctx == CXDeclaratorContext_AliasTemplate
         return CXDeclSpecContext_DSC_alias_declaration
@@ -145,9 +143,7 @@ end
     TryAnnotateTypeOrScopeTokenAfterScopeSpec(x::Parser, ss::CXXScopeSpec, is_new_scope::Bool=false, allow_implicit_typename::Bool=false)
 Return true if there was an error.
 """
-function TryAnnotateTypeOrScopeTokenAfterScopeSpec(x::Parser, ss::CXXScopeSpec,
-                                                   is_new_scope::Bool=false,
-                                                   allow_implicit_typename::Bool=false)
+function TryAnnotateTypeOrScopeTokenAfterScopeSpec(x::Parser, ss::CXXScopeSpec, is_new_scope::Bool=false, allow_implicit_typename::Bool=false)
     @check_ptrs x ss
     return clang_Parser_TryAnnotateTypeOrScopeTokenAfterScopeSpec(x, ss, is_new_scope, allow_implicit_typename)
 end

@@ -19,8 +19,7 @@ This function allocates and one should call `dispose` to release the resources a
 this object. The driver holds a reference to `diags`, so dispose the driver before the
 `DiagnosticsEngine` it was created with.
 """
-function Driver(clang_executable::AbstractString, target_triple::AbstractString,
-                diags::AbstractDiagnosticsEngine)
+function Driver(clang_executable::AbstractString, target_triple::AbstractString, diags::AbstractDiagnosticsEngine)
     @check_ptrs diags
     ptr = clang_Driver_create(clang_executable, target_triple, diags)
     @assert ptr != C_NULL "Failed to create Driver"
@@ -586,12 +585,9 @@ The file really appears on disk and the path is registered with `c`, so it shows
 [`getTempFile`](@ref) and is removed when the compilation cleans up. Dispose `c` before the
 driver.
 """
-function CreateTempFile(x::AbstractDriver, c::Compilation, prefix::AbstractString,
-                        suffix::AbstractString; multiple_archs::Bool=false,
-                        bound_arch::AbstractString="", need_unique_directory::Bool=false)
+function CreateTempFile(x::AbstractDriver, c::Compilation, prefix::AbstractString, suffix::AbstractString; multiple_archs::Bool=false, bound_arch::AbstractString="", need_unique_directory::Bool=false)
     @check_ptrs x c
-    p = clang_Driver_CreateTempFile(x, c, prefix, suffix, multiple_archs, bound_arch,
-                                    need_unique_directory)
+    p = clang_Driver_CreateTempFile(x, c, prefix, suffix, multiple_archs, bound_arch, need_unique_directory)
     return p == C_NULL ? nothing : unsafe_string(p)
 end
 

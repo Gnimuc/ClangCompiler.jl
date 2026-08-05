@@ -64,7 +64,6 @@ function getName(x::NestedNameSpecifier)
     return get_string(clang_NestedNameSpecifier_getName(x))
 end
 
-
 # NestedNameSpecifier (the static builders)
 """
     NestedNameSpecifier(ctx::ASTContext, prefix::NestedNameSpecifier, id::IdentifierInfo) -> NestedNameSpecifier
@@ -74,8 +73,7 @@ there is no `dispose`).
 `prefix` may be a NULL-pointer carrier and must otherwise be dependent (`isDependent`) — an
 identifier component is only well-formed where the prefix cannot be resolved.
 """
-function NestedNameSpecifier(ctx::ASTContext, prefix::NestedNameSpecifier,
-                             id::IdentifierInfo)
+function NestedNameSpecifier(ctx::ASTContext, prefix::NestedNameSpecifier, id::IdentifierInfo)
     @check_ptrs ctx id
     @assert prefix.ptr == C_NULL || isDependent(prefix) "the prefix must be dependent or absent"
     return NestedNameSpecifier(clang_NestedNameSpecifier_Create(ctx, prefix, id))
@@ -98,7 +96,6 @@ function SuperSpecifier(ctx::ASTContext, rd::AbstractCXXRecordDecl)
     @check_ptrs ctx rd
     return NestedNameSpecifier(clang_NestedNameSpecifier_SuperSpecifier(ctx, rd))
 end
-
 
 # NestedNameSpecifierLoc
 """
@@ -208,8 +205,7 @@ function getTypeLoc(x::AbstractNestedNameSpecifierLoc)
     @check_ptrs x
     @assert hasQualifier(x) "an empty nested-name-specifier location names no type"
     k = getKind(getNestedNameSpecifier(x))
-    names_type = k == CXNestedNameSpecifierKind_TypeSpec ||
-                 k == CXNestedNameSpecifierKind_TypeSpecWithTemplate
+    names_type = k == CXNestedNameSpecifierKind_TypeSpec || k == CXNestedNameSpecifierKind_TypeSpecWithTemplate
     @assert names_type "the qualifier must name a type (TypeSpec or TypeSpecWithTemplate)"
     return TypeLoc(clang_NestedNameSpecifierLoc_getTypeLoc(x))
 end

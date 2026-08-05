@@ -15,4 +15,3 @@ Hold a pointer to a `clang::HeaderFileInfo` object.
 struct HeaderFileInfo <: AbstractHeaderFileInfo
     ptr::CXHeaderFileInfo
 end
-

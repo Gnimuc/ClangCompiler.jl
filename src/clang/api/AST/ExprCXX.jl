@@ -364,8 +364,6 @@ function getRParenLoc(x::AbstractCXXNamedCastExpr)
     return SourceLocation(clang_CXXNamedCastExpr_getRParenLoc(x))
 end
 
-
-
 # LambdaExpr
 function getCaptureDefault(x::AbstractLambdaExpr)
     @check_ptrs x
@@ -499,7 +497,6 @@ function getTypeIdParens(x::AbstractCXXNewExpr)
     r = clang_CXXNewExpr_getTypeIdParens(x)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
-
 
 """
     getCastName(x::AbstractCXXNamedCastExpr) -> String
@@ -658,7 +655,6 @@ function getPattern(x::AbstractCXXFoldExpr)
     @check_ptrs x
     return Expr_(clang_CXXFoldExpr_getPattern(x))
 end
-
 
 # UserDefinedLiteral
 """
@@ -837,7 +833,6 @@ function getKeywordLoc(x::AbstractCoroutineSuspendExpr)
     return SourceLocation(clang_CoroutineSuspendExpr_getKeywordLoc(x))
 end
 
-
 # CXXNoexceptExpr
 """
     getOperand(x::AbstractCXXNoexceptExpr) -> Expr_
@@ -972,7 +967,6 @@ function getNumTemplateArgs(x::AbstractDependentScopeDeclRefExpr)
     @check_ptrs x
     return clang_DependentScopeDeclRefExpr_getNumTemplateArgs(x)
 end
-
 
 # OverloadExpr (base of UnresolvedLookupExpr and UnresolvedMemberExpr)
 function getNamingClass(x::AbstractOverloadExpr)
@@ -1309,7 +1303,6 @@ function getValue(x::AbstractExpressionTraitExpr)
     return clang_ExpressionTraitExpr_getValue(x)
 end
 
-
 # CXXTypeidExpr (cont.)
 """
     isPotentiallyEvaluated(x::AbstractCXXTypeidExpr) -> Bool
@@ -1508,7 +1501,6 @@ function getParameterType(x::AbstractSubstNonTypeTemplateParmExpr, ctx::ASTConte
     @check_ptrs x ctx
     return QualType(clang_SubstNonTypeTemplateParmExpr_getParameterType(x, ctx))
 end
-
 
 # CXXOperatorCallExpr
 """
@@ -1721,7 +1713,6 @@ function getKeywordLoc(x::AbstractDependentCoawaitExpr)
     return SourceLocation(clang_DependentCoawaitExpr_getKeywordLoc(x))
 end
 
-
 # CXXDependentScopeMemberExpr
 """
     isImplicitAccess(x::AbstractCXXDependentScopeMemberExpr) -> Bool
@@ -1854,7 +1845,6 @@ function getRAngleLoc(x::AbstractDependentScopeDeclRefExpr)
     @check_ptrs x
     return SourceLocation(clang_DependentScopeDeclRefExpr_getRAngleLoc(x))
 end
-
 
 # CXXConstructExpr
 function setLocation(x::AbstractCXXConstructExpr, loc::SourceLocation)
@@ -2002,7 +1992,6 @@ function getTemplateArg(x::AbstractDependentScopeDeclRefExpr, i::Integer)
     @assert 0 <= i < getNumTemplateArgs(x) "template argument index $i out of range"
     return TemplateArgumentLoc(clang_DependentScopeDeclRefExpr_getTemplateArg(x, i))
 end
-
 
 # CXXRewrittenBinaryOperator
 """
@@ -2200,7 +2189,6 @@ function getInitializedFieldInUnion(x::AbstractCXXParenListInitExpr)
     @check_ptrs x
     return FieldDecl(clang_CXXParenListInitExpr_getInitializedFieldInUnion(x))
 end
-
 
 # CXXTypeidExpr (cont.)
 """
@@ -2401,7 +2389,6 @@ function setInitializedFieldInUnion(x::AbstractCXXParenListInitExpr, fd::Abstrac
     return clang_CXXParenListInitExpr_setInitializedFieldInUnion(x, fd)
 end
 
-
 # --- ExprCXX-l sweep: the name-info / qualifier-extent tail of the dependent-name
 # expressions, plus the node-synthesis factories ---
 
@@ -2426,13 +2413,10 @@ Build a `const_cast<T>(op)` node of type `ty` and value kind `vk` in `ctx`'s are
 written destination type `written_ty` and the `<...>` extent `angles`. The node is
 arena-allocated: there is no `dispose`.
 """
-function CXXConstCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, op::AbstractExpr,
-                          written_ty::TypeSourceInfo, loc::SourceLocation, rparen::SourceLocation,
-                          angles::SourceRange)
+function CXXConstCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, op::AbstractExpr, written_ty::TypeSourceInfo, loc::SourceLocation, rparen::SourceLocation, angles::SourceRange)
     @check_ptrs ctx ty op written_ty
     r = CXSourceRange_(angles.begin_loc.ptr, angles.end_loc.ptr)
-    return CXXConstCastExpr(clang_CXXConstCastExpr_Create(ctx, ty, vk, op, written_ty, loc,
-                                                          rparen, r))
+    return CXXConstCastExpr(clang_CXXConstCastExpr_Create(ctx, ty, vk, op, written_ty, loc, rparen, r))
 end
 
 # CXXBoolLiteralExpr (cont.)
@@ -2469,8 +2453,7 @@ Build a use of `param`'s default argument at `loc`, in `ctx`'s arena, as used fr
 `getDefaultArg()`'s type, value kind and object kind unchecked (Invariant 3). The node is
 arena-allocated: there is no `dispose`.
 """
-function CXXDefaultArgExpr(ctx::ASTContext, loc::SourceLocation, param::AbstractParmVarDecl,
-                           rewritten::Union{Nothing,AbstractExpr}, used_ctx::DeclContext)
+function CXXDefaultArgExpr(ctx::ASTContext, loc::SourceLocation, param::AbstractParmVarDecl, rewritten::Union{Nothing,AbstractExpr}, used_ctx::DeclContext)
     @check_ptrs ctx param used_ctx
     @assert hasDefaultArg(param) "parameter must carry a parsed default argument"
     rw = rewritten === nothing ? C_NULL : rewritten
@@ -2487,8 +2470,7 @@ Build a use of `field`'s in-class initializer at `loc`, in `ctx`'s arena, as use
 constructor and `getExpr` reaches through it unchecked (Invariant 3). The node is
 arena-allocated: there is no `dispose`.
 """
-function CXXDefaultInitExpr(ctx::ASTContext, loc::SourceLocation, field::AbstractFieldDecl,
-                            used_ctx::DeclContext, rewritten::Union{Nothing,AbstractExpr})
+function CXXDefaultInitExpr(ctx::ASTContext, loc::SourceLocation, field::AbstractFieldDecl, used_ctx::DeclContext, rewritten::Union{Nothing,AbstractExpr})
     @check_ptrs ctx field used_ctx
     @assert hasInClassInitializer(field) "field must carry an in-class initializer"
     rw = rewritten === nothing ? C_NULL : rewritten
@@ -2613,7 +2595,6 @@ function getQualifierRange(x::AbstractCXXDependentScopeMemberExpr)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
-
 # --- Named-cast factories (clang/AST/ExprCXX.h) ---
 # Every node built below lives in the ASTContext arena, so none of them is disposed. The
 # `CreateEmpty` shells leave the operand, the written type, the base-specifier slots and the
@@ -2632,13 +2613,10 @@ The factory passes no inheritance path, so `k` must not be one of the base-path 
 (`CK_DerivedToBase` and friends), which clang asserts on. The node is arena-allocated: there is no
 `dispose`.
 """
-function CXXStaticCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind,
-                           op::AbstractExpr, written_ty::TypeSourceInfo, fp_features::Integer,
-                           loc::SourceLocation, rparen::SourceLocation, angles::SourceRange)
+function CXXStaticCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind, op::AbstractExpr, written_ty::TypeSourceInfo, fp_features::Integer, loc::SourceLocation, rparen::SourceLocation, angles::SourceRange)
     @check_ptrs ctx ty op written_ty
     r = CXSourceRange_(angles.begin_loc.ptr, angles.end_loc.ptr)
-    return CXXStaticCastExpr(clang_CXXStaticCastExpr_Create(ctx, ty, vk, k, op, written_ty,
-                                                            fp_features, loc, rparen, r))
+    return CXXStaticCastExpr(clang_CXXStaticCastExpr_Create(ctx, ty, vk, k, op, written_ty, fp_features, loc, rparen, r))
 end
 
 """
@@ -2661,13 +2639,10 @@ Build a `dynamic_cast<T>(op)` node in `ctx`'s arena — the same shape as the `s
 minus the `FPOptionsOverride`, which this node has no storage for. Same empty-path precondition on
 `k`. The node is arena-allocated: there is no `dispose`.
 """
-function CXXDynamicCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind,
-                            op::AbstractExpr, written_ty::TypeSourceInfo, loc::SourceLocation,
-                            rparen::SourceLocation, angles::SourceRange)
+function CXXDynamicCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind, op::AbstractExpr, written_ty::TypeSourceInfo, loc::SourceLocation, rparen::SourceLocation, angles::SourceRange)
     @check_ptrs ctx ty op written_ty
     r = CXSourceRange_(angles.begin_loc.ptr, angles.end_loc.ptr)
-    return CXXDynamicCastExpr(clang_CXXDynamicCastExpr_Create(ctx, ty, vk, k, op, written_ty, loc,
-                                                              rparen, r))
+    return CXXDynamicCastExpr(clang_CXXDynamicCastExpr_Create(ctx, ty, vk, k, op, written_ty, loc, rparen, r))
 end
 
 """
@@ -2688,13 +2663,10 @@ end
 Build a `reinterpret_cast<T>(op)` node in `ctx`'s arena; same shape and same empty-path precondition
 on `k` as the `dynamic_cast` factory. The node is arena-allocated: there is no `dispose`.
 """
-function CXXReinterpretCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind,
-                                op::AbstractExpr, written_ty::TypeSourceInfo, loc::SourceLocation,
-                                rparen::SourceLocation, angles::SourceRange)
+function CXXReinterpretCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind, op::AbstractExpr, written_ty::TypeSourceInfo, loc::SourceLocation, rparen::SourceLocation, angles::SourceRange)
     @check_ptrs ctx ty op written_ty
     r = CXSourceRange_(angles.begin_loc.ptr, angles.end_loc.ptr)
-    return CXXReinterpretCastExpr(clang_CXXReinterpretCastExpr_Create(ctx, ty, vk, k, op, written_ty,
-                                                                      loc, rparen, r))
+    return CXXReinterpretCastExpr(clang_CXXReinterpretCastExpr_Create(ctx, ty, vk, k, op, written_ty, loc, rparen, r))
 end
 
 """
@@ -2727,13 +2699,10 @@ end
 Build an `addrspace_cast<T>(op)` node in `ctx`'s arena. This cast never carries an inheritance path,
 so clang's factory takes none. The node is arena-allocated: there is no `dispose`.
 """
-function CXXAddrspaceCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind,
-                              op::AbstractExpr, written_ty::TypeSourceInfo, loc::SourceLocation,
-                              rparen::SourceLocation, angles::SourceRange)
+function CXXAddrspaceCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind, op::AbstractExpr, written_ty::TypeSourceInfo, loc::SourceLocation, rparen::SourceLocation, angles::SourceRange)
     @check_ptrs ctx ty op written_ty
     r = CXSourceRange_(angles.begin_loc.ptr, angles.end_loc.ptr)
-    return CXXAddrspaceCastExpr(clang_CXXAddrspaceCastExpr_Create(ctx, ty, vk, k, op, written_ty,
-                                                                  loc, rparen, r))
+    return CXXAddrspaceCastExpr(clang_CXXAddrspaceCastExpr_Create(ctx, ty, vk, k, op, written_ty, loc, rparen, r))
 end
 
 """
@@ -2757,13 +2726,9 @@ spelled and `fp_features` the `FPOptionsOverride` opaque encoding (`0` for "no o
 `lparen.isInvalid()`. Same empty-path precondition on `k` as the named-cast factories. The node is
 arena-allocated: there is no `dispose`.
 """
-function CXXFunctionalCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind,
-                               written_ty::TypeSourceInfo, k::CXCastKind, op::AbstractExpr,
-                               fp_features::Integer, lparen::SourceLocation,
-                               rparen::SourceLocation)
+function CXXFunctionalCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, written_ty::TypeSourceInfo, k::CXCastKind, op::AbstractExpr, fp_features::Integer, lparen::SourceLocation, rparen::SourceLocation)
     @check_ptrs ctx ty written_ty op
-    return CXXFunctionalCastExpr(clang_CXXFunctionalCastExpr_Create(ctx, ty, vk, written_ty, k, op,
-                                                                    fp_features, lparen, rparen))
+    return CXXFunctionalCastExpr(clang_CXXFunctionalCastExpr_Create(ctx, ty, vk, written_ty, k, op, fp_features, lparen, rparen))
 end
 
 """
@@ -2773,8 +2738,7 @@ Build the empty functional-cast shell clang deserializes into; the same uninitia
 """
 function CXXFunctionalCastExpr(ctx::ASTContext, path_size::Integer, has_fp_features::Bool)
     @check_ptrs ctx
-    return CXXFunctionalCastExpr(clang_CXXFunctionalCastExpr_CreateEmpty(ctx, path_size,
-                                                                         has_fp_features))
+    return CXXFunctionalCastExpr(clang_CXXFunctionalCastExpr_CreateEmpty(ctx, path_size, has_fp_features))
 end
 
 # FunctionParmPackExpr
@@ -2786,13 +2750,11 @@ substituted but not yet expanded — of type `ty` at `name_loc`, in `ctx`'s aren
 `params` are copied into the node's trailing storage, so `params` need not outlive the call and may be
 empty. The node is arena-allocated: there is no `dispose`.
 """
-function FunctionParmPackExpr(ctx::ASTContext, ty::QualType, param_pack::AbstractVarDecl,
-                              name_loc::SourceLocation, params::Vector{<:AbstractVarDecl})
+function FunctionParmPackExpr(ctx::ASTContext, ty::QualType, param_pack::AbstractVarDecl, name_loc::SourceLocation, params::Vector{<:AbstractVarDecl})
     @check_ptrs ctx ty param_pack
     @assert all(p -> p.ptr != C_NULL, params) "a parameter pack expansion holds no null slot"
     buf = CXVarDecl[Base.unsafe_convert(CXVarDecl, p) for p in params]
-    return FunctionParmPackExpr(clang_FunctionParmPackExpr_Create(ctx, ty, param_pack, name_loc, buf,
-                                                                  length(buf)))
+    return FunctionParmPackExpr(clang_FunctionParmPackExpr_Create(ctx, ty, param_pack, name_loc, buf, length(buf)))
 end
 
 """
@@ -2834,7 +2796,6 @@ function getExpansion(x::AbstractFunctionParmPackExpr, i::Integer)
     return VarDecl(clang_FunctionParmPackExpr_getExpansion(x, i))
 end
 
-
 # SubstNonTypeTemplateParmPackExpr
 """
     SubstNonTypeTemplateParmPackExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind,
@@ -2847,14 +2808,11 @@ position of the replaced parameter in its parameter list. The handles in `args` 
 with `TemplateArgument::CreatePackCopy`, so `args` keeps its own boxes and may be empty. The node is
 arena-allocated: there is no `dispose`.
 """
-function SubstNonTypeTemplateParmPackExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind,
-                                          name_loc::SourceLocation, args::Vector{TemplateArgument},
-                                          assoc::AbstractDecl, index::Integer)
+function SubstNonTypeTemplateParmPackExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, name_loc::SourceLocation, args::Vector{TemplateArgument}, assoc::AbstractDecl, index::Integer)
     @check_ptrs ctx ty assoc
     @assert all(a -> a.ptr != C_NULL, args) "a substituted argument pack holds no null slot"
     buf = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
-    p = clang_SubstNonTypeTemplateParmPackExpr_Create(ctx, ty, vk, name_loc, buf, length(buf), assoc,
-                                                      index)
+    p = clang_SubstNonTypeTemplateParmPackExpr_Create(ctx, ty, vk, name_loc, buf, length(buf), assoc, index)
     return SubstNonTypeTemplateParmPackExpr(p)
 end
 
@@ -2924,16 +2882,12 @@ rest filled in from default member initializers; clang asserts `num_user_specifi
 The handles are copied into the node's trailing storage, so `args` need not outlive the call. The
 node is arena-allocated: there is no `dispose`.
 """
-function CXXParenListInitExpr(ctx::ASTContext, args::Vector{<:AbstractExpr}, ty::QualType,
-                              num_user_specified::Integer, init_loc::SourceLocation,
-                              lparen::SourceLocation, rparen::SourceLocation)
+function CXXParenListInitExpr(ctx::ASTContext, args::Vector{<:AbstractExpr}, ty::QualType, num_user_specified::Integer, init_loc::SourceLocation, lparen::SourceLocation, rparen::SourceLocation)
     @check_ptrs ctx ty
     @assert all(a -> a.ptr != C_NULL, args) "a paren-list initializer holds no null slot"
     @assert 0 <= num_user_specified <= length(args) "written initializers outnumber the initializers"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
-    return CXXParenListInitExpr(clang_CXXParenListInitExpr_Create(ctx, buf, length(buf), ty,
-                                                                  num_user_specified, init_loc,
-                                                                  lparen, rparen))
+    return CXXParenListInitExpr(clang_CXXParenListInitExpr_Create(ctx, buf, length(buf), ty, num_user_specified, init_loc, lparen, rparen))
 end
 
 """
@@ -2957,15 +2911,11 @@ written and `is_list_init` recording a `T{...}` spelling. The handles in `args` 
 node's trailing storage, so `args` need not outlive the call. The node is arena-allocated: there is
 no `dispose`.
 """
-function CXXUnresolvedConstructExpr(ctx::ASTContext, ty::QualType, tsi::TypeSourceInfo,
-                                    lparen::SourceLocation, args::Vector{<:AbstractExpr},
-                                    rparen::SourceLocation, is_list_init::Bool)
+function CXXUnresolvedConstructExpr(ctx::ASTContext, ty::QualType, tsi::TypeSourceInfo, lparen::SourceLocation, args::Vector{<:AbstractExpr}, rparen::SourceLocation, is_list_init::Bool)
     @check_ptrs ctx ty tsi
     @assert all(a -> a.ptr != C_NULL, args) "an unresolved-construct argument holds no null slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
-    return CXXUnresolvedConstructExpr(clang_CXXUnresolvedConstructExpr_Create(ctx, ty, tsi, lparen,
-                                                                              buf, length(buf),
-                                                                              rparen, is_list_init))
+    return CXXUnresolvedConstructExpr(clang_CXXUnresolvedConstructExpr_Create(ctx, ty, tsi, lparen, buf, length(buf), rparen, is_list_init))
 end
 
 """
@@ -3011,11 +2961,9 @@ an array-size slot, an initializer slot, `num_placement_args` placement-argument
 parenthesized-type-id source range — and the payload behind them is uninitialized, so only the node's
 statement class may be read straight away.
 """
-function CXXNewExpr(ctx::ASTContext, is_array::Bool, has_init::Bool, num_placement_args::Integer,
-                    is_paren_type_id::Bool)
+function CXXNewExpr(ctx::ASTContext, is_array::Bool, has_init::Bool, num_placement_args::Integer, is_paren_type_id::Bool)
     @check_ptrs ctx
-    return CXXNewExpr(clang_CXXNewExpr_CreateEmpty(ctx, is_array, has_init, num_placement_args,
-                                                   is_paren_type_id))
+    return CXXNewExpr(clang_CXXNewExpr_CreateEmpty(ctx, is_array, has_init, num_placement_args, is_paren_type_id))
 end
 
 # CXXDefaultArgExpr (cont.)
@@ -3061,8 +3009,7 @@ user-defined-literal shell, with the overloaded operator kind left uninitialized
 """
 function CXXOperatorCallExpr(ctx::ASTContext, num_args::Integer, has_fp_features::Bool)
     @check_ptrs ctx
-    return CXXOperatorCallExpr(clang_CXXOperatorCallExpr_CreateEmpty(ctx, num_args,
-                                                                     has_fp_features))
+    return CXXOperatorCallExpr(clang_CXXOperatorCallExpr_CreateEmpty(ctx, num_args, has_fp_features))
 end
 
 # CXXMemberCallExpr (cont.)
@@ -3084,12 +3031,9 @@ Build the empty unresolved-lookup shell clang deserializes into. The `num_result
 slots and, when `has_template_kw_and_args` is set, `num_template_args` explicit template-argument
 slots are reserved; everything behind them is uninitialized.
 """
-function UnresolvedLookupExpr(ctx::ASTContext, num_results::Integer,
-                              has_template_kw_and_args::Bool, num_template_args::Integer)
+function UnresolvedLookupExpr(ctx::ASTContext, num_results::Integer, has_template_kw_and_args::Bool, num_template_args::Integer)
     @check_ptrs ctx
-    return UnresolvedLookupExpr(clang_UnresolvedLookupExpr_CreateEmpty(ctx, num_results,
-                                                                       has_template_kw_and_args,
-                                                                       num_template_args))
+    return UnresolvedLookupExpr(clang_UnresolvedLookupExpr_CreateEmpty(ctx, num_results, has_template_kw_and_args, num_template_args))
 end
 
 # FunctionParmPackExpr (cont.)
@@ -3102,7 +3046,6 @@ function FunctionParmPackExpr(ctx::ASTContext, num_params::Integer)
     @check_ptrs ctx
     return FunctionParmPackExpr(clang_FunctionParmPackExpr_CreateEmpty(ctx, num_params))
 end
-
 
 # LambdaExpr (cont.)
 """
@@ -3230,8 +3173,7 @@ replaces the node's whole destroyed-type storage: `getDestroyedTypeInfo` reads N
 and `getDestroyedType` a null `QualType`, while `getDestroyedTypeIdentifier` and
 `getDestroyedTypeLoc` read back `ii` and `loc`.
 """
-function setDestroyedType(x::AbstractCXXPseudoDestructorExpr, ii::AbstractIdentifierInfo,
-                          loc::SourceLocation)
+function setDestroyedType(x::AbstractCXXPseudoDestructorExpr, ii::AbstractIdentifierInfo, loc::SourceLocation)
     @check_ptrs x ii
     return clang_CXXPseudoDestructorExpr_setDestroyedType(x, ii, loc)
 end
@@ -3245,8 +3187,7 @@ the ABI assigns it; both read back through `getExtendingDecl` and `getManglingNu
 node that still holds only its subexpression this allocates the `LifetimeExtendedTemporaryDecl`
 carrying them, in the `ASTContext`.
 """
-function setExtendingDecl(x::AbstractMaterializeTemporaryExpr, d::AbstractValueDecl,
-                          mangling_number::Integer)
+function setExtendingDecl(x::AbstractMaterializeTemporaryExpr, d::AbstractValueDecl, mangling_number::Integer)
     @check_ptrs x d
     return clang_MaterializeTemporaryExpr_setExtendingDecl(x, d, mangling_number)
 end
@@ -3262,7 +3203,6 @@ function setIsImplicit(x::AbstractCoawaitExpr, value::Bool=true)
     return clang_CoawaitExpr_setIsImplicit(x, value)
 end
 
-
 # CXXOperatorCallExpr (cont.)
 """
     CXXOperatorCallExpr(ctx::ASTContext, op_kind::CXOverloadedOperatorKind, fn::AbstractExpr,
@@ -3275,15 +3215,11 @@ opaque `FPOptionsOverride` encoding — 0 means "no override" and is the only va
 lookup. The handles in `args` are copied into the node's trailing storage, so `args` need not
 outlive the call. The node is arena-allocated: there is no `dispose`.
 """
-function CXXOperatorCallExpr(ctx::ASTContext, op_kind::CXOverloadedOperatorKind, fn::AbstractExpr,
-                             args::Vector{<:AbstractExpr}, ty::QualType, vk::CXExprValueKind,
-                             operator_loc::SourceLocation, fp_features::Integer, uses_adl::Bool)
+function CXXOperatorCallExpr(ctx::ASTContext, op_kind::CXOverloadedOperatorKind, fn::AbstractExpr, args::Vector{<:AbstractExpr}, ty::QualType, vk::CXExprValueKind, operator_loc::SourceLocation, fp_features::Integer, uses_adl::Bool)
     @check_ptrs ctx fn ty
     @assert all(a -> a.ptr != C_NULL, args) "an operator call holds no null argument slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
-    return CXXOperatorCallExpr(clang_CXXOperatorCallExpr_Create(ctx, op_kind, fn, buf, length(buf),
-                                                                ty, vk, operator_loc, fp_features,
-                                                                uses_adl))
+    return CXXOperatorCallExpr(clang_CXXOperatorCallExpr_Create(ctx, op_kind, fn, buf, length(buf), ty, vk, operator_loc, fp_features, uses_adl))
 end
 
 # CXXMemberCallExpr (cont.)
@@ -3298,14 +3234,11 @@ slots. `fp_features` is the same opaque `FPOptionsOverride` encoding as elsewher
 `args` are copied into the node's trailing storage. The node is arena-allocated: there is no
 `dispose`.
 """
-function CXXMemberCallExpr(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:AbstractExpr},
-                           ty::QualType, vk::CXExprValueKind, rparen::SourceLocation,
-                           fp_features::Integer, min_num_args::Integer)
+function CXXMemberCallExpr(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:AbstractExpr}, ty::QualType, vk::CXExprValueKind, rparen::SourceLocation, fp_features::Integer, min_num_args::Integer)
     @check_ptrs ctx fn ty
     @assert all(a -> a.ptr != C_NULL, args) "a member call holds no null argument slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
-    return CXXMemberCallExpr(clang_CXXMemberCallExpr_Create(ctx, fn, buf, length(buf), ty, vk,
-                                                            rparen, fp_features, min_num_args))
+    return CXXMemberCallExpr(clang_CXXMemberCallExpr_Create(ctx, fn, buf, length(buf), ty, vk, rparen, fp_features, min_num_args))
 end
 
 # CUDAKernelCallExpr
@@ -3333,14 +3266,11 @@ node's trailing storage. `getUDSuffix` and `getLiteralOperatorKind` reach throug
 `cast<FunctionDecl>(getCalleeDecl())`, so a node built with an `fn` that is not a reference to a
 literal operator must not be asked for them. The node is arena-allocated: there is no `dispose`.
 """
-function UserDefinedLiteral(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:AbstractExpr},
-                            ty::QualType, vk::CXExprValueKind, lit_end_loc::SourceLocation,
-                            suffix_loc::SourceLocation, fp_features::Integer)
+function UserDefinedLiteral(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:AbstractExpr}, ty::QualType, vk::CXExprValueKind, lit_end_loc::SourceLocation, suffix_loc::SourceLocation, fp_features::Integer)
     @check_ptrs ctx fn ty
     @assert all(a -> a.ptr != C_NULL, args) "a user-defined literal holds no null argument slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
-    return UserDefinedLiteral(clang_UserDefinedLiteral_Create(ctx, fn, buf, length(buf), ty, vk,
-                                                              lit_end_loc, suffix_loc, fp_features))
+    return UserDefinedLiteral(clang_UserDefinedLiteral_Create(ctx, fn, buf, length(buf), ty, vk, lit_end_loc, suffix_loc, fp_features))
 end
 
 # CXXConstructExpr (cont.)
@@ -3357,21 +3287,12 @@ read back through `isElidable`, `hadMultipleCandidates`, `isListInitialization`,
 `paren_or_brace` the written argument list. The handles in `args` are copied into the node's trailing
 storage, so `args` need not outlive the call. The node is arena-allocated: there is no `dispose`.
 """
-function CXXConstructExpr(ctx::ASTContext, ty::QualType, loc::SourceLocation,
-                          ctor::AbstractCXXConstructorDecl, elidable::Bool,
-                          args::Vector{<:AbstractExpr}, had_multiple_candidates::Bool,
-                          list_initialization::Bool, std_init_list_initialization::Bool,
-                          zero_initialization::Bool, kind::CXCXXConstructionKind,
-                          paren_or_brace::SourceRange)
+function CXXConstructExpr(ctx::ASTContext, ty::QualType, loc::SourceLocation, ctor::AbstractCXXConstructorDecl, elidable::Bool, args::Vector{<:AbstractExpr}, had_multiple_candidates::Bool, list_initialization::Bool, std_init_list_initialization::Bool, zero_initialization::Bool, kind::CXCXXConstructionKind, paren_or_brace::SourceRange)
     @check_ptrs ctx ty ctor
     @assert all(a -> a.ptr != C_NULL, args) "a construction holds no null argument slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     pb = CXSourceRange_(paren_or_brace.begin_loc.ptr, paren_or_brace.end_loc.ptr)
-    return CXXConstructExpr(clang_CXXConstructExpr_Create(ctx, ty, loc, ctor, elidable, buf,
-                                                          length(buf), had_multiple_candidates,
-                                                          list_initialization,
-                                                          std_init_list_initialization,
-                                                          zero_initialization, kind, pb))
+    return CXXConstructExpr(clang_CXXConstructExpr_Create(ctx, ty, loc, ctor, elidable, buf, length(buf), had_multiple_candidates, list_initialization, std_init_list_initialization, zero_initialization, kind, pb))
 end
 
 # CXXTemporaryObjectExpr (cont.)
@@ -3387,21 +3308,12 @@ non-NULL: clang's constructor takes the node's location from `tsi`'s `TypeLoc` u
 in `args` are copied into the node's trailing storage. The node is arena-allocated: there is no
 `dispose`.
 """
-function CXXTemporaryObjectExpr(ctx::ASTContext, cons::AbstractCXXConstructorDecl, ty::QualType,
-                                tsi::TypeSourceInfo, args::Vector{<:AbstractExpr},
-                                paren_or_brace::SourceRange, had_multiple_candidates::Bool,
-                                list_initialization::Bool, std_init_list_initialization::Bool,
-                                zero_initialization::Bool)
+function CXXTemporaryObjectExpr(ctx::ASTContext, cons::AbstractCXXConstructorDecl, ty::QualType, tsi::TypeSourceInfo, args::Vector{<:AbstractExpr}, paren_or_brace::SourceRange, had_multiple_candidates::Bool, list_initialization::Bool, std_init_list_initialization::Bool, zero_initialization::Bool)
     @check_ptrs ctx cons ty tsi
     @assert all(a -> a.ptr != C_NULL, args) "a temporary object holds no null argument slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     pb = CXSourceRange_(paren_or_brace.begin_loc.ptr, paren_or_brace.end_loc.ptr)
-    return CXXTemporaryObjectExpr(clang_CXXTemporaryObjectExpr_Create(ctx, cons, ty, tsi, buf,
-                                                                      length(buf), pb,
-                                                                      had_multiple_candidates,
-                                                                      list_initialization,
-                                                                      std_init_list_initialization,
-                                                                      zero_initialization))
+    return CXXTemporaryObjectExpr(clang_CXXTemporaryObjectExpr_Create(ctx, cons, ty, tsi, buf, length(buf), pb, had_multiple_candidates, list_initialization, std_init_list_initialization, zero_initialization))
 end
 
 # CXXNewExpr (cont.)
@@ -3424,16 +3336,7 @@ other than `CXCXXNewInitializationStyle_None` carries an initializer. The handle
 `placement_args` are copied into the node's trailing storage. The node is arena-allocated: there is
 no `dispose`.
 """
-function CXXNewExpr(ctx::ASTContext, is_global_new::Bool,
-                    operator_new::Union{Nothing,AbstractFunctionDecl},
-                    operator_delete::Union{Nothing,AbstractFunctionDecl},
-                    should_pass_alignment::Bool, usual_array_delete_wants_size::Bool,
-                    placement_args::Vector{<:AbstractExpr}, type_id_parens::SourceRange,
-                    array_size::Union{Nothing,AbstractExpr},
-                    init_style::CXCXXNewInitializationStyle,
-                    initializer::Union{Nothing,AbstractExpr}, ty::QualType,
-                    allocated_type_info::TypeSourceInfo, range::SourceRange,
-                    direct_init_range::SourceRange)
+function CXXNewExpr(ctx::ASTContext, is_global_new::Bool, operator_new::Union{Nothing,AbstractFunctionDecl}, operator_delete::Union{Nothing,AbstractFunctionDecl}, should_pass_alignment::Bool, usual_array_delete_wants_size::Bool, placement_args::Vector{<:AbstractExpr}, type_id_parens::SourceRange, array_size::Union{Nothing,AbstractExpr}, init_style::CXCXXNewInitializationStyle, initializer::Union{Nothing,AbstractExpr}, ty::QualType, allocated_type_info::TypeSourceInfo, range::SourceRange, direct_init_range::SourceRange)
     @check_ptrs ctx ty allocated_type_info
     @assert all(a -> a.ptr != C_NULL, placement_args) "a new-expression holds no null placement slot"
     has_init = initializer !== nothing
@@ -3446,11 +3349,7 @@ function CXXNewExpr(ctx::ASTContext, is_global_new::Bool,
     tip = CXSourceRange_(type_id_parens.begin_loc.ptr, type_id_parens.end_loc.ptr)
     rng = CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr)
     dir = CXSourceRange_(direct_init_range.begin_loc.ptr, direct_init_range.end_loc.ptr)
-    return CXXNewExpr(clang_CXXNewExpr_Create(ctx, is_global_new, on, od, should_pass_alignment,
-                                              usual_array_delete_wants_size, buf, length(buf),
-                                              tip, array_size !== nothing, sz,
-                                              init_style, init, ty, allocated_type_info, rng,
-                                              dir))
+    return CXXNewExpr(clang_CXXNewExpr_Create(ctx, is_global_new, on, od, should_pass_alignment, usual_array_delete_wants_size, buf, length(buf), tip, array_size !== nothing, sz, init_style, init, ty, allocated_type_info, rng, dir))
 end
 
 # LambdaExpr (cont.)
@@ -3475,13 +3374,11 @@ into the node's trailing storage, so `args` need not outlive the call. Only a no
 non-dependent arguments answers `getValue`, which asserts `!isValueDependent()`. The node is
 arena-allocated: there is no `dispose`.
 """
-function TypeTraitExpr(ctx::ASTContext, ty::QualType, loc::SourceLocation, kind::CXTypeTrait,
-                       args::Vector{<:AbstractTypeSourceInfo}, rparen::SourceLocation, value::Bool)
+function TypeTraitExpr(ctx::ASTContext, ty::QualType, loc::SourceLocation, kind::CXTypeTrait, args::Vector{<:AbstractTypeSourceInfo}, rparen::SourceLocation, value::Bool)
     @check_ptrs ctx ty
     @assert all(a -> a.ptr != C_NULL, args) "a type-trait expression holds no null argument slot"
     buf = CXTypeSourceInfo[Base.unsafe_convert(CXTypeSourceInfo, a) for a in args]
-    return TypeTraitExpr(clang_TypeTraitExpr_Create(ctx, ty, loc, kind, buf, length(buf), rparen,
-                                                    value))
+    return TypeTraitExpr(clang_TypeTraitExpr_Create(ctx, ty, loc, kind, buf, length(buf), rparen, value))
 end
 
 """
@@ -3507,18 +3404,13 @@ The boxes in `partial_args` are dereferenced and copied into the node's trailing
 need not outlive the call. Clang asserts that a non-dependent `sizeof...` carries no
 partially-substituted arguments. The node is arena-allocated: there is no `dispose`.
 """
-function SizeOfPackExpr(ctx::ASTContext, operator_loc::SourceLocation, pack::AbstractNamedDecl,
-                        pack_loc::SourceLocation, rparen::SourceLocation,
-                        pack_length::Union{Nothing,Integer},
-                        partial_args::Vector{TemplateArgument}=TemplateArgument[])
+function SizeOfPackExpr(ctx::ASTContext, operator_loc::SourceLocation, pack::AbstractNamedDecl, pack_loc::SourceLocation, rparen::SourceLocation, pack_length::Union{Nothing,Integer}, partial_args::Vector{TemplateArgument}=TemplateArgument[])
     @check_ptrs ctx pack
     @assert all(a -> a.ptr != C_NULL, partial_args) "a substituted pack holds no null slot"
     @assert pack_length === nothing || isempty(partial_args) "a known pack length admits no partial arguments"
     buf = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in partial_args]
     len = pack_length === nothing ? 0 : pack_length
-    return SizeOfPackExpr(clang_SizeOfPackExpr_Create(ctx, operator_loc, pack, pack_loc, rparen,
-                                                      pack_length !== nothing, len, buf,
-                                                      length(buf)))
+    return SizeOfPackExpr(clang_SizeOfPackExpr_Create(ctx, operator_loc, pack, pack_loc, rparen, pack_length !== nothing, len, buf, length(buf)))
 end
 
 """
@@ -3540,12 +3432,9 @@ Build the empty dependent declaration-reference shell clang deserializes into. W
 `has_template_kw_and_args` is set, `num_template_args` explicit template-argument slots are reserved;
 the qualifier and the name behind them are left uninitialized.
 """
-function DependentScopeDeclRefExpr(ctx::ASTContext, has_template_kw_and_args::Bool,
-                                   num_template_args::Integer)
+function DependentScopeDeclRefExpr(ctx::ASTContext, has_template_kw_and_args::Bool, num_template_args::Integer)
     @check_ptrs ctx
-    return DependentScopeDeclRefExpr(clang_DependentScopeDeclRefExpr_CreateEmpty(ctx,
-                                                                                 has_template_kw_and_args,
-                                                                                 num_template_args))
+    return DependentScopeDeclRefExpr(clang_DependentScopeDeclRefExpr_CreateEmpty(ctx, has_template_kw_and_args, num_template_args))
 end
 
 # CXXDependentScopeMemberExpr (cont.)
@@ -3557,11 +3446,9 @@ template-argument storage as the dependent declaration-reference shell, plus a
 first-qualifier-found-in-scope slot when `has_first_qualifier_found` is set. The base and the member
 name are left uninitialized.
 """
-function CXXDependentScopeMemberExpr(ctx::ASTContext, has_template_kw_and_args::Bool,
-                                     num_template_args::Integer, has_first_qualifier_found::Bool)
+function CXXDependentScopeMemberExpr(ctx::ASTContext, has_template_kw_and_args::Bool, num_template_args::Integer, has_first_qualifier_found::Bool)
     @check_ptrs ctx
-    p = clang_CXXDependentScopeMemberExpr_CreateEmpty(ctx, has_template_kw_and_args,
-                                                      num_template_args, has_first_qualifier_found)
+    p = clang_CXXDependentScopeMemberExpr_CreateEmpty(ctx, has_template_kw_and_args, num_template_args, has_first_qualifier_found)
     return CXXDependentScopeMemberExpr(p)
 end
 
@@ -3573,14 +3460,10 @@ Build the empty unresolved member-reference shell clang deserializes into. The `
 lookup-result slots and, when `has_template_kw_and_args` is set, `num_template_args` explicit
 template-argument slots are reserved; everything behind them is uninitialized.
 """
-function UnresolvedMemberExpr(ctx::ASTContext, num_results::Integer,
-                              has_template_kw_and_args::Bool, num_template_args::Integer)
+function UnresolvedMemberExpr(ctx::ASTContext, num_results::Integer, has_template_kw_and_args::Bool, num_template_args::Integer)
     @check_ptrs ctx
-    return UnresolvedMemberExpr(clang_UnresolvedMemberExpr_CreateEmpty(ctx, num_results,
-                                                                       has_template_kw_and_args,
-                                                                       num_template_args))
+    return UnresolvedMemberExpr(clang_UnresolvedMemberExpr_CreateEmpty(ctx, num_results, has_template_kw_and_args, num_template_args))
 end
-
 
 # LambdaExpr (cont.)
 """
@@ -3598,20 +3481,14 @@ body is copied straight out of `cls`'s call operator, which must already carry o
 call; a slot may wrap NULL, which is how a VLA-typed capture is spelled. The node is arena-allocated:
 there is no `dispose`.
 """
-function LambdaExpr(ctx::ASTContext, cls::AbstractCXXRecordDecl, introducer::SourceRange,
-                    capture_default::CXLambdaCaptureDefault, capture_default_loc::SourceLocation,
-                    explicit_params::Bool, explicit_result_type::Bool,
-                    capture_inits::Vector{<:AbstractExpr}, closing_brace::SourceLocation,
-                    contains_unexpanded_pack::Bool)
+function LambdaExpr(ctx::ASTContext, cls::AbstractCXXRecordDecl, introducer::SourceRange, capture_default::CXLambdaCaptureDefault, capture_default_loc::SourceLocation, explicit_params::Bool, explicit_result_type::Bool, capture_inits::Vector{<:AbstractExpr}, closing_brace::SourceLocation, contains_unexpanded_pack::Bool)
     @check_ptrs ctx cls
     @assert isLambda(cls) "the closure type must be a lambda closure type"
     @assert length(capture_inits) == capture_size(cls) "capture initializers must match the closure"
     @assert capture_default == getLambdaCaptureDefault(cls) "capture default must match the closure"
     buf = CXExpr[Base.unsafe_convert(CXExpr, c) for c in capture_inits]
     ir = CXSourceRange_(introducer.begin_loc.ptr, introducer.end_loc.ptr)
-    return LambdaExpr(clang_LambdaExpr_Create(ctx, cls, ir, capture_default, capture_default_loc,
-                                              explicit_params, explicit_result_type, buf,
-                                              length(buf), closing_brace, contains_unexpanded_pack))
+    return LambdaExpr(clang_LambdaExpr_Create(ctx, cls, ir, capture_default, capture_default_loc, explicit_params, explicit_result_type, buf, length(buf), closing_brace, contains_unexpanded_pack))
 end
 
 # CUDAKernelCallExpr (cont.)
@@ -3627,14 +3504,11 @@ fewer arguments; 0 reserves exactly `length(args)` slots. `fp_features` is the o
 node's trailing storage, so `args` need not outlive the call. The node is arena-allocated: there is
 no `dispose`.
 """
-function CUDAKernelCallExpr(ctx::ASTContext, fn::AbstractExpr, config::AbstractCallExpr,
-                            args::Vector{<:AbstractExpr}, ty::QualType, vk::CXExprValueKind,
-                            rparen::SourceLocation, fp_features::Integer, min_num_args::Integer)
+function CUDAKernelCallExpr(ctx::ASTContext, fn::AbstractExpr, config::AbstractCallExpr, args::Vector{<:AbstractExpr}, ty::QualType, vk::CXExprValueKind, rparen::SourceLocation, fp_features::Integer, min_num_args::Integer)
     @check_ptrs ctx fn config ty
     @assert all(a -> a.ptr != C_NULL, args) "a kernel launch holds no null argument slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
-    return CUDAKernelCallExpr(clang_CUDAKernelCallExpr_Create(ctx, fn, config, buf, length(buf), ty,
-                                                              vk, rparen, fp_features, min_num_args))
+    return CUDAKernelCallExpr(clang_CUDAKernelCallExpr_Create(ctx, fn, config, buf, length(buf), ty, vk, rparen, fp_features, min_num_args))
 end
 
 """
@@ -3680,7 +3554,6 @@ function updateDependence(x::AbstractCXXParenListInitExpr)
     @check_ptrs x
     return clang_CXXParenListInitExpr_updateDependence(x)
 end
-
 
 # The getQualifierLoc family. `getQualifierRange` flattens the qualifier to its outer
 # extent; these return the whole `NestedNameSpecifierLoc`, which is the only way to reach
@@ -3756,7 +3629,6 @@ function getQualifierLoc(x::AbstractCXXDependentScopeMemberExpr)
     return NestedNameSpecifierLoc(clang_CXXDependentScopeMemberExpr_getQualifierLoc(x))
 end
 
-
 # OverloadExpr (cont.)
 """
     copyTemplateArgumentsInto(x::AbstractOverloadExpr, list::TemplateArgumentListInfo)
@@ -3779,8 +3651,7 @@ Append the template arguments written on `x`, and the angle-bracket locations, t
 A reference carrying no explicit argument list leaves `list` untouched. `list` stays owned by the
 caller and must be disposed.
 """
-function copyTemplateArgumentsInto(x::AbstractDependentScopeDeclRefExpr,
-                                   list::TemplateArgumentListInfo)
+function copyTemplateArgumentsInto(x::AbstractDependentScopeDeclRefExpr, list::TemplateArgumentListInfo)
     @check_ptrs x list
     clang_DependentScopeDeclRefExpr_copyTemplateArgumentsInto(x, list)
     return nothing
@@ -3794,8 +3665,7 @@ Append the template arguments written on `x`, and the angle-bracket locations, t
 A member access carrying no explicit argument list leaves `list` untouched. `list` stays owned by
 the caller and must be disposed.
 """
-function copyTemplateArgumentsInto(x::AbstractCXXDependentScopeMemberExpr,
-                                   list::TemplateArgumentListInfo)
+function copyTemplateArgumentsInto(x::AbstractCXXDependentScopeMemberExpr, list::TemplateArgumentListInfo)
     @check_ptrs x list
     clang_CXXDependentScopeMemberExpr_copyTemplateArgumentsInto(x, list)
     return nothing
@@ -3811,14 +3681,10 @@ written, `template_kw_loc` the `template` keyword of `T::template f<...>` (an in
 there is none) and `name_info` the name with its location. Pass `nothing` for `template_args` when
 no explicit `<...>` was written. The node is arena-allocated: there is no `dispose`.
 """
-function DependentScopeDeclRefExpr(ctx::ASTContext, qualifier_loc::NestedNameSpecifierLoc,
-                                   template_kw_loc::SourceLocation,
-                                   name_info::DeclarationNameInfo,
-                                   template_args::Union{TemplateArgumentListInfo,Nothing}=nothing)
+function DependentScopeDeclRefExpr(ctx::ASTContext, qualifier_loc::NestedNameSpecifierLoc, template_kw_loc::SourceLocation, name_info::DeclarationNameInfo, template_args::Union{TemplateArgumentListInfo,Nothing}=nothing)
     @check_ptrs ctx qualifier_loc name_info
     @assert hasQualifier(qualifier_loc) "a dependent scope reference must carry a qualifier"
-    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
-        Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
+    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) : Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
     p = clang_DependentScopeDeclRefExpr_Create(ctx, qualifier_loc, template_kw_loc, name_info, args)
     return DependentScopeDeclRefExpr(p)
 end
@@ -3836,22 +3702,12 @@ for `base` to build an implicit access (a bare `member` inside a dependent class
 `template_args` when no explicit `<...>` was written. The node is arena-allocated: there is no
 `dispose`.
 """
-function CXXDependentScopeMemberExpr(ctx::ASTContext, base::Union{AbstractExpr,Nothing},
-                                     base_type::QualType, is_arrow::Bool,
-                                     operator_loc::SourceLocation,
-                                     qualifier_loc::NestedNameSpecifierLoc,
-                                     template_kw_loc::SourceLocation,
-                                     first_qualifier::Union{AbstractNamedDecl,Nothing},
-                                     member_name_info::DeclarationNameInfo,
-                                     template_args::Union{TemplateArgumentListInfo,Nothing}=nothing)
+function CXXDependentScopeMemberExpr(ctx::ASTContext, base::Union{AbstractExpr,Nothing}, base_type::QualType, is_arrow::Bool, operator_loc::SourceLocation, qualifier_loc::NestedNameSpecifierLoc, template_kw_loc::SourceLocation, first_qualifier::Union{AbstractNamedDecl,Nothing}, member_name_info::DeclarationNameInfo, template_args::Union{TemplateArgumentListInfo,Nothing}=nothing)
     @check_ptrs ctx base_type qualifier_loc member_name_info
     b = base === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, base)
     fq = first_qualifier === nothing ? CXNamedDecl(C_NULL) : Base.unsafe_convert(CXNamedDecl, first_qualifier)
-    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
-        Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
-    p = clang_CXXDependentScopeMemberExpr_Create(ctx, b, base_type, is_arrow, operator_loc,
-                                                 qualifier_loc, template_kw_loc, fq,
-                                                 member_name_info, args)
+    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) : Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
+    p = clang_CXXDependentScopeMemberExpr_Create(ctx, b, base_type, is_arrow, operator_loc, qualifier_loc, template_kw_loc, fq, member_name_info, args)
     return CXXDependentScopeMemberExpr(p)
 end
 
@@ -3867,12 +3723,7 @@ declaration. `decls` and `accesses` are the lookup results, read in lockstep and
 node's trailing storage, so neither need outlive the call. The node is arena-allocated: there is no
 `dispose`.
 """
-function UnresolvedLookupExpr(ctx::ASTContext,
-                              naming_class::Union{AbstractCXXRecordDecl,Nothing},
-                              qualifier_loc::NestedNameSpecifierLoc,
-                              name_info::DeclarationNameInfo, requires_adl::Bool,
-                              overloaded::Bool, decls::AbstractVector{<:AbstractNamedDecl},
-                              accesses::AbstractVector{CXAccessSpecifier})
+function UnresolvedLookupExpr(ctx::ASTContext, naming_class::Union{AbstractCXXRecordDecl,Nothing}, qualifier_loc::NestedNameSpecifierLoc, name_info::DeclarationNameInfo, requires_adl::Bool, overloaded::Bool, decls::AbstractVector{<:AbstractNamedDecl}, accesses::AbstractVector{CXAccessSpecifier})
     @check_ptrs ctx qualifier_loc name_info
     @assert length(decls) == length(accesses) "decls and accesses must have the same length"
     @assert !isempty(decls) "an unresolved lookup must name at least one declaration"
@@ -3880,8 +3731,7 @@ function UnresolvedLookupExpr(ctx::ASTContext,
     nc = naming_class === nothing ? CXCXXRecordDecl(C_NULL) : Base.unsafe_convert(CXCXXRecordDecl, naming_class)
     dbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
     abuf = collect(accesses)
-    p = clang_UnresolvedLookupExpr_Create(ctx, nc, qualifier_loc, name_info, requires_adl,
-                                          overloaded, dbuf, abuf, length(dbuf))
+    p = clang_UnresolvedLookupExpr_Create(ctx, nc, qualifier_loc, name_info, requires_adl, overloaded, dbuf, abuf, length(dbuf))
     return UnresolvedLookupExpr(p)
 end
 
@@ -3896,28 +3746,16 @@ when the keyword appears without one) and `known_dependent` whether any canonica
 dependent, which selects the node's type. `decls`, `accesses` and the ownership rules are those of
 the non-templated form.
 """
-function UnresolvedLookupExpr(ctx::ASTContext,
-                              naming_class::Union{AbstractCXXRecordDecl,Nothing},
-                              qualifier_loc::NestedNameSpecifierLoc,
-                              template_kw_loc::SourceLocation,
-                              name_info::DeclarationNameInfo, requires_adl::Bool,
-                              template_args::Union{TemplateArgumentListInfo,Nothing},
-                              decls::AbstractVector{<:AbstractNamedDecl},
-                              accesses::AbstractVector{CXAccessSpecifier},
-                              known_dependent::Bool)
+function UnresolvedLookupExpr(ctx::ASTContext, naming_class::Union{AbstractCXXRecordDecl,Nothing}, qualifier_loc::NestedNameSpecifierLoc, template_kw_loc::SourceLocation, name_info::DeclarationNameInfo, requires_adl::Bool, template_args::Union{TemplateArgumentListInfo,Nothing}, decls::AbstractVector{<:AbstractNamedDecl}, accesses::AbstractVector{CXAccessSpecifier}, known_dependent::Bool)
     @check_ptrs ctx qualifier_loc name_info
     @assert length(decls) == length(accesses) "decls and accesses must have the same length"
     @assert !isempty(decls) "an unresolved lookup must name at least one declaration"
     @assert all(d -> d.ptr != C_NULL, decls) "a lookup result holds no null slot"
     nc = naming_class === nothing ? CXCXXRecordDecl(C_NULL) : Base.unsafe_convert(CXCXXRecordDecl, naming_class)
-    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
-        Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
+    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) : Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
     dbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
     abuf = collect(accesses)
-    p = clang_UnresolvedLookupExpr_CreateWithTemplateArgs(ctx, nc, qualifier_loc,
-                                                          template_kw_loc, name_info,
-                                                          requires_adl, args, dbuf, abuf,
-                                                          length(dbuf), known_dependent)
+    p = clang_UnresolvedLookupExpr_CreateWithTemplateArgs(ctx, nc, qualifier_loc, template_kw_loc, name_info, requires_adl, args, dbuf, abuf, length(dbuf), known_dependent)
     return UnresolvedLookupExpr(p)
 end
 
@@ -3935,27 +3773,16 @@ overload set. `has_unresolved_using` records that the set holds an `UnresolvedUs
 `<...>` was written. `decls` and `accesses` are the lookup results, read in lockstep and copied into
 the node's trailing storage. The node is arena-allocated: there is no `dispose`.
 """
-function UnresolvedMemberExpr(ctx::ASTContext, has_unresolved_using::Bool,
-                              base::Union{AbstractExpr,Nothing}, base_type::QualType,
-                              is_arrow::Bool, operator_loc::SourceLocation,
-                              qualifier_loc::NestedNameSpecifierLoc,
-                              template_kw_loc::SourceLocation,
-                              member_name_info::DeclarationNameInfo,
-                              template_args::Union{TemplateArgumentListInfo,Nothing},
-                              decls::AbstractVector{<:AbstractNamedDecl},
-                              accesses::AbstractVector{CXAccessSpecifier})
+function UnresolvedMemberExpr(ctx::ASTContext, has_unresolved_using::Bool, base::Union{AbstractExpr,Nothing}, base_type::QualType, is_arrow::Bool, operator_loc::SourceLocation, qualifier_loc::NestedNameSpecifierLoc, template_kw_loc::SourceLocation, member_name_info::DeclarationNameInfo, template_args::Union{TemplateArgumentListInfo,Nothing}, decls::AbstractVector{<:AbstractNamedDecl}, accesses::AbstractVector{CXAccessSpecifier})
     @check_ptrs ctx base_type qualifier_loc member_name_info
     @assert length(decls) == length(accesses) "decls and accesses must have the same length"
     @assert !isempty(decls) "an unresolved member access must name at least one declaration"
     @assert all(d -> d.ptr != C_NULL, decls) "a lookup result holds no null slot"
     b = base === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, base)
-    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
-        Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
+    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) : Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
     dbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
     abuf = collect(accesses)
-    p = clang_UnresolvedMemberExpr_Create(ctx, has_unresolved_using, b, base_type, is_arrow,
-                                          operator_loc, qualifier_loc, template_kw_loc,
-                                          member_name_info, args, dbuf, abuf, length(dbuf))
+    p = clang_UnresolvedMemberExpr_Create(ctx, has_unresolved_using, b, base_type, is_arrow, operator_loc, qualifier_loc, template_kw_loc, member_name_info, args, dbuf, abuf, length(dbuf))
     return UnresolvedMemberExpr(p)
 end
 

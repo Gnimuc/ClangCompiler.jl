@@ -13,15 +13,9 @@ pointer is NULL when clang cannot build a CFG for the input. This function
 allocates and one should call `dispose` to release the resources after using this
 object.
 """
-function buildCFG(decl::AbstractDecl, stmt::AbstractStmt, ctx::ASTContext,
-                  AddInitializers::Bool=false, AddImplicitDtors::Bool=false,
-                  AddLifetime::Bool=false, AddLoopExit::Bool=false,
-                  AddTemporaryDtors::Bool=false, AddScopes::Bool=false,
-                  AddCXXNewAllocator::Bool=false)
+function buildCFG(decl::AbstractDecl, stmt::AbstractStmt, ctx::ASTContext, AddInitializers::Bool=false, AddImplicitDtors::Bool=false, AddLifetime::Bool=false, AddLoopExit::Bool=false, AddTemporaryDtors::Bool=false, AddScopes::Bool=false, AddCXXNewAllocator::Bool=false)
     @check_ptrs decl stmt ctx
-    return CFG(clang_CFG_buildCFG(decl, stmt, ctx, AddInitializers, AddImplicitDtors,
-                                  AddLifetime, AddLoopExit, AddTemporaryDtors,
-                                  AddScopes, AddCXXNewAllocator))
+    return CFG(clang_CFG_buildCFG(decl, stmt, ctx, AddInitializers, AddImplicitDtors, AddLifetime, AddLoopExit, AddTemporaryDtors, AddScopes, AddCXXNewAllocator))
 end
 
 dispose(x::CFG) = clang_CFG_dispose(x)
@@ -287,7 +281,6 @@ function printAsString(x::AbstractCFGBlock, cfg::AbstractCFG, ctx::ASTContext)
     return get_string(clang_CFGBlock_printAsString(x, cfg, ctx))
 end
 
-
 # Try-dispatch blocks (count+index; the list is a random-access vector).
 function getNumTryBlocks(x::AbstractCFG)
     @check_ptrs x
@@ -397,12 +390,9 @@ Whether the static `clang::CFGBlock::FilterEdge` would drop the `src` -> `dst` e
 The two booleans are the fields of `clang::CFGBlock::FilterOptions`; the defaults are
 Clang's.
 """
-function FilterEdge(src::AbstractCFGBlock, dst::AbstractCFGBlock,
-                    IgnoreNullPredecessors::Bool=true,
-                    IgnoreDefaultsWithCoveredEnums::Bool=false)
+function FilterEdge(src::AbstractCFGBlock, dst::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true, IgnoreDefaultsWithCoveredEnums::Bool=false)
     @check_ptrs src dst
-    return clang_CFGBlock_FilterEdge(IgnoreNullPredecessors,
-                                     IgnoreDefaultsWithCoveredEnums, src, dst)
+    return clang_CFGBlock_FilterEdge(IgnoreNullPredecessors, IgnoreDefaultsWithCoveredEnums, src, dst)
 end
 
 function printTerminatorAsString(x::AbstractCFGBlock, ctx::ASTContext)
@@ -410,12 +400,10 @@ function printTerminatorAsString(x::AbstractCFGBlock, ctx::ASTContext)
     return get_string(clang_CFGBlock_printTerminatorAsString(x, ctx))
 end
 
-function printTerminatorJsonAsString(x::AbstractCFGBlock, ctx::ASTContext,
-                                     AddQuotes::Bool=false)
+function printTerminatorJsonAsString(x::AbstractCFGBlock, ctx::ASTContext, AddQuotes::Bool=false)
     @check_ptrs x ctx
     return get_string(clang_CFGBlock_printTerminatorJsonAsString(x, ctx, AddQuotes))
 end
-
 
 # Mutation of a block's contents. Every `clang::CFGBlock` append/`addSuccessor`
 # method takes the owning CFG's `BumpVectorContext` — elements and edges are
@@ -429,8 +417,7 @@ end
 Set the block's terminator. `clang::CFGTerminator` is a value type; it is flattened into
 its two constructor arguments, the branch statement and its kind.
 """
-function setTerminator(x::AbstractCFGBlock, s::AbstractStmt,
-                       kind::CXCFGTerminatorKind=CXCFGTerminatorKind_StmtBranch)
+function setTerminator(x::AbstractCFGBlock, s::AbstractStmt, kind::CXCFGTerminatorKind=CXCFGTerminatorKind_StmtBranch)
     @check_ptrs x s
     return clang_CFGBlock_setTerminator(x, s, kind)
 end
@@ -548,15 +535,13 @@ Record `synthetic` as a synthesized single-declaration `DeclStmt` split out of `
 `clang::CFG::addSyntheticDeclStmt` asserts all three preconditions restated below
 (Invariant 3); the mapping reads back through `getSyntheticDeclStmtSource`.
 """
-function addSyntheticDeclStmt(x::AbstractCFG, synthetic::AbstractDeclStmt,
-                              source::AbstractDeclStmt)
+function addSyntheticDeclStmt(x::AbstractCFG, synthetic::AbstractDeclStmt, source::AbstractDeclStmt)
     @check_ptrs x synthetic source
     @assert isSingleDecl(synthetic) "the synthetic DeclStmt must hold a single decl"
     @assert synthetic.ptr != source.ptr "the synthetic and source DeclStmts must differ"
     @assert getSyntheticDeclStmtSource(x, synthetic).ptr == C_NULL "already recorded"
     return clang_CFG_addSyntheticDeclStmt(x, synthetic, source)
 end
-
 
 function appendNewAllocator(x::AbstractCFGBlock, ne::AbstractCXXNewExpr)
     @check_ptrs x ne
@@ -567,7 +552,6 @@ function appendDeleteDtor(x::AbstractCFGBlock, rd::AbstractCXXRecordDecl, de::Ab
     @check_ptrs x rd de
     return clang_CFGBlock_appendDeleteDtor(x, rd, de)
 end
-
 
 """
     isCXXRecordTypedCall(x::AbstractExpr) -> Bool
@@ -625,7 +609,6 @@ function appendCleanupFunction(x::AbstractCFGBlock, vd::AbstractVarDecl)
     @assert hasAttrOfKind(vd, CXAttrKind_Cleanup) "the variable must carry a cleanup attribute"
     return clang_CFGBlock_appendCleanupFunction(x, vd)
 end
-
 
 # CFG::BuildOptions — the stateful half of clang::CFG::BuildOptions. The option booleans
 # stay flattened into `buildCFGWithOptions` (identical to `buildCFG`'s); this object carries
@@ -686,16 +669,9 @@ returned graph keeps no reference to it. The wrapped pointer is NULL when clang 
 a CFG for the input. This function allocates and one should call `dispose` to release the
 resources after using this object.
 """
-function buildCFGWithOptions(decl::AbstractDecl, stmt::AbstractStmt, ctx::ASTContext,
-                             opts::AbstractCFGBuildOptions, AddInitializers::Bool=false,
-                             AddImplicitDtors::Bool=false, AddLifetime::Bool=false,
-                             AddLoopExit::Bool=false, AddTemporaryDtors::Bool=false,
-                             AddScopes::Bool=false, AddCXXNewAllocator::Bool=false)
+function buildCFGWithOptions(decl::AbstractDecl, stmt::AbstractStmt, ctx::ASTContext, opts::AbstractCFGBuildOptions, AddInitializers::Bool=false, AddImplicitDtors::Bool=false, AddLifetime::Bool=false, AddLoopExit::Bool=false, AddTemporaryDtors::Bool=false, AddScopes::Bool=false, AddCXXNewAllocator::Bool=false)
     @check_ptrs decl stmt ctx opts
-    return CFG(clang_CFG_buildCFGWithOptions(decl, stmt, ctx, opts, AddInitializers,
-                                             AddImplicitDtors, AddLifetime, AddLoopExit,
-                                             AddTemporaryDtors, AddScopes,
-                                             AddCXXNewAllocator))
+    return CFG(clang_CFG_buildCFGWithOptions(decl, stmt, ctx, opts, AddInitializers, AddImplicitDtors, AddLifetime, AddLoopExit, AddTemporaryDtors, AddScopes, AddCXXNewAllocator))
 end
 
 """
@@ -729,11 +705,9 @@ Number of successor edges of `x` that survive `clang::CFGBlock::FilterEdge`. The
 booleans are `clang::CFGBlock::FilterOptions` flattened, and default to the values clang's
 own `FilterOptions` constructor installs.
 """
-function getNumFilteredSuccs(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true,
-                             IgnoreDefaultsWithCoveredEnums::Bool=false)
+function getNumFilteredSuccs(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true, IgnoreDefaultsWithCoveredEnums::Bool=false)
     @check_ptrs x
-    return clang_CFGBlock_getNumFilteredSuccs(x, IgnoreNullPredecessors,
-                                              IgnoreDefaultsWithCoveredEnums)
+    return clang_CFGBlock_getNumFilteredSuccs(x, IgnoreNullPredecessors, IgnoreDefaultsWithCoveredEnums)
 end
 
 """
@@ -743,13 +717,11 @@ The successors of `x` that survive `clang::CFGBlock::FilterEdge`, in successor o
 `clang::CFGBlock::filtered_succ_start_end` walk. A carrier is NULL-pointered when the
 surviving edge has no reachable block.
 """
-function getFilteredSuccs(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true,
-                          IgnoreDefaultsWithCoveredEnums::Bool=false)
+function getFilteredSuccs(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true, IgnoreDefaultsWithCoveredEnums::Bool=false)
     @check_ptrs x
     n = getNumFilteredSuccs(x, IgnoreNullPredecessors, IgnoreDefaultsWithCoveredEnums)
     buf = Vector{CXCFGBlock}(undef, n)
-    n > 0 && clang_CFGBlock_getFilteredSuccs(x, IgnoreNullPredecessors,
-                                             IgnoreDefaultsWithCoveredEnums, buf, n)
+    n > 0 && clang_CFGBlock_getFilteredSuccs(x, IgnoreNullPredecessors, IgnoreDefaultsWithCoveredEnums, buf, n)
     return [CFGBlock(p) for p in buf]
 end
 
@@ -761,11 +733,9 @@ booleans are `clang::CFGBlock::FilterOptions` flattened, and default to the valu
 own `FilterOptions` constructor installs — with `IgnoreNullPredecessors` on, an edge whose
 predecessor has no reachable block is dropped.
 """
-function getNumFilteredPreds(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true,
-                             IgnoreDefaultsWithCoveredEnums::Bool=false)
+function getNumFilteredPreds(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true, IgnoreDefaultsWithCoveredEnums::Bool=false)
     @check_ptrs x
-    return clang_CFGBlock_getNumFilteredPreds(x, IgnoreNullPredecessors,
-                                              IgnoreDefaultsWithCoveredEnums)
+    return clang_CFGBlock_getNumFilteredPreds(x, IgnoreNullPredecessors, IgnoreDefaultsWithCoveredEnums)
 end
 
 """
@@ -775,16 +745,13 @@ The predecessors of `x` that survive `clang::CFGBlock::FilterEdge`, in predecess
 the `clang::CFGBlock::filtered_pred_start_end` walk. A carrier is NULL-pointered when the
 surviving edge has no reachable block.
 """
-function getFilteredPreds(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true,
-                          IgnoreDefaultsWithCoveredEnums::Bool=false)
+function getFilteredPreds(x::AbstractCFGBlock, IgnoreNullPredecessors::Bool=true, IgnoreDefaultsWithCoveredEnums::Bool=false)
     @check_ptrs x
     n = getNumFilteredPreds(x, IgnoreNullPredecessors, IgnoreDefaultsWithCoveredEnums)
     buf = Vector{CXCFGBlock}(undef, n)
-    n > 0 && clang_CFGBlock_getFilteredPreds(x, IgnoreNullPredecessors,
-                                             IgnoreDefaultsWithCoveredEnums, buf, n)
+    n > 0 && clang_CFGBlock_getFilteredPreds(x, IgnoreNullPredecessors, IgnoreDefaultsWithCoveredEnums, buf, n)
     return [CFGBlock(p) for p in buf]
 end
-
 
 """
     getElementConstructionContext(x::AbstractCFGBlock, i::Integer) -> ConstructionContext
@@ -808,8 +775,7 @@ block's parent graph, so an element can never be allocated out of a foreign aren
 element list is stored in reverse: the appended element becomes index 0 and everything
 already in the block shifts up by one.
 """
-function appendConstructor(x::AbstractCFGBlock, ce::AbstractCXXConstructExpr,
-                           cc::AbstractConstructionContext)
+function appendConstructor(x::AbstractCFGBlock, ce::AbstractCXXConstructExpr, cc::AbstractConstructionContext)
     @check_ptrs x ce cc
     return clang_CFGBlock_appendConstructor(x, ce, cc)
 end
@@ -823,8 +789,7 @@ Append a `CXXRecordTypedCall` element to the block. PARTIAL: clang's
 `NewAllocatedObjectKind` (Invariant 3); both are restated here. As with
 `appendConstructor`, the appended element becomes index 0.
 """
-function appendCXXRecordTypedCall(x::AbstractCFGBlock, e::AbstractExpr,
-                                  cc::AbstractConstructionContext)
+function appendCXXRecordTypedCall(x::AbstractCFGBlock, e::AbstractExpr, cc::AbstractConstructionContext)
     @check_ptrs x e cc
     @assert isCXXRecordTypedCall(e) "expression must be a call the CFG models as a CXXRecordTypedCall"
     k = getKind(cc)
@@ -855,7 +820,6 @@ function setMarkElidedCXXConstructors(x::AbstractCFGBuildOptions, val::Bool=true
     return clang_CFGBuildOptions_setMarkElidedCXXConstructors(x, val)
 end
 
-
 """
     getSyntheticDeclStmts(x::AbstractCFG) -> Vector{Pair{DeclStmt,DeclStmt}}
 The whole synthetic-`DeclStmt` map of the graph as `synthetic => source` pairs — the
@@ -870,7 +834,7 @@ function getSyntheticDeclStmts(x::AbstractCFG)
     source = Vector{CXDeclStmt}(undef, n)
     n > 0 && clang_CFG_getSyntheticDeclStmts(x, synthetic, source, n)
     out = Vector{Pair{DeclStmt,DeclStmt}}(undef, n)
-    for i in 1:n
+    for i = 1:n
         out[i] = DeclStmt(synthetic[i]) => DeclStmt(source[i])
     end
     return out
@@ -1032,7 +996,6 @@ function setOmitImplicitValueInitializers(x::AbstractCFGBuildOptions, val::Bool=
     return clang_CFGBuildOptions_setOmitImplicitValueInitializers(x, val)
 end
 
-
 """
     dumpElement(x::AbstractCFGBlock, i::Integer)
 Write the `i`-th element of the block to `stderr` — `clang::CFGElement::dump`, the same
@@ -1066,7 +1029,6 @@ function dump(x::AbstractCFG, ctx::ASTContext, show_colors::Bool=false)
     @check_ptrs x ctx
     return clang_CFG_dump(x, ctx, show_colors)
 end
-
 
 """
     getNumBlockStmts(x::AbstractCFG) -> Integer

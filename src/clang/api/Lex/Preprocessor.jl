@@ -79,11 +79,9 @@ function getIdentifierTable(x::AbstractPreprocessor)
     return IdentifierTable(clang_Preprocessor_getIdentifierTable(x))
 end
 
-function SetCommentRetentionState(x::AbstractPreprocessor, keep_comments::Bool,
-                                  keep_macro_comments::Bool)
+function SetCommentRetentionState(x::AbstractPreprocessor, keep_comments::Bool, keep_macro_comments::Bool)
     @check_ptrs x
-    return clang_Preprocessor_SetCommentRetentionState(x, keep_comments,
-                                                       keep_macro_comments)
+    return clang_Preprocessor_SetCommentRetentionState(x, keep_comments, keep_macro_comments)
 end
 
 function getCommentRetentionState(x::AbstractPreprocessor)
@@ -310,8 +308,7 @@ Return the macro definition `ii` had at `loc`, or a NULL-pointer `MacroInfo` whe
 none. `loc` must be a valid source location: the directive-history lookup asserts on an
 invalid one.
 """
-function getMacroInfoAtLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
-                           loc::SourceLocation)
+function getMacroInfoAtLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, loc::SourceLocation)
     @check_ptrs x ii
     @assert isValid(loc) "macro lookup location must be valid"
     return MacroInfo(clang_Preprocessor_getMacroInfoAtLoc(x, ii, loc))
@@ -422,8 +419,7 @@ Relex the token at `loc` into `result`, using the preprocessor's own source mana
 language options. Return `true` if there was a failure, `false` on success (mirroring
 `clang::Preprocessor::getRawToken`).
 """
-function getRawToken(x::AbstractPreprocessor, loc::SourceLocation, result::AbstractToken,
-                     ignore_whitespace::Bool=false)
+function getRawToken(x::AbstractPreprocessor, loc::SourceLocation, result::AbstractToken, ignore_whitespace::Bool=false)
     @check_ptrs x result
     return clang_Preprocessor_getRawToken(x, loc, result, ignore_whitespace)
 end
@@ -434,8 +430,7 @@ end
 Return the location just past the end of the token starting at `loc`, shifted back by
 `offset` characters. The result is invalid when `loc` points into a macro.
 """
-function getLocForEndOfToken(x::AbstractPreprocessor, loc::SourceLocation,
-                             offset::Integer=0)
+function getLocForEndOfToken(x::AbstractPreprocessor, loc::SourceLocation, offset::Integer=0)
     @check_ptrs x
     return SourceLocation(clang_Preprocessor_getLocForEndOfToken(x, loc, offset))
 end
@@ -490,8 +485,7 @@ function getCurrentLexerSubmodule(x::AbstractPreprocessor)
     return Module_(clang_Preprocessor_getCurrentLexerSubmodule(x))
 end
 
-function setCodeCompletionTokenRange(x::AbstractPreprocessor, start::SourceLocation,
-                                     stop::SourceLocation)
+function setCodeCompletionTokenRange(x::AbstractPreprocessor, start::SourceLocation, stop::SourceLocation)
     @check_ptrs x
     return clang_Preprocessor_setCodeCompletionTokenRange(x, start, stop)
 end
@@ -558,8 +552,7 @@ function isAtStartOfMacroExpansion(x::AbstractPreprocessor, loc::SourceLocation)
     @check_ptrs x
     @assert isValid(loc) && isMacroID(loc) "expected a valid macro location"
     out = Ref{CXSourceLocation_}(C_NULL)
-    return clang_Preprocessor_isAtStartOfMacroExpansion(x, loc, out) ?
-           SourceLocation(out[]) : nothing
+    return clang_Preprocessor_isAtStartOfMacroExpansion(x, loc, out) ? SourceLocation(out[]) : nothing
 end
 
 """
@@ -572,8 +565,7 @@ function isAtEndOfMacroExpansion(x::AbstractPreprocessor, loc::SourceLocation)
     @check_ptrs x
     @assert isValid(loc) && isMacroID(loc) "expected a valid macro location"
     out = Ref{CXSourceLocation_}(C_NULL)
-    return clang_Preprocessor_isAtEndOfMacroExpansion(x, loc, out) ?
-           SourceLocation(out[]) : nothing
+    return clang_Preprocessor_isAtEndOfMacroExpansion(x, loc, out) ? SourceLocation(out[]) : nothing
 end
 
 """
@@ -590,8 +582,7 @@ and the walk does not stop at the end of the buffer. The bound is
 [`cleaned_token_length`](@ref); `MeasureTokenLength` is the token's physical extent and
 admits indices that walk past its characters.
 """
-function AdvanceToTokenCharacter(x::AbstractPreprocessor, tok_start::SourceLocation,
-                                 char_no::Integer)
+function AdvanceToTokenCharacter(x::AbstractPreprocessor, tok_start::SourceLocation, char_no::Integer)
     @check_ptrs x
     @assert isValid(tok_start) "tok_start must be a valid location"
     n = cleaned_token_length(tok_start, getSourceManager(x), getLangOpts(x))
@@ -615,8 +606,7 @@ end
 Return the module that owns the code at `loc`. The result is borrowed and holds a NULL
 pointer when the location is outside any module.
 """
-function getModuleForLocation(x::AbstractPreprocessor, loc::SourceLocation,
-                              allow_textual::Bool)
+function getModuleForLocation(x::AbstractPreprocessor, loc::SourceLocation, allow_textual::Bool)
     @check_ptrs x
     return Module_(clang_Preprocessor_getModuleForLocation(x, loc, allow_textual))
 end
@@ -778,8 +768,7 @@ restates both, in that order, so the raw-identifier check runs first.
 """
 function TypoCorrectToken(x::AbstractPreprocessor, tok::AbstractToken)
     @check_ptrs x tok
-    @assert !is_raw_identifier(tok) &&
-            clang_Token_getIdentifierInfo(tok) != C_NULL "token must carry an identifier"
+    @assert !is_raw_identifier(tok) && clang_Token_getIdentifierInfo(tok) != C_NULL "token must carry an identifier"
     return clang_Preprocessor_TypoCorrectToken(x, tok)
 end
 
@@ -820,8 +809,7 @@ end
 Record `#pragma clang arc_cf_code_audited begin` for `ii` at `loc`. An invalid `loc` ends
 the pragma.
 """
-function setPragmaARCCFCodeAuditedInfo(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
-                                       loc::SourceLocation)
+function setPragmaARCCFCodeAuditedInfo(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, loc::SourceLocation)
     @check_ptrs x ii
     return clang_Preprocessor_setPragmaARCCFCodeAuditedInfo(x, ii, loc)
 end
@@ -845,11 +833,9 @@ could not be read.
 `tok` must be a `numeric_constant` of length 1 that needs no cleaning — Clang asserts all
 three, which the `@assert` below restates.
 """
-function getSpellingOfSingleCharacterNumericConstant(x::AbstractPreprocessor,
-                                                     tok::AbstractToken)
+function getSpellingOfSingleCharacterNumericConstant(x::AbstractPreprocessor, tok::AbstractToken)
     @check_ptrs x tok
-    @assert is_numeric_constant(tok) && getLength(tok) == 1 &&
-            !needsCleaning(tok) "expected a single-character numeric constant"
+    @assert is_numeric_constant(tok) && getLength(tok) == 1 && !needsCleaning(tok) "expected a single-character numeric constant"
     invalid = Ref{Bool}(false)
     ch = clang_Preprocessor_getSpellingOfSingleCharacterNumericConstant(x, tok, invalid)
     return invalid[] ? nothing : Char(ch % UInt8)
@@ -863,9 +849,7 @@ Copy `str` into the preprocessor's scratch buffer and point `tok` at it, setting
 token's location and length. Leave both expansion locations unset for a plain scratch
 token, or pass a valid pair to give the token a macro-expansion location.
 """
-function CreateString(x::AbstractPreprocessor, str::AbstractString, tok::AbstractToken,
-                      expansion_start::SourceLocation=SourceLocation(),
-                      expansion_end::SourceLocation=SourceLocation())
+function CreateString(x::AbstractPreprocessor, str::AbstractString, tok::AbstractToken, expansion_start::SourceLocation=SourceLocation(), expansion_end::SourceLocation=SourceLocation())
     @check_ptrs x tok
     @assert isValid(expansion_start) == isValid(expansion_end) "expansion locations must both be set or both unset"
     return clang_Preprocessor_CreateString(x, str, tok, expansion_start, expansion_end)
@@ -926,8 +910,7 @@ back unmodified.
     reserved identifier warns. Call it on a throwaway interpreter, or wrap it in
     [`setSuppressAllDiagnostics`](@ref).
 """
-function CheckMacroName(x::AbstractPreprocessor, tok::AbstractToken,
-                        use::CXMacroUse=CXMacroUse_MU_Other)
+function CheckMacroName(x::AbstractPreprocessor, tok::AbstractToken, use::CXMacroUse=CXMacroUse_MU_Other)
     @check_ptrs x tok
     @assert !is_raw_identifier(tok) && !isAnnotation(tok) "token must carry an identifier slot"
     shadow = Ref{Bool}(false)
@@ -947,8 +930,7 @@ observable gate.
 """
 function getCurrentFPEvalMethod(x::AbstractPreprocessor)
     @check_ptrs x
-    @assert getTUFPEvalMethod(x) !=
-            CXFPEvalMethodKind_FEM_UnsetOnCommandLine "FP evaluation method is unset"
+    @assert getTUFPEvalMethod(x) != CXFPEvalMethodKind_FEM_UnsetOnCommandLine "FP evaluation method is unset"
     return clang_Preprocessor_getCurrentFPEvalMethod(x)
 end
 
@@ -968,8 +950,7 @@ Set the floating-point evaluation method from a `#pragma float_control` at `prag
 this also updates the translation-unit-wide method. `val` must not be
 `FEM_UnsetOnCommandLine` — Clang asserts, which the `@assert` restates.
 """
-function setCurrentFPEvalMethod(x::AbstractPreprocessor, pragma_loc::SourceLocation,
-                                val::CXFPEvalMethodKind)
+function setCurrentFPEvalMethod(x::AbstractPreprocessor, pragma_loc::SourceLocation, val::CXFPEvalMethodKind)
     @check_ptrs x
     @assert val != CXFPEvalMethodKind_FEM_UnsetOnCommandLine "FEM_UnsetOnCommandLine is not settable"
     return clang_Preprocessor_setCurrentFPEvalMethod(x, pragma_loc, val)
@@ -995,8 +976,7 @@ diagnostic at `loc` and comes back as `("", true)`.
 
 `spelling` must be non-empty — Clang asserts, which the `@assert` restates.
 """
-function GetIncludeFilenameSpelling(x::AbstractPreprocessor, loc::SourceLocation,
-                                    spelling::AbstractString)
+function GetIncludeFilenameSpelling(x::AbstractPreprocessor, loc::SourceLocation, spelling::AbstractString)
     @check_ptrs x
     @assert !isempty(spelling) "the include spelling must be non-empty"
     is_angled = Ref{Bool}(false)
@@ -1134,8 +1114,7 @@ Returns `true` on error.
 Clang asserts both, and the `@assert`s restate them (`isCodeCompletionEnabled` is the
 observable gate for the second).
 """
-function SetCodeCompletionPoint(x::AbstractPreprocessor, file::AbstractFileEntryRef,
-                                line::Integer, column::Integer)
+function SetCodeCompletionPoint(x::AbstractPreprocessor, file::AbstractFileEntryRef, line::Integer, column::Integer)
     @check_ptrs x file
     @assert line > 0 && column > 0 "line and column are 1-based"
     @assert !isCodeCompletionEnabled(x) "a code-completion point is already set"
@@ -1147,8 +1126,7 @@ end
 Record the diagnostic reported in place of the default "poisoned identifier" one when the
 poisoned identifier `ii` is used.
 """
-function SetPoisonReason(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
-                         diag_id::Integer)
+function SetPoisonReason(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, diag_id::Integer)
     @check_ptrs x ii
     return clang_Preprocessor_SetPoisonReason(x, ii, diag_id)
 end
@@ -1182,8 +1160,7 @@ end
 Record the `#pragma clang deprecated` message reported when the macro named by `ii` is
 expanded.
 """
-function addMacroDeprecationMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
-                                msg::AbstractString, annotation_loc::SourceLocation)
+function addMacroDeprecationMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, msg::AbstractString, annotation_loc::SourceLocation)
     @check_ptrs x ii
     return clang_Preprocessor_addMacroDeprecationMsg(x, ii, msg, annotation_loc)
 end
@@ -1194,8 +1171,7 @@ end
 Record the `#pragma clang restrict_expansion` message reported when the macro named by
 `ii` is expanded outside the main file.
 """
-function addRestrictExpansionMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
-                                 msg::AbstractString, annotation_loc::SourceLocation)
+function addRestrictExpansionMsg(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, msg::AbstractString, annotation_loc::SourceLocation)
     @check_ptrs x ii
     return clang_Preprocessor_addRestrictExpansionMsg(x, ii, msg, annotation_loc)
 end
@@ -1205,8 +1181,7 @@ end
                 annotation_loc::SourceLocation)
 Record the `#pragma clang final` location for the macro named by `ii`.
 """
-function addFinalLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
-                     annotation_loc::SourceLocation)
+function addFinalLoc(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, annotation_loc::SourceLocation)
     @check_ptrs x ii
     return clang_Preprocessor_addFinalLoc(x, ii, annotation_loc)
 end
@@ -1219,8 +1194,7 @@ Apply the `__FILE__` path transformations — the `-ffile-prefix-map` remappings
 
 Static on `clang::Preprocessor`, so it takes no preprocessor receiver.
 """
-function processPathForFileMacro(path::AbstractString, lang_opts::AbstractLangOptions,
-                                 target::AbstractTargetInfo)
+function processPathForFileMacro(path::AbstractString, lang_opts::AbstractLangOptions, target::AbstractTargetInfo)
     @check_ptrs lang_opts target
     return get_string(clang_Preprocessor_processPathForFileMacro(path, lang_opts, target))
 end
@@ -1261,8 +1235,7 @@ Return whether `ii` is `#define`d inside the already-preprocessed module `m`. Ma
 imported into `m` do not count, and a module this preprocessor never preprocessed answers
 false.
 """
-function isMacroDefinedInLocalModule(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
-                                     m::AbstractModule)
+function isMacroDefinedInLocalModule(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, m::AbstractModule)
     @check_ptrs x ii m
     return clang_Preprocessor_isMacroDefinedInLocalModule(x, ii, m)
 end
@@ -1456,9 +1429,7 @@ Define `ii` as the macro `mi` at `loc` by pushing a fresh `DefMacroDirective` on
 macro-definition history. The directive lives in the preprocessor's arena, so the result is
 borrowed and typed at the `MacroDirective` base.
 """
-function appendDefMacroDirective(x::AbstractPreprocessor, ii::AbstractIdentifierInfo,
-                                 mi::AbstractMacroInfo,
-                                 loc::SourceLocation=getDefinitionLoc(mi))
+function appendDefMacroDirective(x::AbstractPreprocessor, ii::AbstractIdentifierInfo, mi::AbstractMacroInfo, loc::SourceLocation=getDefinitionLoc(mi))
     @check_ptrs x ii mi
     return MacroDirective(clang_Preprocessor_appendDefMacroDirective(x, ii, mi, loc))
 end
@@ -1511,8 +1482,7 @@ macro `tok` names. `tok` must carry an identifier info — the method dereferenc
 null check. Pass `is_ifndef=true` from an `#ifndef` context to suppress the `INFINITY`/`NAN`
 warnings, which do not apply there.
 """
-function emitMacroExpansionWarnings(x::AbstractPreprocessor, tok::AbstractToken,
-                                    is_ifndef::Bool=false)
+function emitMacroExpansionWarnings(x::AbstractPreprocessor, tok::AbstractToken, is_ifndef::Bool=false)
     @check_ptrs x tok
     @assert getIdentifierInfo(tok).ptr != C_NULL "the token must carry an identifier info"
     return clang_Preprocessor_emitMacroExpansionWarnings(x, tok, is_ifndef)
@@ -1603,10 +1573,8 @@ function getPreambleConditionalStack(x::AbstractPreprocessor)
     was_skipping = Vector{Bool}(undef, n)
     found_non_skip = Vector{Bool}(undef, n)
     found_else = Vector{Bool}(undef, n)
-    n > 0 && clang_Preprocessor_getPreambleConditionalStack(x, locs, was_skipping,
-                                                            found_non_skip, found_else)
-    return [(SourceLocation(locs[i]), was_skipping[i], found_non_skip[i], found_else[i])
-            for i = 1:n]
+    n > 0 && clang_Preprocessor_getPreambleConditionalStack(x, locs, was_skipping, found_non_skip, found_else)
+    return [(SourceLocation(locs[i]), was_skipping[i], found_non_skip[i], found_else[i]) for i = 1:n]
 end
 
 """
@@ -1630,9 +1598,7 @@ function setRecordedPreambleConditionalStack(x::AbstractPreprocessor, stack::Abs
         found_non_skip[i] = non_skip
         found_else[i] = saw_else
     end
-    return clang_Preprocessor_setRecordedPreambleConditionalStack(x, locs, was_skipping,
-                                                                  found_non_skip,
-                                                                  found_else, n)
+    return clang_Preprocessor_setRecordedPreambleConditionalStack(x, locs, was_skipping, found_non_skip, found_else, n)
 end
 
 """
@@ -1650,10 +1616,8 @@ function getPreambleSkipInfo(x::AbstractPreprocessor)
     found_non_skip = Ref{Bool}(false)
     found_else = Ref{Bool}(false)
     else_loc = Ref{CXSourceLocation_}(C_NULL)
-    clang_Preprocessor_getPreambleSkipInfo(x, hash_loc, if_loc, found_non_skip, found_else,
-                                           else_loc) || return nothing
-    return (SourceLocation(hash_loc[]), SourceLocation(if_loc[]), found_non_skip[],
-            found_else[], SourceLocation(else_loc[]))
+    clang_Preprocessor_getPreambleSkipInfo(x, hash_loc, if_loc, found_non_skip, found_else, else_loc) || return nothing
+    return (SourceLocation(hash_loc[]), SourceLocation(if_loc[]), found_non_skip[], found_else[], SourceLocation(else_loc[]))
 end
 
 """
@@ -1676,9 +1640,7 @@ macros in `overrides`. Return the registration together with whether it is new: 
 identical `(module, name, macro, overrides)` tuple folds onto the node that already exists
 and reports `false`. The result is preprocessor-arena memory — borrowed, never disposed.
 """
-function addModuleMacro(x::AbstractPreprocessor, m::AbstractModule,
-                        ii::AbstractIdentifierInfo, mi::AbstractMacroInfo,
-                        overrides::AbstractVector=ModuleMacro[])
+function addModuleMacro(x::AbstractPreprocessor, m::AbstractModule, ii::AbstractIdentifierInfo, mi::AbstractMacroInfo, overrides::AbstractVector=ModuleMacro[])
     @check_ptrs x m ii mi
     n = length(overrides)
     buf = Vector{CXModuleMacro}(undef, n)
@@ -1697,8 +1659,7 @@ end
 Return the macro module `m` exports under the name `ii`, or a NULL carrier when it exports
 none. The result is preprocessor-arena memory — borrowed, never disposed.
 """
-function getModuleMacro(x::AbstractPreprocessor, m::AbstractModule,
-                        ii::AbstractIdentifierInfo)
+function getModuleMacro(x::AbstractPreprocessor, m::AbstractModule, ii::AbstractIdentifierInfo)
     @check_ptrs x m ii
     return ModuleMacro(clang_Preprocessor_getModuleMacro(x, m, ii))
 end
@@ -1736,8 +1697,7 @@ equal `tokens`, or the empty string when none does. Each element of `tokens` is 
 and a kind must be neither an identifier nor a literal nor an annotation, all three of
 which Clang asserts while building the token value.
 """
-function getLastMacroWithSpelling(x::AbstractPreprocessor, loc::SourceLocation,
-                                  tokens::AbstractVector)
+function getLastMacroWithSpelling(x::AbstractPreprocessor, loc::SourceLocation, tokens::AbstractVector)
     @check_ptrs x
     @assert isValid(loc) "location must be valid: the macro directive history asserts on it"
     n = length(tokens)
@@ -1768,8 +1728,7 @@ the unmet requirement, the missing header or the shadowing module through `diags
 built by hand has no module map behind it, so whether it counts as available is
 host-decided.
 """
-function checkModuleIsAvailable(lang_opts::AbstractLangOptions, target::AbstractTargetInfo,
-                                m::AbstractModule, diags::AbstractDiagnosticsEngine)
+function checkModuleIsAvailable(lang_opts::AbstractLangOptions, target::AbstractTargetInfo, m::AbstractModule, diags::AbstractDiagnosticsEngine)
     @check_ptrs lang_opts target m diags
     return clang_Preprocessor_checkModuleIsAvailable(lang_opts, target, m, diags)
 end
@@ -1783,8 +1742,7 @@ answer instead. This is not fast and may load module maps that were not otherwis
 so it belongs on a path that is already about to report an error. This function allocates
 and one should call `dispose` to release the resources after using this object.
 """
-function getHeaderToIncludeForDiagnostics(x::AbstractPreprocessor, inc_loc::SourceLocation,
-                                          m_loc::SourceLocation)
+function getHeaderToIncludeForDiagnostics(x::AbstractPreprocessor, inc_loc::SourceLocation, m_loc::SourceLocation)
     @check_ptrs x
     ref = clang_Preprocessor_getHeaderToIncludeForDiagnostics(x, inc_loc, m_loc)
     return ref == C_NULL ? nothing : FileEntryRef(ref)

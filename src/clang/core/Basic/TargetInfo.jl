@@ -15,4 +15,3 @@ Hold a pointer to a `clang::TargetInfo::ConstraintInfo` object.
 struct ConstraintInfo <: AbstractConstraintInfo
     ptr::CXConstraintInfo
 end
-

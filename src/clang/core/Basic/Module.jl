@@ -11,4 +11,3 @@ Hold a pointer to a `clang::Module` object.
 struct Module_ <: AbstractModule
     ptr::CXModule_
 end
-

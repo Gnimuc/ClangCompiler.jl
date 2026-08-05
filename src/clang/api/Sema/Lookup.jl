@@ -94,7 +94,6 @@ function getResult(x::LookupResult)
     return NamedDecl(clang_LookupResult_getResult(x))
 end
 
-
 function getResultKind(x::AbstractLookupResult)
     @check_ptrs x
     return clang_LookupResult_getResultKind(x)
@@ -146,7 +145,6 @@ function suppressDiagnostics(x::AbstractLookupResult)
     clang_LookupResult_suppressDiagnostics(x)
     return nothing
 end
-
 
 function isForExternalRedeclaration(x::AbstractLookupResult)
     @check_ptrs x
@@ -210,7 +208,6 @@ function getContextRange(x::AbstractLookupResult)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
-
 # LookupResult (name info and result assembly)
 """
     getLookupNameInfo(x::AbstractLookupResult) -> DeclarationNameInfo
@@ -271,8 +268,7 @@ until [`resolveKind`](@ref) has run, and clang asserts on that in an assertion b
 """
 function addDecl(x::AbstractLookupResult, nd::AbstractNamedDecl)
     @check_ptrs x nd
-    @assert(!isCXXClassMember(nd) || getAccessUnsafe(nd) != CXAccessSpecifier_AS_none,
-            "a class member's access specifier must be set before it is added to a result")
+    @assert(!isCXXClassMember(nd) || getAccessUnsafe(nd) != CXAccessSpecifier_AS_none, "a class member's access specifier must be set before it is added to a result")
     clang_LookupResult_addDecl(x, nd)
     return nothing
 end
@@ -315,7 +311,6 @@ function setNotFoundInCurrentInstantiation(x::AbstractLookupResult)
     return nothing
 end
 
-
 # LookupResult (the remaining configuration setters)
 """
     setTemplateNameLookup(x::AbstractLookupResult, v::Bool=true)
@@ -350,7 +345,6 @@ function setContextRange(x::AbstractLookupResult, r::SourceRange)
     clang_LookupResult_setContextRange(x, CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr))
     return nothing
 end
-
 
 # LookupResult (acceptability and the remaining configuration)
 """
@@ -409,8 +403,7 @@ parse crashes clang's diagnostic renderer. Call [`suppressDiagnostics`](@ref) fi
 """
 function setAmbiguousQualifiedTagHiding(x::AbstractLookupResult)
     @check_ptrs x
-    @assert(isSuppressingAmbiguousDiagnostics(x),
-            "suppress the result's ambiguity diagnostics before making it ambiguous")
+    @assert(isSuppressingAmbiguousDiagnostics(x), "suppress the result's ambiguity diagnostics before making it ambiguous")
     clang_LookupResult_setAmbiguousQualifiedTagHiding(x)
     return nothing
 end
@@ -541,7 +534,6 @@ function done(x::AbstractLookupResultFilter)
     return nothing
 end
 
-
 """
     redeclarationKind(x::AbstractLookupResult) -> CXRedeclarationKind
 Return which flavour of redeclaration lookup this result was configured for.
@@ -576,7 +568,6 @@ function printToString(x::AbstractLookupResult)
     @check_ptrs x
     return get_string(clang_LookupResult_printToString(x))
 end
-
 
 """
     isAcceptable(s::AbstractSema, d::AbstractNamedDecl, reachable::Bool=false) -> Bool

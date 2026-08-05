@@ -239,4 +239,3 @@ Hold a pointer to a `clang::UnnamedGlobalConstantDecl` object.
 struct UnnamedGlobalConstantDecl <: AbstractUnnamedGlobalConstantDecl
     ptr::CXUnnamedGlobalConstantDecl
 end
-

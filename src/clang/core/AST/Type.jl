@@ -712,4 +712,3 @@ Hold a pointer to a `clang::PipeType` object.
 struct PipeType <: AbstractPipeType
     ptr::CXPipeType
 end
-

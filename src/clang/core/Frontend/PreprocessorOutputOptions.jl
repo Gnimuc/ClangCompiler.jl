@@ -11,4 +11,3 @@ Hold a pointer to a `clang::PreprocessorOutputOptions` object.
 struct PreprocessorOutputOptions <: AbstractPreprocessorOutputOptions
     ptr::CXPreprocessorOutputOptions
 end
-

@@ -11,4 +11,3 @@ must never be disposed.
 struct PrintingPolicy <: AbstractPrintingPolicy
     ptr::CXPrintingPolicy_
 end
-

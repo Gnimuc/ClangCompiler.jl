@@ -11,4 +11,3 @@ Hold a pointer to a `clang::MigratorOptions` object.
 struct MigratorOptions <: AbstractMigratorOptions
     ptr::CXMigratorOptions
 end
-

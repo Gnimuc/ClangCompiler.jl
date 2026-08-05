@@ -215,12 +215,10 @@ end
 # Those wrappers still call the base's C entry points, so its handle needs a route from each
 # spelling. There is no single abstract type over both -- that is precisely the level that was
 # dropped -- so the two methods are written out rather than keyed on a shared supertype.
-Base.unsafe_convert(::Type{CXAbstractConditionalOperator}, x::AbstractConditionalOperator) =
-    CXAbstractConditionalOperator(x.ptr)
+Base.unsafe_convert(::Type{CXAbstractConditionalOperator}, x::AbstractConditionalOperator) = CXAbstractConditionalOperator(x.ptr)
 Base.cconvert(::Type{CXAbstractConditionalOperator}, x::AbstractConditionalOperator) = x
 
-Base.unsafe_convert(::Type{CXAbstractConditionalOperator}, x::AbstractBinaryConditionalOperator) =
-    CXAbstractConditionalOperator(x.ptr)
+Base.unsafe_convert(::Type{CXAbstractConditionalOperator}, x::AbstractBinaryConditionalOperator) = CXAbstractConditionalOperator(x.ptr)
 Base.cconvert(::Type{CXAbstractConditionalOperator}, x::AbstractBinaryConditionalOperator) = x
 
 """
@@ -503,4 +501,3 @@ plus flag pair with no pointer form, so libclangex heap-boxes it.
 struct BlockVarCopyInit <: AbstractBlockVarCopyInit
     ptr::CXBlockVarCopyInit
 end
-

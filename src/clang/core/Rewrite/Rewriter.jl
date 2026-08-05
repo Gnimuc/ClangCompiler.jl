@@ -11,4 +11,3 @@ Hold a pointer to a `clang::Rewriter` object.
 struct Rewriter <: AbstractRewriter
     ptr::CXRewriter
 end
-

@@ -44,7 +44,6 @@ function getAsString(x::DeclarationNameInfo)
     return get_string(clang_DeclarationNameInfo_getAsString(x))
 end
 
-
 # DeclarationName (identity surface)
 #
 # A `DeclarationName` is a value encoding, not a pointer to an object: the empty
@@ -136,8 +135,7 @@ function getCXXDestructorName(x::AbstractDeclarationNameTable, ty::QualType)
     return DeclarationName(clang_DeclarationNameTable_getCXXDestructorName(x, ty))
 end
 
-function getCXXDeductionGuideName(x::AbstractDeclarationNameTable,
-                                  td::AbstractTemplateDecl)
+function getCXXDeductionGuideName(x::AbstractDeclarationNameTable, td::AbstractTemplateDecl)
     @check_ptrs x td
     return DeclarationName(clang_DeclarationNameTable_getCXXDeductionGuideName(x, td))
 end
@@ -157,14 +155,12 @@ end
 `CXDeclarationName_CXXDestructorName` or
 `CXDeclarationName_CXXConversionFunctionName`; `ty` must be canonical.
 """
-function getCXXSpecialName(x::AbstractDeclarationNameTable,
-                           kind::CXDeclarationName_NameKind, ty::QualType)
+function getCXXSpecialName(x::AbstractDeclarationNameTable, kind::CXDeclarationName_NameKind, ty::QualType)
     @check_ptrs x
     return DeclarationName(clang_DeclarationNameTable_getCXXSpecialName(x, kind, ty))
 end
 
-function getCXXOperatorName(x::AbstractDeclarationNameTable,
-                            op::CXOverloadedOperatorKind)
+function getCXXOperatorName(x::AbstractDeclarationNameTable, op::CXOverloadedOperatorKind)
     @check_ptrs x
     return DeclarationName(clang_DeclarationNameTable_getCXXOperatorName(x, op))
 end
@@ -232,7 +228,6 @@ function getSourceRange(x::DeclarationNameInfo)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
-
 # DeclarationName (Objective-C selector shapes)
 isObjCZeroArgSelector(x::DeclarationName) = clang_DeclarationName_isObjCZeroArgSelector(x)
 
@@ -247,8 +242,7 @@ Set the written type of the constructor, destructor or conversion-function name 
 """
 function setNamedTypeInfo(x::DeclarationNameInfo, tinfo::TypeSourceInfo)
     @check_ptrs x tinfo
-    named = (CXDeclarationName_CXXConstructorName, CXDeclarationName_CXXDestructorName,
-             CXDeclarationName_CXXConversionFunctionName)
+    named = (CXDeclarationName_CXXConstructorName, CXDeclarationName_CXXDestructorName, CXDeclarationName_CXXConversionFunctionName)
     @assert getNameKind(getName(x)) in named "the name must be a constructor, destructor or conversion"
     return clang_DeclarationNameInfo_setNamedTypeInfo(x, tinfo)
 end

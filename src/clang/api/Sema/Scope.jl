@@ -466,8 +466,7 @@ scope's error trap keeps a reference to it — so it must outlive the scope.
 `dispose` is a plain `delete`, so it must never be given a scope that came from
 [`getCurScope`](@ref) or [`getParent`](@ref).
 """
-function Scope(parent::Union{AbstractScope,Nothing}, flags::Integer,
-               diag::AbstractDiagnosticsEngine)
+function Scope(parent::Union{AbstractScope,Nothing}, flags::Integer, diag::AbstractDiagnosticsEngine)
     @check_ptrs diag
     if parent !== nothing
         @check_ptrs parent

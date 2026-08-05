@@ -16,8 +16,7 @@ Asking the shim is what turns either assumption into something `test/abi.jl` can
 function shim_type_width(name::Symbol)
     name === :off_t && return Int(clang_sizeof_off_t())
     name === :time_t && return Int(clang_sizeof_time_t())
-    throw(ArgumentError("no width is recorded for $name; :off_t and :time_t are the " *
-                        "platform-dependent C types this layer mirrors"))
+    throw(ArgumentError("no width is recorded for $name; :off_t and :time_t are the " * "platform-dependent C types this layer mirrors"))
 end
 
 # IdentifierTable

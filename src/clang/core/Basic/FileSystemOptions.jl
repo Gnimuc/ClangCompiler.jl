@@ -11,4 +11,3 @@ Hold a pointer to a `clang::FileSystemOptions` object.
 struct FileSystemOptions <: AbstractFileSystemOptions
     ptr::CXFileSystemOptions
 end
-

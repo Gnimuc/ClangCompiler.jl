@@ -11,4 +11,3 @@ Hold a pointer to a `clang::APINotesOptions` object.
 struct APINotesOptions <: AbstractAPINotesOptions
     ptr::CXAPINotesOptions
 end
-

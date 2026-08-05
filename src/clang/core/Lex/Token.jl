@@ -13,4 +13,3 @@ Hold a pointer to an "AnnotationValue".
 struct AnnotationValue <: AbstractAnnotationValue
     ptr::CXAnnotationValue
 end
-

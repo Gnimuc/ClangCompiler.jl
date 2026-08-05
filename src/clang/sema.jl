@@ -1,6 +1,5 @@
 # Sema
-function restore_nns_annotation(x::Sema, v::AnnotationValue, rng::SourceRange,
-                                spec::CXXScopeSpec)
+function restore_nns_annotation(x::Sema, v::AnnotationValue, rng::SourceRange, spec::CXXScopeSpec)
     return RestoreNestedNameSpecifierAnnotation(x, v, rng, spec)
 end
 

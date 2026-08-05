@@ -109,8 +109,7 @@ answer for a null, non-integral, or dependent type. Clang answers the last of th
 function TemplateArgument(ctx::ASTContext, v::LLVM.GenericValue, ty::QualType)
     @check_ptrs ctx ty
     tp = getTypePtr(ty)
-    @assert isIntegralOrEnumerationType(tp) "a non-type template argument's type must be " *
-                                            "integral or an enumeration, got $(getAsString(ty))"
+    @assert isIntegralOrEnumerationType(tp) "a non-type template argument's type must be " * "integral or an enumeration, got $(getAsString(ty))"
     @assert !isDependentType(tp) "the type must not be dependent; clang has no width for it"
     return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx, v, ty))
 end

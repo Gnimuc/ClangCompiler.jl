@@ -15,4 +15,3 @@ Hold a pointer to a `clang::EmptylineHandler` object.
 struct EmptylineHandler <: AbstractEmptylineHandler
     ptr::CXEmptylineHandler
 end
-

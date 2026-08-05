@@ -34,19 +34,15 @@
 # asserting and has clang confirm it.
 
 @noinline function _wrong_handle(want, got)
-    throw(ArgumentError("expected a $want, got a $got -- these name different clang classes. " *
-                        "Use the checked cast for the class you mean if the crossing is intended."))
+    throw(ArgumentError("expected a $want, got a $got -- these name different clang classes. " * "Use the checked cast for the class you mean if the crossing is intended."))
 end
 
-Base.convert(::Type{Ptr{A}}, p::Ptr{B}) where {A<:AbstractCXImpl,B<:AbstractCXImpl} =
-    A === B ? p : _wrong_handle(Ptr{A}, Ptr{B})
+Base.convert(::Type{Ptr{A}}, p::Ptr{B}) where {A<:AbstractCXImpl,B<:AbstractCXImpl} = A === B ? p : _wrong_handle(Ptr{A}, Ptr{B})
 
-Base.unsafe_convert(::Type{Ptr{A}}, p::Ptr{B}) where {A<:AbstractCXImpl,B<:AbstractCXImpl} =
-    A === B ? p : _wrong_handle(Ptr{A}, Ptr{B})
+Base.unsafe_convert(::Type{Ptr{A}}, p::Ptr{B}) where {A<:AbstractCXImpl,B<:AbstractCXImpl} = A === B ? p : _wrong_handle(Ptr{A}, Ptr{B})
 
 # An address is not a handle either. Base converts `Union{Int,UInt}` to any `Ptr`, which is the
 # one non-pointer route into the same hole; this out-specialises exactly that method. A wider
 # `Integer` here would instead be *ambiguous* with it, and any other integer width already has
 # no conversion to a pointer at all.
-Base.convert(::Type{Ptr{A}}, n::Union{Int,UInt}) where {A<:AbstractCXImpl} =
-    _wrong_handle(Ptr{A}, typeof(n))
+Base.convert(::Type{Ptr{A}}, n::Union{Int,UInt}) where {A<:AbstractCXImpl} = _wrong_handle(Ptr{A}, typeof(n))

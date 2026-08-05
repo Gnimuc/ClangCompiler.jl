@@ -271,4 +271,3 @@ Hold a pointer to a `clang::FunctionDecl::DefaultedFunctionInfo` object.
 struct DefaultedFunctionInfo <: AbstractDefaultedFunctionInfo
     ptr::CXFunctionDecl_DefaultedFunctionInfo
 end
-

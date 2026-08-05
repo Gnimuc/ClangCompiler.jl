@@ -128,4 +128,3 @@ Hold a pointer to a `clang::ElaboratedTypeLoc` object.
 struct ElaboratedTypeLoc <: AbstractElaboratedTypeLoc
     ptr::CXElaboratedTypeLoc
 end
-

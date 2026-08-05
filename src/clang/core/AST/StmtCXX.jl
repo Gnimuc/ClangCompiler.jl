@@ -45,4 +45,3 @@ Hold a pointer to a `clang::CoreturnStmt` object.
 struct CoreturnStmt <: AbstractCoreturnStmt
     ptr::CXCoreturnStmt
 end
-

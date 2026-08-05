@@ -96,4 +96,3 @@ copies of the file name and contents they read, so it is caller-owned and releas
 struct SourceManagerForFile <: AbstractSourceManagerForFile
     ptr::CXSourceManagerForFile
 end
-

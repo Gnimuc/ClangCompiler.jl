@@ -14,8 +14,7 @@ function getDefinitionLength(x::AbstractMacroInfo, src_mgr::AbstractSourceManage
     return clang_MacroInfo_getDefinitionLength(x, src_mgr)
 end
 
-function isIdenticalTo(x::AbstractMacroInfo, other::AbstractMacroInfo,
-                       pp::AbstractPreprocessor, syntactically::Bool)
+function isIdenticalTo(x::AbstractMacroInfo, other::AbstractMacroInfo, pp::AbstractPreprocessor, syntactically::Bool)
     @check_ptrs x other pp
     return clang_MacroInfo_isIdenticalTo(x, other, pp, syntactically)
 end
@@ -116,7 +115,6 @@ function dump(x::AbstractMacroInfo)
     @check_ptrs x
     return clang_MacroInfo_dump(x)
 end
-
 
 """
     setDefinitionEndLoc(x::AbstractMacroInfo, loc::SourceLocation)
@@ -264,7 +262,6 @@ function getMacroInfo(x::AbstractMacroDirective)
     @check_ptrs x
     return MacroInfo(clang_MacroDirective_getMacroInfo(x))
 end
-
 
 # MacroInfo — the one-way flags a macro's builder sets while filling it in
 

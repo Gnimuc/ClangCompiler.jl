@@ -9,4 +9,3 @@ Hold a pointer to a `clang::ASTUnit` object.
 struct ASTUnit <: AbstractASTUnit
     ptr::CXASTUnit
 end
-

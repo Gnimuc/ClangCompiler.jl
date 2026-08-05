@@ -20,4 +20,3 @@ A Clang partial translation unit.
 struct PartialTranslationUnit <: AbstractPartialTranslationUnit
     ptr::CXPartialTranslationUnit
 end
-

@@ -68,4 +68,3 @@ Hold a pointer to a `clang::Diagnostic` object.
 struct Diagnostic <: AbstractDiagnostic
     ptr::CXDiagnostic_
 end
-

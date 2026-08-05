@@ -122,8 +122,7 @@ Overwrite one argument of the level at `depth`. The write lands in the list's ow
 the level and `arg` is copied, so the caller keeps ownership of its box. The C++ method
 indexes both the level vector and the argument array unchecked.
 """
-function setArgument(x::AbstractMultiLevelTemplateArgumentList, depth::Integer, index::Integer,
-                     arg::TemplateArgument)
+function setArgument(x::AbstractMultiLevelTemplateArgumentList, depth::Integer, index::Integer, arg::TemplateArgument)
     @check_ptrs x arg
     @assert getNumRetainedOuterLevels(x) <= depth < getNumLevels(x) "depth must name a substituted level"
     @assert index < getNumSubsitutedArgs(x, depth) "index must be within the level's argument list"
@@ -138,19 +137,15 @@ list's own storage, so the caller keeps its own argument boxes. The C++ method a
 no retained outer level has been added yet and that the list is substituting rather than
 rewriting.
 """
-function addOuterTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl,
-                                   args::Vector{CXTemplateArgument}, final::Bool)
+function addOuterTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl, args::Vector{CXTemplateArgument}, final::Bool)
     @check_ptrs x decl
     @assert getNumRetainedOuterLevels(x) == 0 "substituted args cannot sit outside retained ones"
     @assert getKind(x) == CXTemplateSubstitutionKind_Specialization "list must be substituting"
-    return clang_MultiLevelTemplateArgumentList_addOuterTemplateArguments(x, decl, args, length(args),
-                                                                          final)
+    return clang_MultiLevelTemplateArgumentList_addOuterTemplateArguments(x, decl, args, length(args), final)
 end
 
-function addOuterTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl,
-                                   args::Vector{TemplateArgument}, final::Bool)
-    return addOuterTemplateArguments(x, decl, CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, arg)
-                                                    for arg in args], final)
+function addOuterTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl, args::Vector{TemplateArgument}, final::Bool)
+    return addOuterTemplateArguments(x, decl, CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, arg) for arg in args], final)
 end
 
 """
@@ -161,18 +156,14 @@ alive inside the list until it is disposed, so a carrier obtained from it earlie
 dangle - it simply stops being the list's current argument. The C++ method asserts that
 there is something to replace.
 """
-function replaceInnermostTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl,
-                                           args::Vector{CXTemplateArgument})
+function replaceInnermostTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl, args::Vector{CXTemplateArgument})
     @check_ptrs x decl
     @assert getNumSubstitutedLevels(x) > 0 || getNumRetainedOuterLevels(x) > 0 "list must not be empty"
-    return clang_MultiLevelTemplateArgumentList_replaceInnermostTemplateArguments(x, decl, args,
-                                                                                  length(args))
+    return clang_MultiLevelTemplateArgumentList_replaceInnermostTemplateArguments(x, decl, args, length(args))
 end
 
-function replaceInnermostTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl,
-                                           args::Vector{TemplateArgument})
-    return replaceInnermostTemplateArguments(x, decl, CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, arg)
-                                                            for arg in args])
+function replaceInnermostTemplateArguments(x::AbstractMultiLevelTemplateArgumentList, decl::AbstractDecl, args::Vector{TemplateArgument})
+    return replaceInnermostTemplateArguments(x, decl, CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, arg) for arg in args])
 end
 
 function addOuterRetainedLevel(x::AbstractMultiLevelTemplateArgumentList)
@@ -229,7 +220,6 @@ function getOutermostArg(x::AbstractMultiLevelTemplateArgumentList, i::Integer)
     return TemplateArgument(clang_MultiLevelTemplateArgumentList_getOutermostArg(x, i))
 end
 
-
 # LocalInstantiationScope
 """
     LocalInstantiationScope(x::AbstractSema, combine_with_outer_scope::Bool=false) -> LocalInstantiationScope
@@ -250,12 +240,10 @@ stopping at this one.
 """
 function LocalInstantiationScope(x::AbstractSema, combine_with_outer_scope::Bool=false)
     @check_ptrs x
-    return LocalInstantiationScope(clang_LocalInstantiationScope_create(x,
-                                                                        combine_with_outer_scope))
+    return LocalInstantiationScope(clang_LocalInstantiationScope_create(x, combine_with_outer_scope))
 end
 
 dispose(x::LocalInstantiationScope) = clang_LocalInstantiationScope_dispose(x)
-
 
 """
     getSema(x::AbstractLocalInstantiationScope) -> Sema

@@ -19,4 +19,3 @@ Hold a pointer to a `clang::LookupResult::Filter` object.
 struct LookupResultFilter <: AbstractLookupResultFilter
     ptr::CXLookupResult_Filter
 end
-

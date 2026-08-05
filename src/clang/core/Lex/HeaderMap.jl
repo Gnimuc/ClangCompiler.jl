@@ -10,4 +10,3 @@ The map is owned by the `HeaderSearch` that created it, so it is borrowed: there
 struct HeaderMap <: AbstractHeaderMap
     ptr::CXHeaderMap
 end
-

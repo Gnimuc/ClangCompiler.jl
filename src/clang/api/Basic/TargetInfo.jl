@@ -5,7 +5,6 @@ function TargetInfo(opts::TargetOptions, diag::DiagnosticsEngine=DiagnosticsEngi
     return TargetInfo(info)
 end
 
-
 function getSizeType(x::AbstractTargetInfo)
     @check_ptrs x
     return clang_TargetInfo_getSizeType(x)
@@ -487,7 +486,6 @@ function isLittleEndian(x::AbstractTargetInfo)
     return clang_TargetInfo_isLittleEndian(x)
 end
 
-
 """
     getSignedSizeType(x::AbstractTargetInfo) -> CXTargetInfo_IntType
 Return the signed counterpart of the target's `size_t`.
@@ -496,8 +494,7 @@ The target's `size_t` must be one of unsigned short/int/long/long long.
 """
 function getSignedSizeType(x::AbstractTargetInfo)
     @check_ptrs x
-    @assert getSizeType(x) in (CXTargetInfo_UnsignedShort, CXTargetInfo_UnsignedInt, CXTargetInfo_UnsignedLong,
-                               CXTargetInfo_UnsignedLongLong) "size_t must be an unsigned integer type"
+    @assert getSizeType(x) in (CXTargetInfo_UnsignedShort, CXTargetInfo_UnsignedInt, CXTargetInfo_UnsignedLong, CXTargetInfo_UnsignedLongLong) "size_t must be an unsigned integer type"
     return clang_TargetInfo_getSignedSizeType(x)
 end
 
@@ -637,7 +634,6 @@ function getTypeFormatModifier(T::CXTargetInfo_IntType)
     return unsafe_string(clang_TargetInfo_getTypeFormatModifier(T))
 end
 
-
 function getNullPointerValue(x::AbstractTargetInfo, addr_space::CXLangAS=CXLangAS_Default)
     @check_ptrs x
     return clang_TargetInfo_getNullPointerValue(x, addr_space)
@@ -746,13 +742,11 @@ Return the "normalized" GCC register name for `name`; with `canonical`, the form
 `%` prefix or `{}` wrapping (e.g. `"rax"` -> `"ax"` on x86). `name` must be a valid GCC
 register name for this target, i.e. `isValidGCCRegisterName(x, name)` must hold.
 """
-function getNormalizedGCCRegisterName(x::AbstractTargetInfo, name::AbstractString,
-                                      canonical::Bool=false)
+function getNormalizedGCCRegisterName(x::AbstractTargetInfo, name::AbstractString, canonical::Bool=false)
     @check_ptrs x
     @assert isValidGCCRegisterName(x, name) "name must be a valid GCC register name"
     return get_string(clang_TargetInfo_getNormalizedGCCRegisterName(x, name, canonical))
 end
-
 
 """
     getTargetOpts(x::AbstractTargetInfo) -> TargetOptions
@@ -801,8 +795,7 @@ Return the register `constraint` designates, given `expression` as the asm label
 related input/output operand. Returns the empty string when `constraint` is not a
 single-register constraint.
 """
-function getConstraintRegister(x::AbstractTargetInfo, constraint::AbstractString,
-                               expression::AbstractString)
+function getConstraintRegister(x::AbstractTargetInfo, constraint::AbstractString, expression::AbstractString)
     @check_ptrs x
     return get_string(clang_TargetInfo_getConstraintRegister(x, constraint, expression))
 end
@@ -928,7 +921,6 @@ function getVtblPtrAddressSpace(x::AbstractTargetInfo)
     @check_ptrs x
     return clang_TargetInfo_getVtblPtrAddressSpace(x)
 end
-
 
 # TargetInfo::ConstraintInfo
 
@@ -1138,8 +1130,7 @@ This asks a different question from [`isValidGCCRegisterName`](@ref) -- x86 acce
 GCC register name there but only a subset here, and reports the width mismatch separately.
 Total for any string, the empty one included.
 """
-function validateGlobalRegisterVariable(x::AbstractTargetInfo, reg_name::AbstractString,
-                                        reg_size::Integer)
+function validateGlobalRegisterVariable(x::AbstractTargetInfo, reg_name::AbstractString, reg_size::Integer)
     @check_ptrs x
     mismatch = Ref{Bool}(false)
     ok = clang_TargetInfo_validateGlobalRegisterVariable(x, reg_name, reg_size, mismatch)
@@ -1158,7 +1149,6 @@ function validateOutputConstraint(x::AbstractTargetInfo, info::AbstractConstrain
     @check_ptrs x info
     return clang_TargetInfo_validateOutputConstraint(x, info)
 end
-
 
 """
     allowHalfArgsAndReturns(x::AbstractTargetInfo) -> Bool
@@ -1387,7 +1377,6 @@ function allowDebugInfoForExternalRef(x::AbstractTargetInfo)
     @check_ptrs x
     return clang_TargetInfo_allowDebugInfoForExternalRef(x)
 end
-
 
 """
     getOpenCLBuiltinAddressSpace(x::AbstractTargetInfo, addr_space::Integer) -> CXLangAS
@@ -1883,8 +1872,7 @@ Return the real floating-point type of the given bit width, or `CXFloatModeKind_
 when the target has none. `explicit_type` selects between the `float` and `__bf16`
 spellings at 16 bits.
 """
-function getRealTypeByWidth(x::AbstractTargetInfo, bit_width::Integer,
-                            explicit_type::CXFloatModeKind)
+function getRealTypeByWidth(x::AbstractTargetInfo, bit_width::Integer, explicit_type::CXFloatModeKind)
     @check_ptrs x
     return clang_TargetInfo_getRealTypeByWidth(x, bit_width, explicit_type)
 end

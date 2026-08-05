@@ -24,4 +24,3 @@ deliberately outside the `AbstractCompilerInvocation` hierarchy and only the
 struct CowCompilerInvocation <: AbstractCowCompilerInvocation
     ptr::CXCowCompilerInvocation
 end
-

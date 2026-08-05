@@ -42,8 +42,7 @@ Return `true` iff `other` is wholly contained within `x` (raw-encoding order —
 only when both ranges are in the same FileID).
 """
 function fullyContains(x::SourceRange, other::SourceRange)
-    return getRawEncoding(x.begin_loc) <= getRawEncoding(other.begin_loc) &&
-           getRawEncoding(x.end_loc) >= getRawEncoding(other.end_loc)
+    return getRawEncoding(x.begin_loc) <= getRawEncoding(other.begin_loc) && getRawEncoding(x.end_loc) >= getRawEncoding(other.end_loc)
 end
 
 function printToString(x::SourceRange, src_mgr::SourceManager)
@@ -148,8 +147,7 @@ before reaching for one.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function PresumedLoc(src_mgr::SourceManager, loc::SourceLocation;
-                     use_line_directives::Bool=true)
+function PresumedLoc(src_mgr::SourceManager, loc::SourceLocation; use_line_directives::Bool=true)
     @check_ptrs src_mgr
     return PresumedLoc(clang_PresumedLoc_create(src_mgr, loc, use_line_directives))
 end

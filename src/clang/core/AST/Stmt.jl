@@ -237,4 +237,3 @@ Hold a pointer to a `clang::GCCAsmStmt::AsmStringPiece` object.
 struct GCCAsmStmtAsmStringPiece <: AbstractGCCAsmStmtAsmStringPiece
     ptr::CXGCCAsmStmtAsmStringPiece
 end
-

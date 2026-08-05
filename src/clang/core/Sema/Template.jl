@@ -32,4 +32,3 @@ makes it `Sema`'s current scope and disposing it restores the previous one.
 struct LocalInstantiationScope <: AbstractLocalInstantiationScope
     ptr::CXLocalInstantiationScope
 end
-

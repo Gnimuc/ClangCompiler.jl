@@ -38,4 +38,3 @@ it is neither created nor disposed here, and it lives as long as its context.
 struct DeclarationNameTable <: AbstractDeclarationNameTable
     ptr::CXDeclarationNameTable
 end
-

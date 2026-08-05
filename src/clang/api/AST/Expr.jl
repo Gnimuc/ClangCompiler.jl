@@ -987,8 +987,7 @@ function CStyleCastExpr(ctx::ASTContext, path_size::Integer, has_fp_features::Bo
     return CStyleCastExpr(clang_CStyleCastExpr_CreateEmpty(ctx, path_size, has_fp_features))
 end
 
-function CStyleCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind,
-                        op::AbstractExpr)
+function CStyleCastExpr(ctx::ASTContext, ty::QualType, vk::CXExprValueKind, k::CXCastKind, op::AbstractExpr)
     @check_ptrs ctx op
     return CStyleCastExpr(clang_CStyleCastExpr_CreateWithNoTypeInfo(ctx, ty, vk, k, op))
 end
@@ -1120,8 +1119,7 @@ end
 # `Expr::getValueKindForType` is static; `ty` is the queried type.
 getValueKindForType(ty::QualType) = clang_Expr_getValueKindForType(ty)
 
-function isNullPointerConstant(x::AbstractExpr, ctx::ASTContext,
-                               npc::CXExpr_NullPointerConstantValueDependence)
+function isNullPointerConstant(x::AbstractExpr, ctx::ASTContext, npc::CXExpr_NullPointerConstantValueDependence)
     @check_ptrs x ctx
     return clang_Expr_isNullPointerConstant(x, ctx, npc)
 end
@@ -1162,8 +1160,7 @@ function EvaluateAsLValue(x::AbstractExpr, ctx::ASTContext, in_constant_context:
 end
 
 # Owned APValue (dispose) when `x` is a constant expression, else wraps C_NULL.
-function EvaluateAsConstantExpr(x::AbstractExpr, ctx::ASTContext,
-                                kind::CXExpr_ConstantExprKind=CXExpr_ConstantExprKind_Normal)
+function EvaluateAsConstantExpr(x::AbstractExpr, ctx::ASTContext, kind::CXExpr_ConstantExprKind=CXExpr_ConstantExprKind_Normal)
     @check_ptrs x ctx
     return APValue(clang_Expr_EvaluateAsConstantExpr(x, ctx, kind))
 end
@@ -1225,8 +1222,7 @@ function getOpForCompoundAssignment(opc::CXBinaryOperatorKind)
     return clang_BinaryOperator_getOpForCompoundAssignment(opc)
 end
 
-function isNullPointerArithmeticExtension(ctx::ASTContext, opc::CXBinaryOperatorKind,
-                                          lhs::AbstractExpr, rhs::AbstractExpr)
+function isNullPointerArithmeticExtension(ctx::ASTContext, opc::CXBinaryOperatorKind, lhs::AbstractExpr, rhs::AbstractExpr)
     @check_ptrs ctx lhs rhs
     return clang_BinaryOperator_isNullPointerArithmeticExtension(ctx, opc, lhs, rhs)
 end
@@ -2475,13 +2471,11 @@ Upstream handles only narrow literals and walks the concatenated tokens assertin
 out-params — the index of the token holding the byte and the byte's offset inside that
 token — are not exposed.
 """
-function getLocationOfByte(x::AbstractStringLiteral, byteno::Integer, sm::SourceManager,
-                           features::LangOptions, target::TargetInfo)
+function getLocationOfByte(x::AbstractStringLiteral, byteno::Integer, sm::SourceManager, features::LangOptions, target::TargetInfo)
     @check_ptrs x sm features target
     @assert isOrdinary(x) || isUTF8(x) || isUnevaluated(x) "only narrow string literals are supported"
     @assert 0 <= byteno < getByteLength(x) "byte index $byteno out of range"
-    return SourceLocation(clang_StringLiteral_getLocationOfByte(x, byteno, sm, features,
-                                                                target))
+    return SourceLocation(clang_StringLiteral_getLocationOfByte(x, byteno, sm, features, target))
 end
 
 # PredefinedExpr
@@ -3535,8 +3529,7 @@ result is owned — `dispose` it after use. The constant evaluator asserts that 
 value-dependent, so that precondition is restated here. The notes explaining a failure are
 not exposed.
 """
-function EvaluateAsInitializer(x::AbstractExpr, ctx::ASTContext, vd::AbstractVarDecl,
-                               is_constant_init::Bool)
+function EvaluateAsInitializer(x::AbstractExpr, ctx::ASTContext, vd::AbstractVarDecl, is_constant_init::Bool)
     @check_ptrs x ctx vd
     @assert !isValueDependent(x) "expression must not be value-dependent"
     return APValue(clang_Expr_EvaluateAsInitializer(x, ctx, vd, is_constant_init))
@@ -3555,18 +3548,14 @@ The returned `APValue` wraps `C_NULL` when `x` does not fold (check `.ptr`); a n
 result is owned — `dispose` it after use. The constant evaluator asserts that `x` is not
 value-dependent, so that precondition is restated here.
 """
-function EvaluateWithSubstitution(x::AbstractExpr, ctx::ASTContext,
-                                  callee::AbstractFunctionDecl,
-                                  args::AbstractVector{<:AbstractExpr},
-                                  this::Union{Nothing,AbstractExpr}=nothing)
+function EvaluateWithSubstitution(x::AbstractExpr, ctx::ASTContext, callee::AbstractFunctionDecl, args::AbstractVector{<:AbstractExpr}, this::Union{Nothing,AbstractExpr}=nothing)
     @check_ptrs x ctx callee
     @assert !isValueDependent(x) "expression must not be value-dependent"
     @assert all(e -> e.ptr != C_NULL, args) "every substituted argument must be non-NULL"
     @assert length(args) <= getNumParams(callee) "more arguments than callee has parameters"
     ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in args]
     this_ptr = this === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, this)
-    return APValue(clang_Expr_EvaluateWithSubstitution(x, ctx, callee, ptrs, length(ptrs),
-                                                       this_ptr))
+    return APValue(clang_Expr_EvaluateWithSubstitution(x, ctx, callee, ptrs, length(ptrs), this_ptr))
 end
 
 # CallExpr
@@ -3669,8 +3658,7 @@ Replace the `i`-th initializer of `x` (0-based) with `val` and return the one it
 An `i` past the end extends the list with null entries first, in which case the returned
 carrier wraps `C_NULL` (check `.ptr`).
 """
-function updateInit(x::AbstractInitListExpr, ctx::ASTContext, i::Integer,
-                    val::AbstractExpr)
+function updateInit(x::AbstractInitListExpr, ctx::ASTContext, i::Integer, val::AbstractExpr)
     @check_ptrs x ctx val
     @assert i >= 0 "initializer index must be non-negative"
     return Expr_(clang_InitListExpr_updateInit(x, ctx, i, val))
@@ -3740,8 +3728,7 @@ The result is always produced — `__builtin_LINE`/`__builtin_COLUMN` fold to in
 `__builtin_FILE`/`__builtin_FUNCTION` to the address of a string literal. This function
 allocates and one should call `dispose` to release the resources after using this object.
 """
-function EvaluateInContext(x::AbstractSourceLocExpr, ctx::ASTContext,
-                           default::Union{Nothing,AbstractExpr}=nothing)
+function EvaluateInContext(x::AbstractSourceLocExpr, ctx::ASTContext, default::Union{Nothing,AbstractExpr}=nothing)
     @check_ptrs x ctx
     default_ptr = default === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, default)
     return APValue(clang_SourceLocExpr_EvaluateInContext(x, ctx, default_ptr))
@@ -3841,13 +3828,10 @@ pass `0` for "no override", the only value that leaves `hasStoredFPFeatures` fal
 constructor asserts the opcode is not a compound assignment — those go through the
 `CompoundAssignOperator` factory — so the precondition is restated here.
 """
-function BinaryOperator(ctx::ASTContext, lhs::AbstractExpr, rhs::AbstractExpr,
-                        opc::CXBinaryOperatorKind, res_ty::QualType, vk::CXExprValueKind,
-                        ok::CXExprObjectKind, op_loc::SourceLocation, fp_features::Integer)
+function BinaryOperator(ctx::ASTContext, lhs::AbstractExpr, rhs::AbstractExpr, opc::CXBinaryOperatorKind, res_ty::QualType, vk::CXExprValueKind, ok::CXExprObjectKind, op_loc::SourceLocation, fp_features::Integer)
     @check_ptrs ctx lhs rhs
     @assert !isCompoundAssignmentOp(opc) "a compound assignment needs CompoundAssignOperator"
-    return BinaryOperator(clang_BinaryOperator_Create(ctx, lhs, rhs, opc, res_ty, vk, ok,
-                                                      op_loc, fp_features))
+    return BinaryOperator(clang_BinaryOperator_Create(ctx, lhs, rhs, opc, res_ty, vk, ok, op_loc, fp_features))
 end
 
 """
@@ -3877,18 +3861,10 @@ Build the compound assignment `lhs opc rhs`.
 `comp_result_ty` the type of that computation's result. clang's constructor asserts `opc`
 is a compound assignment, so the precondition is restated here.
 """
-function CompoundAssignOperator(ctx::ASTContext, lhs::AbstractExpr, rhs::AbstractExpr,
-                                opc::CXBinaryOperatorKind, res_ty::QualType,
-                                vk::CXExprValueKind, ok::CXExprObjectKind,
-                                op_loc::SourceLocation, fp_features::Integer,
-                                comp_lhs_ty::QualType, comp_result_ty::QualType)
+function CompoundAssignOperator(ctx::ASTContext, lhs::AbstractExpr, rhs::AbstractExpr, opc::CXBinaryOperatorKind, res_ty::QualType, vk::CXExprValueKind, ok::CXExprObjectKind, op_loc::SourceLocation, fp_features::Integer, comp_lhs_ty::QualType, comp_result_ty::QualType)
     @check_ptrs ctx lhs rhs
     @assert isCompoundAssignmentOp(opc) "CompoundAssignOperator needs a compound-assignment opcode"
-    return CompoundAssignOperator(clang_CompoundAssignOperator_Create(ctx, lhs, rhs, opc,
-                                                                      res_ty, vk, ok,
-                                                                      op_loc, fp_features,
-                                                                      comp_lhs_ty,
-                                                                      comp_result_ty))
+    return CompoundAssignOperator(clang_CompoundAssignOperator_Create(ctx, lhs, rhs, opc, res_ty, vk, ok, op_loc, fp_features, comp_lhs_ty, comp_result_ty))
 end
 
 # UnaryOperator
@@ -3902,12 +3878,9 @@ Build the unary expression `opc input` of type `ty`, with `loc` the operator's l
 `can_overflow` records whether the operation may signed-overflow. `fp_features` is the
 `clang::FPOptionsOverride` opaque encoding: pass `0` for "no override".
 """
-function UnaryOperator(ctx::ASTContext, input::AbstractExpr, opc::CXUnaryOperatorKind,
-                       ty::QualType, vk::CXExprValueKind, ok::CXExprObjectKind,
-                       loc::SourceLocation, can_overflow::Bool, fp_features::Integer)
+function UnaryOperator(ctx::ASTContext, input::AbstractExpr, opc::CXUnaryOperatorKind, ty::QualType, vk::CXExprValueKind, ok::CXExprObjectKind, loc::SourceLocation, can_overflow::Bool, fp_features::Integer)
     @check_ptrs ctx input
-    return UnaryOperator(clang_UnaryOperator_Create(ctx, input, opc, ty, vk, ok, loc,
-                                                    can_overflow, fp_features))
+    return UnaryOperator(clang_UnaryOperator_Create(ctx, input, opc, ty, vk, ok, loc, can_overflow, fp_features))
 end
 
 # ImplicitCastExpr
@@ -3920,11 +3893,9 @@ The inheritance path is always empty — `clang::ImplicitCastExpr::Create`'s opt
 `CXXCastPath` is not exposed — so a base-class conversion built this way carries no path.
 `fp_features` is the `clang::FPOptionsOverride` opaque encoding: pass `0` for "no override".
 """
-function ImplicitCastExpr(ctx::ASTContext, ty::QualType, kind::CXCastKind,
-                          op::AbstractExpr, vk::CXExprValueKind, fp_features::Integer)
+function ImplicitCastExpr(ctx::ASTContext, ty::QualType, kind::CXCastKind, op::AbstractExpr, vk::CXExprValueKind, fp_features::Integer)
     @check_ptrs ctx op
-    return ImplicitCastExpr(clang_ImplicitCastExpr_Create(ctx, ty, kind, op, vk,
-                                                          fp_features))
+    return ImplicitCastExpr(clang_ImplicitCastExpr_Create(ctx, ty, kind, op, vk, fp_features))
 end
 
 """
@@ -3938,8 +3909,7 @@ The operand slot and the cast kind are left uninitialized: call `setSubExpr` and
 """
 function ImplicitCastExpr(ctx::ASTContext, path_size::Integer, has_fp_features::Bool)
     @check_ptrs ctx
-    return ImplicitCastExpr(clang_ImplicitCastExpr_CreateEmpty(ctx, path_size,
-                                                               has_fp_features))
+    return ImplicitCastExpr(clang_ImplicitCastExpr_CreateEmpty(ctx, path_size, has_fp_features))
 end
 
 # MemberExpr
@@ -3953,12 +3923,9 @@ Build the implicit member access `base.member` (or `base->member` when `is_arrow
 non-NULL. The access it builds carries no nested-name qualifier, no explicit template
 arguments and no written source locations.
 """
-function MemberExpr(ctx::ASTContext, base::AbstractExpr, is_arrow::Bool,
-                    member::AbstractValueDecl, ty::QualType, vk::CXExprValueKind,
-                    ok::CXExprObjectKind)
+function MemberExpr(ctx::ASTContext, base::AbstractExpr, is_arrow::Bool, member::AbstractValueDecl, ty::QualType, vk::CXExprValueKind, ok::CXExprObjectKind)
     @check_ptrs ctx base member
-    return MemberExpr(clang_MemberExpr_CreateImplicit(ctx, base, is_arrow, member, ty, vk,
-                                                      ok))
+    return MemberExpr(clang_MemberExpr_CreateImplicit(ctx, base, is_arrow, member, ty, vk, ok))
 end
 
 # PredefinedExpr
@@ -3971,13 +3938,10 @@ Build the predefined identifier `kind` (`__func__`, `__PRETTY_FUNCTION__`, …) 
 Pass `nothing` for `sl` to build an expression with no function-name literal, in which case
 `getFunctionName` reports a NULL carrier.
 """
-function PredefinedExpr(ctx::ASTContext, loc::SourceLocation, fn_ty::QualType,
-                        kind::CXPredefinedIdentKind, is_transparent::Bool,
-                        sl::Union{Nothing,AbstractStringLiteral}=nothing)
+function PredefinedExpr(ctx::ASTContext, loc::SourceLocation, fn_ty::QualType, kind::CXPredefinedIdentKind, is_transparent::Bool, sl::Union{Nothing,AbstractStringLiteral}=nothing)
     @check_ptrs ctx
     sl_ptr = sl === nothing ? CXStringLiteral(C_NULL) : Base.unsafe_convert(CXStringLiteral, sl)
-    return PredefinedExpr(clang_PredefinedExpr_Create(ctx, loc, fn_ty, kind, is_transparent,
-                                                      sl_ptr))
+    return PredefinedExpr(clang_PredefinedExpr_Create(ctx, loc, fn_ty, kind, is_transparent, sl_ptr))
 end
 
 # ParenListExpr
@@ -3990,13 +3954,11 @@ Build the parenthesised list `(exprs...)`.
 The expressions are copied into the node's trailing storage, so `exprs` need not outlive
 the call and may be empty. No slot may be NULL, which this restates.
 """
-function ParenListExpr(ctx::ASTContext, lparen_loc::SourceLocation,
-                       exprs::Vector{<:AbstractExpr}, rparen_loc::SourceLocation)
+function ParenListExpr(ctx::ASTContext, lparen_loc::SourceLocation, exprs::Vector{<:AbstractExpr}, rparen_loc::SourceLocation)
     @check_ptrs ctx
     @assert all(e -> e.ptr != C_NULL, exprs) "a paren list holds no null slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
-    return ParenListExpr(clang_ParenListExpr_Create(ctx, lparen_loc, buf, length(buf),
-                                                    rparen_loc))
+    return ParenListExpr(clang_ParenListExpr_Create(ctx, lparen_loc, buf, length(buf), rparen_loc))
 end
 
 # ConstantExpr
@@ -4038,14 +4000,12 @@ The subexpressions are copied into the node's trailing storage, so `sub_exprs` n
 outlive the call and may be empty. clang's constructor dereferences `ty` and asserts both
 that it is non-NULL and that no subexpression slot is NULL, so both are restated here.
 """
-function RecoveryExpr(ctx::ASTContext, ty::QualType, begin_loc::SourceLocation,
-                      end_loc::SourceLocation, sub_exprs::Vector{<:AbstractExpr})
+function RecoveryExpr(ctx::ASTContext, ty::QualType, begin_loc::SourceLocation, end_loc::SourceLocation, sub_exprs::Vector{<:AbstractExpr})
     @check_ptrs ctx
     @assert ty.ptr != C_NULL "a RecoveryExpr needs a non-NULL type"
     @assert all(e -> e.ptr != C_NULL, sub_exprs) "a RecoveryExpr holds no null subexpression"
     buf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in sub_exprs]
-    return RecoveryExpr(clang_RecoveryExpr_Create(ctx, ty, begin_loc, end_loc, buf,
-                                                  length(buf)))
+    return RecoveryExpr(clang_RecoveryExpr_Create(ctx, ty, begin_loc, end_loc, buf, length(buf)))
 end
 
 """
@@ -4318,12 +4278,9 @@ the `-fstrict-flex-arrays` rule `level`.
 how the interpreter was configured. Total: an expression that is not a member, declaration or ivar
 reference, or whose type is neither a constant nor an incomplete array, answers `false`.
 """
-function isFlexibleArrayMemberLike(x::AbstractExpr, ctx::ASTContext,
-                                   level::CXStrictFlexArraysLevelKind,
-                                   ignore_template_or_macro_substitution::Bool=false)
+function isFlexibleArrayMemberLike(x::AbstractExpr, ctx::ASTContext, level::CXStrictFlexArraysLevelKind, ignore_template_or_macro_substitution::Bool=false)
     @check_ptrs x ctx
-    return clang_Expr_isFlexibleArrayMemberLike(x, ctx, level,
-                                                ignore_template_or_macro_substitution)
+    return clang_Expr_isFlexibleArrayMemberLike(x, ctx, level, ignore_template_or_macro_substitution)
 end
 
 # StringLiteral (cont.)
@@ -4338,16 +4295,13 @@ asserts that `ty` is a constant array type, and that the byte count is a whole m
 character width — so a wide, UTF-16 or UTF-32 `kind` needs `str` sized accordingly. The node is
 arena-allocated: there is no `dispose`.
 """
-function StringLiteral(ctx::ASTContext, str::AbstractString, kind::CXStringLiteralKind,
-                       pascal::Bool, ty::QualType, locs::Vector{SourceLocation})
+function StringLiteral(ctx::ASTContext, str::AbstractString, kind::CXStringLiteralKind, pascal::Bool, ty::QualType, locs::Vector{SourceLocation})
     @check_ptrs ctx ty
     @assert !isempty(locs) "a string literal spans at least one token"
-    @assert (kind == CXStringLiteralKind_Unevaluated ||
-             isConstantArrayType(getTypePtr(ty))) "an evaluated string literal's type must be a constant array type"
+    @assert (kind == CXStringLiteralKind_Unevaluated || isConstantArrayType(getTypePtr(ty))) "an evaluated string literal's type must be a constant array type"
     s = String(str)
     buf = CXSourceLocation_[Base.unsafe_convert(CXSourceLocation_, l) for l in locs]
-    return StringLiteral(clang_StringLiteral_Create(ctx, s, ncodeunits(s), kind, pascal, ty, buf,
-                                                    length(buf)))
+    return StringLiteral(clang_StringLiteral_Create(ctx, s, ncodeunits(s), kind, pascal, ty, buf, length(buf)))
 end
 
 """
@@ -4359,11 +4313,9 @@ Build the empty string-literal shell clang deserializes into.
 `getNumConcatenated`, `getLength` and `getCharByteWidth`; the character bytes, the token locations
 and the expression's type are left uninitialized, so nothing else may be read straight away.
 """
-function StringLiteral(ctx::ASTContext, num_concatenated::Integer, len::Integer,
-                       char_byte_width::Integer)
+function StringLiteral(ctx::ASTContext, num_concatenated::Integer, len::Integer, char_byte_width::Integer)
     @check_ptrs ctx
-    return StringLiteral(clang_StringLiteral_CreateEmpty(ctx, num_concatenated, len,
-                                                         char_byte_width))
+    return StringLiteral(clang_StringLiteral_CreateEmpty(ctx, num_concatenated, len, char_byte_width))
 end
 
 # PredefinedExpr (cont.)
@@ -4422,12 +4374,9 @@ Build the empty member-access shell clang deserializes into. The base, the membe
 every trailing slot the four shape flags reserve are left uninitialized, so only the node's statement
 class may be read straight away.
 """
-function MemberExpr(ctx::ASTContext, has_qualifier::Bool, has_found_decl::Bool,
-                    has_template_kw_and_args_info::Bool, num_template_args::Integer)
+function MemberExpr(ctx::ASTContext, has_qualifier::Bool, has_found_decl::Bool, has_template_kw_and_args_info::Bool, num_template_args::Integer)
     @check_ptrs ctx
-    return MemberExpr(clang_MemberExpr_CreateEmpty(ctx, has_qualifier, has_found_decl,
-                                                   has_template_kw_and_args_info,
-                                                   num_template_args))
+    return MemberExpr(clang_MemberExpr_CreateEmpty(ctx, has_qualifier, has_found_decl, has_template_kw_and_args_info, num_template_args))
 end
 
 # CompoundAssignOperator (cont.)
@@ -4452,8 +4401,7 @@ Build the `.name` designator of a designated initializer.
 function allocates and one should call `dispose` to release the resources after using this object.
 The designator `getDesignator` hands back is a borrowed interior pointer and must never be disposed.
 """
-function CreateFieldDesignator(name::IdentifierInfo, dot_loc::SourceLocation,
-                               field_loc::SourceLocation)
+function CreateFieldDesignator(name::IdentifierInfo, dot_loc::SourceLocation, field_loc::SourceLocation)
     @check_ptrs name
     return Designator(clang_Designator_CreateFieldDesignator(name, dot_loc, field_loc))
 end
@@ -4467,8 +4415,7 @@ expression in the owning `DesignatedInitExpr`'s subexpression array, not the val
 This function allocates and one should call `dispose` to release the resources after using this
 object.
 """
-function CreateArrayDesignator(index::Integer, lbracket_loc::SourceLocation,
-                               rbracket_loc::SourceLocation)
+function CreateArrayDesignator(index::Integer, lbracket_loc::SourceLocation, rbracket_loc::SourceLocation)
     return Designator(clang_Designator_CreateArrayDesignator(index, lbracket_loc, rbracket_loc))
 end
 
@@ -4482,10 +4429,8 @@ the two index expressions in the owning `DesignatedInitExpr`'s subexpression arr
 This function allocates and one should call `dispose` to release the resources after using this
 object.
 """
-function CreateArrayRangeDesignator(index::Integer, lbracket_loc::SourceLocation,
-                                    ellipsis_loc::SourceLocation, rbracket_loc::SourceLocation)
-    return Designator(clang_Designator_CreateArrayRangeDesignator(index, lbracket_loc, ellipsis_loc,
-                                                                  rbracket_loc))
+function CreateArrayRangeDesignator(index::Integer, lbracket_loc::SourceLocation, ellipsis_loc::SourceLocation, rbracket_loc::SourceLocation)
+    return Designator(clang_Designator_CreateArrayRangeDesignator(index, lbracket_loc, ellipsis_loc, rbracket_loc))
 end
 
 # Release a Designator produced by `CreateFieldDesignator`, `CreateArrayDesignator` or
@@ -4517,8 +4462,7 @@ The designators are copied, so neither `designators` nor the objects it names ne
 and an owned one stays the caller's to `dispose`. This does not touch `x`'s index-expression slots,
 whose count was fixed when the node was built.
 """
-function setDesignators(x::AbstractDesignatedInitExpr, ctx::ASTContext,
-                        designators::Vector{Designator})
+function setDesignators(x::AbstractDesignatedInitExpr, ctx::ASTContext, designators::Vector{Designator})
     @check_ptrs x ctx
     @assert all(d -> d.ptr != C_NULL, designators) "a designator list holds no null slot"
     buf = CXDesignator[Base.unsafe_convert(CXDesignator, d) for d in designators]
@@ -4574,14 +4518,11 @@ encoding `getFPFeatures` reads back: pass `0` for "no override", the only value 
 `clang::CallExpr::ADLCallKind` that `usesADL` reads back. Neither `fn` nor any argument slot
 may be NULL, which this restates.
 """
-function CallExpr(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:AbstractExpr},
-                  ty::QualType, vk::CXExprValueKind, rparen_loc::SourceLocation,
-                  fp_features::Integer, min_num_args::Integer, uses_adl::Bool)
+function CallExpr(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:AbstractExpr}, ty::QualType, vk::CXExprValueKind, rparen_loc::SourceLocation, fp_features::Integer, min_num_args::Integer, uses_adl::Bool)
     @check_ptrs ctx fn
     @assert all(a -> a.ptr != C_NULL, args) "a call expression holds no null argument slot"
     buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
-    return CallExpr(clang_CallExpr_Create(ctx, fn, buf, length(buf), ty, vk, rparen_loc,
-                                          fp_features, min_num_args, uses_adl))
+    return CallExpr(clang_CallExpr_Create(ctx, fn, buf, length(buf), ty, vk, rparen_loc, fp_features, min_num_args, uses_adl))
 end
 
 # DeclRefExpr (cont.)
@@ -4594,8 +4535,7 @@ parameter, the bit `isCapturedByCopyInLambdaWithExplicitObjectParameter` reads b
 Setting it also recomputes the node's dependence bits, which is why the `ASTContext` is
 required.
 """
-function setCapturedByCopyInLambdaWithExplicitObjectParameter(x::AbstractDeclRefExpr,
-                                                              set::Bool, ctx::ASTContext)
+function setCapturedByCopyInLambdaWithExplicitObjectParameter(x::AbstractDeclRefExpr, set::Bool, ctx::ASTContext)
     @check_ptrs x ctx
     clang_DeclRefExpr_setCapturedByCopyInLambdaWithExplicitObjectParameter(x, set, ctx)
     return nothing
@@ -4679,13 +4619,9 @@ Build a `__builtin_sycl_unique_stable_name(T)` node over the type `tsi` describe
 clang fixes the node's type to `const char *`. `tsi` may not be NULL — clang's constructor
 asserts on it — which `@check_ptrs` restates.
 """
-function SYCLUniqueStableNameExpr(ctx::ASTContext, op_loc::SourceLocation,
-                                  lparen::SourceLocation, rparen::SourceLocation,
-                                  tsi::TypeSourceInfo)
+function SYCLUniqueStableNameExpr(ctx::ASTContext, op_loc::SourceLocation, lparen::SourceLocation, rparen::SourceLocation, tsi::TypeSourceInfo)
     @check_ptrs ctx tsi
-    return SYCLUniqueStableNameExpr(clang_SYCLUniqueStableNameExpr_Create(ctx, op_loc,
-                                                                          lparen, rparen,
-                                                                          tsi))
+    return SYCLUniqueStableNameExpr(clang_SYCLUniqueStableNameExpr_Create(ctx, op_loc, lparen, rparen, tsi))
 end
 
 """
@@ -4768,13 +4704,11 @@ integer rather than through the `GenericValue` bridge. Unlike the `FixedPointLit
 deserialization shell, every slot this node reads is written here. The node is
 ASTContext-arena memory; there is no `dispose`.
 """
-function FixedPointLiteral(ctx::ASTContext, value::Integer, bit_width::Integer,
-                           ty::QualType, loc::SourceLocation, scale::Integer)
+function FixedPointLiteral(ctx::ASTContext, value::Integer, bit_width::Integer, ty::QualType, loc::SourceLocation, scale::Integer)
     @check_ptrs ctx
     @assert bit_width > 0 "a fixed-point literal needs a non-zero bit width"
     @assert ty.ptr != C_NULL "a fixed-point literal needs a non-NULL type"
-    return FixedPointLiteral(clang_FixedPointLiteral_CreateFromRawInt(ctx, value, bit_width,
-                                                                      ty, loc, scale))
+    return FixedPointLiteral(clang_FixedPointLiteral_CreateFromRawInt(ctx, value, bit_width, ty, loc, scale))
 end
 
 """
@@ -4859,8 +4793,7 @@ designators in `ds`, growing the designator array in `ctx`'s arena.
 Unless `length(ds) == 1` the array is reallocated, which dangles every `Designator`
 previously obtained from `x`.
 """
-function ExpandDesignator(x::AbstractDesignatedInitExpr, ctx::ASTContext, i::Integer,
-                          ds::Vector{<:AbstractDesignator})
+function ExpandDesignator(x::AbstractDesignatedInitExpr, ctx::ASTContext, i::Integer, ds::Vector{<:AbstractDesignator})
     @check_ptrs x ctx
     @assert 0 <= i < size(x) "designator index $i out of range"
     @assert all(d -> d.ptr != C_NULL, ds) "a designator list holds no null slot"
@@ -4907,13 +4840,10 @@ Build an `__builtin_astype` reinterpretation of `src` as `ty`.
 `AsTypeExpr`; this is the way to obtain one. The node is ASTContext-arena memory; there is
 no `dispose`.
 """
-function AsTypeExpr(ctx::ASTContext, src::AbstractExpr, ty::QualType, vk::CXExprValueKind,
-                    ok::CXExprObjectKind, builtin_loc::SourceLocation,
-                    rparen_loc::SourceLocation)
+function AsTypeExpr(ctx::ASTContext, src::AbstractExpr, ty::QualType, vk::CXExprValueKind, ok::CXExprObjectKind, builtin_loc::SourceLocation, rparen_loc::SourceLocation)
     @check_ptrs ctx src
     @assert ty.ptr != C_NULL "an AsTypeExpr needs a non-NULL destination type"
-    return AsTypeExpr(clang_AsTypeExpr_Create(ctx, src, ty, vk, ok, builtin_loc,
-                                              rparen_loc))
+    return AsTypeExpr(clang_AsTypeExpr_Create(ctx, src, ty, vk, ok, builtin_loc, rparen_loc))
 end
 
 """
@@ -5020,8 +4950,7 @@ This is the status-reporting form of the two-argument `EvaluateAsRValue`: the fo
 lands in `result` (`getVal`) next to the `hasSideEffects` and `hasUndefinedBehavior` flags,
 which the two-argument form discards. `result` holds whatever a failed fold left behind.
 """
-function EvaluateAsRValue(x::AbstractExpr, ctx::ASTContext, result::AbstractEvalResult,
-                          in_constant_context::Bool)
+function EvaluateAsRValue(x::AbstractExpr, ctx::ASTContext, result::AbstractEvalResult, in_constant_context::Bool)
     @check_ptrs x ctx result
     return clang_Expr_EvaluateAsRValueIntoResult(x, ctx, in_constant_context, result)
 end
@@ -5035,8 +4964,7 @@ succeeded.
 This is the only evaluator that leaves an lvalue in `result`, so it is the one that makes
 `isGlobalLValue` callable.
 """
-function EvaluateAsLValue(x::AbstractExpr, ctx::ASTContext, result::AbstractEvalResult,
-                          in_constant_context::Bool)
+function EvaluateAsLValue(x::AbstractExpr, ctx::ASTContext, result::AbstractEvalResult, in_constant_context::Bool)
     @check_ptrs x ctx result
     return clang_Expr_EvaluateAsLValueIntoResult(x, ctx, in_constant_context, result)
 end
@@ -5051,9 +4979,7 @@ and return whether the read succeeded together with the text it produced.
 The string is empty when the first element is `false`. `x` only scopes the evaluation — it
 need not be related to either operand — and `status` collects the evaluation's flags.
 """
-function EvaluateCharRangeAsString(x::AbstractExpr, size_expr::AbstractExpr,
-                                   ptr_expr::AbstractExpr, ctx::ASTContext,
-                                   status::AbstractEvalResult)
+function EvaluateCharRangeAsString(x::AbstractExpr, size_expr::AbstractExpr, ptr_expr::AbstractExpr, ctx::ASTContext, status::AbstractEvalResult)
     @check_ptrs x size_expr ptr_expr ctx status
     ok = Ref{Bool}(false)
     cxs = clang_Expr_EvaluateCharRangeAsString(x, size_expr, ptr_expr, ctx, status, ok)
@@ -5071,13 +4997,10 @@ qualifier and the flag bits themselves are left uninitialized, so only the node'
 class may be read straight away. `clang::DeclRefExpr::CreateEmpty` asserts that template
 arguments come with the template-keyword info.
 """
-function DeclRefExpr(ctx::ASTContext, has_qualifier::Bool, has_found_decl::Bool,
-                     has_template_kw_and_args_info::Bool, num_template_args::Integer)
+function DeclRefExpr(ctx::ASTContext, has_qualifier::Bool, has_found_decl::Bool, has_template_kw_and_args_info::Bool, num_template_args::Integer)
     @check_ptrs ctx
     @assert num_template_args == 0 || has_template_kw_and_args_info "template arguments need the template-keyword info"
-    return DeclRefExpr(clang_DeclRefExpr_CreateEmpty(ctx, has_qualifier, has_found_decl,
-                                                     has_template_kw_and_args_info,
-                                                     num_template_args))
+    return DeclRefExpr(clang_DeclRefExpr_CreateEmpty(ctx, has_qualifier, has_found_decl, has_template_kw_and_args_info, num_template_args))
 end
 
 # FloatingLiteral (cont.)

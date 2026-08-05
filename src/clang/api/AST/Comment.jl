@@ -923,8 +923,7 @@ location it starts at; [`getCloseName`](@ref) reads the name back.
 The C++ setter stores the `StringRef` it is handed, so `name` is copied into `ctx`'s
 arena first — `ctx` must be the `ASTContext` that owns `x`.
 """
-function setCloseName(x::AbstractVerbatimBlockComment, ctx::ASTContext, name::AbstractString,
-                      loc::SourceLocation)
+function setCloseName(x::AbstractVerbatimBlockComment, ctx::ASTContext, name::AbstractString, loc::SourceLocation)
     @check_ptrs x ctx
     return clang_VerbatimBlockComment_setCloseName(x, ctx, name, loc)
 end
@@ -938,8 +937,7 @@ back, and they are also the node's children.
 The C++ setter stores the `ArrayRef` it is handed, so the array is copied into `ctx`'s
 arena first — `ctx` must be the `ASTContext` that owns `x`. No line may be null.
 """
-function setLines(x::AbstractVerbatimBlockComment, ctx::ASTContext,
-                  lines::AbstractVector{<:AbstractVerbatimBlockLineComment})
+function setLines(x::AbstractVerbatimBlockComment, ctx::ASTContext, lines::AbstractVector{<:AbstractVerbatimBlockLineComment})
     @check_ptrs x ctx
     buf = CXVerbatimBlockLineComment[Base.unsafe_convert(CXVerbatimBlockLineComment, l) for l in lines]
     @assert all(p -> p != C_NULL, buf) "every verbatim-block line must be non-NULL"
@@ -959,8 +957,7 @@ non-empty, because the setter asserts `isPositionValid()`. It is also what
 [`getParamName`](@ref) walks the owning `FullComment`'s template parameter list with, so
 a position that no longer matches that list makes `getParamName` undefined.
 """
-function setPosition(x::AbstractTParamCommandComment, ctx::ASTContext,
-                     position::AbstractVector{<:Integer})
+function setPosition(x::AbstractTParamCommandComment, ctx::ASTContext, position::AbstractVector{<:Integer})
     @check_ptrs x ctx
     @assert !isempty(position) "a template parameter position must have at least one level"
     buf = Cuint[p for p in position]
@@ -1007,21 +1004,14 @@ so the array and both strings are copied into `ctx`'s arena; `ctx` must be the `
 that owns `x`. The setter also moves the tag's range end to the last attribute's value-range
 end, or to its name end when that range is invalid.
 """
-function setAttrs(x::AbstractHTMLStartTagComment, ctx::ASTContext,
-                  name_loc_begins::AbstractVector{SourceLocation},
-                  names::AbstractVector{<:AbstractString},
-                  equals_locs::AbstractVector{SourceLocation},
-                  value_ranges::AbstractVector{SourceRange},
-                  values::AbstractVector{<:AbstractString})
+function setAttrs(x::AbstractHTMLStartTagComment, ctx::ASTContext, name_loc_begins::AbstractVector{SourceLocation}, names::AbstractVector{<:AbstractString}, equals_locs::AbstractVector{SourceLocation}, value_ranges::AbstractVector{SourceRange}, values::AbstractVector{<:AbstractString})
     @check_ptrs x ctx
     n = length(names)
-    @assert length(name_loc_begins) == n && length(equals_locs) == n &&
-            length(value_ranges) == n && length(values) == n "every attribute component collection must have the same length"
+    @assert length(name_loc_begins) == n && length(equals_locs) == n && length(value_ranges) == n && length(values) == n "every attribute component collection must have the same length"
     nb = CXSourceLocation_[Base.unsafe_convert(CXSourceLocation_, l) for l in name_loc_begins]
     el = CXSourceLocation_[Base.unsafe_convert(CXSourceLocation_, l) for l in equals_locs]
     vr = CXSourceRange_[CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr) for r in value_ranges]
-    return clang_HTMLStartTagComment_setAttrs(x, ctx, nb, String[s for s in names], el, vr,
-                                              String[s for s in values], n)
+    return clang_HTMLStartTagComment_setAttrs(x, ctx, nb, String[s for s in names], el, vr, String[s for s in values], n)
 end
 
 """
@@ -1035,9 +1025,7 @@ and the texts are copied into `ctx`'s arena; `ctx` must be the `ASTContext` that
 The setter also extends the command's source range to the last argument's range end when
 that end is valid.
 """
-function setArgs(x::AbstractBlockCommandComment, ctx::ASTContext,
-                 texts::AbstractVector{<:AbstractString},
-                 ranges::AbstractVector{SourceRange})
+function setArgs(x::AbstractBlockCommandComment, ctx::ASTContext, texts::AbstractVector{<:AbstractString}, ranges::AbstractVector{SourceRange})
     @check_ptrs x ctx
     @assert length(texts) == length(ranges) "argument texts and ranges must have the same length"
     rs = CXSourceRange_[CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr) for r in ranges]
@@ -1053,8 +1041,7 @@ the block delimiters — as a documentation tool would present it.
 `diags` receives any warning raised while parsing the comment. Compare
 [`getRawText`](@ref), which returns the bytes exactly as written.
 """
-function getFormattedText(x::AbstractRawComment, src_mgr::AbstractSourceManager,
-                          diags::AbstractDiagnosticsEngine)
+function getFormattedText(x::AbstractRawComment, src_mgr::AbstractSourceManager, diags::AbstractDiagnosticsEngine)
     @check_ptrs x src_mgr diags
     return get_string(clang_RawComment_getFormattedText(x, src_mgr, diags))
 end

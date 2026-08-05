@@ -9,8 +9,7 @@ This function allocates and one should call `dispose` to release the resources a
 this object. [`AddSearchPath`](@ref) and [`AddSystemSearchPath`](@ref) copy the value into the
 search, so it may be disposed as soon as either has been called.
 """
-function DirectoryLookup(dir::AbstractDirectoryEntryRef, dt::CXCharacteristicKind,
-                         is_framework::Bool=false)
+function DirectoryLookup(dir::AbstractDirectoryEntryRef, dt::CXCharacteristicKind, is_framework::Bool=false)
     @check_ptrs dir
     return DirectoryLookup(clang_DirectoryLookup_create(dir, dt, is_framework))
 end

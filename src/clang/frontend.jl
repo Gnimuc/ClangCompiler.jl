@@ -44,7 +44,6 @@ function print_stats_all(ci::CompilerInstance)
 end
 
 # CompilerInvocation
-function create_compiler_invocation_from_cmd(src::String, args::Vector{String}=String[],
-                                             diag::DiagnosticsEngine=DiagnosticsEngine())
+function create_compiler_invocation_from_cmd(src::String, args::Vector{String}=String[], diag::DiagnosticsEngine=DiagnosticsEngine())
     return createFromCommandLine(src, args, diag)
 end

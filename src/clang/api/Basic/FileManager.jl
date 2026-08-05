@@ -30,8 +30,7 @@ Get a file entry from the file manager.
 If `open_file` is true, the file will be opened.
 If `cache_failure` is true, the failure that this file does not exist will be cached.
 """
-function getFileEntry(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
-                      cache_failure::Bool=true)
+function getFileEntry(filemgr::FileManager, filename::AbstractString; open_file::Bool=false, cache_failure::Bool=true)
     @check_ptrs filemgr
     GC.@preserve filename begin
         ref = clang_FileManager_getFileRef(filemgr, filename, open_file, cache_failure)
@@ -48,8 +47,7 @@ Return a heap-boxed `clang::FileEntryRef` for `filename`.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function getFileRef(filemgr::FileManager, filename::AbstractString; open_file::Bool=false,
-                    cache_failure::Bool=true)
+function getFileRef(filemgr::FileManager, filename::AbstractString; open_file::Bool=false, cache_failure::Bool=true)
     @check_ptrs filemgr
     ref = clang_FileManager_getFileRef(filemgr, filename, open_file, cache_failure)
     @assert ref != C_NULL "failed to create a FileEntryRef to $filename."
@@ -69,12 +67,9 @@ Both numbers cross as 64 bits on every platform — `deps/ClangExtra/CMakeLists.
 This function allocates and one should call `dispose` to release the resources after using this
 object.
 """
-function getVirtualFileRef(filemgr::FileManager, filename::AbstractString, size::Integer,
-                           modification_time::Integer)
+function getVirtualFileRef(filemgr::FileManager, filename::AbstractString, size::Integer, modification_time::Integer)
     @check_ptrs filemgr
-    ref = GC.@preserve filename clang_FileManager_getVirtualFileRef(filemgr, filename,
-                                                                    Int64(size),
-                                                                    Int64(modification_time))
+    ref = GC.@preserve filename clang_FileManager_getVirtualFileRef(filemgr, filename, Int64(size), Int64(modification_time))
     @assert ref != C_NULL "failed to create a virtual FileEntryRef for $filename."
     return FileEntryRef(ref)
 end
@@ -92,11 +87,9 @@ Open the file as a caller-owned memory buffer.
 
 This function allocates and one should call `LLVM.dispose` to release the resources after using this object.
 """
-function getBufferForFile(filemgr::FileManager, entry::FileEntryRef; is_volatile::Bool=false,
-                          requires_null_terminator::Bool=true)
+function getBufferForFile(filemgr::FileManager, entry::FileEntryRef; is_volatile::Bool=false, requires_null_terminator::Bool=true)
     @check_ptrs filemgr entry
-    buf = clang_FileManager_getBufferForFile(filemgr, entry, is_volatile,
-                                             requires_null_terminator)
+    buf = clang_FileManager_getBufferForFile(filemgr, entry, is_volatile, requires_null_terminator)
     @assert buf != C_NULL "failed to read the file into a memory buffer."
     return LLVM.MemoryBuffer(buf)
 end
@@ -121,8 +114,7 @@ This is the reference form [`DirectoryLookup`](@ref) needs; [`getDirectory`](@re
 a bare `DirectoryEntry`, which cannot be turned back into one. A non-`nothing` result allocates
 and one should call `dispose` to release the resources after using this object.
 """
-function getOptionalDirectoryRef(filemgr::FileManager, dirname::AbstractString;
-                                 cache_failure::Bool=true)
+function getOptionalDirectoryRef(filemgr::FileManager, dirname::AbstractString; cache_failure::Bool=true)
     @check_ptrs filemgr
     ref = clang_FileManager_getOptionalDirectoryRef(filemgr, dirname, cache_failure)
     return ref == C_NULL ? nothing : DirectoryEntryRef(ref)
@@ -185,8 +177,7 @@ This is the total form of [`getFileRef`](@ref) — the error is consumed rather 
 and mirrors [`getOptionalDirectoryRef`](@ref). A non-`nothing` result allocates and one should
 call `dispose` to release the resources after using this object.
 """
-function getOptionalFileRef(filemgr::FileManager, filename::AbstractString;
-                            open_file::Bool=false, cache_failure::Bool=true)
+function getOptionalFileRef(filemgr::FileManager, filename::AbstractString; open_file::Bool=false, cache_failure::Bool=true)
     @check_ptrs filemgr
     ref = clang_FileManager_getFileRef(filemgr, filename, open_file, cache_failure)
     return ref == C_NULL ? nothing : FileEntryRef(ref)

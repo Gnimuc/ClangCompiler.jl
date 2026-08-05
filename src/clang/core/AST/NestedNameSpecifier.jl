@@ -15,4 +15,3 @@ Hold a pointer to a heap-boxed `clang::NestedNameSpecifierLoc` object.
 struct NestedNameSpecifierLoc <: AbstractNestedNameSpecifierLoc
     ptr::CXNestedNameSpecifierLoc
 end
-

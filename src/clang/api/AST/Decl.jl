@@ -722,8 +722,7 @@ function setTemplateSpecializationKind(x::AbstractVarDecl, tsk::CXTemplateSpecia
     return clang_VarDecl_setTemplateSpecializationKind(x, tsk, poi)
 end
 
-function setInstantiationOfStaticDataMember(x::AbstractVarDecl, decl::AbstractVarDecl,
-                                            tsk::CXTemplateSpecializationKind)
+function setInstantiationOfStaticDataMember(x::AbstractVarDecl, decl::AbstractVarDecl, tsk::CXTemplateSpecializationKind)
     @check_ptrs x decl
     return clang_VarDecl_setInstantiationOfStaticDataMember(x, decl, tsk)
 end
@@ -1394,8 +1393,7 @@ function getMemberSpecializationInfo(x::AbstractFunctionDecl)
     return MemberSpecializationInfo(clang_FunctionDecl_getMemberSpecializationInfo(x))
 end
 
-function setInstantiationOfMemberFunction(x::AbstractFunctionDecl, decl::FunctionDecl,
-                                          tsk::CXTemplateSpecializationKind)
+function setInstantiationOfMemberFunction(x::AbstractFunctionDecl, decl::FunctionDecl, tsk::CXTemplateSpecializationKind)
     @check_ptrs x decl
     return clang_FunctionDecl_setInstantiationOfMemberFunction(x, decl, tsk)
 end
@@ -2355,8 +2353,7 @@ function NamespaceDecl(ctx::ASTContext, id::Integer)
 end
 
 # VarDecl
-function VarDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
-                 id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass)
+function VarDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass)
     @check_ptrs ctx dc id tsi
     return VarDecl(clang_VarDecl_Create(ctx, dc, start_loc, id_loc, id, ty, tsi, sc))
 end
@@ -2367,8 +2364,7 @@ function VarDecl(ctx::ASTContext, id::Integer)
 end
 
 # ImplicitParamDecl
-function ImplicitParamDecl(ctx::ASTContext, dc::AnyDeclContext, id_loc::SourceLocation,
-                           id::IdentifierInfo, ty::QualType, param_kind::CXImplicitParamKind)
+function ImplicitParamDecl(ctx::ASTContext, dc::AnyDeclContext, id_loc::SourceLocation, id::IdentifierInfo, ty::QualType, param_kind::CXImplicitParamKind)
     @check_ptrs ctx dc
     return ImplicitParamDecl(clang_ImplicitParamDecl_Create(ctx, dc, id_loc, id, ty, param_kind))
 end
@@ -2379,9 +2375,7 @@ function ImplicitParamDecl(ctx::ASTContext, id::Integer)
 end
 
 # ParmVarDecl
-function ParmVarDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
-                     id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass,
-                     def_arg::Expr_=Expr_(C_NULL))
+function ParmVarDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass, def_arg::Expr_=Expr_(C_NULL))
     @check_ptrs ctx dc id tsi
     return ParmVarDecl(clang_ParmVarDecl_Create(ctx, dc, start_loc, id_loc, id, ty, tsi, sc, def_arg))
 end
@@ -2392,12 +2386,9 @@ function ParmVarDecl(ctx::ASTContext, id::Integer)
 end
 
 # FunctionDecl
-function FunctionDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, name_loc::SourceLocation,
-                      name::DeclarationName, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass,
-                      is_inline_specified::Bool, has_written_prototype::Bool)
+function FunctionDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, name_loc::SourceLocation, name::DeclarationName, ty::QualType, tsi::TypeSourceInfo, sc::CXStorageClass, is_inline_specified::Bool, has_written_prototype::Bool)
     @check_ptrs ctx dc tsi
-    return FunctionDecl(clang_FunctionDecl_Create(ctx, dc, start_loc, name_loc, name, ty, tsi, sc,
-                                                  is_inline_specified, has_written_prototype))
+    return FunctionDecl(clang_FunctionDecl_Create(ctx, dc, start_loc, name_loc, name, ty, tsi, sc, is_inline_specified, has_written_prototype))
 end
 
 function FunctionDecl(ctx::ASTContext, id::Integer)
@@ -2411,9 +2402,7 @@ function setIsPureVirtual(x::AbstractFunctionDecl, p::Bool=true)
 end
 
 # FieldDecl
-function FieldDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
-                   id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, bw::Expr_,
-                   mutable::Bool, init_style::CXInClassInitStyle)
+function FieldDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo, ty::QualType, tsi::TypeSourceInfo, bw::Expr_, mutable::Bool, init_style::CXInClassInitStyle)
     @check_ptrs ctx dc tsi
     return FieldDecl(clang_FieldDecl_Create(ctx, dc, start_loc, id_loc, id, ty, tsi, bw, mutable, init_style))
 end
@@ -2439,9 +2428,7 @@ function setCapturedVLAType(x::AbstractFieldDecl, vla::VariableArrayType)
 end
 
 # EnumConstantDecl
-function EnumConstantDecl(ctx::ASTContext, dc::AbstractEnumDecl, loc::SourceLocation,
-                          id::IdentifierInfo, ty::QualType, init::Expr_,
-                          val::LibClangEx.LLVMGenericValueRef)
+function EnumConstantDecl(ctx::ASTContext, dc::AbstractEnumDecl, loc::SourceLocation, id::IdentifierInfo, ty::QualType, init::Expr_, val::LibClangEx.LLVMGenericValueRef)
     @check_ptrs ctx dc
     return EnumConstantDecl(clang_EnumConstantDecl_Create(ctx, dc, loc, id, ty, init, val))
 end
@@ -2463,8 +2450,7 @@ function IndirectFieldDecl(ctx::ASTContext, id::Integer)
 end
 
 # TypedefDecl
-function TypedefDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
-                     id::IdentifierInfo, tsi::TypeSourceInfo)
+function TypedefDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo, tsi::TypeSourceInfo)
     @check_ptrs ctx dc id tsi
     return TypedefDecl(clang_TypedefDecl_Create(ctx, dc, start_loc, id_loc, id, tsi))
 end
@@ -2475,8 +2461,7 @@ function TypedefDecl(ctx::ASTContext, id::Integer)
 end
 
 # TypeAliasDecl
-function TypeAliasDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
-                       id::IdentifierInfo, tsi::TypeSourceInfo)
+function TypeAliasDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo, tsi::TypeSourceInfo)
     @check_ptrs ctx dc id tsi
     return TypeAliasDecl(clang_TypeAliasDecl_Create(ctx, dc, start_loc, id_loc, id, tsi))
 end
@@ -2534,12 +2519,9 @@ function setTypedefNameForAnonDecl(x::AbstractTagDecl, tnd::AbstractTypedefNameD
 end
 
 # EnumDecl
-function EnumDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation,
-                  id::IdentifierInfo, prev_decl::EnumDecl=EnumDecl(C_NULL), is_scoped::Bool=false,
-                  is_scoped_using_class_tag::Bool=false, is_fixed::Bool=false)
+function EnumDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo, prev_decl::EnumDecl=EnumDecl(C_NULL), is_scoped::Bool=false, is_scoped_using_class_tag::Bool=false, is_fixed::Bool=false)
     @check_ptrs ctx dc id
-    return EnumDecl(clang_EnumDecl_Create(ctx, dc, start_loc, id_loc, id, prev_decl, is_scoped,
-                                          is_scoped_using_class_tag, is_fixed))
+    return EnumDecl(clang_EnumDecl_Create(ctx, dc, start_loc, id_loc, id, prev_decl, is_scoped, is_scoped_using_class_tag, is_fixed))
 end
 
 function EnumDecl(ctx::ASTContext, id::Integer)
@@ -2577,11 +2559,9 @@ function setPromotionType(x::AbstractEnumDecl, ty::QualType)
     return clang_EnumDecl_setPromotionType(x, ty)
 end
 
-function completeDefinition(x::AbstractEnumDecl, new_type::QualType, promotion_type::QualType,
-                            num_positive_bits::Integer, num_negative_bits::Integer)
+function completeDefinition(x::AbstractEnumDecl, new_type::QualType, promotion_type::QualType, num_positive_bits::Integer, num_negative_bits::Integer)
     @check_ptrs x
-    return clang_EnumDecl_completeDefinition(x, new_type, promotion_type, num_positive_bits,
-                                             num_negative_bits)
+    return clang_EnumDecl_completeDefinition(x, new_type, promotion_type, num_positive_bits, num_negative_bits)
 end
 function setTemplateSpecializationKind(x::AbstractEnumDecl, tsk::CXTemplateSpecializationKind, poi::SourceLocation)
     @check_ptrs x
@@ -2594,8 +2574,7 @@ function setInstantiationOfMemberEnum(x::AbstractEnumDecl, ed::AbstractEnumDecl,
 end
 
 # RecordDecl
-function RecordDecl(ctx::ASTContext, tk::CXTagTypeKind, dc::AnyDeclContext, start_loc::SourceLocation,
-                    id_loc::SourceLocation, id::IdentifierInfo, prev_decl::RecordDecl=RecordDecl(C_NULL))
+function RecordDecl(ctx::ASTContext, tk::CXTagTypeKind, dc::AnyDeclContext, start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo, prev_decl::RecordDecl=RecordDecl(C_NULL))
     @check_ptrs ctx dc
     return RecordDecl(clang_RecordDecl_Create(ctx, tk, dc, start_loc, id_loc, id, prev_decl))
 end
@@ -2676,8 +2655,7 @@ function setParamDestroyedInCallee(x::AbstractRecordDecl, v::Bool=true)
 end
 
 # FileScopeAsmDecl
-function FileScopeAsmDecl(ctx::ASTContext, dc::AnyDeclContext, str::StringLiteral,
-                          asm_loc::SourceLocation, rparen_loc::SourceLocation)
+function FileScopeAsmDecl(ctx::ASTContext, dc::AnyDeclContext, str::StringLiteral, asm_loc::SourceLocation, rparen_loc::SourceLocation)
     @check_ptrs ctx dc str
     return FileScopeAsmDecl(clang_FileScopeAsmDecl_Create(ctx, dc, str, asm_loc, rparen_loc))
 end
@@ -2780,8 +2758,7 @@ function setContextParam(x::AbstractCapturedDecl, i::Integer, p::ImplicitParamDe
 end
 
 # ImportDecl
-function ImportDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation,
-                    imported::AbstractModule, end_loc::SourceLocation)
+function ImportDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation, imported::AbstractModule, end_loc::SourceLocation)
     # `imported` is not checked: `ASTContext::getLocalImport` accepts a null module, which is
     # what an implicit import of the current translation unit carries.
     @check_ptrs ctx dc
@@ -2821,8 +2798,7 @@ function EmptyDecl(ctx::ASTContext, id::Integer)
 end
 
 # PragmaCommentDecl factories
-function PragmaCommentDecl(ctx::ASTContext, tu::TranslationUnitDecl, comment_loc::SourceLocation,
-                           kind::CXPragmaMSCommentKind, arg::AbstractString)
+function PragmaCommentDecl(ctx::ASTContext, tu::TranslationUnitDecl, comment_loc::SourceLocation, kind::CXPragmaMSCommentKind, arg::AbstractString)
     @check_ptrs ctx tu
     return PragmaCommentDecl(clang_PragmaCommentDecl_Create(ctx, tu, comment_loc, kind, arg))
 end
@@ -2833,16 +2809,14 @@ function PragmaCommentDecl(ctx::ASTContext, id::Integer, arg_size::Integer)
 end
 
 # PragmaDetectMismatchDecl factories
-function PragmaDetectMismatchDecl(ctx::ASTContext, tu::TranslationUnitDecl, loc::SourceLocation,
-                                  name::AbstractString, value::AbstractString)
+function PragmaDetectMismatchDecl(ctx::ASTContext, tu::TranslationUnitDecl, loc::SourceLocation, name::AbstractString, value::AbstractString)
     @check_ptrs ctx tu
     return PragmaDetectMismatchDecl(clang_PragmaDetectMismatchDecl_Create(ctx, tu, loc, name, value))
 end
 
 function PragmaDetectMismatchDecl(ctx::ASTContext, id::Integer, name_value_size::Integer)
     @check_ptrs ctx
-    return PragmaDetectMismatchDecl(clang_PragmaDetectMismatchDecl_CreateDeserialized(ctx, id,
-                                                                                      name_value_size))
+    return PragmaDetectMismatchDecl(clang_PragmaDetectMismatchDecl_CreateDeserialized(ctx, id, name_value_size))
 end
 
 # ExternCContextDecl factory
@@ -3189,13 +3163,10 @@ function getInitVal(x::AbstractEnumConstantDecl)
 end
 
 # IndirectFieldDecl factory
-function IndirectFieldDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
-                           id::IdentifierInfo, ty::QualType,
-                           chain::AbstractVector{<:AbstractNamedDecl})
+function IndirectFieldDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation, id::IdentifierInfo, ty::QualType, chain::AbstractVector{<:AbstractNamedDecl})
     @check_ptrs ctx dc id
     buf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in chain]
-    return IndirectFieldDecl(clang_IndirectFieldDecl_Create(ctx, dc, loc, id, ty, buf,
-                                                            length(buf)))
+    return IndirectFieldDecl(clang_IndirectFieldDecl_Create(ctx, dc, loc, id, ty, buf, length(buf)))
 end
 
 # TagDecl
@@ -3396,8 +3367,7 @@ function getReplaceableGlobalAllocationFunctionInfo(x::AbstractFunctionDecl)
     has_alignment = Ref{Bool}()
     alignment = Ref{Cuint}()
     is_nothrow = Ref{Bool}()
-    replaceable = clang_FunctionDecl_getReplaceableGlobalAllocationFunctionInfo(x, has_alignment,
-                                                                               alignment, is_nothrow)
+    replaceable = clang_FunctionDecl_getReplaceableGlobalAllocationFunctionInfo(x, has_alignment, alignment, is_nothrow)
     return (replaceable, has_alignment[] ? alignment[] : nothing, is_nothrow[])
 end
 
@@ -3530,8 +3500,7 @@ Create a `clang::HLSLBufferDecl` (a cbuffer when `cbuffer` is true, a tbuffer ot
 The decl is allocated in `ctx`'s arena — there is no `dispose`. It is NOT added to `dc`,
 and its closing-brace location stays invalid until `setRBraceLoc` is called.
 """
-function HLSLBufferDecl(ctx::ASTContext, dc::AnyDeclContext, cbuffer::Bool, kw_loc::SourceLocation,
-                        id::IdentifierInfo, id_loc::SourceLocation, lbrace_loc::SourceLocation)
+function HLSLBufferDecl(ctx::ASTContext, dc::AnyDeclContext, cbuffer::Bool, kw_loc::SourceLocation, id::IdentifierInfo, id_loc::SourceLocation, lbrace_loc::SourceLocation)
     @check_ptrs ctx dc id
     return HLSLBufferDecl(clang_HLSLBufferDecl_Create(ctx, dc, cbuffer, kw_loc, id, id_loc, lbrace_loc))
 end
@@ -3599,12 +3568,9 @@ Create a `clang::NamespaceDecl` in `ctx`. `prev_decl` may carry a NULL pointer w
 no previous declaration; `nested` marks a component of a C++20 nested-namespace-definition.
 The result is allocated in the ASTContext arena and is *not* added to `dc`.
 """
-function NamespaceDecl(ctx::ASTContext, dc::AnyDeclContext, inline::Bool, start_loc::SourceLocation,
-                       id_loc::SourceLocation, id::IdentifierInfo,
-                       prev_decl::NamespaceDecl=NamespaceDecl(C_NULL), nested::Bool=false)
+function NamespaceDecl(ctx::ASTContext, dc::AnyDeclContext, inline::Bool, start_loc::SourceLocation, id_loc::SourceLocation, id::IdentifierInfo, prev_decl::NamespaceDecl=NamespaceDecl(C_NULL), nested::Bool=false)
     @check_ptrs ctx dc id
-    return NamespaceDecl(clang_NamespaceDecl_Create(ctx, dc, inline, start_loc, id_loc, id,
-                                                    prev_decl, nested))
+    return NamespaceDecl(clang_NamespaceDecl_Create(ctx, dc, inline, start_loc, id_loc, id, prev_decl, nested))
 end
 
 """
@@ -3613,8 +3579,7 @@ Record the "outer" template parameter lists matched against the template-ids of 
 out-of-line declaration. `lists` is borrowed, not copied element-wise, and must be non-empty
 — clang asserts on an empty list.
 """
-function setTemplateParameterListsInfo(x::AbstractDeclaratorDecl, ctx::ASTContext,
-                                       lists::AbstractVector{<:AbstractTemplateParameterList})
+function setTemplateParameterListsInfo(x::AbstractDeclaratorDecl, ctx::ASTContext, lists::AbstractVector{<:AbstractTemplateParameterList})
     @check_ptrs x ctx
     @assert !isempty(lists) "at least one template parameter list is required"
     buf = CXTemplateParameterList[Base.unsafe_convert(CXTemplateParameterList, l) for l in lists]
@@ -3626,8 +3591,7 @@ end
 Record the "outer" template parameter lists of an out-of-line tag definition. `lists` is
 borrowed and must be non-empty — clang asserts on an empty list.
 """
-function setTemplateParameterListsInfo(x::AbstractTagDecl, ctx::ASTContext,
-                                       lists::AbstractVector{<:AbstractTemplateParameterList})
+function setTemplateParameterListsInfo(x::AbstractTagDecl, ctx::ASTContext, lists::AbstractVector{<:AbstractTemplateParameterList})
     @check_ptrs x ctx
     @assert !isempty(lists) "at least one template parameter list is required"
     buf = CXTemplateParameterList[Base.unsafe_convert(CXTemplateParameterList, l) for l in lists]
@@ -3652,8 +3616,7 @@ Store the bits of `v` — an `LLVMGenericValueRef` on the same APSInt bridge `ge
 returns on — as the enumerator's value. `is_unsigned` supplies the signedness the bridge
 cannot carry. `v` stays caller-owned.
 """
-function setInitVal(x::AbstractEnumConstantDecl, ctx::ASTContext,
-                    v::LibClangEx.LLVMGenericValueRef, is_unsigned::Bool)
+function setInitVal(x::AbstractEnumConstantDecl, ctx::ASTContext, v::LibClangEx.LLVMGenericValueRef, is_unsigned::Bool)
     @check_ptrs x ctx
     return clang_EnumConstantDecl_setInitVal(x, ctx, v, is_unsigned)
 end
@@ -3685,8 +3648,7 @@ Allocate a `clang::FunctionDecl::DefaultedFunctionInfo` in `ctx`'s arena holding
 unqualified lookup results `decls` with the matching `accesses`. The two vectors are read in
 lockstep, so they must have the same length. Arena-owned: there is no `dispose`.
 """
-function DefaultedFunctionInfo(ctx::ASTContext, decls::AbstractVector{<:AbstractNamedDecl},
-                               accesses::AbstractVector{CXAccessSpecifier})
+function DefaultedFunctionInfo(ctx::ASTContext, decls::AbstractVector{<:AbstractNamedDecl}, accesses::AbstractVector{CXAccessSpecifier})
     @check_ptrs ctx
     @assert length(decls) == length(accesses) "decls and accesses must have the same length"
     dbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
@@ -3856,11 +3818,7 @@ must have the same length: entry `i` builds one `clang::BlockDecl::Capture` out 
 expression means the capture has none. This replaces whatever captures `x` already held and
 overwrites `capturesCXXThis` with `captures_cxx_this`.
 """
-function setCaptures(x::AbstractBlockDecl, ctx::ASTContext,
-                     variables::AbstractVector{<:AbstractVarDecl},
-                     by_refs::AbstractVector{Bool}, nesteds::AbstractVector{Bool},
-                     copy_exprs::AbstractVector{<:Union{Nothing,AbstractExpr}},
-                     captures_cxx_this::Bool=false)
+function setCaptures(x::AbstractBlockDecl, ctx::ASTContext, variables::AbstractVector{<:AbstractVarDecl}, by_refs::AbstractVector{Bool}, nesteds::AbstractVector{Bool}, copy_exprs::AbstractVector{<:Union{Nothing,AbstractExpr}}, captures_cxx_this::Bool=false)
     @check_ptrs x ctx
     n = length(variables)
     aligned = length(by_refs) == n && length(nesteds) == n && length(copy_exprs) == n
@@ -3868,8 +3826,7 @@ function setCaptures(x::AbstractBlockDecl, ctx::ASTContext,
     vbuf = CXVarDecl[Base.unsafe_convert(CXVarDecl, v) for v in variables]
     @assert all(!=(C_NULL), vbuf) "captured variable handles must be non-NULL"
     ebuf = CXExpr[e === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, e) for e in copy_exprs]
-    return clang_BlockDecl_setCaptures(x, ctx, vbuf, collect(Bool, by_refs),
-                                       collect(Bool, nesteds), ebuf, n, captures_cxx_this)
+    return clang_BlockDecl_setCaptures(x, ctx, vbuf, collect(Bool, by_refs), collect(Bool, nesteds), ebuf, n, captures_cxx_this)
 end
 
 """

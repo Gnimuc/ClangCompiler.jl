@@ -7,8 +7,7 @@ The lexer borrows the buffer, the source manager, and the language options, so a
 must outlive it. This function allocates and one should call `dispose` to release the
 resources after using this object.
 """
-function Lexer(fid::FileID, buffer::LLVM.MemoryBuffer, src_mgr::SourceManager,
-               opts::LangOptions)
+function Lexer(fid::FileID, buffer::LLVM.MemoryBuffer, src_mgr::SourceManager, opts::LangOptions)
     @check_ptrs fid src_mgr opts
     lex = clang_Lexer_create(fid, buffer, src_mgr, opts)
     @assert lex != C_NULL "Failed to create Lexer"
@@ -68,14 +67,12 @@ function isFirstTimeLexingFile(x::AbstractLexer)
 end
 
 # static utilities
-function getSpelling(tok::AbstractToken, src_mgr::AbstractSourceManager,
-                     opts::AbstractLangOptions)
+function getSpelling(tok::AbstractToken, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs tok src_mgr opts
     return get_string(clang_Lexer_getSpelling(tok, src_mgr, opts))
 end
 
-function MeasureTokenLength(loc::SourceLocation, src_mgr::AbstractSourceManager,
-                            opts::AbstractLangOptions)
+function MeasureTokenLength(loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     return clang_Lexer_MeasureTokenLength(loc, src_mgr, opts)
 end
@@ -85,21 +82,17 @@ end
 Relex the token at `loc` into `result`. Return `true` if there was a failure, `false` on
 success (mirroring `clang::Lexer::getRawToken`).
 """
-function getRawToken(loc::SourceLocation, result::AbstractToken,
-                     src_mgr::AbstractSourceManager, opts::AbstractLangOptions,
-                     ignore_whitespace::Bool=false)
+function getRawToken(loc::SourceLocation, result::AbstractToken, src_mgr::AbstractSourceManager, opts::AbstractLangOptions, ignore_whitespace::Bool=false)
     @check_ptrs result src_mgr opts
     return clang_Lexer_getRawToken(loc, result, src_mgr, opts, ignore_whitespace)
 end
 
-function GetBeginningOfToken(loc::SourceLocation, src_mgr::AbstractSourceManager,
-                             opts::AbstractLangOptions)
+function GetBeginningOfToken(loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     return SourceLocation(clang_Lexer_GetBeginningOfToken(loc, src_mgr, opts))
 end
 
-function getLocForEndOfToken(loc::SourceLocation, offset::Integer,
-                             src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
+function getLocForEndOfToken(loc::SourceLocation, offset::Integer, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     return SourceLocation(clang_Lexer_getLocForEndOfToken(loc, offset, src_mgr, opts))
 end
@@ -109,13 +102,11 @@ end
 Return the begin location of the macro when the macro location `loc` points at the first
 token of its expansion, `nothing` otherwise.
 """
-function isAtStartOfMacroExpansion(loc::SourceLocation, src_mgr::AbstractSourceManager,
-                                   opts::AbstractLangOptions)
+function isAtStartOfMacroExpansion(loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     @assert isValid(loc) && isMacroID(loc) "expected a valid macro location"
     out = Ref{CXSourceLocation_}(C_NULL)
-    return clang_Lexer_isAtStartOfMacroExpansion(loc, src_mgr, opts, out) ?
-           SourceLocation(out[]) : nothing
+    return clang_Lexer_isAtStartOfMacroExpansion(loc, src_mgr, opts, out) ? SourceLocation(out[]) : nothing
 end
 
 """
@@ -123,24 +114,20 @@ end
 Return the end location of the macro when the macro location `loc` points at the last
 token of its expansion, `nothing` otherwise.
 """
-function isAtEndOfMacroExpansion(loc::SourceLocation, src_mgr::AbstractSourceManager,
-                                 opts::AbstractLangOptions)
+function isAtEndOfMacroExpansion(loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     @assert isValid(loc) && isMacroID(loc) "expected a valid macro location"
     out = Ref{CXSourceLocation_}(C_NULL)
-    return clang_Lexer_isAtEndOfMacroExpansion(loc, src_mgr, opts, out) ?
-           SourceLocation(out[]) : nothing
+    return clang_Lexer_isAtEndOfMacroExpansion(loc, src_mgr, opts, out) ? SourceLocation(out[]) : nothing
 end
 
-function getSourceText(r::SourceRange, is_token_range::Bool,
-                       src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
+function getSourceText(r::SourceRange, is_token_range::Bool, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     range = CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr)
     return get_string(clang_Lexer_getSourceText(range, is_token_range, src_mgr, opts))
 end
 
-function getImmediateMacroName(loc::SourceLocation, src_mgr::AbstractSourceManager,
-                               opts::AbstractLangOptions)
+function getImmediateMacroName(loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     @assert isValid(loc) && isMacroID(loc) "expected a valid macro location"
     return get_string(clang_Lexer_getImmediateMacroName(loc, src_mgr, opts))
@@ -151,8 +138,7 @@ end
 Fill `result` with the token that comes right after `loc` and return `true`; return
 `false` (leaving `result` untouched) when the location is inside a macro.
 """
-function findNextToken(loc::SourceLocation, src_mgr::AbstractSourceManager,
-                       opts::AbstractLangOptions, result::AbstractToken)
+function findNextToken(loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions, result::AbstractToken)
     @check_ptrs src_mgr opts result
     return clang_Lexer_findNextToken(loc, src_mgr, opts, result)
 end
@@ -226,8 +212,7 @@ This is the bound on a character index into a token, and it is not
 trigraphs and escaped newlines that the cleaned spelling collapses. For a token spliced by an
 escaped newline the two are 11 and 9, and indices 10 and 11 walk past the token's characters.
 """
-function cleaned_token_length(loc::SourceLocation, src_mgr::AbstractSourceManager,
-                              opts::AbstractLangOptions)
+function cleaned_token_length(loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     tok = Token()
     n = getRawToken(loc, tok, src_mgr, opts) ? 0 : ncodeunits(getSpelling(tok, src_mgr, opts))
     dispose(tok)
@@ -247,8 +232,7 @@ the walk does not stop at the end of the token. The bound is the length of the r
 spelling, not [`MeasureTokenLength`](@ref): for a token spliced by an escaped newline those
 are 9 and 11.
 """
-function getTokenPrefixLength(tok_start::SourceLocation, char_no::Integer,
-                              src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
+function getTokenPrefixLength(tok_start::SourceLocation, char_no::Integer, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     @assert isValid(tok_start) "tok_start must be a valid location"
     @assert 0 <= char_no <= cleaned_token_length(tok_start, src_mgr, opts) "char_no must lie within the token that starts at tok_start"
@@ -265,8 +249,7 @@ The result is always a character range — clang produces no token range here. T
 locations are the failure signal: a range that overlaps only part of a macro expansion, or
 whose ends lie in different files, cannot be mapped.
 """
-function makeFileCharRange(r::CharSourceRange, src_mgr::AbstractSourceManager,
-                           opts::AbstractLangOptions)
+function makeFileCharRange(r::CharSourceRange, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     @assert isValid(getBegin(r)) && isValid(getEnd(r)) "expected a valid range"
     range = CXSourceRange_(r.range.begin_loc.ptr, r.range.end_loc.ptr)
@@ -284,9 +267,7 @@ This is where it differs from [`getImmediateMacroName`](@ref), which names the i
 for `MACOUTER(MACINNER(x))` this returns `"MACOUTER"` and that one returns `"MACINNER"`.
 `loc` must be a valid macro location — clang asserts it.
 """
-function getImmediateMacroNameForDiagnostics(loc::SourceLocation,
-                                             src_mgr::AbstractSourceManager,
-                                             opts::AbstractLangOptions)
+function getImmediateMacroNameForDiagnostics(loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     @assert isValid(loc) && isMacroID(loc) "expected a valid macro location"
     return get_string(clang_Lexer_getImmediateMacroNameForDiagnostics(loc, src_mgr, opts))
@@ -313,8 +294,7 @@ start of a line. `max_lines` caps the preamble at that many lines; 0 means no ca
 
 `buffer` must be NUL-terminated: clang lexes it in place up to `Buffer.end()`.
 """
-function ComputePreamble(buffer::AbstractString, opts::AbstractLangOptions,
-                         max_lines::Integer=0)
+function ComputePreamble(buffer::AbstractString, opts::AbstractLangOptions, max_lines::Integer=0)
     @check_ptrs opts
     at_sol = Ref{Bool}(false)
     size = clang_Lexer_ComputePreamble(buffer, opts, max_lines, at_sol)
@@ -332,13 +312,10 @@ looking for it, and `skip_trailing_whitespace_and_newline` also skips what follo
 `kind` is a raw `clang::tok::TokenKind`, as [`getKind`](@ref) returns for a `Token`; the kind
 enum is not mirrored, so read it off a token rather than spelling a number.
 """
-function findLocationAfterToken(loc::SourceLocation, kind::Integer,
-                                src_mgr::AbstractSourceManager, opts::AbstractLangOptions,
-                                skip_trailing_whitespace_and_newline::Bool=false)
+function findLocationAfterToken(loc::SourceLocation, kind::Integer, src_mgr::AbstractSourceManager, opts::AbstractLangOptions, skip_trailing_whitespace_and_newline::Bool=false)
     @check_ptrs src_mgr opts
     @assert isValid(loc) "loc must be a valid location"
-    return SourceLocation(clang_Lexer_findLocationAfterToken(loc, kind, src_mgr, opts,
-                                                             skip_trailing_whitespace_and_newline))
+    return SourceLocation(clang_Lexer_findLocationAfterToken(loc, kind, src_mgr, opts, skip_trailing_whitespace_and_newline))
 end
 
 """
