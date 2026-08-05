@@ -274,6 +274,15 @@ using ClangCompiler: get_tag
 
     tn = CC.getTemplateName(injt)
     @test !CC.is_null_handle(CC.getCanonicalTemplateName(ctx, tn))
+    # Reflexive over any template name, and consistent with canonicalisation — invariants
+    # that hold for whatever AST this file happens to build, with no captured value.
+    @test CC.hasSameTemplateName(ctx, tn, tn)
+    @test CC.getCanonicalTemplateName(ctx, tn).ptr ==
+          CC.getCanonicalTemplateName(ctx, CC.getCanonicalTemplateName(ctx, tn)).ptr
+
+    # `LangOpts.CPlusPlus || LangOpts.RecoveryAST`, and this interpreter is C++ — decided by
+    # the language mode the context was built with, so it is an equality on every target.
+    @test CC.isDependenceAllowed(ctx)
     @test CC.hasSameTempalteName(ctx, tn, tn)
     @test !CC.is_null_handle(CC.getDeducedTemplateSpecializationType(ctx, tn, int_qt, false))
 
@@ -1131,9 +1140,17 @@ end
         nns = CC.getQualifier(tv_ty)
         named = CC.resolve(CC.getTypePtr(CC.getNamedType(tv_ty)))
         if nns.ptr != C_NULL && named isa CC.TemplateSpecializationType
-            qtn = CC.getQualifiedTemplateName(ctx, nns, false, CC.getTemplateName(named))
+            bare = CC.getTemplateName(named)
+            qtn = CC.getQualifiedTemplateName(ctx, nns, false, bare)
             @test qtn isa CC.TemplateName
             @test qtn.ptr != C_NULL
+            # The case hasSameTemplateName exists for: a QualifiedTemplateName and the bare
+            # name it wraps are distinct handles naming one template, so `==` on the handles
+            # answers the wrong question and this must not agree with it.
+            @test qtn.ptr != bare.ptr
+            @test CC.hasSameTemplateName(ctx, qtn, bare)
+            @test CC.getCanonicalTemplateName(ctx, qtn).ptr ==
+                  CC.getCanonicalTemplateName(ctx, bare).ptr
         end
     end
 

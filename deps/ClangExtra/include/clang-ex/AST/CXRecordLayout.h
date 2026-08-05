@@ -65,6 +65,22 @@ CXCXXRecordDecl clang_ASTRecordLayout_getPrimaryBase(CXASTRecordLayout RL);
 // Whether the primary base is virtually inherited. Same documented CXXInfo precondition.
 bool clang_ASTRecordLayout_isPrimaryBaseVirtual(CXASTRecordLayout RL);
 
+// Whether the record ends with a zero-sized subobject.
+//
+// UNLIKE the tail above, this one is TOTAL. clang spells it `CXXInfo &&
+// CXXInfo->EndsWithZeroSizedObject`, so a layout carrying no C++ info answers false instead
+// of aborting, and it is safe on the layout of a C struct or any non-CXXRecordDecl.
+bool clang_ASTRecordLayout_endsWithZeroSizedObject(CXASTRecordLayout RL);
+
+// Whether the record begins with a zero-sized base class.
+//
+// PRECONDITION: the layout was obtained for a CXXRecordDecl; clang asserts CXXInfo here,
+// where endsWithZeroSizedObject merely checks it. The two sit one after the other in
+// clang's own header and differ in exactly this. The condition is not observable from the
+// layout handle -- CXXInfo is private and clang exports no predicate over it -- so it is
+// documented rather than gated, matching the getNonVirtualSize / hasOwnVFPtr tail.
+bool clang_ASTRecordLayout_leadsWithZeroSizedBase(CXASTRecordLayout RL);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

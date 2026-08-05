@@ -14648,6 +14648,14 @@ function clang_ASTContext_NullPtrTy_getAsQualType(Ctx)
     @ccall libclangex.clang_ASTContext_NullPtrTy_getAsQualType(Ctx::CXASTContext)::CXQualType
 end
 
+function clang_ASTContext_isDependenceAllowed(Ctx)
+    @ccall libclangex.clang_ASTContext_isDependenceAllowed(Ctx::CXASTContext)::Bool
+end
+
+function clang_ASTContext_hasSameTemplateName(Ctx, X_, Y)
+    @ccall libclangex.clang_ASTContext_hasSameTemplateName(Ctx::CXASTContext, X_::CXTemplateName, Y::CXTemplateName)::Bool
+end
+
 @enum CXRawCommentKind::UInt32 begin
     CXRawCommentKind_RCK_Invalid = 0
     CXRawCommentKind_RCK_OrdinaryBCPL = 1
@@ -25824,6 +25832,14 @@ end
 
 function clang_ASTRecordLayout_isPrimaryBaseVirtual(RL)
     @ccall libclangex.clang_ASTRecordLayout_isPrimaryBaseVirtual(RL::CXASTRecordLayout)::Bool
+end
+
+function clang_ASTRecordLayout_endsWithZeroSizedObject(RL)
+    @ccall libclangex.clang_ASTRecordLayout_endsWithZeroSizedObject(RL::CXASTRecordLayout)::Bool
+end
+
+function clang_ASTRecordLayout_leadsWithZeroSizedBase(RL)
+    @ccall libclangex.clang_ASTRecordLayout_leadsWithZeroSizedBase(RL::CXASTRecordLayout)::Bool
 end
 
 function clang_CXXCatchStmt_getExceptionDecl(CS)
