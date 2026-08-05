@@ -4,24 +4,24 @@
 
 CXDiagnosticOptions clang_DiagnosticOptions_create(void) {
   auto DO = std::make_unique<clang::DiagnosticOptions>();
-  return DO.release();
+  return reinterpret_cast<CXDiagnosticOptions>(DO.release());
 }
 
 void clang_DiagnosticOptions_dispose(CXDiagnosticOptions DO) {
-  delete static_cast<clang::DiagnosticOptions *>(DO);
+  delete reinterpret_cast<clang::DiagnosticOptions *>(DO);
 }
 
 void clang_DiagnosticOptions_setShowColors(CXDiagnosticOptions DO, bool ShowColors) {
-  static_cast<clang::DiagnosticOptions *>(DO)->ShowColors = ShowColors;
+  reinterpret_cast<clang::DiagnosticOptions *>(DO)->ShowColors = ShowColors;
 }
 
 void clang_DiagnosticOptions_setShowPresumedLoc(CXDiagnosticOptions DO,
                                                 bool ShowPresumedLoc) {
-  static_cast<clang::DiagnosticOptions *>(DO)->ShowPresumedLoc = ShowPresumedLoc;
+  reinterpret_cast<clang::DiagnosticOptions *>(DO)->ShowPresumedLoc = ShowPresumedLoc;
 }
 
 void clang_DiagnosticOptions_PrintStats(CXDiagnosticOptions DO) {
-  auto Opts = static_cast<clang::DiagnosticOptions *>(DO);
+  auto Opts = reinterpret_cast<clang::DiagnosticOptions *>(DO);
   llvm::errs() << "\n*** DiagnosticOptions Stats:\n";
   llvm::errs() << "  DiagnosticLogFile: " << Opts->DiagnosticLogFile << "\n";
   llvm::errs() << "  DiagnosticSerializationFile: " << Opts->DiagnosticSerializationFile

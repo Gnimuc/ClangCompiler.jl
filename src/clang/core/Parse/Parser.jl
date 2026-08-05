@@ -6,5 +6,3 @@ struct Parser <: AbstractParser
     ptr::CXParser
 end
 
-Base.unsafe_convert(::Type{CXParser}, x::Parser) = x.ptr
-Base.cconvert(::Type{CXParser}, x::Parser) = x

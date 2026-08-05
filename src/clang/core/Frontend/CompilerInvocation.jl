@@ -6,10 +6,6 @@ struct CompilerInvocation <: AbstractCompilerInvocation
     ptr::CXCompilerInvocation
 end
 
-Base.unsafe_convert(::Type{CXCompilerInvocation}, x::CompilerInvocation) = x.ptr
-Base.cconvert(::Type{CXCompilerInvocation}, x::CompilerInvocation) = x
-
-
 """
     abstract type AbstractCowCompilerInvocation <: Any
 Supertype for `clang::CowCompilerInvocation`.
@@ -29,5 +25,3 @@ struct CowCompilerInvocation <: AbstractCowCompilerInvocation
     ptr::CXCowCompilerInvocation
 end
 
-Base.unsafe_convert(::Type{CXCowCompilerInvocation}, x::CowCompilerInvocation) = x.ptr
-Base.cconvert(::Type{CXCowCompilerInvocation}, x::CowCompilerInvocation) = x

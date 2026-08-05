@@ -30,9 +30,9 @@ typedef enum CXAttrKind {
 // and kind predicate for every attribute class, stamped from the same vendored
 // table. Attribute classes are leaves (clang derives no attribute from
 // another), so unlike the Stmt/Decl stamps there are no abstract entries.
-// Stamped functions take and return plain CXAttr.
+// Each cast returns the attribute's own handle, so narrowing is checked by the compiler.
 #define ATTR(X)                                                                            \
-  CXAttr clang_Attr_castTo##X##Attr(CXAttr A);                                             \
+  CX##X##Attr clang_Attr_castTo##X##Attr(CXAttr A);                                        \
   bool clang_Attr_is##X##Attr(CXAttr A);
 #include "clang-ex/AST/AttrList.inc"
 // Attr base API (hand-written).

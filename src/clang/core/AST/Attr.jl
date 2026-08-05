@@ -14,7 +14,4 @@ struct Attr <: AbstractAttr
     ptr::CXAttr
 end
 
-Base.unsafe_convert(::Type{CXAttr}, x::Attr) = x.ptr
-Base.cconvert(::Type{CXAttr}, x::Attr) = x
-
 include("AttrCarriers.jl")

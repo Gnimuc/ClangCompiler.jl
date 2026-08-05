@@ -328,17 +328,35 @@ function getComputationResultType(x::AbstractCompoundAssignOperator)
     return QualType(clang_CompoundAssignOperator_getComputationResultType(x))
 end
 
-function getCond(x::AbstractAbstractConditionalOperator)
+# `clang::AbstractConditionalOperator` declares these, and is not mirrored -- see the note in
+# core/AST/Expr.jl. Each is written out for both spellings clang actually builds, which is what
+# keeps every receiver at a class that exists rather than at a looser one.
+function getCond(x::AbstractConditionalOperator)
     @check_ptrs x
     return Expr_(clang_AbstractConditionalOperator_getCond(x))
 end
 
-function getTrueExpr(x::AbstractAbstractConditionalOperator)
+function getCond(x::AbstractBinaryConditionalOperator)
+    @check_ptrs x
+    return Expr_(clang_AbstractConditionalOperator_getCond(x))
+end
+
+function getTrueExpr(x::AbstractConditionalOperator)
     @check_ptrs x
     return Expr_(clang_AbstractConditionalOperator_getTrueExpr(x))
 end
 
-function getFalseExpr(x::AbstractAbstractConditionalOperator)
+function getTrueExpr(x::AbstractBinaryConditionalOperator)
+    @check_ptrs x
+    return Expr_(clang_AbstractConditionalOperator_getTrueExpr(x))
+end
+
+function getFalseExpr(x::AbstractConditionalOperator)
+    @check_ptrs x
+    return Expr_(clang_AbstractConditionalOperator_getFalseExpr(x))
+end
+
+function getFalseExpr(x::AbstractBinaryConditionalOperator)
     @check_ptrs x
     return Expr_(clang_AbstractConditionalOperator_getFalseExpr(x))
 end
@@ -1355,13 +1373,23 @@ function setRBraceLoc(x::AbstractInitListExpr, loc::SourceLocation)
     return clang_InitListExpr_setRBraceLoc(x, loc)
 end
 
-# AbstractConditionalOperator
-function getQuestionLoc(x::AbstractAbstractConditionalOperator)
+# the conditional-operator locations, on both spellings -- see getCond above
+function getQuestionLoc(x::AbstractConditionalOperator)
     @check_ptrs x
     return SourceLocation(clang_AbstractConditionalOperator_getQuestionLoc(x))
 end
 
-function getColonLoc(x::AbstractAbstractConditionalOperator)
+function getQuestionLoc(x::AbstractBinaryConditionalOperator)
+    @check_ptrs x
+    return SourceLocation(clang_AbstractConditionalOperator_getQuestionLoc(x))
+end
+
+function getColonLoc(x::AbstractConditionalOperator)
+    @check_ptrs x
+    return SourceLocation(clang_AbstractConditionalOperator_getColonLoc(x))
+end
+
+function getColonLoc(x::AbstractBinaryConditionalOperator)
     @check_ptrs x
     return SourceLocation(clang_AbstractConditionalOperator_getColonLoc(x))
 end
@@ -1740,15 +1768,15 @@ function isUnique(x::AbstractOpaqueValueExpr)
     return clang_OpaqueValueExpr_isUnique(x)
 end
 
-# ConditionalOperator. getLHS/getRHS are declared on this class, not on the shared
-# base, so the receiver is its per-class abstract — `BinaryConditionalOperator` hangs
-# off a sibling and dispatch rejects it.
-function getLHS(x::AbstractConditionalOperator_)
+# ConditionalOperator. getLHS/getRHS are declared on this class, not on the base both
+# spellings share, so the receiver is its own abstract — `BinaryConditionalOperator` is a
+# sibling and dispatch rejects it.
+function getLHS(x::AbstractConditionalOperator)
     @check_ptrs x
     return Expr_(clang_ConditionalOperator_getLHS(x))
 end
 
-function getRHS(x::AbstractConditionalOperator_)
+function getRHS(x::AbstractConditionalOperator)
     @check_ptrs x
     return Expr_(clang_ConditionalOperator_getRHS(x))
 end
@@ -2406,7 +2434,7 @@ receiver. An empty collection answers `false`.
 """
 function hasAnyTypeDependentArguments(exprs::AbstractVector{<:AbstractExpr})
     @assert all(e -> e.ptr != C_NULL, exprs) "every queried expression must be non-NULL"
-    ptrs = CXExpr[e.ptr for e in exprs]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
     return clang_Expr_hasAnyTypeDependentArguments(ptrs, length(ptrs))
 end
 
@@ -3532,8 +3560,8 @@ function EvaluateWithSubstitution(x::AbstractExpr, ctx::ASTContext,
     @assert !isValueDependent(x) "expression must not be value-dependent"
     @assert all(e -> e.ptr != C_NULL, args) "every substituted argument must be non-NULL"
     @assert length(args) <= getNumParams(callee) "more arguments than callee has parameters"
-    ptrs = CXExpr[e.ptr for e in args]
-    this_ptr = this === nothing ? C_NULL : this.ptr
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in args]
+    this_ptr = this === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, this)
     return APValue(clang_Expr_EvaluateWithSubstitution(x, ctx, callee, ptrs, length(ptrs),
                                                        this_ptr))
 end
@@ -3712,7 +3740,7 @@ allocates and one should call `dispose` to release the resources after using thi
 function EvaluateInContext(x::AbstractSourceLocExpr, ctx::ASTContext,
                            default::Union{Nothing,AbstractExpr}=nothing)
     @check_ptrs x ctx
-    default_ptr = default === nothing ? C_NULL : default.ptr
+    default_ptr = default === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, default)
     return APValue(clang_SourceLocExpr_EvaluateInContext(x, ctx, default_ptr))
 end
 
@@ -3944,7 +3972,7 @@ function PredefinedExpr(ctx::ASTContext, loc::SourceLocation, fn_ty::QualType,
                         kind::CXPredefinedIdentKind, is_transparent::Bool,
                         sl::Union{Nothing,AbstractStringLiteral}=nothing)
     @check_ptrs ctx
-    sl_ptr = sl === nothing ? C_NULL : sl.ptr
+    sl_ptr = sl === nothing ? CXStringLiteral(C_NULL) : Base.unsafe_convert(CXStringLiteral, sl)
     return PredefinedExpr(clang_PredefinedExpr_Create(ctx, loc, fn_ty, kind, is_transparent,
                                                       sl_ptr))
 end
@@ -3963,7 +3991,7 @@ function ParenListExpr(ctx::ASTContext, lparen_loc::SourceLocation,
                        exprs::Vector{<:AbstractExpr}, rparen_loc::SourceLocation)
     @check_ptrs ctx
     @assert all(e -> e.ptr != C_NULL, exprs) "a paren list holds no null slot"
-    buf = CXExpr[e.ptr for e in exprs]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
     return ParenListExpr(clang_ParenListExpr_Create(ctx, lparen_loc, buf, length(buf),
                                                     rparen_loc))
 end
@@ -4012,7 +4040,7 @@ function RecoveryExpr(ctx::ASTContext, ty::QualType, begin_loc::SourceLocation,
     @check_ptrs ctx
     @assert ty.ptr != C_NULL "a RecoveryExpr needs a non-NULL type"
     @assert all(e -> e.ptr != C_NULL, sub_exprs) "a RecoveryExpr holds no null subexpression"
-    buf = CXExpr[e.ptr for e in sub_exprs]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in sub_exprs]
     return RecoveryExpr(clang_RecoveryExpr_Create(ctx, ty, begin_loc, end_loc, buf,
                                                   length(buf)))
 end
@@ -4231,7 +4259,7 @@ function setExprs(x::AbstractShuffleVectorExpr, ctx::ASTContext, exprs::Vector{<
     @check_ptrs x ctx
     @assert all(e -> e.ptr != C_NULL, exprs) "a ShuffleVectorExpr holds no null operand"
     @assert length(exprs) >= 2 "a ShuffleVectorExpr keeps its two vector operands"
-    buf = CXExpr[e.ptr for e in exprs]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
     return clang_ShuffleVectorExpr_setExprs(x, ctx, buf, length(buf))
 end
 
@@ -4314,7 +4342,7 @@ function StringLiteral(ctx::ASTContext, str::AbstractString, kind::CXStringLiter
     @assert (kind == CXStringLiteralKind_Unevaluated ||
              isConstantArrayType(getTypePtr(ty))) "an evaluated string literal's type must be a constant array type"
     s = String(str)
-    buf = CXSourceLocation_[l.ptr for l in locs]
+    buf = CXSourceLocation_[Base.unsafe_convert(CXSourceLocation_, l) for l in locs]
     return StringLiteral(clang_StringLiteral_Create(ctx, s, ncodeunits(s), kind, pascal, ty, buf,
                                                     length(buf)))
 end
@@ -4490,7 +4518,7 @@ function setDesignators(x::AbstractDesignatedInitExpr, ctx::ASTContext,
                         designators::Vector{Designator})
     @check_ptrs x ctx
     @assert all(d -> d.ptr != C_NULL, designators) "a designator list holds no null slot"
-    buf = CXDesignator[d.ptr for d in designators]
+    buf = CXDesignator[Base.unsafe_convert(CXDesignator, d) for d in designators]
     return clang_DesignatedInitExpr_setDesignators(x, ctx, buf, length(buf))
 end
 
@@ -4548,7 +4576,7 @@ function CallExpr(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:AbstractExpr
                   fp_features::Integer, min_num_args::Integer, uses_adl::Bool)
     @check_ptrs ctx fn
     @assert all(a -> a.ptr != C_NULL, args) "a call expression holds no null argument slot"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return CallExpr(clang_CallExpr_Create(ctx, fn, buf, length(buf), ty, vk, rparen_loc,
                                           fp_features, min_num_args, uses_adl))
 end
@@ -4833,7 +4861,7 @@ function ExpandDesignator(x::AbstractDesignatedInitExpr, ctx::ASTContext, i::Int
     @check_ptrs x ctx
     @assert 0 <= i < size(x) "designator index $i out of range"
     @assert all(d -> d.ptr != C_NULL, ds) "a designator list holds no null slot"
-    buf = CXDesignator[d.ptr for d in ds]
+    buf = CXDesignator[Base.unsafe_convert(CXDesignator, d) for d in ds]
     clang_DesignatedInitExpr_ExpandDesignator(x, ctx, i, buf, length(buf))
     return nothing
 end

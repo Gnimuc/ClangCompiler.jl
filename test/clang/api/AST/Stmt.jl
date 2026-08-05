@@ -29,7 +29,7 @@ using Test
             """)
     lookup = DeclFinder(I)
     @test lookup(I, "machine")
-    fd = FunctionDecl(get_decl(lookup).ptr)
+    fd = ClangCompiler.downcast(FunctionDecl, get_decl(lookup).ptr)
     body = getBody(fd)
 
     # collect every node in the function body, resolved to concrete types
@@ -67,7 +67,7 @@ using Test
     # identifier, so getName would assert — use the parameter count)
     le = only(byT(LambdaExpr))
     callop = getCallOperator(le)
-    @test ClangCompiler.getNumParams(FunctionDecl(callop.ptr)) == 1
+    @test ClangCompiler.getNumParams(ClangCompiler.downcast(FunctionDecl, callop.ptr)) == 1
 
     # DeclStmt: `Widget w;` and `int acc = 0;` are single decls
     dss = byT(DeclStmt)
@@ -89,8 +89,8 @@ import ClangCompiler as CC
     CC.parse(I, "int ce2_g(int x) { if (x > 0) { return x + 1; } return 0; }")
     f = DeclFinder(I)
     @test f(I, "ce2_g")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
-    body = CC.Stmt(CC.getBody(fd).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    body = CC.upcast(CC.Stmt, CC.getBody(fd).ptr)
 
     npred = ncast = 0
     for nm in names(CC; all=true)
@@ -179,17 +179,17 @@ end
     end
 
     @test finder(I, "control_flow")
-    cf = CC.FunctionDecl(get_decl(finder).ptr)
+    cf = CC.downcast(CC.FunctionDecl, get_decl(finder).ptr)
     gather!(cf)
 
     @test finder(I, "make_vecs")
-    mv = CC.FunctionDecl(get_decl(finder).ptr)
+    mv = CC.downcast(CC.FunctionDecl, get_decl(finder).ptr)
     gather!(mv)
 
     @test finder(I, "Vec")
-    vec = CC.CXXRecordDecl(get_decl(finder).ptr)
+    vec = CC.downcast(CC.CXXRecordDecl, get_decl(finder).ptr)
     for m in CC.getMethods(vec)
-        fm = CC.FunctionDecl(m.ptr)
+        fm = CC.downcast(CC.FunctionDecl, m.ptr)
         CC.hasBody(fm) && gather!(fm)
     end
 
@@ -487,7 +487,7 @@ end
     f = DeclFinder(I)
     findif(name) = begin
         @assert f(I, name)
-        fd = CC.FunctionDecl(get_decl(f).ptr)
+        fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
         node = CC.resolve(CC.getBody(fd))
         for c in CC.children(node)
             r = CC.resolve(c)
@@ -521,7 +521,7 @@ end
     # only assert once the statement actually parsed and was found on this host.
     findasm = function (name)
         f(I, name) || return nothing
-        body = CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr))
+        body = CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr))
         body.ptr == C_NULL && return nothing
         for c in CC.children(body)
             r = CC.resolve(c)
@@ -569,7 +569,7 @@ end
                """)
     f = CC.DeclFinder(I)
     @test f(I, "stmt_tail_probe")
-    fd = CC.FunctionDecl(CC.get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)
     bodyc = CC.resolve(CC.getBody(fd))
     @test bodyc isa CC.CompoundStmt
 
@@ -610,7 +610,7 @@ end
              """)
     igs = nothing
     if f(I, "stmt_tail_goto")
-        gbody = CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr))
+        gbody = CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr))
         if gbody.ptr != C_NULL
             gstack = CC.AbstractStmt[CC.resolve(gbody)]
             while !isempty(gstack)
@@ -642,7 +642,7 @@ end
     CC.parse(Icv, "void cv_fn(int n){ while (int w = n) { --n; } for (int i = 0; int c = n - i; ++i) {} }")
     fcv = DeclFinder(Icv)
     @test fcv(Icv, "cv_fn")
-    cfd = CC.FunctionDecl(get_decl(fcv).ptr)
+    cfd = CC.downcast(CC.FunctionDecl, get_decl(fcv).ptr)
     cnodes = CC.subtree(CC.resolve(CC.getBody(cfd)))
     ws = cnodes[findfirst(n -> n isa CC.WhileStmt, cnodes)]
     fs = cnodes[findfirst(n -> n isa CC.ForStmt, cnodes)]
@@ -658,7 +658,7 @@ end
     CC.parse(Iseh, "void seh_fn(){ __try { __leave; } __except(1) { } __try { } __finally { } }")
     fseh = DeclFinder(Iseh)
     @test fseh(Iseh, "seh_fn")
-    sfd = CC.FunctionDecl(get_decl(fseh).ptr)
+    sfd = CC.downcast(CC.FunctionDecl, get_decl(fseh).ptr)
     snodes = CC.subtree(CC.resolve(CC.getBody(sfd)))
     tries = filter(n -> n isa CC.SEHTryStmt, snodes)
     excepts = filter(n -> n isa CC.SEHExceptStmt, snodes)
@@ -701,7 +701,7 @@ end
     CC.parse(Iomp, "void omp_fn(int n){\n#pragma omp parallel\n{ int x = n; }\n}")
     fomp = DeclFinder(Iomp)
     @test fomp(Iomp, "omp_fn")
-    ofd = CC.FunctionDecl(get_decl(fomp).ptr)
+    ofd = CC.downcast(CC.FunctionDecl, get_decl(fomp).ptr)
     cs = nothing
     for n in CC.subtree(CC.resolve(CC.getBody(ofd)))
         n isa CC.CapturedStmt && (cs = n; break)
@@ -730,7 +730,7 @@ end
     # actually parsed and was located on this host.
     findasm = function (name)
         f(I, name) || return nothing
-        body = CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr))
+        body = CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr))
         body.ptr == C_NULL && return nothing
         for c in CC.children(body)
             r = CC.resolve(c)
@@ -775,7 +775,7 @@ end
     CC.parse(I, "void attrG(); void attrProbe() { [[clang::nomerge]] attrG(); }")
     astmt = nothing
     if f(I, "attrProbe")
-        abody = CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr))
+        abody = CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr))
         if abody.ptr != C_NULL
             for n in CC.subtree(CC.resolve(abody))
                 if n isa CC.AttributedStmt
@@ -822,7 +822,7 @@ end
              """)
     f = DeclFinder(I)
     @test f(I, "stmtTailProbe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     body = CC.resolve(CC.getBody(fd))
     @test body isa CC.CompoundStmt
     nodes = CC.subtree(body)
@@ -931,7 +931,7 @@ end
     # extension is a host/driver decision, so assert only once it actually parsed.
     CC.parse(I, "int stmtRangeProbe(int n) { switch (n) { case 2 ... 4: return 1; } return 0; }")
     if f(I, "stmtRangeProbe")
-        rbody = CC.getBody(CC.FunctionDecl(get_decl(f).ptr))
+        rbody = CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr))
         if rbody.ptr != C_NULL
             rng = nothing
             for node in CC.subtree(CC.resolve(rbody))
@@ -982,7 +982,7 @@ end
              """)
     f = DeclFinder(I)
     @test f(I, "stmtLocSetterProbe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     body = CC.resolve(CC.getBody(fd))
     @test body isa CC.CompoundStmt
     nodes = CC.subtree(body)
@@ -1090,7 +1090,7 @@ end
              }
              """)
     if f(I, "stmtFPProbe")
-        fpbody = CC.getBody(CC.FunctionDecl(get_decl(f).ptr))
+        fpbody = CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr))
         if fpbody.ptr != C_NULL
             fpcs = CC.resolve(fpbody)
             if fpcs isa CC.CompoundStmt && CC.hasStoredFPFeatures(fpcs)
@@ -1114,7 +1114,7 @@ end
     CC.parse(Iomp, "void capProbe(int n){ int m = n + 1;\n#pragma omp parallel\n{ int x = n + m; }\n}")
     fomp = DeclFinder(Iomp)
     @test fomp(Iomp, "capProbe")
-    ofd = CC.FunctionDecl(get_decl(fomp).ptr)
+    ofd = CC.downcast(CC.FunctionDecl, get_decl(fomp).ptr)
     cs = nothing
     for nd in CC.subtree(CC.resolve(CC.getBody(ofd)))
         nd isa CC.CapturedStmt && (cs = nd; break)
@@ -1172,7 +1172,7 @@ end
              """)
     f = DeclFinder(I)
     @test f(I, "gotoLabelProbe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     nodes = CC.subtree(CC.resolve(CC.getBody(fd)))
 
     labels = filter(x -> x isa CC.LabelStmt, nodes)
@@ -1245,7 +1245,7 @@ end
              """)
     f = DeclFinder(I)
     @test f(I, "stmtMutatorProbe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     nodes = CC.subtree(CC.resolve(CC.getBody(fd)))
     pick(T) = filter(n -> n isa T, nodes)
 
@@ -1353,7 +1353,7 @@ end
     fasm = DeclFinder(Iasm)
     asmstmt = nothing
     if fasm(Iasm, "asmMutator")
-        afd = CC.FunctionDecl(get_decl(fasm).ptr)
+        afd = CC.downcast(CC.FunctionDecl, get_decl(fasm).ptr)
         for n in CC.subtree(CC.resolve(CC.getBody(afd)))
             n isa CC.GCCAsmStmt && (asmstmt = n; break)
         end
@@ -1382,7 +1382,7 @@ end
     CC.parse(Iseh, "void sehMutator(){ __try { __leave; } __except(1) { } }")
     fseh = DeclFinder(Iseh)
     @test fseh(Iseh, "sehMutator")
-    sfd = CC.FunctionDecl(get_decl(fseh).ptr)
+    sfd = CC.downcast(CC.FunctionDecl, get_decl(fseh).ptr)
     lv = only(filter(n -> n isa CC.SEHLeaveStmt, CC.subtree(CC.resolve(CC.getBody(sfd)))))
     leaveloc = CC.getLeaveLoc(lv)
     CC.setLeaveLoc(lv, leaveloc)
@@ -1395,7 +1395,7 @@ end
     CC.parse(Iomp, "void ompMutator(int n){\n#pragma omp parallel\n{ int x = n; }\n}")
     fomp = DeclFinder(Iomp)
     @test fomp(Iomp, "ompMutator")
-    ofd = CC.FunctionDecl(get_decl(fomp).ptr)
+    ofd = CC.downcast(CC.FunctionDecl, get_decl(fomp).ptr)
     cs = nothing
     for n in CC.subtree(CC.resolve(CC.getBody(ofd)))
         n isa CC.CapturedStmt && (cs = n; break)
@@ -1434,7 +1434,7 @@ end
              """)
     f = DeclFinder(I)
     @test f(I, "stmtFactoryProbe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     body = CC.resolve(CC.getBody(fd))
     @test body isa CC.CompoundStmt
     nodes = CC.subtree(body)
@@ -1646,7 +1646,7 @@ end
              }
              """)
     @test f(I, "stmtJProbe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     body = CC.resolve(CC.getBody(fd))
     @test body isa CC.CompoundStmt
     nodes = CC.subtree(body)
@@ -1726,7 +1726,7 @@ end
     # asserts once the statement actually parsed and was located on this host.
     findasm = function (name, T)
         f(I, name) || return nothing
-        b = CC.getBody(CC.FunctionDecl(get_decl(f).ptr))
+        b = CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr))
         b.ptr == C_NULL && return nothing
         for c in CC.children(b)
             r = CC.resolve(c)
@@ -1769,7 +1769,7 @@ end
     # reproduce the DiagnosticRenderer crash a failed parse causes after synthetic AST work.
     findasm = function (name)
         f(I, name) || return nothing
-        body = CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr))
+        body = CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr))
         body.ptr == C_NULL && return nothing
         for c in CC.children(body)
             r = CC.resolve(c)
@@ -1830,7 +1830,7 @@ end
              }
              """)
     @test f(I, "stmtLIndexed")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     body = CC.resolve(CC.getBody(fd))
     @test body isa CC.CompoundStmt
 
@@ -1896,9 +1896,9 @@ end
     # every lookup happens before anything is synthesized, so no factory below can
     # make a name ambiguous for get_decl
     @test f(I, "capBuildVar")
-    vd = CC.VarDecl(get_decl(f).ptr)
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     @test f(I, "capBuildProbe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     body = CC.resolve(CC.getBody(fd))
     @test body isa CC.CompoundStmt
     loc = CC.getLocation(vd)
@@ -1995,7 +1995,7 @@ end
 
     findif = function (name)
         f(I, name) || return nothing
-        body = CC.getBody(CC.FunctionDecl(CC.get_decl(f).ptr))
+        body = CC.getBody(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr))
         body.ptr == C_NULL && return nothing
         for n in CC.subtree(CC.resolve(body))
             n isa CC.IfStmt && return n
@@ -2058,13 +2058,13 @@ end
     f = DeclFinder(I)
     # every lookup runs before anything is synthesized, so no name can turn ambiguous
     @test f(I, "asmBuildText")
-    textvar = CC.VarDecl(get_decl(f).ptr)
+    textvar = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     lit = CC.resolve(CC.IgnoreParenImpCasts(CC.getInit(textvar)))
     @test lit isa CC.StringLiteral
     strty = CC.getType(lit)
     loc = CC.getLocation(textvar)
     @test f(I, "asmBuildVar")
-    operand = CC.getInit(CC.VarDecl(get_decl(f).ptr))
+    operand = CC.getInit(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     @test operand.ptr != C_NULL
 
     mkstr = s -> CC.StringLiteral(ctx, s, LibClangEx.CXStringLiteralKind_Ordinary, false, strty,
@@ -2165,6 +2165,13 @@ end
     dispose(tok)
     @test CC.getNumAsmToks(ms) == 1
     @test CC.getAllConstraints(ms) == ["=r", "r"]
+
+    # `Stmt::EnableStatistics` / `Stmt::PrintStats` are static and now carry the class as a
+    # `::Type` tag. Untagged they were reachable but ambiguous -- `PrintStats()` answered for
+    # whichever hierarchy was defined last, which is not a question anyone meant to ask.
+    @test (CC.EnableStatistics(CC.Stmt); true)
+    @test (CC.PrintStats(CC.Stmt); true)
+    @test !applicable(CC.PrintStats)             # no untagged spelling survives
 
     dispose(f)
     dispose(I)

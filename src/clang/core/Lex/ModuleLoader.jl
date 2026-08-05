@@ -8,5 +8,3 @@ struct ModuleLoader <: AbstractModuleLoader
     ptr::CXModuleLoader
 end
 
-Base.unsafe_convert(::Type{CXModuleLoader}, x::ModuleLoader) = x.ptr
-Base.cconvert(::Type{CXModuleLoader}, x::ModuleLoader) = x

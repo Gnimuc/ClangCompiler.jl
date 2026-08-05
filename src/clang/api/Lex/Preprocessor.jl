@@ -1481,7 +1481,7 @@ submodule, the location it was entered at, and whether it was entered through a
 function getBuildingSubmodules(x::AbstractPreprocessor)
     @check_ptrs x
     n = clang_Preprocessor_getNumBuildingSubmodules(x)
-    mods = Vector{CXModule}(undef, n)
+    mods = Vector{CXModule_}(undef, n)
     locs = Vector{CXSourceLocation_}(undef, n)
     pragmas = Vector{Bool}(undef, n)
     n > 0 && clang_Preprocessor_getBuildingSubmodules(x, mods, locs, pragmas)
@@ -1507,7 +1507,7 @@ underlying set's — it carries no meaning.
 function getAffectingClangModules(x::AbstractPreprocessor)
     @check_ptrs x
     n = clang_Preprocessor_getNumAffectingClangModules(x)
-    buf = Vector{CXModule}(undef, n)
+    buf = Vector{CXModule_}(undef, n)
     n > 0 && clang_Preprocessor_getAffectingClangModules(x, buf)
     return [Module_(p) for p in buf]
 end
@@ -1569,7 +1569,7 @@ function setRecordedPreambleConditionalStack(x::AbstractPreprocessor, stack::Abs
     found_else = Vector{Bool}(undef, n)
     for (i, entry) in enumerate(stack)
         loc, skipping, non_skip, saw_else = entry
-        locs[i] = loc.ptr
+        locs[i] = Base.unsafe_convert(CXSourceLocation_, loc)
         was_skipping[i] = skipping
         found_non_skip[i] = non_skip
         found_else[i] = saw_else
@@ -1628,7 +1628,7 @@ function addModuleMacro(x::AbstractPreprocessor, m::AbstractModule,
     buf = Vector{CXModuleMacro}(undef, n)
     for (i, o) in enumerate(overrides)
         @check_ptrs o
-        buf[i] = o.ptr
+        buf[i] = Base.unsafe_convert(CXModuleMacro, o)
     end
     is_new = Ref{Bool}(false)
     mm = clang_Preprocessor_addModuleMacro(x, m, ii, mi, buf, n, is_new)
@@ -1691,7 +1691,7 @@ function getLastMacroWithSpelling(x::AbstractPreprocessor, loc::SourceLocation,
     for (i, t) in enumerate(tokens)
         if t isa AbstractIdentifierInfo
             @check_ptrs t
-            iis[i] = t.ptr
+            iis[i] = Base.unsafe_convert(CXIdentifierInfo, t)
         else
             @assert t isa Integer "a token is either an IdentifierInfo or a tok::TokenKind value"
             k = Cuint(t)

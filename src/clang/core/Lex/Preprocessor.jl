@@ -6,10 +6,6 @@ struct Preprocessor <: AbstractPreprocessor
     ptr::CXPreprocessor
 end
 
-Base.unsafe_convert(::Type{CXPreprocessor}, x::Preprocessor) = x.ptr
-Base.cconvert(::Type{CXPreprocessor}, x::Preprocessor) = x
-
-
 abstract type AbstractEmptylineHandler end
 
 """
@@ -20,5 +16,3 @@ struct EmptylineHandler <: AbstractEmptylineHandler
     ptr::CXEmptylineHandler
 end
 
-Base.unsafe_convert(::Type{CXEmptylineHandler}, x::EmptylineHandler) = x.ptr
-Base.cconvert(::Type{CXEmptylineHandler}, x::EmptylineHandler) = x

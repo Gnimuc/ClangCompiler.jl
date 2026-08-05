@@ -8,5 +8,3 @@ struct PreprocessorLexer <: AbstractPreprocessorLexer
     ptr::CXPreprocessorLexer
 end
 
-Base.unsafe_convert(::Type{CXPreprocessorLexer}, x::PreprocessorLexer) = x.ptr
-Base.cconvert(::Type{CXPreprocessorLexer}, x::PreprocessorLexer) = x

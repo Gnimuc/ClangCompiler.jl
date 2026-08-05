@@ -4,30 +4,30 @@
 
 CXCodeGenOptions clang_CodeGenOptions_create(void) {
   auto CGO = std::make_unique<clang::CodeGenOptions>();
-  return CGO.release();
+  return reinterpret_cast<CXCodeGenOptions>(CGO.release());
 }
 
 void clang_CodeGenOptions_dispose(CXCodeGenOptions DO) {
-  delete static_cast<clang::CodeGenOptions *>(DO);
+  delete reinterpret_cast<clang::CodeGenOptions *>(DO);
 }
 
 const char *clang_CodeGenOptions_getArgv0(CXCodeGenOptions CGO) {
-  return static_cast<clang::CodeGenOptions *>(CGO)->Argv0;
+  return reinterpret_cast<clang::CodeGenOptions *>(CGO)->Argv0;
 }
 
 unsigned clang_CodeGenOptions_getCommandLineArgsNum(CXCodeGenOptions CGO) {
-  return static_cast<clang::CodeGenOptions *>(CGO)->CommandLineArgs.size();
+  return reinterpret_cast<clang::CodeGenOptions *>(CGO)->CommandLineArgs.size();
 }
 
 void clang_CodeGenOptions_getCommandLineArgs(CXCodeGenOptions CGO, const char **Buf,
                                              unsigned N) {
-  const auto &Args = static_cast<clang::CodeGenOptions *>(CGO)->CommandLineArgs;
+  const auto &Args = reinterpret_cast<clang::CodeGenOptions *>(CGO)->CommandLineArgs;
   for (unsigned I = 0; I < N && I < Args.size(); ++I)
     Buf[I] = Args[I].c_str();
 }
 
 void clang_CodeGenOptions_PrintStats(CXCodeGenOptions CGO) {
-  auto Opts = static_cast<clang::CodeGenOptions *>(CGO);
+  auto Opts = reinterpret_cast<clang::CodeGenOptions *>(CGO);
   llvm::errs() << "\n*** CodeGenOptions Stats:\n";
   llvm::errs() << "  CodeModel: " << Opts->CodeModel << "\n";
   llvm::errs() << "  DebugPass: " << Opts->DebugPass << "\n";

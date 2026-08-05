@@ -13,7 +13,10 @@ function RestoreNestedNameSpecifierAnnotation(x::Sema, v::AnnotationValue, rng::
     @check_ptrs x
     rb = getBeginLoc(rng)
     re = getEndLoc(rng)
-    return clang_Sema_RestoreNestedNameSpecifierAnnotation(x, v, rb, re, spec)
+    # `Sema::RestoreNestedNameSpecifierAnnotation` takes the payload as clang's own opaque
+    # `void *`, so the shim's parameter is `void *` too and there is no `CXAnnotationValue`
+    # entry in converts.jl to marshal through -- the handle is unwrapped here instead.
+    return clang_Sema_RestoreNestedNameSpecifierAnnotation(x, Ptr{Cvoid}(v.ptr), rb, re, spec)
 end
 
 function getTypeName(x::Sema, ii::IdentifierInfo, name_loc::SourceLocation,
@@ -1117,7 +1120,7 @@ initializer.
 function BuildInitList(x::AbstractSema, lbrace_loc::SourceLocation,
                        inits::AbstractVector{<:AbstractExpr}, rbrace_loc::SourceLocation)
     @check_ptrs x
-    ptrs = CXExpr[e.ptr for e in inits]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in inits]
     invalid = Ref{Bool}(false)
     e = clang_Sema_BuildInitList(x, lbrace_loc, ptrs, length(ptrs), rbrace_loc, invalid)
     return invalid[] ? nothing : Expr_(e)
@@ -1641,7 +1644,7 @@ function CreateRecoveryExpr(x::AbstractSema, begin_loc::SourceLocation, end_loc:
                             subexprs::AbstractVector{<:AbstractExpr},
                             ty::AbstractQualType=QualType(C_NULL))
     @check_ptrs x
-    ptrs = CXExpr[e.ptr for e in subexprs]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in subexprs]
     invalid = Ref{Bool}(false)
     e = clang_Sema_CreateRecoveryExpr(x, begin_loc, end_loc, ptrs, length(ptrs), ty, invalid)
     return invalid[] ? nothing : Expr_(e)
@@ -1687,7 +1690,7 @@ function BuildCallExpr(x::AbstractSema, sp::AbstractScope, fn::AbstractExpr,
                        rparen_loc::SourceLocation, exec_config::AbstractExpr=Expr_(C_NULL),
                        is_exec_config::Bool=false, allow_recovery::Bool=false)
     @check_ptrs x fn
-    ptrs = CXExpr[e.ptr for e in args]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in args]
     invalid = Ref{Bool}(false)
     e = clang_Sema_BuildCallExpr(x, sp, fn, lparen_loc, ptrs, length(ptrs), rparen_loc,
                                  exec_config, is_exec_config, allow_recovery, invalid)
@@ -1782,7 +1785,7 @@ function BuildCXXTypeConstructExpr(x::AbstractSema, ty::AbstractTypeSourceInfo,
                                    exprs::AbstractVector{<:AbstractExpr},
                                    rparen_loc::SourceLocation, list_initialization::Bool=false)
     @check_ptrs x ty
-    ptrs = CXExpr[e.ptr for e in exprs]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
     invalid = Ref{Bool}(false)
     e = clang_Sema_BuildCXXTypeConstructExpr(x, ty, lparen_loc, ptrs, length(ptrs), rparen_loc,
                                              list_initialization, invalid)
@@ -1802,7 +1805,7 @@ function BuildTypeTrait(x::AbstractSema, kind::CXTypeTrait, kw_loc::SourceLocati
                         rparen_loc::SourceLocation)
     @check_ptrs x
     @assert !isempty(args) "a type trait needs at least one type argument"
-    ptrs = CXTypeSourceInfo[t.ptr for t in args]
+    ptrs = CXTypeSourceInfo[Base.unsafe_convert(CXTypeSourceInfo, t) for t in args]
     invalid = Ref{Bool}(false)
     e = clang_Sema_BuildTypeTrait(x, kind, kw_loc, ptrs, length(ptrs), rparen_loc, invalid)
     return invalid[] ? nothing : Expr_(e)
@@ -1932,7 +1935,7 @@ is diagnosed over `rng`.
 """
 function CheckSpecifiedExceptionType(x::AbstractSema, t::QualType, rng::SourceRange)
     @check_ptrs x t
-    adjusted = Ref{CXQualType}(t.ptr)
+    adjusted = Ref{CXQualType}(Base.unsafe_convert(CXQualType, t))
     bad = clang_Sema_CheckSpecifiedExceptionType(x, adjusted, getBeginLoc(rng),
                                                  getEndLoc(rng))
     return bad, QualType(adjusted[])
@@ -2207,7 +2210,7 @@ function PerformImplicitObjectArgumentInitialization(x::AbstractSema, from::Abst
                                                      method::AbstractCXXMethodDecl)
     @check_ptrs x from found_decl method
     @assert isImplicitObjectMemberFunction(method) "the method must be an implicit object member function"
-    q = qualifier === nothing ? C_NULL : qualifier.ptr
+    q = qualifier === nothing ? CXNestedNameSpecifier(C_NULL) : Base.unsafe_convert(CXNestedNameSpecifier, qualifier)
     invalid = Ref{Bool}(false)
     e = clang_Sema_PerformImplicitObjectArgumentInitialization(x, from, q, found_decl,
                                                                method, invalid)
@@ -2241,7 +2244,7 @@ function PerformObjectMemberConversion(x::AbstractSema, from::AbstractExpr,
                                        found_decl::AbstractNamedDecl,
                                        member::AbstractNamedDecl)
     @check_ptrs x from found_decl member
-    q = qualifier === nothing ? C_NULL : qualifier.ptr
+    q = qualifier === nothing ? CXNestedNameSpecifier(C_NULL) : Base.unsafe_convert(CXNestedNameSpecifier, qualifier)
     invalid = Ref{Bool}(false)
     e = clang_Sema_PerformObjectMemberConversion(x, from, q, found_decl, member, invalid)
     return invalid[] ? nothing : Expr_(e)
@@ -2272,7 +2275,7 @@ precondition rather than an `@assert` (MARSHALLING.md §13).
 function MarkDeclRefReferenced(x::AbstractSema, e::AbstractDeclRefExpr,
                                base::Union{Nothing,AbstractExpr}=nothing)
     @check_ptrs x e
-    b = base === nothing ? C_NULL : base.ptr
+    b = base === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, base)
     clang_Sema_MarkDeclRefReferenced(x, e, b)
     return nothing
 end
@@ -2301,7 +2304,7 @@ function MarkDeclarationsReferencedInExpr(x::AbstractSema, e::AbstractExpr,
                                           stop_at::AbstractVector{<:AbstractExpr}=Expr_[])
     @check_ptrs x e
     @assert all(s -> s.ptr != C_NULL, stop_at) "every stop-at expression must be non-NULL"
-    ptrs = CXExpr[s.ptr for s in stop_at]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, s) for s in stop_at]
     clang_Sema_MarkDeclarationsReferencedInExpr(x, e, skip_local_variables, ptrs,
                                                 length(ptrs))
     return nothing
@@ -2507,7 +2510,7 @@ function SetMemberAccessSpecifier(x::AbstractSema, member::AbstractNamedDecl,
                                   prev::Union{Nothing,AbstractNamedDecl},
                                   as::CXAccessSpecifier)
     @check_ptrs x member
-    prev_ptr = prev === nothing ? C_NULL : prev.ptr
+    prev_ptr = prev === nothing ? CXNamedDecl(C_NULL) : Base.unsafe_convert(CXNamedDecl, prev)
     return clang_Sema_SetMemberAccessSpecifier(x, member, prev_ptr, as)
 end
 
@@ -2519,7 +2522,7 @@ comes back at the `Decl` base — `resolve` it to reach the concrete carrier.
 """
 function AdjustDeclIfTemplate(x::AbstractSema, d::AbstractDecl)
     @check_ptrs x d
-    slot = Ref{CXDecl}(d.ptr)
+    slot = Ref{CXDecl}(Base.unsafe_convert(CXDecl, d))
     td = TemplateDecl(clang_Sema_AdjustDeclIfTemplate(x, slot))
     return td, Decl(slot[])
 end
@@ -2623,7 +2626,7 @@ Return the expansion location of `loc` when `loc` is a macro location spelled ex
 """
 function findMacroSpelling(x::AbstractSema, loc::SourceLocation, name::AbstractString)
     @check_ptrs x
-    out = Ref{CXSourceLocation_}(loc.ptr)
+    out = Ref{CXSourceLocation_}(Base.unsafe_convert(CXSourceLocation_, loc))
     return clang_Sema_findMacroSpelling(x, out, name) ? SourceLocation(out[]) : nothing
 end
 
@@ -2912,7 +2915,7 @@ may be `nothing`.
 function IsIntegralPromotion(x::AbstractSema, from::Union{Nothing,AbstractExpr},
                              from_ty::QualType, to_ty::QualType)
     @check_ptrs x from_ty to_ty
-    e = from === nothing ? C_NULL : from.ptr
+    e = from === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, from)
     return clang_Sema_IsIntegralPromotion(x, e, from_ty, to_ty)
 end
 
@@ -3113,7 +3116,7 @@ function BuildFunctionType(x::AbstractSema, ret_ty::AbstractQualType,
                            entity::DeclarationName=DeclarationName(C_NULL),
                            variadic::Bool=false, cc::CXCallingConv_=CXCallingConv_CC_C)
     @check_ptrs x ret_ty
-    ptrs = CXQualType[t.ptr for t in param_types]
+    ptrs = CXQualType[Base.unsafe_convert(CXQualType, t) for t in param_types]
     ty = clang_Sema_BuildFunctionType(x, ret_ty, ptrs, length(ptrs), loc, entity, variadic, cc)
     return QualType(ty), QualType[QualType(p) for p in ptrs]
 end
@@ -3203,11 +3206,11 @@ function BuildBuiltinOffsetOf(x::AbstractSema, builtin_loc::SourceLocation,
     @assert !is_brackets[1] "the first component must be a field designator, not a subscript"
     ty = getTypePtr(getType(tsinfo))
     @assert isRecordType(ty) || isDependentType(ty) "offsetof needs a record or dependent type"
-    starts = CXSourceLocation_[l.ptr for l in loc_starts]
-    ends = CXSourceLocation_[l.ptr for l in loc_ends]
+    starts = CXSourceLocation_[Base.unsafe_convert(CXSourceLocation_, l) for l in loc_starts]
+    ends = CXSourceLocation_[Base.unsafe_convert(CXSourceLocation_, l) for l in loc_ends]
     brackets = Bool[b for b in is_brackets]
-    ids = CXIdentifierInfo[i.ptr for i in idents]
-    idx = CXExpr[e.ptr for e in indices]
+    ids = CXIdentifierInfo[Base.unsafe_convert(CXIdentifierInfo, i) for i in idents]
+    idx = CXExpr[Base.unsafe_convert(CXExpr, e) for e in indices]
     invalid = Ref{Bool}(false)
     e = clang_Sema_BuildBuiltinOffsetOf(x, builtin_loc, tsinfo, starts, ends, brackets, ids,
                                         idx, n, rparen_loc, invalid)
@@ -3561,7 +3564,7 @@ function VerifyBitField(x::AbstractSema, field_loc::SourceLocation,
                         field_name::Union{Nothing,AbstractIdentifierInfo},
                         field_ty::QualType, is_ms_struct::Bool, bit_width::AbstractExpr)
     @check_ptrs x field_ty bit_width
-    n = field_name === nothing ? C_NULL : field_name.ptr
+    n = field_name === nothing ? CXIdentifierInfo(C_NULL) : Base.unsafe_convert(CXIdentifierInfo, field_name)
     invalid = Ref{Bool}(false)
     r = clang_Sema_VerifyBitField(x, field_loc, n, field_ty, is_ms_struct, bit_width,
                                   invalid)
@@ -3583,7 +3586,7 @@ statement owns, as in `struct S {} s;` — when one is given.
 function ConvertDeclToDeclGroup(x::AbstractSema, d::AbstractDecl,
                                 owned_type::Union{Nothing,AbstractDecl}=nothing)
     @check_ptrs x d
-    owned = owned_type === nothing ? CXDecl(C_NULL) : owned_type.ptr
+    owned = owned_type === nothing ? CXDecl(C_NULL) : Base.unsafe_convert(CXDecl, owned_type)
     return DeclGroupRef(clang_Sema_ConvertDeclToDeclGroup(x, d, owned))
 end
 
@@ -4143,12 +4146,12 @@ function getASTConsumer(x::AbstractSema)
 end
 
 """
-    getScopeForContext(x::AbstractSema, ctx::DeclContext) -> Scope
+    getScopeForContext(x::AbstractSema, ctx::AnyDeclContext) -> Scope
 The innermost enclosing `Scope` whose entity is `ctx`'s primary context. The returned
 carrier holds NULL when there is no such scope, which is always the case between parses
 because `Sema` then has no current scope at all.
 """
-function getScopeForContext(x::AbstractSema, ctx::DeclContext)
+function getScopeForContext(x::AbstractSema, ctx::AnyDeclContext)
     @check_ptrs x ctx
     return Scope(clang_Sema_getScopeForContext(x, ctx))
 end
@@ -4218,7 +4221,7 @@ function isSimpleTypeSpecifier(x::AbstractSema, kind::Integer)
 end
 
 """
-    isDeclInScope(x::AbstractSema, d::AbstractNamedDecl, ctx::DeclContext,
+    isDeclInScope(x::AbstractSema, d::AbstractNamedDecl, ctx::AnyDeclContext,
                   s::Union{Nothing,AbstractScope}=nothing,
                   allow_inline_namespace::Bool=false) -> Bool
 Whether `d` is declared in `ctx` — and, when `ctx`'s redeclaration context is a function
@@ -4227,11 +4230,11 @@ non-function context: in the function case clang walks the scope's parent chain 
 null check. `allow_inline_namespace` accepts a declaration anywhere in `ctx`'s enclosing
 namespace set rather than directly inside it.
 """
-function isDeclInScope(x::AbstractSema, d::AbstractNamedDecl, ctx::DeclContext,
+function isDeclInScope(x::AbstractSema, d::AbstractNamedDecl, ctx::AnyDeclContext,
                        s::Union{Nothing,AbstractScope}=nothing,
                        allow_inline_namespace::Bool=false)
     @check_ptrs x d ctx
-    sp = s === nothing ? C_NULL : s.ptr
+    sp = s === nothing ? CXScope(C_NULL) : Base.unsafe_convert(CXScope, s)
     if sp == C_NULL
         @assert !isFunctionOrMethod(getRedeclContext(ctx)) "a function or method context needs a scope"
     end
@@ -4376,7 +4379,7 @@ An empty `group` yields a null `DeclGroupRef`, matching `clang::DeclGroupRef::Cr
 """
 function BuildDeclaratorGroup(x::AbstractSema, group::AbstractVector{<:AbstractDecl})
     @check_ptrs x
-    ptrs = CXDecl[d.ptr for d in group]
+    ptrs = CXDecl[Base.unsafe_convert(CXDecl, d) for d in group]
     return DeclGroupRef(clang_Sema_BuildDeclaratorGroup(x, ptrs, length(ptrs)))
 end
 
@@ -4614,8 +4617,10 @@ function CheckCallReturnType(x::AbstractSema, return_ty::QualType, loc::SourceLo
                              fd::Union{Nothing,AbstractFunctionDecl}=nothing)
     @check_ptrs x return_ty
     return clang_Sema_CheckCallReturnType(x, return_ty, loc,
-                                          ce === nothing ? C_NULL : ce.ptr,
-                                          fd === nothing ? C_NULL : fd.ptr)
+                                          ce === nothing ? CXCallExpr(C_NULL) :
+                                          Base.unsafe_convert(CXCallExpr, ce),
+                                          fd === nothing ? CXFunctionDecl(C_NULL) :
+                                          Base.unsafe_convert(CXFunctionDecl, fd))
 end
 
 """
@@ -5027,7 +5032,7 @@ function AddOverloadCandidate(x::AbstractSema, fd::AbstractFunctionDecl,
                               reversed::Bool=false, aggregate_deduction::Bool=false)
     @check_ptrs x fd found cs
     @assert getDescribedFunctionTemplate(fd).ptr == C_NULL "a function template pattern needs AddTemplateOverloadCandidate"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddOverloadCandidate(x, fd, found, access, buf, length(buf), cs,
                                            suppress_user_conversions, partial_overloading,
                                            allow_explicit, allow_explicit_conversion,
@@ -5057,10 +5062,11 @@ function AddFunctionCandidates(x::AbstractSema, fns::AbstractVector{<:AbstractNa
                                first_argument_is_base::Bool=false)
     @check_ptrs x cs
     @assert length(fns) == length(accesses) "fns and accesses must have the same length"
-    fbuf = CXNamedDecl[d.ptr for d in fns]
+    fbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in fns]
     abuf = collect(accesses)
-    ebuf = CXExpr[a.ptr for a in args]
-    tali = explicit_template_args === nothing ? C_NULL : explicit_template_args.ptr
+    ebuf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
+    tali = explicit_template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, explicit_template_args)
     return clang_Sema_AddFunctionCandidates(x, fbuf, abuf, length(fbuf), ebuf,
                                             length(ebuf), cs, tali,
                                             suppress_user_conversions, partial_overloading,
@@ -5090,7 +5096,7 @@ function AddMethodCandidate(x::AbstractSema, md::AbstractCXXMethodDecl,
     @check_ptrs x md found acting object cs
     @assert !isStatic(md) "a static member function is a candidate through AddOverloadCandidate"
     @assert getDeclKindName(md) != "CXXConstructor" "a constructor is a candidate through AddOverloadCandidate"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddMethodCandidate(x, md, found, access, acting, object, buf,
                                          length(buf), cs, suppress_user_conversions,
                                          partial_overloading, reversed)
@@ -5119,8 +5125,9 @@ function AddTemplateOverloadCandidate(x::AbstractSema, ftd::AbstractFunctionTemp
                                       reversed::Bool=false,
                                       aggregate_deduction::Bool=false)
     @check_ptrs x ftd found cs
-    tali = explicit_template_args === nothing ? C_NULL : explicit_template_args.ptr
-    buf = CXExpr[a.ptr for a in args]
+    tali = explicit_template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, explicit_template_args)
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddTemplateOverloadCandidate(x, ftd, found, access, tali, buf,
                                                    length(buf), cs,
                                                    suppress_user_conversions,
@@ -5146,7 +5153,7 @@ function AddMemberOperatorCandidates(x::AbstractSema, op::CXOverloadedOperatorKi
     @check_ptrs x cs
     @assert op != CXOverloadedOperatorKind_OO_None "an operator kind is required"
     @assert !isempty(args) "the left operand is read to pick the class to look in"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddMemberOperatorCandidates(x, op, loc, buf, length(buf), cs,
                                                   reversed)
 end
@@ -5167,8 +5174,8 @@ function AddBuiltinCandidate(x::AbstractSema, param_tys::AbstractVector{QualType
                              num_contextual_bool_arguments::Integer=0)
     @check_ptrs x cs
     @assert length(param_tys) == length(args) "one parameter type is read per argument"
-    pbuf = CXQualType[p.ptr for p in param_tys]
-    ebuf = CXExpr[a.ptr for a in args]
+    pbuf = CXQualType[Base.unsafe_convert(CXQualType, p) for p in param_tys]
+    ebuf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddBuiltinCandidate(x, pbuf, ebuf, length(ebuf), cs,
                                           is_assignment_operator,
                                           num_contextual_bool_arguments)
@@ -5196,7 +5203,7 @@ function AddBuiltinOperatorCandidates(x::AbstractSema, op::CXOverloadedOperatorK
                   CXOverloadedOperatorKind_OO_Array_Delete,
                   CXOverloadedOperatorKind_OO_Call) "this operator has no built-in candidates"
     @assert 1 <= length(args) <= 2 "a built-in operator is unary or binary"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddBuiltinOperatorCandidates(x, op, loc, buf, length(buf), cs)
 end
 
@@ -5218,8 +5225,9 @@ function AddArgumentDependentLookupCandidates(x::AbstractSema, name::Declaration
                                                                             AbstractTemplateArgumentListInfo}=nothing,
                                               partial_overloading::Bool=false)
     @check_ptrs x name cs
-    tali = explicit_template_args === nothing ? C_NULL : explicit_template_args.ptr
-    buf = CXExpr[a.ptr for a in args]
+    tali = explicit_template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, explicit_template_args)
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddArgumentDependentLookupCandidates(x, name, loc, buf, length(buf),
                                                            tali, cs, partial_overloading)
 end
@@ -5262,7 +5270,7 @@ function DeclareGlobalAllocationFunction(x::AbstractSema, name::DeclarationName,
     @assert op ∈ (news..., CXOverloadedOperatorKind_OO_Delete,
                   CXOverloadedOperatorKind_OO_Array_Delete) "name must be an operator new/delete name"
     @assert op ∉ news || getCPlusPlus11(getLangOpts(x)) "declaring an operator new form needs C++11 or later"
-    buf = CXQualType[p.ptr for p in params]
+    buf = CXQualType[Base.unsafe_convert(CXQualType, p) for p in params]
     return clang_Sema_DeclareGlobalAllocationFunction(x, name, ret, buf, length(buf))
 end
 
@@ -5322,7 +5330,7 @@ function InventAbbreviatedTemplateParameterTypeName(x::AbstractSema,
                                                     param_name::Union{Nothing,IdentifierInfo},
                                                     index::Integer)
     @check_ptrs x
-    p = param_name === nothing ? C_NULL : param_name.ptr
+    p = param_name === nothing ? CXIdentifierInfo(C_NULL) : Base.unsafe_convert(CXIdentifierInfo, param_name)
     return IdentifierInfo(clang_Sema_InventAbbreviatedTemplateParameterTypeName(x, p, index))
 end
 
@@ -5349,7 +5357,7 @@ receiver.
 """
 function adjustContextForLocalExternDecl(dc::AbstractDeclContext)
     @check_ptrs dc
-    ref = Ref{CXDeclContext}(dc.ptr)
+    ref = Ref{CXDeclContext}(Base.unsafe_convert(CXDeclContext, dc))
     return clang_Sema_adjustContextForLocalExternDecl(ref) ? DeclContext(ref[]) : nothing
 end
 
@@ -5461,7 +5469,7 @@ function DefaultVariadicArgumentPromotion(x::AbstractSema, e::AbstractExpr,
     @check_ptrs x e
     @assert isValidVarArgType(x, getType(e)) !=
             CXVarArgKind_VAK_Undefined "the operand's type must be valid for a variadic call"
-    d = fd === nothing ? C_NULL : fd.ptr
+    d = fd === nothing ? CXFunctionDecl(C_NULL) : Base.unsafe_convert(CXFunctionDecl, fd)
     invalid = Ref{Bool}(false)
     r = clang_Sema_DefaultVariadicArgumentPromotion(x, e, ct, d, invalid)
     return invalid[] ? nothing : Expr_(r)
@@ -5710,8 +5718,8 @@ function getVariadicCallType(x::AbstractSema, proto::AbstractFunctionProtoType,
                              fd::Union{Nothing,AbstractFunctionDecl}=nothing,
                              fn::Union{Nothing,AbstractExpr}=nothing)
     @check_ptrs x proto
-    d = fd === nothing ? C_NULL : fd.ptr
-    e = fn === nothing ? C_NULL : fn.ptr
+    d = fd === nothing ? CXFunctionDecl(C_NULL) : Base.unsafe_convert(CXFunctionDecl, fd)
+    e = fn === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, fn)
     return clang_Sema_getVariadicCallType(x, d, proto, e)
 end
 
@@ -5769,7 +5777,7 @@ function CreateOverloadedArraySubscriptExpr(x::AbstractSema, lloc::SourceLocatio
                                             args::AbstractVector{<:AbstractExpr})
     @check_ptrs x base
     @assert isRecordType(expr_type_ptr(base)) "the subscripted operand must have class type"
-    ptrs = CXExpr[e.ptr for e in args]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in args]
     invalid = Ref{Bool}(false)
     e = clang_Sema_CreateOverloadedArraySubscriptExpr(x, lloc, rloc, base, ptrs,
                                                       length(ptrs), invalid)
@@ -5790,7 +5798,7 @@ function BuildCallToObjectOfClassType(x::AbstractSema, sp::AbstractScope,
                                       rparen_loc::SourceLocation)
     @check_ptrs x object
     @assert isRecordType(expr_type_ptr(object)) "the called operand must have class type"
-    ptrs = CXExpr[e.ptr for e in args]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in args]
     invalid = Ref{Bool}(false)
     e = clang_Sema_BuildCallToObjectOfClassType(x, sp, object, lparen_loc, ptrs,
                                                 length(ptrs), rparen_loc, invalid)
@@ -5830,7 +5838,7 @@ function BuildAttributedStmt(x::AbstractSema, attrs_loc::SourceLocation,
     @check_ptrs x sub_stmt
     @assert !isempty(attrs) "an AttributedStmt needs at least one attribute"
     @assert all(a -> a.ptr != C_NULL, attrs) "attribute list holds no null slot"
-    ptrs = CXAttr[a.ptr for a in attrs]
+    ptrs = CXAttr[Base.unsafe_convert(CXAttr, a) for a in attrs]
     invalid = Ref{Bool}(false)
     s = clang_Sema_BuildAttributedStmt(x, attrs_loc, ptrs, length(ptrs), sub_stmt, invalid)
     return invalid[] ? nothing : Stmt(s)
@@ -5854,11 +5862,15 @@ function CreateGenericSelectionExpr(x::AbstractSema, key_loc::SourceLocation,
                                     exprs::AbstractVector{<:AbstractExpr})
     @check_ptrs x controlling
     @assert length(types) == length(exprs) "every association needs a type and an expression"
-    ty_ptrs = CXTypeSourceInfo[t === nothing ? C_NULL : t.ptr for t in types]
-    e_ptrs = CXExpr[e.ptr for e in exprs]
+    ty_ptrs = CXTypeSourceInfo[t === nothing ? CXTypeSourceInfo(C_NULL) :
+                               Base.unsafe_convert(CXTypeSourceInfo, t) for t in types]
+    e_ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
     invalid = Ref{Bool}(false)
     e = clang_Sema_CreateGenericSelectionExpr(x, key_loc, default_loc, rparen_loc,
-                                              controlling isa AbstractExpr, controlling.ptr,
+                                              # clang holds the controlling operand as a
+                                              # `void *` discriminated by the flag beside it
+                                              controlling isa AbstractExpr,
+                                              Ptr{Cvoid}(controlling.ptr),
                                               ty_ptrs, e_ptrs, length(e_ptrs), invalid)
     return invalid[] ? nothing : Expr_(e)
 end
@@ -5878,7 +5890,7 @@ function BuildResolvedCallExpr(x::AbstractSema, fn::AbstractExpr, ndecl::Abstrac
                                config::AbstractExpr=Expr_(C_NULL),
                                is_exec_config::Bool=false, uses_adl::Bool=false)
     @check_ptrs x fn ndecl
-    ptrs = CXExpr[e.ptr for e in args]
+    ptrs = CXExpr[Base.unsafe_convert(CXExpr, e) for e in args]
     invalid = Ref{Bool}(false)
     e = clang_Sema_BuildResolvedCallExpr(x, fn, ndecl, lparen_loc, ptrs, length(ptrs),
                                          rparen_loc, config, is_exec_config, uses_adl,
@@ -5977,8 +5989,8 @@ function CheckMultiplyDivideOperands(x::AbstractSema, lhs::AbstractExpr, rhs::Ab
                                      loc::SourceLocation, is_comp_assign::Bool=false,
                                      is_divide::Bool=false)
     @check_ptrs x lhs rhs
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckMultiplyDivideOperands(x, lhs_io, rhs_io, loc, is_comp_assign,
                                                is_divide)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
@@ -5994,8 +6006,8 @@ diagnosed at `loc`.
 function CheckRemainderOperands(x::AbstractSema, lhs::AbstractExpr, rhs::AbstractExpr,
                                 loc::SourceLocation, is_comp_assign::Bool=false)
     @check_ptrs x lhs rhs
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckRemainderOperands(x, lhs_io, rhs_io, loc, is_comp_assign)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
     return QualType(t), Expr_(lhs_io[]), Expr_(rhs_io[])
@@ -6016,8 +6028,8 @@ function CheckAdditionOperands(x::AbstractSema, lhs::AbstractExpr, rhs::Abstract
                                loc::SourceLocation, opc::CXBinaryOperatorKind,
                                is_comp_assign::Bool=false)
     @check_ptrs x lhs rhs
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     comp = Ref{CXQualType}(C_NULL)
     t = clang_Sema_CheckAdditionOperands(x, lhs_io, rhs_io, loc, opc, is_comp_assign, comp)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
@@ -6037,8 +6049,8 @@ Returns `nothing` when the operands are ill-formed, which is diagnosed at `loc`.
 function CheckSubtractionOperands(x::AbstractSema, lhs::AbstractExpr, rhs::AbstractExpr,
                                   loc::SourceLocation, is_comp_assign::Bool=false)
     @check_ptrs x lhs rhs
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     comp = Ref{CXQualType}(C_NULL)
     t = clang_Sema_CheckSubtractionOperands(x, lhs_io, rhs_io, loc, is_comp_assign, comp)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
@@ -6058,8 +6070,8 @@ function CheckShiftOperands(x::AbstractSema, lhs::AbstractExpr, rhs::AbstractExp
                             loc::SourceLocation, opc::CXBinaryOperatorKind,
                             is_comp_assign::Bool=false)
     @check_ptrs x lhs rhs
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckShiftOperands(x, lhs_io, rhs_io, loc, opc, is_comp_assign)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
     return QualType(t), Expr_(lhs_io[]), Expr_(rhs_io[])
@@ -6074,8 +6086,8 @@ arithmetic operands.
 function CheckPtrComparisonWithNullChar(x::AbstractSema, e::AbstractExpr,
                                         null_e::AbstractExpr)
     @check_ptrs x e null_e
-    e_io = Ref{CXExpr}(e.ptr)
-    null_io = Ref{CXExpr}(null_e.ptr)
+    e_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, e))
+    null_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, null_e))
     clang_Sema_CheckPtrComparisonWithNullChar(x, e_io, null_io)
     (e_io[] == C_NULL || null_io[] == C_NULL) && return nothing
     return Expr_(e_io[]), Expr_(null_io[])
@@ -6091,8 +6103,8 @@ Returns `nothing` when the operands are not comparable, which is diagnosed at `l
 function CheckCompareOperands(x::AbstractSema, lhs::AbstractExpr, rhs::AbstractExpr,
                               loc::SourceLocation, opc::CXBinaryOperatorKind)
     @check_ptrs x lhs rhs
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckCompareOperands(x, lhs_io, rhs_io, loc, opc)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
     return QualType(t), Expr_(lhs_io[]), Expr_(rhs_io[])
@@ -6115,7 +6127,7 @@ function CheckAssignmentOperands(x::AbstractSema, lhs_expr::AbstractExpr,
     @check_ptrs x lhs_expr rhs
     mlv = isModifiableLvalue(lhs_expr, getASTContext(x))
     @assert mlv == CXExpr_MLV_Valid "the left operand must be a modifiable lvalue"
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckAssignmentOperands(x, lhs_expr, rhs_io, loc, compound_type, opc)
     (t == C_NULL || rhs_io[] == C_NULL) && return nothing
     return QualType(t), Expr_(rhs_io[])
@@ -6135,8 +6147,8 @@ function CheckPointerToMemberOperands(x::AbstractSema, lhs::AbstractExpr,
     @check_ptrs x lhs rhs
     @assert isMemberPointerType(expr_type_ptr(rhs)) "the right operand of .* / ->* must have member-pointer type"
     @assert !is_indirect || isPointerType(expr_type_ptr(lhs)) "->* takes a pointer as its left operand"
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     vk = Ref{CXExprValueKind}(CXExprValueKind_VK_PRValue)
     t = clang_Sema_CheckPointerToMemberOperands(x, lhs_io, rhs_io, vk, op_loc, is_indirect)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
@@ -6157,7 +6169,7 @@ function CheckAddressOfOperand(x::AbstractSema, operand::AbstractExpr,
     @check_ptrs x operand
     addressable = isLValue(operand) || isPlaceholderType(expr_type_ptr(operand))
     @assert addressable "the operand of unary & must be an lvalue or an overload set"
-    op_io = Ref{CXExpr}(operand.ptr)
+    op_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, operand))
     t = clang_Sema_CheckAddressOfOperand(x, op_io, op_loc)
     (t == C_NULL || op_io[] == C_NULL) && return nothing
     return QualType(t), Expr_(op_io[])
@@ -6349,7 +6361,7 @@ function SubstExprs(x::AbstractSema, exprs::AbstractVector{<:AbstractExpr}, is_c
     @check_ptrs x template_args
     @assert all(e -> e.ptr != C_NULL, exprs) "every expression must be non-NULL"
     @assert getNumCodeSynthesisContexts(x) > 0 "substitution needs a live InstantiatingTemplate"
-    in_buf = CXExpr[e.ptr for e in exprs]
+    in_buf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
     produced = Ref{Cuint}(0)
     out = Vector{CXExpr}(undef, length(in_buf))
     clang_Sema_SubstExprs(x, in_buf, length(in_buf), is_call, template_args, out,
@@ -6527,7 +6539,7 @@ function FindAllocationFunctions(x::AbstractSema, start_loc::SourceLocation,
     @check_ptrs x alloc_ty
     @assert all(a -> a.ptr != C_NULL, place_args) "a placement argument holds no null slot"
     align = Ref{Bool}(pass_alignment)
-    argbuf = CXExpr[a.ptr for a in place_args]
+    argbuf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in place_args]
     opnew = Ref{CXFunctionDecl}(C_NULL)
     opdel = Ref{CXFunctionDecl}(C_NULL)
     failed = clang_Sema_FindAllocationFunctions(x, start_loc, getBeginLoc(range),
@@ -6552,8 +6564,8 @@ to render a diagnostic against.
 function FindCompositePointerType(x::AbstractSema, loc::SourceLocation, e1::AbstractExpr,
                                   e2::AbstractExpr; convert_args::Bool=false)
     @check_ptrs x e1 e2
-    a = Ref{CXExpr}(e1.ptr)
-    b = Ref{CXExpr}(e2.ptr)
+    a = Ref{CXExpr}(Base.unsafe_convert(CXExpr, e1))
+    b = Ref{CXExpr}(Base.unsafe_convert(CXExpr, e2))
     t = clang_Sema_FindCompositePointerType(x, loc, a, b, convert_args)
     t == C_NULL && return nothing
     return QualType(t), Expr_(a[]), Expr_(b[])
@@ -6583,7 +6595,7 @@ function FindInstantiatedDecl(x::AbstractSema, loc::SourceLocation, d::AbstractN
 end
 
 """
-    FindInstantiatedContext(x::AbstractSema, loc::SourceLocation, ctx::DeclContext,
+    FindInstantiatedContext(x::AbstractSema, loc::SourceLocation, ctx::AnyDeclContext,
                             args::AbstractMultiLevelTemplateArgumentList) -> DeclContext
 The declaration context `ctx` denotes once `args` have been substituted.
 
@@ -6592,7 +6604,7 @@ specification — comes back unchanged; anything else is routed through
 [`FindInstantiatedDecl`](@ref) and carries its precondition, so a function or method
 context is rejected here.
 """
-function FindInstantiatedContext(x::AbstractSema, loc::SourceLocation, ctx::DeclContext,
+function FindInstantiatedContext(x::AbstractSema, loc::SourceLocation, ctx::AnyDeclContext,
                                  args::AbstractMultiLevelTemplateArgumentList)
     @check_ptrs x ctx args
     @assert !isFunctionOrMethod(ctx) "a function or method context needs a live local instantiation scope"
@@ -6687,7 +6699,7 @@ call, so run this against an interpreter you own.
 function RegisterLocallyScopedExternCDecl(x::AbstractSema, nd::AbstractNamedDecl,
                                           s::Union{Nothing,AbstractScope}=nothing)
     @check_ptrs x nd
-    sp = s === nothing ? C_NULL : s.ptr
+    sp = s === nothing ? CXScope(C_NULL) : Base.unsafe_convert(CXScope, s)
     clang_Sema_RegisterLocallyScopedExternCDecl(x, nd, sp)
     return nothing
 end
@@ -6771,9 +6783,9 @@ function LookupOverloadedBinOp(x::AbstractSema, cs::AbstractOverloadCandidateSet
     @assert op != CXOverloadedOperatorKind_OO_None "an operator kind is required"
     @assert length(fns) == length(accesses) "fns and accesses must have the same length"
     @assert length(args) == 2 "a binary operator takes both of its operands"
-    fbuf = CXNamedDecl[d.ptr for d in fns]
+    fbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in fns]
     abuf = collect(accesses)
-    ebuf = CXExpr[a.ptr for a in args]
+    ebuf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_LookupOverloadedBinOp(x, cs, op, fbuf, abuf, length(fbuf), ebuf,
                                             length(ebuf), requires_adl)
 end
@@ -6941,7 +6953,7 @@ function IdentifyCUDAPreference(x::AbstractSema,
                                 caller::Union{Nothing,AbstractFunctionDecl},
                                 callee::AbstractFunctionDecl)
     @check_ptrs x callee
-    c = caller === nothing ? C_NULL : caller.ptr
+    c = caller === nothing ? CXFunctionDecl(C_NULL) : Base.unsafe_convert(CXFunctionDecl, caller)
     return clang_Sema_IdentifyCUDAPreference(x, c, callee)
 end
 
@@ -7181,8 +7193,10 @@ so the Sema receiver is only there to reach the language options.
 function canCalleeThrow(x::AbstractSema, e::Union{Nothing,AbstractExpr},
                         d::Union{Nothing,AbstractDecl}, loc::SourceLocation)
     @check_ptrs x
-    return clang_Sema_canCalleeThrow(x, e === nothing ? C_NULL : e.ptr,
-                                     d === nothing ? C_NULL : d.ptr, loc)
+    return clang_Sema_canCalleeThrow(x,
+                                     e === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, e),
+                                     d === nothing ? CXDecl(C_NULL) : Base.unsafe_convert(CXDecl, d),
+                                     loc)
 end
 
 """
@@ -7479,7 +7493,7 @@ function BuildUsingPackDecl(x::AbstractSema, instantiated_from::AbstractNamedDec
     @check_ptrs x instantiated_from
     @assert getCurLexicalContext(x).ptr != C_NULL "Sema has no current declaration context"
     @assert all(d -> d.ptr != C_NULL, expansions) "expansion list holds no null slot"
-    ptrs = CXNamedDecl[d.ptr for d in expansions]
+    ptrs = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in expansions]
     return NamedDecl(clang_Sema_BuildUsingPackDecl(x, instantiated_from, ptrs,
                                                    length(ptrs)))
 end
@@ -7535,7 +7549,7 @@ the argument that caused it.
 function CheckArgsForPlaceholders(x::AbstractSema, args::AbstractVector{<:AbstractExpr})
     @check_ptrs x
     @assert all(a -> a.ptr != C_NULL, args) "every argument must be non-NULL"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     failed = clang_Sema_CheckArgsForPlaceholders(x, buf, length(buf))
     return failed, Expr_[Expr_(p) for p in buf]
 end
@@ -7554,10 +7568,11 @@ function CheckEnableIf(x::AbstractSema, func::AbstractFunctionDecl,
                        missing_implicit_this::Bool=false)
     @check_ptrs x func
     @assert all(a -> a.ptr != C_NULL, args) "every argument must be non-NULL"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     p = clang_Sema_CheckEnableIf(x, func, call_loc, buf, length(buf), missing_implicit_this)
     p == C_NULL && return nothing
-    return EnableIfAttr(p)
+    # CheckEnableIf answers with the enable_if attribute that failed, typed at the base
+    return downcast(EnableIfAttr, p)
 end
 
 """
@@ -7631,9 +7646,9 @@ Returns `nothing` when the operands are ill-formed, which is diagnosed at `quest
 function CheckConditionalOperands(x::AbstractSema, cond::AbstractExpr, lhs::AbstractExpr,
                                   rhs::AbstractExpr, question_loc::SourceLocation)
     @check_ptrs x cond lhs rhs
-    cond_io = Ref{CXExpr}(cond.ptr)
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    cond_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, cond))
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     vk = Ref{CXExprValueKind}(CXExprValueKind_VK_PRValue)
     ok = Ref{CXExprObjectKind}(CXExprObjectKind_OK_Ordinary)
     t = clang_Sema_CheckConditionalOperands(x, cond_io, lhs_io, rhs_io, vk, ok,
@@ -7653,9 +7668,9 @@ Returns `nothing` when the operands are ill-formed, which is diagnosed at `quest
 function CXXCheckConditionalOperands(x::AbstractSema, cond::AbstractExpr, lhs::AbstractExpr,
                                      rhs::AbstractExpr, question_loc::SourceLocation)
     @check_ptrs x cond lhs rhs
-    cond_io = Ref{CXExpr}(cond.ptr)
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    cond_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, cond))
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     vk = Ref{CXExprValueKind}(CXExprValueKind_VK_PRValue)
     ok = Ref{CXExprObjectKind}(CXExprObjectKind_OK_Ordinary)
     t = clang_Sema_CXXCheckConditionalOperands(x, cond_io, lhs_io, rhs_io, vk, ok,
@@ -7678,9 +7693,9 @@ function CheckVectorConditionalTypes(x::AbstractSema, cond::AbstractExpr, lhs::A
                                      rhs::AbstractExpr, question_loc::SourceLocation)
     @check_ptrs x cond lhs rhs
     @assert isVectorType(expr_type_ptr(cond)) "the condition must have vector type"
-    cond_io = Ref{CXExpr}(cond.ptr)
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    cond_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, cond))
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckVectorConditionalTypes(x, cond_io, lhs_io, rhs_io, question_loc)
     (t == C_NULL || cond_io[] == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) &&
         return nothing
@@ -7705,8 +7720,8 @@ function CheckVectorOperands(x::AbstractSema, lhs::AbstractExpr, rhs::AbstractEx
     @check_ptrs x lhs rhs
     vec = isVectorType(expr_type_ptr(lhs)) || isVectorType(expr_type_ptr(rhs))
     @assert vec "at least one operand must have vector type"
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckVectorOperands(x, lhs_io, rhs_io, loc, is_comp_assign,
                                        allow_both_bool, allow_bool_conversion,
                                        allow_bool_operation, report_invalid)
@@ -7727,8 +7742,8 @@ function CheckVectorCompareOperands(x::AbstractSema, lhs::AbstractExpr, rhs::Abs
     @check_ptrs x lhs rhs
     vec = isVectorType(expr_type_ptr(lhs)) || isVectorType(expr_type_ptr(rhs))
     @assert vec "at least one operand must have vector type"
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckVectorCompareOperands(x, lhs_io, rhs_io, loc, opc)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
     return QualType(t), Expr_(lhs_io[]), Expr_(rhs_io[])
@@ -7747,8 +7762,8 @@ function CheckVectorLogicalOperands(x::AbstractSema, lhs::AbstractExpr, rhs::Abs
     @check_ptrs x lhs rhs
     vec = isVectorType(expr_type_ptr(lhs)) || isVectorType(expr_type_ptr(rhs))
     @assert vec "at least one operand must have vector type"
-    lhs_io = Ref{CXExpr}(lhs.ptr)
-    rhs_io = Ref{CXExpr}(rhs.ptr)
+    lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
+    rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
     t = clang_Sema_CheckVectorLogicalOperands(x, lhs_io, rhs_io, loc)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
     return QualType(t), Expr_(lhs_io[]), Expr_(rhs_io[])
@@ -7776,7 +7791,7 @@ function SubstParmTypes(x::AbstractSema, loc::SourceLocation,
     @assert all(p -> p.ptr != C_NULL, params) "every parameter must be non-NULL"
     @assert getNumCodeSynthesisContexts(x) > 0 "substitution needs a live InstantiatingTemplate"
     @assert hasCurrentInstantiationScope(x) "rebuilding a parameter needs a live LocalInstantiationScope"
-    in_buf = CXParmVarDecl[p.ptr for p in params]
+    in_buf = CXParmVarDecl[Base.unsafe_convert(CXParmVarDecl, p) for p in params]
     produced = Ref{Cuint}(0)
     types = Vector{CXQualType}(undef, length(in_buf))
     new_params = Vector{CXParmVarDecl}(undef, length(in_buf))
@@ -7837,7 +7852,7 @@ function SubstTemplateArguments(x::AbstractSema,
     @check_ptrs x template_args outputs
     @assert all(a -> a.ptr != C_NULL, args) "every written template argument must be non-NULL"
     @assert getNumCodeSynthesisContexts(x) > 0 "substitution needs a live InstantiatingTemplate"
-    in_buf = CXTemplateArgumentLoc[a.ptr for a in args]
+    in_buf = CXTemplateArgumentLoc[Base.unsafe_convert(CXTemplateArgumentLoc, a) for a in args]
     return clang_Sema_SubstTemplateArguments(x, in_buf, length(in_buf), template_args,
                                              outputs)
 end
@@ -7895,8 +7910,9 @@ function AddMethodTemplateCandidate(x::AbstractSema, ftd::AbstractFunctionTempla
     oty = expr_type_ptr(object)
     isPointerType(oty) && (oty = getTypePtr(getPointeeType(oty)))
     @assert isRecordType(oty) "the object expression must designate an object of class type"
-    tali = explicit_template_args === nothing ? C_NULL : explicit_template_args.ptr
-    buf = CXExpr[a.ptr for a in args]
+    tali = explicit_template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, explicit_template_args)
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddMethodTemplateCandidate(x, ftd, found, access, acting, tali,
                                                  object, buf, length(buf), cs,
                                                  suppress_user_conversions,
@@ -7991,7 +8007,7 @@ function AddSurrogateCandidate(x::AbstractSema, conv::AbstractCXXConversionDecl,
     oty = expr_type_ptr(object)
     isPointerType(oty) && (oty = getTypePtr(getPointeeType(oty)))
     @assert isRecordType(oty) "the object expression must designate an object of class type"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddSurrogateCandidate(x, conv, found, access, acting, proto, object,
                                             buf, length(buf), cs)
 end
@@ -8022,10 +8038,11 @@ function AddNonMemberOperatorCandidates(x::AbstractSema,
                                             "CXXConversion", "CXXDeductionGuide",
                                             "FunctionTemplate", "UsingShadow"),
                 fns) "every entry must name a function or a function template"
-    fbuf = CXNamedDecl[d.ptr for d in fns]
+    fbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in fns]
     abuf = collect(accesses)
-    ebuf = CXExpr[a.ptr for a in args]
-    tali = explicit_template_args === nothing ? C_NULL : explicit_template_args.ptr
+    ebuf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
+    tali = explicit_template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, explicit_template_args)
     return clang_Sema_AddNonMemberOperatorCandidates(x, fbuf, abuf, length(fbuf), ebuf,
                                                      length(ebuf), cs, tali)
 end
@@ -8072,7 +8089,7 @@ function AddOverloadedCallCandidates(x::AbstractSema, ule::AbstractUnresolvedLoo
                                      cs::AbstractOverloadCandidateSet;
                                      partial_overloading::Bool=false)
     @check_ptrs x ule cs
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddOverloadedCallCandidates(x, ule, buf, length(buf), cs,
                                                   partial_overloading)
 end
@@ -8098,8 +8115,9 @@ function AddOverloadedCallCandidates(x::AbstractSema, r::AbstractLookupResult,
                                             "CXXConversion", "CXXDeductionGuide",
                                             "FunctionTemplate", "UsingShadow"),
                 getResults(r)) "every result must name a function or a function template"
-    tali = explicit_template_args === nothing ? C_NULL : explicit_template_args.ptr
-    buf = CXExpr[a.ptr for a in args]
+    tali = explicit_template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, explicit_template_args)
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_Sema_AddOverloadedCallCandidatesWithLookupResult(x, r, tali, buf,
                                                                   length(buf), cs)
 end
@@ -8118,7 +8136,7 @@ associate nothing, so a call whose arguments are all built-in comes back empty.
 function FindAssociatedClassesAndNamespaces(x::AbstractSema, loc::SourceLocation,
                                             args::AbstractVector{<:AbstractExpr})
     @check_ptrs x
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     nns = Ref{Cuint}(0)
     ncs = Ref{Cuint}(0)
     clang_Sema_FindAssociatedClassesAndNamespaces(x, loc, buf, length(buf),
@@ -8152,7 +8170,7 @@ function CompleteConstructorCall(x::AbstractSema, ctor::AbstractCXXConstructorDe
                                  allow_explicit::Bool=false,
                                  list_initialization::Bool=false)
     @check_ptrs x ctor init_type
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     cap = length(buf) + Int(getNumParams(ctor))
     out = Vector{CXExpr}(undef, cap)
     n = Ref{Cuint}(0)
@@ -8184,7 +8202,7 @@ function GatherArgumentsForCall(x::AbstractSema, call_loc::SourceLocation,
                                 allow_explicit::Bool=false,
                                 list_initialization::Bool=false)
     @check_ptrs x fd proto
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     cap = length(buf) + Int(getNumParams(fd))
     out = Vector{CXExpr}(undef, cap)
     n = Ref{Cuint}(0)
@@ -8388,8 +8406,8 @@ function AreConstraintExpressionsEqual(x::AbstractSema,
                                        new_decl::Union{Nothing,AbstractNamedDecl},
                                        new_constr::AbstractExpr)
     @check_ptrs x old_constr new_constr
-    od = old_decl === nothing ? C_NULL : old_decl.ptr
-    nd = new_decl === nothing ? C_NULL : new_decl.ptr
+    od = old_decl === nothing ? CXNamedDecl(C_NULL) : Base.unsafe_convert(CXNamedDecl, old_decl)
+    nd = new_decl === nothing ? CXNamedDecl(C_NULL) : Base.unsafe_convert(CXNamedDecl, new_decl)
     return clang_Sema_AreConstraintExpressionsEqual(x, od, old_constr, nd, new_constr)
 end
 
@@ -8540,7 +8558,7 @@ function PushExpressionEvaluationContext(x::AbstractSema,
                                          lambda_context_decl::Union{Nothing,AbstractDecl}=nothing,
                                          kind::CXExpressionKind=CXExpressionKind_EK_Other)
     @check_ptrs x
-    decl = lambda_context_decl === nothing ? C_NULL : lambda_context_decl.ptr
+    decl = lambda_context_decl === nothing ? CXDecl(C_NULL) : Base.unsafe_convert(CXDecl, lambda_context_decl)
     return clang_Sema_PushExpressionEvaluationContext(x, ctx, decl, kind)
 end
 

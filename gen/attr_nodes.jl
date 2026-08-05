@@ -5,7 +5,7 @@
 #
 # Emits three files into src/:
 #   src/clang/core/AST/AttrCarriers.jl — `struct <Name>Attr <: Abstract<Category>;
-#                     ptr::CXAttr end` plus both CX converts, one per attribute.
+#                     ptr::CX<Name>Attr end`, one per attribute.
 #   src/clang/api/AST/AttrWrappers.jl  — per attribute: the `is<Name>Attr` predicate
 #                     and the `<Name>Attr` constructor-shaped downcast.
 #   src/clang/AttrKindMap.jl           — `const ATTR_KIND_TO_TYPE = Dict{CXAttrKind,Any}(...)`,
@@ -72,6 +72,8 @@ function emit_carriers(io, nodes)
     println(io, GEN_NOTE)
     println(io, "# One carrier per concrete clang attribute, subtyping its own Abstract<Name>Attr")
     println(io, "# (defined in AttrAbstracts.jl) which subtypes the attribute's category.")
+    println(io, "# Marshalling is the carrier's own entry in converts.jl, plus the `CXAttr`")
+    println(io, "# entry keyed on `AbstractAttr` that carries it to every base-class binding.")
     for n in nodes
         sym = attr_carrier(n.name)
         println(io, """
@@ -80,11 +82,8 @@ function emit_carriers(io, nodes)
         Hold a pointer to a `clang::$sym` object.
         \"\"\"
         struct $sym <: Abstract$sym
-            ptr::CXAttr
+            ptr::CX$sym
         end
-
-        Base.unsafe_convert(::Type{CXAttr}, x::$sym) = x.ptr
-        Base.cconvert(::Type{CXAttr}, x::$sym) = x
         """)
     end
 end

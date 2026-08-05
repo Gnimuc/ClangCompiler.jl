@@ -5,24 +5,24 @@
 #include <string>
 
 CXDriver clang_ToolChain_getDriver(CXToolChain TC) {
-  return const_cast<clang::driver::Driver *>(
-      &static_cast<clang::driver::ToolChain *>(TC)->getDriver());
+  return reinterpret_cast<CXDriver>(const_cast<clang::driver::Driver *>(
+      &reinterpret_cast<clang::driver::ToolChain *>(TC)->getDriver()));
 }
 
 CXString clang_ToolChain_getTripleString(CXToolChain TC) {
   return extra::makeCXString(
-      static_cast<clang::driver::ToolChain *>(TC)->getTripleString());
+      reinterpret_cast<clang::driver::ToolChain *>(TC)->getTripleString());
 }
 
 CXString clang_ToolChain_getArchName(CXToolChain TC) {
   return extra::makeCXString(
-      static_cast<clang::driver::ToolChain *>(TC)->getArchName().str());
+      reinterpret_cast<clang::driver::ToolChain *>(TC)->getArchName().str());
 }
 
 CXString clang_ToolChain_getOS(CXToolChain TC) {
-  return extra::makeCXString(static_cast<clang::driver::ToolChain *>(TC)->getOS().str());
+  return extra::makeCXString(reinterpret_cast<clang::driver::ToolChain *>(TC)->getOS().str());
 }
 
 bool clang_ToolChain_isCrossCompiling(CXToolChain TC) {
-  return static_cast<clang::driver::ToolChain *>(TC)->isCrossCompiling();
+  return reinterpret_cast<clang::driver::ToolChain *>(TC)->isCrossCompiling();
 }

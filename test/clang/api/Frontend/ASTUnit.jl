@@ -72,7 +72,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "astunit_region_probe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     loc = CC.getLocation(fd)
     rng = CC.getSourceRange(fd)
 

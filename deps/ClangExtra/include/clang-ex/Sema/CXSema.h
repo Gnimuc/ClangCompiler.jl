@@ -1764,7 +1764,7 @@ CXExpr clang_Sema_VerifyBitField(CXSema S, CXSourceLocation_ FieldLoc,
 // safe to call between parses.
 
 // Borrowed; null unless a module scope is currently open.
-CXModule clang_Sema_getCurrentModule(CXSema S);
+CXModule_ clang_Sema_getCurrentModule(CXSema S);
 
 // C11 6.2.7/1 structural layout compatibility. clang runs the comparison with
 // complaints enabled, so a mismatch between two tag declarations is reported
@@ -2528,7 +2528,7 @@ bool clang_Sema_hasAnyUnrecoverableErrorsInThisFunction(CXSema S);
 // Whether module M is visible from the translation unit being analysed. M must
 // be non-null — clang indexes it without a null check. ModulePrivate asks the
 // narrower question of whether M is part of the module currently being built.
-bool clang_Sema_isModuleVisible(CXSema S, CXModule M, bool ModulePrivate);
+bool clang_Sema_isModuleVisible(CXSema S, CXModule_ M, bool ModulePrivate);
 
 // Whether Def has a merged definition owned by a module usable from the module
 // currently being built. Def must be non-null.
@@ -3915,7 +3915,7 @@ CXScope clang_Sema_getNonFieldDeclScope(CXSema S, CXScope Sc);
 CXNamespaceDecl clang_Sema_getOrCreateStdNamespace(CXSema S);
 
 // The module owning Entity, or null when it is not owned by one. Entity must be non-null.
-CXModule clang_Sema_getOwningModule(CXSema S, CXDecl Entity);
+CXModule_ clang_Sema_getOwningModule(CXSema S, CXDecl Entity);
 
 // The scope in Sc's chain corresponding to DC, or null when there is none. This mirrors a
 // static member, so it takes no Sema receiver.

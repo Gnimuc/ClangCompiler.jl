@@ -123,8 +123,10 @@ end
         # decls_in walks the linked chain one ccall at a time; decls bulk-extracts the whole
         # subtree. On the direct children of a context they must report the same nodes in
         # the same order -- the disagreement that hid DeclIterator's dropped first element.
-        chain = [d.ptr for d in CC.decls_in(tu)]
-        bulk = Set(d.ptr for d in CC.decls(tu))
+        # `decls` resolves each node while `decls_in` hands back base carriers; carrier
+        # equality is the `Decl *` clang compares, so the two walks meet without unwrapping
+        chain = collect(CC.decls_in(tu))
+        bulk = Set(CC.decls(tu))
         @test !isempty(chain)
         @test allunique(chain)
         @test all(p -> p in bulk, chain)
@@ -163,10 +165,12 @@ end
         end
         @test fwd !== nothing
         if fwd !== nothing
-            seen, cur, steps = Set{Ptr{Cvoid}}(), CC.getMostRecentDecl(fwd), 0
+            # links come back as whatever class each redeclaration is; carrier equality is
+            # the `Decl *` they share, so the cycle check needs no unwrapping
+            seen, cur, steps = Set{CC.AbstractDecl}(), CC.getMostRecentDecl(fwd), 0
             while !CC.is_null_handle(cur) && steps < 64
-                @test !(cur.ptr in seen)         # no cycle
-                push!(seen, cur.ptr)
+                @test !(cur in seen)             # no cycle
+                push!(seen, cur)
                 cur = CC.getPreviousDecl(cur)
                 steps += 1
             end

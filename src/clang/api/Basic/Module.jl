@@ -178,7 +178,6 @@ function getSubmodule(x::AbstractModule, i::Integer)
     return Module_(clang_Module_getSubmodule(x, i))
 end
 
-
 """
     isForBuilding(x::AbstractModule, lang_opts::AbstractLangOptions) -> Bool
 Return `true` iff this module can be built in the compilation described by `lang_opts`.
@@ -235,7 +234,6 @@ function getVisibilityID(x::AbstractModule)
     @check_ptrs x
     return clang_Module_getVisibilityID(x)
 end
-
 
 """
     setParent(x::AbstractModule, parent::AbstractModule)
@@ -329,7 +327,7 @@ not the transitive closure.
 function getExportedModules(x::AbstractModule)
     @check_ptrs x
     n = clang_Module_getNumExportedModules(x)
-    buf = Vector{CXModule}(undef, n)
+    buf = Vector{CXModule_}(undef, n)
     n > 0 && clang_Module_getExportedModules(x, buf)
     return [Module_(p) for p in buf]
 end

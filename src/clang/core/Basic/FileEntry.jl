@@ -6,5 +6,3 @@ struct FileEntry <: AbstractFileEntry
     ptr::CXFileEntry
 end
 
-Base.unsafe_convert(::Type{CXFileEntry}, x::FileEntry) = x.ptr
-Base.cconvert(::Type{CXFileEntry}, x::FileEntry) = x

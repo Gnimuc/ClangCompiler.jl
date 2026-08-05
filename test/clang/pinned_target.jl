@@ -80,8 +80,8 @@ end
         ctx = CC.get_ast_context(I)
         f = DeclFinder(I)
 
-        vwidth(n) = (@test f(I, n); CC.getTypeSize(ctx, CC.getType(CC.VarDecl(get_decl(f).ptr))))
-        rec(n) = (@test f(I, n); CC.getTypeDeclType(ctx, CC.TypeDecl(get_decl(f).ptr)))
+        vwidth(n) = (@test f(I, n); CC.getTypeSize(ctx, CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))))
+        rec(n) = (@test f(I, n); CC.getTypeDeclType(ctx, CC.downcast(CC.TypeDecl, get_decl(f).ptr)))
 
         # the context agrees with the target about the scalar it was pinned to
         @test vwidth("pin_long") == PIN_LONG_BITS
@@ -141,7 +141,7 @@ end
         CC.parse(I, "int pin_mangle(int, double);")
         f = DeclFinder(I)
         @test f(I, "pin_mangle")
-        nd = CC.NamedDecl(get_decl(f).ptr)
+        nd = get_decl(f)
         ctx = CC.get_ast_context(I)
         mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
         name = CC.mangleName(mc, nd)

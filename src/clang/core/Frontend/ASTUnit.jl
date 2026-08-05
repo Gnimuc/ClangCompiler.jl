@@ -10,5 +10,3 @@ struct ASTUnit <: AbstractASTUnit
     ptr::CXASTUnit
 end
 
-Base.unsafe_convert(::Type{CXASTUnit}, x::ASTUnit) = x.ptr
-Base.cconvert(::Type{CXASTUnit}, x::ASTUnit) = x

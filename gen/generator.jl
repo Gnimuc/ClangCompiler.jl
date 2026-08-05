@@ -60,6 +60,21 @@ cd(@__DIR__) do
                 ctx = create_context(headers, args, options)
 
                 build!(ctx)
+
+                # Clang.jl emits each opaque handle's phantom as a bare `mutable struct
+                # CXFooImpl end`, and gives no hook for a supertype. Attach one here: it is
+                # what lets a single method in src/clang/handles.jl speak about any two
+                # handles of this package at once, and so refuse a conversion between them.
+                out = joinpath(@__DIR__, "..", "lib", string(Base.libllvm_version.major),
+                               "LibClangEx.jl")
+                src = read(out, String)
+                src, n = let pat = r"^mutable struct (CX\w+Impl) end"m
+                    replace(src, pat => s"mutable struct \1 <: AbstractCXImpl end"),
+                    length(collect(eachmatch(pat, src)))
+                end
+                @assert n > 900 "phantom post-pass matched $n structs; Clang.jl's shape changed"
+                write(out, src)
+                @info "attached AbstractCXImpl to the generated phantoms" count = n
             end
 
             cleanup_dependencies(prefix, artifact_paths, platform)
@@ -71,3 +86,4 @@ include(joinpath(@__DIR__, "stmt_nodes.jl"))
 include(joinpath(@__DIR__, "decl_nodes.jl"))
 include(joinpath(@__DIR__, "type_nodes.jl"))
 include(joinpath(@__DIR__, "attr_nodes.jl"))
+include(joinpath(@__DIR__, "handle_converts.jl"))

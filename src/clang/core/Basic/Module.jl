@@ -9,8 +9,6 @@ abstract type AbstractModule end
 Hold a pointer to a `clang::Module` object.
 """
 struct Module_ <: AbstractModule
-    ptr::CXModule
+    ptr::CXModule_
 end
 
-Base.unsafe_convert(::Type{CXModule}, x::Module_) = x.ptr
-Base.cconvert(::Type{CXModule}, x::Module_) = x

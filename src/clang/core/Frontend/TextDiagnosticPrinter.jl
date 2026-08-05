@@ -6,5 +6,3 @@ struct TextDiagnosticPrinter <: AbstractTextDiagnosticPrinter
     ptr::CXDiagnosticConsumer
 end
 
-Base.unsafe_convert(::Type{CXDiagnosticConsumer}, x::TextDiagnosticPrinter) = x.ptr
-Base.cconvert(::Type{CXDiagnosticConsumer}, x::TextDiagnosticPrinter) = x

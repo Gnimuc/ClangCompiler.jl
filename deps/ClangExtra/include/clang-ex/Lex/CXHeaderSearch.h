@@ -84,7 +84,7 @@ CXString clang_HeaderSearch_getCachedModuleFileName(CXHeaderSearch HS,
 //   (clang_LangOptions_getModules).
 bool clang_HeaderSearch_ShouldEnterIncludeFile(CXHeaderSearch HS, CXPreprocessor PP,
                                                CXFileEntryRef File, bool isImport,
-                                               bool ModulesEnabled, CXModule M,
+                                               bool ModulesEnabled, CXModule_ M,
                                                bool *IsFirstIncludeOfFile);
 
 // Drops every HeaderFileInfo recorded so far, including the #pragma once / controlling

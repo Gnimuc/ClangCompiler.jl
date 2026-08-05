@@ -2790,7 +2790,7 @@ function FunctionParmPackExpr(ctx::ASTContext, ty::QualType, param_pack::Abstrac
                               name_loc::SourceLocation, params::Vector{<:AbstractVarDecl})
     @check_ptrs ctx ty param_pack
     @assert all(p -> p.ptr != C_NULL, params) "a parameter pack expansion holds no null slot"
-    buf = CXVarDecl[p.ptr for p in params]
+    buf = CXVarDecl[Base.unsafe_convert(CXVarDecl, p) for p in params]
     return FunctionParmPackExpr(clang_FunctionParmPackExpr_Create(ctx, ty, param_pack, name_loc, buf,
                                                                   length(buf)))
 end
@@ -2852,7 +2852,7 @@ function SubstNonTypeTemplateParmPackExpr(ctx::ASTContext, ty::QualType, vk::CXE
                                           assoc::AbstractDecl, index::Integer)
     @check_ptrs ctx ty assoc
     @assert all(a -> a.ptr != C_NULL, args) "a substituted argument pack holds no null slot"
-    buf = CXTemplateArgument[a.ptr for a in args]
+    buf = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
     p = clang_SubstNonTypeTemplateParmPackExpr_Create(ctx, ty, vk, name_loc, buf, length(buf), assoc,
                                                       index)
     return SubstNonTypeTemplateParmPackExpr(p)
@@ -2930,7 +2930,7 @@ function CXXParenListInitExpr(ctx::ASTContext, args::Vector{<:AbstractExpr}, ty:
     @check_ptrs ctx ty
     @assert all(a -> a.ptr != C_NULL, args) "a paren-list initializer holds no null slot"
     @assert 0 <= num_user_specified <= length(args) "written initializers outnumber the initializers"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return CXXParenListInitExpr(clang_CXXParenListInitExpr_Create(ctx, buf, length(buf), ty,
                                                                   num_user_specified, init_loc,
                                                                   lparen, rparen))
@@ -2962,7 +2962,7 @@ function CXXUnresolvedConstructExpr(ctx::ASTContext, ty::QualType, tsi::TypeSour
                                     rparen::SourceLocation, is_list_init::Bool)
     @check_ptrs ctx ty tsi
     @assert all(a -> a.ptr != C_NULL, args) "an unresolved-construct argument holds no null slot"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return CXXUnresolvedConstructExpr(clang_CXXUnresolvedConstructExpr_Create(ctx, ty, tsi, lparen,
                                                                               buf, length(buf),
                                                                               rparen, is_list_init))
@@ -3280,7 +3280,7 @@ function CXXOperatorCallExpr(ctx::ASTContext, op_kind::CXOverloadedOperatorKind,
                              operator_loc::SourceLocation, fp_features::Integer, uses_adl::Bool)
     @check_ptrs ctx fn ty
     @assert all(a -> a.ptr != C_NULL, args) "an operator call holds no null argument slot"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return CXXOperatorCallExpr(clang_CXXOperatorCallExpr_Create(ctx, op_kind, fn, buf, length(buf),
                                                                 ty, vk, operator_loc, fp_features,
                                                                 uses_adl))
@@ -3303,7 +3303,7 @@ function CXXMemberCallExpr(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:Abs
                            fp_features::Integer, min_num_args::Integer)
     @check_ptrs ctx fn ty
     @assert all(a -> a.ptr != C_NULL, args) "a member call holds no null argument slot"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return CXXMemberCallExpr(clang_CXXMemberCallExpr_Create(ctx, fn, buf, length(buf), ty, vk,
                                                             rparen, fp_features, min_num_args))
 end
@@ -3338,7 +3338,7 @@ function UserDefinedLiteral(ctx::ASTContext, fn::AbstractExpr, args::Vector{<:Ab
                             suffix_loc::SourceLocation, fp_features::Integer)
     @check_ptrs ctx fn ty
     @assert all(a -> a.ptr != C_NULL, args) "a user-defined literal holds no null argument slot"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return UserDefinedLiteral(clang_UserDefinedLiteral_Create(ctx, fn, buf, length(buf), ty, vk,
                                                               lit_end_loc, suffix_loc, fp_features))
 end
@@ -3365,7 +3365,7 @@ function CXXConstructExpr(ctx::ASTContext, ty::QualType, loc::SourceLocation,
                           paren_or_brace::SourceRange)
     @check_ptrs ctx ty ctor
     @assert all(a -> a.ptr != C_NULL, args) "a construction holds no null argument slot"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     pb = CXSourceRange_(paren_or_brace.begin_loc.ptr, paren_or_brace.end_loc.ptr)
     return CXXConstructExpr(clang_CXXConstructExpr_Create(ctx, ty, loc, ctor, elidable, buf,
                                                           length(buf), had_multiple_candidates,
@@ -3394,7 +3394,7 @@ function CXXTemporaryObjectExpr(ctx::ASTContext, cons::AbstractCXXConstructorDec
                                 zero_initialization::Bool)
     @check_ptrs ctx cons ty tsi
     @assert all(a -> a.ptr != C_NULL, args) "a temporary object holds no null argument slot"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     pb = CXSourceRange_(paren_or_brace.begin_loc.ptr, paren_or_brace.end_loc.ptr)
     return CXXTemporaryObjectExpr(clang_CXXTemporaryObjectExpr_Create(ctx, cons, ty, tsi, buf,
                                                                       length(buf), pb,
@@ -3442,7 +3442,7 @@ function CXXNewExpr(ctx::ASTContext, is_global_new::Bool,
     od = operator_delete === nothing ? C_NULL : operator_delete
     sz = array_size === nothing ? C_NULL : array_size
     init = has_init ? initializer : C_NULL
-    buf = CXExpr[a.ptr for a in placement_args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in placement_args]
     tip = CXSourceRange_(type_id_parens.begin_loc.ptr, type_id_parens.end_loc.ptr)
     rng = CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr)
     dir = CXSourceRange_(direct_init_range.begin_loc.ptr, direct_init_range.end_loc.ptr)
@@ -3479,7 +3479,7 @@ function TypeTraitExpr(ctx::ASTContext, ty::QualType, loc::SourceLocation, kind:
                        args::Vector{<:AbstractTypeSourceInfo}, rparen::SourceLocation, value::Bool)
     @check_ptrs ctx ty
     @assert all(a -> a.ptr != C_NULL, args) "a type-trait expression holds no null argument slot"
-    buf = CXTypeSourceInfo[a.ptr for a in args]
+    buf = CXTypeSourceInfo[Base.unsafe_convert(CXTypeSourceInfo, a) for a in args]
     return TypeTraitExpr(clang_TypeTraitExpr_Create(ctx, ty, loc, kind, buf, length(buf), rparen,
                                                     value))
 end
@@ -3514,7 +3514,7 @@ function SizeOfPackExpr(ctx::ASTContext, operator_loc::SourceLocation, pack::Abs
     @check_ptrs ctx pack
     @assert all(a -> a.ptr != C_NULL, partial_args) "a substituted pack holds no null slot"
     @assert pack_length === nothing || isempty(partial_args) "a known pack length admits no partial arguments"
-    buf = CXTemplateArgument[a.ptr for a in partial_args]
+    buf = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in partial_args]
     len = pack_length === nothing ? 0 : pack_length
     return SizeOfPackExpr(clang_SizeOfPackExpr_Create(ctx, operator_loc, pack, pack_loc, rparen,
                                                       pack_length !== nothing, len, buf,
@@ -3607,7 +3607,7 @@ function LambdaExpr(ctx::ASTContext, cls::AbstractCXXRecordDecl, introducer::Sou
     @assert isLambda(cls) "the closure type must be a lambda closure type"
     @assert length(capture_inits) == capture_size(cls) "capture initializers must match the closure"
     @assert capture_default == getLambdaCaptureDefault(cls) "capture default must match the closure"
-    buf = CXExpr[c.ptr for c in capture_inits]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, c) for c in capture_inits]
     ir = CXSourceRange_(introducer.begin_loc.ptr, introducer.end_loc.ptr)
     return LambdaExpr(clang_LambdaExpr_Create(ctx, cls, ir, capture_default, capture_default_loc,
                                               explicit_params, explicit_result_type, buf,
@@ -3632,7 +3632,7 @@ function CUDAKernelCallExpr(ctx::ASTContext, fn::AbstractExpr, config::AbstractC
                             rparen::SourceLocation, fp_features::Integer, min_num_args::Integer)
     @check_ptrs ctx fn config ty
     @assert all(a -> a.ptr != C_NULL, args) "a kernel launch holds no null argument slot"
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return CUDAKernelCallExpr(clang_CUDAKernelCallExpr_Create(ctx, fn, config, buf, length(buf), ty,
                                                               vk, rparen, fp_features, min_num_args))
 end
@@ -3666,7 +3666,8 @@ function find(x::AbstractExpr)
     address_of = Ref{Bool}(false)
     member_pointer = Ref{Bool}(false)
     p = clang_OverloadExpr_find(x, address_of, member_pointer)
-    return Expr_(p), address_of[], member_pointer[]
+    # the shim hands back the overload expression it found; `Expr_` is its base
+    return upcast(Expr_, p), address_of[], member_pointer[]
 end
 
 # CXXParenListInitExpr (cont.)
@@ -3816,7 +3817,8 @@ function DependentScopeDeclRefExpr(ctx::ASTContext, qualifier_loc::NestedNameSpe
                                    template_args::Union{TemplateArgumentListInfo,Nothing}=nothing)
     @check_ptrs ctx qualifier_loc name_info
     @assert hasQualifier(qualifier_loc) "a dependent scope reference must carry a qualifier"
-    args = template_args === nothing ? C_NULL : template_args.ptr
+    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
     p = clang_DependentScopeDeclRefExpr_Create(ctx, qualifier_loc, template_kw_loc, name_info, args)
     return DependentScopeDeclRefExpr(p)
 end
@@ -3843,9 +3845,10 @@ function CXXDependentScopeMemberExpr(ctx::ASTContext, base::Union{AbstractExpr,N
                                      member_name_info::DeclarationNameInfo,
                                      template_args::Union{TemplateArgumentListInfo,Nothing}=nothing)
     @check_ptrs ctx base_type qualifier_loc member_name_info
-    b = base === nothing ? C_NULL : base.ptr
-    fq = first_qualifier === nothing ? C_NULL : first_qualifier.ptr
-    args = template_args === nothing ? C_NULL : template_args.ptr
+    b = base === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, base)
+    fq = first_qualifier === nothing ? CXNamedDecl(C_NULL) : Base.unsafe_convert(CXNamedDecl, first_qualifier)
+    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
     p = clang_CXXDependentScopeMemberExpr_Create(ctx, b, base_type, is_arrow, operator_loc,
                                                  qualifier_loc, template_kw_loc, fq,
                                                  member_name_info, args)
@@ -3874,8 +3877,8 @@ function UnresolvedLookupExpr(ctx::ASTContext,
     @assert length(decls) == length(accesses) "decls and accesses must have the same length"
     @assert !isempty(decls) "an unresolved lookup must name at least one declaration"
     @assert all(d -> d.ptr != C_NULL, decls) "a lookup result holds no null slot"
-    nc = naming_class === nothing ? C_NULL : naming_class.ptr
-    dbuf = CXNamedDecl[d.ptr for d in decls]
+    nc = naming_class === nothing ? CXCXXRecordDecl(C_NULL) : Base.unsafe_convert(CXCXXRecordDecl, naming_class)
+    dbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
     abuf = collect(accesses)
     p = clang_UnresolvedLookupExpr_Create(ctx, nc, qualifier_loc, name_info, requires_adl,
                                           overloaded, dbuf, abuf, length(dbuf))
@@ -3906,9 +3909,10 @@ function UnresolvedLookupExpr(ctx::ASTContext,
     @assert length(decls) == length(accesses) "decls and accesses must have the same length"
     @assert !isempty(decls) "an unresolved lookup must name at least one declaration"
     @assert all(d -> d.ptr != C_NULL, decls) "a lookup result holds no null slot"
-    nc = naming_class === nothing ? C_NULL : naming_class.ptr
-    args = template_args === nothing ? C_NULL : template_args.ptr
-    dbuf = CXNamedDecl[d.ptr for d in decls]
+    nc = naming_class === nothing ? CXCXXRecordDecl(C_NULL) : Base.unsafe_convert(CXCXXRecordDecl, naming_class)
+    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
+    dbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
     abuf = collect(accesses)
     p = clang_UnresolvedLookupExpr_CreateWithTemplateArgs(ctx, nc, qualifier_loc,
                                                           template_kw_loc, name_info,
@@ -3944,9 +3948,10 @@ function UnresolvedMemberExpr(ctx::ASTContext, has_unresolved_using::Bool,
     @assert length(decls) == length(accesses) "decls and accesses must have the same length"
     @assert !isempty(decls) "an unresolved member access must name at least one declaration"
     @assert all(d -> d.ptr != C_NULL, decls) "a lookup result holds no null slot"
-    b = base === nothing ? C_NULL : base.ptr
-    args = template_args === nothing ? C_NULL : template_args.ptr
-    dbuf = CXNamedDecl[d.ptr for d in decls]
+    b = base === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, base)
+    args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) :
+        Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
+    dbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
     abuf = collect(accesses)
     p = clang_UnresolvedMemberExpr_Create(ctx, has_unresolved_using, b, base_type, is_arrow,
                                           operator_loc, qualifier_loc, template_kw_loc,

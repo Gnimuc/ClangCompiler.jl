@@ -3,40 +3,40 @@
 #include "clang/Basic/LangOptions.h"
 #include <memory>
 
-CXPrintingPolicy clang_PrintingPolicy_create(CXLangOptions LO) {
-  return std::make_unique<clang::PrintingPolicy>(*static_cast<clang::LangOptions *>(LO))
-      .release();
+CXPrintingPolicy_ clang_PrintingPolicy_create(CXLangOptions LO) {
+  return reinterpret_cast<CXPrintingPolicy_>(std::make_unique<clang::PrintingPolicy>(*reinterpret_cast<clang::LangOptions *>(LO))
+      .release());
 }
 
-CXPrintingPolicy clang_PrintingPolicy_copy(CXPrintingPolicy PP) {
-  return std::make_unique<clang::PrintingPolicy>(*static_cast<clang::PrintingPolicy *>(PP))
-      .release();
+CXPrintingPolicy_ clang_PrintingPolicy_copy(CXPrintingPolicy_ PP) {
+  return reinterpret_cast<CXPrintingPolicy_>(std::make_unique<clang::PrintingPolicy>(*reinterpret_cast<clang::PrintingPolicy *>(PP))
+      .release());
 }
 
-void clang_PrintingPolicy_dispose(CXPrintingPolicy PP) {
-  delete static_cast<clang::PrintingPolicy *>(PP);
+void clang_PrintingPolicy_dispose(CXPrintingPolicy_ PP) {
+  delete reinterpret_cast<clang::PrintingPolicy *>(PP);
 }
 
-bool clang_PrintingPolicy_getSuppressTagKeyword(CXPrintingPolicy PP) {
-  return static_cast<clang::PrintingPolicy *>(PP)->SuppressTagKeyword;
+bool clang_PrintingPolicy_getSuppressTagKeyword(CXPrintingPolicy_ PP) {
+  return reinterpret_cast<clang::PrintingPolicy *>(PP)->SuppressTagKeyword;
 }
 
-void clang_PrintingPolicy_setSuppressTagKeyword(CXPrintingPolicy PP, bool Value) {
-  static_cast<clang::PrintingPolicy *>(PP)->SuppressTagKeyword = Value;
+void clang_PrintingPolicy_setSuppressTagKeyword(CXPrintingPolicy_ PP, bool Value) {
+  reinterpret_cast<clang::PrintingPolicy *>(PP)->SuppressTagKeyword = Value;
 }
 
-bool clang_PrintingPolicy_getSuppressScope(CXPrintingPolicy PP) {
-  return static_cast<clang::PrintingPolicy *>(PP)->SuppressScope;
+bool clang_PrintingPolicy_getSuppressScope(CXPrintingPolicy_ PP) {
+  return reinterpret_cast<clang::PrintingPolicy *>(PP)->SuppressScope;
 }
 
-void clang_PrintingPolicy_setSuppressScope(CXPrintingPolicy PP, bool Value) {
-  static_cast<clang::PrintingPolicy *>(PP)->SuppressScope = Value;
+void clang_PrintingPolicy_setSuppressScope(CXPrintingPolicy_ PP, bool Value) {
+  reinterpret_cast<clang::PrintingPolicy *>(PP)->SuppressScope = Value;
 }
 
-bool clang_PrintingPolicy_getBool(CXPrintingPolicy PP) {
-  return static_cast<clang::PrintingPolicy *>(PP)->Bool;
+bool clang_PrintingPolicy_getBool(CXPrintingPolicy_ PP) {
+  return reinterpret_cast<clang::PrintingPolicy *>(PP)->Bool;
 }
 
-void clang_PrintingPolicy_setBool(CXPrintingPolicy PP, bool Value) {
-  static_cast<clang::PrintingPolicy *>(PP)->Bool = Value;
+void clang_PrintingPolicy_setBool(CXPrintingPolicy_ PP, bool Value) {
+  reinterpret_cast<clang::PrintingPolicy *>(PP)->Bool = Value;
 }

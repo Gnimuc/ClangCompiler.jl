@@ -52,7 +52,7 @@ using Test
         CC.parse(I, src)
         f = DeclFinder(I)
         @test f(I, "deref_demo")
-        fd = CC.FunctionDecl(get_decl(f).ptr)
+        fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
         sites = find_deref_sites(fd)
         kinds = first.(sites)
@@ -84,27 +84,30 @@ end
         body = CC.resolve(CC.getBody(fd))
         nodes = CC.subtree(body)
 
-        declared = Tuple{Ptr{Cvoid},String}[]   # (decl-pointer, name) for each local VarDecl
+        # The two sides arrive as different classes -- a `VarDecl` from the DeclStmt, a
+        # `ValueDecl` from the DeclRefExpr -- and carrier equality is the `Decl *` clang keys
+        # on, so they compare directly.
+        declared = Tuple{CC.AbstractDecl,String}[]   # (decl, name) for each local VarDecl
         for n in nodes
             if n isa CC.DeclStmt
                 for d in CC.getDecls(n)
                     vd = CC.resolve(d)
                     # plain local variables only — not typedefs, not ParmVarDecls
                     if vd isa CC.VarDecl
-                        push!(declared, (vd.ptr, CC.getName(vd)))
+                        push!(declared, (vd, CC.getName(vd)))
                     end
                 end
             end
         end
 
-        referenced = Set{Ptr{Cvoid}}()
+        referenced = Set{CC.AbstractDecl}()
         for n in nodes
             if n isa CC.DeclRefExpr
-                push!(referenced, CC.getDecl(n).ptr)
+                push!(referenced, CC.getDecl(n))
             end
         end
 
-        return String[name for (ptr, name) in declared if !(ptr in referenced)]
+        return String[name for (d, name) in declared if !(d in referenced)]
     end
 
     src = """
@@ -120,7 +123,7 @@ end
         CC.parse(I, src)
         f = DeclFinder(I)
         @test f(I, "compute")
-        fd = CC.FunctionDecl(get_decl(f).ptr)
+        fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
         unused = find_unused_locals(fd)
 
@@ -168,7 +171,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "caller")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
     edges = direct_call_edges(fd)
     @test edges == ["bar", "foo"]          # sorted, unique
@@ -200,7 +203,7 @@ end
         f = DeclFinder(I)
         try
             @test f(I, "S")
-            rd = CC.CXXRecordDecl(get_decl(f).ptr)
+            rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
             layout = dump_layout(rd)
 
             @test length(layout) == 3

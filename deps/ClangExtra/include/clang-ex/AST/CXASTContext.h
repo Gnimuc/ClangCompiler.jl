@@ -73,11 +73,11 @@ void clang_ASTContext_setTraversalScope(CXASTContext Ctx, CXDecl *Decls, unsigne
 // a plain member, not an element of a container clang can reallocate), so it has no dispose,
 // and passing it to clang_PrintingPolicy_dispose deletes into the ASTContext. Mutating it
 // changes what every one of those printers produces for the rest of the context's life.
-CXPrintingPolicy clang_ASTContext_getPrintingPolicy(CXASTContext Ctx);
+CXPrintingPolicy_ clang_ASTContext_getPrintingPolicy(CXASTContext Ctx);
 
 // Copy-assigns Policy into the context. The handle is NOT adopted: the caller keeps ownership
 // and must still dispose a policy it created.
-void clang_ASTContext_setPrintingPolicy(CXASTContext Ctx, CXPrintingPolicy Policy);
+void clang_ASTContext_setPrintingPolicy(CXASTContext Ctx, CXPrintingPolicy_ Policy);
 
 CXSourceManager clang_ASTContext_getSourceManager(CXASTContext Ctx);
 
@@ -277,7 +277,7 @@ CXDecl clang_ASTContext_getPrimaryMergedDecl(CXASTContext Ctx, CXDecl D);
 void clang_ASTContext_setPrimaryMergedDecl(CXASTContext Ctx, CXDecl D, CXDecl Primary);
 
 void clang_ASTContext_mergeDefinitionIntoModule(CXASTContext Ctx, CXNamedDecl ND,
-                                                CXModule Module, bool NotifyListeners);
+                                                CXModule_ Module, bool NotifyListeners);
 
 void clang_ASTContext_deduplicateMergedDefinitonsFor(CXASTContext Ctx, CXNamedDecl ND);
 
@@ -289,7 +289,7 @@ unsigned clang_ASTContext_getNumModulesWithMergedDefinition(CXASTContext Ctx,
 
 // PRECONDITION: I < clang_ASTContext_getNumModulesWithMergedDefinition(Ctx, Def) — the
 // index is unchecked; restated as an @assert in the Julia layer.
-CXModule clang_ASTContext_getModuleWithMergedDefinition(CXASTContext Ctx, CXNamedDecl Def,
+CXModule_ clang_ASTContext_getModuleWithMergedDefinition(CXASTContext Ctx, CXNamedDecl Def,
                                                         unsigned I);
 
 // getModuleInitializers
@@ -297,18 +297,18 @@ CXModule clang_ASTContext_getModuleWithMergedDefinition(CXASTContext Ctx, CXName
 // Records Init as a declaration to run when Module M is initialized — typically a
 // module-scope variable whose initializer runs on import, or an ImportDecl nominating
 // another module. The context keys the list on the Module pointer and owns neither handle.
-void clang_ASTContext_addModuleInitializer(CXASTContext Ctx, CXModule M, CXDecl Init);
+void clang_ASTContext_addModuleInitializer(CXASTContext Ctx, CXModule_ M, CXDecl Init);
 
 // helper — how many initializers Module M has (MARSHALLING.md §6, count+index over the
 // ArrayRef the context stores per module). 0 for a module nothing was recorded against.
-unsigned clang_ASTContext_getNumModuleInitializers(CXASTContext Ctx, CXModule M);
+unsigned clang_ASTContext_getNumModuleInitializers(CXASTContext Ctx, CXModule_ M);
 
 // PRECONDITION: I < clang_ASTContext_getNumModuleInitializers(Ctx, M) — the index is
 // unchecked; restated as an @assert in the Julia layer. The CXDecls are borrowed.
-CXDecl clang_ASTContext_getModuleInitializer(CXASTContext Ctx, CXModule M, unsigned I);
+CXDecl clang_ASTContext_getModuleInitializer(CXASTContext Ctx, CXModule_ M, unsigned I);
 
 // The C++20 named module under construction; NULL outside a named-module build.
-CXModule clang_ASTContext_getCurrentNamedModule(CXASTContext Ctx);
+CXModule_ clang_ASTContext_getCurrentNamedModule(CXASTContext Ctx);
 
 CXTranslationUnitDecl clang_ASTContext_getTranslationUnitDecl(CXASTContext Ctx);
 

@@ -25,7 +25,7 @@ using Test
 
     fer = CC.getFileRef(fm, file)
     @test fer isa CC.FileEntryRef
-    @test occursin("FileManager", CC.getName(CC.getFileEntry(fer)))
+    @test occursin("FileManager", CC.getName(fer))   # the name is the ref's, not the entry's
     buf = CC.getBufferForFile(fm, fer)
     @test buf isa CC.LLVM.MemoryBuffer
     @test length(buf) == filesize(file)
@@ -81,7 +81,8 @@ end
     # a second lookup of the same path is the same reference and the same entry
     r2 = CC.getOptionalFileRef(fm, path)
     @test CC.isSameRef(r1, r2)
-    @test CC.getName(CC.getFileEntry(r1)) == CC.getName(CC.getFileEntry(r2))
+    @test CC.getName(r1) == CC.getName(r2)
+    @test CC.getFileEntry(r1).ptr == CC.getFileEntry(r2).ptr   # and one entry behind both
 
     # an absent path is the documented nothing, not a NULL carrier
     @test CC.getOptionalFileRef(fm, joinpath(dir, "no_such_file.cpp")) === nothing

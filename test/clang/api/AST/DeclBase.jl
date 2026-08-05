@@ -206,7 +206,7 @@ end
     f = DeclFinder(I)
 
     @test f(I, "declbase_a::FlexTail")
-    rd = CC.CXXRecordDecl(get_decl(f).ptr)
+    rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
     ctx = CC.getASTContext(rd)
 
     # Decl::isFlexibleArrayMemberLike is static: the trailing member, then the same
@@ -367,6 +367,67 @@ end
     other = CC.getDeclName(get_decl(f))
     @test CC.getNumLookupResults(dc, other) == 0
     @test CC.lookupSingleResult(dc, other).ptr == C_NULL
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "DeclContext forwarding: a context decl reaches the DeclContext API" begin
+    I = create_interpreter(String[])
+    CC.parse(I, "int fwd_gvar; namespace FwdNS { int inner; } struct FwdS { int m; };")
+    ctx = CC.get_ast_context(I)
+    tu = CC.getTranslationUnitDecl(ctx)
+    f = DeclFinder(I)
+
+    # A forwarded call and the explicit pivot are the same call. Not a tautology: the
+    # forwarding applies clang_Decl_castToDeclContext, and skipping it would read
+    # DeclContext fields out of Decl storage instead.
+    @test CC.isTranslationUnit(tu) == CC.isTranslationUnit(CC.castToDeclContext(tu))
+    @test CC.isTranslationUnit(tu)
+    @test CC.isFileContext(tu)
+    @test !CC.isRecord(tu)
+
+    @test f(I, "FwdNS")
+    ns = CC.downcast(CC.NamespaceDecl, get_decl(f).ptr)
+    @test CC.isNamespace(ns)
+    @test !CC.isTranslationUnit(ns)
+    # the offset really was applied: the namespace's parent context is the TU's context,
+    # which is a different address from the TU's Decl*
+    @test CC.getParent(ns).ptr == CC.castToDeclContext(tu).ptr
+    @test CC.getParent(ns).ptr != tu.ptr
+
+    @test f(I, "FwdS")
+    rec = CC.resolve(get_decl(f))
+    @test CC.isRecord(rec)
+    @test !CC.isNamespace(rec)
+
+    # A decl that is not a DeclContext is refused by dispatch, so the pivot's assert is
+    # unreachable from here -- that is what the Union buys over a runtime check.
+    @test f(I, "fwd_gvar")
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
+    @test !(vd isa CC.AbstractDeclContextDecl)
+    @test_throws MethodError CC.isNamespace(vd)
+    @test_throws MethodError CC.decls_empty(vd)
+
+    # The Union admits exactly clang's DECL_CONTEXT set.
+    @test tu isa CC.AbstractDeclContextDecl
+    @test ns isa CC.AbstractDeclContextDecl
+    @test rec isa CC.AbstractDeclContextDecl
+
+    # `getDeclKindName` is declared on both Decl and DeclContext, so it is deliberately not
+    # forwarded -- a context decl still reaches the Decl-side method.
+    @test CC.getDeclKindName(tu) == "TranslationUnit"
+
+    # `Decl::EnableStatistics` and `Decl::PrintStats` are static, so the class is a `::Type`
+    # tag and not a receiver. Calling them is the whole assertion: the shape this replaced
+    # passed a declaration to a binding that declares no parameters, so *every* call raised
+    # a MethodError and no test could have noticed while none existed.
+    @test (CC.EnableStatistics(CC.Decl); true)
+    @test (CC.PrintStats(CC.Decl); true)
+    # the tag is what keeps the two hierarchies' statics apart, and a declaration is no
+    # longer a way to ask -- the receiver-taking spelling was the broken one
+    @test !applicable(CC.PrintStats, tu)
+    @test !applicable(CC.EnableStatistics, tu)
 
     dispose(f)
     dispose(I)

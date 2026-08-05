@@ -105,7 +105,7 @@ end
     # getImmediateMacroNameForDiagnostics names the OUTERMOST macro, getImmediateMacroName
     # the innermost -- the whole reason both exist
     @test f(I, "mac_probe")
-    mloc = CC.getLocation(CC.NamedDecl(get_decl(f).ptr))
+    mloc = CC.getLocation(get_decl(f))
     @test CC.isMacroID(mloc)
     outer = CC.getImmediateMacroNameForDiagnostics(mloc, sm, opts)
     inner = CC.getImmediateMacroName(mloc, sm, opts)
@@ -118,18 +118,18 @@ end
     # field is indented four spaces. The field is reached through the record rather than by
     # name, since a member is not a top-level lookup result.
     @test f(I, "IndentProbe")
-    rd = CC.CXXRecordDecl(get_decl(f).ptr)
-    rloc = CC.getLocation(CC.NamedDecl(rd.ptr))
+    rd = CC.downcast(CC.CXXRecordDecl, get_decl(f).ptr)
+    rloc = CC.getLocation(CC.upcast(CC.NamedDecl, rd.ptr))
     @test CC.getIndentationForLine(CC.getFileLoc(sm, rloc), sm) == ""
     members = collect(CC.decls_in(CC.castToDeclContext(rd)))
     fld = only(filter(d -> d isa CC.FieldDecl, members))
-    floc = CC.getLocation(CC.NamedDecl(fld.ptr))
+    floc = CC.getLocation(CC.upcast(CC.NamedDecl, fld.ptr))
     @test CC.getIndentationForLine(CC.getFileLoc(sm, floc), sm) == "    "
     @test_throws AssertionError CC.getIndentationForLine(CC.SourceLocation(), sm)
 
     # a plain file range maps to itself, and the mapped text is the declaration
     @test f(I, "mfcr_probe")
-    d = CC.NamedDecl(get_decl(f).ptr)
+    d = get_decl(f)
     csr = CC.makeFileCharRange(CC.getTokenRange(CC.getSourceRange(d)), sm, opts)
     @test CC.isValid(csr)
     @test CC.getFileOffset(sm, CC.getBegin(csr)) ==
@@ -167,7 +167,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "splicetok")
-    loc = CC.getLocation(CC.NamedDecl(get_decl(f).ptr))
+    loc = CC.getLocation(get_decl(f))
 
     @test CC.cleaned_token_length(loc, sm, opts) == 9
     @test CC.MeasureTokenLength(loc, sm, opts) == 11

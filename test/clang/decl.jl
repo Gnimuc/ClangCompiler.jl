@@ -22,13 +22,13 @@ end
     f = DeclFinder(I)
 
     @test f(I, "Node")
-    node = ClangCompiler.CXXRecordDecl(get_decl(f).ptr)
+    node = ClangCompiler.downcast(ClangCompiler.CXXRecordDecl, get_decl(f).ptr)
     @test ClangCompiler.getNumFields(node) == 2
     @test [ClangCompiler.getName(x) for x in ClangCompiler.getFields(node)] == ["x", "y"]
 
     ClangCompiler.parse(I, "struct BaseA { int a; }; struct BaseB { int b; }; struct Der : BaseA, BaseB { int c; };")
     @test f(I, "Der")
-    der = ClangCompiler.CXXRecordDecl(get_decl(f).ptr)
+    der = ClangCompiler.downcast(ClangCompiler.CXXRecordDecl, get_decl(f).ptr)
     @test ClangCompiler.getNumFields(der) == 1
     @test ClangCompiler.getNumBases(der) == 2
     @test ClangCompiler.getNumVBases(der) == 0
@@ -38,7 +38,7 @@ end
     @test basenames == ["BaseA", "BaseB"]
 
     @test f(I, "Foo")
-    foo = ClangCompiler.CXXRecordDecl(get_decl(f).ptr)
+    foo = ClangCompiler.downcast(ClangCompiler.CXXRecordDecl, get_decl(f).ptr)
     @test ClangCompiler.getNumCtors(foo) == 2                     # Foo() and Foo(int)
     @test length(ClangCompiler.getMethods(foo)) == ClangCompiler.getNumMethods(foo)
     @test all(c -> c isa ClangCompiler.CXXConstructorDecl, ClangCompiler.getCtors(foo))
@@ -57,7 +57,8 @@ end
     struct Der : Base { void v() override; };
     """)
     f = DeclFinder(I)
-    D(name, T) = (f(I, name); T(get_decl(f).ptr))
+    # the lookup hands back a NamedDecl; each probe names the class it expects
+    D(name, T) = (f(I, name); ClangCompiler.downcast(T, get_decl(f).ptr))
 
     gv = D("gv", ClangCompiler.VarDecl)
     @test ClangCompiler.hasGlobalStorage(gv)
@@ -162,8 +163,10 @@ end
 
     # every top-level declaration the bulk extractor sees is in the chain; `decls`
     # recurses into nested contexts, so it is a superset rather than an equal
-    bulk = Set(d.ptr for d in CC.decls(tu_dc))
-    @test all(d -> d.ptr in bulk, via_iter)
+    # `decls` resolves each node to its own class while the iterator hands back base carriers;
+    # carrier equality is the `Decl *` clang compares, so the two sides meet without unwrapping
+    bulk = Set(CC.decls(tu_dc))
+    @test all(in(bulk), via_iter)
 
     # --- collect/comprehension work, which needs IteratorSize ---
     @test eltype(DeclIterator(tu)) == CC.AbstractDecl
@@ -173,7 +176,7 @@ end
     # --- redecls walks the redeclaration chain most-recent-first ---
     f = DeclFinder(I)
     @assert f(I, "chainFn") "lookup failed: chainFn"
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     chain = collect(CC.redecls(fd))
     @test length(chain) >= 2                       # a declaration and a definition
     @test first(chain).ptr == CC.getMostRecentDecl(fd).ptr
@@ -247,7 +250,7 @@ end
     tu_dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
     vd = nothing
     for d in CC.decls_in(tu_dc)
-        CC.getDeclKindName(d) == "Var" && (vd = CC.VarDecl(d.ptr); break)
+        CC.getDeclKindName(d) == "Var" && (vd = CC.downcast(CC.VarDecl, d.ptr); break)
     end
     @test vd !== nothing
     if vd !== nothing
@@ -260,6 +263,134 @@ end
             @test CC.is_null_handle(CC.getPrefix(last(quals)))
         end
     end
+
+    dispose(I)
+end
+
+@testset "a decl marshals to its DeclContext base through the pivot" begin
+    # `DeclContext` is the one base in this package that does not sit at offset zero, so its
+    # entry in the marshalling table calls `Decl::castToDeclContext` rather than
+    # reinterpreting. What is asserted is that the adjustment happens *at the boundary*: the
+    # pointer a `CXDeclContext` parameter receives is the pivot's, not the decl's own, and the
+    # gap between them is the base-subobject offset for that class.
+    #
+    # The offsets themselves are not pinned -- they are whatever the host ABI lays out, and
+    # they differ per class because the base preceding `DeclContext` differs (`NamedDecl` in a
+    # NamespaceDecl, `TypeDecl` in a TagDecl). What is pinned is that they are non-zero and
+    # agree with the pivot, which is what reusing the raw pointer would violate.
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    namespace pivot_ns { int inside; }
+    struct PivotRec { int f; };
+    """)
+    ctx = CC.getASTContext(CC.get_sema(I))
+    tu = CC.getTranslationUnitDecl(ctx)
+
+    duals = Any[tu]
+    for d in CC.decls(CC.castToDeclContext(tu))
+        d isa CC.AbstractDeclContextDecl && push!(duals, d)
+    end
+    @test length(duals) >= 3          # the TU plus the namespace and the record
+
+    shifted = 0
+    for d in duals
+        asdecl = Base.unsafe_convert(CC.LibClangEx.CXDecl, d)
+        asctx = Base.unsafe_convert(CC.LibClangEx.CXDeclContext, d)
+        @test asctx === Base.unsafe_convert(CC.LibClangEx.CXDeclContext, CC.castToDeclContext(d))
+        # and crossing back lands on the declaration it started from
+        @test Base.unsafe_convert(CC.LibClangEx.CXDecl, CC.castFromDeclContext(CC.DeclContext(asctx))) ===
+              asdecl
+        UInt(asctx) == UInt(asdecl) || (shifted += 1)
+    end
+    # every class here puts `DeclContext` after some other base, so none of them coincide --
+    # if they did, passing the raw pointer would work and this whole pivot would be dead code
+    @test shifted == length(duals)
+
+    # A decl that is not a context has no route at all: the union admits exactly the classes
+    # clang marks DECL_CONTEXT, so the misuse is a dispatch failure and never reaches clang.
+    vd = nothing
+    for d in CC.decls(CC.castToDeclContext(tu))
+        d isa CC.VarDecl && (vd = d)
+    end
+    @test vd !== nothing
+    if vd !== nothing
+        @test !(vd isa CC.AbstractDeclContextDecl)
+        @test !applicable(Base.unsafe_convert, CC.LibClangEx.CXDeclContext, vd)
+    end
+
+    dispose(I)
+end
+
+@testset "a DeclContext parameter accepts the decl itself" begin
+    # The C++ spelling is `EmptyDecl::Create(Ctx, TU, Loc)` -- a `TranslationUnitDecl *`
+    # converts to `DeclContext *` with no cast written. Here the same call marshals through
+    # the pivot, so the context clang records is the adjusted pointer rather than the decl's.
+    I = create_interpreter(String[])
+    CC.parse(I, "int any_dc_probe = 0;")
+    ctx = CC.getASTContext(CC.get_sema(I))
+    tu = CC.getTranslationUnitDecl(ctx)
+    loc = CC.getLocation(tu)
+
+    ed = CC.EmptyDecl(ctx, tu, loc)
+    @test !CC.is_null_handle(ed)
+    @test Base.unsafe_convert(CC.LibClangEx.CXDeclContext, CC.getDeclContext(ed)) ===
+          Base.unsafe_convert(CC.LibClangEx.CXDeclContext, CC.castToDeclContext(tu))
+    # the decl's own pointer is a different address, so the builder cannot have passed it
+    @test Base.unsafe_convert(CC.LibClangEx.CXDeclContext, CC.getDeclContext(ed)) !==
+          CC.LibClangEx.CXDeclContext(Base.unsafe_convert(CC.LibClangEx.CXDecl, tu))
+
+    dispose(I)
+end
+
+@testset "a decl reaches the DeclContext API with no forwarding" begin
+    # The 65 forwarding methods are gone: a `DeclContext` parameter is typed `AnyDeclContext`,
+    # so dispatch admits the decl itself and the pivot runs inside the marshalling. What is
+    # asserted here is that the union admits exactly clang's DECL_CONTEXT classes -- the same
+    # property the forwarding file had -- and that the answers are the context's, not bits
+    # read out of Decl storage, which is what reusing the raw pointer would produce.
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    namespace fwd_ns { int inside; }
+    struct FwdRec { int f; };
+    int fwd_var;
+    """)
+    ctx = CC.getASTContext(CC.get_sema(I))
+    tu = CC.getTranslationUnitDecl(ctx)
+    ds = collect(CC.decls(CC.castToDeclContext(tu)))
+    ns = first(d for d in ds if d isa CC.NamespaceDecl)
+    rec = first(d for d in ds if d isa CC.CXXRecordDecl)
+    vd = first(d for d in ds if d isa CC.VarDecl)
+
+    # each classifier agrees with the class the decl actually is, so the DeclContext being
+    # read is the one belonging to this decl
+    @test CC.isNamespace(ns)
+    @test !CC.isRecord(ns)
+    @test CC.isRecord(rec)
+    @test !CC.isNamespace(rec)
+    @test CC.isTranslationUnit(tu)
+    @test !CC.isTranslationUnit(ns)
+
+    # `Encloses` and `Equals` are DeclContext methods clang spells with a capital, which the
+    # forwarding generator's "uppercase means a cast" rule skipped -- so these two were
+    # unreachable from a decl until the receivers widened.
+    @test CC.Encloses(tu, ns)
+    @test !CC.Encloses(ns, tu)
+    @test CC.Equals(ns, ns)
+    @test !CC.Equals(ns, CC.castToDeclContext(tu))
+
+    # mixing the two spellings is the same call: a decl and its own pivot are one context
+    @test CC.Equals(ns, CC.castToDeclContext(ns))
+
+    # a decl clang does not mark DECL_CONTEXT has no method at all, so the misuse cannot
+    # reach `castToDeclContext`'s assert
+    @test !(vd isa CC.AbstractDeclContextDecl)
+    @test_throws MethodError CC.isNamespace(vd)
+
+    # `getDeclKindName` stays typed at `DeclContext` alone: clang declares it on both bases,
+    # so widening it would make the call ambiguous for every dual-role decl -- as it is in
+    # C++. A decl therefore still reaches the `Decl` method.
+    @test CC.getDeclKindName(ns) == "Namespace"
+    @test CC.getDeclKindName(CC.castToDeclContext(ns)) == "Namespace"
 
     dispose(I)
 end

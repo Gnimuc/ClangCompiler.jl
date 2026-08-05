@@ -6,5 +6,3 @@ struct HeaderSearchOptions <: AbstractHeaderSearchOptions
     ptr::CXHeaderSearchOptions
 end
 
-Base.unsafe_convert(::Type{CXHeaderSearchOptions}, x::HeaderSearchOptions) = x.ptr
-Base.cconvert(::Type{CXHeaderSearchOptions}, x::HeaderSearchOptions) = x

@@ -6,5 +6,3 @@ struct Compilation <: AbstractCompilation
     ptr::CXCompilation
 end
 
-Base.unsafe_convert(::Type{CXCompilation}, x::Compilation) = x.ptr
-Base.cconvert(::Type{CXCompilation}, x::Compilation) = x

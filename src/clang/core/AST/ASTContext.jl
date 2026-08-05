@@ -6,5 +6,3 @@ struct ASTContext <: AbstractASTContext
     ptr::CXASTContext
 end
 
-Base.unsafe_convert(::Type{CXASTContext}, x::ASTContext) = x.ptr
-Base.cconvert(::Type{CXASTContext}, x::ASTContext) = x

@@ -217,8 +217,8 @@ end
 
     f = DeclFinder(I)
     @test f(I, "ovl_amb_fn")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
-    found = CC.NamedDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    found = get_decl(f)
 
     # The ambiguous arm is reachable only while the sequence's kind says so.
     ics = CC.ImplicitConversionSequence()
@@ -329,8 +329,8 @@ end
 
     f = DeclFinder(I)
     @test f(I, "ovl4_target_fn")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
-    found = CC.NamedDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
+    found = get_decl(f)
 
     # The standard arm dumps only its three conversion kinds, which the owning sequence's
     # constructor already set to the identity conversion.
@@ -451,7 +451,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "ovl5_plain_fn")
-    fn = CC.FunctionDecl(get_decl(f).ptr)
+    fn = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
 
     # The two-argument create leaves clang's default rewrite info: no original operator, so no
     # candidate is a rewrite and every candidate is acceptable, whatever its name.

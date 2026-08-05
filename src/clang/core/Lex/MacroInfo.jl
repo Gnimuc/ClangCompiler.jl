@@ -6,10 +6,6 @@ struct MacroInfo <: AbstractMacroInfo
     ptr::CXMacroInfo
 end
 
-Base.unsafe_convert(::Type{CXMacroInfo}, x::MacroInfo) = x.ptr
-Base.cconvert(::Type{CXMacroInfo}, x::MacroInfo) = x
-
-
 """
     struct MacroDirective <: AbstractMacroDirective
 Hold a pointer to a `clang::MacroDirective` object.
@@ -17,10 +13,6 @@ Hold a pointer to a `clang::MacroDirective` object.
 struct MacroDirective <: AbstractMacroDirective
     ptr::CXMacroDirective
 end
-
-Base.unsafe_convert(::Type{CXMacroDirective}, x::MacroDirective) = x.ptr
-Base.cconvert(::Type{CXMacroDirective}, x::MacroDirective) = x
-
 
 abstract type AbstractDefMacroDirective <: AbstractMacroDirective end
 
@@ -31,9 +23,6 @@ Hold a pointer to a `clang::DefMacroDirective` object.
 struct DefMacroDirective <: AbstractDefMacroDirective
     ptr::CXDefMacroDirective
 end
-
-Base.unsafe_convert(::Type{CXDefMacroDirective}, x::DefMacroDirective) = x.ptr
-Base.cconvert(::Type{CXDefMacroDirective}, x::DefMacroDirective) = x
 
 abstract type AbstractDefInfo end
 
@@ -49,10 +38,6 @@ struct DefInfo <: AbstractDefInfo
     ptr::CXDefInfo
 end
 
-Base.unsafe_convert(::Type{CXDefInfo}, x::DefInfo) = x.ptr
-Base.cconvert(::Type{CXDefInfo}, x::DefInfo) = x
-
-
 abstract type AbstractModuleMacro end
 
 """
@@ -63,5 +48,3 @@ struct ModuleMacro <: AbstractModuleMacro
     ptr::CXModuleMacro
 end
 
-Base.unsafe_convert(::Type{CXModuleMacro}, x::ModuleMacro) = x.ptr
-Base.cconvert(::Type{CXModuleMacro}, x::ModuleMacro) = x

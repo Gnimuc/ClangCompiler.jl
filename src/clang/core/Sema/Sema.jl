@@ -6,10 +6,6 @@ struct Sema <: AbstractSema
     ptr::CXSema
 end
 
-Base.unsafe_convert(::Type{CXSema}, x::Sema) = x.ptr
-Base.cconvert(::Type{CXSema}, x::Sema) = x
-
-
 """
     abstract type AbstractInstantiatingTemplate <: Any
 Supertype for `clang::Sema::InstantiatingTemplate` carriers.
@@ -29,10 +25,6 @@ struct InstantiatingTemplate <: AbstractInstantiatingTemplate
     ptr::CXInstantiatingTemplate
 end
 
-Base.unsafe_convert(::Type{CXInstantiatingTemplate}, x::InstantiatingTemplate) = x.ptr
-Base.cconvert(::Type{CXInstantiatingTemplate}, x::InstantiatingTemplate) = x
-
-
 """
     abstract type AbstractExpressionEvaluationContextRecord <: Any
 Supertype for `clang::Sema::ExpressionEvaluationContextRecord` carriers.
@@ -50,15 +42,6 @@ you need out of it before parsing, and do not hold it across one. There is no `d
 struct ExpressionEvaluationContextRecord <: AbstractExpressionEvaluationContextRecord
     ptr::CXExpressionEvaluationContextRecord
 end
-
-function Base.unsafe_convert(::Type{CXExpressionEvaluationContextRecord},
-                             x::ExpressionEvaluationContextRecord)
-    return x.ptr
-end
-Base.cconvert(::Type{CXExpressionEvaluationContextRecord},
-              x::ExpressionEvaluationContextRecord) = x
-
-
 
 """
     abstract type AbstractAlignPackInfo <: Any
@@ -78,9 +61,6 @@ struct AlignPackInfo <: AbstractAlignPackInfo
     ptr::CXAlignPackInfo
 end
 
-Base.unsafe_convert(::Type{CXAlignPackInfo}, x::AlignPackInfo) = x.ptr
-Base.cconvert(::Type{CXAlignPackInfo}, x::AlignPackInfo) = x
-
 """
     abstract type AbstractDefaultedFunctionKind <: Any
 Supertype for `clang::Sema::DefaultedFunctionKind` carriers.
@@ -97,9 +77,6 @@ value and has no pointer form, so the handle is an owned heap box and disposal i
 struct DefaultedFunctionKind <: AbstractDefaultedFunctionKind
     ptr::CXDefaultedFunctionKind
 end
-
-Base.unsafe_convert(::Type{CXDefaultedFunctionKind}, x::DefaultedFunctionKind) = x.ptr
-Base.cconvert(::Type{CXDefaultedFunctionKind}, x::DefaultedFunctionKind) = x
 
 """
     abstract type AbstractSFINAETrap <: Any
@@ -120,5 +97,3 @@ struct SFINAETrap <: AbstractSFINAETrap
     ptr::CXSFINAETrap
 end
 
-Base.unsafe_convert(::Type{CXSFINAETrap}, x::SFINAETrap) = x.ptr
-Base.cconvert(::Type{CXSFINAETrap}, x::SFINAETrap) = x

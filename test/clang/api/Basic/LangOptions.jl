@@ -77,7 +77,7 @@ end
 
     f = DeclFinder(I)
     @test f(I, "fpo_probe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     binops = [s for s in (CC.resolve(x) for x in CC.subtree(CC.getBody(fd)))
               if s isa CC.BinaryOperator]
     words = unique([CC.getFPFeaturesInEffect(b, lo) for b in binops])

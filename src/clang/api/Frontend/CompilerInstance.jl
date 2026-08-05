@@ -69,9 +69,14 @@ function setFileManager(ci::CompilerInstance, file_mgr::FileManager)
     return clang_CompilerInstance_setFileManager(ci, file_mgr)
 end
 
+"""
+    createFileManager(ci::CompilerInstance) -> FileManager
+Create the file manager `ci` will use, over its existing virtual file system. The compiler
+instance keeps ownership of the returned file manager.
+"""
 function createFileManager(ci::CompilerInstance)
     @check_ptrs ci
-    return clang_CompilerInstance_createFileManager(ci)
+    return FileManager(clang_CompilerInstance_createFileManager(ci))
 end
 
 """

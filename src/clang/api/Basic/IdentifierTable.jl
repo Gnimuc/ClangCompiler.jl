@@ -574,7 +574,7 @@ first slot even for the zero-argument case.
 function getSelector(x::AbstractSelectorTable, numArgs::Integer, ids::Vector{IdentifierInfo})
     @check_ptrs x
     @assert length(ids) >= max(numArgs, 1) "getSelector reads max(numArgs, 1) identifiers"
-    buf = CXIdentifierInfo[id.ptr for id in ids]
+    buf = CXIdentifierInfo[Base.unsafe_convert(CXIdentifierInfo, id) for id in ids]
     return Selector(clang_SelectorTable_getSelector(x, numArgs, buf))
 end
 

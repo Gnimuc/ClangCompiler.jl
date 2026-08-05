@@ -29,7 +29,7 @@ CXString clang_index_getUSRSpacePrefix(void) {
 
 CXString clang_index_generateUSRForDecl(CXDecl D) {
   llvm::SmallString<128> Buf;
-  bool Ignore = clang::index::generateUSRForDecl(static_cast<clang::Decl *>(D), Buf);
+  bool Ignore = clang::index::generateUSRForDecl(reinterpret_cast<clang::Decl *>(D), Buf);
   return usrFromBuf(Buf, Ignore);
 }
 
@@ -108,22 +108,22 @@ CXString clang_index_generateUSRForMacro(const char *MacroName, CXSourceLocation
   llvm::SmallString<128> Buf;
   bool Failed = clang::index::generateUSRForMacro(
       llvm::StringRef(MacroName), clang::SourceLocation::getFromPtrEncoding(Loc),
-      *static_cast<clang::SourceManager *>(SM), Buf);
+      *reinterpret_cast<clang::SourceManager *>(SM), Buf);
   return usrFromBuf(Buf, Failed);
 }
 
 CXString clang_index_generateUSRForType(CXQualType T, CXASTContext Ctx) {
   llvm::SmallString<128> Buf;
   bool Failed = clang::index::generateUSRForType(clang::QualType::getFromOpaquePtr(T),
-                                                 *static_cast<clang::ASTContext *>(Ctx),
+                                                 *reinterpret_cast<clang::ASTContext *>(Ctx),
                                                  Buf);
   return usrFromBuf(Buf, Failed);
 }
 
-CXString clang_index_generateFullUSRForModule(CXModule Mod) {
+CXString clang_index_generateFullUSRForModule(CXModule_ Mod) {
   std::string S;
   llvm::raw_string_ostream OS(S);
-  if (clang::index::generateFullUSRForModule(static_cast<clang::Module *>(Mod), OS))
+  if (clang::index::generateFullUSRForModule(reinterpret_cast<clang::Module *>(Mod), OS))
     return extra::makeCXString("");
   return extra::makeCXString(S);
 }
@@ -136,10 +136,10 @@ CXString clang_index_generateFullUSRForTopLevelModuleName(const char *ModName) {
   return extra::makeCXString(S);
 }
 
-CXString clang_index_generateUSRFragmentForModule(CXModule Mod) {
+CXString clang_index_generateUSRFragmentForModule(CXModule_ Mod) {
   std::string S;
   llvm::raw_string_ostream OS(S);
-  if (clang::index::generateUSRFragmentForModule(static_cast<clang::Module *>(Mod), OS))
+  if (clang::index::generateUSRFragmentForModule(reinterpret_cast<clang::Module *>(Mod), OS))
     return extra::makeCXString("");
   return extra::makeCXString(S);
 }

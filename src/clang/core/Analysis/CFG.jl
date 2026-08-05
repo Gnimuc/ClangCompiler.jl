@@ -15,9 +15,6 @@ struct CFG <: AbstractCFG
     ptr::CXCFG
 end
 
-Base.unsafe_convert(::Type{CXCFG}, x::CFG) = x.ptr
-Base.cconvert(::Type{CXCFG}, x::CFG) = x
-
 """
     struct CFGBlock <: AbstractCFGBlock
 Hold a pointer to a `clang::CFGBlock` object.
@@ -27,10 +24,6 @@ The pointee is owned by its parent `CFG` — there is no `dispose`.
 struct CFGBlock <: AbstractCFGBlock
     ptr::CXCFGBlock
 end
-
-Base.unsafe_convert(::Type{CXCFGBlock}, x::CFGBlock) = x.ptr
-Base.cconvert(::Type{CXCFGBlock}, x::CFGBlock) = x
-
 
 abstract type AbstractCFGBuildOptions end
 
@@ -48,5 +41,3 @@ struct CFGBuildOptions <: AbstractCFGBuildOptions
     ptr::CXCFGBuildOptions
 end
 
-Base.unsafe_convert(::Type{CXCFGBuildOptions}, x::CFGBuildOptions) = x.ptr
-Base.cconvert(::Type{CXCFGBuildOptions}, x::CFGBuildOptions) = x

@@ -4,19 +4,19 @@
 
 CXTargetOptions clang_TargetOptions_create(void) {
   auto TO = std::make_unique<clang::TargetOptions>();
-  return TO.release();
+  return reinterpret_cast<CXTargetOptions>(TO.release());
 }
 
 void clang_TargetOptions_dispose(CXTargetOptions TO) {
-  delete static_cast<clang::TargetOptions *>(TO);
+  delete reinterpret_cast<clang::TargetOptions *>(TO);
 }
 
 void clang_TargetOptions_setTriple(CXTargetOptions TO, const char *TripleStr, size_t Num) {
-  static_cast<clang::TargetOptions *>(TO)->Triple = std::string(TripleStr, Num);
+  reinterpret_cast<clang::TargetOptions *>(TO)->Triple = std::string(TripleStr, Num);
 }
 
 void clang_TargetOptions_PrintStats(CXTargetOptions TO) {
-  auto Opts = static_cast<clang::TargetOptions *>(TO);
+  auto Opts = reinterpret_cast<clang::TargetOptions *>(TO);
   llvm::errs() << "\n*** TargetOptions Stats:\n";
   llvm::errs() << "  Triple: " << Opts->Triple << "\n";
   llvm::errs() << "  HostTriple: " << Opts->HostTriple << "\n";

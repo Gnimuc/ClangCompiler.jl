@@ -6,5 +6,3 @@ struct CodeGenModule <: AbstractCodeGenModule
     ptr::CXCodeGenModule
 end
 
-Base.unsafe_convert(::Type{CXCodeGenModule}, x::CodeGenModule) = x.ptr
-Base.cconvert(::Type{CXCodeGenModule}, x::CodeGenModule) = x

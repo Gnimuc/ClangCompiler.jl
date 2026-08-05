@@ -2,6 +2,10 @@
 # Per-node downcast: `is<Name>` predicate and `<carrier>` constructor-shaped
 # cast for every class, abstract bases included — the C shim stamps both from
 # the same table, and clang's own `classof` makes the dyn_cast sound.
+#
+# The shim stamps each cast to return that class's own handle, so the carrier it
+# feeds is checked by the compiler -- pairing a cast with the wrong carrier is a
+# type error here rather than a pointer of the wrong class reaching clang.
 function isWhileStmt(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isWhileStmt(x)
@@ -1327,11 +1331,6 @@ function isAbstractConditionalOperator(x::AbstractStmt)
     return clang_Stmt_isAbstractConditionalOperator(x)
 end
 
-function AbstractConditionalOperator(x::AbstractStmt)
-    @check_ptrs x
-    return AbstractConditionalOperator(clang_Stmt_castToAbstractConditionalOperator(x))
-end
-
 function isConditionalOperator(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isConditionalOperator(x)
@@ -1939,7 +1938,8 @@ end
 
 function OMPTargetTeamsDistributeParallelForSimdDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetTeamsDistributeParallelForSimdDirective(clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(x))
+    return OMPTargetTeamsDistributeParallelForSimdDirective(
+        clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(x))
 end
 
 function isOMPTargetTeamsDistributeParallelForDirective(x::AbstractStmt)
@@ -1949,7 +1949,8 @@ end
 
 function OMPTargetTeamsDistributeParallelForDirective(x::AbstractStmt)
     @check_ptrs x
-    return OMPTargetTeamsDistributeParallelForDirective(clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(x))
+    return OMPTargetTeamsDistributeParallelForDirective(
+        clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(x))
 end
 
 function isOMPTargetTeamsDistributeDirective(x::AbstractStmt)

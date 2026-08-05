@@ -125,14 +125,14 @@ end
     @test CC.getMessage(findattr(look("mustuse"), CC.WarnUnusedResultAttr)) == "check-me"
 
     # PackedAttr on the record definition (marker attribute; classification only)
-    rd = CC.getDefinition(CC.RecordDecl(look("SPacked").ptr))
+    rd = CC.getDefinition(CC.downcast(CC.RecordDecl, look("SPacked").ptr))
     @test any(a -> a isa CC.PackedAttr, resolved_attrs(rd))
 
     # UsedAttr (marker attribute; classification only)
     @test any(a -> a isa CC.UsedAttr, resolved_attrs(look("gused")))
 
     # CleanupAttr lives on a local variable: walk the function body to it
-    fd = CC.FunctionDecl(look("cfn").ptr)
+    fd = CC.downcast(CC.FunctionDecl, look("cfn").ptr)
     body = CC.resolve(CC.getBody(fd))
     ds = nothing
     for k in CC.children(body)
@@ -190,7 +190,7 @@ end
     CC.parse(I, "[[noreturn]] void ce2_f();")
     f = DeclFinder(I)
     @test f(I, "ce2_f")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     attrs = CC.getAttrs(fd)
     @test length(attrs) == 1
     a = attrs[1]

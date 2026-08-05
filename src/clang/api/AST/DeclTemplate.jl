@@ -42,7 +42,8 @@ function TemplateArgumentList(ctx::ASTContext, args::Vector{CXTemplateArgument})
 end
 
 function TemplateArgumentList(ctx::ASTContext, args::Vector{TemplateArgument})
-    return TemplateArgumentList(ctx, [arg.ptr for arg in args])
+    return TemplateArgumentList(ctx,
+                                CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args])
 end
 
 function Base.size(x::TemplateArgumentList)
@@ -136,7 +137,7 @@ end
 
 # ClassTemplateSpecializationDecl
 function ClassTemplateSpecializationDecl(ctx::ASTContext, tk::CXTagTypeKind,
-                                         dc::DeclContext, start_loc::SourceLocation,
+                                         dc::AnyDeclContext, start_loc::SourceLocation,
                                          id_loc::SourceLocation,
                                          template::ClassTemplateDecl,
                                          args::TemplateArgumentList,
@@ -199,8 +200,8 @@ collapsing the `PointerUnion`: a `ClassTemplatePartialSpecializationDecl` when
 function getSpecializedTemplateOrPartial(x::AbstractClassTemplateSpecializationDecl)
     @check_ptrs x
     ptr = clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial(x)
-    return specializedOnPartial(x) ? ClassTemplatePartialSpecializationDecl(ptr) :
-           ClassTemplateDecl(ptr)
+    return specializedOnPartial(x) ? downcast(ClassTemplatePartialSpecializationDecl, ptr) :
+           downcast(ClassTemplateDecl, ptr)
 end
 
 # VarTemplateSpecializationDecl
@@ -530,8 +531,8 @@ collapsing the `PointerUnion`: a `VarTemplatePartialSpecializationDecl` when
 function getSpecializedTemplateOrPartial(x::AbstractVarTemplateSpecializationDecl)
     @check_ptrs x
     ptr = clang_VarTemplateSpecializationDecl_getSpecializedTemplateOrPartial(x)
-    return specializedOnPartial(x) ? VarTemplatePartialSpecializationDecl(ptr) :
-           VarTemplateDecl(ptr)
+    return specializedOnPartial(x) ? downcast(VarTemplatePartialSpecializationDecl, ptr) :
+           downcast(VarTemplateDecl, ptr)
 end
 
 function getExternLoc(x::AbstractVarTemplateSpecializationDecl)
@@ -889,8 +890,8 @@ the C++ body asserts the former and reaches the latter through an unchecked cast
 function getInjectedSpecializationType(x::AbstractClassTemplatePartialSpecializationDecl)
     @check_ptrs x
     ty = getTypeForDecl(x)
-    @assert ty != C_NULL "the partial specialization has no type set"
-    @assert is_injected_class_name_type(Type_(ty)) "type-decl-type must be an InjectedClassNameType"
+    @assert !is_null_handle(ty) "the partial specialization has no type set"
+    @assert is_injected_class_name_type(ty) "type-decl-type must be an InjectedClassNameType"
     return QualType(clang_ClassTemplatePartialSpecializationDecl_getInjectedSpecializationType(x))
 end
 
@@ -1986,14 +1987,14 @@ end
 
 # FunctionTemplateDecl
 """
-    FunctionTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+    FunctionTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation, name::DeclarationName,
                          params::TemplateParameterList, decl::AbstractNamedDecl) -> FunctionTemplateDecl
 Build a function template declaration for the templated function `decl` over `params`. Clang adopts
 `params` — the parameters' owning context is re-seated when the template is built, so `decl` must be a
 `DeclContext` itself and `params` should already belong there. The node is allocated in `ctx` and is
 *not* added to `dc`; adding it is the caller's job.
 """
-function FunctionTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function FunctionTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                               name::DeclarationName, params::TemplateParameterList,
                               decl::AbstractNamedDecl)
     @check_ptrs ctx dc params decl
@@ -2050,13 +2051,13 @@ end
 
 # BuiltinTemplateDecl
 """
-    BuiltinTemplateDecl(ctx::ASTContext, dc::DeclContext, name::DeclarationName,
+    BuiltinTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, name::DeclarationName,
                         btk::CXBuiltinTemplateKind) -> BuiltinTemplateDecl
 Build the declaration that holds the parameters of a builtin template (`__make_integer_seq`,
 `__type_pack_element`). Clang derives the parameter list from `btk`, so there is none to pass. The
 node is allocated in `ctx` and is *not* added to `dc`.
 """
-function BuiltinTemplateDecl(ctx::ASTContext, dc::DeclContext, name::DeclarationName,
+function BuiltinTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, name::DeclarationName,
                              btk::CXBuiltinTemplateKind)
     @check_ptrs ctx dc
     return BuiltinTemplateDecl(clang_BuiltinTemplateDecl_Create(ctx, dc, name, btk))
@@ -2064,13 +2065,13 @@ end
 
 # ClassTemplateDecl
 """
-    ClassTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+    ClassTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation, name::DeclarationName,
                       params::TemplateParameterList, decl::AbstractNamedDecl) -> ClassTemplateDecl
 Build a class template declaration for the templated record `decl` over `params`. Adopts `params` and
 leaves the node out of `dc` exactly like the function template form, so `decl` must be a `DeclContext`
 here too.
 """
-function ClassTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function ClassTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                            name::DeclarationName, params::TemplateParameterList,
                            decl::AbstractNamedDecl)
     @check_ptrs ctx dc params decl
@@ -2080,7 +2081,7 @@ end
 
 # FriendTemplateDecl
 """
-    FriendTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+    FriendTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                        params::Vector{TemplateParameterList}, friend::AbstractNamedDecl,
                        friend_loc::SourceLocation) -> FriendTemplateDecl
 Build a friend template declaration whose friend is a declaration; `getFriendType` is NULL on the
@@ -2088,28 +2089,28 @@ result. `params` crosses as a handle buffer and is copied into `ctx`-owned stora
 stays the caller's. Clang's own parser never builds this node — a friend template written in source
 yields a `FriendDecl` — so construction is the only way to obtain one.
 """
-function FriendTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function FriendTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                             params::Vector{TemplateParameterList}, friend::AbstractNamedDecl,
                             friend_loc::SourceLocation)
     @check_ptrs ctx dc friend
-    ptrs = CXTemplateParameterList[p.ptr for p in params]
+    ptrs = CXTemplateParameterList[Base.unsafe_convert(CXTemplateParameterList, p) for p in params]
     ftd = clang_FriendTemplateDecl_CreateWithFriendDecl(ctx, dc, loc, ptrs, length(ptrs), friend,
                                                         friend_loc)
     return FriendTemplateDecl(ftd)
 end
 
 """
-    FriendTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+    FriendTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                        params::Vector{TemplateParameterList}, friend::AbstractTypeSourceInfo,
                        friend_loc::SourceLocation) -> FriendTemplateDecl
 Build a friend template declaration whose friend is a type; `getFriendDecl` is NULL on the result.
 `params` is copied into `ctx`-owned storage as in the declaration form.
 """
-function FriendTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function FriendTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                             params::Vector{TemplateParameterList}, friend::AbstractTypeSourceInfo,
                             friend_loc::SourceLocation)
     @check_ptrs ctx dc friend
-    ptrs = CXTemplateParameterList[p.ptr for p in params]
+    ptrs = CXTemplateParameterList[Base.unsafe_convert(CXTemplateParameterList, p) for p in params]
     ftd = clang_FriendTemplateDecl_CreateWithFriendType(ctx, dc, loc, ptrs, length(ptrs), friend,
                                                         friend_loc)
     return FriendTemplateDecl(ftd)
@@ -2165,14 +2166,14 @@ end
 
 # TypeAliasTemplateDecl
 """
-    TypeAliasTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+    TypeAliasTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                           name::DeclarationName, params::TemplateParameterList,
                           decl::AbstractNamedDecl) -> TypeAliasTemplateDecl
 Build an alias template declaration for the templated `TypeAliasDecl` `decl`. A `TypeAliasDecl` is not
 a `DeclContext`, so `params` is adopted into `dc` instead; pass the context the parameters already
 live in. The node is *not* added to `dc`.
 """
-function TypeAliasTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function TypeAliasTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                                name::DeclarationName, params::TemplateParameterList,
                                decl::AbstractNamedDecl)
     @check_ptrs ctx dc params decl
@@ -2181,12 +2182,12 @@ end
 
 # VarTemplateDecl
 """
-    VarTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+    VarTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation, name::DeclarationName,
                     params::TemplateParameterList, decl::AbstractVarDecl) -> VarTemplateDecl
 Build a variable template declaration for the templated variable `decl`. `params` is adopted into `dc`
 (a `VarDecl` is not a `DeclContext`), and the node is *not* added to `dc`.
 """
-function VarTemplateDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function VarTemplateDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                          name::DeclarationName, params::TemplateParameterList,
                          decl::AbstractVarDecl)
     @check_ptrs ctx dc params decl
@@ -2195,12 +2196,12 @@ end
 
 # ConceptDecl
 """
-    ConceptDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, name::DeclarationName,
+    ConceptDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation, name::DeclarationName,
                 params::TemplateParameterList, constraint::AbstractExpr) -> ConceptDecl
 Build a concept declaration constrained by `constraint` over `params`. `params` is adopted into `dc`,
 and the node is *not* added to `dc`.
 """
-function ConceptDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function ConceptDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                      name::DeclarationName, params::TemplateParameterList,
                      constraint::AbstractExpr)
     @check_ptrs ctx dc params constraint
@@ -2225,8 +2226,8 @@ function TemplateParameterList(ctx::ASTContext, template_loc::SourceLocation,
                                requires_clause::Union{Nothing,AbstractExpr}=nothing)
     @check_ptrs ctx
     @assert all(p -> p.ptr != C_NULL, params) "every template parameter must be non-NULL"
-    ptrs = CXNamedDecl[p.ptr for p in params]
-    rc = requires_clause === nothing ? C_NULL : requires_clause.ptr
+    ptrs = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, p) for p in params]
+    rc = requires_clause === nothing ? CXExpr(C_NULL) : Base.unsafe_convert(CXExpr, requires_clause)
     ptr = clang_TemplateParameterList_Create(ctx, template_loc, langle_loc, ptrs, length(ptrs),
                                              rangle_loc, rc)
     return TemplateParameterList(ptr)
@@ -2248,7 +2249,7 @@ end
 
 # TemplateTypeParmDecl
 """
-    TemplateTypeParmDecl(ctx::ASTContext, dc::DeclContext, key_loc::SourceLocation,
+    TemplateTypeParmDecl(ctx::ASTContext, dc::AnyDeclContext, key_loc::SourceLocation,
                          name_loc::SourceLocation, depth::Integer, index::Integer,
                          id::Union{Nothing,AbstractIdentifierInfo}, typename::Bool,
                          parameter_pack::Bool, has_type_constraint::Bool=false,
@@ -2259,13 +2260,13 @@ added to `dc`; `id` may be `nothing` for an unnamed parameter. `num_expanded` mi
 `has_type_constraint` only reserves the trailing constraint slot -- the constraint itself stays
 uninitialized, so `hasInitializedTypeConstraint` keeps reporting `false` until Sema fills it in.
 """
-function TemplateTypeParmDecl(ctx::ASTContext, dc::DeclContext, key_loc::SourceLocation,
+function TemplateTypeParmDecl(ctx::ASTContext, dc::AnyDeclContext, key_loc::SourceLocation,
                               name_loc::SourceLocation, depth::Integer, index::Integer,
                               id::Union{Nothing,AbstractIdentifierInfo}, typename::Bool,
                               parameter_pack::Bool, has_type_constraint::Bool=false,
                               num_expanded::Union{Nothing,Integer}=nothing)
     @check_ptrs ctx dc
-    id_ptr = id === nothing ? C_NULL : id.ptr
+    id_ptr = id === nothing ? CXIdentifierInfo(C_NULL) : Base.unsafe_convert(CXIdentifierInfo, id)
     ptr = clang_TemplateTypeParmDecl_Create(ctx, dc, key_loc, name_loc, depth, index, id_ptr,
                                             typename, parameter_pack, has_type_constraint,
                                             num_expanded !== nothing,
@@ -2329,7 +2330,7 @@ end
 
 # NonTypeTemplateParmDecl
 """
-    NonTypeTemplateParmDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+    NonTypeTemplateParmDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation,
                             id_loc::SourceLocation, depth::Integer, position::Integer,
                             id::Union{Nothing,AbstractIdentifierInfo}, ty::QualType,
                             parameter_pack::Bool,
@@ -2338,7 +2339,7 @@ Build a non-type template parameter (`int N`) of type `ty` at `depth`/`position`
 added to `dc`; `id` and `tinfo` may be `nothing`. Clang packs the position into 20-bit and 12-bit
 fields and asserts on overflow, so both bounds are restated here.
 """
-function NonTypeTemplateParmDecl(ctx::ASTContext, dc::DeclContext, start_loc::SourceLocation,
+function NonTypeTemplateParmDecl(ctx::ASTContext, dc::AnyDeclContext, start_loc::SourceLocation,
                                  id_loc::SourceLocation, depth::Integer, position::Integer,
                                  id::Union{Nothing,AbstractIdentifierInfo}, ty::QualType,
                                  parameter_pack::Bool,
@@ -2346,8 +2347,8 @@ function NonTypeTemplateParmDecl(ctx::ASTContext, dc::DeclContext, start_loc::So
     @check_ptrs ctx dc
     @assert 0 <= depth <= 0xFFFFE "template parameter depth must fit clang's 20-bit field"
     @assert 0 <= position <= 0xFFE "template parameter position must fit clang's 12-bit field"
-    id_ptr = id === nothing ? C_NULL : id.ptr
-    ti_ptr = tinfo === nothing ? C_NULL : tinfo.ptr
+    id_ptr = id === nothing ? CXIdentifierInfo(C_NULL) : Base.unsafe_convert(CXIdentifierInfo, id)
+    ti_ptr = tinfo === nothing ? CXTypeSourceInfo(C_NULL) : Base.unsafe_convert(CXTypeSourceInfo, tinfo)
     ptr = clang_NonTypeTemplateParmDecl_Create(ctx, dc, start_loc, id_loc, depth, position, id_ptr,
                                                ty, parameter_pack, ti_ptr)
     return NonTypeTemplateParmDecl(ptr)
@@ -2376,7 +2377,7 @@ end
 
 # TemplateTemplateParmDecl
 """
-    TemplateTemplateParmDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation, depth::Integer,
+    TemplateTemplateParmDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation, depth::Integer,
                              position::Integer, parameter_pack::Bool,
                              id::Union{Nothing,AbstractIdentifierInfo},
                              params::TemplateParameterList) -> TemplateTemplateParmDecl
@@ -2384,14 +2385,14 @@ Build a template template parameter (`template <typename> class P`) whose own pa
 `params`. The node is *not* added to `dc`; `id` may be `nothing`. Same 20-bit depth / 12-bit
 position bounds as `NonTypeTemplateParmDecl`.
 """
-function TemplateTemplateParmDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function TemplateTemplateParmDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                                   depth::Integer, position::Integer, parameter_pack::Bool,
                                   id::Union{Nothing,AbstractIdentifierInfo},
                                   params::TemplateParameterList)
     @check_ptrs ctx dc params
     @assert 0 <= depth <= 0xFFFFE "template parameter depth must fit clang's 20-bit field"
     @assert 0 <= position <= 0xFFE "template parameter position must fit clang's 12-bit field"
-    id_ptr = id === nothing ? C_NULL : id.ptr
+    id_ptr = id === nothing ? CXIdentifierInfo(C_NULL) : Base.unsafe_convert(CXIdentifierInfo, id)
     ptr = clang_TemplateTemplateParmDecl_Create(ctx, dc, loc, depth, position, parameter_pack,
                                                 id_ptr, params)
     return TemplateTemplateParmDecl(ptr)
@@ -2429,8 +2430,8 @@ function getInstantiatedFrom(x::AbstractClassTemplateSpecializationDecl)
     @check_ptrs x
     ptr = clang_ClassTemplateSpecializationDecl_getInstantiatedFrom(x)
     ptr == C_NULL && return Decl(ptr)
-    return specializedOnPartial(x) ? ClassTemplatePartialSpecializationDecl(ptr) :
-           ClassTemplateDecl(ptr)
+    return specializedOnPartial(x) ? downcast(ClassTemplatePartialSpecializationDecl, ptr) :
+           downcast(ClassTemplateDecl, ptr)
 end
 
 # VarTemplateSpecializationDecl
@@ -2444,24 +2445,24 @@ function getInstantiatedFrom(x::AbstractVarTemplateSpecializationDecl)
     @check_ptrs x
     ptr = clang_VarTemplateSpecializationDecl_getInstantiatedFrom(x)
     ptr == C_NULL && return Decl(ptr)
-    return specializedOnPartial(x) ? VarTemplatePartialSpecializationDecl(ptr) :
-           VarTemplateDecl(ptr)
+    return specializedOnPartial(x) ? downcast(VarTemplatePartialSpecializationDecl, ptr) :
+           downcast(VarTemplateDecl, ptr)
 end
 
 # ImplicitConceptSpecializationDecl
 """
-    ImplicitConceptSpecializationDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+    ImplicitConceptSpecializationDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                                       args::AbstractVector{<:AbstractTemplateArgument})
 Build the node that records a concept's converted template arguments. The argument values are copied
 into `ctx`'s arena, so the caller keeps ownership of the handles it passed and still has to `dispose`
 them. The node is *not* added to `dc`, and the argument array is sized once here -- see
 `setTemplateArguments`.
 """
-function ImplicitConceptSpecializationDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+function ImplicitConceptSpecializationDecl(ctx::ASTContext, dc::AnyDeclContext, loc::SourceLocation,
                                            args::AbstractVector{<:AbstractTemplateArgument})
     @check_ptrs ctx dc
     @assert all(a -> a.ptr != C_NULL, args) "every template argument must be non-NULL"
-    ptrs = CXTemplateArgument[a.ptr for a in args]
+    ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
     ptr = clang_ImplicitConceptSpecializationDecl_Create(ctx, dc, loc, ptrs, length(ptrs))
     return ImplicitConceptSpecializationDecl(ptr)
 end
@@ -2491,7 +2492,7 @@ function setTemplateArguments(x::AbstractImplicitConceptSpecializationDecl,
     @assert all(a -> a.ptr != C_NULL, args) "every template argument must be non-NULL"
     n = clang_ImplicitConceptSpecializationDecl_getNumTemplateArguments(x)
     @assert length(args) == n "the trailing argument array holds exactly $n entries"
-    ptrs = CXTemplateArgument[a.ptr for a in args]
+    ptrs = CXTemplateArgument[Base.unsafe_convert(CXTemplateArgument, a) for a in args]
     return clang_ImplicitConceptSpecializationDecl_setTemplateArguments(x, ptrs, length(ptrs))
 end
 

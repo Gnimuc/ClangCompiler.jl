@@ -12,5 +12,3 @@ struct AnalyzerOptions <: AbstractAnalyzerOptions
     ptr::CXAnalyzerOptions
 end
 
-Base.unsafe_convert(::Type{CXAnalyzerOptions}, x::AnalyzerOptions) = x.ptr
-Base.cconvert(::Type{CXAnalyzerOptions}, x::AnalyzerOptions) = x

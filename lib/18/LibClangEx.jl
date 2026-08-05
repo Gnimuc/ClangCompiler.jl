@@ -8,980 +8,4228 @@ using LLVM.API: LLVMMemoryBufferRef, LLVMGenericValueRef
 using LLVM.API: LLVMTypeRef, LLVMOrcLLJITRef
 using LLVM.API: LLVMOrcExecutorAddress
 
+"""
+    abstract type AbstractCXImpl end
+
+Supertype of every `CX<Class>Impl` phantom, the type behind a `CX<Class>` handle.
+
+It exists so one method can speak about *any* two handles of this package at once. `Ptr` is
+Base's and `convert` between two `Ptr`s bitcasts, so without a common supertype there is no
+way to say "these two handles name different classes" -- and that conversion is the one the
+whole layer has to refuse. A `Union` over the 1,050 phantoms says the same thing, but
+`T <: Union{...}` is a linear scan run during method lookup: measured at ~1,100x the cost of
+a supertype check, and 9x the load time.
+
+The post-pass in gen/generator.jl attaches this to every phantom it emits.
+"""
+abstract type AbstractCXImpl end
+# the generator's auto-export covers only the `CX`/`clang` prefixes, so say this one outright
+export AbstractCXImpl
+
 const time_t = Clong
 
+
+mutable struct CXValueImpl <: AbstractCXImpl end
+
+const CXValue = Ptr{CXValueImpl}
+
+mutable struct CXWhileStmtImpl <: AbstractCXImpl end
+
+const CXWhileStmt = Ptr{CXWhileStmtImpl}
+
+mutable struct CXValueStmtImpl <: AbstractCXImpl end
+
+const CXValueStmt = Ptr{CXValueStmtImpl}
+
+mutable struct CXLabelStmtImpl <: AbstractCXImpl end
+
+const CXLabelStmt = Ptr{CXLabelStmtImpl}
+
+mutable struct CXExprImpl <: AbstractCXImpl end
+
+const CXExpr = Ptr{CXExprImpl}
+
+mutable struct CXVAArgExprImpl <: AbstractCXImpl end
+
+const CXVAArgExpr = Ptr{CXVAArgExprImpl}
+
+mutable struct CXUnaryOperatorImpl <: AbstractCXImpl end
+
+const CXUnaryOperator = Ptr{CXUnaryOperatorImpl}
+
+mutable struct CXUnaryExprOrTypeTraitExprImpl <: AbstractCXImpl end
+
+const CXUnaryExprOrTypeTraitExpr = Ptr{CXUnaryExprOrTypeTraitExprImpl}
+
+mutable struct CXTypoExprImpl <: AbstractCXImpl end
+
+const CXTypoExpr = Ptr{CXTypoExprImpl}
+
+mutable struct CXTypeTraitExprImpl <: AbstractCXImpl end
+
+const CXTypeTraitExpr = Ptr{CXTypeTraitExprImpl}
+
+mutable struct CXSubstNonTypeTemplateParmPackExprImpl <: AbstractCXImpl end
+
+const CXSubstNonTypeTemplateParmPackExpr = Ptr{CXSubstNonTypeTemplateParmPackExprImpl}
+
+mutable struct CXSubstNonTypeTemplateParmExprImpl <: AbstractCXImpl end
+
+const CXSubstNonTypeTemplateParmExpr = Ptr{CXSubstNonTypeTemplateParmExprImpl}
+
+mutable struct CXStringLiteralImpl <: AbstractCXImpl end
+
+const CXStringLiteral = Ptr{CXStringLiteralImpl}
+
+mutable struct CXStmtExprImpl <: AbstractCXImpl end
+
+const CXStmtExpr = Ptr{CXStmtExprImpl}
+
+mutable struct CXSourceLocExprImpl <: AbstractCXImpl end
+
+const CXSourceLocExpr = Ptr{CXSourceLocExprImpl}
+
+mutable struct CXSizeOfPackExprImpl <: AbstractCXImpl end
+
+const CXSizeOfPackExpr = Ptr{CXSizeOfPackExprImpl}
+
+mutable struct CXShuffleVectorExprImpl <: AbstractCXImpl end
+
+const CXShuffleVectorExpr = Ptr{CXShuffleVectorExprImpl}
+
+mutable struct CXSYCLUniqueStableNameExprImpl <: AbstractCXImpl end
+
+const CXSYCLUniqueStableNameExpr = Ptr{CXSYCLUniqueStableNameExprImpl}
+
+mutable struct CXRequiresExprImpl <: AbstractCXImpl end
+
+const CXRequiresExpr = Ptr{CXRequiresExprImpl}
+
+mutable struct CXRecoveryExprImpl <: AbstractCXImpl end
+
+const CXRecoveryExpr = Ptr{CXRecoveryExprImpl}
+
+mutable struct CXPseudoObjectExprImpl <: AbstractCXImpl end
+
+const CXPseudoObjectExpr = Ptr{CXPseudoObjectExprImpl}
+
+mutable struct CXPredefinedExprImpl <: AbstractCXImpl end
+
+const CXPredefinedExpr = Ptr{CXPredefinedExprImpl}
+
+mutable struct CXParenListExprImpl <: AbstractCXImpl end
+
+const CXParenListExpr = Ptr{CXParenListExprImpl}
+
+mutable struct CXParenExprImpl <: AbstractCXImpl end
+
+const CXParenExpr = Ptr{CXParenExprImpl}
+
+mutable struct CXPackExpansionExprImpl <: AbstractCXImpl end
+
+const CXPackExpansionExpr = Ptr{CXPackExpansionExprImpl}
+
+mutable struct CXOverloadExprImpl <: AbstractCXImpl end
+
+const CXOverloadExpr = Ptr{CXOverloadExprImpl}
+
+mutable struct CXUnresolvedMemberExprImpl <: AbstractCXImpl end
+
+const CXUnresolvedMemberExpr = Ptr{CXUnresolvedMemberExprImpl}
+
+mutable struct CXUnresolvedLookupExprImpl <: AbstractCXImpl end
+
+const CXUnresolvedLookupExpr = Ptr{CXUnresolvedLookupExprImpl}
+
+mutable struct CXOpaqueValueExprImpl <: AbstractCXImpl end
+
+const CXOpaqueValueExpr = Ptr{CXOpaqueValueExprImpl}
+
+mutable struct CXOffsetOfExprImpl <: AbstractCXImpl end
+
+const CXOffsetOfExpr = Ptr{CXOffsetOfExprImpl}
+
+mutable struct CXObjCSubscriptRefExprImpl <: AbstractCXImpl end
+
+const CXObjCSubscriptRefExpr = Ptr{CXObjCSubscriptRefExprImpl}
+
+mutable struct CXObjCStringLiteralImpl <: AbstractCXImpl end
+
+const CXObjCStringLiteral = Ptr{CXObjCStringLiteralImpl}
+
+mutable struct CXObjCSelectorExprImpl <: AbstractCXImpl end
+
+const CXObjCSelectorExpr = Ptr{CXObjCSelectorExprImpl}
+
+mutable struct CXObjCProtocolExprImpl <: AbstractCXImpl end
+
+const CXObjCProtocolExpr = Ptr{CXObjCProtocolExprImpl}
+
+mutable struct CXObjCPropertyRefExprImpl <: AbstractCXImpl end
+
+const CXObjCPropertyRefExpr = Ptr{CXObjCPropertyRefExprImpl}
+
+mutable struct CXObjCMessageExprImpl <: AbstractCXImpl end
+
+const CXObjCMessageExpr = Ptr{CXObjCMessageExprImpl}
+
+mutable struct CXObjCIvarRefExprImpl <: AbstractCXImpl end
+
+const CXObjCIvarRefExpr = Ptr{CXObjCIvarRefExprImpl}
+
+mutable struct CXObjCIsaExprImpl <: AbstractCXImpl end
+
+const CXObjCIsaExpr = Ptr{CXObjCIsaExprImpl}
+
+mutable struct CXObjCIndirectCopyRestoreExprImpl <: AbstractCXImpl end
+
+const CXObjCIndirectCopyRestoreExpr = Ptr{CXObjCIndirectCopyRestoreExprImpl}
+
+mutable struct CXObjCEncodeExprImpl <: AbstractCXImpl end
+
+const CXObjCEncodeExpr = Ptr{CXObjCEncodeExprImpl}
+
+mutable struct CXObjCDictionaryLiteralImpl <: AbstractCXImpl end
+
+const CXObjCDictionaryLiteral = Ptr{CXObjCDictionaryLiteralImpl}
+
+mutable struct CXObjCBoxedExprImpl <: AbstractCXImpl end
+
+const CXObjCBoxedExpr = Ptr{CXObjCBoxedExprImpl}
+
+mutable struct CXObjCBoolLiteralExprImpl <: AbstractCXImpl end
+
+const CXObjCBoolLiteralExpr = Ptr{CXObjCBoolLiteralExprImpl}
+
+mutable struct CXObjCAvailabilityCheckExprImpl <: AbstractCXImpl end
+
+const CXObjCAvailabilityCheckExpr = Ptr{CXObjCAvailabilityCheckExprImpl}
+
+mutable struct CXObjCArrayLiteralImpl <: AbstractCXImpl end
+
+const CXObjCArrayLiteral = Ptr{CXObjCArrayLiteralImpl}
+
+mutable struct CXOMPIteratorExprImpl <: AbstractCXImpl end
+
+const CXOMPIteratorExpr = Ptr{CXOMPIteratorExprImpl}
+
+mutable struct CXOMPArrayShapingExprImpl <: AbstractCXImpl end
+
+const CXOMPArrayShapingExpr = Ptr{CXOMPArrayShapingExprImpl}
+
+mutable struct CXOMPArraySectionExprImpl <: AbstractCXImpl end
+
+const CXOMPArraySectionExpr = Ptr{CXOMPArraySectionExprImpl}
+
+mutable struct CXNoInitExprImpl <: AbstractCXImpl end
+
+const CXNoInitExpr = Ptr{CXNoInitExprImpl}
+
+mutable struct CXMemberExprImpl <: AbstractCXImpl end
+
+const CXMemberExpr = Ptr{CXMemberExprImpl}
+
+mutable struct CXMatrixSubscriptExprImpl <: AbstractCXImpl end
+
+const CXMatrixSubscriptExpr = Ptr{CXMatrixSubscriptExprImpl}
+
+mutable struct CXMaterializeTemporaryExprImpl <: AbstractCXImpl end
+
+const CXMaterializeTemporaryExpr = Ptr{CXMaterializeTemporaryExprImpl}
+
+mutable struct CXMSPropertySubscriptExprImpl <: AbstractCXImpl end
+
+const CXMSPropertySubscriptExpr = Ptr{CXMSPropertySubscriptExprImpl}
+
+mutable struct CXMSPropertyRefExprImpl <: AbstractCXImpl end
+
+const CXMSPropertyRefExpr = Ptr{CXMSPropertyRefExprImpl}
+
+mutable struct CXLambdaExprImpl <: AbstractCXImpl end
+
+const CXLambdaExpr = Ptr{CXLambdaExprImpl}
+
+mutable struct CXIntegerLiteralImpl <: AbstractCXImpl end
+
+const CXIntegerLiteral = Ptr{CXIntegerLiteralImpl}
+
+mutable struct CXInitListExprImpl <: AbstractCXImpl end
+
+const CXInitListExpr = Ptr{CXInitListExprImpl}
+
+mutable struct CXImplicitValueInitExprImpl <: AbstractCXImpl end
+
+const CXImplicitValueInitExpr = Ptr{CXImplicitValueInitExprImpl}
+
+mutable struct CXImaginaryLiteralImpl <: AbstractCXImpl end
+
+const CXImaginaryLiteral = Ptr{CXImaginaryLiteralImpl}
+
+mutable struct CXGenericSelectionExprImpl <: AbstractCXImpl end
+
+const CXGenericSelectionExpr = Ptr{CXGenericSelectionExprImpl}
+
+mutable struct CXGNUNullExprImpl <: AbstractCXImpl end
+
+const CXGNUNullExpr = Ptr{CXGNUNullExprImpl}
+
+mutable struct CXFunctionParmPackExprImpl <: AbstractCXImpl end
+
+const CXFunctionParmPackExpr = Ptr{CXFunctionParmPackExprImpl}
+
+mutable struct CXFullExprImpl <: AbstractCXImpl end
+
+const CXFullExpr = Ptr{CXFullExprImpl}
+
+mutable struct CXExprWithCleanupsImpl <: AbstractCXImpl end
+
+const CXExprWithCleanups = Ptr{CXExprWithCleanupsImpl}
+
+mutable struct CXConstantExprImpl <: AbstractCXImpl end
+
+const CXConstantExpr = Ptr{CXConstantExprImpl}
+
+mutable struct CXFloatingLiteralImpl <: AbstractCXImpl end
+
+const CXFloatingLiteral = Ptr{CXFloatingLiteralImpl}
+
+mutable struct CXFixedPointLiteralImpl <: AbstractCXImpl end
+
+const CXFixedPointLiteral = Ptr{CXFixedPointLiteralImpl}
+
+mutable struct CXExtVectorElementExprImpl <: AbstractCXImpl end
+
+const CXExtVectorElementExpr = Ptr{CXExtVectorElementExprImpl}
+
+mutable struct CXExpressionTraitExprImpl <: AbstractCXImpl end
+
+const CXExpressionTraitExpr = Ptr{CXExpressionTraitExprImpl}
+
+mutable struct CXDesignatedInitUpdateExprImpl <: AbstractCXImpl end
+
+const CXDesignatedInitUpdateExpr = Ptr{CXDesignatedInitUpdateExprImpl}
+
+mutable struct CXDesignatedInitExprImpl <: AbstractCXImpl end
+
+const CXDesignatedInitExpr = Ptr{CXDesignatedInitExprImpl}
+
+mutable struct CXDependentScopeDeclRefExprImpl <: AbstractCXImpl end
+
+const CXDependentScopeDeclRefExpr = Ptr{CXDependentScopeDeclRefExprImpl}
+
+mutable struct CXDependentCoawaitExprImpl <: AbstractCXImpl end
+
+const CXDependentCoawaitExpr = Ptr{CXDependentCoawaitExprImpl}
+
+mutable struct CXDeclRefExprImpl <: AbstractCXImpl end
+
+const CXDeclRefExpr = Ptr{CXDeclRefExprImpl}
+
+mutable struct CXCoroutineSuspendExprImpl <: AbstractCXImpl end
+
+const CXCoroutineSuspendExpr = Ptr{CXCoroutineSuspendExprImpl}
+
+mutable struct CXCoyieldExprImpl <: AbstractCXImpl end
+
+const CXCoyieldExpr = Ptr{CXCoyieldExprImpl}
+
+mutable struct CXCoawaitExprImpl <: AbstractCXImpl end
+
+const CXCoawaitExpr = Ptr{CXCoawaitExprImpl}
+
+mutable struct CXConvertVectorExprImpl <: AbstractCXImpl end
+
+const CXConvertVectorExpr = Ptr{CXConvertVectorExprImpl}
+
+mutable struct CXConceptSpecializationExprImpl <: AbstractCXImpl end
+
+const CXConceptSpecializationExpr = Ptr{CXConceptSpecializationExprImpl}
+
+mutable struct CXCompoundLiteralExprImpl <: AbstractCXImpl end
+
+const CXCompoundLiteralExpr = Ptr{CXCompoundLiteralExprImpl}
+
+mutable struct CXChooseExprImpl <: AbstractCXImpl end
+
+const CXChooseExpr = Ptr{CXChooseExprImpl}
+
+mutable struct CXCharacterLiteralImpl <: AbstractCXImpl end
+
+const CXCharacterLiteral = Ptr{CXCharacterLiteralImpl}
+
+mutable struct CXCastExprImpl <: AbstractCXImpl end
+
+const CXCastExpr = Ptr{CXCastExprImpl}
+
+mutable struct CXImplicitCastExprImpl <: AbstractCXImpl end
+
+const CXImplicitCastExpr = Ptr{CXImplicitCastExprImpl}
+
+mutable struct CXExplicitCastExprImpl <: AbstractCXImpl end
+
+const CXExplicitCastExpr = Ptr{CXExplicitCastExprImpl}
+
+mutable struct CXObjCBridgedCastExprImpl <: AbstractCXImpl end
+
+const CXObjCBridgedCastExpr = Ptr{CXObjCBridgedCastExprImpl}
+
+mutable struct CXCXXNamedCastExprImpl <: AbstractCXImpl end
+
+const CXCXXNamedCastExpr = Ptr{CXCXXNamedCastExprImpl}
+
+mutable struct CXCXXStaticCastExprImpl <: AbstractCXImpl end
+
+const CXCXXStaticCastExpr = Ptr{CXCXXStaticCastExprImpl}
+
+mutable struct CXCXXReinterpretCastExprImpl <: AbstractCXImpl end
+
+const CXCXXReinterpretCastExpr = Ptr{CXCXXReinterpretCastExprImpl}
+
+mutable struct CXCXXDynamicCastExprImpl <: AbstractCXImpl end
+
+const CXCXXDynamicCastExpr = Ptr{CXCXXDynamicCastExprImpl}
+
+mutable struct CXCXXConstCastExprImpl <: AbstractCXImpl end
+
+const CXCXXConstCastExpr = Ptr{CXCXXConstCastExprImpl}
+
+mutable struct CXCXXAddrspaceCastExprImpl <: AbstractCXImpl end
+
+const CXCXXAddrspaceCastExpr = Ptr{CXCXXAddrspaceCastExprImpl}
+
+mutable struct CXCXXFunctionalCastExprImpl <: AbstractCXImpl end
+
+const CXCXXFunctionalCastExpr = Ptr{CXCXXFunctionalCastExprImpl}
+
+mutable struct CXCStyleCastExprImpl <: AbstractCXImpl end
+
+const CXCStyleCastExpr = Ptr{CXCStyleCastExprImpl}
+
+mutable struct CXBuiltinBitCastExprImpl <: AbstractCXImpl end
+
+const CXBuiltinBitCastExpr = Ptr{CXBuiltinBitCastExprImpl}
+
+mutable struct CXCallExprImpl <: AbstractCXImpl end
+
+const CXCallExpr = Ptr{CXCallExprImpl}
+
+mutable struct CXUserDefinedLiteralImpl <: AbstractCXImpl end
+
+const CXUserDefinedLiteral = Ptr{CXUserDefinedLiteralImpl}
+
+mutable struct CXCXXOperatorCallExprImpl <: AbstractCXImpl end
+
+const CXCXXOperatorCallExpr = Ptr{CXCXXOperatorCallExprImpl}
+
+mutable struct CXCXXMemberCallExprImpl <: AbstractCXImpl end
+
+const CXCXXMemberCallExpr = Ptr{CXCXXMemberCallExprImpl}
+
+mutable struct CXCUDAKernelCallExprImpl <: AbstractCXImpl end
+
+const CXCUDAKernelCallExpr = Ptr{CXCUDAKernelCallExprImpl}
+
+mutable struct CXCXXUuidofExprImpl <: AbstractCXImpl end
+
+const CXCXXUuidofExpr = Ptr{CXCXXUuidofExprImpl}
+
+mutable struct CXCXXUnresolvedConstructExprImpl <: AbstractCXImpl end
+
+const CXCXXUnresolvedConstructExpr = Ptr{CXCXXUnresolvedConstructExprImpl}
+
+mutable struct CXCXXTypeidExprImpl <: AbstractCXImpl end
+
+const CXCXXTypeidExpr = Ptr{CXCXXTypeidExprImpl}
+
+mutable struct CXCXXThrowExprImpl <: AbstractCXImpl end
+
+const CXCXXThrowExpr = Ptr{CXCXXThrowExprImpl}
+
+mutable struct CXCXXThisExprImpl <: AbstractCXImpl end
+
+const CXCXXThisExpr = Ptr{CXCXXThisExprImpl}
+
+mutable struct CXCXXStdInitializerListExprImpl <: AbstractCXImpl end
+
+const CXCXXStdInitializerListExpr = Ptr{CXCXXStdInitializerListExprImpl}
+
+mutable struct CXCXXScalarValueInitExprImpl <: AbstractCXImpl end
+
+const CXCXXScalarValueInitExpr = Ptr{CXCXXScalarValueInitExprImpl}
+
+mutable struct CXCXXRewrittenBinaryOperatorImpl <: AbstractCXImpl end
+
+const CXCXXRewrittenBinaryOperator = Ptr{CXCXXRewrittenBinaryOperatorImpl}
+
+mutable struct CXCXXPseudoDestructorExprImpl <: AbstractCXImpl end
+
+const CXCXXPseudoDestructorExpr = Ptr{CXCXXPseudoDestructorExprImpl}
+
+mutable struct CXCXXParenListInitExprImpl <: AbstractCXImpl end
+
+const CXCXXParenListInitExpr = Ptr{CXCXXParenListInitExprImpl}
+
+mutable struct CXCXXNullPtrLiteralExprImpl <: AbstractCXImpl end
+
+const CXCXXNullPtrLiteralExpr = Ptr{CXCXXNullPtrLiteralExprImpl}
+
+mutable struct CXCXXNoexceptExprImpl <: AbstractCXImpl end
+
+const CXCXXNoexceptExpr = Ptr{CXCXXNoexceptExprImpl}
+
+mutable struct CXCXXNewExprImpl <: AbstractCXImpl end
+
+const CXCXXNewExpr = Ptr{CXCXXNewExprImpl}
+
+mutable struct CXCXXInheritedCtorInitExprImpl <: AbstractCXImpl end
+
+const CXCXXInheritedCtorInitExpr = Ptr{CXCXXInheritedCtorInitExprImpl}
+
+mutable struct CXCXXFoldExprImpl <: AbstractCXImpl end
+
+const CXCXXFoldExpr = Ptr{CXCXXFoldExprImpl}
+
+mutable struct CXCXXDependentScopeMemberExprImpl <: AbstractCXImpl end
+
+const CXCXXDependentScopeMemberExpr = Ptr{CXCXXDependentScopeMemberExprImpl}
+
+mutable struct CXCXXDeleteExprImpl <: AbstractCXImpl end
+
+const CXCXXDeleteExpr = Ptr{CXCXXDeleteExprImpl}
+
+mutable struct CXCXXDefaultInitExprImpl <: AbstractCXImpl end
+
+const CXCXXDefaultInitExpr = Ptr{CXCXXDefaultInitExprImpl}
+
+mutable struct CXCXXDefaultArgExprImpl <: AbstractCXImpl end
+
+const CXCXXDefaultArgExpr = Ptr{CXCXXDefaultArgExprImpl}
+
+mutable struct CXCXXConstructExprImpl <: AbstractCXImpl end
+
+const CXCXXConstructExpr = Ptr{CXCXXConstructExprImpl}
+
+mutable struct CXCXXTemporaryObjectExprImpl <: AbstractCXImpl end
+
+const CXCXXTemporaryObjectExpr = Ptr{CXCXXTemporaryObjectExprImpl}
+
+mutable struct CXCXXBoolLiteralExprImpl <: AbstractCXImpl end
+
+const CXCXXBoolLiteralExpr = Ptr{CXCXXBoolLiteralExprImpl}
+
+mutable struct CXCXXBindTemporaryExprImpl <: AbstractCXImpl end
+
+const CXCXXBindTemporaryExpr = Ptr{CXCXXBindTemporaryExprImpl}
+
+mutable struct CXBlockExprImpl <: AbstractCXImpl end
+
+const CXBlockExpr = Ptr{CXBlockExprImpl}
+
+mutable struct CXBinaryOperatorImpl <: AbstractCXImpl end
+
+const CXBinaryOperator = Ptr{CXBinaryOperatorImpl}
+
+mutable struct CXCompoundAssignOperatorImpl <: AbstractCXImpl end
+
+const CXCompoundAssignOperator = Ptr{CXCompoundAssignOperatorImpl}
+
+mutable struct CXAtomicExprImpl <: AbstractCXImpl end
+
+const CXAtomicExpr = Ptr{CXAtomicExprImpl}
+
+mutable struct CXAsTypeExprImpl <: AbstractCXImpl end
+
+const CXAsTypeExpr = Ptr{CXAsTypeExprImpl}
+
+mutable struct CXArrayTypeTraitExprImpl <: AbstractCXImpl end
+
+const CXArrayTypeTraitExpr = Ptr{CXArrayTypeTraitExprImpl}
+
+mutable struct CXArraySubscriptExprImpl <: AbstractCXImpl end
+
+const CXArraySubscriptExpr = Ptr{CXArraySubscriptExprImpl}
+
+mutable struct CXArrayInitLoopExprImpl <: AbstractCXImpl end
+
+const CXArrayInitLoopExpr = Ptr{CXArrayInitLoopExprImpl}
+
+mutable struct CXArrayInitIndexExprImpl <: AbstractCXImpl end
+
+const CXArrayInitIndexExpr = Ptr{CXArrayInitIndexExprImpl}
+
+mutable struct CXAddrLabelExprImpl <: AbstractCXImpl end
+
+const CXAddrLabelExpr = Ptr{CXAddrLabelExprImpl}
+
+mutable struct CXAbstractConditionalOperatorImpl <: AbstractCXImpl end
+
+const CXAbstractConditionalOperator = Ptr{CXAbstractConditionalOperatorImpl}
+
+mutable struct CXConditionalOperatorImpl <: AbstractCXImpl end
+
+const CXConditionalOperator = Ptr{CXConditionalOperatorImpl}
+
+mutable struct CXBinaryConditionalOperatorImpl <: AbstractCXImpl end
+
+const CXBinaryConditionalOperator = Ptr{CXBinaryConditionalOperatorImpl}
+
+mutable struct CXAttributedStmtImpl <: AbstractCXImpl end
+
+const CXAttributedStmt = Ptr{CXAttributedStmtImpl}
+
+mutable struct CXSwitchStmtImpl <: AbstractCXImpl end
+
+const CXSwitchStmt = Ptr{CXSwitchStmtImpl}
+
+mutable struct CXSwitchCaseImpl <: AbstractCXImpl end
+
+const CXSwitchCase = Ptr{CXSwitchCaseImpl}
+
+mutable struct CXDefaultStmtImpl <: AbstractCXImpl end
+
+const CXDefaultStmt = Ptr{CXDefaultStmtImpl}
+
+mutable struct CXCaseStmtImpl <: AbstractCXImpl end
+
+const CXCaseStmt = Ptr{CXCaseStmtImpl}
+
+mutable struct CXSEHTryStmtImpl <: AbstractCXImpl end
+
+const CXSEHTryStmt = Ptr{CXSEHTryStmtImpl}
+
+mutable struct CXSEHLeaveStmtImpl <: AbstractCXImpl end
+
+const CXSEHLeaveStmt = Ptr{CXSEHLeaveStmtImpl}
+
+mutable struct CXSEHFinallyStmtImpl <: AbstractCXImpl end
+
+const CXSEHFinallyStmt = Ptr{CXSEHFinallyStmtImpl}
+
+mutable struct CXSEHExceptStmtImpl <: AbstractCXImpl end
+
+const CXSEHExceptStmt = Ptr{CXSEHExceptStmtImpl}
+
+mutable struct CXReturnStmtImpl <: AbstractCXImpl end
+
+const CXReturnStmt = Ptr{CXReturnStmtImpl}
+
+mutable struct CXObjCForCollectionStmtImpl <: AbstractCXImpl end
+
+const CXObjCForCollectionStmt = Ptr{CXObjCForCollectionStmtImpl}
+
+mutable struct CXObjCAutoreleasePoolStmtImpl <: AbstractCXImpl end
+
+const CXObjCAutoreleasePoolStmt = Ptr{CXObjCAutoreleasePoolStmtImpl}
+
+mutable struct CXObjCAtTryStmtImpl <: AbstractCXImpl end
+
+const CXObjCAtTryStmt = Ptr{CXObjCAtTryStmtImpl}
+
+mutable struct CXObjCAtThrowStmtImpl <: AbstractCXImpl end
+
+const CXObjCAtThrowStmt = Ptr{CXObjCAtThrowStmtImpl}
+
+mutable struct CXObjCAtSynchronizedStmtImpl <: AbstractCXImpl end
+
+const CXObjCAtSynchronizedStmt = Ptr{CXObjCAtSynchronizedStmtImpl}
+
+mutable struct CXObjCAtFinallyStmtImpl <: AbstractCXImpl end
+
+const CXObjCAtFinallyStmt = Ptr{CXObjCAtFinallyStmtImpl}
+
+mutable struct CXObjCAtCatchStmtImpl <: AbstractCXImpl end
+
+const CXObjCAtCatchStmt = Ptr{CXObjCAtCatchStmtImpl}
+
+mutable struct CXOMPExecutableDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPExecutableDirective = Ptr{CXOMPExecutableDirectiveImpl}
+
+mutable struct CXOMPTeamsDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTeamsDirective = Ptr{CXOMPTeamsDirectiveImpl}
+
+mutable struct CXOMPTaskyieldDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTaskyieldDirective = Ptr{CXOMPTaskyieldDirectiveImpl}
+
+mutable struct CXOMPTaskwaitDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTaskwaitDirective = Ptr{CXOMPTaskwaitDirectiveImpl}
+
+mutable struct CXOMPTaskgroupDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTaskgroupDirective = Ptr{CXOMPTaskgroupDirectiveImpl}
+
+mutable struct CXOMPTaskDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTaskDirective = Ptr{CXOMPTaskDirectiveImpl}
+
+mutable struct CXOMPTargetUpdateDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetUpdateDirective = Ptr{CXOMPTargetUpdateDirectiveImpl}
+
+mutable struct CXOMPTargetTeamsDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetTeamsDirective = Ptr{CXOMPTargetTeamsDirectiveImpl}
+
+mutable struct CXOMPTargetParallelForDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetParallelForDirective = Ptr{CXOMPTargetParallelForDirectiveImpl}
+
+mutable struct CXOMPTargetParallelDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetParallelDirective = Ptr{CXOMPTargetParallelDirectiveImpl}
+
+mutable struct CXOMPTargetExitDataDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetExitDataDirective = Ptr{CXOMPTargetExitDataDirectiveImpl}
+
+mutable struct CXOMPTargetEnterDataDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetEnterDataDirective = Ptr{CXOMPTargetEnterDataDirectiveImpl}
+
+mutable struct CXOMPTargetDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetDirective = Ptr{CXOMPTargetDirectiveImpl}
+
+mutable struct CXOMPTargetDataDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetDataDirective = Ptr{CXOMPTargetDataDirectiveImpl}
+
+mutable struct CXOMPSingleDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPSingleDirective = Ptr{CXOMPSingleDirectiveImpl}
+
+mutable struct CXOMPSectionsDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPSectionsDirective = Ptr{CXOMPSectionsDirectiveImpl}
+
+mutable struct CXOMPSectionDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPSectionDirective = Ptr{CXOMPSectionDirectiveImpl}
+
+mutable struct CXOMPScopeDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPScopeDirective = Ptr{CXOMPScopeDirectiveImpl}
+
+mutable struct CXOMPScanDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPScanDirective = Ptr{CXOMPScanDirectiveImpl}
+
+mutable struct CXOMPParallelSectionsDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelSectionsDirective = Ptr{CXOMPParallelSectionsDirectiveImpl}
+
+mutable struct CXOMPParallelMasterDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelMasterDirective = Ptr{CXOMPParallelMasterDirectiveImpl}
+
+mutable struct CXOMPParallelMaskedDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelMaskedDirective = Ptr{CXOMPParallelMaskedDirectiveImpl}
+
+mutable struct CXOMPParallelDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelDirective = Ptr{CXOMPParallelDirectiveImpl}
+
+mutable struct CXOMPOrderedDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPOrderedDirective = Ptr{CXOMPOrderedDirectiveImpl}
+
+mutable struct CXOMPMetaDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPMetaDirective = Ptr{CXOMPMetaDirectiveImpl}
+
+mutable struct CXOMPMasterDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPMasterDirective = Ptr{CXOMPMasterDirectiveImpl}
+
+mutable struct CXOMPMaskedDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPMaskedDirective = Ptr{CXOMPMaskedDirectiveImpl}
+
+mutable struct CXOMPLoopBasedDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPLoopBasedDirective = Ptr{CXOMPLoopBasedDirectiveImpl}
+
+mutable struct CXOMPLoopTransformationDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPLoopTransformationDirective = Ptr{CXOMPLoopTransformationDirectiveImpl}
+
+mutable struct CXOMPUnrollDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPUnrollDirective = Ptr{CXOMPUnrollDirectiveImpl}
+
+mutable struct CXOMPTileDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTileDirective = Ptr{CXOMPTileDirectiveImpl}
+
+mutable struct CXOMPLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPLoopDirective = Ptr{CXOMPLoopDirectiveImpl}
+
+mutable struct CXOMPTeamsGenericLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTeamsGenericLoopDirective = Ptr{CXOMPTeamsGenericLoopDirectiveImpl}
+
+mutable struct CXOMPTeamsDistributeSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTeamsDistributeSimdDirective = Ptr{CXOMPTeamsDistributeSimdDirectiveImpl}
+
+mutable struct CXOMPTeamsDistributeParallelForSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTeamsDistributeParallelForSimdDirective = Ptr{CXOMPTeamsDistributeParallelForSimdDirectiveImpl}
+
+mutable struct CXOMPTeamsDistributeParallelForDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTeamsDistributeParallelForDirective = Ptr{CXOMPTeamsDistributeParallelForDirectiveImpl}
+
+mutable struct CXOMPTeamsDistributeDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTeamsDistributeDirective = Ptr{CXOMPTeamsDistributeDirectiveImpl}
+
+mutable struct CXOMPTaskLoopSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTaskLoopSimdDirective = Ptr{CXOMPTaskLoopSimdDirectiveImpl}
+
+mutable struct CXOMPTaskLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTaskLoopDirective = Ptr{CXOMPTaskLoopDirectiveImpl}
+
+mutable struct CXOMPTargetTeamsGenericLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetTeamsGenericLoopDirective = Ptr{CXOMPTargetTeamsGenericLoopDirectiveImpl}
+
+mutable struct CXOMPTargetTeamsDistributeSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetTeamsDistributeSimdDirective = Ptr{CXOMPTargetTeamsDistributeSimdDirectiveImpl}
+
+mutable struct CXOMPTargetTeamsDistributeParallelForSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetTeamsDistributeParallelForSimdDirective = Ptr{CXOMPTargetTeamsDistributeParallelForSimdDirectiveImpl}
+
+mutable struct CXOMPTargetTeamsDistributeParallelForDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetTeamsDistributeParallelForDirective = Ptr{CXOMPTargetTeamsDistributeParallelForDirectiveImpl}
+
+mutable struct CXOMPTargetTeamsDistributeDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetTeamsDistributeDirective = Ptr{CXOMPTargetTeamsDistributeDirectiveImpl}
+
+mutable struct CXOMPTargetSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetSimdDirective = Ptr{CXOMPTargetSimdDirectiveImpl}
+
+mutable struct CXOMPTargetParallelGenericLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetParallelGenericLoopDirective = Ptr{CXOMPTargetParallelGenericLoopDirectiveImpl}
+
+mutable struct CXOMPTargetParallelForSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPTargetParallelForSimdDirective = Ptr{CXOMPTargetParallelForSimdDirectiveImpl}
+
+mutable struct CXOMPSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPSimdDirective = Ptr{CXOMPSimdDirectiveImpl}
+
+mutable struct CXOMPParallelMasterTaskLoopSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelMasterTaskLoopSimdDirective = Ptr{CXOMPParallelMasterTaskLoopSimdDirectiveImpl}
+
+mutable struct CXOMPParallelMasterTaskLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelMasterTaskLoopDirective = Ptr{CXOMPParallelMasterTaskLoopDirectiveImpl}
+
+mutable struct CXOMPParallelMaskedTaskLoopSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelMaskedTaskLoopSimdDirective = Ptr{CXOMPParallelMaskedTaskLoopSimdDirectiveImpl}
+
+mutable struct CXOMPParallelMaskedTaskLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelMaskedTaskLoopDirective = Ptr{CXOMPParallelMaskedTaskLoopDirectiveImpl}
+
+mutable struct CXOMPParallelGenericLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelGenericLoopDirective = Ptr{CXOMPParallelGenericLoopDirectiveImpl}
+
+mutable struct CXOMPParallelForSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelForSimdDirective = Ptr{CXOMPParallelForSimdDirectiveImpl}
+
+mutable struct CXOMPParallelForDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPParallelForDirective = Ptr{CXOMPParallelForDirectiveImpl}
+
+mutable struct CXOMPMasterTaskLoopSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPMasterTaskLoopSimdDirective = Ptr{CXOMPMasterTaskLoopSimdDirectiveImpl}
+
+mutable struct CXOMPMasterTaskLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPMasterTaskLoopDirective = Ptr{CXOMPMasterTaskLoopDirectiveImpl}
+
+mutable struct CXOMPMaskedTaskLoopSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPMaskedTaskLoopSimdDirective = Ptr{CXOMPMaskedTaskLoopSimdDirectiveImpl}
+
+mutable struct CXOMPMaskedTaskLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPMaskedTaskLoopDirective = Ptr{CXOMPMaskedTaskLoopDirectiveImpl}
+
+mutable struct CXOMPGenericLoopDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPGenericLoopDirective = Ptr{CXOMPGenericLoopDirectiveImpl}
+
+mutable struct CXOMPForSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPForSimdDirective = Ptr{CXOMPForSimdDirectiveImpl}
+
+mutable struct CXOMPForDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPForDirective = Ptr{CXOMPForDirectiveImpl}
+
+mutable struct CXOMPDistributeSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPDistributeSimdDirective = Ptr{CXOMPDistributeSimdDirectiveImpl}
+
+mutable struct CXOMPDistributeParallelForSimdDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPDistributeParallelForSimdDirective = Ptr{CXOMPDistributeParallelForSimdDirectiveImpl}
+
+mutable struct CXOMPDistributeParallelForDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPDistributeParallelForDirective = Ptr{CXOMPDistributeParallelForDirectiveImpl}
+
+mutable struct CXOMPDistributeDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPDistributeDirective = Ptr{CXOMPDistributeDirectiveImpl}
+
+mutable struct CXOMPInteropDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPInteropDirective = Ptr{CXOMPInteropDirectiveImpl}
+
+mutable struct CXOMPFlushDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPFlushDirective = Ptr{CXOMPFlushDirectiveImpl}
+
+mutable struct CXOMPErrorDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPErrorDirective = Ptr{CXOMPErrorDirectiveImpl}
+
+mutable struct CXOMPDispatchDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPDispatchDirective = Ptr{CXOMPDispatchDirectiveImpl}
+
+mutable struct CXOMPDepobjDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPDepobjDirective = Ptr{CXOMPDepobjDirectiveImpl}
+
+mutable struct CXOMPCriticalDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPCriticalDirective = Ptr{CXOMPCriticalDirectiveImpl}
+
+mutable struct CXOMPCancellationPointDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPCancellationPointDirective = Ptr{CXOMPCancellationPointDirectiveImpl}
+
+mutable struct CXOMPCancelDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPCancelDirective = Ptr{CXOMPCancelDirectiveImpl}
+
+mutable struct CXOMPBarrierDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPBarrierDirective = Ptr{CXOMPBarrierDirectiveImpl}
+
+mutable struct CXOMPAtomicDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPAtomicDirective = Ptr{CXOMPAtomicDirectiveImpl}
+
+mutable struct CXOMPCanonicalLoopImpl <: AbstractCXImpl end
+
+const CXOMPCanonicalLoop = Ptr{CXOMPCanonicalLoopImpl}
+
+mutable struct CXNullStmtImpl <: AbstractCXImpl end
+
+const CXNullStmt = Ptr{CXNullStmtImpl}
+
+mutable struct CXMSDependentExistsStmtImpl <: AbstractCXImpl end
+
+const CXMSDependentExistsStmt = Ptr{CXMSDependentExistsStmtImpl}
+
+mutable struct CXIndirectGotoStmtImpl <: AbstractCXImpl end
+
+const CXIndirectGotoStmt = Ptr{CXIndirectGotoStmtImpl}
+
+mutable struct CXIfStmtImpl <: AbstractCXImpl end
+
+const CXIfStmt = Ptr{CXIfStmtImpl}
+
+mutable struct CXGotoStmtImpl <: AbstractCXImpl end
+
+const CXGotoStmt = Ptr{CXGotoStmtImpl}
+
+mutable struct CXForStmtImpl <: AbstractCXImpl end
+
+const CXForStmt = Ptr{CXForStmtImpl}
+
+mutable struct CXDoStmtImpl <: AbstractCXImpl end
+
+const CXDoStmt = Ptr{CXDoStmtImpl}
+
+mutable struct CXDeclStmtImpl <: AbstractCXImpl end
+
+const CXDeclStmt = Ptr{CXDeclStmtImpl}
+
+mutable struct CXCoroutineBodyStmtImpl <: AbstractCXImpl end
+
+const CXCoroutineBodyStmt = Ptr{CXCoroutineBodyStmtImpl}
+
+mutable struct CXCoreturnStmtImpl <: AbstractCXImpl end
+
+const CXCoreturnStmt = Ptr{CXCoreturnStmtImpl}
+
+mutable struct CXContinueStmtImpl <: AbstractCXImpl end
+
+const CXContinueStmt = Ptr{CXContinueStmtImpl}
+
+mutable struct CXCompoundStmtImpl <: AbstractCXImpl end
+
+const CXCompoundStmt = Ptr{CXCompoundStmtImpl}
+
+mutable struct CXCapturedStmtImpl <: AbstractCXImpl end
+
+const CXCapturedStmt = Ptr{CXCapturedStmtImpl}
+
+mutable struct CXCXXTryStmtImpl <: AbstractCXImpl end
+
+const CXCXXTryStmt = Ptr{CXCXXTryStmtImpl}
+
+mutable struct CXCXXForRangeStmtImpl <: AbstractCXImpl end
+
+const CXCXXForRangeStmt = Ptr{CXCXXForRangeStmtImpl}
+
+mutable struct CXCXXCatchStmtImpl <: AbstractCXImpl end
+
+const CXCXXCatchStmt = Ptr{CXCXXCatchStmtImpl}
+
+mutable struct CXBreakStmtImpl <: AbstractCXImpl end
+
+const CXBreakStmt = Ptr{CXBreakStmtImpl}
+
+mutable struct CXAsmStmtImpl <: AbstractCXImpl end
+
+const CXAsmStmt = Ptr{CXAsmStmtImpl}
+
+mutable struct CXMSAsmStmtImpl <: AbstractCXImpl end
+
+const CXMSAsmStmt = Ptr{CXMSAsmStmtImpl}
+
+mutable struct CXGCCAsmStmtImpl <: AbstractCXImpl end
+
+const CXGCCAsmStmt = Ptr{CXGCCAsmStmtImpl}
+
+mutable struct CXTranslationUnitDeclImpl <: AbstractCXImpl end
+
+const CXTranslationUnitDecl = Ptr{CXTranslationUnitDeclImpl}
+
+mutable struct CXRequiresExprBodyDeclImpl <: AbstractCXImpl end
+
+const CXRequiresExprBodyDecl = Ptr{CXRequiresExprBodyDeclImpl}
+
+mutable struct CXLinkageSpecDeclImpl <: AbstractCXImpl end
+
+const CXLinkageSpecDecl = Ptr{CXLinkageSpecDeclImpl}
+
+mutable struct CXExternCContextDeclImpl <: AbstractCXImpl end
+
+const CXExternCContextDecl = Ptr{CXExternCContextDeclImpl}
+
+mutable struct CXExportDeclImpl <: AbstractCXImpl end
+
+const CXExportDecl = Ptr{CXExportDeclImpl}
+
+mutable struct CXCapturedDeclImpl <: AbstractCXImpl end
+
+const CXCapturedDecl = Ptr{CXCapturedDeclImpl}
+
+mutable struct CXBlockDeclImpl <: AbstractCXImpl end
+
+const CXBlockDecl = Ptr{CXBlockDeclImpl}
+
+mutable struct CXTopLevelStmtDeclImpl <: AbstractCXImpl end
+
+const CXTopLevelStmtDecl = Ptr{CXTopLevelStmtDeclImpl}
+
+mutable struct CXStaticAssertDeclImpl <: AbstractCXImpl end
+
+const CXStaticAssertDecl = Ptr{CXStaticAssertDeclImpl}
+
+mutable struct CXPragmaDetectMismatchDeclImpl <: AbstractCXImpl end
+
+const CXPragmaDetectMismatchDecl = Ptr{CXPragmaDetectMismatchDeclImpl}
+
+mutable struct CXPragmaCommentDeclImpl <: AbstractCXImpl end
+
+const CXPragmaCommentDecl = Ptr{CXPragmaCommentDeclImpl}
+
+mutable struct CXObjCPropertyImplDeclImpl <: AbstractCXImpl end
+
+const CXObjCPropertyImplDecl = Ptr{CXObjCPropertyImplDeclImpl}
+
+mutable struct CXOMPThreadPrivateDeclImpl <: AbstractCXImpl end
+
+const CXOMPThreadPrivateDecl = Ptr{CXOMPThreadPrivateDeclImpl}
+
+mutable struct CXOMPRequiresDeclImpl <: AbstractCXImpl end
+
+const CXOMPRequiresDecl = Ptr{CXOMPRequiresDeclImpl}
+
+mutable struct CXOMPAllocateDeclImpl <: AbstractCXImpl end
+
+const CXOMPAllocateDecl = Ptr{CXOMPAllocateDeclImpl}
+
+mutable struct CXNamedDeclImpl <: AbstractCXImpl end
+
+const CXNamedDecl = Ptr{CXNamedDeclImpl}
+
+mutable struct CXObjCMethodDeclImpl <: AbstractCXImpl end
+
+const CXObjCMethodDecl = Ptr{CXObjCMethodDeclImpl}
+
+mutable struct CXObjCContainerDeclImpl <: AbstractCXImpl end
+
+const CXObjCContainerDecl = Ptr{CXObjCContainerDeclImpl}
+
+mutable struct CXObjCProtocolDeclImpl <: AbstractCXImpl end
+
+const CXObjCProtocolDecl = Ptr{CXObjCProtocolDeclImpl}
+
+mutable struct CXObjCInterfaceDeclImpl <: AbstractCXImpl end
+
+const CXObjCInterfaceDecl = Ptr{CXObjCInterfaceDeclImpl}
+
+mutable struct CXObjCImplDeclImpl <: AbstractCXImpl end
+
+const CXObjCImplDecl = Ptr{CXObjCImplDeclImpl}
+
+mutable struct CXObjCImplementationDeclImpl <: AbstractCXImpl end
+
+const CXObjCImplementationDecl = Ptr{CXObjCImplementationDeclImpl}
+
+mutable struct CXObjCCategoryImplDeclImpl <: AbstractCXImpl end
+
+const CXObjCCategoryImplDecl = Ptr{CXObjCCategoryImplDeclImpl}
+
+mutable struct CXObjCCategoryDeclImpl <: AbstractCXImpl end
+
+const CXObjCCategoryDecl = Ptr{CXObjCCategoryDeclImpl}
+
+mutable struct CXNamespaceDeclImpl <: AbstractCXImpl end
+
+const CXNamespaceDecl = Ptr{CXNamespaceDeclImpl}
+
+mutable struct CXHLSLBufferDeclImpl <: AbstractCXImpl end
+
+const CXHLSLBufferDecl = Ptr{CXHLSLBufferDeclImpl}
+
+mutable struct CXValueDeclImpl <: AbstractCXImpl end
+
+const CXValueDecl = Ptr{CXValueDeclImpl}
+
+mutable struct CXOMPDeclareReductionDeclImpl <: AbstractCXImpl end
+
+const CXOMPDeclareReductionDecl = Ptr{CXOMPDeclareReductionDeclImpl}
+
+mutable struct CXOMPDeclareMapperDeclImpl <: AbstractCXImpl end
+
+const CXOMPDeclareMapperDecl = Ptr{CXOMPDeclareMapperDeclImpl}
+
+mutable struct CXUnresolvedUsingValueDeclImpl <: AbstractCXImpl end
+
+const CXUnresolvedUsingValueDecl = Ptr{CXUnresolvedUsingValueDeclImpl}
+
+mutable struct CXUnnamedGlobalConstantDeclImpl <: AbstractCXImpl end
+
+const CXUnnamedGlobalConstantDecl = Ptr{CXUnnamedGlobalConstantDeclImpl}
+
+mutable struct CXTemplateParamObjectDeclImpl <: AbstractCXImpl end
+
+const CXTemplateParamObjectDecl = Ptr{CXTemplateParamObjectDeclImpl}
+
+mutable struct CXMSGuidDeclImpl <: AbstractCXImpl end
+
+const CXMSGuidDecl = Ptr{CXMSGuidDeclImpl}
+
+mutable struct CXIndirectFieldDeclImpl <: AbstractCXImpl end
+
+const CXIndirectFieldDecl = Ptr{CXIndirectFieldDeclImpl}
+
+mutable struct CXEnumConstantDeclImpl <: AbstractCXImpl end
+
+const CXEnumConstantDecl = Ptr{CXEnumConstantDeclImpl}
+
+mutable struct CXDeclaratorDeclImpl <: AbstractCXImpl end
+
+const CXDeclaratorDecl = Ptr{CXDeclaratorDeclImpl}
+
+mutable struct CXFunctionDeclImpl <: AbstractCXImpl end
+
+const CXFunctionDecl = Ptr{CXFunctionDeclImpl}
+
+mutable struct CXCXXMethodDeclImpl <: AbstractCXImpl end
+
+const CXCXXMethodDecl = Ptr{CXCXXMethodDeclImpl}
+
+mutable struct CXCXXDestructorDeclImpl <: AbstractCXImpl end
+
+const CXCXXDestructorDecl = Ptr{CXCXXDestructorDeclImpl}
+
+mutable struct CXCXXConversionDeclImpl <: AbstractCXImpl end
+
+const CXCXXConversionDecl = Ptr{CXCXXConversionDeclImpl}
+
+mutable struct CXCXXConstructorDeclImpl <: AbstractCXImpl end
+
+const CXCXXConstructorDecl = Ptr{CXCXXConstructorDeclImpl}
+
+mutable struct CXCXXDeductionGuideDeclImpl <: AbstractCXImpl end
+
+const CXCXXDeductionGuideDecl = Ptr{CXCXXDeductionGuideDeclImpl}
+
+mutable struct CXVarDeclImpl <: AbstractCXImpl end
+
+const CXVarDecl = Ptr{CXVarDeclImpl}
+
+mutable struct CXVarTemplateSpecializationDeclImpl <: AbstractCXImpl end
+
+const CXVarTemplateSpecializationDecl = Ptr{CXVarTemplateSpecializationDeclImpl}
+
+mutable struct CXVarTemplatePartialSpecializationDeclImpl <: AbstractCXImpl end
+
+const CXVarTemplatePartialSpecializationDecl = Ptr{CXVarTemplatePartialSpecializationDeclImpl}
+
+mutable struct CXParmVarDeclImpl <: AbstractCXImpl end
+
+const CXParmVarDecl = Ptr{CXParmVarDeclImpl}
+
+mutable struct CXOMPCapturedExprDeclImpl <: AbstractCXImpl end
+
+const CXOMPCapturedExprDecl = Ptr{CXOMPCapturedExprDeclImpl}
+
+mutable struct CXImplicitParamDeclImpl <: AbstractCXImpl end
+
+const CXImplicitParamDecl = Ptr{CXImplicitParamDeclImpl}
+
+mutable struct CXDecompositionDeclImpl <: AbstractCXImpl end
+
+const CXDecompositionDecl = Ptr{CXDecompositionDeclImpl}
+
+mutable struct CXNonTypeTemplateParmDeclImpl <: AbstractCXImpl end
+
+const CXNonTypeTemplateParmDecl = Ptr{CXNonTypeTemplateParmDeclImpl}
+
+mutable struct CXMSPropertyDeclImpl <: AbstractCXImpl end
+
+const CXMSPropertyDecl = Ptr{CXMSPropertyDeclImpl}
+
+mutable struct CXFieldDeclImpl <: AbstractCXImpl end
+
+const CXFieldDecl = Ptr{CXFieldDeclImpl}
+
+mutable struct CXObjCIvarDeclImpl <: AbstractCXImpl end
+
+const CXObjCIvarDecl = Ptr{CXObjCIvarDeclImpl}
+
+mutable struct CXObjCAtDefsFieldDeclImpl <: AbstractCXImpl end
+
+const CXObjCAtDefsFieldDecl = Ptr{CXObjCAtDefsFieldDeclImpl}
+
+mutable struct CXBindingDeclImpl <: AbstractCXImpl end
+
+const CXBindingDecl = Ptr{CXBindingDeclImpl}
+
+mutable struct CXUsingShadowDeclImpl <: AbstractCXImpl end
+
+const CXUsingShadowDecl = Ptr{CXUsingShadowDeclImpl}
+
+mutable struct CXConstructorUsingShadowDeclImpl <: AbstractCXImpl end
+
+const CXConstructorUsingShadowDecl = Ptr{CXConstructorUsingShadowDeclImpl}
+
+mutable struct CXUsingPackDeclImpl <: AbstractCXImpl end
+
+const CXUsingPackDecl = Ptr{CXUsingPackDeclImpl}
+
+mutable struct CXUsingDirectiveDeclImpl <: AbstractCXImpl end
+
+const CXUsingDirectiveDecl = Ptr{CXUsingDirectiveDeclImpl}
+
+mutable struct CXUnresolvedUsingIfExistsDeclImpl <: AbstractCXImpl end
+
+const CXUnresolvedUsingIfExistsDecl = Ptr{CXUnresolvedUsingIfExistsDeclImpl}
+
+mutable struct CXTypeDeclImpl <: AbstractCXImpl end
+
+const CXTypeDecl = Ptr{CXTypeDeclImpl}
+
+mutable struct CXTagDeclImpl <: AbstractCXImpl end
+
+const CXTagDecl = Ptr{CXTagDeclImpl}
+
+mutable struct CXRecordDeclImpl <: AbstractCXImpl end
+
+const CXRecordDecl = Ptr{CXRecordDeclImpl}
+
+mutable struct CXCXXRecordDeclImpl <: AbstractCXImpl end
+
+const CXCXXRecordDecl = Ptr{CXCXXRecordDeclImpl}
+
+mutable struct CXClassTemplateSpecializationDeclImpl <: AbstractCXImpl end
+
+const CXClassTemplateSpecializationDecl = Ptr{CXClassTemplateSpecializationDeclImpl}
+
+mutable struct CXClassTemplatePartialSpecializationDeclImpl <: AbstractCXImpl end
+
+const CXClassTemplatePartialSpecializationDecl = Ptr{CXClassTemplatePartialSpecializationDeclImpl}
+
+mutable struct CXEnumDeclImpl <: AbstractCXImpl end
+
+const CXEnumDecl = Ptr{CXEnumDeclImpl}
+
+mutable struct CXUnresolvedUsingTypenameDeclImpl <: AbstractCXImpl end
+
+const CXUnresolvedUsingTypenameDecl = Ptr{CXUnresolvedUsingTypenameDeclImpl}
+
+mutable struct CXTypedefNameDeclImpl <: AbstractCXImpl end
+
+const CXTypedefNameDecl = Ptr{CXTypedefNameDeclImpl}
+
+mutable struct CXTypedefDeclImpl <: AbstractCXImpl end
+
+const CXTypedefDecl = Ptr{CXTypedefDeclImpl}
+
+mutable struct CXTypeAliasDeclImpl <: AbstractCXImpl end
+
+const CXTypeAliasDecl = Ptr{CXTypeAliasDeclImpl}
+
+mutable struct CXObjCTypeParamDeclImpl <: AbstractCXImpl end
+
+const CXObjCTypeParamDecl = Ptr{CXObjCTypeParamDeclImpl}
+
+mutable struct CXTemplateTypeParmDeclImpl <: AbstractCXImpl end
+
+const CXTemplateTypeParmDecl = Ptr{CXTemplateTypeParmDeclImpl}
+
+mutable struct CXTemplateDeclImpl <: AbstractCXImpl end
+
+const CXTemplateDecl = Ptr{CXTemplateDeclImpl}
+
+mutable struct CXTemplateTemplateParmDeclImpl <: AbstractCXImpl end
+
+const CXTemplateTemplateParmDecl = Ptr{CXTemplateTemplateParmDeclImpl}
+
+mutable struct CXRedeclarableTemplateDeclImpl <: AbstractCXImpl end
+
+const CXRedeclarableTemplateDecl = Ptr{CXRedeclarableTemplateDeclImpl}
+
+mutable struct CXVarTemplateDeclImpl <: AbstractCXImpl end
+
+const CXVarTemplateDecl = Ptr{CXVarTemplateDeclImpl}
+
+mutable struct CXTypeAliasTemplateDeclImpl <: AbstractCXImpl end
+
+const CXTypeAliasTemplateDecl = Ptr{CXTypeAliasTemplateDeclImpl}
+
+mutable struct CXFunctionTemplateDeclImpl <: AbstractCXImpl end
+
+const CXFunctionTemplateDecl = Ptr{CXFunctionTemplateDeclImpl}
+
+mutable struct CXClassTemplateDeclImpl <: AbstractCXImpl end
+
+const CXClassTemplateDecl = Ptr{CXClassTemplateDeclImpl}
+
+mutable struct CXConceptDeclImpl <: AbstractCXImpl end
+
+const CXConceptDecl = Ptr{CXConceptDeclImpl}
+
+mutable struct CXBuiltinTemplateDeclImpl <: AbstractCXImpl end
+
+const CXBuiltinTemplateDecl = Ptr{CXBuiltinTemplateDeclImpl}
+
+mutable struct CXObjCPropertyDeclImpl <: AbstractCXImpl end
+
+const CXObjCPropertyDecl = Ptr{CXObjCPropertyDeclImpl}
+
+mutable struct CXObjCCompatibleAliasDeclImpl <: AbstractCXImpl end
+
+const CXObjCCompatibleAliasDecl = Ptr{CXObjCCompatibleAliasDeclImpl}
+
+mutable struct CXNamespaceAliasDeclImpl <: AbstractCXImpl end
+
+const CXNamespaceAliasDecl = Ptr{CXNamespaceAliasDeclImpl}
+
+mutable struct CXLabelDeclImpl <: AbstractCXImpl end
+
+const CXLabelDecl = Ptr{CXLabelDeclImpl}
+
+mutable struct CXBaseUsingDeclImpl <: AbstractCXImpl end
+
+const CXBaseUsingDecl = Ptr{CXBaseUsingDeclImpl}
+
+mutable struct CXUsingEnumDeclImpl <: AbstractCXImpl end
+
+const CXUsingEnumDecl = Ptr{CXUsingEnumDeclImpl}
+
+mutable struct CXUsingDeclImpl <: AbstractCXImpl end
+
+const CXUsingDecl = Ptr{CXUsingDeclImpl}
+
+mutable struct CXLifetimeExtendedTemporaryDeclImpl <: AbstractCXImpl end
+
+const CXLifetimeExtendedTemporaryDecl = Ptr{CXLifetimeExtendedTemporaryDeclImpl}
+
+mutable struct CXImportDeclImpl <: AbstractCXImpl end
+
+const CXImportDecl = Ptr{CXImportDeclImpl}
+
+mutable struct CXImplicitConceptSpecializationDeclImpl <: AbstractCXImpl end
+
+const CXImplicitConceptSpecializationDecl = Ptr{CXImplicitConceptSpecializationDeclImpl}
+
+mutable struct CXFriendTemplateDeclImpl <: AbstractCXImpl end
+
+const CXFriendTemplateDecl = Ptr{CXFriendTemplateDeclImpl}
+
+mutable struct CXFriendDeclImpl <: AbstractCXImpl end
+
+const CXFriendDecl = Ptr{CXFriendDeclImpl}
+
+mutable struct CXFileScopeAsmDeclImpl <: AbstractCXImpl end
+
+const CXFileScopeAsmDecl = Ptr{CXFileScopeAsmDeclImpl}
+
+mutable struct CXEmptyDeclImpl <: AbstractCXImpl end
+
+const CXEmptyDecl = Ptr{CXEmptyDeclImpl}
+
+mutable struct CXAccessSpecDeclImpl <: AbstractCXImpl end
+
+const CXAccessSpecDecl = Ptr{CXAccessSpecDeclImpl}
+
+mutable struct CXAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXAddressSpaceAttr = Ptr{CXAddressSpaceAttrImpl}
+
+mutable struct CXAnnotateTypeAttrImpl <: AbstractCXImpl end
+
+const CXAnnotateTypeAttr = Ptr{CXAnnotateTypeAttrImpl}
+
+mutable struct CXArmInAttrImpl <: AbstractCXImpl end
+
+const CXArmInAttr = Ptr{CXArmInAttrImpl}
+
+mutable struct CXArmInOutAttrImpl <: AbstractCXImpl end
+
+const CXArmInOutAttr = Ptr{CXArmInOutAttrImpl}
+
+mutable struct CXArmMveStrictPolymorphismAttrImpl <: AbstractCXImpl end
+
+const CXArmMveStrictPolymorphismAttr = Ptr{CXArmMveStrictPolymorphismAttrImpl}
+
+mutable struct CXArmOutAttrImpl <: AbstractCXImpl end
+
+const CXArmOutAttr = Ptr{CXArmOutAttrImpl}
+
+mutable struct CXArmPreservesAttrImpl <: AbstractCXImpl end
+
+const CXArmPreservesAttr = Ptr{CXArmPreservesAttrImpl}
+
+mutable struct CXArmStreamingAttrImpl <: AbstractCXImpl end
+
+const CXArmStreamingAttr = Ptr{CXArmStreamingAttrImpl}
+
+mutable struct CXArmStreamingCompatibleAttrImpl <: AbstractCXImpl end
+
+const CXArmStreamingCompatibleAttr = Ptr{CXArmStreamingCompatibleAttrImpl}
+
+mutable struct CXBTFTypeTagAttrImpl <: AbstractCXImpl end
+
+const CXBTFTypeTagAttr = Ptr{CXBTFTypeTagAttrImpl}
+
+mutable struct CXCmseNSCallAttrImpl <: AbstractCXImpl end
+
+const CXCmseNSCallAttr = Ptr{CXCmseNSCallAttrImpl}
+
+mutable struct CXHLSLGroupSharedAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXHLSLGroupSharedAddressSpaceAttr = Ptr{CXHLSLGroupSharedAddressSpaceAttrImpl}
+
+mutable struct CXHLSLParamModifierAttrImpl <: AbstractCXImpl end
+
+const CXHLSLParamModifierAttr = Ptr{CXHLSLParamModifierAttrImpl}
+
+mutable struct CXNoDerefAttrImpl <: AbstractCXImpl end
+
+const CXNoDerefAttr = Ptr{CXNoDerefAttrImpl}
+
+mutable struct CXObjCGCAttrImpl <: AbstractCXImpl end
+
+const CXObjCGCAttr = Ptr{CXObjCGCAttrImpl}
+
+mutable struct CXObjCInertUnsafeUnretainedAttrImpl <: AbstractCXImpl end
+
+const CXObjCInertUnsafeUnretainedAttr = Ptr{CXObjCInertUnsafeUnretainedAttrImpl}
+
+mutable struct CXObjCKindOfAttrImpl <: AbstractCXImpl end
+
+const CXObjCKindOfAttr = Ptr{CXObjCKindOfAttrImpl}
+
+mutable struct CXOpenCLConstantAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLConstantAddressSpaceAttr = Ptr{CXOpenCLConstantAddressSpaceAttrImpl}
+
+mutable struct CXOpenCLGenericAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLGenericAddressSpaceAttr = Ptr{CXOpenCLGenericAddressSpaceAttrImpl}
+
+mutable struct CXOpenCLGlobalAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLGlobalAddressSpaceAttr = Ptr{CXOpenCLGlobalAddressSpaceAttrImpl}
+
+mutable struct CXOpenCLGlobalDeviceAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLGlobalDeviceAddressSpaceAttr = Ptr{CXOpenCLGlobalDeviceAddressSpaceAttrImpl}
+
+mutable struct CXOpenCLGlobalHostAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLGlobalHostAddressSpaceAttr = Ptr{CXOpenCLGlobalHostAddressSpaceAttrImpl}
+
+mutable struct CXOpenCLLocalAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLLocalAddressSpaceAttr = Ptr{CXOpenCLLocalAddressSpaceAttrImpl}
+
+mutable struct CXOpenCLPrivateAddressSpaceAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLPrivateAddressSpaceAttr = Ptr{CXOpenCLPrivateAddressSpaceAttrImpl}
+
+mutable struct CXPtr32AttrImpl <: AbstractCXImpl end
+
+const CXPtr32Attr = Ptr{CXPtr32AttrImpl}
+
+mutable struct CXPtr64AttrImpl <: AbstractCXImpl end
+
+const CXPtr64Attr = Ptr{CXPtr64AttrImpl}
+
+mutable struct CXSPtrAttrImpl <: AbstractCXImpl end
+
+const CXSPtrAttr = Ptr{CXSPtrAttrImpl}
+
+mutable struct CXTypeNonNullAttrImpl <: AbstractCXImpl end
+
+const CXTypeNonNullAttr = Ptr{CXTypeNonNullAttrImpl}
+
+mutable struct CXTypeNullUnspecifiedAttrImpl <: AbstractCXImpl end
+
+const CXTypeNullUnspecifiedAttr = Ptr{CXTypeNullUnspecifiedAttrImpl}
+
+mutable struct CXTypeNullableAttrImpl <: AbstractCXImpl end
+
+const CXTypeNullableAttr = Ptr{CXTypeNullableAttrImpl}
+
+mutable struct CXTypeNullableResultAttrImpl <: AbstractCXImpl end
+
+const CXTypeNullableResultAttr = Ptr{CXTypeNullableResultAttrImpl}
+
+mutable struct CXUPtrAttrImpl <: AbstractCXImpl end
+
+const CXUPtrAttr = Ptr{CXUPtrAttrImpl}
+
+mutable struct CXWebAssemblyFuncrefAttrImpl <: AbstractCXImpl end
+
+const CXWebAssemblyFuncrefAttr = Ptr{CXWebAssemblyFuncrefAttrImpl}
+
+mutable struct CXCodeAlignAttrImpl <: AbstractCXImpl end
+
+const CXCodeAlignAttr = Ptr{CXCodeAlignAttrImpl}
+
+mutable struct CXFallThroughAttrImpl <: AbstractCXImpl end
+
+const CXFallThroughAttr = Ptr{CXFallThroughAttrImpl}
+
+mutable struct CXLikelyAttrImpl <: AbstractCXImpl end
+
+const CXLikelyAttr = Ptr{CXLikelyAttrImpl}
+
+mutable struct CXMustTailAttrImpl <: AbstractCXImpl end
+
+const CXMustTailAttr = Ptr{CXMustTailAttrImpl}
+
+mutable struct CXOpenCLUnrollHintAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLUnrollHintAttr = Ptr{CXOpenCLUnrollHintAttrImpl}
+
+mutable struct CXUnlikelyAttrImpl <: AbstractCXImpl end
+
+const CXUnlikelyAttr = Ptr{CXUnlikelyAttrImpl}
+
+mutable struct CXAlwaysInlineAttrImpl <: AbstractCXImpl end
+
+const CXAlwaysInlineAttr = Ptr{CXAlwaysInlineAttrImpl}
+
+mutable struct CXNoInlineAttrImpl <: AbstractCXImpl end
+
+const CXNoInlineAttr = Ptr{CXNoInlineAttrImpl}
+
+mutable struct CXNoMergeAttrImpl <: AbstractCXImpl end
+
+const CXNoMergeAttr = Ptr{CXNoMergeAttrImpl}
+
+mutable struct CXSuppressAttrImpl <: AbstractCXImpl end
+
+const CXSuppressAttr = Ptr{CXSuppressAttrImpl}
+
+mutable struct CXAArch64SVEPcsAttrImpl <: AbstractCXImpl end
+
+const CXAArch64SVEPcsAttr = Ptr{CXAArch64SVEPcsAttrImpl}
+
+mutable struct CXAArch64VectorPcsAttrImpl <: AbstractCXImpl end
+
+const CXAArch64VectorPcsAttr = Ptr{CXAArch64VectorPcsAttrImpl}
+
+mutable struct CXAMDGPUKernelCallAttrImpl <: AbstractCXImpl end
+
+const CXAMDGPUKernelCallAttr = Ptr{CXAMDGPUKernelCallAttrImpl}
+
+mutable struct CXAcquireHandleAttrImpl <: AbstractCXImpl end
+
+const CXAcquireHandleAttr = Ptr{CXAcquireHandleAttrImpl}
+
+mutable struct CXAnyX86NoCfCheckAttrImpl <: AbstractCXImpl end
+
+const CXAnyX86NoCfCheckAttr = Ptr{CXAnyX86NoCfCheckAttrImpl}
+
+mutable struct CXCDeclAttrImpl <: AbstractCXImpl end
+
+const CXCDeclAttr = Ptr{CXCDeclAttrImpl}
+
+mutable struct CXFastCallAttrImpl <: AbstractCXImpl end
+
+const CXFastCallAttr = Ptr{CXFastCallAttrImpl}
+
+mutable struct CXIntelOclBiccAttrImpl <: AbstractCXImpl end
+
+const CXIntelOclBiccAttr = Ptr{CXIntelOclBiccAttrImpl}
+
+mutable struct CXLifetimeBoundAttrImpl <: AbstractCXImpl end
+
+const CXLifetimeBoundAttr = Ptr{CXLifetimeBoundAttrImpl}
+
+mutable struct CXM68kRTDAttrImpl <: AbstractCXImpl end
+
+const CXM68kRTDAttr = Ptr{CXM68kRTDAttrImpl}
+
+mutable struct CXMSABIAttrImpl <: AbstractCXImpl end
+
+const CXMSABIAttr = Ptr{CXMSABIAttrImpl}
+
+mutable struct CXNSReturnsRetainedAttrImpl <: AbstractCXImpl end
+
+const CXNSReturnsRetainedAttr = Ptr{CXNSReturnsRetainedAttrImpl}
+
+mutable struct CXObjCOwnershipAttrImpl <: AbstractCXImpl end
+
+const CXObjCOwnershipAttr = Ptr{CXObjCOwnershipAttrImpl}
+
+mutable struct CXPascalAttrImpl <: AbstractCXImpl end
+
+const CXPascalAttr = Ptr{CXPascalAttrImpl}
+
+mutable struct CXPcsAttrImpl <: AbstractCXImpl end
+
+const CXPcsAttr = Ptr{CXPcsAttrImpl}
+
+mutable struct CXPreserveAllAttrImpl <: AbstractCXImpl end
+
+const CXPreserveAllAttr = Ptr{CXPreserveAllAttrImpl}
+
+mutable struct CXPreserveMostAttrImpl <: AbstractCXImpl end
+
+const CXPreserveMostAttr = Ptr{CXPreserveMostAttrImpl}
+
+mutable struct CXRegCallAttrImpl <: AbstractCXImpl end
+
+const CXRegCallAttr = Ptr{CXRegCallAttrImpl}
+
+mutable struct CXStdCallAttrImpl <: AbstractCXImpl end
+
+const CXStdCallAttr = Ptr{CXStdCallAttrImpl}
+
+mutable struct CXSwiftAsyncCallAttrImpl <: AbstractCXImpl end
+
+const CXSwiftAsyncCallAttr = Ptr{CXSwiftAsyncCallAttrImpl}
+
+mutable struct CXSwiftCallAttrImpl <: AbstractCXImpl end
+
+const CXSwiftCallAttr = Ptr{CXSwiftCallAttrImpl}
+
+mutable struct CXSysVABIAttrImpl <: AbstractCXImpl end
+
+const CXSysVABIAttr = Ptr{CXSysVABIAttrImpl}
+
+mutable struct CXThisCallAttrImpl <: AbstractCXImpl end
+
+const CXThisCallAttr = Ptr{CXThisCallAttrImpl}
+
+mutable struct CXVectorCallAttrImpl <: AbstractCXImpl end
+
+const CXVectorCallAttr = Ptr{CXVectorCallAttrImpl}
+
+mutable struct CXSwiftAsyncContextAttrImpl <: AbstractCXImpl end
+
+const CXSwiftAsyncContextAttr = Ptr{CXSwiftAsyncContextAttrImpl}
+
+mutable struct CXSwiftContextAttrImpl <: AbstractCXImpl end
+
+const CXSwiftContextAttr = Ptr{CXSwiftContextAttrImpl}
+
+mutable struct CXSwiftErrorResultAttrImpl <: AbstractCXImpl end
+
+const CXSwiftErrorResultAttr = Ptr{CXSwiftErrorResultAttrImpl}
+
+mutable struct CXSwiftIndirectResultAttrImpl <: AbstractCXImpl end
+
+const CXSwiftIndirectResultAttr = Ptr{CXSwiftIndirectResultAttrImpl}
+
+mutable struct CXAnnotateAttrImpl <: AbstractCXImpl end
+
+const CXAnnotateAttr = Ptr{CXAnnotateAttrImpl}
+
+mutable struct CXCFConsumedAttrImpl <: AbstractCXImpl end
+
+const CXCFConsumedAttr = Ptr{CXCFConsumedAttrImpl}
+
+mutable struct CXCarriesDependencyAttrImpl <: AbstractCXImpl end
+
+const CXCarriesDependencyAttr = Ptr{CXCarriesDependencyAttrImpl}
+
+mutable struct CXNSConsumedAttrImpl <: AbstractCXImpl end
+
+const CXNSConsumedAttr = Ptr{CXNSConsumedAttrImpl}
+
+mutable struct CXNonNullAttrImpl <: AbstractCXImpl end
+
+const CXNonNullAttr = Ptr{CXNonNullAttrImpl}
+
+mutable struct CXOSConsumedAttrImpl <: AbstractCXImpl end
+
+const CXOSConsumedAttr = Ptr{CXOSConsumedAttrImpl}
+
+mutable struct CXPassObjectSizeAttrImpl <: AbstractCXImpl end
+
+const CXPassObjectSizeAttr = Ptr{CXPassObjectSizeAttrImpl}
+
+mutable struct CXReleaseHandleAttrImpl <: AbstractCXImpl end
+
+const CXReleaseHandleAttr = Ptr{CXReleaseHandleAttrImpl}
+
+mutable struct CXUseHandleAttrImpl <: AbstractCXImpl end
+
+const CXUseHandleAttr = Ptr{CXUseHandleAttrImpl}
+
+mutable struct CXHLSLSV_DispatchThreadIDAttrImpl <: AbstractCXImpl end
+
+const CXHLSLSV_DispatchThreadIDAttr = Ptr{CXHLSLSV_DispatchThreadIDAttrImpl}
+
+mutable struct CXHLSLSV_GroupIndexAttrImpl <: AbstractCXImpl end
+
+const CXHLSLSV_GroupIndexAttr = Ptr{CXHLSLSV_GroupIndexAttrImpl}
+
+mutable struct CXAMDGPUFlatWorkGroupSizeAttrImpl <: AbstractCXImpl end
+
+const CXAMDGPUFlatWorkGroupSizeAttr = Ptr{CXAMDGPUFlatWorkGroupSizeAttrImpl}
+
+mutable struct CXAMDGPUNumSGPRAttrImpl <: AbstractCXImpl end
+
+const CXAMDGPUNumSGPRAttr = Ptr{CXAMDGPUNumSGPRAttrImpl}
+
+mutable struct CXAMDGPUNumVGPRAttrImpl <: AbstractCXImpl end
+
+const CXAMDGPUNumVGPRAttr = Ptr{CXAMDGPUNumVGPRAttrImpl}
+
+mutable struct CXAMDGPUWavesPerEUAttrImpl <: AbstractCXImpl end
+
+const CXAMDGPUWavesPerEUAttr = Ptr{CXAMDGPUWavesPerEUAttrImpl}
+
+mutable struct CXARMInterruptAttrImpl <: AbstractCXImpl end
+
+const CXARMInterruptAttr = Ptr{CXARMInterruptAttrImpl}
+
+mutable struct CXAVRInterruptAttrImpl <: AbstractCXImpl end
+
+const CXAVRInterruptAttr = Ptr{CXAVRInterruptAttrImpl}
+
+mutable struct CXAVRSignalAttrImpl <: AbstractCXImpl end
+
+const CXAVRSignalAttr = Ptr{CXAVRSignalAttrImpl}
+
+mutable struct CXAcquireCapabilityAttrImpl <: AbstractCXImpl end
+
+const CXAcquireCapabilityAttr = Ptr{CXAcquireCapabilityAttrImpl}
+
+mutable struct CXAcquiredAfterAttrImpl <: AbstractCXImpl end
+
+const CXAcquiredAfterAttr = Ptr{CXAcquiredAfterAttrImpl}
+
+mutable struct CXAcquiredBeforeAttrImpl <: AbstractCXImpl end
+
+const CXAcquiredBeforeAttr = Ptr{CXAcquiredBeforeAttrImpl}
+
+mutable struct CXAlignMac68kAttrImpl <: AbstractCXImpl end
+
+const CXAlignMac68kAttr = Ptr{CXAlignMac68kAttrImpl}
+
+mutable struct CXAlignNaturalAttrImpl <: AbstractCXImpl end
+
+const CXAlignNaturalAttr = Ptr{CXAlignNaturalAttrImpl}
+
+mutable struct CXAlignedAttrImpl <: AbstractCXImpl end
+
+const CXAlignedAttr = Ptr{CXAlignedAttrImpl}
+
+mutable struct CXAllocAlignAttrImpl <: AbstractCXImpl end
+
+const CXAllocAlignAttr = Ptr{CXAllocAlignAttrImpl}
+
+mutable struct CXAllocSizeAttrImpl <: AbstractCXImpl end
+
+const CXAllocSizeAttr = Ptr{CXAllocSizeAttrImpl}
+
+mutable struct CXAlwaysDestroyAttrImpl <: AbstractCXImpl end
+
+const CXAlwaysDestroyAttr = Ptr{CXAlwaysDestroyAttrImpl}
+
+mutable struct CXAnalyzerNoReturnAttrImpl <: AbstractCXImpl end
+
+const CXAnalyzerNoReturnAttr = Ptr{CXAnalyzerNoReturnAttrImpl}
+
+mutable struct CXAnyX86InterruptAttrImpl <: AbstractCXImpl end
+
+const CXAnyX86InterruptAttr = Ptr{CXAnyX86InterruptAttrImpl}
+
+mutable struct CXAnyX86NoCallerSavedRegistersAttrImpl <: AbstractCXImpl end
+
+const CXAnyX86NoCallerSavedRegistersAttr = Ptr{CXAnyX86NoCallerSavedRegistersAttrImpl}
+
+mutable struct CXArcWeakrefUnavailableAttrImpl <: AbstractCXImpl end
+
+const CXArcWeakrefUnavailableAttr = Ptr{CXArcWeakrefUnavailableAttrImpl}
+
+mutable struct CXArgumentWithTypeTagAttrImpl <: AbstractCXImpl end
+
+const CXArgumentWithTypeTagAttr = Ptr{CXArgumentWithTypeTagAttrImpl}
+
+mutable struct CXArmBuiltinAliasAttrImpl <: AbstractCXImpl end
+
+const CXArmBuiltinAliasAttr = Ptr{CXArmBuiltinAliasAttrImpl}
+
+mutable struct CXArmLocallyStreamingAttrImpl <: AbstractCXImpl end
+
+const CXArmLocallyStreamingAttr = Ptr{CXArmLocallyStreamingAttrImpl}
+
+mutable struct CXArmNewAttrImpl <: AbstractCXImpl end
+
+const CXArmNewAttr = Ptr{CXArmNewAttrImpl}
+
+mutable struct CXArtificialAttrImpl <: AbstractCXImpl end
+
+const CXArtificialAttr = Ptr{CXArtificialAttrImpl}
+
+mutable struct CXAsmLabelAttrImpl <: AbstractCXImpl end
+
+const CXAsmLabelAttr = Ptr{CXAsmLabelAttrImpl}
+
+mutable struct CXAssertCapabilityAttrImpl <: AbstractCXImpl end
+
+const CXAssertCapabilityAttr = Ptr{CXAssertCapabilityAttrImpl}
+
+mutable struct CXAssertExclusiveLockAttrImpl <: AbstractCXImpl end
+
+const CXAssertExclusiveLockAttr = Ptr{CXAssertExclusiveLockAttrImpl}
+
+mutable struct CXAssertSharedLockAttrImpl <: AbstractCXImpl end
+
+const CXAssertSharedLockAttr = Ptr{CXAssertSharedLockAttrImpl}
+
+mutable struct CXAssumeAlignedAttrImpl <: AbstractCXImpl end
+
+const CXAssumeAlignedAttr = Ptr{CXAssumeAlignedAttrImpl}
+
+mutable struct CXAssumptionAttrImpl <: AbstractCXImpl end
+
+const CXAssumptionAttr = Ptr{CXAssumptionAttrImpl}
+
+mutable struct CXAvailabilityAttrImpl <: AbstractCXImpl end
+
+const CXAvailabilityAttr = Ptr{CXAvailabilityAttrImpl}
+
+mutable struct CXAvailableOnlyInDefaultEvalMethodAttrImpl <: AbstractCXImpl end
+
+const CXAvailableOnlyInDefaultEvalMethodAttr = Ptr{CXAvailableOnlyInDefaultEvalMethodAttrImpl}
+
+mutable struct CXBPFPreserveAccessIndexAttrImpl <: AbstractCXImpl end
+
+const CXBPFPreserveAccessIndexAttr = Ptr{CXBPFPreserveAccessIndexAttrImpl}
+
+mutable struct CXBPFPreserveStaticOffsetAttrImpl <: AbstractCXImpl end
+
+const CXBPFPreserveStaticOffsetAttr = Ptr{CXBPFPreserveStaticOffsetAttrImpl}
+
+mutable struct CXBTFDeclTagAttrImpl <: AbstractCXImpl end
+
+const CXBTFDeclTagAttr = Ptr{CXBTFDeclTagAttrImpl}
+
+mutable struct CXBlocksAttrImpl <: AbstractCXImpl end
+
+const CXBlocksAttr = Ptr{CXBlocksAttrImpl}
+
+mutable struct CXBuiltinAttrImpl <: AbstractCXImpl end
+
+const CXBuiltinAttr = Ptr{CXBuiltinAttrImpl}
+
+mutable struct CXC11NoReturnAttrImpl <: AbstractCXImpl end
+
+const CXC11NoReturnAttr = Ptr{CXC11NoReturnAttrImpl}
+
+mutable struct CXCFAuditedTransferAttrImpl <: AbstractCXImpl end
+
+const CXCFAuditedTransferAttr = Ptr{CXCFAuditedTransferAttrImpl}
+
+mutable struct CXCFGuardAttrImpl <: AbstractCXImpl end
+
+const CXCFGuardAttr = Ptr{CXCFGuardAttrImpl}
+
+mutable struct CXCFICanonicalJumpTableAttrImpl <: AbstractCXImpl end
+
+const CXCFICanonicalJumpTableAttr = Ptr{CXCFICanonicalJumpTableAttrImpl}
+
+mutable struct CXCFReturnsNotRetainedAttrImpl <: AbstractCXImpl end
+
+const CXCFReturnsNotRetainedAttr = Ptr{CXCFReturnsNotRetainedAttrImpl}
+
+mutable struct CXCFReturnsRetainedAttrImpl <: AbstractCXImpl end
+
+const CXCFReturnsRetainedAttr = Ptr{CXCFReturnsRetainedAttrImpl}
+
+mutable struct CXCFUnknownTransferAttrImpl <: AbstractCXImpl end
+
+const CXCFUnknownTransferAttr = Ptr{CXCFUnknownTransferAttrImpl}
+
+mutable struct CXCPUDispatchAttrImpl <: AbstractCXImpl end
+
+const CXCPUDispatchAttr = Ptr{CXCPUDispatchAttrImpl}
+
+mutable struct CXCPUSpecificAttrImpl <: AbstractCXImpl end
+
+const CXCPUSpecificAttr = Ptr{CXCPUSpecificAttrImpl}
+
+mutable struct CXCUDAConstantAttrImpl <: AbstractCXImpl end
+
+const CXCUDAConstantAttr = Ptr{CXCUDAConstantAttrImpl}
+
+mutable struct CXCUDADeviceAttrImpl <: AbstractCXImpl end
+
+const CXCUDADeviceAttr = Ptr{CXCUDADeviceAttrImpl}
+
+mutable struct CXCUDADeviceBuiltinSurfaceTypeAttrImpl <: AbstractCXImpl end
+
+const CXCUDADeviceBuiltinSurfaceTypeAttr = Ptr{CXCUDADeviceBuiltinSurfaceTypeAttrImpl}
+
+mutable struct CXCUDADeviceBuiltinTextureTypeAttrImpl <: AbstractCXImpl end
+
+const CXCUDADeviceBuiltinTextureTypeAttr = Ptr{CXCUDADeviceBuiltinTextureTypeAttrImpl}
+
+mutable struct CXCUDAGlobalAttrImpl <: AbstractCXImpl end
+
+const CXCUDAGlobalAttr = Ptr{CXCUDAGlobalAttrImpl}
+
+mutable struct CXCUDAHostAttrImpl <: AbstractCXImpl end
+
+const CXCUDAHostAttr = Ptr{CXCUDAHostAttrImpl}
+
+mutable struct CXCUDAInvalidTargetAttrImpl <: AbstractCXImpl end
+
+const CXCUDAInvalidTargetAttr = Ptr{CXCUDAInvalidTargetAttrImpl}
+
+mutable struct CXCUDALaunchBoundsAttrImpl <: AbstractCXImpl end
+
+const CXCUDALaunchBoundsAttr = Ptr{CXCUDALaunchBoundsAttrImpl}
+
+mutable struct CXCUDASharedAttrImpl <: AbstractCXImpl end
+
+const CXCUDASharedAttr = Ptr{CXCUDASharedAttrImpl}
+
+mutable struct CXCXX11NoReturnAttrImpl <: AbstractCXImpl end
+
+const CXCXX11NoReturnAttr = Ptr{CXCXX11NoReturnAttrImpl}
+
+mutable struct CXCallableWhenAttrImpl <: AbstractCXImpl end
+
+const CXCallableWhenAttr = Ptr{CXCallableWhenAttrImpl}
+
+mutable struct CXCallbackAttrImpl <: AbstractCXImpl end
+
+const CXCallbackAttr = Ptr{CXCallbackAttrImpl}
+
+mutable struct CXCapabilityAttrImpl <: AbstractCXImpl end
+
+const CXCapabilityAttr = Ptr{CXCapabilityAttrImpl}
+
+mutable struct CXCapturedRecordAttrImpl <: AbstractCXImpl end
+
+const CXCapturedRecordAttr = Ptr{CXCapturedRecordAttrImpl}
+
+mutable struct CXCleanupAttrImpl <: AbstractCXImpl end
+
+const CXCleanupAttr = Ptr{CXCleanupAttrImpl}
+
+mutable struct CXCmseNSEntryAttrImpl <: AbstractCXImpl end
+
+const CXCmseNSEntryAttr = Ptr{CXCmseNSEntryAttrImpl}
+
+mutable struct CXCodeModelAttrImpl <: AbstractCXImpl end
+
+const CXCodeModelAttr = Ptr{CXCodeModelAttrImpl}
+
+mutable struct CXCodeSegAttrImpl <: AbstractCXImpl end
+
+const CXCodeSegAttr = Ptr{CXCodeSegAttrImpl}
+
+mutable struct CXColdAttrImpl <: AbstractCXImpl end
+
+const CXColdAttr = Ptr{CXColdAttrImpl}
+
+mutable struct CXCommonAttrImpl <: AbstractCXImpl end
+
+const CXCommonAttr = Ptr{CXCommonAttrImpl}
+
+mutable struct CXConstAttrImpl <: AbstractCXImpl end
+
+const CXConstAttr = Ptr{CXConstAttrImpl}
+
+mutable struct CXConstInitAttrImpl <: AbstractCXImpl end
+
+const CXConstInitAttr = Ptr{CXConstInitAttrImpl}
+
+mutable struct CXConstructorAttrImpl <: AbstractCXImpl end
+
+const CXConstructorAttr = Ptr{CXConstructorAttrImpl}
+
+mutable struct CXConsumableAttrImpl <: AbstractCXImpl end
+
+const CXConsumableAttr = Ptr{CXConsumableAttrImpl}
+
+mutable struct CXConsumableAutoCastAttrImpl <: AbstractCXImpl end
+
+const CXConsumableAutoCastAttr = Ptr{CXConsumableAutoCastAttrImpl}
+
+mutable struct CXConsumableSetOnReadAttrImpl <: AbstractCXImpl end
+
+const CXConsumableSetOnReadAttr = Ptr{CXConsumableSetOnReadAttrImpl}
+
+mutable struct CXConvergentAttrImpl <: AbstractCXImpl end
+
+const CXConvergentAttr = Ptr{CXConvergentAttrImpl}
+
+mutable struct CXCoroDisableLifetimeBoundAttrImpl <: AbstractCXImpl end
+
+const CXCoroDisableLifetimeBoundAttr = Ptr{CXCoroDisableLifetimeBoundAttrImpl}
+
+mutable struct CXCoroLifetimeBoundAttrImpl <: AbstractCXImpl end
+
+const CXCoroLifetimeBoundAttr = Ptr{CXCoroLifetimeBoundAttrImpl}
+
+mutable struct CXCoroOnlyDestroyWhenCompleteAttrImpl <: AbstractCXImpl end
+
+const CXCoroOnlyDestroyWhenCompleteAttr = Ptr{CXCoroOnlyDestroyWhenCompleteAttrImpl}
+
+mutable struct CXCoroReturnTypeAttrImpl <: AbstractCXImpl end
+
+const CXCoroReturnTypeAttr = Ptr{CXCoroReturnTypeAttrImpl}
+
+mutable struct CXCoroWrapperAttrImpl <: AbstractCXImpl end
+
+const CXCoroWrapperAttr = Ptr{CXCoroWrapperAttrImpl}
+
+mutable struct CXCountedByAttrImpl <: AbstractCXImpl end
+
+const CXCountedByAttr = Ptr{CXCountedByAttrImpl}
+
+mutable struct CXDLLExportAttrImpl <: AbstractCXImpl end
+
+const CXDLLExportAttr = Ptr{CXDLLExportAttrImpl}
+
+mutable struct CXDLLExportStaticLocalAttrImpl <: AbstractCXImpl end
+
+const CXDLLExportStaticLocalAttr = Ptr{CXDLLExportStaticLocalAttrImpl}
+
+mutable struct CXDLLImportAttrImpl <: AbstractCXImpl end
+
+const CXDLLImportAttr = Ptr{CXDLLImportAttrImpl}
+
+mutable struct CXDLLImportStaticLocalAttrImpl <: AbstractCXImpl end
+
+const CXDLLImportStaticLocalAttr = Ptr{CXDLLImportStaticLocalAttrImpl}
+
+mutable struct CXDeprecatedAttrImpl <: AbstractCXImpl end
+
+const CXDeprecatedAttr = Ptr{CXDeprecatedAttrImpl}
+
+mutable struct CXDestructorAttrImpl <: AbstractCXImpl end
+
+const CXDestructorAttr = Ptr{CXDestructorAttrImpl}
+
+mutable struct CXDiagnoseAsBuiltinAttrImpl <: AbstractCXImpl end
+
+const CXDiagnoseAsBuiltinAttr = Ptr{CXDiagnoseAsBuiltinAttrImpl}
+
+mutable struct CXDiagnoseIfAttrImpl <: AbstractCXImpl end
+
+const CXDiagnoseIfAttr = Ptr{CXDiagnoseIfAttrImpl}
+
+mutable struct CXDisableSanitizerInstrumentationAttrImpl <: AbstractCXImpl end
+
+const CXDisableSanitizerInstrumentationAttr = Ptr{CXDisableSanitizerInstrumentationAttrImpl}
+
+mutable struct CXDisableTailCallsAttrImpl <: AbstractCXImpl end
+
+const CXDisableTailCallsAttr = Ptr{CXDisableTailCallsAttrImpl}
+
+mutable struct CXEmptyBasesAttrImpl <: AbstractCXImpl end
+
+const CXEmptyBasesAttr = Ptr{CXEmptyBasesAttrImpl}
+
+mutable struct CXEnableIfAttrImpl <: AbstractCXImpl end
+
+const CXEnableIfAttr = Ptr{CXEnableIfAttrImpl}
+
+mutable struct CXEnforceTCBAttrImpl <: AbstractCXImpl end
+
+const CXEnforceTCBAttr = Ptr{CXEnforceTCBAttrImpl}
+
+mutable struct CXEnforceTCBLeafAttrImpl <: AbstractCXImpl end
+
+const CXEnforceTCBLeafAttr = Ptr{CXEnforceTCBLeafAttrImpl}
+
+mutable struct CXEnumExtensibilityAttrImpl <: AbstractCXImpl end
+
+const CXEnumExtensibilityAttr = Ptr{CXEnumExtensibilityAttrImpl}
+
+mutable struct CXErrorAttrImpl <: AbstractCXImpl end
+
+const CXErrorAttr = Ptr{CXErrorAttrImpl}
+
+mutable struct CXExcludeFromExplicitInstantiationAttrImpl <: AbstractCXImpl end
+
+const CXExcludeFromExplicitInstantiationAttr = Ptr{CXExcludeFromExplicitInstantiationAttrImpl}
+
+mutable struct CXExclusiveTrylockFunctionAttrImpl <: AbstractCXImpl end
+
+const CXExclusiveTrylockFunctionAttr = Ptr{CXExclusiveTrylockFunctionAttrImpl}
+
+mutable struct CXExternalSourceSymbolAttrImpl <: AbstractCXImpl end
+
+const CXExternalSourceSymbolAttr = Ptr{CXExternalSourceSymbolAttrImpl}
+
+mutable struct CXFinalAttrImpl <: AbstractCXImpl end
+
+const CXFinalAttr = Ptr{CXFinalAttrImpl}
+
+mutable struct CXFlagEnumAttrImpl <: AbstractCXImpl end
+
+const CXFlagEnumAttr = Ptr{CXFlagEnumAttrImpl}
+
+mutable struct CXFlattenAttrImpl <: AbstractCXImpl end
+
+const CXFlattenAttr = Ptr{CXFlattenAttrImpl}
+
+mutable struct CXFormatAttrImpl <: AbstractCXImpl end
+
+const CXFormatAttr = Ptr{CXFormatAttrImpl}
+
+mutable struct CXFormatArgAttrImpl <: AbstractCXImpl end
+
+const CXFormatArgAttr = Ptr{CXFormatArgAttrImpl}
+
+mutable struct CXFunctionReturnThunksAttrImpl <: AbstractCXImpl end
+
+const CXFunctionReturnThunksAttr = Ptr{CXFunctionReturnThunksAttrImpl}
+
+mutable struct CXGNUInlineAttrImpl <: AbstractCXImpl end
+
+const CXGNUInlineAttr = Ptr{CXGNUInlineAttrImpl}
+
+mutable struct CXGuardedByAttrImpl <: AbstractCXImpl end
+
+const CXGuardedByAttr = Ptr{CXGuardedByAttrImpl}
+
+mutable struct CXGuardedVarAttrImpl <: AbstractCXImpl end
+
+const CXGuardedVarAttr = Ptr{CXGuardedVarAttrImpl}
+
+mutable struct CXHIPManagedAttrImpl <: AbstractCXImpl end
+
+const CXHIPManagedAttr = Ptr{CXHIPManagedAttrImpl}
+
+mutable struct CXHLSLNumThreadsAttrImpl <: AbstractCXImpl end
+
+const CXHLSLNumThreadsAttr = Ptr{CXHLSLNumThreadsAttrImpl}
+
+mutable struct CXHLSLResourceAttrImpl <: AbstractCXImpl end
+
+const CXHLSLResourceAttr = Ptr{CXHLSLResourceAttrImpl}
+
+mutable struct CXHLSLResourceBindingAttrImpl <: AbstractCXImpl end
+
+const CXHLSLResourceBindingAttr = Ptr{CXHLSLResourceBindingAttrImpl}
+
+mutable struct CXHLSLShaderAttrImpl <: AbstractCXImpl end
+
+const CXHLSLShaderAttr = Ptr{CXHLSLShaderAttrImpl}
+
+mutable struct CXHotAttrImpl <: AbstractCXImpl end
+
+const CXHotAttr = Ptr{CXHotAttrImpl}
+
+mutable struct CXIBActionAttrImpl <: AbstractCXImpl end
+
+const CXIBActionAttr = Ptr{CXIBActionAttrImpl}
+
+mutable struct CXIBOutletAttrImpl <: AbstractCXImpl end
+
+const CXIBOutletAttr = Ptr{CXIBOutletAttrImpl}
+
+mutable struct CXIBOutletCollectionAttrImpl <: AbstractCXImpl end
+
+const CXIBOutletCollectionAttr = Ptr{CXIBOutletCollectionAttrImpl}
+
+mutable struct CXInitPriorityAttrImpl <: AbstractCXImpl end
+
+const CXInitPriorityAttr = Ptr{CXInitPriorityAttrImpl}
+
+mutable struct CXInternalLinkageAttrImpl <: AbstractCXImpl end
+
+const CXInternalLinkageAttr = Ptr{CXInternalLinkageAttrImpl}
+
+mutable struct CXLTOVisibilityPublicAttrImpl <: AbstractCXImpl end
+
+const CXLTOVisibilityPublicAttr = Ptr{CXLTOVisibilityPublicAttrImpl}
+
+mutable struct CXLayoutVersionAttrImpl <: AbstractCXImpl end
+
+const CXLayoutVersionAttr = Ptr{CXLayoutVersionAttrImpl}
+
+mutable struct CXLeafAttrImpl <: AbstractCXImpl end
+
+const CXLeafAttr = Ptr{CXLeafAttrImpl}
+
+mutable struct CXLockReturnedAttrImpl <: AbstractCXImpl end
+
+const CXLockReturnedAttr = Ptr{CXLockReturnedAttrImpl}
+
+mutable struct CXLocksExcludedAttrImpl <: AbstractCXImpl end
+
+const CXLocksExcludedAttr = Ptr{CXLocksExcludedAttrImpl}
+
+mutable struct CXM68kInterruptAttrImpl <: AbstractCXImpl end
+
+const CXM68kInterruptAttr = Ptr{CXM68kInterruptAttrImpl}
+
+mutable struct CXMIGServerRoutineAttrImpl <: AbstractCXImpl end
+
+const CXMIGServerRoutineAttr = Ptr{CXMIGServerRoutineAttrImpl}
+
+mutable struct CXMSAllocatorAttrImpl <: AbstractCXImpl end
+
+const CXMSAllocatorAttr = Ptr{CXMSAllocatorAttrImpl}
+
+mutable struct CXMSConstexprAttrImpl <: AbstractCXImpl end
+
+const CXMSConstexprAttr = Ptr{CXMSConstexprAttrImpl}
+
+mutable struct CXMSInheritanceAttrImpl <: AbstractCXImpl end
+
+const CXMSInheritanceAttr = Ptr{CXMSInheritanceAttrImpl}
+
+mutable struct CXMSNoVTableAttrImpl <: AbstractCXImpl end
+
+const CXMSNoVTableAttr = Ptr{CXMSNoVTableAttrImpl}
+
+mutable struct CXMSP430InterruptAttrImpl <: AbstractCXImpl end
+
+const CXMSP430InterruptAttr = Ptr{CXMSP430InterruptAttrImpl}
+
+mutable struct CXMSStructAttrImpl <: AbstractCXImpl end
+
+const CXMSStructAttr = Ptr{CXMSStructAttrImpl}
+
+mutable struct CXMSVtorDispAttrImpl <: AbstractCXImpl end
+
+const CXMSVtorDispAttr = Ptr{CXMSVtorDispAttrImpl}
+
+mutable struct CXMaxFieldAlignmentAttrImpl <: AbstractCXImpl end
+
+const CXMaxFieldAlignmentAttr = Ptr{CXMaxFieldAlignmentAttrImpl}
+
+mutable struct CXMayAliasAttrImpl <: AbstractCXImpl end
+
+const CXMayAliasAttr = Ptr{CXMayAliasAttrImpl}
+
+mutable struct CXMaybeUndefAttrImpl <: AbstractCXImpl end
+
+const CXMaybeUndefAttr = Ptr{CXMaybeUndefAttrImpl}
+
+mutable struct CXMicroMipsAttrImpl <: AbstractCXImpl end
+
+const CXMicroMipsAttr = Ptr{CXMicroMipsAttrImpl}
+
+mutable struct CXMinSizeAttrImpl <: AbstractCXImpl end
+
+const CXMinSizeAttr = Ptr{CXMinSizeAttrImpl}
+
+mutable struct CXMinVectorWidthAttrImpl <: AbstractCXImpl end
+
+const CXMinVectorWidthAttr = Ptr{CXMinVectorWidthAttrImpl}
+
+mutable struct CXMips16AttrImpl <: AbstractCXImpl end
+
+const CXMips16Attr = Ptr{CXMips16AttrImpl}
+
+mutable struct CXMipsInterruptAttrImpl <: AbstractCXImpl end
+
+const CXMipsInterruptAttr = Ptr{CXMipsInterruptAttrImpl}
+
+mutable struct CXMipsLongCallAttrImpl <: AbstractCXImpl end
+
+const CXMipsLongCallAttr = Ptr{CXMipsLongCallAttrImpl}
+
+mutable struct CXMipsShortCallAttrImpl <: AbstractCXImpl end
+
+const CXMipsShortCallAttr = Ptr{CXMipsShortCallAttrImpl}
+
+mutable struct CXNSConsumesSelfAttrImpl <: AbstractCXImpl end
+
+const CXNSConsumesSelfAttr = Ptr{CXNSConsumesSelfAttrImpl}
+
+mutable struct CXNSErrorDomainAttrImpl <: AbstractCXImpl end
+
+const CXNSErrorDomainAttr = Ptr{CXNSErrorDomainAttrImpl}
+
+mutable struct CXNSReturnsAutoreleasedAttrImpl <: AbstractCXImpl end
+
+const CXNSReturnsAutoreleasedAttr = Ptr{CXNSReturnsAutoreleasedAttrImpl}
+
+mutable struct CXNSReturnsNotRetainedAttrImpl <: AbstractCXImpl end
+
+const CXNSReturnsNotRetainedAttr = Ptr{CXNSReturnsNotRetainedAttrImpl}
+
+mutable struct CXNVPTXKernelAttrImpl <: AbstractCXImpl end
+
+const CXNVPTXKernelAttr = Ptr{CXNVPTXKernelAttrImpl}
+
+mutable struct CXNakedAttrImpl <: AbstractCXImpl end
+
+const CXNakedAttr = Ptr{CXNakedAttrImpl}
+
+mutable struct CXNoAliasAttrImpl <: AbstractCXImpl end
+
+const CXNoAliasAttr = Ptr{CXNoAliasAttrImpl}
+
+mutable struct CXNoCommonAttrImpl <: AbstractCXImpl end
+
+const CXNoCommonAttr = Ptr{CXNoCommonAttrImpl}
+
+mutable struct CXNoDebugAttrImpl <: AbstractCXImpl end
+
+const CXNoDebugAttr = Ptr{CXNoDebugAttrImpl}
+
+mutable struct CXNoDestroyAttrImpl <: AbstractCXImpl end
+
+const CXNoDestroyAttr = Ptr{CXNoDestroyAttrImpl}
+
+mutable struct CXNoDuplicateAttrImpl <: AbstractCXImpl end
+
+const CXNoDuplicateAttr = Ptr{CXNoDuplicateAttrImpl}
+
+mutable struct CXNoInstrumentFunctionAttrImpl <: AbstractCXImpl end
+
+const CXNoInstrumentFunctionAttr = Ptr{CXNoInstrumentFunctionAttrImpl}
+
+mutable struct CXNoMicroMipsAttrImpl <: AbstractCXImpl end
+
+const CXNoMicroMipsAttr = Ptr{CXNoMicroMipsAttrImpl}
+
+mutable struct CXNoMips16AttrImpl <: AbstractCXImpl end
+
+const CXNoMips16Attr = Ptr{CXNoMips16AttrImpl}
+
+mutable struct CXNoProfileFunctionAttrImpl <: AbstractCXImpl end
+
+const CXNoProfileFunctionAttr = Ptr{CXNoProfileFunctionAttrImpl}
+
+mutable struct CXNoRandomizeLayoutAttrImpl <: AbstractCXImpl end
+
+const CXNoRandomizeLayoutAttr = Ptr{CXNoRandomizeLayoutAttrImpl}
+
+mutable struct CXNoReturnAttrImpl <: AbstractCXImpl end
+
+const CXNoReturnAttr = Ptr{CXNoReturnAttrImpl}
+
+mutable struct CXNoSanitizeAttrImpl <: AbstractCXImpl end
+
+const CXNoSanitizeAttr = Ptr{CXNoSanitizeAttrImpl}
+
+mutable struct CXNoSpeculativeLoadHardeningAttrImpl <: AbstractCXImpl end
+
+const CXNoSpeculativeLoadHardeningAttr = Ptr{CXNoSpeculativeLoadHardeningAttrImpl}
+
+mutable struct CXNoSplitStackAttrImpl <: AbstractCXImpl end
+
+const CXNoSplitStackAttr = Ptr{CXNoSplitStackAttrImpl}
+
+mutable struct CXNoStackProtectorAttrImpl <: AbstractCXImpl end
+
+const CXNoStackProtectorAttr = Ptr{CXNoStackProtectorAttrImpl}
+
+mutable struct CXNoThreadSafetyAnalysisAttrImpl <: AbstractCXImpl end
+
+const CXNoThreadSafetyAnalysisAttr = Ptr{CXNoThreadSafetyAnalysisAttrImpl}
+
+mutable struct CXNoThrowAttrImpl <: AbstractCXImpl end
+
+const CXNoThrowAttr = Ptr{CXNoThrowAttrImpl}
+
+mutable struct CXNoUniqueAddressAttrImpl <: AbstractCXImpl end
+
+const CXNoUniqueAddressAttr = Ptr{CXNoUniqueAddressAttrImpl}
+
+mutable struct CXNoUwtableAttrImpl <: AbstractCXImpl end
+
+const CXNoUwtableAttr = Ptr{CXNoUwtableAttrImpl}
+
+mutable struct CXNotTailCalledAttrImpl <: AbstractCXImpl end
+
+const CXNotTailCalledAttr = Ptr{CXNotTailCalledAttrImpl}
+
+mutable struct CXOMPAllocateDeclAttrImpl <: AbstractCXImpl end
+
+const CXOMPAllocateDeclAttr = Ptr{CXOMPAllocateDeclAttrImpl}
+
+mutable struct CXOMPCaptureNoInitAttrImpl <: AbstractCXImpl end
+
+const CXOMPCaptureNoInitAttr = Ptr{CXOMPCaptureNoInitAttrImpl}
+
+mutable struct CXOMPDeclareTargetDeclAttrImpl <: AbstractCXImpl end
+
+const CXOMPDeclareTargetDeclAttr = Ptr{CXOMPDeclareTargetDeclAttrImpl}
+
+mutable struct CXOMPDeclareVariantAttrImpl <: AbstractCXImpl end
+
+const CXOMPDeclareVariantAttr = Ptr{CXOMPDeclareVariantAttrImpl}
+
+mutable struct CXOMPThreadPrivateDeclAttrImpl <: AbstractCXImpl end
+
+const CXOMPThreadPrivateDeclAttr = Ptr{CXOMPThreadPrivateDeclAttrImpl}
+
+mutable struct CXOSConsumesThisAttrImpl <: AbstractCXImpl end
+
+const CXOSConsumesThisAttr = Ptr{CXOSConsumesThisAttrImpl}
+
+mutable struct CXOSReturnsNotRetainedAttrImpl <: AbstractCXImpl end
+
+const CXOSReturnsNotRetainedAttr = Ptr{CXOSReturnsNotRetainedAttrImpl}
+
+mutable struct CXOSReturnsRetainedAttrImpl <: AbstractCXImpl end
+
+const CXOSReturnsRetainedAttr = Ptr{CXOSReturnsRetainedAttrImpl}
+
+mutable struct CXOSReturnsRetainedOnNonZeroAttrImpl <: AbstractCXImpl end
+
+const CXOSReturnsRetainedOnNonZeroAttr = Ptr{CXOSReturnsRetainedOnNonZeroAttrImpl}
+
+mutable struct CXOSReturnsRetainedOnZeroAttrImpl <: AbstractCXImpl end
+
+const CXOSReturnsRetainedOnZeroAttr = Ptr{CXOSReturnsRetainedOnZeroAttrImpl}
+
+mutable struct CXObjCBridgeAttrImpl <: AbstractCXImpl end
+
+const CXObjCBridgeAttr = Ptr{CXObjCBridgeAttrImpl}
+
+mutable struct CXObjCBridgeMutableAttrImpl <: AbstractCXImpl end
+
+const CXObjCBridgeMutableAttr = Ptr{CXObjCBridgeMutableAttrImpl}
+
+mutable struct CXObjCBridgeRelatedAttrImpl <: AbstractCXImpl end
+
+const CXObjCBridgeRelatedAttr = Ptr{CXObjCBridgeRelatedAttrImpl}
+
+mutable struct CXObjCExceptionAttrImpl <: AbstractCXImpl end
+
+const CXObjCExceptionAttr = Ptr{CXObjCExceptionAttrImpl}
+
+mutable struct CXObjCExplicitProtocolImplAttrImpl <: AbstractCXImpl end
+
+const CXObjCExplicitProtocolImplAttr = Ptr{CXObjCExplicitProtocolImplAttrImpl}
+
+mutable struct CXObjCExternallyRetainedAttrImpl <: AbstractCXImpl end
+
+const CXObjCExternallyRetainedAttr = Ptr{CXObjCExternallyRetainedAttrImpl}
+
+mutable struct CXObjCIndependentClassAttrImpl <: AbstractCXImpl end
+
+const CXObjCIndependentClassAttr = Ptr{CXObjCIndependentClassAttrImpl}
+
+mutable struct CXObjCMethodFamilyAttrImpl <: AbstractCXImpl end
+
+const CXObjCMethodFamilyAttr = Ptr{CXObjCMethodFamilyAttrImpl}
+
+mutable struct CXObjCNSObjectAttrImpl <: AbstractCXImpl end
+
+const CXObjCNSObjectAttr = Ptr{CXObjCNSObjectAttrImpl}
+
+mutable struct CXObjCPreciseLifetimeAttrImpl <: AbstractCXImpl end
+
+const CXObjCPreciseLifetimeAttr = Ptr{CXObjCPreciseLifetimeAttrImpl}
+
+mutable struct CXObjCRequiresPropertyDefsAttrImpl <: AbstractCXImpl end
+
+const CXObjCRequiresPropertyDefsAttr = Ptr{CXObjCRequiresPropertyDefsAttrImpl}
+
+mutable struct CXObjCRequiresSuperAttrImpl <: AbstractCXImpl end
+
+const CXObjCRequiresSuperAttr = Ptr{CXObjCRequiresSuperAttrImpl}
+
+mutable struct CXObjCReturnsInnerPointerAttrImpl <: AbstractCXImpl end
+
+const CXObjCReturnsInnerPointerAttr = Ptr{CXObjCReturnsInnerPointerAttrImpl}
+
+mutable struct CXObjCRootClassAttrImpl <: AbstractCXImpl end
+
+const CXObjCRootClassAttr = Ptr{CXObjCRootClassAttrImpl}
+
+mutable struct CXObjCSubclassingRestrictedAttrImpl <: AbstractCXImpl end
+
+const CXObjCSubclassingRestrictedAttr = Ptr{CXObjCSubclassingRestrictedAttrImpl}
+
+mutable struct CXOpenCLIntelReqdSubGroupSizeAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLIntelReqdSubGroupSizeAttr = Ptr{CXOpenCLIntelReqdSubGroupSizeAttrImpl}
+
+mutable struct CXOpenCLKernelAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLKernelAttr = Ptr{CXOpenCLKernelAttrImpl}
+
+mutable struct CXOptimizeNoneAttrImpl <: AbstractCXImpl end
+
+const CXOptimizeNoneAttr = Ptr{CXOptimizeNoneAttrImpl}
+
+mutable struct CXOverrideAttrImpl <: AbstractCXImpl end
+
+const CXOverrideAttr = Ptr{CXOverrideAttrImpl}
+
+mutable struct CXOwnerAttrImpl <: AbstractCXImpl end
+
+const CXOwnerAttr = Ptr{CXOwnerAttrImpl}
+
+mutable struct CXOwnershipAttrImpl <: AbstractCXImpl end
+
+const CXOwnershipAttr = Ptr{CXOwnershipAttrImpl}
+
+mutable struct CXPackedAttrImpl <: AbstractCXImpl end
+
+const CXPackedAttr = Ptr{CXPackedAttrImpl}
+
+mutable struct CXParamTypestateAttrImpl <: AbstractCXImpl end
+
+const CXParamTypestateAttr = Ptr{CXParamTypestateAttrImpl}
+
+mutable struct CXPatchableFunctionEntryAttrImpl <: AbstractCXImpl end
+
+const CXPatchableFunctionEntryAttr = Ptr{CXPatchableFunctionEntryAttrImpl}
+
+mutable struct CXPointerAttrImpl <: AbstractCXImpl end
+
+const CXPointerAttr = Ptr{CXPointerAttrImpl}
+
+mutable struct CXPragmaClangBSSSectionAttrImpl <: AbstractCXImpl end
+
+const CXPragmaClangBSSSectionAttr = Ptr{CXPragmaClangBSSSectionAttrImpl}
+
+mutable struct CXPragmaClangDataSectionAttrImpl <: AbstractCXImpl end
+
+const CXPragmaClangDataSectionAttr = Ptr{CXPragmaClangDataSectionAttrImpl}
+
+mutable struct CXPragmaClangRelroSectionAttrImpl <: AbstractCXImpl end
+
+const CXPragmaClangRelroSectionAttr = Ptr{CXPragmaClangRelroSectionAttrImpl}
+
+mutable struct CXPragmaClangRodataSectionAttrImpl <: AbstractCXImpl end
+
+const CXPragmaClangRodataSectionAttr = Ptr{CXPragmaClangRodataSectionAttrImpl}
+
+mutable struct CXPragmaClangTextSectionAttrImpl <: AbstractCXImpl end
+
+const CXPragmaClangTextSectionAttr = Ptr{CXPragmaClangTextSectionAttrImpl}
+
+mutable struct CXPreferredNameAttrImpl <: AbstractCXImpl end
+
+const CXPreferredNameAttr = Ptr{CXPreferredNameAttrImpl}
+
+mutable struct CXPreferredTypeAttrImpl <: AbstractCXImpl end
+
+const CXPreferredTypeAttr = Ptr{CXPreferredTypeAttrImpl}
+
+mutable struct CXPtGuardedByAttrImpl <: AbstractCXImpl end
+
+const CXPtGuardedByAttr = Ptr{CXPtGuardedByAttrImpl}
+
+mutable struct CXPtGuardedVarAttrImpl <: AbstractCXImpl end
+
+const CXPtGuardedVarAttr = Ptr{CXPtGuardedVarAttrImpl}
+
+mutable struct CXPureAttrImpl <: AbstractCXImpl end
+
+const CXPureAttr = Ptr{CXPureAttrImpl}
+
+mutable struct CXRISCVInterruptAttrImpl <: AbstractCXImpl end
+
+const CXRISCVInterruptAttr = Ptr{CXRISCVInterruptAttrImpl}
+
+mutable struct CXRandomizeLayoutAttrImpl <: AbstractCXImpl end
+
+const CXRandomizeLayoutAttr = Ptr{CXRandomizeLayoutAttrImpl}
+
+mutable struct CXReadOnlyPlacementAttrImpl <: AbstractCXImpl end
+
+const CXReadOnlyPlacementAttr = Ptr{CXReadOnlyPlacementAttrImpl}
+
+mutable struct CXReinitializesAttrImpl <: AbstractCXImpl end
+
+const CXReinitializesAttr = Ptr{CXReinitializesAttrImpl}
+
+mutable struct CXReleaseCapabilityAttrImpl <: AbstractCXImpl end
+
+const CXReleaseCapabilityAttr = Ptr{CXReleaseCapabilityAttrImpl}
+
+mutable struct CXReqdWorkGroupSizeAttrImpl <: AbstractCXImpl end
+
+const CXReqdWorkGroupSizeAttr = Ptr{CXReqdWorkGroupSizeAttrImpl}
+
+mutable struct CXRequiresCapabilityAttrImpl <: AbstractCXImpl end
+
+const CXRequiresCapabilityAttr = Ptr{CXRequiresCapabilityAttrImpl}
+
+mutable struct CXRestrictAttrImpl <: AbstractCXImpl end
+
+const CXRestrictAttr = Ptr{CXRestrictAttrImpl}
+
+mutable struct CXRetainAttrImpl <: AbstractCXImpl end
+
+const CXRetainAttr = Ptr{CXRetainAttrImpl}
+
+mutable struct CXReturnTypestateAttrImpl <: AbstractCXImpl end
+
+const CXReturnTypestateAttr = Ptr{CXReturnTypestateAttrImpl}
+
+mutable struct CXReturnsNonNullAttrImpl <: AbstractCXImpl end
+
+const CXReturnsNonNullAttr = Ptr{CXReturnsNonNullAttrImpl}
+
+mutable struct CXReturnsTwiceAttrImpl <: AbstractCXImpl end
+
+const CXReturnsTwiceAttr = Ptr{CXReturnsTwiceAttrImpl}
+
+mutable struct CXSYCLKernelAttrImpl <: AbstractCXImpl end
+
+const CXSYCLKernelAttr = Ptr{CXSYCLKernelAttrImpl}
+
+mutable struct CXSYCLSpecialClassAttrImpl <: AbstractCXImpl end
+
+const CXSYCLSpecialClassAttr = Ptr{CXSYCLSpecialClassAttrImpl}
+
+mutable struct CXScopedLockableAttrImpl <: AbstractCXImpl end
+
+const CXScopedLockableAttr = Ptr{CXScopedLockableAttrImpl}
+
+mutable struct CXSectionAttrImpl <: AbstractCXImpl end
+
+const CXSectionAttr = Ptr{CXSectionAttrImpl}
+
+mutable struct CXSelectAnyAttrImpl <: AbstractCXImpl end
+
+const CXSelectAnyAttr = Ptr{CXSelectAnyAttrImpl}
+
+mutable struct CXSentinelAttrImpl <: AbstractCXImpl end
+
+const CXSentinelAttr = Ptr{CXSentinelAttrImpl}
+
+mutable struct CXSetTypestateAttrImpl <: AbstractCXImpl end
+
+const CXSetTypestateAttr = Ptr{CXSetTypestateAttrImpl}
+
+mutable struct CXSharedTrylockFunctionAttrImpl <: AbstractCXImpl end
+
+const CXSharedTrylockFunctionAttr = Ptr{CXSharedTrylockFunctionAttrImpl}
+
+mutable struct CXSpeculativeLoadHardeningAttrImpl <: AbstractCXImpl end
+
+const CXSpeculativeLoadHardeningAttr = Ptr{CXSpeculativeLoadHardeningAttrImpl}
+
+mutable struct CXStandaloneDebugAttrImpl <: AbstractCXImpl end
+
+const CXStandaloneDebugAttr = Ptr{CXStandaloneDebugAttrImpl}
+
+mutable struct CXStrictFPAttrImpl <: AbstractCXImpl end
+
+const CXStrictFPAttr = Ptr{CXStrictFPAttrImpl}
+
+mutable struct CXStrictGuardStackCheckAttrImpl <: AbstractCXImpl end
+
+const CXStrictGuardStackCheckAttr = Ptr{CXStrictGuardStackCheckAttrImpl}
+
+mutable struct CXSwiftAsyncAttrImpl <: AbstractCXImpl end
+
+const CXSwiftAsyncAttr = Ptr{CXSwiftAsyncAttrImpl}
+
+mutable struct CXSwiftAsyncErrorAttrImpl <: AbstractCXImpl end
+
+const CXSwiftAsyncErrorAttr = Ptr{CXSwiftAsyncErrorAttrImpl}
+
+mutable struct CXSwiftAsyncNameAttrImpl <: AbstractCXImpl end
+
+const CXSwiftAsyncNameAttr = Ptr{CXSwiftAsyncNameAttrImpl}
+
+mutable struct CXSwiftAttrAttrImpl <: AbstractCXImpl end
+
+const CXSwiftAttrAttr = Ptr{CXSwiftAttrAttrImpl}
+
+mutable struct CXSwiftBridgeAttrImpl <: AbstractCXImpl end
+
+const CXSwiftBridgeAttr = Ptr{CXSwiftBridgeAttrImpl}
+
+mutable struct CXSwiftBridgedTypedefAttrImpl <: AbstractCXImpl end
+
+const CXSwiftBridgedTypedefAttr = Ptr{CXSwiftBridgedTypedefAttrImpl}
+
+mutable struct CXSwiftErrorAttrImpl <: AbstractCXImpl end
+
+const CXSwiftErrorAttr = Ptr{CXSwiftErrorAttrImpl}
+
+mutable struct CXSwiftImportAsNonGenericAttrImpl <: AbstractCXImpl end
+
+const CXSwiftImportAsNonGenericAttr = Ptr{CXSwiftImportAsNonGenericAttrImpl}
+
+mutable struct CXSwiftImportPropertyAsAccessorsAttrImpl <: AbstractCXImpl end
+
+const CXSwiftImportPropertyAsAccessorsAttr = Ptr{CXSwiftImportPropertyAsAccessorsAttrImpl}
+
+mutable struct CXSwiftNameAttrImpl <: AbstractCXImpl end
+
+const CXSwiftNameAttr = Ptr{CXSwiftNameAttrImpl}
+
+mutable struct CXSwiftNewTypeAttrImpl <: AbstractCXImpl end
+
+const CXSwiftNewTypeAttr = Ptr{CXSwiftNewTypeAttrImpl}
+
+mutable struct CXSwiftPrivateAttrImpl <: AbstractCXImpl end
+
+const CXSwiftPrivateAttr = Ptr{CXSwiftPrivateAttrImpl}
+
+mutable struct CXTLSModelAttrImpl <: AbstractCXImpl end
+
+const CXTLSModelAttr = Ptr{CXTLSModelAttrImpl}
+
+mutable struct CXTargetAttrImpl <: AbstractCXImpl end
+
+const CXTargetAttr = Ptr{CXTargetAttrImpl}
+
+mutable struct CXTargetClonesAttrImpl <: AbstractCXImpl end
+
+const CXTargetClonesAttr = Ptr{CXTargetClonesAttrImpl}
+
+mutable struct CXTargetVersionAttrImpl <: AbstractCXImpl end
+
+const CXTargetVersionAttr = Ptr{CXTargetVersionAttrImpl}
+
+mutable struct CXTestTypestateAttrImpl <: AbstractCXImpl end
+
+const CXTestTypestateAttr = Ptr{CXTestTypestateAttrImpl}
+
+mutable struct CXTransparentUnionAttrImpl <: AbstractCXImpl end
+
+const CXTransparentUnionAttr = Ptr{CXTransparentUnionAttrImpl}
+
+mutable struct CXTrivialABIAttrImpl <: AbstractCXImpl end
+
+const CXTrivialABIAttr = Ptr{CXTrivialABIAttrImpl}
+
+mutable struct CXTryAcquireCapabilityAttrImpl <: AbstractCXImpl end
+
+const CXTryAcquireCapabilityAttr = Ptr{CXTryAcquireCapabilityAttrImpl}
+
+mutable struct CXTypeTagForDatatypeAttrImpl <: AbstractCXImpl end
+
+const CXTypeTagForDatatypeAttr = Ptr{CXTypeTagForDatatypeAttrImpl}
+
+mutable struct CXTypeVisibilityAttrImpl <: AbstractCXImpl end
+
+const CXTypeVisibilityAttr = Ptr{CXTypeVisibilityAttrImpl}
+
+mutable struct CXUnavailableAttrImpl <: AbstractCXImpl end
+
+const CXUnavailableAttr = Ptr{CXUnavailableAttrImpl}
+
+mutable struct CXUninitializedAttrImpl <: AbstractCXImpl end
+
+const CXUninitializedAttr = Ptr{CXUninitializedAttrImpl}
+
+mutable struct CXUnsafeBufferUsageAttrImpl <: AbstractCXImpl end
+
+const CXUnsafeBufferUsageAttr = Ptr{CXUnsafeBufferUsageAttrImpl}
+
+mutable struct CXUnusedAttrImpl <: AbstractCXImpl end
+
+const CXUnusedAttr = Ptr{CXUnusedAttrImpl}
+
+mutable struct CXUsedAttrImpl <: AbstractCXImpl end
+
+const CXUsedAttr = Ptr{CXUsedAttrImpl}
+
+mutable struct CXUsingIfExistsAttrImpl <: AbstractCXImpl end
+
+const CXUsingIfExistsAttr = Ptr{CXUsingIfExistsAttrImpl}
+
+mutable struct CXUuidAttrImpl <: AbstractCXImpl end
+
+const CXUuidAttr = Ptr{CXUuidAttrImpl}
+
+mutable struct CXVecReturnAttrImpl <: AbstractCXImpl end
+
+const CXVecReturnAttr = Ptr{CXVecReturnAttrImpl}
+
+mutable struct CXVecTypeHintAttrImpl <: AbstractCXImpl end
+
+const CXVecTypeHintAttr = Ptr{CXVecTypeHintAttrImpl}
+
+mutable struct CXVisibilityAttrImpl <: AbstractCXImpl end
+
+const CXVisibilityAttr = Ptr{CXVisibilityAttrImpl}
+
+mutable struct CXWarnUnusedAttrImpl <: AbstractCXImpl end
+
+const CXWarnUnusedAttr = Ptr{CXWarnUnusedAttrImpl}
+
+mutable struct CXWarnUnusedResultAttrImpl <: AbstractCXImpl end
+
+const CXWarnUnusedResultAttr = Ptr{CXWarnUnusedResultAttrImpl}
+
+mutable struct CXWeakAttrImpl <: AbstractCXImpl end
+
+const CXWeakAttr = Ptr{CXWeakAttrImpl}
+
+mutable struct CXWeakImportAttrImpl <: AbstractCXImpl end
+
+const CXWeakImportAttr = Ptr{CXWeakImportAttrImpl}
+
+mutable struct CXWeakRefAttrImpl <: AbstractCXImpl end
+
+const CXWeakRefAttr = Ptr{CXWeakRefAttrImpl}
+
+mutable struct CXWebAssemblyExportNameAttrImpl <: AbstractCXImpl end
+
+const CXWebAssemblyExportNameAttr = Ptr{CXWebAssemblyExportNameAttrImpl}
+
+mutable struct CXWebAssemblyImportModuleAttrImpl <: AbstractCXImpl end
+
+const CXWebAssemblyImportModuleAttr = Ptr{CXWebAssemblyImportModuleAttrImpl}
+
+mutable struct CXWebAssemblyImportNameAttrImpl <: AbstractCXImpl end
+
+const CXWebAssemblyImportNameAttr = Ptr{CXWebAssemblyImportNameAttrImpl}
+
+mutable struct CXWorkGroupSizeHintAttrImpl <: AbstractCXImpl end
+
+const CXWorkGroupSizeHintAttr = Ptr{CXWorkGroupSizeHintAttrImpl}
+
+mutable struct CXX86ForceAlignArgPointerAttrImpl <: AbstractCXImpl end
+
+const CXX86ForceAlignArgPointerAttr = Ptr{CXX86ForceAlignArgPointerAttrImpl}
+
+mutable struct CXXRayInstrumentAttrImpl <: AbstractCXImpl end
+
+const CXXRayInstrumentAttr = Ptr{CXXRayInstrumentAttrImpl}
+
+mutable struct CXXRayLogArgsAttrImpl <: AbstractCXImpl end
+
+const CXXRayLogArgsAttr = Ptr{CXXRayLogArgsAttrImpl}
+
+mutable struct CXZeroCallUsedRegsAttrImpl <: AbstractCXImpl end
+
+const CXZeroCallUsedRegsAttr = Ptr{CXZeroCallUsedRegsAttrImpl}
+
+mutable struct CXAbiTagAttrImpl <: AbstractCXImpl end
+
+const CXAbiTagAttr = Ptr{CXAbiTagAttrImpl}
+
+mutable struct CXAliasAttrImpl <: AbstractCXImpl end
+
+const CXAliasAttr = Ptr{CXAliasAttrImpl}
+
+mutable struct CXAlignValueAttrImpl <: AbstractCXImpl end
+
+const CXAlignValueAttr = Ptr{CXAlignValueAttrImpl}
+
+mutable struct CXBuiltinAliasAttrImpl <: AbstractCXImpl end
+
+const CXBuiltinAliasAttr = Ptr{CXBuiltinAliasAttrImpl}
+
+mutable struct CXCalledOnceAttrImpl <: AbstractCXImpl end
+
+const CXCalledOnceAttr = Ptr{CXCalledOnceAttrImpl}
+
+mutable struct CXIFuncAttrImpl <: AbstractCXImpl end
+
+const CXIFuncAttr = Ptr{CXIFuncAttrImpl}
+
+mutable struct CXInitSegAttrImpl <: AbstractCXImpl end
+
+const CXInitSegAttr = Ptr{CXInitSegAttrImpl}
+
+mutable struct CXLoaderUninitializedAttrImpl <: AbstractCXImpl end
+
+const CXLoaderUninitializedAttr = Ptr{CXLoaderUninitializedAttrImpl}
+
+mutable struct CXLoopHintAttrImpl <: AbstractCXImpl end
+
+const CXLoopHintAttr = Ptr{CXLoopHintAttrImpl}
+
+mutable struct CXModeAttrImpl <: AbstractCXImpl end
+
+const CXModeAttr = Ptr{CXModeAttrImpl}
+
+mutable struct CXNoBuiltinAttrImpl <: AbstractCXImpl end
+
+const CXNoBuiltinAttr = Ptr{CXNoBuiltinAttrImpl}
+
+mutable struct CXNoEscapeAttrImpl <: AbstractCXImpl end
+
+const CXNoEscapeAttr = Ptr{CXNoEscapeAttrImpl}
+
+mutable struct CXOMPCaptureKindAttrImpl <: AbstractCXImpl end
+
+const CXOMPCaptureKindAttr = Ptr{CXOMPCaptureKindAttrImpl}
+
+mutable struct CXOMPDeclareSimdDeclAttrImpl <: AbstractCXImpl end
+
+const CXOMPDeclareSimdDeclAttr = Ptr{CXOMPDeclareSimdDeclAttrImpl}
+
+mutable struct CXOMPReferencedVarAttrImpl <: AbstractCXImpl end
+
+const CXOMPReferencedVarAttr = Ptr{CXOMPReferencedVarAttrImpl}
+
+mutable struct CXObjCBoxableAttrImpl <: AbstractCXImpl end
+
+const CXObjCBoxableAttr = Ptr{CXObjCBoxableAttrImpl}
+
+mutable struct CXObjCClassStubAttrImpl <: AbstractCXImpl end
+
+const CXObjCClassStubAttr = Ptr{CXObjCClassStubAttrImpl}
+
+mutable struct CXObjCDesignatedInitializerAttrImpl <: AbstractCXImpl end
+
+const CXObjCDesignatedInitializerAttr = Ptr{CXObjCDesignatedInitializerAttrImpl}
+
+mutable struct CXObjCDirectAttrImpl <: AbstractCXImpl end
+
+const CXObjCDirectAttr = Ptr{CXObjCDirectAttrImpl}
+
+mutable struct CXObjCDirectMembersAttrImpl <: AbstractCXImpl end
+
+const CXObjCDirectMembersAttr = Ptr{CXObjCDirectMembersAttrImpl}
+
+mutable struct CXObjCNonLazyClassAttrImpl <: AbstractCXImpl end
+
+const CXObjCNonLazyClassAttr = Ptr{CXObjCNonLazyClassAttrImpl}
+
+mutable struct CXObjCNonRuntimeProtocolAttrImpl <: AbstractCXImpl end
+
+const CXObjCNonRuntimeProtocolAttr = Ptr{CXObjCNonRuntimeProtocolAttrImpl}
+
+mutable struct CXObjCRuntimeNameAttrImpl <: AbstractCXImpl end
+
+const CXObjCRuntimeNameAttr = Ptr{CXObjCRuntimeNameAttrImpl}
+
+mutable struct CXObjCRuntimeVisibleAttrImpl <: AbstractCXImpl end
+
+const CXObjCRuntimeVisibleAttr = Ptr{CXObjCRuntimeVisibleAttrImpl}
+
+mutable struct CXOpenCLAccessAttrImpl <: AbstractCXImpl end
+
+const CXOpenCLAccessAttr = Ptr{CXOpenCLAccessAttrImpl}
+
+mutable struct CXOverloadableAttrImpl <: AbstractCXImpl end
+
+const CXOverloadableAttr = Ptr{CXOverloadableAttrImpl}
+
+mutable struct CXRenderScriptKernelAttrImpl <: AbstractCXImpl end
+
+const CXRenderScriptKernelAttr = Ptr{CXRenderScriptKernelAttrImpl}
+
+mutable struct CXSwiftObjCMembersAttrImpl <: AbstractCXImpl end
+
+const CXSwiftObjCMembersAttr = Ptr{CXSwiftObjCMembersAttrImpl}
+
+mutable struct CXSwiftVersionedAdditionAttrImpl <: AbstractCXImpl end
+
+const CXSwiftVersionedAdditionAttr = Ptr{CXSwiftVersionedAdditionAttrImpl}
+
+mutable struct CXSwiftVersionedRemovalAttrImpl <: AbstractCXImpl end
+
+const CXSwiftVersionedRemovalAttr = Ptr{CXSwiftVersionedRemovalAttrImpl}
+
+mutable struct CXThreadAttrImpl <: AbstractCXImpl end
+
+const CXThreadAttr = Ptr{CXThreadAttrImpl}
+
+mutable struct CXAdjustedTypeImpl <: AbstractCXImpl end
+
+const CXAdjustedType = Ptr{CXAdjustedTypeImpl}
+
+mutable struct CXDecayedTypeImpl <: AbstractCXImpl end
+
+const CXDecayedType = Ptr{CXDecayedTypeImpl}
+
+mutable struct CXArrayTypeImpl <: AbstractCXImpl end
+
+const CXArrayType = Ptr{CXArrayTypeImpl}
+
+mutable struct CXConstantArrayTypeImpl <: AbstractCXImpl end
+
+const CXConstantArrayType = Ptr{CXConstantArrayTypeImpl}
+
+mutable struct CXDependentSizedArrayTypeImpl <: AbstractCXImpl end
+
+const CXDependentSizedArrayType = Ptr{CXDependentSizedArrayTypeImpl}
+
+mutable struct CXIncompleteArrayTypeImpl <: AbstractCXImpl end
+
+const CXIncompleteArrayType = Ptr{CXIncompleteArrayTypeImpl}
+
+mutable struct CXVariableArrayTypeImpl <: AbstractCXImpl end
+
+const CXVariableArrayType = Ptr{CXVariableArrayTypeImpl}
+
+mutable struct CXAtomicTypeImpl <: AbstractCXImpl end
+
+const CXAtomicType = Ptr{CXAtomicTypeImpl}
+
+mutable struct CXAttributedTypeImpl <: AbstractCXImpl end
+
+const CXAttributedType = Ptr{CXAttributedTypeImpl}
+
+mutable struct CXBTFTagAttributedTypeImpl <: AbstractCXImpl end
+
+const CXBTFTagAttributedType = Ptr{CXBTFTagAttributedTypeImpl}
+
+mutable struct CXBitIntTypeImpl <: AbstractCXImpl end
+
+const CXBitIntType = Ptr{CXBitIntTypeImpl}
+
+mutable struct CXBlockPointerTypeImpl <: AbstractCXImpl end
+
+const CXBlockPointerType = Ptr{CXBlockPointerTypeImpl}
+
+mutable struct CXBuiltinTypeImpl <: AbstractCXImpl end
+
+const CXBuiltinType = Ptr{CXBuiltinTypeImpl}
+
+mutable struct CXComplexTypeImpl <: AbstractCXImpl end
+
+const CXComplexType = Ptr{CXComplexTypeImpl}
+
+mutable struct CXDecltypeTypeImpl <: AbstractCXImpl end
+
+const CXDecltypeType = Ptr{CXDecltypeTypeImpl}
+
+mutable struct CXDeducedTypeImpl <: AbstractCXImpl end
+
+const CXDeducedType = Ptr{CXDeducedTypeImpl}
+
+mutable struct CXAutoTypeImpl <: AbstractCXImpl end
+
+const CXAutoType = Ptr{CXAutoTypeImpl}
+
+mutable struct CXDeducedTemplateSpecializationTypeImpl <: AbstractCXImpl end
+
+const CXDeducedTemplateSpecializationType = Ptr{CXDeducedTemplateSpecializationTypeImpl}
+
+mutable struct CXDependentAddressSpaceTypeImpl <: AbstractCXImpl end
+
+const CXDependentAddressSpaceType = Ptr{CXDependentAddressSpaceTypeImpl}
+
+mutable struct CXDependentBitIntTypeImpl <: AbstractCXImpl end
+
+const CXDependentBitIntType = Ptr{CXDependentBitIntTypeImpl}
+
+mutable struct CXDependentNameTypeImpl <: AbstractCXImpl end
+
+const CXDependentNameType = Ptr{CXDependentNameTypeImpl}
+
+mutable struct CXDependentSizedExtVectorTypeImpl <: AbstractCXImpl end
+
+const CXDependentSizedExtVectorType = Ptr{CXDependentSizedExtVectorTypeImpl}
+
+mutable struct CXDependentTemplateSpecializationTypeImpl <: AbstractCXImpl end
+
+const CXDependentTemplateSpecializationType = Ptr{CXDependentTemplateSpecializationTypeImpl}
+
+mutable struct CXDependentVectorTypeImpl <: AbstractCXImpl end
+
+const CXDependentVectorType = Ptr{CXDependentVectorTypeImpl}
+
+mutable struct CXElaboratedTypeImpl <: AbstractCXImpl end
+
+const CXElaboratedType = Ptr{CXElaboratedTypeImpl}
+
+mutable struct CXFunctionTypeImpl <: AbstractCXImpl end
+
+const CXFunctionType = Ptr{CXFunctionTypeImpl}
+
+mutable struct CXFunctionNoProtoTypeImpl <: AbstractCXImpl end
+
+const CXFunctionNoProtoType = Ptr{CXFunctionNoProtoTypeImpl}
+
+mutable struct CXFunctionProtoTypeImpl <: AbstractCXImpl end
+
+const CXFunctionProtoType = Ptr{CXFunctionProtoTypeImpl}
+
+mutable struct CXInjectedClassNameTypeImpl <: AbstractCXImpl end
+
+const CXInjectedClassNameType = Ptr{CXInjectedClassNameTypeImpl}
+
+mutable struct CXMacroQualifiedTypeImpl <: AbstractCXImpl end
+
+const CXMacroQualifiedType = Ptr{CXMacroQualifiedTypeImpl}
+
+mutable struct CXMatrixTypeImpl <: AbstractCXImpl end
+
+const CXMatrixType = Ptr{CXMatrixTypeImpl}
+
+mutable struct CXConstantMatrixTypeImpl <: AbstractCXImpl end
+
+const CXConstantMatrixType = Ptr{CXConstantMatrixTypeImpl}
+
+mutable struct CXDependentSizedMatrixTypeImpl <: AbstractCXImpl end
+
+const CXDependentSizedMatrixType = Ptr{CXDependentSizedMatrixTypeImpl}
+
+mutable struct CXMemberPointerTypeImpl <: AbstractCXImpl end
+
+const CXMemberPointerType = Ptr{CXMemberPointerTypeImpl}
+
+mutable struct CXObjCObjectPointerTypeImpl <: AbstractCXImpl end
+
+const CXObjCObjectPointerType = Ptr{CXObjCObjectPointerTypeImpl}
+
+mutable struct CXObjCObjectTypeImpl <: AbstractCXImpl end
+
+const CXObjCObjectType = Ptr{CXObjCObjectTypeImpl}
+
+mutable struct CXObjCInterfaceTypeImpl <: AbstractCXImpl end
+
+const CXObjCInterfaceType = Ptr{CXObjCInterfaceTypeImpl}
+
+mutable struct CXObjCTypeParamTypeImpl <: AbstractCXImpl end
+
+const CXObjCTypeParamType = Ptr{CXObjCTypeParamTypeImpl}
+
+mutable struct CXPackExpansionTypeImpl <: AbstractCXImpl end
+
+const CXPackExpansionType = Ptr{CXPackExpansionTypeImpl}
+
+mutable struct CXParenTypeImpl <: AbstractCXImpl end
+
+const CXParenType = Ptr{CXParenTypeImpl}
+
+mutable struct CXPipeTypeImpl <: AbstractCXImpl end
+
+const CXPipeType = Ptr{CXPipeTypeImpl}
+
+mutable struct CXPointerTypeImpl <: AbstractCXImpl end
+
+const CXPointerType = Ptr{CXPointerTypeImpl}
+
+mutable struct CXReferenceTypeImpl <: AbstractCXImpl end
+
+const CXReferenceType = Ptr{CXReferenceTypeImpl}
+
+mutable struct CXLValueReferenceTypeImpl <: AbstractCXImpl end
+
+const CXLValueReferenceType = Ptr{CXLValueReferenceTypeImpl}
+
+mutable struct CXRValueReferenceTypeImpl <: AbstractCXImpl end
+
+const CXRValueReferenceType = Ptr{CXRValueReferenceTypeImpl}
+
+mutable struct CXSubstTemplateTypeParmPackTypeImpl <: AbstractCXImpl end
+
+const CXSubstTemplateTypeParmPackType = Ptr{CXSubstTemplateTypeParmPackTypeImpl}
+
+mutable struct CXSubstTemplateTypeParmTypeImpl <: AbstractCXImpl end
+
+const CXSubstTemplateTypeParmType = Ptr{CXSubstTemplateTypeParmTypeImpl}
+
+mutable struct CXTagTypeImpl <: AbstractCXImpl end
+
+const CXTagType = Ptr{CXTagTypeImpl}
+
+mutable struct CXEnumTypeImpl <: AbstractCXImpl end
+
+const CXEnumType = Ptr{CXEnumTypeImpl}
+
+mutable struct CXRecordTypeImpl <: AbstractCXImpl end
+
+const CXRecordType = Ptr{CXRecordTypeImpl}
+
+mutable struct CXTemplateSpecializationTypeImpl <: AbstractCXImpl end
+
+const CXTemplateSpecializationType = Ptr{CXTemplateSpecializationTypeImpl}
+
+mutable struct CXTemplateTypeParmTypeImpl <: AbstractCXImpl end
+
+const CXTemplateTypeParmType = Ptr{CXTemplateTypeParmTypeImpl}
+
+mutable struct CXTypeOfExprTypeImpl <: AbstractCXImpl end
+
+const CXTypeOfExprType = Ptr{CXTypeOfExprTypeImpl}
+
+mutable struct CXTypeOfTypeImpl <: AbstractCXImpl end
+
+const CXTypeOfType = Ptr{CXTypeOfTypeImpl}
+
+mutable struct CXTypedefTypeImpl <: AbstractCXImpl end
+
+const CXTypedefType = Ptr{CXTypedefTypeImpl}
+
+mutable struct CXUnaryTransformTypeImpl <: AbstractCXImpl end
+
+const CXUnaryTransformType = Ptr{CXUnaryTransformTypeImpl}
+
+mutable struct CXUnresolvedUsingTypeImpl <: AbstractCXImpl end
+
+const CXUnresolvedUsingType = Ptr{CXUnresolvedUsingTypeImpl}
+
+mutable struct CXUsingTypeImpl <: AbstractCXImpl end
+
+const CXUsingType = Ptr{CXUsingTypeImpl}
+
+mutable struct CXVectorTypeImpl <: AbstractCXImpl end
+
+const CXVectorType = Ptr{CXVectorTypeImpl}
+
+mutable struct CXExtVectorTypeImpl <: AbstractCXImpl end
+
+const CXExtVectorType = Ptr{CXExtVectorTypeImpl}
+
+mutable struct CXAdjustedTypeLocImpl <: AbstractCXImpl end
+
+const CXAdjustedTypeLoc = Ptr{CXAdjustedTypeLocImpl}
+
+mutable struct CXDecayedTypeLocImpl <: AbstractCXImpl end
+
+const CXDecayedTypeLoc = Ptr{CXDecayedTypeLocImpl}
+
+mutable struct CXConstantArrayTypeLocImpl <: AbstractCXImpl end
+
+const CXConstantArrayTypeLoc = Ptr{CXConstantArrayTypeLocImpl}
+
+mutable struct CXDependentSizedArrayTypeLocImpl <: AbstractCXImpl end
+
+const CXDependentSizedArrayTypeLoc = Ptr{CXDependentSizedArrayTypeLocImpl}
+
+mutable struct CXIncompleteArrayTypeLocImpl <: AbstractCXImpl end
+
+const CXIncompleteArrayTypeLoc = Ptr{CXIncompleteArrayTypeLocImpl}
+
+mutable struct CXVariableArrayTypeLocImpl <: AbstractCXImpl end
+
+const CXVariableArrayTypeLoc = Ptr{CXVariableArrayTypeLocImpl}
+
+mutable struct CXAtomicTypeLocImpl <: AbstractCXImpl end
+
+const CXAtomicTypeLoc = Ptr{CXAtomicTypeLocImpl}
+
+mutable struct CXAttributedTypeLocImpl <: AbstractCXImpl end
+
+const CXAttributedTypeLoc = Ptr{CXAttributedTypeLocImpl}
+
+mutable struct CXBTFTagAttributedTypeLocImpl <: AbstractCXImpl end
+
+const CXBTFTagAttributedTypeLoc = Ptr{CXBTFTagAttributedTypeLocImpl}
+
+mutable struct CXBitIntTypeLocImpl <: AbstractCXImpl end
+
+const CXBitIntTypeLoc = Ptr{CXBitIntTypeLocImpl}
+
+mutable struct CXBlockPointerTypeLocImpl <: AbstractCXImpl end
+
+const CXBlockPointerTypeLoc = Ptr{CXBlockPointerTypeLocImpl}
+
+mutable struct CXBuiltinTypeLocImpl <: AbstractCXImpl end
+
+const CXBuiltinTypeLoc = Ptr{CXBuiltinTypeLocImpl}
+
+mutable struct CXComplexTypeLocImpl <: AbstractCXImpl end
+
+const CXComplexTypeLoc = Ptr{CXComplexTypeLocImpl}
+
+mutable struct CXDecltypeTypeLocImpl <: AbstractCXImpl end
+
+const CXDecltypeTypeLoc = Ptr{CXDecltypeTypeLocImpl}
+
+mutable struct CXAutoTypeLocImpl <: AbstractCXImpl end
+
+const CXAutoTypeLoc = Ptr{CXAutoTypeLocImpl}
+
+mutable struct CXDeducedTemplateSpecializationTypeLocImpl <: AbstractCXImpl end
+
+const CXDeducedTemplateSpecializationTypeLoc = Ptr{CXDeducedTemplateSpecializationTypeLocImpl}
+
+mutable struct CXDependentAddressSpaceTypeLocImpl <: AbstractCXImpl end
+
+const CXDependentAddressSpaceTypeLoc = Ptr{CXDependentAddressSpaceTypeLocImpl}
+
+mutable struct CXDependentBitIntTypeLocImpl <: AbstractCXImpl end
+
+const CXDependentBitIntTypeLoc = Ptr{CXDependentBitIntTypeLocImpl}
+
+mutable struct CXDependentNameTypeLocImpl <: AbstractCXImpl end
+
+const CXDependentNameTypeLoc = Ptr{CXDependentNameTypeLocImpl}
+
+mutable struct CXDependentSizedExtVectorTypeLocImpl <: AbstractCXImpl end
+
+const CXDependentSizedExtVectorTypeLoc = Ptr{CXDependentSizedExtVectorTypeLocImpl}
+
+mutable struct CXDependentTemplateSpecializationTypeLocImpl <: AbstractCXImpl end
+
+const CXDependentTemplateSpecializationTypeLoc = Ptr{CXDependentTemplateSpecializationTypeLocImpl}
+
+mutable struct CXDependentVectorTypeLocImpl <: AbstractCXImpl end
+
+const CXDependentVectorTypeLoc = Ptr{CXDependentVectorTypeLocImpl}
+
+mutable struct CXElaboratedTypeLocImpl <: AbstractCXImpl end
+
+const CXElaboratedTypeLoc = Ptr{CXElaboratedTypeLocImpl}
+
+mutable struct CXFunctionNoProtoTypeLocImpl <: AbstractCXImpl end
+
+const CXFunctionNoProtoTypeLoc = Ptr{CXFunctionNoProtoTypeLocImpl}
+
+mutable struct CXFunctionProtoTypeLocImpl <: AbstractCXImpl end
+
+const CXFunctionProtoTypeLoc = Ptr{CXFunctionProtoTypeLocImpl}
+
+mutable struct CXInjectedClassNameTypeLocImpl <: AbstractCXImpl end
+
+const CXInjectedClassNameTypeLoc = Ptr{CXInjectedClassNameTypeLocImpl}
+
+mutable struct CXMacroQualifiedTypeLocImpl <: AbstractCXImpl end
+
+const CXMacroQualifiedTypeLoc = Ptr{CXMacroQualifiedTypeLocImpl}
+
+mutable struct CXConstantMatrixTypeLocImpl <: AbstractCXImpl end
+
+const CXConstantMatrixTypeLoc = Ptr{CXConstantMatrixTypeLocImpl}
+
+mutable struct CXDependentSizedMatrixTypeLocImpl <: AbstractCXImpl end
+
+const CXDependentSizedMatrixTypeLoc = Ptr{CXDependentSizedMatrixTypeLocImpl}
+
+mutable struct CXMemberPointerTypeLocImpl <: AbstractCXImpl end
+
+const CXMemberPointerTypeLoc = Ptr{CXMemberPointerTypeLocImpl}
+
+mutable struct CXObjCObjectPointerTypeLocImpl <: AbstractCXImpl end
+
+const CXObjCObjectPointerTypeLoc = Ptr{CXObjCObjectPointerTypeLocImpl}
+
+mutable struct CXObjCObjectTypeLocImpl <: AbstractCXImpl end
+
+const CXObjCObjectTypeLoc = Ptr{CXObjCObjectTypeLocImpl}
+
+mutable struct CXObjCInterfaceTypeLocImpl <: AbstractCXImpl end
+
+const CXObjCInterfaceTypeLoc = Ptr{CXObjCInterfaceTypeLocImpl}
+
+mutable struct CXObjCTypeParamTypeLocImpl <: AbstractCXImpl end
+
+const CXObjCTypeParamTypeLoc = Ptr{CXObjCTypeParamTypeLocImpl}
+
+mutable struct CXPackExpansionTypeLocImpl <: AbstractCXImpl end
+
+const CXPackExpansionTypeLoc = Ptr{CXPackExpansionTypeLocImpl}
+
+mutable struct CXParenTypeLocImpl <: AbstractCXImpl end
+
+const CXParenTypeLoc = Ptr{CXParenTypeLocImpl}
+
+mutable struct CXPipeTypeLocImpl <: AbstractCXImpl end
+
+const CXPipeTypeLoc = Ptr{CXPipeTypeLocImpl}
+
+mutable struct CXPointerTypeLocImpl <: AbstractCXImpl end
+
+const CXPointerTypeLoc = Ptr{CXPointerTypeLocImpl}
+
+mutable struct CXLValueReferenceTypeLocImpl <: AbstractCXImpl end
+
+const CXLValueReferenceTypeLoc = Ptr{CXLValueReferenceTypeLocImpl}
+
+mutable struct CXRValueReferenceTypeLocImpl <: AbstractCXImpl end
+
+const CXRValueReferenceTypeLoc = Ptr{CXRValueReferenceTypeLocImpl}
+
+mutable struct CXSubstTemplateTypeParmPackTypeLocImpl <: AbstractCXImpl end
+
+const CXSubstTemplateTypeParmPackTypeLoc = Ptr{CXSubstTemplateTypeParmPackTypeLocImpl}
+
+mutable struct CXSubstTemplateTypeParmTypeLocImpl <: AbstractCXImpl end
+
+const CXSubstTemplateTypeParmTypeLoc = Ptr{CXSubstTemplateTypeParmTypeLocImpl}
+
+mutable struct CXEnumTypeLocImpl <: AbstractCXImpl end
+
+const CXEnumTypeLoc = Ptr{CXEnumTypeLocImpl}
+
+mutable struct CXRecordTypeLocImpl <: AbstractCXImpl end
+
+const CXRecordTypeLoc = Ptr{CXRecordTypeLocImpl}
+
+mutable struct CXTemplateSpecializationTypeLocImpl <: AbstractCXImpl end
+
+const CXTemplateSpecializationTypeLoc = Ptr{CXTemplateSpecializationTypeLocImpl}
+
+mutable struct CXTemplateTypeParmTypeLocImpl <: AbstractCXImpl end
+
+const CXTemplateTypeParmTypeLoc = Ptr{CXTemplateTypeParmTypeLocImpl}
+
+mutable struct CXTypeOfExprTypeLocImpl <: AbstractCXImpl end
+
+const CXTypeOfExprTypeLoc = Ptr{CXTypeOfExprTypeLocImpl}
+
+mutable struct CXTypeOfTypeLocImpl <: AbstractCXImpl end
+
+const CXTypeOfTypeLoc = Ptr{CXTypeOfTypeLocImpl}
+
+mutable struct CXTypedefTypeLocImpl <: AbstractCXImpl end
+
+const CXTypedefTypeLoc = Ptr{CXTypedefTypeLocImpl}
+
+mutable struct CXUnaryTransformTypeLocImpl <: AbstractCXImpl end
+
+const CXUnaryTransformTypeLoc = Ptr{CXUnaryTransformTypeLocImpl}
+
+mutable struct CXUnresolvedUsingTypeLocImpl <: AbstractCXImpl end
+
+const CXUnresolvedUsingTypeLoc = Ptr{CXUnresolvedUsingTypeLocImpl}
+
+mutable struct CXUsingTypeLocImpl <: AbstractCXImpl end
+
+const CXUsingTypeLoc = Ptr{CXUsingTypeLocImpl}
+
+mutable struct CXVectorTypeLocImpl <: AbstractCXImpl end
+
+const CXVectorTypeLoc = Ptr{CXVectorTypeLocImpl}
+
+mutable struct CXExtVectorTypeLocImpl <: AbstractCXImpl end
+
+const CXExtVectorTypeLoc = Ptr{CXExtVectorTypeLocImpl}
+
+mutable struct CXQualifiedTypeLocImpl <: AbstractCXImpl end
+
+const CXQualifiedTypeLoc = Ptr{CXQualifiedTypeLocImpl}
+
+mutable struct CXTypeSpecTypeLocImpl <: AbstractCXImpl end
+
+const CXTypeSpecTypeLoc = Ptr{CXTypeSpecTypeLocImpl}
+
+mutable struct CXFunctionTypeLocImpl <: AbstractCXImpl end
+
+const CXFunctionTypeLoc = Ptr{CXFunctionTypeLocImpl}
+
+mutable struct CXArrayTypeLocImpl <: AbstractCXImpl end
+
+const CXArrayTypeLoc = Ptr{CXArrayTypeLocImpl}
 
 struct CXArrayRef
     Data::Ptr{Cvoid}
     Length::Csize_t
 end
 
-const CXAPINotesOptions = Ptr{Cvoid}
+mutable struct CXAPINotesOptionsImpl <: AbstractCXImpl end
 
-const CXPrintingPolicy = Ptr{Cvoid}
+const CXAPINotesOptions = Ptr{CXAPINotesOptionsImpl}
 
-const CXASTConsumer = Ptr{Cvoid}
+mutable struct CXPrintingPolicy_Impl <: AbstractCXImpl end
 
-const CXDeclInfo = Ptr{Cvoid}
+const CXPrintingPolicy_ = Ptr{CXPrintingPolicy_Impl}
 
-const CXVerbatimLineComment = Ptr{Cvoid}
+mutable struct CXASTConsumerImpl <: AbstractCXImpl end
 
-const CXVerbatimBlockComment = Ptr{Cvoid}
+const CXASTConsumer = Ptr{CXASTConsumerImpl}
 
-const CXVerbatimBlockLineComment = Ptr{Cvoid}
+mutable struct CXDeclInfoImpl <: AbstractCXImpl end
 
-const CXTParamCommandComment = Ptr{Cvoid}
+const CXDeclInfo = Ptr{CXDeclInfoImpl}
 
-const CXHTMLEndTagComment = Ptr{Cvoid}
+mutable struct CXVerbatimLineCommentImpl <: AbstractCXImpl end
 
-const CXHTMLStartTagComment = Ptr{Cvoid}
+const CXVerbatimLineComment = Ptr{CXVerbatimLineCommentImpl}
 
-const CXHTMLTagComment = Ptr{Cvoid}
+mutable struct CXVerbatimBlockCommentImpl <: AbstractCXImpl end
 
-const CXInlineCommandComment = Ptr{Cvoid}
+const CXVerbatimBlockComment = Ptr{CXVerbatimBlockCommentImpl}
 
-const CXParagraphComment = Ptr{Cvoid}
+mutable struct CXVerbatimBlockLineCommentImpl <: AbstractCXImpl end
 
-const CXInlineContentComment = Ptr{Cvoid}
+const CXVerbatimBlockLineComment = Ptr{CXVerbatimBlockLineCommentImpl}
 
-const CXFullComment = Ptr{Cvoid}
+mutable struct CXTParamCommandCommentImpl <: AbstractCXImpl end
 
-const CXParamCommandComment = Ptr{Cvoid}
+const CXTParamCommandComment = Ptr{CXTParamCommandCommentImpl}
 
-const CXBlockCommandComment = Ptr{Cvoid}
+mutable struct CXHTMLEndTagCommentImpl <: AbstractCXImpl end
 
-const CXTextComment = Ptr{Cvoid}
+const CXHTMLEndTagComment = Ptr{CXHTMLEndTagCommentImpl}
 
-const CXComment = Ptr{Cvoid}
+mutable struct CXHTMLStartTagCommentImpl <: AbstractCXImpl end
 
-const CXRawComment = Ptr{Cvoid}
+const CXHTMLStartTagComment = Ptr{CXHTMLStartTagCommentImpl}
 
-const CXRawCommentList = Ptr{Cvoid}
+mutable struct CXHTMLTagCommentImpl <: AbstractCXImpl end
 
-const CXASTContext = Ptr{Cvoid}
+const CXHTMLTagComment = Ptr{CXHTMLTagCommentImpl}
 
-const CXHLSLBufferDecl = Ptr{Cvoid}
+mutable struct CXInlineCommandCommentImpl <: AbstractCXImpl end
 
-const CXTranslationUnitDecl = Ptr{Cvoid}
+const CXInlineCommandComment = Ptr{CXInlineCommandCommentImpl}
 
-const CXPragmaCommentDecl = Ptr{Cvoid}
+mutable struct CXParagraphCommentImpl <: AbstractCXImpl end
 
-const CXPragmaDetectMismatchDecl = Ptr{Cvoid}
+const CXParagraphComment = Ptr{CXParagraphCommentImpl}
 
-const CXExternCContextDecl = Ptr{Cvoid}
+mutable struct CXInlineContentCommentImpl <: AbstractCXImpl end
 
-const CXNamedDecl = Ptr{Cvoid}
+const CXInlineContentComment = Ptr{CXInlineContentCommentImpl}
 
-const CXLabelDecl = Ptr{Cvoid}
+mutable struct CXFullCommentImpl <: AbstractCXImpl end
 
-const CXNamespaceDecl = Ptr{Cvoid}
+const CXFullComment = Ptr{CXFullCommentImpl}
 
-const CXValueDecl = Ptr{Cvoid}
+mutable struct CXParamCommandCommentImpl <: AbstractCXImpl end
 
-const CXDeclaratorDecl = Ptr{Cvoid}
+const CXParamCommandComment = Ptr{CXParamCommandCommentImpl}
 
-const CXEvaluatedStmt = Ptr{Cvoid}
+mutable struct CXBlockCommandCommentImpl <: AbstractCXImpl end
 
-const CXVarDecl = Ptr{Cvoid}
+const CXBlockCommandComment = Ptr{CXBlockCommandCommentImpl}
 
-const CXImplicitParamDecl = Ptr{Cvoid}
+mutable struct CXTextCommentImpl <: AbstractCXImpl end
 
-const CXParmVarDecl = Ptr{Cvoid}
+const CXTextComment = Ptr{CXTextCommentImpl}
 
-const CXFunctionDecl = Ptr{Cvoid}
+mutable struct CXCommentImpl <: AbstractCXImpl end
 
-const CXFieldDecl = Ptr{Cvoid}
+const CXComment = Ptr{CXCommentImpl}
 
-const CXEnumConstantDecl = Ptr{Cvoid}
+mutable struct CXRawCommentImpl <: AbstractCXImpl end
 
-const CXIndirectFieldDecl = Ptr{Cvoid}
+const CXRawComment = Ptr{CXRawCommentImpl}
 
-const CXTypeDecl = Ptr{Cvoid}
+mutable struct CXRawCommentListImpl <: AbstractCXImpl end
 
-const CXTypedefNameDecl = Ptr{Cvoid}
+const CXRawCommentList = Ptr{CXRawCommentListImpl}
 
-const CXTypedefDecl = Ptr{Cvoid}
+mutable struct CXASTContextImpl <: AbstractCXImpl end
 
-const CXTypeAliasDecl = Ptr{Cvoid}
+const CXASTContext = Ptr{CXASTContextImpl}
 
-const CXTagDecl = Ptr{Cvoid}
+mutable struct CXEvaluatedStmtImpl <: AbstractCXImpl end
 
-const CXEnumDecl = Ptr{Cvoid}
+const CXEvaluatedStmt = Ptr{CXEvaluatedStmtImpl}
 
-const CXRecordDecl = Ptr{Cvoid}
+mutable struct CXDeclarationNameTableImpl <: AbstractCXImpl end
 
-const CXFileScopeAsmDecl = Ptr{Cvoid}
+const CXDeclarationNameTable = Ptr{CXDeclarationNameTableImpl}
 
-const CXBlockDecl = Ptr{Cvoid}
+mutable struct CXDeclarationNameImpl <: AbstractCXImpl end
 
-const CXCapturedDecl = Ptr{Cvoid}
+const CXDeclarationName = Ptr{CXDeclarationNameImpl}
 
-const CXImportDecl = Ptr{Cvoid}
+mutable struct CXDeclarationNameInfoImpl <: AbstractCXImpl end
 
-const CXExportDecl = Ptr{Cvoid}
+const CXDeclarationNameInfo = Ptr{CXDeclarationNameInfoImpl}
 
-const CXEmptyDecl = Ptr{Cvoid}
+mutable struct CXDeclImpl <: AbstractCXImpl end
 
-const CXTopLevelStmtDecl = Ptr{Cvoid}
+const CXDecl = Ptr{CXDeclImpl}
 
-const CXDeclarationNameTable = Ptr{Cvoid}
+mutable struct CXDeclContextImpl <: AbstractCXImpl end
 
-const CXDeclarationName = Ptr{Cvoid}
+const CXDeclContext = Ptr{CXDeclContextImpl}
 
-const CXDeclarationNameInfo = Ptr{Cvoid}
+mutable struct CXCXXBaseSpecifierImpl <: AbstractCXImpl end
 
-const CXDecl = Ptr{Cvoid}
+const CXCXXBaseSpecifier = Ptr{CXCXXBaseSpecifierImpl}
 
-const CXDeclContext = Ptr{Cvoid}
+mutable struct CXExplicitSpecifierImpl <: AbstractCXImpl end
 
-const CXUnnamedGlobalConstantDecl = Ptr{Cvoid}
+const CXExplicitSpecifier = Ptr{CXExplicitSpecifierImpl}
 
-const CXUnresolvedUsingIfExistsDecl = Ptr{Cvoid}
+mutable struct CXCXXCtorInitializerImpl <: AbstractCXImpl end
 
-const CXUsingEnumDecl = Ptr{Cvoid}
+const CXCXXCtorInitializer = Ptr{CXCXXCtorInitializerImpl}
 
-const CXAccessSpecDecl = Ptr{Cvoid}
+mutable struct CXDeclGroupRefImpl <: AbstractCXImpl end
 
-const CXCXXBaseSpecifier = Ptr{Cvoid}
+const CXDeclGroupRef = Ptr{CXDeclGroupRefImpl}
 
-const CXCXXRecordDecl = Ptr{Cvoid}
+mutable struct CXTemplateParameterListImpl <: AbstractCXImpl end
 
-const CXExplicitSpecifier = Ptr{Cvoid}
+const CXTemplateParameterList = Ptr{CXTemplateParameterListImpl}
 
-const CXCXXDeductionGuideDecl = Ptr{Cvoid}
+mutable struct CXTemplateArgumentListImpl <: AbstractCXImpl end
 
-const CXRequiresExprBodyDecl = Ptr{Cvoid}
+const CXTemplateArgumentList = Ptr{CXTemplateArgumentListImpl}
 
-const CXCXXMethodDecl = Ptr{Cvoid}
+mutable struct CXFunctionTemplateSpecializationInfoImpl <: AbstractCXImpl end
 
-const CXCXXCtorInitializer = Ptr{Cvoid}
+const CXFunctionTemplateSpecializationInfo = Ptr{CXFunctionTemplateSpecializationInfoImpl}
 
-const CXCXXConstructorDecl = Ptr{Cvoid}
+mutable struct CXMemberSpecializationInfoImpl <: AbstractCXImpl end
 
-const CXCXXDestructorDecl = Ptr{Cvoid}
+const CXMemberSpecializationInfo = Ptr{CXMemberSpecializationInfoImpl}
 
-const CXCXXConversionDecl = Ptr{Cvoid}
+mutable struct CXDependentFunctionTemplateSpecializationInfoImpl <: AbstractCXImpl end
 
-const CXLinkageSpecDecl = Ptr{Cvoid}
+const CXDependentFunctionTemplateSpecializationInfo = Ptr{CXDependentFunctionTemplateSpecializationInfoImpl}
 
-const CXUsingDirectiveDecl = Ptr{Cvoid}
+mutable struct CXClassScopeFunctionSpecializationDeclImpl <: AbstractCXImpl end
 
-const CXNamespaceAliasDecl = Ptr{Cvoid}
+const CXClassScopeFunctionSpecializationDecl = Ptr{CXClassScopeFunctionSpecializationDeclImpl}
 
-const CXLifetimeExtendedTemporaryDecl = Ptr{Cvoid}
+mutable struct CXAPValueImpl <: AbstractCXImpl end
 
-const CXUsingShadowDecl = Ptr{Cvoid}
+const CXAPValue = Ptr{CXAPValueImpl}
 
-const CXConstructorUsingShadowDecl = Ptr{Cvoid}
+mutable struct CXAttrImpl <: AbstractCXImpl end
 
-const CXBaseUsingDecl = Ptr{Cvoid}
+const CXAttr = Ptr{CXAttrImpl}
 
-const CXUsingDecl = Ptr{Cvoid}
+mutable struct CXEvalResult_Impl <: AbstractCXImpl end
 
-const CXUsingPackDecl = Ptr{Cvoid}
+const CXEvalResult_ = Ptr{CXEvalResult_Impl}
 
-const CXUnresolvedUsingValueDecl = Ptr{Cvoid}
+mutable struct CXClassificationImpl <: AbstractCXImpl end
 
-const CXUnresolvedUsingTypenameDecl = Ptr{Cvoid}
+const CXClassification = Ptr{CXClassificationImpl}
 
-const CXStaticAssertDecl = Ptr{Cvoid}
+mutable struct CXOffsetOfNodeImpl <: AbstractCXImpl end
 
-const CXBindingDecl = Ptr{Cvoid}
+const CXOffsetOfNode = Ptr{CXOffsetOfNodeImpl}
 
-const CXDecompositionDecl = Ptr{Cvoid}
+mutable struct CXDesignatorImpl <: AbstractCXImpl end
 
-const CXMSPropertyDecl = Ptr{Cvoid}
+const CXDesignator = Ptr{CXDesignatorImpl}
 
-const CXMSGuidDecl = Ptr{Cvoid}
+mutable struct CXBlockVarCopyInitImpl <: AbstractCXImpl end
 
-const CXDeclGroupRef = Ptr{Cvoid}
+const CXBlockVarCopyInit = Ptr{CXBlockVarCopyInitImpl}
 
-const CXImplicitConceptSpecializationDecl = Ptr{Cvoid}
+mutable struct CXCXXTemporaryImpl <: AbstractCXImpl end
 
-const CXTemplateParameterList = Ptr{Cvoid}
+const CXCXXTemporary = Ptr{CXCXXTemporaryImpl}
 
-const CXTemplateArgumentList = Ptr{Cvoid}
+mutable struct CXLambdaCaptureImpl <: AbstractCXImpl end
 
-const CXTemplateDecl = Ptr{Cvoid}
+const CXLambdaCapture = Ptr{CXLambdaCaptureImpl}
 
-const CXFunctionTemplateSpecializationInfo = Ptr{Cvoid}
+mutable struct CXMangleContextImpl <: AbstractCXImpl end
 
-const CXMemberSpecializationInfo = Ptr{Cvoid}
+const CXMangleContext = Ptr{CXMangleContextImpl}
 
-const CXDependentFunctionTemplateSpecializationInfo = Ptr{Cvoid}
+mutable struct CXItaniumMangleContextImpl <: AbstractCXImpl end
 
-const CXRedeclarableTemplateDecl = Ptr{Cvoid}
+const CXItaniumMangleContext = Ptr{CXItaniumMangleContextImpl}
 
-const CXFunctionTemplateDecl = Ptr{Cvoid}
+mutable struct CXMicrosoftMangleContextImpl <: AbstractCXImpl end
 
-const CXTemplateTypeParmDecl = Ptr{Cvoid}
+const CXMicrosoftMangleContext = Ptr{CXMicrosoftMangleContextImpl}
 
-const CXNonTypeTemplateParmDecl = Ptr{Cvoid}
+mutable struct CXASTNameGeneratorImpl <: AbstractCXImpl end
 
-const CXTemplateTemplateParmDecl = Ptr{Cvoid}
+const CXASTNameGenerator = Ptr{CXASTNameGeneratorImpl}
 
-const CXBuiltinTemplateDecl = Ptr{Cvoid}
+mutable struct CXNestedNameSpecifierLocImpl <: AbstractCXImpl end
 
-const CXClassTemplateSpecializationDecl = Ptr{Cvoid}
+const CXNestedNameSpecifierLoc = Ptr{CXNestedNameSpecifierLocImpl}
 
-const CXClassTemplatePartialSpecializationDecl = Ptr{Cvoid}
+mutable struct CXNestedNameSpecifierImpl <: AbstractCXImpl end
 
-const CXClassTemplateDecl = Ptr{Cvoid}
+const CXNestedNameSpecifier = Ptr{CXNestedNameSpecifierImpl}
 
-const CXFriendTemplateDecl = Ptr{Cvoid}
+mutable struct CXASTRecordLayoutImpl <: AbstractCXImpl end
 
-const CXTypeAliasTemplateDecl = Ptr{Cvoid}
+const CXASTRecordLayout = Ptr{CXASTRecordLayoutImpl}
 
-const CXClassScopeFunctionSpecializationDecl = Ptr{Cvoid}
+mutable struct CXGCCAsmStmtAsmStringPieceImpl <: AbstractCXImpl end
 
-const CXVarTemplateSpecializationDecl = Ptr{Cvoid}
+const CXGCCAsmStmtAsmStringPiece = Ptr{CXGCCAsmStmtAsmStringPieceImpl}
 
-const CXVarTemplatePartialSpecializationDecl = Ptr{Cvoid}
+mutable struct CXCapturedStmtCaptureImpl <: AbstractCXImpl end
 
-const CXVarTemplateDecl = Ptr{Cvoid}
+const CXCapturedStmtCapture = Ptr{CXCapturedStmtCaptureImpl}
 
-const CXConceptDecl = Ptr{Cvoid}
+mutable struct CXStmtImpl <: AbstractCXImpl end
 
-const CXTemplateParamObjectDecl = Ptr{Cvoid}
+const CXStmt = Ptr{CXStmtImpl}
 
-const CXAPValue = Ptr{Cvoid}
+mutable struct CXQualTypeImpl <: AbstractCXImpl end
 
-const CXAttr = Ptr{Cvoid}
+const CXQualType = Ptr{CXQualTypeImpl}
 
-const CXAlignedAttr = Ptr{Cvoid}
+mutable struct CXType_Impl <: AbstractCXImpl end
 
-const CXAnnotateAttr = Ptr{Cvoid}
+const CXType_ = Ptr{CXType_Impl}
 
-const CXAsmLabelAttr = Ptr{Cvoid}
+mutable struct CXDependentTypeOfExprTypeImpl <: AbstractCXImpl end
 
-const CXCleanupAttr = Ptr{Cvoid}
+const CXDependentTypeOfExprType = Ptr{CXDependentTypeOfExprTypeImpl}
 
-const CXConstructorAttr = Ptr{Cvoid}
+mutable struct CXDependentDecltypeTypeImpl <: AbstractCXImpl end
 
-const CXDeprecatedAttr = Ptr{Cvoid}
+const CXDependentDecltypeType = Ptr{CXDependentDecltypeTypeImpl}
 
-const CXDestructorAttr = Ptr{Cvoid}
+mutable struct CXDependentUnaryTransformTypeImpl <: AbstractCXImpl end
 
-const CXFormatAttr = Ptr{Cvoid}
+const CXDependentUnaryTransformType = Ptr{CXDependentUnaryTransformTypeImpl}
 
-const CXNonNullAttr = Ptr{Cvoid}
+mutable struct CXTypeWithKeywordImpl <: AbstractCXImpl end
 
-const CXSectionAttr = Ptr{Cvoid}
+const CXTypeWithKeyword = Ptr{CXTypeWithKeywordImpl}
 
-const CXTLSModelAttr = Ptr{Cvoid}
+mutable struct CXExtIntTypeImpl <: AbstractCXImpl end
 
-const CXUnavailableAttr = Ptr{Cvoid}
+const CXExtIntType = Ptr{CXExtIntTypeImpl}
 
-const CXVisibilityAttr = Ptr{Cvoid}
+mutable struct CXDependentExtIntTypeImpl <: AbstractCXImpl end
 
-const CXWarnUnusedResultAttr = Ptr{Cvoid}
+const CXDependentExtIntType = Ptr{CXDependentExtIntTypeImpl}
 
-const CXEvalResult = Ptr{Cvoid}
+mutable struct CXQualifierCollectorImpl <: AbstractCXImpl end
 
-const CXSYCLUniqueStableNameExpr = Ptr{Cvoid}
+const CXQualifierCollector = Ptr{CXQualifierCollectorImpl}
 
-const CXClassification = Ptr{Cvoid}
+mutable struct CXTypeSourceInfoImpl <: AbstractCXImpl end
 
-const CXExpr = Ptr{Cvoid}
+const CXTypeSourceInfo = Ptr{CXTypeSourceInfoImpl}
 
-const CXFullExpr = Ptr{Cvoid}
+mutable struct CXTypeLocImpl <: AbstractCXImpl end
 
-const CXConstantExpr = Ptr{Cvoid}
+const CXTypeLoc = Ptr{CXTypeLocImpl}
 
-const CXOpaqueValueExpr = Ptr{Cvoid}
+mutable struct CXTemplateNameImpl <: AbstractCXImpl end
 
-const CXDeclRefExpr = Ptr{Cvoid}
+const CXTemplateName = Ptr{CXTemplateNameImpl}
 
-const CXIntegerLiteral = Ptr{Cvoid}
+mutable struct CXTemplateArgumentLocInfoImpl <: AbstractCXImpl end
 
-const CXFixedPointLiteral = Ptr{Cvoid}
+const CXTemplateArgumentLocInfo = Ptr{CXTemplateArgumentLocInfoImpl}
 
-const CXCharacterLiteral = Ptr{Cvoid}
+mutable struct CXTemplateArgumentLocImpl <: AbstractCXImpl end
 
-const CXFloatingLiteral = Ptr{Cvoid}
+const CXTemplateArgumentLoc = Ptr{CXTemplateArgumentLocImpl}
 
-const CXImaginaryLiteral = Ptr{Cvoid}
+mutable struct CXTemplateArgumentListInfoImpl <: AbstractCXImpl end
 
-const CXStringLiteral = Ptr{Cvoid}
+const CXTemplateArgumentListInfo = Ptr{CXTemplateArgumentListInfoImpl}
 
-const CXPredefinedExpr = Ptr{Cvoid}
+mutable struct CXASTTemplateArgumentListInfoImpl <: AbstractCXImpl end
 
-const CXParenExpr = Ptr{Cvoid}
+const CXASTTemplateArgumentListInfo = Ptr{CXASTTemplateArgumentListInfoImpl}
 
-const CXUnaryOperator = Ptr{Cvoid}
+mutable struct CXDependentTemplateNameImpl <: AbstractCXImpl end
 
-const CXOffsetOfNode = Ptr{Cvoid}
+const CXDependentTemplateName = Ptr{CXDependentTemplateNameImpl}
 
-const CXOffsetOfExpr = Ptr{Cvoid}
+mutable struct CXQualifiedTemplateNameImpl <: AbstractCXImpl end
 
-const CXUnaryExprOrTypeTraitExpr = Ptr{Cvoid}
+const CXQualifiedTemplateName = Ptr{CXQualifiedTemplateNameImpl}
 
-const CXArraySubscriptExpr = Ptr{Cvoid}
+mutable struct CXSubstTemplateTemplateParmStorageImpl <: AbstractCXImpl end
 
-const CXMatrixSubscriptExpr = Ptr{Cvoid}
+const CXSubstTemplateTemplateParmStorage = Ptr{CXSubstTemplateTemplateParmStorageImpl}
 
-const CXCallExpr = Ptr{Cvoid}
+mutable struct CXSubstTemplateTemplateParmPackStorageImpl <: AbstractCXImpl end
 
-const CXMemberExpr = Ptr{Cvoid}
+const CXSubstTemplateTemplateParmPackStorage = Ptr{CXSubstTemplateTemplateParmPackStorageImpl}
 
-const CXCompoundLiteralExpr = Ptr{Cvoid}
+mutable struct CXAssumedTemplateStorageImpl <: AbstractCXImpl end
 
-const CXCastExpr = Ptr{Cvoid}
+const CXAssumedTemplateStorage = Ptr{CXAssumedTemplateStorageImpl}
 
-const CXImplicitCastExpr = Ptr{Cvoid}
+mutable struct CXOverloadedTemplateStorageImpl <: AbstractCXImpl end
 
-const CXExplicitCastExpr = Ptr{Cvoid}
+const CXOverloadedTemplateStorage = Ptr{CXOverloadedTemplateStorageImpl}
 
-const CXCStyleCastExpr = Ptr{Cvoid}
+mutable struct CXTemplateArgumentImpl <: AbstractCXImpl end
 
-const CXBinaryOperator = Ptr{Cvoid}
+const CXTemplateArgument = Ptr{CXTemplateArgumentImpl}
 
-const CXCompoundAssignOperator = Ptr{Cvoid}
+mutable struct CXConstructionContextImpl <: AbstractCXImpl end
 
-const CXAbstractConditionalOperator = Ptr{Cvoid}
+const CXConstructionContext = Ptr{CXConstructionContextImpl}
 
-const CXConditionalOperator = Ptr{Cvoid}
+mutable struct CXCFGBuildOptionsImpl <: AbstractCXImpl end
 
-const CXBinaryConditionalOperator = Ptr{Cvoid}
+const CXCFGBuildOptions = Ptr{CXCFGBuildOptionsImpl}
 
-const CXAddrLabelExpr = Ptr{Cvoid}
+mutable struct CXCFGBlockImpl <: AbstractCXImpl end
 
-const CXStmtExpr = Ptr{Cvoid}
+const CXCFGBlock = Ptr{CXCFGBlockImpl}
 
-const CXShuffleVectorExpr = Ptr{Cvoid}
+mutable struct CXCFGImpl <: AbstractCXImpl end
 
-const CXConvertVectorExpr = Ptr{Cvoid}
+const CXCFG = Ptr{CXCFGImpl}
 
-const CXChooseExpr = Ptr{Cvoid}
+mutable struct CXBuiltinContextImpl <: AbstractCXImpl end
 
-const CXGNUNullExpr = Ptr{Cvoid}
+const CXBuiltinContext = Ptr{CXBuiltinContextImpl}
 
-const CXVAArgExpr = Ptr{Cvoid}
+mutable struct CXCodeGenOptionsImpl <: AbstractCXImpl end
 
-const CXSourceLocExpr = Ptr{Cvoid}
+const CXCodeGenOptions = Ptr{CXCodeGenOptionsImpl}
 
-const CXInitListExpr = Ptr{Cvoid}
+mutable struct CXDiagnostic_Impl <: AbstractCXImpl end
 
-const CXDesignatedInitExpr = Ptr{Cvoid}
+const CXDiagnostic_ = Ptr{CXDiagnostic_Impl}
 
-const CXDesignator = Ptr{Cvoid}
+mutable struct CXDiagnosticBuilderImpl <: AbstractCXImpl end
 
-const CXNoInitExpr = Ptr{Cvoid}
+const CXDiagnosticBuilder = Ptr{CXDiagnosticBuilderImpl}
 
-const CXDesignatedInitUpdateExpr = Ptr{Cvoid}
+mutable struct CXStreamingDiagnosticImpl <: AbstractCXImpl end
 
-const CXArrayInitLoopExpr = Ptr{Cvoid}
+const CXStreamingDiagnostic = Ptr{CXStreamingDiagnosticImpl}
 
-const CXArrayInitIndexExpr = Ptr{Cvoid}
+mutable struct CXFixItHintImpl <: AbstractCXImpl end
 
-const CXImplicitValueInitExpr = Ptr{Cvoid}
+const CXFixItHint = Ptr{CXFixItHintImpl}
 
-const CXParenListExpr = Ptr{Cvoid}
+mutable struct CXStoredDiagnosticImpl <: AbstractCXImpl end
 
-const CXGenericSelectionExpr = Ptr{Cvoid}
+const CXStoredDiagnostic = Ptr{CXStoredDiagnosticImpl}
 
-const CXExtVectorElementExpr = Ptr{Cvoid}
+mutable struct CXDiagnosticErrorTrapImpl <: AbstractCXImpl end
 
-const CXBlockExpr = Ptr{Cvoid}
+const CXDiagnosticErrorTrap = Ptr{CXDiagnosticErrorTrapImpl}
 
-const CXBlockVarCopyInit = Ptr{Cvoid}
+mutable struct CXDiagnosticConsumerImpl <: AbstractCXImpl end
 
-const CXAsTypeExpr = Ptr{Cvoid}
+const CXDiagnosticConsumer = Ptr{CXDiagnosticConsumerImpl}
 
-const CXPseudoObjectExpr = Ptr{Cvoid}
+mutable struct CXDiagnosticsEngineImpl <: AbstractCXImpl end
 
-const CXAtomicExpr = Ptr{Cvoid}
+const CXDiagnosticsEngine = Ptr{CXDiagnosticsEngineImpl}
 
-const CXTypoExpr = Ptr{Cvoid}
+mutable struct CXDiagnosticIDsImpl <: AbstractCXImpl end
 
-const CXRecoveryExpr = Ptr{Cvoid}
+const CXDiagnosticIDs = Ptr{CXDiagnosticIDsImpl}
 
-const CXCXXParenListInitExpr = Ptr{Cvoid}
+mutable struct CXDiagnosticOptionsImpl <: AbstractCXImpl end
 
-const CXCXXTemporary = Ptr{Cvoid}
+const CXDiagnosticOptions = Ptr{CXDiagnosticOptionsImpl}
 
-const CXCXXOperatorCallExpr = Ptr{Cvoid}
+mutable struct CXFileEntryImpl <: AbstractCXImpl end
 
-const CXCXXMemberCallExpr = Ptr{Cvoid}
+const CXFileEntry = Ptr{CXFileEntryImpl}
 
-const CXCUDAKernelCallExpr = Ptr{Cvoid}
+mutable struct CXDirectoryEntryImpl <: AbstractCXImpl end
 
-const CXCXXRewrittenBinaryOperator = Ptr{Cvoid}
+const CXDirectoryEntry = Ptr{CXDirectoryEntryImpl}
 
-const CXCXXNamedCastExpr = Ptr{Cvoid}
+mutable struct CXDirectoryEntryRefImpl <: AbstractCXImpl end
 
-const CXCXXStaticCastExpr = Ptr{Cvoid}
+const CXDirectoryEntryRef = Ptr{CXDirectoryEntryRefImpl}
 
-const CXCXXDynamicCastExpr = Ptr{Cvoid}
+mutable struct CXFileEntryRefImpl <: AbstractCXImpl end
 
-const CXCXXReinterpretCastExpr = Ptr{Cvoid}
+const CXFileEntryRef = Ptr{CXFileEntryRefImpl}
 
-const CXCXXConstCastExpr = Ptr{Cvoid}
+mutable struct CXFileManagerImpl <: AbstractCXImpl end
 
-const CXCXXAddrspaceCastExpr = Ptr{Cvoid}
+const CXFileManager = Ptr{CXFileManagerImpl}
 
-const CXUserDefinedLiteral = Ptr{Cvoid}
+mutable struct CXSelectorImpl <: AbstractCXImpl end
 
-const CXCXXBoolLiteralExpr = Ptr{Cvoid}
+const CXSelector = Ptr{CXSelectorImpl}
 
-const CXCXXNullPtrLiteralExpr = Ptr{Cvoid}
+mutable struct CXSelectorTableImpl <: AbstractCXImpl end
 
-const CXCXXStdInitializerListExpr = Ptr{Cvoid}
+const CXSelectorTable = Ptr{CXSelectorTableImpl}
 
-const CXCXXTypeidExpr = Ptr{Cvoid}
+mutable struct CXIdentifierInfoImpl <: AbstractCXImpl end
 
-const CXMSPropertyRefExpr = Ptr{Cvoid}
+const CXIdentifierInfo = Ptr{CXIdentifierInfoImpl}
 
-const CXMSPropertySubscriptExpr = Ptr{Cvoid}
+mutable struct CXIdentifierTableImpl <: AbstractCXImpl end
 
-const CXCXXUuidofExpr = Ptr{Cvoid}
+const CXIdentifierTable = Ptr{CXIdentifierTableImpl}
 
-const CXCXXThisExpr = Ptr{Cvoid}
+mutable struct CXLangOptionsImpl <: AbstractCXImpl end
 
-const CXCXXThrowExpr = Ptr{Cvoid}
+const CXLangOptions = Ptr{CXLangOptionsImpl}
 
-const CXCXXDefaultArgExpr = Ptr{Cvoid}
+mutable struct CXModule_Impl <: AbstractCXImpl end
 
-const CXCXXDefaultInitExpr = Ptr{Cvoid}
+const CXModule_ = Ptr{CXModule_Impl}
 
-const CXCXXBindTemporaryExpr = Ptr{Cvoid}
+mutable struct CXPresumedLocImpl <: AbstractCXImpl end
 
-const CXCXXConstructExpr = Ptr{Cvoid}
+const CXPresumedLoc = Ptr{CXPresumedLocImpl}
 
-const CXCXXInheritedCtorInitExpr = Ptr{Cvoid}
+mutable struct CXSourceLocation_Impl <: AbstractCXImpl end
 
-const CXCXXFunctionalCastExpr = Ptr{Cvoid}
-
-const CXCXXTemporaryObjectExpr = Ptr{Cvoid}
-
-const CXLambdaExpr = Ptr{Cvoid}
-
-const CXLambdaCapture = Ptr{Cvoid}
-
-const CXCXXScalarValueInitExpr = Ptr{Cvoid}
-
-const CXCXXNewExpr = Ptr{Cvoid}
-
-const CXCXXDeleteExpr = Ptr{Cvoid}
-
-const CXCXXPseudoDestructorExpr = Ptr{Cvoid}
-
-const CXTypeTraitExpr = Ptr{Cvoid}
-
-const CXArrayTypeTraitExpr = Ptr{Cvoid}
-
-const CXExpressionTraitExpr = Ptr{Cvoid}
-
-const CXOverloadExpr = Ptr{Cvoid}
-
-const CXUnresolvedLookupExpr = Ptr{Cvoid}
-
-const CXDependentScopeDeclRefExpr = Ptr{Cvoid}
-
-const CXExprWithCleanups = Ptr{Cvoid}
-
-const CXCXXUnresolvedConstructExpr = Ptr{Cvoid}
-
-const CXCXXDependentScopeMemberExpr = Ptr{Cvoid}
-
-const CXUnresolvedMemberExpr = Ptr{Cvoid}
-
-const CXCXXNoexceptExpr = Ptr{Cvoid}
-
-const CXPackExpansionExpr = Ptr{Cvoid}
-
-const CXSizeOfPackExpr = Ptr{Cvoid}
-
-const CXSubstNonTypeTemplateParmExpr = Ptr{Cvoid}
-
-const CXSubstNonTypeTemplateParmPackExpr = Ptr{Cvoid}
-
-const CXFunctionParmPackExpr = Ptr{Cvoid}
-
-const CXMaterializeTemporaryExpr = Ptr{Cvoid}
-
-const CXCXXFoldExpr = Ptr{Cvoid}
-
-const CXCoroutineSuspendExpr = Ptr{Cvoid}
-
-const CXCoawaitExpr = Ptr{Cvoid}
-
-const CXDependentCoawaitExpr = Ptr{Cvoid}
-
-const CXCoyieldExpr = Ptr{Cvoid}
-
-const CXBuiltinBitCastExpr = Ptr{Cvoid}
-
-const CXMangleContext = Ptr{Cvoid}
-
-const CXItaniumMangleContext = Ptr{Cvoid}
-
-const CXMicrosoftMangleContext = Ptr{Cvoid}
-
-const CXASTNameGenerator = Ptr{Cvoid}
-
-const CXNestedNameSpecifierLoc = Ptr{Cvoid}
-
-const CXNestedNameSpecifier = Ptr{Cvoid}
-
-const CXASTRecordLayout = Ptr{Cvoid}
-
-const CXGCCAsmStmtAsmStringPiece = Ptr{Cvoid}
-
-const CXCapturedStmtCapture = Ptr{Cvoid}
-
-const CXStmt = Ptr{Cvoid}
-
-const CXDeclStmt = Ptr{Cvoid}
-
-const CXNullStmt = Ptr{Cvoid}
-
-const CXCompoundStmt = Ptr{Cvoid}
-
-const CXSwitchCase = Ptr{Cvoid}
-
-const CXCaseStmt = Ptr{Cvoid}
-
-const CXDefaultStmt = Ptr{Cvoid}
-
-const CXValueStmt = Ptr{Cvoid}
-
-const CXLabelStmt = Ptr{Cvoid}
-
-const CXAttributedStmt = Ptr{Cvoid}
-
-const CXIfStmt = Ptr{Cvoid}
-
-const CXSwitchStmt = Ptr{Cvoid}
-
-const CXWhileStmt = Ptr{Cvoid}
-
-const CXDoStmt = Ptr{Cvoid}
-
-const CXForStmt = Ptr{Cvoid}
-
-const CXGotoStmt = Ptr{Cvoid}
-
-const CXIndirectGotoStmt = Ptr{Cvoid}
-
-const CXContinueStmt = Ptr{Cvoid}
-
-const CXBreakStmt = Ptr{Cvoid}
-
-const CXReturnStmt = Ptr{Cvoid}
-
-const CXAsmStmt = Ptr{Cvoid}
-
-const CXGCCAsmStmt = Ptr{Cvoid}
-
-const CXMSAsmStmt = Ptr{Cvoid}
-
-const CXSEHExceptStmt = Ptr{Cvoid}
-
-const CXSEHFinallyStmt = Ptr{Cvoid}
-
-const CXSEHTryStmt = Ptr{Cvoid}
-
-const CXSEHLeaveStmt = Ptr{Cvoid}
-
-const CXCapturedStmt = Ptr{Cvoid}
-
-const CXCXXCatchStmt = Ptr{Cvoid}
-
-const CXCXXTryStmt = Ptr{Cvoid}
-
-const CXCXXForRangeStmt = Ptr{Cvoid}
-
-const CXMSDependentExistsStmt = Ptr{Cvoid}
-
-const CXCoroutineBodyStmt = Ptr{Cvoid}
-
-const CXCoreturnStmt = Ptr{Cvoid}
-
-const CXDependentBitIntType = Ptr{Cvoid}
-
-const CXBitIntType = Ptr{Cvoid}
-
-const CXQualType = Ptr{Cvoid}
-
-const CXType_ = Ptr{Cvoid}
-
-const CXBuiltinType = Ptr{Cvoid}
-
-const CXComplexType = Ptr{Cvoid}
-
-const CXParenType = Ptr{Cvoid}
-
-const CXPointerType = Ptr{Cvoid}
-
-const CXAdjustedType = Ptr{Cvoid}
-
-const CXDecayedType = Ptr{Cvoid}
-
-const CXBlockPointerType = Ptr{Cvoid}
-
-const CXReferenceType = Ptr{Cvoid}
-
-const CXLValueReferenceType = Ptr{Cvoid}
-
-const CXRValueReferenceType = Ptr{Cvoid}
-
-const CXMemberPointerType = Ptr{Cvoid}
-
-const CXArrayType = Ptr{Cvoid}
-
-const CXConstantArrayType = Ptr{Cvoid}
-
-const CXIncompleteArrayType = Ptr{Cvoid}
-
-const CXVariableArrayType = Ptr{Cvoid}
-
-const CXDependentSizedArrayType = Ptr{Cvoid}
-
-const CXDependentAddressSpaceType = Ptr{Cvoid}
-
-const CXDependentSizedExtVectorType = Ptr{Cvoid}
-
-const CXVectorType = Ptr{Cvoid}
-
-const CXDependentVectorType = Ptr{Cvoid}
-
-const CXExtVectorType = Ptr{Cvoid}
-
-const CXMatrixType = Ptr{Cvoid}
-
-const CXConstantMatrixType = Ptr{Cvoid}
-
-const CXDependentSizedMatrixType = Ptr{Cvoid}
-
-const CXFunctionType = Ptr{Cvoid}
-
-const CXFunctionNoProtoType = Ptr{Cvoid}
-
-const CXFunctionProtoType = Ptr{Cvoid}
-
-const CXUnresolvedUsingType = Ptr{Cvoid}
-
-const CXUsingType = Ptr{Cvoid}
-
-const CXTypedefType = Ptr{Cvoid}
-
-const CXMacroQualifiedType = Ptr{Cvoid}
-
-const CXTypeOfExprType = Ptr{Cvoid}
-
-const CXDependentTypeOfExprType = Ptr{Cvoid}
-
-const CXTypeOfType = Ptr{Cvoid}
-
-const CXDecltypeType = Ptr{Cvoid}
-
-const CXDependentDecltypeType = Ptr{Cvoid}
-
-const CXUnaryTransformType = Ptr{Cvoid}
-
-const CXDependentUnaryTransformType = Ptr{Cvoid}
-
-const CXTagType = Ptr{Cvoid}
-
-const CXRecordType = Ptr{Cvoid}
-
-const CXEnumType = Ptr{Cvoid}
-
-const CXAttributedType = Ptr{Cvoid}
-
-const CXTemplateTypeParmType = Ptr{Cvoid}
-
-const CXSubstTemplateTypeParmType = Ptr{Cvoid}
-
-const CXSubstTemplateTypeParmPackType = Ptr{Cvoid}
-
-const CXDeducedType = Ptr{Cvoid}
-
-const CXAutoType = Ptr{Cvoid}
-
-const CXDeducedTemplateSpecializationType = Ptr{Cvoid}
-
-const CXTemplateSpecializationType = Ptr{Cvoid}
-
-const CXInjectedClassNameType = Ptr{Cvoid}
-
-const CXTypeWithKeyword = Ptr{Cvoid}
-
-const CXElaboratedType = Ptr{Cvoid}
-
-const CXDependentNameType = Ptr{Cvoid}
-
-const CXDependentTemplateSpecializationType = Ptr{Cvoid}
-
-const CXPackExpansionType = Ptr{Cvoid}
-
-const CXObjCTypeParamType = Ptr{Cvoid}
-
-const CXObjCObjectType = Ptr{Cvoid}
-
-const CXObjCInterfaceType = Ptr{Cvoid}
-
-const CXObjCObjectPointerType = Ptr{Cvoid}
-
-const CXAtomicType = Ptr{Cvoid}
-
-const CXPipeType = Ptr{Cvoid}
-
-const CXExtIntType = Ptr{Cvoid}
-
-const CXDependentExtIntType = Ptr{Cvoid}
-
-const CXQualifierCollector = Ptr{Cvoid}
-
-const CXTypeSourceInfo = Ptr{Cvoid}
-
-const CXTypeLoc = Ptr{Cvoid}
-
-const CXTemplateName = Ptr{Cvoid}
-
-const CXTemplateArgumentLocInfo = Ptr{Cvoid}
-
-const CXTemplateArgumentLoc = Ptr{Cvoid}
-
-const CXTemplateArgumentListInfo = Ptr{Cvoid}
-
-const CXASTTemplateArgumentListInfo = Ptr{Cvoid}
-
-const CXDependentTemplateName = Ptr{Cvoid}
-
-const CXQualifiedTemplateName = Ptr{Cvoid}
-
-const CXSubstTemplateTemplateParmStorage = Ptr{Cvoid}
-
-const CXSubstTemplateTemplateParmPackStorage = Ptr{Cvoid}
-
-const CXAssumedTemplateStorage = Ptr{Cvoid}
-
-const CXOverloadedTemplateStorage = Ptr{Cvoid}
-
-const CXTemplateArgument = Ptr{Cvoid}
-
-const CXConstructionContext = Ptr{Cvoid}
-
-const CXCFGBuildOptions = Ptr{Cvoid}
-
-const CXCFGBlock = Ptr{Cvoid}
-
-const CXCFG = Ptr{Cvoid}
-
-const CXBuiltinContext = Ptr{Cvoid}
-
-const CXCodeGenOptions = Ptr{Cvoid}
-
-const CXDiagnostic_ = Ptr{Cvoid}
-
-const CXDiagnosticBuilder = Ptr{Cvoid}
-
-const CXStreamingDiagnostic = Ptr{Cvoid}
-
-const CXFixItHint = Ptr{Cvoid}
-
-const CXStoredDiagnostic = Ptr{Cvoid}
-
-const CXDiagnosticErrorTrap = Ptr{Cvoid}
-
-const CXDiagnosticConsumer = Ptr{Cvoid}
-
-const CXDiagnosticsEngine = Ptr{Cvoid}
-
-const CXDiagnosticIDs = Ptr{Cvoid}
-
-const CXDiagnosticOptions = Ptr{Cvoid}
-
-const CXFileEntry = Ptr{Cvoid}
-
-const CXDirectoryEntry = Ptr{Cvoid}
-
-const CXDirectoryEntryRef = Ptr{Cvoid}
-
-const CXFileEntryRef = Ptr{Cvoid}
-
-const CXFileManager = Ptr{Cvoid}
-
-const CXSelector = Ptr{Cvoid}
-
-const CXSelectorTable = Ptr{Cvoid}
-
-const CXIdentifierInfo = Ptr{Cvoid}
-
-const CXIdentifierTable = Ptr{Cvoid}
-
-const CXLangOptions = Ptr{Cvoid}
-
-const CXModule = Ptr{Cvoid}
-
-const CXPresumedLoc = Ptr{Cvoid}
-
-const CXSourceLocation_ = Ptr{Cvoid}
+const CXSourceLocation_ = Ptr{CXSourceLocation_Impl}
 
 struct CXSourceRange_
     B::CXSourceLocation_
     E::CXSourceLocation_
 end
 
-const CXSourceManagerForFile = Ptr{Cvoid}
+mutable struct CXSourceManagerForFileImpl <: AbstractCXImpl end
 
-const CXLineOffsetMapping = Ptr{Cvoid}
+const CXSourceManagerForFile = Ptr{CXSourceManagerForFileImpl}
 
-const CXContentCache = Ptr{Cvoid}
+mutable struct CXLineOffsetMappingImpl <: AbstractCXImpl end
 
-const CXSLocEntry = Ptr{Cvoid}
+const CXLineOffsetMapping = Ptr{CXLineOffsetMappingImpl}
 
-const CXExpansionInfo = Ptr{Cvoid}
+mutable struct CXContentCacheImpl <: AbstractCXImpl end
 
-const CXFileInfo = Ptr{Cvoid}
+const CXContentCache = Ptr{CXContentCacheImpl}
 
-const CXFileID = Ptr{Cvoid}
+mutable struct CXSLocEntryImpl <: AbstractCXImpl end
 
-const CXSourceManager = Ptr{Cvoid}
+const CXSLocEntry = Ptr{CXSLocEntryImpl}
 
-const CXConstraintInfo = Ptr{Cvoid}
+mutable struct CXExpansionInfoImpl <: AbstractCXImpl end
 
-const CXTargetInfo_ = Ptr{Cvoid}
+const CXExpansionInfo = Ptr{CXExpansionInfoImpl}
 
-const CXTargetOptions = Ptr{Cvoid}
+mutable struct CXFileInfoImpl <: AbstractCXImpl end
 
-const CXCodeGenAction = Ptr{Cvoid}
+const CXFileInfo = Ptr{CXFileInfoImpl}
 
-const CXCodeGenerator = Ptr{Cvoid}
+mutable struct CXFileIDImpl <: AbstractCXImpl end
 
-const CXCodeGenModule = Ptr{Cvoid}
+const CXFileID = Ptr{CXFileIDImpl}
 
-const CXDriver = Ptr{Cvoid}
+mutable struct CXSourceManagerImpl <: AbstractCXImpl end
 
-const CXCompilation = Ptr{Cvoid}
+const CXSourceManager = Ptr{CXSourceManagerImpl}
 
-const CXToolChain = Ptr{Cvoid}
+mutable struct CXConstraintInfoImpl <: AbstractCXImpl end
 
-const CXASTUnit = Ptr{Cvoid}
+const CXConstraintInfo = Ptr{CXConstraintInfoImpl}
 
-const CXCompilerInstance = Ptr{Cvoid}
+mutable struct CXTargetInfo_Impl <: AbstractCXImpl end
 
-const CXPreprocessorOutputOptions = Ptr{Cvoid}
+const CXTargetInfo_ = Ptr{CXTargetInfo_Impl}
 
-const CXDependencyOutputOptions = Ptr{Cvoid}
+mutable struct CXTargetOptionsImpl <: AbstractCXImpl end
 
-const CXFileSystemOptions = Ptr{Cvoid}
+const CXTargetOptions = Ptr{CXTargetOptionsImpl}
 
-const CXMigratorOptions = Ptr{Cvoid}
+mutable struct CXCodeGenActionImpl <: AbstractCXImpl end
 
-const CXAnalyzerOptions = Ptr{Cvoid}
+const CXCodeGenAction = Ptr{CXCodeGenActionImpl}
 
-const CXCompilerInvocation = Ptr{Cvoid}
+mutable struct CXCodeGeneratorImpl <: AbstractCXImpl end
 
-const CXCowCompilerInvocation = Ptr{Cvoid}
+const CXCodeGenerator = Ptr{CXCodeGeneratorImpl}
 
-const CXFrontendOptions = Ptr{Cvoid}
+mutable struct CXCodeGenModuleImpl <: AbstractCXImpl end
 
-const CXIncrementalCompilerBuilder = Ptr{Cvoid}
+const CXCodeGenModule = Ptr{CXCodeGenModuleImpl}
 
-const CXInterpreter = Ptr{Cvoid}
+mutable struct CXDriverImpl <: AbstractCXImpl end
 
-const CXPartialTranslationUnit = Ptr{Cvoid}
+const CXDriver = Ptr{CXDriverImpl}
 
-const CXValue = Ptr{Cvoid}
+mutable struct CXCompilationImpl <: AbstractCXImpl end
 
-const CXDirectoryLookup = Ptr{Cvoid}
+const CXCompilation = Ptr{CXCompilationImpl}
 
-const CXHeaderMap = Ptr{Cvoid}
+mutable struct CXToolChainImpl <: AbstractCXImpl end
 
-const CXHeaderFileInfo = Ptr{Cvoid}
+const CXToolChain = Ptr{CXToolChainImpl}
 
-const CXHeaderSearch = Ptr{Cvoid}
+mutable struct CXASTUnitImpl <: AbstractCXImpl end
 
-const CXHeaderSearchOptions = Ptr{Cvoid}
+const CXASTUnit = Ptr{CXASTUnitImpl}
 
-const CXPreprocessorLexer = Ptr{Cvoid}
+mutable struct CXCompilerInstanceImpl <: AbstractCXImpl end
 
-const CXLexer = Ptr{Cvoid}
+const CXCompilerInstance = Ptr{CXCompilerInstanceImpl}
 
-const CXModuleMacro = Ptr{Cvoid}
+mutable struct CXPreprocessorOutputOptionsImpl <: AbstractCXImpl end
 
-const CXDefMacroDirective = Ptr{Cvoid}
+const CXPreprocessorOutputOptions = Ptr{CXPreprocessorOutputOptionsImpl}
 
-const CXDefInfo = Ptr{Cvoid}
+mutable struct CXDependencyOutputOptionsImpl <: AbstractCXImpl end
 
-const CXMacroDirective = Ptr{Cvoid}
+const CXDependencyOutputOptions = Ptr{CXDependencyOutputOptionsImpl}
 
-const CXMacroInfo = Ptr{Cvoid}
+mutable struct CXFileSystemOptionsImpl <: AbstractCXImpl end
 
-const CXCodeCompletionHandler = Ptr{Cvoid}
+const CXFileSystemOptions = Ptr{CXFileSystemOptionsImpl}
 
-const CXExternalPreprocessorSource = Ptr{Cvoid}
+mutable struct CXMigratorOptionsImpl <: AbstractCXImpl end
 
-const CXModuleLoader = Ptr{Cvoid}
+const CXMigratorOptions = Ptr{CXMigratorOptionsImpl}
 
-const CXPPCallbacks = Ptr{Cvoid}
+mutable struct CXAnalyzerOptionsImpl <: AbstractCXImpl end
 
-const CXInclusionDirective = Ptr{Cvoid}
+const CXAnalyzerOptions = Ptr{CXAnalyzerOptionsImpl}
 
-const CXMacroExpansion = Ptr{Cvoid}
+mutable struct CXCompilerInvocationImpl <: AbstractCXImpl end
 
-const CXMacroDefinitionRecord = Ptr{Cvoid}
+const CXCompilerInvocation = Ptr{CXCompilerInvocationImpl}
 
-const CXPreprocessedEntity = Ptr{Cvoid}
+mutable struct CXCowCompilerInvocationImpl <: AbstractCXImpl end
 
-const CXPreprocessingRecord = Ptr{Cvoid}
+const CXCowCompilerInvocation = Ptr{CXCowCompilerInvocationImpl}
 
-const CXPreprocessor = Ptr{Cvoid}
+mutable struct CXFrontendOptionsImpl <: AbstractCXImpl end
 
-const CXEmptylineHandler = Ptr{Cvoid}
+const CXFrontendOptions = Ptr{CXFrontendOptionsImpl}
 
-const CXPreprocessorOptions = Ptr{Cvoid}
+mutable struct CXIncrementalCompilerBuilderImpl <: AbstractCXImpl end
 
-const CXToken_ = Ptr{Cvoid}
+const CXIncrementalCompilerBuilder = Ptr{CXIncrementalCompilerBuilderImpl}
 
-const CXAnnotationValue = Ptr{Cvoid}
+mutable struct CXInterpreterImpl <: AbstractCXImpl end
 
-const CXParser = Ptr{Cvoid}
+const CXInterpreter = Ptr{CXInterpreterImpl}
 
-const CXSFINAETrap = Ptr{Cvoid}
+mutable struct CXPartialTranslationUnitImpl <: AbstractCXImpl end
 
-const CXDefaultedFunctionKind = Ptr{Cvoid}
+const CXPartialTranslationUnit = Ptr{CXPartialTranslationUnitImpl}
 
-const CXAlignPackInfo = Ptr{Cvoid}
+mutable struct CXDirectoryLookupImpl <: AbstractCXImpl end
 
-const CXExpressionEvaluationContextRecord = Ptr{Cvoid}
+const CXDirectoryLookup = Ptr{CXDirectoryLookupImpl}
 
-const CXInstantiatingTemplate = Ptr{Cvoid}
+mutable struct CXHeaderMapImpl <: AbstractCXImpl end
 
-const CXSema = Ptr{Cvoid}
+const CXHeaderMap = Ptr{CXHeaderMapImpl}
 
-const CXUserDefinedConversionSequence = Ptr{Cvoid}
+mutable struct CXHeaderFileInfoImpl <: AbstractCXImpl end
 
-const CXOverloadCandidate = Ptr{Cvoid}
+const CXHeaderFileInfo = Ptr{CXHeaderFileInfoImpl}
 
-const CXAmbiguousConversionSequence = Ptr{Cvoid}
+mutable struct CXHeaderSearchImpl <: AbstractCXImpl end
 
-const CXStandardConversionSequence = Ptr{Cvoid}
+const CXHeaderSearch = Ptr{CXHeaderSearchImpl}
 
-const CXBadConversionSequence = Ptr{Cvoid}
+mutable struct CXHeaderSearchOptionsImpl <: AbstractCXImpl end
 
-const CXImplicitConversionSequence = Ptr{Cvoid}
+const CXHeaderSearchOptions = Ptr{CXHeaderSearchOptionsImpl}
 
-const CXOverloadCandidateSet = Ptr{Cvoid}
+mutable struct CXPreprocessorLexerImpl <: AbstractCXImpl end
 
-const CXLocalInstantiationScope = Ptr{Cvoid}
+const CXPreprocessorLexer = Ptr{CXPreprocessorLexerImpl}
 
-const CXMultiLevelTemplateArgumentList = Ptr{Cvoid}
+mutable struct CXLexerImpl <: AbstractCXImpl end
 
-const CXTemplateDeductionInfo = Ptr{Cvoid}
+const CXLexer = Ptr{CXLexerImpl}
 
-const CXCXXScopeSpec = Ptr{Cvoid}
+mutable struct CXModuleMacroImpl <: AbstractCXImpl end
 
-const CXLookupResult_Filter = Ptr{Cvoid}
+const CXModuleMacro = Ptr{CXModuleMacroImpl}
 
-const CXLookupResult = Ptr{Cvoid}
+mutable struct CXDefMacroDirectiveImpl <: AbstractCXImpl end
 
-const CXScope = Ptr{Cvoid}
+const CXDefMacroDirective = Ptr{CXDefMacroDirectiveImpl}
 
-const CXRewriter = Ptr{Cvoid}
+mutable struct CXDefInfoImpl <: AbstractCXImpl end
+
+const CXDefInfo = Ptr{CXDefInfoImpl}
+
+mutable struct CXMacroDirectiveImpl <: AbstractCXImpl end
+
+const CXMacroDirective = Ptr{CXMacroDirectiveImpl}
+
+mutable struct CXMacroInfoImpl <: AbstractCXImpl end
+
+const CXMacroInfo = Ptr{CXMacroInfoImpl}
+
+mutable struct CXCodeCompletionHandlerImpl <: AbstractCXImpl end
+
+const CXCodeCompletionHandler = Ptr{CXCodeCompletionHandlerImpl}
+
+mutable struct CXExternalPreprocessorSourceImpl <: AbstractCXImpl end
+
+const CXExternalPreprocessorSource = Ptr{CXExternalPreprocessorSourceImpl}
+
+mutable struct CXModuleLoaderImpl <: AbstractCXImpl end
+
+const CXModuleLoader = Ptr{CXModuleLoaderImpl}
+
+mutable struct CXPPCallbacksImpl <: AbstractCXImpl end
+
+const CXPPCallbacks = Ptr{CXPPCallbacksImpl}
+
+mutable struct CXInclusionDirectiveImpl <: AbstractCXImpl end
+
+const CXInclusionDirective = Ptr{CXInclusionDirectiveImpl}
+
+mutable struct CXMacroExpansionImpl <: AbstractCXImpl end
+
+const CXMacroExpansion = Ptr{CXMacroExpansionImpl}
+
+mutable struct CXMacroDefinitionRecordImpl <: AbstractCXImpl end
+
+const CXMacroDefinitionRecord = Ptr{CXMacroDefinitionRecordImpl}
+
+mutable struct CXPreprocessedEntityImpl <: AbstractCXImpl end
+
+const CXPreprocessedEntity = Ptr{CXPreprocessedEntityImpl}
+
+mutable struct CXPreprocessingRecordImpl <: AbstractCXImpl end
+
+const CXPreprocessingRecord = Ptr{CXPreprocessingRecordImpl}
+
+mutable struct CXPreprocessorImpl <: AbstractCXImpl end
+
+const CXPreprocessor = Ptr{CXPreprocessorImpl}
+
+mutable struct CXEmptylineHandlerImpl <: AbstractCXImpl end
+
+const CXEmptylineHandler = Ptr{CXEmptylineHandlerImpl}
+
+mutable struct CXPreprocessorOptionsImpl <: AbstractCXImpl end
+
+const CXPreprocessorOptions = Ptr{CXPreprocessorOptionsImpl}
+
+mutable struct CXToken_Impl <: AbstractCXImpl end
+
+const CXToken_ = Ptr{CXToken_Impl}
+
+mutable struct CXAnnotationValueImpl <: AbstractCXImpl end
+
+const CXAnnotationValue = Ptr{CXAnnotationValueImpl}
+
+mutable struct CXParserImpl <: AbstractCXImpl end
+
+const CXParser = Ptr{CXParserImpl}
+
+mutable struct CXSFINAETrapImpl <: AbstractCXImpl end
+
+const CXSFINAETrap = Ptr{CXSFINAETrapImpl}
+
+mutable struct CXDefaultedFunctionKindImpl <: AbstractCXImpl end
+
+const CXDefaultedFunctionKind = Ptr{CXDefaultedFunctionKindImpl}
+
+mutable struct CXAlignPackInfoImpl <: AbstractCXImpl end
+
+const CXAlignPackInfo = Ptr{CXAlignPackInfoImpl}
+
+mutable struct CXExpressionEvaluationContextRecordImpl <: AbstractCXImpl end
+
+const CXExpressionEvaluationContextRecord = Ptr{CXExpressionEvaluationContextRecordImpl}
+
+mutable struct CXInstantiatingTemplateImpl <: AbstractCXImpl end
+
+const CXInstantiatingTemplate = Ptr{CXInstantiatingTemplateImpl}
+
+mutable struct CXSemaImpl <: AbstractCXImpl end
+
+const CXSema = Ptr{CXSemaImpl}
+
+mutable struct CXUserDefinedConversionSequenceImpl <: AbstractCXImpl end
+
+const CXUserDefinedConversionSequence = Ptr{CXUserDefinedConversionSequenceImpl}
+
+mutable struct CXOverloadCandidateImpl <: AbstractCXImpl end
+
+const CXOverloadCandidate = Ptr{CXOverloadCandidateImpl}
+
+mutable struct CXAmbiguousConversionSequenceImpl <: AbstractCXImpl end
+
+const CXAmbiguousConversionSequence = Ptr{CXAmbiguousConversionSequenceImpl}
+
+mutable struct CXStandardConversionSequenceImpl <: AbstractCXImpl end
+
+const CXStandardConversionSequence = Ptr{CXStandardConversionSequenceImpl}
+
+mutable struct CXBadConversionSequenceImpl <: AbstractCXImpl end
+
+const CXBadConversionSequence = Ptr{CXBadConversionSequenceImpl}
+
+mutable struct CXImplicitConversionSequenceImpl <: AbstractCXImpl end
+
+const CXImplicitConversionSequence = Ptr{CXImplicitConversionSequenceImpl}
+
+mutable struct CXOverloadCandidateSetImpl <: AbstractCXImpl end
+
+const CXOverloadCandidateSet = Ptr{CXOverloadCandidateSetImpl}
+
+mutable struct CXLocalInstantiationScopeImpl <: AbstractCXImpl end
+
+const CXLocalInstantiationScope = Ptr{CXLocalInstantiationScopeImpl}
+
+mutable struct CXMultiLevelTemplateArgumentListImpl <: AbstractCXImpl end
+
+const CXMultiLevelTemplateArgumentList = Ptr{CXMultiLevelTemplateArgumentListImpl}
+
+mutable struct CXTemplateDeductionInfoImpl <: AbstractCXImpl end
+
+const CXTemplateDeductionInfo = Ptr{CXTemplateDeductionInfoImpl}
+
+mutable struct CXCXXScopeSpecImpl <: AbstractCXImpl end
+
+const CXCXXScopeSpec = Ptr{CXCXXScopeSpecImpl}
+
+mutable struct CXLookupResult_FilterImpl <: AbstractCXImpl end
+
+const CXLookupResult_Filter = Ptr{CXLookupResult_FilterImpl}
+
+mutable struct CXLookupResultImpl <: AbstractCXImpl end
+
+const CXLookupResult = Ptr{CXLookupResultImpl}
+
+mutable struct CXScopeImpl <: AbstractCXImpl end
+
+const CXScope = Ptr{CXScopeImpl}
+
+mutable struct CXRewriterImpl <: AbstractCXImpl end
+
+const CXRewriter = Ptr{CXRewriterImpl}
 
 @enum CXTranslationUnitKind::UInt32 begin
     CXTranslationUnitKind_TU_Complete = 0
@@ -990,7 +4238,9 @@ const CXRewriter = Ptr{Cvoid}
     CXTranslationUnitKind_TU_Incremental = 3
 end
 
-const CXFrontendAction = Ptr{Cvoid}
+mutable struct CXFrontendActionImpl <: AbstractCXImpl end
+
+const CXFrontendAction = Ptr{CXFrontendActionImpl}
 
 function clang_ASTConsumer_Initialize(Csr, Ctx)
     @ccall libclangex.clang_ASTConsumer_Initialize(Csr::CXASTConsumer, Ctx::CXASTContext)::Cvoid
@@ -1632,7 +4882,7 @@ end
 end
 
 function clang_Attr_castToAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAddressSpaceAttr(A::CXAttr)::CXAddressSpaceAttr
 end
 
 function clang_Attr_isAddressSpaceAttr(A)
@@ -1640,7 +4890,7 @@ function clang_Attr_isAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToAnnotateTypeAttr(A)
-    @ccall libclangex.clang_Attr_castToAnnotateTypeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAnnotateTypeAttr(A::CXAttr)::CXAnnotateTypeAttr
 end
 
 function clang_Attr_isAnnotateTypeAttr(A)
@@ -1648,7 +4898,7 @@ function clang_Attr_isAnnotateTypeAttr(A)
 end
 
 function clang_Attr_castToArmInAttr(A)
-    @ccall libclangex.clang_Attr_castToArmInAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmInAttr(A::CXAttr)::CXArmInAttr
 end
 
 function clang_Attr_isArmInAttr(A)
@@ -1656,7 +4906,7 @@ function clang_Attr_isArmInAttr(A)
 end
 
 function clang_Attr_castToArmInOutAttr(A)
-    @ccall libclangex.clang_Attr_castToArmInOutAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmInOutAttr(A::CXAttr)::CXArmInOutAttr
 end
 
 function clang_Attr_isArmInOutAttr(A)
@@ -1664,7 +4914,7 @@ function clang_Attr_isArmInOutAttr(A)
 end
 
 function clang_Attr_castToArmMveStrictPolymorphismAttr(A)
-    @ccall libclangex.clang_Attr_castToArmMveStrictPolymorphismAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmMveStrictPolymorphismAttr(A::CXAttr)::CXArmMveStrictPolymorphismAttr
 end
 
 function clang_Attr_isArmMveStrictPolymorphismAttr(A)
@@ -1672,7 +4922,7 @@ function clang_Attr_isArmMveStrictPolymorphismAttr(A)
 end
 
 function clang_Attr_castToArmOutAttr(A)
-    @ccall libclangex.clang_Attr_castToArmOutAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmOutAttr(A::CXAttr)::CXArmOutAttr
 end
 
 function clang_Attr_isArmOutAttr(A)
@@ -1680,7 +4930,7 @@ function clang_Attr_isArmOutAttr(A)
 end
 
 function clang_Attr_castToArmPreservesAttr(A)
-    @ccall libclangex.clang_Attr_castToArmPreservesAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmPreservesAttr(A::CXAttr)::CXArmPreservesAttr
 end
 
 function clang_Attr_isArmPreservesAttr(A)
@@ -1688,7 +4938,7 @@ function clang_Attr_isArmPreservesAttr(A)
 end
 
 function clang_Attr_castToArmStreamingAttr(A)
-    @ccall libclangex.clang_Attr_castToArmStreamingAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmStreamingAttr(A::CXAttr)::CXArmStreamingAttr
 end
 
 function clang_Attr_isArmStreamingAttr(A)
@@ -1696,7 +4946,7 @@ function clang_Attr_isArmStreamingAttr(A)
 end
 
 function clang_Attr_castToArmStreamingCompatibleAttr(A)
-    @ccall libclangex.clang_Attr_castToArmStreamingCompatibleAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmStreamingCompatibleAttr(A::CXAttr)::CXArmStreamingCompatibleAttr
 end
 
 function clang_Attr_isArmStreamingCompatibleAttr(A)
@@ -1704,7 +4954,7 @@ function clang_Attr_isArmStreamingCompatibleAttr(A)
 end
 
 function clang_Attr_castToBTFTypeTagAttr(A)
-    @ccall libclangex.clang_Attr_castToBTFTypeTagAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToBTFTypeTagAttr(A::CXAttr)::CXBTFTypeTagAttr
 end
 
 function clang_Attr_isBTFTypeTagAttr(A)
@@ -1712,7 +4962,7 @@ function clang_Attr_isBTFTypeTagAttr(A)
 end
 
 function clang_Attr_castToCmseNSCallAttr(A)
-    @ccall libclangex.clang_Attr_castToCmseNSCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCmseNSCallAttr(A::CXAttr)::CXCmseNSCallAttr
 end
 
 function clang_Attr_isCmseNSCallAttr(A)
@@ -1720,7 +4970,7 @@ function clang_Attr_isCmseNSCallAttr(A)
 end
 
 function clang_Attr_castToHLSLGroupSharedAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLGroupSharedAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHLSLGroupSharedAddressSpaceAttr(A::CXAttr)::CXHLSLGroupSharedAddressSpaceAttr
 end
 
 function clang_Attr_isHLSLGroupSharedAddressSpaceAttr(A)
@@ -1728,7 +4978,7 @@ function clang_Attr_isHLSLGroupSharedAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToHLSLParamModifierAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLParamModifierAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHLSLParamModifierAttr(A::CXAttr)::CXHLSLParamModifierAttr
 end
 
 function clang_Attr_isHLSLParamModifierAttr(A)
@@ -1736,7 +4986,7 @@ function clang_Attr_isHLSLParamModifierAttr(A)
 end
 
 function clang_Attr_castToNoDerefAttr(A)
-    @ccall libclangex.clang_Attr_castToNoDerefAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoDerefAttr(A::CXAttr)::CXNoDerefAttr
 end
 
 function clang_Attr_isNoDerefAttr(A)
@@ -1744,7 +4994,7 @@ function clang_Attr_isNoDerefAttr(A)
 end
 
 function clang_Attr_castToObjCGCAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCGCAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCGCAttr(A::CXAttr)::CXObjCGCAttr
 end
 
 function clang_Attr_isObjCGCAttr(A)
@@ -1752,7 +5002,7 @@ function clang_Attr_isObjCGCAttr(A)
 end
 
 function clang_Attr_castToObjCInertUnsafeUnretainedAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCInertUnsafeUnretainedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCInertUnsafeUnretainedAttr(A::CXAttr)::CXObjCInertUnsafeUnretainedAttr
 end
 
 function clang_Attr_isObjCInertUnsafeUnretainedAttr(A)
@@ -1760,7 +5010,7 @@ function clang_Attr_isObjCInertUnsafeUnretainedAttr(A)
 end
 
 function clang_Attr_castToObjCKindOfAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCKindOfAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCKindOfAttr(A::CXAttr)::CXObjCKindOfAttr
 end
 
 function clang_Attr_isObjCKindOfAttr(A)
@@ -1768,7 +5018,7 @@ function clang_Attr_isObjCKindOfAttr(A)
 end
 
 function clang_Attr_castToOpenCLConstantAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLConstantAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLConstantAddressSpaceAttr(A::CXAttr)::CXOpenCLConstantAddressSpaceAttr
 end
 
 function clang_Attr_isOpenCLConstantAddressSpaceAttr(A)
@@ -1776,7 +5026,7 @@ function clang_Attr_isOpenCLConstantAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToOpenCLGenericAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLGenericAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLGenericAddressSpaceAttr(A::CXAttr)::CXOpenCLGenericAddressSpaceAttr
 end
 
 function clang_Attr_isOpenCLGenericAddressSpaceAttr(A)
@@ -1784,7 +5034,7 @@ function clang_Attr_isOpenCLGenericAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToOpenCLGlobalAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLGlobalAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLGlobalAddressSpaceAttr(A::CXAttr)::CXOpenCLGlobalAddressSpaceAttr
 end
 
 function clang_Attr_isOpenCLGlobalAddressSpaceAttr(A)
@@ -1792,7 +5042,7 @@ function clang_Attr_isOpenCLGlobalAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToOpenCLGlobalDeviceAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLGlobalDeviceAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLGlobalDeviceAddressSpaceAttr(A::CXAttr)::CXOpenCLGlobalDeviceAddressSpaceAttr
 end
 
 function clang_Attr_isOpenCLGlobalDeviceAddressSpaceAttr(A)
@@ -1800,7 +5050,7 @@ function clang_Attr_isOpenCLGlobalDeviceAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToOpenCLGlobalHostAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLGlobalHostAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLGlobalHostAddressSpaceAttr(A::CXAttr)::CXOpenCLGlobalHostAddressSpaceAttr
 end
 
 function clang_Attr_isOpenCLGlobalHostAddressSpaceAttr(A)
@@ -1808,7 +5058,7 @@ function clang_Attr_isOpenCLGlobalHostAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToOpenCLLocalAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLLocalAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLLocalAddressSpaceAttr(A::CXAttr)::CXOpenCLLocalAddressSpaceAttr
 end
 
 function clang_Attr_isOpenCLLocalAddressSpaceAttr(A)
@@ -1816,7 +5066,7 @@ function clang_Attr_isOpenCLLocalAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToOpenCLPrivateAddressSpaceAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLPrivateAddressSpaceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLPrivateAddressSpaceAttr(A::CXAttr)::CXOpenCLPrivateAddressSpaceAttr
 end
 
 function clang_Attr_isOpenCLPrivateAddressSpaceAttr(A)
@@ -1824,7 +5074,7 @@ function clang_Attr_isOpenCLPrivateAddressSpaceAttr(A)
 end
 
 function clang_Attr_castToPtr32Attr(A)
-    @ccall libclangex.clang_Attr_castToPtr32Attr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPtr32Attr(A::CXAttr)::CXPtr32Attr
 end
 
 function clang_Attr_isPtr32Attr(A)
@@ -1832,7 +5082,7 @@ function clang_Attr_isPtr32Attr(A)
 end
 
 function clang_Attr_castToPtr64Attr(A)
-    @ccall libclangex.clang_Attr_castToPtr64Attr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPtr64Attr(A::CXAttr)::CXPtr64Attr
 end
 
 function clang_Attr_isPtr64Attr(A)
@@ -1840,7 +5090,7 @@ function clang_Attr_isPtr64Attr(A)
 end
 
 function clang_Attr_castToSPtrAttr(A)
-    @ccall libclangex.clang_Attr_castToSPtrAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSPtrAttr(A::CXAttr)::CXSPtrAttr
 end
 
 function clang_Attr_isSPtrAttr(A)
@@ -1848,7 +5098,7 @@ function clang_Attr_isSPtrAttr(A)
 end
 
 function clang_Attr_castToTypeNonNullAttr(A)
-    @ccall libclangex.clang_Attr_castToTypeNonNullAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTypeNonNullAttr(A::CXAttr)::CXTypeNonNullAttr
 end
 
 function clang_Attr_isTypeNonNullAttr(A)
@@ -1856,7 +5106,7 @@ function clang_Attr_isTypeNonNullAttr(A)
 end
 
 function clang_Attr_castToTypeNullUnspecifiedAttr(A)
-    @ccall libclangex.clang_Attr_castToTypeNullUnspecifiedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTypeNullUnspecifiedAttr(A::CXAttr)::CXTypeNullUnspecifiedAttr
 end
 
 function clang_Attr_isTypeNullUnspecifiedAttr(A)
@@ -1864,7 +5114,7 @@ function clang_Attr_isTypeNullUnspecifiedAttr(A)
 end
 
 function clang_Attr_castToTypeNullableAttr(A)
-    @ccall libclangex.clang_Attr_castToTypeNullableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTypeNullableAttr(A::CXAttr)::CXTypeNullableAttr
 end
 
 function clang_Attr_isTypeNullableAttr(A)
@@ -1872,7 +5122,7 @@ function clang_Attr_isTypeNullableAttr(A)
 end
 
 function clang_Attr_castToTypeNullableResultAttr(A)
-    @ccall libclangex.clang_Attr_castToTypeNullableResultAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTypeNullableResultAttr(A::CXAttr)::CXTypeNullableResultAttr
 end
 
 function clang_Attr_isTypeNullableResultAttr(A)
@@ -1880,7 +5130,7 @@ function clang_Attr_isTypeNullableResultAttr(A)
 end
 
 function clang_Attr_castToUPtrAttr(A)
-    @ccall libclangex.clang_Attr_castToUPtrAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUPtrAttr(A::CXAttr)::CXUPtrAttr
 end
 
 function clang_Attr_isUPtrAttr(A)
@@ -1888,7 +5138,7 @@ function clang_Attr_isUPtrAttr(A)
 end
 
 function clang_Attr_castToWebAssemblyFuncrefAttr(A)
-    @ccall libclangex.clang_Attr_castToWebAssemblyFuncrefAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWebAssemblyFuncrefAttr(A::CXAttr)::CXWebAssemblyFuncrefAttr
 end
 
 function clang_Attr_isWebAssemblyFuncrefAttr(A)
@@ -1896,7 +5146,7 @@ function clang_Attr_isWebAssemblyFuncrefAttr(A)
 end
 
 function clang_Attr_castToCodeAlignAttr(A)
-    @ccall libclangex.clang_Attr_castToCodeAlignAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCodeAlignAttr(A::CXAttr)::CXCodeAlignAttr
 end
 
 function clang_Attr_isCodeAlignAttr(A)
@@ -1904,7 +5154,7 @@ function clang_Attr_isCodeAlignAttr(A)
 end
 
 function clang_Attr_castToFallThroughAttr(A)
-    @ccall libclangex.clang_Attr_castToFallThroughAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToFallThroughAttr(A::CXAttr)::CXFallThroughAttr
 end
 
 function clang_Attr_isFallThroughAttr(A)
@@ -1912,7 +5162,7 @@ function clang_Attr_isFallThroughAttr(A)
 end
 
 function clang_Attr_castToLikelyAttr(A)
-    @ccall libclangex.clang_Attr_castToLikelyAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLikelyAttr(A::CXAttr)::CXLikelyAttr
 end
 
 function clang_Attr_isLikelyAttr(A)
@@ -1920,7 +5170,7 @@ function clang_Attr_isLikelyAttr(A)
 end
 
 function clang_Attr_castToMustTailAttr(A)
-    @ccall libclangex.clang_Attr_castToMustTailAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMustTailAttr(A::CXAttr)::CXMustTailAttr
 end
 
 function clang_Attr_isMustTailAttr(A)
@@ -1928,7 +5178,7 @@ function clang_Attr_isMustTailAttr(A)
 end
 
 function clang_Attr_castToOpenCLUnrollHintAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLUnrollHintAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLUnrollHintAttr(A::CXAttr)::CXOpenCLUnrollHintAttr
 end
 
 function clang_Attr_isOpenCLUnrollHintAttr(A)
@@ -1936,7 +5186,7 @@ function clang_Attr_isOpenCLUnrollHintAttr(A)
 end
 
 function clang_Attr_castToUnlikelyAttr(A)
-    @ccall libclangex.clang_Attr_castToUnlikelyAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUnlikelyAttr(A::CXAttr)::CXUnlikelyAttr
 end
 
 function clang_Attr_isUnlikelyAttr(A)
@@ -1944,7 +5194,7 @@ function clang_Attr_isUnlikelyAttr(A)
 end
 
 function clang_Attr_castToAlwaysInlineAttr(A)
-    @ccall libclangex.clang_Attr_castToAlwaysInlineAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAlwaysInlineAttr(A::CXAttr)::CXAlwaysInlineAttr
 end
 
 function clang_Attr_isAlwaysInlineAttr(A)
@@ -1952,7 +5202,7 @@ function clang_Attr_isAlwaysInlineAttr(A)
 end
 
 function clang_Attr_castToNoInlineAttr(A)
-    @ccall libclangex.clang_Attr_castToNoInlineAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoInlineAttr(A::CXAttr)::CXNoInlineAttr
 end
 
 function clang_Attr_isNoInlineAttr(A)
@@ -1960,7 +5210,7 @@ function clang_Attr_isNoInlineAttr(A)
 end
 
 function clang_Attr_castToNoMergeAttr(A)
-    @ccall libclangex.clang_Attr_castToNoMergeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoMergeAttr(A::CXAttr)::CXNoMergeAttr
 end
 
 function clang_Attr_isNoMergeAttr(A)
@@ -1968,7 +5218,7 @@ function clang_Attr_isNoMergeAttr(A)
 end
 
 function clang_Attr_castToSuppressAttr(A)
-    @ccall libclangex.clang_Attr_castToSuppressAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSuppressAttr(A::CXAttr)::CXSuppressAttr
 end
 
 function clang_Attr_isSuppressAttr(A)
@@ -1976,7 +5226,7 @@ function clang_Attr_isSuppressAttr(A)
 end
 
 function clang_Attr_castToAArch64SVEPcsAttr(A)
-    @ccall libclangex.clang_Attr_castToAArch64SVEPcsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAArch64SVEPcsAttr(A::CXAttr)::CXAArch64SVEPcsAttr
 end
 
 function clang_Attr_isAArch64SVEPcsAttr(A)
@@ -1984,7 +5234,7 @@ function clang_Attr_isAArch64SVEPcsAttr(A)
 end
 
 function clang_Attr_castToAArch64VectorPcsAttr(A)
-    @ccall libclangex.clang_Attr_castToAArch64VectorPcsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAArch64VectorPcsAttr(A::CXAttr)::CXAArch64VectorPcsAttr
 end
 
 function clang_Attr_isAArch64VectorPcsAttr(A)
@@ -1992,7 +5242,7 @@ function clang_Attr_isAArch64VectorPcsAttr(A)
 end
 
 function clang_Attr_castToAMDGPUKernelCallAttr(A)
-    @ccall libclangex.clang_Attr_castToAMDGPUKernelCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAMDGPUKernelCallAttr(A::CXAttr)::CXAMDGPUKernelCallAttr
 end
 
 function clang_Attr_isAMDGPUKernelCallAttr(A)
@@ -2000,7 +5250,7 @@ function clang_Attr_isAMDGPUKernelCallAttr(A)
 end
 
 function clang_Attr_castToAcquireHandleAttr(A)
-    @ccall libclangex.clang_Attr_castToAcquireHandleAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAcquireHandleAttr(A::CXAttr)::CXAcquireHandleAttr
 end
 
 function clang_Attr_isAcquireHandleAttr(A)
@@ -2008,7 +5258,7 @@ function clang_Attr_isAcquireHandleAttr(A)
 end
 
 function clang_Attr_castToAnyX86NoCfCheckAttr(A)
-    @ccall libclangex.clang_Attr_castToAnyX86NoCfCheckAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAnyX86NoCfCheckAttr(A::CXAttr)::CXAnyX86NoCfCheckAttr
 end
 
 function clang_Attr_isAnyX86NoCfCheckAttr(A)
@@ -2016,7 +5266,7 @@ function clang_Attr_isAnyX86NoCfCheckAttr(A)
 end
 
 function clang_Attr_castToCDeclAttr(A)
-    @ccall libclangex.clang_Attr_castToCDeclAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCDeclAttr(A::CXAttr)::CXCDeclAttr
 end
 
 function clang_Attr_isCDeclAttr(A)
@@ -2024,7 +5274,7 @@ function clang_Attr_isCDeclAttr(A)
 end
 
 function clang_Attr_castToFastCallAttr(A)
-    @ccall libclangex.clang_Attr_castToFastCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToFastCallAttr(A::CXAttr)::CXFastCallAttr
 end
 
 function clang_Attr_isFastCallAttr(A)
@@ -2032,7 +5282,7 @@ function clang_Attr_isFastCallAttr(A)
 end
 
 function clang_Attr_castToIntelOclBiccAttr(A)
-    @ccall libclangex.clang_Attr_castToIntelOclBiccAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToIntelOclBiccAttr(A::CXAttr)::CXIntelOclBiccAttr
 end
 
 function clang_Attr_isIntelOclBiccAttr(A)
@@ -2040,7 +5290,7 @@ function clang_Attr_isIntelOclBiccAttr(A)
 end
 
 function clang_Attr_castToLifetimeBoundAttr(A)
-    @ccall libclangex.clang_Attr_castToLifetimeBoundAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLifetimeBoundAttr(A::CXAttr)::CXLifetimeBoundAttr
 end
 
 function clang_Attr_isLifetimeBoundAttr(A)
@@ -2048,7 +5298,7 @@ function clang_Attr_isLifetimeBoundAttr(A)
 end
 
 function clang_Attr_castToM68kRTDAttr(A)
-    @ccall libclangex.clang_Attr_castToM68kRTDAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToM68kRTDAttr(A::CXAttr)::CXM68kRTDAttr
 end
 
 function clang_Attr_isM68kRTDAttr(A)
@@ -2056,7 +5306,7 @@ function clang_Attr_isM68kRTDAttr(A)
 end
 
 function clang_Attr_castToMSABIAttr(A)
-    @ccall libclangex.clang_Attr_castToMSABIAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMSABIAttr(A::CXAttr)::CXMSABIAttr
 end
 
 function clang_Attr_isMSABIAttr(A)
@@ -2064,7 +5314,7 @@ function clang_Attr_isMSABIAttr(A)
 end
 
 function clang_Attr_castToNSReturnsRetainedAttr(A)
-    @ccall libclangex.clang_Attr_castToNSReturnsRetainedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNSReturnsRetainedAttr(A::CXAttr)::CXNSReturnsRetainedAttr
 end
 
 function clang_Attr_isNSReturnsRetainedAttr(A)
@@ -2072,7 +5322,7 @@ function clang_Attr_isNSReturnsRetainedAttr(A)
 end
 
 function clang_Attr_castToObjCOwnershipAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCOwnershipAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCOwnershipAttr(A::CXAttr)::CXObjCOwnershipAttr
 end
 
 function clang_Attr_isObjCOwnershipAttr(A)
@@ -2080,7 +5330,7 @@ function clang_Attr_isObjCOwnershipAttr(A)
 end
 
 function clang_Attr_castToPascalAttr(A)
-    @ccall libclangex.clang_Attr_castToPascalAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPascalAttr(A::CXAttr)::CXPascalAttr
 end
 
 function clang_Attr_isPascalAttr(A)
@@ -2088,7 +5338,7 @@ function clang_Attr_isPascalAttr(A)
 end
 
 function clang_Attr_castToPcsAttr(A)
-    @ccall libclangex.clang_Attr_castToPcsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPcsAttr(A::CXAttr)::CXPcsAttr
 end
 
 function clang_Attr_isPcsAttr(A)
@@ -2096,7 +5346,7 @@ function clang_Attr_isPcsAttr(A)
 end
 
 function clang_Attr_castToPreserveAllAttr(A)
-    @ccall libclangex.clang_Attr_castToPreserveAllAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPreserveAllAttr(A::CXAttr)::CXPreserveAllAttr
 end
 
 function clang_Attr_isPreserveAllAttr(A)
@@ -2104,7 +5354,7 @@ function clang_Attr_isPreserveAllAttr(A)
 end
 
 function clang_Attr_castToPreserveMostAttr(A)
-    @ccall libclangex.clang_Attr_castToPreserveMostAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPreserveMostAttr(A::CXAttr)::CXPreserveMostAttr
 end
 
 function clang_Attr_isPreserveMostAttr(A)
@@ -2112,7 +5362,7 @@ function clang_Attr_isPreserveMostAttr(A)
 end
 
 function clang_Attr_castToRegCallAttr(A)
-    @ccall libclangex.clang_Attr_castToRegCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToRegCallAttr(A::CXAttr)::CXRegCallAttr
 end
 
 function clang_Attr_isRegCallAttr(A)
@@ -2120,7 +5370,7 @@ function clang_Attr_isRegCallAttr(A)
 end
 
 function clang_Attr_castToStdCallAttr(A)
-    @ccall libclangex.clang_Attr_castToStdCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToStdCallAttr(A::CXAttr)::CXStdCallAttr
 end
 
 function clang_Attr_isStdCallAttr(A)
@@ -2128,7 +5378,7 @@ function clang_Attr_isStdCallAttr(A)
 end
 
 function clang_Attr_castToSwiftAsyncCallAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftAsyncCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftAsyncCallAttr(A::CXAttr)::CXSwiftAsyncCallAttr
 end
 
 function clang_Attr_isSwiftAsyncCallAttr(A)
@@ -2136,7 +5386,7 @@ function clang_Attr_isSwiftAsyncCallAttr(A)
 end
 
 function clang_Attr_castToSwiftCallAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftCallAttr(A::CXAttr)::CXSwiftCallAttr
 end
 
 function clang_Attr_isSwiftCallAttr(A)
@@ -2144,7 +5394,7 @@ function clang_Attr_isSwiftCallAttr(A)
 end
 
 function clang_Attr_castToSysVABIAttr(A)
-    @ccall libclangex.clang_Attr_castToSysVABIAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSysVABIAttr(A::CXAttr)::CXSysVABIAttr
 end
 
 function clang_Attr_isSysVABIAttr(A)
@@ -2152,7 +5402,7 @@ function clang_Attr_isSysVABIAttr(A)
 end
 
 function clang_Attr_castToThisCallAttr(A)
-    @ccall libclangex.clang_Attr_castToThisCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToThisCallAttr(A::CXAttr)::CXThisCallAttr
 end
 
 function clang_Attr_isThisCallAttr(A)
@@ -2160,7 +5410,7 @@ function clang_Attr_isThisCallAttr(A)
 end
 
 function clang_Attr_castToVectorCallAttr(A)
-    @ccall libclangex.clang_Attr_castToVectorCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToVectorCallAttr(A::CXAttr)::CXVectorCallAttr
 end
 
 function clang_Attr_isVectorCallAttr(A)
@@ -2168,7 +5418,7 @@ function clang_Attr_isVectorCallAttr(A)
 end
 
 function clang_Attr_castToSwiftAsyncContextAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftAsyncContextAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftAsyncContextAttr(A::CXAttr)::CXSwiftAsyncContextAttr
 end
 
 function clang_Attr_isSwiftAsyncContextAttr(A)
@@ -2176,7 +5426,7 @@ function clang_Attr_isSwiftAsyncContextAttr(A)
 end
 
 function clang_Attr_castToSwiftContextAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftContextAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftContextAttr(A::CXAttr)::CXSwiftContextAttr
 end
 
 function clang_Attr_isSwiftContextAttr(A)
@@ -2184,7 +5434,7 @@ function clang_Attr_isSwiftContextAttr(A)
 end
 
 function clang_Attr_castToSwiftErrorResultAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftErrorResultAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftErrorResultAttr(A::CXAttr)::CXSwiftErrorResultAttr
 end
 
 function clang_Attr_isSwiftErrorResultAttr(A)
@@ -2192,7 +5442,7 @@ function clang_Attr_isSwiftErrorResultAttr(A)
 end
 
 function clang_Attr_castToSwiftIndirectResultAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftIndirectResultAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftIndirectResultAttr(A::CXAttr)::CXSwiftIndirectResultAttr
 end
 
 function clang_Attr_isSwiftIndirectResultAttr(A)
@@ -2200,7 +5450,7 @@ function clang_Attr_isSwiftIndirectResultAttr(A)
 end
 
 function clang_Attr_castToAnnotateAttr(A)
-    @ccall libclangex.clang_Attr_castToAnnotateAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAnnotateAttr(A::CXAttr)::CXAnnotateAttr
 end
 
 function clang_Attr_isAnnotateAttr(A)
@@ -2208,7 +5458,7 @@ function clang_Attr_isAnnotateAttr(A)
 end
 
 function clang_Attr_castToCFConsumedAttr(A)
-    @ccall libclangex.clang_Attr_castToCFConsumedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCFConsumedAttr(A::CXAttr)::CXCFConsumedAttr
 end
 
 function clang_Attr_isCFConsumedAttr(A)
@@ -2216,7 +5466,7 @@ function clang_Attr_isCFConsumedAttr(A)
 end
 
 function clang_Attr_castToCarriesDependencyAttr(A)
-    @ccall libclangex.clang_Attr_castToCarriesDependencyAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCarriesDependencyAttr(A::CXAttr)::CXCarriesDependencyAttr
 end
 
 function clang_Attr_isCarriesDependencyAttr(A)
@@ -2224,7 +5474,7 @@ function clang_Attr_isCarriesDependencyAttr(A)
 end
 
 function clang_Attr_castToNSConsumedAttr(A)
-    @ccall libclangex.clang_Attr_castToNSConsumedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNSConsumedAttr(A::CXAttr)::CXNSConsumedAttr
 end
 
 function clang_Attr_isNSConsumedAttr(A)
@@ -2232,7 +5482,7 @@ function clang_Attr_isNSConsumedAttr(A)
 end
 
 function clang_Attr_castToNonNullAttr(A)
-    @ccall libclangex.clang_Attr_castToNonNullAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNonNullAttr(A::CXAttr)::CXNonNullAttr
 end
 
 function clang_Attr_isNonNullAttr(A)
@@ -2240,7 +5490,7 @@ function clang_Attr_isNonNullAttr(A)
 end
 
 function clang_Attr_castToOSConsumedAttr(A)
-    @ccall libclangex.clang_Attr_castToOSConsumedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOSConsumedAttr(A::CXAttr)::CXOSConsumedAttr
 end
 
 function clang_Attr_isOSConsumedAttr(A)
@@ -2248,7 +5498,7 @@ function clang_Attr_isOSConsumedAttr(A)
 end
 
 function clang_Attr_castToPassObjectSizeAttr(A)
-    @ccall libclangex.clang_Attr_castToPassObjectSizeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPassObjectSizeAttr(A::CXAttr)::CXPassObjectSizeAttr
 end
 
 function clang_Attr_isPassObjectSizeAttr(A)
@@ -2256,7 +5506,7 @@ function clang_Attr_isPassObjectSizeAttr(A)
 end
 
 function clang_Attr_castToReleaseHandleAttr(A)
-    @ccall libclangex.clang_Attr_castToReleaseHandleAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToReleaseHandleAttr(A::CXAttr)::CXReleaseHandleAttr
 end
 
 function clang_Attr_isReleaseHandleAttr(A)
@@ -2264,7 +5514,7 @@ function clang_Attr_isReleaseHandleAttr(A)
 end
 
 function clang_Attr_castToUseHandleAttr(A)
-    @ccall libclangex.clang_Attr_castToUseHandleAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUseHandleAttr(A::CXAttr)::CXUseHandleAttr
 end
 
 function clang_Attr_isUseHandleAttr(A)
@@ -2272,7 +5522,7 @@ function clang_Attr_isUseHandleAttr(A)
 end
 
 function clang_Attr_castToHLSLSV_DispatchThreadIDAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLSV_DispatchThreadIDAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHLSLSV_DispatchThreadIDAttr(A::CXAttr)::CXHLSLSV_DispatchThreadIDAttr
 end
 
 function clang_Attr_isHLSLSV_DispatchThreadIDAttr(A)
@@ -2280,7 +5530,7 @@ function clang_Attr_isHLSLSV_DispatchThreadIDAttr(A)
 end
 
 function clang_Attr_castToHLSLSV_GroupIndexAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLSV_GroupIndexAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHLSLSV_GroupIndexAttr(A::CXAttr)::CXHLSLSV_GroupIndexAttr
 end
 
 function clang_Attr_isHLSLSV_GroupIndexAttr(A)
@@ -2288,7 +5538,7 @@ function clang_Attr_isHLSLSV_GroupIndexAttr(A)
 end
 
 function clang_Attr_castToAMDGPUFlatWorkGroupSizeAttr(A)
-    @ccall libclangex.clang_Attr_castToAMDGPUFlatWorkGroupSizeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAMDGPUFlatWorkGroupSizeAttr(A::CXAttr)::CXAMDGPUFlatWorkGroupSizeAttr
 end
 
 function clang_Attr_isAMDGPUFlatWorkGroupSizeAttr(A)
@@ -2296,7 +5546,7 @@ function clang_Attr_isAMDGPUFlatWorkGroupSizeAttr(A)
 end
 
 function clang_Attr_castToAMDGPUNumSGPRAttr(A)
-    @ccall libclangex.clang_Attr_castToAMDGPUNumSGPRAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAMDGPUNumSGPRAttr(A::CXAttr)::CXAMDGPUNumSGPRAttr
 end
 
 function clang_Attr_isAMDGPUNumSGPRAttr(A)
@@ -2304,7 +5554,7 @@ function clang_Attr_isAMDGPUNumSGPRAttr(A)
 end
 
 function clang_Attr_castToAMDGPUNumVGPRAttr(A)
-    @ccall libclangex.clang_Attr_castToAMDGPUNumVGPRAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAMDGPUNumVGPRAttr(A::CXAttr)::CXAMDGPUNumVGPRAttr
 end
 
 function clang_Attr_isAMDGPUNumVGPRAttr(A)
@@ -2312,7 +5562,7 @@ function clang_Attr_isAMDGPUNumVGPRAttr(A)
 end
 
 function clang_Attr_castToAMDGPUWavesPerEUAttr(A)
-    @ccall libclangex.clang_Attr_castToAMDGPUWavesPerEUAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAMDGPUWavesPerEUAttr(A::CXAttr)::CXAMDGPUWavesPerEUAttr
 end
 
 function clang_Attr_isAMDGPUWavesPerEUAttr(A)
@@ -2320,7 +5570,7 @@ function clang_Attr_isAMDGPUWavesPerEUAttr(A)
 end
 
 function clang_Attr_castToARMInterruptAttr(A)
-    @ccall libclangex.clang_Attr_castToARMInterruptAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToARMInterruptAttr(A::CXAttr)::CXARMInterruptAttr
 end
 
 function clang_Attr_isARMInterruptAttr(A)
@@ -2328,7 +5578,7 @@ function clang_Attr_isARMInterruptAttr(A)
 end
 
 function clang_Attr_castToAVRInterruptAttr(A)
-    @ccall libclangex.clang_Attr_castToAVRInterruptAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAVRInterruptAttr(A::CXAttr)::CXAVRInterruptAttr
 end
 
 function clang_Attr_isAVRInterruptAttr(A)
@@ -2336,7 +5586,7 @@ function clang_Attr_isAVRInterruptAttr(A)
 end
 
 function clang_Attr_castToAVRSignalAttr(A)
-    @ccall libclangex.clang_Attr_castToAVRSignalAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAVRSignalAttr(A::CXAttr)::CXAVRSignalAttr
 end
 
 function clang_Attr_isAVRSignalAttr(A)
@@ -2344,7 +5594,7 @@ function clang_Attr_isAVRSignalAttr(A)
 end
 
 function clang_Attr_castToAcquireCapabilityAttr(A)
-    @ccall libclangex.clang_Attr_castToAcquireCapabilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAcquireCapabilityAttr(A::CXAttr)::CXAcquireCapabilityAttr
 end
 
 function clang_Attr_isAcquireCapabilityAttr(A)
@@ -2352,7 +5602,7 @@ function clang_Attr_isAcquireCapabilityAttr(A)
 end
 
 function clang_Attr_castToAcquiredAfterAttr(A)
-    @ccall libclangex.clang_Attr_castToAcquiredAfterAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAcquiredAfterAttr(A::CXAttr)::CXAcquiredAfterAttr
 end
 
 function clang_Attr_isAcquiredAfterAttr(A)
@@ -2360,7 +5610,7 @@ function clang_Attr_isAcquiredAfterAttr(A)
 end
 
 function clang_Attr_castToAcquiredBeforeAttr(A)
-    @ccall libclangex.clang_Attr_castToAcquiredBeforeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAcquiredBeforeAttr(A::CXAttr)::CXAcquiredBeforeAttr
 end
 
 function clang_Attr_isAcquiredBeforeAttr(A)
@@ -2368,7 +5618,7 @@ function clang_Attr_isAcquiredBeforeAttr(A)
 end
 
 function clang_Attr_castToAlignMac68kAttr(A)
-    @ccall libclangex.clang_Attr_castToAlignMac68kAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAlignMac68kAttr(A::CXAttr)::CXAlignMac68kAttr
 end
 
 function clang_Attr_isAlignMac68kAttr(A)
@@ -2376,7 +5626,7 @@ function clang_Attr_isAlignMac68kAttr(A)
 end
 
 function clang_Attr_castToAlignNaturalAttr(A)
-    @ccall libclangex.clang_Attr_castToAlignNaturalAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAlignNaturalAttr(A::CXAttr)::CXAlignNaturalAttr
 end
 
 function clang_Attr_isAlignNaturalAttr(A)
@@ -2384,7 +5634,7 @@ function clang_Attr_isAlignNaturalAttr(A)
 end
 
 function clang_Attr_castToAlignedAttr(A)
-    @ccall libclangex.clang_Attr_castToAlignedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAlignedAttr(A::CXAttr)::CXAlignedAttr
 end
 
 function clang_Attr_isAlignedAttr(A)
@@ -2392,7 +5642,7 @@ function clang_Attr_isAlignedAttr(A)
 end
 
 function clang_Attr_castToAllocAlignAttr(A)
-    @ccall libclangex.clang_Attr_castToAllocAlignAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAllocAlignAttr(A::CXAttr)::CXAllocAlignAttr
 end
 
 function clang_Attr_isAllocAlignAttr(A)
@@ -2400,7 +5650,7 @@ function clang_Attr_isAllocAlignAttr(A)
 end
 
 function clang_Attr_castToAllocSizeAttr(A)
-    @ccall libclangex.clang_Attr_castToAllocSizeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAllocSizeAttr(A::CXAttr)::CXAllocSizeAttr
 end
 
 function clang_Attr_isAllocSizeAttr(A)
@@ -2408,7 +5658,7 @@ function clang_Attr_isAllocSizeAttr(A)
 end
 
 function clang_Attr_castToAlwaysDestroyAttr(A)
-    @ccall libclangex.clang_Attr_castToAlwaysDestroyAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAlwaysDestroyAttr(A::CXAttr)::CXAlwaysDestroyAttr
 end
 
 function clang_Attr_isAlwaysDestroyAttr(A)
@@ -2416,7 +5666,7 @@ function clang_Attr_isAlwaysDestroyAttr(A)
 end
 
 function clang_Attr_castToAnalyzerNoReturnAttr(A)
-    @ccall libclangex.clang_Attr_castToAnalyzerNoReturnAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAnalyzerNoReturnAttr(A::CXAttr)::CXAnalyzerNoReturnAttr
 end
 
 function clang_Attr_isAnalyzerNoReturnAttr(A)
@@ -2424,7 +5674,7 @@ function clang_Attr_isAnalyzerNoReturnAttr(A)
 end
 
 function clang_Attr_castToAnyX86InterruptAttr(A)
-    @ccall libclangex.clang_Attr_castToAnyX86InterruptAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAnyX86InterruptAttr(A::CXAttr)::CXAnyX86InterruptAttr
 end
 
 function clang_Attr_isAnyX86InterruptAttr(A)
@@ -2432,7 +5682,7 @@ function clang_Attr_isAnyX86InterruptAttr(A)
 end
 
 function clang_Attr_castToAnyX86NoCallerSavedRegistersAttr(A)
-    @ccall libclangex.clang_Attr_castToAnyX86NoCallerSavedRegistersAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAnyX86NoCallerSavedRegistersAttr(A::CXAttr)::CXAnyX86NoCallerSavedRegistersAttr
 end
 
 function clang_Attr_isAnyX86NoCallerSavedRegistersAttr(A)
@@ -2440,7 +5690,7 @@ function clang_Attr_isAnyX86NoCallerSavedRegistersAttr(A)
 end
 
 function clang_Attr_castToArcWeakrefUnavailableAttr(A)
-    @ccall libclangex.clang_Attr_castToArcWeakrefUnavailableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArcWeakrefUnavailableAttr(A::CXAttr)::CXArcWeakrefUnavailableAttr
 end
 
 function clang_Attr_isArcWeakrefUnavailableAttr(A)
@@ -2448,7 +5698,7 @@ function clang_Attr_isArcWeakrefUnavailableAttr(A)
 end
 
 function clang_Attr_castToArgumentWithTypeTagAttr(A)
-    @ccall libclangex.clang_Attr_castToArgumentWithTypeTagAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArgumentWithTypeTagAttr(A::CXAttr)::CXArgumentWithTypeTagAttr
 end
 
 function clang_Attr_isArgumentWithTypeTagAttr(A)
@@ -2456,7 +5706,7 @@ function clang_Attr_isArgumentWithTypeTagAttr(A)
 end
 
 function clang_Attr_castToArmBuiltinAliasAttr(A)
-    @ccall libclangex.clang_Attr_castToArmBuiltinAliasAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmBuiltinAliasAttr(A::CXAttr)::CXArmBuiltinAliasAttr
 end
 
 function clang_Attr_isArmBuiltinAliasAttr(A)
@@ -2464,7 +5714,7 @@ function clang_Attr_isArmBuiltinAliasAttr(A)
 end
 
 function clang_Attr_castToArmLocallyStreamingAttr(A)
-    @ccall libclangex.clang_Attr_castToArmLocallyStreamingAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmLocallyStreamingAttr(A::CXAttr)::CXArmLocallyStreamingAttr
 end
 
 function clang_Attr_isArmLocallyStreamingAttr(A)
@@ -2472,7 +5722,7 @@ function clang_Attr_isArmLocallyStreamingAttr(A)
 end
 
 function clang_Attr_castToArmNewAttr(A)
-    @ccall libclangex.clang_Attr_castToArmNewAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArmNewAttr(A::CXAttr)::CXArmNewAttr
 end
 
 function clang_Attr_isArmNewAttr(A)
@@ -2480,7 +5730,7 @@ function clang_Attr_isArmNewAttr(A)
 end
 
 function clang_Attr_castToArtificialAttr(A)
-    @ccall libclangex.clang_Attr_castToArtificialAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToArtificialAttr(A::CXAttr)::CXArtificialAttr
 end
 
 function clang_Attr_isArtificialAttr(A)
@@ -2488,7 +5738,7 @@ function clang_Attr_isArtificialAttr(A)
 end
 
 function clang_Attr_castToAsmLabelAttr(A)
-    @ccall libclangex.clang_Attr_castToAsmLabelAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAsmLabelAttr(A::CXAttr)::CXAsmLabelAttr
 end
 
 function clang_Attr_isAsmLabelAttr(A)
@@ -2496,7 +5746,7 @@ function clang_Attr_isAsmLabelAttr(A)
 end
 
 function clang_Attr_castToAssertCapabilityAttr(A)
-    @ccall libclangex.clang_Attr_castToAssertCapabilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAssertCapabilityAttr(A::CXAttr)::CXAssertCapabilityAttr
 end
 
 function clang_Attr_isAssertCapabilityAttr(A)
@@ -2504,7 +5754,7 @@ function clang_Attr_isAssertCapabilityAttr(A)
 end
 
 function clang_Attr_castToAssertExclusiveLockAttr(A)
-    @ccall libclangex.clang_Attr_castToAssertExclusiveLockAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAssertExclusiveLockAttr(A::CXAttr)::CXAssertExclusiveLockAttr
 end
 
 function clang_Attr_isAssertExclusiveLockAttr(A)
@@ -2512,7 +5762,7 @@ function clang_Attr_isAssertExclusiveLockAttr(A)
 end
 
 function clang_Attr_castToAssertSharedLockAttr(A)
-    @ccall libclangex.clang_Attr_castToAssertSharedLockAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAssertSharedLockAttr(A::CXAttr)::CXAssertSharedLockAttr
 end
 
 function clang_Attr_isAssertSharedLockAttr(A)
@@ -2520,7 +5770,7 @@ function clang_Attr_isAssertSharedLockAttr(A)
 end
 
 function clang_Attr_castToAssumeAlignedAttr(A)
-    @ccall libclangex.clang_Attr_castToAssumeAlignedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAssumeAlignedAttr(A::CXAttr)::CXAssumeAlignedAttr
 end
 
 function clang_Attr_isAssumeAlignedAttr(A)
@@ -2528,7 +5778,7 @@ function clang_Attr_isAssumeAlignedAttr(A)
 end
 
 function clang_Attr_castToAssumptionAttr(A)
-    @ccall libclangex.clang_Attr_castToAssumptionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAssumptionAttr(A::CXAttr)::CXAssumptionAttr
 end
 
 function clang_Attr_isAssumptionAttr(A)
@@ -2536,7 +5786,7 @@ function clang_Attr_isAssumptionAttr(A)
 end
 
 function clang_Attr_castToAvailabilityAttr(A)
-    @ccall libclangex.clang_Attr_castToAvailabilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAvailabilityAttr(A::CXAttr)::CXAvailabilityAttr
 end
 
 function clang_Attr_isAvailabilityAttr(A)
@@ -2544,7 +5794,7 @@ function clang_Attr_isAvailabilityAttr(A)
 end
 
 function clang_Attr_castToAvailableOnlyInDefaultEvalMethodAttr(A)
-    @ccall libclangex.clang_Attr_castToAvailableOnlyInDefaultEvalMethodAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAvailableOnlyInDefaultEvalMethodAttr(A::CXAttr)::CXAvailableOnlyInDefaultEvalMethodAttr
 end
 
 function clang_Attr_isAvailableOnlyInDefaultEvalMethodAttr(A)
@@ -2552,7 +5802,7 @@ function clang_Attr_isAvailableOnlyInDefaultEvalMethodAttr(A)
 end
 
 function clang_Attr_castToBPFPreserveAccessIndexAttr(A)
-    @ccall libclangex.clang_Attr_castToBPFPreserveAccessIndexAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToBPFPreserveAccessIndexAttr(A::CXAttr)::CXBPFPreserveAccessIndexAttr
 end
 
 function clang_Attr_isBPFPreserveAccessIndexAttr(A)
@@ -2560,7 +5810,7 @@ function clang_Attr_isBPFPreserveAccessIndexAttr(A)
 end
 
 function clang_Attr_castToBPFPreserveStaticOffsetAttr(A)
-    @ccall libclangex.clang_Attr_castToBPFPreserveStaticOffsetAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToBPFPreserveStaticOffsetAttr(A::CXAttr)::CXBPFPreserveStaticOffsetAttr
 end
 
 function clang_Attr_isBPFPreserveStaticOffsetAttr(A)
@@ -2568,7 +5818,7 @@ function clang_Attr_isBPFPreserveStaticOffsetAttr(A)
 end
 
 function clang_Attr_castToBTFDeclTagAttr(A)
-    @ccall libclangex.clang_Attr_castToBTFDeclTagAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToBTFDeclTagAttr(A::CXAttr)::CXBTFDeclTagAttr
 end
 
 function clang_Attr_isBTFDeclTagAttr(A)
@@ -2576,7 +5826,7 @@ function clang_Attr_isBTFDeclTagAttr(A)
 end
 
 function clang_Attr_castToBlocksAttr(A)
-    @ccall libclangex.clang_Attr_castToBlocksAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToBlocksAttr(A::CXAttr)::CXBlocksAttr
 end
 
 function clang_Attr_isBlocksAttr(A)
@@ -2584,7 +5834,7 @@ function clang_Attr_isBlocksAttr(A)
 end
 
 function clang_Attr_castToBuiltinAttr(A)
-    @ccall libclangex.clang_Attr_castToBuiltinAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToBuiltinAttr(A::CXAttr)::CXBuiltinAttr
 end
 
 function clang_Attr_isBuiltinAttr(A)
@@ -2592,7 +5842,7 @@ function clang_Attr_isBuiltinAttr(A)
 end
 
 function clang_Attr_castToC11NoReturnAttr(A)
-    @ccall libclangex.clang_Attr_castToC11NoReturnAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToC11NoReturnAttr(A::CXAttr)::CXC11NoReturnAttr
 end
 
 function clang_Attr_isC11NoReturnAttr(A)
@@ -2600,7 +5850,7 @@ function clang_Attr_isC11NoReturnAttr(A)
 end
 
 function clang_Attr_castToCFAuditedTransferAttr(A)
-    @ccall libclangex.clang_Attr_castToCFAuditedTransferAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCFAuditedTransferAttr(A::CXAttr)::CXCFAuditedTransferAttr
 end
 
 function clang_Attr_isCFAuditedTransferAttr(A)
@@ -2608,7 +5858,7 @@ function clang_Attr_isCFAuditedTransferAttr(A)
 end
 
 function clang_Attr_castToCFGuardAttr(A)
-    @ccall libclangex.clang_Attr_castToCFGuardAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCFGuardAttr(A::CXAttr)::CXCFGuardAttr
 end
 
 function clang_Attr_isCFGuardAttr(A)
@@ -2616,7 +5866,7 @@ function clang_Attr_isCFGuardAttr(A)
 end
 
 function clang_Attr_castToCFICanonicalJumpTableAttr(A)
-    @ccall libclangex.clang_Attr_castToCFICanonicalJumpTableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCFICanonicalJumpTableAttr(A::CXAttr)::CXCFICanonicalJumpTableAttr
 end
 
 function clang_Attr_isCFICanonicalJumpTableAttr(A)
@@ -2624,7 +5874,7 @@ function clang_Attr_isCFICanonicalJumpTableAttr(A)
 end
 
 function clang_Attr_castToCFReturnsNotRetainedAttr(A)
-    @ccall libclangex.clang_Attr_castToCFReturnsNotRetainedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCFReturnsNotRetainedAttr(A::CXAttr)::CXCFReturnsNotRetainedAttr
 end
 
 function clang_Attr_isCFReturnsNotRetainedAttr(A)
@@ -2632,7 +5882,7 @@ function clang_Attr_isCFReturnsNotRetainedAttr(A)
 end
 
 function clang_Attr_castToCFReturnsRetainedAttr(A)
-    @ccall libclangex.clang_Attr_castToCFReturnsRetainedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCFReturnsRetainedAttr(A::CXAttr)::CXCFReturnsRetainedAttr
 end
 
 function clang_Attr_isCFReturnsRetainedAttr(A)
@@ -2640,7 +5890,7 @@ function clang_Attr_isCFReturnsRetainedAttr(A)
 end
 
 function clang_Attr_castToCFUnknownTransferAttr(A)
-    @ccall libclangex.clang_Attr_castToCFUnknownTransferAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCFUnknownTransferAttr(A::CXAttr)::CXCFUnknownTransferAttr
 end
 
 function clang_Attr_isCFUnknownTransferAttr(A)
@@ -2648,7 +5898,7 @@ function clang_Attr_isCFUnknownTransferAttr(A)
 end
 
 function clang_Attr_castToCPUDispatchAttr(A)
-    @ccall libclangex.clang_Attr_castToCPUDispatchAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCPUDispatchAttr(A::CXAttr)::CXCPUDispatchAttr
 end
 
 function clang_Attr_isCPUDispatchAttr(A)
@@ -2656,7 +5906,7 @@ function clang_Attr_isCPUDispatchAttr(A)
 end
 
 function clang_Attr_castToCPUSpecificAttr(A)
-    @ccall libclangex.clang_Attr_castToCPUSpecificAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCPUSpecificAttr(A::CXAttr)::CXCPUSpecificAttr
 end
 
 function clang_Attr_isCPUSpecificAttr(A)
@@ -2664,7 +5914,7 @@ function clang_Attr_isCPUSpecificAttr(A)
 end
 
 function clang_Attr_castToCUDAConstantAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDAConstantAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDAConstantAttr(A::CXAttr)::CXCUDAConstantAttr
 end
 
 function clang_Attr_isCUDAConstantAttr(A)
@@ -2672,7 +5922,7 @@ function clang_Attr_isCUDAConstantAttr(A)
 end
 
 function clang_Attr_castToCUDADeviceAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDADeviceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDADeviceAttr(A::CXAttr)::CXCUDADeviceAttr
 end
 
 function clang_Attr_isCUDADeviceAttr(A)
@@ -2680,7 +5930,7 @@ function clang_Attr_isCUDADeviceAttr(A)
 end
 
 function clang_Attr_castToCUDADeviceBuiltinSurfaceTypeAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDADeviceBuiltinSurfaceTypeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDADeviceBuiltinSurfaceTypeAttr(A::CXAttr)::CXCUDADeviceBuiltinSurfaceTypeAttr
 end
 
 function clang_Attr_isCUDADeviceBuiltinSurfaceTypeAttr(A)
@@ -2688,7 +5938,7 @@ function clang_Attr_isCUDADeviceBuiltinSurfaceTypeAttr(A)
 end
 
 function clang_Attr_castToCUDADeviceBuiltinTextureTypeAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDADeviceBuiltinTextureTypeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDADeviceBuiltinTextureTypeAttr(A::CXAttr)::CXCUDADeviceBuiltinTextureTypeAttr
 end
 
 function clang_Attr_isCUDADeviceBuiltinTextureTypeAttr(A)
@@ -2696,7 +5946,7 @@ function clang_Attr_isCUDADeviceBuiltinTextureTypeAttr(A)
 end
 
 function clang_Attr_castToCUDAGlobalAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDAGlobalAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDAGlobalAttr(A::CXAttr)::CXCUDAGlobalAttr
 end
 
 function clang_Attr_isCUDAGlobalAttr(A)
@@ -2704,7 +5954,7 @@ function clang_Attr_isCUDAGlobalAttr(A)
 end
 
 function clang_Attr_castToCUDAHostAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDAHostAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDAHostAttr(A::CXAttr)::CXCUDAHostAttr
 end
 
 function clang_Attr_isCUDAHostAttr(A)
@@ -2712,7 +5962,7 @@ function clang_Attr_isCUDAHostAttr(A)
 end
 
 function clang_Attr_castToCUDAInvalidTargetAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDAInvalidTargetAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDAInvalidTargetAttr(A::CXAttr)::CXCUDAInvalidTargetAttr
 end
 
 function clang_Attr_isCUDAInvalidTargetAttr(A)
@@ -2720,7 +5970,7 @@ function clang_Attr_isCUDAInvalidTargetAttr(A)
 end
 
 function clang_Attr_castToCUDALaunchBoundsAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDALaunchBoundsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDALaunchBoundsAttr(A::CXAttr)::CXCUDALaunchBoundsAttr
 end
 
 function clang_Attr_isCUDALaunchBoundsAttr(A)
@@ -2728,7 +5978,7 @@ function clang_Attr_isCUDALaunchBoundsAttr(A)
 end
 
 function clang_Attr_castToCUDASharedAttr(A)
-    @ccall libclangex.clang_Attr_castToCUDASharedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCUDASharedAttr(A::CXAttr)::CXCUDASharedAttr
 end
 
 function clang_Attr_isCUDASharedAttr(A)
@@ -2736,7 +5986,7 @@ function clang_Attr_isCUDASharedAttr(A)
 end
 
 function clang_Attr_castToCXX11NoReturnAttr(A)
-    @ccall libclangex.clang_Attr_castToCXX11NoReturnAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCXX11NoReturnAttr(A::CXAttr)::CXCXX11NoReturnAttr
 end
 
 function clang_Attr_isCXX11NoReturnAttr(A)
@@ -2744,7 +5994,7 @@ function clang_Attr_isCXX11NoReturnAttr(A)
 end
 
 function clang_Attr_castToCallableWhenAttr(A)
-    @ccall libclangex.clang_Attr_castToCallableWhenAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCallableWhenAttr(A::CXAttr)::CXCallableWhenAttr
 end
 
 function clang_Attr_isCallableWhenAttr(A)
@@ -2752,7 +6002,7 @@ function clang_Attr_isCallableWhenAttr(A)
 end
 
 function clang_Attr_castToCallbackAttr(A)
-    @ccall libclangex.clang_Attr_castToCallbackAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCallbackAttr(A::CXAttr)::CXCallbackAttr
 end
 
 function clang_Attr_isCallbackAttr(A)
@@ -2760,7 +6010,7 @@ function clang_Attr_isCallbackAttr(A)
 end
 
 function clang_Attr_castToCapabilityAttr(A)
-    @ccall libclangex.clang_Attr_castToCapabilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCapabilityAttr(A::CXAttr)::CXCapabilityAttr
 end
 
 function clang_Attr_isCapabilityAttr(A)
@@ -2768,7 +6018,7 @@ function clang_Attr_isCapabilityAttr(A)
 end
 
 function clang_Attr_castToCapturedRecordAttr(A)
-    @ccall libclangex.clang_Attr_castToCapturedRecordAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCapturedRecordAttr(A::CXAttr)::CXCapturedRecordAttr
 end
 
 function clang_Attr_isCapturedRecordAttr(A)
@@ -2776,7 +6026,7 @@ function clang_Attr_isCapturedRecordAttr(A)
 end
 
 function clang_Attr_castToCleanupAttr(A)
-    @ccall libclangex.clang_Attr_castToCleanupAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCleanupAttr(A::CXAttr)::CXCleanupAttr
 end
 
 function clang_Attr_isCleanupAttr(A)
@@ -2784,7 +6034,7 @@ function clang_Attr_isCleanupAttr(A)
 end
 
 function clang_Attr_castToCmseNSEntryAttr(A)
-    @ccall libclangex.clang_Attr_castToCmseNSEntryAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCmseNSEntryAttr(A::CXAttr)::CXCmseNSEntryAttr
 end
 
 function clang_Attr_isCmseNSEntryAttr(A)
@@ -2792,7 +6042,7 @@ function clang_Attr_isCmseNSEntryAttr(A)
 end
 
 function clang_Attr_castToCodeModelAttr(A)
-    @ccall libclangex.clang_Attr_castToCodeModelAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCodeModelAttr(A::CXAttr)::CXCodeModelAttr
 end
 
 function clang_Attr_isCodeModelAttr(A)
@@ -2800,7 +6050,7 @@ function clang_Attr_isCodeModelAttr(A)
 end
 
 function clang_Attr_castToCodeSegAttr(A)
-    @ccall libclangex.clang_Attr_castToCodeSegAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCodeSegAttr(A::CXAttr)::CXCodeSegAttr
 end
 
 function clang_Attr_isCodeSegAttr(A)
@@ -2808,7 +6058,7 @@ function clang_Attr_isCodeSegAttr(A)
 end
 
 function clang_Attr_castToColdAttr(A)
-    @ccall libclangex.clang_Attr_castToColdAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToColdAttr(A::CXAttr)::CXColdAttr
 end
 
 function clang_Attr_isColdAttr(A)
@@ -2816,7 +6066,7 @@ function clang_Attr_isColdAttr(A)
 end
 
 function clang_Attr_castToCommonAttr(A)
-    @ccall libclangex.clang_Attr_castToCommonAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCommonAttr(A::CXAttr)::CXCommonAttr
 end
 
 function clang_Attr_isCommonAttr(A)
@@ -2824,7 +6074,7 @@ function clang_Attr_isCommonAttr(A)
 end
 
 function clang_Attr_castToConstAttr(A)
-    @ccall libclangex.clang_Attr_castToConstAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToConstAttr(A::CXAttr)::CXConstAttr
 end
 
 function clang_Attr_isConstAttr(A)
@@ -2832,7 +6082,7 @@ function clang_Attr_isConstAttr(A)
 end
 
 function clang_Attr_castToConstInitAttr(A)
-    @ccall libclangex.clang_Attr_castToConstInitAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToConstInitAttr(A::CXAttr)::CXConstInitAttr
 end
 
 function clang_Attr_isConstInitAttr(A)
@@ -2840,7 +6090,7 @@ function clang_Attr_isConstInitAttr(A)
 end
 
 function clang_Attr_castToConstructorAttr(A)
-    @ccall libclangex.clang_Attr_castToConstructorAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToConstructorAttr(A::CXAttr)::CXConstructorAttr
 end
 
 function clang_Attr_isConstructorAttr(A)
@@ -2848,7 +6098,7 @@ function clang_Attr_isConstructorAttr(A)
 end
 
 function clang_Attr_castToConsumableAttr(A)
-    @ccall libclangex.clang_Attr_castToConsumableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToConsumableAttr(A::CXAttr)::CXConsumableAttr
 end
 
 function clang_Attr_isConsumableAttr(A)
@@ -2856,7 +6106,7 @@ function clang_Attr_isConsumableAttr(A)
 end
 
 function clang_Attr_castToConsumableAutoCastAttr(A)
-    @ccall libclangex.clang_Attr_castToConsumableAutoCastAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToConsumableAutoCastAttr(A::CXAttr)::CXConsumableAutoCastAttr
 end
 
 function clang_Attr_isConsumableAutoCastAttr(A)
@@ -2864,7 +6114,7 @@ function clang_Attr_isConsumableAutoCastAttr(A)
 end
 
 function clang_Attr_castToConsumableSetOnReadAttr(A)
-    @ccall libclangex.clang_Attr_castToConsumableSetOnReadAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToConsumableSetOnReadAttr(A::CXAttr)::CXConsumableSetOnReadAttr
 end
 
 function clang_Attr_isConsumableSetOnReadAttr(A)
@@ -2872,7 +6122,7 @@ function clang_Attr_isConsumableSetOnReadAttr(A)
 end
 
 function clang_Attr_castToConvergentAttr(A)
-    @ccall libclangex.clang_Attr_castToConvergentAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToConvergentAttr(A::CXAttr)::CXConvergentAttr
 end
 
 function clang_Attr_isConvergentAttr(A)
@@ -2880,7 +6130,7 @@ function clang_Attr_isConvergentAttr(A)
 end
 
 function clang_Attr_castToCoroDisableLifetimeBoundAttr(A)
-    @ccall libclangex.clang_Attr_castToCoroDisableLifetimeBoundAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCoroDisableLifetimeBoundAttr(A::CXAttr)::CXCoroDisableLifetimeBoundAttr
 end
 
 function clang_Attr_isCoroDisableLifetimeBoundAttr(A)
@@ -2888,7 +6138,7 @@ function clang_Attr_isCoroDisableLifetimeBoundAttr(A)
 end
 
 function clang_Attr_castToCoroLifetimeBoundAttr(A)
-    @ccall libclangex.clang_Attr_castToCoroLifetimeBoundAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCoroLifetimeBoundAttr(A::CXAttr)::CXCoroLifetimeBoundAttr
 end
 
 function clang_Attr_isCoroLifetimeBoundAttr(A)
@@ -2896,7 +6146,7 @@ function clang_Attr_isCoroLifetimeBoundAttr(A)
 end
 
 function clang_Attr_castToCoroOnlyDestroyWhenCompleteAttr(A)
-    @ccall libclangex.clang_Attr_castToCoroOnlyDestroyWhenCompleteAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCoroOnlyDestroyWhenCompleteAttr(A::CXAttr)::CXCoroOnlyDestroyWhenCompleteAttr
 end
 
 function clang_Attr_isCoroOnlyDestroyWhenCompleteAttr(A)
@@ -2904,7 +6154,7 @@ function clang_Attr_isCoroOnlyDestroyWhenCompleteAttr(A)
 end
 
 function clang_Attr_castToCoroReturnTypeAttr(A)
-    @ccall libclangex.clang_Attr_castToCoroReturnTypeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCoroReturnTypeAttr(A::CXAttr)::CXCoroReturnTypeAttr
 end
 
 function clang_Attr_isCoroReturnTypeAttr(A)
@@ -2912,7 +6162,7 @@ function clang_Attr_isCoroReturnTypeAttr(A)
 end
 
 function clang_Attr_castToCoroWrapperAttr(A)
-    @ccall libclangex.clang_Attr_castToCoroWrapperAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCoroWrapperAttr(A::CXAttr)::CXCoroWrapperAttr
 end
 
 function clang_Attr_isCoroWrapperAttr(A)
@@ -2920,7 +6170,7 @@ function clang_Attr_isCoroWrapperAttr(A)
 end
 
 function clang_Attr_castToCountedByAttr(A)
-    @ccall libclangex.clang_Attr_castToCountedByAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCountedByAttr(A::CXAttr)::CXCountedByAttr
 end
 
 function clang_Attr_isCountedByAttr(A)
@@ -2928,7 +6178,7 @@ function clang_Attr_isCountedByAttr(A)
 end
 
 function clang_Attr_castToDLLExportAttr(A)
-    @ccall libclangex.clang_Attr_castToDLLExportAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDLLExportAttr(A::CXAttr)::CXDLLExportAttr
 end
 
 function clang_Attr_isDLLExportAttr(A)
@@ -2936,7 +6186,7 @@ function clang_Attr_isDLLExportAttr(A)
 end
 
 function clang_Attr_castToDLLExportStaticLocalAttr(A)
-    @ccall libclangex.clang_Attr_castToDLLExportStaticLocalAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDLLExportStaticLocalAttr(A::CXAttr)::CXDLLExportStaticLocalAttr
 end
 
 function clang_Attr_isDLLExportStaticLocalAttr(A)
@@ -2944,7 +6194,7 @@ function clang_Attr_isDLLExportStaticLocalAttr(A)
 end
 
 function clang_Attr_castToDLLImportAttr(A)
-    @ccall libclangex.clang_Attr_castToDLLImportAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDLLImportAttr(A::CXAttr)::CXDLLImportAttr
 end
 
 function clang_Attr_isDLLImportAttr(A)
@@ -2952,7 +6202,7 @@ function clang_Attr_isDLLImportAttr(A)
 end
 
 function clang_Attr_castToDLLImportStaticLocalAttr(A)
-    @ccall libclangex.clang_Attr_castToDLLImportStaticLocalAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDLLImportStaticLocalAttr(A::CXAttr)::CXDLLImportStaticLocalAttr
 end
 
 function clang_Attr_isDLLImportStaticLocalAttr(A)
@@ -2960,7 +6210,7 @@ function clang_Attr_isDLLImportStaticLocalAttr(A)
 end
 
 function clang_Attr_castToDeprecatedAttr(A)
-    @ccall libclangex.clang_Attr_castToDeprecatedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDeprecatedAttr(A::CXAttr)::CXDeprecatedAttr
 end
 
 function clang_Attr_isDeprecatedAttr(A)
@@ -2968,7 +6218,7 @@ function clang_Attr_isDeprecatedAttr(A)
 end
 
 function clang_Attr_castToDestructorAttr(A)
-    @ccall libclangex.clang_Attr_castToDestructorAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDestructorAttr(A::CXAttr)::CXDestructorAttr
 end
 
 function clang_Attr_isDestructorAttr(A)
@@ -2976,7 +6226,7 @@ function clang_Attr_isDestructorAttr(A)
 end
 
 function clang_Attr_castToDiagnoseAsBuiltinAttr(A)
-    @ccall libclangex.clang_Attr_castToDiagnoseAsBuiltinAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDiagnoseAsBuiltinAttr(A::CXAttr)::CXDiagnoseAsBuiltinAttr
 end
 
 function clang_Attr_isDiagnoseAsBuiltinAttr(A)
@@ -2984,7 +6234,7 @@ function clang_Attr_isDiagnoseAsBuiltinAttr(A)
 end
 
 function clang_Attr_castToDiagnoseIfAttr(A)
-    @ccall libclangex.clang_Attr_castToDiagnoseIfAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDiagnoseIfAttr(A::CXAttr)::CXDiagnoseIfAttr
 end
 
 function clang_Attr_isDiagnoseIfAttr(A)
@@ -2992,7 +6242,7 @@ function clang_Attr_isDiagnoseIfAttr(A)
 end
 
 function clang_Attr_castToDisableSanitizerInstrumentationAttr(A)
-    @ccall libclangex.clang_Attr_castToDisableSanitizerInstrumentationAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDisableSanitizerInstrumentationAttr(A::CXAttr)::CXDisableSanitizerInstrumentationAttr
 end
 
 function clang_Attr_isDisableSanitizerInstrumentationAttr(A)
@@ -3000,7 +6250,7 @@ function clang_Attr_isDisableSanitizerInstrumentationAttr(A)
 end
 
 function clang_Attr_castToDisableTailCallsAttr(A)
-    @ccall libclangex.clang_Attr_castToDisableTailCallsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToDisableTailCallsAttr(A::CXAttr)::CXDisableTailCallsAttr
 end
 
 function clang_Attr_isDisableTailCallsAttr(A)
@@ -3008,7 +6258,7 @@ function clang_Attr_isDisableTailCallsAttr(A)
 end
 
 function clang_Attr_castToEmptyBasesAttr(A)
-    @ccall libclangex.clang_Attr_castToEmptyBasesAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToEmptyBasesAttr(A::CXAttr)::CXEmptyBasesAttr
 end
 
 function clang_Attr_isEmptyBasesAttr(A)
@@ -3016,7 +6266,7 @@ function clang_Attr_isEmptyBasesAttr(A)
 end
 
 function clang_Attr_castToEnableIfAttr(A)
-    @ccall libclangex.clang_Attr_castToEnableIfAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToEnableIfAttr(A::CXAttr)::CXEnableIfAttr
 end
 
 function clang_Attr_isEnableIfAttr(A)
@@ -3024,7 +6274,7 @@ function clang_Attr_isEnableIfAttr(A)
 end
 
 function clang_Attr_castToEnforceTCBAttr(A)
-    @ccall libclangex.clang_Attr_castToEnforceTCBAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToEnforceTCBAttr(A::CXAttr)::CXEnforceTCBAttr
 end
 
 function clang_Attr_isEnforceTCBAttr(A)
@@ -3032,7 +6282,7 @@ function clang_Attr_isEnforceTCBAttr(A)
 end
 
 function clang_Attr_castToEnforceTCBLeafAttr(A)
-    @ccall libclangex.clang_Attr_castToEnforceTCBLeafAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToEnforceTCBLeafAttr(A::CXAttr)::CXEnforceTCBLeafAttr
 end
 
 function clang_Attr_isEnforceTCBLeafAttr(A)
@@ -3040,7 +6290,7 @@ function clang_Attr_isEnforceTCBLeafAttr(A)
 end
 
 function clang_Attr_castToEnumExtensibilityAttr(A)
-    @ccall libclangex.clang_Attr_castToEnumExtensibilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToEnumExtensibilityAttr(A::CXAttr)::CXEnumExtensibilityAttr
 end
 
 function clang_Attr_isEnumExtensibilityAttr(A)
@@ -3048,7 +6298,7 @@ function clang_Attr_isEnumExtensibilityAttr(A)
 end
 
 function clang_Attr_castToErrorAttr(A)
-    @ccall libclangex.clang_Attr_castToErrorAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToErrorAttr(A::CXAttr)::CXErrorAttr
 end
 
 function clang_Attr_isErrorAttr(A)
@@ -3056,7 +6306,7 @@ function clang_Attr_isErrorAttr(A)
 end
 
 function clang_Attr_castToExcludeFromExplicitInstantiationAttr(A)
-    @ccall libclangex.clang_Attr_castToExcludeFromExplicitInstantiationAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToExcludeFromExplicitInstantiationAttr(A::CXAttr)::CXExcludeFromExplicitInstantiationAttr
 end
 
 function clang_Attr_isExcludeFromExplicitInstantiationAttr(A)
@@ -3064,7 +6314,7 @@ function clang_Attr_isExcludeFromExplicitInstantiationAttr(A)
 end
 
 function clang_Attr_castToExclusiveTrylockFunctionAttr(A)
-    @ccall libclangex.clang_Attr_castToExclusiveTrylockFunctionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToExclusiveTrylockFunctionAttr(A::CXAttr)::CXExclusiveTrylockFunctionAttr
 end
 
 function clang_Attr_isExclusiveTrylockFunctionAttr(A)
@@ -3072,7 +6322,7 @@ function clang_Attr_isExclusiveTrylockFunctionAttr(A)
 end
 
 function clang_Attr_castToExternalSourceSymbolAttr(A)
-    @ccall libclangex.clang_Attr_castToExternalSourceSymbolAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToExternalSourceSymbolAttr(A::CXAttr)::CXExternalSourceSymbolAttr
 end
 
 function clang_Attr_isExternalSourceSymbolAttr(A)
@@ -3080,7 +6330,7 @@ function clang_Attr_isExternalSourceSymbolAttr(A)
 end
 
 function clang_Attr_castToFinalAttr(A)
-    @ccall libclangex.clang_Attr_castToFinalAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToFinalAttr(A::CXAttr)::CXFinalAttr
 end
 
 function clang_Attr_isFinalAttr(A)
@@ -3088,7 +6338,7 @@ function clang_Attr_isFinalAttr(A)
 end
 
 function clang_Attr_castToFlagEnumAttr(A)
-    @ccall libclangex.clang_Attr_castToFlagEnumAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToFlagEnumAttr(A::CXAttr)::CXFlagEnumAttr
 end
 
 function clang_Attr_isFlagEnumAttr(A)
@@ -3096,7 +6346,7 @@ function clang_Attr_isFlagEnumAttr(A)
 end
 
 function clang_Attr_castToFlattenAttr(A)
-    @ccall libclangex.clang_Attr_castToFlattenAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToFlattenAttr(A::CXAttr)::CXFlattenAttr
 end
 
 function clang_Attr_isFlattenAttr(A)
@@ -3104,7 +6354,7 @@ function clang_Attr_isFlattenAttr(A)
 end
 
 function clang_Attr_castToFormatAttr(A)
-    @ccall libclangex.clang_Attr_castToFormatAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToFormatAttr(A::CXAttr)::CXFormatAttr
 end
 
 function clang_Attr_isFormatAttr(A)
@@ -3112,7 +6362,7 @@ function clang_Attr_isFormatAttr(A)
 end
 
 function clang_Attr_castToFormatArgAttr(A)
-    @ccall libclangex.clang_Attr_castToFormatArgAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToFormatArgAttr(A::CXAttr)::CXFormatArgAttr
 end
 
 function clang_Attr_isFormatArgAttr(A)
@@ -3120,7 +6370,7 @@ function clang_Attr_isFormatArgAttr(A)
 end
 
 function clang_Attr_castToFunctionReturnThunksAttr(A)
-    @ccall libclangex.clang_Attr_castToFunctionReturnThunksAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToFunctionReturnThunksAttr(A::CXAttr)::CXFunctionReturnThunksAttr
 end
 
 function clang_Attr_isFunctionReturnThunksAttr(A)
@@ -3128,7 +6378,7 @@ function clang_Attr_isFunctionReturnThunksAttr(A)
 end
 
 function clang_Attr_castToGNUInlineAttr(A)
-    @ccall libclangex.clang_Attr_castToGNUInlineAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToGNUInlineAttr(A::CXAttr)::CXGNUInlineAttr
 end
 
 function clang_Attr_isGNUInlineAttr(A)
@@ -3136,7 +6386,7 @@ function clang_Attr_isGNUInlineAttr(A)
 end
 
 function clang_Attr_castToGuardedByAttr(A)
-    @ccall libclangex.clang_Attr_castToGuardedByAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToGuardedByAttr(A::CXAttr)::CXGuardedByAttr
 end
 
 function clang_Attr_isGuardedByAttr(A)
@@ -3144,7 +6394,7 @@ function clang_Attr_isGuardedByAttr(A)
 end
 
 function clang_Attr_castToGuardedVarAttr(A)
-    @ccall libclangex.clang_Attr_castToGuardedVarAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToGuardedVarAttr(A::CXAttr)::CXGuardedVarAttr
 end
 
 function clang_Attr_isGuardedVarAttr(A)
@@ -3152,7 +6402,7 @@ function clang_Attr_isGuardedVarAttr(A)
 end
 
 function clang_Attr_castToHIPManagedAttr(A)
-    @ccall libclangex.clang_Attr_castToHIPManagedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHIPManagedAttr(A::CXAttr)::CXHIPManagedAttr
 end
 
 function clang_Attr_isHIPManagedAttr(A)
@@ -3160,7 +6410,7 @@ function clang_Attr_isHIPManagedAttr(A)
 end
 
 function clang_Attr_castToHLSLNumThreadsAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLNumThreadsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHLSLNumThreadsAttr(A::CXAttr)::CXHLSLNumThreadsAttr
 end
 
 function clang_Attr_isHLSLNumThreadsAttr(A)
@@ -3168,7 +6418,7 @@ function clang_Attr_isHLSLNumThreadsAttr(A)
 end
 
 function clang_Attr_castToHLSLResourceAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLResourceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHLSLResourceAttr(A::CXAttr)::CXHLSLResourceAttr
 end
 
 function clang_Attr_isHLSLResourceAttr(A)
@@ -3176,7 +6426,7 @@ function clang_Attr_isHLSLResourceAttr(A)
 end
 
 function clang_Attr_castToHLSLResourceBindingAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLResourceBindingAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHLSLResourceBindingAttr(A::CXAttr)::CXHLSLResourceBindingAttr
 end
 
 function clang_Attr_isHLSLResourceBindingAttr(A)
@@ -3184,7 +6434,7 @@ function clang_Attr_isHLSLResourceBindingAttr(A)
 end
 
 function clang_Attr_castToHLSLShaderAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLShaderAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHLSLShaderAttr(A::CXAttr)::CXHLSLShaderAttr
 end
 
 function clang_Attr_isHLSLShaderAttr(A)
@@ -3192,7 +6442,7 @@ function clang_Attr_isHLSLShaderAttr(A)
 end
 
 function clang_Attr_castToHotAttr(A)
-    @ccall libclangex.clang_Attr_castToHotAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToHotAttr(A::CXAttr)::CXHotAttr
 end
 
 function clang_Attr_isHotAttr(A)
@@ -3200,7 +6450,7 @@ function clang_Attr_isHotAttr(A)
 end
 
 function clang_Attr_castToIBActionAttr(A)
-    @ccall libclangex.clang_Attr_castToIBActionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToIBActionAttr(A::CXAttr)::CXIBActionAttr
 end
 
 function clang_Attr_isIBActionAttr(A)
@@ -3208,7 +6458,7 @@ function clang_Attr_isIBActionAttr(A)
 end
 
 function clang_Attr_castToIBOutletAttr(A)
-    @ccall libclangex.clang_Attr_castToIBOutletAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToIBOutletAttr(A::CXAttr)::CXIBOutletAttr
 end
 
 function clang_Attr_isIBOutletAttr(A)
@@ -3216,7 +6466,7 @@ function clang_Attr_isIBOutletAttr(A)
 end
 
 function clang_Attr_castToIBOutletCollectionAttr(A)
-    @ccall libclangex.clang_Attr_castToIBOutletCollectionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToIBOutletCollectionAttr(A::CXAttr)::CXIBOutletCollectionAttr
 end
 
 function clang_Attr_isIBOutletCollectionAttr(A)
@@ -3224,7 +6474,7 @@ function clang_Attr_isIBOutletCollectionAttr(A)
 end
 
 function clang_Attr_castToInitPriorityAttr(A)
-    @ccall libclangex.clang_Attr_castToInitPriorityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToInitPriorityAttr(A::CXAttr)::CXInitPriorityAttr
 end
 
 function clang_Attr_isInitPriorityAttr(A)
@@ -3232,7 +6482,7 @@ function clang_Attr_isInitPriorityAttr(A)
 end
 
 function clang_Attr_castToInternalLinkageAttr(A)
-    @ccall libclangex.clang_Attr_castToInternalLinkageAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToInternalLinkageAttr(A::CXAttr)::CXInternalLinkageAttr
 end
 
 function clang_Attr_isInternalLinkageAttr(A)
@@ -3240,7 +6490,7 @@ function clang_Attr_isInternalLinkageAttr(A)
 end
 
 function clang_Attr_castToLTOVisibilityPublicAttr(A)
-    @ccall libclangex.clang_Attr_castToLTOVisibilityPublicAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLTOVisibilityPublicAttr(A::CXAttr)::CXLTOVisibilityPublicAttr
 end
 
 function clang_Attr_isLTOVisibilityPublicAttr(A)
@@ -3248,7 +6498,7 @@ function clang_Attr_isLTOVisibilityPublicAttr(A)
 end
 
 function clang_Attr_castToLayoutVersionAttr(A)
-    @ccall libclangex.clang_Attr_castToLayoutVersionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLayoutVersionAttr(A::CXAttr)::CXLayoutVersionAttr
 end
 
 function clang_Attr_isLayoutVersionAttr(A)
@@ -3256,7 +6506,7 @@ function clang_Attr_isLayoutVersionAttr(A)
 end
 
 function clang_Attr_castToLeafAttr(A)
-    @ccall libclangex.clang_Attr_castToLeafAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLeafAttr(A::CXAttr)::CXLeafAttr
 end
 
 function clang_Attr_isLeafAttr(A)
@@ -3264,7 +6514,7 @@ function clang_Attr_isLeafAttr(A)
 end
 
 function clang_Attr_castToLockReturnedAttr(A)
-    @ccall libclangex.clang_Attr_castToLockReturnedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLockReturnedAttr(A::CXAttr)::CXLockReturnedAttr
 end
 
 function clang_Attr_isLockReturnedAttr(A)
@@ -3272,7 +6522,7 @@ function clang_Attr_isLockReturnedAttr(A)
 end
 
 function clang_Attr_castToLocksExcludedAttr(A)
-    @ccall libclangex.clang_Attr_castToLocksExcludedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLocksExcludedAttr(A::CXAttr)::CXLocksExcludedAttr
 end
 
 function clang_Attr_isLocksExcludedAttr(A)
@@ -3280,7 +6530,7 @@ function clang_Attr_isLocksExcludedAttr(A)
 end
 
 function clang_Attr_castToM68kInterruptAttr(A)
-    @ccall libclangex.clang_Attr_castToM68kInterruptAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToM68kInterruptAttr(A::CXAttr)::CXM68kInterruptAttr
 end
 
 function clang_Attr_isM68kInterruptAttr(A)
@@ -3288,7 +6538,7 @@ function clang_Attr_isM68kInterruptAttr(A)
 end
 
 function clang_Attr_castToMIGServerRoutineAttr(A)
-    @ccall libclangex.clang_Attr_castToMIGServerRoutineAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMIGServerRoutineAttr(A::CXAttr)::CXMIGServerRoutineAttr
 end
 
 function clang_Attr_isMIGServerRoutineAttr(A)
@@ -3296,7 +6546,7 @@ function clang_Attr_isMIGServerRoutineAttr(A)
 end
 
 function clang_Attr_castToMSAllocatorAttr(A)
-    @ccall libclangex.clang_Attr_castToMSAllocatorAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMSAllocatorAttr(A::CXAttr)::CXMSAllocatorAttr
 end
 
 function clang_Attr_isMSAllocatorAttr(A)
@@ -3304,7 +6554,7 @@ function clang_Attr_isMSAllocatorAttr(A)
 end
 
 function clang_Attr_castToMSConstexprAttr(A)
-    @ccall libclangex.clang_Attr_castToMSConstexprAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMSConstexprAttr(A::CXAttr)::CXMSConstexprAttr
 end
 
 function clang_Attr_isMSConstexprAttr(A)
@@ -3312,7 +6562,7 @@ function clang_Attr_isMSConstexprAttr(A)
 end
 
 function clang_Attr_castToMSInheritanceAttr(A)
-    @ccall libclangex.clang_Attr_castToMSInheritanceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMSInheritanceAttr(A::CXAttr)::CXMSInheritanceAttr
 end
 
 function clang_Attr_isMSInheritanceAttr(A)
@@ -3320,7 +6570,7 @@ function clang_Attr_isMSInheritanceAttr(A)
 end
 
 function clang_Attr_castToMSNoVTableAttr(A)
-    @ccall libclangex.clang_Attr_castToMSNoVTableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMSNoVTableAttr(A::CXAttr)::CXMSNoVTableAttr
 end
 
 function clang_Attr_isMSNoVTableAttr(A)
@@ -3328,7 +6578,7 @@ function clang_Attr_isMSNoVTableAttr(A)
 end
 
 function clang_Attr_castToMSP430InterruptAttr(A)
-    @ccall libclangex.clang_Attr_castToMSP430InterruptAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMSP430InterruptAttr(A::CXAttr)::CXMSP430InterruptAttr
 end
 
 function clang_Attr_isMSP430InterruptAttr(A)
@@ -3336,7 +6586,7 @@ function clang_Attr_isMSP430InterruptAttr(A)
 end
 
 function clang_Attr_castToMSStructAttr(A)
-    @ccall libclangex.clang_Attr_castToMSStructAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMSStructAttr(A::CXAttr)::CXMSStructAttr
 end
 
 function clang_Attr_isMSStructAttr(A)
@@ -3344,7 +6594,7 @@ function clang_Attr_isMSStructAttr(A)
 end
 
 function clang_Attr_castToMSVtorDispAttr(A)
-    @ccall libclangex.clang_Attr_castToMSVtorDispAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMSVtorDispAttr(A::CXAttr)::CXMSVtorDispAttr
 end
 
 function clang_Attr_isMSVtorDispAttr(A)
@@ -3352,7 +6602,7 @@ function clang_Attr_isMSVtorDispAttr(A)
 end
 
 function clang_Attr_castToMaxFieldAlignmentAttr(A)
-    @ccall libclangex.clang_Attr_castToMaxFieldAlignmentAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMaxFieldAlignmentAttr(A::CXAttr)::CXMaxFieldAlignmentAttr
 end
 
 function clang_Attr_isMaxFieldAlignmentAttr(A)
@@ -3360,7 +6610,7 @@ function clang_Attr_isMaxFieldAlignmentAttr(A)
 end
 
 function clang_Attr_castToMayAliasAttr(A)
-    @ccall libclangex.clang_Attr_castToMayAliasAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMayAliasAttr(A::CXAttr)::CXMayAliasAttr
 end
 
 function clang_Attr_isMayAliasAttr(A)
@@ -3368,7 +6618,7 @@ function clang_Attr_isMayAliasAttr(A)
 end
 
 function clang_Attr_castToMaybeUndefAttr(A)
-    @ccall libclangex.clang_Attr_castToMaybeUndefAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMaybeUndefAttr(A::CXAttr)::CXMaybeUndefAttr
 end
 
 function clang_Attr_isMaybeUndefAttr(A)
@@ -3376,7 +6626,7 @@ function clang_Attr_isMaybeUndefAttr(A)
 end
 
 function clang_Attr_castToMicroMipsAttr(A)
-    @ccall libclangex.clang_Attr_castToMicroMipsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMicroMipsAttr(A::CXAttr)::CXMicroMipsAttr
 end
 
 function clang_Attr_isMicroMipsAttr(A)
@@ -3384,7 +6634,7 @@ function clang_Attr_isMicroMipsAttr(A)
 end
 
 function clang_Attr_castToMinSizeAttr(A)
-    @ccall libclangex.clang_Attr_castToMinSizeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMinSizeAttr(A::CXAttr)::CXMinSizeAttr
 end
 
 function clang_Attr_isMinSizeAttr(A)
@@ -3392,7 +6642,7 @@ function clang_Attr_isMinSizeAttr(A)
 end
 
 function clang_Attr_castToMinVectorWidthAttr(A)
-    @ccall libclangex.clang_Attr_castToMinVectorWidthAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMinVectorWidthAttr(A::CXAttr)::CXMinVectorWidthAttr
 end
 
 function clang_Attr_isMinVectorWidthAttr(A)
@@ -3400,7 +6650,7 @@ function clang_Attr_isMinVectorWidthAttr(A)
 end
 
 function clang_Attr_castToMips16Attr(A)
-    @ccall libclangex.clang_Attr_castToMips16Attr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMips16Attr(A::CXAttr)::CXMips16Attr
 end
 
 function clang_Attr_isMips16Attr(A)
@@ -3408,7 +6658,7 @@ function clang_Attr_isMips16Attr(A)
 end
 
 function clang_Attr_castToMipsInterruptAttr(A)
-    @ccall libclangex.clang_Attr_castToMipsInterruptAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMipsInterruptAttr(A::CXAttr)::CXMipsInterruptAttr
 end
 
 function clang_Attr_isMipsInterruptAttr(A)
@@ -3416,7 +6666,7 @@ function clang_Attr_isMipsInterruptAttr(A)
 end
 
 function clang_Attr_castToMipsLongCallAttr(A)
-    @ccall libclangex.clang_Attr_castToMipsLongCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMipsLongCallAttr(A::CXAttr)::CXMipsLongCallAttr
 end
 
 function clang_Attr_isMipsLongCallAttr(A)
@@ -3424,7 +6674,7 @@ function clang_Attr_isMipsLongCallAttr(A)
 end
 
 function clang_Attr_castToMipsShortCallAttr(A)
-    @ccall libclangex.clang_Attr_castToMipsShortCallAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToMipsShortCallAttr(A::CXAttr)::CXMipsShortCallAttr
 end
 
 function clang_Attr_isMipsShortCallAttr(A)
@@ -3432,7 +6682,7 @@ function clang_Attr_isMipsShortCallAttr(A)
 end
 
 function clang_Attr_castToNSConsumesSelfAttr(A)
-    @ccall libclangex.clang_Attr_castToNSConsumesSelfAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNSConsumesSelfAttr(A::CXAttr)::CXNSConsumesSelfAttr
 end
 
 function clang_Attr_isNSConsumesSelfAttr(A)
@@ -3440,7 +6690,7 @@ function clang_Attr_isNSConsumesSelfAttr(A)
 end
 
 function clang_Attr_castToNSErrorDomainAttr(A)
-    @ccall libclangex.clang_Attr_castToNSErrorDomainAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNSErrorDomainAttr(A::CXAttr)::CXNSErrorDomainAttr
 end
 
 function clang_Attr_isNSErrorDomainAttr(A)
@@ -3448,7 +6698,7 @@ function clang_Attr_isNSErrorDomainAttr(A)
 end
 
 function clang_Attr_castToNSReturnsAutoreleasedAttr(A)
-    @ccall libclangex.clang_Attr_castToNSReturnsAutoreleasedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNSReturnsAutoreleasedAttr(A::CXAttr)::CXNSReturnsAutoreleasedAttr
 end
 
 function clang_Attr_isNSReturnsAutoreleasedAttr(A)
@@ -3456,7 +6706,7 @@ function clang_Attr_isNSReturnsAutoreleasedAttr(A)
 end
 
 function clang_Attr_castToNSReturnsNotRetainedAttr(A)
-    @ccall libclangex.clang_Attr_castToNSReturnsNotRetainedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNSReturnsNotRetainedAttr(A::CXAttr)::CXNSReturnsNotRetainedAttr
 end
 
 function clang_Attr_isNSReturnsNotRetainedAttr(A)
@@ -3464,7 +6714,7 @@ function clang_Attr_isNSReturnsNotRetainedAttr(A)
 end
 
 function clang_Attr_castToNVPTXKernelAttr(A)
-    @ccall libclangex.clang_Attr_castToNVPTXKernelAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNVPTXKernelAttr(A::CXAttr)::CXNVPTXKernelAttr
 end
 
 function clang_Attr_isNVPTXKernelAttr(A)
@@ -3472,7 +6722,7 @@ function clang_Attr_isNVPTXKernelAttr(A)
 end
 
 function clang_Attr_castToNakedAttr(A)
-    @ccall libclangex.clang_Attr_castToNakedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNakedAttr(A::CXAttr)::CXNakedAttr
 end
 
 function clang_Attr_isNakedAttr(A)
@@ -3480,7 +6730,7 @@ function clang_Attr_isNakedAttr(A)
 end
 
 function clang_Attr_castToNoAliasAttr(A)
-    @ccall libclangex.clang_Attr_castToNoAliasAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoAliasAttr(A::CXAttr)::CXNoAliasAttr
 end
 
 function clang_Attr_isNoAliasAttr(A)
@@ -3488,7 +6738,7 @@ function clang_Attr_isNoAliasAttr(A)
 end
 
 function clang_Attr_castToNoCommonAttr(A)
-    @ccall libclangex.clang_Attr_castToNoCommonAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoCommonAttr(A::CXAttr)::CXNoCommonAttr
 end
 
 function clang_Attr_isNoCommonAttr(A)
@@ -3496,7 +6746,7 @@ function clang_Attr_isNoCommonAttr(A)
 end
 
 function clang_Attr_castToNoDebugAttr(A)
-    @ccall libclangex.clang_Attr_castToNoDebugAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoDebugAttr(A::CXAttr)::CXNoDebugAttr
 end
 
 function clang_Attr_isNoDebugAttr(A)
@@ -3504,7 +6754,7 @@ function clang_Attr_isNoDebugAttr(A)
 end
 
 function clang_Attr_castToNoDestroyAttr(A)
-    @ccall libclangex.clang_Attr_castToNoDestroyAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoDestroyAttr(A::CXAttr)::CXNoDestroyAttr
 end
 
 function clang_Attr_isNoDestroyAttr(A)
@@ -3512,7 +6762,7 @@ function clang_Attr_isNoDestroyAttr(A)
 end
 
 function clang_Attr_castToNoDuplicateAttr(A)
-    @ccall libclangex.clang_Attr_castToNoDuplicateAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoDuplicateAttr(A::CXAttr)::CXNoDuplicateAttr
 end
 
 function clang_Attr_isNoDuplicateAttr(A)
@@ -3520,7 +6770,7 @@ function clang_Attr_isNoDuplicateAttr(A)
 end
 
 function clang_Attr_castToNoInstrumentFunctionAttr(A)
-    @ccall libclangex.clang_Attr_castToNoInstrumentFunctionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoInstrumentFunctionAttr(A::CXAttr)::CXNoInstrumentFunctionAttr
 end
 
 function clang_Attr_isNoInstrumentFunctionAttr(A)
@@ -3528,7 +6778,7 @@ function clang_Attr_isNoInstrumentFunctionAttr(A)
 end
 
 function clang_Attr_castToNoMicroMipsAttr(A)
-    @ccall libclangex.clang_Attr_castToNoMicroMipsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoMicroMipsAttr(A::CXAttr)::CXNoMicroMipsAttr
 end
 
 function clang_Attr_isNoMicroMipsAttr(A)
@@ -3536,7 +6786,7 @@ function clang_Attr_isNoMicroMipsAttr(A)
 end
 
 function clang_Attr_castToNoMips16Attr(A)
-    @ccall libclangex.clang_Attr_castToNoMips16Attr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoMips16Attr(A::CXAttr)::CXNoMips16Attr
 end
 
 function clang_Attr_isNoMips16Attr(A)
@@ -3544,7 +6794,7 @@ function clang_Attr_isNoMips16Attr(A)
 end
 
 function clang_Attr_castToNoProfileFunctionAttr(A)
-    @ccall libclangex.clang_Attr_castToNoProfileFunctionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoProfileFunctionAttr(A::CXAttr)::CXNoProfileFunctionAttr
 end
 
 function clang_Attr_isNoProfileFunctionAttr(A)
@@ -3552,7 +6802,7 @@ function clang_Attr_isNoProfileFunctionAttr(A)
 end
 
 function clang_Attr_castToNoRandomizeLayoutAttr(A)
-    @ccall libclangex.clang_Attr_castToNoRandomizeLayoutAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoRandomizeLayoutAttr(A::CXAttr)::CXNoRandomizeLayoutAttr
 end
 
 function clang_Attr_isNoRandomizeLayoutAttr(A)
@@ -3560,7 +6810,7 @@ function clang_Attr_isNoRandomizeLayoutAttr(A)
 end
 
 function clang_Attr_castToNoReturnAttr(A)
-    @ccall libclangex.clang_Attr_castToNoReturnAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoReturnAttr(A::CXAttr)::CXNoReturnAttr
 end
 
 function clang_Attr_isNoReturnAttr(A)
@@ -3568,7 +6818,7 @@ function clang_Attr_isNoReturnAttr(A)
 end
 
 function clang_Attr_castToNoSanitizeAttr(A)
-    @ccall libclangex.clang_Attr_castToNoSanitizeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoSanitizeAttr(A::CXAttr)::CXNoSanitizeAttr
 end
 
 function clang_Attr_isNoSanitizeAttr(A)
@@ -3576,7 +6826,7 @@ function clang_Attr_isNoSanitizeAttr(A)
 end
 
 function clang_Attr_castToNoSpeculativeLoadHardeningAttr(A)
-    @ccall libclangex.clang_Attr_castToNoSpeculativeLoadHardeningAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoSpeculativeLoadHardeningAttr(A::CXAttr)::CXNoSpeculativeLoadHardeningAttr
 end
 
 function clang_Attr_isNoSpeculativeLoadHardeningAttr(A)
@@ -3584,7 +6834,7 @@ function clang_Attr_isNoSpeculativeLoadHardeningAttr(A)
 end
 
 function clang_Attr_castToNoSplitStackAttr(A)
-    @ccall libclangex.clang_Attr_castToNoSplitStackAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoSplitStackAttr(A::CXAttr)::CXNoSplitStackAttr
 end
 
 function clang_Attr_isNoSplitStackAttr(A)
@@ -3592,7 +6842,7 @@ function clang_Attr_isNoSplitStackAttr(A)
 end
 
 function clang_Attr_castToNoStackProtectorAttr(A)
-    @ccall libclangex.clang_Attr_castToNoStackProtectorAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoStackProtectorAttr(A::CXAttr)::CXNoStackProtectorAttr
 end
 
 function clang_Attr_isNoStackProtectorAttr(A)
@@ -3600,7 +6850,7 @@ function clang_Attr_isNoStackProtectorAttr(A)
 end
 
 function clang_Attr_castToNoThreadSafetyAnalysisAttr(A)
-    @ccall libclangex.clang_Attr_castToNoThreadSafetyAnalysisAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoThreadSafetyAnalysisAttr(A::CXAttr)::CXNoThreadSafetyAnalysisAttr
 end
 
 function clang_Attr_isNoThreadSafetyAnalysisAttr(A)
@@ -3608,7 +6858,7 @@ function clang_Attr_isNoThreadSafetyAnalysisAttr(A)
 end
 
 function clang_Attr_castToNoThrowAttr(A)
-    @ccall libclangex.clang_Attr_castToNoThrowAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoThrowAttr(A::CXAttr)::CXNoThrowAttr
 end
 
 function clang_Attr_isNoThrowAttr(A)
@@ -3616,7 +6866,7 @@ function clang_Attr_isNoThrowAttr(A)
 end
 
 function clang_Attr_castToNoUniqueAddressAttr(A)
-    @ccall libclangex.clang_Attr_castToNoUniqueAddressAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoUniqueAddressAttr(A::CXAttr)::CXNoUniqueAddressAttr
 end
 
 function clang_Attr_isNoUniqueAddressAttr(A)
@@ -3624,7 +6874,7 @@ function clang_Attr_isNoUniqueAddressAttr(A)
 end
 
 function clang_Attr_castToNoUwtableAttr(A)
-    @ccall libclangex.clang_Attr_castToNoUwtableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoUwtableAttr(A::CXAttr)::CXNoUwtableAttr
 end
 
 function clang_Attr_isNoUwtableAttr(A)
@@ -3632,7 +6882,7 @@ function clang_Attr_isNoUwtableAttr(A)
 end
 
 function clang_Attr_castToNotTailCalledAttr(A)
-    @ccall libclangex.clang_Attr_castToNotTailCalledAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNotTailCalledAttr(A::CXAttr)::CXNotTailCalledAttr
 end
 
 function clang_Attr_isNotTailCalledAttr(A)
@@ -3640,7 +6890,7 @@ function clang_Attr_isNotTailCalledAttr(A)
 end
 
 function clang_Attr_castToOMPAllocateDeclAttr(A)
-    @ccall libclangex.clang_Attr_castToOMPAllocateDeclAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOMPAllocateDeclAttr(A::CXAttr)::CXOMPAllocateDeclAttr
 end
 
 function clang_Attr_isOMPAllocateDeclAttr(A)
@@ -3648,7 +6898,7 @@ function clang_Attr_isOMPAllocateDeclAttr(A)
 end
 
 function clang_Attr_castToOMPCaptureNoInitAttr(A)
-    @ccall libclangex.clang_Attr_castToOMPCaptureNoInitAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOMPCaptureNoInitAttr(A::CXAttr)::CXOMPCaptureNoInitAttr
 end
 
 function clang_Attr_isOMPCaptureNoInitAttr(A)
@@ -3656,7 +6906,7 @@ function clang_Attr_isOMPCaptureNoInitAttr(A)
 end
 
 function clang_Attr_castToOMPDeclareTargetDeclAttr(A)
-    @ccall libclangex.clang_Attr_castToOMPDeclareTargetDeclAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOMPDeclareTargetDeclAttr(A::CXAttr)::CXOMPDeclareTargetDeclAttr
 end
 
 function clang_Attr_isOMPDeclareTargetDeclAttr(A)
@@ -3664,7 +6914,7 @@ function clang_Attr_isOMPDeclareTargetDeclAttr(A)
 end
 
 function clang_Attr_castToOMPDeclareVariantAttr(A)
-    @ccall libclangex.clang_Attr_castToOMPDeclareVariantAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOMPDeclareVariantAttr(A::CXAttr)::CXOMPDeclareVariantAttr
 end
 
 function clang_Attr_isOMPDeclareVariantAttr(A)
@@ -3672,7 +6922,7 @@ function clang_Attr_isOMPDeclareVariantAttr(A)
 end
 
 function clang_Attr_castToOMPThreadPrivateDeclAttr(A)
-    @ccall libclangex.clang_Attr_castToOMPThreadPrivateDeclAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOMPThreadPrivateDeclAttr(A::CXAttr)::CXOMPThreadPrivateDeclAttr
 end
 
 function clang_Attr_isOMPThreadPrivateDeclAttr(A)
@@ -3680,7 +6930,7 @@ function clang_Attr_isOMPThreadPrivateDeclAttr(A)
 end
 
 function clang_Attr_castToOSConsumesThisAttr(A)
-    @ccall libclangex.clang_Attr_castToOSConsumesThisAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOSConsumesThisAttr(A::CXAttr)::CXOSConsumesThisAttr
 end
 
 function clang_Attr_isOSConsumesThisAttr(A)
@@ -3688,7 +6938,7 @@ function clang_Attr_isOSConsumesThisAttr(A)
 end
 
 function clang_Attr_castToOSReturnsNotRetainedAttr(A)
-    @ccall libclangex.clang_Attr_castToOSReturnsNotRetainedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOSReturnsNotRetainedAttr(A::CXAttr)::CXOSReturnsNotRetainedAttr
 end
 
 function clang_Attr_isOSReturnsNotRetainedAttr(A)
@@ -3696,7 +6946,7 @@ function clang_Attr_isOSReturnsNotRetainedAttr(A)
 end
 
 function clang_Attr_castToOSReturnsRetainedAttr(A)
-    @ccall libclangex.clang_Attr_castToOSReturnsRetainedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOSReturnsRetainedAttr(A::CXAttr)::CXOSReturnsRetainedAttr
 end
 
 function clang_Attr_isOSReturnsRetainedAttr(A)
@@ -3704,7 +6954,7 @@ function clang_Attr_isOSReturnsRetainedAttr(A)
 end
 
 function clang_Attr_castToOSReturnsRetainedOnNonZeroAttr(A)
-    @ccall libclangex.clang_Attr_castToOSReturnsRetainedOnNonZeroAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOSReturnsRetainedOnNonZeroAttr(A::CXAttr)::CXOSReturnsRetainedOnNonZeroAttr
 end
 
 function clang_Attr_isOSReturnsRetainedOnNonZeroAttr(A)
@@ -3712,7 +6962,7 @@ function clang_Attr_isOSReturnsRetainedOnNonZeroAttr(A)
 end
 
 function clang_Attr_castToOSReturnsRetainedOnZeroAttr(A)
-    @ccall libclangex.clang_Attr_castToOSReturnsRetainedOnZeroAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOSReturnsRetainedOnZeroAttr(A::CXAttr)::CXOSReturnsRetainedOnZeroAttr
 end
 
 function clang_Attr_isOSReturnsRetainedOnZeroAttr(A)
@@ -3720,7 +6970,7 @@ function clang_Attr_isOSReturnsRetainedOnZeroAttr(A)
 end
 
 function clang_Attr_castToObjCBridgeAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCBridgeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCBridgeAttr(A::CXAttr)::CXObjCBridgeAttr
 end
 
 function clang_Attr_isObjCBridgeAttr(A)
@@ -3728,7 +6978,7 @@ function clang_Attr_isObjCBridgeAttr(A)
 end
 
 function clang_Attr_castToObjCBridgeMutableAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCBridgeMutableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCBridgeMutableAttr(A::CXAttr)::CXObjCBridgeMutableAttr
 end
 
 function clang_Attr_isObjCBridgeMutableAttr(A)
@@ -3736,7 +6986,7 @@ function clang_Attr_isObjCBridgeMutableAttr(A)
 end
 
 function clang_Attr_castToObjCBridgeRelatedAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCBridgeRelatedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCBridgeRelatedAttr(A::CXAttr)::CXObjCBridgeRelatedAttr
 end
 
 function clang_Attr_isObjCBridgeRelatedAttr(A)
@@ -3744,7 +6994,7 @@ function clang_Attr_isObjCBridgeRelatedAttr(A)
 end
 
 function clang_Attr_castToObjCExceptionAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCExceptionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCExceptionAttr(A::CXAttr)::CXObjCExceptionAttr
 end
 
 function clang_Attr_isObjCExceptionAttr(A)
@@ -3752,7 +7002,7 @@ function clang_Attr_isObjCExceptionAttr(A)
 end
 
 function clang_Attr_castToObjCExplicitProtocolImplAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCExplicitProtocolImplAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCExplicitProtocolImplAttr(A::CXAttr)::CXObjCExplicitProtocolImplAttr
 end
 
 function clang_Attr_isObjCExplicitProtocolImplAttr(A)
@@ -3760,7 +7010,7 @@ function clang_Attr_isObjCExplicitProtocolImplAttr(A)
 end
 
 function clang_Attr_castToObjCExternallyRetainedAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCExternallyRetainedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCExternallyRetainedAttr(A::CXAttr)::CXObjCExternallyRetainedAttr
 end
 
 function clang_Attr_isObjCExternallyRetainedAttr(A)
@@ -3768,7 +7018,7 @@ function clang_Attr_isObjCExternallyRetainedAttr(A)
 end
 
 function clang_Attr_castToObjCIndependentClassAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCIndependentClassAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCIndependentClassAttr(A::CXAttr)::CXObjCIndependentClassAttr
 end
 
 function clang_Attr_isObjCIndependentClassAttr(A)
@@ -3776,7 +7026,7 @@ function clang_Attr_isObjCIndependentClassAttr(A)
 end
 
 function clang_Attr_castToObjCMethodFamilyAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCMethodFamilyAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCMethodFamilyAttr(A::CXAttr)::CXObjCMethodFamilyAttr
 end
 
 function clang_Attr_isObjCMethodFamilyAttr(A)
@@ -3784,7 +7034,7 @@ function clang_Attr_isObjCMethodFamilyAttr(A)
 end
 
 function clang_Attr_castToObjCNSObjectAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCNSObjectAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCNSObjectAttr(A::CXAttr)::CXObjCNSObjectAttr
 end
 
 function clang_Attr_isObjCNSObjectAttr(A)
@@ -3792,7 +7042,7 @@ function clang_Attr_isObjCNSObjectAttr(A)
 end
 
 function clang_Attr_castToObjCPreciseLifetimeAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCPreciseLifetimeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCPreciseLifetimeAttr(A::CXAttr)::CXObjCPreciseLifetimeAttr
 end
 
 function clang_Attr_isObjCPreciseLifetimeAttr(A)
@@ -3800,7 +7050,7 @@ function clang_Attr_isObjCPreciseLifetimeAttr(A)
 end
 
 function clang_Attr_castToObjCRequiresPropertyDefsAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCRequiresPropertyDefsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCRequiresPropertyDefsAttr(A::CXAttr)::CXObjCRequiresPropertyDefsAttr
 end
 
 function clang_Attr_isObjCRequiresPropertyDefsAttr(A)
@@ -3808,7 +7058,7 @@ function clang_Attr_isObjCRequiresPropertyDefsAttr(A)
 end
 
 function clang_Attr_castToObjCRequiresSuperAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCRequiresSuperAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCRequiresSuperAttr(A::CXAttr)::CXObjCRequiresSuperAttr
 end
 
 function clang_Attr_isObjCRequiresSuperAttr(A)
@@ -3816,7 +7066,7 @@ function clang_Attr_isObjCRequiresSuperAttr(A)
 end
 
 function clang_Attr_castToObjCReturnsInnerPointerAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCReturnsInnerPointerAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCReturnsInnerPointerAttr(A::CXAttr)::CXObjCReturnsInnerPointerAttr
 end
 
 function clang_Attr_isObjCReturnsInnerPointerAttr(A)
@@ -3824,7 +7074,7 @@ function clang_Attr_isObjCReturnsInnerPointerAttr(A)
 end
 
 function clang_Attr_castToObjCRootClassAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCRootClassAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCRootClassAttr(A::CXAttr)::CXObjCRootClassAttr
 end
 
 function clang_Attr_isObjCRootClassAttr(A)
@@ -3832,7 +7082,7 @@ function clang_Attr_isObjCRootClassAttr(A)
 end
 
 function clang_Attr_castToObjCSubclassingRestrictedAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCSubclassingRestrictedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCSubclassingRestrictedAttr(A::CXAttr)::CXObjCSubclassingRestrictedAttr
 end
 
 function clang_Attr_isObjCSubclassingRestrictedAttr(A)
@@ -3840,7 +7090,7 @@ function clang_Attr_isObjCSubclassingRestrictedAttr(A)
 end
 
 function clang_Attr_castToOpenCLIntelReqdSubGroupSizeAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLIntelReqdSubGroupSizeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLIntelReqdSubGroupSizeAttr(A::CXAttr)::CXOpenCLIntelReqdSubGroupSizeAttr
 end
 
 function clang_Attr_isOpenCLIntelReqdSubGroupSizeAttr(A)
@@ -3848,7 +7098,7 @@ function clang_Attr_isOpenCLIntelReqdSubGroupSizeAttr(A)
 end
 
 function clang_Attr_castToOpenCLKernelAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLKernelAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLKernelAttr(A::CXAttr)::CXOpenCLKernelAttr
 end
 
 function clang_Attr_isOpenCLKernelAttr(A)
@@ -3856,7 +7106,7 @@ function clang_Attr_isOpenCLKernelAttr(A)
 end
 
 function clang_Attr_castToOptimizeNoneAttr(A)
-    @ccall libclangex.clang_Attr_castToOptimizeNoneAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOptimizeNoneAttr(A::CXAttr)::CXOptimizeNoneAttr
 end
 
 function clang_Attr_isOptimizeNoneAttr(A)
@@ -3864,7 +7114,7 @@ function clang_Attr_isOptimizeNoneAttr(A)
 end
 
 function clang_Attr_castToOverrideAttr(A)
-    @ccall libclangex.clang_Attr_castToOverrideAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOverrideAttr(A::CXAttr)::CXOverrideAttr
 end
 
 function clang_Attr_isOverrideAttr(A)
@@ -3872,7 +7122,7 @@ function clang_Attr_isOverrideAttr(A)
 end
 
 function clang_Attr_castToOwnerAttr(A)
-    @ccall libclangex.clang_Attr_castToOwnerAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOwnerAttr(A::CXAttr)::CXOwnerAttr
 end
 
 function clang_Attr_isOwnerAttr(A)
@@ -3880,7 +7130,7 @@ function clang_Attr_isOwnerAttr(A)
 end
 
 function clang_Attr_castToOwnershipAttr(A)
-    @ccall libclangex.clang_Attr_castToOwnershipAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOwnershipAttr(A::CXAttr)::CXOwnershipAttr
 end
 
 function clang_Attr_isOwnershipAttr(A)
@@ -3888,7 +7138,7 @@ function clang_Attr_isOwnershipAttr(A)
 end
 
 function clang_Attr_castToPackedAttr(A)
-    @ccall libclangex.clang_Attr_castToPackedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPackedAttr(A::CXAttr)::CXPackedAttr
 end
 
 function clang_Attr_isPackedAttr(A)
@@ -3896,7 +7146,7 @@ function clang_Attr_isPackedAttr(A)
 end
 
 function clang_Attr_castToParamTypestateAttr(A)
-    @ccall libclangex.clang_Attr_castToParamTypestateAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToParamTypestateAttr(A::CXAttr)::CXParamTypestateAttr
 end
 
 function clang_Attr_isParamTypestateAttr(A)
@@ -3904,7 +7154,7 @@ function clang_Attr_isParamTypestateAttr(A)
 end
 
 function clang_Attr_castToPatchableFunctionEntryAttr(A)
-    @ccall libclangex.clang_Attr_castToPatchableFunctionEntryAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPatchableFunctionEntryAttr(A::CXAttr)::CXPatchableFunctionEntryAttr
 end
 
 function clang_Attr_isPatchableFunctionEntryAttr(A)
@@ -3912,7 +7162,7 @@ function clang_Attr_isPatchableFunctionEntryAttr(A)
 end
 
 function clang_Attr_castToPointerAttr(A)
-    @ccall libclangex.clang_Attr_castToPointerAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPointerAttr(A::CXAttr)::CXPointerAttr
 end
 
 function clang_Attr_isPointerAttr(A)
@@ -3920,7 +7170,7 @@ function clang_Attr_isPointerAttr(A)
 end
 
 function clang_Attr_castToPragmaClangBSSSectionAttr(A)
-    @ccall libclangex.clang_Attr_castToPragmaClangBSSSectionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPragmaClangBSSSectionAttr(A::CXAttr)::CXPragmaClangBSSSectionAttr
 end
 
 function clang_Attr_isPragmaClangBSSSectionAttr(A)
@@ -3928,7 +7178,7 @@ function clang_Attr_isPragmaClangBSSSectionAttr(A)
 end
 
 function clang_Attr_castToPragmaClangDataSectionAttr(A)
-    @ccall libclangex.clang_Attr_castToPragmaClangDataSectionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPragmaClangDataSectionAttr(A::CXAttr)::CXPragmaClangDataSectionAttr
 end
 
 function clang_Attr_isPragmaClangDataSectionAttr(A)
@@ -3936,7 +7186,7 @@ function clang_Attr_isPragmaClangDataSectionAttr(A)
 end
 
 function clang_Attr_castToPragmaClangRelroSectionAttr(A)
-    @ccall libclangex.clang_Attr_castToPragmaClangRelroSectionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPragmaClangRelroSectionAttr(A::CXAttr)::CXPragmaClangRelroSectionAttr
 end
 
 function clang_Attr_isPragmaClangRelroSectionAttr(A)
@@ -3944,7 +7194,7 @@ function clang_Attr_isPragmaClangRelroSectionAttr(A)
 end
 
 function clang_Attr_castToPragmaClangRodataSectionAttr(A)
-    @ccall libclangex.clang_Attr_castToPragmaClangRodataSectionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPragmaClangRodataSectionAttr(A::CXAttr)::CXPragmaClangRodataSectionAttr
 end
 
 function clang_Attr_isPragmaClangRodataSectionAttr(A)
@@ -3952,7 +7202,7 @@ function clang_Attr_isPragmaClangRodataSectionAttr(A)
 end
 
 function clang_Attr_castToPragmaClangTextSectionAttr(A)
-    @ccall libclangex.clang_Attr_castToPragmaClangTextSectionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPragmaClangTextSectionAttr(A::CXAttr)::CXPragmaClangTextSectionAttr
 end
 
 function clang_Attr_isPragmaClangTextSectionAttr(A)
@@ -3960,7 +7210,7 @@ function clang_Attr_isPragmaClangTextSectionAttr(A)
 end
 
 function clang_Attr_castToPreferredNameAttr(A)
-    @ccall libclangex.clang_Attr_castToPreferredNameAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPreferredNameAttr(A::CXAttr)::CXPreferredNameAttr
 end
 
 function clang_Attr_isPreferredNameAttr(A)
@@ -3968,7 +7218,7 @@ function clang_Attr_isPreferredNameAttr(A)
 end
 
 function clang_Attr_castToPreferredTypeAttr(A)
-    @ccall libclangex.clang_Attr_castToPreferredTypeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPreferredTypeAttr(A::CXAttr)::CXPreferredTypeAttr
 end
 
 function clang_Attr_isPreferredTypeAttr(A)
@@ -3976,7 +7226,7 @@ function clang_Attr_isPreferredTypeAttr(A)
 end
 
 function clang_Attr_castToPtGuardedByAttr(A)
-    @ccall libclangex.clang_Attr_castToPtGuardedByAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPtGuardedByAttr(A::CXAttr)::CXPtGuardedByAttr
 end
 
 function clang_Attr_isPtGuardedByAttr(A)
@@ -3984,7 +7234,7 @@ function clang_Attr_isPtGuardedByAttr(A)
 end
 
 function clang_Attr_castToPtGuardedVarAttr(A)
-    @ccall libclangex.clang_Attr_castToPtGuardedVarAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPtGuardedVarAttr(A::CXAttr)::CXPtGuardedVarAttr
 end
 
 function clang_Attr_isPtGuardedVarAttr(A)
@@ -3992,7 +7242,7 @@ function clang_Attr_isPtGuardedVarAttr(A)
 end
 
 function clang_Attr_castToPureAttr(A)
-    @ccall libclangex.clang_Attr_castToPureAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToPureAttr(A::CXAttr)::CXPureAttr
 end
 
 function clang_Attr_isPureAttr(A)
@@ -4000,7 +7250,7 @@ function clang_Attr_isPureAttr(A)
 end
 
 function clang_Attr_castToRISCVInterruptAttr(A)
-    @ccall libclangex.clang_Attr_castToRISCVInterruptAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToRISCVInterruptAttr(A::CXAttr)::CXRISCVInterruptAttr
 end
 
 function clang_Attr_isRISCVInterruptAttr(A)
@@ -4008,7 +7258,7 @@ function clang_Attr_isRISCVInterruptAttr(A)
 end
 
 function clang_Attr_castToRandomizeLayoutAttr(A)
-    @ccall libclangex.clang_Attr_castToRandomizeLayoutAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToRandomizeLayoutAttr(A::CXAttr)::CXRandomizeLayoutAttr
 end
 
 function clang_Attr_isRandomizeLayoutAttr(A)
@@ -4016,7 +7266,7 @@ function clang_Attr_isRandomizeLayoutAttr(A)
 end
 
 function clang_Attr_castToReadOnlyPlacementAttr(A)
-    @ccall libclangex.clang_Attr_castToReadOnlyPlacementAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToReadOnlyPlacementAttr(A::CXAttr)::CXReadOnlyPlacementAttr
 end
 
 function clang_Attr_isReadOnlyPlacementAttr(A)
@@ -4024,7 +7274,7 @@ function clang_Attr_isReadOnlyPlacementAttr(A)
 end
 
 function clang_Attr_castToReinitializesAttr(A)
-    @ccall libclangex.clang_Attr_castToReinitializesAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToReinitializesAttr(A::CXAttr)::CXReinitializesAttr
 end
 
 function clang_Attr_isReinitializesAttr(A)
@@ -4032,7 +7282,7 @@ function clang_Attr_isReinitializesAttr(A)
 end
 
 function clang_Attr_castToReleaseCapabilityAttr(A)
-    @ccall libclangex.clang_Attr_castToReleaseCapabilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToReleaseCapabilityAttr(A::CXAttr)::CXReleaseCapabilityAttr
 end
 
 function clang_Attr_isReleaseCapabilityAttr(A)
@@ -4040,7 +7290,7 @@ function clang_Attr_isReleaseCapabilityAttr(A)
 end
 
 function clang_Attr_castToReqdWorkGroupSizeAttr(A)
-    @ccall libclangex.clang_Attr_castToReqdWorkGroupSizeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToReqdWorkGroupSizeAttr(A::CXAttr)::CXReqdWorkGroupSizeAttr
 end
 
 function clang_Attr_isReqdWorkGroupSizeAttr(A)
@@ -4048,7 +7298,7 @@ function clang_Attr_isReqdWorkGroupSizeAttr(A)
 end
 
 function clang_Attr_castToRequiresCapabilityAttr(A)
-    @ccall libclangex.clang_Attr_castToRequiresCapabilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToRequiresCapabilityAttr(A::CXAttr)::CXRequiresCapabilityAttr
 end
 
 function clang_Attr_isRequiresCapabilityAttr(A)
@@ -4056,7 +7306,7 @@ function clang_Attr_isRequiresCapabilityAttr(A)
 end
 
 function clang_Attr_castToRestrictAttr(A)
-    @ccall libclangex.clang_Attr_castToRestrictAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToRestrictAttr(A::CXAttr)::CXRestrictAttr
 end
 
 function clang_Attr_isRestrictAttr(A)
@@ -4064,7 +7314,7 @@ function clang_Attr_isRestrictAttr(A)
 end
 
 function clang_Attr_castToRetainAttr(A)
-    @ccall libclangex.clang_Attr_castToRetainAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToRetainAttr(A::CXAttr)::CXRetainAttr
 end
 
 function clang_Attr_isRetainAttr(A)
@@ -4072,7 +7322,7 @@ function clang_Attr_isRetainAttr(A)
 end
 
 function clang_Attr_castToReturnTypestateAttr(A)
-    @ccall libclangex.clang_Attr_castToReturnTypestateAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToReturnTypestateAttr(A::CXAttr)::CXReturnTypestateAttr
 end
 
 function clang_Attr_isReturnTypestateAttr(A)
@@ -4080,7 +7330,7 @@ function clang_Attr_isReturnTypestateAttr(A)
 end
 
 function clang_Attr_castToReturnsNonNullAttr(A)
-    @ccall libclangex.clang_Attr_castToReturnsNonNullAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToReturnsNonNullAttr(A::CXAttr)::CXReturnsNonNullAttr
 end
 
 function clang_Attr_isReturnsNonNullAttr(A)
@@ -4088,7 +7338,7 @@ function clang_Attr_isReturnsNonNullAttr(A)
 end
 
 function clang_Attr_castToReturnsTwiceAttr(A)
-    @ccall libclangex.clang_Attr_castToReturnsTwiceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToReturnsTwiceAttr(A::CXAttr)::CXReturnsTwiceAttr
 end
 
 function clang_Attr_isReturnsTwiceAttr(A)
@@ -4096,7 +7346,7 @@ function clang_Attr_isReturnsTwiceAttr(A)
 end
 
 function clang_Attr_castToSYCLKernelAttr(A)
-    @ccall libclangex.clang_Attr_castToSYCLKernelAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSYCLKernelAttr(A::CXAttr)::CXSYCLKernelAttr
 end
 
 function clang_Attr_isSYCLKernelAttr(A)
@@ -4104,7 +7354,7 @@ function clang_Attr_isSYCLKernelAttr(A)
 end
 
 function clang_Attr_castToSYCLSpecialClassAttr(A)
-    @ccall libclangex.clang_Attr_castToSYCLSpecialClassAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSYCLSpecialClassAttr(A::CXAttr)::CXSYCLSpecialClassAttr
 end
 
 function clang_Attr_isSYCLSpecialClassAttr(A)
@@ -4112,7 +7362,7 @@ function clang_Attr_isSYCLSpecialClassAttr(A)
 end
 
 function clang_Attr_castToScopedLockableAttr(A)
-    @ccall libclangex.clang_Attr_castToScopedLockableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToScopedLockableAttr(A::CXAttr)::CXScopedLockableAttr
 end
 
 function clang_Attr_isScopedLockableAttr(A)
@@ -4120,7 +7370,7 @@ function clang_Attr_isScopedLockableAttr(A)
 end
 
 function clang_Attr_castToSectionAttr(A)
-    @ccall libclangex.clang_Attr_castToSectionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSectionAttr(A::CXAttr)::CXSectionAttr
 end
 
 function clang_Attr_isSectionAttr(A)
@@ -4128,7 +7378,7 @@ function clang_Attr_isSectionAttr(A)
 end
 
 function clang_Attr_castToSelectAnyAttr(A)
-    @ccall libclangex.clang_Attr_castToSelectAnyAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSelectAnyAttr(A::CXAttr)::CXSelectAnyAttr
 end
 
 function clang_Attr_isSelectAnyAttr(A)
@@ -4136,7 +7386,7 @@ function clang_Attr_isSelectAnyAttr(A)
 end
 
 function clang_Attr_castToSentinelAttr(A)
-    @ccall libclangex.clang_Attr_castToSentinelAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSentinelAttr(A::CXAttr)::CXSentinelAttr
 end
 
 function clang_Attr_isSentinelAttr(A)
@@ -4144,7 +7394,7 @@ function clang_Attr_isSentinelAttr(A)
 end
 
 function clang_Attr_castToSetTypestateAttr(A)
-    @ccall libclangex.clang_Attr_castToSetTypestateAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSetTypestateAttr(A::CXAttr)::CXSetTypestateAttr
 end
 
 function clang_Attr_isSetTypestateAttr(A)
@@ -4152,7 +7402,7 @@ function clang_Attr_isSetTypestateAttr(A)
 end
 
 function clang_Attr_castToSharedTrylockFunctionAttr(A)
-    @ccall libclangex.clang_Attr_castToSharedTrylockFunctionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSharedTrylockFunctionAttr(A::CXAttr)::CXSharedTrylockFunctionAttr
 end
 
 function clang_Attr_isSharedTrylockFunctionAttr(A)
@@ -4160,7 +7410,7 @@ function clang_Attr_isSharedTrylockFunctionAttr(A)
 end
 
 function clang_Attr_castToSpeculativeLoadHardeningAttr(A)
-    @ccall libclangex.clang_Attr_castToSpeculativeLoadHardeningAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSpeculativeLoadHardeningAttr(A::CXAttr)::CXSpeculativeLoadHardeningAttr
 end
 
 function clang_Attr_isSpeculativeLoadHardeningAttr(A)
@@ -4168,7 +7418,7 @@ function clang_Attr_isSpeculativeLoadHardeningAttr(A)
 end
 
 function clang_Attr_castToStandaloneDebugAttr(A)
-    @ccall libclangex.clang_Attr_castToStandaloneDebugAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToStandaloneDebugAttr(A::CXAttr)::CXStandaloneDebugAttr
 end
 
 function clang_Attr_isStandaloneDebugAttr(A)
@@ -4176,7 +7426,7 @@ function clang_Attr_isStandaloneDebugAttr(A)
 end
 
 function clang_Attr_castToStrictFPAttr(A)
-    @ccall libclangex.clang_Attr_castToStrictFPAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToStrictFPAttr(A::CXAttr)::CXStrictFPAttr
 end
 
 function clang_Attr_isStrictFPAttr(A)
@@ -4184,7 +7434,7 @@ function clang_Attr_isStrictFPAttr(A)
 end
 
 function clang_Attr_castToStrictGuardStackCheckAttr(A)
-    @ccall libclangex.clang_Attr_castToStrictGuardStackCheckAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToStrictGuardStackCheckAttr(A::CXAttr)::CXStrictGuardStackCheckAttr
 end
 
 function clang_Attr_isStrictGuardStackCheckAttr(A)
@@ -4192,7 +7442,7 @@ function clang_Attr_isStrictGuardStackCheckAttr(A)
 end
 
 function clang_Attr_castToSwiftAsyncAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftAsyncAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftAsyncAttr(A::CXAttr)::CXSwiftAsyncAttr
 end
 
 function clang_Attr_isSwiftAsyncAttr(A)
@@ -4200,7 +7450,7 @@ function clang_Attr_isSwiftAsyncAttr(A)
 end
 
 function clang_Attr_castToSwiftAsyncErrorAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftAsyncErrorAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftAsyncErrorAttr(A::CXAttr)::CXSwiftAsyncErrorAttr
 end
 
 function clang_Attr_isSwiftAsyncErrorAttr(A)
@@ -4208,7 +7458,7 @@ function clang_Attr_isSwiftAsyncErrorAttr(A)
 end
 
 function clang_Attr_castToSwiftAsyncNameAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftAsyncNameAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftAsyncNameAttr(A::CXAttr)::CXSwiftAsyncNameAttr
 end
 
 function clang_Attr_isSwiftAsyncNameAttr(A)
@@ -4216,7 +7466,7 @@ function clang_Attr_isSwiftAsyncNameAttr(A)
 end
 
 function clang_Attr_castToSwiftAttrAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftAttrAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftAttrAttr(A::CXAttr)::CXSwiftAttrAttr
 end
 
 function clang_Attr_isSwiftAttrAttr(A)
@@ -4224,7 +7474,7 @@ function clang_Attr_isSwiftAttrAttr(A)
 end
 
 function clang_Attr_castToSwiftBridgeAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftBridgeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftBridgeAttr(A::CXAttr)::CXSwiftBridgeAttr
 end
 
 function clang_Attr_isSwiftBridgeAttr(A)
@@ -4232,7 +7482,7 @@ function clang_Attr_isSwiftBridgeAttr(A)
 end
 
 function clang_Attr_castToSwiftBridgedTypedefAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftBridgedTypedefAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftBridgedTypedefAttr(A::CXAttr)::CXSwiftBridgedTypedefAttr
 end
 
 function clang_Attr_isSwiftBridgedTypedefAttr(A)
@@ -4240,7 +7490,7 @@ function clang_Attr_isSwiftBridgedTypedefAttr(A)
 end
 
 function clang_Attr_castToSwiftErrorAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftErrorAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftErrorAttr(A::CXAttr)::CXSwiftErrorAttr
 end
 
 function clang_Attr_isSwiftErrorAttr(A)
@@ -4248,7 +7498,7 @@ function clang_Attr_isSwiftErrorAttr(A)
 end
 
 function clang_Attr_castToSwiftImportAsNonGenericAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftImportAsNonGenericAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftImportAsNonGenericAttr(A::CXAttr)::CXSwiftImportAsNonGenericAttr
 end
 
 function clang_Attr_isSwiftImportAsNonGenericAttr(A)
@@ -4256,7 +7506,7 @@ function clang_Attr_isSwiftImportAsNonGenericAttr(A)
 end
 
 function clang_Attr_castToSwiftImportPropertyAsAccessorsAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftImportPropertyAsAccessorsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftImportPropertyAsAccessorsAttr(A::CXAttr)::CXSwiftImportPropertyAsAccessorsAttr
 end
 
 function clang_Attr_isSwiftImportPropertyAsAccessorsAttr(A)
@@ -4264,7 +7514,7 @@ function clang_Attr_isSwiftImportPropertyAsAccessorsAttr(A)
 end
 
 function clang_Attr_castToSwiftNameAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftNameAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftNameAttr(A::CXAttr)::CXSwiftNameAttr
 end
 
 function clang_Attr_isSwiftNameAttr(A)
@@ -4272,7 +7522,7 @@ function clang_Attr_isSwiftNameAttr(A)
 end
 
 function clang_Attr_castToSwiftNewTypeAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftNewTypeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftNewTypeAttr(A::CXAttr)::CXSwiftNewTypeAttr
 end
 
 function clang_Attr_isSwiftNewTypeAttr(A)
@@ -4280,7 +7530,7 @@ function clang_Attr_isSwiftNewTypeAttr(A)
 end
 
 function clang_Attr_castToSwiftPrivateAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftPrivateAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftPrivateAttr(A::CXAttr)::CXSwiftPrivateAttr
 end
 
 function clang_Attr_isSwiftPrivateAttr(A)
@@ -4288,7 +7538,7 @@ function clang_Attr_isSwiftPrivateAttr(A)
 end
 
 function clang_Attr_castToTLSModelAttr(A)
-    @ccall libclangex.clang_Attr_castToTLSModelAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTLSModelAttr(A::CXAttr)::CXTLSModelAttr
 end
 
 function clang_Attr_isTLSModelAttr(A)
@@ -4296,7 +7546,7 @@ function clang_Attr_isTLSModelAttr(A)
 end
 
 function clang_Attr_castToTargetAttr(A)
-    @ccall libclangex.clang_Attr_castToTargetAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTargetAttr(A::CXAttr)::CXTargetAttr
 end
 
 function clang_Attr_isTargetAttr(A)
@@ -4304,7 +7554,7 @@ function clang_Attr_isTargetAttr(A)
 end
 
 function clang_Attr_castToTargetClonesAttr(A)
-    @ccall libclangex.clang_Attr_castToTargetClonesAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTargetClonesAttr(A::CXAttr)::CXTargetClonesAttr
 end
 
 function clang_Attr_isTargetClonesAttr(A)
@@ -4312,7 +7562,7 @@ function clang_Attr_isTargetClonesAttr(A)
 end
 
 function clang_Attr_castToTargetVersionAttr(A)
-    @ccall libclangex.clang_Attr_castToTargetVersionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTargetVersionAttr(A::CXAttr)::CXTargetVersionAttr
 end
 
 function clang_Attr_isTargetVersionAttr(A)
@@ -4320,7 +7570,7 @@ function clang_Attr_isTargetVersionAttr(A)
 end
 
 function clang_Attr_castToTestTypestateAttr(A)
-    @ccall libclangex.clang_Attr_castToTestTypestateAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTestTypestateAttr(A::CXAttr)::CXTestTypestateAttr
 end
 
 function clang_Attr_isTestTypestateAttr(A)
@@ -4328,7 +7578,7 @@ function clang_Attr_isTestTypestateAttr(A)
 end
 
 function clang_Attr_castToTransparentUnionAttr(A)
-    @ccall libclangex.clang_Attr_castToTransparentUnionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTransparentUnionAttr(A::CXAttr)::CXTransparentUnionAttr
 end
 
 function clang_Attr_isTransparentUnionAttr(A)
@@ -4336,7 +7586,7 @@ function clang_Attr_isTransparentUnionAttr(A)
 end
 
 function clang_Attr_castToTrivialABIAttr(A)
-    @ccall libclangex.clang_Attr_castToTrivialABIAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTrivialABIAttr(A::CXAttr)::CXTrivialABIAttr
 end
 
 function clang_Attr_isTrivialABIAttr(A)
@@ -4344,7 +7594,7 @@ function clang_Attr_isTrivialABIAttr(A)
 end
 
 function clang_Attr_castToTryAcquireCapabilityAttr(A)
-    @ccall libclangex.clang_Attr_castToTryAcquireCapabilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTryAcquireCapabilityAttr(A::CXAttr)::CXTryAcquireCapabilityAttr
 end
 
 function clang_Attr_isTryAcquireCapabilityAttr(A)
@@ -4352,7 +7602,7 @@ function clang_Attr_isTryAcquireCapabilityAttr(A)
 end
 
 function clang_Attr_castToTypeTagForDatatypeAttr(A)
-    @ccall libclangex.clang_Attr_castToTypeTagForDatatypeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTypeTagForDatatypeAttr(A::CXAttr)::CXTypeTagForDatatypeAttr
 end
 
 function clang_Attr_isTypeTagForDatatypeAttr(A)
@@ -4360,7 +7610,7 @@ function clang_Attr_isTypeTagForDatatypeAttr(A)
 end
 
 function clang_Attr_castToTypeVisibilityAttr(A)
-    @ccall libclangex.clang_Attr_castToTypeVisibilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToTypeVisibilityAttr(A::CXAttr)::CXTypeVisibilityAttr
 end
 
 function clang_Attr_isTypeVisibilityAttr(A)
@@ -4368,7 +7618,7 @@ function clang_Attr_isTypeVisibilityAttr(A)
 end
 
 function clang_Attr_castToUnavailableAttr(A)
-    @ccall libclangex.clang_Attr_castToUnavailableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUnavailableAttr(A::CXAttr)::CXUnavailableAttr
 end
 
 function clang_Attr_isUnavailableAttr(A)
@@ -4376,7 +7626,7 @@ function clang_Attr_isUnavailableAttr(A)
 end
 
 function clang_Attr_castToUninitializedAttr(A)
-    @ccall libclangex.clang_Attr_castToUninitializedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUninitializedAttr(A::CXAttr)::CXUninitializedAttr
 end
 
 function clang_Attr_isUninitializedAttr(A)
@@ -4384,7 +7634,7 @@ function clang_Attr_isUninitializedAttr(A)
 end
 
 function clang_Attr_castToUnsafeBufferUsageAttr(A)
-    @ccall libclangex.clang_Attr_castToUnsafeBufferUsageAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUnsafeBufferUsageAttr(A::CXAttr)::CXUnsafeBufferUsageAttr
 end
 
 function clang_Attr_isUnsafeBufferUsageAttr(A)
@@ -4392,7 +7642,7 @@ function clang_Attr_isUnsafeBufferUsageAttr(A)
 end
 
 function clang_Attr_castToUnusedAttr(A)
-    @ccall libclangex.clang_Attr_castToUnusedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUnusedAttr(A::CXAttr)::CXUnusedAttr
 end
 
 function clang_Attr_isUnusedAttr(A)
@@ -4400,7 +7650,7 @@ function clang_Attr_isUnusedAttr(A)
 end
 
 function clang_Attr_castToUsedAttr(A)
-    @ccall libclangex.clang_Attr_castToUsedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUsedAttr(A::CXAttr)::CXUsedAttr
 end
 
 function clang_Attr_isUsedAttr(A)
@@ -4408,7 +7658,7 @@ function clang_Attr_isUsedAttr(A)
 end
 
 function clang_Attr_castToUsingIfExistsAttr(A)
-    @ccall libclangex.clang_Attr_castToUsingIfExistsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUsingIfExistsAttr(A::CXAttr)::CXUsingIfExistsAttr
 end
 
 function clang_Attr_isUsingIfExistsAttr(A)
@@ -4416,7 +7666,7 @@ function clang_Attr_isUsingIfExistsAttr(A)
 end
 
 function clang_Attr_castToUuidAttr(A)
-    @ccall libclangex.clang_Attr_castToUuidAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToUuidAttr(A::CXAttr)::CXUuidAttr
 end
 
 function clang_Attr_isUuidAttr(A)
@@ -4424,7 +7674,7 @@ function clang_Attr_isUuidAttr(A)
 end
 
 function clang_Attr_castToVecReturnAttr(A)
-    @ccall libclangex.clang_Attr_castToVecReturnAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToVecReturnAttr(A::CXAttr)::CXVecReturnAttr
 end
 
 function clang_Attr_isVecReturnAttr(A)
@@ -4432,7 +7682,7 @@ function clang_Attr_isVecReturnAttr(A)
 end
 
 function clang_Attr_castToVecTypeHintAttr(A)
-    @ccall libclangex.clang_Attr_castToVecTypeHintAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToVecTypeHintAttr(A::CXAttr)::CXVecTypeHintAttr
 end
 
 function clang_Attr_isVecTypeHintAttr(A)
@@ -4440,7 +7690,7 @@ function clang_Attr_isVecTypeHintAttr(A)
 end
 
 function clang_Attr_castToVisibilityAttr(A)
-    @ccall libclangex.clang_Attr_castToVisibilityAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToVisibilityAttr(A::CXAttr)::CXVisibilityAttr
 end
 
 function clang_Attr_isVisibilityAttr(A)
@@ -4448,7 +7698,7 @@ function clang_Attr_isVisibilityAttr(A)
 end
 
 function clang_Attr_castToWarnUnusedAttr(A)
-    @ccall libclangex.clang_Attr_castToWarnUnusedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWarnUnusedAttr(A::CXAttr)::CXWarnUnusedAttr
 end
 
 function clang_Attr_isWarnUnusedAttr(A)
@@ -4456,7 +7706,7 @@ function clang_Attr_isWarnUnusedAttr(A)
 end
 
 function clang_Attr_castToWarnUnusedResultAttr(A)
-    @ccall libclangex.clang_Attr_castToWarnUnusedResultAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWarnUnusedResultAttr(A::CXAttr)::CXWarnUnusedResultAttr
 end
 
 function clang_Attr_isWarnUnusedResultAttr(A)
@@ -4464,7 +7714,7 @@ function clang_Attr_isWarnUnusedResultAttr(A)
 end
 
 function clang_Attr_castToWeakAttr(A)
-    @ccall libclangex.clang_Attr_castToWeakAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWeakAttr(A::CXAttr)::CXWeakAttr
 end
 
 function clang_Attr_isWeakAttr(A)
@@ -4472,7 +7722,7 @@ function clang_Attr_isWeakAttr(A)
 end
 
 function clang_Attr_castToWeakImportAttr(A)
-    @ccall libclangex.clang_Attr_castToWeakImportAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWeakImportAttr(A::CXAttr)::CXWeakImportAttr
 end
 
 function clang_Attr_isWeakImportAttr(A)
@@ -4480,7 +7730,7 @@ function clang_Attr_isWeakImportAttr(A)
 end
 
 function clang_Attr_castToWeakRefAttr(A)
-    @ccall libclangex.clang_Attr_castToWeakRefAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWeakRefAttr(A::CXAttr)::CXWeakRefAttr
 end
 
 function clang_Attr_isWeakRefAttr(A)
@@ -4488,7 +7738,7 @@ function clang_Attr_isWeakRefAttr(A)
 end
 
 function clang_Attr_castToWebAssemblyExportNameAttr(A)
-    @ccall libclangex.clang_Attr_castToWebAssemblyExportNameAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWebAssemblyExportNameAttr(A::CXAttr)::CXWebAssemblyExportNameAttr
 end
 
 function clang_Attr_isWebAssemblyExportNameAttr(A)
@@ -4496,7 +7746,7 @@ function clang_Attr_isWebAssemblyExportNameAttr(A)
 end
 
 function clang_Attr_castToWebAssemblyImportModuleAttr(A)
-    @ccall libclangex.clang_Attr_castToWebAssemblyImportModuleAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWebAssemblyImportModuleAttr(A::CXAttr)::CXWebAssemblyImportModuleAttr
 end
 
 function clang_Attr_isWebAssemblyImportModuleAttr(A)
@@ -4504,7 +7754,7 @@ function clang_Attr_isWebAssemblyImportModuleAttr(A)
 end
 
 function clang_Attr_castToWebAssemblyImportNameAttr(A)
-    @ccall libclangex.clang_Attr_castToWebAssemblyImportNameAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWebAssemblyImportNameAttr(A::CXAttr)::CXWebAssemblyImportNameAttr
 end
 
 function clang_Attr_isWebAssemblyImportNameAttr(A)
@@ -4512,7 +7762,7 @@ function clang_Attr_isWebAssemblyImportNameAttr(A)
 end
 
 function clang_Attr_castToWorkGroupSizeHintAttr(A)
-    @ccall libclangex.clang_Attr_castToWorkGroupSizeHintAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToWorkGroupSizeHintAttr(A::CXAttr)::CXWorkGroupSizeHintAttr
 end
 
 function clang_Attr_isWorkGroupSizeHintAttr(A)
@@ -4520,7 +7770,7 @@ function clang_Attr_isWorkGroupSizeHintAttr(A)
 end
 
 function clang_Attr_castToX86ForceAlignArgPointerAttr(A)
-    @ccall libclangex.clang_Attr_castToX86ForceAlignArgPointerAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToX86ForceAlignArgPointerAttr(A::CXAttr)::CXX86ForceAlignArgPointerAttr
 end
 
 function clang_Attr_isX86ForceAlignArgPointerAttr(A)
@@ -4528,7 +7778,7 @@ function clang_Attr_isX86ForceAlignArgPointerAttr(A)
 end
 
 function clang_Attr_castToXRayInstrumentAttr(A)
-    @ccall libclangex.clang_Attr_castToXRayInstrumentAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToXRayInstrumentAttr(A::CXAttr)::CXXRayInstrumentAttr
 end
 
 function clang_Attr_isXRayInstrumentAttr(A)
@@ -4536,7 +7786,7 @@ function clang_Attr_isXRayInstrumentAttr(A)
 end
 
 function clang_Attr_castToXRayLogArgsAttr(A)
-    @ccall libclangex.clang_Attr_castToXRayLogArgsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToXRayLogArgsAttr(A::CXAttr)::CXXRayLogArgsAttr
 end
 
 function clang_Attr_isXRayLogArgsAttr(A)
@@ -4544,7 +7794,7 @@ function clang_Attr_isXRayLogArgsAttr(A)
 end
 
 function clang_Attr_castToZeroCallUsedRegsAttr(A)
-    @ccall libclangex.clang_Attr_castToZeroCallUsedRegsAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToZeroCallUsedRegsAttr(A::CXAttr)::CXZeroCallUsedRegsAttr
 end
 
 function clang_Attr_isZeroCallUsedRegsAttr(A)
@@ -4552,7 +7802,7 @@ function clang_Attr_isZeroCallUsedRegsAttr(A)
 end
 
 function clang_Attr_castToAbiTagAttr(A)
-    @ccall libclangex.clang_Attr_castToAbiTagAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAbiTagAttr(A::CXAttr)::CXAbiTagAttr
 end
 
 function clang_Attr_isAbiTagAttr(A)
@@ -4560,7 +7810,7 @@ function clang_Attr_isAbiTagAttr(A)
 end
 
 function clang_Attr_castToAliasAttr(A)
-    @ccall libclangex.clang_Attr_castToAliasAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAliasAttr(A::CXAttr)::CXAliasAttr
 end
 
 function clang_Attr_isAliasAttr(A)
@@ -4568,7 +7818,7 @@ function clang_Attr_isAliasAttr(A)
 end
 
 function clang_Attr_castToAlignValueAttr(A)
-    @ccall libclangex.clang_Attr_castToAlignValueAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToAlignValueAttr(A::CXAttr)::CXAlignValueAttr
 end
 
 function clang_Attr_isAlignValueAttr(A)
@@ -4576,7 +7826,7 @@ function clang_Attr_isAlignValueAttr(A)
 end
 
 function clang_Attr_castToBuiltinAliasAttr(A)
-    @ccall libclangex.clang_Attr_castToBuiltinAliasAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToBuiltinAliasAttr(A::CXAttr)::CXBuiltinAliasAttr
 end
 
 function clang_Attr_isBuiltinAliasAttr(A)
@@ -4584,7 +7834,7 @@ function clang_Attr_isBuiltinAliasAttr(A)
 end
 
 function clang_Attr_castToCalledOnceAttr(A)
-    @ccall libclangex.clang_Attr_castToCalledOnceAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToCalledOnceAttr(A::CXAttr)::CXCalledOnceAttr
 end
 
 function clang_Attr_isCalledOnceAttr(A)
@@ -4592,7 +7842,7 @@ function clang_Attr_isCalledOnceAttr(A)
 end
 
 function clang_Attr_castToIFuncAttr(A)
-    @ccall libclangex.clang_Attr_castToIFuncAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToIFuncAttr(A::CXAttr)::CXIFuncAttr
 end
 
 function clang_Attr_isIFuncAttr(A)
@@ -4600,7 +7850,7 @@ function clang_Attr_isIFuncAttr(A)
 end
 
 function clang_Attr_castToInitSegAttr(A)
-    @ccall libclangex.clang_Attr_castToInitSegAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToInitSegAttr(A::CXAttr)::CXInitSegAttr
 end
 
 function clang_Attr_isInitSegAttr(A)
@@ -4608,7 +7858,7 @@ function clang_Attr_isInitSegAttr(A)
 end
 
 function clang_Attr_castToLoaderUninitializedAttr(A)
-    @ccall libclangex.clang_Attr_castToLoaderUninitializedAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLoaderUninitializedAttr(A::CXAttr)::CXLoaderUninitializedAttr
 end
 
 function clang_Attr_isLoaderUninitializedAttr(A)
@@ -4616,7 +7866,7 @@ function clang_Attr_isLoaderUninitializedAttr(A)
 end
 
 function clang_Attr_castToLoopHintAttr(A)
-    @ccall libclangex.clang_Attr_castToLoopHintAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToLoopHintAttr(A::CXAttr)::CXLoopHintAttr
 end
 
 function clang_Attr_isLoopHintAttr(A)
@@ -4624,7 +7874,7 @@ function clang_Attr_isLoopHintAttr(A)
 end
 
 function clang_Attr_castToModeAttr(A)
-    @ccall libclangex.clang_Attr_castToModeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToModeAttr(A::CXAttr)::CXModeAttr
 end
 
 function clang_Attr_isModeAttr(A)
@@ -4632,7 +7882,7 @@ function clang_Attr_isModeAttr(A)
 end
 
 function clang_Attr_castToNoBuiltinAttr(A)
-    @ccall libclangex.clang_Attr_castToNoBuiltinAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoBuiltinAttr(A::CXAttr)::CXNoBuiltinAttr
 end
 
 function clang_Attr_isNoBuiltinAttr(A)
@@ -4640,7 +7890,7 @@ function clang_Attr_isNoBuiltinAttr(A)
 end
 
 function clang_Attr_castToNoEscapeAttr(A)
-    @ccall libclangex.clang_Attr_castToNoEscapeAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToNoEscapeAttr(A::CXAttr)::CXNoEscapeAttr
 end
 
 function clang_Attr_isNoEscapeAttr(A)
@@ -4648,7 +7898,7 @@ function clang_Attr_isNoEscapeAttr(A)
 end
 
 function clang_Attr_castToOMPCaptureKindAttr(A)
-    @ccall libclangex.clang_Attr_castToOMPCaptureKindAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOMPCaptureKindAttr(A::CXAttr)::CXOMPCaptureKindAttr
 end
 
 function clang_Attr_isOMPCaptureKindAttr(A)
@@ -4656,7 +7906,7 @@ function clang_Attr_isOMPCaptureKindAttr(A)
 end
 
 function clang_Attr_castToOMPDeclareSimdDeclAttr(A)
-    @ccall libclangex.clang_Attr_castToOMPDeclareSimdDeclAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOMPDeclareSimdDeclAttr(A::CXAttr)::CXOMPDeclareSimdDeclAttr
 end
 
 function clang_Attr_isOMPDeclareSimdDeclAttr(A)
@@ -4664,7 +7914,7 @@ function clang_Attr_isOMPDeclareSimdDeclAttr(A)
 end
 
 function clang_Attr_castToOMPReferencedVarAttr(A)
-    @ccall libclangex.clang_Attr_castToOMPReferencedVarAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOMPReferencedVarAttr(A::CXAttr)::CXOMPReferencedVarAttr
 end
 
 function clang_Attr_isOMPReferencedVarAttr(A)
@@ -4672,7 +7922,7 @@ function clang_Attr_isOMPReferencedVarAttr(A)
 end
 
 function clang_Attr_castToObjCBoxableAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCBoxableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCBoxableAttr(A::CXAttr)::CXObjCBoxableAttr
 end
 
 function clang_Attr_isObjCBoxableAttr(A)
@@ -4680,7 +7930,7 @@ function clang_Attr_isObjCBoxableAttr(A)
 end
 
 function clang_Attr_castToObjCClassStubAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCClassStubAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCClassStubAttr(A::CXAttr)::CXObjCClassStubAttr
 end
 
 function clang_Attr_isObjCClassStubAttr(A)
@@ -4688,7 +7938,7 @@ function clang_Attr_isObjCClassStubAttr(A)
 end
 
 function clang_Attr_castToObjCDesignatedInitializerAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCDesignatedInitializerAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCDesignatedInitializerAttr(A::CXAttr)::CXObjCDesignatedInitializerAttr
 end
 
 function clang_Attr_isObjCDesignatedInitializerAttr(A)
@@ -4696,7 +7946,7 @@ function clang_Attr_isObjCDesignatedInitializerAttr(A)
 end
 
 function clang_Attr_castToObjCDirectAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCDirectAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCDirectAttr(A::CXAttr)::CXObjCDirectAttr
 end
 
 function clang_Attr_isObjCDirectAttr(A)
@@ -4704,7 +7954,7 @@ function clang_Attr_isObjCDirectAttr(A)
 end
 
 function clang_Attr_castToObjCDirectMembersAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCDirectMembersAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCDirectMembersAttr(A::CXAttr)::CXObjCDirectMembersAttr
 end
 
 function clang_Attr_isObjCDirectMembersAttr(A)
@@ -4712,7 +7962,7 @@ function clang_Attr_isObjCDirectMembersAttr(A)
 end
 
 function clang_Attr_castToObjCNonLazyClassAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCNonLazyClassAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCNonLazyClassAttr(A::CXAttr)::CXObjCNonLazyClassAttr
 end
 
 function clang_Attr_isObjCNonLazyClassAttr(A)
@@ -4720,7 +7970,7 @@ function clang_Attr_isObjCNonLazyClassAttr(A)
 end
 
 function clang_Attr_castToObjCNonRuntimeProtocolAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCNonRuntimeProtocolAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCNonRuntimeProtocolAttr(A::CXAttr)::CXObjCNonRuntimeProtocolAttr
 end
 
 function clang_Attr_isObjCNonRuntimeProtocolAttr(A)
@@ -4728,7 +7978,7 @@ function clang_Attr_isObjCNonRuntimeProtocolAttr(A)
 end
 
 function clang_Attr_castToObjCRuntimeNameAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCRuntimeNameAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCRuntimeNameAttr(A::CXAttr)::CXObjCRuntimeNameAttr
 end
 
 function clang_Attr_isObjCRuntimeNameAttr(A)
@@ -4736,7 +7986,7 @@ function clang_Attr_isObjCRuntimeNameAttr(A)
 end
 
 function clang_Attr_castToObjCRuntimeVisibleAttr(A)
-    @ccall libclangex.clang_Attr_castToObjCRuntimeVisibleAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToObjCRuntimeVisibleAttr(A::CXAttr)::CXObjCRuntimeVisibleAttr
 end
 
 function clang_Attr_isObjCRuntimeVisibleAttr(A)
@@ -4744,7 +7994,7 @@ function clang_Attr_isObjCRuntimeVisibleAttr(A)
 end
 
 function clang_Attr_castToOpenCLAccessAttr(A)
-    @ccall libclangex.clang_Attr_castToOpenCLAccessAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOpenCLAccessAttr(A::CXAttr)::CXOpenCLAccessAttr
 end
 
 function clang_Attr_isOpenCLAccessAttr(A)
@@ -4752,7 +8002,7 @@ function clang_Attr_isOpenCLAccessAttr(A)
 end
 
 function clang_Attr_castToOverloadableAttr(A)
-    @ccall libclangex.clang_Attr_castToOverloadableAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToOverloadableAttr(A::CXAttr)::CXOverloadableAttr
 end
 
 function clang_Attr_isOverloadableAttr(A)
@@ -4760,7 +8010,7 @@ function clang_Attr_isOverloadableAttr(A)
 end
 
 function clang_Attr_castToRenderScriptKernelAttr(A)
-    @ccall libclangex.clang_Attr_castToRenderScriptKernelAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToRenderScriptKernelAttr(A::CXAttr)::CXRenderScriptKernelAttr
 end
 
 function clang_Attr_isRenderScriptKernelAttr(A)
@@ -4768,7 +8018,7 @@ function clang_Attr_isRenderScriptKernelAttr(A)
 end
 
 function clang_Attr_castToSwiftObjCMembersAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftObjCMembersAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftObjCMembersAttr(A::CXAttr)::CXSwiftObjCMembersAttr
 end
 
 function clang_Attr_isSwiftObjCMembersAttr(A)
@@ -4776,7 +8026,7 @@ function clang_Attr_isSwiftObjCMembersAttr(A)
 end
 
 function clang_Attr_castToSwiftVersionedAdditionAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftVersionedAdditionAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftVersionedAdditionAttr(A::CXAttr)::CXSwiftVersionedAdditionAttr
 end
 
 function clang_Attr_isSwiftVersionedAdditionAttr(A)
@@ -4784,7 +8034,7 @@ function clang_Attr_isSwiftVersionedAdditionAttr(A)
 end
 
 function clang_Attr_castToSwiftVersionedRemovalAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftVersionedRemovalAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToSwiftVersionedRemovalAttr(A::CXAttr)::CXSwiftVersionedRemovalAttr
 end
 
 function clang_Attr_isSwiftVersionedRemovalAttr(A)
@@ -4792,7 +8042,7 @@ function clang_Attr_isSwiftVersionedRemovalAttr(A)
 end
 
 function clang_Attr_castToThreadAttr(A)
-    @ccall libclangex.clang_Attr_castToThreadAttr(A::CXAttr)::CXAttr
+    @ccall libclangex.clang_Attr_castToThreadAttr(A::CXAttr)::CXThreadAttr
 end
 
 function clang_Attr_isThreadAttr(A)
@@ -4980,243 +8230,243 @@ end
 end
 
 function clang_Type_castToAdjustedType(T)
-    @ccall libclangex.clang_Type_castToAdjustedType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToAdjustedType(T::CXType_)::CXAdjustedType
 end
 
 function clang_Type_castToDecayedType(T)
-    @ccall libclangex.clang_Type_castToDecayedType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDecayedType(T::CXType_)::CXDecayedType
 end
 
 function clang_Type_castToArrayType(T)
-    @ccall libclangex.clang_Type_castToArrayType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToArrayType(T::CXType_)::CXArrayType
 end
 
 function clang_Type_castToConstantArrayType(T)
-    @ccall libclangex.clang_Type_castToConstantArrayType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToConstantArrayType(T::CXType_)::CXConstantArrayType
 end
 
 function clang_Type_castToDependentSizedArrayType(T)
-    @ccall libclangex.clang_Type_castToDependentSizedArrayType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDependentSizedArrayType(T::CXType_)::CXDependentSizedArrayType
 end
 
 function clang_Type_castToIncompleteArrayType(T)
-    @ccall libclangex.clang_Type_castToIncompleteArrayType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToIncompleteArrayType(T::CXType_)::CXIncompleteArrayType
 end
 
 function clang_Type_castToVariableArrayType(T)
-    @ccall libclangex.clang_Type_castToVariableArrayType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToVariableArrayType(T::CXType_)::CXVariableArrayType
 end
 
 function clang_Type_castToAtomicType(T)
-    @ccall libclangex.clang_Type_castToAtomicType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToAtomicType(T::CXType_)::CXAtomicType
 end
 
 function clang_Type_castToAttributedType(T)
-    @ccall libclangex.clang_Type_castToAttributedType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToAttributedType(T::CXType_)::CXAttributedType
 end
 
 function clang_Type_castToBTFTagAttributedType(T)
-    @ccall libclangex.clang_Type_castToBTFTagAttributedType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToBTFTagAttributedType(T::CXType_)::CXBTFTagAttributedType
 end
 
 function clang_Type_castToBitIntType(T)
-    @ccall libclangex.clang_Type_castToBitIntType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToBitIntType(T::CXType_)::CXBitIntType
 end
 
 function clang_Type_castToBlockPointerType(T)
-    @ccall libclangex.clang_Type_castToBlockPointerType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToBlockPointerType(T::CXType_)::CXBlockPointerType
 end
 
 function clang_Type_castToBuiltinType(T)
-    @ccall libclangex.clang_Type_castToBuiltinType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToBuiltinType(T::CXType_)::CXBuiltinType
 end
 
 function clang_Type_castToComplexType(T)
-    @ccall libclangex.clang_Type_castToComplexType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToComplexType(T::CXType_)::CXComplexType
 end
 
 function clang_Type_castToDecltypeType(T)
-    @ccall libclangex.clang_Type_castToDecltypeType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDecltypeType(T::CXType_)::CXDecltypeType
 end
 
 function clang_Type_castToDeducedType(T)
-    @ccall libclangex.clang_Type_castToDeducedType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDeducedType(T::CXType_)::CXDeducedType
 end
 
 function clang_Type_castToAutoType(T)
-    @ccall libclangex.clang_Type_castToAutoType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToAutoType(T::CXType_)::CXAutoType
 end
 
 function clang_Type_castToDeducedTemplateSpecializationType(T)
-    @ccall libclangex.clang_Type_castToDeducedTemplateSpecializationType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDeducedTemplateSpecializationType(T::CXType_)::CXDeducedTemplateSpecializationType
 end
 
 function clang_Type_castToDependentAddressSpaceType(T)
-    @ccall libclangex.clang_Type_castToDependentAddressSpaceType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDependentAddressSpaceType(T::CXType_)::CXDependentAddressSpaceType
 end
 
 function clang_Type_castToDependentBitIntType(T)
-    @ccall libclangex.clang_Type_castToDependentBitIntType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDependentBitIntType(T::CXType_)::CXDependentBitIntType
 end
 
 function clang_Type_castToDependentNameType(T)
-    @ccall libclangex.clang_Type_castToDependentNameType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDependentNameType(T::CXType_)::CXDependentNameType
 end
 
 function clang_Type_castToDependentSizedExtVectorType(T)
-    @ccall libclangex.clang_Type_castToDependentSizedExtVectorType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDependentSizedExtVectorType(T::CXType_)::CXDependentSizedExtVectorType
 end
 
 function clang_Type_castToDependentTemplateSpecializationType(T)
-    @ccall libclangex.clang_Type_castToDependentTemplateSpecializationType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDependentTemplateSpecializationType(T::CXType_)::CXDependentTemplateSpecializationType
 end
 
 function clang_Type_castToDependentVectorType(T)
-    @ccall libclangex.clang_Type_castToDependentVectorType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDependentVectorType(T::CXType_)::CXDependentVectorType
 end
 
 function clang_Type_castToElaboratedType(T)
-    @ccall libclangex.clang_Type_castToElaboratedType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToElaboratedType(T::CXType_)::CXElaboratedType
 end
 
 function clang_Type_castToFunctionType(T)
-    @ccall libclangex.clang_Type_castToFunctionType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToFunctionType(T::CXType_)::CXFunctionType
 end
 
 function clang_Type_castToFunctionNoProtoType(T)
-    @ccall libclangex.clang_Type_castToFunctionNoProtoType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToFunctionNoProtoType(T::CXType_)::CXFunctionNoProtoType
 end
 
 function clang_Type_castToFunctionProtoType(T)
-    @ccall libclangex.clang_Type_castToFunctionProtoType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToFunctionProtoType(T::CXType_)::CXFunctionProtoType
 end
 
 function clang_Type_castToInjectedClassNameType(T)
-    @ccall libclangex.clang_Type_castToInjectedClassNameType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToInjectedClassNameType(T::CXType_)::CXInjectedClassNameType
 end
 
 function clang_Type_castToMacroQualifiedType(T)
-    @ccall libclangex.clang_Type_castToMacroQualifiedType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToMacroQualifiedType(T::CXType_)::CXMacroQualifiedType
 end
 
 function clang_Type_castToMatrixType(T)
-    @ccall libclangex.clang_Type_castToMatrixType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToMatrixType(T::CXType_)::CXMatrixType
 end
 
 function clang_Type_castToConstantMatrixType(T)
-    @ccall libclangex.clang_Type_castToConstantMatrixType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToConstantMatrixType(T::CXType_)::CXConstantMatrixType
 end
 
 function clang_Type_castToDependentSizedMatrixType(T)
-    @ccall libclangex.clang_Type_castToDependentSizedMatrixType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToDependentSizedMatrixType(T::CXType_)::CXDependentSizedMatrixType
 end
 
 function clang_Type_castToMemberPointerType(T)
-    @ccall libclangex.clang_Type_castToMemberPointerType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToMemberPointerType(T::CXType_)::CXMemberPointerType
 end
 
 function clang_Type_castToObjCObjectPointerType(T)
-    @ccall libclangex.clang_Type_castToObjCObjectPointerType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToObjCObjectPointerType(T::CXType_)::CXObjCObjectPointerType
 end
 
 function clang_Type_castToObjCObjectType(T)
-    @ccall libclangex.clang_Type_castToObjCObjectType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToObjCObjectType(T::CXType_)::CXObjCObjectType
 end
 
 function clang_Type_castToObjCInterfaceType(T)
-    @ccall libclangex.clang_Type_castToObjCInterfaceType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToObjCInterfaceType(T::CXType_)::CXObjCInterfaceType
 end
 
 function clang_Type_castToObjCTypeParamType(T)
-    @ccall libclangex.clang_Type_castToObjCTypeParamType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToObjCTypeParamType(T::CXType_)::CXObjCTypeParamType
 end
 
 function clang_Type_castToPackExpansionType(T)
-    @ccall libclangex.clang_Type_castToPackExpansionType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToPackExpansionType(T::CXType_)::CXPackExpansionType
 end
 
 function clang_Type_castToParenType(T)
-    @ccall libclangex.clang_Type_castToParenType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToParenType(T::CXType_)::CXParenType
 end
 
 function clang_Type_castToPipeType(T)
-    @ccall libclangex.clang_Type_castToPipeType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToPipeType(T::CXType_)::CXPipeType
 end
 
 function clang_Type_castToPointerType(T)
-    @ccall libclangex.clang_Type_castToPointerType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToPointerType(T::CXType_)::CXPointerType
 end
 
 function clang_Type_castToReferenceType(T)
-    @ccall libclangex.clang_Type_castToReferenceType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToReferenceType(T::CXType_)::CXReferenceType
 end
 
 function clang_Type_castToLValueReferenceType(T)
-    @ccall libclangex.clang_Type_castToLValueReferenceType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToLValueReferenceType(T::CXType_)::CXLValueReferenceType
 end
 
 function clang_Type_castToRValueReferenceType(T)
-    @ccall libclangex.clang_Type_castToRValueReferenceType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToRValueReferenceType(T::CXType_)::CXRValueReferenceType
 end
 
 function clang_Type_castToSubstTemplateTypeParmPackType(T)
-    @ccall libclangex.clang_Type_castToSubstTemplateTypeParmPackType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToSubstTemplateTypeParmPackType(T::CXType_)::CXSubstTemplateTypeParmPackType
 end
 
 function clang_Type_castToSubstTemplateTypeParmType(T)
-    @ccall libclangex.clang_Type_castToSubstTemplateTypeParmType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToSubstTemplateTypeParmType(T::CXType_)::CXSubstTemplateTypeParmType
 end
 
 function clang_Type_castToTagType(T)
-    @ccall libclangex.clang_Type_castToTagType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToTagType(T::CXType_)::CXTagType
 end
 
 function clang_Type_castToEnumType(T)
-    @ccall libclangex.clang_Type_castToEnumType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToEnumType(T::CXType_)::CXEnumType
 end
 
 function clang_Type_castToRecordType(T)
-    @ccall libclangex.clang_Type_castToRecordType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToRecordType(T::CXType_)::CXRecordType
 end
 
 function clang_Type_castToTemplateSpecializationType(T)
-    @ccall libclangex.clang_Type_castToTemplateSpecializationType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToTemplateSpecializationType(T::CXType_)::CXTemplateSpecializationType
 end
 
 function clang_Type_castToTemplateTypeParmType(T)
-    @ccall libclangex.clang_Type_castToTemplateTypeParmType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToTemplateTypeParmType(T::CXType_)::CXTemplateTypeParmType
 end
 
 function clang_Type_castToTypeOfExprType(T)
-    @ccall libclangex.clang_Type_castToTypeOfExprType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToTypeOfExprType(T::CXType_)::CXTypeOfExprType
 end
 
 function clang_Type_castToTypeOfType(T)
-    @ccall libclangex.clang_Type_castToTypeOfType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToTypeOfType(T::CXType_)::CXTypeOfType
 end
 
 function clang_Type_castToTypedefType(T)
-    @ccall libclangex.clang_Type_castToTypedefType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToTypedefType(T::CXType_)::CXTypedefType
 end
 
 function clang_Type_castToUnaryTransformType(T)
-    @ccall libclangex.clang_Type_castToUnaryTransformType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToUnaryTransformType(T::CXType_)::CXUnaryTransformType
 end
 
 function clang_Type_castToUnresolvedUsingType(T)
-    @ccall libclangex.clang_Type_castToUnresolvedUsingType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToUnresolvedUsingType(T::CXType_)::CXUnresolvedUsingType
 end
 
 function clang_Type_castToUsingType(T)
-    @ccall libclangex.clang_Type_castToUsingType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToUsingType(T::CXType_)::CXUsingType
 end
 
 function clang_Type_castToVectorType(T)
-    @ccall libclangex.clang_Type_castToVectorType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToVectorType(T::CXType_)::CXVectorType
 end
 
 function clang_Type_castToExtVectorType(T)
-    @ccall libclangex.clang_Type_castToExtVectorType(T::CXType_)::CXType_
+    @ccall libclangex.clang_Type_castToExtVectorType(T::CXType_)::CXExtVectorType
 end
 
 function clang_Type_getTypeClass(T)
@@ -9679,11 +12929,11 @@ function clang_ASTContext_setTraversalScope(Ctx, Decls, NumDecls)
 end
 
 function clang_ASTContext_getPrintingPolicy(Ctx)
-    @ccall libclangex.clang_ASTContext_getPrintingPolicy(Ctx::CXASTContext)::CXPrintingPolicy
+    @ccall libclangex.clang_ASTContext_getPrintingPolicy(Ctx::CXASTContext)::CXPrintingPolicy_
 end
 
 function clang_ASTContext_setPrintingPolicy(Ctx, Policy)
-    @ccall libclangex.clang_ASTContext_setPrintingPolicy(Ctx::CXASTContext, Policy::CXPrintingPolicy)::Cvoid
+    @ccall libclangex.clang_ASTContext_setPrintingPolicy(Ctx::CXASTContext, Policy::CXPrintingPolicy_)::Cvoid
 end
 
 function clang_ASTContext_getSourceManager(Ctx)
@@ -9855,7 +13105,7 @@ function clang_ASTContext_setPrimaryMergedDecl(Ctx, D, Primary)
 end
 
 function clang_ASTContext_mergeDefinitionIntoModule(Ctx, ND, Module, NotifyListeners)
-    @ccall libclangex.clang_ASTContext_mergeDefinitionIntoModule(Ctx::CXASTContext, ND::CXNamedDecl, Module::CXModule, NotifyListeners::Bool)::Cvoid
+    @ccall libclangex.clang_ASTContext_mergeDefinitionIntoModule(Ctx::CXASTContext, ND::CXNamedDecl, Module::CXModule_, NotifyListeners::Bool)::Cvoid
 end
 
 function clang_ASTContext_deduplicateMergedDefinitonsFor(Ctx, ND)
@@ -9867,23 +13117,23 @@ function clang_ASTContext_getNumModulesWithMergedDefinition(Ctx, Def)
 end
 
 function clang_ASTContext_getModuleWithMergedDefinition(Ctx, Def, I)
-    @ccall libclangex.clang_ASTContext_getModuleWithMergedDefinition(Ctx::CXASTContext, Def::CXNamedDecl, I::Cuint)::CXModule
+    @ccall libclangex.clang_ASTContext_getModuleWithMergedDefinition(Ctx::CXASTContext, Def::CXNamedDecl, I::Cuint)::CXModule_
 end
 
 function clang_ASTContext_addModuleInitializer(Ctx, M, Init)
-    @ccall libclangex.clang_ASTContext_addModuleInitializer(Ctx::CXASTContext, M::CXModule, Init::CXDecl)::Cvoid
+    @ccall libclangex.clang_ASTContext_addModuleInitializer(Ctx::CXASTContext, M::CXModule_, Init::CXDecl)::Cvoid
 end
 
 function clang_ASTContext_getNumModuleInitializers(Ctx, M)
-    @ccall libclangex.clang_ASTContext_getNumModuleInitializers(Ctx::CXASTContext, M::CXModule)::Cuint
+    @ccall libclangex.clang_ASTContext_getNumModuleInitializers(Ctx::CXASTContext, M::CXModule_)::Cuint
 end
 
 function clang_ASTContext_getModuleInitializer(Ctx, M, I)
-    @ccall libclangex.clang_ASTContext_getModuleInitializer(Ctx::CXASTContext, M::CXModule, I::Cuint)::CXDecl
+    @ccall libclangex.clang_ASTContext_getModuleInitializer(Ctx::CXASTContext, M::CXModule_, I::Cuint)::CXDecl
 end
 
 function clang_ASTContext_getCurrentNamedModule(Ctx)
-    @ccall libclangex.clang_ASTContext_getCurrentNamedModule(Ctx::CXASTContext)::CXModule
+    @ccall libclangex.clang_ASTContext_getCurrentNamedModule(Ctx::CXASTContext)::CXModule_
 end
 
 function clang_ASTContext_getTranslationUnitDecl(Ctx)
@@ -12893,11 +16143,11 @@ function clang_CXXMethodDecl_isLambdaStaticInvoker(CXXMD)
 end
 
 function clang_CXXMethodDecl_getCorrespondingMethodInClass(CXXMD, RD, MayBeBase)
-    @ccall libclangex.clang_CXXMethodDecl_getCorrespondingMethodInClass(CXXMD::CXCXXMethodDecl, RD::CXCXXRecordDecl, MayBeBase::Bool)::CXCXXRecordDecl
+    @ccall libclangex.clang_CXXMethodDecl_getCorrespondingMethodInClass(CXXMD::CXCXXMethodDecl, RD::CXCXXRecordDecl, MayBeBase::Bool)::CXCXXMethodDecl
 end
 
 function clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD, RD, MayBeBase)
-    @ccall libclangex.clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD::CXCXXMethodDecl, RD::CXCXXRecordDecl, MayBeBase::Bool)::CXCXXRecordDecl
+    @ccall libclangex.clang_CXXMethodDecl_getCorrespondingMethodDeclaredInClass(CXXMD::CXCXXMethodDecl, RD::CXCXXRecordDecl, MayBeBase::Bool)::CXCXXMethodDecl
 end
 
 function clang_CXXMethodDecl_isExplicitObjectMemberFunction(CXXMD)
@@ -14464,7 +17714,7 @@ end
 end
 
 function clang_Decl_castToTranslationUnitDecl(D)
-    @ccall libclangex.clang_Decl_castToTranslationUnitDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTranslationUnitDecl(D::CXDecl)::CXTranslationUnitDecl
 end
 
 function clang_Decl_isTranslationUnitDecl(D)
@@ -14472,7 +17722,7 @@ function clang_Decl_isTranslationUnitDecl(D)
 end
 
 function clang_Decl_castToRequiresExprBodyDecl(D)
-    @ccall libclangex.clang_Decl_castToRequiresExprBodyDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToRequiresExprBodyDecl(D::CXDecl)::CXRequiresExprBodyDecl
 end
 
 function clang_Decl_isRequiresExprBodyDecl(D)
@@ -14480,7 +17730,7 @@ function clang_Decl_isRequiresExprBodyDecl(D)
 end
 
 function clang_Decl_castToLinkageSpecDecl(D)
-    @ccall libclangex.clang_Decl_castToLinkageSpecDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToLinkageSpecDecl(D::CXDecl)::CXLinkageSpecDecl
 end
 
 function clang_Decl_isLinkageSpecDecl(D)
@@ -14488,7 +17738,7 @@ function clang_Decl_isLinkageSpecDecl(D)
 end
 
 function clang_Decl_castToExternCContextDecl(D)
-    @ccall libclangex.clang_Decl_castToExternCContextDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToExternCContextDecl(D::CXDecl)::CXExternCContextDecl
 end
 
 function clang_Decl_isExternCContextDecl(D)
@@ -14496,7 +17746,7 @@ function clang_Decl_isExternCContextDecl(D)
 end
 
 function clang_Decl_castToExportDecl(D)
-    @ccall libclangex.clang_Decl_castToExportDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToExportDecl(D::CXDecl)::CXExportDecl
 end
 
 function clang_Decl_isExportDecl(D)
@@ -14504,7 +17754,7 @@ function clang_Decl_isExportDecl(D)
 end
 
 function clang_Decl_castToCapturedDecl(D)
-    @ccall libclangex.clang_Decl_castToCapturedDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToCapturedDecl(D::CXDecl)::CXCapturedDecl
 end
 
 function clang_Decl_isCapturedDecl(D)
@@ -14512,7 +17762,7 @@ function clang_Decl_isCapturedDecl(D)
 end
 
 function clang_Decl_castToBlockDecl(D)
-    @ccall libclangex.clang_Decl_castToBlockDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToBlockDecl(D::CXDecl)::CXBlockDecl
 end
 
 function clang_Decl_isBlockDecl(D)
@@ -14520,7 +17770,7 @@ function clang_Decl_isBlockDecl(D)
 end
 
 function clang_Decl_castToTopLevelStmtDecl(D)
-    @ccall libclangex.clang_Decl_castToTopLevelStmtDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTopLevelStmtDecl(D::CXDecl)::CXTopLevelStmtDecl
 end
 
 function clang_Decl_isTopLevelStmtDecl(D)
@@ -14528,7 +17778,7 @@ function clang_Decl_isTopLevelStmtDecl(D)
 end
 
 function clang_Decl_castToStaticAssertDecl(D)
-    @ccall libclangex.clang_Decl_castToStaticAssertDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToStaticAssertDecl(D::CXDecl)::CXStaticAssertDecl
 end
 
 function clang_Decl_isStaticAssertDecl(D)
@@ -14536,7 +17786,7 @@ function clang_Decl_isStaticAssertDecl(D)
 end
 
 function clang_Decl_castToPragmaDetectMismatchDecl(D)
-    @ccall libclangex.clang_Decl_castToPragmaDetectMismatchDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToPragmaDetectMismatchDecl(D::CXDecl)::CXPragmaDetectMismatchDecl
 end
 
 function clang_Decl_isPragmaDetectMismatchDecl(D)
@@ -14544,7 +17794,7 @@ function clang_Decl_isPragmaDetectMismatchDecl(D)
 end
 
 function clang_Decl_castToPragmaCommentDecl(D)
-    @ccall libclangex.clang_Decl_castToPragmaCommentDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToPragmaCommentDecl(D::CXDecl)::CXPragmaCommentDecl
 end
 
 function clang_Decl_isPragmaCommentDecl(D)
@@ -14552,7 +17802,7 @@ function clang_Decl_isPragmaCommentDecl(D)
 end
 
 function clang_Decl_castToObjCPropertyImplDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCPropertyImplDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCPropertyImplDecl(D::CXDecl)::CXObjCPropertyImplDecl
 end
 
 function clang_Decl_isObjCPropertyImplDecl(D)
@@ -14560,7 +17810,7 @@ function clang_Decl_isObjCPropertyImplDecl(D)
 end
 
 function clang_Decl_castToOMPThreadPrivateDecl(D)
-    @ccall libclangex.clang_Decl_castToOMPThreadPrivateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToOMPThreadPrivateDecl(D::CXDecl)::CXOMPThreadPrivateDecl
 end
 
 function clang_Decl_isOMPThreadPrivateDecl(D)
@@ -14568,7 +17818,7 @@ function clang_Decl_isOMPThreadPrivateDecl(D)
 end
 
 function clang_Decl_castToOMPRequiresDecl(D)
-    @ccall libclangex.clang_Decl_castToOMPRequiresDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToOMPRequiresDecl(D::CXDecl)::CXOMPRequiresDecl
 end
 
 function clang_Decl_isOMPRequiresDecl(D)
@@ -14576,7 +17826,7 @@ function clang_Decl_isOMPRequiresDecl(D)
 end
 
 function clang_Decl_castToOMPAllocateDecl(D)
-    @ccall libclangex.clang_Decl_castToOMPAllocateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToOMPAllocateDecl(D::CXDecl)::CXOMPAllocateDecl
 end
 
 function clang_Decl_isOMPAllocateDecl(D)
@@ -14584,7 +17834,7 @@ function clang_Decl_isOMPAllocateDecl(D)
 end
 
 function clang_Decl_castToNamedDecl(D)
-    @ccall libclangex.clang_Decl_castToNamedDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToNamedDecl(D::CXDecl)::CXNamedDecl
 end
 
 function clang_Decl_isNamedDecl(D)
@@ -14592,7 +17842,7 @@ function clang_Decl_isNamedDecl(D)
 end
 
 function clang_Decl_castToObjCMethodDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCMethodDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCMethodDecl(D::CXDecl)::CXObjCMethodDecl
 end
 
 function clang_Decl_isObjCMethodDecl(D)
@@ -14600,7 +17850,7 @@ function clang_Decl_isObjCMethodDecl(D)
 end
 
 function clang_Decl_castToObjCContainerDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCContainerDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCContainerDecl(D::CXDecl)::CXObjCContainerDecl
 end
 
 function clang_Decl_isObjCContainerDecl(D)
@@ -14608,7 +17858,7 @@ function clang_Decl_isObjCContainerDecl(D)
 end
 
 function clang_Decl_castToObjCProtocolDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCProtocolDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCProtocolDecl(D::CXDecl)::CXObjCProtocolDecl
 end
 
 function clang_Decl_isObjCProtocolDecl(D)
@@ -14616,7 +17866,7 @@ function clang_Decl_isObjCProtocolDecl(D)
 end
 
 function clang_Decl_castToObjCInterfaceDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCInterfaceDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCInterfaceDecl(D::CXDecl)::CXObjCInterfaceDecl
 end
 
 function clang_Decl_isObjCInterfaceDecl(D)
@@ -14624,7 +17874,7 @@ function clang_Decl_isObjCInterfaceDecl(D)
 end
 
 function clang_Decl_castToObjCImplDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCImplDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCImplDecl(D::CXDecl)::CXObjCImplDecl
 end
 
 function clang_Decl_isObjCImplDecl(D)
@@ -14632,7 +17882,7 @@ function clang_Decl_isObjCImplDecl(D)
 end
 
 function clang_Decl_castToObjCImplementationDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCImplementationDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCImplementationDecl(D::CXDecl)::CXObjCImplementationDecl
 end
 
 function clang_Decl_isObjCImplementationDecl(D)
@@ -14640,7 +17890,7 @@ function clang_Decl_isObjCImplementationDecl(D)
 end
 
 function clang_Decl_castToObjCCategoryImplDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCCategoryImplDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCCategoryImplDecl(D::CXDecl)::CXObjCCategoryImplDecl
 end
 
 function clang_Decl_isObjCCategoryImplDecl(D)
@@ -14648,7 +17898,7 @@ function clang_Decl_isObjCCategoryImplDecl(D)
 end
 
 function clang_Decl_castToObjCCategoryDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCCategoryDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCCategoryDecl(D::CXDecl)::CXObjCCategoryDecl
 end
 
 function clang_Decl_isObjCCategoryDecl(D)
@@ -14656,7 +17906,7 @@ function clang_Decl_isObjCCategoryDecl(D)
 end
 
 function clang_Decl_castToNamespaceDecl(D)
-    @ccall libclangex.clang_Decl_castToNamespaceDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToNamespaceDecl(D::CXDecl)::CXNamespaceDecl
 end
 
 function clang_Decl_isNamespaceDecl(D)
@@ -14664,7 +17914,7 @@ function clang_Decl_isNamespaceDecl(D)
 end
 
 function clang_Decl_castToHLSLBufferDecl(D)
-    @ccall libclangex.clang_Decl_castToHLSLBufferDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToHLSLBufferDecl(D::CXDecl)::CXHLSLBufferDecl
 end
 
 function clang_Decl_isHLSLBufferDecl(D)
@@ -14672,7 +17922,7 @@ function clang_Decl_isHLSLBufferDecl(D)
 end
 
 function clang_Decl_castToValueDecl(D)
-    @ccall libclangex.clang_Decl_castToValueDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToValueDecl(D::CXDecl)::CXValueDecl
 end
 
 function clang_Decl_isValueDecl(D)
@@ -14680,7 +17930,7 @@ function clang_Decl_isValueDecl(D)
 end
 
 function clang_Decl_castToOMPDeclareReductionDecl(D)
-    @ccall libclangex.clang_Decl_castToOMPDeclareReductionDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToOMPDeclareReductionDecl(D::CXDecl)::CXOMPDeclareReductionDecl
 end
 
 function clang_Decl_isOMPDeclareReductionDecl(D)
@@ -14688,7 +17938,7 @@ function clang_Decl_isOMPDeclareReductionDecl(D)
 end
 
 function clang_Decl_castToOMPDeclareMapperDecl(D)
-    @ccall libclangex.clang_Decl_castToOMPDeclareMapperDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToOMPDeclareMapperDecl(D::CXDecl)::CXOMPDeclareMapperDecl
 end
 
 function clang_Decl_isOMPDeclareMapperDecl(D)
@@ -14696,7 +17946,7 @@ function clang_Decl_isOMPDeclareMapperDecl(D)
 end
 
 function clang_Decl_castToUnresolvedUsingValueDecl(D)
-    @ccall libclangex.clang_Decl_castToUnresolvedUsingValueDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUnresolvedUsingValueDecl(D::CXDecl)::CXUnresolvedUsingValueDecl
 end
 
 function clang_Decl_isUnresolvedUsingValueDecl(D)
@@ -14704,7 +17954,7 @@ function clang_Decl_isUnresolvedUsingValueDecl(D)
 end
 
 function clang_Decl_castToUnnamedGlobalConstantDecl(D)
-    @ccall libclangex.clang_Decl_castToUnnamedGlobalConstantDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUnnamedGlobalConstantDecl(D::CXDecl)::CXUnnamedGlobalConstantDecl
 end
 
 function clang_Decl_isUnnamedGlobalConstantDecl(D)
@@ -14712,7 +17962,7 @@ function clang_Decl_isUnnamedGlobalConstantDecl(D)
 end
 
 function clang_Decl_castToTemplateParamObjectDecl(D)
-    @ccall libclangex.clang_Decl_castToTemplateParamObjectDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTemplateParamObjectDecl(D::CXDecl)::CXTemplateParamObjectDecl
 end
 
 function clang_Decl_isTemplateParamObjectDecl(D)
@@ -14720,7 +17970,7 @@ function clang_Decl_isTemplateParamObjectDecl(D)
 end
 
 function clang_Decl_castToMSGuidDecl(D)
-    @ccall libclangex.clang_Decl_castToMSGuidDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToMSGuidDecl(D::CXDecl)::CXMSGuidDecl
 end
 
 function clang_Decl_isMSGuidDecl(D)
@@ -14728,7 +17978,7 @@ function clang_Decl_isMSGuidDecl(D)
 end
 
 function clang_Decl_castToIndirectFieldDecl(D)
-    @ccall libclangex.clang_Decl_castToIndirectFieldDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToIndirectFieldDecl(D::CXDecl)::CXIndirectFieldDecl
 end
 
 function clang_Decl_isIndirectFieldDecl(D)
@@ -14736,7 +17986,7 @@ function clang_Decl_isIndirectFieldDecl(D)
 end
 
 function clang_Decl_castToEnumConstantDecl(D)
-    @ccall libclangex.clang_Decl_castToEnumConstantDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToEnumConstantDecl(D::CXDecl)::CXEnumConstantDecl
 end
 
 function clang_Decl_isEnumConstantDecl(D)
@@ -14744,7 +17994,7 @@ function clang_Decl_isEnumConstantDecl(D)
 end
 
 function clang_Decl_castToDeclaratorDecl(D)
-    @ccall libclangex.clang_Decl_castToDeclaratorDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToDeclaratorDecl(D::CXDecl)::CXDeclaratorDecl
 end
 
 function clang_Decl_isDeclaratorDecl(D)
@@ -14752,7 +18002,7 @@ function clang_Decl_isDeclaratorDecl(D)
 end
 
 function clang_Decl_castToFunctionDecl(D)
-    @ccall libclangex.clang_Decl_castToFunctionDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToFunctionDecl(D::CXDecl)::CXFunctionDecl
 end
 
 function clang_Decl_isFunctionDecl(D)
@@ -14760,7 +18010,7 @@ function clang_Decl_isFunctionDecl(D)
 end
 
 function clang_Decl_castToCXXMethodDecl(D)
-    @ccall libclangex.clang_Decl_castToCXXMethodDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToCXXMethodDecl(D::CXDecl)::CXCXXMethodDecl
 end
 
 function clang_Decl_isCXXMethodDecl(D)
@@ -14768,7 +18018,7 @@ function clang_Decl_isCXXMethodDecl(D)
 end
 
 function clang_Decl_castToCXXDestructorDecl(D)
-    @ccall libclangex.clang_Decl_castToCXXDestructorDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToCXXDestructorDecl(D::CXDecl)::CXCXXDestructorDecl
 end
 
 function clang_Decl_isCXXDestructorDecl(D)
@@ -14776,7 +18026,7 @@ function clang_Decl_isCXXDestructorDecl(D)
 end
 
 function clang_Decl_castToCXXConversionDecl(D)
-    @ccall libclangex.clang_Decl_castToCXXConversionDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToCXXConversionDecl(D::CXDecl)::CXCXXConversionDecl
 end
 
 function clang_Decl_isCXXConversionDecl(D)
@@ -14784,7 +18034,7 @@ function clang_Decl_isCXXConversionDecl(D)
 end
 
 function clang_Decl_castToCXXConstructorDecl(D)
-    @ccall libclangex.clang_Decl_castToCXXConstructorDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToCXXConstructorDecl(D::CXDecl)::CXCXXConstructorDecl
 end
 
 function clang_Decl_isCXXConstructorDecl(D)
@@ -14792,7 +18042,7 @@ function clang_Decl_isCXXConstructorDecl(D)
 end
 
 function clang_Decl_castToCXXDeductionGuideDecl(D)
-    @ccall libclangex.clang_Decl_castToCXXDeductionGuideDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToCXXDeductionGuideDecl(D::CXDecl)::CXCXXDeductionGuideDecl
 end
 
 function clang_Decl_isCXXDeductionGuideDecl(D)
@@ -14800,7 +18050,7 @@ function clang_Decl_isCXXDeductionGuideDecl(D)
 end
 
 function clang_Decl_castToVarDecl(D)
-    @ccall libclangex.clang_Decl_castToVarDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToVarDecl(D::CXDecl)::CXVarDecl
 end
 
 function clang_Decl_isVarDecl(D)
@@ -14808,7 +18058,7 @@ function clang_Decl_isVarDecl(D)
 end
 
 function clang_Decl_castToVarTemplateSpecializationDecl(D)
-    @ccall libclangex.clang_Decl_castToVarTemplateSpecializationDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToVarTemplateSpecializationDecl(D::CXDecl)::CXVarTemplateSpecializationDecl
 end
 
 function clang_Decl_isVarTemplateSpecializationDecl(D)
@@ -14816,7 +18066,7 @@ function clang_Decl_isVarTemplateSpecializationDecl(D)
 end
 
 function clang_Decl_castToVarTemplatePartialSpecializationDecl(D)
-    @ccall libclangex.clang_Decl_castToVarTemplatePartialSpecializationDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToVarTemplatePartialSpecializationDecl(D::CXDecl)::CXVarTemplatePartialSpecializationDecl
 end
 
 function clang_Decl_isVarTemplatePartialSpecializationDecl(D)
@@ -14824,7 +18074,7 @@ function clang_Decl_isVarTemplatePartialSpecializationDecl(D)
 end
 
 function clang_Decl_castToParmVarDecl(D)
-    @ccall libclangex.clang_Decl_castToParmVarDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToParmVarDecl(D::CXDecl)::CXParmVarDecl
 end
 
 function clang_Decl_isParmVarDecl(D)
@@ -14832,7 +18082,7 @@ function clang_Decl_isParmVarDecl(D)
 end
 
 function clang_Decl_castToOMPCapturedExprDecl(D)
-    @ccall libclangex.clang_Decl_castToOMPCapturedExprDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToOMPCapturedExprDecl(D::CXDecl)::CXOMPCapturedExprDecl
 end
 
 function clang_Decl_isOMPCapturedExprDecl(D)
@@ -14840,7 +18090,7 @@ function clang_Decl_isOMPCapturedExprDecl(D)
 end
 
 function clang_Decl_castToImplicitParamDecl(D)
-    @ccall libclangex.clang_Decl_castToImplicitParamDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToImplicitParamDecl(D::CXDecl)::CXImplicitParamDecl
 end
 
 function clang_Decl_isImplicitParamDecl(D)
@@ -14848,7 +18098,7 @@ function clang_Decl_isImplicitParamDecl(D)
 end
 
 function clang_Decl_castToDecompositionDecl(D)
-    @ccall libclangex.clang_Decl_castToDecompositionDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToDecompositionDecl(D::CXDecl)::CXDecompositionDecl
 end
 
 function clang_Decl_isDecompositionDecl(D)
@@ -14856,7 +18106,7 @@ function clang_Decl_isDecompositionDecl(D)
 end
 
 function clang_Decl_castToNonTypeTemplateParmDecl(D)
-    @ccall libclangex.clang_Decl_castToNonTypeTemplateParmDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToNonTypeTemplateParmDecl(D::CXDecl)::CXNonTypeTemplateParmDecl
 end
 
 function clang_Decl_isNonTypeTemplateParmDecl(D)
@@ -14864,7 +18114,7 @@ function clang_Decl_isNonTypeTemplateParmDecl(D)
 end
 
 function clang_Decl_castToMSPropertyDecl(D)
-    @ccall libclangex.clang_Decl_castToMSPropertyDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToMSPropertyDecl(D::CXDecl)::CXMSPropertyDecl
 end
 
 function clang_Decl_isMSPropertyDecl(D)
@@ -14872,7 +18122,7 @@ function clang_Decl_isMSPropertyDecl(D)
 end
 
 function clang_Decl_castToFieldDecl(D)
-    @ccall libclangex.clang_Decl_castToFieldDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToFieldDecl(D::CXDecl)::CXFieldDecl
 end
 
 function clang_Decl_isFieldDecl(D)
@@ -14880,7 +18130,7 @@ function clang_Decl_isFieldDecl(D)
 end
 
 function clang_Decl_castToObjCIvarDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCIvarDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCIvarDecl(D::CXDecl)::CXObjCIvarDecl
 end
 
 function clang_Decl_isObjCIvarDecl(D)
@@ -14888,7 +18138,7 @@ function clang_Decl_isObjCIvarDecl(D)
 end
 
 function clang_Decl_castToObjCAtDefsFieldDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCAtDefsFieldDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCAtDefsFieldDecl(D::CXDecl)::CXObjCAtDefsFieldDecl
 end
 
 function clang_Decl_isObjCAtDefsFieldDecl(D)
@@ -14896,7 +18146,7 @@ function clang_Decl_isObjCAtDefsFieldDecl(D)
 end
 
 function clang_Decl_castToBindingDecl(D)
-    @ccall libclangex.clang_Decl_castToBindingDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToBindingDecl(D::CXDecl)::CXBindingDecl
 end
 
 function clang_Decl_isBindingDecl(D)
@@ -14904,7 +18154,7 @@ function clang_Decl_isBindingDecl(D)
 end
 
 function clang_Decl_castToUsingShadowDecl(D)
-    @ccall libclangex.clang_Decl_castToUsingShadowDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUsingShadowDecl(D::CXDecl)::CXUsingShadowDecl
 end
 
 function clang_Decl_isUsingShadowDecl(D)
@@ -14912,7 +18162,7 @@ function clang_Decl_isUsingShadowDecl(D)
 end
 
 function clang_Decl_castToConstructorUsingShadowDecl(D)
-    @ccall libclangex.clang_Decl_castToConstructorUsingShadowDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToConstructorUsingShadowDecl(D::CXDecl)::CXConstructorUsingShadowDecl
 end
 
 function clang_Decl_isConstructorUsingShadowDecl(D)
@@ -14920,7 +18170,7 @@ function clang_Decl_isConstructorUsingShadowDecl(D)
 end
 
 function clang_Decl_castToUsingPackDecl(D)
-    @ccall libclangex.clang_Decl_castToUsingPackDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUsingPackDecl(D::CXDecl)::CXUsingPackDecl
 end
 
 function clang_Decl_isUsingPackDecl(D)
@@ -14928,7 +18178,7 @@ function clang_Decl_isUsingPackDecl(D)
 end
 
 function clang_Decl_castToUsingDirectiveDecl(D)
-    @ccall libclangex.clang_Decl_castToUsingDirectiveDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUsingDirectiveDecl(D::CXDecl)::CXUsingDirectiveDecl
 end
 
 function clang_Decl_isUsingDirectiveDecl(D)
@@ -14936,7 +18186,7 @@ function clang_Decl_isUsingDirectiveDecl(D)
 end
 
 function clang_Decl_castToUnresolvedUsingIfExistsDecl(D)
-    @ccall libclangex.clang_Decl_castToUnresolvedUsingIfExistsDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUnresolvedUsingIfExistsDecl(D::CXDecl)::CXUnresolvedUsingIfExistsDecl
 end
 
 function clang_Decl_isUnresolvedUsingIfExistsDecl(D)
@@ -14944,7 +18194,7 @@ function clang_Decl_isUnresolvedUsingIfExistsDecl(D)
 end
 
 function clang_Decl_castToTypeDecl(D)
-    @ccall libclangex.clang_Decl_castToTypeDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTypeDecl(D::CXDecl)::CXTypeDecl
 end
 
 function clang_Decl_isTypeDecl(D)
@@ -14952,7 +18202,7 @@ function clang_Decl_isTypeDecl(D)
 end
 
 function clang_Decl_castToTagDecl(D)
-    @ccall libclangex.clang_Decl_castToTagDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTagDecl(D::CXDecl)::CXTagDecl
 end
 
 function clang_Decl_isTagDecl(D)
@@ -14960,7 +18210,7 @@ function clang_Decl_isTagDecl(D)
 end
 
 function clang_Decl_castToRecordDecl(D)
-    @ccall libclangex.clang_Decl_castToRecordDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToRecordDecl(D::CXDecl)::CXRecordDecl
 end
 
 function clang_Decl_isRecordDecl(D)
@@ -14968,7 +18218,7 @@ function clang_Decl_isRecordDecl(D)
 end
 
 function clang_Decl_castToCXXRecordDecl(D)
-    @ccall libclangex.clang_Decl_castToCXXRecordDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToCXXRecordDecl(D::CXDecl)::CXCXXRecordDecl
 end
 
 function clang_Decl_isCXXRecordDecl(D)
@@ -14976,7 +18226,7 @@ function clang_Decl_isCXXRecordDecl(D)
 end
 
 function clang_Decl_castToClassTemplateSpecializationDecl(D)
-    @ccall libclangex.clang_Decl_castToClassTemplateSpecializationDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToClassTemplateSpecializationDecl(D::CXDecl)::CXClassTemplateSpecializationDecl
 end
 
 function clang_Decl_isClassTemplateSpecializationDecl(D)
@@ -14984,7 +18234,7 @@ function clang_Decl_isClassTemplateSpecializationDecl(D)
 end
 
 function clang_Decl_castToClassTemplatePartialSpecializationDecl(D)
-    @ccall libclangex.clang_Decl_castToClassTemplatePartialSpecializationDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToClassTemplatePartialSpecializationDecl(D::CXDecl)::CXClassTemplatePartialSpecializationDecl
 end
 
 function clang_Decl_isClassTemplatePartialSpecializationDecl(D)
@@ -14992,7 +18242,7 @@ function clang_Decl_isClassTemplatePartialSpecializationDecl(D)
 end
 
 function clang_Decl_castToEnumDecl(D)
-    @ccall libclangex.clang_Decl_castToEnumDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToEnumDecl(D::CXDecl)::CXEnumDecl
 end
 
 function clang_Decl_isEnumDecl(D)
@@ -15000,7 +18250,7 @@ function clang_Decl_isEnumDecl(D)
 end
 
 function clang_Decl_castToUnresolvedUsingTypenameDecl(D)
-    @ccall libclangex.clang_Decl_castToUnresolvedUsingTypenameDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUnresolvedUsingTypenameDecl(D::CXDecl)::CXUnresolvedUsingTypenameDecl
 end
 
 function clang_Decl_isUnresolvedUsingTypenameDecl(D)
@@ -15008,7 +18258,7 @@ function clang_Decl_isUnresolvedUsingTypenameDecl(D)
 end
 
 function clang_Decl_castToTypedefNameDecl(D)
-    @ccall libclangex.clang_Decl_castToTypedefNameDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTypedefNameDecl(D::CXDecl)::CXTypedefNameDecl
 end
 
 function clang_Decl_isTypedefNameDecl(D)
@@ -15016,7 +18266,7 @@ function clang_Decl_isTypedefNameDecl(D)
 end
 
 function clang_Decl_castToTypedefDecl(D)
-    @ccall libclangex.clang_Decl_castToTypedefDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTypedefDecl(D::CXDecl)::CXTypedefDecl
 end
 
 function clang_Decl_isTypedefDecl(D)
@@ -15024,7 +18274,7 @@ function clang_Decl_isTypedefDecl(D)
 end
 
 function clang_Decl_castToTypeAliasDecl(D)
-    @ccall libclangex.clang_Decl_castToTypeAliasDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTypeAliasDecl(D::CXDecl)::CXTypeAliasDecl
 end
 
 function clang_Decl_isTypeAliasDecl(D)
@@ -15032,7 +18282,7 @@ function clang_Decl_isTypeAliasDecl(D)
 end
 
 function clang_Decl_castToObjCTypeParamDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCTypeParamDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCTypeParamDecl(D::CXDecl)::CXObjCTypeParamDecl
 end
 
 function clang_Decl_isObjCTypeParamDecl(D)
@@ -15040,7 +18290,7 @@ function clang_Decl_isObjCTypeParamDecl(D)
 end
 
 function clang_Decl_castToTemplateTypeParmDecl(D)
-    @ccall libclangex.clang_Decl_castToTemplateTypeParmDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTemplateTypeParmDecl(D::CXDecl)::CXTemplateTypeParmDecl
 end
 
 function clang_Decl_isTemplateTypeParmDecl(D)
@@ -15048,7 +18298,7 @@ function clang_Decl_isTemplateTypeParmDecl(D)
 end
 
 function clang_Decl_castToTemplateDecl(D)
-    @ccall libclangex.clang_Decl_castToTemplateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTemplateDecl(D::CXDecl)::CXTemplateDecl
 end
 
 function clang_Decl_isTemplateDecl(D)
@@ -15056,7 +18306,7 @@ function clang_Decl_isTemplateDecl(D)
 end
 
 function clang_Decl_castToTemplateTemplateParmDecl(D)
-    @ccall libclangex.clang_Decl_castToTemplateTemplateParmDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTemplateTemplateParmDecl(D::CXDecl)::CXTemplateTemplateParmDecl
 end
 
 function clang_Decl_isTemplateTemplateParmDecl(D)
@@ -15064,7 +18314,7 @@ function clang_Decl_isTemplateTemplateParmDecl(D)
 end
 
 function clang_Decl_castToRedeclarableTemplateDecl(D)
-    @ccall libclangex.clang_Decl_castToRedeclarableTemplateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToRedeclarableTemplateDecl(D::CXDecl)::CXRedeclarableTemplateDecl
 end
 
 function clang_Decl_isRedeclarableTemplateDecl(D)
@@ -15072,7 +18322,7 @@ function clang_Decl_isRedeclarableTemplateDecl(D)
 end
 
 function clang_Decl_castToVarTemplateDecl(D)
-    @ccall libclangex.clang_Decl_castToVarTemplateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToVarTemplateDecl(D::CXDecl)::CXVarTemplateDecl
 end
 
 function clang_Decl_isVarTemplateDecl(D)
@@ -15080,7 +18330,7 @@ function clang_Decl_isVarTemplateDecl(D)
 end
 
 function clang_Decl_castToTypeAliasTemplateDecl(D)
-    @ccall libclangex.clang_Decl_castToTypeAliasTemplateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToTypeAliasTemplateDecl(D::CXDecl)::CXTypeAliasTemplateDecl
 end
 
 function clang_Decl_isTypeAliasTemplateDecl(D)
@@ -15088,7 +18338,7 @@ function clang_Decl_isTypeAliasTemplateDecl(D)
 end
 
 function clang_Decl_castToFunctionTemplateDecl(D)
-    @ccall libclangex.clang_Decl_castToFunctionTemplateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToFunctionTemplateDecl(D::CXDecl)::CXFunctionTemplateDecl
 end
 
 function clang_Decl_isFunctionTemplateDecl(D)
@@ -15096,7 +18346,7 @@ function clang_Decl_isFunctionTemplateDecl(D)
 end
 
 function clang_Decl_castToClassTemplateDecl(D)
-    @ccall libclangex.clang_Decl_castToClassTemplateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToClassTemplateDecl(D::CXDecl)::CXClassTemplateDecl
 end
 
 function clang_Decl_isClassTemplateDecl(D)
@@ -15104,7 +18354,7 @@ function clang_Decl_isClassTemplateDecl(D)
 end
 
 function clang_Decl_castToConceptDecl(D)
-    @ccall libclangex.clang_Decl_castToConceptDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToConceptDecl(D::CXDecl)::CXConceptDecl
 end
 
 function clang_Decl_isConceptDecl(D)
@@ -15112,7 +18362,7 @@ function clang_Decl_isConceptDecl(D)
 end
 
 function clang_Decl_castToBuiltinTemplateDecl(D)
-    @ccall libclangex.clang_Decl_castToBuiltinTemplateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToBuiltinTemplateDecl(D::CXDecl)::CXBuiltinTemplateDecl
 end
 
 function clang_Decl_isBuiltinTemplateDecl(D)
@@ -15120,7 +18370,7 @@ function clang_Decl_isBuiltinTemplateDecl(D)
 end
 
 function clang_Decl_castToObjCPropertyDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCPropertyDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCPropertyDecl(D::CXDecl)::CXObjCPropertyDecl
 end
 
 function clang_Decl_isObjCPropertyDecl(D)
@@ -15128,7 +18378,7 @@ function clang_Decl_isObjCPropertyDecl(D)
 end
 
 function clang_Decl_castToObjCCompatibleAliasDecl(D)
-    @ccall libclangex.clang_Decl_castToObjCCompatibleAliasDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToObjCCompatibleAliasDecl(D::CXDecl)::CXObjCCompatibleAliasDecl
 end
 
 function clang_Decl_isObjCCompatibleAliasDecl(D)
@@ -15136,7 +18386,7 @@ function clang_Decl_isObjCCompatibleAliasDecl(D)
 end
 
 function clang_Decl_castToNamespaceAliasDecl(D)
-    @ccall libclangex.clang_Decl_castToNamespaceAliasDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToNamespaceAliasDecl(D::CXDecl)::CXNamespaceAliasDecl
 end
 
 function clang_Decl_isNamespaceAliasDecl(D)
@@ -15144,7 +18394,7 @@ function clang_Decl_isNamespaceAliasDecl(D)
 end
 
 function clang_Decl_castToLabelDecl(D)
-    @ccall libclangex.clang_Decl_castToLabelDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToLabelDecl(D::CXDecl)::CXLabelDecl
 end
 
 function clang_Decl_isLabelDecl(D)
@@ -15152,7 +18402,7 @@ function clang_Decl_isLabelDecl(D)
 end
 
 function clang_Decl_castToBaseUsingDecl(D)
-    @ccall libclangex.clang_Decl_castToBaseUsingDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToBaseUsingDecl(D::CXDecl)::CXBaseUsingDecl
 end
 
 function clang_Decl_isBaseUsingDecl(D)
@@ -15160,7 +18410,7 @@ function clang_Decl_isBaseUsingDecl(D)
 end
 
 function clang_Decl_castToUsingEnumDecl(D)
-    @ccall libclangex.clang_Decl_castToUsingEnumDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUsingEnumDecl(D::CXDecl)::CXUsingEnumDecl
 end
 
 function clang_Decl_isUsingEnumDecl(D)
@@ -15168,7 +18418,7 @@ function clang_Decl_isUsingEnumDecl(D)
 end
 
 function clang_Decl_castToUsingDecl(D)
-    @ccall libclangex.clang_Decl_castToUsingDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToUsingDecl(D::CXDecl)::CXUsingDecl
 end
 
 function clang_Decl_isUsingDecl(D)
@@ -15176,7 +18426,7 @@ function clang_Decl_isUsingDecl(D)
 end
 
 function clang_Decl_castToLifetimeExtendedTemporaryDecl(D)
-    @ccall libclangex.clang_Decl_castToLifetimeExtendedTemporaryDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToLifetimeExtendedTemporaryDecl(D::CXDecl)::CXLifetimeExtendedTemporaryDecl
 end
 
 function clang_Decl_isLifetimeExtendedTemporaryDecl(D)
@@ -15184,7 +18434,7 @@ function clang_Decl_isLifetimeExtendedTemporaryDecl(D)
 end
 
 function clang_Decl_castToImportDecl(D)
-    @ccall libclangex.clang_Decl_castToImportDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToImportDecl(D::CXDecl)::CXImportDecl
 end
 
 function clang_Decl_isImportDecl(D)
@@ -15192,7 +18442,7 @@ function clang_Decl_isImportDecl(D)
 end
 
 function clang_Decl_castToImplicitConceptSpecializationDecl(D)
-    @ccall libclangex.clang_Decl_castToImplicitConceptSpecializationDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToImplicitConceptSpecializationDecl(D::CXDecl)::CXImplicitConceptSpecializationDecl
 end
 
 function clang_Decl_isImplicitConceptSpecializationDecl(D)
@@ -15200,7 +18450,7 @@ function clang_Decl_isImplicitConceptSpecializationDecl(D)
 end
 
 function clang_Decl_castToFriendTemplateDecl(D)
-    @ccall libclangex.clang_Decl_castToFriendTemplateDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToFriendTemplateDecl(D::CXDecl)::CXFriendTemplateDecl
 end
 
 function clang_Decl_isFriendTemplateDecl(D)
@@ -15208,7 +18458,7 @@ function clang_Decl_isFriendTemplateDecl(D)
 end
 
 function clang_Decl_castToFriendDecl(D)
-    @ccall libclangex.clang_Decl_castToFriendDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToFriendDecl(D::CXDecl)::CXFriendDecl
 end
 
 function clang_Decl_isFriendDecl(D)
@@ -15216,7 +18466,7 @@ function clang_Decl_isFriendDecl(D)
 end
 
 function clang_Decl_castToFileScopeAsmDecl(D)
-    @ccall libclangex.clang_Decl_castToFileScopeAsmDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToFileScopeAsmDecl(D::CXDecl)::CXFileScopeAsmDecl
 end
 
 function clang_Decl_isFileScopeAsmDecl(D)
@@ -15224,7 +18474,7 @@ function clang_Decl_isFileScopeAsmDecl(D)
 end
 
 function clang_Decl_castToEmptyDecl(D)
-    @ccall libclangex.clang_Decl_castToEmptyDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToEmptyDecl(D::CXDecl)::CXEmptyDecl
 end
 
 function clang_Decl_isEmptyDecl(D)
@@ -15232,7 +18482,7 @@ function clang_Decl_isEmptyDecl(D)
 end
 
 function clang_Decl_castToAccessSpecDecl(D)
-    @ccall libclangex.clang_Decl_castToAccessSpecDecl(D::CXDecl)::CXDecl
+    @ccall libclangex.clang_Decl_castToAccessSpecDecl(D::CXDecl)::CXAccessSpecDecl
 end
 
 function clang_Decl_isAccessSpecDecl(D)
@@ -15588,11 +18838,11 @@ function clang_Decl_getOwningModuleID(D)
 end
 
 function clang_Decl_getImportedOwningModule(D)
-    @ccall libclangex.clang_Decl_getImportedOwningModule(D::CXDecl)::CXModule
+    @ccall libclangex.clang_Decl_getImportedOwningModule(D::CXDecl)::CXModule_
 end
 
 function clang_Decl_getLocalOwningModule(D)
-    @ccall libclangex.clang_Decl_getLocalOwningModule(D::CXDecl)::CXModule
+    @ccall libclangex.clang_Decl_getLocalOwningModule(D::CXDecl)::CXModule_
 end
 
 function clang_Decl_hasOwningModule(D)
@@ -15600,11 +18850,11 @@ function clang_Decl_hasOwningModule(D)
 end
 
 function clang_Decl_getOwningModule(D)
-    @ccall libclangex.clang_Decl_getOwningModule(D::CXDecl)::CXModule
+    @ccall libclangex.clang_Decl_getOwningModule(D::CXDecl)::CXModule_
 end
 
 function clang_Decl_getOwningModuleForLinkage(D, IgnoreLinkage)
-    @ccall libclangex.clang_Decl_getOwningModuleForLinkage(D::CXDecl, IgnoreLinkage::Bool)::CXModule
+    @ccall libclangex.clang_Decl_getOwningModuleForLinkage(D::CXDecl, IgnoreLinkage::Bool)::CXModule_
 end
 
 function clang_Decl_isUnconditionallyVisible(D)
@@ -17013,7 +20263,9 @@ end
     CXFunctionDecl_TK_DependentNonTemplate = 5
 end
 
-const CXFunctionDecl_DefaultedFunctionInfo = Ptr{Cvoid}
+mutable struct CXFunctionDecl_DefaultedFunctionInfoImpl <: AbstractCXImpl end
+
+const CXFunctionDecl_DefaultedFunctionInfo = Ptr{CXFunctionDecl_DefaultedFunctionInfoImpl}
 
 function clang_FunctionDecl_Create(C, DC, StartLoc, NLoc, N, T, TInfo, SC, isInlineSpecified, hasWrittenPrototype)
     @ccall libclangex.clang_FunctionDecl_Create(C::CXASTContext, DC::CXDeclContext, StartLoc::CXSourceLocation_, NLoc::CXSourceLocation_, N::CXDeclarationName, T::CXQualType, TInfo::CXTypeSourceInfo, SC::CXStorageClass, isInlineSpecified::Bool, hasWrittenPrototype::Bool)::CXFunctionDecl
@@ -18726,7 +21978,7 @@ function clang_CapturedDecl_castFromDeclContext(DC)
 end
 
 function clang_ImportDecl_CreateImplicit(C, DC, StartLoc, Imported, EndLoc)
-    @ccall libclangex.clang_ImportDecl_CreateImplicit(C::CXASTContext, DC::CXDeclContext, StartLoc::CXSourceLocation_, Imported::CXModule, EndLoc::CXSourceLocation_)::CXImportDecl
+    @ccall libclangex.clang_ImportDecl_CreateImplicit(C::CXASTContext, DC::CXDeclContext, StartLoc::CXSourceLocation_, Imported::CXModule_, EndLoc::CXSourceLocation_)::CXImportDecl
 end
 
 function clang_ImportDecl_CreateDeserialized(C, ID, NumLocations)
@@ -18734,7 +21986,7 @@ function clang_ImportDecl_CreateDeserialized(C, ID, NumLocations)
 end
 
 function clang_ImportDecl_getImportedModule(ID)
-    @ccall libclangex.clang_ImportDecl_getImportedModule(ID::CXImportDecl)::CXModule
+    @ccall libclangex.clang_ImportDecl_getImportedModule(ID::CXImportDecl)::CXModule_
 end
 
 function clang_ImportDecl_getNumIdentifierLocs(ID)
@@ -22200,7 +25452,7 @@ function clang_ItaniumMangleContext_mangleDynamicStermFinalizer(MC, D)
 end
 
 function clang_ItaniumMangleContext_mangleModuleInitializer(MC, M)
-    @ccall libclangex.clang_ItaniumMangleContext_mangleModuleInitializer(MC::CXItaniumMangleContext, M::CXModule)::CXString
+    @ccall libclangex.clang_ItaniumMangleContext_mangleModuleInitializer(MC::CXItaniumMangleContext, M::CXModule_)::CXString
 end
 
 function clang_ASTNameGenerator_getName(G, D)
@@ -22334,39 +25586,39 @@ function clang_NestedNameSpecifierLoc_dispose(NNSL)
 end
 
 function clang_PrintingPolicy_create(LO)
-    @ccall libclangex.clang_PrintingPolicy_create(LO::CXLangOptions)::CXPrintingPolicy
+    @ccall libclangex.clang_PrintingPolicy_create(LO::CXLangOptions)::CXPrintingPolicy_
 end
 
 function clang_PrintingPolicy_copy(PP)
-    @ccall libclangex.clang_PrintingPolicy_copy(PP::CXPrintingPolicy)::CXPrintingPolicy
+    @ccall libclangex.clang_PrintingPolicy_copy(PP::CXPrintingPolicy_)::CXPrintingPolicy_
 end
 
 function clang_PrintingPolicy_dispose(PP)
-    @ccall libclangex.clang_PrintingPolicy_dispose(PP::CXPrintingPolicy)::Cvoid
+    @ccall libclangex.clang_PrintingPolicy_dispose(PP::CXPrintingPolicy_)::Cvoid
 end
 
 function clang_PrintingPolicy_getSuppressTagKeyword(PP)
-    @ccall libclangex.clang_PrintingPolicy_getSuppressTagKeyword(PP::CXPrintingPolicy)::Bool
+    @ccall libclangex.clang_PrintingPolicy_getSuppressTagKeyword(PP::CXPrintingPolicy_)::Bool
 end
 
 function clang_PrintingPolicy_setSuppressTagKeyword(PP, Value)
-    @ccall libclangex.clang_PrintingPolicy_setSuppressTagKeyword(PP::CXPrintingPolicy, Value::Bool)::Cvoid
+    @ccall libclangex.clang_PrintingPolicy_setSuppressTagKeyword(PP::CXPrintingPolicy_, Value::Bool)::Cvoid
 end
 
 function clang_PrintingPolicy_getSuppressScope(PP)
-    @ccall libclangex.clang_PrintingPolicy_getSuppressScope(PP::CXPrintingPolicy)::Bool
+    @ccall libclangex.clang_PrintingPolicy_getSuppressScope(PP::CXPrintingPolicy_)::Bool
 end
 
 function clang_PrintingPolicy_setSuppressScope(PP, Value)
-    @ccall libclangex.clang_PrintingPolicy_setSuppressScope(PP::CXPrintingPolicy, Value::Bool)::Cvoid
+    @ccall libclangex.clang_PrintingPolicy_setSuppressScope(PP::CXPrintingPolicy_, Value::Bool)::Cvoid
 end
 
 function clang_PrintingPolicy_getBool(PP)
-    @ccall libclangex.clang_PrintingPolicy_getBool(PP::CXPrintingPolicy)::Bool
+    @ccall libclangex.clang_PrintingPolicy_getBool(PP::CXPrintingPolicy_)::Bool
 end
 
 function clang_PrintingPolicy_setBool(PP, Value)
-    @ccall libclangex.clang_PrintingPolicy_setBool(PP::CXPrintingPolicy, Value::Bool)::Cvoid
+    @ccall libclangex.clang_PrintingPolicy_setBool(PP::CXPrintingPolicy_, Value::Bool)::Cvoid
 end
 
 function clang_ASTRecordLayout_getAlignment(RL)
@@ -23334,235 +26586,235 @@ function clang_ElaboratedTypeLoc_getElaboratedKeywordLoc(TL)
 end
 
 function clang_TypeLoc_castToAdjustedTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToAdjustedTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToAdjustedTypeLoc(TL::CXTypeLoc)::CXAdjustedTypeLoc
 end
 
 function clang_TypeLoc_castToDecayedTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDecayedTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDecayedTypeLoc(TL::CXTypeLoc)::CXDecayedTypeLoc
 end
 
 function clang_TypeLoc_castToConstantArrayTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToConstantArrayTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToConstantArrayTypeLoc(TL::CXTypeLoc)::CXConstantArrayTypeLoc
 end
 
 function clang_TypeLoc_castToDependentSizedArrayTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDependentSizedArrayTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDependentSizedArrayTypeLoc(TL::CXTypeLoc)::CXDependentSizedArrayTypeLoc
 end
 
 function clang_TypeLoc_castToIncompleteArrayTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToIncompleteArrayTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToIncompleteArrayTypeLoc(TL::CXTypeLoc)::CXIncompleteArrayTypeLoc
 end
 
 function clang_TypeLoc_castToVariableArrayTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToVariableArrayTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToVariableArrayTypeLoc(TL::CXTypeLoc)::CXVariableArrayTypeLoc
 end
 
 function clang_TypeLoc_castToAtomicTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToAtomicTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToAtomicTypeLoc(TL::CXTypeLoc)::CXAtomicTypeLoc
 end
 
 function clang_TypeLoc_castToAttributedTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToAttributedTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToAttributedTypeLoc(TL::CXTypeLoc)::CXAttributedTypeLoc
 end
 
 function clang_TypeLoc_castToBTFTagAttributedTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToBTFTagAttributedTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToBTFTagAttributedTypeLoc(TL::CXTypeLoc)::CXBTFTagAttributedTypeLoc
 end
 
 function clang_TypeLoc_castToBitIntTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToBitIntTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToBitIntTypeLoc(TL::CXTypeLoc)::CXBitIntTypeLoc
 end
 
 function clang_TypeLoc_castToBlockPointerTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToBlockPointerTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToBlockPointerTypeLoc(TL::CXTypeLoc)::CXBlockPointerTypeLoc
 end
 
 function clang_TypeLoc_castToBuiltinTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToBuiltinTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToBuiltinTypeLoc(TL::CXTypeLoc)::CXBuiltinTypeLoc
 end
 
 function clang_TypeLoc_castToComplexTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToComplexTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToComplexTypeLoc(TL::CXTypeLoc)::CXComplexTypeLoc
 end
 
 function clang_TypeLoc_castToDecltypeTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDecltypeTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDecltypeTypeLoc(TL::CXTypeLoc)::CXDecltypeTypeLoc
 end
 
 function clang_TypeLoc_castToAutoTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToAutoTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToAutoTypeLoc(TL::CXTypeLoc)::CXAutoTypeLoc
 end
 
 function clang_TypeLoc_castToDeducedTemplateSpecializationTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDeducedTemplateSpecializationTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDeducedTemplateSpecializationTypeLoc(TL::CXTypeLoc)::CXDeducedTemplateSpecializationTypeLoc
 end
 
 function clang_TypeLoc_castToDependentAddressSpaceTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDependentAddressSpaceTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDependentAddressSpaceTypeLoc(TL::CXTypeLoc)::CXDependentAddressSpaceTypeLoc
 end
 
 function clang_TypeLoc_castToDependentBitIntTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDependentBitIntTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDependentBitIntTypeLoc(TL::CXTypeLoc)::CXDependentBitIntTypeLoc
 end
 
 function clang_TypeLoc_castToDependentNameTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDependentNameTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDependentNameTypeLoc(TL::CXTypeLoc)::CXDependentNameTypeLoc
 end
 
 function clang_TypeLoc_castToDependentSizedExtVectorTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDependentSizedExtVectorTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDependentSizedExtVectorTypeLoc(TL::CXTypeLoc)::CXDependentSizedExtVectorTypeLoc
 end
 
 function clang_TypeLoc_castToDependentTemplateSpecializationTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDependentTemplateSpecializationTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDependentTemplateSpecializationTypeLoc(TL::CXTypeLoc)::CXDependentTemplateSpecializationTypeLoc
 end
 
 function clang_TypeLoc_castToDependentVectorTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDependentVectorTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDependentVectorTypeLoc(TL::CXTypeLoc)::CXDependentVectorTypeLoc
 end
 
 function clang_TypeLoc_castToElaboratedTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToElaboratedTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToElaboratedTypeLoc(TL::CXTypeLoc)::CXElaboratedTypeLoc
 end
 
 function clang_TypeLoc_castToFunctionNoProtoTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToFunctionNoProtoTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToFunctionNoProtoTypeLoc(TL::CXTypeLoc)::CXFunctionNoProtoTypeLoc
 end
 
 function clang_TypeLoc_castToFunctionProtoTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToFunctionProtoTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToFunctionProtoTypeLoc(TL::CXTypeLoc)::CXFunctionProtoTypeLoc
 end
 
 function clang_TypeLoc_castToInjectedClassNameTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToInjectedClassNameTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToInjectedClassNameTypeLoc(TL::CXTypeLoc)::CXInjectedClassNameTypeLoc
 end
 
 function clang_TypeLoc_castToMacroQualifiedTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToMacroQualifiedTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToMacroQualifiedTypeLoc(TL::CXTypeLoc)::CXMacroQualifiedTypeLoc
 end
 
 function clang_TypeLoc_castToConstantMatrixTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToConstantMatrixTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToConstantMatrixTypeLoc(TL::CXTypeLoc)::CXConstantMatrixTypeLoc
 end
 
 function clang_TypeLoc_castToDependentSizedMatrixTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToDependentSizedMatrixTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToDependentSizedMatrixTypeLoc(TL::CXTypeLoc)::CXDependentSizedMatrixTypeLoc
 end
 
 function clang_TypeLoc_castToMemberPointerTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToMemberPointerTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToMemberPointerTypeLoc(TL::CXTypeLoc)::CXMemberPointerTypeLoc
 end
 
 function clang_TypeLoc_castToObjCObjectPointerTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToObjCObjectPointerTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToObjCObjectPointerTypeLoc(TL::CXTypeLoc)::CXObjCObjectPointerTypeLoc
 end
 
 function clang_TypeLoc_castToObjCObjectTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToObjCObjectTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToObjCObjectTypeLoc(TL::CXTypeLoc)::CXObjCObjectTypeLoc
 end
 
 function clang_TypeLoc_castToObjCInterfaceTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToObjCInterfaceTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToObjCInterfaceTypeLoc(TL::CXTypeLoc)::CXObjCInterfaceTypeLoc
 end
 
 function clang_TypeLoc_castToObjCTypeParamTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToObjCTypeParamTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToObjCTypeParamTypeLoc(TL::CXTypeLoc)::CXObjCTypeParamTypeLoc
 end
 
 function clang_TypeLoc_castToPackExpansionTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToPackExpansionTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToPackExpansionTypeLoc(TL::CXTypeLoc)::CXPackExpansionTypeLoc
 end
 
 function clang_TypeLoc_castToParenTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToParenTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToParenTypeLoc(TL::CXTypeLoc)::CXParenTypeLoc
 end
 
 function clang_TypeLoc_castToPipeTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToPipeTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToPipeTypeLoc(TL::CXTypeLoc)::CXPipeTypeLoc
 end
 
 function clang_TypeLoc_castToPointerTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToPointerTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToPointerTypeLoc(TL::CXTypeLoc)::CXPointerTypeLoc
 end
 
 function clang_TypeLoc_castToLValueReferenceTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToLValueReferenceTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToLValueReferenceTypeLoc(TL::CXTypeLoc)::CXLValueReferenceTypeLoc
 end
 
 function clang_TypeLoc_castToRValueReferenceTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToRValueReferenceTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToRValueReferenceTypeLoc(TL::CXTypeLoc)::CXRValueReferenceTypeLoc
 end
 
 function clang_TypeLoc_castToSubstTemplateTypeParmPackTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToSubstTemplateTypeParmPackTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToSubstTemplateTypeParmPackTypeLoc(TL::CXTypeLoc)::CXSubstTemplateTypeParmPackTypeLoc
 end
 
 function clang_TypeLoc_castToSubstTemplateTypeParmTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToSubstTemplateTypeParmTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToSubstTemplateTypeParmTypeLoc(TL::CXTypeLoc)::CXSubstTemplateTypeParmTypeLoc
 end
 
 function clang_TypeLoc_castToEnumTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToEnumTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToEnumTypeLoc(TL::CXTypeLoc)::CXEnumTypeLoc
 end
 
 function clang_TypeLoc_castToRecordTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToRecordTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToRecordTypeLoc(TL::CXTypeLoc)::CXRecordTypeLoc
 end
 
 function clang_TypeLoc_castToTemplateSpecializationTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToTemplateSpecializationTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToTemplateSpecializationTypeLoc(TL::CXTypeLoc)::CXTemplateSpecializationTypeLoc
 end
 
 function clang_TypeLoc_castToTemplateTypeParmTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToTemplateTypeParmTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToTemplateTypeParmTypeLoc(TL::CXTypeLoc)::CXTemplateTypeParmTypeLoc
 end
 
 function clang_TypeLoc_castToTypeOfExprTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToTypeOfExprTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToTypeOfExprTypeLoc(TL::CXTypeLoc)::CXTypeOfExprTypeLoc
 end
 
 function clang_TypeLoc_castToTypeOfTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToTypeOfTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToTypeOfTypeLoc(TL::CXTypeLoc)::CXTypeOfTypeLoc
 end
 
 function clang_TypeLoc_castToTypedefTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToTypedefTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToTypedefTypeLoc(TL::CXTypeLoc)::CXTypedefTypeLoc
 end
 
 function clang_TypeLoc_castToUnaryTransformTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToUnaryTransformTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToUnaryTransformTypeLoc(TL::CXTypeLoc)::CXUnaryTransformTypeLoc
 end
 
 function clang_TypeLoc_castToUnresolvedUsingTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToUnresolvedUsingTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToUnresolvedUsingTypeLoc(TL::CXTypeLoc)::CXUnresolvedUsingTypeLoc
 end
 
 function clang_TypeLoc_castToUsingTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToUsingTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToUsingTypeLoc(TL::CXTypeLoc)::CXUsingTypeLoc
 end
 
 function clang_TypeLoc_castToVectorTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToVectorTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToVectorTypeLoc(TL::CXTypeLoc)::CXVectorTypeLoc
 end
 
 function clang_TypeLoc_castToExtVectorTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToExtVectorTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToExtVectorTypeLoc(TL::CXTypeLoc)::CXExtVectorTypeLoc
 end
 
 function clang_TypeLoc_castToQualifiedTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToQualifiedTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToQualifiedTypeLoc(TL::CXTypeLoc)::CXQualifiedTypeLoc
 end
 
 function clang_TypeLoc_castToTypeSpecTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToTypeSpecTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToTypeSpecTypeLoc(TL::CXTypeLoc)::CXTypeSpecTypeLoc
 end
 
 function clang_TypeLoc_castToFunctionTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToFunctionTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToFunctionTypeLoc(TL::CXTypeLoc)::CXFunctionTypeLoc
 end
 
 function clang_TypeLoc_castToArrayTypeLoc(TL)
-    @ccall libclangex.clang_TypeLoc_castToArrayTypeLoc(TL::CXTypeLoc)::CXTypeLoc
+    @ccall libclangex.clang_TypeLoc_castToArrayTypeLoc(TL::CXTypeLoc)::CXArrayTypeLoc
 end
 
 @enum CXCapturedRegionKind::UInt32 begin
@@ -23810,7 +27062,7 @@ end
 end
 
 function clang_Stmt_castToWhileStmt(S)
-    @ccall libclangex.clang_Stmt_castToWhileStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToWhileStmt(S::CXStmt)::CXWhileStmt
 end
 
 function clang_Stmt_isWhileStmt(S)
@@ -23818,7 +27070,7 @@ function clang_Stmt_isWhileStmt(S)
 end
 
 function clang_Stmt_castToValueStmt(S)
-    @ccall libclangex.clang_Stmt_castToValueStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToValueStmt(S::CXStmt)::CXValueStmt
 end
 
 function clang_Stmt_isValueStmt(S)
@@ -23826,7 +27078,7 @@ function clang_Stmt_isValueStmt(S)
 end
 
 function clang_Stmt_castToLabelStmt(S)
-    @ccall libclangex.clang_Stmt_castToLabelStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToLabelStmt(S::CXStmt)::CXLabelStmt
 end
 
 function clang_Stmt_isLabelStmt(S)
@@ -23834,7 +27086,7 @@ function clang_Stmt_isLabelStmt(S)
 end
 
 function clang_Stmt_castToExpr(S)
-    @ccall libclangex.clang_Stmt_castToExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToExpr(S::CXStmt)::CXExpr
 end
 
 function clang_Stmt_isExpr(S)
@@ -23842,7 +27094,7 @@ function clang_Stmt_isExpr(S)
 end
 
 function clang_Stmt_castToVAArgExpr(S)
-    @ccall libclangex.clang_Stmt_castToVAArgExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToVAArgExpr(S::CXStmt)::CXVAArgExpr
 end
 
 function clang_Stmt_isVAArgExpr(S)
@@ -23850,7 +27102,7 @@ function clang_Stmt_isVAArgExpr(S)
 end
 
 function clang_Stmt_castToUnaryOperator(S)
-    @ccall libclangex.clang_Stmt_castToUnaryOperator(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToUnaryOperator(S::CXStmt)::CXUnaryOperator
 end
 
 function clang_Stmt_isUnaryOperator(S)
@@ -23858,7 +27110,7 @@ function clang_Stmt_isUnaryOperator(S)
 end
 
 function clang_Stmt_castToUnaryExprOrTypeTraitExpr(S)
-    @ccall libclangex.clang_Stmt_castToUnaryExprOrTypeTraitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToUnaryExprOrTypeTraitExpr(S::CXStmt)::CXUnaryExprOrTypeTraitExpr
 end
 
 function clang_Stmt_isUnaryExprOrTypeTraitExpr(S)
@@ -23866,7 +27118,7 @@ function clang_Stmt_isUnaryExprOrTypeTraitExpr(S)
 end
 
 function clang_Stmt_castToTypoExpr(S)
-    @ccall libclangex.clang_Stmt_castToTypoExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToTypoExpr(S::CXStmt)::CXTypoExpr
 end
 
 function clang_Stmt_isTypoExpr(S)
@@ -23874,7 +27126,7 @@ function clang_Stmt_isTypoExpr(S)
 end
 
 function clang_Stmt_castToTypeTraitExpr(S)
-    @ccall libclangex.clang_Stmt_castToTypeTraitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToTypeTraitExpr(S::CXStmt)::CXTypeTraitExpr
 end
 
 function clang_Stmt_isTypeTraitExpr(S)
@@ -23882,7 +27134,7 @@ function clang_Stmt_isTypeTraitExpr(S)
 end
 
 function clang_Stmt_castToSubstNonTypeTemplateParmPackExpr(S)
-    @ccall libclangex.clang_Stmt_castToSubstNonTypeTemplateParmPackExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSubstNonTypeTemplateParmPackExpr(S::CXStmt)::CXSubstNonTypeTemplateParmPackExpr
 end
 
 function clang_Stmt_isSubstNonTypeTemplateParmPackExpr(S)
@@ -23890,7 +27142,7 @@ function clang_Stmt_isSubstNonTypeTemplateParmPackExpr(S)
 end
 
 function clang_Stmt_castToSubstNonTypeTemplateParmExpr(S)
-    @ccall libclangex.clang_Stmt_castToSubstNonTypeTemplateParmExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSubstNonTypeTemplateParmExpr(S::CXStmt)::CXSubstNonTypeTemplateParmExpr
 end
 
 function clang_Stmt_isSubstNonTypeTemplateParmExpr(S)
@@ -23898,7 +27150,7 @@ function clang_Stmt_isSubstNonTypeTemplateParmExpr(S)
 end
 
 function clang_Stmt_castToStringLiteral(S)
-    @ccall libclangex.clang_Stmt_castToStringLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToStringLiteral(S::CXStmt)::CXStringLiteral
 end
 
 function clang_Stmt_isStringLiteral(S)
@@ -23906,7 +27158,7 @@ function clang_Stmt_isStringLiteral(S)
 end
 
 function clang_Stmt_castToStmtExpr(S)
-    @ccall libclangex.clang_Stmt_castToStmtExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToStmtExpr(S::CXStmt)::CXStmtExpr
 end
 
 function clang_Stmt_isStmtExpr(S)
@@ -23914,7 +27166,7 @@ function clang_Stmt_isStmtExpr(S)
 end
 
 function clang_Stmt_castToSourceLocExpr(S)
-    @ccall libclangex.clang_Stmt_castToSourceLocExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSourceLocExpr(S::CXStmt)::CXSourceLocExpr
 end
 
 function clang_Stmt_isSourceLocExpr(S)
@@ -23922,7 +27174,7 @@ function clang_Stmt_isSourceLocExpr(S)
 end
 
 function clang_Stmt_castToSizeOfPackExpr(S)
-    @ccall libclangex.clang_Stmt_castToSizeOfPackExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSizeOfPackExpr(S::CXStmt)::CXSizeOfPackExpr
 end
 
 function clang_Stmt_isSizeOfPackExpr(S)
@@ -23930,7 +27182,7 @@ function clang_Stmt_isSizeOfPackExpr(S)
 end
 
 function clang_Stmt_castToShuffleVectorExpr(S)
-    @ccall libclangex.clang_Stmt_castToShuffleVectorExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToShuffleVectorExpr(S::CXStmt)::CXShuffleVectorExpr
 end
 
 function clang_Stmt_isShuffleVectorExpr(S)
@@ -23938,7 +27190,7 @@ function clang_Stmt_isShuffleVectorExpr(S)
 end
 
 function clang_Stmt_castToSYCLUniqueStableNameExpr(S)
-    @ccall libclangex.clang_Stmt_castToSYCLUniqueStableNameExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSYCLUniqueStableNameExpr(S::CXStmt)::CXSYCLUniqueStableNameExpr
 end
 
 function clang_Stmt_isSYCLUniqueStableNameExpr(S)
@@ -23946,7 +27198,7 @@ function clang_Stmt_isSYCLUniqueStableNameExpr(S)
 end
 
 function clang_Stmt_castToRequiresExpr(S)
-    @ccall libclangex.clang_Stmt_castToRequiresExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToRequiresExpr(S::CXStmt)::CXRequiresExpr
 end
 
 function clang_Stmt_isRequiresExpr(S)
@@ -23954,7 +27206,7 @@ function clang_Stmt_isRequiresExpr(S)
 end
 
 function clang_Stmt_castToRecoveryExpr(S)
-    @ccall libclangex.clang_Stmt_castToRecoveryExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToRecoveryExpr(S::CXStmt)::CXRecoveryExpr
 end
 
 function clang_Stmt_isRecoveryExpr(S)
@@ -23962,7 +27214,7 @@ function clang_Stmt_isRecoveryExpr(S)
 end
 
 function clang_Stmt_castToPseudoObjectExpr(S)
-    @ccall libclangex.clang_Stmt_castToPseudoObjectExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToPseudoObjectExpr(S::CXStmt)::CXPseudoObjectExpr
 end
 
 function clang_Stmt_isPseudoObjectExpr(S)
@@ -23970,7 +27222,7 @@ function clang_Stmt_isPseudoObjectExpr(S)
 end
 
 function clang_Stmt_castToPredefinedExpr(S)
-    @ccall libclangex.clang_Stmt_castToPredefinedExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToPredefinedExpr(S::CXStmt)::CXPredefinedExpr
 end
 
 function clang_Stmt_isPredefinedExpr(S)
@@ -23978,7 +27230,7 @@ function clang_Stmt_isPredefinedExpr(S)
 end
 
 function clang_Stmt_castToParenListExpr(S)
-    @ccall libclangex.clang_Stmt_castToParenListExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToParenListExpr(S::CXStmt)::CXParenListExpr
 end
 
 function clang_Stmt_isParenListExpr(S)
@@ -23986,7 +27238,7 @@ function clang_Stmt_isParenListExpr(S)
 end
 
 function clang_Stmt_castToParenExpr(S)
-    @ccall libclangex.clang_Stmt_castToParenExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToParenExpr(S::CXStmt)::CXParenExpr
 end
 
 function clang_Stmt_isParenExpr(S)
@@ -23994,7 +27246,7 @@ function clang_Stmt_isParenExpr(S)
 end
 
 function clang_Stmt_castToPackExpansionExpr(S)
-    @ccall libclangex.clang_Stmt_castToPackExpansionExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToPackExpansionExpr(S::CXStmt)::CXPackExpansionExpr
 end
 
 function clang_Stmt_isPackExpansionExpr(S)
@@ -24002,7 +27254,7 @@ function clang_Stmt_isPackExpansionExpr(S)
 end
 
 function clang_Stmt_castToOverloadExpr(S)
-    @ccall libclangex.clang_Stmt_castToOverloadExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOverloadExpr(S::CXStmt)::CXOverloadExpr
 end
 
 function clang_Stmt_isOverloadExpr(S)
@@ -24010,7 +27262,7 @@ function clang_Stmt_isOverloadExpr(S)
 end
 
 function clang_Stmt_castToUnresolvedMemberExpr(S)
-    @ccall libclangex.clang_Stmt_castToUnresolvedMemberExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToUnresolvedMemberExpr(S::CXStmt)::CXUnresolvedMemberExpr
 end
 
 function clang_Stmt_isUnresolvedMemberExpr(S)
@@ -24018,7 +27270,7 @@ function clang_Stmt_isUnresolvedMemberExpr(S)
 end
 
 function clang_Stmt_castToUnresolvedLookupExpr(S)
-    @ccall libclangex.clang_Stmt_castToUnresolvedLookupExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToUnresolvedLookupExpr(S::CXStmt)::CXUnresolvedLookupExpr
 end
 
 function clang_Stmt_isUnresolvedLookupExpr(S)
@@ -24026,7 +27278,7 @@ function clang_Stmt_isUnresolvedLookupExpr(S)
 end
 
 function clang_Stmt_castToOpaqueValueExpr(S)
-    @ccall libclangex.clang_Stmt_castToOpaqueValueExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOpaqueValueExpr(S::CXStmt)::CXOpaqueValueExpr
 end
 
 function clang_Stmt_isOpaqueValueExpr(S)
@@ -24034,7 +27286,7 @@ function clang_Stmt_isOpaqueValueExpr(S)
 end
 
 function clang_Stmt_castToOffsetOfExpr(S)
-    @ccall libclangex.clang_Stmt_castToOffsetOfExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOffsetOfExpr(S::CXStmt)::CXOffsetOfExpr
 end
 
 function clang_Stmt_isOffsetOfExpr(S)
@@ -24042,7 +27294,7 @@ function clang_Stmt_isOffsetOfExpr(S)
 end
 
 function clang_Stmt_castToObjCSubscriptRefExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCSubscriptRefExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCSubscriptRefExpr(S::CXStmt)::CXObjCSubscriptRefExpr
 end
 
 function clang_Stmt_isObjCSubscriptRefExpr(S)
@@ -24050,7 +27302,7 @@ function clang_Stmt_isObjCSubscriptRefExpr(S)
 end
 
 function clang_Stmt_castToObjCStringLiteral(S)
-    @ccall libclangex.clang_Stmt_castToObjCStringLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCStringLiteral(S::CXStmt)::CXObjCStringLiteral
 end
 
 function clang_Stmt_isObjCStringLiteral(S)
@@ -24058,7 +27310,7 @@ function clang_Stmt_isObjCStringLiteral(S)
 end
 
 function clang_Stmt_castToObjCSelectorExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCSelectorExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCSelectorExpr(S::CXStmt)::CXObjCSelectorExpr
 end
 
 function clang_Stmt_isObjCSelectorExpr(S)
@@ -24066,7 +27318,7 @@ function clang_Stmt_isObjCSelectorExpr(S)
 end
 
 function clang_Stmt_castToObjCProtocolExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCProtocolExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCProtocolExpr(S::CXStmt)::CXObjCProtocolExpr
 end
 
 function clang_Stmt_isObjCProtocolExpr(S)
@@ -24074,7 +27326,7 @@ function clang_Stmt_isObjCProtocolExpr(S)
 end
 
 function clang_Stmt_castToObjCPropertyRefExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCPropertyRefExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCPropertyRefExpr(S::CXStmt)::CXObjCPropertyRefExpr
 end
 
 function clang_Stmt_isObjCPropertyRefExpr(S)
@@ -24082,7 +27334,7 @@ function clang_Stmt_isObjCPropertyRefExpr(S)
 end
 
 function clang_Stmt_castToObjCMessageExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCMessageExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCMessageExpr(S::CXStmt)::CXObjCMessageExpr
 end
 
 function clang_Stmt_isObjCMessageExpr(S)
@@ -24090,7 +27342,7 @@ function clang_Stmt_isObjCMessageExpr(S)
 end
 
 function clang_Stmt_castToObjCIvarRefExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCIvarRefExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCIvarRefExpr(S::CXStmt)::CXObjCIvarRefExpr
 end
 
 function clang_Stmt_isObjCIvarRefExpr(S)
@@ -24098,7 +27350,7 @@ function clang_Stmt_isObjCIvarRefExpr(S)
 end
 
 function clang_Stmt_castToObjCIsaExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCIsaExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCIsaExpr(S::CXStmt)::CXObjCIsaExpr
 end
 
 function clang_Stmt_isObjCIsaExpr(S)
@@ -24106,7 +27358,7 @@ function clang_Stmt_isObjCIsaExpr(S)
 end
 
 function clang_Stmt_castToObjCIndirectCopyRestoreExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCIndirectCopyRestoreExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCIndirectCopyRestoreExpr(S::CXStmt)::CXObjCIndirectCopyRestoreExpr
 end
 
 function clang_Stmt_isObjCIndirectCopyRestoreExpr(S)
@@ -24114,7 +27366,7 @@ function clang_Stmt_isObjCIndirectCopyRestoreExpr(S)
 end
 
 function clang_Stmt_castToObjCEncodeExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCEncodeExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCEncodeExpr(S::CXStmt)::CXObjCEncodeExpr
 end
 
 function clang_Stmt_isObjCEncodeExpr(S)
@@ -24122,7 +27374,7 @@ function clang_Stmt_isObjCEncodeExpr(S)
 end
 
 function clang_Stmt_castToObjCDictionaryLiteral(S)
-    @ccall libclangex.clang_Stmt_castToObjCDictionaryLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCDictionaryLiteral(S::CXStmt)::CXObjCDictionaryLiteral
 end
 
 function clang_Stmt_isObjCDictionaryLiteral(S)
@@ -24130,7 +27382,7 @@ function clang_Stmt_isObjCDictionaryLiteral(S)
 end
 
 function clang_Stmt_castToObjCBoxedExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCBoxedExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCBoxedExpr(S::CXStmt)::CXObjCBoxedExpr
 end
 
 function clang_Stmt_isObjCBoxedExpr(S)
@@ -24138,7 +27390,7 @@ function clang_Stmt_isObjCBoxedExpr(S)
 end
 
 function clang_Stmt_castToObjCBoolLiteralExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCBoolLiteralExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCBoolLiteralExpr(S::CXStmt)::CXObjCBoolLiteralExpr
 end
 
 function clang_Stmt_isObjCBoolLiteralExpr(S)
@@ -24146,7 +27398,7 @@ function clang_Stmt_isObjCBoolLiteralExpr(S)
 end
 
 function clang_Stmt_castToObjCAvailabilityCheckExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCAvailabilityCheckExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCAvailabilityCheckExpr(S::CXStmt)::CXObjCAvailabilityCheckExpr
 end
 
 function clang_Stmt_isObjCAvailabilityCheckExpr(S)
@@ -24154,7 +27406,7 @@ function clang_Stmt_isObjCAvailabilityCheckExpr(S)
 end
 
 function clang_Stmt_castToObjCArrayLiteral(S)
-    @ccall libclangex.clang_Stmt_castToObjCArrayLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCArrayLiteral(S::CXStmt)::CXObjCArrayLiteral
 end
 
 function clang_Stmt_isObjCArrayLiteral(S)
@@ -24162,7 +27414,7 @@ function clang_Stmt_isObjCArrayLiteral(S)
 end
 
 function clang_Stmt_castToOMPIteratorExpr(S)
-    @ccall libclangex.clang_Stmt_castToOMPIteratorExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPIteratorExpr(S::CXStmt)::CXOMPIteratorExpr
 end
 
 function clang_Stmt_isOMPIteratorExpr(S)
@@ -24170,7 +27422,7 @@ function clang_Stmt_isOMPIteratorExpr(S)
 end
 
 function clang_Stmt_castToOMPArrayShapingExpr(S)
-    @ccall libclangex.clang_Stmt_castToOMPArrayShapingExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPArrayShapingExpr(S::CXStmt)::CXOMPArrayShapingExpr
 end
 
 function clang_Stmt_isOMPArrayShapingExpr(S)
@@ -24178,7 +27430,7 @@ function clang_Stmt_isOMPArrayShapingExpr(S)
 end
 
 function clang_Stmt_castToOMPArraySectionExpr(S)
-    @ccall libclangex.clang_Stmt_castToOMPArraySectionExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPArraySectionExpr(S::CXStmt)::CXOMPArraySectionExpr
 end
 
 function clang_Stmt_isOMPArraySectionExpr(S)
@@ -24186,7 +27438,7 @@ function clang_Stmt_isOMPArraySectionExpr(S)
 end
 
 function clang_Stmt_castToNoInitExpr(S)
-    @ccall libclangex.clang_Stmt_castToNoInitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToNoInitExpr(S::CXStmt)::CXNoInitExpr
 end
 
 function clang_Stmt_isNoInitExpr(S)
@@ -24194,7 +27446,7 @@ function clang_Stmt_isNoInitExpr(S)
 end
 
 function clang_Stmt_castToMemberExpr(S)
-    @ccall libclangex.clang_Stmt_castToMemberExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToMemberExpr(S::CXStmt)::CXMemberExpr
 end
 
 function clang_Stmt_isMemberExpr(S)
@@ -24202,7 +27454,7 @@ function clang_Stmt_isMemberExpr(S)
 end
 
 function clang_Stmt_castToMatrixSubscriptExpr(S)
-    @ccall libclangex.clang_Stmt_castToMatrixSubscriptExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToMatrixSubscriptExpr(S::CXStmt)::CXMatrixSubscriptExpr
 end
 
 function clang_Stmt_isMatrixSubscriptExpr(S)
@@ -24210,7 +27462,7 @@ function clang_Stmt_isMatrixSubscriptExpr(S)
 end
 
 function clang_Stmt_castToMaterializeTemporaryExpr(S)
-    @ccall libclangex.clang_Stmt_castToMaterializeTemporaryExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToMaterializeTemporaryExpr(S::CXStmt)::CXMaterializeTemporaryExpr
 end
 
 function clang_Stmt_isMaterializeTemporaryExpr(S)
@@ -24218,7 +27470,7 @@ function clang_Stmt_isMaterializeTemporaryExpr(S)
 end
 
 function clang_Stmt_castToMSPropertySubscriptExpr(S)
-    @ccall libclangex.clang_Stmt_castToMSPropertySubscriptExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToMSPropertySubscriptExpr(S::CXStmt)::CXMSPropertySubscriptExpr
 end
 
 function clang_Stmt_isMSPropertySubscriptExpr(S)
@@ -24226,7 +27478,7 @@ function clang_Stmt_isMSPropertySubscriptExpr(S)
 end
 
 function clang_Stmt_castToMSPropertyRefExpr(S)
-    @ccall libclangex.clang_Stmt_castToMSPropertyRefExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToMSPropertyRefExpr(S::CXStmt)::CXMSPropertyRefExpr
 end
 
 function clang_Stmt_isMSPropertyRefExpr(S)
@@ -24234,7 +27486,7 @@ function clang_Stmt_isMSPropertyRefExpr(S)
 end
 
 function clang_Stmt_castToLambdaExpr(S)
-    @ccall libclangex.clang_Stmt_castToLambdaExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToLambdaExpr(S::CXStmt)::CXLambdaExpr
 end
 
 function clang_Stmt_isLambdaExpr(S)
@@ -24242,7 +27494,7 @@ function clang_Stmt_isLambdaExpr(S)
 end
 
 function clang_Stmt_castToIntegerLiteral(S)
-    @ccall libclangex.clang_Stmt_castToIntegerLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToIntegerLiteral(S::CXStmt)::CXIntegerLiteral
 end
 
 function clang_Stmt_isIntegerLiteral(S)
@@ -24250,7 +27502,7 @@ function clang_Stmt_isIntegerLiteral(S)
 end
 
 function clang_Stmt_castToInitListExpr(S)
-    @ccall libclangex.clang_Stmt_castToInitListExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToInitListExpr(S::CXStmt)::CXInitListExpr
 end
 
 function clang_Stmt_isInitListExpr(S)
@@ -24258,7 +27510,7 @@ function clang_Stmt_isInitListExpr(S)
 end
 
 function clang_Stmt_castToImplicitValueInitExpr(S)
-    @ccall libclangex.clang_Stmt_castToImplicitValueInitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToImplicitValueInitExpr(S::CXStmt)::CXImplicitValueInitExpr
 end
 
 function clang_Stmt_isImplicitValueInitExpr(S)
@@ -24266,7 +27518,7 @@ function clang_Stmt_isImplicitValueInitExpr(S)
 end
 
 function clang_Stmt_castToImaginaryLiteral(S)
-    @ccall libclangex.clang_Stmt_castToImaginaryLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToImaginaryLiteral(S::CXStmt)::CXImaginaryLiteral
 end
 
 function clang_Stmt_isImaginaryLiteral(S)
@@ -24274,7 +27526,7 @@ function clang_Stmt_isImaginaryLiteral(S)
 end
 
 function clang_Stmt_castToGenericSelectionExpr(S)
-    @ccall libclangex.clang_Stmt_castToGenericSelectionExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToGenericSelectionExpr(S::CXStmt)::CXGenericSelectionExpr
 end
 
 function clang_Stmt_isGenericSelectionExpr(S)
@@ -24282,7 +27534,7 @@ function clang_Stmt_isGenericSelectionExpr(S)
 end
 
 function clang_Stmt_castToGNUNullExpr(S)
-    @ccall libclangex.clang_Stmt_castToGNUNullExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToGNUNullExpr(S::CXStmt)::CXGNUNullExpr
 end
 
 function clang_Stmt_isGNUNullExpr(S)
@@ -24290,7 +27542,7 @@ function clang_Stmt_isGNUNullExpr(S)
 end
 
 function clang_Stmt_castToFunctionParmPackExpr(S)
-    @ccall libclangex.clang_Stmt_castToFunctionParmPackExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToFunctionParmPackExpr(S::CXStmt)::CXFunctionParmPackExpr
 end
 
 function clang_Stmt_isFunctionParmPackExpr(S)
@@ -24298,7 +27550,7 @@ function clang_Stmt_isFunctionParmPackExpr(S)
 end
 
 function clang_Stmt_castToFullExpr(S)
-    @ccall libclangex.clang_Stmt_castToFullExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToFullExpr(S::CXStmt)::CXFullExpr
 end
 
 function clang_Stmt_isFullExpr(S)
@@ -24306,7 +27558,7 @@ function clang_Stmt_isFullExpr(S)
 end
 
 function clang_Stmt_castToExprWithCleanups(S)
-    @ccall libclangex.clang_Stmt_castToExprWithCleanups(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToExprWithCleanups(S::CXStmt)::CXExprWithCleanups
 end
 
 function clang_Stmt_isExprWithCleanups(S)
@@ -24314,7 +27566,7 @@ function clang_Stmt_isExprWithCleanups(S)
 end
 
 function clang_Stmt_castToConstantExpr(S)
-    @ccall libclangex.clang_Stmt_castToConstantExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToConstantExpr(S::CXStmt)::CXConstantExpr
 end
 
 function clang_Stmt_isConstantExpr(S)
@@ -24322,7 +27574,7 @@ function clang_Stmt_isConstantExpr(S)
 end
 
 function clang_Stmt_castToFloatingLiteral(S)
-    @ccall libclangex.clang_Stmt_castToFloatingLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToFloatingLiteral(S::CXStmt)::CXFloatingLiteral
 end
 
 function clang_Stmt_isFloatingLiteral(S)
@@ -24330,7 +27582,7 @@ function clang_Stmt_isFloatingLiteral(S)
 end
 
 function clang_Stmt_castToFixedPointLiteral(S)
-    @ccall libclangex.clang_Stmt_castToFixedPointLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToFixedPointLiteral(S::CXStmt)::CXFixedPointLiteral
 end
 
 function clang_Stmt_isFixedPointLiteral(S)
@@ -24338,7 +27590,7 @@ function clang_Stmt_isFixedPointLiteral(S)
 end
 
 function clang_Stmt_castToExtVectorElementExpr(S)
-    @ccall libclangex.clang_Stmt_castToExtVectorElementExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToExtVectorElementExpr(S::CXStmt)::CXExtVectorElementExpr
 end
 
 function clang_Stmt_isExtVectorElementExpr(S)
@@ -24346,7 +27598,7 @@ function clang_Stmt_isExtVectorElementExpr(S)
 end
 
 function clang_Stmt_castToExpressionTraitExpr(S)
-    @ccall libclangex.clang_Stmt_castToExpressionTraitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToExpressionTraitExpr(S::CXStmt)::CXExpressionTraitExpr
 end
 
 function clang_Stmt_isExpressionTraitExpr(S)
@@ -24354,7 +27606,7 @@ function clang_Stmt_isExpressionTraitExpr(S)
 end
 
 function clang_Stmt_castToDesignatedInitUpdateExpr(S)
-    @ccall libclangex.clang_Stmt_castToDesignatedInitUpdateExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToDesignatedInitUpdateExpr(S::CXStmt)::CXDesignatedInitUpdateExpr
 end
 
 function clang_Stmt_isDesignatedInitUpdateExpr(S)
@@ -24362,7 +27614,7 @@ function clang_Stmt_isDesignatedInitUpdateExpr(S)
 end
 
 function clang_Stmt_castToDesignatedInitExpr(S)
-    @ccall libclangex.clang_Stmt_castToDesignatedInitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToDesignatedInitExpr(S::CXStmt)::CXDesignatedInitExpr
 end
 
 function clang_Stmt_isDesignatedInitExpr(S)
@@ -24370,7 +27622,7 @@ function clang_Stmt_isDesignatedInitExpr(S)
 end
 
 function clang_Stmt_castToDependentScopeDeclRefExpr(S)
-    @ccall libclangex.clang_Stmt_castToDependentScopeDeclRefExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToDependentScopeDeclRefExpr(S::CXStmt)::CXDependentScopeDeclRefExpr
 end
 
 function clang_Stmt_isDependentScopeDeclRefExpr(S)
@@ -24378,7 +27630,7 @@ function clang_Stmt_isDependentScopeDeclRefExpr(S)
 end
 
 function clang_Stmt_castToDependentCoawaitExpr(S)
-    @ccall libclangex.clang_Stmt_castToDependentCoawaitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToDependentCoawaitExpr(S::CXStmt)::CXDependentCoawaitExpr
 end
 
 function clang_Stmt_isDependentCoawaitExpr(S)
@@ -24386,7 +27638,7 @@ function clang_Stmt_isDependentCoawaitExpr(S)
 end
 
 function clang_Stmt_castToDeclRefExpr(S)
-    @ccall libclangex.clang_Stmt_castToDeclRefExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToDeclRefExpr(S::CXStmt)::CXDeclRefExpr
 end
 
 function clang_Stmt_isDeclRefExpr(S)
@@ -24394,7 +27646,7 @@ function clang_Stmt_isDeclRefExpr(S)
 end
 
 function clang_Stmt_castToCoroutineSuspendExpr(S)
-    @ccall libclangex.clang_Stmt_castToCoroutineSuspendExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCoroutineSuspendExpr(S::CXStmt)::CXCoroutineSuspendExpr
 end
 
 function clang_Stmt_isCoroutineSuspendExpr(S)
@@ -24402,7 +27654,7 @@ function clang_Stmt_isCoroutineSuspendExpr(S)
 end
 
 function clang_Stmt_castToCoyieldExpr(S)
-    @ccall libclangex.clang_Stmt_castToCoyieldExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCoyieldExpr(S::CXStmt)::CXCoyieldExpr
 end
 
 function clang_Stmt_isCoyieldExpr(S)
@@ -24410,7 +27662,7 @@ function clang_Stmt_isCoyieldExpr(S)
 end
 
 function clang_Stmt_castToCoawaitExpr(S)
-    @ccall libclangex.clang_Stmt_castToCoawaitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCoawaitExpr(S::CXStmt)::CXCoawaitExpr
 end
 
 function clang_Stmt_isCoawaitExpr(S)
@@ -24418,7 +27670,7 @@ function clang_Stmt_isCoawaitExpr(S)
 end
 
 function clang_Stmt_castToConvertVectorExpr(S)
-    @ccall libclangex.clang_Stmt_castToConvertVectorExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToConvertVectorExpr(S::CXStmt)::CXConvertVectorExpr
 end
 
 function clang_Stmt_isConvertVectorExpr(S)
@@ -24426,7 +27678,7 @@ function clang_Stmt_isConvertVectorExpr(S)
 end
 
 function clang_Stmt_castToConceptSpecializationExpr(S)
-    @ccall libclangex.clang_Stmt_castToConceptSpecializationExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToConceptSpecializationExpr(S::CXStmt)::CXConceptSpecializationExpr
 end
 
 function clang_Stmt_isConceptSpecializationExpr(S)
@@ -24434,7 +27686,7 @@ function clang_Stmt_isConceptSpecializationExpr(S)
 end
 
 function clang_Stmt_castToCompoundLiteralExpr(S)
-    @ccall libclangex.clang_Stmt_castToCompoundLiteralExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCompoundLiteralExpr(S::CXStmt)::CXCompoundLiteralExpr
 end
 
 function clang_Stmt_isCompoundLiteralExpr(S)
@@ -24442,7 +27694,7 @@ function clang_Stmt_isCompoundLiteralExpr(S)
 end
 
 function clang_Stmt_castToChooseExpr(S)
-    @ccall libclangex.clang_Stmt_castToChooseExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToChooseExpr(S::CXStmt)::CXChooseExpr
 end
 
 function clang_Stmt_isChooseExpr(S)
@@ -24450,7 +27702,7 @@ function clang_Stmt_isChooseExpr(S)
 end
 
 function clang_Stmt_castToCharacterLiteral(S)
-    @ccall libclangex.clang_Stmt_castToCharacterLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCharacterLiteral(S::CXStmt)::CXCharacterLiteral
 end
 
 function clang_Stmt_isCharacterLiteral(S)
@@ -24458,7 +27710,7 @@ function clang_Stmt_isCharacterLiteral(S)
 end
 
 function clang_Stmt_castToCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCastExpr(S::CXStmt)::CXCastExpr
 end
 
 function clang_Stmt_isCastExpr(S)
@@ -24466,7 +27718,7 @@ function clang_Stmt_isCastExpr(S)
 end
 
 function clang_Stmt_castToImplicitCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToImplicitCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToImplicitCastExpr(S::CXStmt)::CXImplicitCastExpr
 end
 
 function clang_Stmt_isImplicitCastExpr(S)
@@ -24474,7 +27726,7 @@ function clang_Stmt_isImplicitCastExpr(S)
 end
 
 function clang_Stmt_castToExplicitCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToExplicitCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToExplicitCastExpr(S::CXStmt)::CXExplicitCastExpr
 end
 
 function clang_Stmt_isExplicitCastExpr(S)
@@ -24482,7 +27734,7 @@ function clang_Stmt_isExplicitCastExpr(S)
 end
 
 function clang_Stmt_castToObjCBridgedCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToObjCBridgedCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCBridgedCastExpr(S::CXStmt)::CXObjCBridgedCastExpr
 end
 
 function clang_Stmt_isObjCBridgedCastExpr(S)
@@ -24490,7 +27742,7 @@ function clang_Stmt_isObjCBridgedCastExpr(S)
 end
 
 function clang_Stmt_castToCXXNamedCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXNamedCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXNamedCastExpr(S::CXStmt)::CXCXXNamedCastExpr
 end
 
 function clang_Stmt_isCXXNamedCastExpr(S)
@@ -24498,7 +27750,7 @@ function clang_Stmt_isCXXNamedCastExpr(S)
 end
 
 function clang_Stmt_castToCXXStaticCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXStaticCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXStaticCastExpr(S::CXStmt)::CXCXXStaticCastExpr
 end
 
 function clang_Stmt_isCXXStaticCastExpr(S)
@@ -24506,7 +27758,7 @@ function clang_Stmt_isCXXStaticCastExpr(S)
 end
 
 function clang_Stmt_castToCXXReinterpretCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXReinterpretCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXReinterpretCastExpr(S::CXStmt)::CXCXXReinterpretCastExpr
 end
 
 function clang_Stmt_isCXXReinterpretCastExpr(S)
@@ -24514,7 +27766,7 @@ function clang_Stmt_isCXXReinterpretCastExpr(S)
 end
 
 function clang_Stmt_castToCXXDynamicCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXDynamicCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXDynamicCastExpr(S::CXStmt)::CXCXXDynamicCastExpr
 end
 
 function clang_Stmt_isCXXDynamicCastExpr(S)
@@ -24522,7 +27774,7 @@ function clang_Stmt_isCXXDynamicCastExpr(S)
 end
 
 function clang_Stmt_castToCXXConstCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXConstCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXConstCastExpr(S::CXStmt)::CXCXXConstCastExpr
 end
 
 function clang_Stmt_isCXXConstCastExpr(S)
@@ -24530,7 +27782,7 @@ function clang_Stmt_isCXXConstCastExpr(S)
 end
 
 function clang_Stmt_castToCXXAddrspaceCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXAddrspaceCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXAddrspaceCastExpr(S::CXStmt)::CXCXXAddrspaceCastExpr
 end
 
 function clang_Stmt_isCXXAddrspaceCastExpr(S)
@@ -24538,7 +27790,7 @@ function clang_Stmt_isCXXAddrspaceCastExpr(S)
 end
 
 function clang_Stmt_castToCXXFunctionalCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXFunctionalCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXFunctionalCastExpr(S::CXStmt)::CXCXXFunctionalCastExpr
 end
 
 function clang_Stmt_isCXXFunctionalCastExpr(S)
@@ -24546,7 +27798,7 @@ function clang_Stmt_isCXXFunctionalCastExpr(S)
 end
 
 function clang_Stmt_castToCStyleCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToCStyleCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCStyleCastExpr(S::CXStmt)::CXCStyleCastExpr
 end
 
 function clang_Stmt_isCStyleCastExpr(S)
@@ -24554,7 +27806,7 @@ function clang_Stmt_isCStyleCastExpr(S)
 end
 
 function clang_Stmt_castToBuiltinBitCastExpr(S)
-    @ccall libclangex.clang_Stmt_castToBuiltinBitCastExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToBuiltinBitCastExpr(S::CXStmt)::CXBuiltinBitCastExpr
 end
 
 function clang_Stmt_isBuiltinBitCastExpr(S)
@@ -24562,7 +27814,7 @@ function clang_Stmt_isBuiltinBitCastExpr(S)
 end
 
 function clang_Stmt_castToCallExpr(S)
-    @ccall libclangex.clang_Stmt_castToCallExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCallExpr(S::CXStmt)::CXCallExpr
 end
 
 function clang_Stmt_isCallExpr(S)
@@ -24570,7 +27822,7 @@ function clang_Stmt_isCallExpr(S)
 end
 
 function clang_Stmt_castToUserDefinedLiteral(S)
-    @ccall libclangex.clang_Stmt_castToUserDefinedLiteral(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToUserDefinedLiteral(S::CXStmt)::CXUserDefinedLiteral
 end
 
 function clang_Stmt_isUserDefinedLiteral(S)
@@ -24578,7 +27830,7 @@ function clang_Stmt_isUserDefinedLiteral(S)
 end
 
 function clang_Stmt_castToCXXOperatorCallExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXOperatorCallExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXOperatorCallExpr(S::CXStmt)::CXCXXOperatorCallExpr
 end
 
 function clang_Stmt_isCXXOperatorCallExpr(S)
@@ -24586,7 +27838,7 @@ function clang_Stmt_isCXXOperatorCallExpr(S)
 end
 
 function clang_Stmt_castToCXXMemberCallExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXMemberCallExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXMemberCallExpr(S::CXStmt)::CXCXXMemberCallExpr
 end
 
 function clang_Stmt_isCXXMemberCallExpr(S)
@@ -24594,7 +27846,7 @@ function clang_Stmt_isCXXMemberCallExpr(S)
 end
 
 function clang_Stmt_castToCUDAKernelCallExpr(S)
-    @ccall libclangex.clang_Stmt_castToCUDAKernelCallExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCUDAKernelCallExpr(S::CXStmt)::CXCUDAKernelCallExpr
 end
 
 function clang_Stmt_isCUDAKernelCallExpr(S)
@@ -24602,7 +27854,7 @@ function clang_Stmt_isCUDAKernelCallExpr(S)
 end
 
 function clang_Stmt_castToCXXUuidofExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXUuidofExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXUuidofExpr(S::CXStmt)::CXCXXUuidofExpr
 end
 
 function clang_Stmt_isCXXUuidofExpr(S)
@@ -24610,7 +27862,7 @@ function clang_Stmt_isCXXUuidofExpr(S)
 end
 
 function clang_Stmt_castToCXXUnresolvedConstructExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXUnresolvedConstructExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXUnresolvedConstructExpr(S::CXStmt)::CXCXXUnresolvedConstructExpr
 end
 
 function clang_Stmt_isCXXUnresolvedConstructExpr(S)
@@ -24618,7 +27870,7 @@ function clang_Stmt_isCXXUnresolvedConstructExpr(S)
 end
 
 function clang_Stmt_castToCXXTypeidExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXTypeidExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXTypeidExpr(S::CXStmt)::CXCXXTypeidExpr
 end
 
 function clang_Stmt_isCXXTypeidExpr(S)
@@ -24626,7 +27878,7 @@ function clang_Stmt_isCXXTypeidExpr(S)
 end
 
 function clang_Stmt_castToCXXThrowExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXThrowExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXThrowExpr(S::CXStmt)::CXCXXThrowExpr
 end
 
 function clang_Stmt_isCXXThrowExpr(S)
@@ -24634,7 +27886,7 @@ function clang_Stmt_isCXXThrowExpr(S)
 end
 
 function clang_Stmt_castToCXXThisExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXThisExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXThisExpr(S::CXStmt)::CXCXXThisExpr
 end
 
 function clang_Stmt_isCXXThisExpr(S)
@@ -24642,7 +27894,7 @@ function clang_Stmt_isCXXThisExpr(S)
 end
 
 function clang_Stmt_castToCXXStdInitializerListExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXStdInitializerListExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXStdInitializerListExpr(S::CXStmt)::CXCXXStdInitializerListExpr
 end
 
 function clang_Stmt_isCXXStdInitializerListExpr(S)
@@ -24650,7 +27902,7 @@ function clang_Stmt_isCXXStdInitializerListExpr(S)
 end
 
 function clang_Stmt_castToCXXScalarValueInitExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXScalarValueInitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXScalarValueInitExpr(S::CXStmt)::CXCXXScalarValueInitExpr
 end
 
 function clang_Stmt_isCXXScalarValueInitExpr(S)
@@ -24658,7 +27910,7 @@ function clang_Stmt_isCXXScalarValueInitExpr(S)
 end
 
 function clang_Stmt_castToCXXRewrittenBinaryOperator(S)
-    @ccall libclangex.clang_Stmt_castToCXXRewrittenBinaryOperator(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXRewrittenBinaryOperator(S::CXStmt)::CXCXXRewrittenBinaryOperator
 end
 
 function clang_Stmt_isCXXRewrittenBinaryOperator(S)
@@ -24666,7 +27918,7 @@ function clang_Stmt_isCXXRewrittenBinaryOperator(S)
 end
 
 function clang_Stmt_castToCXXPseudoDestructorExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXPseudoDestructorExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXPseudoDestructorExpr(S::CXStmt)::CXCXXPseudoDestructorExpr
 end
 
 function clang_Stmt_isCXXPseudoDestructorExpr(S)
@@ -24674,7 +27926,7 @@ function clang_Stmt_isCXXPseudoDestructorExpr(S)
 end
 
 function clang_Stmt_castToCXXParenListInitExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXParenListInitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXParenListInitExpr(S::CXStmt)::CXCXXParenListInitExpr
 end
 
 function clang_Stmt_isCXXParenListInitExpr(S)
@@ -24682,7 +27934,7 @@ function clang_Stmt_isCXXParenListInitExpr(S)
 end
 
 function clang_Stmt_castToCXXNullPtrLiteralExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXNullPtrLiteralExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXNullPtrLiteralExpr(S::CXStmt)::CXCXXNullPtrLiteralExpr
 end
 
 function clang_Stmt_isCXXNullPtrLiteralExpr(S)
@@ -24690,7 +27942,7 @@ function clang_Stmt_isCXXNullPtrLiteralExpr(S)
 end
 
 function clang_Stmt_castToCXXNoexceptExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXNoexceptExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXNoexceptExpr(S::CXStmt)::CXCXXNoexceptExpr
 end
 
 function clang_Stmt_isCXXNoexceptExpr(S)
@@ -24698,7 +27950,7 @@ function clang_Stmt_isCXXNoexceptExpr(S)
 end
 
 function clang_Stmt_castToCXXNewExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXNewExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXNewExpr(S::CXStmt)::CXCXXNewExpr
 end
 
 function clang_Stmt_isCXXNewExpr(S)
@@ -24706,7 +27958,7 @@ function clang_Stmt_isCXXNewExpr(S)
 end
 
 function clang_Stmt_castToCXXInheritedCtorInitExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXInheritedCtorInitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXInheritedCtorInitExpr(S::CXStmt)::CXCXXInheritedCtorInitExpr
 end
 
 function clang_Stmt_isCXXInheritedCtorInitExpr(S)
@@ -24714,7 +27966,7 @@ function clang_Stmt_isCXXInheritedCtorInitExpr(S)
 end
 
 function clang_Stmt_castToCXXFoldExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXFoldExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXFoldExpr(S::CXStmt)::CXCXXFoldExpr
 end
 
 function clang_Stmt_isCXXFoldExpr(S)
@@ -24722,7 +27974,7 @@ function clang_Stmt_isCXXFoldExpr(S)
 end
 
 function clang_Stmt_castToCXXDependentScopeMemberExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXDependentScopeMemberExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXDependentScopeMemberExpr(S::CXStmt)::CXCXXDependentScopeMemberExpr
 end
 
 function clang_Stmt_isCXXDependentScopeMemberExpr(S)
@@ -24730,7 +27982,7 @@ function clang_Stmt_isCXXDependentScopeMemberExpr(S)
 end
 
 function clang_Stmt_castToCXXDeleteExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXDeleteExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXDeleteExpr(S::CXStmt)::CXCXXDeleteExpr
 end
 
 function clang_Stmt_isCXXDeleteExpr(S)
@@ -24738,7 +27990,7 @@ function clang_Stmt_isCXXDeleteExpr(S)
 end
 
 function clang_Stmt_castToCXXDefaultInitExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXDefaultInitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXDefaultInitExpr(S::CXStmt)::CXCXXDefaultInitExpr
 end
 
 function clang_Stmt_isCXXDefaultInitExpr(S)
@@ -24746,7 +27998,7 @@ function clang_Stmt_isCXXDefaultInitExpr(S)
 end
 
 function clang_Stmt_castToCXXDefaultArgExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXDefaultArgExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXDefaultArgExpr(S::CXStmt)::CXCXXDefaultArgExpr
 end
 
 function clang_Stmt_isCXXDefaultArgExpr(S)
@@ -24754,7 +28006,7 @@ function clang_Stmt_isCXXDefaultArgExpr(S)
 end
 
 function clang_Stmt_castToCXXConstructExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXConstructExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXConstructExpr(S::CXStmt)::CXCXXConstructExpr
 end
 
 function clang_Stmt_isCXXConstructExpr(S)
@@ -24762,7 +28014,7 @@ function clang_Stmt_isCXXConstructExpr(S)
 end
 
 function clang_Stmt_castToCXXTemporaryObjectExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXTemporaryObjectExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXTemporaryObjectExpr(S::CXStmt)::CXCXXTemporaryObjectExpr
 end
 
 function clang_Stmt_isCXXTemporaryObjectExpr(S)
@@ -24770,7 +28022,7 @@ function clang_Stmt_isCXXTemporaryObjectExpr(S)
 end
 
 function clang_Stmt_castToCXXBoolLiteralExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXBoolLiteralExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXBoolLiteralExpr(S::CXStmt)::CXCXXBoolLiteralExpr
 end
 
 function clang_Stmt_isCXXBoolLiteralExpr(S)
@@ -24778,7 +28030,7 @@ function clang_Stmt_isCXXBoolLiteralExpr(S)
 end
 
 function clang_Stmt_castToCXXBindTemporaryExpr(S)
-    @ccall libclangex.clang_Stmt_castToCXXBindTemporaryExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXBindTemporaryExpr(S::CXStmt)::CXCXXBindTemporaryExpr
 end
 
 function clang_Stmt_isCXXBindTemporaryExpr(S)
@@ -24786,7 +28038,7 @@ function clang_Stmt_isCXXBindTemporaryExpr(S)
 end
 
 function clang_Stmt_castToBlockExpr(S)
-    @ccall libclangex.clang_Stmt_castToBlockExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToBlockExpr(S::CXStmt)::CXBlockExpr
 end
 
 function clang_Stmt_isBlockExpr(S)
@@ -24794,7 +28046,7 @@ function clang_Stmt_isBlockExpr(S)
 end
 
 function clang_Stmt_castToBinaryOperator(S)
-    @ccall libclangex.clang_Stmt_castToBinaryOperator(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToBinaryOperator(S::CXStmt)::CXBinaryOperator
 end
 
 function clang_Stmt_isBinaryOperator(S)
@@ -24802,7 +28054,7 @@ function clang_Stmt_isBinaryOperator(S)
 end
 
 function clang_Stmt_castToCompoundAssignOperator(S)
-    @ccall libclangex.clang_Stmt_castToCompoundAssignOperator(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCompoundAssignOperator(S::CXStmt)::CXCompoundAssignOperator
 end
 
 function clang_Stmt_isCompoundAssignOperator(S)
@@ -24810,7 +28062,7 @@ function clang_Stmt_isCompoundAssignOperator(S)
 end
 
 function clang_Stmt_castToAtomicExpr(S)
-    @ccall libclangex.clang_Stmt_castToAtomicExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToAtomicExpr(S::CXStmt)::CXAtomicExpr
 end
 
 function clang_Stmt_isAtomicExpr(S)
@@ -24818,7 +28070,7 @@ function clang_Stmt_isAtomicExpr(S)
 end
 
 function clang_Stmt_castToAsTypeExpr(S)
-    @ccall libclangex.clang_Stmt_castToAsTypeExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToAsTypeExpr(S::CXStmt)::CXAsTypeExpr
 end
 
 function clang_Stmt_isAsTypeExpr(S)
@@ -24826,7 +28078,7 @@ function clang_Stmt_isAsTypeExpr(S)
 end
 
 function clang_Stmt_castToArrayTypeTraitExpr(S)
-    @ccall libclangex.clang_Stmt_castToArrayTypeTraitExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToArrayTypeTraitExpr(S::CXStmt)::CXArrayTypeTraitExpr
 end
 
 function clang_Stmt_isArrayTypeTraitExpr(S)
@@ -24834,7 +28086,7 @@ function clang_Stmt_isArrayTypeTraitExpr(S)
 end
 
 function clang_Stmt_castToArraySubscriptExpr(S)
-    @ccall libclangex.clang_Stmt_castToArraySubscriptExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToArraySubscriptExpr(S::CXStmt)::CXArraySubscriptExpr
 end
 
 function clang_Stmt_isArraySubscriptExpr(S)
@@ -24842,7 +28094,7 @@ function clang_Stmt_isArraySubscriptExpr(S)
 end
 
 function clang_Stmt_castToArrayInitLoopExpr(S)
-    @ccall libclangex.clang_Stmt_castToArrayInitLoopExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToArrayInitLoopExpr(S::CXStmt)::CXArrayInitLoopExpr
 end
 
 function clang_Stmt_isArrayInitLoopExpr(S)
@@ -24850,7 +28102,7 @@ function clang_Stmt_isArrayInitLoopExpr(S)
 end
 
 function clang_Stmt_castToArrayInitIndexExpr(S)
-    @ccall libclangex.clang_Stmt_castToArrayInitIndexExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToArrayInitIndexExpr(S::CXStmt)::CXArrayInitIndexExpr
 end
 
 function clang_Stmt_isArrayInitIndexExpr(S)
@@ -24858,7 +28110,7 @@ function clang_Stmt_isArrayInitIndexExpr(S)
 end
 
 function clang_Stmt_castToAddrLabelExpr(S)
-    @ccall libclangex.clang_Stmt_castToAddrLabelExpr(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToAddrLabelExpr(S::CXStmt)::CXAddrLabelExpr
 end
 
 function clang_Stmt_isAddrLabelExpr(S)
@@ -24866,7 +28118,7 @@ function clang_Stmt_isAddrLabelExpr(S)
 end
 
 function clang_Stmt_castToAbstractConditionalOperator(S)
-    @ccall libclangex.clang_Stmt_castToAbstractConditionalOperator(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToAbstractConditionalOperator(S::CXStmt)::CXAbstractConditionalOperator
 end
 
 function clang_Stmt_isAbstractConditionalOperator(S)
@@ -24874,7 +28126,7 @@ function clang_Stmt_isAbstractConditionalOperator(S)
 end
 
 function clang_Stmt_castToConditionalOperator(S)
-    @ccall libclangex.clang_Stmt_castToConditionalOperator(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToConditionalOperator(S::CXStmt)::CXConditionalOperator
 end
 
 function clang_Stmt_isConditionalOperator(S)
@@ -24882,7 +28134,7 @@ function clang_Stmt_isConditionalOperator(S)
 end
 
 function clang_Stmt_castToBinaryConditionalOperator(S)
-    @ccall libclangex.clang_Stmt_castToBinaryConditionalOperator(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToBinaryConditionalOperator(S::CXStmt)::CXBinaryConditionalOperator
 end
 
 function clang_Stmt_isBinaryConditionalOperator(S)
@@ -24890,7 +28142,7 @@ function clang_Stmt_isBinaryConditionalOperator(S)
 end
 
 function clang_Stmt_castToAttributedStmt(S)
-    @ccall libclangex.clang_Stmt_castToAttributedStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToAttributedStmt(S::CXStmt)::CXAttributedStmt
 end
 
 function clang_Stmt_isAttributedStmt(S)
@@ -24898,7 +28150,7 @@ function clang_Stmt_isAttributedStmt(S)
 end
 
 function clang_Stmt_castToSwitchStmt(S)
-    @ccall libclangex.clang_Stmt_castToSwitchStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSwitchStmt(S::CXStmt)::CXSwitchStmt
 end
 
 function clang_Stmt_isSwitchStmt(S)
@@ -24906,7 +28158,7 @@ function clang_Stmt_isSwitchStmt(S)
 end
 
 function clang_Stmt_castToSwitchCase(S)
-    @ccall libclangex.clang_Stmt_castToSwitchCase(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSwitchCase(S::CXStmt)::CXSwitchCase
 end
 
 function clang_Stmt_isSwitchCase(S)
@@ -24914,7 +28166,7 @@ function clang_Stmt_isSwitchCase(S)
 end
 
 function clang_Stmt_castToDefaultStmt(S)
-    @ccall libclangex.clang_Stmt_castToDefaultStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToDefaultStmt(S::CXStmt)::CXDefaultStmt
 end
 
 function clang_Stmt_isDefaultStmt(S)
@@ -24922,7 +28174,7 @@ function clang_Stmt_isDefaultStmt(S)
 end
 
 function clang_Stmt_castToCaseStmt(S)
-    @ccall libclangex.clang_Stmt_castToCaseStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCaseStmt(S::CXStmt)::CXCaseStmt
 end
 
 function clang_Stmt_isCaseStmt(S)
@@ -24930,7 +28182,7 @@ function clang_Stmt_isCaseStmt(S)
 end
 
 function clang_Stmt_castToSEHTryStmt(S)
-    @ccall libclangex.clang_Stmt_castToSEHTryStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSEHTryStmt(S::CXStmt)::CXSEHTryStmt
 end
 
 function clang_Stmt_isSEHTryStmt(S)
@@ -24938,7 +28190,7 @@ function clang_Stmt_isSEHTryStmt(S)
 end
 
 function clang_Stmt_castToSEHLeaveStmt(S)
-    @ccall libclangex.clang_Stmt_castToSEHLeaveStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSEHLeaveStmt(S::CXStmt)::CXSEHLeaveStmt
 end
 
 function clang_Stmt_isSEHLeaveStmt(S)
@@ -24946,7 +28198,7 @@ function clang_Stmt_isSEHLeaveStmt(S)
 end
 
 function clang_Stmt_castToSEHFinallyStmt(S)
-    @ccall libclangex.clang_Stmt_castToSEHFinallyStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSEHFinallyStmt(S::CXStmt)::CXSEHFinallyStmt
 end
 
 function clang_Stmt_isSEHFinallyStmt(S)
@@ -24954,7 +28206,7 @@ function clang_Stmt_isSEHFinallyStmt(S)
 end
 
 function clang_Stmt_castToSEHExceptStmt(S)
-    @ccall libclangex.clang_Stmt_castToSEHExceptStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToSEHExceptStmt(S::CXStmt)::CXSEHExceptStmt
 end
 
 function clang_Stmt_isSEHExceptStmt(S)
@@ -24962,7 +28214,7 @@ function clang_Stmt_isSEHExceptStmt(S)
 end
 
 function clang_Stmt_castToReturnStmt(S)
-    @ccall libclangex.clang_Stmt_castToReturnStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToReturnStmt(S::CXStmt)::CXReturnStmt
 end
 
 function clang_Stmt_isReturnStmt(S)
@@ -24970,7 +28222,7 @@ function clang_Stmt_isReturnStmt(S)
 end
 
 function clang_Stmt_castToObjCForCollectionStmt(S)
-    @ccall libclangex.clang_Stmt_castToObjCForCollectionStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCForCollectionStmt(S::CXStmt)::CXObjCForCollectionStmt
 end
 
 function clang_Stmt_isObjCForCollectionStmt(S)
@@ -24978,7 +28230,7 @@ function clang_Stmt_isObjCForCollectionStmt(S)
 end
 
 function clang_Stmt_castToObjCAutoreleasePoolStmt(S)
-    @ccall libclangex.clang_Stmt_castToObjCAutoreleasePoolStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCAutoreleasePoolStmt(S::CXStmt)::CXObjCAutoreleasePoolStmt
 end
 
 function clang_Stmt_isObjCAutoreleasePoolStmt(S)
@@ -24986,7 +28238,7 @@ function clang_Stmt_isObjCAutoreleasePoolStmt(S)
 end
 
 function clang_Stmt_castToObjCAtTryStmt(S)
-    @ccall libclangex.clang_Stmt_castToObjCAtTryStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCAtTryStmt(S::CXStmt)::CXObjCAtTryStmt
 end
 
 function clang_Stmt_isObjCAtTryStmt(S)
@@ -24994,7 +28246,7 @@ function clang_Stmt_isObjCAtTryStmt(S)
 end
 
 function clang_Stmt_castToObjCAtThrowStmt(S)
-    @ccall libclangex.clang_Stmt_castToObjCAtThrowStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCAtThrowStmt(S::CXStmt)::CXObjCAtThrowStmt
 end
 
 function clang_Stmt_isObjCAtThrowStmt(S)
@@ -25002,7 +28254,7 @@ function clang_Stmt_isObjCAtThrowStmt(S)
 end
 
 function clang_Stmt_castToObjCAtSynchronizedStmt(S)
-    @ccall libclangex.clang_Stmt_castToObjCAtSynchronizedStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCAtSynchronizedStmt(S::CXStmt)::CXObjCAtSynchronizedStmt
 end
 
 function clang_Stmt_isObjCAtSynchronizedStmt(S)
@@ -25010,7 +28262,7 @@ function clang_Stmt_isObjCAtSynchronizedStmt(S)
 end
 
 function clang_Stmt_castToObjCAtFinallyStmt(S)
-    @ccall libclangex.clang_Stmt_castToObjCAtFinallyStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCAtFinallyStmt(S::CXStmt)::CXObjCAtFinallyStmt
 end
 
 function clang_Stmt_isObjCAtFinallyStmt(S)
@@ -25018,7 +28270,7 @@ function clang_Stmt_isObjCAtFinallyStmt(S)
 end
 
 function clang_Stmt_castToObjCAtCatchStmt(S)
-    @ccall libclangex.clang_Stmt_castToObjCAtCatchStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToObjCAtCatchStmt(S::CXStmt)::CXObjCAtCatchStmt
 end
 
 function clang_Stmt_isObjCAtCatchStmt(S)
@@ -25026,7 +28278,7 @@ function clang_Stmt_isObjCAtCatchStmt(S)
 end
 
 function clang_Stmt_castToOMPExecutableDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPExecutableDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPExecutableDirective(S::CXStmt)::CXOMPExecutableDirective
 end
 
 function clang_Stmt_isOMPExecutableDirective(S)
@@ -25034,7 +28286,7 @@ function clang_Stmt_isOMPExecutableDirective(S)
 end
 
 function clang_Stmt_castToOMPTeamsDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTeamsDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDirective(S::CXStmt)::CXOMPTeamsDirective
 end
 
 function clang_Stmt_isOMPTeamsDirective(S)
@@ -25042,7 +28294,7 @@ function clang_Stmt_isOMPTeamsDirective(S)
 end
 
 function clang_Stmt_castToOMPTaskyieldDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTaskyieldDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTaskyieldDirective(S::CXStmt)::CXOMPTaskyieldDirective
 end
 
 function clang_Stmt_isOMPTaskyieldDirective(S)
@@ -25050,7 +28302,7 @@ function clang_Stmt_isOMPTaskyieldDirective(S)
 end
 
 function clang_Stmt_castToOMPTaskwaitDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTaskwaitDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTaskwaitDirective(S::CXStmt)::CXOMPTaskwaitDirective
 end
 
 function clang_Stmt_isOMPTaskwaitDirective(S)
@@ -25058,7 +28310,7 @@ function clang_Stmt_isOMPTaskwaitDirective(S)
 end
 
 function clang_Stmt_castToOMPTaskgroupDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTaskgroupDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTaskgroupDirective(S::CXStmt)::CXOMPTaskgroupDirective
 end
 
 function clang_Stmt_isOMPTaskgroupDirective(S)
@@ -25066,7 +28318,7 @@ function clang_Stmt_isOMPTaskgroupDirective(S)
 end
 
 function clang_Stmt_castToOMPTaskDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTaskDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTaskDirective(S::CXStmt)::CXOMPTaskDirective
 end
 
 function clang_Stmt_isOMPTaskDirective(S)
@@ -25074,7 +28326,7 @@ function clang_Stmt_isOMPTaskDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetUpdateDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetUpdateDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetUpdateDirective(S::CXStmt)::CXOMPTargetUpdateDirective
 end
 
 function clang_Stmt_isOMPTargetUpdateDirective(S)
@@ -25082,7 +28334,7 @@ function clang_Stmt_isOMPTargetUpdateDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetTeamsDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDirective(S::CXStmt)::CXOMPTargetTeamsDirective
 end
 
 function clang_Stmt_isOMPTargetTeamsDirective(S)
@@ -25090,7 +28342,7 @@ function clang_Stmt_isOMPTargetTeamsDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetParallelForDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetParallelForDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetParallelForDirective(S::CXStmt)::CXOMPTargetParallelForDirective
 end
 
 function clang_Stmt_isOMPTargetParallelForDirective(S)
@@ -25098,7 +28350,7 @@ function clang_Stmt_isOMPTargetParallelForDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetParallelDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetParallelDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetParallelDirective(S::CXStmt)::CXOMPTargetParallelDirective
 end
 
 function clang_Stmt_isOMPTargetParallelDirective(S)
@@ -25106,7 +28358,7 @@ function clang_Stmt_isOMPTargetParallelDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetExitDataDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetExitDataDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetExitDataDirective(S::CXStmt)::CXOMPTargetExitDataDirective
 end
 
 function clang_Stmt_isOMPTargetExitDataDirective(S)
@@ -25114,7 +28366,7 @@ function clang_Stmt_isOMPTargetExitDataDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetEnterDataDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetEnterDataDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetEnterDataDirective(S::CXStmt)::CXOMPTargetEnterDataDirective
 end
 
 function clang_Stmt_isOMPTargetEnterDataDirective(S)
@@ -25122,7 +28374,7 @@ function clang_Stmt_isOMPTargetEnterDataDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetDirective(S::CXStmt)::CXOMPTargetDirective
 end
 
 function clang_Stmt_isOMPTargetDirective(S)
@@ -25130,7 +28382,7 @@ function clang_Stmt_isOMPTargetDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetDataDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetDataDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetDataDirective(S::CXStmt)::CXOMPTargetDataDirective
 end
 
 function clang_Stmt_isOMPTargetDataDirective(S)
@@ -25138,7 +28390,7 @@ function clang_Stmt_isOMPTargetDataDirective(S)
 end
 
 function clang_Stmt_castToOMPSingleDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPSingleDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPSingleDirective(S::CXStmt)::CXOMPSingleDirective
 end
 
 function clang_Stmt_isOMPSingleDirective(S)
@@ -25146,7 +28398,7 @@ function clang_Stmt_isOMPSingleDirective(S)
 end
 
 function clang_Stmt_castToOMPSectionsDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPSectionsDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPSectionsDirective(S::CXStmt)::CXOMPSectionsDirective
 end
 
 function clang_Stmt_isOMPSectionsDirective(S)
@@ -25154,7 +28406,7 @@ function clang_Stmt_isOMPSectionsDirective(S)
 end
 
 function clang_Stmt_castToOMPSectionDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPSectionDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPSectionDirective(S::CXStmt)::CXOMPSectionDirective
 end
 
 function clang_Stmt_isOMPSectionDirective(S)
@@ -25162,7 +28414,7 @@ function clang_Stmt_isOMPSectionDirective(S)
 end
 
 function clang_Stmt_castToOMPScopeDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPScopeDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPScopeDirective(S::CXStmt)::CXOMPScopeDirective
 end
 
 function clang_Stmt_isOMPScopeDirective(S)
@@ -25170,7 +28422,7 @@ function clang_Stmt_isOMPScopeDirective(S)
 end
 
 function clang_Stmt_castToOMPScanDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPScanDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPScanDirective(S::CXStmt)::CXOMPScanDirective
 end
 
 function clang_Stmt_isOMPScanDirective(S)
@@ -25178,7 +28430,7 @@ function clang_Stmt_isOMPScanDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelSectionsDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelSectionsDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelSectionsDirective(S::CXStmt)::CXOMPParallelSectionsDirective
 end
 
 function clang_Stmt_isOMPParallelSectionsDirective(S)
@@ -25186,7 +28438,7 @@ function clang_Stmt_isOMPParallelSectionsDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelMasterDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelMasterDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelMasterDirective(S::CXStmt)::CXOMPParallelMasterDirective
 end
 
 function clang_Stmt_isOMPParallelMasterDirective(S)
@@ -25194,7 +28446,7 @@ function clang_Stmt_isOMPParallelMasterDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelMaskedDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedDirective(S::CXStmt)::CXOMPParallelMaskedDirective
 end
 
 function clang_Stmt_isOMPParallelMaskedDirective(S)
@@ -25202,7 +28454,7 @@ function clang_Stmt_isOMPParallelMaskedDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelDirective(S::CXStmt)::CXOMPParallelDirective
 end
 
 function clang_Stmt_isOMPParallelDirective(S)
@@ -25210,7 +28462,7 @@ function clang_Stmt_isOMPParallelDirective(S)
 end
 
 function clang_Stmt_castToOMPOrderedDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPOrderedDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPOrderedDirective(S::CXStmt)::CXOMPOrderedDirective
 end
 
 function clang_Stmt_isOMPOrderedDirective(S)
@@ -25218,7 +28470,7 @@ function clang_Stmt_isOMPOrderedDirective(S)
 end
 
 function clang_Stmt_castToOMPMetaDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPMetaDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPMetaDirective(S::CXStmt)::CXOMPMetaDirective
 end
 
 function clang_Stmt_isOMPMetaDirective(S)
@@ -25226,7 +28478,7 @@ function clang_Stmt_isOMPMetaDirective(S)
 end
 
 function clang_Stmt_castToOMPMasterDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPMasterDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPMasterDirective(S::CXStmt)::CXOMPMasterDirective
 end
 
 function clang_Stmt_isOMPMasterDirective(S)
@@ -25234,7 +28486,7 @@ function clang_Stmt_isOMPMasterDirective(S)
 end
 
 function clang_Stmt_castToOMPMaskedDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPMaskedDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPMaskedDirective(S::CXStmt)::CXOMPMaskedDirective
 end
 
 function clang_Stmt_isOMPMaskedDirective(S)
@@ -25242,7 +28494,7 @@ function clang_Stmt_isOMPMaskedDirective(S)
 end
 
 function clang_Stmt_castToOMPLoopBasedDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPLoopBasedDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPLoopBasedDirective(S::CXStmt)::CXOMPLoopBasedDirective
 end
 
 function clang_Stmt_isOMPLoopBasedDirective(S)
@@ -25250,7 +28502,7 @@ function clang_Stmt_isOMPLoopBasedDirective(S)
 end
 
 function clang_Stmt_castToOMPLoopTransformationDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPLoopTransformationDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPLoopTransformationDirective(S::CXStmt)::CXOMPLoopTransformationDirective
 end
 
 function clang_Stmt_isOMPLoopTransformationDirective(S)
@@ -25258,7 +28510,7 @@ function clang_Stmt_isOMPLoopTransformationDirective(S)
 end
 
 function clang_Stmt_castToOMPUnrollDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPUnrollDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPUnrollDirective(S::CXStmt)::CXOMPUnrollDirective
 end
 
 function clang_Stmt_isOMPUnrollDirective(S)
@@ -25266,7 +28518,7 @@ function clang_Stmt_isOMPUnrollDirective(S)
 end
 
 function clang_Stmt_castToOMPTileDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTileDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTileDirective(S::CXStmt)::CXOMPTileDirective
 end
 
 function clang_Stmt_isOMPTileDirective(S)
@@ -25274,7 +28526,7 @@ function clang_Stmt_isOMPTileDirective(S)
 end
 
 function clang_Stmt_castToOMPLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPLoopDirective(S::CXStmt)::CXOMPLoopDirective
 end
 
 function clang_Stmt_isOMPLoopDirective(S)
@@ -25282,7 +28534,7 @@ function clang_Stmt_isOMPLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPTeamsGenericLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTeamsGenericLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTeamsGenericLoopDirective(S::CXStmt)::CXOMPTeamsGenericLoopDirective
 end
 
 function clang_Stmt_isOMPTeamsGenericLoopDirective(S)
@@ -25290,7 +28542,7 @@ function clang_Stmt_isOMPTeamsGenericLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPTeamsDistributeSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeSimdDirective(S::CXStmt)::CXOMPTeamsDistributeSimdDirective
 end
 
 function clang_Stmt_isOMPTeamsDistributeSimdDirective(S)
@@ -25298,7 +28550,7 @@ function clang_Stmt_isOMPTeamsDistributeSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPTeamsDistributeParallelForSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeParallelForSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeParallelForSimdDirective(S::CXStmt)::CXOMPTeamsDistributeParallelForSimdDirective
 end
 
 function clang_Stmt_isOMPTeamsDistributeParallelForSimdDirective(S)
@@ -25306,7 +28558,7 @@ function clang_Stmt_isOMPTeamsDistributeParallelForSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPTeamsDistributeParallelForDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeParallelForDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeParallelForDirective(S::CXStmt)::CXOMPTeamsDistributeParallelForDirective
 end
 
 function clang_Stmt_isOMPTeamsDistributeParallelForDirective(S)
@@ -25314,7 +28566,7 @@ function clang_Stmt_isOMPTeamsDistributeParallelForDirective(S)
 end
 
 function clang_Stmt_castToOMPTeamsDistributeDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTeamsDistributeDirective(S::CXStmt)::CXOMPTeamsDistributeDirective
 end
 
 function clang_Stmt_isOMPTeamsDistributeDirective(S)
@@ -25322,7 +28574,7 @@ function clang_Stmt_isOMPTeamsDistributeDirective(S)
 end
 
 function clang_Stmt_castToOMPTaskLoopSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTaskLoopSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTaskLoopSimdDirective(S::CXStmt)::CXOMPTaskLoopSimdDirective
 end
 
 function clang_Stmt_isOMPTaskLoopSimdDirective(S)
@@ -25330,7 +28582,7 @@ function clang_Stmt_isOMPTaskLoopSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPTaskLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTaskLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTaskLoopDirective(S::CXStmt)::CXOMPTaskLoopDirective
 end
 
 function clang_Stmt_isOMPTaskLoopDirective(S)
@@ -25338,7 +28590,7 @@ function clang_Stmt_isOMPTaskLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetTeamsGenericLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsGenericLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsGenericLoopDirective(S::CXStmt)::CXOMPTargetTeamsGenericLoopDirective
 end
 
 function clang_Stmt_isOMPTargetTeamsGenericLoopDirective(S)
@@ -25346,7 +28598,7 @@ function clang_Stmt_isOMPTargetTeamsGenericLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetTeamsDistributeSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeSimdDirective(S::CXStmt)::CXOMPTargetTeamsDistributeSimdDirective
 end
 
 function clang_Stmt_isOMPTargetTeamsDistributeSimdDirective(S)
@@ -25354,7 +28606,7 @@ function clang_Stmt_isOMPTargetTeamsDistributeSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeParallelForSimdDirective(S::CXStmt)::CXOMPTargetTeamsDistributeParallelForSimdDirective
 end
 
 function clang_Stmt_isOMPTargetTeamsDistributeParallelForSimdDirective(S)
@@ -25362,7 +28614,7 @@ function clang_Stmt_isOMPTargetTeamsDistributeParallelForSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeParallelForDirective(S::CXStmt)::CXOMPTargetTeamsDistributeParallelForDirective
 end
 
 function clang_Stmt_isOMPTargetTeamsDistributeParallelForDirective(S)
@@ -25370,7 +28622,7 @@ function clang_Stmt_isOMPTargetTeamsDistributeParallelForDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetTeamsDistributeDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetTeamsDistributeDirective(S::CXStmt)::CXOMPTargetTeamsDistributeDirective
 end
 
 function clang_Stmt_isOMPTargetTeamsDistributeDirective(S)
@@ -25378,7 +28630,7 @@ function clang_Stmt_isOMPTargetTeamsDistributeDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetSimdDirective(S::CXStmt)::CXOMPTargetSimdDirective
 end
 
 function clang_Stmt_isOMPTargetSimdDirective(S)
@@ -25386,7 +28638,7 @@ function clang_Stmt_isOMPTargetSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetParallelGenericLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetParallelGenericLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetParallelGenericLoopDirective(S::CXStmt)::CXOMPTargetParallelGenericLoopDirective
 end
 
 function clang_Stmt_isOMPTargetParallelGenericLoopDirective(S)
@@ -25394,7 +28646,7 @@ function clang_Stmt_isOMPTargetParallelGenericLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPTargetParallelForSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPTargetParallelForSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPTargetParallelForSimdDirective(S::CXStmt)::CXOMPTargetParallelForSimdDirective
 end
 
 function clang_Stmt_isOMPTargetParallelForSimdDirective(S)
@@ -25402,7 +28654,7 @@ function clang_Stmt_isOMPTargetParallelForSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPSimdDirective(S::CXStmt)::CXOMPSimdDirective
 end
 
 function clang_Stmt_isOMPSimdDirective(S)
@@ -25410,7 +28662,7 @@ function clang_Stmt_isOMPSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelMasterTaskLoopSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelMasterTaskLoopSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelMasterTaskLoopSimdDirective(S::CXStmt)::CXOMPParallelMasterTaskLoopSimdDirective
 end
 
 function clang_Stmt_isOMPParallelMasterTaskLoopSimdDirective(S)
@@ -25418,7 +28670,7 @@ function clang_Stmt_isOMPParallelMasterTaskLoopSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelMasterTaskLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelMasterTaskLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelMasterTaskLoopDirective(S::CXStmt)::CXOMPParallelMasterTaskLoopDirective
 end
 
 function clang_Stmt_isOMPParallelMasterTaskLoopDirective(S)
@@ -25426,7 +28678,7 @@ function clang_Stmt_isOMPParallelMasterTaskLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelMaskedTaskLoopSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedTaskLoopSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedTaskLoopSimdDirective(S::CXStmt)::CXOMPParallelMaskedTaskLoopSimdDirective
 end
 
 function clang_Stmt_isOMPParallelMaskedTaskLoopSimdDirective(S)
@@ -25434,7 +28686,7 @@ function clang_Stmt_isOMPParallelMaskedTaskLoopSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelMaskedTaskLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedTaskLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelMaskedTaskLoopDirective(S::CXStmt)::CXOMPParallelMaskedTaskLoopDirective
 end
 
 function clang_Stmt_isOMPParallelMaskedTaskLoopDirective(S)
@@ -25442,7 +28694,7 @@ function clang_Stmt_isOMPParallelMaskedTaskLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelGenericLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelGenericLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelGenericLoopDirective(S::CXStmt)::CXOMPParallelGenericLoopDirective
 end
 
 function clang_Stmt_isOMPParallelGenericLoopDirective(S)
@@ -25450,7 +28702,7 @@ function clang_Stmt_isOMPParallelGenericLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelForSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelForSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelForSimdDirective(S::CXStmt)::CXOMPParallelForSimdDirective
 end
 
 function clang_Stmt_isOMPParallelForSimdDirective(S)
@@ -25458,7 +28710,7 @@ function clang_Stmt_isOMPParallelForSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPParallelForDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPParallelForDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPParallelForDirective(S::CXStmt)::CXOMPParallelForDirective
 end
 
 function clang_Stmt_isOMPParallelForDirective(S)
@@ -25466,7 +28718,7 @@ function clang_Stmt_isOMPParallelForDirective(S)
 end
 
 function clang_Stmt_castToOMPMasterTaskLoopSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPMasterTaskLoopSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPMasterTaskLoopSimdDirective(S::CXStmt)::CXOMPMasterTaskLoopSimdDirective
 end
 
 function clang_Stmt_isOMPMasterTaskLoopSimdDirective(S)
@@ -25474,7 +28726,7 @@ function clang_Stmt_isOMPMasterTaskLoopSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPMasterTaskLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPMasterTaskLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPMasterTaskLoopDirective(S::CXStmt)::CXOMPMasterTaskLoopDirective
 end
 
 function clang_Stmt_isOMPMasterTaskLoopDirective(S)
@@ -25482,7 +28734,7 @@ function clang_Stmt_isOMPMasterTaskLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPMaskedTaskLoopSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPMaskedTaskLoopSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPMaskedTaskLoopSimdDirective(S::CXStmt)::CXOMPMaskedTaskLoopSimdDirective
 end
 
 function clang_Stmt_isOMPMaskedTaskLoopSimdDirective(S)
@@ -25490,7 +28742,7 @@ function clang_Stmt_isOMPMaskedTaskLoopSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPMaskedTaskLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPMaskedTaskLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPMaskedTaskLoopDirective(S::CXStmt)::CXOMPMaskedTaskLoopDirective
 end
 
 function clang_Stmt_isOMPMaskedTaskLoopDirective(S)
@@ -25498,7 +28750,7 @@ function clang_Stmt_isOMPMaskedTaskLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPGenericLoopDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPGenericLoopDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPGenericLoopDirective(S::CXStmt)::CXOMPGenericLoopDirective
 end
 
 function clang_Stmt_isOMPGenericLoopDirective(S)
@@ -25506,7 +28758,7 @@ function clang_Stmt_isOMPGenericLoopDirective(S)
 end
 
 function clang_Stmt_castToOMPForSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPForSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPForSimdDirective(S::CXStmt)::CXOMPForSimdDirective
 end
 
 function clang_Stmt_isOMPForSimdDirective(S)
@@ -25514,7 +28766,7 @@ function clang_Stmt_isOMPForSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPForDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPForDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPForDirective(S::CXStmt)::CXOMPForDirective
 end
 
 function clang_Stmt_isOMPForDirective(S)
@@ -25522,7 +28774,7 @@ function clang_Stmt_isOMPForDirective(S)
 end
 
 function clang_Stmt_castToOMPDistributeSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPDistributeSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPDistributeSimdDirective(S::CXStmt)::CXOMPDistributeSimdDirective
 end
 
 function clang_Stmt_isOMPDistributeSimdDirective(S)
@@ -25530,7 +28782,7 @@ function clang_Stmt_isOMPDistributeSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPDistributeParallelForSimdDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPDistributeParallelForSimdDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPDistributeParallelForSimdDirective(S::CXStmt)::CXOMPDistributeParallelForSimdDirective
 end
 
 function clang_Stmt_isOMPDistributeParallelForSimdDirective(S)
@@ -25538,7 +28790,7 @@ function clang_Stmt_isOMPDistributeParallelForSimdDirective(S)
 end
 
 function clang_Stmt_castToOMPDistributeParallelForDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPDistributeParallelForDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPDistributeParallelForDirective(S::CXStmt)::CXOMPDistributeParallelForDirective
 end
 
 function clang_Stmt_isOMPDistributeParallelForDirective(S)
@@ -25546,7 +28798,7 @@ function clang_Stmt_isOMPDistributeParallelForDirective(S)
 end
 
 function clang_Stmt_castToOMPDistributeDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPDistributeDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPDistributeDirective(S::CXStmt)::CXOMPDistributeDirective
 end
 
 function clang_Stmt_isOMPDistributeDirective(S)
@@ -25554,7 +28806,7 @@ function clang_Stmt_isOMPDistributeDirective(S)
 end
 
 function clang_Stmt_castToOMPInteropDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPInteropDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPInteropDirective(S::CXStmt)::CXOMPInteropDirective
 end
 
 function clang_Stmt_isOMPInteropDirective(S)
@@ -25562,7 +28814,7 @@ function clang_Stmt_isOMPInteropDirective(S)
 end
 
 function clang_Stmt_castToOMPFlushDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPFlushDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPFlushDirective(S::CXStmt)::CXOMPFlushDirective
 end
 
 function clang_Stmt_isOMPFlushDirective(S)
@@ -25570,7 +28822,7 @@ function clang_Stmt_isOMPFlushDirective(S)
 end
 
 function clang_Stmt_castToOMPErrorDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPErrorDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPErrorDirective(S::CXStmt)::CXOMPErrorDirective
 end
 
 function clang_Stmt_isOMPErrorDirective(S)
@@ -25578,7 +28830,7 @@ function clang_Stmt_isOMPErrorDirective(S)
 end
 
 function clang_Stmt_castToOMPDispatchDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPDispatchDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPDispatchDirective(S::CXStmt)::CXOMPDispatchDirective
 end
 
 function clang_Stmt_isOMPDispatchDirective(S)
@@ -25586,7 +28838,7 @@ function clang_Stmt_isOMPDispatchDirective(S)
 end
 
 function clang_Stmt_castToOMPDepobjDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPDepobjDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPDepobjDirective(S::CXStmt)::CXOMPDepobjDirective
 end
 
 function clang_Stmt_isOMPDepobjDirective(S)
@@ -25594,7 +28846,7 @@ function clang_Stmt_isOMPDepobjDirective(S)
 end
 
 function clang_Stmt_castToOMPCriticalDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPCriticalDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPCriticalDirective(S::CXStmt)::CXOMPCriticalDirective
 end
 
 function clang_Stmt_isOMPCriticalDirective(S)
@@ -25602,7 +28854,7 @@ function clang_Stmt_isOMPCriticalDirective(S)
 end
 
 function clang_Stmt_castToOMPCancellationPointDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPCancellationPointDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPCancellationPointDirective(S::CXStmt)::CXOMPCancellationPointDirective
 end
 
 function clang_Stmt_isOMPCancellationPointDirective(S)
@@ -25610,7 +28862,7 @@ function clang_Stmt_isOMPCancellationPointDirective(S)
 end
 
 function clang_Stmt_castToOMPCancelDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPCancelDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPCancelDirective(S::CXStmt)::CXOMPCancelDirective
 end
 
 function clang_Stmt_isOMPCancelDirective(S)
@@ -25618,7 +28870,7 @@ function clang_Stmt_isOMPCancelDirective(S)
 end
 
 function clang_Stmt_castToOMPBarrierDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPBarrierDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPBarrierDirective(S::CXStmt)::CXOMPBarrierDirective
 end
 
 function clang_Stmt_isOMPBarrierDirective(S)
@@ -25626,7 +28878,7 @@ function clang_Stmt_isOMPBarrierDirective(S)
 end
 
 function clang_Stmt_castToOMPAtomicDirective(S)
-    @ccall libclangex.clang_Stmt_castToOMPAtomicDirective(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPAtomicDirective(S::CXStmt)::CXOMPAtomicDirective
 end
 
 function clang_Stmt_isOMPAtomicDirective(S)
@@ -25634,7 +28886,7 @@ function clang_Stmt_isOMPAtomicDirective(S)
 end
 
 function clang_Stmt_castToOMPCanonicalLoop(S)
-    @ccall libclangex.clang_Stmt_castToOMPCanonicalLoop(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToOMPCanonicalLoop(S::CXStmt)::CXOMPCanonicalLoop
 end
 
 function clang_Stmt_isOMPCanonicalLoop(S)
@@ -25642,7 +28894,7 @@ function clang_Stmt_isOMPCanonicalLoop(S)
 end
 
 function clang_Stmt_castToNullStmt(S)
-    @ccall libclangex.clang_Stmt_castToNullStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToNullStmt(S::CXStmt)::CXNullStmt
 end
 
 function clang_Stmt_isNullStmt(S)
@@ -25650,7 +28902,7 @@ function clang_Stmt_isNullStmt(S)
 end
 
 function clang_Stmt_castToMSDependentExistsStmt(S)
-    @ccall libclangex.clang_Stmt_castToMSDependentExistsStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToMSDependentExistsStmt(S::CXStmt)::CXMSDependentExistsStmt
 end
 
 function clang_Stmt_isMSDependentExistsStmt(S)
@@ -25658,7 +28910,7 @@ function clang_Stmt_isMSDependentExistsStmt(S)
 end
 
 function clang_Stmt_castToIndirectGotoStmt(S)
-    @ccall libclangex.clang_Stmt_castToIndirectGotoStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToIndirectGotoStmt(S::CXStmt)::CXIndirectGotoStmt
 end
 
 function clang_Stmt_isIndirectGotoStmt(S)
@@ -25666,7 +28918,7 @@ function clang_Stmt_isIndirectGotoStmt(S)
 end
 
 function clang_Stmt_castToIfStmt(S)
-    @ccall libclangex.clang_Stmt_castToIfStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToIfStmt(S::CXStmt)::CXIfStmt
 end
 
 function clang_Stmt_isIfStmt(S)
@@ -25674,7 +28926,7 @@ function clang_Stmt_isIfStmt(S)
 end
 
 function clang_Stmt_castToGotoStmt(S)
-    @ccall libclangex.clang_Stmt_castToGotoStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToGotoStmt(S::CXStmt)::CXGotoStmt
 end
 
 function clang_Stmt_isGotoStmt(S)
@@ -25682,7 +28934,7 @@ function clang_Stmt_isGotoStmt(S)
 end
 
 function clang_Stmt_castToForStmt(S)
-    @ccall libclangex.clang_Stmt_castToForStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToForStmt(S::CXStmt)::CXForStmt
 end
 
 function clang_Stmt_isForStmt(S)
@@ -25690,7 +28942,7 @@ function clang_Stmt_isForStmt(S)
 end
 
 function clang_Stmt_castToDoStmt(S)
-    @ccall libclangex.clang_Stmt_castToDoStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToDoStmt(S::CXStmt)::CXDoStmt
 end
 
 function clang_Stmt_isDoStmt(S)
@@ -25698,7 +28950,7 @@ function clang_Stmt_isDoStmt(S)
 end
 
 function clang_Stmt_castToDeclStmt(S)
-    @ccall libclangex.clang_Stmt_castToDeclStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToDeclStmt(S::CXStmt)::CXDeclStmt
 end
 
 function clang_Stmt_isDeclStmt(S)
@@ -25706,7 +28958,7 @@ function clang_Stmt_isDeclStmt(S)
 end
 
 function clang_Stmt_castToCoroutineBodyStmt(S)
-    @ccall libclangex.clang_Stmt_castToCoroutineBodyStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCoroutineBodyStmt(S::CXStmt)::CXCoroutineBodyStmt
 end
 
 function clang_Stmt_isCoroutineBodyStmt(S)
@@ -25714,7 +28966,7 @@ function clang_Stmt_isCoroutineBodyStmt(S)
 end
 
 function clang_Stmt_castToCoreturnStmt(S)
-    @ccall libclangex.clang_Stmt_castToCoreturnStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCoreturnStmt(S::CXStmt)::CXCoreturnStmt
 end
 
 function clang_Stmt_isCoreturnStmt(S)
@@ -25722,7 +28974,7 @@ function clang_Stmt_isCoreturnStmt(S)
 end
 
 function clang_Stmt_castToContinueStmt(S)
-    @ccall libclangex.clang_Stmt_castToContinueStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToContinueStmt(S::CXStmt)::CXContinueStmt
 end
 
 function clang_Stmt_isContinueStmt(S)
@@ -25730,7 +28982,7 @@ function clang_Stmt_isContinueStmt(S)
 end
 
 function clang_Stmt_castToCompoundStmt(S)
-    @ccall libclangex.clang_Stmt_castToCompoundStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCompoundStmt(S::CXStmt)::CXCompoundStmt
 end
 
 function clang_Stmt_isCompoundStmt(S)
@@ -25738,7 +28990,7 @@ function clang_Stmt_isCompoundStmt(S)
 end
 
 function clang_Stmt_castToCapturedStmt(S)
-    @ccall libclangex.clang_Stmt_castToCapturedStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCapturedStmt(S::CXStmt)::CXCapturedStmt
 end
 
 function clang_Stmt_isCapturedStmt(S)
@@ -25746,7 +28998,7 @@ function clang_Stmt_isCapturedStmt(S)
 end
 
 function clang_Stmt_castToCXXTryStmt(S)
-    @ccall libclangex.clang_Stmt_castToCXXTryStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXTryStmt(S::CXStmt)::CXCXXTryStmt
 end
 
 function clang_Stmt_isCXXTryStmt(S)
@@ -25754,7 +29006,7 @@ function clang_Stmt_isCXXTryStmt(S)
 end
 
 function clang_Stmt_castToCXXForRangeStmt(S)
-    @ccall libclangex.clang_Stmt_castToCXXForRangeStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXForRangeStmt(S::CXStmt)::CXCXXForRangeStmt
 end
 
 function clang_Stmt_isCXXForRangeStmt(S)
@@ -25762,7 +29014,7 @@ function clang_Stmt_isCXXForRangeStmt(S)
 end
 
 function clang_Stmt_castToCXXCatchStmt(S)
-    @ccall libclangex.clang_Stmt_castToCXXCatchStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToCXXCatchStmt(S::CXStmt)::CXCXXCatchStmt
 end
 
 function clang_Stmt_isCXXCatchStmt(S)
@@ -25770,7 +29022,7 @@ function clang_Stmt_isCXXCatchStmt(S)
 end
 
 function clang_Stmt_castToBreakStmt(S)
-    @ccall libclangex.clang_Stmt_castToBreakStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToBreakStmt(S::CXStmt)::CXBreakStmt
 end
 
 function clang_Stmt_isBreakStmt(S)
@@ -25778,7 +29030,7 @@ function clang_Stmt_isBreakStmt(S)
 end
 
 function clang_Stmt_castToAsmStmt(S)
-    @ccall libclangex.clang_Stmt_castToAsmStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToAsmStmt(S::CXStmt)::CXAsmStmt
 end
 
 function clang_Stmt_isAsmStmt(S)
@@ -25786,7 +29038,7 @@ function clang_Stmt_isAsmStmt(S)
 end
 
 function clang_Stmt_castToMSAsmStmt(S)
-    @ccall libclangex.clang_Stmt_castToMSAsmStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToMSAsmStmt(S::CXStmt)::CXMSAsmStmt
 end
 
 function clang_Stmt_isMSAsmStmt(S)
@@ -25794,7 +29046,7 @@ function clang_Stmt_isMSAsmStmt(S)
 end
 
 function clang_Stmt_castToGCCAsmStmt(S)
-    @ccall libclangex.clang_Stmt_castToGCCAsmStmt(S::CXStmt)::CXStmt
+    @ccall libclangex.clang_Stmt_castToGCCAsmStmt(S::CXStmt)::CXGCCAsmStmt
 end
 
 function clang_Stmt_isGCCAsmStmt(S)
@@ -28305,10 +31557,6 @@ function clang_Diagnostic_dispose(D)
     @ccall libclangex.clang_Diagnostic_dispose(D::CXDiagnostic_)::Cvoid
 end
 
-function clang_FileEntry_getName(FE)
-    @ccall libclangex.clang_FileEntry_getName(FE::CXFileEntry)::Ptr{Cchar}
-end
-
 function clang_FileEntry_tryGetRealPathName(FE)
     @ccall libclangex.clang_FileEntry_tryGetRealPathName(FE::CXFileEntry)::Ptr{Cchar}
 end
@@ -28402,191 +31650,191 @@ end
 end
 
 function clang_Module_create(Name, DefinitionLoc, Parent, IsFramework, IsExplicit, VisibilityID)
-    @ccall libclangex.clang_Module_create(Name::Ptr{Cchar}, DefinitionLoc::CXSourceLocation_, Parent::CXModule, IsFramework::Bool, IsExplicit::Bool, VisibilityID::Cuint)::CXModule
+    @ccall libclangex.clang_Module_create(Name::Ptr{Cchar}, DefinitionLoc::CXSourceLocation_, Parent::CXModule_, IsFramework::Bool, IsExplicit::Bool, VisibilityID::Cuint)::CXModule_
 end
 
 function clang_Module_dispose(M)
-    @ccall libclangex.clang_Module_dispose(M::CXModule)::Cvoid
+    @ccall libclangex.clang_Module_dispose(M::CXModule_)::Cvoid
 end
 
 function clang_Module_getName(M)
-    @ccall libclangex.clang_Module_getName(M::CXModule)::Ptr{Cchar}
+    @ccall libclangex.clang_Module_getName(M::CXModule_)::Ptr{Cchar}
 end
 
 function clang_Module_getKind(M)
-    @ccall libclangex.clang_Module_getKind(M::CXModule)::CXModuleKind
+    @ccall libclangex.clang_Module_getKind(M::CXModule_)::CXModuleKind
 end
 
 function clang_Module_getParent(M)
-    @ccall libclangex.clang_Module_getParent(M::CXModule)::CXModule
+    @ccall libclangex.clang_Module_getParent(M::CXModule_)::CXModule_
 end
 
 function clang_Module_isNamedModule(M)
-    @ccall libclangex.clang_Module_isNamedModule(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isNamedModule(M::CXModule_)::Bool
 end
 
 function clang_Module_isGlobalModule(M)
-    @ccall libclangex.clang_Module_isGlobalModule(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isGlobalModule(M::CXModule_)::Bool
 end
 
 function clang_Module_isExplicitGlobalModule(M)
-    @ccall libclangex.clang_Module_isExplicitGlobalModule(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isExplicitGlobalModule(M::CXModule_)::Bool
 end
 
 function clang_Module_isImplicitGlobalModule(M)
-    @ccall libclangex.clang_Module_isImplicitGlobalModule(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isImplicitGlobalModule(M::CXModule_)::Bool
 end
 
 function clang_Module_isPrivateModule(M)
-    @ccall libclangex.clang_Module_isPrivateModule(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isPrivateModule(M::CXModule_)::Bool
 end
 
 function clang_Module_isModuleMapModule(M)
-    @ccall libclangex.clang_Module_isModuleMapModule(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isModuleMapModule(M::CXModule_)::Bool
 end
 
 function clang_Module_isUnimportable(M)
-    @ccall libclangex.clang_Module_isUnimportable(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isUnimportable(M::CXModule_)::Bool
 end
 
 function clang_Module_isForBuilding(M, LangOpts)
-    @ccall libclangex.clang_Module_isForBuilding(M::CXModule, LangOpts::CXLangOptions)::Bool
+    @ccall libclangex.clang_Module_isForBuilding(M::CXModule_, LangOpts::CXLangOptions)::Bool
 end
 
 function clang_Module_isAvailable(M)
-    @ccall libclangex.clang_Module_isAvailable(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isAvailable(M::CXModule_)::Bool
 end
 
 function clang_Module_isSubModule(M)
-    @ccall libclangex.clang_Module_isSubModule(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isSubModule(M::CXModule_)::Bool
 end
 
 function clang_Module_isSubModuleOf(M, Other)
-    @ccall libclangex.clang_Module_isSubModuleOf(M::CXModule, Other::CXModule)::Bool
+    @ccall libclangex.clang_Module_isSubModuleOf(M::CXModule_, Other::CXModule_)::Bool
 end
 
 function clang_Module_isPartOfFramework(M)
-    @ccall libclangex.clang_Module_isPartOfFramework(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isPartOfFramework(M::CXModule_)::Bool
 end
 
 function clang_Module_isSubFramework(M)
-    @ccall libclangex.clang_Module_isSubFramework(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isSubFramework(M::CXModule_)::Bool
 end
 
 function clang_Module_setParent(M, Parent)
-    @ccall libclangex.clang_Module_setParent(M::CXModule, Parent::CXModule)::Cvoid
+    @ccall libclangex.clang_Module_setParent(M::CXModule_, Parent::CXModule_)::Cvoid
 end
 
 function clang_Module_isHeaderLikeModule(M)
-    @ccall libclangex.clang_Module_isHeaderLikeModule(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isHeaderLikeModule(M::CXModule_)::Bool
 end
 
 function clang_Module_isModulePartition(M)
-    @ccall libclangex.clang_Module_isModulePartition(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isModulePartition(M::CXModule_)::Bool
 end
 
 function clang_Module_isModuleImplementation(M)
-    @ccall libclangex.clang_Module_isModuleImplementation(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isModuleImplementation(M::CXModule_)::Bool
 end
 
 function clang_Module_isHeaderUnit(M)
-    @ccall libclangex.clang_Module_isHeaderUnit(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isHeaderUnit(M::CXModule_)::Bool
 end
 
 function clang_Module_isInterfaceOrPartition(M)
-    @ccall libclangex.clang_Module_isInterfaceOrPartition(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isInterfaceOrPartition(M::CXModule_)::Bool
 end
 
 function clang_Module_isNamedModuleUnit(M)
-    @ccall libclangex.clang_Module_isNamedModuleUnit(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isNamedModuleUnit(M::CXModule_)::Bool
 end
 
 function clang_Module_isModuleInterfaceUnit(M)
-    @ccall libclangex.clang_Module_isModuleInterfaceUnit(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isModuleInterfaceUnit(M::CXModule_)::Bool
 end
 
 function clang_Module_isNamedModuleInterfaceHasInit(M)
-    @ccall libclangex.clang_Module_isNamedModuleInterfaceHasInit(M::CXModule)::Bool
+    @ccall libclangex.clang_Module_isNamedModuleInterfaceHasInit(M::CXModule_)::Bool
 end
 
 function clang_Module_getPrimaryModuleInterfaceName(M)
-    @ccall libclangex.clang_Module_getPrimaryModuleInterfaceName(M::CXModule)::CXString
+    @ccall libclangex.clang_Module_getPrimaryModuleInterfaceName(M::CXModule_)::CXString
 end
 
 function clang_Module_getFullModuleName(M, AllowStringLiterals)
-    @ccall libclangex.clang_Module_getFullModuleName(M::CXModule, AllowStringLiterals::Bool)::CXString
+    @ccall libclangex.clang_Module_getFullModuleName(M::CXModule_, AllowStringLiterals::Bool)::CXString
 end
 
 function clang_Module_fullModuleNameIs(M, NameParts, NumParts)
-    @ccall libclangex.clang_Module_fullModuleNameIs(M::CXModule, NameParts::Ptr{Ptr{Cchar}}, NumParts::Cuint)::Bool
+    @ccall libclangex.clang_Module_fullModuleNameIs(M::CXModule_, NameParts::Ptr{Ptr{Cchar}}, NumParts::Cuint)::Bool
 end
 
 function clang_Module_getTopLevelModule(M)
-    @ccall libclangex.clang_Module_getTopLevelModule(M::CXModule)::CXModule
+    @ccall libclangex.clang_Module_getTopLevelModule(M::CXModule_)::CXModule_
 end
 
 function clang_Module_getTopLevelModuleName(M)
-    @ccall libclangex.clang_Module_getTopLevelModuleName(M::CXModule)::Ptr{Cchar}
+    @ccall libclangex.clang_Module_getTopLevelModuleName(M::CXModule_)::Ptr{Cchar}
 end
 
 function clang_Module_getASTFile(M)
-    @ccall libclangex.clang_Module_getASTFile(M::CXModule)::CXFileEntryRef
+    @ccall libclangex.clang_Module_getASTFile(M::CXModule_)::CXFileEntryRef
 end
 
 function clang_Module_addTopHeaderFilename(M, Filename)
-    @ccall libclangex.clang_Module_addTopHeaderFilename(M::CXModule, Filename::Ptr{Cchar})::Cvoid
+    @ccall libclangex.clang_Module_addTopHeaderFilename(M::CXModule_, Filename::Ptr{Cchar})::Cvoid
 end
 
 function clang_Module_directlyUses(M, Requested)
-    @ccall libclangex.clang_Module_directlyUses(M::CXModule, Requested::CXModule)::Bool
+    @ccall libclangex.clang_Module_directlyUses(M::CXModule_, Requested::CXModule_)::Bool
 end
 
 function clang_Module_addRequirement(M, Feature, RequiredState, LangOpts, Target)
-    @ccall libclangex.clang_Module_addRequirement(M::CXModule, Feature::Ptr{Cchar}, RequiredState::Bool, LangOpts::CXLangOptions, Target::CXTargetInfo_)::Cvoid
+    @ccall libclangex.clang_Module_addRequirement(M::CXModule_, Feature::Ptr{Cchar}, RequiredState::Bool, LangOpts::CXLangOptions, Target::CXTargetInfo_)::Cvoid
 end
 
 function clang_Module_markUnavailable(M, Unimportable)
-    @ccall libclangex.clang_Module_markUnavailable(M::CXModule, Unimportable::Bool)::Cvoid
+    @ccall libclangex.clang_Module_markUnavailable(M::CXModule_, Unimportable::Bool)::Cvoid
 end
 
 function clang_Module_findSubmodule(M, Name)
-    @ccall libclangex.clang_Module_findSubmodule(M::CXModule, Name::Ptr{Cchar})::CXModule
+    @ccall libclangex.clang_Module_findSubmodule(M::CXModule_, Name::Ptr{Cchar})::CXModule_
 end
 
 function clang_Module_findOrInferSubmodule(M, Name)
-    @ccall libclangex.clang_Module_findOrInferSubmodule(M::CXModule, Name::Ptr{Cchar})::CXModule
+    @ccall libclangex.clang_Module_findOrInferSubmodule(M::CXModule_, Name::Ptr{Cchar})::CXModule_
 end
 
 function clang_Module_getGlobalModuleFragment(M)
-    @ccall libclangex.clang_Module_getGlobalModuleFragment(M::CXModule)::CXModule
+    @ccall libclangex.clang_Module_getGlobalModuleFragment(M::CXModule_)::CXModule_
 end
 
 function clang_Module_getPrivateModuleFragment(M)
-    @ccall libclangex.clang_Module_getPrivateModuleFragment(M::CXModule)::CXModule
+    @ccall libclangex.clang_Module_getPrivateModuleFragment(M::CXModule_)::CXModule_
 end
 
 function clang_Module_isModuleVisible(M, Other)
-    @ccall libclangex.clang_Module_isModuleVisible(M::CXModule, Other::CXModule)::Bool
+    @ccall libclangex.clang_Module_isModuleVisible(M::CXModule_, Other::CXModule_)::Bool
 end
 
 function clang_Module_getVisibilityID(M)
-    @ccall libclangex.clang_Module_getVisibilityID(M::CXModule)::Cuint
+    @ccall libclangex.clang_Module_getVisibilityID(M::CXModule_)::Cuint
 end
 
 function clang_Module_getNumSubmodules(M)
-    @ccall libclangex.clang_Module_getNumSubmodules(M::CXModule)::Cuint
+    @ccall libclangex.clang_Module_getNumSubmodules(M::CXModule_)::Cuint
 end
 
 function clang_Module_getSubmodule(M, Index)
-    @ccall libclangex.clang_Module_getSubmodule(M::CXModule, Index::Cuint)::CXModule
+    @ccall libclangex.clang_Module_getSubmodule(M::CXModule_, Index::Cuint)::CXModule_
 end
 
 function clang_Module_getNumExportedModules(M)
-    @ccall libclangex.clang_Module_getNumExportedModules(M::CXModule)::Cuint
+    @ccall libclangex.clang_Module_getNumExportedModules(M::CXModule_)::Cuint
 end
 
 function clang_Module_getExportedModules(M, Buf)
-    @ccall libclangex.clang_Module_getExportedModules(M::CXModule, Buf::Ptr{CXModule})::Cvoid
+    @ccall libclangex.clang_Module_getExportedModules(M::CXModule_, Buf::Ptr{CXModule_})::Cvoid
 end
 
 function clang_Module_getModuleInputBufferName()
@@ -28594,11 +31842,11 @@ function clang_Module_getModuleInputBufferName()
 end
 
 function clang_Module_print(M, Indent, Dump)
-    @ccall libclangex.clang_Module_print(M::CXModule, Indent::Cuint, Dump::Bool)::CXString
+    @ccall libclangex.clang_Module_print(M::CXModule_, Indent::Cuint, Dump::Bool)::CXString
 end
 
 function clang_Module_dump(M)
-    @ccall libclangex.clang_Module_dump(M::CXModule)::Cvoid
+    @ccall libclangex.clang_Module_dump(M::CXModule_)::Cvoid
 end
 
 function clang_SourceLocation_createInvalid()
@@ -29827,7 +33075,7 @@ function clang_index_generateUSRForType(T, Ctx)
 end
 
 function clang_index_generateFullUSRForModule(Mod)
-    @ccall libclangex.clang_index_generateFullUSRForModule(Mod::CXModule)::CXString
+    @ccall libclangex.clang_index_generateFullUSRForModule(Mod::CXModule_)::CXString
 end
 
 function clang_index_generateFullUSRForTopLevelModuleName(ModName)
@@ -29835,7 +33083,7 @@ function clang_index_generateFullUSRForTopLevelModuleName(ModName)
 end
 
 function clang_index_generateUSRFragmentForModule(Mod)
-    @ccall libclangex.clang_index_generateUSRFragmentForModule(Mod::CXModule)::CXString
+    @ccall libclangex.clang_index_generateUSRFragmentForModule(Mod::CXModule_)::CXString
 end
 
 function clang_index_generateUSRFragmentForModuleName(ModName)
@@ -30873,7 +34121,7 @@ function clang_HeaderSearch_getCachedModuleFileName(HS, ModuleName, ModuleMapPat
 end
 
 function clang_HeaderSearch_ShouldEnterIncludeFile(HS, PP, File, isImport, ModulesEnabled, M, IsFirstIncludeOfFile)
-    @ccall libclangex.clang_HeaderSearch_ShouldEnterIncludeFile(HS::CXHeaderSearch, PP::CXPreprocessor, File::CXFileEntryRef, isImport::Bool, ModulesEnabled::Bool, M::CXModule, IsFirstIncludeOfFile::Ptr{Bool})::Bool
+    @ccall libclangex.clang_HeaderSearch_ShouldEnterIncludeFile(HS::CXHeaderSearch, PP::CXPreprocessor, File::CXFileEntryRef, isImport::Bool, ModulesEnabled::Bool, M::CXModule_, IsFirstIncludeOfFile::Ptr{Bool})::Bool
 end
 
 function clang_HeaderSearch_ClearFileInfo(HS)
@@ -31645,7 +34893,7 @@ function clang_Preprocessor_getMacroInfo(PP, II)
 end
 
 function clang_Preprocessor_isMacroDefinedInLocalModule(PP, II, M)
-    @ccall libclangex.clang_Preprocessor_isMacroDefinedInLocalModule(PP::CXPreprocessor, II::CXIdentifierInfo, M::CXModule)::Bool
+    @ccall libclangex.clang_Preprocessor_isMacroDefinedInLocalModule(PP::CXPreprocessor, II::CXIdentifierInfo, M::CXModule_)::Bool
 end
 
 function clang_Preprocessor_getLocalMacroDirective(PP, II)
@@ -31661,11 +34909,11 @@ function clang_Preprocessor_appendDefMacroDirective(PP, II, MI, Loc)
 end
 
 function clang_Preprocessor_addModuleMacro(PP, Mod, II, Macro, Overrides, NumOverrides, IsNew)
-    @ccall libclangex.clang_Preprocessor_addModuleMacro(PP::CXPreprocessor, Mod::CXModule, II::CXIdentifierInfo, Macro::CXMacroInfo, Overrides::Ptr{CXModuleMacro}, NumOverrides::Cuint, IsNew::Ptr{Bool})::CXModuleMacro
+    @ccall libclangex.clang_Preprocessor_addModuleMacro(PP::CXPreprocessor, Mod::CXModule_, II::CXIdentifierInfo, Macro::CXMacroInfo, Overrides::Ptr{CXModuleMacro}, NumOverrides::Cuint, IsNew::Ptr{Bool})::CXModuleMacro
 end
 
 function clang_Preprocessor_getModuleMacro(PP, Mod, II)
-    @ccall libclangex.clang_Preprocessor_getModuleMacro(PP::CXPreprocessor, Mod::CXModule, II::CXIdentifierInfo)::CXModuleMacro
+    @ccall libclangex.clang_Preprocessor_getModuleMacro(PP::CXPreprocessor, Mod::CXModule_, II::CXIdentifierInfo)::CXModuleMacro
 end
 
 function clang_Preprocessor_getNumLeafModuleMacros(PP, II)
@@ -31689,11 +34937,11 @@ function clang_Preprocessor_getNumBuildingSubmodules(PP)
 end
 
 function clang_Preprocessor_getBuildingSubmodules(PP, Modules, ImportLocs, IsPragma)
-    @ccall libclangex.clang_Preprocessor_getBuildingSubmodules(PP::CXPreprocessor, Modules::Ptr{CXModule}, ImportLocs::Ptr{CXSourceLocation_}, IsPragma::Ptr{Bool})::Cvoid
+    @ccall libclangex.clang_Preprocessor_getBuildingSubmodules(PP::CXPreprocessor, Modules::Ptr{CXModule_}, ImportLocs::Ptr{CXSourceLocation_}, IsPragma::Ptr{Bool})::Cvoid
 end
 
 function clang_Preprocessor_markClangModuleAsAffecting(PP, M)
-    @ccall libclangex.clang_Preprocessor_markClangModuleAsAffecting(PP::CXPreprocessor, M::CXModule)::Cvoid
+    @ccall libclangex.clang_Preprocessor_markClangModuleAsAffecting(PP::CXPreprocessor, M::CXModule_)::Cvoid
 end
 
 function clang_Preprocessor_getNumAffectingClangModules(PP)
@@ -31701,7 +34949,7 @@ function clang_Preprocessor_getNumAffectingClangModules(PP)
 end
 
 function clang_Preprocessor_getAffectingClangModules(PP, Buffer)
-    @ccall libclangex.clang_Preprocessor_getAffectingClangModules(PP::CXPreprocessor, Buffer::Ptr{CXModule})::Cvoid
+    @ccall libclangex.clang_Preprocessor_getAffectingClangModules(PP::CXPreprocessor, Buffer::Ptr{CXModule_})::Cvoid
 end
 
 function clang_Preprocessor_getNumIncludedFiles(PP)
@@ -31725,11 +34973,11 @@ function clang_Preprocessor_createPreprocessingRecord(PP)
 end
 
 function clang_Preprocessor_makeModuleVisible(PP, M, Loc)
-    @ccall libclangex.clang_Preprocessor_makeModuleVisible(PP::CXPreprocessor, M::CXModule, Loc::CXSourceLocation_)::Cvoid
+    @ccall libclangex.clang_Preprocessor_makeModuleVisible(PP::CXPreprocessor, M::CXModule_, Loc::CXSourceLocation_)::Cvoid
 end
 
 function clang_Preprocessor_getModuleImportLoc(PP, M)
-    @ccall libclangex.clang_Preprocessor_getModuleImportLoc(PP::CXPreprocessor, M::CXModule)::CXSourceLocation_
+    @ccall libclangex.clang_Preprocessor_getModuleImportLoc(PP::CXPreprocessor, M::CXModule_)::CXSourceLocation_
 end
 
 function clang_Preprocessor_getPredefines(PP)
@@ -31905,11 +35153,11 @@ function clang_Preprocessor_getLocForEndOfToken(PP, Loc, Offset)
 end
 
 function clang_Preprocessor_getCurrentModule(PP)
-    @ccall libclangex.clang_Preprocessor_getCurrentModule(PP::CXPreprocessor)::CXModule
+    @ccall libclangex.clang_Preprocessor_getCurrentModule(PP::CXPreprocessor)::CXModule_
 end
 
 function clang_Preprocessor_getCurrentModuleImplementation(PP)
-    @ccall libclangex.clang_Preprocessor_getCurrentModuleImplementation(PP::CXPreprocessor)::CXModule
+    @ccall libclangex.clang_Preprocessor_getCurrentModuleImplementation(PP::CXPreprocessor)::CXModule_
 end
 
 function clang_Preprocessor_isInNamedInterfaceUnit(PP)
@@ -31925,7 +35173,7 @@ function clang_Preprocessor_getAuxTargetInfo(PP)
 end
 
 function clang_Preprocessor_getCurrentLexerSubmodule(PP)
-    @ccall libclangex.clang_Preprocessor_getCurrentLexerSubmodule(PP::CXPreprocessor)::CXModule
+    @ccall libclangex.clang_Preprocessor_getCurrentLexerSubmodule(PP::CXPreprocessor)::CXModule_
 end
 
 function clang_Preprocessor_setCodeCompletionTokenRange(PP, Start, End)
@@ -31977,11 +35225,11 @@ function clang_Preprocessor_isInImportingCXXNamedModules(PP)
 end
 
 function clang_Preprocessor_getModuleForLocation(PP, Loc, AllowTextual)
-    @ccall libclangex.clang_Preprocessor_getModuleForLocation(PP::CXPreprocessor, Loc::CXSourceLocation_, AllowTextual::Bool)::CXModule
+    @ccall libclangex.clang_Preprocessor_getModuleForLocation(PP::CXPreprocessor, Loc::CXSourceLocation_, AllowTextual::Bool)::CXModule_
 end
 
 function clang_Preprocessor_checkModuleIsAvailable(LangOpts, TI, M, Diags)
-    @ccall libclangex.clang_Preprocessor_checkModuleIsAvailable(LangOpts::CXLangOptions, TI::CXTargetInfo_, M::CXModule, Diags::CXDiagnosticsEngine)::Bool
+    @ccall libclangex.clang_Preprocessor_checkModuleIsAvailable(LangOpts::CXLangOptions, TI::CXTargetInfo_, M::CXModule_, Diags::CXDiagnosticsEngine)::Bool
 end
 
 function clang_Preprocessor_getHeaderToIncludeForDiagnostics(PP, IncLoc, MLoc)
@@ -36498,39 +39746,39 @@ function clang_AsTypeExpr_getRParenLoc(E)
 end
 
 function clang_EvalResult_create()
-    @ccall libclangex.clang_EvalResult_create()::CXEvalResult
+    @ccall libclangex.clang_EvalResult_create()::CXEvalResult_
 end
 
 function clang_EvalResult_dispose(R)
-    @ccall libclangex.clang_EvalResult_dispose(R::CXEvalResult)::Cvoid
+    @ccall libclangex.clang_EvalResult_dispose(R::CXEvalResult_)::Cvoid
 end
 
 function clang_EvalResult_getVal(R)
-    @ccall libclangex.clang_EvalResult_getVal(R::CXEvalResult)::CXAPValue
+    @ccall libclangex.clang_EvalResult_getVal(R::CXEvalResult_)::CXAPValue
 end
 
 function clang_EvalStatus_hasSideEffects(R)
-    @ccall libclangex.clang_EvalStatus_hasSideEffects(R::CXEvalResult)::Bool
+    @ccall libclangex.clang_EvalStatus_hasSideEffects(R::CXEvalResult_)::Bool
 end
 
 function clang_EvalStatus_hasUndefinedBehavior(R)
-    @ccall libclangex.clang_EvalStatus_hasUndefinedBehavior(R::CXEvalResult)::Bool
+    @ccall libclangex.clang_EvalStatus_hasUndefinedBehavior(R::CXEvalResult_)::Bool
 end
 
 function clang_EvalResult_isGlobalLValue(R)
-    @ccall libclangex.clang_EvalResult_isGlobalLValue(R::CXEvalResult)::Bool
+    @ccall libclangex.clang_EvalResult_isGlobalLValue(R::CXEvalResult_)::Bool
 end
 
 function clang_Expr_EvaluateAsRValueIntoResult(E, Ctx, InConstantContext, Result)
-    @ccall libclangex.clang_Expr_EvaluateAsRValueIntoResult(E::CXExpr, Ctx::CXASTContext, InConstantContext::Bool, Result::CXEvalResult)::Bool
+    @ccall libclangex.clang_Expr_EvaluateAsRValueIntoResult(E::CXExpr, Ctx::CXASTContext, InConstantContext::Bool, Result::CXEvalResult_)::Bool
 end
 
 function clang_Expr_EvaluateAsLValueIntoResult(E, Ctx, InConstantContext, Result)
-    @ccall libclangex.clang_Expr_EvaluateAsLValueIntoResult(E::CXExpr, Ctx::CXASTContext, InConstantContext::Bool, Result::CXEvalResult)::Bool
+    @ccall libclangex.clang_Expr_EvaluateAsLValueIntoResult(E::CXExpr, Ctx::CXASTContext, InConstantContext::Bool, Result::CXEvalResult_)::Bool
 end
 
 function clang_Expr_EvaluateCharRangeAsString(E, SizeExpression, PtrExpression, Ctx, Status, Succeeded)
-    @ccall libclangex.clang_Expr_EvaluateCharRangeAsString(E::CXExpr, SizeExpression::CXExpr, PtrExpression::CXExpr, Ctx::CXASTContext, Status::CXEvalResult, Succeeded::Ptr{Bool})::CXString
+    @ccall libclangex.clang_Expr_EvaluateCharRangeAsString(E::CXExpr, SizeExpression::CXExpr, PtrExpression::CXExpr, Ctx::CXASTContext, Status::CXEvalResult_, Succeeded::Ptr{Bool})::CXString
 end
 
 function clang_DeclRefExpr_CreateEmpty(C, HasQualifier, HasFoundDecl, HasTemplateKWAndArgsInfo, NumTemplateArgs)
@@ -38327,7 +41575,7 @@ function clang_Sema_VerifyBitField(S, FieldLoc, FieldName, FieldTy, IsMsStruct, 
 end
 
 function clang_Sema_getCurrentModule(S)
-    @ccall libclangex.clang_Sema_getCurrentModule(S::CXSema)::CXModule
+    @ccall libclangex.clang_Sema_getCurrentModule(S::CXSema)::CXModule_
 end
 
 function clang_Sema_hasStructuralCompatLayout(S, D, Suggested)
@@ -38801,7 +42049,7 @@ function clang_Sema_hasAnyUnrecoverableErrorsInThisFunction(S)
 end
 
 function clang_Sema_isModuleVisible(S, M, ModulePrivate)
-    @ccall libclangex.clang_Sema_isModuleVisible(S::CXSema, M::CXModule, ModulePrivate::Bool)::Bool
+    @ccall libclangex.clang_Sema_isModuleVisible(S::CXSema, M::CXModule_, ModulePrivate::Bool)::Bool
 end
 
 function clang_Sema_hasMergedDefinitionInCurrentModule(S, Def)
@@ -39670,7 +42918,7 @@ function clang_Sema_getOrCreateStdNamespace(S)
 end
 
 function clang_Sema_getOwningModule(S, Entity)
-    @ccall libclangex.clang_Sema_getOwningModule(S::CXSema, Entity::CXDecl)::CXModule
+    @ccall libclangex.clang_Sema_getOwningModule(S::CXSema, Entity::CXDecl)::CXModule_
 end
 
 function clang_Sema_getScopeForDeclContext(Sc, DC)
@@ -39812,9 +43060,9 @@ function clang_Stmt_PrintStats()
     @ccall libclangex.clang_Stmt_PrintStats()::Cvoid
 end
 
-# Skipping MacroDefinition: LAST_TYPE ( Class ) CXTypeClass_TypeLast = CXTypeClass_ ## Class
+# Skipping MacroDefinition: DECL ( DERIVED , BASE ) typedef struct CX ## DERIVED ## DeclImpl * CX ## DERIVED ## Decl ;
 
-# Skipping MacroDefinition: DECL ( DERIVED , BASE ) CXDeclKind_ ## DERIVED ,
+# Skipping MacroDefinition: LAST_TYPE ( Class ) CXTypeClass_TypeLast = CXTypeClass_ ## Class
 
 # exports
 const PREFIXES = ["clang", "CX"]

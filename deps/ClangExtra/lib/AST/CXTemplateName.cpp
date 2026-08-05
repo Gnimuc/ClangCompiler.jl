@@ -14,47 +14,47 @@ CXTemplateName_NameKind clang_TemplateName_getKind(CXTemplateName TN) {
 }
 
 CXTemplateDecl clang_TemplateName_getAsTemplateDecl(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getAsTemplateDecl();
+  return reinterpret_cast<CXTemplateDecl>(clang::TemplateName::getFromVoidPointer(TN).getAsTemplateDecl());
 }
 
 CXOverloadedTemplateStorage clang_TemplateName_getAsOverloadedTemplate(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getAsOverloadedTemplate();
+  return reinterpret_cast<CXOverloadedTemplateStorage>(clang::TemplateName::getFromVoidPointer(TN).getAsOverloadedTemplate());
 }
 
 CXAssumedTemplateStorage clang_TemplateName_getAsAssumedTemplateName(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getAsAssumedTemplateName();
+  return reinterpret_cast<CXAssumedTemplateStorage>(clang::TemplateName::getFromVoidPointer(TN).getAsAssumedTemplateName());
 }
 
 CXSubstTemplateTemplateParmStorage
 clang_TemplateName_getAsSubstTemplateTemplateParm(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getAsSubstTemplateTemplateParm();
+  return reinterpret_cast<CXSubstTemplateTemplateParmStorage>(clang::TemplateName::getFromVoidPointer(TN).getAsSubstTemplateTemplateParm());
 }
 
 CXSubstTemplateTemplateParmPackStorage
 clang_TemplateName_getAsSubstTemplateTemplateParmPack(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getAsSubstTemplateTemplateParmPack();
+  return reinterpret_cast<CXSubstTemplateTemplateParmPackStorage>(clang::TemplateName::getFromVoidPointer(TN).getAsSubstTemplateTemplateParmPack());
 }
 
 CXQualifiedTemplateName clang_TemplateName_getAsQualifiedTemplateName(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getAsQualifiedTemplateName();
+  return reinterpret_cast<CXQualifiedTemplateName>(clang::TemplateName::getFromVoidPointer(TN).getAsQualifiedTemplateName());
 }
 
 CXDependentTemplateName clang_TemplateName_getAsDependentTemplateName(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getAsDependentTemplateName();
+  return reinterpret_cast<CXDependentTemplateName>(clang::TemplateName::getFromVoidPointer(TN).getAsDependentTemplateName());
 }
 
 CXUsingShadowDecl clang_TemplateName_getAsUsingShadowDecl(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getAsUsingShadowDecl();
+  return reinterpret_cast<CXUsingShadowDecl>(clang::TemplateName::getFromVoidPointer(TN).getAsUsingShadowDecl());
 }
 
 CXTemplateName clang_TemplateName_getUnderlying(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN).getUnderlying().getAsVoidPointer();
+  return reinterpret_cast<CXTemplateName>(clang::TemplateName::getFromVoidPointer(TN).getUnderlying().getAsVoidPointer());
 }
 
 CXTemplateName clang_TemplateName_getNameToSubstitute(CXTemplateName TN) {
-  return clang::TemplateName::getFromVoidPointer(TN)
+  return reinterpret_cast<CXTemplateName>(clang::TemplateName::getFromVoidPointer(TN)
       .getNameToSubstitute()
-      .getAsVoidPointer();
+      .getAsVoidPointer());
 }
 
 unsigned clang_TemplateName_getDependence(CXTemplateName TN) {
@@ -78,7 +78,7 @@ CXString clang_TemplateName_getAsString(CXTemplateName TN, CXASTContext Ctx,
   std::string Str;
   llvm::raw_string_ostream OS(Str);
   clang::TemplateName::getFromVoidPointer(TN).print(
-      OS, static_cast<clang::ASTContext *>(Ctx)->getPrintingPolicy(),
+      OS, reinterpret_cast<clang::ASTContext *>(Ctx)->getPrintingPolicy(),
       static_cast<clang::TemplateName::Qualified>(Qual));
   return extra::makeCXString(Str);
 }
@@ -90,68 +90,68 @@ void clang_TemplateName_dump(CXTemplateName TN) {
 
 CXDecl clang_SubstTemplateTemplateParmStorage_getAssociatedDecl(
     CXSubstTemplateTemplateParmStorage S) {
-  return static_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getAssociatedDecl();
+  return reinterpret_cast<CXDecl>(reinterpret_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getAssociatedDecl());
 }
 
 unsigned
 clang_SubstTemplateTemplateParmStorage_getIndex(CXSubstTemplateTemplateParmStorage S) {
-  return static_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getIndex();
+  return reinterpret_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getIndex();
 }
 
 CXTemplateName clang_SubstTemplateTemplateParmStorage_getReplacement(
     CXSubstTemplateTemplateParmStorage S) {
-  return static_cast<clang::SubstTemplateTemplateParmStorage *>(S)
+  return reinterpret_cast<CXTemplateName>(reinterpret_cast<clang::SubstTemplateTemplateParmStorage *>(S)
       ->getReplacement()
-      .getAsVoidPointer();
+      .getAsVoidPointer());
 }
 
 // QualifiedTemplateName
 
 CXNestedNameSpecifier
 clang_QualifiedTemplateName_getQualifier(CXQualifiedTemplateName QTN) {
-  return static_cast<clang::QualifiedTemplateName *>(QTN)->getQualifier();
+  return reinterpret_cast<CXNestedNameSpecifier>(reinterpret_cast<clang::QualifiedTemplateName *>(QTN)->getQualifier());
 }
 
 bool clang_QualifiedTemplateName_hasTemplateKeyword(CXQualifiedTemplateName QTN) {
-  return static_cast<clang::QualifiedTemplateName *>(QTN)->hasTemplateKeyword();
+  return reinterpret_cast<clang::QualifiedTemplateName *>(QTN)->hasTemplateKeyword();
 }
 
 CXTemplateName
 clang_QualifiedTemplateName_getUnderlyingTemplate(CXQualifiedTemplateName QTN) {
-  return static_cast<clang::QualifiedTemplateName *>(QTN)
+  return reinterpret_cast<CXTemplateName>(reinterpret_cast<clang::QualifiedTemplateName *>(QTN)
       ->getUnderlyingTemplate()
-      .getAsVoidPointer();
+      .getAsVoidPointer());
 }
 
 // DependentTemplateName
 
 CXNestedNameSpecifier
 clang_DependentTemplateName_getQualifier(CXDependentTemplateName DTN) {
-  return static_cast<clang::DependentTemplateName *>(DTN)->getQualifier();
+  return reinterpret_cast<CXNestedNameSpecifier>(reinterpret_cast<clang::DependentTemplateName *>(DTN)->getQualifier());
 }
 
 bool clang_DependentTemplateName_isIdentifier(CXDependentTemplateName DTN) {
-  return static_cast<clang::DependentTemplateName *>(DTN)->isIdentifier();
+  return reinterpret_cast<clang::DependentTemplateName *>(DTN)->isIdentifier();
 }
 
 CXIdentifierInfo clang_DependentTemplateName_getIdentifier(CXDependentTemplateName DTN) {
-  return const_cast<clang::IdentifierInfo *>(
-      static_cast<clang::DependentTemplateName *>(DTN)->getIdentifier());
+  return reinterpret_cast<CXIdentifierInfo>(const_cast<clang::IdentifierInfo *>(
+      reinterpret_cast<clang::DependentTemplateName *>(DTN)->getIdentifier()));
 }
 
 bool clang_DependentTemplateName_isOverloadedOperator(CXDependentTemplateName DTN) {
-  return static_cast<clang::DependentTemplateName *>(DTN)->isOverloadedOperator();
+  return reinterpret_cast<clang::DependentTemplateName *>(DTN)->isOverloadedOperator();
 }
 
 CXOverloadedOperatorKind
 clang_DependentTemplateName_getOperator(CXDependentTemplateName DTN) {
   return static_cast<CXOverloadedOperatorKind>(
-      static_cast<clang::DependentTemplateName *>(DTN)->getOperator());
+      reinterpret_cast<clang::DependentTemplateName *>(DTN)->getOperator());
 }
 
 bool clang_SubstTemplateTemplateParmStorage_getPackIndex(
     CXSubstTemplateTemplateParmStorage S, unsigned *Out) {
-  auto I = static_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getPackIndex();
+  auto I = reinterpret_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getPackIndex();
   if (!I)
     return false;
   *Out = *I;
@@ -160,5 +160,5 @@ bool clang_SubstTemplateTemplateParmStorage_getPackIndex(
 
 CXTemplateTemplateParmDecl clang_SubstTemplateTemplateParmStorage_getParameter(
     CXSubstTemplateTemplateParmStorage S) {
-  return static_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getParameter();
+  return reinterpret_cast<CXTemplateTemplateParmDecl>(reinterpret_cast<clang::SubstTemplateTemplateParmStorage *>(S)->getParameter());
 }

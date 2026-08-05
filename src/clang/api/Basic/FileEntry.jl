@@ -1,9 +1,8 @@
 # FileEntry
-function getName(x::FileEntry)
-    @check_ptrs x
-    s = clang_FileEntry_getName(x)
-    return unsafe_string(s)
-end
+#
+# No `getName` here. `FileEntry::getName` forwards to whichever `FileEntryRef` last referred
+# to the file, so one file reached under two spellings answers with whichever was used most
+# recently -- clang deprecates it for that reason. Ask the ref instead: `getName(::FileEntryRef)`.
 
 function tryGetRealPathName(x::FileEntry)
     @check_ptrs x

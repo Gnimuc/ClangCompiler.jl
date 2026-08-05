@@ -7,26 +7,25 @@ getAnnotationRange(x::Token) = SourceRange(getLocation(x), getAnnotationEndLoc(x
 getName(x::Token) = unsafe_string(clang_Token_getName(x))
 getIdentifierInfo(x::Token) = IdentifierInfo(clang_Token_getIdentifierInfo(x))
 
-is_eof(Tok) = clang_Token_isKind_eof(Tok)
-is_annot_repl_input_end(Tok) = clang_Token_isKind_annot_repl_input_end(Tok)
-is_identifier(Tok) = clang_Token_isKind_identifier(Tok)
-is_coloncolon(Tok) = clang_Token_isKind_coloncolon(Tok)
+is_eof(Tok::AbstractToken) = clang_Token_isKind_eof(Tok)
+is_annot_repl_input_end(Tok::AbstractToken) = clang_Token_isKind_annot_repl_input_end(Tok)
+is_identifier(Tok::AbstractToken) = clang_Token_isKind_identifier(Tok)
+is_coloncolon(Tok::AbstractToken) = clang_Token_isKind_coloncolon(Tok)
 
-is_annot_cxxscope(Tok) = clang_Token_isKind_annot_cxxscope(Tok)
-is_annot_typename(Tok) = clang_Token_isKind_annot_typename(Tok)
-is_annot_template_id(Tok) = clang_Token_isKind_annot_template_id(Tok)
+is_annot_cxxscope(Tok::AbstractToken) = clang_Token_isKind_annot_cxxscope(Tok)
+is_annot_typename(Tok::AbstractToken) = clang_Token_isKind_annot_typename(Tok)
+is_annot_template_id(Tok::AbstractToken) = clang_Token_isKind_annot_template_id(Tok)
 
-is_kw_enum(Tok) = clang_Token_isKind_kw_enum(Tok)
-is_kw_typename(Tok) = clang_Token_isKind_kw_typename(Tok)
+is_kw_enum(Tok::AbstractToken) = clang_Token_isKind_kw_enum(Tok)
+is_kw_typename(Tok::AbstractToken) = clang_Token_isKind_kw_typename(Tok)
 
 # AnnotationValue
 function getAnnotationValue(x::Token)
     return AnnotationValue(clang_Token_getAnnotationValue(x))
 end
 
-
-is_raw_identifier(Tok) = clang_Token_isKind_raw_identifier(Tok)
-is_numeric_constant(Tok) = clang_Token_isKind_numeric_constant(Tok)
+is_raw_identifier(Tok::AbstractToken) = clang_Token_isKind_raw_identifier(Tok)
+is_numeric_constant(Tok::AbstractToken) = clang_Token_isKind_numeric_constant(Tok)
 
 """
     Token() -> Token
@@ -180,7 +179,6 @@ function isEditorPlaceholder(x::AbstractToken)
     @check_ptrs x
     return clang_Token_isEditorPlaceholder(x)
 end
-
 
 """
     setIdentifierInfo(x::AbstractToken, ii::AbstractIdentifierInfo)

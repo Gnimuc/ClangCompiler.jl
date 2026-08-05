@@ -6,5 +6,3 @@ struct CompilerInstance <: AbstractCompilerInstance
     ptr::CXCompilerInstance
 end
 
-Base.unsafe_convert(::Type{CXCompilerInstance}, x::CompilerInstance) = x.ptr
-Base.cconvert(::Type{CXCompilerInstance}, x::CompilerInstance) = x

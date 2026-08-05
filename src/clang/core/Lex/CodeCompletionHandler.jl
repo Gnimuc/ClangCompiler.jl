@@ -8,5 +8,3 @@ struct CodeCompletionHandler <: AbstractCodeCompletionHandler
     ptr::CXCodeCompletionHandler
 end
 
-Base.unsafe_convert(::Type{CXCodeCompletionHandler}, x::CodeCompletionHandler) = x.ptr
-Base.cconvert(::Type{CXCodeCompletionHandler}, x::CodeCompletionHandler) = x

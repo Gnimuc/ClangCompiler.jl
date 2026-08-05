@@ -43,11 +43,14 @@ function getChildren(x::AbstractStmt)
     return [Stmt(p) for p in buf]
 end
 
-function EnableStatistics()
+# Static, like `Decl`'s pair in DeclBase.jl, and tagged with the class for the same reason:
+# untagged, `PrintStats()` would answer for whichever of the two hierarchies happened to be
+# defined last.
+function EnableStatistics(::Type{Stmt})
     return clang_Stmt_EnableStatistics()
 end
 
-function PrintStats()
+function PrintStats(::Type{Stmt})
     return clang_Stmt_PrintStats()
 end
 # Stmt Cast — one constructor-shaped downcast and one predicate per class in the
@@ -2048,7 +2051,7 @@ function CompoundStmt(ctx::ASTContext, stmts::Vector{<:AbstractStmt}, fp_feature
                       lbrace_loc::SourceLocation, rbrace_loc::SourceLocation)
     @check_ptrs ctx
     @assert all(s -> s.ptr != C_NULL, stmts) "a compound statement body holds no null slot"
-    buf = CXStmt[s.ptr for s in stmts]
+    buf = CXStmt[Base.unsafe_convert(CXStmt, s) for s in stmts]
     return CompoundStmt(clang_CompoundStmt_Create(ctx, buf, length(buf), fp_features,
                                                   lbrace_loc, rbrace_loc))
 end
@@ -2066,7 +2069,7 @@ function AttributedStmt(ctx::ASTContext, loc::SourceLocation, attrs::Vector{<:Ab
     @check_ptrs ctx sub_stmt
     @assert !isempty(attrs) "an AttributedStmt needs at least one attribute"
     @assert all(a -> a.ptr != C_NULL, attrs) "attribute list holds no null slot"
-    buf = CXAttr[a.ptr for a in attrs]
+    buf = CXAttr[Base.unsafe_convert(CXAttr, a) for a in attrs]
     return AttributedStmt(clang_AttributedStmt_Create(ctx, loc, buf, length(buf), sub_stmt))
 end
 
@@ -2264,8 +2267,8 @@ function CapturedStmt(ctx::ASTContext, s::AbstractStmt, kind::CXCapturedRegionKi
     @check_ptrs ctx s cd rd
     @assert length(captures) == length(inits) "each capture needs exactly one initializer"
     @assert all(c -> c.ptr != C_NULL, captures) "a capture list holds no null slot"
-    cbuf = CXCapturedStmtCapture[c.ptr for c in captures]
-    ibuf = CXExpr[e.ptr for e in inits]
+    cbuf = CXCapturedStmtCapture[Base.unsafe_convert(CXCapturedStmtCapture, c) for c in captures]
+    ibuf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in inits]
     return CapturedStmt(clang_CapturedStmt_Create(ctx, s, kind, cbuf, ibuf, length(cbuf), cd, rd))
 end
 
@@ -2290,7 +2293,7 @@ neither attribute, the empty list included, reports `CXLikelihood_LH_None`.
 """
 function getLikelihood(attrs::Vector{<:AbstractAttr})
     @assert all(a -> a.ptr != C_NULL, attrs) "attribute list holds no null slot"
-    buf = CXAttr[a.ptr for a in attrs]
+    buf = CXAttr[Base.unsafe_convert(CXAttr, a) for a in attrs]
     return clang_Stmt_getLikelihoodOfAttrs(buf, length(buf))
 end
 
@@ -2356,10 +2359,10 @@ function GCCAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, is_simple::Bool, i
     @assert all(e -> e.ptr != C_NULL, exprs) "an asm operand list holds no null slot"
     @assert all(c -> c.ptr != C_NULL, constraints) "a constraint list holds no null slot"
     @assert all(c -> c.ptr != C_NULL, clobbers) "a clobber list holds no null slot"
-    nbuf = CXIdentifierInfo[n.ptr for n in names]
-    cbuf = CXStringLiteral[c.ptr for c in constraints]
-    ebuf = CXExpr[e.ptr for e in exprs]
-    lbuf = CXStringLiteral[c.ptr for c in clobbers]
+    nbuf = CXIdentifierInfo[Base.unsafe_convert(CXIdentifierInfo, n) for n in names]
+    cbuf = CXStringLiteral[Base.unsafe_convert(CXStringLiteral, c) for c in constraints]
+    ebuf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
+    lbuf = CXStringLiteral[Base.unsafe_convert(CXStringLiteral, c) for c in clobbers]
     return GCCAsmStmt(clang_GCCAsmStmt_Create(ctx, asm_loc, is_simple, is_volatile, num_outputs,
                                               num_inputs, nbuf, cbuf, ebuf, asm_str, length(lbuf),
                                               lbuf, length(exprs) - num_operands, rparen_loc))
@@ -2393,8 +2396,8 @@ function MSAsmStmt(ctx::ASTContext, asm_loc::SourceLocation, lbrace_loc::SourceL
     @assert length(exprs) == num_operands "exprs holds one expression per output and input"
     @assert all(e -> e.ptr != C_NULL, exprs) "an asm operand list holds no null slot"
     @assert all(t -> t.ptr != C_NULL, asm_toks) "a token list holds no null slot"
-    tbuf = CXToken_[t.ptr for t in asm_toks]
-    ebuf = CXExpr[e.ptr for e in exprs]
+    tbuf = CXToken_[Base.unsafe_convert(CXToken_, t) for t in asm_toks]
+    ebuf = CXExpr[Base.unsafe_convert(CXExpr, e) for e in exprs]
     return MSAsmStmt(clang_MSAsmStmt_Create(ctx, asm_loc, lbrace_loc, is_simple, is_volatile, tbuf,
                                             length(tbuf), num_outputs, num_inputs, constraints,
                                             ebuf, String(asm_str), clobbers, length(clobbers),

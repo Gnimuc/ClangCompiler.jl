@@ -256,7 +256,6 @@ is_deduced_type(x::AbstractDeducedType) = true
 is_deduced_template_specialization_type(x::AbstractType) = isa_DeducedTemplateSpecializationType(x)
 is_deduced_template_specialization_type(x::DeducedTemplateSpecializationType) = true
 
-
 """
     get_definition_if_incomplete(x::AbstractType) -> Union{Nothing,NamedDecl}
 Return the declaration that would complete `x` when `x` is an incomplete type that refers

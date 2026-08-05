@@ -9,6 +9,42 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+// One opaque handle per class in each of clang's node families, stamped from the same
+// vendored .inc files that stamp the classification enums and the downcasts. Stamping
+// rather than listing is what lets `clang_Stmt_castToIfStmt` return `CXIfStmt` instead of
+// `CXStmt`: the cast's return type is spelled by the same macro expansion that declares the
+// handle, so the two cannot drift, and an LLVM bump adds both together.
+//
+// StmtNodes.inc and TypeNodes.inc undef their own macros; DeclNodes.inc and AttrList.inc
+// only undef their category macros, so those two are undef'd here.
+#define STMT(CLASS, PARENT) typedef struct CX##CLASS##Impl *CX##CLASS;
+#define ABSTRACT_STMT(S) S
+#include "clang-ex/AST/StmtNodes.inc"
+
+#define DECL(DERIVED, BASE) typedef struct CX##DERIVED##DeclImpl *CX##DERIVED##Decl;
+#define ABSTRACT_DECL(D) D
+#include "clang-ex/AST/DeclNodes.inc"
+#undef DECL
+#undef ABSTRACT_DECL
+
+#define ATTR(X) typedef struct CX##X##AttrImpl *CX##X##Attr;
+#include "clang-ex/AST/AttrList.inc"
+#undef ATTR
+
+#define TYPE(Class, Base) typedef struct CX##Class##TypeImpl *CX##Class##Type;
+#include "clang-ex/AST/TypeNodes.inc"
+
+#define TYPE(Class, Base) typedef struct CX##Class##TypeLocImpl *CX##Class##TypeLoc;
+#define ABSTRACT_TYPE(Class, Base)
+#include "clang-ex/AST/TypeNodes.inc"
+
+// TypeLoc classes with no TypeNodes.inc counterpart: the qualified wrapper and the
+// payload-bearing intermediates, all four cast by hand in CXTypeLoc.h.
+typedef struct CXQualifiedTypeLocImpl *CXQualifiedTypeLoc;
+typedef struct CXTypeSpecTypeLocImpl *CXTypeSpecTypeLoc;
+typedef struct CXFunctionTypeLocImpl *CXFunctionTypeLoc;
+typedef struct CXArrayTypeLocImpl *CXArrayTypeLoc;
+
 // ADT
 typedef struct {
   const void *Data;
@@ -17,482 +53,189 @@ typedef struct {
 
 // APINotes
 // APINotesOptions
-typedef void *CXAPINotesOptions;
+typedef struct CXAPINotesOptionsImpl *CXAPINotesOptions;
 
 // AST
 
 // PrettyPrinter
-typedef void *CXPrintingPolicy;
+typedef struct CXPrintingPolicy_Impl *CXPrintingPolicy_;
 // ASTConsumer
-typedef void *CXASTConsumer;
+typedef struct CXASTConsumerImpl *CXASTConsumer;
 
 // ASTContext
-typedef void *CXDeclInfo;
-typedef void *CXVerbatimLineComment;
-typedef void *CXVerbatimBlockComment;
-typedef void *CXVerbatimBlockLineComment;
-typedef void *CXTParamCommandComment;
-typedef void *CXHTMLEndTagComment;
-typedef void *CXHTMLStartTagComment;
-typedef void *CXHTMLTagComment;
-typedef void *CXInlineCommandComment;
-typedef void *CXParagraphComment;
-typedef void *CXInlineContentComment;
-typedef void *CXFullComment;
-typedef void *CXParamCommandComment;
-typedef void *CXBlockCommandComment;
-typedef void *CXTextComment;
-typedef void *CXComment;
-typedef void *CXRawComment;
-typedef void *CXRawCommentList;
-typedef void *CXASTContext;
+typedef struct CXDeclInfoImpl *CXDeclInfo;
+typedef struct CXVerbatimLineCommentImpl *CXVerbatimLineComment;
+typedef struct CXVerbatimBlockCommentImpl *CXVerbatimBlockComment;
+typedef struct CXVerbatimBlockLineCommentImpl *CXVerbatimBlockLineComment;
+typedef struct CXTParamCommandCommentImpl *CXTParamCommandComment;
+typedef struct CXHTMLEndTagCommentImpl *CXHTMLEndTagComment;
+typedef struct CXHTMLStartTagCommentImpl *CXHTMLStartTagComment;
+typedef struct CXHTMLTagCommentImpl *CXHTMLTagComment;
+typedef struct CXInlineCommandCommentImpl *CXInlineCommandComment;
+typedef struct CXParagraphCommentImpl *CXParagraphComment;
+typedef struct CXInlineContentCommentImpl *CXInlineContentComment;
+typedef struct CXFullCommentImpl *CXFullComment;
+typedef struct CXParamCommandCommentImpl *CXParamCommandComment;
+typedef struct CXBlockCommandCommentImpl *CXBlockCommandComment;
+typedef struct CXTextCommentImpl *CXTextComment;
+typedef struct CXCommentImpl *CXComment;
+typedef struct CXRawCommentImpl *CXRawComment;
+typedef struct CXRawCommentListImpl *CXRawCommentList;
+typedef struct CXASTContextImpl *CXASTContext;
 
 // Decl
-typedef void *CXHLSLBufferDecl;
-typedef void *CXTranslationUnitDecl;
-typedef void *CXPragmaCommentDecl;
-typedef void *CXPragmaDetectMismatchDecl;
-typedef void *CXExternCContextDecl;
-typedef void *CXNamedDecl;
-typedef void *CXLabelDecl;
-typedef void *CXNamespaceDecl;
-typedef void *CXValueDecl;
-typedef void *CXDeclaratorDecl;
-typedef void *CXEvaluatedStmt;
-typedef void *CXVarDecl;
-typedef void *CXImplicitParamDecl;
-typedef void *CXParmVarDecl;
-typedef void *CXFunctionDecl;
-typedef void *CXFieldDecl;
-typedef void *CXEnumConstantDecl;
-typedef void *CXIndirectFieldDecl;
-typedef void *CXTypeDecl;
-typedef void *CXTypedefNameDecl;
-typedef void *CXTypedefDecl;
-typedef void *CXTypeAliasDecl;
-typedef void *CXTagDecl;
-typedef void *CXEnumDecl;
-typedef void *CXRecordDecl;
-typedef void *CXFileScopeAsmDecl;
-typedef void *CXBlockDecl;
-typedef void *CXCapturedDecl;
-typedef void *CXImportDecl;
-typedef void *CXExportDecl;
-typedef void *CXEmptyDecl;
-typedef void *CXTopLevelStmtDecl;
+typedef struct CXEvaluatedStmtImpl *CXEvaluatedStmt;
 
 // DeclarationName
-typedef void *CXDeclarationNameTable;
-typedef void *CXDeclarationName;
-typedef void *CXDeclarationNameInfo;
+typedef struct CXDeclarationNameTableImpl *CXDeclarationNameTable;
+typedef struct CXDeclarationNameImpl *CXDeclarationName;
+typedef struct CXDeclarationNameInfoImpl *CXDeclarationNameInfo;
 
 // DeclBase
-typedef void *CXDecl;
-typedef void *CXDeclContext;
+typedef struct CXDeclImpl *CXDecl;
+typedef struct CXDeclContextImpl *CXDeclContext;
 
 // DeclCXX
-typedef void *CXUnnamedGlobalConstantDecl;
-typedef void *CXUnresolvedUsingIfExistsDecl;
-typedef void *CXUsingEnumDecl;
-typedef void *CXAccessSpecDecl;
-typedef void *CXCXXBaseSpecifier;
-typedef void *CXCXXRecordDecl;
-typedef void *CXExplicitSpecifier;
-typedef void *CXCXXDeductionGuideDecl;
-typedef void *CXRequiresExprBodyDecl;
-typedef void *CXCXXMethodDecl;
-typedef void *CXCXXCtorInitializer;
-typedef void *CXCXXConstructorDecl;
-typedef void *CXCXXDestructorDecl;
-typedef void *CXCXXConversionDecl;
-typedef void *CXLinkageSpecDecl;
-typedef void *CXUsingDirectiveDecl;
-typedef void *CXNamespaceAliasDecl;
-typedef void *CXLifetimeExtendedTemporaryDecl;
-typedef void *CXUsingShadowDecl;
-typedef void *CXConstructorUsingShadowDecl;
-typedef void *CXBaseUsingDecl;
-typedef void *CXUsingDecl;
-typedef void *CXUsingPackDecl;
-typedef void *CXUnresolvedUsingValueDecl;
-typedef void *CXUnresolvedUsingTypenameDecl;
-typedef void *CXStaticAssertDecl;
-typedef void *CXBindingDecl;
-typedef void *CXDecompositionDecl;
-typedef void *CXMSPropertyDecl;
-typedef void *CXMSGuidDecl;
+typedef struct CXCXXBaseSpecifierImpl *CXCXXBaseSpecifier;
+typedef struct CXExplicitSpecifierImpl *CXExplicitSpecifier;
+typedef struct CXCXXCtorInitializerImpl *CXCXXCtorInitializer;
 
 // DeclGroup
-typedef void *CXDeclGroupRef;
+typedef struct CXDeclGroupRefImpl *CXDeclGroupRef;
 
 // DeclTemplate
-typedef void *CXImplicitConceptSpecializationDecl;
-typedef void *CXTemplateParameterList;
-typedef void *CXTemplateArgumentList;
-typedef void *CXTemplateDecl;
-typedef void *CXFunctionTemplateSpecializationInfo;
-typedef void *CXMemberSpecializationInfo;
-typedef void *CXDependentFunctionTemplateSpecializationInfo;
-typedef void *CXRedeclarableTemplateDecl;
-typedef void *CXFunctionTemplateDecl;
-typedef void *CXTemplateTypeParmDecl;
-typedef void *CXNonTypeTemplateParmDecl;
-typedef void *CXTemplateTemplateParmDecl;
-typedef void *CXBuiltinTemplateDecl;
-typedef void *CXClassTemplateSpecializationDecl;
-typedef void *CXClassTemplatePartialSpecializationDecl;
-typedef void *CXClassTemplateDecl;
-typedef void *CXFriendTemplateDecl;
-typedef void *CXTypeAliasTemplateDecl;
-typedef void *CXClassScopeFunctionSpecializationDecl;
-typedef void *CXVarTemplateSpecializationDecl;
-typedef void *CXVarTemplatePartialSpecializationDecl;
-typedef void *CXVarTemplateDecl;
-typedef void *CXConceptDecl;
-typedef void *CXTemplateParamObjectDecl;
+typedef struct CXTemplateParameterListImpl *CXTemplateParameterList;
+typedef struct CXTemplateArgumentListImpl *CXTemplateArgumentList;
+typedef struct CXFunctionTemplateSpecializationInfoImpl *CXFunctionTemplateSpecializationInfo;
+typedef struct CXMemberSpecializationInfoImpl *CXMemberSpecializationInfo;
+typedef struct CXDependentFunctionTemplateSpecializationInfoImpl *CXDependentFunctionTemplateSpecializationInfo;
+typedef struct CXClassScopeFunctionSpecializationDeclImpl *CXClassScopeFunctionSpecializationDecl;
 
 // APValue
-typedef void *CXAPValue;
+typedef struct CXAPValueImpl *CXAPValue;
 
 // Attr
-typedef void *CXAttr;
-typedef void *CXAlignedAttr;
-typedef void *CXAnnotateAttr;
-typedef void *CXAsmLabelAttr;
-typedef void *CXCleanupAttr;
-typedef void *CXConstructorAttr;
-typedef void *CXDeprecatedAttr;
-typedef void *CXDestructorAttr;
-typedef void *CXFormatAttr;
-typedef void *CXNonNullAttr;
-typedef void *CXSectionAttr;
-typedef void *CXTLSModelAttr;
-typedef void *CXUnavailableAttr;
-typedef void *CXVisibilityAttr;
-typedef void *CXWarnUnusedResultAttr;
+typedef struct CXAttrImpl *CXAttr;
 
 // Expr
-typedef void *CXEvalResult;
-typedef void *CXSYCLUniqueStableNameExpr;
-typedef void *CXClassification;
-typedef void *CXExpr;
-typedef void *CXFullExpr;
-typedef void *CXConstantExpr;
-typedef void *CXOpaqueValueExpr;
-typedef void *CXDeclRefExpr;
-typedef void *CXIntegerLiteral;
-typedef void *CXFixedPointLiteral;
-typedef void *CXCharacterLiteral;
-typedef void *CXFloatingLiteral;
-typedef void *CXImaginaryLiteral;
-typedef void *CXStringLiteral;
-typedef void *CXPredefinedExpr;
-typedef void *CXParenExpr;
-typedef void *CXUnaryOperator;
-typedef void *CXOffsetOfNode;
-typedef void *CXOffsetOfExpr;
-typedef void *CXUnaryExprOrTypeTraitExpr;
-typedef void *CXArraySubscriptExpr;
-typedef void *CXMatrixSubscriptExpr;
-typedef void *CXCallExpr;
-typedef void *CXMemberExpr;
-typedef void *CXCompoundLiteralExpr;
-typedef void *CXCastExpr;
-typedef void *CXImplicitCastExpr;
-typedef void *CXExplicitCastExpr;
-typedef void *CXCStyleCastExpr;
-typedef void *CXBinaryOperator;
-typedef void *CXCompoundAssignOperator;
-typedef void *CXAbstractConditionalOperator;
-typedef void *CXConditionalOperator;
-typedef void *CXBinaryConditionalOperator;
-typedef void *CXAddrLabelExpr;
-typedef void *CXStmtExpr;
-typedef void *CXShuffleVectorExpr;
-typedef void *CXConvertVectorExpr;
-typedef void *CXChooseExpr;
-typedef void *CXGNUNullExpr;
-typedef void *CXVAArgExpr;
-typedef void *CXSourceLocExpr;
-typedef void *CXInitListExpr;
-typedef void *CXDesignatedInitExpr;
-typedef void *CXDesignator;
-typedef void *CXNoInitExpr;
-typedef void *CXDesignatedInitUpdateExpr;
-typedef void *CXArrayInitLoopExpr;
-typedef void *CXArrayInitIndexExpr;
-typedef void *CXImplicitValueInitExpr;
-typedef void *CXParenListExpr;
-typedef void *CXGenericSelectionExpr;
-typedef void *CXExtVectorElementExpr;
-typedef void *CXBlockExpr;
-typedef void *CXBlockVarCopyInit;
-typedef void *CXAsTypeExpr;
-typedef void *CXPseudoObjectExpr;
-typedef void *CXAtomicExpr;
-typedef void *CXTypoExpr;
-typedef void *CXRecoveryExpr;
+typedef struct CXEvalResult_Impl *CXEvalResult_;
+typedef struct CXClassificationImpl *CXClassification;
+typedef struct CXOffsetOfNodeImpl *CXOffsetOfNode;
+typedef struct CXDesignatorImpl *CXDesignator;
+typedef struct CXBlockVarCopyInitImpl *CXBlockVarCopyInit;
 
 // ExprCXX
-typedef void *CXCXXParenListInitExpr;
-typedef void *CXCXXTemporary;
-typedef void *CXCXXOperatorCallExpr;
-typedef void *CXCXXMemberCallExpr;
-typedef void *CXCUDAKernelCallExpr;
-typedef void *CXCXXRewrittenBinaryOperator;
-typedef void *CXCXXNamedCastExpr;
-typedef void *CXCXXStaticCastExpr;
-typedef void *CXCXXDynamicCastExpr;
-typedef void *CXCXXReinterpretCastExpr;
-typedef void *CXCXXConstCastExpr;
-typedef void *CXCXXAddrspaceCastExpr;
-typedef void *CXUserDefinedLiteral;
-typedef void *CXCXXBoolLiteralExpr;
-typedef void *CXCXXNullPtrLiteralExpr;
-typedef void *CXCXXStdInitializerListExpr;
-typedef void *CXCXXTypeidExpr;
-typedef void *CXMSPropertyRefExpr;
-typedef void *CXMSPropertySubscriptExpr;
-typedef void *CXCXXUuidofExpr;
-typedef void *CXCXXThisExpr;
-typedef void *CXCXXThrowExpr;
-typedef void *CXCXXDefaultArgExpr;
-typedef void *CXCXXDefaultInitExpr;
-typedef void *CXCXXBindTemporaryExpr;
-typedef void *CXCXXConstructExpr;
-typedef void *CXCXXInheritedCtorInitExpr;
-typedef void *CXCXXFunctionalCastExpr;
-typedef void *CXCXXTemporaryObjectExpr;
-typedef void *CXLambdaExpr;
+typedef struct CXCXXTemporaryImpl *CXCXXTemporary;
 
 // LambdaCapture
-typedef void *CXLambdaCapture;
-typedef void *CXCXXScalarValueInitExpr;
-typedef void *CXCXXNewExpr;
-typedef void *CXCXXDeleteExpr;
-typedef void *CXCXXPseudoDestructorExpr;
-typedef void *CXTypeTraitExpr;
-typedef void *CXArrayTypeTraitExpr;
-typedef void *CXExpressionTraitExpr;
-typedef void *CXOverloadExpr;
-typedef void *CXUnresolvedLookupExpr;
-typedef void *CXDependentScopeDeclRefExpr;
-typedef void *CXExprWithCleanups;
-typedef void *CXCXXUnresolvedConstructExpr;
-typedef void *CXCXXDependentScopeMemberExpr;
-typedef void *CXUnresolvedMemberExpr;
-typedef void *CXCXXNoexceptExpr;
-typedef void *CXPackExpansionExpr;
-typedef void *CXSizeOfPackExpr;
-typedef void *CXSubstNonTypeTemplateParmExpr;
-typedef void *CXSubstNonTypeTemplateParmPackExpr;
-typedef void *CXFunctionParmPackExpr;
-typedef void *CXMaterializeTemporaryExpr;
-typedef void *CXCXXFoldExpr;
-typedef void *CXCoroutineSuspendExpr;
-typedef void *CXCoawaitExpr;
-typedef void *CXDependentCoawaitExpr;
-typedef void *CXCoyieldExpr;
-typedef void *CXBuiltinBitCastExpr;
+typedef struct CXLambdaCaptureImpl *CXLambdaCapture;
 
 // Mangle
-typedef void *CXMangleContext;
-typedef void *CXItaniumMangleContext;
-typedef void *CXMicrosoftMangleContext;
-typedef void *CXASTNameGenerator;
+typedef struct CXMangleContextImpl *CXMangleContext;
+typedef struct CXItaniumMangleContextImpl *CXItaniumMangleContext;
+typedef struct CXMicrosoftMangleContextImpl *CXMicrosoftMangleContext;
+typedef struct CXASTNameGeneratorImpl *CXASTNameGenerator;
 
 // NestedNameSpacifier
-typedef void *CXNestedNameSpecifierLoc;
-typedef void *CXNestedNameSpecifier;
+typedef struct CXNestedNameSpecifierLocImpl *CXNestedNameSpecifierLoc;
+typedef struct CXNestedNameSpecifierImpl *CXNestedNameSpecifier;
 
 // RecordLayout
-typedef void *CXASTRecordLayout;
+typedef struct CXASTRecordLayoutImpl *CXASTRecordLayout;
 
 // Stmt
-typedef void *CXGCCAsmStmtAsmStringPiece;
-typedef void *CXCapturedStmtCapture;
-typedef void *CXStmt;
-typedef void *CXDeclStmt;
-typedef void *CXNullStmt;
-typedef void *CXCompoundStmt;
-typedef void *CXSwitchCase;
-typedef void *CXCaseStmt;
-typedef void *CXDefaultStmt;
-typedef void *CXValueStmt;
-typedef void *CXLabelStmt;
-typedef void *CXAttributedStmt;
-typedef void *CXIfStmt;
-typedef void *CXSwitchStmt;
-typedef void *CXWhileStmt;
-typedef void *CXDoStmt;
-typedef void *CXForStmt;
-typedef void *CXGotoStmt;
-typedef void *CXIndirectGotoStmt;
-typedef void *CXContinueStmt;
-typedef void *CXBreakStmt;
-typedef void *CXReturnStmt;
-typedef void *CXAsmStmt;
-typedef void *CXGCCAsmStmt;
-typedef void *CXMSAsmStmt;
-typedef void *CXSEHExceptStmt;
-typedef void *CXSEHFinallyStmt;
-typedef void *CXSEHTryStmt;
-typedef void *CXSEHLeaveStmt;
-typedef void *CXCapturedStmt;
+typedef struct CXGCCAsmStmtAsmStringPieceImpl *CXGCCAsmStmtAsmStringPiece;
+typedef struct CXCapturedStmtCaptureImpl *CXCapturedStmtCapture;
+typedef struct CXStmtImpl *CXStmt;
 
 // StmtCXX
-typedef void *CXCXXCatchStmt;
-typedef void *CXCXXTryStmt;
-typedef void *CXCXXForRangeStmt;
-typedef void *CXMSDependentExistsStmt;
-typedef void *CXCoroutineBodyStmt;
-typedef void *CXCoreturnStmt;
 
 // Types
-typedef void *CXDependentBitIntType;
-typedef void *CXBitIntType;
-typedef void *CXQualType;
-typedef void *CXType_;
-typedef void *CXBuiltinType;
-typedef void *CXComplexType;
-typedef void *CXParenType;
-typedef void *CXPointerType;
-typedef void *CXAdjustedType;
-typedef void *CXDecayedType;
-typedef void *CXBlockPointerType;
-typedef void *CXReferenceType;
-typedef void *CXLValueReferenceType;
-typedef void *CXRValueReferenceType;
-typedef void *CXMemberPointerType;
-typedef void *CXArrayType;
-typedef void *CXConstantArrayType;
-typedef void *CXIncompleteArrayType;
-typedef void *CXVariableArrayType;
-typedef void *CXDependentSizedArrayType;
-typedef void *CXDependentAddressSpaceType;
-typedef void *CXDependentSizedExtVectorType;
-typedef void *CXVectorType;
-typedef void *CXDependentVectorType;
-typedef void *CXExtVectorType;
-typedef void *CXMatrixType;
-typedef void *CXConstantMatrixType;
-typedef void *CXDependentSizedMatrixType;
-typedef void *CXFunctionType;
-typedef void *CXFunctionNoProtoType;
-typedef void *CXFunctionProtoType;
-typedef void *CXUnresolvedUsingType;
-typedef void *CXUsingType;
-typedef void *CXTypedefType;
-typedef void *CXMacroQualifiedType;
-typedef void *CXTypeOfExprType;
-typedef void *CXDependentTypeOfExprType;
-typedef void *CXTypeOfType;
-typedef void *CXDecltypeType;
-typedef void *CXDependentDecltypeType;
-typedef void *CXUnaryTransformType;
-typedef void *CXDependentUnaryTransformType;
-typedef void *CXTagType;
-typedef void *CXRecordType;
-typedef void *CXEnumType;
-typedef void *CXAttributedType;
-typedef void *CXTemplateTypeParmType;
-typedef void *CXSubstTemplateTypeParmType;
-typedef void *CXSubstTemplateTypeParmPackType;
-typedef void *CXDeducedType;
-typedef void *CXAutoType;
-typedef void *CXDeducedTemplateSpecializationType;
-typedef void *CXTemplateSpecializationType;
-typedef void *CXInjectedClassNameType;
-typedef void *CXTypeWithKeyword;
-typedef void *CXElaboratedType;
-typedef void *CXDependentNameType;
-typedef void *CXDependentTemplateSpecializationType;
-typedef void *CXPackExpansionType;
-typedef void *CXObjCTypeParamType;
-typedef void *CXObjCObjectType;
-typedef void *CXObjCInterfaceType;
-typedef void *CXObjCObjectPointerType;
-typedef void *CXAtomicType;
-typedef void *CXPipeType;
-typedef void *CXExtIntType;
-typedef void *CXDependentExtIntType;
-typedef void *CXQualifierCollector;
-typedef void *CXTypeSourceInfo;
+typedef struct CXQualTypeImpl *CXQualType;
+typedef struct CXType_Impl *CXType_;
+typedef struct CXDependentTypeOfExprTypeImpl *CXDependentTypeOfExprType;
+typedef struct CXDependentDecltypeTypeImpl *CXDependentDecltypeType;
+typedef struct CXDependentUnaryTransformTypeImpl *CXDependentUnaryTransformType;
+typedef struct CXTypeWithKeywordImpl *CXTypeWithKeyword;
+typedef struct CXExtIntTypeImpl *CXExtIntType;
+typedef struct CXDependentExtIntTypeImpl *CXDependentExtIntType;
+typedef struct CXQualifierCollectorImpl *CXQualifierCollector;
+typedef struct CXTypeSourceInfoImpl *CXTypeSourceInfo;
 
 // TypeLoc
-typedef void *CXTypeLoc;
+typedef struct CXTypeLocImpl *CXTypeLoc;
 
 // TemplateBase
-typedef void *CXTemplateName;
-typedef void *CXTemplateArgumentLocInfo;
-typedef void *CXTemplateArgumentLoc;
-typedef void *CXTemplateArgumentListInfo;
-typedef void *CXASTTemplateArgumentListInfo;
+typedef struct CXTemplateNameImpl *CXTemplateName;
+typedef struct CXTemplateArgumentLocInfoImpl *CXTemplateArgumentLocInfo;
+typedef struct CXTemplateArgumentLocImpl *CXTemplateArgumentLoc;
+typedef struct CXTemplateArgumentListInfoImpl *CXTemplateArgumentListInfo;
+typedef struct CXASTTemplateArgumentListInfoImpl *CXASTTemplateArgumentListInfo;
 
 // TemplateName
-typedef void *CXDependentTemplateName;
-typedef void *CXQualifiedTemplateName;
-typedef void *CXSubstTemplateTemplateParmStorage;
-typedef void *CXSubstTemplateTemplateParmPackStorage;
-typedef void *CXAssumedTemplateStorage;
-typedef void *CXOverloadedTemplateStorage;
-typedef void *CXTemplateArgument;
+typedef struct CXDependentTemplateNameImpl *CXDependentTemplateName;
+typedef struct CXQualifiedTemplateNameImpl *CXQualifiedTemplateName;
+typedef struct CXSubstTemplateTemplateParmStorageImpl *CXSubstTemplateTemplateParmStorage;
+typedef struct CXSubstTemplateTemplateParmPackStorageImpl *CXSubstTemplateTemplateParmPackStorage;
+typedef struct CXAssumedTemplateStorageImpl *CXAssumedTemplateStorage;
+typedef struct CXOverloadedTemplateStorageImpl *CXOverloadedTemplateStorage;
+typedef struct CXTemplateArgumentImpl *CXTemplateArgument;
 
 // Analysis
 
 // ConstructionContext
-typedef void *CXConstructionContext;
+typedef struct CXConstructionContextImpl *CXConstructionContext;
 // CFG
-typedef void *CXCFGBuildOptions;
-typedef void *CXCFGBlock;
-typedef void *CXCFG;
+typedef struct CXCFGBuildOptionsImpl *CXCFGBuildOptions;
+typedef struct CXCFGBlockImpl *CXCFGBlock;
+typedef struct CXCFGImpl *CXCFG;
 
 // Basic
 // Builtins
-typedef void *CXBuiltinContext;
+typedef struct CXBuiltinContextImpl *CXBuiltinContext;
 // CodeGenOptions
-typedef void *CXCodeGenOptions;
+typedef struct CXCodeGenOptionsImpl *CXCodeGenOptions;
 
 // Diagnostic
-typedef void *CXDiagnostic_;
-typedef void *CXDiagnosticBuilder;
-typedef void *CXStreamingDiagnostic;
-typedef void *CXFixItHint;
-typedef void *CXStoredDiagnostic;
-typedef void *CXDiagnosticErrorTrap;
-typedef void *CXDiagnosticConsumer;
-typedef void *CXDiagnosticsEngine;
+typedef struct CXDiagnostic_Impl *CXDiagnostic_;
+typedef struct CXDiagnosticBuilderImpl *CXDiagnosticBuilder;
+typedef struct CXStreamingDiagnosticImpl *CXStreamingDiagnostic;
+typedef struct CXFixItHintImpl *CXFixItHint;
+typedef struct CXStoredDiagnosticImpl *CXStoredDiagnostic;
+typedef struct CXDiagnosticErrorTrapImpl *CXDiagnosticErrorTrap;
+typedef struct CXDiagnosticConsumerImpl *CXDiagnosticConsumer;
+typedef struct CXDiagnosticsEngineImpl *CXDiagnosticsEngine;
 
 // DiagnosticIDs
-typedef void *CXDiagnosticIDs;
+typedef struct CXDiagnosticIDsImpl *CXDiagnosticIDs;
 
 // DiagnosticOptions
-typedef void *CXDiagnosticOptions;
+typedef struct CXDiagnosticOptionsImpl *CXDiagnosticOptions;
 
 // FileEntry
-typedef void *CXFileEntry;
+typedef struct CXFileEntryImpl *CXFileEntry;
 
 // FileManager
-typedef void *CXDirectoryEntry;
-typedef void *CXDirectoryEntryRef;
-typedef void *CXFileEntryRef;
-typedef void *CXFileManager;
+typedef struct CXDirectoryEntryImpl *CXDirectoryEntry;
+typedef struct CXDirectoryEntryRefImpl *CXDirectoryEntryRef;
+typedef struct CXFileEntryRefImpl *CXFileEntryRef;
+typedef struct CXFileManagerImpl *CXFileManager;
 
 // IdentifierTable
-typedef void *CXSelector;
-typedef void *CXSelectorTable;
-typedef void *CXIdentifierInfo;
-typedef void *CXIdentifierTable;
+typedef struct CXSelectorImpl *CXSelector;
+typedef struct CXSelectorTableImpl *CXSelectorTable;
+typedef struct CXIdentifierInfoImpl *CXIdentifierInfo;
+typedef struct CXIdentifierTableImpl *CXIdentifierTable;
 
 // LangOptions
-typedef void *CXLangOptions;
+typedef struct CXLangOptionsImpl *CXLangOptions;
 
 // Module
-typedef void *CXModule;
+typedef struct CXModule_Impl *CXModule_;
 
 // SourceLocation
-typedef void *CXPresumedLoc;
-typedef void *CXSourceLocation_;
+typedef struct CXPresumedLocImpl *CXPresumedLoc;
+typedef struct CXSourceLocation_Impl *CXSourceLocation_;
 
 typedef struct CXSourceRange_ {
   CXSourceLocation_ B;
@@ -500,159 +243,159 @@ typedef struct CXSourceRange_ {
 } CXSourceRange_;
 
 // SourceManager
-typedef void *CXSourceManagerForFile;
-typedef void *CXLineOffsetMapping;
-typedef void *CXContentCache;
-typedef void *CXSLocEntry;
-typedef void *CXExpansionInfo;
-typedef void *CXFileInfo;
-typedef void *CXFileID;
-typedef void *CXSourceManager;
+typedef struct CXSourceManagerForFileImpl *CXSourceManagerForFile;
+typedef struct CXLineOffsetMappingImpl *CXLineOffsetMapping;
+typedef struct CXContentCacheImpl *CXContentCache;
+typedef struct CXSLocEntryImpl *CXSLocEntry;
+typedef struct CXExpansionInfoImpl *CXExpansionInfo;
+typedef struct CXFileInfoImpl *CXFileInfo;
+typedef struct CXFileIDImpl *CXFileID;
+typedef struct CXSourceManagerImpl *CXSourceManager;
 
 // TargetInfo
-typedef void *CXConstraintInfo;
-typedef void *CXTargetInfo_;
+typedef struct CXConstraintInfoImpl *CXConstraintInfo;
+typedef struct CXTargetInfo_Impl *CXTargetInfo_;
 
 // TargetOptions
-typedef void *CXTargetOptions;
+typedef struct CXTargetOptionsImpl *CXTargetOptions;
 
 // CodeGen
 // CodeGenAction
-typedef void *CXCodeGenAction;
+typedef struct CXCodeGenActionImpl *CXCodeGenAction;
 
 // ModuleBuilder
-typedef void *CXCodeGenerator;
-typedef void *CXCodeGenModule;
+typedef struct CXCodeGeneratorImpl *CXCodeGenerator;
+typedef struct CXCodeGenModuleImpl *CXCodeGenModule;
 
 // Driver
 // Driver
-typedef void *CXDriver;
+typedef struct CXDriverImpl *CXDriver;
 
 // Compilation
-typedef void *CXCompilation;
+typedef struct CXCompilationImpl *CXCompilation;
 
 // ToolChain
-typedef void *CXToolChain;
+typedef struct CXToolChainImpl *CXToolChain;
 
 // Frontend
 // ASTUnit
-typedef void *CXASTUnit;
+typedef struct CXASTUnitImpl *CXASTUnit;
 
 // CompilerInstance
-typedef void *CXCompilerInstance;
+typedef struct CXCompilerInstanceImpl *CXCompilerInstance;
 
 // CompilerInvocation
-typedef void *CXPreprocessorOutputOptions;
-typedef void *CXDependencyOutputOptions;
-typedef void *CXFileSystemOptions;
-typedef void *CXMigratorOptions;
-typedef void *CXAnalyzerOptions;
-typedef void *CXCompilerInvocation;
-typedef void *CXCowCompilerInvocation;
+typedef struct CXPreprocessorOutputOptionsImpl *CXPreprocessorOutputOptions;
+typedef struct CXDependencyOutputOptionsImpl *CXDependencyOutputOptions;
+typedef struct CXFileSystemOptionsImpl *CXFileSystemOptions;
+typedef struct CXMigratorOptionsImpl *CXMigratorOptions;
+typedef struct CXAnalyzerOptionsImpl *CXAnalyzerOptions;
+typedef struct CXCompilerInvocationImpl *CXCompilerInvocation;
+typedef struct CXCowCompilerInvocationImpl *CXCowCompilerInvocation;
 
 // FrontendOptions
-typedef void *CXFrontendOptions;
+typedef struct CXFrontendOptionsImpl *CXFrontendOptions;
 
 // Interpreter
-typedef void *CXIncrementalCompilerBuilder;
-typedef void *CXInterpreter;
-typedef void *CXPartialTranslationUnit;
-typedef void *CXValue;
+typedef struct CXIncrementalCompilerBuilderImpl *CXIncrementalCompilerBuilder;
+typedef struct CXInterpreterImpl *CXInterpreter;
+typedef struct CXPartialTranslationUnitImpl *CXPartialTranslationUnit;
+typedef struct CXValueImpl *CXValue;
 
 // Lex
 // DirectoryLookup
-typedef void *CXDirectoryLookup;
+typedef struct CXDirectoryLookupImpl *CXDirectoryLookup;
 
 // HeaderMap
-typedef void *CXHeaderMap;
+typedef struct CXHeaderMapImpl *CXHeaderMap;
 
 // HeaderSearch
-typedef void *CXHeaderFileInfo;
-typedef void *CXHeaderSearch;
+typedef struct CXHeaderFileInfoImpl *CXHeaderFileInfo;
+typedef struct CXHeaderSearchImpl *CXHeaderSearch;
 
 // HeaderSearchOptions
-typedef void *CXHeaderSearchOptions;
+typedef struct CXHeaderSearchOptionsImpl *CXHeaderSearchOptions;
 
 // Lexer
-typedef void *CXPreprocessorLexer;
-typedef void *CXLexer;
+typedef struct CXPreprocessorLexerImpl *CXPreprocessorLexer;
+typedef struct CXLexerImpl *CXLexer;
 
 // MacroInfo
-typedef void *CXModuleMacro;
-typedef void *CXDefMacroDirective;
-typedef void *CXDefInfo;
-typedef void *CXMacroDirective;
-typedef void *CXMacroInfo;
+typedef struct CXModuleMacroImpl *CXModuleMacro;
+typedef struct CXDefMacroDirectiveImpl *CXDefMacroDirective;
+typedef struct CXDefInfoImpl *CXDefInfo;
+typedef struct CXMacroDirectiveImpl *CXMacroDirective;
+typedef struct CXMacroInfoImpl *CXMacroInfo;
 
 // CodeCompletionHandler
-typedef void *CXCodeCompletionHandler;
+typedef struct CXCodeCompletionHandlerImpl *CXCodeCompletionHandler;
 
 // ExternalPreprocessorSource
-typedef void *CXExternalPreprocessorSource;
+typedef struct CXExternalPreprocessorSourceImpl *CXExternalPreprocessorSource;
 
 // ModuleLoader
-typedef void *CXModuleLoader;
+typedef struct CXModuleLoaderImpl *CXModuleLoader;
 
 // PPCallbacks
-typedef void *CXPPCallbacks;
+typedef struct CXPPCallbacksImpl *CXPPCallbacks;
 
 // Preprocessor
-typedef void *CXInclusionDirective;
-typedef void *CXMacroExpansion;
-typedef void *CXMacroDefinitionRecord;
-typedef void *CXPreprocessedEntity;
-typedef void *CXPreprocessingRecord;
-typedef void *CXPreprocessor;
-typedef void *CXEmptylineHandler;
+typedef struct CXInclusionDirectiveImpl *CXInclusionDirective;
+typedef struct CXMacroExpansionImpl *CXMacroExpansion;
+typedef struct CXMacroDefinitionRecordImpl *CXMacroDefinitionRecord;
+typedef struct CXPreprocessedEntityImpl *CXPreprocessedEntity;
+typedef struct CXPreprocessingRecordImpl *CXPreprocessingRecord;
+typedef struct CXPreprocessorImpl *CXPreprocessor;
+typedef struct CXEmptylineHandlerImpl *CXEmptylineHandler;
 
 // PreprocessorOptions
-typedef void *CXPreprocessorOptions;
+typedef struct CXPreprocessorOptionsImpl *CXPreprocessorOptions;
 
 // Token
-typedef void *CXToken_;
+typedef struct CXToken_Impl *CXToken_;
 
-typedef void *CXAnnotationValue;
+typedef struct CXAnnotationValueImpl *CXAnnotationValue;
 
 // Parse
 // Parser
-typedef void *CXParser;
+typedef struct CXParserImpl *CXParser;
 
 // Sema
-typedef void *CXSFINAETrap;
-typedef void *CXDefaultedFunctionKind;
-typedef void *CXAlignPackInfo;
-typedef void *CXExpressionEvaluationContextRecord;
-typedef void *CXInstantiatingTemplate;
-typedef void *CXSema;
+typedef struct CXSFINAETrapImpl *CXSFINAETrap;
+typedef struct CXDefaultedFunctionKindImpl *CXDefaultedFunctionKind;
+typedef struct CXAlignPackInfoImpl *CXAlignPackInfo;
+typedef struct CXExpressionEvaluationContextRecordImpl *CXExpressionEvaluationContextRecord;
+typedef struct CXInstantiatingTemplateImpl *CXInstantiatingTemplate;
+typedef struct CXSemaImpl *CXSema;
 
 // Overload
-typedef void *CXUserDefinedConversionSequence;
-typedef void *CXOverloadCandidate;
-typedef void *CXAmbiguousConversionSequence;
-typedef void *CXStandardConversionSequence;
-typedef void *CXBadConversionSequence;
-typedef void *CXImplicitConversionSequence;
-typedef void *CXOverloadCandidateSet;
+typedef struct CXUserDefinedConversionSequenceImpl *CXUserDefinedConversionSequence;
+typedef struct CXOverloadCandidateImpl *CXOverloadCandidate;
+typedef struct CXAmbiguousConversionSequenceImpl *CXAmbiguousConversionSequence;
+typedef struct CXStandardConversionSequenceImpl *CXStandardConversionSequence;
+typedef struct CXBadConversionSequenceImpl *CXBadConversionSequence;
+typedef struct CXImplicitConversionSequenceImpl *CXImplicitConversionSequence;
+typedef struct CXOverloadCandidateSetImpl *CXOverloadCandidateSet;
 
 // Template
-typedef void *CXLocalInstantiationScope;
-typedef void *CXMultiLevelTemplateArgumentList;
+typedef struct CXLocalInstantiationScopeImpl *CXLocalInstantiationScope;
+typedef struct CXMultiLevelTemplateArgumentListImpl *CXMultiLevelTemplateArgumentList;
 
 // TemplateDeduction
-typedef void *CXTemplateDeductionInfo;
+typedef struct CXTemplateDeductionInfoImpl *CXTemplateDeductionInfo;
 
 // DeclSpec
-typedef void *CXCXXScopeSpec;
+typedef struct CXCXXScopeSpecImpl *CXCXXScopeSpec;
 
 // Lookup
-typedef void *CXLookupResult_Filter;
-typedef void *CXLookupResult;
+typedef struct CXLookupResult_FilterImpl *CXLookupResult_Filter;
+typedef struct CXLookupResultImpl *CXLookupResult;
 
 // Scope
-typedef void *CXScope;
+typedef struct CXScopeImpl *CXScope;
 
 // Others
-typedef void *CXRewriter;
+typedef struct CXRewriterImpl *CXRewriter;
 typedef enum CXTranslationUnitKind {
   CXTranslationUnitKind_TU_Complete,
   CXTranslationUnitKind_TU_Prefix,
@@ -660,7 +403,7 @@ typedef enum CXTranslationUnitKind {
   CXTranslationUnitKind_TU_Incremental,
 } CXTranslationUnitKind;
 
-typedef void *CXFrontendAction;
+typedef struct CXFrontendActionImpl *CXFrontendAction;
 
 LLVM_CLANG_C_EXTERN_C_END
 

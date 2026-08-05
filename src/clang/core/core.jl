@@ -126,3 +126,10 @@ include("Lex/CodeCompletionHandler.jl")
 include("Lex/ExternalPreprocessorSource.jl")
 include("Lex/ModuleLoader.jl")
 include("Lex/PPCallbacks.jl")
+
+# last, because each entry is keyed on an abstract type and so has to see the whole
+# hierarchy: one unsafe_convert/cconvert pair per CX handle, generated from the carriers
+# above by gen/handle_converts.jl
+include("converts.jl")
+# and the one base that is not at offset zero, which marshals through the pivot instead
+include("AST/DeclContextUnion.jl")

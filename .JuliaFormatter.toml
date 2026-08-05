@@ -13,4 +13,5 @@ pipe_to_function_call=false
 ignore = ["lib", "examples",
           "AttrAbstracts.jl", "AttrCarriers.jl", "AttrWrappers.jl", "AttrKindMap.jl",
           "StmtAbstractGen.jl", "StmtCarriers.jl", "StmtWrappers.jl", "StmtClassMap.jl",
-          "DeclKindMap.jl", "TypeClassMap.jl"]
+          "DeclKindMap.jl", "DeclContextUnion.jl", "TypeClassMap.jl",
+          "converts.jl"]

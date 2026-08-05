@@ -301,4 +301,41 @@ isdefined(@__MODULE__, :strip_jl_comments) || include("util.jl")
             @error "wrapper reads an Expr's type pointer directly; use `expr_type_ptr`" offenders
         @test isempty(offenders)
     end
+
+    @testset "no raw handle reaches a binding as an argument" begin
+        # `clang/handles.jl` refuses a conversion between two different `CX` handles, so a
+        # wrapper that passes the *carrier* cannot deliver a pointer of the wrong class. A
+        # wrapper that reads `x.ptr` opts out of that: the field's own type is whatever the
+        # carrier declared, and the two spellings Julia leaves permissive -- `CXFoo(p)`, its
+        # `Ptr{T}(::Ptr)` constructor, and `reinterpret` -- bitcast without complaint. So the
+        # rule this enforces is not "never touch `.ptr`" but the narrower shape that actually
+        # corrupts: a `.ptr` read handed to a binding.
+        #
+        # Two spellings are exempt because neither is a handle crossing. `Ptr{Cvoid}(x.ptr)`
+        # feeds a parameter clang itself declares `void *` (`Value::setOpaqueType` and the
+        # four others listed in src/clang/CLAUDE.md), and `CXSourceRange_(a.ptr, b.ptr)`
+        # fills a value struct out of two `CXSourceLocation_`s rather than passing a handle.
+        call = r"clang_[A-Za-z0-9_]+\(([^)]*\.ptr[^)]*)\)"
+        offenders, scanned = String[], 0
+        for (root, _, files) in walkdir(joinpath(SRC_DIR, "clang")),
+            f in filter(endswith(".jl"), files)
+
+            relf = relpath(joinpath(root, f), SRC_DIR)
+            relf == joinpath("clang", "core", "converts.jl") && continue
+            for (n, line) in enumerate(eachline(joinpath(root, f)))
+                startswith(lstrip(line), "#") && continue
+                for m in eachmatch(call, line)
+                    scanned += 1
+                    args = m.captures[1]
+                    occursin("Ptr{Cvoid}(", args) && continue
+                    occursin("CXSourceRange_(", args) && continue
+                    push!(offenders, "$relf:$n passes a raw handle: $(strip(m.match))")
+                end
+            end
+        end
+        @test scanned >= 5  # the exempt spellings themselves keep this from matching nothing
+        isempty(offenders) ||
+            @error "wrapper hands a raw `.ptr` to a binding; pass the carrier instead" offenders
+        @test isempty(offenders)
+    end
 end

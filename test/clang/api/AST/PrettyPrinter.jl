@@ -17,14 +17,14 @@ using Test
 
     f = DeclFinder(I)
     @test f(I, "SPP")
-    spp = CC.getTypeDeclType(ctx, CC.TypeDecl(get_decl(f).ptr))
+    spp = CC.getTypeDeclType(ctx, CC.downcast(CC.TypeDecl, get_decl(f).ptr))
     # the nested record is reached through its namespace: "S" is not a unique top-level name
     @test f(I, "NSPP")
-    ns = CC.NamespaceDecl(get_decl(f).ptr)
+    ns = CC.downcast(CC.NamespaceDecl, get_decl(f).ptr)
     inner = only(filter(d -> d isa CC.CXXRecordDecl, collect(CC.decls_in(CC.castToDeclContext(ns)))))
-    nested = CC.getTypeDeclType(ctx, CC.TypeDecl(inner.ptr))
+    nested = CC.getTypeDeclType(ctx, CC.upcast(CC.TypeDecl, inner.ptr))
     @test f(I, "bpp_probe")
-    boolty = CC.getType(CC.VarDecl(get_decl(f).ptr))
+    boolty = CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
 
     # the context's own policy is borrowed, and an owned copy of it starts out equal
     ctx_policy = CC.getPrintingPolicy(ctx)

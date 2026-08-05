@@ -655,7 +655,7 @@ function StoredDiagnostic(level::CXDiagnosticsEngine_Level, id::Integer, message
     @assert length(ranges) == length(range_is_token) "each range needs a token-range flag"
     raw_ranges = CXSourceRange_[CXSourceRange_(r.begin_loc.ptr, r.end_loc.ptr) for r in ranges]
     raw_flags = collect(Bool, range_is_token)
-    raw_fixits = CXFixItHint[h.ptr for h in fixits]
+    raw_fixits = CXFixItHint[Base.unsafe_convert(CXFixItHint, h) for h in fixits]
     sd = clang_StoredDiagnostic_createWithRangesAndFixIts(level, id, message, loc, src_mgr,
                                                           raw_ranges, raw_flags,
                                                           length(raw_ranges), raw_fixits,

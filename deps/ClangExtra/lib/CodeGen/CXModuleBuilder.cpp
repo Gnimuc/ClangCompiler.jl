@@ -15,26 +15,26 @@
 // }
 
 CXCodeGenModule clang_CodeGenerator_CGM(CXCodeGenerator CG) {
-  return &static_cast<clang::CodeGenerator *>(CG)->CGM();
+  return reinterpret_cast<CXCodeGenModule>(&reinterpret_cast<clang::CodeGenerator *>(CG)->CGM());
 }
 
 LLVMModuleRef clang_CodeGenerator_GetModule(CXCodeGenerator CG) {
-  return llvm::wrap(static_cast<clang::CodeGenerator *>(CG)->GetModule());
+  return llvm::wrap(reinterpret_cast<clang::CodeGenerator *>(CG)->GetModule());
 }
 
 LLVMModuleRef clang_CodeGenerator_ReleaseModule(CXCodeGenerator CG) {
-  return llvm::wrap(static_cast<clang::CodeGenerator *>(CG)->ReleaseModule());
+  return llvm::wrap(reinterpret_cast<clang::CodeGenerator *>(CG)->ReleaseModule());
 }
 
 CXDecl clang_CodeGenerator_GetDeclForMangledName(CXCodeGenerator CG,
                                                  const char *MangledName) {
-  return const_cast<clang::Decl *>(
-      static_cast<clang::CodeGenerator *>(CG)->GetDeclForMangledName(
-          llvm::StringRef(MangledName)));
+  return reinterpret_cast<CXDecl>(const_cast<clang::Decl *>(
+      reinterpret_cast<clang::CodeGenerator *>(CG)->GetDeclForMangledName(
+          llvm::StringRef(MangledName))));
 }
 
 LLVMModuleRef clang_CodeGenerator_StartModule(CXCodeGenerator CG, LLVMContextRef LLVMCtx,
                                               const char *ModuleName) {
-  return llvm::wrap(static_cast<clang::CodeGenerator *>(CG)->StartModule(
+  return llvm::wrap(reinterpret_cast<clang::CodeGenerator *>(CG)->StartModule(
       llvm::StringRef(ModuleName), *llvm::unwrap(LLVMCtx)));
 }

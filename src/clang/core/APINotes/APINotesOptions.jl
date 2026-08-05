@@ -12,5 +12,3 @@ struct APINotesOptions <: AbstractAPINotesOptions
     ptr::CXAPINotesOptions
 end
 
-Base.unsafe_convert(::Type{CXAPINotesOptions}, x::APINotesOptions) = x.ptr
-Base.cconvert(::Type{CXAPINotesOptions}, x::APINotesOptions) = x

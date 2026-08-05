@@ -679,7 +679,7 @@ typedef enum CXFunctionDecl_TemplatedKind {
   CXFunctionDecl_TK_DependentNonTemplate
 } CXFunctionDecl_TemplatedKind;
 
-typedef void *CXFunctionDecl_DefaultedFunctionInfo;
+typedef struct CXFunctionDecl_DefaultedFunctionInfoImpl *CXFunctionDecl_DefaultedFunctionInfo;
 
 CXFunctionDecl clang_FunctionDecl_Create(CXASTContext C, CXDeclContext DC,
                                          CXSourceLocation_ StartLoc, CXSourceLocation_ NLoc,
@@ -1735,13 +1735,13 @@ CXCapturedDecl clang_CapturedDecl_castFromDeclContext(CXDeclContext DC);
 
 // ImportDecl
 CXImportDecl clang_ImportDecl_CreateImplicit(CXASTContext C, CXDeclContext DC,
-                                             CXSourceLocation_ StartLoc, CXModule Imported,
+                                             CXSourceLocation_ StartLoc, CXModule_ Imported,
                                              CXSourceLocation_ EndLoc);
 
 CXImportDecl clang_ImportDecl_CreateDeserialized(CXASTContext C, unsigned ID,
                                                  unsigned NumLocations);
 
-CXModule clang_ImportDecl_getImportedModule(CXImportDecl ID);
+CXModule_ clang_ImportDecl_getImportedModule(CXImportDecl ID);
 
 // getIdentifierLocs
 unsigned clang_ImportDecl_getNumIdentifierLocs(CXImportDecl ID);

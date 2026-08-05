@@ -12,5 +12,3 @@ struct MigratorOptions <: AbstractMigratorOptions
     ptr::CXMigratorOptions
 end
 
-Base.unsafe_convert(::Type{CXMigratorOptions}, x::MigratorOptions) = x.ptr
-Base.cconvert(::Type{CXMigratorOptions}, x::MigratorOptions) = x

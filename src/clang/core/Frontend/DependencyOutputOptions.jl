@@ -12,5 +12,3 @@ struct DependencyOutputOptions <: AbstractDependencyOutputOptions
     ptr::CXDependencyOutputOptions
 end
 
-Base.unsafe_convert(::Type{CXDependencyOutputOptions}, x::DependencyOutputOptions) = x.ptr
-Base.cconvert(::Type{CXDependencyOutputOptions}, x::DependencyOutputOptions) = x

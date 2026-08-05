@@ -125,14 +125,14 @@ CXSourceLocation_ clang_ElaboratedTypeLoc_getElaboratedKeywordLoc(CXTypeLoc TL);
 // concrete Type class, plus hand-written casts for the TypeLoc-only classes
 // with no concrete TypeNodes.inc counterpart: Qualified, and the
 // payload-bearing intermediates TypeSpec/Function/Array.
-#define TYPE(Class, Base) CXTypeLoc clang_TypeLoc_castTo##Class##TypeLoc(CXTypeLoc TL);
+#define TYPE(Class, Base) CX##Class##TypeLoc clang_TypeLoc_castTo##Class##TypeLoc(CXTypeLoc TL);
 #define ABSTRACT_TYPE(Class, Base)
 #include "clang-ex/AST/TypeNodes.inc"
 
-CXTypeLoc clang_TypeLoc_castToQualifiedTypeLoc(CXTypeLoc TL);
-CXTypeLoc clang_TypeLoc_castToTypeSpecTypeLoc(CXTypeLoc TL);
-CXTypeLoc clang_TypeLoc_castToFunctionTypeLoc(CXTypeLoc TL);
-CXTypeLoc clang_TypeLoc_castToArrayTypeLoc(CXTypeLoc TL);
+CXQualifiedTypeLoc clang_TypeLoc_castToQualifiedTypeLoc(CXTypeLoc TL);
+CXTypeSpecTypeLoc clang_TypeLoc_castToTypeSpecTypeLoc(CXTypeLoc TL);
+CXFunctionTypeLoc clang_TypeLoc_castToFunctionTypeLoc(CXTypeLoc TL);
+CXArrayTypeLoc clang_TypeLoc_castToArrayTypeLoc(CXTypeLoc TL);
 
 LLVM_CLANG_C_EXTERN_C_END
 

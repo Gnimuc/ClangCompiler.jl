@@ -1012,7 +1012,7 @@ both the candidates and `args`, which is the argument list the set was built for
 function shouldDeferDiags(x::AbstractOverloadCandidateSet, sema::AbstractSema,
                           args::AbstractVector{<:AbstractExpr}, op_loc::SourceLocation)
     @check_ptrs x sema
-    buf = CXExpr[a.ptr for a in args]
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_OverloadCandidateSet_shouldDeferDiags(x, sema, buf, length(buf), op_loc)
 end
 
@@ -1250,7 +1250,7 @@ function CompleteCandidates(x::AbstractOverloadCandidateSet, sema::AbstractSema,
             end
         end
     end
-    argv = CXExpr[a.ptr for a in args]
+    argv = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
     # The selection is a subset of the set, so one capacity-bounded call both sizes and fills
     # it; a count-then-fill pair would run the non-viable completion walk twice.
     out = Vector{CXOverloadCandidate}(undef, n)

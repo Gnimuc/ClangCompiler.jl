@@ -16,9 +16,11 @@ public C library — nothing else, C or C++, ever calls it directly. Every other
 file derives from that single fact, and the choices that look unsafe in isolation are
 principled because of it:
 
-- **Handles are opaque `void *`** (all of them, in `CXTypes.h`). The C layer carries no
-  subtyping information at all; Clang's class hierarchy and its multiple-inheritance pivots
-  are reproduced one layer up, in Julia's type system.
+- **Handles are distinct incomplete struct pointers** (`typedef struct CXFooImpl *CXFoo`),
+  so the compiler rejects a handle passed where another class is wanted. What it still
+  cannot see is the *hierarchy*: `CXIfStmt` and `CXStmt` are unrelated to it, so every
+  base/derived crossing is a `reinterpret_cast` the compiler takes on trust. Clang's class
+  hierarchy and its multiple-inheritance pivots are reproduced one layer up, in Julia.
 - **Payload downcasts are `static_cast`, not `dyn_cast`.** The wrapper has already
   established the receiver's dynamic type before it calls, so the cast's precondition holds
   by construction.
@@ -110,9 +112,12 @@ Corollaries:
   a marker that sometimes means "absent" and sometimes means "here it is" cannot be read or
   counted. A `// ClassName` line heading a block of that class's wrappers is the one other
   use, and it names a class rather than a method.
-- ALL opaque handles are `typedef void *CX<ClangClassName>;` in the central
-  `include/clang-ex/CXTypes.h`, grouped under `// <Library>` / `// <ClangHeader>` comments
-  in upstream declaration order. Don't typedef handles in per-class headers (one legacy
+- ALL opaque handles are `typedef struct CX<ClangClassName>Impl *CX<ClangClassName>;` in the
+  central `include/clang-ex/CXTypes.h`, grouped under `// <Library>` / `// <ClangHeader>`
+  comments in upstream declaration order. The five node families (Stmt, Decl, Attr, Type,
+  TypeLoc) are the exception: their handles are stamped from the vendored .inc at the top of
+  that file, so never add one by hand for a class the .inc already names — an LLVM bump
+  should add the handle and its stamped cast together, or they drift. Don't typedef handles in per-class headers (one legacy
   stray exists: `CXFunctionDecl_DefaultedFunctionInfo` in AST/CXDecl.h — search beyond
   CXTypes.h when checking for an existing typedef; `CXTemplateSpecializationType` is
   already duplicated inside CXTypes.h itself). A typedef existing does not mean wrapper
@@ -164,7 +169,8 @@ that file rather than inventing a one-off scheme.
   `const_cast` (the C surface is all non-const `void*`). Reference params → deref a
   pointer arg.
 - Downcasts: `clang_<Base>_castTo<Derived>` = `llvm::dyn_cast_or_null<clang::Derived>(...)`
-  (null-safe, nullptr on wrong kind), placed under a `// <Base> Cast` comment at the end
+  (null-safe, nullptr on wrong kind), **returning `CX<Derived>` rather than the base handle**
+  so the Julia carrier it feeds is checked against it, placed under a `// <Base> Cast` comment at the end
   of that class's section (files hold several classes; casts close each section, not the
   file). Decl ↔ DeclContext cross-casts go through Clang's static
   `Decl::castToDeclContext`/`castFromDeclContext` or `dyn_cast` — never a plain pointer

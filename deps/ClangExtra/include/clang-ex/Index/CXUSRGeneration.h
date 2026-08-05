@@ -62,12 +62,12 @@ CXString clang_index_generateUSRForType(CXQualType T, CXASTContext Ctx);
 
 // Precondition: Mod must be non-NULL — the callee dereferences it unconditionally
 // (Mod->Parent, Mod->Name); it does not null-check.
-CXString clang_index_generateFullUSRForModule(CXModule Mod);
+CXString clang_index_generateFullUSRForModule(CXModule_ Mod);
 
 CXString clang_index_generateFullUSRForTopLevelModuleName(const char *ModName);
 
 // Precondition: Mod must be non-NULL — the callee reads Mod->Name unconditionally.
-CXString clang_index_generateUSRFragmentForModule(CXModule Mod);
+CXString clang_index_generateUSRFragmentForModule(CXModule_ Mod);
 
 CXString clang_index_generateUSRFragmentForModuleName(const char *ModName);
 

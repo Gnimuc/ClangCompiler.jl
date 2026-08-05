@@ -37,7 +37,7 @@ typedef enum CXTypeClass {
 
 // Null-safe downcast for every class in the hierarchy, ABSTRACT bases included.
 // The wrapper name carries the full class spelling (TypeNodes name + "Type").
-#define TYPE(Class, Base) CXType_ clang_Type_castTo##Class##Type(CXType_ T);
+#define TYPE(Class, Base) CX##Class##Type clang_Type_castTo##Class##Type(CXType_ T);
 #include "clang-ex/AST/TypeNodes.inc"
 
 CXTypeClass clang_Type_getTypeClass(CXType_ T);

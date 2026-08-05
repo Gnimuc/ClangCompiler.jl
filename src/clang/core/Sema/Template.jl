@@ -15,12 +15,6 @@ struct MultiLevelTemplateArgumentList <: AbstractMultiLevelTemplateArgumentList
     ptr::CXMultiLevelTemplateArgumentList
 end
 
-function Base.unsafe_convert(::Type{CXMultiLevelTemplateArgumentList}, x::MultiLevelTemplateArgumentList)
-    return x.ptr
-end
-Base.cconvert(::Type{CXMultiLevelTemplateArgumentList}, x::MultiLevelTemplateArgumentList) = x
-
-
 """
     abstract type AbstractLocalInstantiationScope <: Any
 Supertype for `clang::LocalInstantiationScope` carriers.
@@ -39,7 +33,3 @@ struct LocalInstantiationScope <: AbstractLocalInstantiationScope
     ptr::CXLocalInstantiationScope
 end
 
-function Base.unsafe_convert(::Type{CXLocalInstantiationScope}, x::LocalInstantiationScope)
-    return x.ptr
-end
-Base.cconvert(::Type{CXLocalInstantiationScope}, x::LocalInstantiationScope) = x

@@ -2,7 +2,7 @@
 #include "clang/AST/DeclGroup.h"
 
 CXDeclGroupRef clang_DeclGroupRef_fromDecl(CXDecl D) {
-  return clang::DeclGroupRef(static_cast<clang::Decl *>(D)).getAsOpaquePtr();
+  return reinterpret_cast<CXDeclGroupRef>(clang::DeclGroupRef(reinterpret_cast<clang::Decl *>(D)).getAsOpaquePtr());
 }
 
 bool clang_DeclGroupRef_isNull(CXDeclGroupRef DG) {
@@ -18,5 +18,5 @@ bool clang_DeclGroupRef_isDeclGroup(CXDeclGroupRef DG) {
 }
 
 CXDecl clang_DeclGroupRef_getSingleDecl(CXDeclGroupRef DG) {
-  return clang::DeclGroupRef::getFromOpaquePtr(DG).getSingleDecl();
+  return reinterpret_cast<CXDecl>(clang::DeclGroupRef::getFromOpaquePtr(DG).getSingleDecl());
 }

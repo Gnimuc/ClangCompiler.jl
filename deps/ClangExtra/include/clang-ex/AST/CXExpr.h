@@ -2284,7 +2284,7 @@ CXSourceLocation_ clang_AsTypeExpr_getBuiltinLoc(CXAsTypeExpr E);
 CXSourceLocation_ clang_AsTypeExpr_getRParenLoc(CXAsTypeExpr E);
 
 // Expr::EvalStatus / Expr::EvalResult
-// A CXEvalResult is owned: clang::Expr::EvalResult is a by-value struct (an APValue plus
+// A CXEvalResult_ is owned: clang::Expr::EvalResult is a by-value struct (an APValue plus
 // the status of the fold that produced it) with no pointer form, so clang_EvalResult_create
 // heap-boxes one and clang_EvalResult_dispose releases it. clang::Expr::EvalStatus is
 // EvalResult's base class, and the C surface carries no subtyping, so the EvalStatus
@@ -2292,25 +2292,25 @@ CXSourceLocation_ clang_AsTypeExpr_getRParenLoc(CXAsTypeExpr E);
 // A freshly created result holds no value: run one of the evaluators further down first.
 // clang never clears the status flags between evaluations into the same result, so use a
 // fresh result per evaluation whenever the flags matter.
-CXEvalResult clang_EvalResult_create(void);
+CXEvalResult_ clang_EvalResult_create(void);
 
-void clang_EvalResult_dispose(CXEvalResult R);
+void clang_EvalResult_dispose(CXEvalResult_ R);
 
 // helper: the EvalResult::Val member. The APValue is interior to the box (borrowed) and
 // must never be passed to clang_APValue_dispose; it carries the None kind until an
 // evaluator has filled the result.
-CXAPValue clang_EvalResult_getVal(CXEvalResult R);
+CXAPValue clang_EvalResult_getVal(CXEvalResult_ R);
 
-bool clang_EvalStatus_hasSideEffects(CXEvalResult R);
+bool clang_EvalStatus_hasSideEffects(CXEvalResult_ R);
 
 // helper: the EvalStatus::HasUndefinedBehavior member — true when the expression folded but
 // its evaluation is undefined (INT_MAX + 1 folds to INT_MIN, 1.0 / 0.0 folds to Inf).
-bool clang_EvalStatus_hasUndefinedBehavior(CXEvalResult R);
+bool clang_EvalStatus_hasUndefinedBehavior(CXEvalResult_ R);
 
 // PARTIAL: clang::Expr::EvalResult::isGlobalLValue asserts that the folded value is an
 // lvalue, so the Julia wrapper restates that precondition through clang_APValue_isLValue on
 // clang_EvalResult_getVal (Invariant 3).
-bool clang_EvalResult_isGlobalLValue(CXEvalResult R);
+bool clang_EvalResult_isGlobalLValue(CXEvalResult_ R);
 
 // Expr
 // helper: the EvalResult-filling form of clang::Expr::EvaluateAsRValue, which keeps the
@@ -2318,13 +2318,13 @@ bool clang_EvalResult_isGlobalLValue(CXEvalResult R);
 // clang_Expr_EvaluateAsRValue discards. Result holds whatever the failed evaluation left
 // behind when this returns false.
 bool clang_Expr_EvaluateAsRValueIntoResult(CXExpr E, CXASTContext Ctx,
-                                           bool InConstantContext, CXEvalResult Result);
+                                           bool InConstantContext, CXEvalResult_ Result);
 
 // helper: the EvalResult-filling form of clang::Expr::EvaluateAsLValue. This is the only
 // evaluator that leaves an lvalue in Result, so it is the one that makes
 // clang_EvalResult_isGlobalLValue callable.
 bool clang_Expr_EvaluateAsLValueIntoResult(CXExpr E, CXASTContext Ctx,
-                                           bool InConstantContext, CXEvalResult Result);
+                                           bool InConstantContext, CXEvalResult_ Result);
 
 // EvaluateCharRangeAsString folds SizeExpression to a count and PtrExpression to a
 // character pointer, then reads that many code units. The returned CXString is the decoded
@@ -2333,7 +2333,7 @@ bool clang_Expr_EvaluateAsLValueIntoResult(CXExpr E, CXASTContext Ctx,
 // related to either operand.
 CXString clang_Expr_EvaluateCharRangeAsString(CXExpr E, CXExpr SizeExpression,
                                               CXExpr PtrExpression, CXASTContext Ctx,
-                                              CXEvalResult Status, bool *Succeeded);
+                                              CXEvalResult_ Status, bool *Succeeded);
 
 // DeclRefExpr
 // CreateEmpty allocates the trailing storage the four arguments describe but writes only

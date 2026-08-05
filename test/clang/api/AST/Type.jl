@@ -59,8 +59,8 @@ end
     enum E { A }; E ev; struct Rec { int m; }; Rec rc;
     """)
     f = CC.DeclFinder(I)
-    tp(name) = (f(I, name); CC.getTypePtr(CC.getType(CC.VarDecl(CC.get_decl(f).ptr))))
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(CC.get_decl(f).ptr)))
+    tp(name) = (f(I, name); CC.getTypePtr(CC.getType(CC.downcast(CC.VarDecl, CC.get_decl(f).ptr))))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, CC.get_decl(f).ptr)))
 
     # QualType qualifiers
     @test CC.isConstQualified(qt("ci"))
@@ -84,7 +84,7 @@ end
 
     # function type return
     f(I, "fn5")
-    fty = CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(CC.get_decl(f).ptr)))))
+    fty = CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.FunctionDecl, CC.get_decl(f).ptr)))))
     @test fty isa CC.FunctionProtoType
     @test CC.resolve(CC.getTypePtr(CC.getReturnType(fty))) isa CC.BuiltinType
 
@@ -247,7 +247,7 @@ end
     CC.parse(I, "template<typename T, int N> struct STempl { T x; }; STempl<int,3> stempl_obj;")
     f = DeclFinder(I)
     @test f(I, "stempl_obj")
-    vd = CC.VarDecl(get_decl(f).ptr)
+    vd = CC.downcast(CC.VarDecl, get_decl(f).ptr)
     ety = CC.resolve(CC.getTypePtr(CC.getType(vd)))
     tst = CC.resolve(CC.getTypePtr(CC.getNamedType(ety)))
     @test tst isa CC.TemplateSpecializationType
@@ -262,7 +262,7 @@ end
     CC.parse(I, "int fpt_probe(double a, char b) noexcept;")
     f = DeclFinder(I)
     @test f(I, "fpt_probe")
-    fd = CC.FunctionDecl(get_decl(f).ptr)
+    fd = CC.downcast(CC.FunctionDecl, get_decl(f).ptr)
     ty = CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(fd))))   # Type_ -> FunctionType -> FunctionProtoType
     @test ty isa CC.FunctionProtoType
     @test CC.getNumParams(ty) == 2
@@ -309,7 +309,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
 
     f = DeclFinder(I)
     unwrap(t) = t isa CC.ElaboratedType ? CC.resolve(CC.getTypePtr(CC.getNamedType(t))) : t
-    vdecl(name) = (f(I, name); CC.VarDecl(get_decl(f).ptr))
+    vdecl(name) = (f(I, name); CC.downcast(CC.VarDecl, get_decl(f).ptr))
     vqt(name) = CC.getType(vdecl(name))
     patt_of(name) = (f(I, name); CC.getTemplatedDecl(CC.resolve(get_decl(f))))
 
@@ -494,7 +494,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     CC.parse(I2, "int tapi_thr(int) throw(int);")
     f2 = DeclFinder(I2)
     @test f2(I2, "tapi_thr")
-    ft2 = CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f2).ptr))))
+    ft2 = CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.FunctionDecl, get_decl(f2).ptr))))
     ft2 isa CC.FunctionProtoType || (ft2 = CC.resolve(ft2))
     @test ft2 isa CC.FunctionProtoType
     @test CC.getNumExceptions(ft2) == 1
@@ -575,7 +575,9 @@ end
     tpof(name) = CC.getTypePtr(qtof(name))
     rty(name) = CC.resolve(tpof(name))
     unwrap(t) = t isa CC.ElaboratedType ? CC.resolve(CC.getTypePtr(CC.getNamedType(t))) : t
-    fpt_of(name) = (f(I, name); CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f).ptr))))))
+    fpt_of(name) = (f(I, name);
+                    CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(
+                        CC.downcast(CC.FunctionDecl, get_decl(f).ptr))))))
 
     # ---------------- QualType ----------------
     cq = qtof("ci")
@@ -749,7 +751,7 @@ end
 
     # ---------------- VariableArrayType (VLA in a function body) ----------------
     f(I, "vlafn")
-    vlabody = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    vlabody = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     local vaty = nothing
     for n in CC.subtree(vlabody)
         if n isa CC.DeclStmt
@@ -807,7 +809,7 @@ end
 
     # ---------------- DecayedType / AdjustedType (decayed function parameter) ----------------
     f(I, "g")
-    gparm = CC.getParamDecl(CC.FunctionDecl(get_decl(f).ptr), 0)
+    gparm = CC.getParamDecl(CC.downcast(CC.FunctionDecl, get_decl(f).ptr), 0)
     dty = CC.resolve(CC.getTypePtr(CC.getType(gparm)))
     @test dty isa CC.DecayedType
     @test !CC.is_null_handle(CC.getDecayedType(dty))
@@ -871,7 +873,7 @@ end
     @test !CC.is_null_handle(CC.desugar(rrt))
     @test CC.hasConstFields(rrt)
     @test !(CC.isSugared(rrt))
-    @test CC.getDecl(CC.TagType(rrt.ptr)) isa CC.TagDecl
+    @test CC.getDecl(CC.upcast(CC.TagType, rrt.ptr)) isa CC.TagDecl
 
     # ---------------- EnumType ----------------
     ety = unwrap(rty("ev"))
@@ -969,7 +971,7 @@ end
     int &qt_ref = qt_plain;
     """)
     f = DeclFinder(I)
-    qtof(name) = (@assert f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qtof(name) = (@assert f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
 
     plain = qtof("qt_plain")
     cqual = qtof("qt_const")
@@ -1143,7 +1145,7 @@ end
 
     # VariableArrayType::getBracketsRange (VLA declared in a function body)
     f(I, "tsub_vla")
-    vlabody = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr)))
+    vlabody = CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))
     local vaty = nothing
     for n in CC.subtree(vlabody)
         if n isa CC.DeclStmt
@@ -1174,7 +1176,7 @@ end
     local pet = nothing
     for d in CC.decls(hdc)
         d isa CC.CXXMethodDecl || continue
-        fd = CC.FunctionDecl(d.ptr)
+        fd = CC.downcast(CC.FunctionDecl, d.ptr)
         CC.getNumParams(fd) > 0 || continue
         t = CC.resolve(CC.getTypePtr(CC.getType(CC.getParamDecl(fd, 0))))
         t isa CC.PackExpansionType && (pet = t)
@@ -1205,7 +1207,7 @@ end
     QtlPoly &qtl_rr_poly = *qtl_pp_poly;
     """)
     f = CC.DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(CC.get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, CC.get_decl(f).ptr)))
 
     # Qualifiers has no carrier struct: it crosses as its opaque unsigned
     # encoding, so every wrapper below dispatches on Integer.
@@ -1290,7 +1292,7 @@ end
     """)
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
     tp(name) = CC.getTypePtr(qt(name))
 
     # Qualifiers: the fast/non-fast split, round-tripped through the opaque encoding.
@@ -1496,7 +1498,7 @@ end
     # VariableArrayType::getLBracketLoc / getRBracketLoc (VLA in a function body)
     f(I, "td_vla")
     local vaty = nothing
-    for n in CC.subtree(CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f).ptr))))
+    for n in CC.subtree(CC.resolve(CC.getBody(CC.downcast(CC.FunctionDecl, get_decl(f).ptr))))
         if n isa CC.DeclStmt
             for d in CC.getDecls(n)
                 rd = CC.resolve(d)
@@ -1532,7 +1534,7 @@ end
     local pet = nothing
     for d in CC.decls(hdc)
         d isa CC.CXXMethodDecl || continue
-        fd = CC.FunctionDecl(d.ptr)
+        fd = CC.downcast(CC.FunctionDecl, d.ptr)
         CC.getNumParams(fd) > 0 || continue
         t = CC.resolve(CC.getTypePtr(CC.getType(CC.getParamDecl(fd, 0))))
         t isa CC.PackExpansionType && (pet = t)
@@ -1564,8 +1566,8 @@ end
     """)
     f = DeclFinder(I)
     ctx = CC.get_ast_context(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
-    fty(name) = (f(I, name); CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f).ptr)))))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
+    fty(name) = (f(I, name); CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))))
 
     # Type -- the sizeless-builtin / WebAssembly / OpenCL probes, all false for plain `int`
     ity = CC.getTypePtr(qt("te_i"))
@@ -1613,7 +1615,7 @@ end
     cts = Set{Any}()
     for d in CC.decls(dc)
         d isa CC.CXXMethodDecl || continue
-        t = CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(d.ptr))))
+        t = CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.FunctionDecl, d.ptr))))
         t isa CC.FunctionProtoType || continue
         push!(rqs, CC.getRefQualifier(t))
         push!(cts, CC.canThrow(t))
@@ -1646,7 +1648,7 @@ end
     const int tf_ci = 0;
     """)
     f = DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
 
     # Qualifiers -- hasOnly* separates an exact set from a superset
     q0 = CC.fromCVRMask(0)
@@ -1727,7 +1729,7 @@ end
     int *tg_p;
     """)
     f = DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
 
     # QualType -- the local-qualifier removers return a new value and leave the receiver
     # alone, because a QualType crosses by value.
@@ -1801,7 +1803,7 @@ end
     int qmt_i = 0;
     """)
     f = DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
     ity = CC.getTypePtr(qt("qmt_i"))
 
     # Qualifiers has no carrier struct: it crosses as its opaque unsigned encoding, so every
@@ -1927,7 +1929,7 @@ end
     TiWrap<int> ti_w;
     """)
     f = DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
 
     ity = CC.getTypePtr(qt("ti_i"))
     pty = CC.getTypePtr(qt("ti_p"))
@@ -2062,7 +2064,7 @@ end
     float tj_f = 0.0f;
     """)
     f = DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
 
     ity = CC.getTypePtr(qt("tj_i"))
     pty = CC.getTypePtr(qt("tj_p"))
@@ -2141,7 +2143,7 @@ end
     int tk_fn(double a, char b) noexcept;
     """)
     f = DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
 
     # Type::getNullability is a sugar-only query: the annotated pointers answer, the bare
     # pointer and the bare int carry no nullability node and come back `nothing`.
@@ -2179,7 +2181,7 @@ end
     # An ordinary C++ prototype carries no ExtParameterInfo, so every parameter reads back
     # the zero encoding and the Ordinary ABI.
     @test f(I, "tk_fn")
-    fpt = CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f).ptr)))))
+    fpt = CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))))
     @test fpt isa CC.FunctionProtoType
     @test CC.hasExtParameterInfos(fpt) == false
     @test CC.getNumParams(fpt) == 2
@@ -2234,11 +2236,11 @@ end
     f = DeclFinder(I)
     function vqt(name)
         @assert f(I, name) "lookup failed: $name"
-        return CC.getType(CC.VarDecl(get_decl(f).ptr))
+        return CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr))
     end
     function proto(name)
         @assert f(I, name) "lookup failed: $name"
-        return CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f).ptr)))))
+        return CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.downcast(CC.FunctionDecl, get_decl(f).ptr)))))
     end
 
     # Qualifiers printing runs under the context's own policy; the flag only ever adds a
@@ -2281,7 +2283,7 @@ end
     @test ((d & 0x10) != 0) == CC.containsErrors(ity)
 
     @assert f(I, "TylDep")
-    patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
+    patt = CC.getTemplatedDecl(CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr))
     dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt)))))
     @test dsaty isa CC.DependentSizedArrayType
     dd = CC.getDependence(dsaty)
@@ -2356,7 +2358,7 @@ end
     int tym_i = 0;
     """)
     f = DeclFinder(I)
-    qt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
 
     # A C++ translation unit never produces an ObjC GC attribute or an ARC lifetime, so both
     # families are exercised on hand-built encodings: the qualifier set is the opaque
@@ -2461,7 +2463,7 @@ end
     const int tn_cq = 5;
     """)
     f = DeclFinder(I)
-    qtof(name) = (@assert f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    qtof(name) = (@assert f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
     tyof(name) = CC.resolve(CC.getTypePtr(qtof(name)))
 
     # `__typeof__(expr)` builds a TypeOfExprType; the sugar it provides is the operand's
@@ -2537,7 +2539,7 @@ end
     # spelling needs -fblocks, which the default interpreter args do not pass. The builder
     # asserts a function-type pointee, so the declared function's type is what it is handed.
     @assert f(I, "tyo_fn")
-    fn_qt = CC.getType(CC.FunctionDecl(get_decl(f).ptr))
+    fn_qt = CC.getType(CC.downcast(CC.FunctionDecl, get_decl(f).ptr))
     bpt = CC.resolve(CC.getTypePtr(CC.getBlockPointerType(ctx, fn_qt)))
     @test bpt isa CC.BlockPointerType
     @test !CC.is_null_handle(CC.getPointeeType(bpt))
@@ -2559,7 +2561,7 @@ end
     # The dependent nodes each need a value-dependent Expr; the template pattern's
     # `int tyo_arr[TyoN]` supplies one and the pattern's location doubles as the attr loc.
     @assert f(I, "TyoDepMat")
-    patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
+    patt = CC.getTemplatedDecl(CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr))
     dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt)))))
     @test dsaty isa CC.DependentSizedArrayType
     dep_e = CC.getSizeExpr(dsaty)
@@ -2648,7 +2650,7 @@ end
     # The dependent nodes need a value-dependent Expr; the template pattern's
     # `int wlpt_arr[WlptN]` supplies one.
     @assert f(I, "WlptDep")
-    patt = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f).ptr))
+    patt = CC.getTemplatedDecl(CC.downcast(CC.ClassTemplateDecl, get_decl(f).ptr))
     dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt)))))
     @test dsaty isa CC.DependentSizedArrayType
     dep_e = CC.getSizeExpr(dsaty)
@@ -2660,7 +2662,9 @@ end
     @test CC.isSigned(dbi) === true
     @test CC.isUnsigned(dbi) === false
     @test CC.isSugared(dbi) === false
-    @test CC.getTypePtr(CC.desugar(dbi)).ptr === dbi.ptr
+    # `desugar` hands back a `Type_` and `resolve` handed back the subclass; carrier
+    # equality is the `clang::Type *` they share, so the two compare directly
+    @test CC.getTypePtr(CC.desugar(dbi)) == dbi
 
     dispose(I)
 end
@@ -2676,7 +2680,7 @@ end
     TrqRec trq_r;
     """)
     f = DeclFinder(I)
-    vqt(name) = (f(I, name); CC.getType(CC.VarDecl(get_decl(f).ptr)))
+    vqt(name) = (f(I, name); CC.getType(CC.downcast(CC.VarDecl, get_decl(f).ptr)))
 
     # SplitQualType::getSingleStepDesugaredType peels one level off the pair `split` returns
     # and carries the qualifiers collected so far along with it. TrqCInt hides its const inside
@@ -2740,25 +2744,28 @@ end
     # an OpenCL translation unit, while getReadPipeType/getWritePipeType build the node in
     # any language mode. The element type read back is the one the builder was handed, and
     # the node is a canonical leaf -- no sugar, and desugaring hands back the node itself.
+    #
+    # `desugar` hands back a `Type_` while `resolve` hands back the subclass; carrier equality
+    # is the `clang::Type *` the two share, so they compare directly.
     rp = CC.resolve(CC.getTypePtr(CC.getReadPipeType(ctx, int_qt)))
     @test rp isa CC.PipeType
     @test CC.getTypePtr(CC.getElementType(rp)).ptr === CC.getTypePtr(int_qt).ptr
     @test CC.isReadOnly(rp) === true
     @test CC.isSugared(rp) === false
-    @test CC.getTypePtr(CC.desugar(rp)).ptr === rp.ptr
+    @test CC.getTypePtr(CC.desugar(rp)) == rp
 
     # The read/write flag is part of the folding profile, so the two pipes over the same
     # element type are distinct nodes.
     wp = CC.resolve(CC.getTypePtr(CC.getWritePipeType(ctx, int_qt)))
     @test wp isa CC.PipeType
     @test CC.isReadOnly(wp) === false
-    @test wp.ptr !== rp.ptr
+    @test wp != rp
 
     # ExtVectorType is a canonical leaf too.
     evt = CC.resolve(CC.getTypePtr(CC.getExtVectorType(ctx, float_qt, 4)))
     @test evt isa CC.ExtVectorType
     @test CC.isSugared(evt) === false
-    @test CC.getTypePtr(CC.desugar(evt)).ptr === evt.ptr
+    @test CC.getTypePtr(CC.desugar(evt)) == evt
 
     # isObjCIdOrObjectKindOfType matches `id` and __kindof object types, neither of which a
     # C++ translation unit can spell; what is worth asserting here is that the bound
@@ -2766,7 +2773,7 @@ end
     matched, bound = CC.isObjCIdOrObjectKindOfType(ity, ctx)
     @test matched === false
     @test bound isa CC.ObjCObjectType
-    @test bound.ptr === C_NULL
+    @test CC.is_null_handle(bound)
 
     dispose(I)
 end

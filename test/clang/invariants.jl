@@ -84,11 +84,11 @@ end
             @test !CC.is_null_handle(lhs)
             @test !CC.is_null_handle(rhs)
             # the two operands of a binary operator are different nodes
-            @test lhs.ptr != rhs.ptr
+            @test lhs != rhs
             # and each is a child of the operator, which pins them to this node
-            kids = [k.ptr for k in CC.children(bo)]
-            @test lhs.ptr in kids
-            @test rhs.ptr in kids
+            kids = collect(CC.children(bo))
+            @test lhs in kids
+            @test rhs in kids
         end
     end
 
@@ -132,12 +132,14 @@ end
             d isa CC.AbstractFunctionDecl || continue
             body = CC.getBody(d)
             CC.is_null_handle(body) && continue
+            # the walk hands back many statement classes; carrier equality is the `Stmt *`
+            # clang compares, so a set of them holds nodes rather than handles
             walked = CC.subtree(body)
-            reached = Set{Ptr{Cvoid}}([body.ptr])
+            reached = Set{CC.AbstractStmt}([body])
             for n in walked, k in CC.children(n)
-                push!(reached, k.ptr)
+                push!(reached, k)
             end
-            @test all(n -> n.ptr in reached, walked)
+            @test all(in(reached), walked)
         end
     end
 
