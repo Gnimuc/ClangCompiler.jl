@@ -1,4 +1,5 @@
 [deps]
+Clang_jll = "0ee61d77-7f21-5576-8119-9fcc46b10100"
 LLVM = "929cbde3-209d-540e-8aea-75f648917ca0"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"

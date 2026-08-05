@@ -442,10 +442,10 @@ Supertype for `BinaryOperator`s.
 abstract type AbstractBinaryOperator <: AbstractExpr end
 
 """
-    abstract type AbstractConditionalOperator <: AbstractExpr
+    abstract type AbstractAbstractConditionalOperator <: AbstractExpr
 Supertype for `AbstractConditionalOperator`s.
 """
-abstract type AbstractConditionalOperator <: AbstractExpr end
+abstract type AbstractAbstractConditionalOperator <: AbstractExpr end
 
 # ExprCXX
 """
@@ -772,3 +772,146 @@ include("Interpreter/AbstractInterpreter.jl")
 # per-carrier leaf abstracts (every hand-written Foo gets an AbstractFoo); last,
 # since these subtype the backbone/subsystem abstracts above.
 include("AbstractExtras.jl")
+
+
+"""
+    abstract type AbstractTopLevelStmtDecl <: AbstractDecl
+Supertype for `TopLevelStmtDecl`s.
+"""
+abstract type AbstractTopLevelStmtDecl <: AbstractDecl end
+
+
+"""
+    abstract type AbstractVectorType <: AbstractType
+Supertype for `VectorType`s.
+"""
+abstract type AbstractVectorType <: AbstractType end
+
+"""
+    abstract type AbstractAttributedType <: AbstractType
+Supertype for `AttributedType`s.
+"""
+abstract type AbstractAttributedType <: AbstractType end
+
+"""
+    abstract type AbstractPackExpansionType <: AbstractType
+Supertype for `PackExpansionType`s.
+"""
+abstract type AbstractPackExpansionType <: AbstractType end
+
+"""
+    abstract type AbstractAutoType <: AbstractDeducedType
+Supertype for `AutoType`s.
+"""
+abstract type AbstractAutoType <: AbstractDeducedType end
+
+
+"""
+    abstract type AbstractHLSLBufferDecl <: AbstractNamedDecl
+Supertype for `HLSLBufferDecl`s.
+"""
+abstract type AbstractHLSLBufferDecl <: AbstractNamedDecl end
+
+
+"""
+    abstract type AbstractUsingEnumDecl <: AbstractBaseUsingDecl
+Supertype for `UsingEnumDecl`s.
+"""
+abstract type AbstractUsingEnumDecl <: AbstractBaseUsingDecl end
+
+
+"""
+    abstract type AbstractTypeOfExprType <: AbstractType
+Supertype for `TypeOfExprType`s.
+"""
+abstract type AbstractTypeOfExprType <: AbstractType end
+
+"""
+    abstract type AbstractTypeOfType <: AbstractType
+Supertype for `TypeOfType`s.
+"""
+abstract type AbstractTypeOfType <: AbstractType end
+
+"""
+    abstract type AbstractBitIntType <: AbstractType
+Supertype for `BitIntType`s.
+"""
+abstract type AbstractBitIntType <: AbstractType end
+
+
+"""
+    abstract type AbstractUnresolvedUsingIfExistsDecl <: AbstractNamedDecl
+Supertype for `UnresolvedUsingIfExistsDecl`s.
+"""
+abstract type AbstractUnresolvedUsingIfExistsDecl <: AbstractNamedDecl end
+
+
+"""
+    abstract type AbstractBlockPointerType <: AbstractType
+Supertype for `BlockPointerType`s.
+"""
+abstract type AbstractBlockPointerType <: AbstractType end
+
+"""
+    abstract type AbstractDependentVectorType <: AbstractType
+Supertype for `DependentVectorType`s.
+"""
+abstract type AbstractDependentVectorType <: AbstractType end
+
+"""
+    abstract type AbstractMatrixType <: AbstractType
+Supertype for `MatrixType`s.
+"""
+abstract type AbstractMatrixType <: AbstractType end
+
+"""
+    abstract type AbstractConstantMatrixType <: AbstractMatrixType
+Supertype for `ConstantMatrixType`s.
+"""
+abstract type AbstractConstantMatrixType <: AbstractMatrixType end
+
+"""
+    abstract type AbstractDependentSizedMatrixType <: AbstractMatrixType
+Supertype for `DependentSizedMatrixType`s.
+"""
+abstract type AbstractDependentSizedMatrixType <: AbstractMatrixType end
+
+"""
+    abstract type AbstractDependentBitIntType <: AbstractType
+Supertype for `DependentBitIntType`s.
+"""
+abstract type AbstractDependentBitIntType <: AbstractType end
+
+
+"""
+    abstract type AbstractExtVectorType <: AbstractVectorType
+Supertype for `ExtVectorType`s.
+"""
+abstract type AbstractExtVectorType <: AbstractVectorType end
+
+
+"""
+    abstract type AbstractUnnamedGlobalConstantDecl <: AbstractValueDecl
+Supertype for `UnnamedGlobalConstantDecl`s.
+"""
+abstract type AbstractUnnamedGlobalConstantDecl <: AbstractValueDecl end
+
+
+"""
+    abstract type AbstractObjCObjectType <: AbstractType
+Supertype for `ObjCObjectType`s.
+"""
+abstract type AbstractObjCObjectType <: AbstractType end
+
+"""
+    abstract type AbstractObjCObjectPointerType <: AbstractType
+Supertype for `ObjCObjectPointerType`s.
+"""
+abstract type AbstractObjCObjectPointerType <: AbstractType end
+
+
+"""
+    abstract type AbstractPipeType <: AbstractType
+Supertype for `PipeType`s.
+"""
+abstract type AbstractPipeType <: AbstractType end

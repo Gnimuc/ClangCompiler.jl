@@ -67,3 +67,41 @@ CXFileEntry clang_FileEntryRef_getFileEntry(CXFileEntryRef FER) {
       static_cast<clang::FileEntryRef *>(FER)->getFileEntry());
   return &FE;
 }
+
+CXDirectoryEntryRef clang_FileManager_getOptionalDirectoryRef(CXFileManager FM,
+                                                              const char *DirName,
+                                                              bool CacheFailure) {
+  auto D = static_cast<clang::FileManager *>(FM)->getOptionalDirectoryRef(
+      llvm::StringRef(DirName), CacheFailure);
+  if (!D)
+    return nullptr;
+  return std::make_unique<clang::DirectoryEntryRef>(*D).release();
+}
+
+void clang_DirectoryEntryRef_dispose(CXDirectoryEntryRef DER) {
+  delete static_cast<clang::DirectoryEntryRef *>(DER);
+}
+
+const char *clang_FileEntryRef_getName(CXFileEntryRef FER) {
+  return static_cast<clang::FileEntryRef *>(FER)->getName().data();
+}
+
+CXDirectoryEntryRef clang_FileEntryRef_getDir(CXFileEntryRef FER) {
+  return std::make_unique<clang::DirectoryEntryRef>(
+             static_cast<clang::FileEntryRef *>(FER)->getDir())
+      .release();
+}
+
+bool clang_FileEntryRef_isSameRef(CXFileEntryRef FER, CXFileEntryRef RHS) {
+  return static_cast<clang::FileEntryRef *>(FER)->isSameRef(
+      *static_cast<clang::FileEntryRef *>(RHS));
+}
+
+size_t clang_FileManager_getNumUniqueRealFiles(CXFileManager FM) {
+  return static_cast<clang::FileManager *>(FM)->getNumUniqueRealFiles();
+}
+
+
+int64_t clang_FileEntry_getSize(CXFileEntry FE) {
+  return static_cast<clang::FileEntry *>(FE)->getSize();
+}

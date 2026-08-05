@@ -2,6 +2,17 @@
 #include "clang/Frontend/FrontendOptions.h"
 #include "llvm/Support/Errc.h"
 
+unsigned clang_FrontendOptions_getModulesEmbedFilesNum(CXFrontendOptions FEO) {
+  return static_cast<clang::FrontendOptions *>(FEO)->ModulesEmbedFiles.size();
+}
+
+void clang_FrontendOptions_getModulesEmbedFiles(CXFrontendOptions FEO, const char **Buf,
+                                                unsigned N) {
+  const auto &Files = static_cast<clang::FrontendOptions *>(FEO)->ModulesEmbedFiles;
+  for (unsigned I = 0; I < N && I < Files.size(); ++I)
+    Buf[I] = Files[I].c_str();
+}
+
 void clang_FrontendOptions_PrintStats(CXFrontendOptions FEO) {
   auto Opts = static_cast<clang::FrontendOptions *>(FEO);
   llvm::errs() << "\n*** FrontendOptions Stats:\n";

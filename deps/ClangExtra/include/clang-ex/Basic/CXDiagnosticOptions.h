@@ -7,6 +7,12 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
+// clang/Basic/DiagnosticOptions.h: enum OverloadsShown : unsigned
+typedef enum CXOverloadsShown : unsigned {
+  CXOverloadsShown_Ovl_All = 0,
+  CXOverloadsShown_Ovl_Best
+} CXOverloadsShown;
+
 CXDiagnosticOptions clang_DiagnosticOptions_create(void);
 
 void clang_DiagnosticOptions_dispose(CXDiagnosticOptions DO);

@@ -1,8 +1,15 @@
 #include "clang-ex/Frontend/CXCompilerInstance.h"
+#include "clang/Frontend/FrontendOptions.h"
+#include "utils.h"
+#include "clang/Basic/FileSystemOptions.h"
+#include "clang/Frontend/CompilerInvocation.h"
+#include "clang/Frontend/DependencyOutputOptions.h"
+#include "clang/Frontend/PreprocessorOutputOptions.h"
 #include "clang/Basic/TargetInfo.h"
 #include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Preprocessor.h"
+#include "llvm/Support/Timer.h"
 #include "llvm/Support/VirtualFileSystem.h"
 
 CXCompilerInstance clang_CompilerInstance_create(void) {
@@ -250,7 +257,144 @@ CXLangOptions clang_CompilerInstance_getLangOpts(CXCompilerInstance CI) {
 }
 
 // Action
+
+// Forwarding options — all of these dereference CompilerInstance::Invocation
+// unchecked; see the header for the precondition.
+CXAnalyzerOptions clang_CompilerInstance_getAnalyzerOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getAnalyzerOpts();
+  return &Opts;
+}
+
+CXDependencyOutputOptions
+clang_CompilerInstance_getDependencyOutputOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getDependencyOutputOpts();
+  return &Opts;
+}
+
+CXFileSystemOptions clang_CompilerInstance_getFileSystemOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getFileSystemOpts();
+  return &Opts;
+}
+
+CXPreprocessorOutputOptions
+clang_CompilerInstance_getPreprocessorOutputOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getPreprocessorOutputOpts();
+  return &Opts;
+}
+
+CXAPINotesOptions clang_CompilerInstance_getAPINotesOpts(CXCompilerInstance CI) {
+  auto &Opts = static_cast<clang::CompilerInstance *>(CI)->getAPINotesOpts();
+  return &Opts;
+}
+
+// Module loading
+bool clang_CompilerInstance_shouldBuildGlobalModuleIndex(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->shouldBuildGlobalModuleIndex();
+}
+
+void clang_CompilerInstance_setBuildGlobalModuleIndex(CXCompilerInstance CI, bool Build) {
+  static_cast<clang::CompilerInstance *>(CI)->setBuildGlobalModuleIndex(Build);
+}
+
+bool clang_CompilerInstance_hadModuleLoaderFatalFailure(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->hadModuleLoaderFatalFailure();
+}
+
+CXString clang_CompilerInstance_getSpecificModuleCachePath(CXCompilerInstance CI) {
+  return extra::makeCXString(
+      static_cast<clang::CompilerInstance *>(CI)->getSpecificModuleCachePath());
+}
+
+// AuxTarget
+bool clang_CompilerInstance_createTarget(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->createTarget();
+}
+
+CXTargetInfo_ clang_CompilerInstance_getAuxTarget(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->getAuxTarget();
+}
+
+void clang_CompilerInstance_setAuxTarget(CXCompilerInstance CI, CXTargetInfo_ Info) {
+  static_cast<clang::CompilerInstance *>(CI)->setAuxTarget(
+      static_cast<clang::TargetInfo *>(Info));
+}
+
+// Code completion
+bool clang_CompilerInstance_hasCodeCompletionConsumer(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->hasCodeCompletionConsumer();
+}
+
+// Output files
+void clang_CompilerInstance_clearOutputFiles(CXCompilerInstance CI, bool EraseFiles) {
+  static_cast<clang::CompilerInstance *>(CI)->clearOutputFiles(EraseFiles);
+}
+
+// Plugins
+void clang_CompilerInstance_LoadRequestedPlugins(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->LoadRequestedPlugins();
+}
+
+// Frontend timer
+bool clang_CompilerInstance_hasFrontendTimer(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->hasFrontendTimer();
+}
+
+CXString clang_CompilerInstance_getFrontendTimerName(CXCompilerInstance CI) {
+  return extra::makeCXString(
+      static_cast<clang::CompilerInstance *>(CI)->getFrontendTimer().getName());
+}
+
+bool clang_CompilerInstance_isFrontendTimerRunning(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->getFrontendTimer().isRunning();
+}
+
+void clang_CompilerInstance_createFrontendTimer(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->createFrontendTimer();
+}
+
+// Ownership transfer
+void clang_CompilerInstance_resetAndLeakFileManager(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakFileManager();
+}
+
+void clang_CompilerInstance_resetAndLeakSourceManager(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakSourceManager();
+}
+
+void clang_CompilerInstance_resetAndLeakPreprocessor(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakPreprocessor();
+}
+
+void clang_CompilerInstance_resetAndLeakASTContext(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakASTContext();
+}
+
+void clang_CompilerInstance_resetAndLeakSema(CXCompilerInstance CI) {
+  static_cast<clang::CompilerInstance *>(CI)->resetAndLeakSema();
+}
+
+// Action
 bool clang_CompilerInstance_ExecuteAction(CXCompilerInstance CI, CXFrontendAction Act) {
   return static_cast<clang::CompilerInstance *>(CI)->ExecuteAction(
       *static_cast<clang::FrontendAction *>(Act));
+}
+
+bool clang_CompilerInstance_buildingModule(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->buildingModule();
+}
+
+void clang_CompilerInstance_setBuildingModule(CXCompilerInstance CI, bool Flag) {
+  static_cast<clang::CompilerInstance *>(CI)->setBuildingModule(Flag);
+}
+
+CXASTConsumer clang_CompilerInstance_takeASTConsumer(CXCompilerInstance CI) {
+  return static_cast<clang::CompilerInstance *>(CI)->takeASTConsumer().release();
+}
+
+bool clang_CompilerInstance_InitializeSourceManagerFromFile(CXCompilerInstance CI,
+                                                            const char *Path,
+                                                            bool IsSystem) {
+  clang::FrontendInputFile Input(
+      Path, clang::InputKind(clang::Language::Unknown, clang::InputKind::Source), IsSystem);
+  return static_cast<clang::CompilerInstance *>(CI)->InitializeSourceManager(Input);
 }

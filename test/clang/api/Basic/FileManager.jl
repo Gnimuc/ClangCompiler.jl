@@ -59,3 +59,39 @@ end
     dispose(fer)
     dispose(ci)    # the instance owns the file manager it created
 end
+
+@testset "FileManager | reference identity, virtual files and sizes" begin
+    fm = CC.FileManager()
+    dir = mktempdir()
+    path = joinpath(dir, "fmref_probe.cpp")
+    write(path, "int fmref = 1;\n")
+
+    r1 = CC.getOptionalFileRef(fm, path)
+    @test r1 isa CC.FileEntryRef
+    # the name round-trips the path the lookup was given
+    @test CC.getName(r1) == path
+    # the file's size is the bytes actually written
+    @test CC.getSize(CC.getFileEntry(r1)) == filesize(path)
+
+    # the directory reached through the reference is the one holding it
+    d = CC.getDir(r1)
+    @test d isa CC.DirectoryEntryRef
+    CC.dispose(d)
+
+    # a second lookup of the same path is the same reference and the same entry
+    r2 = CC.getOptionalFileRef(fm, path)
+    @test CC.isSameRef(r1, r2)
+    @test CC.getName(CC.getFileEntry(r1)) == CC.getName(CC.getFileEntry(r2))
+
+    # an absent path is the documented nothing, not a NULL carrier
+    @test CC.getOptionalFileRef(fm, joinpath(dir, "no_such_file.cpp")) === nothing
+
+    # looking the same real file up twice does not open a second one
+    n = CC.getNumUniqueRealFiles(fm)
+    @test n >= 1
+    @test CC.getNumUniqueRealFiles(fm) == n
+
+    CC.dispose(r2)
+    CC.dispose(r1)
+    CC.dispose(fm)
+end

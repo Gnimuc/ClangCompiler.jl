@@ -19,6 +19,14 @@ typedef enum CXLanguageLinkage {
   CXLanguageLinkage_NoLanguageLinkage
 } CXLanguageLinkage;
 
+typedef enum CXGVALinkage {
+  CXGVALinkage_GVA_Internal,
+  CXGVALinkage_GVA_AvailableExternally,
+  CXGVALinkage_GVA_DiscardableODR,
+  CXGVALinkage_GVA_StrongExternal,
+  CXGVALinkage_GVA_StrongODR
+} CXGVALinkage;
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

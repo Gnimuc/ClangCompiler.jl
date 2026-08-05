@@ -7,7 +7,7 @@
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
 
-CXDeclGroupRef clang_DeclGroupRef_fromeDecl(CXDecl D);
+CXDeclGroupRef clang_DeclGroupRef_fromDecl(CXDecl D);
 
 bool clang_DeclGroupRef_isNull(CXDeclGroupRef DG);
 

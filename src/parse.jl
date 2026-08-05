@@ -1,3 +1,16 @@
+"""
+    parse(instance::CompilerInstance) -> Bool
+Run `clang::ParseAST` over the instance's main file.
+
+Preconditions the caller must establish (this is the classic frontend
+pipeline, not the interpreter's):
+- the instance owns a Sema, an ASTContext and an ASTConsumer, and the source
+  manager's main file is set (`setMainFileID`);
+- **no live `Parser` already owns the instance's preprocessor** — `ParseAST`
+  constructs its own parser, and a second parser over an owned preprocessor
+  crashes in `Preprocessor::AddPragmaHandler`. In particular, never call this
+  on the interpreter's own instance (`get_instance(I)`).
+"""
 function parse(instance::CompilerInstance)
     begin_diag(instance)
     try

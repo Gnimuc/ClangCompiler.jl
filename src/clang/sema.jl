@@ -17,3 +17,9 @@ is_unique(x::LookupResult) = isSingleResult(x)
 is_overloaded(x::LookupResult) = isOverloadedResult(x)
 is_class_lookup(x::LookupResult) = isClassLookup(x)
 is_tag(x::LookupResult) = isSingleTagDecl(x)
+
+"""
+    enclosing(x::Scope) -> ChainIterator
+Iterate `x` and its enclosing scopes, outward to the translation-unit scope.
+"""
+enclosing(x::Scope) = ChainIterator(x, getParent)

@@ -15,14 +15,40 @@ typedef struct {
   size_t Length;
 } CXArrayRef;
 
+// APINotes
+// APINotesOptions
+typedef void *CXAPINotesOptions;
+
 // AST
+
+// PrettyPrinter
+typedef void *CXPrintingPolicy;
 // ASTConsumer
 typedef void *CXASTConsumer;
 
 // ASTContext
+typedef void *CXDeclInfo;
+typedef void *CXVerbatimLineComment;
+typedef void *CXVerbatimBlockComment;
+typedef void *CXVerbatimBlockLineComment;
+typedef void *CXTParamCommandComment;
+typedef void *CXHTMLEndTagComment;
+typedef void *CXHTMLStartTagComment;
+typedef void *CXHTMLTagComment;
+typedef void *CXInlineCommandComment;
+typedef void *CXParagraphComment;
+typedef void *CXInlineContentComment;
+typedef void *CXFullComment;
+typedef void *CXParamCommandComment;
+typedef void *CXBlockCommandComment;
+typedef void *CXTextComment;
+typedef void *CXComment;
+typedef void *CXRawComment;
+typedef void *CXRawCommentList;
 typedef void *CXASTContext;
 
 // Decl
+typedef void *CXHLSLBufferDecl;
 typedef void *CXTranslationUnitDecl;
 typedef void *CXPragmaCommentDecl;
 typedef void *CXPragmaDetectMismatchDecl;
@@ -53,8 +79,10 @@ typedef void *CXCapturedDecl;
 typedef void *CXImportDecl;
 typedef void *CXExportDecl;
 typedef void *CXEmptyDecl;
+typedef void *CXTopLevelStmtDecl;
 
 // DeclarationName
+typedef void *CXDeclarationNameTable;
 typedef void *CXDeclarationName;
 typedef void *CXDeclarationNameInfo;
 
@@ -63,6 +91,9 @@ typedef void *CXDecl;
 typedef void *CXDeclContext;
 
 // DeclCXX
+typedef void *CXUnnamedGlobalConstantDecl;
+typedef void *CXUnresolvedUsingIfExistsDecl;
+typedef void *CXUsingEnumDecl;
 typedef void *CXAccessSpecDecl;
 typedef void *CXCXXBaseSpecifier;
 typedef void *CXCXXRecordDecl;
@@ -95,6 +126,7 @@ typedef void *CXMSGuidDecl;
 typedef void *CXDeclGroupRef;
 
 // DeclTemplate
+typedef void *CXImplicitConceptSpecializationDecl;
 typedef void *CXTemplateParameterList;
 typedef void *CXTemplateArgumentList;
 typedef void *CXTemplateDecl;
@@ -140,6 +172,9 @@ typedef void *CXVisibilityAttr;
 typedef void *CXWarnUnusedResultAttr;
 
 // Expr
+typedef void *CXEvalResult;
+typedef void *CXSYCLUniqueStableNameExpr;
+typedef void *CXClassification;
 typedef void *CXExpr;
 typedef void *CXFullExpr;
 typedef void *CXConstantExpr;
@@ -181,6 +216,7 @@ typedef void *CXVAArgExpr;
 typedef void *CXSourceLocExpr;
 typedef void *CXInitListExpr;
 typedef void *CXDesignatedInitExpr;
+typedef void *CXDesignator;
 typedef void *CXNoInitExpr;
 typedef void *CXDesignatedInitUpdateExpr;
 typedef void *CXArrayInitLoopExpr;
@@ -198,6 +234,8 @@ typedef void *CXTypoExpr;
 typedef void *CXRecoveryExpr;
 
 // ExprCXX
+typedef void *CXCXXParenListInitExpr;
+typedef void *CXCXXTemporary;
 typedef void *CXCXXOperatorCallExpr;
 typedef void *CXCXXMemberCallExpr;
 typedef void *CXCUDAKernelCallExpr;
@@ -239,6 +277,7 @@ typedef void *CXExpressionTraitExpr;
 typedef void *CXOverloadExpr;
 typedef void *CXUnresolvedLookupExpr;
 typedef void *CXDependentScopeDeclRefExpr;
+typedef void *CXExprWithCleanups;
 typedef void *CXCXXUnresolvedConstructExpr;
 typedef void *CXCXXDependentScopeMemberExpr;
 typedef void *CXUnresolvedMemberExpr;
@@ -263,9 +302,15 @@ typedef void *CXMicrosoftMangleContext;
 typedef void *CXASTNameGenerator;
 
 // NestedNameSpacifier
+typedef void *CXNestedNameSpecifierLoc;
 typedef void *CXNestedNameSpecifier;
 
+// RecordLayout
+typedef void *CXASTRecordLayout;
+
 // Stmt
+typedef void *CXGCCAsmStmtAsmStringPiece;
+typedef void *CXCapturedStmtCapture;
 typedef void *CXStmt;
 typedef void *CXDeclStmt;
 typedef void *CXNullStmt;
@@ -304,6 +349,8 @@ typedef void *CXCoroutineBodyStmt;
 typedef void *CXCoreturnStmt;
 
 // Types
+typedef void *CXDependentBitIntType;
+typedef void *CXBitIntType;
 typedef void *CXQualType;
 typedef void *CXType_;
 typedef void *CXBuiltinType;
@@ -383,13 +430,36 @@ typedef void *CXTemplateArgumentListInfo;
 typedef void *CXASTTemplateArgumentListInfo;
 
 // TemplateName
+typedef void *CXDependentTemplateName;
+typedef void *CXQualifiedTemplateName;
+typedef void *CXSubstTemplateTemplateParmStorage;
+typedef void *CXSubstTemplateTemplateParmPackStorage;
+typedef void *CXAssumedTemplateStorage;
+typedef void *CXOverloadedTemplateStorage;
 typedef void *CXTemplateArgument;
 
+// Analysis
+
+// ConstructionContext
+typedef void *CXConstructionContext;
+// CFG
+typedef void *CXCFGBuildOptions;
+typedef void *CXCFGBlock;
+typedef void *CXCFG;
+
 // Basic
+// Builtins
+typedef void *CXBuiltinContext;
 // CodeGenOptions
 typedef void *CXCodeGenOptions;
 
 // Diagnostic
+typedef void *CXDiagnostic_;
+typedef void *CXDiagnosticBuilder;
+typedef void *CXStreamingDiagnostic;
+typedef void *CXFixItHint;
+typedef void *CXStoredDiagnostic;
+typedef void *CXDiagnosticErrorTrap;
 typedef void *CXDiagnosticConsumer;
 typedef void *CXDiagnosticsEngine;
 
@@ -404,10 +474,13 @@ typedef void *CXFileEntry;
 
 // FileManager
 typedef void *CXDirectoryEntry;
+typedef void *CXDirectoryEntryRef;
 typedef void *CXFileEntryRef;
 typedef void *CXFileManager;
 
 // IdentifierTable
+typedef void *CXSelector;
+typedef void *CXSelectorTable;
 typedef void *CXIdentifierInfo;
 typedef void *CXIdentifierTable;
 
@@ -418,6 +491,7 @@ typedef void *CXLangOptions;
 typedef void *CXModule;
 
 // SourceLocation
+typedef void *CXPresumedLoc;
 typedef void *CXSourceLocation_;
 
 typedef struct CXSourceRange_ {
@@ -426,10 +500,17 @@ typedef struct CXSourceRange_ {
 } CXSourceRange_;
 
 // SourceManager
+typedef void *CXSourceManagerForFile;
+typedef void *CXLineOffsetMapping;
+typedef void *CXContentCache;
+typedef void *CXSLocEntry;
+typedef void *CXExpansionInfo;
+typedef void *CXFileInfo;
 typedef void *CXFileID;
 typedef void *CXSourceManager;
 
 // TargetInfo
+typedef void *CXConstraintInfo;
 typedef void *CXTargetInfo_;
 
 // TargetOptions
@@ -443,12 +524,31 @@ typedef void *CXCodeGenAction;
 typedef void *CXCodeGenerator;
 typedef void *CXCodeGenModule;
 
+// Driver
+// Driver
+typedef void *CXDriver;
+
+// Compilation
+typedef void *CXCompilation;
+
+// ToolChain
+typedef void *CXToolChain;
+
 // Frontend
+// ASTUnit
+typedef void *CXASTUnit;
+
 // CompilerInstance
 typedef void *CXCompilerInstance;
 
 // CompilerInvocation
+typedef void *CXPreprocessorOutputOptions;
+typedef void *CXDependencyOutputOptions;
+typedef void *CXFileSystemOptions;
+typedef void *CXMigratorOptions;
+typedef void *CXAnalyzerOptions;
 typedef void *CXCompilerInvocation;
+typedef void *CXCowCompilerInvocation;
 
 // FrontendOptions
 typedef void *CXFrontendOptions;
@@ -460,17 +560,50 @@ typedef void *CXPartialTranslationUnit;
 typedef void *CXValue;
 
 // Lex
+// DirectoryLookup
+typedef void *CXDirectoryLookup;
+
+// HeaderMap
+typedef void *CXHeaderMap;
+
 // HeaderSearch
+typedef void *CXHeaderFileInfo;
 typedef void *CXHeaderSearch;
 
 // HeaderSearchOptions
 typedef void *CXHeaderSearchOptions;
 
 // Lexer
+typedef void *CXPreprocessorLexer;
 typedef void *CXLexer;
 
+// MacroInfo
+typedef void *CXModuleMacro;
+typedef void *CXDefMacroDirective;
+typedef void *CXDefInfo;
+typedef void *CXMacroDirective;
+typedef void *CXMacroInfo;
+
+// CodeCompletionHandler
+typedef void *CXCodeCompletionHandler;
+
+// ExternalPreprocessorSource
+typedef void *CXExternalPreprocessorSource;
+
+// ModuleLoader
+typedef void *CXModuleLoader;
+
+// PPCallbacks
+typedef void *CXPPCallbacks;
+
 // Preprocessor
+typedef void *CXInclusionDirective;
+typedef void *CXMacroExpansion;
+typedef void *CXMacroDefinitionRecord;
+typedef void *CXPreprocessedEntity;
+typedef void *CXPreprocessingRecord;
 typedef void *CXPreprocessor;
+typedef void *CXEmptylineHandler;
 
 // PreprocessorOptions
 typedef void *CXPreprocessorOptions;
@@ -485,18 +618,41 @@ typedef void *CXAnnotationValue;
 typedef void *CXParser;
 
 // Sema
+typedef void *CXSFINAETrap;
+typedef void *CXDefaultedFunctionKind;
+typedef void *CXAlignPackInfo;
+typedef void *CXExpressionEvaluationContextRecord;
+typedef void *CXInstantiatingTemplate;
 typedef void *CXSema;
+
+// Overload
+typedef void *CXUserDefinedConversionSequence;
+typedef void *CXOverloadCandidate;
+typedef void *CXAmbiguousConversionSequence;
+typedef void *CXStandardConversionSequence;
+typedef void *CXBadConversionSequence;
+typedef void *CXImplicitConversionSequence;
+typedef void *CXOverloadCandidateSet;
+
+// Template
+typedef void *CXLocalInstantiationScope;
+typedef void *CXMultiLevelTemplateArgumentList;
+
+// TemplateDeduction
+typedef void *CXTemplateDeductionInfo;
 
 // DeclSpec
 typedef void *CXCXXScopeSpec;
 
 // Lookup
+typedef void *CXLookupResult_Filter;
 typedef void *CXLookupResult;
 
 // Scope
 typedef void *CXScope;
 
 // Others
+typedef void *CXRewriter;
 typedef enum CXTranslationUnitKind {
   CXTranslationUnitKind_TU_Complete,
   CXTranslationUnitKind_TU_Prefix,

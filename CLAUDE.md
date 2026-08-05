@@ -14,21 +14,83 @@ julia --project -e 'using Pkg; Pkg.test()'
 
 # Run a single test file — each test file is self-contained (does its own `using`),
 # but needs the test environment (Test/TOML are not deps of the main project).
-# Requires TestEnv installed in the global environment (`julia -e 'using Pkg; Pkg.add("TestEnv")'`):
-julia --project -e 'using TestEnv; TestEnv.activate(); include("test/lookup.jl")'
+# Requires TestEnv installed in the global environment (`julia -e 'using Pkg; Pkg.add("TestEnv")'`).
+# TestEnv.activate() switches to a temp env whose directory has NO LocalPreferences.toml,
+# so ClangCompiler would silently load libclangex_jll instead of your local build (new
+# symbols then fail at call time and look like C-side bugs) — copy the preference across
+# BEFORE `using ClangCompiler`:
+julia --project -e 'using TestEnv; TestEnv.activate();
+  cp("LocalPreferences.toml", joinpath(dirname(Base.active_project()), "LocalPreferences.toml"); force=true);
+  include("test/lookup.jl")'
 
 # Build the C++ shim library (libclangex) locally after modifying deps/ClangExtra.
 # Writes LocalPreferences.toml so the package loads the local build instead of libclangex_jll.
-julia --project=deps deps/build_local.jl
+# Pass a directory to keep an incremental build tree; without one every run recompiles
+# everything in a fresh tempdir.
+julia --project=deps deps/build_local.jl [build_dir]
 
 # CI variant: only rebuilds if deps/ClangExtra changed since the last libclangex_jll release
 julia --project=deps deps/build_ci.jl
 
 # Regenerate the raw Julia bindings in lib/<llvm_major>/LibClangEx.jl after changing ClangExtra headers
 julia --project=gen gen/generator.jl
+
+# Fail on assertions that cannot fail (also run from test/lint.jl, so CI enforces it)
+julia test/tautologies.jl
 ```
 
+### Rules for writing a test here
+
+A green suite is not evidence on its own — an assertion can fail to run, or run and be
+incapable of failing. These four rules are what keep it evidence; `test/lint.jl` and
+`test/tautologies.jl` enforce the middle two. The `suite-audit` skill has the tools that find
+violations, and the measurements for why each rule earns its place.
+
+- **A loop whose body is the only thing asserting proves nothing when the loop is empty.**
+  Construct the state that makes the assertion run, or assert the empty case explicitly.
+- **Never assert a type the wrapper's own return expression already fixes** — `isa Bool` on a
+  `::Bool` ccall restates this repo's source, not anything Clang decided, so it cannot tell a
+  correct shim from one returning a null or another argument's payload. Assert what Clang
+  decided: a value, a round trip, or a relationship the shim could get wrong. (Whether
+  carriers wrap at all is `test/abi.jl`'s job, not each test's.)
+- **When the value genuinely is not assertable, mark the site `# shape-only` with its reason.**
+  Three reasons are legitimate and no others: the host decides the value (triple, ABI,
+  mangling, path, size, alignment), it varies across the objects the test walks, or it is an
+  integer the target chooses. The marker belongs at the site — a baseline file recording the
+  same thing goes stale the moment a file is cleaned up and makes two branches conflict over a
+  generated artifact. The remaining markers are a ratchet, not a backlog: converting one
+  requires finding something Clang decided, which is not a mechanical edit.
+- **Prefer an invariant that holds over any AST to a pinned value.** A pin catches drift away
+  from today's answer but freezes the bug if today's answer has always been wrong; invariants
+  (`test/clang/invariants.jl`) need no captured values and no per-platform care. They have
+  their own ceiling — a *consistently* wrong shim satisfies them — which is what the
+  independent oracle in `test/clang/differential.jl` closes. When you add an invariant, add
+  the mutant it kills to the catalogue in `.claude/skills/suite-audit/`.
+
 Formatting: JuliaFormatter, YAS style, margin 120 (see `.JuliaFormatter.toml`). `lib/` and `examples/` are excluded from formatting.
+
+### Verifying a local build is the one you are testing
+
+`build_local.jl` installs into a **scratchspace shared by every checkout and worktree**
+(`~/.julia/scratchspaces/06fc9500-.../build`), and wipes it at the start of each run. A build
+started from a different checkout therefore replaces your dylib with one compiled from *its*
+sources — silently. The symptom is `test/abi.jl` reporting bound symbols as missing, or a suite
+that passed minutes ago failing. Check the exported symbol count (it only ever grows within a
+branch) and rebuild from your own worktree if it dropped:
+
+```bash
+nm -gU ~/.julia/scratchspaces/06fc9500-c033-43bc-8ca2-e20da63309d9/build/lib/libclangex.dylib | grep -c " _clang_"
+```
+
+Two more traps when running these commands:
+
+- **Piping hides failures.** `julia ... 2>&1 | tail -20; echo $?` reports *tail's* status. Redirect
+  to a file (`julia ... > log 2>&1; echo $?`) and grep the log.
+- **Grep the log for crashes, not just failures.** A segfault prints `signal 11 (2): Segmentation
+  fault` (or `EXCEPTION_ACCESS_VIOLATION` on Windows) and never the word "Fail"; a libstdc++
+  assertion prints `SIGABRT`. Include `signal|Segmentation|SIGABRT|EXCEPTION` in triage greps.
+- A test file can pass standalone and still crash inside the full suite (different AST state from
+  earlier files). Always run `Pkg.test()` before committing.
 
 ## Architecture
 
@@ -51,18 +113,14 @@ There are three layers, from C++ up to user-facing Julia:
 
 ## Adding a new wrapper API (end-to-end)
 
-The C-side steps (header + impl + CMake + typedef in CXTypes.h) are covered in `deps/ClangExtra/CLAUDE.md`. After rebuilding (`deps/build_local.jl`) and regenerating (`gen/generator.jl`), the Julia side is:
+The full step-by-step workflow (core type → API wrapper → registration → lifetime/dispose → resolve-chain) lives in the `add-wrapper-api` skill (`.claude/skills/add-wrapper-api/SKILL.md`) — invoke it when wrapping a new Clang class or method. The C-side steps come first and are covered in `deps/ClangExtra/CLAUDE.md`.
 
-1. **Core type** (skip if the class is already wrapped): add `abstract type AbstractFoo <: Abstract<ClangBase> end` mirroring Clang's inheritance — the AST/Type/Frontend hierarchies live in `src/clang/core/abstract.jl`, while Interpreter/CodeGen/Basic classes define their abstract types locally next to the struct (follow whichever the target file already does). Then in `src/clang/core/<Dir>/<ClangHeader>.jl` add `struct Foo <: AbstractFoo; ptr::CXFoo; end` plus `Base.unsafe_convert(::Type{CXFoo}, x::Foo) = x.ptr` and `Base.cconvert(::Type{CXFoo}, x::Foo) = x` (many files stamp sibling classes out in a `for sym in [...] @eval` loop — append to it rather than writing a standalone struct). Docstring format: "Hold a pointer to a `clang::Foo` object." The field must be named `ptr` (`@check_ptrs` depends on it). Underscore-suffixed collision types drop both the `CX` prefix and the underscore in Julia (`CXToken_` → `Token`), unless the bare name clashes with Base (`CXType_` → `Type_`).
-2. **API wrapper** in `src/clang/api/<Dir>/<ClangHeader>.jl`: `function methodName(x::AbstractFoo, ...)` — type the receiver as the abstract supertype of the class that declares the C++ method so subclasses dispatch; start with `@check_ptrs` on every wrapper argument; wrap pointer returns in their Julia struct — never return a raw `Ptr` (a few legacy wrappers like `getParent(x::DeclContext)` do; don't imitate them); `unsafe_string` for `const char*` returns, `get_string` for `CXString`/`CXStringSet` returns (it disposes them — plain `unsafe_string` leaks), bare returns for Bool/int/enum. `castTo` C functions surface as constructor-shaped methods named after the target type (`CXXRecordDecl(x::DeclContext)`), except the Decl↔DeclContext pivot which keeps its C names `castToDeclContext`/`castFromDeclContext`.
-3. **Registration**: new files must be added to both include lists by hand — `src/clang/core/core.jl` and `src/clang/api/api.jl` (they are not kept in sync automatically).
-4. **Lifetime**: pair every `clang_Foo_create` binding with a Julia constructor and a `dispose(x::Foo) = clang_Foo_dispose(x)` method; there are no finalizers, disposal is always manual (create → use → dispose). Allocating getters carry the docstring sentence "This function allocates and one should call `dispose` to release the resources after using this object."
-5. Optionally add a snake_case helper in the matching high-level file (`src/clang/ast.jl`, `basic.jl`, `sema.jl`, …) and a `public` declaration in `src/ClangCompiler.jl` if user-facing. New Clang `Type` subclasses that participate in runtime downcasting also need an `is_foo_type` predicate pair in `src/clang/type.jl` and an entry in the **ordered** `resolve()` chain in `src/types.jl` (sugared types are tested before canonical ones — placement matters).
+## Naming conventions
 
-## Naming conventions (from CONTRIBUTING.md)
+Quick reference. `CONTRIBUTING.md` states these fully; `src/clang/CLAUDE.md` covers the carrier and inheritance rules behind them.
 
-- C API (`libclangex`): types prefixed `CX`, functions named `clang_<ClassName>_<methodName>`. On a name collision with libclang, the libclangex symbol gets a trailing underscore (e.g. `CXToken_`).
-- Julia types drop the `CX` prefix and keep the Clang class name (`CXInterpreter` → `Interpreter`).
+- C API (`libclangex`): types prefixed `CX`, functions named `clang_<ClassName>_<methodName>` with both segments copied from Clang verbatim including case. On a name collision with libclang, the libclangex symbol gets a trailing underscore (e.g. `CXToken_`).
+- Julia types drop the `CX` prefix and keep the Clang class name (`CXInterpreter` → `Interpreter`), except where that would collide with Base — those take a trailing underscore (`Expr_`, `Type_`), and `CXToken_` becomes `Token`. Every class gets a carrier and a per-class abstract, abstract C++ bases included. One name cannot be both, so where clang has a class named `AbstractX` the carrier keeps the plain name and the abstract takes a trailing underscore: carrier `AbstractConditionalOperator` under `AbstractAbstractConditionalOperator`, with `ConditionalOperator` under `AbstractConditionalOperator_`.
 - Julia wrappers drop both the `clang_` prefix and the class name: `clang_CompilerInstance_hasDiagnostics` → `hasDiagnostics`. So most wrapper functions intentionally use Clang's camelCase C++ method names, not Julia style.
 - The file hierarchy in `src/clang/core/` and `src/clang/api/` mirrors the LLVM/Clang source tree — put new wrappers in the file matching the Clang header the class lives in.
 - Only the extra convenience helpers (e.g. in `src/compiler/`, `src/lookup.jl`) use YAS-style snake_case naming.
@@ -71,4 +129,32 @@ The C-side steps (header + impl + CMake + typedef in CXTypes.h) are covered in `
 
 - The package uses `public` declarations (Julia 1.11+) rather than `export` for its API surface — see `src/ClangCompiler.jl`.
 - Objects wrapping C++ resources need explicit `dispose(x)`; tests and examples follow a create → use → dispose pattern.
-- Test files (`test/types.jl`, `parse.jl`, `lookup.jl`, `traversal.jl`, `execution.jl`) are plain `@testset` files included by `test/runtests.jl`.
+- Test files are plain `@testset` files included by `test/runtests.jl`, laid out to mirror the source tree: whole-package checks in `test/*.jl` (`lint.jl` and `abi.jl` are the meta guards), middle-layer helpers in `test/clang/*.jl`, thin wrappers in `test/clang/api/**` alongside the file they exercise. A new test file must be added to `test/runtests.jl` by hand.
+- CI runs macOS, Linux and Windows on x86_64, and an equality assertion on something the
+  runner decides turns into a red CI on a platform you did not run locally. This class of bug
+  is invisible to a local single-platform run and to `-fsyntax-only`; only the per-file test
+  run against real AST state catches it, so never skip it before committing. The link failure
+  that removed `getVirtualFileRef` — `off_t` is `long` on mingw and `long long` elsewhere —
+  reached CI exactly this way.
+
+  Two kinds of value hide behind that, and they need opposite treatment:
+
+  - **The target decides it** — sizes and alignments, ABI-specific layout offsets, mangled
+    names, endianness, integer widths. These are *not* unassertable, only unpinned. Build the
+    interpreter with `create_interpreter(...; triple="x86_64-linux-gnu")` and every one becomes
+    an equality that reads the same on all three runners; `test/clang/pinned_target.jl` is the
+    worked example. Only parsing and AST inspection can cross-target — the JIT still emits for
+    the host — and pinning downloads that target's GCC shard, so keep it to one target and one
+    file rather than pinning at every site.
+  - **Nothing decides it** — module provenance (`isPartOfFramework`), a `Driver`'s LTO mode
+    before argument processing, and a hand-built `Module`'s availability, including the
+    `markUnavailable` transition whose gating predicate reads bits a synthetic module never had
+    a module map to set. These read uninitialized memory. Pinning a triple does not help and
+    would only make the answer look trustworthy; restate the precondition instead, or leave the
+    site `# shape-only` with that as its reason. A wrapper whose value comes back outside its
+    own enum (Julia prints `<invalid #N>`) is this case — a UB precondition to restate, not a
+    flaky test.
+
+  Anything genuinely host-decided that is neither of those — a sysroot, an executable path —
+  still takes the shape assertion: `isa Bool`, `isa Integer`, or a round-trip of a value the
+  test itself set.

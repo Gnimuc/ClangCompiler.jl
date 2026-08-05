@@ -4,35 +4,38 @@ using Test
 const CC = ClangCompiler
 
 @testset "Status" begin
-    src = joinpath(@__DIR__, "..", "code", "main.cpp")
-    args = get_compiler_args()
+    src = normpath(joinpath(@__DIR__, "..", "cxx", "main.cpp"))
+    args = CC.get_default_args()
     push!(args, "-std=c++11")
-    pushfirst!(args, "clang")
-    push!(args, "-I$(@__DIR__)")
 
     instance = CC.CompilerInstance()
     CC.createDiagnostics(instance)
     diag = CC.getDiagnostics(instance)
 
     invok = CC.createFromCommandLine(src, args, diag)
-    CC.setInvocation(instance, invok)
+    CC.setInvocation(instance, invok)  # adopts invok — no dispose
     CC.setTargetAndLangOpts(instance)
 
-    CC.PrintStats(instance, CC.HeaderSearchOptions)
-    CC.PrintStats(instance, CC.DiagnosticOptions)
-    CC.PrintStats(instance, CC.FrontendOptions)
-    CC.PrintStats(instance, CC.CodeGenOptions)
-    CC.PrintStats(instance, CC.PreprocessorOptions)
-    CC.PrintStats(instance, CC.TargetOptions)
+    # the stats dumps go to stderr; run them for coverage, drop the noise
+    redirect_stdio(; stderr=devnull) do
+        CC.PrintStats(instance, CC.HeaderSearchOptions)
+        CC.PrintStats(instance, CC.DiagnosticOptions)
+        CC.PrintStats(instance, CC.FrontendOptions)
+        CC.PrintStats(instance, CC.CodeGenOptions)
+        CC.PrintStats(instance, CC.PreprocessorOptions)
+        CC.PrintStats(instance, CC.TargetOptions)
+    end
 
     CC.createFileManager(instance)
     CC.createSourceManager(instance)
 
-    CC.getFileEntry(instance, src)
+    entry = CC.getFileEntry(instance, src)
+    @test entry.ptr != C_NULL
 
     CC.createPreprocessor(instance)
-
-    CC.PrintStats(instance, CC.HeaderSearch)
+    redirect_stdio(; stderr=devnull) do
+        CC.PrintStats(instance, CC.HeaderSearch)
+    end
 
     CC.dispose(instance)
 end

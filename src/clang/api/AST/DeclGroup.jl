@@ -1,7 +1,7 @@
 # DeclGroupRef
 function DeclGroupRef(x::Decl)
     @check_ptrs x
-    return DeclGroupRef(clang_DeclGroupRef_fromeDecl(x))
+    return DeclGroupRef(clang_DeclGroupRef_fromDecl(x))
 end
 
 function isNull(x::DeclGroupRef)

@@ -1,10 +1,15 @@
 # FrontendOptions
 function getModulesEmbedFilesNum(x::FrontendOptions)
     @check_ptrs x
-    n = clang_FrontendOptions_getModulesEmbedFilesNum(x)
-    files = Vector{Ptr{Cuchar}}(undef, n)
+    return clang_FrontendOptions_getModulesEmbedFilesNum(x)
+end
+
+function getModulesEmbedFiles(x::FrontendOptions)
+    @check_ptrs x
+    n = getModulesEmbedFilesNum(x)
+    files = Vector{Ptr{Cchar}}(undef, n)
     clang_FrontendOptions_getModulesEmbedFiles(x, files, n)
-    return unsafe_string.(files)
+    return [unsafe_string(p) for p in files]
 end
 
 function PrintStats(x::FrontendOptions)

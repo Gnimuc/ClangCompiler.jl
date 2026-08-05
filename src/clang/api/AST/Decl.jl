@@ -42,8 +42,19 @@ function getIdentifier(x::AbstractNamedDecl)
     return IdentifierInfo(clang_NamedDecl_getIdentifier(x))
 end
 
+"""
+    getName(x::AbstractNamedDecl) -> String
+Return the declaration's name as a plain identifier.
+
+Not every declaration has one: a constructor, destructor, conversion function or overloaded
+operator carries a `DeclarationName` of another kind, and `NamedDecl::getName` asserts
+`Name.isIdentifier()` rather than returning anything for those. Implicit members make this
+reachable from any struct, so the precondition is restated here. Use
+[`getNameAsString`](@ref) for a spelling that every declaration has.
+"""
 function getName(x::AbstractNamedDecl)
     @check_ptrs x
+    @assert isIdentifier(getDeclName(x)) "this declaration's name is not a simple identifier"
     return unsafe_string(clang_NamedDecl_getName(x))
 end
 
@@ -127,7 +138,7 @@ end
 
 function getMostRecentDecl(x::AbstractNamedDecl)
     @check_ptrs x
-    return clang_NamedDecl_getMostRecentDecl(x)
+    return NamedDecl(clang_NamedDecl_getMostRecentDecl(x))
 end
 
 # TODO: getObjCFStringFormattingFamily
@@ -335,7 +346,7 @@ end
 
 function getTemplateParameterList(x::AbstractDeclaratorDecl, i::Integer)
     @check_ptrs x
-    return clang_DeclaratorDecl_getTemplateParameterList(x, i)
+    return TemplateParameterList(clang_DeclaratorDecl_getTemplateParameterList(x, i))
 end
 
 # TODO: setTemplateParameterListsInfo
@@ -492,14 +503,14 @@ end
 
 # TODO: getInitAddress
 
-function getInit(x::AbstractVarDecl, expr::Expr_)
+function setInit(x::AbstractVarDecl, expr::Expr_)
     @check_ptrs x expr
     return clang_VarDecl_setInit(x, expr)
 end
 
 function getInitializingDeclaration(x::AbstractVarDecl)
     @check_ptrs x
-    return clang_VarDecl_getInitializingDeclaration(x)
+    return VarDecl(clang_VarDecl_getInitializingDeclaration(x))
 end
 
 function mightBeUsableInConstantExpressions(x::AbstractVarDecl, ctx::ASTContext)
@@ -520,8 +531,17 @@ function isUsableInConstantExpressions(x::AbstractVarDecl, ctx::ASTContext)
     return clang_VarDecl_isUsableInConstantExpressions(x, ctx)
 end
 
-# TODO: clang_VarDecl_ensureEvaluatedStmt
-# TODO: clang_VarDecl_getEvaluatedStmt
+function ensureEvaluatedStmt(x::AbstractVarDecl)
+    @check_ptrs x
+    return EvaluatedStmt(clang_VarDecl_ensureEvaluatedStmt(x))
+end
+
+# The returned `EvaluatedStmt` wraps C_NULL when the initializer has not been
+# evaluated yet (see `ensureEvaluatedStmt`).
+function getEvaluatedStmt(x::AbstractVarDecl)
+    @check_ptrs x
+    return EvaluatedStmt(clang_VarDecl_getEvaluatedStmt(x))
+end
 
 # TODO: evaluateValue
 # TODO: getEvaluatedValue
@@ -899,7 +919,7 @@ end
 
 function getEllipsisLoc(x::AbstractFunctionDecl)
     @check_ptrs x
-    return clang_FunctionDecl_getEllipsisLoc(x)
+    return SourceLocation(clang_FunctionDecl_getEllipsisLoc(x))
 end
 
 # TODO: getSourceRange
@@ -974,14 +994,11 @@ function setVirtualAsWritten(x::AbstractFunctionDecl, v::Bool)
     return clang_FunctionDecl_setVirtualAsWritten(x, v)
 end
 
-# NOTE: FunctionDecl::isPure() was renamed isPureVirtual() upstream; the working
-# wrapper is isPureVirtual(::AbstractFunctionDecl) above. The old isPure wrapper
-# called a binding that no longer exists and has been removed.
-
-function setPure(x::AbstractFunctionDecl, pure::Bool=true)
-    @check_ptrs x
-    return clang_FunctionDecl_setPure(x, pure)
-end
+# NOTE: FunctionDecl::isPure()/setPure() were renamed isPureVirtual()/
+# setIsPureVirtual() upstream; the working wrappers are
+# isPureVirtual(::AbstractFunctionDecl) above and
+# setIsPureVirtual(::AbstractFunctionDecl) below. The old-name wrappers called
+# bindings that no longer exist and have been removed.
 
 function isLateTemplateParsed(x::AbstractFunctionDecl)
     @check_ptrs x
@@ -1269,7 +1286,7 @@ end
 
 function getParamDecl(x::AbstractFunctionDecl, i::Integer)
     @check_ptrs x
-    return clang_FunctionDecl_getParamDecl(x, i)
+    return ParmVarDecl(clang_FunctionDecl_getParamDecl(x, i))
 end
 
 # TODO: setParams
@@ -2839,4 +2856,1059 @@ end
 function ExternCContextDecl(ctx::ASTContext, tu::TranslationUnitDecl)
     @check_ptrs ctx tu
     return ExternCContextDecl(clang_ExternCContextDecl_Create(ctx, tu))
+end
+
+
+# NamedDecl printing surface
+function getNameAsString(x::AbstractNamedDecl)
+    @check_ptrs x
+    return get_string(clang_NamedDecl_getNameAsString(x))
+end
+
+function printName(x::AbstractNamedDecl)
+    @check_ptrs x
+    return get_string(clang_NamedDecl_printName(x))
+end
+
+function printNestedNameSpecifier(x::AbstractNamedDecl)
+    @check_ptrs x
+    return get_string(clang_NamedDecl_printNestedNameSpecifier(x))
+end
+
+function getQualifiedNameAsString(x::AbstractNamedDecl)
+    @check_ptrs x
+    return get_string(clang_NamedDecl_getQualifiedNameAsString(x))
+end
+
+"""
+    getNameForDiagnostic(x::AbstractNamedDecl, qualified::Bool=true)
+Return the spelling Sema would print for `x` in a diagnostic (template arguments
+included), formatted with the decl's own `ASTContext` printing policy.
+"""
+function getNameForDiagnostic(x::AbstractNamedDecl, qualified::Bool=true)
+    @check_ptrs x
+    return get_string(clang_NamedDecl_getNameForDiagnostic(x, qualified))
+end
+
+function isPlaceholderVar(x::AbstractNamedDecl, lang_opts::LangOptions)
+    @check_ptrs x lang_opts
+    return clang_NamedDecl_isPlaceholderVar(x, lang_opts)
+end
+
+# LabelDecl
+function setMSAsmLabel(x::AbstractLabelDecl, name::AbstractString)
+    @check_ptrs x
+    return clang_LabelDecl_setMSAsmLabel(x, name)
+end
+
+# NamespaceDecl
+function isNested(x::AbstractNamespaceDecl)
+    @check_ptrs x
+    return clang_NamespaceDecl_isNested(x)
+end
+
+function setNested(x::AbstractNamespaceDecl, nested::Bool)
+    @check_ptrs x
+    return clang_NamespaceDecl_setNested(x, nested)
+end
+
+function isRedundantInlineQualifierFor(x::AbstractNamespaceDecl, name::DeclarationName)
+    @check_ptrs x
+    return clang_NamespaceDecl_isRedundantInlineQualifierFor(x, name)
+end
+
+# ValueDecl
+function isInitCapture(x::AbstractValueDecl)
+    @check_ptrs x
+    return clang_ValueDecl_isInitCapture(x)
+end
+
+# The returned `VarDecl` wraps C_NULL when `x` is neither a VarDecl nor a
+# BindingDecl bound to one.
+function getPotentiallyDecomposedVarDecl(x::AbstractValueDecl)
+    @check_ptrs x
+    return VarDecl(clang_ValueDecl_getPotentiallyDecomposedVarDecl(x))
+end
+
+# DeclaratorDecl
+function getSourceRange(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    r = clang_DeclaratorDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# VarDecl
+"""
+    getStorageClassSpecifierString(sc::CXStorageClass)
+Return the source spelling of `sc`. Undefined for `CXStorageClass_SC_None`.
+"""
+function getStorageClassSpecifierString(sc::CXStorageClass)
+    return unsafe_string(clang_VarDecl_getStorageClassSpecifierString(sc))
+end
+
+function getTLSKind(x::AbstractVarDecl)
+    @check_ptrs x
+    return clang_VarDecl_getTLSKind(x)
+end
+
+function isThisDeclarationADefinition(x::AbstractVarDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_VarDecl_isThisDeclarationADefinition(x, ctx)
+end
+
+function hasDefinition(x::AbstractVarDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_VarDecl_hasDefinition(x, ctx)
+end
+
+# The returned `APValue` wraps C_NULL when the initializer has never been
+# evaluated (see `evaluateValue`); a non-null result is borrowed (cached in the
+# VarDecl) — never `dispose` it.
+function getEvaluatedValue(x::AbstractVarDecl)
+    @check_ptrs x
+    return APValue(clang_VarDecl_getEvaluatedValue(x))
+end
+
+function evaluateDestruction(x::AbstractVarDecl)
+    @check_ptrs x
+    return clang_VarDecl_evaluateDestruction(x)
+end
+
+function checkForConstantInitialization(x::AbstractVarDecl)
+    @check_ptrs x
+    return clang_VarDecl_checkForConstantInitialization(x)
+end
+
+function setInitStyle(x::AbstractVarDecl, style::CXVarDecl_InitializationStyle)
+    @check_ptrs x
+    return clang_VarDecl_setInitStyle(x, style)
+end
+
+function getInitStyle(x::AbstractVarDecl)
+    @check_ptrs x
+    return clang_VarDecl_getInitStyle(x)
+end
+
+function hasDependentAlignment(x::AbstractVarDecl)
+    @check_ptrs x
+    return clang_VarDecl_hasDependentAlignment(x)
+end
+
+function getMemberSpecializationInfo(x::AbstractVarDecl)
+    @check_ptrs x
+    return MemberSpecializationInfo(clang_VarDecl_getMemberSpecializationInfo(x))
+end
+
+function hasFlexibleArrayInit(x::AbstractVarDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_VarDecl_hasFlexibleArrayInit(x, ctx)
+end
+
+"""
+    getFlexibleArrayInitChars(x::AbstractVarDecl, ctx::ASTContext) -> Int64
+Return, in bytes, the extra storage the flexible array member's initializer
+needs beyond the record's size. Only meaningful when `hasFlexibleArrayInit`.
+"""
+function getFlexibleArrayInitChars(x::AbstractVarDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_VarDecl_getFlexibleArrayInitChars(x, ctx)
+end
+
+# ParmVarDecl
+function getSourceRange(x::AbstractParmVarDecl)
+    @check_ptrs x
+    r = clang_ParmVarDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+getMaxFunctionScopeDepth() = clang_ParmVarDecl_getMaxFunctionScopeDepth()
+
+function isExplicitObjectParameter(x::AbstractParmVarDecl)
+    @check_ptrs x
+    return clang_ParmVarDecl_isExplicitObjectParameter(x)
+end
+
+function setExplicitObjectParameterLoc(x::AbstractParmVarDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_ParmVarDecl_setExplicitObjectParameterLoc(x, loc)
+end
+
+function getExplicitObjectParamThisLoc(x::AbstractParmVarDecl)
+    @check_ptrs x
+    return SourceLocation(clang_ParmVarDecl_getExplicitObjectParamThisLoc(x))
+end
+
+# FunctionDecl
+function getDefaultLoc(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return SourceLocation(clang_FunctionDecl_getDefaultLoc(x))
+end
+
+function setDefaultLoc(x::AbstractFunctionDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_FunctionDecl_setDefaultLoc(x, loc)
+end
+
+function isIneligibleOrNotSelected(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_isIneligibleOrNotSelected(x)
+end
+
+function setIneligibleOrNotSelected(x::AbstractFunctionDecl, ineligible::Bool)
+    @check_ptrs x
+    return clang_FunctionDecl_setIneligibleOrNotSelected(x, ineligible)
+end
+
+function setBodyContainsImmediateEscalatingExpressions(x::AbstractFunctionDecl, set::Bool)
+    @check_ptrs x
+    return clang_FunctionDecl_setBodyContainsImmediateEscalatingExpressions(x, set)
+end
+
+function BodyContainsImmediateEscalatingExpressions(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_BodyContainsImmediateEscalatingExpressions(x)
+end
+
+function isImmediateEscalating(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_isImmediateEscalating(x)
+end
+
+function isImmediateFunction(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_isImmediateFunction(x)
+end
+
+function setFriendConstraintRefersToEnclosingTemplate(x::AbstractFunctionDecl, v::Bool=true)
+    @check_ptrs x
+    return clang_FunctionDecl_setFriendConstraintRefersToEnclosingTemplate(x, v)
+end
+
+function FriendConstraintRefersToEnclosingTemplate(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_FriendConstraintRefersToEnclosingTemplate(x)
+end
+
+function isMemberLikeConstrainedFriend(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_isMemberLikeConstrainedFriend(x)
+end
+
+function isTargetClonesMultiVersion(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_isTargetClonesMultiVersion(x)
+end
+
+function UsesFPIntrin(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_UsesFPIntrin(x)
+end
+
+function setUsesFPIntrin(x::AbstractFunctionDecl, uses::Bool)
+    @check_ptrs x
+    return clang_FunctionDecl_setUsesFPIntrin(x, uses)
+end
+
+"""
+    getAssociatedConstraints(x::AbstractFunctionDecl) -> Vector{Expr_}
+Return every constraint expression associated with `x` (the trailing
+requires-clause and the constraints of its template parameter lists), in
+declaration order. Empty for an unconstrained function.
+"""
+function getAssociatedConstraints(x::AbstractFunctionDecl)
+    @check_ptrs x
+    n = clang_FunctionDecl_getNumAssociatedConstraints(x)
+    buf = Vector{CXExpr}(undef, n)
+    n > 0 && clang_FunctionDecl_getAssociatedConstraints(x, buf)
+    return [Expr_(p) for p in buf]
+end
+
+# NOTE: FunctionDecl::setParams is private in clang 18 (Sema and the
+# deserializer are its only callers), so there is no setParams wrapper.
+
+function getMinRequiredExplicitArguments(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_getMinRequiredExplicitArguments(x)
+end
+
+function hasCXXExplicitFunctionObjectParameter(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_hasCXXExplicitFunctionObjectParameter(x)
+end
+
+function getNumNonObjectParams(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_getNumNonObjectParams(x)
+end
+
+# `i` is 0-based, like `getParamDecl`.
+function getNonObjectParameter(x::AbstractFunctionDecl, i::Integer)
+    @check_ptrs x
+    return ParmVarDecl(clang_FunctionDecl_getNonObjectParameter(x, i))
+end
+
+"""
+    getFunctionTypeLoc(x::AbstractFunctionDecl) -> TypeLoc
+Return the written `TypeLoc` of `x`'s function type (null when `x` has no
+written type). This function allocates and one should call `dispose` to release
+the resources after using this object.
+"""
+function getFunctionTypeLoc(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return TypeLoc(clang_FunctionDecl_getFunctionTypeLoc(x))
+end
+
+function getOverloadedOperator(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return clang_FunctionDecl_getOverloadedOperator(x)
+end
+
+function getInstantiatedFromDecl(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return FunctionDecl(clang_FunctionDecl_getInstantiatedFromDecl(x))
+end
+
+function setInstantiatedFromDecl(x::AbstractFunctionDecl, fd::AbstractFunctionDecl)
+    @check_ptrs x fd
+    return clang_FunctionDecl_setInstantiatedFromDecl(x, fd)
+end
+
+# FieldDecl
+function isPotentiallyOverlapping(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_isPotentiallyOverlapping(x)
+end
+
+function hasNonNullInClassInitializer(x::AbstractFieldDecl)
+    @check_ptrs x
+    return clang_FieldDecl_hasNonNullInClassInitializer(x)
+end
+
+# EnumConstantDecl
+"""
+    getInitVal(x::AbstractEnumConstantDecl)
+Return the enumerator's value as a caller-owned `LLVMGenericValueRef` (release
+via LLVM-C's `LLVMDisposeGenericValue`; no Julia `dispose` method exists for it).
+Use `get_enum_constant_decl_value` for the narrowed `Int64` form.
+"""
+function getInitVal(x::AbstractEnumConstantDecl)
+    @check_ptrs x
+    return clang_EnumConstantDecl_getInitVal(x)
+end
+
+# IndirectFieldDecl factory
+function IndirectFieldDecl(ctx::ASTContext, dc::DeclContext, loc::SourceLocation,
+                           id::IdentifierInfo, ty::QualType,
+                           chain::AbstractVector{<:AbstractNamedDecl})
+    @check_ptrs ctx dc id
+    buf = CXNamedDecl[d.ptr for d in chain]
+    return IndirectFieldDecl(clang_IndirectFieldDecl_Create(ctx, dc, loc, id, ty, buf,
+                                                            length(buf)))
+end
+
+# TagDecl
+function isThisDeclarationADemotedDefinition(x::AbstractTagDecl)
+    @check_ptrs x
+    return clang_TagDecl_isThisDeclarationADemotedDefinition(x)
+end
+
+# Precondition: `isCompleteDefinition(x)`.
+function demoteThisDefinitionToDeclaration(x::AbstractTagDecl)
+    @check_ptrs x
+    @assert isCompleteDefinition(x) "only a complete definition can be demoted"
+    return clang_TagDecl_demoteThisDefinitionToDeclaration(x)
+end
+
+# EnumDecl
+function getSourceRange(x::AbstractEnumDecl)
+    @check_ptrs x
+    r = clang_EnumDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+"""
+    getValueRange(x::AbstractEnumDecl) -> (max, min)
+Return the `[min, max)` value range the enumeration can store, as two
+caller-owned `LLVMGenericValueRef`s (release via LLVM-C's
+`LLVMDisposeGenericValue`; no Julia `dispose` method exists for them).
+"""
+function getValueRange(x::AbstractEnumDecl)
+    @check_ptrs x
+    max_ref = Ref{LibClangEx.LLVMGenericValueRef}()
+    min_ref = Ref{LibClangEx.LLVMGenericValueRef}()
+    clang_EnumDecl_getValueRange(x, max_ref, min_ref)
+    return (max_ref[], min_ref[])
+end
+
+# RecordDecl
+function completeDefinition(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_completeDefinition(x)
+end
+
+function getODRHash(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_getODRHash(x)
+end
+
+function isRandomized(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_isRandomized(x)
+end
+
+function setIsRandomized(x::AbstractRecordDecl, randomized::Bool)
+    @check_ptrs x
+    return clang_RecordDecl_setIsRandomized(x, randomized)
+end
+
+# BlockDecl
+function setIsVariadic(x::AbstractBlockDecl, variadic::Bool)
+    @check_ptrs x
+    return clang_BlockDecl_setIsVariadic(x, variadic)
+end
+
+function getCompoundBody(x::AbstractBlockDecl)
+    @check_ptrs x
+    return CompoundStmt(clang_BlockDecl_getCompoundBody(x))
+end
+
+function getBody(x::AbstractBlockDecl)
+    @check_ptrs x
+    return Stmt(clang_BlockDecl_getBody(x))
+end
+
+# The capture accessors below index the contiguous `BlockDecl::Capture` array;
+# `i` is 0-based and must be < `getNumCaptures(x)`.
+function getCaptureVariable(x::AbstractBlockDecl, i::Integer)
+    @check_ptrs x
+    return VarDecl(clang_BlockDecl_getCaptureVariable(x, i))
+end
+
+function isCaptureByRef(x::AbstractBlockDecl, i::Integer)
+    @check_ptrs x
+    return clang_BlockDecl_isCaptureByRef(x, i)
+end
+
+function isCaptureNested(x::AbstractBlockDecl, i::Integer)
+    @check_ptrs x
+    return clang_BlockDecl_isCaptureNested(x, i)
+end
+
+function isCaptureEscapingByref(x::AbstractBlockDecl, i::Integer)
+    @check_ptrs x
+    return clang_BlockDecl_isCaptureEscapingByref(x, i)
+end
+
+function captureHasCopyExpr(x::AbstractBlockDecl, i::Integer)
+    @check_ptrs x
+    return clang_BlockDecl_captureHasCopyExpr(x, i)
+end
+
+# The returned `Expr_` wraps C_NULL unless `captureHasCopyExpr(x, i)`.
+function getCaptureCopyExpr(x::AbstractBlockDecl, i::Integer)
+    @check_ptrs x
+    return Expr_(clang_BlockDecl_getCaptureCopyExpr(x, i))
+end
+
+# TopLevelStmtDecl
+function TopLevelStmtDecl(ctx::ASTContext, stmt::AbstractStmt)
+    @check_ptrs ctx stmt
+    return TopLevelStmtDecl(clang_TopLevelStmtDecl_Create(ctx, stmt))
+end
+
+function TopLevelStmtDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return TopLevelStmtDecl(clang_TopLevelStmtDecl_CreateDeserialized(ctx, id))
+end
+
+function getSourceRange(x::AbstractTopLevelStmtDecl)
+    @check_ptrs x
+    r = clang_TopLevelStmtDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+function getStmt(x::AbstractTopLevelStmtDecl)
+    @check_ptrs x
+    return Stmt(clang_TopLevelStmtDecl_getStmt(x))
+end
+
+"""
+    setStmt(x::AbstractTopLevelStmtDecl, s::AbstractStmt)
+Replace the wrapped statement. Clang only supports this on a value-printing
+decl, so `isSemiMissing(x)` must hold.
+"""
+function setStmt(x::AbstractTopLevelStmtDecl, s::AbstractStmt)
+    @check_ptrs x s
+    @assert isSemiMissing(x) "setStmt is supported for printing values only"
+    return clang_TopLevelStmtDecl_setStmt(x, s)
+end
+
+function isSemiMissing(x::AbstractTopLevelStmtDecl)
+    @check_ptrs x
+    return clang_TopLevelStmtDecl_isSemiMissing(x)
+end
+
+function setSemiMissing(x::AbstractTopLevelStmtDecl, missing_semi::Bool=true)
+    @check_ptrs x
+    return clang_TopLevelStmtDecl_setSemiMissing(x, missing_semi)
+end
+
+
+# NamedDecl (linkage/visibility tail)
+"""
+    getLinkageAndVisibility(x::AbstractNamedDecl) -> (linkage, visibility, is_explicit)
+Return the entity's computed `CXLinkage`, its computed `CXVisibility`, and whether
+that visibility was explicitly specified.
+"""
+function getLinkageAndVisibility(x::AbstractNamedDecl)
+    @check_ptrs x
+    linkage = Ref{CXLinkage}()
+    visibility = Ref{CXVisibility}()
+    is_explicit = Ref{Bool}()
+    clang_NamedDecl_getLinkageAndVisibility(x, linkage, visibility, is_explicit)
+    return (linkage[], visibility[], is_explicit[])
+end
+
+"""
+    getExplicitVisibility(x::AbstractNamedDecl, for_type::Bool=false) -> Union{CXVisibility,Nothing}
+Return the visibility explicitly specified for `x`, or `nothing` when the declaration
+has none. `for_type` selects `NamedDecl::ExplicitVisibilityKind`: `true` computes it
+for a type, `false` (the default) for a non-type declaration.
+"""
+function getExplicitVisibility(x::AbstractNamedDecl, for_type::Bool=false)
+    @check_ptrs x
+    visibility = Ref{CXVisibility}()
+    return clang_NamedDecl_getExplicitVisibility(x, for_type, visibility) ? visibility[] : nothing
+end
+
+# VarDecl
+"""
+    needsDestruction(x::AbstractVarDecl, ctx::ASTContext) -> CXDestructionKind
+Return what kind of destruction, if any, destroying this variable performs.
+"""
+function needsDestruction(x::AbstractVarDecl, ctx::ASTContext)
+    @check_ptrs x ctx
+    return clang_VarDecl_needsDestruction(x, ctx)
+end
+
+# FunctionDecl
+"""
+    getReplaceableGlobalAllocationFunctionInfo(x::AbstractFunctionDecl) ->
+        (is_replaceable, alignment_param, is_nothrow)
+`isReplaceableGlobalAllocationFunction` with its two out-params exposed:
+`alignment_param` is the parameter number of the requested alignment, or `nothing`
+when the function takes none, and `is_nothrow` reports whether the function takes
+the `std::nothrow_t` tag.
+"""
+function getReplaceableGlobalAllocationFunctionInfo(x::AbstractFunctionDecl)
+    @check_ptrs x
+    has_alignment = Ref{Bool}()
+    alignment = Ref{Cuint}()
+    is_nothrow = Ref{Bool}()
+    replaceable = clang_FunctionDecl_getReplaceableGlobalAllocationFunctionInfo(x, has_alignment,
+                                                                               alignment, is_nothrow)
+    return (replaceable, has_alignment[] ? alignment[] : nothing, is_nothrow[])
+end
+
+
+# =========================================================
+# DeclContext pivots (castToDeclContext / castFromDeclContext)
+# =========================================================
+
+# TranslationUnitDecl Cast
+function DeclContext(x::AbstractTranslationUnitDecl)
+    @check_ptrs x
+    return DeclContext(clang_TranslationUnitDecl_castToDeclContext(x))
+end
+
+function TranslationUnitDecl(x::DeclContext)
+    @check_ptrs x
+    return TranslationUnitDecl(clang_TranslationUnitDecl_castFromDeclContext(x))
+end
+
+# ExternCContextDecl Cast
+function DeclContext(x::AbstractExternCContextDecl)
+    @check_ptrs x
+    return DeclContext(clang_ExternCContextDecl_castToDeclContext(x))
+end
+
+function ExternCContextDecl(x::DeclContext)
+    @check_ptrs x
+    return ExternCContextDecl(clang_ExternCContextDecl_castFromDeclContext(x))
+end
+
+# NamespaceDecl Cast
+function DeclContext(x::AbstractNamespaceDecl)
+    @check_ptrs x
+    return DeclContext(clang_NamespaceDecl_castToDeclContext(x))
+end
+
+function NamespaceDecl(x::DeclContext)
+    @check_ptrs x
+    return NamespaceDecl(clang_NamespaceDecl_castFromDeclContext(x))
+end
+
+# FunctionDecl Cast
+function DeclContext(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return DeclContext(clang_FunctionDecl_castToDeclContext(x))
+end
+
+function FunctionDecl(x::DeclContext)
+    @check_ptrs x
+    return FunctionDecl(clang_FunctionDecl_castFromDeclContext(x))
+end
+
+# BlockDecl Cast
+function DeclContext(x::AbstractBlockDecl)
+    @check_ptrs x
+    return DeclContext(clang_BlockDecl_castToDeclContext(x))
+end
+
+function BlockDecl(x::DeclContext)
+    @check_ptrs x
+    return BlockDecl(clang_BlockDecl_castFromDeclContext(x))
+end
+
+# CapturedDecl Cast
+function DeclContext(x::AbstractCapturedDecl)
+    @check_ptrs x
+    return DeclContext(clang_CapturedDecl_castToDeclContext(x))
+end
+
+function CapturedDecl(x::DeclContext)
+    @check_ptrs x
+    return CapturedDecl(clang_CapturedDecl_castFromDeclContext(x))
+end
+
+# ExportDecl Cast
+function DeclContext(x::AbstractExportDecl)
+    @check_ptrs x
+    return DeclContext(clang_ExportDecl_castToDeclContext(x))
+end
+
+function ExportDecl(x::DeclContext)
+    @check_ptrs x
+    return ExportDecl(clang_ExportDecl_castFromDeclContext(x))
+end
+
+function isReserved(x::AbstractNamedDecl, langopts::AbstractLangOptions)
+    @check_ptrs x langopts
+    return clang_NamedDecl_isReserved(x, langopts)
+end
+
+function getObjCFStringFormattingFamily(x::AbstractNamedDecl)
+    @check_ptrs x
+    return clang_NamedDecl_getObjCFStringFormattingFamily(x)
+end
+
+function getObjCDeclQualifier(x::AbstractParmVarDecl)
+    @check_ptrs x
+    return clang_ParmVarDecl_getObjCDeclQualifier(x)
+end
+
+
+"""
+    field_empty(x::AbstractRecordDecl) -> Bool
+Whether the record declares no fields (non-static data members).
+
+Cheaper than `getNumFields(x) == 0`, which walks the whole decl list.
+"""
+function field_empty(x::AbstractRecordDecl)
+    @check_ptrs x
+    return clang_RecordDecl_field_empty(x)
+end
+
+"""
+    isCaptureNonEscapingByref(x::AbstractBlockDecl, i::Integer) -> Bool
+Whether capture `i` is a `__block` variable that does not escape the block.
+
+The C++ accessor dereferences the capture's `VarDecl`, so `i` must address a
+real capture slot: `0 <= i < getNumCaptures(x)`.
+"""
+function isCaptureNonEscapingByref(x::AbstractBlockDecl, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumCaptures(x) "capture index out of range"
+    return clang_BlockDecl_isCaptureNonEscapingByref(x, i)
+end
+
+# HLSLBufferDecl
+"""
+    HLSLBufferDecl(ctx::ASTContext, dc::DeclContext, cbuffer::Bool, kw_loc::SourceLocation,
+                   id::IdentifierInfo, id_loc::SourceLocation, lbrace_loc::SourceLocation)
+Create a `clang::HLSLBufferDecl` (a cbuffer when `cbuffer` is true, a tbuffer otherwise).
+
+The decl is allocated in `ctx`'s arena — there is no `dispose`. It is NOT added to `dc`,
+and its closing-brace location stays invalid until `setRBraceLoc` is called.
+"""
+function HLSLBufferDecl(ctx::ASTContext, dc::DeclContext, cbuffer::Bool, kw_loc::SourceLocation,
+                        id::IdentifierInfo, id_loc::SourceLocation, lbrace_loc::SourceLocation)
+    @check_ptrs ctx dc id
+    return HLSLBufferDecl(clang_HLSLBufferDecl_Create(ctx, dc, cbuffer, kw_loc, id, id_loc, lbrace_loc))
+end
+
+function HLSLBufferDecl(ctx::ASTContext, id::Integer)
+    @check_ptrs ctx
+    return HLSLBufferDecl(clang_HLSLBufferDecl_CreateDeserialized(ctx, id))
+end
+
+function getSourceRange(x::AbstractHLSLBufferDecl)
+    @check_ptrs x
+    r = clang_HLSLBufferDecl_getSourceRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+"""
+    getLocStart(x::AbstractHLSLBufferDecl) -> SourceLocation
+The location of the `cbuffer`/`tbuffer` keyword.
+"""
+function getLocStart(x::AbstractHLSLBufferDecl)
+    @check_ptrs x
+    return SourceLocation(clang_HLSLBufferDecl_getLocStart(x))
+end
+
+function getLBraceLoc(x::AbstractHLSLBufferDecl)
+    @check_ptrs x
+    return SourceLocation(clang_HLSLBufferDecl_getLBraceLoc(x))
+end
+
+function getRBraceLoc(x::AbstractHLSLBufferDecl)
+    @check_ptrs x
+    return SourceLocation(clang_HLSLBufferDecl_getRBraceLoc(x))
+end
+
+function setRBraceLoc(x::AbstractHLSLBufferDecl, loc::SourceLocation)
+    @check_ptrs x
+    return clang_HLSLBufferDecl_setRBraceLoc(x, loc)
+end
+
+function isCBuffer(x::AbstractHLSLBufferDecl)
+    @check_ptrs x
+    return clang_HLSLBufferDecl_isCBuffer(x)
+end
+
+# HLSLBufferDecl Cast
+function DeclContext(x::AbstractHLSLBufferDecl)
+    @check_ptrs x
+    return DeclContext(clang_HLSLBufferDecl_castToDeclContext(x))
+end
+
+function HLSLBufferDecl(x::DeclContext)
+    @check_ptrs x
+    return HLSLBufferDecl(clang_HLSLBufferDecl_castFromDeclContext(x))
+end
+
+
+# ---------------------------------------------------------------------------
+# NamespaceDecl factory, outer template-parameter-list setters,
+# ObjC declaration qualifier setter, enumerator value setter, and the
+# FunctionDecl::DefaultedFunctionInfo family.
+# ---------------------------------------------------------------------------
+
+"""
+    NamespaceDecl(ctx, dc, inline, start_loc, id_loc, id, prev_decl, nested) -> NamespaceDecl
+Create a `clang::NamespaceDecl` in `ctx`. `prev_decl` may carry a NULL pointer when there is
+no previous declaration; `nested` marks a component of a C++20 nested-namespace-definition.
+The result is allocated in the ASTContext arena and is *not* added to `dc`.
+"""
+function NamespaceDecl(ctx::ASTContext, dc::DeclContext, inline::Bool, start_loc::SourceLocation,
+                       id_loc::SourceLocation, id::IdentifierInfo,
+                       prev_decl::NamespaceDecl=NamespaceDecl(C_NULL), nested::Bool=false)
+    @check_ptrs ctx dc id
+    return NamespaceDecl(clang_NamespaceDecl_Create(ctx, dc, inline, start_loc, id_loc, id,
+                                                    prev_decl, nested))
+end
+
+"""
+    setTemplateParameterListsInfo(x::AbstractDeclaratorDecl, ctx::ASTContext, lists)
+Record the "outer" template parameter lists matched against the template-ids of an
+out-of-line declaration. `lists` is borrowed, not copied element-wise, and must be non-empty
+— clang asserts on an empty list.
+"""
+function setTemplateParameterListsInfo(x::AbstractDeclaratorDecl, ctx::ASTContext,
+                                       lists::AbstractVector{<:AbstractTemplateParameterList})
+    @check_ptrs x ctx
+    @assert !isempty(lists) "at least one template parameter list is required"
+    buf = CXTemplateParameterList[l.ptr for l in lists]
+    return clang_DeclaratorDecl_setTemplateParameterListsInfo(x, ctx, buf, length(buf))
+end
+
+"""
+    setTemplateParameterListsInfo(x::AbstractTagDecl, ctx::ASTContext, lists)
+Record the "outer" template parameter lists of an out-of-line tag definition. `lists` is
+borrowed and must be non-empty — clang asserts on an empty list.
+"""
+function setTemplateParameterListsInfo(x::AbstractTagDecl, ctx::ASTContext,
+                                       lists::AbstractVector{<:AbstractTemplateParameterList})
+    @check_ptrs x ctx
+    @assert !isempty(lists) "at least one template parameter list is required"
+    buf = CXTemplateParameterList[l.ptr for l in lists]
+    return clang_TagDecl_setTemplateParameterListsInfo(x, ctx, buf, length(buf))
+end
+
+"""
+    setObjCDeclQualifier(x::AbstractParmVarDecl, q::CXObjCDeclQualifier)
+Set the Objective-C declaration qualifier of an Objective-C method parameter. The qualifier
+shares its bitfield with the parameter's scope depth, so this is only legal on a parameter
+for which `isObjCMethodParameter` holds (`setObjCMethodScopeInfo` establishes that).
+"""
+function setObjCDeclQualifier(x::AbstractParmVarDecl, q::CXObjCDeclQualifier)
+    @check_ptrs x
+    @assert isObjCMethodParameter(x) "parameter must be an Objective-C method parameter"
+    return clang_ParmVarDecl_setObjCDeclQualifier(x, q)
+end
+
+"""
+    setInitVal(x::AbstractEnumConstantDecl, ctx::ASTContext, v, is_unsigned::Bool)
+Store the bits of `v` — an `LLVMGenericValueRef` on the same APSInt bridge `getInitVal`
+returns on — as the enumerator's value. `is_unsigned` supplies the signedness the bridge
+cannot carry. `v` stays caller-owned.
+"""
+function setInitVal(x::AbstractEnumConstantDecl, ctx::ASTContext,
+                    v::LibClangEx.LLVMGenericValueRef, is_unsigned::Bool)
+    @check_ptrs x ctx
+    return clang_EnumConstantDecl_setInitVal(x, ctx, v, is_unsigned)
+end
+
+"""
+    getDefaultedFunctionInfo(x::AbstractFunctionDecl) -> DefaultedFunctionInfo
+Return the stashed information about a defaulted function definition whose body has not been
+generated yet, or a NULL-pointer carrier when this declaration stores a body instead.
+"""
+function getDefaultedFunctionInfo(x::AbstractFunctionDecl)
+    @check_ptrs x
+    return DefaultedFunctionInfo(clang_FunctionDecl_getDefaultedFunctionInfo(x))
+end
+
+"""
+    setDefaultedFunctionInfo(x::AbstractFunctionDecl, info::AbstractDefaultedFunctionInfo)
+Stash defaulted-function info on `x`. Only legal while `x` carries no body and no defaulted
+info yet — clang asserts on both.
+"""
+function setDefaultedFunctionInfo(x::AbstractFunctionDecl, info::AbstractDefaultedFunctionInfo)
+    @check_ptrs x info
+    return clang_FunctionDecl_setDefaultedFunctionInfo(x, info)
+end
+
+# FunctionDecl::DefaultedFunctionInfo
+"""
+    DefaultedFunctionInfo(ctx::ASTContext, decls, accesses) -> DefaultedFunctionInfo
+Allocate a `clang::FunctionDecl::DefaultedFunctionInfo` in `ctx`'s arena holding the
+unqualified lookup results `decls` with the matching `accesses`. The two vectors are read in
+lockstep, so they must have the same length. Arena-owned: there is no `dispose`.
+"""
+function DefaultedFunctionInfo(ctx::ASTContext, decls::AbstractVector{<:AbstractNamedDecl},
+                               accesses::AbstractVector{CXAccessSpecifier})
+    @check_ptrs ctx
+    @assert length(decls) == length(accesses) "decls and accesses must have the same length"
+    dbuf = CXNamedDecl[d.ptr for d in decls]
+    abuf = collect(accesses)
+    p = clang_FunctionDecl_DefaultedFunctionInfo_Create(ctx, dbuf, abuf, length(dbuf))
+    return DefaultedFunctionInfo(p)
+end
+
+function getNumUnqualifiedLookups(x::AbstractDefaultedFunctionInfo)
+    @check_ptrs x
+    return Int(clang_FunctionDecl_DefaultedFunctionInfo_getNumUnqualifiedLookups(x))
+end
+
+function getUnqualifiedLookupDecl(x::AbstractDefaultedFunctionInfo, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumUnqualifiedLookups(x) "lookup index out of range"
+    return NamedDecl(clang_FunctionDecl_DefaultedFunctionInfo_getUnqualifiedLookupDecl(x, i))
+end
+
+function getUnqualifiedLookupAccess(x::AbstractDefaultedFunctionInfo, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumUnqualifiedLookups(x) "lookup index out of range"
+    return clang_FunctionDecl_DefaultedFunctionInfo_getUnqualifiedLookupAccess(x, i)
+end
+
+
+# ---------------------------------------------------------------------------
+# Decl::Kind family predicates, nested-name-specifier extents, and the
+# TagDecl <-> DeclContext pivot.
+# ---------------------------------------------------------------------------
+
+"""
+    classofKind(T, k::CXDeclKind) -> Bool
+Whether a declaration of kind `k` is a `T` — the range test `isa<T>` performs, evaluated on
+the kind alone. Reach for it when no `Decl` handle is available to run the `castTo*`/`is*`
+family against: `getDeclKind(::DeclContext)` and the kinds `decls` hands back are kinds, not
+declarations. The test covers subclasses, so `classofKind(TagDecl, k)` also holds for every
+record and enum kind. `T` is one of `NamedDecl`, `ValueDecl`, `DeclaratorDecl`, `VarDecl`,
+`FunctionDecl`, `FieldDecl`, `TypeDecl`, `TypedefNameDecl`, `TagDecl`, `RecordDecl`.
+"""
+classofKind(::Type{NamedDecl}, k::CXDeclKind) = clang_NamedDecl_classofKind(k)
+
+classofKind(::Type{ValueDecl}, k::CXDeclKind) = clang_ValueDecl_classofKind(k)
+
+classofKind(::Type{DeclaratorDecl}, k::CXDeclKind) = clang_DeclaratorDecl_classofKind(k)
+
+classofKind(::Type{VarDecl}, k::CXDeclKind) = clang_VarDecl_classofKind(k)
+
+classofKind(::Type{FunctionDecl}, k::CXDeclKind) = clang_FunctionDecl_classofKind(k)
+
+classofKind(::Type{FieldDecl}, k::CXDeclKind) = clang_FieldDecl_classofKind(k)
+
+classofKind(::Type{TypeDecl}, k::CXDeclKind) = clang_TypeDecl_classofKind(k)
+
+classofKind(::Type{TypedefNameDecl}, k::CXDeclKind) = clang_TypedefNameDecl_classofKind(k)
+
+classofKind(::Type{TagDecl}, k::CXDeclKind) = clang_TagDecl_classofKind(k)
+
+classofKind(::Type{RecordDecl}, k::CXDeclKind) = clang_RecordDecl_classofKind(k)
+
+"""
+    getQualifierRange(x::AbstractDeclaratorDecl) -> SourceRange
+Return the extent of the nested-name-specifier that qualifies this declarator's name — the
+`N::` of an out-of-line `void N::f() {}`. `NestedNameSpecifierLoc` has no handle of its own,
+so it crosses as its two parts: the qualifier through `getQualifier`, its written extent
+here. Invalid when the name is written unqualified.
+"""
+function getQualifierRange(x::AbstractDeclaratorDecl)
+    @check_ptrs x
+    r = clang_DeclaratorDecl_getQualifierRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+"""
+    getQualifierRange(x::AbstractTagDecl) -> SourceRange
+Return the extent of the nested-name-specifier that qualifies this tag's name — the `N::` of
+an out-of-line `struct N::S { ... };`. Crosses as the two parts of `getQualifierLoc`, as
+above. Invalid when the tag name is written unqualified.
+"""
+function getQualifierRange(x::AbstractTagDecl)
+    @check_ptrs x
+    r = clang_TagDecl_getQualifierRange(x)
+    return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
+end
+
+# ---------------------------------------------------------------------------
+# The remaining Decl::Kind tests — the leaf classes whose test is a single-kind
+# equality rather than a range.
+# ---------------------------------------------------------------------------
+
+"""
+    classofKind(T, k::CXDeclKind) -> Bool
+Whether a declaration of kind `k` is a `T`, as above, for the leaf classes of the hierarchy.
+Each of these is final in Clang, so its test is a single-kind equality: exactly one
+enumerator of `CXDeclKind` answers `true`. `T` is one of `TranslationUnitDecl`,
+`PragmaCommentDecl`, `PragmaDetectMismatchDecl`, `ExternCContextDecl`, `LabelDecl`,
+`NamespaceDecl`, `ImplicitParamDecl`, `ParmVarDecl`, `EnumConstantDecl`,
+`IndirectFieldDecl`, `TypedefDecl`, `TypeAliasDecl`, `EnumDecl`, `FileScopeAsmDecl`,
+`TopLevelStmtDecl`, `BlockDecl`, `CapturedDecl`, `ImportDecl`, `ExportDecl`, `EmptyDecl`.
+"""
+classofKind(::Type{TranslationUnitDecl}, k::CXDeclKind) = clang_TranslationUnitDecl_classofKind(k)
+
+classofKind(::Type{PragmaCommentDecl}, k::CXDeclKind) = clang_PragmaCommentDecl_classofKind(k)
+
+classofKind(::Type{PragmaDetectMismatchDecl}, k::CXDeclKind) = clang_PragmaDetectMismatchDecl_classofKind(k)
+
+classofKind(::Type{ExternCContextDecl}, k::CXDeclKind) = clang_ExternCContextDecl_classofKind(k)
+
+classofKind(::Type{LabelDecl}, k::CXDeclKind) = clang_LabelDecl_classofKind(k)
+
+classofKind(::Type{NamespaceDecl}, k::CXDeclKind) = clang_NamespaceDecl_classofKind(k)
+
+classofKind(::Type{ImplicitParamDecl}, k::CXDeclKind) = clang_ImplicitParamDecl_classofKind(k)
+
+classofKind(::Type{ParmVarDecl}, k::CXDeclKind) = clang_ParmVarDecl_classofKind(k)
+
+classofKind(::Type{EnumConstantDecl}, k::CXDeclKind) = clang_EnumConstantDecl_classofKind(k)
+
+classofKind(::Type{IndirectFieldDecl}, k::CXDeclKind) = clang_IndirectFieldDecl_classofKind(k)
+
+classofKind(::Type{TypedefDecl}, k::CXDeclKind) = clang_TypedefDecl_classofKind(k)
+
+classofKind(::Type{TypeAliasDecl}, k::CXDeclKind) = clang_TypeAliasDecl_classofKind(k)
+
+classofKind(::Type{EnumDecl}, k::CXDeclKind) = clang_EnumDecl_classofKind(k)
+
+classofKind(::Type{FileScopeAsmDecl}, k::CXDeclKind) = clang_FileScopeAsmDecl_classofKind(k)
+
+classofKind(::Type{TopLevelStmtDecl}, k::CXDeclKind) = clang_TopLevelStmtDecl_classofKind(k)
+
+classofKind(::Type{BlockDecl}, k::CXDeclKind) = clang_BlockDecl_classofKind(k)
+
+classofKind(::Type{CapturedDecl}, k::CXDeclKind) = clang_CapturedDecl_classofKind(k)
+
+classofKind(::Type{ImportDecl}, k::CXDeclKind) = clang_ImportDecl_classofKind(k)
+
+classofKind(::Type{ExportDecl}, k::CXDeclKind) = clang_ExportDecl_classofKind(k)
+
+classofKind(::Type{EmptyDecl}, k::CXDeclKind) = clang_EmptyDecl_classofKind(k)
+
+
+# ---------------------------------------------------------------------------
+# BlockDecl parameter and capture installation — the write half of the block
+# surface whose readers (getNumParams/getParamDecl, the getCapture* family) are
+# already bound.
+# ---------------------------------------------------------------------------
+
+"""
+    setParams(x::AbstractBlockDecl, params)
+Install `params` as the block's formal parameter list. The handles are copied into the
+`ASTContext` arena, so `params` itself is not retained. Installable exactly once: clang
+asserts unless the block still has no parameter array, and `getNumParams(x) == 0` is exactly
+that state — an empty `params` installs nothing and leaves the block installable.
+"""
+function setParams(x::AbstractBlockDecl, params::AbstractVector{<:AbstractParmVarDecl})
+    @check_ptrs x
+    @assert getNumParams(x) == 0 "the block already has a parameter list"
+    buf = CXParmVarDecl[p.ptr for p in params]
+    @assert all(!=(C_NULL), buf) "parameter handles must be non-NULL"
+    return clang_BlockDecl_setParams(x, buf, length(buf))
+end
+
+"""
+    setCaptures(x::AbstractBlockDecl, ctx::ASTContext, variables, by_refs, nesteds,
+                copy_exprs, captures_cxx_this::Bool=false)
+Rebuild the block's capture list in `ctx`'s arena. The four vectors are read in lockstep and
+must have the same length: entry `i` builds one `clang::BlockDecl::Capture` out of
+`variables[i]`, `by_refs[i]`, `nesteds[i]` and `copy_exprs[i]`, where a `nothing` copy
+expression means the capture has none. This replaces whatever captures `x` already held and
+overwrites `capturesCXXThis` with `captures_cxx_this`.
+"""
+function setCaptures(x::AbstractBlockDecl, ctx::ASTContext,
+                     variables::AbstractVector{<:AbstractVarDecl},
+                     by_refs::AbstractVector{Bool}, nesteds::AbstractVector{Bool},
+                     copy_exprs::AbstractVector{<:Union{Nothing,AbstractExpr}},
+                     captures_cxx_this::Bool=false)
+    @check_ptrs x ctx
+    n = length(variables)
+    aligned = length(by_refs) == n && length(nesteds) == n && length(copy_exprs) == n
+    @assert aligned "the capture component vectors must have the same length"
+    vbuf = CXVarDecl[v.ptr for v in variables]
+    @assert all(!=(C_NULL), vbuf) "captured variable handles must be non-NULL"
+    ebuf = CXExpr[e === nothing ? C_NULL : e.ptr for e in copy_exprs]
+    return clang_BlockDecl_setCaptures(x, ctx, vbuf, collect(Bool, by_refs),
+                                       collect(Bool, nesteds), ebuf, n, captures_cxx_this)
+end
+
+"""
+    setCaptureCopyExpr(x::AbstractBlockDecl, i::Integer, e::AbstractExpr)
+Set the copy expression of the capture at `i` — the one field of a `BlockDecl::Capture` that
+is writable in place. Only a capture of class type needs one; pass a NULL-pointer `Expr_` to
+clear it. `i` must be less than `getNumCaptures(x)`.
+"""
+function setCaptureCopyExpr(x::AbstractBlockDecl, i::Integer, e::AbstractExpr)
+    @check_ptrs x
+    @assert 0 <= i < getNumCaptures(x) "capture index out of range"
+    return clang_BlockDecl_setCaptureCopyExpr(x, i, e)
+end
+
+classofKind(::Type{HLSLBufferDecl}, k::CXDeclKind) = clang_HLSLBufferDecl_classofKind(k)
+
+"""
+    classof(T, x::AbstractDecl) -> Bool
+Whether the declaration `x` is a `T` — the test `isa<T>(x)` performs, spelled against a
+declaration instead of a bare kind. Clang defines it as `classofKind(x->getKind())` on every
+`Decl` subclass, so this composes the two bindings rather than adding a third: `T` is any
+class `classofKind` accepts, and the test covers subclasses, so `classof(TagDecl, x)` holds
+for every record and enum declaration.
+"""
+function classof(::Type{T}, x::AbstractDecl) where {T<:AbstractDecl}
+    @check_ptrs x
+    return classofKind(T, getKind(x))
 end

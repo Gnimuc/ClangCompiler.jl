@@ -122,9 +122,11 @@ function createSourceManager(ci::CompilerInstance)
 end
 
 function setMainFileID(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
-    file_entry = getFileEntry(ci, filename, open_file)
+    ref = getFileRef(getFileManager(ci), filename; open_file)
     src_mgr = getSourceManager(ci)
-    return setMainFileID(src_mgr, file_entry)
+    setMainFileID(src_mgr, ref)
+    dispose(ref)
+    return nothing
 end
 
 """
@@ -241,6 +243,10 @@ end
 function createASTContext(ci::CompilerInstance)
     @check_ptrs ci
     @assert hasPreprocessor(ci) "CompilerInstance has no preprocessor."
+    # The new context is finished with `InitBuiltinTypes(getTarget(), getAuxTarget())`, and
+    # `getTarget` is `assert(Target); return *Target;` -- so a target-less instance aborts
+    # inside clang rather than reporting anything.
+    @assert hasTarget(ci) "CompilerInstance has no target."
     return clang_CompilerInstance_createASTContext(ci)
 end
 
@@ -259,13 +265,6 @@ end
 function setASTConsumer(ci::CompilerInstance, csr::AbstractASTConsumer)
     @check_ptrs ci csr
     return clang_CompilerInstance_setASTConsumer(ci, csr)
-end
-
-# CodeGenerator
-function CreateLLVMCodeGen(ci::CompilerInstance, ctx::LLVM.Context, mod_name::String="JLCC")
-    @check_ptrs ci
-    @assert ctx.ref != C_NULL "Context has a NULL pointer."
-    return CodeGenerator(clang_CreateLLVMCodeGen(ci, ctx, mod_name))
 end
 
 # Actions
@@ -380,4 +379,326 @@ end
 function PrintStats(ci::CompilerInstance, ::Type{ASTConsumer})
     ctx = getASTConsumer(ci)
     return PrintStats(ctx)
+end
+
+# Forwarding options
+# Every accessor here forwards through `CompilerInstance::Invocation` with an
+# unchecked dereference, hence the `hasInvocation` assertion.
+"""
+    getAnalyzerOpts(ci::CompilerInstance) -> AnalyzerOptions
+Return the `clang::AnalyzerOptions` of this instance's invocation (borrowed view).
+"""
+function getAnalyzerOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return AnalyzerOptions(clang_CompilerInstance_getAnalyzerOpts(ci))
+end
+
+"""
+    getDependencyOutputOpts(ci::CompilerInstance) -> DependencyOutputOptions
+Return the `clang::DependencyOutputOptions` of this instance's invocation (borrowed view).
+"""
+function getDependencyOutputOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return DependencyOutputOptions(clang_CompilerInstance_getDependencyOutputOpts(ci))
+end
+
+"""
+    getFileSystemOpts(ci::CompilerInstance) -> FileSystemOptions
+Return the `clang::FileSystemOptions` of this instance's invocation (borrowed view).
+"""
+function getFileSystemOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return FileSystemOptions(clang_CompilerInstance_getFileSystemOpts(ci))
+end
+
+"""
+    getPreprocessorOutputOpts(ci::CompilerInstance) -> PreprocessorOutputOptions
+Return the `clang::PreprocessorOutputOptions` of this instance's invocation (borrowed view).
+"""
+function getPreprocessorOutputOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return PreprocessorOutputOptions(clang_CompilerInstance_getPreprocessorOutputOpts(ci))
+end
+
+# Module loading
+"""
+    shouldBuildGlobalModuleIndex(ci::CompilerInstance) -> Bool
+Return whether the global module index should be (re)built.
+"""
+function shouldBuildGlobalModuleIndex(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return clang_CompilerInstance_shouldBuildGlobalModuleIndex(ci)
+end
+
+"""
+    setBuildGlobalModuleIndex(ci::CompilerInstance, build::Bool)
+Set the flag indicating whether the global module index should be (re)built.
+"""
+function setBuildGlobalModuleIndex(ci::CompilerInstance, build::Bool)
+    @check_ptrs ci
+    return clang_CompilerInstance_setBuildGlobalModuleIndex(ci, build)
+end
+
+"""
+    hadModuleLoaderFatalFailure(ci::CompilerInstance) -> Bool
+Return whether the module loader hit a fatal failure.
+"""
+function hadModuleLoaderFatalFailure(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_hadModuleLoaderFatalFailure(ci)
+end
+
+"""
+    getSpecificModuleCachePath(ci::CompilerInstance) -> String
+Return the module cache path specialized with the invocation's module hash, or an
+empty string when no module cache path is configured.
+"""
+function getSpecificModuleCachePath(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return get_string(clang_CompilerInstance_getSpecificModuleCachePath(ci))
+end
+
+# AuxTarget
+"""
+    createTarget(ci::CompilerInstance) -> Bool
+Create the target and auxiliary target from the current options, reporting problems
+through the instance's diagnostics engine.
+"""
+function createTarget(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    @assert hasDiagnostics(ci) "the compiler instance must have a diagnostics engine"
+    return clang_CompilerInstance_createTarget(ci)
+end
+
+"""
+    getAuxTarget(ci::CompilerInstance) -> TargetInfo
+Return the auxiliary target. The carrier holds a NULL pointer when none is set.
+"""
+function getAuxTarget(ci::CompilerInstance)
+    @check_ptrs ci
+    return TargetInfo(clang_CompilerInstance_getAuxTarget(ci))
+end
+
+"""
+    setAuxTarget(ci::CompilerInstance, tgti::TargetInfo)
+Replace the current auxiliary target.
+"""
+function setAuxTarget(ci::CompilerInstance, tgti::TargetInfo)
+    @check_ptrs ci tgti
+    return clang_CompilerInstance_setAuxTarget(ci, tgti)
+end
+
+# Code completion
+"""
+    hasCodeCompletionConsumer(ci::CompilerInstance) -> Bool
+Return whether a code completion consumer has been set.
+"""
+function hasCodeCompletionConsumer(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_hasCodeCompletionConsumer(ci)
+end
+
+# Output files
+"""
+    clearOutputFiles(ci::CompilerInstance, erase_files::Bool=false)
+Clear the output file list; when `erase_files` is true the files are also erased from
+disk. The underlying output streams must have been closed beforehand.
+"""
+function clearOutputFiles(ci::CompilerInstance, erase_files::Bool=false)
+    @check_ptrs ci
+    return clang_CompilerInstance_clearOutputFiles(ci, erase_files)
+end
+
+# Plugins
+"""
+    LoadRequestedPlugins(ci::CompilerInstance)
+Load the frontend plugins named by the invocation's frontend options. `ci` must
+have an invocation.
+"""
+function LoadRequestedPlugins(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return clang_CompilerInstance_LoadRequestedPlugins(ci)
+end
+
+# Frontend timer
+"""
+    hasFrontendTimer(ci::CompilerInstance) -> Bool
+Return whether a frontend timer has been created.
+"""
+function hasFrontendTimer(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_hasFrontendTimer(ci)
+end
+
+"""
+    createFrontendTimer(ci::CompilerInstance)
+Create the frontend timer, replacing any existing one.
+"""
+function createFrontendTimer(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_createFrontendTimer(ci)
+end
+
+# Ownership transfer
+"""
+    resetAndLeakFileManager(ci::CompilerInstance)
+Drop the instance's ownership of its file manager without destroying it: the object goes
+to `llvm::BuryPointer` and lives until the process exits, and `hasFileManager` is false
+afterwards. This is the escape hatch for a component another owner has already adopted —
+neither owner then frees it twice.
+"""
+function resetAndLeakFileManager(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakFileManager(ci)
+end
+
+"""
+    resetAndLeakSourceManager(ci::CompilerInstance)
+Drop the instance's ownership of its source manager without destroying it: the object
+goes to `llvm::BuryPointer` and lives until the process exits, and `hasSourceManager` is
+false afterwards.
+"""
+function resetAndLeakSourceManager(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakSourceManager(ci)
+end
+
+"""
+    resetAndLeakPreprocessor(ci::CompilerInstance)
+Pin the instance's preprocessor alive for the rest of the process: a copy of the owning
+`shared_ptr` goes to `llvm::BuryPointer`. Unlike the other `resetAndLeak*` this leaves
+the instance's own pointer in place, so `hasPreprocessor` still holds afterwards.
+"""
+function resetAndLeakPreprocessor(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakPreprocessor(ci)
+end
+
+"""
+    resetAndLeakASTContext(ci::CompilerInstance)
+Drop the instance's ownership of its AST context without destroying it: the object goes
+to `llvm::BuryPointer` and lives until the process exits, and `hasASTContext` is false
+afterwards.
+"""
+function resetAndLeakASTContext(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakASTContext(ci)
+end
+
+"""
+    resetAndLeakSema(ci::CompilerInstance)
+Drop the instance's ownership of its `Sema` without destroying it: the object goes to
+`llvm::BuryPointer` and lives until the process exits, and `hasSema` is false afterwards.
+"""
+function resetAndLeakSema(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_resetAndLeakSema(ci)
+end
+
+"""
+    getAPINotesOpts(ci::CompilerInstance) -> APINotesOptions
+Return the `clang::APINotesOptions` of this instance's invocation (borrowed view — the
+object belongs to the invocation, never `dispose` it). The instance must have an
+invocation: `CompilerInstance` forwards through an unchecked `Invocation->` dereference,
+hence the `hasInvocation` assertion.
+
+The view's lifetime is whoever ends up owning the invocation, not the caller:
+`setInvocation` rewraps the raw handle in a fresh `shared_ptr`, and
+`clang_Interpreter_create` consumes the whole `CompilerInstance` even when it fails.
+"""
+function getAPINotesOpts(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasInvocation(ci) "the compiler instance must have an invocation"
+    return APINotesOptions(clang_CompilerInstance_getAPINotesOpts(ci))
+end
+
+"""
+    getFrontendTimerName(ci::CompilerInstance) -> String
+Return the name of the instance's frontend timer. `llvm::Timer` has no LLVM-C handle, so the
+timer is published through this accessor and [`isFrontendTimerRunning`](@ref) rather than as
+a carrier of its own. The instance must have a frontend timer.
+"""
+function getFrontendTimerName(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasFrontendTimer(ci) "the compiler instance has no frontend timer"
+    return get_string(clang_CompilerInstance_getFrontendTimerName(ci))
+end
+
+"""
+    isFrontendTimerRunning(ci::CompilerInstance) -> Bool
+Return whether the instance's frontend timer is currently between a `startTimer` and a
+`stopTimer`. The instance must have a frontend timer.
+"""
+function isFrontendTimerRunning(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasFrontendTimer(ci) "the compiler instance has no frontend timer"
+    return clang_CompilerInstance_isFrontendTimerRunning(ci)
+end
+
+"""
+    buildingModule(ci::CompilerInstance) -> Bool
+Return whether this instance is building a module.
+
+Inherited from `clang::ModuleLoader`, whose constructor sets the flag, so this is total.
+"""
+function buildingModule(ci::CompilerInstance)
+    @check_ptrs ci
+    return clang_CompilerInstance_buildingModule(ci)
+end
+
+"""
+    setBuildingModule(ci::CompilerInstance, flag::Bool) -> Nothing
+Set whether this instance is building a module.
+"""
+function setBuildingModule(ci::CompilerInstance, flag::Bool)
+    @check_ptrs ci
+    return clang_CompilerInstance_setBuildingModule(ci, flag)
+end
+
+"""
+    takeASTConsumer(ci::CompilerInstance) -> ASTConsumer
+Remove `ci`'s AST consumer and hand it back, leaving `ci` with none —
+[`hasASTConsumer`](@ref) is `false` afterwards. This is how an adoption performed by
+[`setASTConsumer`](@ref) is undone before disposing an instance whose consumer another owner
+still holds.
+
+There is no `dispose` for an `ASTConsumer` and none is wanted: the consumer this package can
+obtain belongs to an interpreter, so re-install it or drop the handle, never free it. The
+consumer was also `Initialize`d against the donor's `ASTContext`, which this call cannot
+undo; a donor that will be used again must have its own pipeline re-run.
+"""
+function takeASTConsumer(ci::CompilerInstance)
+    @check_ptrs ci
+    @assert hasASTConsumer(ci) "CompilerInstance has no AST consumer."
+    return ASTConsumer(clang_CompilerInstance_takeASTConsumer(ci))
+end
+
+"""
+    InitializeSourceManagerFromFile(ci::CompilerInstance, path::AbstractString,
+                                    is_system::Bool=false) -> Bool
+Make the file at `path` the main file of `ci`'s source manager and return whether it could be
+read. On failure clang reports through `ci`'s diagnostics engine, which is what distinguishes
+this from hand-rolling `getFileRef` + `setMainFileID`: a missing file becomes a counted
+diagnostic instead of a NULL `FileEntryRef` fed into the setter.
+
+`is_system=true` marks the file's locations as system rather than user code, which
+[`getFileCharacteristic`](@ref) reads back. `path` may not be `"-"`, which clang would read as
+the calling process's standard input.
+"""
+function InitializeSourceManagerFromFile(ci::CompilerInstance, path::AbstractString,
+                                         is_system::Bool=false)
+    @check_ptrs ci
+    @assert hasDiagnostics(ci) "CompilerInstance has no diagnostics engine."
+    @assert hasFileManager(ci) "CompilerInstance has no file manager."
+    @assert hasSourceManager(ci) "CompilerInstance has no source manager."
+    @assert path != "-" "path must name a file, not standard input"
+    return clang_CompilerInstance_InitializeSourceManagerFromFile(ci, path, is_system)
 end
