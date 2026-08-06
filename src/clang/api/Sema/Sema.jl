@@ -8262,3 +8262,32 @@ function resolveAddressOfSingleOverloadCandidate(x::AbstractSema, e::AbstractExp
     p == C_NULL && return nothing
     return FunctionDecl(p), NamedDecl(found[]), access[]
 end
+
+"""
+    IsValueInFlagEnum(x::AbstractSema, ed::AbstractEnumDecl, val, allow_mask::Bool) -> Bool
+
+Whether `val` is a value the flag enum `ed` can hold: one of its enumerators, an OR of them,
+or — when `allow_mask` — the complement of such a value, so that a mask reads as valid too.
+
+`val` is an `LLVMGenericValueRef` carrying the integer, the form `getIntegerConstantExpr` and
+`EvaluateKnownConstInt` return.
+"""
+function IsValueInFlagEnum(x::AbstractSema, ed::AbstractEnumDecl, val, allow_mask::Bool)
+    @check_ptrs x ed
+    return clang_Sema_IsValueInFlagEnum(x, ed, val, allow_mask)
+end
+
+"""
+    getPrintingPolicy(x::AbstractSema) -> PrintingPolicy
+
+Sema's printing policy: the `ASTContext`'s, adjusted for the preprocessor — so it is not
+[`getPrintingPolicy(::ASTContext)`](@ref) and the two can disagree.
+
+Clang returns this **by value**, so the result is a fresh object the caller owns: release it
+with `dispose`. That is the opposite of the `ASTContext` getter, whose result is a borrowed
+interior pointer that must never be disposed.
+"""
+function getPrintingPolicy(x::AbstractSema)
+    @check_ptrs x
+    return PrintingPolicy(clang_Sema_getPrintingPolicy(x))
+end

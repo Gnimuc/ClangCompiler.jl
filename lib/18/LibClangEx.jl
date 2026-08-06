@@ -43350,6 +43350,14 @@ function clang_Sema_resolveAddressOfSingleOverloadCandidate(S, E, FoundDecl, Fou
     @ccall libclangex.clang_Sema_resolveAddressOfSingleOverloadCandidate(S::CXSema, E::CXExpr, FoundDecl::Ptr{CXNamedDecl}, FoundAccess::Ptr{CXAccessSpecifier})::CXFunctionDecl
 end
 
+function clang_Sema_IsValueInFlagEnum(S, ED, Val, AllowMask)
+    @ccall libclangex.clang_Sema_IsValueInFlagEnum(S::CXSema, ED::CXEnumDecl, Val::LLVMGenericValueRef, AllowMask::Bool)::Bool
+end
+
+function clang_Sema_getPrintingPolicy(S)
+    @ccall libclangex.clang_Sema_getPrintingPolicy(S::CXSema)::CXPrintingPolicy_
+end
+
 function clang_TemplateDeductionInfo_create(Loc, DeducedDepth)
     @ccall libclangex.clang_TemplateDeductionInfo_create(Loc::CXSourceLocation_, DeducedDepth::Cuint)::CXTemplateDeductionInfo
 end

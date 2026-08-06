@@ -4111,6 +4111,23 @@ CXFunctionDecl clang_Sema_resolveAddressOfSingleOverloadCandidate(CXSema S, CXEx
                                                                   CXNamedDecl *FoundDecl,
                                                                   CXAccessSpecifier *FoundAccess);
 
+// Whether Val is a value the flag-enum ED can hold: one of its enumerators, an OR of them,
+// or -- when AllowMask -- the complement of such a value, so a mask reads as valid too.
+//
+// Val crosses as an LLVMGenericValueRef, the shape §1 uses for an APInt; only its IntVal is
+// read, and its width is taken as clang takes it, so a value wider than the enum's underlying
+// type answers for the bits it actually holds.
+bool clang_Sema_IsValueInFlagEnum(CXSema S, CXEnumDecl ED, LLVMGenericValueRef Val,
+                                  bool AllowMask);
+
+// Sema's printing policy, which is the ASTContext's adjusted for the preprocessor -- so it is
+// NOT clang_ASTContext_getPrintingPolicy and the two can disagree.
+//
+// Returned BY VALUE by clang, so this is a fresh heap box the caller owns: release it with
+// clang_PrintingPolicy_dispose. That is the opposite of the ASTContext getter, whose result is
+// a borrowed interior pointer that must never be disposed.
+CXPrintingPolicy_ clang_Sema_getPrintingPolicy(CXSema S);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif
