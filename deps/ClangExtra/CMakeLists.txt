@@ -54,6 +54,15 @@ endif(WIN32)
 # lets the shim spell `int64_t` at its own boundary with no truncation anywhere.
 target_compile_definitions(clangex PUBLIC "_FILE_OFFSET_BITS=64")
 
+# The three definitions LLVMConfig.cmake exports in LLVM_DEFINITIONS. LLVM headers use the
+# C99 PRI* format macros ("%" PRIu64 in BitstreamReader.h), and glibc before 2.18 defines
+# those in C++ only when __STDC_FORMAT_MACROS is set before <inttypes.h> first arrives --
+# the x86_64, i686 and powerpc64le BinaryBuilder sysroots (glibc 2.12/2.17) are that old.
+# GCC's own <stdint.h> wrapper supplies the LIMIT/CONSTANT pair in C++11 mode, but it has
+# no <inttypes.h> counterpart, so only the FORMAT macro ever goes missing; all three are
+# spelled here because they are one contract.
+target_compile_definitions(clangex PUBLIC "__STDC_CONSTANT_MACROS" "__STDC_FORMAT_MACROS" "__STDC_LIMIT_MACROS")
+
 target_link_libraries(clangex LINK_PUBLIC LLVM clang-cpp)
 
 include(cmake/install_config.cmake)
