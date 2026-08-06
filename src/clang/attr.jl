@@ -3,7 +3,7 @@
 # CXAttrKind value -> concrete Julia carrier type, so resolving an attribute
 # is one ccall (getKind) + one lookup instead of a per-class predicate chain.
 # The kinds and carriers both derive from AttrList.inc, so the map is generated
-# from it into lib/<major>/AttrKindMap.jl (defines `ATTR_KIND_TO_TYPE`).
+# from it into src/clang/AttrKindMap.jl (defines `ATTR_KIND_TO_TYPE`).
 include("AttrKindMap.jl")
 
 """

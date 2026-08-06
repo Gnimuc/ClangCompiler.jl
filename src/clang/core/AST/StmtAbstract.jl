@@ -1,6 +1,6 @@
 # The abstract-type skeleton of the Stmt hierarchy that abstract.jl doesn't
 # already define (the OpenMP/ObjC tail) is generated from the vendored
-# StmtNodes.inc into lib/<major>/StmtAbstractGen.jl by gen/stmt_nodes.jl. Runs
+# StmtNodes.inc into src/clang/core/AST/StmtAbstractGen.jl by gen/stmt_nodes.jl. Runs
 # right after abstract.jl so the hand-written struct files can subtype per-class
 # abstract types.
 #

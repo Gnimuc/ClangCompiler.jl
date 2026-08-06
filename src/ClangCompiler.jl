@@ -30,7 +30,7 @@ using .LibClangEx
 
 # The Attr/Stmt/Decl/Type hierarchies are emitted as explicit source (carriers,
 # wrappers, and resolve maps) from the vendored *.inc files by gen/*_nodes.jl
-# into lib/<major>/, and included where each subsystem is defined — there is no
+# into src/, beside the hand-written files of each subsystem — there is no
 # runtime node-table mirror.
 
 include("platform/JLLEnvs.jl")

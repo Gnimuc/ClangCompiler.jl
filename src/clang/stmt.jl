@@ -3,7 +3,7 @@
 # CXStmtClass value -> concrete Julia carrier type, so resolving is one ccall
 # + one lookup instead of a per-class predicate chain. The classes and carriers
 # both derive from StmtNodes.inc, so the map is generated from it into
-# lib/<major>/StmtClassMap.jl (defines `STMT_CLASS_TO_TYPE`).
+# src/clang/StmtClassMap.jl (defines `STMT_CLASS_TO_TYPE`).
 include("StmtClassMap.jl")
 
 """

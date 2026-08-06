@@ -21,18 +21,20 @@ principled because of it:
   cannot see is the *hierarchy*: `CXIfStmt` and `CXStmt` are unrelated to it, so every
   base/derived crossing is a `reinterpret_cast` the compiler takes on trust. Clang's class
   hierarchy and its multiple-inheritance pivots are reproduced one layer up, in Julia.
-- **Payload downcasts are `static_cast`, not `dyn_cast`.** The wrapper has already
+- **Payload downcasts are unchecked, not `dyn_cast`.** The wrapper has already
   established the receiver's dynamic type before it calls, so the cast's precondition holds
   by construction.
 - **No null checks, no validation, no error codes cross the boundary** (see Error handling).
   Preconditions are the caller's contract, and there is exactly one caller.
 
 The safety this discards is re-established entirely in the Julia thin wrapper, which is the
-**sole safety boundary**. Two invariants there make every `static_cast` in this library
+**sole safety boundary**. Two invariants there make every `reinterpret_cast` in this library
 valid — they are specified and must be preserved in `../../src/clang/CLAUDE.md`:
 
 1. **Faithful carriers** — a Julia carrier's type always reflects its pointee's true dynamic
-   C++ class, because carriers are constructed only through checked casts.
+   C++ class, because a carrier is only ever built from a pointer whose dynamic class is already
+   established — see `../../src/clang/CLAUDE.md` for the three routes, only one of which is a
+   checked cast.
 2. **Correctly-leveled receivers** — each wrapper types its receiver at the abstract
    supertype of the C++ class that declares the method, so multiple dispatch rejects a
    mistyped receiver before the ccall is emitted.
@@ -76,12 +78,29 @@ linkable. No external symbol back means the method is dead — drop the wrapper 
 placeholder comment. When overrides do exist, the gate must be the flag that selects those targets
 (`hasIbm128Type` for `getIbm128Mangling`, which only PPC implements), asserted in Julia.
 
+A fifth, and the one that looks least like our problem: **a C type's width is part of the
+mangled name of every C++ function taking one**, and on Windows the two sides of that name come
+from different toolchains — this library is compiled on the runner by msys2's mingw gcc, while
+`clang-cpp` arrives prebuilt from BinaryBuilder. `getVirtualFileRef(StringRef, off_t, time_t)`
+linked on macOS and Linux and failed on Windows alone for exactly that reason: mingw's `off_t`
+is `long` under LLP64, 32 bits, where the prebuilt library had 64. No signature on our side
+fixes it, because the mangling comes from clang's own declaration; the two have to be made to
+agree, which `CMakeLists.txt` does with `_FILE_OFFSET_BITS=64`. `time_t` never had the problem
+— the `addFile` call in `createFileManagerWithVOFS4PCH` takes one and always linked — which is
+what isolated the cause to `off_t` rather than to the toolchains in general.
+
+The Julia side of the same fact: `time_t` is 64 bits on every target but is `long long` on
+mingw where the other two spell `long`, so entry points taking one spell `int64_t` and no alias
+tracks it. `shim_type_width` asks this library its own widths and `test/abi.jl` asserts them, so
+a toolchain flag change fails a test instead of corrupting a value.
+
 ## The rule that prevents disasters
 
 **Header and .cpp must change in lockstep.** The Julia bindings are generated from the
-headers alone, and `extern "C"` + `void*`-typedef signatures mean neither the C++ compiler
-nor the linker catches arity or type drift between declaration and definition — failures
-surface at Julia runtime as memory corruption or `dlsym` errors, never at build time.
+headers alone, and `extern "C"` sits on the declaration only — so a definition whose signature
+has drifted is a separate C++-linkage overload rather than a redeclaration, and neither the
+compiler nor the linker says so. The failure surfaces at Julia runtime as a `dlsym` error,
+never at build time.
 Corollaries:
 
 - A function defined only in the .cpp but missing from the header never reaches Julia.
@@ -122,11 +141,18 @@ Corollaries:
   CXTypes.h when checking for an existing typedef; `CXTemplateSpecializationType` is
   already duplicated inside CXTypes.h itself). A typedef existing does not mean wrapper
   functions exist.
-- On a name collision with libclang, the **type** gets a trailing underscore — currently
-  exactly six: `CXType_`, `CXSourceLocation_`, `CXSourceRange_`, `CXTargetInfo_`,
-  `CXToken_`, `CXDiagnostic_`. Function names never get the underscore. Using the
-  un-underscored name in a new signature silently binds to libclang's unrelated type in
-  the generated bindings.
+- On a name collision with libclang, the **type** gets a trailing underscore; function names
+  never do. Using the un-underscored name in a new signature silently binds to libclang's
+  unrelated type in the generated bindings, so check which spelling a type has before writing
+  it rather than trusting a list here — this bullet said "exactly six" while the headers
+  carried more, and the omitted ones are precisely the ones a contributor re-declares:
+
+  ```bash
+  grep -rhoE 'CX[A-Za-z0-9]+_;' include/clang-ex | sed 's/;//' | sort -u
+  ```
+
+  `test/lint.jl`'s guard against the bare spellings is derived from that same set, so the two
+  cannot drift apart.
 - Header skeleton: guard `LLVM_CLANG_C_EXTRA_<NAME>_H` (watch for copy-paste guard
   collisions — a colliding guard silently drops the header from the generated bindings); include
   `clang-ex/CXTypes.h`, `clang-c/ExternC.h`, `clang-c/Platform.h` (+ `clang-c/CXString.h`
@@ -159,31 +185,34 @@ Corollaries:
 ## Marshalling
 
 The trivial shapes are below. For value types, iterator ranges, arbitrary-precision numbers,
-and other out-of-band results that a `void *` accessor can't carry, follow the playbook in
+and other out-of-band results that a plain handle accessor can't carry, follow the playbook in
 `MARSHALLING.md` (APValue/APSInt/APFloat, `std::string`→CXString, count+fill vs count+index for
 ranges, exposing aggregate fields, discriminated unions, opaque navigation handles) — extend
 that file rather than inventing a one-off scheme.
 
-- Handle → C++: `static_cast<clang::T *>(h)`. Never `dynamic_cast`/`typeid` (built with
-  `-fno-rtti`), never C-style casts. `T&` returns → `return &...;` const returns →
-  `const_cast` (the C surface is all non-const `void*`). Reference params → deref a
-  pointer arg.
+- Handle → C++: `reinterpret_cast<clang::T *>(h)`. It cannot be `static_cast`: a handle is its
+  own incomplete struct type, unrelated by inheritance to the Clang class it stands for, and
+  `static_cast` between unrelated pointer types is ill-formed — the compiler rejects it.
+  Never `dynamic_cast`/`typeid` (built with `-fno-rtti`), never C-style casts. `T&` returns →
+  `return &...;` const returns → `const_cast` (the C surface is all non-const handles).
+  Reference params → deref a pointer arg.
 - Downcasts: `clang_<Base>_castTo<Derived>` = `llvm::dyn_cast_or_null<clang::Derived>(...)`
   (null-safe, nullptr on wrong kind), **returning `CX<Derived>` rather than the base handle**
   so the Julia carrier it feeds is checked against it, placed under a `// <Base> Cast` comment at the end
   of that class's section (files hold several classes; casts close each section, not the
   file). Decl ↔ DeclContext cross-casts go through Clang's static
   `Decl::castToDeclContext`/`castFromDeclContext` or `dyn_cast` — never a plain pointer
-  cast of the `void*` (multiple inheritance shifts the pointer).
+  cast of the handle (multiple inheritance shifts the pointer).
 - Value types cross by encoding, never as object pointers: `SourceLocation` ↔
   `.getPtrEncoding()` / `SourceLocation::getFromPtrEncoding()` (a `CXSourceLocation_` is
   the encoding itself — casting it to `SourceLocation*` and dereferencing is wrong);
   `QualType`/`DeclarationName`/`DeclGroupRef` ↔ `getAsOpaquePtr`/`getFromOpaquePtr`;
   `TemplateName` ↔ `getAsVoidPointer`/`getFromVoidPointer`. `SourceRange` returns by value
   as `CXSourceRange_{b.getPtrEncoding(), e.getPtrEncoding()}`; SourceRange parameters are
-  passed either as `CXSourceRange_` by value (`clang_TagDecl_setBraceRange`) or
-  decomposed into two `CXSourceLocation_` args (`clang_Sema_setAnnotationRange`) — match
-  the local file.
+  passed as `CXSourceRange_` by value (`clang_TagDecl_setBraceRange`,
+  `clang_CXXConstructExpr_setParenOrBraceRange`, `clang_ASTUnit_mapRangeToPreamble`). Pass
+  one that way rather than decomposing it into two `CXSourceLocation_` args — no entry point
+  here takes that shape, so a new one would be alone in the library.
 - Strings out: computed/temporary → `extra::makeCXString(std::string)` from `utils.h`
   (strdup + CXS_Malloc; empty string is a static unmanaged ""; Julia frees via libclang's
   `clang_disposeString` — libclangex ships no string-free functions). Stable Clang-owned
@@ -217,7 +246,8 @@ CXStmt.cpp fail the build if it goes stale); stamped symbols are
 version-following per LLVM major, exempt from the frozen-ABI rule; per-class
 payload accessors are hand-written in the normal per-header files, NOT stamped.
 gen/generator.jl auto-ignorelists the .inc's transient per-class macros and
-emits lib/<major>/StmtNodes.jl (the table the Julia layer stamps from) — both
+emits explicit Julia source under src/ (StmtAbstractGen.jl, StmtCarriers.jl, StmtWrappers.jl,
+StmtClassMap.jl — the Julia layer stamps from no runtime table) — both
 regenerate with the bindings.
 
 ## Enums
@@ -266,7 +296,7 @@ The only reliable way to tell ownership is to read the impl; these are the rules
 new code by:
 
 - Caller-owned: a heap-allocating `_create` = `std::make_unique<T>(...).release()` with a
-  matching `_dispose` = `delete static_cast<T*>(h)` declared in the same header (creates
+  matching `_dispose` = `delete reinterpret_cast<T*>(h)` declared in the same header (creates
   that return a value encoding, like `clang_DeclarationName_create`, allocate nothing and
   have no dispose). Subclass creates return the BASE-class handle and share the base
   `_dispose` (`clang_TextDiagnosticPrinter_create` → `CXDiagnosticConsumer`,
@@ -289,9 +319,16 @@ new code by:
   consume the `LLVMMemoryBufferRef`.
 - C++ objects returned **by value** with no pointer encoding (FileEntryRef, FileID,
   TemplateArgument) are heap-boxed with make_unique/release and get an explicit dispose —
-  flag this in a header comment. TemplateArgument is the only AST-area family with a
-  dispose; nearly everything else in AST wrappers is ASTContext-arena memory. The one exception
-  is `clang_ASTContext_createMangleContext` and its device twin, which forward to a clang factory
+  flag this in a header comment. Most AST wrappers hand back ASTContext-arena memory and have
+  no dispose, but do not read that as "AST handles are never owned" — the rule is that an
+  AST-area handle gets a dispose exactly when the shim heap-boxes a by-value C++ object or
+  `new`s one itself, and a good many do. Ask rather than assume:
+
+  ```bash
+  grep -rhoE 'clang_[A-Za-z0-9_]+_dispose' include/clang-ex/AST | sort -u
+  ```
+
+  `clang_ASTContext_createMangleContext` and its device twin forward to a clang factory
   that `new`s — `clang_MangleContext_dispose` is the matching release, and `clang::MangleContext`
   has a virtual destructor, so deleting through the base runs the subclass's.
 - Lifetime traps documented in code, keep them true: `clang_SourceManager_create` stores
