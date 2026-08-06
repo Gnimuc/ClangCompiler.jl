@@ -7,7 +7,7 @@ const LX = CC.LibClangEx
 
 @testset "Attr hierarchy table" begin
     # Re-parse the vendored AttrList.inc as an independent oracle and check the
-    # generated carriers (lib/<major>/AttrCarriers.jl) against it: every clang
+    # generated carriers (src/clang/core/AST/AttrCarriers.jl) against it: every clang
     # attribute has a `<Name>Attr` carrier subtyping the abstract of its C++
     # base category. This is the same source gen/attr_nodes.jl reads, parsed
     # separately here so a generator mistake can't validate itself.

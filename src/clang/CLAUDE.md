@@ -17,7 +17,7 @@ construction. All of that is re-established here. Two invariants make every cast
 C shim valid; preserving them is the whole responsibility of this layer:
 
 1. **Faithful carriers.** A carrier struct's Julia type always reflects its pointee's true
-   dynamic C++ class. A carrier that lies makes the next `static_cast` in C undefined
+   dynamic C++ class. A carrier that lies makes the next `reinterpret_cast` in C undefined
    behaviour even though Julia dispatch "succeeded."
 2. **Correctly-leveled receivers.** Each wrapper types its receiver at the abstract
    supertype of the C++ class that *declares* the method — never looser. This is what makes
@@ -42,7 +42,7 @@ Everything below is how these two invariants are maintained.
 
 Clang's hierarchy is mirrored as an abstract-type tree in `core/abstract.jl` (and, for the
 Stmt hierarchy, the OpenMP/ObjC tail is generated from `StmtNodes.inc` into
-`lib/<major>/StmtAbstractGen.jl`, included via `core/AST/StmtAbstract.jl`):
+`src/clang/core/AST/StmtAbstractGen.jl`, included via `core/AST/StmtAbstract.jl`):
 `AbstractExpr <: AbstractValueStmt <: AbstractStmt`, and so on, class-for-class. Each
 concrete class is a carrier:
 
@@ -106,8 +106,8 @@ with the same method for `unsafe_convert`, and a third for `Union{Int,UInt}` —
 non-pointer route, since Base converts those to any `Ptr`. Extending Base here is not piracy:
 `A` and `B` are this package's own phantoms, so no call in a program that does not use this
 package can dispatch to them. `AbstractCXImpl`, attached to every phantom by a post-pass in
-`gen/generator.jl`, is what makes it one method rather than a million; a `Union` over the 1,050
-phantoms expresses the same set but costs ~1,100× per subtype check, because Julia scans union
+`gen/generator.jl`, is what makes it one method rather than a million; a `Union` over every
+phantom expresses the same set but costs ~1,100× per subtype check, because Julia scans union
 members linearly during method lookup.
 
 Two spellings stay open, and must. `CXWhileStmt(p)` is Julia's own `Ptr{T}(::Ptr)` constructor,
@@ -243,7 +243,7 @@ getBeginLoc(x::AbstractStmt) = ...   # Stmt::getBeginLoc — declared on the bas
 ```
 
 Dispatch is then the type check: a `WhileStmt` cannot reach `getCond`, so the C
-`static_cast<clang::IfStmt *>` never runs on a non-`IfStmt`. Typing the receiver too loosely
+`reinterpret_cast<clang::IfStmt *>` never runs on a non-`IfStmt`. Typing the receiver too loosely
 (`AbstractStmt` for an `IfStmt`-only method) silently removes that guarantee and reopens the
 UB the C layer assumes away. This is the single most important rule in this directory.
 

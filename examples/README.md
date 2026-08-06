@@ -82,8 +82,8 @@ plan to hold clang handles yourself. 04, 05, 06 and 07 are independent and can b
 
 ## Finding the API for something the tour does not cover
 
-These seven touch a small part of the surface: 8,980 C entry points behind 6,531 Julia wrapper
-functions across 78 files. Two things make that navigable.
+These seven touch a small part of the surface — on the order of nine thousand C entry points
+behind some seven thousand Julia wrappers. Two things make that navigable.
 
 **The file tree mirrors Clang's.** A method declared in `clang/AST/Decl.h` is wrapped in
 `src/clang/api/AST/Decl.jl`. So if you know where clang declares it, you know where to look.

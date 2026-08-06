@@ -83,7 +83,7 @@ clty_to_jlty(x::DependentTemplateSpecializationType) = x
 # their leaf (Record/Enum, Proto/NoProto, LValue/RValue, Constant/…) — the
 # sub-resolves below stay for callers that hold an abstract carrier.
 # The classes derive from TypeNodes.inc, so the map is generated from it into
-# lib/<major>/TypeClassMap.jl (defines `TYPE_CLASS_TO_TYPE`).
+# src/TypeClassMap.jl (defines `TYPE_CLASS_TO_TYPE`).
 include("TypeClassMap.jl")
 
 """

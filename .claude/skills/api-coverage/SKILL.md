@@ -73,7 +73,7 @@ Every wrapper types its receiver at the abstract of the class that *declares* th
 symbol names that class — `clang_NamedDecl_getName` — so it looked checkable, and it was worth
 knowing whether the review dimension that keeps coming back clean was actually seeing anything.
 
-**It holds.** Measured over `src/clang/api`: 8651 wrapper blocks, 6554 instance-method
+**It holds.** Measured over `src/clang/api` when the check was run — 8651 wrapper blocks, 6554 instance-method
 receiver/symbol pairs, **zero mismatches**.
 
 The check itself is not worth keeping, and the reason is the useful part. Four passes each
@@ -157,6 +157,11 @@ against that rate, not against the `viable` count.
 
 ## Before quoting a number
 
-Re-run `gapmap.jl`, then `gapdiff.jl`. Quoting a stale map has produced wrong figures more than
-once. And say which number you mean: "bound symbols" (C functions), "already wrapped" (methods
+Re-run `candidates.jl`. Quoting a stale map has produced wrong figures more than once, and the
+classifier itself has been wrong twice — once calling ranges blocked, once reporting every
+renamed crossing as a gap — so a number from an older run may be wrong in a way no rerun of
+that run would reveal. Run `selfcheck.jl` too if you are about to rely on the oracle rather
+than just the count.
+
+And say which number you mean: "bound symbols" (C functions), "already wrapped" (methods
 reachable from Julia) and "viable" are three different things.

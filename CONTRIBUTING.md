@@ -18,10 +18,16 @@ almost everything about how to change it.
 `lib/LibClang.jl` is the one exception to "never hand-edit `lib/`": it is a small hand-maintained
 excerpt of `libclang` bindings, not generator output.
 
-The C shim is deliberately **type-erased** (every handle is `void *`) and **check-free** (plain
-`static_cast`, no null checks, no error codes). All of that erased safety is re-established in
-`src/clang/`, which is therefore the only safety boundary in the package. Do not push validation
-down into C, and do not expect C to check anything.
+Every handle is its own incomplete struct pointer (`typedef struct CXDeclImpl *CXDecl`), so the
+C compiler rejects a handle passed where another class is wanted. What it cannot see is the
+**hierarchy** — `CXIfStmt` and `CXStmt` are unrelated types to it — so every base/derived
+crossing inside the shim is a `reinterpret_cast` taken on trust. The shim is also deliberately
+**check-free**: no null checks, no error codes.
+
+Both of those are re-established in `src/clang/`, which is therefore the only safety boundary in
+the package: it reproduces Clang's hierarchy in abstract types so the trusted casts are actually
+valid, and it checks the preconditions C does not. Do not push validation down into C, and do
+not expect C to check anything beyond the class of a single handle.
 
 ## Getting set up
 
@@ -57,9 +63,10 @@ Segmentation fault` (or `EXCEPTION_ACCESS_VIOLATION`), a libstdc++ assertion pri
 
 A C-side change is not finished when it compiles. It is finished when all of this has happened:
 
-1. the header **and** the `.cpp` have moved together — the signatures are `extern "C"` over
-   `void *`, so neither the compiler nor the linker catches drift between declaration and
-   definition, and the failure surfaces at Julia runtime as corruption or a `dlsym` error;
+1. the header **and** the `.cpp` have moved together — `extern "C"` sits on the *declaration*,
+   so a definition whose signature has drifted is not a redeclaration at all but a separate
+   C++-linkage overload: it compiles, the library links, the `extern "C"` symbol is simply
+   absent, and the failure surfaces at Julia runtime as a `dlsym` error;
 2. any new `.cpp` is registered in the `CMakeLists.txt` of its own directory under
    `deps/ClangExtra/lib/` — an unregistered file builds to nothing, and the symbol goes missing
    only when Julia first calls it;
@@ -81,7 +88,7 @@ nowhere: `Sema::CheckBitwiseOperands` is local while its sibling `CheckAdditionO
 external, and a plain `nm -C` finds both. No external symbol means the method is dead — do not
 wrap it.
 
-For anything whose signature does not fit through a `void *` — value types, iterator ranges,
+For anything whose signature does not fit through a plain handle — value types, iterator ranges,
 arbitrary-precision numbers, optionals — follow `deps/ClangExtra/MARSHALLING.md` rather than
 inventing a scheme. Extend that file if your case is new.
 
@@ -151,7 +158,7 @@ wrappers keep Clang's camelCase method names rather than Julia style.
 
 ## Writing a wrapper
 
-A wrapper is three lines long and each one is doing a job. The C `static_cast` behind it is only
+A wrapper is three lines long and each one is doing a job. The C `reinterpret_cast` behind it is only
 valid because of these:
 
 ```julia
@@ -165,7 +172,7 @@ end
   concrete carrier only from `resolve(x)`, from a `castTo<Derived>` (null-safe, NULL carrier on
   the wrong kind), or from a getter whose C++ return type *is* statically that class. When a C
   method hands back a base handle, wrap it at that base and let the caller refine — a carrier
-  that lies makes the next `static_cast` in C undefined behaviour while Julia dispatch looks
+  that lies makes the next `reinterpret_cast` in C undefined behaviour while Julia dispatch looks
   perfectly happy.
 * **Type the receiver at the class that declares the method**, as in the naming section above.
 * **Restate the C++ method's preconditions as `@assert`.** Many Clang accessors are partial: they
@@ -230,7 +237,7 @@ sounds. Three rules, the first two enforced by `test/lint.jl` and `test/tautolog
 
 Test files mirror the source tree, and a new one must be added to `test/runtests.jl` by hand.
 
-Format with JuliaFormatter, YAS style, margin 1000 (`.JuliaFormatter.toml`); `lib/` and
-`examples/` are excluded. The margin sits past the longest line in the repo, so the formatter
+Format with JuliaFormatter, YAS style, margin 1000 (`.JuliaFormatter.toml`); `lib/`,
+`examples/` and the generated `src/` files listed in its `ignore` entry are excluded. The margin sits past the longest line in the repo, so the formatter
 never splits one — but it will still *join* anything that now fits, hand-placed breaks
 included, so don't run it over the tree. Match the file you are editing.

@@ -4,7 +4,7 @@
 # ccall (getKind) + one lookup instead of a string-compare on getDeclKindName.
 # Kinds whose carrier struct is not wrapped (many ObjC/OpenMP decls) are simply
 # absent — resolve falls back to the base. The kinds derive from DeclNodes.inc,
-# so the map is generated from it into lib/<major>/DeclKindMap.jl (defines
+# so the map is generated from it into src/clang/DeclKindMap.jl (defines
 # `DECL_KIND_TO_TYPE`).
 include("DeclKindMap.jl")
 

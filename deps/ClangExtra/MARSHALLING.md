@@ -3,8 +3,9 @@
 Most Clang methods marshal trivially (bool/int/enum, a `QualType` opaque pointer, an
 AST-node pointer). This file is the playbook for the ones that don't — the value types,
 iterator ranges, and out-of-band results that a naive `void *` accessor can't carry. Each
-pattern respects the single-client axiom (see `CLAUDE.md`): the C shim stays type-erased and
-total; the Julia thin wrapper re-imposes types and checks preconditions.
+pattern respects the single-client axiom (see `CLAUDE.md`): the C shim stays total and
+check-free, and its handles name a class but never a hierarchy; the Julia thin wrapper
+reproduces the hierarchy and checks preconditions.
 
 Pick the lightest pattern that fits. Prefer exposing components over marshalling an aggregate;
 prefer a borrowed interior pointer over an owned copy; only heap-box when the value has no
@@ -31,7 +32,8 @@ that existing handle and convert with `llvm::wrap`/`llvm::unwrap` (or the establ
 
 Only genuinely-Clang types get a `CX` handle: `Decl`/`Stmt`/`Expr`/`QualType`/`Type`,
 `APValue`, `Attr`, `TypeLoc`, `TemplateArgument`, `NestedNameSpecifier`, `DeclarationNameInfo`,
-`ASTRecordLayout`, `clang::Module` (`CXModule` — the header-modules type, *not* `llvm::Module`),
+`ASTRecordLayout`, `clang::Module` (`CXModule_` — the header-modules type, *not* `llvm::Module`; the trailing
+underscore is the libclang collision rule),
 `clang::Value` (`CXValue` — the interpreter value). When one of these wraps an LLVM value
 (e.g. `APValue`'s integer/float leaves), the wrapper is `CX` but the leaf still crosses as its
 LLVM-C handle.
@@ -94,16 +96,29 @@ getters (`lib/AST/CXAPValue.cpp`); the borrowed entry point
 
 These fill an `Expr::EvalResult` (an `APValue` + a diagnostics vector) and take `const ASTContext&`.
 
-**bool-return + out-param.** `clang_Expr_EvaluateAsInt(CXExpr, CXASTContext, LLVMGenericValueRef* out)`:
-run into a local `EvalResult`, on success box `Result.Val.getInt()` through the APSInt bridge and
-return `true`; `false` (leaving `*out` untouched) on non-constant. No exceptions cross.
+**Signal failure in the return, never by leaving an out-param untouched.** Which shape depends
+on what success has to carry, and the tree uses three:
 
-**In the tree.** `clang_Expr_EvaluateAsInt` / `EvaluateAsBooleanCondition` /
-`EvaluateAsFloat` (`lib/AST/CXExpr.cpp`).
+- an **owned handle or `nullptr`** when the result is an `APValue` —
+  `CXAPValue clang_Expr_EvaluateAsInt(CXExpr, CXASTContext)`, `nullptr` when `E` is not an
+  integer constant, and the caller disposes on success. `EvaluateAsRValue`, `EvaluateAsLValue`,
+  `EvaluateAsConstantExpr`, `EvaluateAsInitializer` and `EvaluateAsFixedPoint` are the same;
+- an **owned `LLVMGenericValueRef` or `nullptr`** when it is a float —
+  `LLVMGenericValueRef clang_Expr_EvaluateAsFloat(CXExpr, CXASTContext)` (§0: reuse LLVM's own
+  C type rather than minting one);
+- a **tri-state `int`** when the value is a bool and so cannot carry its own failure —
+  `int clang_Expr_EvaluateAsBooleanCondition(CXExpr, CXASTContext)`, 1/0 for the folded value
+  and -1 for "did not fold".
+
+Run into a local `Expr::EvalResult` and discard its diagnostics vector; no exceptions cross.
+
+The **bool + out-param** shape is used only where the caller needs what a *failed* evaluation
+left behind — `clang_Expr_EvaluateAsRValueIntoResult` and its LValue twin (`CXExpr.h:2320`),
+described under §3.
 
 **When the status half matters, promote the `EvalResult` to a caller-owned box.**
 The bool-return form discards everything in the aggregate except the value —
-`hasSideEffects`, `HasUndefinedBehavior`, `isGlobalLValue`. `CXEvalResult` is a
+`hasSideEffects`, `HasUndefinedBehavior`, `isGlobalLValue`. `CXEvalResult_` is a
 heap-boxed `Expr::EvalResult` (`clang_EvalResult_create` / `_dispose`); the
 `...IntoResult` evaluators take it as an in/out parameter and the status is read
 back through accessors. `EvaluateCharRangeAsString` cannot be wrapped at all
@@ -190,8 +205,11 @@ aggregate must round-trip intact.
 `ClassTemplateSpecializationDecl::getSpecializedTemplateOrPartial` (union of two decl types);
 `IfStmt::getNondiscardedCase` (`optional<Stmt*>`).
 
-**Split the discriminator from the payload.** Return the pointer as `void*` plus a companion
-`bool` predicate (`...specializedOnPartial`) so the Julia layer picks the right carrier. For
+**Split the discriminator from the payload.** Return the arms' common base handle — `CXDecl`
+for `clang_ClassTemplateSpecializationDecl_getSpecializedTemplateOrPartial`, since both arms
+are declarations — plus a companion `bool` predicate (`...specializedOnPartial`) so the Julia
+layer picks the right carrier. Not `void *`: no handle in this library is one, and the two
+`void *` returns that remain (`clang_Value_getType`, `getPtr`) are deliberately opaque. For
 `optional<T*>`, use `nullptr` as the disengaged sentinel when `T*` is a pointer.
 
 **Partly in the tree.** The union split —
@@ -218,8 +236,13 @@ Julia side spells it `num_expanded::Union{Nothing,Integer}=nothing`.
 
 ## 9. Qualifier / navigation classes with their own surface (`NestedNameSpecifier`, `TypeLoc`, `ASTRecordLayout`)
 
-**Opaque handle + a dedicated accessor family, interior pointer borrowed.** These are
-context/AST-arena-owned, so no `dispose`. `NestedNameSpecifier*` → `CXNestedNameSpecifier`
+**Opaque handle + a dedicated accessor family.** Ownership is not uniform across the three, and
+guessing it wrong leaks or double-frees: a class clang hands back **by pointer** into its arena
+is borrowed and has no `dispose`, while one it returns **by value** has to be heap-boxed and is
+therefore owned. `NestedNameSpecifier` and `ASTRecordLayout` are the first kind; `TypeLoc` is
+the second, and so is `NestedNameSpecifierLoc` inside the otherwise-borrowed
+`CXNestedNameSpecifier` family (`clang_TypeLoc_dispose`,
+`clang_NestedNameSpecifierLoc_dispose`). `NestedNameSpecifier*` → `CXNestedNameSpecifier`
 (family already exists). `ASTRecordLayout` → `CXASTRecordLayout` + `getSize`/`getFieldOffset(i)`/
 `getBaseClassOffset` accessors and an `AbstractASTRecordLayout` carrier. `TypeLoc` → at minimum
 an opaque handle + source-range floor.
@@ -235,6 +258,27 @@ accessor family (`lib/AST/CXRecordLayout.cpp`), including the CXXInfo-gated
 tail (`clang_ASTRecordLayout_getNonVirtualSize` / `hasOwnVFPtr` / `hasVBPtr`
 etc., `lib/AST/CXRecordLayout.cpp`) — CharUnits cross in bytes as `int64_t`,
 `getFieldOffset` alone in bits, matching the C++ API.
+
+**Box the value together with the storage it borrows.** Some by-value classes have
+no pointer form *and* do not own what they point at, so heap-boxing the value alone
+leaves a handle onto freed memory: `SrcMgr::LineOffsetMapping` holds `unsigned *`
+out of a caller-supplied `BumpPtrAllocator`, and `SourceManagerForFile` keeps only
+`StringRef`s of the file name and contents it was constructed from. The scheme is a
+file-local `struct <Thing>Box` in an anonymous namespace whose members are the
+borrowed storage **first** and the C++ value **last**, so declaration order makes
+the storage outlive the value; `CX<Thing>` is a handle to the box and `_dispose`
+deletes it. This is the same boxing mechanism as §13's "synthesize the gate inside
+the box" — a different missing thing (storage rather than a flag). The payoff is
+that the Julia caller does not have to keep its own string alive: the box owns a
+copy. `clang_LineOffsetMapping_create` and `clang_SourceManagerForFile_create`
+(`lib/Basic/CXSourceManager.cpp`) demonstrate it.
+
+**`NestedNameSpecifierLoc` is a member of this section**, not §7. An earlier round
+crossed it as its source range alone, which is the cheap path and is still bound
+(`clang_DeclRefExpr_getQualifierRange` and friends), but a `(specifier, range)` pair
+cannot express `getTypeLoc`. The heap-boxed `CXNestedNameSpecifierLoc` family from
+`clang_*_getQualifierLoc` (`lib/AST/CXNestedNameSpecifier.cpp`) is the full form,
+owned and disposed because it is a by-value object.
 
 ## 10. C++ callbacks / visitors — don't cross the boundary
 
@@ -272,27 +316,6 @@ to rows and hand back one C array per component field, filled in lockstep agains
 a single count. This is §11's parallel-component-array shape on the output side.
 Both calls re-run the same walk, so the ordering must be deterministic; say so in
 the header.
-
-**Box the value together with the storage it borrows.** Some by-value classes have
-no pointer form *and* do not own what they point at, so heap-boxing the value alone
-leaves a handle onto freed memory: `SrcMgr::LineOffsetMapping` holds `unsigned *`
-out of a caller-supplied `BumpPtrAllocator`, and `SourceManagerForFile` keeps only
-`StringRef`s of the file name and contents it was constructed from. The scheme is a
-file-local `struct <Thing>Box` in an anonymous namespace whose members are the
-borrowed storage **first** and the C++ value **last**, so declaration order makes
-the storage outlive the value; `CX<Thing>` is a handle to the box and `_dispose`
-deletes it. This is the same boxing mechanism as §13's "synthesize the gate inside
-the box" — a different missing thing (storage rather than a flag). The payoff is
-that the Julia caller does not have to keep its own string alive: the box owns a
-copy. `clang_LineOffsetMapping_create` and `clang_SourceManagerForFile_create`
-(`lib/Basic/CXSourceManager.cpp`) demonstrate it.
-
-**`NestedNameSpecifierLoc` is a member of this section**, not §7. An earlier round
-crossed it as its source range alone, which is the cheap path and is still bound
-(`clang_DeclRefExpr_getQualifierRange` and friends), but a `(specifier, range)` pair
-cannot express `getTypeLoc`. The heap-boxed `CXNestedNameSpecifierLoc` family from
-`clang_*_getQualifierLoc` (`lib/AST/CXNestedNameSpecifier.cpp`) is the full form,
-owned and disposed because it is a by-value object.
 
 ## 11. Builders taking `ArrayRef` / non-trivial value inputs (`ASTContext::getFunctionType`, `getConstantArrayType`, `getTemplateSpecializationType`)
 

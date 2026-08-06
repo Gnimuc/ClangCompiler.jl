@@ -38,7 +38,7 @@ end
 
 # Attr Cast — one checked cast and one predicate per attribute
 # class (NULL carrier when the attribute is another class; dyn_cast_or_null
-# semantics). Generated from AttrList.inc into lib/<major>/AttrWrappers.jl.
+# semantics). Generated from AttrList.inc into src/clang/api/AST/AttrWrappers.jl.
 include("AttrWrappers.jl")
 
 # Per-attribute payload accessors (Clang class order). Attribute classes are

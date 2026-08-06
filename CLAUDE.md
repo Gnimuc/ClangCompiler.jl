@@ -39,56 +39,13 @@ julia --project=gen gen/generator.jl
 julia test/tautologies.jl
 ```
 
-### Rules for writing a test here
+## Writing a test here
 
 A green suite is not evidence on its own — an assertion can fail to run, or run and be
-incapable of failing. These four rules are what keep it evidence; `test/lint.jl` and
-`test/tautologies.jl` enforce the middle two. The `suite-audit` skill has the tools that find
-violations, and the measurements for why each rule earns its place.
-
-- **A loop whose body is the only thing asserting proves nothing when the loop is empty.**
-  Construct the state that makes the assertion run, or assert the empty case explicitly.
-- **Never assert a type the wrapper's own return expression already fixes** — `isa Bool` on a
-  `::Bool` ccall restates this repo's source, not anything Clang decided, so it cannot tell a
-  correct shim from one returning a null or another argument's payload. Assert what Clang
-  decided: a value, a round trip, or a relationship the shim could get wrong. (Whether
-  carriers wrap at all is `test/abi.jl`'s job, not each test's.)
-- **When the value genuinely is not assertable, mark the site `# shape-only` with its reason.**
-  Three reasons are legitimate and no others: the host decides the value (triple, ABI,
-  mangling, path, size, alignment), it varies across the objects the test walks, or it is an
-  integer the target chooses. The marker belongs at the site — a baseline file recording the
-  same thing goes stale the moment a file is cleaned up and makes two branches conflict over a
-  generated artifact. The remaining markers are a ratchet, not a backlog: converting one
-  requires finding something Clang decided, which is not a mechanical edit.
-- **Prefer an invariant that holds over any AST to a pinned value.** A pin catches drift away
-  from today's answer but freezes the bug if today's answer has always been wrong; invariants
-  (`test/clang/invariants.jl`) need no captured values and no per-platform care. They have
-  their own ceiling — a *consistently* wrong shim satisfies them — which is what the
-  independent oracle in `test/clang/differential.jl` closes. When you add an invariant, add
-  the mutant it kills to the catalogue in `.claude/skills/suite-audit/`.
-
-Formatting: JuliaFormatter, YAS style, margin 1000 (see `.JuliaFormatter.toml`); `lib/` and
-`examples/` are excluded. The margin is set past the longest line here, so the formatter never
-*splits* a line — the wrapper signatures carry identifiers with no good break point, and its
-choices there were worse than a hand-placed break.
-
-`join_lines_based_on_source=false` is the other half, and the margin does almost nothing
-without it. YAS turns that setting *on* by default, which means "keep whatever breaks the
-source already had" — so raising the margin only removes the obligation to split and never
-asks it to join. The two together say: put a definition on one line unless it physically
-cannot go there.
-
-The cost is a tail of very long lines — in `src/clang`, a few dozen over 300 characters, the
-worst near 900 where a `for (cls, T) in [...]` dispatch table collapses. Where a table is
-meant to be read vertically, fence it rather than widening the margin back:
-
-```julia
-#! format: off
-... the table ...
-#! format: on
-```
-
-Nothing in CI runs the formatter, so none of this happens on its own.
+incapable of failing. **See [`test/CLAUDE.md`](test/CLAUDE.md) for the four rules that keep
+this one evidence, what decides a value you are tempted to mark `# shape-only`, and the
+layout — read it before adding or changing a test.** `test/lint.jl` and `test/tautologies.jl`
+enforce two of the rules, so CI catches those; the rest is on the author.
 
 ### Verifying a local build is the one you are testing
 
@@ -113,6 +70,31 @@ Two more traps when running these commands:
 - A test file can pass standalone and still crash inside the full suite (different AST state from
   earlier files). Always run `Pkg.test()` before committing.
 
+## Formatting
+
+Formatting: JuliaFormatter, YAS style, margin 1000 (see `.JuliaFormatter.toml`); `lib/`,
+`examples/` and the generated `src/` files listed in its `ignore` entry are excluded. The margin is set past the longest line here, so the formatter never
+*splits* a line — the wrapper signatures carry identifiers with no good break point, and its
+choices there were worse than a hand-placed break.
+
+`join_lines_based_on_source=false` is the other half, and the margin does almost nothing
+without it. YAS turns that setting *on* by default, which means "keep whatever breaks the
+source already had" — so raising the margin only removes the obligation to split and never
+asks it to join. The two together say: put a definition on one line unless it physically
+cannot go there.
+
+The cost is a tail of very long lines — in `src/clang`, a few dozen over 300 characters, the
+worst near 900 where a `for (cls, T) in [...]` dispatch table collapses. Where a table is
+meant to be read vertically, fence it rather than widening the margin back:
+
+```julia
+#! format: off
+... the table ...
+#! format: on
+```
+
+Nothing in CI runs the formatter, so none of this happens on its own.
+
 ## Architecture
 
 There are three layers, from C++ up to user-facing Julia:
@@ -121,13 +103,13 @@ There are three layers, from C++ up to user-facing Julia:
 
 2. **`lib/`** — auto-generated raw bindings; never hand-edit — with one exception: `lib/LibClang.jl` is a small hand-maintained excerpt of libclang bindings (CXString/CXStringSet with their accessor and dispose functions, plus `clang_toggleCrashRecovery`), not generator output.
    - `lib/LibClang.jl`: bindings to `libclang` from `Clang_jll`.
-   - `lib/<llvm_major>/LibClangEx.jl`: bindings to `libclangex`, generated from the ClangExtra headers by `gen/generator.jl` (Clang.jl generator, config in `gen/option.toml`). The version directory to load is picked at runtime from `Base.libllvm_version` in `src/ClangCompiler.jl`. All CX handles are `Ptr{Cvoid}` aliases, so the raw layer has no type safety — that's the hand-written layer's job. CI never regenerates bindings; commit the regenerated file together with the header change.
+   - `lib/<llvm_major>/LibClangEx.jl`: bindings to `libclangex`, generated from the ClangExtra headers by `gen/generator.jl` (Clang.jl generator, config in `gen/option.toml`). The version directory to load is picked at runtime from `Base.libllvm_version` in `src/ClangCompiler.jl`. Each CX handle is its own phantom pointer type (`const CXDecl = Ptr{CXDeclImpl}`), so passing a `CXStmt` where a `CXDecl` is wanted is a `MethodError` rather than a reinterpreted pointer — but only because `src/clang/handles.jl` refuses `Ptr`'s permissive conversions, which would otherwise bitcast between any two pointer types silently. What the raw layer still cannot see is the *hierarchy*: `Ptr{CXIfStmtImpl}` and `Ptr{CXStmtImpl}` are unrelated to Julia however Clang's classes are related, so every widening goes through the abstract types and `src/clang/core/converts.jl` in the hand-written layer. CI never regenerates bindings; commit the regenerated file together with the header change.
 
 3. **`src/`** — hand-written Julia layer.
    - `src/clang/core/`: Julia types mirroring Clang's C++ classes; Clang's inheritance hierarchy is reproduced with abstract types and subtyping.
    - `src/clang/api/`: Julia wrapper functions for the C API.
    - `src/clang/*.jl` (ast.jl, sema.jl, qualtype.jl, ...): higher-level helpers over the raw API.
-   - **See `src/clang/CLAUDE.md` for the thin-wrapper conventions** (the single-client axiom, the two type-safety invariants, and how C++ subtyping/multiple-inheritance are reproduced in Julia) — read it before touching any wrapper code, since this layer is the only safety boundary in front of the type-erased C shim.
+   - **See `src/clang/CLAUDE.md` for the thin-wrapper conventions** (the single-client axiom, the two type-safety invariants, and how C++ subtyping/multiple-inheritance are reproduced in Julia) — read it before touching any wrapper code, since this layer is the only safety boundary in front of a C shim that is check-free by design and blind to Clang's class hierarchy.
    - `src/compiler/`: the user-facing API — `CxxInterpreter`, `create_interpreter`, `parse`/`execute`/`compile`, `get_function_pointer`.
    - `src/platform/JLLEnvs.jl` + `src/env.jl`: resolve cross-compilation "shard" artifacts (GCC sysroots, system includes) from the top-level `Artifacts.toml` to build the default compiler flags (`get_default_args`) — the interpreter runs with `-nostdinc`/`-nostdlib` and JLL-provided include paths, not the host toolchain's.
    - The `libclangex` library path can be overridden via the `"libclangex"` Preferences key (this is what `deps/build_local.jl` sets in `LocalPreferences.toml`).
@@ -151,49 +133,9 @@ Quick reference. `CONTRIBUTING.md` states these fully; `src/clang/CLAUDE.md` cov
 
 - The package uses `public` declarations (Julia 1.11+) rather than `export` for its API surface — see `src/ClangCompiler.jl`.
 - Objects wrapping C++ resources need explicit `dispose(x)`; tests and examples follow a create → use → dispose pattern.
-- Test files are plain `@testset` files included by `test/runtests.jl`, laid out to mirror the source tree: whole-package checks in `test/*.jl` (`lint.jl` and `abi.jl` are the meta guards), middle-layer helpers in `test/clang/*.jl`, thin wrappers in `test/clang/api/**` alongside the file they exercise. A new test file must be added to `test/runtests.jl` by hand.
-- CI runs macOS, Linux and Windows on x86_64, and an equality assertion on something the
-  runner decides turns into a red CI on a platform you did not run locally. This class of bug
-  is invisible to a local single-platform run and to `-fsyntax-only`; only the per-file test
-  run against real AST state catches it, so never skip it before committing.
-
-  A C type whose *width* is platform-dependent is the sharpest version of this, because a
-  mismatch is a misread register rather than an error. `time_t` is 64 bits on every target but
-  is `long long` on mingw where the other two spell `long`, so the entry points taking one spell
-  `int64_t` and no alias tracks it — `const time_t = Clong` is what this package used to say, and
-  it read half a value on Windows alone. `off_t` is 64 bits on Darwin and Linux and 32 on mingw.
-  `shim_type_width` asks the shim its own widths and `test/abi.jl` asserts both, so a toolchain
-  flag change fails a test instead of corrupting a value.
-
-  There is a harder version. A C type's width is part of the *mangled name* of every C++ function
-  taking one, and on Windows the two sides of that name come from different toolchains: the shim
-  is compiled on the runner by msys2's mingw gcc, clang-cpp arrives prebuilt from BinaryBuilder.
-  `getVirtualFileRef(StringRef, off_t, time_t)` failed to link there for exactly that reason —
-  mingw's `off_t` is `long` under LLP64, 32 bits, where the prebuilt library had 64. No signature
-  on our side fixes it, because the mangling comes from clang's declaration; the fix is to make
-  the two agree, which `deps/ClangExtra/CMakeLists.txt` now does with `_FILE_OFFSET_BITS=64`.
-  `time_t` never had the problem — the `addFile` call in `createFileManagerWithVOFS4PCH` takes
-  one and always linked — which is what isolated the cause to `off_t` rather than to the
-  toolchains in general.
-
-  Two kinds of value hide behind that, and they need opposite treatment:
-
-  - **The target decides it** — sizes and alignments, ABI-specific layout offsets, mangled
-    names, endianness, integer widths. These are *not* unassertable, only unpinned. Build the
-    interpreter with `create_interpreter(...; triple="x86_64-linux-gnu")` and every one becomes
-    an equality that reads the same on all three runners; `test/clang/pinned_target.jl` is the
-    worked example. Only parsing and AST inspection can cross-target — the JIT still emits for
-    the host — and pinning downloads that target's GCC shard, so keep it to one target and one
-    file rather than pinning at every site.
-  - **Nothing decides it** — module provenance (`isPartOfFramework`), a `Driver`'s LTO mode
-    before argument processing, and a hand-built `Module`'s availability, including the
-    `markUnavailable` transition whose gating predicate reads bits a synthetic module never had
-    a module map to set. These read uninitialized memory. Pinning a triple does not help and
-    would only make the answer look trustworthy; restate the precondition instead, or leave the
-    site `# shape-only` with that as its reason. A wrapper whose value comes back outside its
-    own enum (Julia prints `<invalid #N>`) is this case — a UB precondition to restate, not a
-    flaky test.
-
-  Anything genuinely host-decided that is neither of those — a sysroot, an executable path —
-  still takes the shape assertion: `isa Bool`, `isa Integer`, or a round-trip of a value the
-  test itself set.
+- **CI runs macOS, Linux and Windows on x86_64**, and an equality assertion on something the
+  runner decides turns into a red CI on a platform you did not run locally — invisible to a
+  local single-platform run and to `-fsyntax-only`. What that means for an assertion is in
+  [`test/CLAUDE.md`](test/CLAUDE.md); what it means for a C type's width, and why a mangled
+  name can make a wrapper link everywhere but Windows, is in
+  [`deps/ClangExtra/CLAUDE.md`](deps/ClangExtra/CLAUDE.md).

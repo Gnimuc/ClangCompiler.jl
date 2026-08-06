@@ -57,7 +57,7 @@ end
 # hierarchy (abstract bases included; NULL carrier when the node is another
 # class, dyn_cast_or_null semantics). Classes clang itself names `Abstract*`
 # have no carrier, so they get only the predicate. Generated from StmtNodes.inc
-# into lib/<major>/StmtWrappers.jl.
+# into src/clang/api/AST/StmtWrappers.jl.
 include("StmtWrappers.jl")
 
 function isSingleDecl(x::AbstractDeclStmt)

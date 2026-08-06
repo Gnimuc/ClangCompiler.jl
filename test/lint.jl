@@ -30,9 +30,19 @@ const LINT_FILE = @__FILE__
 
 @testset "ClangExtra layout lint" begin
     @testset "no duplicate typedefs in CXTypes.h" begin
-        typedefs = filter(startswith("typedef void *"),
-                          readlines(joinpath(CLANGEX_INC, "CXTypes.h")))
-        dups = [t for t in unique(typedefs) if count(==(t), typedefs) > 1]
+        # Handles stopped being `typedef void *` when each class got its own incomplete
+        # struct, and this filter was not moved with them: it selected zero lines, so the
+        # emptiness assertion below could not fail, and the duplicate-typedef drift that
+        # deps/ClangExtra/CLAUDE.md warns about went unguarded. Keyed on the real spelling
+        # it fails if a handle is declared twice, which has happened before
+        # (`CXTemplateSpecializationType` is duplicated inside CXTypes.h itself).
+        # Scanned over the file's CONTENT rather than its lines: two typedefs sharing a line
+        # is exactly the shape a careless edit produces, and a line-at-a-time `match` sees
+        # only the first of them.
+        src = read(joinpath(CLANGEX_INC, "CXTypes.h"), String)
+        names = [m.captures[1] for m in eachmatch(r"typedef struct CX\w*Impl \*(CX\w+);", src)]
+        @test !isempty(names)             # the pattern itself must still select something
+        dups = [n for n in unique(names) if count(==(n), names) > 1]
         @test isempty(dups)
     end
 
@@ -77,9 +87,17 @@ const LINT_FILE = @__FILE__
     end
 
     @testset "no bare libclang-colliding type names in headers" begin
-        # These five names exist in libclang with different (by-value!) layouts;
-        # the libclangex spellings carry a trailing underscore.
-        bare = r"\b(CXType|CXSourceLocation|CXSourceRange|CXTargetInfo|CXToken)\b"
+        # A libclangex type whose name collides with libclang's carries a trailing underscore,
+        # and the bare spelling silently binds to libclang's unrelated (by-value!) type in the
+        # generated bindings. The set was hard-coded at five while the headers carried more —
+        # so it is derived from the headers instead, which is also what deps/ClangExtra's
+        # CLAUDE.md now tells a contributor to do.
+        underscored = Set{String}()
+        for h in clangex_headers(), m in eachmatch(r"\b(CX[A-Za-z0-9]+)_\s*;", read(h, String))
+            push!(underscored, m.captures[1])
+        end
+        @test length(underscored) >= 5          # the derivation must still find them
+        bare = Regex("\\b(" * join(sort(collect(underscored)), "|") * ")\\b")
         for h in clangex_headers()
             for (i, line) in enumerate(eachline(h))
                 # file names in #include lines legitimately contain "CXType.h"
@@ -317,9 +335,11 @@ const LINT_FILE = @__FILE__
         # corrupts: a `.ptr` read handed to a binding.
         #
         # Two spellings are exempt because neither is a handle crossing. `Ptr{Cvoid}(x.ptr)`
-        # feeds a parameter clang itself declares `void *` (`Value::setOpaqueType` and the
-        # four others listed in src/clang/CLAUDE.md), and `CXSourceRange_(a.ptr, b.ptr)`
-        # fills a value struct out of two `CXSourceLocation_`s rather than passing a handle.
+        # feeds a parameter clang itself declares `void *` — four sites, enumerated here
+        # rather than pointed at, because the list this comment used to cite does not exist:
+        # api/Interpreter/Value.jl:12 and :40 (`createValueFromType`, `setOpaqueType`) and
+        # api/Sema/Sema.jl:18 and :5448. And `CXSourceRange_(a.ptr, b.ptr)` fills a value
+        # struct out of two `CXSourceLocation_`s rather than passing a handle.
         call = r"clang_[A-Za-z0-9_]+\(([^)]*\.ptr[^)]*)\)"
         offenders, scanned = String[], 0
         for (root, _, files) in walkdir(joinpath(SRC_DIR, "clang")),
