@@ -677,6 +677,67 @@ bool clang_TargetInfo_validateOutputConstraint(CXTargetInfo_ TI, CXConstraintInf
       *reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(Info));
 }
 
+bool clang_TargetInfo_validateInputConstraint(CXTargetInfo_ TI,
+                                              CXConstraintInfo *OutputConstraints,
+                                              unsigned NumOutputs, CXConstraintInfo Info) {
+  llvm::SmallVector<clang::TargetInfo::ConstraintInfo, 4> Outs;
+  Outs.reserve(NumOutputs);
+  for (unsigned I = 0; I < NumOutputs; ++I)
+    Outs.push_back(
+        *reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(OutputConstraints[I]));
+  bool OK = reinterpret_cast<clang::TargetInfo *>(TI)->validateInputConstraint(
+      Outs, *reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(Info));
+  // The outputs are an in/out parameter: a tie is recorded on the output, not the input.
+  for (unsigned I = 0; I < NumOutputs; ++I)
+    *reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(OutputConstraints[I]) = Outs[I];
+  return OK;
+}
+
+bool clang_TargetInfo_setCPU(CXTargetInfo_ TI, const char *Name) {
+  return reinterpret_cast<clang::TargetInfo *>(TI)->setCPU(std::string(Name));
+}
+
+bool clang_TargetInfo_setABI(CXTargetInfo_ TI, const char *Name) {
+  return reinterpret_cast<clang::TargetInfo *>(TI)->setABI(std::string(Name));
+}
+
+bool clang_TargetInfo_setFPMath(CXTargetInfo_ TI, const char *Name) {
+  return reinterpret_cast<clang::TargetInfo *>(TI)->setFPMath(llvm::StringRef(Name));
+}
+
+bool clang_TargetInfo_resolveSymbolicName(CXTargetInfo_ TI, const char *Name,
+                                          CXConstraintInfo *OutputConstraints,
+                                          unsigned NumOutputs, unsigned *Consumed,
+                                          unsigned *Index) {
+  llvm::SmallVector<clang::TargetInfo::ConstraintInfo, 4> Outs;
+  Outs.reserve(NumOutputs);
+  for (unsigned I = 0; I < NumOutputs; ++I)
+    Outs.push_back(
+        *reinterpret_cast<clang::TargetInfo::ConstraintInfo *>(OutputConstraints[I]));
+  const char *Cursor = Name;
+  unsigned Idx = 0;
+  bool OK = reinterpret_cast<clang::TargetInfo *>(TI)->resolveSymbolicName(Cursor, Outs, Idx);
+  if (OK) {
+    // Cursor now sits ON the closing ']'; report the distance rather than the pointer.
+    if (Consumed)
+      *Consumed = static_cast<unsigned>(Cursor - Name);
+    if (Index)
+      *Index = Idx;
+  }
+  return OK;
+}
+
+bool clang_TargetInfo_validateConstraintModifier(CXTargetInfo_ TI, const char *Constraint,
+                                                 char Modifier, unsigned Size,
+                                                 CXString *Suggested) {
+  std::string S;
+  bool OK = reinterpret_cast<clang::TargetInfo *>(TI)->validateConstraintModifier(
+      llvm::StringRef(Constraint), Modifier, Size, S);
+  if (Suggested)
+    *Suggested = extra::makeCXString(S);
+  return OK;
+}
+
 CXString clang_TargetInfo_getClobbers(CXTargetInfo_ TI) {
   return extra::makeCXString(
       std::string(reinterpret_cast<clang::TargetInfo *>(TI)->getClobbers()));

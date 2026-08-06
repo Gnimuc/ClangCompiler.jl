@@ -178,6 +178,24 @@ end
     # the bound is the cleaned length, so 10 is rejected even though 10 <= MeasureTokenLength
     @test_throws AssertionError CC.getTokenPrefixLength(loc, 10, sm, opts)
 
+    # AdvanceToTokenCharacter counts in the SPELLING too, so it must land exactly where
+    # getTokenPrefixLength says: the n-th spelling character sits that many physical bytes in.
+    # A shim that ignored `characters`, or counted raw bytes, breaks this for n = 9 — the one
+    # that crosses the splice.
+    base = CC.getFileOffset(sm, loc)
+    for n in (0, 2, 9)
+        adv = CC.AdvanceToTokenCharacter(loc, n, sm, opts)
+        @test CC.getFileOffset(sm, adv) - base == CC.getTokenPrefixLength(loc, n, sm, opts)
+    end
+
+    # getAsCharRange widens a token range: the end moves from the START of the last token to
+    # just past it, which is MeasureTokenLength — 11 here, the physical extent including the
+    # splice, not the 9 characters it spells.
+    cr = CC.getAsCharRange(CC.SourceRange(loc, loc), sm, opts)
+    @test cr.is_token_range == false
+    @test CC.getFileOffset(sm, cr.range.begin_loc) == base
+    @test CC.getFileOffset(sm, cr.range.end_loc) - base == CC.MeasureTokenLength(loc, sm, opts)
+
     dispose(f)
     dispose(I)
 end

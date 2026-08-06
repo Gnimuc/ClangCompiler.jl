@@ -86,6 +86,30 @@ CXSourceLocation_ clang_Lexer_GetBeginningOfToken(CXSourceLocation_ Loc,
       .getPtrEncoding());
 }
 
+CXSourceLocation_ clang_Lexer_AdvanceToTokenCharacter(CXSourceLocation_ TokStart,
+                                                      unsigned Characters,
+                                                      CXSourceManager SM,
+                                                      CXLangOptions LangOpts) {
+  return reinterpret_cast<CXSourceLocation_>(
+      clang::Lexer::AdvanceToTokenCharacter(
+          clang::SourceLocation::getFromPtrEncoding(TokStart), Characters,
+          *reinterpret_cast<clang::SourceManager *>(SM),
+          *reinterpret_cast<clang::LangOptions *>(LangOpts))
+          .getPtrEncoding());
+}
+
+CXSourceRange_ clang_Lexer_getAsCharRange(CXSourceRange_ Range, CXSourceManager SM,
+                                          CXLangOptions LangOpts) {
+  clang::CharSourceRange R = clang::Lexer::getAsCharRange(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(Range.B),
+                         clang::SourceLocation::getFromPtrEncoding(Range.E)),
+      *reinterpret_cast<clang::SourceManager *>(SM),
+      *reinterpret_cast<clang::LangOptions *>(LangOpts));
+  return CXSourceRange_{
+      reinterpret_cast<CXSourceLocation_>(R.getBegin().getPtrEncoding()),
+      reinterpret_cast<CXSourceLocation_>(R.getEnd().getPtrEncoding())};
+}
+
 CXSourceLocation_ clang_Lexer_getLocForEndOfToken(CXSourceLocation_ Loc, unsigned Offset,
                                                   CXSourceManager SM,
                                                   CXLangOptions LangOpts) {

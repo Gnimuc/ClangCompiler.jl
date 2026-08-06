@@ -182,3 +182,52 @@ function getOptionalFileRef(filemgr::FileManager, filename::AbstractString; open
     ref = clang_FileManager_getFileRef(filemgr, filename, open_file, cache_failure)
     return ref == C_NULL ? nothing : FileEntryRef(ref)
 end
+
+"""
+    fixup_relative_path(filemgr::FileManager, path::AbstractString) -> (path, changed)
+
+Rewrite `path` according to the file manager's working directory, returning the result and
+whether clang altered it.
+
+clang takes a `SmallVectorImpl{Char}` in and out; the result crosses as a copy because its
+length is not knowable before the call.
+"""
+function FixupRelativePath(filemgr::FileManager, path::AbstractString)
+    @check_ptrs filemgr
+    changed = Ref{Bool}(false)
+    s = get_string(clang_FileManager_FixupRelativePath(filemgr, path, changed))
+    return (path=s, changed=changed[])
+end
+
+"""
+    makeAbsolutePath(filemgr::FileManager, path::AbstractString) -> (path, changed)
+
+Make `path` absolute per the file manager's `FileSystemOptions` and working directory.
+`changed` reports whether it was not already absolute. Same copying contract as
+[`FixupRelativePath`](@ref).
+"""
+function makeAbsolutePath(filemgr::FileManager, path::AbstractString)
+    @check_ptrs filemgr
+    changed = Ref{Bool}(false)
+    s = get_string(clang_FileManager_makeAbsolutePath(filemgr, path, changed))
+    return (path=s, changed=changed[])
+end
+
+"""
+    getCanonicalName(filemgr::FileManager, x) -> String
+
+The canonical on-disk name of a file or directory reference.
+
+Expensive even with clang's cache, and needed only when the physical layout of the file
+system is. clang answers with a `StringRef` into that cache; this returns a copy, because a
+borrow into storage the file manager may drop is not something this boundary can police.
+"""
+function getCanonicalName(filemgr::FileManager, file::AbstractFileEntryRef)
+    @check_ptrs filemgr file
+    return get_string(clang_FileManager_getCanonicalNameForFile(filemgr, file))
+end
+
+function getCanonicalName(filemgr::FileManager, dir::AbstractDirectoryEntryRef)
+    @check_ptrs filemgr dir
+    return get_string(clang_FileManager_getCanonicalNameForDir(filemgr, dir))
+end
