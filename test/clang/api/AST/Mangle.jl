@@ -61,7 +61,7 @@ end
     # complete-object (C1) constructors under the Itanium family every resolved target
     # uses.
     @test f(I, "NgWidget")
-    ctor = first(CC.getCtors(CC.CXXRecordDecl(get_decl(f))))
+    ctor = only(c for c in CC.getCtors(CC.CXXRecordDecl(get_decl(f))) if CC.isDefaultConstructor(c))
     manglings = CC.getAllManglings(g, ctor)
     @test any(endswith("_ZN8NgWidgetC1Ev"), manglings)
     @test any(endswith("_ZN8NgWidgetC2Ev"), manglings)
