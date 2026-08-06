@@ -4,6 +4,7 @@
 #include <sys/types.h>   // off_t, whose width is the point of this file
 #include <time.h>
 #include "clang-ex/CXTypes.h"
+#include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
 #include "llvm-c/Types.h"
@@ -90,6 +91,29 @@ CXDirectoryEntryRef clang_FileManager_getOptionalDirectoryRef(CXFileManager FM,
                                                               bool CacheFailure);
 
 void clang_DirectoryEntryRef_dispose(CXDirectoryEntryRef DER);
+
+// Rewrite `Path` per the FileManager's FileSystemOptions working directory, returning the
+// result as an owned CXString and reporting in *Changed whether clang altered it.
+//
+// clang takes a `SmallVectorImpl<char>&` in/out; a caller-supplied buffer would have to be
+// sized in advance for a result whose length clang alone knows, so the string crosses as a
+// copy (MARSHALLING.md §5) and the boolean the C++ API returns becomes the out-param.
+// *Changed may be NULL.
+CXString clang_FileManager_FixupRelativePath(CXFileManager FM, const char *Path,
+                                             bool *Changed);
+
+// Same shape as FixupRelativePath: make `Path` absolute per FileSystemOptions and the working
+// directory, returning the result and reporting whether it changed.
+CXString clang_FileManager_makeAbsolutePath(CXFileManager FM, const char *Path,
+                                            bool *Changed);
+
+// The canonical on-disk name of a file or directory.
+//
+// Very expensive despite clang's cache, and needed only when the physical layout of the file
+// system is. clang returns a StringRef into that cache — an interior pointer whose lifetime
+// this boundary cannot observe (MARSHALLING.md §14) — so it crosses as an owned copy.
+CXString clang_FileManager_getCanonicalNameForFile(CXFileManager FM, CXFileEntryRef File);
+CXString clang_FileManager_getCanonicalNameForDir(CXFileManager FM, CXDirectoryEntryRef Dir);
 
 LLVM_CLANG_C_EXTERN_C_END
 

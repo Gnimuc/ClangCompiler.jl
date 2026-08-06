@@ -1151,6 +1151,105 @@ function validateOutputConstraint(x::AbstractTargetInfo, info::AbstractConstrain
 end
 
 """
+    validateInputConstraint(x::AbstractTargetInfo, outputs, info::AbstractConstraintInfo) -> Bool
+
+Validate one input constraint against `outputs`, the output constraints of the same asm
+statement in operand order, each already passed through [`validateOutputConstraint`](@ref).
+`outputs` may be empty.
+
+`outputs` is an in/out argument: an input that ties to output `n` records the tie **on that
+output**, which is what [`getTiedOperand`](@ref) then reports. As with its output counterpart,
+`info`'s own flags only become meaningful after this call.
+"""
+function validateInputConstraint(x::AbstractTargetInfo,
+                                 outputs::AbstractVector{<:AbstractConstraintInfo},
+                                 info::AbstractConstraintInfo)
+    @check_ptrs x info
+    for o in outputs
+        @check_ptrs o
+    end
+    handles = CXConstraintInfo[Base.unsafe_convert(CXConstraintInfo, o) for o in outputs]
+    return GC.@preserve outputs handles begin
+        clang_TargetInfo_validateInputConstraint(x, pointer(handles), length(handles), info)
+    end
+end
+
+"""
+    setCPU(x::AbstractTargetInfo, name::AbstractString) -> Bool
+
+Select the target CPU by name, returning whether this target accepts it. `TargetInfo`'s own
+implementation returns `false`, so a target that does not override this rejects every name.
+"""
+function setCPU(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_setCPU(x, name)
+end
+
+"""
+    setABI(x::AbstractTargetInfo, name::AbstractString) -> Bool
+Select the target ABI by name. Same base-returns-`false` contract as [`setCPU`](@ref).
+"""
+function setABI(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_setABI(x, name)
+end
+
+"""
+    setFPMath(x::AbstractTargetInfo, name::AbstractString) -> Bool
+Select the floating-point maths unit by name. Same contract as [`setCPU`](@ref).
+"""
+function setFPMath(x::AbstractTargetInfo, name::AbstractString)
+    @check_ptrs x
+    return clang_TargetInfo_setFPMath(x, name)
+end
+
+"""
+    resolveSymbolicName(x, name, outputs) -> (index, consumed) or nothing
+
+Resolve a `[symbolic]` operand name in an asm constraint to the operand it refers to.
+`name` must begin at the `[`, and `outputs` are the statement's output constraints in
+operand order. Returns `nothing` when the name does not resolve.
+
+`consumed` is how far into `name` clang advanced, which lands **on** the closing `]` rather
+than past it — `"[sym]"` reports 4, and the caller still steps over the bracket. clang
+reports this by advancing a `const char *&`, a moving interior pointer nothing here could
+hold safely, so the count crosses instead.
+"""
+function resolveSymbolicName(x::AbstractTargetInfo, name::AbstractString,
+                             outputs::AbstractVector{<:AbstractConstraintInfo})
+    @check_ptrs x
+    for o in outputs
+        @check_ptrs o
+    end
+    handles = CXConstraintInfo[Base.unsafe_convert(CXConstraintInfo, o) for o in outputs]
+    consumed, index = Ref{Cuint}(0), Ref{Cuint}(0)
+    ok = GC.@preserve outputs handles begin
+        clang_TargetInfo_resolveSymbolicName(x, name, pointer(handles), length(handles),
+                                             consumed, index)
+    end
+    return ok ? (index=Int(index[]), consumed=Int(consumed[])) : nothing
+end
+
+"""
+    validateConstraintModifier(x, constraint, modifier::Char, size) -> (ok, suggested)
+
+Whether `modifier` — the letter in `%<modifier><operand>` — is valid for `constraint` at an
+operand of `size` bits. When it is not, `suggested` is the modifier clang would accept
+instead; it is empty otherwise.
+
+`TargetInfo`'s own implementation accepts everything, so a target that does not override this
+answers `true` for any modifier.
+"""
+function validateConstraintModifier(x::AbstractTargetInfo, constraint::AbstractString,
+                                    modifier::AbstractChar, size::Integer)
+    @check_ptrs x
+    suggested = Ref{CXString}()
+    ok = clang_TargetInfo_validateConstraintModifier(x, constraint, Cchar(modifier), size,
+                                                     suggested)
+    return (ok=ok, suggested=get_string(suggested[]))
+end
+
+"""
     allowHalfArgsAndReturns(x::AbstractTargetInfo) -> Bool
 Whether half-precision floating point may be used as a function argument or return type on
 this target.

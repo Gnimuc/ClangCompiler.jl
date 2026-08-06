@@ -92,6 +92,38 @@ function GetBeginningOfToken(loc::SourceLocation, src_mgr::AbstractSourceManager
     return SourceLocation(clang_Lexer_GetBeginningOfToken(loc, src_mgr, opts))
 end
 
+"""
+    AdvanceToTokenCharacter(tok_start::SourceLocation, characters::Integer, src_mgr, opts)
+
+Return the location of the `characters`-th character of the token starting at `tok_start`,
+counted in the token's **spelling** — so it steps over escaped newlines and trigraphs rather
+than counting raw bytes, and `characters == 0` gives `tok_start` back.
+"""
+function AdvanceToTokenCharacter(tok_start::SourceLocation, characters::Integer,
+                                 src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
+    @check_ptrs src_mgr opts
+    return SourceLocation(clang_Lexer_AdvanceToTokenCharacter(tok_start, characters, src_mgr,
+                                                              opts))
+end
+
+"""
+    getAsCharRange(range::SourceRange, src_mgr, opts) -> CharSourceRange
+
+Widen a token range — one whose end names the *start* of its last token — into the character
+range that covers that last token in full.
+
+The result is always a character range, which is the point of the call, so the returned
+`CharSourceRange` carries `is_token_range = false` and only the two locations cross the
+boundary.
+"""
+function getAsCharRange(range::SourceRange, src_mgr::AbstractSourceManager,
+                        opts::AbstractLangOptions)
+    @check_ptrs src_mgr opts
+    r = clang_Lexer_getAsCharRange(CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr),
+                                   src_mgr, opts)
+    return CharSourceRange(SourceRange(SourceLocation(r.B), SourceLocation(r.E)), false)
+end
+
 function getLocForEndOfToken(loc::SourceLocation, offset::Integer, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
     return SourceLocation(clang_Lexer_getLocForEndOfToken(loc, offset, src_mgr, opts))

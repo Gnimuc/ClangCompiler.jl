@@ -47,6 +47,24 @@ CXSourceLocation_ clang_Lexer_GetBeginningOfToken(CXSourceLocation_ Loc,
                                                   CXSourceManager SM,
                                                   CXLangOptions LangOpts);
 
+// The location of the `Characters`-th character of the token beginning at TokStart, in the
+// *spelling* of that token — so it steps over escaped newlines and trigraphs rather than
+// counting raw bytes. Same shape as GetBeginningOfToken above.
+CXSourceLocation_ clang_Lexer_AdvanceToTokenCharacter(CXSourceLocation_ TokStart,
+                                                      unsigned Characters,
+                                                      CXSourceManager SM,
+                                                      CXLangOptions LangOpts);
+
+// Widen a token range — one whose end names the START of its last token — to the character
+// range covering that last token in full.
+//
+// clang returns a CharSourceRange, an aggregate of a SourceRange plus an is-token-range flag.
+// Only the range crosses, because this function's whole purpose is to produce a CHARACTER
+// range: the flag is false for every result it can return, and a constant is not worth a
+// marshalling scheme. The Julia layer supplies it when it builds its own CharSourceRange.
+CXSourceRange_ clang_Lexer_getAsCharRange(CXSourceRange_ Range, CXSourceManager SM,
+                                          CXLangOptions LangOpts);
+
 CXSourceLocation_ clang_Lexer_getLocForEndOfToken(CXSourceLocation_ Loc, unsigned Offset,
                                                   CXSourceManager SM,
                                                   CXLangOptions LangOpts);

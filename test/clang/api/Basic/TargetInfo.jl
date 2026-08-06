@@ -354,6 +354,62 @@ end
     @test CC.validateOutputConstraint(ti, bad) == false
     @test CC.allowsRegister(bad) == false
 
+    # Input constraints, validated against the outputs they may tie to. "r" is a plain
+    # register input and ties to nothing; "0" is the digit form that ties to output 0, and
+    # the tie is recorded on the OUTPUT -- which is the whole reason the outputs cross as an
+    # in/out array rather than by value.
+    out0 = CC.ConstraintInfo("=r", "")
+    @test CC.validateOutputConstraint(ti, out0)
+    @test CC.hasMatchingInput(out0) == false
+
+    plain_in = CC.ConstraintInfo("r", "")
+    @test CC.validateInputConstraint(ti, [out0], plain_in)
+    @test CC.allowsRegister(plain_in)
+    @test CC.hasMatchingInput(out0) == false      # nothing tied to it yet
+
+    tied_in = CC.ConstraintInfo("0", "")
+    @test CC.validateInputConstraint(ti, [out0], tied_in)
+    @test CC.getTiedOperand(tied_in) == 0
+    @test CC.hasMatchingInput(out0) == true       # the call mutated the output
+
+    # a tie to an operand that does not exist is rejected; with no outputs at all, so is "0"
+    @test CC.validateInputConstraint(ti, CC.ConstraintInfo[], CC.ConstraintInfo("0", "")) == false
+
+    # setCPU/setABI/setFPMath answer for the concrete target, and x86_64 overrides setCPU:
+    # it takes a real CPU name and refuses a nonsense one. Both answers come from clang.
+    @test CC.setCPU(ti, "x86-64") == true
+    @test CC.setCPU(ti, "not-a-real-cpu") == false
+    @test CC.setFPMath(ti, "not-a-real-fpmath-unit") == false
+
+    # A `[symbolic]` operand name resolves to the operand carrying that name, and to nothing
+    # when no operand has it. `consumed` lands ON the closing bracket rather than past it —
+    # 4 for "[sym]" — which is clang's own convention and the reason the count crosses
+    # instead of the moving pointer clang advances.
+    named = CC.ConstraintInfo("=r", "sym")
+    @test CC.validateOutputConstraint(ti, named)
+    got = CC.resolveSymbolicName(ti, "[sym]", [named])
+    @test got !== nothing
+    @test got.index == 0
+    @test got.consumed == 4
+    @test CC.resolveSymbolicName(ti, "[absent]", [named]) === nothing
+    @test CC.resolveSymbolicName(ti, "[sym]", CC.ConstraintInfo[]) === nothing
+
+    # validateConstraintModifier is a target decision, and this fixture's pinned x86_64 is a
+    # target that declines to override it — so the base implementation answers, accepting
+    # every modifier and suggesting nothing. That is what makes it assertable at all: the
+    # same code on an AArch64 target rejects 'P' on a 32-bit "r" operand and suggests "w",
+    # so without the pinned triple this would read differently on an Apple-silicon runner
+    # than on the x86 ones.
+    for (constraint, modifier, size) in (("r", 'P', 32), ("r", 'q', 8), ("m", 'P', 32))
+        got = CC.validateConstraintModifier(ti, constraint, modifier, size)
+        @test got.ok == true
+        @test isempty(got.suggested)
+    end
+    CC.dispose(named)
+    for c in (out0, plain_in, tied_in)
+        CC.dispose(c)
+    end
+
     # the setters reach the same flag bits without going through a target
     flags = CC.ConstraintInfo("=r", "")
     CC.setIsReadWrite(flags)

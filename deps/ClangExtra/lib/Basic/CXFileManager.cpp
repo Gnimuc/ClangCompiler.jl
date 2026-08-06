@@ -1,4 +1,5 @@
 #include "clang-ex/Basic/CXFileManager.h"
+#include "utils.h"
 #include "clang/Basic/FileManager.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -116,4 +117,40 @@ size_t clang_FileManager_getNumUniqueRealFiles(CXFileManager FM) {
 
 int64_t clang_FileEntry_getSize(CXFileEntry FE) {
   return reinterpret_cast<clang::FileEntry *>(FE)->getSize();
+}
+
+// clang mutates a SmallVector in place; the shim seeds it from Path, calls, and copies the
+// result out, so the Julia side never holds storage clang owns.
+static CXString fixupOrAbsolute(CXFileManager FM, const char *Path, bool *Changed,
+                                bool Absolute) {
+  llvm::SmallString<128> Buf(Path);
+  auto *M = reinterpret_cast<clang::FileManager *>(FM);
+  bool Did = Absolute ? M->makeAbsolutePath(Buf) : M->FixupRelativePath(Buf);
+  if (Changed)
+    *Changed = Did;
+  return extra::makeCXString(std::string(Buf.str()));
+}
+
+CXString clang_FileManager_FixupRelativePath(CXFileManager FM, const char *Path,
+                                             bool *Changed) {
+  return fixupOrAbsolute(FM, Path, Changed, /*Absolute=*/false);
+}
+
+CXString clang_FileManager_makeAbsolutePath(CXFileManager FM, const char *Path,
+                                            bool *Changed) {
+  return fixupOrAbsolute(FM, Path, Changed, /*Absolute=*/true);
+}
+
+CXString clang_FileManager_getCanonicalNameForFile(CXFileManager FM, CXFileEntryRef File) {
+  return extra::makeCXString(
+      reinterpret_cast<clang::FileManager *>(FM)
+          ->getCanonicalName(*reinterpret_cast<clang::FileEntryRef *>(File))
+          .str());
+}
+
+CXString clang_FileManager_getCanonicalNameForDir(CXFileManager FM, CXDirectoryEntryRef Dir) {
+  return extra::makeCXString(
+      reinterpret_cast<clang::FileManager *>(FM)
+          ->getCanonicalName(*reinterpret_cast<clang::DirectoryEntryRef *>(Dir))
+          .str());
 }

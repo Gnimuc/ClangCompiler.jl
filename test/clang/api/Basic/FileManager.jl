@@ -104,6 +104,38 @@ end
     @test n >= 1
     @test CC.getNumUniqueRealFiles(fm) == n
 
+    # Path rewriting. The results are host-decided strings, so what is asserted is the
+    # PROPERTY clang promises, not the text: makeAbsolutePath yields an absolute path and
+    # reports `changed` exactly when the input was not already one. Both hold on any host.
+    abs_in = CC.makeAbsolutePath(fm, path)
+    @test isabspath(abs_in.path)
+    @test abs_in.changed == !isabspath(path)
+
+    rel = CC.makeAbsolutePath(fm, "some/relative/file.cpp")
+    @test isabspath(rel.path)
+    @test rel.changed == true
+    # clang prepends the working directory using the HOST's separator and leaves the relative
+    # tail exactly as it was written, so on Windows the result mixes both:
+    # `D:\...\test\some/relative/file.cpp`. The property is that the tail survives, which is
+    # asserted by normalising separators rather than by building the expectation with
+    # `joinpath` — that spells `\` on Windows and never matches what clang preserved.
+    @test endswith(replace(rel.path, '\\' => '/'), "some/relative/file.cpp")
+
+    # already absolute: idempotent, and clang says it did nothing
+    again = CC.makeAbsolutePath(fm, abs_in.path)
+    @test again.path == abs_in.path
+    @test again.changed == false
+
+    fixed = CC.FixupRelativePath(fm, "some/relative/file.cpp")
+    @test fixed.path isa String   # shape-only: the working directory decides whether this
+    @test fixed.changed isa Bool  # rewrites at all, and to what
+
+    # the canonical name is a copy, so it survives the reference it came from
+    canon = CC.getCanonicalName(fm, r1)
+    @test !isempty(canon)
+    @test basename(canon) == basename(path)
+    @test CC.getCanonicalName(fm, r2) == canon
+
     CC.dispose(r2)
     CC.dispose(r1)
     CC.dispose(fm)

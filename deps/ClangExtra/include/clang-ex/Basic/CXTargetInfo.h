@@ -273,6 +273,47 @@ bool clang_TargetInfo_validateGlobalRegisterVariable(CXTargetInfo_ TI, const cha
 // Parses Info's constraint string as an output constraint and updates Info's flags in
 // place; false when it is not a valid output constraint for this target.
 bool clang_TargetInfo_validateOutputConstraint(CXTargetInfo_ TI, CXConstraintInfo Info);
+
+// Validate one input constraint against the outputs it may tie to. `OutputConstraints` is the
+// array already accepted by clang_TargetInfo_validateOutputConstraint, in operand order;
+// NumOutputs may be 0 and then OutputConstraints may be NULL.
+//
+// clang takes the outputs as a MutableArrayRef and MUTATES them: tying an input to output N
+// records the tie on that output, which is what clang_ConstraintInfo_getTiedOperand later
+// reads. The handles are separate boxes rather than one contiguous array, so the shim copies
+// them into a local vector, calls, and copies the results back — an input that ties leaves its
+// output changed exactly as the C++ API would.
+bool clang_TargetInfo_validateInputConstraint(CXTargetInfo_ TI,
+                                              CXConstraintInfo *OutputConstraints,
+                                              unsigned NumOutputs, CXConstraintInfo Info);
+
+// Select the target's CPU / ABI / floating-point maths by name, returning whether the target
+// accepts it. `TargetInfo`'s own implementations return false, so a target that overrides
+// none of them rejects every name rather than aborting.
+bool clang_TargetInfo_setCPU(CXTargetInfo_ TI, const char *Name);
+bool clang_TargetInfo_setABI(CXTargetInfo_ TI, const char *Name);
+bool clang_TargetInfo_setFPMath(CXTargetInfo_ TI, const char *Name);
+
+// Resolve a `[symbolic]` operand name in an asm constraint to its operand index.
+//
+// `Name` points at the '['. clang takes it as `const char *&` and advances it TO the closing
+// ']' -- not past it, so "[sym]" reports 4 consumed and the caller still steps over the
+// bracket itself. A moving interior pointer is not something the Julia side can hold
+// (MARSHALLING.md §14), so the shim reports how far it moved in *Consumed instead. *Index
+// receives the operand number. Both out-params are written only on success, and either may
+// be NULL.
+bool clang_TargetInfo_resolveSymbolicName(CXTargetInfo_ TI, const char *Name,
+                                          CXConstraintInfo *OutputConstraints,
+                                          unsigned NumOutputs, unsigned *Consumed,
+                                          unsigned *Index);
+
+// Whether `Modifier` (the letter in `%<modifier><operand>`) is valid for `Constraint` at an
+// operand of `Size` bits. On rejection *Suggested receives the modifier clang would accept,
+// as an owned CXString the caller disposes; it is set to the empty string otherwise. The base
+// implementation accepts everything, so a target overriding nothing answers true.
+bool clang_TargetInfo_validateConstraintModifier(CXTargetInfo_ TI, const char *Constraint,
+                                                 char Modifier, unsigned Size,
+                                                 CXString *Suggested);
 CXString clang_TargetInfo_getClobbers(CXTargetInfo_ TI);
 bool clang_TargetInfo_isNan2008(CXTargetInfo_ TI);
 // Returns the triple string, borrowed from the llvm::Triple owned by the target.

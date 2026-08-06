@@ -12516,6 +12516,30 @@ function clang_TargetInfo_validateOutputConstraint(TI, Info)
     @ccall libclangex.clang_TargetInfo_validateOutputConstraint(TI::CXTargetInfo_, Info::CXConstraintInfo)::Bool
 end
 
+function clang_TargetInfo_validateInputConstraint(TI, OutputConstraints, NumOutputs, Info)
+    @ccall libclangex.clang_TargetInfo_validateInputConstraint(TI::CXTargetInfo_, OutputConstraints::Ptr{CXConstraintInfo}, NumOutputs::Cuint, Info::CXConstraintInfo)::Bool
+end
+
+function clang_TargetInfo_setCPU(TI, Name)
+    @ccall libclangex.clang_TargetInfo_setCPU(TI::CXTargetInfo_, Name::Ptr{Cchar})::Bool
+end
+
+function clang_TargetInfo_setABI(TI, Name)
+    @ccall libclangex.clang_TargetInfo_setABI(TI::CXTargetInfo_, Name::Ptr{Cchar})::Bool
+end
+
+function clang_TargetInfo_setFPMath(TI, Name)
+    @ccall libclangex.clang_TargetInfo_setFPMath(TI::CXTargetInfo_, Name::Ptr{Cchar})::Bool
+end
+
+function clang_TargetInfo_resolveSymbolicName(TI, Name, OutputConstraints, NumOutputs, Consumed, Index)
+    @ccall libclangex.clang_TargetInfo_resolveSymbolicName(TI::CXTargetInfo_, Name::Ptr{Cchar}, OutputConstraints::Ptr{CXConstraintInfo}, NumOutputs::Cuint, Consumed::Ptr{Cuint}, Index::Ptr{Cuint})::Bool
+end
+
+function clang_TargetInfo_validateConstraintModifier(TI, Constraint, Modifier, Size, Suggested)
+    @ccall libclangex.clang_TargetInfo_validateConstraintModifier(TI::CXTargetInfo_, Constraint::Ptr{Cchar}, Modifier::Cchar, Size::Cuint, Suggested::Ptr{CXString})::Bool
+end
+
 function clang_TargetInfo_getClobbers(TI)
     @ccall libclangex.clang_TargetInfo_getClobbers(TI::CXTargetInfo_)::CXString
 end
@@ -31786,6 +31810,22 @@ function clang_DirectoryEntryRef_dispose(DER)
     @ccall libclangex.clang_DirectoryEntryRef_dispose(DER::CXDirectoryEntryRef)::Cvoid
 end
 
+function clang_FileManager_FixupRelativePath(FM, Path, Changed)
+    @ccall libclangex.clang_FileManager_FixupRelativePath(FM::CXFileManager, Path::Ptr{Cchar}, Changed::Ptr{Bool})::CXString
+end
+
+function clang_FileManager_makeAbsolutePath(FM, Path, Changed)
+    @ccall libclangex.clang_FileManager_makeAbsolutePath(FM::CXFileManager, Path::Ptr{Cchar}, Changed::Ptr{Bool})::CXString
+end
+
+function clang_FileManager_getCanonicalNameForFile(FM, File)
+    @ccall libclangex.clang_FileManager_getCanonicalNameForFile(FM::CXFileManager, File::CXFileEntryRef)::CXString
+end
+
+function clang_FileManager_getCanonicalNameForDir(FM, Dir)
+    @ccall libclangex.clang_FileManager_getCanonicalNameForDir(FM::CXFileManager, Dir::CXDirectoryEntryRef)::CXString
+end
+
 @enum CXModuleKind::UInt32 begin
     CXModuleKind_ModuleMapModule = 0
     CXModuleKind_ModuleHeaderUnit = 1
@@ -34592,6 +34632,14 @@ end
 
 function clang_Lexer_GetBeginningOfToken(Loc, SM, LangOpts)
     @ccall libclangex.clang_Lexer_GetBeginningOfToken(Loc::CXSourceLocation_, SM::CXSourceManager, LangOpts::CXLangOptions)::CXSourceLocation_
+end
+
+function clang_Lexer_AdvanceToTokenCharacter(TokStart, Characters, SM, LangOpts)
+    @ccall libclangex.clang_Lexer_AdvanceToTokenCharacter(TokStart::CXSourceLocation_, Characters::Cuint, SM::CXSourceManager, LangOpts::CXLangOptions)::CXSourceLocation_
+end
+
+function clang_Lexer_getAsCharRange(Range, SM, LangOpts)
+    @ccall libclangex.clang_Lexer_getAsCharRange(Range::CXSourceRange_, SM::CXSourceManager, LangOpts::CXLangOptions)::CXSourceRange_
 end
 
 function clang_Lexer_getLocForEndOfToken(Loc, Offset, SM, LangOpts)
