@@ -4966,3 +4966,49 @@ end
 
     dispose(I)
 end
+
+@testset "Sema | flag-enum membership and the printing policy" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+             enum __attribute__((flag_enum)) SemaFlags { SFA = 1, SFB = 2, SFD = 4 };
+             """)
+    sema = CC.get_sema(I)
+    ctx = CC.get_ast_context(I)
+    intty = CC.get_qual_type(CC.IntTy(ctx))
+
+    f = DeclFinder(I)
+    @test f(I, "SemaFlags")
+    ed = CC.EnumDecl(get_tag(f))
+
+    inflag(n, mask=false) = begin
+        gv = CC.LLVM.GenericValue(CC.MakeIntValue(ctx, n, intty))
+        r = CC.IsValueInFlagEnum(sema, ed, gv, mask)
+        CC.LLVM.dispose(gv)
+        r
+    end
+
+    # any OR of the enumerators is in the enum; zero is; a bit the enum does not declare is not
+    @test inflag(1)
+    @test inflag(3)          # SFA | SFB
+    @test inflag(5)          # SFA | SFD
+    @test inflag(7)          # all three
+    @test inflag(0)
+    @test inflag(8) == false # no enumerator has that bit
+
+    # allow_mask is what the flag decides, and this pair is the only thing that proves the
+    # wrapper passes it: ~7 is not itself a value in the enum, but it is the complement of one,
+    # so it is accepted as a mask and rejected otherwise.
+    @test inflag(0xFFFFFFF8, true) == true
+    @test inflag(0xFFFFFFF8, false) == false
+
+    # Sema's printing policy is a fresh object the caller owns, unlike the ASTContext's, which
+    # is a borrowed member -- so this one is disposed and that one must not be.
+    pp = CC.getPrintingPolicy(sema)
+    @test pp isa CC.PrintingPolicy
+    @test pp.ptr != C_NULL
+    @test pp.ptr != CC.getPrintingPolicy(ctx).ptr    # distinct objects, not the same box
+    CC.dispose(pp)
+
+    dispose(f)
+    dispose(I)
+end

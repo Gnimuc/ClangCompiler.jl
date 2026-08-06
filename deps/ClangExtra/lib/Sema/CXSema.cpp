@@ -12,6 +12,7 @@
 #include "clang/Lex/Token.h"
 #include "clang/Sema/Overload.h"
 #include "clang/Sema/Sema.h"
+#include "llvm/ExecutionEngine/GenericValue.h"
 #include "clang/Sema/TemplateDeduction.h"
 
 bool clang_Sema_usesPartialOrExplicitSpecialization(
@@ -5096,3 +5097,18 @@ CXFunctionDecl clang_Sema_resolveAddressOfSingleOverloadCandidate(
     *FoundAccess = static_cast<CXAccessSpecifier>(Found.getAccess());
   return reinterpret_cast<CXFunctionDecl>(R);
 }
+
+bool clang_Sema_IsValueInFlagEnum(CXSema S, CXEnumDecl ED, LLVMGenericValueRef Val,
+                                  bool AllowMask) {
+  return reinterpret_cast<clang::Sema *>(S)->IsValueInFlagEnum(
+      reinterpret_cast<clang::EnumDecl *>(ED),
+      reinterpret_cast<llvm::GenericValue *>(Val)->IntVal, AllowMask);
+}
+
+CXPrintingPolicy_ clang_Sema_getPrintingPolicy(CXSema S) {
+  // Returned by value, so the box is the caller's; the ASTContext getter borrows instead.
+  auto P = std::make_unique<clang::PrintingPolicy>(
+      reinterpret_cast<clang::Sema *>(S)->getPrintingPolicy());
+  return reinterpret_cast<CXPrintingPolicy_>(P.release());
+}
+
