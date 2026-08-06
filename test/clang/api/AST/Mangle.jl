@@ -37,10 +37,39 @@ using Libdl
     dispose(I)
 end
 
-@testset "mangling name generator surface" begin
-    # No creator for clang::ASTNameGenerator crosses the C boundary yet, so only the
-    # method surface is checkable here.
-    @test hasmethod(CC.getAllManglings, Tuple{CC.ASTNameGenerator,CC.FunctionDecl})
+@testset "ASTNameGenerator" begin
+    I = create_interpreter(String[])
+    ctx = CC.get_ast_context(I)
+    g = CC.ASTNameGenerator(ctx)
+    mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
+    f = DeclFinder(I)
+    # Primitive signatures keep the Itanium spelling target-stable; the generator layers
+    # the backend mangling on top, so its result carries the data layout's global prefix
+    # (`_` on Mach-O, none on ELF/COFF) — assert the frontend suffix, never the whole
+    # string.
+    CC.parse(I, "int ng_mul(int a, int b) { return a * b; } struct NgWidget { NgWidget(); };")
+
+    @test f(I, "ng_mul")
+    mul_nd = get_decl(f)
+    @test endswith(CC.getName(g, mul_nd), "_Z6ng_mulii")
+    # ...and that suffix is exactly the frontend mangling, on every C++ ABI.
+    @test endswith(CC.getName(g, mul_nd), CC.mangleName(mc, mul_nd))
+    # getAllManglings enumerates structor/method variants only; a plain function has none.
+    @test CC.getAllManglings(g, mul_nd) == String[]
+
+    # A constructor mangles once per structor variant — the base-object (C2) and
+    # complete-object (C1) constructors under the Itanium family every resolved target
+    # uses.
+    @test f(I, "NgWidget")
+    ctor = first(CC.getCtors(CC.CXXRecordDecl(get_decl(f))))
+    manglings = CC.getAllManglings(g, ctor)
+    @test any(endswith("_ZN8NgWidgetC1Ev"), manglings)
+    @test any(endswith("_ZN8NgWidgetC2Ev"), manglings)
+
+    dispose(f)
+    CC.dispose(mc)
+    CC.dispose(g)
+    dispose(I)
 end
 
 @testset "Coverage | MangleContext tail" begin
