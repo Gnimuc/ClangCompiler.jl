@@ -35,7 +35,8 @@ using Test
     CC.setASTContext(au, ctx)
     @test CC.getASTContext(au).ptr == ctx.ptr
 
-    @test CC.getOnlyLocalDecls(au) isa Bool  # shape-only: the host decides this
+    # ASTUnit::create leaves this at its default; only the LoadFrom* entry points set it
+    @test CC.getOnlyLocalDecls(au) == false
 
     owns = CC.getOwnsRemappedFileBuffers(au)
     @test owns isa Bool
@@ -44,8 +45,8 @@ using Test
     CC.setOwnsRemappedFileBuffers(au, owns)
 
     # No frontend input and no main file registered, so both names come back empty.
-    @test CC.getMainFileName(au) isa String  # shape-only: the host decides this
-    @test CC.getOriginalSourceFileName(au) isa String  # shape-only: the host decides this
+    @test isempty(CC.getMainFileName(au))
+    @test isempty(CC.getOriginalSourceFileName(au))
 
     # The top-level list starts empty and tracks exactly what addTopLevelDecl appends.
     @test CC.top_level_empty(au) == true
@@ -94,9 +95,10 @@ end
     @test to_preamble.end_loc.ptr == rng.end_loc.ptr
 
     # Neither file ID exists on a unit that has never parsed, so both predicates
-    # short-circuit; only the shape is the library's business here.
-    @test CC.isInMainFileID(au, loc) isa Bool  # shape-only: the host decides this
-    @test CC.isInPreambleFileID(au, loc) isa Bool  # shape-only: the host decides this
+    # short-circuit to false. That agreement is why they cannot be told apart here --
+    # the parsed unit in the load testset is where one is true and the other is not.
+    @test CC.isInMainFileID(au, loc) == false
+    @test CC.isInPreambleFileID(au, loc) == false
     # this unit was built without a main file or a preamble, so both are the invalid
     # location -- the documented answer, and one a shim handing back a stale location fails
     @test CC.isInvalid(CC.getStartOfMainFileID(au))
@@ -154,9 +156,10 @@ end
     inv = CC.CompilerInvocation()
     au = CC.ASTUnit(inv, CC.getDiagnostics(ci))
 
-    # The unsafe-to-free bit is a bit-field with no in-class initializer, so only a value the
-    # test itself wrote is asserted.
-    @test CC.isUnsafeToFree(au) isa Bool  # shape-only: the host decides this
+    # The unsafe-to-free bit is a bit-field with no in-class initializer, so reading it
+    # before anything writes it reads uninitialized memory. Only the values the test
+    # itself wrote are asserted; the initial read is not one, and asserting its shape
+    # would only make an unanswerable question look answered.
     @test CC.setUnsafeToFree(au, true) === nothing
     @test CC.isUnsafeToFree(au) == true
     @test CC.setUnsafeToFree(au, false) === nothing
@@ -169,12 +172,13 @@ end
 
     # C++ hands the top-level name hash back as a mutable reference; round-trip it through
     # the read/write pair the C surface splits it into.
-    @test CC.getCurrentTopLevelHashValue(au) isa Integer  # shape-only: the host decides this
+    # the initial read is the same uninitialized bit-field case as above, so the round
+    # trip starts at the write
     @test CC.setCurrentTopLevelHashValue(au, 0x1234) === nothing
     @test CC.getCurrentTopLevelHashValue(au) == 0x1234
 
     # Nothing has built a preamble and nothing has cached completion results.
-    @test CC.getPreambleCounterForTests(au) isa Integer  # shape-only: the host decides this
+    @test Int(CC.getPreambleCounterForTests(au)) == 0
     @test CC.cached_completion_size(au) == 0
 
     # No parse has run, so the unit captured no diagnostics and the driver split sits at the
@@ -189,8 +193,9 @@ end
     # accessors on the instance that owns it.
     CC.createFrontendTimer(ci)
     @test CC.hasFrontendTimer(ci)
-    @test CC.getFrontendTimerName(ci) isa String  # shape-only: the host decides this
-    @test CC.isFrontendTimerRunning(ci) isa Bool  # shape-only: the host decides this
+    # clang names it, not the host, and creating a timer does not start it
+    @test CC.getFrontendTimerName(ci) == "frontend"
+    @test CC.isFrontendTimerRunning(ci) == false
 
     dispose(I)
 end
@@ -228,6 +233,15 @@ end
         @test CC.isMainFileAST(au) == false
         @test basename(CC.getMainFileName(au)) == "astunit_load.cpp"
         @test basename(CC.getOriginalSourceFileName(au)) == "astunit_load.cpp"
+
+        # A unit that parsed has a main file ID, which is what separates the two region
+        # predicates: on the never-parsed unit both short-circuit to false and a shim
+        # answering either question with the other's result passes. Here they differ --
+        # no preamble was built, so a location in the main file is in one and not the other.
+        main_start = CC.getStartOfMainFileID(au)
+        @test CC.isValid(main_start)
+        @test CC.isInMainFileID(au, main_start) == true
+        @test CC.isInPreambleFileID(au, main_start) == false
 
         # The top-level list is this file's and not another unit's: both declarations the
         # source writes are in it, under the kind names clang gave them.

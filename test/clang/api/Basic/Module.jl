@@ -44,14 +44,13 @@ using Test
 
     @test CC.getModuleInputBufferName() == "<module-includes>"
 
-    # Availability of a hand-built module is host-decided, and so is the transition a
-    # failing requirement would drive: markUnavailable reads bits a synthetic module
-    # never had a module map to set. Only the shape is asserted.
+    # Neither availability nor the transition a failing requirement would drive is an
+    # answer here: markUnavailable reads bits a synthetic module never had a module map
+    # to set. Only the shape is asserted.
     @test CC.addRequirement(root, "cplusplus", true, lang_opts, target) === nothing
-    # A synthetic module has no module map, so isAvailable reads bits that were never
-    # set and the answer differs per runner (CLAUDE.md records this); only the shape
-    # of it is assertable here.
-    @test CC.isAvailable(root) isa Bool  # shape-only: the host decides this
+    # A synthetic module has no module map, so isAvailable reads bits nothing ever set
+    # (CLAUDE.md records this class); only the shape of it is assertable here.
+    @test CC.isAvailable(root) isa Bool  # shape-only: nothing decides it — reads bits never set on a synthetic module
 
     text = CC.print(root, 0, false)
     @test text isa String

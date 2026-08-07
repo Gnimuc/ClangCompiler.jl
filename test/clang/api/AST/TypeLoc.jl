@@ -54,7 +54,11 @@ end
     ptl = CC.resolve(tl)
     @test ptl isa CC.PointerTypeLoc
     @test CC.isValid(CC.getStarLoc(ptl))
-    @test CC.getSourceRange(ptl) isa CC.SourceRange    # base method on a carrier
+    # the base method reached through a carrier still has to return this declarator's own
+    # written extent; a default-constructed range would satisfy `isa SourceRange`
+    ptl_rng = CC.getSourceRange(ptl)
+    @test CC.isValid(ptl_rng.begin_loc)
+    @test CC.isValid(ptl_rng.end_loc)
     # a pointer location is no array location, and the cast names both classes rather than
     # handing back a box over nothing — nothing to dispose on the failing path
     @test_throws CC.CastError CC.ArrayTypeLoc(ptl)
@@ -220,7 +224,8 @@ end
     @test tl isa CC.TypeLoc
     @test !CC.isNull(tl)
     @test CC.resolve(CC.getTypePtr(CC.getType(tl))) isa CC.PointerType
-    @test CC.getSourceRange(tl) isa CC.SourceRange  # shape-only
+    @test CC.isValid((CC.getSourceRange(tl)).begin_loc)
+    @test CC.isValid((CC.getSourceRange(tl)).end_loc)
     @test !CC.is_null_handle(CC.getBeginLoc(tl))
 
     nxt = CC.getNextTypeLoc(tl)                     # the pointee (int) loc; owned box

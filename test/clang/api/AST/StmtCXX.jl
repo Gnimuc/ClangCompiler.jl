@@ -33,8 +33,15 @@ using Test
         @test CC.getInit(frs) isa CC.AbstractStmt
         @test !CC.is_null_handle(CC.getRangeStmt(frs))
         @test !CC.is_null_handle(CC.getLoopVarStmt(frs))
-        @test CC.getCond(frs) isa CC.Expr_   # implicit __begin != __end
-        @test CC.getInc(frs) isa CC.Expr_    # implicit ++__begin
+        # the condition and increment clang synthesises are `__begin != __end` and
+        # `++__begin`; asserting their operators is what separates the two accessors,
+        # which `isa Expr_` cannot do because both wrappers return one
+        cond = CC.resolve(CC.getCond(frs))
+        @test cond isa CC.AbstractBinaryOperator
+        @test CC.getOpcode(cond) == CC.LibClangEx.CXBinaryOperatorKind_BO_NE
+        inc = CC.resolve(CC.getInc(frs))
+        @test inc isa CC.AbstractUnaryOperator
+        @test CC.getOpcode(inc) == CC.LibClangEx.CXUnaryOperatorKind_UO_PreInc
     end
     dispose(I)
 
@@ -125,8 +132,11 @@ end
     # the ParagraphComment refinement wherever it applies. Returns the paragraph count.
     function walk_comment(c, n)
         c.ptr == C_NULL && return n
-        @test CC.isInlineContentComment(c) isa Bool  # shape-only
-        @test CC.isBlockContentComment(c) isa Bool  # shape-only
+        # InlineContentComment and BlockContentComment are disjoint branches of the
+        # Comment hierarchy, so no node is both. Two predicates wired to the same
+        # underlying query -- the way a copy-paste slip in the shim reads -- would be
+        # equal instead, and both true on every content node.
+        @test !(CC.isInlineContentComment(c) && CC.isBlockContentComment(c))
         @test !(CC.isHTMLTagComment(c))
         pc = CC.ParagraphComment(c)
         if pc.ptr != C_NULL
@@ -325,8 +335,10 @@ end
         n = CC.getNumChildrenExclBody(cbs)
         @test n isa Integer
         @test n > 0
+        body = CC.getBody(cbs)
         for i = 0:(Int(n) - 1)
-            @test CC.getChildExclBody(cbs, i) isa CC.Stmt  # shape-only
+            # what "ExclBody" means: the body is the one child this view never yields
+            @test CC.getChildExclBody(cbs, i).ptr != body.ptr
         end
         # The coroutine body is slot 0 of the full child list and the promise
         # declaration slot 1, so the body-excluded view starts at the promise.
@@ -349,11 +361,14 @@ end
     mses = collect_stmts(CC.MSDependentExistsStmt, CC.resolve(CC.getBody(mfd)),
                          CC.MSDependentExistsStmt[])
     @test length(mses) == 2
+    # the source writes one `__if_exists` and one `__if_not_exists`, so the predicate has
+    # to separate them; one wired to a constant or to the wrong bit gives 0 or 2
+    @test count(CC.isIfExists, mses) == 1
     for m in mses
         @test !CC.is_null_handle(CC.getKeywordLoc(m))
-        @test CC.isIfExists(m) isa Bool  # shape-only
         @test CC.isIfNotExists(m) == !CC.isIfExists(m)
-        @test CC.getQualifierRange(m) isa CC.SourceRange  # shape-only
+        @test CC.isValid((CC.getQualifierRange(m)).begin_loc)
+        @test CC.isValid((CC.getQualifierRange(m)).end_loc)
         @test !CC.is_null_handle(CC.getQualifier(m))
         @test CC.getSubStmt(m) isa CC.CompoundStmt
         @test CC.getSubStmt(m).ptr != C_NULL

@@ -34,9 +34,9 @@ using Test
     @test info.ptr != C_NULL
     @test !CC.is_null_handle(CC.getLocation(info))
     @test CC.getDeducedDepth(info) == 0
-    @test CC.getNumExplicitArgs(info) isa Integer  # shape-only: the target chooses this value
+    @test Int(CC.getNumExplicitArgs(info)) == 0
     @test !(CC.hasSFINAEDiagnostic(info))
-    @test CC.getCallArgIndex(info) isa Integer  # shape-only: the target chooses this value
+    @test Int(CC.getCallArgIndex(info)) == 0
     @test CC.takeCanonical(info).ptr == C_NULL
 
     # --- matching a class template partial specialization against an argument list ---

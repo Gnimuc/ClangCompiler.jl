@@ -28,9 +28,9 @@ using Test
     @test CC.isImplicitIntRequired(lo) == false
     @test CC.isImplicitIntAllowed(lo) == false
     @test !(CC.hasSjLjExceptions(lo))
-    # target-decided: structured exception handling is a Windows construct, so the
-    # default this LangOptions carries depends on the runner
-    @test CC.hasSEHExceptions(lo) isa Bool  # shape-only: the host decides this
+    # structured exception handling is a Windows construct, so the default this
+    # LangOptions carries follows the target the interpreter was built for
+    @test CC.hasSEHExceptions(lo) isa Bool  # shape-only: the target decides it
     @test !(CC.hasDWARFExceptions(lo))
     @test !(CC.hasWasmExceptions(lo))
     @test CC.isSYCL(lo) == false
@@ -106,16 +106,16 @@ using Test
     @test CC.isImplicitGlobalModule(root) == false
     @test CC.isPrivateModule(root) == false
     # last of the synthetic-module bits: a module built without a module map has no
-    # unimportable reason recorded either, so the answer is the runner's, not clang's
-    @test CC.isUnimportable(root) isa Bool  # shape-only: the host decides this
-    # A synthetic module has no module map, so isAvailable reads bits that were never
-    # set and the answer differs per runner (CLAUDE.md records this); only the shape
-    # of it is assertable here.
-    @test CC.isAvailable(root) isa Bool  # shape-only: the host decides this
+    # unimportable reason recorded either, so there is nothing to read back
+    @test CC.isUnimportable(root) isa Bool  # shape-only: nothing decides it — never set on a module built without a module map
+    # A synthetic module has no module map, so isAvailable reads bits nothing ever set.
+    # The value is not the host's answer to a question -- there is no answer, which is
+    # why only the shape is asserted (CLAUDE.md records this class).
+    @test CC.isAvailable(root) isa Bool  # shape-only: nothing decides it — reads bits never set on a synthetic module
     @test CC.isSubModule(root) == false
-    # framework membership walks to the top-level module and depends on how the
-    # host's module map was synthesized — assert the shape, not the value
-    @test CC.isPartOfFramework(root) isa Bool  # shape-only: the host decides this
+    # framework membership walks to the top-level module, whose framework bits a
+    # synthetic module never had a module map to set — assert the shape, not the value
+    @test CC.isPartOfFramework(root) isa Bool  # shape-only: nothing decides it — walks to a top-level module whose framework bits were never set
     @test CC.isSubFramework(root) == false
     @test CC.isModulePartition(root) == false
     @test CC.isModuleImplementation(root) == false
@@ -391,7 +391,8 @@ end
     @test CC.getNameForSlot(multi, 0) == "width"
     @test CC.getNameForSlot(multi, 1) == "height"
     @test CC.getSelector(selt, 2, [width, height]).ptr == multi.ptr
-    @test CC.getTotalMemory(selt) isa Integer  # shape-only: the target chooses this value
+    # selectors were interned into this table above, so its allocator is holding something
+    @test CC.getTotalMemory(selt) > 0
 
     # ---- ObjC family classification: a plain C++ identifier vs a family name ----
     @test CC.getMethodFamily(nullary) == CC.CXObjCMethodFamily_OMF_None

@@ -1032,8 +1032,12 @@ end
     @test CC.getSyntacticForm(poe).ptr != C_NULL
     @test CC.getNumSemanticExprs(poe) >= 1
     @test 0 <= CC.getResultExprIndex(poe) < CC.getNumSemanticExprs(poe)
-    @test CC.getResultExpr(poe) isa CC.Expr_        # property read has a result
     @test CC.getResultExpr(poe).ptr != C_NULL
+    # the result is the semantic expression the result index names. That relationship is
+    # what ties the two accessors together; `isa Expr_` holds even if one of them reads
+    # the syntactic form or an adjacent slot.
+    @test CC.getResultExpr(poe).ptr ==
+          CC.getSemanticExpr(poe, CC.getResultExprIndex(poe)).ptr
     @test !CC.is_null_handle(CC.getSemanticExpr(poe, 0))
     @test CC.getSemanticExpr(poe, 0).ptr != C_NULL
 
@@ -1202,8 +1206,12 @@ end
     # ---- FullExpr / ConstantExpr (immediate consteval invocation) ----
     cst = pick(CC.ConstantExpr)
     @test cst isa CC.ConstantExpr
-    @test CC.getSubExpr(cst) isa CC.Expr_            # FullExpr::getSubExpr
     @test CC.getSubExpr(cst).ptr != C_NULL
+    # a FullExpr wraps exactly one sub-expression, so `FullExpr::getSubExpr` and the child
+    # walk are two readings of the same edge and must agree
+    cst_kids = collect(CC.children(cst))
+    @test length(cst_kids) == 1
+    @test CC.getSubExpr(cst).ptr == cst_kids[1].ptr
     @test CC.getResultStorageKind(cst) isa CC.LibClangEx.CXConstantResultStorageKind
     @test CC.getResultAPValueKind(cst) isa CC.LibClangEx.CXAPValueKind
     # hasAPValueResult is defined upstream as "APValueKind != None"

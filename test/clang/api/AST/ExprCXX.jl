@@ -1762,7 +1762,10 @@ end
     @test CC.getAsString(ni) == "ll_oo"
     @test CC.getLoc(ni).ptr == CC.getNameLoc(ule).ptr
     dispose(ni)
-    @test CC.getQualifierRange(ule) isa CC.SourceRange   # `ll_oo` is unqualified
+    # `ll_oo` is written without a `T::`, so the qualifier range is the invalid one clang
+    # default-constructs -- a shim handing back the whole expression's range instead would
+    # satisfy `isa SourceRange` and fail this
+    @test !CC.isValid(CC.getQualifierRange(ule).begin_loc)
 
     # ---- DependentScopeDeclRefExpr: the `T::` is always written -------------------
     dre = _find_node(CC.DependentScopeDeclRefExpr, tpl_body("ll_dref"))
@@ -1804,7 +1807,8 @@ end
     ms_body = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms))))
     mp = _find_node(CC.MSPropertyRefExpr, ms_body)
     @test mp isa CC.MSPropertyRefExpr
-    @test CC.getQualifierRange(mp) isa CC.SourceRange   # `p->x` is unqualified
+    # `p->x` names no `T::`, so the qualifier range is the invalid default
+    @test !CC.isValid(CC.getQualifierRange(mp).begin_loc)
 
     dispose(fms)
     dispose(Ims)
@@ -2468,7 +2472,9 @@ end
     @test pre isa CC.NestedNameSpecifierLoc
     @test CC.hasQualifier(pre) == false
     @test CC.getNestedNameSpecifier(pre).ptr == C_NULL
-    @test CC.getSourceRange(pre) isa CC.SourceRange   # an empty box is a legal value
+    # an empty prefix carries no location either, so the box is the invalid one -- the
+    # value that makes it a legal result rather than merely a well-typed one
+    @test !CC.isValid(CC.getSourceRange(pre).begin_loc)
     CC.dispose(pre)
 
     # getTypeLoc is defined only for the two type-naming kinds, and which kind clang records

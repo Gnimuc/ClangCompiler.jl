@@ -62,7 +62,8 @@ end
     @test !(CC.isInherited(dep))
     @test !CC.isPackExpansion(dep)
     @test !CC.is_null_handle(CC.getLocation(dep))
-    @test CC.getRange(dep) isa CC.SourceRange  # shape-only
+    @test CC.isValid((CC.getRange(dep)).begin_loc)
+    @test CC.isValid((CC.getRange(dep)).end_loc)
 
     # stamped predicates and casts: `isa<T>` beside `cast<T>`, and the cast names both
     # classes when it refuses rather than handing back a carrier over nothing

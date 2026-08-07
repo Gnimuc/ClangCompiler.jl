@@ -23,12 +23,12 @@ end
     pp = CC.getPreprocessor(get_instance(I))
 
     @test !CC.is_null_handle(CC.getPreprocessorOpts(pp))
-    @test CC.getNumDirectives(pp) isa Integer  # shape-only: the target chooses this value
+    # this interpreter was handed `-include cstddef`, so directives were seen
+    @test CC.getNumDirectives(pp) > 0
     @test CC.isParsingIfOrElifDirective(pp) == false
     @test !(CC.isPreprocessedOutput(pp))
     @test CC.isInPrimaryFile(pp)
     @test !(CC.SawDateOrTime(pp))
-    @test CC.getTotalMemory(pp) isa Integer  # shape-only: the target chooses this value
     @test CC.getTotalMemory(pp) > 0
     @test CC.isInNamedModule(pp) == false
 

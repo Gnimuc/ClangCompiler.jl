@@ -25,8 +25,15 @@ using Test
     @test CC.isInvalid(ploc) == !CC.isValid(ploc)
     if CC.isValid(ploc)
         @test CC.getFilename(ploc) isa String
-        @test CC.getLine(ploc) isa Integer  # shape-only: the target chooses this value
-        @test CC.getColumn(ploc) isa Integer  # shape-only: the target chooses this value
+        # No target chooses these: the source is one line, so the presumed line is 1 and
+        # the column is where the name is written. They differ, which is the only reason
+        # the two accessors are separable at all -- `isa Integer` held for both.
+        # PresumedLoc is the #line-aware view and no #line is in play, so it has to agree
+        # with the source manager's own spelling numbers for the same location.
+        @test CC.getLine(ploc) == 1
+        @test CC.getColumn(ploc) > 1
+        @test CC.getLine(ploc) == CC.getSpellingLineNumber(sm, loc)
+        @test CC.getColumn(ploc) == CC.getSpellingColumnNumber(sm, loc)
         @test !CC.is_null_handle(CC.getIncludeLoc(ploc))
         pfid = CC.getFileID(ploc)
         @test pfid isa CC.FileID

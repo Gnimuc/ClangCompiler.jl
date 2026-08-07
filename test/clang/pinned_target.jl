@@ -127,7 +127,9 @@ end
 
         @test CC.getRegisterWidth(ti) == 64
         @test CC.isTLSSupported(ti)
-        @test CC.isVLASupported(ti) isa Bool  # shape-only: the target chooses this value
+        # this whole testset is pinned to x86_64-unknown-linux-gnu, which supports VLAs --
+   # the pin is exactly what turns a target-decided answer into an assertable one
+        @test CC.isVLASupported(ti) == true
 
         dispose(I)
     end

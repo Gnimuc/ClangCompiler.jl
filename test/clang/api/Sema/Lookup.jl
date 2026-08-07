@@ -26,7 +26,8 @@ using Test
     @test !(CC.isFunctionScope(sc))
     @test !(CC.isClassScope(sc))
     @test !(CC.containedInPrototypeScope(sc))
-    @test CC.getFunctionPrototypeDepth(sc) isa Integer  # shape-only: the target chooses this value
+    # not a prototype scope, as the line above asserts, so the depth is the outermost
+    @test Int(CC.getFunctionPrototypeDepth(sc)) == 0
     @test CC.is_null_handle(CC.getContinueParent(sc))
     @test CC.is_null_handle(CC.getBreakParent(sc))
     @test CC.is_null_handle(CC.getBlockParent(sc))
@@ -55,7 +56,11 @@ using Test
     @test !CC.isSuppressingAccessDiagnostics(r)
     @test !CC.isSuppressingAmbiguousDiagnostics(r)
     @test CC.is_null_handle(CC.getBaseObjectType(r))
-    @test CC.getContextRange(r) isa CC.SourceRange  # shape-only
+    # nothing has set a lookup context on `r` yet, so the context range is still the
+    # invalid default -- the same unset state the null base object type reports, and a
+    # value an accessor reading the name location instead would not produce
+    @test !CC.isValid((CC.getContextRange(r)).begin_loc)
+    @test !CC.isValid((CC.getContextRange(r)).end_loc)
 
     found = CC.LookupQualifiedName(sema, r, tu)
     @test found
@@ -221,11 +226,11 @@ end
     # has no mangling parent, which is the only value this test can pin down on every host.
     ms_parent = CC.getMSLastManglingParent(sc)
     @test ms_parent isa CC.Scope
-    @test CC.getMSCurManglingNumber(sc) isa Integer  # shape-only: the host decides this
+    @test CC.getMSCurManglingNumber(sc) isa Integer  # shape-only: varies with what the incremental parser has already mangled into this scope
     if ms_parent.ptr == C_NULL
         @test CC.getMSLastManglingNumber(sc) == 1
     else
-        @test CC.getMSLastManglingNumber(sc) isa Integer  # shape-only: the host decides this
+        @test CC.getMSLastManglingNumber(sc) isa Integer  # shape-only: varies with what the incremental parser has already mangled into this scope
     end
 
     # Contains compares scope depths, so a scope never contains itself and a parent always
@@ -410,7 +415,9 @@ end
     @test CC.getAlignMode(aligned) == CC.CXAlignPackInfo_Natural
     @test CC.IsXLStack(aligned)
     @test !CC.IsPackSet(aligned)
-    @test CC.getPackNumber(aligned) isa Integer  # shape-only: the target chooses this value
+    # IsPackSet is false above, so the slot still holds AlignPackInfo::UninitPackVal --
+    # clang's "no pack number recorded" sentinel, not a pack number of zero
+    @test Int(CC.getPackNumber(aligned)) == 255
     dispose(aligned)
 
     # Sema::DefaultedFunctionKind over a record declaring four special members and one
@@ -431,6 +438,7 @@ end
     @test !isempty(methods)
 
     any_special = false
+    diag_idx = Int[]
     for m in methods
         dfk = CC.getDefaultedFunctionKind(sema, m)
         @test dfk isa CC.DefaultedFunctionKind
@@ -443,11 +451,16 @@ end
         @test CC.isComparison(dfk) == (comparison != CC.CXDefaultedComparisonKind_None)
         # getSpecialMember is the already-bound spelling of the same query
         @test special == CC.getSpecialMember(sema, m)
-        @test CC.getDiagnosticIndex(dfk) isa Integer  # shape-only: the target chooses this value
+        push!(diag_idx, Int(CC.getDiagnosticIndex(dfk)))
         any_special |= CC.isSpecialMember(dfk)
         dispose(dfk)
     end
     @test any_special
+    # the diagnostic index identifies which defaulted-function arm a diagnostic is about,
+    # so the four special members this record declares carry four different ones. Its
+    # numeric values are clang's, but their distinctness is the source's.
+    @test length(diag_idx) >= 4
+    @test length(unique(diag_idx)) == length(diag_idx)
 
     # LookupResult: the redeclaration flavour round-trips, and the result renders
     loc = CC.get_main_file_begin_loc(sm)
@@ -561,6 +574,16 @@ end
     i0 = CC.getNextFunctionPrototypeIndex(proto)
     @test i0 isa Integer
     @test CC.getNextFunctionPrototypeIndex(proto) == i0 + 1
+
+    # The depth counts the prototype scopes enclosing a scope, itself included, so the
+    # three scopes here sit at three different values. Without a nested one the suite only
+    # ever sees 0, and an accessor pinned at the outermost value is indistinguishable from
+    # a working one.
+    proto2 = CC.Scope(proto, UInt32(CC.CXScopeFlags_FunctionPrototypeScope) | decl_flags, diag)
+    @test Int(CC.getFunctionPrototypeDepth(s)) == 0
+    @test Int(CC.getFunctionPrototypeDepth(proto)) == 1
+    @test Int(CC.getFunctionPrototypeDepth(proto2)) == 2
+    dispose(proto2)
 
     # --- A template parameter scope refuses setEntity but accepts setLookupEntity ---
     tps = CC.Scope(nothing, UInt32(CC.CXScopeFlags_TemplateParamScope) | decl_flags, diag)
