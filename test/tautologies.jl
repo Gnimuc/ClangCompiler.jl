@@ -31,6 +31,78 @@ const MARKER = "# shape-only"
 const API = joinpath(ROOT, "src", "clang")
 const TESTS = joinpath(ROOT, "test")
 
+# The marker is an exemption, so it carries the reason it was granted under. CLAUDE.md admits
+# four and no others; these match them by keyword, leaving the prose free.
+#
+# The fourth is not a weaker version of the first. "The host decides it" says a real machine
+# chose a real value; "nothing decides it" says the read was of memory nobody wrote, which is
+# a precondition to state rather than an answer to record. Sites in the second class were all
+# labelled with the first before this existed, which read as though someone had checked.
+#
+# What this can and cannot do: it checks that a reason was *stated* and names one of the three
+# categories. It cannot check that the claim is TRUE -- `getLine` marked "the target chooses
+# this value" satisfies every pattern below and is still false, because a line number is
+# decided by the source. Only reading the site catches that. Without the check, though, a
+# marker with no reason at all reads exactly like one that was thought about.
+const REASONS = ["the host decides it" =>
+                     r"\bhost\b|\bsysroot\b|\brunner\b|\bworking directory\b|\bexecutable path\b"i,
+                 "the target decides it" =>
+                     r"\btarget\b|\bABI\b|\btriple\b|\bmangl|\blayout\b|\balign|\bendian|\bplatform\b"i,
+                 "it varies across the objects the test walks" =>
+                     r"\bvar(?:y|ies|ying)\b|\bwalk|\bdiffers\b|\bnode to node\b"i,
+                 "nothing decides it -- the read is uninitialised" =>
+                     r"\buninitiali[sz]ed\b|\bnever set\b|\bnever initiali[sz]ed\b|\bno in-class initiali[sz]er\b"i]
+
+"""
+    split_comment(line) -> (code, comment)
+
+Split `line` at its trailing comment, with `comment` keeping its `#`.
+
+The assertion pattern is anchored at end-of-code, so the comment has to come off before the
+match rather than being tolerated inside it. Anchoring at end-of-*line* instead is what made
+this check vacuous: every marked site ends in `# shape-only`, so none of them matched the
+pattern, the marker test below was unreachable, and any trailing comment whatsoever -- not
+just the marker -- exempted an assertion from the ratchet.
+
+The scan tracks string and character literals so a `#` inside one is not mistaken for the
+start of a comment.
+"""
+function split_comment(line)
+    instr = inchar = escaped = false
+    for (i, c) in pairs(line)
+        if escaped
+            escaped = false
+        elseif c == '\\'
+            escaped = true
+        elseif instr
+            c == '"' && (instr = false)
+        elseif inchar
+            c == '\'' && (inchar = false)
+        elseif c == '"'
+            instr = true
+        elseif c == '\''
+            inchar = true
+        elseif c == '#'
+            return (line[1:prevind(line, i)], line[i:end])
+        end
+    end
+    return (line, "")
+end
+
+"""
+    reason_of(comment) -> String
+
+The prose following the marker, or `""` when the marker carries none.
+
+Split on the marker rather than matched as a whole so that a site writing `# shape-only`
+with no colon is reported as missing a reason instead of silently not matching.
+"""
+function reason_of(comment)
+    i = findfirst(MARKER, comment)
+    i === nothing && return ""
+    return strip(lstrip(comment[(last(i) + 1):end], [':', ' ', '\t', '-', '—']))
+end
+
 "A ccall's declared return type, e.g. `clang_Foo_bar` => `:Cuint`."
 function ccall_returns(binding_file)
     out = Dict{String,Symbol}()
@@ -92,6 +164,44 @@ function wrapper_returns(dir, ccalls)
     return out
 end
 
+"The assertion this script hunts for, matched against a line with its comment already removed."
+const ASSERTION = r"@test\s+(?:CC\.|ClangCompiler\.)?(\w+)\(.*\)\s+isa\s+(?:CC\.|ClangCompiler\.)?([\w{}]+)\s*$"
+
+"""
+    self_check()
+
+Fail loudly if the line mechanics stop recognising the shapes they are supposed to.
+
+This exists because the detector went vacuous once without anyone noticing: `ASSERTION` was
+matched against the whole line, so a site ending in `# shape-only` -- which is every marked
+site, and any commented assertion besides -- did not match at all. The marker test below it
+was unreachable, every marker was decorative, and the script reported a clean tree. A clean
+tree and a broken detector print the same sentence, which is what makes this worth asserting.
+"""
+function self_check()
+    probe = "    @test CC.getNumBases(rd) isa Integer"
+    for (suffix, want) in ("" => "", "  # prose" => "# prose",
+                           "  # shape-only" => "# shape-only",
+                           "  # shape-only: the host decides this" =>
+                               "# shape-only: the host decides this")
+        code, comment = split_comment(probe * suffix)
+        comment == want || error("split_comment lost the comment on `$probe$suffix`: got `$comment`")
+        match(ASSERTION, strip(code)) === nothing &&
+            error("the assertion pattern no longer matches `$probe$suffix`")
+    end
+    # a `#` inside a string literal does not start a comment
+    _, c = split_comment("""    @test CC.getName(d) == "a#b" """)
+    isempty(c) || error("split_comment read a `#` inside a string as a comment: `$c`")
+    # every admitted reason is recognised by its own pattern, and prose naming none is not
+    for (name, _) in REASONS
+        any(p -> occursin(last(p), name), REASONS) ||
+            error("the admitted reason `$name` matches none of the patterns")
+    end
+    any(p -> occursin(last(p), "because it seemed fine"), REASONS) &&
+        error("the reason patterns accept prose that names no category")
+    return nothing
+end
+
 "Whether a result of shape `shape` is always an instance of `asserted`."
 function always_isa(shape, asserted)
     shape === :unknown && return false
@@ -109,55 +219,87 @@ function always_isa(shape, asserted)
 end
 
 function main()
+    self_check()
     ccalls = ccall_returns(joinpath(ROOT, "lib", "18", "LibClangEx.jl"))
     rets = wrapper_returns(API, ccalls)
     isempty(ccalls) && (println("no ccalls parsed — is lib/18/LibClangEx.jl present?"); return 2)
 
     hits = Tuple{String,Int,String,String}[]
+    bare = Tuple{String,Int,String,String}[]
     for (root, _, files) in walkdir(TESTS), f in files
         endswith(f, ".jl") || continue
         occursin(".cov", f) && continue
         path = joinpath(root, f)
         for (n, line) in enumerate(eachline(path))
-            m = match(r"@test\s+(?:CC\.|ClangCompiler\.)?(\w+)\(.*\)\s+isa\s+(?:CC\.|ClangCompiler\.)?([\w{}]+)\s*$",
-                      strip(line))
+            code, comment = split_comment(line)
+            m = match(ASSERTION, strip(code))
             m === nothing && continue
             fname, asserted = m.captures[1], Symbol(m.captures[2])
             shapes = get(rets, fname, nothing)
             shapes === nothing && continue
             # sound only when every method of the name agrees
             all(s -> always_isa(s, asserted), shapes) || continue
+            # forward slashes always: this output is compared against a checked-in
+            # baseline, and Windows would otherwise report every path as a new file
+            rel = replace(relpath(path, ROOT), '\\' => '/')
             # An accepted exception carries the marker at the site, with its reason beside
             # it. Recording these in a separate baseline file instead put the count three
             # directories from the code, drifted whenever a file was cleaned up, and made
             # two branches conflict over a generated artifact.
-            occursin(MARKER, line) && continue
-            # forward slashes always: this output is compared against a checked-in
-            # baseline, and Windows would otherwise report every path as a new file
-            push!(hits, (replace(relpath(path, ROOT), '\\' => '/'), n, fname, strip(line)))
+            if occursin(MARKER, comment)
+                # The marker alone used to end the check here, which made the reason a
+                # comment nobody read: a third of the exemptions carried none at all.
+                r = reason_of(comment)
+                any(p -> occursin(last(p), r), REASONS) && continue
+                push!(bare, (rel, n, fname, strip(line)))
+                continue
+            end
+            push!(hits, (rel, n, fname, strip(line)))
         end
     end
 
-    if isempty(hits)
-        println("every statically-true `isa` assertion carries the `$MARKER` marker")
+    if isempty(hits) && isempty(bare)
+        println("every statically-true `isa` assertion carries the `$MARKER` marker, with a reason")
         return 0
     end
-    byfile = Dict{String,Vector{Tuple{Int,String,String}}}()
-    for (p, n, fn, code) in hits
-        push!(get!(byfile, p, Tuple{Int,String,String}[]), (n, fn, code))
-    end
-    println("`@test ... isa ...` assertions that cannot fail: $(length(hits)) across $(length(byfile)) files\n")
-    for p in sort!(collect(keys(byfile)); by=k -> -length(byfile[k]))
-        println("--- $p  ($(length(byfile[p])))")
-        for (n, fn, code) in byfile[p]
-            println("    $p:$n  $code")
+
+    # Group by file and print, densest file first. The four-space indent is load-bearing:
+    # test/lint.jl scrapes `path:line` out of it to decide whether CI fails.
+    function report(rows)
+        byfile = Dict{String,Vector{Tuple{Int,String,String}}}()
+        for (p, n, fn, code) in rows
+            push!(get!(byfile, p, Tuple{Int,String,String}[]), (n, fn, code))
         end
+        for p in sort!(collect(keys(byfile)); by=k -> -length(byfile[k]))
+            println("--- $p  ($(length(byfile[p])))")
+            for (n, fn, code) in byfile[p]
+                println("    $p:$n  $code")
+            end
+        end
+        return length(byfile)
     end
-    println("\nEach restates the wrapper's own return expression. Assert what Clang decided")
-    println("instead: a value, a round trip, or a relationship the shim could get wrong.")
-    println("If the value genuinely is not assertable -- the host decides it, it varies across")
-    println("the objects the test walks, or it is an integer the target chooses -- mark the")
-    println("line `$MARKER` and say which of those it is.")
+
+    if !isempty(hits)
+        nf = report(hits)
+        println("`@test ... isa ...` assertions that cannot fail: $(length(hits)) across $nf files\n")
+        println("Each restates the wrapper's own return expression. Assert what Clang decided")
+        println("instead: a value, a round trip, or a relationship the shim could get wrong.")
+        println("If the value genuinely is not assertable -- the host decides it, it varies across")
+        println("the objects the test walks, or it is an integer the target chooses -- mark the")
+        println("line `$MARKER` and say which of those it is.\n")
+    end
+    if !isempty(bare)
+        nf = report(bare)
+        println("`$MARKER` markers whose reason is missing or names none of the three admitted")
+        println("categories: $(length(bare)) across $nf files\n")
+        println("The marker is an exemption from the rule above, so it states the ground it was")
+        println("granted on. One of these must be recognisable in the text after it:")
+        for (name, _) in REASONS
+            println("  - $name")
+        end
+        println("\nIf none of them is true of the site, the value is assertable and the marker")
+        println("is the wrong fix -- assert what Clang decided instead.")
+    end
     return 1
 end
 
