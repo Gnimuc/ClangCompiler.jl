@@ -74,7 +74,7 @@ Know the ceiling of the thing you are about to rely on:
   entirely and every `# shape-only` marker was decorative — a broken detector prints the same
   clean sentence a clean tree does, which is why `self_check()` now runs first and why you
   should reach for the four-probe test in this skill's history before believing a green run.
-  And it validates that a marker *names* one of the three admitted reasons, never that the
+  And it validates that a marker *names* one of the four admitted reasons, never that the
   reason is true: a source-decided value excused as target-decided passes.
 - **Metamorphic invariants** (`test/clang/invariants.jl`) assert relationships that hold over
   any AST — a parent's range contains its children's, a binary operator's operands are distinct
@@ -82,12 +82,19 @@ Know the ceiling of the thing you are about to rely on:
   score from 28.6% to 85.7%; one invariant is worth a hundred value assertions.
 - **A saturated catalogue is not an instrument.** The score read 100% while all nine mutants sat
   in AST core and ran only `AST_CORE` files, so it described `Expr`/`Decl`/`Stmt` and nothing
-  else. It has now been extended twice, and each time the number fell the moment it reached
-  somewhere new: to 62.5% over `CompilerInstance.jl` and `Driver.jl` (six of seven survived),
-  then to 70.8% over `SourceManager.jl`, `ASTUnit.jl`, `Comment.jl` and `IdentifierTable.jl`
-  (seven of eight). Both rounds are fixed; it reads 95.8% across 24. Extend the catalogue into
-  a region *before* concluding anything about that region — `CFG`, `Lex` and the rest of
-  `Sema` have still never had a fault injected.
+  else. It has been extended three times, and the number fell every time it reached somewhere
+  new: 62.5% over `CompilerInstance.jl` and `Driver.jl` (six of seven survived), 70.8% over
+  `SourceManager.jl`, `ASTUnit.jl`, `Comment.jl` and `IdentifierTable.jl` (seven of eight),
+  then `CFG`, `Lex` and `Sema` (three of eight). All fixed; it reads 93.8% across 32. Extend
+  the catalogue into a region *before* concluding anything about that region — `Type.jl`,
+  `ExprCXX.jl`, `DeclCXX.jl`, `DeclTemplate.jl` and `APValue.jl` have still never had a fault
+  injected, which is tracked in #51.
+- **A score measured against a red tree only goes up.** Detection here is "a `Test Failed`
+  appeared", which cannot separate a mutant being caught from a suite that was already
+  failing: one broken assertion marks every mutant over that file set as caught. A wrong
+  expected value once reported two genuine survivors as caught in the run that introduced it.
+  `check_baseline` now runs each file set unmutated first and exits 3 rather than scoring a
+  red tree — so never quote a number from a run that did not print the baseline line.
 - **A survivor is sometimes a missing capability, not a missing assertion.** `getMainFileName`
   and `getOriginalSourceFileName` agree in every state this suite can build — both empty before
   a parse, both the `.cpp` after one — so no assertion at either site can separate them. They
