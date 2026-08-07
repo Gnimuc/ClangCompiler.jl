@@ -232,7 +232,9 @@ using ClangCompiler: get_tag
     @test CC.getTypeSize(ctx, CC.getTypePtr(int_qt)) == 32   # AbstractType overload
     pt_qt = CC.getType(CC.VarDecl(getdecl("cta_pt_var")))
     @test CC.get_name(CC.getMemberPointerType(ctx, int_qt, pt_qt)) == "int CtaPt::*"   # QualType-class overload
-    @test CC.getScalableVectorType(ctx, int_qt, 4) isa CC.QualType   # null QualType off SVE/RVV targets
+    # scalable vectors exist only on AArch64 (SVE) and RISC-V (RVV), so this is a null
+    # QualType on some runners and a real one on others
+    @test CC.getScalableVectorType(ctx, int_qt, 4) isa CC.QualType  # shape-only: the target decides it
 
     # ---------- stmt-tree carriers: AtomicExpr / IndirectGotoStmt ----------
     nodes = CC.AbstractStmt[]
@@ -1012,8 +1014,8 @@ end
 
     # ---- getCXXABIKind / getDefaultOpenCLPointeeAddrSpace ----
     abi = CC.getCXXABIKind(ctx)
-    @test abi isa LX.CXTargetCXXABI_Kind  # shape-only: the host decides this
-    @test CC.getDefaultOpenCLPointeeAddrSpace(ctx) isa LX.CXLangAS  # shape-only: the host decides this
+    @test abi isa LX.CXTargetCXXABI_Kind  # shape-only: the target decides it (Itanium vs Microsoft)
+    @test CC.getDefaultOpenCLPointeeAddrSpace(ctx) isa LX.CXLangAS  # shape-only: the target decides it (address spaces follow the target's OpenCL support)
 
     # ---- getCurrentNamedModule: no C++20 named module is under construction here ----
     m = CC.getCurrentNamedModule(ctx)

@@ -486,7 +486,7 @@ end
     # from strings that passed validateCpuSupports. On a target with no multiversioning
     # support nothing validates and the loop body simply does not run.
     for f in filter(n -> CC.validateCpuSupports(ti, n), ["sse2", "avx", "neon"])
-        @test CC.multiVersionSortPriority(ti, f) isa Integer  # shape-only: the host decides this
+        @test CC.multiVersionSortPriority(ti, f) isa Integer  # shape-only: the target decides it (CPU feature priorities are per-target tables)
     end
 
     dispose(I)

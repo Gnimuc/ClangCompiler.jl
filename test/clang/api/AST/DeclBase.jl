@@ -14,7 +14,8 @@ using Test
     g = CC.resolve(nd)
 
     # source range / location
-    @test CC.getSourceRange(g) isa CC.SourceRange  # shape-only
+    @test CC.isValid((CC.getSourceRange(g)).begin_loc)
+    @test CC.isValid((CC.getSourceRange(g)).end_loc)
     @test !CC.is_null_handle(CC.getBodyRBrace(g))
 
     # flags
@@ -61,7 +62,7 @@ using Test
     @test length(CC.getRedecls(g)) == n
 
     # attributes: none written, so the kind-indexed queries answer negatively
-    @test CC.getMaxAlignment(g) isa Integer  # shape-only: the host decides this
+    @test Int(CC.getMaxAlignment(g)) == 0
     @test CC.hasAttrOfKind(g, CC.LibClangEx.CXAttrKind_Deprecated) == false
     @test CC.getAttrOfKind(g, CC.LibClangEx.CXAttrKind_Deprecated).ptr == C_NULL
     @test CC.hasDefiningAttr(g) == false
@@ -118,11 +119,17 @@ using Test
 
     # DeclarationNameInfo: owned box, mutated and read back
     ni = CC.DeclarationNameInfo(name, CC.getLocation(nd))
-    @test CC.getSourceRange(ni) isa CC.SourceRange  # shape-only
+    @test CC.isValid((CC.getSourceRange(ni)).begin_loc)
+    @test CC.isValid((CC.getSourceRange(ni)).end_loc)
     @test CC.isInstantiationDependent(ni) == false
     @test CC.containsUnexpandedParameterPack(ni) == false
     @test CC.getNamedTypeInfo(ni).ptr == C_NULL
-    @test CC.getCXXOperatorNameRange(ni) isa CC.SourceRange  # shape-only
+    # `ni` was built over an ordinary identifier, so the two name-kind-specific slots are
+    # the defaults clang leaves them at -- the operator range invalid and the literal
+    # operator location null. Asserting the range is *invalid* is what separates this
+    # accessor from one reading the name's own range, which is valid.
+    @test !CC.isValid((CC.getCXXOperatorNameRange(ni)).begin_loc)
+    @test !CC.isValid((CC.getCXXOperatorNameRange(ni)).end_loc)
     @test CC.is_null_handle(CC.getCXXLiteralOperatorNameLoc(ni))
     CC.setName(ni, name)
     CC.setLoc(ni, CC.getLocation(nd))

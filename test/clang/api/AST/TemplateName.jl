@@ -61,7 +61,8 @@ end
     @test CC.getKind(qarg) == CC.LibClangEx.CXTemplateArgument_Template
     tn_q = CC.getAsTemplate(qarg)
     @test CC.getKind(tn_q) == CC.LibClangEx.CXTemplateName_QualifiedTemplate
-    @test CC.getDependence(tn_q) isa Integer  # shape-only: the target chooses this value
+    # `TnNS::TnBox` names a concrete template, so nothing about it is dependent
+    @test Int(CC.getDependence(tn_q)) == 0
     @test occursin("TnBox", CC.getAsString(tn_q, ctx))
     @test occursin("TnBox", CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_None))
     @test occursin("TnBox", CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_Fully))
@@ -98,7 +99,8 @@ end
     sub = CC.getAsSubstTemplateTemplateParm(tn_s)
     @test sub isa CC.SubstTemplateTemplateParmStorage
     @test sub.ptr != C_NULL
-    @test CC.getIndex(sub) isa Integer  # shape-only: the target chooses this value
+    # the substitution stands in for the first (and only) template template parameter
+    @test Int(CC.getIndex(sub)) == 0
     @test !CC.is_null_handle(CC.getAssociatedDecl(sub))
     repl = CC.getReplacement(sub)
     @test repl isa CC.TemplateName

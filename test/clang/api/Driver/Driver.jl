@@ -24,15 +24,18 @@ end
     drv = CC.Driver(exe, triple, diags)
     @test drv isa CC.Driver
 
-    @test CC.getTargetTriple(drv) isa String  # shape-only: the host decides this
-    @test occursin("x86_64", CC.getTargetTriple(drv))
-    @test CC.getClangProgramPath(drv) isa String  # shape-only: the host decides this
-    @test occursin("clang", CC.getClangProgramPath(drv))
-    @test CC.getInstalledDir(drv) isa String  # shape-only: the host decides this
+    # Nothing here is host-decided: the triple and the executable path are the two the
+    # driver was constructed with, and every derived path follows from them. `isa String`
+    # held equally for an accessor returning a sibling member -- the sysroot and the
+    # resource dir are both strings, and only one of them is empty.
+    @test CC.getTargetTriple(drv) == triple
+    @test CC.getClangProgramPath(drv) == exe
+    @test CC.getInstalledDir(drv) == dirname(exe)
     @test CC.getDir(drv) isa String
-    @test CC.getResourceDir(drv) isa String  # shape-only: the host decides this
-    @test CC.getSysRoot(drv) isa String  # shape-only: the host decides this
-    @test CC.getDyldPrefix(drv) isa String  # shape-only: the host decides this
+    @test occursin("clang", CC.getResourceDir(drv))
+    # no --sysroot and no -isysroot were passed, so these stay at their empty defaults
+    @test isempty(CC.getSysRoot(drv))
+    @test isempty(CC.getDyldPrefix(drv))
 
     old = CC.getCheckInputsExist(drv)
     @test old isa Bool
@@ -57,7 +60,8 @@ end
     # Driver::Mode is a single enum, so at most one predicate can be true.
     @test count(modes) <= 1
 
-    @test CC.getCCCGenericGCCName(drv) isa String  # shape-only: the host decides this
+    # -ccc-gcc-name was not passed, so this is the empty default
+    @test isempty(CC.getCCCGenericGCCName(drv))
     @test !CC.is_null_handle(CC.getDiags(drv))
 
     img = CC.getDefaultImageName(drv)
@@ -125,11 +129,22 @@ end
     diags = CC.DiagnosticsEngine()
     drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
 
-    # isUsingLTO reads the same uninitialized Driver::LTOMode as getLTOMode, but as a
-    # comparison, so it is a valid Bool even on a driver that never processed
-    # arguments -- only its meaning depends on that.
-    @test CC.isUsingLTO(drv) isa Bool  # shape-only: the host decides this
-    @test CC.isUsingLTO(drv, true) isa Bool  # shape-only: the host decides this
+    # isUsingLTO reads Driver::LTOMode, which BuildCompilation is what initialises. Asked
+    # of a driver that never processed arguments it is a comparison against uninitialised
+    # memory: a valid Bool, but not an answer, and pinning it would only make the reading
+    # look trustworthy. Processing arguments first is what gives the two calls a meaning,
+    # and -flto is what separates them -- a predicate stuck at either answer fails here.
+    CC.setCheckInputsExist(drv, false)
+    CC.BuildCompilation(drv, ["clang", "-fsyntax-only", "lto-probe.cpp"])
+    @test CC.isUsingLTO(drv) == false
+
+    lto_drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu",
+                        CC.DiagnosticsEngine())
+    CC.setCheckInputsExist(lto_drv, false)
+    CC.BuildCompilation(lto_drv, ["clang", "-flto", "-c", "lto-probe.cpp"])
+    @test CC.isUsingLTO(lto_drv) == true
+    # the offload query reads a separate mode that -flto alone does not set
+    @test CC.isUsingLTO(lto_drv, true) == false
 
     # Both create their entry on disk and hand ownership to the caller.
     tmpfile = CC.GetTemporaryPath(drv, "clangcompiler", "tmp")
@@ -180,13 +195,15 @@ end
     src = "clangcompiler-driver-test.cpp"
     comp = CC.BuildCompilation(drv, ["clang", "-fsyntax-only", src])
     @test comp isa CC.Compilation
-    @test CC.isForDiagnostics(comp) isa Bool  # shape-only: the host decides this
-    @test CC.getActiveOffloadKinds(comp) isa Integer  # shape-only: the host decides this
-    @test CC.getSysRoot(comp) isa String  # shape-only: the host decides this
+    # a plain -fsyntax-only compilation: not a diagnostic re-run, no offloading, and the
+    # sysroot it reports is the driver's own
+    @test CC.isForDiagnostics(comp) == false
+    @test Int(CC.getActiveOffloadKinds(comp)) == 0
+    @test CC.getSysRoot(comp) == CC.getSysRoot(drv)
     @test CC.getTempFiles(comp) isa Vector{String}
 
     # setContainsError only ever sets the bit, so this round trip is one-way.
-    @test CC.containsError(comp) isa Bool  # shape-only: the host decides this
+    @test CC.containsError(comp) == false
     CC.setContainsError(comp)
     @test CC.containsError(comp)
 
@@ -196,14 +213,20 @@ end
     tc = CC.getDefaultToolChain(comp)
     @test tc isa CC.ToolChain
     @test occursin("x86_64", CC.getTripleString(tc))
-    @test CC.getArchName(tc) isa String  # shape-only: the host decides this
-    @test CC.getOS(tc) isa String  # shape-only: the host decides this
-    @test CC.isCrossCompiling(tc) isa Bool  # shape-only: the host decides this
+    # both are read out of the triple the driver was pinned to, so they are the two
+    # components of it and not each other
+    @test CC.getArchName(tc) == "x86_64"
+    @test CC.getOS(tc) == "linux"
+    # this compares the pinned target triple against the triple of the machine running the
+    # test, so the answer differs from runner to runner
+    @test CC.isCrossCompiling(tc) isa Bool  # shape-only: the host decides it
     @test CC.getTargetTriple(CC.getDriver(tc)) == CC.getTargetTriple(drv)
 
     # Neither lookup has to find anything; both always come back with a path string.
-    @test CC.GetFilePath(drv, "crt1.o", tc) isa String  # shape-only: the host decides this
-    @test CC.GetProgramPath(drv, "ld", tc) isa String  # shape-only: the host decides this
+    # a miss returns the name it was handed rather than an empty string, so the query is
+    # traceable either way
+    @test occursin("crt1.o", CC.GetFilePath(drv, "crt1.o", tc))
+    @test occursin("ld", CC.GetProgramPath(drv, "ld", tc))
 
     banner = CC.PrintVersion(drv, comp)
     @test banner isa String

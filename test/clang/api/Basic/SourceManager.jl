@@ -147,7 +147,16 @@ end
     @test CC.getHashValue(fid2) == CC.getHashValue(fid)
     @test CC.getFileOffset(sm, loc) == off
     @test CC.getFileIDSize(sm, fid) > 0
-    @test CC.getNumCreatedFIDsForFileID(sm, fid) isa Integer  # shape-only: the target chooses this value
+    # How many FileIDs this one spawned depends on what the default include path pulls in,
+    # so the count itself is not pinnable -- but the setter makes it observable, which is
+    # what separates a working getter from one answering a constant. `force` is needed
+    # because clang refuses to overwrite a count already set. Restored afterwards so later
+    # assertions see the source manager as they found it.
+    created = Int(CC.getNumCreatedFIDsForFileID(sm, fid))
+    CC.setNumCreatedFIDsForFileID(sm, fid, created + 3, true)
+    @test Int(CC.getNumCreatedFIDsForFileID(sm, fid)) == created + 3
+    CC.setNumCreatedFIDsForFileID(sm, fid, created, true)
+    @test Int(CC.getNumCreatedFIDsForFileID(sm, fid)) == created
     inside, rel = CC.isInFileID(sm, loc, fid)
     @test inside
     @test rel == off
@@ -314,11 +323,14 @@ end
     # ---- SourceManager: state and size queries ----
     @test !(CC.userFilesAreVolatile(sm))
     @test CC.hasLineTable(sm)
-    @test CC.getContentCacheSize(sm) isa Integer  # shape-only: the host decides this
-    @test CC.local_sloc_entry_size(sm) isa Integer  # shape-only: the target chooses this value
+    @test CC.getContentCacheSize(sm) > 0
     @test CC.local_sloc_entry_size(sm) > 0
-    @test CC.loaded_sloc_entry_size(sm) isa Integer  # shape-only: the target chooses this value
-    @test CC.getNextLocalOffset(sm) isa Integer  # shape-only: the target chooses this value
+    # nothing was loaded from an AST file, so every entry in this manager is a local one
+    @test Int(CC.loaded_sloc_entry_size(sm)) == 0
+    # the next offset sits past every local entry, since each one occupies at least a byte
+    # of the address space they are handed out of -- a swallowed counter reads 0 and fails
+    @test CC.getNextLocalOffset(sm) >= CC.local_sloc_entry_size(sm)
+    @test CC.getNextLocalOffset(sm) > 0
 
     # the line table is materialised on demand by getLineTableFilenameID
     fnid = CC.getLineTableFilenameID(sm, "sm-batch-b.h")
@@ -363,9 +375,9 @@ end
     # ---- Module ----
     root = CC.Module_("SmbTopMod"; visibility_id=3)
     @test CC.getVisibilityID(root) == 3
-    # another bit a synthetic module never had a module map to set, so the answer is
-    # the runner's rather than clang's -- only its shape is assertable
-    @test CC.isNamedModuleInterfaceHasInit(root) isa Bool  # shape-only: the host decides this
+    # another bit a synthetic module never had a module map to set, so there is no
+    # answer to read -- only its shape is assertable
+    @test CC.isNamedModuleInterfaceHasInit(root) isa Bool  # shape-only: nothing decides it — never set on a module built without a module map
     @test !(CC.isForBuilding(root, langopts))
     @test CC.getASTFile(root) === nothing
     @test CC.addTopHeaderFilename(root, "smb-top.h") === nothing
@@ -385,14 +397,13 @@ end
     # real module map or requirement list to set. Windows CI observed isAvailable still
     # true after the call while macOS and Linux observed false. Only the shape is
     # asserted; the call itself still exercises the wrapper.
-    # A synthetic module has no module map, so isAvailable reads bits that were never
-    # set and the answer differs per runner (CLAUDE.md records this); only the shape
-    # of it is assertable here.
-    @test CC.isAvailable(root) isa Bool  # shape-only: the host decides this
+    # A synthetic module has no module map, so isAvailable reads bits nothing ever set
+    # (CLAUDE.md records this class); only the shape of it is assertable here.
+    @test CC.isAvailable(root) isa Bool  # shape-only: nothing decides it — reads bits never set on a synthetic module
     @test CC.markUnavailable(root, true) === nothing
     # same synthetic-module caveat: the markUnavailable transition is gated on bits a
     # module built without a module map never had
-    @test CC.isAvailable(root) isa Bool  # shape-only: the host decides this
+    @test CC.isAvailable(root) isa Bool  # shape-only: nothing decides it — reads bits never set on a synthetic module
     CC.dispose(root)
 
     CC.dispose(I)
@@ -420,7 +431,8 @@ end
     entry, invalid = CC.getSLocEntry(sm, mainid)
     @test entry isa CC.SLocEntry
     @test invalid isa Bool
-    @test CC.getOffset(entry) isa Integer  # shape-only: the target chooses this value
+    # every local entry sits below the offset the manager would hand out next
+    @test CC.getOffset(entry) < CC.getNextLocalOffset(sm)
 
     # Which indices hold a file and which a macro expansion is decided by the parse, so the
     # exemplars are found by scanning instead of being hard-coded.
@@ -443,7 +455,7 @@ end
 
     # ---- SrcMgr::FileInfo ----
     fe = CC.getLocalSLocEntry(sm, file_idx)
-    @test CC.getOffset(fe) isa Integer  # shape-only: the target chooses this value
+    @test CC.getOffset(fe) < CC.getNextLocalOffset(sm)
     fi = CC.getFile(fe)
     @test fi isa CC.FileInfo
     @test CC.is_null_handle(CC.getIncludeLoc(fi))
@@ -506,7 +518,7 @@ end
 
     # ---- SourceManager: configuration and memory accounting ----
     @test CC.setOverridenFilesKeepOriginalName(sm, true) === nothing
-    @test CC.getDataStructureSizes(sm) isa Integer  # shape-only: the host decides this
+    @test CC.getDataStructureSizes(sm) > 0
     malloc_bytes, mmap_bytes = CC.getMemoryBufferSizes(sm)
     @test malloc_bytes isa Integer
     @test mmap_bytes isa Integer
@@ -553,7 +565,7 @@ end
     cc = CC.getContentCache(fi)
     @test cc isa CC.ContentCache
     @test CC.isBufferLoaded(cc)
-    @test CC.getSizeBytesMapped(cc) isa Integer  # shape-only: the host decides this
+    @test CC.getSizeBytesMapped(cc) isa Integer  # shape-only: the host decides it — whether a buffer is mmap'd rather than read into malloc'd memory is the loader's choice
     ccdata = CC.getBufferDataIfLoaded(cc)
     @test ccdata === nothing || ccdata isa String
     if CC.isBufferLoaded(cc)

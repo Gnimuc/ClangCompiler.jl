@@ -23,7 +23,9 @@ using Test
     @test CC.usesPreprocessorOnly(act) == false
     @test CC.hasPCHSupport(act) == true
     @test CC.hasASTFileSupport(act) == true
-    @test CC.hasIRSupport(act) isa Bool  # shape-only: the host decides this
+    # `act` is an LLVMOnlyAction, i.e. a CodeGenAction, which is the class that overrides
+    # this to true -- the comment above says as much, so the class decides it, not the host
+    @test CC.hasIRSupport(act) == true
     @test CC.hasCodeCompletionSupport(act) == false
     @test CC.getTranslationUnitKind(act) == CC.LibClangEx.CXTranslationUnitKind_TU_Complete
 
@@ -60,7 +62,6 @@ using Test
     inv = CC.CompilerInvocation()
     @test CC.resetNonModularOptions(inv) === nothing
     @test CC.clearImplicitModuleBuildOptions(inv) === nothing
-    @test CC.getModuleHash(inv) isa String  # shape-only: the host decides this
     @test !isempty(CC.getModuleHash(inv))
     dispose(inv)
 end

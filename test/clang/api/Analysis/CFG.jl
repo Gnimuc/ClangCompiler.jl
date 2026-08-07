@@ -164,7 +164,7 @@ end
         try
             # CFG tail: try-dispatch blocks and the synthetic-DeclStmt map
             @test CC.getNumTryBlocks(cfg) == 0
-            @test CC.getNumSyntheticDeclStmts(cfg) isa Integer  # shape-only: the target chooses this value
+            @test Int(CC.getNumSyntheticDeclStmts(cfg)) == 0
 
             entry = CC.getEntry(cfg)
             exit_ = CC.getExit(cfg)
@@ -661,8 +661,10 @@ end
                     @test length(fp) == Int(CC.getNumFilteredPreds(b))
                     @test length(fs) <= Int(CC.succ_size(b))
                     @test length(fp) <= Int(CC.pred_size(b))
-                    # non-default FilterOptions still return a well-formed count
-                    @test CC.getNumFilteredSuccs(b, false, false) isa Integer  # shape-only
+                    # with both filters off nothing is dropped, so the filtered count
+                    # collapses onto the unfiltered one -- the relationship that pins the
+                    # options to an effect rather than merely returning some integer
+                    @test Int(CC.getNumFilteredSuccs(b, false, false)) == Int(CC.succ_size(b))
                 end
 
                 # a successor walk filters nothing here: its source block is never null
@@ -696,12 +698,14 @@ end
             };
             CfgCCObj cfg_cc_make(int x);
             void cfg_cc_take(CfgCCObj o);
+            void cfg_cc_take2(int a, CfgCCObj o);
             CfgCCObj cfg_cc_fn(int x) {
                 CfgCCObj local(x);
                 CfgCCObj made = cfg_cc_make(x);
                 CfgCCObj *heap = new CfgCCObj(x);
                 cfg_cc_take(CfgCCObj(x));
-                auto lam = [local]() { return local.v; };
+                cfg_cc_take2(x, CfgCCObj(x));
+                auto lam = [local, made]() { return local.v + made.v; };
                 delete heap;
                 return local;
             }
@@ -734,6 +738,8 @@ end
                 typed_call = nothing
                 seen = K.CXConstructionContextKind[]
                 elided = CC.ConstructionContext[]
+                bind_temp = Bool[]
+                cc_index = Tuple{Symbol,Int}[]
                 for i in 0:(n - 1)
                     b = CC.getBlock(cfg, i)
                     for j in 0:(Int(CC.size(b)) - 1)
@@ -754,20 +760,37 @@ end
                         ck = CC.getKind(cc)
                         @test ck isa K.CXConstructionContextKind
                         push!(seen, ck)
-                        # every payload accessor is total: it answers a carrier of its
-                        # own type, NULL-valued unless the kind matches
-                        @test CC.getDeclStmt(cc) isa CC.DeclStmt  # shape-only
+                        # Every payload accessor is total: it answers a carrier of its own
+                        # type, NULL-valued unless the kind matches. `isa` states only the
+                        # first half, and states it for every accessor at once, so it
+                        # cannot tell one wired to its own slot from one wired to a
+                        # sibling's. The biconditional below is the second half -- non-null
+                        # for exactly the kinds that carry that payload -- and a
+                        # sibling-wired accessor is non-null under the wrong kind.
+                        @test (CC.getDeclStmt(cc).ptr != C_NULL) ==
+                              (ck in (K.CXConstructionContextKind_SimpleVariableKind,
+                                      K.CXConstructionContextKind_CXX17ElidedCopyVariableKind))
                         @test CC.is_null_handle(CC.getCXXCtorInitializer(cc))
-                        @test CC.getCXXNewExpr(cc) isa CC.CXXNewExpr  # shape-only
-                        @test CC.getCXXBindTemporaryExpr(cc) isa CC.CXXBindTemporaryExpr  # shape-only
+                        @test (CC.getCXXNewExpr(cc).ptr != C_NULL) ==
+                              (ck == K.CXConstructionContextKind_NewAllocatedObjectKind)
+                        # this one is not a function of the kind: it is present when the
+                        # construction binds a temporary needing destruction, which is a
+                        # property of the individual construction rather than its class.
+                        # Collected and asserted as a partition below.
+                        push!(bind_temp, CC.getCXXBindTemporaryExpr(cc).ptr != C_NULL)
                         @test CC.is_null_handle(CC.getMaterializedTemporaryExpr(cc))
                         @test CC.is_null_handle(CC.getConstructorAfterElision(cc))
                         @test CC.is_null_handle(CC.getConstructionContextAfterElision(cc))
-                        @test CC.getReturnStmt(cc) isa CC.ReturnStmt
-                        @test CC.getCallLikeExpr(cc) isa CC.Expr_  # shape-only
-                        @test CC.getLambdaExpr(cc) isa CC.LambdaExpr  # shape-only
-                        @test CC.getInitializer(cc) isa CC.Expr_  # shape-only
-                        @test CC.getFieldDecl(cc) isa CC.FieldDecl  # shape-only
+                        @test (CC.getReturnStmt(cc).ptr != C_NULL) ==
+                              (ck in (K.CXConstructionContextKind_SimpleReturnedValueKind,
+                                      K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind))
+                        @test (CC.getCallLikeExpr(cc).ptr != C_NULL) ==
+                              (ck == K.CXConstructionContextKind_ArgumentKind)
+                        # the three lambda-capture payloads travel together
+                        for get in (CC.getLambdaExpr, CC.getInitializer, CC.getFieldDecl)
+                            @test (get(cc).ptr != C_NULL) ==
+                                  (ck == K.CXConstructionContextKind_LambdaCaptureKind)
+                        end
                         if ck == K.CXConstructionContextKind_SimpleVariableKind ||
                            ck == K.CXConstructionContextKind_CXX17ElidedCopyVariableKind
                             @test CC.getDeclStmt(cc).ptr != C_NULL
@@ -785,10 +808,10 @@ end
                             @test CC.getReturnStmt(cc).ptr != C_NULL
                         elseif ck == K.CXConstructionContextKind_ArgumentKind
                             @test CC.getCallLikeExpr(cc).ptr != C_NULL
-                            @test CC.getIndex(cc) isa Integer  # shape-only: the target chooses this value
+                            push!(cc_index, (:arg, Int(CC.getIndex(cc))))
                         elseif ck == K.CXConstructionContextKind_LambdaCaptureKind
                             @test CC.getLambdaExpr(cc).ptr != C_NULL
-                            @test CC.getIndex(cc) isa Integer  # shape-only: the target chooses this value
+                            push!(cc_index, (:capture, Int(CC.getIndex(cc))))
                             @test CC.getInitializer(cc).ptr != C_NULL
                             @test CC.getFieldDecl(cc).ptr != C_NULL
                         end
@@ -797,6 +820,20 @@ end
                 # `CfgCCObj local(x);` is a direct-initialised local of class type, so the
                 # rich builder always yields a variable-kind Constructor element for it
                 @test !isempty(seen)
+                # Both polarities occur over this source, so the accessor separates the
+                # constructions that bind a temporary from the ones that do not. A shim
+                # swallowing its result is all-false here and one wired to a sibling
+                # payload is all-true; only a working one partitions the set.
+                @test any(bind_temp)
+                @test !all(bind_temp)
+                # cfg_cc_take2 takes its object second and the lambda captures two, so both
+                # accessors have a position other than 0 to report. Without that the source
+                # only ever constructs at index 0 and an accessor ignoring its subject is
+                # indistinguishable from a working one.
+                @test (:arg, 0) in cc_index
+                @test (:arg, 1) in cc_index
+                @test (:capture, 0) in cc_index
+                @test (:capture, 1) in cc_index
                 # Under C++17 the temporary in a copy-initialisation is not merely elided
                 # but never materialised, so no element carries an elided-temporary
                 # context here and the two after-elision accessors have nothing to read.

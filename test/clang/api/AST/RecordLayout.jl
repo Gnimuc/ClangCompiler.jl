@@ -84,7 +84,7 @@ end
     # vbptr is an MS-ABI construct; on Itanium the queries answer false with a
     # negative sentinel offset — assert shape, not ABI specifics
     @test !(CC.hasVBPtr(virt))
-    @test CC.getVBPtrOffset(virt) isa Integer  # shape-only: the target chooses this value
+    @test CC.getVBPtrOffset(virt) isa Integer  # shape-only: the target ABI decides it — a real offset under MS, a negative sentinel under Itanium
     @test CC.getNonVirtualSize(virt) <= CC.getSize(virt)
 
     dispose(f)

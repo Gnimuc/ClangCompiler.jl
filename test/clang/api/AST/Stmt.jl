@@ -1819,7 +1819,9 @@ end
         @test op_r isa CC.SourceRange
         @test !CC.is_null_handle(op_r.begin_loc)
         @test !CC.is_null_handle(op_r.end_loc)
-        @test CC.getModifier(ops[1]) isa Char    # '\0' when the reference carries none
+        # `%0` carries no modifier letter, so clang reports the NUL it uses for "none" --
+        # the value that separates this accessor from one reading an adjacent byte
+        @test CC.getModifier(ops[1]) == '\0'
         for p in pieces
             dispose(p)
         end

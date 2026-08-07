@@ -2982,7 +2982,10 @@ end
     # target-decided: what counts as a valid section specifier follows the object
     # file format (Mach-O vs ELF vs COFF), so only the shape of the answer holds across CI runners
     @test CC.isValidSectionSpecifier(sema, "__TEXT,__text") isa Bool  # shape-only: host target section format rules decide this
-    @test CC.isValidSectionSpecifier(sema, "not a section specifier") isa Bool  # shape-only: host target section format rules decide this
+    # Only Mach-O imposes a grammar on the name -- it wants `segment,section`, so a string
+    # with spaces is rejected there and accepted under ELF and COFF, which take almost any
+    # name. There is no spelling that is invalid on all three.
+    @test CC.isValidSectionSpecifier(sema, "not a section specifier") isa Bool  # shape-only: the target decides it (object file format)
     cuda_name = CC.getCudaConfigureFuncName(sema)
     @test cuda_name isa String
     @test !isempty(cuda_name)

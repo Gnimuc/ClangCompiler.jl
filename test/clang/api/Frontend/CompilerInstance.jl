@@ -71,8 +71,10 @@ using Test
     hs = CC.getHeaderSearchInfo(pp)
     @test hs isa CC.HeaderSearch
     @test (CC.PrintStats(pp); true)
-    @test CC.isIncrementalProcessingEnabled(pp) isa Bool  # shape-only: the host decides this
-    @test (CC.enableIncrementalProcessing(pp); CC.isIncrementalProcessingEnabled(pp)) isa Bool
+    # the interpreter drives clang incrementally, so this is already on before anything
+    # here touches it, and enabling it again is idempotent rather than a toggle
+    @test CC.isIncrementalProcessingEnabled(pp) == true
+    @test (CC.enableIncrementalProcessing(pp); CC.isIncrementalProcessingEnabled(pp)) == true
 
     # ---- HeaderSearch / HeaderSearchOptions / PreprocessorOptions ----
     @test (CC.PrintStats(hs); true)
@@ -105,25 +107,33 @@ using Test
     # LookupResult construction + unqualified LookupName
     nm = CC.DeclarationName(CC.get_name(ctx, "compute"))
     lr = CC.LookupResult(sema, nm, widget_loc, CC.CXLookupNameKind_LookupOrdinaryName)
-    @test CC.LookupName(sema, lr, scope, true) isa Bool  # shape-only: the host decides this
+    # `compute` is a file-scope function in this translation unit, so an unqualified
+    # ordinary-name lookup finds it. Nothing about that is host-decided.
+    @test CC.LookupName(sema, lr, scope, true) == true
 
     # LookupParsedName on a fresh result + scope spec
     ss_lp = CC.CXXScopeSpec()
     lr2 = CC.LookupResult(sema, nm, widget_loc, CC.CXLookupNameKind_LookupOrdinaryName)
-    @test CC.LookupParsedName(sema, lr2, scope, ss_lp, true, true) isa Bool  # shape-only: the host decides this
+    @test CC.LookupParsedName(sema, lr2, scope, ss_lp, true, true) == true
 
     # ---- LookupResult query surface (Sema/Lookup.jl) on the populated `lr` ----
     @test (CC.resolveKind(lr); true)
-    @test CC.isForRedeclaration(lr) isa Bool  # shape-only: the host decides this
-    @test CC.isTemplateNameLookup(lr) isa Bool  # shape-only: the host decides this
-    @test CC.isAmbiguous(lr) isa Bool
-    @test CC.isSingleResult(lr) isa Bool  # shape-only: the host decides this
-    @test CC.isOverloadedResult(lr) isa Bool  # shape-only: the host decides this
-    @test CC.isUnresolvableResult(lr) isa Bool  # shape-only: the host decides this
-    @test CC.isClassLookup(lr) isa Bool  # shape-only: the host decides this
-    @test CC.isSingleTagDecl(lr) isa Bool  # shape-only: the host decides this
-    @test CC.empty(lr) isa Bool  # shape-only: the host decides this
-    @test CC.getNum(lr) isa Integer  # shape-only: the host decides this
+    # `compute` is a single non-overloaded free function found by ordinary lookup, so
+    # every one of these has an answer the source decides. `isa Bool` held for all of
+    # them at once and so could not tell one predicate from another; these values can.
+    @test CC.isForRedeclaration(lr) == false     # the shim's default is NotForRedeclaration
+    @test CC.isTemplateNameLookup(lr) == false
+    @test CC.isAmbiguous(lr) == false
+    @test CC.isSingleResult(lr) == true
+    @test CC.isOverloadedResult(lr) == false
+    @test CC.isUnresolvableResult(lr) == false
+    @test CC.isClassLookup(lr) == false          # LookupOrdinaryName, not a class member lookup
+    @test CC.isSingleTagDecl(lr) == false        # a function, not a tag
+    @test CC.empty(lr) == false
+    @test Int(CC.getNum(lr)) == 1
+    # and the count agrees with the two predicates derived from it
+    @test CC.empty(lr) == (Int(CC.getNum(lr)) == 0)
+    @test CC.isSingleResult(lr) == (Int(CC.getNum(lr)) == 1)
     @test CC.getResults(lr) isa Vector
     @test !CC.is_null_handle(CC.getRepresentativeDecl(lr))
     @test !CC.is_null_handle(CC.getLookupName(lr))
@@ -148,10 +158,15 @@ using Test
     dss = CC.CXXScopeSpec()
     tail = CC.parse_cxx_scope_spec(I, dss, "NS::Inner")
     @test tail isa AbstractString
-    @test CC.isValid(dss) isa Bool  # shape-only: the host decides this
-    @test CC.isInvalid(dss) isa Bool  # shape-only: the host decides this
-    @test CC.isEmpty(dss) isa Bool  # shape-only: the host decides this
-    @test CC.isNotEmpty(dss) isa Bool  # shape-only: the host decides this
+    # `NS::Inner` names a real nested scope, so the spec parsed and is populated. The two
+    # pairs are complements of each other, which is the part `isa Bool` cannot state: two
+    # predicates wired to the same underlying query satisfy it and fail this.
+    @test CC.isValid(dss) == true
+    @test CC.isInvalid(dss) == false
+    @test CC.isEmpty(dss) == false
+    @test CC.isNotEmpty(dss) == true
+    @test CC.isValid(dss) == !CC.isInvalid(dss)
+    @test CC.isNotEmpty(dss) == !CC.isEmpty(dss)
     @test !CC.is_null_handle(CC.getScopeRep(dss))
     bloc = CC.getBeginLoc(dss)
     eloc = CC.getEndLoc(dss)
@@ -160,19 +175,22 @@ using Test
     @test (CC.setBeginLoc(dss, bloc); true)
     @test (CC.setEndLoc(dss, eloc); true)
     sr = CC.SourceRange(bloc, eloc)
-    @test CC.getRange(dss, sr) isa CC.SourceRange  # shape-only: the host decides this
+    @test CC.getRange(dss, sr) isa CC.SourceRange  # shape-only: varies with the scope spec the parse left behind
     @test (CC.setRange(dss, sr); true)
     @test (CC.clear(dss); true)
     dispose(dss)
 
     # ---- Parser: read-only queries (Parse/Parser.jl) ----
-    @test CC.getLangOpts(parser) isa CC.LangOptions  # shape-only: the host decides this
-    @test CC.getTargetInfo(parser) isa CC.TargetInfo  # shape-only: the host decides this
-    @test CC.getPreprocessor(parser) isa CC.Preprocessor  # shape-only: the host decides this
-    @test CC.getActions(parser) isa CC.Sema  # shape-only: the host decides this
+    # the parser borrows these from the CompilerInstance rather than owning copies, so
+    # each is the very same object -- an accessor reading a neighbouring member returns a
+    # perfectly well-typed carrier and fails only on identity
+    @test CC.getLangOpts(parser).ptr == CC.getLangOpts(sema).ptr
+    @test CC.getTargetInfo(parser).ptr == CC.getTarget(ci).ptr
+    @test CC.getPreprocessor(parser).ptr == CC.getPreprocessor(ci).ptr
+    @test CC.getActions(parser).ptr == CC.getSema(ci).ptr
     tok = CC.getCurToken(parser)
     @test tok isa CC.Token
-    @test CC.NextToken(parser) isa CC.Token  # shape-only: the host decides this
+    @test CC.NextToken(parser) isa CC.Token  # shape-only: varies with where the incremental parser is resting
 
     # pure helper functions over the parser context enums
     @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_Member) isa CC.CXDeclSpecContext
@@ -182,11 +200,12 @@ using Test
     @test CC.shouldEnterContext(CC.CXDeclSpecContext_DSC_normal) isa Bool
 
     # ---- Token query surface (Lex/Token.jl) ----
-    @test CC.getLocation(tok) isa CC.SourceLocation  # shape-only: the host decides this
+    # a token the parser is actually resting on was written somewhere
+    @test CC.isValid(CC.getLocation(tok))
     @test CC.getAnnotationEndLoc(tok) isa CC.SourceLocation
     @test CC.getAnnotationRange(tok) isa CC.SourceRange
     @test CC.getName(tok) isa String
-    @test CC.getAnnotationValue(tok) isa CC.AnnotationValue  # shape-only: the host decides this
+    @test CC.getAnnotationValue(tok) isa CC.AnnotationValue  # shape-only: varies with the token kind the parser is resting on
     @test CC.is_eof(tok) isa Bool
     @test CC.is_annot_repl_input_end(tok) isa Bool
     @test CC.is_identifier(tok) isa Bool
@@ -206,7 +225,6 @@ using Test
     CC.EnterSourceFile(pp, ident_fid)
     CC.is_annot_repl_input_end(tok) && CC.ConsumeAnyToken(parser)
     @test CC.is_identifier(tok)
-    @test CC.getIdentifierInfo(tok) isa CC.IdentifierInfo  # shape-only: the host decides this
     @test CC.getName(CC.getIdentifierInfo(tok)) == "Widget"
     while !CC.is_annot_repl_input_end(tok)
         CC.ConsumeAnyToken(parser)
@@ -216,7 +234,7 @@ using Test
     dispose(ident_fid)
 
     # QualType annotation read off a token (Parse/Parser.jl)
-    @test CC.getTypeAnnotation(tok) isa CC.QualType  # shape-only: the host decides this
+    @test CC.getTypeAnnotation(tok) isa CC.QualType  # shape-only: varies with the token kind the parser is resting on
 
     # ---- Preprocessor dump helpers (need a token / a location) ----
     @test (CC.DumpToken(pp, tok); true)
@@ -229,11 +247,12 @@ using Test
     @test CC.TryAnnotateOptionalCXXScopeToken(parser, false) isa Bool
     @test CC.TryAnnotateOptionalCXXScopeToken(parser, CC.CXDeclSpecContext_DSC_class) isa Bool
     @test CC.TryAnnotateOptionalCXXScopeToken(parser, CC.CXDeclaratorContext_Member) isa Bool
-    @test CC.TryAnnotateTypeOrScopeToken(parser) isa Bool  # shape-only: the host decides this
+    @test CC.TryAnnotateTypeOrScopeToken(parser) isa Bool  # shape-only: varies with where the incremental parser is resting
     ss_af = CC.CXXScopeSpec()
-    @test CC.TryAnnotateTypeOrScopeTokenAfterScopeSpec(parser, ss_af) isa Bool  # shape-only: the host decides this
+    @test CC.TryAnnotateTypeOrScopeTokenAfterScopeSpec(parser, ss_af) isa Bool  # shape-only: varies with where the incremental parser is resting
     dispose(ss_af)
-    @test CC.ConsumeAnyToken(parser) isa CC.SourceLocation  # shape-only: the host decides this
+    # the location it hands back is the token it consumed, which was a real one
+    @test CC.isValid(CC.ConsumeAnyToken(parser))
 
     dispose(f)
     dispose(I)
@@ -245,7 +264,9 @@ end
     # CompilerInstance: no plugins are requested, so loading them is a no-op
     ci = CC.get_instance(I)
     @test (CC.LoadRequestedPlugins(ci); true)
-    @test CC.hasFrontendTimer(ci) isa Bool  # shape-only: the host decides this
+    # -ftime-report was not passed, so there is no timer until one is made -- the half of
+    # the round trip that says the assertion below is the create doing something
+    @test CC.hasFrontendTimer(ci) == false
     CC.createFrontendTimer(ci)
     @test CC.hasFrontendTimer(ci)
 
@@ -257,7 +278,9 @@ end
     # instance already answers and the setter round-trips.
     ci = CC.CompilerInstance()
 
-    @test CC.buildingModule(ci) isa Bool  # shape-only: the host decides this
+    # ModuleLoader's constructor sets it false, so the initial answer is a value and not
+    # an uninitialised read -- which is what makes the setter round trip below meaningful
+    @test CC.buildingModule(ci) == false
     @test !CC.buildingModule(ci)
     @test CC.setBuildingModule(ci, true) === nothing
     @test CC.buildingModule(ci)
