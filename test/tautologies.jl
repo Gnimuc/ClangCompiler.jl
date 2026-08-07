@@ -39,8 +39,8 @@ const TESTS = joinpath(ROOT, "test")
 # a precondition to state rather than an answer to record. Sites in the second class were all
 # labelled with the first before this existed, which read as though someone had checked.
 #
-# What this can and cannot do: it checks that a reason was *stated* and names one of the three
-# categories. It cannot check that the claim is TRUE -- `getLine` marked "the target chooses
+# What this can and cannot do: it checks that a reason was *stated* and names one of the
+# categories above. It cannot check that the claim is TRUE -- `getLine` marked "the target chooses
 # this value" satisfies every pattern below and is still false, because a line number is
 # decided by the source. Only reading the site catches that. Without the check, though, a
 # marker with no reason at all reads exactly like one that was thought about.
@@ -290,7 +290,7 @@ function main()
     end
     if !isempty(bare)
         nf = report(bare)
-        println("`$MARKER` markers whose reason is missing or names none of the three admitted")
+        println("`$MARKER` markers whose reason is missing or names none of the $(length(REASONS)) admitted")
         println("categories: $(length(bare)) across $nf files\n")
         println("The marker is an exemption from the rule above, so it states the ground it was")
         println("granted on. One of these must be recognisable in the text after it:")

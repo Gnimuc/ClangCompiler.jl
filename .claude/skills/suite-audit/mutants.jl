@@ -39,6 +39,12 @@ end
 
 const ROOT = repo_root()
 
+# What "the fault was noticed by luck rather than detected" looks like in a log. Windows
+# reports an access violation instead of a signal, so leaving EXCEPTION out would let a
+# crashing baseline pass the gate there and be scored as green. Defined once because the two
+# call sites had already drifted apart; the triage grep in CLAUDE.md is the same set.
+const CRASH = r"signal|Segmentation|Assertion failed|SIGABRT|EXCEPTION"
+
 struct Mutant
     label::String
     mutation::String        # evaluated inside the ClangCompiler module
@@ -234,7 +240,7 @@ function check_baseline(sel)
     for files in unique(m.files for m in sel)
         log = run_files(files, "")
         if occursin("Test Failed", log) ||
-           occursin(r"signal|Segmentation|Assertion failed|SIGABRT", log)
+           occursin(CRASH, log)
             push!(bad, join(files, ", "))
         end
     end
@@ -245,7 +251,7 @@ end
 function run_mutant(m::Mutant)
     log = run_files(m.files, m.mutation)
     occursin("Test Failed", log) && return :assertion
-    occursin(r"signal|Segmentation|Assertion failed|SIGABRT", log) && return :crash
+    occursin(CRASH, log) && return :crash
     return :survived
 end
 
