@@ -69,10 +69,33 @@ Know the ceiling of the thing you are about to rely on:
   bug.
 - **`isa` assertions** cannot separate two results of the same type. `getBeginLoc` returning the
   end location passes every one of them. This is what `test/tautologies.jl` exists to find.
+  Two things about that detector are worth knowing before trusting its output. It once matched
+  its pattern against the whole line, so any assertion carrying a trailing comment escaped
+  entirely and every `# shape-only` marker was decorative — a broken detector prints the same
+  clean sentence a clean tree does, which is why `self_check()` now runs first and why you
+  should reach for the four-probe test in this skill's history before believing a green run.
+  And it validates that a marker *names* one of the three admitted reasons, never that the
+  reason is true: a source-decided value excused as target-decided passes.
 - **Metamorphic invariants** (`test/clang/invariants.jl`) assert relationships that hold over
   any AST — a parent's range contains its children's, a binary operator's operands are distinct
   nodes. They need no captured values and no per-platform care. Five testsets took the mutation
   score from 28.6% to 85.7%; one invariant is worth a hundred value assertions.
+- **A saturated catalogue is not an instrument.** The score read 100% while all nine mutants sat
+  in AST core and ran only `AST_CORE` files, so it described `Expr`/`Decl`/`Stmt` and nothing
+  else. It has now been extended twice, and each time the number fell the moment it reached
+  somewhere new: to 62.5% over `CompilerInstance.jl` and `Driver.jl` (six of seven survived),
+  then to 70.8% over `SourceManager.jl`, `ASTUnit.jl`, `Comment.jl` and `IdentifierTable.jl`
+  (seven of eight). Both rounds are fixed; it reads 95.8% across 24. Extend the catalogue into
+  a region *before* concluding anything about that region — `CFG`, `Lex` and the rest of
+  `Sema` have still never had a fault injected.
+- **A survivor is sometimes a missing capability, not a missing assertion.** `getMainFileName`
+  and `getOriginalSourceFileName` agree in every state this suite can build — both empty before
+  a parse, both the `.cpp` after one — so no assertion at either site can separate them. They
+  diverge only after `ASTUnit::LoadFromASTFile`, which has no wrapper. That mutant carries a
+  `blocked_on` note naming exactly that, still counts against the score, and keeps the exit
+  status meaningful so a red run means something *new* survived. The script fails just as
+  loudly if a blocked mutant starts being caught, because that note is then stale — the same
+  rot that turned 152 `# shape-only` markers into decoration.
 - **Invariants still have a ceiling**: they check the shim's answers against each other, so a
   *consistently* wrong shim satisfies them. Swap `getBeginLoc` and `getEndLoc` together and
   containment still holds, because containment is symmetric. Measured: invariants report 0
