@@ -21,12 +21,21 @@ and the measurements for why each rule below earns its place.
   decided: a value, a round trip, or a relationship the shim could get wrong. (Whether
   carriers wrap at all is `test/abi.jl`'s job, not each test's.)
 - **When the value genuinely is not assertable, mark the site `# shape-only` with its reason.**
-  Three reasons are legitimate and no others: the host decides the value (triple, ABI,
-  mangling, path, size, alignment), it varies across the objects the test walks, or it is an
-  integer the target chooses. The marker belongs at the site — a baseline file recording the
-  same thing goes stale the moment a file is cleaned up and makes two branches conflict over a
-  generated artifact. The remaining markers are a ratchet, not a backlog: converting one
-  requires finding something Clang decided, which is not a mechanical edit.
+  Four reasons are legitimate and no others: the host decides the value (triple, ABI,
+  mangling, path, size, alignment), it varies across the objects the test walks, it is an
+  integer the target chooses, or nothing decides it because the read is of uninitialised
+  memory. That last one is not a softer version of the first — "the host decides it" says a
+  machine chose a real value, while "nothing decides it" says nobody wrote the memory, and
+  every site in the second class was once labelled with the first, which read as though
+  someone had checked. `tautologies.jl` rejects a marker whose text names none of them,
+  so the reason cannot decay back into decoration — but it checks only that a category was
+  *named*, never that the claim is true. `getLine` marked "the target chooses this value"
+  passes the linter and is still false, because a line number is decided by the source. Only
+  reading the site catches that, so write the reason you can defend. The marker belongs at the
+  site — a baseline file recording the same thing goes stale the moment a file is cleaned up
+  and makes two branches conflict over a generated artifact. The remaining markers are a
+  ratchet, not a backlog: converting one requires finding something Clang decided, which is
+  not a mechanical edit.
 - **Prefer an invariant that holds over any AST to a pinned value.** A pin catches drift away
   from today's answer but freezes the bug if today's answer has always been wrong; invariants
   (`test/clang/invariants.jl`) need no captured values and no per-platform care. They have
@@ -47,12 +56,19 @@ Only parsing and AST inspection can cross-target — the JIT still emits for the
 pinning downloads that target's GCC shard, so keep it to one target and one file rather than
 pinning at every site.
 
-**Nothing decides it** — module provenance (`isPartOfFramework`), a `Driver`'s LTO mode before
-argument processing, and a hand-built `Module`'s availability, including the `markUnavailable`
-transition whose gating predicate reads bits a synthetic module never had a module map to set.
-These read uninitialized memory. Pinning a triple does not help and would only make the answer
-look trustworthy; restate the precondition instead, or leave the site `# shape-only` with that
-as its reason. A wrapper whose value comes back outside its own enum (Julia prints
+**Nothing decides it** — module provenance (`isPartOfFramework`) and a hand-built `Module`'s
+availability, including the `markUnavailable` transition whose gating predicate reads bits a
+synthetic module never had a module map to set. These read uninitialized memory. Pinning a
+triple does not help and would only make the answer look trustworthy; restate the precondition
+instead, or leave the site `# shape-only` with that as its reason.
+
+Before accepting that, check whether the state can simply be *initialized*. A `Driver`'s LTO
+mode used to be the worked example here: asked of a driver that never processed arguments it
+is a read of uninitialized memory, and the site was marked accordingly. But `BuildCompilation`
+is what initializes it, so building one first turns the same call into an ordinary assertion —
+`-flto` gives true and `-fsyntax-only` gives false, which is a partition rather than a pin.
+Reaching for the marker is premature whenever a constructor or a setup call the test could
+make would give the field a value. A wrapper whose value comes back outside its own enum (Julia prints
 `<invalid #N>`) is this case — a UB precondition to restate, not a flaky test.
 
 **The host decides it, and neither of the above applies** — a sysroot, an executable path.

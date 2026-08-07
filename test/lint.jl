@@ -282,7 +282,8 @@ const LINT_FILE = @__FILE__
         out = read(ignorestatus(`$(Base.julia_cmd()) $script`), String)
         unmarked = [m.captures[1] for m in eachmatch(r"^    (\S+:\d+)"m, out)]
         isempty(unmarked) ||
-            @error "assertions that cannot fail and are not marked `# shape-only`" unmarked
+            @error "assertions that cannot fail, either unmarked or marked `# shape-only` " *
+                   "without naming one of the three admitted reasons" unmarked
         @test isempty(unmarked)
     end
 
