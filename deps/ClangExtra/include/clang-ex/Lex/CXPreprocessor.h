@@ -13,6 +13,13 @@ CXHeaderSearch clang_Preprocessor_getHeaderSearchInfo(CXPreprocessor PP);
 
 void clang_Preprocessor_EnterMainSourceFile(CXPreprocessor PP);
 
+// Stamps every builtin's ID onto its identifier, which is what makes `__builtin_unreachable`
+// and friends resolve rather than read as undeclared. A frontend action does this on the
+// caller's behalf; a driver assembling a CompilerInstance by hand has to ask for it, and the
+// symptom of not asking is a system header failing on a builtin call rather than anything
+// pointing at the identifier table.
+void clang_Preprocessor_initializeBuiltins(CXPreprocessor PP);
+
 bool clang_Preprocessor_EnterSourceFile(CXPreprocessor PP, CXFileID FID,
                                         CXSourceLocation_ Loc);
 

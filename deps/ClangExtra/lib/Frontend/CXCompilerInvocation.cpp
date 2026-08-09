@@ -1,4 +1,5 @@
 #include "clang-ex/Frontend/CXCompilerInvocation.h"
+#include <vector>
 #include "utils.h"
 #include "clang/Basic/FileSystemOptions.h"
 #include "clang/Frontend/DependencyOutputOptions.h"
@@ -18,12 +19,20 @@ void clang_CompilerInvocation_dispose(CXCompilerInvocation CI) {
   delete reinterpret_cast<clang::CompilerInvocation *>(CI);
 }
 
-// Runs the driver to translate driver-style arguments (argv[0] excluded) into
-// a CompilerInvocation, reporting problems through the borrowed engine — the
-// cc1-parsing CompilerInvocation::CreateFromArgs would reject driver flags
-// like --target. The explicit Retain pins the engine so the temporary
-// IntrusiveRefCntPtr inside CreateInvocationOptions cannot delete it; the
-// caller keeps sole ownership (its dispose deletes unconditionally).
+// Runs the driver to translate driver-style arguments into a CompilerInvocation, reporting
+// problems through the borrowed engine — the cc1-parsing
+// CompilerInvocation::CreateFromArgs would reject driver flags like --target. The explicit
+// Retain pins the engine so the temporary IntrusiveRefCntPtr inside CreateInvocationOptions
+// cannot delete it; the caller keeps sole ownership (its dispose deletes unconditionally).
+//
+// The caller passes flags only. clang::createInvocation expects a full argv, INCLUDING the
+// program name: it splices "-fsyntax-only" in at index 1 and hands Args[0] to the Driver as
+// the executable. Without one the caller's first flag is silently eaten as the program name
+// — which is not a diagnostic, just a missing flag, and the symptom is a header that cannot
+// be found because the -isystem naming its directory happened to be first. So argv[0] is
+// supplied here rather than by each caller. Its value only seeds the driver's InstalledDir
+// (and through that a resource-dir guess), which every caller of this library overrides
+// with an explicit -isystem for the clang builtin headers.
 CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
     const char **command_line_args_with_src, int num_command_line_args,
     CXDiagnosticsEngine Diags) {
@@ -31,8 +40,12 @@ CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
   DE->Retain();
   clang::CreateInvocationOptions Opts;
   Opts.Diags = llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(DE);
-  auto Invoc = clang::createInvocation(
-      llvm::ArrayRef(command_line_args_with_src, num_command_line_args), Opts);
+  std::vector<const char *> Argv;
+  Argv.reserve(num_command_line_args + 1);
+  Argv.push_back("clang");
+  Argv.insert(Argv.end(), command_line_args_with_src,
+              command_line_args_with_src + num_command_line_args);
+  auto Invoc = clang::createInvocation(llvm::ArrayRef(Argv), Opts);
   return reinterpret_cast<CXCompilerInvocation>(Invoc.release());
 }
 

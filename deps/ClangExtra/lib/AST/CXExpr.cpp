@@ -1054,8 +1054,8 @@ double clang_FloatingLiteral_getValueAsApproximateDouble(CXFloatingLiteral FL) {
 }
 
 // StringLiteral
-CXString clang_StringLiteral_getBytes(CXStringLiteral SL) {
-  return extra::makeCXString(reinterpret_cast<clang::StringLiteral *>(SL)->getBytes().str());
+const char *clang_StringLiteral_getBytes(CXStringLiteral SL) {
+  return reinterpret_cast<clang::StringLiteral *>(SL)->getBytes().data();
 }
 
 unsigned clang_StringLiteral_getByteLength(CXStringLiteral SL) {
@@ -1620,8 +1620,8 @@ CXTypeSourceInfo clang_CompoundLiteralExpr_getTypeSourceInfo(CXCompoundLiteralEx
 }
 
 // StringLiteral
-CXString clang_StringLiteral_getString(CXStringLiteral SL) {
-  return extra::makeCXString(reinterpret_cast<clang::StringLiteral *>(SL)->getString().str());
+const char *clang_StringLiteral_getString(CXStringLiteral SL) {
+  return reinterpret_cast<clang::StringLiteral *>(SL)->getString().data();
 }
 
 CXStringLiteralKind clang_StringLiteral_getKind(CXStringLiteral SL) {

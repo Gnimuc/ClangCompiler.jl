@@ -2,8 +2,9 @@
 
 # CXDeclKind value -> concrete Julia carrier type, so resolving a Decl is one
 # ccall (getKind) + one lookup instead of a string-compare on getDeclKindName.
-# Kinds whose carrier struct is not wrapped (many ObjC/OpenMP decls) are simply
-# absent — resolve falls back to the base. The kinds derive from DeclNodes.inc,
+# Kinds whose carrier struct is not wrapped are simply absent — resolve falls
+# back to the base. Seven of the 86 are: the six OpenMP declaration kinds, and
+# Friend. The kinds derive from DeclNodes.inc,
 # so the map is generated from it into src/clang/DeclKindMap.jl (defines
 # `DECL_KIND_TO_TYPE`).
 include("DeclKindMap.jl")

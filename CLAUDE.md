@@ -110,7 +110,13 @@ There are three layers, from C++ up to user-facing Julia:
    - `src/clang/api/`: Julia wrapper functions for the C API.
    - `src/clang/*.jl` (ast.jl, sema.jl, qualtype.jl, ...): higher-level helpers over the raw API.
    - **See `src/clang/CLAUDE.md` for the thin-wrapper conventions** (the single-client axiom, the two type-safety invariants, and how C++ subtyping/multiple-inheritance are reproduced in Julia) — read it before touching any wrapper code, since this layer is the only safety boundary in front of a C shim that is check-free by design and blind to Clang's class hierarchy.
-   - `src/compiler/`: the user-facing API — `CxxInterpreter`, `create_interpreter`, `parse`/`execute`/`compile`, `get_function_pointer`.
+   - `src/compiler/`: the user-facing API — `CxxInterpreter`, `create_interpreter`, `parse`/`execute`/`compile`, `get_function_pointer`, and `IncrementalParser`/`create_parser`.
+   - `src/compiler/parser.jl` reimplements clang's incremental parse loop over a **single**
+     `TranslationUnitDecl`. Clang's own `Interpreter` starts a new one per increment, and
+     because C's unqualified lookup does not cross the chain that makes, C and Objective-C
+     there cannot see anything declared in an earlier increment — `clang-repl --Xcc -xc`
+     fails the same way, so it is upstream rather than this package's flags. Driving the
+     loop directly is what makes all four languages work; it parses and does not execute.
    - `src/platform/JLLEnvs.jl` + `src/env.jl`: resolve cross-compilation "shard" artifacts (GCC sysroots, system includes) from the top-level `Artifacts.toml` to build the default compiler flags (`get_default_args`) — the interpreter runs with `-nostdinc`/`-nostdlib` and JLL-provided include paths, not the host toolchain's.
    - The `libclangex` library path can be overridden via the `"libclangex"` Preferences key (this is what `deps/build_local.jl` sets in `LocalPreferences.toml`).
 
@@ -131,7 +137,25 @@ Quick reference. `CONTRIBUTING.md` states these fully; `src/clang/CLAUDE.md` cov
 
 ## Notes
 
-- The package uses `public` declarations (Julia 1.11+) rather than `export` for its API surface — see `src/ClangCompiler.jl`.
+- The package uses `public` declarations (Julia 1.11+) rather than `export` for its API
+  surface — see `src/ClangCompiler.jl`. **The hard rule is that a public name reads as Julia**:
+  snake_case functions, CamelCase types. That is what keeps the thin wrapper layer out of the
+  surface, and it is not a judgment call — the wrappers copy Clang's C++ method names verbatim,
+  camelCase included (see Naming conventions above), which is exactly what makes them diffable
+  against Clang's headers and exactly what disqualifies them from being public. `getFields` and
+  `getASTRecordLayout` are not names this package may put its name to.
+
+  So exposing something new to users is never a `public` line on a wrapper; it is a snake_case
+  helper over that wrapper, in `src/clang/*.jl` or the high-level files (`src/compiler/`,
+  `src/lookup.jl`, `src/highlevel.jl`, `src/types.jl`). `get_record_layout` and `field_offsets`
+  are what `getASTRecordLayout` and `getFieldOffset` look like once they are surface, and
+  `children` is what `getChildren` looks like.
+
+  Four camelCase names are public and predate the rule: `getStmtClass`, `getChildren`,
+  `getKind` and `getAttrs`. They are grandfathered, not precedent — `children` is already
+  public beside `getChildren`, which is what the rest should grow into. Do not add a fifth,
+  and do not read these four as licence to: the count going up is the only way this rule
+  fails quietly, since each addition looks exactly like the ones already there.
 - Objects wrapping C++ resources need explicit `dispose(x)`; tests and examples follow a create → use → dispose pattern.
 - **CI runs macOS, Linux and Windows on x86_64**, and an equality assertion on something the
   runner decides turns into a red CI on a platform you did not run locally — invisible to a

@@ -63,6 +63,7 @@
 #include "clang-ex/Sema/CXOverload.h"
 #include "clang-ex/Sema/CXScope.h"
 #include "clang-ex/Sema/CXTemplate.h"
+#include "clang-ex/AST/CXDeclObjC.h"
 #include "clang/AST/APValue.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
@@ -115,6 +116,7 @@
 #include "clang/Sema/Scope.h"
 #include "clang/Sema/Sema.h"
 #include "clang/Sema/Template.h"
+#include "clang/AST/DeclObjC.h"
 #include "llvm/ADT/FloatingPointMode.h"
 #include "llvm/Support/MemoryBuffer.h"
 
@@ -1961,5 +1963,43 @@ ENUM_SYNC(CXNamedReturnInfo_None, clang::Sema::NamedReturnInfo::None);
 ENUM_SYNC(CXNamedReturnInfo_MoveEligible, clang::Sema::NamedReturnInfo::MoveEligible);
 ENUM_SYNC(CXNamedReturnInfo_MoveEligibleAndCopyElidable,
           clang::Sema::NamedReturnInfo::MoveEligibleAndCopyElidable);
+
+// clang/AST/DeclObjC.h: enum class clang::ObjCTypeParamVariance
+ENUM_SYNC(CXObjCTypeParamVariance_Invariant, clang::ObjCTypeParamVariance::Invariant);
+ENUM_SYNC(CXObjCTypeParamVariance_Covariant, clang::ObjCTypeParamVariance::Covariant);
+ENUM_SYNC(CXObjCTypeParamVariance_Contravariant,
+          clang::ObjCTypeParamVariance::Contravariant);
+
+// clang/Basic/Specifiers.h: namespace clang::ObjCPropertyAttribute, enum Kind
+ENUM_SYNC(CXObjCPropertyAttributeKind_noattr, clang::ObjCPropertyAttribute::kind_noattr);
+ENUM_SYNC(CXObjCPropertyAttributeKind_readonly,
+          clang::ObjCPropertyAttribute::kind_readonly);
+ENUM_SYNC(CXObjCPropertyAttributeKind_getter, clang::ObjCPropertyAttribute::kind_getter);
+ENUM_SYNC(CXObjCPropertyAttributeKind_assign, clang::ObjCPropertyAttribute::kind_assign);
+ENUM_SYNC(CXObjCPropertyAttributeKind_readwrite,
+          clang::ObjCPropertyAttribute::kind_readwrite);
+ENUM_SYNC(CXObjCPropertyAttributeKind_retain, clang::ObjCPropertyAttribute::kind_retain);
+ENUM_SYNC(CXObjCPropertyAttributeKind_copy, clang::ObjCPropertyAttribute::kind_copy);
+ENUM_SYNC(CXObjCPropertyAttributeKind_nonatomic,
+          clang::ObjCPropertyAttribute::kind_nonatomic);
+ENUM_SYNC(CXObjCPropertyAttributeKind_setter, clang::ObjCPropertyAttribute::kind_setter);
+ENUM_SYNC(CXObjCPropertyAttributeKind_atomic, clang::ObjCPropertyAttribute::kind_atomic);
+ENUM_SYNC(CXObjCPropertyAttributeKind_weak, clang::ObjCPropertyAttribute::kind_weak);
+ENUM_SYNC(CXObjCPropertyAttributeKind_strong, clang::ObjCPropertyAttribute::kind_strong);
+ENUM_SYNC(CXObjCPropertyAttributeKind_unsafe_unretained,
+          clang::ObjCPropertyAttribute::kind_unsafe_unretained);
+ENUM_SYNC(CXObjCPropertyAttributeKind_nullability,
+          clang::ObjCPropertyAttribute::kind_nullability);
+ENUM_SYNC(CXObjCPropertyAttributeKind_null_resettable,
+          clang::ObjCPropertyAttribute::kind_null_resettable);
+ENUM_SYNC(CXObjCPropertyAttributeKind_class, clang::ObjCPropertyAttribute::kind_class);
+ENUM_SYNC(CXObjCPropertyAttributeKind_direct, clang::ObjCPropertyAttribute::kind_direct);
+
+// clang/AST/DeclObjC.h: enum clang::ObjCIvarDecl::AccessControl
+ENUM_SYNC(CXObjCIvarDecl_None, clang::ObjCIvarDecl::None);
+ENUM_SYNC(CXObjCIvarDecl_Private, clang::ObjCIvarDecl::Private);
+ENUM_SYNC(CXObjCIvarDecl_Protected, clang::ObjCIvarDecl::Protected);
+ENUM_SYNC(CXObjCIvarDecl_Public, clang::ObjCIvarDecl::Public);
+ENUM_SYNC(CXObjCIvarDecl_Package, clang::ObjCIvarDecl::Package);
 
 #undef ENUM_SYNC

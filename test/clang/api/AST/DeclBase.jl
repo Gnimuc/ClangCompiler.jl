@@ -341,6 +341,7 @@ end
     @test CC.hasAttrs(sink)
     @test CC.getNumAttrs(sink) == length(attrs)
     @test CC.getAttr(sink, 0).ptr == attrs[1].ptr
+    @test_throws AssertionError CC.getAttr(sink, CC.getNumAttrs(sink))  # the restated clang assert (Invariant 3)
     CC.dropAttrs(sink)                      # leave the declaration as it was found
     @test CC.hasAttrs(sink) == false
 
@@ -437,5 +438,141 @@ end
     @test !applicable(CC.EnableStatistics, tu)
 
     dispose(f)
+    dispose(I)
+end
+
+# The ObjC runtime is target-picked, and only Darwin's is non-fragile; pinning it keeps this
+# fixture parsing the same way on all three CI hosts. See test/clang/api/AST/DeclObjC.jl.
+const OBJC_ARGS = ["-x", "objective-c++", "-fobjc-runtime=macosx"]
+
+@testset "stamped Decl predicate/cast surface" begin
+    # The Attr and Stmt families each have a sweep like this; the Decl family had none, so
+    # every `is<Name>Decl`/`<Name>Decl` pair was covered only where some test happened to
+    # narrow to that class by hand — which for the ObjC classes was nowhere.
+    #
+    # Objective-C++ so both kinds of node are in one translation unit: a sweep over a single
+    # node exercises the *refusing* branch of every cast but the handful that match it, and
+    # the ObjC classes match nothing a C++ declaration can be.
+    I = create_interpreter(OBJC_ARGS)
+    # Wide enough that every stamped ObjC class has an instance: with one interface only two
+    # of the fourteen ever ran their MATCHING branch, and a cast that matched nothing would
+    # have passed the sweep by refusing everything.
+    CC.parse(I, """
+             int cd2_fn(int x) { return x; }
+             @protocol CD2Proto
+             - (void)cd2Proto;
+             @end
+             @interface CD2Iface <CD2Proto>
+             {
+                 int cd2_ivar;
+             }
+             @property (assign) int cd2Prop;
+             - (void)cd2Method;
+             @end
+             @interface CD2Iface (CD2Cat)
+             - (void)cd2Cat;
+             @end
+             @implementation CD2Iface
+             @synthesize cd2Prop = cd2_ivar;
+             - (void)cd2Method {}
+             @end
+             @implementation CD2Iface (CD2Cat)
+             - (void)cd2Cat {}
+             @end
+             @compatibility_alias CD2Alias CD2Iface;
+             @interface CD2Gen<CD2T> : CD2Iface
+             @end
+             """)
+    ctx = CC.get_ast_context(I)
+    top = collect(CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))))
+    fd = only(filter(d -> d isa CC.AbstractFunctionDecl, top))
+    iface = only(filter(d -> d isa CC.ObjCInterfaceDecl &&
+                             CC.getNameAsString(d) == "CD2Iface", top))
+    @test CC.getNameAsString(fd) == "cd2_fn"
+    @test CC.getNameAsString(iface) == "CD2Iface"
+
+    # One representative per concrete ObjC carrier, found by walking rather than by naming the
+    # classes: a class the walk cannot reach is a coverage hole the sweep should not hide.
+    function walk!(out, dc)
+        for d in CC.decls_in(dc)
+            push!(out, d)
+            d isa CC.AbstractDeclContextDecl && walk!(out, CC.castToDeclContext(d))
+        end
+        return out
+    end
+    everything = walk!(CC.AbstractDecl[], CC.castToDeclContext(CC.getTranslationUnitDecl(ctx)))
+    gen = only(filter(d -> d isa CC.ObjCInterfaceDecl &&
+                           CC.getNameAsString(d) == "CD2Gen", top))
+    # A type parameter hangs off an ObjCTypeParamList rather than off the interface's
+    # DeclContext, so the walk cannot reach it and it has to be asked for by name.
+    push!(everything, CC.getTypeParam(gen, 0))
+    reps = Dict{DataType,Any}()
+    for d in everything
+        startswith(string(nameof(typeof(d))), "ObjC") || continue
+        get!(reps, typeof(d), d)
+    end
+
+    # Pair each stamped cast with the predicate of the same name rather than sweeping every
+    # `is*` on a Decl: the hand-written predicates share that prefix and are not this
+    # surface, and some of them carry preconditions a blind sweep would walk into.
+    stamped = Tuple{Symbol,Any,Any}[]
+    for nm in names(CC; all=true)
+        isdefined(CC, nm) || continue
+        v = getproperty(CC, nm)
+        v isa Type && v !== CC.Decl || continue
+        hasmethod(v, Tuple{CC.Decl}) || continue
+        which(v, Tuple{CC.Decl}).sig <: Tuple{Type,CC.AbstractDecl} || continue
+        pred = Symbol("is", nm)
+        isdefined(CC, pred) || continue
+        p = getproperty(CC, pred)
+        hasmethod(p, Tuple{CC.Decl}) || continue
+        push!(stamped, (nm, v, p))
+    end
+    # 90 pairs, one per class DeclWrappers.jl stamps a carrier for; the floor guards
+    # against the enumeration silently matching nothing rather than pinning the count.
+    @test length(stamped) >= 85
+
+    # Every stamped ObjC class has a node above, except three that structurally cannot: two are
+    # abstract C++ bases clang never instantiates (their casts still match, through the
+    # interface and the implementation), and `@defs` is gone from ObjC 2.0. Comparing sets
+    # rather than counting means a newly stamped class fails here instead of quietly going
+    # unexercised.
+    objc_stamped = Set(string(nm) for (nm, _, _) in stamped if startswith(string(nm), "ObjC"))
+    never_a_node = Set(["ObjCContainerDecl", "ObjCImplDecl", "ObjCAtDefsFieldDecl"])
+    @test setdiff(objc_stamped, never_a_node) ==
+          Set(string(nameof(T)) for T in keys(reps))
+
+    for node in [fd; sort!(collect(values(reps)); by=d -> string(nameof(typeof(d))))]
+        base = CC.Decl(node)                 # widen: the cast has to establish the class
+        r = CC.resolve(base)
+        nmatch = 0
+        for (nm, v, p) in stamped
+            hit = p(base)
+            @test hit isa Bool
+            absT = isdefined(CC, Symbol("Abstract", nm)) ?
+                   getproperty(CC, Symbol("Abstract", nm)) : nothing
+            if hit
+                # predicate, cast and the Julia abstract are three spellings of one
+                # `classof`; a generated hierarchy that disagrees with clang shows up here
+                absT === nothing || @test r isa absT
+                @test v(base).ptr == base.ptr
+                nmatch += 1
+            else
+                absT === nothing || @test !(r isa absT)
+                @test_throws CC.CastError v(base)
+            end
+        end
+        # a declaration matches its own class and every wrapped base above it, never zero
+        @test nmatch >= 1
+    end
+
+    # Every stamped ObjC cast now runs its matching branch on some node above, and its
+    # refusing branch on the C++ function. Spelled out once for the interface, since the loop
+    # asserts the relationship and this asserts the class.
+    @test CC.isObjCInterfaceDecl(CC.Decl(iface))
+    @test !CC.isObjCInterfaceDecl(CC.Decl(fd))
+    @test_throws CC.CastError CC.ObjCInterfaceDecl(CC.Decl(fd))
+    @test CC.isObjCContainerDecl(CC.Decl(iface))     # the abstract base, also stamped
+
     dispose(I)
 end

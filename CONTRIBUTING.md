@@ -154,7 +154,11 @@ wrappers keep Clang's camelCase method names rather than Julia style.
 * Helpers that are not 1:1 with a Clang method — `src/compiler/`, `src/lookup.jl` — use ordinary
   snake_case, following [YASGuide](https://github.com/jrevels/YASGuide).
 * The package uses `public` rather than `export`; add a line in `src/ClangCompiler.jl` for any
-  user-facing name.
+  user-facing name. **A public name must follow Julia's naming conventions** — snake_case for
+  functions, CamelCase for types — so a wrapper in `src/clang/core/` or `src/clang/api/` can
+  never be one: those keep Clang's camelCase C++ spelling on purpose (see Naming above). When a
+  downstream package needs something it cannot reach, the fix is a snake_case helper over the
+  wrapper, not a `public` line on `getSomethingCamelCase`.
 
 ## Writing a wrapper
 

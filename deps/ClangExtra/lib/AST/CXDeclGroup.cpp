@@ -20,3 +20,17 @@ bool clang_DeclGroupRef_isDeclGroup(CXDeclGroupRef DG) {
 CXDecl clang_DeclGroupRef_getSingleDecl(CXDeclGroupRef DG) {
   return reinterpret_cast<CXDecl>(clang::DeclGroupRef::getFromOpaquePtr(DG).getSingleDecl());
 }
+
+unsigned clang_DeclGroupRef_size(CXDeclGroupRef DG) {
+  clang::DeclGroupRef G = clang::DeclGroupRef::getFromOpaquePtr(DG);
+  if (G.isNull())
+    return 0;
+  if (G.isSingleDecl())
+    return 1;
+  return G.getDeclGroup().size();
+}
+
+CXDecl clang_DeclGroupRef_getDecl(CXDeclGroupRef DG, unsigned I) {
+  clang::DeclGroupRef G = clang::DeclGroupRef::getFromOpaquePtr(DG);
+  return reinterpret_cast<CXDecl>(G.isSingleDecl() ? G.getSingleDecl() : G.getDeclGroup()[I]);
+}

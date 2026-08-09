@@ -308,6 +308,46 @@ end
         end
         @test failed === nothing
 
+        # ---- reading a serialized AST back ------------------------------------------------
+        # Each load gets its own engine: a failed one raises an unrecoverable error, and
+        # `Save` above refuses to run against an engine carrying one.
+        ldiag = CC.DiagnosticsEngine()
+        reloaded = CC.LoadFromASTFile(out, ldiag)
+        @test reloaded !== nothing
+        @test CC.isMainFileAST(reloaded) == true
+        # The declarations survived the round trip, which is what says an AST was read
+        # rather than just its header.
+        rtu = CC.getTranslationUnitDecl(CC.getASTContext(reloaded))
+        rnames = [CC.getNameAsString(d)
+                  for d in CC.decls(CC.castToDeclContext(rtu)) if d isa CC.AbstractNamedDecl]
+        @test "astunit_loaded_fn" in rnames
+        @test "astunit_loaded_type" in rnames
+        # Both file-name accessors name the ORIGINAL source, not the .ast just read: clang
+        # rebuilds the invocation from what the AST recorded, and `getMainFileName` reads
+        # that rather than the path it was handed. So a loaded unit does not separate the
+        # two accessors either, and `astunit_filename_swap` stays blocked.
+        @test basename(CC.getOriginalSourceFileName(reloaded)) == "astunit_load.cpp"
+        @test basename(CC.getMainFileName(reloaded)) == "astunit_load.cpp"
+        CC.dispose(reloaded)
+
+        # LoadPreprocessorOnly stops before the AST, so the same file yields a unit that
+        # names the same source and carries no Sema -- the mode argument is doing something.
+        pponly = CC.LoadFromASTFile(out, ldiag; to_load=CC.CXASTUnit_LoadPreprocessorOnly)
+        @test pponly !== nothing
+        @test CC.hasSema(pponly) == false
+        @test basename(CC.getOriginalSourceFileName(pponly)) == "astunit_load.cpp"
+        CC.dispose(pponly)
+        CC.dispose(ldiag)
+
+        # A file that is not a serialized AST comes back as `nothing` rather than a unit.
+        baddiag = CC.DiagnosticsEngine()
+        notast = joinpath(dir, "not_an_ast.ast")
+        write(notast, "this is not a serialized AST\n")
+        @test redirect_stdio(; stderr=devnull) do
+            CC.LoadFromASTFile(notast, baddiag)
+        end === nothing
+        CC.dispose(baddiag)
+
         CC.dispose(au)
         CC.dispose(fm)
         CC.dispose(diag)

@@ -79,6 +79,17 @@ const LEX = ["test/clang/api/Lex/Preprocessor.jl"]
 const SEMA = ["test/clang/api/Sema/Sema.jl", "test/clang/api/Sema/Lookup.jl",
               "test/clang/api/Sema/TemplateDeduction.jl"]
 const SRCLOC = ["test/clang/api/Basic/SourceLocation.jl"]
+# The six largest files no fault had ever been injected into, plus the two surfaces added
+# for ISSUE 42 and ISSUE 49. The score before these described the files the catalogue
+# happened to touch and said nothing about the type system or the C++ decl/expr families.
+const TYPEF = ["test/clang/api/AST/Type.jl"]
+const DECLCXX = ["test/clang/api/AST/DeclCXX.jl"]
+const EXPRCXX = ["test/clang/api/AST/ExprCXX.jl"]
+const DECLTMPL = ["test/clang/api/AST/DeclTemplate.jl"]
+const APVAL = ["test/clang/api/AST/APValue.jl"]
+const OVERLOAD = ["test/clang/api/Sema/Overload.jl"]
+const OBJC = ["test/clang/api/AST/DeclObjC.jl"]
+const DIAGBUF = ["test/clang/api/Frontend/TextDiagnosticBuffer.jl"]
 
 const CATALOGUE = [
     Mutant("swap_begin_end",
@@ -106,6 +117,12 @@ const CATALOGUE = [
                getEndLoc(x::AbstractDecl) = clang_Decl_getBeginLoc(x) |> SourceLocation
            end""", AST_CORE,
            "both ends swapped together -- symmetric, so containment cannot see it; only an outside oracle can"),
+    Mutant("enum_fits_int64_always",
+           "initValFitsInInt64(x::AbstractEnumConstantDecl) = true", AST_CORE,
+           "the signed-narrowing gate stuck open, so a 128-bit enumerator reaches APInt::getSExtValue's assertion"),
+    Mutant("enum_fits_uint64_always",
+           "initValFitsInUInt64(x::AbstractEnumConstantDecl) = true", AST_CORE,
+           "the unsigned-narrowing gate stuck open -- the two gates assert different bit counts, so one cannot cover the other"),
     Mutant("no_decl_resolve",
            "resolve(x::AbstractDecl) = x", AST_CORE,
            "declaration carriers left at their base class -- every `isa` against a concrete decl silently stops matching"),
@@ -138,13 +155,14 @@ const CATALOGUE = [
     Mutant("astunit_filename_swap",
            "getMainFileName(x::AbstractASTUnit) = getOriginalSourceFileName(x)", ASTUNIT,
            "two string accessors on one object wired to the same member",
-           """a unit whose main file and original source differ. Both are empty on a unit
-              that never parsed and both are the .cpp after a command-line parse, so the
-              two accessors agree in every state the suite can currently build. They
-              diverge only after ASTUnit::LoadFromASTFile, where the main file is the .ast
-              and the original source is the .cpp it came from -- and that entry point has
-              no wrapper. The load testset already writes an .ast and checks its magic, so
-              wrapping LoadFromASTFile is what closes this."""),
+           """a unit whose main file and original source differ, and it is not clear one
+              can be built. Both are empty on a unit that never parsed and both are the
+              .cpp after a command-line parse. LoadFromASTFile was wrapped for ISSUE 48 on
+              the expectation that a loaded unit would name the .ast through one and the
+              .cpp through the other; it does not. clang rebuilds the invocation from what
+              the AST recorded, so getMainFileName reads the recorded input rather than the
+              path it was handed, and both still name the .cpp -- asserted in the load
+              testset so the finding does not have to be rediscovered."""),
     Mutant("astunit_fileid_swap",
            "isInMainFileID(x::AbstractASTUnit, loc::SourceLocation) = isInPreambleFileID(x, loc)",
            ASTUNIT,
@@ -188,16 +206,122 @@ const CATALOGUE = [
     Mutant("deduction_callarg_zero",
            "getCallArgIndex(x::AbstractTemplateDeductionInfo) = 0", SEMA,
            "the argument a deduction failed on, reported as always the first",
-           """a deduction that fails on an argument other than the first. CallArgIndex is
-              written only by the deduce-from-call-arguments path, and the three wrapped
-              DeduceTemplateArguments overloads are the two partial-specialisation ones and
-              the explicit-template-argument one -- none of which take call arguments, so
-              the field stays 0 in every state the suite can reach. Wrapping the
-              overload-resolution entry point (FunctionTemplateDecl + ArrayRef<Expr*>) is
-              what closes this."""),
+           """a deduction that fails on an argument other than the first. The
+              overload-resolution entry point (FunctionTemplateDecl + ArrayRef<Expr*>) was
+              wrapped for ISSUE 50 to reach it, and it does not: clang 18 leaves
+              CallArgIndex at 0 through every path that entry point takes, including the
+              initializer-list one, on success and on TDK_Inconsistent alike. The
+              deduce-from-call test pins that 0 so the finding stays recorded. Whatever
+              writes the field in clang 18, this API cannot reach it."""),
     Mutant("presumedloc_line_col_swap",
            "getLine(x::PresumedLoc) = getColumn(x)", SRCLOC,
            "line reported as column -- two integers off one struct, which `isa Integer` cannot separate"),
+
+    # --- the type system ---------------------------------------------------------------
+    Mutant("pointee_is_the_pointer",
+           "getPointeeType(x::PointerType) = QualType(clang_Type_getCanonicalTypeInternal(x))",
+           TYPEF,
+           "getPointeeType handing back the pointer type itself -- still a QualType, still non-null"),
+    Mutant("functionproto_first_param_always",
+           "getParamType(x::FunctionProtoType, i::Integer) = QualType(clang_FunctionProtoType_getParamType(x, 0))",
+           TYPEF,
+           "an index ignored on a parameter list -- every parameter reads as the first"),
+    Mutant("array_extent_zero",
+           "getZExtSize(x::AbstractConstantArrayType) = UInt64(0)", TYPEF,
+           "an array extent swallowed -- every array looks like a zero-length one"),
+    Mutant("typedef_never_sugared",
+           "isSugared(x::AbstractTypedefType) = false", TYPEF,
+           "a sugar predicate stuck at one answer, so sugared and canonical stop being distinguishable"),
+
+    # --- the C++ declaration family -------------------------------------------------------
+    Mutant("cxxrecord_base_count_zero",
+           "getNumBases(x::AbstractCXXRecordDecl) = 0", DECLCXX,
+           "a base-class count swallowed, so every class looks like a root"),
+    Mutant("cxxmethod_static_const_swap",
+           "isStatic(x::AbstractCXXMethodDecl) = isConst(x)", DECLCXX,
+           "two unrelated method predicates wired to one query"),
+    Mutant("cxxrecord_polymorphic_always",
+           "isPolymorphic(x::AbstractCXXRecordDecl) = true", DECLCXX,
+           "a whole-class property pinned at one answer"),
+
+    # --- the C++ expression family --------------------------------------------------------
+    Mutant("construct_first_arg_always",
+           "getArg(x::AbstractCXXConstructExpr, i::Integer) = Expr_(clang_CXXConstructExpr_getArg(x, 0))",
+           EXPRCXX,
+           "an index ignored on a construct expression -- every argument reads as the first"),
+    Mutant("newexpr_isarray_always",
+           "isArray(x::AbstractCXXNewExpr) = true", EXPRCXX,
+           "a form predicate stuck on, so `new T` and `new T[n]` stop being distinguishable"),
+
+    # --- templates --------------------------------------------------------------------------
+    Mutant("template_param_depth_zero",
+           "getDepth(x::TemplateTypeParmDecl) = 0", DECLTMPL,
+           "a nesting depth pinned at the outermost value -- a nested template's parameters read as the enclosing one's"),
+    Mutant("template_param_index_zero",
+           "getIndex(x::TemplateTypeParmDecl) = 0", DECLTMPL,
+           "a parameter position ignored, so every parameter of a list looks like the first"),
+
+    # --- compile-time values -----------------------------------------------------------------
+    Mutant("apvalue_int_float_collapse",
+           "isInt(x::APValue) = isFloat(x)", APVAL,
+           "two tagged-union kind predicates wired to one query -- the read that follows takes one member's bytes as another's"),
+    Mutant("apvalue_struct_fields_zero",
+           "getStructNumFields(x::APValue) = 0", APVAL,
+           "an aggregate's field count swallowed"),
+
+    # --- overload resolution -------------------------------------------------------------------
+    Mutant("overload_candidate_count_zero",
+           "Base.size(x::AbstractOverloadCandidateSet) = 0", OVERLOAD,
+           "the candidate count swallowed, so a populated set reads as empty"),
+    Mutant("conversion_standard_userdefined_swap",
+           "isStandard(x::AbstractImplicitConversionSequence) = isUserDefined(x)", OVERLOAD,
+           "two conversion-kind predicates wired to one query"),
+
+    # --- Objective-C (ISSUE 49) --------------------------------------------------------------
+    Mutant("objc_instance_class_swap",
+           "isInstanceMethod(x::AbstractObjCMethodDecl) = isClassMethod(x)", OBJC,
+           "the two method-kind predicates wired to one query -- `+` and `-` stop being distinguishable"),
+    Mutant("objc_first_protocol_always",
+           "getProtocol(x::AbstractObjCInterfaceDecl, i::Integer) = ObjCProtocolDecl(clang_ObjCInterfaceDecl_getProtocol(x, 0))",
+           OBJC,
+           "an index ignored on the protocol list"),
+    Mutant("objc_all_referenced_aliases_written",
+           "getAllReferencedProtocol(x::AbstractObjCInterfaceDecl, i::Integer) = ObjCProtocolDecl(clang_ObjCInterfaceDecl_getProtocol(x, i))",
+           OBJC,
+           "the transitive protocol list aliased to the written one -- equal on every interface whose extensions add nothing, so only a class extension separates them"),
+    Mutant("objc_category_first_protocol_always",
+           "getProtocol(x::AbstractObjCCategoryDecl, i::Integer) = ObjCProtocolDecl(clang_ObjCCategoryDecl_getProtocol(x, 0))",
+           OBJC,
+           "an index ignored on a category's protocol list -- reachable only through a class extension"),
+    Mutant("objc_category_first_ivar_always",
+           "getIvar(x::AbstractObjCCategoryDecl, i::Integer) = ObjCIvarDecl(clang_ObjCCategoryDecl_getIvar(x, 0))",
+           OBJC,
+           "an index ignored on a category's ivar list, which only a class extension may have"),
+    Mutant("objc_method_defined_always",
+           "isDefined(x::AbstractObjCMethodDecl) = true", OBJC,
+           "every method reported implemented, including a protocol method nobody implements"),
+    Mutant("objc_ivar_access_none",
+           "getAccessControl(x::AbstractObjCIvarDecl) = LibClangEx.CXObjCIvarDecl_None", OBJC,
+           "an access control answering `None` whatever the ivar -- the value a written specifier is supposed to replace"),
+    Mutant("objc_property_attrs_zero",
+           "getPropertyAttributes(x::AbstractObjCPropertyDecl) = UInt32(0)", OBJC,
+           "a bit set swallowed, so every property reads as carrying no attribute"),
+
+    # --- recorded diagnostics (ISSUE 42) ------------------------------------------------------
+    Mutant("diagbuf_message_first_always",
+           """begin
+               function getMessage(x::AbstractTextDiagnosticBuffer,
+                                   level::LibClangEx.CXTextDiagnosticBuffer_Level, i::Integer)
+                   @assert 0 <= i < Base.size(x, level) "index out of range"
+                   return get_string(clang_TextDiagnosticBuffer_getMessage(x, level, 0))
+               end
+           end""",
+           DIAGBUF,
+           "an index ignored, so every buffered diagnostic reads as the first one at its level -- the bounds gate is kept, so an out-of-range read cannot crash in its place"),
+    Mutant("diagbuf_errors_as_warnings",
+           "Base.size(x::AbstractTextDiagnosticBuffer, level::LibClangEx.CXTextDiagnosticBuffer_Level) = clang_TextDiagnosticBuffer_size(x, LibClangEx.CXTextDiagnosticBuffer_Warning)",
+           DIAGBUF,
+           "a level argument ignored -- the four buffered lists collapse onto one"),
 ]
 
 """

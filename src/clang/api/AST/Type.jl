@@ -1172,8 +1172,11 @@ function getNumParams(x::FunctionProtoType)
     return clang_FunctionProtoType_getNumParams(x)
 end
 
+# Upstream asserts the bound and that assertion is compiled into the release library, so an
+# out-of-range index aborts the process rather than returning a null QualType.
 function getParamType(x::FunctionProtoType, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumParams(x) "parameter index $i out of range"
     return QualType(clang_FunctionProtoType_getParamType(x, i))
 end
 
@@ -1225,6 +1228,7 @@ end
 
 function getExceptionType(x::AbstractFunctionProtoType, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumExceptions(x) "exception index $i out of range"
     return QualType(clang_FunctionProtoType_getExceptionType(x, i))
 end
 
@@ -1501,6 +1505,7 @@ end
 
 function getArg(x::TemplateSpecializationType, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumArgs(x) "template argument index $i out of range"
     return TemplateArgument(clang_TemplateSpecializationType_getArg(x, i))
 end
 
@@ -1678,6 +1683,207 @@ end
 function isSugared(x::AbstractAdjustedType)
     @check_ptrs x
     return clang_AdjustedType_isSugared(x)
+end
+
+# ObjCTypeParamType
+function getDecl(x::AbstractObjCTypeParamType)
+    @check_ptrs x
+    return ObjCTypeParamDecl(clang_ObjCTypeParamType_getDecl(x))
+end
+
+"""
+    getNumProtocols(x::AbstractObjCTypeParamType) -> UInt32
+The number of protocol qualifiers written on the parameter reference (`T<NSCopying>`).
+"""
+function getNumProtocols(x::AbstractObjCTypeParamType)
+    @check_ptrs x
+    return clang_ObjCTypeParamType_getNumProtocols(x)
+end
+
+function getProtocol(x::AbstractObjCTypeParamType, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumProtocols(x) "protocol index $i out of range"
+    return ObjCProtocolDecl(clang_ObjCTypeParamType_getProtocol(x, i))
+end
+
+function isSugared(x::AbstractObjCTypeParamType)
+    @check_ptrs x
+    return clang_ObjCTypeParamType_isSugared(x)
+end
+
+function desugar(x::AbstractObjCTypeParamType)
+    @check_ptrs x
+    return QualType(clang_ObjCTypeParamType_desugar(x))
+end
+
+# ObjCObjectType
+function getBaseType(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return QualType(clang_ObjCObjectType_getBaseType(x))
+end
+
+"""
+    getInterface(x::AbstractObjCObjectType) -> ObjCInterfaceDecl
+The interface this object type names. Wraps `C_NULL` for `id` and `Class`, whose base type
+is a builtin rather than an interface.
+"""
+function getInterface(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return ObjCInterfaceDecl(clang_ObjCObjectType_getInterface(x))
+end
+
+function isObjCId(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_isObjCId(x)
+end
+
+function isObjCClass(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_isObjCClass(x)
+end
+
+function isObjCUnqualifiedId(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_isObjCUnqualifiedId(x)
+end
+
+function isObjCQualifiedId(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_isObjCQualifiedId(x)
+end
+
+function isSpecialized(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_isSpecialized(x)
+end
+
+function isKindOfType(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_isKindOfType(x)
+end
+
+"""
+    getNumTypeArgs(x::AbstractObjCObjectType) -> UInt32
+The number of type arguments of a specialized object type (`NSArray<NSString *>`); `0` on
+an unspecialized one.
+"""
+function getNumTypeArgs(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_getNumTypeArgs(x)
+end
+
+function getTypeArg(x::AbstractObjCObjectType, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumTypeArgs(x) "type argument index $i out of range"
+    return QualType(clang_ObjCObjectType_getTypeArg(x, i))
+end
+
+function getNumProtocols(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_getNumProtocols(x)
+end
+
+function getProtocol(x::AbstractObjCObjectType, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumProtocols(x) "protocol index $i out of range"
+    return ObjCProtocolDecl(clang_ObjCObjectType_getProtocol(x, i))
+end
+
+"""
+    getSuperClassType(x::AbstractObjCObjectType) -> QualType
+The superclass with this type's type arguments substituted in. A null `QualType` when the
+interface has no superclass.
+"""
+function getSuperClassType(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return QualType(clang_ObjCObjectType_getSuperClassType(x))
+end
+
+function isSugared(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return clang_ObjCObjectType_isSugared(x)
+end
+
+function desugar(x::AbstractObjCObjectType)
+    @check_ptrs x
+    return QualType(clang_ObjCObjectType_desugar(x))
+end
+
+# ObjCInterfaceType
+function getDecl(x::AbstractObjCInterfaceType)
+    @check_ptrs x
+    return ObjCInterfaceDecl(clang_ObjCInterfaceType_getDecl(x))
+end
+
+function isSugared(x::AbstractObjCInterfaceType)
+    @check_ptrs x
+    return clang_ObjCInterfaceType_isSugared(x)
+end
+
+function desugar(x::AbstractObjCInterfaceType)
+    @check_ptrs x
+    return QualType(clang_ObjCInterfaceType_desugar(x))
+end
+
+# ObjCObjectPointerType
+function getPointeeType(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return QualType(clang_ObjCObjectPointerType_getPointeeType(x))
+end
+
+"""
+    getObjectType(x::AbstractObjCObjectPointerType) -> ObjCObjectType
+The pointee as an `ObjCObjectType`, which it always is by construction.
+"""
+function getObjectType(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return ObjCObjectType(clang_ObjCObjectPointerType_getObjectType(x))
+end
+
+"""
+    getInterfaceDecl(x::AbstractObjCObjectPointerType) -> ObjCInterfaceDecl
+The interface named by the pointee. Wraps `C_NULL` for `id`/`Class` and for a pointer to a
+type parameter.
+"""
+function getInterfaceDecl(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return ObjCInterfaceDecl(clang_ObjCObjectPointerType_getInterfaceDecl(x))
+end
+
+function isObjCIdType(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return clang_ObjCObjectPointerType_isObjCIdType(x)
+end
+
+function isObjCClassType(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return clang_ObjCObjectPointerType_isObjCClassType(x)
+end
+
+function isObjCQualifiedIdType(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return clang_ObjCObjectPointerType_isObjCQualifiedIdType(x)
+end
+
+function getNumProtocols(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return clang_ObjCObjectPointerType_getNumProtocols(x)
+end
+
+function getProtocol(x::AbstractObjCObjectPointerType, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumProtocols(x) "protocol index $i out of range"
+    return ObjCProtocolDecl(clang_ObjCObjectPointerType_getProtocol(x, i))
+end
+
+function isSugared(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return clang_ObjCObjectPointerType_isSugared(x)
+end
+
+function desugar(x::AbstractObjCObjectPointerType)
+    @check_ptrs x
+    return QualType(clang_ObjCObjectPointerType_desugar(x))
 end
 
 # AtomicType
@@ -2022,6 +2228,18 @@ exists for it), matching `getValue(::AbstractIntegerLiteral)`.
 function getSize(x::AbstractConstantArrayType)
     @check_ptrs x
     return clang_ConstantArrayType_getSize(x)
+end
+
+"""
+    getZExtSize(x::AbstractConstantArrayType) -> UInt64
+The array's element count as a plain integer, which is what reading an array extent
+normally wants — [`getSize`](@ref) costs an LLVM-C round trip and a disposal per array.
+clang normalises the extent to the target's pointer width before storing it, so this
+narrowing cannot lose a bit.
+"""
+function getZExtSize(x::AbstractConstantArrayType)
+    @check_ptrs x
+    return clang_ConstantArrayType_getZExtSize(x)
 end
 
 # VariableArrayType

@@ -253,6 +253,7 @@ end
     @test tst isa CC.TemplateSpecializationType
     @test CC.getNumArgs(tst) == 2
     @test CC.getArg(tst, 0) isa CC.TemplateArgument
+    @test_throws AssertionError CC.getArg(tst, CC.getNumArgs(tst))  # the restated clang assert (Invariant 3)
     dispose(f)
     dispose(I)
 end
@@ -269,7 +270,13 @@ end
     @test CC.isVariadic(ty) == false
     @test CC.getNumExceptions(ty) == 0
     @test CC.isIntegerType(CC.getTypePtr(CC.getReturnType(ty)))
+    # Both parameters, not just the first: an accessor that ignores its index reads the
+    # same as a working one when only index 0 is ever asked for. `double` then `char` also
+    # pins WHICH parameter each is, rather than only that the two differ.
     @test CC.isRealFloatingType(CC.getTypePtr(CC.getParamType(ty, 0)))
+    @test CC.getAsString(CC.getParamType(ty, 0)) == "double"
+    @test CC.getAsString(CC.getParamType(ty, 1)) == "char"
+    @test_throws AssertionError CC.getParamType(ty, 2)
     @test Integer(CC.getCallConv(ty)) == Integer(CC.LibClangEx.CXCallingConv_CC_C)
     @test CC.getExceptionSpecType(ty) == CC.LibClangEx.CXExceptionSpecificationType_EST_BasicNoexcept
     dispose(f)
@@ -500,6 +507,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test ft2 isa CC.FunctionProtoType
     @test CC.getNumExceptions(ft2) == 1
     @test !CC.is_null_handle(CC.getExceptionType(ft2, 0))
+    @test_throws AssertionError CC.getExceptionType(ft2, CC.getNumExceptions(ft2))  # the restated clang assert (Invariant 3)
     dispose(f2)
     dispose(I2)
 end
@@ -1106,6 +1114,8 @@ end
     @test gv != C_NULL
     @test LLVM.API.LLVMGenericValueToInt(gv, false) == 7
     LLVM.API.LLVMDisposeGenericValue(gv)
+    # The narrowed twin reads the same extent with no LLVM-C round trip and no disposal.
+    @test CC.getZExtSize(aty) == 7
 
     # TagType::isBeingDefined — false for a complete record
     rec = unwrap(rty("tsub_rec"))

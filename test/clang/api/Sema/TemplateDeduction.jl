@@ -132,6 +132,11 @@ end
               template <class T> constexpr int SemaVBox = 1;
               template <class T> constexpr int SemaVBox<T *> = 2;
               template <class T> void sema_ident(T) {}
+              template <class T> void sema_call2(T a, T b);
+              template <class T> void sema_callptr(T *a, T b);
+              int sema_arg_i = 1;
+              double sema_arg_d = 2.5;
+              void sema_explicit_use() { void (*p)(int, int) = &sema_call2<int>; (void)p; }
               """)
     sema = CC.get_sema(I)
     ctx = CC.get_ast_context(I)
@@ -187,6 +192,75 @@ end
         @test r2 != CC.CXTemplateDeductionResult_TDK_Success
         @test spec2 === nothing
         CC.dispose(info2)
+    end
+
+    @testset "a function template deduces from the arguments of a call" begin
+        # The overload-resolution form. The three above deduce from a template-argument list
+        # or a target function type; only this one is handed the call's arguments, and it
+        # tells the failure modes apart by which argument broke -- a shim ignoring the
+        # argument buffer gives one answer for all four cases below.
+        expr_of(name) = (CC.reset(f); @assert f(I, name); CC.getInit(CC.VarDecl(get_decl(f))))
+        template_named(name) = (CC.reset(f); @assert f(I, name);
+                                CC.FunctionTemplateDecl(first(d for d in CC.get_decls(f)
+                                                              if CC.getDeclKindName(d) == "FunctionTemplate")))
+        ei, ed = expr_of("sema_arg_i"), expr_of("sema_arg_d")
+        @test CC.getAsString(CC.getType(ei)) == "int"
+        @test CC.getAsString(CC.getType(ed)) == "double"
+        call2, callptr = template_named("sema_call2"), template_named("sema_callptr")
+
+        function deduce(tmpl, args; kwargs...)
+            info = CC.TemplateDeductionInfo(loc)
+            r, spec = CC.DeduceTemplateArguments(sema, tmpl, args, info; kwargs...)
+            idx = Int(CC.getCallArgIndex(info))
+            CC.dispose(info)
+            return r, spec, idx
+        end
+
+        # Two `int`s deduce T = int.
+        r, spec, _ = deduce(call2, [ei, ei])
+        @test r == CC.CXTemplateDeductionResult_TDK_Success
+        @test spec !== nothing
+        @test CC.getName(spec) == "sema_call2"
+
+        # An `int` then a `double` deduce T twice, inconsistently -- and this is the second
+        # argument disagreeing with the first, not either one being unusable on its own.
+        r, spec, idx = deduce(call2, [ei, ed])
+        @test r == CC.CXTemplateDeductionResult_TDK_Inconsistent
+        @test spec === nothing
+        # ISSUE 50 expected this overload to make `getCallArgIndex` meaningful. It does not:
+        # clang 18 leaves it at 0 through every path this entry point reaches, so the
+        # `deduction_callarg_zero` mutant stays blocked rather than being killed here.
+        @test idx == 0
+
+        # No arguments at all: a different failure again, and reached without touching the
+        # (empty) buffer.
+        r, spec, _ = deduce(call2, CC.Expr_[])
+        @test r == CC.CXTemplateDeductionResult_TDK_TooFewArguments
+        @test spec === nothing
+
+        # A `T *` parameter against an `int` argument is a non-deduced mismatch -- a fourth
+        # outcome, so the result tracks the parameter/argument pairing rather than the count.
+        r, spec, _ = deduce(callptr, [ei, ei])
+        @test r == CC.CXTemplateDeductionResult_TDK_NonDeducedMismatch
+        @test spec === nothing
+
+        # Explicit template arguments participate rather than being dropped: naming T = int
+        # makes the same (int, double) call stop being a deduction conflict, because there
+        # is nothing left to deduce. The `<int>` comes off a reference the source wrote,
+        # since a TemplateArgumentLoc cannot be built from nothing.
+        CC.reset(f)
+        @test f(I, "sema_explicit_use")
+        use = CC.FunctionDecl(get_decl(f))
+        dre = first(n for n in CC.subtree(CC.getBody(use))
+                    if n isa CC.DeclRefExpr && CC.hasExplicitTemplateArgs(n))
+        explicit = CC.TemplateArgumentListInfo(CC.getLAngleLoc(dre), CC.getRAngleLoc(dre))
+        CC.copyTemplateArgumentsInto(dre, explicit)
+        @test size(explicit) == 1
+
+        r, spec, _ = deduce(call2, [ei, ed]; explicit_args=explicit)
+        @test r == CC.CXTemplateDeductionResult_TDK_Success
+        @test spec !== nothing
+        CC.dispose(explicit)
     end
 
     CC.dispose(f)

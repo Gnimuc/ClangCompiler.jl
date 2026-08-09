@@ -276,7 +276,11 @@ CXCharacterLiteralKind clang_CharacterLiteral_getKind(CXCharacterLiteral CL);
 double clang_FloatingLiteral_getValueAsApproximateDouble(CXFloatingLiteral FL);
 
 // StringLiteral
-CXString clang_StringLiteral_getBytes(CXStringLiteral SL);
+// The character bytes of a literal of any width, borrowed from the AST arena and NOT
+// NUL-terminated — a wide/UTF-16/UTF-32 literal has an interior NUL in every character,
+// so a CXString return would truncate at the first one. Read exactly
+// clang_StringLiteral_getByteLength bytes.
+const char *clang_StringLiteral_getBytes(CXStringLiteral SL);
 
 unsigned clang_StringLiteral_getByteLength(CXStringLiteral SL);
 
@@ -593,9 +597,11 @@ CXExpr clang_CompoundLiteralExpr_getInitializer(CXCompoundLiteralExpr E);
 CXTypeSourceInfo clang_CompoundLiteralExpr_getTypeSourceInfo(CXCompoundLiteralExpr E);
 
 // StringLiteral
-// getString asserts char width 1 (or unevaluated) upstream; NUL-safe copy via
-// makeCXString(std::string). Julia reads with get_string.
-CXString clang_StringLiteral_getString(CXStringLiteral SL);
+// getString asserts char width 1 (or unevaluated) upstream, and that assertion is compiled
+// into the release library. Same borrowed, non-NUL-terminated bytes as
+// clang_StringLiteral_getBytes — a narrow literal may still carry an interior NUL, so read
+// exactly clang_StringLiteral_getByteLength bytes.
+const char *clang_StringLiteral_getString(CXStringLiteral SL);
 
 CXStringLiteralKind clang_StringLiteral_getKind(CXStringLiteral SL);
 

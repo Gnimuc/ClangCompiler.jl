@@ -1118,6 +1118,8 @@ end
     CC.parse(I, """
     struct CCIA { int v; CCIA(int x) : v(x) {} };
     CCIA cci_make(int v) { CCIA a(v); return a; }
+    struct CCI2 { int p; double q; CCI2(int a, double b) : p(a), q(b) {} };
+    CCI2 cci_make2() { CCI2 a(1, 2.5); return a; }
     struct CCIB { int w; int get() { return this->w; } };
     bool cci_flag() { return true; }
     int *cci_null() { return nullptr; }
@@ -1182,6 +1184,18 @@ end
     CC.setArg(ce, 0, a0)
     @test CC.getArg(ce, 0).ptr == a0.ptr
     @test_throws AssertionError CC.setArg(ce, nargs, a0)
+
+    # Reading only index 0 cannot separate a working accessor from one that ignores its
+    # index, so a two-argument construction is where the index has to do something. The
+    # types differ too, which pins which argument is which rather than only that they are
+    # two distinct nodes.
+    ce2 = _find_node(CC.AbstractCXXConstructExpr, fn_body("cci_make2"))
+    @test ce2 isa CC.AbstractCXXConstructExpr
+    @test CC.getNumArgs(ce2) == 2
+    @test CC.getArg(ce2, 0).ptr != CC.getArg(ce2, 1).ptr
+    @test CC.getAsString(CC.getType(CC.getArg(ce2, 0))) == "int"
+    @test CC.getAsString(CC.getType(CC.getArg(ce2, 1))) == "double"
+    @test_throws AssertionError CC.getArg(ce2, 2)
 
     # ---- CXXThisExpr setters: `this->w` inside CCIB::get ----
     @test f(I, "CCIB")

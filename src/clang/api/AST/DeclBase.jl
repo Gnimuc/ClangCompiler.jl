@@ -37,6 +37,7 @@ end
 # The borrowed `Attr` at position `i` (0-based); classify it with `getKind`.
 function getAttr(x::AbstractDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumAttrs(x) "attribute index $i out of range"
     return Attr(clang_Decl_getAttr(x, i))
 end
 

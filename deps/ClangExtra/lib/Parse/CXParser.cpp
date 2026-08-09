@@ -85,3 +85,22 @@ CXQualType clang_Parser_getTypeAnnotation(CXToken_ Tok) {
 //   else
 //     return nullptr;
 // }
+bool clang_Parser_ParseFirstTopLevelDecl(CXParser P, CXDeclGroupRef *Result,
+                                         unsigned *ImportState) {
+  clang::Parser::DeclGroupPtrTy ADecl;
+  auto IS = static_cast<clang::Sema::ModuleImportState>(*ImportState);
+  bool AtEOF = reinterpret_cast<clang::Parser *>(P)->ParseFirstTopLevelDecl(ADecl, IS);
+  *ImportState = static_cast<unsigned>(IS);
+  *Result = reinterpret_cast<CXDeclGroupRef>(ADecl.getAsOpaquePtr());
+  return AtEOF;
+}
+
+bool clang_Parser_ParseTopLevelDecl(CXParser P, CXDeclGroupRef *Result,
+                                    unsigned *ImportState) {
+  clang::Parser::DeclGroupPtrTy ADecl;
+  auto IS = static_cast<clang::Sema::ModuleImportState>(*ImportState);
+  bool AtEOF = reinterpret_cast<clang::Parser *>(P)->ParseTopLevelDecl(ADecl, IS);
+  *ImportState = static_cast<unsigned>(IS);
+  *Result = reinterpret_cast<CXDeclGroupRef>(ADecl.getAsOpaquePtr());
+  return AtEOF;
+}

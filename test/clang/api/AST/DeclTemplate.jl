@@ -53,6 +53,10 @@ import ClangCompiler as CC
     I = create_interpreter(String[])
     src = """
     template <typename T, int N> struct S { T data; T get() { return data; } };
+    template <typename A, typename B> struct TwoTypes { A a; B b; };
+    template <typename Outer> struct NestOuter {
+        template <typename Inner> struct NestInner { Inner v; };
+    };
     template <typename U> U identity(U v) { return v; }
     __attribute__((deprecated("old"))) int depvar = 3;
     int freefn(int a, int b) { return a + b; }
@@ -82,11 +86,42 @@ import ClangCompiler as CC
     @test CC.getIndex(ttp) == 0
     @test CC.isParameterPack(ttp) == false
 
+    @test_throws AssertionError CC.getParam(tpl, size(tpl))  # the restated clang assert (Invariant 3)
     p1 = CC.getParam(tpl, 1)                            # NonTypeTemplateParmDecl (N)
     nttp = CC.NonTypeTemplateParmDecl(p1)
     @test CC.getDepth(nttp) == 0
     @test CC.getIndex(nttp) == 1
     @test CC.isParameterPack(nttp) == false
+
+    # Both coordinates of a TYPE parameter were only ever read at 0 here, and a depth or an
+    # index that ignores its subject reads as 0 too. `TwoTypes` gives the second index and
+    # `NestOuter::NestInner` the second depth, so each accessor has to be doing something.
+    @test f(I, "TwoTypes")
+    two_tpl = CC.getTemplateParameters(CC.ClassTemplateDecl(get_decl(f)))
+    @test size(two_tpl) == 2
+    a_parm = CC.TemplateTypeParmDecl(CC.getParam(two_tpl, 0))
+    b_parm = CC.TemplateTypeParmDecl(CC.getParam(two_tpl, 1))
+    @test CC.getName(a_parm) == "A" && CC.getName(b_parm) == "B"
+    @test CC.getIndex(a_parm) == 0
+    @test CC.getIndex(b_parm) == 1
+    @test CC.getDepth(a_parm) == CC.getDepth(b_parm) == 0
+
+    # The inner template is a member, so it is reached through its enclosing record rather
+    # than by name at the top level.
+    CC.reset(f)
+    @test f(I, "NestOuter")
+    outer_rec = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f)))
+    inner_ctd = first(d for d in CC.decls_in(CC.castToDeclContext(outer_rec))
+                      if d isa CC.AbstractClassTemplateDecl)
+    @test CC.getName(inner_ctd) == "NestInner"
+    inner_tpl = CC.getTemplateParameters(inner_ctd)
+    inner_parm = CC.TemplateTypeParmDecl(CC.getParam(inner_tpl, 0))
+    @test CC.getName(inner_parm) == "Inner"
+    # nested one template deep, and still the first parameter of its own list
+    @test CC.getDepth(inner_parm) == 1
+    @test CC.getIndex(inner_parm) == 0
+    @test CC.getDepth(inner_tpl) == 1
+    CC.reset(f)
 
     # RedeclarableTemplateDecl / ClassTemplateDecl accessors on ctd
     trec = CC.getTemplatedDecl(ctd)                    # Redeclarable -> CXXRecordDecl

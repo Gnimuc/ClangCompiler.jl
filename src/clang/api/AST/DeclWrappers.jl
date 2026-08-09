@@ -138,6 +138,18 @@ function PragmaCommentDecl(x::AbstractDecl)
     return PragmaCommentDecl(p)
 end
 
+function isObjCPropertyImplDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCPropertyImplDecl(x)
+end
+
+function ObjCPropertyImplDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCPropertyImplDecl(x)
+    p == C_NULL && _cast_failed(ObjCPropertyImplDecl, x)
+    return ObjCPropertyImplDecl(p)
+end
+
 function isNamedDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isNamedDecl(x)
@@ -148,6 +160,102 @@ function NamedDecl(x::AbstractDecl)
     p = clang_Decl_castToNamedDecl(x)
     p == C_NULL && _cast_failed(NamedDecl, x)
     return NamedDecl(p)
+end
+
+function isObjCMethodDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCMethodDecl(x)
+end
+
+function ObjCMethodDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCMethodDecl(x)
+    p == C_NULL && _cast_failed(ObjCMethodDecl, x)
+    return ObjCMethodDecl(p)
+end
+
+function isObjCContainerDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCContainerDecl(x)
+end
+
+function ObjCContainerDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCContainerDecl(x)
+    p == C_NULL && _cast_failed(ObjCContainerDecl, x)
+    return ObjCContainerDecl(p)
+end
+
+function isObjCProtocolDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCProtocolDecl(x)
+end
+
+function ObjCProtocolDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCProtocolDecl(x)
+    p == C_NULL && _cast_failed(ObjCProtocolDecl, x)
+    return ObjCProtocolDecl(p)
+end
+
+function isObjCInterfaceDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCInterfaceDecl(x)
+end
+
+function ObjCInterfaceDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCInterfaceDecl(x)
+    p == C_NULL && _cast_failed(ObjCInterfaceDecl, x)
+    return ObjCInterfaceDecl(p)
+end
+
+function isObjCImplDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCImplDecl(x)
+end
+
+function ObjCImplDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCImplDecl(x)
+    p == C_NULL && _cast_failed(ObjCImplDecl, x)
+    return ObjCImplDecl(p)
+end
+
+function isObjCImplementationDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCImplementationDecl(x)
+end
+
+function ObjCImplementationDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCImplementationDecl(x)
+    p == C_NULL && _cast_failed(ObjCImplementationDecl, x)
+    return ObjCImplementationDecl(p)
+end
+
+function isObjCCategoryImplDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCCategoryImplDecl(x)
+end
+
+function ObjCCategoryImplDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCCategoryImplDecl(x)
+    p == C_NULL && _cast_failed(ObjCCategoryImplDecl, x)
+    return ObjCCategoryImplDecl(p)
+end
+
+function isObjCCategoryDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCCategoryDecl(x)
+end
+
+function ObjCCategoryDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCCategoryDecl(x)
+    p == C_NULL && _cast_failed(ObjCCategoryDecl, x)
+    return ObjCCategoryDecl(p)
 end
 
 function isNamespaceDecl(x::AbstractDecl)
@@ -450,6 +558,30 @@ function FieldDecl(x::AbstractDecl)
     return FieldDecl(p)
 end
 
+function isObjCIvarDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCIvarDecl(x)
+end
+
+function ObjCIvarDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCIvarDecl(x)
+    p == C_NULL && _cast_failed(ObjCIvarDecl, x)
+    return ObjCIvarDecl(p)
+end
+
+function isObjCAtDefsFieldDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCAtDefsFieldDecl(x)
+end
+
+function ObjCAtDefsFieldDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCAtDefsFieldDecl(x)
+    p == C_NULL && _cast_failed(ObjCAtDefsFieldDecl, x)
+    return ObjCAtDefsFieldDecl(p)
+end
+
 function isBindingDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isBindingDecl(x)
@@ -654,6 +786,18 @@ function TypeAliasDecl(x::AbstractDecl)
     return TypeAliasDecl(p)
 end
 
+function isObjCTypeParamDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCTypeParamDecl(x)
+end
+
+function ObjCTypeParamDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCTypeParamDecl(x)
+    p == C_NULL && _cast_failed(ObjCTypeParamDecl, x)
+    return ObjCTypeParamDecl(p)
+end
+
 function isTemplateTypeParmDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isTemplateTypeParmDecl(x)
@@ -772,6 +916,30 @@ function BuiltinTemplateDecl(x::AbstractDecl)
     p = clang_Decl_castToBuiltinTemplateDecl(x)
     p == C_NULL && _cast_failed(BuiltinTemplateDecl, x)
     return BuiltinTemplateDecl(p)
+end
+
+function isObjCPropertyDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCPropertyDecl(x)
+end
+
+function ObjCPropertyDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCPropertyDecl(x)
+    p == C_NULL && _cast_failed(ObjCPropertyDecl, x)
+    return ObjCPropertyDecl(p)
+end
+
+function isObjCCompatibleAliasDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isObjCCompatibleAliasDecl(x)
+end
+
+function ObjCCompatibleAliasDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToObjCCompatibleAliasDecl(x)
+    p == C_NULL && _cast_failed(ObjCCompatibleAliasDecl, x)
+    return ObjCCompatibleAliasDecl(p)
 end
 
 function isNamespaceAliasDecl(x::AbstractDecl)

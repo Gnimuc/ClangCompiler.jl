@@ -1409,7 +1409,15 @@ unsigned clang_ArrayType_getIndexTypeCVRQualifiers(CXArrayType T);
 // count). It crosses as an owned llvm::GenericValue (MARSHALLING.md §1), like
 // clang_IntegerLiteral_getValue; the caller owns it (LLVM-C disposal).
 LLVMGenericValueRef clang_ConstantArrayType_getSize(CXConstantArrayType T);
-// getSize
+
+// helper
+// The same element count narrowed to 64 bits, which is what a caller reading an array
+// extent actually wants — the GenericValue form above costs an LLVM-C round trip and a
+// disposal per array. ASTContext normalises the extent to the target's max pointer
+// width before storing it, so the APInt is never wider than 64 bits and the narrowing
+// cannot lose a bit. clang gained this accessor under this name after 18.
+unsigned long long clang_ConstantArrayType_getZExtSize(CXConstantArrayType T);
+
 CXExpr clang_ConstantArrayType_getSizeExpr(CXConstantArrayType T);
 
 bool clang_ConstantArrayType_isSugared(CXConstantArrayType T);
@@ -2126,6 +2134,92 @@ CXQualType clang_PackExpansionType_desugar(CXPackExpansionType T);
 
 // isSugared
 // desugar
+
+// ObjCTypeParamType
+CXObjCTypeParamDecl clang_ObjCTypeParamType_getDecl(CXObjCTypeParamType T);
+
+// The protocol qualifiers written on the parameter reference, as a count + index pair.
+unsigned clang_ObjCTypeParamType_getNumProtocols(CXObjCTypeParamType T);
+
+// PRECONDITION: I < clang_ObjCTypeParamType_getNumProtocols.
+CXObjCProtocolDecl clang_ObjCTypeParamType_getProtocol(CXObjCTypeParamType T, unsigned I);
+
+bool clang_ObjCTypeParamType_isSugared(CXObjCTypeParamType T);
+
+CXQualType clang_ObjCTypeParamType_desugar(CXObjCTypeParamType T);
+
+// ObjCObjectType
+CXQualType clang_ObjCObjectType_getBaseType(CXObjCObjectType T);
+
+// The interface this object type names, or nullptr for `id` and `Class`, whose base type
+// is a builtin rather than an interface.
+CXObjCInterfaceDecl clang_ObjCObjectType_getInterface(CXObjCObjectType T);
+
+bool clang_ObjCObjectType_isObjCId(CXObjCObjectType T);
+
+bool clang_ObjCObjectType_isObjCClass(CXObjCObjectType T);
+
+bool clang_ObjCObjectType_isObjCUnqualifiedId(CXObjCObjectType T);
+
+bool clang_ObjCObjectType_isObjCQualifiedId(CXObjCObjectType T);
+
+bool clang_ObjCObjectType_isSpecialized(CXObjCObjectType T);
+
+bool clang_ObjCObjectType_isKindOfType(CXObjCObjectType T);
+
+// The type arguments of a specialized object type (`NSArray<NSString *> *`), as a count +
+// index pair. Empty on an unspecialized type.
+unsigned clang_ObjCObjectType_getNumTypeArgs(CXObjCObjectType T);
+
+// PRECONDITION: I < clang_ObjCObjectType_getNumTypeArgs.
+CXQualType clang_ObjCObjectType_getTypeArg(CXObjCObjectType T, unsigned I);
+
+unsigned clang_ObjCObjectType_getNumProtocols(CXObjCObjectType T);
+
+// PRECONDITION: I < clang_ObjCObjectType_getNumProtocols.
+CXObjCProtocolDecl clang_ObjCObjectType_getProtocol(CXObjCObjectType T, unsigned I);
+
+// The superclass of a specialized object type, with the type arguments substituted in. A
+// null CXQualType when the interface has no superclass.
+CXQualType clang_ObjCObjectType_getSuperClassType(CXObjCObjectType T);
+
+bool clang_ObjCObjectType_isSugared(CXObjCObjectType T);
+
+CXQualType clang_ObjCObjectType_desugar(CXObjCObjectType T);
+
+// ObjCInterfaceType
+CXObjCInterfaceDecl clang_ObjCInterfaceType_getDecl(CXObjCInterfaceType T);
+
+bool clang_ObjCInterfaceType_isSugared(CXObjCInterfaceType T);
+
+CXQualType clang_ObjCInterfaceType_desugar(CXObjCInterfaceType T);
+
+// ObjCObjectPointerType
+CXQualType clang_ObjCObjectPointerType_getPointeeType(CXObjCObjectPointerType T);
+
+// The pointee as an ObjCObjectType. Total: clang reaches it with a castAs, and the
+// pointee of an ObjCObjectPointerType is an ObjCObjectType by construction.
+CXObjCObjectType clang_ObjCObjectPointerType_getObjectType(CXObjCObjectPointerType T);
+
+// The interface named by the pointee, or nullptr for `id`/`Class` and for a pointer to a
+// type parameter.
+CXObjCInterfaceDecl clang_ObjCObjectPointerType_getInterfaceDecl(CXObjCObjectPointerType T);
+
+bool clang_ObjCObjectPointerType_isObjCIdType(CXObjCObjectPointerType T);
+
+bool clang_ObjCObjectPointerType_isObjCClassType(CXObjCObjectPointerType T);
+
+bool clang_ObjCObjectPointerType_isObjCQualifiedIdType(CXObjCObjectPointerType T);
+
+unsigned clang_ObjCObjectPointerType_getNumProtocols(CXObjCObjectPointerType T);
+
+// PRECONDITION: I < clang_ObjCObjectPointerType_getNumProtocols.
+CXObjCProtocolDecl clang_ObjCObjectPointerType_getProtocol(CXObjCObjectPointerType T,
+                                                           unsigned I);
+
+bool clang_ObjCObjectPointerType_isSugared(CXObjCObjectPointerType T);
+
+CXQualType clang_ObjCObjectPointerType_desugar(CXObjCObjectPointerType T);
 
 // AtomicType
 CXQualType clang_AtomicType_getValueType(CXAtomicType T);

@@ -2097,6 +2097,24 @@ long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD
   return reinterpret_cast<clang::EnumConstantDecl *>(ECD)->getInitVal().getSExtValue();
 }
 
+bool clang_EnumConstantDecl_isInitValSigned(CXEnumConstantDecl ECD) {
+  return reinterpret_cast<clang::EnumConstantDecl *>(ECD)->getInitVal().isSigned();
+}
+
+unsigned long long clang_EnumConstantDecl_getZExtInitVal(CXEnumConstantDecl ECD) {
+  return reinterpret_cast<clang::EnumConstantDecl *>(ECD)->getInitVal().getZExtValue();
+}
+
+bool clang_EnumConstantDecl_initValFitsInInt64(CXEnumConstantDecl ECD) {
+  const llvm::APSInt &V = reinterpret_cast<clang::EnumConstantDecl *>(ECD)->getInitVal();
+  return V.isSingleWord() || V.getSignificantBits() <= 64;
+}
+
+bool clang_EnumConstantDecl_initValFitsInUInt64(CXEnumConstantDecl ECD) {
+  const llvm::APSInt &V = reinterpret_cast<clang::EnumConstantDecl *>(ECD)->getInitVal();
+  return V.isSingleWord() || V.getActiveBits() <= 64;
+}
+
 bool clang_EnumConstantDecl_classofKind(CXDeclKind K) {
   return clang::EnumConstantDecl::classofKind(static_cast<clang::Decl::Kind>(K));
 }

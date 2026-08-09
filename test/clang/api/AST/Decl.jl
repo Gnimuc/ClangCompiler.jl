@@ -245,6 +245,11 @@ end
         @test CC.getParam(cd, 0).ptr == ipd.ptr
         CC.setContextParam(cd, 0, ipd)
         @test CC.getContextParam(cd).ptr == ipd.ptr
+        # All three index the same trailing parameter array, and clang asserts on each.
+        n_cd = CC.getNumParams(cd)
+        @test_throws AssertionError CC.getParam(cd, n_cd)
+        @test_throws AssertionError CC.setParam(cd, n_cd, ipd)
+        @test_throws AssertionError CC.setContextParam(cd, n_cd, ipd)
 
         # ExportDecl (fresh) setter
         exd = CC.ExportDecl(ctx, dc, loc)
@@ -537,6 +542,7 @@ end
         n = CC.getChainingSize(ifd)
         @test n == 2
         @test CC.getChainElement(ifd, n - 1).ptr == CC.getAnonField(ifd).ptr
+        @test_throws AssertionError CC.getChainElement(ifd, n)  # the restated clang assert (Invariant 3)
     end
     dispose(f)
     dispose(I)
@@ -846,6 +852,8 @@ using ClangCompiler: get_tag
         @test tplh !== nothing
         if tplh !== nothing
             @test !CC.is_null_handle(CC.getTemplateParameterList(tplh, 0))
+            @test_throws AssertionError CC.getTemplateParameterList(tplh,
+                                                                    CC.getNumTemplateParameterLists(tplh))
         end
 
         # ================= TypeDecl / TypedefDecl =================
@@ -946,6 +954,7 @@ using ClangCompiler: get_tag
         # A deserialized import is incomplete: no identifier locs, safe getters.
         imp2 = CC.ImportDecl(ctx, 99, 0)
         @test CC.getNumIdentifierLocs(imp2) == 0
+        @test_throws AssertionError CC.getIdentifierLoc(imp2, 0)  # the restated clang assert (Invariant 3)
         @test CC.is_null_handle(CC.getSourceRange(imp2).begin_loc)
 
         # ================= IndirectFieldDecl =================
@@ -1083,6 +1092,12 @@ end
 
     enum Color { Red, Green = 5, Blue };
     enum class Scoped : long { A, B, C };
+    enum class Wide : unsigned long long { Top = 0xFFFFFFFFFFFFFFFFULL, One = 1 };
+    enum Negative { Neg = -3 };
+    // `__int128` is gated on TargetInfo::hasInt128Type (pointer width >= 64), so this line
+    // is an error under a 32-bit triple -- fine on all three x64 CI hosts, but it does not
+    // belong in a fixture reused under a pinned 32-bit target.
+    enum class Huge : unsigned __int128 { Big = (unsigned __int128)1 << 100, Small = 1 };
 
     struct Point {
         int x;
@@ -1168,6 +1183,11 @@ end
     @test CC.is_null_handle(CC.getDescribedVarTemplate(gvar))
     @test CC.is_null_handle(CC.getPointOfInstantiation(gvar))
     @test !CC.is_null_handle(CC.evaluateValue(cxglob))
+    # `extern int eglob;` declares without defining, so there is no initializer to fold.
+    # Upstream reaches through getInit() with no null test and segfaults; the gate is what
+    # turns that into an exception.
+    @test CC.hasInit(eglob) == false
+    @test_throws AssertionError CC.evaluateValue(eglob)
     @test !CC.is_null_handle(CC.getSourceRange(gvar).begin_loc)
     @test CC.mightBeUsableInConstantExpressions(cxglob, ctx) == true
     @test CC.isUsableInConstantExpressions(cxglob, ctx) == true
@@ -1307,6 +1327,7 @@ end
     @test CC.is_null_handle(CC.getDependentSpecializationInfo(add))
     @test CC.is_null_handle(CC.getPointOfInstantiation(add))
     @test !CC.is_null_handle(CC.getParamDecl(add, 0))
+    @test_throws AssertionError CC.getParamDecl(add, CC.getNumParams(add))  # the restated clang assert (Invariant 3)
     @test CC.isVariadic(vfn) == true
     @test !CC.is_null_handle(CC.getEllipsisLoc(vfn))
     @test CC.isExternC(cfn) == true
@@ -1488,6 +1509,43 @@ end
     @test length(enumerators) == 3
     ec = enumerators[2]   # Green = 5
     @test CC.getEnumConstantDeclValue(ec) == 5
+    @test CC.getZExtInitVal(ec) == 5
+    @test CC.initValFitsInInt64(ec) == true
+    @test CC.initValFitsInUInt64(ec) == true
+
+    # Signedness is what the GenericValue bridge cannot carry, and the one case where the
+    # two narrowing accessors disagree: an unsigned 64-bit enumerator with its top bit set
+    # reads back as -1 through the sign-extending one. Which to trust is `isInitValSigned`.
+    @test f(I, "Wide")
+    wide = Dict(CC.getNameAsString(e) => e for e in CC.getEnumerators(CC.EnumDecl(get_decl(f))))
+    @test CC.isInitValSigned(wide["Top"]) == false
+    # A 64-bit enumerator is a single APInt word, so both narrowings are safe even though
+    # one of them reports the value negative.
+    @test CC.initValFitsInInt64(wide["Top"]) == true
+    @test CC.initValFitsInUInt64(wide["Top"]) == true
+    @test CC.getZExtInitVal(wide["Top"]) == 0xFFFFFFFFFFFFFFFF
+    @test CC.getEnumConstantDeclValue(wide["Top"]) == -1
+    @test CC.getZExtInitVal(wide["One"]) == CC.getEnumConstantDeclValue(wide["One"]) == 1
+
+    # A 128-bit enumerator fits neither narrowing, which is what makes the two gates
+    # observable at all: asserted only on values that fit, a predicate stuck at `true` passes
+    # every test above. `Small` is the partition — same 128-bit enum, so the predicates are
+    # answering about the VALUE rather than about the declared width.
+    @test f(I, "Huge")
+    huge = Dict(CC.getNameAsString(e) => e for e in CC.getEnumerators(CC.EnumDecl(get_decl(f))))
+    @test CC.initValFitsInInt64(huge["Big"]) == false
+    @test CC.initValFitsInUInt64(huge["Big"]) == false
+    @test_throws AssertionError CC.getEnumConstantDeclValue(huge["Big"])
+    @test_throws AssertionError CC.getZExtInitVal(huge["Big"])
+    @test CC.initValFitsInInt64(huge["Small"]) == true
+    @test CC.initValFitsInUInt64(huge["Small"]) == true
+    @test CC.getEnumConstantDeclValue(huge["Small"]) == 1
+    @test CC.getZExtInitVal(huge["Small"]) == 1
+
+    @test f(I, "Negative")
+    neg = only(CC.getEnumerators(CC.EnumDecl(get_decl(f))))
+    @test CC.isInitValSigned(neg) == true
+    @test CC.getEnumConstantDeclValue(neg) == -3
     @test CC.getCanonicalDecl(ec).ptr == ec.ptr
     @test !CC.is_null_handle(CC.getInitExpr(ec))
     @test !CC.is_null_handle(CC.getSourceRange(ec).begin_loc)
@@ -1531,6 +1589,9 @@ end
     # ---------------- BlockDecl (reached via the recursive decl walk) ----------------
     all_decls = CC.decls(CC.castToDeclContext(tu))
     blk = all_decls[findfirst(d -> d isa CC.BlockDecl, all_decls)]
+    # Upstream indexes an ArrayRef unchecked, so one past the end is a read of adjacent memory
+    # rather than null -- the gate is the only thing between a caller and that.
+    @test_throws AssertionError CC.getParamDecl(blk, CC.getNumParams(blk))
     addend = all_decls[findfirst(d -> d isa CC.VarDecl && CC.getName(d) == "addend", all_decls)]
     @test CC.blockMissingReturnType(blk) == false
     @test CC.canAvoidCopyToHeap(blk) == true
@@ -1878,6 +1939,7 @@ end
         CC.setTemplateParameterListsInfo(rec, ctx, [tpl])
         @test CC.getNumTemplateParameterLists(rec) == 1
         @test CC.getTemplateParameterList(rec, 0).ptr == tpl.ptr
+        @test_throws AssertionError CC.getTemplateParameterList(rec, 1)  # the restated clang assert (Invariant 3)
         @test_throws AssertionError CC.setTemplateParameterListsInfo(rec, ctx,
                                                                      CC.TemplateParameterList[])
 

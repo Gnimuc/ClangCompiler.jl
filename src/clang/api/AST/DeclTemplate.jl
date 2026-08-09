@@ -6,11 +6,13 @@ end
 
 function getTemplateParameterList(x::AbstractTagDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumTemplateParameterLists(x) "template parameter list index $i out of range"
     return TemplateParameterList(clang_TagDecl_getTemplateParameterList(x, i))
 end
 
 function getParam(x::TemplateParameterList, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < Base.size(x) "template parameter index $i out of range"
     return NamedDecl(clang_TemplateParameterList_getParam(x, i))
 end
 

@@ -83,6 +83,10 @@ include("compiler/interpreter.jl")
 public CxxInterpreter, create_interpreter, dispose
 public get_instance, get_ast_context, get_codegen_module, get_parser, get_sema
 
+# The incremental driver clang's own Interpreter cannot provide outside C++.
+include("compiler/parser.jl")
+public IncrementalParser, create_parser
+
 # include("compiler/irgen.jl")
 
 include("types.jl")

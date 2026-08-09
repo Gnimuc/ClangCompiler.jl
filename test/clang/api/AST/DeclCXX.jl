@@ -339,7 +339,13 @@ end
         @test p(baseRD) in (true, false)
         @test p(derivedRD) in (true, false)
     end
-    # a few meaningful values
+    # a few meaningful values. `Plain` is the negative side: a predicate read only on a
+    # class that satisfies it cannot tell a working one from one stuck at `true`.
+    @test f(I, "Plain")
+    plainRD = CC.CXXRecordDecl(get_decl(f))
+    @test CC.isPolymorphic(plainRD) == false
+    @test CC.isDynamicClass(plainRD) == false
+    @test CC.isAbstract(plainRD) == false
     @test CC.isPolymorphic(baseRD)
     @test CC.isAbstract(baseRD)
     @test CC.isDynamicClass(baseRD)
@@ -628,6 +634,7 @@ end
         @test CC.hasCXXExplicitFunctionObjectParameter(fd) == false
         @test CC.getNumNonObjectParams(fd) == 2
         @test !CC.is_null_handle(CC.getNonObjectParameter(fd, 0))
+        @test_throws AssertionError CC.getNonObjectParameter(fd, CC.getNumNonObjectParams(fd))
         @test CC.getMinRequiredExplicitArguments(fd) == 1
         # FunctionDecl::setParams is private in clang 18, so the parameter list
         # is read-only here — check indexed access agrees with the count.
@@ -1190,6 +1197,7 @@ end
             @test length(bindings) == 2
             @test all(b -> b isa CC.BindingDecl, bindings)
             @test CC.getBinding(dd, 0).ptr == bindings[1].ptr
+            @test_throws AssertionError CC.getBinding(dd, CC.getNumBindings(dd))  # the restated clang assert (Invariant 3)
             b = bindings[1]
             @test CC.getNameAsString(b) == "fbaF"
             vd = CC.getDecomposedDecl(b)
@@ -1262,6 +1270,7 @@ end
         @test CC.getInstantiatedFromUsingDecl(upd).ptr != C_NULL
         @test CC.getNumExpansions(upd) == 2
         @test CC.getExpansion(upd, 0) isa CC.NamedDecl
+        @test_throws AssertionError CC.getExpansion(upd, CC.getNumExpansions(upd))  # the restated clang assert (Invariant 3)
         exps = CC.getExpansions(upd)
         @test length(exps) == 2
         @test all(e -> e isa CC.NamedDecl && e.ptr != C_NULL, exps)

@@ -4246,6 +4246,14 @@ mutable struct CXFrontendActionImpl <: AbstractCXImpl end
 
 const CXFrontendAction = Ptr{CXFrontendActionImpl}
 
+function clang_ASTConsumer_create()
+    @ccall libclangex.clang_ASTConsumer_create()::CXASTConsumer
+end
+
+function clang_ASTConsumer_dispose(Csr)
+    @ccall libclangex.clang_ASTConsumer_dispose(Csr::CXASTConsumer)::Cvoid
+end
+
 function clang_ASTConsumer_Initialize(Csr, Ctx)
     @ccall libclangex.clang_ASTConsumer_Initialize(Csr::CXASTConsumer, Ctx::CXASTContext)::Cvoid
 end
@@ -8109,6 +8117,42 @@ function clang_AsmLabelAttr_getIsLiteralLabel(A)
     @ccall libclangex.clang_AsmLabelAttr_getIsLiteralLabel(A::CXAsmLabelAttr)::Bool
 end
 
+function clang_AvailabilityAttr_getPlatform(A)
+    @ccall libclangex.clang_AvailabilityAttr_getPlatform(A::CXAvailabilityAttr)::CXIdentifierInfo
+end
+
+function clang_AvailabilityAttr_getIntroduced(A, Major, Minor, Subminor)
+    @ccall libclangex.clang_AvailabilityAttr_getIntroduced(A::CXAvailabilityAttr, Major::Ptr{Cuint}, Minor::Ptr{Cuint}, Subminor::Ptr{Cuint})::Bool
+end
+
+function clang_AvailabilityAttr_getDeprecated(A, Major, Minor, Subminor)
+    @ccall libclangex.clang_AvailabilityAttr_getDeprecated(A::CXAvailabilityAttr, Major::Ptr{Cuint}, Minor::Ptr{Cuint}, Subminor::Ptr{Cuint})::Bool
+end
+
+function clang_AvailabilityAttr_getObsoleted(A, Major, Minor, Subminor)
+    @ccall libclangex.clang_AvailabilityAttr_getObsoleted(A::CXAvailabilityAttr, Major::Ptr{Cuint}, Minor::Ptr{Cuint}, Subminor::Ptr{Cuint})::Bool
+end
+
+function clang_AvailabilityAttr_getUnavailable(A)
+    @ccall libclangex.clang_AvailabilityAttr_getUnavailable(A::CXAvailabilityAttr)::Bool
+end
+
+function clang_AvailabilityAttr_getMessage(A)
+    @ccall libclangex.clang_AvailabilityAttr_getMessage(A::CXAvailabilityAttr)::CXString
+end
+
+function clang_AvailabilityAttr_getStrict(A)
+    @ccall libclangex.clang_AvailabilityAttr_getStrict(A::CXAvailabilityAttr)::Bool
+end
+
+function clang_AvailabilityAttr_getReplacement(A)
+    @ccall libclangex.clang_AvailabilityAttr_getReplacement(A::CXAvailabilityAttr)::CXString
+end
+
+function clang_AvailabilityAttr_getPriority(A)
+    @ccall libclangex.clang_AvailabilityAttr_getPriority(A::CXAvailabilityAttr)::Cint
+end
+
 function clang_CleanupAttr_getFunctionDecl(A)
     @ccall libclangex.clang_CleanupAttr_getFunctionDecl(A::CXCleanupAttr)::CXFunctionDecl
 end
@@ -8139,6 +8183,10 @@ end
 
 function clang_FormatAttr_getFirstArg(A)
     @ccall libclangex.clang_FormatAttr_getFirstArg(A::CXFormatAttr)::Cint
+end
+
+function clang_MaxFieldAlignmentAttr_getAlignment(A)
+    @ccall libclangex.clang_MaxFieldAlignmentAttr_getAlignment(A::CXMaxFieldAlignmentAttr)::Cuint
 end
 
 function clang_NonNullAttr_args_size(A)
@@ -10452,6 +10500,10 @@ function clang_ConstantArrayType_getSize(T)
     @ccall libclangex.clang_ConstantArrayType_getSize(T::CXConstantArrayType)::LLVMGenericValueRef
 end
 
+function clang_ConstantArrayType_getZExtSize(T)
+    @ccall libclangex.clang_ConstantArrayType_getZExtSize(T::CXConstantArrayType)::Culonglong
+end
+
 function clang_ConstantArrayType_getSizeExpr(T)
     @ccall libclangex.clang_ConstantArrayType_getSizeExpr(T::CXConstantArrayType)::CXExpr
 end
@@ -11455,6 +11507,138 @@ end
 
 function clang_PackExpansionType_desugar(T)
     @ccall libclangex.clang_PackExpansionType_desugar(T::CXPackExpansionType)::CXQualType
+end
+
+function clang_ObjCTypeParamType_getDecl(T)
+    @ccall libclangex.clang_ObjCTypeParamType_getDecl(T::CXObjCTypeParamType)::CXObjCTypeParamDecl
+end
+
+function clang_ObjCTypeParamType_getNumProtocols(T)
+    @ccall libclangex.clang_ObjCTypeParamType_getNumProtocols(T::CXObjCTypeParamType)::Cuint
+end
+
+function clang_ObjCTypeParamType_getProtocol(T, I)
+    @ccall libclangex.clang_ObjCTypeParamType_getProtocol(T::CXObjCTypeParamType, I::Cuint)::CXObjCProtocolDecl
+end
+
+function clang_ObjCTypeParamType_isSugared(T)
+    @ccall libclangex.clang_ObjCTypeParamType_isSugared(T::CXObjCTypeParamType)::Bool
+end
+
+function clang_ObjCTypeParamType_desugar(T)
+    @ccall libclangex.clang_ObjCTypeParamType_desugar(T::CXObjCTypeParamType)::CXQualType
+end
+
+function clang_ObjCObjectType_getBaseType(T)
+    @ccall libclangex.clang_ObjCObjectType_getBaseType(T::CXObjCObjectType)::CXQualType
+end
+
+function clang_ObjCObjectType_getInterface(T)
+    @ccall libclangex.clang_ObjCObjectType_getInterface(T::CXObjCObjectType)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCObjectType_isObjCId(T)
+    @ccall libclangex.clang_ObjCObjectType_isObjCId(T::CXObjCObjectType)::Bool
+end
+
+function clang_ObjCObjectType_isObjCClass(T)
+    @ccall libclangex.clang_ObjCObjectType_isObjCClass(T::CXObjCObjectType)::Bool
+end
+
+function clang_ObjCObjectType_isObjCUnqualifiedId(T)
+    @ccall libclangex.clang_ObjCObjectType_isObjCUnqualifiedId(T::CXObjCObjectType)::Bool
+end
+
+function clang_ObjCObjectType_isObjCQualifiedId(T)
+    @ccall libclangex.clang_ObjCObjectType_isObjCQualifiedId(T::CXObjCObjectType)::Bool
+end
+
+function clang_ObjCObjectType_isSpecialized(T)
+    @ccall libclangex.clang_ObjCObjectType_isSpecialized(T::CXObjCObjectType)::Bool
+end
+
+function clang_ObjCObjectType_isKindOfType(T)
+    @ccall libclangex.clang_ObjCObjectType_isKindOfType(T::CXObjCObjectType)::Bool
+end
+
+function clang_ObjCObjectType_getNumTypeArgs(T)
+    @ccall libclangex.clang_ObjCObjectType_getNumTypeArgs(T::CXObjCObjectType)::Cuint
+end
+
+function clang_ObjCObjectType_getTypeArg(T, I)
+    @ccall libclangex.clang_ObjCObjectType_getTypeArg(T::CXObjCObjectType, I::Cuint)::CXQualType
+end
+
+function clang_ObjCObjectType_getNumProtocols(T)
+    @ccall libclangex.clang_ObjCObjectType_getNumProtocols(T::CXObjCObjectType)::Cuint
+end
+
+function clang_ObjCObjectType_getProtocol(T, I)
+    @ccall libclangex.clang_ObjCObjectType_getProtocol(T::CXObjCObjectType, I::Cuint)::CXObjCProtocolDecl
+end
+
+function clang_ObjCObjectType_getSuperClassType(T)
+    @ccall libclangex.clang_ObjCObjectType_getSuperClassType(T::CXObjCObjectType)::CXQualType
+end
+
+function clang_ObjCObjectType_isSugared(T)
+    @ccall libclangex.clang_ObjCObjectType_isSugared(T::CXObjCObjectType)::Bool
+end
+
+function clang_ObjCObjectType_desugar(T)
+    @ccall libclangex.clang_ObjCObjectType_desugar(T::CXObjCObjectType)::CXQualType
+end
+
+function clang_ObjCInterfaceType_getDecl(T)
+    @ccall libclangex.clang_ObjCInterfaceType_getDecl(T::CXObjCInterfaceType)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCInterfaceType_isSugared(T)
+    @ccall libclangex.clang_ObjCInterfaceType_isSugared(T::CXObjCInterfaceType)::Bool
+end
+
+function clang_ObjCInterfaceType_desugar(T)
+    @ccall libclangex.clang_ObjCInterfaceType_desugar(T::CXObjCInterfaceType)::CXQualType
+end
+
+function clang_ObjCObjectPointerType_getPointeeType(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_getPointeeType(T::CXObjCObjectPointerType)::CXQualType
+end
+
+function clang_ObjCObjectPointerType_getObjectType(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_getObjectType(T::CXObjCObjectPointerType)::CXObjCObjectType
+end
+
+function clang_ObjCObjectPointerType_getInterfaceDecl(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_getInterfaceDecl(T::CXObjCObjectPointerType)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCObjectPointerType_isObjCIdType(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_isObjCIdType(T::CXObjCObjectPointerType)::Bool
+end
+
+function clang_ObjCObjectPointerType_isObjCClassType(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_isObjCClassType(T::CXObjCObjectPointerType)::Bool
+end
+
+function clang_ObjCObjectPointerType_isObjCQualifiedIdType(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_isObjCQualifiedIdType(T::CXObjCObjectPointerType)::Bool
+end
+
+function clang_ObjCObjectPointerType_getNumProtocols(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_getNumProtocols(T::CXObjCObjectPointerType)::Cuint
+end
+
+function clang_ObjCObjectPointerType_getProtocol(T, I)
+    @ccall libclangex.clang_ObjCObjectPointerType_getProtocol(T::CXObjCObjectPointerType, I::Cuint)::CXObjCProtocolDecl
+end
+
+function clang_ObjCObjectPointerType_isSugared(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_isSugared(T::CXObjCObjectPointerType)::Bool
+end
+
+function clang_ObjCObjectPointerType_desugar(T)
+    @ccall libclangex.clang_ObjCObjectPointerType_desugar(T::CXObjCObjectPointerType)::CXQualType
 end
 
 function clang_AtomicType_getValueType(T)
@@ -17195,6 +17379,360 @@ function clang_DeclGroupRef_getSingleDecl(DG)
     @ccall libclangex.clang_DeclGroupRef_getSingleDecl(DG::CXDeclGroupRef)::CXDecl
 end
 
+function clang_DeclGroupRef_size(DG)
+    @ccall libclangex.clang_DeclGroupRef_size(DG::CXDeclGroupRef)::Cuint
+end
+
+function clang_DeclGroupRef_getDecl(DG, I)
+    @ccall libclangex.clang_DeclGroupRef_getDecl(DG::CXDeclGroupRef, I::Cuint)::CXDecl
+end
+
+function clang_ObjCMethodDecl_getCanonicalDecl(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_getCanonicalDecl(MD::CXObjCMethodDecl)::CXObjCMethodDecl
+end
+
+function clang_ObjCMethodDecl_getClassInterface(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_getClassInterface(MD::CXObjCMethodDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCMethodDecl_getCategory(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_getCategory(MD::CXObjCMethodDecl)::CXObjCCategoryDecl
+end
+
+function clang_ObjCMethodDecl_getSelector(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_getSelector(MD::CXObjCMethodDecl)::CXString
+end
+
+function clang_ObjCMethodDecl_getReturnType(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_getReturnType(MD::CXObjCMethodDecl)::CXQualType
+end
+
+function clang_ObjCMethodDecl_getReturnTypeSourceInfo(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_getReturnTypeSourceInfo(MD::CXObjCMethodDecl)::CXTypeSourceInfo
+end
+
+function clang_ObjCMethodDecl_param_size(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_param_size(MD::CXObjCMethodDecl)::Cuint
+end
+
+function clang_ObjCMethodDecl_getParamDecl(MD, I)
+    @ccall libclangex.clang_ObjCMethodDecl_getParamDecl(MD::CXObjCMethodDecl, I::Cuint)::CXParmVarDecl
+end
+
+function clang_ObjCMethodDecl_getNumSelectorLocs(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_getNumSelectorLocs(MD::CXObjCMethodDecl)::Cuint
+end
+
+function clang_ObjCMethodDecl_isInstanceMethod(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_isInstanceMethod(MD::CXObjCMethodDecl)::Bool
+end
+
+function clang_ObjCMethodDecl_isClassMethod(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_isClassMethod(MD::CXObjCMethodDecl)::Bool
+end
+
+function clang_ObjCMethodDecl_isVariadic(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_isVariadic(MD::CXObjCMethodDecl)::Bool
+end
+
+function clang_ObjCMethodDecl_isPropertyAccessor(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_isPropertyAccessor(MD::CXObjCMethodDecl)::Bool
+end
+
+function clang_ObjCMethodDecl_isDefined(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_isDefined(MD::CXObjCMethodDecl)::Bool
+end
+
+function clang_ObjCMethodDecl_isThisDeclarationADesignatedInitializer(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_isThisDeclarationADesignatedInitializer(MD::CXObjCMethodDecl)::Bool
+end
+
+function clang_ObjCMethodDecl_hasRelatedResultType(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_hasRelatedResultType(MD::CXObjCMethodDecl)::Bool
+end
+
+function clang_ObjCMethodDecl_isOptional(MD)
+    @ccall libclangex.clang_ObjCMethodDecl_isOptional(MD::CXObjCMethodDecl)::Bool
+end
+
+@enum CXObjCTypeParamVariance::UInt32 begin
+    CXObjCTypeParamVariance_Invariant = 0
+    CXObjCTypeParamVariance_Covariant = 1
+    CXObjCTypeParamVariance_Contravariant = 2
+end
+
+function clang_ObjCTypeParamDecl_getVariance(TPD)
+    @ccall libclangex.clang_ObjCTypeParamDecl_getVariance(TPD::CXObjCTypeParamDecl)::CXObjCTypeParamVariance
+end
+
+function clang_ObjCTypeParamDecl_getIndex(TPD)
+    @ccall libclangex.clang_ObjCTypeParamDecl_getIndex(TPD::CXObjCTypeParamDecl)::Cuint
+end
+
+function clang_ObjCTypeParamDecl_hasExplicitBound(TPD)
+    @ccall libclangex.clang_ObjCTypeParamDecl_hasExplicitBound(TPD::CXObjCTypeParamDecl)::Bool
+end
+
+function clang_ObjCContainerDecl_prop_size(CD)
+    @ccall libclangex.clang_ObjCContainerDecl_prop_size(CD::CXObjCContainerDecl)::Cuint
+end
+
+function clang_ObjCContainerDecl_getProperty(CD, I)
+    @ccall libclangex.clang_ObjCContainerDecl_getProperty(CD::CXObjCContainerDecl, I::Cuint)::CXObjCPropertyDecl
+end
+
+function clang_ObjCContainerDecl_meth_size(CD)
+    @ccall libclangex.clang_ObjCContainerDecl_meth_size(CD::CXObjCContainerDecl)::Cuint
+end
+
+function clang_ObjCContainerDecl_getMethodAt(CD, I)
+    @ccall libclangex.clang_ObjCContainerDecl_getMethodAt(CD::CXObjCContainerDecl, I::Cuint)::CXObjCMethodDecl
+end
+
+function clang_ObjCContainerDecl_getMethod(CD, Sel, C, IsInstance, AllowHidden)
+    @ccall libclangex.clang_ObjCContainerDecl_getMethod(CD::CXObjCContainerDecl, Sel::Ptr{Cchar}, C::CXASTContext, IsInstance::Bool, AllowHidden::Bool)::CXObjCMethodDecl
+end
+
+function clang_ObjCContainerDecl_getAtEndRange(CD)
+    @ccall libclangex.clang_ObjCContainerDecl_getAtEndRange(CD::CXObjCContainerDecl)::CXSourceRange_
+end
+
+function clang_ObjCInterfaceDecl_protocol_size(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_protocol_size(ID::CXObjCInterfaceDecl)::Cuint
+end
+
+function clang_ObjCInterfaceDecl_getProtocol(ID, I)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getProtocol(ID::CXObjCInterfaceDecl, I::Cuint)::CXObjCProtocolDecl
+end
+
+function clang_ObjCInterfaceDecl_all_referenced_protocol_size(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_all_referenced_protocol_size(ID::CXObjCInterfaceDecl)::Cuint
+end
+
+function clang_ObjCInterfaceDecl_getAllReferencedProtocol(ID, I)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getAllReferencedProtocol(ID::CXObjCInterfaceDecl, I::Cuint)::CXObjCProtocolDecl
+end
+
+function clang_ObjCInterfaceDecl_ivar_size(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_ivar_size(ID::CXObjCInterfaceDecl)::Cuint
+end
+
+function clang_ObjCInterfaceDecl_getIvar(ID, I)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getIvar(ID::CXObjCInterfaceDecl, I::Cuint)::CXObjCIvarDecl
+end
+
+function clang_ObjCInterfaceDecl_hasDefinition(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_hasDefinition(ID::CXObjCInterfaceDecl)::Bool
+end
+
+function clang_ObjCInterfaceDecl_isThisDeclarationADefinition(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_isThisDeclarationADefinition(ID::CXObjCInterfaceDecl)::Bool
+end
+
+function clang_ObjCInterfaceDecl_getDefinition(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getDefinition(ID::CXObjCInterfaceDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCInterfaceDecl_getSuperClass(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getSuperClass(ID::CXObjCInterfaceDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCInterfaceDecl_getSuperClassType(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getSuperClassType(ID::CXObjCInterfaceDecl)::CXObjCObjectType
+end
+
+function clang_ObjCInterfaceDecl_getSuperClassTInfo(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getSuperClassTInfo(ID::CXObjCInterfaceDecl)::CXTypeSourceInfo
+end
+
+function clang_ObjCInterfaceDecl_getNumTypeParams(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getNumTypeParams(ID::CXObjCInterfaceDecl)::Cuint
+end
+
+function clang_ObjCInterfaceDecl_getTypeParam(ID, I)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getTypeParam(ID::CXObjCInterfaceDecl, I::Cuint)::CXObjCTypeParamDecl
+end
+
+function clang_ObjCInterfaceDecl_getCanonicalDecl(ID)
+    @ccall libclangex.clang_ObjCInterfaceDecl_getCanonicalDecl(ID::CXObjCInterfaceDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCProtocolDecl_protocol_size(PD)
+    @ccall libclangex.clang_ObjCProtocolDecl_protocol_size(PD::CXObjCProtocolDecl)::Cuint
+end
+
+function clang_ObjCProtocolDecl_getProtocol(PD, I)
+    @ccall libclangex.clang_ObjCProtocolDecl_getProtocol(PD::CXObjCProtocolDecl, I::Cuint)::CXObjCProtocolDecl
+end
+
+function clang_ObjCProtocolDecl_hasDefinition(PD)
+    @ccall libclangex.clang_ObjCProtocolDecl_hasDefinition(PD::CXObjCProtocolDecl)::Bool
+end
+
+function clang_ObjCProtocolDecl_isThisDeclarationADefinition(PD)
+    @ccall libclangex.clang_ObjCProtocolDecl_isThisDeclarationADefinition(PD::CXObjCProtocolDecl)::Bool
+end
+
+function clang_ObjCProtocolDecl_getDefinition(PD)
+    @ccall libclangex.clang_ObjCProtocolDecl_getDefinition(PD::CXObjCProtocolDecl)::CXObjCProtocolDecl
+end
+
+function clang_ObjCProtocolDecl_getCanonicalDecl(PD)
+    @ccall libclangex.clang_ObjCProtocolDecl_getCanonicalDecl(PD::CXObjCProtocolDecl)::CXObjCProtocolDecl
+end
+
+function clang_ObjCCategoryDecl_getClassInterface(CD)
+    @ccall libclangex.clang_ObjCCategoryDecl_getClassInterface(CD::CXObjCCategoryDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCCategoryDecl_protocol_size(CD)
+    @ccall libclangex.clang_ObjCCategoryDecl_protocol_size(CD::CXObjCCategoryDecl)::Cuint
+end
+
+function clang_ObjCCategoryDecl_getProtocol(CD, I)
+    @ccall libclangex.clang_ObjCCategoryDecl_getProtocol(CD::CXObjCCategoryDecl, I::Cuint)::CXObjCProtocolDecl
+end
+
+function clang_ObjCCategoryDecl_getNextClassCategory(CD)
+    @ccall libclangex.clang_ObjCCategoryDecl_getNextClassCategory(CD::CXObjCCategoryDecl)::CXObjCCategoryDecl
+end
+
+function clang_ObjCCategoryDecl_IsClassExtension(CD)
+    @ccall libclangex.clang_ObjCCategoryDecl_IsClassExtension(CD::CXObjCCategoryDecl)::Bool
+end
+
+function clang_ObjCCategoryDecl_ivar_size(CD)
+    @ccall libclangex.clang_ObjCCategoryDecl_ivar_size(CD::CXObjCCategoryDecl)::Cuint
+end
+
+function clang_ObjCCategoryDecl_getIvar(CD, I)
+    @ccall libclangex.clang_ObjCCategoryDecl_getIvar(CD::CXObjCCategoryDecl, I::Cuint)::CXObjCIvarDecl
+end
+
+function clang_ObjCCategoryDecl_getCategoryNameLoc(CD)
+    @ccall libclangex.clang_ObjCCategoryDecl_getCategoryNameLoc(CD::CXObjCCategoryDecl)::CXSourceLocation_
+end
+
+@enum CXObjCPropertyAttributeKind::UInt32 begin
+    CXObjCPropertyAttributeKind_noattr = 0
+    CXObjCPropertyAttributeKind_readonly = 1
+    CXObjCPropertyAttributeKind_getter = 2
+    CXObjCPropertyAttributeKind_assign = 4
+    CXObjCPropertyAttributeKind_readwrite = 8
+    CXObjCPropertyAttributeKind_retain = 16
+    CXObjCPropertyAttributeKind_copy = 32
+    CXObjCPropertyAttributeKind_nonatomic = 64
+    CXObjCPropertyAttributeKind_setter = 128
+    CXObjCPropertyAttributeKind_atomic = 256
+    CXObjCPropertyAttributeKind_weak = 512
+    CXObjCPropertyAttributeKind_strong = 1024
+    CXObjCPropertyAttributeKind_unsafe_unretained = 2048
+    CXObjCPropertyAttributeKind_nullability = 4096
+    CXObjCPropertyAttributeKind_null_resettable = 8192
+    CXObjCPropertyAttributeKind_class = 16384
+    CXObjCPropertyAttributeKind_direct = 32768
+end
+
+function clang_ObjCPropertyDecl_getType(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getType(PD::CXObjCPropertyDecl)::CXQualType
+end
+
+function clang_ObjCPropertyDecl_getTypeSourceInfo(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getTypeSourceInfo(PD::CXObjCPropertyDecl)::CXTypeSourceInfo
+end
+
+function clang_ObjCPropertyDecl_getPropertyAttributes(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getPropertyAttributes(PD::CXObjCPropertyDecl)::CXObjCPropertyAttributeKind
+end
+
+function clang_ObjCPropertyDecl_getPropertyAttributesAsWritten(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getPropertyAttributesAsWritten(PD::CXObjCPropertyDecl)::CXObjCPropertyAttributeKind
+end
+
+function clang_ObjCPropertyDecl_getGetterName(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getGetterName(PD::CXObjCPropertyDecl)::CXString
+end
+
+function clang_ObjCPropertyDecl_getSetterName(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getSetterName(PD::CXObjCPropertyDecl)::CXString
+end
+
+function clang_ObjCPropertyDecl_getGetterMethodDecl(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getGetterMethodDecl(PD::CXObjCPropertyDecl)::CXObjCMethodDecl
+end
+
+function clang_ObjCPropertyDecl_getSetterMethodDecl(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getSetterMethodDecl(PD::CXObjCPropertyDecl)::CXObjCMethodDecl
+end
+
+function clang_ObjCPropertyDecl_isReadOnly(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_isReadOnly(PD::CXObjCPropertyDecl)::Bool
+end
+
+function clang_ObjCPropertyDecl_isAtomic(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_isAtomic(PD::CXObjCPropertyDecl)::Bool
+end
+
+function clang_ObjCPropertyDecl_isInstanceProperty(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_isInstanceProperty(PD::CXObjCPropertyDecl)::Bool
+end
+
+function clang_ObjCPropertyDecl_isClassProperty(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_isClassProperty(PD::CXObjCPropertyDecl)::Bool
+end
+
+function clang_ObjCPropertyDecl_isOptional(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_isOptional(PD::CXObjCPropertyDecl)::Bool
+end
+
+function clang_ObjCPropertyDecl_getAtLoc(PD)
+    @ccall libclangex.clang_ObjCPropertyDecl_getAtLoc(PD::CXObjCPropertyDecl)::CXSourceLocation_
+end
+
+@enum CXObjCIvarDecl_AccessControl::UInt32 begin
+    CXObjCIvarDecl_None = 0
+    CXObjCIvarDecl_Private = 1
+    CXObjCIvarDecl_Protected = 2
+    CXObjCIvarDecl_Public = 3
+    CXObjCIvarDecl_Package = 4
+end
+
+function clang_ObjCIvarDecl_getAccessControl(IVD)
+    @ccall libclangex.clang_ObjCIvarDecl_getAccessControl(IVD::CXObjCIvarDecl)::CXObjCIvarDecl_AccessControl
+end
+
+function clang_ObjCIvarDecl_getCanonicalAccessControl(IVD)
+    @ccall libclangex.clang_ObjCIvarDecl_getCanonicalAccessControl(IVD::CXObjCIvarDecl)::CXObjCIvarDecl_AccessControl
+end
+
+function clang_ObjCIvarDecl_getContainingInterface(IVD)
+    @ccall libclangex.clang_ObjCIvarDecl_getContainingInterface(IVD::CXObjCIvarDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCIvarDecl_getNextIvar(IVD)
+    @ccall libclangex.clang_ObjCIvarDecl_getNextIvar(IVD::CXObjCIvarDecl)::CXObjCIvarDecl
+end
+
+function clang_ObjCIvarDecl_getSynthesize(IVD)
+    @ccall libclangex.clang_ObjCIvarDecl_getSynthesize(IVD::CXObjCIvarDecl)::Bool
+end
+
+function clang_ObjCCompatibleAliasDecl_getClassInterface(AD)
+    @ccall libclangex.clang_ObjCCompatibleAliasDecl_getClassInterface(AD::CXObjCCompatibleAliasDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCImplDecl_getClassInterface(ID)
+    @ccall libclangex.clang_ObjCImplDecl_getClassInterface(ID::CXObjCImplDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCImplementationDecl_getSuperClass(ID)
+    @ccall libclangex.clang_ObjCImplementationDecl_getSuperClass(ID::CXObjCImplementationDecl)::CXObjCInterfaceDecl
+end
+
+function clang_ObjCCategoryImplDecl_getCategoryDecl(ID)
+    @ccall libclangex.clang_ObjCCategoryImplDecl_getCategoryDecl(ID::CXObjCCategoryImplDecl)::CXObjCCategoryDecl
+end
+
 @enum CXPragmaMSCommentKind::UInt32 begin
     CXPragmaMSCommentKind_PCK_Unknown = 0
     CXPragmaMSCommentKind_PCK_Linker = 1
@@ -21153,6 +21691,22 @@ end
 
 function clang_EnumConstantDecl_getEnumConstantDeclValue(ECD)
     @ccall libclangex.clang_EnumConstantDecl_getEnumConstantDeclValue(ECD::CXEnumConstantDecl)::Clonglong
+end
+
+function clang_EnumConstantDecl_isInitValSigned(ECD)
+    @ccall libclangex.clang_EnumConstantDecl_isInitValSigned(ECD::CXEnumConstantDecl)::Bool
+end
+
+function clang_EnumConstantDecl_getZExtInitVal(ECD)
+    @ccall libclangex.clang_EnumConstantDecl_getZExtInitVal(ECD::CXEnumConstantDecl)::Culonglong
+end
+
+function clang_EnumConstantDecl_initValFitsInInt64(ECD)
+    @ccall libclangex.clang_EnumConstantDecl_initValFitsInInt64(ECD::CXEnumConstantDecl)::Bool
+end
+
+function clang_EnumConstantDecl_initValFitsInUInt64(ECD)
+    @ccall libclangex.clang_EnumConstantDecl_initValFitsInUInt64(ECD::CXEnumConstantDecl)::Bool
 end
 
 function clang_EnumConstantDecl_classofKind(K)
@@ -32706,6 +33260,16 @@ function clang_ASTUnit_dispose(AU)
     @ccall libclangex.clang_ASTUnit_dispose(AU::CXASTUnit)::Cvoid
 end
 
+@enum CXASTUnit_WhatToLoad::UInt32 begin
+    CXASTUnit_LoadPreprocessorOnly = 0
+    CXASTUnit_LoadASTOnly = 1
+    CXASTUnit_LoadEverything = 2
+end
+
+function clang_ASTUnit_LoadFromASTFile(Filename, ToLoad, Diags, FileSystemOpts, HSOpts, OnlyLocalDecls, CaptureDiagnostics, AllowASTWithCompilerErrors, UserFilesAreVolatile)
+    @ccall libclangex.clang_ASTUnit_LoadFromASTFile(Filename::Ptr{Cchar}, ToLoad::CXASTUnit_WhatToLoad, Diags::CXDiagnosticsEngine, FileSystemOpts::CXFileSystemOptions, HSOpts::CXHeaderSearchOptions, OnlyLocalDecls::Bool, CaptureDiagnostics::CXCaptureDiagsKind, AllowASTWithCompilerErrors::Bool, UserFilesAreVolatile::Bool)::CXASTUnit
+end
+
 function clang_ASTUnit_LoadFromCompilerInvocation(CI, Diags, FileMgr, OnlyLocalDecls, CaptureDiagnostics, PrecompilePreambleAfterNParses, TUKind, CacheCodeCompletionResults, IncludeBriefCommentsInCodeCompletion, UserFilesAreVolatile)
     @ccall libclangex.clang_ASTUnit_LoadFromCompilerInvocation(CI::CXCompilerInvocation, Diags::CXDiagnosticsEngine, FileMgr::CXFileManager, OnlyLocalDecls::Bool, CaptureDiagnostics::CXCaptureDiagsKind, PrecompilePreambleAfterNParses::Cuint, TUKind::CXTranslationUnitKind, CacheCodeCompletionResults::Bool, IncludeBriefCommentsInCodeCompletion::Bool, UserFilesAreVolatile::Bool)::CXASTUnit
 end
@@ -33259,6 +33823,33 @@ end
 
 function clang_FrontendOptions_PrintStats(FEO)
     @ccall libclangex.clang_FrontendOptions_PrintStats(FEO::CXFrontendOptions)::Cvoid
+end
+
+function clang_TextDiagnosticBuffer_create()
+    @ccall libclangex.clang_TextDiagnosticBuffer_create()::CXDiagnosticConsumer
+end
+
+@enum CXTextDiagnosticBuffer_Level::UInt32 begin
+    CXTextDiagnosticBuffer_Note = 0
+    CXTextDiagnosticBuffer_Remark = 1
+    CXTextDiagnosticBuffer_Warning = 2
+    CXTextDiagnosticBuffer_Error = 3
+end
+
+function clang_TextDiagnosticBuffer_size(DC, Level)
+    @ccall libclangex.clang_TextDiagnosticBuffer_size(DC::CXDiagnosticConsumer, Level::CXTextDiagnosticBuffer_Level)::Cuint
+end
+
+function clang_TextDiagnosticBuffer_getMessage(DC, Level, Idx)
+    @ccall libclangex.clang_TextDiagnosticBuffer_getMessage(DC::CXDiagnosticConsumer, Level::CXTextDiagnosticBuffer_Level, Idx::Cuint)::CXString
+end
+
+function clang_TextDiagnosticBuffer_getLocation(DC, Level, Idx)
+    @ccall libclangex.clang_TextDiagnosticBuffer_getLocation(DC::CXDiagnosticConsumer, Level::CXTextDiagnosticBuffer_Level, Idx::Cuint)::CXSourceLocation_
+end
+
+function clang_TextDiagnosticBuffer_FlushDiagnostics(DC, DE)
+    @ccall libclangex.clang_TextDiagnosticBuffer_FlushDiagnostics(DC::CXDiagnosticConsumer, DE::CXDiagnosticsEngine)::Cvoid
 end
 
 function clang_TextDiagnosticPrinter_create(Opts)
@@ -35070,6 +35661,10 @@ function clang_Preprocessor_EnterMainSourceFile(PP)
     @ccall libclangex.clang_Preprocessor_EnterMainSourceFile(PP::CXPreprocessor)::Cvoid
 end
 
+function clang_Preprocessor_initializeBuiltins(PP)
+    @ccall libclangex.clang_Preprocessor_initializeBuiltins(PP::CXPreprocessor)::Cvoid
+end
+
 function clang_Preprocessor_EnterSourceFile(PP, FID, Loc)
     @ccall libclangex.clang_Preprocessor_EnterSourceFile(PP::CXPreprocessor, FID::CXFileID, Loc::CXSourceLocation_)::Bool
 end
@@ -36118,6 +36713,14 @@ end
 
 function clang_Parser_getTypeAnnotation(Tok)
     @ccall libclangex.clang_Parser_getTypeAnnotation(Tok::CXToken_)::CXQualType
+end
+
+function clang_Parser_ParseFirstTopLevelDecl(P, Result, ImportState)
+    @ccall libclangex.clang_Parser_ParseFirstTopLevelDecl(P::CXParser, Result::Ptr{CXDeclGroupRef}, ImportState::Ptr{Cuint})::Bool
+end
+
+function clang_Parser_ParseTopLevelDecl(P, Result, ImportState)
+    @ccall libclangex.clang_Parser_ParseTopLevelDecl(P::CXParser, Result::Ptr{CXDeclGroupRef}, ImportState::Ptr{Cuint})::Bool
 end
 
 function clang_Rewriter_create(SM, LO)
@@ -37685,7 +38288,7 @@ function clang_FloatingLiteral_getValueAsApproximateDouble(FL)
 end
 
 function clang_StringLiteral_getBytes(SL)
-    @ccall libclangex.clang_StringLiteral_getBytes(SL::CXStringLiteral)::CXString
+    @ccall libclangex.clang_StringLiteral_getBytes(SL::CXStringLiteral)::Ptr{Cchar}
 end
 
 function clang_StringLiteral_getByteLength(SL)
@@ -38237,7 +38840,7 @@ function clang_CompoundLiteralExpr_getTypeSourceInfo(E)
 end
 
 function clang_StringLiteral_getString(SL)
-    @ccall libclangex.clang_StringLiteral_getString(SL::CXStringLiteral)::CXString
+    @ccall libclangex.clang_StringLiteral_getString(SL::CXStringLiteral)::Ptr{Cchar}
 end
 
 function clang_StringLiteral_getKind(SL)
@@ -40575,6 +41178,10 @@ function clang_Sema_getASTContext(S)
     @ccall libclangex.clang_Sema_getASTContext(S::CXSema)::CXASTContext
 end
 
+function clang_Sema_ActOnEndOfTranslationUnit(S)
+    @ccall libclangex.clang_Sema_ActOnEndOfTranslationUnit(S::CXSema)::Cvoid
+end
+
 function clang_Sema_getSourceManager(S)
     @ccall libclangex.clang_Sema_getSourceManager(S::CXSema)::CXSourceManager
 end
@@ -42035,6 +42642,10 @@ end
 
 function clang_Sema_DeduceTemplateArgumentsFunctionTemplate(S, FunctionTemplate, ExplicitTemplateArgs, ArgFunctionType, Specialization, Info, IsAddressOfFunction)
     @ccall libclangex.clang_Sema_DeduceTemplateArgumentsFunctionTemplate(S::CXSema, FunctionTemplate::CXFunctionTemplateDecl, ExplicitTemplateArgs::CXTemplateArgumentListInfo, ArgFunctionType::CXQualType, Specialization::Ptr{CXFunctionDecl}, Info::CXTemplateDeductionInfo, IsAddressOfFunction::Bool)::CXTemplateDeductionResult
+end
+
+function clang_Sema_DeduceTemplateArgumentsFromCallArgs(S, FunctionTemplate, ExplicitTemplateArgs, Args, NumArgs, Specialization, Info, PartialOverloading, AggregateDeductionCandidate)
+    @ccall libclangex.clang_Sema_DeduceTemplateArgumentsFromCallArgs(S::CXSema, FunctionTemplate::CXFunctionTemplateDecl, ExplicitTemplateArgs::CXTemplateArgumentListInfo, Args::Ptr{CXExpr}, NumArgs::Cuint, Specialization::Ptr{CXFunctionDecl}, Info::CXTemplateDeductionInfo, PartialOverloading::Bool, AggregateDeductionCandidate::Bool)::CXTemplateDeductionResult
 end
 
 function clang_Sema_DeduceAutoType(S, AutoTypeLoc, Initializer, Result, Info, DependentDeduction, IgnoreConstraints)

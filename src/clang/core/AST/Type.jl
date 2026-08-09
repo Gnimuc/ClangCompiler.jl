@@ -698,6 +698,22 @@ struct ObjCObjectType <: AbstractObjCObjectType
 end
 
 """
+    struct ObjCInterfaceType <: AbstractObjCInterfaceType
+Hold a pointer to a `clang::ObjCInterfaceType` object.
+"""
+struct ObjCInterfaceType <: AbstractObjCInterfaceType
+    ptr::CXObjCInterfaceType
+end
+
+"""
+    struct ObjCTypeParamType <: AbstractObjCTypeParamType
+Hold a pointer to a `clang::ObjCTypeParamType` object.
+"""
+struct ObjCTypeParamType <: AbstractObjCTypeParamType
+    ptr::CXObjCTypeParamType
+end
+
+"""
     struct ObjCObjectPointerType <: AbstractObjCObjectPointerType
 Hold a pointer to a `clang::ObjCObjectPointerType` object.
 """

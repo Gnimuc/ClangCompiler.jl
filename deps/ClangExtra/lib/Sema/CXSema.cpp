@@ -74,6 +74,10 @@ CXASTContext clang_Sema_getASTContext(CXSema S) {
   return reinterpret_cast<CXASTContext>(&reinterpret_cast<clang::Sema *>(S)->getASTContext());
 }
 
+void clang_Sema_ActOnEndOfTranslationUnit(CXSema S) {
+  reinterpret_cast<clang::Sema *>(S)->ActOnEndOfTranslationUnit();
+}
+
 CXSourceManager clang_Sema_getSourceManager(CXSema S) {
   return reinterpret_cast<CXSourceManager>(&reinterpret_cast<clang::Sema *>(S)->getSourceManager());
 }
@@ -3995,6 +3999,25 @@ CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsFunctionTemplate(
           reinterpret_cast<clang::TemplateArgumentListInfo *>(ExplicitTemplateArgs),
           clang::QualType::getFromOpaquePtr(ArgFunctionType), Spec,
           *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info), IsAddressOfFunction);
+  if (Specialization && R == clang::Sema::TDK_Success)
+    *Specialization = reinterpret_cast<CXFunctionDecl>(Spec);
+  return static_cast<CXTemplateDeductionResult>(R);
+}
+
+CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsFromCallArgs(
+    CXSema S, CXFunctionTemplateDecl FunctionTemplate,
+    CXTemplateArgumentListInfo ExplicitTemplateArgs, CXExpr *Args, unsigned NumArgs,
+    CXFunctionDecl *Specialization, CXTemplateDeductionInfo Info, bool PartialOverloading,
+    bool AggregateDeductionCandidate) {
+  clang::FunctionDecl *Spec =
+      Specialization ? reinterpret_cast<clang::FunctionDecl *>(*Specialization) : nullptr;
+  auto R = reinterpret_cast<clang::Sema *>(S)->DeduceTemplateArguments(
+      reinterpret_cast<clang::FunctionTemplateDecl *>(FunctionTemplate),
+      reinterpret_cast<clang::TemplateArgumentListInfo *>(ExplicitTemplateArgs),
+      llvm::ArrayRef<clang::Expr *>(reinterpret_cast<clang::Expr **>(Args), NumArgs), Spec,
+      *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info), PartialOverloading,
+      AggregateDeductionCandidate, clang::QualType(), clang::Expr::Classification(),
+      [](llvm::ArrayRef<clang::QualType>) { return false; });
   if (Specialization && R == clang::Sema::TDK_Success)
     *Specialization = reinterpret_cast<CXFunctionDecl>(Spec);
   return static_cast<CXTemplateDeductionResult>(R);

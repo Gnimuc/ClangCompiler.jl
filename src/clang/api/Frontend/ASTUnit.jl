@@ -59,6 +59,37 @@ function LoadFromCompilerInvocation(inv::CompilerInvocation, diag::DiagnosticsEn
 end
 
 """
+    LoadFromASTFile(filename::AbstractString, diag::DiagnosticsEngine;
+                    to_load=CXASTUnit_LoadEverything, fs_opts=nothing, hs_opts=nothing,
+                    only_local_decls=false, capture_diagnostics=CXCaptureDiagsKind_None,
+                    allow_ast_with_compiler_errors=false,
+                    user_files_are_volatile=false) -> Union{ASTUnit,Nothing}
+Read a serialized AST back from `filename` — the file [`Save`](@ref) writes — returning
+`nothing` when it could not be loaded, with the reason reported through `diag`.
+
+This is the only state in which the two file-name accessors differ:
+[`getMainFileName`](@ref) then names `filename` while
+[`getOriginalSourceFileName`](@ref) names the source the AST was built from.
+
+`diag` stays the caller's, pinned with an explicit `Retain` (MARSHALLING.md §12) as on the
+other load path, and must outlive the unit. `fs_opts` and `hs_opts` default to a fresh
+default-constructed set; a supplied `hs_opts` is **copied** rather than adopted, so
+disposing the caller's own copy afterwards stays correct.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+function LoadFromASTFile(filename::AbstractString, diag::DiagnosticsEngine; to_load::CXASTUnit_WhatToLoad=CXASTUnit_LoadEverything, fs_opts::Union{Nothing,FileSystemOptions}=nothing, hs_opts::Union{Nothing,HeaderSearchOptions}=nothing, only_local_decls::Bool=false, capture_diagnostics::CXCaptureDiagsKind=CXCaptureDiagsKind_None, allow_ast_with_compiler_errors::Bool=false, user_files_are_volatile::Bool=false)
+    @check_ptrs diag
+    fs_opts === nothing || @check_ptrs fs_opts
+    hs_opts === nothing || @check_ptrs hs_opts
+    fso = fs_opts === nothing ? CXFileSystemOptions(C_NULL) : Base.unsafe_convert(CXFileSystemOptions, fs_opts)
+    hso = hs_opts === nothing ? CXHeaderSearchOptions(C_NULL) : Base.unsafe_convert(CXHeaderSearchOptions, hs_opts)
+    unit = clang_ASTUnit_LoadFromASTFile(String(filename), to_load, diag, fso, hso, only_local_decls, capture_diagnostics, allow_ast_with_compiler_errors, user_files_are_volatile)
+    return unit == C_NULL ? nothing : ASTUnit(unit)
+end
+
+"""
     isMainFileAST(x::AbstractASTUnit) -> Bool
 Return whether the unit was loaded from a serialized AST file rather than parsed from
 source. The top-level declaration accessors are only valid when this is `false`.

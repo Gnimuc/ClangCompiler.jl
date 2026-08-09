@@ -4,6 +4,21 @@ function EnterMainSourceFile(x::Preprocessor)
     return clang_Preprocessor_EnterMainSourceFile(x)
 end
 
+"""
+    initializeBuiltins(x::Preprocessor)
+Stamp every builtin's ID onto its identifier, so `__builtin_unreachable` and the rest resolve
+instead of reading as undeclared identifiers.
+
+A frontend action does this for you. A driver that assembles a `CompilerInstance` by hand
+must ask for it — and the symptom of not asking is not an obvious one: the identifier table
+simply reports every builtin as `getBuiltinID() == 0`, and the first failure is usually a
+system header calling one.
+"""
+function initializeBuiltins(x::Preprocessor)
+    @check_ptrs x
+    return clang_Preprocessor_initializeBuiltins(x)
+end
+
 function EnterSourceFile(x::Preprocessor, id::FileID, loc::SourceLocation=SourceLocation())
     @check_ptrs x id
     return clang_Preprocessor_EnterSourceFile(x, id, loc)
