@@ -50,9 +50,14 @@ end
 """
     getArg(x::AbstractCXXConstructExpr, i)
 Return the `i`-th argument (0-based, following the C++ API).
+
+Upstream asserts the bound and that assertion is compiled into the release library, so an
+out-of-range index aborts the process rather than returning null — the same gate
+[`setArg`](@ref) already carried.
 """
 function getArg(x::AbstractCXXConstructExpr, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumArgs(x) "constructor argument index $i out of range"
     return Expr_(clang_CXXConstructExpr_getArg(x, i))
 end
 

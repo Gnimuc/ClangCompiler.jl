@@ -253,6 +253,20 @@ function ObjCObjectType(x::AbstractType)
     return ObjCObjectType(p)
 end
 
+function ObjCInterfaceType(x::AbstractType)
+    @check_ptrs x
+    p = clang_Type_castToObjCInterfaceType(x)
+    p == C_NULL && _cast_failed(ObjCInterfaceType, x)
+    return ObjCInterfaceType(p)
+end
+
+function ObjCTypeParamType(x::AbstractType)
+    @check_ptrs x
+    p = clang_Type_castToObjCTypeParamType(x)
+    p == C_NULL && _cast_failed(ObjCTypeParamType, x)
+    return ObjCTypeParamType(p)
+end
+
 function PackExpansionType(x::AbstractType)
     @check_ptrs x
     p = clang_Type_castToPackExpansionType(x)

@@ -86,6 +86,62 @@ bool clang_AsmLabelAttr_getIsLiteralLabel(CXAsmLabelAttr A) {
   return reinterpret_cast<clang::AsmLabelAttr *>(A)->getIsLiteralLabel();
 }
 
+// AvailabilityAttr
+CXIdentifierInfo clang_AvailabilityAttr_getPlatform(CXAvailabilityAttr A) {
+  return reinterpret_cast<CXIdentifierInfo>(
+      reinterpret_cast<clang::AvailabilityAttr *>(A)->getPlatform());
+}
+
+static bool unpackVersion(llvm::VersionTuple V, unsigned *Major, unsigned *Minor,
+                          unsigned *Subminor) {
+  if (V.empty())
+    return false;
+  *Major = V.getMajor();
+  *Minor = V.getMinor().value_or(0);
+  *Subminor = V.getSubminor().value_or(0);
+  return true;
+}
+
+bool clang_AvailabilityAttr_getIntroduced(CXAvailabilityAttr A, unsigned *Major,
+                                          unsigned *Minor, unsigned *Subminor) {
+  return unpackVersion(reinterpret_cast<clang::AvailabilityAttr *>(A)->getIntroduced(), Major,
+                       Minor, Subminor);
+}
+
+bool clang_AvailabilityAttr_getDeprecated(CXAvailabilityAttr A, unsigned *Major,
+                                          unsigned *Minor, unsigned *Subminor) {
+  return unpackVersion(reinterpret_cast<clang::AvailabilityAttr *>(A)->getDeprecated(), Major,
+                       Minor, Subminor);
+}
+
+bool clang_AvailabilityAttr_getObsoleted(CXAvailabilityAttr A, unsigned *Major,
+                                         unsigned *Minor, unsigned *Subminor) {
+  return unpackVersion(reinterpret_cast<clang::AvailabilityAttr *>(A)->getObsoleted(), Major,
+                       Minor, Subminor);
+}
+
+bool clang_AvailabilityAttr_getUnavailable(CXAvailabilityAttr A) {
+  return reinterpret_cast<clang::AvailabilityAttr *>(A)->getUnavailable();
+}
+
+CXString clang_AvailabilityAttr_getMessage(CXAvailabilityAttr A) {
+  return extra::makeCXString(
+      reinterpret_cast<clang::AvailabilityAttr *>(A)->getMessage().str());
+}
+
+bool clang_AvailabilityAttr_getStrict(CXAvailabilityAttr A) {
+  return reinterpret_cast<clang::AvailabilityAttr *>(A)->getStrict();
+}
+
+CXString clang_AvailabilityAttr_getReplacement(CXAvailabilityAttr A) {
+  return extra::makeCXString(
+      reinterpret_cast<clang::AvailabilityAttr *>(A)->getReplacement().str());
+}
+
+int clang_AvailabilityAttr_getPriority(CXAvailabilityAttr A) {
+  return reinterpret_cast<clang::AvailabilityAttr *>(A)->getPriority();
+}
+
 // CleanupAttr
 CXFunctionDecl clang_CleanupAttr_getFunctionDecl(CXCleanupAttr A) {
   return reinterpret_cast<CXFunctionDecl>(reinterpret_cast<clang::CleanupAttr *>(A)->getFunctionDecl());
@@ -122,6 +178,11 @@ int clang_FormatAttr_getFormatIdx(CXFormatAttr A) {
 
 int clang_FormatAttr_getFirstArg(CXFormatAttr A) {
   return reinterpret_cast<clang::FormatAttr *>(A)->getFirstArg();
+}
+
+// MaxFieldAlignmentAttr
+unsigned clang_MaxFieldAlignmentAttr_getAlignment(CXMaxFieldAlignmentAttr A) {
+  return reinterpret_cast<clang::MaxFieldAlignmentAttr *>(A)->getAlignment();
 }
 
 // NonNullAttr

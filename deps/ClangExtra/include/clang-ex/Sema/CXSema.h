@@ -31,6 +31,12 @@ typedef enum CXCompleteTypeKind {
 
 CXASTContext clang_Sema_getASTContext(CXSema S);
 
+// Finalises the translation unit: drains pending instantiations, weak declarations and
+// deferred diagnostics. clang_Parser_ParseFirstTopLevelDecl calls the Start counterpart
+// itself, so a driver only needs this one, and only once the last input has been parsed --
+// calling it between increments ends the unit the next increment wants to extend.
+void clang_Sema_ActOnEndOfTranslationUnit(CXSema S);
+
 CXSourceManager clang_Sema_getSourceManager(CXSema S);
 
 CXDiagnosticsEngine clang_Sema_getDiagnostics(CXSema S);
@@ -1964,6 +1970,24 @@ CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsFunctionTemplate(
     CXSema S, CXFunctionTemplateDecl FunctionTemplate,
     CXTemplateArgumentListInfo ExplicitTemplateArgs, CXQualType ArgFunctionType,
     CXFunctionDecl *Specialization, CXTemplateDeductionInfo Info, bool IsAddressOfFunction);
+
+// Deduce a specialization of FunctionTemplate from the arguments of a call. This is the
+// overload clang runs during overload resolution, and the only one that records which
+// argument the deduction failed on -- the other three leave
+// clang_TemplateDeductionInfo_getCallArgIndex at 0. ExplicitTemplateArgs is optional (NULL
+// for none); Args is the usual (buffer, count) pair and may be empty. *Specialization is
+// written only on TDK_Success and left alone otherwise.
+// Three upstream parameters are pinned rather than exposed. The object type and its
+// Expr::Classification are pinned to the non-member defaults -- a Classification can only
+// come from Expr::Classify, which this library does not wrap -- so this deduces calls to
+// free and static function templates, not to member ones. The CheckNonDependent callback
+// is pinned to "no non-dependent parameter fails" (MARSHALLING.md section 10), which is
+// also clang's own default.
+CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsFromCallArgs(
+    CXSema S, CXFunctionTemplateDecl FunctionTemplate,
+    CXTemplateArgumentListInfo ExplicitTemplateArgs, CXExpr *Args, unsigned NumArgs,
+    CXFunctionDecl *Specialization, CXTemplateDeductionInfo Info, bool PartialOverloading,
+    bool AggregateDeductionCandidate);
 
 // Deduces the type the `auto` in AutoTypeLoc stands for from Initializer, writing it
 // through Result on success and leaving *Result untouched otherwise. PRECONDITION:

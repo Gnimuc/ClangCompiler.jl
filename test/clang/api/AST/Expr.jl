@@ -105,6 +105,23 @@ end
     @test !CC.isWide(sl)
     @test CC.getKind(sl) == CC.LibClangEx.CXStringLiteralKind_Ordinary
 
+    # A UTF-16 literal: two bytes per character, so every character carries an interior NUL
+    # and `getString` is the accessor clang asserts against. `u"..."` rather than `L"..."`
+    # because wchar_t is 2 bytes on Windows and 4 elsewhere, while char16_t is 2 everywhere.
+    CC.parse(I, "const char16_t *g_u16 = u\"wide\";")
+    @test f(I, "g_u16")
+    vdw = CC.VarDecl(get_decl(f))
+    slw = _find_node(CC.StringLiteral, CC.resolve(CC.getInit(vdw)))
+    @test slw !== nothing
+    @test CC.isUTF16(slw)
+    @test CC.getCharByteWidth(slw) == 2
+    @test CC.getLength(slw) == 4
+    @test CC.getByteLength(slw) == 8
+    # The interior NULs are the point: a NUL-terminated crossing reports one byte, not eight.
+    @test CC.getBytes(slw) == "w\0i\0d\0e\0"
+    @test ncodeunits(CC.getBytes(slw)) == 8
+    @test_throws AssertionError CC.getString(slw)
+
     CC.parse(I, "unsigned long g_sz = sizeof(int);")
     @test f(I, "g_sz")
     vd2 = CC.VarDecl(get_decl(f))
@@ -290,6 +307,10 @@ end
     nargs = CC.getNumArgs(ce)
     @test nargs isa Integer
     @test CC.getArg(ce, 0) isa CC.Expr_
+    # Upstream's bound assertion is compiled into the release library, so one past the end
+    # aborts the process. The gate turning that into a Julia error is the only reason a caller
+    # can be wrong here without taking the session down.
+    @test_throws AssertionError CC.getArg(ce, nargs)
     @test !CC.is_null_handle(CC.getRParenLoc(ce))
     @test !(CC.usesADL(ce))
     @test CC.hasStoredFPFeatures(ce) == false
@@ -367,6 +388,7 @@ end
     @test ile !== nothing
     @test CC.getNumInits(ile) == 3
     @test CC.getInit(ile, 0) isa CC.Expr_
+    @test_throws AssertionError CC.getInit(ile, CC.getNumInits(ile))  # the restated clang assert (Invariant 3)
     @test CC.isSemanticForm(ile)
     @test CC.getSyntacticForm(ile) isa CC.InitListExpr
     @test CC.getSemanticForm(ile) isa CC.InitListExpr

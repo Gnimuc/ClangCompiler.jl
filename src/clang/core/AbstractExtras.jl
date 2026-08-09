@@ -94,6 +94,7 @@ abstract type AbstractTemplateParamObjectDecl <: AbstractValueDecl end
 abstract type AbstractTemplateParameterList end
 abstract type AbstractTemplateTemplateParmDecl <: AbstractTemplateDecl end
 abstract type AbstractTemplateTypeParmDecl <: AbstractTypeDecl end
+abstract type AbstractTextDiagnosticBuffer <: AbstractDiagnosticConsumer end
 abstract type AbstractTextDiagnosticPrinter <: AbstractDiagnosticConsumer end
 abstract type AbstractToken end
 abstract type AbstractTypeAliasTemplateDecl <: AbstractRedeclarableTemplateDecl end

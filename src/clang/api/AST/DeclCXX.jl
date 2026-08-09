@@ -1965,6 +1965,7 @@ end
 
 function getBinding(x::AbstractDecompositionDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumBindings(x) "binding index $i out of range"
     return BindingDecl(clang_DecompositionDecl_getBinding(x, i))
 end
 
@@ -2081,6 +2082,7 @@ end
 
 function getExpansion(x::AbstractUsingPackDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumExpansions(x) "expansion index $i out of range"
     return NamedDecl(clang_UsingPackDecl_getExpansion(x, i))
 end
 

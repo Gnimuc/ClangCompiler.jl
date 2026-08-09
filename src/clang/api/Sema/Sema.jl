@@ -61,6 +61,23 @@ function getASTContext(x::AbstractSema)
     return ASTContext(clang_Sema_getASTContext(x))
 end
 
+"""
+    ActOnEndOfTranslationUnit(x::AbstractSema)
+Finalise the translation unit: drain pending template instantiations, weak declarations and
+deferred diagnostics.
+
+An [`IncrementalParser`](@ref) session needs no call to this, because clang already makes one
+per increment: `Parser::ParseTopLevelDecl` calls it on reaching the incremental marker that
+ends each buffer. Calling it again is harmless — the next increment still parses, and
+declarations made before it stay visible — but it is redundant rather than a finalisation the
+caller owns. What that per-increment finalisation means for input split across calls is in
+[`parse`](@ref).
+"""
+function ActOnEndOfTranslationUnit(x::AbstractSema)
+    @check_ptrs x
+    return clang_Sema_ActOnEndOfTranslationUnit(x)
+end
+
 function getSourceManager(x::AbstractSema)
     @check_ptrs x
     return SourceManager(clang_Sema_getSourceManager(x))
@@ -3421,6 +3438,39 @@ function DeduceTemplateArguments(x::AbstractSema, ft::AbstractFunctionTemplateDe
     aft = arg_function_type === nothing ? CXQualType(C_NULL) : Base.unsafe_convert(CXQualType, arg_function_type)
     spec = Ref{CXFunctionDecl}(CXFunctionDecl(C_NULL))
     r = clang_Sema_DeduceTemplateArgumentsFunctionTemplate(x, ft, ea, aft, spec, info, is_address_of_function)
+    got = spec[] == CXFunctionDecl(C_NULL) ? nothing : FunctionDecl(spec[])
+    return r, got
+end
+
+"""
+    DeduceTemplateArguments(x::AbstractSema, ft::AbstractFunctionTemplateDecl,
+                            args::AbstractVector{<:AbstractExpr},
+                            info::TemplateDeductionInfo;
+                            explicit_args=nothing, partial_overloading::Bool=false,
+                            aggregate_deduction_candidate::Bool=false)
+        -> Tuple{CXTemplateDeductionResult,Union{FunctionDecl,Nothing}}
+Deduce a specialization of `ft` from the arguments of a call — the overload clang itself
+runs during overload resolution.
+
+This is the only deduction path that records *which* argument failed, so
+[`getCallArgIndex`](@ref) reports `0` after any of the others regardless of what happened.
+`args` may be empty. The specialization comes back only on `TDK_Success`, and is `nothing`
+otherwise.
+
+The object type and classification the upstream overload also takes are pinned to the
+non-member defaults, so this deduces calls to free and static function templates rather
+than to member ones: an `Expr::Classification` can only come from `Expr::Classify`, which
+this package does not wrap.
+"""
+function DeduceTemplateArguments(x::AbstractSema, ft::AbstractFunctionTemplateDecl, args::AbstractVector{<:AbstractExpr}, info::TemplateDeductionInfo; explicit_args::Union{TemplateArgumentListInfo,Nothing}=nothing, partial_overloading::Bool=false, aggregate_deduction_candidate::Bool=false)
+    @check_ptrs x ft info
+    for a in args
+        @check_ptrs a
+    end
+    ea = explicit_args === nothing ? CXTemplateArgumentListInfo(C_NULL) : Base.unsafe_convert(CXTemplateArgumentListInfo, explicit_args)
+    buf = CXExpr[Base.unsafe_convert(CXExpr, a) for a in args]
+    spec = Ref{CXFunctionDecl}(CXFunctionDecl(C_NULL))
+    r = clang_Sema_DeduceTemplateArgumentsFromCallArgs(x, ft, ea, buf, length(buf), spec, info, partial_overloading, aggregate_deduction_candidate)
     got = spec[] == CXFunctionDecl(C_NULL) ? nothing : FunctionDecl(spec[])
     return r, got
 end

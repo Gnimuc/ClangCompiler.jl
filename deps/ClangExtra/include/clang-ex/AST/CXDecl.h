@@ -1141,7 +1141,28 @@ CXSourceRange_ clang_EnumConstantDecl_getSourceRange(CXEnumConstantDecl ECD);
 CXEnumConstantDecl clang_EnumConstantDecl_getCanonicalDecl(CXEnumConstantDecl ECD);
 
 // helper
+// getInitVal narrowed to 64 bits, sign-extended. The next two carry what that narrowing
+// drops: an enumerator whose underlying type is unsigned and whose top bit is set reads
+// back negative here and needs the zero-extended twin instead, and the GenericValue
+// bridge above cannot carry the signedness that says which.
 long long clang_EnumConstantDecl_getEnumConstantDeclValue(CXEnumConstantDecl ECD);
+
+// helper
+bool clang_EnumConstantDecl_isInitValSigned(CXEnumConstantDecl ECD);
+
+// helper
+unsigned long long clang_EnumConstantDecl_getZExtInitVal(CXEnumConstantDecl ECD);
+
+// helper
+// Whether each narrowing accessor above is safe to call, mirroring the exact condition the
+// corresponding APInt assert tests -- and they are NOT the same condition: getSExtValue
+// asserts getSignificantBits() <= 64 while getZExtValue asserts getActiveBits() <= 64, and
+// both are skipped entirely for a single-word value. Gating either accessor on the other's
+// predicate is wrong in both directions. Both of these are total.
+bool clang_EnumConstantDecl_initValFitsInInt64(CXEnumConstantDecl ECD);
+
+// helper
+bool clang_EnumConstantDecl_initValFitsInUInt64(CXEnumConstantDecl ECD);
 
 // The Decl::Kind test behind isa<EnumConstantDecl> (as above).
 bool clang_EnumConstantDecl_classofKind(CXDeclKind K);

@@ -75,6 +75,33 @@ CXString clang_AsmLabelAttr_getLabel(CXAsmLabelAttr A);
 
 bool clang_AsmLabelAttr_getIsLiteralLabel(CXAsmLabelAttr A);
 
+// AvailabilityAttr
+CXIdentifierInfo clang_AvailabilityAttr_getPlatform(CXAvailabilityAttr A);
+
+// The three version payloads follow clang_Decl_getVersionIntroduced: true (and fills
+// *Major/*Minor/*Subminor) when the component is present, false leaves the out-params
+// untouched. Absent minor/subminor components come back as 0, which is also a legal
+// written value — an all-zero tuple and `10.0` are indistinguishable, as they are in
+// VersionTuple itself.
+bool clang_AvailabilityAttr_getIntroduced(CXAvailabilityAttr A, unsigned *Major,
+                                          unsigned *Minor, unsigned *Subminor);
+
+bool clang_AvailabilityAttr_getDeprecated(CXAvailabilityAttr A, unsigned *Major,
+                                          unsigned *Minor, unsigned *Subminor);
+
+bool clang_AvailabilityAttr_getObsoleted(CXAvailabilityAttr A, unsigned *Major,
+                                         unsigned *Minor, unsigned *Subminor);
+
+bool clang_AvailabilityAttr_getUnavailable(CXAvailabilityAttr A);
+
+CXString clang_AvailabilityAttr_getMessage(CXAvailabilityAttr A);
+
+bool clang_AvailabilityAttr_getStrict(CXAvailabilityAttr A);
+
+CXString clang_AvailabilityAttr_getReplacement(CXAvailabilityAttr A);
+
+int clang_AvailabilityAttr_getPriority(CXAvailabilityAttr A);
+
 // CleanupAttr
 CXFunctionDecl clang_CleanupAttr_getFunctionDecl(CXCleanupAttr A);
 
@@ -95,6 +122,10 @@ CXIdentifierInfo clang_FormatAttr_getType(CXFormatAttr A);
 int clang_FormatAttr_getFormatIdx(CXFormatAttr A);
 
 int clang_FormatAttr_getFirstArg(CXFormatAttr A);
+
+// MaxFieldAlignmentAttr
+// The `n` of `#pragma pack(n)`, in bits.
+unsigned clang_MaxFieldAlignmentAttr_getAlignment(CXMaxFieldAlignmentAttr A);
 
 // NonNullAttr
 unsigned clang_NonNullAttr_args_size(CXNonNullAttr A);

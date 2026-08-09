@@ -340,6 +340,7 @@ end
 
 function getTemplateParameterList(x::AbstractDeclaratorDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumTemplateParameterLists(x) "template parameter list index $i out of range"
     return TemplateParameterList(clang_DeclaratorDecl_getTemplateParameterList(x, i))
 end
 
@@ -513,10 +514,17 @@ function mightBeUsableInConstantExpressions(x::AbstractVarDecl, ctx::ASTContext)
 end
 
 # Evaluate the initializer to a constant. The returned `APValue` wraps `C_NULL`
-# when the initializer is absent or not constant-foldable (check `.ptr`); a
-# non-null result is borrowed (cached in the VarDecl) — never `dispose` it.
+# when the initializer is not constant-foldable (check `.ptr`); a non-null result
+# is borrowed (cached in the VarDecl) — never `dispose` it.
+#
+# Upstream reaches `getInit()->isValueDependent()` with no null test, so a
+# declaration with no initializer segfaults rather than returning null; and it
+# then asserts that the initializer is not value-dependent, which a declaration
+# inside an uninstantiated template satisfies.
 function evaluateValue(x::AbstractVarDecl)
     @check_ptrs x
+    @assert hasInit(x) "a declaration with no initializer has no value to evaluate"
+    @assert !isValueDependent(getInit(x)) "a value-dependent initializer has no value until instantiation"
     return APValue(clang_VarDecl_evaluateValue(x))
 end
 
@@ -1279,6 +1287,7 @@ end
 
 function getParamDecl(x::AbstractFunctionDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumParams(x) "parameter index $i out of range"
     return ParmVarDecl(clang_FunctionDecl_getParamDecl(x, i))
 end
 
@@ -1497,8 +1506,15 @@ function getODRHash(x::AbstractFunctionDecl)
 end
 
 # EnumConstantDecl
+"""
+    getEnumConstantDeclValue(x::EnumConstantDecl) -> Int64
+The enumerator's value sign-extended to 64 bits. An unsigned enumerator with its top bit
+set comes back negative here — [`isInitValSigned`](@ref) says when, and
+[`getZExtInitVal`](@ref) is the accessor for that case.
+"""
 function getEnumConstantDeclValue(x::EnumConstantDecl)
     @check_ptrs x
+    @assert initValFitsInInt64(x) "this enumerator does not fit a signed 64-bit narrowing; use getInitVal"
     return clang_EnumConstantDecl_getEnumConstantDeclValue(x)
 end
 
@@ -2220,6 +2236,7 @@ end
 
 function getIdentifierLoc(x::AbstractImportDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumIdentifierLocs(x) "identifier location index $i out of range"
     return SourceLocation(clang_ImportDecl_getIdentifierLoc(x, i))
 end
 
@@ -2247,6 +2264,7 @@ end
 
 function getChainElement(x::AbstractIndirectFieldDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getChainingSize(x) "chain index $i out of range"
     return NamedDecl(clang_IndirectFieldDecl_getChainElement(x, i))
 end
 
@@ -2313,6 +2331,7 @@ end
 
 function getParamDecl(x::AbstractBlockDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumParams(x) "parameter index $i out of range"
     return ParmVarDecl(clang_BlockDecl_getParamDecl(x, i))
 end
 
@@ -2324,6 +2343,7 @@ end
 
 function getParam(x::AbstractCapturedDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumParams(x) "parameter index $i out of range"
     return ImplicitParamDecl(clang_CapturedDecl_getParam(x, i))
 end
 
@@ -2749,11 +2769,13 @@ end
 
 function setParam(x::AbstractCapturedDecl, i::Integer, p::ImplicitParamDecl)
     @check_ptrs x p
+    @assert 0 <= i < getNumParams(x) "parameter index $i out of range"
     return clang_CapturedDecl_setParam(x, i, p)
 end
 
 function setContextParam(x::AbstractCapturedDecl, i::Integer, p::ImplicitParamDecl)
     @check_ptrs x p
+    @assert 0 <= i < getNumParams(x) "parameter index $i out of range"
     return clang_CapturedDecl_setContextParam(x, i, p)
 end
 
@@ -3110,6 +3132,7 @@ end
 # `i` is 0-based, like `getParamDecl`.
 function getNonObjectParameter(x::AbstractFunctionDecl, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumNonObjectParams(x) "non-object parameter index $i out of range"
     return ParmVarDecl(clang_FunctionDecl_getNonObjectParameter(x, i))
 end
 
@@ -3155,11 +3178,55 @@ end
     getInitVal(x::AbstractEnumConstantDecl)
 Return the enumerator's value as a caller-owned `LLVMGenericValueRef` (release
 via LLVM-C's `LLVMDisposeGenericValue`; no Julia `dispose` method exists for it).
-Use `get_enum_constant_decl_value` for the narrowed `Int64` form.
+Use [`getEnumConstantDeclValue`](@ref) for the narrowed form, which needs no disposal.
 """
 function getInitVal(x::AbstractEnumConstantDecl)
     @check_ptrs x
     return clang_EnumConstantDecl_getInitVal(x)
+end
+
+"""
+    isInitValSigned(x::AbstractEnumConstantDecl) -> Bool
+Whether the enumerator's value is signed — which the `LLVMGenericValueRef`
+[`getInitVal`](@ref) hands back cannot carry, and which decides how to read it.
+"""
+function isInitValSigned(x::AbstractEnumConstantDecl)
+    @check_ptrs x
+    return clang_EnumConstantDecl_isInitValSigned(x)
+end
+
+"""
+    initValFitsInInt64(x::AbstractEnumConstantDecl) -> Bool
+Whether [`getEnumConstantDeclValue`](@ref) is safe to call. Mirrors the exact condition
+`APInt::getSExtValue` asserts, which is not the one `getZExtValue` asserts — see
+[`initValFitsInUInt64`](@ref).
+"""
+function initValFitsInInt64(x::AbstractEnumConstantDecl)
+    @check_ptrs x
+    return clang_EnumConstantDecl_initValFitsInInt64(x)
+end
+
+"""
+    initValFitsInUInt64(x::AbstractEnumConstantDecl) -> Bool
+Whether [`getZExtInitVal`](@ref) is safe to call. The signed and unsigned narrowings assert
+different quantities — significant bits against active bits, which differ by the sign bit —
+so each gate is its own, and gating one accessor on the other's predicate is wrong in both
+directions.
+"""
+function initValFitsInUInt64(x::AbstractEnumConstantDecl)
+    @check_ptrs x
+    return clang_EnumConstantDecl_initValFitsInUInt64(x)
+end
+
+"""
+    getZExtInitVal(x::AbstractEnumConstantDecl) -> UInt64
+The enumerator's value zero-extended. This is the accessor an unsigned enumerator with its
+top bit set needs; [`getEnumConstantDeclValue`](@ref) reports that one negative.
+"""
+function getZExtInitVal(x::AbstractEnumConstantDecl)
+    @check_ptrs x
+    @assert initValFitsInUInt64(x) "this enumerator does not fit an unsigned 64-bit narrowing; use getInitVal"
+    return clang_EnumConstantDecl_getZExtInitVal(x)
 end
 
 # IndirectFieldDecl factory

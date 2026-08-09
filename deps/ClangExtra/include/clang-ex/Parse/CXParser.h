@@ -60,7 +60,21 @@ bool clang_Parser_TryAnnotateOptionalCXXScopeToken(CXParser P, bool EnteringCont
 
 CXQualType clang_Parser_getTypeAnnotation(CXToken_ Tok);
 
-// CXDeclGroupRef clang_Parser_parseOneTopLevelDecl(CXParser Parser, bool IsFirstDecl);
+// The incremental parse loop, as clang::IncrementalParser drives it: call
+// clang_Parser_ParseFirstTopLevelDecl once per input, then clang_Parser_ParseTopLevelDecl
+// until it returns true. Both return AtEOF and write the declaration group they parsed
+// through *Result, which is a null DeclGroupRef when the increment produced none.
+//
+// *ImportState threads clang's Sema::ModuleImportState through the loop. It crosses as a
+// plain unsigned rather than a mirrored enum on purpose: the caller never reads it, only
+// hands the same cell back, and clang_Parser_ParseFirstTopLevelDecl initialises it. One
+// cell per input, as upstream does -- sharing one across inputs is what a C++20 module
+// declaration would need, and this library wraps no module support to need it.
+bool clang_Parser_ParseFirstTopLevelDecl(CXParser P, CXDeclGroupRef *Result,
+                                         unsigned *ImportState);
+
+bool clang_Parser_ParseTopLevelDecl(CXParser P, CXDeclGroupRef *Result,
+                                    unsigned *ImportState);
 
 LLVM_CLANG_C_EXTERN_C_END
 

@@ -82,13 +82,30 @@ Know the ceiling of the thing you are about to rely on:
   score from 28.6% to 85.7%; one invariant is worth a hundred value assertions.
 - **A saturated catalogue is not an instrument.** The score read 100% while all nine mutants sat
   in AST core and ran only `AST_CORE` files, so it described `Expr`/`Decl`/`Stmt` and nothing
-  else. It has been extended three times, and the number fell every time it reached somewhere
+  else. It has been extended four times, and the number fell every time it reached somewhere
   new: 62.5% over `CompilerInstance.jl` and `Driver.jl` (six of seven survived), 70.8% over
   `SourceManager.jl`, `ASTUnit.jl`, `Comment.jl` and `IdentifierTable.jl` (seven of eight),
-  then `CFG`, `Lex` and `Sema` (three of eight). All fixed; it reads 93.8% across 32. Extend
-  the catalogue into a region *before* concluding anything about that region — `Type.jl`,
-  `ExprCXX.jl`, `DeclCXX.jl`, `DeclTemplate.jl` and `APValue.jl` have still never had a fault
-  injected, which is tracked in #51.
+  then `CFG`, `Lex` and `Sema` (three of eight), then 86.8% over the six largest files it had
+  never touched — `Type.jl`, `ExprCXX.jl`, `DeclCXX.jl`, `DeclTemplate.jl`, `APValue.jl`,
+  `Overload.jl` — plus the ObjC and diagnostic-buffer surfaces (#51). All fixed; it reads
+  96.2% across 53, and the two blocked survivors are the entire remainder. Extend the catalogue
+  into a region *before* concluding anything about that region.
+- **Most survivors here were a missing STATE, not a missing assertion.** Four of the five that
+  #51 turned up were an accessor read only at the one input that cannot distinguish it: a
+  template parameter's depth and index read only at 0, a construct expression read only at
+  argument 0, a buffered diagnostic read only at index 0, `isPolymorphic` read only on a
+  polymorphic class. The fix is another declaration in the source, not a rewritten assertion —
+  and reaching for the assertion first is how a suite ends up asserting the thing it can
+  already see. The fifth was the reverse: two `# shape-only` markers on `isValidSectionSpecifier`
+  that were not unassertable at all, because only Mach-O imposes a grammar and `Sys.isapple()`
+  is what decides the answer.
+- **Adding the state can find a missing gate instead.** Asserting `getArg(ce, 1)` on a
+  two-argument construction aborted the process: `CXXConstructExpr::getArg` reached clang's
+  `assert(Arg < getNumArgs())` with no bound of its own, and so did `CallExpr::getArg` and
+  `FunctionProtoType::getParamType` — each beside a sibling *setter* that had carried the gate
+  all along. A mutation catalogue cannot see that class directly, since a wrapper that aborts
+  is a wrapper no assertion reached; it surfaced only because killing the mutant required
+  reaching the index that trips it.
 - **A score measured against a red tree only goes up.** Detection here is "a `Test Failed`
   appeared", which cannot separate a mutant being caught from a suite that was already
   failing: one broken assertion marks every mutant over that file set as caught. A wrong

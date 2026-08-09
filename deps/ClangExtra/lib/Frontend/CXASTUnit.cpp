@@ -8,6 +8,7 @@
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/PCHContainerOperations.h"
+#include "clang/Lex/HeaderSearchOptions.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Sema/Sema.h"
 #include "llvm/ADT/SmallVector.h"
@@ -15,7 +16,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include <memory>
 
-// Mirror sync for CXCaptureDiagsKind. It lives here rather than in lib/Basic/CXEnumSync.cpp
+// Mirror sync for CXCaptureDiagsKind and CXASTUnit_WhatToLoad. It lives here rather than in lib/Basic/CXEnumSync.cpp
 // because clang/Frontend/ASTUnit.h includes clang-c/Index.h, whose declarations collide
 // with this library's own once the clang-ex headers that file gathers are also in scope.
 #define ENUM_SYNC(cx, cpp)                                                                 \
@@ -25,6 +26,10 @@ ENUM_SYNC(CXCaptureDiagsKind_None, clang::CaptureDiagsKind::None);
 ENUM_SYNC(CXCaptureDiagsKind_All, clang::CaptureDiagsKind::All);
 ENUM_SYNC(CXCaptureDiagsKind_AllWithoutNonErrorsFromIncludes,
           clang::CaptureDiagsKind::AllWithoutNonErrorsFromIncludes);
+
+ENUM_SYNC(CXASTUnit_LoadPreprocessorOnly, clang::ASTUnit::LoadPreprocessorOnly);
+ENUM_SYNC(CXASTUnit_LoadASTOnly, clang::ASTUnit::LoadASTOnly);
+ENUM_SYNC(CXASTUnit_LoadEverything, clang::ASTUnit::LoadEverything);
 
 #undef ENUM_SYNC
 
@@ -308,7 +313,35 @@ CXASTUnit clang_ASTUnit_create(CXCompilerInvocation CI, CXDiagnosticsEngine Diag
 
 void clang_ASTUnit_dispose(CXASTUnit AU) { delete reinterpret_cast<clang::ASTUnit *>(AU); }
 
-// LoadFromASTFile
+CXASTUnit clang_ASTUnit_LoadFromASTFile(const char *Filename, CXASTUnit_WhatToLoad ToLoad,
+                                        CXDiagnosticsEngine Diags,
+                                        CXFileSystemOptions FileSystemOpts,
+                                        CXHeaderSearchOptions HSOpts, bool OnlyLocalDecls,
+                                        CXCaptureDiagsKind CaptureDiagnostics,
+                                        bool AllowASTWithCompilerErrors,
+                                        bool UserFilesAreVolatile) {
+  auto *DE = reinterpret_cast<clang::DiagnosticsEngine *>(Diags);
+  DE->Retain();
+  clang::FileSystemOptions FSOpts =
+      FileSystemOpts ? *reinterpret_cast<clang::FileSystemOptions *>(FileSystemOpts)
+                     : clang::FileSystemOptions();
+  auto HS = HSOpts ? std::make_shared<clang::HeaderSearchOptions>(
+                         *reinterpret_cast<clang::HeaderSearchOptions *>(HSOpts))
+                   : std::make_shared<clang::HeaderSearchOptions>();
+  // ASTReader stores this BY REFERENCE (Serialization/ASTReader.h: `const
+  // PCHContainerReader &PCHContainerRdr;`) and the unit owns that reader for its whole
+  // life, consulting it on every lazy deserialization -- so a function-local would dangle
+  // the moment this returns. RawPCHContainerReader is stateless, so one shared instance
+  // with static lifetime is the whole fix.
+  static const clang::RawPCHContainerReader Reader;
+  auto AU = clang::ASTUnit::LoadFromASTFile(
+      std::string(Filename), Reader, static_cast<clang::ASTUnit::WhatToLoad>(ToLoad),
+      llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(DE), FSOpts, HS, OnlyLocalDecls,
+      static_cast<clang::CaptureDiagsKind>(CaptureDiagnostics), AllowASTWithCompilerErrors,
+      UserFilesAreVolatile);
+  return reinterpret_cast<CXASTUnit>(AU.release());
+}
+
 // LoadFromCompilerInvocationAction
 
 CXASTUnit clang_ASTUnit_LoadFromCompilerInvocation(

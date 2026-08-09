@@ -2187,6 +2187,10 @@ LLVMGenericValueRef clang_ConstantArrayType_getSize(CXConstantArrayType T) {
   GV->IntVal = reinterpret_cast<clang::ConstantArrayType *>(T)->getSize();
   return reinterpret_cast<LLVMGenericValueRef>(GV);
 }
+unsigned long long clang_ConstantArrayType_getZExtSize(CXConstantArrayType T) {
+  return reinterpret_cast<clang::ConstantArrayType *>(T)->getSize().getZExtValue();
+}
+
 CXExpr clang_ConstantArrayType_getSizeExpr(CXConstantArrayType T) {
   return reinterpret_cast<CXExpr>(const_cast<clang::Expr *>(
       reinterpret_cast<clang::ConstantArrayType *>(T)->getSizeExpr()));
@@ -3314,6 +3318,159 @@ bool clang_PackExpansionType_isSugared(CXPackExpansionType T) {
 
 CXQualType clang_PackExpansionType_desugar(CXPackExpansionType T) {
   return reinterpret_cast<CXQualType>(reinterpret_cast<clang::PackExpansionType *>(T)->desugar().getAsOpaquePtr());
+}
+
+// ObjCTypeParamType
+CXObjCTypeParamDecl clang_ObjCTypeParamType_getDecl(CXObjCTypeParamType T) {
+  return reinterpret_cast<CXObjCTypeParamDecl>(
+      reinterpret_cast<clang::ObjCTypeParamType *>(T)->getDecl());
+}
+
+unsigned clang_ObjCTypeParamType_getNumProtocols(CXObjCTypeParamType T) {
+  return reinterpret_cast<clang::ObjCTypeParamType *>(T)->getNumProtocols();
+}
+
+CXObjCProtocolDecl clang_ObjCTypeParamType_getProtocol(CXObjCTypeParamType T, unsigned I) {
+  return reinterpret_cast<CXObjCProtocolDecl>(
+      reinterpret_cast<clang::ObjCTypeParamType *>(T)->getProtocol(I));
+}
+
+bool clang_ObjCTypeParamType_isSugared(CXObjCTypeParamType T) {
+  return reinterpret_cast<clang::ObjCTypeParamType *>(T)->isSugared();
+}
+
+CXQualType clang_ObjCTypeParamType_desugar(CXObjCTypeParamType T) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::ObjCTypeParamType *>(T)->desugar().getAsOpaquePtr());
+}
+
+// ObjCObjectType
+CXQualType clang_ObjCObjectType_getBaseType(CXObjCObjectType T) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::ObjCObjectType *>(T)->getBaseType().getAsOpaquePtr());
+}
+
+CXObjCInterfaceDecl clang_ObjCObjectType_getInterface(CXObjCObjectType T) {
+  return reinterpret_cast<CXObjCInterfaceDecl>(
+      reinterpret_cast<clang::ObjCObjectType *>(T)->getInterface());
+}
+
+bool clang_ObjCObjectType_isObjCId(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->isObjCId();
+}
+
+bool clang_ObjCObjectType_isObjCClass(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->isObjCClass();
+}
+
+bool clang_ObjCObjectType_isObjCUnqualifiedId(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->isObjCUnqualifiedId();
+}
+
+bool clang_ObjCObjectType_isObjCQualifiedId(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->isObjCQualifiedId();
+}
+
+bool clang_ObjCObjectType_isSpecialized(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->isSpecialized();
+}
+
+bool clang_ObjCObjectType_isKindOfType(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->isKindOfType();
+}
+
+unsigned clang_ObjCObjectType_getNumTypeArgs(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->getTypeArgs().size();
+}
+
+CXQualType clang_ObjCObjectType_getTypeArg(CXObjCObjectType T, unsigned I) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::ObjCObjectType *>(T)->getTypeArgs()[I].getAsOpaquePtr());
+}
+
+unsigned clang_ObjCObjectType_getNumProtocols(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->getNumProtocols();
+}
+
+CXObjCProtocolDecl clang_ObjCObjectType_getProtocol(CXObjCObjectType T, unsigned I) {
+  return reinterpret_cast<CXObjCProtocolDecl>(
+      reinterpret_cast<clang::ObjCObjectType *>(T)->getProtocol(I));
+}
+
+CXQualType clang_ObjCObjectType_getSuperClassType(CXObjCObjectType T) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::ObjCObjectType *>(T)->getSuperClassType().getAsOpaquePtr());
+}
+
+bool clang_ObjCObjectType_isSugared(CXObjCObjectType T) {
+  return reinterpret_cast<clang::ObjCObjectType *>(T)->isSugared();
+}
+
+CXQualType clang_ObjCObjectType_desugar(CXObjCObjectType T) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::ObjCObjectType *>(T)->desugar().getAsOpaquePtr());
+}
+
+// ObjCInterfaceType
+CXObjCInterfaceDecl clang_ObjCInterfaceType_getDecl(CXObjCInterfaceType T) {
+  return reinterpret_cast<CXObjCInterfaceDecl>(
+      reinterpret_cast<clang::ObjCInterfaceType *>(T)->getDecl());
+}
+
+bool clang_ObjCInterfaceType_isSugared(CXObjCInterfaceType T) {
+  return reinterpret_cast<clang::ObjCInterfaceType *>(T)->isSugared();
+}
+
+CXQualType clang_ObjCInterfaceType_desugar(CXObjCInterfaceType T) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::ObjCInterfaceType *>(T)->desugar().getAsOpaquePtr());
+}
+
+// ObjCObjectPointerType
+CXQualType clang_ObjCObjectPointerType_getPointeeType(CXObjCObjectPointerType T) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::ObjCObjectPointerType *>(T)->getPointeeType().getAsOpaquePtr());
+}
+
+CXObjCObjectType clang_ObjCObjectPointerType_getObjectType(CXObjCObjectPointerType T) {
+  return reinterpret_cast<CXObjCObjectType>(const_cast<clang::ObjCObjectType *>(
+      reinterpret_cast<clang::ObjCObjectPointerType *>(T)->getObjectType()));
+}
+
+CXObjCInterfaceDecl clang_ObjCObjectPointerType_getInterfaceDecl(CXObjCObjectPointerType T) {
+  return reinterpret_cast<CXObjCInterfaceDecl>(
+      reinterpret_cast<clang::ObjCObjectPointerType *>(T)->getInterfaceDecl());
+}
+
+bool clang_ObjCObjectPointerType_isObjCIdType(CXObjCObjectPointerType T) {
+  return reinterpret_cast<clang::ObjCObjectPointerType *>(T)->isObjCIdType();
+}
+
+bool clang_ObjCObjectPointerType_isObjCClassType(CXObjCObjectPointerType T) {
+  return reinterpret_cast<clang::ObjCObjectPointerType *>(T)->isObjCClassType();
+}
+
+bool clang_ObjCObjectPointerType_isObjCQualifiedIdType(CXObjCObjectPointerType T) {
+  return reinterpret_cast<clang::ObjCObjectPointerType *>(T)->isObjCQualifiedIdType();
+}
+
+unsigned clang_ObjCObjectPointerType_getNumProtocols(CXObjCObjectPointerType T) {
+  return reinterpret_cast<clang::ObjCObjectPointerType *>(T)->getNumProtocols();
+}
+
+CXObjCProtocolDecl clang_ObjCObjectPointerType_getProtocol(CXObjCObjectPointerType T,
+                                                           unsigned I) {
+  return reinterpret_cast<CXObjCProtocolDecl>(
+      reinterpret_cast<clang::ObjCObjectPointerType *>(T)->getProtocol(I));
+}
+
+bool clang_ObjCObjectPointerType_isSugared(CXObjCObjectPointerType T) {
+  return reinterpret_cast<clang::ObjCObjectPointerType *>(T)->isSugared();
+}
+
+CXQualType clang_ObjCObjectPointerType_desugar(CXObjCObjectPointerType T) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::ObjCObjectPointerType *>(T)->desugar().getAsOpaquePtr());
 }
 
 // AtomicType

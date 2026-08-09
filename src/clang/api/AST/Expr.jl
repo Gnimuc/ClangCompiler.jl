@@ -104,9 +104,13 @@ function getValueAsApproximateDouble(x::AbstractFloatingLiteral)
     return clang_FloatingLiteral_getValueAsApproximateDouble(x)
 end
 
+# The character bytes as clang stores them, whatever the width. Every character of a
+# wide/UTF-16/UTF-32 literal carries interior NULs, so the length has to come from
+# `getByteLength` rather than from a terminator — and the returned `String` holds those
+# NULs. Borrowed from the AST arena: valid only while the owning `ASTContext` is.
 function getBytes(x::AbstractStringLiteral)
     @check_ptrs x
-    return get_string(clang_StringLiteral_getBytes(x))
+    return unsafe_string(clang_StringLiteral_getBytes(x), getByteLength(x))
 end
 
 function getByteLength(x::AbstractStringLiteral)
@@ -207,9 +211,13 @@ end
 """
     getArg(x::AbstractCallExpr, i)
 Return the `i`-th argument (0-based, following the C++ API).
+
+Upstream asserts the bound and that assertion is compiled into the release library, so an
+out-of-range index aborts the process rather than returning null.
 """
 function getArg(x::AbstractCallExpr, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumArgs(x) "call argument index $i out of range"
     return Expr_(clang_CallExpr_getArg(x, i))
 end
 
@@ -372,6 +380,7 @@ Return the `i`-th initializer (0-based, following the C++ API).
 """
 function getInit(x::AbstractInitListExpr, i::Integer)
     @check_ptrs x
+    @assert 0 <= i < getNumInits(x) "initializer index $i out of range"
     return Expr_(clang_InitListExpr_getInit(x, i))
 end
 
@@ -897,9 +906,14 @@ function getTypeSourceInfo(x::AbstractCompoundLiteralExpr)
 end
 
 # StringLiteral
+# Upstream asserts the character width, and that assertion is compiled into the release
+# library — a wide, UTF-16 or UTF-32 literal aborts the process here. `getBytes` is the
+# accessor that reads those, and returns the same bytes for the literals this one accepts.
+# A narrow literal may still carry an interior NUL, so the length comes from `getByteLength`.
 function getString(x::AbstractStringLiteral)
     @check_ptrs x
-    return get_string(clang_StringLiteral_getString(x))
+    @assert isUnevaluated(x) || getCharByteWidth(x) == 1 "getString requires a narrow (char) string literal; use getBytes"
+    return unsafe_string(clang_StringLiteral_getString(x), getByteLength(x))
 end
 
 function getKind(x::AbstractStringLiteral)

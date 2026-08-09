@@ -249,7 +249,34 @@ CXASTUnit clang_ASTUnit_create(CXCompilerInvocation CI, CXDiagnosticsEngine Diag
 
 void clang_ASTUnit_dispose(CXASTUnit AU);
 
-// LoadFromASTFile
+// clang/Frontend/ASTUnit.h: enum clang::ASTUnit::WhatToLoad
+typedef enum CXASTUnit_WhatToLoad {
+  CXASTUnit_LoadPreprocessorOnly,
+  CXASTUnit_LoadASTOnly,
+  CXASTUnit_LoadEverything
+} CXASTUnit_WhatToLoad;
+
+// Reads a serialized AST back from disk, returning nullptr when the file could not be
+// loaded (the reason goes to Diags). Caller-owned: release with clang_ASTUnit_dispose.
+// This is the only way to obtain a unit whose main file and original source file differ:
+// clang_ASTUnit_getMainFileName then names Filename while
+// clang_ASTUnit_getOriginalSourceFileName names the source the AST was built from.
+// Diags stays the caller's: it lands in an IntrusiveRefCntPtr member, so it is pinned with
+// an explicit Retain (MARSHALLING.md section 12) and must outlive the unit.
+// FileSystemOpts is borrowed and copied; pass NULL for a default-constructed set.
+// HSOpts is COPIED rather than adopted -- clang wants a std::shared_ptr and rewrapping a
+// borrowed handle in one would make the unit's release free the caller's object
+// (MARSHALLING.md section 14). Pass NULL for a default-constructed set.
+// PCHContainerOperations and the VFS are not part of the C surface: the shim supplies the
+// raw PCH container reader and the real file system, which are clang's own defaults.
+CXASTUnit clang_ASTUnit_LoadFromASTFile(const char *Filename, CXASTUnit_WhatToLoad ToLoad,
+                                        CXDiagnosticsEngine Diags,
+                                        CXFileSystemOptions FileSystemOpts,
+                                        CXHeaderSearchOptions HSOpts, bool OnlyLocalDecls,
+                                        CXCaptureDiagsKind CaptureDiagnostics,
+                                        bool AllowASTWithCompilerErrors,
+                                        bool UserFilesAreVolatile);
+
 // LoadFromCompilerInvocationAction
 
 // Runs a whole frontend parse of the invocation's single input file and returns the

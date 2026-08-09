@@ -194,6 +194,91 @@ Supertype for `EmptyDecl`s.
 """
 abstract type AbstractEmptyDecl <: AbstractDecl end
 
+# DeclObjC
+"""
+    abstract type AbstractObjCMethodDecl <: AbstractNamedDecl
+Supertype for `ObjCMethodDecl`s.
+"""
+abstract type AbstractObjCMethodDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractObjCContainerDecl <: AbstractNamedDecl
+Supertype for `ObjCContainerDecl`s.
+"""
+abstract type AbstractObjCContainerDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractObjCProtocolDecl <: AbstractObjCContainerDecl
+Supertype for `ObjCProtocolDecl`s.
+"""
+abstract type AbstractObjCProtocolDecl <: AbstractObjCContainerDecl end
+
+"""
+    abstract type AbstractObjCInterfaceDecl <: AbstractObjCContainerDecl
+Supertype for `ObjCInterfaceDecl`s.
+"""
+abstract type AbstractObjCInterfaceDecl <: AbstractObjCContainerDecl end
+
+"""
+    abstract type AbstractObjCImplDecl <: AbstractObjCContainerDecl
+Supertype for `ObjCImplDecl`s.
+"""
+abstract type AbstractObjCImplDecl <: AbstractObjCContainerDecl end
+
+"""
+    abstract type AbstractObjCImplementationDecl <: AbstractObjCImplDecl
+Supertype for `ObjCImplementationDecl`s.
+"""
+abstract type AbstractObjCImplementationDecl <: AbstractObjCImplDecl end
+
+"""
+    abstract type AbstractObjCCategoryImplDecl <: AbstractObjCImplDecl
+Supertype for `ObjCCategoryImplDecl`s.
+"""
+abstract type AbstractObjCCategoryImplDecl <: AbstractObjCImplDecl end
+
+"""
+    abstract type AbstractObjCCategoryDecl <: AbstractObjCContainerDecl
+Supertype for `ObjCCategoryDecl`s.
+"""
+abstract type AbstractObjCCategoryDecl <: AbstractObjCContainerDecl end
+
+"""
+    abstract type AbstractObjCPropertyDecl <: AbstractNamedDecl
+Supertype for `ObjCPropertyDecl`s.
+"""
+abstract type AbstractObjCPropertyDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractObjCCompatibleAliasDecl <: AbstractNamedDecl
+Supertype for `ObjCCompatibleAliasDecl`s.
+"""
+abstract type AbstractObjCCompatibleAliasDecl <: AbstractNamedDecl end
+
+"""
+    abstract type AbstractObjCPropertyImplDecl <: AbstractDecl
+Supertype for `ObjCPropertyImplDecl`s.
+"""
+abstract type AbstractObjCPropertyImplDecl <: AbstractDecl end
+
+"""
+    abstract type AbstractObjCIvarDecl <: AbstractFieldDecl
+Supertype for `ObjCIvarDecl`s.
+"""
+abstract type AbstractObjCIvarDecl <: AbstractFieldDecl end
+
+"""
+    abstract type AbstractObjCAtDefsFieldDecl <: AbstractFieldDecl
+Supertype for `ObjCAtDefsFieldDecl`s.
+"""
+abstract type AbstractObjCAtDefsFieldDecl <: AbstractFieldDecl end
+
+"""
+    abstract type AbstractObjCTypeParamDecl <: AbstractTypedefNameDecl
+Supertype for `ObjCTypeParamDecl`s.
+"""
+abstract type AbstractObjCTypeParamDecl <: AbstractTypedefNameDecl end
+
 # DeclarationName
 """
     abstract type AbstractDeclarationName <: Any
@@ -886,6 +971,18 @@ abstract type AbstractUnnamedGlobalConstantDecl <: AbstractValueDecl end
 Supertype for `ObjCObjectType`s.
 """
 abstract type AbstractObjCObjectType <: AbstractType end
+
+"""
+    abstract type AbstractObjCInterfaceType <: AbstractObjCObjectType
+Supertype for `ObjCInterfaceType`s.
+"""
+abstract type AbstractObjCInterfaceType <: AbstractObjCObjectType end
+
+"""
+    abstract type AbstractObjCTypeParamType <: AbstractType
+Supertype for `ObjCTypeParamType`s.
+"""
+abstract type AbstractObjCTypeParamType <: AbstractType end
 
 """
     abstract type AbstractObjCObjectPointerType <: AbstractType

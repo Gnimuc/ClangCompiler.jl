@@ -2979,13 +2979,14 @@ end
     @test CC.isCast(CC.CXCheckedConversionKind_CCK_ForBuiltinOverloadedOp) == false
 
     # --- Target- and dialect-decided answers (never a specific value: CI is three hosts) ---
-    # target-decided: what counts as a valid section specifier follows the object
-    # file format (Mach-O vs ELF vs COFF), so only the shape of the answer holds across CI runners
-    @test CC.isValidSectionSpecifier(sema, "__TEXT,__text") isa Bool  # shape-only: host target section format rules decide this
-    # Only Mach-O imposes a grammar on the name -- it wants `segment,section`, so a string
-    # with spaces is rejected there and accepted under ELF and COFF, which take almost any
-    # name. There is no spelling that is invalid on all three.
-    @test CC.isValidSectionSpecifier(sema, "not a section specifier") isa Bool  # shape-only: the target decides it (object file format)
+    # Only Mach-O imposes a grammar on a section name -- it wants `segment,section`, and
+    # clang returns success unconditionally for every other object format. So there is no
+    # spelling that is invalid on all three runners, but the answer is not unassertable
+    # either: which runner this is decides it, and `Sys.isapple()` is that. Asserting only
+    # the shape here left a validator that accepts everything indistinguishable from a
+    # working one.
+    @test CC.isValidSectionSpecifier(sema, "__TEXT,__text") == true
+    @test CC.isValidSectionSpecifier(sema, "not a section specifier") == !Sys.isapple()
     cuda_name = CC.getCudaConfigureFuncName(sema)
     @test cuda_name isa String
     @test !isempty(cuda_name)

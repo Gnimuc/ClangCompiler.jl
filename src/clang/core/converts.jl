@@ -1299,6 +1299,42 @@ Base.cconvert(::Type{CXUsingShadowDecl}, x::AbstractUsingShadowDecl) = x
 Base.unsafe_convert(::Type{CXDeclGroupRef}, x::AbstractDeclGroupRef) = CXDeclGroupRef(x.ptr)
 Base.cconvert(::Type{CXDeclGroupRef}, x::AbstractDeclGroupRef) = x
 
+# core/AST/DeclObjC.jl
+Base.unsafe_convert(::Type{CXObjCAtDefsFieldDecl}, x::AbstractObjCAtDefsFieldDecl) = CXObjCAtDefsFieldDecl(x.ptr)
+Base.cconvert(::Type{CXObjCAtDefsFieldDecl}, x::AbstractObjCAtDefsFieldDecl) = x
+Base.unsafe_convert(::Type{CXObjCCategoryDecl}, x::AbstractObjCCategoryDecl) = CXObjCCategoryDecl(x.ptr)
+Base.cconvert(::Type{CXObjCCategoryDecl}, x::AbstractObjCCategoryDecl) = x
+Base.unsafe_convert(::Type{CXObjCCategoryImplDecl}, x::AbstractObjCCategoryImplDecl) = CXObjCCategoryImplDecl(x.ptr)
+Base.cconvert(::Type{CXObjCCategoryImplDecl}, x::AbstractObjCCategoryImplDecl) = x
+function Base.unsafe_convert(::Type{CXObjCCompatibleAliasDecl},
+                             x::AbstractObjCCompatibleAliasDecl)
+    return CXObjCCompatibleAliasDecl(x.ptr)
+end
+Base.cconvert(::Type{CXObjCCompatibleAliasDecl}, x::AbstractObjCCompatibleAliasDecl) = x
+Base.unsafe_convert(::Type{CXObjCContainerDecl}, x::AbstractObjCContainerDecl) = CXObjCContainerDecl(x.ptr)
+Base.cconvert(::Type{CXObjCContainerDecl}, x::AbstractObjCContainerDecl) = x
+Base.unsafe_convert(::Type{CXObjCImplDecl}, x::AbstractObjCImplDecl) = CXObjCImplDecl(x.ptr)
+Base.cconvert(::Type{CXObjCImplDecl}, x::AbstractObjCImplDecl) = x
+function Base.unsafe_convert(::Type{CXObjCImplementationDecl},
+                             x::AbstractObjCImplementationDecl)
+    return CXObjCImplementationDecl(x.ptr)
+end
+Base.cconvert(::Type{CXObjCImplementationDecl}, x::AbstractObjCImplementationDecl) = x
+Base.unsafe_convert(::Type{CXObjCInterfaceDecl}, x::AbstractObjCInterfaceDecl) = CXObjCInterfaceDecl(x.ptr)
+Base.cconvert(::Type{CXObjCInterfaceDecl}, x::AbstractObjCInterfaceDecl) = x
+Base.unsafe_convert(::Type{CXObjCIvarDecl}, x::AbstractObjCIvarDecl) = CXObjCIvarDecl(x.ptr)
+Base.cconvert(::Type{CXObjCIvarDecl}, x::AbstractObjCIvarDecl) = x
+Base.unsafe_convert(::Type{CXObjCMethodDecl}, x::AbstractObjCMethodDecl) = CXObjCMethodDecl(x.ptr)
+Base.cconvert(::Type{CXObjCMethodDecl}, x::AbstractObjCMethodDecl) = x
+Base.unsafe_convert(::Type{CXObjCPropertyDecl}, x::AbstractObjCPropertyDecl) = CXObjCPropertyDecl(x.ptr)
+Base.cconvert(::Type{CXObjCPropertyDecl}, x::AbstractObjCPropertyDecl) = x
+Base.unsafe_convert(::Type{CXObjCPropertyImplDecl}, x::AbstractObjCPropertyImplDecl) = CXObjCPropertyImplDecl(x.ptr)
+Base.cconvert(::Type{CXObjCPropertyImplDecl}, x::AbstractObjCPropertyImplDecl) = x
+Base.unsafe_convert(::Type{CXObjCProtocolDecl}, x::AbstractObjCProtocolDecl) = CXObjCProtocolDecl(x.ptr)
+Base.cconvert(::Type{CXObjCProtocolDecl}, x::AbstractObjCProtocolDecl) = x
+Base.unsafe_convert(::Type{CXObjCTypeParamDecl}, x::AbstractObjCTypeParamDecl) = CXObjCTypeParamDecl(x.ptr)
+Base.cconvert(::Type{CXObjCTypeParamDecl}, x::AbstractObjCTypeParamDecl) = x
+
 # core/AST/DeclTemplate.jl
 Base.unsafe_convert(::Type{CXBuiltinTemplateDecl}, x::AbstractBuiltinTemplateDecl) = CXBuiltinTemplateDecl(x.ptr)
 Base.cconvert(::Type{CXBuiltinTemplateDecl}, x::AbstractBuiltinTemplateDecl) = x
@@ -2303,10 +2339,14 @@ Base.unsafe_convert(::Type{CXMatrixType}, x::AbstractMatrixType) = CXMatrixType(
 Base.cconvert(::Type{CXMatrixType}, x::AbstractMatrixType) = x
 Base.unsafe_convert(::Type{CXMemberPointerType}, x::AbstractMemberPointerType) = CXMemberPointerType(x.ptr)
 Base.cconvert(::Type{CXMemberPointerType}, x::AbstractMemberPointerType) = x
+Base.unsafe_convert(::Type{CXObjCInterfaceType}, x::AbstractObjCInterfaceType) = CXObjCInterfaceType(x.ptr)
+Base.cconvert(::Type{CXObjCInterfaceType}, x::AbstractObjCInterfaceType) = x
 Base.unsafe_convert(::Type{CXObjCObjectPointerType}, x::AbstractObjCObjectPointerType) = CXObjCObjectPointerType(x.ptr)
 Base.cconvert(::Type{CXObjCObjectPointerType}, x::AbstractObjCObjectPointerType) = x
 Base.unsafe_convert(::Type{CXObjCObjectType}, x::AbstractObjCObjectType) = CXObjCObjectType(x.ptr)
 Base.cconvert(::Type{CXObjCObjectType}, x::AbstractObjCObjectType) = x
+Base.unsafe_convert(::Type{CXObjCTypeParamType}, x::AbstractObjCTypeParamType) = CXObjCTypeParamType(x.ptr)
+Base.cconvert(::Type{CXObjCTypeParamType}, x::AbstractObjCTypeParamType) = x
 Base.unsafe_convert(::Type{CXPackExpansionType}, x::AbstractPackExpansionType) = CXPackExpansionType(x.ptr)
 Base.cconvert(::Type{CXPackExpansionType}, x::AbstractPackExpansionType) = x
 Base.unsafe_convert(::Type{CXParenType}, x::AbstractParenType) = CXParenType(x.ptr)

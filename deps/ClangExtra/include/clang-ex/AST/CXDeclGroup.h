@@ -17,6 +17,14 @@ bool clang_DeclGroupRef_isDeclGroup(CXDeclGroupRef DG);
 
 CXDecl clang_DeclGroupRef_getSingleDecl(CXDeclGroupRef DG);
 
+// The group as a count + index pair, which is the only way to reach a multi-declaration
+// group (`int a, b;`) -- clang exposes those through iterators alone, and getSingleDecl
+// asserts on them. Total: a null group has size 0.
+unsigned clang_DeclGroupRef_size(CXDeclGroupRef DG);
+
+// PRECONDITION: I < clang_DeclGroupRef_size.
+CXDecl clang_DeclGroupRef_getDecl(CXDeclGroupRef DG, unsigned I);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

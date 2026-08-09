@@ -396,6 +396,11 @@ CXHeaderSearch clang_Preprocessor_getHeaderSearchInfo(CXPreprocessor PP) {
   return reinterpret_cast<CXHeaderSearch>(&reinterpret_cast<clang::Preprocessor *>(PP)->getHeaderSearchInfo());
 }
 
+void clang_Preprocessor_initializeBuiltins(CXPreprocessor PP) {
+  auto *P = reinterpret_cast<clang::Preprocessor *>(PP);
+  P->getBuiltinInfo().initializeBuiltins(P->getIdentifierTable(), P->getLangOpts());
+}
+
 void clang_Preprocessor_EnterMainSourceFile(CXPreprocessor PP) {
   reinterpret_cast<clang::Preprocessor *>(PP)->EnterMainSourceFile();
 }

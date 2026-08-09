@@ -88,6 +88,72 @@ function getIsLiteralLabel(x::AsmLabelAttr)
     return clang_AsmLabelAttr_getIsLiteralLabel(x)
 end
 
+# AvailabilityAttr
+function getPlatform(x::AvailabilityAttr)
+    @check_ptrs x
+    return IdentifierInfo(clang_AvailabilityAttr_getPlatform(x))
+end
+
+"""
+    getIntroduced(x::AvailabilityAttr) -> Union{Nothing,NTuple{3,UInt32}}
+The `(major, minor, subminor)` platform version the declaration was introduced in, or
+`nothing` when the attribute names none. Absent minor / subminor components are reported
+as `0`, the same convention [`getVersionIntroduced`](@ref) uses.
+"""
+function getIntroduced(x::AvailabilityAttr)
+    @check_ptrs x
+    major, minor, subminor = Ref{Cuint}(0), Ref{Cuint}(0), Ref{Cuint}(0)
+    clang_AvailabilityAttr_getIntroduced(x, major, minor, subminor) || return nothing
+    return (major[], minor[], subminor[])
+end
+
+"""
+    getDeprecated(x::AvailabilityAttr) -> Union{Nothing,NTuple{3,UInt32}}
+The version the declaration was deprecated in, in the shape [`getIntroduced`](@ref) returns.
+"""
+function getDeprecated(x::AvailabilityAttr)
+    @check_ptrs x
+    major, minor, subminor = Ref{Cuint}(0), Ref{Cuint}(0), Ref{Cuint}(0)
+    clang_AvailabilityAttr_getDeprecated(x, major, minor, subminor) || return nothing
+    return (major[], minor[], subminor[])
+end
+
+"""
+    getObsoleted(x::AvailabilityAttr) -> Union{Nothing,NTuple{3,UInt32}}
+The version the declaration was removed in, in the shape [`getIntroduced`](@ref) returns.
+"""
+function getObsoleted(x::AvailabilityAttr)
+    @check_ptrs x
+    major, minor, subminor = Ref{Cuint}(0), Ref{Cuint}(0), Ref{Cuint}(0)
+    clang_AvailabilityAttr_getObsoleted(x, major, minor, subminor) || return nothing
+    return (major[], minor[], subminor[])
+end
+
+function getUnavailable(x::AvailabilityAttr)
+    @check_ptrs x
+    return clang_AvailabilityAttr_getUnavailable(x)
+end
+
+function getMessage(x::AvailabilityAttr)
+    @check_ptrs x
+    return get_string(clang_AvailabilityAttr_getMessage(x))
+end
+
+function getStrict(x::AvailabilityAttr)
+    @check_ptrs x
+    return clang_AvailabilityAttr_getStrict(x)
+end
+
+function getReplacement(x::AvailabilityAttr)
+    @check_ptrs x
+    return get_string(clang_AvailabilityAttr_getReplacement(x))
+end
+
+function getPriority(x::AvailabilityAttr)
+    @check_ptrs x
+    return clang_AvailabilityAttr_getPriority(x)
+end
+
 # CleanupAttr
 function getFunctionDecl(x::CleanupAttr)
     @check_ptrs x
@@ -131,6 +197,16 @@ end
 function getFirstArg(x::FormatAttr)
     @check_ptrs x
     return clang_FormatAttr_getFirstArg(x)
+end
+
+# MaxFieldAlignmentAttr
+"""
+    getAlignment(x::MaxFieldAlignmentAttr) -> UInt32
+The `n` of `#pragma pack(n)`, in bits — so `#pragma pack(1)` reports `8`.
+"""
+function getAlignment(x::MaxFieldAlignmentAttr)
+    @check_ptrs x
+    return clang_MaxFieldAlignmentAttr_getAlignment(x)
 end
 
 # NonNullAttr

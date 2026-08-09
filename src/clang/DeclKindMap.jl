@@ -1,6 +1,7 @@
 # Generated from deps/ClangExtra/include/clang-ex/AST/DeclNodes.inc by gen/decl_nodes.jl — do not edit.
 # CXDeclKind -> concrete carrier; kinds without a wrapped `<name>Decl` carrier
-# (many ObjC/OpenMP decls) are absent, so resolve falls back to the base Decl.
+# (the six OpenMP declaration kinds, and Friend, which is not one) are absent, so
+# resolve falls back to the base Decl.
 const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_TranslationUnit => TranslationUnitDecl,
     LibClangEx.CXDeclKind_RequiresExprBody => RequiresExprBodyDecl,
@@ -13,6 +14,13 @@ const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_StaticAssert => StaticAssertDecl,
     LibClangEx.CXDeclKind_PragmaDetectMismatch => PragmaDetectMismatchDecl,
     LibClangEx.CXDeclKind_PragmaComment => PragmaCommentDecl,
+    LibClangEx.CXDeclKind_ObjCPropertyImpl => ObjCPropertyImplDecl,
+    LibClangEx.CXDeclKind_ObjCMethod => ObjCMethodDecl,
+    LibClangEx.CXDeclKind_ObjCProtocol => ObjCProtocolDecl,
+    LibClangEx.CXDeclKind_ObjCInterface => ObjCInterfaceDecl,
+    LibClangEx.CXDeclKind_ObjCImplementation => ObjCImplementationDecl,
+    LibClangEx.CXDeclKind_ObjCCategoryImpl => ObjCCategoryImplDecl,
+    LibClangEx.CXDeclKind_ObjCCategory => ObjCCategoryDecl,
     LibClangEx.CXDeclKind_Namespace => NamespaceDecl,
     LibClangEx.CXDeclKind_HLSLBuffer => HLSLBufferDecl,
     LibClangEx.CXDeclKind_UnresolvedUsingValue => UnresolvedUsingValueDecl,
@@ -36,6 +44,8 @@ const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_NonTypeTemplateParm => NonTypeTemplateParmDecl,
     LibClangEx.CXDeclKind_MSProperty => MSPropertyDecl,
     LibClangEx.CXDeclKind_Field => FieldDecl,
+    LibClangEx.CXDeclKind_ObjCIvar => ObjCIvarDecl,
+    LibClangEx.CXDeclKind_ObjCAtDefsField => ObjCAtDefsFieldDecl,
     LibClangEx.CXDeclKind_Binding => BindingDecl,
     LibClangEx.CXDeclKind_UsingShadow => UsingShadowDecl,
     LibClangEx.CXDeclKind_ConstructorUsingShadow => ConstructorUsingShadowDecl,
@@ -50,6 +60,7 @@ const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_UnresolvedUsingTypename => UnresolvedUsingTypenameDecl,
     LibClangEx.CXDeclKind_Typedef => TypedefDecl,
     LibClangEx.CXDeclKind_TypeAlias => TypeAliasDecl,
+    LibClangEx.CXDeclKind_ObjCTypeParam => ObjCTypeParamDecl,
     LibClangEx.CXDeclKind_TemplateTypeParm => TemplateTypeParmDecl,
     LibClangEx.CXDeclKind_TemplateTemplateParm => TemplateTemplateParmDecl,
     LibClangEx.CXDeclKind_VarTemplate => VarTemplateDecl,
@@ -58,6 +69,8 @@ const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_ClassTemplate => ClassTemplateDecl,
     LibClangEx.CXDeclKind_Concept => ConceptDecl,
     LibClangEx.CXDeclKind_BuiltinTemplate => BuiltinTemplateDecl,
+    LibClangEx.CXDeclKind_ObjCProperty => ObjCPropertyDecl,
+    LibClangEx.CXDeclKind_ObjCCompatibleAlias => ObjCCompatibleAliasDecl,
     LibClangEx.CXDeclKind_NamespaceAlias => NamespaceAliasDecl,
     LibClangEx.CXDeclKind_Label => LabelDecl,
     LibClangEx.CXDeclKind_UsingEnum => UsingEnumDecl,

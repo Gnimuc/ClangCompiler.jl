@@ -36,6 +36,9 @@ end
              void nnfn(int *a, int *b) __attribute__((nonnull(2)));
              [[nodiscard("check-me")]] int mustuse();
              struct __attribute__((packed)) SPacked { char c; int i; };
+             #pragma pack(2)
+             struct SPack2 { char c; int i; };
+             #pragma pack()
              __attribute__((used)) static int gused = 1;
              void cleanup_fn(int *p);
              void cfn() { int lc __attribute__((cleanup(cleanup_fn))) = 0; (void)lc; }
@@ -84,6 +87,12 @@ end
     @test CC.isAlignmentExpr(ali)
     @test CC.getAlignmentExpr(ali).ptr != C_NULL
     @test CC.getAlignment(ali, ctx) == 32 * 8
+
+    # MaxFieldAlignmentAttr: `#pragma pack(2)` in bytes, reported in bits like AlignedAttr.
+    # `struct SPacked`'s __attribute__((packed)) is a different attribute and leaves none.
+    mfa = findattr(look("SPack2"), CC.MaxFieldAlignmentAttr)
+    @test CC.getAlignment(mfa) == 2 * 8
+    @test !any(a -> a isa CC.MaxFieldAlignmentAttr, resolved_attrs(look("SPacked")))
 
     # SectionAttr
     @test CC.getName(findattr(look("gsec"), CC.SectionAttr)) == "__DATA,__mysec"
