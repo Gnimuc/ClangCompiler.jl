@@ -4,6 +4,7 @@
 abstract type AbstractAPValue end
 abstract type AbstractASTNameGenerator end
 abstract type AbstractASTTemplateArgumentListInfo end
+abstract type AbstractAnalysisAction <: AbstractFrontendAction end
 abstract type AbstractAnnotationValue end
 abstract type AbstractBFloat16Ty <: AbstractBuiltinType end
 abstract type AbstractBoolTy <: AbstractBuiltinType end
@@ -37,6 +38,7 @@ abstract type AbstractEmitCodeGenOnlyAction <: AbstractCodeGenAction end
 abstract type AbstractEmitLLVMAction <: AbstractCodeGenAction end
 abstract type AbstractEmitObjAction <: AbstractCodeGenAction end
 abstract type AbstractExplicitSpecifier end
+abstract type AbstractExtractAPIAction <: AbstractFrontendAction end
 abstract type AbstractExpr_ <: AbstractExpr end
 abstract type AbstractFileEntry end
 abstract type AbstractFileEntryRef end
@@ -47,6 +49,7 @@ abstract type AbstractFloat128Ty <: AbstractBuiltinType end
 abstract type AbstractFloat16Ty <: AbstractBuiltinType end
 abstract type AbstractFloatComplexTy <: AbstractBuiltinType end
 abstract type AbstractFloatTy <: AbstractBuiltinType end
+abstract type AbstractFriendDecl <: AbstractDecl end
 abstract type AbstractFriendTemplateDecl <: AbstractDecl end
 abstract type AbstractFrontendOptions end
 abstract type AbstractFunctionTemplateDecl <: AbstractRedeclarableTemplateDecl end
@@ -174,3 +177,24 @@ abstract type AbstractAmbiguousConversionSequence end
 abstract type AbstractOverloadCandidate end
 
 abstract type AbstractUserDefinedConversionSequence end
+
+abstract type AbstractPrecompiledPreamble end
+
+# The concrete FrontendActions. They subtype AbstractFrontendAction directly rather than an
+# AbstractASTFrontendAction: clang's ASTFrontendAction declares no member function this
+# package reaches, and AbstractCodeGenAction -- whose C++ class is also an ASTFrontendAction
+# -- already sits one level under AbstractFrontendAction for the same reason.
+abstract type AbstractASTDumpAction <: AbstractFrontendAction end
+abstract type AbstractASTPrintAction <: AbstractFrontendAction end
+abstract type AbstractGeneratePCHAction <: AbstractFrontendAction end
+abstract type AbstractReadPCHAndPreprocessAction <: AbstractFrontendAction end
+abstract type AbstractSyntaxOnlyAction <: AbstractFrontendAction end
+
+abstract type AbstractMultiplexConsumer <: AbstractASTConsumer end
+
+abstract type AbstractChainedDiagnosticConsumer <: AbstractDiagnosticConsumer end
+abstract type AbstractVerifyDiagnosticConsumer <: AbstractDiagnosticConsumer end
+abstract type AbstractSerializedDiagnosticPrinter <: AbstractDiagnosticConsumer end
+
+abstract type AbstractDependencyCollector end
+abstract type AbstractDependencyFileGenerator <: AbstractDependencyCollector end

@@ -12,6 +12,8 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <memory>
+
 // Expr::Classification
 namespace {
 // clang::Expr::Classification keeps "was modifiability tested" in a private member
@@ -1665,6 +1667,15 @@ CXCXXBaseSpecifier clang_CastExpr_getPathElement(CXCastExpr E, unsigned I) {
 }
 
 // OpaqueValueExpr
+CXOpaqueValueExpr clang_OpaqueValueExpr_create(CXASTContext Ctx, CXSourceLocation_ Loc,
+                                               CXQualType T, CXExprValueKind VK,
+                                               CXExprObjectKind OK) {
+  auto *C = reinterpret_cast<clang::ASTContext *>(Ctx);
+  return reinterpret_cast<CXOpaqueValueExpr>(new (*C) clang::OpaqueValueExpr(
+      clang::SourceLocation::getFromPtrEncoding(Loc), clang::QualType::getFromOpaquePtr(T),
+      static_cast<clang::ExprValueKind>(VK), static_cast<clang::ExprObjectKind>(OK)));
+}
+
 CXSourceLocation_ clang_OpaqueValueExpr_getLocation(CXOpaqueValueExpr E) {
   return reinterpret_cast<CXSourceLocation_>(reinterpret_cast<clang::OpaqueValueExpr *>(E)->getLocation().getPtrEncoding());
 }

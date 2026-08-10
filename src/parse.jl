@@ -108,5 +108,18 @@ function parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::Ab
         EndSourceFile(pp)
         dispose(fid)
         end_diag(ci)
+        # Re-arm the diagnostic consumer. `end_diag` is
+        # `DiagnosticConsumer::EndSourceFile`, and on the TextDiagnosticPrinter
+        # `createDiagnostics` installs that *destroys* the printer's TextDiagnostic --
+        # there is no nesting, so the call tears down the outer state this nested parse
+        # borrowed rather than just its own. `HandleDiagnostic` then reaches
+        # `TextDiag->emitDiagnostic(...)` through a null unique_ptr for the next diagnostic
+        # that carries a location, and the assert that would have caught it is compiled out
+        # of the release libclang-cpp: an ordinary warning in a later increment segfaults.
+        #
+        # The interpreter arms its consumer once, in `create_parser` (src/compiler/parser.jl),
+        # with no matching end -- staying armed for the interpreter's life is the invariant.
+        # A scope-spec lookup must not be what breaks it.
+        begin_diag(ci)
     end
 end

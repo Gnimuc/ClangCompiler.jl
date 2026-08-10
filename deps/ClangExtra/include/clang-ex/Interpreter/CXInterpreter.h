@@ -2,8 +2,10 @@
 #define LLVM_CLANG_C_EXTRA_CXINTERPRETER_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-ex/Basic/CXABI.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
+#include "clang-c/CXString.h"
 #include "llvm-c/LLJIT.h"
 
 LLVM_CLANG_C_EXTERN_C_BEGIN
@@ -47,20 +49,44 @@ LLVMOrcLLJITRef clang_Interpreter_getExecutionEngine(CXInterpreter Interp);
 
 CXPartialTranslationUnit clang_Interpreter_Parse(CXInterpreter Interp, const char *Code);
 
-void clang_Interpreter_Execute(CXInterpreter Interp, CXPartialTranslationUnit PTU);
+// The four fallible void methods below report failure through their return value rather
+// than the library's usual log-to-stderr-and-swallow, because a REPL has to tell its user
+// that an input did not run. The CXString is the llvm::Error's message and is empty on
+// success; it is caller-owned either way (an empty CXString is unmanaged, so disposing it
+// is still correct).
+CXString clang_Interpreter_Execute(CXInterpreter Interp, CXPartialTranslationUnit PTU);
 
-void clang_Interpreter_ParseAndExecute(CXInterpreter Interp, const char *Code,
-                                       CXValue Result);
+CXString clang_Interpreter_ParseAndExecute(CXInterpreter Interp, const char *Code,
+                                           CXValue Result);
 
 LLVMOrcExecutorAddress clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
                                                          CXCXXRecordDecl CXXRD);
 
-void clang_Interpreter_Undo(CXInterpreter Interp, unsigned int N);
+// Undoing more increments than have been parsed is the caller's error to detect: the
+// returned message says so rather than the process aborting.
+CXString clang_Interpreter_Undo(CXInterpreter Interp, unsigned int N);
 
-void clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name);
+CXString clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name);
 
 LLVMOrcExecutorAddress clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
                                                           const char *IRName);
+
+// helper: the GlobalDecl overload of getSymbolAddress, split into one entry point per
+// GlobalDecl spelling because C has no overloading. Unlike the IRName overload these use
+// CodeGenModule's own mangled name for the decl, so they cannot disagree with what codegen
+// emitted. All three return 0 when the decl has not been emitted yet (the symbol does not
+// exist until its increment has been executed) and log the reason.
+LLVMOrcExecutorAddress clang_Interpreter_getSymbolAddressFromDecl(CXInterpreter Interp,
+                                                                  CXNamedDecl D);
+
+// A constructor has several emitted bodies; CtorKind picks the one wanted.
+LLVMOrcExecutorAddress
+clang_Interpreter_getSymbolAddressFromCtorDecl(CXInterpreter Interp, CXCXXConstructorDecl D,
+                                               CXCXXCtorType CtorKind);
+
+LLVMOrcExecutorAddress
+clang_Interpreter_getSymbolAddressFromDtorDecl(CXInterpreter Interp, CXCXXDestructorDecl D,
+                                               CXCXXDtorType DtorKind);
 
 LLVMOrcExecutorAddress
 clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,

@@ -1114,6 +1114,15 @@ function getID(x::AbstractStmt, ctx::ASTContext)
 end
 
 """
+    dumpToString(x::AbstractStmt, ctx::AbstractASTContext) -> String
+Return the AST dump `dump_ast` writes to stderr, as a string.
+"""
+function dumpToString(x::AbstractStmt, ctx::AbstractASTContext)
+    @check_ptrs x ctx
+    return get_string(clang_Stmt_dumpToString(x, ctx))
+end
+
+"""
     dumpPretty(x::AbstractStmt, ctx::ASTContext)
 Write the pretty-printed statement to `stderr`.
 """

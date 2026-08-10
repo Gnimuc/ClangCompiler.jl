@@ -1,0 +1,8 @@
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXArgumentsAdjusters.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXCompilationDatabase.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXJSONCompilationDatabase.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXTooling.h)
+add_subdirectory(Core)
+add_subdirectory(DependencyScanning)
+add_subdirectory(Inclusions)
+add_subdirectory(Syntax)

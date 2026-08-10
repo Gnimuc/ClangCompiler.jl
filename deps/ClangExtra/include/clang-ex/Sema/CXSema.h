@@ -4144,6 +4144,64 @@ CXFunctionDecl clang_Sema_resolveAddressOfSingleOverloadCandidate(CXSema S, CXEx
 bool clang_Sema_IsValueInFlagEnum(CXSema S, CXEnumDecl ED, LLVMGenericValueRef Val,
                                   bool AllowMask);
 
+// `Base.Name` / `Base->Name`, resolving the member by lookup rather than taking one already
+// resolved: this runs access checking and overload handling, which
+// clang_Sema_BuildFieldReferenceExpr's already-resolved FieldDecl skips. TemplateKWLoc and
+// TemplateArgs carry the `.template f<T>()` form and may be an invalid location / NULL.
+// FirstQualifierInScope may be NULL. ExprResult crosses split (MARSHALLING.md section 8).
+CXExpr clang_Sema_BuildMemberReferenceExpr(CXSema S, CXExpr Base, CXQualType BaseType,
+                                           CXSourceLocation_ OpLoc, bool IsArrow,
+                                           CXCXXScopeSpec SS,
+                                           CXSourceLocation_ TemplateKWLoc,
+                                           CXNamedDecl FirstQualifierInScope,
+                                           CXDeclarationNameInfo NameInfo,
+                                           CXTemplateArgumentListInfo TemplateArgs,
+                                           CXScope Scp, bool *IsInvalid);
+
+// The overload taking a LookupResult the caller has already filled -- what composes with
+// the wrapped clang_Sema_LookupQualifiedName machinery.
+CXExpr clang_Sema_BuildMemberReferenceExprFromLookup(
+    CXSema S, CXExpr Base, CXQualType BaseType, CXSourceLocation_ OpLoc, bool IsArrow,
+    CXCXXScopeSpec SS, CXSourceLocation_ TemplateKWLoc, CXNamedDecl FirstQualifierInScope,
+    CXLookupResult R, CXTemplateArgumentListInfo TemplateArgs, CXScope Scp,
+    bool SuppressQualifierCheck, bool *IsInvalid);
+
+// A complete new-expression: allocation function selection, the constructor call and the
+// array form. AllocTypeInfo may be NULL when AllocType carries the type instead; ArraySize
+// is passed only when HasArraySize, which is what distinguishes `new T[n]` from `new T`.
+// Initializer may be NULL. ExprResult crosses split.
+CXExpr clang_Sema_BuildCXXNew(CXSema S, CXSourceRange_ Range, bool UseGlobal,
+                              CXSourceLocation_ PlacementLParen, CXExpr *PlacementArgs,
+                              unsigned NumPlacementArgs, CXSourceLocation_ PlacementRParen,
+                              CXSourceRange_ TypeIdParens, CXQualType AllocType,
+                              CXTypeSourceInfo AllocTypeInfo, bool HasArraySize,
+                              CXExpr ArraySize, CXSourceRange_ DirectInitRange,
+                              CXExpr Initializer, bool *IsInvalid);
+
+// TemplateName + arguments -> the QualType of the class-template specialization, creating
+// it if this is the first use. This is the on-demand instantiation entry point; the
+// definition is only instantiated once something requires it complete
+// (clang_Sema_RequireCompleteType). A null QualType comes back on error.
+CXQualType clang_Sema_CheckTemplateIdType(CXSema S, CXTemplateName Template,
+                                          CXSourceLocation_ TemplateLoc,
+                                          CXTemplateArgumentListInfo TemplateArgs);
+
+// Begin semantic processing of a function definition whose Decl already exists -- the
+// overload that avoids the parser-side Declarator, so a body can be attached to a
+// FunctionDecl built by other means. Returns the decl processing is scoped to.
+//
+// This opens a scope clang_Sema_ActOnFinishFunctionBody must close. Neither reports an
+// imbalance: an unmatched start leaves Sema mid-definition and the next parse misbehaves,
+// so the pairing is the caller's to keep.
+CXDecl clang_Sema_ActOnStartOfFunctionDef(CXSema S, CXScope Scp, CXDecl D);
+
+// Close the definition opened above, attaching Body (which may be NULL for a function left
+// without one).
+CXDecl clang_Sema_ActOnFinishFunctionBody(CXSema S, CXDecl D, CXStmt Body);
+
+// Close it having skipped the body -- what a parse configured with SkipFunctionBodies does.
+CXDecl clang_Sema_ActOnSkippedFunctionBody(CXSema S, CXDecl D);
+
 // Sema's printing policy, which is the ASTContext's adjusted for the preprocessor -- so it is
 // NOT clang_ASTContext_getPrintingPolicy and the two can disagree.
 //

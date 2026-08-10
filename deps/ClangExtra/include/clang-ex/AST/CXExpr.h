@@ -1009,6 +1009,15 @@ CXExpr clang_ExtVectorElementExpr_getBase(CXExtVectorElementExpr E);
 unsigned clang_ExtVectorElementExpr_getNumElements(CXExtVectorElementExpr E);
 
 // OpaqueValueExpr
+// A placeholder expression of a given type and value category, standing in for a value the
+// caller has no expression for. Overload resolution driven from outside the parser is built
+// on these: one per argument type feeds clang_Sema_AddOverloadCandidate. Allocated in the
+// ASTContext arena, so there is no dispose -- the context owns it. SourceExpr is left null,
+// which clang_OpaqueValueExpr_getSourceExpr then reports.
+CXOpaqueValueExpr clang_OpaqueValueExpr_create(CXASTContext Ctx, CXSourceLocation_ Loc,
+                                               CXQualType T, CXExprValueKind VK,
+                                               CXExprObjectKind OK);
+
 CXSourceLocation_ clang_OpaqueValueExpr_getLocation(CXOpaqueValueExpr E);
 
 // The source expression may be null (an OpaqueValueExpr synthesised without one).

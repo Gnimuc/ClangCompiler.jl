@@ -718,6 +718,31 @@ CXString clang_QualType_printAsString(CXQualType OpaquePtr, CXASTContext Ctx,
   return extra::makeCXString(Str);
 }
 
+CXString clang_QualType_dumpToString(CXQualType OpaquePtr, CXASTContext Ctx) {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  clang::QualType::getFromOpaquePtr(OpaquePtr).dump(
+      OS, *reinterpret_cast<clang::ASTContext *>(Ctx));
+  return extra::makeCXString(OS.str());
+}
+
+CXString clang_QualType_getAsStringWithPolicy(CXQualType OpaquePtr,
+                                              CXPrintingPolicy_ Policy) {
+  return extra::makeCXString(clang::QualType::getFromOpaquePtr(OpaquePtr).getAsString(
+      *reinterpret_cast<clang::PrintingPolicy *>(Policy)));
+}
+
+CXString clang_QualType_printAsStringWithPolicy(CXQualType OpaquePtr,
+                                                CXPrintingPolicy_ Policy,
+                                                const char *PlaceHolder,
+                                                unsigned Indentation) {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  clang::QualType::getFromOpaquePtr(OpaquePtr).print(
+      OS, *reinterpret_cast<clang::PrintingPolicy *>(Policy), PlaceHolder, Indentation);
+  return extra::makeCXString(Str);
+}
+
 void clang_QualType_dump(CXQualType OpaquePtr) {
   clang::QualType::getFromOpaquePtr(OpaquePtr).dump();
 }

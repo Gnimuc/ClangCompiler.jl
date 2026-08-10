@@ -500,6 +500,20 @@ CXString clang_QualType_getAsString(CXQualType OpaquePtr);
 CXString clang_QualType_printAsString(CXQualType OpaquePtr, CXASTContext Ctx,
                                       const char *PlaceHolder, unsigned Indentation);
 
+// The tree clang_QualType_dump writes to stderr, captured as a string instead.
+CXString clang_QualType_dumpToString(CXQualType OpaquePtr, CXASTContext Ctx);
+
+// clang_QualType_getAsString and _printAsString both spell the type under the ASTContext's
+// own policy. These take a caller-built policy instead, which is what makes
+// SuppressDefaultTemplateArgs and PrintCanonicalTypes reachable.
+CXString clang_QualType_getAsStringWithPolicy(CXQualType OpaquePtr,
+                                              CXPrintingPolicy_ Policy);
+
+CXString clang_QualType_printAsStringWithPolicy(CXQualType OpaquePtr,
+                                                CXPrintingPolicy_ Policy,
+                                                const char *PlaceHolder,
+                                                unsigned Indentation);
+
 void clang_QualType_dump(CXQualType OpaquePtr);
 
 CXQualType clang_QualType_getCanonicalType(CXQualType OpaquePtr);

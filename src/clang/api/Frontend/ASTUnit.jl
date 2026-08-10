@@ -7,8 +7,9 @@ file manager, a source manager and `diag`, but no preprocessor, AST context or `
 until a parse runs.
 
 `inv` is **adopted**: the unit rewraps it in a fresh `shared_ptr` and frees it, so calling
-`dispose` on `inv` afterwards is a double free. `diag` stays the caller's — the shim pins
-it with an explicit `Retain` (MARSHALLING.md §12) so the unit's release cannot delete it.
+`dispose` on `inv` afterwards is a double free. `diag` stays the caller's: it arrives already holding
+the caller's own reference (MARSHALLING.md §12), so the unit's `IntrusiveRefCntPtr` rides on
+top of that and its release cannot delete it.
 
 Keyword arguments mirror the C++ parameters: `capture_diagnostics` selects whether the
 unit installs a capturing diagnostic consumer on `diag` (the default,
@@ -36,10 +37,10 @@ file's top-level declarations, and it outlives any `CompilerInstance`.
 
 `inv` is **adopted** — on the success path *and* on the failure path, where the unit is
 destroyed before this returns — so calling `dispose` on it afterwards is a double free.
-`diag` and `fm` stay the caller's: the unit holds each in an `IntrusiveRefCntPtr` and the
-shim pins both with an explicit `Retain` (MARSHALLING.md §12), so the unit's release cannot
-delete them. Both must still outlive the unit, which points at them — `dispose` the unit
-first.
+`diag` and `fm` stay the caller's: the unit holds each in an `IntrusiveRefCntPtr`, and each
+arrives already holding the caller's own reference (MARSHALLING.md §12), so the unit's
+release cannot delete them. Both must still outlive the unit, which points at them —
+`dispose` the unit first.
 
 `inv` must carry exactly one input, of source kind and not LLVM IR: Clang reads `Inputs[0]`
 unconditionally and asserts on the rest, so an invocation built for no input file is out of
@@ -71,8 +72,8 @@ This is the only state in which the two file-name accessors differ:
 [`getMainFileName`](@ref) then names `filename` while
 [`getOriginalSourceFileName`](@ref) names the source the AST was built from.
 
-`diag` stays the caller's, pinned with an explicit `Retain` (MARSHALLING.md §12) as on the
-other load path, and must outlive the unit. `fs_opts` and `hs_opts` default to a fresh
+`diag` stays the caller's, holding its own reference as on the other load path
+(MARSHALLING.md §12), and must outlive the unit. `fs_opts` and `hs_opts` default to a fresh
 default-constructed set; a supplied `hs_opts` is **copied** rather than adopted, so
 disposing the caller's own copy afterwards stays correct.
 

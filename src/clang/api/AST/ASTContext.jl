@@ -1057,6 +1057,19 @@ function isNearlyEmpty(x::ASTContext, a2::AbstractCXXRecordDecl)
     return clang_ASTContext_isNearlyEmpty(x, a2)
 end
 
+"""
+    getVTableContext(x::ASTContext) -> VTableContextBase
+Return the context's vtable-layout builder, created on the first ask.
+
+Borrowed: the `ASTContext` owns it, so it has no `dispose`. Which ABI's builder it is is
+readable with [`isMicrosoft`](@ref); everything beyond that needs the Itanium one, reached
+with [`castToItaniumVTableContext`](@ref).
+"""
+function getVTableContext(x::ASTContext)
+    @check_ptrs x
+    return VTableContextBase(clang_ASTContext_getVTableContext(x))
+end
+
 function isPromotableBitField(x::ASTContext, a2::AbstractExpr)
     @check_ptrs x
     return QualType(clang_ASTContext_isPromotableBitField(x, a2))
@@ -1976,6 +1989,29 @@ function getParentAsDecl(x::ASTContext, d::AbstractDecl, i::Integer)
     @assert 0 <= i < getNumParents(x, d) "parent index out of range"
     p = Decl(clang_ASTContext_getParentOfDeclAsDecl(x, d, i))
     return is_null_handle(p) ? p : resolve(p)
+end
+
+"""
+    getParentAsNode(x::ASTContext, node, i::Integer) -> DynTypedNode
+Return `node`'s `i`-th parent whatever its kind — the answer [`getParentAsStmt`](@ref) and
+[`getParentAsDecl`](@ref) cannot give, because a type, a type location or a
+nested-name-specifier parent is NULL to both of them.
+
+`i` must be less than [`getNumParents`](@ref).
+
+This function allocates and one should call `dispose` to release the resources after using
+this object. Discriminate the result with the `getAs*` family in `api/AST/ASTTypeTraits.jl`.
+"""
+function getParentAsNode(x::ASTContext, s::AbstractStmt, i::Integer)
+    @check_ptrs x s
+    @assert 0 <= i < getNumParents(x, s) "parent index out of range"
+    return DynTypedNode(clang_ASTContext_getParentOfStmtAsNode(x, s, i))
+end
+
+function getParentAsNode(x::ASTContext, d::AbstractDecl, i::Integer)
+    @check_ptrs x d
+    @assert 0 <= i < getNumParents(x, d) "parent index out of range"
+    return DynTypedNode(clang_ASTContext_getParentOfDeclAsNode(x, d, i))
 end
 
 """

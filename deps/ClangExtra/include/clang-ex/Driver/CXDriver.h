@@ -234,6 +234,20 @@ const char *clang_Driver_CreateTempFile(CXDriver D, CXCompilation C, const char 
 // The path clang-cl would use for the precompiled header of BaseName.
 CXString clang_Driver_GetClPchPath(CXDriver D, CXCompilation C, const char *BaseName);
 
+// Runs the compilation the driver built and returns the exit code clang would have
+// returned: this is what turns the already-wrapped Driver + BuildCompilation pair into a
+// working compiler, with the driver still doing the surrounding work (reporting errors,
+// writing response files, removing temporaries) that ExecuteJobs alone does not.
+//
+// The failure report has the same shape as clang_Compilation_ExecuteJobs: `*NumFailing`
+// receives the total, and the first min(N, *NumFailing) failures land in `FailingResults`
+// and `FailingCommands`. Failures come only from commands in the compilation's own job
+// list, so N = clang_JobList_size(clang_Compilation_getJobs(C)) reports all of them.
+// `NumFailing` may be NULL, and so may the buffers when N is 0.
+int clang_Driver_ExecuteCompilation(CXDriver D, CXCompilation C, unsigned *NumFailing,
+                                    int *FailingResults, CXCommand *FailingCommands,
+                                    unsigned N);
+
 // --- clang::driver, namespace-level ---------------------------------------------------
 //
 // Free functions, so no receiver: the lowercase `driver` segment is the namespace.

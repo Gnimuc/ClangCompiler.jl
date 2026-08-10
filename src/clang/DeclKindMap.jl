@@ -1,6 +1,6 @@
 # Generated from deps/ClangExtra/include/clang-ex/AST/DeclNodes.inc by gen/decl_nodes.jl — do not edit.
 # CXDeclKind -> concrete carrier; kinds without a wrapped `<name>Decl` carrier
-# (the six OpenMP declaration kinds, and Friend, which is not one) are absent, so
+# (the six OpenMP declaration kinds) are absent, so
 # resolve falls back to the base Decl.
 const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_TranslationUnit => TranslationUnitDecl,
@@ -79,6 +79,7 @@ const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_Import => ImportDecl,
     LibClangEx.CXDeclKind_ImplicitConceptSpecialization => ImplicitConceptSpecializationDecl,
     LibClangEx.CXDeclKind_FriendTemplate => FriendTemplateDecl,
+    LibClangEx.CXDeclKind_Friend => FriendDecl,
     LibClangEx.CXDeclKind_FileScopeAsm => FileScopeAsmDecl,
     LibClangEx.CXDeclKind_Empty => EmptyDecl,
     LibClangEx.CXDeclKind_AccessSpec => AccessSpecDecl,

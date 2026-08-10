@@ -90,3 +90,60 @@ function setBool(x::AbstractPrintingPolicy, value::Bool)
     @check_ptrs x
     return clang_PrintingPolicy_setBool(x, value)
 end
+
+"""
+    getFullyQualifiedName(x::AbstractPrintingPolicy) -> Bool
+Return whether names print fully qualified from the global namespace.
+"""
+function getFullyQualifiedName(x::AbstractPrintingPolicy)
+    @check_ptrs x
+    return clang_PrintingPolicy_getFullyQualifiedName(x)
+end
+
+"""
+    setFullyQualifiedName(x::AbstractPrintingPolicy, value::Bool)
+Choose whether names print fully qualified from the global namespace. This qualifies the
+name as the AST spells it; it does not resolve using-declarations or requalify template
+arguments, which is what [`getFullyQualifiedName`](@ref) on a `QualType` does instead.
+"""
+function setFullyQualifiedName(x::AbstractPrintingPolicy, value::Bool)
+    @check_ptrs x
+    return clang_PrintingPolicy_setFullyQualifiedName(x, value)
+end
+
+"""
+    getSuppressDefaultTemplateArgs(x::AbstractPrintingPolicy) -> Bool
+Return whether template arguments matching their parameter's default are omitted.
+"""
+function getSuppressDefaultTemplateArgs(x::AbstractPrintingPolicy)
+    @check_ptrs x
+    return clang_PrintingPolicy_getSuppressDefaultTemplateArgs(x)
+end
+
+"""
+    setSuppressDefaultTemplateArgs(x::AbstractPrintingPolicy, value::Bool)
+Choose whether template arguments matching their parameter's default are omitted, printing
+`std::vector<int>` rather than `std::vector<int, std::allocator<int>>`.
+"""
+function setSuppressDefaultTemplateArgs(x::AbstractPrintingPolicy, value::Bool)
+    @check_ptrs x
+    return clang_PrintingPolicy_setSuppressDefaultTemplateArgs(x, value)
+end
+
+"""
+    getPrintCanonicalTypes(x::AbstractPrintingPolicy) -> Bool
+Return whether types print canonically, with sugar stripped.
+"""
+function getPrintCanonicalTypes(x::AbstractPrintingPolicy)
+    @check_ptrs x
+    return clang_PrintingPolicy_getPrintCanonicalTypes(x)
+end
+
+"""
+    setPrintCanonicalTypes(x::AbstractPrintingPolicy, value::Bool)
+Choose whether types print canonically, with sugar (typedefs, using-aliases) stripped.
+"""
+function setPrintCanonicalTypes(x::AbstractPrintingPolicy, value::Bool)
+    @check_ptrs x
+    return clang_PrintingPolicy_setPrintCanonicalTypes(x, value)
+end

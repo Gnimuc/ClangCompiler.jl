@@ -12,6 +12,7 @@ include("AST/DeclBase.jl")
 include("AST/DeclCXX.jl")
 include("AST/DeclGroup.jl")
 include("AST/DeclObjC.jl")
+include("AST/DeclFriend.jl")
 include("AST/DeclTemplate.jl")
 include("AST/NestedNameSpecifier.jl")
 include("AST/ParentMapContext.jl")
@@ -21,15 +22,40 @@ include("AST/TemplateBase.jl")
 include("AST/TemplateName.jl")
 include("AST/Type.jl")
 include("AST/TypeLoc.jl")
+include("AST/QualTypeNames.jl")
 include("AST/Expr.jl")
 include("AST/ExprCXX.jl")
 include("AST/Stmt.jl")
 include("AST/StmtOpenMP.jl")
 include("AST/StmtCXX.jl")
+include("AST/ASTImporter.jl")
+include("AST/ASTStructuralEquivalence.jl")
+include("AST/ASTTypeTraits.jl")
+include("AST/ExprConcepts.jl")
+include("AST/VTableBuilder.jl")
+
+# ASTMatchers
+include("ASTMatchers/ASTMatchers.jl")
+include("ASTMatchers/ASTMatchersInternal.jl")
+include("ASTMatchers/ASTMatchFinder.jl")
+include("ASTMatchers/Dynamic/Parser.jl")
+include("ASTMatchers/Dynamic/VariantValue.jl")
 
 # Analysis
+include("Analysis/AnalysisDeclContext.jl")
 include("Analysis/CFG.jl")
+include("Analysis/CFGReachabilityAnalysis.jl")
 include("Analysis/ConstructionContext.jl")
+include("Analysis/IntervalPartition.jl")
+include("Analysis/LiveVariables.jl")
+include("Analysis/PostOrderCFGView.jl")
+include("Analysis/ReachableCode.jl")
+include("Analysis/UninitializedValues.jl")
+include("Analysis/CallGraph.jl")
+include("Analysis/CloneDetection.jl")
+include("Analysis/MacroExpansionContext.jl")
+include("Analysis/Analyses/Dominators.jl")
+include("Analysis/Analyses/ExprMutationAnalyzer.jl")
 
 # Basic
 include("Basic/CodeGenOptions.jl")
@@ -42,6 +68,11 @@ include("Basic/Module.jl")
 include("Basic/TokenKinds.jl")
 include("Basic/IdentifierTable.jl")
 include("Basic/LangOptions.jl")
+include("Basic/LangStandard.jl")
+include("Basic/Builtins.jl")
+include("Basic/Version.jl")
+include("Basic/Attributes.jl")
+include("Basic/OperatorPrecedence.jl")
 include("Basic/OperatorKinds.jl")
 include("Basic/SourceLocation.jl")
 include("Basic/SourceManager.jl")
@@ -49,14 +80,25 @@ include("Basic/TargetInfo.jl")
 include("Basic/TargetOptions.jl")
 
 # CodeGen
+include("CodeGen/CGFunctionInfo.jl")
 include("CodeGen/CodeGenABITypes.jl")
 include("CodeGen/CodeGenAction.jl")
 include("CodeGen/ModuleBuilder.jl")
+include("CodeGen/BackendUtil.jl")
+include("CodeGen/ObjectFilePCHContainerOperations.jl")
 
 # Driver
 include("Driver/Driver.jl")
 include("Driver/Compilation.jl")
 include("Driver/ToolChain.jl")
+# Edit
+include("Edit/EditedSource.jl")
+include("Edit/Commit.jl")
+# Format
+include("Format/Format.jl")
+include("Driver/Job.jl")
+include("Driver/DriverTypes.jl")
+include("Driver/Options.jl")
 # Frontend
 include("Frontend/ASTUnit.jl")
 include("Frontend/CompilerInstance.jl")
@@ -65,21 +107,42 @@ include("Frontend/FrontendAction.jl")
 include("Frontend/FrontendOptions.jl")
 include("Frontend/TextDiagnosticBuffer.jl")
 include("Frontend/TextDiagnosticPrinter.jl")
+include("Frontend/FrontendActions.jl")
+include("Frontend/DependencyOutputOptions.jl")
+include("Frontend/PrecompiledPreamble.jl")
+include("Frontend/Utils.jl")
+include("Frontend/MultiplexConsumer.jl")
+include("Frontend/ChainedDiagnosticConsumer.jl")
+include("Frontend/VerifyDiagnosticConsumer.jl")
+include("Frontend/SerializedDiagnosticPrinter.jl")
+
+# FrontendTool
+include("FrontendTool/Utils.jl")
 
 # Interpreter
 include("Interpreter/Interpreter.jl")
+include("Interpreter/CodeCompletion.jl")
+include("Interpreter/PartialTranslationUnit.jl")
 include("Interpreter/Value.jl")
 
 # Lex
+include("Lex/DependencyDirectivesScanner.jl")
 include("Lex/DirectoryLookup.jl")
+include("Lex/HeaderMap.jl")
 include("Lex/HeaderSearch.jl")
 include("Lex/HeaderSearchOptions.jl")
 include("Lex/Lexer.jl")
+include("Lex/LiteralSupport.jl")
 include("Lex/MacroInfo.jl")
+include("Lex/ModuleLoader.jl")
+include("Lex/PPConditionalDirectiveRecord.jl")
+include("Lex/Pragma.jl")
 include("Lex/Preprocessor.jl")
 include("Lex/PreprocessingRecord.jl")
+include("Lex/PreprocessorLexer.jl")
 include("Lex/PreprocessorOptions.jl")
 include("Lex/Token.jl")
+include("Lex/TokenConcatenation.jl")
 
 # Parse
 include("Parse/ParseAST.jl")
@@ -87,15 +150,51 @@ include("Parse/Parser.jl")
 
 # Index
 include("Index/USRGeneration.jl")
+include("Index/IndexSymbol.jl")
+include("Index/IndexingAction.jl")
+include("Index/CommentToXML.jl")
+
+# CrossTU
+include("CrossTU/CrossTranslationUnit.jl")
+
+# ExtractAPI
+include("ExtractAPI/FrontendActions.jl")
+
+# Serialization
+include("Serialization/ASTReader.jl")
+
+# StaticAnalyzer
+include("StaticAnalyzer/AnalyzerOptions.jl")
+include("StaticAnalyzer/AnalysisConsumer.jl")
+include("StaticAnalyzer/AnalyzerHelpFlags.jl")
+include("StaticAnalyzer/FrontendActions.jl")
 
 # Rewrite
 include("Rewrite/Rewriter.jl")
+include("Rewrite/HTMLRewrite.jl")
+include("Rewrite/FixItRewriter.jl")
 
 # Sema
 include("Sema/DeclSpec.jl")
+include("Sema/Initialization.jl")
 include("Sema/Lookup.jl")
+include("Sema/TypoCorrection.jl")
 include("Sema/Scope.jl")
 include("Sema/Sema.jl")
 include("Sema/Overload.jl")
 include("Sema/Template.jl")
 include("Sema/TemplateDeduction.jl")
+
+# Tooling
+include("Tooling/CompilationDatabase.jl")
+include("Tooling/JSONCompilationDatabase.jl")
+include("Tooling/ArgumentsAdjusters.jl")
+include("Tooling/Tooling.jl")
+include("Tooling/Core/Replacement.jl")
+include("Tooling/DependencyScanning/DependencyScanningService.jl")
+include("Tooling/DependencyScanning/DependencyScanningTool.jl")
+include("Tooling/Inclusions/IncludeStyle.jl")
+include("Tooling/Inclusions/HeaderIncludes.jl")
+include("Tooling/Inclusions/HeaderAnalysis.jl")
+include("Tooling/Inclusions/StandardLibrary.jl")
+include("Tooling/Syntax/Tokens.jl")

@@ -1050,6 +1050,18 @@ function FriendTemplateDecl(x::AbstractDecl)
     return FriendTemplateDecl(p)
 end
 
+function isFriendDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isFriendDecl(x)
+end
+
+function FriendDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToFriendDecl(x)
+    p == C_NULL && _cast_failed(FriendDecl, x)
+    return FriendDecl(p)
+end
+
 function isFileScopeAsmDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isFileScopeAsmDecl(x)

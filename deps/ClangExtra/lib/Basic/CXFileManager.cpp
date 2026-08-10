@@ -3,14 +3,26 @@
 #include "clang/Basic/FileManager.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/VirtualFileSystem.h"
+#include <memory>
+#include <string>
+#include <utility>
 
 CXFileManager clang_FileManager_create(void) {
   auto FM = std::make_unique<clang::FileManager>(clang::FileSystemOptions());
+  // FileManager is a RefCountedBase, so hand it back already holding the caller's own
+  // reference rather than at a count of zero. Consumers that borrow it do so through an
+  // IntrusiveRefCntPtr -- FrontendActionFactory::runInvocation, for one, parks it in a
+  // stack CompilerInstance -- and a borrow that starts from zero goes 0 -> 1 -> 0 and
+  // deletes the manager when the consumer goes out of scope, leaving the caller with a
+  // dangling handle. Starting at one turns every such borrow into 1 -> 2 -> 1.
+  FM->Retain();
   return reinterpret_cast<CXFileManager>(FM.release());
 }
 
 void clang_FileManager_dispose(CXFileManager FM) {
-  delete reinterpret_cast<clang::FileManager *>(FM);
+  // Balances the Retain in clang_FileManager_create; the last Release deletes.
+  reinterpret_cast<clang::FileManager *>(FM)->Release();
 }
 
 LLVMMemoryBufferRef clang_FileManager_getBufferForFile(CXFileManager FM, CXFileEntryRef FER,
@@ -153,4 +165,95 @@ CXString clang_FileManager_getCanonicalNameForDir(CXFileManager FM, CXDirectoryE
       reinterpret_cast<clang::FileManager *>(FM)
           ->getCanonicalName(*reinterpret_cast<clang::DirectoryEntryRef *>(Dir))
           .str());
+}
+
+// llvm::vfs
+//
+// One box type for every handle in the cluster: the derived handles point at the same
+// IntrusiveRefCntPtr<FileSystem> the base handle does, and the derived-only entry points
+// narrow the pointee back. Both directions are single-inheritance pointer identity, which
+// is the same argument every reinterpret_cast in this shim rests on.
+using VFSBox = llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>;
+
+static VFSBox *unwrapVFS(CXVirtualFileSystem FS) {
+  return reinterpret_cast<VFSBox *>(FS);
+}
+
+static llvm::vfs::InMemoryFileSystem *unwrapIMFS(CXInMemoryFileSystem FS) {
+  return reinterpret_cast<llvm::vfs::InMemoryFileSystem *>(
+      reinterpret_cast<VFSBox *>(FS)->get());
+}
+
+static llvm::vfs::OverlayFileSystem *unwrapOFS(CXOverlayFileSystem FS) {
+  return reinterpret_cast<llvm::vfs::OverlayFileSystem *>(
+      reinterpret_cast<VFSBox *>(FS)->get());
+}
+
+CXVirtualFileSystem clang_vfs_getRealFileSystem(void) {
+  return reinterpret_cast<CXVirtualFileSystem>(
+      std::make_unique<VFSBox>(llvm::vfs::getRealFileSystem()).release());
+}
+
+void clang_VirtualFileSystem_dispose(CXVirtualFileSystem FS) {
+  delete reinterpret_cast<VFSBox *>(FS);
+}
+
+bool clang_VirtualFileSystem_exists(CXVirtualFileSystem FS, const char *Path) {
+  return (*unwrapVFS(FS))->exists(llvm::Twine(Path));
+}
+
+CXInMemoryFileSystem clang_InMemoryFileSystem_create(void) {
+  VFSBox Box(new llvm::vfs::InMemoryFileSystem());
+  return reinterpret_cast<CXInMemoryFileSystem>(
+      std::make_unique<VFSBox>(std::move(Box)).release());
+}
+
+void clang_InMemoryFileSystem_dispose(CXInMemoryFileSystem FS) {
+  delete reinterpret_cast<VFSBox *>(FS);
+}
+
+bool clang_InMemoryFileSystem_addFile(CXInMemoryFileSystem FS, const char *Path,
+                                      int64_t ModificationTime,
+                                      LLVMMemoryBufferRef Buffer) {
+  return unwrapIMFS(FS)->addFile(
+      llvm::Twine(Path), ModificationTime,
+      std::unique_ptr<llvm::MemoryBuffer>(llvm::unwrap(Buffer)));
+}
+
+CXString clang_InMemoryFileSystem_toString(CXInMemoryFileSystem FS) {
+  return extra::makeCXString(unwrapIMFS(FS)->toString());
+}
+
+CXVirtualFileSystem clang_InMemoryFileSystem_castToFileSystem(CXInMemoryFileSystem FS) {
+  return reinterpret_cast<CXVirtualFileSystem>(FS);
+}
+
+CXOverlayFileSystem clang_OverlayFileSystem_create(CXVirtualFileSystem Base) {
+  VFSBox Box(new llvm::vfs::OverlayFileSystem(*unwrapVFS(Base)));
+  return reinterpret_cast<CXOverlayFileSystem>(
+      std::make_unique<VFSBox>(std::move(Box)).release());
+}
+
+void clang_OverlayFileSystem_dispose(CXOverlayFileSystem FS) {
+  delete reinterpret_cast<VFSBox *>(FS);
+}
+
+void clang_OverlayFileSystem_pushOverlay(CXOverlayFileSystem FS,
+                                         CXVirtualFileSystem Overlay) {
+  unwrapOFS(FS)->pushOverlay(*unwrapVFS(Overlay));
+}
+
+CXVirtualFileSystem clang_OverlayFileSystem_castToFileSystem(CXOverlayFileSystem FS) {
+  return reinterpret_cast<CXVirtualFileSystem>(FS);
+}
+
+CXVirtualFileSystem clang_FileManager_getVirtualFileSystem(CXFileManager FM) {
+  return reinterpret_cast<CXVirtualFileSystem>(
+      std::make_unique<VFSBox>(
+          reinterpret_cast<clang::FileManager *>(FM)->getVirtualFileSystemPtr())
+          .release());
+}
+
+void clang_FileManager_setVirtualFileSystem(CXFileManager FM, CXVirtualFileSystem FS) {
+  reinterpret_cast<clang::FileManager *>(FM)->setVirtualFileSystem(*unwrapVFS(FS));
 }

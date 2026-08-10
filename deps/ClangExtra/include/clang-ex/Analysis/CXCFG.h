@@ -399,6 +399,41 @@ bool clang_CFGBuildOptions_getAddEHEdges(CXCFGBuildOptions BO);
 
 void clang_CFGBuildOptions_setAddEHEdges(CXCFGBuildOptions BO, bool Val);
 
+// The seven element-producing booleans clang_CFG_buildCFG takes as trailing parameters.
+// Setting them here is pointless on the clang_CFG_buildCFGWithOptions path — that call
+// overwrites all seven from its own parameters — and is the ONLY way to set them on the
+// clang/Analysis/AnalysisDeclContext.h path, where clang_AnalysisDeclContext_getCFGBuildOptions
+// hands back the borrowed BuildOptions the context will build its CFG from and nothing
+// overwrites anything. Declaration order follows the class, so the group sits between
+// AddEHEdges and AddStaticInitBranches. // helper
+bool clang_CFGBuildOptions_getAddInitializers(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddInitializers(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddImplicitDtors(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddImplicitDtors(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddLifetime(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddLifetime(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddLoopExit(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddLoopExit(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddTemporaryDtors(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddTemporaryDtors(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddScopes(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddScopes(CXCFGBuildOptions BO, bool Val);
+
+bool clang_CFGBuildOptions_getAddCXXNewAllocator(CXCFGBuildOptions BO);
+
+void clang_CFGBuildOptions_setAddCXXNewAllocator(CXCFGBuildOptions BO, bool Val);
+
 bool clang_CFGBuildOptions_getAddStaticInitBranches(CXCFGBuildOptions BO);
 
 void clang_CFGBuildOptions_setAddStaticInitBranches(CXCFGBuildOptions BO, bool Val);

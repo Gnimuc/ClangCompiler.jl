@@ -191,6 +191,20 @@ function getAsFunction(x::AbstractDecl)
     return FunctionDecl(clang_Decl_getAsFunction(x))
 end
 
+"""
+    dumpToString(x::AbstractDecl; deserialize::Bool=false, format::CXASTDumpOutputFormat=LibClangEx.CXASTDumpOutputFormat_ADOF_Default) -> String
+Return the AST dump `dump` writes to stderr, as a string.
+
+`deserialize` pulls in declarations still held by an external AST source rather than
+skipping them. `format` selects `ADOF_JSON` for a machine-readable rendering of the same
+nodes.
+"""
+function dumpToString(x::AbstractDecl; deserialize::Bool=false,
+                      format::CXASTDumpOutputFormat=LibClangEx.CXASTDumpOutputFormat_ADOF_Default)
+    @check_ptrs x
+    return get_string(clang_Decl_dumpToString(x, deserialize, format))
+end
+
 function dump(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_dump(x)

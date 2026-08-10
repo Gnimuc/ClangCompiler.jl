@@ -6,11 +6,29 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <memory>
+
 CXTargetInfo_ clang_TargetInfo_CreateTargetInfo(CXDiagnosticsEngine DE,
                                                 CXTargetOptions Opts) {
-  return reinterpret_cast<CXTargetInfo_>(clang::TargetInfo::CreateTargetInfo(
+  auto *TI = clang::TargetInfo::CreateTargetInfo(
       *reinterpret_cast<clang::DiagnosticsEngine *>(DE),
-      std::shared_ptr<clang::TargetOptions>(reinterpret_cast<clang::TargetOptions *>(Opts))));
+      std::shared_ptr<clang::TargetOptions>(reinterpret_cast<clang::TargetOptions *>(Opts)));
+  // TargetInfo is a RefCountedBase and clang's factory hands back a raw pointer at a count
+  // of zero, so pin the caller's own reference before returning (MARSHALLING.md section 12).
+  // CompilerInstance::setTarget and setAuxTarget park the pointer in an IntrusiveRefCntPtr
+  // member, so a borrow starting from zero goes 0 -> 1 -> 0 and deletes the target when that
+  // instance is disposed, leaving the caller with a dangling handle. Starting at one turns
+  // every such borrow into 1 -> 2 -> 1. The factory returns null on an unusable triple, and
+  // there is nothing to pin in that case.
+  if (TI)
+    TI->Retain();
+  return reinterpret_cast<CXTargetInfo_>(TI);
+}
+
+void clang_TargetInfo_dispose(CXTargetInfo_ TI) {
+  // Balances the Retain in clang_TargetInfo_CreateTargetInfo; the last Release deletes, and
+  // deleting the target also drops the shared_ptr to the TargetOptions it absorbed.
+  reinterpret_cast<clang::TargetInfo *>(TI)->Release();
 }
 
 CXTargetOptions clang_TargetInfo_getTargetOpts(CXTargetInfo_ TI) {

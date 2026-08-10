@@ -54,8 +54,17 @@ typedef enum CXOpenCLTypeKind : unsigned char {
   CXOpenCLTypeKind_OCLTK_Sampler
 } CXOpenCLTypeKind;
 
+// The target comes back holding the caller's own reference, so lending it to a
+// CompilerInstance cannot free it and one dispose at the end does (MARSHALLING.md section
+// 12). Returns null when the triple names no known target. `Opts` is absorbed: the target
+// keeps it in a shared_ptr and frees it, so it must not be disposed separately.
 CXTargetInfo_ clang_TargetInfo_CreateTargetInfo(CXDiagnosticsEngine DE,
                                                 CXTargetOptions Opts);
+
+// Only for a target built by clang_TargetInfo_CreateTargetInfo. Targets reached through a
+// getter -- clang_CompilerInstance_getTarget, clang_Preprocessor_getTargetInfo and the like
+// -- are borrowed from their owner and must never be disposed.
+void clang_TargetInfo_dispose(CXTargetInfo_ TI);
 
 // Precondition: TI was built by clang_TargetInfo_CreateTargetInfo (the only constructor
 // this API exposes); the accessor asserts on, and otherwise dereferences, a null

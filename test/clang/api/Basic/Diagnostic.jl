@@ -6,7 +6,10 @@ using Test
 @testset "Diagnostic | engine state, counts & severity mapping" begin
     opts = CC.DiagnosticOptions()
     client = CC.IgnoringDiagConsumer()
-    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), opts, client, true)  # engine adopts all three
+    ids = CC.DiagnosticIDs()
+    # The engine takes its own reference to the ids and the options, so ours outlive it and
+    # are disposed below. `client` is the one thing it really owns, via should_own_client.
+    engine = CC.DiagnosticsEngine(ids, opts, client, true)
 
     # borrowed accessors
     @test !CC.is_null_handle(CC.getDiagnosticIDs(engine))
@@ -147,7 +150,9 @@ using Test
     @test CC.hasSourceManager(engine)
     @test CC.getSourceManager(engine).ptr == src_mgr.ptr
 
-    CC.dispose(engine)  # the adopted ids/opts/client are released with the engine
+    CC.dispose(engine)  # releases its references and deletes the client it owns
+    CC.dispose(ids)      # ours to free: the engine only ever held a second reference
+    CC.dispose(opts)
     CC.dispose(I)
 end
 
@@ -462,4 +467,40 @@ end
     CC.dispose(hint)
     CC.dispose(engine)                  # the adopted ids/opts/client go with it
     CC.dispose(I)
+end
+
+@testset "Diagnostic | refcounted handles survive being lent out" begin
+    # Every one of these objects is reference counted, and each is handed back already
+    # holding our reference (MARSHALLING.md §12). That is what makes them reusable across
+    # consumers: before the conversion a consumer's release took a count-zero object to zero
+    # and deleted it, so the *second* use of any of these read freed memory.
+
+    # One diagnostic table backing two engines in turn. getOrCreateDiagID uniques on
+    # (level, message), so a table that survived the first engine must return the same id.
+    ids = CC.DiagnosticIDs()
+    o1 = CC.DiagnosticOptions()
+    e1 = CC.DiagnosticsEngine(ids, o1, CC.IgnoringDiagConsumer(), true)
+    w1 = CC.getCustomDiagID(e1, CC.CXDiagnosticsEngine_Warning, "reuse probe")
+    CC.dispose(e1)
+    CC.dispose(o1)
+
+    o2 = CC.DiagnosticOptions()
+    e2 = CC.DiagnosticsEngine(ids, o2, CC.IgnoringDiagConsumer(), true)
+    @test CC.getCustomDiagID(e2, CC.CXDiagnosticsEngine_Warning, "reuse probe") == w1
+
+    # One engine backing two compiler instances in turn. setDiagnostics takes a reference
+    # and disposing the instance gives it back, which used to be the last one.
+    ci1 = CC.CompilerInstance()
+    CC.setDiagnostics(ci1, e2)
+    CC.dispose(ci1)
+    ci2 = CC.CompilerInstance()
+    CC.setDiagnostics(ci2, e2)
+    @test CC.hasDiagnostics(ci2)
+    # Registering through the still-live engine touches the table both of them share.
+    @test CC.getCustomDiagID(e2, CC.CXDiagnosticsEngine_Warning, "reuse probe") == w1
+    CC.dispose(ci2)
+
+    CC.dispose(e2)
+    CC.dispose(o2)
+    CC.dispose(ids)
 end

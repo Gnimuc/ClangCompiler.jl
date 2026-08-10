@@ -1,5 +1,8 @@
 #include "clang-ex/Parse/CXParser.h"
 #include "clang/Parse/Parser.h"
+#include "llvm/ADT/SmallVector.h"
+
+#include <memory>
 
 CXParser clang_Parser_create(CXPreprocessor PP, CXSema Actions, bool SkipFunctionBodies) {
   auto P = std::make_unique<clang::Parser>(*reinterpret_cast<clang::Preprocessor *>(PP),
@@ -103,4 +106,14 @@ bool clang_Parser_ParseTopLevelDecl(CXParser P, CXDeclGroupRef *Result,
   *ImportState = static_cast<unsigned>(IS);
   *Result = reinterpret_cast<CXDeclGroupRef>(ADecl.getAsOpaquePtr());
   return AtEOF;
+}
+
+bool clang_Parser_SkipUntil(CXParser P, const unsigned *Toks, unsigned NumToks,
+                            unsigned Flags) {
+  llvm::SmallVector<clang::tok::TokenKind, 8> Kinds;
+  Kinds.reserve(NumToks);
+  for (unsigned I = 0; I < NumToks; ++I)
+    Kinds.push_back(static_cast<clang::tok::TokenKind>(Toks[I]));
+  return reinterpret_cast<clang::Parser *>(P)->SkipUntil(
+      Kinds, static_cast<clang::Parser::SkipUntilFlags>(Flags));
 }

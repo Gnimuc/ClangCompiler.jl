@@ -68,6 +68,29 @@ function hasLangStandard(x::LangOptions)
     return clang_LangOptions_hasLangStandard(x)
 end
 
+"""
+    setLangDefaults(x::AbstractLangOptions, lang::CXLanguage, triple::AbstractString,
+                    lang_std::CXLangStandardKind=CXLangStandardKind_lang_unspecified) -> Vector{String}
+Configure `x` the way `-x <lang> -std=<lang_std>` for `triple` would have, and return the
+headers the language implicitly requires — the empty vector for everything but HLSL and
+OpenCL.
+
+This is what makes a programmatically-created `LangOptions` usable without round-tripping
+through CC1 argument parsing: it is the same static clang's own driver calls.
+
+Leaving `lang_std` at `lang_unspecified` asks clang for the language's own default, and
+that resolution is the one partial step here: it aborts the process for
+`CXLanguage_Unknown` and `CXLanguage_LLVM_IR`, neither of which has a default standard. An
+explicit `lang_std` bypasses it, so any language goes with one.
+"""
+function setLangDefaults(x::AbstractLangOptions, lang::CXLanguage, triple::AbstractString,
+                         lang_std::CXLangStandardKind=CXLangStandardKind_lang_unspecified)
+    @check_ptrs x
+    @assert lang_std != CXLangStandardKind_lang_unspecified ||
+            (lang != CXLanguage_Unknown && lang != CXLanguage_LLVM_IR) "no default language standard is defined for $lang"
+    return get_string(clang_LangOptions_setLangDefaults(x, lang, triple, lang_std))
+end
+
 function assumeFunctionsAreConvergent(x::AbstractLangOptions)
     @check_ptrs x
     return clang_LangOptions_assumeFunctionsAreConvergent(x)

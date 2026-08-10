@@ -4,6 +4,8 @@
 #include "clang/Basic/SourceManager.h"
 #include "llvm/ADT/SmallString.h"
 
+#include <memory>
+
 // DiagnosticConsumer
 unsigned clang_DiagnosticConsumer_getNumErrors(CXDiagnosticConsumer DC) {
   return reinterpret_cast<clang::DiagnosticConsumer *>(DC)->getNumErrors();
@@ -387,11 +389,22 @@ CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
       llvm::IntrusiveRefCntPtr<clang::DiagnosticOptions>(
           reinterpret_cast<clang::DiagnosticOptions *>(DO)),
       reinterpret_cast<clang::DiagnosticConsumer *>(DC), ShouldOwnClient);
+  // DiagnosticsEngine is a RefCountedBase, so hand it back already holding the caller's own
+  // reference rather than at a count of zero. Consumers that borrow it do so through an
+  // IntrusiveRefCntPtr -- CompilerInstance::setDiagnostics parks it in the instance's
+  // Diagnostics member, every ASTUnit entry point keeps one for the life of the unit, and
+  // CreateInvocationOptions holds one for the length of a createInvocation call -- and a
+  // borrow that starts from zero goes 0 -> 1 -> 0 and deletes the engine when the consumer
+  // is destroyed, taking the ids, the options and the owned client with it and leaving the
+  // caller with a dangling handle. Starting at one turns every such borrow into 1 -> 2 -> 1,
+  // which is also why the call sites that borrow an engine no longer pin it themselves.
+  DE->Retain();
   return reinterpret_cast<CXDiagnosticsEngine>(DE.release());
 }
 
 void clang_DiagnosticsEngine_dispose(CXDiagnosticsEngine DE) {
-  delete reinterpret_cast<clang::DiagnosticsEngine *>(DE);
+  // Balances the Retain in clang_DiagnosticsEngine_create; the last Release deletes.
+  reinterpret_cast<clang::DiagnosticsEngine *>(DE)->Release();
 }
 
 void clang_DiagnosticsEngine_setShowColors(CXDiagnosticsEngine DE, bool ShowColors) {

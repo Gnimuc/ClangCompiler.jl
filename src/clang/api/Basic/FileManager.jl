@@ -8,6 +8,16 @@ Return a pointer to a `clang::FileManager` object.
 For now, `FileSystemOptions` is set to nothing and `llvm::vfs::FileSystem` defaults to the
 "real" file system, as seen by the operating system.
 
+The manager comes back already holding the caller's reference, so it survives being lent to
+a consumer and back, and one [`dispose`](@ref) at the end still frees it. This is the general
+rule for the reference-counted types the shim mints (MARSHALLING.md §12). `clang::FileManager`
+is reference counted, and the consumers that borrow one take it by `IntrusiveRefCntPtr`:
+`ToolInvocation`, for instance, parks it in a `CompilerInstance` that lives only for the
+length of a single [`run`](@ref). Handing those a manager at a count of zero would let that
+borrow run 0 to 1 and back to 0, deleting the manager the moment the consumer returned and
+leaving every later use reading freed memory. The shim's `Retain` at creation makes the same
+borrow run 1 to 2 and back to 1 instead.
+
 TODO: support custom `FileSystemOptions` and `llvm::vfs::FileSystem`
 """
 function create_file_manager()
@@ -230,4 +240,134 @@ end
 function getCanonicalName(filemgr::FileManager, dir::AbstractDirectoryEntryRef)
     @check_ptrs filemgr dir
     return get_string(clang_FileManager_getCanonicalNameForDir(filemgr, dir))
+end
+
+# llvm::vfs — building a file system and installing it on a FileManager.
+#
+# Each carrier holds one reference; `dispose` drops it, and whatever else holds a reference
+# (a FileManager reading through the overlay, an overlay holding a pushed layer) keeps the
+# file system alive. That is what makes disposing in any order safe here, unlike the
+# create → use → dispose chains elsewhere in this file.
+
+"""
+    getRealFileSystem() -> VirtualFileSystem
+Return a reference to the physical file system.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+getRealFileSystem() = VirtualFileSystem(clang_vfs_getRealFileSystem())
+
+dispose(x::VirtualFileSystem) = clang_VirtualFileSystem_dispose(x)
+
+"""
+    exists(x::AbstractVirtualFileSystem, path::AbstractString) -> Bool
+Return whether `path` resolves to something in this file system. The cheapest way to check
+that an overlay is wired up the way it was meant to be.
+"""
+function exists(x::AbstractVirtualFileSystem, path::AbstractString)
+    @check_ptrs x
+    return clang_VirtualFileSystem_exists(x, path)
+end
+
+"""
+    InMemoryFileSystem() -> InMemoryFileSystem
+Create an empty in-memory file system.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+InMemoryFileSystem() = InMemoryFileSystem(clang_InMemoryFileSystem_create())
+
+dispose(x::InMemoryFileSystem) = clang_InMemoryFileSystem_dispose(x)
+
+"""
+    addFile(x::AbstractInMemoryFileSystem, path::AbstractString, mtime::Integer,
+            buffer::LLVM.MemoryBuffer) -> Bool
+Add `path` with the contents of `buffer`, taking ownership of the buffer. Return `false`
+when a file of that name is already present with different contents, in which case the
+buffer is dropped rather than installed.
+"""
+function addFile(x::AbstractInMemoryFileSystem, path::AbstractString, mtime::Integer,
+                 buffer::LLVM.MemoryBuffer)
+    @check_ptrs x
+    return clang_InMemoryFileSystem_addFile(x, path, Int64(mtime), buffer)
+end
+
+"""
+    toString(x::AbstractInMemoryFileSystem) -> String
+Return a one-entry-per-line rendering of the tree — what was added, and under which names.
+"""
+function toString(x::AbstractInMemoryFileSystem)
+    @check_ptrs x
+    return get_string(clang_InMemoryFileSystem_toString(x))
+end
+
+"""
+    castToFileSystem(x::AbstractInMemoryFileSystem) -> VirtualFileSystem
+Return the same reference viewed as a plain file system, which is what an overlay and a
+file manager take. Borrowed: the result shares the argument's reference and must not be
+disposed separately.
+"""
+function castToFileSystem(x::AbstractInMemoryFileSystem)
+    @check_ptrs x
+    return VirtualFileSystem(clang_InMemoryFileSystem_castToFileSystem(x))
+end
+
+"""
+    OverlayFileSystem(base::AbstractVirtualFileSystem) -> OverlayFileSystem
+Create an overlay stack whose bottom layer is `base`. Later
+[`pushOverlay`](@ref) calls shadow earlier ones.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+function OverlayFileSystem(base::AbstractVirtualFileSystem)
+    @check_ptrs base
+    return OverlayFileSystem(clang_OverlayFileSystem_create(base))
+end
+
+dispose(x::OverlayFileSystem) = clang_OverlayFileSystem_dispose(x)
+
+"""
+    pushOverlay(x::AbstractOverlayFileSystem, overlay::AbstractVirtualFileSystem)
+Push a file system on top of the stack, so it shadows every layer already there.
+"""
+function pushOverlay(x::AbstractOverlayFileSystem, overlay::AbstractVirtualFileSystem)
+    @check_ptrs x overlay
+    return clang_OverlayFileSystem_pushOverlay(x, overlay)
+end
+
+"""
+    castToFileSystem(x::AbstractOverlayFileSystem) -> VirtualFileSystem
+Return the same reference viewed as a plain file system. Borrowed, exactly as the
+`InMemoryFileSystem` method.
+"""
+function castToFileSystem(x::AbstractOverlayFileSystem)
+    @check_ptrs x
+    return VirtualFileSystem(clang_OverlayFileSystem_castToFileSystem(x))
+end
+
+"""
+    getVirtualFileSystem(filemgr::AbstractFileManager) -> VirtualFileSystem
+Return a new reference to the file system this manager reads through.
+
+This function allocates and one should call `dispose` to release the resources after using
+this object.
+"""
+function getVirtualFileSystem(filemgr::AbstractFileManager)
+    @check_ptrs filemgr
+    return VirtualFileSystem(clang_FileManager_getVirtualFileSystem(filemgr))
+end
+
+"""
+    setVirtualFileSystem(filemgr::AbstractFileManager, fs::AbstractVirtualFileSystem)
+Install a different file system on the manager.
+
+The manager keeps the caches it has already filled, so this belongs before the first
+lookup: a file already resolved through the old file system stays resolved that way.
+"""
+function setVirtualFileSystem(filemgr::AbstractFileManager, fs::AbstractVirtualFileSystem)
+    @check_ptrs filemgr fs
+    return clang_FileManager_setVirtualFileSystem(filemgr, fs)
 end

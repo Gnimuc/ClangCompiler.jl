@@ -1,7 +1,21 @@
 # FrontendAction
 # `clang::FrontendAction` is abstract: every carrier reaching these wrappers is a
 # concrete action built by one of the CodeGen factories (`LLVMOnlyAction`,
-# `EmitObjAction`, ...) and released through `dispose(::AbstractCodeGenAction)`.
+# `EmitObjAction`, ...), by one of the Frontend ones (`SyntaxOnlyAction`,
+# `GeneratePCHAction`, ...), or by `CreateFrontendAction`.
+
+"""
+    dispose(x::AbstractFrontendAction)
+Release an action of any dynamic class, deleting through `clang::FrontendAction`'s virtual
+destructor.
+
+This is the disposal for every action whose class the Julia side does not name — the
+[`FrontendAction`](@ref) that [`CreateFrontendAction`](@ref) returns — and for the concrete
+Frontend actions. The CodeGen family keeps its own more specific method
+(`dispose(::AbstractCodeGenAction)`), which dispatch selects for those carriers; the two
+free the same object the same way.
+"""
+dispose(x::AbstractFrontendAction) = clang_FrontendAction_dispose(x)
 
 """
     getCompilerInstance(x::AbstractFrontendAction) -> CompilerInstance

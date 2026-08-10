@@ -8,6 +8,8 @@ using Clang.Generators
 @add_def LLVMMemoryBufferRef
 @add_def LLVMGenericValueRef
 @add_def LLVMTypeRef
+@add_def LLVMOpaqueValue
+@add_def LLVMValueRef
 
 options = load_options(joinpath(@__DIR__, "option.toml"))
 

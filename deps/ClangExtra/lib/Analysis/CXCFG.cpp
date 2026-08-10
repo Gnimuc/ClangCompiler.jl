@@ -566,6 +566,62 @@ void clang_CFGBuildOptions_setAddEHEdges(CXCFGBuildOptions BO, bool Val) {
   reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddEHEdges = Val;
 }
 
+bool clang_CFGBuildOptions_getAddInitializers(CXCFGBuildOptions BO) {
+  return reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddInitializers;
+}
+
+void clang_CFGBuildOptions_setAddInitializers(CXCFGBuildOptions BO, bool Val) {
+  reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddInitializers = Val;
+}
+
+bool clang_CFGBuildOptions_getAddImplicitDtors(CXCFGBuildOptions BO) {
+  return reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddImplicitDtors;
+}
+
+void clang_CFGBuildOptions_setAddImplicitDtors(CXCFGBuildOptions BO, bool Val) {
+  reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddImplicitDtors = Val;
+}
+
+bool clang_CFGBuildOptions_getAddLifetime(CXCFGBuildOptions BO) {
+  return reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddLifetime;
+}
+
+void clang_CFGBuildOptions_setAddLifetime(CXCFGBuildOptions BO, bool Val) {
+  reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddLifetime = Val;
+}
+
+bool clang_CFGBuildOptions_getAddLoopExit(CXCFGBuildOptions BO) {
+  return reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddLoopExit;
+}
+
+void clang_CFGBuildOptions_setAddLoopExit(CXCFGBuildOptions BO, bool Val) {
+  reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddLoopExit = Val;
+}
+
+bool clang_CFGBuildOptions_getAddTemporaryDtors(CXCFGBuildOptions BO) {
+  return reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddTemporaryDtors;
+}
+
+void clang_CFGBuildOptions_setAddTemporaryDtors(CXCFGBuildOptions BO, bool Val) {
+  reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddTemporaryDtors = Val;
+}
+
+bool clang_CFGBuildOptions_getAddScopes(CXCFGBuildOptions BO) {
+  return reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddScopes;
+}
+
+void clang_CFGBuildOptions_setAddScopes(CXCFGBuildOptions BO, bool Val) {
+  reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddScopes = Val;
+}
+
+bool clang_CFGBuildOptions_getAddCXXNewAllocator(CXCFGBuildOptions BO) {
+  return reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddCXXNewAllocator;
+}
+
+void clang_CFGBuildOptions_setAddCXXNewAllocator(CXCFGBuildOptions BO, bool Val) {
+  reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddCXXNewAllocator = Val;
+}
+
 bool clang_CFGBuildOptions_getAddStaticInitBranches(CXCFGBuildOptions BO) {
   return reinterpret_cast<clang::CFG::BuildOptions *>(BO)->AddStaticInitBranches;
 }

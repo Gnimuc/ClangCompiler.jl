@@ -10,6 +10,8 @@
 #include "clang/APINotes/APINotesOptions.h"
 #include "clang/Basic/Diagnostic.h"
 
+#include <memory>
+
 CXCompilerInvocation clang_CompilerInvocation_create(void) {
   auto Invoc = std::make_unique<clang::CompilerInvocation>();
   return reinterpret_cast<CXCompilerInvocation>(Invoc.release());
@@ -36,8 +38,10 @@ void clang_CompilerInvocation_dispose(CXCompilerInvocation CI) {
 CXCompilerInvocation clang_CompilerInvocation_createFromCommandLine(
     const char **command_line_args_with_src, int num_command_line_args,
     CXDiagnosticsEngine Diags) {
+  // CreateInvocationOptions holds the engine in an IntrusiveRefCntPtr for the length of the
+  // call only. The engine arrives already holding the caller's reference, so that transient
+  // borrow cannot drop it to zero and no pin is needed.
   auto *DE = reinterpret_cast<clang::DiagnosticsEngine *>(Diags);
-  DE->Retain();
   clang::CreateInvocationOptions Opts;
   Opts.Diags = llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(DE);
   std::vector<const char *> Argv;

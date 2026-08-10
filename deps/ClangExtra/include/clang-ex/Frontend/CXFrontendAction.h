@@ -10,8 +10,16 @@ LLVM_CLANG_C_EXTERN_C_BEGIN
 
 // clang::FrontendAction is abstract and has no creation entry point of its own:
 // every handle reaching these accessors comes from a concrete action factory
-// (the clang_Emit*Action_create family in clang-ex/CodeGen/CXCodeGenAction.h)
-// and is released through that class's own dispose.
+// (the clang_Emit*Action_create family in clang-ex/CodeGen/CXCodeGenAction.h,
+// the clang_*Action_create family in clang-ex/Frontend/CXFrontendActions.h, or
+// clang_CreateFrontendAction in clang-ex/FrontendTool/CXFrontendToolUtils.h) and is
+// released through that class's own dispose or through the base one below.
+
+// Deletes through clang::FrontendAction's virtual destructor, so it releases an action of
+// any dynamic type -- including one whose class only clang names, which is what
+// clang_CreateFrontendAction hands back. clang_CodeGenAction_dispose remains the CodeGen
+// family's spelling; for those two handles either call is correct and equivalent.
+void clang_FrontendAction_dispose(CXFrontendAction FA);
 
 // Compiler instance access
 // PRECONDITION: an instance must already be registered, either by

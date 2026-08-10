@@ -221,7 +221,12 @@ end
         elseif v isa Type && v != CC.Attr && hasmethod(v, Tuple{CC.Attr}) &&
                # exact stamped-cast signature — every struct also has the
                # implicit converting constructor, whose sig is (::Type, ::Any)
-               which(v, Tuple{CC.Attr}).sig <: Tuple{Type,CC.AbstractAttr}
+               which(v, Tuple{CC.Attr}).sig <: Tuple{Type,CC.AbstractAttr} &&
+               # ...and a stamped cast lands inside the Attr hierarchy. A carrier from
+               # another family that merely *accepts* an attribute is a conversion, not a
+               # downcast, and has no `is<Name>` to pair with: `DynTypedNode(::AbstractAttr)`
+               # is one, since a DynTypedNode can hold a node of any family.
+               v <: CC.AbstractAttr
             # The predicate and the cast are one question asked twice, `isa<T>` and `cast<T>`
             # off the same `classof` — and the Julia abstract mirroring that class is a third
             # spelling of it. Holding all three against each other for every attribute class

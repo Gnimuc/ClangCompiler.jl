@@ -209,9 +209,10 @@ end
               """)
 
         # LoadFromCompilerInvocation adopts the invocation on the success path *and* on the
-        # failure path, so no invocation built here is ever disposed. `diag` and `fm` are
-        # only pinned with a Retain, so both stay ours -- and both must outlive every unit
-        # built from them, which is why they are disposed last.
+        # failure path, so no invocation built here is ever disposed. `diag` and `fm` stay
+        # ours: each was handed back already holding our reference, so a unit's own retain
+        # and release ride on top of it. Both must still outlive every unit built from them,
+        # which is why they are disposed last.
         diag = CC.DiagnosticsEngine()
         fm = CC.FileManager()
         inv = CC.createFromCommandLine(src, CC.get_default_args(), diag)
