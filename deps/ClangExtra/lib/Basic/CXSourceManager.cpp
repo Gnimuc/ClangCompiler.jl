@@ -2,6 +2,8 @@
 #include "clang/Basic/SourceManager.h"
 #include "llvm/Support/MemoryBuffer.h"
 
+#include <memory>
+
 CXDiagnosticsEngine clang_SourceManager_getDiagnostics(CXSourceManager SM) {
   return reinterpret_cast<CXDiagnosticsEngine>(&reinterpret_cast<clang::SourceManager *>(SM)->getDiagnostics());
 }
@@ -892,11 +894,22 @@ CXSourceManager clang_SourceManager_create(CXDiagnosticsEngine Diag, CXFileManag
   auto SM = std::make_unique<clang::SourceManager>(
       *(reinterpret_cast<clang::DiagnosticsEngine *>(Diag)),
       *(reinterpret_cast<clang::FileManager *>(FileMgr)), UserFilesAreVolatile);
+  // SourceManager is a RefCountedBase, so hand it back already holding the caller's own
+  // reference rather than at a count of zero. CompilerInstance::setSourceManager parks the
+  // pointer in an IntrusiveRefCntPtr member and releases it when the instance dies or its
+  // manager is replaced, so a borrow starting from zero goes 0 -> 1 -> 0 and deletes the
+  // manager out from under the caller. Starting at one turns every such borrow into
+  // 1 -> 2 -> 1. The engine and the file manager above are held by plain reference and are
+  // never counted, so this pin says nothing about them: the manager must still be destroyed
+  // before both, and because dispose now only releases, a manager some consumer still holds
+  // outlives that dispose and keeps reading references the caller may already have freed.
+  SM->Retain();
   return reinterpret_cast<CXSourceManager>(SM.release());
 }
 
 void clang_SourceManager_dispose(CXSourceManager SM) {
-  delete reinterpret_cast<clang::SourceManager *>(SM);
+  // Balances the Retain in clang_SourceManager_create; the last Release deletes.
+  reinterpret_cast<clang::SourceManager *>(SM)->Release();
 }
 
 void clang_SourceManager_PrintStats(CXSourceManager SM) {

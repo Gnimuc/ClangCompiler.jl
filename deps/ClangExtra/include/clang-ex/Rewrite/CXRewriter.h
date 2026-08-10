@@ -22,6 +22,11 @@ CXLangOptions clang_Rewriter_getLangOpts(CXRewriter R);
 
 void clang_Rewriter_dispose(CXRewriter R);
 
+/// Rebind R to a different SourceManager/LangOptions pair. The buffers already rewritten
+/// are keyed on FileIDs of the OLD manager and are not cleared, so this is only safe on a
+/// rewriter that has not been edited yet. Both references are stored raw and must outlive R.
+void clang_Rewriter_setSourceMgr(CXRewriter R, CXSourceManager SM, CXLangOptions LO);
+
 CXSourceManager clang_Rewriter_getSourceMgr(CXRewriter R);
 
 /// Rewriter::isRewritable (static) -- true for raw file locations only; macro
@@ -79,16 +84,34 @@ bool clang_Rewriter_ReplaceTextInRangeWithRange(CXRewriter R, CXSourceRange_ Ran
 bool clang_Rewriter_IncreaseIndentation(CXRewriter R, CXSourceRange_ Range,
                                         CXSourceLocation_ ParentIndent);
 
+// getEditBuffer
+// -- returns a `RewriteBuffer &`, the low-level scribbling interface. RewriteBuffer is
+// deliberately kept out of this C surface: everything a caller needs from it is either an
+// edit (the Insert/Remove/Replace family above, which route through the same buffer) or
+// the resulting text (clang_Rewriter_getRewriteBufferText below).
+
+/// helper -- getRewriteBufferFor(FID) != nullptr. True once FID has been edited; a file
+/// nothing has touched has no rewrite buffer at all.
+bool clang_Rewriter_hasChangesForFileID(CXRewriter R, CXFileID FID);
+
+/// helper -- getRewriteBufferFor(FID) followed by RewriteBuffer::write into a string.
+/// The whole rewritten text of FID, in memory. Returns the EMPTY string when FID has no
+/// rewrite buffer, which clang_Rewriter_hasChangesForFileID tells apart from a file that
+/// really did rewrite to nothing.
+CXString clang_Rewriter_getRewriteBufferText(CXRewriter R, CXFileID FID);
+
+/// helper -- std::distance(buffer_begin(), buffer_end()). The number of files R has
+/// changed.
+unsigned clang_Rewriter_getNumBuffers(CXRewriter R);
+
+/// helper -- the FileID of the Idx'th changed file, walking buffer_begin()..buffer_end().
+/// PRECONDITION: Idx < clang_Rewriter_getNumBuffers(R).
+/// This allocates a FileID box; release it with clang_FileID_dispose.
+CXFileID clang_Rewriter_getBufferFileID(CXRewriter R, unsigned Idx);
+
 /// Save all changed buffers to disk; true if any file failed to save. Diagnostics go
 /// through the SourceManager's DiagnosticsEngine.
 bool clang_Rewriter_overwriteChangedFiles(CXRewriter R);
-
-// setSourceMgr
-// getLangOpts
-// getEditBuffer
-// getRewriteBufferFor
-// buffer_begin
-// buffer_end
 
 LLVM_CLANG_C_EXTERN_C_END
 

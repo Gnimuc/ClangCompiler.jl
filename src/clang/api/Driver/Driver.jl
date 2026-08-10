@@ -619,3 +619,24 @@ the same question before any `Driver` exists.
 function getDriverMode(prog_name::AbstractString, args::Vector{String}=String[])
     return get_string(clang_driver_getDriverMode(prog_name, args, length(args)))
 end
+
+"""
+    ExecuteCompilation(x::AbstractDriver, c::AbstractCompilation) -> Tuple{Int,Vector{Tuple{Int,Command}}}
+Run the compilation `x` built and return `(exit_code, failures)`, where each failure is a
+`(result_code, command)` pair.
+
+This is the whole driver, not just the subprocesses: it reports errors, writes response
+files and removes temporaries the way `clang` itself does, which is what turns
+[`BuildCompilation`](@ref) into a working compiler. Failures can only come from commands in
+the compilation's own job list, so the vector is complete.
+"""
+function ExecuteCompilation(x::AbstractDriver, c::AbstractCompilation)
+    @check_ptrs x c
+    n = size(getJobs(c))
+    num = Ref{Cuint}(0)
+    results = Vector{Cint}(undef, n)
+    commands = Vector{CXCommand}(undef, n)
+    code = clang_Driver_ExecuteCompilation(x, c, num, results, commands, n)
+    k = min(Int(num[]), n)
+    return (Int(code), Tuple{Int,Command}[(Int(results[i]), Command(commands[i])) for i = 1:k])
+end

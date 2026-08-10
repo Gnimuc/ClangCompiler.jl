@@ -96,6 +96,13 @@ CXSourceRange_ clang_Stmt_getSourceRange(CXStmt S) {
   return CXSourceRange_{B, E};
 }
 
+CXString clang_Stmt_dumpToString(CXStmt S, CXASTContext Ctx) {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  reinterpret_cast<clang::Stmt *>(S)->dump(OS, *reinterpret_cast<clang::ASTContext *>(Ctx));
+  return extra::makeCXString(OS.str());
+}
+
 void clang_Stmt_dump(CXStmt S) { return reinterpret_cast<clang::Stmt *>(S)->dump(); }
 
 size_t clang_Stmt_getNumChildren(CXStmt S) {

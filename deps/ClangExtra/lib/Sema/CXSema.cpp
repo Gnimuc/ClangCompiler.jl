@@ -1,4 +1,5 @@
 #include "clang-ex/Sema/CXSema.h"
+#include <optional>
 #include "Sema/CXTemplateBox.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclAccessPair.h"
@@ -1749,6 +1750,8 @@ void clang_Sema_PerformDependentDiagnostics(CXSema S, CXDeclContext Pattern,
       extra::unboxMultiLevelTemplateArgumentList(TemplateArgs));
 }
 #include "clang/AST/Stmt.h"
+
+#include <memory>
 
 bool clang_Sema_hasUncompilableErrorOccurred(CXSema S) {
   return reinterpret_cast<clang::Sema *>(S)->hasUncompilableErrorOccurred();
@@ -5126,6 +5129,101 @@ bool clang_Sema_IsValueInFlagEnum(CXSema S, CXEnumDecl ED, LLVMGenericValueRef V
   return reinterpret_cast<clang::Sema *>(S)->IsValueInFlagEnum(
       reinterpret_cast<clang::EnumDecl *>(ED),
       reinterpret_cast<llvm::GenericValue *>(Val)->IntVal, AllowMask);
+}
+
+CXExpr clang_Sema_BuildMemberReferenceExpr(CXSema S, CXExpr Base, CXQualType BaseType,
+                                           CXSourceLocation_ OpLoc, bool IsArrow,
+                                           CXCXXScopeSpec SS,
+                                           CXSourceLocation_ TemplateKWLoc,
+                                           CXNamedDecl FirstQualifierInScope,
+                                           CXDeclarationNameInfo NameInfo,
+                                           CXTemplateArgumentListInfo TemplateArgs,
+                                           CXScope Scp, bool *IsInvalid) {
+  clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->BuildMemberReferenceExpr(
+      reinterpret_cast<clang::Expr *>(Base), clang::QualType::getFromOpaquePtr(BaseType),
+      clang::SourceLocation::getFromPtrEncoding(OpLoc), IsArrow,
+      *reinterpret_cast<clang::CXXScopeSpec *>(SS),
+      clang::SourceLocation::getFromPtrEncoding(TemplateKWLoc),
+      reinterpret_cast<clang::NamedDecl *>(FirstQualifierInScope),
+      *reinterpret_cast<clang::DeclarationNameInfo *>(NameInfo),
+      reinterpret_cast<const clang::TemplateArgumentListInfo *>(TemplateArgs),
+      reinterpret_cast<const clang::Scope *>(Scp));
+  *IsInvalid = R.isInvalid();
+  return reinterpret_cast<CXExpr>(R.isInvalid() ? nullptr : R.get());
+}
+
+CXExpr clang_Sema_BuildMemberReferenceExprFromLookup(
+    CXSema S, CXExpr Base, CXQualType BaseType, CXSourceLocation_ OpLoc, bool IsArrow,
+    CXCXXScopeSpec SS, CXSourceLocation_ TemplateKWLoc, CXNamedDecl FirstQualifierInScope,
+    CXLookupResult R_, CXTemplateArgumentListInfo TemplateArgs, CXScope Scp,
+    bool SuppressQualifierCheck, bool *IsInvalid) {
+  clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->BuildMemberReferenceExpr(
+      reinterpret_cast<clang::Expr *>(Base), clang::QualType::getFromOpaquePtr(BaseType),
+      clang::SourceLocation::getFromPtrEncoding(OpLoc), IsArrow,
+      *reinterpret_cast<clang::CXXScopeSpec *>(SS),
+      clang::SourceLocation::getFromPtrEncoding(TemplateKWLoc),
+      reinterpret_cast<clang::NamedDecl *>(FirstQualifierInScope),
+      *reinterpret_cast<clang::LookupResult *>(R_),
+      reinterpret_cast<const clang::TemplateArgumentListInfo *>(TemplateArgs),
+      reinterpret_cast<const clang::Scope *>(Scp), SuppressQualifierCheck);
+  *IsInvalid = R.isInvalid();
+  return reinterpret_cast<CXExpr>(R.isInvalid() ? nullptr : R.get());
+}
+
+CXExpr clang_Sema_BuildCXXNew(CXSema S, CXSourceRange_ Range, bool UseGlobal,
+                              CXSourceLocation_ PlacementLParen, CXExpr *PlacementArgs,
+                              unsigned NumPlacementArgs, CXSourceLocation_ PlacementRParen,
+                              CXSourceRange_ TypeIdParens, CXQualType AllocType,
+                              CXTypeSourceInfo AllocTypeInfo, bool HasArraySize,
+                              CXExpr ArraySize, CXSourceRange_ DirectInitRange,
+                              CXExpr Initializer, bool *IsInvalid) {
+  std::optional<clang::Expr *> Size;
+  if (HasArraySize)
+    Size = reinterpret_cast<clang::Expr *>(ArraySize);
+  clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->BuildCXXNew(
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(Range.B),
+                         clang::SourceLocation::getFromPtrEncoding(Range.E)),
+      UseGlobal, clang::SourceLocation::getFromPtrEncoding(PlacementLParen),
+      clang::MultiExprArg(reinterpret_cast<clang::Expr **>(PlacementArgs), NumPlacementArgs),
+      clang::SourceLocation::getFromPtrEncoding(PlacementRParen),
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(TypeIdParens.B),
+                         clang::SourceLocation::getFromPtrEncoding(TypeIdParens.E)),
+      clang::QualType::getFromOpaquePtr(AllocType),
+      reinterpret_cast<clang::TypeSourceInfo *>(AllocTypeInfo), Size,
+      clang::SourceRange(clang::SourceLocation::getFromPtrEncoding(DirectInitRange.B),
+                         clang::SourceLocation::getFromPtrEncoding(DirectInitRange.E)),
+      reinterpret_cast<clang::Expr *>(Initializer));
+  *IsInvalid = R.isInvalid();
+  return reinterpret_cast<CXExpr>(R.isInvalid() ? nullptr : R.get());
+}
+
+CXQualType clang_Sema_CheckTemplateIdType(CXSema S, CXTemplateName Template,
+                                          CXSourceLocation_ TemplateLoc,
+                                          CXTemplateArgumentListInfo TemplateArgs) {
+  return reinterpret_cast<CXQualType>(
+      reinterpret_cast<clang::Sema *>(S)
+          ->CheckTemplateIdType(
+              clang::TemplateName::getFromVoidPointer(Template),
+              clang::SourceLocation::getFromPtrEncoding(TemplateLoc),
+              *reinterpret_cast<clang::TemplateArgumentListInfo *>(TemplateArgs))
+          .getAsOpaquePtr());
+}
+
+CXDecl clang_Sema_ActOnStartOfFunctionDef(CXSema S, CXScope Scp, CXDecl D) {
+  return reinterpret_cast<CXDecl>(
+      reinterpret_cast<clang::Sema *>(S)->ActOnStartOfFunctionDef(
+          reinterpret_cast<clang::Scope *>(Scp), reinterpret_cast<clang::Decl *>(D)));
+}
+
+CXDecl clang_Sema_ActOnFinishFunctionBody(CXSema S, CXDecl D, CXStmt Body) {
+  return reinterpret_cast<CXDecl>(reinterpret_cast<clang::Sema *>(S)->ActOnFinishFunctionBody(
+      reinterpret_cast<clang::Decl *>(D), reinterpret_cast<clang::Stmt *>(Body)));
+}
+
+CXDecl clang_Sema_ActOnSkippedFunctionBody(CXSema S, CXDecl D) {
+  return reinterpret_cast<CXDecl>(
+      reinterpret_cast<clang::Sema *>(S)->ActOnSkippedFunctionBody(
+          reinterpret_cast<clang::Decl *>(D)));
 }
 
 CXPrintingPolicy_ clang_Sema_getPrintingPolicy(CXSema S) {

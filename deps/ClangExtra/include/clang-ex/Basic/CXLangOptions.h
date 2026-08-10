@@ -2,6 +2,7 @@
 #define LLVM_CLANG_C_EXTRA_CXLANGOPTIONS_H
 
 #include "clang-ex/CXTypes.h"
+#include "clang-ex/Basic/CXLangStandard.h"
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -132,6 +133,22 @@ bool clang_LangOptions_getCPlusPlus11(CXLangOptions LO);
 // calls getLangStandardForKind, which report_fatal_error's on the unspecified kind, and a
 // default-constructed invocation has exactly that.
 bool clang_LangOptions_hasLangStandard(CXLangOptions LO);
+
+// clang::LangOptions::setLangDefaults, the static that brings a programmatically-created
+// LangOptions up to what `-x <Lang> -std=<LangStd>` for `Triple` would have produced. The
+// triple is spelled as text and parsed on this side, so no llvm::Triple crosses.
+//
+// Passing CXLangStandardKind_lang_unspecified asks clang for the language's own default,
+// and that resolution is the one partial step: it llvm_unreachable's for CXLanguage_Unknown
+// and CXLanguage_LLVM_IR, neither of which has a default standard. An explicit LangStd
+// bypasses it entirely.
+//
+// The `Includes` out-parameter of the C++ signature — the headers a language implicitly
+// requires, which is how HLSL and OpenCL get their prelude — crosses as the return value.
+// Release it with clang_disposeStringSet; the common answer is an empty set.
+CXStringSet *clang_LangOptions_setLangDefaults(CXLangOptions LO, CXLanguage Lang,
+                                               const char *Triple,
+                                               CXLangStandardKind LangStd);
 
 bool clang_LangOptions_assumeFunctionsAreConvergent(CXLangOptions LO);
 

@@ -94,7 +94,7 @@ function emit_decl_kindmap()
         println(io,
                 "# Generated from deps/ClangExtra/include/clang-ex/AST/DeclNodes.inc by gen/decl_nodes.jl — do not edit.")
         println(io, "# CXDeclKind -> concrete carrier; kinds without a wrapped `<name>Decl` carrier")
-        println(io, "# (the six OpenMP declaration kinds, and Friend, which is not one) are absent, so")
+        println(io, "# (the six OpenMP declaration kinds) are absent, so")
         println(io, "# resolve falls back to the base Decl.")
         println(io, "const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(")
         for name in names

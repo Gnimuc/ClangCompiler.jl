@@ -25,6 +25,15 @@ function getDiagnostics(ci::CompilerInstance)
     return DiagnosticsEngine(clang_CompilerInstance_getDiagnostics(ci))
 end
 
+"""
+    setDiagnostics(ci::CompilerInstance, diag::DiagnosticsEngine)
+Install `diag` as the instance's diagnostics engine.
+
+`diag` stays the caller's. The instance holds it in an `IntrusiveRefCntPtr` and releases it
+when `ci` is disposed or its engine replaced, but the engine arrives already holding the
+caller's own reference (MARSHALLING.md §12), so that release cannot free it and the same
+engine can back several instances in turn.
+"""
 function setDiagnostics(ci::CompilerInstance, diag::DiagnosticsEngine)
     @check_ptrs ci diag
     return clang_CompilerInstance_setDiagnostics(ci, diag)
@@ -106,6 +115,15 @@ function getSourceManager(ci::CompilerInstance)
     return SourceManager(clang_CompilerInstance_getSourceManager(ci))
 end
 
+"""
+    setSourceManager(ci::CompilerInstance, src_mgr::SourceManager)
+Install `src_mgr` as the instance's source manager.
+
+`src_mgr` stays the caller's, on the same terms as [`setDiagnostics`](@ref): the instance
+takes its own reference and releasing it cannot free a manager that arrived holding the
+caller's (MARSHALLING.md §12). Note that a `SourceManager` holds its diagnostics engine and
+file manager by plain reference, so it must still be disposed before both.
+"""
 function setSourceManager(ci::CompilerInstance, src_mgr::SourceManager)
     @check_ptrs ci src_mgr
     return clang_CompilerInstance_setSourceManager(ci, src_mgr)

@@ -301,8 +301,9 @@ CXTranslationUnitKind clang_ASTUnit_getTranslationUnitKind(CXASTUnit AU) {
 CXASTUnit clang_ASTUnit_create(CXCompilerInvocation CI, CXDiagnosticsEngine Diags,
                                CXCaptureDiagsKind CaptureDiagnostics,
                                bool UserFilesAreVolatile) {
+  // clang_DiagnosticsEngine_create hands the engine back already holding the caller's own
+  // reference, so the unit's IntrusiveRefCntPtr rides on top of it and needs no pin here.
   auto *DE = reinterpret_cast<clang::DiagnosticsEngine *>(Diags);
-  DE->Retain();
   auto AU = clang::ASTUnit::create(std::shared_ptr<clang::CompilerInvocation>(
                                        reinterpret_cast<clang::CompilerInvocation *>(CI)),
                                    llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(DE),
@@ -320,8 +321,9 @@ CXASTUnit clang_ASTUnit_LoadFromASTFile(const char *Filename, CXASTUnit_WhatToLo
                                         CXCaptureDiagsKind CaptureDiagnostics,
                                         bool AllowASTWithCompilerErrors,
                                         bool UserFilesAreVolatile) {
+  // The engine arrives already holding the caller's reference; the unit's own retain and
+  // release ride on top of it.
   auto *DE = reinterpret_cast<clang::DiagnosticsEngine *>(Diags);
-  DE->Retain();
   clang::FileSystemOptions FSOpts =
       FileSystemOpts ? *reinterpret_cast<clang::FileSystemOptions *>(FileSystemOpts)
                      : clang::FileSystemOptions();
@@ -350,14 +352,12 @@ CXASTUnit clang_ASTUnit_LoadFromCompilerInvocation(
     unsigned PrecompilePreambleAfterNParses, CXTranslationUnitKind TUKind,
     bool CacheCodeCompletionResults, bool IncludeBriefCommentsInCodeCompletion,
     bool UserFilesAreVolatile) {
-  // Both objects land in an IntrusiveRefCntPtr member of the unit, while the C surface
-  // hands them over as caller-owned raw pointers it never refcounts, so each is pinned
-  // with an explicit Retain first (MARSHALLING.md section 12): without it the unit's
-  // release drops the last reference and deletes an object the caller still disposes.
+  // Both objects land in an IntrusiveRefCntPtr member of the unit, and neither needs
+  // pinning here: their create functions hand each back already holding the caller's own
+  // reference, so the unit's retain and release ride on top of that and the caller's
+  // dispose stays the reference that frees.
   auto *DE = reinterpret_cast<clang::DiagnosticsEngine *>(Diags);
-  DE->Retain();
   auto *FM = reinterpret_cast<clang::FileManager *>(FileMgr);
-  FM->Retain();
   auto AU = clang::ASTUnit::LoadFromCompilerInvocation(
       std::shared_ptr<clang::CompilerInvocation>(
           reinterpret_cast<clang::CompilerInvocation *>(CI)),

@@ -368,25 +368,48 @@ pass `Set.begin()` / `Set.end()`. Nothing dangles: clang copies the
 `fillUnresolvedSet` helper in `lib/AST/CXExprCXX.cpp` is shared by the
 `UnresolvedLookupExpr` / `UnresolvedMemberExpr` factories.
 
-## 12. Refcount-adopting parameters (`IntrusiveRefCntPtr` sinks)
+## 12. Reference-counted types: retain at create, release at dispose
 
-Some Clang entry points take an `IntrusiveRefCntPtr<T>` (e.g.
-`CreateInvocationOptions::Diags`), but the shim's handles are caller-owned raw
-pointers whose `_dispose` is an unconditional `delete` — refcounts are never part
-of the C surface.
+Some Clang types derive from `llvm::RefCountedBase`, and their consumers borrow
+them through an `IntrusiveRefCntPtr`. A freshly `new`ed one has a count of zero,
+so a borrow runs 0→1→0 and **deletes the object** when the consumer is destroyed,
+leaving the caller's handle dangling. The symptom is a flaky segfault on the
+*second* use; one use never reveals it.
 
-**Pin with `Retain()` before wrapping.** Wrapping the raw pointer in a temporary
-`IntrusiveRefCntPtr` bumps the count 0→1 and the temporary's destructor takes it
-back to 0 — deleting an object the caller still owns. One explicit `Retain()`
-before constructing the temporary makes the count end at 1 instead: the borrowed
-object survives, the caller's `_dispose` still frees it (plain `delete` ignores
-the count), and no second boxing scheme appears. Never hand the C API's raw
-handle to a refcount-taking parameter without the pin, and never add a
-dispose-via-`Release` variant next to the `delete`-based one.
+**A create function that mints one of these must `Retain()`, and its `_dispose`
+must `Release()` rather than `delete`.** The object then leaves the shim already
+holding the caller's own reference, every borrow runs 1→2→1, and the caller's
+`_dispose` is the reference that frees. This makes ownership independent of
+teardown order and needs no cooperation from the Julia layer.
 
-**In the tree.** `clang_CompilerInvocation_createFromCommandLine`
-(`lib/Frontend/CXCompilerInvocation.cpp`) pins the borrowed `DiagnosticsEngine`
-before `clang::createInvocation` runs the driver.
+**Do not pin at the borrow site.** An unbalanced `Retain()` next to a consumer
+does stop the premature free, but it costs a permanent leak and it makes the
+caller's `_dispose` abort on LLVM's `RefCount == 0 && "Destruction occurred when
+there are still references to this."` — a `delete` cannot destroy a pinned
+object. Seven such pins accumulated in this tree, each papering over one symptom
+of the same hole, and all seven came out when the create functions were fixed.
+
+**In the tree.** `FileManager`, `DiagnosticIDs`, `DiagnosticOptions`,
+`DiagnosticsEngine`, `SourceManager` and `TargetInfo` all follow the
+retain-at-create pattern; see `lib/Basic/CXFileManager.cpp` for the canonical
+shape. `TargetInfo` is the one whose factory is clang's rather than the shim's
+own `new`, and the pin goes on the returned pointer just the same.
+
+**Two consequences worth stating.** A Julia constructor that mints one of these
+into a local and returns only the consumer must release its own reference before
+returning, or it strands an unreachable pin — see `DiagnosticsEngine` in
+`src/clang/api/Basic/Diagnostic.jl`. And because `_dispose` now only releases, an
+object some consumer still holds outlives that call, so a type holding **plain
+references** to others (`SourceManager` holds its engine and file manager that
+way) must still be destroyed before them.
+
+**Only for types the shim mints.** Borrowing getters keep returning raw pointers
+and must never be disposed. `ASTContext` is reference counted and has an
+`IntrusiveRefCntPtr` sink in `CompilerInstance`, but the shim mints none — every
+`CXASTContext` comes from a getter, and `createASTContext` builds one the
+instance owns — so it needs no create/dispose pair. Checked as of the
+`TargetInfo` conversion; if a minting entry point is ever added, it inherits the
+rule above.
 
 ## 13. Uninitialized-state preconditions → export the gate, don't just document it
 

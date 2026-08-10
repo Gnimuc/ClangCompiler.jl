@@ -1,9 +1,34 @@
 # TargetInfo
+"""
+    TargetInfo(opts::TargetOptions, diag::DiagnosticsEngine=DiagnosticsEngine()) -> TargetInfo
+Build the target description named by `opts`.
+
+The target comes back already holding the caller's reference, so lending it to a
+[`CompilerInstance`](@ref) with [`setTarget`](@ref) cannot free it and one [`dispose`](@ref)
+at the end does (MARSHALLING.md §12). The same target can back several instances in turn.
+
+`opts` is **absorbed**: the target keeps it in a `shared_ptr` and frees it, so disposing
+`opts` afterwards is a double free.
+
+!!! note "A null handle means the triple named no known target"
+    clang's factory reports an unusable triple by diagnosing through `diag` and returning
+    null, so check the result rather than assuming construction succeeded.
+"""
 function TargetInfo(opts::TargetOptions, diag::DiagnosticsEngine=DiagnosticsEngine())
     @check_ptrs opts diag
     info = clang_TargetInfo_CreateTargetInfo(diag, opts)
     return TargetInfo(info)
 end
+
+"""
+    dispose(x::TargetInfo)
+Release the caller's reference to a target built by [`TargetInfo`](@ref).
+
+Only for targets built that way. One reached through a getter — [`getTarget`](@ref),
+`getTargetInfo` and the like — is borrowed from whatever owns it, and disposing it drops a
+reference that owner still needs.
+"""
+dispose(x::TargetInfo) = clang_TargetInfo_dispose(x)
 
 function getSizeType(x::AbstractTargetInfo)
     @check_ptrs x

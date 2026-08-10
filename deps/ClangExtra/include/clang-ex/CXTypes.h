@@ -140,6 +140,9 @@ typedef struct CXASTNameGeneratorImpl *CXASTNameGenerator;
 typedef struct CXNestedNameSpecifierLocImpl *CXNestedNameSpecifierLoc;
 typedef struct CXNestedNameSpecifierImpl *CXNestedNameSpecifier;
 
+// ParentMap
+typedef struct CXParentMapImpl *CXParentMap;
+
 // ParentMapContext
 typedef struct CXParentMapContextImpl *CXParentMapContext;
 
@@ -184,6 +187,37 @@ typedef struct CXAssumedTemplateStorageImpl *CXAssumedTemplateStorage;
 typedef struct CXOverloadedTemplateStorageImpl *CXOverloadedTemplateStorage;
 typedef struct CXTemplateArgumentImpl *CXTemplateArgument;
 
+// ASTMatchers
+typedef struct CXBoundNodesImpl *CXBoundNodes;
+// ASTMatchFinder
+typedef struct CXMatchFinderImpl *CXMatchFinder;
+// ASTMatchersInternal
+typedef struct CXDynTypedMatcherImpl *CXDynTypedMatcher;
+// Dynamic/Parser
+typedef struct CXMatcherDiagnosticsImpl *CXMatcherDiagnostics;
+typedef struct CXMatcherCompletionListImpl *CXMatcherCompletionList;
+// Dynamic/VariantValue
+typedef struct CXVariantValueImpl *CXVariantValue;
+typedef struct CXNamedValueMapImpl *CXNamedValueMap;
+// ASTImporter
+typedef struct CXASTImporterImpl *CXASTImporter;
+// ASTStructuralEquivalence
+typedef struct CXStructuralEquivalenceContextImpl *CXStructuralEquivalenceContext;
+// ASTTypeTraits
+typedef struct CXDynTypedNodeImpl *CXDynTypedNode;
+// ASTConcept
+typedef struct CXConceptReferenceImpl *CXConceptReference;
+// ExprConcepts
+typedef struct CXRequirementImpl *CXRequirement;
+typedef struct CXTypeRequirementImpl *CXTypeRequirement;
+typedef struct CXExprRequirementImpl *CXExprRequirement;
+typedef struct CXNestedRequirementImpl *CXNestedRequirement;
+// VTableBuilder
+typedef struct CXVTableComponentImpl *CXVTableComponent;
+typedef struct CXVTableLayoutImpl *CXVTableLayout;
+typedef struct CXVTableContextBaseImpl *CXVTableContextBase;
+typedef struct CXItaniumVTableContextImpl *CXItaniumVTableContext;
+
 // Analysis
 
 // ConstructionContext
@@ -192,6 +226,41 @@ typedef struct CXConstructionContextImpl *CXConstructionContext;
 typedef struct CXCFGBuildOptionsImpl *CXCFGBuildOptions;
 typedef struct CXCFGBlockImpl *CXCFGBlock;
 typedef struct CXCFGImpl *CXCFG;
+// CallGraph
+typedef struct CXCallGraphImpl *CXCallGraph;
+typedef struct CXCallGraphNodeImpl *CXCallGraphNode;
+// CloneDetection
+typedef struct CXCloneDetectorImpl *CXCloneDetector;
+// MacroExpansionContext
+typedef struct CXMacroExpansionContextImpl *CXMacroExpansionContext;
+
+// Analyses
+// Dominators
+typedef struct CXCFGDomTreeImpl *CXCFGDomTree;
+typedef struct CXCFGPostDomTreeImpl *CXCFGPostDomTree;
+typedef struct CXControlDependencyCalculatorImpl *CXControlDependencyCalculator;
+// ExprMutationAnalyzer
+typedef struct CXExprMutationAnalyzerImpl *CXExprMutationAnalyzer;
+typedef struct CXFunctionParmMutationAnalyzerImpl *CXFunctionParmMutationAnalyzer;
+
+// CFGStmtMap
+typedef struct CXCFGStmtMapImpl *CXCFGStmtMap;
+
+// AnalysisDeclContext
+typedef struct CXAnalysisDeclContextImpl *CXAnalysisDeclContext;
+typedef struct CXAnalysisDeclContextManagerImpl *CXAnalysisDeclContextManager;
+
+// Analyses/CFGReachabilityAnalysis
+typedef struct CXCFGReverseBlockReachabilityAnalysisImpl *CXCFGReverseBlockReachabilityAnalysis;
+
+// Analyses/LiveVariables
+typedef struct CXLiveVariablesImpl *CXLiveVariables;
+
+// Analyses/UninitializedValues
+typedef struct CXUninitVariablesResultImpl *CXUninitVariablesResult;
+
+// Analyses/ReachableCode
+typedef struct CXUnreachableCodeResultImpl *CXUnreachableCodeResult;
 
 // Basic
 // Builtins
@@ -218,6 +287,12 @@ typedef struct CXDiagnosticOptionsImpl *CXDiagnosticOptions;
 // FileEntry
 typedef struct CXFileEntryImpl *CXFileEntry;
 
+// VirtualFileSystem (llvm/Support/VirtualFileSystem.h; the FileManager cluster is what
+// installs one, so the handles live next to it)
+typedef struct CXVirtualFileSystemImpl *CXVirtualFileSystem;
+typedef struct CXInMemoryFileSystemImpl *CXInMemoryFileSystem;
+typedef struct CXOverlayFileSystemImpl *CXOverlayFileSystem;
+
 // FileManager
 typedef struct CXDirectoryEntryImpl *CXDirectoryEntry;
 typedef struct CXDirectoryEntryRefImpl *CXDirectoryEntryRef;
@@ -232,6 +307,9 @@ typedef struct CXIdentifierTableImpl *CXIdentifierTable;
 
 // LangOptions
 typedef struct CXLangOptionsImpl *CXLangOptions;
+
+// LangStandard
+typedef struct CXLangStandardImpl *CXLangStandard;
 
 // Module
 typedef struct CXModule_Impl *CXModule_;
@@ -270,6 +348,24 @@ typedef struct CXCodeGenActionImpl *CXCodeGenAction;
 typedef struct CXCodeGeneratorImpl *CXCodeGenerator;
 typedef struct CXCodeGenModuleImpl *CXCodeGenModule;
 
+// CGFunctionInfo
+typedef struct CXCGFunctionInfoImpl *CXCGFunctionInfo;
+typedef struct CXABIArgInfoImpl *CXABIArgInfo;
+// CodeGenABITypes
+typedef struct CXAttrBuilderImpl *CXAttrBuilder;
+// ObjectFilePCHContainerOperations
+typedef struct CXPCHContainerOperationsImpl *CXPCHContainerOperations;
+typedef struct CXPCHContainerWriterImpl *CXPCHContainerWriter;
+typedef struct CXPCHContainerReaderImpl *CXPCHContainerReader;
+// CrossTU
+// CrossTranslationUnit
+typedef struct CXCrossTranslationUnitContextImpl *CXCrossTranslationUnitContext;
+// The "USR<space>filepath" index of clang/CrossTU/CrossTranslationUnit.h, i.e. the
+// `llvm::StringMap<std::string>` that parseCrossTUIndex returns and
+// createCrossTUIndexString consumes. No llvm-c type spells a StringMap, so the shim
+// owns one: clang_CrossTUIndex_create / _dispose in CXCrossTranslationUnit.h.
+typedef struct CXCrossTUIndexImpl *CXCrossTUIndex;
+
 // Driver
 // Driver
 typedef struct CXDriverImpl *CXDriver;
@@ -279,6 +375,22 @@ typedef struct CXCompilationImpl *CXCompilation;
 
 // ToolChain
 typedef struct CXToolChainImpl *CXToolChain;
+
+// Edit
+// Commit
+typedef struct CXCommitImpl *CXCommit;
+// EditedSource
+typedef struct CXEditedSourceImpl *CXEditedSource;
+// Format
+typedef struct CXFormatStyleImpl *CXFormatStyle;
+// Job
+typedef struct CXJobListImpl *CXJobList;
+typedef struct CXCommandImpl *CXCommand;
+// Tool
+typedef struct CXToolImpl *CXTool;
+// Options
+typedef struct CXOptTableImpl *CXOptTable;
+typedef struct CXOptionImpl *CXOption;
 
 // Frontend
 // ASTUnit
@@ -299,6 +411,19 @@ typedef struct CXCowCompilerInvocationImpl *CXCowCompilerInvocation;
 // FrontendOptions
 typedef struct CXFrontendOptionsImpl *CXFrontendOptions;
 
+// PrecompiledPreamble
+typedef struct CXPrecompiledPreambleImpl *CXPrecompiledPreamble;
+// Utils
+typedef struct CXDependencyCollectorImpl *CXDependencyCollector;
+// Index
+// CommentToXML
+typedef struct CXCommentToXMLConverterImpl *CXCommentToXMLConverter;
+// IndexingAction
+// Not a clang class: the one concrete `clang::index::IndexDataConsumer` subclass the
+// shim compiles in, batch-collecting the occurrences a run of indexASTUnit /
+// indexTopLevelDecls reports. See CXIndexingAction.h.
+typedef struct CXIndexDataCollectorImpl *CXIndexDataCollector;
+
 // Interpreter
 typedef struct CXIncrementalCompilerBuilderImpl *CXIncrementalCompilerBuilder;
 typedef struct CXInterpreterImpl *CXInterpreter;
@@ -306,6 +431,11 @@ typedef struct CXPartialTranslationUnitImpl *CXPartialTranslationUnit;
 typedef struct CXValueImpl *CXValue;
 
 // Lex
+// DependencyDirectivesScanner
+// One scan: the input copy, the POD token vector and the directive vector whose
+// ArrayRefs point into it, boxed together so the directives stay valid.
+typedef struct CXDependencyDirectivesScanImpl *CXDependencyDirectivesScan;
+
 // DirectoryLookup
 typedef struct CXDirectoryLookupImpl *CXDirectoryLookup;
 
@@ -322,6 +452,13 @@ typedef struct CXHeaderSearchOptionsImpl *CXHeaderSearchOptions;
 // Lexer
 typedef struct CXPreprocessorLexerImpl *CXPreprocessorLexer;
 typedef struct CXLexerImpl *CXLexer;
+
+// LiteralSupport
+// NumericLiteralParser keeps pointers into the spelling it was handed, so its box owns a
+// copy of that spelling; the other two parsers hold their results by value.
+typedef struct CXNumericLiteralParserImpl *CXNumericLiteralParser;
+typedef struct CXCharLiteralParserImpl *CXCharLiteralParser;
+typedef struct CXStringLiteralParserImpl *CXStringLiteralParser;
 
 // MacroInfo
 typedef struct CXModuleMacroImpl *CXModuleMacro;
@@ -342,6 +479,14 @@ typedef struct CXModuleLoaderImpl *CXModuleLoader;
 // PPCallbacks
 typedef struct CXPPCallbacksImpl *CXPPCallbacks;
 
+// PPConditionalDirectiveRecord
+typedef struct CXPPConditionalDirectiveRecordImpl *CXPPConditionalDirectiveRecord;
+
+// Pragma
+typedef struct CXPragmaHandlerImpl *CXPragmaHandler;
+typedef struct CXEmptyPragmaHandlerImpl *CXEmptyPragmaHandler;
+typedef struct CXPragmaNamespaceImpl *CXPragmaNamespace;
+
 // Preprocessor
 typedef struct CXInclusionDirectiveImpl *CXInclusionDirective;
 typedef struct CXMacroExpansionImpl *CXMacroExpansion;
@@ -359,9 +504,17 @@ typedef struct CXToken_Impl *CXToken_;
 
 typedef struct CXAnnotationValueImpl *CXAnnotationValue;
 
+// TokenConcatenation
+typedef struct CXTokenConcatenationImpl *CXTokenConcatenation;
+
 // Parse
 // Parser
 typedef struct CXParserImpl *CXParser;
+
+// Initialization
+typedef struct CXInitializedEntityImpl *CXInitializedEntity;
+typedef struct CXInitializationKindImpl *CXInitializationKind;
+typedef struct CXInitializationSequenceImpl *CXInitializationSequence;
 
 // Sema
 typedef struct CXSFINAETrapImpl *CXSFINAETrap;
@@ -390,6 +543,10 @@ typedef struct CXTemplateDeductionInfoImpl *CXTemplateDeductionInfo;
 // DeclSpec
 typedef struct CXCXXScopeSpecImpl *CXCXXScopeSpec;
 
+// TypoCorrection
+typedef struct CXTypoCorrectionImpl *CXTypoCorrection;
+typedef struct CXCorrectionCandidateCallbackImpl *CXCorrectionCandidateCallback;
+
 // Lookup
 typedef struct CXLookupResult_FilterImpl *CXLookupResult_Filter;
 typedef struct CXLookupResultImpl *CXLookupResult;
@@ -397,8 +554,56 @@ typedef struct CXLookupResultImpl *CXLookupResult;
 // Scope
 typedef struct CXScopeImpl *CXScope;
 
+// Tooling
+// CompilationDatabase
+typedef struct CXCompileCommandImpl *CXCompileCommand;
+// A shim-owned std::vector<clang::tooling::CompileCommand>: clang returns the query results
+// by value, and this is what a Julia caller indexes them through. No clang class of that name.
+typedef struct CXCompileCommandListImpl *CXCompileCommandList;
+typedef struct CXCompilationDatabaseImpl *CXCompilationDatabase;
+typedef struct CXFixedCompilationDatabaseImpl *CXFixedCompilationDatabase;
+// JSONCompilationDatabase
+typedef struct CXJSONCompilationDatabaseImpl *CXJSONCompilationDatabase;
+// ArgumentsAdjusters
+// clang::tooling::ArgumentsAdjuster is a std::function typedef, so the handle boxes the
+// closure itself rather than pointing at a clang object.
+typedef struct CXArgumentsAdjusterImpl *CXArgumentsAdjuster;
+// Tooling
+typedef struct CXClangToolImpl *CXClangTool;
+typedef struct CXToolInvocationImpl *CXToolInvocation;
+// Replacement
+typedef struct CXReplacementImpl *CXReplacement;
+typedef struct CXReplacementsImpl *CXReplacements;
+// StandardLibrary
+// `stdlib::Symbol` and `stdlib::Header` are (unsigned ID, Lang) value pairs with private
+// constructors; these handles are heap-boxed copies. The two *List handles are shim-owned
+// std::vectors -- clang hands `all()`/`headers()` back by value, so there is nothing to
+// borrow from.
+typedef struct CXStdlibSymbolImpl *CXStdlibSymbol;
+typedef struct CXStdlibHeaderImpl *CXStdlibHeader;
+typedef struct CXStdlibSymbolListImpl *CXStdlibSymbolList;
+typedef struct CXStdlibHeaderListImpl *CXStdlibHeaderList;
+typedef struct CXStdlibRecognizerImpl *CXStdlibRecognizer;
+// IncludeStyle
+typedef struct CXIncludeStyleImpl *CXIncludeStyle;
+// HeaderIncludes
+typedef struct CXIncludeCategoryManagerImpl *CXIncludeCategoryManager;
+typedef struct CXHeaderIncludesImpl *CXHeaderIncludes;
+// DependencyScanningService
+typedef struct CXDependencyScanningServiceImpl *CXDependencyScanningService;
+// DependencyScanningTool
+typedef struct CXDependencyScanningToolImpl *CXDependencyScanningTool;
+// Tokens
+typedef struct CXSyntaxTokenImpl *CXSyntaxToken;
+typedef struct CXSyntaxTokenListImpl *CXSyntaxTokenList;
+typedef struct CXTokenBufferImpl *CXTokenBuffer;
+typedef struct CXTokenCollectorImpl *CXTokenCollector;
+
 // Others
 typedef struct CXRewriterImpl *CXRewriter;
+// FixItRewriter -- the handle designates a shim-side box holding the FixItRewriter
+// together with the one FixItOptions subclass libclangex compiles; see CXFixItRewriter.h.
+typedef struct CXFixItRewriterImpl *CXFixItRewriter;
 typedef enum CXTranslationUnitKind {
   CXTranslationUnitKind_TU_Complete,
   CXTranslationUnitKind_TU_Prefix,

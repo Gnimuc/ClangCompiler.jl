@@ -20,3 +20,20 @@ using Test
     end
     CC.LLVM.dispose(llvm_ctx)
 end
+
+@testset "an action hands back the context it was given, and no generator before it runs" begin
+    llvm_ctx = CC.LLVM.Context()
+    act = CC.LLVMOnlyAction(llvm_ctx)
+
+    # every constructor above supplies the context, so taking it back is the identity: the
+    # action never made one of its own to hand over
+    @test CC.takeLLVMContext(act).ref == llvm_ctx.ref
+
+    # the code generator lives on the action's backend consumer, and that consumer is built
+    # in CreateASTConsumer -- reaching for it beforehand dereferences a null pointer inside
+    # clang, so the shim answers rather than crashing
+    @test CC.getCodeGenerator(act) === nothing
+
+    dispose(act)
+    CC.LLVM.dispose(llvm_ctx)
+end

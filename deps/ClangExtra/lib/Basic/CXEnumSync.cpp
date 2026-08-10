@@ -9,6 +9,7 @@
 #include "clang-ex/CXTypes.h"
 
 #include "clang-ex/AST/CXAPValue.h"
+#include "clang-ex/AST/CXASTDumperUtils.h"
 #include "clang-ex/AST/CXAttr.h"
 #include "clang-ex/AST/CXExpr.h"
 #include "clang-ex/AST/CXExprCXX.h"
@@ -30,9 +31,13 @@
 #include "clang-ex/AST/CXType.h"
 #include "clang-ex/AST/CXTemplateBase.h"
 #include "clang-ex/AST/CXComment.h"
+#include "clang-ex/Parse/CXParser.h"
 #include "clang-ex/Sema/CXLookup.h"
+#include "clang-ex/Sema/CXTypoCorrection.h"
 #include "clang-ex/Sema/CXSema.h"
 #include "clang-ex/Analysis/CXCFG.h"
+#include "clang-ex/Analysis/CXReachableCode.h"
+#include "clang-ex/Analysis/CXUninitializedValues.h"
 #include "clang-ex/Basic/CXDiagnostic.h"
 #include "clang-ex/Basic/CXDiagnosticIDs.h"
 #include "clang-ex/Basic/CXDiagnosticOptions.h"
@@ -48,6 +53,7 @@
 #include "clang-ex/AST/CXStmt.h"
 #include "clang-ex/AST/CXTemplateName.h"
 #include "clang-ex/Analysis/CXConstructionContext.h"
+#include "clang-ex/Basic/CXABI.h"
 #include "clang-ex/Basic/CXBuiltins.h"
 #include "clang-ex/Basic/CXCapturedStmt.h"
 #include "clang-ex/Basic/CXExpressionTraits.h"
@@ -58,12 +64,35 @@
 #include "clang-ex/AST/CXParentMapContext.h"
 #include "clang-ex/Lex/CXModuleMap.h"
 #include "clang-ex/Lex/CXPreprocessingRecord.h"
+#include "clang-ex/Lex/CXDependencyDirectivesScanner.h"
+#include "clang-ex/Lex/CXLiteralSupport.h"
 #include "clang-ex/Lex/CXPreprocessor.h"
 #include "clang-ex/Lex/CXPreprocessorOptions.h"
 #include "clang-ex/Sema/CXOverload.h"
 #include "clang-ex/Sema/CXScope.h"
 #include "clang-ex/Sema/CXTemplate.h"
+#include "clang-ex/Tooling/DependencyScanning/CXDependencyScanningService.h"
+#include "clang-ex/Tooling/Inclusions/CXHeaderIncludes.h"
+#include "clang-ex/Tooling/Inclusions/CXIncludeStyle.h"
+#include "clang-ex/Tooling/Inclusions/CXStandardLibrary.h"
 #include "clang-ex/AST/CXDeclObjC.h"
+#include "clang-ex/CodeGen/CXBackendUtil.h"
+#include "clang-ex/CodeGen/CXCGFunctionInfo.h"
+#include "clang-ex/Format/CXFormat.h"
+#include "clang-ex/Tooling/CXArgumentsAdjusters.h"
+#include "clang-ex/Tooling/CXJSONCompilationDatabase.h"
+#include "clang-ex/Frontend/CXDependencyOutputOptions.h"
+#include "clang-ex/Frontend/CXFrontendOptions.h"
+#include "clang-ex/Basic/CXAttributes.h"
+#include "clang-ex/Basic/CXCodeGenOptions.h"
+#include "clang-ex/Basic/CXLangStandard.h"
+#include "clang-ex/Basic/CXOperatorPrecedence.h"
+#include "clang-ex/Driver/CXDriverTypes.h"
+#include "clang-ex/Driver/CXOptions.h"
+#include "clang-ex/Driver/CXToolChain.h"
+#include "clang-ex/Index/CXIndexSymbol.h"
+#include "clang-ex/Index/CXIndexingAction.h"
+#include "clang-ex/StaticAnalyzer/Core/CXAnalyzerOptions.h"
 #include "clang/AST/APValue.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
@@ -81,6 +110,8 @@
 #include "clang/AST/TemplateBase.h"
 #include "clang/AST/TemplateName.h"
 #include "clang/AST/Type.h"
+#include "clang/Analysis/Analyses/ReachableCode.h"
+#include "clang/Analysis/Analyses/UninitializedValues.h"
 #include "clang/Analysis/CFG.h"
 #include "clang/Analysis/ConstructionContext.h"
 #include "clang/Basic/AddressSpaces.h"
@@ -106,6 +137,8 @@
 #include "clang/Driver/Driver.h"
 #include "clang/Lex/MacroInfo.h"
 #include "clang/AST/ASTTypeTraits.h"
+#include "clang/Lex/DependencyDirectivesScanner.h"
+#include "clang/Lex/LiteralSupport.h"
 #include "clang/Lex/ModuleMap.h"
 #include "clang/Lex/PreprocessingRecord.h"
 #include "clang/Lex/Preprocessor.h"
@@ -115,8 +148,44 @@
 #include "clang/Sema/Overload.h"
 #include "clang/Sema/Scope.h"
 #include "clang/Sema/Sema.h"
+#include "clang/Parse/Parser.h"
 #include "clang/Sema/Template.h"
+#include "clang/AST/ASTDumperUtils.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/Basic/ABI.h"
+#include "clang/CodeGen/BackendUtil.h"
+#include "clang/CodeGen/CGFunctionInfo.h"
+#include "clang/Format/Format.h"
+#include "clang/Tooling/ArgumentsAdjusters.h"
+#include "clang/Tooling/JSONCompilationDatabase.h"
+#include "clang/Tooling/DependencyScanning/DependencyScanningService.h"
+#include "clang/Tooling/Inclusions/HeaderIncludes.h"
+#include "clang/Tooling/Inclusions/IncludeStyle.h"
+#include "clang/Tooling/Inclusions/StandardLibrary.h"
+#include "clang-ex/AST/CXASTImporter.h"
+#include "clang-ex/AST/CXASTStructuralEquivalence.h"
+#include "clang-ex/AST/CXExprConcepts.h"
+#include "clang-ex/AST/CXVTableBuilder.h"
+#include "clang/AST/ASTImportError.h"
+#include "clang/AST/ASTImporter.h"
+#include "clang/AST/ASTStructuralEquivalence.h"
+#include "clang/AST/ExprConcepts.h"
+#include "clang/AST/VTableBuilder.h"
+#include "clang/Basic/LangStandard.h"
+#include "clang/Frontend/DependencyOutputOptions.h"
+#include "clang/Frontend/FrontendOptions.h"
+#include "clang/Basic/AttributeCommonInfo.h"
+#include "clang/Basic/CodeGenOptions.h"
+#include "clang/Basic/OperatorPrecedence.h"
+#include "clang/Driver/Options.h"
+#include "clang/Driver/Phases.h"
+#include "clang/Driver/ToolChain.h"
+#include "llvm/Frontend/Debug/Options.h"
+#include "llvm/Option/Option.h"
+#include "llvm/Support/CodeGen.h"
+#include "clang/Index/IndexSymbol.h"
+#include "clang/Index/IndexingOptions.h"
+#include "clang/StaticAnalyzer/Core/AnalyzerOptions.h"
 #include "llvm/ADT/FloatingPointMode.h"
 #include "llvm/Support/MemoryBuffer.h"
 
@@ -2001,5 +2070,546 @@ ENUM_SYNC(CXObjCIvarDecl_Private, clang::ObjCIvarDecl::Private);
 ENUM_SYNC(CXObjCIvarDecl_Protected, clang::ObjCIvarDecl::Protected);
 ENUM_SYNC(CXObjCIvarDecl_Public, clang::ObjCIvarDecl::Public);
 ENUM_SYNC(CXObjCIvarDecl_Package, clang::ObjCIvarDecl::Package);
+
+// clang/Sema/Sema.h: enum Sema::CorrectTypoKind
+ENUM_SYNC(CXCorrectTypoKind_CTK_NonError, clang::Sema::CTK_NonError);
+ENUM_SYNC(CXCorrectTypoKind_CTK_ErrorRecovery, clang::Sema::CTK_ErrorRecovery);
+
+// clang/Parse/Parser.h: enum Parser::SkipUntilFlags
+ENUM_SYNC(CXSkipUntilFlags_StopAtSemi, clang::Parser::StopAtSemi);
+ENUM_SYNC(CXSkipUntilFlags_StopBeforeMatch, clang::Parser::StopBeforeMatch);
+ENUM_SYNC(CXSkipUntilFlags_StopAtCodeCompletion, clang::Parser::StopAtCodeCompletion);
+
+// clang/AST/ASTDumperUtils.h: enum clang::ASTDumpOutputFormat
+ENUM_SYNC(CXASTDumpOutputFormat_ADOF_Default, clang::ADOF_Default);
+ENUM_SYNC(CXASTDumpOutputFormat_ADOF_JSON, clang::ADOF_JSON);
+
+// clang/Basic/ABI.h: enum clang::CXXCtorType
+ENUM_SYNC(CXCXXCtorType_Ctor_Complete, clang::Ctor_Complete);
+ENUM_SYNC(CXCXXCtorType_Ctor_Base, clang::Ctor_Base);
+ENUM_SYNC(CXCXXCtorType_Ctor_Comdat, clang::Ctor_Comdat);
+ENUM_SYNC(CXCXXCtorType_Ctor_CopyingClosure, clang::Ctor_CopyingClosure);
+ENUM_SYNC(CXCXXCtorType_Ctor_DefaultClosure, clang::Ctor_DefaultClosure);
+
+// clang/Basic/ABI.h: enum clang::CXXDtorType
+ENUM_SYNC(CXCXXDtorType_Dtor_Deleting, clang::Dtor_Deleting);
+ENUM_SYNC(CXCXXDtorType_Dtor_Complete, clang::Dtor_Complete);
+ENUM_SYNC(CXCXXDtorType_Dtor_Base, clang::Dtor_Base);
+ENUM_SYNC(CXCXXDtorType_Dtor_Comdat, clang::Dtor_Comdat);
+
+// clang/Analysis/Analyses/UninitializedValues.h: enum Kind (nested in clang::UninitUse)
+ENUM_SYNC(CXUninitUseKind_Maybe, clang::UninitUse::Maybe);
+ENUM_SYNC(CXUninitUseKind_Sometimes, clang::UninitUse::Sometimes);
+ENUM_SYNC(CXUninitUseKind_AfterDecl, clang::UninitUse::AfterDecl);
+ENUM_SYNC(CXUninitUseKind_AfterCall, clang::UninitUse::AfterCall);
+ENUM_SYNC(CXUninitUseKind_Always, clang::UninitUse::Always);
+// clang/Analysis/Analyses/ReachableCode.h: enum clang::reachable_code::UnreachableKind
+ENUM_SYNC(CXUnreachableKind_UK_Return, clang::reachable_code::UK_Return);
+ENUM_SYNC(CXUnreachableKind_UK_Break, clang::reachable_code::UK_Break);
+ENUM_SYNC(CXUnreachableKind_UK_Loop_Increment, clang::reachable_code::UK_Loop_Increment);
+ENUM_SYNC(CXUnreachableKind_UK_Other, clang::reachable_code::UK_Other);
+// clang/CodeGen/CGFunctionInfo.h: enum clang::CodeGen::ABIArgInfo::Kind : uint8_t
+ENUM_SYNC(CXABIArgInfo_Direct, clang::CodeGen::ABIArgInfo::Direct);
+ENUM_SYNC(CXABIArgInfo_Extend, clang::CodeGen::ABIArgInfo::Extend);
+ENUM_SYNC(CXABIArgInfo_Indirect, clang::CodeGen::ABIArgInfo::Indirect);
+ENUM_SYNC(CXABIArgInfo_IndirectAliased, clang::CodeGen::ABIArgInfo::IndirectAliased);
+ENUM_SYNC(CXABIArgInfo_Ignore, clang::CodeGen::ABIArgInfo::Ignore);
+ENUM_SYNC(CXABIArgInfo_Expand, clang::CodeGen::ABIArgInfo::Expand);
+ENUM_SYNC(CXABIArgInfo_CoerceAndExpand, clang::CodeGen::ABIArgInfo::CoerceAndExpand);
+ENUM_SYNC(CXABIArgInfo_InAlloca, clang::CodeGen::ABIArgInfo::InAlloca);
+// clang/CodeGen/BackendUtil.h: enum clang::BackendAction
+ENUM_SYNC(CXBackendAction_Backend_EmitAssembly, clang::Backend_EmitAssembly);
+ENUM_SYNC(CXBackendAction_Backend_EmitBC, clang::Backend_EmitBC);
+ENUM_SYNC(CXBackendAction_Backend_EmitLL, clang::Backend_EmitLL);
+ENUM_SYNC(CXBackendAction_Backend_EmitNothing, clang::Backend_EmitNothing);
+ENUM_SYNC(CXBackendAction_Backend_EmitMCNull, clang::Backend_EmitMCNull);
+ENUM_SYNC(CXBackendAction_Backend_EmitObj, clang::Backend_EmitObj);
+// clang/Format/Format.h: enum FormatStyle::LanguageKind : int8_t
+ENUM_SYNC(CXLanguageKind_LK_None, clang::format::FormatStyle::LK_None);
+ENUM_SYNC(CXLanguageKind_LK_Cpp, clang::format::FormatStyle::LK_Cpp);
+ENUM_SYNC(CXLanguageKind_LK_CSharp, clang::format::FormatStyle::LK_CSharp);
+ENUM_SYNC(CXLanguageKind_LK_Java, clang::format::FormatStyle::LK_Java);
+ENUM_SYNC(CXLanguageKind_LK_JavaScript, clang::format::FormatStyle::LK_JavaScript);
+ENUM_SYNC(CXLanguageKind_LK_Json, clang::format::FormatStyle::LK_Json);
+ENUM_SYNC(CXLanguageKind_LK_ObjC, clang::format::FormatStyle::LK_ObjC);
+ENUM_SYNC(CXLanguageKind_LK_Proto, clang::format::FormatStyle::LK_Proto);
+ENUM_SYNC(CXLanguageKind_LK_TableGen, clang::format::FormatStyle::LK_TableGen);
+ENUM_SYNC(CXLanguageKind_LK_TextProto, clang::format::FormatStyle::LK_TextProto);
+ENUM_SYNC(CXLanguageKind_LK_Verilog, clang::format::FormatStyle::LK_Verilog);
+// clang/Format/Format.h: enum class clang::format::ParseError
+ENUM_SYNC(CXParseError_Success, clang::format::ParseError::Success);
+ENUM_SYNC(CXParseError_Error, clang::format::ParseError::Error);
+ENUM_SYNC(CXParseError_Unsuitable, clang::format::ParseError::Unsuitable);
+ENUM_SYNC(CXParseError_BinPackTrailingCommaConflict,
+          clang::format::ParseError::BinPackTrailingCommaConflict);
+ENUM_SYNC(CXParseError_InvalidQualifierSpecified,
+          clang::format::ParseError::InvalidQualifierSpecified);
+ENUM_SYNC(CXParseError_DuplicateQualifierSpecified,
+          clang::format::ParseError::DuplicateQualifierSpecified);
+ENUM_SYNC(CXParseError_MissingQualifierType,
+          clang::format::ParseError::MissingQualifierType);
+ENUM_SYNC(CXParseError_MissingQualifierOrder,
+          clang::format::ParseError::MissingQualifierOrder);
+// clang/Tooling/JSONCompilationDatabase.h: enum class clang::tooling::JSONCommandLineSyntax
+ENUM_SYNC(CXJSONCommandLineSyntax_Windows, clang::tooling::JSONCommandLineSyntax::Windows);
+ENUM_SYNC(CXJSONCommandLineSyntax_Gnu, clang::tooling::JSONCommandLineSyntax::Gnu);
+ENUM_SYNC(CXJSONCommandLineSyntax_AutoDetect,
+          clang::tooling::JSONCommandLineSyntax::AutoDetect);
+// clang/Tooling/ArgumentsAdjusters.h: enum class clang::tooling::ArgumentInsertPosition
+ENUM_SYNC(CXArgumentInsertPosition_BEGIN, clang::tooling::ArgumentInsertPosition::BEGIN);
+ENUM_SYNC(CXArgumentInsertPosition_END, clang::tooling::ArgumentInsertPosition::END);
+// clang/Tooling/Inclusions/StandardLibrary.h: enum class stdlib::Lang
+// (the trailing LastValue is an alias of CXX and is not mirrored)
+ENUM_SYNC(CXStdlibLang_C, clang::tooling::stdlib::Lang::C);
+ENUM_SYNC(CXStdlibLang_CXX, clang::tooling::stdlib::Lang::CXX);
+// clang/Tooling/Inclusions/IncludeStyle.h: enum IncludeStyle::IncludeBlocksStyle
+ENUM_SYNC(CXIncludeBlocksStyle_IBS_Preserve,
+          clang::tooling::IncludeStyle::IBS_Preserve);
+ENUM_SYNC(CXIncludeBlocksStyle_IBS_Merge, clang::tooling::IncludeStyle::IBS_Merge);
+ENUM_SYNC(CXIncludeBlocksStyle_IBS_Regroup, clang::tooling::IncludeStyle::IBS_Regroup);
+// clang/Tooling/Inclusions/HeaderIncludes.h: enum class IncludeDirective
+ENUM_SYNC(CXIncludeDirective_Include, clang::tooling::IncludeDirective::Include);
+ENUM_SYNC(CXIncludeDirective_Import, clang::tooling::IncludeDirective::Import);
+// clang/Tooling/DependencyScanning/DependencyScanningService.h:
+// enum class dependencies::ScanningMode
+ENUM_SYNC(CXScanningMode_CanonicalPreprocessing,
+          clang::tooling::dependencies::ScanningMode::CanonicalPreprocessing);
+ENUM_SYNC(CXScanningMode_DependencyDirectivesScan,
+          clang::tooling::dependencies::ScanningMode::DependencyDirectivesScan);
+// ... enum class dependencies::ScanningOutputFormat
+ENUM_SYNC(CXScanningOutputFormat_Make,
+          clang::tooling::dependencies::ScanningOutputFormat::Make);
+ENUM_SYNC(CXScanningOutputFormat_Full,
+          clang::tooling::dependencies::ScanningOutputFormat::Full);
+ENUM_SYNC(CXScanningOutputFormat_P1689,
+          clang::tooling::dependencies::ScanningOutputFormat::P1689);
+// ... enum class dependencies::ScanningOptimizations, a bitmask enum. `Default` aliases
+// `All` and LLVM_MARK_AS_BITMASK_ENUM adds an alias of `SystemWarnings`; neither is
+// mirrored, so neither is synced.
+ENUM_SYNC(CXScanningOptimizations_None,
+          clang::tooling::dependencies::ScanningOptimizations::None);
+ENUM_SYNC(CXScanningOptimizations_HeaderSearch,
+          clang::tooling::dependencies::ScanningOptimizations::HeaderSearch);
+ENUM_SYNC(CXScanningOptimizations_SystemWarnings,
+          clang::tooling::dependencies::ScanningOptimizations::SystemWarnings);
+ENUM_SYNC(CXScanningOptimizations_All,
+          clang::tooling::dependencies::ScanningOptimizations::All);
+// clang/AST/ASTImportError.h: enum clang::ASTImportError::ErrorKind
+ENUM_SYNC(CXASTImportError_NameConflict, clang::ASTImportError::NameConflict);
+ENUM_SYNC(CXASTImportError_UnsupportedConstruct,
+          clang::ASTImportError::UnsupportedConstruct);
+ENUM_SYNC(CXASTImportError_Unknown, clang::ASTImportError::Unknown);
+// clang/AST/ASTImporter.h: enum class clang::ASTImporter::ODRHandlingType
+ENUM_SYNC(CXASTImporter_Conservative,
+          clang::ASTImporter::ODRHandlingType::Conservative);
+ENUM_SYNC(CXASTImporter_Liberal, clang::ASTImporter::ODRHandlingType::Liberal);
+// clang/AST/ASTStructuralEquivalence.h: enum class clang::StructuralEquivalenceKind
+ENUM_SYNC(CXStructuralEquivalenceKind_Default,
+          clang::StructuralEquivalenceKind::Default);
+ENUM_SYNC(CXStructuralEquivalenceKind_Minimal,
+          clang::StructuralEquivalenceKind::Minimal);
+// clang/AST/VTableBuilder.h: enum clang::VTableComponent::Kind
+ENUM_SYNC(CXVTableComponent_CK_VCallOffset, clang::VTableComponent::CK_VCallOffset);
+ENUM_SYNC(CXVTableComponent_CK_VBaseOffset, clang::VTableComponent::CK_VBaseOffset);
+ENUM_SYNC(CXVTableComponent_CK_OffsetToTop, clang::VTableComponent::CK_OffsetToTop);
+ENUM_SYNC(CXVTableComponent_CK_RTTI, clang::VTableComponent::CK_RTTI);
+ENUM_SYNC(CXVTableComponent_CK_FunctionPointer,
+          clang::VTableComponent::CK_FunctionPointer);
+ENUM_SYNC(CXVTableComponent_CK_CompleteDtorPointer,
+          clang::VTableComponent::CK_CompleteDtorPointer);
+ENUM_SYNC(CXVTableComponent_CK_DeletingDtorPointer,
+          clang::VTableComponent::CK_DeletingDtorPointer);
+ENUM_SYNC(CXVTableComponent_CK_UnusedFunctionPointer,
+          clang::VTableComponent::CK_UnusedFunctionPointer);
+// clang/AST/VTableBuilder.h: enum clang::ItaniumVTableContext::VTableComponentLayout
+ENUM_SYNC(CXItaniumVTableContext_Pointer, clang::ItaniumVTableContext::Pointer);
+ENUM_SYNC(CXItaniumVTableContext_Relative, clang::ItaniumVTableContext::Relative);
+// clang/AST/ExprConcepts.h: enum clang::concepts::Requirement::RequirementKind
+ENUM_SYNC(CXRequirement_RK_Type, clang::concepts::Requirement::RK_Type);
+ENUM_SYNC(CXRequirement_RK_Simple, clang::concepts::Requirement::RK_Simple);
+ENUM_SYNC(CXRequirement_RK_Compound, clang::concepts::Requirement::RK_Compound);
+ENUM_SYNC(CXRequirement_RK_Nested, clang::concepts::Requirement::RK_Nested);
+// clang/AST/ExprConcepts.h: enum clang::concepts::TypeRequirement::SatisfactionStatus
+ENUM_SYNC(CXTypeRequirement_SS_Dependent, clang::concepts::TypeRequirement::SS_Dependent);
+ENUM_SYNC(CXTypeRequirement_SS_SubstitutionFailure,
+          clang::concepts::TypeRequirement::SS_SubstitutionFailure);
+ENUM_SYNC(CXTypeRequirement_SS_Satisfied, clang::concepts::TypeRequirement::SS_Satisfied);
+// clang/AST/ExprConcepts.h: enum clang::concepts::ExprRequirement::SatisfactionStatus
+ENUM_SYNC(CXExprRequirement_SS_Dependent, clang::concepts::ExprRequirement::SS_Dependent);
+ENUM_SYNC(CXExprRequirement_SS_ExprSubstitutionFailure,
+          clang::concepts::ExprRequirement::SS_ExprSubstitutionFailure);
+ENUM_SYNC(CXExprRequirement_SS_NoexceptNotMet,
+          clang::concepts::ExprRequirement::SS_NoexceptNotMet);
+ENUM_SYNC(CXExprRequirement_SS_TypeRequirementSubstitutionFailure,
+          clang::concepts::ExprRequirement::SS_TypeRequirementSubstitutionFailure);
+ENUM_SYNC(CXExprRequirement_SS_ConstraintsNotSatisfied,
+          clang::concepts::ExprRequirement::SS_ConstraintsNotSatisfied);
+ENUM_SYNC(CXExprRequirement_SS_Satisfied, clang::concepts::ExprRequirement::SS_Satisfied);
+// clang/Lex/LiteralSupport.h: enum class StringLiteralEvalMethod
+ENUM_SYNC(CXStringLiteralEvalMethod_Evaluated,
+          clang::StringLiteralEvalMethod::Evaluated);
+ENUM_SYNC(CXStringLiteralEvalMethod_Unevaluated,
+          clang::StringLiteralEvalMethod::Unevaluated);
+// clang/Lex/DependencyDirectivesScanner.h: enum
+// clang::dependency_directives_scan::DirectiveKind : uint8_t
+ENUM_SYNC(CXDependencyDirectiveKind_pp_none,
+          clang::dependency_directives_scan::pp_none);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_include,
+          clang::dependency_directives_scan::pp_include);
+ENUM_SYNC(CXDependencyDirectiveKind_pp___include_macros,
+          clang::dependency_directives_scan::pp___include_macros);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_define,
+          clang::dependency_directives_scan::pp_define);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_undef,
+          clang::dependency_directives_scan::pp_undef);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_import,
+          clang::dependency_directives_scan::pp_import);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_pragma_import,
+          clang::dependency_directives_scan::pp_pragma_import);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_pragma_once,
+          clang::dependency_directives_scan::pp_pragma_once);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_pragma_push_macro,
+          clang::dependency_directives_scan::pp_pragma_push_macro);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_pragma_pop_macro,
+          clang::dependency_directives_scan::pp_pragma_pop_macro);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_pragma_include_alias,
+          clang::dependency_directives_scan::pp_pragma_include_alias);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_pragma_system_header,
+          clang::dependency_directives_scan::pp_pragma_system_header);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_include_next,
+          clang::dependency_directives_scan::pp_include_next);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_if, clang::dependency_directives_scan::pp_if);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_ifdef,
+          clang::dependency_directives_scan::pp_ifdef);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_ifndef,
+          clang::dependency_directives_scan::pp_ifndef);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_elif, clang::dependency_directives_scan::pp_elif);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_elifdef,
+          clang::dependency_directives_scan::pp_elifdef);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_elifndef,
+          clang::dependency_directives_scan::pp_elifndef);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_else, clang::dependency_directives_scan::pp_else);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_endif, clang::dependency_directives_scan::pp_endif);
+ENUM_SYNC(CXDependencyDirectiveKind_decl_at_import,
+          clang::dependency_directives_scan::decl_at_import);
+ENUM_SYNC(CXDependencyDirectiveKind_cxx_module_decl,
+          clang::dependency_directives_scan::cxx_module_decl);
+ENUM_SYNC(CXDependencyDirectiveKind_cxx_import_decl,
+          clang::dependency_directives_scan::cxx_import_decl);
+ENUM_SYNC(CXDependencyDirectiveKind_cxx_export_module_decl,
+          clang::dependency_directives_scan::cxx_export_module_decl);
+ENUM_SYNC(CXDependencyDirectiveKind_cxx_export_import_decl,
+          clang::dependency_directives_scan::cxx_export_import_decl);
+ENUM_SYNC(CXDependencyDirectiveKind_tokens_present_before_eof,
+          clang::dependency_directives_scan::tokens_present_before_eof);
+ENUM_SYNC(CXDependencyDirectiveKind_pp_eof, clang::dependency_directives_scan::pp_eof);
+// clang/Frontend/FrontendOptions.h: enum clang::frontend::ActionKind
+ENUM_SYNC(CXActionKind_ASTDeclList, clang::frontend::ASTDeclList);
+ENUM_SYNC(CXActionKind_ASTDump, clang::frontend::ASTDump);
+ENUM_SYNC(CXActionKind_ASTPrint, clang::frontend::ASTPrint);
+ENUM_SYNC(CXActionKind_ASTView, clang::frontend::ASTView);
+ENUM_SYNC(CXActionKind_DumpCompilerOptions, clang::frontend::DumpCompilerOptions);
+ENUM_SYNC(CXActionKind_DumpRawTokens, clang::frontend::DumpRawTokens);
+ENUM_SYNC(CXActionKind_DumpTokens, clang::frontend::DumpTokens);
+ENUM_SYNC(CXActionKind_EmitAssembly, clang::frontend::EmitAssembly);
+ENUM_SYNC(CXActionKind_EmitBC, clang::frontend::EmitBC);
+ENUM_SYNC(CXActionKind_EmitHTML, clang::frontend::EmitHTML);
+ENUM_SYNC(CXActionKind_EmitLLVM, clang::frontend::EmitLLVM);
+ENUM_SYNC(CXActionKind_EmitLLVMOnly, clang::frontend::EmitLLVMOnly);
+ENUM_SYNC(CXActionKind_EmitCodeGenOnly, clang::frontend::EmitCodeGenOnly);
+ENUM_SYNC(CXActionKind_EmitObj, clang::frontend::EmitObj);
+ENUM_SYNC(CXActionKind_ExtractAPI, clang::frontend::ExtractAPI);
+ENUM_SYNC(CXActionKind_FixIt, clang::frontend::FixIt);
+ENUM_SYNC(CXActionKind_GenerateModule, clang::frontend::GenerateModule);
+ENUM_SYNC(CXActionKind_GenerateModuleInterface, clang::frontend::GenerateModuleInterface);
+ENUM_SYNC(CXActionKind_GenerateHeaderUnit, clang::frontend::GenerateHeaderUnit);
+ENUM_SYNC(CXActionKind_GeneratePCH, clang::frontend::GeneratePCH);
+ENUM_SYNC(CXActionKind_GenerateInterfaceStubs, clang::frontend::GenerateInterfaceStubs);
+ENUM_SYNC(CXActionKind_InitOnly, clang::frontend::InitOnly);
+ENUM_SYNC(CXActionKind_ModuleFileInfo, clang::frontend::ModuleFileInfo);
+ENUM_SYNC(CXActionKind_VerifyPCH, clang::frontend::VerifyPCH);
+ENUM_SYNC(CXActionKind_ParseSyntaxOnly, clang::frontend::ParseSyntaxOnly);
+ENUM_SYNC(CXActionKind_PluginAction, clang::frontend::PluginAction);
+ENUM_SYNC(CXActionKind_PrintPreamble, clang::frontend::PrintPreamble);
+ENUM_SYNC(CXActionKind_PrintPreprocessedInput, clang::frontend::PrintPreprocessedInput);
+ENUM_SYNC(CXActionKind_RewriteMacros, clang::frontend::RewriteMacros);
+ENUM_SYNC(CXActionKind_RewriteObjC, clang::frontend::RewriteObjC);
+ENUM_SYNC(CXActionKind_RewriteTest, clang::frontend::RewriteTest);
+ENUM_SYNC(CXActionKind_RunAnalysis, clang::frontend::RunAnalysis);
+ENUM_SYNC(CXActionKind_TemplightDump, clang::frontend::TemplightDump);
+ENUM_SYNC(CXActionKind_MigrateSource, clang::frontend::MigrateSource);
+ENUM_SYNC(CXActionKind_RunPreprocessorOnly, clang::frontend::RunPreprocessorOnly);
+ENUM_SYNC(CXActionKind_PrintDependencyDirectivesSourceMinimizerOutput,
+          clang::frontend::PrintDependencyDirectivesSourceMinimizerOutput);
+// clang/Basic/LangStandard.h: enum class clang::Language : uint8_t
+// clang/Basic/LangStandard.h: enum class Language : uint8_t
+ENUM_SYNC(CXLanguage_Unknown, clang::Language::Unknown);
+ENUM_SYNC(CXLanguage_Asm, clang::Language::Asm);
+ENUM_SYNC(CXLanguage_LLVM_IR, clang::Language::LLVM_IR);
+ENUM_SYNC(CXLanguage_C, clang::Language::C);
+ENUM_SYNC(CXLanguage_CXX, clang::Language::CXX);
+ENUM_SYNC(CXLanguage_ObjC, clang::Language::ObjC);
+ENUM_SYNC(CXLanguage_ObjCXX, clang::Language::ObjCXX);
+ENUM_SYNC(CXLanguage_OpenCL, clang::Language::OpenCL);
+ENUM_SYNC(CXLanguage_OpenCLCXX, clang::Language::OpenCLCXX);
+ENUM_SYNC(CXLanguage_CUDA, clang::Language::CUDA);
+ENUM_SYNC(CXLanguage_RenderScript, clang::Language::RenderScript);
+ENUM_SYNC(CXLanguage_HIP, clang::Language::HIP);
+ENUM_SYNC(CXLanguage_HLSL, clang::Language::HLSL);
+// clang/Frontend/FrontendOptions.h: enum clang::InputKind::Format
+ENUM_SYNC(CXInputKind_Source, clang::InputKind::Source);
+ENUM_SYNC(CXInputKind_ModuleMap, clang::InputKind::ModuleMap);
+ENUM_SYNC(CXInputKind_Precompiled, clang::InputKind::Precompiled);
+// clang/Frontend/FrontendOptions.h: enum clang::InputKind::HeaderUnitKind
+ENUM_SYNC(CXInputKind_HeaderUnit_None, clang::InputKind::HeaderUnit_None);
+ENUM_SYNC(CXInputKind_HeaderUnit_User, clang::InputKind::HeaderUnit_User);
+ENUM_SYNC(CXInputKind_HeaderUnit_System, clang::InputKind::HeaderUnit_System);
+ENUM_SYNC(CXInputKind_HeaderUnit_Abs, clang::InputKind::HeaderUnit_Abs);
+// clang/Frontend/DependencyOutputOptions.h: enum class clang::DependencyOutputFormat
+ENUM_SYNC(CXDependencyOutputFormat_Make, clang::DependencyOutputFormat::Make);
+ENUM_SYNC(CXDependencyOutputFormat_NMake, clang::DependencyOutputFormat::NMake);
+static_assert(sizeof(CXLanguage) == sizeof(clang::Language), "CXLanguage size");
+// clang/Basic/LangStandard.h: enum LangStandard::Kind (LangStandards.def)
+ENUM_SYNC(CXLangStandardKind_lang_c89, clang::LangStandard::lang_c89);
+ENUM_SYNC(CXLangStandardKind_lang_c94, clang::LangStandard::lang_c94);
+ENUM_SYNC(CXLangStandardKind_lang_gnu89, clang::LangStandard::lang_gnu89);
+ENUM_SYNC(CXLangStandardKind_lang_c99, clang::LangStandard::lang_c99);
+ENUM_SYNC(CXLangStandardKind_lang_gnu99, clang::LangStandard::lang_gnu99);
+ENUM_SYNC(CXLangStandardKind_lang_c11, clang::LangStandard::lang_c11);
+ENUM_SYNC(CXLangStandardKind_lang_gnu11, clang::LangStandard::lang_gnu11);
+ENUM_SYNC(CXLangStandardKind_lang_c17, clang::LangStandard::lang_c17);
+ENUM_SYNC(CXLangStandardKind_lang_gnu17, clang::LangStandard::lang_gnu17);
+ENUM_SYNC(CXLangStandardKind_lang_c23, clang::LangStandard::lang_c23);
+ENUM_SYNC(CXLangStandardKind_lang_gnu23, clang::LangStandard::lang_gnu23);
+ENUM_SYNC(CXLangStandardKind_lang_cxx98, clang::LangStandard::lang_cxx98);
+ENUM_SYNC(CXLangStandardKind_lang_gnucxx98, clang::LangStandard::lang_gnucxx98);
+ENUM_SYNC(CXLangStandardKind_lang_cxx11, clang::LangStandard::lang_cxx11);
+ENUM_SYNC(CXLangStandardKind_lang_gnucxx11, clang::LangStandard::lang_gnucxx11);
+ENUM_SYNC(CXLangStandardKind_lang_cxx14, clang::LangStandard::lang_cxx14);
+ENUM_SYNC(CXLangStandardKind_lang_gnucxx14, clang::LangStandard::lang_gnucxx14);
+ENUM_SYNC(CXLangStandardKind_lang_cxx17, clang::LangStandard::lang_cxx17);
+ENUM_SYNC(CXLangStandardKind_lang_gnucxx17, clang::LangStandard::lang_gnucxx17);
+ENUM_SYNC(CXLangStandardKind_lang_cxx20, clang::LangStandard::lang_cxx20);
+ENUM_SYNC(CXLangStandardKind_lang_gnucxx20, clang::LangStandard::lang_gnucxx20);
+ENUM_SYNC(CXLangStandardKind_lang_cxx23, clang::LangStandard::lang_cxx23);
+ENUM_SYNC(CXLangStandardKind_lang_gnucxx23, clang::LangStandard::lang_gnucxx23);
+ENUM_SYNC(CXLangStandardKind_lang_cxx26, clang::LangStandard::lang_cxx26);
+ENUM_SYNC(CXLangStandardKind_lang_gnucxx26, clang::LangStandard::lang_gnucxx26);
+ENUM_SYNC(CXLangStandardKind_lang_opencl10, clang::LangStandard::lang_opencl10);
+ENUM_SYNC(CXLangStandardKind_lang_opencl11, clang::LangStandard::lang_opencl11);
+ENUM_SYNC(CXLangStandardKind_lang_opencl12, clang::LangStandard::lang_opencl12);
+ENUM_SYNC(CXLangStandardKind_lang_opencl20, clang::LangStandard::lang_opencl20);
+ENUM_SYNC(CXLangStandardKind_lang_opencl30, clang::LangStandard::lang_opencl30);
+ENUM_SYNC(CXLangStandardKind_lang_openclcpp10, clang::LangStandard::lang_openclcpp10);
+ENUM_SYNC(CXLangStandardKind_lang_openclcpp2021, clang::LangStandard::lang_openclcpp2021);
+ENUM_SYNC(CXLangStandardKind_lang_hlsl, clang::LangStandard::lang_hlsl);
+ENUM_SYNC(CXLangStandardKind_lang_hlsl2015, clang::LangStandard::lang_hlsl2015);
+ENUM_SYNC(CXLangStandardKind_lang_hlsl2016, clang::LangStandard::lang_hlsl2016);
+ENUM_SYNC(CXLangStandardKind_lang_hlsl2017, clang::LangStandard::lang_hlsl2017);
+ENUM_SYNC(CXLangStandardKind_lang_hlsl2018, clang::LangStandard::lang_hlsl2018);
+ENUM_SYNC(CXLangStandardKind_lang_hlsl2021, clang::LangStandard::lang_hlsl2021);
+ENUM_SYNC(CXLangStandardKind_lang_hlsl202x, clang::LangStandard::lang_hlsl202x);
+ENUM_SYNC(CXLangStandardKind_lang_unspecified, clang::LangStandard::lang_unspecified);
+// llvm/Frontend/Debug/Options.h: enum llvm::codegenoptions::DebugInfoKind
+ENUM_SYNC(CXDebugInfoKind_NoDebugInfo, llvm::codegenoptions::NoDebugInfo);
+ENUM_SYNC(CXDebugInfoKind_LocTrackingOnly, llvm::codegenoptions::LocTrackingOnly);
+ENUM_SYNC(CXDebugInfoKind_DebugDirectivesOnly, llvm::codegenoptions::DebugDirectivesOnly);
+ENUM_SYNC(CXDebugInfoKind_DebugLineTablesOnly, llvm::codegenoptions::DebugLineTablesOnly);
+ENUM_SYNC(CXDebugInfoKind_DebugInfoConstructor, llvm::codegenoptions::DebugInfoConstructor);
+ENUM_SYNC(CXDebugInfoKind_LimitedDebugInfo, llvm::codegenoptions::LimitedDebugInfo);
+ENUM_SYNC(CXDebugInfoKind_FullDebugInfo, llvm::codegenoptions::FullDebugInfo);
+ENUM_SYNC(CXDebugInfoKind_UnusedTypeInfo, llvm::codegenoptions::UnusedTypeInfo);
+// llvm/Support/CodeGen.h: enum llvm::Reloc::Model
+ENUM_SYNC(CXRelocModel_Static, llvm::Reloc::Static);
+ENUM_SYNC(CXRelocModel_PIC_, llvm::Reloc::PIC_);
+ENUM_SYNC(CXRelocModel_DynamicNoPIC, llvm::Reloc::DynamicNoPIC);
+ENUM_SYNC(CXRelocModel_ROPI, llvm::Reloc::ROPI);
+ENUM_SYNC(CXRelocModel_RWPI, llvm::Reloc::RWPI);
+ENUM_SYNC(CXRelocModel_ROPI_RWPI, llvm::Reloc::ROPI_RWPI);
+// clang/Basic/AttributeCommonInfo.h: enum AttributeCommonInfo::Syntax
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_GNU,
+          clang::AttributeCommonInfo::AS_GNU);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_CXX11,
+          clang::AttributeCommonInfo::AS_CXX11);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_C23,
+          clang::AttributeCommonInfo::AS_C23);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_Declspec,
+          clang::AttributeCommonInfo::AS_Declspec);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_Microsoft,
+          clang::AttributeCommonInfo::AS_Microsoft);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_Keyword,
+          clang::AttributeCommonInfo::AS_Keyword);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_Pragma,
+          clang::AttributeCommonInfo::AS_Pragma);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_ContextSensitiveKeyword,
+          clang::AttributeCommonInfo::AS_ContextSensitiveKeyword);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_HLSLSemantic,
+          clang::AttributeCommonInfo::AS_HLSLSemantic);
+ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_Implicit,
+          clang::AttributeCommonInfo::AS_Implicit);
+// clang/Basic/OperatorPrecedence.h: enum clang::prec::Level
+ENUM_SYNC(CXPrecLevel_Unknown, clang::prec::Unknown);
+ENUM_SYNC(CXPrecLevel_Comma, clang::prec::Comma);
+ENUM_SYNC(CXPrecLevel_Assignment, clang::prec::Assignment);
+ENUM_SYNC(CXPrecLevel_Conditional, clang::prec::Conditional);
+ENUM_SYNC(CXPrecLevel_LogicalOr, clang::prec::LogicalOr);
+ENUM_SYNC(CXPrecLevel_LogicalAnd, clang::prec::LogicalAnd);
+ENUM_SYNC(CXPrecLevel_InclusiveOr, clang::prec::InclusiveOr);
+ENUM_SYNC(CXPrecLevel_ExclusiveOr, clang::prec::ExclusiveOr);
+ENUM_SYNC(CXPrecLevel_And, clang::prec::And);
+ENUM_SYNC(CXPrecLevel_Equality, clang::prec::Equality);
+ENUM_SYNC(CXPrecLevel_Relational, clang::prec::Relational);
+ENUM_SYNC(CXPrecLevel_Spaceship, clang::prec::Spaceship);
+ENUM_SYNC(CXPrecLevel_Shift, clang::prec::Shift);
+ENUM_SYNC(CXPrecLevel_Additive, clang::prec::Additive);
+ENUM_SYNC(CXPrecLevel_Multiplicative, clang::prec::Multiplicative);
+ENUM_SYNC(CXPrecLevel_PointerToMember, clang::prec::PointerToMember);
+// clang/Driver/ToolChain.h: enum ToolChain::CXXStdlibType
+ENUM_SYNC(CXCXXStdlibType_CST_Libcxx, clang::driver::ToolChain::CST_Libcxx);
+ENUM_SYNC(CXCXXStdlibType_CST_Libstdcxx, clang::driver::ToolChain::CST_Libstdcxx);
+// clang/Driver/ToolChain.h: enum ToolChain::RuntimeLibType
+ENUM_SYNC(CXRuntimeLibType_RLT_CompilerRT, clang::driver::ToolChain::RLT_CompilerRT);
+ENUM_SYNC(CXRuntimeLibType_RLT_Libgcc, clang::driver::ToolChain::RLT_Libgcc);
+// clang/Driver/Phases.h: enum clang::driver::phases::ID
+ENUM_SYNC(CXPhaseID_Preprocess, clang::driver::phases::Preprocess);
+ENUM_SYNC(CXPhaseID_Precompile, clang::driver::phases::Precompile);
+ENUM_SYNC(CXPhaseID_Compile, clang::driver::phases::Compile);
+ENUM_SYNC(CXPhaseID_Backend, clang::driver::phases::Backend);
+ENUM_SYNC(CXPhaseID_Assemble, clang::driver::phases::Assemble);
+ENUM_SYNC(CXPhaseID_Link, clang::driver::phases::Link);
+ENUM_SYNC(CXPhaseID_IfsMerge, clang::driver::phases::IfsMerge);
+// llvm/Option/Option.h: enum llvm::opt::Option::OptionClass
+ENUM_SYNC(CXOptionClass_GroupClass, llvm::opt::Option::GroupClass);
+ENUM_SYNC(CXOptionClass_InputClass, llvm::opt::Option::InputClass);
+ENUM_SYNC(CXOptionClass_UnknownClass, llvm::opt::Option::UnknownClass);
+ENUM_SYNC(CXOptionClass_FlagClass, llvm::opt::Option::FlagClass);
+ENUM_SYNC(CXOptionClass_JoinedClass, llvm::opt::Option::JoinedClass);
+ENUM_SYNC(CXOptionClass_ValuesClass, llvm::opt::Option::ValuesClass);
+ENUM_SYNC(CXOptionClass_SeparateClass, llvm::opt::Option::SeparateClass);
+ENUM_SYNC(CXOptionClass_RemainingArgsClass, llvm::opt::Option::RemainingArgsClass);
+ENUM_SYNC(CXOptionClass_RemainingArgsJoinedClass, llvm::opt::Option::RemainingArgsJoinedClass);
+ENUM_SYNC(CXOptionClass_CommaJoinedClass, llvm::opt::Option::CommaJoinedClass);
+ENUM_SYNC(CXOptionClass_MultiArgClass, llvm::opt::Option::MultiArgClass);
+ENUM_SYNC(CXOptionClass_JoinedOrSeparateClass, llvm::opt::Option::JoinedOrSeparateClass);
+ENUM_SYNC(CXOptionClass_JoinedAndSeparateClass, llvm::opt::Option::JoinedAndSeparateClass);
+// clang/Driver/Options.h: enum clang::driver::options::ClangVisibility
+ENUM_SYNC(CXClangVisibility_ClangOption, clang::driver::options::ClangOption);
+ENUM_SYNC(CXClangVisibility_CLOption, clang::driver::options::CLOption);
+ENUM_SYNC(CXClangVisibility_CC1Option, clang::driver::options::CC1Option);
+ENUM_SYNC(CXClangVisibility_CC1AsOption, clang::driver::options::CC1AsOption);
+ENUM_SYNC(CXClangVisibility_FlangOption, clang::driver::options::FlangOption);
+ENUM_SYNC(CXClangVisibility_FC1Option, clang::driver::options::FC1Option);
+ENUM_SYNC(CXClangVisibility_DXCOption, clang::driver::options::DXCOption);
+// clang/StaticAnalyzer/Core/AnalyzerOptions.h: enum clang::AnalysisConstraints
+ENUM_SYNC(CXAnalysisConstraints_RangeConstraintsModel, clang::RangeConstraintsModel);
+ENUM_SYNC(CXAnalysisConstraints_Z3ConstraintsModel, clang::Z3ConstraintsModel);
+// clang/StaticAnalyzer/Core/AnalyzerOptions.h: enum clang::AnalysisDiagClients
+ENUM_SYNC(CXAnalysisDiagClients_PD_HTML, clang::PD_HTML);
+ENUM_SYNC(CXAnalysisDiagClients_PD_HTML_SINGLE_FILE, clang::PD_HTML_SINGLE_FILE);
+ENUM_SYNC(CXAnalysisDiagClients_PD_PLIST, clang::PD_PLIST);
+ENUM_SYNC(CXAnalysisDiagClients_PD_PLIST_MULTI_FILE, clang::PD_PLIST_MULTI_FILE);
+ENUM_SYNC(CXAnalysisDiagClients_PD_PLIST_HTML, clang::PD_PLIST_HTML);
+ENUM_SYNC(CXAnalysisDiagClients_PD_SARIF, clang::PD_SARIF);
+ENUM_SYNC(CXAnalysisDiagClients_PD_SARIF_HTML, clang::PD_SARIF_HTML);
+ENUM_SYNC(CXAnalysisDiagClients_PD_TEXT, clang::PD_TEXT);
+ENUM_SYNC(CXAnalysisDiagClients_PD_TEXT_MINIMAL, clang::PD_TEXT_MINIMAL);
+ENUM_SYNC(CXAnalysisDiagClients_PD_NONE, clang::PD_NONE);
+// clang/Index/IndexSymbol.h: enum class clang::index::SymbolKind : uint8_t
+ENUM_SYNC(CXSymbolKind_Unknown, clang::index::SymbolKind::Unknown);
+ENUM_SYNC(CXSymbolKind_Module, clang::index::SymbolKind::Module);
+ENUM_SYNC(CXSymbolKind_Namespace, clang::index::SymbolKind::Namespace);
+ENUM_SYNC(CXSymbolKind_NamespaceAlias, clang::index::SymbolKind::NamespaceAlias);
+ENUM_SYNC(CXSymbolKind_Macro, clang::index::SymbolKind::Macro);
+ENUM_SYNC(CXSymbolKind_Enum, clang::index::SymbolKind::Enum);
+ENUM_SYNC(CXSymbolKind_Struct, clang::index::SymbolKind::Struct);
+ENUM_SYNC(CXSymbolKind_Class, clang::index::SymbolKind::Class);
+ENUM_SYNC(CXSymbolKind_Protocol, clang::index::SymbolKind::Protocol);
+ENUM_SYNC(CXSymbolKind_Extension, clang::index::SymbolKind::Extension);
+ENUM_SYNC(CXSymbolKind_Union, clang::index::SymbolKind::Union);
+ENUM_SYNC(CXSymbolKind_TypeAlias, clang::index::SymbolKind::TypeAlias);
+ENUM_SYNC(CXSymbolKind_Function, clang::index::SymbolKind::Function);
+ENUM_SYNC(CXSymbolKind_Variable, clang::index::SymbolKind::Variable);
+ENUM_SYNC(CXSymbolKind_Field, clang::index::SymbolKind::Field);
+ENUM_SYNC(CXSymbolKind_EnumConstant, clang::index::SymbolKind::EnumConstant);
+ENUM_SYNC(CXSymbolKind_InstanceMethod, clang::index::SymbolKind::InstanceMethod);
+ENUM_SYNC(CXSymbolKind_ClassMethod, clang::index::SymbolKind::ClassMethod);
+ENUM_SYNC(CXSymbolKind_StaticMethod, clang::index::SymbolKind::StaticMethod);
+ENUM_SYNC(CXSymbolKind_InstanceProperty, clang::index::SymbolKind::InstanceProperty);
+ENUM_SYNC(CXSymbolKind_ClassProperty, clang::index::SymbolKind::ClassProperty);
+ENUM_SYNC(CXSymbolKind_StaticProperty, clang::index::SymbolKind::StaticProperty);
+ENUM_SYNC(CXSymbolKind_Constructor, clang::index::SymbolKind::Constructor);
+ENUM_SYNC(CXSymbolKind_Destructor, clang::index::SymbolKind::Destructor);
+ENUM_SYNC(CXSymbolKind_ConversionFunction,
+          clang::index::SymbolKind::ConversionFunction);
+ENUM_SYNC(CXSymbolKind_Parameter, clang::index::SymbolKind::Parameter);
+ENUM_SYNC(CXSymbolKind_Using, clang::index::SymbolKind::Using);
+ENUM_SYNC(CXSymbolKind_TemplateTypeParm, clang::index::SymbolKind::TemplateTypeParm);
+ENUM_SYNC(CXSymbolKind_TemplateTemplateParm,
+          clang::index::SymbolKind::TemplateTemplateParm);
+ENUM_SYNC(CXSymbolKind_NonTypeTemplateParm,
+          clang::index::SymbolKind::NonTypeTemplateParm);
+ENUM_SYNC(CXSymbolKind_Concept, clang::index::SymbolKind::Concept);
+// clang/Index/IndexSymbol.h: enum class clang::index::SymbolLanguage : uint8_t
+ENUM_SYNC(CXSymbolLanguage_C, clang::index::SymbolLanguage::C);
+ENUM_SYNC(CXSymbolLanguage_ObjC, clang::index::SymbolLanguage::ObjC);
+ENUM_SYNC(CXSymbolLanguage_CXX, clang::index::SymbolLanguage::CXX);
+ENUM_SYNC(CXSymbolLanguage_Swift, clang::index::SymbolLanguage::Swift);
+// clang/Index/IndexSymbol.h: enum class clang::index::SymbolSubKind : uint8_t
+ENUM_SYNC(CXSymbolSubKind_None, clang::index::SymbolSubKind::None);
+ENUM_SYNC(CXSymbolSubKind_CXXCopyConstructor,
+          clang::index::SymbolSubKind::CXXCopyConstructor);
+ENUM_SYNC(CXSymbolSubKind_CXXMoveConstructor,
+          clang::index::SymbolSubKind::CXXMoveConstructor);
+ENUM_SYNC(CXSymbolSubKind_AccessorGetter, clang::index::SymbolSubKind::AccessorGetter);
+ENUM_SYNC(CXSymbolSubKind_AccessorSetter, clang::index::SymbolSubKind::AccessorSetter);
+ENUM_SYNC(CXSymbolSubKind_UsingTypename, clang::index::SymbolSubKind::UsingTypename);
+ENUM_SYNC(CXSymbolSubKind_UsingValue, clang::index::SymbolSubKind::UsingValue);
+ENUM_SYNC(CXSymbolSubKind_UsingEnum, clang::index::SymbolSubKind::UsingEnum);
+// clang/Index/IndexSymbol.h: enum class clang::index::SymbolProperty : uint16_t
+ENUM_SYNC(CXSymbolProperty_Generic, clang::index::SymbolProperty::Generic);
+ENUM_SYNC(CXSymbolProperty_TemplatePartialSpecialization,
+          clang::index::SymbolProperty::TemplatePartialSpecialization);
+ENUM_SYNC(CXSymbolProperty_TemplateSpecialization,
+          clang::index::SymbolProperty::TemplateSpecialization);
+ENUM_SYNC(CXSymbolProperty_UnitTest, clang::index::SymbolProperty::UnitTest);
+ENUM_SYNC(CXSymbolProperty_IBAnnotated, clang::index::SymbolProperty::IBAnnotated);
+ENUM_SYNC(CXSymbolProperty_IBOutletCollection,
+          clang::index::SymbolProperty::IBOutletCollection);
+ENUM_SYNC(CXSymbolProperty_GKInspectable, clang::index::SymbolProperty::GKInspectable);
+ENUM_SYNC(CXSymbolProperty_Local, clang::index::SymbolProperty::Local);
+ENUM_SYNC(CXSymbolProperty_ProtocolInterface,
+          clang::index::SymbolProperty::ProtocolInterface);
+// clang/Index/IndexSymbol.h: enum class clang::index::SymbolRole : uint32_t
+ENUM_SYNC(CXSymbolRole_Declaration, clang::index::SymbolRole::Declaration);
+ENUM_SYNC(CXSymbolRole_Definition, clang::index::SymbolRole::Definition);
+ENUM_SYNC(CXSymbolRole_Reference, clang::index::SymbolRole::Reference);
+ENUM_SYNC(CXSymbolRole_Read, clang::index::SymbolRole::Read);
+ENUM_SYNC(CXSymbolRole_Write, clang::index::SymbolRole::Write);
+ENUM_SYNC(CXSymbolRole_Call, clang::index::SymbolRole::Call);
+ENUM_SYNC(CXSymbolRole_Dynamic, clang::index::SymbolRole::Dynamic);
+ENUM_SYNC(CXSymbolRole_AddressOf, clang::index::SymbolRole::AddressOf);
+ENUM_SYNC(CXSymbolRole_Implicit, clang::index::SymbolRole::Implicit);
+ENUM_SYNC(CXSymbolRole_Undefinition, clang::index::SymbolRole::Undefinition);
+ENUM_SYNC(CXSymbolRole_RelationChildOf, clang::index::SymbolRole::RelationChildOf);
+ENUM_SYNC(CXSymbolRole_RelationBaseOf, clang::index::SymbolRole::RelationBaseOf);
+ENUM_SYNC(CXSymbolRole_RelationOverrideOf, clang::index::SymbolRole::RelationOverrideOf);
+ENUM_SYNC(CXSymbolRole_RelationReceivedBy, clang::index::SymbolRole::RelationReceivedBy);
+ENUM_SYNC(CXSymbolRole_RelationCalledBy, clang::index::SymbolRole::RelationCalledBy);
+ENUM_SYNC(CXSymbolRole_RelationExtendedBy, clang::index::SymbolRole::RelationExtendedBy);
+ENUM_SYNC(CXSymbolRole_RelationAccessorOf, clang::index::SymbolRole::RelationAccessorOf);
+ENUM_SYNC(CXSymbolRole_RelationContainedBy,
+          clang::index::SymbolRole::RelationContainedBy);
+ENUM_SYNC(CXSymbolRole_RelationIBTypeOf, clang::index::SymbolRole::RelationIBTypeOf);
+ENUM_SYNC(CXSymbolRole_RelationSpecializationOf,
+          clang::index::SymbolRole::RelationSpecializationOf);
+ENUM_SYNC(CXSymbolRole_NameReference, clang::index::SymbolRole::NameReference);
+// clang/Index/IndexingOptions.h: enum class
+// clang::index::IndexingOptions::SystemSymbolFilterKind
+ENUM_SYNC(CXSystemSymbolFilterKind_None,
+          clang::index::IndexingOptions::SystemSymbolFilterKind::None);
+ENUM_SYNC(CXSystemSymbolFilterKind_DeclarationsOnly,
+          clang::index::IndexingOptions::SystemSymbolFilterKind::DeclarationsOnly);
+ENUM_SYNC(CXSystemSymbolFilterKind_All,
+          clang::index::IndexingOptions::SystemSymbolFilterKind::All);
 
 #undef ENUM_SYNC

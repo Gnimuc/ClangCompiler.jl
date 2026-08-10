@@ -86,3 +86,53 @@ function setContainsError(x::AbstractCompilation)
     clang_Compilation_setContainsError(x)
     return nothing
 end
+
+"""
+    getJobs(x::AbstractCompilation) -> JobList
+Return the commands the driver planned for this compilation — one per subprocess, the
+`-###` view. The list is a member of the compilation, so it is borrowed and dies with it.
+"""
+function getJobs(x::AbstractCompilation)
+    @check_ptrs x
+    return JobList(clang_Compilation_getJobs(x))
+end
+
+"""
+    ExecuteJobs(x::AbstractCompilation, jobs::AbstractJobList;
+                log_only::Bool=false) -> Vector{Tuple{Int,Command}}
+Run `jobs` and return the failures as `(result_code, command)` pairs, empty when every
+command succeeded.
+
+Failures can only come from commands in `jobs`, so the report is complete. With
+`log_only` set nothing is executed and the commands are only logged.
+"""
+function ExecuteJobs(x::AbstractCompilation, jobs::AbstractJobList; log_only::Bool=false)
+    @check_ptrs x jobs
+    n = size(jobs)
+    num = Ref{Cuint}(0)
+    results = Vector{Cint}(undef, n)
+    commands = Vector{CXCommand}(undef, n)
+    clang_Compilation_ExecuteJobs(x, jobs, log_only, num, results, commands, n)
+    k = min(Int(num[]), n)
+    return Tuple{Int,Command}[(Int(results[i]), Command(commands[i])) for i = 1:k]
+end
+
+"""
+    Redirect(x::AbstractCompilation; in_path=nothing, out_path=nothing, err_path=nothing)
+Send the child processes' standard input, output and error to the named files; a `nothing`
+leaves that stream alone.
+
+clang stores the paths as non-owning references, so the shim first copies them into the
+compilation's own argument allocator — they then live exactly as long as the compilation.
+Per clang's own contract this can only be done once.
+"""
+function Redirect(x::AbstractCompilation; in_path::Union{AbstractString,Nothing}=nothing,
+                  out_path::Union{AbstractString,Nothing}=nothing,
+                  err_path::Union{AbstractString,Nothing}=nothing)
+    @check_ptrs x
+    i = in_path === nothing ? C_NULL : in_path
+    o = out_path === nothing ? C_NULL : out_path
+    e = err_path === nothing ? C_NULL : err_path
+    clang_Compilation_Redirect(x, i, o, e)
+    return nothing
+end

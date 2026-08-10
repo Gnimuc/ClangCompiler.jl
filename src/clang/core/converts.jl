@@ -34,6 +34,21 @@ Base.cconvert(::Type{CXASTConsumer}, x::AbstractASTConsumer) = x
 Base.unsafe_convert(::Type{CXASTContext}, x::AbstractASTContext) = CXASTContext(x.ptr)
 Base.cconvert(::Type{CXASTContext}, x::AbstractASTContext) = x
 
+# core/AST/ASTImporter.jl
+Base.unsafe_convert(::Type{CXASTImporter}, x::AbstractASTImporter) = CXASTImporter(x.ptr)
+Base.cconvert(::Type{CXASTImporter}, x::AbstractASTImporter) = x
+
+# core/AST/ASTStructuralEquivalence.jl
+function Base.unsafe_convert(::Type{CXStructuralEquivalenceContext},
+                             x::AbstractStructuralEquivalenceContext)
+    return CXStructuralEquivalenceContext(x.ptr)
+end
+Base.cconvert(::Type{CXStructuralEquivalenceContext}, x::AbstractStructuralEquivalenceContext) = x
+
+# core/AST/ASTTypeTraits.jl
+Base.unsafe_convert(::Type{CXDynTypedNode}, x::AbstractDynTypedNode) = CXDynTypedNode(x.ptr)
+Base.cconvert(::Type{CXDynTypedNode}, x::AbstractDynTypedNode) = x
+
 # core/AST/Attr.jl
 Base.unsafe_convert(::Type{CXAttr}, x::AbstractAttr) = CXAttr(x.ptr)
 Base.cconvert(::Type{CXAttr}, x::AbstractAttr) = x
@@ -1295,6 +1310,10 @@ Base.cconvert(::Type{CXUsingPackDecl}, x::AbstractUsingPackDecl) = x
 Base.unsafe_convert(::Type{CXUsingShadowDecl}, x::AbstractUsingShadowDecl) = CXUsingShadowDecl(x.ptr)
 Base.cconvert(::Type{CXUsingShadowDecl}, x::AbstractUsingShadowDecl) = x
 
+# core/AST/DeclFriend.jl
+Base.unsafe_convert(::Type{CXFriendDecl}, x::AbstractFriendDecl) = CXFriendDecl(x.ptr)
+Base.cconvert(::Type{CXFriendDecl}, x::AbstractFriendDecl) = x
+
 # core/AST/DeclGroup.jl
 Base.unsafe_convert(::Type{CXDeclGroupRef}, x::AbstractDeclGroupRef) = CXDeclGroupRef(x.ptr)
 Base.cconvert(::Type{CXDeclGroupRef}, x::AbstractDeclGroupRef) = x
@@ -1716,6 +1735,18 @@ Base.unsafe_convert(::Type{CXUnresolvedMemberExpr}, x::AbstractUnresolvedMemberE
 Base.cconvert(::Type{CXUnresolvedMemberExpr}, x::AbstractUnresolvedMemberExpr) = x
 Base.unsafe_convert(::Type{CXUserDefinedLiteral}, x::AbstractUserDefinedLiteral) = CXUserDefinedLiteral(x.ptr)
 Base.cconvert(::Type{CXUserDefinedLiteral}, x::AbstractUserDefinedLiteral) = x
+
+# core/AST/ExprConcepts.jl
+Base.unsafe_convert(::Type{CXConceptReference}, x::AbstractConceptReference) = CXConceptReference(x.ptr)
+Base.cconvert(::Type{CXConceptReference}, x::AbstractConceptReference) = x
+Base.unsafe_convert(::Type{CXExprRequirement}, x::AbstractExprRequirement) = CXExprRequirement(x.ptr)
+Base.cconvert(::Type{CXExprRequirement}, x::AbstractExprRequirement) = x
+Base.unsafe_convert(::Type{CXNestedRequirement}, x::AbstractNestedRequirement) = CXNestedRequirement(x.ptr)
+Base.cconvert(::Type{CXNestedRequirement}, x::AbstractNestedRequirement) = x
+Base.unsafe_convert(::Type{CXRequirement}, x::AbstractRequirement) = CXRequirement(x.ptr)
+Base.cconvert(::Type{CXRequirement}, x::AbstractRequirement) = x
+Base.unsafe_convert(::Type{CXTypeRequirement}, x::AbstractTypeRequirement) = CXTypeRequirement(x.ptr)
+Base.cconvert(::Type{CXTypeRequirement}, x::AbstractTypeRequirement) = x
 
 # core/AST/Mangle.jl
 Base.unsafe_convert(::Type{CXASTNameGenerator}, x::AbstractASTNameGenerator) = CXASTNameGenerator(x.ptr)
@@ -2446,9 +2477,76 @@ Base.cconvert(::Type{CXTypeLoc}, x::AbstractTypeLoc) = x
 Base.unsafe_convert(::Type{CXTypeSpecTypeLoc}, x::AbstractTypeSpecTypeLoc) = CXTypeSpecTypeLoc(x.ptr)
 Base.cconvert(::Type{CXTypeSpecTypeLoc}, x::AbstractTypeSpecTypeLoc) = x
 
+# core/AST/VTableBuilder.jl
+Base.unsafe_convert(::Type{CXItaniumVTableContext}, x::AbstractItaniumVTableContext) = CXItaniumVTableContext(x.ptr)
+Base.cconvert(::Type{CXItaniumVTableContext}, x::AbstractItaniumVTableContext) = x
+Base.unsafe_convert(::Type{CXVTableComponent}, x::AbstractVTableComponent) = CXVTableComponent(x.ptr)
+Base.cconvert(::Type{CXVTableComponent}, x::AbstractVTableComponent) = x
+Base.unsafe_convert(::Type{CXVTableContextBase}, x::AbstractVTableContextBase) = CXVTableContextBase(x.ptr)
+Base.cconvert(::Type{CXVTableContextBase}, x::AbstractVTableContextBase) = x
+Base.unsafe_convert(::Type{CXVTableLayout}, x::AbstractVTableLayout) = CXVTableLayout(x.ptr)
+Base.cconvert(::Type{CXVTableLayout}, x::AbstractVTableLayout) = x
+
+# core/ASTMatchers/ASTMatchFinder.jl
+Base.unsafe_convert(::Type{CXMatchFinder}, x::AbstractMatchFinder) = CXMatchFinder(x.ptr)
+Base.cconvert(::Type{CXMatchFinder}, x::AbstractMatchFinder) = x
+
+# core/ASTMatchers/ASTMatchers.jl
+Base.unsafe_convert(::Type{CXBoundNodes}, x::AbstractBoundNodes) = CXBoundNodes(x.ptr)
+Base.cconvert(::Type{CXBoundNodes}, x::AbstractBoundNodes) = x
+
+# core/ASTMatchers/ASTMatchersInternal.jl
+Base.unsafe_convert(::Type{CXDynTypedMatcher}, x::AbstractDynTypedMatcher) = CXDynTypedMatcher(x.ptr)
+Base.cconvert(::Type{CXDynTypedMatcher}, x::AbstractDynTypedMatcher) = x
+
+# core/ASTMatchers/Dynamic/Parser.jl
+Base.unsafe_convert(::Type{CXMatcherCompletionList}, x::AbstractMatcherCompletionList) = CXMatcherCompletionList(x.ptr)
+Base.cconvert(::Type{CXMatcherCompletionList}, x::AbstractMatcherCompletionList) = x
+Base.unsafe_convert(::Type{CXMatcherDiagnostics}, x::AbstractMatcherDiagnostics) = CXMatcherDiagnostics(x.ptr)
+Base.cconvert(::Type{CXMatcherDiagnostics}, x::AbstractMatcherDiagnostics) = x
+
+# core/ASTMatchers/Dynamic/VariantValue.jl
+Base.unsafe_convert(::Type{CXNamedValueMap}, x::AbstractNamedValueMap) = CXNamedValueMap(x.ptr)
+Base.cconvert(::Type{CXNamedValueMap}, x::AbstractNamedValueMap) = x
+Base.unsafe_convert(::Type{CXVariantValue}, x::AbstractVariantValue) = CXVariantValue(x.ptr)
+Base.cconvert(::Type{CXVariantValue}, x::AbstractVariantValue) = x
+
 # core/AbstractExtras.jl
 Base.unsafe_convert(::Type{CXStreamingDiagnostic}, x::AbstractStreamingDiagnostic) = CXStreamingDiagnostic(x.ptr)
 Base.cconvert(::Type{CXStreamingDiagnostic}, x::AbstractStreamingDiagnostic) = x
+
+# core/Analysis/Analyses/Dominators.jl
+Base.unsafe_convert(::Type{CXCFGDomTree}, x::AbstractCFGDomTree) = CXCFGDomTree(x.ptr)
+Base.cconvert(::Type{CXCFGDomTree}, x::AbstractCFGDomTree) = x
+Base.unsafe_convert(::Type{CXCFGPostDomTree}, x::AbstractCFGPostDomTree) = CXCFGPostDomTree(x.ptr)
+Base.cconvert(::Type{CXCFGPostDomTree}, x::AbstractCFGPostDomTree) = x
+function Base.unsafe_convert(::Type{CXControlDependencyCalculator},
+                             x::AbstractControlDependencyCalculator)
+    return CXControlDependencyCalculator(x.ptr)
+end
+Base.cconvert(::Type{CXControlDependencyCalculator}, x::AbstractControlDependencyCalculator) = x
+
+# core/Analysis/Analyses/ExprMutationAnalyzer.jl
+Base.unsafe_convert(::Type{CXExprMutationAnalyzer}, x::AbstractExprMutationAnalyzer) = CXExprMutationAnalyzer(x.ptr)
+Base.cconvert(::Type{CXExprMutationAnalyzer}, x::AbstractExprMutationAnalyzer) = x
+function Base.unsafe_convert(::Type{CXFunctionParmMutationAnalyzer},
+                             x::AbstractFunctionParmMutationAnalyzer)
+    return CXFunctionParmMutationAnalyzer(x.ptr)
+end
+Base.cconvert(::Type{CXFunctionParmMutationAnalyzer}, x::AbstractFunctionParmMutationAnalyzer) = x
+
+# core/Analysis/AnalysisDeclContext.jl
+Base.unsafe_convert(::Type{CXAnalysisDeclContext}, x::AbstractAnalysisDeclContext) = CXAnalysisDeclContext(x.ptr)
+Base.cconvert(::Type{CXAnalysisDeclContext}, x::AbstractAnalysisDeclContext) = x
+function Base.unsafe_convert(::Type{CXAnalysisDeclContextManager},
+                             x::AbstractAnalysisDeclContextManager)
+    return CXAnalysisDeclContextManager(x.ptr)
+end
+Base.cconvert(::Type{CXAnalysisDeclContextManager}, x::AbstractAnalysisDeclContextManager) = x
+Base.unsafe_convert(::Type{CXCFGStmtMap}, x::AbstractCFGStmtMap) = CXCFGStmtMap(x.ptr)
+Base.cconvert(::Type{CXCFGStmtMap}, x::AbstractCFGStmtMap) = x
+Base.unsafe_convert(::Type{CXParentMap}, x::AbstractParentMap) = CXParentMap(x.ptr)
+Base.cconvert(::Type{CXParentMap}, x::AbstractParentMap) = x
 
 # core/Analysis/CFG.jl
 Base.unsafe_convert(::Type{CXCFG}, x::AbstractCFG) = CXCFG(x.ptr)
@@ -2458,9 +2556,42 @@ Base.cconvert(::Type{CXCFGBlock}, x::AbstractCFGBlock) = x
 Base.unsafe_convert(::Type{CXCFGBuildOptions}, x::AbstractCFGBuildOptions) = CXCFGBuildOptions(x.ptr)
 Base.cconvert(::Type{CXCFGBuildOptions}, x::AbstractCFGBuildOptions) = x
 
+# core/Analysis/CFGReachabilityAnalysis.jl
+function Base.unsafe_convert(::Type{CXCFGReverseBlockReachabilityAnalysis},
+                             x::AbstractCFGReverseBlockReachabilityAnalysis)
+    return CXCFGReverseBlockReachabilityAnalysis(x.ptr)
+end
+Base.cconvert(::Type{CXCFGReverseBlockReachabilityAnalysis}, x::AbstractCFGReverseBlockReachabilityAnalysis) = x
+
+# core/Analysis/CallGraph.jl
+Base.unsafe_convert(::Type{CXCallGraph}, x::AbstractCallGraph) = CXCallGraph(x.ptr)
+Base.cconvert(::Type{CXCallGraph}, x::AbstractCallGraph) = x
+Base.unsafe_convert(::Type{CXCallGraphNode}, x::AbstractCallGraphNode) = CXCallGraphNode(x.ptr)
+Base.cconvert(::Type{CXCallGraphNode}, x::AbstractCallGraphNode) = x
+
+# core/Analysis/CloneDetection.jl
+Base.unsafe_convert(::Type{CXCloneDetector}, x::AbstractCloneDetector) = CXCloneDetector(x.ptr)
+Base.cconvert(::Type{CXCloneDetector}, x::AbstractCloneDetector) = x
+
 # core/Analysis/ConstructionContext.jl
 Base.unsafe_convert(::Type{CXConstructionContext}, x::AbstractConstructionContext) = CXConstructionContext(x.ptr)
 Base.cconvert(::Type{CXConstructionContext}, x::AbstractConstructionContext) = x
+
+# core/Analysis/LiveVariables.jl
+Base.unsafe_convert(::Type{CXLiveVariables}, x::AbstractLiveVariables) = CXLiveVariables(x.ptr)
+Base.cconvert(::Type{CXLiveVariables}, x::AbstractLiveVariables) = x
+
+# core/Analysis/MacroExpansionContext.jl
+Base.unsafe_convert(::Type{CXMacroExpansionContext}, x::AbstractMacroExpansionContext) = CXMacroExpansionContext(x.ptr)
+Base.cconvert(::Type{CXMacroExpansionContext}, x::AbstractMacroExpansionContext) = x
+
+# core/Analysis/ReachableCode.jl
+Base.unsafe_convert(::Type{CXUnreachableCodeResult}, x::AbstractUnreachableCodeResult) = CXUnreachableCodeResult(x.ptr)
+Base.cconvert(::Type{CXUnreachableCodeResult}, x::AbstractUnreachableCodeResult) = x
+
+# core/Analysis/UninitializedValues.jl
+Base.unsafe_convert(::Type{CXUninitVariablesResult}, x::AbstractUninitVariablesResult) = CXUninitVariablesResult(x.ptr)
+Base.cconvert(::Type{CXUninitVariablesResult}, x::AbstractUninitVariablesResult) = x
 
 # core/Basic/Builtins.jl
 Base.unsafe_convert(::Type{CXBuiltinContext}, x::AbstractBuiltinContext) = CXBuiltinContext(x.ptr)
@@ -2507,6 +2638,12 @@ Base.unsafe_convert(::Type{CXFileEntryRef}, x::AbstractFileEntryRef) = CXFileEnt
 Base.cconvert(::Type{CXFileEntryRef}, x::AbstractFileEntryRef) = x
 Base.unsafe_convert(::Type{CXFileManager}, x::AbstractFileManager) = CXFileManager(x.ptr)
 Base.cconvert(::Type{CXFileManager}, x::AbstractFileManager) = x
+Base.unsafe_convert(::Type{CXInMemoryFileSystem}, x::AbstractInMemoryFileSystem) = CXInMemoryFileSystem(x.ptr)
+Base.cconvert(::Type{CXInMemoryFileSystem}, x::AbstractInMemoryFileSystem) = x
+Base.unsafe_convert(::Type{CXOverlayFileSystem}, x::AbstractOverlayFileSystem) = CXOverlayFileSystem(x.ptr)
+Base.cconvert(::Type{CXOverlayFileSystem}, x::AbstractOverlayFileSystem) = x
+Base.unsafe_convert(::Type{CXVirtualFileSystem}, x::AbstractVirtualFileSystem) = CXVirtualFileSystem(x.ptr)
+Base.cconvert(::Type{CXVirtualFileSystem}, x::AbstractVirtualFileSystem) = x
 
 # core/Basic/FileSystemOptions.jl
 Base.unsafe_convert(::Type{CXFileSystemOptions}, x::AbstractFileSystemOptions) = CXFileSystemOptions(x.ptr)
@@ -2525,6 +2662,10 @@ Base.cconvert(::Type{CXSelectorTable}, x::AbstractSelectorTable) = x
 # core/Basic/LangOptions.jl
 Base.unsafe_convert(::Type{CXLangOptions}, x::AbstractLangOptions) = CXLangOptions(x.ptr)
 Base.cconvert(::Type{CXLangOptions}, x::AbstractLangOptions) = x
+
+# core/Basic/LangStandard.jl
+Base.unsafe_convert(::Type{CXLangStandard}, x::AbstractLangStandard) = CXLangStandard(x.ptr)
+Base.cconvert(::Type{CXLangStandard}, x::AbstractLangStandard) = x
 
 # core/Basic/Module.jl
 Base.unsafe_convert(::Type{CXModule_}, x::AbstractModule) = CXModule_(x.ptr)
@@ -2564,6 +2705,16 @@ Base.cconvert(::Type{CXTargetInfo_}, x::AbstractTargetInfo) = x
 Base.unsafe_convert(::Type{CXTargetOptions}, x::AbstractTargetOptions) = CXTargetOptions(x.ptr)
 Base.cconvert(::Type{CXTargetOptions}, x::AbstractTargetOptions) = x
 
+# core/CodeGen/CGFunctionInfo.jl
+Base.unsafe_convert(::Type{CXABIArgInfo}, x::AbstractABIArgInfo) = CXABIArgInfo(x.ptr)
+Base.cconvert(::Type{CXABIArgInfo}, x::AbstractABIArgInfo) = x
+Base.unsafe_convert(::Type{CXCGFunctionInfo}, x::AbstractCGFunctionInfo) = CXCGFunctionInfo(x.ptr)
+Base.cconvert(::Type{CXCGFunctionInfo}, x::AbstractCGFunctionInfo) = x
+
+# core/CodeGen/CodeGenABITypes.jl
+Base.unsafe_convert(::Type{CXAttrBuilder}, x::AbstractAttrBuilder) = CXAttrBuilder(x.ptr)
+Base.cconvert(::Type{CXAttrBuilder}, x::AbstractAttrBuilder) = x
+
 # core/CodeGen/CodeGenAction.jl
 Base.unsafe_convert(::Type{CXCodeGenAction}, x::AbstractCodeGenAction) = CXCodeGenAction(x.ptr)
 Base.cconvert(::Type{CXCodeGenAction}, x::AbstractCodeGenAction) = x
@@ -2576,6 +2727,26 @@ Base.cconvert(::Type{CXCodeGenModule}, x::AbstractCodeGenModule) = x
 Base.unsafe_convert(::Type{CXCodeGenerator}, x::AbstractCodeGenerator) = CXCodeGenerator(x.ptr)
 Base.cconvert(::Type{CXCodeGenerator}, x::AbstractCodeGenerator) = x
 
+# core/CodeGen/ObjectFilePCHContainerOperations.jl
+function Base.unsafe_convert(::Type{CXPCHContainerOperations},
+                             x::AbstractPCHContainerOperations)
+    return CXPCHContainerOperations(x.ptr)
+end
+Base.cconvert(::Type{CXPCHContainerOperations}, x::AbstractPCHContainerOperations) = x
+Base.unsafe_convert(::Type{CXPCHContainerReader}, x::AbstractPCHContainerReader) = CXPCHContainerReader(x.ptr)
+Base.cconvert(::Type{CXPCHContainerReader}, x::AbstractPCHContainerReader) = x
+Base.unsafe_convert(::Type{CXPCHContainerWriter}, x::AbstractPCHContainerWriter) = CXPCHContainerWriter(x.ptr)
+Base.cconvert(::Type{CXPCHContainerWriter}, x::AbstractPCHContainerWriter) = x
+
+# core/CrossTU/CrossTranslationUnit.jl
+Base.unsafe_convert(::Type{CXCrossTUIndex}, x::AbstractCrossTUIndex) = CXCrossTUIndex(x.ptr)
+Base.cconvert(::Type{CXCrossTUIndex}, x::AbstractCrossTUIndex) = x
+function Base.unsafe_convert(::Type{CXCrossTranslationUnitContext},
+                             x::AbstractCrossTranslationUnitContext)
+    return CXCrossTranslationUnitContext(x.ptr)
+end
+Base.cconvert(::Type{CXCrossTranslationUnitContext}, x::AbstractCrossTranslationUnitContext) = x
+
 # core/Driver/Compilation.jl
 Base.unsafe_convert(::Type{CXCompilation}, x::AbstractCompilation) = CXCompilation(x.ptr)
 Base.cconvert(::Type{CXCompilation}, x::AbstractCompilation) = x
@@ -2584,9 +2755,39 @@ Base.cconvert(::Type{CXCompilation}, x::AbstractCompilation) = x
 Base.unsafe_convert(::Type{CXDriver}, x::AbstractDriver) = CXDriver(x.ptr)
 Base.cconvert(::Type{CXDriver}, x::AbstractDriver) = x
 
+# core/Driver/Job.jl
+Base.unsafe_convert(::Type{CXCommand}, x::AbstractCommand) = CXCommand(x.ptr)
+Base.cconvert(::Type{CXCommand}, x::AbstractCommand) = x
+Base.unsafe_convert(::Type{CXJobList}, x::AbstractJobList) = CXJobList(x.ptr)
+Base.cconvert(::Type{CXJobList}, x::AbstractJobList) = x
+Base.unsafe_convert(::Type{CXTool}, x::AbstractTool) = CXTool(x.ptr)
+Base.cconvert(::Type{CXTool}, x::AbstractTool) = x
+
+# core/Driver/Options.jl
+Base.unsafe_convert(::Type{CXOptTable}, x::AbstractOptTable) = CXOptTable(x.ptr)
+Base.cconvert(::Type{CXOptTable}, x::AbstractOptTable) = x
+Base.unsafe_convert(::Type{CXOption}, x::AbstractOption) = CXOption(x.ptr)
+Base.cconvert(::Type{CXOption}, x::AbstractOption) = x
+
 # core/Driver/ToolChain.jl
 Base.unsafe_convert(::Type{CXToolChain}, x::AbstractToolChain) = CXToolChain(x.ptr)
 Base.cconvert(::Type{CXToolChain}, x::AbstractToolChain) = x
+
+# core/Edit/Commit.jl
+Base.unsafe_convert(::Type{CXCommit}, x::AbstractCommit) = CXCommit(x.ptr)
+Base.cconvert(::Type{CXCommit}, x::AbstractCommit) = x
+
+# core/Edit/EditedSource.jl
+Base.unsafe_convert(::Type{CXEditedSource}, x::AbstractEditedSource) = CXEditedSource(x.ptr)
+Base.cconvert(::Type{CXEditedSource}, x::AbstractEditedSource) = x
+
+# core/ExtractAPI/FrontendActions.jl
+Base.unsafe_convert(::Type{CXFrontendAction}, x::AbstractFrontendAction) = CXFrontendAction(x.ptr)
+Base.cconvert(::Type{CXFrontendAction}, x::AbstractFrontendAction) = x
+
+# core/Format/Format.jl
+Base.unsafe_convert(::Type{CXFormatStyle}, x::AbstractFormatStyle) = CXFormatStyle(x.ptr)
+Base.cconvert(::Type{CXFormatStyle}, x::AbstractFormatStyle) = x
 
 # core/Frontend/ASTUnit.jl
 Base.unsafe_convert(::Type{CXASTUnit}, x::AbstractASTUnit) = CXASTUnit(x.ptr)
@@ -2617,12 +2818,28 @@ Base.cconvert(::Type{CXFrontendOptions}, x::AbstractFrontendOptions) = x
 Base.unsafe_convert(::Type{CXMigratorOptions}, x::AbstractMigratorOptions) = CXMigratorOptions(x.ptr)
 Base.cconvert(::Type{CXMigratorOptions}, x::AbstractMigratorOptions) = x
 
+# core/Frontend/PrecompiledPreamble.jl
+Base.unsafe_convert(::Type{CXPrecompiledPreamble}, x::AbstractPrecompiledPreamble) = CXPrecompiledPreamble(x.ptr)
+Base.cconvert(::Type{CXPrecompiledPreamble}, x::AbstractPrecompiledPreamble) = x
+
 # core/Frontend/PreprocessorOutputOptions.jl
 function Base.unsafe_convert(::Type{CXPreprocessorOutputOptions},
                              x::AbstractPreprocessorOutputOptions)
     return CXPreprocessorOutputOptions(x.ptr)
 end
 Base.cconvert(::Type{CXPreprocessorOutputOptions}, x::AbstractPreprocessorOutputOptions) = x
+
+# core/Frontend/Utils.jl
+Base.unsafe_convert(::Type{CXDependencyCollector}, x::AbstractDependencyCollector) = CXDependencyCollector(x.ptr)
+Base.cconvert(::Type{CXDependencyCollector}, x::AbstractDependencyCollector) = x
+
+# core/Index/CommentToXML.jl
+Base.unsafe_convert(::Type{CXCommentToXMLConverter}, x::AbstractCommentToXMLConverter) = CXCommentToXMLConverter(x.ptr)
+Base.cconvert(::Type{CXCommentToXMLConverter}, x::AbstractCommentToXMLConverter) = x
+
+# core/Index/IndexingAction.jl
+Base.unsafe_convert(::Type{CXIndexDataCollector}, x::AbstractIndexDataCollector) = CXIndexDataCollector(x.ptr)
+Base.cconvert(::Type{CXIndexDataCollector}, x::AbstractIndexDataCollector) = x
 
 # core/Interpreter/Interpreter.jl
 function Base.unsafe_convert(::Type{CXIncrementalCompilerBuilder},
@@ -2645,6 +2862,13 @@ Base.cconvert(::Type{CXValue}, x::AbstractValue) = x
 # core/Lex/CodeCompletionHandler.jl
 Base.unsafe_convert(::Type{CXCodeCompletionHandler}, x::AbstractCodeCompletionHandler) = CXCodeCompletionHandler(x.ptr)
 Base.cconvert(::Type{CXCodeCompletionHandler}, x::AbstractCodeCompletionHandler) = x
+
+# core/Lex/DependencyDirectivesScanner.jl
+function Base.unsafe_convert(::Type{CXDependencyDirectivesScan},
+                             x::AbstractDependencyDirectivesScan)
+    return CXDependencyDirectivesScan(x.ptr)
+end
+Base.cconvert(::Type{CXDependencyDirectivesScan}, x::AbstractDependencyDirectivesScan) = x
 
 # core/Lex/DirectoryLookup.jl
 Base.unsafe_convert(::Type{CXDirectoryLookup}, x::AbstractDirectoryLookup) = CXDirectoryLookup(x.ptr)
@@ -2675,6 +2899,14 @@ Base.cconvert(::Type{CXHeaderSearchOptions}, x::AbstractHeaderSearchOptions) = x
 Base.unsafe_convert(::Type{CXLexer}, x::AbstractLexer) = CXLexer(x.ptr)
 Base.cconvert(::Type{CXLexer}, x::AbstractLexer) = x
 
+# core/Lex/LiteralSupport.jl
+Base.unsafe_convert(::Type{CXCharLiteralParser}, x::AbstractCharLiteralParser) = CXCharLiteralParser(x.ptr)
+Base.cconvert(::Type{CXCharLiteralParser}, x::AbstractCharLiteralParser) = x
+Base.unsafe_convert(::Type{CXNumericLiteralParser}, x::AbstractNumericLiteralParser) = CXNumericLiteralParser(x.ptr)
+Base.cconvert(::Type{CXNumericLiteralParser}, x::AbstractNumericLiteralParser) = x
+Base.unsafe_convert(::Type{CXStringLiteralParser}, x::AbstractStringLiteralParser) = CXStringLiteralParser(x.ptr)
+Base.cconvert(::Type{CXStringLiteralParser}, x::AbstractStringLiteralParser) = x
+
 # core/Lex/MacroInfo.jl
 Base.unsafe_convert(::Type{CXDefInfo}, x::AbstractDefInfo) = CXDefInfo(x.ptr)
 Base.cconvert(::Type{CXDefInfo}, x::AbstractDefInfo) = x
@@ -2694,6 +2926,21 @@ Base.cconvert(::Type{CXModuleLoader}, x::AbstractModuleLoader) = x
 # core/Lex/PPCallbacks.jl
 Base.unsafe_convert(::Type{CXPPCallbacks}, x::AbstractPPCallbacks) = CXPPCallbacks(x.ptr)
 Base.cconvert(::Type{CXPPCallbacks}, x::AbstractPPCallbacks) = x
+
+# core/Lex/PPConditionalDirectiveRecord.jl
+function Base.unsafe_convert(::Type{CXPPConditionalDirectiveRecord},
+                             x::AbstractPPConditionalDirectiveRecord)
+    return CXPPConditionalDirectiveRecord(x.ptr)
+end
+Base.cconvert(::Type{CXPPConditionalDirectiveRecord}, x::AbstractPPConditionalDirectiveRecord) = x
+
+# core/Lex/Pragma.jl
+Base.unsafe_convert(::Type{CXEmptyPragmaHandler}, x::AbstractEmptyPragmaHandler) = CXEmptyPragmaHandler(x.ptr)
+Base.cconvert(::Type{CXEmptyPragmaHandler}, x::AbstractEmptyPragmaHandler) = x
+Base.unsafe_convert(::Type{CXPragmaHandler}, x::AbstractPragmaHandler) = CXPragmaHandler(x.ptr)
+Base.cconvert(::Type{CXPragmaHandler}, x::AbstractPragmaHandler) = x
+Base.unsafe_convert(::Type{CXPragmaNamespace}, x::AbstractPragmaNamespace) = CXPragmaNamespace(x.ptr)
+Base.cconvert(::Type{CXPragmaNamespace}, x::AbstractPragmaNamespace) = x
 
 # core/Lex/PreprocessingRecord.jl
 Base.unsafe_convert(::Type{CXInclusionDirective}, x::AbstractInclusionDirective) = CXInclusionDirective(x.ptr)
@@ -2727,9 +2974,17 @@ Base.cconvert(::Type{CXAnnotationValue}, x::AbstractAnnotationValue) = x
 Base.unsafe_convert(::Type{CXToken_}, x::AbstractToken) = CXToken_(x.ptr)
 Base.cconvert(::Type{CXToken_}, x::AbstractToken) = x
 
+# core/Lex/TokenConcatenation.jl
+Base.unsafe_convert(::Type{CXTokenConcatenation}, x::AbstractTokenConcatenation) = CXTokenConcatenation(x.ptr)
+Base.cconvert(::Type{CXTokenConcatenation}, x::AbstractTokenConcatenation) = x
+
 # core/Parse/Parser.jl
 Base.unsafe_convert(::Type{CXParser}, x::AbstractParser) = CXParser(x.ptr)
 Base.cconvert(::Type{CXParser}, x::AbstractParser) = x
+
+# core/Rewrite/FixItRewriter.jl
+Base.unsafe_convert(::Type{CXFixItRewriter}, x::AbstractFixItRewriter) = CXFixItRewriter(x.ptr)
+Base.cconvert(::Type{CXFixItRewriter}, x::AbstractFixItRewriter) = x
 
 # core/Rewrite/Rewriter.jl
 Base.unsafe_convert(::Type{CXRewriter}, x::AbstractRewriter) = CXRewriter(x.ptr)
@@ -2738,6 +2993,17 @@ Base.cconvert(::Type{CXRewriter}, x::AbstractRewriter) = x
 # core/Sema/DeclSpec.jl
 Base.unsafe_convert(::Type{CXCXXScopeSpec}, x::AbstractCXXScopeSpec) = CXCXXScopeSpec(x.ptr)
 Base.cconvert(::Type{CXCXXScopeSpec}, x::AbstractCXXScopeSpec) = x
+
+# core/Sema/Initialization.jl
+Base.unsafe_convert(::Type{CXInitializationKind}, x::AbstractInitializationKind) = CXInitializationKind(x.ptr)
+Base.cconvert(::Type{CXInitializationKind}, x::AbstractInitializationKind) = x
+function Base.unsafe_convert(::Type{CXInitializationSequence},
+                             x::AbstractInitializationSequence)
+    return CXInitializationSequence(x.ptr)
+end
+Base.cconvert(::Type{CXInitializationSequence}, x::AbstractInitializationSequence) = x
+Base.unsafe_convert(::Type{CXInitializedEntity}, x::AbstractInitializedEntity) = CXInitializedEntity(x.ptr)
+Base.cconvert(::Type{CXInitializedEntity}, x::AbstractInitializedEntity) = x
 
 # core/Sema/Lookup.jl
 Base.unsafe_convert(::Type{CXLookupResult}, x::AbstractLookupResult) = CXLookupResult(x.ptr)
@@ -2810,13 +3076,105 @@ Base.cconvert(::Type{CXMultiLevelTemplateArgumentList}, x::AbstractMultiLevelTem
 Base.unsafe_convert(::Type{CXTemplateDeductionInfo}, x::AbstractTemplateDeductionInfo) = CXTemplateDeductionInfo(x.ptr)
 Base.cconvert(::Type{CXTemplateDeductionInfo}, x::AbstractTemplateDeductionInfo) = x
 
+# core/Sema/TypoCorrection.jl
+function Base.unsafe_convert(::Type{CXCorrectionCandidateCallback},
+                             x::AbstractCorrectionCandidateCallback)
+    return CXCorrectionCandidateCallback(x.ptr)
+end
+Base.cconvert(::Type{CXCorrectionCandidateCallback}, x::AbstractCorrectionCandidateCallback) = x
+Base.unsafe_convert(::Type{CXTypoCorrection}, x::AbstractTypoCorrection) = CXTypoCorrection(x.ptr)
+Base.cconvert(::Type{CXTypoCorrection}, x::AbstractTypoCorrection) = x
+
 # core/StaticAnalyzer/AnalyzerOptions.jl
 Base.unsafe_convert(::Type{CXAnalyzerOptions}, x::AbstractAnalyzerOptions) = CXAnalyzerOptions(x.ptr)
 Base.cconvert(::Type{CXAnalyzerOptions}, x::AbstractAnalyzerOptions) = x
 
+# core/Tooling/ArgumentsAdjusters.jl
+Base.unsafe_convert(::Type{CXArgumentsAdjuster}, x::AbstractArgumentsAdjuster) = CXArgumentsAdjuster(x.ptr)
+Base.cconvert(::Type{CXArgumentsAdjuster}, x::AbstractArgumentsAdjuster) = x
+
+# core/Tooling/CompilationDatabase.jl
+Base.unsafe_convert(::Type{CXCompilationDatabase}, x::AbstractCompilationDatabase) = CXCompilationDatabase(x.ptr)
+Base.cconvert(::Type{CXCompilationDatabase}, x::AbstractCompilationDatabase) = x
+Base.unsafe_convert(::Type{CXCompileCommand}, x::AbstractCompileCommand) = CXCompileCommand(x.ptr)
+Base.cconvert(::Type{CXCompileCommand}, x::AbstractCompileCommand) = x
+Base.unsafe_convert(::Type{CXCompileCommandList}, x::AbstractCompileCommandList) = CXCompileCommandList(x.ptr)
+Base.cconvert(::Type{CXCompileCommandList}, x::AbstractCompileCommandList) = x
+function Base.unsafe_convert(::Type{CXFixedCompilationDatabase},
+                             x::AbstractFixedCompilationDatabase)
+    return CXFixedCompilationDatabase(x.ptr)
+end
+Base.cconvert(::Type{CXFixedCompilationDatabase}, x::AbstractFixedCompilationDatabase) = x
+
+# core/Tooling/Core/Replacement.jl
+Base.unsafe_convert(::Type{CXReplacement}, x::AbstractReplacement) = CXReplacement(x.ptr)
+Base.cconvert(::Type{CXReplacement}, x::AbstractReplacement) = x
+Base.unsafe_convert(::Type{CXReplacements}, x::AbstractReplacements) = CXReplacements(x.ptr)
+Base.cconvert(::Type{CXReplacements}, x::AbstractReplacements) = x
+
+# core/Tooling/DependencyScanning/DependencyScanningService.jl
+function Base.unsafe_convert(::Type{CXDependencyScanningService},
+                             x::AbstractDependencyScanningService)
+    return CXDependencyScanningService(x.ptr)
+end
+Base.cconvert(::Type{CXDependencyScanningService}, x::AbstractDependencyScanningService) = x
+
+# core/Tooling/DependencyScanning/DependencyScanningTool.jl
+function Base.unsafe_convert(::Type{CXDependencyScanningTool},
+                             x::AbstractDependencyScanningTool)
+    return CXDependencyScanningTool(x.ptr)
+end
+Base.cconvert(::Type{CXDependencyScanningTool}, x::AbstractDependencyScanningTool) = x
+
+# core/Tooling/Inclusions/HeaderIncludes.jl
+Base.unsafe_convert(::Type{CXHeaderIncludes}, x::AbstractHeaderIncludes) = CXHeaderIncludes(x.ptr)
+Base.cconvert(::Type{CXHeaderIncludes}, x::AbstractHeaderIncludes) = x
+function Base.unsafe_convert(::Type{CXIncludeCategoryManager},
+                             x::AbstractIncludeCategoryManager)
+    return CXIncludeCategoryManager(x.ptr)
+end
+Base.cconvert(::Type{CXIncludeCategoryManager}, x::AbstractIncludeCategoryManager) = x
+
+# core/Tooling/Inclusions/IncludeStyle.jl
+Base.unsafe_convert(::Type{CXIncludeStyle}, x::AbstractIncludeStyle) = CXIncludeStyle(x.ptr)
+Base.cconvert(::Type{CXIncludeStyle}, x::AbstractIncludeStyle) = x
+
+# core/Tooling/Inclusions/StandardLibrary.jl
+Base.unsafe_convert(::Type{CXStdlibHeader}, x::AbstractStdlibHeader) = CXStdlibHeader(x.ptr)
+Base.cconvert(::Type{CXStdlibHeader}, x::AbstractStdlibHeader) = x
+Base.unsafe_convert(::Type{CXStdlibHeaderList}, x::AbstractStdlibHeaderList) = CXStdlibHeaderList(x.ptr)
+Base.cconvert(::Type{CXStdlibHeaderList}, x::AbstractStdlibHeaderList) = x
+Base.unsafe_convert(::Type{CXStdlibRecognizer}, x::AbstractStdlibRecognizer) = CXStdlibRecognizer(x.ptr)
+Base.cconvert(::Type{CXStdlibRecognizer}, x::AbstractStdlibRecognizer) = x
+Base.unsafe_convert(::Type{CXStdlibSymbol}, x::AbstractStdlibSymbol) = CXStdlibSymbol(x.ptr)
+Base.cconvert(::Type{CXStdlibSymbol}, x::AbstractStdlibSymbol) = x
+Base.unsafe_convert(::Type{CXStdlibSymbolList}, x::AbstractStdlibSymbolList) = CXStdlibSymbolList(x.ptr)
+Base.cconvert(::Type{CXStdlibSymbolList}, x::AbstractStdlibSymbolList) = x
+
+# core/Tooling/JSONCompilationDatabase.jl
+function Base.unsafe_convert(::Type{CXJSONCompilationDatabase},
+                             x::AbstractJSONCompilationDatabase)
+    return CXJSONCompilationDatabase(x.ptr)
+end
+Base.cconvert(::Type{CXJSONCompilationDatabase}, x::AbstractJSONCompilationDatabase) = x
+
+# core/Tooling/Syntax/Tokens.jl
+Base.unsafe_convert(::Type{CXSyntaxToken}, x::AbstractSyntaxToken) = CXSyntaxToken(x.ptr)
+Base.cconvert(::Type{CXSyntaxToken}, x::AbstractSyntaxToken) = x
+Base.unsafe_convert(::Type{CXSyntaxTokenList}, x::AbstractSyntaxTokenList) = CXSyntaxTokenList(x.ptr)
+Base.cconvert(::Type{CXSyntaxTokenList}, x::AbstractSyntaxTokenList) = x
+Base.unsafe_convert(::Type{CXTokenBuffer}, x::AbstractTokenBuffer) = CXTokenBuffer(x.ptr)
+Base.cconvert(::Type{CXTokenBuffer}, x::AbstractTokenBuffer) = x
+Base.unsafe_convert(::Type{CXTokenCollector}, x::AbstractTokenCollector) = CXTokenCollector(x.ptr)
+Base.cconvert(::Type{CXTokenCollector}, x::AbstractTokenCollector) = x
+
+# core/Tooling/Tooling.jl
+Base.unsafe_convert(::Type{CXClangTool}, x::AbstractClangTool) = CXClangTool(x.ptr)
+Base.cconvert(::Type{CXClangTool}, x::AbstractClangTool) = x
+Base.unsafe_convert(::Type{CXToolInvocation}, x::AbstractToolInvocation) = CXToolInvocation(x.ptr)
+Base.cconvert(::Type{CXToolInvocation}, x::AbstractToolInvocation) = x
+
 # core/abstract.jl
 Base.unsafe_convert(::Type{CXBuiltinType}, x::AbstractBuiltinType) = CXBuiltinType(x.ptr)
 Base.cconvert(::Type{CXBuiltinType}, x::AbstractBuiltinType) = x
-Base.unsafe_convert(::Type{CXFrontendAction}, x::AbstractFrontendAction) = CXFrontendAction(x.ptr)
-Base.cconvert(::Type{CXFrontendAction}, x::AbstractFrontendAction) = x
 

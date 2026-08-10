@@ -106,7 +106,12 @@ import ClangCompiler as CC
             @test v(body) isa Bool
             npred += 1
         elseif v isa Type && v != CC.Stmt && hasmethod(v, Tuple{CC.Stmt}) &&
-               which(v, Tuple{CC.Stmt}).sig <: Tuple{Type,CC.AbstractStmt}
+               which(v, Tuple{CC.Stmt}).sig <: Tuple{Type,CC.AbstractStmt} &&
+               # ...and a stamped cast lands inside the Stmt hierarchy. A carrier from
+               # another family that merely *accepts* a statement is a conversion, not a
+               # downcast, and has no `is<Name>` to pair with: `DynTypedNode(::AbstractStmt)`
+               # is one, since a DynTypedNode can hold a node of any family.
+               v <: CC.AbstractStmt
             # The predicate and the cast are one question asked twice, `isa<T>` and `cast<T>`
             # off the same `classof` — and the Julia abstract mirroring that class is a third
             # spelling of it. Holding all three against each other for every statement class

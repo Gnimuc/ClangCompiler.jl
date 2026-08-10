@@ -18,6 +18,19 @@ end
 
 dispose(x::Rewriter) = clang_Rewriter_dispose(x)
 
+"""
+    setSourceMgr(x::AbstractRewriter, src_mgr::SourceManager, lang_opts::LangOptions)
+Rebind `x` to a different `SourceManager`/`LangOptions` pair.
+
+The buffers `x` has already rewritten are keyed on `FileID`s of the *old* manager and are
+not cleared, so this is only meaningful on a rewriter nothing has edited yet. Both are
+stored as raw references and must outlive `x`.
+"""
+function setSourceMgr(x::AbstractRewriter, src_mgr::SourceManager, lang_opts::LangOptions)
+    @check_ptrs x src_mgr lang_opts
+    return clang_Rewriter_setSourceMgr(x, src_mgr, lang_opts)
+end
+
 function getSourceMgr(x::AbstractRewriter)
     @check_ptrs x
     return SourceManager(clang_Rewriter_getSourceMgr(x))
@@ -181,6 +194,50 @@ function IncreaseIndentation(x::AbstractRewriter, range::SourceRange, parent_ind
     @assert isValid(parent_indent) "parent indentation location must be valid"
     r = CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr)
     return clang_Rewriter_IncreaseIndentation(x, r, parent_indent)
+end
+
+"""
+    hasChangesForFileID(x::AbstractRewriter, id::FileID) -> Bool
+Return whether `x` has edited the file `id` names. A file nothing has touched has no
+rewrite buffer at all, which is what this asks about.
+"""
+function hasChangesForFileID(x::AbstractRewriter, id::FileID)
+    @check_ptrs x id
+    return clang_Rewriter_hasChangesForFileID(x, id)
+end
+
+"""
+    getRewriteBufferText(x::AbstractRewriter, id::FileID) -> String
+Return the whole rewritten text of the file `id` names, in memory — the counterpart of
+`overwriteChangedFiles`, which can only write it to disk.
+
+Returns the empty string when `id` has no rewrite buffer; `hasChangesForFileID` tells that
+apart from a file that really did rewrite to nothing.
+"""
+function getRewriteBufferText(x::AbstractRewriter, id::FileID)
+    @check_ptrs x id
+    return get_string(clang_Rewriter_getRewriteBufferText(x, id))
+end
+
+"""
+    getNumBuffers(x::AbstractRewriter) -> UInt32
+Return how many files `x` has changed.
+"""
+function getNumBuffers(x::AbstractRewriter)
+    @check_ptrs x
+    return clang_Rewriter_getNumBuffers(x)
+end
+
+"""
+    getBufferFileID(x::AbstractRewriter, i::Integer) -> FileID
+Return the `FileID` of the `i`-th changed file, counting from zero.
+
+This function allocates and one should call `dispose` to release the resources after using this object.
+"""
+function getBufferFileID(x::AbstractRewriter, i::Integer)
+    @check_ptrs x
+    @assert 0 <= i < getNumBuffers(x) "rewrite buffer index out of range"
+    return FileID(clang_Rewriter_getBufferFileID(x, i))
 end
 
 """

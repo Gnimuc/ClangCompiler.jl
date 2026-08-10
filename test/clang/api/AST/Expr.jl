@@ -799,7 +799,7 @@ end
                  void *p = __null;          // GNUNullExpr
                  void *q = &&lbl;           // AddrLabelExpr (GNU label address)
              lbl:
-                 return a + b + (p != __null) + (int)(long)q;
+                 return a + b + (p != __null) + (int)(__INTPTR_TYPE__)q;
              }
              int va_fn(int count, ...) {
                  __builtin_va_list ap;
@@ -1842,7 +1842,7 @@ end
                  cc_k_i4 iv = __builtin_convertvector(v, cc_k_i4);  // ConvertVectorExpr
                  int b = n ?: 30;                       // BinaryConditionalOperator + OVE
              cc_k_lbl:
-                 return s + p.x + (int)e + iv.x + b + (int)(long)q + (int)(long)z + fn[0];
+                 return s + p.x + (int)e + iv.x + b + (int)(__INTPTR_TYPE__)q + (int)(__INTPTR_TYPE__)z + fn[0];
              }
              """)
 

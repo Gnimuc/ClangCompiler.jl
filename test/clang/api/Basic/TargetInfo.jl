@@ -551,7 +551,7 @@ end
     x86_opts = CC.TargetOptions()
     CC.setTriple(x86_opts, "x86_64-unknown-linux-gnu")
     x86 = CC.TargetInfo(x86_opts, CC.getDiagnostics(x86_ci))  # absorbs x86_opts
-    CC.setTarget(x86_ci, x86)  # adopts x86
+    CC.setTarget(x86_ci, x86)  # the instance takes a reference; `x86` stays ours
     @test !CC.validateCPUSpecificCPUDispatch(x86, "definitely-not-a-cpu")
     for name in ("generic", "pentium_4", "core_2_duo_ssse3")
         @test CC.validateCPUSpecificCPUDispatch(x86, name)
@@ -561,6 +561,7 @@ end
         @test 0x20 < c < 0x7f
     end
     dispose(x86_ci)
+    dispose(x86)
 
     dispose(I)
 end
@@ -799,4 +800,37 @@ end
     @test CC.isValidAsmImmediate(imm, 128) == false
 
     dispose(imm)
+end
+
+@testset "TargetInfo | a target survives being lent to a compiler instance" begin
+    # TargetInfo is reference counted, and setTarget parks it in an IntrusiveRefCntPtr that
+    # the instance releases when disposed. Because the target is handed back already holding
+    # our reference, that borrow runs 1 -> 2 -> 1 and the target outlives the instance; it
+    # used to run 0 -> 1 -> 0 and be deleted, which only ever showed on a *second* use.
+    ci = CC.CompilerInstance()
+    CC.createDiagnostics(ci)
+    topts = CC.TargetOptions()
+    CC.setTriple(topts, PIN)
+    ti = CC.TargetInfo(topts, CC.getDiagnostics(ci))  # absorbs topts
+    @test !CC.is_null_handle(ti)
+
+    # These come from TransferrableTargetInfo, the first base, so they occupy the object's
+    # leading bytes -- where a freed block would have free-list linkage written over it.
+    fingerprint() = (CC.getBoolWidth(ti), CC.getCharWidth(ti), CC.getShortWidth(ti),
+                     CC.getIntWidth(ti), CC.getLongWidth(ti), CC.getSizeType(ti))
+    before = fingerprint()
+
+    CC.setTarget(ci, ti)
+    dispose(ci)
+
+    # Second lifetime over the same target. Whatever the widths are for PIN, they are the
+    # same widths, which a deleted-and-reused block would not reliably give back.
+    ci2 = CC.CompilerInstance()
+    CC.createDiagnostics(ci2)
+    CC.setTarget(ci2, ti)
+    @test fingerprint() == before
+    dispose(ci2)
+
+    # And the target is ours to free -- before this conversion there was no dispose at all.
+    dispose(ti)
 end

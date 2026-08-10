@@ -149,3 +149,41 @@ end
     dispose(off)
     dispose(on)
 end
+
+@testset "LangOptions | setLangDefaults" begin
+    # A pristine LangOptions from a default-constructed invocation: no standard selected, so
+    # none of the language flags is on yet.
+    inv = CC.CompilerInvocation(CC.LibClangEx.clang_CompilerInvocation_create())
+    lo = CC.getLangOpts(inv)
+    triple = "x86_64-unknown-linux-gnu"
+
+    @test CC.hasLangStandard(lo) == false
+    @test CC.getCPlusPlus(lo) == false
+    @test CC.getCPlusPlus11(lo) == false
+
+    # Asking for C++20 turns on exactly the cumulative C++ flags of that standard, which is
+    # the whole point of the call: a LangOptions usable without parsing a cc1 command line.
+    includes = CC.setLangDefaults(lo, CC.CXLanguage_CXX, triple,
+                                  CC.CXLangStandardKind_lang_cxx20)
+    @test includes == String[]        # C++ requires no implicit header
+    @test CC.hasLangStandard(lo)
+    @test CC.getCPlusPlus(lo)
+    @test CC.getCPlusPlus11(lo)
+
+    # The same options object, set to a C standard, comes back out of C++ mode -- so the call
+    # writes the flags rather than only ever setting them.
+    CC.setLangDefaults(lo, CC.CXLanguage_C, triple, CC.CXLangStandardKind_lang_c99)
+    @test CC.hasLangStandard(lo)
+    @test CC.getCPlusPlus(lo) == false
+    @test CC.getCPlusPlus11(lo) == false
+
+    # Leaving the standard unspecified asks clang for the language's own default, and that
+    # resolution is the partial step: two languages have no default at all.
+    inv2 = CC.CompilerInvocation(CC.LibClangEx.clang_CompilerInvocation_create())
+    lo2 = CC.getLangOpts(inv2)
+    CC.setLangDefaults(lo2, CC.CXLanguage_CXX, triple)
+    @test CC.hasLangStandard(lo2)
+    @test CC.getCPlusPlus(lo2)
+    @test_throws AssertionError CC.setLangDefaults(lo2, CC.CXLanguage_Unknown, triple)
+    @test_throws AssertionError CC.setLangDefaults(lo2, CC.CXLanguage_LLVM_IR, triple)
+end

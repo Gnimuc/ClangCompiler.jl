@@ -2083,3 +2083,35 @@ end
     dispose(f)
     dispose(P)
 end
+
+@testset "a new increment invalidates the cached parent map" begin
+    # Regression: ASTContext builds the parent map lazily on the first parent query and
+    # then keeps it. clang never invalidates it, because a translation unit does not
+    # normally grow once built -- the incremental interpreter is exactly the case that
+    # breaks that assumption. Left stale, every node a later increment added is absent from
+    # the map, so getNumParents answers 0 for it and every matcher that consults parents
+    # (hasAncestor/hasParent, and so ExprMutationAnalyzer and its static isUnevaluated)
+    # silently reports nothing rather than failing. `parse` now clears it.
+    #
+    # The partition is warming the cache before the second increment or not: both must give
+    # the same answer, and asserting only the cold case would have missed this entirely.
+    for warm in (false, true)
+        I = create_interpreter(String[])
+        f = DeclFinder(I)
+        ctx = CC.get_ast_context(I)
+        CC.parse(I, "void pmc_first(int a) { (void)a; }")
+        @test f(I, "pmc_first")
+        if warm
+            # a parent query against the first increment, which builds and caches the map
+            @test CC.getNumParents(ctx, CC.getBody(CC.getAsFunction(get_decl(f)))) == 1
+        end
+        CC.reset(f)
+        CC.parse(I, "void pmc_second(int b) { (void)b; }")
+        @test f(I, "pmc_second")
+        body = CC.getBody(CC.getAsFunction(get_decl(f)))
+        # the second increment's body has its FunctionDecl as a parent either way
+        @test CC.getNumParents(ctx, body) == 1
+        dispose(f)
+        dispose(I)
+    end
+end

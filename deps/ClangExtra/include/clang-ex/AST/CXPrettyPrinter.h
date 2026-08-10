@@ -37,6 +37,22 @@ void clang_PrintingPolicy_setSuppressScope(CXPrintingPolicy_ PP, bool Value);
 bool clang_PrintingPolicy_getBool(CXPrintingPolicy_ PP);
 void clang_PrintingPolicy_setBool(CXPrintingPolicy_ PP, bool Value);
 
+// Whether names print fully qualified from the global namespace. This is a printer
+// setting: it qualifies the name as the AST spells it, and does not resolve
+// using-declarations or requalify template arguments the way
+// clang_TypeName_getFullyQualifiedName does.
+bool clang_PrintingPolicy_getFullyQualifiedName(CXPrintingPolicy_ PP);
+void clang_PrintingPolicy_setFullyQualifiedName(CXPrintingPolicy_ PP, bool Value);
+
+// Whether template arguments matching their parameter's default are omitted, printing
+// "std::vector<int>" rather than "std::vector<int, std::allocator<int>>".
+bool clang_PrintingPolicy_getSuppressDefaultTemplateArgs(CXPrintingPolicy_ PP);
+void clang_PrintingPolicy_setSuppressDefaultTemplateArgs(CXPrintingPolicy_ PP, bool Value);
+
+// Whether types print canonically, with sugar (typedefs, using-aliases) stripped.
+bool clang_PrintingPolicy_getPrintCanonicalTypes(CXPrintingPolicy_ PP);
+void clang_PrintingPolicy_setPrintCanonicalTypes(CXPrintingPolicy_ PP, bool Value);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

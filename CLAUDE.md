@@ -66,7 +66,12 @@ Two more traps when running these commands:
   to a file (`julia ... > log 2>&1; echo $?`) and grep the log.
 - **Grep the log for crashes, not just failures.** A segfault prints `signal 11 (2): Segmentation
   fault` (or `EXCEPTION_ACCESS_VIOLATION` on Windows) and never the word "Fail"; a libstdc++
-  assertion prints `SIGABRT`. Include `signal|Segmentation|SIGABRT|EXCEPTION` in triage greps.
+  assertion prints `SIGABRT`. But an abort reaching `Pkg.test()` is reported as
+  `ERROR: Package ClangCompiler errored during testing (received signal: 6)` -- the word
+  SIGABRT never appears, and neither does "Fail", so a run that aborted reads as a clean one
+  with fewer testsets. Include
+  `signal|Segmentation|SIGABRT|EXCEPTION|received signal|Assertion failed` in triage greps,
+  and check the testset count against the previous run.
 - A test file can pass standalone and still crash inside the full suite (different AST state from
   earlier files). Always run `Pkg.test()` before committing.
 

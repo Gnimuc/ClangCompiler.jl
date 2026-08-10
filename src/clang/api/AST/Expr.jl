@@ -1765,6 +1765,24 @@ function getNumElements(x::AbstractExtVectorElementExpr)
 end
 
 # OpaqueValueExpr
+"""
+    OpaqueValueExpr(ctx::AbstractASTContext, loc::SourceLocation, ty::QualType,
+                    vk::CXExprValueKind, ok::CXExprObjectKind=LibClangEx.CXExprObjectKind_OK_Ordinary) -> OpaqueValueExpr
+Build a placeholder expression of type `ty` and value category `vk`, standing in for a value
+no expression exists for.
+
+This is what drives overload resolution from outside the parser: one of these per argument
+type feeds [`AddOverloadCandidate`](@ref), whose viability check reads only the operand
+types. The node is allocated in `ctx`'s arena, so it lives as long as the context and there
+is nothing to `dispose`.
+"""
+function OpaqueValueExpr(ctx::AbstractASTContext, loc::SourceLocation, ty::QualType,
+                         vk::CXExprValueKind,
+                         ok::CXExprObjectKind=LibClangEx.CXExprObjectKind_OK_Ordinary)
+    @check_ptrs ctx ty
+    return OpaqueValueExpr(clang_OpaqueValueExpr_create(ctx, loc, ty, vk, ok))
+end
+
 function getLocation(x::AbstractOpaqueValueExpr)
     @check_ptrs x
     return SourceLocation(clang_OpaqueValueExpr_getLocation(x))

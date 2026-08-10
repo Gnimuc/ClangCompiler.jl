@@ -4,6 +4,10 @@
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/FrontendOptions.h"
 
+void clang_FrontendAction_dispose(CXFrontendAction FA) {
+  delete reinterpret_cast<clang::FrontendAction *>(FA);
+}
+
 // Compiler instance access
 CXCompilerInstance clang_FrontendAction_getCompilerInstance(CXFrontendAction FA) {
   return reinterpret_cast<CXCompilerInstance>(&reinterpret_cast<clang::FrontendAction *>(FA)->getCompilerInstance());

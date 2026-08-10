@@ -33,6 +33,10 @@ function DiagnosticsEngine(opts::DiagnosticOptions, client::AbstractDiagnosticCo
     ids = create_diagnostic_ids()
     engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client)
     @assert engine != C_NULL "Failed to create DiagnosticsEngine"
+    # The table was minted here and nothing else will ever hold this reference, so give it
+    # up now that the engine holds one of its own. It is freed when the engine is. `opts` is
+    # the caller's and is left alone.
+    clang_DiagnosticIDs_dispose(ids)
     return DiagnosticsEngine(engine)
 end
 
@@ -53,6 +57,11 @@ function create_diagnostics_engine()
     should_own_client = true
     engine = clang_DiagnosticsEngine_create(ids, opts, client, should_own_client)
     @assert engine != C_NULL "Failed to create DiagnosticsEngine"
+    # Everything above was minted here and no caller ever sees it, so give up the references
+    # this function holds. The printer and the engine keep their own, so the table and the
+    # options stay alive exactly as long as the engine does and are freed with it.
+    clang_DiagnosticIDs_dispose(ids)
+    dispose(opts)
     return engine
 end
 

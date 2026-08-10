@@ -1,3 +1,6 @@
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXCodeGenABITypes.h)
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXCodeGenAction.h)
 target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXModuleBuilder.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXBackendUtil.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXCGFunctionInfo.h)
+target_sources(clangex PRIVATE ${CMAKE_CURRENT_LIST_DIR}/CXObjectFilePCHContainerOperations.h)

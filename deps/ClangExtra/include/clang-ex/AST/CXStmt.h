@@ -52,6 +52,9 @@ CXSourceLocation_ clang_Stmt_getEndLoc(CXStmt S);
 
 CXSourceRange_ clang_Stmt_getSourceRange(CXStmt S);
 
+// The tree clang_Stmt_dump writes to stderr, captured as a string instead.
+CXString clang_Stmt_dumpToString(CXStmt S, CXASTContext Ctx);
+
 void clang_Stmt_dump(CXStmt S);
 
 // children: two-call protocol. getNumChildren walks Stmt::children() to count

@@ -55,6 +55,29 @@ dispose(x::CxxInterpreter) = dispose(x.interp)
 
 get_instance(x::CxxInterpreter) = getCompilerInstance(x.interp)
 get_ast_context(x::CxxInterpreter) = getASTContext(get_instance(x))
+"""
+    get_codegen_module(x::CxxInterpreter) -> CodeGenModule
+
+Return the `CodeGenModule` the interpreter is currently emitting into.
+
+!!! warning "Valid for one increment only"
+    The incremental interpreter starts a fresh module per increment, so this handle belongs
+    to the increment that is current *now* and is left dangling by the next
+    [`parse`](@ref). Using a stale one does not fail cleanly: the CodeGenTypes it reaches
+    is freed memory, and the first lookup into its interned `CGFunctionInfo` set walks it
+    and segfaults.
+
+    Take it after the code you care about has been parsed, and take it again after every
+    later parse rather than holding on to one:
+
+    ```julia
+    parse(I, "int f(int a) { return a; }")
+    cgm = get_codegen_module(I)            # belongs to this increment
+    fi  = arrangeFreeFunctionType(cgm, getType(fd))
+    ```
+
+    The handle is non-NULL even when stale, so `is_null_handle` does not detect this.
+"""
 get_codegen_module(x::CxxInterpreter) = CGM(getCodeGen(x.interp))
 get_parser(x::CxxInterpreter) = getParser(x.interp)
 get_sema(x::CxxInterpreter) = getSema(get_parser(x))
@@ -93,7 +116,21 @@ the increment created stay in the AST and stay findable, and can report `isInval
 from the lookup map. So neither the counters nor per-declaration validity substitutes for
 the unit: what the unit says is that this increment will not be code-generated or executed.
 """
-parse(x::CxxInterpreter, code::String) = Parse(x.interp, code)
+function parse(x::CxxInterpreter, code::String)
+    ptu = Parse(x.interp, code)
+    # Drop the cached parent map. `ASTContext` builds it lazily on the first parent query
+    # and then keeps it, and clang never invalidates it here because a translation unit does
+    # not normally grow after it is built -- an incremental interpreter is exactly the case
+    # that breaks that assumption. Left alone, every node this increment added has no entry,
+    # so `getNumParents` answers 0 for it and every matcher that consults parents
+    # (`hasAncestor`, `hasParent`, and so `ExprMutationAnalyzer` and its static
+    # `isUnevaluated`) silently reports nothing rather than failing.
+    #
+    # The map rebuilds lazily on the next query, so the cost is only paid by callers that
+    # ask for parents, and it is paid once per increment rather than once per interpreter.
+    clear(getParentMapContext(getASTContext(get_instance(x))))
+    return ptu
+end
 execute(x::CxxInterpreter, tu::PartialTranslationUnit) = Execute(x.interp, tu)
 compile(x::CxxInterpreter, code::String) = execute(x, parse(x, code))
 

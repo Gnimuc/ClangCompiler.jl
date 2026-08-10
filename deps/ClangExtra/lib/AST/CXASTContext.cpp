@@ -107,6 +107,28 @@ CXDecl clang_ASTContext_getParentOfDeclAsDecl(CXASTContext Ctx, CXDecl D, unsign
       const_cast<clang::Decl *>(Parents[I].get<clang::Decl>()));
 }
 
+CXDynTypedNode clang_ASTContext_getParentOfStmtAsNode(CXASTContext Ctx, CXStmt S,
+                                                      unsigned I) {
+  clang::DynTypedNodeList Parents =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->getParents(
+          *reinterpret_cast<clang::Stmt *>(S));
+  if (I >= Parents.size())
+    return nullptr;
+  return reinterpret_cast<CXDynTypedNode>(
+      std::make_unique<clang::DynTypedNode>(Parents[I]).release());
+}
+
+CXDynTypedNode clang_ASTContext_getParentOfDeclAsNode(CXASTContext Ctx, CXDecl D,
+                                                      unsigned I) {
+  clang::DynTypedNodeList Parents =
+      reinterpret_cast<clang::ASTContext *>(Ctx)->getParents(
+          *reinterpret_cast<clang::Decl *>(D));
+  if (I >= Parents.size())
+    return nullptr;
+  return reinterpret_cast<CXDynTypedNode>(
+      std::make_unique<clang::DynTypedNode>(Parents[I]).release());
+}
+
 // getPrintingPolicy
 // setPrintingPolicy
 
@@ -2096,7 +2118,10 @@ bool clang_ASTContext_isNearlyEmpty(CXASTContext Ctx, CXCXXRecordDecl RD) {
       reinterpret_cast<clang::CXXRecordDecl *>(RD));
 }
 
-// getVTableContext
+CXVTableContextBase clang_ASTContext_getVTableContext(CXASTContext Ctx) {
+  return reinterpret_cast<CXVTableContextBase>(
+      reinterpret_cast<clang::ASTContext *>(Ctx)->getVTableContext());
+}
 
 CXMangleContext clang_ASTContext_createMangleContext(CXASTContext Ctx, CXTargetInfo_ T) {
   return reinterpret_cast<CXMangleContext>(reinterpret_cast<clang::ASTContext *>(Ctx)->createMangleContext(

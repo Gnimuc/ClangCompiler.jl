@@ -201,6 +201,15 @@ CXFunctionDecl clang_Decl_getAsFunction(CXDecl DC) {
   return reinterpret_cast<CXFunctionDecl>(reinterpret_cast<clang::Decl *>(DC)->getAsFunction());
 }
 
+CXString clang_Decl_dumpToString(CXDecl DC, bool Deserialize,
+                                 CXASTDumpOutputFormat OutputFormat) {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  reinterpret_cast<clang::Decl *>(DC)->dump(
+      OS, Deserialize, static_cast<clang::ASTDumpOutputFormat>(OutputFormat));
+  return extra::makeCXString(OS.str());
+}
+
 void clang_Decl_dump(CXDecl DC) { reinterpret_cast<clang::Decl *>(DC)->dump(); }
 
 void clang_Decl_dumpColor(CXDecl DC) { reinterpret_cast<clang::Decl *>(DC)->dumpColor(); }

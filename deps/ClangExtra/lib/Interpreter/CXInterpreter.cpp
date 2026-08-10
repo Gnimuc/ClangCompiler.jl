@@ -1,4 +1,7 @@
 #include "clang-ex/Interpreter/CXInterpreter.h"
+#include "utils.h"
+#include "clang/AST/DeclCXX.h"
+#include "clang/AST/GlobalDecl.h"
 #include "clang/Frontend/CompilerInstance.h"
 // hacks
 // #include "clang/Interpreter/Interpreter.h"
@@ -6,7 +9,30 @@
 #include "Interpreter/Interpreter.h"
 
 #include <memory>
+#include <string>
 #include <vector>
+
+namespace {
+
+// The four fallible void methods return their llvm::Error's message, empty on success.
+// Consuming the Error is mandatory: a destroyed-unconsumed Error aborts under the assertion
+// builds build_local.jl supports.
+CXString takeErrorMessage(llvm::Error Err) {
+  if (!Err)
+    return extra::makeCXString(std::string());
+  return extra::makeCXString(llvm::toString(std::move(Err)));
+}
+
+LLVMOrcExecutorAddress symbolAddressOf(CXInterpreter Interp, clang::GlobalDecl GD) {
+  auto Addr = reinterpret_cast<clang::Interpreter *>(Interp)->getSymbolAddress(GD);
+  if (auto E = Addr.takeError()) {
+    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
+    return 0;
+  }
+  return Addr->getValue();
+}
+
+} // namespace
 
 CXIncrementalCompilerBuilder clang_IncrementalCompilerBuilder_create(void) {
   auto CB = std::make_unique<clang::IncrementalCompilerBuilder>();
@@ -115,19 +141,15 @@ CXPartialTranslationUnit clang_Interpreter_Parse(CXInterpreter Interp, const cha
   return reinterpret_cast<CXPartialTranslationUnit>(&*PTU);
 }
 
-void clang_Interpreter_Execute(CXInterpreter Interp, CXPartialTranslationUnit PTU) {
-  auto Err = reinterpret_cast<clang::Interpreter *>(Interp)->Execute(
-      *reinterpret_cast<clang::PartialTranslationUnit *>(PTU));
-  if (Err)
-    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
+CXString clang_Interpreter_Execute(CXInterpreter Interp, CXPartialTranslationUnit PTU) {
+  return takeErrorMessage(reinterpret_cast<clang::Interpreter *>(Interp)->Execute(
+      *reinterpret_cast<clang::PartialTranslationUnit *>(PTU)));
 }
 
-void clang_Interpreter_ParseAndExecute(CXInterpreter Interp, const char *Code,
-                                       CXValue Result) {
-  auto Err = reinterpret_cast<clang::Interpreter *>(Interp)->ParseAndExecute(
-      llvm::StringRef(Code), reinterpret_cast<clang::Value *>(Result));
-  if (Err)
-    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
+CXString clang_Interpreter_ParseAndExecute(CXInterpreter Interp, const char *Code,
+                                           CXValue Result) {
+  return takeErrorMessage(reinterpret_cast<clang::Interpreter *>(Interp)->ParseAndExecute(
+      llvm::StringRef(Code), reinterpret_cast<clang::Value *>(Result)));
 }
 
 LLVMOrcExecutorAddress clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
@@ -141,16 +163,13 @@ LLVMOrcExecutorAddress clang_Interpreter_CompileDtorCall(CXInterpreter Interp,
   return Addr->getValue();
 }
 
-void clang_Interpreter_Undo(CXInterpreter Interp, unsigned int N) {
-  auto Err = reinterpret_cast<clang::Interpreter *>(Interp)->Undo(N);
-  if (Err)
-    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
+CXString clang_Interpreter_Undo(CXInterpreter Interp, unsigned int N) {
+  return takeErrorMessage(reinterpret_cast<clang::Interpreter *>(Interp)->Undo(N));
 }
 
-void clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name) {
-  auto Err = reinterpret_cast<clang::Interpreter *>(Interp)->LoadDynamicLibrary(name);
-  if (Err)
-    llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(Err)) << "\n";
+CXString clang_Interpreter_LoadDynamicLibrary(CXInterpreter Interp, const char *name) {
+  return takeErrorMessage(
+      reinterpret_cast<clang::Interpreter *>(Interp)->LoadDynamicLibrary(name));
 }
 
 LLVMOrcExecutorAddress clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
@@ -162,6 +181,28 @@ LLVMOrcExecutorAddress clang_Interpreter_getSymbolAddress(CXInterpreter Interp,
     return 0;
   }
   return Addr->getValue();
+}
+
+LLVMOrcExecutorAddress clang_Interpreter_getSymbolAddressFromDecl(CXInterpreter Interp,
+                                                                  CXNamedDecl D) {
+  return symbolAddressOf(Interp,
+                         clang::GlobalDecl(reinterpret_cast<clang::NamedDecl *>(D)));
+}
+
+LLVMOrcExecutorAddress
+clang_Interpreter_getSymbolAddressFromCtorDecl(CXInterpreter Interp, CXCXXConstructorDecl D,
+                                               CXCXXCtorType CtorKind) {
+  return symbolAddressOf(
+      Interp, clang::GlobalDecl(reinterpret_cast<clang::CXXConstructorDecl *>(D),
+                                static_cast<clang::CXXCtorType>(CtorKind)));
+}
+
+LLVMOrcExecutorAddress
+clang_Interpreter_getSymbolAddressFromDtorDecl(CXInterpreter Interp, CXCXXDestructorDecl D,
+                                               CXCXXDtorType DtorKind) {
+  return symbolAddressOf(
+      Interp, clang::GlobalDecl(reinterpret_cast<clang::CXXDestructorDecl *>(D),
+                                static_cast<clang::CXXDtorType>(DtorKind)));
 }
 
 LLVMOrcExecutorAddress

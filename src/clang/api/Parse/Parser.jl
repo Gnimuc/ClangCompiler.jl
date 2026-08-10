@@ -152,3 +152,18 @@ function getTypeAnnotation(x::Token)
     @check_ptrs x
     return QualType(clang_Parser_getTypeAnnotation(x))
 end
+
+"""
+    SkipUntil(x::AbstractParser, toks::AbstractVector{<:Integer}; flags::Integer=0) -> Bool
+Skip tokens until one of `toks` is reached, returning whether one was found.
+
+This is how a driver of the incremental parse loop recovers after a failed increment:
+without it the leftover tokens of the bad input are read as the start of the next one and
+the errors cascade. `flags` is an OR of `CXSkipUntilFlags` values; `0` skips to the token
+and consumes it.
+"""
+function SkipUntil(x::AbstractParser, toks::AbstractVector{<:Integer}; flags::Integer=0)
+    @check_ptrs x
+    buf = UInt32.(toks)
+    return clang_Parser_SkipUntil(x, buf, length(buf), flags)
+end

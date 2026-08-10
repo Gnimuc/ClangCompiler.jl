@@ -111,6 +111,15 @@ getAsString(x::QualType) = get_string(clang_QualType_getAsString(x))
 
 dump(x::QualType) = clang_QualType_dump(x)
 
+"""
+    dumpToString(x::QualType, ctx::AbstractASTContext) -> String
+Return the type dump [`dump`](@ref) writes to stderr, as a string.
+"""
+function dumpToString(x::QualType, ctx::AbstractASTContext)
+    @check_ptrs x ctx
+    return get_string(clang_QualType_dumpToString(x, ctx))
+end
+
 getCanonicalType(x::QualType) = QualType(clang_QualType_getCanonicalType(x))
 
 getLocalUnqualifiedType(x::QualType) = QualType(clang_QualType_getLocalUnqualifiedType(x))
@@ -4098,6 +4107,27 @@ null `QualType` prints `"NULL TYPE"`, matching [`getAsString`](@ref).
 function printAsString(x::QualType, ctx::ASTContext, placeholder::AbstractString="", indentation::Integer=0)
     @check_ptrs ctx
     return get_string(clang_QualType_printAsString(x, ctx, placeholder, indentation))
+end
+
+"""
+    getAsString(x::QualType, policy::AbstractPrintingPolicy) -> String
+Return `x` spelled under `policy` rather than under an `ASTContext`'s own printing policy.
+This is what makes `SuppressDefaultTemplateArgs` and `PrintCanonicalTypes` reachable.
+"""
+function getAsString(x::QualType, policy::AbstractPrintingPolicy)
+    @check_ptrs policy
+    return get_string(clang_QualType_getAsStringWithPolicy(x, policy))
+end
+
+"""
+    printAsString(x::QualType, policy::AbstractPrintingPolicy, placeholder::AbstractString="",
+                  indentation::Integer=0) -> String
+Return `x` printed under `policy` rather than under an `ASTContext`'s own printing policy.
+`placeholder` and `indentation` mean what they do in the `ASTContext` method above.
+"""
+function printAsString(x::QualType, policy::AbstractPrintingPolicy, placeholder::AbstractString="", indentation::Integer=0)
+    @check_ptrs policy
+    return get_string(clang_QualType_printAsStringWithPolicy(x, policy, placeholder, indentation))
 end
 
 """

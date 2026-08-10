@@ -6,6 +6,37 @@ function takeModule(x::T) where {T<:AbstractCodeGenAction}
     return LLVM.Module(m)
 end
 
+"""
+    takeLLVMContext(x::AbstractCodeGenAction) -> LLVM.Context
+The LLVM context the action is using, with ownership handed back to the caller.
+
+Every constructor in this file supplies the context, so what comes back is that same
+context: the caller already owns it, and this only stops the action from claiming it too.
+Disposing it twice — once through the returned object and once through the one passed in —
+is a double free.
+"""
+function takeLLVMContext(x::AbstractCodeGenAction)
+    @check_ptrs x
+    ctx = clang_CodeGenAction_takeLLVMContext(x)
+    @assert ctx != C_NULL "the action has no LLVM context"
+    return LLVM.Context(ctx)
+end
+
+"""
+    getCodeGenerator(x::AbstractCodeGenAction) -> Union{Nothing,CodeGenerator}
+The action's code generator, which is the way from an action-driven compile into the whole
+`CodeGenerator`/`CodeGenModule` surface without going through an `Interpreter`.
+
+`nothing` until the action has created its backend consumer, which happens inside
+`CreateASTConsumer` — i.e. only once `ExecuteAction` has started it. The result belongs to
+the action; never `dispose` it.
+"""
+function getCodeGenerator(x::AbstractCodeGenAction)
+    @check_ptrs x
+    cg = clang_CodeGenAction_getCodeGenerator(x)
+    return cg == C_NULL ? nothing : CodeGenerator(cg)
+end
+
 dispose(x::AbstractCodeGenAction) = clang_CodeGenAction_dispose(x)
 
 # LLVMOnlyAction

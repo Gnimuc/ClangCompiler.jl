@@ -115,6 +115,72 @@ CXString clang_FileManager_makeAbsolutePath(CXFileManager FM, const char *Path,
 CXString clang_FileManager_getCanonicalNameForFile(CXFileManager FM, CXFileEntryRef File);
 CXString clang_FileManager_getCanonicalNameForDir(CXFileManager FM, CXDirectoryEntryRef Dir);
 
+// llvm::vfs — the virtual file system a FileManager reads through
+//
+// Every handle in this cluster points at a heap-allocated
+// `llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>`: the box is what the caller owns and
+// disposes, and disposing it drops one reference rather than destroying a file system some
+// FileManager is still reading through. That is what makes the ownership answerable at this
+// boundary at all — a bare `vfs::FileSystem *` would say nothing about who keeps it alive.
+//
+// The three handles are distinct C types so a wrapper cannot hand an overlay where an
+// in-memory file system is meant; `_castToFileSystem` is the upcast, and it returns the
+// SAME box rather than a new reference, so it must not be disposed separately.
+//
+// Together with clang_FileManager_setVirtualFileSystem this is the general form of
+// clang_CompilerInstance_createFileManagerWithVOFS4PCH, which does one hardcoded
+// overlay-a-PCH-buffer-on-the-real-filesystem arrangement and nothing else: build an
+// InMemoryFileSystem with as many files as the session needs, push it onto an overlay over
+// the real file system, and install that.
+
+// The physical file system, as a fresh owned reference.
+CXVirtualFileSystem clang_vfs_getRealFileSystem(void);
+
+void clang_VirtualFileSystem_dispose(CXVirtualFileSystem FS);
+
+// Whether a path resolves to something in this file system. The convenience predicate
+// clang's own FileManager reaches for, and the cheapest way to observe that an overlay is
+// wired up the way the caller meant.
+bool clang_VirtualFileSystem_exists(CXVirtualFileSystem FS, const char *Path);
+
+CXInMemoryFileSystem clang_InMemoryFileSystem_create(void);
+
+void clang_InMemoryFileSystem_dispose(CXInMemoryFileSystem FS);
+
+// Adds `Path` with the given contents, taking ownership of the buffer. Returns false when
+// a file of that name is already present with different contents, in which case the buffer
+// is dropped rather than installed.
+bool clang_InMemoryFileSystem_addFile(CXInMemoryFileSystem FS, const char *Path,
+                                      int64_t ModificationTime,
+                                      LLVMMemoryBufferRef Buffer);
+
+// A one-entry-per-line rendering of the tree, which is how a caller checks what was added.
+CXString clang_InMemoryFileSystem_toString(CXInMemoryFileSystem FS);
+
+// Upcast. Borrowed: the same reference the argument holds, not a new one.
+CXVirtualFileSystem clang_InMemoryFileSystem_castToFileSystem(CXInMemoryFileSystem FS);
+
+// An overlay stack whose bottom layer is `Base`. Later pushes shadow earlier ones.
+CXOverlayFileSystem clang_OverlayFileSystem_create(CXVirtualFileSystem Base);
+
+void clang_OverlayFileSystem_dispose(CXOverlayFileSystem FS);
+
+void clang_OverlayFileSystem_pushOverlay(CXOverlayFileSystem FS,
+                                         CXVirtualFileSystem Overlay);
+
+// Upcast. Borrowed, exactly as clang_InMemoryFileSystem_castToFileSystem.
+CXVirtualFileSystem clang_OverlayFileSystem_castToFileSystem(CXOverlayFileSystem FS);
+
+// The file system this manager reads through, as a fresh owned reference — clang's
+// getVirtualFileSystemPtr, not the reference-returning getVirtualFileSystem, because a bare
+// reference could outlive the manager. Release it with clang_VirtualFileSystem_dispose.
+CXVirtualFileSystem clang_FileManager_getVirtualFileSystem(CXFileManager FM);
+
+// Installs a different file system. The manager keeps the caches it has already filled, so
+// this belongs before the first lookup: a file resolved through the old file system stays
+// resolved that way.
+void clang_FileManager_setVirtualFileSystem(CXFileManager FM, CXVirtualFileSystem FS);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

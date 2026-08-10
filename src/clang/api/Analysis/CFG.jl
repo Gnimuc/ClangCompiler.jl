@@ -879,6 +879,146 @@ function setAddEHEdges(x::AbstractCFGBuildOptions, val::Bool=true)
     return clang_CFGBuildOptions_setAddEHEdges(x, val)
 end
 
+# The seven element-producing booleans that [`buildCFG`](@ref) and
+# [`buildCFGWithOptions`](@ref) take as trailing arguments and overwrite. Setting them on an
+# options object handed to those two therefore changes nothing; they exist for the
+# `AnalysisDeclContext` path, where [`getCFGBuildOptions`](@ref) hands back the borrowed
+# options a context is about to build its CFG from and nothing overwrites them. Each maps
+# onto the same-named `clang::CFG::BuildOptions` field, and clang's default is `false` for
+# all seven.
+"""
+    getAddInitializers(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddInitializers` build option (clang's default is `false`).
+"""
+function getAddInitializers(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddInitializers(x)
+end
+
+"""
+    setAddInitializers(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddInitializers` build option, which makes the builder emit an `Initializer`
+element per member/base initializer of a constructor.
+"""
+function setAddInitializers(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddInitializers(x, val)
+end
+
+"""
+    getAddImplicitDtors(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddImplicitDtors` build option (clang's default is `false`).
+"""
+function getAddImplicitDtors(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddImplicitDtors(x)
+end
+
+"""
+    setAddImplicitDtors(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddImplicitDtors` build option, which makes the builder emit the implicit
+destructor calls (`AutomaticObjectDtor`, `BaseDtor`, `MemberDtor`, `DeleteDtor`).
+"""
+function setAddImplicitDtors(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddImplicitDtors(x, val)
+end
+
+"""
+    getAddLifetime(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddLifetime` build option (clang's default is `false`).
+"""
+function getAddLifetime(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddLifetime(x)
+end
+
+"""
+    setAddLifetime(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddLifetime` build option, which makes the builder emit a `LifetimeEnds` element
+where each automatic object's lifetime ends.
+"""
+function setAddLifetime(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddLifetime(x, val)
+end
+
+"""
+    getAddLoopExit(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddLoopExit` build option (clang's default is `false`).
+"""
+function getAddLoopExit(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddLoopExit(x)
+end
+
+"""
+    setAddLoopExit(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddLoopExit` build option, which makes the builder emit a `LoopExit` element where
+control leaves each loop.
+"""
+function setAddLoopExit(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddLoopExit(x, val)
+end
+
+"""
+    getAddTemporaryDtors(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddTemporaryDtors` build option (clang's default is `false`).
+"""
+function getAddTemporaryDtors(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddTemporaryDtors(x)
+end
+
+"""
+    setAddTemporaryDtors(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddTemporaryDtors` build option, which makes the builder emit a `TemporaryDtor`
+element per destroyed temporary.
+"""
+function setAddTemporaryDtors(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddTemporaryDtors(x, val)
+end
+
+"""
+    getAddScopes(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddScopes` build option (clang's default is `false`).
+"""
+function getAddScopes(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddScopes(x)
+end
+
+"""
+    setAddScopes(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddScopes` build option, which makes the builder bracket each scope with
+`ScopeBegin` / `ScopeEnd` elements.
+"""
+function setAddScopes(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddScopes(x, val)
+end
+
+"""
+    getAddCXXNewAllocator(x::AbstractCFGBuildOptions) -> Bool
+Read back the `AddCXXNewAllocator` build option (clang's default is `false`).
+"""
+function getAddCXXNewAllocator(x::AbstractCFGBuildOptions)
+    @check_ptrs x
+    return clang_CFGBuildOptions_getAddCXXNewAllocator(x)
+end
+
+"""
+    setAddCXXNewAllocator(x::AbstractCFGBuildOptions, val::Bool=true)
+Set the `AddCXXNewAllocator` build option, which makes the builder emit a `NewAllocator`
+element for the allocation half of each `new` expression.
+"""
+function setAddCXXNewAllocator(x::AbstractCFGBuildOptions, val::Bool=true)
+    @check_ptrs x
+    return clang_CFGBuildOptions_setAddCXXNewAllocator(x, val)
+end
+
 """
     getAddStaticInitBranches(x::AbstractCFGBuildOptions) -> Bool
 Read back the `AddStaticInitBranches` build option (clang's default is `false`).

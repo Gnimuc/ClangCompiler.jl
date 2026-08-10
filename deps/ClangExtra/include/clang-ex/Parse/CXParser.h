@@ -76,6 +76,25 @@ bool clang_Parser_ParseFirstTopLevelDecl(CXParser P, CXDeclGroupRef *Result,
 bool clang_Parser_ParseTopLevelDecl(CXParser P, CXDeclGroupRef *Result,
                                     unsigned *ImportState);
 
+// clang/Parse/Parser.h: enum Parser::SkipUntilFlags. A bit set, so these are OR-able and
+// the mirror is a plain unsigned parameter rather than an enum-typed one.
+typedef enum CXSkipUntilFlags {
+  CXSkipUntilFlags_StopAtSemi = 1 << 0,
+  CXSkipUntilFlags_StopBeforeMatch = 1 << 1,
+  CXSkipUntilFlags_StopAtCodeCompletion = 1 << 2
+} CXSkipUntilFlags;
+
+// Skip tokens until one of Toks is reached, returning whether one was found. This is how a
+// driver of the incremental loop above recovers after a failed increment: without it the
+// leftover tokens of the bad input are read as the start of the next one and the errors
+// cascade.
+//
+// Toks holds NumToks tok::TokenKind values (the same currency CXTokenKinds.h mirrors).
+// Flags is an OR of CXSkipUntilFlags; 0 means skip to the token unconditionally and consume
+// it.
+bool clang_Parser_SkipUntil(CXParser P, const unsigned *Toks, unsigned NumToks,
+                            unsigned Flags);
+
 LLVM_CLANG_C_EXTERN_C_END
 
 #endif

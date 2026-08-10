@@ -4,6 +4,9 @@
 #include "clang/Basic/LangStandard.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/TargetParser/Triple.h"
+#include <string>
+#include <vector>
 
 bool clang_LangOptions_isCompilingModule(CXLangOptions LO) {
   return reinterpret_cast<clang::LangOptions *>(LO)->isCompilingModule();
@@ -66,6 +69,17 @@ bool clang_LangOptions_getCPlusPlus11(CXLangOptions LO) {
 bool clang_LangOptions_hasLangStandard(CXLangOptions LO) {
   return reinterpret_cast<clang::LangOptions *>(LO)->LangStd !=
          clang::LangStandard::lang_unspecified;
+}
+
+CXStringSet *clang_LangOptions_setLangDefaults(CXLangOptions LO, CXLanguage Lang,
+                                               const char *Triple,
+                                               CXLangStandardKind LangStd) {
+  std::vector<std::string> Includes;
+  clang::LangOptions::setLangDefaults(
+      *reinterpret_cast<clang::LangOptions *>(LO), static_cast<clang::Language>(Lang),
+      llvm::Triple(llvm::StringRef(Triple)), Includes,
+      static_cast<clang::LangStandard::Kind>(LangStd));
+  return extra::makeCXStringSet(Includes);
 }
 
 bool clang_LangOptions_assumeFunctionsAreConvergent(CXLangOptions LO) {

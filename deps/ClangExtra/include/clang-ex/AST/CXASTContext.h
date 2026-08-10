@@ -101,6 +101,16 @@ unsigned clang_ASTContext_getNumParentsOfDecl(CXASTContext Ctx, CXDecl D);
 CXStmt clang_ASTContext_getParentOfDeclAsStmt(CXASTContext Ctx, CXDecl D, unsigned I);
 CXDecl clang_ASTContext_getParentOfDeclAsDecl(CXASTContext Ctx, CXDecl D, unsigned I);
 
+// The same parent, whatever its kind -- the answer the two arm-split accessors above cannot
+// give. Copying the node out of the DynTypedNodeList is what makes a Type, TypeLoc or
+// NestedNameSpecifierLoc parent readable at all: those kinds live inside the node, and the
+// list the node came from is a temporary (clang-ex/AST/CXASTTypeTraits.h says why).
+// OWNED: release the result with clang_DynTypedNode_dispose. NULL when I is out of range.
+CXDynTypedNode clang_ASTContext_getParentOfStmtAsNode(CXASTContext Ctx, CXStmt S,
+                                                      unsigned I);
+CXDynTypedNode clang_ASTContext_getParentOfDeclAsNode(CXASTContext Ctx, CXDecl D,
+                                                      unsigned I);
+
 // The context's own policy -- the one every printer taking a CXASTContext reads. This is a
 // BORROWED interior pointer into a by-value member (MARSHALLING.md §14 does not apply: it is
 // a plain member, not an element of a container clang can reallocate), so it has no dispose,
@@ -1296,7 +1306,12 @@ int64_t clang_ASTContext_getMemberPointerPathAdjustment(CXASTContext Ctx, CXAPVa
 
 bool clang_ASTContext_isNearlyEmpty(CXASTContext Ctx, CXCXXRecordDecl RD);
 
-// getVTableContext
+// The context's vtable-layout builder, created on first ask (clang-ex/AST/CXVTableBuilder.h
+// is the accessor surface). BORROWED: the context owns it through a std::unique_ptr member,
+// so it lives exactly as long as the context and has no dispose. Which ABI's builder it is
+// is readable with clang_VTableContextBase_isMicrosoft; everything the shim wraps beyond
+// that needs the Itanium one.
+CXVTableContextBase clang_ASTContext_getVTableContext(CXASTContext Ctx);
 
 CXMangleContext clang_ASTContext_createMangleContext(CXASTContext Ctx, CXTargetInfo_ T);
 

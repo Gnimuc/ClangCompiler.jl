@@ -5016,3 +5016,41 @@ end
     dispose(f)
     dispose(I)
 end
+
+@testset "CorrectTypo | a near miss is suggested and a wild name is not" begin
+    I = create_interpreter(String[])
+    sema = CC.get_sema(I)
+    ctx = CC.getASTContext(sema)
+    CC.parse(I, "int typo_probe_variable = 1;")
+
+    pp = CC.getPreprocessor(sema)
+    loc = CC.SourceLocation()
+    # one deletion away from the declared name
+    info = CC.DeclarationNameInfo(CC.DeclarationName(CC.getIdentifierInfo(pp, "typo_probe_variabl")), loc)
+    ss = CC.CXXScopeSpec()
+    ccc = CC.CorrectionCandidateCallback(CC.LibClangEx.CXCorrectionCandidateCallbackKind_Default, sema)
+    tc = CC.CorrectTypo(sema, info, CC.LibClangEx.CXLookupNameKind_LookupOrdinaryName,
+                        CC.getCurScope(sema), ss, ccc)
+    # the suggestion is the real declaration, reached by name rather than by luck
+    @test !CC.isEmpty(tc)
+    @test CC.getAsString(tc, CC.getLangOpts(sema)) == "typo_probe_variable"
+    # one character edit; the unnormalized form is the same distance weighted, so it is a
+    # multiple of it rather than an independent number
+    @test CC.getEditDistance(tc) == 1
+    @test CC.getEditDistance(tc, false) == 100
+    @test CC.getNameAsString(CC.getCorrectionDecl(tc)) == "typo_probe_variable"
+
+    # a name sharing nothing with any declaration has no correction to offer
+    info2 = CC.DeclarationNameInfo(CC.DeclarationName(CC.getIdentifierInfo(pp, "zzqqxx_nothing_like_this")), loc)
+    tc2 = CC.CorrectTypo(sema, info2, CC.LibClangEx.CXLookupNameKind_LookupOrdinaryName,
+                         CC.getCurScope(sema), ss, ccc)
+    @test CC.isEmpty(tc2)
+
+    dispose(tc2)
+    dispose(tc)
+    dispose(ccc)
+    dispose(ss)
+    dispose(info2)
+    dispose(info)
+    dispose(I)
+end

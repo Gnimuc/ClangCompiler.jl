@@ -5,6 +5,7 @@
 #include "clang-ex/Basic/CXSpecifiers.h"
 
 #include "clang-ex/CXTypes.h"
+#include "clang-ex/AST/CXASTDumperUtils.h"
 #include "clang-c/CXString.h"
 #include "clang-c/ExternC.h"
 #include "clang-c/Platform.h"
@@ -179,6 +180,12 @@ CXTemplateDecl clang_Decl_getDescribedTemplate(CXDecl DC);
 CXTemplateParameterList clang_Decl_getDescribedTemplateParams(CXDecl DC);
 
 CXFunctionDecl clang_Decl_getAsFunction(CXDecl DC);
+
+// The tree clang_Decl_dump writes to stderr, captured as a string instead. Deserialize
+// pulls in declarations still in an external AST source; ADOF_JSON renders the same nodes
+// as JSON, which is what makes an AST dump machine-readable without wrapping JSONNodeDumper.
+CXString clang_Decl_dumpToString(CXDecl DC, bool Deserialize,
+                                 CXASTDumpOutputFormat OutputFormat);
 
 void clang_Decl_dump(CXDecl DC);
 

@@ -40,3 +40,27 @@ bool clang_PrintingPolicy_getBool(CXPrintingPolicy_ PP) {
 void clang_PrintingPolicy_setBool(CXPrintingPolicy_ PP, bool Value) {
   reinterpret_cast<clang::PrintingPolicy *>(PP)->Bool = Value;
 }
+
+bool clang_PrintingPolicy_getFullyQualifiedName(CXPrintingPolicy_ PP) {
+  return reinterpret_cast<clang::PrintingPolicy *>(PP)->FullyQualifiedName;
+}
+
+void clang_PrintingPolicy_setFullyQualifiedName(CXPrintingPolicy_ PP, bool Value) {
+  reinterpret_cast<clang::PrintingPolicy *>(PP)->FullyQualifiedName = Value;
+}
+
+bool clang_PrintingPolicy_getSuppressDefaultTemplateArgs(CXPrintingPolicy_ PP) {
+  return reinterpret_cast<clang::PrintingPolicy *>(PP)->SuppressDefaultTemplateArgs;
+}
+
+void clang_PrintingPolicy_setSuppressDefaultTemplateArgs(CXPrintingPolicy_ PP, bool Value) {
+  reinterpret_cast<clang::PrintingPolicy *>(PP)->SuppressDefaultTemplateArgs = Value;
+}
+
+bool clang_PrintingPolicy_getPrintCanonicalTypes(CXPrintingPolicy_ PP) {
+  return reinterpret_cast<clang::PrintingPolicy *>(PP)->PrintCanonicalTypes;
+}
+
+void clang_PrintingPolicy_setPrintCanonicalTypes(CXPrintingPolicy_ PP, bool Value) {
+  reinterpret_cast<clang::PrintingPolicy *>(PP)->PrintCanonicalTypes = Value;
+}

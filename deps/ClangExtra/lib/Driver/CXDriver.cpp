@@ -10,7 +10,10 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
 #include "clang/Driver/Compilation.h"
+#include "clang/Driver/Job.h"
 #include "clang/Driver/ToolChain.h"
+#include "llvm/ADT/SmallVector.h"
+#include <utility>
 #include "llvm/Support/raw_ostream.h"
 
 CXDriver clang_Driver_create(const char *ClangExecutable, const char *TargetTriple,
@@ -280,6 +283,24 @@ const char *clang_Driver_CreateTempFile(CXDriver D, CXCompilation C, const char 
 CXString clang_Driver_GetClPchPath(CXDriver D, CXCompilation C, const char *BaseName) {
   return extra::makeCXString(reinterpret_cast<clang::driver::Driver *>(D)->GetClPchPath(
       *reinterpret_cast<clang::driver::Compilation *>(C), llvm::StringRef(BaseName)));
+}
+
+int clang_Driver_ExecuteCompilation(CXDriver D, CXCompilation C, unsigned *NumFailing,
+                                    int *FailingResults, CXCommand *FailingCommands,
+                                    unsigned N) {
+  llvm::SmallVector<std::pair<int, const clang::driver::Command *>, 4> Failing;
+  int Result = reinterpret_cast<clang::driver::Driver *>(D)->ExecuteCompilation(
+      *reinterpret_cast<clang::driver::Compilation *>(C), Failing);
+  if (NumFailing)
+    *NumFailing = static_cast<unsigned>(Failing.size());
+  for (unsigned I = 0; I < N && I < Failing.size(); ++I) {
+    if (FailingResults)
+      FailingResults[I] = Failing[I].first;
+    if (FailingCommands)
+      FailingCommands[I] = reinterpret_cast<CXCommand>(
+          const_cast<clang::driver::Command *>(Failing[I].second));
+  }
+  return Result;
 }
 
 // --- clang::driver, namespace-level ---------------------------------------------------
