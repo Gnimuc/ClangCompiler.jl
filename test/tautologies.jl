@@ -44,14 +44,7 @@ const TESTS = joinpath(ROOT, "test")
 # this value" satisfies every pattern below and is still false, because a line number is
 # decided by the source. Only reading the site catches that. Without the check, though, a
 # marker with no reason at all reads exactly like one that was thought about.
-const REASONS = ["the host decides it" =>
-                     r"\bhost\b|\bsysroot\b|\brunner\b|\bworking directory\b|\bexecutable path\b"i,
-                 "the target decides it" =>
-                     r"\btarget\b|\bABI\b|\btriple\b|\bmangl|\blayout\b|\balign|\bendian|\bplatform\b"i,
-                 "it varies across the objects the test walks" =>
-                     r"\bvar(?:y|ies|ying)\b|\bwalk|\bdiffers\b|\bnode to node\b"i,
-                 "nothing decides it -- the read is uninitialised" =>
-                     r"\buninitiali[sz]ed\b|\bnever set\b|\bnever initiali[sz]ed\b|\bno in-class initiali[sz]er\b"i]
+const REASONS = ["the host decides it" => r"\bhost\b|\bsysroot\b|\brunner\b|\bworking directory\b|\bexecutable path\b"i, "the target decides it" => r"\btarget\b|\bABI\b|\btriple\b|\bmangl|\blayout\b|\balign|\bendian|\bplatform\b"i, "it varies across the objects the test walks" => r"\bvar(?:y|ies|ying)\b|\bwalk|\bdiffers\b|\bnode to node\b"i, "nothing decides it -- the read is uninitialised" => r"\buninitiali[sz]ed\b|\bnever set\b|\bnever initiali[sz]ed\b|\bno in-class initiali[sz]er\b"i]
 
 """
     split_comment(line) -> (code, comment)
@@ -103,6 +96,79 @@ function reason_of(comment)
     return strip(lstrip(comment[(last(i) + 1):end], [':', ' ', '\t', '-', '—']))
 end
 
+"""
+    continues(code, nxt) -> Bool
+
+Whether `code` runs on into `nxt` with its parentheses already balanced.
+
+Julia accepts a binary operator at either end of the break, so both `x isa\\n Bool` and
+`x\\n isa Bool` are one expression, and each hides the assertion from a per-line scan. Only
+the operators that can appear in an `ASSERTION` are listed; a wider set would risk joining
+one assertion onto the next.
+"""
+function continues(code, nxt)
+    c, n = rstrip(code), lstrip(nxt)
+    (isempty(c) || isempty(n)) && return false
+    # `isa` and `in` are words, so they need the space: without it `Visa` ends with `isa`.
+    any(endswith(c, op) for op in (" isa", " in", "==", "!=", "<=", ">=", "&&", "||")) && return true
+    return any(startswith(n, op) for op in ("isa ", "in ", "==", "!=", "<=", ">=", "&&", "||"))
+end
+
+"""
+    logical_lines(path) -> Vector{Tuple{Int,String,String}}
+
+The file as ASSERTIONS see it: `(first line number, code, comments)`, with a `@test` that does
+not finish on its own line joined to the lines that finish it.
+
+Without this the detector is formatting-dependent, which is a way of being vacuous that its
+own `self_check` was not built to catch. `ASSERTION` is anchored to end-of-line, so
+
+    @test CC.SpecialMemberIsTrivial(sema, ctor,
+                                    CC.CXCXXSpecialMember_CXXDefaultConstructor) isa Bool
+
+never matched, and four such assertions sat unreported until an unrelated formatter run
+happened to join them. Whether an assertion is checked must not depend on where the author
+pressed return.
+
+Two things continue a line, and counting parentheses alone catches only the first. An operator
+may also sit at the end of one line or the start of the next with the parentheses already
+balanced —
+
+    @test CC.getElementDestructorDecl(b, j, ctx) isa
+          CC.CXXDestructorDecl
+
+— which is how a fifth vacuous assertion survived the pass that added the parenthesis joining,
+and stayed hidden until the formatter joined it too. [`continues`](@ref) reads both spellings.
+
+Comments are stripped per physical line and concatenated, so a `# shape-only` marker counts
+wherever in the assertion it was written.
+"""
+function logical_lines(path)
+    out = Tuple{Int,String,String}[]
+    lines = readlines(path)
+    i = 1
+    while i <= length(lines)
+        code, comment = split_comment(lines[i])
+        first_line = i
+        # Only a `@test` is joined, and only while it is unfinished: this is a report about
+        # assertions, and joining everything would risk swallowing a following statement when
+        # a file has unbalanced parens inside a string this crude counter cannot see.
+        if occursin("@test", code)
+            depth = count(==('('), code) - count(==(')'), code)
+            while i < length(lines) && (depth > 0 || continues(code, split_comment(lines[i + 1])[1]))
+                i += 1
+                c2, cm2 = split_comment(lines[i])
+                code = rstrip(code) * " " * strip(c2)
+                comment *= cm2
+                depth += count(==('('), c2) - count(==(')'), c2)
+            end
+        end
+        push!(out, (first_line, code, comment))
+        i += 1
+    end
+    return out
+end
+
 "A ccall's declared return type, e.g. `clang_Foo_bar` => `:Cuint`."
 function ccall_returns(binding_file)
     out = Dict{String,Symbol}()
@@ -114,11 +180,7 @@ function ccall_returns(binding_file)
 end
 
 # The concrete Julia types these C return types always produce.
-const SCALAR = Dict(:Cuint => :Integer, :Cint => :Integer, :Csize_t => :Integer,
-                    :Clong => :Integer, :Culong => :Integer, :Cshort => :Integer,
-                    :Cushort => :Integer, :UInt32 => :Integer, :Int32 => :Integer,
-                    :Int64 => :Integer, :UInt64 => :Integer, :Bool => :Bool,
-                    :Cdouble => :AbstractFloat, :Cfloat => :AbstractFloat)
+const SCALAR = Dict(:Cuint => :Integer, :Cint => :Integer, :Csize_t => :Integer, :Clong => :Integer, :Culong => :Integer, :Cshort => :Integer, :Cushort => :Integer, :UInt32 => :Integer, :Int32 => :Integer, :Int64 => :Integer, :UInt64 => :Integer, :Bool => :Bool, :Cdouble => :AbstractFloat, :Cfloat => :AbstractFloat)
 
 """
     wrapper_returns(dir) -> Dict{String,Set{Symbol}}
@@ -180,25 +242,70 @@ tree and a broken detector print the same sentence, which is what makes this wor
 """
 function self_check()
     probe = "    @test CC.getNumBases(rd) isa Integer"
-    for (suffix, want) in ("" => "", "  # prose" => "# prose",
-                           "  # shape-only" => "# shape-only",
-                           "  # shape-only: the host decides this" =>
-                               "# shape-only: the host decides this")
+    for (suffix, want) in ("" => "", "  # prose" => "# prose", "  # shape-only" => "# shape-only", "  # shape-only: the host decides this" => "# shape-only: the host decides this")
         code, comment = split_comment(probe * suffix)
         comment == want || error("split_comment lost the comment on `$probe$suffix`: got `$comment`")
-        match(ASSERTION, strip(code)) === nothing &&
-            error("the assertion pattern no longer matches `$probe$suffix`")
+        match(ASSERTION, strip(code)) === nothing && error("the assertion pattern no longer matches `$probe$suffix`")
     end
     # a `#` inside a string literal does not start a comment
     _, c = split_comment("""    @test CC.getName(d) == "a#b" """)
     isempty(c) || error("split_comment read a `#` inside a string as a comment: `$c`")
+    # A split assertion reaches ASSERTION as one line, carrying its marker and its first line
+    # number. Probing only single-line shapes is how this check missed the joining hole for as
+    # long as it did: the mechanic it guarded was sound and the input never reached it.
+    mktemp() do probe_path, io
+        write(io, """
+              x = 1
+              @test CC.getNumBases(rd,
+                                   extra) isa Integer  # shape-only: the host decides this
+              y = 2
+              """)
+        close(io)
+        got = logical_lines(probe_path)
+        # four physical lines, three logical: the joining is the whole point
+        length(got) == 3 || error("logical_lines produced $(length(got)) entries for a 4-line file with one \
+                                   split assertion; expected 3")
+        n, code, comment = got[2]
+        n == 2 || error("logical_lines lost the first line number of a joined assertion: got $n")
+        match(ASSERTION, strip(code)) === nothing && error("a joined assertion no longer matches the assertion pattern: `$code`")
+        occursin(MARKER, comment) || error("logical_lines dropped the marker from a joined assertion: `$comment`")
+    end
+    # The same, with the parentheses BALANCED at the break and an operator carrying the line --
+    # both spellings, since Julia accepts the operator at either end. Paren-depth alone reports
+    # neither, which is how one of these stayed hidden after the joining pass went in.
+    for body in ("""
+                 @test CC.getElementDestructorDecl(b, j, ctx) isa
+                       CC.CXXDestructorDecl  # shape-only: the host decides this
+                 """, """
+                 @test CC.getElementDestructorDecl(b, j, ctx)
+                       isa CC.CXXDestructorDecl  # shape-only: the host decides this
+                 """)
+        mktemp() do probe_path, io
+            write(io, body)
+            close(io)
+            got = logical_lines(probe_path)
+            length(got) == 1 || error("logical_lines produced $(length(got)) entries for an assertion broken \
+                                       at a balanced-paren operator; expected 1")
+            n, code, comment = got[1]
+            n == 1 || error("logical_lines lost the first line number of an operator-joined assertion: got $n")
+            match(ASSERTION, strip(code)) === nothing && error("an operator-joined assertion no longer matches the assertion pattern: `$code`")
+            occursin(MARKER, comment) || error("logical_lines dropped the marker from an operator-joined assertion: `$comment`")
+        end
+    end
+    # ... and joining must stop at the end of an assertion, or two would be reported as one
+    mktemp() do probe_path, io
+        write(io, """
+              @test CC.getNumBases(rd) isa Integer
+              @test CC.getNumVBases(rd) isa Integer
+              """)
+        close(io)
+        length(logical_lines(probe_path)) == 2 || error("logical_lines joined two complete assertions into one")
+    end
     # every admitted reason is recognised by its own pattern, and prose naming none is not
     for (name, _) in REASONS
-        any(p -> occursin(last(p), name), REASONS) ||
-            error("the admitted reason `$name` matches none of the patterns")
+        any(p -> occursin(last(p), name), REASONS) || error("the admitted reason `$name` matches none of the patterns")
     end
-    any(p -> occursin(last(p), "because it seemed fine"), REASONS) &&
-        error("the reason patterns accept prose that names no category")
+    any(p -> occursin(last(p), "because it seemed fine"), REASONS) && error("the reason patterns accept prose that names no category")
     return nothing
 end
 
@@ -229,9 +336,13 @@ function main()
     for (root, _, files) in walkdir(TESTS), f in files
         endswith(f, ".jl") || continue
         occursin(".cov", f) && continue
+        # This file is the detector, not a test: it contains no `@testset`, and the example
+        # assertions in its own comments and docstrings are illustrations. Scanning itself was
+        # harmless only while those examples were invisible for being split across lines --
+        # joining them turned the script's own documentation into a finding.
+        f == "tautologies.jl" && continue
         path = joinpath(root, f)
-        for (n, line) in enumerate(eachline(path))
-            code, comment = split_comment(line)
+        for (n, code, comment) in logical_lines(path)
             m = match(ASSERTION, strip(code))
             m === nothing && continue
             fname, asserted = m.captures[1], Symbol(m.captures[2])
@@ -251,10 +362,10 @@ function main()
                 # comment nobody read: a third of the exemptions carried none at all.
                 r = reason_of(comment)
                 any(p -> occursin(last(p), r), REASONS) && continue
-                push!(bare, (rel, n, fname, strip(line)))
+                push!(bare, (rel, n, fname, strip(code * comment)))
                 continue
             end
-            push!(hits, (rel, n, fname, strip(line)))
+            push!(hits, (rel, n, fname, strip(code * comment)))
         end
     end
 

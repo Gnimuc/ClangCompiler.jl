@@ -54,27 +54,26 @@ using Test
         found_branch = false
         found_stmt = false
         ids = UInt32[]
-        for i in 0:(n - 1)
+        for i = 0:(n - 1)
             b = CC.getBlock(cfg, i)
             @test CC.getIndexInCFG(b) == i
             @test CC.getParent(b).ptr == cfg.ptr
             push!(ids, CC.getBlockID(b))
             if CC.hasTerminator(b)
                 found_branch = true
-                @test CC.getTerminatorKind(b) ==
-                      CC.LibClangEx.CXCFGTerminatorKind_StmtBranch
+                @test CC.getTerminatorKind(b) == CC.LibClangEx.CXCFGTerminatorKind_StmtBranch
                 ts = CC.getTerminatorStmt(b)
                 @test ts.ptr != C_NULL
                 @test CC.resolve(ts) isa CC.AbstractStmt
                 @test CC.getTerminatorCondition(b).ptr != C_NULL
                 @test !CC.is_null_handle(CC.getLastCondition(b))
-                for j in 0:(Int(CC.succ_size(b)) - 1)
+                for j = 0:(Int(CC.succ_size(b)) - 1)
                     @test CC.isSuccReachable(b, j)
                     @test CC.getSucc(b, j).ptr != C_NULL
                     @test CC.getSuccPossiblyUnreachableBlock(b, j).ptr == C_NULL
                 end
             end
-            for j in 0:(Int(CC.size(b)) - 1)
+            for j = 0:(Int(CC.size(b)) - 1)
                 k = CC.getElementKind(b, j)
                 if k == CC.LibClangEx.CXCFGElementKind_Statement
                     found_stmt = true
@@ -109,14 +108,13 @@ using Test
             """)
         @assert f(I, "cfg_fn2")
         fd2 = CC.getAsFunction(CC.get_decl(f))
-        cfg2 = CC.buildCFG(fd2, CC.getBody(fd2), ctx, false, true, false, true,
-                           false, false, false)
+        cfg2 = CC.buildCFG(fd2, CC.getBody(fd2), ctx, false, true, false, true, false, false, false)
         @test cfg2.ptr != C_NULL
         found_dtor = false
         found_loop_exit = false
-        for i in 0:(Int(CC.getNumBlocks(cfg2)) - 1)
+        for i = 0:(Int(CC.getNumBlocks(cfg2)) - 1)
             b = CC.getBlock(cfg2, i)
-            for j in 0:(Int(CC.size(b)) - 1)
+            for j = 0:(Int(CC.size(b)) - 1)
                 k = CC.getElementKind(b, j)
                 if k == CC.LibClangEx.CXCFGElementKind_AutomaticObjectDtor
                     found_dtor = true
@@ -158,8 +156,7 @@ end
         fd = CC.getAsFunction(CC.get_decl(f))
         ctx = CC.get_ast_context(I)
         # AddImplicitDtors so the graph carries dtor-family elements
-        cfg = CC.buildCFG(fd, CC.getBody(fd), ctx, false, true, false, false, false,
-                          false, false)
+        cfg = CC.buildCFG(fd, CC.getBody(fd), ctx, false, true, false, false, false, false, false)
         @test cfg.ptr != C_NULL
         try
             # CFG tail: try-dispatch blocks and the synthetic-DeclStmt map
@@ -176,7 +173,7 @@ end
             @test !(CC.FilterEdge(entry, exit_))
             @test !(CC.FilterEdge(entry, exit_, false, false))
 
-            for j in 0:(Int(CC.pred_size(exit_)) - 1)
+            for j = 0:(Int(CC.pred_size(exit_)) - 1)
                 @test CC.isPredReachable(exit_, j)
                 @test CC.is_null_handle(CC.getPredPossiblyUnreachableBlock(exit_, j))
             end
@@ -185,7 +182,7 @@ end
             found_terminator = false
             found_dtor = false
             found_declstmt = false
-            for i in 0:(n - 1)
+            for i = 0:(n - 1)
                 b = CC.getBlock(cfg, i)
                 @test isempty(b) == (CC.size(b) == 0)
                 if CC.hasTerminator(b)
@@ -194,12 +191,15 @@ end
                     @test !isempty(CC.printTerminatorJsonAsString(b, ctx))
                     @test !isempty(CC.printTerminatorJsonAsString(b, ctx, true))
                 end
-                for j in 0:(Int(CC.size(b)) - 1)
+                for j = 0:(Int(CC.size(b)) - 1)
                     k = CC.getElementKind(b, j)
                     if k == CC.LibClangEx.CXCFGElementKind_AutomaticObjectDtor
                         found_dtor = true
-                        @test CC.getElementDestructorDecl(b, j, ctx) isa
-                              CC.CXXDestructorDecl
+                        # Non-null here against the NULL the Statement branch below asserts for
+                        # the same call: that contrast is what says the ELEMENT KIND selects the
+                        # payload, which `isa CC.CXXDestructorDecl` -- the wrapper's own return
+                        # type -- could not have said.
+                        @test CC.getElementDestructorDecl(b, j, ctx).ptr != C_NULL
                         # kind-mismatched payloads still yield the NULL sentinel
                         @test CC.getElementDeleteExpr(b, j).ptr == C_NULL
                         @test CC.getElementCXXRecordDecl(b, j).ptr == C_NULL
@@ -253,8 +253,7 @@ end
         fd = CC.getAsFunction(CC.get_decl(f))
         # implicit dtors + loop exits + temporary dtors, so the graph carries the
         # payloads the appenders below re-attach to a hand-made block
-        cfg = CC.buildCFG(fd, CC.getBody(fd), ctx, false, true, false, true, true, false,
-                          false)
+        cfg = CC.buildCFG(fd, CC.getBody(fd), ctx, false, true, false, true, true, false, false)
         @test cfg.ptr != C_NULL
         try
             stmt = nothing
@@ -263,9 +262,9 @@ end
             loop_stmt = nothing
             bind_temp = nothing
             decl_stmts = CC.DeclStmt[]
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
-                for j in 0:(Int(CC.size(b)) - 1)
+                for j = 0:(Int(CC.size(b)) - 1)
                     k = CC.getElementKind(b, j)
                     if k == CC.LibClangEx.CXCFGElementKind_Statement
                         s = CC.getElementStmt(b, j)
@@ -280,8 +279,7 @@ end
                     elseif k == CC.LibClangEx.CXCFGElementKind_LoopExit
                         loop_stmt === nothing && (loop_stmt = CC.getElementLoopStmt(b, j))
                     elseif k == CC.LibClangEx.CXCFGElementKind_TemporaryDtor
-                        bind_temp === nothing &&
-                            (bind_temp = CC.getElementBindTemporaryExpr(b, j))
+                        bind_temp === nothing && (bind_temp = CC.getElementBindTemporaryExpr(b, j))
                     end
                 end
             end
@@ -331,8 +329,7 @@ end
             @test CC.getTerminatorStmt(nb).ptr == stmt.ptr
             @test CC.getTerminatorKind(nb) == CC.LibClangEx.CXCFGTerminatorKind_StmtBranch
             CC.setTerminator(nb, stmt, CC.LibClangEx.CXCFGTerminatorKind_VirtualBaseBranch)
-            @test CC.getTerminatorKind(nb) ==
-                  CC.LibClangEx.CXCFGTerminatorKind_VirtualBaseBranch
+            @test CC.getTerminatorKind(nb) == CC.LibClangEx.CXCFGTerminatorKind_VirtualBaseBranch
 
             exit_ = CC.getExit(cfg)
             s0 = Int(CC.succ_size(nb))
@@ -378,8 +375,7 @@ end
             @test CC.getElementBindTemporaryExpr(nb, 0).ptr == bind_temp.ptr
 
             CC.appendAutomaticObjDtor(nb, vd, trigger)
-            @test CC.getElementKind(nb, 0) ==
-                  CC.LibClangEx.CXCFGElementKind_AutomaticObjectDtor
+            @test CC.getElementKind(nb, 0) == CC.LibClangEx.CXCFGElementKind_AutomaticObjectDtor
 
             CC.appendLifetimeEnds(nb, vd, trigger)
             @test CC.getElementKind(nb, 0) == CC.LibClangEx.CXCFGElementKind_LifetimeEnds
@@ -448,9 +444,9 @@ end
             new_expr = nothing
             del_expr = nothing
             rec_decl = nothing
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
-                for j in 0:(Int(CC.size(b)) - 1)
+                for j = 0:(Int(CC.size(b)) - 1)
                     k = CC.getElementKind(b, j)
                     if k == CC.LibClangEx.CXCFGElementKind_NewAllocator
                         new_expr === nothing && (new_expr = CC.getElementAllocatorExpr(b, j))
@@ -511,18 +507,16 @@ end
         @assert f(I, "cfg_d_fn")
         fd = CC.getAsFunction(CC.get_decl(f))
         ctx = CC.get_ast_context(I)
-        cfg = CC.buildCFG(fd, CC.getBody(fd), ctx, false, false, false, false, false, false,
-                          false)
+        cfg = CC.buildCFG(fd, CC.getBody(fd), ctx, false, false, false, false, false, false, false)
         @test cfg.ptr != C_NULL
         try
             vd = nothing
             rec_call = nothing
             int_call = nothing
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
-                for j in 0:(Int(CC.size(b)) - 1)
-                    CC.getElementKind(b, j) == CC.LibClangEx.CXCFGElementKind_Statement ||
-                        continue
+                for j = 0:(Int(CC.size(b)) - 1)
+                    CC.getElementKind(b, j) == CC.LibClangEx.CXCFGElementKind_Statement || continue
                     s = CC.resolve(CC.getElementStmt(b, j))
                     if s isa CC.DeclStmt && CC.isSingleDecl(s)
                         d = CC.getSingleDecl(s)
@@ -549,18 +543,16 @@ end
 
             # printAsOperand is the LLVM-style label, derived from the block id
             entry = CC.getEntry(cfg)
-            @test CC.printAsOperandAsString(entry) ==
-                  "BB#" * string(Int(CC.getBlockID(entry)))
+            @test CC.printAsOperandAsString(entry) == "BB#" * string(Int(CC.getBlockID(entry)))
 
             # the `if` gives exactly one block a statement-branch terminator
             branch = nothing
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
                 CC.hasTerminator(b) && branch === nothing && (branch = b)
             end
             @test branch !== nothing
-            @test CC.getTerminatorKind(branch) ==
-                  CC.LibClangEx.CXCFGTerminatorKind_StmtBranch
+            @test CC.getTerminatorKind(branch) == CC.LibClangEx.CXCFGTerminatorKind_StmtBranch
             @test CC.isTerminatorStmtBranch(branch)
             @test !CC.isTerminatorTemporaryDtorsBranch(branch)
             @test !CC.isTerminatorVirtualBaseBranch(branch)
@@ -570,8 +562,7 @@ end
             nb = CC.createBlock(cfg)
             @test !CC.hasTerminator(nb)
             @test CC.isTerminatorStmtBranch(nb)
-            CC.setTerminator(nb, CC.getBody(fd),
-                             CC.LibClangEx.CXCFGTerminatorKind_VirtualBaseBranch)
+            CC.setTerminator(nb, CC.getBody(fd), CC.LibClangEx.CXCFGTerminatorKind_VirtualBaseBranch)
             @test CC.hasTerminator(nb)
             @test CC.isTerminatorVirtualBaseBranch(nb)
             @test !CC.isTerminatorStmtBranch(nb)
@@ -582,8 +573,7 @@ end
             cb = CC.createBlock(cfg)
             CC.appendCleanupFunction(cb, vd)
             @test Int(CC.size(cb)) == 1
-            @test CC.getElementKind(cb, 0) ==
-                  CC.LibClangEx.CXCFGElementKind_CleanupFunction
+            @test CC.getElementKind(cb, 0) == CC.LibClangEx.CXCFGElementKind_CleanupFunction
             @test CC.getElementVarDecl(cb, 0).ptr == vd.ptr
             hook = CC.getElementCleanupFunctionDecl(cb, 0)
             @test hook.ptr != C_NULL
@@ -649,7 +639,7 @@ end
                 entry = CC.getEntry(cfg)
                 exit_ = CC.getExit(cfg)
 
-                for i in 0:(n - 1)
+                for i = 0:(n - 1)
                     b = CC.getBlock(cfg, i)
                     fs = CC.getFilteredSuccs(b)
                     fp = CC.getFilteredPreds(b)
@@ -723,16 +713,14 @@ end
             # without it there is no Constructor element to read one from
             CC.setAddRichCXXConstructors(opts)
             CC.setMarkElidedCXXConstructors(opts, true)
-            cfg = CC.buildCFGWithOptions(fd, body, ctx, opts, false, false, false, false,
-                                         false, false, true)
+            cfg = CC.buildCFGWithOptions(fd, body, ctx, opts, false, false, false, false, false, false, true)
             try
                 @test cfg isa CC.CFG
                 @test cfg.ptr != C_NULL
                 n = Int(CC.getNumBlocks(cfg))
                 @test n >= 2
 
-                stmt_kinds = (K.CXCFGElementKind_Statement, K.CXCFGElementKind_Constructor,
-                              K.CXCFGElementKind_CXXRecordTypedCall)
+                stmt_kinds = (K.CXCFGElementKind_Statement, K.CXCFGElementKind_Constructor, K.CXCFGElementKind_CXXRecordTypedCall)
                 ctor_expr = nothing
                 ctor_ctx = nothing
                 typed_call = nothing
@@ -740,9 +728,9 @@ end
                 elided = CC.ConstructionContext[]
                 bind_temp = Bool[]
                 cc_index = Tuple{Symbol,Int}[]
-                for i in 0:(n - 1)
+                for i = 0:(n - 1)
                     b = CC.getBlock(cfg, i)
-                    for j in 0:(Int(CC.size(b)) - 1)
+                    for j = 0:(Int(CC.size(b)) - 1)
                         k = CC.getElementKind(b, j)
                         k in stmt_kinds || continue
                         s = CC.resolve(CC.getElementStmt(b, j))
@@ -767,12 +755,9 @@ end
                         # sibling's. The biconditional below is the second half -- non-null
                         # for exactly the kinds that carry that payload -- and a
                         # sibling-wired accessor is non-null under the wrong kind.
-                        @test (CC.getDeclStmt(cc).ptr != C_NULL) ==
-                              (ck in (K.CXConstructionContextKind_SimpleVariableKind,
-                                      K.CXConstructionContextKind_CXX17ElidedCopyVariableKind))
+                        @test (CC.getDeclStmt(cc).ptr != C_NULL) == (ck in (K.CXConstructionContextKind_SimpleVariableKind, K.CXConstructionContextKind_CXX17ElidedCopyVariableKind))
                         @test CC.is_null_handle(CC.getCXXCtorInitializer(cc))
-                        @test (CC.getCXXNewExpr(cc).ptr != C_NULL) ==
-                              (ck == K.CXConstructionContextKind_NewAllocatedObjectKind)
+                        @test (CC.getCXXNewExpr(cc).ptr != C_NULL) == (ck == K.CXConstructionContextKind_NewAllocatedObjectKind)
                         # this one is not a function of the kind: it is present when the
                         # construction binds a temporary needing destruction, which is a
                         # property of the individual construction rather than its class.
@@ -781,21 +766,15 @@ end
                         @test CC.is_null_handle(CC.getMaterializedTemporaryExpr(cc))
                         @test CC.is_null_handle(CC.getConstructorAfterElision(cc))
                         @test CC.is_null_handle(CC.getConstructionContextAfterElision(cc))
-                        @test (CC.getReturnStmt(cc).ptr != C_NULL) ==
-                              (ck in (K.CXConstructionContextKind_SimpleReturnedValueKind,
-                                      K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind))
-                        @test (CC.getCallLikeExpr(cc).ptr != C_NULL) ==
-                              (ck == K.CXConstructionContextKind_ArgumentKind)
+                        @test (CC.getReturnStmt(cc).ptr != C_NULL) == (ck in (K.CXConstructionContextKind_SimpleReturnedValueKind, K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind))
+                        @test (CC.getCallLikeExpr(cc).ptr != C_NULL) == (ck == K.CXConstructionContextKind_ArgumentKind)
                         # the three lambda-capture payloads travel together
                         for get in (CC.getLambdaExpr, CC.getInitializer, CC.getFieldDecl)
-                            @test (get(cc).ptr != C_NULL) ==
-                                  (ck == K.CXConstructionContextKind_LambdaCaptureKind)
+                            @test (get(cc).ptr != C_NULL) == (ck == K.CXConstructionContextKind_LambdaCaptureKind)
                         end
-                        if ck == K.CXConstructionContextKind_SimpleVariableKind ||
-                           ck == K.CXConstructionContextKind_CXX17ElidedCopyVariableKind
+                        if ck == K.CXConstructionContextKind_SimpleVariableKind || ck == K.CXConstructionContextKind_CXX17ElidedCopyVariableKind
                             @test CC.getDeclStmt(cc).ptr != C_NULL
-                            if k == K.CXCFGElementKind_Constructor &&
-                               s isa CC.AbstractCXXConstructExpr
+                            if k == K.CXCFGElementKind_Constructor && s isa CC.AbstractCXXConstructExpr
                                 ctor_expr = s
                                 ctor_ctx = cc
                             end
@@ -803,8 +782,7 @@ end
                             @test CC.getCXXNewExpr(cc).ptr != C_NULL
                         elseif ck == K.CXConstructionContextKind_ElidedTemporaryObjectKind
                             push!(elided, cc)
-                        elseif ck == K.CXConstructionContextKind_SimpleReturnedValueKind ||
-                               ck == K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind
+                        elseif ck == K.CXConstructionContextKind_SimpleReturnedValueKind || ck == K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind
                             @test CC.getReturnStmt(cc).ptr != C_NULL
                         elseif ck == K.CXConstructionContextKind_ArgumentKind
                             @test CC.getCallLikeExpr(cc).ptr != C_NULL
@@ -856,8 +834,7 @@ end
                     if typed_call !== nothing
                         CC.appendCXXRecordTypedCall(nb, typed_call, ctor_ctx)
                         @test CC.size(nb) == 2
-                        @test CC.getElementKind(nb, 0) ==
-                              K.CXCFGElementKind_CXXRecordTypedCall
+                        @test CC.getElementKind(nb, 0) == K.CXCFGElementKind_CXXRecordTypedCall
                         @test CC.getElementStmt(nb, 0).ptr == typed_call.ptr
                         @test CC.getElementConstructionContext(nb, 0).ptr == ctor_ctx.ptr
                     end
@@ -952,11 +929,10 @@ end
 
                 # two separate `int` declarations give two single-decl DeclStmts to pair
                 decl_stmts = CC.DeclStmt[]
-                for i in 0:(nb - 1)
+                for i = 0:(nb - 1)
                     b = CC.getBlock(cfg, i)
-                    for j in 0:(Int(CC.size(b)) - 1)
-                        CC.getElementKind(b, j) ==
-                        CC.LibClangEx.CXCFGElementKind_Statement || continue
+                    for j = 0:(Int(CC.size(b)) - 1)
+                        CC.getElementKind(b, j) == CC.LibClangEx.CXCFGElementKind_Statement || continue
                         s = CC.resolve(CC.getElementStmt(b, j))
                         s isa CC.DeclStmt && CC.isSingleDecl(s) && push!(decl_stmts, s)
                     end
@@ -976,8 +952,7 @@ end
                 @test first(ps).first.ptr == synthetic.ptr
                 @test first(ps).second.ptr == source.ptr
                 # the bulk walk and the by-key lookup agree
-                @test CC.getSyntheticDeclStmtSource(cfg, first(ps).first).ptr ==
-                      first(ps).second.ptr
+                @test CC.getSyntheticDeclStmtSource(cfg, first(ps).first).ptr == first(ps).second.ptr
             finally
                 CC.dispose(cfg)
             end
@@ -1012,7 +987,7 @@ end
             entry = CC.getEntry(cfg)
             # the first block that carries at least one element
             elem_blk = nothing
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
                 if CC.size(b) > 0
                     elem_blk = b
@@ -1024,12 +999,7 @@ end
             # rendering is host-decided, so only the call and its `nothing` are asserted;
             # the string forms of the same input are asserted non-empty below.
             ok = redirect_stderr(devnull) do
-                CC.dump(cfg, ctx) === nothing &&
-                    CC.dump(cfg, ctx, true) === nothing &&
-                    CC.dump(entry, cfg, ctx) === nothing &&
-                    CC.dump(entry, cfg, ctx, true) === nothing &&
-                    CC.dump(elem_blk, cfg, ctx) === nothing &&
-                    CC.dumpElement(elem_blk, 0) === nothing
+                CC.dump(cfg, ctx) === nothing && CC.dump(cfg, ctx, true) === nothing && CC.dump(entry, cfg, ctx) === nothing && CC.dump(entry, cfg, ctx, true) === nothing && CC.dump(elem_blk, cfg, ctx) === nothing && CC.dumpElement(elem_blk, 0) === nothing
             end
             @test ok
             @test !isempty(CC.printAsString(cfg, ctx))
@@ -1083,13 +1053,11 @@ end
             # the bulk walk reproduces the per-block element walk exactly: block order,
             # then element order, statement-family element kinds only
             expected = Ptr{Cvoid}[]
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
-                for j in 0:(Int(CC.size(b)) - 1)
+                for j = 0:(Int(CC.size(b)) - 1)
                     k = CC.getElementKind(b, j)
-                    if k == CC.LibClangEx.CXCFGElementKind_Statement ||
-                       k == CC.LibClangEx.CXCFGElementKind_Constructor ||
-                       k == CC.LibClangEx.CXCFGElementKind_CXXRecordTypedCall
+                    if k == CC.LibClangEx.CXCFGElementKind_Statement || k == CC.LibClangEx.CXCFGElementKind_Constructor || k == CC.LibClangEx.CXCFGElementKind_CXXRecordTypedCall
                         push!(expected, CC.getElementStmt(b, j).ptr)
                     end
                 end

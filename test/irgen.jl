@@ -1,6 +1,6 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: LLVM, getMessage, create_irgenerator, create_compiler, take_module, has_module, compile, link_process_symbols, get_function_pointer, get_symbol_address, get_jit, get_dylib, get_instance, get_context, get_irgenerator, dispose
+using ClangCompiler: LLVM, getMessage, create_irgenerator, create_compiler, take_module, has_module, compile, link_process_symbols, get_function_pointer, get_symbol_address, get_jit, get_dylib, get_instance, get_llvm_context, get_irgenerator, dispose
 using Test
 
 # The batch drivers: `IRGenerator` (source in, one LLVM module out) and `CxxCompiler`
@@ -316,7 +316,7 @@ end
 
     # The compiler forwards to the generator it was built on rather than holding its own.
     @test get_instance(cc) === get_instance(get_irgenerator(cc))
-    @test get_context(cc) === get_context(get_irgenerator(cc))
+    @test get_llvm_context(cc) === get_llvm_context(get_irgenerator(cc))
     @test !has_module(cc)                    # `compile` took it
 
     # ... and taking it a second time is the same error the generator raises.

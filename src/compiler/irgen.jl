@@ -43,7 +43,17 @@ end
 
 # interface
 get_instance(x::IRGenerator) = x.instance
-get_context(x::IRGenerator) = x.ts_ctx
+"""
+    get_llvm_context(x::IRGenerator) -> LLVM.ThreadSafeContext
+The `LLVM.ThreadSafeContext` the compiled module lives in. Borrowed: it is disposed with the
+generator, and the module may not outlive it.
+
+Named apart from [`get_ast_context`](@ref) deliberately. Both are "the context", and they are
+different objects from different libraries — one is clang's `ASTContext`, this is LLVM's — so a
+single `get_context` beside `get_ast_context` invited exactly the confusion that ends in a
+module outliving the context it was emitted in.
+"""
+get_llvm_context(x::IRGenerator) = x.ts_ctx
 
 """
     create_irgenerator(code::AbstractString; args=String[], language=:cxx,
@@ -289,7 +299,8 @@ handing it to something that does — [`compile`](@ref) gives it to an `LLJIT`, 
 `LLVM.ThreadSafeModule` and `LLVM.dispose` are the two ways to consume it directly. Left
 untaken it belongs to the generator and dies with it.
 
-The module lives in the `LLVM.Context` behind `get_context(x)` and may not outlive it.
+The module lives in the `LLVM.Context` behind [`get_llvm_context`](@ref) and may not
+outlive it.
 """
 function take_module(x::IRGenerator)
     x.taken[] && error("the module has already been taken")

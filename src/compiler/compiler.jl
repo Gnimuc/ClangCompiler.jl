@@ -56,7 +56,7 @@ function create_compiler(code::AbstractString; link_process::Bool=true, kwargs..
 end
 
 get_instance(x::CxxCompiler) = get_instance(x.irgen)
-get_context(x::CxxCompiler) = get_context(x.irgen)
+get_llvm_context(x::CxxCompiler) = get_llvm_context(x.irgen)
 take_module(x::CxxCompiler) = take_module(x.irgen)
 has_module(x::CxxCompiler) = has_module(x.irgen)
 
@@ -125,7 +125,7 @@ function compile(x::CxxCompiler, mod::LLVM.Module)
     # generator or compiler afterwards would have pushed its own on top of ours. Activating
     # for the length of the call is what keeps the module in the context it was emitted in;
     # under the wrong one LLVM.jl silently round-trips it through bitcode instead.
-    ts_mod = LLVM.ts_context!(get_context(x)) do
+    ts_mod = LLVM.ts_context!(get_llvm_context(x)) do
         LLVM.ThreadSafeModule(mod)
     end
     LLVM.add!(get_jit(x), get_dylib(x), ts_mod)

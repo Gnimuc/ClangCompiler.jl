@@ -11,6 +11,7 @@ using Test
              template <typename T> struct SemaDedBox { T v; };
              template <typename T> struct SemaDedBox<T *> { T *v; };
              template <typename T> struct SemaDedPair { T a; T b; };
+             template <typename A, typename B> struct SemaDedTwo { A a; B b; };
              struct SemaDedRec { int m; };
              void semaDedFn(int p);
              const int semaDedSeven = 7;
@@ -93,12 +94,19 @@ using Test
     @test CC.TemplateParameterListsAreEqual(sema, box_params, box_params, false,
                                             CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch,
                                             loc)
+    # Clang compares parameter KINDS and arity, not names -- so `SemaDedPair`'s list, which
+    # spells its one type parameter identically but belongs to another template, compares equal,
+    # while `SemaDedTwo`'s two-parameter list does not. Both halves are needed: the equal case on
+    # its own would pass for an implementation that always answers yes.
     @test f(I, "SemaDedPair")
     pair = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "ClassTemplate"))
-    @test CC.TemplateParameterListsAreEqual(sema, box_params,
-                                            CC.getTemplateParameters(pair), false,
-                                            CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch,
-                                            loc) isa Bool
+    @test CC.TemplateParameterListsAreEqual(sema, box_params, CC.getTemplateParameters(pair), false,
+                                            CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch, loc) == true
+    CC.reset(f)
+    @test f(I, "SemaDedTwo")
+    two = CC.ClassTemplateDecl(first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == "ClassTemplate"))
+    @test CC.TemplateParameterListsAreEqual(sema, box_params, CC.getTemplateParameters(two), false,
+                                            CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch, loc) == false
 
     # --- default member initializer and default argument conversion ---
     @test f(I, "SemaDedRec")

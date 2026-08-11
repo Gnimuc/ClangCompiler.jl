@@ -127,7 +127,7 @@ public IncrementalParser, create_parser
 # The batch driver: one translation unit in, one LLVM module out.
 include("compiler/irgen.jl")
 public IRGenerator, create_irgenerator
-public take_module, has_module, get_context
+public take_module, has_module, get_llvm_context
 
 # ... and that module on a JIT.
 include("compiler/compiler.jl")

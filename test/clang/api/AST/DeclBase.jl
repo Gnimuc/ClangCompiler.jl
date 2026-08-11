@@ -216,16 +216,16 @@ end
     rd = CC.CXXRecordDecl(get_decl(f))
     ctx = CC.getASTContext(rd)
 
-    # Decl::isFlexibleArrayMemberLike is static: the trailing member, then the same
-    # query with no declaration at all (the rule level is passed, never read out of ctx,
-    # so only the shape of the answer is host-independent)
+    # Decl::isFlexibleArrayMemberLike is static, so it takes the declaration as an argument and
+    # accepts none at all. Same type, same rule level, one with the trailing member and one with
+    # no declaration: the answers differ, which is what says the DECLARATION is read rather than
+    # the type alone.
     flds = CC.getFields(rd)
     tail = flds[end]
     @test CC.getName(tail) == "tail"
     lvl = CC.LibClangEx.CXStrictFlexArraysLevelKind_Default
-    @test CC.isFlexibleArrayMemberLike(ctx, tail, CC.getType(tail), lvl)
-    @test CC.isFlexibleArrayMemberLike(ctx, CC.Decl(C_NULL), CC.getType(tail), lvl,
-                                       true) isa Bool
+    @test CC.isFlexibleArrayMemberLike(ctx, tail, CC.getType(tail), lvl) == true
+    @test CC.isFlexibleArrayMemberLike(ctx, CC.Decl(C_NULL), CC.getType(tail), lvl, true) == false
 
     # printGroup: a single declaration, then two printed as one group
     @test f(I, "declbase_a::grouped_a")
