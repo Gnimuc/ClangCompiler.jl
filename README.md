@@ -25,38 +25,57 @@ import ClangCompiler as CC
 I = CC.create_interpreter(["-include", "vector"])
 
 # Run a real C++ name lookup. The result is resolved to the class clang built
-# for it -- here a `ClassTemplateDecl` -- so `isa` tests on it mean what they say.
+# for it, so `isa` tests on it mean what they say.
 decl = CC.find_decl(I, "std::vector")
-CC.dump(decl)
+CC.qualified_name(decl)          # "std::vector"
+decl isa CC.AbstractNamedDecl    # true
 
 # Clean up resources
 CC.dispose(I)
 ```
 
 `find_decl` returns `nothing` when the name is not found, and `find_decls` returns the whole
-overload set. `CC.DeclFinder` is still there if you want to drive the lookup yourself.
+overload set.
+
+**Dispatch on the abstract, not the carrier.** Carriers are leaves, mirroring clang's classes
+one-for-one, so `d isa CC.CXXMethodDecl` is an exact-class test that a constructor fails even
+though clang's `CXXConstructorDecl` derives from `CXXMethodDecl`. The abstract supertypes are
+the spelling of C++'s `isa<T>`, and they are what this package promises across an LLVM upgrade:
+
+```julia-repl
+julia> CC.find_decl(I, "app::Widget") isa CC.AbstractRecordDecl
+true
+```
+
+`AbstractDecl`, `AbstractNamedDecl`, `AbstractFunctionDecl`, `AbstractTagDecl`,
+`AbstractVarDecl` and `AbstractRecordDecl` are public for this reason. The concrete carriers
+are not: they are named after clang's AST classes, and those get renamed and deleted between
+LLVM releases.
 
 ### AST Traversal
 
-The following example demonstrates how to perform AST traversal:
+Walking what a declaration contains:
 
 ```julia-repl
 import ClangCompiler as CC
 
-# Create an interpreter
-I = CC.create_interpreter(["-include", "vector"])
+I = CC.create_interpreter()
+CC.parse(I, "namespace app { struct Widget { int w; int area() const; }; }")
 
-# `std::vector` is a template; step from the template to the class it describes
-record = CC.getTemplatedDecl(CC.find_decl(I, "std::vector"))
+# `definition` first: a lookup can land on a forward declaration, which has no members
+w = CC.definition(CC.find_decl(I, "app::Widget"))
 
-# AST Traversal -- 119 members, each resolved to its own concrete type
-for x in CC.DeclIterator(record)
-    CC.dump(x)
+for m in CC.members(w)
+    println(CC.decl_name(m), "  ", m isa CC.AbstractFunctionDecl ? "(function)" : "")
 end
 
-# Clean up resources
 CC.dispose(I)
 ```
+
+Everything below `src/clang/` — `dump`, `resolve`, `children`, `getTemplatedDecl`,
+`DeclIterator` and the rest of the wrapper layer — is reachable as `CC.name` and is what the
+package is built on, but it carries no compatibility promise; see
+[the note in `src/ClangCompiler.jl`](src/ClangCompiler.jl) for why.
 
 ### Execution
 

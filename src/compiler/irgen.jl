@@ -301,15 +301,26 @@ end
 """
     has_module(x::IRGenerator) -> Bool
 Whether the compiled module is still the generator's, i.e. whether [`take_module`](@ref) would
-return rather than raise. Answers for a *live* generator: after `dispose` there is no module
-and no generator either, and this reports whatever the last `take_module` left behind — using
-a disposed object is undefined here as everywhere else in this package.
+return rather than raise. `dispose` clears it too, so a disposed generator answers `false`
+rather than offering a module whose context is gone.
 """
 has_module(x::IRGenerator) = !x.taken[]
 
 function dispose(x::IRGenerator)
+    # The context pop has to be *checked* first even though it happens last. LLVM.jl errors
+    # when the context being disposed is not the top of its task-local stack, and raising that
+    # after the three irreversible frees below would leave an object that can be neither used
+    # nor disposed again, with its context wedged on the stack forever. Checking up front turns
+    # an out-of-order dispose into a no-op that says so.
+    top = LLVM.ts_context(; throw_error=false)
+    top !== nothing && top.ref == x.ts_ctx.ref || error("dispose out of order: this generator's LLVM context is not the innermost one \
+                                                         still open. Generators and compilers must be disposed in reverse creation order.")
     dispose(x.act)                 # frees the module too, unless `take_module` moved it out
     dispose(x.instance)            # before the buffer its SourceManager points at
     LLVM.dispose(x.buffer)
-    return LLVM.dispose(x.ts_ctx)  # last: an untaken module lives in this context
+    LLVM.dispose(x.ts_ctx)         # last: an untaken module lives in this context
+    # `has_module` answers from this flag, so leaving it false would have a disposed generator
+    # claim to still hold a module and `take_module` hand back one whose context is gone.
+    x.taken[] = true
+    return nothing
 end

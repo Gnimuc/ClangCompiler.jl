@@ -68,7 +68,7 @@ import ClangCompiler as CC
 
     # ---------- ClassTemplateDecl (S) ----------
     @test f(I, "S")
-    snd = get_decl(f)                                   # NamedDecl carrier
+    snd = get_decl(f)                                   # resolved carrier
     ctd = CC.ClassTemplateDecl(snd)                     # castTo (AbstractDecl)
     @test ctd.ptr != C_NULL && CC.getName(ctd) == "S"
 

@@ -15,16 +15,29 @@
 
 // Drift alarm: the vendored DeclNodes.inc must match the pinned LLVM version.
 // One assert per concrete class proves CXDeclKind equals clang's Decl::Kind
-// value-for-value. (clang exposes no Decl-count sentinel like Stmt's
-// lastStmtConstant, so a class appended at the very end of the enum in a future
-// LLVM is only caught when DeclNodes.inc is re-vendored — the documented
-// per-bump step — not by these asserts.)
+// value-for-value; the count assert catches classes appended at the end
+// (which per-class asserts alone would miss).
 #define DECL(DERIVED, BASE)                                                                \
   static_assert(static_cast<int>(CXDeclKind_##DERIVED) ==                                  \
                     static_cast<int>(clang::Decl::DERIVED),                                 \
                 "CXDeclKind drift: " #DERIVED);
 #define ABSTRACT_DECL(DECL)
 #include "clang-ex/AST/DeclNodes.inc"
+
+// Decl's sentinel is spelled differently from Stmt's but it does exist: DeclNodes.inc ends in
+// LAST_DECL_RANGE(Decl, TranslationUnit, AccessSpec), which clang's DeclBase.h expands to
+// `firstDecl = TranslationUnit, lastDecl = AccessSpec` inside enum Kind. So `lastDecl` is the
+// ordinal of the final kind, and the count is one more.
+namespace {
+enum : int {
+  CXDeclKindCount = 0
+#define DECL(DERIVED, BASE) +1
+#define ABSTRACT_DECL(DECL)
+#include "clang-ex/AST/DeclNodes.inc"
+};
+} // namespace
+static_assert(CXDeclKindCount - 1 == static_cast<int>(clang::Decl::lastDecl),
+              "CXDeclKind drift: vendored DeclNodes.inc is missing classes");
 
 #define DECL(DERIVED, BASE)                                                                \
   CX##DERIVED##Decl clang_Decl_castTo##DERIVED##Decl(CXDecl D) {                            \

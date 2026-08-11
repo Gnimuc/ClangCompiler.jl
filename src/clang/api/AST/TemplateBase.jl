@@ -114,6 +114,27 @@ function TemplateArgument(ctx::ASTContext, v::LLVM.GenericValue, ty::QualType)
     return TemplateArgument(clang_TemplateArgument_constructFromIntegral(ctx, v, ty))
 end
 
+"""
+    TemplateArgument(ctx::ASTContext, v::Integer, ty::QualType) -> TemplateArgument
+
+Build the non-type template argument of type `ty` whose value is `v`.
+
+Identical to the `LLVM.GenericValue` method in everything that matters, and the reason to
+prefer it: the `GenericValue` only ever ferried raw bits, because the signedness and the width
+both come from `ty` — so building one meant a caller needed an `LLVM.Context` to answer a
+question clang was going to answer anyway.
+
+Same preconditions: `ty` must be a non-dependent integral or enumeration type. `v` is narrowed
+to 64 bits on the way in, which is what the `GenericValue` path already did.
+"""
+function TemplateArgument(ctx::ASTContext, v::Integer, ty::QualType)
+    @check_ptrs ctx ty
+    tp = getTypePtr(ty)
+    @assert isIntegralOrEnumerationType(tp) "a non-type template argument's type must be " * "integral or an enumeration, got $(getAsString(ty))"
+    @assert !isDependentType(tp) "the type must not be dependent; clang has no width for it"
+    return TemplateArgument(clang_TemplateArgument_constructFromInt64(ctx, Int64(v), ty))
+end
+
 function containsUnexpandedParameterPack(x::TemplateArgument)
     @check_ptrs x
     return clang_TemplateArgument_containsUnexpandedParameterPack(x)

@@ -88,7 +88,9 @@ using Test
     f = DeclFinder(I)
     @test f(I, "Widget")
     widget = get_decl(f)
-    @test widget isa CC.NamedDecl
+    # `get_decl` resolves, so this is the class clang reported rather than the base carrier
+    @test widget isa CC.CXXRecordDecl
+    @test widget isa CC.AbstractNamedDecl
     widget_rd = CC.CXXRecordDecl(get_decl(f))
     widget_ii = CC.getIdentifier(widget)
     widget_loc = CC.getLocation(widget)

@@ -26,16 +26,19 @@ get_decl_kind(x::AbstractDecl) = getKind(x)
 get_decl_kind_name(x::AbstractDecl) = getDeclKindName(x)
 
 """
-    decls(x::DeclContext) -> Vector{AbstractDecl}
+    decls(x::AnyDeclContext) -> Vector{AbstractDecl}
 Every declaration in `x` and all nested decl-contexts (namespaces, records,
 functions, …), pre-order, each resolved to its concrete Decl carrier. The whole
 subtree is bulk-extracted in a single pair of ccalls (count + fill) that also
 returns each node's `CXDeclKind`, so building the resolved carriers needs no
 per-node round-trip — O(1) FFI calls for a whole-translation-unit walk instead
-of the O(decls) that the `decl_iterator` protocol costs. Cross from a
-`TranslationUnitDecl` (or any Decl that is a context) with `castToDeclContext`.
+of the O(decls) that the `decl_iterator` protocol costs.
+
+`x` may be a context or a declaration that is one, so `decls(translation_unit(I))` works
+without a cast: marshalling crosses to `DeclContext` through `Decl::castToDeclContext`, which
+is the offset-correct pivot and the only correct way to make that crossing.
 """
-function decls(x::DeclContext)
+function decls(x::AnyDeclContext)
     @check_ptrs x
     n = Int(clang_DeclContext_getRecursiveDeclCount(x))
     nodes = Vector{CXDecl}(undef, n)

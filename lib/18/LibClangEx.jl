@@ -27915,6 +27915,10 @@ function clang_TemplateArgument_constructFromIntegral(Ctx, Val, OpaquePtr)
     @ccall libclangex.clang_TemplateArgument_constructFromIntegral(Ctx::CXASTContext, Val::LLVMGenericValueRef, OpaquePtr::CXQualType)::CXTemplateArgument
 end
 
+function clang_TemplateArgument_constructFromInt64(Ctx, Val, OpaquePtr)
+    @ccall libclangex.clang_TemplateArgument_constructFromInt64(Ctx::CXASTContext, Val::Int64, OpaquePtr::CXQualType)::CXTemplateArgument
+end
+
 function clang_TemplateArgument_dispose(TA)
     @ccall libclangex.clang_TemplateArgument_dispose(TA::CXTemplateArgument)::Cvoid
 end

@@ -58,8 +58,24 @@ function shouldMangleStringLiteral(x::MangleContext, sl::AbstractStringLiteral)
 end
 
 """
-    mangleName(x::MangleContext, d::AbstractNamedDecl) -> String
-Return the mangled linkage name of `d`.
+    const MANGLEABLE_DECL
+
+The declarations [`mangleName`](@ref) and [`mangled_name`](@ref) accept: the ones clang's
+mangler has an entry for. `MangleContext::mangleName` reaches its target through an unchecked
+`cast`, so a declaration of any other class is undefined behaviour — and `llvm_unreachable`
+compiled as `__builtin_unreachable()` in a release LLVM means SIGSEGV, not an abort a caller
+could catch.
+
+The set is what was measured against this build rather than what a header suggests: a
+`FunctionDecl`, `CXXMethodDecl`, `VarDecl`, `FieldDecl` and `IndirectFieldDecl` all mangle,
+while a `CXXRecordDecl`, `EnumDecl`, `EnumConstantDecl`, `TypedefDecl` and `NamespaceDecl`
+each took the process down. A *type*'s name comes from `mangleTypeName`, not from here.
+"""
+const MANGLEABLE_DECL = Union{AbstractFunctionDecl,AbstractVarDecl,AbstractFieldDecl,AbstractIndirectFieldDecl}
+
+"""
+    mangleName(x::MangleContext, d::MANGLEABLE_DECL) -> String
+Return the mangled linkage name of `d`, which must be one of [`MANGLEABLE_DECL`](@ref).
 
 `d` must not be a constructor or a destructor. Those have *several* mangled names — for a
 constructor the complete-object, base-object and allocating variants — so clang's entry point
@@ -68,7 +84,7 @@ takes a `GlobalDecl` carrying which one is meant, and building one from a bare
 decls!")` in GlobalDecl.h. That assert is compiled into the release libclang-cpp, so the
 process aborts rather than returning. Ask [`getAllManglings`](@ref) for those.
 """
-function mangleName(x::MangleContext, d::AbstractNamedDecl)
+function mangleName(x::MangleContext, d::MANGLEABLE_DECL)
     @check_ptrs x d
     @assert !(d isa AbstractCXXConstructorDecl) && !(d isa AbstractCXXDestructorDecl) "a " * "constructor or destructor has several mangled names; use `getAllManglings`"
     return get_string(clang_MangleContext_mangleName(x, d))

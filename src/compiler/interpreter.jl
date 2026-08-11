@@ -35,8 +35,7 @@ For parsing rather than executing, use [`create_parser`](@ref): it drives the sa
 `Parser` over ONE translation unit it never replaces, which is the whole difference, and
 works in C, C++, Objective-C and Objective-C++.
 """
-function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER,
-                            triple=nothing)
+function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
     LLVM.InitializeNativeTarget()
     LLVM.InitializeAllTargetInfos()
     LLVM.InitializeAllTargetMCs()
@@ -51,9 +50,26 @@ function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_
     return CxxInterpreter(I)
 end
 
+"""
+    dispose(x::CxxInterpreter)
+Release the interpreter and everything it owns — the `CompilerInstance`, the AST, and the JIT
+with any code compiled into it. Every pointer obtained from it, including function pointers
+from [`get_function_pointer`](@ref) and any decl carrier, dangles afterwards.
+"""
 dispose(x::CxxInterpreter) = dispose(x.interp)
 
+"""
+    get_instance(x::CxxInterpreter) -> CompilerInstance
+The `clang::CompilerInstance` driving `x`. Borrowed: it dies with the interpreter, never
+`dispose` it. The returned type is not part of the public promise — this is the escape hatch
+into the unpromised wrapper layer, not a stable signature.
+"""
 get_instance(x::CxxInterpreter) = getCompilerInstance(x.interp)
+"""
+    get_ast_context(x::CxxInterpreter) -> ASTContext
+The `clang::ASTContext` holding everything `x` has parsed. Borrowed; same caveat about the
+returned type as [`get_instance`](@ref).
+"""
 get_ast_context(x::CxxInterpreter) = getASTContext(get_instance(x))
 """
     get_codegen_module(x::CxxInterpreter) -> CodeGenModule
@@ -79,11 +95,33 @@ Return the `CodeGenModule` the interpreter is currently emitting into.
     The handle is non-NULL even when stale, so `is_null_handle` does not detect this.
 """
 get_codegen_module(x::CxxInterpreter) = CGM(getCodeGen(x.interp))
+"""
+    get_parser(x::CxxInterpreter) -> Parser
+The `clang::Parser` behind `x`. Borrowed; same caveat as [`get_instance`](@ref), and one more:
+reaching it goes through clang's *private* `Interpreter::IncrParser` via an access-edited copy
+of the header, so this accessor is expected to need rework at the next LLVM bump.
+"""
 get_parser(x::CxxInterpreter) = getParser(x.interp)
+"""
+    get_sema(x::CxxInterpreter) -> Sema
+Clang's semantic analyser for `x`. Borrowed; reached through [`get_parser`](@ref) and carrying
+the same caveats.
+"""
 get_sema(x::CxxInterpreter) = getSema(get_parser(x))
 get_execution_engine(x::CxxInterpreter) = getExecutionEngine(x.interp)
 get_symbol_address(x::CxxInterpreter, name::AbstractString) = getSymbolAddress(x.interp, name)
 get_symbol_address_from_linker_name(x::CxxInterpreter, name::AbstractString) = getSymbolAddressFromLinkerName(x.interp, name)
+"""
+    get_function_pointer(x::CxxInterpreter, name::AbstractString) -> Ptr{Cvoid}
+A pointer to the compiled function `name`, ready to `ccall`.
+
+**Returns `C_NULL` for a name the JIT does not have**, where [`CxxCompiler`](@ref)'s method of
+this name raises `LLVM.LLVMException` instead. The two drivers reach different JIT APIs, so a
+caller writing one error path for both must test the pointer *and* catch.
+
+`name` is the linker name: `extern "C"` functions as written, everything else as clang mangled
+it — see [`mangled_name`](@ref).
+"""
 get_function_pointer(x::CxxInterpreter, name::AbstractString) = Ptr{Cvoid}(get_symbol_address(x, name))
 
 """
@@ -132,6 +170,16 @@ function parse(x::CxxInterpreter, code::String)
     return ptu
 end
 execute(x::CxxInterpreter, tu::PartialTranslationUnit) = Execute(x.interp, tu)
+"""
+    compile(x::CxxInterpreter, code::String)
+Parse `code` as one more increment and execute it: [`parse`](@ref) then `execute`.
+
+This is the interpreter's `compile`, and it differs from [`CxxCompiler`](@ref)'s in what it
+takes and what failure looks like. Here the argument is source and each call adds an increment;
+there the argument is a module that was already compiled, and the call adds it to a JIT. A
+snippet that fails to parse is not an error here — `parse` hands back a null unit and this
+executes nothing — so check the unit rather than expecting a throw.
+"""
 compile(x::CxxInterpreter, code::String) = execute(x, parse(x, code))
 
 parse_cxx_scope_spec(x::CxxInterpreter, ss::CXXScopeSpec, code::String) = parse_cxx_scope_spec(x.interp, ss, code)

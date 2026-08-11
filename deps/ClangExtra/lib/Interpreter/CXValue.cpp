@@ -6,6 +6,42 @@
 
 #include <memory>
 
+// Drift alarm: CXValueKind is hand-mirrored from clang::Value::Kind, which clang builds by
+// expanding the REPL_BUILTIN_TYPES X-macro and then appending K_Void, K_PtrOrObj and
+// K_Unspecified. Mirroring it by hand is what makes it driftable, and unlike the .inc-stamped
+// families it has no CXEnumSync.cpp entry either, so nothing else in the build would notice.
+//
+// It is not a hypothetical: LLVM 20 inserts X(unsigned char, Char_U) between SChar and UChar,
+// shifting every value from UChar onward by one. Unguarded, a port would compile clean and
+// `clang_Value_getKind` would answer K_Int where the Julia side reads CXValue_Long. Expanding
+// the macro over the mirror is what turns that into a build error -- on LLVM 20 the line below
+// asks for CXValue_Char_U, which does not exist.
+#define X(type, name)                                                                      \
+  static_assert(static_cast<int>(CXValue_##name) == static_cast<int>(clang::Value::K_##name), \
+                "CXValueKind drift: " #name);
+REPL_BUILTIN_TYPES
+#undef X
+static_assert(static_cast<int>(CXValue_Void) == static_cast<int>(clang::Value::K_Void),
+              "CXValueKind drift: Void");
+static_assert(static_cast<int>(CXValue_PtrOrObj) == static_cast<int>(clang::Value::K_PtrOrObj),
+              "CXValueKind drift: PtrOrObj");
+static_assert(static_cast<int>(CXValue_Unspecified) ==
+                  static_cast<int>(clang::Value::K_Unspecified),
+              "CXValueKind drift: Unspecified");
+
+namespace {
+enum : int {
+  CXValueKindCount = 3 // Void, PtrOrObj, Unspecified
+#define X(type, name) +1
+  REPL_BUILTIN_TYPES
+#undef X
+};
+} // namespace
+// K_Unspecified is last, so its ordinal is one less than the count -- this is what catches a
+// builtin appended to the END of REPL_BUILTIN_TYPES, which the per-name asserts would miss.
+static_assert(CXValueKindCount - 1 == static_cast<int>(clang::Value::K_Unspecified),
+              "CXValueKind drift: clang::Value::Kind has gained a variant");
+
 CXValue clang_Value_create(void) {
   auto V = std::make_unique<clang::Value>();
   return reinterpret_cast<CXValue>(V.release());

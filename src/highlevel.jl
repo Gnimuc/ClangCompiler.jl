@@ -10,18 +10,35 @@
 """
     translation_unit(x::CxxInterpreter) -> TranslationUnitDecl
 
-Return the translation unit everything parsed into `x` lives under.
+Return the translation unit of the **most recent** increment.
+
+Not everything parsed into `x`. Clang's incremental interpreter starts a fresh
+`TranslationUnitDecl` for every [`parse`](@ref) and chains them by previous-decl, and
+`getTranslationUnitDecl` answers with the most recent one — so after two parses the first
+increment's declarations are not under the node this returns, and walking it sees only the
+second. The declarations are all still there and still findable by name with
+[`find_decl`](@ref); it is the *container* that is per-increment.
+
+Use [`IncrementalParser`](@ref) when one translation unit spanning every increment is what is
+wanted: it drives the same clang `Parser` over a unit it never replaces. It parses and does not
+execute.
 """
 translation_unit(x::CxxInterpreter) = getTranslationUnitDecl(get_ast_context(x))
 
 """
     top_level_decls(x::CxxInterpreter) -> Vector
 
-Return the declarations written directly at file scope, each resolved to its concrete class.
+Return the declarations written directly at file scope in the **most recent** increment, each
+resolved to its concrete class.
 
 Direct children only: a namespace comes back as one `NamespaceDecl`, not as itself plus
 everything inside it. Use [`decls`](@ref) on a context for the flattened walk, or
 [`decls_in`](@ref) to descend one level at a time.
+
+Per-increment for the reason [`translation_unit`](@ref) gives — this walks the unit that
+returns — so a second [`parse`](@ref) does not add to what an earlier call reported. Collect
+per increment, or use [`IncrementalParser`](@ref), which returns each increment's declarations
+from `parse` itself.
 """
 top_level_decls(x::CxxInterpreter) = collect(decls_in(castToDeclContext(translation_unit(x))))
 
@@ -80,8 +97,7 @@ function source_location(x::CxxInterpreter, loc::SourceLocation)
     # The presumed location is the one `#line` directives can move, which is what a diagnostic
     # would print. It is unavailable for an invalid location, and then the spelling -- where the
     # text physically sits -- is the only answer there is.
-    presumed === nothing && return (; file="", line=Int(getSpellingLineNumber(sm, loc)),
-                                    column=Int(getSpellingColumnNumber(sm, loc)))
+    presumed === nothing && return (; file="", line=Int(getSpellingLineNumber(sm, loc)), column=Int(getSpellingColumnNumber(sm, loc)))
     file, line, column, _ = presumed
     return (; file=file, line=Int(line), column=Int(column))
 end
@@ -151,18 +167,35 @@ the function's `FunctionProtoType` rather than on the declaration, and the param
 `getParamDecl` at a time — so a caller asking "what is this function" writes the same six lines
 every time.
 
-`is_const` and `is_virtual` are false for a free function, which has neither.
+`is_const` and `is_virtual` are false for a free function, which has neither. `is_static` is
+true for both a `static` member and a file-scope `static` function, which are different
+language features that share a keyword: the first is "no implicit object argument", the second
+is internal linkage.
+
+The rendered types follow the translation unit's own language options, so C++ spellings come
+back as C++ — `bool` rather than `_Bool`, `A<A<int>>` rather than `A<A<int> >`. Rendering is
+for reading and reporting; it is clang's printer talking, and both the policy and the target
+influence it, so compare declarations by their parts rather than by these strings.
 """
 function signature(x::AbstractFunctionDecl)
     @check_ptrs x
     ft = resolve(getTypePtr(getType(x)))
-    ret = ft isa AbstractFunctionProtoType ? getAsString(getReturnType(ft)) : ""
-    params = [getAsString(getType(getParamDecl(x, i))) for i = 0:(getNumParams(x) - 1)]
-    method = x isa AbstractCXXMethodDecl
-    return (; name=getNameAsString(x), return_type=ret, parameters=params,
-            is_const=method ? isConst(x) : false, is_static=method ? isStatic(x) : false,
-            is_virtual=method ? isVirtual(x) : false, is_deleted=isDeleted(x),
-            is_variadic=ft isa AbstractFunctionProtoType ? isVariadic(ft) : false)
+    # `QualType::getAsString()` with no policy uses a default-constructed `LangOptions`, i.e.
+    # C89 -- which is why a C++ `bool` came back as `_Bool` and nested template arguments got
+    # the pre-C++11 `> >` separator. The declaration's own context knows better.
+    policy = PrintingPolicy(getLangOpts(getASTContext(x)))
+    try
+        ret = ft isa AbstractFunctionProtoType ? getAsString(getReturnType(ft), policy) : ""
+        params = [getAsString(getType(getParamDecl(x, i)), policy) for i = 0:(getNumParams(x) - 1)]
+        method = x isa AbstractCXXMethodDecl
+        return (; name=getNameAsString(x), return_type=ret, parameters=params, is_const=method ? isConst(x) : false,
+                # A file-scope `static` is not an `AbstractCXXMethodDecl`, so asking only the
+                # method accessor reported `false` for the one declaration whose `static` is
+                # written in the source.
+                is_static=method ? isStatic(x) : getStorageClass(x) == CXStorageClass_SC_Static, is_virtual=method ? isVirtual(x) : false, is_deleted=isDeleted(x), is_variadic=ft isa AbstractFunctionProtoType ? isVariadic(ft) : false)
+    finally
+        dispose(policy)
+    end
 end
 
 """
@@ -175,13 +208,18 @@ library being linked — the question that otherwise waits for a build. Note a m
 inline in its header has no out-of-line symbol at all, so a caller compiling its own copy links
 without one; a mangled name absent from the exports is not by itself a verdict.
 
-`d` must not be a constructor or destructor: those have several mangled names and clang's
+`d` is a function, variable or field — the declarations clang's mangler has an entry for. A
+class, enum, typedef or namespace has no mangled name and is a `MethodError` here rather than
+the segfault that reaching clang with one produces; a *type*'s name comes from
+`mangleTypeName`. The accepted set is [`MANGLEABLE_DECL`](@ref).
+
+`d` must also not be a constructor or destructor: those have several mangled names and clang's
 entry point wants to be told which, so ask [`getAllManglings`](@ref) instead.
 
 Builds and disposes a `MangleContext` per call. To mangle many declarations, make one with
 [`createMangleContext`](@ref) and call [`mangleName`](@ref) directly.
 """
-function mangled_name(x::CxxInterpreter, d::AbstractNamedDecl)
+function mangled_name(x::CxxInterpreter, d::MANGLEABLE_DECL)
     @check_ptrs d
     ctx = get_ast_context(x)
     mc = createMangleContext(ctx, getTargetInfo(ctx))
@@ -191,3 +229,22 @@ function mangled_name(x::CxxInterpreter, d::AbstractNamedDecl)
         dispose(mc)
     end
 end
+
+"""
+    decl_name(d::AbstractNamedDecl) -> String
+The name `d` was declared with, unqualified: `"m"` for `app::Widget::m`.
+
+Empty for a declaration that has no name of its own — an anonymous struct, an unnamed
+parameter — which is a state clang represents rather than an error.
+"""
+decl_name(d::AbstractNamedDecl) = getNameAsString(d)
+
+"""
+    qualified_name(d::AbstractNamedDecl) -> String
+The name `d` was declared with, qualified by the namespaces and classes enclosing it:
+`"app::Widget::m"`.
+
+This is the spelling [`find_decl`](@ref) takes, so it is the round trip between a declaration
+and the name that finds it again.
+"""
+qualified_name(d::AbstractNamedDecl) = getQualifiedNameAsString(d)

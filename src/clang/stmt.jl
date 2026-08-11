@@ -18,12 +18,18 @@ end
 
 """
     children(x::AbstractStmt) -> Vector{AbstractStmt}
-Direct sub-statements of `x`, each resolved to its concrete type. NULL slots
-(e.g. a missing `else` branch) are dropped; use [`getChildren`](@ref) to keep
-positional NULLs.
+Direct sub-statements of `x`, each resolved to its concrete type. NULL slots — the absent
+`init`/`cond`/`inc` of a `for (;;)`, which occupy four of that `ForStmt`'s five slots — are
+dropped; use [`getChildren`](@ref) to keep them positional.
+
+The element type is `AbstractStmt` whatever the children turn out to be, matching
+[`subtree`](@ref). Letting the comprehension infer it instead would name a concrete carrier —
+`Vector{ReturnStmt}` for a one-child node — and that leaks a class name from clang's
+`StmtNodes.inc` into the return *type*, where it changes with the LLVM version rather than
+with the code being analysed.
 """
 function children(x::AbstractStmt)
-    return [resolve(c) for c in getChildren(x) if c.ptr != C_NULL]
+    return AbstractStmt[resolve(c) for c in getChildren(x) if c.ptr != C_NULL]
 end
 
 """

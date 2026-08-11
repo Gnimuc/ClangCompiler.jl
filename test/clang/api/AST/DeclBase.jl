@@ -10,7 +10,7 @@ using Test
     f = DeclFinder(I)
 
     @test f(I, "declbase_probe::g")
-    nd = get_decl(f)                       # NamedDecl
+    nd = get_decl(f)                       # resolved carrier
     g = CC.resolve(nd)
 
     # source range / location
@@ -147,7 +147,7 @@ end
     f = DeclFinder(I)
 
     @test f(I, "declbase_nl::h")
-    nd = get_decl(f)                       # NamedDecl
+    nd = get_decl(f)                       # resolved carrier
 
     # Objective-C container flag: absent on a C++ decl, and writes back
     @test CC.isTopLevelDeclInObjCContainer(nd) == false

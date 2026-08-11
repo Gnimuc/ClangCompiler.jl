@@ -1,12 +1,12 @@
 """
-    specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::ClassTemplateDecl, args...)
+    specialize(ctx::ASTContext, template_decl::ClassTemplateDecl, args...)
 Return the [`ClassTemplateSpecializationDecl`](@ref) of `template_decl` specialized on
 `args`, creating and registering it first if the specialization does not exist yet.
 
 Each argument is either a Julia `Bool`/`Integer` (a non-type template argument) or an
 `AbstractType` (a type template argument).
 """
-function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::ClassTemplateDecl, args...)
+function specialize(ctx::ASTContext, template_decl::ClassTemplateDecl, args...)
     params = getTemplateParameters(template_decl)
 
     # One TemplateArgument from one Julia value, at the type the parameter declares.
@@ -14,12 +14,9 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
         if arg isa Union{Bool,Integer}
             jlty = typeof(arg)
             clty = declared === nothing ? get_qual_type(jlty_to_clty(jlty, ctx)) : declared
-            # The GenericValue only carries the bits; the shim takes the width and the
-            # signedness of the argument from `clty`, exactly as clang does.
-            v = LLVM.GenericValue(jlty_to_llvmty(jlty, llvm_ctx), Int(arg))
-            ta = TemplateArgument(ctx, v, clty)
-            LLVM.dispose(v)
-            return ta
+            # The width and the signedness come from `clty`, exactly as clang does, so the
+            # value itself is all this has to carry.
+            return TemplateArgument(ctx, Int(arg), clty)
         elseif arg isa AbstractType
             return TemplateArgument(get_qual_type(arg))
         else
@@ -38,9 +35,7 @@ function specialize(llvm_ctx::LLVM.Context, ctx::ASTContext, template_decl::Clas
         p = pi <= size(params) ? resolve(getParam(params, pi - 1)) : nothing
         declared = p isa NonTypeTemplateParmDecl ? getCanonicalType(ctx, getType(p)) : nothing
         if p !== nothing && isParameterPack(p)
-            push!(arg_vec,
-                  CreatePackCopy(ctx, TemplateArgument[build(args[j], declared)
-                                                       for j = next:length(args)]))
+            push!(arg_vec, CreatePackCopy(ctx, TemplateArgument[build(args[j], declared) for j = next:length(args)]))
             next = length(args) + 1
         else
             push!(arg_vec, build(args[next], declared))

@@ -177,14 +177,23 @@ Quick reference. `CONTRIBUTING.md` states these fully; `src/clang/CLAUDE.md` cov
   So exposing something new to users is never a `public` line on a wrapper; it is a snake_case
   helper over that wrapper, in `src/clang/*.jl` or the high-level files (`src/compiler/`,
   `src/lookup.jl`, `src/highlevel.jl`, `src/types.jl`). `get_record_layout` and `field_offsets`
-  are what `getASTRecordLayout` and `getFieldOffset` look like once they are surface, and
-  `children` is what `getChildren` looks like.
+  are what `getASTRecordLayout` and `getFieldOffset` would be named if they were surface, and
+  `children` is what `getChildren` would be.
 
-  Four camelCase names are public and predate the rule: `getStmtClass`, `getChildren`,
-  `getKind` and `getAttrs`. They are grandfathered, not precedent — `children` is already
-  public beside `getChildren`, which is what the rest should grow into. Do not add a fifth,
-  and do not read these four as licence to: the count going up is the only way this rule
-  fails quietly, since each addition looks exactly like the ones already there.
+  **Nothing in `src/clang/` is public**, and the rule now has no exceptions: the four
+  camelCase names that used to be grandfathered — `getStmtClass`, `getChildren`, `getKind`,
+  `getAttrs` — are not public either. They went with the rest of that layer, for a reason
+  bigger than naming, recorded at the head of the `# clang` block in `src/ClangCompiler.jl`:
+  `public` is a promise to keep a name working, and an audit found most of that layer unable
+  to keep one across an LLVM major bump, because the values are TableGen line ordinals, the
+  type names are clang's AST class names, and the generated unions change membership.
+
+  What survives as public is the layer above: the drivers in `src/compiler/`, and the
+  snake_case helpers in `src/lookup.jl`, `src/highlevel.jl`, `src/types.jl`, `src/template.jl`.
+  Everything under `src/clang/` stays reachable as `ClangCompiler.name` — it is what the
+  package is built on — but carries no promise. Add a `public` line when a downstream package
+  asks for a specific name, and write down what that name can promise across a bump when you
+  do.
 - Objects wrapping C++ resources need explicit `dispose(x)`; tests and examples follow a create → use → dispose pattern.
 - **CI runs macOS, Linux and Windows on x86_64**, and an equality assertion on something the
   runner decides turns into a red CI on a platform you did not run locally — invisible to a

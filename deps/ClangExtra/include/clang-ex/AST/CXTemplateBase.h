@@ -36,6 +36,13 @@ CXTemplateArgument clang_TemplateArgument_constructFromIntegral(CXASTContext Ctx
                                                                 LLVMGenericValueRef Val,
                                                                 CXQualType OpaquePtr);
 
+// Same argument, same preconditions, without the LLVMGenericValueRef. The GenericValue only
+// ever carried raw bits: the body below takes the signedness and the width from OpaquePtr, so
+// an int64_t says everything the GenericValue said. Having this means a Julia caller building
+// a non-type template argument needs no LLVM context at all.
+CXTemplateArgument clang_TemplateArgument_constructFromInt64(CXASTContext Ctx, int64_t Val,
+                                                             CXQualType OpaquePtr);
+
 void clang_TemplateArgument_dispose(CXTemplateArgument TA);
 
 // A freshly heap-boxed empty pack argument. Owned by the caller: release it with
