@@ -1,9 +1,12 @@
 # Run every example and fail if any of them does.
 #
-# This exists because the examples rotted once already: they referenced `get_compiler_args`,
-# `IRGenerator` and `link_process_symbols` -- an API generation removed years earlier -- and
-# nothing noticed, because nothing ran them. Documentation that is never executed is a claim,
-# not a demonstration.
+# This exists because the examples rotted once already: they called `get_compiler_args`,
+# `IRGenerator(src, args)` and `link_process_symbols(cc)` with signatures no version of this
+# package still had, and nothing noticed, because nothing ran them. Documentation that is never
+# executed is a claim, not a demonstration. (Two of those three names are back, under
+# `create_irgenerator`/`create_compiler`, which is the sharper version of the same point: a
+# name that reappears with a different shape breaks a stale caller exactly as a deleted one
+# does, and only running it says which.)
 #
 #   julia --project examples/runall.jl
 #

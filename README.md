@@ -113,6 +113,37 @@ julia> v
 
 julia> CC.dispose(I)
 ```
+
+### Batch Compilation
+
+`create_interpreter` compiles increment by increment and hands each one straight to its own
+JIT. `create_compiler` compiles a whole translation unit in one go, which puts the entire
+module in your hands before anything runs it:
+
+```julia-repl
+julia> import ClangCompiler as CC
+
+julia> cc = CC.create_compiler("""
+           extern "C" int fib(int n) { return n < 2 ? n : fib(n - 1) + fib(n - 2); }
+       """; args=["-O2"])
+
+julia> mod = CC.take_module(cc)   # the whole unit as one LLVM module: inspect it, transform it
+
+julia> CC.compile(cc, mod)        # ... and hand it back
+
+julia> p = CC.get_function_pointer(cc, "fib")
+Ptr{Nothing}(0x000000010f5b4000)
+
+julia> @ccall $p(20::Cint)::Cint
+6765
+
+julia> CC.dispose(cc)
+```
+
+`CC.create_irgenerator` is the same frontend without the JIT, for when the IR itself is the
+product. Neither leaves an AST behind — the frontend has finished by the time the call
+returns — so use `create_interpreter` or `create_parser` for anything that traverses one.
+
 ## More
 
 [`examples/`](examples/) has seven worked programs that run — a JIT'd C++ function called from

@@ -1,7 +1,7 @@
 """
-    struct CxxInterpreter <: AbstractClangCompiler
+    struct CxxInterpreter <: AbstractCxxInterpreter
 """
-struct CxxInterpreter <: AbstractClangCompiler
+struct CxxInterpreter <: AbstractCxxInterpreter
     interp::Interpreter
 end
 

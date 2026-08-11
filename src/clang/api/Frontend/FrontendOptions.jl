@@ -2,6 +2,9 @@
 """
     getDisableFree(x::AbstractFrontendOptions) -> Bool
 Whether the frontend skips tearing down its own allocations, as `-disable-free` asks.
+
+`-disable-free` sets *two* fields, this one and `CodeGenOptions`', and this getter answers for
+this one alone — see [`setDisableFree`](@ref).
 """
 function getDisableFree(x::AbstractFrontendOptions)
     @check_ptrs x
@@ -10,7 +13,16 @@ end
 
 """
     setDisableFree(x::AbstractFrontendOptions, value::Bool)
-Set whether the frontend skips tearing down its own allocations.
+Set whether the frontend skips tearing down its own allocations — under `true`,
+`FrontendAction::EndSourceFile` calls `resetAndLeakSema`/`resetAndLeakASTContext`, so the
+`Sema` and the `ASTContext` are unlinked from the instance and never destroyed.
+
+**`-disable-free` sets two fields, and this is only one of them.**
+`CompilerInvocation::CreateFromArgsImpl` seeds `CodeGenOptions`' field of the same name from
+this one, after which the two are independent — so an invocation built from a command line
+needs `setDisableFree(getCodeGenOpts(ci), false)` as well, and clearing this one alone still
+leaks an `llvm::TargetMachine` per compilation. The `CodeGenOptions` method of this name is
+the other half.
 """
 function setDisableFree(x::AbstractFrontendOptions, value::Bool)
     @check_ptrs x
@@ -88,11 +100,7 @@ end
 Replace the `-x` input kind. `clang::InputKind` has no setters, so it is rebuilt from its
 five components and assigned.
 """
-function setDashX(x::AbstractFrontendOptions, lang::CXLanguage;
-                  fmt::CXInputKind_Format=CXInputKind_Source,
-                  preprocessed::Bool=false,
-                  header_unit::CXInputKind_HeaderUnitKind=CXInputKind_HeaderUnit_None,
-                  header::Bool=false)
+function setDashX(x::AbstractFrontendOptions, lang::CXLanguage; fmt::CXInputKind_Format=CXInputKind_Source, preprocessed::Bool=false, header_unit::CXInputKind_HeaderUnitKind=CXInputKind_HeaderUnit_None, header::Bool=false)
     @check_ptrs x
     return clang_FrontendOptions_setDashX(x, lang, fmt, preprocessed, header_unit, header)
 end
@@ -157,9 +165,7 @@ with no member function to grow it, and every `cc1` action needs at least one en
 Buffer-backed inputs are deliberately absent: the `MemoryBufferRef` such an entry holds is
 non-owning, and nothing on this side could keep the bytes alive for the parse.
 """
-function addInputFile(x::AbstractFrontendOptions, file::AbstractString, lang::CXLanguage;
-                      fmt::CXInputKind_Format=CXInputKind_Source,
-                      preprocessed::Bool=false, system::Bool=false)
+function addInputFile(x::AbstractFrontendOptions, file::AbstractString, lang::CXLanguage; fmt::CXInputKind_Format=CXInputKind_Source, preprocessed::Bool=false, system::Bool=false)
     @check_ptrs x
     return clang_FrontendOptions_addInputFile(x, file, lang, fmt, preprocessed, system)
 end

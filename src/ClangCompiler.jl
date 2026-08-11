@@ -76,18 +76,31 @@ include("clang/attr.jl")
 public getAttrs, get_attr_kind, get_attr_spelling
 
 # public
-include("compiler/compiler.jl")
-public AbstractClangCompiler
+include("compiler/types.jl")
+public AbstractClangCompiler, AbstractCxxInterpreter, AbstractIncrementalParser
+public AbstractIRGenerator, AbstractCxxCompiler
+
+include("compiler/utils.jl")
 
 include("compiler/interpreter.jl")
 public CxxInterpreter, create_interpreter, dispose
 public get_instance, get_ast_context, get_codegen_module, get_parser, get_sema
+# the verbs every driver that runs code shares
+public compile, get_symbol_address, get_function_pointer
 
 # The incremental driver clang's own Interpreter cannot provide outside C++.
 include("compiler/parser.jl")
 public IncrementalParser, create_parser
 
-# include("compiler/irgen.jl")
+# The batch driver: one translation unit in, one LLVM module out.
+include("compiler/irgen.jl")
+public IRGenerator, create_irgenerator
+public take_module, has_module, get_context
+
+# ... and that module on a JIT.
+include("compiler/compiler.jl")
+public CxxCompiler, create_compiler, link_process_symbols
+public get_jit, get_dylib, get_irgenerator
 
 include("types.jl")
 public clty_to_jlty, jlty_to_clty

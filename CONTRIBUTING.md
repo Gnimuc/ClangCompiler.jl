@@ -13,7 +13,8 @@ almost everything about how to change it.
 | `src/clang/` | the hand-written Julia wrapper | yes |
 
 `src/compiler/` sits on top of `src/clang/` and is the user-facing API (`create_interpreter`,
-`parse`, `execute`, `get_function_pointer`).
+`create_parser`, `create_irgenerator`, `create_compiler`, and the verbs `parse`, `execute`,
+`compile`, `take_module`, `get_function_pointer`).
 
 `lib/LibClang.jl` is the one exception to "never hand-edit `lib/`": it is a small hand-maintained
 excerpt of `libclang` bindings, not generator output.

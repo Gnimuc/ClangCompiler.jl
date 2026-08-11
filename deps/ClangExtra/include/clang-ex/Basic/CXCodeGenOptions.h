@@ -49,6 +49,22 @@ void clang_CodeGenOptions_getCommandLineArgs(CXCodeGenOptions CGO, const char **
 
 void clang_CodeGenOptions_PrintStats(CXCodeGenOptions CGO);
 
+// -clear-ast-before-backend: the frontend releases the AST — `ASTContext::cleanup()` plus a
+// reset of its arena — before the backend runs, keeping only what the SourceManager needs.
+// A one-bit CODEGENOPT, i.e. a plain public bitfield of CodeGenOptionsBase with no generated
+// accessor pair, so this reads and writes it by name.
+unsigned clang_CodeGenOptions_getClearASTBeforeBackend(CXCodeGenOptions CGO);
+void clang_CodeGenOptions_setClearASTBeforeBackend(CXCodeGenOptions CGO, unsigned Value);
+
+// -disable-free, the CodeGen copy. `CompilerInvocation::CreateFromArgsImpl` sets this from
+// the FrontendOptions flag of the same name, after which the two are independent: clearing
+// `clang_FrontendOptions_setDisableFree` does not clear this one. What reads it is
+// `~EmitAssemblyHelper`, which buries the `llvm::TargetMachine` rather than destroying it —
+// the only use in CodeGen, so clearing this trades a per-compilation leak for an ordinary
+// destructor call and changes nothing else. Same one-bit CODEGENOPT shape as above.
+unsigned clang_CodeGenOptions_getDisableFree(CXCodeGenOptions CGO);
+void clang_CodeGenOptions_setDisableFree(CXCodeGenOptions CGO, unsigned Value);
+
 // The -O level (0..3). CodeGenOptions.def declares it AFFECTING_VALUE_CODEGENOPT, i.e. a
 // plain two-bit public member of CodeGenOptionsBase with no generated accessor pair, so
 // this reads and writes it directly. Values above 3 do not fit the bitfield and are

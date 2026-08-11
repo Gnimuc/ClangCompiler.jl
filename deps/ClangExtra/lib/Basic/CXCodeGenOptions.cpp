@@ -51,6 +51,22 @@ void clang_CodeGenOptions_PrintStats(CXCodeGenOptions CGO) {
   llvm::errs() << "  CudaGpuBinaryFileName: " << Opts->CudaGpuBinaryFileName << "\n";
 }
 
+unsigned clang_CodeGenOptions_getClearASTBeforeBackend(CXCodeGenOptions CGO) {
+  return reinterpret_cast<clang::CodeGenOptions *>(CGO)->ClearASTBeforeBackend;
+}
+
+void clang_CodeGenOptions_setClearASTBeforeBackend(CXCodeGenOptions CGO, unsigned Value) {
+  reinterpret_cast<clang::CodeGenOptions *>(CGO)->ClearASTBeforeBackend = Value;
+}
+
+unsigned clang_CodeGenOptions_getDisableFree(CXCodeGenOptions CGO) {
+  return reinterpret_cast<clang::CodeGenOptions *>(CGO)->DisableFree;
+}
+
+void clang_CodeGenOptions_setDisableFree(CXCodeGenOptions CGO, unsigned Value) {
+  reinterpret_cast<clang::CodeGenOptions *>(CGO)->DisableFree = Value;
+}
+
 unsigned clang_CodeGenOptions_getOptimizationLevel(CXCodeGenOptions CGO) {
   return reinterpret_cast<clang::CodeGenOptions *>(CGO)->OptimizationLevel;
 }

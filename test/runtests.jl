@@ -173,6 +173,7 @@ include("clang/api/Tooling/Inclusions/StandardLibrary.jl")
 include("clang/api/Tooling/Syntax/Tokens.jl")
 
 # execution last (JIT is the slowest)
+include("irgen.jl")
 include("execution.jl")
 
 # include("llvm/pointer_from_objref.jl")

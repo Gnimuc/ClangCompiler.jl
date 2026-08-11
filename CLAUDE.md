@@ -115,7 +115,31 @@ There are three layers, from C++ up to user-facing Julia:
    - `src/clang/api/`: Julia wrapper functions for the C API.
    - `src/clang/*.jl` (ast.jl, sema.jl, qualtype.jl, ...): higher-level helpers over the raw API.
    - **See `src/clang/CLAUDE.md` for the thin-wrapper conventions** (the single-client axiom, the two type-safety invariants, and how C++ subtyping/multiple-inheritance are reproduced in Julia) — read it before touching any wrapper code, since this layer is the only safety boundary in front of a C shim that is check-free by design and blind to Clang's class hierarchy.
-   - `src/compiler/`: the user-facing API — `CxxInterpreter`, `create_interpreter`, `parse`/`execute`/`compile`, `get_function_pointer`, and `IncrementalParser`/`create_parser`.
+   - `src/compiler/`: the user-facing API — four drivers, one per file, over a taxonomy and a
+     shared helper file that come first because everything else depends on them.
+     `types.jl` holds every abstract type (`AbstractClangCompiler` and the four
+     `Abstract<Driver>` supertypes); `utils.jl` holds what more than one driver needs
+     (`SOURCE_LANGUAGES` and its two validators). Then
+     `CxxInterpreter`/`create_interpreter` (interpreter.jl) and
+     `IncrementalParser`/`create_parser` (parser.jl), the incremental pair, and
+     `IRGenerator`/`create_irgenerator` (irgen.jl) and `CxxCompiler`/`create_compiler`
+     (compiler.jl), the batch pair. Plus the verbs: `parse`/`execute`/`compile`,
+     `take_module`, `get_function_pointer`. The abstract types are taxonomy, not extension
+     points: nothing dispatches on them, exactly as with `AbstractFinder` in `src/lookup.jl`,
+     so each driver's accessors are written against its concrete type.
+   - The include order in `src/ClangCompiler.jl` is load-bearing and not alphabetical.
+     `types.jl` precedes every driver because each subtypes it; `utils.jl` precedes
+     `parser.jl` and `irgen.jl` because their docstrings interpolate `SOURCE_LANGUAGES` at
+     include time; and `irgen.jl` precedes `compiler.jl` because `CxxCompiler` has an
+     `IRGenerator` field, which is why the supertype cannot simply live with the compiler.
+   - `src/compiler/irgen.jl` + `compiler.jl` are the batch half: one `EmitLLVMOnlyAction`
+     over a whole translation unit, so the result is a single `LLVM.Module` rather than one
+     per increment, and `take_module` hands it over before anything JITs it. That gap is the
+     reason the pair exists — it is where an optimisation pipeline or a hand-built function
+     goes, and `compile(cc, mod)` takes the module back. The cost is the other side of the
+     same trade: the frontend runs to completion inside the constructor, so
+     `FrontendAction::EndSourceFile` has already dropped the `ASTContext` and there is no AST
+     to traverse afterwards.
    - `src/compiler/parser.jl` reimplements clang's incremental parse loop over a **single**
      `TranslationUnitDecl`. Clang's own `Interpreter` starts a new one per increment, and
      because C's unqualified lookup does not cross the chain that makes, C and Objective-C

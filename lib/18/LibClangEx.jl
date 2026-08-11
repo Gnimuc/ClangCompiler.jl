@@ -34025,6 +34025,22 @@ function clang_CodeGenOptions_PrintStats(CGO)
     @ccall libclangex.clang_CodeGenOptions_PrintStats(CGO::CXCodeGenOptions)::Cvoid
 end
 
+function clang_CodeGenOptions_getClearASTBeforeBackend(CGO)
+    @ccall libclangex.clang_CodeGenOptions_getClearASTBeforeBackend(CGO::CXCodeGenOptions)::Cuint
+end
+
+function clang_CodeGenOptions_setClearASTBeforeBackend(CGO, Value)
+    @ccall libclangex.clang_CodeGenOptions_setClearASTBeforeBackend(CGO::CXCodeGenOptions, Value::Cuint)::Cvoid
+end
+
+function clang_CodeGenOptions_getDisableFree(CGO)
+    @ccall libclangex.clang_CodeGenOptions_getDisableFree(CGO::CXCodeGenOptions)::Cuint
+end
+
+function clang_CodeGenOptions_setDisableFree(CGO, Value)
+    @ccall libclangex.clang_CodeGenOptions_setDisableFree(CGO::CXCodeGenOptions, Value::Cuint)::Cvoid
+end
+
 function clang_CodeGenOptions_getOptimizationLevel(CGO)
     @ccall libclangex.clang_CodeGenOptions_getOptimizationLevel(CGO::CXCodeGenOptions)::Cuint
 end

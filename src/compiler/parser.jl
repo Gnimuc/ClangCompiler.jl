@@ -1,12 +1,5 @@
 """
-    const INCREMENTAL_LANGUAGES
-
-The `language` values [`create_parser`](@ref) accepts, and the `-x` spelling each selects.
-"""
-const INCREMENTAL_LANGUAGES = (c = "c", cxx = "c++", objc = "objective-c", objcxx = "objective-c++")
-
-"""
-    struct IncrementalParser <: AbstractClangCompiler
+    struct IncrementalParser <: AbstractIncrementalParser
 An incremental parser: successive [`parse`](@ref) calls extend one translation unit, so a
 declaration made in one call is visible to the next.
 
@@ -23,7 +16,7 @@ which is the whole difference: C, C++, Objective-C and Objective-C++ all work.
 It parses and does not execute — there is no JIT here. For running code, which clang's
 Interpreter only supports in C++ anyway, use [`CxxInterpreter`](@ref).
 """
-struct IncrementalParser <: AbstractClangCompiler
+struct IncrementalParser <: AbstractIncrementalParser
     instance::CompilerInstance
     parser::Parser
     language::Symbol
@@ -32,7 +25,7 @@ end
 """
     create_parser(args=String[]; language=:cxx, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
         -> IncrementalParser
-Create an incremental parser for `language`, one of `$(join(keys(INCREMENTAL_LANGUAGES), ", "))`.
+Create an incremental parser for `language`, one of `$(join(keys(SOURCE_LANGUAGES), ", "))`.
 
 `args` are extra compiler flags, and the build environment follows `language` — the C shards
 for `:c`/`:objc`, the C++ ones otherwise — so unlike [`create_interpreter`](@ref) the
@@ -68,9 +61,8 @@ turns the flag on.
 Release it with `dispose`.
 """
 function create_parser(args=String[]; language::Symbol=:cxx, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
-    haskey(INCREMENTAL_LANGUAGES, language) ||
-        throw(ArgumentError("language must be one of $(keys(INCREMENTAL_LANGUAGES)), got :$language"))
-    is_cxx = language in (:cxx, :objcxx)
+    check_language(language)
+    is_cxx = is_cxx_language(language)
     default_args = get_default_args(; is_cxx, version, triple)
 
     ci = CompilerInstance()
@@ -79,8 +71,7 @@ function create_parser(args=String[]; language::Symbol=:cxx, version=JLLEnvs.GCC
     diag = getDiagnostics(ci)
     # `-fincremental-extensions` is what makes the lexer end each buffer with a marker token
     # rather than a hard EOF, so the parser can be handed another one afterwards.
-    all_args = [default_args..., args..., "-x", INCREMENTAL_LANGUAGES[language],
-                "-Xclang", "-fincremental-extensions"]
+    all_args = [default_args..., args..., "-x", SOURCE_LANGUAGES[language], "-Xclang", "-fincremental-extensions"]
     # The driver needs an input name to build a job for; nothing ever opens it, because the
     # main file is installed below from an empty buffer.
     setInvocation(ci, createFromCommandLine("<<< inputs >>>", all_args, diag))
@@ -247,7 +238,7 @@ false, so a caller that forgot to resolve gets a test that passes by never match
 function _collect_group!(out::Vector{AbstractDecl}, g::CXDeclGroupRef)
     g == CXDeclGroupRef(C_NULL) && return out
     dg = DeclGroupRef(g)
-    for i in 0:(Base.size(dg) - 1)
+    for i = 0:(Base.size(dg) - 1)
         push!(out, resolve(getDecl(dg, i)))
     end
     return out
