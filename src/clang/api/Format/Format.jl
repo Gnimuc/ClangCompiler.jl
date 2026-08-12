@@ -89,11 +89,8 @@ reason is written to standard error by clang itself.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function getStyle(style_name::AbstractString, filename::AbstractString,
-                  fallback_style::AbstractString="LLVM", code::AbstractString="",
-                  allow_unknown_options::Bool=false)
-    ptr = clang_format_getStyle(style_name, filename, fallback_style, code,
-                                allow_unknown_options)
+function getStyle(style_name::AbstractString, filename::AbstractString, fallback_style::AbstractString="LLVM", code::AbstractString="", allow_unknown_options::Bool=false)
+    ptr = clang_format_getStyle(style_name, filename, fallback_style, code, allow_unknown_options)
     return ptr == C_NULL ? nothing : FormatStyle(ptr)
 end
 
@@ -106,8 +103,7 @@ success and the specific parse error otherwise.
 Options the document does not mention keep the value they already had in `x`, unless the
 document sets `BasedOnStyle` — in which case the base is taken from `getLanguage(x)`.
 """
-function parseConfiguration(x::AbstractFormatStyle, config::AbstractString,
-                            allow_unknown_options::Bool=false)
+function parseConfiguration(x::AbstractFormatStyle, config::AbstractString, allow_unknown_options::Bool=false)
     @check_ptrs x
     return clang_format_parseConfiguration(config, x, allow_unknown_options)
 end
@@ -126,8 +122,7 @@ end
 Guess the language of `code` from its file name and its contents. Defaults to
 `CXLanguageKind_LK_Cpp`.
 """
-guessLanguage(filename::AbstractString, code::AbstractString) =
-    clang_format_guessLanguage(filename, code)
+guessLanguage(filename::AbstractString, code::AbstractString) = clang_format_guessLanguage(filename, code)
 
 """
     getLanguageName(language::CXLanguageKind) -> String
@@ -184,8 +179,7 @@ end
                             filename::AbstractString="<stdin>") -> String
 Add or correct the `// namespace foo` comment on every namespace closing brace of `code`.
 """
-function fixNamespaceEndComments(x::AbstractFormatStyle, code::AbstractString,
-                                 filename::AbstractString="<stdin>")
+function fixNamespaceEndComments(x::AbstractFormatStyle, code::AbstractString, filename::AbstractString="<stdin>")
     @check_ptrs x
     return get_string(clang_format_fixNamespaceEndComments(x, code, filename))
 end
@@ -195,8 +189,7 @@ end
                           filename::AbstractString="<stdin>") -> String
 Sort every run of consecutive `using` declarations in `code`.
 """
-function sortUsingDeclarations(x::AbstractFormatStyle, code::AbstractString,
-                               filename::AbstractString="<stdin>")
+function sortUsingDeclarations(x::AbstractFormatStyle, code::AbstractString, filename::AbstractString="<stdin>")
     @check_ptrs x
     return get_string(clang_format_sortUsingDeclarations(x, code, filename))
 end
@@ -212,13 +205,10 @@ starts, the number of bytes it replaces, and the text to put there. The empty st
 back when the script is order-dependent — `clang::tooling::Replacements` refuses to hold
 two edits whose result depends on which is applied first.
 """
-function formatReplacements(x::AbstractFormatStyle, code::AbstractString,
-                            offsets::Vector{UInt32}, lengths::Vector{UInt32},
-                            texts::Vector{String}, filename::AbstractString="<stdin>")
+function formatReplacements(x::AbstractFormatStyle, code::AbstractString, offsets::Vector{UInt32}, lengths::Vector{UInt32}, texts::Vector{String}, filename::AbstractString="<stdin>")
     @check_ptrs x
     @assert length(offsets) == length(lengths) == length(texts) "offsets, lengths and texts must be parallel"
-    return get_string(clang_format_formatReplacements(x, code, filename, offsets, lengths,
-                                                      texts, length(texts)))
+    return get_string(clang_format_formatReplacements(x, code, filename, offsets, lengths, texts, length(texts)))
 end
 
 """
@@ -235,11 +225,8 @@ This is also how `#include` directives are inserted and removed, through clang's
 `0` inserts its text — a whole `#include "..."` line — into the right block, and one whose
 offset is `typemax(UInt32)` and whose length is `1` removes the header its text names.
 """
-function cleanupAroundReplacements(x::AbstractFormatStyle, code::AbstractString,
-                                   offsets::Vector{UInt32}, lengths::Vector{UInt32},
-                                   texts::Vector{String}, filename::AbstractString="<stdin>")
+function cleanupAroundReplacements(x::AbstractFormatStyle, code::AbstractString, offsets::Vector{UInt32}, lengths::Vector{UInt32}, texts::Vector{String}, filename::AbstractString="<stdin>")
     @check_ptrs x
     @assert length(offsets) == length(lengths) == length(texts) "offsets, lengths and texts must be parallel"
-    return get_string(clang_format_cleanupAroundReplacements(x, code, filename, offsets,
-                                                             lengths, texts, length(texts)))
+    return get_string(clang_format_cleanupAroundReplacements(x, code, filename, offsets, lengths, texts, length(texts)))
 end

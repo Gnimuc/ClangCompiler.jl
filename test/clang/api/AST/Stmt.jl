@@ -1,4 +1,5 @@
 using ClangCompiler
+import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, compile, DeclFinder, get_decl
 using ClangCompiler: FunctionDecl, getBody, resolve, children, getChildren
 using ClangCompiler: getStmtClass, getStmtClassName, getNumChildren
@@ -15,26 +16,25 @@ using Test
 
 @testset "Stmt/Expr payload accessors" begin
     I = create_interpreter()
-    compile(I,
-            """
-            struct Widget {
-                int m(int v) { return v + 1; }
-            };
-            int machine(int n) {
-                Widget w;
-                int acc = 0;
-                while (n > 0) { acc += w.m(n); --n; }
-                if (acc > 10) { return acc; } else { return [](int v) { return v; }(acc); }
-            }
-            """)
+    compile(I, """
+               struct Widget {
+                   int m(int v) { return v + 1; }
+               };
+               int machine(int n) {
+                   Widget w;
+                   int acc = 0;
+                   while (n > 0) { acc += w.m(n); --n; }
+                   if (acc > 10) { return acc; } else { return [](int v) { return v; }(acc); }
+               }
+               """)
     lookup = DeclFinder(I)
     @test lookup(I, "machine")
     fd = FunctionDecl(get_decl(lookup))
     body = getBody(fd)
 
     # collect every node in the function body, resolved to concrete types
-    nodes = ClangCompiler.AbstractStmt[]
-    stack = ClangCompiler.AbstractStmt[resolve(body)]
+    nodes = CC.AbstractStmt[]
+    stack = CC.AbstractStmt[resolve(body)]
     while !isempty(stack)
         node = pop!(stack)
         push!(nodes, node)
@@ -67,7 +67,7 @@ using Test
     # identifier, so getName would assert — use the parameter count)
     le = only(byT(LambdaExpr))
     callop = getCallOperator(le)
-    @test ClangCompiler.getNumParams(FunctionDecl(callop)) == 1
+    @test CC.getNumParams(FunctionDecl(callop)) == 1
 
     # DeclStmt: `Widget w;` and `int acc = 0;` are single decls
     dss = byT(DeclStmt)
@@ -83,7 +83,6 @@ using Test
     dispose(I)
 end
 
-import ClangCompiler as CC
 @testset "stamped Stmt predicate/cast surface" begin
     I = create_interpreter(String[])
     CC.parse(I, "int ce2_g(int x) { if (x > 0) { return x + 1; } return 0; }")
@@ -101,11 +100,12 @@ import ClangCompiler as CC
     for nm in names(CC; all=true)
         isdefined(CC, nm) || continue
         v = getproperty(CC, nm)
-        if v isa Function && !(v isa Type) && startswith(String(nm), "is") &&
-           hasmethod(v, Tuple{CC.Stmt})
+        if v isa Function && !(v isa Type) && startswith(String(nm), "is") && hasmethod(v, Tuple{CC.Stmt})
             @test v(body) isa Bool
             npred += 1
-        elseif v isa Type && v != CC.Stmt && hasmethod(v, Tuple{CC.Stmt}) &&
+        elseif v isa Type &&
+               v != CC.Stmt &&
+               hasmethod(v, Tuple{CC.Stmt}) &&
                which(v, Tuple{CC.Stmt}).sig <: Tuple{Type,CC.AbstractStmt} &&
                # ...and a stamped cast lands inside the Stmt hierarchy. A carrier from
                # another family that merely *accepts* a statement is a conversion, not a
@@ -119,8 +119,7 @@ import ClangCompiler as CC
             # `Expr_` carries clang's `Expr`; the predicate and the abstract keep the
             # undecorated spelling, so drop the Base-clash underscore before forming them
             cls = rstrip(String(nm), '_')
-            absT = isdefined(CC, Symbol("Abstract", cls)) ? getproperty(CC, Symbol("Abstract", cls)) :
-                   nothing
+            absT = isdefined(CC, Symbol("Abstract", cls)) ? getproperty(CC, Symbol("Abstract", cls)) : nothing
             if getproperty(CC, Symbol("is", cls))(body)
                 absT === nothing || @test r isa absT
                 @test v(body) == body            # narrows to the same clang::Stmt
@@ -426,7 +425,8 @@ end
     @test !(CC.capturesThis(cap))
     @test CC.capturesVariable(cap)
     @test !(CC.capturesVLAType(cap))
-    CC.capturesVariable(cap) && (@test CC.getCapturedVar(cap) isa CC.ValueDecl && get_name(CC.getCapturedVar(cap)) == "g")
+    CC.capturesVariable(cap) &&
+        (@test CC.getCapturedVar(cap) isa CC.ValueDecl && get_name(CC.getCapturedVar(cap)) == "g")
 
     # CXXNewExpr — new Vec(4) and new int[n]
     news = pick(CC.CXXNewExpr)
@@ -443,7 +443,8 @@ end
         @test !(CC.isGlobalNew(ne))
         @test CC.passAlignment(ne) == false
         @test CC.doesUsualArrayDeleteWantSize(ne) == false
-        @test CC.getInitializationStyle(ne) in (LibClangEx.CXCXXNewInitializationStyle_Parens, LibClangEx.CXCXXNewInitializationStyle_None)
+        @test CC.getInitializationStyle(ne) in
+              (LibClangEx.CXCXXNewInitializationStyle_Parens, LibClangEx.CXCXXNewInitializationStyle_None)
         @test !CC.is_null_handle(CC.getOperatorDelete(ne))
         @test !CC.is_null_handle(CC.getOperatorNew(ne))
         @test !CC.is_null_handle(CC.getAllocatedTypeSourceInfo(ne))
@@ -586,14 +587,13 @@ end
 
 @testset "Stmt subclass tail: getExprStmt / getStmtExprResult / NRVO / indirect goto" begin
     I = CC.create_interpreter()
-    CC.compile(I,
-               """
-               int stmt_tail_probe(int n) {
-                   int local = n + 1;
-                   local += 2;
-                   return local;
-               }
-               """)
+    CC.compile(I, """
+                  int stmt_tail_probe(int n) {
+                      int local = n + 1;
+                      local += 2;
+                      return local;
+                  }
+                  """)
     f = CC.DeclFinder(I)
     @test f(I, "stmt_tail_probe")
     fd = CC.FunctionDecl(CC.get_decl(f))
@@ -626,15 +626,14 @@ end
 
     # IndirectGotoStmt -- computed goto / labels-as-values are GNU extensions, so
     # only assert once the host dialect accepted the statement and it was found.
-    CC.parse(I,
-             """
-             int stmt_tail_goto(int n) {
-                 int local = n;
-                 goto *&&done;
-             done:
-                 return local;
-             }
-             """)
+    CC.parse(I, """
+                int stmt_tail_goto(int n) {
+                    int local = n;
+                    goto *&&done;
+                done:
+                    return local;
+                }
+                """)
     igs = nothing
     if f(I, "stmt_tail_goto")
         gbody = CC.getBody(CC.FunctionDecl(CC.get_decl(f)))
@@ -731,7 +730,7 @@ end
     ofd = CC.FunctionDecl(get_decl(fomp))
     cs = nothing
     for n in CC.subtree(CC.resolve(CC.getBody(ofd)))
-        n isa CC.CapturedStmt && (cs = n; break)
+        n isa CC.CapturedStmt && (cs=n; break)
     end
     @test cs isa CC.CapturedStmt
     @test !CC.is_null_handle(CC.getCapturedStmt(cs))
@@ -1144,7 +1143,7 @@ end
     ofd = CC.FunctionDecl(get_decl(fomp))
     cs = nothing
     for nd in CC.subtree(CC.resolve(CC.getBody(ofd)))
-        nd isa CC.CapturedStmt && (cs = nd; break)
+        nd isa CC.CapturedStmt && (cs=nd; break)
     end
     @test cs isa CC.CapturedStmt
 
@@ -1156,7 +1155,7 @@ end
 
     ncaps = CC.capture_size(cs)
     @test ncaps >= 2                                            # n and m are captured
-    caps = [CC.getCapture(cs, i) for i in 0:(ncaps - 1)]
+    caps = [CC.getCapture(cs, i) for i = 0:(ncaps - 1)]
     @test all(c -> c isa CC.CapturedStmtCapture, caps)
     @test all(c -> c.ptr != C_NULL, caps)
     @test_throws AssertionError CC.getCapture(cs, ncaps)
@@ -1165,8 +1164,8 @@ end
         @test CC.getCaptureKind(c) isa LibClangEx.CXVariableCaptureKind
         @test !CC.is_null_handle(CC.getLocation(c))
         # the four forms partition the capture kinds: exactly one of them holds
-        forms = [CC.capturesThis(c), CC.capturesVariable(c),
-                 CC.capturesVariableByCopy(c), CC.capturesVariableArrayType(c)]
+        forms = [CC.capturesThis(c), CC.capturesVariable(c), CC.capturesVariableByCopy(c),
+                 CC.capturesVariableArrayType(c)]
         @test count(forms) == 1
         @test count(forms) == 1
     end
@@ -1177,7 +1176,7 @@ end
     @test all(c -> CC.getCapturedVar(c).ptr != C_NULL, varcaps)
     @test issubset(Set(["n", "m"]), Set(get_name(CC.getCapturedVar(c)) for c in varcaps))
 
-    inits = [CC.getCaptureInit(cs, i) for i in 0:(ncaps - 1)]
+    inits = [CC.getCaptureInit(cs, i) for i = 0:(ncaps - 1)]
     @test all(e -> e isa CC.Expr_, inits)
     @test any(e -> e.ptr != C_NULL, inits)
     @test_throws AssertionError CC.getCaptureInit(cs, ncaps)
@@ -1282,11 +1281,11 @@ end
     # --- IfStmt: statement kind + condition-variable DeclStmt ---
     ifs = pick(CC.IfStmt)
     @test length(ifs) == 3
-    @test map(CC.getStatementKind, ifs) == [CC.LibClangEx.CXIfStatementKind_Ordinary, CC.LibClangEx.CXIfStatementKind_Constexpr, CC.LibClangEx.CXIfStatementKind_Ordinary]
-    @test length(filter(i -> CC.getStatementKind(i) ==
-                             CC.LibClangEx.CXIfStatementKind_Constexpr, ifs)) == 1
-    @test length(filter(i -> CC.getStatementKind(i) ==
-                             CC.LibClangEx.CXIfStatementKind_Constexpr, ifs)) == 1
+    @test map(CC.getStatementKind, ifs) ==
+          [CC.LibClangEx.CXIfStatementKind_Ordinary, CC.LibClangEx.CXIfStatementKind_Constexpr,
+           CC.LibClangEx.CXIfStatementKind_Ordinary]
+    @test length(filter(i -> CC.getStatementKind(i) == CC.LibClangEx.CXIfStatementKind_Constexpr, ifs)) == 1
+    @test length(filter(i -> CC.getStatementKind(i) == CC.LibClangEx.CXIfStatementKind_Constexpr, ifs)) == 1
     withvar = only(filter(CC.hasVarStorage, ifs))
     kind = CC.getStatementKind(withvar)
     @test kind == CC.LibClangEx.CXIfStatementKind_Ordinary
@@ -1382,7 +1381,7 @@ end
     if fasm(Iasm, "asmMutator")
         afd = CC.FunctionDecl(get_decl(fasm))
         for n in CC.subtree(CC.resolve(CC.getBody(afd)))
-            n isa CC.GCCAsmStmt && (asmstmt = n; break)
+            n isa CC.GCCAsmStmt && (asmstmt=n; break)
         end
     end
     if asmstmt !== nothing
@@ -1425,7 +1424,7 @@ end
     ofd = CC.FunctionDecl(get_decl(fomp))
     cs = nothing
     for n in CC.subtree(CC.resolve(CC.getBody(ofd)))
-        n isa CC.CapturedStmt && (cs = n; break)
+        n isa CC.CapturedStmt && (cs=n; break)
     end
     @test cs isa CC.CapturedStmt
     cd = CC.getCapturedDecl(cs)
@@ -1523,8 +1522,8 @@ end
 
     # IfStmt::Create — storage flags mirror exactly which optional arguments were non-null
     ordinary = CC.LibClangEx.CXIfStatementKind_Ordinary
-    made_if = CC.IfStmt(ctx, ifloc, ordinary, nullstmt, nullvar, icond, ilpl, irpl, ithen,
-                        CC.SourceLocation(C_NULL), nullstmt)
+    made_if = CC.IfStmt(ctx, ifloc, ordinary, nullstmt, nullvar, icond, ilpl, irpl, ithen, CC.SourceLocation(C_NULL),
+                        nullstmt)
     @test made_if isa CC.IfStmt
     @test CC.getIfLoc(made_if).ptr == ifloc.ptr
     @test CC.getLParenLoc(made_if).ptr == ilpl.ptr
@@ -1536,8 +1535,7 @@ end
     @test !CC.hasVarStorage(made_if)
     @test !CC.hasInitStorage(made_if)
     @test CC.getStatementKind(made_if) == ordinary
-    with_else = CC.IfStmt(ctx, ifloc, ordinary, ithen, wvar, icond, ilpl, irpl, ithen, colon,
-                          ithen)
+    with_else = CC.IfStmt(ctx, ifloc, ordinary, ithen, wvar, icond, ilpl, irpl, ithen, colon, ithen)
     @test CC.hasElseStorage(with_else)
     @test CC.hasVarStorage(with_else)
     @test CC.hasInitStorage(with_else)
@@ -1869,7 +1867,7 @@ end
     kids = CC.children(body)
     n = length(body)
     @test n == length(kids)
-    @test [CC.getBodyStmt(body, i).ptr for i in 0:(n - 1)] == [k.ptr for k in kids]
+    @test [CC.getBodyStmt(body, i).ptr for i = 0:(n - 1)] == [k.ptr for k in kids]
     @test CC.getBodyStmt(body, 0).ptr == CC.body_front(body).ptr
     @test CC.getBodyStmt(body, n - 1).ptr == CC.body_back(body).ptr
     @test !CC.is_null_handle(CC.getBodyStmt(body, 0))
@@ -1882,7 +1880,7 @@ end
     @test ds isa CC.DeclStmt
     decls = CC.getDecls(ds)
     @test CC.getNumDecls(ds) == length(decls) == 2
-    @test [CC.getDecl(ds, i).ptr for i in 0:(length(decls) - 1)] == [d.ptr for d in decls]
+    @test [CC.getDecl(ds, i).ptr for i = 0:(length(decls) - 1)] == [d.ptr for d in decls]
     @test CC.getDecl(ds, 0) isa CC.Decl
     @test_throws AssertionError CC.getDecl(ds, CC.getNumDecls(ds))
     @test_throws AssertionError CC.getDecl(ds, -1)
@@ -1981,9 +1979,8 @@ end
 
     # one initializer per capture is clang's own precondition
     @test_throws AssertionError CC.CapturedStmt(ctx, body, kind, caps, CC.Expr_[init], cd, rd)
-    @test_throws AssertionError CC.CapturedStmt(ctx, body, kind,
-                                                 CC.CapturedStmtCapture[CC.CapturedStmtCapture(C_NULL)],
-                                                 CC.Expr_[init], cd, rd)
+    @test_throws AssertionError CC.CapturedStmt(ctx, body, kind, CC.CapturedStmtCapture[CC.CapturedStmtCapture(C_NULL)],
+                                                CC.Expr_[init], cd, rd)
 
     # the boxes are ours; the statement kept copies, so it stays readable afterwards
     dispose(byref)
@@ -2096,15 +2093,13 @@ end
     operand = CC.getInit(CC.VarDecl(get_decl(f)))
     @test operand.ptr != C_NULL
 
-    mkstr = s -> CC.StringLiteral(ctx, s, LibClangEx.CXStringLiteralKind_Ordinary, false, strty,
-                                  [loc])
+    mkstr = s -> CC.StringLiteral(ctx, s, LibClangEx.CXStringLiteralKind_Ordinary, false, strty, [loc])
     asmstr, outc, inc, clob = mkstr("nop"), mkstr("=r"), mkstr("r"), mkstr("memory")
     noname = CC.IdentifierInfo(C_NULL)
 
     # --- GCCAsmStmt: one output, one input, one clobber, no labels ---
-    g = CC.GCCAsmStmt(ctx, loc, true, false, 1, 1, CC.IdentifierInfo[noname, noname],
-                      CC.StringLiteral[outc, inc], CC.Expr_[operand, operand], asmstr,
-                      CC.StringLiteral[clob], loc)
+    g = CC.GCCAsmStmt(ctx, loc, true, false, 1, 1, CC.IdentifierInfo[noname, noname], CC.StringLiteral[outc, inc],
+                      CC.Expr_[operand, operand], asmstr, CC.StringLiteral[clob], loc)
     @test g isa CC.GCCAsmStmt
     @test g.ptr != C_NULL
     @test CC.getStmtClassName(g) == "GCCAsmStmt"
@@ -2139,22 +2134,18 @@ end
     @test CC.getEndLoc(g).ptr == loc.ptr
 
     # names and exprs are read in lockstep, one slot per output, input and label
-    @test_throws AssertionError CC.GCCAsmStmt(ctx, loc, true, false, 1, 1,
-                                              CC.IdentifierInfo[noname],
-                                              CC.StringLiteral[outc, inc],
-                                              CC.Expr_[operand, operand], asmstr,
+    @test_throws AssertionError CC.GCCAsmStmt(ctx, loc, true, false, 1, 1, CC.IdentifierInfo[noname],
+                                              CC.StringLiteral[outc, inc], CC.Expr_[operand, operand], asmstr,
                                               CC.StringLiteral[clob], loc)
     # one constraint literal per output and input
-    @test_throws AssertionError CC.GCCAsmStmt(ctx, loc, true, false, 1, 1,
-                                              CC.IdentifierInfo[noname, noname],
-                                              CC.StringLiteral[outc],
-                                              CC.Expr_[operand, operand], asmstr,
+    @test_throws AssertionError CC.GCCAsmStmt(ctx, loc, true, false, 1, 1, CC.IdentifierInfo[noname, noname],
+                                              CC.StringLiteral[outc], CC.Expr_[operand, operand], asmstr,
                                               CC.StringLiteral[clob], loc)
 
     # --- MSAsmStmt: the same shape, with string operands instead of literal nodes ---
     tok = CC.Token()
-    ms = CC.MSAsmStmt(ctx, loc, loc, true, true, CC.Token[tok], 1, 1, ["=r", "r"],
-                      CC.Expr_[operand, operand], "nop", ["memory"], loc)
+    ms = CC.MSAsmStmt(ctx, loc, loc, true, true, CC.Token[tok], 1, 1, ["=r", "r"], CC.Expr_[operand, operand], "nop",
+                      ["memory"], loc)
     @test ms isa CC.MSAsmStmt
     @test ms.ptr != C_NULL
     @test CC.getStmtClassName(ms) == "MSAsmStmt"
@@ -2183,11 +2174,9 @@ end
     @test CC.getEndLoc(ms).ptr == loc.ptr
 
     # one constraint and one expression per operand, and no null token box
-    @test_throws AssertionError CC.MSAsmStmt(ctx, loc, loc, true, true, CC.Token[tok], 1, 1,
-                                             ["=r"], CC.Expr_[operand, operand], "nop",
-                                             ["memory"], loc)
-    @test_throws AssertionError CC.MSAsmStmt(ctx, loc, loc, true, true,
-                                             CC.Token[CC.Token(C_NULL)], 1, 1, ["=r", "r"],
+    @test_throws AssertionError CC.MSAsmStmt(ctx, loc, loc, true, true, CC.Token[tok], 1, 1, ["=r"],
+                                             CC.Expr_[operand, operand], "nop", ["memory"], loc)
+    @test_throws AssertionError CC.MSAsmStmt(ctx, loc, loc, true, true, CC.Token[CC.Token(C_NULL)], 1, 1, ["=r", "r"],
                                              CC.Expr_[operand, operand], "nop", String[], loc)
 
     # the token box is ours; the statement kept a copy, so it stays readable afterwards

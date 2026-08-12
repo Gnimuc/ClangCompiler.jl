@@ -1,18 +1,23 @@
 style = "yas"
 
-margin=1000
+# Ordinary Julia margin. The wide one belongs to src/clang alone, which has its own
+# .JuliaFormatter.toml saying why — nothing outside that directory has signatures that
+# cannot be broken sensibly.
+margin=120
 always_for_in=false
 whitespace_in_kwargs=false
 whitespace_typedefs=false
 always_use_return=false
 pipe_to_function_call=false
 
-# "lib" and "examples" are generated / vendored. The src files below are also
-# generated (from the vendored *.inc by gen/*_nodes.jl) — do not hand-format;
-# regenerate instead.
-ignore = ["lib", "examples",
-          "AttrAbstracts.jl", "AttrCarriers.jl", "AttrWrappers.jl", "AttrKindMap.jl",
-          "StmtAbstractGen.jl", "StmtCarriers.jl", "StmtWrappers.jl", "StmtClassMap.jl",
-          "DeclKindMap.jl", "DeclContextUnion.jl", "TypeClassMap.jl",
-          "converts.jl"]
+# "lib" and "examples" are generated / vendored, and src/TypeClassMap.jl is generated from
+# the vendored *.inc by gen/type_nodes.jl — do not hand-format; regenerate instead. The rest
+# of the generated files live under src/clang and are listed in that directory's own config,
+# because JuliaFormatter uses the nearest config rather than merging with this one.
+#
+# gen/prologue.jl is here for a reason one step removed: gen/option.toml names it as
+# `prologue_file_path`, so the generator copies it VERBATIM into lib/<v>/LibClangEx.jl.
+# Formatting it changes bytes in a file this config already excludes, and the "regenerated
+# bindings match lib/" CI check then fails on whitespace alone.
+ignore = ["lib", "examples", "prologue.jl", "TypeClassMap.jl"]
 join_lines_based_on_source=false

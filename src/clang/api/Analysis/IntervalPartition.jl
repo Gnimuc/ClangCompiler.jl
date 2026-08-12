@@ -19,5 +19,5 @@ function getIntervalWTO(g::AbstractCFG)
     found = Ref{Bool}(false)
     m = Int(clang_getIntervalWTO(g, buf, n, found))
     found[] || return nothing
-    return CFGBlock[CFGBlock(buf[i]) for i in 1:min(m, n)]
+    return CFGBlock[CFGBlock(buf[i]) for i = 1:min(m, n)]
 end

@@ -8351,18 +8351,10 @@ This is the form that does the work: access checking and overload handling happe
 where [`BuildFieldReferenceExpr`](@ref) takes a `FieldDecl` already resolved and skips both.
 Returns a carrier holding `NULL` when the access was rejected.
 """
-function BuildMemberReferenceExpr(sema::AbstractSema, base::AbstractExpr, base_type::QualType,
-                                  op_loc::SourceLocation, is_arrow::Bool,
-                                  ss::AbstractCXXScopeSpec, name_info::AbstractDeclarationNameInfo,
-                                  scope::AbstractScope;
-                                  template_kw_loc::SourceLocation=SourceLocation(),
-                                  first_qualifier_in_scope::AbstractNamedDecl=NamedDecl(C_NULL),
-                                  template_args::AbstractTemplateArgumentListInfo=TemplateArgumentListInfo(C_NULL))
+function BuildMemberReferenceExpr(sema::AbstractSema, base::AbstractExpr, base_type::QualType, op_loc::SourceLocation, is_arrow::Bool, ss::AbstractCXXScopeSpec, name_info::AbstractDeclarationNameInfo, scope::AbstractScope; template_kw_loc::SourceLocation=SourceLocation(), first_qualifier_in_scope::AbstractNamedDecl=NamedDecl(C_NULL), template_args::AbstractTemplateArgumentListInfo=TemplateArgumentListInfo(C_NULL))
     @check_ptrs sema base base_type ss name_info scope
     invalid = Ref{Bool}(false)
-    e = clang_Sema_BuildMemberReferenceExpr(sema, base, base_type, op_loc, is_arrow, ss,
-                                            template_kw_loc, first_qualifier_in_scope, name_info,
-                                            template_args, scope, invalid)
+    e = clang_Sema_BuildMemberReferenceExpr(sema, base, base_type, op_loc, is_arrow, ss, template_kw_loc, first_qualifier_in_scope, name_info, template_args, scope, invalid)
     return Expr_(e)
 end
 
@@ -8371,20 +8363,10 @@ end
 The overload taking a `LookupResult` the caller has already filled — what composes with
 [`LookupQualifiedName`](@ref) and the rest of the wrapped lookup machinery.
 """
-function BuildMemberReferenceExpr(sema::AbstractSema, base::AbstractExpr, base_type::QualType,
-                                  op_loc::SourceLocation, is_arrow::Bool,
-                                  ss::AbstractCXXScopeSpec, r::AbstractLookupResult,
-                                  scope::AbstractScope;
-                                  template_kw_loc::SourceLocation=SourceLocation(),
-                                  first_qualifier_in_scope::AbstractNamedDecl=NamedDecl(C_NULL),
-                                  template_args::AbstractTemplateArgumentListInfo=TemplateArgumentListInfo(C_NULL),
-                                  suppress_qualifier_check::Bool=false)
+function BuildMemberReferenceExpr(sema::AbstractSema, base::AbstractExpr, base_type::QualType, op_loc::SourceLocation, is_arrow::Bool, ss::AbstractCXXScopeSpec, r::AbstractLookupResult, scope::AbstractScope; template_kw_loc::SourceLocation=SourceLocation(), first_qualifier_in_scope::AbstractNamedDecl=NamedDecl(C_NULL), template_args::AbstractTemplateArgumentListInfo=TemplateArgumentListInfo(C_NULL), suppress_qualifier_check::Bool=false)
     @check_ptrs sema base base_type ss r scope
     invalid = Ref{Bool}(false)
-    e = clang_Sema_BuildMemberReferenceExprFromLookup(sema, base, base_type, op_loc, is_arrow, ss,
-                                                      template_kw_loc, first_qualifier_in_scope, r,
-                                                      template_args, scope,
-                                                      suppress_qualifier_check, invalid)
+    e = clang_Sema_BuildMemberReferenceExprFromLookup(sema, base, base_type, op_loc, is_arrow, ss, template_kw_loc, first_qualifier_in_scope, r, template_args, scope, suppress_qualifier_check, invalid)
     return Expr_(e)
 end
 
@@ -8397,27 +8379,11 @@ array form.
 `use_global` forces `::new`. Returns a carrier holding `NULL` when the expression was
 rejected.
 """
-function BuildCXXNew(sema::AbstractSema, alloc_type::QualType;
-                     range::SourceRange=SourceRange(SourceLocation(), SourceLocation()),
-                     use_global::Bool=false,
-                     placement_lparen::SourceLocation=SourceLocation(),
-                     placement_args::AbstractVector{<:AbstractExpr}=Expr_[],
-                     placement_rparen::SourceLocation=SourceLocation(),
-                     type_id_parens::SourceRange=SourceRange(SourceLocation(), SourceLocation()),
-                     alloc_type_info::AbstractTypeSourceInfo=TypeSourceInfo(C_NULL),
-                     array_size::Union{Nothing,AbstractExpr}=nothing,
-                     direct_init_range::SourceRange=SourceRange(SourceLocation(), SourceLocation()),
-                     initializer::AbstractExpr=Expr_(C_NULL))
+function BuildCXXNew(sema::AbstractSema, alloc_type::QualType; range::SourceRange=SourceRange(SourceLocation(), SourceLocation()), use_global::Bool=false, placement_lparen::SourceLocation=SourceLocation(), placement_args::AbstractVector{<:AbstractExpr}=Expr_[], placement_rparen::SourceLocation=SourceLocation(), type_id_parens::SourceRange=SourceRange(SourceLocation(), SourceLocation()), alloc_type_info::AbstractTypeSourceInfo=TypeSourceInfo(C_NULL), array_size::Union{Nothing,AbstractExpr}=nothing, direct_init_range::SourceRange=SourceRange(SourceLocation(), SourceLocation()), initializer::AbstractExpr=Expr_(C_NULL))
     @check_ptrs sema alloc_type
     buf = [Base.unsafe_convert(CXExpr, a) for a in placement_args]
     invalid = Ref{Bool}(false)
-    e = clang_Sema_BuildCXXNew(sema, CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr),
-                               use_global, placement_lparen, buf, length(buf), placement_rparen,
-                               CXSourceRange_(type_id_parens.begin_loc.ptr, type_id_parens.end_loc.ptr),
-                               alloc_type, alloc_type_info, array_size !== nothing,
-                               array_size === nothing ? Expr_(C_NULL) : array_size,
-                               CXSourceRange_(direct_init_range.begin_loc.ptr, direct_init_range.end_loc.ptr),
-                               initializer, invalid)
+    e = clang_Sema_BuildCXXNew(sema, CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr), use_global, placement_lparen, buf, length(buf), placement_rparen, CXSourceRange_(type_id_parens.begin_loc.ptr, type_id_parens.end_loc.ptr), alloc_type, alloc_type_info, array_size !== nothing, array_size === nothing ? Expr_(C_NULL) : array_size, CXSourceRange_(direct_init_range.begin_loc.ptr, direct_init_range.end_loc.ptr), initializer, invalid)
     return Expr_(e)
 end
 
@@ -8430,9 +8396,7 @@ This is the on-demand instantiation entry point. It creates the specialization d
 the *definition* is instantiated only once something requires the type complete, which
 [`RequireCompleteType`](@ref) is how to ask for. A null `QualType` comes back on error.
 """
-function CheckTemplateIdType(sema::AbstractSema, template::TemplateName,
-                             template_loc::SourceLocation,
-                             template_args::AbstractTemplateArgumentListInfo)
+function CheckTemplateIdType(sema::AbstractSema, template::TemplateName, template_loc::SourceLocation, template_args::AbstractTemplateArgumentListInfo)
     @check_ptrs sema template template_args
     return QualType(clang_Sema_CheckTemplateIdType(sema, template, template_loc, template_args))
 end

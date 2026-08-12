@@ -15,8 +15,9 @@ const LXB = CC.LibClangEx
     # Not owned by the engine: the test disposes it, and the printer goes back at the end.
     CC.setClient(de, buf, false)
 
-    for level in (LXB.CXTextDiagnosticBuffer_Note, LXB.CXTextDiagnosticBuffer_Remark,
-                  LXB.CXTextDiagnosticBuffer_Warning, LXB.CXTextDiagnosticBuffer_Error)
+    for level in
+        (LXB.CXTextDiagnosticBuffer_Note, LXB.CXTextDiagnosticBuffer_Remark, LXB.CXTextDiagnosticBuffer_Warning,
+         LXB.CXTextDiagnosticBuffer_Error)
         @test Base.size(buf, level) == 0
     end
     # Nothing buffered yet, so index 0 is out of range at every level.
@@ -84,10 +85,8 @@ const LXB = CC.LibClangEx
     sink = CC.TextDiagnosticBuffer()
     other = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), sink, false)
     CC.FlushDiagnostics(buf, other)
-    @test Base.size(sink, LXB.CXTextDiagnosticBuffer_Error) ==
-          Base.size(buf, LXB.CXTextDiagnosticBuffer_Error)
-    @test Base.size(sink, LXB.CXTextDiagnosticBuffer_Warning) ==
-          Base.size(buf, LXB.CXTextDiagnosticBuffer_Warning)
+    @test Base.size(sink, LXB.CXTextDiagnosticBuffer_Error) == Base.size(buf, LXB.CXTextDiagnosticBuffer_Error)
+    @test Base.size(sink, LXB.CXTextDiagnosticBuffer_Warning) == Base.size(buf, LXB.CXTextDiagnosticBuffer_Warning)
     @test CC.getMessage(sink, LXB.CXTextDiagnosticBuffer_Error, 0) ==
           CC.getMessage(buf, LXB.CXTextDiagnosticBuffer_Error, 0)
     dispose(other)

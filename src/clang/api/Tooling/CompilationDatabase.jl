@@ -14,11 +14,8 @@ database `inferMissingCompileCommands` builds ever sets it.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function CompileCommand(directory::AbstractString, filename::AbstractString,
-                        command_line::AbstractVector{<:String},
-                        output::AbstractString="")
-    ptr = clang_CompileCommand_create(directory, filename, command_line,
-                                      length(command_line), output)
+function CompileCommand(directory::AbstractString, filename::AbstractString, command_line::AbstractVector{<:String}, output::AbstractString="")
+    ptr = clang_CompileCommand_create(directory, filename, command_line, length(command_line), output)
     @assert ptr != C_NULL "Failed to create CompileCommand"
     return CompileCommand(ptr)
 end
@@ -226,10 +223,8 @@ Not enumerable: `getAllFiles` and `getAllCompileCommands` are empty for it.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function FixedCompilationDatabase(directory::AbstractString,
-                                  command_line::AbstractVector{<:String})
-    ptr = clang_FixedCompilationDatabase_create(directory, command_line,
-                                                length(command_line))
+function FixedCompilationDatabase(directory::AbstractString, command_line::AbstractVector{<:String})
+    ptr = clang_FixedCompilationDatabase_create(directory, command_line, length(command_line))
     @assert ptr != C_NULL "Failed to create FixedCompilationDatabase"
     return FixedCompilationDatabase(ptr)
 end
@@ -284,8 +279,7 @@ Read flags one per line from `data`, as if it were the `compile_flags.txt` of `d
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function loadFromBuffer(::Type{FixedCompilationDatabase}, directory::AbstractString,
-                        data::AbstractString)
+function loadFromBuffer(::Type{FixedCompilationDatabase}, directory::AbstractString, data::AbstractString)
     err = Ref{CXString}()
     ptr = clang_FixedCompilationDatabase_loadFromBuffer(directory, data, err)
     return (ptr == C_NULL ? nothing : FixedCompilationDatabase(ptr)), get_string(err[])

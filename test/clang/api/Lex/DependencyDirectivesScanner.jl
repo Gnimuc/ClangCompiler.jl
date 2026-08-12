@@ -25,10 +25,8 @@ const LXB_DDS = CC.LibClangEx
 
     # every directive that can change what gets included is kept, in source order, and
     # nothing else of that set is invented
-    wanted = [LXB_DDS.CXDependencyDirectiveKind_pp_include,
-              LXB_DDS.CXDependencyDirectiveKind_pp_define,
-              LXB_DDS.CXDependencyDirectiveKind_pp_if,
-              LXB_DDS.CXDependencyDirectiveKind_pp_include,
+    wanted = [LXB_DDS.CXDependencyDirectiveKind_pp_include, LXB_DDS.CXDependencyDirectiveKind_pp_define,
+              LXB_DDS.CXDependencyDirectiveKind_pp_if, LXB_DDS.CXDependencyDirectiveKind_pp_include,
               LXB_DDS.CXDependencyDirectiveKind_pp_endif]
     @test filter(in(wanted), kinds) == wanted
     # and the scan is terminated by the end-of-file marker
@@ -72,8 +70,7 @@ end
     n = CC.getNumDirectives(scan)
     kinds = [CC.getDirectiveKind(scan, i) for i = 0:(Int(n) - 1)]
     # no #include, #define or conditional appears anywhere in the answer
-    @test !any(k -> k in (LXB_DDS.CXDependencyDirectiveKind_pp_include,
-                          LXB_DDS.CXDependencyDirectiveKind_pp_define,
+    @test !any(k -> k in (LXB_DDS.CXDependencyDirectiveKind_pp_include, LXB_DDS.CXDependencyDirectiveKind_pp_define,
                           LXB_DDS.CXDependencyDirectiveKind_pp_if), kinds)
     @test kinds[end] == LXB_DDS.CXDependencyDirectiveKind_pp_eof
     @test !occursin("plain", CC.printAsSource(scan))

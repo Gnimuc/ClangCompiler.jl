@@ -7,8 +7,8 @@
 # Emits src/clang/DeclKindMap.jl defining `DECL_KIND_TO_TYPE`, and
 # src/clang/api/AST/DeclWrappers.jl carrying the checked `cast`/`isa` pair per class.
 
-const DECL_NODES_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include",
-                                         "clang-ex", "AST", "DeclNodes.inc"))
+const DECL_NODES_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include", "clang-ex", "AST",
+                                         "DeclNodes.inc"))
 const DECL_SRC = normpath(joinpath(@__DIR__, "..", "src"))
 const DECL_SRC_AST = normpath(joinpath(@__DIR__, "..", "src", "clang", "core", "AST"))
 
@@ -43,8 +43,7 @@ function parse_all_decl_names(inc_path)
         end
         m = match(concrete_re, line)
         m === nothing && continue
-        m.captures[1] in ("DECL_RANGE", "LAST_DECL_RANGE", "DECL_CONTEXT",
-                          "DECL_CONTEXT_BASE") && continue
+        m.captures[1] in ("DECL_RANGE", "LAST_DECL_RANGE", "DECL_CONTEXT", "DECL_CONTEXT_BASE") && continue
         push!(names, Symbol(m.captures[2]))
     end
     return unique(names)
@@ -80,7 +79,7 @@ function carrier_handles(dir)
             end
             isempty(name) && continue
             m = match(r"^\s+ptr::(\w+)", line)
-            m === nothing || (h[name] = m.captures[1]; name = "")
+            m === nothing || (h[name]=m.captures[1]; name="")
         end
     end
     return h
@@ -224,8 +223,8 @@ function emit_declcontext_union()
         passed wherever a [`DeclContext`](@ref) is wanted. Dispatch admits exactly these, which is
         what stops a decl that is not a context from ever reaching `castToDeclContext`'s assert.
         \"\"\"""")
-        println(io, "const AbstractDeclContextDecl = Union{",
-                join(("Abstract$(n)Decl" for n in have), ",\n" * indent), "}\n")
+        println(io, "const AbstractDeclContextDecl = Union{", join(("Abstract$(n)Decl" for n in have), ",\n" * indent),
+                "}\n")
         println(io, """
         # `DeclContext` is the one base in this package that is not at offset zero, so unlike
         # every entry in converts.jl this one cannot reinterpret: it calls the pivot, and

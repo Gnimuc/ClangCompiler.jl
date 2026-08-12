@@ -78,8 +78,7 @@ end
     f = DeclFinder(I)
     @test f(I, "fpo_probe")
     fd = CC.FunctionDecl(get_decl(f))
-    binops = [s for s in (CC.resolve(x) for x in CC.subtree(CC.getBody(fd)))
-              if s isa CC.BinaryOperator]
+    binops = [s for s in (CC.resolve(x) for x in CC.subtree(CC.getBody(fd))) if s isa CC.BinaryOperator]
     words = unique([CC.getFPFeaturesInEffect(b, lo) for b in binops])
 
     # whatever the modes present, the two contraction predicates are mutually exclusive on
@@ -87,9 +86,8 @@ end
     for w in words
         @test !(CC.allowFPContractWithinStatement(w) && CC.allowFPContractAcrossStatement(w))
         # a word is constrained exactly when it departs from ignored exceptions / default rounding
-        @test CC.isFPConstrained(w) ==
-              (CC.getExceptionMode(w) != CC.CXFPExceptionModeKind_FPE_Ignore ||
-               CC.getRoundingMode(w) != CC.CXRoundingMode_NearestTiesToEven)
+        @test CC.isFPConstrained(w) == (CC.getExceptionMode(w) != CC.CXFPExceptionModeKind_FPE_Ignore ||
+                                        CC.getRoundingMode(w) != CC.CXRoundingMode_NearestTiesToEven)
     end
     # the pragmas produced more than one distinct mode, so the predicates discriminate
     @test length(words) > 1
@@ -163,8 +161,7 @@ end
 
     # Asking for C++20 turns on exactly the cumulative C++ flags of that standard, which is
     # the whole point of the call: a LangOptions usable without parsing a cc1 command line.
-    includes = CC.setLangDefaults(lo, CC.CXLanguage_CXX, triple,
-                                  CC.CXLangStandardKind_lang_cxx20)
+    includes = CC.setLangDefaults(lo, CC.CXLanguage_CXX, triple, CC.CXLangStandardKind_lang_cxx20)
     @test includes == String[]        # C++ requires no implicit header
     @test CC.hasLangStandard(lo)
     @test CC.getCPlusPlus(lo)

@@ -32,8 +32,7 @@ using Test
     rd = find_decl(I, "cst::Widget")
     # clang adds implicit copy/move members beside the two written ones, so pick by name
     members = [CC.resolve(d) for d in CC.decls_in(CC.castToDeclContext(rd))]
-    method = only(m for m in members if m isa CC.CXXMethodDecl &&
-                                        CC.getNameAsString(m) == "area")
+    method = only(m for m in members if m isa CC.CXXMethodDecl && CC.getNameAsString(m) == "area")
     ctor = only(m for m in members if m isa CC.CXXConstructorDecl && CC.getNumParams(m) == 0)
 
     @testset "widening is not spelled" begin
@@ -129,9 +128,7 @@ using Test
         # are wrapped, under the names that say which is which — and a variable declared
         # `Widget` is written with an ElaboratedType over the record either way.
         sugar = CC.getTypePtr(CC.getType(CC.VarDecl(find_decl(I, "cst::g_alias"))))
-        canon = CC.getTypePtr(CC.getCanonicalType(ctx,
-                                                  CC.getType(CC.VarDecl(find_decl(I,
-                                                                                  "cst::g_alias")))))
+        canon = CC.getTypePtr(CC.getCanonicalType(ctx, CC.getType(CC.VarDecl(find_decl(I, "cst::g_alias")))))
         @test CC.isRecordType(sugar)                  # clang's predicate: true through sugar
         @test !(CC.resolve(sugar) isa CC.RecordType)  # the node itself is not a RecordType
         @test_throws CC.CastError CC.RecordType(sugar)
@@ -141,8 +138,7 @@ using Test
         # the two spellings of `Widget` are different nodes that denote one type
         w = CC.getTypePtr(CC.getType(CC.VarDecl(find_decl(I, "cst::g_w"))))
         @test w != sugar
-        @test CC.getCanonicalType(ctx, CC.get_qual_type(w)) ==
-              CC.getCanonicalType(ctx, CC.get_qual_type(sugar))
+        @test CC.getCanonicalType(ctx, CC.get_qual_type(w)) == CC.getCanonicalType(ctx, CC.get_qual_type(sugar))
     end
 
     @testset "a null carrier is refused before clang sees it" begin

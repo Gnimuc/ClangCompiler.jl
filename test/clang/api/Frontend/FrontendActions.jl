@@ -97,8 +97,7 @@ end
             CC.createDiagnostics(ci)
             buf = CC.TextDiagnosticBuffer()
             CC.setClient(CC.getDiagnostics(ci), buf, false)
-            invok = CC.createFromCommandLine(src, ["-std=c++17"],
-                                             CC.getDiagnostics(ci))
+            invok = CC.createFromCommandLine(src, ["-std=c++17"], CC.getDiagnostics(ci))
             CC.setInvocation(ci, invok)
 
             act = CC.SyntaxOnlyAction()
@@ -110,8 +109,7 @@ end
             n_err = Base.size(buf, LXB_FA.CXTextDiagnosticBuffer_Error)
             @test (n_err > 0) == !expected
             if !expected
-                @test occursin("soa_nosuch",
-                               CC.getMessage(buf, LXB_FA.CXTextDiagnosticBuffer_Error, 0))
+                @test occursin("soa_nosuch", CC.getMessage(buf, LXB_FA.CXTextDiagnosticBuffer_Error, 0))
             end
 
             dispose(ci)

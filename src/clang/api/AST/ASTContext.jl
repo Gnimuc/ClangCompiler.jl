@@ -27,11 +27,18 @@ end
 """
     getASTRecordLayout(x::ASTContext, decl::AbstractRecordDecl) -> ASTRecordLayout
 Return the record's memory layout. The layout is owned by the `ASTContext`
-arena (no `dispose`). The record must have a complete definition.
+arena (no `dispose`). The record must have a complete definition, and must not be
+dependent — an uninstantiated template pattern has no layout to compute.
 """
 function getASTRecordLayout(x::ASTContext, decl::AbstractRecordDecl)
     @check_ptrs x decl
     @assert getDefinition(decl).ptr != C_NULL "cannot get the layout of a forward declaration"
+    # Having a definition is not enough. The pattern of a class template is a definition and is
+    # dependent, and `ItaniumRecordLayoutBuilder` reaches `llvm_unreachable` on one -- which a
+    # release LLVM compiles to `__builtin_unreachable()`, so the process segfaults rather than
+    # aborting. Every sibling layout query in this file gates on the same predicate; this one
+    # takes a decl rather than a QualType, so it asks through the decl's own type.
+    @assert !isDependentType(getTypeForDecl(decl)) "type layout queries require a non-dependent type"
     return ASTRecordLayout(clang_ASTContext_getASTRecordLayout(x, decl))
 end
 

@@ -42,10 +42,11 @@ const IACT = CC.LibClangEx
 
     # The definition of iact_callee has to be among what the walk reported.
     def_role = UInt32(IACT.CXSymbolRole_Definition)
-    defs = [i for i = 0:(n_callee - 1)
+    defs = [i
+            for i = 0:(n_callee - 1)
             if CC.getOccurrenceRoles(c, i) & def_role != 0 &&
-               CC.getOccurrenceDecl(c, i) !== nothing &&
-               CC.getOccurrenceDecl(c, i).ptr == callee.ptr]
+                   CC.getOccurrenceDecl(c, i) !== nothing &&
+                   CC.getOccurrenceDecl(c, i).ptr == callee.ptr]
     @test !isempty(defs)
     # A decl occurrence carries a decl and no macro name; the two payloads are disjoint.
     for i in defs
@@ -64,8 +65,7 @@ const IACT = CC.LibClangEx
     call_role = UInt32(IACT.CXSymbolRole_Call)
     calls = count(i -> CC.getOccurrenceRoles(c, i) & call_role != 0 &&
                        CC.getOccurrenceDecl(c, i) !== nothing &&
-                       CC.getOccurrenceDecl(c, i).ptr == callee.ptr,
-                  n_callee:(CC.getNumOccurrences(c) - 1))
+                       CC.getOccurrenceDecl(c, i).ptr == callee.ptr, n_callee:(CC.getNumOccurrences(c) - 1))
     @test calls == 2
 
     CC.clear(c)
@@ -82,8 +82,7 @@ const IACT = CC.LibClangEx
 
     CC.indexASTUnit(au, c)
     @test CC.getNumOccurrences(c) > 0
-    @test any(i -> CC.getOccurrenceDecl(c, i) !== nothing &&
-                   CC.getOccurrenceDecl(c, i).ptr == callee.ptr,
+    @test any(i -> CC.getOccurrenceDecl(c, i) !== nothing && CC.getOccurrenceDecl(c, i).ptr == callee.ptr,
               0:(CC.getNumOccurrences(c) - 1))
 
     CC.dispose(au)

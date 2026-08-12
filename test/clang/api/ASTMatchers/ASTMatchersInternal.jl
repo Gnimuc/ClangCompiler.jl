@@ -52,8 +52,7 @@ end
     ctx = CC.get_ast_context(I)
     err = CC.MatcherDiagnostics()
 
-    base = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCDTMTag\"), unless(isImplicit()))",
-                                     err)
+    base = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCDTMTag\"), unless(isImplicit()))", err)
     @test !CC.is_null_handle(base)
 
     # Unbound, the match carries no ids at all.

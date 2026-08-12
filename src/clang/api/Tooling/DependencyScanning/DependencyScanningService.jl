@@ -18,11 +18,8 @@ holds a reference to it: dispose the tools first.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function DependencyScanningService(mode::CXScanningMode, format::CXScanningOutputFormat,
-                                   optimize_args::CXScanningOptimizations=CXScanningOptimizations_All,
-                                   eager_load_modules::Bool=false)
-    ptr = clang_DependencyScanningService_create(mode, format, optimize_args,
-                                                 eager_load_modules)
+function DependencyScanningService(mode::CXScanningMode, format::CXScanningOutputFormat, optimize_args::CXScanningOptimizations=CXScanningOptimizations_All, eager_load_modules::Bool=false)
+    ptr = clang_DependencyScanningService_create(mode, format, optimize_args, eager_load_modules)
     @assert ptr != C_NULL "Failed to create DependencyScanningService"
     return DependencyScanningService(ptr)
 end

@@ -1,8 +1,9 @@
 using ClangCompiler
+import ClangCompiler as CC
 using Base.BinaryPlatforms
 using Test
 
-const J = ClangCompiler.JLLEnvs
+const J = CC.JLLEnvs
 
 # get_env dispatches on the target Platform to one of the cross-compilation
 # environment types. On any single CI host only one branch would otherwise run,
@@ -19,7 +20,6 @@ const J = ClangCompiler.JLLEnvs
     @test J.get_env(Platform("x86_64", "windows")).platform isa Platform
 end
 
-import ClangCompiler as CC
 @testset "coverage tail: JLLEnvs helpers" begin
     J = CC.JLLEnvs
 
@@ -47,8 +47,8 @@ import ClangCompiler as CC
 
     # get_system_includes! for every non-mac env flavor: pure path
     # construction against a fake prefix — no artifact downloads
-    for triple in ("x86_64-w64-mingw32", "x86_64-linux-gnu", "x86_64-linux-musl",
-                   "armv7l-linux-gnueabihf", "armv7l-linux-musleabihf")
+    for triple in ("x86_64-w64-mingw32", "x86_64-linux-gnu", "x86_64-linux-musl", "armv7l-linux-gnueabihf",
+                   "armv7l-linux-musleabihf")
         for is_cxx in (false, true)
             env = J.get_default_env(triple; is_cxx)
             isys = String[]

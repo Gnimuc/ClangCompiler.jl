@@ -15,10 +15,7 @@ they are spelled with [`getIdentifierInfo`](@ref).
 This is what `__has_attribute` and `__has_cpp_attribute` answer with, so it is how a caller
 can probe availability before synthesizing attributed code.
 """
-function hasAttribute(syntax::CXAttributeCommonInfoSyntax,
-                      scope::Union{AbstractIdentifierInfo,Nothing},
-                      attr::AbstractIdentifierInfo, target::AbstractTargetInfo,
-                      lang_opts::AbstractLangOptions)
+function hasAttribute(syntax::CXAttributeCommonInfoSyntax, scope::Union{AbstractIdentifierInfo,Nothing}, attr::AbstractIdentifierInfo, target::AbstractTargetInfo, lang_opts::AbstractLangOptions)
     @check_ptrs attr target lang_opts
     scope === nothing || @check_ptrs scope
     s = scope === nothing ? IdentifierInfo(C_NULL) : scope

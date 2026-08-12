@@ -43,7 +43,7 @@ using Test
             rank = Dict(b.ptr => i for (i, b) in enumerate(wto))
             backward = 0
             for (i, b) in enumerate(wto)
-                for j in 0:(Int(CC.succ_size(b)) - 1)
+                for j = 0:(Int(CC.succ_size(b)) - 1)
                     s = CC.getSucc(b, j)
                     s.ptr == C_NULL && continue
                     haskey(rank, s.ptr) || continue

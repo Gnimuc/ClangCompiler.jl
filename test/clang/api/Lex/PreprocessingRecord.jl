@@ -31,15 +31,14 @@ using Test
     # every host — a Windows temp path would otherwise carry escapes into the C literal
     hdr_spelling = replace(hdr, '\\' => '/')
 
-    CC.parse(I,
-             """
-             #define CC_PPREC_OBJ 7
-             #include "$hdr_spelling"
-             #if 0
-             int cc_pprec_dead = 0;
-             #endif
-             int cc_pprec_use = CC_PPREC_OBJ;
-             """)
+    CC.parse(I, """
+                #define CC_PPREC_OBJ 7
+                #include "$hdr_spelling"
+                #if 0
+                int cc_pprec_dead = 0;
+                #endif
+                int cc_pprec_use = CC_PPREC_OBJ;
+                """)
 
     n = CC.getNumPreprocessedEntities(rec)
     @test n isa Integer

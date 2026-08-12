@@ -87,8 +87,7 @@ end
     ctx = CC.get_ast_context(I)
 
     err = CC.MatcherDiagnostics()
-    m = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCNVMTag\"), unless(isImplicit()))",
-                                  err)
+    m = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCNVMTag\"), unless(isImplicit()))", err)
     @test !CC.is_null_handle(m)
 
     nv = CC.NamedValueMap()

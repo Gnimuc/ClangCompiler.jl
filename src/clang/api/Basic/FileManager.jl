@@ -288,8 +288,7 @@ Add `path` with the contents of `buffer`, taking ownership of the buffer. Return
 when a file of that name is already present with different contents, in which case the
 buffer is dropped rather than installed.
 """
-function addFile(x::AbstractInMemoryFileSystem, path::AbstractString, mtime::Integer,
-                 buffer::LLVM.MemoryBuffer)
+function addFile(x::AbstractInMemoryFileSystem, path::AbstractString, mtime::Integer, buffer::LLVM.MemoryBuffer)
     @check_ptrs x
     return clang_InMemoryFileSystem_addFile(x, path, Int64(mtime), buffer)
 end

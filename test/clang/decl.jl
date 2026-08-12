@@ -1,9 +1,9 @@
 using ClangCompiler
+import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose
 using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
 using Test
 
-import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, DeclIterator
 # Depth-first search for the first resolved child node whose carrier is `T`.
 if !@isdefined(_find_node)
@@ -22,26 +22,25 @@ end
     f = DeclFinder(I)
 
     @test f(I, "Node")
-    node = ClangCompiler.CXXRecordDecl(get_decl(f))
-    @test ClangCompiler.getNumFields(node) == 2
-    @test [ClangCompiler.getName(x) for x in ClangCompiler.getFields(node)] == ["x", "y"]
+    node = CC.CXXRecordDecl(get_decl(f))
+    @test CC.getNumFields(node) == 2
+    @test [CC.getName(x) for x in CC.getFields(node)] == ["x", "y"]
 
-    ClangCompiler.parse(I, "struct BaseA { int a; }; struct BaseB { int b; }; struct Der : BaseA, BaseB { int c; };")
+    CC.parse(I, "struct BaseA { int a; }; struct BaseB { int b; }; struct Der : BaseA, BaseB { int c; };")
     @test f(I, "Der")
-    der = ClangCompiler.CXXRecordDecl(get_decl(f))
-    @test ClangCompiler.getNumFields(der) == 1
-    @test ClangCompiler.getNumBases(der) == 2
-    @test ClangCompiler.getNumVBases(der) == 0
-    bases = ClangCompiler.getBases(der)
-    basenames = [ClangCompiler.getName(ClangCompiler.getAsCXXRecordDecl(ClangCompiler.getTypePtr(ClangCompiler.getType(b))))
-                 for b in bases]
+    der = CC.CXXRecordDecl(get_decl(f))
+    @test CC.getNumFields(der) == 1
+    @test CC.getNumBases(der) == 2
+    @test CC.getNumVBases(der) == 0
+    bases = CC.getBases(der)
+    basenames = [CC.getName(CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(b)))) for b in bases]
     @test basenames == ["BaseA", "BaseB"]
 
     @test f(I, "Foo")
-    foo = ClangCompiler.CXXRecordDecl(get_decl(f))
-    @test ClangCompiler.getNumCtors(foo) == 2                     # Foo() and Foo(int)
-    @test length(ClangCompiler.getMethods(foo)) == ClangCompiler.getNumMethods(foo)
-    @test all(c -> c isa ClangCompiler.CXXConstructorDecl, ClangCompiler.getCtors(foo))
+    foo = CC.CXXRecordDecl(get_decl(f))
+    @test CC.getNumCtors(foo) == 2                     # Foo() and Foo(int)
+    @test length(CC.getMethods(foo)) == CC.getNumMethods(foo)
+    @test all(c -> c isa CC.CXXConstructorDecl, CC.getCtors(foo))
 
     dispose(f)
     dispose(I)
@@ -49,7 +48,7 @@ end
 
 @testset "Decl predicate exercise" begin
     I = create_interpreter(String[])
-    ClangCompiler.parse(I, """
+    CC.parse(I, """
     int gv = 5; static int sv; constexpr int cev = 7;
     int variadic_fn(int, ...); inline int inl_fn(){ return 1; }
     struct Abstract { virtual void pure() = 0; };
@@ -60,26 +59,26 @@ end
     # the lookup hands back a NamedDecl; each probe names the class it expects
     D(name, T) = (f(I, name); T(get_decl(f)))
 
-    gv = D("gv", ClangCompiler.VarDecl)
-    @test ClangCompiler.hasGlobalStorage(gv)
-    @test ClangCompiler.hasInit(gv)
-    @test !ClangCompiler.isStaticLocal(D("sv", ClangCompiler.VarDecl))
-    @test ClangCompiler.hasGlobalStorage(D("sv", ClangCompiler.VarDecl))
-    @test ClangCompiler.hasInit(D("cev", ClangCompiler.VarDecl))
+    gv = D("gv", CC.VarDecl)
+    @test CC.hasGlobalStorage(gv)
+    @test CC.hasInit(gv)
+    @test !CC.isStaticLocal(D("sv", CC.VarDecl))
+    @test CC.hasGlobalStorage(D("sv", CC.VarDecl))
+    @test CC.hasInit(D("cev", CC.VarDecl))
 
-    vfn = D("variadic_fn", ClangCompiler.FunctionDecl)
-    @test ClangCompiler.isVariadic(vfn)
-    @test ClangCompiler.getNumParams(vfn) == 1
-    @test ClangCompiler.isInlined(D("inl_fn", ClangCompiler.FunctionDecl))
+    vfn = D("variadic_fn", CC.FunctionDecl)
+    @test CC.isVariadic(vfn)
+    @test CC.getNumParams(vfn) == 1
+    @test CC.isInlined(D("inl_fn", CC.FunctionDecl))
 
-    @test ClangCompiler.isAbstract(D("Abstract", ClangCompiler.CXXRecordDecl))
-    base = D("Base", ClangCompiler.CXXRecordDecl)
-    @test ClangCompiler.isPolymorphic(base)
-    @test ClangCompiler.hasUserDeclaredDestructor(base)
-    @test !ClangCompiler.isAbstract(base)
-    der = D("Der", ClangCompiler.CXXRecordDecl)
-    @test ClangCompiler.isPolymorphic(der)
-    @test ClangCompiler.getNumBases(der) == 1
+    @test CC.isAbstract(D("Abstract", CC.CXXRecordDecl))
+    base = D("Base", CC.CXXRecordDecl)
+    @test CC.isPolymorphic(base)
+    @test CC.hasUserDeclaredDestructor(base)
+    @test !CC.isAbstract(base)
+    der = D("Der", CC.CXXRecordDecl)
+    @test CC.isPolymorphic(der)
+    @test CC.getNumBases(der) == 1
 
     dispose(f)
     dispose(I)
@@ -192,7 +191,7 @@ end
     @test !all(d -> typeof(d) === CC.Decl, via_iter)
     ns = nothing
     for d in DeclIterator(tu)
-        d isa CC.NamespaceDecl && (ns = d; break)
+        d isa CC.NamespaceDecl && (ns=d; break)
     end
     @test ns !== nothing
     if ns !== nothing
@@ -250,7 +249,7 @@ end
     tu_dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
     vd = nothing
     for d in CC.decls_in(tu_dc)
-        CC.getDeclKindName(d) == "Var" && (vd = CC.VarDecl(d); break)
+        CC.getDeclKindName(d) == "Var" && (vd=CC.VarDecl(d); break)
     end
     @test vd !== nothing
     if vd !== nothing
@@ -298,8 +297,7 @@ end
         asctx = Base.unsafe_convert(CC.LibClangEx.CXDeclContext, d)
         @test asctx === Base.unsafe_convert(CC.LibClangEx.CXDeclContext, CC.castToDeclContext(d))
         # and crossing back lands on the declaration it started from
-        @test Base.unsafe_convert(CC.LibClangEx.CXDecl, CC.castFromDeclContext(CC.DeclContext(asctx))) ===
-              asdecl
+        @test Base.unsafe_convert(CC.LibClangEx.CXDecl, CC.castFromDeclContext(CC.DeclContext(asctx))) === asdecl
         UInt(asctx) == UInt(asdecl) || (shifted += 1)
     end
     # every class here puts `DeclContext` after some other base, so none of them coincide --

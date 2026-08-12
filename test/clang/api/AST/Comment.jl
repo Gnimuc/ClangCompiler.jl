@@ -319,8 +319,7 @@ end
     pp = CC.getPreprocessor(ci)
 
     # ParamCommandComment::getDirectionAsString is static — it needs no comment node.
-    dirs = (CC.CXParamCommandPassDirection_In, CC.CXParamCommandPassDirection_Out,
-            CC.CXParamCommandPassDirection_InOut)
+    dirs = (CC.CXParamCommandPassDirection_In, CC.CXParamCommandPassDirection_Out, CC.CXParamCommandPassDirection_InOut)
     for d in dirs
         s = CC.getDirectionAsString(d)
         @test s isa String

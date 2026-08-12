@@ -31,8 +31,7 @@ const SER_LXB = CC.LibClangEx
     @test CC.getOriginalSourceFile(missing_pch, fm, diag) == ""
     n1 = errs()
     @test n1 > n0
-    @test occursin("no-such-file.pch",
-                   CC.getMessage(buf, SER_LXB.CXTextDiagnosticBuffer_Error, n1 - 1))
+    @test occursin("no-such-file.pch", CC.getMessage(buf, SER_LXB.CXTextDiagnosticBuffer_Error, n1 - 1))
 
     # Readable, but not an AST file: same empty answer, and another diagnostic — so the two
     # failures are distinguishable from "the reader was never asked".

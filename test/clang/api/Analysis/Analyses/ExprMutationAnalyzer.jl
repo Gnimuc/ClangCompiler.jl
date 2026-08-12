@@ -56,21 +56,18 @@ end
             # rather than an answer, because clang 18 still ships the pointee finder list
             # as a `{/*TODO*/}` stub and reports nothing for either pointer
             for d in (p, q)
-                @test CC.isPointeeMutated(ema, d) ==
-                      !CC.is_null_handle(CC.findPointeeMutation(ema, d))
+                @test CC.isPointeeMutated(ema, d) == !CC.is_null_handle(CC.findPointeeMutation(ema, d))
             end
 
             # the Expr overloads answer for one reference rather than for the whole
             # declaration, so at least one reference to `b` has to carry the mutation
-            refs = [r for r in map(CC.resolve, emu_descendants(body))
-                    if r isa CC.AbstractDeclRefExpr]
+            refs = [r for r in map(CC.resolve, emu_descendants(body)) if r isa CC.AbstractDeclRefExpr]
             @test !isempty(refs)
             mutated_refs = [r for r in refs if CC.isMutated(ema, r)]
             @test !isempty(mutated_refs)
             @test all(r -> !CC.is_null_handle(CC.findMutation(ema, r)), mutated_refs)
             for r in refs
-                @test CC.isPointeeMutated(ema, r) ==
-                      !CC.is_null_handle(CC.findPointeeMutation(ema, r))
+                @test CC.isPointeeMutated(ema, r) == !CC.is_null_handle(CC.findPointeeMutation(ema, r))
             end
         finally
             CC.dispose(ema)

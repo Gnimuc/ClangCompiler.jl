@@ -17,7 +17,7 @@ using Test
     # LLVM resolves virtual paths as native absolute paths, and a leading "/" is not
     # absolute on Windows, so anchor the probe on the same volume as this file.
     root = Sys.iswindows() ? string(first(splitdrive(@__DIR__)), "/clangcompiler-vfs-probe") :
-                             "/clangcompiler-vfs-probe"
+           "/clangcompiler-vfs-probe"
     path = "$root/probe.h"
     memfs = CC.castToFileSystem(mem)
     @test !CC.exists(memfs, path)

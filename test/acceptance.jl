@@ -156,18 +156,17 @@ end
     end
 
     I = create_interpreter(String[])
-    CC.parse(I,
-        """
-        void foo();
-        void bar(int x);
-        typedef void (*fp)();
-        void caller(fp p) {
-            foo();       // direct
-            foo();       // repeated -> must dedup
-            bar(3);      // direct, with an argument
-            p();         // indirect call through function pointer -> null callee, skip
-        }
-        """)
+    CC.parse(I, """
+                void foo();
+                void bar(int x);
+                typedef void (*fp)();
+                void caller(fp p) {
+                    foo();       // direct
+                    foo();       // repeated -> must dedup
+                    bar(3);      // direct, with an argument
+                    p();         // indirect call through function pointer -> null callee, skip
+                }
+                """)
 
     f = DeclFinder(I)
     @test f(I, "caller")

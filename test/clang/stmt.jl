@@ -1,4 +1,5 @@
 using ClangCompiler
+import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, compile, DeclFinder, get_decl
 using ClangCompiler: FunctionDecl, getBody, resolve, children, getChildren
 using ClangCompiler: getStmtClass, getStmtClassName, getNumChildren
@@ -15,7 +16,6 @@ using Test
 
 using ClangCompiler: create_interpreter, dispose
 using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
-import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, DeclIterator
 # Depth-first search for the first resolved child node whose carrier is `T`.
 if !@isdefined(_find_node)
@@ -63,8 +63,7 @@ end
         while unmirrored(name)
             name = parent_of[name]
         end
-        return name === :Stmt ? ClangCompiler.AbstractStmt :
-               getfield(ClangCompiler, Symbol("Abstract", name))
+        return name === :Stmt ? CC.AbstractStmt : getfield(ClangCompiler, Symbol("Abstract", name))
     end
 
     swept = 0
@@ -91,13 +90,13 @@ end
     # `AbstractConditionalOperator` names the abstract type over clang's `ConditionalOperator`
     # -- the spelling freed by dropping the class clang gave that name to.
     @test !isdefined(ClangCompiler, :AbstractAbstractConditionalOperator)
-    @test isabstracttype(ClangCompiler.AbstractConditionalOperator)
-    @test ClangCompiler.ConditionalOperator <: ClangCompiler.AbstractConditionalOperator
+    @test isabstracttype(CC.AbstractConditionalOperator)
+    @test CC.ConditionalOperator <: CC.AbstractConditionalOperator
     # both spellings hang off Expr directly now, and are siblings, so a ConditionalOperator-only
     # method cannot reach the other
-    @test ClangCompiler.AbstractConditionalOperator <: ClangCompiler.AbstractExpr
-    @test ClangCompiler.AbstractBinaryConditionalOperator <: ClangCompiler.AbstractExpr
-    @test !(ClangCompiler.BinaryConditionalOperator <: ClangCompiler.AbstractConditionalOperator)
+    @test CC.AbstractConditionalOperator <: CC.AbstractExpr
+    @test CC.AbstractBinaryConditionalOperator <: CC.AbstractExpr
+    @test !(CC.BinaryConditionalOperator <: CC.AbstractConditionalOperator)
 
     # every concrete class has an enum value and a carrier in the resolve map
     @test length(STMT_CLASS_TO_TYPE) == count(n -> !n.isabstract, nodes)
@@ -105,15 +104,14 @@ end
 
 @testset "Stmt traversal & classification" begin
     I = create_interpreter()
-    compile(I,
-            """
-            int fact(int n) {
-                if (n <= 1) { return 1; }
-                int r = 1;
-                while (n > 1) { r *= n; --n; }
-                return r;
-            }
-            """)
+    compile(I, """
+               int fact(int n) {
+                   if (n <= 1) { return 1; }
+                   int r = 1;
+                   while (n > 1) { r *= n; --n; }
+                   return r;
+               }
+               """)
     lookup = DeclFinder(I)
     @test lookup(I, "fact")
     fd = FunctionDecl(get_decl(lookup))
@@ -169,10 +167,10 @@ end
     # the CXXRecord naming the class from inside itself -- and the fields follow it.
     kinds = [getDeclKindName(d) for d in DeclIterator(decl)]
     @test kinds[1] == "CXXRecord"
-    @test ClangCompiler.isImplicit(first(DeclIterator(decl)))
+    @test CC.isImplicit(first(DeclIterator(decl)))
     for field in DeclIterator(decl)
-        ClangCompiler.isImplicit(field) && continue
-        ClangCompiler.dump(field)
+        CC.isImplicit(field) && continue
+        CC.dump(field)
         @test getDeclKindName(field) == "Field"
     end
     @test count(==("Field"), kinds) == 2
@@ -180,7 +178,7 @@ end
     @test decl_lookup(I, "Foo")
     decl = get_decl(decl_lookup)
     for x in DeclIterator(decl)
-        ClangCompiler.dump(x)
+        CC.dump(x)
     end
 
     dispose(decl_lookup)

@@ -40,8 +40,7 @@ end
         bounds = CC.ComputePreambleBounds(lo, contents)
         @test bounds.size == ncodeunits(head)
 
-        pre = CC.PrecompiledPreamble(inv, contents, main, bounds, diag;
-                                     storage_path=dir)
+        pre = CC.PrecompiledPreamble(inv, contents, main, bounds, diag; storage_path=dir)
 
         # What the preamble records about itself, checked against what went in.
         got = CC.getBounds(pre)

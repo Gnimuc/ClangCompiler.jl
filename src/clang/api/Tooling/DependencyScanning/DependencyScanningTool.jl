@@ -37,14 +37,11 @@ Clang returns an `llvm::Expected<std::string>`, so the first half of the tuple s
 the scan succeeded and the second is either the dependency file or the diagnostics Clang
 emitted.
 """
-function getDependencyFile(x::AbstractDependencyScanningTool,
-                           command_line::AbstractVector{<:AbstractString},
-                           cwd::AbstractString)
+function getDependencyFile(x::AbstractDependencyScanningTool, command_line::AbstractVector{<:AbstractString}, cwd::AbstractString)
     @check_ptrs x
     @assert !isempty(command_line) "the command line must at least name the driver"
     args = String[String(a) for a in command_line]
     ok = Ref{Bool}(false)
-    out = get_string(clang_DependencyScanningTool_getDependencyFile(x, args, length(args),
-                                                                    cwd, ok))
+    out = get_string(clang_DependencyScanningTool_getDependencyFile(x, args, length(args), cwd, ok))
     return ok[], out
 end

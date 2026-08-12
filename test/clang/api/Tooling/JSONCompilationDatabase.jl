@@ -24,8 +24,7 @@ const CCDB_JSON = """
 ]
 """
 
-ccdb_args(cc) = String[CC.getCommandLineArg(cc, i)
-                       for i in 0:(CC.getNumCommandLineArgs(cc) - 1)]
+ccdb_args(cc) = String[CC.getCommandLineArg(cc, i) for i = 0:(CC.getNumCommandLineArgs(cc) - 1)]
 
 @testset "JSONCompilationDatabase | a database parsed out of memory enumerates" begin
     db, err = CC.loadFromBuffer(CC.JSONCompilationDatabase, CCDB_JSON)
@@ -74,8 +73,7 @@ end
     @test !isempty(msg)
 
     mktempdir() do dir
-        gone, ferr = CC.loadFromFile(CC.JSONCompilationDatabase,
-                                     joinpath(dir, "compile_commands.json"))
+        gone, ferr = CC.loadFromFile(CC.JSONCompilationDatabase, joinpath(dir, "compile_commands.json"))
         @test gone === nothing
         @test !isempty(ferr)
     end
@@ -85,8 +83,7 @@ end
     mktempdir() do dir
         write(joinpath(dir, "compile_commands.json"), CCDB_JSON)
 
-        db, err = CC.loadFromFile(CC.JSONCompilationDatabase,
-                                  joinpath(dir, "compile_commands.json"))
+        db, err = CC.loadFromFile(CC.JSONCompilationDatabase, joinpath(dir, "compile_commands.json"))
         @test db !== nothing
         @test isempty(err)
         @test length(CC.getAllFiles(db)) == 2

@@ -25,38 +25,57 @@ import ClangCompiler as CC
 I = CC.create_interpreter(["-include", "vector"])
 
 # Run a real C++ name lookup. The result is resolved to the class clang built
-# for it -- here a `ClassTemplateDecl` -- so `isa` tests on it mean what they say.
+# for it, so `isa` tests on it mean what they say.
 decl = CC.find_decl(I, "std::vector")
-CC.dump(decl)
+CC.qualified_name(decl)          # "std::vector"
+decl isa CC.AbstractNamedDecl    # true
 
 # Clean up resources
 CC.dispose(I)
 ```
 
 `find_decl` returns `nothing` when the name is not found, and `find_decls` returns the whole
-overload set. `CC.DeclFinder` is still there if you want to drive the lookup yourself.
+overload set.
+
+**Dispatch on the abstract, not the carrier.** Carriers are leaves, mirroring clang's classes
+one-for-one, so `d isa CC.CXXMethodDecl` is an exact-class test that a constructor fails even
+though clang's `CXXConstructorDecl` derives from `CXXMethodDecl`. The abstract supertypes are
+the spelling of C++'s `isa<T>`, and they are what this package promises across an LLVM upgrade:
+
+```julia-repl
+julia> CC.find_decl(I, "app::Widget") isa CC.AbstractRecordDecl
+true
+```
+
+`AbstractDecl`, `AbstractNamedDecl`, `AbstractFunctionDecl`, `AbstractTagDecl`,
+`AbstractVarDecl` and `AbstractRecordDecl` are public for this reason. The concrete carriers
+are not: they are named after clang's AST classes, and those get renamed and deleted between
+LLVM releases.
 
 ### AST Traversal
 
-The following example demonstrates how to perform AST traversal:
+Walking what a declaration contains:
 
 ```julia-repl
 import ClangCompiler as CC
 
-# Create an interpreter
-I = CC.create_interpreter(["-include", "vector"])
+I = CC.create_interpreter()
+CC.parse(I, "namespace app { struct Widget { int w; int area() const; }; }")
 
-# `std::vector` is a template; step from the template to the class it describes
-record = CC.getTemplatedDecl(CC.find_decl(I, "std::vector"))
+# `definition` first: a lookup can land on a forward declaration, which has no members
+w = CC.definition(CC.find_decl(I, "app::Widget"))
 
-# AST Traversal -- 119 members, each resolved to its own concrete type
-for x in CC.DeclIterator(record)
-    CC.dump(x)
+for m in CC.members(w)
+    println(CC.decl_name(m), "  ", m isa CC.AbstractFunctionDecl ? "(function)" : "")
 end
 
-# Clean up resources
 CC.dispose(I)
 ```
+
+Everything below `src/clang/` — `dump`, `resolve`, `children`, `getTemplatedDecl`,
+`DeclIterator` and the rest of the wrapper layer — is reachable as `CC.name` and is what the
+package is built on, but it carries no compatibility promise; see
+[the note in `src/ClangCompiler.jl`](src/ClangCompiler.jl) for why.
 
 ### Execution
 
@@ -113,6 +132,37 @@ julia> v
 
 julia> CC.dispose(I)
 ```
+
+### Batch Compilation
+
+`create_interpreter` compiles increment by increment and hands each one straight to its own
+JIT. `create_compiler` compiles a whole translation unit in one go, which puts the entire
+module in your hands before anything runs it:
+
+```julia-repl
+julia> import ClangCompiler as CC
+
+julia> cc = CC.create_compiler("""
+           extern "C" int fib(int n) { return n < 2 ? n : fib(n - 1) + fib(n - 2); }
+       """; args=["-O2"])
+
+julia> mod = CC.take_module(cc)   # the whole unit as one LLVM module: inspect it, transform it
+
+julia> CC.compile(cc, mod)        # ... and hand it back
+
+julia> p = CC.get_function_pointer(cc, "fib")
+Ptr{Nothing}(0x000000010f5b4000)
+
+julia> @ccall $p(20::Cint)::Cint
+6765
+
+julia> CC.dispose(cc)
+```
+
+`CC.create_irgenerator` is the same frontend without the JIT, for when the IR itself is the
+product. Neither leaves an AST behind — the frontend has finished by the time the call
+returns — so use `create_interpreter` or `create_parser` for anything that traverses one.
+
 ## More
 
 [`examples/`](examples/) has seven worked programs that run — a JIT'd C++ function called from

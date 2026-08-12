@@ -32,8 +32,14 @@ end
 
 """
     getChildren(x::AbstractStmt) -> Vector{Stmt}
-Return the direct sub-statements. Slots may hold a NULL pointer (e.g. the
-missing `else` branch of an `IfStmt` keeps its position).
+Return the direct sub-statements. Slots may hold a NULL pointer: `for (;;)` leaves four of its
+`ForStmt`'s five slots empty, because clang stores those in a fixed `SubExprs` array and an
+omitted clause is a null entry in it.
+
+Which classes do that is per class and not a general rule — a `Stmt`'s `children()` is
+hand-written in clang, and the classes using trailing-object storage never allocate a slot for
+an absent child at all. An `IfStmt` with no `else` is the case worth knowing, because it is the
+one a reader expects to hold a NULL and it does not: it reports two children, not three.
 """
 function getChildren(x::AbstractStmt)
     @check_ptrs x

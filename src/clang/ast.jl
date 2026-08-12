@@ -129,14 +129,17 @@ function Base.iterate(x::DeclIterator, state=decl_iterator_begin(castToDeclConte
 end
 
 """
-    decls_in(x::DeclContext)
+    decls_in(x::AnyDeclContext)
 Iterate the declarations `x` holds directly, without descending into nested contexts.
+
+`x` may be a context or a declaration that is one; marshalling crosses through
+`Decl::castToDeclContext`.
 
 Elements are resolved to their concrete carriers, so `d isa NamespaceDecl` works. Use
 `ChainIterator(decl_iterator_begin(x), getNextDeclInContext)` directly for the unresolved
 walk when the extra ccall per node matters and the kind does not.
 """
-decls_in(x::DeclContext) = Iterators.map(resolve, ChainIterator(decl_iterator_begin(x), getNextDeclInContext))
+decls_in(x::AnyDeclContext) = Iterators.map(resolve, ChainIterator(decl_iterator_begin(x), getNextDeclInContext))
 
 """
     redecls(x::AbstractDecl) -> ChainIterator
@@ -154,15 +157,16 @@ Iterate a nested-name-specifier outward: for `A::B::C`, `C` then `B` then `A`.
 qualifiers(x::AbstractNestedNameSpecifier) = ChainIterator(x, getPrefix)
 
 """
-    parents(x::DeclContext) -> ChainIterator
-Iterate `x`'s semantic parent contexts, outward to the translation unit.
+    parents(x::AnyDeclContext) -> ChainIterator
+Iterate `x`'s semantic parent contexts, outward to the translation unit. `x` may be a context
+or a declaration that is one.
 """
-parents(x::DeclContext) = ChainIterator(getParent(x), getParent)
+parents(x::AnyDeclContext) = ChainIterator(getParent(x), getParent)
 
 """
-    lexical_parents(x::DeclContext) -> ChainIterator
+    lexical_parents(x::AnyDeclContext) -> ChainIterator
 Iterate `x`'s lexical parent contexts, outward to the translation unit. This differs from
 [`parents`](@ref) for anything written outside the context it belongs to -- an out-of-line
 member definition is lexically in the namespace and semantically in the class.
 """
-lexical_parents(x::DeclContext) = ChainIterator(getLexicalParent(x), getLexicalParent)
+lexical_parents(x::AnyDeclContext) = ChainIterator(getLexicalParent(x), getLexicalParent)

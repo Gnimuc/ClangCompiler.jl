@@ -274,8 +274,8 @@ end
     @test CC.is_null_handle(CC.getRewriteInfoOpLoc(plain))
     CC.dispose(plain)
 
-    cs = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator,
-                                 CC.CXOverloadedOperatorKind_OO_Less, loc, true)
+    cs = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator, CC.CXOverloadedOperatorKind_OO_Less, loc,
+                                 true)
     @test cs isa CC.OverloadCandidateSet
     @test cs.ptr != C_NULL
     @test CC.getKind(cs) == CC.CXOverloadCandidateSet_CSK_Operator
@@ -459,8 +459,7 @@ end
     @test CC.rewriteInfoIsRewrittenOperator(plain, fn) == false
     @test CC.rewriteInfoIsAcceptableCandidate(plain, fn) == true
     @test CC.rewriteInfoGetRewriteKind(plain, fn) == CC.CXOverloadCandidateRewriteKind_CRK_None
-    @test CC.rewriteInfoGetRewriteKind(plain, fn, true) ==
-          CC.CXOverloadCandidateRewriteKind_CRK_Reversed
+    @test CC.rewriteInfoGetRewriteKind(plain, fn, true) == CC.CXOverloadCandidateRewriteKind_CRK_Reversed
     # isReversible's first conjunct is AllowRewrittenCandidates, which this set leaves false.
     @test CC.rewriteInfoIsReversible(plain) == false
     @test !(CC.rewriteInfoAllowsReversed(plain, CC.CXOverloadedOperatorKind_OO_EqualEqual))
@@ -474,12 +473,11 @@ end
 
     # A set built for `operator==`, judged against a plain function: its name is not an
     # overloaded-operator name, so it is a rewrite to a different operator and not acceptable.
-    op = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator,
-                                 CC.CXOverloadedOperatorKind_OO_EqualEqual, loc, true)
+    op = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator, CC.CXOverloadedOperatorKind_OO_EqualEqual,
+                                 loc, true)
     @test CC.rewriteInfoIsRewrittenOperator(op, fn) == true
     @test CC.rewriteInfoIsAcceptableCandidate(op, fn) == false
-    @test CC.rewriteInfoGetRewriteKind(op, fn) ==
-          CC.CXOverloadCandidateRewriteKind_CRK_DifferentOperator
+    @test CC.rewriteInfoGetRewriteKind(op, fn) == CC.CXOverloadCandidateRewriteKind_CRK_DifferentOperator
     # Both rewrite bits together are not an enumerator, so the value is compared numerically.
     @test Int(CC.rewriteInfoGetRewriteKind(op, fn, true)) ==
           (Int(CC.CXOverloadCandidateRewriteKind_CRK_DifferentOperator) |

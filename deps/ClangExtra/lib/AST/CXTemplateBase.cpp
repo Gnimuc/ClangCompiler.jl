@@ -50,6 +50,22 @@ CXTemplateArgument clang_TemplateArgument_constructFromIntegral(CXASTContext Ctx
   return reinterpret_cast<CXTemplateArgument>(ptr.release());
 }
 
+CXTemplateArgument clang_TemplateArgument_constructFromInt64(CXASTContext Ctx, int64_t Val,
+                                                             CXQualType OpaquePtr) {
+  // The GenericValue overload above and this one differ only in how the raw bits arrive; every
+  // decision that matters -- signedness and width, both folded by TemplateArgument::Profile --
+  // is read from T either way, so the two build identical arguments for the same input.
+  clang::QualType T = clang::QualType::getFromOpaquePtr(OpaquePtr);
+  clang::ASTContext &C = *reinterpret_cast<clang::ASTContext *>(Ctx);
+  bool Unsigned = T->isUnsignedIntegerOrEnumerationType();
+  unsigned Width = C.getIntWidth(T);
+  llvm::APInt Raw(64, static_cast<uint64_t>(Val), /*isSigned=*/true);
+  llvm::APSInt V(Unsigned ? Raw.zextOrTrunc(Width) : Raw.sextOrTrunc(Width), Unsigned);
+  std::unique_ptr<clang::TemplateArgument> ptr =
+      std::make_unique<clang::TemplateArgument>(C, V, T);
+  return reinterpret_cast<CXTemplateArgument>(ptr.release());
+}
+
 void clang_TemplateArgument_dispose(CXTemplateArgument TA) {
   delete reinterpret_cast<clang::TemplateArgument *>(TA);
 }

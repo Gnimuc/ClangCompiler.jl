@@ -14,8 +14,7 @@ using Clang.Generators
 options = load_options(joinpath(@__DIR__, "option.toml"))
 
 using Pkg: Pkg
-import BinaryBuilderBase:
-                          PkgSpec, Prefix, temp_prefix, setup_dependencies, cleanup_dependencies, destdir
+import BinaryBuilderBase: PkgSpec, Prefix, temp_prefix, setup_dependencies, cleanup_dependencies, destdir
 
 const dependencies = PkgSpec[PkgSpec(; name="LLVM_full_jll")]
 
@@ -32,9 +31,7 @@ cd(@__DIR__) do
             artifact_paths = setup_dependencies(prefix, dependencies, platform; verbose=true)
 
             let options = deepcopy(options)
-                output_file_path = joinpath(libdir,
-                                            string(llvm_version.major),
-                                            options["general"]["output_file_path"])
+                output_file_path = joinpath(libdir, string(llvm_version.major), options["general"]["output_file_path"])
                 isdir(dirname(output_file_path)) || mkpath(dirname(output_file_path))
                 options["general"]["output_file_path"] = output_file_path
 
@@ -67,8 +64,7 @@ cd(@__DIR__) do
                 # CXFooImpl end`, and gives no hook for a supertype. Attach one here: it is
                 # what lets a single method in src/clang/handles.jl speak about any two
                 # handles of this package at once, and so refuse a conversion between them.
-                out = joinpath(@__DIR__, "..", "lib", string(Base.libllvm_version.major),
-                               "LibClangEx.jl")
+                out = joinpath(@__DIR__, "..", "lib", string(Base.libllvm_version.major), "LibClangEx.jl")
                 src = read(out, String)
                 src, n = let pat = r"^mutable struct (CX\w+Impl) end"m
                     replace(src, pat => s"mutable struct \1 <: AbstractCXImpl end"),

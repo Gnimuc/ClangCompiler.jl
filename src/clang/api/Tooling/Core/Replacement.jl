@@ -10,8 +10,7 @@ what lets a set of these be collected across translation units and applied at th
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function Replacement(file_path::AbstractString, offset::Integer, len::Integer,
-                     text::AbstractString)
+function Replacement(file_path::AbstractString, offset::Integer, len::Integer, text::AbstractString)
     ptr = clang_Replacement_create(file_path, offset, len, text)
     @assert ptr != C_NULL "Failed to create Replacement"
     return Replacement(ptr)
@@ -40,8 +39,7 @@ on.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function Replacement(src_mgr::AbstractSourceManager, start::SourceLocation, len::Integer,
-                     text::AbstractString)
+function Replacement(src_mgr::AbstractSourceManager, start::SourceLocation, len::Integer, text::AbstractString)
     @check_ptrs src_mgr
     @assert isValid(start) "replacement start must be a valid source location"
     ptr = clang_Replacement_createFromSourceLocation(src_mgr, start, len, text)
@@ -61,24 +59,20 @@ lexed for; omitting it selects Clang's own default argument, a default-construct
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function Replacement(src_mgr::AbstractSourceManager, range::CharSourceRange,
-                     text::AbstractString, lang_opts::AbstractLangOptions)
+function Replacement(src_mgr::AbstractSourceManager, range::CharSourceRange, text::AbstractString, lang_opts::AbstractLangOptions)
     @check_ptrs src_mgr lang_opts
     @assert isValid(range) "replacement range endpoints must be valid source locations"
     r = CXSourceRange_(range.range.begin_loc.ptr, range.range.end_loc.ptr)
-    ptr = clang_Replacement_createFromCharSourceRange(src_mgr, r, range.is_token_range,
-                                                      text, lang_opts)
+    ptr = clang_Replacement_createFromCharSourceRange(src_mgr, r, range.is_token_range, text, lang_opts)
     @assert ptr != C_NULL "Failed to create Replacement"
     return Replacement(ptr)
 end
 
-function Replacement(src_mgr::AbstractSourceManager, range::CharSourceRange,
-                     text::AbstractString)
+function Replacement(src_mgr::AbstractSourceManager, range::CharSourceRange, text::AbstractString)
     @check_ptrs src_mgr
     @assert isValid(range) "replacement range endpoints must be valid source locations"
     r = CXSourceRange_(range.range.begin_loc.ptr, range.range.end_loc.ptr)
-    ptr = clang_Replacement_createFromCharSourceRange(src_mgr, r, range.is_token_range,
-                                                      text, C_NULL)
+    ptr = clang_Replacement_createFromCharSourceRange(src_mgr, r, range.is_token_range, text, C_NULL)
     @assert ptr != C_NULL "Failed to create Replacement"
     return Replacement(ptr)
 end
@@ -231,7 +225,7 @@ function getAffectedRanges(x::AbstractReplacements)
     offsets = Vector{UInt32}(undef, n)
     lengths = Vector{UInt32}(undef, n)
     clang_Replacements_getAffectedRanges(x, offsets, lengths, n)
-    return [(offsets[i], lengths[i]) for i in 1:n]
+    return [(offsets[i], lengths[i]) for i = 1:n]
 end
 
 """
@@ -327,9 +321,7 @@ alongside `file_path`.
 
 `x` must be conflict-free, which is exactly what building it through `add` guarantees.
 """
-function formatAndApplyAllReplacements(file_path::AbstractString, x::AbstractReplacements,
-                                       rewriter::AbstractRewriter,
-                                       style::AbstractString="file")
+function formatAndApplyAllReplacements(file_path::AbstractString, x::AbstractReplacements, rewriter::AbstractRewriter, style::AbstractString="file")
     @check_ptrs x rewriter
     return clang_tooling_formatAndApplyAllReplacements(file_path, x, rewriter, style)
 end

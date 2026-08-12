@@ -11,8 +11,7 @@ using Test
 const TC_TRIPLE = "x86_64-unknown-linux-gnu"
 
 function toolchain_for(args)
-    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                 CC.IgnoringDiagConsumer(), true)
+    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     drv = CC.Driver(joinpath("usr", "bin", "clang"), TC_TRIPLE, diags)
     CC.setCheckInputsExist(drv, false)
     comp = CC.BuildCompilation(drv, args)
@@ -40,8 +39,7 @@ end
     @test length(arch_paths) >= 2
     @test all(p -> startswith(p, resource), arch_paths)
     @test any(p -> occursin(CC.getTripleString(tc), p), arch_paths)
-    @test any(p -> occursin(CC.getOSLibName(tc), p) && occursin(CC.getArchName(tc), p),
-              arch_paths)
+    @test any(p -> occursin(CC.getOSLibName(tc), p) && occursin(CC.getArchName(tc), p), arch_paths)
 
     # The optional-valued pair: absent is reported as an empty string, and a present one is
     # under the resource directory like everything else here.
@@ -82,10 +80,8 @@ end
     # property of the target.
     @test CC.isPICDefault(tc) isa Bool          # shape-only: the target decides it
     @test CC.isPICDefaultForced(tc) isa Bool    # shape-only: the target decides it
-    @test CC.GetDefaultCXXStdlibType(tc) in
-          (CC.CXCXXStdlibType_CST_Libcxx, CC.CXCXXStdlibType_CST_Libstdcxx)
-    @test CC.GetDefaultRuntimeLibType(tc) in
-          (CC.CXRuntimeLibType_RLT_CompilerRT, CC.CXRuntimeLibType_RLT_Libgcc)
+    @test CC.GetDefaultCXXStdlibType(tc) in (CC.CXCXXStdlibType_CST_Libcxx, CC.CXCXXStdlibType_CST_Libstdcxx)
+    @test CC.GetDefaultRuntimeLibType(tc) in (CC.CXRuntimeLibType_RLT_CompilerRT, CC.CXRuntimeLibType_RLT_Libgcc)
 
     dispose(comp)
     dispose(drv)
@@ -94,8 +90,7 @@ end
     # --sysroot is what computeSysRoot reports back when one was given, which is the
     # partition the empty answer above needs.
     root = joinpath(tempdir(), "clangcompiler-sysroot")
-    tc2, comp2, drv2, diags2 = toolchain_for(["clang", "--sysroot=" * root, "-fsyntax-only",
-                                              src])
+    tc2, comp2, drv2, diags2 = toolchain_for(["clang", "--sysroot=" * root, "-fsyntax-only", src])
     @test CC.computeSysRoot(tc2) == root
     dispose(comp2)
     dispose(drv2)

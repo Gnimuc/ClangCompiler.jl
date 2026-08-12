@@ -396,8 +396,7 @@ end
 
     # ---- ObjC family classification: a plain C++ identifier vs a family name ----
     @test CC.getMethodFamily(nullary) == CC.CXObjCMethodFamily_OMF_None
-    @test CC.getMethodFamily(CC.getNullarySelector(selt, alloc)) ==
-          CC.CXObjCMethodFamily_OMF_alloc
+    @test CC.getMethodFamily(CC.getNullarySelector(selt, alloc)) == CC.CXObjCMethodFamily_OMF_alloc
     @test CC.getMethodFamily(multi) isa CC.CXObjCMethodFamily
     @test CC.getStringFormatFamily(nullary) == CC.CXObjCStringFormatFamily_SFF_None
     @test CC.getStringFormatFamily(multi) isa CC.CXObjCStringFormatFamily
@@ -434,8 +433,8 @@ end
 
     # which identifiers are future-compat keywords depends on the standard the interpreter
     # defaults to, so the one to test with is found rather than assumed
-    candidates = ["char8_t", "concept", "requires", "co_await", "co_return", "co_yield",
-                  "consteval", "constinit", "static_assert", "thread_local"]
+    candidates = ["char8_t", "concept", "requires", "co_await", "co_return", "co_yield", "consteval", "constinit",
+                  "static_assert", "thread_local"]
     future = filter(n -> CC.isFutureCompatKeyword(get(it, n)), candidates)
     @test !isempty(future)
 
@@ -448,8 +447,7 @@ end
     @test lvl in instances(CC.CXDiagnosticsEngine_Level)
     # isIgnored is the Ignored level by another name, so the two must agree -- a cross-check of
     # two independent shims against the same id
-    @test CC.isIgnored(diags, k, CC.SourceLocation()) ==
-          (lvl == CC.CXDiagnosticsEngine_Ignored)
+    @test CC.isIgnored(diags, k, CC.SourceLocation()) == (lvl == CC.CXDiagnosticsEngine_Ignored)
     # every future-compat keyword in this table maps to the same warning family, and a
     # plain identifier is rejected by the gate rather than answered
     @test all(n -> CC.getFutureCompatDiagKind(it, get(it, n), opts) == k, future)

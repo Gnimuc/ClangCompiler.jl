@@ -47,8 +47,7 @@ Return whether an insertion at byte `offset` of the file `id` names, reached fro
 
 `clang::edit::FileOffset` is a `FileID` plus a byte offset, so it crosses as that pair.
 """
-function canInsertInOffset(x::AbstractEditedSource, orig_loc::SourceLocation, id::FileID,
-                           offset::Integer)
+function canInsertInOffset(x::AbstractEditedSource, orig_loc::SourceLocation, id::FileID, offset::Integer)
     @check_ptrs x id
     return clang_EditedSource_canInsertInOffset(x, orig_loc, id, offset)
 end
@@ -82,8 +81,7 @@ behind, which is what makes deletions look hand-written.
 `x` and `rw` must be built over the same `SourceManager` — the offsets replayed here are
 that manager's.
 """
-function applyRewrites(x::AbstractEditedSource, rw::AbstractRewriter,
-                       adjust_removals::Bool=true)
+function applyRewrites(x::AbstractEditedSource, rw::AbstractRewriter, adjust_removals::Bool=true)
     @check_ptrs x rw
     @assert getSourceManager(x).ptr == getSourceMgr(rw).ptr "the edited source and the rewriter must share a SourceManager"
     return clang_EditedSource_applyRewrites(x, rw, adjust_removals)

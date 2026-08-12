@@ -9,7 +9,7 @@ function lv_locals(cfg)
     for s in CC.getBlockStmts(cfg)
         ds = CC.resolve(s)
         ds isa CC.AbstractDeclStmt || continue
-        for i in 0:(CC.getNumDecls(ds) - 1)
+        for i = 0:(CC.getNumDecls(ds) - 1)
             d = CC.resolve(CC.getDecl(ds, i))
             d isa CC.AbstractVarDecl || continue
             out[CC.getName(d)] = d
@@ -43,7 +43,7 @@ end
             CC.setAllAlwaysAdd(CC.getCFGBuildOptions(adc))
             cfg = CC.getCFG(adc)
             @test !CC.is_null_handle(cfg)
-            blocks = [CC.getBlock(cfg, i) for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)]
+            blocks = [CC.getBlock(cfg, i) for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)]
             locals = lv_locals(cfg)
             @test haskey(locals, "a")
             @test haskey(locals, "b")
@@ -87,8 +87,7 @@ end
 
                 sm = CC.getSourceManager(CC.get_instance(I))
                 dumped = redirect_stderr(devnull) do
-                    CC.dumpBlockLiveness(strict, sm) === nothing &&
-                        CC.dumpExprLiveness(strict, sm) === nothing
+                    CC.dumpBlockLiveness(strict, sm) === nothing && CC.dumpExprLiveness(strict, sm) === nothing
                 end
                 @test dumped
             finally

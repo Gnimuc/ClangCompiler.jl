@@ -9,8 +9,8 @@
 # src/clang/api/AST/TypeWrappers.jl carrying the checked cast per class. `name`
 # is the bare TypeNodes spelling (CXTypeClass_<name>, carrier <name>Type).
 
-const TYPE_NODES_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include",
-                                         "clang-ex", "AST", "TypeNodes.inc"))
+const TYPE_NODES_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include", "clang-ex", "AST",
+                                         "TypeNodes.inc"))
 const TYPE_SRC = normpath(joinpath(@__DIR__, "..", "src"))
 const TYPE_SRC_AST = normpath(joinpath(@__DIR__, "..", "src", "clang", "core", "AST"))
 
@@ -72,7 +72,7 @@ function carrier_handles(dir)
             end
             isempty(name) && continue
             m = match(r"^\s+ptr::(\w+)", line)
-            m === nothing || (h[name] = m.captures[1]; name = "")
+            m === nothing || (h[name]=m.captures[1]; name="")
         end
     end
     return h

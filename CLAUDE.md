@@ -77,20 +77,37 @@ Two more traps when running these commands:
 
 ## Formatting
 
-Formatting: JuliaFormatter, YAS style, margin 1000 (see `.JuliaFormatter.toml`); `lib/`,
-`examples/` and the generated `src/` files listed in its `ignore` entry are excluded. The margin is set past the longest line here, so the formatter never
-*splits* a line — the wrapper signatures carry identifiers with no good break point, and its
-choices there were worse than a hand-placed break.
+JuliaFormatter, YAS style. **Two margins, and which one applies is decided by directory:**
 
-`join_lines_based_on_source=false` is the other half, and the margin does almost nothing
-without it. YAS turns that setting *on* by default, which means "keep whatever breaks the
-source already had" — so raising the margin only removes the obligation to split and never
-asks it to join. The two together say: put a definition on one line unless it physically
-cannot go there.
+- **`src/clang/**` — margin 1000** (`src/clang/.JuliaFormatter.toml`). This is the only place
+  that earns it. The files are thin wrappers that copy Clang's own method names verbatim, so
+  a signature is one run of long camelCase identifiers with no good break point; the
+  formatter's choices there were worse than a hand-placed break, and a wrapper on one line
+  stays diffable against the header it mirrors. The cost is local to this directory: a few
+  dozen lines over 300 characters, the worst near 900 where a `for (cls, T) in [...]`
+  dispatch table sits on one line.
+- **everything else — margin 120** (the repo-root `.JuliaFormatter.toml`). Ordinary Julia,
+  formatted like ordinary Julia. Nothing outside `src/clang` has signatures that cannot be
+  broken sensibly, so nothing outside it gets the wide margin.
 
-The cost is a tail of very long lines — in `src/clang`, a few dozen over 300 characters, the
-worst near 900 where a `for (cls, T) in [...]` dispatch table collapses. Where a table is
-meant to be read vertically, fence it rather than widening the margin back:
+JuliaFormatter uses the **nearest** config it finds rather than merging with the parent, so
+`src/clang/.JuliaFormatter.toml` has to repeat every setting it wants — including its own
+`ignore` list, since the root one does not reach inside.
+
+Excluded from formatting entirely: `lib/` and `examples/` (generated / vendored), the
+generated `src/` files named in the two `ignore` entries, and `gen/prologue.jl`. That last one
+is excluded for a reason one step removed — `gen/option.toml` names it as
+`prologue_file_path`, so the generator copies it *verbatim* into `lib/<v>/LibClangEx.jl`, and
+formatting it changes bytes in a file that is itself excluded. The "regenerated bindings match
+`lib/`" CI check then fails on whitespace alone.
+
+`join_lines_based_on_source=false` is set in both. YAS turns it *on* by default, which means
+"keep whatever breaks the source already had" — with it on, the margin only removes the
+obligation to split and never asks the formatter to join. Off, the layout is derived from the
+margin alone, so the output is canonical rather than a record of where someone pressed return.
+
+Where a table is meant to be read vertically and the margin still collapses it, fence it
+rather than widening the margin back:
 
 ```julia
 #! format: off
@@ -98,7 +115,12 @@ meant to be read vertically, fence it rather than widening the margin back:
 #! format: on
 ```
 
-Nothing in CI runs the formatter, so none of this happens on its own.
+At margin 120 this is rarely needed — a two-column table generally stays one row per line on
+its own — and the tree currently has no fences at all.
+
+Nothing in CI runs the formatter, so none of this happens on its own. Adding a CI gate would
+need the JuliaFormatter version pinned first; unpinned, a formatter release turns CI red on a
+commit that changed nothing.
 
 ## Architecture
 
@@ -115,7 +137,31 @@ There are three layers, from C++ up to user-facing Julia:
    - `src/clang/api/`: Julia wrapper functions for the C API.
    - `src/clang/*.jl` (ast.jl, sema.jl, qualtype.jl, ...): higher-level helpers over the raw API.
    - **See `src/clang/CLAUDE.md` for the thin-wrapper conventions** (the single-client axiom, the two type-safety invariants, and how C++ subtyping/multiple-inheritance are reproduced in Julia) — read it before touching any wrapper code, since this layer is the only safety boundary in front of a C shim that is check-free by design and blind to Clang's class hierarchy.
-   - `src/compiler/`: the user-facing API — `CxxInterpreter`, `create_interpreter`, `parse`/`execute`/`compile`, `get_function_pointer`, and `IncrementalParser`/`create_parser`.
+   - `src/compiler/`: the user-facing API — four drivers, one per file, over a taxonomy and a
+     shared helper file that come first because everything else depends on them.
+     `types.jl` holds every abstract type (`AbstractClangCompiler` and the four
+     `Abstract<Driver>` supertypes); `utils.jl` holds what more than one driver needs
+     (`SOURCE_LANGUAGES` and its two validators). Then
+     `CxxInterpreter`/`create_interpreter` (interpreter.jl) and
+     `IncrementalParser`/`create_parser` (parser.jl), the incremental pair, and
+     `IRGenerator`/`create_irgenerator` (irgen.jl) and `CxxCompiler`/`create_compiler`
+     (compiler.jl), the batch pair. Plus the verbs: `parse`/`execute`/`compile`,
+     `take_module`, `get_function_pointer`. The abstract types are taxonomy, not extension
+     points: nothing dispatches on them, exactly as with `AbstractFinder` in `src/lookup.jl`,
+     so each driver's accessors are written against its concrete type.
+   - The include order in `src/ClangCompiler.jl` is load-bearing and not alphabetical.
+     `types.jl` precedes every driver because each subtypes it; `utils.jl` precedes
+     `parser.jl` and `irgen.jl` because their docstrings interpolate `SOURCE_LANGUAGES` at
+     include time; and `irgen.jl` precedes `compiler.jl` because `CxxCompiler` has an
+     `IRGenerator` field, which is why the supertype cannot simply live with the compiler.
+   - `src/compiler/irgen.jl` + `compiler.jl` are the batch half: one `EmitLLVMOnlyAction`
+     over a whole translation unit, so the result is a single `LLVM.Module` rather than one
+     per increment, and `take_module` hands it over before anything JITs it. That gap is the
+     reason the pair exists — it is where an optimisation pipeline or a hand-built function
+     goes, and `compile(cc, mod)` takes the module back. The cost is the other side of the
+     same trade: the frontend runs to completion inside the constructor, so
+     `FrontendAction::EndSourceFile` has already dropped the `ASTContext` and there is no AST
+     to traverse afterwards.
    - `src/compiler/parser.jl` reimplements clang's incremental parse loop over a **single**
      `TranslationUnitDecl`. Clang's own `Interpreter` starts a new one per increment, and
      because C's unqualified lookup does not cross the chain that makes, C and Objective-C
@@ -153,14 +199,23 @@ Quick reference. `CONTRIBUTING.md` states these fully; `src/clang/CLAUDE.md` cov
   So exposing something new to users is never a `public` line on a wrapper; it is a snake_case
   helper over that wrapper, in `src/clang/*.jl` or the high-level files (`src/compiler/`,
   `src/lookup.jl`, `src/highlevel.jl`, `src/types.jl`). `get_record_layout` and `field_offsets`
-  are what `getASTRecordLayout` and `getFieldOffset` look like once they are surface, and
-  `children` is what `getChildren` looks like.
+  are what `getASTRecordLayout` and `getFieldOffset` would be named if they were surface, and
+  `children` is what `getChildren` would be.
 
-  Four camelCase names are public and predate the rule: `getStmtClass`, `getChildren`,
-  `getKind` and `getAttrs`. They are grandfathered, not precedent — `children` is already
-  public beside `getChildren`, which is what the rest should grow into. Do not add a fifth,
-  and do not read these four as licence to: the count going up is the only way this rule
-  fails quietly, since each addition looks exactly like the ones already there.
+  **Nothing in `src/clang/` is public**, and the rule now has no exceptions: the four
+  camelCase names that used to be grandfathered — `getStmtClass`, `getChildren`, `getKind`,
+  `getAttrs` — are not public either. They went with the rest of that layer, for a reason
+  bigger than naming, recorded at the head of the `# clang` block in `src/ClangCompiler.jl`:
+  `public` is a promise to keep a name working, and an audit found most of that layer unable
+  to keep one across an LLVM major bump, because the values are TableGen line ordinals, the
+  type names are clang's AST class names, and the generated unions change membership.
+
+  What survives as public is the layer above: the drivers in `src/compiler/`, and the
+  snake_case helpers in `src/lookup.jl`, `src/highlevel.jl`, `src/types.jl`, `src/template.jl`.
+  Everything under `src/clang/` stays reachable as `ClangCompiler.name` — it is what the
+  package is built on — but carries no promise. Add a `public` line when a downstream package
+  asks for a specific name, and write down what that name can promise across a bump when you
+  do.
 - Objects wrapping C++ resources need explicit `dispose(x)`; tests and examples follow a create → use → dispose pattern.
 - **CI runs macOS, Linux and Windows on x86_64**, and an equality assertion on something the
   runner decides turns into a red CI on a platform you did not run locally — invisible to a

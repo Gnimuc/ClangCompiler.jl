@@ -65,8 +65,7 @@ end
 
     # a document for another language cannot configure a C++ style
     cpp = CC.getLLVMStyle(CC.CXLanguageKind_LK_Cpp)
-    @test CC.parseConfiguration(cpp, "---\nLanguage: JavaScript\nColumnLimit: 20\n...\n") ==
-          CC.CXParseError_Unsuitable
+    @test CC.parseConfiguration(cpp, "---\nLanguage: JavaScript\nColumnLimit: 20\n...\n") == CC.CXParseError_Unsuitable
 
     dispose(cpp)
     dispose(s)
@@ -168,13 +167,13 @@ end
     # cleanupAroundReplacements is the #include insertion/removal entry point: an offset of
     # typemax(UInt32) with length 0 inserts a directive, and with length 1 removes a header
     inc = "#include \"ccaaa.h\"\nint ccx;\n"
-    inserted = CC.cleanupAroundReplacements(s, inc, UInt32[typemax(UInt32)], UInt32[0],
-                                            String["#include \"ccbbb.h\""], "ccfmt.cpp")
+    inserted = CC.cleanupAroundReplacements(s, inc, UInt32[typemax(UInt32)], UInt32[0], String["#include \"ccbbb.h\""],
+                                            "ccfmt.cpp")
     @test occursin("ccbbb.h", inserted)
     @test occursin("ccaaa.h", inserted)
 
-    removed = CC.cleanupAroundReplacements(s, inc, UInt32[typemax(UInt32)], UInt32[1],
-                                           String["\"ccaaa.h\""], "ccfmt.cpp")
+    removed = CC.cleanupAroundReplacements(s, inc, UInt32[typemax(UInt32)], UInt32[1], String["\"ccaaa.h\""],
+                                           "ccfmt.cpp")
     @test !occursin("ccaaa.h", removed)
 
     # an empty script changes nothing

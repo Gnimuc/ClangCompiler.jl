@@ -128,7 +128,7 @@ end
         @test CC.getRegisterWidth(ti) == 64
         @test CC.isTLSSupported(ti)
         # this whole testset is pinned to x86_64-unknown-linux-gnu, which supports VLAs --
-   # the pin is exactly what turns a target-decided answer into an assertable one
+        # the pin is exactly what turns a target-decided answer into an assertable one
         @test CC.isVLASupported(ti) == true
 
         dispose(I)
@@ -180,15 +180,11 @@ The OS half of a `HOST_WIDTHS` key. `Sys.KERNEL` names the *kernel*, not the OS 
 `:NT` on Windows -- so the discriminator comes from the documented `Sys.is*` predicates
 instead, and the table below reads in OS names.
 """
-host_os() = Sys.iswindows() ? :Windows :
-            Sys.isapple() ? :Darwin :
-            Sys.islinux() ? :Linux : Symbol(Sys.KERNEL)
+host_os() = Sys.iswindows() ? :Windows : Sys.isapple() ? :Darwin : Sys.islinux() ? :Linux : Symbol(Sys.KERNEL)
 
 "Expected (long, wchar_t) widths for the host, by (arch, OS). Each read from a pinned run."
 const HOST_WIDTHS = Dict((:x86_64, :Windows) => (32, 16),   # mingw: the LLP64 outlier
-                         (:x86_64, :Linux) => (64, 32),
-                         (:x86_64, :Darwin) => (64, 32),
-                         (:aarch64, :Darwin) => (64, 32),   # developer machines; not a CI runner
+                         (:x86_64, :Linux) => (64, 32), (:x86_64, :Darwin) => (64, 32), (:aarch64, :Darwin) => (64, 32),   # developer machines; not a CI runner
                          (:aarch64, :Linux) => (64, 32))
 
 @testset "host target | the default interpreter reads this machine's target" begin

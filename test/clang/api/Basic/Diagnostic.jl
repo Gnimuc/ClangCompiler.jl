@@ -78,8 +78,7 @@ using Test
     @test !CC.setDiagnosticGroupWarningAsError(engine, "unused", true)
     @test CC.setDiagnosticGroupWarningAsError(engine, "no-such-group-xyz", true)
     @test !CC.setDiagnosticGroupErrorAsFatal(engine, "unused", false)
-    @test !CC.setSeverityForGroup(engine, CC.CXDiag_Flavor_WarningOrError, "unused",
-                                  CC.CXDiag_Severity_Warning)
+    @test !CC.setSeverityForGroup(engine, CC.CXDiag_Flavor_WarningOrError, "unused", CC.CXDiag_Severity_Warning)
     CC.setSeverity(engine, 1, CC.CXDiag_Severity_Error)
     CC.setSeverityForAll(engine, CC.CXDiag_Flavor_Remark, CC.CXDiag_Severity_Ignored)
 
@@ -208,8 +207,7 @@ end
     @test CC.getNumOverloadCandidatesToShow(engine) == 4
 
     # notePriorDiagnosticFrom copies the other engine's last-diagnostic level
-    other = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                 CC.IgnoringDiagConsumer(), true)
+    other = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     CC.setLastDiagnosticIgnored(other, false)
     CC.setLastDiagnosticIgnored(engine, true)
     @test CC.isLastDiagnosticIgnored(engine)
@@ -312,8 +310,8 @@ end
     warn_id = CC.getCustomDiagID(engine, CC.CXDiagnosticsEngine_Warning, "fix-it probe")
 
     # A full record: location, two ranges differing only in token-ness, and two hints.
-    sd = CC.StoredDiagnostic(CC.CXDiagnosticsEngine_Warning, warn_id, "needs a fix", loc, sm,
-                             [span, span], [true, false], [removal, replacement])
+    sd = CC.StoredDiagnostic(CC.CXDiagnosticsEngine_Warning, warn_id, "needs a fix", loc, sm, [span, span],
+                             [true, false], [removal, replacement])
     @test sd isa CC.StoredDiagnostic
     @test sd.ptr != C_NULL
     @test CC.getID(sd) == warn_id
@@ -372,11 +370,9 @@ end
     ident = CC.getIdentifier(probe)
     @test CC.getNameStart(ident) == "diag_probe"
 
-    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                  CC.IgnoringDiagConsumer(), true)  # engine adopts all three
+    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)  # engine adopts all three
     CC.setSourceManager(engine, sm)
-    warn_id = CC.getCustomDiagID(engine, CC.CXDiagnosticsEngine_Warning,
-                                 "probe %0 saw %1 and %2")
+    warn_id = CC.getCustomDiagID(engine, CC.CXDiagnosticsEngine_Warning, "probe %0 saw %1 and %2")
 
     # With nothing in flight the storage reads back empty and the id is the sentinel, so
     # every indexed accessor is out of bounds and the formatter has no description to find.

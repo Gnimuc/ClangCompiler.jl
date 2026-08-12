@@ -40,7 +40,7 @@ function getVerifyPrefixes(x::AbstractDiagnosticOptions)
     # Int() first: the count is a C `unsigned`, and `0:(UInt32(0) - 1)` is four billion
     # iterations rather than the empty range an empty list wants.
     n = Int(clang_DiagnosticOptions_getVerifyPrefixesNum(x))
-    return [get_string(clang_DiagnosticOptions_getVerifyPrefix(x, i)) for i in 0:(n - 1)]
+    return [get_string(clang_DiagnosticOptions_getVerifyPrefix(x, i)) for i = 0:(n - 1)]
 end
 
 """

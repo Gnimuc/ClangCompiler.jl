@@ -100,8 +100,7 @@ There is no trailing `eof` token.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function tokenize(fid::AbstractFileID, src_mgr::AbstractSourceManager,
-                  lang_opts::AbstractLangOptions)
+function tokenize(fid::AbstractFileID, src_mgr::AbstractSourceManager, lang_opts::AbstractLangOptions)
     @check_ptrs fid src_mgr lang_opts
     @assert isValid(fid) "the file ID must be valid"
     ptr = clang_syntax_tokenize(fid, src_mgr, lang_opts)
@@ -119,8 +118,7 @@ may run past `end_offset`.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function tokenize(fid::AbstractFileID, begin_offset::Integer, end_offset::Integer,
-                  src_mgr::AbstractSourceManager, lang_opts::AbstractLangOptions)
+function tokenize(fid::AbstractFileID, begin_offset::Integer, end_offset::Integer, src_mgr::AbstractSourceManager, lang_opts::AbstractLangOptions)
     @check_ptrs fid src_mgr lang_opts
     @assert isValid(fid) "the file ID must be valid"
     @assert 0 <= begin_offset <= end_offset "the file range must be a half-open [begin, end)"

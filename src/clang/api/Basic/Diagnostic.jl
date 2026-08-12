@@ -512,8 +512,13 @@ end
 """
     reset(x::AbstractDiagnosticErrorTrap)
 Re-snapshot the engine's counters, returning the trap to its "no errors occurred" state.
+
+Extends `Base.reset`, as the `DeclFinder` method does: both dispatch on a type this package
+owns, so neither is piracy, and defining a separate `reset` here would shadow `Base.reset` for
+anyone importing it. Both mean what `reset(::Base.Event)` means — return a stateful object to
+its initial state.
 """
-function reset(x::AbstractDiagnosticErrorTrap)
+function Base.reset(x::AbstractDiagnosticErrorTrap)
     @check_ptrs x
     clang_DiagnosticErrorTrap_reset(x)
     return nothing

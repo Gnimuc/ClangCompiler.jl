@@ -1,71 +1,71 @@
 using ClangCompiler
+import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose
 using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
 using Test
 
 @testset "APValue constant evaluation" begin
     I = create_interpreter(String[])
-    ClangCompiler.parse(I, "constexpr int cx = 2 + 3;")
+    CC.parse(I, "constexpr int cx = 2 + 3;")
     f = DeclFinder(I)
     @test f(I, "cx")
-    vd = ClangCompiler.VarDecl(get_decl(f))
+    vd = CC.VarDecl(get_decl(f))
 
     # VarDecl::evaluateValue — borrowed, cached in the VarDecl (never disposed).
-    av = ClangCompiler.evaluateValue(vd)
+    av = CC.evaluateValue(vd)
     @test av.ptr != C_NULL
-    @test ClangCompiler.isInt(av)
-    @test ClangCompiler.getKind(av) == ClangCompiler.LibClangEx.CXAPValueKind_Int
-    gv = ClangCompiler.LLVM.GenericValue(ClangCompiler.getInt(av))
+    @test CC.isInt(av)
+    @test CC.getKind(av) == CC.LibClangEx.CXAPValueKind_Int
+    gv = CC.LLVM.GenericValue(CC.getInt(av))
     @test convert(Int, gv) == 5
-    ClangCompiler.LLVM.dispose(gv)
+    CC.LLVM.dispose(gv)
 
     # Expr::EvaluateAsRValue — owned, must be disposed.
-    ctx = ClangCompiler.get_ast_context(I)
-    init = ClangCompiler.getInit(vd)
-    av2 = ClangCompiler.EvaluateAsRValue(init, ctx)
+    ctx = CC.get_ast_context(I)
+    init = CC.getInit(vd)
+    av2 = CC.EvaluateAsRValue(init, ctx)
     @test av2.ptr != C_NULL
-    gv2 = ClangCompiler.LLVM.GenericValue(ClangCompiler.getInt(av2))
+    gv2 = CC.LLVM.GenericValue(CC.getInt(av2))
     @test convert(Int, gv2) == 5
-    ClangCompiler.LLVM.dispose(gv2)
-    ClangCompiler.dispose(av2)
+    CC.LLVM.dispose(gv2)
+    CC.dispose(av2)
 
     # Constant-evaluation predicates + the typed Evaluate* entry points.
-    @test ClangCompiler.isEvaluatable(init, ctx)
-    @test ClangCompiler.isIntegerConstantExpr(init, ctx)
-    @test ClangCompiler.isCXX11ConstantExpr(init, ctx)
+    @test CC.isEvaluatable(init, ctx)
+    @test CC.isIntegerConstantExpr(init, ctx)
+    @test CC.isCXX11ConstantExpr(init, ctx)
 
-    avi = ClangCompiler.EvaluateAsInt(init, ctx)
-    @test avi.ptr != C_NULL && ClangCompiler.isInt(avi)
-    gvi = ClangCompiler.LLVM.GenericValue(ClangCompiler.getInt(avi))
+    avi = CC.EvaluateAsInt(init, ctx)
+    @test avi.ptr != C_NULL && CC.isInt(avi)
+    gvi = CC.LLVM.GenericValue(CC.getInt(avi))
     @test convert(Int, gvi) == 5
-    ClangCompiler.LLVM.dispose(gvi)
-    ClangCompiler.dispose(avi)
+    CC.LLVM.dispose(gvi)
+    CC.dispose(avi)
 
-    ClangCompiler.parse(I, "constexpr bool cb = (2 > 1); constexpr float cf = 1.5f;")
+    CC.parse(I, "constexpr bool cb = (2 > 1); constexpr float cf = 1.5f;")
     @test f(I, "cb")
-    cb_init = ClangCompiler.getInit(ClangCompiler.VarDecl(get_decl(f)))
-    @test ClangCompiler.EvaluateAsBooleanCondition(cb_init, ctx) == 1
+    cb_init = CC.getInit(CC.VarDecl(get_decl(f)))
+    @test CC.EvaluateAsBooleanCondition(cb_init, ctx) == 1
 
     @test f(I, "cf")
-    cf_init = ClangCompiler.getInit(ClangCompiler.VarDecl(get_decl(f)))
-    gvf = ClangCompiler.LLVM.GenericValue(ClangCompiler.EvaluateAsFloat(cf_init, ctx))
-    @test ClangCompiler.LLVM.intwidth(gvf) == 32                  # APFloat bits (bitcastToAPInt)
+    cf_init = CC.getInit(CC.VarDecl(get_decl(f)))
+    gvf = CC.LLVM.GenericValue(CC.EvaluateAsFloat(cf_init, ctx))
+    @test CC.LLVM.intwidth(gvf) == 32                  # APFloat bits (bitcastToAPInt)
     @test reinterpret(Float32, convert(UInt32, gvf)) == 1.5f0
-    ClangCompiler.LLVM.dispose(gvf)
+    CC.LLVM.dispose(gvf)
 
     # A non-constant expression yields the null/-1 sentinels.
-    ClangCompiler.parse(I, "int nc_fn(); int nc = nc_fn();")
+    CC.parse(I, "int nc_fn(); int nc = nc_fn();")
     @test f(I, "nc")
-    nc_init = ClangCompiler.getInit(ClangCompiler.VarDecl(get_decl(f)))
-    @test !ClangCompiler.isEvaluatable(nc_init, ctx)
-    @test ClangCompiler.EvaluateAsInt(nc_init, ctx).ptr == C_NULL
-    @test ClangCompiler.EvaluateAsBooleanCondition(nc_init, ctx) == -1
+    nc_init = CC.getInit(CC.VarDecl(get_decl(f)))
+    @test !CC.isEvaluatable(nc_init, ctx)
+    @test CC.EvaluateAsInt(nc_init, ctx).ptr == C_NULL
+    @test CC.EvaluateAsBooleanCondition(nc_init, ctx) == -1
 
     dispose(f)
     dispose(I)
 end
 
-import ClangCompiler as CC
 @testset "Coverage | ValueTypesMisc" begin
     I = create_interpreter(["-std=c++20"])
     ctx = CC.get_ast_context(I)
@@ -177,7 +177,7 @@ import ClangCompiler as CC
     CC.dispose(av_owned)
 
     # ---------- NestedNameSpecifier ----------
-    exercise_nns(nns; is_dep::Bool=false, expected_kind=nothing, expected_name::Union{String, Nothing}=nothing) = begin
+    exercise_nns(nns; is_dep::Bool=false, expected_kind=nothing, expected_name::Union{String,Nothing}=nothing) = begin
         @test nns isa CC.NestedNameSpecifier
         if expected_kind !== nothing
             @test CC.getKind(nns) == expected_kind
@@ -207,14 +207,18 @@ import ClangCompiler as CC
     ety_ab = CC.resolve(CC.getTypePtr(CC.getType(varof("nns_ab"))))
     @test ety_ab isa CC.ElaboratedType
     nns_ab = CC.getQualifier(ety_ab)               # Namespace (B), prefix Namespace (A)
-    exercise_nns(nns_ab; is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Namespace, expected_name="A::B::")
-    exercise_nns(CC.getPrefix(nns_ab); is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Namespace, expected_name="A::")
+    exercise_nns(nns_ab; is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Namespace,
+                 expected_name="A::B::")
+    exercise_nns(CC.getPrefix(nns_ab); is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Namespace,
+                 expected_name="A::")
 
     ety_oi = CC.resolve(CC.getTypePtr(CC.getType(varof("nns_oi"))))
-    exercise_nns(CC.getQualifier(ety_oi); is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec, expected_name="struct Outer::")
+    exercise_nns(CC.getQualifier(ety_oi); is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec,
+                 expected_name="struct Outer::")
 
     ety_al = CC.resolve(CC.getTypePtr(CC.getType(varof("nns_alias"))))
-    exercise_nns(CC.getQualifier(ety_al); is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_NamespaceAlias, expected_name="Shrt::")
+    exercise_nns(CC.getQualifier(ety_al); is_dep=false,
+                 expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_NamespaceAlias, expected_name="Shrt::")
 
     # Dependent identifier NNS from `typename T::foo::type`.
     @test f(I, "Dep")
@@ -223,7 +227,8 @@ import ClangCompiler as CC
     for fld in CC.getFields(patt)
         dnt = CC.resolve(CC.getTypePtr(CC.getType(fld)))
         if dnt isa CC.DependentNameType
-            exercise_nns(CC.getQualifier(dnt); is_dep=true, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Identifier, expected_name="T::foo::")
+            exercise_nns(CC.getQualifier(dnt); is_dep=true,
+                         expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Identifier, expected_name="T::foo::")
         end
     end
 
@@ -259,7 +264,7 @@ import ClangCompiler as CC
     vd_str = varof("g_str")
     sl = nothing
     for n in CC.subtree(CC.resolve(CC.getInit(vd_str)))
-        n isa CC.StringLiteral && (sl = n; break)
+        n isa CC.StringLiteral && (sl=n; break)
     end
     @test sl isa CC.StringLiteral
     @test !CC.shouldMangleStringLiteral(mc, sl)
@@ -324,7 +329,7 @@ import ClangCompiler as CC
     tst = tst_of(varof("stempl_obj"))
     @test tst isa CC.TemplateSpecializationType
     @test CC.getNumArgs(tst) == 2
-    for i in 0:(CC.getNumArgs(tst) - 1)
+    for i = 0:(CC.getNumArgs(tst) - 1)
         exercise_targ(CC.getArg(tst, i))
     end
 
@@ -337,7 +342,7 @@ import ClangCompiler as CC
     n_conv = Int(size(conv_args))
     @test n_conv == 2
     kinds = CC.LibClangEx.CXTemplateArgument_ArgKind[]
-    for i in 0:(n_conv - 1)
+    for i = 0:(n_conv - 1)
         arg = get(conv_args, i)
         push!(kinds, CC.getKind(arg))
         exercise_targ(arg)
@@ -347,7 +352,7 @@ import ClangCompiler as CC
 
     tst2 = tst_of(varof("usett_obj"))
     if tst2 isa CC.TemplateSpecializationType
-        for i in 0:(CC.getNumArgs(tst2) - 1)
+        for i = 0:(CC.getNumArgs(tst2) - 1)
             exercise_targ(CC.getArg(tst2, i))
         end
     end
@@ -685,8 +690,7 @@ end
     @test CC.getNumTemplateArgs(astli) == 2
     @test CC.getLAngleLoc(astli).ptr == le.ptr
     @test CC.getRAngleLoc(astli).ptr == lb.ptr
-    @test CC.getKind(CC.getArgument(CC.getTemplateArg(astli, 0))) ==
-          CC.LibClangEx.CXTemplateArgument_Template
+    @test CC.getKind(CC.getArgument(CC.getTemplateArg(astli, 0))) == CC.LibClangEx.CXTemplateArgument_Template
     dispose(li)
 
     # The two arms of the lvalue base's union that only exist mid-fold: a completed

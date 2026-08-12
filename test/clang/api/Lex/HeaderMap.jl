@@ -42,8 +42,10 @@ hmap_hash(s) = foldl((a, c) -> a + UInt32(lowercase(c)) * UInt32(13), s; init=UI
             end
         end
         write(io, UInt8(0))                           # pool[0], the reserved slot
-        write(io, key); write(io, UInt8(0))
-        write(io, prefix); write(io, UInt8(0))
+        write(io, key)
+        write(io, UInt8(0))
+        write(io, prefix)
+        write(io, UInt8(0))
     end
 
     I = create_interpreter(String[])

@@ -28,8 +28,7 @@ Render a full doc comment as HTML.
 `ctx` must be the `ASTContext` the comment was parsed in: the converter reads the comment's
 source locations and the declaration it is attached to out of that context's tables.
 """
-function convertCommentToHTML(x::AbstractCommentToXMLConverter, fc::AbstractFullComment,
-                              ctx::AbstractASTContext)
+function convertCommentToHTML(x::AbstractCommentToXMLConverter, fc::AbstractFullComment, ctx::AbstractASTContext)
     @check_ptrs x fc ctx
     return get_string(clang_CommentToXMLConverter_convertCommentToHTML(x, fc, ctx))
 end
@@ -39,8 +38,7 @@ end
 Render one HTML tag node of a doc comment as the text it stands for. Same `ctx` requirement
 as [`convertCommentToHTML`](@ref).
 """
-function convertHTMLTagNodeToText(x::AbstractCommentToXMLConverter,
-                                  htc::AbstractHTMLTagComment, ctx::AbstractASTContext)
+function convertHTMLTagNodeToText(x::AbstractCommentToXMLConverter, htc::AbstractHTMLTagComment, ctx::AbstractASTContext)
     @check_ptrs x htc ctx
     return get_string(clang_CommentToXMLConverter_convertHTMLTagNodeToText(x, htc, ctx))
 end
@@ -50,8 +48,7 @@ end
 Render a full doc comment as XML — the structured form libclang exposes as
 `clang_FullComment_getAsXML`. Same `ctx` requirement as [`convertCommentToHTML`](@ref).
 """
-function convertCommentToXML(x::AbstractCommentToXMLConverter, fc::AbstractFullComment,
-                             ctx::AbstractASTContext)
+function convertCommentToXML(x::AbstractCommentToXMLConverter, fc::AbstractFullComment, ctx::AbstractASTContext)
     @check_ptrs x fc ctx
     return get_string(clang_CommentToXMLConverter_convertCommentToXML(x, fc, ctx))
 end

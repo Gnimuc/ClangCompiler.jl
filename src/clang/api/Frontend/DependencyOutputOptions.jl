@@ -104,8 +104,7 @@ end
     setOutputFormat(x::AbstractDependencyOutputOptions, format::CXDependencyOutputFormat)
 Choose `make` or `nmake` syntax for the dependency file.
 """
-function setOutputFormat(x::AbstractDependencyOutputOptions,
-                         format::CXDependencyOutputFormat)
+function setOutputFormat(x::AbstractDependencyOutputOptions, format::CXDependencyOutputFormat)
     @check_ptrs x
     return clang_DependencyOutputOptions_setOutputFormat(x, format)
 end

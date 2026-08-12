@@ -23,7 +23,7 @@ using Test
         try
             entry = CC.getEntry(cfg)
             exit_ = CC.getExit(cfg)
-            blocks = [CC.getBlock(cfg, i) for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)]
+            blocks = [CC.getBlock(cfg, i) for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)]
 
             a = CC.CFGReverseBlockReachabilityAnalysis(cfg)
             try

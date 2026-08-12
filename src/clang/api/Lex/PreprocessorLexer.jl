@@ -97,8 +97,6 @@ function getConditionalStack(x::AbstractPreprocessorLexer)
     was_skipping = Vector{Bool}(undef, n)
     found_non_skip = Vector{Bool}(undef, n)
     found_else = Vector{Bool}(undef, n)
-    n > 0 && clang_PreprocessorLexer_getConditionalStack(x, locs, was_skipping,
-                                                         found_non_skip, found_else)
-    return [(SourceLocation(locs[i]), was_skipping[i], found_non_skip[i], found_else[i])
-            for i = 1:n]
+    n > 0 && clang_PreprocessorLexer_getConditionalStack(x, locs, was_skipping, found_non_skip, found_else)
+    return [(SourceLocation(locs[i]), was_skipping[i], found_non_skip[i], found_else[i]) for i = 1:n]
 end

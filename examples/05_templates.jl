@@ -110,7 +110,7 @@ try
     #     stores in a `TemplateArgument`.
     #
     # Anything else is rejected: `specialize(..., "4")` raises rather than guessing.
-    spec = CC.specialize(llctx, ctx, ctd, CC.jlty_to_clty(Float64, ctx), Int32(4))
+    spec = CC.specialize(ctx, ctd, CC.jlty_to_clty(Float64, ctx), Int32(4))
     @assert spec isa CC.ClassTemplateSpecializationDecl
 
     println("after specialize:")
@@ -162,7 +162,7 @@ try
     end
 
     "Instantiate `Buffer<T, N>` for a `T` and `N` chosen at Julia runtime."
-    instantiate(T, N) = complete!(CC.specialize(llctx, ctx, ctd, CC.jlty_to_clty(T, ctx), Int32(N)))
+    instantiate(T, N) = complete!(CC.specialize(ctx, ctd, CC.jlty_to_clty(T, ctx), Int32(N)))
 
     "Print the fields and ABI layout clang derived for one instantiation."
     function report(s)
@@ -217,7 +217,7 @@ try
     # profiled into a folding set hanging off the template, so asking twice for the same
     # arguments returns the *same declaration*, not a copy. This is why a translation unit
     # that mentions `Buffer<double, 4>` a thousand times has one record, one layout.
-    again = CC.specialize(llctx, ctx, ctd, CC.jlty_to_clty(Float64, ctx), Int32(4))
+    again = CC.specialize(ctx, ctd, CC.jlty_to_clty(Float64, ctx), Int32(4))
     println("\nasking a second time for <double, 4> returns the same decl: ",
             again.ptr == specs[1].ptr)
 
@@ -230,7 +230,7 @@ try
     # clang the `Type` it produced a moment ago.
     inner = instantiate(Float32, 16)                       # already built above; memoised
     inner_ty = CC.getTypePtr(CC.get_decl_type(ctx, inner))  # a `Type`, which is what a type argument is
-    outer = complete!(CC.specialize(llctx, ctx, ctd, inner_ty, Int32(2)))
+    outer = complete!(CC.specialize(ctx, ctd, inner_ty, Int32(2)))
     report(outer)
     inner_bytes = CC.getSize(CC.get_record_layout(ctx, inner))
     println("\n    the inner record is ", inner_bytes, " bytes, so `data` here spans ",

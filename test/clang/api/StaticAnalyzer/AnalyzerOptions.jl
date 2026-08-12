@@ -71,14 +71,10 @@ using Test
     CC.setAnalysisDiagOpt(opts, CC.LibClangEx.CXAnalysisDiagClients_PD_TEXT)
     @test CC.getAnalysisDiagOpt(opts) == CC.LibClangEx.CXAnalysisDiagClients_PD_TEXT
 
-    @test CC.getAnalysisConstraintsOpt(opts) ==
-          CC.LibClangEx.CXAnalysisConstraints_RangeConstraintsModel
-    CC.setAnalysisConstraintsOpt(opts,
-                                 CC.LibClangEx.CXAnalysisConstraints_Z3ConstraintsModel)
-    @test CC.getAnalysisConstraintsOpt(opts) ==
-          CC.LibClangEx.CXAnalysisConstraints_Z3ConstraintsModel
-    CC.setAnalysisConstraintsOpt(opts,
-                                 CC.LibClangEx.CXAnalysisConstraints_RangeConstraintsModel)
+    @test CC.getAnalysisConstraintsOpt(opts) == CC.LibClangEx.CXAnalysisConstraints_RangeConstraintsModel
+    CC.setAnalysisConstraintsOpt(opts, CC.LibClangEx.CXAnalysisConstraints_Z3ConstraintsModel)
+    @test CC.getAnalysisConstraintsOpt(opts) == CC.LibClangEx.CXAnalysisConstraints_Z3ConstraintsModel
+    CC.setAnalysisConstraintsOpt(opts, CC.LibClangEx.CXAnalysisConstraints_RangeConstraintsModel)
 
     @test CC.getAnalyzeSpecificFunction(opts) == ""
     CC.setAnalyzeSpecificFunction(opts, "only_this_one")

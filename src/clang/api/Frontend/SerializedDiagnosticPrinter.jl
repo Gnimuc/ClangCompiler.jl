@@ -20,9 +20,7 @@ hands back an object already holding the caller's own reference (MARSHALLING.md 
 borrow runs 1 → 2 → 1. Dispose them when you are done, in either order relative to this
 consumer.
 """
-function SerializedDiagnosticPrinter(output_file::AbstractString,
-                                     opts::AbstractDiagnosticOptions;
-                                     merge_child_records::Bool=false)
+function SerializedDiagnosticPrinter(output_file::AbstractString, opts::AbstractDiagnosticOptions; merge_child_records::Bool=false)
     @check_ptrs opts
     @assert !isempty(output_file) "SerializedDiagnosticPrinter needs an output path"
     dc = clang_serialized_diags_create(output_file, opts, merge_child_records)

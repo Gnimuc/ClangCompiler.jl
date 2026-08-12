@@ -78,8 +78,7 @@ PRECONDITION: `getKind(x)` is `CXABIArgInfo_Direct`, `CXABIArgInfo_Extend` or
 function getCoerceToType(x::AbstractABIArgInfo)
     @check_ptrs x
     k = getKind(x)
-    @assert k == CXABIArgInfo_Direct || k == CXABIArgInfo_Extend ||
-            k == CXABIArgInfo_CoerceAndExpand "getCoerceToType needs a Direct, Extend or CoerceAndExpand argument, got $k"
+    @assert k == CXABIArgInfo_Direct || k == CXABIArgInfo_Extend || k == CXABIArgInfo_CoerceAndExpand "getCoerceToType needs a Direct, Extend or CoerceAndExpand argument, got $k"
     return clang_ABIArgInfo_getCoerceToType(x)
 end
 

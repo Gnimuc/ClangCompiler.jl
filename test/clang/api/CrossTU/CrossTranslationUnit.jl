@@ -22,8 +22,7 @@ using Test
 
     # The index enumeration agrees with the lookups, whatever bucket order it uses.
     by_index = Dict(CC.getUSR(idx, i) => CC.getFilePath(idx, i) for i = 0:1)
-    @test by_index == Dict("c:@F@ctu_one#" => "/tmp/other.ast",
-                           "c:@F@ctu_two#" => "/tmp/two.ast")
+    @test by_index == Dict("c:@F@ctu_one#" => "/tmp/other.ast", "c:@F@ctu_two#" => "/tmp/two.ast")
     @test_throws AssertionError CC.getUSR(idx, 2)
     @test_throws AssertionError CC.getFilePath(idx, 2)
 
@@ -119,16 +118,14 @@ end
     mktempdir() do dir
         # No index file in `dir`, so every lookup fails cleanly rather than throwing.
         @test CC.getCrossTUDefinition(ctu, declared, dir, "externalDefMap.txt") === nothing
-        @test CC.loadExternalAST(ctu, CC.getLookupName(declared), dir,
-                                 "externalDefMap.txt") === nothing
+        @test CC.loadExternalAST(ctu, CC.getLookupName(declared), dir, "externalDefMap.txt") === nothing
 
         @test f(I, "ctu_extern_var")
         extern_var = CC.VarDecl(get_decl(f))
         @test CC.hasInit(extern_var) == false
         @test CC.getCrossTUDefinition(ctu, extern_var, dir, "externalDefMap.txt") === nothing
         # ...while the one that is already initialised here is refused before clang sees it.
-        @test_throws AssertionError CC.getCrossTUDefinition(ctu, trivial, dir,
-                                                            "externalDefMap.txt")
+        @test_throws AssertionError CC.getCrossTUDefinition(ctu, trivial, dir, "externalDefMap.txt")
     end
 
     CC.dispose(ctu)

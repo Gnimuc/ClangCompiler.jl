@@ -142,13 +142,10 @@ end
     ib = tpof("gint")
 
     # every dyn_cast probe is false on a plain builtin int
-    preds = (CC.isa_ComplexType, CC.isa_PointerType, CC.isa_ReferenceType,
-             CC.isa_LValueReferenceType, CC.isa_RValueReferenceType,
-             CC.isa_MemberPointerType, CC.isa_ArrayType, CC.isa_ConstantArrayType,
-             CC.isa_IncompleteArrayType, CC.isa_VariableArrayType,
-             CC.isa_DependentSizedArrayType, CC.isa_FunctionType,
-             CC.isa_FunctionNoProtoType, CC.isa_FunctionProtoType,
-             CC.isa_DependentDecltypeType, CC.isa_RecordType,
+    preds = (CC.isa_ComplexType, CC.isa_PointerType, CC.isa_ReferenceType, CC.isa_LValueReferenceType,
+             CC.isa_RValueReferenceType, CC.isa_MemberPointerType, CC.isa_ArrayType, CC.isa_ConstantArrayType,
+             CC.isa_IncompleteArrayType, CC.isa_VariableArrayType, CC.isa_DependentSizedArrayType, CC.isa_FunctionType,
+             CC.isa_FunctionNoProtoType, CC.isa_FunctionProtoType, CC.isa_DependentDecltypeType, CC.isa_RecordType,
              CC.isa_TemplateTypeParmType, CC.isa_AutoType)
     for p in preds
         @test p(ib) == false
@@ -586,9 +583,7 @@ end
     tpof(name) = CC.getTypePtr(qtof(name))
     rty(name) = CC.resolve(tpof(name))
     unwrap(t) = t isa CC.ElaboratedType ? CC.resolve(CC.getTypePtr(CC.getNamedType(t))) : t
-    fpt_of(name) = (f(I, name);
-                    CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(
-                        CC.FunctionDecl(get_decl(f)))))))
+    fpt_of(name) = (f(I, name); CC.resolve(CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f)))))))
 
     # ---------------- QualType ----------------
     cq = qtof("ci")
@@ -619,53 +614,46 @@ end
 
     # ---------------- Type (predicate/accessor block on a plain Type_) ----------------
     ty = tpof("gx")
-    preds = Function[CC.canDecayToPointerType, CC.hasAutoForTrailingReturnType,
-        CC.hasFloatingRepresentation, CC.hasIntegerRepresentation, CC.hasObjCPointerRepresentation,
-        CC.hasPointerRepresentation, CC.hasSignedIntegerRepresentation, CC.hasSizedVLAType,
-        CC.hasUnnamedOrLocalType, CC.hasUnsignedIntegerRepresentation, CC.isAggregateType,
-        CC.isAlignValT, CC.isAnyCharacterType, CC.isAnyComplexType, CC.isAnyPointerType,
-        CC.isArithmeticType, CC.isAtomicType, CC.isBFloat16Type, CC.isBlockPointerType,
-        CC.isCanonicalUnqualified, CC.isChar16Type, CC.isChar32Type, CC.isChar8Type,
-        CC.isClassType, CC.isComplexIntegerType, CC.isCompoundType, CC.isConstantMatrixType,
-        CC.isConstantSizeType, CC.isDecltypeType, CC.isDependentAddressSpaceType,
-        CC.isDependentType, CC.isElaboratedTypeSpecifier, CC.isExtVectorType,
-        CC.isFixedPointOrIntegerType, CC.isFixedPointType, CC.isFloat128Type, CC.isFloat16Type,
-        CC.isFloatingType, CC.isFromAST, CC.isFunctionReferenceType, CC.isFundamentalType,
-        CC.isHalfType, CC.isInstantiationDependentType, CC.isIntegerType,
-        CC.isIntegralOrEnumerationType, CC.isIntegralOrUnscopedEnumerationType,
-        CC.isInterfaceType, CC.isLinkageValid, CC.isMatrixType, CC.isMemberDataPointerType,
-        CC.isNothrowT, CC.isNullPtrType, CC.isObjCBoxableRecordType, CC.isObjectPointerType,
-        CC.isOverloadableType, CC.isRealFloatingType, CC.isRealType, CC.isSaturatedFixedPointType,
-        CC.isScalarType, CC.isScopedEnumeralType, CC.isSignedFixedPointType,
-        CC.isSignedIntegerOrEnumerationType, CC.isSignedIntegerType, CC.isSizelessBuiltinType,
-        CC.isSizelessType, CC.isSpecifierType, CC.isStdByteType, CC.isStructureOrClassType,
-        CC.isStructureType, CC.isTypedefNameType, CC.isUndeducedAutoType, CC.isUndeducedType,
-        CC.isUnionType, CC.isUnsaturatedFixedPointType, CC.isUnscopedEnumerationType,
-        CC.isUnsignedFixedPointType, CC.isUnsignedIntegerOrEnumerationType,
-        CC.isUnsignedIntegerType, CC.isVariablyModifiedType, CC.isVectorType,
-        CC.isVisibilityExplicit, CC.isVoidPointerType, CC.isWideCharType, CC.isVoidType,
-        CC.isBooleanType, CC.isPointerType, CC.isFunctionPointerType, CC.isFunctionType,
-        CC.isMemberFunctionPointerType, CC.isReferenceType, CC.isCharType, CC.isEnumeralType,
-        CC.isBuiltinType, CC.isComplexType, CC.isArrayType, CC.isLValueReferenceType,
-        CC.isRValueReferenceType, CC.isMemberPointerType, CC.isConstantArrayType,
-        CC.isIncompleteArrayType, CC.isVariableArrayType, CC.isDependentSizedArrayType,
-        CC.isFunctionNoProtoType, CC.isFunctionProtoType, CC.isRecordType,
-        CC.isTemplateTypeParmType, CC.isa_TypedefType, CC.isa_TagType, CC.isa_EnumType,
-        CC.isa_SubstTemplateTypeParmType, CC.isa_SubstTemplateTypeParmPackType,
-        CC.isa_TemplateSpecializationType, CC.isa_ElaboratedType, CC.isa_DependentNameType,
-        CC.isa_DependentTemplateSpecializationType, CC.isa_UsingType, CC.isa_AtomicType,
-        CC.isa_AdjustedType, CC.isa_DecayedType, CC.isa_InjectedClassNameType,
-        CC.isa_MacroQualifiedType, CC.isa_UnaryTransformType, CC.isa_ParenType,
-        CC.isa_DependentAddressSpaceType, CC.isa_DependentSizedExtVectorType,
-        CC.isa_DecltypeType, CC.isa_DeducedType, CC.isa_DeducedTemplateSpecializationType]
-    true_preds = Set{Function}([
-        CC.hasIntegerRepresentation, CC.hasSignedIntegerRepresentation, CC.isArithmeticType,
-        CC.isCanonicalUnqualified, CC.isConstantSizeType, CC.isFixedPointOrIntegerType,
-        CC.isFundamentalType, CC.isIntegerType, CC.isIntegralOrEnumerationType,
-        CC.isIntegralOrUnscopedEnumerationType, CC.isLinkageValid, CC.isRealType,
-        CC.isScalarType, CC.isSignedIntegerOrEnumerationType, CC.isSignedIntegerType,
-        CC.isSpecifierType, CC.isBuiltinType
-    ])
+    preds = Function[CC.canDecayToPointerType, CC.hasAutoForTrailingReturnType, CC.hasFloatingRepresentation,
+                     CC.hasIntegerRepresentation, CC.hasObjCPointerRepresentation, CC.hasPointerRepresentation,
+                     CC.hasSignedIntegerRepresentation, CC.hasSizedVLAType, CC.hasUnnamedOrLocalType,
+                     CC.hasUnsignedIntegerRepresentation, CC.isAggregateType, CC.isAlignValT, CC.isAnyCharacterType,
+                     CC.isAnyComplexType, CC.isAnyPointerType, CC.isArithmeticType, CC.isAtomicType, CC.isBFloat16Type,
+                     CC.isBlockPointerType, CC.isCanonicalUnqualified, CC.isChar16Type, CC.isChar32Type, CC.isChar8Type,
+                     CC.isClassType, CC.isComplexIntegerType, CC.isCompoundType, CC.isConstantMatrixType,
+                     CC.isConstantSizeType, CC.isDecltypeType, CC.isDependentAddressSpaceType, CC.isDependentType,
+                     CC.isElaboratedTypeSpecifier, CC.isExtVectorType, CC.isFixedPointOrIntegerType,
+                     CC.isFixedPointType, CC.isFloat128Type, CC.isFloat16Type, CC.isFloatingType, CC.isFromAST,
+                     CC.isFunctionReferenceType, CC.isFundamentalType, CC.isHalfType, CC.isInstantiationDependentType,
+                     CC.isIntegerType, CC.isIntegralOrEnumerationType, CC.isIntegralOrUnscopedEnumerationType,
+                     CC.isInterfaceType, CC.isLinkageValid, CC.isMatrixType, CC.isMemberDataPointerType, CC.isNothrowT,
+                     CC.isNullPtrType, CC.isObjCBoxableRecordType, CC.isObjectPointerType, CC.isOverloadableType,
+                     CC.isRealFloatingType, CC.isRealType, CC.isSaturatedFixedPointType, CC.isScalarType,
+                     CC.isScopedEnumeralType, CC.isSignedFixedPointType, CC.isSignedIntegerOrEnumerationType,
+                     CC.isSignedIntegerType, CC.isSizelessBuiltinType, CC.isSizelessType, CC.isSpecifierType,
+                     CC.isStdByteType, CC.isStructureOrClassType, CC.isStructureType, CC.isTypedefNameType,
+                     CC.isUndeducedAutoType, CC.isUndeducedType, CC.isUnionType, CC.isUnsaturatedFixedPointType,
+                     CC.isUnscopedEnumerationType, CC.isUnsignedFixedPointType, CC.isUnsignedIntegerOrEnumerationType,
+                     CC.isUnsignedIntegerType, CC.isVariablyModifiedType, CC.isVectorType, CC.isVisibilityExplicit,
+                     CC.isVoidPointerType, CC.isWideCharType, CC.isVoidType, CC.isBooleanType, CC.isPointerType,
+                     CC.isFunctionPointerType, CC.isFunctionType, CC.isMemberFunctionPointerType, CC.isReferenceType,
+                     CC.isCharType, CC.isEnumeralType, CC.isBuiltinType, CC.isComplexType, CC.isArrayType,
+                     CC.isLValueReferenceType, CC.isRValueReferenceType, CC.isMemberPointerType, CC.isConstantArrayType,
+                     CC.isIncompleteArrayType, CC.isVariableArrayType, CC.isDependentSizedArrayType,
+                     CC.isFunctionNoProtoType, CC.isFunctionProtoType, CC.isRecordType, CC.isTemplateTypeParmType,
+                     CC.isa_TypedefType, CC.isa_TagType, CC.isa_EnumType, CC.isa_SubstTemplateTypeParmType,
+                     CC.isa_SubstTemplateTypeParmPackType, CC.isa_TemplateSpecializationType, CC.isa_ElaboratedType,
+                     CC.isa_DependentNameType, CC.isa_DependentTemplateSpecializationType, CC.isa_UsingType,
+                     CC.isa_AtomicType, CC.isa_AdjustedType, CC.isa_DecayedType, CC.isa_InjectedClassNameType,
+                     CC.isa_MacroQualifiedType, CC.isa_UnaryTransformType, CC.isa_ParenType,
+                     CC.isa_DependentAddressSpaceType, CC.isa_DependentSizedExtVectorType, CC.isa_DecltypeType,
+                     CC.isa_DeducedType, CC.isa_DeducedTemplateSpecializationType]
+    true_preds = Set{Function}([CC.hasIntegerRepresentation, CC.hasSignedIntegerRepresentation, CC.isArithmeticType,
+                                CC.isCanonicalUnqualified, CC.isConstantSizeType, CC.isFixedPointOrIntegerType,
+                                CC.isFundamentalType, CC.isIntegerType, CC.isIntegralOrEnumerationType,
+                                CC.isIntegralOrUnscopedEnumerationType, CC.isLinkageValid, CC.isRealType,
+                                CC.isScalarType, CC.isSignedIntegerOrEnumerationType, CC.isSignedIntegerType,
+                                CC.isSpecifierType, CC.isBuiltinType])
     for fn in preds
         @test fn(ty) == (fn in true_preds)
     end
@@ -690,15 +678,15 @@ end
     bt = rty("gx")
     @test bt isa CC.BuiltinType
     bpreds = Function[CC.isa_BuiltinType_Void, CC.isa_BuiltinType_Bool, CC.isa_BuiltinType_Char_U,
-        CC.isa_BuiltinType_Char_S, CC.isa_BuiltinType_WChar_U, CC.isa_BuiltinType_WChar_S,
-        CC.isa_BuiltinType_Char8, CC.isa_BuiltinType_Char16, CC.isa_BuiltinType_Char32,
-        CC.isa_BuiltinType_SChar, CC.isa_BuiltinType_Short, CC.isa_BuiltinType_Int,
-        CC.isa_BuiltinType_Long, CC.isa_BuiltinType_LongLong, CC.isa_BuiltinType_Int128,
-        CC.isa_BuiltinType_UChar, CC.isa_BuiltinType_UShort, CC.isa_BuiltinType_UInt,
-        CC.isa_BuiltinType_ULong, CC.isa_BuiltinType_ULongLong, CC.isa_BuiltinType_UInt128,
-        CC.isa_BuiltinType_Float, CC.isa_BuiltinType_Double, CC.isa_BuiltinType_LongDouble,
-        CC.isa_BuiltinType_Float128, CC.isa_BuiltinType_Half, CC.isa_BuiltinType_BFloat16,
-        CC.isa_BuiltinType_Float16, CC.isa_BuiltinType_NullPtr]
+                      CC.isa_BuiltinType_Char_S, CC.isa_BuiltinType_WChar_U, CC.isa_BuiltinType_WChar_S,
+                      CC.isa_BuiltinType_Char8, CC.isa_BuiltinType_Char16, CC.isa_BuiltinType_Char32,
+                      CC.isa_BuiltinType_SChar, CC.isa_BuiltinType_Short, CC.isa_BuiltinType_Int,
+                      CC.isa_BuiltinType_Long, CC.isa_BuiltinType_LongLong, CC.isa_BuiltinType_Int128,
+                      CC.isa_BuiltinType_UChar, CC.isa_BuiltinType_UShort, CC.isa_BuiltinType_UInt,
+                      CC.isa_BuiltinType_ULong, CC.isa_BuiltinType_ULongLong, CC.isa_BuiltinType_UInt128,
+                      CC.isa_BuiltinType_Float, CC.isa_BuiltinType_Double, CC.isa_BuiltinType_LongDouble,
+                      CC.isa_BuiltinType_Float128, CC.isa_BuiltinType_Half, CC.isa_BuiltinType_BFloat16,
+                      CC.isa_BuiltinType_Float16, CC.isa_BuiltinType_NullPtr]
     for fn in bpreds
         @test fn(bt) == (fn === CC.isa_BuiltinType_Int)
     end
@@ -1033,8 +1021,7 @@ end
 
     # destruction kind: none for a POD, a C++ destructor for the non-POD
     @test CC.isDestructedType(pod) == CC.LibClangEx.CXDestructionKind_DK_none
-    @test CC.isDestructedType(nonpod) ==
-          CC.LibClangEx.CXDestructionKind_DK_cxx_destructor
+    @test CC.isDestructedType(nonpod) == CC.LibClangEx.CXDestructionKind_DK_cxx_destructor
 
     dispose(f)
     dispose(I)
@@ -1458,9 +1445,9 @@ end
     @test CC.typeMatchesDecl(us)
 
     # AutoType::getKeyword across the three keyword spellings
-    for (nm, kw) in (("tc_auto", CC.LibClangEx.CXAutoTypeKeyword_Auto),
-                     ("tc_dauto", CC.LibClangEx.CXAutoTypeKeyword_DecltypeAuto),
-                     ("tc_gauto", CC.LibClangEx.CXAutoTypeKeyword_GNUAutoType))
+    for (nm, kw) in
+        (("tc_auto", CC.LibClangEx.CXAutoTypeKeyword_Auto), ("tc_dauto", CC.LibClangEx.CXAutoTypeKeyword_DecltypeAuto),
+         ("tc_gauto", CC.LibClangEx.CXAutoTypeKeyword_GNUAutoType))
         f(I, nm) || continue
         t = CC.resolve(CC.getTypePtr(CC.getType(CC.resolve(get_decl(f)))))
         if t isa CC.AutoType
@@ -1599,12 +1586,9 @@ end
     # QualType -- the non-trivial-C-struct family
     @test CC.isNonTrivialToPrimitiveDefaultInitialize(qt("te_i")) ==
           CC.LibClangEx.CXPrimitiveDefaultInitializeKind_PDIK_Trivial
-    @test CC.isNonTrivialToPrimitiveCopy(qt("te_i")) ==
-          CC.LibClangEx.CXPrimitiveCopyKind_PCK_Trivial
-    @test CC.isNonTrivialToPrimitiveCopy(qt("te_vi")) ==
-          CC.LibClangEx.CXPrimitiveCopyKind_PCK_VolatileTrivial
-    @test CC.isNonTrivialToPrimitiveDestructiveMove(qt("te_i")) ==
-          CC.LibClangEx.CXPrimitiveCopyKind_PCK_Trivial
+    @test CC.isNonTrivialToPrimitiveCopy(qt("te_i")) == CC.LibClangEx.CXPrimitiveCopyKind_PCK_Trivial
+    @test CC.isNonTrivialToPrimitiveCopy(qt("te_vi")) == CC.LibClangEx.CXPrimitiveCopyKind_PCK_VolatileTrivial
+    @test CC.isNonTrivialToPrimitiveDestructiveMove(qt("te_i")) == CC.LibClangEx.CXPrimitiveCopyKind_PCK_Trivial
     @test CC.hasNonTrivialToPrimitiveDefaultInitializeCUnion(qt("te_i")) == false
     @test CC.hasNonTrivialToPrimitiveDestructCUnion(qt("te_i")) == false
     @test CC.hasNonTrivialToPrimitiveCopyCUnion(qt("te_i")) == false
@@ -1695,12 +1679,9 @@ end
     @test CC.hasAddressSpace(CC.withoutAddressSpace(qcv)) == false
     @test CC.hasTargetSpecificAddressSpace(qcv) == false
     @test CC.getAddressSpaceAttributePrintValue(qcv) == 0
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global,
-                                      LX.CXLangAS_opencl_global) == true
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_generic,
-                                      LX.CXLangAS_opencl_global) == true
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global,
-                                      LX.CXLangAS_opencl_generic) == false
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_global) == true
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_generic, LX.CXLangAS_opencl_global) == true
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_generic) == false
     @test CC.getAddrSpaceAsString(LX.CXLangAS_Default) isa String
     @test occursin("global", CC.getAddrSpaceAsString(LX.CXLangAS_opencl_global))
 
@@ -1718,12 +1699,9 @@ end
     @test_throws AssertionError CC.withExactLocalFastQualifiers(plain, 8)
 
     # TypeWithKeyword -- the static keyword <-> tag-kind conversions
-    @test CC.getKeywordForTagTypeKind(LX.CXTagTypeKind_Struct) ==
-          LX.CXElaboratedTypeKeyword_Struct
-    @test CC.getKeywordForTagTypeKind(LX.CXTagTypeKind_Enum) ==
-          LX.CXElaboratedTypeKeyword_Enum
-    @test CC.getTagTypeKindForKeyword(LX.CXElaboratedTypeKeyword_Union) ==
-          LX.CXTagTypeKind_Union
+    @test CC.getKeywordForTagTypeKind(LX.CXTagTypeKind_Struct) == LX.CXElaboratedTypeKeyword_Struct
+    @test CC.getKeywordForTagTypeKind(LX.CXTagTypeKind_Enum) == LX.CXElaboratedTypeKeyword_Enum
+    @test CC.getTagTypeKindForKeyword(LX.CXElaboratedTypeKeyword_Union) == LX.CXTagTypeKind_Union
     @test CC.KeywordIsTagTypeKind(LX.CXElaboratedTypeKeyword_Class) == true
     @test CC.KeywordIsTagTypeKind(LX.CXElaboratedTypeKeyword_Typename) == false
     @test CC.KeywordIsTagTypeKind(LX.CXElaboratedTypeKeyword_None) == false
@@ -1786,8 +1764,7 @@ end
     end
     # isObjCBuiltinType is exactly the disjunction of the three singleton probes
     for t in (ity, pty)
-        @test CC.isObjCBuiltinType(t) ==
-              (CC.isObjCIdType(t) || CC.isObjCClassType(t) || CC.isObjCSelType(t))
+        @test CC.isObjCBuiltinType(t) == (CC.isObjCIdType(t) || CC.isObjCClassType(t) || CC.isObjCSelType(t))
     end
 
     # Type -- the OpenCL opaque-type family, likewise false outside OpenCL
@@ -1804,10 +1781,14 @@ end
     end
     # isOpenCLSpecificType is exactly the union clang documents
     for t in (ity, pty)
-        @test CC.isOpenCLSpecificType(t) ==
-              (CC.isSamplerT(t) || CC.isEventT(t) || CC.isImageType(t) ||
-               CC.isClkEventT(t) || CC.isQueueT(t) || CC.isReserveIDT(t) ||
-               CC.isPipeType(t) || CC.isOCLExtOpaqueType(t))
+        @test CC.isOpenCLSpecificType(t) == (CC.isSamplerT(t) ||
+                                             CC.isEventT(t) ||
+                                             CC.isImageType(t) ||
+                                             CC.isClkEventT(t) ||
+                                             CC.isQueueT(t) ||
+                                             CC.isReserveIDT(t) ||
+                                             CC.isPipeType(t) ||
+                                             CC.isOCLExtOpaqueType(t))
     end
 
     dispose(f)
@@ -2129,8 +2110,7 @@ end
     # disjunction of the other two, which is the relation to assert on a non-wasm host.
     for n in ("tj_i", "tj_p", "tj_vp")
         t = qt(n)
-        @test CC.isWebAssemblyReferenceType(t) ==
-              (CC.isWebAssemblyExternrefType(t) || CC.isWebAssemblyFuncrefType(t))
+        @test CC.isWebAssemblyReferenceType(t) == (CC.isWebAssemblyExternrefType(t) || CC.isWebAssemblyFuncrefType(t))
         @test CC.isWebAssemblyReferenceType(t) == false
     end
     # the QualType receiver is a distinct method from the Type_ one of the same name
@@ -2177,12 +2157,9 @@ end
     @test CC.getImmediateNullability(nnattr) == CC.LibClangEx.CXNullabilityKind_NonNull
 
     # The static kind -> attr::Kind mapping agrees with what the node itself reports.
-    @test CC.getNullabilityAttrKind(CC.LibClangEx.CXNullabilityKind_NonNull) ==
-          CC.LibClangEx.CXAttrKind_TypeNonNull
-    @test CC.getNullabilityAttrKind(CC.LibClangEx.CXNullabilityKind_Nullable) ==
-          CC.LibClangEx.CXAttrKind_TypeNullable
-    @test CC.getNullabilityAttrKind(CC.getImmediateNullability(nnattr)) ==
-          CC.getAttrKind(nnattr)
+    @test CC.getNullabilityAttrKind(CC.LibClangEx.CXNullabilityKind_NonNull) == CC.LibClangEx.CXAttrKind_TypeNonNull
+    @test CC.getNullabilityAttrKind(CC.LibClangEx.CXNullabilityKind_Nullable) == CC.LibClangEx.CXAttrKind_TypeNullable
+    @test CC.getNullabilityAttrKind(CC.getImmediateNullability(nnattr)) == CC.getAttrKind(nnattr)
 
     # stripOuterNullability peels exactly one nullability node and reports what it removed;
     # a type with none comes back unchanged and disengaged.
@@ -2218,8 +2195,7 @@ end
 
     swift = CC.withABI(zero_info, CC.LibClangEx.CXParameterABI_SwiftContext)
     @test CC.getABI(swift) == CC.LibClangEx.CXParameterABI_SwiftContext
-    @test CC.getABI(CC.withABI(swift, CC.LibClangEx.CXParameterABI_Ordinary)) ==
-          CC.LibClangEx.CXParameterABI_Ordinary
+    @test CC.getABI(CC.withABI(swift, CC.LibClangEx.CXParameterABI_Ordinary)) == CC.LibClangEx.CXParameterABI_Ordinary
 
     consumed = CC.withIsConsumed(zero_info, true)
     @test CC.isConsumed(consumed) == true
@@ -2349,7 +2325,7 @@ end
     # The DeclSpec::TST conversions: exactly the tag specifiers answer a keyword, and the two
     # static maps agree on each of them. TST_unspecified is 0 and gates the assert.
     kw_none = CC.LibClangEx.CXElaboratedTypeKeyword_None
-    tagspecs = [ts for ts in 0:63 if CC.getKeywordForTypeSpec(ts) != kw_none]
+    tagspecs = [ts for ts = 0:63 if CC.getKeywordForTypeSpec(ts) != kw_none]
     # enum, union, struct, class, interface AND typename -- TST_typename maps to the
     # Typename keyword, so the set has six members, not the five tag kinds alone.
     @test length(tagspecs) == 6
@@ -2358,8 +2334,7 @@ end
     kw_typename = CC.LibClangEx.CXElaboratedTypeKeyword_Typename
     for ts in tagspecs
         CC.getKeywordForTypeSpec(ts) == kw_typename && continue
-        @test CC.getKeywordForTagTypeKind(CC.getTagTypeKindForTypeSpec(ts)) ==
-              CC.getKeywordForTypeSpec(ts)
+        @test CC.getKeywordForTagTypeKind(CC.getTagTypeKindForTypeSpec(ts)) == CC.getKeywordForTypeSpec(ts)
     end
     @test CC.getKeywordForTypeSpec(0) == kw_none
     @test_throws AssertionError CC.getTagTypeKindForTypeSpec(0)
@@ -2386,15 +2361,13 @@ end
     qw = CC.setObjCGCAttr(q0, LX.CXQualifiers_Weak)
     @test CC.hasObjCGCAttr(qw)
     @test CC.getObjCGCAttr(qw) == LX.CXQualifiers_Weak
-    @test CC.getObjCGCAttr(CC.setObjCGCAttr(q0, LX.CXQualifiers_Strong)) ==
-          LX.CXQualifiers_Strong
+    @test CC.getObjCGCAttr(CC.setObjCGCAttr(q0, LX.CXQualifiers_Strong)) == LX.CXQualifiers_Strong
     # setObjCGCAttr(GCNone) is clang's removeObjCGCAttr, and withoutObjCGCAttr the copying
     # spelling of the same clear.
     @test CC.setObjCGCAttr(qw, LX.CXQualifiers_GCNone) == q0
     @test CC.withoutObjCGCAttr(qw) == q0
     @test CC.withoutObjCGCAttr(q0) == q0
-    @test CC.addObjCGCAttr(q0, LX.CXQualifiers_Strong) ==
-          CC.setObjCGCAttr(q0, LX.CXQualifiers_Strong)
+    @test CC.addObjCGCAttr(q0, LX.CXQualifiers_Strong) == CC.setObjCGCAttr(q0, LX.CXQualifiers_Strong)
     @test_throws AssertionError CC.addObjCGCAttr(q0, LX.CXQualifiers_GCNone)
 
     # The ARC lifetime rides the same encoding in its own bitfield, so it composes with the
@@ -2409,8 +2382,7 @@ end
     @test CC.hasNonTrivialObjCLifetime(qs)
     @test CC.hasStrongOrWeakObjCLifetime(qs)
     @test CC.getObjCGCAttr(CC.setObjCGCAttr(qs, LX.CXQualifiers_Weak)) == LX.CXQualifiers_Weak
-    @test CC.getObjCLifetime(CC.setObjCGCAttr(qs, LX.CXQualifiers_Weak)) ==
-          LX.CXQualifiers_OCL_Strong
+    @test CC.getObjCLifetime(CC.setObjCGCAttr(qs, LX.CXQualifiers_Weak)) == LX.CXQualifiers_OCL_Strong
     qe = CC.setObjCLifetime(q0, LX.CXQualifiers_OCL_ExplicitNone)
     @test CC.hasObjCLifetime(qe)
     @test CC.hasNonTrivialObjCLifetime(qe) == false
@@ -2584,8 +2556,7 @@ end
     dep_e = CC.getSizeExpr(dsaty)
     loc = CC.getLocation(patt)
 
-    dsm = CC.resolve(CC.getTypePtr(CC.getDependentSizedMatrixType(ctx, int_qt, dep_e, dep_e,
-                                                                  loc)))
+    dsm = CC.resolve(CC.getTypePtr(CC.getDependentSizedMatrixType(ctx, int_qt, dep_e, dep_e, loc)))
     @test dsm isa CC.DependentSizedMatrixType
     @test CC.getRowExpr(dsm).ptr == dep_e.ptr
     @test CC.getColumnExpr(dsm).ptr == dep_e.ptr

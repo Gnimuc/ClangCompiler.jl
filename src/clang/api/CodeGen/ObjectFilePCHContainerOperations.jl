@@ -107,5 +107,5 @@ Every `-fmodule-format=` spelling this reader accepts.
 """
 function getFormats(x::AbstractPCHContainerReader)
     @check_ptrs x
-    return [getFormat(x, i) for i in 0:(getNumFormats(x) - 1)]
+    return [getFormat(x, i) for i = 0:(getNumFormats(x) - 1)]
 end

@@ -26,8 +26,7 @@ dispose(x::CrossTUIndex) = clang_CrossTUIndex_dispose(x)
     setindex!(x::AbstractCrossTUIndex, file_path, usr) -> Nothing
 Record `file_path` as the AST file defining `usr`, replacing any previous entry.
 """
-function Base.setindex!(x::AbstractCrossTUIndex, file_path::AbstractString,
-                        usr::AbstractString)
+function Base.setindex!(x::AbstractCrossTUIndex, file_path::AbstractString, usr::AbstractString)
     @check_ptrs x
     return clang_CrossTUIndex_set(x, usr, file_path)
 end
@@ -136,15 +135,10 @@ index has no such definition or the import failed.
 `assert(!D->hasBody())`, since importing a second definition of a function that already has
 one is what it exists to avoid.
 """
-function getCrossTUDefinition(ctu::AbstractCrossTranslationUnitContext,
-                              fd::AbstractFunctionDecl, cross_tu_dir::AbstractString,
-                              index_name::AbstractString; display_progress::Bool=false)
+function getCrossTUDefinition(ctu::AbstractCrossTranslationUnitContext, fd::AbstractFunctionDecl, cross_tu_dir::AbstractString, index_name::AbstractString; display_progress::Bool=false)
     @check_ptrs ctu fd
     @assert !hasBody(fd) "the function already has a body in this translation unit."
-    d = clang_CrossTranslationUnitContext_getCrossTUDefinitionForFunction(ctu, fd,
-                                                                          cross_tu_dir,
-                                                                          index_name,
-                                                                          display_progress)
+    d = clang_CrossTranslationUnitContext_getCrossTUDefinitionForFunction(ctu, fd, cross_tu_dir, index_name, display_progress)
     return d == C_NULL ? nothing : FunctionDecl(d)
 end
 
@@ -153,14 +147,10 @@ end
 The variable form of the lookup above. `vd` must have **no** initializer here, for the same
 reason and behind the same assertion.
 """
-function getCrossTUDefinition(ctu::AbstractCrossTranslationUnitContext,
-                              vd::AbstractVarDecl, cross_tu_dir::AbstractString,
-                              index_name::AbstractString; display_progress::Bool=false)
+function getCrossTUDefinition(ctu::AbstractCrossTranslationUnitContext, vd::AbstractVarDecl, cross_tu_dir::AbstractString, index_name::AbstractString; display_progress::Bool=false)
     @check_ptrs ctu vd
     @assert !hasInit(vd) "the variable already has an initializer in this translation unit."
-    d = clang_CrossTranslationUnitContext_getCrossTUDefinitionForVar(ctu, vd, cross_tu_dir,
-                                                                     index_name,
-                                                                     display_progress)
+    d = clang_CrossTranslationUnitContext_getCrossTUDefinitionForVar(ctu, vd, cross_tu_dir, index_name, display_progress)
     return d == C_NULL ? nothing : VarDecl(d)
 end
 
@@ -171,12 +161,9 @@ Load — or return from the context's cache — the AST file that defines `looku
 The unit is **borrowed**: the context owns it, so it must not be disposed. `nothing` on
 failure, which includes the context having hit its own AST load threshold.
 """
-function loadExternalAST(ctu::AbstractCrossTranslationUnitContext,
-                         lookup_name::AbstractString, cross_tu_dir::AbstractString,
-                         index_name::AbstractString; display_progress::Bool=false)
+function loadExternalAST(ctu::AbstractCrossTranslationUnitContext, lookup_name::AbstractString, cross_tu_dir::AbstractString, index_name::AbstractString; display_progress::Bool=false)
     @check_ptrs ctu
-    u = clang_CrossTranslationUnitContext_loadExternalAST(ctu, lookup_name, cross_tu_dir,
-                                                          index_name, display_progress)
+    u = clang_CrossTranslationUnitContext_loadExternalAST(ctu, lookup_name, cross_tu_dir, index_name, display_progress)
     return u == C_NULL ? nothing : ASTUnit(u)
 end
 
@@ -189,8 +176,7 @@ way. `nothing` when the import failed.
 `fd` is the *foreign* declaration being imported, so unlike the lookup it must **have** a
 body: the importer opens with `assert(hasBodyOrInit(D))`.
 """
-function importDefinition(ctu::AbstractCrossTranslationUnitContext,
-                          fd::AbstractFunctionDecl, unit::AbstractASTUnit)
+function importDefinition(ctu::AbstractCrossTranslationUnitContext, fd::AbstractFunctionDecl, unit::AbstractASTUnit)
     @check_ptrs ctu fd unit
     @assert hasBody(fd) "only a function that has a body can be imported."
     d = clang_CrossTranslationUnitContext_importDefinitionForFunction(ctu, fd, unit)
@@ -202,8 +188,7 @@ end
 The variable form of the merge above; `vd` must carry an initializer, behind the same
 assertion.
 """
-function importDefinition(ctu::AbstractCrossTranslationUnitContext, vd::AbstractVarDecl,
-                          unit::AbstractASTUnit)
+function importDefinition(ctu::AbstractCrossTranslationUnitContext, vd::AbstractVarDecl, unit::AbstractASTUnit)
     @check_ptrs ctu vd unit
     @assert hasInit(vd) "only a variable that has an initializer can be imported."
     d = clang_CrossTranslationUnitContext_importDefinitionForVar(ctu, vd, unit)

@@ -86,10 +86,8 @@ function oracle_facts(path)
             out[fname] = (type=m.type, beginline=m.beginline, endline=m.endline, params=0)
         elseif !isempty(fname) && occursin("ParmVarDecl", line)
             f = out[fname]
-            out[fname] = (type=f.type, beginline=f.beginline, endline=f.endline,
-                          params=f.params + 1)
-        elseif !isempty(line) && !startswith(line, " ") && !startswith(line, "|") &&
-               !startswith(line, "`")
+            out[fname] = (type=f.type, beginline=f.beginline, endline=f.endline, params=f.params + 1)
+        elseif !isempty(line) && !startswith(line, " ") && !startswith(line, "|") && !startswith(line, "`")
             fname = ""
         end
     end
@@ -151,10 +149,8 @@ function wrapper_facts(I)
         # printAsString uses the context's own PrintingPolicy, which is what the dump
         # prints under; getAsString uses clang's default policy and spells an empty
         # parameter list "(void)" where a C++ context spells it "()".
-        out[name] = (type=CC.printAsString(CC.getType(d), ctx),
-                     beginline=Int(CC.getSpellingLineNumber(sm, b)),
-                     endline=Int(CC.getSpellingLineNumber(sm, e)),
-                     params=Int(CC.getNumParams(d)))
+        out[name] = (type=CC.printAsString(CC.getType(d), ctx), beginline=Int(CC.getSpellingLineNumber(sm, b)),
+                     endline=Int(CC.getSpellingLineNumber(sm, e)), params=Int(CC.getNumParams(d)))
     end
     return out
 end
@@ -188,8 +184,7 @@ end
     withq = raw"| |-FieldDecl 0x1 <line:2:5, col:9> col:9 referenced f 'int'"
     plain = raw"| |-FieldDecl 0x2 <line:3:5, col:12> col:12 g 'double'"
     var = raw"| `-VarDecl 0x3 <line:6:1, col:19> col:5 diff_global 'int' cinit"
-    for (line, want_name, want_type) in ((withq, "f", "int"), (plain, "g", "double"),
-                                         (var, "diff_global", "int"))
+    for (line, want_name, want_type) in ((withq, "f", "int"), (plain, "g", "double"), (var, "diff_global", "int"))
         @test match(r"\b(FieldDecl|VarDecl) 0x", line) !== nothing
         nt = match(r"(\w+) '([^']+)'", line)
         @test nt !== nothing

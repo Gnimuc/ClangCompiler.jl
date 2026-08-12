@@ -120,8 +120,7 @@ Class g_cls;
     # which live in their own namespace, and it resolves a @compatibility_alias to the
     # interface it aliases rather than to the alias declaration.
     top = collect(CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))))
-    lookup(name) = only(filter(d -> d isa CC.AbstractNamedDecl &&
-                                    CC.getNameAsString(d) == name, top))
+    lookup(name) = only(filter(d -> d isa CC.AbstractNamedDecl && CC.getNameAsString(d) == name, top))
 
     # ---- resolve reaches the ObjC carriers, which it could not before -------------------
     base = lookup("Base")
@@ -190,7 +189,7 @@ Class g_cls;
     # ---- properties ---------------------------------------------------------------------
     @test CC.prop_size(base) == 2
     props = Dict(CC.getNameAsString(CC.getProperty(base, i)) => CC.getProperty(base, i)
-                 for i in 0:(CC.prop_size(base) - 1))
+                 for i = 0:(CC.prop_size(base) - 1))
     count_p, name_p = props["count"], props["name"]
 
     @test CC.getAsString(CC.getType(count_p)) == "int"
@@ -232,8 +231,7 @@ Class g_cls;
     # ---- methods -------------------------------------------------------------------------
     # Five: the two written, plus the three accessors Sema synthesized for the properties.
     @test CC.meth_size(base) == 5
-    meths = Dict(CC.getSelector(CC.getMethodAt(base, i)) => CC.getMethodAt(base, i)
-                 for i in 0:(CC.meth_size(base) - 1))
+    meths = Dict(CC.getSelector(CC.getMethodAt(base, i)) => CC.getMethodAt(base, i) for i = 0:(CC.meth_size(base) - 1))
     @test sort(collect(keys(meths))) == ["addTo:with:", "count", "create", "name", "setName:"]
 
     add = meths["addTo:with:"]
@@ -342,8 +340,7 @@ Class g_cls;
     ext_iface = lookup("Ext")
     @test CC.protocol_size(ext_iface) == 0
     @test CC.all_referenced_protocol_size(ext_iface) == 2
-    @test [CC.getNameAsString(CC.getAllReferencedProtocol(ext_iface, i)) for i = 0:1] ==
-          ["NSCopying", "Extra"]
+    @test [CC.getNameAsString(CC.getAllReferencedProtocol(ext_iface, i)) for i = 0:1] == ["NSCopying", "Extra"]
     @test_throws AssertionError CC.getAllReferencedProtocol(ext_iface, 2)
 
     # ---- generics ----------------------------------------------------------------------------
@@ -383,8 +380,7 @@ Class g_cls;
     @test CC.is_null_handle(CC.getNextClassCategory(category))
 
     # ---- designated initializer ------------------------------------------------------------------
-    impl_iface = only(filter(d -> d isa CC.ObjCInterfaceDecl &&
-                                  CC.getNameAsString(d) == "Impl", top))
+    impl_iface = only(filter(d -> d isa CC.ObjCInterfaceDecl && CC.getNameAsString(d) == "Impl", top))
     init = CC.getMethod(impl_iface, "initWithValue:", ctx)
     @test !CC.is_null_handle(init)
     @test CC.isThisDeclarationADesignatedInitializer(init) == true
@@ -412,8 +408,7 @@ end
     @test !CC.is_null_handle(CC.parse(I, OBJC_SRC))
     ctx = CC.get_ast_context(I)
     top = collect(CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))))
-    lookup(name) = only(filter(d -> d isa CC.AbstractNamedDecl &&
-                                    CC.getNameAsString(d) == name, top))
+    lookup(name) = only(filter(d -> d isa CC.AbstractNamedDecl && CC.getNameAsString(d) == name, top))
     vartype(name) = CC.resolve(CC.getTypePtr(CC.getType(lookup(name))))
 
     # `Base *` — an unqualified, unspecialized interface pointer. Its pointee resolving to
@@ -545,8 +540,7 @@ end
     # `Old` reads all three of these at their default, which a stuck accessor also gives.
     # `unavailable` and `replacement=` are spellable, and so is `strict` — so each has a
     # written non-default to answer for.
-    availof(name) = only(filter(a -> a isa CC.AvailabilityAttr,
-                                map(CC.resolve, CC.getAttrs(lookup(name)))))
+    availof(name) = only(filter(a -> a isa CC.AvailabilityAttr, map(CC.resolve, CC.getAttrs(lookup(name)))))
     gone = availof("Gone")
     @test CC.getUnavailable(gone) == true
     @test CC.getReplacement(gone) == "NewThing"
@@ -558,8 +552,7 @@ end
 
     # An interface with no availability attribute at all: every version reads as absent
     # rather than as version 0, which is a legal written value.
-    @test isempty(filter(a -> a isa CC.AvailabilityAttr,
-                         map(CC.resolve, CC.getAttrs(lookup("Base")))))
+    @test isempty(filter(a -> a isa CC.AvailabilityAttr, map(CC.resolve, CC.getAttrs(lookup("Base")))))
 
     dispose(I)
 end

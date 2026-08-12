@@ -27915,6 +27915,10 @@ function clang_TemplateArgument_constructFromIntegral(Ctx, Val, OpaquePtr)
     @ccall libclangex.clang_TemplateArgument_constructFromIntegral(Ctx::CXASTContext, Val::LLVMGenericValueRef, OpaquePtr::CXQualType)::CXTemplateArgument
 end
 
+function clang_TemplateArgument_constructFromInt64(Ctx, Val, OpaquePtr)
+    @ccall libclangex.clang_TemplateArgument_constructFromInt64(Ctx::CXASTContext, Val::Int64, OpaquePtr::CXQualType)::CXTemplateArgument
+end
+
 function clang_TemplateArgument_dispose(TA)
     @ccall libclangex.clang_TemplateArgument_dispose(TA::CXTemplateArgument)::Cvoid
 end
@@ -34023,6 +34027,22 @@ end
 
 function clang_CodeGenOptions_PrintStats(CGO)
     @ccall libclangex.clang_CodeGenOptions_PrintStats(CGO::CXCodeGenOptions)::Cvoid
+end
+
+function clang_CodeGenOptions_getClearASTBeforeBackend(CGO)
+    @ccall libclangex.clang_CodeGenOptions_getClearASTBeforeBackend(CGO::CXCodeGenOptions)::Cuint
+end
+
+function clang_CodeGenOptions_setClearASTBeforeBackend(CGO, Value)
+    @ccall libclangex.clang_CodeGenOptions_setClearASTBeforeBackend(CGO::CXCodeGenOptions, Value::Cuint)::Cvoid
+end
+
+function clang_CodeGenOptions_getDisableFree(CGO)
+    @ccall libclangex.clang_CodeGenOptions_getDisableFree(CGO::CXCodeGenOptions)::Cuint
+end
+
+function clang_CodeGenOptions_setDisableFree(CGO, Value)
+    @ccall libclangex.clang_CodeGenOptions_setDisableFree(CGO::CXCodeGenOptions, Value::Cuint)::Cvoid
 end
 
 function clang_CodeGenOptions_getOptimizationLevel(CGO)

@@ -30,6 +30,34 @@ using Test
     @test CC.field_offsets(ctx, rd) == [0, 32, 64]
     @test_throws AssertionError CC.getFieldOffset(lay, 3)
 
+    # A forward declaration has no layout, and neither does the *pattern* of a class template
+    # -- and only the first was gated. The pattern is the sharper case precisely because it
+    # looks complete: `getDefinition` is non-null, so it passed the has-a-definition check and
+    # went on to `ItaniumRecordLayoutBuilder`, which reaches `llvm_unreachable` on a dependent
+    # type. A release LLVM compiles that to `__builtin_unreachable()`, so the process segfaulted
+    # rather than aborting -- no exception to catch, and nothing in the suite to see it.
+    CC.parse(I, "struct Fwd; template <typename T> struct Pat { T a; int b; };")
+    @test f(I, "Fwd")
+    @test_throws AssertionError CC.getASTRecordLayout(ctx, CC.RecordDecl(get_tag(f)))
+
+    @test f(I, "Pat")
+    pattern = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f)))
+    # the two halves of the precondition, so the test says which one is doing the work
+    @test CC.getDefinition(pattern).ptr != C_NULL
+    @test CC.isDependentType(CC.getTypeForDecl(pattern)) == true
+    @test_throws AssertionError CC.getASTRecordLayout(ctx, pattern)
+    @test_throws AssertionError CC.field_offsets(ctx, pattern)
+
+    # ... and an instantiation of that same template does have one, which is what makes the
+    # assertion above a partition rather than a blanket refusal of templates. The instantiation
+    # is reached through a variable of that type rather than by name: a lookup for
+    # `Pat<double>` finds nothing, because an implicit instantiation is not entered into the
+    # enclosing scope's lookup table.
+    CC.parse(I, "Pat<double> pat_inst;")
+    inst = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(CC.find_decl(I, "pat_inst"))))
+    @test CC.isDependentType(CC.getTypeForDecl(inst)) == false
+    @test CC.field_offsets(ctx, inst) == [0, 64]
+
     @test f(I, "D")
     drd = CC.CXXRecordDecl(get_tag(f))
     @test f(I, "B1")

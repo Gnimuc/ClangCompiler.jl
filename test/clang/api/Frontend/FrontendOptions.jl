@@ -40,9 +40,8 @@ const LXB_FEO = CC.LibClangEx
     @test CC.getDisableFree(feo) == true
 
     # InputKind is rebuilt from its components, so a set must carry all five back.
-    CC.setDashX(feo, LXB_FEO.CXLanguage_ObjCXX; fmt=LXB_FEO.CXInputKind_Precompiled,
-                preprocessed=true, header_unit=LXB_FEO.CXInputKind_HeaderUnit_System,
-                header=true)
+    CC.setDashX(feo, LXB_FEO.CXLanguage_ObjCXX; fmt=LXB_FEO.CXInputKind_Precompiled, preprocessed=true,
+                header_unit=LXB_FEO.CXInputKind_HeaderUnit_System, header=true)
     @test CC.getDashXLanguage(feo) == LXB_FEO.CXLanguage_ObjCXX
     @test CC.getDashXFormat(feo) == LXB_FEO.CXInputKind_Precompiled
     @test CC.getDashXHeaderUnitKind(feo) == LXB_FEO.CXInputKind_HeaderUnit_System

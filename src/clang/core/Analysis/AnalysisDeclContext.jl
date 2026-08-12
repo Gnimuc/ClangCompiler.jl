@@ -65,5 +65,4 @@ the kind and ends in `llvm_unreachable`, so every accessor that reaches the body
 undefined for any other declaration; this union is that precondition, restated as a type so
 dispatch enforces it at the one place a context is built.
 """
-const AnalyzableDecl = Union{AbstractFunctionDecl,AbstractObjCMethodDecl,AbstractBlockDecl,
-                             AbstractFunctionTemplateDecl}
+const AnalyzableDecl = Union{AbstractFunctionDecl,AbstractObjCMethodDecl,AbstractBlockDecl,AbstractFunctionTemplateDecl}

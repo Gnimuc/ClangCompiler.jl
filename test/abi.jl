@@ -32,19 +32,15 @@ using Test
     # deps/build_local.jl) must export every bound symbol — hard failure.
     # The released libclangex_jll artifact may legitimately lag freshly
     # regenerated bindings until the next JLL bump — report only.
-    is_jll = isdefined(libclangex_jll, :libclangex) &&
-             libclangex == libclangex_jll.libclangex
+    is_jll = isdefined(libclangex_jll, :libclangex) && libclangex == libclangex_jll.libclangex
     # The symbols on the package's own create → use → dispose path. They are
     # the floor the "report only" branch still holds the artifact to: a library
     # that cannot resolve these is not a lagging libclangex, it is the wrong
     # library or a load that silently produced nothing, and the loop above then
     # reports every bound name as missing while the branch stays quiet.
-    core_syms = ["clang_IncrementalCompilerBuilder_create",
-                 "clang_Interpreter_create",
-                 "clang_Interpreter_getCompilerInstance",
-                 "clang_Interpreter_ParseAndExecute",
-                 "clang_Interpreter_getSymbolAddress",
-                 "clang_Interpreter_dispose"]
+    core_syms = ["clang_IncrementalCompilerBuilder_create", "clang_Interpreter_create",
+                 "clang_Interpreter_getCompilerInstance", "clang_Interpreter_ParseAndExecute",
+                 "clang_Interpreter_getSymbolAddress", "clang_Interpreter_dispose"]
     @test issubset(core_syms, binding_names)
     # The core symbols are the ones the package's own startup path calls, so whichever
     # library is loaded must export them. Asserting that outside the branch keeps
@@ -53,8 +49,7 @@ using Test
     @test isdisjoint(core_syms, missing_syms)
     if is_jll
         if !isempty(missing_syms)
-            @info "bindings ahead of the released libclangex_jll (expected until the next JLL bump)" count =
-                length(missing_syms)
+            @info "bindings ahead of the released libclangex_jll (expected until the next JLL bump)" count = length(missing_syms)
         end
     else
         if !isempty(missing_syms)
@@ -72,8 +67,7 @@ function carriers_with_handles()
     for nm in names(CC; all=true)
         isdefined(CC, nm) || continue
         T = getproperty(CC, nm)
-        (T isa DataType && isstructtype(T) && fieldcount(T) == 1 &&
-         fieldnames(T) == (:ptr,)) || continue
+        (T isa DataType && isstructtype(T) && fieldcount(T) == 1 && fieldnames(T) == (:ptr,)) || continue
         H = fieldtype(T, 1)
         H <: Ptr || continue
         push!(out, (T, H))
@@ -182,8 +176,7 @@ end
                     # Julia's own module type, so the wrapper could never return.
                     startswith(returns[fn], "CX") || continue
                     scanned += 1
-                    push!(offenders,
-                          "$relf:$n wraps $fn, which returns $(returns[fn]), in $carrier — not a carrier")
+                    push!(offenders, "$relf:$n wraps $fn, which returns $(returns[fn]), in $carrier — not a carrier")
                     continue
                 end
                 scanned += 1
@@ -193,8 +186,7 @@ end
         end
     end
     @test scanned >= 2000               # the pattern matches the bulk of the wrapper layer
-    isempty(offenders) ||
-        @error "carrier built from a foreign handle; wrap it in `unchecked_cast`" offenders
+    isempty(offenders) || @error "carrier built from a foreign handle; wrap it in `unchecked_cast`" offenders
     @test isempty(offenders)
 end
 
@@ -218,8 +210,7 @@ end
     # nothing else to key on; `gen/handle_converts.jl` reports it as unclaimed.
     allowed = ["EvaluatedStmt"]
     offenders = ["$(m.file):$(m.line) $(Base.unwrap_unionall(m.sig).parameters[3])"
-                 for m in concrete
-                 if !(string(nameof(Base.unwrap_unionall(m.sig).parameters[3])) in allowed)]
+                 for m in concrete if !(string(nameof(Base.unwrap_unionall(m.sig).parameters[3])) in allowed)]
     isempty(offenders) ||
         @error "unsafe_convert keyed on a concrete carrier; key it on the class's abstract type" offenders
     @test isempty(offenders)
@@ -257,11 +248,14 @@ end
     @test_throws ArgumentError CC.IfStmt(UInt(4096))
 
     # a Vector element assignment converts too, so the same refusal reaches it
-    @test_throws ArgumentError (v = Vector{CC.LibClangEx.CXWhileStmt}(undef, 1);
-                                v[1] = CC.LibClangEx.CXIfStmt(C_NULL))
+    @test_throws ArgumentError (v=Vector{CC.LibClangEx.CXWhileStmt}(undef, 1); v[1]=CC.LibClangEx.CXIfStmt(C_NULL))
 
     # and the message says which class was wanted, rather than reporting no method
-    msg = sprint(showerror, try CC.IfStmt(CC.LibClangEx.CXDecl(C_NULL)) catch e; e end)
+    msg = sprint(showerror, try
+                     CC.IfStmt(CC.LibClangEx.CXDecl(C_NULL))
+                 catch e
+                     e
+                 end)
     @test occursin("CXIfStmtImpl", msg)
     @test occursin("CXDeclImpl", msg)
 end
@@ -303,7 +297,6 @@ end
         end
     end
     @test scanned > 5000        # inference really ran over the layer, not over a handful
-    isempty(bottoms) ||
-        @error "wrapper can never return; every call to it throws" bottoms
+    isempty(bottoms) || @error "wrapper can never return; every call to it throws" bottoms
     @test isempty(bottoms)
 end

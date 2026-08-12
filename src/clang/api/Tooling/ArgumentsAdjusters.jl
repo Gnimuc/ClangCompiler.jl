@@ -70,8 +70,7 @@ right after `argv[0]`, which is where a `-x` or `-std=` belongs; `_END` appends 
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function getInsertArgumentAdjuster(extra::AbstractString,
-                                   pos::CXArgumentInsertPosition=CXArgumentInsertPosition_END)
+function getInsertArgumentAdjuster(extra::AbstractString, pos::CXArgumentInsertPosition=CXArgumentInsertPosition_END)
     ptr = clang_tooling_getInsertArgumentAdjuster(extra, pos)
     @assert ptr != C_NULL "Failed to create ArgumentsAdjuster"
     return ArgumentsAdjuster(ptr)
@@ -86,8 +85,7 @@ The list overload: inserts all of `extra`, in order, at `pos`.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function getInsertArgumentAdjuster(extra::AbstractVector{<:String},
-                                   pos::CXArgumentInsertPosition=CXArgumentInsertPosition_END)
+function getInsertArgumentAdjuster(extra::AbstractVector{<:String}, pos::CXArgumentInsertPosition=CXArgumentInsertPosition_END)
     ptr = clang_tooling_getInsertArgumentAdjusterForArgs(extra, length(extra), pos)
     @assert ptr != C_NULL "Failed to create ArgumentsAdjuster"
     return ArgumentsAdjuster(ptr)
@@ -104,8 +102,7 @@ each still has to be disposed by whoever created it.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function combineAdjusters(first_adjuster::AbstractArgumentsAdjuster,
-                          second_adjuster::AbstractArgumentsAdjuster)
+function combineAdjusters(first_adjuster::AbstractArgumentsAdjuster, second_adjuster::AbstractArgumentsAdjuster)
     @check_ptrs first_adjuster second_adjuster
     ptr = clang_tooling_combineAdjusters(first_adjuster, second_adjuster)
     @assert ptr != C_NULL "Failed to create ArgumentsAdjuster"
@@ -128,8 +125,7 @@ is the way to see what a chain of adjusters does to a command line without parsi
 not carry the position it was built with — so the refusal covers every adjuster rather than
 the ones it can be shown to matter for.
 """
-function adjust(x::AbstractArgumentsAdjuster, args::AbstractVector{<:String},
-                filename::AbstractString)
+function adjust(x::AbstractArgumentsAdjuster, args::AbstractVector{<:String}, filename::AbstractString)
     @check_ptrs x
     @assert !isempty(args) "an adjuster runs on a command line, whose first entry is argv[0]"
     return get_string(clang_ArgumentsAdjuster_adjust(x, args, length(args), filename))

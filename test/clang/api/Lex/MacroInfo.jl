@@ -27,12 +27,11 @@ using Test
     @test predefines_fid isa CC.FileID
     dispose(predefines_fid)
 
-    CC.parse(I,
-             """
-             #define CC_LEX_OBJ 42
-             #define CC_LEX_FN(a, b) a + b
-             int cc_lex_dummy = CC_LEX_OBJ;
-             """)
+    CC.parse(I, """
+                #define CC_LEX_OBJ 42
+                #define CC_LEX_FN(a, b) a + b
+                int cc_lex_dummy = CC_LEX_OBJ;
+                """)
     f = DeclFinder(I)
     @test f(I, "cc_lex_dummy")
     dispose(f)
@@ -80,8 +79,7 @@ using Test
     # is a lexer detail — assert flag/predicate consistency, not the value
     @test !(CC.hasLeadingSpace(tok42))
     @test !CC.isAtStartOfLine(tok42)
-    @test CC.getFlag(tok42, CC.LibClangEx.CXTokenFlags_LeadingSpace) ==
-          CC.hasLeadingSpace(tok42)
+    @test CC.getFlag(tok42, CC.LibClangEx.CXTokenFlags_LeadingSpace) == CC.hasLeadingSpace(tok42)
     @test !CC.getFlag(tok42, CC.LibClangEx.CXTokenFlags_NeedsCleaning)
     @test CC.getFlags(tok42) isa Unsigned
     @test !CC.isExpandDisabled(tok42) && !CC.needsCleaning(tok42)
@@ -188,14 +186,13 @@ end
     ci = get_instance(I)
     pp = CC.getPreprocessor(ci)
 
-    CC.parse(I,
-             """
-             #define CC_MDIR_OBJ 7
-             #define CC_MDIR_H 1
-             #undef CC_MDIR_H
-             #define CC_MDIR_H 2
-             int cc_mdir_probe = CC_MDIR_OBJ + CC_MDIR_H;
-             """)
+    CC.parse(I, """
+                #define CC_MDIR_OBJ 7
+                #define CC_MDIR_H 1
+                #undef CC_MDIR_H
+                #define CC_MDIR_H 2
+                int cc_mdir_probe = CC_MDIR_OBJ + CC_MDIR_H;
+                """)
 
     # MacroDirective on a plain single #define
     ii = CC.getIdentifierInfo(pp, "CC_MDIR_OBJ")
@@ -298,13 +295,12 @@ end
     pp = CC.getPreprocessor(ci)
     sm = CC.getSourceManager(pp)
 
-    CC.parse(I,
-             """
-             #define CC_DEFINFO_A 1
-             #undef CC_DEFINFO_A
-             #define CC_DEFINFO_A 2
-             int cc_definfo_probe = CC_DEFINFO_A;
-             """)
+    CC.parse(I, """
+                #define CC_DEFINFO_A 1
+                #undef CC_DEFINFO_A
+                #define CC_DEFINFO_A 2
+                int cc_definfo_probe = CC_DEFINFO_A;
+                """)
     f = DeclFinder(I)
     @test f(I, "cc_definfo_probe")
     dispose(f)

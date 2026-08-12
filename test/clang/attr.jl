@@ -11,12 +11,10 @@ const LX = CC.LibClangEx
     # attribute has a `<Name>Attr` carrier subtyping the abstract of its C++
     # base category. This is the same source gen/attr_nodes.jl reads, parsed
     # separately here so a generator mistake can't validate itself.
-    macro_to_category = Dict("ATTR" => :Attr, "TYPE_ATTR" => :TypeAttr,
-                             "STMT_ATTR" => :StmtAttr, "DECL_OR_STMT_ATTR" => :DeclOrStmtAttr,
-                             "INHERITABLE_ATTR" => :InheritableAttr, "DECL_OR_TYPE_ATTR" => :InheritableAttr,
-                             "INHERITABLE_PARAM_ATTR" => :InheritableParamAttr,
-                             "PARAMETER_ABI_ATTR" => :ParameterABIAttr,
-                             "HLSL_ANNOTATION_ATTR" => :HLSLAnnotationAttr)
+    macro_to_category = Dict("ATTR" => :Attr, "TYPE_ATTR" => :TypeAttr, "STMT_ATTR" => :StmtAttr,
+                             "DECL_OR_STMT_ATTR" => :DeclOrStmtAttr, "INHERITABLE_ATTR" => :InheritableAttr,
+                             "DECL_OR_TYPE_ATTR" => :InheritableAttr, "INHERITABLE_PARAM_ATTR" => :InheritableParamAttr,
+                             "PARAMETER_ABI_ATTR" => :ParameterABIAttr, "HLSL_ANNOTATION_ATTR" => :HLSLAnnotationAttr)
     inc = joinpath(pkgdir(ClangCompiler), "deps", "ClangExtra", "include", "clang-ex", "AST", "AttrList.inc")
     entry_re = r"^([A-Z][A-Z0-9_]*)\((\w+)\)$"
     count = 0

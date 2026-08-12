@@ -71,7 +71,7 @@ using Test
 
                 # away from the exit block the answer is a genuine common dominator
                 unsound = 0
-                for i in 0:(n - 1), j in 0:(n - 1)
+                for i = 0:(n - 1), j = 0:(n - 1)
                     a, b = CC.getBlock(cfg, i), CC.getBlock(cfg, j)
                     (CC.hasNode(dt, a) && CC.hasNode(dt, b)) || continue
                     (CC.getBlockID(a) == 0 || CC.getBlockID(b) == 0) && continue

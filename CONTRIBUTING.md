@@ -13,7 +13,8 @@ almost everything about how to change it.
 | `src/clang/` | the hand-written Julia wrapper | yes |
 
 `src/compiler/` sits on top of `src/clang/` and is the user-facing API (`create_interpreter`,
-`parse`, `execute`, `get_function_pointer`).
+`create_parser`, `create_irgenerator`, `create_compiler`, and the verbs `parse`, `execute`,
+`compile`, `take_module`, `get_function_pointer`).
 
 `lib/LibClang.jl` is the one exception to "never hand-edit `lib/`": it is a small hand-maintained
 excerpt of `libclang` bindings, not generator output.
@@ -241,7 +242,11 @@ sounds. Three rules, the first two enforced by `test/lint.jl` and `test/tautolog
 
 Test files mirror the source tree, and a new one must be added to `test/runtests.jl` by hand.
 
-Format with JuliaFormatter, YAS style, margin 1000 (`.JuliaFormatter.toml`); `lib/`,
-`examples/` and the generated `src/` files listed in its `ignore` entry are excluded. The margin sits past the longest line in the repo, so the formatter
-never splits one — but it will still *join* anything that now fits, hand-placed breaks
-included, so don't run it over the tree. Match the file you are editing.
+Format with JuliaFormatter, YAS style. The margin depends on where the file lives: **1000
+under `src/clang/`**, whose thin wrappers copy Clang's method names verbatim and have no good
+break point, and **120 everywhere else**. Each directory's `.JuliaFormatter.toml` says which,
+and JuliaFormatter uses the nearest one rather than merging, so `src/clang/` repeats every
+setting including its own `ignore` list. `lib/`, `examples/`, `gen/prologue.jl` and the
+generated `src/` files named in those `ignore` entries are excluded — regenerate them instead.
+`join_lines_based_on_source=false` is set in both, so layout follows the margin rather than
+where the last author pressed return.

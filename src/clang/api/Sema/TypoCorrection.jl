@@ -11,11 +11,9 @@ would need a callback trampoline this package does not have. `num_args` and
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function CorrectionCandidateCallback(kind::CXCorrectionCandidateCallbackKind, sema::AbstractSema;
-                                     num_args::Integer=0, has_explicit_template_args::Bool=false)
+function CorrectionCandidateCallback(kind::CXCorrectionCandidateCallbackKind, sema::AbstractSema; num_args::Integer=0, has_explicit_template_args::Bool=false)
     @check_ptrs sema
-    return CorrectionCandidateCallback(clang_CorrectionCandidateCallback_create(kind, sema, num_args,
-                                                                                has_explicit_template_args))
+    return CorrectionCandidateCallback(clang_CorrectionCandidateCallback_create(kind, sema, num_args, has_explicit_template_args))
 end
 
 dispose(x::CorrectionCandidateCallback) = clang_CorrectionCandidateCallback_dispose(x)
@@ -33,15 +31,9 @@ same name are suppressed.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function CorrectTypo(sema::AbstractSema, typo::AbstractDeclarationNameInfo,
-                     lookup_kind::CXLookupNameKind, scope::AbstractScope,
-                     ss::AbstractCXXScopeSpec, ccc::AbstractCorrectionCandidateCallback;
-                     mode::CXCorrectTypoKind=LibClangEx.CXCorrectTypoKind_CTK_ErrorRecovery,
-                     member_context::AnyDeclContext=DeclContext(C_NULL),
-                     entering_context::Bool=false, record_failure::Bool=true)
+function CorrectTypo(sema::AbstractSema, typo::AbstractDeclarationNameInfo, lookup_kind::CXLookupNameKind, scope::AbstractScope, ss::AbstractCXXScopeSpec, ccc::AbstractCorrectionCandidateCallback; mode::CXCorrectTypoKind=LibClangEx.CXCorrectTypoKind_CTK_ErrorRecovery, member_context::AnyDeclContext=DeclContext(C_NULL), entering_context::Bool=false, record_failure::Bool=true)
     @check_ptrs sema typo scope ss ccc
-    return TypoCorrection(clang_Sema_CorrectTypo(sema, typo, lookup_kind, scope, ss, ccc, mode,
-                                                 member_context, entering_context, record_failure))
+    return TypoCorrection(clang_Sema_CorrectTypo(sema, typo, lookup_kind, scope, ss, ccc, mode, member_context, entering_context, record_failure))
 end
 
 dispose(x::TypoCorrection) = clang_TypoCorrection_dispose(x)

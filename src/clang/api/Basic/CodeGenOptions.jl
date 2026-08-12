@@ -31,6 +31,55 @@ function PrintStats(x::CodeGenOptions)
 end
 
 """
+    getClearASTBeforeBackend(x::AbstractCodeGenOptions) -> Bool
+Whether the frontend releases the AST before running the backend.
+"""
+function getClearASTBeforeBackend(x::AbstractCodeGenOptions)
+    @check_ptrs x
+    return clang_CodeGenOptions_getClearASTBeforeBackend(x) != 0
+end
+
+"""
+    setClearASTBeforeBackend(x::AbstractCodeGenOptions, value::Bool)
+Choose whether the frontend releases the AST before running the backend — an
+`ASTContext::cleanup()` and an arena reset, leaving what the `SourceManager` needs.
+
+Clearing this is what an embedder that generates code from one AST more than once has to do;
+leaving it set is otherwise harmless even when [`setDisableFree`](@ref) is off, because
+`~ASTContext` *is* `cleanup()`, every container it walks is emptied as it goes and
+`ReleaseDeclContextMaps` nulls its list head, so the second pass is a no-op by construction.
+"""
+function setClearASTBeforeBackend(x::AbstractCodeGenOptions, value::Bool)
+    @check_ptrs x
+    return clang_CodeGenOptions_setClearASTBeforeBackend(x, value)
+end
+
+"""
+    getDisableFree(x::AbstractCodeGenOptions) -> Bool
+Whether codegen leaves its own allocations for the process to take away.
+"""
+function getDisableFree(x::AbstractCodeGenOptions)
+    @check_ptrs x
+    return clang_CodeGenOptions_getDisableFree(x) != 0
+end
+
+"""
+    setDisableFree(x::AbstractCodeGenOptions, value::Bool)
+Choose whether codegen leaves its own allocations for the process to take away.
+
+**This is a second, independent copy of the flag** `setDisableFree(::AbstractFrontendOptions,
+…)` sets: `CompilerInvocation::CreateFromArgsImpl` seeds it from the frontend one and the two
+go their own way afterwards, so an invocation built from a command line needs both cleared.
+What reads this one is `~EmitAssemblyHelper`, which buries the `llvm::TargetMachine` instead
+of destroying it — the only use of the flag in CodeGen, so clearing it trades one leak per
+compilation for an ordinary destructor call.
+"""
+function setDisableFree(x::AbstractCodeGenOptions, value::Bool)
+    @check_ptrs x
+    return clang_CodeGenOptions_setDisableFree(x, value)
+end
+
+"""
     getOptimizationLevel(x::AbstractCodeGenOptions) -> Int
 Return the `-O` level, 0 through 3.
 """

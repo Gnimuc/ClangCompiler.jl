@@ -432,10 +432,8 @@ end
     # macro annotation tables are write-only through the C API: assert they do not throw
     ii = CC.getIdentifierInfo(pp, "pp_batch_annotated")
     @test ii isa CC.IdentifierInfo
-    @test CC.addMacroDeprecationMsg(pp, ii, "deprecated by the batch test",
-                                    CC.SourceLocation()) === nothing
-    @test CC.addRestrictExpansionMsg(pp, ii, "restricted by the batch test",
-                                     CC.SourceLocation()) === nothing
+    @test CC.addMacroDeprecationMsg(pp, ii, "deprecated by the batch test", CC.SourceLocation()) === nothing
+    @test CC.addRestrictExpansionMsg(pp, ii, "restricted by the batch test", CC.SourceLocation()) === nothing
     @test CC.addFinalLoc(pp, ii, CC.SourceLocation()) === nothing
 
     # poison bookkeeping: the identifier is never poisoned, so nothing is diagnosed
@@ -450,8 +448,7 @@ end
     dispose(blank)
 
     # __FILE__ path processing is static and its separators are host-decided: shape only
-    processed = CC.processPathForFileMacro(joinpath("pp", "batch", "file.h"),
-                                           CC.getLangOpts(pp), CC.getTargetInfo(pp))
+    processed = CC.processPathForFileMacro(joinpath("pp", "batch", "file.h"), CC.getLangOpts(pp), CC.getTargetInfo(pp))
     @test processed isa String
     @test !isempty(processed)
 
@@ -839,8 +836,7 @@ end
     # a hand-built module has no module map behind it, so its availability is host-decided;
     # the failing branch reports through the diagnostics engine, hence the stderr redirect
     avail = redirect_stderr(devnull) do
-        return CC.checkModuleIsAvailable(CC.getLangOpts(pp), CC.getTargetInfo(pp), m,
-                                         CC.getDiagnostics(pp))
+        return CC.checkModuleIsAvailable(CC.getLangOpts(pp), CC.getTargetInfo(pp), m, CC.getDiagnostics(pp))
     end
     @test avail isa Bool
 

@@ -31,6 +31,25 @@ using Test
     @test_throws AssertionError CC.setOptimizationLevel(opts, -1)
     @test_throws AssertionError CC.setOptimizeSize(opts, 4)
 
+    # `ClearASTBeforeBackend` and `DisableFree` are adjacent one-bit fields --
+    # CodeGenOptions.def declares them on consecutive lines, so they share a bitfield word.
+    # That is exactly the shape where a shim naming the wrong member still round-trips
+    # through itself, so each is set in turn and BOTH are read back after every write.
+    @test CC.getClearASTBeforeBackend(opts) == false
+    @test CC.getDisableFree(opts) == false
+    CC.setDisableFree(opts, true)
+    @test CC.getDisableFree(opts) == true
+    @test CC.getClearASTBeforeBackend(opts) == false
+    CC.setClearASTBeforeBackend(opts, true)
+    @test CC.getClearASTBeforeBackend(opts) == true
+    @test CC.getDisableFree(opts) == true
+    CC.setDisableFree(opts, false)
+    @test CC.getDisableFree(opts) == false
+    @test CC.getClearASTBeforeBackend(opts) == true
+    # ... and neither disturbs the two-bit neighbours set above
+    @test CC.getOptimizationLevel(opts) == 0
+    @test CC.getOptimizeSize(opts) == 2
+
     # DebugInfo is the one option here clang generates a getter/setter pair for, so the
     # round trip goes through clang's own accessors rather than through a named member.
     CC.setDebugInfo(opts, CC.CXDebugInfoKind_FullDebugInfo)

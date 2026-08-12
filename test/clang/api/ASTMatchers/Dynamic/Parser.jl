@@ -49,8 +49,8 @@ end
     n = CC.getNumCompletions(root)
     @test n > 50
 
-    texts = [CC.getTypedText(root, i) for i in 0:(n - 1)]
-    decls = [CC.getMatcherDecl(root, i) for i in 0:(n - 1)]
+    texts = [CC.getTypedText(root, i) for i = 0:(n - 1)]
+    decls = [CC.getMatcherDecl(root, i) for i = 0:(n - 1)]
     # nothing typed yet, so each completion is the whole matcher name plus its "("
     @test any(t -> startswith(t, "cxxRecordDecl("), texts)
     @test any(t -> startswith(t, "functionDecl("), texts)

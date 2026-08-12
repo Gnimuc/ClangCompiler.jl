@@ -1186,9 +1186,7 @@ statement in operand order, each already passed through [`validateOutputConstrai
 output**, which is what [`getTiedOperand`](@ref) then reports. As with its output counterpart,
 `info`'s own flags only become meaningful after this call.
 """
-function validateInputConstraint(x::AbstractTargetInfo,
-                                 outputs::AbstractVector{<:AbstractConstraintInfo},
-                                 info::AbstractConstraintInfo)
+function validateInputConstraint(x::AbstractTargetInfo, outputs::AbstractVector{<:AbstractConstraintInfo}, info::AbstractConstraintInfo)
     @check_ptrs x info
     for o in outputs
         @check_ptrs o
@@ -1240,8 +1238,7 @@ than past it — `"[sym]"` reports 4, and the caller still steps over the bracke
 reports this by advancing a `const char *&`, a moving interior pointer nothing here could
 hold safely, so the count crosses instead.
 """
-function resolveSymbolicName(x::AbstractTargetInfo, name::AbstractString,
-                             outputs::AbstractVector{<:AbstractConstraintInfo})
+function resolveSymbolicName(x::AbstractTargetInfo, name::AbstractString, outputs::AbstractVector{<:AbstractConstraintInfo})
     @check_ptrs x
     for o in outputs
         @check_ptrs o
@@ -1249,8 +1246,7 @@ function resolveSymbolicName(x::AbstractTargetInfo, name::AbstractString,
     handles = CXConstraintInfo[Base.unsafe_convert(CXConstraintInfo, o) for o in outputs]
     consumed, index = Ref{Cuint}(0), Ref{Cuint}(0)
     ok = GC.@preserve outputs handles begin
-        clang_TargetInfo_resolveSymbolicName(x, name, pointer(handles), length(handles),
-                                             consumed, index)
+        clang_TargetInfo_resolveSymbolicName(x, name, pointer(handles), length(handles), consumed, index)
     end
     return ok ? (index=Int(index[]), consumed=Int(consumed[])) : nothing
 end
@@ -1265,12 +1261,10 @@ instead; it is empty otherwise.
 `TargetInfo`'s own implementation accepts everything, so a target that does not override this
 answers `true` for any modifier.
 """
-function validateConstraintModifier(x::AbstractTargetInfo, constraint::AbstractString,
-                                    modifier::AbstractChar, size::Integer)
+function validateConstraintModifier(x::AbstractTargetInfo, constraint::AbstractString, modifier::AbstractChar, size::Integer)
     @check_ptrs x
     suggested = Ref{CXString}()
-    ok = clang_TargetInfo_validateConstraintModifier(x, constraint, Cchar(modifier), size,
-                                                     suggested)
+    ok = clang_TargetInfo_validateConstraintModifier(x, constraint, Cchar(modifier), size, suggested)
     return (ok=ok, suggested=get_string(suggested[]))
 end
 

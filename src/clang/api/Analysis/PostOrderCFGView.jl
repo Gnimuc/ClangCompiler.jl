@@ -15,5 +15,5 @@ function getBlocksInReversePostOrder(g::AbstractCFG)
     n = Int(getNumBlocks(g))
     buf = Vector{CXCFGBlock}(undef, n)
     m = Int(clang_PostOrderCFGView_getBlocksInReversePostOrder(g, buf, n))
-    return CFGBlock[CFGBlock(buf[i]) for i in 1:min(m, n)]
+    return CFGBlock[CFGBlock(buf[i]) for i = 1:min(m, n)]
 end

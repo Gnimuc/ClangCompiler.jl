@@ -77,9 +77,8 @@ end
     sema = CC.get_sema(I)
     ctx = CC.getASTContext(sema)
     ty = CC.get_qual_type(CC.IntTy(ctx))
-    for entity in (CC.InitializeTemporary(ty),
-                   CC.InitializeResult(CC.SourceLocation(), ty),
-                   CC.InitializeParameter(ctx, ty))
+    for entity in
+        (CC.InitializeTemporary(ty), CC.InitializeResult(CC.SourceLocation(), ty), CC.InitializeParameter(ctx, ty))
         # whichever role the entity plays, the type crosses back unchanged
         @test CC.getAsString(CC.getType(entity)) == CC.getAsString(ty)
         dispose(entity)

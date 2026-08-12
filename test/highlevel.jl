@@ -34,11 +34,14 @@ namespace app {
         @test find_decl(I, "app::counter") isa CC.VarDecl
         @test find_decl(I, "app") isa CC.NamespaceDecl
 
-        # and the unresolved spelling really would have been a base carrier
+        # `get_decl` resolves too, so driving the finder by hand is no longer the trap it
+        # was: both spellings answer with the class clang reported. What the abstract adds is
+        # the portable test -- carriers are leaves, so `isa CXXRecordDecl` is exact where
+        # `isa AbstractRecordDecl` is C++'s `isa<RecordDecl>` and keeps working for a subclass.
         finder = DeclFinder(I)
         @test finder(I, "app::Point")
-        @test get_decl(finder) isa CC.NamedDecl
-        @test !(get_decl(finder) isa CC.CXXRecordDecl)   # the trap `find_decl` closes
+        @test get_decl(finder) isa CC.CXXRecordDecl
+        @test get_decl(finder) isa CC.AbstractRecordDecl
         dispose(finder)
 
         # same node reached both ways: the helper is a shortcut, not a different question
@@ -53,7 +56,7 @@ namespace app {
         @test isempty(find_decls(I, "app::nope"))
         # and the finder it allocated was still disposed -- repeating the miss many times must
         # not exhaust anything, which is the observable form of "the `finally` really runs"
-        for _ in 1:50
+        for _ = 1:50
             @test find_decl(I, "app::nope") === nothing
         end
     end
@@ -80,15 +83,40 @@ namespace app {
         @test !("Point" in names)
         @test !("counter" in names)
 
-        flat = [CC.getName(d) for d in CC.decls(CC.castToDeclContext(translation_unit(I)))]
+        # No cast: these take `AnyDeclContext`, so a decl that IS a context goes straight in
+        # and marshalling crosses through `Decl::castToDeclContext`. Asserting the two
+        # spellings agree is what says the pivot still happened rather than a raw pointer
+        # being reused -- the crossing that `src/clang/CLAUDE.md` says corrupts.
+        flat = [CC.getName(d) for d in CC.decls(translation_unit(I))]
         @test "Point" in flat          # the flattened walk really does reach it
         @test length(flat) > length(top)
+        @test flat == [CC.getName(d) for d in CC.decls(CC.castToDeclContext(translation_unit(I)))]
 
         # descending one level gets there, and the resolved types survive the descent
         ns = only(d for d in top if d isa CC.NamespaceDecl)
-        inner = collect(CC.decls_in(CC.castToDeclContext(ns)))
+        inner = collect(CC.decls_in(ns))
+        @test length(inner) == length(collect(CC.decls_in(CC.castToDeclContext(ns))))
+        @test length(collect(CC.parents(ns))) == length(collect(CC.parents(CC.castToDeclContext(ns))))
+        @test length(collect(CC.lexical_parents(ns))) == length(collect(CC.lexical_parents(CC.castToDeclContext(ns))))
         @test any(d -> d isa CC.CXXRecordDecl && CC.getName(d) == "Point", inner)
         @test any(d -> d isa CC.FunctionDecl && CC.getName(d) == "twice", inner)
+    end
+
+    @testset "translation_unit is the most recent increment, not the union of them" begin
+        # The docstring used to claim this held everything parsed into `x`. Clang's incremental
+        # interpreter starts a fresh TranslationUnitDecl per increment and `getTranslationUnitDecl`
+        # answers with the most recent, so a second parse does not extend the first's unit. The
+        # suite could not see it because every other testset here parses exactly once.
+        J = create_interpreter(String[])
+        CC.parse(J, "int hl_first;")
+        CC.parse(J, "int hl_second;")
+        seen = [CC.decl_name(d) for d in CC.decls_in(translation_unit(J)) if d isa CC.AbstractNamedDecl]
+        @test "hl_second" in seen
+        @test !("hl_first" in seen)          # the truncation, asserted rather than documented
+        # both are still *findable*: it is the container that is per-increment, not the AST
+        @test find_decl(J, "hl_first") isa CC.AbstractVarDecl
+        @test find_decl(J, "hl_second") isa CC.AbstractVarDecl
+        dispose(J)
     end
 
     @testset "translation_unit is what the top-level decls hang off" begin
@@ -97,6 +125,30 @@ namespace app {
         # the relationship, not the Julia type: clang says the namespace's semantic parent is
         # this translation unit
         @test CC.decl_id(CC.castFromDeclContext(CC.getDeclContext(ns))) == CC.decl_id(tu)
+    end
+
+    @testset "the public abstracts are what a portable caller dispatches on" begin
+        # Carriers are leaves, so `isa` against a concrete carrier is not C++'s `isa<T>`: a
+        # constructor is not a `CXXMethodDecl` even though clang's CXXConstructorDecl derives
+        # from CXXMethodDecl. The abstract is the correct spelling, and these six are public
+        # precisely so a caller can write it.
+        rec = find_decl(I, "app::Point")
+        @test rec isa CC.AbstractRecordDecl && rec isa CC.AbstractTagDecl
+        @test rec isa CC.AbstractNamedDecl && rec isa CC.AbstractDecl
+        # `app::twice` is overloaded, so it is `find_decls`' job; a member function is the
+        # single-result case, and is also a CXXMethodDecl -- which is exactly why the abstract
+        # matters, since `isa CC.FunctionDecl` on it is false.
+        fn = only(m for m in CC.members(CC.definition(rec)) if CC.decl_name(m) == "sum")
+        @test fn isa CC.AbstractFunctionDecl
+        @test !(fn isa CC.FunctionDecl)
+        @test all(d -> d isa CC.AbstractFunctionDecl, find_decls(I, "app::twice"))
+        @test find_decl(I, "app::counter") isa CC.AbstractVarDecl
+
+        # the name accessors, which are the reason the AST half is usable from public names
+        @test CC.decl_name(rec) == "Point"
+        @test CC.qualified_name(rec) == "app::Point"
+        # and the round trip the docstring promises
+        @test CC.decl_id(find_decl(I, CC.qualified_name(rec))) == CC.decl_id(rec)
     end
 
     @testset "source_location reports where the text was written" begin
@@ -111,8 +163,7 @@ namespace app {
         @test startswith(source_location(I, ns).file, "input_line")
 
         # a statement locates too, and the body of `sum` sits after the struct opens
-        m = only(d for d in CC.decls_in(CC.castToDeclContext(rec))
-                 if d isa CC.CXXMethodDecl && CC.getName(d) == "sum")
+        m = only(d for d in CC.decls_in(CC.castToDeclContext(rec)) if d isa CC.CXXMethodDecl && CC.getName(d) == "sum")
         body = CC.resolve(CC.getBody(m))
         @test source_location(I, body).line == 5
     end
@@ -181,8 +232,7 @@ end
 
         # a namespace is a context too, and reaches the same function
         ns = CC.find_decl(I, "hl")
-        @test "twice" in Set(CC.getNameAsString(m) for m in CC.members(ns)
-                             if m isa CC.AbstractNamedDecl)
+        @test "twice" in Set(CC.getNameAsString(m) for m in CC.members(ns) if m isa CC.AbstractNamedDecl)
     end
 
     @testset "signature reports what clang parsed" begin
@@ -194,11 +244,9 @@ end
         @test !s.is_const && !s.is_static && !s.is_virtual && !s.is_deleted && !s.is_variadic
 
         w = CC.find_decl(I, "hl::Widget")
-        area = only(m for m in CC.members(w)
-                    if m isa CC.CXXMethodDecl && CC.getNameAsString(m) == "area")
+        area = only(m for m in CC.members(w) if m isa CC.CXXMethodDecl && CC.getNameAsString(m) == "area")
         @test CC.signature(area).is_const
-        cnt = only(m for m in CC.members(w)
-                   if m isa CC.CXXMethodDecl && CC.getNameAsString(m) == "count")
+        cnt = only(m for m in CC.members(w) if m isa CC.CXXMethodDecl && CC.getNameAsString(m) == "count")
         @test CC.signature(cnt).is_static
         @test CC.signature(cnt).return_type == "int"
     end
@@ -217,6 +265,19 @@ end
         dtor = only(m for m in CC.members(w) if m isa CC.CXXDestructorDecl)
         @test_throws AssertionError CC.mangled_name(I, ctor)
         @test_throws AssertionError CC.mangled_name(I, dtor)
+
+        # A class, enum, typedef or namespace has no mangled name, and reaching clang with one
+        # is not a refusal but a SIGSEGV -- `llvm_unreachable` compiled to
+        # `__builtin_unreachable()`. Dispatch is what keeps them out, so these are MethodErrors
+        # rather than assertions, and the partition below says the narrowing did not simply
+        # refuse everything.
+        CC.parse(I, "enum HLE { HLEC }; typedef int HLTd; namespace hlns {}")
+        for bad in (w, CC.find_decl(I, "HLE"), CC.find_decl(I, "HLTd"), CC.find_decl(I, "hlns"))
+            @test_throws MethodError CC.mangled_name(I, bad)
+        end
+        # ... while a field, which is neither a function nor a variable, still mangles
+        fld = only(m for m in CC.members(w) if m isa CC.FieldDecl)
+        @test !isempty(CC.mangled_name(I, fld))
 
         # getAllManglings is the one that answers for those, and it needs a generator that
         # nothing could construct until now

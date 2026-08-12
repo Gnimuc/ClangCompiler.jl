@@ -15,7 +15,7 @@ function ScanReachableFromBlock(start::AbstractCFGBlock)
     n = Int(getNumBlocks(getParent(start)))
     buf = Vector{CXCFGBlock}(undef, n)
     m = Int(clang_reachable_code_ScanReachableFromBlock(start, buf, n))
-    return CFGBlock[CFGBlock(buf[i]) for i in 1:min(m, n)]
+    return CFGBlock[CFGBlock(buf[i]) for i = 1:min(m, n)]
 end
 
 """

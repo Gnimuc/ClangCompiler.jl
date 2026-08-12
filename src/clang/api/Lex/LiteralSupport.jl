@@ -13,13 +13,9 @@ as a ppnumber.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function NumericLiteralParser(spelling::AbstractString, loc::SourceLocation,
-                              src_mgr::AbstractSourceManager, opts::AbstractLangOptions,
-                              target::AbstractTargetInfo,
-                              diag::AbstractDiagnosticsEngine)
+function NumericLiteralParser(spelling::AbstractString, loc::SourceLocation, src_mgr::AbstractSourceManager, opts::AbstractLangOptions, target::AbstractTargetInfo, diag::AbstractDiagnosticsEngine)
     @check_ptrs src_mgr opts target diag
-    p = clang_NumericLiteralParser_create(spelling, ncodeunits(spelling), loc, src_mgr,
-                                          opts, target, diag)
+    p = clang_NumericLiteralParser_create(spelling, ncodeunits(spelling), loc, src_mgr, opts, target, diag)
     @assert p != C_NULL "Failed to create NumericLiteralParser"
     return NumericLiteralParser(p)
 end
@@ -245,8 +241,7 @@ long enough to hold its quotes.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function CharLiteralParser(pp::AbstractPreprocessor, text::AbstractString,
-                           loc::SourceLocation, kind::Integer)
+function CharLiteralParser(pp::AbstractPreprocessor, text::AbstractString, loc::SourceLocation, kind::Integer)
     @check_ptrs pp
     p = clang_CharLiteralParser_create(pp, text, ncodeunits(text), loc, kind)
     return p == C_NULL ? nothing : CharLiteralParser(p)
@@ -352,16 +347,13 @@ the literals off.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function StringLiteralParser(toks::AbstractVector{Token}, src_mgr::AbstractSourceManager,
-                             opts::AbstractLangOptions, target::AbstractTargetInfo,
-                             diag::Union{AbstractDiagnosticsEngine,Nothing}=nothing)
+function StringLiteralParser(toks::AbstractVector{Token}, src_mgr::AbstractSourceManager, opts::AbstractLangOptions, target::AbstractTargetInfo, diag::Union{AbstractDiagnosticsEngine,Nothing}=nothing)
     @check_ptrs src_mgr opts target
     for tok in toks
         @check_ptrs tok
     end
     handles = CXToken_[Base.unsafe_convert(CXToken_, tok) for tok in toks]
-    d = diag === nothing ? CXDiagnosticsEngine(C_NULL) :
-        Base.unsafe_convert(CXDiagnosticsEngine, diag)
+    d = diag === nothing ? CXDiagnosticsEngine(C_NULL) : Base.unsafe_convert(CXDiagnosticsEngine, diag)
     p = clang_StringLiteralParser_create(handles, length(handles), src_mgr, opts, target, d)
     return p == C_NULL ? nothing : StringLiteralParser(p)
 end
@@ -376,15 +368,13 @@ predefined macros and can decode in unevaluated mode — what a `static_assert` 
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function StringLiteralParser(toks::AbstractVector{Token}, pp::AbstractPreprocessor,
-                             method::CXStringLiteralEvalMethod=CXStringLiteralEvalMethod_Evaluated)
+function StringLiteralParser(toks::AbstractVector{Token}, pp::AbstractPreprocessor, method::CXStringLiteralEvalMethod=CXStringLiteralEvalMethod_Evaluated)
     @check_ptrs pp
     for tok in toks
         @check_ptrs tok
     end
     handles = CXToken_[Base.unsafe_convert(CXToken_, tok) for tok in toks]
-    p = clang_StringLiteralParser_createFromPreprocessor(handles, length(handles), pp,
-                                                         method)
+    p = clang_StringLiteralParser_createFromPreprocessor(handles, length(handles), pp, method)
     return p == C_NULL ? nothing : StringLiteralParser(p)
 end
 
@@ -438,8 +428,7 @@ Clang only handles the narrow and UTF-8 forms here and asserts on the others, so
 be ordinary or UTF-8. Every decoded byte comes from at least one spelling character, which
 is what bounds `byte_no` by the token's length.
 """
-function getOffsetOfStringByte(x::AbstractStringLiteralParser, tok::AbstractToken,
-                               byte_no::Integer)
+function getOffsetOfStringByte(x::AbstractStringLiteralParser, tok::AbstractToken, byte_no::Integer)
     @check_ptrs x tok
     @assert isOrdinary(x) || isUTF8(x) "byte offsets are only defined for narrow and UTF-8 literals"
     @assert 0 <= byte_no < getLength(tok) "byte offset out of range for this token"

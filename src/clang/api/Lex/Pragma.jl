@@ -67,8 +67,7 @@ failed match falls back to the namespace's null handler instead of returning `no
 
 The result is borrowed from the namespace.
 """
-function FindHandler(x::AbstractPragmaNamespace, name::AbstractString;
-                     ignore_null::Bool=true)
+function FindHandler(x::AbstractPragmaNamespace, name::AbstractString; ignore_null::Bool=true)
     @check_ptrs x
     p = clang_PragmaNamespace_FindHandler(x, name, ignore_null)
     return p == C_NULL ? nothing : PragmaHandler(p)
@@ -121,8 +120,7 @@ preprocessor goes away. Nothing may be registered under `handler`'s name in that
 yet — Clang asserts that, and the check cannot be made from here because a preprocessor's
 root namespace is private with no accessor.
 """
-function AddPragmaHandler(pp::AbstractPreprocessor, handler::AbstractPragmaHandler,
-                          namespace::AbstractString="")
+function AddPragmaHandler(pp::AbstractPreprocessor, handler::AbstractPragmaHandler, namespace::AbstractString="")
     @check_ptrs pp handler
     clang_Preprocessor_AddPragmaHandler(pp, namespace, handler)
     return nothing
@@ -137,8 +135,7 @@ Unregister `handler` from `pp`, releasing ownership back to the caller, and drop
 `handler` must currently be registered under exactly that namespace; Clang asserts both
 that the namespace exists and that the handler is in it.
 """
-function RemovePragmaHandler(pp::AbstractPreprocessor, handler::AbstractPragmaHandler,
-                             namespace::AbstractString="")
+function RemovePragmaHandler(pp::AbstractPreprocessor, handler::AbstractPragmaHandler, namespace::AbstractString="")
     @check_ptrs pp handler
     clang_Preprocessor_RemovePragmaHandler(pp, namespace, handler)
     return nothing

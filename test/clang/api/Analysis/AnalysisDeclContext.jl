@@ -76,16 +76,15 @@ using Test
             @test CC.getCFGStmtMap(adc).ptr == m.ptr
             mapped_stmts = 0
             mapped_terminators = 0
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
                 if CC.hasTerminator(b)
                     t = CC.getTerminatorStmt(b)
                     @test CC.getBlock(m, t).ptr == b.ptr
                     mapped_terminators += 1
                 end
-                for j in 0:(Int(CC.size(b)) - 1)
-                    CC.getElementKind(b, j) ==
-                        CC.LibClangEx.CXCFGElementKind_Statement || continue
+                for j = 0:(Int(CC.size(b)) - 1)
+                    CC.getElementKind(b, j) == CC.LibClangEx.CXCFGElementKind_Statement || continue
                     s = CC.getElementStmt(b, j)
                     landed = CC.getBlock(m, s)
                     @test !CC.is_null_handle(landed)
@@ -106,7 +105,7 @@ using Test
             @test CC.is_null_handle(CC.getOuterParenParent(pm, body))
 
             conditions = 0
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
                 CC.hasTerminator(b) || continue
                 cond = CC.getLastCondition(b)
@@ -202,12 +201,11 @@ using Test
             target = CC.Stmt(C_NULL)
             try
                 bcfg = CC.getCFG(base)
-                for i in 0:(Int(CC.getNumBlocks(bcfg)) - 1)
+                for i = 0:(Int(CC.getNumBlocks(bcfg)) - 1)
                     b = CC.getBlock(bcfg, i)
                     CC.hasTerminator(b) || continue
                     CC.size(b) > 0 || continue
-                    CC.getElementKind(b, 0) ==
-                        CC.LibClangEx.CXCFGElementKind_Statement || continue
+                    CC.getElementKind(b, 0) == CC.LibClangEx.CXCFGElementKind_Statement || continue
                     target = CC.getElementStmt(b, 0)
                     break
                 end
@@ -276,7 +274,7 @@ end
 
             direct = 0
             through_parens = 0
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
                 CC.hasTerminator(b) || continue
                 cond = CC.getLastCondition(b)
@@ -291,8 +289,7 @@ end
                     @test CC.resolve(CC.getParent(pm, cond)) isa CC.AbstractParenExpr
                     # the outermost paren of that chain is the if's own operand
                     outer = CC.getOuterParenParent(pm, CC.getParent(pm, cond))
-                    @test CC.is_null_handle(outer) ||
-                          CC.resolve(outer) isa CC.AbstractParenExpr
+                    @test CC.is_null_handle(outer) || CC.resolve(outer) isa CC.AbstractParenExpr
                 end
             end
             @test direct == 1
@@ -357,9 +354,9 @@ end
             @test !CC.is_null_handle(cfg)
             found_dtor = false
             found_loop_exit = false
-            for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+            for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                 b = CC.getBlock(cfg, i)
-                for j in 0:(Int(CC.size(b)) - 1)
+                for j = 0:(Int(CC.size(b)) - 1)
                     k = CC.getElementKind(b, j)
                     if k == CC.LibClangEx.CXCFGElementKind_AutomaticObjectDtor
                         found_dtor = true
@@ -414,9 +411,9 @@ end
                 cfg = CC.getCFG(adc)
                 @test !CC.is_null_handle(cfg)
                 kinds = Set{CC.LibClangEx.CXCFGElementKind}()
-                for i in 0:(Int(CC.getNumBlocks(cfg)) - 1)
+                for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                     b = CC.getBlock(cfg, i)
-                    for j in 0:(Int(CC.size(b)) - 1)
+                    for j = 0:(Int(CC.size(b)) - 1)
                         push!(kinds, CC.getElementKind(b, j))
                     end
                 end
@@ -436,13 +433,11 @@ end
                 @test !CC.getAddTemporaryDtors(fresh)
                 @test !CC.getAddScopes(fresh)
                 @test !CC.getAddCXXNewAllocator(fresh)
-                for (get, set) in ((CC.getAddInitializers, CC.setAddInitializers),
-                                   (CC.getAddImplicitDtors, CC.setAddImplicitDtors),
-                                   (CC.getAddLifetime, CC.setAddLifetime),
-                                   (CC.getAddLoopExit, CC.setAddLoopExit),
-                                   (CC.getAddTemporaryDtors, CC.setAddTemporaryDtors),
-                                   (CC.getAddScopes, CC.setAddScopes),
-                                   (CC.getAddCXXNewAllocator, CC.setAddCXXNewAllocator))
+                for (get, set) in
+                    ((CC.getAddInitializers, CC.setAddInitializers), (CC.getAddImplicitDtors, CC.setAddImplicitDtors),
+                     (CC.getAddLifetime, CC.setAddLifetime), (CC.getAddLoopExit, CC.setAddLoopExit),
+                     (CC.getAddTemporaryDtors, CC.setAddTemporaryDtors), (CC.getAddScopes, CC.setAddScopes),
+                     (CC.getAddCXXNewAllocator, CC.setAddCXXNewAllocator))
                     set(fresh, true)
                     @test get(fresh)
                     set(fresh, false)

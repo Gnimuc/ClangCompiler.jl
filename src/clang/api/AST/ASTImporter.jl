@@ -21,12 +21,9 @@ can instead of pulling in whole definitions.
 This function allocates and one should call `dispose` to release the resources after using
 this object. The importer must not outlive either context or either file manager.
 """
-function ASTImporter(to_ctx::AbstractASTContext, to_fm::AbstractFileManager,
-                     from_ctx::AbstractASTContext, from_fm::AbstractFileManager,
-                     minimal_import::Bool=false)
+function ASTImporter(to_ctx::AbstractASTContext, to_fm::AbstractFileManager, from_ctx::AbstractASTContext, from_fm::AbstractFileManager, minimal_import::Bool=false)
     @check_ptrs to_ctx to_fm from_ctx from_fm
-    return ASTImporter(clang_ASTImporter_create(to_ctx, to_fm, from_ctx, from_fm,
-                                                minimal_import))
+    return ASTImporter(clang_ASTImporter_create(to_ctx, to_fm, from_ctx, from_fm, minimal_import))
 end
 
 dispose(x::ASTImporter) = clang_ASTImporter_dispose(x)
@@ -108,8 +105,7 @@ end
 
 function Import(x::AbstractASTImporter, rng::SourceRange)
     @check_ptrs x
-    r = clang_ASTImporter_ImportSourceRange(x, CXSourceRange_(rng.begin_loc.ptr,
-                                                              rng.end_loc.ptr))
+    r = clang_ASTImporter_ImportSourceRange(x, CXSourceRange_(rng.begin_loc.ptr, rng.end_loc.ptr))
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
@@ -278,8 +274,7 @@ Mark `from` as having failed to import with `err`.
 PARTIAL: `from` must carry no error yet, or the same one — clang asserts that the insertion
 either happened or found an equal kind.
 """
-function setImportDeclError(x::AbstractASTImporter, from::AbstractDecl,
-                            err::CXASTImportError_ErrorKind)
+function setImportDeclError(x::AbstractASTImporter, from::AbstractDecl, err::CXASTImportError_ErrorKind)
     @check_ptrs x from
     prev = getImportDeclErrorIfAny(x, from)
     @assert prev === nothing || prev == err "`from` already carries a different import error"
@@ -291,8 +286,7 @@ end
 Whether the two types are structurally equivalent, using the importer's own non-equivalence
 cache. `complain` routes a mismatch through the "to" context's diagnostics.
 """
-function IsStructurallyEquivalent(x::AbstractASTImporter, from::QualType, to::QualType,
-                                  complain::Bool=true)
+function IsStructurallyEquivalent(x::AbstractASTImporter, from::QualType, to::QualType, complain::Bool=true)
     @check_ptrs x from to
     return clang_ASTImporter_IsStructurallyEquivalent(x, from, to, complain)
 end

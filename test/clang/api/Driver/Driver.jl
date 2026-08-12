@@ -54,8 +54,8 @@ end
     diags = CC.DiagnosticsEngine()
     drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
 
-    modes = [CC.CCCIsCXX(drv), CC.CCCIsCPP(drv), CC.CCCIsCC(drv), CC.IsCLMode(drv),
-             CC.IsFlangMode(drv), CC.IsDXCMode(drv)]
+    modes = [CC.CCCIsCXX(drv), CC.CCCIsCPP(drv), CC.CCCIsCC(drv), CC.IsCLMode(drv), CC.IsFlangMode(drv),
+             CC.IsDXCMode(drv)]
     @test all(m -> m isa Bool, modes)
     # Driver::Mode is a single enum, so at most one predicate can be true.
     @test count(modes) <= 1
@@ -110,9 +110,8 @@ end
     CC.setInstalledDir(drv, "usr/lib/llvm/bin")
     @test CC.getInstalledDir(drv) == "usr/lib/llvm/bin"
 
-    flags = [CC.isSaveTempsEnabled(drv), CC.isSaveTempsObj(drv),
-             CC.embedBitcodeEnabled(drv), CC.embedBitcodeInObject(drv),
-             CC.embedBitcodeMarkerOnly(drv), CC.offloadHostOnly(drv),
+    flags = [CC.isSaveTempsEnabled(drv), CC.isSaveTempsObj(drv), CC.embedBitcodeEnabled(drv),
+             CC.embedBitcodeInObject(drv), CC.embedBitcodeMarkerOnly(drv), CC.offloadHostOnly(drv),
              CC.offloadDeviceOnly(drv), CC.hasHeaderMode(drv)]
     @test all(v -> v isa Bool, flags)
     # Driver::Offload is a single enum, so host-only and device-only exclude each
@@ -138,8 +137,7 @@ end
     CC.BuildCompilation(drv, ["clang", "-fsyntax-only", "lto-probe.cpp"])
     @test CC.isUsingLTO(drv) == false
 
-    lto_drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu",
-                        CC.DiagnosticsEngine())
+    lto_drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", CC.DiagnosticsEngine())
     CC.setCheckInputsExist(lto_drv, false)
     CC.BuildCompilation(lto_drv, ["clang", "-flto", "-c", "lto-probe.cpp"])
     @test CC.isUsingLTO(lto_drv) == true
@@ -187,8 +185,7 @@ end
     # Building a compilation is what assigns the Driver members that have no in-class
     # initializer, so this is the only place getLTOMode is well-defined. Diagnostics are
     # swallowed: the input file is phony and only argument processing is exercised.
-    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                 CC.IgnoringDiagConsumer(), true)
+    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
     CC.setCheckInputsExist(drv, false)
 
@@ -235,16 +232,15 @@ end
     # Arguments have now been processed, so the accessors reading Driver::LTOMode and the
     # config-file list are defined -- on a driver that never built a compilation
     # getLTOMode has been observed returning a value outside its own enum.
-    @test CC.getLTOMode(drv) in (CC.CXLTOKind_LTOK_None, CC.CXLTOKind_LTOK_Full,
-                                 CC.CXLTOKind_LTOK_Thin, CC.CXLTOKind_LTOK_Unknown)
+    @test CC.getLTOMode(drv) in
+          (CC.CXLTOKind_LTOK_None, CC.CXLTOKind_LTOK_Full, CC.CXLTOKind_LTOK_Thin, CC.CXLTOKind_LTOK_Unknown)
     @test CC.getLTOMode(drv, true) isa CC.CXLTOKind
     @test CC.getConfigFiles(drv) isa Vector{String}
 
     # A compile-and-link line plans an intermediate object file, which the driver registers
     # as a temporary and the compilation's destructor removes again. A Driver is built for
     # one command line, so this uses its own.
-    diags2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                  CC.IgnoringDiagConsumer(), true)
+    diags2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     drv2 = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags2)
     CC.setCheckInputsExist(drv2, false)
     out = joinpath(tempdir(), "clangcompiler-driver-test.out")
@@ -293,15 +289,13 @@ end
     # the total is host-dependent: assert the two this test passed and the index contract,
     # never a count. Diagnostics are swallowed: the input file is phony and only argument
     # processing is exercised.
-    diags2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                  CC.IgnoringDiagConsumer(), true)
+    diags2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     drv2 = CC.Driver(exe, "x86_64-unknown-linux-gnu", diags2)
     CC.setCheckInputsExist(drv2, false)
-    prefixes = [joinpath("clangcompiler", "prefix-one"),
-                joinpath("clangcompiler", "prefix-two")]
+    prefixes = [joinpath("clangcompiler", "prefix-one"), joinpath("clangcompiler", "prefix-two")]
     comp = CC.BuildCompilation(drv2,
-                               ["clang", "-B", prefixes[1], "-B", prefixes[2],
-                                "-fsyntax-only", "clangcompiler-driver-test.cpp"])
+                               ["clang", "-B", prefixes[1], "-B", prefixes[2], "-fsyntax-only",
+                                "clangcompiler-driver-test.cpp"])
 
     n = CC.getNumPrefixDirs(drv2)
     @test n >= length(prefixes)
@@ -362,8 +356,7 @@ end
     # processing is exercised.
     src = "clangcompiler-header-mode-test.cpp"
     function newdriver()
-        diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                     CC.IgnoringDiagConsumer(), true)
+        diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
         drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
         CC.setCheckInputsExist(drv, false)
         return drv, diags
@@ -375,8 +368,7 @@ end
     # wrappers have to agree about that one member on every driver, before and after a
     # command line. A shim reading the wrong member passes the equality above and fails
     # this once the mode moves.
-    @test CC.hasHeaderMode(drv) ==
-          (CC.getModuleHeaderMode(drv) != CC.CXModuleHeaderMode_HeaderMode_None)
+    @test CC.hasHeaderMode(drv) == (CC.getModuleHeaderMode(drv) != CC.CXModuleHeaderMode_HeaderMode_None)
     CC.dispose(drv)
     CC.dispose(diags)
 
@@ -385,8 +377,7 @@ end
     # member has moved by the time BuildCompilation returns whatever the inputs were.
     for (flag, expected) in (("-fmodule-header", CC.CXModuleHeaderMode_HeaderMode_Default),
                              ("-fmodule-header=user", CC.CXModuleHeaderMode_HeaderMode_User),
-                             ("-fmodule-header=system",
-                              CC.CXModuleHeaderMode_HeaderMode_System))
+                             ("-fmodule-header=system", CC.CXModuleHeaderMode_HeaderMode_System))
         d, dg = newdriver()
         comp = CC.BuildCompilation(d, ["clang", flag, "-fsyntax-only", src])
         # This is the whole point of the accessor: hasHeaderMode cannot tell the three
@@ -441,8 +432,7 @@ end
     # And it agrees with the Driver: BuildCompilation feeds the driver's own executable
     # path through this same function to pick Driver::Mode, so a "g++" answer is exactly
     # what CCCIsCXX goes on to report. Diagnostics are swallowed; the input is phony.
-    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                 CC.IgnoringDiagConsumer(), true)
+    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     drv = CC.Driver(joinpath("usr", "bin", "clang++"), "x86_64-unknown-linux-gnu", diags)
     CC.setCheckInputsExist(drv, false)
     # Driver::Mode starts at GCCMode and only argument processing consults the mode, so the
@@ -454,8 +444,7 @@ end
 
     # A --driver-mode= on the command line beats the executable name for the Driver too, so
     # a plain "clang" reaches the same g++ mode the name-derived case did above.
-    diags2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                  CC.IgnoringDiagConsumer(), true)
+    diags2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     drv2 = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags2)
     CC.setCheckInputsExist(drv2, false)
     args2 = ["-fsyntax-only", "cc-driver-mode-test.cpp"]

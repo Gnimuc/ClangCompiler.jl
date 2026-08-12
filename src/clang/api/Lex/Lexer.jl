@@ -99,11 +99,9 @@ Return the location of the `characters`-th character of the token starting at `t
 counted in the token's **spelling** — so it steps over escaped newlines and trigraphs rather
 than counting raw bytes, and `characters == 0` gives `tok_start` back.
 """
-function AdvanceToTokenCharacter(tok_start::SourceLocation, characters::Integer,
-                                 src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
+function AdvanceToTokenCharacter(tok_start::SourceLocation, characters::Integer, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
-    return SourceLocation(clang_Lexer_AdvanceToTokenCharacter(tok_start, characters, src_mgr,
-                                                              opts))
+    return SourceLocation(clang_Lexer_AdvanceToTokenCharacter(tok_start, characters, src_mgr, opts))
 end
 
 """
@@ -116,11 +114,9 @@ The result is always a character range, which is the point of the call, so the r
 `CharSourceRange` carries `is_token_range = false` and only the two locations cross the
 boundary.
 """
-function getAsCharRange(range::SourceRange, src_mgr::AbstractSourceManager,
-                        opts::AbstractLangOptions)
+function getAsCharRange(range::SourceRange, src_mgr::AbstractSourceManager, opts::AbstractLangOptions)
     @check_ptrs src_mgr opts
-    r = clang_Lexer_getAsCharRange(CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr),
-                                   src_mgr, opts)
+    r = clang_Lexer_getAsCharRange(CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr), src_mgr, opts)
     return CharSourceRange(SourceRange(SourceLocation(r.B), SourceLocation(r.E)), false)
 end
 

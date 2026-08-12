@@ -35,15 +35,13 @@ end
     # the name, and on Windows that needs a root *name* as well as a root directory -- a bare
     # "/" has only the latter. Anchor on this file's volume, and use one string for both the
     # mapping key and the include so the in-memory file system is keyed and queried alike.
-    bac_hdr = Sys.iswindows() ? string(first(splitdrive(@__DIR__)), "/bac_probe.h") :
-                                "/bac_probe.h"
+    bac_hdr = Sys.iswindows() ? string(first(splitdrive(@__DIR__)), "/bac_probe.h") : "/bac_probe.h"
     code = "#include <$bac_hdr>\nint bac_uses_vf() { return BAC_VALUE; }\n"
 
     # With the header mapped in, the include resolves and nothing is reported.
     with_map = CC.TextDiagnosticBuffer()
     au = CC.buildASTFromCodeWithArgs(code, ["-std=c++17"]; filename="main.cc",
-                                     virtual_files=[bac_hdr => "#define BAC_VALUE 41\n"],
-                                     diag_consumer=with_map)
+                                     virtual_files=[bac_hdr => "#define BAC_VALUE 41\n"], diag_consumer=with_map)
     @test au !== nothing
     @test CC.getMainFileName(au) == "main.cc"
     @test Base.size(with_map, TOOLING_ERR) == 0
@@ -53,8 +51,7 @@ end
     # Without it the very same snippet cannot find the header. That partition is what proves
     # the mapping was used rather than the include silently succeeding some other way.
     without_map = CC.TextDiagnosticBuffer()
-    unmapped = CC.buildASTFromCodeWithArgs(code, ["-std=c++17"]; filename="main.cc",
-                                           diag_consumer=without_map)
+    unmapped = CC.buildASTFromCodeWithArgs(code, ["-std=c++17"]; filename="main.cc", diag_consumer=without_map)
     @test unmapped !== nothing
     @test Base.size(without_map, TOOLING_ERR) >= 1
     dispose(unmapped)
@@ -73,8 +70,7 @@ end
 
     adjusted = CC.TextDiagnosticBuffer()
     adj = CC.getInsertArgumentAdjuster("-DBAC_ADJ=1")
-    with_adj = CC.buildASTFromCodeWithArgs(guarded, ["-std=c++17"]; adjuster=adj,
-                                           diag_consumer=adjusted)
+    with_adj = CC.buildASTFromCodeWithArgs(guarded, ["-std=c++17"]; adjuster=adj, diag_consumer=adjusted)
     @test with_adj !== nothing
     @test Base.size(adjusted, TOOLING_ERR) == 0
     dispose(with_adj)
@@ -94,23 +90,18 @@ end
 
     # A snippet that compiles: the action runs and reports success.
     ok = CC.LLVMOnlyAction(lctx)
-    @test CC.runToolOnCodeWithArgs(ok, "int rtc_probe(int a) { return a + 1; }",
-                                   ["-std=c++17"]) == true
+    @test CC.runToolOnCodeWithArgs(ok, "int rtc_probe(int a) { return a + 1; }", ["-std=c++17"]) == true
 
     # A snippet that does not: `CompilerInstance::ExecuteAction` reports the error count, so
     # the same call comes back false. Each action is consumed by its run, hence a second one.
     broken = CC.LLVMOnlyAction(lctx)
-    @test CC.runToolOnCodeWithArgs(broken, "int rtc_broken(int a) { return nosuch(a); }",
-                                   ["-std=c++17"]) == false
+    @test CC.runToolOnCodeWithArgs(broken, "int rtc_broken(int a) { return nosuch(a); }", ["-std=c++17"]) == false
 
     # The mapped-file pairs reach the snippet here too. Same volume anchoring as above.
-    rtc_hdr = Sys.iswindows() ? string(first(splitdrive(@__DIR__)), "/rtc_probe.h") :
-                                "/rtc_probe.h"
+    rtc_hdr = Sys.iswindows() ? string(first(splitdrive(@__DIR__)), "/rtc_probe.h") : "/rtc_probe.h"
     with_header = CC.LLVMOnlyAction(lctx)
-    @test CC.runToolOnCodeWithArgs(with_header,
-                                   "#include <$rtc_hdr>\nint rtc_uses() { return RTC_V; }\n",
-                                   ["-std=c++17"];
-                                   virtual_files=[rtc_hdr => "#define RTC_V 7\n"]) == true
+    @test CC.runToolOnCodeWithArgs(with_header, "#include <$rtc_hdr>\nint rtc_uses() { return RTC_V; }\n",
+                                   ["-std=c++17"]; virtual_files=[rtc_hdr => "#define RTC_V 7\n"]) == true
 
     # None of the three may be disposed: clang destroyed each one before returning.
     CC.LLVM.dispose(lctx)
@@ -148,8 +139,7 @@ end
         #
         # A command line naming a file that is not there cannot run, and says so.
         act2 = CC.LLVMOnlyAction(lctx)
-        ti2 = CC.ToolInvocation(["clang-tool", "-std=c++17", joinpath(dir, "no_such.cc")],
-                                act2, fm)
+        ti2 = CC.ToolInvocation(["clang-tool", "-std=c++17", joinpath(dir, "no_such.cc")], act2, fm)
         buf2 = CC.TextDiagnosticBuffer()
         CC.setDiagnosticConsumer(ti2, buf2)
         @test CC.run(ti2) == false
