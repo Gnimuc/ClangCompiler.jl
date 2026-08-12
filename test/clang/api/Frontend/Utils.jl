@@ -117,8 +117,7 @@ end
         dispose(inv)
 
         # The captured list is the -cc1 line the driver produced, not the flags handed in.
-        inv2, cc1 = CC.createInvocation(src, ["-std=c++17"]; diag=diag,
-                                        capture_cc1_args=true)
+        inv2, cc1 = CC.createInvocation(src, ["-std=c++17"]; diag=diag, capture_cc1_args=true)
         @test inv2 !== nothing
         @test "-cc1" in cc1
         @test "-std=c++17" in cc1
@@ -136,8 +135,7 @@ end
 
         args = ["-std=c++17", "-include", hdr]
         inv3, plain = CC.createInvocation(src, args; diag=diag, capture_cc1_args=true)
-        inv4, probed = CC.createInvocation(src, args; diag=diag, probe_precompiled=true,
-                                           capture_cc1_args=true)
+        inv4, probed = CC.createInvocation(src, args; diag=diag, probe_precompiled=true, capture_cc1_args=true)
         @test "-include" in plain
         @test !("-include-pch" in plain)
         @test "-include-pch" in probed

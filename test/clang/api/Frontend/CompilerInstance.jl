@@ -59,10 +59,10 @@ using Test
     dispose(fid)
 
     # ---- CompilerInstance: PrintStats dispatch table (writes to stderr) ----
-    for T in (CC.CodeGenOptions, CC.DiagnosticOptions, CC.FrontendOptions,
-              CC.HeaderSearchOptions, CC.PreprocessorOptions, CC.TargetOptions,
-              CC.LangOptions, CC.FileManager, CC.SourceManager, CC.HeaderSearch,
-              CC.Preprocessor, CC.Sema, CC.ASTContext, CC.ASTConsumer)
+    for T in
+        (CC.CodeGenOptions, CC.DiagnosticOptions, CC.FrontendOptions, CC.HeaderSearchOptions, CC.PreprocessorOptions,
+         CC.TargetOptions, CC.LangOptions, CC.FileManager, CC.SourceManager, CC.HeaderSearch, CC.Preprocessor, CC.Sema,
+         CC.ASTContext, CC.ASTConsumer)
         @test (CC.PrintStats(ci, T); true)
     end
 
@@ -313,15 +313,13 @@ end
     @test CC.isValid(fid)
     # the content round-trips, so the file really became the main file
     @test CC.getBufferData(sm, fid) == "int g = 1;\n"
-    @test CC.getFileCharacteristic(sm, CC.getLocForStartOfFile(sm, fid)) ==
-          CC.CXCharacteristicKind_C_User
+    @test CC.getFileCharacteristic(sm, CC.getLocForStartOfFile(sm, fid)) == CC.CXCharacteristicKind_C_User
     CC.dispose(fid)
 
     # is_system selects the other characteristic for the same bytes
     @test CC.InitializeSourceManagerFromFile(ci, path, true)
     sfid = CC.getMainFileID(sm)
-    @test CC.getFileCharacteristic(sm, CC.getLocForStartOfFile(sm, sfid)) ==
-          CC.CXCharacteristicKind_C_System
+    @test CC.getFileCharacteristic(sm, CC.getLocForStartOfFile(sm, sfid)) == CC.CXCharacteristicKind_C_System
     CC.dispose(sfid)
 
     # an unreadable path is a counted diagnostic, not a silent false
@@ -391,8 +389,7 @@ end
         # Iterating the context is what pulls the decls across: the reader leaves the
         # translation unit with external lexical storage, and `decls_begin` loads it.
         tu = CC.getTranslationUnitDecl(CC.getASTContext(ci))
-        names = [CC.getNameAsString(d)
-                 for d in CC.decls_in(CC.castToDeclContext(tu)) if d isa CC.AbstractNamedDecl]
+        names = [CC.getNameAsString(d) for d in CC.decls_in(CC.castToDeclContext(tu)) if d isa CC.AbstractNamedDecl]
         @test "pch_probe_g" in names
         @test !("pch_main_v" in names)
         CC.dispose(ci)

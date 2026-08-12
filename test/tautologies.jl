@@ -44,7 +44,13 @@ const TESTS = joinpath(ROOT, "test")
 # this value" satisfies every pattern below and is still false, because a line number is
 # decided by the source. Only reading the site catches that. Without the check, though, a
 # marker with no reason at all reads exactly like one that was thought about.
-const REASONS = ["the host decides it" => r"\bhost\b|\bsysroot\b|\brunner\b|\bworking directory\b|\bexecutable path\b"i, "the target decides it" => r"\btarget\b|\bABI\b|\btriple\b|\bmangl|\blayout\b|\balign|\bendian|\bplatform\b"i, "it varies across the objects the test walks" => r"\bvar(?:y|ies|ying)\b|\bwalk|\bdiffers\b|\bnode to node\b"i, "nothing decides it -- the read is uninitialised" => r"\buninitiali[sz]ed\b|\bnever set\b|\bnever initiali[sz]ed\b|\bno in-class initiali[sz]er\b"i]
+const REASONS = ["the host decides it" => r"\bhost\b|\bsysroot\b|\brunner\b|\bworking directory\b|\bexecutable path\b"i,
+                 "the target decides it" =>
+                     r"\btarget\b|\bABI\b|\btriple\b|\bmangl|\blayout\b|\balign|\bendian|\bplatform\b"i,
+                 "it varies across the objects the test walks" =>
+                     r"\bvar(?:y|ies|ying)\b|\bwalk|\bdiffers\b|\bnode to node\b"i,
+                 "nothing decides it -- the read is uninitialised" =>
+                     r"\buninitiali[sz]ed\b|\bnever set\b|\bnever initiali[sz]ed\b|\bno in-class initiali[sz]er\b"i]
 
 """
     split_comment(line) -> (code, comment)
@@ -180,7 +186,10 @@ function ccall_returns(binding_file)
 end
 
 # The concrete Julia types these C return types always produce.
-const SCALAR = Dict(:Cuint => :Integer, :Cint => :Integer, :Csize_t => :Integer, :Clong => :Integer, :Culong => :Integer, :Cshort => :Integer, :Cushort => :Integer, :UInt32 => :Integer, :Int32 => :Integer, :Int64 => :Integer, :UInt64 => :Integer, :Bool => :Bool, :Cdouble => :AbstractFloat, :Cfloat => :AbstractFloat)
+const SCALAR = Dict(:Cuint => :Integer, :Cint => :Integer, :Csize_t => :Integer, :Clong => :Integer,
+                    :Culong => :Integer, :Cshort => :Integer, :Cushort => :Integer, :UInt32 => :Integer,
+                    :Int32 => :Integer, :Int64 => :Integer, :UInt64 => :Integer, :Bool => :Bool,
+                    :Cdouble => :AbstractFloat, :Cfloat => :AbstractFloat)
 
 """
     wrapper_returns(dir) -> Dict{String,Set{Symbol}}
@@ -242,7 +251,8 @@ tree and a broken detector print the same sentence, which is what makes this wor
 """
 function self_check()
     probe = "    @test CC.getNumBases(rd) isa Integer"
-    for (suffix, want) in ("" => "", "  # prose" => "# prose", "  # shape-only" => "# shape-only", "  # shape-only: the host decides this" => "# shape-only: the host decides this")
+    for (suffix, want) in ("" => "", "  # prose" => "# prose", "  # shape-only" => "# shape-only",
+                           "  # shape-only: the host decides this" => "# shape-only: the host decides this")
         code, comment = split_comment(probe * suffix)
         comment == want || error("split_comment lost the comment on `$probe$suffix`: got `$comment`")
         match(ASSERTION, strip(code)) === nothing && error("the assertion pattern no longer matches `$probe$suffix`")
@@ -267,7 +277,8 @@ function self_check()
                                    split assertion; expected 3")
         n, code, comment = got[2]
         n == 2 || error("logical_lines lost the first line number of a joined assertion: got $n")
-        match(ASSERTION, strip(code)) === nothing && error("a joined assertion no longer matches the assertion pattern: `$code`")
+        match(ASSERTION, strip(code)) === nothing &&
+            error("a joined assertion no longer matches the assertion pattern: `$code`")
         occursin(MARKER, comment) || error("logical_lines dropped the marker from a joined assertion: `$comment`")
     end
     # The same, with the parentheses BALANCED at the break and an operator carrying the line --
@@ -288,8 +299,10 @@ function self_check()
                                        at a balanced-paren operator; expected 1")
             n, code, comment = got[1]
             n == 1 || error("logical_lines lost the first line number of an operator-joined assertion: got $n")
-            match(ASSERTION, strip(code)) === nothing && error("an operator-joined assertion no longer matches the assertion pattern: `$code`")
-            occursin(MARKER, comment) || error("logical_lines dropped the marker from an operator-joined assertion: `$comment`")
+            match(ASSERTION, strip(code)) === nothing &&
+                error("an operator-joined assertion no longer matches the assertion pattern: `$code`")
+            occursin(MARKER, comment) ||
+                error("logical_lines dropped the marker from an operator-joined assertion: `$comment`")
         end
     end
     # ... and joining must stop at the end of an assertion, or two would be reported as one
@@ -305,7 +318,8 @@ function self_check()
     for (name, _) in REASONS
         any(p -> occursin(last(p), name), REASONS) || error("the admitted reason `$name` matches none of the patterns")
     end
-    any(p -> occursin(last(p), "because it seemed fine"), REASONS) && error("the reason patterns accept prose that names no category")
+    any(p -> occursin(last(p), "because it seemed fine"), REASONS) &&
+        error("the reason patterns accept prose that names no category")
     return nothing
 end
 

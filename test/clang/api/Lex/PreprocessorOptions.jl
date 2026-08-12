@@ -19,8 +19,7 @@ const LXB_PPO = CC.LibClangEx
     @test CC.getPCHWithHdrStopCreate(ppo) == false
     @test CC.getPCHThroughHeader(ppo) == ""
     @test CC.getImplicitPCHInclude(ppo) == ""
-    @test CC.getDisablePCHOrModuleValidation(ppo) ==
-          LXB_PPO.CXDisableValidationForModuleKind_None
+    @test CC.getDisablePCHOrModuleValidation(ppo) == LXB_PPO.CXDisableValidationForModuleKind_None
     @test CC.getAllowPCHWithCompilerErrors(ppo) == false
     @test CC.getAllowPCHWithDifferentModulesCachePath(ppo) == false
     @test CC.getPrecompiledPreambleBytes(ppo) == (0, false)
@@ -41,17 +40,14 @@ end
     CC.setImplicitPCHInclude(ppo, "/tmp/probe.pch")
     @test CC.getImplicitPCHInclude(ppo) == "/tmp/probe.pch"
     CC.setDisablePCHOrModuleValidation(ppo, LXB_PPO.CXDisableValidationForModuleKind_PCH)
-    @test CC.getDisablePCHOrModuleValidation(ppo) ==
-          LXB_PPO.CXDisableValidationForModuleKind_PCH
+    @test CC.getDisablePCHOrModuleValidation(ppo) == LXB_PPO.CXDisableValidationForModuleKind_PCH
     CC.setAllowPCHWithCompilerErrors(ppo, true)
     @test CC.getAllowPCHWithCompilerErrors(ppo) == true
 
     # the enum is a bitmask upstream, so All must be distinct from either half
     CC.setDisablePCHOrModuleValidation(ppo, LXB_PPO.CXDisableValidationForModuleKind_All)
-    @test CC.getDisablePCHOrModuleValidation(ppo) ==
-          LXB_PPO.CXDisableValidationForModuleKind_All
-    @test LXB_PPO.CXDisableValidationForModuleKind_All !=
-          LXB_PPO.CXDisableValidationForModuleKind_PCH
+    @test CC.getDisablePCHOrModuleValidation(ppo) == LXB_PPO.CXDisableValidationForModuleKind_All
+    @test LXB_PPO.CXDisableValidationForModuleKind_All != LXB_PPO.CXDisableValidationForModuleKind_PCH
 
     CC.setPCHThroughHeader(ppo, "prefix.h")
     @test CC.getPCHThroughHeader(ppo) == "prefix.h"
@@ -92,13 +88,11 @@ end
 
     CC.addRemappedFile(ppo, "orig.h", "replacement.h")
     CC.addRemappedFile(ppo, "other.h", "other-replacement.h")
-    @test CC.getRemappedFiles(ppo) ==
-          ["orig.h" => "replacement.h", "other.h" => "other-replacement.h"]
+    @test CC.getRemappedFiles(ppo) == ["orig.h" => "replacement.h", "other.h" => "other-replacement.h"]
     # the buffer form fills a different vector, so the path-to-path one is unchanged
     @test isempty(CC.getRemappedFileBuffers(ppo))
 
-    buf = CC.LLVM.MemoryBuffer(Vector{UInt8}(codeunits("int remapped = 1;\n")),
-                               "remap-probe", true)
+    buf = CC.LLVM.MemoryBuffer(Vector{UInt8}(codeunits("int remapped = 1;\n")), "remap-probe", true)
     CC.addRemappedFile(ppo, "buffered.h", buf)
     @test CC.getRemappedFileBuffers(ppo) == ["buffered.h"]
     @test length(CC.getRemappedFiles(ppo)) == 2

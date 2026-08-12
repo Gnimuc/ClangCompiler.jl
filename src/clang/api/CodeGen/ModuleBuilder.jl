@@ -73,8 +73,7 @@ end
     GetMangledName(x::AbstractCodeGenerator, d::AbstractCXXConstructorDecl, kind::CXCXXCtorType) -> String
 The mangled name of the constructor body `kind` selects.
 """
-function GetMangledName(x::AbstractCodeGenerator, d::AbstractCXXConstructorDecl,
-                        kind::CXCXXCtorType)
+function GetMangledName(x::AbstractCodeGenerator, d::AbstractCXXConstructorDecl, kind::CXCXXCtorType)
     @check_ptrs x d
     return get_string(clang_CodeGenerator_GetMangledNameFromCtorDecl(x, d, kind))
 end
@@ -83,8 +82,7 @@ end
     GetMangledName(x::AbstractCodeGenerator, d::AbstractCXXDestructorDecl, kind::CXCXXDtorType) -> String
 The mangled name of the destructor body `kind` selects.
 """
-function GetMangledName(x::AbstractCodeGenerator, d::AbstractCXXDestructorDecl,
-                        kind::CXCXXDtorType)
+function GetMangledName(x::AbstractCodeGenerator, d::AbstractCXXDestructorDecl, kind::CXCXXDtorType)
     @check_ptrs x d
     return get_string(clang_CodeGenerator_GetMangledNameFromDtorDecl(x, d, kind))
 end
@@ -101,8 +99,7 @@ expression that names the entity. `nothing` when codegen produced no constant at
 Constructors and destructors are rejected for the same reason as in
 [`GetMangledName`](@ref).
 """
-function GetAddrOfGlobal(x::AbstractCodeGenerator, d::AbstractNamedDecl,
-                         is_for_definition::Bool=false)
+function GetAddrOfGlobal(x::AbstractCodeGenerator, d::AbstractNamedDecl, is_for_definition::Bool=false)
     @check_ptrs x d
     @assert !isCXXConstructorDecl(d) && !isCXXDestructorDecl(d) "a constructor or destructor has several emitted bodies; pass its CXCXXCtorType/CXCXXDtorType"
     v = clang_CodeGenerator_GetAddrOfGlobal(x, d, is_for_definition)
@@ -113,8 +110,7 @@ end
     GetAddrOfGlobal(x::AbstractCodeGenerator, d::AbstractCXXConstructorDecl, kind::CXCXXCtorType, is_for_definition::Bool=false) -> Union{Nothing,LLVM.Value}
 [`GetAddrOfGlobal`](@ref) for the constructor body `kind` selects.
 """
-function GetAddrOfGlobal(x::AbstractCodeGenerator, d::AbstractCXXConstructorDecl,
-                         kind::CXCXXCtorType, is_for_definition::Bool=false)
+function GetAddrOfGlobal(x::AbstractCodeGenerator, d::AbstractCXXConstructorDecl, kind::CXCXXCtorType, is_for_definition::Bool=false)
     @check_ptrs x d
     v = clang_CodeGenerator_GetAddrOfGlobalFromCtorDecl(x, d, kind, is_for_definition)
     return v == C_NULL ? nothing : LLVM.Value(v)
@@ -124,8 +120,7 @@ end
     GetAddrOfGlobal(x::AbstractCodeGenerator, d::AbstractCXXDestructorDecl, kind::CXCXXDtorType, is_for_definition::Bool=false) -> Union{Nothing,LLVM.Value}
 [`GetAddrOfGlobal`](@ref) for the destructor body `kind` selects.
 """
-function GetAddrOfGlobal(x::AbstractCodeGenerator, d::AbstractCXXDestructorDecl,
-                         kind::CXCXXDtorType, is_for_definition::Bool=false)
+function GetAddrOfGlobal(x::AbstractCodeGenerator, d::AbstractCXXDestructorDecl, kind::CXCXXDtorType, is_for_definition::Bool=false)
     @check_ptrs x d
     v = clang_CodeGenerator_GetAddrOfGlobalFromDtorDecl(x, d, kind, is_for_definition)
     return v == C_NULL ? nothing : LLVM.Value(v)

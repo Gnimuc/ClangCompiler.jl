@@ -30,11 +30,9 @@ answers `typemax(Int32)`.
 
 Clang documents this as not thread-safe.
 """
-function getIncludePriority(x::AbstractIncludeCategoryManager,
-                            include_name::AbstractString, check_main_header::Bool)
+function getIncludePriority(x::AbstractIncludeCategoryManager, include_name::AbstractString, check_main_header::Bool)
     @check_ptrs x
-    return clang_IncludeCategoryManager_getIncludePriority(x, include_name,
-                                                           check_main_header)
+    return clang_IncludeCategoryManager_getIncludePriority(x, include_name, check_main_header)
 end
 
 """
@@ -43,11 +41,9 @@ end
 Same as [`getIncludePriority`](@ref), but reporting the category's `SortPriority` — the one
 that orders includes inside a regrouped block.
 """
-function getSortIncludePriority(x::AbstractIncludeCategoryManager,
-                                include_name::AbstractString, check_main_header::Bool)
+function getSortIncludePriority(x::AbstractIncludeCategoryManager, include_name::AbstractString, check_main_header::Bool)
     @check_ptrs x
-    return clang_IncludeCategoryManager_getSortIncludePriority(x, include_name,
-                                                               check_main_header)
+    return clang_IncludeCategoryManager_getSortIncludePriority(x, include_name, check_main_header)
 end
 
 # HeaderIncludes
@@ -63,8 +59,7 @@ main header. `style` is copied.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function HeaderIncludes(file_name::AbstractString, code::AbstractString,
-                        style::AbstractIncludeStyle)
+function HeaderIncludes(file_name::AbstractString, code::AbstractString, style::AbstractIncludeStyle)
     @check_ptrs style
     ptr = clang_HeaderIncludes_create(file_name, code, style)
     @assert ptr != C_NULL "Failed to create HeaderIncludes"
@@ -91,8 +86,7 @@ block, inside `#if`s or raw string literals, are deliberately ignored as candida
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function insert(x::AbstractHeaderIncludes, header::AbstractString, is_angled::Bool,
-                directive::CXIncludeDirective=CXIncludeDirective_Include)
+function insert(x::AbstractHeaderIncludes, header::AbstractString, is_angled::Bool, directive::CXIncludeDirective=CXIncludeDirective_Include)
     @check_ptrs x
     @assert !isempty(header) "the header name must not be empty"
     @assert !startswith(header, '<') && !startswith(header, '"') "the header name carries no quoting: pass \"vector\", not \"<vector>\""

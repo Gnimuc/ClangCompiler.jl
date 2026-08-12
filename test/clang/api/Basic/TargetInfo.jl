@@ -87,9 +87,9 @@ const PIN = "x86_64-linux-gnu"
     @test CC.hasFPReturn(ti) == true
     @test CC.isTLSSupported(ti) == true
     @test CC.isVLASupported(ti) == true
-    for f in (CC.hasLegalHalfType, CC.hasFloat16Type, CC.hasBFloat16Type, CC.hasFullBFloat16Type,
-              CC.hasFloat128Type, CC.hasIbm128Type, CC.hasStrictFP, CC.hasAArch64SVETypes,
-              CC.hasRISCVVTypes, CC.supportsMultiVersioning, CC.supportsIFunc)
+    for f in (CC.hasLegalHalfType, CC.hasFloat16Type, CC.hasBFloat16Type, CC.hasFullBFloat16Type, CC.hasFloat128Type,
+              CC.hasIbm128Type, CC.hasStrictFP, CC.hasAArch64SVETypes, CC.hasRISCVVTypes, CC.supportsMultiVersioning,
+              CC.supportsIFunc)
         @test f(ti) isa Bool
     end
 
@@ -167,8 +167,7 @@ end
     @test CC.getCorrespondingUnsignedType(i16) == u16
 
     # remaining IntType slots
-    for f in (CC.getWIntType, CC.getChar16Type, CC.getChar32Type, CC.getSigAtomicType,
-              CC.getProcessIDType)
+    for f in (CC.getWIntType, CC.getChar16Type, CC.getChar32Type, CC.getSigAtomicType, CC.getProcessIDType)
         @test f(ti) isa CC.CXTargetInfo_IntType
     end
     @test CC.getTypeWidth(ti, CC.getChar16Type(ti)) == 16
@@ -582,27 +581,26 @@ end
     @test issorted(accum)
     @test issorted(fract)
 
-    aligns = [CC.getShortAccumAlign(ti), CC.getAccumAlign(ti), CC.getLongAccumAlign(ti),
-              CC.getShortFractAlign(ti), CC.getFractAlign(ti), CC.getLongFractAlign(ti)]
+    aligns = [CC.getShortAccumAlign(ti), CC.getAccumAlign(ti), CC.getLongAccumAlign(ti), CC.getShortFractAlign(ti),
+              CC.getFractAlign(ti), CC.getLongFractAlign(ti)]
     for a in aligns
         @test a isa Integer
         @test a > 0
     end
 
     # A signed _Accum is a sign bit, its integral bits and its fractional bits, exactly.
-    for (w, ibits, scale) in
-        [(CC.getShortAccumWidth(ti), CC.getShortAccumIBits(ti), CC.getShortAccumScale(ti)),
-         (CC.getAccumWidth(ti), CC.getAccumIBits(ti), CC.getAccumScale(ti)),
-         (CC.getLongAccumWidth(ti), CC.getLongAccumIBits(ti), CC.getLongAccumScale(ti))]
+    for (w, ibits, scale) in [(CC.getShortAccumWidth(ti), CC.getShortAccumIBits(ti), CC.getShortAccumScale(ti)),
+                              (CC.getAccumWidth(ti), CC.getAccumIBits(ti), CC.getAccumScale(ti)),
+                              (CC.getLongAccumWidth(ti), CC.getLongAccumIBits(ti), CC.getLongAccumScale(ti))]
         @test ibits > 0
         @test scale > 0
         @test 1 + ibits + scale == w
     end
 
     # A signed _Fract is a sign bit and its fractional bits: no integral bits at all.
-    for (w, scale) in [(CC.getShortFractWidth(ti), CC.getShortFractScale(ti)),
-                       (CC.getFractWidth(ti), CC.getFractScale(ti)),
-                       (CC.getLongFractWidth(ti), CC.getLongFractScale(ti))]
+    for (w, scale) in
+        [(CC.getShortFractWidth(ti), CC.getShortFractScale(ti)), (CC.getFractWidth(ti), CC.getFractScale(ti)),
+         (CC.getLongFractWidth(ti), CC.getLongFractScale(ti))]
         @test scale > 0
         @test 1 + scale == w
     end
@@ -613,11 +611,9 @@ end
     padded = CC.doUnsignedFixedPointTypesHavePadding(ti)
     @test padded isa Bool
     for (w, uibits, uscale) in
-        [(CC.getShortAccumWidth(ti), CC.getUnsignedShortAccumIBits(ti),
-          CC.getUnsignedShortAccumScale(ti)),
+        [(CC.getShortAccumWidth(ti), CC.getUnsignedShortAccumIBits(ti), CC.getUnsignedShortAccumScale(ti)),
          (CC.getAccumWidth(ti), CC.getUnsignedAccumIBits(ti), CC.getUnsignedAccumScale(ti)),
-         (CC.getLongAccumWidth(ti), CC.getUnsignedLongAccumIBits(ti),
-          CC.getUnsignedLongAccumScale(ti))]
+         (CC.getLongAccumWidth(ti), CC.getUnsignedLongAccumIBits(ti), CC.getUnsignedLongAccumScale(ti))]
         @test uibits > 0
         @test uscale > 0
         @test uibits + uscale == (padded ? w - 1 : w)
@@ -632,11 +628,9 @@ end
     @test CC.getFPEvalMethod(ti) isa CC.CXFPEvalMethodKind
     # every target this package runs on has a 32-bit and a 64-bit real type
     @test CC.getRealTypeByWidth(ti, 32, CC.CXFloatModeKind_Float) == CC.CXFloatModeKind_Float
-    @test CC.getRealTypeByWidth(ti, 64, CC.CXFloatModeKind_Float) ==
-          CC.CXFloatModeKind_Double
+    @test CC.getRealTypeByWidth(ti, 64, CC.CXFloatModeKind_Float) == CC.CXFloatModeKind_Double
     # and none has a real type of an absurd width
-    @test CC.getRealTypeByWidth(ti, 3, CC.CXFloatModeKind_Float) ==
-          CC.CXFloatModeKind_NoFloat
+    @test CC.getRealTypeByWidth(ti, 3, CC.CXFloatModeKind_Float) == CC.CXFloatModeKind_NoFloat
 
     dispose(I)
 end
@@ -665,14 +659,12 @@ end
 
     # `adjust` is idempotent in the fields it sets, and the interpreter already applied it
     # with these very options -- so re-running it must move nothing and report nothing.
-    before = (CC.getWCharType(ti), CC.getWCharWidth(ti), CC.getDoubleAlign(ti),
-              CC.getLongDoubleWidth(ti), CC.getLongDoubleAlign(ti), CC.getNewAlign(ti),
-              CC.useBitFieldTypeAlignment(ti), CC.getFPEvalMethod(ti))
+    before = (CC.getWCharType(ti), CC.getWCharWidth(ti), CC.getDoubleAlign(ti), CC.getLongDoubleWidth(ti),
+              CC.getLongDoubleAlign(ti), CC.getNewAlign(ti), CC.useBitFieldTypeAlignment(ti), CC.getFPEvalMethod(ti))
     nerrors = CC.getNumErrors(diag)
     CC.adjust(ti, diag, lo)
-    after = (CC.getWCharType(ti), CC.getWCharWidth(ti), CC.getDoubleAlign(ti),
-             CC.getLongDoubleWidth(ti), CC.getLongDoubleAlign(ti), CC.getNewAlign(ti),
-             CC.useBitFieldTypeAlignment(ti), CC.getFPEvalMethod(ti))
+    after = (CC.getWCharType(ti), CC.getWCharWidth(ti), CC.getDoubleAlign(ti), CC.getLongDoubleWidth(ti),
+             CC.getLongDoubleAlign(ti), CC.getNewAlign(ti), CC.useBitFieldTypeAlignment(ti), CC.getFPEvalMethod(ti))
     @test after == before
     @test CC.getNumErrors(diag) == nerrors
     @test CC.validateTarget(ti, diag)            # the target is still coherent afterwards
@@ -698,8 +690,7 @@ end
     # two, so an AArch64 target description takes `TargetInfo`'s own implementation, which
     # answers false *and emits* err_opt_not_valid_on_target. The engine below swallows the
     # text but still counts the error, so the side effect is asserted rather than printed.
-    quiet = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                 CC.IgnoringDiagConsumer(), true)
+    quiet = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     arm_ci = CC.CompilerInstance()
     arm_opts = CC.TargetOptions()
     CC.setTriple(arm_opts, "aarch64-unknown-linux-gnu")
@@ -763,8 +754,9 @@ end
     # empty bit pattern and is false on every target.
     @test CC.useObjCFPRetForRealType(ti, CC.CXFloatModeKind_NoFloat) == false
     @test CC.useObjCFPRetForRealType(ti, CC.CXFloatModeKind_LongDouble) == true
-    for m in (CC.CXFloatModeKind_Half, CC.CXFloatModeKind_Float, CC.CXFloatModeKind_Double,
-              CC.CXFloatModeKind_Float128, CC.CXFloatModeKind_Ibm128)
+    for m in
+        (CC.CXFloatModeKind_Half, CC.CXFloatModeKind_Float, CC.CXFloatModeKind_Double, CC.CXFloatModeKind_Float128,
+         CC.CXFloatModeKind_Ibm128)
         @test CC.useObjCFPRetForRealType(ti, m) == false
     end
 
@@ -816,8 +808,8 @@ end
 
     # These come from TransferrableTargetInfo, the first base, so they occupy the object's
     # leading bytes -- where a freed block would have free-list linkage written over it.
-    fingerprint() = (CC.getBoolWidth(ti), CC.getCharWidth(ti), CC.getShortWidth(ti),
-                     CC.getIntWidth(ti), CC.getLongWidth(ti), CC.getSizeType(ti))
+    fingerprint() = (CC.getBoolWidth(ti), CC.getCharWidth(ti), CC.getShortWidth(ti), CC.getIntWidth(ti),
+                     CC.getLongWidth(ti), CC.getSizeType(ti))
     before = fingerprint()
 
     CC.setTarget(ci, ti)

@@ -41,7 +41,7 @@ using Test
             # follows all of its predecessors
             rank = Dict(b.ptr => i for (i, b) in enumerate(rpo))
             for (i, b) in enumerate(rpo)
-                for j in 0:(Int(CC.pred_size(b)) - 1)
+                for j = 0:(Int(CC.pred_size(b)) - 1)
                     p = CC.getPred(b, j)
                     p.ptr == C_NULL && continue
                     haskey(rank, p.ptr) || continue
@@ -64,7 +64,7 @@ using Test
             rank = Dict(b.ptr => i for (i, b) in enumerate(rpo))
             back_edges = 0
             for (i, b) in enumerate(rpo)
-                for j in 0:(Int(CC.pred_size(b)) - 1)
+                for j = 0:(Int(CC.pred_size(b)) - 1)
                     p = CC.getPred(b, j)
                     p.ptr == C_NULL && continue
                     haskey(rank, p.ptr) || continue

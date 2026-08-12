@@ -25,8 +25,7 @@ this object.
 """
 function AnalysisDeclContext(d::AnalyzableDecl)
     @check_ptrs d
-    return AnalysisDeclContext(clang_AnalysisDeclContext_create(CXAnalysisDeclContextManager(C_NULL),
-                                                                d))
+    return AnalysisDeclContext(clang_AnalysisDeclContext_create(CXAnalysisDeclContextManager(C_NULL), d))
 end
 
 function AnalysisDeclContext(mgr::AbstractAnalysisDeclContextManager, d::AnalyzableDecl)
@@ -36,12 +35,10 @@ end
 
 function AnalysisDeclContext(d::AnalyzableDecl, opts::AbstractCFGBuildOptions)
     @check_ptrs d opts
-    return AnalysisDeclContext(clang_AnalysisDeclContext_createWithOptions(CXAnalysisDeclContextManager(C_NULL),
-                                                                          d, opts))
+    return AnalysisDeclContext(clang_AnalysisDeclContext_createWithOptions(CXAnalysisDeclContextManager(C_NULL), d, opts))
 end
 
-function AnalysisDeclContext(mgr::AbstractAnalysisDeclContextManager, d::AnalyzableDecl,
-                             opts::AbstractCFGBuildOptions)
+function AnalysisDeclContext(mgr::AbstractAnalysisDeclContextManager, d::AnalyzableDecl, opts::AbstractCFGBuildOptions)
     @check_ptrs mgr d opts
     return AnalysisDeclContext(clang_AnalysisDeclContext_createWithOptions(mgr, d, opts))
 end
@@ -286,8 +283,7 @@ this object.
 """
 function AnalysisDeclContextManager(ctx::AbstractASTContext, synthesize_bodies::Bool=false)
     @check_ptrs ctx
-    return AnalysisDeclContextManager(clang_AnalysisDeclContextManager_create(ctx,
-                                                                              synthesize_bodies))
+    return AnalysisDeclContextManager(clang_AnalysisDeclContextManager_create(ctx, synthesize_bodies))
 end
 
 """

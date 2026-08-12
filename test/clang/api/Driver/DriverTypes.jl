@@ -58,12 +58,12 @@ end
     pp_cxx = CC.getPreprocessedType(cxx)
 
     # TYPE("c++", CXX, PP_CXX, "cpp", Preprocess, Compile, Backend, Assemble, Link)
-    @test CC.getCompilationPhases(cxx) == [CC.CXPhaseID_Preprocess, CC.CXPhaseID_Compile,
-                                           CC.CXPhaseID_Backend, CC.CXPhaseID_Assemble,
-                                           CC.CXPhaseID_Link]
+    @test CC.getCompilationPhases(cxx) ==
+          [CC.CXPhaseID_Preprocess, CC.CXPhaseID_Compile, CC.CXPhaseID_Backend, CC.CXPhaseID_Assemble,
+           CC.CXPhaseID_Link]
     # the preprocessed form drops exactly the phase that produced it
-    @test CC.getCompilationPhases(pp_cxx) == [CC.CXPhaseID_Compile, CC.CXPhaseID_Backend,
-                                              CC.CXPhaseID_Assemble, CC.CXPhaseID_Link]
+    @test CC.getCompilationPhases(pp_cxx) ==
+          [CC.CXPhaseID_Compile, CC.CXPhaseID_Backend, CC.CXPhaseID_Assemble, CC.CXPhaseID_Link]
 
     # LastPhase truncates the list, and truncating is all it does.
     all_phases = CC.getCompilationPhases(cxx)
@@ -73,9 +73,8 @@ end
     @test length(all_phases) <= CC.getMaxNumberOfPhases()
 
     # Every phase has a name and no two share one.
-    phases = [CC.CXPhaseID_Preprocess, CC.CXPhaseID_Precompile, CC.CXPhaseID_Compile,
-              CC.CXPhaseID_Backend, CC.CXPhaseID_Assemble, CC.CXPhaseID_Link,
-              CC.CXPhaseID_IfsMerge]
+    phases = [CC.CXPhaseID_Preprocess, CC.CXPhaseID_Precompile, CC.CXPhaseID_Compile, CC.CXPhaseID_Backend,
+              CC.CXPhaseID_Assemble, CC.CXPhaseID_Link, CC.CXPhaseID_IfsMerge]
     @test length(phases) == CC.getMaxNumberOfPhases()
     names = map(CC.getPhaseName, phases)
     @test all(!isempty, names)

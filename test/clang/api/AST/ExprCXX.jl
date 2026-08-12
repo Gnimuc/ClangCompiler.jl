@@ -780,8 +780,7 @@ end
     ice = CC.resolve(CC.getInit(CC.getCtorInitializer(ctor, 0)))
     @test ice isa CC.CXXInheritedCtorInitExpr
     @test CC.constructsVBase(ice) == false
-    @test CC.getConstructionKind(ice) ==
-          CC.LibClangEx.CXCXXConstructionKind_NonVirtualBase
+    @test CC.getConstructionKind(ice) == CC.LibClangEx.CXCXXConstructionKind_NonVirtualBase
     @test !(CC.inheritedFromVBase(ice))
     @test !CC.is_null_handle(CC.getLocation(ice))
 
@@ -1148,8 +1147,7 @@ end
     ce = _find_node(CC.AbstractCXXConstructExpr, fn_body("cci_make"))
     @test ce isa CC.AbstractCXXConstructExpr
 
-    for (setter, getter) in ((CC.setElidable, CC.isElidable),
-                             (CC.setHadMultipleCandidates, CC.hadMultipleCandidates),
+    for (setter, getter) in ((CC.setElidable, CC.isElidable), (CC.setHadMultipleCandidates, CC.hadMultipleCandidates),
                              (CC.setListInitialization, CC.isListInitialization),
                              (CC.setStdInitListInitialization, CC.isStdInitListInitialization),
                              (CC.setRequiresZeroInitialization, CC.requiresZeroInitialization),
@@ -1240,7 +1238,7 @@ end
     @test ule isa CC.UnresolvedLookupExpr
     ndecls = CC.getNumDecls(ule)
     @test ndecls >= 2                       # cci_oo(int) and cci_oo(double)
-    for i in 0:(ndecls - 1)
+    for i = 0:(ndecls - 1)
         @test CC.getDecl(ule, i) isa CC.NamedDecl
         @test CC.getDecl(ule, i).ptr != C_NULL
         @test CC.getDeclAccess(ule, i) isa CC.LibClangEx.CXAccessSpecifier
@@ -1895,8 +1893,7 @@ end
     shells = [(CC.CXXStaticCastExpr(ctx, 0, false), "CXXStaticCastExpr"),
               (CC.CXXDynamicCastExpr(ctx, 0), "CXXDynamicCastExpr"),
               (CC.CXXReinterpretCastExpr(ctx, 0), "CXXReinterpretCastExpr"),
-              (CC.CXXConstCastExpr(ctx), "CXXConstCastExpr"),
-              (CC.CXXAddrspaceCastExpr(ctx), "CXXAddrspaceCastExpr"),
+              (CC.CXXConstCastExpr(ctx), "CXXConstCastExpr"), (CC.CXXAddrspaceCastExpr(ctx), "CXXAddrspaceCastExpr"),
               (CC.CXXFunctionalCastExpr(ctx, 0, false), "CXXFunctionalCastExpr")]
     for (shell, name) in shells
         @test shell.ptr != C_NULL
@@ -2095,7 +2092,7 @@ end
     if ewc !== nothing
         n = CC.getNumObjects(ewc)
         @test n == 0
-        for i in 0:(n - 1)
+        for i = 0:(n - 1)
             isblk = CC.objectIsBlockDecl(ewc, i)
             @test isblk == false
             obj = CC.getObject(ewc, i)
@@ -2228,8 +2225,7 @@ end
     @test tsi_int isa CC.TypeSourceInfo
 
     # ---- the CallExpr-shaped factories ---------------------------------------------
-    oce = CC.CXXOperatorCallExpr(ctx, CC.CXOverloadedOperatorKind_OO_Plus, op, [op, op], intty, vk,
-                                 loc, 0, false)
+    oce = CC.CXXOperatorCallExpr(ctx, CC.CXOverloadedOperatorKind_OO_Plus, op, [op, op], intty, vk, loc, 0, false)
     @test CC.getStmtClassName(oce) == "CXXOperatorCallExpr"
     @test CC.getOperator(oce) == CC.CXOverloadedOperatorKind_OO_Plus
     @test CC.getOperatorLoc(oce).ptr == loc.ptr
@@ -2283,9 +2279,9 @@ end
     @test CC.isArray(ne) == false
     new_ne = CC.CXXNewExpr(ctx, CC.isGlobalNew(ne), CC.getOperatorNew(ne), CC.getOperatorDelete(ne),
                            CC.passAlignment(ne), CC.doesUsualArrayDeleteWantSize(ne), CC.Expr_[],
-                           CC.getTypeIdParens(ne), nothing, CC.getInitializationStyle(ne),
-                           CC.getInitializer(ne), CC.getType(ne), CC.getAllocatedTypeSourceInfo(ne),
-                           CC.getSourceRange(ne), CC.getDirectInitRange(ne))
+                           CC.getTypeIdParens(ne), nothing, CC.getInitializationStyle(ne), CC.getInitializer(ne),
+                           CC.getType(ne), CC.getAllocatedTypeSourceInfo(ne), CC.getSourceRange(ne),
+                           CC.getDirectInitRange(ne))
     @test CC.getStmtClassName(new_ne) == "CXXNewExpr"
     @test CC.getNumPlacementArgs(new_ne) == 0
     @test CC.isArray(new_ne) == false
@@ -2329,13 +2325,11 @@ end
     dispose(ta)
 
     # ---- the deserialization shells: only the statement class is initialized --------
-    shells = [(CC.LambdaExpr(ctx, 1), "LambdaExpr"),
-              (CC.TypeTraitExpr(ctx, 2), "TypeTraitExpr"),
+    shells = [(CC.LambdaExpr(ctx, 1), "LambdaExpr"), (CC.TypeTraitExpr(ctx, 2), "TypeTraitExpr"),
               (CC.SizeOfPackExpr(ctx, 1), "SizeOfPackExpr"),
               (CC.CUDAKernelCallExpr(ctx, 1, false), "CUDAKernelCallExpr"),
               (CC.DependentScopeDeclRefExpr(ctx, false, 0), "DependentScopeDeclRefExpr"),
-              (CC.CXXDependentScopeMemberExpr(ctx, false, 0, false),
-               "CXXDependentScopeMemberExpr"),
+              (CC.CXXDependentScopeMemberExpr(ctx, false, 0, false), "CXXDependentScopeMemberExpr"),
               (CC.UnresolvedMemberExpr(ctx, 1, false, 0), "UnresolvedMemberExpr")]
     for (shell, name) in shells
         @test shell.ptr != C_NULL
@@ -2377,10 +2371,9 @@ end
     le = _find_node(CC.LambdaExpr, CC.resolve(CC.getBody(fl)))
     @test le isa CC.LambdaExpr
     cls = CC.getLambdaClass(le)
-    inits = [CC.getCaptureInit(le, i) for i in 0:(CC.getNumCaptures(le) - 1)]
-    le2 = CC.LambdaExpr(ctx, cls, CC.getIntroducerRange(le), CC.getCaptureDefault(le),
-                        CC.getCaptureDefaultLoc(le), CC.hasExplicitParameters(le),
-                        CC.hasExplicitResultType(le), inits, CC.getEndLoc(le), false)
+    inits = [CC.getCaptureInit(le, i) for i = 0:(CC.getNumCaptures(le) - 1)]
+    le2 = CC.LambdaExpr(ctx, cls, CC.getIntroducerRange(le), CC.getCaptureDefault(le), CC.getCaptureDefaultLoc(le),
+                        CC.hasExplicitParameters(le), CC.hasExplicitResultType(le), inits, CC.getEndLoc(le), false)
     @test CC.getStmtClassName(le2) == "LambdaExpr"
     @test CC.getLambdaClass(le2).ptr == cls.ptr
     @test CC.getNumCaptures(le2) == CC.getNumCaptures(le)
@@ -2390,10 +2383,9 @@ end
     # the body is copied straight out of the closure's call operator
     @test CC.getBody(le2).ptr == CC.getBody(le).ptr
     # the initializer count is checked against the closure's own capture count
-    @test_throws AssertionError CC.LambdaExpr(ctx, cls, CC.getIntroducerRange(le),
-                                              CC.getCaptureDefault(le),
-                                              CC.getCaptureDefaultLoc(le), false, false,
-                                              CC.Expr_[], CC.getEndLoc(le), false)
+    @test_throws AssertionError CC.LambdaExpr(ctx, cls, CC.getIntroducerRange(le), CC.getCaptureDefault(le),
+                                              CC.getCaptureDefaultLoc(le), false, false, CC.Expr_[], CC.getEndLoc(le),
+                                              false)
 
     # ---- CUDAKernelCallExpr::Create and its configuration call ----------------------
     @test f(I, "oq_caller")
@@ -2678,9 +2670,8 @@ end
     @test dsme isa CC.CXXDependentScopeMemberExpr
     q2 = CC.getQualifierLoc(dsme)
     ni2 = CC.getMemberNameInfo(dsme)
-    built2 = CC.CXXDependentScopeMemberExpr(ctx, CC.getBase(dsme), CC.getBaseType(dsme), false,
-                                            CC.getOperatorLoc(dsme), q2,
-                                            CC.getTemplateKeywordLoc(dsme), nothing, ni2)
+    built2 = CC.CXXDependentScopeMemberExpr(ctx, CC.getBase(dsme), CC.getBaseType(dsme), false, CC.getOperatorLoc(dsme),
+                                            q2, CC.getTemplateKeywordLoc(dsme), nothing, ni2)
     @test built2 isa CC.CXXDependentScopeMemberExpr
     @test built2.ptr != C_NULL
     @test CC.isArrow(built2) == false                    # the `false` this call passed
@@ -2705,11 +2696,9 @@ end
     @test CC.isOverloaded(built3)
     @test CC.getDecl(built3, 0).ptr == decls[1].ptr
     @test CC.getNumTemplateArgs(built3) == 0
-    @test_throws AssertionError CC.UnresolvedLookupExpr(ctx, nothing, q3, ni3, true, true,
-                                                        CC.NamedDecl[],
+    @test_throws AssertionError CC.UnresolvedLookupExpr(ctx, nothing, q3, ni3, true, true, CC.NamedDecl[],
                                                         CC.LibClangEx.CXAccessSpecifier[])
-    @test_throws AssertionError CC.UnresolvedLookupExpr(ctx, nothing, q3, ni3, true, true,
-                                                        decls,
+    @test_throws AssertionError CC.UnresolvedLookupExpr(ctx, nothing, q3, ni3, true, true, decls,
                                                         CC.LibClangEx.CXAccessSpecifier[])
     CC.dispose(ni3)
     CC.dispose(q3)
@@ -2720,8 +2709,8 @@ end
     accs_t = [CC.getDeclAccess(ule_t, i) for i = 0:(nt - 1)]
     q5 = CC.getQualifierLoc(ule_t)
     ni5 = CC.getNameInfo(ule_t)
-    built5 = CC.UnresolvedLookupExpr(ctx, nothing, q5, CC.getTemplateKeywordLoc(ule_t), ni5,
-                                     true, li3, decls_t, accs_t, true)
+    built5 = CC.UnresolvedLookupExpr(ctx, nothing, q5, CC.getTemplateKeywordLoc(ule_t), ni5, true, li3, decls_t, accs_t,
+                                     true)
     @test built5 isa CC.UnresolvedLookupExpr
     @test built5.ptr != C_NULL
     @test Int(CC.getNumDecls(built5)) == nt
@@ -2740,11 +2729,9 @@ end
     maccs = [CC.getDeclAccess(ume, i) for i = 0:(nm - 1)]
     q4 = CC.getQualifierLoc(ume)
     ni4 = CC.getMemberNameInfo(ume)
-    built4 = CC.UnresolvedMemberExpr(ctx, CC.hasUnresolvedUsing(ume), CC.getBase(ume),
-                                     CC.getBaseType(ume), CC.isArrow(ume),
-                                     CC.getOperatorLoc(ume), q4,
-                                     CC.getTemplateKeywordLoc(ume), ni4, nothing, mdecls,
-                                     maccs)
+    built4 = CC.UnresolvedMemberExpr(ctx, CC.hasUnresolvedUsing(ume), CC.getBase(ume), CC.getBaseType(ume),
+                                     CC.isArrow(ume), CC.getOperatorLoc(ume), q4, CC.getTemplateKeywordLoc(ume), ni4,
+                                     nothing, mdecls, maccs)
     @test built4 isa CC.UnresolvedMemberExpr
     @test built4.ptr != C_NULL
     @test Int(CC.getNumDecls(built4)) == nm
@@ -2765,8 +2752,7 @@ end
     @test all(c -> c isa CC.LambdaCapture, CC.captures(le))
     @test length(CC.explicit_captures(le)) == nexp
     @test length(CC.implicit_captures(le)) == ncap - nexp
-    @test [c.ptr for c in vcat(CC.explicit_captures(le), CC.implicit_captures(le))] ==
-          [c.ptr for c in CC.captures(le)]
+    @test [c.ptr for c in vcat(CC.explicit_captures(le), CC.implicit_captures(le))] == [c.ptr for c in CC.captures(le)]
 
     dispose(f)
     dispose(I)

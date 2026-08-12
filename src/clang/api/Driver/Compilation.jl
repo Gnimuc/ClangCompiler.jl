@@ -126,9 +126,7 @@ clang stores the paths as non-owning references, so the shim first copies them i
 compilation's own argument allocator — they then live exactly as long as the compilation.
 Per clang's own contract this can only be done once.
 """
-function Redirect(x::AbstractCompilation; in_path::Union{AbstractString,Nothing}=nothing,
-                  out_path::Union{AbstractString,Nothing}=nothing,
-                  err_path::Union{AbstractString,Nothing}=nothing)
+function Redirect(x::AbstractCompilation; in_path::Union{AbstractString,Nothing}=nothing, out_path::Union{AbstractString,Nothing}=nothing, err_path::Union{AbstractString,Nothing}=nothing)
     @check_ptrs x
     i = in_path === nothing ? C_NULL : in_path
     o = out_path === nothing ? C_NULL : out_path

@@ -97,7 +97,8 @@ function source_location(x::CxxInterpreter, loc::SourceLocation)
     # The presumed location is the one `#line` directives can move, which is what a diagnostic
     # would print. It is unavailable for an invalid location, and then the spelling -- where the
     # text physically sits -- is the only answer there is.
-    presumed === nothing && return (; file="", line=Int(getSpellingLineNumber(sm, loc)), column=Int(getSpellingColumnNumber(sm, loc)))
+    presumed === nothing &&
+        return (; file="", line=Int(getSpellingLineNumber(sm, loc)), column=Int(getSpellingColumnNumber(sm, loc)))
     file, line, column, _ = presumed
     return (; file=file, line=Int(line), column=Int(column))
 end
@@ -192,7 +193,9 @@ function signature(x::AbstractFunctionDecl)
                 # A file-scope `static` is not an `AbstractCXXMethodDecl`, so asking only the
                 # method accessor reported `false` for the one declaration whose `static` is
                 # written in the source.
-                is_static=method ? isStatic(x) : getStorageClass(x) == CXStorageClass_SC_Static, is_virtual=method ? isVirtual(x) : false, is_deleted=isDeleted(x), is_variadic=ft isa AbstractFunctionProtoType ? isVariadic(ft) : false)
+                is_static=method ? isStatic(x) : getStorageClass(x) == CXStorageClass_SC_Static,
+                is_virtual=method ? isVirtual(x) : false, is_deleted=isDeleted(x),
+                is_variadic=ft isa AbstractFunctionProtoType ? isVariadic(ft) : false)
     finally
         dispose(policy)
     end

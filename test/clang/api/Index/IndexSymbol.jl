@@ -15,8 +15,7 @@ const ISYM = CC.LibClangEx
     def_role = CC.printSymbolRoles(UInt32(ISYM.CXSymbolRole_Definition))
     @test !isempty(decl_role)
     @test decl_role != def_role
-    both = CC.printSymbolRoles(UInt32(ISYM.CXSymbolRole_Declaration) |
-                               UInt32(ISYM.CXSymbolRole_Definition))
+    both = CC.printSymbolRoles(UInt32(ISYM.CXSymbolRole_Declaration) | UInt32(ISYM.CXSymbolRole_Definition))
     @test occursin(decl_role, both)
     @test occursin(def_role, both)
     @test occursin(",", both)
@@ -24,8 +23,7 @@ const ISYM = CC.LibClangEx
     generic = CC.printSymbolProperties(UInt32(ISYM.CXSymbolProperty_Generic))
     @test !isempty(generic)
     @test occursin(generic,
-                   CC.printSymbolProperties(UInt32(ISYM.CXSymbolProperty_Generic) |
-                                            UInt32(ISYM.CXSymbolProperty_Local)))
+                   CC.printSymbolProperties(UInt32(ISYM.CXSymbolProperty_Generic) | UInt32(ISYM.CXSymbolProperty_Local)))
 
     # Every kind, sub-kind and language has its own spelling: clang switches over the
     # enumerator, so two enumerators sharing a string would mean the mirror is misaligned.

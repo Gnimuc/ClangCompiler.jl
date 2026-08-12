@@ -27,9 +27,7 @@ line when the range is multiline so the markup nests correctly.
 
 Both locations must be valid and must expand into the same file — clang asserts the latter.
 """
-function HighlightRange(x::AbstractRewriter, b::SourceLocation, e::SourceLocation,
-                        start_tag::AbstractString, end_tag::AbstractString,
-                        is_token_range::Bool=true)
+function HighlightRange(x::AbstractRewriter, b::SourceLocation, e::SourceLocation, start_tag::AbstractString, end_tag::AbstractString, is_token_range::Bool=true)
     @check_ptrs x
     @assert isValid(b) && isValid(e) "highlighted range endpoints must be valid source locations"
     @assert _same_expansion_file(x, b, e) "highlighted range endpoints must expand into the same file"
@@ -42,10 +40,7 @@ end
 `CharSourceRange` form of `HighlightRange`; the range's token/character flag decides whether
 the last token is covered in full.
 """
-HighlightRange(x::AbstractRewriter, range::CharSourceRange, start_tag::AbstractString,
-               end_tag::AbstractString) =
-    HighlightRange(x, getBegin(range), getEnd(range), start_tag, end_tag,
-                   isTokenRange(range))
+HighlightRange(x::AbstractRewriter, range::CharSourceRange, start_tag::AbstractString, end_tag::AbstractString) = HighlightRange(x, getBegin(range), getEnd(range), start_tag, end_tag, isTokenRange(range))
 
 """
     EscapeText(x::AbstractRewriter, id::FileID, escape_spaces::Bool=false,
@@ -56,8 +51,7 @@ expands tabs.
 
 `id` must be valid and belong to the rewriter's own `SourceManager`.
 """
-function EscapeText(x::AbstractRewriter, id::FileID, escape_spaces::Bool=false,
-                    replace_tabs::Bool=false)
+function EscapeText(x::AbstractRewriter, id::FileID, escape_spaces::Bool=false, replace_tabs::Bool=false)
     @check_ptrs x id
     @assert isValid(id) "the file ID must designate a source file"
     return clang_html_EscapeText(x, id, escape_spaces, replace_tabs)
@@ -68,8 +62,7 @@ end
 HTMLize a string rather than a file. Note the different default for `replace_tabs`, which
 mirrors clang's own two overloads.
 """
-EscapeText(s::AbstractString, escape_spaces::Bool=false, replace_tabs::Bool=true) =
-    get_string(clang_html_EscapeTextOfString(s, escape_spaces, replace_tabs))
+EscapeText(s::AbstractString, escape_spaces::Bool=false, replace_tabs::Bool=true) = get_string(clang_html_EscapeTextOfString(s, escape_spaces, replace_tabs))
 
 """
     AddLineNumbers(x::AbstractRewriter, id::FileID)

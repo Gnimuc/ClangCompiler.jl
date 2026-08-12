@@ -60,7 +60,7 @@ end
     m = Int(CC.getNumHeaderMapFileNames(hs))
     @test m >= 1
     hmap_names = String[]
-    for i in 0:(m - 1)
+    for i = 0:(m - 1)
         name = CC.getHeaderMapFileName(hs, i)
         @test !isempty(name) && isfile(name)
         push!(hmap_names, name)
@@ -82,11 +82,9 @@ end
     @test CC.header_file_size(hs) >= 0
     @test CC.getTotalMemory(hs) > 0
 
-    @test CC.getUniqueFrameworkName(hs, "ClangCompilerFakeFramework") ==
-          "ClangCompilerFakeFramework"
+    @test CC.getUniqueFrameworkName(hs, "ClangCompilerFakeFramework") == "ClangCompilerFakeFramework"
     # Uniquing is idempotent.
-    @test CC.getUniqueFrameworkName(hs, "ClangCompilerFakeFramework") ==
-          "ClangCompilerFakeFramework"
+    @test CC.getUniqueFrameworkName(hs, "ClangCompilerFakeFramework") == "ClangCompilerFakeFramework"
 
     old_hash = CC.getModuleHash(hs)
     CC.setModuleHash(hs, "clangcompiler-test-hash")
@@ -102,8 +100,7 @@ end
 
     CC.AddIncludeAlias(hs, "<clangcompiler-alias.h>", "clangcompiler-target.h")
     @test CC.HasIncludeAliasMap(hs)
-    @test CC.MapHeaderToIncludeAlias(hs, "<clangcompiler-alias.h>") ==
-          "clangcompiler-target.h"
+    @test CC.MapHeaderToIncludeAlias(hs, "<clangcompiler-alias.h>") == "clangcompiler-target.h"
     @test CC.MapHeaderToIncludeAlias(hs, "<clangcompiler-no-such-alias.h>") == ""
 
     CC.dispose(I)
@@ -198,8 +195,7 @@ end
 
         # No prebuilt module paths are configured, so both forms come back empty.
         @test CC.getPrebuiltModuleFileName(hs, "ClangCompilerNoSuchModule") == ""
-        @test CC.getPrebuiltModuleFileName(hs, "ClangCompilerNoSuchModule";
-                                           file_map_only=true) == ""
+        @test CC.getPrebuiltModuleFileName(hs, "ClangCompilerNoSuchModule"; file_map_only=true) == ""
 
         # Include-name / diagnostic-path suggestions.
         @test CC.getIncludeNameForHeader(hs, fe) == ""
@@ -277,8 +273,7 @@ end
         # missed keeps missing, and `skip_cache` is what gets past it.
         still_missing, _, _ = CC.LookupFile(hs, "clangcompiler-lookup-probe.h")
         @test still_missing.ptr == C_NULL
-        found, is_mapped, is_framework = CC.LookupFile(hs, "clangcompiler-lookup-probe.h";
-                                                       skip_cache=true)
+        found, is_mapped, is_framework = CC.LookupFile(hs, "clangcompiler-lookup-probe.h"; skip_cache=true)
         @test found.ptr != C_NULL
         @test is_mapped == false
         @test is_framework == false
@@ -290,8 +285,7 @@ end
         @test fresh_ref.ptr != C_NULL
         dispose(fresh_ref)
 
-        angled_miss, _, _ = CC.LookupFile(hs, "clangcompiler-lookup-probe.h"; is_angled=true,
-                                          skip_cache=true)
+        angled_miss, _, _ = CC.LookupFile(hs, "clangcompiler-lookup-probe.h"; is_angled=true, skip_cache=true)
         @test angled_miss.ptr == C_NULL
 
         # The search resolved to the same file the file manager hands out for the absolute
@@ -333,8 +327,7 @@ end
 
         # A combined role is a legal runtime value matching no single enumerator, which is why
         # roles cross the boundary as a UInt32 rather than as an @enum.
-        combined = UInt32(CC.CXModuleHeaderRole_PrivateHeader) |
-                   UInt32(CC.CXModuleHeaderRole_TextualHeader)
+        combined = UInt32(CC.CXModuleHeaderRole_PrivateHeader) | UInt32(CC.CXModuleHeaderRole_TextualHeader)
         @test CC.isPrivateHeaderRole(combined)
         @test CC.isTextualHeaderRole(combined)
         @test !CC.isExcludedHeaderRole(combined)
@@ -461,8 +454,7 @@ end
         @test Int(CC.getNumResolvedModulesForHeader(hs, textualref)) == 1
         tresolved, trole = CC.getResolvedModuleForHeader(hs, textualref, 0)
         @test tresolved.ptr == tmod.ptr
-        @test trole == (UInt32(CC.CXModuleHeaderRole_PrivateHeader) |
-                        UInt32(CC.CXModuleHeaderRole_TextualHeader))
+        @test trole == (UInt32(CC.CXModuleHeaderRole_PrivateHeader) | UInt32(CC.CXModuleHeaderRole_TextualHeader))
         @test CC.isPrivateHeaderRole(trole)
         @test CC.isTextualHeaderRole(trole)
         @test !CC.isModular(trole)

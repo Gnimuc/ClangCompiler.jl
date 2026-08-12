@@ -17,8 +17,7 @@ PRECONDITIONS: `ci` must have a file manager and a target. The return value then
 whether the pipeline added an error to `ci`'s diagnostics — the C++ function returns void
 and says so only through them.
 """
-function EmitBackendOutput(ci::CompilerInstance, m::LLVM.Module, action::CXBackendAction,
-                           output_path::AbstractString)
+function EmitBackendOutput(ci::CompilerInstance, m::LLVM.Module, action::CXBackendAction, output_path::AbstractString)
     @check_ptrs ci
     @assert hasFileManager(ci) "CompilerInstance has no file manager."
     @assert hasTarget(ci) "CompilerInstance has no target."

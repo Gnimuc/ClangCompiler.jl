@@ -129,8 +129,7 @@ vtb_methods(rd) = Dict(CC.getNameAsString(m) => m for m in CC.getMethods(rd))
         @test CC.getVirtualBaseOffsetOffset(itanium, virt, base) < 0
 
         # the two spellings of the component representation agree
-        @test CC.isPointerLayout(itanium) ==
-              (CC.getVTableComponentLayout(itanium) == CC.CXItaniumVTableContext_Pointer)
+        @test CC.isPointerLayout(itanium) == (CC.getVTableComponentLayout(itanium) == CC.CXItaniumVTableContext_Pointer)
         @test CC.isPointerLayout(itanium) != CC.isRelativeLayout(itanium)
     else
         # Microsoft: the Itanium surface is unreachable, which is the whole content of the

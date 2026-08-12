@@ -120,13 +120,10 @@ spelling is empty when nothing was near enough.
 `visibility` is an OR of `CXClangVisibility` values; the default asks the whole table.
 `minimum_length` keeps very short options from being suggested for unrelated input.
 """
-function findNearest(x::AbstractOptTable, option::AbstractString;
-                     visibility::Integer=typemax(UInt32), minimum_length::Integer=4,
-                     maximum_distance::Integer=typemax(UInt32))
+function findNearest(x::AbstractOptTable, option::AbstractString; visibility::Integer=typemax(UInt32), minimum_length::Integer=4, maximum_distance::Integer=typemax(UInt32))
     @check_ptrs x
     distance = Ref{Cuint}(0)
-    nearest = get_string(clang_OptTable_findNearest(x, option, visibility, minimum_length,
-                                                    maximum_distance, distance))
+    nearest = get_string(clang_OptTable_findNearest(x, option, visibility, minimum_length, maximum_distance, distance))
     return (nearest, Int(distance[]))
 end
 
@@ -136,10 +133,7 @@ end
               visibility::Integer=typemax(UInt32)) -> String
 Return the help screen clang would print, rendered into a string.
 """
-function printHelp(x::AbstractOptTable, usage::AbstractString, title::AbstractString;
-                   show_hidden::Bool=false, show_all_aliases::Bool=false,
-                   visibility::Integer=typemax(UInt32))
+function printHelp(x::AbstractOptTable, usage::AbstractString, title::AbstractString; show_hidden::Bool=false, show_all_aliases::Bool=false, visibility::Integer=typemax(UInt32))
     @check_ptrs x
-    return get_string(clang_OptTable_printHelp(x, usage, title, show_hidden,
-                                               show_all_aliases, visibility))
+    return get_string(clang_OptTable_printHelp(x, usage, title, show_hidden, show_all_aliases, visibility))
 end

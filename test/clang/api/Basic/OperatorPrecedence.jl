@@ -35,18 +35,10 @@ using Test
     # the loop below proves nothing if the lexer produced nothing
     @test length(kinds) >= 16
 
-    expected = ["," => CC.CXPrecLevel_Comma,
-                "=" => CC.CXPrecLevel_Assignment,
-                "?" => CC.CXPrecLevel_Conditional,
-                "||" => CC.CXPrecLevel_LogicalOr,
-                "&&" => CC.CXPrecLevel_LogicalAnd,
-                "|" => CC.CXPrecLevel_InclusiveOr,
-                "^" => CC.CXPrecLevel_ExclusiveOr,
-                "&" => CC.CXPrecLevel_And,
-                "==" => CC.CXPrecLevel_Equality,
-                "<" => CC.CXPrecLevel_Relational,
-                "<<" => CC.CXPrecLevel_Shift,
-                "+" => CC.CXPrecLevel_Additive,
+    expected = ["," => CC.CXPrecLevel_Comma, "=" => CC.CXPrecLevel_Assignment, "?" => CC.CXPrecLevel_Conditional,
+                "||" => CC.CXPrecLevel_LogicalOr, "&&" => CC.CXPrecLevel_LogicalAnd, "|" => CC.CXPrecLevel_InclusiveOr,
+                "^" => CC.CXPrecLevel_ExclusiveOr, "&" => CC.CXPrecLevel_And, "==" => CC.CXPrecLevel_Equality,
+                "<" => CC.CXPrecLevel_Relational, "<<" => CC.CXPrecLevel_Shift, "+" => CC.CXPrecLevel_Additive,
                 "*" => CC.CXPrecLevel_Multiplicative]
     for (spelling, level) in expected
         @test CC.getBinOpPrecedence(kinds[spelling], true, true) == level
@@ -80,10 +72,8 @@ using Test
     @test CC.getBinOpPrecedence(kinds["<<"], false, false) == CC.CXPrecLevel_Shift
 
     # Low numbers bind more weakly, which is the ordering the whole ladder is for.
-    @test Int(CC.getBinOpPrecedence(kinds["+"], true, true)) <
-          Int(CC.getBinOpPrecedence(kinds["*"], true, true))
-    @test Int(CC.getBinOpPrecedence(kinds[","], true, true)) <
-          Int(CC.getBinOpPrecedence(kinds["="], true, true))
+    @test Int(CC.getBinOpPrecedence(kinds["+"], true, true)) < Int(CC.getBinOpPrecedence(kinds["*"], true, true))
+    @test Int(CC.getBinOpPrecedence(kinds[","], true, true)) < Int(CC.getBinOpPrecedence(kinds["="], true, true))
 
     dispose(lex)
     CC.LLVM.dispose(lex_buf)  # the lexer only borrowed it

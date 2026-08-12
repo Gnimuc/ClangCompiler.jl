@@ -47,25 +47,16 @@ that an empty vector does not have.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function buildASTFromCodeWithArgs(code::AbstractString, args::AbstractVector{<:String};
-                                  filename::AbstractString="input.cc",
-                                  tool_name::AbstractString="clang-tool",
-                                  adjuster::Union{Nothing,AbstractArgumentsAdjuster}=nothing,
-                                  virtual_files::AbstractVector{<:Pair{<:AbstractString,<:AbstractString}}=Pair{String,String}[],
-                                  diag_consumer::Union{Nothing,AbstractDiagnosticConsumer}=nothing)
+function buildASTFromCodeWithArgs(code::AbstractString, args::AbstractVector{<:String}; filename::AbstractString="input.cc", tool_name::AbstractString="clang-tool", adjuster::Union{Nothing,AbstractArgumentsAdjuster}=nothing, virtual_files::AbstractVector{<:Pair{<:AbstractString,<:AbstractString}}=Pair{String,String}[], diag_consumer::Union{Nothing,AbstractDiagnosticConsumer}=nothing)
     adjuster === nothing || @check_ptrs adjuster
     diag_consumer === nothing || @check_ptrs diag_consumer
     @assert adjuster === nothing || !isempty(args) "an adjuster runs on `args`, whose first \
                                                     entry it treats as argv[0]"
-    adj = adjuster === nothing ? CXArgumentsAdjuster(C_NULL) :
-          Base.unsafe_convert(CXArgumentsAdjuster, adjuster)
-    dc = diag_consumer === nothing ? CXDiagnosticConsumer(C_NULL) :
-         Base.unsafe_convert(CXDiagnosticConsumer, diag_consumer)
+    adj = adjuster === nothing ? CXArgumentsAdjuster(C_NULL) : Base.unsafe_convert(CXArgumentsAdjuster, adjuster)
+    dc = diag_consumer === nothing ? CXDiagnosticConsumer(C_NULL) : Base.unsafe_convert(CXDiagnosticConsumer, diag_consumer)
     vnames = String[String(p.first) for p in virtual_files]
     vcontents = String[String(p.second) for p in virtual_files]
-    ptr = clang_tooling_buildASTFromCodeWithArgs(code, args, length(args), filename,
-                                                 tool_name, adj, vnames, vcontents,
-                                                 length(vnames), dc)
+    ptr = clang_tooling_buildASTFromCodeWithArgs(code, args, length(args), filename, tool_name, adj, vnames, vcontents, length(vnames), dc)
     return ptr == C_NULL ? nothing : ASTUnit(ptr)
 end
 
@@ -83,16 +74,11 @@ successfully.
 The overload taking an explicit virtual file system is not wrapped; there is no
 `llvm::vfs::FileSystem` carrier yet.
 """
-function runToolOnCodeWithArgs(action::AbstractFrontendAction, code::AbstractString,
-                               args::AbstractVector{<:String};
-                               filename::AbstractString="input.cc",
-                               tool_name::AbstractString="clang-tool",
-                               virtual_files::AbstractVector{<:Pair{<:AbstractString,<:AbstractString}}=Pair{String,String}[])
+function runToolOnCodeWithArgs(action::AbstractFrontendAction, code::AbstractString, args::AbstractVector{<:String}; filename::AbstractString="input.cc", tool_name::AbstractString="clang-tool", virtual_files::AbstractVector{<:Pair{<:AbstractString,<:AbstractString}}=Pair{String,String}[])
     @check_ptrs action
     vnames = String[String(p.first) for p in virtual_files]
     vcontents = String[String(p.second) for p in virtual_files]
-    return clang_tooling_runToolOnCodeWithArgs(action, code, args, length(args), filename,
-                                               tool_name, vnames, vcontents, length(vnames))
+    return clang_tooling_runToolOnCodeWithArgs(action, code, args, length(args), filename, tool_name, vnames, vcontents, length(vnames))
 end
 
 # ToolInvocation
@@ -119,8 +105,7 @@ before it looks at anything else.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function ToolInvocation(command_line::AbstractVector{<:String},
-                        action::AbstractFrontendAction, files::AbstractFileManager)
+function ToolInvocation(command_line::AbstractVector{<:String}, action::AbstractFrontendAction, files::AbstractFileManager)
     @check_ptrs action files
     @assert !isempty(command_line) "a tool invocation needs at least its binary name"
     ptr = clang_ToolInvocation_create(command_line, length(command_line), action, files)
@@ -196,8 +181,7 @@ dispose(x::ClangTool) = clang_ClangTool_dispose(x)
 Map `content` in at `file_path` in the tool's in-memory file system, so a translation unit it
 builds can read a file that is not on disk. Both strings are copied.
 """
-function mapVirtualFile(x::AbstractClangTool, file_path::AbstractString,
-                        content::AbstractString)
+function mapVirtualFile(x::AbstractClangTool, file_path::AbstractString, content::AbstractString)
     @check_ptrs x
     return clang_ClangTool_mapVirtualFile(x, file_path, content)
 end
@@ -294,5 +278,5 @@ function buildASTs(x::AbstractClangTool; capacity::Integer=max(getNumSourcePaths
     n = Int(built[])
     @assert n <= capacity "buildASTs produced $n units but only $capacity fitted; \
                            re-run with capacity=$n"
-    return ASTUnit[ASTUnit(buf[i]) for i in 1:n], Int(status)
+    return ASTUnit[ASTUnit(buf[i]) for i = 1:n], Int(status)
 end

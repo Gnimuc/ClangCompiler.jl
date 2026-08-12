@@ -21,7 +21,7 @@ using Test
     hs = CC.all_(CC.StdlibHeader)
     n = Int(length(hs))
     @test n > 0
-    names = Set(CC.name(CC.getHeader(hs, i)) for i in 0:(n - 1))
+    names = Set(CC.name(CC.getHeader(hs, i)) for i = 0:(n - 1))
     @test "<vector>" in names
     @test "<string>" in names
 
@@ -43,7 +43,7 @@ end
 
     hs = CC.headers(s)
     @test length(hs) >= 1
-    @test "<vector>" in Set(CC.name(CC.getHeader(hs, i)) for i in 0:(Int(length(hs)) - 1))
+    @test "<vector>" in Set(CC.name(CC.getHeader(hs, i)) for i = 0:(Int(length(hs)) - 1))
 
     @test CC.named(CC.StdlibSymbol, "std::", "no_such_std_symbol") === nothing
     # the scope has to carry its trailing "::"

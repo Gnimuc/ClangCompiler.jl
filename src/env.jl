@@ -14,7 +14,8 @@ links and runs, using another platform's headers and ABI, and nothing raises.
 """
 function get_compiler_flags(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
     # Config the JLL build environment
-    env = triple === nothing ? JLLEnvs.get_default_env(; version, is_cxx) : JLLEnvs.get_default_env(String(triple); version, is_cxx)
+    env = triple === nothing ? JLLEnvs.get_default_env(; version, is_cxx) :
+          JLLEnvs.get_default_env(String(triple); version, is_cxx)
     args = ["-isystem" * dir for dir in JLLEnvs.get_system_includes(env)]
     clang_inc = joinpath(Clang_jll.artifact_dir, "lib", "clang", llvm_version, "include")
     push!(args, "-isystem" * clang_inc)

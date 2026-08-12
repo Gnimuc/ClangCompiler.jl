@@ -266,8 +266,7 @@ end
 
         # ... and the unit's own AST context holds them under the source's own names.
         tu = CC.getTranslationUnitDecl(CC.getASTContext(au))
-        names = [CC.getNameAsString(d)
-                 for d in CC.decls(CC.castToDeclContext(tu)) if d isa CC.AbstractNamedDecl]
+        names = [CC.getNameAsString(d) for d in CC.decls(CC.castToDeclContext(tu)) if d isa CC.AbstractNamedDecl]
         @test "astunit_loaded_fn" in names
         @test "astunit_loaded_type" in names
 
@@ -319,8 +318,7 @@ end
         # The declarations survived the round trip, which is what says an AST was read
         # rather than just its header.
         rtu = CC.getTranslationUnitDecl(CC.getASTContext(reloaded))
-        rnames = [CC.getNameAsString(d)
-                  for d in CC.decls(CC.castToDeclContext(rtu)) if d isa CC.AbstractNamedDecl]
+        rnames = [CC.getNameAsString(d) for d in CC.decls(CC.castToDeclContext(rtu)) if d isa CC.AbstractNamedDecl]
         @test "astunit_loaded_fn" in rnames
         @test "astunit_loaded_type" in rnames
         # Both file-name accessors name the ORIGINAL source, not the .ast just read: clang

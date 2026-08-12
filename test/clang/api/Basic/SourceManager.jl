@@ -91,8 +91,7 @@ using Test
     # engines that share externally-allocated opts/client are exercised then leaked
     eng1 = CC.DiagnosticsEngine(CC.DiagnosticOptions())
     @test eng1 isa CC.DiagnosticsEngine
-    eng2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                CC.IgnoringDiagConsumer(), false)
+    eng2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), false)
     @test eng2 isa CC.DiagnosticsEngine
 
     # ---- CodeGen/ModuleBuilder.jl ----
@@ -624,8 +623,7 @@ end
 
     # the interpreter's main file is a synthetic buffer, so only the shape is asserted
     @test isempty(CC.getBufferDataOrFake(sm, mainid))
-    @test CC.getBufferDataOrFake(sm, mainid, startloc) ==
-          CC.getBufferDataOrFake(sm, mainid)
+    @test CC.getBufferDataOrFake(sm, mainid, startloc) == CC.getBufferDataOrFake(sm, mainid)
 
     # ---- SourceManager: a real on-disk file, whose contents the test itself wrote ----
     path, io = mktemp()
@@ -656,8 +654,7 @@ end
     # ---- SourceManager: a line note rewrites the presumed filename ----
     fnid = CC.getLineTableFilenameID(sm, "sme-line-note.h")
     @test fnid isa Integer
-    @test CC.AddLineNote(sm, floc, 100, fnid, false, false,
-                         CC.CXCharacteristicKind_C_User) === nothing
+    @test CC.AddLineNote(sm, floc, 100, fnid, false, false, CC.CXCharacteristicKind_C_User) === nothing
     @test CC.hasLineTable(sm)
     presumed = CC.getPresumedLoc(sm, floc)
     @test presumed !== nothing
@@ -699,10 +696,8 @@ end
     r, is_token = CC.getExpansionLocRange(ei)
     @test r isa CC.SourceRange
     @test is_token == CC.isExpansionTokenRange(ei)
-    @test CC.getRawEncoding(CC.getBeginLoc(r)) ==
-          CC.getRawEncoding(CC.getExpansionLocStart(ei))
-    @test CC.getRawEncoding(CC.getEndLoc(r)) ==
-          CC.getRawEncoding(CC.getExpansionLocEnd(ei))
+    @test CC.getRawEncoding(CC.getBeginLoc(r)) == CC.getRawEncoding(CC.getExpansionLocStart(ei))
+    @test CC.getRawEncoding(CC.getEndLoc(r)) == CC.getRawEncoding(CC.getExpansionLocEnd(ei))
     CC.dispose(expid)
 
     CC.dispose(fid)
@@ -802,8 +797,7 @@ end
 
     # ---- DiagnosticsEngine / DiagnosticBuilder / Diagnostic ----
     # A throwaway engine, so nothing here reaches the interpreter's own DiagnosticsEngine.
-    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                  CC.IgnoringDiagConsumer(), true)  # engine adopts all three
+    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)  # engine adopts all three
     @test_throws AssertionError CC.dump(engine)   # the state map is rendered through the SM
     CC.setSourceManager(engine, sm)
     @test CC.dump(engine) === nothing             # writes the state map to stderr
@@ -833,11 +827,9 @@ end
     @test !CC.isDiagnosticInFlight(engine)
 
     # A second engine, so the delayed queue is observed on counters of its own.
-    engine2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                   CC.IgnoringDiagConsumer(), true)
+    engine2 = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     CC.setSourceManager(engine2, sm)
-    delayed_id = CC.getCustomDiagID(engine2, CC.CXDiagnosticsEngine_Warning,
-                                    "delayed %0 %1 %2")
+    delayed_id = CC.getCustomDiagID(engine2, CC.CXDiagnosticsEngine_Warning, "delayed %0 %1 %2")
     plain_id = CC.getCustomDiagID(engine2, CC.CXDiagnosticsEngine_Warning, "plain probe")
     @test CC.SetDelayedDiagnostic(engine2, delayed_id, "a", "b", "c") === nothing
     @test CC.getNumWarnings(engine2) == 0
@@ -940,8 +932,7 @@ end
 
     # ---- SourceManager: address-space usage notes, through a throwaway engine ----
     # A throwaway engine, so nothing here reaches the interpreter's own DiagnosticsEngine.
-    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                  CC.IgnoringDiagConsumer(), true)  # engine adopts all three
+    engine = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)  # engine adopts all three
     CC.setSourceManager(engine, sm)
     @test CC.noteSLocAddressSpaceUsage(sm, engine) === nothing
     @test CC.noteSLocAddressSpaceUsage(sm, engine; max_notes=nothing) === nothing
@@ -973,8 +964,7 @@ end
 
     @test !CC.isFileOverridden(old, entry)
     @test_throws AssertionError CC.bypassFileContentsOverride(old, ref)
-    ov = CC.LLVM.MemoryBuffer(Vector{UInt8}(codeunits("int overridden_probe;")), "override",
-                              true)
+    ov = CC.LLVM.MemoryBuffer(Vector{UInt8}(codeunits("int overridden_probe;")), "override", true)
     CC.overrideFileContents(old, ref, ov)    # consumes ov: do not dispose the buffer
     if CC.isFileOverridden(old, entry)
         bypass = CC.bypassFileContentsOverride(old, ref)

@@ -30,8 +30,7 @@ Return whether a space has to be printed between `prev_tok` and `tok`.
 (a `.` after a numeric constant, a `+` or `-` after an exponent); pass a freshly created
 `Token` when there is none.
 """
-function AvoidConcat(x::AbstractTokenConcatenation, prev_prev_tok::AbstractToken,
-                     prev_tok::AbstractToken, tok::AbstractToken)
+function AvoidConcat(x::AbstractTokenConcatenation, prev_prev_tok::AbstractToken, prev_tok::AbstractToken, tok::AbstractToken)
     @check_ptrs x prev_prev_tok prev_tok tok
     return clang_TokenConcatenation_AvoidConcat(x, prev_prev_tok, prev_tok, tok)
 end

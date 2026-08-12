@@ -84,7 +84,7 @@ function getDependencies(x::AbstractDependencyCollector)
     @check_ptrs x
     # Int() first: the count is a C `unsigned`, and `0:(UInt32(0) - 1)` is four billion
     # iterations rather than the empty range an empty list wants.
-    return [getDependency(x, i) for i in 0:(Int(getDependenciesNum(x)) - 1)]
+    return [getDependency(x, i) for i = 0:(Int(getDependenciesNum(x)) - 1)]
 end
 
 """
@@ -103,12 +103,9 @@ end
 Offer one filename to the collector exactly as the preprocessor callbacks would, honouring
 its filter and its already-seen set. Lets a caller seed or extend the list without a parse.
 """
-function maybeAddDependency(x::AbstractDependencyCollector, filename::AbstractString;
-                            from_module::Bool=false, is_system::Bool=false,
-                            is_module_file::Bool=false, is_missing::Bool=false)
+function maybeAddDependency(x::AbstractDependencyCollector, filename::AbstractString; from_module::Bool=false, is_system::Bool=false, is_module_file::Bool=false, is_missing::Bool=false)
     @check_ptrs x
-    return clang_DependencyCollector_maybeAddDependency(x, filename, from_module, is_system,
-                                                        is_module_file, is_missing)
+    return clang_DependencyCollector_maybeAddDependency(x, filename, from_module, is_system, is_module_file, is_missing)
 end
 
 """
@@ -120,8 +117,7 @@ nothing is written. Typed at the generator, not at the collector: the base class
 `finishedMainFile` does nothing, so accepting a plain collector here would be a call that
 silently does nothing rather than one that fails.
 """
-function finishedMainFile(x::AbstractDependencyFileGenerator,
-                          diags::AbstractDiagnosticsEngine)
+function finishedMainFile(x::AbstractDependencyFileGenerator, diags::AbstractDiagnosticsEngine)
     @check_ptrs x diags
     return clang_DependencyFileGenerator_finishedMainFile(x, diags)
 end
@@ -150,20 +146,15 @@ some cases where it produces no invocation, so it is worth asking for on a failu
 
 The invocation is caller-owned; release it with `dispose`.
 """
-function createInvocation(src::AbstractString, args::Vector{String}=String[];
-                          diag::DiagnosticsEngine=DiagnosticsEngine(),
-                          recover_on_error::Bool=false, probe_precompiled::Bool=false,
-                          capture_cc1_args::Bool=false)
+function createInvocation(src::AbstractString, args::Vector{String}=String[]; diag::DiagnosticsEngine=DiagnosticsEngine(), recover_on_error::Bool=false, probe_precompiled::Bool=false, capture_cc1_args::Bool=false)
     @check_ptrs diag
     argv = ["clang"; args; String(src)]
     if capture_cc1_args
         cc1 = Ref{Ptr{CXStringSet}}(C_NULL)
-        ptr = clang_createInvocation(argv, length(argv), diag, recover_on_error,
-                                     probe_precompiled, cc1)
+        ptr = clang_createInvocation(argv, length(argv), diag, recover_on_error, probe_precompiled, cc1)
         invocation = ptr == C_NULL ? nothing : CompilerInvocation(ptr)
         return invocation, get_string(cc1[])
     end
-    ptr = clang_createInvocation(argv, length(argv), diag, recover_on_error,
-                                 probe_precompiled, C_NULL)
+    ptr = clang_createInvocation(argv, length(argv), diag, recover_on_error, probe_precompiled, C_NULL)
     return ptr == C_NULL ? nothing : CompilerInvocation(ptr)
 end

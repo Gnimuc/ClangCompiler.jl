@@ -1,9 +1,9 @@
 using ClangCompiler
+import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose
 using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
 using Test
 
-import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_instance
 using Libdl
 # Frontend/infra tail: the deferred wrappers that must never run against the live
@@ -13,27 +13,27 @@ using Libdl
 
 @testset "name mangling" begin
     I = create_interpreter(String[])
-    ctx = ClangCompiler.get_ast_context(I)
-    mc = ClangCompiler.createMangleContext(ctx, ClangCompiler.getTargetInfo(ctx))
+    ctx = CC.get_ast_context(I)
+    mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
     f = DeclFinder(I)
     # Primitive-signature functions so the expected Itanium mangling is
     # stable across every target the interpreter may resolve. A std-library
     # parameter (e.g. std::vector) would drag in the platform-specific inline
     # namespace (`std` under libstdc++ vs `std::__1` under libc++) and make the
     # string host-dependent.
-    ClangCompiler.parse(I, "int add(int a, int b) { return a + b; } void ref(int &r) { r = 0; }")
+    CC.parse(I, "int add(int a, int b) { return a + b; } void ref(int &r) { r = 0; }")
 
     @test f(I, "add")
     add_nd = get_decl(f)
-    @test ClangCompiler.shouldMangleDeclName(mc, add_nd)
-    @test ClangCompiler.mangleName(mc, add_nd) == "_Z3addii"
+    @test CC.shouldMangleDeclName(mc, add_nd)
+    @test CC.mangleName(mc, add_nd) == "_Z3addii"
 
     @test f(I, "ref")
     ref_nd = get_decl(f)
-    @test ClangCompiler.mangleName(mc, ref_nd) == "_Z3refRi"
+    @test CC.mangleName(mc, ref_nd) == "_Z3refRi"
 
     dispose(f)
-    ClangCompiler.dispose(mc)
+    CC.dispose(mc)
     dispose(I)
 end
 

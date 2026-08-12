@@ -21,15 +21,14 @@ end
 
 @testset "Expr/Stmt setters and factories" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             int compute(int n) {
-                 int arr[3] = {1, 2, 3};
-                 double d = 1.5;
-                 double dd = (double)n;
-                 return (int)d + arr[0];
-             }
-             """)
+    CC.parse(I, """
+                int compute(int n) {
+                    int arr[3] = {1, 2, 3};
+                    double d = 1.5;
+                    double dd = (double)n;
+                    return (int)d + arr[0];
+                }
+                """)
     ctx = CC.get_ast_context(I)
 
     lookup = DeclFinder(I)
@@ -49,8 +48,7 @@ end
     @test CC.getNumChildren(empty_cast) == 1
 
     # CStyleCastExpr::Create (no-type-info): int -> int NoOp cast over `il`
-    noop = CC.CStyleCastExpr(ctx, ity, CC.LibClangEx.CXExprValueKind_VK_PRValue,
-                             CC.LibClangEx.CXCastKind_CK_NoOp, il)
+    noop = CC.CStyleCastExpr(ctx, ity, CC.LibClangEx.CXExprValueKind_VK_PRValue, CC.LibClangEx.CXCastKind_CK_NoOp, il)
     @test noop.ptr != C_NULL
     @test CC.getType(noop).ptr == ity.ptr
     @test CC.getValueKind(noop) == CC.LibClangEx.CXExprValueKind_VK_PRValue
@@ -137,42 +135,41 @@ end
 
 @testset "Coverage | Expr" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-        """
-        struct Base { int b; };
-        struct Derived : Base { int d; };
-        struct PointT { int x; int y; };
+    CC.parse(I, """
+                struct Base { int b; };
+                struct Derived : Base { int d; };
+                struct PointT { int x; int y; };
 
-        int helper(int a, int b) { return a + b; }
-        consteval int sq(int x) { return x * x; }
+                int helper(int a, int b) { return a + b; }
+                consteval int sq(int x) { return x * x; }
 
-        int compute(int n) {
-            int arr[3] = {1, 2, 3};
-            double d = 1.5;
-            char c = 'a';
-            const char* s = "hello";
-            const char* fn = __func__;
-            int a = (n + 1);
-            a += 2;
-            ++a;
-            a--;
-            int b = arr[a % 3];
-            int e = a > b ? a : b;
-            unsigned long szt = sizeof(PointT);
-            unsigned long sze = sizeof a;
-            PointT p;
-            p.x = 5;
-            double dd = (double)n;
-            int f = helper(a, b);
-            int cc = sq(3);
-            int g = ({ int t = a; t + 1; });
-            PointT q = (PointT){1, 2};
-            Derived dv;
-            Base& br = dv;
-            Base* bp = &dv;
-            return e + f + cc + g + (int)d + c + p.x + q.x + br.b + bp->b + s[0] + fn[0];
-        }
-        """)
+                int compute(int n) {
+                    int arr[3] = {1, 2, 3};
+                    double d = 1.5;
+                    char c = 'a';
+                    const char* s = "hello";
+                    const char* fn = __func__;
+                    int a = (n + 1);
+                    a += 2;
+                    ++a;
+                    a--;
+                    int b = arr[a % 3];
+                    int e = a > b ? a : b;
+                    unsigned long szt = sizeof(PointT);
+                    unsigned long sze = sizeof a;
+                    PointT p;
+                    p.x = 5;
+                    double dd = (double)n;
+                    int f = helper(a, b);
+                    int cc = sq(3);
+                    int g = ({ int t = a; t + 1; });
+                    PointT q = (PointT){1, 2};
+                    Derived dv;
+                    Base& br = dv;
+                    Base* bp = &dv;
+                    return e + f + cc + g + (int)d + c + p.x + q.x + br.b + bp->b + s[0] + fn[0];
+                }
+                """)
     ctx = CC.get_ast_context(I)
 
     lookup = DeclFinder(I)
@@ -181,7 +178,7 @@ end
     body = CC.getBody(fd)
     nodes = CC.subtree(body)
     byT(T) = filter(n -> n isa T, nodes)
-    first_of(T) = (v = byT(T); isempty(v) ? nothing : first(v))
+    first_of(T) = (v=byT(T); isempty(v) ? nothing : first(v))
 
     # ---- Expr base predicates (any expression node) --------------------------
     anyexpr = first(filter(n -> n isa CC.AbstractExpr, nodes))
@@ -354,8 +351,7 @@ end
     @test !CC.is_null_handle(CC.getRParenLoc(csc))
 
     # getPathElement needs a cast whose inheritance path is non-empty
-    dtb = first(filter(n -> n isa CC.AbstractCastExpr &&
-                            CC.getCastKindName(n) == "DerivedToBase", nodes))
+    dtb = first(filter(n -> n isa CC.AbstractCastExpr && CC.getCastKindName(n) == "DerivedToBase", nodes))
     @test CC.getPathElement(dtb, 0).ptr != C_NULL
 
     # ---- BinaryOperator ------------------------------------------------------
@@ -490,38 +486,30 @@ end
     @test CC.isShiftAssignOp(LX.CXBinaryOperatorKind_BO_ShlAssign)
     @test CC.isPtrMemOp(LX.CXBinaryOperatorKind_BO_PtrMemD)
     @test CC.isAdditiveOp(LX.CXBinaryOperatorKind_BO_Mul) == false
-    @test CC.negateComparisonOp(LX.CXBinaryOperatorKind_BO_EQ) ==
-          LX.CXBinaryOperatorKind_BO_NE
-    @test CC.reverseComparisonOp(LX.CXBinaryOperatorKind_BO_LT) ==
-          LX.CXBinaryOperatorKind_BO_GT
-    @test CC.getOpForCompoundAssignment(LX.CXBinaryOperatorKind_BO_AddAssign) ==
-          LX.CXBinaryOperatorKind_BO_Add
-    @test CC.getOverloadedOperator(LX.CXBinaryOperatorKind_BO_Add) isa
-          LX.CXOverloadedOperatorKind
-    @test CC.getOverloadedOpcode(LX.CXOverloadedOperatorKind_OO_Plus) isa
-          LX.CXBinaryOperatorKind
+    @test CC.negateComparisonOp(LX.CXBinaryOperatorKind_BO_EQ) == LX.CXBinaryOperatorKind_BO_NE
+    @test CC.reverseComparisonOp(LX.CXBinaryOperatorKind_BO_LT) == LX.CXBinaryOperatorKind_BO_GT
+    @test CC.getOpForCompoundAssignment(LX.CXBinaryOperatorKind_BO_AddAssign) == LX.CXBinaryOperatorKind_BO_Add
+    @test CC.getOverloadedOperator(LX.CXBinaryOperatorKind_BO_Add) isa LX.CXOverloadedOperatorKind
+    @test CC.getOverloadedOpcode(LX.CXOverloadedOperatorKind_OO_Plus) isa LX.CXBinaryOperatorKind
     @test CC.getOpcodeStr(LX.CXUnaryOperatorKind_UO_Minus) == "-"
-    @test CC.getOverloadedOperator(LX.CXUnaryOperatorKind_UO_Minus) isa
-          LX.CXOverloadedOperatorKind
-    @test CC.getOverloadedOpcode(LX.CXOverloadedOperatorKind_OO_PlusPlus, true) isa
-          LX.CXUnaryOperatorKind
+    @test CC.getOverloadedOperator(LX.CXUnaryOperatorKind_UO_Minus) isa LX.CXOverloadedOperatorKind
+    @test CC.getOverloadedOpcode(LX.CXOverloadedOperatorKind_OO_PlusPlus, true) isa LX.CXUnaryOperatorKind
 
     # ---- live AST -----------------------------------------------------------
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             struct ExprCoreRec { int a; int b; };
-             int exprcore_callee(int x) { return x; }
-             int exprcore_use(int n) {
-                 int arr[3] = {1, 2, 3};
-                 double d = 1.5;
-                 const char *s = "abc";
-                 int *p = nullptr;
-                 ExprCoreRec r{.a = 1, .b = 2};
-                 int q = exprcore_callee(n) + arr[1] + r.a;
-                 return q + (n ? 1 : 0) + (int)d + (p == nullptr);
-             }
-             """)
+    CC.parse(I, """
+                struct ExprCoreRec { int a; int b; };
+                int exprcore_callee(int x) { return x; }
+                int exprcore_use(int n) {
+                    int arr[3] = {1, 2, 3};
+                    double d = 1.5;
+                    const char *s = "abc";
+                    int *p = nullptr;
+                    ExprCoreRec r{.a = 1, .b = 2};
+                    int q = exprcore_callee(n) + arr[1] + r.a;
+                    return q + (n ? 1 : 0) + (int)d + (p == nullptr);
+                }
+                """)
     ctx = CC.get_ast_context(I)
     lang_opts = CC.getLangOpts(ctx)
     @test lang_opts isa CC.LangOptions
@@ -554,8 +542,8 @@ end
     @test_throws AssertionError CC.getBestDynamicClassType(il)
     @test CC.is_null_handle(CC.getAsBuiltinConstantDeclRef(il, ctx))
 
-    for f in (CC.IgnoreImplicit, CC.IgnoreImplicitAsWritten, CC.IgnoreParenBaseCasts,
-              CC.IgnoreParenLValueCasts, CC.IgnoreUnlessSpelledInSource)
+    for f in (CC.IgnoreImplicit, CC.IgnoreImplicitAsWritten, CC.IgnoreParenBaseCasts, CC.IgnoreParenLValueCasts,
+              CC.IgnoreUnlessSpelledInSource)
         @test f(il) isa CC.Expr_
     end
     @test !CC.is_null_handle(CC.IgnoreParenNoopCasts(il, ctx))
@@ -582,8 +570,7 @@ end
     # nullptr classification
     nps = filter(n -> n isa CC.CXXNullPtrLiteralExpr, nodes)
     if !isempty(nps)
-        @test CC.isNullPointerConstant(first(nps), ctx,
-                                       LX.CXExpr_NPC_NeverValueDependent) isa
+        @test CC.isNullPointerConstant(first(nps), ctx, LX.CXExpr_NPC_NeverValueDependent) isa
               LX.CXExpr_NullPointerConstantKind
     end
 
@@ -629,12 +616,10 @@ end
     @test !CC.is_null_handle(CC.getTypeInfoAsWritten(first(css)))
     # only valid for union destination types; the wrapper's precondition
     # rejects anything else instead of letting clang dereference a null record
-    @test_throws AssertionError CC.getTargetFieldForToUnionCast(CC.getType(first(css)),
-                                                                CC.getType(il))
+    @test_throws AssertionError CC.getTargetFieldForToUnionCast(CC.getType(first(css)), CC.getType(il))
     # a null QualType is rejected before the gate reads it -- `getTypePtr` asserts, so the
     # gate would otherwise abort the process instead of raising
-    @test_throws AssertionError CC.getTargetFieldForToUnionCast(CC.QualType(C_NULL),
-                                                                CC.getType(il))
+    @test_throws AssertionError CC.getTargetFieldForToUnionCast(CC.QualType(C_NULL), CC.getType(il))
 
     # ---- ConditionalOperator ------------------------------------------------
     cos = filter(n -> n isa CC.ConditionalOperator, nodes)
@@ -791,24 +776,23 @@ end
 
 @testset "Expr subclasses: conditional/opaque/addrlabel/gnunull/vaarg accessors" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             int cond_fn(int n) {
-                 int a = n ? 10 : 20;      // ConditionalOperator
-                 int b = n ?: 30;          // BinaryConditionalOperator + OpaqueValueExpr
-                 void *p = __null;          // GNUNullExpr
-                 void *q = &&lbl;           // AddrLabelExpr (GNU label address)
-             lbl:
-                 return a + b + (p != __null) + (int)(__INTPTR_TYPE__)q;
-             }
-             int va_fn(int count, ...) {
-                 __builtin_va_list ap;
-                 __builtin_va_start(ap, count);
-                 int x = __builtin_va_arg(ap, int);   // VAArgExpr
-                 __builtin_va_end(ap);
-                 return x;
-             }
-             """)
+    CC.parse(I, """
+                int cond_fn(int n) {
+                    int a = n ? 10 : 20;      // ConditionalOperator
+                    int b = n ?: 30;          // BinaryConditionalOperator + OpaqueValueExpr
+                    void *p = __null;          // GNUNullExpr
+                    void *q = &&lbl;           // AddrLabelExpr (GNU label address)
+                lbl:
+                    return a + b + (p != __null) + (int)(__INTPTR_TYPE__)q;
+                }
+                int va_fn(int count, ...) {
+                    __builtin_va_list ap;
+                    __builtin_va_start(ap, count);
+                    int x = __builtin_va_arg(ap, int);   // VAArgExpr
+                    __builtin_va_end(ap);
+                    return x;
+                }
+                """)
 
     lookup = DeclFinder(I)
 
@@ -888,11 +872,10 @@ end
 @testset "Expr subclasses: matrix/convertvector/imaginary/block/sourceloc/choose" begin
     # MatrixSubscriptExpr (needs -fenable-matrix)
     Im = create_interpreter(["-std=gnu++20", "-fenable-matrix"])
-    CC.parse(Im,
-             """
-             typedef float cc_mat4 __attribute__((matrix_type(4, 4)));
-             float cc_mat_elem(cc_mat4 m) { return m[1][2]; }
-             """)
+    CC.parse(Im, """
+                 typedef float cc_mat4 __attribute__((matrix_type(4, 4)));
+                 float cc_mat_elem(cc_mat4 m) { return m[1][2]; }
+                 """)
     lm = DeclFinder(Im)
     @test lm(Im, "cc_mat_elem")
     mfd = CC.FunctionDecl(get_decl(lm))
@@ -909,15 +892,14 @@ end
 
     # ConvertVectorExpr / ImaginaryLiteral / SourceLocExpr / ChooseExpr
     I = create_interpreter(["-std=gnu++20"])
-    CC.parse(I,
-             """
-             typedef float cc_f4 __attribute__((ext_vector_type(4)));
-             typedef int cc_i4 __attribute__((ext_vector_type(4)));
-             cc_i4 cc_cv(cc_f4 v) { return __builtin_convertvector(v, cc_i4); }
-             _Complex double cc_imag(void) { return 2.0i; }
-             const char *cc_file(void) { return __builtin_FILE(); }
-             int cc_choose(void) { return __builtin_choose_expr(1, 10, 20); }
-             """)
+    CC.parse(I, """
+                typedef float cc_f4 __attribute__((ext_vector_type(4)));
+                typedef int cc_i4 __attribute__((ext_vector_type(4)));
+                cc_i4 cc_cv(cc_f4 v) { return __builtin_convertvector(v, cc_i4); }
+                _Complex double cc_imag(void) { return 2.0i; }
+                const char *cc_file(void) { return __builtin_FILE(); }
+                int cc_choose(void) { return __builtin_choose_expr(1, 10, 20); }
+                """)
     lookup = DeclFinder(I)
 
     @test lookup(I, "cc_cv")
@@ -958,10 +940,9 @@ end
 
     # BlockExpr (needs -fblocks)
     Ib = create_interpreter(["-std=gnu++20", "-fblocks"])
-    CC.parse(Ib,
-             """
-             void cc_block(void) { int (^blk)(void) = ^int(void) { return 7; }; (void)blk; }
-             """)
+    CC.parse(Ib, """
+                 void cc_block(void) { int (^blk)(void) = ^int(void) { return 7; }; (void)blk; }
+                 """)
     lb = DeclFinder(Ib)
     @test lb(Ib, "cc_block")
     bfd = CC.FunctionDecl(get_decl(lb))
@@ -1058,8 +1039,7 @@ end
     # the result is the semantic expression the result index names. That relationship is
     # what ties the two accessors together; `isa Expr_` holds even if one of them reads
     # the syntactic form or an adjacent slot.
-    @test CC.getResultExpr(poe).ptr ==
-          CC.getSemanticExpr(poe, CC.getResultExprIndex(poe)).ptr
+    @test CC.getResultExpr(poe).ptr == CC.getSemanticExpr(poe, CC.getResultExprIndex(poe)).ptr
     @test !CC.is_null_handle(CC.getSemanticExpr(poe, 0))
     @test CC.getSemanticExpr(poe, 0).ptr != C_NULL
 
@@ -1069,25 +1049,24 @@ end
 
 @testset "expr-e: offsetof components / ext-vector accessor / conversion step" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             typedef float cc_e_v4f __attribute__((ext_vector_type(4)));
-             struct cc_e_base { int bx; };
-             struct cc_e_mid : cc_e_base {};
-             struct cc_e_inner { float f; double d; };
-             struct cc_e_outer { int i; cc_e_inner s[4]; };
-             struct cc_e_conv { operator int() const { return 7; } };
-             unsigned long cc_e_fn(cc_e_v4f v, cc_e_v4f *pv, cc_e_conv c) {
-                 unsigned long a = __builtin_offsetof(cc_e_inner, d);
-                 unsigned long b = __builtin_offsetof(cc_e_outer, s[2].d);
-                 unsigned long e = __builtin_offsetof(cc_e_mid, bx);
-                 float p = v.x;
-                 cc_e_v4f q = v.xxyy;
-                 float r = pv->y;
-                 int t = c;
-                 return a + b + e + (unsigned long)(p + q.x + r + t);
-             }
-             """)
+    CC.parse(I, """
+                typedef float cc_e_v4f __attribute__((ext_vector_type(4)));
+                struct cc_e_base { int bx; };
+                struct cc_e_mid : cc_e_base {};
+                struct cc_e_inner { float f; double d; };
+                struct cc_e_outer { int i; cc_e_inner s[4]; };
+                struct cc_e_conv { operator int() const { return 7; } };
+                unsigned long cc_e_fn(cc_e_v4f v, cc_e_v4f *pv, cc_e_conv c) {
+                    unsigned long a = __builtin_offsetof(cc_e_inner, d);
+                    unsigned long b = __builtin_offsetof(cc_e_outer, s[2].d);
+                    unsigned long e = __builtin_offsetof(cc_e_mid, bx);
+                    float p = v.x;
+                    cc_e_v4f q = v.xxyy;
+                    float r = pv->y;
+                    int t = c;
+                    return a + b + e + (unsigned long)(p + q.x + r + t);
+                }
+                """)
     lookup = DeclFinder(I)
     @test lookup(I, "cc_e_fn")
     fd = CC.FunctionDecl(get_decl(lookup))
@@ -1109,7 +1088,7 @@ end
         tsi = CC.getTypeSourceInfo(oe)
         @test tsi isa CC.TypeSourceInfo
         @test tsi.ptr != C_NULL
-        for i in 0:(nc - 1)
+        for i = 0:(nc - 1)
             comp = CC.getComponent(oe, i)
             @test comp isa CC.OffsetOfNode
             @test comp.ptr != C_NULL
@@ -1119,10 +1098,8 @@ end
             @test CC.getRawEncoding(CC.getEndLoc(comp)) == CC.getRawEncoding(CC.getEndLoc(CC.getSourceRange(comp)))
             rng = CC.getSourceRange(comp)
             @test rng isa CC.SourceRange
-            @test CC.getRawEncoding(CC.getBeginLoc(rng)) ==
-                  CC.getRawEncoding(CC.getBeginLoc(comp))
-            @test CC.getRawEncoding(CC.getEndLoc(rng)) ==
-                  CC.getRawEncoding(CC.getEndLoc(comp))
+            @test CC.getRawEncoding(CC.getBeginLoc(rng)) == CC.getRawEncoding(CC.getBeginLoc(comp))
+            @test CC.getRawEncoding(CC.getEndLoc(rng)) == CC.getRawEncoding(CC.getEndLoc(comp))
             if k == CC.LibClangEx.CXOffsetOfNode_Kind_Field
                 saw_field = true
                 f = CC.getField(comp)
@@ -1237,8 +1214,7 @@ end
     @test CC.getResultStorageKind(cst) isa CC.LibClangEx.CXConstantResultStorageKind
     @test CC.getResultAPValueKind(cst) isa CC.LibClangEx.CXAPValueKind
     # hasAPValueResult is defined upstream as "APValueKind != None"
-    @test (CC.getResultAPValueKind(cst) != CC.LibClangEx.CXAPValueKind_None) ==
-          CC.hasAPValueResult(cst)
+    @test (CC.getResultAPValueKind(cst) != CC.LibClangEx.CXAPValueKind_None) == CC.hasAPValueResult(cst)
 
     # ---- ShuffleVectorExpr: location getters + setter round-trip ----
     sve = pick(CC.ShuffleVectorExpr)
@@ -1284,10 +1260,9 @@ end
 
     # ---- BlockExpr::getFunctionType (needs -fblocks) ----
     Ib = create_interpreter(["-std=c++20", "-fblocks"])
-    CC.parse(Ib,
-             """
-             void cc_exprf_blk(void) { int (^b)(void) = ^int(void) { return 7; }; (void)b; }
-             """)
+    CC.parse(Ib, """
+                 void cc_exprf_blk(void) { int (^b)(void) = ^int(void) { return 7; }; (void)b; }
+                 """)
     lb = DeclFinder(Ib)
     @test lb(Ib, "cc_exprf_blk")
     bfd = CC.FunctionDecl(get_decl(lb))
@@ -1330,13 +1305,11 @@ end
 
     # ---- Expr::isModifiableLvalue: const-qualified vs plain integer lvalue ----
     # selecting by type keeps the operator() DeclRefExpr (a non-identifier name) out
-    ints = filter(n -> n isa CC.DeclRefExpr && CC.isIntegerType(CC.getTypePtr(CC.getType(n))),
-                  nodes)
+    ints = filter(n -> n isa CC.DeclRefExpr && CC.isIntegerType(CC.getTypePtr(CC.getType(n))), nodes)
     @test !isempty(ints)
     ci_ref = first(filter(d -> CC.isConstQualified(CC.getType(d)), ints))
     mut_ref = first(filter(d -> !CC.isConstQualified(CC.getType(d)), ints))
-    @test CC.isModifiableLvalue(ci_ref, ctx) ==
-          CC.LibClangEx.CXExpr_MLV_ConstQualified
+    @test CC.isModifiableLvalue(ci_ref, ctx) == CC.LibClangEx.CXExpr_MLV_ConstQualified
     @test CC.isModifiableLvalue(mut_ref, ctx) == CC.LibClangEx.CXExpr_MLV_Valid
 
     # ---- Expr: the diagnostic-only folds -------------------------------------
@@ -1378,8 +1351,7 @@ end
     @test CC.getStorageKind(av) == CC.LibClangEx.CXConstantResultStorageKind_Int64
     dispose(av)
     ity = CC.getTypePtr(CC.getType(il))
-    @test CC.getStorageKindForType(ity, ctx) ==
-          CC.LibClangEx.CXConstantResultStorageKind_Int64
+    @test CC.getStorageKindForType(ity, ctx) == CC.LibClangEx.CXConstantResultStorageKind_Int64
 
     # ---- ShuffleVectorExpr: mask entries (__builtin_shufflevector(v, v, 3, 2, 1, 0))
     sve = pick(CC.ShuffleVectorExpr)
@@ -1437,20 +1409,19 @@ end
 
 @testset "expr tail: paren/unary/subscript/binary setters, char-literal print, atomic scope" begin
     I = create_interpreter(String[])
-    CC.parse(I,
-             """
-             #ifndef __MEMORY_SCOPE_SYSTEM
-             #define __MEMORY_SCOPE_SYSTEM 0
-             #endif
-             int cc_wl16_expr(int *p, int n) {
-                 int arr[3] = {1, 2, 3};
-                 char c = 'a';
-                 int s = (n) + arr[0];
-                 int u = -n;
-                 int a = __scoped_atomic_load_n(p, __ATOMIC_SEQ_CST, __MEMORY_SCOPE_SYSTEM);
-                 return s + u + a + c;
-             }
-             """)
+    CC.parse(I, """
+                #ifndef __MEMORY_SCOPE_SYSTEM
+                #define __MEMORY_SCOPE_SYSTEM 0
+                #endif
+                int cc_wl16_expr(int *p, int n) {
+                    int arr[3] = {1, 2, 3};
+                    char c = 'a';
+                    int s = (n) + arr[0];
+                    int u = -n;
+                    int a = __scoped_atomic_load_n(p, __ATOMIC_SEQ_CST, __MEMORY_SCOPE_SYSTEM);
+                    return s + u + a + c;
+                }
+                """)
     lookup = DeclFinder(I)
     @test lookup(I, "cc_wl16_expr")
     fd = CC.FunctionDecl(get_decl(lookup))
@@ -1648,8 +1619,7 @@ end
     @test CC.getSubExpr(cst).ptr == fsub.ptr
 
     # ---- UnaryExprOrTypeTraitExpr (`sizeof n`, an expression operand) ----
-    uett = first(filter(n -> n isa CC.UnaryExprOrTypeTraitExpr && !CC.isArgumentType(n),
-                        nodes))
+    uett = first(filter(n -> n isa CC.UnaryExprOrTypeTraitExpr && !CC.isArgumentType(n), nodes))
     ukind = CC.getKind(uett)
     CC.setKind(uett, ukind)
     @test CC.getKind(uett) == ukind
@@ -1659,14 +1629,12 @@ end
     @test CC.getArgumentExpr(uett).ptr == uarg.ptr
 
     # ---- InitListExpr: union field, then the array-list mutators ----
-    uile = first(filter(n -> n isa CC.InitListExpr &&
-                            CC.getInitializedFieldInUnion(n).ptr != C_NULL, nodes))
+    uile = first(filter(n -> n isa CC.InitListExpr && CC.getInitializedFieldInUnion(n).ptr != C_NULL, nodes))
     ufield = CC.getInitializedFieldInUnion(uile)
     CC.setInitializedFieldInUnion(uile, ufield)
     @test CC.getInitializedFieldInUnion(uile).ptr == ufield.ptr
 
-    iles = filter(n -> n isa CC.InitListExpr && CC.getNumInits(n) == 3 &&
-                      !CC.hasArrayFiller(n), nodes)
+    iles = filter(n -> n isa CC.InitListExpr && CC.getNumInits(n) == 3 && !CC.hasArrayFiller(n), nodes)
     @test length(iles) >= 2
     aile, bile = iles[1], iles[2]
     @test aile.ptr != bile.ptr
@@ -1702,24 +1670,23 @@ end
 
 @testset "Expr FP-environment queries and StmtExpr/ChooseExpr/VAArgExpr setters" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             double jfp_mix(double a, double b) {
-                 double s = a + b;                          // BinaryOperator (double)
-                 double n = -s;                             // UnaryOperator (double)
-                 int c = __builtin_choose_expr(1, 10, 20);  // ChooseExpr
-                 int g = ({ int t = c; t + 1; });           // StmtExpr
-                 unsigned long z = sizeof(int);             // UnaryExprOrTypeTraitExpr
-                 return s + n + c + g + z;
-             }
-             int jfp_va(int count, ...) {
-                 __builtin_va_list ap;
-                 __builtin_va_start(ap, count);
-                 int x = __builtin_va_arg(ap, int);         // VAArgExpr
-                 __builtin_va_end(ap);
-                 return x;
-             }
-             """)
+    CC.parse(I, """
+                double jfp_mix(double a, double b) {
+                    double s = a + b;                          // BinaryOperator (double)
+                    double n = -s;                             // UnaryOperator (double)
+                    int c = __builtin_choose_expr(1, 10, 20);  // ChooseExpr
+                    int g = ({ int t = c; t + 1; });           // StmtExpr
+                    unsigned long z = sizeof(int);             // UnaryExprOrTypeTraitExpr
+                    return s + n + c + g + z;
+                }
+                int jfp_va(int count, ...) {
+                    __builtin_va_list ap;
+                    __builtin_va_start(ap, count);
+                    int x = __builtin_va_arg(ap, int);         // VAArgExpr
+                    __builtin_va_end(ap);
+                    return x;
+                }
+                """)
     ctx = CC.get_ast_context(I)
     lo = CC.getLangOpts(ctx)
 
@@ -1822,29 +1789,28 @@ end
 
 @testset "Expr subclasses: designated-update/compound-literal/ext-vector setters" begin
     I = create_interpreter(["-std=gnu++20"])
-    CC.parse(I,
-             """
-             typedef float cc_k_f4 __attribute__((ext_vector_type(4)));
-             typedef int cc_k_i4 __attribute__((ext_vector_type(4)));
-             struct CCKQ { int a, b, c; };
-             struct CCKA { CCKQ q; };
-             struct CCKP { int x, y; };
-             CCKQ *cc_k_getQ();
-             int cc_k_all(int n, cc_k_f4 v) {
-                 CCKA a = { *cc_k_getQ(), .q.b = 3 };   // DesignatedInitUpdateExpr
-                 CCKP p = (CCKP){1, 2};                 // CompoundLiteralExpr
-                 int s = 0;
-                 s += a.q.b;                            // CompoundAssignOperator
-                 void *z = __null;                      // GNUNullExpr
-                 void *q = &&cc_k_lbl;                  // AddrLabelExpr
-                 const char *fn = __func__;             // PredefinedExpr
-                 float e = v.x;                         // ExtVectorElementExpr
-                 cc_k_i4 iv = __builtin_convertvector(v, cc_k_i4);  // ConvertVectorExpr
-                 int b = n ?: 30;                       // BinaryConditionalOperator + OVE
-             cc_k_lbl:
-                 return s + p.x + (int)e + iv.x + b + (int)(__INTPTR_TYPE__)q + (int)(__INTPTR_TYPE__)z + fn[0];
-             }
-             """)
+    CC.parse(I, """
+                typedef float cc_k_f4 __attribute__((ext_vector_type(4)));
+                typedef int cc_k_i4 __attribute__((ext_vector_type(4)));
+                struct CCKQ { int a, b, c; };
+                struct CCKA { CCKQ q; };
+                struct CCKP { int x, y; };
+                CCKQ *cc_k_getQ();
+                int cc_k_all(int n, cc_k_f4 v) {
+                    CCKA a = { *cc_k_getQ(), .q.b = 3 };   // DesignatedInitUpdateExpr
+                    CCKP p = (CCKP){1, 2};                 // CompoundLiteralExpr
+                    int s = 0;
+                    s += a.q.b;                            // CompoundAssignOperator
+                    void *z = __null;                      // GNUNullExpr
+                    void *q = &&cc_k_lbl;                  // AddrLabelExpr
+                    const char *fn = __func__;             // PredefinedExpr
+                    float e = v.x;                         // ExtVectorElementExpr
+                    cc_k_i4 iv = __builtin_convertvector(v, cc_k_i4);  // ConvertVectorExpr
+                    int b = n ?: 30;                       // BinaryConditionalOperator + OVE
+                cc_k_lbl:
+                    return s + p.x + (int)e + iv.x + b + (int)(__INTPTR_TYPE__)q + (int)(__INTPTR_TYPE__)z + fn[0];
+                }
+                """)
 
     lookup = DeclFinder(I)
     @test lookup(I, "cc_k_all")
@@ -1966,15 +1932,14 @@ end
 
 @testset "Expr::Classification and the FP-feature accessors" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             double cls_callee(double a);
-             double cls_probe(double a, double b) {
-                 double local = a + b;
-                 local = -local;
-                 return cls_callee(local);
-             }
-             """)
+    CC.parse(I, """
+                double cls_callee(double a);
+                double cls_probe(double a, double b) {
+                    double local = a + b;
+                    local = -local;
+                    return cls_callee(local);
+                }
+                """)
     ctx = CC.get_ast_context(I)
 
     lookup = DeclFinder(I)
@@ -2007,8 +1972,7 @@ end
     @test badloc isa CC.SourceLocation
     @test CC.isModifiableTested(clm)
     @test CC.getModifiable(clm) isa CC.LibClangEx.CXClassification_ModifiableType
-    @test CC.isModifiable(clm) ==
-          (CC.getModifiable(clm) == CC.LibClangEx.CXClassification_CM_Modifiable)
+    @test CC.isModifiable(clm) == (CC.getModifiable(clm) == CC.LibClangEx.CXClassification_CM_Modifiable)
     @test CC.isGLValue(clm) == (CC.isLValue(clm) || CC.isXValue(clm))
     CC.dispose(clm)
 
@@ -2063,23 +2027,22 @@ end
 @testset "expr-m: FP-in-effect / substituted evaluation / offsetof, init-list, designator setters" begin
     LX = CC.LibClangEx
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             struct cc_m_pt { int x; int y; };
-             struct cc_m_inner { float f; double d; };
-             struct cc_m_outer { int i; cc_m_inner s[4]; };
-             constexpr int cc_m_double(int v) { return v * 2; }
-             constexpr int cc_m_seed = 21;
-             double cc_m_fn(double a, double b) {
-                 double local = a + b;
-                 double cast = (double)(int)local;
-                 int arr[3] = {1, 2, 3};
-                 cc_m_pt p = {.x = 4, .y = 5};
-                 unsigned long off = __builtin_offsetof(cc_m_outer, s[2].d);
-                 return local + cast + arr[0] + p.x + (double)off;
-             }
-             const char *cc_m_file(void) { return __builtin_FILE(); }
-             """)
+    CC.parse(I, """
+                struct cc_m_pt { int x; int y; };
+                struct cc_m_inner { float f; double d; };
+                struct cc_m_outer { int i; cc_m_inner s[4]; };
+                constexpr int cc_m_double(int v) { return v * 2; }
+                constexpr int cc_m_seed = 21;
+                double cc_m_fn(double a, double b) {
+                    double local = a + b;
+                    double cast = (double)(int)local;
+                    int arr[3] = {1, 2, 3};
+                    cc_m_pt p = {.x = 4, .y = 5};
+                    unsigned long off = __builtin_offsetof(cc_m_outer, s[2].d);
+                    return local + cast + arr[0] + p.x + (double)off;
+                }
+                const char *cc_m_file(void) { return __builtin_FILE(); }
+                """)
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
 
@@ -2149,8 +2112,7 @@ end
     @test convert(Int, gv2) == 42
     CC.LLVM.dispose(gv2)
     CC.dispose(subst)
-    @test_throws AssertionError CC.EvaluateWithSubstitution(mul, ctx, callee,
-                                                            [seed_lit, seed_lit])
+    @test_throws AssertionError CC.EvaluateWithSubstitution(mul, ctx, callee, [seed_lit, seed_lit])
     @test CC.isPotentialConstantExprUnevaluated(mul, callee)
 
     # ---- CallExpr::setADLCallKind ------------------------------------------
@@ -2247,22 +2209,21 @@ end
 
 @testset "Expr builders, dependence and setter tail (wl22 expr-n)" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             struct WL22S { int x; double y; };
-             int wl22_add(int a, int b) { return a + b; }
-             int wl22_caller(int n) {
-                 int arr[3] = {1, 2, 3};
-                 double d = 1.5;
-                 d += 0.5;
-                 WL22S s;
-                 s.x = 4;
-                 const char *fn = __func__;
-                 (void)fn;
-                 (void)d;
-                 return wl22_add(n, arr[0]) + s.x;
-             }
-             """)
+    CC.parse(I, """
+                struct WL22S { int x; double y; };
+                int wl22_add(int a, int b) { return a + b; }
+                int wl22_caller(int n) {
+                    int arr[3] = {1, 2, 3};
+                    double d = 1.5;
+                    d += 0.5;
+                    WL22S s;
+                    s.x = 4;
+                    const char *fn = __func__;
+                    (void)fn;
+                    (void)d;
+                    return wl22_add(n, arr[0]) + s.x;
+                }
+                """)
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
     @test lookup(I, "wl22_caller")
@@ -2320,16 +2281,14 @@ end
     # ---- BinaryOperator: the static gate, Create and CreateEmpty ------------
     @test !CC.isCompoundAssignmentOp(LX.CXBinaryOperatorKind_BO_Add)
     @test CC.isCompoundAssignmentOp(LX.CXBinaryOperatorKind_BO_AddAssign)
-    bo = CC.BinaryOperator(ctx, il, il, LX.CXBinaryOperatorKind_BO_Add, ity, VKP, OKO, loc,
-                           0)
+    bo = CC.BinaryOperator(ctx, il, il, LX.CXBinaryOperatorKind_BO_Add, ity, VKP, OKO, loc, 0)
     @test bo isa CC.BinaryOperator
     @test CC.getOpcode(bo) == LX.CXBinaryOperatorKind_BO_Add
     @test CC.getLHS(bo).ptr == il.ptr
     @test CC.getRHS(bo).ptr == il.ptr
     @test CC.getFPFeatures(bo) == 0
-    @test_throws AssertionError CC.BinaryOperator(ctx, il, il,
-                                                  LX.CXBinaryOperatorKind_BO_AddAssign, ity,
-                                                  VKP, OKO, loc, 0)
+    @test_throws AssertionError CC.BinaryOperator(ctx, il, il, LX.CXBinaryOperatorKind_BO_AddAssign, ity, VKP, OKO, loc,
+                                                  0)
 
     boe = CC.BinaryOperator(ctx, false)
     @test boe isa CC.BinaryOperator
@@ -2343,19 +2302,16 @@ end
     @test CC.getRHS(boe).ptr == il.ptr
 
     # ---- CompoundAssignOperator::Create -------------------------------------
-    cao = CC.CompoundAssignOperator(ctx, il, il, LX.CXBinaryOperatorKind_BO_AddAssign, ity,
-                                    VKL, OKO, loc, 0, ity, ity)
+    cao = CC.CompoundAssignOperator(ctx, il, il, LX.CXBinaryOperatorKind_BO_AddAssign, ity, VKL, OKO, loc, 0, ity, ity)
     @test cao isa CC.CompoundAssignOperator
     @test CC.getOpcode(cao) == LX.CXBinaryOperatorKind_BO_AddAssign
     @test CC.getComputationLHSType(cao).ptr == ity.ptr
     @test CC.getComputationResultType(cao).ptr == ity.ptr
-    @test_throws AssertionError CC.CompoundAssignOperator(ctx, il, il,
-                                                          LX.CXBinaryOperatorKind_BO_Add,
-                                                          ity, VKL, OKO, loc, 0, ity, ity)
+    @test_throws AssertionError CC.CompoundAssignOperator(ctx, il, il, LX.CXBinaryOperatorKind_BO_Add, ity, VKL, OKO,
+                                                          loc, 0, ity, ity)
 
     # ---- UnaryOperator::Create ----------------------------------------------
-    uo = CC.UnaryOperator(ctx, il, LX.CXUnaryOperatorKind_UO_Minus, ity, VKP, OKO, loc,
-                          false, 0)
+    uo = CC.UnaryOperator(ctx, il, LX.CXUnaryOperatorKind_UO_Minus, ity, VKP, OKO, loc, false, 0)
     @test uo isa CC.UnaryOperator
     @test CC.getOpcode(uo) == LX.CXUnaryOperatorKind_UO_Minus
     @test CC.getSubExpr(uo).ptr == il.ptr
@@ -2379,8 +2335,7 @@ end
     me = pick(CC.MemberExpr)
     mbase = CC.getBase(me)
     mdecl = CC.getMemberDecl(me)
-    mimp = CC.MemberExpr(ctx, mbase, CC.isArrow(me), mdecl, CC.getType(me),
-                         CC.getValueKind(me), CC.getObjectKind(me))
+    mimp = CC.MemberExpr(ctx, mbase, CC.isArrow(me), mdecl, CC.getType(me), CC.getValueKind(me), CC.getObjectKind(me))
     @test mimp isa CC.MemberExpr
     @test CC.getMemberDecl(mimp).ptr == mdecl.ptr
     @test CC.getBase(mimp).ptr == mbase.ptr
@@ -2390,13 +2345,11 @@ end
     pe = pick(CC.PredefinedExpr)
     sl = CC.getFunctionName(pe)
     @test sl.ptr != C_NULL
-    pe2 = CC.PredefinedExpr(ctx, CC.getBeginLoc(pe), CC.getType(pe), CC.getIdentKind(pe),
-                            false, sl)
+    pe2 = CC.PredefinedExpr(ctx, CC.getBeginLoc(pe), CC.getType(pe), CC.getIdentKind(pe), false, sl)
     @test pe2 isa CC.PredefinedExpr
     @test CC.getIdentKind(pe2) == CC.getIdentKind(pe)
     @test CC.getFunctionName(pe2).ptr == sl.ptr
-    pe3 = CC.PredefinedExpr(ctx, CC.getBeginLoc(pe), CC.getType(pe), CC.getIdentKind(pe),
-                            false)
+    pe3 = CC.PredefinedExpr(ctx, CC.getBeginLoc(pe), CC.getType(pe), CC.getIdentKind(pe), false)
     @test CC.getFunctionName(pe3).ptr == C_NULL
 
     # ---- ParenListExpr::Create ----------------------------------------------
@@ -2430,8 +2383,7 @@ end
     @test CC.getNumSubExpressions(rec) == 1
     @test CC.getSubExpression(rec, 0).ptr == il.ptr
     @test_throws AssertionError CC.getSubExpression(rec, 1)
-    @test CC.getNumSubExpressions(CC.RecoveryExpr(ctx, ity, loc, loc,
-                                                  CC.IntegerLiteral[])) == 0
+    @test CC.getNumSubExpressions(CC.RecoveryExpr(ctx, ity, loc, loc, CC.IntegerLiteral[])) == 0
     @test_throws AssertionError CC.RecoveryExpr(ctx, CC.QualType(C_NULL), loc, loc, [il])
 
     dispose(lookup)
@@ -2541,7 +2493,7 @@ end
     @test sve isa CC.ShuffleVectorExpr
     nsub = CC.getNumSubExprs(sve)
     @test nsub >= 2
-    ops = CC.Expr_[CC.getExpr(sve, i) for i in 0:(nsub - 1)]
+    ops = CC.Expr_[CC.getExpr(sve, i) for i = 0:(nsub - 1)]
     CC.setExprs(sve, ctx, ops)
     @test CC.getNumSubExprs(sve) == nsub
     @test CC.getExpr(sve, 0).ptr == ops[1].ptr
@@ -2583,11 +2535,10 @@ end
 
     # ---- MatrixSubscriptExpr setters (needs -fenable-matrix) ----------------
     Im = create_interpreter(["-std=gnu++20", "-fenable-matrix"])
-    CC.parse(Im,
-             """
-             typedef float cc_o_mat4 __attribute__((matrix_type(4, 4)));
-             float cc_o_mat_elem(cc_o_mat4 m) { return m[1][2]; }
-             """)
+    CC.parse(Im, """
+                 typedef float cc_o_mat4 __attribute__((matrix_type(4, 4)));
+                 float cc_o_mat_elem(cc_o_mat4 m) { return m[1][2]; }
+                 """)
     lm = DeclFinder(Im)
     @test lm(Im, "cc_o_mat_elem")
     mfd = CC.FunctionDecl(get_decl(lm))
@@ -2612,10 +2563,9 @@ end
 
     # ---- BlockExpr::setBlockDecl (needs -fblocks) ---------------------------
     Ib = create_interpreter(["-std=gnu++20", "-fblocks"])
-    CC.parse(Ib,
-             """
-             void cc_o_block(void) { int (^blk)(void) = ^int(void) { return 7; }; (void)blk; }
-             """)
+    CC.parse(Ib, """
+                 void cc_o_block(void) { int (^blk)(void) = ^int(void) { return 7; }; (void)blk; }
+                 """)
     lb = DeclFinder(Ib)
     @test lb(Ib, "cc_o_block")
     bfd = CC.FunctionDecl(get_decl(lb))
@@ -2630,19 +2580,18 @@ end
 
 @testset "Expr dependence, flexible-array query and the deserialization shells" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             struct WLPFam { int n; char data[]; };
-             struct WLPPt { int x; int y; };
-             int wlp_add(int a, int b) { return a + b; }
-             int wlp_fn(int a, WLPFam *f) {
-                 WLPPt p = {.x = 1, .y = 2};
-                 int arr[3] = {1, 2, 3};
-                 const char *s = "wlp";
-                 const char *fam = f->data;
-                 return wlp_add(a, p.x) + arr[0] + (int)s[0] + (int)fam[0] + f->n;
-             }
-             """)
+    CC.parse(I, """
+                struct WLPFam { int n; char data[]; };
+                struct WLPPt { int x; int y; };
+                int wlp_add(int a, int b) { return a + b; }
+                int wlp_fn(int a, WLPFam *f) {
+                    WLPPt p = {.x = 1, .y = 2};
+                    int arr[3] = {1, 2, 3};
+                    const char *s = "wlp";
+                    const char *fam = f->data;
+                    return wlp_add(a, p.x) + arr[0] + (int)s[0] + (int)fam[0] + f->n;
+                }
+                """)
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
     @test lookup(I, "wlp_fn")
@@ -2666,14 +2615,12 @@ end
 
     # ---- Expr::isFlexibleArrayMemberLike ------------------------------------
     @test !isempty(mes)
-    fam_like = [CC.isFlexibleArrayMemberLike(m, ctx, LX.CXStrictFlexArraysLevelKind_IncompleteOnly)
-                for m in mes]
+    fam_like = [CC.isFlexibleArrayMemberLike(m, ctx, LX.CXStrictFlexArraysLevelKind_IncompleteOnly) for m in mes]
     @test all(v -> v isa Bool, fam_like)
     # `f->data` has incomplete array type, so it is flexible-array-like at every level
     @test any(fam_like)
-    @test all(m -> CC.isFlexibleArrayMemberLike(m, ctx,
-                                                LX.CXStrictFlexArraysLevelKind_ZeroOrIncomplete,
-                                                true) isa Bool, mes)
+    @test all(m -> CC.isFlexibleArrayMemberLike(m, ctx, LX.CXStrictFlexArraysLevelKind_ZeroOrIncomplete, true) isa Bool,
+              mes)
     # an expression whose type is not an array is never one, whatever the level
     @test !CC.isFlexibleArrayMemberLike(il, ctx, LX.CXStrictFlexArraysLevelKind_Default)
 
@@ -2686,11 +2633,11 @@ end
     @test CC.getCharByteWidth(made) == 1
     @test CC.getNumConcatenated(made) == 1
     @test CC.getKind(made) == LX.CXStringLiteralKind_Ordinary
-    @test_throws AssertionError CC.StringLiteral(ctx, "wlp", LX.CXStringLiteralKind_Ordinary, false,
-                                                 sty, CC.SourceLocation[])
+    @test_throws AssertionError CC.StringLiteral(ctx, "wlp", LX.CXStringLiteralKind_Ordinary, false, sty,
+                                                 CC.SourceLocation[])
     # an evaluated string literal's type has to be a constant array type
-    @test_throws AssertionError CC.StringLiteral(ctx, "wlp", LX.CXStringLiteralKind_Ordinary, false,
-                                                 CC.getType(il), [loc])
+    @test_throws AssertionError CC.StringLiteral(ctx, "wlp", LX.CXStringLiteralKind_Ordinary, false, CC.getType(il),
+                                                 [loc])
 
     sle = CC.StringLiteral(ctx, 1, 4, 1)
     @test sle isa CC.StringLiteral
@@ -2785,14 +2732,13 @@ end
 
 @testset "Expr node factories: call, fixed-point and SYCL stable-name" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             int exprq_callee(int x) { return x; }
-             int exprq_use(int n) {
-                 int q = exprq_callee(n);
-                 return q;
-             }
-             """)
+    CC.parse(I, """
+                int exprq_callee(int x) { return x; }
+                int exprq_use(int n) {
+                    int q = exprq_callee(n);
+                    return q;
+                }
+                """)
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
     @test lookup(I, "exprq_use")
@@ -2806,8 +2752,7 @@ end
     # ---- CallExpr::Create ---------------------------------------------------
     callee = CC.getCallee(ce)
     arg0 = CC.getArg(ce, 0)
-    new_ce = CC.CallExpr(ctx, callee, [arg0], CC.getType(ce),
-                         LX.CXExprValueKind_VK_PRValue, loc, 0, 0, false)
+    new_ce = CC.CallExpr(ctx, callee, [arg0], CC.getType(ce), LX.CXExprValueKind_VK_PRValue, loc, 0, 0, false)
     @test new_ce isa CC.CallExpr
     @test CC.getStmtClassName(new_ce) == "CallExpr"
     @test CC.getNumArgs(new_ce) == 1
@@ -2819,8 +2764,7 @@ end
     @test CC.hasStoredFPFeatures(new_ce) == false
 
     # an empty argument list is legal, and the ADL flag round-trips through usesADL
-    adl_ce = CC.CallExpr(ctx, callee, CC.Expr_[], CC.getType(ce),
-                         LX.CXExprValueKind_VK_PRValue, loc, 0, 0, true)
+    adl_ce = CC.CallExpr(ctx, callee, CC.Expr_[], CC.getType(ce), LX.CXExprValueKind_VK_PRValue, loc, 0, 0, true)
     @test CC.getNumArgs(adl_ce) == 0
     @test CC.usesADL(adl_ce)
 
@@ -2862,33 +2806,32 @@ end
 
 @testset "Generic-selection associations, qualifier extents, designator expansion, astype" begin
     I = create_interpreter(["-std=gnu++20"])
-    CC.parse(I,
-             """
-             namespace cc_r_ns {
-             struct Point { int x; int y; };
-             int gval = 5;
-             }
-             struct cc_r_base { int a; };
-             struct cc_r_holder : cc_r_base {
-                 int b;
-                 template <class T> int tget() const { return (int)sizeof(T); }
-             };
-             template <class T> int cc_r_tfn() { return (int)sizeof(T); }
-             int cc_r_fn(cc_r_holder h) {
-                 int n = 1;
-                 int g = _Generic(n, int: 1, default: 2);
-                 cc_r_ns::Point p = { .x = 3, .y = 4 };
-                 int qa = h.cc_r_base::a;
-                 int ub = h.b;
-                 int m = h.tget<int>();
-                 int t = cc_r_tfn<double>();
-                 int v = cc_r_ns::gval;
-                 float fa = 1.5f, fb = 2.5f;
-                 float fp = fa * fb;
-                 unsigned long o = __builtin_offsetof(cc_r_ns::Point, y);
-                 return g + p.x + qa + ub + m + t + v + (int)fp + (int)o;
-             }
-             """)
+    CC.parse(I, """
+                namespace cc_r_ns {
+                struct Point { int x; int y; };
+                int gval = 5;
+                }
+                struct cc_r_base { int a; };
+                struct cc_r_holder : cc_r_base {
+                    int b;
+                    template <class T> int tget() const { return (int)sizeof(T); }
+                };
+                template <class T> int cc_r_tfn() { return (int)sizeof(T); }
+                int cc_r_fn(cc_r_holder h) {
+                    int n = 1;
+                    int g = _Generic(n, int: 1, default: 2);
+                    cc_r_ns::Point p = { .x = 3, .y = 4 };
+                    int qa = h.cc_r_base::a;
+                    int ub = h.b;
+                    int m = h.tget<int>();
+                    int t = cc_r_tfn<double>();
+                    int v = cc_r_ns::gval;
+                    float fa = 1.5f, fb = 2.5f;
+                    float fp = fa * fb;
+                    unsigned long o = __builtin_offsetof(cc_r_ns::Point, y);
+                    return g + p.x + qa + ub + m + t + v + (int)fp + (int)o;
+                }
+                """)
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
     @test lookup(I, "cc_r_fn")
@@ -2996,8 +2939,7 @@ end
     @test CC.getBuiltinLoc(ate).ptr == loc.ptr
     @test CC.getRParenLoc(ate).ptr == loc.ptr
     @test CC.getType(ate).ptr == ity.ptr
-    @test_throws AssertionError CC.AsTypeExpr(ctx, il, CC.QualType(C_NULL),
-                                              CC.getValueKind(il), CC.getObjectKind(il),
+    @test_throws AssertionError CC.AsTypeExpr(ctx, il, CC.QualType(C_NULL), CC.getValueKind(il), CC.getObjectKind(il),
                                               loc, loc)
 
     # ---- FixedPointLiteral::CreateFromRawInt + getValueAsString -------------
@@ -3017,14 +2959,13 @@ end
 
 @testset "Expr constant-evaluation results, block-var copy init and deserialization shells" begin
     I = create_interpreter(["-std=c++20"])
-    CC.parse(I,
-             """
-             int exprs_global = 7;
-             constexpr char exprs_buf[] = "hello";
-             constexpr const char *exprs_ptr = exprs_buf;
-             constexpr int exprs_len = 5;
-             int exprs_use(int n) { return exprs_global + n; }
-             """)
+    CC.parse(I, """
+                int exprs_global = 7;
+                constexpr char exprs_buf[] = "hello";
+                constexpr const char *exprs_ptr = exprs_buf;
+                constexpr int exprs_len = 5;
+                int exprs_use(int n) { return exprs_global + n; }
+                """)
     ctx = CC.get_ast_context(I)
     lookup = DeclFinder(I)
 
@@ -3032,8 +2973,7 @@ end
     fd = CC.FunctionDecl(get_decl(lookup))
     nodes = CC.subtree(CC.getBody(fd))
     # select by referent, not by walk order: the body holds two DeclRefExprs
-    dre = first(n for n in nodes
-                if n isa CC.DeclRefExpr && CC.getNameAsString(CC.getDecl(n)) == "exprs_global")
+    dre = first(n for n in nodes if n isa CC.DeclRefExpr && CC.getNameAsString(CC.getDecl(n)) == "exprs_global")
 
     @test lookup(I, "exprs_len")
     size_e = CC.getInit(CC.VarDecl(get_decl(lookup)))

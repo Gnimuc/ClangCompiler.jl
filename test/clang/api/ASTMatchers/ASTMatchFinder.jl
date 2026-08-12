@@ -13,8 +13,7 @@ using Test
     # An explicit record declaration. `unless(isImplicit())` drops the
     # injected-class-name Clang synthesises inside every C++ class, which carries
     # the same name and would otherwise match too.
-    m = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCMFTag\"), unless(isImplicit())).bind(\"r\")",
-                                  err)
+    m = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCMFTag\"), unless(isImplicit())).bind(\"r\")", err)
     @test !CC.is_null_handle(m)
 
     mf = CC.MatchFinder()

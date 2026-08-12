@@ -67,8 +67,7 @@ const LINT_FILE = @__FILE__
         for (root, _, files) in walkdir(CLANGEX_LIB)
             "CMakeLists.txt" in files || continue
             cmake = read(joinpath(root, "CMakeLists.txt"), String)
-            registered = [m.captures[1]
-                          for m in eachmatch(r"\$\{CMAKE_CURRENT_LIST_DIR\}/([\w.]+)", cmake)]
+            registered = [m.captures[1] for m in eachmatch(r"\$\{CMAKE_CURRENT_LIST_DIR\}/([\w.]+)", cmake)]
             for f in files
                 endswith(f, ".cpp") || continue
                 @test f in registered
@@ -121,8 +120,7 @@ const LINT_FILE = @__FILE__
         root = normpath(joinpath(@__DIR__, ".."))
         llvm_major = string(Base.libllvm_version.major)
         defined = Set{String}()
-        for lib in (joinpath(root, "lib", llvm_major, "LibClangEx.jl"),
-                    joinpath(root, "lib", "LibClang.jl"))
+        for lib in (joinpath(root, "lib", llvm_major, "LibClangEx.jl"), joinpath(root, "lib", "LibClang.jl"))
             for m in eachmatch(r"function (clang_\w+)\(", read(lib, String))
                 push!(defined, m.captures[1])
             end
@@ -160,8 +158,7 @@ const LINT_FILE = @__FILE__
         for (r, _, files) in walkdir(inc), f in files
             endswith(f, ".h") || continue
             hdr = joinpath(r, f)
-            cpp = replace(replace(hdr, joinpath("include", "clang-ex") => "lib"),
-                          ".h" => ".cpp")
+            cpp = replace(replace(hdr, joinpath("include", "clang-ex") => "lib"), ".h" => ".cpp")
             isfile(cpp) || continue          # pure-enum headers have no impl
             htext = replace(read(hdr, String), r"//[^\n]*" => "")
             ctext = read(cpp, String)
@@ -195,8 +192,7 @@ const LINT_FILE = @__FILE__
         referenced = Set{String}()
         for (r, _, files) in walkdir(joinpath(root, "src")), f in files
             endswith(f, ".jl") || continue
-            for m in eachmatch(r"clang_\w+",
-                               strip_jl_comments(read(joinpath(r, f), String)))
+            for m in eachmatch(r"clang_\w+", strip_jl_comments(read(joinpath(r, f), String)))
                 push!(referenced, m.match)
             end
         end
@@ -207,8 +203,7 @@ const LINT_FILE = @__FILE__
                      occursin(r"^clang_Attr_(castTo|is)[A-Z]\w*Attr$", n) ||
                      occursin(r"^clang_TypeLoc_castTo[A-Z]\w*TypeLoc$", n)
 
-        unaccounted = sort!([n for n in binding_names
-                             if !(n in referenced) && !stamped(n)])
+        unaccounted = sort!([n for n in binding_names if !(n in referenced) && !stamped(n)])
         if !isempty(unaccounted)
             @error "libclangex bindings with no Julia wrapper (wrap them)" unaccounted
         end
@@ -253,7 +248,8 @@ const LINT_FILE = @__FILE__
                     @test isfile(file)
                     src = isfile(file) ? read(file, String) : ""
                     for sym in pending
-                        occursin(sym, src) || @error "MARSHALLING.md cites a symbol absent from its file" symbol = sym file = relpath
+                        occursin(sym, src) ||
+                            @error "MARSHALLING.md cites a symbol absent from its file" symbol = sym file = relpath
                         @test occursin(sym, src)
                         checked += 1
                     end
@@ -281,9 +277,8 @@ const LINT_FILE = @__FILE__
         # the script exits 1 whenever it reports anything
         out = read(ignorestatus(`$(Base.julia_cmd()) $script`), String)
         unmarked = [m.captures[1] for m in eachmatch(r"^    (\S+:\d+)"m, out)]
-        isempty(unmarked) ||
-            @error "assertions that cannot fail, either unmarked or marked `# shape-only` " *
-                   "without naming one of the three admitted reasons" unmarked
+        isempty(unmarked) || @error "assertions that cannot fail, either unmarked or marked `# shape-only` " *
+               "without naming one of the three admitted reasons" unmarked
         @test isempty(unmarked)
     end
 
@@ -301,9 +296,7 @@ const LINT_FILE = @__FILE__
         # expression and a `TypeLoc` and read the latter's type directly.
         direct = r"getTypePtr\(\s*getType\((\w+)\)\s*\)"
         offenders, scanned = String[], 0
-        for (root, _, files) in walkdir(joinpath(SRC_DIR, "clang", "api")),
-            f in filter(endswith(".jl"), files)
-
+        for (root, _, files) in walkdir(joinpath(SRC_DIR, "clang", "api")), f in filter(endswith(".jl"), files)
             relf = relpath(joinpath(root, f), SRC_DIR)
             sig = ""
             for (n, line) in enumerate(eachline(joinpath(root, f)))
@@ -321,8 +314,7 @@ const LINT_FILE = @__FILE__
             end
         end
         @test scanned >= 5  # guard against the pattern silently matching nothing
-        isempty(offenders) ||
-            @error "wrapper reads an Expr's type pointer directly; use `expr_type_ptr`" offenders
+        isempty(offenders) || @error "wrapper reads an Expr's type pointer directly; use `expr_type_ptr`" offenders
         @test isempty(offenders)
     end
 
@@ -343,9 +335,7 @@ const LINT_FILE = @__FILE__
         # struct out of two `CXSourceLocation_`s rather than passing a handle.
         call = r"clang_[A-Za-z0-9_]+\(([^)]*\.ptr[^)]*)\)"
         offenders, scanned = String[], 0
-        for (root, _, files) in walkdir(joinpath(SRC_DIR, "clang")),
-            f in filter(endswith(".jl"), files)
-
+        for (root, _, files) in walkdir(joinpath(SRC_DIR, "clang")), f in filter(endswith(".jl"), files)
             relf = relpath(joinpath(root, f), SRC_DIR)
             relf == joinpath("clang", "core", "converts.jl") && continue
             for (n, line) in enumerate(eachline(joinpath(root, f)))
@@ -360,8 +350,7 @@ const LINT_FILE = @__FILE__
             end
         end
         @test scanned >= 5  # the exempt spellings themselves keep this from matching nothing
-        isempty(offenders) ||
-            @error "wrapper hands a raw `.ptr` to a binding; pass the carrier instead" offenders
+        isempty(offenders) || @error "wrapper hands a raw `.ptr` to a binding; pass the carrier instead" offenders
         @test isempty(offenders)
     end
 
@@ -375,20 +364,15 @@ const LINT_FILE = @__FILE__
         # Not a ratchet on the count. Adding one more `resolve` branch to an existing table
         # is the same argument again; adding the first one in a new file is not.
         allowed = Set([
-            # the resolve machinery: `T` comes from a table keyed on the class clang reported
-            joinpath("clang", "casts.jl"),          # the definition itself
-            joinpath("clang", "decl.jl"),
-            joinpath("clang", "stmt.jl"),
-            joinpath("clang", "attr.jl"),
-            "types.jl",
-            # wrapper bodies where the C function's declared return handle is not the
-            # carrier's: a discriminated `PointerUnion`, or a result typed at a base
-            joinpath("clang", "api", "AST", "DeclTemplate.jl"),
-            joinpath("clang", "api", "AST", "ASTContext.jl"),
-            joinpath("clang", "api", "AST", "ExprCXX.jl"),
-            joinpath("clang", "api", "AST", "Type.jl"),
-            joinpath("clang", "api", "Sema", "Sema.jl"),
-        ])
+                       # the resolve machinery: `T` comes from a table keyed on the class clang reported
+                       joinpath("clang", "casts.jl"),          # the definition itself
+                       joinpath("clang", "decl.jl"), joinpath("clang", "stmt.jl"), joinpath("clang", "attr.jl"),
+                       "types.jl",
+                       # wrapper bodies where the C function's declared return handle is not the
+                       # carrier's: a discriminated `PointerUnion`, or a result typed at a base
+                       joinpath("clang", "api", "AST", "DeclTemplate.jl"),
+                       joinpath("clang", "api", "AST", "ASTContext.jl"), joinpath("clang", "api", "AST", "ExprCXX.jl"),
+                       joinpath("clang", "api", "AST", "Type.jl"), joinpath("clang", "api", "Sema", "Sema.jl")])
         found, offenders = String[], String[]
         for (root, _, files) in walkdir(SRC_DIR), f in files
             endswith(f, ".jl") || continue
@@ -403,9 +387,8 @@ const LINT_FILE = @__FILE__
         stale = sort!(collect(setdiff(allowed, found)))
         isempty(stale) || @error "these files no longer need `unchecked_cast`" stale
         @test isempty(stale)
-        isempty(offenders) ||
-            @error "`unchecked_cast` outside the sites that argue for it; use the checked \
-                    cast for the class you mean, or add the file with its reason" offenders
+        isempty(offenders) || @error "`unchecked_cast` outside the sites that argue for it; use the checked \
+                                      cast for the class you mean, or add the file with its reason" offenders
         @test isempty(offenders)
 
         # and it never leaves the package: it is not `public`, and a test or example reaching
@@ -424,8 +407,7 @@ const LINT_FILE = @__FILE__
                 endswith(f, ".jl") || continue
                 path = joinpath(root, f)
                 (path == LINT_FILE || path == pins) && continue
-                occursin(reach, strip_jl_comments(read(path, String))) &&
-                    push!(outside, relpath(path, PKG_ROOT))
+                occursin(reach, strip_jl_comments(read(path, String))) && push!(outside, relpath(path, PKG_ROOT))
             end
         end
         isempty(outside) || @error "`unchecked_cast` reached from outside src/" outside

@@ -102,9 +102,8 @@ end
     @test CC.getNumRequirements(re) == 3
     reqs = CC.getRequirements(re)
     # source order is storage order, and each entry is the kind it was written as
-    @test [CC.getKind(r) for r in reqs] == [CC.CXRequirement_RK_Simple,
-                                            CC.CXRequirement_RK_Type,
-                                            CC.CXRequirement_RK_Nested]
+    @test [CC.getKind(r) for r in reqs] ==
+          [CC.CXRequirement_RK_Simple, CC.CXRequirement_RK_Type, CC.CXRequirement_RK_Nested]
     @test all(r -> !CC.isDependent(r), reqs)
     @test all(CC.isSatisfied, reqs)
     @test_throws AssertionError CC.getRequirement(re, 3)

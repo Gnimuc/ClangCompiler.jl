@@ -21,30 +21,29 @@ end
     I = create_interpreter(["-std=c++20"])
     f = DeclFinder(I)
     ctx = CC.get_ast_context(I)
-    CC.parse(I,
-             """
-             int gdep __attribute__((deprecated("dep-msg", "use_this")));
-             alignas(32) int gali;
-             int gsec __attribute__((section("__DATA,__mysec")));
-             [[noreturn]] void nofunc();
-             int fasm(int) asm("real_fasm");
-             int gann __attribute__((annotate("my-note")));
-             __attribute__((constructor(200))) void ctorfn();
-             __attribute__((destructor(201))) void dtorfn();
-             int gunavail __attribute__((unavailable("gone-msg")));
-             __attribute__((format(printf, 1, 2))) void logfn(const char *fmt, ...);
-             void nnfn(int *a, int *b) __attribute__((nonnull(2)));
-             [[nodiscard("check-me")]] int mustuse();
-             struct __attribute__((packed)) SPacked { char c; int i; };
-             #pragma pack(2)
-             struct SPack2 { char c; int i; };
-             #pragma pack()
-             __attribute__((used)) static int gused = 1;
-             void cleanup_fn(int *p);
-             void cfn() { int lc __attribute__((cleanup(cleanup_fn))) = 0; (void)lc; }
-             thread_local int gtls __attribute__((tls_model("initial-exec")));
-             __attribute__((visibility("hidden"))) void vfunc();
-             """)
+    CC.parse(I, """
+                int gdep __attribute__((deprecated("dep-msg", "use_this")));
+                alignas(32) int gali;
+                int gsec __attribute__((section("__DATA,__mysec")));
+                [[noreturn]] void nofunc();
+                int fasm(int) asm("real_fasm");
+                int gann __attribute__((annotate("my-note")));
+                __attribute__((constructor(200))) void ctorfn();
+                __attribute__((destructor(201))) void dtorfn();
+                int gunavail __attribute__((unavailable("gone-msg")));
+                __attribute__((format(printf, 1, 2))) void logfn(const char *fmt, ...);
+                void nnfn(int *a, int *b) __attribute__((nonnull(2)));
+                [[nodiscard("check-me")]] int mustuse();
+                struct __attribute__((packed)) SPacked { char c; int i; };
+                #pragma pack(2)
+                struct SPack2 { char c; int i; };
+                #pragma pack()
+                __attribute__((used)) static int gused = 1;
+                void cleanup_fn(int *p);
+                void cfn() { int lc __attribute__((cleanup(cleanup_fn))) = 0; (void)lc; }
+                thread_local int gtls __attribute__((tls_model("initial-exec")));
+                __attribute__((visibility("hidden"))) void vfunc();
+                """)
 
     look(name) = (@assert f(I, name) "lookup failed: $name"; get_decl(f))
     resolved_attrs(d) = [CC.resolve(a) for a in CC.getAttrs(d)]
@@ -161,8 +160,7 @@ end
     @test CC.getModel(findattr(look("gtls"), CC.TLSModelAttr)) == "initial-exec"
 
     # VisibilityAttr (mirrored class-local enum)
-    @test CC.getVisibility(findattr(look("vfunc"), CC.VisibilityAttr)) ==
-          LX.CXVisibilityAttr_Hidden
+    @test CC.getVisibility(findattr(look("vfunc"), CC.VisibilityAttr)) == LX.CXVisibilityAttr_Hidden
 
     dispose(f)
     dispose(I)
@@ -214,11 +212,12 @@ end
     for nm in names(CC; all=true)
         isdefined(CC, nm) || continue
         v = getproperty(CC, nm)
-        if v isa Function && !(v isa Type) && startswith(String(nm), "is") &&
-           hasmethod(v, Tuple{CC.Attr})
+        if v isa Function && !(v isa Type) && startswith(String(nm), "is") && hasmethod(v, Tuple{CC.Attr})
             @test v(a) isa Bool
             npred += 1
-        elseif v isa Type && v != CC.Attr && hasmethod(v, Tuple{CC.Attr}) &&
+        elseif v isa Type &&
+               v != CC.Attr &&
+               hasmethod(v, Tuple{CC.Attr}) &&
                # exact stamped-cast signature — every struct also has the
                # implicit converting constructor, whose sig is (::Type, ::Any)
                which(v, Tuple{CC.Attr}).sig <: Tuple{Type,CC.AbstractAttr} &&
@@ -231,8 +230,7 @@ end
             # off the same `classof` — and the Julia abstract mirroring that class is a third
             # spelling of it. Holding all three against each other for every attribute class
             # is what says the generated hierarchy matches the one clang actually has.
-            absT = isdefined(CC, Symbol("Abstract", nm)) ? getproperty(CC, Symbol("Abstract", nm)) :
-                   nothing
+            absT = isdefined(CC, Symbol("Abstract", nm)) ? getproperty(CC, Symbol("Abstract", nm)) : nothing
             if getproperty(CC, Symbol("is", nm))(a)
                 absT === nothing || @test r isa absT
                 @test v(a) == a                  # narrows to the same clang::Attr

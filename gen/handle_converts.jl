@@ -22,12 +22,9 @@ const HC_OUT = joinpath(HC_SRC, "core", "converts.jl")
 # Handles no carrier stores and whose class name does not spell its abstract. Each entry is a
 # name collision the CX side resolved with a trailing underscore and the Julia side resolved
 # some other way, so the two spellings cannot be bridged by a rule.
-const HC_ALIASES = Dict("CXDiagnostic_" => "AbstractDiagnostic",
-                        "CXEvalResult_" => "AbstractEvalResult",
-                        "CXModule_" => "AbstractModule",
-                        "CXPrintingPolicy_" => "AbstractPrintingPolicy",
-                        "CXSourceLocation_" => "AbstractSourceLocation",
-                        "CXTargetInfo_" => "AbstractTargetInfo",
+const HC_ALIASES = Dict("CXDiagnostic_" => "AbstractDiagnostic", "CXEvalResult_" => "AbstractEvalResult",
+                        "CXModule_" => "AbstractModule", "CXPrintingPolicy_" => "AbstractPrintingPolicy",
+                        "CXSourceLocation_" => "AbstractSourceLocation", "CXTargetInfo_" => "AbstractTargetInfo",
                         "CXToken_" => "AbstractToken")
 
 "Every `CX*` handle the bindings declare, in declaration order."
@@ -173,7 +170,6 @@ function hc_method(f, handle, keyabs, body; margin=120)
         return $body
     end"""
 end
-
 
 function emit_handle_converts()
     handles = hc_handles()

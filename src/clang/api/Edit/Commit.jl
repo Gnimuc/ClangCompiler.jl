@@ -48,8 +48,7 @@ inserted at the same point.
 
 An empty `text` succeeds and records nothing.
 """
-function insert(x::AbstractCommit, loc::SourceLocation, text::AbstractString,
-                after_token::Bool=false, before_previous_insertions::Bool=false)
+function insert(x::AbstractCommit, loc::SourceLocation, text::AbstractString, after_token::Bool=false, before_previous_insertions::Bool=false)
     @check_ptrs x
     return clang_Commit_insert(x, loc, text, after_token, before_previous_insertions)
 end
@@ -59,8 +58,7 @@ end
                      before_previous_insertions::Bool=false) -> Bool
 Insert `text` after the token that starts at `loc`.
 """
-function insertAfterToken(x::AbstractCommit, loc::SourceLocation, text::AbstractString,
-                          before_previous_insertions::Bool=false)
+function insertAfterToken(x::AbstractCommit, loc::SourceLocation, text::AbstractString, before_previous_insertions::Bool=false)
     @check_ptrs x
     return clang_Commit_insertAfterToken(x, loc, text, before_previous_insertions)
 end
@@ -79,12 +77,10 @@ end
                     after_token::Bool=false, before_previous_insertions::Bool=false) -> Bool
 Insert at `loc` a copy of the source text `range` currently covers.
 """
-function insertFromRange(x::AbstractCommit, loc::SourceLocation, range::CharSourceRange,
-                         after_token::Bool=false, before_previous_insertions::Bool=false)
+function insertFromRange(x::AbstractCommit, loc::SourceLocation, range::CharSourceRange, after_token::Bool=false, before_previous_insertions::Bool=false)
     @check_ptrs x
     r = CXSourceRange_(range.range.begin_loc.ptr, range.range.end_loc.ptr)
-    return clang_Commit_insertFromRange(x, loc, r, range.is_token_range, after_token,
-                                        before_previous_insertions)
+    return clang_Commit_insertFromRange(x, loc, r, range.is_token_range, after_token, before_previous_insertions)
 end
 
 """
@@ -92,8 +88,7 @@ end
                after::AbstractString) -> Bool
 Surround `range` with `before` and `after`.
 """
-function insertWrap(x::AbstractCommit, before::AbstractString, range::CharSourceRange,
-                    after::AbstractString)
+function insertWrap(x::AbstractCommit, before::AbstractString, range::CharSourceRange, after::AbstractString)
     @check_ptrs x
     r = CXSourceRange_(range.range.begin_loc.ptr, range.range.end_loc.ptr)
     return clang_Commit_insertWrap(x, before, r, range.is_token_range, after)
@@ -133,8 +128,7 @@ function replaceWithInner(x::AbstractCommit, range::CharSourceRange, inner::Char
     @check_ptrs x
     r = CXSourceRange_(range.range.begin_loc.ptr, range.range.end_loc.ptr)
     ir = CXSourceRange_(inner.range.begin_loc.ptr, inner.range.end_loc.ptr)
-    return clang_Commit_replaceWithInner(x, r, range.is_token_range, ir,
-                                         inner.is_token_range)
+    return clang_Commit_replaceWithInner(x, r, range.is_token_range, ir, inner.is_token_range)
 end
 
 """
@@ -143,8 +137,7 @@ end
 Replace the token spelled `text` at `loc` with `replacement_text`. Either string being
 empty succeeds and records nothing.
 """
-function replaceText(x::AbstractCommit, loc::SourceLocation, text::AbstractString,
-                     replacement_text::AbstractString)
+function replaceText(x::AbstractCommit, loc::SourceLocation, text::AbstractString, replacement_text::AbstractString)
     @check_ptrs x
     return clang_Commit_replaceText(x, loc, text, replacement_text)
 end

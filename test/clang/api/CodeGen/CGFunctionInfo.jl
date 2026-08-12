@@ -33,9 +33,8 @@ const LX = CC.LibClangEx
 
     # the arguments are the ones clang parsed, in order, canonicalized
     @test CC.arg_size(fi) == 2
-    for i in 0:1
-        @test CC.getArgType(fi, i) ==
-              CC.getCanonicalType(CC.getType(CC.getParamDecl(fd, i)))
+    for i = 0:1
+        @test CC.getArgType(fi, i) == CC.getCanonicalType(CC.getType(CC.getParamDecl(fd, i)))
     end
     @test CC.getReturnType(fi) == CC.getCanonicalType(CC.getReturnType(fd))
 
@@ -146,21 +145,18 @@ end
     @test !CC.isVariadic(fromargs)
     @test CC.getReturnType(fromargs) == CC.getReturnType(fromtype)
     @test CC.getKind(CC.getReturnInfo(fromargs)) == CC.getKind(CC.getReturnInfo(fromtype))
-    for i in 0:(CC.arg_size(fromtype) - 1)
+    for i = 0:(CC.arg_size(fromtype) - 1)
         @test CC.getArgType(fromargs, i) == CC.getArgType(fromtype, i)
         @test CC.getKind(CC.getArgInfo(fromargs, i)) == CC.getKind(CC.getArgInfo(fromtype, i))
     end
 
     # the variadic flag and the required count are ours to set here, unlike above where the
     # prototype carried them
-    varargs = CC.arrangeFreeFunctionCall(cgm, ctx, ret, args, LX.CXCallingConv_CC_C, false,
-                                         true, 1)
+    varargs = CC.arrangeFreeFunctionCall(cgm, ctx, ret, args, LX.CXCallingConv_CC_C, false, true, 1)
     @test CC.isVariadic(varargs)
     @test CC.getNumRequiredArgs(varargs) == 1
     # and a required count no argument list can satisfy is refused before the ccall
-    @test_throws AssertionError CC.arrangeFreeFunctionCall(cgm, ctx, ret, args,
-                                                           LX.CXCallingConv_CC_C, false,
-                                                           true, 3)
+    @test_throws AssertionError CC.arrangeFreeFunctionCall(cgm, ctx, ret, args, LX.CXCallingConv_CC_C, false, true, 3)
 
     dispose(f)
     dispose(I)

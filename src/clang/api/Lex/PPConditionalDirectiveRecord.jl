@@ -33,8 +33,7 @@ A whole `#if`/`#endif` block sitting inside `range` does not count: the question
 the range crosses a boundary, which is what decides whether the text it covers can be moved
 as one piece. An invalid range, or one spanning two files, is `false`.
 """
-function rangeIntersectsConditionalDirective(x::AbstractPPConditionalDirectiveRecord,
-                                             range::SourceRange)
+function rangeIntersectsConditionalDirective(x::AbstractPPConditionalDirectiveRecord, range::SourceRange)
     @check_ptrs x
     r = CXSourceRange_(range.begin_loc.ptr, range.end_loc.ptr)
     return clang_PPConditionalDirectiveRecord_rangeIntersectsConditionalDirective(x, r)
@@ -45,11 +44,9 @@ end
 Return the location of the conditional directive that opens the region `loc` falls in, or
 an invalid location when `loc` is outside every region.
 """
-function findConditionalDirectiveRegionLoc(x::AbstractPPConditionalDirectiveRecord,
-                                           loc::SourceLocation)
+function findConditionalDirectiveRegionLoc(x::AbstractPPConditionalDirectiveRecord, loc::SourceLocation)
     @check_ptrs x
-    return SourceLocation(clang_PPConditionalDirectiveRecord_findConditionalDirectiveRegionLoc(x,
-        loc))
+    return SourceLocation(clang_PPConditionalDirectiveRecord_findConditionalDirectiveRegionLoc(x, loc))
 end
 
 """
@@ -58,9 +55,7 @@ end
 Return whether the two locations sit in different conditional-directive regions, i.e.
 whether code cannot be moved between them without changing what gets compiled.
 """
-function areInDifferentConditionalDirectiveRegion(x::AbstractPPConditionalDirectiveRecord,
-                                                  lhs::SourceLocation, rhs::SourceLocation)
+function areInDifferentConditionalDirectiveRegion(x::AbstractPPConditionalDirectiveRecord, lhs::SourceLocation, rhs::SourceLocation)
     @check_ptrs x
-    return clang_PPConditionalDirectiveRecord_areInDifferentConditionalDirectiveRegion(x,
-        lhs, rhs)
+    return clang_PPConditionalDirectiveRecord_areInDifferentConditionalDirectiveRegion(x, lhs, rhs)
 end

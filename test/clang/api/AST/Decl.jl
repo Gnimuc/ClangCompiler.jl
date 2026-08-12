@@ -94,11 +94,12 @@ end
         @test !CC.is_null_handle(CC.ParmVarDecl(ctx, dc, loc, loc, id, ty, tsi, LX.CXStorageClass_SC_None))
         @test !CC.is_null_handle(CC.ParmVarDecl(ctx, 1))
 
-        @test !CC.is_null_handle(CC.FunctionDecl(ctx, dc, loc, loc, name, fty, ftsi, LX.CXStorageClass_SC_None, false, true))
+        @test !CC.is_null_handle(CC.FunctionDecl(ctx, dc, loc, loc, name, fty, ftsi, LX.CXStorageClass_SC_None, false,
+                                                 true))
         @test !CC.is_null_handle(CC.FunctionDecl(ctx, 1))
 
         @test !CC.is_null_handle(CC.FieldDecl(ctx, dc, loc, loc, id, ty, tsi, CC.Expr_(C_NULL), false,
-                           LX.CXInClassInitStyle_ICIS_NoInit))
+                                              LX.CXInClassInitStyle_ICIS_NoInit))
         @test !CC.is_null_handle(CC.FieldDecl(ctx, 1))
 
         @test !CC.is_null_handle(CC.EnumConstantDecl(ctx, 1))
@@ -137,8 +138,7 @@ end
         @test CC.getBitWidth(fld2).ptr == bw.ptr
 
         # FieldDecl::setInClassInitializer (fresh field w/ in-class-init storage)
-        fdi = CC.FieldDecl(ctx, dc, loc, loc, id, ty, tsi, CC.Expr_(C_NULL), false,
-                           LX.CXInClassInitStyle_ICIS_CopyInit)
+        fdi = CC.FieldDecl(ctx, dc, loc, loc, id, ty, tsi, CC.Expr_(C_NULL), false, LX.CXInClassInitStyle_ICIS_CopyInit)
         @test CC.hasInClassInitializer(fdi)
         CC.setInClassInitializer(fdi, bw)
         @test CC.getInClassInitializer(fdi).ptr == bw.ptr
@@ -504,8 +504,7 @@ end
     @test mdd.ptr != C_NULL
     @test CC.getName(mdd) == "vm"
 
-    mes = [n for n in CC.subtree(CC.resolve(CC.getBody(CC.FunctionDecl(getdecl("useo")))))
-           if n isa CC.MemberExpr]
+    mes = [n for n in CC.subtree(CC.resolve(CC.getBody(CC.FunctionDecl(getdecl("useo"))))) if n isa CC.MemberExpr]
     @test length(mes) == 2
     byname = Dict(CC.getName(CC.getMemberDecl(m)) => m for m in mes)
     md_om2 = CC.getCanonicalDecl(CC.CXXMethodDecl(CC.getMemberDecl(byname["om2"])))
@@ -735,13 +734,10 @@ using ClangCompiler: get_tag
             break
         end
         @test !CC.is_null_handle(sdm_a) && !CC.is_null_handle(sdm_b)
-        CC.setInstantiationOfStaticDataMember(sdm_a, sdm_b,
-                                              LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+        CC.setInstantiationOfStaticDataMember(sdm_a, sdm_b, LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
         @test CC.getInstantiatedFromStaticDataMember(sdm_a).ptr == sdm_b.ptr
-        CC.setTemplateSpecializationKind(sdm_a,
-                                         LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
-        @test CC.getTemplateSpecializationKind(sdm_a) ==
-              LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
+        CC.setTemplateSpecializationKind(sdm_a, LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
+        @test CC.getTemplateSpecializationKind(sdm_a) == LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
 
         # described var template on a fresh VarDecl
         @assert fnd(I, "dk10_vt")
@@ -785,8 +781,7 @@ using ClangCompiler: get_tag
         @test CC.isObjCMethodParameter(parm_b)
 
         # ================= FunctionDecl =================
-        mkfd() = CC.FunctionDecl(ctx, dc, gloc, gloc, fname, gfty, gftsi,
-                                 LXD.CXStorageClass_SC_None, false, true)
+        mkfd() = CC.FunctionDecl(ctx, dc, gloc, gloc, fname, gfty, gftsi, LXD.CXStorageClass_SC_None, false, true)
 
         fd_f1 = mkfd()
         CC.setBody(fd_f1, gbody)
@@ -804,13 +799,10 @@ using ClangCompiler: get_tag
         @test CC.getPreviousDecl(fd_f4).ptr == gfd.ptr
 
         fd_f5 = mkfd()
-        CC.setInstantiationOfMemberFunction(fd_f5, gfd,
-                                            LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+        CC.setInstantiationOfMemberFunction(fd_f5, gfd, LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
         @test CC.getMemberSpecializationInfo(fd_f5).ptr != C_NULL
-        CC.setTemplateSpecializationKind(fd_f5,
-                                         LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
-        @test CC.getTemplateSpecializationKind(fd_f5) ==
-              LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
+        CC.setTemplateSpecializationKind(fd_f5, LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
+        @test CC.getTemplateSpecializationKind(fd_f5) == LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
 
         @assert fnd(I, "dk_tfn")
         ftd = nothing
@@ -852,8 +844,7 @@ using ClangCompiler: get_tag
         @test tplh !== nothing
         if tplh !== nothing
             @test !CC.is_null_handle(CC.getTemplateParameterList(tplh, 0))
-            @test_throws AssertionError CC.getTemplateParameterList(tplh,
-                                                                    CC.getNumTemplateParameterLists(tplh))
+            @test_throws AssertionError CC.getTemplateParameterList(tplh, CC.getNumTemplateParameterLists(tplh))
         end
 
         # ================= TypeDecl / TypedefDecl =================
@@ -904,8 +895,8 @@ using ClangCompiler: get_tag
         @test !CC.is_null_handle(vla_ty)
         rec_f2 = CC.RecordDecl(ctx, LXD.CXTagTypeKind_Struct, dc, gloc, gloc, id)
         CC.setCapturedRecord(rec_f2)
-        fld_vla = CC.FieldDecl(ctx, CC.DeclContext(rec_f2), gloc, gloc, id, vla_qt, tsi,
-                               CC.Expr_(C_NULL), false, LXD.CXInClassInitStyle_ICIS_NoInit)
+        fld_vla = CC.FieldDecl(ctx, CC.DeclContext(rec_f2), gloc, gloc, id, vla_qt, tsi, CC.Expr_(C_NULL), false,
+                               LXD.CXInClassInitStyle_ICIS_NoInit)
         CC.setCapturedVLAType(fld_vla, vla_ty)
         @test CC.hasCapturedVLAType(fld_vla)
         @test !CC.is_null_handle(CC.getCapturedVLAType(fld_vla))
@@ -913,20 +904,16 @@ using ClangCompiler: get_tag
         # ================= EnumDecl / EnumConstantDecl =================
         ed = CC.getDefinition(CC.EnumDecl(look("DKE")))
         enum_f = CC.EnumDecl(ctx, dc, gloc, gloc, id)
-        CC.setInstantiationOfMemberEnum(enum_f, ed,
-                                        LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
-        CC.setTemplateSpecializationKind(enum_f,
-                                         LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
-        @test CC.getTemplateSpecializationKind(enum_f) ==
-              LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
+        CC.setInstantiationOfMemberEnum(enum_f, ed, LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
+        CC.setTemplateSpecializationKind(enum_f, LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
+        @test CC.getTemplateSpecializationKind(enum_f) == LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
 
         ecd = CC.EnumConstantDecl(ctx, ed, gloc, id, qt_int, CC.Expr_(C_NULL), gv)
         @test !CC.is_null_handle(ecd)
 
         # ================= CapturedDecl =================
         cd_f = CC.CapturedDecl(ctx, dc, 1)
-        ipd2 = CC.ImplicitParamDecl(ctx, dc, gloc, id, qt_int,
-                                    LXD.CXImplicitParamKind_CapturedContext)
+        ipd2 = CC.ImplicitParamDecl(ctx, dc, gloc, id, qt_int, LXD.CXImplicitParamKind_CapturedContext)
         CC.setContextParam(cd_f, 0, ipd2)
         @test CC.getContextParamPosition(cd_f) == 0
         @test CC.getNumParams(cd_f) == 1
@@ -1658,12 +1645,9 @@ end
         ctx = CC.get_ast_context(I)
 
         # VarDecl::needsDestruction — the ASTContext-taking query.
-        @test CC.needsDestruction(D("dt_tail_plain", CC.VarDecl), ctx) ==
-              LX.CXDestructionKind_DK_none
-        @test CC.needsDestruction(D("dt_tail_triv", CC.VarDecl), ctx) ==
-              LX.CXDestructionKind_DK_none
-        @test CC.needsDestruction(D("dt_tail_nontriv", CC.VarDecl), ctx) !=
-              LX.CXDestructionKind_DK_none
+        @test CC.needsDestruction(D("dt_tail_plain", CC.VarDecl), ctx) == LX.CXDestructionKind_DK_none
+        @test CC.needsDestruction(D("dt_tail_triv", CC.VarDecl), ctx) == LX.CXDestructionKind_DK_none
+        @test CC.needsDestruction(D("dt_tail_nontriv", CC.VarDecl), ctx) != LX.CXDestructionKind_DK_none
 
         # NamedDecl::getLinkageAndVisibility — the LinkageInfo aggregate.
         plain = D("dt_tail_plain", CC.VarDecl)
@@ -1918,8 +1902,7 @@ end
         @test v_blue != C_NULL
         # the mutation target is a detached enumerator: EnumConstantDecl::Create does not
         # add it to DGColor, so nothing in the live AST changes value here.
-        fresh = CC.EnumConstantDecl(ctx, ed, loc, id, CC.getType(ecs[1]), CC.Expr_(C_NULL),
-                                    v_red)
+        fresh = CC.EnumConstantDecl(ctx, ed, loc, id, CC.getType(ecs[1]), CC.Expr_(C_NULL), v_red)
         @test CC.getEnumConstantDeclValue(fresh) == CC.getEnumConstantDeclValue(ecs[1])
         CC.setInitVal(fresh, ctx, v_blue, false)
         @test CC.getEnumConstantDeclValue(fresh) == CC.getEnumConstantDeclValue(ecs[2])
@@ -1940,8 +1923,7 @@ end
         @test CC.getNumTemplateParameterLists(rec) == 1
         @test CC.getTemplateParameterList(rec, 0).ptr == tpl.ptr
         @test_throws AssertionError CC.getTemplateParameterList(rec, 1)  # the restated clang assert (Invariant 3)
-        @test_throws AssertionError CC.setTemplateParameterListsInfo(rec, ctx,
-                                                                     CC.TemplateParameterList[])
+        @test_throws AssertionError CC.setTemplateParameterListsInfo(rec, ctx, CC.TemplateParameterList[])
 
         # DeclaratorDecl arm, on a freshly created (detached) variable
         vd = CC.VarDecl(ctx, dc, loc, loc, id, qt_int, tsi, LXG.CXStorageClass_SC_None)
@@ -1949,16 +1931,14 @@ end
         CC.setTemplateParameterListsInfo(vd, ctx, [tpl])
         @test CC.getNumTemplateParameterLists(vd) == 1
         @test CC.getTemplateParameterList(vd, 0).ptr == tpl.ptr
-        @test_throws AssertionError CC.setTemplateParameterListsInfo(vd, ctx,
-                                                                     CC.TemplateParameterList[])
+        @test_throws AssertionError CC.setTemplateParameterListsInfo(vd, ctx, CC.TemplateParameterList[])
 
         # ---------------- ParmVarDecl::setObjCDeclQualifier ----------------
         parm = CC.ParmVarDecl(ctx, dc, loc, loc, id, qt_int, tsi, LXG.CXStorageClass_SC_None)
         # the qualifier shares a bitfield with the scope depth, so the wrapper refuses a
         # plain C/C++ parameter until setObjCMethodScopeInfo marks it as an ObjC one
         @test !CC.isObjCMethodParameter(parm)
-        @test_throws AssertionError CC.setObjCDeclQualifier(parm,
-                                                            LXG.CXObjCDeclQualifier_OBJC_TQ_Byref)
+        @test_throws AssertionError CC.setObjCDeclQualifier(parm, LXG.CXObjCDeclQualifier_OBJC_TQ_Byref)
         CC.setObjCMethodScopeInfo(parm, 0)
         @test CC.isObjCMethodParameter(parm)
         CC.setObjCDeclQualifier(parm, LXG.CXObjCDeclQualifier_OBJC_TQ_Byref)
@@ -1975,8 +1955,7 @@ end
         nd_a = CC.NamedDecl(anchor)
         nd_b = CC.NamedDecl(ed)
         info = CC.DefaultedFunctionInfo(ctx, [nd_a, nd_b],
-                                        [LXG.CXAccessSpecifier_AS_public,
-                                         LXG.CXAccessSpecifier_AS_private])
+                                        [LXG.CXAccessSpecifier_AS_public, LXG.CXAccessSpecifier_AS_private])
         @test info.ptr != C_NULL
         @test CC.getNumUnqualifiedLookups(info) == 2
         # decls and accesses are read in lockstep at the same index
@@ -1986,8 +1965,7 @@ end
         @test CC.getUnqualifiedLookupAccess(info, 1) == LXG.CXAccessSpecifier_AS_private
         @test_throws AssertionError CC.getUnqualifiedLookupDecl(info, 2)
         @test_throws AssertionError CC.getUnqualifiedLookupAccess(info, 2)
-        @test_throws AssertionError CC.DefaultedFunctionInfo(ctx, [nd_a],
-                                                             CC.CXAccessSpecifier[])
+        @test_throws AssertionError CC.DefaultedFunctionInfo(ctx, [nd_a], CC.CXAccessSpecifier[])
 
         # the carrier overload of the existing setter round-trips the info back out
         info1 = CC.DefaultedFunctionInfo(ctx, [nd_a], [LXG.CXAccessSpecifier_AS_none])
@@ -2256,8 +2234,7 @@ end
 
         # ---------------- BlockDecl::setCaptures ----------------
         @test CC.getNumCaptures(bd) == 0
-        CC.setCaptures(bd, ctx, [first_vd, second_vd], [false, true], [true, false],
-                       [nothing, nothing], false)
+        CC.setCaptures(bd, ctx, [first_vd, second_vd], [false, true], [true, false], [nothing, nothing], false)
         @test CC.getNumCaptures(bd) == 2
         @test CC.hasCaptures(bd)
         @test CC.getCaptureVariable(bd, 0).ptr == first_vd.ptr
@@ -2334,8 +2311,7 @@ end
     fty = CC.getType(seed)
     loc = CC.getLocation(seed)
     tsi = CC.getTrivialTypeSourceInfo(ctx, fty, loc)
-    mk() = CC.FunctionDecl(ctx, dc, loc, loc, name, fty, tsi, LX.CXStorageClass_SC_None,
-                           false, true)
+    mk() = CC.FunctionDecl(ctx, dc, loc, loc, name, fty, tsi, LX.CXStorageClass_SC_None, false, true)
 
     ordinary = UInt32(CC.CXDecl_IDNS_Ordinary)
     ofriend = UInt32(CC.CXDecl_IDNS_OrdinaryFriend)

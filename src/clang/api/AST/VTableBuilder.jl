@@ -250,8 +250,7 @@ The slot index of one variant of a virtual destructor. `CXCXXDtorType_Dtor_Compl
 
 PARTIAL: `d` must be virtual and must have a vtable slot.
 """
-function getMethodVTableIndexForDtor(x::AbstractItaniumVTableContext,
-                                     d::AbstractCXXDestructorDecl, kind::CXCXXDtorType)
+function getMethodVTableIndexForDtor(x::AbstractItaniumVTableContext, d::AbstractCXXDestructorDecl, kind::CXCXXDtorType)
     @check_ptrs x d
     @assert isVirtual(d) "a non-virtual destructor has no vtable slot"
     @assert hasVtableSlot(d) "the destructor has no vtable slot"
@@ -265,8 +264,7 @@ The constructor form of [`getMethodVTableIndex`](@ref).
 Constructors are never virtual in C++, so clang has no slot for one and this exists only to
 make the `GlobalDecl` flattening total; the precondition it restates can never be met.
 """
-function getMethodVTableIndexForCtor(x::AbstractItaniumVTableContext,
-                                     d::AbstractCXXConstructorDecl, kind::CXCXXCtorType)
+function getMethodVTableIndexForCtor(x::AbstractItaniumVTableContext, d::AbstractCXXConstructorDecl, kind::CXCXXCtorType)
     @check_ptrs x d
     @assert hasVtableSlot(d) "a constructor has no vtable slot"
     return clang_ItaniumVTableContext_getMethodVTableIndexForCtor(x, d, kind)
@@ -281,9 +279,7 @@ PARTIAL: `vbase` must be one of `rd`'s virtual bases, direct or indirect — cla
 vbase-offset map for `rd` and then asserts the pair is in it. `rd` must therefore also have a
 definition.
 """
-function getVirtualBaseOffsetOffset(x::AbstractItaniumVTableContext,
-                                    rd::AbstractCXXRecordDecl,
-                                    vbase::AbstractCXXRecordDecl)
+function getVirtualBaseOffsetOffset(x::AbstractItaniumVTableContext, rd::AbstractCXXRecordDecl, vbase::AbstractCXXRecordDecl)
     @check_ptrs x rd vbase
     @assert hasDefinition(rd) "CXXRecordDecl has no definition."
     @assert is_virtual_base_of(rd, vbase) "the class is not a virtual base of the record"

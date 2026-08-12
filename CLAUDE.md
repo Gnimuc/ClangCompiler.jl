@@ -77,20 +77,37 @@ Two more traps when running these commands:
 
 ## Formatting
 
-Formatting: JuliaFormatter, YAS style, margin 1000 (see `.JuliaFormatter.toml`); `lib/`,
-`examples/` and the generated `src/` files listed in its `ignore` entry are excluded. The margin is set past the longest line here, so the formatter never
-*splits* a line — the wrapper signatures carry identifiers with no good break point, and its
-choices there were worse than a hand-placed break.
+JuliaFormatter, YAS style. **Two margins, and which one applies is decided by directory:**
 
-`join_lines_based_on_source=false` is the other half, and the margin does almost nothing
-without it. YAS turns that setting *on* by default, which means "keep whatever breaks the
-source already had" — so raising the margin only removes the obligation to split and never
-asks it to join. The two together say: put a definition on one line unless it physically
-cannot go there.
+- **`src/clang/**` — margin 1000** (`src/clang/.JuliaFormatter.toml`). This is the only place
+  that earns it. The files are thin wrappers that copy Clang's own method names verbatim, so
+  a signature is one run of long camelCase identifiers with no good break point; the
+  formatter's choices there were worse than a hand-placed break, and a wrapper on one line
+  stays diffable against the header it mirrors. The cost is local to this directory: a few
+  dozen lines over 300 characters, the worst near 900 where a `for (cls, T) in [...]`
+  dispatch table sits on one line.
+- **everything else — margin 120** (the repo-root `.JuliaFormatter.toml`). Ordinary Julia,
+  formatted like ordinary Julia. Nothing outside `src/clang` has signatures that cannot be
+  broken sensibly, so nothing outside it gets the wide margin.
 
-The cost is a tail of very long lines — in `src/clang`, a few dozen over 300 characters, the
-worst near 900 where a `for (cls, T) in [...]` dispatch table collapses. Where a table is
-meant to be read vertically, fence it rather than widening the margin back:
+JuliaFormatter uses the **nearest** config it finds rather than merging with the parent, so
+`src/clang/.JuliaFormatter.toml` has to repeat every setting it wants — including its own
+`ignore` list, since the root one does not reach inside.
+
+Excluded from formatting entirely: `lib/` and `examples/` (generated / vendored), the
+generated `src/` files named in the two `ignore` entries, and `gen/prologue.jl`. That last one
+is excluded for a reason one step removed — `gen/option.toml` names it as
+`prologue_file_path`, so the generator copies it *verbatim* into `lib/<v>/LibClangEx.jl`, and
+formatting it changes bytes in a file that is itself excluded. The "regenerated bindings match
+`lib/`" CI check then fails on whitespace alone.
+
+`join_lines_based_on_source=false` is set in both. YAS turns it *on* by default, which means
+"keep whatever breaks the source already had" — with it on, the margin only removes the
+obligation to split and never asks the formatter to join. Off, the layout is derived from the
+margin alone, so the output is canonical rather than a record of where someone pressed return.
+
+Where a table is meant to be read vertically and the margin still collapses it, fence it
+rather than widening the margin back:
 
 ```julia
 #! format: off
@@ -98,7 +115,12 @@ meant to be read vertically, fence it rather than widening the margin back:
 #! format: on
 ```
 
-Nothing in CI runs the formatter, so none of this happens on its own.
+At margin 120 this is rarely needed — a two-column table generally stays one row per line on
+its own — and the tree currently has no fences at all.
+
+Nothing in CI runs the formatter, so none of this happens on its own. Adding a CI gate would
+need the JuliaFormatter version pinned first; unpinned, a formatter release turns CI red on a
+commit that changed nothing.
 
 ## Architecture
 

@@ -30,20 +30,17 @@ end
     # per increment; C++ lookup crosses that chain and C's does not, so `clang-repl --Xcc -xc`
     # cannot see a declaration made one line earlier. Each case below uses, in a LATER
     # increment, something declared in an earlier one — which is exactly what fails there.
-    @testset "$language" for (language, chunks, expected) in (
-        (:c, ["struct Pt { int x; };",
-              "struct Pt ip_gp; int ip_getx(void) { return ip_gp.x; }"],
-         ["Pt"] => ["ip_gp", "ip_getx"]),
-        (:cxx, ["struct Pt { int x; };",
-                "Pt ip_gp; int ip_getx() { return ip_gp.x; }"],   # `Pt` unqualified: C++ only
-         ["Pt"] => ["ip_gp", "ip_getx"]),
-        (:objc, ["@interface Thing { int v; } @end",
-                 "Thing *ip_gt; id ip_get(void) { return ip_gt; }"],
-         ["Thing"] => ["ip_gt", "ip_get"]),
-        (:objcxx, ["@interface Thing { int v; } @end",
-                   "Thing *ip_gt; struct Holder { Thing *t; };"],
-         ["Thing"] => ["ip_gt", "Holder"]),
-    )
+    @testset "$language" for (language, chunks, expected) in
+                             ((:c, ["struct Pt { int x; };", "struct Pt ip_gp; int ip_getx(void) { return ip_gp.x; }"],
+                               ["Pt"] => ["ip_gp", "ip_getx"]),
+                              (:cxx, ["struct Pt { int x; };", "Pt ip_gp; int ip_getx() { return ip_gp.x; }"],   # `Pt` unqualified: C++ only
+                               ["Pt"] => ["ip_gp", "ip_getx"]),
+                              (:objc,
+                               ["@interface Thing { int v; } @end", "Thing *ip_gt; id ip_get(void) { return ip_gt; }"],
+                               ["Thing"] => ["ip_gt", "ip_get"]),
+                              (:objcxx,
+                               ["@interface Thing { int v; } @end", "Thing *ip_gt; struct Holder { Thing *t; };"],
+                               ["Thing"] => ["ip_gt", "Holder"]))
         added, errs = ip_run(language, chunks)
         @test isempty(errs)
         @test added[1] == first(expected)
@@ -55,8 +52,7 @@ end
     # `#include <stdint.h>` in C is the case clang's Interpreter cannot do at all: the
     # header reaches `__builtin_va_list`, which lives in the increment before every other
     # one. Reading `int64_t` from a LATER increment than the include is the second half.
-    added, errs = ip_run(:c, ["#include <stdint.h>",
-                              "int64_t ip_big = 1; uint8_t ip_small = 2;"])
+    added, errs = ip_run(:c, ["#include <stdint.h>", "int64_t ip_big = 1; uint8_t ip_small = 2;"])
     @test isempty(errs)
     @test "int64_t" in added[1]                       # the header's own typedefs
     @test added[2] == ["ip_big", "ip_small"]
@@ -98,8 +94,9 @@ end
         dispose(p)
     end
 
-    added, errs = ip_run(:c, ["void ip_u(void) { __builtin_unreachable(); }",
-                              "unsigned long ip_l(const char *s) { return __builtin_strlen(s); }"])
+    added, errs = ip_run(:c,
+                         ["void ip_u(void) { __builtin_unreachable(); }",
+                          "unsigned long ip_l(const char *s) { return __builtin_strlen(s); }"])
     @test isempty(errs)
     @test added == [["ip_u"], ["ip_l"]]
 end
@@ -146,8 +143,7 @@ end
     ctx = CC.get_ast_context(p)
     tu = CC.getTranslationUnitDecl(ctx)
     @test CC.is_null_handle(CC.getPreviousDecl(tu))
-    names = [CC.getNameAsString(d) for d in CC.decls_in(CC.castToDeclContext(tu))
-             if d isa CC.AbstractNamedDecl]
+    names = [CC.getNameAsString(d) for d in CC.decls_in(CC.castToDeclContext(tu)) if d isa CC.AbstractNamedDecl]
     @test "Shared" in names
     @test "ip_inst" in names
 
@@ -279,7 +275,8 @@ end
         @test isempty(errs)
         @test [CC.getNameAsString(d) for d in ds if d isa CC.AbstractNamedDecl] == ["ip_uses"]
         # the header's own declaration is in the shared unit, not in the increment's result
-        names = [CC.getNameAsString(d) for d in CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(CC.get_ast_context(p))))
+        names = [CC.getNameAsString(d)
+                 for d in CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(CC.get_ast_context(p))))
                  if d isa CC.AbstractNamedDecl]
         @test "ip_preincluded" in names
         CC.setClient(de, CC.TextDiagnosticPrinter(CC.getDiagnosticOptions(de)), true)
@@ -310,8 +307,7 @@ end
 
     # Declarations that are self-contained per increment are unaffected, which is what makes
     # the driver usable at all -- so this is the partition, not a second pin of the same thing.
-    added, errs = ip_run(:c, ["struct T { int x; }; struct T ip_t;",
-                              "int ip_u(void) { return ip_t.x; }"])
+    added, errs = ip_run(:c, ["struct T { int x; }; struct T ip_t;", "int ip_u(void) { return ip_t.x; }"])
     @test isempty(errs)
     @test added[2] == ["ip_u"]
 end

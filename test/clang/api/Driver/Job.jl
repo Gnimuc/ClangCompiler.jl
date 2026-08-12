@@ -11,8 +11,7 @@ using Test
 const JOB_TRIPLE = "x86_64-unknown-linux-gnu"
 
 function job_driver()
-    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(),
-                                 CC.IgnoringDiagConsumer(), true)
+    diags = CC.DiagnosticsEngine(CC.DiagnosticIDs(), CC.DiagnosticOptions(), CC.IgnoringDiagConsumer(), true)
     drv = CC.Driver(joinpath("usr", "bin", "clang"), JOB_TRIPLE, diags)
     CC.setCheckInputsExist(drv, false)
     return drv, diags
@@ -85,8 +84,7 @@ end
     @test !isempty(CC.getShortName(tool))
     @test !CC.isLinkJob(tool)
     # the toolchain reached through the tool is the one the compilation was built for
-    @test CC.getTripleString(CC.getToolChain(tool)) ==
-          CC.getTripleString(CC.getDefaultToolChain(comp))
+    @test CC.getTripleString(CC.getToolChain(tool)) == CC.getTripleString(CC.getDefaultToolChain(comp))
 
     dispose(comp)
     dispose(drv)

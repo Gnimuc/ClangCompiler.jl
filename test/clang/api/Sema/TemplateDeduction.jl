@@ -52,8 +52,7 @@ using Test
     ptr_arg = CC.TemplateArgument(ptr_ty)
     ptr_args = CC.TemplateArgumentList(ctx, [ptr_arg])
     # `SemaDedBox<int *>` matches the `SemaDedBox<T *>` pattern with T = int
-    @test CC.DeduceTemplateArguments(sema, partial, ptr_args, info) ==
-          CC.CXTemplateDeductionResult_TDK_Success
+    @test CC.DeduceTemplateArguments(sema, partial, ptr_args, info) == CC.CXTemplateDeductionResult_TDK_Success
     deduced = CC.takeSugared(info)
     @test deduced isa CC.TemplateArgumentList
     @test deduced.ptr != C_NULL
@@ -66,8 +65,7 @@ using Test
     int_arg = CC.TemplateArgument(int_ty)
     int_args = CC.TemplateArgumentList(ctx, [int_arg])
     # a plain `int` cannot match the pointer pattern
-    @test CC.DeduceTemplateArguments(sema, partial, int_args, info2) !=
-          CC.CXTemplateDeductionResult_TDK_Success
+    @test CC.DeduceTemplateArguments(sema, partial, int_args, info2) != CC.CXTemplateDeductionResult_TDK_Success
     CC.dispose(int_arg)
     CC.dispose(info2)
 
@@ -92,8 +90,7 @@ using Test
     box_params = CC.getTemplateParameters(ctd)
     @test box_params isa CC.TemplateParameterList
     @test CC.TemplateParameterListsAreEqual(sema, box_params, box_params, false,
-                                            CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch,
-                                            loc)
+                                            CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch, loc)
     # Clang compares parameter KINDS and arity, not names -- so `SemaDedPair`'s list, which
     # spells its one type parameter identically but belongs to another template, compares equal,
     # while `SemaDedTwo`'s two-parameter list does not. Both halves are needed: the equal case on
@@ -113,8 +110,7 @@ using Test
     rec = CC.CXXRecordDecl(get_decl(f))
     fld = first(CC.getFields(rec))
     @test fld isa CC.FieldDecl
-    @test CC.ConvertMemberDefaultInitExpression(sema, fld, seven, loc) isa
-          Union{Nothing,CC.Expr_}
+    @test CC.ConvertMemberDefaultInitExpression(sema, fld, seven, loc) isa Union{Nothing,CC.Expr_}
 
     @test f(I, "semaDedFn")
     fn = CC.FunctionDecl(get_decl(f))
@@ -163,8 +159,7 @@ end
         arg = CC.TemplateArgument(ptr_ty)
         args = CC.TemplateArgumentList(ctx, [arg])
         # `SemaVBox<int *>` matches the `SemaVBox<T *>` pattern
-        @test CC.DeduceTemplateArguments(sema, partials[1], args, info) ==
-              CC.CXTemplateDeductionResult_TDK_Success
+        @test CC.DeduceTemplateArguments(sema, partials[1], args, info) == CC.CXTemplateDeductionResult_TDK_Success
         @test CC.size(CC.takeSugared(info)) == 1
         CC.dispose(arg)
         CC.dispose(info)
@@ -209,7 +204,8 @@ end
         # argument buffer gives one answer for all four cases below.
         expr_of(name) = (CC.reset(f); @assert f(I, name); CC.getInit(CC.VarDecl(get_decl(f))))
         template_named(name) = (CC.reset(f); @assert f(I, name);
-                                CC.FunctionTemplateDecl(first(d for d in CC.get_decls(f)
+                                CC.FunctionTemplateDecl(first(d
+                                                              for d in CC.get_decls(f)
                                                               if CC.getDeclKindName(d) == "FunctionTemplate")))
         ei, ed = expr_of("sema_arg_i"), expr_of("sema_arg_d")
         @test CC.getAsString(CC.getType(ei)) == "int"
@@ -259,8 +255,7 @@ end
         CC.reset(f)
         @test f(I, "sema_explicit_use")
         use = CC.FunctionDecl(get_decl(f))
-        dre = first(n for n in CC.subtree(CC.getBody(use))
-                    if n isa CC.DeclRefExpr && CC.hasExplicitTemplateArgs(n))
+        dre = first(n for n in CC.subtree(CC.getBody(use)) if n isa CC.DeclRefExpr && CC.hasExplicitTemplateArgs(n))
         explicit = CC.TemplateArgumentListInfo(CC.getLAngleLoc(dre), CC.getRAngleLoc(dre))
         CC.copyTemplateArgumentsInto(dre, explicit)
         @test size(explicit) == 1

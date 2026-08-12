@@ -54,8 +54,7 @@ end
     ci = CC.CompilerInstance()
     lctx = LLVM.Context()
     mod = LLVM.Module("beu_empty")
-    @test_throws AssertionError CC.EmitBackendOutput(ci, mod,
-                                                     LX.CXBackendAction_Backend_EmitLL,
+    @test_throws AssertionError CC.EmitBackendOutput(ci, mod, LX.CXBackendAction_Backend_EmitLL,
                                                      joinpath(mktempdir(), "x.ll"))
     LLVM.dispose(mod)
     LLVM.dispose(lctx)

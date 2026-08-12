@@ -523,8 +523,7 @@ extension — a named category cannot declare ivars — which is clang's own ass
 function getContainingInterface(x::AbstractObjCIvarDecl)
     @check_ptrs x
     dc = resolve(castFromDeclContext(getDeclContext(x)))
-    ok = dc isa AbstractObjCInterfaceDecl || dc isa AbstractObjCImplementationDecl ||
-         (dc isa AbstractObjCCategoryDecl && IsClassExtension(dc))
+    ok = dc isa AbstractObjCInterfaceDecl || dc isa AbstractObjCImplementationDecl || (dc isa AbstractObjCCategoryDecl && IsClassExtension(dc))
     @assert ok "ivar container must be an @interface, an @implementation or a class extension"
     return ObjCInterfaceDecl(clang_ObjCIvarDecl_getContainingInterface(x))
 end

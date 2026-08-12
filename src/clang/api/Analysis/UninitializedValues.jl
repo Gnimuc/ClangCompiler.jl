@@ -38,8 +38,7 @@ function UninitVariablesResult(adc::AbstractAnalysisDeclContext)
     return UninitVariablesResult(castToDeclContext(getDecl(adc)), g, adc)
 end
 
-function UninitVariablesResult(dc::AnyDeclContext, g::AbstractCFG,
-                               adc::AbstractAnalysisDeclContext)
+function UninitVariablesResult(dc::AnyDeclContext, g::AbstractCFG, adc::AbstractAnalysisDeclContext)
     @check_ptrs dc g adc
     @assert getCFG(adc).ptr == g.ptr "the CFG must be the one this AnalysisDeclContext built"
     return UninitVariablesResult(clang_UninitVariablesResult_create(dc, g, adc))

@@ -57,7 +57,7 @@ end
             @test CC.getNumVariablesAnalyzed(r) >= 1
             @test CC.getNumBlockVisits(r) >= 1
             @test CC.getNumSelfInits(r) == 0
-            names = [CC.getName(CC.getVarDecl(r, i)) for i in 0:(n - 1)]
+            names = [CC.getName(CC.getVarDecl(r, i)) for i = 0:(n - 1)]
             @test "y" in names
             i = findfirst(==("y"), names) - 1
             @test CC.getKind(r, i) == CC.LibClangEx.CXUninitUseKind_Always
@@ -75,12 +75,11 @@ end
         uv_run(f, I, "uv_sometimes") do adc, r
             n = Int(CC.getNumUses(r))
             @test n >= 1
-            names = [CC.getName(CC.getVarDecl(r, i)) for i in 0:(n - 1)]
+            names = [CC.getName(CC.getVarDecl(r, i)) for i = 0:(n - 1)]
             @test "x" in names
             i = findfirst(==("x"), names) - 1
             k = CC.getKind(r, i)
-            @test k == CC.LibClangEx.CXUninitUseKind_Sometimes ||
-                  k == CC.LibClangEx.CXUninitUseKind_Maybe
+            @test k == CC.LibClangEx.CXUninitUseKind_Sometimes || k == CC.LibClangEx.CXUninitUseKind_Maybe
             nb = Int(CC.getNumBranches(r, i))
             # getKind reports Sometimes exactly when it has branches to blame, and Maybe
             # exactly when it has none
@@ -89,7 +88,7 @@ end
             else
                 @test nb == 0
             end
-            for j in 0:(nb - 1)
+            for j = 0:(nb - 1)
                 t = CC.getBranchTerminator(r, i, j)
                 @test !CC.is_null_handle(t)
                 @test CC.resolve(t) isa CC.AbstractIfStmt
@@ -109,7 +108,7 @@ end
         uv_run(f, I, "uv_self") do adc, r
             n = Int(CC.getNumSelfInits(r))
             @test n >= 1
-            @test "w" in [CC.getName(CC.getSelfInit(r, i)) for i in 0:(n - 1)]
+            @test "w" in [CC.getName(CC.getSelfInit(r, i)) for i = 0:(n - 1)]
         end
 
         # the explicit three-argument form reaches the same analysis

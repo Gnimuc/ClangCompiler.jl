@@ -24,21 +24,9 @@ batch of related questions and build a fresh one once the ASTs have changed unde
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function StructuralEquivalenceContext(from_ctx::AbstractASTContext,
-                                      to_ctx::AbstractASTContext;
-                                      kind::CXStructuralEquivalenceKind=CXStructuralEquivalenceKind_Default,
-                                      strict_type_spelling::Bool=false,
-                                      complain::Bool=false,
-                                      error_on_tag_type_mismatch::Bool=false,
-                                      ignore_template_parm_depth::Bool=false)
+function StructuralEquivalenceContext(from_ctx::AbstractASTContext, to_ctx::AbstractASTContext; kind::CXStructuralEquivalenceKind=CXStructuralEquivalenceKind_Default, strict_type_spelling::Bool=false, complain::Bool=false, error_on_tag_type_mismatch::Bool=false, ignore_template_parm_depth::Bool=false)
     @check_ptrs from_ctx to_ctx
-    return StructuralEquivalenceContext(clang_StructuralEquivalenceContext_create(from_ctx,
-                                                                                  to_ctx,
-                                                                                  kind,
-                                                                                  strict_type_spelling,
-                                                                                  complain,
-                                                                                  error_on_tag_type_mismatch,
-                                                                                  ignore_template_parm_depth))
+    return StructuralEquivalenceContext(clang_StructuralEquivalenceContext_create(from_ctx, to_ctx, kind, strict_type_spelling, complain, error_on_tag_type_mismatch, ignore_template_parm_depth))
 end
 
 dispose(x::StructuralEquivalenceContext) = clang_StructuralEquivalenceContext_dispose(x)
@@ -59,8 +47,7 @@ Whether the two declarations, types or statements are structurally equivalent.
 
 `a` must come from the context's "from" AST and `b` from its "to" AST.
 """
-function IsEquivalent(x::AbstractStructuralEquivalenceContext, d1::AbstractDecl,
-                      d2::AbstractDecl)
+function IsEquivalent(x::AbstractStructuralEquivalenceContext, d1::AbstractDecl, d2::AbstractDecl)
     @check_ptrs x d1 d2
     return clang_StructuralEquivalenceContext_IsEquivalentDecl(x, d1, d2)
 end
@@ -70,8 +57,7 @@ function IsEquivalent(x::AbstractStructuralEquivalenceContext, t1::QualType, t2:
     return clang_StructuralEquivalenceContext_IsEquivalentQualType(x, t1, t2)
 end
 
-function IsEquivalent(x::AbstractStructuralEquivalenceContext, s1::AbstractStmt,
-                      s2::AbstractStmt)
+function IsEquivalent(x::AbstractStructuralEquivalenceContext, s1::AbstractStmt, s2::AbstractStmt)
     @check_ptrs x s1 s2
     return clang_StructuralEquivalenceContext_IsEquivalentStmt(x, s1, s2)
 end

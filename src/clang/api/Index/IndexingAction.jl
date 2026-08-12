@@ -117,20 +117,9 @@ Keyword arguments mirror `clang::index::IndexingOptions`, with its defaults:
 `index_parameters_in_declarations` (no effect unless `index_function_locals` is set) and
 `index_template_parameters`.
 """
-function indexASTUnit(unit::AbstractASTUnit, c::AbstractIndexDataCollector;
-                      system_symbol_filter::CXSystemSymbolFilterKind=CXSystemSymbolFilterKind_DeclarationsOnly,
-                      index_function_locals::Bool=false,
-                      index_implicit_instantiation::Bool=false,
-                      index_macros::Bool=true,
-                      index_macros_in_preprocessor::Bool=false,
-                      index_parameters_in_declarations::Bool=false,
-                      index_template_parameters::Bool=false)
+function indexASTUnit(unit::AbstractASTUnit, c::AbstractIndexDataCollector; system_symbol_filter::CXSystemSymbolFilterKind=CXSystemSymbolFilterKind_DeclarationsOnly, index_function_locals::Bool=false, index_implicit_instantiation::Bool=false, index_macros::Bool=true, index_macros_in_preprocessor::Bool=false, index_parameters_in_declarations::Bool=false, index_template_parameters::Bool=false)
     @check_ptrs unit c
-    return clang_index_indexASTUnit(unit, c, system_symbol_filter, index_function_locals,
-                                    index_implicit_instantiation, index_macros,
-                                    index_macros_in_preprocessor,
-                                    index_parameters_in_declarations,
-                                    index_template_parameters)
+    return clang_index_indexASTUnit(unit, c, system_symbol_filter, index_function_locals, index_implicit_instantiation, index_macros, index_macros_in_preprocessor, index_parameters_in_declarations, index_template_parameters)
 end
 
 """
@@ -141,16 +130,7 @@ route, where there is no `ASTUnit` to hand to [`indexASTUnit`](@ref).
 
 An empty `decls` walks nothing. Keyword arguments are the same as `indexASTUnit`'s.
 """
-function indexTopLevelDecls(ctx::AbstractASTContext, pp::AbstractPreprocessor,
-                            decls::AbstractVector{<:AbstractDecl},
-                            c::AbstractIndexDataCollector;
-                            system_symbol_filter::CXSystemSymbolFilterKind=CXSystemSymbolFilterKind_DeclarationsOnly,
-                            index_function_locals::Bool=false,
-                            index_implicit_instantiation::Bool=false,
-                            index_macros::Bool=true,
-                            index_macros_in_preprocessor::Bool=false,
-                            index_parameters_in_declarations::Bool=false,
-                            index_template_parameters::Bool=false)
+function indexTopLevelDecls(ctx::AbstractASTContext, pp::AbstractPreprocessor, decls::AbstractVector{<:AbstractDecl}, c::AbstractIndexDataCollector; system_symbol_filter::CXSystemSymbolFilterKind=CXSystemSymbolFilterKind_DeclarationsOnly, index_function_locals::Bool=false, index_implicit_instantiation::Bool=false, index_macros::Bool=true, index_macros_in_preprocessor::Bool=false, index_parameters_in_declarations::Bool=false, index_template_parameters::Bool=false)
     @check_ptrs ctx pp c
     for d in decls
         @check_ptrs d
@@ -158,10 +138,5 @@ function indexTopLevelDecls(ctx::AbstractASTContext, pp::AbstractPreprocessor,
     # One handle per decl, each produced by the same checked conversion a ccall argument
     # would go through; the array is what the C side reads as `CXDecl *`.
     handles = CXDecl[Base.unsafe_convert(CXDecl, d) for d in decls]
-    return clang_index_indexTopLevelDecls(ctx, pp, handles, length(handles), c,
-                                          system_symbol_filter, index_function_locals,
-                                          index_implicit_instantiation, index_macros,
-                                          index_macros_in_preprocessor,
-                                          index_parameters_in_declarations,
-                                          index_template_parameters)
+    return clang_index_indexTopLevelDecls(ctx, pp, handles, length(handles), c, system_symbol_filter, index_function_locals, index_implicit_instantiation, index_macros, index_macros_in_preprocessor, index_parameters_in_declarations, index_template_parameters)
 end

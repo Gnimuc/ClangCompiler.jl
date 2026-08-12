@@ -13,8 +13,7 @@ Return `""` when the file cannot be read or is not an AST file; the reason is re
 through `diags`, so a caller that wants it should attach a
 [`TextDiagnosticBuffer`](@ref) first.
 """
-function getOriginalSourceFile(ast_file_name::AbstractString, file_mgr::AbstractFileManager,
-                               diags::AbstractDiagnosticsEngine)
+function getOriginalSourceFile(ast_file_name::AbstractString, file_mgr::AbstractFileManager, diags::AbstractDiagnosticsEngine)
     @check_ptrs file_mgr diags
     return get_string(clang_ASTReader_getOriginalSourceFile(ast_file_name, file_mgr, diags))
 end
@@ -33,14 +32,7 @@ acceptable.
 `require_strict_option_matches` turns benign option differences into rejections. Both
 defaults match clang's.
 """
-function isAcceptableASTFile(filename::AbstractString, file_mgr::AbstractFileManager,
-                             lang_opts::AbstractLangOptions,
-                             target_opts::AbstractTargetOptions,
-                             pp_opts::AbstractPreprocessorOptions;
-                             existing_module_cache_path::AbstractString="",
-                             require_strict_option_matches::Bool=false)
+function isAcceptableASTFile(filename::AbstractString, file_mgr::AbstractFileManager, lang_opts::AbstractLangOptions, target_opts::AbstractTargetOptions, pp_opts::AbstractPreprocessorOptions; existing_module_cache_path::AbstractString="", require_strict_option_matches::Bool=false)
     @check_ptrs file_mgr lang_opts target_opts pp_opts
-    return clang_ASTReader_isAcceptableASTFile(filename, file_mgr, lang_opts, target_opts,
-                                               pp_opts, existing_module_cache_path,
-                                               require_strict_option_matches)
+    return clang_ASTReader_isAcceptableASTFile(filename, file_mgr, lang_opts, target_opts, pp_opts, existing_module_cache_path, require_strict_option_matches)
 end

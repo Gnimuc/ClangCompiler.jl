@@ -17,8 +17,8 @@
 #   src/clang/api/AST/StmtWrappers.jl     — per-node `is<Name>` predicate + `<carrier>` downcast.
 #   src/clang/StmtClassMap.jl             — `const STMT_CLASS_TO_TYPE = Dict{CXStmtClass,Any}(...)`.
 
-const STMT_NODES_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include",
-                                         "clang-ex", "AST", "StmtNodes.inc"))
+const STMT_NODES_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include", "clang-ex", "AST",
+                                         "StmtNodes.inc"))
 const STMT_SRC = normpath(joinpath(@__DIR__, "..", "src"))
 const SRC_AST = normpath(joinpath(@__DIR__, "..", "src", "clang", "core"))
 
@@ -147,8 +147,7 @@ function emit_wrappers(io, nodes)
         sym = stmt_carrier_name(n.name)
         # the OpenMP directive names run past the margin on one line
         call = "p = clang_Stmt_castTo$(n.name)(x)"
-        length(call) + 4 <= 120 ||
-            (call = "p = clang_Stmt_castTo$(n.name)(\n        x)")
+        length(call) + 4 <= 120 || (call = "p = clang_Stmt_castTo$(n.name)(\n        x)")
         println(io, """
         function $sym(x::AbstractStmt)
             @check_ptrs x
@@ -175,16 +174,19 @@ end
 function emit_stmt_sources()
     nodes = parse_stmt_nodes(STMT_NODES_INC)
     predefined = collect_names([joinpath(SRC_AST, "abstract.jl")], r"^abstract type (\w+)")
-    hand = collect_names([joinpath(SRC_AST, "AST", f) for f in
-                                                          ("Stmt.jl", "StmtCXX.jl", "Expr.jl", "ExprCXX.jl")],
+    hand = collect_names([joinpath(SRC_AST, "AST", f) for f in ("Stmt.jl", "StmtCXX.jl", "Expr.jl", "ExprCXX.jl")],
                          r"^struct (\w+)")
     carriers = Set(stmt_carrier_name(n.name) for n in nodes if !is_unmirrored(n.name))
     parents = Dict(n.name => n.parent for n in nodes)
-    @info "Stmt sources" total = length(nodes) concrete = count(!, getindex.(nodes, :isabstract)) predefined = length(predefined) hand = length(hand) unmirrored = [n.name for n in nodes if is_unmirrored(n.name)]
+    # Bound out of the @info so the line fits the margin: five keyword arguments plus an
+    # inline comprehension left the formatter aligning continuations past column 160.
+    concrete = count(!, getindex.(nodes, :isabstract))
+    unmirrored = [n.name for n in nodes if is_unmirrored(n.name)]
+    @info "Stmt sources" total = length(nodes) concrete predefined = length(predefined) hand = length(hand) unmirrored
     open(io -> emit_abstract(io, nodes, predefined, carriers, parents),
          joinpath(STMT_SRC, "clang", "core", "AST", "StmtAbstractGen.jl"), "w")
-    open(io -> emit_carriers(io, nodes, hand, carriers),
-         joinpath(STMT_SRC, "clang", "core", "AST", "StmtCarriers.jl"), "w")
+    open(io -> emit_carriers(io, nodes, hand, carriers), joinpath(STMT_SRC, "clang", "core", "AST", "StmtCarriers.jl"),
+         "w")
     open(io -> emit_wrappers(io, nodes), joinpath(STMT_SRC, "clang", "api", "AST", "StmtWrappers.jl"), "w")
     open(io -> emit_classmap(io, nodes), joinpath(STMT_SRC, "clang", "StmtClassMap.jl"), "w")
     @info "wrote Stmt sources into src/"

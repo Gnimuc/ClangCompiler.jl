@@ -28,8 +28,7 @@ not `"vector"`.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function named(::Type{StdlibHeader}, name::AbstractString,
-               lang::CXStdlibLang=CXStdlibLang_CXX)
+function named(::Type{StdlibHeader}, name::AbstractString, lang::CXStdlibLang=CXStdlibLang_CXX)
     ptr = clang_stdlib_Header_named(name, lang)
     return ptr == C_NULL ? nothing : StdlibHeader(ptr)
 end
@@ -93,8 +92,7 @@ Return the table entry for `scope * name`, or `nothing` when there is none.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function named(::Type{StdlibSymbol}, scope::AbstractString, name::AbstractString,
-               lang::CXStdlibLang=CXStdlibLang_CXX)
+function named(::Type{StdlibSymbol}, scope::AbstractString, name::AbstractString, lang::CXStdlibLang=CXStdlibLang_CXX)
     ptr = clang_stdlib_Symbol_named(scope, name, lang)
     return ptr == C_NULL ? nothing : StdlibSymbol(ptr)
 end

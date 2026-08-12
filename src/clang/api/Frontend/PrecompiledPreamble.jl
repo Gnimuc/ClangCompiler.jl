@@ -10,8 +10,7 @@ Lex `buffer` far enough to find where its leading `#include` block ends.
 `max_lines` caps how far the lexer looks; `0` means no cap. Pure computation over the bytes
 given — no file is opened and nothing is cached.
 """
-function ComputePreambleBounds(lang_opts::AbstractLangOptions, buffer::AbstractString,
-                               max_lines::Integer=0)
+function ComputePreambleBounds(lang_opts::AbstractLangOptions, buffer::AbstractString, max_lines::Integer=0)
     @check_ptrs lang_opts
     @assert max_lines >= 0 "max_lines must not be negative"
     b = clang_ComputePreambleBounds(lang_opts, buffer, ncodeunits(buffer), max_lines)
@@ -35,16 +34,9 @@ this object. The object also owns the main-file buffer the later
 [`AddImplicitPreamble`](@ref) remaps, so it must outlive both the compiler run that consumes
 it and the AST that run builds.
 """
-function PrecompiledPreamble(invocation::AbstractCompilerInvocation,
-                             contents::AbstractString, main_file_name::AbstractString,
-                             bounds::PreambleBounds, diags::DiagnosticsEngine;
-                             storage_path::AbstractString="")
+function PrecompiledPreamble(invocation::AbstractCompilerInvocation, contents::AbstractString, main_file_name::AbstractString, bounds::PreambleBounds, diags::DiagnosticsEngine; storage_path::AbstractString="")
     @check_ptrs invocation diags
-    p = clang_PrecompiledPreamble_Build(invocation, contents, ncodeunits(contents),
-                                        main_file_name,
-                                        CXPreambleBounds_(bounds.size,
-                                                          bounds.ends_at_start_of_line),
-                                        diags, storage_path)
+    p = clang_PrecompiledPreamble_Build(invocation, contents, ncodeunits(contents), main_file_name, CXPreambleBounds_(bounds.size, bounds.ends_at_start_of_line), diags, storage_path)
     @assert p != C_NULL "Failed to build PrecompiledPreamble"
     return PrecompiledPreamble(p)
 end
@@ -91,14 +83,9 @@ must still match and no file it read may have changed.
 This is the query the whole class exists for — a `true` answer is what lets a reparse skip
 the headers.
 """
-function CanReuse(x::AbstractPrecompiledPreamble, invocation::AbstractCompilerInvocation,
-                  contents::AbstractString, main_file_name::AbstractString,
-                  bounds::PreambleBounds)
+function CanReuse(x::AbstractPrecompiledPreamble, invocation::AbstractCompilerInvocation, contents::AbstractString, main_file_name::AbstractString, bounds::PreambleBounds)
     @check_ptrs x invocation
-    return clang_PrecompiledPreamble_CanReuse(x, invocation, contents, ncodeunits(contents),
-                                              main_file_name,
-                                              CXPreambleBounds_(bounds.size,
-                                                                bounds.ends_at_start_of_line))
+    return clang_PrecompiledPreamble_CanReuse(x, invocation, contents, ncodeunits(contents), main_file_name, CXPreambleBounds_(bounds.size, bounds.ends_at_start_of_line))
 end
 
 """
@@ -111,13 +98,9 @@ asserted here: rechecking costs a stat of every file in the preamble, which is t
 this class exists to avoid, and a stale preamble parses differently rather than corrupting
 memory. Use [`OverridePreamble`](@ref) when a mismatch is expected and acceptable.
 """
-function AddImplicitPreamble(x::AbstractPrecompiledPreamble,
-                             ci::AbstractCompilerInvocation, contents::AbstractString,
-                             main_file_name::AbstractString)
+function AddImplicitPreamble(x::AbstractPrecompiledPreamble, ci::AbstractCompilerInvocation, contents::AbstractString, main_file_name::AbstractString)
     @check_ptrs x ci
-    return clang_PrecompiledPreamble_AddImplicitPreamble(x, ci, contents,
-                                                         ncodeunits(contents),
-                                                         main_file_name)
+    return clang_PrecompiledPreamble_AddImplicitPreamble(x, ci, contents, ncodeunits(contents), main_file_name)
 end
 
 """
@@ -125,9 +108,7 @@ end
 The same rewiring as [`AddImplicitPreamble`](@ref) without its reuse expectation: use it
 when the preamble is known not to match and a possibly-different parse is acceptable.
 """
-function OverridePreamble(x::AbstractPrecompiledPreamble, ci::AbstractCompilerInvocation,
-                          contents::AbstractString, main_file_name::AbstractString)
+function OverridePreamble(x::AbstractPrecompiledPreamble, ci::AbstractCompilerInvocation, contents::AbstractString, main_file_name::AbstractString)
     @check_ptrs x ci
-    return clang_PrecompiledPreamble_OverridePreamble(x, ci, contents, ncodeunits(contents),
-                                                      main_file_name)
+    return clang_PrecompiledPreamble_OverridePreamble(x, ci, contents, ncodeunits(contents), main_file_name)
 end

@@ -36,7 +36,7 @@ using Test
 
             # every block reaches at least itself, and none reaches more than the whole
             # graph
-            for i in 0:(n - 1)
+            for i = 0:(n - 1)
                 b = CC.getBlock(cfg, i)
                 reach = CC.ScanReachableFromBlock(b)
                 @test b.ptr in [r.ptr for r in reach]
@@ -92,9 +92,9 @@ end
             try
                 n = Int(CC.getNumUnreachable(r))
                 @test n >= 1
-                kinds = [CC.getKind(r, i) for i in 0:(n - 1)]
+                kinds = [CC.getKind(r, i) for i = 0:(n - 1)]
                 @test CC.LibClangEx.CXUnreachableKind_UK_Return in kinds
-                for i in 0:(n - 1)
+                for i = 0:(n - 1)
                     # the location is what identifies the dead region, and clang always
                     # supplies one
                     @test CC.isValid(CC.getLocation(r, i))

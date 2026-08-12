@@ -25,7 +25,8 @@ import ClangCompiler as CC
              """)
     # the decl clang itself built for a source-written variable of that specialization
     sema_spec(name) = CC.resolve(CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(CC.VarDecl(CC.find_decl(I, name))))))
-    for (tmpl, var, arg) in (("SugPlain", "sug_plain_obj", Int32(4)), ("SugTypedef", "sug_typedef_obj", Int32(4)), ("SugEnum", "sug_enum_obj", Int32(1)))
+    for (tmpl, var, arg) in (("SugPlain", "sug_plain_obj", Int32(4)), ("SugTypedef", "sug_typedef_obj", Int32(4)),
+                             ("SugEnum", "sug_enum_obj", Int32(1)))
         ctd = CC.ClassTemplateDecl(CC.find_decl(I, tmpl))
         mine = CC.specialize(ctx, ctd, arg)
         theirs = sema_spec(var)
@@ -180,7 +181,8 @@ end
     # `long` is the case that also proves the type itself comes from the parameter: Julia has one
     # 64-bit integer and `jlty_to_clty` maps it to `long long`, so guessing from the Julia type
     # yields a different QualType and a different profile.
-    for (tpl, var, arg) in (("UniI", "uni_i", Int32(4)), ("UniU", "uni_u", UInt32(4)), ("UniB", "uni_b", true), ("UniL", "uni_l", Int64(4)))
+    for (tpl, var, arg) in (("UniI", "uni_i", Int32(4)), ("UniU", "uni_u", UInt32(4)), ("UniB", "uni_b", true),
+                            ("UniL", "uni_l", Int64(4)))
         built = CC.specialize(ctx, class_template(tpl), arg)
         @test decl_id(built) == decl_id(sema_specialization(var))
     end

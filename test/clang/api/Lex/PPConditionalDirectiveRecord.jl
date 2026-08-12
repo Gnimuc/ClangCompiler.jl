@@ -43,22 +43,15 @@ using Test
     @test CC.areInDifferentConditionalDirectiveRegion(rec, loc_in, loc_out) == true
 
     # and the region locations agree with that partition
-    @test CC.findConditionalDirectiveRegionLoc(rec, loc_in) ==
-          CC.findConditionalDirectiveRegionLoc(rec, loc_in2)
-    @test CC.findConditionalDirectiveRegionLoc(rec, loc_in) !=
-          CC.findConditionalDirectiveRegionLoc(rec, loc_out)
+    @test CC.findConditionalDirectiveRegionLoc(rec, loc_in) == CC.findConditionalDirectiveRegionLoc(rec, loc_in2)
+    @test CC.findConditionalDirectiveRegionLoc(rec, loc_in) != CC.findConditionalDirectiveRegionLoc(rec, loc_out)
 
     # a range that stays inside the body crosses no directive; one that reaches past the
     # `#endif` does
-    @test CC.rangeIntersectsConditionalDirective(rec, CC.SourceRange(loc_in, loc_in2)) ==
-          false
-    @test CC.rangeIntersectsConditionalDirective(rec, CC.SourceRange(loc_in, loc_out)) ==
-          true
+    @test CC.rangeIntersectsConditionalDirective(rec, CC.SourceRange(loc_in, loc_in2)) == false
+    @test CC.rangeIntersectsConditionalDirective(rec, CC.SourceRange(loc_in, loc_out)) == true
     # an invalid range is answered rather than asserted on
-    @test CC.rangeIntersectsConditionalDirective(rec,
-                                                 CC.SourceRange(CC.SourceLocation(),
-                                                                CC.SourceLocation())) ==
-          false
+    @test CC.rangeIntersectsConditionalDirective(rec, CC.SourceRange(CC.SourceLocation(), CC.SourceLocation())) == false
 
     dispose(f)
     dispose(I)

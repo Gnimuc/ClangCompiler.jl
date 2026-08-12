@@ -109,7 +109,10 @@ quoted in that error rather than only counted.
 
 Release it with `dispose`.
 """
-function create_irgenerator(code::AbstractString; args=String[], language::Symbol=:cxx, filename::AbstractString=SOURCE_NAMES[check_language(language)], version=JLLEnvs.GCC_MIN_VER, triple=nothing, diag_consumer::Union{Nothing,AbstractDiagnosticConsumer}=nothing, show_colors::Bool=false)
+function create_irgenerator(code::AbstractString; args=String[], language::Symbol=:cxx,
+                            filename::AbstractString=SOURCE_NAMES[check_language(language)],
+                            version=JLLEnvs.GCC_MIN_VER, triple=nothing,
+                            diag_consumer::Union{Nothing,AbstractDiagnosticConsumer}=nothing, show_colors::Bool=false)
     check_language(language)
     # Codegen asks the target registry for the target machine the module is emitted against,
     # so an uninitialised registry fails inside the backend rather than here.
@@ -164,7 +167,8 @@ function create_irgenerator(code::AbstractString; args=String[], language::Symbo
         # invocation. clang's own cc1_main abandons the compilation here for the same reason.
         nerr = getNumErrors(diag)
         if nerr > 0
-            throw(ArgumentError("clang rejected the compiler arguments ($nerr error(s))" * _diagnostic_detail(diag_consumer, mark)))
+            throw(ArgumentError("clang rejected the compiler arguments ($nerr error(s))" *
+                                _diagnostic_detail(diag_consumer, mark)))
         end
         # Twice, and both are needed. `createDiagnostics` builds the engine from the instance's
         # CURRENT DiagnosticOptions, and before `setInvocation` those are the defaults -- so the
@@ -324,8 +328,9 @@ function dispose(x::IRGenerator)
     # nor disposed again, with its context wedged on the stack forever. Checking up front turns
     # an out-of-order dispose into a no-op that says so.
     top = LLVM.ts_context(; throw_error=false)
-    top !== nothing && top.ref == x.ts_ctx.ref || error("dispose out of order: this generator's LLVM context is not the innermost one \
-                                                         still open. Generators and compilers must be disposed in reverse creation order.")
+    top !== nothing && top.ref == x.ts_ctx.ref ||
+        error("dispose out of order: this generator's LLVM context is not the innermost one \
+               still open. Generators and compilers must be disposed in reverse creation order.")
     dispose(x.act)                 # frees the module too, unless `take_module` moved it out
     dispose(x.instance)            # before the buffer its SourceManager points at
     LLVM.dispose(x.buffer)

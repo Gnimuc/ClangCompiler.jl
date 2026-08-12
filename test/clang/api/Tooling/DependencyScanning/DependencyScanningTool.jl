@@ -4,8 +4,7 @@ using ClangCompiler: dispose
 using Test
 
 @testset "DependencyScanningService | the configuration the workers share" begin
-    svc = CC.DependencyScanningService(CC.CXScanningMode_DependencyDirectivesScan,
-                                       CC.CXScanningOutputFormat_Make)
+    svc = CC.DependencyScanningService(CC.CXScanningMode_DependencyDirectivesScan, CC.CXScanningOutputFormat_Make)
     # the defaulted parameters are Clang's own
     @test CC.getMode(svc) == CC.CXScanningMode_DependencyDirectivesScan
     @test CC.getFormat(svc) == CC.CXScanningOutputFormat_Make
@@ -13,8 +12,7 @@ using Test
     @test !CC.shouldEagerLoadModules(svc)
     dispose(svc)
 
-    other = CC.DependencyScanningService(CC.CXScanningMode_CanonicalPreprocessing,
-                                         CC.CXScanningOutputFormat_Full,
+    other = CC.DependencyScanningService(CC.CXScanningMode_CanonicalPreprocessing, CC.CXScanningOutputFormat_Full,
                                          CC.CXScanningOptimizations_None, true)
     @test CC.getMode(other) == CC.CXScanningMode_CanonicalPreprocessing
     @test CC.getFormat(other) == CC.CXScanningOutputFormat_Full
@@ -30,8 +28,7 @@ end
     src = joinpath(dir, "ccdeps_main.c")
     write(src, "#include \"ccdeps_header.h\"\nint ccdeps_main_marker;\n")
 
-    svc = CC.DependencyScanningService(CC.CXScanningMode_DependencyDirectivesScan,
-                                       CC.CXScanningOutputFormat_Make)
+    svc = CC.DependencyScanningService(CC.CXScanningMode_DependencyDirectivesScan, CC.CXScanningOutputFormat_Make)
     tool = CC.DependencyScanningTool(svc)
 
     ok, out = CC.getDependencyFile(tool, ["clang", "-c", "-x", "c", src], dir)
@@ -46,8 +43,7 @@ end
 
     # the failing half of the partition: a source that does not exist cannot be scanned, and
     # the error is reported rather than swallowed
-    bad_ok, bad_out = CC.getDependencyFile(tool, ["clang", "-c", "-x", "c",
-                                                  joinpath(dir, "no_such_source.c")], dir)
+    bad_ok, bad_out = CC.getDependencyFile(tool, ["clang", "-c", "-x", "c", joinpath(dir, "no_such_source.c")], dir)
     @test !bad_ok
     @test !isempty(bad_out)
 

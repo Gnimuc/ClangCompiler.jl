@@ -24,7 +24,7 @@ const LXB_DC = CC.LibClangEx
     for level in (LXB_DC.CXTextDiagnosticBuffer_Warning, LXB_DC.CXTextDiagnosticBuffer_Error)
         @test Base.size(seen, level) == Base.size(kept, level)
         @test Base.size(seen, level) > 0
-        for i in 0:(Int(Base.size(seen, level)) - 1)
+        for i = 0:(Int(Base.size(seen, level)) - 1)
             @test CC.getMessage(seen, level, i) == CC.getMessage(kept, level, i)
         end
     end
@@ -48,11 +48,9 @@ end
     # the client it took over at construction.
     mktempdir() do dir
         matching = joinpath(dir, "vdc_match.cpp")
-        write(matching,
-              "int vdc_match(int x) { return vdc_y; } // expected-error {{undeclared identifier}}\n")
+        write(matching, "int vdc_match(int x) { return vdc_y; } // expected-error {{undeclared identifier}}\n")
         mismatching = joinpath(dir, "vdc_mismatch.cpp")
-        write(mismatching,
-              "int vdc_mismatch(int x) { return vdc_z; } // expected-warning {{undeclared identifier}}\n")
+        write(mismatching, "int vdc_mismatch(int x) { return vdc_z; } // expected-warning {{undeclared identifier}}\n")
 
         for (src, should_be_clean) in ((matching, true), (mismatching, false))
             ci = CC.CompilerInstance()

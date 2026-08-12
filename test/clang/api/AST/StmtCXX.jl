@@ -358,8 +358,7 @@ end
     @test mf(K, "cc_mse_probe")
     mtd = first(d for d in CC.get_decls(mf) if CC.getDeclKindName(d) == "FunctionTemplate")
     mfd = CC.getTemplatedDecl(CC.FunctionTemplateDecl(mtd))
-    mses = collect_stmts(CC.MSDependentExistsStmt, CC.resolve(CC.getBody(mfd)),
-                         CC.MSDependentExistsStmt[])
+    mses = collect_stmts(CC.MSDependentExistsStmt, CC.resolve(CC.getBody(mfd)), CC.MSDependentExistsStmt[])
     @test length(mses) == 2
     # the source writes one `__if_exists` and one `__if_not_exists`, so the predicate has
     # to separate them; one wired to a constant or to the wrong bit gives 0 or 2

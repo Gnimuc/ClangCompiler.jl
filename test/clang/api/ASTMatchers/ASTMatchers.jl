@@ -11,8 +11,7 @@ using Test
 
     # One match binding two nodes of different families: the variable itself and
     # its type.
-    m = CC.parseMatcherExpression("varDecl(hasName(\"ccbn_var\"), hasType(qualType().bind(\"t\"))).bind(\"v\")",
-                                  err)
+    m = CC.parseMatcherExpression("varDecl(hasName(\"ccbn_var\"), hasType(qualType().bind(\"t\"))).bind(\"v\")", err)
     @test !CC.is_null_handle(m)
 
     mf = CC.MatchFinder()

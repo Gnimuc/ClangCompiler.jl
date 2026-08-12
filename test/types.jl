@@ -260,8 +260,9 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     # over the innermost active context.
     llctx = CC.LLVM.Context()
     decoy = CC.LLVM.Context()
-    for T in (Bool, Int8, Int16, Int32, Int64, Int128, UInt8, UInt16, UInt32, UInt64,
-              UInt128, Float16, Float32, Float64, Nothing, Ptr{Cvoid})
+    for T in
+        (Bool, Int8, Int16, Int32, Int64, Int128, UInt8, UInt16, UInt32, UInt64, UInt128, Float16, Float32, Float64,
+         Nothing, Ptr{Cvoid})
         llty = CC.jlty_to_llvmty(T, llctx)                         # @172-@193
         @test llty isa CC.LLVM.LLVMType
         @test CC.LLVM.context(llty) == llctx

@@ -132,8 +132,7 @@ end
     d = get_decl(f)
     csr = CC.makeFileCharRange(CC.getTokenRange(CC.getSourceRange(d)), sm, opts)
     @test CC.isValid(csr)
-    @test CC.getFileOffset(sm, CC.getBegin(csr)) ==
-          CC.getFileOffset(sm, CC.getBeginLoc(CC.getSourceRange(d)))
+    @test CC.getFileOffset(sm, CC.getBegin(csr)) == CC.getFileOffset(sm, CC.getBeginLoc(CC.getSourceRange(d)))
     @test CC.getSourceText(CC.getAsRange(csr), false, sm, opts) == "int mfcr_probe = 1"
 
     # findLocationAfterToken: the token after the type is the identifier, and asking for a

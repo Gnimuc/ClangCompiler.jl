@@ -47,8 +47,8 @@ using Test
     @test all(d -> CC.isDeclScope(sc, d), scope_decls)
 
     # --- LookupResult configuration and diagnostic suppression ---
-    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "lookup_scope_fn")),
-                        loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "lookup_scope_fn")), loc,
+                        CC.CXLookupNameKind_LookupOrdinaryName)
     # the create shim uses clang's default Sema::NotForRedeclaration, which turns both
     # diagnostic flags on and leaves Shadowed/AllowHidden at their member initializers
     @test !CC.isForExternalRedeclaration(r)
@@ -256,8 +256,8 @@ end
     @test !isempty(CC.dumpImplToString(sc))
 
     # --- LookupResult state that has a matching reader ---
-    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "scope_kind_fn")),
-                        loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "scope_kind_fn")), loc,
+                        CC.CXLookupNameKind_LookupOrdinaryName)
     # clang's member initializer for TemplateNameLookup is false, so the setter round-trips
     @test !CC.isTemplateNameLookup(r)
     CC.setTemplateNameLookup(r)
@@ -294,8 +294,8 @@ end
     loc = CC.get_main_file_begin_loc(sm)
     tu = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
 
-    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "lookup_filter_fn")),
-                        loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "lookup_filter_fn")), loc,
+                        CC.CXLookupNameKind_LookupOrdinaryName)
     @test !CC.is_null_handle(CC.getSema(r))
     @test CC.getSema(r).ptr == sema.ptr
 
@@ -465,8 +465,8 @@ end
     # LookupResult: the redeclaration flavour round-trips, and the result renders
     loc = CC.get_main_file_begin_loc(sm)
     tu = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
-    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaDFKRec")),
-                        loc, CC.CXLookupNameKind_LookupTagName)
+    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaDFKRec")), loc,
+                        CC.CXLookupNameKind_LookupTagName)
     @test CC.redeclarationKind(r) == CC.CXRedeclarationKind_NotForRedeclaration
     CC.setRedeclarationKind(r, CC.CXRedeclarationKind_ForVisibleRedeclaration)
     @test CC.redeclarationKind(r) == CC.CXRedeclarationKind_ForVisibleRedeclaration
@@ -642,8 +642,7 @@ end
 
     # AddFlags ORs, so the pre-existing continue flag survives and the parent links update
     CC.AddFlags(s, UInt32(CC.CXScopeFlags_BreakScope))
-    @test UInt32(CC.getFlags(s)) ==
-          (UInt32(CC.CXScopeFlags_ContinueScope) | UInt32(CC.CXScopeFlags_BreakScope))
+    @test UInt32(CC.getFlags(s)) == (UInt32(CC.CXScopeFlags_ContinueScope) | UInt32(CC.CXScopeFlags_BreakScope))
     @test CC.getBreakParent(s).ptr == s.ptr
     @test CC.getContinueParent(s).ptr == s.ptr
 

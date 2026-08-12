@@ -1776,9 +1776,7 @@ type feeds [`AddOverloadCandidate`](@ref), whose viability check reads only the 
 types. The node is allocated in `ctx`'s arena, so it lives as long as the context and there
 is nothing to `dispose`.
 """
-function OpaqueValueExpr(ctx::AbstractASTContext, loc::SourceLocation, ty::QualType,
-                         vk::CXExprValueKind,
-                         ok::CXExprObjectKind=LibClangEx.CXExprObjectKind_OK_Ordinary)
+function OpaqueValueExpr(ctx::AbstractASTContext, loc::SourceLocation, ty::QualType, vk::CXExprValueKind, ok::CXExprObjectKind=LibClangEx.CXExprObjectKind_OK_Ordinary)
     @check_ptrs ctx ty
     return OpaqueValueExpr(clang_OpaqueValueExpr_create(ctx, loc, ty, vk, ok))
 end

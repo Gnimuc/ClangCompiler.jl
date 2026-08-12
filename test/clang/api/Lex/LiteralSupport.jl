@@ -186,8 +186,7 @@ end
     # the kind gates, on both entry points
     num = lit_raw_tokens(ci, "42", "charlit-gate")
     @test CC.CharLiteralParser(pp, only(num)) === nothing
-    @test CC.CharLiteralParser(pp, "42", CC.getLocation(only(num)),
-                               CC.getKind(only(num))) === nothing
+    @test CC.CharLiteralParser(pp, "42", CC.getLocation(only(num)), CC.getKind(only(num))) === nothing
     dispose(only(num))
 
     dispose(I)
@@ -223,8 +222,7 @@ end
     # two-character escape starts
     @test CC.getOffsetOfStringByte(sp, toks[1], 0) == 1
     @test CC.getOffsetOfStringByte(sp, toks[1], 1) == 2
-    @test_throws AssertionError CC.getOffsetOfStringByte(sp, toks[1],
-                                                         CC.getLength(toks[1]))
+    @test_throws AssertionError CC.getOffsetOfStringByte(sp, toks[1], CC.getLength(toks[1]))
 
     # the preprocessor-free constructor must decode identically -- it is the same parser
     # with the diagnostics turned off
@@ -234,8 +232,7 @@ end
     dispose(sp2)
 
     # unevaluated mode is a different answer from the same tokens
-    spu = CC.StringLiteralParser(toks, pp,
-                                 CC.LibClangEx.CXStringLiteralEvalMethod_Unevaluated)
+    spu = CC.StringLiteralParser(toks, pp, CC.LibClangEx.CXStringLiteralEvalMethod_Unevaluated)
     @test spu !== nothing
     @test CC.isUnevaluated(spu)
     dispose(spu)

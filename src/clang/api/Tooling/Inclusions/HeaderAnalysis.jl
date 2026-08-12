@@ -13,8 +13,7 @@ info.
 This can be expensive: when the per-file info does not settle the question, Clang falls back
 to scanning the file's text.
 """
-function isSelfContainedHeader(fe::AbstractFileEntryRef, src_mgr::AbstractSourceManager,
-                               header_info::AbstractHeaderSearch)
+function isSelfContainedHeader(fe::AbstractFileEntryRef, src_mgr::AbstractSourceManager, header_info::AbstractHeaderSearch)
     @check_ptrs fe src_mgr header_info
     return clang_tooling_isSelfContainedHeader(fe, src_mgr, header_info)
 end

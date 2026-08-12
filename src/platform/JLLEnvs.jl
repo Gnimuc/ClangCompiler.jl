@@ -83,7 +83,8 @@ function get_pkg_artifact_dir(pkg::Module, target::String)
         end
     end
     isempty(candidates) && return ""
-    length(candidates) > 1 && @warn "found more than one candidate artifacts, only use the first one: $(first(candidates))"
+    length(candidates) > 1 &&
+        @warn "found more than one candidate artifacts, only use the first one: $(first(candidates))"
     info = first(candidates)
     name = info["git-tree-sha1"]  # this is not a real name but a hash
     Artifacts.ensure_artifact_installed(name, info, arftspath::String)

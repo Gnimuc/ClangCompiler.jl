@@ -18,8 +18,7 @@ Unlike a database reached through the base class, this one enumerates: `getAllFi
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function loadFromFile(::Type{JSONCompilationDatabase}, file_path::AbstractString,
-                      syntax::CXJSONCommandLineSyntax=CXJSONCommandLineSyntax_AutoDetect)
+function loadFromFile(::Type{JSONCompilationDatabase}, file_path::AbstractString, syntax::CXJSONCommandLineSyntax=CXJSONCommandLineSyntax_AutoDetect)
     err = Ref{CXString}()
     ptr = clang_JSONCompilationDatabase_loadFromFile(file_path, err, syntax)
     return (ptr == C_NULL ? nothing : JSONCompilationDatabase(ptr)), get_string(err[])
@@ -37,8 +36,7 @@ Same `syntax` meaning as [`loadFromFile`](@ref).
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function loadFromBuffer(::Type{JSONCompilationDatabase}, database_string::AbstractString,
-                        syntax::CXJSONCommandLineSyntax=CXJSONCommandLineSyntax_AutoDetect)
+function loadFromBuffer(::Type{JSONCompilationDatabase}, database_string::AbstractString, syntax::CXJSONCommandLineSyntax=CXJSONCommandLineSyntax_AutoDetect)
     err = Ref{CXString}()
     ptr = clang_JSONCompilationDatabase_loadFromBuffer(database_string, err, syntax)
     return (ptr == C_NULL ? nothing : JSONCompilationDatabase(ptr)), get_string(err[])

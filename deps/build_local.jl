@@ -80,7 +80,5 @@ lib_path = joinpath(scratch_dir, "lib", only(built_libs))
 isfile(lib_path) || error("Could not find library $lib_path in build directory")
 
 # tell ClangCompiler.jl to load our library instead of the default artifact one
-set_preferences!(joinpath(dirname(@__DIR__), "LocalPreferences.toml"),
-                 "ClangCompiler",
-                 "libclangex" => lib_path;
-                 force=true,)
+set_preferences!(joinpath(dirname(@__DIR__), "LocalPreferences.toml"), "ClangCompiler", "libclangex" => lib_path;
+                 force=true)

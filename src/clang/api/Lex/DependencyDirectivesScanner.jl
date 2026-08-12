@@ -20,11 +20,8 @@ A failed scan still yields a usable handle holding whatever was scanned before t
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function scanSourceForDependencyDirectives(source::AbstractString;
-                                           diag::Union{AbstractDiagnosticsEngine,Nothing}=nothing,
-                                           loc::SourceLocation=SourceLocation())
-    d = diag === nothing ? CXDiagnosticsEngine(C_NULL) :
-        Base.unsafe_convert(CXDiagnosticsEngine, diag)
+function scanSourceForDependencyDirectives(source::AbstractString; diag::Union{AbstractDiagnosticsEngine,Nothing}=nothing, loc::SourceLocation=SourceLocation())
+    d = diag === nothing ? CXDiagnosticsEngine(C_NULL) : Base.unsafe_convert(CXDiagnosticsEngine, diag)
     had_error = Ref{Bool}(false)
     s = clang_DependencyDirectivesScan_create(source, ncodeunits(source), d, loc, had_error)
     @assert s != C_NULL "Failed to create DependencyDirectivesScan"

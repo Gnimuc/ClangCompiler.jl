@@ -54,8 +54,9 @@ end
     @test !CC.isCPlusPlus26(cxx17)
 
     # gnu++17 is c++17 plus exactly one bit, which is the whole difference between them.
-    for f in (CC.isCPlusPlus, CC.isCPlusPlus11, CC.isCPlusPlus14, CC.isCPlusPlus17,
-              CC.isCPlusPlus20, CC.hasLineComments, CC.hasDigraphs, CC.hasHexFloats)
+    for f in
+        (CC.isCPlusPlus, CC.isCPlusPlus11, CC.isCPlusPlus14, CC.isCPlusPlus17, CC.isCPlusPlus20, CC.hasLineComments,
+         CC.hasDigraphs, CC.hasHexFloats)
         @test f(cxx17) == f(gnucxx17)
     end
     @test !CC.isGNUMode(cxx17)
@@ -85,10 +86,9 @@ end
 end
 
 @testset "LangStandard | language names and per-language defaults" begin
-    langs = [CC.CXLanguage_Unknown, CC.CXLanguage_Asm, CC.CXLanguage_LLVM_IR,
-             CC.CXLanguage_C, CC.CXLanguage_CXX, CC.CXLanguage_ObjC, CC.CXLanguage_ObjCXX,
-             CC.CXLanguage_OpenCL, CC.CXLanguage_OpenCLCXX, CC.CXLanguage_CUDA,
-             CC.CXLanguage_RenderScript, CC.CXLanguage_HIP, CC.CXLanguage_HLSL]
+    langs = [CC.CXLanguage_Unknown, CC.CXLanguage_Asm, CC.CXLanguage_LLVM_IR, CC.CXLanguage_C, CC.CXLanguage_CXX,
+             CC.CXLanguage_ObjC, CC.CXLanguage_ObjCXX, CC.CXLanguage_OpenCL, CC.CXLanguage_OpenCLCXX,
+             CC.CXLanguage_CUDA, CC.CXLanguage_RenderScript, CC.CXLanguage_HIP, CC.CXLanguage_HLSL]
     names = map(CC.languageToString, langs)
     # Every language has a name and no two share one: a shim returning a constant, or one
     # off by an enumerator, fails here.
@@ -99,17 +99,14 @@ end
     # The default for these four is a standard of that same language. It is not a universal
     # rule -- ObjC defaults to a C standard, and C++ for OpenCL's own table entry is filed
     # under OpenCL -- so the languages where it does hold are the ones named here.
-    for lang in (CC.CXLanguage_C, CC.CXLanguage_CXX, CC.CXLanguage_OpenCL,
-                 CC.CXLanguage_HLSL)
+    for lang in (CC.CXLanguage_C, CC.CXLanguage_CXX, CC.CXLanguage_OpenCL, CC.CXLanguage_HLSL)
         kind = CC.getDefaultLanguageStandard(lang, triple)
         @test kind != CC.CXLangStandardKind_lang_unspecified
         @test CC.getLanguage(CC.getLangStandardForKind(kind)) == lang
     end
     # and C++ defaults to a C++ standard while C does not
-    @test CC.isCPlusPlus(CC.getLangStandardForKind(
-        CC.getDefaultLanguageStandard(CC.CXLanguage_CXX, triple)))
-    @test !CC.isCPlusPlus(CC.getLangStandardForKind(
-        CC.getDefaultLanguageStandard(CC.CXLanguage_C, triple)))
+    @test CC.isCPlusPlus(CC.getLangStandardForKind(CC.getDefaultLanguageStandard(CC.CXLanguage_CXX, triple)))
+    @test !CC.isCPlusPlus(CC.getLangStandardForKind(CC.getDefaultLanguageStandard(CC.CXLanguage_C, triple)))
 
     # Neither of these has a default standard; clang answers both with llvm_unreachable.
     @test_throws AssertionError CC.getDefaultLanguageStandard(CC.CXLanguage_Unknown, triple)

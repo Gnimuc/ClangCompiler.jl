@@ -125,12 +125,9 @@ Append one include category.
 Order matters — the first matching regex wins — so this puts the new category last; clear
 the list and rebuild it to control where it sits.
 """
-function addIncludeCategory(x::AbstractIncludeStyle, regex::AbstractString,
-                            priority::Integer, sort_priority::Integer=0,
-                            case_sensitive::Bool=false)
+function addIncludeCategory(x::AbstractIncludeStyle, regex::AbstractString, priority::Integer, sort_priority::Integer=0, case_sensitive::Bool=false)
     @check_ptrs x
-    return clang_IncludeStyle_addIncludeCategory(x, regex, priority, sort_priority,
-                                                 case_sensitive)
+    return clang_IncludeStyle_addIncludeCategory(x, regex, priority, sort_priority, case_sensitive)
 end
 
 """

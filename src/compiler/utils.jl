@@ -19,6 +19,7 @@ Return `language` if it is one of [`SOURCE_LANGUAGES`](@ref), and throw `Argumen
 otherwise.
 """
 function check_language(language::Symbol)
-    haskey(SOURCE_LANGUAGES, language) || throw(ArgumentError("language must be one of $(keys(SOURCE_LANGUAGES)), got :$language"))
+    haskey(SOURCE_LANGUAGES, language) ||
+        throw(ArgumentError("language must be one of $(keys(SOURCE_LANGUAGES)), got :$language"))
     return language
 end

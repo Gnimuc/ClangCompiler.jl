@@ -21,10 +21,8 @@ using Test
     @test occursin("Extras", cat)
 
     # the bool discriminators really discriminate
-    @test CC.generateUSRForObjCMethod("foo:", true) !=
-          CC.generateUSRForObjCMethod("foo:", false)
-    @test CC.generateUSRForObjCProperty("prop", true) !=
-          CC.generateUSRForObjCProperty("prop", false)
+    @test CC.generateUSRForObjCMethod("foo:", true) != CC.generateUSRForObjCMethod("foo:", false)
+    @test CC.generateUSRForObjCProperty("prop", true) != CC.generateUSRForObjCProperty("prop", false)
 
     # module USRs: the by-handle and the by-name spellings agree for a top-level module
     modusr = CC.generateFullUSRForTopLevelModuleName("UsrProbeMod")
@@ -33,8 +31,7 @@ using Test
 
     m = CC.Module_("UsrProbeMod")
     @test CC.generateFullUSRForModule(m) == modusr
-    @test CC.generateUSRFragmentForModule(m) ==
-          CC.generateUSRFragmentForModuleName("UsrProbeMod")
+    @test CC.generateUSRFragmentForModule(m) == CC.generateUSRFragmentForModuleName("UsrProbeMod")
     @test occursin("UsrProbeMod", CC.generateUSRFragmentForModule(m))
     CC.dispose(m)
 

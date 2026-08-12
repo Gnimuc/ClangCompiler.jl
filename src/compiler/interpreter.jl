@@ -110,7 +110,9 @@ the same caveats.
 get_sema(x::CxxInterpreter) = getSema(get_parser(x))
 get_execution_engine(x::CxxInterpreter) = getExecutionEngine(x.interp)
 get_symbol_address(x::CxxInterpreter, name::AbstractString) = getSymbolAddress(x.interp, name)
-get_symbol_address_from_linker_name(x::CxxInterpreter, name::AbstractString) = getSymbolAddressFromLinkerName(x.interp, name)
+function get_symbol_address_from_linker_name(x::CxxInterpreter, name::AbstractString)
+    getSymbolAddressFromLinkerName(x.interp, name)
+end
 """
     get_function_pointer(x::CxxInterpreter, name::AbstractString) -> Ptr{Cvoid}
 A pointer to the compiled function `name`, ready to `ccall`.

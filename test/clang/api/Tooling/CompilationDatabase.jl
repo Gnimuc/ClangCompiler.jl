@@ -4,8 +4,7 @@ using ClangCompiler: dispose
 using Test
 
 "The whole command line of `cc`, read back one argument at a time."
-command_line(cc) = String[CC.getCommandLineArg(cc, i)
-                          for i in 0:(CC.getNumCommandLineArgs(cc) - 1)]
+command_line(cc) = String[CC.getCommandLineArg(cc, i) for i = 0:(CC.getNumCommandLineArgs(cc) - 1)]
 
 @testset "CompileCommand | the five fields round-trip" begin
     cc = CC.CompileCommand("/proj", "a.cc", ["clang++", "-Wall", "a.cc"], "a.o")
@@ -101,8 +100,7 @@ end
         dispose(fdb)
 
         # a path that is not there is a load failure, and the reason comes back with it
-        missing_db, missing_err = CC.loadFromFile(CC.FixedCompilationDatabase,
-                                                  joinpath(dir, "no_such_flags.txt"))
+        missing_db, missing_err = CC.loadFromFile(CC.FixedCompilationDatabase, joinpath(dir, "no_such_flags.txt"))
         @test missing_db === nothing
         @test !isempty(missing_err)
     end

@@ -5,8 +5,7 @@ using Test
 
 @testset "DeclBase | argument-taking surface" begin
     I = create_interpreter(String[])
-    CC.parse(I,
-             "namespace declbase_probe { struct S { int a; }; int g(int x) { return x; } }")
+    CC.parse(I, "namespace declbase_probe { struct S { int a; }; int g(int x) { return x; } }")
     f = DeclFinder(I)
 
     @test f(I, "declbase_probe::g")
@@ -105,8 +104,7 @@ using Test
     @test !CC.is_null_handle(CC.getAsIdentifierInfo(name))
     @test CC.compare(name, name) == 0
     @test !isempty(CC.getAsString(CC.getUsingDirectiveName()))
-    @test CC.getCXXOverloadedOperator(name) ==
-          CC.LibClangEx.CXOverloadedOperatorKind_OO_None
+    @test CC.getCXXOverloadedOperator(name) == CC.LibClangEx.CXOverloadedOperatorKind_OO_None
 
     # DeclarationNameTable: identifiers round-trip, operator names classify
     tbl = CC.getDeclarationNames(CC.getASTContext(nd))
@@ -114,8 +112,7 @@ using Test
     @test CC.getIdentifier(tbl, CC.getIdentifier(nd)) == name
     op = CC.getCXXOperatorName(tbl, CC.LibClangEx.CXOverloadedOperatorKind_OO_Plus)
     @test CC.getNameKind(op) == CC.LibClangEx.CXDeclarationName_CXXOperatorName
-    @test CC.getCXXOverloadedOperator(op) ==
-          CC.LibClangEx.CXOverloadedOperatorKind_OO_Plus
+    @test CC.getCXXOverloadedOperator(op) == CC.LibClangEx.CXOverloadedOperatorKind_OO_Plus
 
     # DeclarationNameInfo: owned box, mutated and read back
     ni = CC.DeclarationNameInfo(name, CC.getLocation(nd))
@@ -142,8 +139,7 @@ end
 
 @testset "DeclBase | module identity, no-load lookup, frontend timer" begin
     I = create_interpreter(String[])
-    CC.parse(I,
-             "namespace declbase_nl { struct T { int a; }; int h(int x) { return x; } }")
+    CC.parse(I, "namespace declbase_nl { struct T { int a; }; int h(int x) { return x; } }")
     f = DeclFinder(I)
 
     @test f(I, "declbase_nl::h")
@@ -316,16 +312,15 @@ end
 
 @testset "DeclBase | attribute-list assignment and the lookup-name surface" begin
     I = create_interpreter(String[])
-    CC.parse(I,
-             """
-             namespace declbase_k {
-             __attribute__((deprecated)) void attr_source();
-             void attr_sink();
-             int lookup_probe(int);
-             struct LookupTag { int m; };
-             }
-             namespace declbase_k2 { void elsewhere(); }
-             """)
+    CC.parse(I, """
+                namespace declbase_k {
+                __attribute__((deprecated)) void attr_source();
+                void attr_sink();
+                int lookup_probe(int);
+                struct LookupTag { int m; };
+                }
+                namespace declbase_k2 { void elsewhere(); }
+                """)
     f = DeclFinder(I)
 
     # setAttrs: the attribute list of one declaration, installed on a bare one
@@ -486,8 +481,7 @@ const OBJC_ARGS = ["-x", "objective-c++", "-fobjc-runtime=macosx"]
     ctx = CC.get_ast_context(I)
     top = collect(CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))))
     fd = only(filter(d -> d isa CC.AbstractFunctionDecl, top))
-    iface = only(filter(d -> d isa CC.ObjCInterfaceDecl &&
-                             CC.getNameAsString(d) == "CD2Iface", top))
+    iface = only(filter(d -> d isa CC.ObjCInterfaceDecl && CC.getNameAsString(d) == "CD2Iface", top))
     @test CC.getNameAsString(fd) == "cd2_fn"
     @test CC.getNameAsString(iface) == "CD2Iface"
 
@@ -501,8 +495,7 @@ const OBJC_ARGS = ["-x", "objective-c++", "-fobjc-runtime=macosx"]
         return out
     end
     everything = walk!(CC.AbstractDecl[], CC.castToDeclContext(CC.getTranslationUnitDecl(ctx)))
-    gen = only(filter(d -> d isa CC.ObjCInterfaceDecl &&
-                           CC.getNameAsString(d) == "CD2Gen", top))
+    gen = only(filter(d -> d isa CC.ObjCInterfaceDecl && CC.getNameAsString(d) == "CD2Gen", top))
     # A type parameter hangs off an ObjCTypeParamList rather than off the interface's
     # DeclContext, so the walk cannot reach it and it has to be asked for by name.
     push!(everything, CC.getTypeParam(gen, 0))
@@ -539,8 +532,7 @@ const OBJC_ARGS = ["-x", "objective-c++", "-fobjc-runtime=macosx"]
     # unexercised.
     objc_stamped = Set(string(nm) for (nm, _, _) in stamped if startswith(string(nm), "ObjC"))
     never_a_node = Set(["ObjCContainerDecl", "ObjCImplDecl", "ObjCAtDefsFieldDecl"])
-    @test setdiff(objc_stamped, never_a_node) ==
-          Set(string(nameof(T)) for T in keys(reps))
+    @test setdiff(objc_stamped, never_a_node) == Set(string(nameof(T)) for T in keys(reps))
 
     for node in [fd; sort!(collect(values(reps)); by=d -> string(nameof(typeof(d))))]
         base = CC.Decl(node)                 # widen: the cast has to establish the class
@@ -549,8 +541,7 @@ const OBJC_ARGS = ["-x", "objective-c++", "-fobjc-runtime=macosx"]
         for (nm, v, p) in stamped
             hit = p(base)
             @test hit isa Bool
-            absT = isdefined(CC, Symbol("Abstract", nm)) ?
-                   getproperty(CC, Symbol("Abstract", nm)) : nothing
+            absT = isdefined(CC, Symbol("Abstract", nm)) ? getproperty(CC, Symbol("Abstract", nm)) : nothing
             if hit
                 # predicate, cast and the Julia abstract are three spellings of one
                 # `classof`; a generated hierarchy that disagrees with clang shows up here

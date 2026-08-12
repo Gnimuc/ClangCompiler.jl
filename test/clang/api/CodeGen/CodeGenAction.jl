@@ -11,8 +11,7 @@ using Test
 
 @testset "codegen emit actions" begin
     llvm_ctx = CC.LLVM.Context()
-    for T in (CC.EmitAssemblyAction, CC.EmitBCAction, CC.EmitLLVMAction,
-              CC.EmitCodeGenOnlyAction, CC.EmitObjAction)
+    for T in (CC.EmitAssemblyAction, CC.EmitBCAction, CC.EmitLLVMAction, CC.EmitCodeGenOnlyAction, CC.EmitObjAction)
         act = T(llvm_ctx)
         @test act isa T
         @test act.ptr != C_NULL

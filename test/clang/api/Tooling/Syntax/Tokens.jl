@@ -4,8 +4,7 @@ using ClangCompiler: create_interpreter, dispose, get_instance
 using Test
 
 "The kind names of every token in `list`, in order."
-kind_names(list) = [CC.getTokenName(CC.getKind(CC.getToken(list, i)))
-                    for i in 0:(Int(length(list)) - 1)]
+kind_names(list) = [CC.getTokenName(CC.getKind(CC.getToken(list, i))) for i = 0:(Int(length(list)) - 1)]
 
 @testset "syntax::tokenize | the tokens as written" begin
     dir = mktempdir()

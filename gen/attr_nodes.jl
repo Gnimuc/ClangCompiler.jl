@@ -15,16 +15,13 @@
 # which X-macro spells the entry (DECL_OR_TYPE_ATTR entries carry :InheritableAttr
 # — clang defines no DeclOrTypeAttr class). Every attribute class is concrete.
 
-const ATTR_LIST_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include",
-                                        "clang-ex", "AST", "AttrList.inc"))
+const ATTR_LIST_INC = normpath(joinpath(@__DIR__, "..", "deps", "ClangExtra", "include", "clang-ex", "AST",
+                                        "AttrList.inc"))
 const ATTR_SRC = normpath(joinpath(@__DIR__, "..", "src"))
 
 # X-macro -> the C++ base class the attribute derives from (clang/AST/Attr.h).
-const ATTR_MACRO_TO_CATEGORY = Dict("ATTR" => :Attr,
-                                    "TYPE_ATTR" => :TypeAttr,
-                                    "STMT_ATTR" => :StmtAttr,
-                                    "DECL_OR_STMT_ATTR" => :DeclOrStmtAttr,
-                                    "INHERITABLE_ATTR" => :InheritableAttr,
+const ATTR_MACRO_TO_CATEGORY = Dict("ATTR" => :Attr, "TYPE_ATTR" => :TypeAttr, "STMT_ATTR" => :StmtAttr,
+                                    "DECL_OR_STMT_ATTR" => :DeclOrStmtAttr, "INHERITABLE_ATTR" => :InheritableAttr,
                                     "DECL_OR_TYPE_ATTR" => :InheritableAttr,
                                     "INHERITABLE_PARAM_ATTR" => :InheritableParamAttr,
                                     "PARAMETER_ABI_ATTR" => :ParameterABIAttr,

@@ -38,24 +38,20 @@ end
     @test CC.isValid(loc)
 
     # insert / insertAfterToken / insertBefore all land, at the places their names promise
-    ok, committed, text = cc_commit_text(I, sm, lo, loc,
-                                         c -> CC.insert(c, loc, "/*at*/"))
+    ok, committed, text = cc_commit_text(I, sm, lo, loc, c -> CC.insert(c, loc, "/*at*/"))
     @test ok && committed
     @test occursin("/*at*/struct", text)
 
-    ok, committed, text = cc_commit_text(I, sm, lo, loc,
-                                         c -> CC.insertAfterToken(c, loc, "/*after*/"))
+    ok, committed, text = cc_commit_text(I, sm, lo, loc, c -> CC.insertAfterToken(c, loc, "/*after*/"))
     @test ok && committed
     @test occursin("struct/*after*/", text)
 
-    ok, committed, text = cc_commit_text(I, sm, lo, loc,
-                                         c -> CC.insertBefore(c, loc, "/*before*/"))
+    ok, committed, text = cc_commit_text(I, sm, lo, loc, c -> CC.insertBefore(c, loc, "/*before*/"))
     @test ok && committed
     @test occursin("/*before*/struct", text)
 
     # replace swaps the whole declaration out
-    ok, committed, text = cc_commit_text(I, sm, lo, loc,
-                                         c -> CC.replace(c, csr, "struct CCCommitTag2 {}"))
+    ok, committed, text = cc_commit_text(I, sm, lo, loc, c -> CC.replace(c, csr, "struct CCCommitTag2 {}"))
     @test ok && committed
     @test occursin("CCCommitTag2", text)
     @test !occursin("int a;", text)
@@ -66,8 +62,7 @@ end
     @test !occursin("CCCommitTag", text)
 
     # insertWrap brackets it
-    ok, committed, text = cc_commit_text(I, sm, lo, loc,
-                                         c -> CC.insertWrap(c, "/*<*/", csr, "/*>*/"))
+    ok, committed, text = cc_commit_text(I, sm, lo, loc, c -> CC.insertWrap(c, "/*<*/", csr, "/*>*/"))
     @test ok && committed
     @test occursin("/*<*/struct", text)
     @test occursin("/*>*/", text)
@@ -75,20 +70,17 @@ end
     # replaceWithInner keeps an inner range and drops what surrounds it: here the inner
     # range is just the `struct` keyword, so the declaration it introduced goes away
     keyword = CC.getTokenRange(loc, loc)
-    ok, committed, text = cc_commit_text(I, sm, lo, loc,
-                                         c -> CC.replaceWithInner(c, csr, keyword))
+    ok, committed, text = cc_commit_text(I, sm, lo, loc, c -> CC.replaceWithInner(c, csr, keyword))
     @test ok && committed
     @test occursin("struct", text)
     @test !occursin("CCCommitTag", text)
 
     # and the containment really is checked: swapping the two ranges is refused
-    ok, _, _ = cc_commit_text(I, sm, lo, loc,
-                              c -> CC.replaceWithInner(c, keyword, csr))
+    ok, _, _ = cc_commit_text(I, sm, lo, loc, c -> CC.replaceWithInner(c, keyword, csr))
     @test !ok
 
     # insertFromRange copies existing source rather than new text
-    ok, committed, text = cc_commit_text(I, sm, lo, loc,
-                                         c -> CC.insertFromRange(c, loc, csr))
+    ok, committed, text = cc_commit_text(I, sm, lo, loc, c -> CC.insertFromRange(c, loc, csr))
     @test ok && committed
     @test length(collect(eachmatch(r"CCCommitTag", text))) >= 2
 
@@ -106,11 +98,9 @@ end
     # So the assertion is the refusal, which is real and falsifiable -- a shim that
     # ignored the guard and edited anyway would fail it. What is NOT covered here is a
     # successful replaceText; that wants a source setup this test does not have.
-    ok, _, _ = cc_commit_text(I, sm, lo, loc,
-                              c -> CC.replaceText(c, loc, "struct", "class"))
+    ok, _, _ = cc_commit_text(I, sm, lo, loc, c -> CC.replaceText(c, loc, "struct", "class"))
     @test !ok
-    ok, _, _ = cc_commit_text(I, sm, lo, loc,
-                              c -> CC.replaceText(c, loc, "union", "class"))
+    ok, _, _ = cc_commit_text(I, sm, lo, loc, c -> CC.replaceText(c, loc, "union", "class"))
     @test !ok
 
     dispose(f)

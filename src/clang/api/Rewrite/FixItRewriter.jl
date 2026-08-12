@@ -26,13 +26,9 @@ holds by raw reference.
 
 This function allocates and one should call `dispose` to release the resources after using this object.
 """
-function FixItRewriter(diags::DiagnosticsEngine, src_mgr::SourceManager,
-                       lang_opts::LangOptions; in_place::Bool=false,
-                       fix_what_you_can::Bool=false, fix_only_warnings::Bool=false,
-                       silent::Bool=false)
+function FixItRewriter(diags::DiagnosticsEngine, src_mgr::SourceManager, lang_opts::LangOptions; in_place::Bool=false, fix_what_you_can::Bool=false, fix_only_warnings::Bool=false, silent::Bool=false)
     @check_ptrs diags src_mgr lang_opts
-    ptr = clang_FixItRewriter_create(diags, src_mgr, lang_opts, in_place, fix_what_you_can,
-                                     fix_only_warnings, silent)
+    ptr = clang_FixItRewriter_create(diags, src_mgr, lang_opts, in_place, fix_what_you_can, fix_only_warnings, silent)
     @assert ptr != C_NULL "Failed to create FixItRewriter"
     return FixItRewriter(ptr)
 end

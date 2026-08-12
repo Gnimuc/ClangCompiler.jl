@@ -13,7 +13,6 @@ The two switches are the context the answer depends on: with `greater_than_is_op
 false a `>` closes a template argument list instead of comparing, and `cplusplus11` is what
 makes `>>` a shift rather than two closing angle brackets.
 """
-function getBinOpPrecedence(kind::Integer, greater_than_is_operator::Bool,
-                            cplusplus11::Bool)
+function getBinOpPrecedence(kind::Integer, greater_than_is_operator::Bool, cplusplus11::Bool)
     return clang_getBinOpPrecedence(kind, greater_than_is_operator, cplusplus11)
 end

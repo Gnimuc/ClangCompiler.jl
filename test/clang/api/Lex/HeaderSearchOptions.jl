@@ -31,11 +31,8 @@ using Test
     @test CC.getModuleCachePath(hso) == ""
 
     for (getter, setter) in ((CC.getUseBuiltinIncludes, CC.setUseBuiltinIncludes),
-                             (CC.getUseStandardSystemIncludes,
-                              CC.setUseStandardSystemIncludes),
-                             (CC.getUseStandardCXXIncludes,
-                              CC.setUseStandardCXXIncludes),
-                             (CC.getVerbose, CC.setVerbose))
+                             (CC.getUseStandardSystemIncludes, CC.setUseStandardSystemIncludes),
+                             (CC.getUseStandardCXXIncludes, CC.setUseStandardCXXIncludes), (CC.getVerbose, CC.setVerbose))
         old = getter(hso)
         setter(hso, !old)
         @test getter(hso) == !old

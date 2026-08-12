@@ -45,8 +45,7 @@ using Test
     @test !CC.IsEquivalent(types, from_int, to_double)
 
     # one context twice is legal, and is how a header parsed twice is deduplicated
-    self = CC.StructuralEquivalenceContext(from_ctx, from_ctx;
-                                           kind=CC.CXStructuralEquivalenceKind_Minimal)
+    self = CC.StructuralEquivalenceContext(from_ctx, from_ctx; kind=CC.CXStructuralEquivalenceKind_Minimal)
     @test CC.IsEquivalent(self, from_shape, from_shape)
     @test !CC.IsEquivalent(self, from_shape, from_other)
 
@@ -67,8 +66,7 @@ end
 
     owner = find_decl(I, "SeqOwner")
     @test owner !== nothing
-    anon = [d for d in CC.members(owner)
-            if d isa CC.CXXRecordDecl && isempty(CC.getNameAsString(d))]
+    anon = [d for d in CC.members(owner) if d isa CC.CXXRecordDecl && isempty(CC.getNameAsString(d))]
     @test length(anon) == 1
     # the anonymous union is the owner's first (and only) untagged member record
     @test CC.findUntaggedStructOrUnionIndex(anon[1]) == 0

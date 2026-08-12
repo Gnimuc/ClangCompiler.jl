@@ -1,9 +1,9 @@
 using ClangCompiler
+import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose
 using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
 using Test
 
-import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, DeclIterator
 # Depth-first search for the first resolved child node whose carrier is `T`.
 if !@isdefined(_find_node)
@@ -19,13 +19,13 @@ end
 
 @testset "sugar type resolve" begin
     I = create_interpreter(String[])
-    ClangCompiler.parse(I, "_Atomic int av;")
+    CC.parse(I, "_Atomic int av;")
     f = DeclFinder(I)
     @test f(I, "av")
-    vd = ClangCompiler.VarDecl(get_decl(f))
-    ty = ClangCompiler.resolve(ClangCompiler.getTypePtr(ClangCompiler.getType(vd)))
-    @test ty isa ClangCompiler.AtomicType
-    @test !CC.is_null_handle(ClangCompiler.getValueType(ty))
+    vd = CC.VarDecl(get_decl(f))
+    ty = CC.resolve(CC.getTypePtr(CC.getType(vd)))
+    @test ty isa CC.AtomicType
+    @test !CC.is_null_handle(CC.getValueType(ty))
     dispose(f)
     dispose(I)
 end
@@ -51,25 +51,24 @@ end
 
 @testset "get_template_args element access" begin
     I = create_interpreter(String[])
-    ClangCompiler.parse(I, """
+    CC.parse(I, """
     template<typename A, typename B, int N> struct GtaP {};
     GtaP<int, double, 3> gta_v;
     """)
     f = DeclFinder(I)
     @test f(I, "gta_v")
-    qt = ClangCompiler.getType(ClangCompiler.VarDecl(get_decl(f)))
-    ty = ClangCompiler.resolve(ClangCompiler.getTypePtr(qt))
-    ty isa ClangCompiler.ElaboratedType &&
-        (ty = ClangCompiler.resolve(ClangCompiler.getTypePtr(ClangCompiler.desugar(ty))))
-    @test ty isa ClangCompiler.TemplateSpecializationType
-    args = ClangCompiler.get_template_args(ty)
+    qt = CC.getType(CC.VarDecl(get_decl(f)))
+    ty = CC.resolve(CC.getTypePtr(qt))
+    ty isa CC.ElaboratedType && (ty = CC.resolve(CC.getTypePtr(CC.desugar(ty))))
+    @test ty isa CC.TemplateSpecializationType
+    args = CC.get_template_args(ty)
     # every element must be readable — the old Ptr-stride walk returned garbage
     # for index >= 1
     @test length(args) == 3
-    kinds = [ClangCompiler.getKind(a) for a in args]
-    @test kinds[1] == kinds[2] == ClangCompiler.LibClangEx.CXTemplateArgument_Type
+    kinds = [CC.getKind(a) for a in args]
+    @test kinds[1] == kinds[2] == CC.LibClangEx.CXTemplateArgument_Type
     # the as-written (sugared) spelling keeps `3` as an expression argument
-    @test kinds[3] == ClangCompiler.LibClangEx.CXTemplateArgument_Expression
+    @test kinds[3] == CC.LibClangEx.CXTemplateArgument_Expression
     dispose(f)
     dispose(I)
 end
@@ -124,11 +123,11 @@ using ClangCompiler: get_tag
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
 
-    getdecl(name) = (r = f(I, name); @assert r "lookup failed: $name"; get_decl(f))
+    getdecl(name) = (r=f(I, name); @assert r "lookup failed: $name"; get_decl(f))
     qtof(name) = CC.getType(CC.VarDecl(getdecl(name)))
     tpof(name) = CC.getTypePtr(qtof(name))
     canon(tp) = CC.getTypePtr(CC.get_qual_type(tp))
-    unwrap(tp) = (r = CC.resolve(tp); r isa CC.ElaboratedType ? CC.getTypePtr(CC.getNamedType(r)) : tp)
+    unwrap(tp) = (r=CC.resolve(tp); r isa CC.ElaboratedType ? CC.getTypePtr(CC.getNamedType(r)) : tp)
     function patfield(name)
         r = f(I, name)
         @assert r "lookup failed: $name"
@@ -145,23 +144,19 @@ using ClangCompiler: get_tag
     end
 
     # builtin per-kind predicates: concrete singleton method + AbstractType fallback
-    builtin_pairs = Any[(CC.VoidTy, CC.is_void_ty), (CC.BoolTy, CC.is_bool_ty),
-                        (CC.CharTy, CC.is_char_ty), (CC.WCharTy, CC.is_wchar_ty),
-                        (CC.WideCharTy, CC.is_widechar_ty), (CC.Char8Ty, CC.is_char8_ty),
+    builtin_pairs = Any[(CC.VoidTy, CC.is_void_ty), (CC.BoolTy, CC.is_bool_ty), (CC.CharTy, CC.is_char_ty),
+                        (CC.WCharTy, CC.is_wchar_ty), (CC.WideCharTy, CC.is_widechar_ty), (CC.Char8Ty, CC.is_char8_ty),
                         (CC.Char16Ty, CC.is_char16_ty), (CC.Char32Ty, CC.is_char32_ty),
-                        (CC.SignedCharTy, CC.is_signed_char_ty), (CC.ShortTy, CC.is_short_ty),
-                        (CC.IntTy, CC.is_int_ty), (CC.LongTy, CC.is_long_ty),
-                        (CC.LongLongTy, CC.is_longlong_ty), (CC.Int128Ty, CC.is_int128_ty),
-                        (CC.UnsignedCharTy, CC.is_unsigned_char_ty),
-                        (CC.UnsignedShortTy, CC.is_unsigned_short_ty),
-                        (CC.UnsignedIntTy, CC.is_unsigned_int_ty),
-                        (CC.UnsignedLongTy, CC.is_unsigned_long_ty),
+                        (CC.SignedCharTy, CC.is_signed_char_ty), (CC.ShortTy, CC.is_short_ty), (CC.IntTy, CC.is_int_ty),
+                        (CC.LongTy, CC.is_long_ty), (CC.LongLongTy, CC.is_longlong_ty), (CC.Int128Ty, CC.is_int128_ty),
+                        (CC.UnsignedCharTy, CC.is_unsigned_char_ty), (CC.UnsignedShortTy, CC.is_unsigned_short_ty),
+                        (CC.UnsignedIntTy, CC.is_unsigned_int_ty), (CC.UnsignedLongTy, CC.is_unsigned_long_ty),
                         (CC.UnsignedLongLongTy, CC.is_unsigned_longlong_ty),
-                        (CC.UnsignedInt128Ty, CC.is_unsigned_int128_ty),
-                        (CC.FloatTy, CC.is_float_ty), (CC.DoubleTy, CC.is_double_ty),
-                        (CC.LongDoubleTy, CC.is_long_double_ty), (CC.Float128Ty, CC.is_float128_ty),
-                        (CC.HalfTy, CC.is_half_ty), (CC.BFloat16Ty, CC.is_bfloat_ty),
-                        (CC.Float16Ty, CC.is_float16_ty), (CC.NullPtrTy, CC.is_nullptr_ty)]
+                        (CC.UnsignedInt128Ty, CC.is_unsigned_int128_ty), (CC.FloatTy, CC.is_float_ty),
+                        (CC.DoubleTy, CC.is_double_ty), (CC.LongDoubleTy, CC.is_long_double_ty),
+                        (CC.Float128Ty, CC.is_float128_ty), (CC.HalfTy, CC.is_half_ty),
+                        (CC.BFloat16Ty, CC.is_bfloat_ty), (CC.Float16Ty, CC.is_float16_ty),
+                        (CC.NullPtrTy, CC.is_nullptr_ty)]
     for (T, pred) in builtin_pairs
         conc = T(ctx)
         @test pred(conc) === true                     # concrete singleton method

@@ -135,17 +135,10 @@ what produces the expression, and it must be given the same arguments.
 This function allocates and one should call `dispose` to release the resources after using
 this object.
 """
-function InitializationSequence(sema::AbstractSema, entity::AbstractInitializedEntity,
-                                kind::AbstractInitializationKind,
-                                args::AbstractVector{<:AbstractExpr};
-                                top_level_of_init_list::Bool=false,
-                                treat_unavailable_as_invalid::Bool=true)
+function InitializationSequence(sema::AbstractSema, entity::AbstractInitializedEntity, kind::AbstractInitializationKind, args::AbstractVector{<:AbstractExpr}; top_level_of_init_list::Bool=false, treat_unavailable_as_invalid::Bool=true)
     @check_ptrs sema entity kind
     buf = [Base.unsafe_convert(CXExpr, a) for a in args]
-    return InitializationSequence(clang_InitializationSequence_create(sema, entity, kind, buf,
-                                                                      length(buf),
-                                                                      top_level_of_init_list,
-                                                                      treat_unavailable_as_invalid))
+    return InitializationSequence(clang_InitializationSequence_create(sema, entity, kind, buf, length(buf), top_level_of_init_list, treat_unavailable_as_invalid))
 end
 
 dispose(x::InitializationSequence) = clang_InitializationSequence_dispose(x)
@@ -185,9 +178,7 @@ Build the initialization expression, returning a carrier holding `NULL` if it fa
 
 `args` must be the same arguments the sequence was computed from.
 """
-function Perform(x::AbstractInitializationSequence, sema::AbstractSema,
-                 entity::AbstractInitializedEntity, kind::AbstractInitializationKind,
-                 args::AbstractVector{<:AbstractExpr})
+function Perform(x::AbstractInitializationSequence, sema::AbstractSema, entity::AbstractInitializedEntity, kind::AbstractInitializationKind, args::AbstractVector{<:AbstractExpr})
     @check_ptrs x sema entity kind
     buf = [Base.unsafe_convert(CXExpr, a) for a in args]
     invalid = Ref{Bool}(false)
@@ -199,9 +190,7 @@ end
     Diagnose(x::AbstractInitializationSequence, sema::AbstractSema, entity::AbstractInitializedEntity, kind::AbstractInitializationKind, args::AbstractVector{<:AbstractExpr}) -> Bool
 Emit the diagnostics explaining a failed sequence, returning whether it was ill-formed.
 """
-function Diagnose(x::AbstractInitializationSequence, sema::AbstractSema,
-                  entity::AbstractInitializedEntity, kind::AbstractInitializationKind,
-                  args::AbstractVector{<:AbstractExpr})
+function Diagnose(x::AbstractInitializationSequence, sema::AbstractSema, entity::AbstractInitializedEntity, kind::AbstractInitializationKind, args::AbstractVector{<:AbstractExpr})
     @check_ptrs x sema entity kind
     buf = [Base.unsafe_convert(CXExpr, a) for a in args]
     return clang_InitializationSequence_Diagnose(x, sema, entity, kind, buf, length(buf))
@@ -225,12 +214,9 @@ what binding a call argument or a return value goes through.
 
 Returns a carrier holding `NULL` when the initialization was rejected.
 """
-function PerformCopyInitialization(sema::AbstractSema, entity::AbstractInitializedEntity,
-                                   init::AbstractExpr; equal_loc::SourceLocation=SourceLocation(),
-                                   top_level_of_init_list::Bool=false, allow_explicit::Bool=false)
+function PerformCopyInitialization(sema::AbstractSema, entity::AbstractInitializedEntity, init::AbstractExpr; equal_loc::SourceLocation=SourceLocation(), top_level_of_init_list::Bool=false, allow_explicit::Bool=false)
     @check_ptrs sema entity init
     invalid = Ref{Bool}(false)
-    e = clang_Sema_PerformCopyInitialization(sema, entity, equal_loc, init,
-                                             top_level_of_init_list, allow_explicit, invalid)
+    e = clang_Sema_PerformCopyInitialization(sema, entity, equal_loc, init, top_level_of_init_list, allow_explicit, invalid)
     return Expr_(e)
 end

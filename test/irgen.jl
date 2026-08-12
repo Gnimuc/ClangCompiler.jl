@@ -1,6 +1,8 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: LLVM, getMessage, create_irgenerator, create_compiler, take_module, has_module, compile, link_process_symbols, get_function_pointer, get_symbol_address, get_jit, get_dylib, get_instance, get_llvm_context, get_irgenerator, dispose
+using ClangCompiler: LLVM, getMessage, create_irgenerator, create_compiler, take_module, has_module, compile,
+                     link_process_symbols, get_function_pointer, get_symbol_address, get_jit, get_dylib, get_instance,
+                     get_llvm_context, get_irgenerator, dispose
 using Test
 
 # The batch drivers: `IRGenerator` (source in, one LLVM module out) and `CxxCompiler`

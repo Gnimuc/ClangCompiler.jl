@@ -720,7 +720,8 @@ end
                 n = Int(CC.getNumBlocks(cfg))
                 @test n >= 2
 
-                stmt_kinds = (K.CXCFGElementKind_Statement, K.CXCFGElementKind_Constructor, K.CXCFGElementKind_CXXRecordTypedCall)
+                stmt_kinds = (K.CXCFGElementKind_Statement, K.CXCFGElementKind_Constructor,
+                              K.CXCFGElementKind_CXXRecordTypedCall)
                 ctor_expr = nothing
                 ctor_ctx = nothing
                 typed_call = nothing
@@ -755,9 +756,12 @@ end
                         # sibling's. The biconditional below is the second half -- non-null
                         # for exactly the kinds that carry that payload -- and a
                         # sibling-wired accessor is non-null under the wrong kind.
-                        @test (CC.getDeclStmt(cc).ptr != C_NULL) == (ck in (K.CXConstructionContextKind_SimpleVariableKind, K.CXConstructionContextKind_CXX17ElidedCopyVariableKind))
+                        @test (CC.getDeclStmt(cc).ptr != C_NULL) ==
+                              (ck in (K.CXConstructionContextKind_SimpleVariableKind,
+                                      K.CXConstructionContextKind_CXX17ElidedCopyVariableKind))
                         @test CC.is_null_handle(CC.getCXXCtorInitializer(cc))
-                        @test (CC.getCXXNewExpr(cc).ptr != C_NULL) == (ck == K.CXConstructionContextKind_NewAllocatedObjectKind)
+                        @test (CC.getCXXNewExpr(cc).ptr != C_NULL) ==
+                              (ck == K.CXConstructionContextKind_NewAllocatedObjectKind)
                         # this one is not a function of the kind: it is present when the
                         # construction binds a temporary needing destruction, which is a
                         # property of the individual construction rather than its class.
@@ -766,13 +770,16 @@ end
                         @test CC.is_null_handle(CC.getMaterializedTemporaryExpr(cc))
                         @test CC.is_null_handle(CC.getConstructorAfterElision(cc))
                         @test CC.is_null_handle(CC.getConstructionContextAfterElision(cc))
-                        @test (CC.getReturnStmt(cc).ptr != C_NULL) == (ck in (K.CXConstructionContextKind_SimpleReturnedValueKind, K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind))
+                        @test (CC.getReturnStmt(cc).ptr != C_NULL) ==
+                              (ck in (K.CXConstructionContextKind_SimpleReturnedValueKind,
+                                      K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind))
                         @test (CC.getCallLikeExpr(cc).ptr != C_NULL) == (ck == K.CXConstructionContextKind_ArgumentKind)
                         # the three lambda-capture payloads travel together
                         for get in (CC.getLambdaExpr, CC.getInitializer, CC.getFieldDecl)
                             @test (get(cc).ptr != C_NULL) == (ck == K.CXConstructionContextKind_LambdaCaptureKind)
                         end
-                        if ck == K.CXConstructionContextKind_SimpleVariableKind || ck == K.CXConstructionContextKind_CXX17ElidedCopyVariableKind
+                        if ck == K.CXConstructionContextKind_SimpleVariableKind ||
+                           ck == K.CXConstructionContextKind_CXX17ElidedCopyVariableKind
                             @test CC.getDeclStmt(cc).ptr != C_NULL
                             if k == K.CXCFGElementKind_Constructor && s isa CC.AbstractCXXConstructExpr
                                 ctor_expr = s
@@ -782,7 +789,8 @@ end
                             @test CC.getCXXNewExpr(cc).ptr != C_NULL
                         elseif ck == K.CXConstructionContextKind_ElidedTemporaryObjectKind
                             push!(elided, cc)
-                        elseif ck == K.CXConstructionContextKind_SimpleReturnedValueKind || ck == K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind
+                        elseif ck == K.CXConstructionContextKind_SimpleReturnedValueKind ||
+                               ck == K.CXConstructionContextKind_CXX17ElidedCopyReturnedValueKind
                             @test CC.getReturnStmt(cc).ptr != C_NULL
                         elseif ck == K.CXConstructionContextKind_ArgumentKind
                             @test CC.getCallLikeExpr(cc).ptr != C_NULL
@@ -999,7 +1007,12 @@ end
             # rendering is host-decided, so only the call and its `nothing` are asserted;
             # the string forms of the same input are asserted non-empty below.
             ok = redirect_stderr(devnull) do
-                CC.dump(cfg, ctx) === nothing && CC.dump(cfg, ctx, true) === nothing && CC.dump(entry, cfg, ctx) === nothing && CC.dump(entry, cfg, ctx, true) === nothing && CC.dump(elem_blk, cfg, ctx) === nothing && CC.dumpElement(elem_blk, 0) === nothing
+                CC.dump(cfg, ctx) === nothing &&
+                    CC.dump(cfg, ctx, true) === nothing &&
+                    CC.dump(entry, cfg, ctx) === nothing &&
+                    CC.dump(entry, cfg, ctx, true) === nothing &&
+                    CC.dump(elem_blk, cfg, ctx) === nothing &&
+                    CC.dumpElement(elem_blk, 0) === nothing
             end
             @test ok
             @test !isempty(CC.printAsString(cfg, ctx))
@@ -1057,7 +1070,9 @@ end
                 b = CC.getBlock(cfg, i)
                 for j = 0:(Int(CC.size(b)) - 1)
                     k = CC.getElementKind(b, j)
-                    if k == CC.LibClangEx.CXCFGElementKind_Statement || k == CC.LibClangEx.CXCFGElementKind_Constructor || k == CC.LibClangEx.CXCFGElementKind_CXXRecordTypedCall
+                    if k == CC.LibClangEx.CXCFGElementKind_Statement ||
+                       k == CC.LibClangEx.CXCFGElementKind_Constructor ||
+                       k == CC.LibClangEx.CXCFGElementKind_CXXRecordTypedCall
                         push!(expected, CC.getElementStmt(b, j).ptr)
                     end
                 end

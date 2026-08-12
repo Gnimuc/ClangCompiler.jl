@@ -43,8 +43,7 @@ be a null-pointered carrier, in which case `ftp` alone describes the arguments.
 
 Borrowed like [`arrangeFreeFunctionType`](@ref).
 """
-function arrangeCXXMethodType(x::AbstractCodeGenModule, rd::AbstractCXXRecordDecl,
-                              ftp::AbstractFunctionProtoType, md::AbstractCXXMethodDecl)
+function arrangeCXXMethodType(x::AbstractCodeGenModule, rd::AbstractCXXRecordDecl, ftp::AbstractFunctionProtoType, md::AbstractCXXMethodDecl)
     @check_ptrs x rd ftp
     return CGFunctionInfo(clang_CodeGen_arrangeCXXMethodType(x, rd, ftp, md))
 end
@@ -66,22 +65,14 @@ arguments.
 
 Borrowed like [`arrangeFreeFunctionType`](@ref).
 """
-function arrangeFreeFunctionCall(x::AbstractCodeGenModule, ctx::AbstractASTContext,
-                                 ret::QualType, args::Vector{CXQualType},
-                                 cc::CXCallingConv_=CXCallingConv_CC_C, noreturn::Bool=false,
-                                 variadic::Bool=false, num_required::Integer=length(args))
+function arrangeFreeFunctionCall(x::AbstractCodeGenModule, ctx::AbstractASTContext, ret::QualType, args::Vector{CXQualType}, cc::CXCallingConv_=CXCallingConv_CC_C, noreturn::Bool=false, variadic::Bool=false, num_required::Integer=length(args))
     @check_ptrs x ctx ret
     @assert all(a -> a != CXQualType(C_NULL), args) "an argument type has a NULL pointer"
     @assert 0 <= num_required <= length(args) "num_required $num_required is not an argument count"
-    return CGFunctionInfo(clang_CodeGen_arrangeFreeFunctionCall(x, ctx, ret, args,
-                                                                length(args), cc, noreturn,
-                                                                variadic, num_required))
+    return CGFunctionInfo(clang_CodeGen_arrangeFreeFunctionCall(x, ctx, ret, args, length(args), cc, noreturn, variadic, num_required))
 end
 
-function arrangeFreeFunctionCall(x::AbstractCodeGenModule, ctx::AbstractASTContext,
-                                 ret::QualType, args::Vector{QualType},
-                                 cc::CXCallingConv_=CXCallingConv_CC_C, noreturn::Bool=false,
-                                 variadic::Bool=false, num_required::Integer=length(args))
+function arrangeFreeFunctionCall(x::AbstractCodeGenModule, ctx::AbstractASTContext, ret::QualType, args::Vector{QualType}, cc::CXCallingConv_=CXCallingConv_CC_C, noreturn::Bool=false, variadic::Bool=false, num_required::Integer=length(args))
     handles = CXQualType[Base.unsafe_convert(CXQualType, a) for a in args]
     return arrangeFreeFunctionCall(x, ctx, ret, handles, cc, noreturn, variadic, num_required)
 end
@@ -103,16 +94,13 @@ function getImplicitCXXConstructorArgs(x::AbstractCodeGenModule, d::AbstractCXXC
     prefix = Vector{LLVM.API.LLVMValueRef}(undef, cap)
     suffix = Vector{LLVM.API.LLVMValueRef}(undef, cap)
     nprefix, nsuffix = Ref{Cuint}(0), Ref{Cuint}(0)
-    clang_CodeGen_getImplicitCXXConstructorArgs(x, d, cap, prefix, nprefix, cap, suffix,
-                                                nsuffix)
+    clang_CodeGen_getImplicitCXXConstructorArgs(x, d, cap, prefix, nprefix, cap, suffix, nsuffix)
     if nprefix[] > cap || nsuffix[] > cap
         resize!(prefix, nprefix[])
         resize!(suffix, nsuffix[])
-        clang_CodeGen_getImplicitCXXConstructorArgs(x, d, nprefix[], prefix, nprefix,
-                                                    nsuffix[], suffix, nsuffix)
+        clang_CodeGen_getImplicitCXXConstructorArgs(x, d, nprefix[], prefix, nprefix, nsuffix[], suffix, nsuffix)
     end
-    return ([LLVM.Value(prefix[i]) for i in 1:nprefix[]],
-            [LLVM.Value(suffix[i]) for i in 1:nsuffix[]])
+    return ([LLVM.Value(prefix[i]) for i = 1:nprefix[]], [LLVM.Value(suffix[i]) for i = 1:nsuffix[]])
 end
 
 """
@@ -138,8 +126,7 @@ among `rd`'s fields, and it is the index a GEP has to use.
 PRECONDITION (stated by the clang header): `fd` must be a direct, non-bitfield field of
 `rd`. An inherited or bitfield field is looked up in a table that does not contain it.
 """
-function getLLVMFieldNumber(x::AbstractCodeGenModule, rd::AbstractRecordDecl,
-                            fd::AbstractFieldDecl)
+function getLLVMFieldNumber(x::AbstractCodeGenModule, rd::AbstractRecordDecl, fd::AbstractFieldDecl)
     @check_ptrs x rd fd
     @assert !isBitField(fd) "getLLVMFieldNumber is not defined for a bitfield"
     # `getParent` answers a `RecordDecl` carrier while `rd` may be a `CXXRecordDecl` one, so
@@ -174,8 +161,7 @@ configuration — target CPU, target features, the frame-pointer policy and so o
 Entries already in `ab` are neither consulted nor preserved, so build on top of the result
 rather than before it.
 """
-function addDefaultFunctionDefinitionAttributes(x::AbstractCodeGenModule,
-                                                ab::AbstractAttrBuilder)
+function addDefaultFunctionDefinitionAttributes(x::AbstractCodeGenModule, ab::AbstractAttrBuilder)
     @check_ptrs x ab
     return clang_CodeGen_addDefaultFunctionDefinitionAttributes(x, ab)
 end

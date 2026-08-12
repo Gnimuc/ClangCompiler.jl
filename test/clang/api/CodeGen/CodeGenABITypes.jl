@@ -117,7 +117,7 @@ end
     CC.addDefaultFunctionDefinitionAttributes(cgm, ab)
     n = CC.getNumAttributes(ab)
     @test n > 0                                     # the empty/filled partition
-    strs = [CC.getAttributeAsString(ab, i) for i in 0:(n - 1)]
+    strs = [CC.getAttributeAsString(ab, i) for i = 0:(n - 1)]
     @test all(!isempty, strs)
     @test_throws AssertionError CC.getAttributeAsString(ab, n)
     @test !contains(ab, "no-such-attribute-at-all")

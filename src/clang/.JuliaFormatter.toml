@@ -1,0 +1,27 @@
+style = "yas"
+
+# The wide margin is scoped to this directory, and it is the only place that earns it: these
+# are thin wrappers over Clang's C++ API, and they copy Clang's own method names verbatim, so
+# a signature is one run of long camelCase identifiers with no good break point. The
+# formatter's choices there were worse than a hand-placed break, and a wrapper that sits on
+# one line stays diffable against the header it mirrors.
+#
+# Everything outside src/clang is ordinary Julia and uses the repo-root margin of 120.
+margin=1000
+always_for_in=false
+whitespace_in_kwargs=false
+whitespace_typedefs=false
+always_use_return=false
+pipe_to_function_call=false
+
+# All generated — regenerate, never hand-format. Two generators produce them: the *.inc
+# mirrors (Attr*, Stmt*, Decl*) come from the vendored TableGen files via gen/*_nodes.jl,
+# while converts.jl is the marshalling table emitted by gen/handle_converts.jl, which reads
+# the wrapper sources rather than any *.inc.
+#
+# This list must repeat the ones living here: JuliaFormatter uses the NEAREST config it
+# finds rather than merging with the parent, so the root `ignore` does not reach inside.
+ignore = ["AttrAbstracts.jl", "AttrCarriers.jl", "AttrWrappers.jl", "AttrKindMap.jl",
+          "StmtAbstractGen.jl", "StmtCarriers.jl", "StmtWrappers.jl", "StmtClassMap.jl",
+          "DeclKindMap.jl", "DeclContextUnion.jl", "converts.jl"]
+join_lines_based_on_source=false

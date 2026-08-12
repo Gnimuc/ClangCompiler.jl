@@ -30,7 +30,8 @@ using Test
 
     # qualified lookup into the translation unit, then decl -> QualType
     function lookup_tag_type(name)
-        r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, name)), loc, CC.CXLookupNameKind_LookupTagName)
+        r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, name)), loc,
+                            CC.CXLookupNameKind_LookupTagName)
         found = CC.LookupQualifiedName(sema, r, tu)
         ty = found ? CC.getTypeDeclType(ctx, CC.TypeDecl(CC.getResult(r))) : nothing
         CC.dispose(r)
@@ -68,7 +69,8 @@ using Test
     CC.dispose(ss)
 
     scope = CC.getCurScope(CC.get_parser(I))
-    single = CC.LookupSingleName(sema, scope, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaCompleteS")), loc, CC.CXLookupNameKind_LookupTagName)
+    single = CC.LookupSingleName(sema, scope, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaCompleteS")), loc,
+                                 CC.CXLookupNameKind_LookupTagName)
     @test single isa CC.NamedDecl
 
     dispose(I)
@@ -120,11 +122,15 @@ end
     @test !(CC.usesPartialOrExplicitSpecialization(sema, loc, spec))
     # `true` means the instantiation FAILED, so a well-formed `Box<double>` must give false --
     # which is also what makes the `isCompleteDefinition` below evidence rather than a repeat
-    @test CC.InstantiateClassTemplateSpecialization(sema, loc, spec, CC.CXTemplateSpecializationKind_TSK_ImplicitInstantiation, false) == false
+    @test CC.InstantiateClassTemplateSpecialization(sema, loc, spec,
+                                                    CC.CXTemplateSpecializationKind_TSK_ImplicitInstantiation, false) ==
+          false
     @test CC.isCompleteDefinition(spec)
     qt = CC.getTypeDeclType(ctx, spec)
     @test CC.isCompleteType(sema, loc, qt)
-    @test CC.InstantiateClassTemplateSpecializationMembers(sema, loc, spec, CC.CXTemplateSpecializationKind_TSK_ImplicitInstantiation) === nothing
+    @test CC.InstantiateClassTemplateSpecializationMembers(sema, loc, spec,
+                                                           CC.CXTemplateSpecializationKind_TSK_ImplicitInstantiation) ===
+          nothing
     @test CC.PerformPendingInstantiations(sema) === nothing
 
     dispose(f)
@@ -183,7 +189,8 @@ end
 
     # A class with no definition cannot take a special-member lookup: the wrapper rejects
     # it instead of letting Sema's own assert fire.
-    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaOpaque")), loc, CC.CXLookupNameKind_LookupTagName)
+    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaOpaque")), loc,
+                        CC.CXLookupNameKind_LookupTagName)
     tu = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
     @test CC.LookupQualifiedName(sema, r, tu)
     opaque = CC.CXXRecordDecl(CC.getResult(r))
@@ -193,7 +200,8 @@ end
     @test_throws AssertionError CC.LookupSpecialMember(sema, opaque, CC.CXCXXSpecialMember_CXXDestructor)
 
     # A user-declared name is not a builtin, so nothing is created and the lookup fails.
-    rb = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaSpecial")), loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    rb = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaSpecial")), loc,
+                         CC.CXLookupNameKind_LookupOrdinaryName)
     @test CC.LookupBuiltin(sema, rb) === false
     CC.dispose(rb)
 
@@ -282,7 +290,8 @@ end
     @test !CC.IsDerivedFrom(sema, loc, unrelated_ty, base_ty)
 
     # float -> double is the textbook floating-point promotion
-    @test CC.IsFloatingPointPromotion(sema, CC.get_qual_type(CC.jlty_to_clty(Float32, ctx)), CC.get_qual_type(CC.jlty_to_clty(Float64, ctx)))
+    @test CC.IsFloatingPointPromotion(sema, CC.get_qual_type(CC.jlty_to_clty(Float32, ctx)),
+                                      CC.get_qual_type(CC.jlty_to_clty(Float64, ctx)))
     @test CC.IsFloatingPointPromotion(sema, int_ty, int_ty) == false
 
     # member queries reached through the record's own method list
@@ -302,7 +311,8 @@ end
     body = CC.getBody(fd)
     @test body.ptr != C_NULL
     @test CC.canThrow(sema, body) isa CC.CXCanThrowResult
-    @test CC.canThrow(sema, body) in (CC.CXCanThrowResult_CT_Cannot, CC.CXCanThrowResult_CT_Dependent, CC.CXCanThrowResult_CT_Can)
+    @test CC.canThrow(sema, body) in
+          (CC.CXCanThrowResult_CT_Cannot, CC.CXCanThrowResult_CT_Dependent, CC.CXCanThrowResult_CT_Can)
 
     # the literal spelling asserts scalar-ness, which a class type fails
     @test_throws AssertionError CC.getFixItZeroLiteralForType(sema, base_ty, loc)
@@ -859,13 +869,16 @@ end
     @test tt isa CC.Expr_
     @test tt === nothing || CC.resolve(tt) isa CC.TypeTraitExpr
     # the wrapper rejects the empty argument list clang would index into
-    @test_throws AssertionError CC.BuildTypeTrait(sema, CC.LibClangEx.CXTypeTrait_UTT_IsPOD, loc, CC.TypeSourceInfo[], loc)
+    @test_throws AssertionError CC.BuildTypeTrait(sema, CC.LibClangEx.CXTypeTrait_UTT_IsPOD, loc, CC.TypeSourceInfo[],
+                                                  loc)
 
-    rank = CC.BuildArrayTypeTrait(sema, CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayRank, loc, arr_tsi, CC.Expr_(C_NULL), loc)
+    rank = CC.BuildArrayTypeTrait(sema, CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayRank, loc, arr_tsi, CC.Expr_(C_NULL),
+                                  loc)
     @test rank isa CC.Expr_
     @test rank === nothing || CC.resolve(rank) isa CC.ArrayTypeTraitExpr
     # __array_extent evaluates its dimension expression, so a null one is rejected here
-    @test_throws AssertionError CC.BuildArrayTypeTrait(sema, CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayExtent, loc, arr_tsi, CC.Expr_(C_NULL), loc)
+    @test_throws AssertionError CC.BuildArrayTypeTrait(sema, CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayExtent, loc,
+                                                       arr_tsi, CC.Expr_(C_NULL), loc)
 
     et = CC.BuildExpressionTrait(sema, CC.LibClangEx.CXExpressionTrait_ET_IsRValueExpr, loc, eight, loc)
     @test et isa CC.Expr_
@@ -986,7 +999,8 @@ end
     is_chk_ns(d) = d isa CC.NamespaceDecl && CC.getNameAsString(d) == "SemaChk2NS"
     ns = first(d for d in CC.decls(tu) if is_chk_ns(d))
     ns_decls = CC.decls(CC.castToDeclContext(ns))
-    is_lit_op(d) = d isa CC.FunctionDecl && CC.getNameKind(CC.getDeclName(d)) == CC.CXDeclarationName_CXXLiteralOperatorName
+    is_lit_op(d) = d isa CC.FunctionDecl &&
+                   CC.getNameKind(CC.getDeclName(d)) == CC.CXDeclarationName_CXXLiteralOperatorName
     plus = first(d for d in ns_decls if d isa CC.FunctionDecl && CC.isOverloadedOperator(d))
     lit = first(d for d in ns_decls if is_lit_op(d))
     @test CC.CheckOverloadedOperatorDeclaration(sema, plus) == false
@@ -1097,7 +1111,9 @@ end
 
     qual = CC.PerformQualificationConversion(sema, eight, CC.getType(eight))
     @test qual isa Union{Nothing,CC.Expr_}
-    qual_cast = CC.PerformQualificationConversion(sema, eight, CC.getType(eight), CC.LibClangEx.CXExprValueKind_VK_PRValue, CC.LibClangEx.CXCheckedConversionKind_CCK_CStyleCast)
+    qual_cast = CC.PerformQualificationConversion(sema, eight, CC.getType(eight),
+                                                  CC.LibClangEx.CXExprValueKind_VK_PRValue,
+                                                  CC.LibClangEx.CXCheckedConversionKind_CCK_CStyleCast)
     @test qual_cast isa Union{Nothing,CC.Expr_}
 
     dispose(f)
@@ -1150,7 +1166,9 @@ end
 
     # `plain` names nothing in the base, so no overridden method is wired up. Its override
     # list must still be empty going in — clang appends without de-duplicating.
-    plain_m = first(d for d in CC.decls(CC.castToDeclContext(derived)) if d isa CC.CXXMethodDecl && CC.getNameAsString(d) == "plain")
+    plain_m = first(d
+                    for d in CC.decls(CC.castToDeclContext(derived))
+                    if d isa CC.CXXMethodDecl && CC.getNameAsString(d) == "plain")
     @test CC.size_overridden_methods(plain_m) == 0
     @test CC.AddOverriddenMethods(sema, derived, plain_m) == false
 
@@ -1162,12 +1180,16 @@ end
     @test CC.hasDefaultArg(param)
 
     # `= delete` and `= default` applied after the fact, each read back through its predicate
-    gone = first(d for d in CC.decls(CC.castToDeclContext(delete_rec)) if d isa CC.CXXMethodDecl && CC.getNameAsString(d) == "gone")
+    gone = first(d
+                 for d in CC.decls(CC.castToDeclContext(delete_rec))
+                 if d isa CC.CXXMethodDecl && CC.getNameAsString(d) == "gone")
     @test !CC.isDeleted(gone)
     @test CC.SetDeclDeleted(sema, gone, loc) === nothing
     @test CC.isDeleted(gone)
 
-    ctor = first(d for d in CC.decls(CC.castToDeclContext(default_rec)) if d isa CC.CXXConstructorDecl && !CC.isImplicit(d))
+    ctor = first(d
+                 for d in CC.decls(CC.castToDeclContext(default_rec))
+                 if d isa CC.CXXConstructorDecl && !CC.isImplicit(d))
     @test !CC.isDefaulted(ctor)
     @test CC.SetDeclDefaulted(sema, ctor, loc) === nothing
     @test CC.isDefaulted(ctor)
@@ -1344,7 +1366,8 @@ end
     @test f(I, "SemaMiscDerived")
     derived_ty = CC.getTypeDeclType(ctx, CC.CXXRecordDecl(get_decl(f)))
     bd_res, bd_conv = CC.CompareReferenceRelationship(sema, loc, base_ty, derived_ty)
-    @test bd_res in (CC.CXReferenceCompareResult_Ref_Incompatible, CC.CXReferenceCompareResult_Ref_Related, CC.CXReferenceCompareResult_Ref_Compatible)
+    @test bd_res in (CC.CXReferenceCompareResult_Ref_Incompatible, CC.CXReferenceCompareResult_Ref_Related,
+                     CC.CXReferenceCompareResult_Ref_Compatible)
     @test bd_conv isa Integer
     # neither operand may itself be a reference type
     ref_ty = CC.getLValueReferenceType(ctx, int_ty)
@@ -1544,9 +1567,12 @@ end
     @test off isa CC.Expr_
     @test CC.resolve(off) isa CC.OffsetOfExpr
     # the wrapper rejects the three component shapes clang assumes away
-    @test_throws AssertionError CC.BuildBuiltinOffsetOf(sema, loc, rec_tsi, CC.SourceLocation[], CC.SourceLocation[], Bool[], CC.IdentifierInfo[], CC.Expr_[], loc)
-    @test_throws AssertionError CC.BuildBuiltinOffsetOf(sema, loc, rec_tsi, [loc], [loc], [true], [b_ii], [no_index], loc)
-    @test_throws AssertionError CC.BuildBuiltinOffsetOf(sema, loc, int_tsi, [loc], [loc], [false], [b_ii], [no_index], loc)
+    @test_throws AssertionError CC.BuildBuiltinOffsetOf(sema, loc, rec_tsi, CC.SourceLocation[], CC.SourceLocation[],
+                                                        Bool[], CC.IdentifierInfo[], CC.Expr_[], loc)
+    @test_throws AssertionError CC.BuildBuiltinOffsetOf(sema, loc, rec_tsi, [loc], [loc], [true], [b_ii], [no_index],
+                                                        loc)
+    @test_throws AssertionError CC.BuildBuiltinOffsetOf(sema, loc, int_tsi, [loc], [loc], [false], [b_ii], [no_index],
+                                                        loc)
 
     # --- __builtin_LINE(), whose result type the caller supplies ---
     sl = CC.BuildSourceLocExpr(sema, CC.CXSourceLocIdentKind_Line, int_ty, loc, loc, tu)
@@ -1640,7 +1666,8 @@ end
     @test CC.isInitialized(ics)
     @test CC.getKind(ics) isa CC.LibClangEx.CXImplicitConversionSequence_Kind
     # every explicit-conversion policy is accepted and still leaves a usable sequence
-    again = CC.TryImplicitConversion(sema, eight, double_ty, ics, false, CC.LibClangEx.CXAllowedExplicit_All, true, true, false)
+    again = CC.TryImplicitConversion(sema, eight, double_ty, ics, false, CC.LibClangEx.CXAllowedExplicit_All, true,
+                                     true, false)
     @test CC.isInitialized(again)
     dispose(ics)
 
@@ -1775,7 +1802,8 @@ end
 
     # --- Lookup-result filters ---
     # A class template survives the template-name filter unchanged.
-    tmpl_r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaDefTmpl")), loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    tmpl_r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaDefTmpl")), loc,
+                             CC.CXLookupNameKind_LookupOrdinaryName)
     @test CC.LookupQualifiedName(sema, tmpl_r, tu)
     @test CC.getNum(tmpl_r) == 1
     @test CC.FilterAcceptableTemplateNames(sema, tmpl_r) === nothing
@@ -1783,7 +1811,8 @@ end
     CC.dispose(tmpl_r)
 
     # A plain variable names no template at all, so the filter empties the result.
-    plain_r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaDefPlain")), loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    plain_r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaDefPlain")), loc,
+                              CC.CXLookupNameKind_LookupOrdinaryName)
     @test CC.LookupQualifiedName(sema, plain_r, tu)
     @test CC.getNum(plain_r) == 1
     CC.FilterAcceptableTemplateNames(sema, plain_r)
@@ -1793,7 +1822,8 @@ end
 
     # semaDefPlain is declared in the translation unit, so filtering against the
     # translation-unit context keeps it — that is a language fact, not a host decision.
-    scope_r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaDefPlain")), loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    scope_r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaDefPlain")), loc,
+                              CC.CXLookupNameKind_LookupOrdinaryName)
     @test CC.LookupQualifiedName(sema, scope_r, tu)
     before = CC.getNum(scope_r)
     @test CC.FilterLookupForScope(sema, scope_r, tu, sc, false, false) === nothing
@@ -1803,7 +1833,8 @@ end
     # FilterUsingLookup keeps only what a using-declaration would newly introduce; which
     # context Sema currently rests in decides how much that removes, so only the direction
     # of the change is asserted.
-    using_r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaDefPlain")), loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    using_r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaDefPlain")), loc,
+                              CC.CXLookupNameKind_LookupOrdinaryName)
     @test CC.LookupQualifiedName(sema, using_r, tu)
     using_before = CC.getNum(using_r)
     @test CC.FilterUsingLookup(sema, sc, using_r) === nothing
@@ -2176,7 +2207,8 @@ end
     base = CC.BuildDeclRefExpr(sema, obj_vd, CC.getType(obj_vd), CC.LibClangEx.CXExprValueKind_VK_LValue, loc)
     ss = CC.CXXScopeSpec()
     dni = CC.DeclarationNameInfo(CC.DeclarationName(CC.getIdentifierInfo(pp, "a")), loc)
-    member = CC.BuildFieldReferenceExpr(sema, base, false, loc, ss, field, field, CC.LibClangEx.CXAccessSpecifier_AS_public, dni)
+    member = CC.BuildFieldReferenceExpr(sema, base, false, loc, ss, field, field,
+                                        CC.LibClangEx.CXAccessSpecifier_AS_public, dni)
     @test member === nothing || CC.resolve(member) isa CC.MemberExpr
 
     # --- (int){8}, whose initializer list is built through the wrapped entry point ---
@@ -2551,14 +2583,16 @@ end
     CC.dispose(tmpl_set)
 
     method_set = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Normal)
-    CC.AddMethodCandidate(sema, member_md, member_md, CC.CXAccessSpecifier_AS_public, derived, obj_arg, [int_arg], method_set)
+    CC.AddMethodCandidate(sema, member_md, member_md, CC.CXAccessSpecifier_AS_public, derived, obj_arg, [int_arg],
+                          method_set)
     @test size(method_set) == 1
     CC.dispose(method_set)
 
     member_ops = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator)
     CC.AddMemberOperatorCandidates(sema, CC.CXOverloadedOperatorKind_OO_Plus, loc, [obj_arg, int_arg], member_ops)
     @test size(member_ops) >= 1
-    @test_throws AssertionError CC.AddMemberOperatorCandidates(sema, CC.CXOverloadedOperatorKind_OO_Plus, loc, CC.DeclRefExpr[], member_ops)
+    @test_throws AssertionError CC.AddMemberOperatorCandidates(sema, CC.CXOverloadedOperatorKind_OO_Plus, loc,
+                                                               CC.DeclRefExpr[], member_ops)
     CC.dispose(member_ops)
 
     builtins = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator)
@@ -2566,7 +2600,8 @@ end
     @test size(builtins) > 0
     # The operators with no built-in forms abort clang outright, so the wrapper rejects
     # them before the ccall.
-    @test_throws AssertionError CC.AddBuiltinOperatorCandidates(sema, CC.CXOverloadedOperatorKind_OO_New, loc, [int_arg], builtins)
+    @test_throws AssertionError CC.AddBuiltinOperatorCandidates(sema, CC.CXOverloadedOperatorKind_OO_New, loc,
+                                                                [int_arg], builtins)
     CC.dispose(builtins)
 
     one_builtin = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator)
@@ -2693,7 +2728,8 @@ end
     @test !(CC.NeedToCaptureVariable(sema, global_var, loc))
 
     ss = CC.CXXScopeSpec()
-    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaMiscCallee")), loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "semaMiscCallee")), loc,
+                        CC.CXLookupNameKind_LookupOrdinaryName)
     @test CC.LookupQualifiedName(sema, r, tu)
     @test CC.UseArgumentDependentLookup(sema, ss, r, true)
     @test !(CC.UseArgumentDependentLookup(sema, ss, r, false))
@@ -2750,7 +2786,8 @@ end
     @test ctor.ptr != C_NULL
     # the class is trivial by construction, so clang's answer is known rather than merely Bool
     @test CC.SpecialMemberIsTrivial(sema, ctor, CC.CXCXXSpecialMember_CXXDefaultConstructor) == true
-    @test CC.SpecialMemberIsTrivial(sema, ctor, CC.CXCXXSpecialMember_CXXDefaultConstructor, CC.CXTrivialABIHandling_TAH_ConsiderTrivialABI) == true
+    @test CC.SpecialMemberIsTrivial(sema, ctor, CC.CXCXXSpecialMember_CXXDefaultConstructor,
+                                    CC.CXTrivialABIHandling_TAH_ConsiderTrivialABI) == true
     @test_throws AssertionError CC.SpecialMemberIsTrivial(sema, ctor, CC.CXCXXSpecialMember_CXXInvalid)
 
     dispose(f)
@@ -2959,7 +2996,8 @@ end
     generic = CC.CreateGenericSelectionExpr(sema, loc, loc, loc, int_ref, [int_tsi, nothing], [int_ref, int_ref])
     @test generic isa CC.Expr_
     @test CC.resolve(generic) isa CC.GenericSelectionExpr
-    @test_throws AssertionError CC.CreateGenericSelectionExpr(sema, loc, loc, loc, int_ref, [int_tsi], [int_ref, int_ref])
+    @test_throws AssertionError CC.CreateGenericSelectionExpr(sema, loc, loc, loc, int_ref, [int_tsi],
+                                                              [int_ref, int_ref])
 
     # --- A resolved call, with the ADL flag round-tripping through the node
     resolved = CC.BuildResolvedCallExpr(sema, fn_ref, callee, loc, [int_ref, int_ref], loc)
@@ -2967,7 +3005,8 @@ end
     resolved_node = CC.resolve(resolved)
     @test resolved_node isa CC.AbstractCallExpr
     @test CC.usesADL(resolved_node) == false
-    adl_call = CC.BuildResolvedCallExpr(sema, fn_ref, callee, loc, [int_ref, int_ref], loc, CC.Expr_(C_NULL), false, true)
+    adl_call = CC.BuildResolvedCallExpr(sema, fn_ref, callee, loc, [int_ref, int_ref], loc, CC.Expr_(C_NULL), false,
+                                        true)
     @test adl_call isa CC.Expr_
     @test CC.usesADL(CC.resolve(adl_call)) == true
 
@@ -3113,7 +3152,9 @@ end
     # --- .* operands, taken from the `r.*p` clang itself built -------------------------
     @test f(I, "semaChkPtmFn")
     ptm_fd = CC.FunctionDecl(get_decl(f))
-    ptm = first(n for n in CC.subtree(CC.getBody(ptm_fd)) if n isa CC.BinaryOperator && CC.getOpcode(n) == CC.LibClangEx.CXBinaryOperatorKind_BO_PtrMemD)
+    ptm = first(n
+                for n in CC.subtree(CC.getBody(ptm_fd))
+                if n isa CC.BinaryOperator && CC.getOpcode(n) == CC.LibClangEx.CXBinaryOperatorKind_BO_PtrMemD)
     ptm_res = CC.CheckPointerToMemberOperands(sema, CC.getLHS(ptm), CC.getRHS(ptm), loc)
     @test ptm_res !== nothing
     ptm_ty, ptm_l, ptm_r, ptm_vk = ptm_res
@@ -3337,7 +3378,9 @@ end
     rng = CC.SourceRange(loc, loc)
 
     # --- operator new / operator delete for `new int` and `new int[]` ---
-    failed, pass_align, opnew, opdel = CC.FindAllocationFunctions(sema, loc, rng, CC.CXAllocationFunctionScope_AFS_Global, CC.CXAllocationFunctionScope_AFS_Global, int_ty)
+    failed, pass_align, opnew, opdel = CC.FindAllocationFunctions(sema, loc, rng,
+                                                                  CC.CXAllocationFunctionScope_AFS_Global,
+                                                                  CC.CXAllocationFunctionScope_AFS_Global, int_ty)
     @test failed isa Bool
     @test pass_align isa Bool
     @test opnew isa CC.FunctionDecl
@@ -3345,7 +3388,8 @@ end
     # either the global lookup failed or it named an operator new
     @test failed || opnew.ptr != C_NULL
 
-    failed2, _, opnew2, _ = CC.FindAllocationFunctions(sema, loc, rng, CC.CXAllocationFunctionScope_AFS_Global, CC.CXAllocationFunctionScope_AFS_Global, int_ty; is_array=true)
+    failed2, _, opnew2, _ = CC.FindAllocationFunctions(sema, loc, rng, CC.CXAllocationFunctionScope_AFS_Global,
+                                                       CC.CXAllocationFunctionScope_AFS_Global, int_ty; is_array=true)
     @test failed2 isa Bool
     @test failed2 || opnew2.ptr != C_NULL
 
@@ -3414,7 +3458,8 @@ end
     before = CC.CurFPFeatureOverrides(sema)
     @test before isa Integer
     default_mode = CC.getDefaultExceptionMode(CC.getLangOpts(sema))
-    other_mode = default_mode == CC.CXFPExceptionModeKind_FPE_Strict ? CC.CXFPExceptionModeKind_FPE_Ignore : CC.CXFPExceptionModeKind_FPE_Strict
+    other_mode = default_mode == CC.CXFPExceptionModeKind_FPE_Strict ? CC.CXFPExceptionModeKind_FPE_Ignore :
+                 CC.CXFPExceptionModeKind_FPE_Strict
     @test CC.setExceptionMode(sema, loc, other_mode) === nothing
     @test CC.CurFPFeatureOverrides(sema) != before      # the mode this call set
     @test CC.setExceptionMode(sema, loc, default_mode) === nothing
@@ -3473,12 +3518,15 @@ end
     # --- Scoring the candidates for a binary operator ---
     accesses = fill(CC.CXAccessSpecifier_AS_none, length(plus_fns))
     binop_set = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator)
-    CC.LookupOverloadedBinOp(sema, binop_set, CC.CXOverloadedOperatorKind_OO_Plus, plus_fns, accesses, [obj_ref, obj_ref])
+    CC.LookupOverloadedBinOp(sema, binop_set, CC.CXOverloadedOperatorKind_OO_Plus, plus_fns, accesses,
+                             [obj_ref, obj_ref])
     # The operand type is declared next to `operator+` in this file, so ADL alone finds it.
     @test size(binop_set) isa Integer
     @test size(binop_set) >= 1
-    @test_throws AssertionError CC.LookupOverloadedBinOp(sema, binop_set, CC.CXOverloadedOperatorKind_OO_Plus, plus_fns, accesses, [obj_ref])
-    @test_throws AssertionError CC.LookupOverloadedBinOp(sema, binop_set, CC.CXOverloadedOperatorKind_OO_Plus, plus_fns, CC.CXAccessSpecifier[], [obj_ref, obj_ref])
+    @test_throws AssertionError CC.LookupOverloadedBinOp(sema, binop_set, CC.CXOverloadedOperatorKind_OO_Plus, plus_fns,
+                                                         accesses, [obj_ref])
+    @test_throws AssertionError CC.LookupOverloadedBinOp(sema, binop_set, CC.CXOverloadedOperatorKind_OO_Plus, plus_fns,
+                                                         CC.CXAccessSpecifier[], [obj_ref, obj_ref])
     CC.dispose(binop_set)
 
     # --- The innermost expression-evaluation context ---
@@ -3494,7 +3542,9 @@ end
     @test !(CC.isDiscardedStatementContext(rec))
     # The Sema-level predicate reads this very record, so the two must agree whatever the
     # host left on the stack.
-    @test CC.isUnevaluatedContext(sema) == (ctx_kind in (CC.CXExpressionEvaluationContext_Unevaluated, CC.CXExpressionEvaluationContext_UnevaluatedList, CC.CXExpressionEvaluationContext_UnevaluatedAbstract))
+    @test CC.isUnevaluatedContext(sema) ==
+          (ctx_kind in (CC.CXExpressionEvaluationContext_Unevaluated, CC.CXExpressionEvaluationContext_UnevaluatedList,
+                        CC.CXExpressionEvaluationContext_UnevaluatedAbstract))
 
     # --- The optional InitializationContext triple, per record and across the stack ---
     delayed = CC.getDelayedDefaultInitializationContext(rec)
@@ -3562,7 +3612,8 @@ end
     # a type written in source carries an ElaboratedType wrapper, so peel it first
     written isa CC.ElaboratedType && (written = CC.resolve(CC.getTypePtr(CC.getNamedType(written))))
     @test written isa CC.TemplateSpecializationType
-    @test CC.getTemplateNameKindForDiagnostics(sema, CC.getTemplateName(written)) == CC.CXTemplateNameKindForDiagnostics_ClassTemplate
+    @test CC.getTemplateNameKindForDiagnostics(sema, CC.getTemplateName(written)) ==
+          CC.CXTemplateNameKindForDiagnostics_ClassTemplate
 
     # --- how a non-tag declaration introduces its type name ---
     @test f(I, "SemaQ6Typedef")
@@ -3584,7 +3635,8 @@ end
 
     # --- splatting a scalar across a vector on initialization ---
     int_qt = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
-    altivec = CC.resolve(CC.getTypePtr(CC.getVectorType(sema |> CC.getASTContext, int_qt, 4, CC.CXVectorKind_AltiVecVector)))
+    altivec = CC.resolve(CC.getTypePtr(CC.getVectorType(sema |> CC.getASTContext, int_qt, 4,
+                                                        CC.CXVectorKind_AltiVecVector)))
     @test altivec isa CC.VectorType
     @test CC.ShouldSplatAltivecScalarInCast(sema, altivec)   # true for every AltiVecVector
     generic = CC.resolve(CC.getTypePtr(CC.getVectorType(ctx, int_qt, 4, CC.CXVectorKind_Generic)))
@@ -3596,7 +3648,8 @@ end
     @test_throws AssertionError CC.IsInvalidSMECallConversion(sema, int_qt, fn_qt)
 
     # --- a lookup result that holds a template name ---
-    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaQ6Tpl")), loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "SemaQ6Tpl")), loc,
+                        CC.CXLookupNameKind_LookupOrdinaryName)
     @test CC.LookupQualifiedName(sema, r, tu)
     @test CC.hasAnyAcceptableTemplateNames(sema, r)
     @test CC.hasAnyAcceptableTemplateNames(sema, r; allow_dependent=false)
@@ -3736,7 +3789,8 @@ end
 
     # --- BuildCXXFoldExpr: a unary fold, with the opposite operand left absent ---
     no_callee = CC.UnresolvedLookupExpr(C_NULL)
-    fold = CC.BuildCXXFoldExpr(sema, no_callee, loc, one, CC.LibClangEx.CXBinaryOperatorKind_BO_Add, loc, CC.Expr_(C_NULL), loc)
+    fold = CC.BuildCXXFoldExpr(sema, no_callee, loc, one, CC.LibClangEx.CXBinaryOperatorKind_BO_Add, loc,
+                               CC.Expr_(C_NULL), loc)
     @test fold isa CC.Expr_
     folded = CC.resolve(fold)
     @test folded isa CC.CXXFoldExpr
@@ -3744,7 +3798,8 @@ end
     @test CC.getLHS(folded).ptr == one.ptr
     @test CC.getRHS(folded).ptr == C_NULL
     # the same builder with the pack length supplied and the operands the other way round
-    fold2 = CC.BuildCXXFoldExpr(sema, no_callee, loc, CC.Expr_(C_NULL), CC.LibClangEx.CXBinaryOperatorKind_BO_Add, loc, one, loc, 3)
+    fold2 = CC.BuildCXXFoldExpr(sema, no_callee, loc, CC.Expr_(C_NULL), CC.LibClangEx.CXBinaryOperatorKind_BO_Add, loc,
+                                one, loc, 3)
     @test fold2 isa CC.Expr_
     @test CC.resolve(fold2) isa CC.CXXFoldExpr
     @test CC.getRHS(CC.resolve(fold2)).ptr == one.ptr
@@ -3876,8 +3931,10 @@ end
     # crash — so assert the shape of either outcome.
     # The comparison and logical forms share CheckVectorOperands' precondition, so the
     # scalar operands this testset has to hand exercise the gate rather than the check.
-    @test_throws AssertionError CC.CheckVectorCompareOperands(sema, v1, v2, loc, CC.LibClangEx.CXBinaryOperatorKind_BO_LT)
-    @test_throws AssertionError CC.CheckVectorCompareOperands(sema, eight, two, loc, CC.LibClangEx.CXBinaryOperatorKind_BO_LT)
+    @test_throws AssertionError CC.CheckVectorCompareOperands(sema, v1, v2, loc,
+                                                              CC.LibClangEx.CXBinaryOperatorKind_BO_LT)
+    @test_throws AssertionError CC.CheckVectorCompareOperands(sema, eight, two, loc,
+                                                              CC.LibClangEx.CXBinaryOperatorKind_BO_LT)
     @test_throws AssertionError CC.CheckVectorLogicalOperands(sema, v1, v2, loc)
     @test_throws AssertionError CC.CheckVectorLogicalOperands(sema, eight, two, loc)
 
@@ -4079,7 +4136,9 @@ end
     conv_rec = CC.CXXRecordDecl(get_decl(f))
     # A template's pattern is excluded explicitly: `operator T *` would answer the pointer
     # predicate below just as `operator SemaD6FnPtr` does.
-    convs = [CC.CXXConversionDecl(m) for m in CC.getMethods(conv_rec) if CC.getDeclKindName(m) == "CXXConversion" && CC.getDescribedFunctionTemplate(m).ptr == C_NULL]
+    convs = [CC.CXXConversionDecl(m)
+             for m in CC.getMethods(conv_rec)
+             if CC.getDeclKindName(m) == "CXXConversion" && CC.getDescribedFunctionTemplate(m).ptr == C_NULL]
     int_conv = first(c for c in convs if CC.isIntegerType(CC.getTypePtr(CC.getConversionType(c))))
     fnptr_conv = first(c for c in convs if CC.isPointerType(CC.getTypePtr(CC.getConversionType(c))))
     # The conversion target is written through an alias, so canonicalise before peeling the
@@ -4088,7 +4147,8 @@ end
     surrogate_proto = CC.resolve(CC.getTypePtr(CC.getPointeeType(CC.getTypePtr(fnptr_target))))
     @test surrogate_proto isa CC.FunctionProtoType
 
-    conv_tmpls = [CC.FunctionTemplateDecl(d) for d in CC.decls(CC.castToDeclContext(conv_rec)) if CC.getDeclKindName(d) == "FunctionTemplate"]
+    conv_tmpls = [CC.FunctionTemplateDecl(d)
+                  for d in CC.decls(CC.castToDeclContext(conv_rec)) if CC.getDeclKindName(d) == "FunctionTemplate"]
     tmpl_conv = first(t for t in conv_tmpls if CC.getDeclKindName(CC.getTemplatedDecl(t)) == "CXXConversion")
     tmpl_method = first(t for t in conv_tmpls if CC.getDeclKindName(CC.getTemplatedDecl(t)) == "CXXMethod")
 
@@ -4097,7 +4157,9 @@ end
 
     @assert f(I, "SemaD6Ctor") "lookup failed: SemaD6Ctor"
     ctor_rec = CC.CXXRecordDecl(get_decl(f))
-    ctor = CC.CXXConstructorDecl(first(m for m in CC.getMethods(ctor_rec) if CC.getDeclKindName(m) == "CXXConstructor" && CC.getNumParams(m) == 2))
+    ctor = CC.CXXConstructorDecl(first(m
+                                       for m in CC.getMethods(ctor_rec)
+                                       if CC.getDeclKindName(m) == "CXXConstructor" && CC.getNumParams(m) == 2))
     ctor_ty = CC.getTypeDeclType(ctx, ctor_rec)
 
     @assert f(I, "semaD6Fn") "lookup failed: semaD6Fn"
@@ -4109,7 +4171,8 @@ end
     callee_proto = CC.resolve(CC.getTypePtr(CC.getType(callee)))
     @test callee_proto isa CC.FunctionProtoType
 
-    plus_fns = [CC.FunctionDecl(d) for d in CC.decls(tu) if d isa CC.FunctionDecl && CC.getNameAsString(d) == "operator+"]
+    plus_fns = [CC.FunctionDecl(d)
+                for d in CC.decls(tu) if d isa CC.FunctionDecl && CC.getNameAsString(d) == "operator+"]
     @test length(plus_fns) == 2
 
     @assert f(I, "semaD6Body") "lookup failed: semaD6Body"
@@ -4124,37 +4187,48 @@ end
 
     # --- Conversion functions, written out and deduced ---
     conv_set = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Normal)
-    CC.AddConversionCandidate(sema, int_conv, int_conv, CC.CXAccessSpecifier_AS_public, conv_rec, obj_arg, int_qt, conv_set)
+    CC.AddConversionCandidate(sema, int_conv, int_conv, CC.CXAccessSpecifier_AS_public, conv_rec, obj_arg, int_qt,
+                              conv_set)
     @test size(conv_set) == 1
     # A deduction failure would still be recorded, so the set grows either way.
-    CC.AddTemplateConversionCandidate(sema, tmpl_conv, tmpl_conv, CC.CXAccessSpecifier_AS_public, conv_rec, obj_arg, int_ptr_qt, conv_set)
+    CC.AddTemplateConversionCandidate(sema, tmpl_conv, tmpl_conv, CC.CXAccessSpecifier_AS_public, conv_rec, obj_arg,
+                                      int_ptr_qt, conv_set)
     @test size(conv_set) == 2
     # The wrappers reject the two inputs clang assumes away: a non-class source expression
     # and a template asked for through the non-template entry point.
-    @test_throws AssertionError CC.AddConversionCandidate(sema, int_conv, int_conv, CC.CXAccessSpecifier_AS_public, conv_rec, int_arg, int_qt, conv_set)
-    @test_throws AssertionError CC.AddTemplateConversionCandidate(sema, tmpl_method, tmpl_method, CC.CXAccessSpecifier_AS_public, conv_rec, obj_arg, int_ptr_qt, conv_set)
+    @test_throws AssertionError CC.AddConversionCandidate(sema, int_conv, int_conv, CC.CXAccessSpecifier_AS_public,
+                                                          conv_rec, int_arg, int_qt, conv_set)
+    @test_throws AssertionError CC.AddTemplateConversionCandidate(sema, tmpl_method, tmpl_method,
+                                                                  CC.CXAccessSpecifier_AS_public, conv_rec, obj_arg,
+                                                                  int_ptr_qt, conv_set)
     CC.dispose(conv_set)
 
     # --- The surrogate for calling an object through a conversion to a function pointer ---
     surrogate_set = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Normal)
-    CC.AddSurrogateCandidate(sema, fnptr_conv, fnptr_conv, CC.CXAccessSpecifier_AS_public, conv_rec, surrogate_proto, obj_arg, [int_arg], surrogate_set)
+    CC.AddSurrogateCandidate(sema, fnptr_conv, fnptr_conv, CC.CXAccessSpecifier_AS_public, conv_rec, surrogate_proto,
+                             obj_arg, [int_arg], surrogate_set)
     @test size(surrogate_set) == 1
-    @test_throws AssertionError CC.AddSurrogateCandidate(sema, fnptr_conv, fnptr_conv, CC.CXAccessSpecifier_AS_public, conv_rec, surrogate_proto, int_arg, [int_arg], surrogate_set)
+    @test_throws AssertionError CC.AddSurrogateCandidate(sema, fnptr_conv, fnptr_conv, CC.CXAccessSpecifier_AS_public,
+                                                         conv_rec, surrogate_proto, int_arg, [int_arg], surrogate_set)
     CC.dispose(surrogate_set)
 
     # --- A member function template deduced against the call arguments ---
     mt_set = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Normal)
-    CC.AddMethodTemplateCandidate(sema, tmpl_method, tmpl_method, CC.CXAccessSpecifier_AS_public, conv_rec, obj_arg, [int_arg], mt_set)
+    CC.AddMethodTemplateCandidate(sema, tmpl_method, tmpl_method, CC.CXAccessSpecifier_AS_public, conv_rec, obj_arg,
+                                  [int_arg], mt_set)
     @test size(mt_set) == 1
     # a namespace-scope template describes no member function
-    @test_throws AssertionError CC.AddMethodTemplateCandidate(sema, free_tmpl, free_tmpl, CC.CXAccessSpecifier_AS_none, conv_rec, obj_arg, [int_arg], mt_set)
+    @test_throws AssertionError CC.AddMethodTemplateCandidate(sema, free_tmpl, free_tmpl, CC.CXAccessSpecifier_AS_none,
+                                                              conv_rec, obj_arg, [int_arg], mt_set)
     CC.dispose(mt_set)
 
     # --- The non-member operator candidates of an overload set ---
     op_set = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator)
-    CC.AddNonMemberOperatorCandidates(sema, plus_fns, fill(CC.CXAccessSpecifier_AS_none, length(plus_fns)), [plus_arg, int_arg], op_set)
+    CC.AddNonMemberOperatorCandidates(sema, plus_fns, fill(CC.CXAccessSpecifier_AS_none, length(plus_fns)),
+                                      [plus_arg, int_arg], op_set)
     @test size(op_set) == length(plus_fns)
-    @test_throws AssertionError CC.AddNonMemberOperatorCandidates(sema, plus_fns, CC.CXAccessSpecifier[], [plus_arg, int_arg], op_set)
+    @test_throws AssertionError CC.AddNonMemberOperatorCandidates(sema, plus_fns, CC.CXAccessSpecifier[],
+                                                                  [plus_arg, int_arg], op_set)
     CC.dispose(op_set)
 
     # --- A call through an unresolved lookup, collected from the expression and from the
@@ -4331,7 +4405,8 @@ end
     @test icast isa CC.Expr_
     @test CC.resolve(icast) isa CC.ImplicitCastExpr
     @test CC.isPRValue(lit)
-    @test_throws AssertionError CC.ImpCastExprToType(sema, lit, double_ty, CC.CXCastKind_CK_IntegralToFloating, CC.CXExprValueKind_VK_LValue)
+    @test_throws AssertionError CC.ImpCastExprToType(sema, lit, double_ty, CC.CXCastKind_CK_IntegralToFloating,
+                                                     CC.CXExprValueKind_VK_LValue)
 
     # --- Blaming a conjunct of a boolean condition, and describing it ---
     (failed, desc) = CC.findFailedBooleanCondition(sema, lit)
@@ -4392,7 +4467,8 @@ end
     @test CC.PopExpressionEvaluationContext(sema) === nothing
     @test !CC.isUnevaluatedContext(sema)
     # the lambda-context decl and the expression kind are both accepted
-    CC.PushExpressionEvaluationContext(sema, CC.CXExpressionEvaluationContext_PotentiallyEvaluated, tu, CC.CXExpressionKind_EK_Decltype)
+    CC.PushExpressionEvaluationContext(sema, CC.CXExpressionEvaluationContext_PotentiallyEvaluated, tu,
+                                       CC.CXExpressionKind_EK_Decltype)
     @test CC.PopExpressionEvaluationContext(sema) === nothing
 
     # --- The CUDA host/device stack reports an unbalanced pop instead of underflowing ---
@@ -4592,7 +4668,8 @@ end
     # the FP state is a word the decoders read, and it agrees with the context's default
     w = CC.getCurFPFeatures(sema)
     @test !(CC.allowFPContractWithinStatement(w) && CC.allowFPContractAcrossStatement(w))
-    @test CC.isFPConstrained(w) == (CC.getExceptionMode(w) != CC.CXFPExceptionModeKind_FPE_Ignore || CC.getRoundingMode(w) != CC.CXRoundingMode_NearestTiesToEven)
+    @test CC.isFPConstrained(w) == (CC.getExceptionMode(w) != CC.CXFPExceptionModeKind_FPE_Ignore ||
+                                    CC.getRoundingMode(w) != CC.CXRoundingMode_NearestTiesToEven)
 
     dispose(f)
     dispose(I)
@@ -4616,7 +4693,9 @@ end
     # question the other way round gives the SAME winner -- so the answer is a property of
     # the pair, not of argument order
     @test f(I, "po_fn")
-    fts = [CC.FunctionTemplateDecl(d) for d in CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(CC.get_ast_context(I)))) if d isa CC.FunctionTemplateDecl]
+    fts = [CC.FunctionTemplateDecl(d)
+           for d in CC.decls_in(CC.castToDeclContext(CC.getTranslationUnitDecl(CC.get_ast_context(I))))
+           if d isa CC.FunctionTemplateDecl]
     @test length(fts) >= 2
     a, b = fts[1], fts[2]
     w1 = CC.getMoreSpecializedTemplate(sema, a, b, loc, CC.CXTPOC_TPOC_Call, 1, 1)
@@ -4625,7 +4704,8 @@ end
     @test w2 !== nothing
     @test w1.ptr == w2.ptr
     # the reversed form is only defined for call-context ordering
-    @test_throws AssertionError CC.getMoreSpecializedTemplate(sema, a, b, loc, CC.CXTPOC_TPOC_Other, 1, 1; reversed=true)
+    @test_throws AssertionError CC.getMoreSpecializedTemplate(sema, a, b, loc, CC.CXTPOC_TPOC_Other, 1, 1;
+                                                              reversed=true)
 
     # the format attribute decodes to the indices actually written in the source
     @test f(I, "fmt_fn")

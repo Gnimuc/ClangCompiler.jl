@@ -59,8 +59,7 @@ end
     @test nearest2 == "-fsyntax-only"
 
     # Nothing within the allowed distance is reported as no suggestion at all.
-    nearest3, distance3 = CC.findNearest(table, "-clangcompiler-nowhere-near-any-option";
-                                         maximum_distance=1)
+    nearest3, distance3 = CC.findNearest(table, "-clangcompiler-nowhere-near-any-option"; maximum_distance=1)
     @test isempty(nearest3)
     @test distance3 > 1
 
@@ -72,7 +71,6 @@ end
 
     # Narrowing the visibility mask can only remove options, never add them: the CC1-only
     # view is a subset of the whole table's.
-    cc1 = CC.printHelp(table, "usage", "title";
-                       visibility=Int(CC.CXClangVisibility_CC1Option))
+    cc1 = CC.printHelp(table, "usage", "title"; visibility=Int(CC.CXClangVisibility_CC1Option))
     @test length(cc1) < length(help)
 end

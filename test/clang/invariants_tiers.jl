@@ -58,8 +58,7 @@ end
             # applying it twice changes nothing
             @test CC.getTypePtr(CC.getCanonicalType(can)).ptr == CC.getTypePtr(can).ptr
             # and crossing QualType -> Type_ -> QualType lands on the same node
-            @test CC.getTypePtr(CC.getCanonicalTypeInternal(CC.getTypePtr(q))).ptr ==
-                  CC.getTypePtr(can).ptr
+            @test CC.getTypePtr(CC.getCanonicalTypeInternal(CC.getTypePtr(q))).ptr == CC.getTypePtr(can).ptr
         end
     end
 
@@ -105,8 +104,7 @@ end
             # case where the two pointees are the same type and the nodes rightly coincide.
             @test CC.getPointerType(ctx, q).ptr == p.ptr
             cq = CC.addConst(q)
-            cq.ptr == q.ptr ||
-                @test CC.getPointerType(ctx, cq).ptr != p.ptr
+            cq.ptr == q.ptr || @test CC.getPointerType(ctx, cq).ptr != p.ptr
         end
     end
 
@@ -161,7 +159,7 @@ end
         for d in CC.decls(tu)
             d isa CC.AbstractFunctionDecl || continue
             CC.isIdentifier(CC.getDeclName(d)) || continue
-            CC.getName(d) == "ti_fwd" && (fwd = d; break)
+            CC.getName(d) == "ti_fwd" && (fwd=d; break)
         end
         @test fwd !== nothing
         if fwd !== nothing
@@ -228,7 +226,8 @@ end
 
     CC.parse(I, "int tu_first(int x) { return x; }")
     tu1 = CC.getTranslationUnitDecl(ctx)
-    fnnames(t) = [CC.getName(d) for d in CC.decls(CC.castToDeclContext(t))
+    fnnames(t) = [CC.getName(d)
+                  for d in CC.decls(CC.castToDeclContext(t))
                   if d isa CC.AbstractFunctionDecl && CC.isIdentifier(CC.getDeclName(d))]
     names1 = fnnames(tu1)
     @test "tu_first" in names1

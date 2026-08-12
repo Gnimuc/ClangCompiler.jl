@@ -154,8 +154,7 @@ function getCloneGroup(x::AbstractCloneDetector, g::Integer)
         for j = 0:(m - 1)
             stmts[j + 1] = getCloneStmt(x, g, i, j)
         end
-        out[i + 1] = CloneSequence(getCloneContainingDecl(x, g, i), stmts,
-                                   cloneHoldsSequence(x, g, i), getCloneSourceRange(x, g, i))
+        out[i + 1] = CloneSequence(getCloneContainingDecl(x, g, i), stmts, cloneHoldsSequence(x, g, i), getCloneSourceRange(x, g, i))
     end
     return out
 end

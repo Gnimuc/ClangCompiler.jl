@@ -123,8 +123,7 @@ function getDisablePCHOrModuleValidation(x::AbstractPreprocessorOptions)
     return clang_PreprocessorOptions_getDisablePCHOrModuleValidation(x)
 end
 
-function setDisablePCHOrModuleValidation(x::AbstractPreprocessorOptions,
-                                         kind::CXDisableValidationForModuleKind)
+function setDisablePCHOrModuleValidation(x::AbstractPreprocessorOptions, kind::CXDisableValidationForModuleKind)
     @check_ptrs x
     clang_PreprocessorOptions_setDisablePCHOrModuleValidation(x, kind)
     return nothing
@@ -154,8 +153,7 @@ function getAllowPCHWithDifferentModulesCachePath(x::AbstractPreprocessorOptions
     return clang_PreprocessorOptions_getAllowPCHWithDifferentModulesCachePath(x)
 end
 
-function setAllowPCHWithDifferentModulesCachePath(x::AbstractPreprocessorOptions,
-                                                  value::Bool)
+function setAllowPCHWithDifferentModulesCachePath(x::AbstractPreprocessorOptions, value::Bool)
     @check_ptrs x
     clang_PreprocessorOptions_setAllowPCHWithDifferentModulesCachePath(x, value)
     return nothing
@@ -169,8 +167,7 @@ whole precompiled header rather than a preamble.
 """
 function getPrecompiledPreambleBytes(x::AbstractPreprocessorOptions)
     @check_ptrs x
-    return (clang_PreprocessorOptions_getPrecompiledPreambleSize(x),
-            clang_PreprocessorOptions_getPrecompiledPreambleEndsAtStartOfLine(x))
+    return (clang_PreprocessorOptions_getPrecompiledPreambleSize(x), clang_PreprocessorOptions_getPrecompiledPreambleEndsAtStartOfLine(x))
 end
 
 """
@@ -178,8 +175,7 @@ end
 Declare that the implicit PCH is a preamble covering the first `size` bytes of the main
 file.
 """
-function setPrecompiledPreambleBytes(x::AbstractPreprocessorOptions, size::Integer,
-                                     ends_at_start_of_line::Bool)
+function setPrecompiledPreambleBytes(x::AbstractPreprocessorOptions, size::Integer, ends_at_start_of_line::Bool)
     @check_ptrs x
     clang_PreprocessorOptions_setPrecompiledPreambleBytes(x, size, ends_at_start_of_line)
     return nothing
@@ -221,8 +217,7 @@ end
     addRemappedFile(x::AbstractPreprocessorOptions, from::AbstractString, to::AbstractString)
 Give the file `from` the contents of the file `to`.
 """
-function addRemappedFile(x::AbstractPreprocessorOptions, from::AbstractString,
-                         to::AbstractString)
+function addRemappedFile(x::AbstractPreprocessorOptions, from::AbstractString, to::AbstractString)
     @check_ptrs x
     clang_PreprocessorOptions_addRemappedFile(x, from, to)
     return nothing
@@ -235,8 +230,7 @@ Give the file `from` the contents of `to`.
 The buffer is borrowed and must outlive the compiler instance that reads it;
 [`getRetainRemappedFileBuffers`](@ref) decides whether that instance frees it.
 """
-function addRemappedFile(x::AbstractPreprocessorOptions, from::AbstractString,
-                         to::LLVM.MemoryBuffer)
+function addRemappedFile(x::AbstractPreprocessorOptions, from::AbstractString, to::LLVM.MemoryBuffer)
     @check_ptrs x
     clang_PreprocessorOptions_addRemappedFileBuffer(x, from, to)
     return nothing
@@ -249,9 +243,7 @@ Return the path-to-path remappings, in the order they were added.
 function getRemappedFiles(x::AbstractPreprocessorOptions)
     @check_ptrs x
     n = clang_PreprocessorOptions_getNumRemappedFiles(x)
-    return [get_string(clang_PreprocessorOptions_getRemappedFileFrom(x, i)) =>
-                get_string(clang_PreprocessorOptions_getRemappedFileTo(x, i))
-            for i = 0:(Int(n) - 1)]
+    return [get_string(clang_PreprocessorOptions_getRemappedFileFrom(x, i)) => get_string(clang_PreprocessorOptions_getRemappedFileTo(x, i)) for i = 0:(Int(n) - 1)]
 end
 
 """
@@ -262,8 +254,7 @@ buffers themselves stay on the C++ side.
 function getRemappedFileBuffers(x::AbstractPreprocessorOptions)
     @check_ptrs x
     n = clang_PreprocessorOptions_getNumRemappedFileBuffers(x)
-    return [get_string(clang_PreprocessorOptions_getRemappedFileBufferFrom(x, i))
-            for i = 0:(Int(n) - 1)]
+    return [get_string(clang_PreprocessorOptions_getRemappedFileBufferFrom(x, i)) for i = 0:(Int(n) - 1)]
 end
 
 """

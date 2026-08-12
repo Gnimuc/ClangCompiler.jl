@@ -26,8 +26,7 @@ parent graph is as much of that as is checkable from here — the analysis objec
 record which graph it came from — so the assertion below catches the common mistake of
 mixing two functions' blocks, not the rarer one of querying a graph the analysis never saw.
 """
-function isReachable(x::AbstractCFGReverseBlockReachabilityAnalysis, src::AbstractCFGBlock,
-                     dst::AbstractCFGBlock)
+function isReachable(x::AbstractCFGReverseBlockReachabilityAnalysis, src::AbstractCFGBlock, dst::AbstractCFGBlock)
     @check_ptrs x src dst
     @assert getParent(src).ptr == getParent(dst).ptr "src and dst belong to different CFGs"
     return clang_CFGReverseBlockReachabilityAnalysis_isReachable(x, src, dst)
