@@ -9,7 +9,7 @@ Everything but `mod_name` and `ctx` is read off `ci` — its diagnostics engine,
 header-search / preprocessor / codegen options, and the virtual file system its file manager
 holds.
 
-PRECONDITION: `ci` must have a file manager; the LLVM 18 signature takes a virtual file
+PRECONDITION: `ci` must have a file manager; the LLVM 20 signature takes a virtual file
 system and there is nowhere else to get one.
 
 This function allocates and one should call `dispose` to release the resources after using

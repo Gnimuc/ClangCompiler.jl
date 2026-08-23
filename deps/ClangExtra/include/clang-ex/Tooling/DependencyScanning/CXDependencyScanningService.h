@@ -29,7 +29,9 @@ typedef enum CXScanningOptimizations {
   CXScanningOptimizations_None = 0,
   CXScanningOptimizations_HeaderSearch = 1,
   CXScanningOptimizations_SystemWarnings = 2,
-  CXScanningOptimizations_All = 3
+  CXScanningOptimizations_VFS = 4,
+  CXScanningOptimizations_Macros = 8,
+  CXScanningOptimizations_All = 15
 } CXScanningOptimizations;
 
 // DependencyScanningService

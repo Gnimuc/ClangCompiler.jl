@@ -712,7 +712,8 @@ clang_CXXPseudoDestructorExpr_getDestroyedTypeInfo(CXCXXPseudoDestructorExpr E) 
 
 CXIdentifierInfo
 clang_CXXPseudoDestructorExpr_getDestroyedTypeIdentifier(CXCXXPseudoDestructorExpr E) {
-  return reinterpret_cast<CXIdentifierInfo>(reinterpret_cast<clang::CXXPseudoDestructorExpr *>(E)->getDestroyedTypeIdentifier());
+  return reinterpret_cast<CXIdentifierInfo>(const_cast<clang::IdentifierInfo *>(
+      reinterpret_cast<clang::CXXPseudoDestructorExpr *>(E)->getDestroyedTypeIdentifier()));
 }
 
 CXQualType clang_CXXPseudoDestructorExpr_getDestroyedType(CXCXXPseudoDestructorExpr E) {
@@ -859,7 +860,7 @@ bool clang_UnresolvedLookupExpr_requiresADL(CXUnresolvedLookupExpr E) {
 }
 
 bool clang_UnresolvedLookupExpr_isOverloaded(CXUnresolvedLookupExpr E) {
-  return reinterpret_cast<clang::UnresolvedLookupExpr *>(E)->isOverloaded();
+  return reinterpret_cast<clang::UnresolvedLookupExpr *>(E)->getNumDecls() > 1;
 }
 
 // UnresolvedMemberExpr
@@ -2453,12 +2454,14 @@ clang_UnresolvedLookupExpr_Create(CXASTContext Context, CXCXXRecordDecl NamingCl
                                   const CXAccessSpecifier *Accesses, unsigned NumDecls) {
   clang::UnresolvedSet<8> Set;
   fillUnresolvedSet(Set, Decls, Accesses, NumDecls);
+  (void)Overloaded;
   return reinterpret_cast<CXUnresolvedLookupExpr>(clang::UnresolvedLookupExpr::Create(
       *reinterpret_cast<clang::ASTContext *>(Context),
       reinterpret_cast<clang::CXXRecordDecl *>(NamingClass),
       *reinterpret_cast<clang::NestedNameSpecifierLoc *>(QualifierLoc),
-      *reinterpret_cast<clang::DeclarationNameInfo *>(NameInfo), RequiresADL, Overloaded,
-      Set.begin(), Set.end()));
+      *reinterpret_cast<clang::DeclarationNameInfo *>(NameInfo), RequiresADL,
+      Set.begin(), Set.end(), /*KnownDependent=*/false,
+      /*KnownInstantiationDependent=*/false));
 }
 
 CXUnresolvedLookupExpr clang_UnresolvedLookupExpr_CreateWithTemplateArgs(
@@ -2476,7 +2479,7 @@ CXUnresolvedLookupExpr clang_UnresolvedLookupExpr_CreateWithTemplateArgs(
       clang::SourceLocation::getFromPtrEncoding(TemplateKWLoc),
       *reinterpret_cast<clang::DeclarationNameInfo *>(NameInfo), RequiresADL,
       reinterpret_cast<clang::TemplateArgumentListInfo *>(TemplateArgs), Set.begin(), Set.end(),
-      KnownDependent));
+      KnownDependent, KnownDependent));
 }
 
 // UnresolvedMemberExpr (cont.)

@@ -65,6 +65,9 @@ import ClangCompiler as CC
 function carriers_with_handles()
     out = Tuple{DataType,DataType}[]
     for nm in names(CC; all=true)
+        # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; they alias
+        # the real carriers and would otherwise be counted twice.
+        occursin('#', String(nm)) && continue
         isdefined(CC, nm) || continue
         T = getproperty(CC, nm)
         (T isa DataType && isstructtype(T) && fieldcount(T) == 1 && fieldnames(T) == (:ptr,)) || continue
@@ -274,6 +277,8 @@ end
     # unreachable since they were written.
     bottoms, scanned = String[], 0
     for name in names(CC; all=true)
+        # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; skip them.
+        occursin('#', String(name)) && continue
         isdefined(CC, name) || continue
         f = getfield(CC, name)
         f isa Function || continue

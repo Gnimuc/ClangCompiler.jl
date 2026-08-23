@@ -29,6 +29,7 @@ typedef enum CXPPKeywordKind {
   CXPPKeywordKind_pp_line,
   CXPPKeywordKind_pp_error,
   CXPPKeywordKind_pp_pragma,
+  CXPPKeywordKind_pp_embed,
   CXPPKeywordKind_pp_import,
   CXPPKeywordKind_pp_include_next,
   CXPPKeywordKind_pp_warning,

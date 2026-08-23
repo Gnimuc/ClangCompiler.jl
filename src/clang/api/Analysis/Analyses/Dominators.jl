@@ -70,6 +70,11 @@ implements by dereferencing a block's node are gated on this.
 """
 function hasNode(x::AbstractCFGDomTree, b::AbstractCFGBlock)
     @check_ptrs x b
+    # LLVM 20's getNode asserts Parent == block->getParent(). After
+    # releaseMemory that Parent is null, and a block from another CFG
+    # never matches. Both cases mean the block has no node.
+    getNumRoots(x) == 0 && return false
+    getCFG(x).ptr == getParent(b).ptr || return false
     return clang_CFGDomTree_hasNode(x, b)
 end
 
@@ -236,6 +241,8 @@ Return whether `b` has a node in the post-dominator tree.
 """
 function hasNode(x::AbstractCFGPostDomTree, b::AbstractCFGBlock)
     @check_ptrs x b
+    getNumRoots(x) == 0 && return false
+    getCFG(x).ptr == getParent(b).ptr || return false
     return clang_CFGPostDomTree_hasNode(x, b)
 end
 

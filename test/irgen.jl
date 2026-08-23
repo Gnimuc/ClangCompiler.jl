@@ -161,6 +161,12 @@ end
 @testset "IRGenerator | a pinned triple emits for that target, not this machine" begin
     # The module carries the pinned target's triple and data layout, so these two equalities
     # read the same on all three runners. Only the IR crosses: nothing here executes.
+    # LLVM_full_jll on aarch64 does not ship the x86_64 backend, so codegen for PIN_TRIPLE
+    # cannot form a TargetMachine there. CI is x86_64.
+    if Sys.ARCH !== :x86_64
+        @test_skip "x86_64 LLVM backend not available on $(Sys.ARCH)"
+        return
+    end
     gen = create_irgenerator("""extern "C" long irg_size() { return sizeof(long); }"""; triple=PIN_TRIPLE)
     mod = take_module(gen)
     @test LLVM.triple(mod) == "x86_64-unknown-linux-gnu"

@@ -24,6 +24,7 @@ const ATTR_MACRO_TO_CATEGORY = Dict("ATTR" => :Attr, "TYPE_ATTR" => :TypeAttr, "
                                     "DECL_OR_STMT_ATTR" => :DeclOrStmtAttr, "INHERITABLE_ATTR" => :InheritableAttr,
                                     "DECL_OR_TYPE_ATTR" => :InheritableAttr,
                                     "INHERITABLE_PARAM_ATTR" => :InheritableParamAttr,
+                                    "INHERITABLE_PARAM_OR_STMT_ATTR" => :InheritableParamOrStmtAttr,
                                     "PARAMETER_ABI_ATTR" => :ParameterABIAttr,
                                     "HLSL_ANNOTATION_ATTR" => :HLSLAnnotationAttr)
 

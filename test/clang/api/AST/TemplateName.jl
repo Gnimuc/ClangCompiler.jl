@@ -20,7 +20,6 @@ using Test
     @test CC.isNull(tn) == false
     @test CC.getKind(tn) isa CC.LibClangEx.CXTemplateName_NameKind
     @test CC.getUnderlying(tn) isa CC.TemplateName
-    @test CC.getNameToSubstitute(tn) isa CC.TemplateName
     @test CC.isDependent(tn) == false
     @test !(CC.isInstantiationDependent(tn))
     @test CC.containsUnexpandedParameterPack(tn) == false
@@ -63,9 +62,10 @@ end
     @test CC.getKind(tn_q) == CC.LibClangEx.CXTemplateName_QualifiedTemplate
     # `TnNS::TnBox` names a concrete template, so nothing about it is dependent
     @test Int(CC.getDependence(tn_q)) == 0
-    @test occursin("TnBox", CC.getAsString(tn_q, ctx))
-    @test occursin("TnBox", CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_None))
-    @test occursin("TnBox", CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_Fully))
+    @test CC.getAsString(tn_q, ctx) == "TnNS::TnBox"
+    @test CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_None) == "TnBox"
+    @test CC.getAsString(tn_q, ctx, CC.LibClangEx.CXTemplateName_Qualified_AsWritten) ==
+          "TnNS::TnBox"
 
     qtn = CC.getAsQualifiedTemplateName(tn_q)
     @test qtn isa CC.QualifiedTemplateName

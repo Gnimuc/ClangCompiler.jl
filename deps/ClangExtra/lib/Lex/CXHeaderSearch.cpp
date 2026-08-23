@@ -321,12 +321,21 @@ bool clang_HeaderFileInfo_getIsValid(CXHeaderFileInfo HFI) {
 }
 
 CXIdentifierInfo clang_HeaderFileInfo_getControllingMacroRaw(CXHeaderFileInfo HFI) {
-  return reinterpret_cast<CXIdentifierInfo>(const_cast<clang::IdentifierInfo *>(
-      reinterpret_cast<clang::HeaderFileInfo *>(HFI)->ControllingMacro));
+  // LLVM 20 stores this as LazyIdentifierInfoPtr; when it still holds an ID
+  // the IdentifierInfo has not been deserialized and there is nothing to return.
+  auto Macro =
+      reinterpret_cast<clang::HeaderFileInfo *>(HFI)->LazyControllingMacro;
+  if (!Macro.isValid() || Macro.isID())
+    return nullptr;
+  return reinterpret_cast<CXIdentifierInfo>(Macro.getPtr());
 }
 
 CXString clang_HeaderFileInfo_getFramework(CXHeaderFileInfo HFI) {
-  return extra::makeCXString(reinterpret_cast<clang::HeaderFileInfo *>(HFI)->Framework.str());
+  (void)HFI;
+  // LLVM 20 dropped HeaderFileInfo::Framework. A header that is not a
+  // framework include used to answer with an empty string; that is still the
+  // answer this API can give.
+  return extra::makeCXString("");
 }
 
 CXHeaderFileInfo clang_HeaderSearch_copyFileInfo(CXHeaderSearch HS, CXFileEntryRef FE) {
@@ -337,10 +346,14 @@ CXHeaderFileInfo clang_HeaderSearch_copyFileInfo(CXHeaderSearch HS, CXFileEntryR
 CXHeaderFileInfo clang_HeaderSearch_copyExistingFileInfo(CXHeaderSearch HS,
                                                          CXFileEntryRef FE,
                                                          bool WantExternal) {
-  const clang::HeaderFileInfo *HFI =
-      reinterpret_cast<clang::HeaderSearch *>(HS)->getExistingFileInfo(
-          *reinterpret_cast<clang::FileEntryRef *>(FE), WantExternal);
-  return reinterpret_cast<CXHeaderFileInfo>(HFI ? new clang::HeaderFileInfo(*HFI) : nullptr);
+  // LLVM 20 split the old WantExternal argument into two methods.
+  auto *Search = reinterpret_cast<clang::HeaderSearch *>(HS);
+  auto &File = *reinterpret_cast<clang::FileEntryRef *>(FE);
+  const clang::HeaderFileInfo *HFI = WantExternal
+                                         ? Search->getExistingFileInfo(File)
+                                         : Search->getExistingLocalFileInfo(File);
+  return reinterpret_cast<CXHeaderFileInfo>(HFI ? new clang::HeaderFileInfo(*HFI)
+                                                : nullptr);
 }
 
 void clang_HeaderFileInfo_dispose(CXHeaderFileInfo HFI) {

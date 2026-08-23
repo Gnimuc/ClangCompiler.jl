@@ -6863,14 +6863,16 @@ end
 Create the implicit declaration of the builtin `id` under the name `ii` with the function
 type `ty`, parented to the translation unit — behind an implicit `extern "C"` block in C++.
 
-`id` is a `clang::Builtin::ID`; pass `0` (`Builtin::NotBuiltin`) to declare an ordinary
-implicit function. `ty` must be a function type, since `clang::FunctionDecl::Create` stores
-it unchecked and the parameters are built from it, so a prototype gives the declaration its
-`ParmVarDecl`s. The declaration is `ASTContext` arena memory.
+`id` is a `clang::Builtin::ID`. LLVM 20's `CreateBuiltin` indexes `BuiltinInfo[id]`,
+so `0` (`Builtin::NotBuiltin`) is not a table entry and is rejected here. `ty` must be
+a function type, since `clang::FunctionDecl::Create` stores it unchecked and the
+parameters are built from it, so a prototype gives the declaration its `ParmVarDecl`s.
+The declaration is `ASTContext` arena memory.
 """
 function CreateBuiltin(x::AbstractSema, ii::AbstractIdentifierInfo, ty::AbstractQualType, id::Integer, loc::SourceLocation)
     @check_ptrs x ii ty
     @assert isFunctionType(getTypePtr(ty)) "a builtin declaration needs a function type"
+    @assert id != 0 "Builtin::NotBuiltin is not a table entry; pass a real Builtin::ID"
     return FunctionDecl(clang_Sema_CreateBuiltin(x, ii, ty, id, loc))
 end
 

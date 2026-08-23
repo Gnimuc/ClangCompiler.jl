@@ -3,16 +3,32 @@
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/GlobalDecl.h"
 #include "clang/Frontend/CompilerInstance.h"
-// hacks
+// hacks: access-specifier edits of clang 20 Interpreter internals so we can
+// reach getCodeGen, CompileDtorCall, IncrParser, and IncrementalParser::P.
 // #include "clang/Interpreter/Interpreter.h"
 #include "Interpreter/IncrementalParser.h"
 #include "Interpreter/Interpreter.h"
+#include "llvm/Support/TargetSelect.h"
 
+#include <list>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace {
+
+void ensureLLVMTargets() {
+  static std::once_flag Once;
+  std::call_once(Once, [] {
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
+  });
+}
 
 // The four fallible void methods return their llvm::Error's message, empty on success.
 // Consuming the Error is mandatory: a destroyed-unconsumed Error aborts under the assertion
@@ -51,6 +67,7 @@ void clang_IncrementalCompilerBuilder_SetCompilerArgs(CXIncrementalCompilerBuild
 
 CXCompilerInstance
 clang_IncrementalCompilerBuilder_CreateCpp(CXIncrementalCompilerBuilder CB) {
+  ensureLLVMTargets();
   auto CI = reinterpret_cast<clang::IncrementalCompilerBuilder *>(CB)->CreateCpp();
   if (auto E = CI.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
@@ -73,6 +90,7 @@ void clang_IncrementalCompilerBuilder_SetCudaSDK(CXIncrementalCompilerBuilder CB
 
 CXCompilerInstance
 clang_IncrementalCompilerBuilder_CreateCudaHost(CXIncrementalCompilerBuilder CB) {
+  ensureLLVMTargets();
   auto CI = reinterpret_cast<clang::IncrementalCompilerBuilder *>(CB)->CreateCudaHost();
   if (auto E = CI.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";
@@ -123,8 +141,8 @@ void clang_Interpreter_dispose(CXInterpreter Interp) {
 }
 
 CXCompilerInstance clang_Interpreter_getCompilerInstance(CXInterpreter Interp) {
-  return reinterpret_cast<CXCompilerInstance>(const_cast<clang::CompilerInstance *>(
-      reinterpret_cast<clang::Interpreter *>(Interp)->getCompilerInstance()));
+  return reinterpret_cast<CXCompilerInstance>(
+      reinterpret_cast<clang::Interpreter *>(Interp)->getCompilerInstance());
 }
 
 LLVMOrcLLJITRef clang_Interpreter_getExecutionEngine(CXInterpreter Interp) {
@@ -218,7 +236,8 @@ clang_Interpreter_getSymbolAddressFromLinkerName(CXInterpreter Interp,
 }
 
 CXCodeGenerator clang_Interpreter_getCodeGen(CXInterpreter Interp) {
-  return reinterpret_cast<CXCodeGenerator>(reinterpret_cast<clang::Interpreter *>(Interp)->IncrParser->getCodeGen());
+  return reinterpret_cast<CXCodeGenerator>(
+      reinterpret_cast<clang::Interpreter *>(Interp)->getCodeGen());
 }
 
 CXParser clang_Interpreter_getParser(CXInterpreter Interp) {

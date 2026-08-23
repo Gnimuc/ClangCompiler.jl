@@ -98,9 +98,9 @@ using Test
     CC.Report(engine, CC.SourceLocation(), err_id)
     @test CC.hasErrorOccurred(engine)
     @test CC.getNumErrors(engine) == 1
-    # custom errors are unrecoverable but not "uncompilable" (they have no default error mapping)
+    # a custom Error is a real error, not a -Werror upgrade, so it is uncompilable
     @test CC.hasUnrecoverableErrorOccurred(engine)
-    @test !CC.hasUncompilableErrorOccurred(engine)
+    @test CC.hasUncompilableErrorOccurred(engine)
     @test !CC.hasFatalErrorOccurred(engine)
 
     # suppression blocks both emission and counting

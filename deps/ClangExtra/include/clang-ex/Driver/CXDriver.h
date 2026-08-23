@@ -60,6 +60,7 @@ CXString clang_Driver_getTargetTriple(CXDriver D);
 
 const char *clang_Driver_getClangProgramPath(CXDriver D);
 
+// LLVM 20 dropped the separate InstalledDir override; this reads Driver::Dir.
 const char *clang_Driver_getInstalledDir(CXDriver D);
 
 // helper: the public `Driver::Dir` field (path the driver executable was in).
@@ -106,6 +107,7 @@ const char *clang_Driver_getPrependArg(CXDriver D);
 
 void clang_Driver_setPrependArg(CXDriver D, const char *Value);
 
+// LLVM 20 dropped InstalledDir; this writes Driver::Dir.
 void clang_Driver_setInstalledDir(CXDriver D, const char *Value);
 
 // The predicates below read Driver::SaveTemps / BitcodeEmbed / Offload /

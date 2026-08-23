@@ -3732,16 +3732,16 @@ end
     # --- CreateBuiltin: an implicit extern "C" declaration in the translation unit ---
     ii = get(CC.getIdents(ctx), "semaB6Builtin")
     fnty = CC.getFunctionType(ctx, int_ty, CC.QualType[int_ty])
-    bfd = CC.CreateBuiltin(sema, ii, fnty, 0, loc)
+    bfd = CC.CreateBuiltin(sema, ii, fnty, 1, loc)
     @test bfd isa CC.FunctionDecl
     @test bfd.ptr != C_NULL
     @test CC.getNameAsString(bfd) == "semaB6Builtin"
     @test CC.getNumParams(bfd) == 1
     @test CC.isImplicit(bfd)
-    # 0 is Builtin::NotBuiltin, the ID this call passed in
-    @test CC.getBuiltinID(bfd) == 0
-    # a non-function type is rejected before the ccall
-    @test_throws AssertionError CC.CreateBuiltin(sema, ii, int_ty, 0, loc)
+    @test CC.getBuiltinID(bfd) == 1
+    # a non-function type, and Builtin::NotBuiltin, are rejected before the ccall
+    @test_throws AssertionError CC.CreateBuiltin(sema, ii, int_ty, 1, loc)
+    @test_throws AssertionError CC.CreateBuiltin(sema, ii, fnty, 0, loc)
 
     # --- CreateCapturedStmtRecordDecl: the closure record plus its CapturedDecl ---
     crd, cd = CC.CreateCapturedStmtRecordDecl(sema, loc, 2)

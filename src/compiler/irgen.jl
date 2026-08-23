@@ -116,10 +116,10 @@ function create_irgenerator(code::AbstractString; args=String[], language::Symbo
     check_language(language)
     # Codegen asks the target registry for the target machine the module is emitted against,
     # so an uninitialised registry fails inside the backend rather than here.
-    LLVM.InitializeNativeTarget()
     LLVM.InitializeAllTargetInfos()
+    LLVM.InitializeAllTargets()
     LLVM.InitializeAllTargetMCs()
-    LLVM.InitializeNativeAsmPrinter()
+    LLVM.InitializeAllAsmPrinters()
     default_args = get_default_args(; is_cxx=is_cxx_language(language), version, triple)
     name = String(filename)
 

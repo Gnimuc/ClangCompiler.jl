@@ -12,7 +12,15 @@
 #include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Lex/Token.h"
 #include "clang/Sema/Overload.h"
+#include "clang/Sema/Redeclaration.h"
 #include "clang/Sema/Sema.h"
+#include "clang/Sema/SemaCUDA.h"
+#include "clang/Sema/SemaObjC.h"
+#include "clang/Sema/SemaOpenMP.h"
+#include "clang/Sema/SemaRISCV.h"
+#include "clang/Sema/SemaSYCL.h"
+#include "clang/AST/TemplateName.h"
+#include "clang/AST/OperationKinds.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "clang/Sema/TemplateDeduction.h"
 
@@ -30,7 +38,8 @@ bool clang_Sema_InstantiateClassTemplateSpecialization(
   return reinterpret_cast<clang::Sema *>(S)->InstantiateClassTemplateSpecialization(
       clang::SourceLocation::getFromPtrEncoding(PointOfInstantiation),
       reinterpret_cast<clang::ClassTemplateSpecializationDecl *>(ClassTemplateSpec),
-      static_cast<clang::TemplateSpecializationKind>(TSK), Complain);
+      static_cast<clang::TemplateSpecializationKind>(TSK), Complain,
+      /*PrimaryHasMatchedPackOnParmToNonPackOnArg=*/false);
 }
 
 void clang_Sema_InstantiateClassTemplateSpecializationMembers(
@@ -166,7 +175,7 @@ CXNamedDecl clang_Sema_LookupSingleName(CXSema S, CXScope Sp, CXDeclarationName 
       reinterpret_cast<clang::Scope *>(Sp), clang::DeclarationName::getFromOpaquePtr(Name),
       clang::SourceLocation::getFromPtrEncoding(Loc),
       static_cast<clang::Sema::LookupNameKind>(NameKind),
-      static_cast<clang::Sema::RedeclarationKind>(Redecl)));
+      static_cast<RedeclarationKind>(Redecl)));
 }
 
 bool clang_Sema_LookupQualifiedName(CXSema S, CXLookupResult R, CXDeclContext LookupCtx,
@@ -230,7 +239,8 @@ bool clang_Sema_LookupParsedName(CXSema S, CXLookupResult R, CXScope Sp, CXCXXSc
                                  bool AllowBuiltinCreation, bool EnteringContext) {
   return reinterpret_cast<clang::Sema *>(S)->LookupParsedName(
       *reinterpret_cast<clang::LookupResult *>(R), reinterpret_cast<clang::Scope *>(Sp),
-      reinterpret_cast<clang::CXXScopeSpec *>(SS), AllowBuiltinCreation, EnteringContext);
+      reinterpret_cast<clang::CXXScopeSpec *>(SS), clang::QualType(), AllowBuiltinCreation,
+      EnteringContext);
 }
 
 bool clang_Sema_LookupName(CXSema S, CXLookupResult R, CXScope Sp,
@@ -1055,7 +1065,7 @@ CXExpr clang_Sema_BuildSYCLUniqueStableNameExpr(CXSema S, CXSourceLocation_ OpLo
                                                 CXSourceLocation_ LParen,
                                                 CXSourceLocation_ RParen,
                                                 CXTypeSourceInfo TSI, bool *IsInvalid) {
-  clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->BuildSYCLUniqueStableNameExpr(
+  clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->SYCL().BuildUniqueStableNameExpr(
       clang::SourceLocation::getFromPtrEncoding(OpLoc),
       clang::SourceLocation::getFromPtrEncoding(LParen),
       clang::SourceLocation::getFromPtrEncoding(RParen),
@@ -1903,7 +1913,7 @@ CXCXXMethodDecl clang_Sema_LookupSpecialMember(CXSema S, CXCXXRecordDecl D,
   clang::Sema::SpecialMemberOverloadResult R =
       reinterpret_cast<clang::Sema *>(S)->LookupSpecialMember(
           reinterpret_cast<clang::CXXRecordDecl *>(D),
-          static_cast<clang::Sema::CXXSpecialMember>(SM), ConstArg, VolatileArg, RValueThis,
+          static_cast<clang::CXXSpecialMemberKind>(SM), ConstArg, VolatileArg, RValueThis,
           ConstThis, VolatileThis);
   if (Kind)
     *Kind = static_cast<CXSpecialMemberOverloadResultKind>(R.getKind());
@@ -1975,7 +1985,7 @@ bool clang_Sema_IsComplexPromotion(CXSema S, CXQualType FromType, CXQualType ToT
 }
 
 bool clang_Sema_isKnownName(CXSema S, const char *Name) {
-  return reinterpret_cast<clang::Sema *>(S)->isKnownName(llvm::StringRef(Name));
+  return reinterpret_cast<clang::Sema *>(S)->ObjC().isKnownName(llvm::StringRef(Name));
 }
 
 bool clang_Sema_isAcceptableNestedNameSpecifier(CXSema S, CXNamedDecl SD,
@@ -2226,7 +2236,16 @@ CXFormatStringType clang_Sema_GetFormatStringType(CXFormatAttr Format) {
 }
 
 bool clang_Sema_GetFormatNSStringIdx(CXFormatAttr Format, unsigned *Idx) {
-  return clang::Sema::GetFormatNSStringIdx(reinterpret_cast<clang::FormatAttr *>(Format), *Idx);
+  // LLVM 20 moved this onto SemaObjC. Reconstruct from the still-static
+  // GetFormatStringType / getFormatStringInfo helpers it calls.
+  auto *FA = reinterpret_cast<clang::FormatAttr *>(Format);
+  clang::Sema::FormatStringInfo FSI;
+  if ((clang::Sema::GetFormatStringType(FA) == clang::Sema::FST_NSString) &&
+      clang::Sema::getFormatStringInfo(FA, false, true, &FSI)) {
+    *Idx = FSI.FormatIdx;
+    return true;
+  }
+  return false;
 }
 
 bool clang_Sema_FormatStringHasSArg(CXSema S, CXStringLiteral FExpr) {
@@ -2328,7 +2347,7 @@ CXExpr clang_Sema_PerformImplicitConversion(CXSema S, CXExpr From, CXQualType To
                                             bool *IsInvalid) {
   clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->PerformImplicitConversion(
       reinterpret_cast<clang::Expr *>(From), clang::QualType::getFromOpaquePtr(ToType),
-      static_cast<clang::Sema::AssignmentAction>(Action), AllowExplicit);
+      static_cast<clang::AssignmentAction>(Action), AllowExplicit);
   *IsInvalid = R.isInvalid();
   return reinterpret_cast<CXExpr>(R.isInvalid() ? nullptr : R.get());
 }
@@ -2340,7 +2359,7 @@ CXExpr clang_Sema_PerformQualificationConversion(CXSema S, CXExpr E, CXQualType 
   clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->PerformQualificationConversion(
       reinterpret_cast<clang::Expr *>(E), clang::QualType::getFromOpaquePtr(Ty),
       static_cast<clang::ExprValueKind>(VK),
-      static_cast<clang::Sema::CheckedConversionKind>(CCK));
+      static_cast<clang::CheckedConversionKind>(CCK));
   *IsInvalid = R.isInvalid();
   return reinterpret_cast<CXExpr>(R.isInvalid() ? nullptr : R.get());
 }
@@ -2459,8 +2478,9 @@ CXAssignConvertType clang_Sema_CheckAssignmentConstraints(CXSema S, CXSourceLoca
 }
 
 bool clang_Sema_CheckForConstantInitializer(CXSema S, CXExpr E, CXQualType T) {
+  (void)T;
   return reinterpret_cast<clang::Sema *>(S)->CheckForConstantInitializer(
-      reinterpret_cast<clang::Expr *>(E), clang::QualType::getFromOpaquePtr(T));
+      reinterpret_cast<clang::Expr *>(E));
 }
 
 CXExpr clang_Sema_CheckBooleanCondition(CXSema S, CXSourceLocation_ Loc, CXExpr E,
@@ -2518,7 +2538,8 @@ void clang_Sema_RegisterTypeTagForDatatype(CXSema S, CXIdentifierInfo ArgumentKi
 }
 
 void clang_Sema_AddCFAuditedAttribute(CXSema S, CXDecl D) {
-  reinterpret_cast<clang::Sema *>(S)->AddCFAuditedAttribute(reinterpret_cast<clang::Decl *>(D));
+  reinterpret_cast<clang::Sema *>(S)->ObjC().AddCFAuditedAttribute(
+      reinterpret_cast<clang::Decl *>(D));
 }
 
 void clang_Sema_AddPragmaAttributes(CXSema S, CXScope Sp, CXDecl D) {
@@ -2571,7 +2592,7 @@ CXTemplateDeductionResult clang_Sema_DeduceTemplateArguments(
   return static_cast<CXTemplateDeductionResult>(
       reinterpret_cast<clang::Sema *>(S)->DeduceTemplateArguments(
           reinterpret_cast<clang::ClassTemplatePartialSpecializationDecl *>(Partial),
-          *reinterpret_cast<clang::TemplateArgumentList *>(TemplateArgs),
+          reinterpret_cast<clang::TemplateArgumentList *>(TemplateArgs)->asArray(),
           *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)));
 }
 
@@ -2581,11 +2602,11 @@ CXTemplateDeductionResult clang_Sema_DeduceAutoType(CXSema S, CXTypeLoc AutoType
                                                     bool DependentDeduction,
                                                     bool IgnoreConstraints) {
   clang::QualType Deduced;
-  clang::Sema::TemplateDeductionResult R = reinterpret_cast<clang::Sema *>(S)->DeduceAutoType(
+  clang::TemplateDeductionResult R = reinterpret_cast<clang::Sema *>(S)->DeduceAutoType(
       *reinterpret_cast<clang::TypeLoc *>(AutoTypeLoc), reinterpret_cast<clang::Expr *>(Initializer),
       Deduced, *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info), DependentDeduction,
       IgnoreConstraints);
-  if (R == clang::Sema::TDK_Success)
+  if (R == clang::TemplateDeductionResult::Success)
     *Result = reinterpret_cast<CXQualType>(Deduced.getAsOpaquePtr());
   return static_cast<CXTemplateDeductionResult>(R);
 }
@@ -2617,7 +2638,8 @@ bool clang_Sema_CheckPointerConversion(CXSema S, CXExpr From, CXQualType ToType,
 
 CXObjCLiteralKind clang_Sema_CheckLiteralKind(CXSema S, CXExpr FromE) {
   return static_cast<CXObjCLiteralKind>(
-      reinterpret_cast<clang::Sema *>(S)->CheckLiteralKind(reinterpret_cast<clang::Expr *>(FromE)));
+      reinterpret_cast<clang::Sema *>(S)->ObjC().CheckLiteralKind(
+          reinterpret_cast<clang::Expr *>(FromE)));
 }
 
 CXExpr clang_Sema_CheckUnevaluatedOperand(CXSema S, CXExpr E, bool *IsInvalid) {
@@ -2637,7 +2659,8 @@ CXExpr clang_Sema_CheckLValueToRValueConversionOperand(CXSema S, CXExpr E,
 
 bool clang_Sema_CheckLoopHintExpr(CXSema S, CXExpr E, CXSourceLocation_ Loc) {
   return reinterpret_cast<clang::Sema *>(S)->CheckLoopHintExpr(
-      reinterpret_cast<clang::Expr *>(E), clang::SourceLocation::getFromPtrEncoding(Loc));
+      reinterpret_cast<clang::Expr *>(E), clang::SourceLocation::getFromPtrEncoding(Loc),
+      /*AllowZero=*/false);
 }
 
 bool clang_Sema_CheckUnaryExprOrTypeTraitOperand(CXSema S, CXExpr E,
@@ -2690,7 +2713,7 @@ bool clang_Sema_CheckVectorCast(CXSema S, CXSourceLocation_ R_begin,
 
 bool clang_Sema_CheckObjCARCUnavailableWeakConversion(CXSema S, CXQualType CastType,
                                                       CXQualType ExprType) {
-  return reinterpret_cast<clang::Sema *>(S)->CheckObjCARCUnavailableWeakConversion(
+  return reinterpret_cast<clang::Sema *>(S)->ObjC().CheckObjCARCUnavailableWeakConversion(
       clang::QualType::getFromOpaquePtr(CastType),
       clang::QualType::getFromOpaquePtr(ExprType));
 }
@@ -2977,7 +3000,7 @@ bool clang_Sema_SpecialMemberIsTrivial(CXSema S, CXCXXMethodDecl MD, CXCXXSpecia
                                        CXTrivialABIHandling TAH, bool Diagnose) {
   return reinterpret_cast<clang::Sema *>(S)->SpecialMemberIsTrivial(
       reinterpret_cast<clang::CXXMethodDecl *>(MD),
-      static_cast<clang::Sema::CXXSpecialMember>(CSM),
+      static_cast<clang::CXXSpecialMemberKind>(CSM),
       static_cast<clang::Sema::TrivialABIHandling>(TAH), Diagnose);
 }
 
@@ -3500,8 +3523,20 @@ CXQualType clang_Sema_getDecltypeForExpr(CXSema S, CXExpr E) {
 }
 
 bool clang_Sema_isSimpleTypeSpecifier(CXSema S, unsigned Kind) {
-  return reinterpret_cast<clang::Sema *>(S)->isSimpleTypeSpecifier(
-      static_cast<clang::tok::TokenKind>(Kind));
+  // LLVM 20's Token::isSimpleTypeSpecifier reads IdentifierInfo (and used to
+  // crash on a kind-only token). Attach the keyword's interned identifier when
+  // Kind is a keyword; punctuators and unknown kinds stay without one.
+  auto *SemaPtr = reinterpret_cast<clang::Sema *>(S);
+  auto TK = static_cast<clang::tok::TokenKind>(Kind);
+  clang::Token Tok;
+  Tok.startToken();
+  Tok.setKind(TK);
+  if (const char *Spelling = clang::tok::getKeywordSpelling(TK)) {
+    clang::IdentifierInfo &II =
+        SemaPtr->getPreprocessor().getIdentifierTable().get(Spelling);
+    Tok.setIdentifierInfo(&II);
+  }
+  return Tok.isSimpleTypeSpecifier(SemaPtr->getLangOpts());
 }
 
 bool clang_Sema_isDeclInScope(CXSema S, CXNamedDecl D, CXDeclContext Ctx, CXScope Sc,
@@ -3563,14 +3598,14 @@ bool clang_Sema_isValidSveBitcast(CXSema S, CXQualType SrcType, CXQualType DestT
 }
 
 bool clang_Sema_isValidRVVBitcast(CXSema S, CXQualType SrcType, CXQualType DestType) {
-  return reinterpret_cast<clang::Sema *>(S)->isValidRVVBitcast(
+  return reinterpret_cast<clang::Sema *>(S)->RISCV().isValidRVVBitcast(
       clang::QualType::getFromOpaquePtr(SrcType),
       clang::QualType::getFromOpaquePtr(DestType));
 }
 
 CXDeclContext clang_Sema_getCurObjCLexicalContext(CXSema S) {
   return reinterpret_cast<CXDeclContext>(const_cast<clang::DeclContext *>(
-      reinterpret_cast<clang::Sema *>(S)->getCurObjCLexicalContext()));
+      reinterpret_cast<clang::Sema *>(S)->ObjC().getCurObjCLexicalContext()));
 }
 
 // Sema::AlignPackInfo
@@ -3787,19 +3822,19 @@ bool clang_Sema_OutermostDeclarationWithDelayedImmediateInvocations(CXSema S,
 CXCUDAFunctionTarget clang_Sema_IdentifyCUDATarget(CXSema S, CXFunctionDecl D,
                                                    bool IgnoreImplicitHDAttr) {
   return static_cast<CXCUDAFunctionTarget>(
-      reinterpret_cast<clang::Sema *>(S)->IdentifyCUDATarget(
+      reinterpret_cast<clang::Sema *>(S)->CUDA().IdentifyTarget(
           reinterpret_cast<clang::FunctionDecl *>(D), IgnoreImplicitHDAttr));
 }
 
 CXCUDAFunctionTarget clang_Sema_CurrentCUDATarget(CXSema S) {
   return static_cast<CXCUDAFunctionTarget>(
-      reinterpret_cast<clang::Sema *>(S)->CurrentCUDATarget());
+      reinterpret_cast<clang::Sema *>(S)->CUDA().CurrentTarget());
 }
 
 CXCUDAFunctionPreference clang_Sema_IdentifyCUDAPreference(CXSema S, CXFunctionDecl Caller,
                                                            CXFunctionDecl Callee) {
   return static_cast<CXCUDAFunctionPreference>(
-      reinterpret_cast<clang::Sema *>(S)->IdentifyCUDAPreference(
+      reinterpret_cast<clang::Sema *>(S)->CUDA().IdentifyPreference(
           reinterpret_cast<clang::FunctionDecl *>(Caller),
           reinterpret_cast<clang::FunctionDecl *>(Callee)));
 }
@@ -3869,7 +3904,8 @@ CXQualType clang_Sema_AdjustParameterTypeForObjCAutoRefCount(CXSema S, CXQualTyp
                                                              CXSourceLocation_ NameLoc,
                                                              CXTypeSourceInfo TSInfo) {
   return reinterpret_cast<CXQualType>(reinterpret_cast<clang::Sema *>(S)
-      ->AdjustParameterTypeForObjCAutoRefCount(
+      ->ObjC()
+      .AdjustParameterTypeForObjCAutoRefCount(
           clang::QualType::getFromOpaquePtr(T),
           clang::SourceLocation::getFromPtrEncoding(NameLoc),
           reinterpret_cast<clang::TypeSourceInfo *>(TSInfo))
@@ -3987,7 +4023,7 @@ CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsVarPartial(
   return static_cast<CXTemplateDeductionResult>(
       reinterpret_cast<clang::Sema *>(S)->DeduceTemplateArguments(
           reinterpret_cast<clang::VarTemplatePartialSpecializationDecl *>(Partial),
-          *reinterpret_cast<clang::TemplateArgumentList *>(TemplateArgs),
+          reinterpret_cast<clang::TemplateArgumentList *>(TemplateArgs)->asArray(),
           *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info)));
 }
 
@@ -4002,7 +4038,7 @@ CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsFunctionTemplate(
           reinterpret_cast<clang::TemplateArgumentListInfo *>(ExplicitTemplateArgs),
           clang::QualType::getFromOpaquePtr(ArgFunctionType), Spec,
           *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info), IsAddressOfFunction);
-  if (Specialization && R == clang::Sema::TDK_Success)
+  if (Specialization && R == clang::TemplateDeductionResult::Success)
     *Specialization = reinterpret_cast<CXFunctionDecl>(Spec);
   return static_cast<CXTemplateDeductionResult>(R);
 }
@@ -4019,9 +4055,9 @@ CXTemplateDeductionResult clang_Sema_DeduceTemplateArgumentsFromCallArgs(
       reinterpret_cast<clang::TemplateArgumentListInfo *>(ExplicitTemplateArgs),
       llvm::ArrayRef<clang::Expr *>(reinterpret_cast<clang::Expr **>(Args), NumArgs), Spec,
       *reinterpret_cast<clang::sema::TemplateDeductionInfo *>(Info), PartialOverloading,
-      AggregateDeductionCandidate, clang::QualType(), clang::Expr::Classification(),
-      [](llvm::ArrayRef<clang::QualType>) { return false; });
-  if (Specialization && R == clang::Sema::TDK_Success)
+      AggregateDeductionCandidate, /*PartialOrdering=*/false, clang::QualType(),
+      clang::Expr::Classification(), [](llvm::ArrayRef<clang::QualType>) { return false; });
+  if (Specialization && R == clang::TemplateDeductionResult::Success)
     *Specialization = reinterpret_cast<CXFunctionDecl>(Spec);
   return static_cast<CXTemplateDeductionResult>(R);
 }
@@ -4283,7 +4319,8 @@ CXCXXCtorInitializer clang_Sema_BuildMemberInitializer(CXSema S, CXValueDecl Mem
 }
 
 bool clang_Sema_isObjCMethodDecl(CXSema S, CXDecl D) {
-  return reinterpret_cast<clang::Sema *>(S)->isObjCMethodDecl(reinterpret_cast<clang::Decl *>(D));
+  return reinterpret_cast<clang::Sema *>(S)->ObjC().isObjCMethodDecl(
+      reinterpret_cast<clang::Decl *>(D));
 }
 
 bool clang_Sema_canSkipFunctionBody(CXSema S, CXDecl D) {
@@ -4358,15 +4395,15 @@ bool clang_Sema_CanBeGetReturnTypeOnAllocFailure(CXFunctionDecl FD) {
 }
 
 bool clang_Sema_isInOpenMPAssumeScope(CXSema S) {
-  return reinterpret_cast<clang::Sema *>(S)->isInOpenMPAssumeScope();
+  return reinterpret_cast<clang::Sema *>(S)->OpenMP().isInOpenMPAssumeScope();
 }
 
 bool clang_Sema_hasGlobalOpenMPAssumes(CXSema S) {
-  return reinterpret_cast<clang::Sema *>(S)->hasGlobalOpenMPAssumes();
+  return reinterpret_cast<clang::Sema *>(S)->OpenMP().hasGlobalOpenMPAssumes();
 }
 
 bool clang_Sema_isCast(CXCheckedConversionKind CCK) {
-  return clang::Sema::isCast(static_cast<clang::Sema::CheckedConversionKind>(CCK));
+  return clang::Sema::isCast(static_cast<clang::CheckedConversionKind>(CCK));
 }
 
 CXVariadicCallType clang_Sema_getVariadicCallType(CXSema S, CXFunctionDecl FDecl,
@@ -4377,16 +4414,18 @@ CXVariadicCallType clang_Sema_getVariadicCallType(CXSema S, CXFunctionDecl FDecl
 }
 
 bool clang_Sema_isCUDAImplicitHostDeviceFunction(CXFunctionDecl D) {
-  return clang::Sema::isCUDAImplicitHostDeviceFunction(
+  return clang::SemaCUDA::isImplicitHostDeviceFunction(
       reinterpret_cast<clang::FunctionDecl *>(D));
 }
 
 CXString clang_Sema_getCudaConfigureFuncName(CXSema S) {
-  return extra::makeCXString(reinterpret_cast<clang::Sema *>(S)->getCudaConfigureFuncName());
+  return extra::makeCXString(
+      reinterpret_cast<clang::Sema *>(S)->CUDA().getConfigureFuncName());
 }
 
 CXIdentifierInfo clang_Sema_getNSErrorIdent(CXSema S) {
-  return reinterpret_cast<CXIdentifierInfo>(reinterpret_cast<clang::Sema *>(S)->getNSErrorIdent());
+  return reinterpret_cast<CXIdentifierInfo>(
+      reinterpret_cast<clang::Sema *>(S)->ObjC().getNSErrorIdent());
 }
 
 CXIdentifierInfo clang_Sema_getSuperIdentifier(CXSema S) {
@@ -4481,7 +4520,7 @@ CXExpr clang_Sema_ImpCastExprToType(CXSema S, CXExpr E, CXQualType Type, CXCastK
   clang::ExprResult R = reinterpret_cast<clang::Sema *>(S)->ImpCastExprToType(
       reinterpret_cast<clang::Expr *>(E), clang::QualType::getFromOpaquePtr(Type),
       static_cast<clang::CastKind>(CK), static_cast<clang::ExprValueKind>(VK), nullptr,
-      static_cast<clang::Sema::CheckedConversionKind>(CCK));
+      static_cast<clang::CheckedConversionKind>(CCK));
   *IsInvalid = R.isInvalid();
   return reinterpret_cast<CXExpr>(R.isInvalid() ? nullptr : R.get());
 }
@@ -4634,7 +4673,7 @@ CXQualType clang_Sema_CheckVectorLogicalOperands(CXSema S, CXExpr *LHS, CXExpr *
   clang::ExprResult L = reinterpret_cast<clang::Expr *>(*LHS);
   clang::ExprResult R = reinterpret_cast<clang::Expr *>(*RHS);
   clang::QualType T = reinterpret_cast<clang::Sema *>(S)->CheckVectorLogicalOperands(
-      L, R, clang::SourceLocation::getFromPtrEncoding(Loc));
+      L, R, clang::SourceLocation::getFromPtrEncoding(Loc), clang::BO_LAnd);
   *LHS = L.isInvalid() ? nullptr : reinterpret_cast<CXExpr>(L.get());
   *RHS = R.isInvalid() ? nullptr : reinterpret_cast<CXExpr>(R.get());
   return reinterpret_cast<CXQualType>(T.getAsOpaquePtr());
@@ -4815,11 +4854,11 @@ bool clang_Sema_isMoreSpecializedThanPrimary(CXSema S,
 }
 
 bool clang_Sema_isInOpenMPDeclareVariantScope(CXSema S) {
-  return reinterpret_cast<clang::Sema *>(S)->isInOpenMPDeclareVariantScope();
+  return reinterpret_cast<clang::Sema *>(S)->OpenMP().isInOpenMPDeclareVariantScope();
 }
 
 bool clang_Sema_isInOpenMPDeclareTargetContext(CXSema S) {
-  return reinterpret_cast<clang::Sema *>(S)->isInOpenMPDeclareTargetContext();
+  return reinterpret_cast<clang::Sema *>(S)->OpenMP().isInOpenMPDeclareTargetContext();
 }
 
 CXIdentifierInfo clang_Sema_getNullabilityKeyword(CXSema S, CXNullabilityKind Nullability) {
@@ -4828,7 +4867,8 @@ CXIdentifierInfo clang_Sema_getNullabilityKeyword(CXSema S, CXNullabilityKind Nu
 }
 
 bool clang_Sema_isCFError(CXSema S, CXRecordDecl D) {
-  return reinterpret_cast<clang::Sema *>(S)->isCFError(reinterpret_cast<clang::RecordDecl *>(D));
+  return reinterpret_cast<clang::Sema *>(S)->ObjC().isCFError(
+      reinterpret_cast<clang::RecordDecl *>(D));
 }
 
 void clang_Sema_PushDeclContext(CXSema S, CXScope Sc, CXDeclContext DC) {
@@ -4881,11 +4921,11 @@ void clang_Sema_PopExpressionEvaluationContext(CXSema S) {
 }
 
 void clang_Sema_PushForceCUDAHostDevice(CXSema S) {
-  reinterpret_cast<clang::Sema *>(S)->PushForceCUDAHostDevice();
+  reinterpret_cast<clang::Sema *>(S)->CUDA().PushForceHostDevice();
 }
 
 bool clang_Sema_PopForceCUDAHostDevice(CXSema S) {
-  return reinterpret_cast<clang::Sema *>(S)->PopForceCUDAHostDevice();
+  return reinterpret_cast<clang::Sema *>(S)->CUDA().PopForceHostDevice();
 }
 
 void clang_Sema_PopPragmaVisibility(CXSema S, bool IsNamespaceEnd,
@@ -5012,8 +5052,9 @@ bool clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(
     CXSourceLocation_ Loc) {
   return reinterpret_cast<clang::Sema *>(S)->isTemplateTemplateParameterAtLeastAsSpecializedAs(
       reinterpret_cast<clang::TemplateParameterList *>(PParam),
-      reinterpret_cast<clang::TemplateDecl *>(AArg),
-      clang::SourceLocation::getFromPtrEncoding(Loc));
+      /*PArg=*/nullptr, reinterpret_cast<clang::TemplateDecl *>(AArg), clang::DefaultArguments(),
+      clang::SourceLocation::getFromPtrEncoding(Loc), /*PartialOrdering=*/false,
+      /*MatchedPackOnParmToNonPackOnArg=*/nullptr);
 }
 
 CXTemplateArgumentLoc clang_Sema_getIdentityTemplateArgumentLoc(CXSema S, CXNamedDecl Param,
@@ -5065,12 +5106,13 @@ bool clang_Sema_IsPointerConversion(CXSema S, CXExpr From, CXQualType FromType,
 CXFunctionTemplateDecl clang_Sema_getMoreSpecializedTemplate(
     CXSema S, CXFunctionTemplateDecl FT1, CXFunctionTemplateDecl FT2, CXSourceLocation_ Loc,
     CXTPOC TPOC, unsigned NumCallArguments1, unsigned NumCallArguments2, bool Reversed) {
+  (void)NumCallArguments2;
   return reinterpret_cast<CXFunctionTemplateDecl>(reinterpret_cast<clang::Sema *>(S)->getMoreSpecializedTemplate(
       reinterpret_cast<clang::FunctionTemplateDecl *>(FT1),
       reinterpret_cast<clang::FunctionTemplateDecl *>(FT2),
       clang::SourceLocation::getFromPtrEncoding(Loc),
       clang::TemplatePartialOrderingContext(static_cast<clang::TPOC>(TPOC)),
-      NumCallArguments1, NumCallArguments2, Reversed));
+      NumCallArguments1, clang::QualType(), clang::QualType(), Reversed));
 }
 
 bool clang_Sema_getFormatStringInfo(CXFormatAttr Format, bool IsCXXMember, bool IsVariadic,
@@ -5105,9 +5147,13 @@ CXMultiLevelTemplateArgumentList clang_Sema_getTemplateInstantiationArgs(
              reinterpret_cast<clang::Sema *>(S)->getTemplateInstantiationArgs(
                  reinterpret_cast<clang::NamedDecl *>(D),
                  reinterpret_cast<clang::DeclContext *>(DC), Final,
-                 reinterpret_cast<clang::TemplateArgumentList *>(Innermost), RelativeToPrimary,
-                 reinterpret_cast<clang::FunctionDecl *>(Pattern), ForConstraintInstantiation,
-                 SkipForSpecialization))
+                 Innermost
+                     ? std::optional<llvm::ArrayRef<clang::TemplateArgument>>(
+                           reinterpret_cast<clang::TemplateArgumentList *>(Innermost)
+                               ->asArray())
+                     : std::nullopt,
+                 RelativeToPrimary, reinterpret_cast<clang::FunctionDecl *>(Pattern),
+                 ForConstraintInstantiation, SkipForSpecialization))
       .release());
 }
 

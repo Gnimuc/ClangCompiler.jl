@@ -48,7 +48,7 @@ CXUsingShadowDecl clang_TemplateName_getAsUsingShadowDecl(CXTemplateName TN);
 
 CXTemplateName clang_TemplateName_getUnderlying(CXTemplateName TN);
 
-CXTemplateName clang_TemplateName_getNameToSubstitute(CXTemplateName TN);
+// getNameToSubstitute
 
 // The whole clang::TemplateNameDependence bitmask in one call. It is an LLVM bitmask
 // enum whose combined enumerators duplicate values, so it crosses as a plain unsigned
@@ -69,8 +69,7 @@ bool clang_TemplateName_containsUnexpandedParameterPack(CXTemplateName TN);
 // takes.
 typedef enum CXTemplateName_Qualified {
   CXTemplateName_Qualified_None,
-  CXTemplateName_Qualified_AsWritten,
-  CXTemplateName_Qualified_Fully
+  CXTemplateName_Qualified_AsWritten
 } CXTemplateName_Qualified;
 
 // helper -- TemplateName::print streamed into a string, under Ctx's own printing

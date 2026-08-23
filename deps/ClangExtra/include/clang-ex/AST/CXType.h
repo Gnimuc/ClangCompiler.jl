@@ -239,9 +239,9 @@ unsigned clang_Qualifiers_addConsistentQualifiers(unsigned Quals, unsigned Other
 // Static: the OpenCL/SYCL/CUDA address-space superset relation over two LangAS
 // values. This is Qualifiers::isAddressSpaceSupersetOf(LangAS, LangAS), not the
 // same-named member overload taking another Qualifiers set, so it has no receiver.
-bool clang_Qualifiers_isAddressSpaceSupersetOf(CXLangAS A, CXLangAS B);
+bool clang_Qualifiers_isAddressSpaceSupersetOf(CXLangAS A, CXLangAS B, CXASTContext Ctx);
 
-bool clang_Qualifiers_compatiblyIncludes(unsigned Quals, unsigned Other);
+bool clang_Qualifiers_compatiblyIncludes(unsigned Quals, unsigned Other, CXASTContext Ctx);
 
 bool clang_Qualifiers_isStrictSupersetOf(unsigned Quals, unsigned Other);
 
@@ -395,13 +395,15 @@ CXLangAS clang_QualType_getAddressSpace(CXQualType OpaquePtr);
 
 CXDestructionKind clang_QualType_isDestructedType(CXQualType OpaquePtr);
 
-bool clang_QualType_isMoreQualifiedThan(CXQualType OpaquePtr, CXQualType Other);
+bool clang_QualType_isMoreQualifiedThan(CXQualType OpaquePtr, CXQualType Other,
+                                        CXASTContext Ctx);
 
 // PRECONDITION (Invariant 3): both QualTypes must be non-null.
 // QualType::isAddressSpaceOverlapping reads QualType::getQualifiers() on each operand,
 // which reaches the type through getCommonPtr() and asserts !isNull(); the Julia wrapper
 // restates it.
-bool clang_QualType_isAddressSpaceOverlapping(CXQualType OpaquePtr, CXQualType Other);
+bool clang_QualType_isAddressSpaceOverlapping(CXQualType OpaquePtr, CXQualType Other,
+                                              CXASTContext Ctx);
 
 // The ObjC qualifier tail. Every one of these reads QualType::getQualifiers(), which
 // reaches the type through getCommonPtr() and asserts !isNull(), so a null QualType is
@@ -426,7 +428,8 @@ bool clang_QualType_hasStrongOrWeakObjCLifetime(CXQualType OpaquePtr);
 // that enables weak references without ARC, so a C++ TU always reads false.
 bool clang_QualType_isNonWeakInMRRWithObjCWeak(CXQualType OpaquePtr, CXASTContext Ctx);
 
-bool clang_QualType_isAtLeastAsQualifiedAs(CXQualType OpaquePtr, CXQualType Other);
+bool clang_QualType_isAtLeastAsQualifiedAs(CXQualType OpaquePtr, CXQualType Other,
+                                           CXASTContext Ctx);
 
 CXQualType clang_QualType_getNonReferenceType(CXQualType OpaquePtr);
 
@@ -487,8 +490,7 @@ bool clang_QualType_isTriviallyCopyConstructibleType(CXQualType OpaquePtr,
 
 bool clang_QualType_isTriviallyRelocatableType(CXQualType OpaquePtr, CXASTContext Ctx);
 
-bool clang_QualType_isTriviallyEqualityComparableType(CXQualType OpaquePtr,
-                                                      CXASTContext Ctx);
+// isTriviallyEqualityComparableType
 
 CXString clang_QualType_getAsString(CXQualType OpaquePtr);
 
@@ -1950,7 +1952,6 @@ bool clang_AttributedType_isCallingConv(CXAttributedType T);
 bool clang_AttributedType_getImmediateNullability(CXAttributedType T,
                                                   CXNullabilityKind *Out);
 
-// Static: the attr::Kind that spells one nullability kind. Takes no receiver.
 CXAttrKind clang_AttributedType_getNullabilityAttrKind(CXNullabilityKind Kind);
 
 // Static in-out: *T is read as the type to strip and, when a top-level nullability

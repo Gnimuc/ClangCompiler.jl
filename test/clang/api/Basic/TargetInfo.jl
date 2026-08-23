@@ -1,6 +1,6 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_tag, get_instance
+using ClangCompiler: create_parser, create_interpreter, dispose, DeclFinder, get_decl, get_tag, get_instance
 using Test
 
 # Pinned so every TargetInfo answer below is a fact about this target rather than about the
@@ -8,7 +8,7 @@ using Test
 const PIN = "x86_64-linux-gnu"
 
 @testset "Basic | TargetInfo target queries" begin
-    I = CC.create_interpreter(String[]; triple=PIN)
+    I = CC.create_parser(String[]; triple=PIN)
     ci = CC.get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -130,7 +130,7 @@ const PIN = "x86_64-linux-gnu"
 end
 
 @testset "Basic | TargetInfo integer-type and bitfield tail" begin
-    I = CC.create_interpreter(String[]; triple=PIN)
+    I = CC.create_parser(String[]; triple=PIN)
     ci = CC.get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -198,7 +198,7 @@ end
 end
 
 @testset "Basic | TargetInfo ABI knobs and GCC register names" begin
-    I = CC.create_interpreter(String[]; triple=PIN)
+    I = CC.create_parser(String[]; triple=PIN)
     ci = CC.get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -253,7 +253,7 @@ end
 end
 
 @testset "Basic | TargetInfo target policy queries" begin
-    I = create_interpreter(String[]; triple=PIN)
+    I = create_parser(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -308,7 +308,7 @@ end
 end
 
 @testset "Basic | TargetInfo::ConstraintInfo" begin
-    I = CC.create_interpreter(String[]; triple=PIN)
+    I = CC.create_parser(String[]; triple=PIN)
     ci = CC.get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -445,7 +445,7 @@ end
 end
 
 @testset "Basic | TargetInfo feature, tuning and multiversioning queries" begin
-    I = create_interpreter(String[]; triple=PIN)
+    I = create_parser(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
 
@@ -492,7 +492,7 @@ end
 end
 
 @testset "Basic | TargetInfo address spaces, calling conventions, target identity" begin
-    I = create_interpreter(String[]; triple=PIN)
+    I = create_parser(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
     lo = CC.getLangOpts(ci)
@@ -566,7 +566,7 @@ end
 end
 
 @testset "TargetInfo | fixed-point types" begin
-    I = CC.create_interpreter(String[]; triple=PIN)
+    I = CC.create_parser(String[]; triple=PIN)
     ti = CC.getTarget(CC.get_instance(I))
 
     # Every number here is target-chosen, so what is asserted is the shape and the
@@ -636,7 +636,7 @@ end
 end
 
 @testset "Basic | TargetInfo predefined macros and LangOptions adjustment" begin
-    I = create_interpreter(String[]; triple=PIN)
+    I = create_parser(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
     lo = CC.getLangOpts(ci)
@@ -674,7 +674,7 @@ end
 end
 
 @testset "Basic | TargetInfo control-flow protection support" begin
-    I = create_interpreter(String[]; triple=PIN)
+    I = create_parser(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
     diag = CC.getDiagnostics(ci)
@@ -714,7 +714,7 @@ end
 end
 
 @testset "Basic | TargetInfo global registers, cpu_specific features and fpret" begin
-    I = create_interpreter(String[]; triple=PIN)
+    I = create_parser(String[]; triple=PIN)
     ci = get_instance(I)
     ti = CC.getTarget(ci)
 

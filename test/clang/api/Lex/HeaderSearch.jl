@@ -131,9 +131,11 @@ end
         @test CC.hasFileBeenImported(hs, fer) == false
         @test CC.isFileMultipleIncludeGuarded(hs, fer) == false
 
-        # getFileDirFlavor goes through getFileInfo, which creates the record.
+        # LLVM 20's getFileDirFlavor reads existing info only and answers with
+        # the default DirInfo (C_User) when none exists — it does not create a record.
         @test CC.getFileDirFlavor(hs, fer) == CC.CXCharacteristicKind_C_User
-        hfi = CC.getExistingFileInfo(hs, fer)
+        @test CC.getExistingFileInfo(hs, fer).ptr == C_NULL
+        hfi = CC.getFileInfo(hs, fer)
         @test hfi isa CC.HeaderFileInfo && hfi.ptr != C_NULL
 
         # Each call copies the record out, so two calls are distinct allocations holding
@@ -333,13 +335,17 @@ end
         @test !CC.isExcludedHeaderRole(combined)
         @test !CC.isModular(combined)
 
-        # A non-modular role with is_compiling_module_header false changes nothing, so clang
-        # returns before creating a record -- unlike every other MarkFile* function.
+        # LLVM 20 creates a record even for a non-modular role; it just does not
+        # set the module-header bit.
         @test CC.getExistingFileInfo(hs, fer).ptr == C_NULL
         CC.MarkFileModuleHeader(hs, fer, CC.CXModuleHeaderRole_TextualHeader, false)
-        @test CC.getExistingFileInfo(hs, fer).ptr == C_NULL
+        textual = CC.getExistingFileInfo(hs, fer)
+        @test textual.ptr != C_NULL
+        @test CC.getIsModuleHeader(textual) == false
+        @test CC.getIsCompilingModuleHeader(textual) == false
+        dispose(textual)
 
-        # A modular role does create one, and sets exactly the module-header bit.
+        # A modular role sets the module-header bit.
         CC.MarkFileModuleHeader(hs, fer, CC.CXModuleHeaderRole_NormalHeader, false)
         hfi = CC.getExistingFileInfo(hs, fer)
         @test hfi.ptr != C_NULL

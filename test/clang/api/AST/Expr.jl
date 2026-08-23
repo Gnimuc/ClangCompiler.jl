@@ -346,7 +346,7 @@ end
     # CStyleCastExpr is an ExplicitCastExpr — covers getTypeAsWritten + own locs
     csc = first_of(CC.CStyleCastExpr)
     @test csc !== nothing
-    @test CC.getTypeAsWritten(csc) isa CC.QualType
+    @test CC.getAsString(CC.getTypeAsWritten(csc)) in ("int", "double")
     @test !CC.is_null_handle(CC.getLParenLoc(csc))
     @test !CC.is_null_handle(CC.getRParenLoc(csc))
 

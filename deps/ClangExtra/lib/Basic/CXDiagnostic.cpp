@@ -2,9 +2,18 @@
 #include "utils.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceManager.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallString.h"
 
+#include <limits>
 #include <memory>
+#include <string>
+
+// LLVM 20 moved in-flight diagnostic state from DiagnosticsEngine onto
+// DiagnosticBuilder. Track builders created through this C API so the
+// engine-level predicates still answer.
+static llvm::DenseMap<clang::DiagnosticsEngine *, clang::DiagnosticBuilder *>
+    InFlight;
 
 // DiagnosticConsumer
 unsigned clang_DiagnosticConsumer_getNumErrors(CXDiagnosticConsumer DC) {
@@ -361,22 +370,39 @@ void clang_DiagnosticsEngine_Report(CXDiagnosticsEngine DE, CXSourceLocation_ Lo
 }
 
 bool clang_DiagnosticsEngine_isDiagnosticInFlight(CXDiagnosticsEngine DE) {
-  return reinterpret_cast<clang::DiagnosticsEngine *>(DE)->isDiagnosticInFlight();
+  return InFlight.lookup(reinterpret_cast<clang::DiagnosticsEngine *>(DE)) !=
+         nullptr;
 }
 
-void clang_DiagnosticsEngine_SetDelayedDiagnostic(CXDiagnosticsEngine DE, unsigned DiagID,
-                                                  const char *Arg1, const char *Arg2,
-                                                  const char *Arg3) {
-  reinterpret_cast<clang::DiagnosticsEngine *>(DE)->SetDelayedDiagnostic(DiagID, Arg1, Arg2,
-                                                                    Arg3);
+void clang_DiagnosticsEngine_SetDelayedDiagnostic(CXDiagnosticsEngine DE,
+                                                  unsigned DiagID, const char *Arg1,
+                                                  const char *Arg2, const char *Arg3) {
+  (void)DE;
+  (void)DiagID;
+  (void)Arg1;
+  (void)Arg2;
+  (void)Arg3;
+  // LLVM 20 dropped DiagnosticsEngine::SetDelayedDiagnostic.
 }
 
 void clang_DiagnosticsEngine_Clear(CXDiagnosticsEngine DE) {
-  reinterpret_cast<clang::DiagnosticsEngine *>(DE)->Clear();
+  (void)DE;
+  // LLVM 20 dropped DiagnosticsEngine::Clear (the in-flight id lived on the
+  // engine). Cancelling an in-flight DiagnosticBuilder would require its
+  // protected Clear(); the Julia caller hits this with nothing in flight.
 }
 
 const char *clang_DiagnosticsEngine_getFlagValue(CXDiagnosticsEngine DE) {
-  return reinterpret_cast<clang::DiagnosticsEngine *>(DE)->getFlagValue().data();
+  static std::string Scratch;
+  auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
+  auto *Builder = InFlight.lookup(Engine);
+  if (!Builder) {
+    Scratch.clear();
+    return Scratch.c_str();
+  }
+  clang::Diagnostic Info(Engine, *Builder);
+  Scratch = Info.getFlagValue().str();
+  return Scratch.c_str();
 }
 
 CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
@@ -403,6 +429,7 @@ CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
 }
 
 void clang_DiagnosticsEngine_dispose(CXDiagnosticsEngine DE) {
+  InFlight.erase(reinterpret_cast<clang::DiagnosticsEngine *>(DE));
   // Balances the Retain in clang_DiagnosticsEngine_create; the last Release deletes.
   reinterpret_cast<clang::DiagnosticsEngine *>(DE)->Release();
 }
@@ -608,14 +635,22 @@ void clang_FixItHint_dispose(CXFixItHint H) { delete reinterpret_cast<clang::Fix
 // DiagnosticBuilder
 CXDiagnosticBuilder clang_DiagnosticBuilder_create(CXDiagnosticsEngine DE,
                                                    CXSourceLocation_ Loc, unsigned DiagID) {
+  auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
   auto DB = std::make_unique<clang::DiagnosticBuilder>(
-      reinterpret_cast<clang::DiagnosticsEngine *>(DE)->Report(
-          clang::SourceLocation::getFromPtrEncoding(Loc), DiagID));
+      Engine->Report(clang::SourceLocation::getFromPtrEncoding(Loc), DiagID));
+  InFlight[Engine] = DB.get();
   return reinterpret_cast<CXDiagnosticBuilder>(DB.release());
 }
 
 void clang_DiagnosticBuilder_dispose(CXDiagnosticBuilder DB) {
-  delete reinterpret_cast<clang::DiagnosticBuilder *>(DB);
+  auto *B = reinterpret_cast<clang::DiagnosticBuilder *>(DB);
+  for (auto It = InFlight.begin(), E = InFlight.end(); It != E; ++It) {
+    if (It->second == B) {
+      InFlight.erase(It);
+      break;
+    }
+  }
+  delete B;
 }
 
 CXDiagnosticBuilder clang_DiagnosticBuilder_setForceEmit(CXDiagnosticBuilder DB) {
@@ -653,8 +688,14 @@ void clang_StreamingDiagnostic_AddFixItHint(CXStreamingDiagnostic SD, CXFixItHin
 
 // Diagnostic
 CXDiagnostic_ clang_Diagnostic_create(CXDiagnosticsEngine DE) {
-  auto D = std::make_unique<clang::Diagnostic>(reinterpret_cast<clang::DiagnosticsEngine *>(DE));
-  return reinterpret_cast<CXDiagnostic_>(D.release());
+  auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
+  if (auto *Builder = InFlight.lookup(Engine)) {
+    return reinterpret_cast<CXDiagnostic_>(new clang::Diagnostic(Engine, *Builder));
+  }
+  static clang::DiagnosticStorage EmptyStorage;
+  return reinterpret_cast<CXDiagnostic_>(new clang::Diagnostic(
+      Engine, clang::SourceLocation(), std::numeric_limits<unsigned>::max(),
+      EmptyStorage, llvm::StringRef()));
 }
 
 CXDiagnosticsEngine clang_Diagnostic_getDiags(CXDiagnostic_ D) {

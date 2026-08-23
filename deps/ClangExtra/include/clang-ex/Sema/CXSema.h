@@ -937,6 +937,7 @@ typedef enum CXCCEKind {
   CXCCEKind_CCEK_CaseValue,
   CXCCEKind_CCEK_Enumerator,
   CXCCEKind_CCEK_TemplateArg,
+  CXCCEKind_CCEK_InjectedTTP,
   CXCCEKind_CCEK_ArrayBound,
   CXCCEKind_CCEK_ExplicitBool,
   CXCCEKind_CCEK_Noexcept,
@@ -1369,6 +1370,7 @@ typedef enum CXFormatStringType {
   CXFormatStringType_FST_FreeBSDKPrintf,
   CXFormatStringType_FST_OSTrace,
   CXFormatStringType_FST_OSLog,
+  CXFormatStringType_FST_Syslog,
   CXFormatStringType_FST_Unknown
 } CXFormatStringType;
 
@@ -2835,6 +2837,7 @@ typedef enum CXExpressionEvaluationContext {
 typedef enum CXExpressionKind {
   CXExpressionKind_EK_Decltype,
   CXExpressionKind_EK_TemplateArgument,
+  CXExpressionKind_EK_AttrArgument,
   CXExpressionKind_EK_Other
 } CXExpressionKind;
 

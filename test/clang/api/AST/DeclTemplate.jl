@@ -205,11 +205,19 @@ end
     @test CC.is_null_handle(CC.getParentFunctionOrMethod(fd))
     # getCanonicalDecl/getMostRecentDecl on AbstractDecl are shadowed for named
     # decls; the non-named TranslationUnitDecl reaches the DeclBase fallbacks.
-    @test CC.getCanonicalDecl(tu).ptr == tu.ptr
+    # Clang 20's incremental Interpreter chains TUs as Redeclarable, so the
+    # current increment is the most recent, not the canonical first TU.
+    canon_tu = CC.getCanonicalDecl(tu)
+    @test canon_tu.ptr != C_NULL
+    @test CC.isCanonicalDecl(canon_tu)
+    @test CC.getCanonicalDecl(canon_tu).ptr == canon_tu.ptr
+    @test CC.isFirstDecl(canon_tu)
+    @test CC.getPreviousDecl(canon_tu).ptr == C_NULL
+    @test CC.getMostRecentDecl(tu).ptr == tu.ptr
+    @test CC.getMostRecentDecl(canon_tu).ptr == tu.ptr
     @test CC.isCanonicalDecl(fd)
     @test CC.getPreviousDecl(fd).ptr == C_NULL
     @test CC.isFirstDecl(fd)
-    @test CC.getMostRecentDecl(tu).ptr == tu.ptr
     @test !(CC.isTemplateParameter(fd))
     @test !(CC.isTemplateParameterPack(fd))
     @test CC.isParameterPack(fd) == false               # AbstractDecl path
@@ -397,7 +405,9 @@ end
         @test CC.isExplicitInstantiationOrSpecialization(vtsd)
         @test CC.is_null_handle(CC.getPointOfInstantiation(vtsd))
         @test CC.is_null_handle(CC.getExternLoc(vtsd))
-        @test !CC.is_null_handle(CC.getTemplateKeywordLoc(vtsd))
+        # LLVM 20 stores TemplateKeywordLoc only on ExplicitInstantiationInfo,
+        # which `template <>` specializations do not allocate.
+        @test CC.is_null_handle(CC.getTemplateKeywordLoc(vtsd))
         on_partial = CC.specializedOnPartial(vtsd)
         @test on_partial == false
         arm = CC.getSpecializedTemplateOrPartial(vtsd)
@@ -450,7 +460,6 @@ end
         cspec = CC.ClassTemplateSpecializationDecl(specrec)
         @test !(CC.isClassScopeExplicitSpecialization(cspec))
         @test !CC.is_null_handle(CC.getTemplateInstantiationArgs(cspec))
-        @test CC.getTypeAsWritten(cspec).ptr == C_NULL
         @test CC.is_null_handle(CC.getExternLoc(cspec))
         @test CC.is_null_handle(CC.getTemplateKeywordLoc(cspec))
         @test CC.isValid(CC.getSourceRange(cspec))
@@ -477,7 +486,6 @@ end
     if vtsd isa CC.VarTemplateSpecializationDecl
         @test !(CC.isClassScopeExplicitSpecialization(vtsd))
         @test !CC.is_null_handle(CC.getTemplateInstantiationArgs(vtsd))
-        @test CC.getTypeAsWritten(vtsd).ptr == C_NULL
         @test CC.isValid(CC.getSourceRange(vtsd))
     end
 
@@ -1326,19 +1334,11 @@ end
     @test length(cac) == 1
     @test CC.hasAssociatedConstraints(cpss[1]) == !isempty(cac)
 
-    # ---------- setTypeAsWritten round-trip (class) ----------
+    # ---------- VarTemplate family ----------
     @test f(I, "dti_many")
     vd = CC.VarDecl(get_decl(f))
     rec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(vd)))
     @test rec.ptr != C_NULL && CC.getName(rec) == "DtiBox"
-    if CC.getDeclKindName(rec) == "ClassTemplateSpecialization"
-        cspec = CC.ClassTemplateSpecializationDecl(rec)
-        tsi = CC.getTrivialTypeSourceInfo(ctx, CC.getType(vd), CC.getLocation(vd))
-        CC.setTypeAsWritten(cspec, tsi)
-        @test CC.getTypeAsWritten(cspec).ptr == tsi.ptr
-    end
-
-    # ---------- VarTemplate family ----------
     tu = CC.getTranslationUnitDecl(vd)
     vtsd = nothing
     for d in CC.decls(CC.castToDeclContext(tu))
@@ -1347,11 +1347,6 @@ end
         end
     end
     @test vtsd !== nothing && vtsd.ptr != C_NULL && CC.getName(vtsd) == "dti_var"
-    if vtsd isa CC.VarTemplateSpecializationDecl
-        vtsi = CC.getTrivialTypeSourceInfo(ctx, CC.getType(vtsd), CC.getLocation(vtsd))
-        CC.setTypeAsWritten(vtsd, vtsi)
-        @test CC.getTypeAsWritten(vtsd).ptr == vtsi.ptr
-    end
 
     # dti_var names the primary variable template AND its partial specialization, so
     # the lookup result is not unique -- take the VarTemplateDecl explicitly.

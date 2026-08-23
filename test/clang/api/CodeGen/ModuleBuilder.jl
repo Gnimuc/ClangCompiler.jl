@@ -128,7 +128,7 @@ end
     @test CC.CGM(cg).ptr != CC.get_codegen_module(I).ptr
     dispose(cg)
 
-    # ... and the LLVM 18 signature takes a virtual file system, which only a configured
+    # ... and the LLVM 20 signature takes a virtual file system, which only a configured
     # file manager can supply
     bare = CC.CompilerInstance()
     @test_throws AssertionError CC.CodeGenerator(bare, "no_fm", lctx)

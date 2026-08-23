@@ -5,8 +5,6 @@ getKind(x::TemplateName) = clang_TemplateName_getKind(x)
 
 getUnderlying(x::TemplateName) = TemplateName(clang_TemplateName_getUnderlying(x))
 
-getNameToSubstitute(x::TemplateName) = TemplateName(clang_TemplateName_getNameToSubstitute(x))
-
 isDependent(x::TemplateName) = clang_TemplateName_isDependent(x)
 
 isInstantiationDependent(x::TemplateName) = clang_TemplateName_isInstantiationDependent(x)
@@ -99,9 +97,8 @@ getDependence(x::TemplateName) = clang_TemplateName_getDependence(x)
 """
     getAsString(x::TemplateName, ctx::ASTContext, qual=CXTemplateName_Qualified_AsWritten) -> String
 Return the printed spelling of `x` under `ctx`'s own printing policy. `qual` picks the bare
-name (`CXTemplateName_Qualified_None`), the qualifier as written
-(`CXTemplateName_Qualified_AsWritten`) or the fully qualified name
-(`CXTemplateName_Qualified_Fully`).
+name (`CXTemplateName_Qualified_None`) or the qualifier as written
+(`CXTemplateName_Qualified_AsWritten`).
 """
 function getAsString(x::TemplateName, ctx::ASTContext, qual::CXTemplateName_Qualified=CXTemplateName_Qualified_AsWritten)
     @check_ptrs ctx

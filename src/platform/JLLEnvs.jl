@@ -83,6 +83,11 @@ function get_pkg_artifact_dir(pkg::Module, target::String)
         end
     end
     isempty(candidates) && return ""
+    llvm_maj = string(Base.libllvm_version.major)
+    tagged = filter(info -> get(info, "llvm_version", "") == llvm_maj, candidates)
+    if !isempty(tagged)
+        candidates = tagged
+    end
     length(candidates) > 1 &&
         @warn "found more than one candidate artifacts, only use the first one: $(first(candidates))"
     info = first(candidates)

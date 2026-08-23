@@ -5,8 +5,8 @@
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Rewrite/Core/RewriteBuffer.h"
 #include "clang/Rewrite/Core/Rewriter.h"
+#include "llvm/ADT/RewriteBuffer.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -126,7 +126,7 @@ bool clang_Rewriter_hasChangesForFileID(CXRewriter R, CXFileID FID) {
 }
 
 CXString clang_Rewriter_getRewriteBufferText(CXRewriter R, CXFileID FID) {
-  const clang::RewriteBuffer *Buf =
+  const llvm::RewriteBuffer *Buf =
       reinterpret_cast<clang::Rewriter *>(R)->getRewriteBufferFor(
           *reinterpret_cast<clang::FileID *>(FID));
   if (!Buf)

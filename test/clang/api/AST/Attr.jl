@@ -210,6 +210,9 @@ end
 
     npred = ncast = nmatch = 0
     for nm in names(CC; all=true)
+        # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; they alias
+        # the real carrier types and are not the stamped `isFoo`/`Foo` surface.
+        occursin('#', String(nm)) && continue
         isdefined(CC, nm) || continue
         v = getproperty(CC, nm)
         if v isa Function && !(v isa Type) && startswith(String(nm), "is") && hasmethod(v, Tuple{CC.Attr})

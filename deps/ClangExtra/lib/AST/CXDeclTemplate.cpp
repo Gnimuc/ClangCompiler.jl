@@ -261,7 +261,7 @@ CXClassTemplateSpecializationDecl clang_ClassTemplateSpecializationDecl_Create(
       clang::SourceLocation::getFromPtrEncoding(StartLoc),
       clang::SourceLocation::getFromPtrEncoding(IdLoc),
       reinterpret_cast<clang::ClassTemplateDecl *>(SpecializedTemplate),
-      reinterpret_cast<clang::TemplateArgumentList *>(Args)->asArray(),
+      reinterpret_cast<clang::TemplateArgumentList *>(Args)->asArray(), false,
       reinterpret_cast<clang::ClassTemplateSpecializationDecl *>(PrevDecl)));
 }
 
@@ -310,8 +310,10 @@ bool clang_TemplateTypeParmDecl_hasDefaultArgument(CXTemplateTypeParmDecl D) {
 // Precondition: hasDefaultArgument().
 CXQualType clang_TemplateTypeParmDecl_getDefaultArgument(CXTemplateTypeParmDecl D) {
   return reinterpret_cast<CXQualType>(reinterpret_cast<clang::TemplateTypeParmDecl *>(D)
-      ->getDefaultArgument()
-      .getAsOpaquePtr());
+                                          ->getDefaultArgument()
+                                          .getArgument()
+                                          .getAsType()
+                                          .getAsOpaquePtr());
 }
 
 bool clang_TemplateTypeParmDecl_defaultArgumentWasInherited(CXTemplateTypeParmDecl D) {
@@ -348,7 +350,10 @@ bool clang_NonTypeTemplateParmDecl_hasDefaultArgument(CXNonTypeTemplateParmDecl 
 }
 
 CXExpr clang_NonTypeTemplateParmDecl_getDefaultArgument(CXNonTypeTemplateParmDecl D) {
-  return reinterpret_cast<CXExpr>(reinterpret_cast<clang::NonTypeTemplateParmDecl *>(D)->getDefaultArgument());
+  return reinterpret_cast<CXExpr>(const_cast<clang::Expr *>(
+      reinterpret_cast<clang::NonTypeTemplateParmDecl *>(D)
+          ->getDefaultArgument()
+          .getSourceExpression()));
 }
 
 bool clang_NonTypeTemplateParmDecl_isExpandedParameterPack(CXNonTypeTemplateParmDecl D) {
@@ -569,11 +574,12 @@ bool clang_VarTemplateSpecializationDecl_specializedOnPartial(
       .is<clang::VarTemplatePartialSpecializationDecl *>();
 }
 
-CXSourceLocation_
-clang_VarTemplateSpecializationDecl_getExternLoc(CXVarTemplateSpecializationDecl D) {
-  return reinterpret_cast<CXSourceLocation_>(reinterpret_cast<clang::VarTemplateSpecializationDecl *>(D)
-      ->getExternLoc()
-      .getPtrEncoding());
+CXSourceLocation_ clang_VarTemplateSpecializationDecl_getExternLoc(
+    CXVarTemplateSpecializationDecl D) {
+  return reinterpret_cast<CXSourceLocation_>(
+      reinterpret_cast<clang::VarTemplateSpecializationDecl *>(D)
+          ->getExternKeywordLoc()
+          .getPtrEncoding());
 }
 
 CXSourceLocation_ clang_VarTemplateSpecializationDecl_getTemplateKeywordLoc(
@@ -626,16 +632,12 @@ CXTemplateArgumentList clang_ClassTemplateSpecializationDecl_getTemplateInstanti
            ->getTemplateInstantiationArgs()));
 }
 
-CXTypeSourceInfo clang_ClassTemplateSpecializationDecl_getTypeAsWritten(
-    CXClassTemplateSpecializationDecl D) {
-  return reinterpret_cast<CXTypeSourceInfo>(reinterpret_cast<clang::ClassTemplateSpecializationDecl *>(D)->getTypeAsWritten());
-}
-
 CXSourceLocation_
 clang_ClassTemplateSpecializationDecl_getExternLoc(CXClassTemplateSpecializationDecl D) {
-  return reinterpret_cast<CXSourceLocation_>(reinterpret_cast<clang::ClassTemplateSpecializationDecl *>(D)
-      ->getExternLoc()
-      .getPtrEncoding());
+  return reinterpret_cast<CXSourceLocation_>(
+      reinterpret_cast<clang::ClassTemplateSpecializationDecl *>(D)
+          ->getExternKeywordLoc()
+          .getPtrEncoding());
 }
 
 CXSourceLocation_ clang_ClassTemplateSpecializationDecl_getTemplateKeywordLoc(
@@ -667,10 +669,7 @@ CXTemplateArgumentList clang_VarTemplateSpecializationDecl_getTemplateInstantiat
            ->getTemplateInstantiationArgs()));
 }
 
-CXTypeSourceInfo
-clang_VarTemplateSpecializationDecl_getTypeAsWritten(CXVarTemplateSpecializationDecl D) {
-  return reinterpret_cast<CXTypeSourceInfo>(reinterpret_cast<clang::VarTemplateSpecializationDecl *>(D)->getTypeAsWritten());
-}
+// getTypeAsWritten
 
 CXSourceRange_
 clang_VarTemplateSpecializationDecl_getSourceRange(CXVarTemplateSpecializationDecl D) {
@@ -907,7 +906,7 @@ clang_TypeAliasTemplateDecl_getPreviousDecl(CXTypeAliasTemplateDecl TATD) {
 CXASTTemplateArgumentListInfo
 clang_VarTemplateSpecializationDecl_getTemplateArgsInfo(CXVarTemplateSpecializationDecl D) {
   return reinterpret_cast<CXASTTemplateArgumentListInfo>(const_cast<clang::ASTTemplateArgumentListInfo *>(
-      reinterpret_cast<clang::VarTemplateSpecializationDecl *>(D)->getTemplateArgsInfo()));
+      reinterpret_cast<clang::VarTemplateSpecializationDecl *>(D)->getTemplateArgsAsWritten()));
 }
 
 // VarTemplatePartialSpecializationDecl
@@ -991,14 +990,15 @@ void clang_TemplateDecl_getAssociatedConstraints(CXTemplateDecl TD, CXExpr *AC) 
 unsigned
 clang_RedeclarableTemplateDecl_getNumInjectedTemplateArgs(CXRedeclarableTemplateDecl RTD) {
   auto *D = reinterpret_cast<clang::RedeclarableTemplateDecl *>(RTD);
-  return static_cast<unsigned>(D->getInjectedTemplateArgs().size());
+  return static_cast<unsigned>(D->getInjectedTemplateArgs(D->getASTContext()).size());
 }
 
 CXTemplateArgument
 clang_RedeclarableTemplateDecl_getInjectedTemplateArg(CXRedeclarableTemplateDecl RTD,
                                                       unsigned I) {
   auto *D = reinterpret_cast<clang::RedeclarableTemplateDecl *>(RTD);
-  return reinterpret_cast<CXTemplateArgument>(const_cast<clang::TemplateArgument *>(&D->getInjectedTemplateArgs()[I]));
+  return reinterpret_cast<CXTemplateArgument>(const_cast<clang::TemplateArgument *>(
+      &D->getInjectedTemplateArgs(D->getASTContext())[I]));
 }
 
 // TemplateTypeParmDecl
@@ -1134,7 +1134,8 @@ void clang_FunctionTemplateDecl_getSpecializations(CXFunctionTemplateDecl FTD,
 // TemplateTypeParmDecl
 CXTypeSourceInfo
 clang_TemplateTypeParmDecl_getDefaultArgumentInfo(CXTemplateTypeParmDecl D) {
-  return reinterpret_cast<CXTypeSourceInfo>(reinterpret_cast<clang::TemplateTypeParmDecl *>(D)->getDefaultArgumentInfo());
+  return reinterpret_cast<CXTypeSourceInfo>(
+      reinterpret_cast<clang::TemplateTypeParmDecl *>(D)->getDefaultArgument().getTypeSourceInfo());
 }
 
 void clang_TemplateTypeParmDecl_setDeclaredWithTypename(CXTemplateTypeParmDecl D,
@@ -1234,8 +1235,11 @@ void clang_MemberSpecializationInfo_setPointOfInstantiation(CXMemberSpecializati
 // TemplateTypeParmDecl
 void clang_TemplateTypeParmDecl_setDefaultArgument(CXTemplateTypeParmDecl D,
                                                    CXTypeSourceInfo DefArg) {
-  reinterpret_cast<clang::TemplateTypeParmDecl *>(D)->setDefaultArgument(
-      reinterpret_cast<clang::TypeSourceInfo *>(DefArg));
+  auto *TSI = reinterpret_cast<clang::TypeSourceInfo *>(DefArg);
+  clang::TemplateArgument Arg(TSI->getType());
+  clang::TemplateArgumentLoc Loc(Arg, TSI);
+  auto *Parm = reinterpret_cast<clang::TemplateTypeParmDecl *>(D);
+  Parm->setDefaultArgument(Parm->getASTContext(), Loc);
 }
 
 void clang_TemplateTypeParmDecl_removeDefaultArgument(CXTemplateTypeParmDecl D) {
@@ -1245,8 +1249,11 @@ void clang_TemplateTypeParmDecl_removeDefaultArgument(CXTemplateTypeParmDecl D) 
 // NonTypeTemplateParmDecl
 void clang_NonTypeTemplateParmDecl_setDefaultArgument(CXNonTypeTemplateParmDecl D,
                                                       CXExpr DefArg) {
-  reinterpret_cast<clang::NonTypeTemplateParmDecl *>(D)->setDefaultArgument(
-      reinterpret_cast<clang::Expr *>(DefArg));
+  auto *E = reinterpret_cast<clang::Expr *>(DefArg);
+  clang::TemplateArgument Arg(E);
+  clang::TemplateArgumentLoc Loc(Arg, E);
+  auto *Parm = reinterpret_cast<clang::NonTypeTemplateParmDecl *>(D);
+  Parm->setDefaultArgument(Parm->getASTContext(), Loc);
 }
 
 void clang_NonTypeTemplateParmDecl_removeDefaultArgument(CXNonTypeTemplateParmDecl D) {
@@ -1287,7 +1294,7 @@ void clang_ClassTemplateSpecializationDecl_setPointOfInstantiation(
 
 void clang_ClassTemplateSpecializationDecl_setExternLoc(CXClassTemplateSpecializationDecl D,
                                                         CXSourceLocation_ Loc) {
-  reinterpret_cast<clang::ClassTemplateSpecializationDecl *>(D)->setExternLoc(
+  reinterpret_cast<clang::ClassTemplateSpecializationDecl *>(D)->setExternKeywordLoc(
       clang::SourceLocation::getFromPtrEncoding(Loc));
 }
 
@@ -1312,7 +1319,7 @@ void clang_VarTemplateSpecializationDecl_setPointOfInstantiation(
 
 void clang_VarTemplateSpecializationDecl_setExternLoc(CXVarTemplateSpecializationDecl D,
                                                       CXSourceLocation_ Loc) {
-  reinterpret_cast<clang::VarTemplateSpecializationDecl *>(D)->setExternLoc(
+  reinterpret_cast<clang::VarTemplateSpecializationDecl *>(D)->setExternKeywordLoc(
       clang::SourceLocation::getFromPtrEncoding(Loc));
 }
 
@@ -1408,11 +1415,7 @@ CXSourceRange_ clang_BuiltinTemplateDecl_getSourceRange(CXBuiltinTemplateDecl D)
 }
 
 // ClassTemplateSpecializationDecl
-void clang_ClassTemplateSpecializationDecl_setTypeAsWritten(
-    CXClassTemplateSpecializationDecl D, CXTypeSourceInfo T) {
-  reinterpret_cast<clang::ClassTemplateSpecializationDecl *>(D)->setTypeAsWritten(
-      reinterpret_cast<clang::TypeSourceInfo *>(T));
-}
+// setTypeAsWritten
 
 // ClassTemplatePartialSpecializationDecl
 unsigned clang_ClassTemplatePartialSpecializationDecl_getNumAssociatedConstraints(
@@ -1456,11 +1459,7 @@ clang_ClassTemplateDecl_findPartialSpecInstantiatedFromMember(
 }
 
 // VarTemplateSpecializationDecl
-void clang_VarTemplateSpecializationDecl_setTypeAsWritten(CXVarTemplateSpecializationDecl D,
-                                                          CXTypeSourceInfo T) {
-  reinterpret_cast<clang::VarTemplateSpecializationDecl *>(D)->setTypeAsWritten(
-      reinterpret_cast<clang::TypeSourceInfo *>(T));
-}
+// setTypeAsWritten
 
 // VarTemplatePartialSpecializationDecl
 unsigned clang_VarTemplatePartialSpecializationDecl_getNumAssociatedConstraints(
@@ -1776,7 +1775,7 @@ clang_TemplateTemplateParmDecl_Create(CXASTContext C, CXDeclContext DC, CXSource
   return reinterpret_cast<CXTemplateTemplateParmDecl>(clang::TemplateTemplateParmDecl::Create(
       *reinterpret_cast<clang::ASTContext *>(C), reinterpret_cast<clang::DeclContext *>(DC),
       clang::SourceLocation::getFromPtrEncoding(L), D, P, ParameterPack,
-      reinterpret_cast<clang::IdentifierInfo *>(Id),
+      reinterpret_cast<clang::IdentifierInfo *>(Id), /*Typename=*/false,
       reinterpret_cast<clang::TemplateParameterList *>(Params)));
 }
 

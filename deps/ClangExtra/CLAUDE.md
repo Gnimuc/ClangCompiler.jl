@@ -7,7 +7,7 @@ monolithic `LLVM` + `clang-cpp` shared libs). Format C++ with clang-format (LLVM
 ColumnLimit 92 — narrower than the Julia code's 120), but always pass
 `--sort-includes=false`: reordering the includes in a CX header changes the order the
 binding generator walks declarations, and one moved `#include` rewrites ~8,000 lines of
-`lib/18/LibClangEx.jl` for no semantic gain.
+`lib/20/LibClangEx.jl` for no semantic gain.
 
 ## The governing axiom
 
@@ -382,7 +382,7 @@ are never installed.
    types have both; the Orc refs get by on prologue-only); a new helper macro (X-macro
    tables etc.) must go in `output_ignorelist` in gen/option.toml or it becomes a junk
    binding.
-3. Commit the header, .cpp, CMakeLists, and regenerated `lib/18/LibClangEx.jl` together —
+3. Commit the header, .cpp, CMakeLists, and regenerated `lib/20/LibClangEx.jl` together —
    deterministic symbol mode keeps the lib diff minimal. The `bindings` CI job reruns the
    generator and fails on any diff under `lib/`, and the test suite enforces the rest:
    test/abi.jl (every binding's symbol resolves), test/lint.jl (layout/guards/CMake

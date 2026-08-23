@@ -9,10 +9,18 @@
 #include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Preprocessor.h"
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/Support/Timer.h"
 #include "llvm/Support/VirtualFileSystem.h"
 #include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Serialization/ASTReader.h"
+
+// LLVM 20 dropped CompilerInstance::hasFrontendTimer; FrontendTimer remains a
+// private unique_ptr written only by createFrontendTimer. Reconstruct the C
+// predicate by recording instances that went through this C API. The single
+// client always creates the timer this way; Interpreter-owned instances are
+// not entered unless the Julia wrapper calls createFrontendTimer on them.
+static llvm::SmallPtrSet<clang::CompilerInstance *, 4> FrontendTimerOwners;
 
 CXCompilerInstance clang_CompilerInstance_create(void) {
   auto CI = std::make_unique<clang::CompilerInstance>();
@@ -20,7 +28,9 @@ CXCompilerInstance clang_CompilerInstance_create(void) {
 }
 
 void clang_CompilerInstance_dispose(CXCompilerInstance CI) {
-  delete reinterpret_cast<clang::CompilerInstance *>(CI);
+  auto *Instance = reinterpret_cast<clang::CompilerInstance *>(CI);
+  FrontendTimerOwners.erase(Instance);
+  delete Instance;
 }
 
 // Diagnostics
@@ -47,8 +57,17 @@ CXDiagnosticConsumer clang_CompilerInstance_getDiagnosticClient(CXCompilerInstan
 void clang_CompilerInstance_createDiagnostics(CXCompilerInstance CI,
                                               CXDiagnosticConsumer DC,
                                               bool ShouldOwnClient) {
-  return reinterpret_cast<clang::CompilerInstance *>(CI)->createDiagnostics(
-      reinterpret_cast<clang::DiagnosticConsumer *>(DC), ShouldOwnClient);
+  auto *Instance = reinterpret_cast<clang::CompilerInstance *>(CI);
+  // LLVM 20 requires a VFS; reuse the instance's when a FileManager exists,
+  // otherwise the process-wide real FS (createDiagnostics is often called
+  // before createFileManager).
+  llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> VFS =
+      Instance->hasFileManager()
+          ? llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>(
+                &Instance->getVirtualFileSystem())
+          : llvm::vfs::getRealFileSystem();
+  Instance->createDiagnostics(*VFS, reinterpret_cast<clang::DiagnosticConsumer *>(DC),
+                             ShouldOwnClient);
 }
 
 // FileManager
@@ -356,7 +375,8 @@ void clang_CompilerInstance_LoadRequestedPlugins(CXCompilerInstance CI) {
 
 // Frontend timer
 bool clang_CompilerInstance_hasFrontendTimer(CXCompilerInstance CI) {
-  return reinterpret_cast<clang::CompilerInstance *>(CI)->hasFrontendTimer();
+  return FrontendTimerOwners.contains(
+      reinterpret_cast<clang::CompilerInstance *>(CI));
 }
 
 CXString clang_CompilerInstance_getFrontendTimerName(CXCompilerInstance CI) {
@@ -369,7 +389,9 @@ bool clang_CompilerInstance_isFrontendTimerRunning(CXCompilerInstance CI) {
 }
 
 void clang_CompilerInstance_createFrontendTimer(CXCompilerInstance CI) {
-  reinterpret_cast<clang::CompilerInstance *>(CI)->createFrontendTimer();
+  auto *Instance = reinterpret_cast<clang::CompilerInstance *>(CI);
+  Instance->createFrontendTimer();
+  FrontendTimerOwners.insert(Instance);
 }
 
 // Ownership transfer

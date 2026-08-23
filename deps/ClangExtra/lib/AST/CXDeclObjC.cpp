@@ -141,7 +141,9 @@ static clang::Selector selectorFromSpelling(llvm::StringRef Spelling, clang::AST
   }
   if (Idents.empty())
     return clang::Selector();
-  return C.Selectors.getSelector(Spelling.contains(':') ? Idents.size() : 0, Idents.data());
+  const clang::IdentifierInfo **Data =
+      const_cast<const clang::IdentifierInfo **>(Idents.data());
+  return C.Selectors.getSelector(Spelling.contains(':') ? Idents.size() : 0, Data);
 }
 
 CXObjCMethodDecl clang_ObjCContainerDecl_getMethod(CXObjCContainerDecl CD, const char *Sel,

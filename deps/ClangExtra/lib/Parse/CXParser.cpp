@@ -4,6 +4,13 @@
 
 #include <memory>
 
+#define ENUM_SYNC(cx, cpp)                                                                 \
+  static_assert(static_cast<int>(cx) == static_cast<int>(cpp), #cx " != " #cpp)
+ENUM_SYNC(CXSkipUntilFlags_StopAtSemi, clang::Parser::StopAtSemi);
+ENUM_SYNC(CXSkipUntilFlags_StopBeforeMatch, clang::Parser::StopBeforeMatch);
+ENUM_SYNC(CXSkipUntilFlags_StopAtCodeCompletion, clang::Parser::StopAtCodeCompletion);
+#undef ENUM_SYNC
+
 CXParser clang_Parser_create(CXPreprocessor PP, CXSema Actions, bool SkipFunctionBodies) {
   auto P = std::make_unique<clang::Parser>(*reinterpret_cast<clang::Preprocessor *>(PP),
                                            *reinterpret_cast<clang::Sema *>(Actions),

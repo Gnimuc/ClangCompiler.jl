@@ -86,9 +86,9 @@ end
 end
 
 @testset "LangStandard | language names and per-language defaults" begin
-    langs = [CC.CXLanguage_Unknown, CC.CXLanguage_Asm, CC.CXLanguage_LLVM_IR, CC.CXLanguage_C, CC.CXLanguage_CXX,
-             CC.CXLanguage_ObjC, CC.CXLanguage_ObjCXX, CC.CXLanguage_OpenCL, CC.CXLanguage_OpenCLCXX,
-             CC.CXLanguage_CUDA, CC.CXLanguage_RenderScript, CC.CXLanguage_HIP, CC.CXLanguage_HLSL]
+    langs = [CC.CXLanguage_Unknown, CC.CXLanguage_Asm, CC.CXLanguage_CIR, CC.CXLanguage_LLVM_IR, CC.CXLanguage_C,
+             CC.CXLanguage_CXX, CC.CXLanguage_ObjC, CC.CXLanguage_ObjCXX, CC.CXLanguage_OpenCL, CC.CXLanguage_OpenCLCXX,
+             CC.CXLanguage_CUDA, CC.CXLanguage_HIP, CC.CXLanguage_HLSL]
     names = map(CC.languageToString, langs)
     # Every language has a name and no two share one: a shim returning a constant, or one
     # off by an enumerator, fails here.

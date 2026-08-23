@@ -65,6 +65,11 @@ end
 Base.cconvert(::Type{CXAMDGPUFlatWorkGroupSizeAttr}, x::AbstractAMDGPUFlatWorkGroupSizeAttr) = x
 Base.unsafe_convert(::Type{CXAMDGPUKernelCallAttr}, x::AbstractAMDGPUKernelCallAttr) = CXAMDGPUKernelCallAttr(x.ptr)
 Base.cconvert(::Type{CXAMDGPUKernelCallAttr}, x::AbstractAMDGPUKernelCallAttr) = x
+function Base.unsafe_convert(::Type{CXAMDGPUMaxNumWorkGroupsAttr},
+                             x::AbstractAMDGPUMaxNumWorkGroupsAttr)
+    return CXAMDGPUMaxNumWorkGroupsAttr(x.ptr)
+end
+Base.cconvert(::Type{CXAMDGPUMaxNumWorkGroupsAttr}, x::AbstractAMDGPUMaxNumWorkGroupsAttr) = x
 Base.unsafe_convert(::Type{CXAMDGPUNumSGPRAttr}, x::AbstractAMDGPUNumSGPRAttr) = CXAMDGPUNumSGPRAttr(x.ptr)
 Base.cconvert(::Type{CXAMDGPUNumSGPRAttr}, x::AbstractAMDGPUNumSGPRAttr) = x
 Base.unsafe_convert(::Type{CXAMDGPUNumVGPRAttr}, x::AbstractAMDGPUNumVGPRAttr) = CXAMDGPUNumVGPRAttr(x.ptr)
@@ -103,6 +108,8 @@ Base.unsafe_convert(::Type{CXAllocAlignAttr}, x::AbstractAllocAlignAttr) = CXAll
 Base.cconvert(::Type{CXAllocAlignAttr}, x::AbstractAllocAlignAttr) = x
 Base.unsafe_convert(::Type{CXAllocSizeAttr}, x::AbstractAllocSizeAttr) = CXAllocSizeAttr(x.ptr)
 Base.cconvert(::Type{CXAllocSizeAttr}, x::AbstractAllocSizeAttr) = x
+Base.unsafe_convert(::Type{CXAllocatingAttr}, x::AbstractAllocatingAttr) = CXAllocatingAttr(x.ptr)
+Base.cconvert(::Type{CXAllocatingAttr}, x::AbstractAllocatingAttr) = x
 Base.unsafe_convert(::Type{CXAlwaysDestroyAttr}, x::AbstractAlwaysDestroyAttr) = CXAlwaysDestroyAttr(x.ptr)
 Base.cconvert(::Type{CXAlwaysDestroyAttr}, x::AbstractAlwaysDestroyAttr) = x
 Base.unsafe_convert(::Type{CXAlwaysInlineAttr}, x::AbstractAlwaysInlineAttr) = CXAlwaysInlineAttr(x.ptr)
@@ -132,6 +139,8 @@ function Base.unsafe_convert(::Type{CXArgumentWithTypeTagAttr},
     return CXArgumentWithTypeTagAttr(x.ptr)
 end
 Base.cconvert(::Type{CXArgumentWithTypeTagAttr}, x::AbstractArgumentWithTypeTagAttr) = x
+Base.unsafe_convert(::Type{CXArmAgnosticAttr}, x::AbstractArmAgnosticAttr) = CXArmAgnosticAttr(x.ptr)
+Base.cconvert(::Type{CXArmAgnosticAttr}, x::AbstractArmAgnosticAttr) = x
 Base.unsafe_convert(::Type{CXArmBuiltinAliasAttr}, x::AbstractArmBuiltinAliasAttr) = CXArmBuiltinAliasAttr(x.ptr)
 Base.cconvert(::Type{CXArmBuiltinAliasAttr}, x::AbstractArmBuiltinAliasAttr) = x
 Base.unsafe_convert(::Type{CXArmInAttr}, x::AbstractArmInAttr) = CXArmInAttr(x.ptr)
@@ -176,8 +185,6 @@ Base.unsafe_convert(::Type{CXAssertSharedLockAttr}, x::AbstractAssertSharedLockA
 Base.cconvert(::Type{CXAssertSharedLockAttr}, x::AbstractAssertSharedLockAttr) = x
 Base.unsafe_convert(::Type{CXAssumeAlignedAttr}, x::AbstractAssumeAlignedAttr) = CXAssumeAlignedAttr(x.ptr)
 Base.cconvert(::Type{CXAssumeAlignedAttr}, x::AbstractAssumeAlignedAttr) = x
-Base.unsafe_convert(::Type{CXAssumptionAttr}, x::AbstractAssumptionAttr) = CXAssumptionAttr(x.ptr)
-Base.cconvert(::Type{CXAssumptionAttr}, x::AbstractAssumptionAttr) = x
 Base.unsafe_convert(::Type{CXAvailabilityAttr}, x::AbstractAvailabilityAttr) = CXAvailabilityAttr(x.ptr)
 Base.cconvert(::Type{CXAvailabilityAttr}, x::AbstractAvailabilityAttr) = x
 function Base.unsafe_convert(::Type{CXAvailableOnlyInDefaultEvalMethodAttr},
@@ -185,6 +192,8 @@ function Base.unsafe_convert(::Type{CXAvailableOnlyInDefaultEvalMethodAttr},
     return CXAvailableOnlyInDefaultEvalMethodAttr(x.ptr)
 end
 Base.cconvert(::Type{CXAvailableOnlyInDefaultEvalMethodAttr}, x::AbstractAvailableOnlyInDefaultEvalMethodAttr) = x
+Base.unsafe_convert(::Type{CXBPFFastCallAttr}, x::AbstractBPFFastCallAttr) = CXBPFFastCallAttr(x.ptr)
+Base.cconvert(::Type{CXBPFFastCallAttr}, x::AbstractBPFFastCallAttr) = x
 function Base.unsafe_convert(::Type{CXBPFPreserveAccessIndexAttr},
                              x::AbstractBPFPreserveAccessIndexAttr)
     return CXBPFPreserveAccessIndexAttr(x.ptr)
@@ -199,6 +208,8 @@ Base.unsafe_convert(::Type{CXBTFDeclTagAttr}, x::AbstractBTFDeclTagAttr) = CXBTF
 Base.cconvert(::Type{CXBTFDeclTagAttr}, x::AbstractBTFDeclTagAttr) = x
 Base.unsafe_convert(::Type{CXBTFTypeTagAttr}, x::AbstractBTFTypeTagAttr) = CXBTFTypeTagAttr(x.ptr)
 Base.cconvert(::Type{CXBTFTypeTagAttr}, x::AbstractBTFTypeTagAttr) = x
+Base.unsafe_convert(::Type{CXBlockingAttr}, x::AbstractBlockingAttr) = CXBlockingAttr(x.ptr)
+Base.cconvert(::Type{CXBlockingAttr}, x::AbstractBlockingAttr) = x
 Base.unsafe_convert(::Type{CXBlocksAttr}, x::AbstractBlocksAttr) = CXBlocksAttr(x.ptr)
 Base.cconvert(::Type{CXBlocksAttr}, x::AbstractBlocksAttr) = x
 Base.unsafe_convert(::Type{CXBuiltinAliasAttr}, x::AbstractBuiltinAliasAttr) = CXBuiltinAliasAttr(x.ptr)
@@ -249,6 +260,8 @@ end
 Base.cconvert(::Type{CXCUDADeviceBuiltinTextureTypeAttr}, x::AbstractCUDADeviceBuiltinTextureTypeAttr) = x
 Base.unsafe_convert(::Type{CXCUDAGlobalAttr}, x::AbstractCUDAGlobalAttr) = CXCUDAGlobalAttr(x.ptr)
 Base.cconvert(::Type{CXCUDAGlobalAttr}, x::AbstractCUDAGlobalAttr) = x
+Base.unsafe_convert(::Type{CXCUDAGridConstantAttr}, x::AbstractCUDAGridConstantAttr) = CXCUDAGridConstantAttr(x.ptr)
+Base.cconvert(::Type{CXCUDAGridConstantAttr}, x::AbstractCUDAGridConstantAttr) = x
 Base.unsafe_convert(::Type{CXCUDAHostAttr}, x::AbstractCUDAHostAttr) = CXCUDAHostAttr(x.ptr)
 Base.cconvert(::Type{CXCUDAHostAttr}, x::AbstractCUDAHostAttr) = x
 Base.unsafe_convert(::Type{CXCUDAInvalidTargetAttr}, x::AbstractCUDAInvalidTargetAttr) = CXCUDAInvalidTargetAttr(x.ptr)
@@ -259,6 +272,8 @@ Base.unsafe_convert(::Type{CXCUDASharedAttr}, x::AbstractCUDASharedAttr) = CXCUD
 Base.cconvert(::Type{CXCUDASharedAttr}, x::AbstractCUDASharedAttr) = x
 Base.unsafe_convert(::Type{CXCXX11NoReturnAttr}, x::AbstractCXX11NoReturnAttr) = CXCXX11NoReturnAttr(x.ptr)
 Base.cconvert(::Type{CXCXX11NoReturnAttr}, x::AbstractCXX11NoReturnAttr) = x
+Base.unsafe_convert(::Type{CXCXXAssumeAttr}, x::AbstractCXXAssumeAttr) = CXCXXAssumeAttr(x.ptr)
+Base.cconvert(::Type{CXCXXAssumeAttr}, x::AbstractCXXAssumeAttr) = x
 Base.unsafe_convert(::Type{CXCallableWhenAttr}, x::AbstractCallableWhenAttr) = CXCallableWhenAttr(x.ptr)
 Base.cconvert(::Type{CXCallableWhenAttr}, x::AbstractCallableWhenAttr) = x
 Base.unsafe_convert(::Type{CXCallbackAttr}, x::AbstractCallbackAttr) = CXCallbackAttr(x.ptr)
@@ -273,6 +288,11 @@ Base.unsafe_convert(::Type{CXCarriesDependencyAttr}, x::AbstractCarriesDependenc
 Base.cconvert(::Type{CXCarriesDependencyAttr}, x::AbstractCarriesDependencyAttr) = x
 Base.unsafe_convert(::Type{CXCleanupAttr}, x::AbstractCleanupAttr) = CXCleanupAttr(x.ptr)
 Base.cconvert(::Type{CXCleanupAttr}, x::AbstractCleanupAttr) = x
+function Base.unsafe_convert(::Type{CXClspvLibclcBuiltinAttr},
+                             x::AbstractClspvLibclcBuiltinAttr)
+    return CXClspvLibclcBuiltinAttr(x.ptr)
+end
+Base.cconvert(::Type{CXClspvLibclcBuiltinAttr}, x::AbstractClspvLibclcBuiltinAttr) = x
 Base.unsafe_convert(::Type{CXCmseNSCallAttr}, x::AbstractCmseNSCallAttr) = CXCmseNSCallAttr(x.ptr)
 Base.cconvert(::Type{CXCmseNSCallAttr}, x::AbstractCmseNSCallAttr) = x
 Base.unsafe_convert(::Type{CXCmseNSEntryAttr}, x::AbstractCmseNSEntryAttr) = CXCmseNSEntryAttr(x.ptr)
@@ -307,6 +327,13 @@ end
 Base.cconvert(::Type{CXConsumableSetOnReadAttr}, x::AbstractConsumableSetOnReadAttr) = x
 Base.unsafe_convert(::Type{CXConvergentAttr}, x::AbstractConvergentAttr) = CXConvergentAttr(x.ptr)
 Base.cconvert(::Type{CXConvergentAttr}, x::AbstractConvergentAttr) = x
+function Base.unsafe_convert(::Type{CXCoroAwaitElidableArgumentAttr},
+                             x::AbstractCoroAwaitElidableArgumentAttr)
+    return CXCoroAwaitElidableArgumentAttr(x.ptr)
+end
+Base.cconvert(::Type{CXCoroAwaitElidableArgumentAttr}, x::AbstractCoroAwaitElidableArgumentAttr) = x
+Base.unsafe_convert(::Type{CXCoroAwaitElidableAttr}, x::AbstractCoroAwaitElidableAttr) = CXCoroAwaitElidableAttr(x.ptr)
+Base.cconvert(::Type{CXCoroAwaitElidableAttr}, x::AbstractCoroAwaitElidableAttr) = x
 function Base.unsafe_convert(::Type{CXCoroDisableLifetimeBoundAttr},
                              x::AbstractCoroDisableLifetimeBoundAttr)
     return CXCoroDisableLifetimeBoundAttr(x.ptr)
@@ -325,6 +352,8 @@ Base.unsafe_convert(::Type{CXCoroWrapperAttr}, x::AbstractCoroWrapperAttr) = CXC
 Base.cconvert(::Type{CXCoroWrapperAttr}, x::AbstractCoroWrapperAttr) = x
 Base.unsafe_convert(::Type{CXCountedByAttr}, x::AbstractCountedByAttr) = CXCountedByAttr(x.ptr)
 Base.cconvert(::Type{CXCountedByAttr}, x::AbstractCountedByAttr) = x
+Base.unsafe_convert(::Type{CXCountedByOrNullAttr}, x::AbstractCountedByOrNullAttr) = CXCountedByOrNullAttr(x.ptr)
+Base.cconvert(::Type{CXCountedByOrNullAttr}, x::AbstractCountedByOrNullAttr) = x
 Base.unsafe_convert(::Type{CXDLLExportAttr}, x::AbstractDLLExportAttr) = CXDLLExportAttr(x.ptr)
 Base.cconvert(::Type{CXDLLExportAttr}, x::AbstractDLLExportAttr) = x
 function Base.unsafe_convert(::Type{CXDLLExportStaticLocalAttr},
@@ -376,6 +405,8 @@ function Base.unsafe_convert(::Type{CXExclusiveTrylockFunctionAttr},
     return CXExclusiveTrylockFunctionAttr(x.ptr)
 end
 Base.cconvert(::Type{CXExclusiveTrylockFunctionAttr}, x::AbstractExclusiveTrylockFunctionAttr) = x
+Base.unsafe_convert(::Type{CXExplicitInitAttr}, x::AbstractExplicitInitAttr) = CXExplicitInitAttr(x.ptr)
+Base.cconvert(::Type{CXExplicitInitAttr}, x::AbstractExplicitInitAttr) = x
 function Base.unsafe_convert(::Type{CXExternalSourceSymbolAttr},
                              x::AbstractExternalSourceSymbolAttr)
     return CXExternalSourceSymbolAttr(x.ptr)
@@ -408,15 +439,30 @@ Base.unsafe_convert(::Type{CXGuardedVarAttr}, x::AbstractGuardedVarAttr) = CXGua
 Base.cconvert(::Type{CXGuardedVarAttr}, x::AbstractGuardedVarAttr) = x
 Base.unsafe_convert(::Type{CXHIPManagedAttr}, x::AbstractHIPManagedAttr) = CXHIPManagedAttr(x.ptr)
 Base.cconvert(::Type{CXHIPManagedAttr}, x::AbstractHIPManagedAttr) = x
+Base.unsafe_convert(::Type{CXHLSLContainedTypeAttr}, x::AbstractHLSLContainedTypeAttr) = CXHLSLContainedTypeAttr(x.ptr)
+Base.cconvert(::Type{CXHLSLContainedTypeAttr}, x::AbstractHLSLContainedTypeAttr) = x
+function Base.unsafe_convert(::Type{CXHLSLControlFlowHintAttr},
+                             x::AbstractHLSLControlFlowHintAttr)
+    return CXHLSLControlFlowHintAttr(x.ptr)
+end
+Base.cconvert(::Type{CXHLSLControlFlowHintAttr}, x::AbstractHLSLControlFlowHintAttr) = x
 function Base.unsafe_convert(::Type{CXHLSLGroupSharedAddressSpaceAttr},
                              x::AbstractHLSLGroupSharedAddressSpaceAttr)
     return CXHLSLGroupSharedAddressSpaceAttr(x.ptr)
 end
 Base.cconvert(::Type{CXHLSLGroupSharedAddressSpaceAttr}, x::AbstractHLSLGroupSharedAddressSpaceAttr) = x
+Base.unsafe_convert(::Type{CXHLSLLoopHintAttr}, x::AbstractHLSLLoopHintAttr) = CXHLSLLoopHintAttr(x.ptr)
+Base.cconvert(::Type{CXHLSLLoopHintAttr}, x::AbstractHLSLLoopHintAttr) = x
 Base.unsafe_convert(::Type{CXHLSLNumThreadsAttr}, x::AbstractHLSLNumThreadsAttr) = CXHLSLNumThreadsAttr(x.ptr)
 Base.cconvert(::Type{CXHLSLNumThreadsAttr}, x::AbstractHLSLNumThreadsAttr) = x
+Base.unsafe_convert(::Type{CXHLSLPackOffsetAttr}, x::AbstractHLSLPackOffsetAttr) = CXHLSLPackOffsetAttr(x.ptr)
+Base.cconvert(::Type{CXHLSLPackOffsetAttr}, x::AbstractHLSLPackOffsetAttr) = x
 Base.unsafe_convert(::Type{CXHLSLParamModifierAttr}, x::AbstractHLSLParamModifierAttr) = CXHLSLParamModifierAttr(x.ptr)
 Base.cconvert(::Type{CXHLSLParamModifierAttr}, x::AbstractHLSLParamModifierAttr) = x
+Base.unsafe_convert(::Type{CXHLSLROVAttr}, x::AbstractHLSLROVAttr) = CXHLSLROVAttr(x.ptr)
+Base.cconvert(::Type{CXHLSLROVAttr}, x::AbstractHLSLROVAttr) = x
+Base.unsafe_convert(::Type{CXHLSLRawBufferAttr}, x::AbstractHLSLRawBufferAttr) = CXHLSLRawBufferAttr(x.ptr)
+Base.cconvert(::Type{CXHLSLRawBufferAttr}, x::AbstractHLSLRawBufferAttr) = x
 Base.unsafe_convert(::Type{CXHLSLResourceAttr}, x::AbstractHLSLResourceAttr) = CXHLSLResourceAttr(x.ptr)
 Base.cconvert(::Type{CXHLSLResourceAttr}, x::AbstractHLSLResourceAttr) = x
 function Base.unsafe_convert(::Type{CXHLSLResourceBindingAttr},
@@ -424,17 +470,30 @@ function Base.unsafe_convert(::Type{CXHLSLResourceBindingAttr},
     return CXHLSLResourceBindingAttr(x.ptr)
 end
 Base.cconvert(::Type{CXHLSLResourceBindingAttr}, x::AbstractHLSLResourceBindingAttr) = x
+Base.unsafe_convert(::Type{CXHLSLResourceClassAttr}, x::AbstractHLSLResourceClassAttr) = CXHLSLResourceClassAttr(x.ptr)
+Base.cconvert(::Type{CXHLSLResourceClassAttr}, x::AbstractHLSLResourceClassAttr) = x
 function Base.unsafe_convert(::Type{CXHLSLSV_DispatchThreadIDAttr},
                              x::AbstractHLSLSV_DispatchThreadIDAttr)
     return CXHLSLSV_DispatchThreadIDAttr(x.ptr)
 end
 Base.cconvert(::Type{CXHLSLSV_DispatchThreadIDAttr}, x::AbstractHLSLSV_DispatchThreadIDAttr) = x
+Base.unsafe_convert(::Type{CXHLSLSV_GroupIDAttr}, x::AbstractHLSLSV_GroupIDAttr) = CXHLSLSV_GroupIDAttr(x.ptr)
+Base.cconvert(::Type{CXHLSLSV_GroupIDAttr}, x::AbstractHLSLSV_GroupIDAttr) = x
 Base.unsafe_convert(::Type{CXHLSLSV_GroupIndexAttr}, x::AbstractHLSLSV_GroupIndexAttr) = CXHLSLSV_GroupIndexAttr(x.ptr)
 Base.cconvert(::Type{CXHLSLSV_GroupIndexAttr}, x::AbstractHLSLSV_GroupIndexAttr) = x
+function Base.unsafe_convert(::Type{CXHLSLSV_GroupThreadIDAttr},
+                             x::AbstractHLSLSV_GroupThreadIDAttr)
+    return CXHLSLSV_GroupThreadIDAttr(x.ptr)
+end
+Base.cconvert(::Type{CXHLSLSV_GroupThreadIDAttr}, x::AbstractHLSLSV_GroupThreadIDAttr) = x
 Base.unsafe_convert(::Type{CXHLSLShaderAttr}, x::AbstractHLSLShaderAttr) = CXHLSLShaderAttr(x.ptr)
 Base.cconvert(::Type{CXHLSLShaderAttr}, x::AbstractHLSLShaderAttr) = x
+Base.unsafe_convert(::Type{CXHLSLWaveSizeAttr}, x::AbstractHLSLWaveSizeAttr) = CXHLSLWaveSizeAttr(x.ptr)
+Base.cconvert(::Type{CXHLSLWaveSizeAttr}, x::AbstractHLSLWaveSizeAttr) = x
 Base.unsafe_convert(::Type{CXHotAttr}, x::AbstractHotAttr) = CXHotAttr(x.ptr)
 Base.cconvert(::Type{CXHotAttr}, x::AbstractHotAttr) = x
+Base.unsafe_convert(::Type{CXHybridPatchableAttr}, x::AbstractHybridPatchableAttr) = CXHybridPatchableAttr(x.ptr)
+Base.cconvert(::Type{CXHybridPatchableAttr}, x::AbstractHybridPatchableAttr) = x
 Base.unsafe_convert(::Type{CXIBActionAttr}, x::AbstractIBActionAttr) = CXIBActionAttr(x.ptr)
 Base.cconvert(::Type{CXIBActionAttr}, x::AbstractIBActionAttr) = x
 Base.unsafe_convert(::Type{CXIBOutletAttr}, x::AbstractIBOutletAttr) = CXIBOutletAttr(x.ptr)
@@ -465,6 +524,8 @@ Base.unsafe_convert(::Type{CXLeafAttr}, x::AbstractLeafAttr) = CXLeafAttr(x.ptr)
 Base.cconvert(::Type{CXLeafAttr}, x::AbstractLeafAttr) = x
 Base.unsafe_convert(::Type{CXLifetimeBoundAttr}, x::AbstractLifetimeBoundAttr) = CXLifetimeBoundAttr(x.ptr)
 Base.cconvert(::Type{CXLifetimeBoundAttr}, x::AbstractLifetimeBoundAttr) = x
+Base.unsafe_convert(::Type{CXLifetimeCaptureByAttr}, x::AbstractLifetimeCaptureByAttr) = CXLifetimeCaptureByAttr(x.ptr)
+Base.cconvert(::Type{CXLifetimeCaptureByAttr}, x::AbstractLifetimeCaptureByAttr) = x
 Base.unsafe_convert(::Type{CXLikelyAttr}, x::AbstractLikelyAttr) = CXLikelyAttr(x.ptr)
 Base.cconvert(::Type{CXLikelyAttr}, x::AbstractLikelyAttr) = x
 function Base.unsafe_convert(::Type{CXLoaderUninitializedAttr},
@@ -552,6 +613,8 @@ Base.unsafe_convert(::Type{CXNoBuiltinAttr}, x::AbstractNoBuiltinAttr) = CXNoBui
 Base.cconvert(::Type{CXNoBuiltinAttr}, x::AbstractNoBuiltinAttr) = x
 Base.unsafe_convert(::Type{CXNoCommonAttr}, x::AbstractNoCommonAttr) = CXNoCommonAttr(x.ptr)
 Base.cconvert(::Type{CXNoCommonAttr}, x::AbstractNoCommonAttr) = x
+Base.unsafe_convert(::Type{CXNoConvergentAttr}, x::AbstractNoConvergentAttr) = CXNoConvergentAttr(x.ptr)
+Base.cconvert(::Type{CXNoConvergentAttr}, x::AbstractNoConvergentAttr) = x
 Base.unsafe_convert(::Type{CXNoDebugAttr}, x::AbstractNoDebugAttr) = CXNoDebugAttr(x.ptr)
 Base.cconvert(::Type{CXNoDebugAttr}, x::AbstractNoDebugAttr) = x
 Base.unsafe_convert(::Type{CXNoDerefAttr}, x::AbstractNoDerefAttr) = CXNoDerefAttr(x.ptr)
@@ -583,6 +646,8 @@ Base.unsafe_convert(::Type{CXNoReturnAttr}, x::AbstractNoReturnAttr) = CXNoRetur
 Base.cconvert(::Type{CXNoReturnAttr}, x::AbstractNoReturnAttr) = x
 Base.unsafe_convert(::Type{CXNoSanitizeAttr}, x::AbstractNoSanitizeAttr) = CXNoSanitizeAttr(x.ptr)
 Base.cconvert(::Type{CXNoSanitizeAttr}, x::AbstractNoSanitizeAttr) = x
+Base.unsafe_convert(::Type{CXNoSpecializationsAttr}, x::AbstractNoSpecializationsAttr) = CXNoSpecializationsAttr(x.ptr)
+Base.cconvert(::Type{CXNoSpecializationsAttr}, x::AbstractNoSpecializationsAttr) = x
 function Base.unsafe_convert(::Type{CXNoSpeculativeLoadHardeningAttr},
                              x::AbstractNoSpeculativeLoadHardeningAttr)
     return CXNoSpeculativeLoadHardeningAttr(x.ptr)
@@ -599,16 +664,27 @@ end
 Base.cconvert(::Type{CXNoThreadSafetyAnalysisAttr}, x::AbstractNoThreadSafetyAnalysisAttr) = x
 Base.unsafe_convert(::Type{CXNoThrowAttr}, x::AbstractNoThrowAttr) = CXNoThrowAttr(x.ptr)
 Base.cconvert(::Type{CXNoThrowAttr}, x::AbstractNoThrowAttr) = x
+function Base.unsafe_convert(::Type{CXNoTrivialAutoVarInitAttr},
+                             x::AbstractNoTrivialAutoVarInitAttr)
+    return CXNoTrivialAutoVarInitAttr(x.ptr)
+end
+Base.cconvert(::Type{CXNoTrivialAutoVarInitAttr}, x::AbstractNoTrivialAutoVarInitAttr) = x
 Base.unsafe_convert(::Type{CXNoUniqueAddressAttr}, x::AbstractNoUniqueAddressAttr) = CXNoUniqueAddressAttr(x.ptr)
 Base.cconvert(::Type{CXNoUniqueAddressAttr}, x::AbstractNoUniqueAddressAttr) = x
 Base.unsafe_convert(::Type{CXNoUwtableAttr}, x::AbstractNoUwtableAttr) = CXNoUwtableAttr(x.ptr)
 Base.cconvert(::Type{CXNoUwtableAttr}, x::AbstractNoUwtableAttr) = x
+Base.unsafe_convert(::Type{CXNonAllocatingAttr}, x::AbstractNonAllocatingAttr) = CXNonAllocatingAttr(x.ptr)
+Base.cconvert(::Type{CXNonAllocatingAttr}, x::AbstractNonAllocatingAttr) = x
+Base.unsafe_convert(::Type{CXNonBlockingAttr}, x::AbstractNonBlockingAttr) = CXNonBlockingAttr(x.ptr)
+Base.cconvert(::Type{CXNonBlockingAttr}, x::AbstractNonBlockingAttr) = x
 Base.unsafe_convert(::Type{CXNonNullAttr}, x::AbstractNonNullAttr) = CXNonNullAttr(x.ptr)
 Base.cconvert(::Type{CXNonNullAttr}, x::AbstractNonNullAttr) = x
 Base.unsafe_convert(::Type{CXNotTailCalledAttr}, x::AbstractNotTailCalledAttr) = CXNotTailCalledAttr(x.ptr)
 Base.cconvert(::Type{CXNotTailCalledAttr}, x::AbstractNotTailCalledAttr) = x
 Base.unsafe_convert(::Type{CXOMPAllocateDeclAttr}, x::AbstractOMPAllocateDeclAttr) = CXOMPAllocateDeclAttr(x.ptr)
 Base.cconvert(::Type{CXOMPAllocateDeclAttr}, x::AbstractOMPAllocateDeclAttr) = x
+Base.unsafe_convert(::Type{CXOMPAssumeAttr}, x::AbstractOMPAssumeAttr) = CXOMPAssumeAttr(x.ptr)
+Base.cconvert(::Type{CXOMPAssumeAttr}, x::AbstractOMPAssumeAttr) = x
 Base.unsafe_convert(::Type{CXOMPCaptureKindAttr}, x::AbstractOMPCaptureKindAttr) = CXOMPCaptureKindAttr(x.ptr)
 Base.cconvert(::Type{CXOMPCaptureKindAttr}, x::AbstractOMPCaptureKindAttr) = x
 Base.unsafe_convert(::Type{CXOMPCaptureNoInitAttr}, x::AbstractOMPCaptureNoInitAttr) = CXOMPCaptureNoInitAttr(x.ptr)
@@ -848,6 +924,8 @@ Base.unsafe_convert(::Type{CXPreserveAllAttr}, x::AbstractPreserveAllAttr) = CXP
 Base.cconvert(::Type{CXPreserveAllAttr}, x::AbstractPreserveAllAttr) = x
 Base.unsafe_convert(::Type{CXPreserveMostAttr}, x::AbstractPreserveMostAttr) = CXPreserveMostAttr(x.ptr)
 Base.cconvert(::Type{CXPreserveMostAttr}, x::AbstractPreserveMostAttr) = x
+Base.unsafe_convert(::Type{CXPreserveNoneAttr}, x::AbstractPreserveNoneAttr) = CXPreserveNoneAttr(x.ptr)
+Base.cconvert(::Type{CXPreserveNoneAttr}, x::AbstractPreserveNoneAttr) = x
 Base.unsafe_convert(::Type{CXPtGuardedByAttr}, x::AbstractPtGuardedByAttr) = CXPtGuardedByAttr(x.ptr)
 Base.cconvert(::Type{CXPtGuardedByAttr}, x::AbstractPtGuardedByAttr) = x
 Base.unsafe_convert(::Type{CXPtGuardedVarAttr}, x::AbstractPtGuardedVarAttr) = CXPtGuardedVarAttr(x.ptr)
@@ -860,6 +938,8 @@ Base.unsafe_convert(::Type{CXPureAttr}, x::AbstractPureAttr) = CXPureAttr(x.ptr)
 Base.cconvert(::Type{CXPureAttr}, x::AbstractPureAttr) = x
 Base.unsafe_convert(::Type{CXRISCVInterruptAttr}, x::AbstractRISCVInterruptAttr) = CXRISCVInterruptAttr(x.ptr)
 Base.cconvert(::Type{CXRISCVInterruptAttr}, x::AbstractRISCVInterruptAttr) = x
+Base.unsafe_convert(::Type{CXRISCVVectorCCAttr}, x::AbstractRISCVVectorCCAttr) = CXRISCVVectorCCAttr(x.ptr)
+Base.cconvert(::Type{CXRISCVVectorCCAttr}, x::AbstractRISCVVectorCCAttr) = x
 Base.unsafe_convert(::Type{CXRandomizeLayoutAttr}, x::AbstractRandomizeLayoutAttr) = CXRandomizeLayoutAttr(x.ptr)
 Base.cconvert(::Type{CXRandomizeLayoutAttr}, x::AbstractRandomizeLayoutAttr) = x
 Base.unsafe_convert(::Type{CXReadOnlyPlacementAttr}, x::AbstractReadOnlyPlacementAttr) = CXReadOnlyPlacementAttr(x.ptr)
@@ -872,11 +952,6 @@ Base.unsafe_convert(::Type{CXReleaseCapabilityAttr}, x::AbstractReleaseCapabilit
 Base.cconvert(::Type{CXReleaseCapabilityAttr}, x::AbstractReleaseCapabilityAttr) = x
 Base.unsafe_convert(::Type{CXReleaseHandleAttr}, x::AbstractReleaseHandleAttr) = CXReleaseHandleAttr(x.ptr)
 Base.cconvert(::Type{CXReleaseHandleAttr}, x::AbstractReleaseHandleAttr) = x
-function Base.unsafe_convert(::Type{CXRenderScriptKernelAttr},
-                             x::AbstractRenderScriptKernelAttr)
-    return CXRenderScriptKernelAttr(x.ptr)
-end
-Base.cconvert(::Type{CXRenderScriptKernelAttr}, x::AbstractRenderScriptKernelAttr) = x
 Base.unsafe_convert(::Type{CXReqdWorkGroupSizeAttr}, x::AbstractReqdWorkGroupSizeAttr) = CXReqdWorkGroupSizeAttr(x.ptr)
 Base.cconvert(::Type{CXReqdWorkGroupSizeAttr}, x::AbstractReqdWorkGroupSizeAttr) = x
 function Base.unsafe_convert(::Type{CXRequiresCapabilityAttr},
@@ -898,6 +973,11 @@ Base.unsafe_convert(::Type{CXSPtrAttr}, x::AbstractSPtrAttr) = CXSPtrAttr(x.ptr)
 Base.cconvert(::Type{CXSPtrAttr}, x::AbstractSPtrAttr) = x
 Base.unsafe_convert(::Type{CXSYCLKernelAttr}, x::AbstractSYCLKernelAttr) = CXSYCLKernelAttr(x.ptr)
 Base.cconvert(::Type{CXSYCLKernelAttr}, x::AbstractSYCLKernelAttr) = x
+function Base.unsafe_convert(::Type{CXSYCLKernelEntryPointAttr},
+                             x::AbstractSYCLKernelEntryPointAttr)
+    return CXSYCLKernelEntryPointAttr(x.ptr)
+end
+Base.cconvert(::Type{CXSYCLKernelEntryPointAttr}, x::AbstractSYCLKernelEntryPointAttr) = x
 Base.unsafe_convert(::Type{CXSYCLSpecialClassAttr}, x::AbstractSYCLSpecialClassAttr) = CXSYCLSpecialClassAttr(x.ptr)
 Base.cconvert(::Type{CXSYCLSpecialClassAttr}, x::AbstractSYCLSpecialClassAttr) = x
 Base.unsafe_convert(::Type{CXScopedLockableAttr}, x::AbstractScopedLockableAttr) = CXScopedLockableAttr(x.ptr)
@@ -915,6 +995,10 @@ function Base.unsafe_convert(::Type{CXSharedTrylockFunctionAttr},
     return CXSharedTrylockFunctionAttr(x.ptr)
 end
 Base.cconvert(::Type{CXSharedTrylockFunctionAttr}, x::AbstractSharedTrylockFunctionAttr) = x
+Base.unsafe_convert(::Type{CXSizedByAttr}, x::AbstractSizedByAttr) = CXSizedByAttr(x.ptr)
+Base.cconvert(::Type{CXSizedByAttr}, x::AbstractSizedByAttr) = x
+Base.unsafe_convert(::Type{CXSizedByOrNullAttr}, x::AbstractSizedByOrNullAttr) = CXSizedByOrNullAttr(x.ptr)
+Base.cconvert(::Type{CXSizedByOrNullAttr}, x::AbstractSizedByOrNullAttr) = x
 function Base.unsafe_convert(::Type{CXSpeculativeLoadHardeningAttr},
                              x::AbstractSpeculativeLoadHardeningAttr)
     return CXSpeculativeLoadHardeningAttr(x.ptr)
@@ -1059,6 +1143,11 @@ Base.unsafe_convert(::Type{CXUsingIfExistsAttr}, x::AbstractUsingIfExistsAttr) =
 Base.cconvert(::Type{CXUsingIfExistsAttr}, x::AbstractUsingIfExistsAttr) = x
 Base.unsafe_convert(::Type{CXUuidAttr}, x::AbstractUuidAttr) = CXUuidAttr(x.ptr)
 Base.cconvert(::Type{CXUuidAttr}, x::AbstractUuidAttr) = x
+function Base.unsafe_convert(::Type{CXVTablePointerAuthenticationAttr},
+                             x::AbstractVTablePointerAuthenticationAttr)
+    return CXVTablePointerAuthenticationAttr(x.ptr)
+end
+Base.cconvert(::Type{CXVTablePointerAuthenticationAttr}, x::AbstractVTablePointerAuthenticationAttr) = x
 Base.unsafe_convert(::Type{CXVecReturnAttr}, x::AbstractVecReturnAttr) = CXVecReturnAttr(x.ptr)
 Base.cconvert(::Type{CXVecReturnAttr}, x::AbstractVecReturnAttr) = x
 Base.unsafe_convert(::Type{CXVecTypeHintAttr}, x::AbstractVecTypeHintAttr) = CXVecTypeHintAttr(x.ptr)
@@ -1857,6 +1946,8 @@ Base.unsafe_convert(::Type{CXMSDependentExistsStmt}, x::AbstractMSDependentExist
 Base.cconvert(::Type{CXMSDependentExistsStmt}, x::AbstractMSDependentExistsStmt) = x
 
 # core/AST/StmtCarriers.jl
+Base.unsafe_convert(::Type{CXArraySectionExpr}, x::AbstractArraySectionExpr) = CXArraySectionExpr(x.ptr)
+Base.cconvert(::Type{CXArraySectionExpr}, x::AbstractArraySectionExpr) = x
 Base.unsafe_convert(::Type{CXCStyleCastExpr}, x::AbstractCStyleCastExpr) = CXCStyleCastExpr(x.ptr)
 Base.cconvert(::Type{CXCStyleCastExpr}, x::AbstractCStyleCastExpr) = x
 Base.unsafe_convert(::Type{CXCXXParenListInitExpr}, x::AbstractCXXParenListInitExpr) = CXCXXParenListInitExpr(x.ptr)
@@ -1866,12 +1957,16 @@ function Base.unsafe_convert(::Type{CXConceptSpecializationExpr},
     return CXConceptSpecializationExpr(x.ptr)
 end
 Base.cconvert(::Type{CXConceptSpecializationExpr}, x::AbstractConceptSpecializationExpr) = x
+Base.unsafe_convert(::Type{CXEmbedExpr}, x::AbstractEmbedExpr) = CXEmbedExpr(x.ptr)
+Base.cconvert(::Type{CXEmbedExpr}, x::AbstractEmbedExpr) = x
 Base.unsafe_convert(::Type{CXExprWithCleanups}, x::AbstractExprWithCleanups) = CXExprWithCleanups(x.ptr)
 Base.cconvert(::Type{CXExprWithCleanups}, x::AbstractExprWithCleanups) = x
-Base.unsafe_convert(::Type{CXOMPArraySectionExpr}, x::AbstractOMPArraySectionExpr) = CXOMPArraySectionExpr(x.ptr)
-Base.cconvert(::Type{CXOMPArraySectionExpr}, x::AbstractOMPArraySectionExpr) = x
+Base.unsafe_convert(::Type{CXHLSLOutArgExpr}, x::AbstractHLSLOutArgExpr) = CXHLSLOutArgExpr(x.ptr)
+Base.cconvert(::Type{CXHLSLOutArgExpr}, x::AbstractHLSLOutArgExpr) = x
 Base.unsafe_convert(::Type{CXOMPArrayShapingExpr}, x::AbstractOMPArrayShapingExpr) = CXOMPArrayShapingExpr(x.ptr)
 Base.cconvert(::Type{CXOMPArrayShapingExpr}, x::AbstractOMPArrayShapingExpr) = x
+Base.unsafe_convert(::Type{CXOMPAssumeDirective}, x::AbstractOMPAssumeDirective) = CXOMPAssumeDirective(x.ptr)
+Base.cconvert(::Type{CXOMPAssumeDirective}, x::AbstractOMPAssumeDirective) = x
 Base.unsafe_convert(::Type{CXOMPAtomicDirective}, x::AbstractOMPAtomicDirective) = CXOMPAtomicDirective(x.ptr)
 Base.cconvert(::Type{CXOMPAtomicDirective}, x::AbstractOMPAtomicDirective) = x
 Base.unsafe_convert(::Type{CXOMPBarrierDirective}, x::AbstractOMPBarrierDirective) = CXOMPBarrierDirective(x.ptr)
@@ -1929,6 +2024,11 @@ function Base.unsafe_convert(::Type{CXOMPGenericLoopDirective},
     return CXOMPGenericLoopDirective(x.ptr)
 end
 Base.cconvert(::Type{CXOMPGenericLoopDirective}, x::AbstractOMPGenericLoopDirective) = x
+function Base.unsafe_convert(::Type{CXOMPInterchangeDirective},
+                             x::AbstractOMPInterchangeDirective)
+    return CXOMPInterchangeDirective(x.ptr)
+end
+Base.cconvert(::Type{CXOMPInterchangeDirective}, x::AbstractOMPInterchangeDirective) = x
 Base.unsafe_convert(::Type{CXOMPInteropDirective}, x::AbstractOMPInteropDirective) = CXOMPInteropDirective(x.ptr)
 Base.cconvert(::Type{CXOMPInteropDirective}, x::AbstractOMPInteropDirective) = x
 Base.unsafe_convert(::Type{CXOMPIteratorExpr}, x::AbstractOMPIteratorExpr) = CXOMPIteratorExpr(x.ptr)
@@ -2022,6 +2122,8 @@ function Base.unsafe_convert(::Type{CXOMPParallelSectionsDirective},
     return CXOMPParallelSectionsDirective(x.ptr)
 end
 Base.cconvert(::Type{CXOMPParallelSectionsDirective}, x::AbstractOMPParallelSectionsDirective) = x
+Base.unsafe_convert(::Type{CXOMPReverseDirective}, x::AbstractOMPReverseDirective) = CXOMPReverseDirective(x.ptr)
+Base.cconvert(::Type{CXOMPReverseDirective}, x::AbstractOMPReverseDirective) = x
 Base.unsafe_convert(::Type{CXOMPScanDirective}, x::AbstractOMPScanDirective) = CXOMPScanDirective(x.ptr)
 Base.cconvert(::Type{CXOMPScanDirective}, x::AbstractOMPScanDirective) = x
 Base.unsafe_convert(::Type{CXOMPScopeDirective}, x::AbstractOMPScopeDirective) = CXOMPScopeDirective(x.ptr)
@@ -2226,8 +2328,69 @@ Base.unsafe_convert(::Type{CXObjCSubscriptRefExpr}, x::AbstractObjCSubscriptRefE
 Base.cconvert(::Type{CXObjCSubscriptRefExpr}, x::AbstractObjCSubscriptRefExpr) = x
 Base.unsafe_convert(::Type{CXOffsetOfExpr}, x::AbstractOffsetOfExpr) = CXOffsetOfExpr(x.ptr)
 Base.cconvert(::Type{CXOffsetOfExpr}, x::AbstractOffsetOfExpr) = x
+function Base.unsafe_convert(::Type{CXOpenACCAssociatedStmtConstruct},
+                             x::AbstractOpenACCAssociatedStmtConstruct)
+    return CXOpenACCAssociatedStmtConstruct(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCAssociatedStmtConstruct}, x::AbstractOpenACCAssociatedStmtConstruct) = x
+function Base.unsafe_convert(::Type{CXOpenACCAsteriskSizeExpr},
+                             x::AbstractOpenACCAsteriskSizeExpr)
+    return CXOpenACCAsteriskSizeExpr(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCAsteriskSizeExpr}, x::AbstractOpenACCAsteriskSizeExpr) = x
+function Base.unsafe_convert(::Type{CXOpenACCCombinedConstruct},
+                             x::AbstractOpenACCCombinedConstruct)
+    return CXOpenACCCombinedConstruct(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCCombinedConstruct}, x::AbstractOpenACCCombinedConstruct) = x
+function Base.unsafe_convert(::Type{CXOpenACCComputeConstruct},
+                             x::AbstractOpenACCComputeConstruct)
+    return CXOpenACCComputeConstruct(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCComputeConstruct}, x::AbstractOpenACCComputeConstruct) = x
+Base.unsafe_convert(::Type{CXOpenACCConstructStmt}, x::AbstractOpenACCConstructStmt) = CXOpenACCConstructStmt(x.ptr)
+Base.cconvert(::Type{CXOpenACCConstructStmt}, x::AbstractOpenACCConstructStmt) = x
+Base.unsafe_convert(::Type{CXOpenACCDataConstruct}, x::AbstractOpenACCDataConstruct) = CXOpenACCDataConstruct(x.ptr)
+Base.cconvert(::Type{CXOpenACCDataConstruct}, x::AbstractOpenACCDataConstruct) = x
+function Base.unsafe_convert(::Type{CXOpenACCEnterDataConstruct},
+                             x::AbstractOpenACCEnterDataConstruct)
+    return CXOpenACCEnterDataConstruct(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCEnterDataConstruct}, x::AbstractOpenACCEnterDataConstruct) = x
+function Base.unsafe_convert(::Type{CXOpenACCExitDataConstruct},
+                             x::AbstractOpenACCExitDataConstruct)
+    return CXOpenACCExitDataConstruct(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCExitDataConstruct}, x::AbstractOpenACCExitDataConstruct) = x
+function Base.unsafe_convert(::Type{CXOpenACCHostDataConstruct},
+                             x::AbstractOpenACCHostDataConstruct)
+    return CXOpenACCHostDataConstruct(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCHostDataConstruct}, x::AbstractOpenACCHostDataConstruct) = x
+Base.unsafe_convert(::Type{CXOpenACCInitConstruct}, x::AbstractOpenACCInitConstruct) = CXOpenACCInitConstruct(x.ptr)
+Base.cconvert(::Type{CXOpenACCInitConstruct}, x::AbstractOpenACCInitConstruct) = x
+Base.unsafe_convert(::Type{CXOpenACCLoopConstruct}, x::AbstractOpenACCLoopConstruct) = CXOpenACCLoopConstruct(x.ptr)
+Base.cconvert(::Type{CXOpenACCLoopConstruct}, x::AbstractOpenACCLoopConstruct) = x
+Base.unsafe_convert(::Type{CXOpenACCSetConstruct}, x::AbstractOpenACCSetConstruct) = CXOpenACCSetConstruct(x.ptr)
+Base.cconvert(::Type{CXOpenACCSetConstruct}, x::AbstractOpenACCSetConstruct) = x
+function Base.unsafe_convert(::Type{CXOpenACCShutdownConstruct},
+                             x::AbstractOpenACCShutdownConstruct)
+    return CXOpenACCShutdownConstruct(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCShutdownConstruct}, x::AbstractOpenACCShutdownConstruct) = x
+function Base.unsafe_convert(::Type{CXOpenACCUpdateConstruct},
+                             x::AbstractOpenACCUpdateConstruct)
+    return CXOpenACCUpdateConstruct(x.ptr)
+end
+Base.cconvert(::Type{CXOpenACCUpdateConstruct}, x::AbstractOpenACCUpdateConstruct) = x
+Base.unsafe_convert(::Type{CXOpenACCWaitConstruct}, x::AbstractOpenACCWaitConstruct) = CXOpenACCWaitConstruct(x.ptr)
+Base.cconvert(::Type{CXOpenACCWaitConstruct}, x::AbstractOpenACCWaitConstruct) = x
+Base.unsafe_convert(::Type{CXPackIndexingExpr}, x::AbstractPackIndexingExpr) = CXPackIndexingExpr(x.ptr)
+Base.cconvert(::Type{CXPackIndexingExpr}, x::AbstractPackIndexingExpr) = x
 Base.unsafe_convert(::Type{CXRequiresExpr}, x::AbstractRequiresExpr) = CXRequiresExpr(x.ptr)
 Base.cconvert(::Type{CXRequiresExpr}, x::AbstractRequiresExpr) = x
+Base.unsafe_convert(::Type{CXSYCLKernelCallStmt}, x::AbstractSYCLKernelCallStmt) = CXSYCLKernelCallStmt(x.ptr)
+Base.cconvert(::Type{CXSYCLKernelCallStmt}, x::AbstractSYCLKernelCallStmt) = x
 function Base.unsafe_convert(::Type{CXSYCLUniqueStableNameExpr},
                              x::AbstractSYCLUniqueStableNameExpr)
     return CXSYCLUniqueStableNameExpr(x.ptr)

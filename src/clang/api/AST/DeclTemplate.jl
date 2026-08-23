@@ -583,16 +583,6 @@ function getTemplateInstantiationArgs(x::AbstractClassTemplateSpecializationDecl
     return TemplateArgumentList(clang_ClassTemplateSpecializationDecl_getTemplateInstantiationArgs(x))
 end
 
-"""
-    getTypeAsWritten(x::AbstractClassTemplateSpecializationDecl) -> TypeSourceInfo
-Return the specialization type as written by the user. The carrier holds NULL
-when the type was not so written (e.g. an implicit instantiation).
-"""
-function getTypeAsWritten(x::AbstractClassTemplateSpecializationDecl)
-    @check_ptrs x
-    return TypeSourceInfo(clang_ClassTemplateSpecializationDecl_getTypeAsWritten(x))
-end
-
 function getExternLoc(x::AbstractClassTemplateSpecializationDecl)
     @check_ptrs x
     return SourceLocation(clang_ClassTemplateSpecializationDecl_getExternLoc(x))
@@ -623,16 +613,6 @@ Return a borrowed carrier of the deduced instantiation arguments (see the
 function getTemplateInstantiationArgs(x::AbstractVarTemplateSpecializationDecl)
     @check_ptrs x
     return TemplateArgumentList(clang_VarTemplateSpecializationDecl_getTemplateInstantiationArgs(x))
-end
-
-"""
-    getTypeAsWritten(x::AbstractVarTemplateSpecializationDecl) -> TypeSourceInfo
-Return the specialization type as written by the user. The carrier holds NULL
-when the type was not so written.
-"""
-function getTypeAsWritten(x::AbstractVarTemplateSpecializationDecl)
-    @check_ptrs x
-    return TypeSourceInfo(clang_VarTemplateSpecializationDecl_getTypeAsWritten(x))
 end
 
 function getSourceRange(x::AbstractVarTemplateSpecializationDecl)
@@ -1693,17 +1673,6 @@ function getSourceRange(x::AbstractBuiltinTemplateDecl)
     return SourceRange(SourceLocation(r.B), SourceLocation(r.E))
 end
 
-# ClassTemplateSpecializationDecl
-"""
-    setTypeAsWritten(x::AbstractClassTemplateSpecializationDecl, tsi::TypeSourceInfo)
-Record the specialization type as it was written by the user. The
-explicit-specialization info block is allocated in the ASTContext on first use.
-"""
-function setTypeAsWritten(x::AbstractClassTemplateSpecializationDecl, tsi::TypeSourceInfo)
-    @check_ptrs x tsi
-    return clang_ClassTemplateSpecializationDecl_setTypeAsWritten(x, tsi)
-end
-
 # ClassTemplatePartialSpecializationDecl
 """
     getAssociatedConstraints(x::AbstractClassTemplatePartialSpecializationDecl) -> Vector{Expr_}
@@ -1757,17 +1726,6 @@ function findPartialSpecInstantiatedFromMember(x::AbstractClassTemplateDecl, d::
     @assert all(p -> getInstantiatedFromMember(p).ptr != C_NULL, getPartialSpecializations(x)) msg
     p = clang_ClassTemplateDecl_findPartialSpecInstantiatedFromMember(x, d)
     return ClassTemplatePartialSpecializationDecl(p)
-end
-
-# VarTemplateSpecializationDecl
-"""
-    setTypeAsWritten(x::AbstractVarTemplateSpecializationDecl, tsi::TypeSourceInfo)
-Record the specialization type as it was written by the user. The
-explicit-specialization info block is allocated in the ASTContext on first use.
-"""
-function setTypeAsWritten(x::AbstractVarTemplateSpecializationDecl, tsi::TypeSourceInfo)
-    @check_ptrs x tsi
-    return clang_VarTemplateSpecializationDecl_setTypeAsWritten(x, tsi)
 end
 
 # VarTemplatePartialSpecializationDecl
