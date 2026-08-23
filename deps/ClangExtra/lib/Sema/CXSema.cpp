@@ -4669,11 +4669,13 @@ CXQualType clang_Sema_CheckVectorCompareOperands(CXSema S, CXExpr *LHS, CXExpr *
 }
 
 CXQualType clang_Sema_CheckVectorLogicalOperands(CXSema S, CXExpr *LHS, CXExpr *RHS,
-                                                 CXSourceLocation_ Loc) {
+                                                 CXSourceLocation_ Loc,
+                                                 CXBinaryOperatorKind Opc) {
   clang::ExprResult L = reinterpret_cast<clang::Expr *>(*LHS);
   clang::ExprResult R = reinterpret_cast<clang::Expr *>(*RHS);
   clang::QualType T = reinterpret_cast<clang::Sema *>(S)->CheckVectorLogicalOperands(
-      L, R, clang::SourceLocation::getFromPtrEncoding(Loc), clang::BO_LAnd);
+      L, R, clang::SourceLocation::getFromPtrEncoding(Loc),
+      static_cast<clang::BinaryOperatorKind>(Opc));
   *LHS = L.isInvalid() ? nullptr : reinterpret_cast<CXExpr>(L.get());
   *RHS = R.isInvalid() ? nullptr : reinterpret_cast<CXExpr>(R.get());
   return reinterpret_cast<CXQualType>(T.getAsOpaquePtr());
@@ -5048,11 +5050,12 @@ unsigned clang_Sema_getCurFPFeatures(CXSema S) {
 }
 
 bool clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(
-    CXSema S, CXTemplateParameterList PParam, CXTemplateDecl AArg,
+    CXSema S, CXTemplateParameterList PParam, CXTemplateDecl PArg, CXTemplateDecl AArg,
     CXSourceLocation_ Loc) {
   return reinterpret_cast<clang::Sema *>(S)->isTemplateTemplateParameterAtLeastAsSpecializedAs(
       reinterpret_cast<clang::TemplateParameterList *>(PParam),
-      /*PArg=*/nullptr, reinterpret_cast<clang::TemplateDecl *>(AArg), clang::DefaultArguments(),
+      reinterpret_cast<clang::TemplateDecl *>(PArg),
+      reinterpret_cast<clang::TemplateDecl *>(AArg), clang::DefaultArguments(),
       clang::SourceLocation::getFromPtrEncoding(Loc), /*PartialOrdering=*/false,
       /*MatchedPackOnParmToNonPackOnArg=*/nullptr);
 }

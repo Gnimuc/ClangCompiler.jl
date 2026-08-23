@@ -2014,8 +2014,9 @@ end
 
 """
     CheckForConstantInitializer(x::AbstractSema, e::AbstractExpr, t::QualType) -> Bool
-Return `true` when `e` is not a valid constant initializer for an object of type `t`. The
-subexpression that made it non-constant is diagnosed.
+Return `true` when `e` is not a valid constant initializer. The subexpression that made it
+non-constant is diagnosed. `t` is accepted and ignored: LLVM 20 dropped the type parameter
+from `Sema::CheckForConstantInitializer`. It must still be non-null, which this wrapper checks.
 """
 function CheckForConstantInitializer(x::AbstractSema, e::AbstractExpr, t::QualType)
     @check_ptrs x e t
@@ -7187,20 +7188,24 @@ function CheckVectorCompareOperands(x::AbstractSema, lhs::AbstractExpr, rhs::Abs
 end
 
 """
-    CheckVectorLogicalOperands(x::AbstractSema, lhs, rhs, loc::SourceLocation) -> Union{Nothing,Tuple{QualType,Expr_,Expr_}}
+    CheckVectorLogicalOperands(x::AbstractSema, lhs, rhs, loc::SourceLocation, opc::CXBinaryOperatorKind=CXBinaryOperatorKind_BO_LAnd) -> Union{Nothing,Tuple{QualType,Expr_,Expr_}}
 Type-check `&&` or `||` over vector operands, returning the signed integer vector type the
 operator yields together with the two converted operands.
+
+`opc` says which operator is being checked — `CXBinaryOperatorKind_BO_LAnd` for `&&`,
+`CXBinaryOperatorKind_BO_LOr` for `||`.
 
 One side may be a scalar of the element type, so at least one operand must have vector type.
 Returns `nothing` when the operands are ill-formed, which is diagnosed at `loc`.
 """
-function CheckVectorLogicalOperands(x::AbstractSema, lhs::AbstractExpr, rhs::AbstractExpr, loc::SourceLocation)
+function CheckVectorLogicalOperands(x::AbstractSema, lhs::AbstractExpr, rhs::AbstractExpr, loc::SourceLocation, opc::CXBinaryOperatorKind=CXBinaryOperatorKind_BO_LAnd)
     @check_ptrs x lhs rhs
     vec = isVectorType(expr_type_ptr(lhs)) || isVectorType(expr_type_ptr(rhs))
     @assert vec "at least one operand must have vector type"
+    @assert opc == CXBinaryOperatorKind_BO_LAnd || opc == CXBinaryOperatorKind_BO_LOr "the opcode must be `&&` or `||`"
     lhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, lhs))
     rhs_io = Ref{CXExpr}(Base.unsafe_convert(CXExpr, rhs))
-    t = clang_Sema_CheckVectorLogicalOperands(x, lhs_io, rhs_io, loc)
+    t = clang_Sema_CheckVectorLogicalOperands(x, lhs_io, rhs_io, loc, opc)
     (t == C_NULL || lhs_io[] == C_NULL || rhs_io[] == C_NULL) && return nothing
     return QualType(t), Expr_(lhs_io[]), Expr_(rhs_io[])
 end
@@ -8152,14 +8157,18 @@ end
 
 """
     isTemplateTemplateParameterAtLeastAsSpecializedAs(x::AbstractSema,
-        pparam::TemplateParameterList, aarg::AbstractTemplateDecl,
-        loc::SourceLocation) -> Bool
+        pparam::TemplateParameterList, parg::AbstractTemplateDecl,
+        aarg::AbstractTemplateDecl, loc::SourceLocation) -> Bool
 Return whether the parameter list `pparam` is at least as specialized as the template `aarg`,
 the partial-ordering test for template template parameters.
+
+`parg` is the template the parameter side names, and `pparam` must be its own parameter list,
+`getTemplateParameters(parg)` — clang carries `parg` as the entity of the instantiation
+context the check runs in, so it has to be a real declaration.
 """
-function isTemplateTemplateParameterAtLeastAsSpecializedAs(x::AbstractSema, pparam::TemplateParameterList, aarg::AbstractTemplateDecl, loc::SourceLocation)
-    @check_ptrs x pparam aarg
-    return clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(x, pparam, aarg, loc)
+function isTemplateTemplateParameterAtLeastAsSpecializedAs(x::AbstractSema, pparam::TemplateParameterList, parg::AbstractTemplateDecl, aarg::AbstractTemplateDecl, loc::SourceLocation)
+    @check_ptrs x pparam parg aarg
+    return clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(x, pparam, parg, aarg, loc)
 end
 
 """

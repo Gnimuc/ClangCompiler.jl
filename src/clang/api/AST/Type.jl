@@ -50,8 +50,15 @@ Return the kind of cleanup objects of this type require, or
 """
 isDestructedType(x::QualType) = clang_QualType_isDestructedType(x)
 
-isMoreQualifiedThan(x::QualType, other::QualType, ctx::ASTContext) = clang_QualType_isMoreQualifiedThan(x, other, ctx)
-isAtLeastAsQualifiedAs(x::QualType, other::QualType, ctx::ASTContext) = clang_QualType_isAtLeastAsQualifiedAs(x, other, ctx)
+function isMoreQualifiedThan(x::QualType, other::QualType, ctx::ASTContext)
+    @check_ptrs ctx
+    return clang_QualType_isMoreQualifiedThan(x, other, ctx)
+end
+
+function isAtLeastAsQualifiedAs(x::QualType, other::QualType, ctx::ASTContext)
+    @check_ptrs ctx
+    return clang_QualType_isAtLeastAsQualifiedAs(x, other, ctx)
+end
 
 getNonReferenceType(x::QualType) = QualType(clang_QualType_getNonReferenceType(x))
 IgnoreParens(x::QualType) = QualType(clang_QualType_IgnoreParens(x))
@@ -2405,7 +2412,10 @@ hasQualifiers(quals::Integer) = clang_Qualifiers_hasQualifiers(quals)
 Return whether an object qualified with `other` can be used safely where `quals`
 is expected: CVR qualifiers may subset, ObjC lifetime must match exactly.
 """
-compatiblyIncludes(quals::Integer, other::Integer, ctx::ASTContext) = clang_Qualifiers_compatiblyIncludes(quals, other, ctx)
+function compatiblyIncludes(quals::Integer, other::Integer, ctx::ASTContext)
+    @check_ptrs ctx
+    return clang_Qualifiers_compatiblyIncludes(quals, other, ctx)
+end
 
 """
     isStrictSupersetOf(quals::Integer, other::Integer) -> Bool

@@ -1283,6 +1283,8 @@ Base.unsafe_convert(::Type{CXNamedDecl}, x::AbstractNamedDecl) = CXNamedDecl(x.p
 Base.cconvert(::Type{CXNamedDecl}, x::AbstractNamedDecl) = x
 Base.unsafe_convert(::Type{CXNamespaceDecl}, x::AbstractNamespaceDecl) = CXNamespaceDecl(x.ptr)
 Base.cconvert(::Type{CXNamespaceDecl}, x::AbstractNamespaceDecl) = x
+Base.unsafe_convert(::Type{CXOutlinedFunctionDecl}, x::AbstractOutlinedFunctionDecl) = CXOutlinedFunctionDecl(x.ptr)
+Base.cconvert(::Type{CXOutlinedFunctionDecl}, x::AbstractOutlinedFunctionDecl) = x
 Base.unsafe_convert(::Type{CXParmVarDecl}, x::AbstractParmVarDecl) = CXParmVarDecl(x.ptr)
 Base.cconvert(::Type{CXParmVarDecl}, x::AbstractParmVarDecl) = x
 Base.unsafe_convert(::Type{CXPragmaCommentDecl}, x::AbstractPragmaCommentDecl) = CXPragmaCommentDecl(x.ptr)
@@ -2449,6 +2451,8 @@ Base.cconvert(::Type{CXTemplateName}, x::AbstractTemplateName) = x
 # core/AST/Type.jl
 Base.unsafe_convert(::Type{CXAdjustedType}, x::AbstractAdjustedType) = CXAdjustedType(x.ptr)
 Base.cconvert(::Type{CXAdjustedType}, x::AbstractAdjustedType) = x
+Base.unsafe_convert(::Type{CXArrayParameterType}, x::AbstractArrayParameterType) = CXArrayParameterType(x.ptr)
+Base.cconvert(::Type{CXArrayParameterType}, x::AbstractArrayParameterType) = x
 Base.unsafe_convert(::Type{CXArrayType}, x::AbstractArrayType) = CXArrayType(x.ptr)
 Base.cconvert(::Type{CXArrayType}, x::AbstractArrayType) = x
 Base.unsafe_convert(::Type{CXAtomicType}, x::AbstractAtomicType) = CXAtomicType(x.ptr)
@@ -2461,12 +2465,16 @@ Base.unsafe_convert(::Type{CXBitIntType}, x::AbstractBitIntType) = CXBitIntType(
 Base.cconvert(::Type{CXBitIntType}, x::AbstractBitIntType) = x
 Base.unsafe_convert(::Type{CXBlockPointerType}, x::AbstractBlockPointerType) = CXBlockPointerType(x.ptr)
 Base.cconvert(::Type{CXBlockPointerType}, x::AbstractBlockPointerType) = x
+Base.unsafe_convert(::Type{CXBoundsAttributedType}, x::AbstractBoundsAttributedType) = CXBoundsAttributedType(x.ptr)
+Base.cconvert(::Type{CXBoundsAttributedType}, x::AbstractBoundsAttributedType) = x
 Base.unsafe_convert(::Type{CXComplexType}, x::AbstractComplexType) = CXComplexType(x.ptr)
 Base.cconvert(::Type{CXComplexType}, x::AbstractComplexType) = x
 Base.unsafe_convert(::Type{CXConstantArrayType}, x::AbstractConstantArrayType) = CXConstantArrayType(x.ptr)
 Base.cconvert(::Type{CXConstantArrayType}, x::AbstractConstantArrayType) = x
 Base.unsafe_convert(::Type{CXConstantMatrixType}, x::AbstractConstantMatrixType) = CXConstantMatrixType(x.ptr)
 Base.cconvert(::Type{CXConstantMatrixType}, x::AbstractConstantMatrixType) = x
+Base.unsafe_convert(::Type{CXCountAttributedType}, x::AbstractCountAttributedType) = CXCountAttributedType(x.ptr)
+Base.cconvert(::Type{CXCountAttributedType}, x::AbstractCountAttributedType) = x
 Base.unsafe_convert(::Type{CXDecayedType}, x::AbstractDecayedType) = CXDecayedType(x.ptr)
 Base.cconvert(::Type{CXDecayedType}, x::AbstractDecayedType) = x
 Base.unsafe_convert(::Type{CXDecltypeType}, x::AbstractDecltypeType) = CXDecltypeType(x.ptr)
@@ -2521,6 +2529,11 @@ Base.unsafe_convert(::Type{CXFunctionProtoType}, x::AbstractFunctionProtoType) =
 Base.cconvert(::Type{CXFunctionProtoType}, x::AbstractFunctionProtoType) = x
 Base.unsafe_convert(::Type{CXFunctionType}, x::AbstractFunctionType) = CXFunctionType(x.ptr)
 Base.cconvert(::Type{CXFunctionType}, x::AbstractFunctionType) = x
+function Base.unsafe_convert(::Type{CXHLSLAttributedResourceType},
+                             x::AbstractHLSLAttributedResourceType)
+    return CXHLSLAttributedResourceType(x.ptr)
+end
+Base.cconvert(::Type{CXHLSLAttributedResourceType}, x::AbstractHLSLAttributedResourceType) = x
 Base.unsafe_convert(::Type{CXIncompleteArrayType}, x::AbstractIncompleteArrayType) = CXIncompleteArrayType(x.ptr)
 Base.cconvert(::Type{CXIncompleteArrayType}, x::AbstractIncompleteArrayType) = x
 Base.unsafe_convert(::Type{CXInjectedClassNameType}, x::AbstractInjectedClassNameType) = CXInjectedClassNameType(x.ptr)
@@ -2543,6 +2556,8 @@ Base.unsafe_convert(::Type{CXObjCTypeParamType}, x::AbstractObjCTypeParamType) =
 Base.cconvert(::Type{CXObjCTypeParamType}, x::AbstractObjCTypeParamType) = x
 Base.unsafe_convert(::Type{CXPackExpansionType}, x::AbstractPackExpansionType) = CXPackExpansionType(x.ptr)
 Base.cconvert(::Type{CXPackExpansionType}, x::AbstractPackExpansionType) = x
+Base.unsafe_convert(::Type{CXPackIndexingType}, x::AbstractPackIndexingType) = CXPackIndexingType(x.ptr)
+Base.cconvert(::Type{CXPackIndexingType}, x::AbstractPackIndexingType) = x
 Base.unsafe_convert(::Type{CXParenType}, x::AbstractParenType) = CXParenType(x.ptr)
 Base.cconvert(::Type{CXParenType}, x::AbstractParenType) = x
 Base.unsafe_convert(::Type{CXPipeType}, x::AbstractPipeType) = CXPipeType(x.ptr)

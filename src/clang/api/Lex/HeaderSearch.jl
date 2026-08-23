@@ -741,8 +741,8 @@ end
 
 """
     getFramework(x::AbstractHeaderFileInfo) -> String
-Return the name of the framework the header came from, or an empty string when it did not
-come from a framework include.
+Always `""`. LLVM 20 dropped the `HeaderFileInfo::Framework` field, so the shim has no member
+to read; the C name is kept so the binding still resolves.
 """
 function getFramework(x::AbstractHeaderFileInfo)
     @check_ptrs x

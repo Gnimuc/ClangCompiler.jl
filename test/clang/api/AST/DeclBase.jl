@@ -152,7 +152,6 @@ end
 
     # deserialization identity of a decl parsed from source
     @test CC.isFromASTFile(nd) == false
-    @test CC.isDiscardedInGlobalModuleFragment(nd) == false
     @test !(CC.shouldSkipCheckingODR(nd))
     @test CC.getGlobalID(nd) == 0
     @test CC.getOwningModuleID(nd) == 0

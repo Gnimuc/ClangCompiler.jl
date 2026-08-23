@@ -460,15 +460,10 @@ end
     @test CC.checkArithmeticFenceSupported(ti) == true
     @test CC.allowDebugInfoForExternalRef(ti) == false
     @test CC.getMaxOpenCLWorkGroupSize(ti) == 0x00000400
-    # not host-decided: an interpreter built from an empty command line never targets
-    # RenderScript on any of the CI platforms
-    @test CC.isRenderScriptTarget(ti) == false
 
     # Feature-name queries are total for any string.
     @test CC.doesFeatureAffectCodeGen(ti, "sse2") == true
     @test CC.isReadOnlyFeature(ti, "sse2") == false
-    @test CC.getFeatureDependencies(ti, "sse2") == ""
-    @test isempty(CC.getFeatureDependencies(ti, "no-such-feature"))
     @test CC.isBranchProtectionSupportedArch(ti, "x86-64") == false
 
     # __builtin_cpu_supports / __builtin_cpu_is / cpu_dispatch argument validation: these
@@ -478,15 +473,6 @@ end
     @test CC.validateCPUSpecificCPUDispatch(ti, "generic") == true
     @test CC.validateCpuSupports(ti, "definitely-not-a-feature") == false
     @test CC.validateCpuIs(ti, "definitely-not-a-cpu") == false
-    @test CC.multiVersionFeatureCost(ti) == 0x00000000
-
-    # multiVersionSortPriority indexes a target-specific priority table, so it is only
-    # defined for a name the same target already validated -- clang itself only reaches it
-    # from strings that passed validateCpuSupports. On a target with no multiversioning
-    # support nothing validates and the loop body simply does not run.
-    for f in filter(n -> CC.validateCpuSupports(ti, n), ["sse2", "avx", "neon"])
-        @test CC.multiVersionSortPriority(ti, f) isa Integer  # shape-only: the target decides it (CPU feature priorities are per-target tables)
-    end
 
     dispose(I)
 end

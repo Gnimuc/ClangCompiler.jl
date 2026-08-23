@@ -42,6 +42,18 @@ function RequiresExprBodyDecl(x::AbstractDecl)
     return RequiresExprBodyDecl(p)
 end
 
+function isOutlinedFunctionDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isOutlinedFunctionDecl(x)
+end
+
+function OutlinedFunctionDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToOutlinedFunctionDecl(x)
+    p == C_NULL && _cast_failed(OutlinedFunctionDecl, x)
+    return OutlinedFunctionDecl(p)
+end
+
 function isLinkageSpecDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isLinkageSpecDecl(x)

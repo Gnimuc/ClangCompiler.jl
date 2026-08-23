@@ -7,13 +7,24 @@
 
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
 
-// LLVM 20 moved in-flight diagnostic state from DiagnosticsEngine onto
-// DiagnosticBuilder. Track builders created through this C API so the
-// engine-level predicates still answer.
-static llvm::DenseMap<clang::DiagnosticsEngine *, clang::DiagnosticBuilder *>
-    InFlight;
+// clang keeps in-flight diagnostic state on the DiagnosticBuilder, so the engine-level
+// predicates answer from the builders this C API created. The key is the builder because
+// this library owns every one of them and deletes it in clang_DiagnosticBuilder_dispose:
+// no entry can outlive an object whose lifetime this library controls, which bounds the
+// map by the number of live builders and keeps a freed pointer out of the key.
+static llvm::DenseMap<clang::DiagnosticBuilder *, clang::DiagnosticsEngine *> InFlight;
+static std::mutex InFlightMutex;
+
+// Returns the live builder reporting to Engine, or nullptr. Callers hold InFlightMutex.
+static clang::DiagnosticBuilder *lookupInFlight(clang::DiagnosticsEngine *Engine) {
+  for (const auto &Entry : InFlight)
+    if (Entry.second == Engine)
+      return Entry.first;
+  return nullptr;
+}
 
 // DiagnosticConsumer
 unsigned clang_DiagnosticConsumer_getNumErrors(CXDiagnosticConsumer DC) {
@@ -370,8 +381,8 @@ void clang_DiagnosticsEngine_Report(CXDiagnosticsEngine DE, CXSourceLocation_ Lo
 }
 
 bool clang_DiagnosticsEngine_isDiagnosticInFlight(CXDiagnosticsEngine DE) {
-  return InFlight.lookup(reinterpret_cast<clang::DiagnosticsEngine *>(DE)) !=
-         nullptr;
+  std::lock_guard<std::mutex> Lock(InFlightMutex);
+  return lookupInFlight(reinterpret_cast<clang::DiagnosticsEngine *>(DE)) != nullptr;
 }
 
 void clang_DiagnosticsEngine_SetDelayedDiagnostic(CXDiagnosticsEngine DE,
@@ -393,9 +404,12 @@ void clang_DiagnosticsEngine_Clear(CXDiagnosticsEngine DE) {
 }
 
 const char *clang_DiagnosticsEngine_getFlagValue(CXDiagnosticsEngine DE) {
-  static std::string Scratch;
+  // Thread-local: the caller reads the returned pointer after this function has released
+  // InFlightMutex, so one shared buffer could be overwritten under it.
+  static thread_local std::string Scratch;
   auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
-  auto *Builder = InFlight.lookup(Engine);
+  std::lock_guard<std::mutex> Lock(InFlightMutex);
+  auto *Builder = lookupInFlight(Engine);
   if (!Builder) {
     Scratch.clear();
     return Scratch.c_str();
@@ -429,7 +443,14 @@ CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
 }
 
 void clang_DiagnosticsEngine_dispose(CXDiagnosticsEngine DE) {
-  InFlight.erase(reinterpret_cast<clang::DiagnosticsEngine *>(DE));
+  {
+    // A builder outliving its engine would leave this address behind as a value, and a
+    // later engine allocated over it would then answer as though that builder were its own.
+    std::lock_guard<std::mutex> Lock(InFlightMutex);
+    auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
+    while (auto *Builder = lookupInFlight(Engine))
+      InFlight.erase(Builder);
+  }
   // Balances the Retain in clang_DiagnosticsEngine_create; the last Release deletes.
   reinterpret_cast<clang::DiagnosticsEngine *>(DE)->Release();
 }
@@ -638,18 +659,20 @@ CXDiagnosticBuilder clang_DiagnosticBuilder_create(CXDiagnosticsEngine DE,
   auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
   auto DB = std::make_unique<clang::DiagnosticBuilder>(
       Engine->Report(clang::SourceLocation::getFromPtrEncoding(Loc), DiagID));
-  InFlight[Engine] = DB.get();
+  {
+    std::lock_guard<std::mutex> Lock(InFlightMutex);
+    InFlight[DB.get()] = Engine;
+  }
   return reinterpret_cast<CXDiagnosticBuilder>(DB.release());
 }
 
 void clang_DiagnosticBuilder_dispose(CXDiagnosticBuilder DB) {
   auto *B = reinterpret_cast<clang::DiagnosticBuilder *>(DB);
-  for (auto It = InFlight.begin(), E = InFlight.end(); It != E; ++It) {
-    if (It->second == B) {
-      InFlight.erase(It);
-      break;
-    }
+  {
+    std::lock_guard<std::mutex> Lock(InFlightMutex);
+    InFlight.erase(B);
   }
+  // Outside the lock: ~DiagnosticBuilder emits to the client, which can re-enter this API.
   delete B;
 }
 
@@ -689,7 +712,8 @@ void clang_StreamingDiagnostic_AddFixItHint(CXStreamingDiagnostic SD, CXFixItHin
 // Diagnostic
 CXDiagnostic_ clang_Diagnostic_create(CXDiagnosticsEngine DE) {
   auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
-  if (auto *Builder = InFlight.lookup(Engine)) {
+  std::lock_guard<std::mutex> Lock(InFlightMutex);
+  if (auto *Builder = lookupInFlight(Engine)) {
     return reinterpret_cast<CXDiagnostic_>(new clang::Diagnostic(Engine, *Builder));
   }
   static clang::DiagnosticStorage EmptyStorage;

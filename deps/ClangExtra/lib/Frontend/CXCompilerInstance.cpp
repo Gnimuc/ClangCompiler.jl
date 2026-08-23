@@ -9,18 +9,30 @@
 #include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Preprocessor.h"
-#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/Support/Timer.h"
 #include "llvm/Support/VirtualFileSystem.h"
 #include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Serialization/ASTReader.h"
 
-// LLVM 20 dropped CompilerInstance::hasFrontendTimer; FrontendTimer remains a
-// private unique_ptr written only by createFrontendTimer. Reconstruct the C
-// predicate by recording instances that went through this C API. The single
-// client always creates the timer this way; Interpreter-owned instances are
-// not entered unless the Julia wrapper calls createFrontendTimer on them.
-static llvm::SmallPtrSet<clang::CompilerInstance *, 4> FrontendTimerOwners;
+// clang::CompilerInstance has no public predicate for its frontend timer, and
+// FrontendTimer is a private unique_ptr written only by createFrontendTimer.
+// Explicit instantiation is exempt from access checking ([temp.spec]p6), so the
+// member itself answers the predicate: no side table, nothing that can go stale,
+// and a member rename on an LLVM bump is a compile error here rather than a
+// wrong answer.
+namespace {
+struct FrontendTimerMember {
+  using type = std::unique_ptr<llvm::Timer> clang::CompilerInstance::*;
+  friend type get(FrontendTimerMember);
+};
+
+template <typename Tag, typename Tag::type Member> struct StealMember {
+  friend typename Tag::type get(Tag) { return Member; }
+};
+
+template struct StealMember<FrontendTimerMember,
+                            &clang::CompilerInstance::FrontendTimer>;
+} // namespace
 
 CXCompilerInstance clang_CompilerInstance_create(void) {
   auto CI = std::make_unique<clang::CompilerInstance>();
@@ -28,9 +40,7 @@ CXCompilerInstance clang_CompilerInstance_create(void) {
 }
 
 void clang_CompilerInstance_dispose(CXCompilerInstance CI) {
-  auto *Instance = reinterpret_cast<clang::CompilerInstance *>(CI);
-  FrontendTimerOwners.erase(Instance);
-  delete Instance;
+  delete reinterpret_cast<clang::CompilerInstance *>(CI);
 }
 
 // Diagnostics
@@ -375,8 +385,8 @@ void clang_CompilerInstance_LoadRequestedPlugins(CXCompilerInstance CI) {
 
 // Frontend timer
 bool clang_CompilerInstance_hasFrontendTimer(CXCompilerInstance CI) {
-  return FrontendTimerOwners.contains(
-      reinterpret_cast<clang::CompilerInstance *>(CI));
+  return static_cast<bool>(reinterpret_cast<clang::CompilerInstance *>(CI)->*
+                           get(FrontendTimerMember{}));
 }
 
 CXString clang_CompilerInstance_getFrontendTimerName(CXCompilerInstance CI) {
@@ -389,9 +399,7 @@ bool clang_CompilerInstance_isFrontendTimerRunning(CXCompilerInstance CI) {
 }
 
 void clang_CompilerInstance_createFrontendTimer(CXCompilerInstance CI) {
-  auto *Instance = reinterpret_cast<clang::CompilerInstance *>(CI);
-  Instance->createFrontendTimer();
-  FrontendTimerOwners.insert(Instance);
+  reinterpret_cast<clang::CompilerInstance *>(CI)->createFrontendTimer();
 }
 
 // Ownership transfer

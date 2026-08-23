@@ -6,6 +6,7 @@ const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_TranslationUnit => TranslationUnitDecl,
     LibClangEx.CXDeclKind_TopLevelStmt => TopLevelStmtDecl,
     LibClangEx.CXDeclKind_RequiresExprBody => RequiresExprBodyDecl,
+    LibClangEx.CXDeclKind_OutlinedFunction => OutlinedFunctionDecl,
     LibClangEx.CXDeclKind_LinkageSpec => LinkageSpecDecl,
     LibClangEx.CXDeclKind_ExternCContext => ExternCContextDecl,
     LibClangEx.CXDeclKind_Export => ExportDecl,

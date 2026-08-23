@@ -229,6 +229,9 @@ void clang_DiagnosticsEngine_SetDelayedDiagnostic(CXDiagnosticsEngine DE, unsign
                                                   const char *Arg1, const char *Arg2,
                                                   const char *Arg3);
 
+// LLVM 20 dropped DiagnosticsEngine::Clear; this is a no-op kept so the C name stays.
+// Cancelling an in-flight diagnostic would need DiagnosticBuilder's protected Clear(),
+// so there is no way to cancel one through this API: a builder always emits on dispose.
 void clang_DiagnosticsEngine_Clear(CXDiagnosticsEngine DE);
 
 const char *clang_DiagnosticsEngine_getFlagValue(CXDiagnosticsEngine DE);
@@ -400,9 +403,10 @@ void clang_StreamingDiagnostic_AddSourceRange(CXStreamingDiagnostic SD, CXSource
 void clang_StreamingDiagnostic_AddFixItHint(CXStreamingDiagnostic SD, CXFixItHint Hint);
 
 // Diagnostic
-// LLVM 20 dropped the DiagnosticsEngine-only constructor. When a builder is in
-// flight on DE this is a view of that builder; otherwise an idle diagnostic
-// whose id is the not-in-flight sentinel.
+// When a builder is in flight on DE this is a view of that builder; otherwise an idle
+// diagnostic whose id is the not-in-flight sentinel. The view borrows the builder's
+// argument storage, which returns to DE's allocator once the builder is disposed, so
+// dispose the view first.
 CXDiagnostic_ clang_Diagnostic_create(CXDiagnosticsEngine DE);
 
 // Borrowed: the engine the view reads through, never disposed through this handle.

@@ -5,6 +5,10 @@ using Pkg.Artifacts
 using Pkg.Artifacts: load_artifacts_toml, artifact_path
 using Base.BinaryPlatforms
 
+# The same string the package picks its `lib/<major>` bindings with. Legal at load time
+# because ClangCompiler.jl defines the const before it includes this submodule.
+using ..ClangCompiler: llvm_version
+
 const JLL_ENV_SHARDS = Dict{String,Any}()
 
 const ARTIFACT_TOML_PATH = Ref{String}()
@@ -83,9 +87,15 @@ function get_pkg_artifact_dir(pkg::Module, target::String)
         end
     end
     isempty(candidates) && return ""
-    llvm_maj = string(Base.libllvm_version.major)
-    tagged = filter(info -> get(info, "llvm_version", "") == llvm_maj, candidates)
-    if !isempty(tagged)
+    tagged = filter(info -> get(info, "llvm_version", "") == llvm_version, candidates)
+    if isempty(tagged)
+        # Silence here would hand back a shard built against another LLVM and read exactly
+        # like a match, which is the mismatch the tag exists to catch.
+        tags = unique(get(info, "llvm_version", "") for info in candidates)
+        any(!isempty, tags) &&
+            @warn "no $(nameof(pkg)) artifact is tagged llvm_version = $llvm_version; " *
+                  "using one built against another LLVM" available = tags
+    else
         candidates = tagged
     end
     length(candidates) > 1 &&

@@ -148,7 +148,6 @@ end
         for other in (hfi2, hfi3)
             @test CC.getIsValid(other) == CC.getIsValid(hfi)
             @test CC.getDirInfo(other) == CC.getDirInfo(hfi)
-            @test CC.getFramework(other) == CC.getFramework(hfi)
         end
         dispose(hfi2)
         dispose(hfi3)
@@ -159,7 +158,6 @@ end
         @test CC.getIsPragmaOnce(hfi) == false
         @test CC.getIsModuleHeader(hfi) == false
         @test CC.getDirInfo(hfi) == CC.CXCharacteristicKind_C_User
-        @test CC.getFramework(hfi) == ""
         @test CC.getControllingMacroRaw(hfi).ptr == C_NULL
 
         # A snapshot does not track later edits: the record taken before the mark still

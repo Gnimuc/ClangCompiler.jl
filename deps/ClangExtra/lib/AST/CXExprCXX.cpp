@@ -2469,7 +2469,8 @@ CXUnresolvedLookupExpr clang_UnresolvedLookupExpr_CreateWithTemplateArgs(
     CXNestedNameSpecifierLoc QualifierLoc, CXSourceLocation_ TemplateKWLoc,
     CXDeclarationNameInfo NameInfo, bool RequiresADL,
     CXTemplateArgumentListInfo TemplateArgs, const CXNamedDecl *Decls,
-    const CXAccessSpecifier *Accesses, unsigned NumDecls, bool KnownDependent) {
+    const CXAccessSpecifier *Accesses, unsigned NumDecls, bool KnownDependent,
+    bool KnownInstantiationDependent) {
   clang::UnresolvedSet<8> Set;
   fillUnresolvedSet(Set, Decls, Accesses, NumDecls);
   return reinterpret_cast<CXUnresolvedLookupExpr>(clang::UnresolvedLookupExpr::Create(
@@ -2479,7 +2480,7 @@ CXUnresolvedLookupExpr clang_UnresolvedLookupExpr_CreateWithTemplateArgs(
       clang::SourceLocation::getFromPtrEncoding(TemplateKWLoc),
       *reinterpret_cast<clang::DeclarationNameInfo *>(NameInfo), RequiresADL,
       reinterpret_cast<clang::TemplateArgumentListInfo *>(TemplateArgs), Set.begin(), Set.end(),
-      KnownDependent, KnownDependent));
+      KnownDependent, KnownInstantiationDependent));
 }
 
 // UnresolvedMemberExpr (cont.)

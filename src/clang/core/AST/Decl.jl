@@ -251,6 +251,14 @@ struct TopLevelStmtDecl <: AbstractTopLevelStmtDecl
 end
 
 """
+    struct OutlinedFunctionDecl <: AbstractOutlinedFunctionDecl
+Hold a pointer to a `clang::OutlinedFunctionDecl` object.
+"""
+struct OutlinedFunctionDecl <: AbstractOutlinedFunctionDecl
+    ptr::CXOutlinedFunctionDecl
+end
+
+"""
     struct HLSLBufferDecl <: AbstractHLSLBufferDecl
 Hold a pointer to a `clang::HLSLBufferDecl` object.
 """

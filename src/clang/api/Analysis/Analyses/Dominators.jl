@@ -110,6 +110,11 @@ dominated by everything, and an unreachable block dominates nothing.
 """
 function dominates(x::AbstractCFGDomTree, a::AbstractCFGBlock, b::AbstractCFGBlock)
     @check_ptrs x a b
+    # llvm's getNode asserts the block's parent is the tree's own graph, and both
+    # `dominates` and `properlyDominates` reach it. A released tree holds no graph and a
+    # block from another CFG never matches, so both abort inside clang.
+    @assert getNumRoots(x) != 0 "the tree holds no graph; build it before querying"
+    @assert getCFG(x).ptr == getParent(a).ptr == getParent(b).ptr "the blocks belong to a different CFG"
     return clang_CFGDomTree_dominates(x, a, b)
 end
 
@@ -119,6 +124,8 @@ Return [`dominates`](@ref) with the reflexive case removed: `false` when `a === 
 """
 function properlyDominates(x::AbstractCFGDomTree, a::AbstractCFGBlock, b::AbstractCFGBlock)
     @check_ptrs x a b
+    @assert getNumRoots(x) != 0 "the tree holds no graph; build it before querying"
+    @assert getCFG(x).ptr == getParent(a).ptr == getParent(b).ptr "the blocks belong to a different CFG"
     return clang_CFGDomTree_properlyDominates(x, a, b)
 end
 
@@ -170,6 +177,8 @@ tree.
 """
 function isReachableFromEntry(x::AbstractCFGDomTree, a::AbstractCFGBlock)
     @check_ptrs x a
+    @assert getNumRoots(x) != 0 "the tree holds no graph; build it before querying"
+    @assert getCFG(x).ptr == getParent(a).ptr "the block belongs to a different CFG"
     return clang_CFGDomTree_isReachableFromEntry(x, a)
 end
 
@@ -275,6 +284,8 @@ Return whether `a` post-dominates `b`.
 """
 function dominates(x::AbstractCFGPostDomTree, a::AbstractCFGBlock, b::AbstractCFGBlock)
     @check_ptrs x a b
+    @assert getNumRoots(x) != 0 "the tree holds no graph; build it before querying"
+    @assert getCFG(x).ptr == getParent(a).ptr == getParent(b).ptr "the blocks belong to a different CFG"
     return clang_CFGPostDomTree_dominates(x, a, b)
 end
 
@@ -285,6 +296,8 @@ Return [`dominates`](@ref) with the reflexive case removed.
 """
 function properlyDominates(x::AbstractCFGPostDomTree, a::AbstractCFGBlock, b::AbstractCFGBlock)
     @check_ptrs x a b
+    @assert getNumRoots(x) != 0 "the tree holds no graph; build it before querying"
+    @assert getCFG(x).ptr == getParent(a).ptr == getParent(b).ptr "the blocks belong to a different CFG"
     return clang_CFGPostDomTree_properlyDominates(x, a, b)
 end
 

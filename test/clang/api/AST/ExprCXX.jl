@@ -2716,6 +2716,14 @@ end
     @test Int(CC.getNumDecls(built5)) == nt
     @test CC.hasExplicitTemplateArgs(built5) == true
     @test Int(CC.getNumTemplateArgs(built5)) == Int(CC.size(li3))
+
+    # the two dependence flags are independent: same operands, only the new one flipped
+    built5a = CC.UnresolvedLookupExpr(ctx, nothing, q5, CC.getTemplateKeywordLoc(ule_t), ni5, true, li3, decls_t,
+                                      accs_t, false, false)
+    built5b = CC.UnresolvedLookupExpr(ctx, nothing, q5, CC.getTemplateKeywordLoc(ule_t), ni5, true, li3, decls_t,
+                                      accs_t, false, true)
+    @test CC.isInstantiationDependent(built5b)
+    @test CC.isInstantiationDependent(built5a) != CC.isInstantiationDependent(built5b)
     CC.dispose(ni5)
     CC.dispose(q5)
     CC.dispose(li3)

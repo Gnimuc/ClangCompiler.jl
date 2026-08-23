@@ -27550,8 +27550,8 @@ function clang_UnresolvedLookupExpr_Create(Context, NamingClass, QualifierLoc, N
     @ccall libclangex.clang_UnresolvedLookupExpr_Create(Context::CXASTContext, NamingClass::CXCXXRecordDecl, QualifierLoc::CXNestedNameSpecifierLoc, NameInfo::CXDeclarationNameInfo, RequiresADL::Bool, Overloaded::Bool, Decls::Ptr{CXNamedDecl}, Accesses::Ptr{CXAccessSpecifier}, NumDecls::Cuint)::CXUnresolvedLookupExpr
 end
 
-function clang_UnresolvedLookupExpr_CreateWithTemplateArgs(Context, NamingClass, QualifierLoc, TemplateKWLoc, NameInfo, RequiresADL, TemplateArgs, Decls, Accesses, NumDecls, KnownDependent)
-    @ccall libclangex.clang_UnresolvedLookupExpr_CreateWithTemplateArgs(Context::CXASTContext, NamingClass::CXCXXRecordDecl, QualifierLoc::CXNestedNameSpecifierLoc, TemplateKWLoc::CXSourceLocation_, NameInfo::CXDeclarationNameInfo, RequiresADL::Bool, TemplateArgs::CXTemplateArgumentListInfo, Decls::Ptr{CXNamedDecl}, Accesses::Ptr{CXAccessSpecifier}, NumDecls::Cuint, KnownDependent::Bool)::CXUnresolvedLookupExpr
+function clang_UnresolvedLookupExpr_CreateWithTemplateArgs(Context, NamingClass, QualifierLoc, TemplateKWLoc, NameInfo, RequiresADL, TemplateArgs, Decls, Accesses, NumDecls, KnownDependent, KnownInstantiationDependent)
+    @ccall libclangex.clang_UnresolvedLookupExpr_CreateWithTemplateArgs(Context::CXASTContext, NamingClass::CXCXXRecordDecl, QualifierLoc::CXNestedNameSpecifierLoc, TemplateKWLoc::CXSourceLocation_, NameInfo::CXDeclarationNameInfo, RequiresADL::Bool, TemplateArgs::CXTemplateArgumentListInfo, Decls::Ptr{CXNamedDecl}, Accesses::Ptr{CXAccessSpecifier}, NumDecls::Cuint, KnownDependent::Bool, KnownInstantiationDependent::Bool)::CXUnresolvedLookupExpr
 end
 
 function clang_UnresolvedMemberExpr_Create(Context, HasUnresolvedUsing, Base, BaseType, IsArrow, OperatorLoc, QualifierLoc, TemplateKWLoc, MemberNameInfo, TemplateArgs, Decls, Accesses, NumDecls)
@@ -49319,8 +49319,8 @@ function clang_Sema_CheckVectorCompareOperands(S, LHS, RHS, Loc, Opc)
     @ccall libclangex.clang_Sema_CheckVectorCompareOperands(S::CXSema, LHS::Ptr{CXExpr}, RHS::Ptr{CXExpr}, Loc::CXSourceLocation_, Opc::CXBinaryOperatorKind)::CXQualType
 end
 
-function clang_Sema_CheckVectorLogicalOperands(S, LHS, RHS, Loc)
-    @ccall libclangex.clang_Sema_CheckVectorLogicalOperands(S::CXSema, LHS::Ptr{CXExpr}, RHS::Ptr{CXExpr}, Loc::CXSourceLocation_)::CXQualType
+function clang_Sema_CheckVectorLogicalOperands(S, LHS, RHS, Loc, Opc)
+    @ccall libclangex.clang_Sema_CheckVectorLogicalOperands(S::CXSema, LHS::Ptr{CXExpr}, RHS::Ptr{CXExpr}, Loc::CXSourceLocation_, Opc::CXBinaryOperatorKind)::CXQualType
 end
 
 function clang_Sema_CreateBuiltin(S, II, Type, ID, Loc)
@@ -49570,8 +49570,8 @@ function clang_Sema_getCurFPFeatures(S)
     @ccall libclangex.clang_Sema_getCurFPFeatures(S::CXSema)::Cuint
 end
 
-function clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S, PParam, AArg, Loc)
-    @ccall libclangex.clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S::CXSema, PParam::CXTemplateParameterList, AArg::CXTemplateDecl, Loc::CXSourceLocation_)::Bool
+function clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S, PParam, PArg, AArg, Loc)
+    @ccall libclangex.clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S::CXSema, PParam::CXTemplateParameterList, PArg::CXTemplateDecl, AArg::CXTemplateDecl, Loc::CXSourceLocation_)::Bool
 end
 
 function clang_Sema_getIdentityTemplateArgumentLoc(S, Param, Location)

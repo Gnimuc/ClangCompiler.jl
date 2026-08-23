@@ -102,6 +102,7 @@ clang_IncrementalCompilerBuilder_CreateCudaHost(CXIncrementalCompilerBuilder CB)
 
 CXCompilerInstance
 clang_IncrementalCompilerBuilder_CreateCudaDevice(CXIncrementalCompilerBuilder CB) {
+  ensureLLVMTargets();
   auto CI = reinterpret_cast<clang::IncrementalCompilerBuilder *>(CB)->CreateCudaDevice();
   if (auto E = CI.takeError()) {
     llvm::errs() << "LIBCLANGEX ERROR: " << llvm::toString(std::move(E)) << "\n";

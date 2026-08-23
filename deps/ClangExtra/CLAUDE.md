@@ -358,7 +358,12 @@ new code by:
 
 `upstream/` holds verbatim copies of Clang headers edited ONLY to change member access
 (inserting `public:`/`private:`) so wrappers can reach private members (currently
-`Interpreter::IncrParser` and `IncrementalParser::P`). It's on the include path as
+`Interpreter::IncrParser` and `IncrementalParser::P`). It is not the only route to a
+private member: `CXCompilerInstance.cpp` reads `CompilerInstance::FrontendTimer` through an
+explicit instantiation, whose template arguments are exempt from access checking. That form
+copies no header and alters no class, so it carries none of the ODR/layout risk below —
+prefer it when a single member is all a wrapper needs, and reserve `upstream/` for cases
+that need a whole private class. It's on the include path as
 `CLANG_SRC`, so `#include "Interpreter/Interpreter.h"` gets the hacked copy while
 `#include "clang/Interpreter/Interpreter.h"` gets the real one — CXInterpreter.cpp uses
 the hacked copies, CXValue.cpp the real header; this ODR tightrope is safe only because

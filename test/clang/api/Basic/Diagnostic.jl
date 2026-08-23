@@ -126,7 +126,14 @@ using Test
     @test !CC.hasErrorOccurred(engine)
     @test CC.getNumErrors(engine) == 0
     @test CC.getNumWarnings(engine) == 0
+    # in-flight tracks the builder, not the engine: true only while one is live, and `Clear`
+    # is a no-op that cannot cancel it -- emitting is what ends it
+    @test !CC.isDiagnosticInFlight(engine)
+    inflight = CC.DiagnosticBuilder(engine, CC.SourceLocation(), warn_id)
+    @test CC.isDiagnosticInFlight(engine)
     CC.Clear(engine)
+    @test CC.isDiagnosticInFlight(engine)
+    CC.dispose(inflight)
     @test !CC.isDiagnosticInFlight(engine)
 
     # replacing the owned client: the engine deletes the old one and adopts the new one
