@@ -60,7 +60,6 @@ end
 @testset "VariantValue | the matcher alternative" begin
     err = CC.MatcherDiagnostics()
     m = CC.parseMatcherExpression("cxxRecordDecl()", err)
-    @test !CC.is_null_handle(m)
 
     v = CC.VariantValue(m)
     @test CC.hasValue(v)
@@ -69,7 +68,6 @@ end
     @test occursin("Matcher<", CC.getTypeAsString(v))
 
     round = CC.getSingleMatcher(v)
-    @test !CC.is_null_handle(round)
     @test CC.getSupportedKind(round) == CC.getSupportedKind(m)
 
     # the value holds its own copy: disposing the source leaves it usable
@@ -88,7 +86,6 @@ end
 
     err = CC.MatcherDiagnostics()
     m = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCNVMTag\"), unless(isImplicit()))", err)
-    @test !CC.is_null_handle(m)
 
     nv = CC.NamedValueMap()
     @test size(nv) == 0
@@ -117,18 +114,16 @@ end
     # ... and with it, the name stands in for the matcher it was bound to.
     errnamed = CC.MatcherDiagnostics()
     named = CC.parseMatcherExpression("ccnvmRecord", nv, errnamed)
-    @test !CC.is_null_handle(named)
     @test CC.getNumErrors(errnamed) == 0
     @test CC.getSupportedKind(named) == CC.getSupportedKind(m)
 
     bound = CC.tryBind(named, "n")
-    @test !CC.is_null_handle(bound)
     mf = CC.MatchFinder()
     @test CC.addDynamicMatcher(mf, bound)
     @test CC.matchAST(mf, ctx) == 1
     bn = CC.getMatch(mf, 0)
     @test CC.getBindingID(bn, 0) == "n"
-    @test !CC.is_null_handle(CC.getNodeAsDecl(bn, "n"))
+    @test CC.getName(CC.resolve(CC.getNodeAsDecl(bn, "n"))) == "CCNVMTag"
 
     dispose(bn)
     dispose(mf)

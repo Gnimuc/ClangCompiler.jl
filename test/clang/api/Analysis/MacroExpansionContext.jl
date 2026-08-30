@@ -31,7 +31,6 @@ using Test
         vd = CC.resolve(CC.get_decl(f))
         @test vd isa CC.VarDecl
         init = CC.getInit(vd)
-        @test !CC.is_null_handle(init)
         # the initializer's own begin location sits inside the expansion; the expansion
         # location is where `MEC_ADD` was written, which is the key the context records
         spelled = CC.getBeginLoc(init)

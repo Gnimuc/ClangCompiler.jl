@@ -67,10 +67,9 @@ using Test
             # edges out of cg_mid are two distinct calls
             e0 = CC.getCallExpr(mid, 0)
             e1 = CC.getCallExpr(mid, 1)
-            @test !CC.is_null_handle(e0)
-            @test !CC.is_null_handle(e1)
             @test e0.ptr != e1.ptr
             @test CC.resolve(e0) isa CC.AbstractCallExpr
+            @test CC.resolve(e1) isa CC.AbstractCallExpr
 
             # the root's edges are synthetic: one per node, each with no call site
             @test CC.size(root) == CC.size(g) - 1
@@ -81,7 +80,6 @@ using Test
             end
 
             # getDefinition resolves to the defining FunctionDecl of the node's Decl
-            @test !CC.is_null_handle(CC.getDefinition(mid))
             @test CC.getDefinition(mid).ptr == CC.getDecl(mid).ptr
             @test CC.getName(CC.getAsFunction(CC.getDecl(mid))) == "cg_mid"
 

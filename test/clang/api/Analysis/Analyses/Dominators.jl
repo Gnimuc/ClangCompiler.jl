@@ -18,7 +18,6 @@ using Test
         fd = CC.getAsFunction(CC.get_decl(f))
         ctx = CC.get_ast_context(I)
         cfg = CC.buildCFG(fd, CC.getBody(fd), ctx)
-        @test !CC.is_null_handle(cfg)
         try
             n = Int(CC.getNumBlocks(cfg))
             entry = CC.getEntry(cfg)
@@ -95,12 +94,10 @@ using Test
                     end
                 end
                 @test branch !== nothing
-                if branch !== nothing
-                    b, s0, s1 = branch
-                    @test CC.properlyDominates(dt, b, s0)
-                    @test CC.properlyDominates(dt, b, s1)
-                    @test CC.findNearestCommonDominator(dt, s0, s1).ptr == b.ptr
-                end
+                b, s0, s1 = branch
+                @test CC.properlyDominates(dt, b, s0)
+                @test CC.properlyDominates(dt, b, s1)
+                @test CC.findNearestCommonDominator(dt, s0, s1).ptr == b.ptr
 
                 @test !isempty(CC.printAsString(dt))
 

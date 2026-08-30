@@ -28,7 +28,6 @@ using Test
         @assert f(I, "wto_reducible")
         fd = CC.getAsFunction(CC.get_decl(f))
         cfg = CC.buildCFG(fd, CC.getBody(fd), ctx)
-        @test cfg.ptr != C_NULL
         try
             wto = CC.getIntervalWTO(cfg)
             @test wto !== nothing
@@ -59,7 +58,6 @@ using Test
         @assert f(I, "wto_irreducible")
         ifd = CC.getAsFunction(CC.get_decl(f))
         icfg = CC.buildCFG(ifd, CC.getBody(ifd), ctx)
-        @test icfg.ptr != C_NULL
         try
             @test CC.getIntervalWTO(icfg) === nothing
         finally
