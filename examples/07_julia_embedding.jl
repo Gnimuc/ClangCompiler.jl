@@ -157,7 +157,7 @@ CC.compile(I, """
     #include <julia.h>
 
     extern "C" double call_julia_mix(double a, double b) {
-        jl_function_t *f = jl_get_function(jl_main_module, "mix");
+        jl_value_t *f = jl_get_function(jl_main_module, "mix");
         if (f == NULL) return -2.0;           // never hand NULL to jl_call*: nothing checks it
         jl_value_t *x = NULL, *y = NULL, *r = NULL;
         JL_GC_PUSH4(&f, &x, &y, &r);          // see section 4
@@ -256,7 +256,7 @@ CC.compile(I, """
     #include <julia.h>
 
     extern "C" double survives_full_gc(double x) {
-        jl_function_t *f = jl_get_function(jl_main_module, "mix");
+        jl_value_t *f = jl_get_function(jl_main_module, "mix");
         if (f == NULL) return -2.0;           // before the push, so the push/pop still pair
         jl_value_t *boxed = NULL, *r = NULL;
         JL_GC_PUSH3(&f, &boxed, &r);
