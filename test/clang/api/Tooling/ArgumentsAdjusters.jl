@@ -9,7 +9,6 @@ using Test
 
 @testset "ArgumentsAdjuster | the prebuilt factories rewrite a command line" begin
     syntax_only = CC.getClangSyntaxOnlyAdjuster()
-    @test syntax_only.ptr != C_NULL
 
     out = CC.adjust(syntax_only, ["clang++", "-Wall", "a.cc"], "a.cc")
     @test out == ["clang++", "-Wall", "a.cc", "-fsyntax-only"]

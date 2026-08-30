@@ -120,7 +120,11 @@ void clang_IdentifierInfo_setBuiltinID(CXIdentifierInfo II, unsigned ID) {
 }
 
 unsigned clang_IdentifierInfo_getMaxBuiltinID(void) {
-  return (1u << clang::ObjCOrBuiltinIDBits) - static_cast<unsigned>(clang::FirstBuiltinID);
+  // LLVM 20 packed builtins into InterestingIdentifier (16 bits). The sentinel
+  // NotInterestingIdentifier is 65534; IDs must pack strictly below it.
+  auto FirstBuiltin =
+      static_cast<unsigned>(clang::InterestingIdentifier::NotBuiltin);
+  return 65533u - FirstBuiltin;
 }
 
 void clang_IdentifierInfo_clearBuiltinID(CXIdentifierInfo II) {
@@ -128,17 +132,17 @@ void clang_IdentifierInfo_clearBuiltinID(CXIdentifierInfo II) {
 }
 
 unsigned clang_IdentifierInfo_getInterestingIdentifierID(CXIdentifierInfo II) {
+  // LLVM 20 renamed InterestingIdentifierKind to NotableIdentifierKind.
   return static_cast<unsigned>(
-      reinterpret_cast<clang::IdentifierInfo *>(II)->getInterestingIdentifierID());
+      reinterpret_cast<clang::IdentifierInfo *>(II)->getNotableIdentifierID());
 }
 
 void clang_IdentifierInfo_setInterestingIdentifierID(CXIdentifierInfo II, unsigned ID) {
-  reinterpret_cast<clang::IdentifierInfo *>(II)->setInterestingIdentifierID(ID);
+  reinterpret_cast<clang::IdentifierInfo *>(II)->setNotableIdentifierID(ID);
 }
 
 unsigned clang_IdentifierInfo_getMaxInterestingIdentifierID(void) {
-  return static_cast<unsigned>(clang::LastInterestingIdentifierID -
-                               clang::FirstInterestingIdentifierID + 1);
+  return static_cast<unsigned>(clang::tok::NUM_NOTABLE_IDENTIFIERS) - 1u;
 }
 
 unsigned clang_IdentifierInfo_getObjCOrBuiltinID(CXIdentifierInfo II) {
@@ -305,7 +309,8 @@ unsigned clang_Selector_getNumArgs(CXSelector Sel) { return toSelector(Sel).getN
 
 CXIdentifierInfo clang_Selector_getIdentifierInfoForSlot(CXSelector Sel,
                                                          unsigned ArgIndex) {
-  return reinterpret_cast<CXIdentifierInfo>(toSelector(Sel).getIdentifierInfoForSlot(ArgIndex));
+  return reinterpret_cast<CXIdentifierInfo>(
+      const_cast<clang::IdentifierInfo *>(toSelector(Sel).getIdentifierInfoForSlot(ArgIndex)));
 }
 
 CXString clang_Selector_getNameForSlot(CXSelector Sel, unsigned ArgIndex) {
@@ -344,8 +349,10 @@ CXSelector clang_SelectorTable_getSelector(CXSelectorTable SelTab, unsigned NumA
   llvm::SmallVector<clang::IdentifierInfo *, 8> Idents;
   for (unsigned I = 0, E = NumArgs ? NumArgs : 1u; I != E; ++I)
     Idents.push_back(reinterpret_cast<clang::IdentifierInfo *>(IIV[I]));
+  const clang::IdentifierInfo **Data =
+      const_cast<const clang::IdentifierInfo **>(Idents.data());
   return reinterpret_cast<CXSelector>(reinterpret_cast<clang::SelectorTable *>(SelTab)
-      ->getSelector(NumArgs, Idents.data())
+      ->getSelector(NumArgs, Data)
       .getAsOpaquePtr());
 }
 

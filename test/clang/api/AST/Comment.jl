@@ -1,6 +1,6 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_tag, get_instance
+using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_instance
 using Test
 
 @testset "Comments" begin
@@ -22,54 +22,47 @@ using Test
     d = CC.get_decl(f)
 
     rc = CC.getRawCommentForAnyRedecl(ctx, d)
-    @test rc isa CC.RawComment
-    if rc.ptr != C_NULL
-        @test CC.getKind(rc) isa Enum
-        @test !(CC.isAttached(rc))
-        @test !(CC.isTrailingComment(rc))
-        @test CC.isDocumentation(rc)
-        txt = CC.getRawText(rc, sm)
-        @test txt isa String
-        @test occursin("brief", txt)
-        @test !isempty(CC.getBriefText(rc, ctx))
-        rng = CC.getSourceRange(rc)
-        @test rng isa CC.SourceRange
-        @test rng.begin_loc isa CC.SourceLocation
-    end
+    @test !CC.is_null_handle(rc)
+    # adjacent `///` lines are fused; a single-line `///` would be RCK_BCPLSlash
+    @test CC.getKind(rc) == CC.CXRawCommentKind_RCK_Merged
+    @test !(CC.isAttached(rc))
+    @test !(CC.isTrailingComment(rc))
+    @test CC.isDocumentation(rc)
+    txt = CC.getRawText(rc, sm)
+    @test occursin("brief", txt)
+    @test !isempty(CC.getBriefText(rc, ctx))
+    rng = CC.getSourceRange(rc)
+    @test CC.isValid(rng.begin_loc)
+    @test CC.isValid(rng.end_loc)
 
     fc = CC.getCommentForDecl(ctx, d, pp)
-    @test fc isa CC.FullComment
-    if fc.ptr != C_NULL
-        @test CC.getCommentKindName(fc) == "FullComment"
-        @test CC.isValid((CC.getSourceRange(fc)).begin_loc)
-        @test CC.isValid((CC.getSourceRange(fc)).end_loc)
-        n = CC.child_count(fc)
-        @test n isa Integer
-        @test n >= 0
-        names = String[]
-        params = String[]
-        for i = 0:(n - 1)
-            c = CC.getChild(fc, i)
-            @test c isa CC.Comment
-            @test !isempty(CC.getCommentKindName(c))
-            for j = 0:(CC.child_count(c) - 1)
-                gc = CC.getChild(c, j)
-                tc = CC.TextComment(gc)
-                tc.ptr != C_NULL && @test !isempty(CC.getText(tc))
-            end
-            bcc = CC.BlockCommandComment(c)
-            if bcc.ptr != C_NULL
-                push!(names, CC.getCommandName(bcc, ctx))
-            end
-            pcc = CC.ParamCommandComment(c)
-            if pcc.ptr != C_NULL && CC.hasParamName(pcc)
-                push!(params, CC.getParamNameAsWritten(pcc))
-            end
+    @test !CC.is_null_handle(fc)
+    @test CC.getCommentKindName(fc) == "FullComment"
+    @test CC.isValid((CC.getSourceRange(fc)).begin_loc)
+    @test CC.isValid((CC.getSourceRange(fc)).end_loc)
+    n = Int(CC.child_count(fc))
+    names = String[]
+    params = String[]
+    for i = 0:(n - 1)
+        c = CC.getChild(fc, i)
+        @test !isempty(CC.getCommentKindName(c))
+        for j = 0:(Int(CC.child_count(c)) - 1)
+            gc = CC.getChild(c, j)
+            tc = CC.TextComment(gc)
+            tc.ptr != C_NULL && @test !isempty(CC.getText(tc))
         end
-        @test all(x -> x isa String, names)
-        @test all(x -> x isa String, params)
-        @test issubset(params, ["a", "b"])
+        bcc = CC.BlockCommandComment(c)
+        if bcc.ptr != C_NULL
+            push!(names, CC.getCommandName(bcc, ctx))
+        end
+        pcc = CC.ParamCommandComment(c)
+        if pcc.ptr != C_NULL && CC.hasParamName(pcc)
+            push!(params, CC.getParamNameAsWritten(pcc))
+        end
     end
+    # ParamCommandComment is a BlockCommandComment, so both `\param`s appear in `names`
+    @test names == ["brief", "param", "param"]
+    @test params == ["a", "b"]
 
     CC.dispose(f)
     CC.dispose(I)
@@ -94,83 +87,90 @@ end
     d = CC.get_decl(f)
 
     fc = CC.getCommentForDecl(ctx, d, pp)
-    @test fc isa CC.FullComment
-    if fc.ptr != C_NULL
-        @test !CC.is_null_handle(CC.getBeginLoc(fc))
-        @test !CC.is_null_handle(CC.getEndLoc(fc))
-        @test !CC.is_null_handle(CC.getLocation(fc))
+    @test !CC.is_null_handle(fc)
+    @test CC.isValid(CC.getBeginLoc(fc))
+    @test CC.isValid(CC.getEndLoc(fc))
+    @test CC.isValid(CC.getLocation(fc))
 
-        dirs = Bool[]
-        cmds = Tuple{String,Int}[]
-        pidx = Int[]
-        for i = 0:(CC.child_count(fc) - 1)
-            c = CC.getChild(fc, i)
-            @test !CC.is_null_handle(CC.getBeginLoc(c))
+    dirs = Bool[]
+    pdirs = CC.CXParamCommandPassDirection[]
+    cmds = Tuple{String,Int}[]
+    pidx = Int[]
+    saw_non_ws_text = false
+    for i = 0:(Int(CC.child_count(fc)) - 1)
+        c = CC.getChild(fc, i)
+        @test CC.isValid(CC.getBeginLoc(c))
 
-            for j = 0:(CC.child_count(c) - 1)
-                gc = CC.getChild(c, j)
-                tc = CC.TextComment(gc)
-                if tc.ptr != C_NULL
-                    @test !isempty(CC.getText(tc))
-                    @test CC.isWhitespace(tc)
-                    @test !(CC.hasTrailingNewline(tc))
-                end
+        bcc = CC.BlockCommandComment(c)
+        if bcc.ptr != C_NULL
+            cname = CC.getCommandName(bcc, ctx)
+            push!(cmds, (cname, Int(CC.getCommandID(bcc))))
+            @test CC.isValid(CC.getCommandNameBeginLoc(bcc))
+            @test CC.getCommandMarker(bcc) == CC.CXCommandMarkerKind_CMK_Backslash
+            @test CC.hasNonWhitespaceParagraph(bcc)
+            narg = Int(CC.getNumArgs(bcc))
+            if cname == "brief" || cname == "return"
+                @test narg == 0
+            else
+                # `\param` stores the parameter name as argument 0
+                @test narg >= 1
+                @test !isempty(CC.getArgText(bcc, 0))
+                @test CC.isValid((CC.getArgRange(bcc, 0)).begin_loc)
+                @test CC.isValid((CC.getArgRange(bcc, 0)).end_loc)
             end
-
-            bcc = CC.BlockCommandComment(c)
-            if bcc.ptr != C_NULL
-                push!(cmds, (CC.getCommandName(bcc, ctx), Int(CC.getCommandID(bcc))))
-                @test !CC.is_null_handle(CC.getCommandNameBeginLoc(bcc))
-                @test CC.getCommandMarker(bcc) isa Enum
-                @test CC.hasNonWhitespaceParagraph(bcc)
-                n = CC.getNumArgs(bcc)
-                @test n isa Integer
-                for k = 0:(n - 1)
-                    @test !isempty(CC.getArgText(bcc, k))
-                    @test CC.isValid((CC.getArgRange(bcc, k)).begin_loc)
-                    @test CC.isValid((CC.getArgRange(bcc, k)).end_loc)
-                end
-                para = CC.getParagraph(bcc)
-                @test para isa CC.ParagraphComment
-                # `hasNonWhitespaceParagraph` was just asserted, so this paragraph is the
-                # non-whitespace one -- the two accessors have to agree
-                para.ptr != C_NULL && @test !CC.isWhitespace(para)
-            end
-
-            pcc = CC.ParamCommandComment(c)
-            if pcc.ptr != C_NULL
-                @test CC.getDirection(pcc) isa Enum
-                push!(dirs, CC.isDirectionExplicit(pcc))
-                @test CC.isParamIndexValid(pcc)
-                @test !(CC.isVarArgParam(pcc))
-                CC.hasParamName(pcc) && @test CC.isValid((CC.getParamNameRange(pcc)).begin_loc)
-                CC.hasParamName(pcc) && @test CC.isValid((CC.getParamNameRange(pcc)).end_loc)
-                if CC.isParamIndexValid(pcc) && !CC.isVarArgParam(pcc)
-                    push!(pidx, Int(CC.getParamIndex(pcc)))
+            para = CC.getParagraph(bcc)
+            @test !CC.is_null_handle(para)
+            # `hasNonWhitespaceParagraph` was just asserted, so this paragraph is the
+            # non-whitespace one -- the two accessors have to agree
+            @test !CC.isWhitespace(para)
+            for j = 0:(Int(CC.child_count(para)) - 1)
+                tc = CC.TextComment(CC.getChild(para, j))
+                tc.ptr == C_NULL && continue
+                if !CC.isWhitespace(tc)
+                    saw_non_ws_text = true
+                    @test occursin("two numbers", CC.getText(tc)) ||
+                          occursin("first addend", CC.getText(tc)) ||
+                          occursin("second addend", CC.getText(tc)) ||
+                          occursin("sum", CC.getText(tc))
                 end
             end
         end
-        # `\param a` is written with no direction and `\param[out] b` with one, so this
-        # source puts one comment on each side. A predicate reading a neighbouring bit --
-        # or the direction enum itself, which is set either way -- is constant here.
-        @test sort(dirs) == [false, true]
 
-        # The command ID indexes clang's CommandTraits table, so its numeric value moves
-        # with the clang release and pinning it would break on the next one. What does not
-        # move is that the ID and the name agree: this source writes \brief, \param twice
-        # and \return, so three distinct names carry three distinct IDs and the repeated
-        # name repeats its own. A swallowed ID collapses that to one and fails here.
-        @test length(cmds) == 4
-        @test length(unique(last.(cmds))) == length(unique(first.(cmds))) == 3
-        @test allunique(unique(cmds))
-        for (n1, i1) in cmds, (n2, i2) in cmds
-            @test (n1 == n2) == (i1 == i2)
+        pcc = CC.ParamCommandComment(c)
+        if pcc.ptr != C_NULL
+            push!(pdirs, CC.getDirection(pcc))
+            push!(dirs, CC.isDirectionExplicit(pcc))
+            @test CC.isParamIndexValid(pcc)
+            @test !(CC.isVarArgParam(pcc))
+            CC.hasParamName(pcc) && @test CC.isValid((CC.getParamNameRange(pcc)).begin_loc)
+            CC.hasParamName(pcc) && @test CC.isValid((CC.getParamNameRange(pcc)).end_loc)
+            if CC.isParamIndexValid(pcc) && !CC.isVarArgParam(pcc)
+                push!(pidx, Int(CC.getParamIndex(pcc)))
+            end
         end
-
-        # `\param a` and `\param[out] b` name the first and second parameters of
-        # `cc_doc_add3(int a, int b)`. An accessor ignoring its subject reports 0 twice.
-        @test sort(pidx) == [0, 1]
     end
+    @test saw_non_ws_text
+    # `\param a` is written with no direction and `\param[out] b` with one, so this
+    # source puts one comment on each side. A predicate reading a neighbouring bit --
+    # or the direction enum itself, which is set either way -- is constant here.
+    @test sort(dirs) == [false, true]
+    @test sort(pdirs) == [CC.CXParamCommandPassDirection_In, CC.CXParamCommandPassDirection_Out]
+
+    # The command ID indexes clang's CommandTraits table, so its numeric value moves
+    # with the clang release and pinning it would break on the next one. What does not
+    # move is that the ID and the name agree: this source writes \brief, \param twice
+    # and \return, so three distinct names carry three distinct IDs and the repeated
+    # name repeats its own. A swallowed ID collapses that to one and fails here.
+    @test length(cmds) == 4
+    @test length(unique(last.(cmds))) == length(unique(first.(cmds))) == 3
+    @test allunique(unique(cmds))
+    for (n1, i1) in cmds, (n2, i2) in cmds
+        @test (n1 == n2) == (i1 == i2)
+    end
+
+    # `\param a` and `\param[out] b` name the first and second parameters of
+    # `cc_doc_add3(int a, int b)`. An accessor ignoring its subject reports 0 twice.
+    @test sort(pidx) == [0, 1]
 
     CC.dispose(f)
     CC.dispose(I)
@@ -197,100 +197,89 @@ end
     d = first(x for x in CC.get_decls(f) if CC.getDeclKindName(x) == "FunctionTemplate")
 
     fc = CC.getCommentForDecl(ctx, d, pp)
-    @test fc isa CC.FullComment
-    if fc.ptr != C_NULL
-        owner = CC.getDecl(fc)
-        @test owner isa CC.Decl
-        @test owner.ptr != C_NULL
+    @test !CC.is_null_handle(fc)
+    owner = CC.getDecl(fc)
+    @test CC.getDeclKindName(owner) == "FunctionTemplate"
+    @test CC.getNameAsString(CC.NamedDecl(owner)) == "cc_doc_rich"
 
-        nodes = CC.Comment[]
-        queue = CC.Comment[CC.getChild(fc, i) for i = 0:(CC.child_count(fc) - 1)]
-        while !isempty(queue)
-            c = popfirst!(queue)
-            push!(nodes, c)
-            for i = 0:(CC.child_count(c) - 1)
-                push!(queue, CC.getChild(c, i))
-            end
+    nodes = CC.Comment[]
+    queue = CC.Comment[CC.getChild(fc, i) for i = 0:(Int(CC.child_count(fc)) - 1)]
+    while !isempty(queue)
+        c = popfirst!(queue)
+        push!(nodes, c)
+        for i = 0:(Int(CC.child_count(c)) - 1)
+            push!(queue, CC.getChild(c, i))
         end
-        @test !isempty(nodes)
-
-        inline_names = String[]
-        inline_cmds = Tuple{String,Int}[]
-        tag_names = String[]
-        attr_names = String[]
-        tparam_names = String[]
-        n_end_tags = 0
-        for c in nodes
-            icc = CC.InlineCommandComment(c)
-            if icc.ptr != C_NULL
-                push!(inline_cmds, (CC.getCommandName(icc, ctx), Int(CC.getCommandID(icc))))
-                @test CC.isValid((CC.getCommandNameRange(icc)).begin_loc)
-                @test CC.isValid((CC.getCommandNameRange(icc)).end_loc)
-                @test CC.getRenderKind(icc) isa Enum
-                push!(inline_names, CC.getCommandName(icc, ctx))
-                na = CC.getNumArgs(icc)
-                @test na isa Integer
-                for k = 0:(na - 1)
-                    @test !isempty(CC.getArgText(icc, k))
-                    @test CC.isValid((CC.getArgRange(icc, k)).begin_loc)
-                    @test CC.isValid((CC.getArgRange(icc, k)).end_loc)
-                end
-            end
-
-            hst = CC.HTMLStartTagComment(c)
-            if hst.ptr != C_NULL
-                @test CC.isValid((CC.getTagNameSourceRange(hst)).begin_loc)
-                @test CC.isValid((CC.getTagNameSourceRange(hst)).end_loc)
-                @test !(CC.isMalformed(hst))
-                @test !(CC.isSelfClosing(hst))
-                push!(tag_names, CC.getTagName(hst))
-                nattr = CC.getNumAttrs(hst)
-                @test nattr isa Integer
-                for k = 0:(nattr - 1)
-                    push!(attr_names, CC.getAttrName(hst, k))
-                    @test !isempty(CC.getAttrValue(hst, k))
-                end
-            end
-
-            het = CC.HTMLEndTagComment(c)
-            if het.ptr != C_NULL
-                n_end_tags += 1
-                @test !(CC.isMalformed(het))
-                push!(tag_names, CC.getTagName(het))
-            end
-
-            tpc = CC.TParamCommandComment(c)
-            if tpc.ptr != C_NULL
-                @test CC.isPositionValid(tpc)
-                if CC.hasParamName(tpc)
-                    push!(tparam_names, CC.getParamNameAsWritten(tpc))
-                    @test CC.isValid((CC.getParamNameRange(tpc)).begin_loc)
-                    @test CC.isValid((CC.getParamNameRange(tpc)).end_loc)
-                end
-                # `T` is the sole parameter of the sole template parameter list of
-                # cc_doc_rich, so Sema resolves the \tparam to position {0} and the
-                # depth/index accessors are in range.
-                @test CC.isPositionValid(tpc)
-                dep = CC.getDepth(tpc)
-                @test dep isa Integer
-                @test dep > 0
-                @test dep == 1
-                @test CC.getIndex(tpc, 0) == 0
-            end
-        end
-
-        @test "c" in inline_names
-        # same agreement as the block commands: the table index is not pinnable across
-        # clang releases, but a name and its ID have to identify each other
-        @test !isempty(inline_cmds)
-        for (n1, i1) in inline_cmds, (n2, i2) in inline_cmds
-            @test (n1 == n2) == (i1 == i2)
-        end
-        @test "b" in tag_names
-        @test n_end_tags == 1
-        @test attr_names == ["class"]
-        @test tparam_names == ["T"]
     end
+    @test !isempty(nodes)
+
+    inline_names = String[]
+    inline_cmds = Tuple{String,Int}[]
+    tag_names = String[]
+    attr_names = String[]
+    tparam_names = String[]
+    n_end_tags = 0
+    for c in nodes
+        icc = CC.InlineCommandComment(c)
+        if icc.ptr != C_NULL
+            push!(inline_cmds, (CC.getCommandName(icc, ctx), Int(CC.getCommandID(icc))))
+            @test CC.isValid((CC.getCommandNameRange(icc)).begin_loc)
+            @test CC.isValid((CC.getCommandNameRange(icc)).end_loc)
+            @test CC.getRenderKind(icc) == CC.CXInlineCommandRenderKind_Monospaced
+            push!(inline_names, CC.getCommandName(icc, ctx))
+            @test CC.getNumArgs(icc) == 1
+            @test CC.getArgText(icc, 0) == "int"
+            @test CC.isValid((CC.getArgRange(icc, 0)).begin_loc)
+            @test CC.isValid((CC.getArgRange(icc, 0)).end_loc)
+        end
+
+        hst = CC.HTMLStartTagComment(c)
+        if hst.ptr != C_NULL
+            @test CC.isValid((CC.getTagNameSourceRange(hst)).begin_loc)
+            @test CC.isValid((CC.getTagNameSourceRange(hst)).end_loc)
+            @test !(CC.isMalformed(hst))
+            @test !(CC.isSelfClosing(hst))
+            push!(tag_names, CC.getTagName(hst))
+            @test CC.getNumAttrs(hst) == 1
+            push!(attr_names, CC.getAttrName(hst, 0))
+            @test CC.getAttrValue(hst, 0) == "lead"
+        end
+
+        het = CC.HTMLEndTagComment(c)
+        if het.ptr != C_NULL
+            n_end_tags += 1
+            @test !(CC.isMalformed(het))
+            push!(tag_names, CC.getTagName(het))
+        end
+
+        tpc = CC.TParamCommandComment(c)
+        if tpc.ptr != C_NULL
+            @test CC.isPositionValid(tpc)
+            if CC.hasParamName(tpc)
+                push!(tparam_names, CC.getParamNameAsWritten(tpc))
+                @test CC.isValid((CC.getParamNameRange(tpc)).begin_loc)
+                @test CC.isValid((CC.getParamNameRange(tpc)).end_loc)
+            end
+            # `T` is the sole parameter of the sole template parameter list of
+            # cc_doc_rich, so Sema resolves the \tparam to position {0} and the
+            # depth/index accessors are in range.
+            @test CC.getDepth(tpc) == 1
+            @test CC.getIndex(tpc, 0) == 0
+            @test_throws AssertionError CC.getIndex(tpc, 1)
+        end
+    end
+
+    @test "c" in inline_names
+    # same agreement as the block commands: the table index is not pinnable across
+    # clang releases, but a name and its ID have to identify each other
+    @test !isempty(inline_cmds)
+    for (n1, i1) in inline_cmds, (n2, i2) in inline_cmds
+        @test (n1 == n2) == (i1 == i2)
+    end
+    @test "b" in tag_names
+    @test n_end_tags == 1
+    @test attr_names == ["class"]
+    @test tparam_names == ["T"]
 
     dispose(f)
     dispose(I)
@@ -319,21 +308,17 @@ end
     pp = CC.getPreprocessor(ci)
 
     # ParamCommandComment::getDirectionAsString is static — it needs no comment node.
-    dirs = (CC.CXParamCommandPassDirection_In, CC.CXParamCommandPassDirection_Out, CC.CXParamCommandPassDirection_InOut)
-    for d in dirs
-        s = CC.getDirectionAsString(d)
-        @test s isa String
-        @test !isempty(s)
-    end
     @test CC.getDirectionAsString(CC.CXParamCommandPassDirection_In) == "[in]"
+    @test CC.getDirectionAsString(CC.CXParamCommandPassDirection_Out) == "[out]"
+    @test CC.getDirectionAsString(CC.CXParamCommandPassDirection_InOut) == "[in,out]"
 
     function collect_nodes(root)
         nodes = CC.Comment[]
-        queue = CC.Comment[CC.getChild(root, i) for i = 0:(CC.child_count(root) - 1)]
+        queue = CC.Comment[CC.getChild(root, i) for i = 0:(Int(CC.child_count(root)) - 1)]
         while !isempty(queue)
             c = popfirst!(queue)
             push!(nodes, c)
-            for i = 0:(CC.child_count(c) - 1)
+            for i = 0:(Int(CC.child_count(c)) - 1)
                 push!(queue, CC.getChild(c, i))
             end
         end
@@ -345,103 +330,94 @@ end
     d = get_decl(f)
 
     fc = CC.getCommentForDecl(ctx, d, pp)
-    @test fc isa CC.FullComment
-    if fc.ptr != C_NULL
-        # getBlocks() as count+index: FullComment::child_begin/child_end walk exactly
-        # the Blocks array, so the two views must agree element for element.
-        nb = CC.getNumBlocks(fc)
-        @test nb isa Integer
-        @test nb == CC.child_count(fc)
-        for i = 0:(nb - 1)
-            b = CC.getBlock(fc, i)
-            @test b isa CC.Comment
-            @test b.ptr == CC.getChild(fc, i).ptr
-        end
-
-        di = CC.getDeclInfo(fc)
-        @test di isa CC.DeclInfo
-        @test di.ptr != C_NULL
-        @test CC.getKind(di) == CC.CXDeclInfo_FunctionKind
-        @test CC.getTemplateKind(di) == CC.CXDeclInfo_NotTemplate
-        @test CC.involvesFunctionType(di)
-
-        close_names = String[]
-        block_lines = String[]
-        line_texts = String[]
-        verbatim_lines = String[]
-        param_names = String[]
-        for c in collect_nodes(fc)
-            bcc = CC.BlockCommandComment(c)
-            bcc.ptr != C_NULL && @test CC.isValid((CC.getCommandNameRange(bcc, ctx)).begin_loc)
-            bcc.ptr != C_NULL && @test CC.isValid((CC.getCommandNameRange(bcc, ctx)).end_loc)
-
-            vbc = CC.VerbatimBlockComment(c)
-            if vbc.ptr != C_NULL
-                push!(close_names, CC.getCloseName(vbc))
-                nl = CC.getNumLines(vbc)
-                @test nl isa Integer
-                for k = 0:(nl - 1)
-                    push!(block_lines, CC.getText(vbc, k))
-                end
-            end
-
-            vblc = CC.VerbatimBlockLineComment(c)
-            vblc.ptr != C_NULL && push!(line_texts, CC.getText(vblc))
-
-            vlc = CC.VerbatimLineComment(c)
-            if vlc.ptr != C_NULL
-                push!(verbatim_lines, CC.getText(vlc))
-                @test CC.isValid((CC.getTextRange(vlc)).begin_loc)
-                @test CC.isValid((CC.getTextRange(vlc)).end_loc)
-            end
-
-            pcc = CC.ParamCommandComment(c)
-            if pcc.ptr != C_NULL && CC.isParamIndexValid(pcc)
-                push!(param_names, CC.getParamName(pcc, fc))
-            end
-        end
-
-        @test "endcode" in close_names
-        @test any(s -> occursin("cc_doc_vb", s), block_lines)
-        # getText(vbc, i) forwards to Lines[i]->getText(), the same nodes the walk saw.
-        @test line_texts == block_lines
-        @test any(s -> occursin("cc_doc_vb_group", s), verbatim_lines)
-        @test all(s -> s isa String, param_names)
-        @test issubset(param_names, ["a", "b"])
+    @test !CC.is_null_handle(fc)
+    # getBlocks() as count+index: FullComment::child_begin/child_end walk exactly
+    # the Blocks array, so the two views must agree element for element.
+    nb = Int(CC.getNumBlocks(fc))
+    @test nb == Int(CC.child_count(fc))
+    @test nb >= 1
+    for i = 0:(nb - 1)
+        @test CC.getBlock(fc, i).ptr == CC.getChild(fc, i).ptr
     end
+
+    di = CC.getDeclInfo(fc)
+    @test !CC.is_null_handle(di)
+    @test CC.getKind(di) == CC.CXDeclInfo_FunctionKind
+    @test CC.getTemplateKind(di) == CC.CXDeclInfo_NotTemplate
+    @test CC.involvesFunctionType(di)
+
+    close_names = String[]
+    block_lines = String[]
+    line_texts = String[]
+    verbatim_lines = String[]
+    param_names = String[]
+    for c in collect_nodes(fc)
+        bcc = CC.BlockCommandComment(c)
+        bcc.ptr != C_NULL && @test CC.isValid((CC.getCommandNameRange(bcc, ctx)).begin_loc)
+        bcc.ptr != C_NULL && @test CC.isValid((CC.getCommandNameRange(bcc, ctx)).end_loc)
+
+        vbc = CC.VerbatimBlockComment(c)
+        if vbc.ptr != C_NULL
+            push!(close_names, CC.getCloseName(vbc))
+            nl = Int(CC.getNumLines(vbc))
+            @test nl >= 1
+            for k = 0:(nl - 1)
+                push!(block_lines, CC.getText(vbc, k))
+            end
+        end
+
+        vblc = CC.VerbatimBlockLineComment(c)
+        vblc.ptr != C_NULL && push!(line_texts, CC.getText(vblc))
+
+        vlc = CC.VerbatimLineComment(c)
+        if vlc.ptr != C_NULL
+            push!(verbatim_lines, CC.getText(vlc))
+            @test CC.isValid((CC.getTextRange(vlc)).begin_loc)
+            @test CC.isValid((CC.getTextRange(vlc)).end_loc)
+        end
+
+        pcc = CC.ParamCommandComment(c)
+        if pcc.ptr != C_NULL && CC.isParamIndexValid(pcc)
+            push!(param_names, CC.getParamName(pcc, fc))
+        end
+    end
+
+    @test "endcode" in close_names
+    @test any(s -> occursin("cc_doc_vb", s), block_lines)
+    # getText(vbc, i) forwards to Lines[i]->getText(), the same nodes the walk saw.
+    @test line_texts == block_lines
+    @test any(s -> occursin("cc_doc_vb_group", s), verbatim_lines)
+    @test param_names == ["a", "b"]
 
     @test f(I, "cc_doc_vb_ident")
     td = first(x for x in CC.get_decls(f) if CC.getDeclKindName(x) == "FunctionTemplate")
     tfc = CC.getCommentForDecl(ctx, td, pp)
-    @test tfc isa CC.FullComment
-    if tfc.ptr != C_NULL
-        tdi = CC.getDeclInfo(tfc)
-        @test CC.getKind(tdi) == CC.CXDeclInfo_FunctionKind
-        @test CC.getTemplateKind(tdi) == CC.CXDeclInfo_Template
-        @test CC.involvesFunctionType(tdi)
+    @test !CC.is_null_handle(tfc)
+    tdi = CC.getDeclInfo(tfc)
+    @test CC.getKind(tdi) == CC.CXDeclInfo_FunctionKind
+    @test CC.getTemplateKind(tdi) == CC.CXDeclInfo_Template
+    @test CC.involvesFunctionType(tdi)
 
-        n_attrs = 0
-        tparam_names = String[]
-        for c in collect_nodes(tfc)
-            hst = CC.HTMLStartTagComment(c)
-            if hst.ptr != C_NULL
-                for k = 0:(CC.getNumAttrs(hst) - 1)
-                    n_attrs += 1
-                    @test CC.isValid((CC.getAttrNameRange(hst, k)).begin_loc)
-                    @test CC.isValid((CC.getAttrNameRange(hst, k)).end_loc)
-                    @test !CC.is_null_handle(CC.getAttrNameLocEnd(hst, k))
-                end
-            end
-
-            tpc = CC.TParamCommandComment(c)
-            if tpc.ptr != C_NULL && CC.isPositionValid(tpc)
-                push!(tparam_names, CC.getParamName(tpc, tfc))
+    n_attrs = 0
+    tparam_names = String[]
+    for c in collect_nodes(tfc)
+        hst = CC.HTMLStartTagComment(c)
+        if hst.ptr != C_NULL
+            for k = 0:(Int(CC.getNumAttrs(hst)) - 1)
+                n_attrs += 1
+                @test CC.isValid((CC.getAttrNameRange(hst, k)).begin_loc)
+                @test CC.isValid((CC.getAttrNameRange(hst, k)).end_loc)
+                @test CC.isValid(CC.getAttrNameLocEnd(hst, k))
             end
         end
-        @test n_attrs == 1
-        @test all(s -> s isa String, tparam_names)
-        @test issubset(tparam_names, ["T"])
+
+        tpc = CC.TParamCommandComment(c)
+        if tpc.ptr != C_NULL && CC.isPositionValid(tpc)
+            push!(tparam_names, CC.getParamName(tpc, tfc))
+        end
     end
+    @test n_attrs == 1
+    @test tparam_names == ["T"]
 
     dispose(f)
     dispose(I)
@@ -461,7 +437,7 @@ end
     f = DeclFinder(I)
     @test f(I, "cc_mutate_add")
     fc = CC.getCommentForDecl(ctx, get_decl(f), pp)
-    @test fc isa CC.FullComment
+    @test !CC.is_null_handle(fc)
 
     # child_count is an unsigned C count: widen it before building a range, or a
     # childless node turns `0:(n - 1)` into a 2^32-long loop.
@@ -477,7 +453,7 @@ end
 
     # getCommentKind and getCommentKindName are stamped from the same class list,
     # so the enumerator name is always the kind name with the mirror's prefix.
-    @test CC.getCommentKind(fc) isa Enum
+    @test CC.getCommentKind(fc) == CC.CXCommentKind_FullComment
     @test string(CC.getCommentKind(fc)) == "CXCommentKind_FullComment"
     for c in nodes
         @test string(CC.getCommentKind(c)) == "CXCommentKind_" * CC.getCommentKindName(c)
@@ -602,46 +578,35 @@ end
     croot = CC.resolve(CC.getBody(cfd))
     cbs = find_node(CC.CoroutineBodyStmt, croot)
     @test cbs isa CC.CoroutineBodyStmt
-    if cbs isa CC.CoroutineBodyStmt
-        pds = CC.getPromiseDeclStmt(cbs)
-        @test pds isa CC.AbstractStmt
-        if pds.ptr != C_NULL
-            @test CC.resolve(pds) isa CC.DeclStmt
-        end
-        @test CC.getFallthroughHandler(cbs) isa CC.AbstractStmt
-        @test CC.getResultDecl(cbs) isa CC.AbstractStmt
-        @test CC.getReturnStmtOnAllocFailure(cbs) isa CC.AbstractStmt
-        @test !CC.is_null_handle(CC.getReturnValueInit(cbs))
-        # `co_return;` yields nothing, so the return value may be a null carrier
-        @test CC.is_null_handle(CC.getReturnValue(cbs))
-        n = Int(CC.getNumParamMoves(cbs))
-        @test n >= 0
-        for i = 0:(n - 1)
-            @test CC.getParamMove(cbs, i) isa CC.AbstractStmt
-        end
+    pds = CC.getPromiseDeclStmt(cbs)
+    @test !CC.is_null_handle(pds)
+    @test CC.resolve(pds) isa CC.DeclStmt
+    # this promise has no `get_return_object_on_allocation_failure`
+    @test CC.is_null_handle(CC.getReturnStmtOnAllocFailure(cbs))
+    @test !CC.is_null_handle(CC.getReturnValueInit(cbs))
+    # `co_return;` yields nothing
+    @test CC.is_null_handle(CC.getReturnValue(cbs))
+    @test Int(CC.getNumParamMoves(cbs)) == 1
+    @test CC.resolve(CC.getParamMove(cbs, 0)) isa CC.DeclStmt
+    @test_throws AssertionError CC.getParamMove(cbs, 1)
 
-        crs = find_node(CC.CoreturnStmt, croot)
-        @test crs isa CC.CoreturnStmt
-        if crs isa CC.CoreturnStmt
-            v = CC.isImplicit(crs)
-            CC.setIsImplicit(crs, v)
-            @test CC.isImplicit(crs) == v
-        end
-    end
+    crs = find_node(CC.CoreturnStmt, croot)
+    @test crs isa CC.CoreturnStmt
+    v = CC.isImplicit(crs)
+    CC.setIsImplicit(crs, v)
+    @test CC.isImplicit(crs) == v
 
     rf = DeclFinder(J)
     @test rf(J, "sum_over_array")
     rfd = CC.FunctionDecl(get_decl(rf))
     frs = find_node(CC.CXXForRangeStmt, CC.resolve(CC.getBody(rfd)))
     @test frs isa CC.CXXForRangeStmt
-    if frs isa CC.CXXForRangeStmt
-        body = CC.getBody(frs)
-        CC.setBody(frs, body)
-        @test CC.getBody(frs).ptr == body.ptr
-        cond = CC.getCond(frs)
-        CC.setCond(frs, cond)
-        @test CC.getCond(frs).ptr == cond.ptr
-    end
+    body = CC.getBody(frs)
+    CC.setBody(frs, body)
+    @test CC.getBody(frs).ptr == body.ptr
+    cond = CC.getCond(frs)
+    CC.setCond(frs, cond)
+    @test CC.getCond(frs).ptr == cond.ptr
     dispose(J)
 end
 
@@ -694,7 +659,6 @@ end
     sm = CC.getSourceManager(ci)
 
     rcl = CC.getComments(ctx)
-    @test rcl isa CC.RawCommentList
     # the parse attached comments, so the list is not empty
     @test !CC.empty(rcl)
 
@@ -703,7 +667,6 @@ end
     fd = CC.FunctionDecl(get_decl(f))
     fid = CC.getFileID(sm, CC.getLocation(fd))
     comments = CC.getCommentsInFile(rcl, fid)
-    @test comments isa Vector{CC.RawComment}
     # both comments the source declares are present, and their texts are the ones written
     @test length(comments) >= 2
     texts = [CC.getRawText(c, sm) for c in comments]
@@ -713,9 +676,10 @@ end
     offsets = [CC.getFileOffset(sm, CC.getBeginLoc(CC.getSourceRange(c))) for c in comments]
     @test issorted(offsets)
 
-    # a file with no comments in it answers with an empty snapshot, not an error
+    # the incremental snippet is not the interpreter's main file, so that FileID
+    # answers with an empty snapshot rather than the comments above
     other = CC.getMainFileID(sm)
-    @test CC.getCommentsInFile(rcl, other) isa Vector{CC.RawComment}
+    @test isempty(CC.getCommentsInFile(rcl, other))
     CC.dispose(other)
 
     CC.dispose(fid)

@@ -125,33 +125,55 @@ end
     @test length(kids) == 4
     @test typeof.(kids) == [IfStmt, DeclStmt, WhileStmt, ReturnStmt]
 
-    # IfStmt without else/init exposes exactly cond + then
+    # IfStmt without else/init exposes exactly cond + then — accessors, not just children length
     ifstmt = kids[1]
-    @test length(children(ifstmt)) == 2
+    if_kids = children(ifstmt)
+    @test length(if_kids) == 2
+    @test getCond(ifstmt) == if_kids[1]
+    @test getThen(ifstmt) == if_kids[2]
+    @test CC.is_null_handle(getElse(ifstmt))
 
     # stamped predicates and casts, including an abstract-base cast
-    cond = children(ifstmt)[1]
+    cond = if_kids[1]
     @test cond isa BinaryOperator
     @test isExpr(cond)
     @test isValueStmt(cond)
     @test !isIfStmt(cond)
     e = Expr_(cond)
-    @test e.ptr != C_NULL
-    @test isIfStmt(kids[1]) && !isExpr(kids[1])
+    @test e == cond
+    @test isIfStmt(ifstmt) && !isExpr(ifstmt)
+    @test getOpcode(cond) == LibClangEx.CXBinaryOperatorKind_BO_LE
+    @test getOpcodeStr(cond) == "<="
+    @test isComparisonOp(cond)
 
     # Expr base API
     ty = getType(e)
     # the default printing policy spells C++ bool as C's _Bool
     @test get_name(ty) in ("bool", "_Bool")
     @test getValueKind(e) == LibClangEx.CXExprValueKind_VK_PRValue
-    stripped = IgnoreParenImpCasts(e)
-    @test stripped.ptr != C_NULL
+    @test IgnoreParenImpCasts(e) == e
 
-    # source locations round-trip
-    @test getBeginLoc(body).ptr != C_NULL
-    @test getEndLoc(body).ptr != C_NULL
+    # source locations: invalid is the zero encoding, so isValid is the real check, and a
+    # multi-line body is what separates begin from end
+    @test CC.isValid(getBeginLoc(body))
+    @test CC.isValid(getEndLoc(body))
+    @test getBeginLoc(body) != getEndLoc(body)
 
-    @test getNumChildren(kids[4]) == 1  # return r;
+    ds = kids[2]
+    @test isSingleDecl(ds)
+    @test CC.getName(VarDecl(getSingleDecl(ds))) == "r"
+
+    wh = kids[3]
+    wcond = CC.resolve(getCond(wh))
+    @test wcond isa BinaryOperator
+    @test getOpcodeStr(wcond) == ">"
+    @test isComparisonOp(wcond)
+
+    ret = kids[4]
+    @test getNumChildren(ret) == 1  # return r;
+    rdref = CC.resolve(IgnoreParenImpCasts(getRetValue(ret)))
+    @test rdref isa DeclRefExpr
+    @test CC.getName(CC.getDecl(rdref)) == "r"
 
     dispose(lookup)
     dispose(I)
@@ -177,9 +199,9 @@ end
 
     @test decl_lookup(I, "Foo")
     decl = get_decl(decl_lookup)
-    for x in DeclIterator(decl)
-        CC.dump(x)
-    end
+    foo_kinds = [getDeclKindName(d) for d in DeclIterator(decl)]
+    @test count(==("CXXConstructor"), foo_kinds) == 2
+    @test count(==("Field"), foo_kinds) == 1
 
     dispose(decl_lookup)
     dispose(I)
@@ -205,7 +227,6 @@ end
     bulk = CC.subtree(body)
     @test length(bulk) == length(rec)
     @test bulk[1] isa CC.CompoundStmt                       # pre-order: root first
-    @test all(x -> x isa CC.AbstractStmt, bulk)
     @test !any(x -> isabstracttype(typeof(x)), bulk)        # every node fully resolved
     @test [s.ptr for s in bulk] == [s.ptr for s in rec]     # same nodes, same order
 

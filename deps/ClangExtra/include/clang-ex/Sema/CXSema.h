@@ -937,6 +937,7 @@ typedef enum CXCCEKind {
   CXCCEKind_CCEK_CaseValue,
   CXCCEKind_CCEK_Enumerator,
   CXCCEKind_CCEK_TemplateArg,
+  CXCCEKind_CCEK_InjectedTTP,
   CXCCEKind_CCEK_ArrayBound,
   CXCCEKind_CCEK_ExplicitBool,
   CXCCEKind_CCEK_Noexcept,
@@ -1369,6 +1370,7 @@ typedef enum CXFormatStringType {
   CXFormatStringType_FST_FreeBSDKPrintf,
   CXFormatStringType_FST_OSTrace,
   CXFormatStringType_FST_OSLog,
+  CXFormatStringType_FST_Syslog,
   CXFormatStringType_FST_Unknown
 } CXFormatStringType;
 
@@ -1626,8 +1628,8 @@ CXAssignConvertType clang_Sema_CheckAssignmentConstraints(CXSema S, CXSourceLoca
                                                           CXQualType LHSType,
                                                           CXQualType RHSType);
 
-// True when E is not a valid constant initializer for an object of type T, diagnosing the
-// subexpression that made it non-constant.
+// True when E is not a valid constant initializer, diagnosing the subexpression that made
+// it non-constant. LLVM 20 dropped the QualType parameter; T is accepted and ignored.
 bool clang_Sema_CheckForConstantInitializer(CXSema S, CXExpr E, CXQualType T);
 
 // Convert E to the boolean condition of an if/while/for, applying the usual function and
@@ -2835,6 +2837,7 @@ typedef enum CXExpressionEvaluationContext {
 typedef enum CXExpressionKind {
   CXExpressionKind_EK_Decltype,
   CXExpressionKind_EK_TemplateArgument,
+  CXExpressionKind_EK_AttrArgument,
   CXExpressionKind_EK_Other
 } CXExpressionKind;
 
@@ -3703,9 +3706,12 @@ CXQualType clang_Sema_CheckVectorCompareOperands(CXSema S, CXExpr *LHS, CXExpr *
                                                  CXSourceLocation_ Loc,
                                                  CXBinaryOperatorKind Opc);
 
-// `&&` and `||` over vector operands; the result is the signed integer vector type.
+// `&&` and `||` over vector operands; the result is the signed integer vector type. Opc
+// says which of the two is being checked -- CXBinaryOperatorKind_BO_LAnd for `&&`,
+// CXBinaryOperatorKind_BO_LOr for `||`.
 CXQualType clang_Sema_CheckVectorLogicalOperands(CXSema S, CXExpr *LHS, CXExpr *RHS,
-                                                 CXSourceLocation_ Loc);
+                                                 CXSourceLocation_ Loc,
+                                                 CXBinaryOperatorKind Opc);
 
 // --- Declaration and node builders taken in clang::Sema declaration order ---
 //
@@ -4060,8 +4066,12 @@ bool clang_Sema_getFullyPackExpandedSize(CXSema S, CXTemplateArgument Arg, unsig
 unsigned clang_Sema_getCurFPFeatures(CXSema S);
 
 // Whether the template template parameter list PParam is at least as specialized as AArg.
+// PArg is the template the parameter side names and PParam must be its own parameter list,
+// clang_TemplateDecl_getTemplateParameters(PArg); both PArg and AArg must be non-null,
+// since clang carries PArg as the entity of the instantiation context the check runs in.
 bool clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(
-    CXSema S, CXTemplateParameterList PParam, CXTemplateDecl AArg, CXSourceLocation_ Loc);
+    CXSema S, CXTemplateParameterList PParam, CXTemplateDecl PArg, CXTemplateDecl AArg,
+    CXSourceLocation_ Loc);
 
 // A template argument mapping Param to itself -- the injected self-argument, e.g. T for
 // `template <typename T>`. Returned BY VALUE and heap-boxed, so unlike every other
@@ -4101,7 +4111,8 @@ typedef enum CXFormatArgumentPassingKind {
 } CXFormatArgumentPassingKind;
 
 // Which of FT1 and FT2 is more specialized, or NULL when neither is. Reversed selects the
-// reversed-parameter-order form, which is defined only for TPOC_Call.
+// reversed-parameter-order form, which is defined only for TPOC_Call. LLVM 20 dropped
+// NumCallArguments2; it is accepted and ignored.
 CXFunctionTemplateDecl clang_Sema_getMoreSpecializedTemplate(
     CXSema S, CXFunctionTemplateDecl FT1, CXFunctionTemplateDecl FT2, CXSourceLocation_ Loc,
     CXTPOC TPOC, unsigned NumCallArguments1, unsigned NumCallArguments2, bool Reversed);

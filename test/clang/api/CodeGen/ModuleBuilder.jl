@@ -39,7 +39,7 @@ end
     fd = CC.FunctionDecl(get_decl(f))
     mangled = CC.GetMangledName(cg, fd)
     @test mangled != "mb_cxx_fn"
-    @test !CC.is_null_handle(CC.GetDeclForMangledName(cg, mangled))
+    @test CC.GetDeclForMangledName(cg, mangled).ptr == fd.ptr
 
     dispose(f)
     dispose(I)
@@ -57,7 +57,7 @@ end
     @test !isempty(ctors)
     ctor = first(ctors)
     dtor = CC.getDestructor(rd)
-    @test !CC.is_null_handle(dtor)
+    @test CC.isCXXDestructorDecl(dtor)
 
     # clang's GlobalDecl(NamedDecl *) rejects them outright: several bodies, no single name
     @test_throws AssertionError CC.GetMangledName(cg, ctor)
@@ -111,7 +111,6 @@ end
     lctx = LLVM.Context()
 
     cg = CC.CodeGenerator(ci, "standalone_cgen", lctx)
-    @test cg isa CC.CodeGenerator
     # the generator owns a module of its own from the moment it is built -- that module is
     # the whole point of driving a Parser into it
     mod = CC.GetModule(cg)
@@ -128,7 +127,7 @@ end
     @test CC.CGM(cg).ptr != CC.get_codegen_module(I).ptr
     dispose(cg)
 
-    # ... and the LLVM 18 signature takes a virtual file system, which only a configured
+    # ... and the LLVM 20 signature takes a virtual file system, which only a configured
     # file manager can supply
     bare = CC.CompilerInstance()
     @test_throws AssertionError CC.CodeGenerator(bare, "no_fm", lctx)

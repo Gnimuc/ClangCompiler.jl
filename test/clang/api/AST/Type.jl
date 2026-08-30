@@ -180,7 +180,6 @@ end
     @test fpt_u isa CC.FunctionProtoType
     @test CC.isa_AutoType(CC.getTypePtr(CC.getReturnType(fpt_u)))
     dt = CC.getContainedDeducedType(tpof("undeduced_fn"))
-    @test dt isa CC.DeducedType
     @test dt.ptr != C_NULL
     @test CC.getContainedDeducedType(ib).ptr == C_NULL
 
@@ -227,9 +226,8 @@ end
     @test cse isa CC.CStyleCastExpr
     bl = CC.getBeginLoc(cse)
     el = CC.getEndLoc(cse)
-    @test bl isa CC.SourceLocation
-    @test el isa CC.SourceLocation
     @test bl.ptr == CC.getLParenLoc(cse).ptr
+    @test el.ptr != bl.ptr
 
     # free-function operator spelling
     @test CC.getOperatorSpelling(LX.CXOverloadedOperatorKind_OO_Plus) == "+"
@@ -249,7 +247,9 @@ end
     tst = CC.resolve(CC.getTypePtr(CC.getNamedType(ety)))
     @test tst isa CC.TemplateSpecializationType
     @test CC.getNumArgs(tst) == 2
-    @test CC.getArg(tst, 0) isa CC.TemplateArgument
+    @test CC.getKind(CC.getArg(tst, 0)) == CC.LibClangEx.CXTemplateArgument_Type
+    # as-written, the non-type argument stays an expression rather than an integral
+    @test CC.getKind(CC.getArg(tst, 1)) == CC.LibClangEx.CXTemplateArgument_Expression
     @test_throws AssertionError CC.getArg(tst, CC.getNumArgs(tst))  # the restated clang assert (Invariant 3)
     dispose(f)
     dispose(I)
@@ -290,6 +290,8 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
 
     template <class T> struct TapiWrap { T val; };
     TapiWrap<int> tapi_w;
+    template <class A, class B> struct TapiTwo { A a; B b; };
+    TapiTwo<int, long> tapi_two;
 
     template <class A, class B> struct TapiPair {};
     template <class... As> struct TapiHost3 {};
@@ -319,8 +321,8 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
 
     # ---------------- Type::getPointeeType (generic) + isa_UnresolvedUsingType ----------------
     ptp = CC.getTypePtr(vqt("tapi_p"))
-    @test ptp isa CC.Type_
-    @test !CC.is_null_handle(CC.getPointeeType(ptp))
+    @test CC.isPointerType(ptp)
+    @test CC.getAsString(CC.getPointeeType(ptp)) == "int"
     @test !(CC.isa_UnresolvedUsingType(ptp))
 
     # ---------------- FunctionNoProtoType ----------------
@@ -328,20 +330,33 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     fnp = CC.resolve(CC.getTypePtr(CC.getFunctionNoProtoType(ctx, int_qt)))
     fnp isa CC.FunctionNoProtoType || (fnp = CC.resolve(fnp))
     @test fnp isa CC.FunctionNoProtoType
-    @test !CC.is_null_handle(CC.desugar(fnp))
-    @test !(CC.isSugared(fnp))
+    @test !CC.isSugared(fnp)
+    @test CC.getTypePtr(CC.desugar(fnp)) == fnp
 
     # ---------------- SubstTemplateTypeParmType (instantiated member of TapiWrap<int>) ----------------
     w_crt = CC.resolve(CC.getTypePtr(CC.getCanonicalType(vqt("tapi_w"))))
     @test w_crt isa CC.RecordType
     sttp = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(CC.getDecl(w_crt))))))
     @test sttp isa CC.SubstTemplateTypeParmType
-    @test !CC.is_null_handle(CC.getReplacementType(sttp))
-    @test !CC.is_null_handle(CC.desugar(sttp))
-    @test !CC.is_null_handle(CC.getAssociatedDecl(sttp))
+    @test CC.getAsString(CC.getReplacementType(sttp)) == "int"
+    @test CC.getAsString(CC.desugar(sttp)) == "int"
+    @test CC.getNameAsString(CC.resolve(CC.getAssociatedDecl(sttp))) == "TapiWrap"
     @test CC.getIndex(sttp) == 0
-    @test !CC.is_null_handle(CC.getReplacedParameter(sttp))
+    @test CC.getName(CC.getReplacedParameter(sttp)) == "T"
     @test CC.isSugared(sttp) == true
+    # a one-parameter instantiation cannot tell an index-ignoring accessor from a working one
+    two_crt = CC.resolve(CC.getTypePtr(CC.getCanonicalType(vqt("tapi_two"))))
+    two_fields = CC.getFields(CC.getDecl(two_crt))
+    sttp0 = CC.resolve(CC.getTypePtr(CC.getType(two_fields[1])))
+    sttp1 = CC.resolve(CC.getTypePtr(CC.getType(two_fields[2])))
+    @test sttp0 isa CC.SubstTemplateTypeParmType
+    @test sttp1 isa CC.SubstTemplateTypeParmType
+    @test CC.getIndex(sttp0) == 0
+    @test CC.getIndex(sttp1) == 1
+    @test CC.getAsString(CC.getReplacementType(sttp0)) == "int"
+    @test CC.getAsString(CC.getReplacementType(sttp1)) == "long"
+    @test CC.getName(CC.getReplacedParameter(sttp0)) == "A"
+    @test CC.getName(CC.getReplacedParameter(sttp1)) == "B"
 
     # ---------------- SubstTemplateTypeParmPackType (member alias template of TapiPackOuter<int,long>) ----------------
     # `Zip`'s underlying type in the specialization is TapiHost3<TapiPair<Ts, Us>...> with Ts
@@ -369,30 +384,30 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test pair_tst isa CC.TemplateSpecializationType
     pk = CC.resolve(CC.getTypePtr(CC.getAsType(CC.getArg(pair_tst, 0))))
     @test pk isa CC.SubstTemplateTypeParmPackType
-    @test !CC.is_null_handle(CC.desugar(pk))
-    @test !CC.is_null_handle(CC.getAssociatedDecl(pk))
+    @test !CC.isSugared(pk)
+    @test CC.getTypePtr(CC.desugar(pk)) == pk
+    @test CC.getNameAsString(CC.resolve(CC.getAssociatedDecl(pk))) == "TapiPackOuter"
     # the pack's own arity, cross-checked against the args of the specialization it came from
     @test CC.getArgumentPack(pk).Length == CC.getNumArgs(pair_tst)
     @test !(CC.getFinal(pk))
     @test CC.getIndex(pk) == 0
     @test CC.getNumArgs(pk) == 2
-    @test !CC.is_null_handle(CC.getReplacedParameter(pk))
-    @test !(CC.isSugared(pk))
+    @test CC.getName(CC.getReplacedParameter(pk)) == "Ts"
 
     # ---------------- DependentTemplateSpecializationType (pattern TapiS4 field v) ----------------
     dtst = unwrap(CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt_of("TapiS4")))))))
     @test dtst isa CC.DependentTemplateSpecializationType
-    @test !CC.is_null_handle(CC.desugar(dtst))
-    @test CC.getIdentifier(dtst) isa CC.IdentifierInfo
+    @test !CC.isSugared(dtst)
+    @test CC.getTypePtr(CC.desugar(dtst)) == dtst
+    @test CC.getName(CC.getIdentifier(dtst)) == "Inner"
     @test !CC.is_null_handle(CC.getQualifier(dtst))
-    @test !(CC.isSugared(dtst))
 
     # ---------------- UnresolvedUsingType (pattern TapiS5 field m) ----------------
     uut = unwrap(CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt_of("TapiS5")))))))
     @test uut isa CC.UnresolvedUsingType
-    @test !CC.is_null_handle(CC.desugar(uut))
-    @test CC.getDecl(uut) isa CC.UnresolvedUsingTypenameDecl
-    @test !(CC.isSugared(uut))
+    @test !CC.isSugared(uut)
+    @test CC.getTypePtr(CC.desugar(uut)) == uut
+    @test CC.getName(CC.getDecl(uut)) == "type"
 
     # ---------------- DeducedTemplateSpecializationType + DeducedType (CTAD variable) ----------------
     ctad_vd = vdecl("tapi_ctad")
@@ -405,10 +420,9 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     end
     @test dts isa CC.DeducedTemplateSpecializationType
     @test !CC.is_null_handle(CC.getTemplateName(dts))
-    @test !CC.is_null_handle(CC.desugar(dts))
-    @test !CC.is_null_handle(CC.getDeducedType(dts))
-    @test CC.isDeduced(dts)
     @test CC.isSugared(dts)
+    @test CC.getAsString(CC.desugar(dts)) == CC.getAsString(CC.getDeducedType(dts))
+    @test CC.isDeduced(dts)
 
     # ---------------- DependentAddressSpaceType (typedef DASTy in pattern TapiDAS) ----------------
     local das_td = nothing
@@ -418,10 +432,10 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test das_td isa CC.TypedefDecl
     dast = CC.resolve(CC.getTypePtr(CC.getUnderlyingType(das_td)))
     @test dast isa CC.DependentAddressSpaceType
-    @test !CC.is_null_handle(CC.desugar(dast))
+    @test !CC.isSugared(dast)
+    @test CC.getTypePtr(CC.desugar(dast)) == dast
     @test !CC.is_null_handle(CC.getAddrSpaceExpr(dast))
-    @test !CC.is_null_handle(CC.getPointeeType(dast))
-    @test !(CC.isSugared(dast))
+    @test CC.getAsString(CC.getPointeeType(dast)) == "int"
 
     # ---------------- DependentSizedExtVectorType (typedef EVTy in pattern TapiDEV) ----------------
     local dev_td = nothing
@@ -431,26 +445,26 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test dev_td isa CC.TypedefDecl
     devt = CC.resolve(CC.getTypePtr(CC.getUnderlyingType(dev_td)))
     @test devt isa CC.DependentSizedExtVectorType
-    @test !CC.is_null_handle(CC.desugar(devt))
-    @test !CC.is_null_handle(CC.getElementType(devt))
+    @test !CC.isSugared(devt)
+    @test CC.getTypePtr(CC.desugar(devt)) == devt
+    @test CC.getAsString(CC.getElementType(devt)) == "int"
     @test !CC.is_null_handle(CC.getSizeExpr(devt))
-    @test !(CC.isSugared(devt))
 
     # ---------------- MacroQualifiedType (built via ASTContext with a borrowed IdentifierInfo) ----------------
     mqt = CC.resolve(CC.getTypePtr(CC.getMacroQualifiedType(ctx, int_qt, CC.getIdentifier(dtst))))
     @test mqt isa CC.MacroQualifiedType
-    @test !CC.is_null_handle(CC.desugar(mqt))
-    @test !CC.is_null_handle(CC.getMacroIdentifier(mqt))
-    @test !CC.is_null_handle(CC.getModifiedType(mqt))
-    @test !CC.is_null_handle(CC.getUnderlyingType(mqt))
     @test CC.isSugared(mqt)
+    @test CC.getName(CC.getMacroIdentifier(mqt)) == CC.getName(CC.getIdentifier(dtst))
+    @test !CC.isNull(CC.getModifiedType(mqt))
+    @test CC.getAsString(CC.getUnderlyingType(mqt)) == "int"
+    @test CC.getAsString(CC.desugar(mqt)) == "int"
 
     # ---------------- ParenType (built via ASTContext) ----------------
     pty = CC.resolve(CC.getTypePtr(CC.getParenType(ctx, int_qt)))
     @test pty isa CC.ParenType
-    @test !CC.is_null_handle(CC.desugar(pty))
-    @test !CC.is_null_handle(CC.getInnerType(pty))
     @test CC.isSugared(pty)
+    @test CC.getAsString(CC.getInnerType(pty)) == "int"
+    @test CC.getAsString(CC.desugar(pty)) == "int"
 
     # ---------------- TemplateArgument::getNumTemplateExpansions (TT-pack expansion arg) ----------------
     ttst = unwrap(CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(patt_of("TapiTTUser")))))))
@@ -465,16 +479,12 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     # ---------------- TypeLoc base + AbstractTypeLoc carriers ----------------
     gx_vd = vdecl("tapi_gx")
     tl = CC.getTypeLoc(CC.getTypeSourceInfo(gx_vd))
-    @test !CC.is_null_handle(CC.getEndLoc(tl))
+    @test CC.getAsString(CC.getType(tl)) == "int"
     @test !CC.is_null_handle(CC.getBeginLoc(tl))
-    @test !CC.is_null_handle(CC.getEndLoc(tl))
     btl = CC.BuiltinTypeLoc(tl)
-    @test btl isa CC.BuiltinTypeLoc
-    @test CC.getType(btl) isa CC.QualType
-    @test !CC.is_null_handle(CC.getBeginLoc(btl))
-    @test !CC.is_null_handle(CC.getEndLoc(btl))
-    @test !CC.is_null_handle(CC.getBeginLoc(btl))
-    @test !CC.is_null_handle(CC.getEndLoc(btl))
+    @test CC.getAsString(CC.getType(btl)) == "int"
+    @test CC.getRawEncoding(CC.getBeginLoc(btl)) == CC.getRawEncoding(CC.getBeginLoc(tl))
+    @test CC.getRawEncoding(CC.getEndLoc(btl)) == CC.getRawEncoding(CC.getEndLoc(tl))
     dispose(btl)
     dispose(tl)
 
@@ -484,9 +494,8 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     tsi2 = CC.getTrivialTypeSourceInfo(ctx, dec_qt, CC.getLocation(gx_vd))
     tl2 = CC.getTypeLoc(tsi2)
     atl = CC.AdjustedTypeLoc(tl2)
-    @test atl isa CC.AdjustedTypeLoc
     orig = CC.getOriginalLoc(atl)
-    @test orig isa CC.TypeLoc
+    @test CC.getAsString(CC.getType(orig)) == "int[3]"
     dispose(orig)
     dispose(atl)
     dispose(tl2)
@@ -496,14 +505,15 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
 
     # ---------------- FunctionProtoType::getExceptionType (dynamic exception spec, C++14) ----------------
     I2 = create_interpreter(["-std=c++14"])
-    CC.parse(I2, "int tapi_thr(int) throw(int);")
+    CC.parse(I2, "int tapi_thr(int) throw(int, char);")
     f2 = DeclFinder(I2)
     @test f2(I2, "tapi_thr")
     ft2 = CC.resolve(CC.getTypePtr(CC.getType(CC.FunctionDecl(get_decl(f2)))))
     ft2 isa CC.FunctionProtoType || (ft2 = CC.resolve(ft2))
     @test ft2 isa CC.FunctionProtoType
-    @test CC.getNumExceptions(ft2) == 1
-    @test !CC.is_null_handle(CC.getExceptionType(ft2, 0))
+    @test CC.getNumExceptions(ft2) == 2
+    @test CC.getAsString(CC.getExceptionType(ft2, 0)) == "int"
+    @test CC.getAsString(CC.getExceptionType(ft2, 1)) == "char"
     @test_throws AssertionError CC.getExceptionType(ft2, CC.getNumExceptions(ft2))  # the restated clang assert (Invariant 3)
     dispose(f2)
     dispose(I2)
@@ -517,6 +527,9 @@ end
     # own canonical QualType (faithful by construction)
     n = 0
     for nm in names(CC; all=true)
+        # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; they alias
+        # the real carrier types and are not the stamped constructors.
+        occursin('#', String(nm)) && continue
         isdefined(CC, nm) || continue
         T = getproperty(CC, nm)
         (T isa DataType && T <: CC.AbstractBuiltinType) || continue
@@ -574,6 +587,7 @@ end
     AliasT<int> at2;
     template <int N> struct S2 { int a[N]; };
     template <class T> struct S3 { typename T::type v; };
+    template <class T> struct NestOuter { template <class U> struct NestInner { U u; }; };
     void vlafn(int n) { int vla[n]; (void)vla; }
     """)
 
@@ -587,30 +601,26 @@ end
 
     # ---------------- QualType ----------------
     cq = qtof("ci")
-    @test !CC.is_null_handle(CC.getTypePtr(cq))
     @test !CC.is_null_handle(CC.getTypePtrOrNull(cq))
     @test CC.isCanonical(cq) == true
     @test !(CC.isNull(cq))
-    @test CC.isConstQualified(cq) == true
     @test CC.isRestrictQualified(cq) == false
-    @test CC.isVolatileQualified(cq) == false
-    @test CC.hasQualifiers(cq) == true
-    @test !CC.isNull(CC.withConst(cq))
-    @test !CC.isNull(CC.withRestrict(cq))
-    @test !CC.isNull(CC.withVolatile(cq))
-    @test !CC.isNull(CC.addConst(cq))
-    @test !CC.isNull(CC.addRestrict(cq))
-    @test !CC.isNull(CC.addVolatile(cq))
     @test CC.isLocalConstQualified(cq) == true
     @test CC.isLocalRestrictQualified(cq) == false
     @test CC.isLocalVolatileQualified(cq) == false
     @test CC.hasLocalQualifiers(cq) == true
     @test CC.getCVRQualifiers(cq) == 1
-    @test !isempty(CC.getAsString(cq))
+    @test CC.getAsString(CC.withConst(cq)) == "const int"
+    @test occursin("restrict", CC.getAsString(CC.withRestrict(cq)))
+    @test occursin("volatile", CC.getAsString(CC.withVolatile(cq)))
+    @test CC.getAsString(CC.addConst(cq)) == "const int"
+    @test CC.isLocalConstQualified(CC.addConst(qtof("gx")))
+    @test CC.isLocalVolatileQualified(CC.addVolatile(qtof("gx")))
+    @test CC.getAsString(cq) == "const int"
     @test (CC.dump(cq); true)
-    @test !CC.is_null_handle(CC.getCanonicalType(cq))
-    @test !CC.isNull(CC.getLocalUnqualifiedType(cq))
-    @test !CC.isNull(CC.getUnqualifiedType(cq))
+    @test CC.getAsString(CC.getCanonicalType(cq)) == "const int"
+    @test CC.getAsString(CC.getLocalUnqualifiedType(cq)) == "int"
+    @test CC.getAsString(CC.getUnqualifiedType(cq)) == "int"
 
     # ---------------- Type (predicate/accessor block on a plain Type_) ----------------
     ty = tpof("gx")
@@ -659,18 +669,18 @@ end
     end
 
     @test CC.getTypeClass(ty) == CC.LibClangEx.CXTypeClass_Builtin
-    @test !CC.is_null_handle(CC.getCanonicalTypeInternal(ty))
+    @test CC.getAsString(CC.getCanonicalTypeInternal(ty)) == "int"
     @test CC.is_null_handle(CC.getArrayElementTypeNoTypeQual(ty))
-    @test !CC.is_null_handle(CC.getPointeeOrArrayElementType(ty))
-    @test !CC.is_null_handle(CC.getUnqualifiedDesugaredType(ty))
+    @test CC.getPointeeOrArrayElementType(ty).ptr == ty.ptr
+    @test CC.getUnqualifiedDesugaredType(ty).ptr == ty.ptr
     @test (CC.dump(ty); true)
     # getAs* accessors return their target carrier (possibly NULL-backed) — call on a record type
     recty = unwrap(rty("rc"))
-    @test !CC.is_null_handle(CC.getAsCXXRecordDecl(recty))
+    @test CC.getName(CC.getAsCXXRecordDecl(recty)) == "Rec"
     @test CC.is_null_handle(CC.getAsComplexIntegerType(ty))
-    @test CC.getAsRecordDecl(recty) isa CC.RecordDecl
-    @test !CC.is_null_handle(CC.getAsStructureType(recty))
-    @test !CC.is_null_handle(CC.getAsTagDecl(recty))
+    @test CC.getName(CC.getAsRecordDecl(recty)) == "Rec"
+    @test CC.getName(CC.getDecl(CC.getAsStructureType(recty))) == "Rec"
+    @test CC.getName(CC.getAsTagDecl(recty)) == "Rec"
     @test CC.is_null_handle(CC.getAsUnionType(ty))
     @test CC.is_null_handle(CC.getPointeeCXXRecordDecl(rty("p")))
 
@@ -694,59 +704,59 @@ end
     # ---------------- ComplexType ----------------
     cty = rty("cd")
     @test cty isa CC.ComplexType
-    @test !CC.is_null_handle(CC.getElementType(cty))
-    @test !CC.is_null_handle(CC.desugar(cty))
-    @test !(CC.isSugared(cty))
+    @test CC.getAsString(CC.getElementType(cty)) == "double"
+    @test !CC.isSugared(cty)
+    @test CC.getTypePtr(CC.desugar(cty)) == cty
 
     # ---------------- PointerType ----------------
     pty = rty("p")
     @test pty isa CC.PointerType
-    @test !CC.is_null_handle(CC.getPointeeType(pty))
-    @test !CC.is_null_handle(CC.desugar(pty))
-    @test !(CC.isSugared(pty))
+    @test CC.getAsString(CC.getPointeeType(pty)) == "int"
+    @test !CC.isSugared(pty)
+    @test CC.getTypePtr(CC.desugar(pty)) == pty
 
     # ---------------- ReferenceType / LValue / RValue ----------------
     lref = rty("r")
     @test lref isa CC.LValueReferenceType
-    @test !CC.is_null_handle(CC.getPointeeType(lref))
-    @test !CC.is_null_handle(CC.getPointeeTypeAsWritten(lref))
+    @test CC.getAsString(CC.getPointeeType(lref)) == "int"
+    @test CC.getAsString(CC.getPointeeTypeAsWritten(lref)) == "int"
     @test !(CC.isInnerRef(lref))
     @test CC.isSpelledAsLValue(lref)
-    @test !CC.is_null_handle(CC.desugar(lref))
-    @test !(CC.isSugared(lref))
+    @test !CC.isSugared(lref)
+    @test CC.getTypePtr(CC.desugar(lref)) == lref
     rref = rty("rr")
     @test rref isa CC.RValueReferenceType
-    @test !CC.is_null_handle(CC.getPointeeType(rref))
-    @test !CC.is_null_handle(CC.desugar(rref))
-    @test !(CC.isSugared(rref))
+    @test CC.getAsString(CC.getPointeeType(rref)) == "int"
+    @test !CC.isSugared(rref)
+    @test CC.getTypePtr(CC.desugar(rref)) == rref
 
     # ---------------- MemberPointerType ----------------
     mpt = rty("mp")
     @test mpt isa CC.MemberPointerType
-    @test !CC.is_null_handle(CC.getPointeeType(mpt))
-    @test !CC.is_null_handle(CC.getClass(mpt))
-    @test !CC.is_null_handle(CC.desugar(mpt))
-    @test !CC.is_null_handle(CC.getMostRecentCXXRecordDecl(mpt))
+    @test CC.getAsString(CC.getPointeeType(mpt)) == "int"
+    @test CC.getTypeClassName(CC.getClass(mpt)) == "Elaborated"
+    @test !CC.isSugared(mpt)
+    @test CC.getTypePtr(CC.desugar(mpt)) == mpt
+    @test CC.getName(CC.getMostRecentCXXRecordDecl(mpt)) == "Rec"
     @test CC.isMemberDataPointer(mpt)
-    @test !(CC.isSugared(mpt))
     mfpt = rty("mfp")
     @test CC.isMemberFunctionPointer(mfpt)
 
     # ---------------- ArrayType + ConstantArrayType ----------------
     aty = rty("arr")
     @test aty isa CC.ConstantArrayType
-    @test !CC.is_null_handle(CC.getElementType(aty))
+    @test CC.getAsString(CC.getElementType(aty)) == "int"
     @test CC.getIndexTypeCVRQualifiers(aty) == 0
     @test CC.getSizeModifier(aty) == CC.LibClangEx.CXArraySizeModifier_Normal
-    @test !CC.is_null_handle(CC.desugar(aty))
+    @test !CC.isSugared(aty)
+    @test CC.getTypePtr(CC.desugar(aty)) == aty
     @test CC.is_null_handle(CC.getSizeExpr(aty))
-    @test !(CC.isSugared(aty))
 
     # ---------------- IncompleteArrayType ----------------
     ity = rty("iarr")
     @test ity isa CC.IncompleteArrayType
-    @test !CC.is_null_handle(CC.desugar(ity))
-    @test !(CC.isSugared(ity))
+    @test !CC.isSugared(ity)
+    @test CC.getTypePtr(CC.desugar(ity)) == ity
 
     # ---------------- VariableArrayType (VLA in a function body) ----------------
     f(I, "vlafn")
@@ -764,14 +774,14 @@ end
         end
     end
     @test vaty isa CC.VariableArrayType
-    @test !CC.is_null_handle(CC.desugar(vaty))
+    @test !CC.isSugared(vaty)
+    @test CC.getTypePtr(CC.desugar(vaty)) == vaty
     @test !CC.is_null_handle(CC.getSizeExpr(vaty))
-    @test !(CC.isSugared(vaty))
 
     # ---------------- FunctionType + FunctionProtoType ----------------
     fpt = fpt_of("fn5")
     @test fpt isa CC.FunctionProtoType
-    @test !CC.is_null_handle(CC.getReturnType(fpt))
+    @test CC.getAsString(CC.getReturnType(fpt)) == "int"
     # CC_C is the default on every x86_64 target CI runs; an explicit convention is an attribute
     @test CC.getCallConv(fpt) == CC.LibClangEx.CXCallingConv_CC_C
     @test !(CC.getCmseNSCallAttr(fpt))
@@ -782,9 +792,12 @@ end
     @test !(CC.isRestrict(fpt))
     @test !(CC.isVolatile(fpt))
     @test CC.getNumParams(fpt) == 2
-    @test !CC.is_null_handle(CC.getParamType(fpt, 0))
+    @test CC.getAsString(CC.getParamType(fpt, 0)) == "double"
+    @test CC.getAsString(CC.getParamType(fpt, 1)) == "char"
+    @test_throws AssertionError CC.getParamType(fpt, 2)
     @test !(CC.isNoThrow(fpt))
-    @test !CC.is_null_handle(CC.desugar(fpt))
+    @test !CC.isSugared(fpt)
+    @test CC.getTypePtr(CC.desugar(fpt)) == fpt
     @test CC.is_null_handle(CC.getExceptionSpecDecl(fpt))
     @test CC.is_null_handle(CC.getExceptionSpecTemplate(fpt))
     @test CC.getNumExceptions(fpt) == 0
@@ -795,7 +808,6 @@ end
     @test !(CC.hasInstantiationDependentExceptionSpec(fpt))
     @test !(CC.hasNoexceptExceptionSpec(fpt))
     @test !(CC.hasTrailingReturn(fpt))
-    @test !(CC.isSugared(fpt))
     @test !(CC.isTemplateVariadic(fpt))
     @test !(CC.isVariadic(fpt))
     # `fpt` (`int fn5(double, char)`) has no exception spec, so the guard `if
@@ -814,77 +826,78 @@ end
     gparm = CC.getParamDecl(CC.FunctionDecl(get_decl(f)), 0)
     dty = CC.resolve(CC.getTypePtr(CC.getType(gparm)))
     @test dty isa CC.DecayedType
-    @test !CC.is_null_handle(CC.getDecayedType(dty))
-    @test !CC.is_null_handle(CC.getPointeeType(dty))
-    @test !CC.is_null_handle(CC.desugar(dty))
-    @test !CC.is_null_handle(CC.getAdjustedType(dty))
-    @test !CC.is_null_handle(CC.getOriginalType(dty))
+    @test CC.getAsString(CC.getDecayedType(dty)) == "int *"
+    @test CC.getAsString(CC.getPointeeType(dty)) == "int"
+    @test CC.getAsString(CC.getOriginalType(dty)) == "int[10]"
+    @test CC.getAsString(CC.getAdjustedType(dty)) == "int *"
     @test CC.isSugared(dty)
+    @test CC.getAsString(CC.desugar(dty)) == "int *"
 
     # ---------------- DecltypeType ----------------
     dcty = rty("dd")
     @test dcty isa CC.DecltypeType
-    @test !CC.is_null_handle(CC.desugar(dcty))
-    @test !CC.is_null_handle(CC.getUnderlyingExpr(dcty))
-    @test !CC.is_null_handle(CC.getUnderlyingType(dcty))
     @test CC.isSugared(dcty)
+    @test !CC.is_null_handle(CC.getUnderlyingExpr(dcty))
+    @test CC.getAsString(CC.getUnderlyingType(dcty)) == "int"
+    @test CC.getAsString(CC.desugar(dcty)) == "int"
 
     # ---------------- AtomicType ----------------
     atty = rty("ai")
     @test atty isa CC.AtomicType
-    @test !CC.is_null_handle(CC.desugar(atty))
-    @test !CC.is_null_handle(CC.getValueType(atty))
-    @test !(CC.isSugared(atty))
+    @test !CC.isSugared(atty)
+    @test CC.getTypePtr(CC.desugar(atty)) == atty
+    @test CC.getAsString(CC.getValueType(atty)) == "int"
 
     # ---------------- UnaryTransformType ----------------
     utty = rty("ut")
     @test utty isa CC.UnaryTransformType
-    @test !CC.is_null_handle(CC.desugar(utty))
-    @test !CC.is_null_handle(CC.getBaseType(utty))
-    @test !CC.is_null_handle(CC.getUnderlyingType(utty))
     @test CC.isSugared(utty)
+    @test CC.isEnumeralType(CC.getTypePtr(CC.getBaseType(utty)))
+    @test CC.isIntegerType(CC.getTypePtr(CC.getUnderlyingType(utty)))
+    @test CC.getAsString(CC.desugar(utty)) == CC.getAsString(CC.getUnderlyingType(utty))
 
     # ---------------- UsingType ----------------
     usty = unwrap(rty("uv"))
     @test usty isa CC.UsingType
-    @test !CC.is_null_handle(CC.desugar(usty))
     @test CC.getFoundDecl(usty) isa CC.UsingShadowDecl
-    @test !CC.is_null_handle(CC.getUnderlyingType(usty))
+    @test CC.getAsString(CC.getUnderlyingType(usty)) == "N::Tn"
     @test CC.isSugared(usty)
+    @test CC.getAsString(CC.desugar(usty)) == "N::Tn"
 
     # ---------------- TypedefType ----------------
     tdty = unwrap(rty("mi"))
     @test tdty isa CC.TypedefType
-    @test !CC.is_null_handle(CC.desugar(tdty))
     @test CC.getDecl(tdty) isa CC.TypedefNameDecl
+    @test CC.getName(CC.getDecl(tdty)) == "myint"
     @test CC.isSugared(tdty)
+    @test CC.getAsString(CC.desugar(tdty)) == "int"
 
     # ---------------- ElaboratedType (sugar wrapper around record/enum/typedef) ----------------
     elab = rty("rc")
     @test elab isa CC.ElaboratedType
-    @test !CC.is_null_handle(CC.desugar(elab))
-    @test !CC.is_null_handle(CC.getNamedType(elab))
+    @test CC.isSugared(elab)
+    @test CC.getAsString(CC.getNamedType(elab)) == "struct Rec"
+    @test CC.getAsString(CC.desugar(elab)) == "struct Rec"
     @test CC.is_null_handle(CC.getOwnedTagDecl(elab))
     @test CC.is_null_handle(CC.getQualifier(elab))
-    @test CC.isSugared(elab)
 
     # ---------------- RecordType + TagType ----------------
     rrt = unwrap(rty("rc"))
     @test rrt isa CC.RecordType
-    @test CC.getDecl(rrt) isa CC.RecordDecl
-    @test !CC.is_null_handle(CC.desugar(rrt))
+    @test CC.getName(CC.getDecl(rrt)) == "Rec"
+    @test !CC.isSugared(rrt)
+    @test CC.getTypePtr(CC.desugar(rrt)) == rrt
     @test CC.hasConstFields(rrt)
-    @test !(CC.isSugared(rrt))
-    @test CC.getDecl(CC.TagType(rrt)) isa CC.TagDecl
+    @test CC.getName(CC.getDecl(CC.TagType(rrt))) == "Rec"
 
     # ---------------- EnumType ----------------
     ety = unwrap(rty("ev"))
     @test ety isa CC.EnumType
-    @test CC.getDecl(ety) isa CC.EnumDecl
-    @test CC.getIntegerType(ety) isa CC.QualType
-    @test CC.getName(ety) isa AbstractString
-    @test !CC.is_null_handle(CC.desugar(ety))
-    @test !(CC.isSugared(ety))
+    @test CC.getName(CC.getDecl(ety)) == "E"
+    @test CC.isIntegerType(CC.getTypePtr(CC.getIntegerType(ety)))
+    @test CC.getName(ety) == "E"
+    @test !CC.isSugared(ety)
+    @test CC.getTypePtr(CC.desugar(ety)) == ety
 
     # ---------------- TemplateSpecializationType ----------------
     tst = unwrap(rty("si"))
@@ -893,15 +906,15 @@ end
     @test !(CC.isTypeAlias(tst))
     # the ArrayRef and the count accessor are two readings of one list
     @test CC.getTemplateArguments(tst).Length == CC.getNumArgs(tst)
-    @test CC.getNumArgs(tst) >= 1
-    @test CC.getArg(tst, 0) isa CC.TemplateArgument
+    @test CC.getNumArgs(tst) == 1
+    @test CC.getKind(CC.getArg(tst, 0)) == CC.LibClangEx.CXTemplateArgument_Type
     @test CC.isSugared(tst)
-    @test !CC.is_null_handle(CC.desugar(tst))
+    @test CC.getAsString(CC.desugar(tst)) == "struct STempl<int>"
     # an alias-template specialization exercises getAliasedType
     tsta = unwrap(rty("at2"))
-    if tsta isa CC.TemplateSpecializationType && CC.isTypeAlias(tsta)
-        @test !CC.is_null_handle(CC.getAliasedType(tsta))
-    end
+    @test tsta isa CC.TemplateSpecializationType
+    @test CC.isTypeAlias(tsta)
+    @test CC.getAsString(CC.getAliasedType(tsta)) == "STempl<int>"
 
     # ---------------- template-pattern-only carriers ----------------
     f(I, "STempl")
@@ -919,41 +932,53 @@ end
 
     # TemplateTypeParmType
     @test ttpt isa CC.TemplateTypeParmType
-    @test !CC.is_null_handle(CC.desugar(ttpt))
+    @test !CC.isSugared(ttpt)
+    @test CC.getTypePtr(CC.desugar(ttpt)) == ttpt
     @test CC.getDecl(ttpt) isa CC.TemplateTypeParmDecl
-    @test CC.getDepth(ttpt) isa Integer
+    @test CC.getName(CC.getDecl(ttpt)) == "T"
+    @test CC.getDepth(ttpt) == 0
     @test CC.getIndex(ttpt) == 0
     @test !(CC.isParameterPack(ttpt))
-    @test !(CC.isSugared(ttpt))
+
+    # a nested template parameter is depth 1: an accessor stuck at 0 cannot tell T from U
+    f(I, "NestOuter")
+    outer_rec = CC.getTemplatedDecl(CC.resolve(get_decl(f)))
+    inner_ctd = first(d for d in CC.decls(CC.castToDeclContext(outer_rec)) if d isa CC.AbstractClassTemplateDecl)
+    @test CC.getName(inner_ctd) == "NestInner"
+    inner_ttpt = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(CC.getTemplatedDecl(inner_ctd))))))
+    @test inner_ttpt isa CC.TemplateTypeParmType
+    @test CC.getDepth(inner_ttpt) == 1
+    @test CC.getIndex(inner_ttpt) == 0
+    @test CC.getName(CC.getDecl(inner_ttpt)) == "U"
 
     # InjectedClassNameType
     @test injt isa CC.InjectedClassNameType
-    @test !CC.is_null_handle(CC.desugar(injt))
-    @test CC.getDecl(injt) isa CC.CXXRecordDecl
+    @test !CC.isSugared(injt)
+    @test CC.getTypePtr(CC.desugar(injt)) == injt
+    @test CC.getName(CC.getDecl(injt)) == "STempl"
     @test !CC.is_null_handle(CC.getInjectedSpecializationType(injt))
     @test !CC.is_null_handle(CC.getInjectedTST(injt))
     @test !CC.is_null_handle(CC.getTemplateName(injt))
-    @test !(CC.isSugared(injt))
 
     # DependentSizedArrayType (template pattern S2 field a)
     f(I, "S2")
     p2 = CC.getTemplatedDecl(CC.resolve(get_decl(f)))
     dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(p2)))))
     @test dsaty isa CC.DependentSizedArrayType
-    @test !CC.is_null_handle(CC.desugar(dsaty))
+    @test !CC.isSugared(dsaty)
+    @test CC.getTypePtr(CC.desugar(dsaty)) == dsaty
     @test !CC.is_null_handle(CC.getSizeExpr(dsaty))
-    @test !(CC.isSugared(dsaty))
-    @test !CC.is_null_handle(CC.getElementType(dsaty))
+    @test CC.getAsString(CC.getElementType(dsaty)) == "int"
 
     # DependentNameType (template pattern S3 field v)
     f(I, "S3")
     p3 = CC.getTemplatedDecl(CC.resolve(get_decl(f)))
     dnty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(p3)))))
     @test dnty isa CC.DependentNameType
-    @test !CC.is_null_handle(CC.desugar(dnty))
-    @test CC.getIdentifier(dnty) isa CC.IdentifierInfo
+    @test !CC.isSugared(dnty)
+    @test CC.getTypePtr(CC.desugar(dnty)) == dnty
+    @test CC.getName(CC.getIdentifier(dnty)) == "type"
     @test !CC.is_null_handle(CC.getQualifier(dnty))
-    @test !(CC.isSugared(dnty))
 
     CC.dispose(f)
     CC.dispose(I)
@@ -980,17 +1005,20 @@ end
     cqual = qtof("qt_const")
 
     # qualifier encodings: the full Qualifiers set vs the CVR-only subset
-    @test CC.getQualifiersAsOpaqueValue(cqual) isa Unsigned
+    @test CC.hasConst(CC.getQualifiersAsOpaqueValue(cqual))
+    @test !CC.hasConst(CC.getQualifiersAsOpaqueValue(plain))
     @test CC.getQualifiersAsOpaqueValue(cqual) != CC.getQualifiersAsOpaqueValue(plain)
-    @test CC.getLocalFastQualifiers(cqual) isa Unsigned
+    @test CC.getLocalFastQualifiers(cqual) == CC.getCVRQualifiers(cqual)
+    @test CC.getLocalFastQualifiers(cqual) != 0
+    @test CC.getLocalFastQualifiers(plain) == 0
     @test CC.hasAddressSpace(plain) == false
     @test CC.getAddressSpace(plain) == CC.LibClangEx.CXLangAS_Default
 
     # qualifier ordering
-    @test CC.isMoreQualifiedThan(cqual, plain)
-    @test !CC.isMoreQualifiedThan(plain, cqual)
-    @test CC.isAtLeastAsQualifiedAs(cqual, plain)
-    @test CC.isAtLeastAsQualifiedAs(plain, plain)
+    @test CC.isMoreQualifiedThan(cqual, plain, ctx)
+    @test !CC.isMoreQualifiedThan(plain, cqual, ctx)
+    @test CC.isAtLeastAsQualifiedAs(cqual, plain, ctx)
+    @test CC.isAtLeastAsQualifiedAs(plain, plain, ctx)
 
     # reference stripping / paren stripping are identities on a plain int
     @test CC.getNonReferenceType(qtof("qt_ref")).ptr == plain.ptr
@@ -1067,9 +1095,7 @@ end
     @test CC.getAsArrayTypeUnsafe(intty).ptr == C_NULL
     @test !CC.is_null_handle(CC.getLocallyUnqualifiedSingleStepDesugaredType(intty))
 
-    name = CC.getTypeClassName(intty)
-    @test name isa AbstractString
-    @test !isempty(name)
+    @test CC.getTypeClassName(intty) == "Builtin"
 
     CC.dispose(I)
 end
@@ -1121,31 +1147,28 @@ end
     # VectorType through the typedef's underlying type
     vsug = unwrap(rty("tsub_vec"))
     vt = vsug isa CC.TypedefType ? CC.resolve(CC.getTypePtr(CC.desugar(vsug))) : vsug
-    if vt isa CC.VectorType
-        @test CC.getNumElements(vt) == 4
-        @test CC.resolve(CC.getTypePtr(CC.getElementType(vt))) isa CC.BuiltinType
-        @test CC.isSugared(vt) == false
-        @test CC.getTypePtr(CC.desugar(vt)) isa CC.Type_
-    end
+    @test vt isa CC.VectorType
+    @test CC.getNumElements(vt) == 4
+    @test CC.resolve(CC.getTypePtr(CC.getElementType(vt))) isa CC.BuiltinType
+    @test CC.isSugared(vt) == false
+    @test CC.getTypePtr(CC.desugar(vt)) == vt
 
     # AttributedType: the _Nonnull nullability attribute wraps `int *`
     nn = rty("tsub_nn")
-    if nn isa CC.AttributedType
-        @test CC.isSugared(nn) == true
-        @test CC.resolve(CC.getTypePtr(CC.getModifiedType(nn))) isa CC.PointerType
-        @test CC.resolve(CC.getTypePtr(CC.getEquivalentType(nn))) isa CC.PointerType
-        @test CC.desugar(nn).ptr == CC.getEquivalentType(nn).ptr
-    end
+    @test nn isa CC.AttributedType
+    @test CC.isSugared(nn) == true
+    @test CC.resolve(CC.getTypePtr(CC.getModifiedType(nn))) isa CC.PointerType
+    @test CC.resolve(CC.getTypePtr(CC.getEquivalentType(nn))) isa CC.PointerType
+    @test CC.desugar(nn).ptr == CC.getEquivalentType(nn).ptr
 
     # AutoType: plain deduced `auto`, unconstrained
     aut = rty("tsub_auto")
-    if aut isa CC.AutoType
-        @test CC.isConstrained(aut) == false
-        @test CC.isDecltypeAuto(aut) == false
-        @test CC.isGNUAutoType(aut) == false
-        @test CC.is_null_handle(CC.getTypeConstraintConcept(aut))
-        @test CC.isDeduced(aut) == true          # inherited AbstractDeducedType method
-    end
+    @test aut isa CC.AutoType
+    @test CC.isConstrained(aut) == false
+    @test CC.isDecltypeAuto(aut) == false
+    @test CC.isGNUAutoType(aut) == false
+    @test CC.is_null_handle(CC.getTypeConstraintConcept(aut))
+    @test CC.isDeduced(aut) == true          # inherited AbstractDeducedType method
 
     # VariableArrayType::getBracketsRange (VLA declared in a function body)
     f(I, "tsub_vla")
@@ -1186,10 +1209,8 @@ end
         t isa CC.PackExpansionType && (pet = t)
     end
     @test pet isa CC.PackExpansionType
-    if pet isa CC.PackExpansionType
-        @test CC.resolve(CC.getTypePtr(CC.getPattern(pet))) isa CC.TemplateTypeParmType
-        @test CC.getNumExpansions(pet) === nothing
-    end
+    @test CC.resolve(CC.getTypePtr(CC.getPattern(pet))) isa CC.TemplateTypeParmType
+    @test CC.getNumExpansions(pet) === nothing
 
     dispose(I)
 end
@@ -1216,7 +1237,6 @@ end
     # Qualifiers has no carrier struct: it crosses as its opaque unsigned
     # encoding, so every wrapper below dispatches on Integer.
     q0 = CC.fromCVRMask(0)
-    @test q0 isa Integer
     @test CC.empty(q0)
     @test !CC.hasConst(q0)
     @test !CC.hasVolatile(q0)
@@ -1237,8 +1257,8 @@ end
     qcv = CC.withVolatile(qc)
     @test CC.hasConst(qcv) && CC.hasVolatile(qcv)
     @test CC.fromCVRMask(CC.getCVRQualifiers(qcv)) == qcv
-    @test CC.compatiblyIncludes(qcv, qc)
-    @test !CC.compatiblyIncludes(qc, qcv)
+    @test CC.compatiblyIncludes(qcv, qc, CC.get_ast_context(I))
+    @test !CC.compatiblyIncludes(qc, qcv, CC.get_ast_context(I))
     @test CC.isStrictSupersetOf(qcv, qc)
     @test !CC.isStrictSupersetOf(qc, qcv)
     @test !CC.hasAddressSpace(qcv)
@@ -1255,7 +1275,6 @@ end
     @test !CC.hasQualifiers(CC.getAtomicUnqualifiedType(qt("qtl_ci")))
 
     id = CC.getBaseTypeIdentifier(qt("qtl_plain"))
-    @test id isa CC.IdentifierInfo
     @test CC.getName(id) == "QtlPlain"
 
     # Both reach the POINTEE class, so a class type named directly answers
@@ -1322,8 +1341,6 @@ end
     @test !(CC.isCanonicalAsParam(qt("wl9pod")))
     @test !CC.isConstantStorage(qt("wl9i"), ctx, false, false)
     @test CC.isConstantStorage(qt("wl9ci"), ctx, false, false)
-    @test CC.isTriviallyEqualityComparableType(qt("wl9i"), ctx)
-    @test !(CC.isTriviallyEqualityComparableType(qt("wl9d"), ctx))
 
     # QualType: CVR construction and pack-expansion stripping.
     ci = CC.withCVRQualifiers(qt("wl9i"), constmask)
@@ -1357,7 +1374,6 @@ end
     @test !CC.isSizelessVectorType(ity)
     @test CC.isSizelessVectorType(tp("wl9pod")) == false
     @test CC.is_null_handle(CC.getContainedAutoType(ity))
-    @test CC.getContainedAutoType(ity).ptr == C_NULL
     @test CC.getContainedDeducedType(ity).ptr == C_NULL
 
     dispose(I)
@@ -1396,7 +1412,7 @@ end
     @test CC.isSVEBool(bi) == false
     @test CC.isSVECount(bi) == false
     @test CC.isSugared(bi) == false
-    @test CC.getTypePtr(CC.desugar(bi)) isa CC.Type_
+    @test CC.getTypePtr(CC.desugar(bi)) == bi
 
     # BuiltinType: double is floating-point; unsigned is unsigned-integer
     bd = rty("tc_d")
@@ -1411,33 +1427,28 @@ end
     # VectorType::getVectorKind via the vector_size typedef's underlying type
     vsug = unwrap(rty("tc_vec"))
     vt = vsug isa CC.TypedefType ? CC.resolve(CC.getTypePtr(CC.desugar(vsug))) : vsug
-    if vt isa CC.VectorType
-        @test CC.getVectorKind(vt) isa CC.LibClangEx.CXVectorKind
-        @test CC.getVectorKind(vt) == CC.LibClangEx.CXVectorKind_Generic
-    end
+    @test vt isa CC.VectorType
+    @test CC.getVectorKind(vt) == CC.LibClangEx.CXVectorKind_Generic
 
     # FunctionType::getCallResultType — int(double, char) yields an int result
     fpt = rty("tc_fn")
     @test fpt isa CC.FunctionProtoType
     crt = CC.getCallResultType(fpt, ctx)
-    @test crt isa CC.QualType
+    @test CC.getAsString(crt) == "int"
     @test CC.resolve(CC.getTypePtr(crt)) isa CC.BuiltinType
 
     # AttributedType: the _Nonnull nullability attribute
     nn = rty("tc_nn")
-    if nn isa CC.AttributedType
-        @test CC.isQualifier(nn)
-        @test CC.isMSTypeSpec(nn) == false
-        @test CC.isWebAssemblyFuncrefSpec(nn) == false
-        @test CC.isCallingConv(nn) == false
-    end
+    @test nn isa CC.AttributedType
+    @test CC.isQualifier(nn)
+    @test CC.isMSTypeSpec(nn) == false
+    @test CC.isWebAssemblyFuncrefSpec(nn) == false
+    @test CC.isCallingConv(nn) == false
 
     # TypedefType::typeMatchesDecl — a plain typedef's type matches its decl
     td = unwrap(rty("tc_td"))
-    if td isa CC.TypedefType
-        @test CC.typeMatchesDecl(td)
-        @test CC.typeMatchesDecl(td) == true
-    end
+    @test td isa CC.TypedefType
+    @test CC.typeMatchesDecl(td) == true
 
     # UsingType::typeMatchesDecl
     us = unwrap(rty("tc_using"))
@@ -1448,12 +1459,10 @@ end
     for (nm, kw) in
         (("tc_auto", CC.LibClangEx.CXAutoTypeKeyword_Auto), ("tc_dauto", CC.LibClangEx.CXAutoTypeKeyword_DecltypeAuto),
          ("tc_gauto", CC.LibClangEx.CXAutoTypeKeyword_GNUAutoType))
-        f(I, nm) || continue
+        @assert f(I, nm) "lookup failed: $nm"
         t = CC.resolve(CC.getTypePtr(CC.getType(CC.resolve(get_decl(f)))))
-        if t isa CC.AutoType
-            @test CC.getKeyword(t) isa CC.LibClangEx.CXAutoTypeKeyword
-            @test CC.getKeyword(t) == kw
-        end
+        @test t isa CC.AutoType
+        @test CC.getKeyword(t) == kw
     end
 
     CC.dispose(f)
@@ -1480,13 +1489,13 @@ end
     # TypeWithKeyword::getKeyword (an ElaboratedType is a TypeWithKeyword)
     ety = rty("td_rec")
     @test ety isa CC.ElaboratedType
-    @test CC.getKeyword(ety) isa CC.LibClangEx.CXElaboratedTypeKeyword
+    @test CC.getKeyword(ety) == CC.LibClangEx.CXElaboratedTypeKeyword_None
 
     # Type::getLinkage / getVisibility -- shape only (host-decided enum value)
     rec = unwrap(ety)
     @test rec isa CC.RecordType
-    @test CC.getLinkage(rec) isa CC.LibClangEx.CXLinkage
-    @test CC.getVisibility(rec) isa CC.LibClangEx.CXVisibility
+    @test CC.getLinkage(rec) == CC.LibClangEx.CXLinkage_External
+    @test CC.getVisibility(rec) == CC.LibClangEx.CXVisibility_DefaultVisibility
 
     # ArrayType::getIndexTypeQualifiers -- empty qualifiers encode to 0
     aty = rty("td_arr")
@@ -1530,7 +1539,7 @@ end
     pparm = CC.getTemplatedDecl(CC.resolve(get_decl(f)))
     ttpt = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(pparm)))))
     @test ttpt isa CC.TemplateTypeParmType
-    @test CC.getIdentifier(ttpt) isa CC.IdentifierInfo
+    @test CC.getName(CC.getIdentifier(ttpt)) == "T"
 
     # PackExpansionType::isSugared / desugar (the `Ts... zs` parameter type)
     f(I, "TdHold")
@@ -1544,10 +1553,8 @@ end
         t isa CC.PackExpansionType && (pet = t)
     end
     @test pet isa CC.PackExpansionType
-    if pet isa CC.PackExpansionType
-        @test !(CC.isSugared(pet))
-        @test CC.getTypePtr(CC.desugar(pet)) isa CC.Type_
-    end
+    @test !CC.isSugared(pet)
+    @test CC.getTypePtr(CC.desugar(pet)) == pet
 
     dispose(f)
     dispose(I)
@@ -1575,7 +1582,6 @@ end
 
     # Type -- the sizeless-builtin / WebAssembly / OpenCL probes, all false for plain `int`
     ity = CC.getTypePtr(qt("te_i"))
-    @test ity isa CC.Type_
     @test CC.isSVESizelessBuiltinType(ity) == false
     @test CC.isRVVSizelessBuiltinType(ity) == false
     @test CC.isWebAssemblyExternrefType(ity) == false
@@ -1632,7 +1638,6 @@ end
     f(I, "te_i")
     ivd = CC.resolve(get_decl(f))
     tsi = CC.getTrivialTypeSourceInfo(ctx, CC.getType(ivd), CC.getLocation(ivd))
-    @test CC.getType(tsi) isa CC.QualType
     @test CC.getAsString(CC.getType(tsi)) == "int"
     CC.overrideType(tsi, qt("te_ci"))
     @test CC.getAsString(CC.getType(tsi)) == "const int"
@@ -1679,10 +1684,11 @@ end
     @test CC.hasAddressSpace(CC.withoutAddressSpace(qcv)) == false
     @test CC.hasTargetSpecificAddressSpace(qcv) == false
     @test CC.getAddressSpaceAttributePrintValue(qcv) == 0
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_global) == true
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_generic, LX.CXLangAS_opencl_global) == true
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_generic) == false
-    @test CC.getAddrSpaceAsString(LX.CXLangAS_Default) isa String
+    ctx = CC.get_ast_context(I)
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_global, ctx) == true
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_generic, LX.CXLangAS_opencl_global, ctx) == true
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_generic, ctx) == false
+    @test CC.getAddrSpaceAsString(LX.CXLangAS_Default) == ""
     @test occursin("global", CC.getAddrSpaceAsString(LX.CXLangAS_opencl_global))
 
     # QualType -- the fast-qualifier constructors, read back through getAsString
@@ -1708,7 +1714,7 @@ end
     @test_throws AssertionError CC.getTagTypeKindForKeyword(LX.CXElaboratedTypeKeyword_None)
     @test CC.getKeywordName(LX.CXElaboratedTypeKeyword_Struct) == "struct"
     @test CC.getKeywordName(LX.CXElaboratedTypeKeyword_Typename) == "typename"
-    @test CC.getKeywordName(LX.CXElaboratedTypeKeyword_None) isa String
+    @test CC.getKeywordName(LX.CXElaboratedTypeKeyword_None) == ""
     @test CC.getTagTypeKindName(LX.CXTagTypeKind_Class) == "class"
     @test CC.getTagTypeKindName(LX.CXTagTypeKind_Union) == "union"
 
@@ -1953,13 +1959,11 @@ end
     # typedef of `const int`, so both levels of qualifier come back together.
     vci = qt("ti_vci")
     dty, dquals = CC.getSplitDesugaredType(vci)
-    @test dty isa CC.Type_
     @test CC.getTypeClassName(dty) == "Builtin"
     @test CC.hasConst(dquals) == true
     @test CC.hasVolatile(dquals) == true
 
     uty, uquals = CC.getSplitUnqualifiedType(vci)
-    @test uty isa CC.Type_
     @test CC.hasConst(uquals) == true
     @test CC.hasVolatile(uquals) == true
     # clang_QualType_constructFromTypePtr is wrapped as the QualType(Type_, quals)
@@ -1971,10 +1975,10 @@ end
 
     # address spaces: everything in a plain C++ TU sits in the default space, which overlaps
     # itself and every other default-space type
-    @test CC.isAddressSpaceOverlapping(qt("ti_i"), qt("ti_p")) == true
-    @test CC.isAddressSpaceOverlapping(vci, vci) == true
-    @test_throws AssertionError CC.isAddressSpaceOverlapping(CC.QualType(C_NULL), vci)
-    @test_throws AssertionError CC.isAddressSpaceOverlapping(vci, CC.QualType(C_NULL))
+    @test CC.isAddressSpaceOverlapping(qt("ti_i"), qt("ti_p"), ctx) == true
+    @test CC.isAddressSpaceOverlapping(vci, vci, ctx) == true
+    @test_throws AssertionError CC.isAddressSpaceOverlapping(CC.QualType(C_NULL), vci, ctx)
+    @test_throws AssertionError CC.isAddressSpaceOverlapping(vci, CC.QualType(C_NULL), ctx)
 
     # BuiltinType -- the Kind round-trips through the Type-level kind queries. clang stamps
     # the OpenCL/SVE/RVV builtins into Kind first, so `int` lands in the 400s; assert the
@@ -1982,7 +1986,6 @@ end
     bty = CC.resolve(ity)
     @test bty isa CC.BuiltinType
     k = CC.getKind(bty)
-    @test k isa Integer
     @test CC.isSpecificBuiltinType(ity, k) == true
     @test CC.isPlaceholderTypeKind(k) == false
     @test CC.isPlaceholderType(bty) == false
@@ -1991,9 +1994,8 @@ end
     @test CC.isPlaceholderType(bty) == CC.isPlaceholderType(ity)
     @test CC.isNonOverloadPlaceholderType(bty) == CC.isNonOverloadPlaceholderType(ity)
 
-    # ConstantArrayType's size cap is target-decided -- assert its shape only
+    # ConstantArrayType's size cap is target-decided -- positivity is the portable polarity
     mb = CC.getMaxSizeBits(ctx)
-    @test mb isa Integer
     @test mb > 0
 
     # the matrix-type statics are pure functions with no receiver at all
@@ -2164,7 +2166,6 @@ end
     # stripOuterNullability peels exactly one nullability node and reports what it removed;
     # a type with none comes back unchanged and disengaged.
     stripped, kind = CC.stripOuterNullability(qt("tk_nn"))
-    @test stripped isa CC.QualType
     @test kind == CC.LibClangEx.CXNullabilityKind_NonNull
     @test CC.getNullability(CC.getTypePtr(stripped)) === nothing
     @test CC.isPointerType(CC.getTypePtr(stripped))
@@ -2267,7 +2268,6 @@ end
     # Type::getDependence is the bitmask the five single-bit predicates each read one bit of.
     ity = CC.getTypePtr(vqt("tyl_i"))
     d = CC.getDependence(ity)
-    @test d isa Integer
     @test d == 0
     @test ((d & 0x01) != 0) == CC.containsUnexpandedParameterPack(ity)
     @test ((d & 0x02) != 0) == CC.isInstantiationDependentType(ity)
@@ -2498,7 +2498,6 @@ end
     # builtin plus a const set, while the typedef hides its const below the sugar.
     cq = qtof("tn_cq")
     sty, squals = CC.split(cq)
-    @test sty isa CC.Type_
     @test sty.ptr == CC.getTypePtr(cq).ptr
     @test CC.hasConst(squals) == true
     @test CC.hasConst(CC.split(qtof("tn_cv"))[2]) == false
@@ -2612,7 +2611,6 @@ end
     linkage, visibility, vis_explicit = CC.getLinkageAndVisibility(ity)
     @test linkage === CC.getLinkage(ity)
     @test visibility === CC.getVisibility(ity)
-    @test vis_explicit isa Bool
     @test vis_explicit === CC.isVisibilityExplicit(ity)
 
     # isNonConstantStorage carries the reason isConstantStorage drops; the two must stay
@@ -2675,7 +2673,6 @@ end
     # and carries the qualifiers collected so far along with it. TrqCInt hides its const inside
     # the typedef, so the local split sees no qualifier and the first step exposes the const.
     ty0, q0 = CC.split(vqt("trq_ci"))
-    @test ty0 isa CC.Type_
     @test CC.hasConst(q0) == false
 
     # Each written typedef name contributes an ElaboratedType as well as a TypedefType, so
@@ -2705,15 +2702,10 @@ end
     # object type at all, so each of them reports a NULL carrier here.
     for t in (CC.getTypePtr(vqt("trq_i")), CC.getTypePtr(vqt("trq_r")))
         @test CC.is_null_handle(CC.getAsObjCInterfaceType(t))
-        @test CC.getAsObjCInterfaceType(t).ptr == C_NULL
         @test CC.is_null_handle(CC.getAsObjCInterfacePointerType(t))
-        @test CC.getAsObjCInterfacePointerType(t).ptr == C_NULL
         @test CC.is_null_handle(CC.getAsObjCQualifiedIdType(t))
-        @test CC.getAsObjCQualifiedIdType(t).ptr == C_NULL
         @test CC.is_null_handle(CC.getAsObjCQualifiedClassType(t))
-        @test CC.getAsObjCQualifiedClassType(t).ptr == C_NULL
         @test CC.is_null_handle(CC.getAsObjCQualifiedInterfaceType(t))
-        @test CC.getAsObjCQualifiedInterfaceType(t).ptr == C_NULL
     end
 
     dispose(I)
@@ -2761,7 +2753,6 @@ end
     # out-param comes back defined -- a NULL carrier, not uninitialised memory.
     matched, bound = CC.isObjCIdOrObjectKindOfType(ity, ctx)
     @test matched === false
-    @test bound isa CC.ObjCObjectType
     @test CC.is_null_handle(bound)
 
     dispose(I)

@@ -51,11 +51,7 @@ CXTemplateName clang_TemplateName_getUnderlying(CXTemplateName TN) {
   return reinterpret_cast<CXTemplateName>(clang::TemplateName::getFromVoidPointer(TN).getUnderlying().getAsVoidPointer());
 }
 
-CXTemplateName clang_TemplateName_getNameToSubstitute(CXTemplateName TN) {
-  return reinterpret_cast<CXTemplateName>(clang::TemplateName::getFromVoidPointer(TN)
-      .getNameToSubstitute()
-      .getAsVoidPointer());
-}
+// getNameToSubstitute
 
 unsigned clang_TemplateName_getDependence(CXTemplateName TN) {
   return static_cast<unsigned>(clang::TemplateName::getFromVoidPointer(TN).getDependence());

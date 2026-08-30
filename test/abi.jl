@@ -65,6 +65,9 @@ import ClangCompiler as CC
 function carriers_with_handles()
     out = Tuple{DataType,DataType}[]
     for nm in names(CC; all=true)
+        # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; they alias
+        # the real carriers and would otherwise be counted twice.
+        occursin('#', String(nm)) && continue
         isdefined(CC, nm) || continue
         T = getproperty(CC, nm)
         (T isa DataType && isstructtype(T) && fieldcount(T) == 1 && fieldnames(T) == (:ptr,)) || continue
@@ -274,6 +277,12 @@ end
     # unreachable since they were written.
     bottoms, scanned = String[], 0
     for name in names(CC; all=true)
+        # Julia 1.13 lists a kwarg-default thunk `#NNNN#val` per defaulted argument; those
+        # are `Function`s, so `f isa Function` below does not filter them and the sweep
+        # would spend itself on 4k thunks. Match that shape only: the kwarg *body* methods
+        # (`#getName#151`) carry the real implementation of every kwarg-taking wrapper and
+        # are exactly what this sweep exists to reach.
+        occursin(r"^#\d+#", String(name)) && continue
         isdefined(CC, name) || continue
         f = getfield(CC, name)
         f isa Function || continue

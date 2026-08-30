@@ -39,6 +39,12 @@ Supertype for inheritable-parameter-attribute carriers, mirroring `clang::Inheri
 abstract type AbstractInheritableParamAttr <: AbstractInheritableAttr end
 
 """
+    abstract type AbstractInheritableParamOrStmtAttr <: AbstractInheritableParamAttr
+Supertype for inheritable-parameter-or-statement-attribute carriers, mirroring `clang::InheritableParamOrStmtAttr`.
+"""
+abstract type AbstractInheritableParamOrStmtAttr <: AbstractInheritableParamAttr end
+
+"""
     abstract type AbstractParameterABIAttr <: AbstractInheritableParamAttr
 Supertype for parameter-ABI-attribute carriers, mirroring `clang::ParameterABIAttr`.
 """

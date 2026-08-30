@@ -56,7 +56,7 @@ end
     # get_tag on a single tag decl.
     CC.parse(I, "struct TagS { int a; };")
     @test f(I, "TagS")
-    @test CC.get_tag(f) isa CC.NamedDecl
+    @test CC.getName(CC.get_tag(f)) == "TagS"
 
     # a name that does not resolve returns false.
     @test !f(I, "no_such_symbol_xyz")

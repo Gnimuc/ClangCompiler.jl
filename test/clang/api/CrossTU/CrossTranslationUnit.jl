@@ -98,7 +98,6 @@ end
     @test CC.shouldImport(trivial, ctx) != CC.shouldImport(nontrivial, ctx)
 
     ctu = CC.CrossTranslationUnitContext(ci)
-    @test ctu.ptr != C_NULL
 
     # Nothing has been imported through this context, so no decl of the current AST is
     # either newly created or marked with an import error.

@@ -19,7 +19,6 @@ using Test
         fd = CC.getAsFunction(CC.get_decl(f))
         ctx = CC.get_ast_context(I)
         cfg = CC.buildCFG(fd, CC.getBody(fd), ctx)
-        @test cfg.ptr != C_NULL
         try
             entry = CC.getEntry(cfg)
             exit_ = CC.getExit(cfg)
@@ -66,7 +65,6 @@ using Test
             try
                 acfg = CC.getCFG(adc)
                 ra = CC.getCFGReachablityAnalysis(adc)
-                @test !CC.is_null_handle(ra)
                 aentry = CC.getEntry(acfg)
                 aexit = CC.getExit(acfg)
                 @test CC.isReachable(ra, aentry, aexit)

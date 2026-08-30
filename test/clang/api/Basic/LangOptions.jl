@@ -41,7 +41,6 @@ using Test
 
     # FPOptions crosses as its opaque 32-bit word, decoded by the FPOptions accessors
     fp = CC.defaultWithoutTrailingStorage(lo)
-    @test fp isa Unsigned
     @test CC.getRoundingMode(fp) == CC.CXRoundingMode_NearestTiesToEven
     @test CC.getExceptionMode(fp) == CC.CXFPExceptionModeKind_FPE_Ignore
 

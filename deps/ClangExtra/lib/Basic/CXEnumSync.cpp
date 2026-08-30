@@ -148,7 +148,13 @@
 #include "clang/Sema/Overload.h"
 #include "clang/Sema/Scope.h"
 #include "clang/Sema/Sema.h"
-#include "clang/Parse/Parser.h"
+#include "clang/Sema/SemaCUDA.h"
+#include "clang/Sema/SemaObjC.h"
+#include "clang/Basic/Cuda.h"
+#include "clang/Sema/Redeclaration.h"
+// Parser.h is not included here: in LLVM 20 it pulls clang-c/Index.h via
+// CodeCompleteConsumer.h, which collides with this library's CX names. SkipUntilFlags
+// is synced in lib/Parse/CXParser.cpp instead.
 #include "clang/Sema/Template.h"
 #include "clang/AST/ASTDumperUtils.h"
 #include "clang/AST/DeclObjC.h"
@@ -215,7 +221,7 @@ ENUM_SYNC(CXVisibility_DefaultVisibility, clang::DefaultVisibility);
 // clang/Basic/LangOptions.h: enum TranslationUnitKind
 ENUM_SYNC(CXTranslationUnitKind_TU_Complete, clang::TU_Complete);
 ENUM_SYNC(CXTranslationUnitKind_TU_Prefix, clang::TU_Prefix);
-ENUM_SYNC(CXTranslationUnitKind_TU_Module, clang::TU_Module);
+ENUM_SYNC(CXTranslationUnitKind_TU_Module, clang::TU_ClangModule);
 ENUM_SYNC(CXTranslationUnitKind_TU_Incremental, clang::TU_Incremental);
 
 // clang/Basic/Specifiers.h: enum class ExplicitSpecKind
@@ -514,6 +520,7 @@ ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_SizeOf, clang::UETT_SizeOf);
 ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_DataSizeOf, clang::UETT_DataSizeOf);
 ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_AlignOf, clang::UETT_AlignOf);
 ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_PreferredAlignOf, clang::UETT_PreferredAlignOf);
+ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_PtrAuthTypeDiscriminator, clang::UETT_PtrAuthTypeDiscriminator);
 ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_VecStep, clang::UETT_VecStep);
 ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_OpenMPRequiredSimdAlign, clang::UETT_OpenMPRequiredSimdAlign);
 ENUM_SYNC(CXUnaryExprOrTypeTrait_UETT_VectorElements, clang::UETT_VectorElements);
@@ -621,6 +628,7 @@ ENUM_SYNC(CXLangAS_ptr32_sptr, clang::LangAS::ptr32_sptr);
 ENUM_SYNC(CXLangAS_ptr32_uptr, clang::LangAS::ptr32_uptr);
 ENUM_SYNC(CXLangAS_ptr64, clang::LangAS::ptr64);
 ENUM_SYNC(CXLangAS_hlsl_groupshared, clang::LangAS::hlsl_groupshared);
+ENUM_SYNC(CXLangAS_hlsl_constant, clang::LangAS::hlsl_constant);
 ENUM_SYNC(CXLangAS_wasm_funcref, clang::LangAS::wasm_funcref);
 ENUM_SYNC(CXLangAS_FirstTargetAddressSpace, clang::LangAS::FirstTargetAddressSpace);
 static_assert(sizeof(CXLangAS) == sizeof(clang::LangAS), "CXLangAS size");
@@ -710,6 +718,7 @@ ENUM_SYNC(CXPPKeywordKind_pp_undef, clang::tok::pp_undef);
 ENUM_SYNC(CXPPKeywordKind_pp_line, clang::tok::pp_line);
 ENUM_SYNC(CXPPKeywordKind_pp_error, clang::tok::pp_error);
 ENUM_SYNC(CXPPKeywordKind_pp_pragma, clang::tok::pp_pragma);
+ENUM_SYNC(CXPPKeywordKind_pp_embed, clang::tok::pp_embed);
 ENUM_SYNC(CXPPKeywordKind_pp_import, clang::tok::pp_import);
 ENUM_SYNC(CXPPKeywordKind_pp_include_next, clang::tok::pp_include_next);
 ENUM_SYNC(CXPPKeywordKind_pp_warning, clang::tok::pp_warning);
@@ -915,10 +924,10 @@ ENUM_SYNC(CXLookupNameKind_LookupAnyName, clang::Sema::LookupAnyName);
 ENUM_SYNC(CXCompleteTypeKind_Normal, clang::Sema::CompleteTypeKind::Normal);
 ENUM_SYNC(CXCompleteTypeKind_AcceptSizeless, clang::Sema::CompleteTypeKind::AcceptSizeless);
 
-// clang/Sema/Sema.h: enum Sema::RedeclarationKind
-ENUM_SYNC(CXRedeclarationKind_NotForRedeclaration, clang::Sema::NotForRedeclaration);
-ENUM_SYNC(CXRedeclarationKind_ForVisibleRedeclaration, clang::Sema::ForVisibleRedeclaration);
-ENUM_SYNC(CXRedeclarationKind_ForExternalRedeclaration, clang::Sema::ForExternalRedeclaration);
+// clang/Sema/Redeclaration.h: enum class RedeclarationKind
+ENUM_SYNC(CXRedeclarationKind_NotForRedeclaration, RedeclarationKind::NotForRedeclaration);
+ENUM_SYNC(CXRedeclarationKind_ForVisibleRedeclaration, RedeclarationKind::ForVisibleRedeclaration);
+ENUM_SYNC(CXRedeclarationKind_ForExternalRedeclaration, RedeclarationKind::ForExternalRedeclaration);
 
 
 // clang/Sema/Lookup.h: enum LookupResult::LookupResultKind
@@ -1323,13 +1332,13 @@ ENUM_SYNC(CXTypeTrait_UTT_IsNothrowDestructible, clang::UTT_IsNothrowDestructibl
 ENUM_SYNC(CXTypeTrait_UTT_HasNothrowMoveAssign, clang::UTT_HasNothrowMoveAssign);
 ENUM_SYNC(CXTypeTrait_UTT_HasTrivialMoveAssign, clang::UTT_HasTrivialMoveAssign);
 ENUM_SYNC(CXTypeTrait_UTT_HasTrivialMoveConstructor, clang::UTT_HasTrivialMoveConstructor);
+ENUM_SYNC(CXTypeTrait_UTT_IsImplicitLifetime, clang::UTT_IsImplicitLifetime);
 ENUM_SYNC(CXTypeTrait_UTT_HasNothrowAssign, clang::UTT_HasNothrowAssign);
 ENUM_SYNC(CXTypeTrait_UTT_HasNothrowCopy, clang::UTT_HasNothrowCopy);
 ENUM_SYNC(CXTypeTrait_UTT_HasNothrowConstructor, clang::UTT_HasNothrowConstructor);
 ENUM_SYNC(CXTypeTrait_UTT_HasTrivialAssign, clang::UTT_HasTrivialAssign);
 ENUM_SYNC(CXTypeTrait_UTT_HasTrivialCopy, clang::UTT_HasTrivialCopy);
-ENUM_SYNC(CXTypeTrait_UTT_HasTrivialDefaultConstructor,
-          clang::UTT_HasTrivialDefaultConstructor);
+ENUM_SYNC(CXTypeTrait_UTT_HasTrivialDefaultConstructor, clang::UTT_HasTrivialDefaultConstructor);
 ENUM_SYNC(CXTypeTrait_UTT_HasTrivialDestructor, clang::UTT_HasTrivialDestructor);
 ENUM_SYNC(CXTypeTrait_UTT_HasVirtualDestructor, clang::UTT_HasVirtualDestructor);
 ENUM_SYNC(CXTypeTrait_UTT_IsAbstract, clang::UTT_IsAbstract);
@@ -1345,17 +1354,15 @@ ENUM_SYNC(CXTypeTrait_UTT_IsStandardLayout, clang::UTT_IsStandardLayout);
 ENUM_SYNC(CXTypeTrait_UTT_IsTrivial, clang::UTT_IsTrivial);
 ENUM_SYNC(CXTypeTrait_UTT_IsTriviallyCopyable, clang::UTT_IsTriviallyCopyable);
 ENUM_SYNC(CXTypeTrait_UTT_IsUnion, clang::UTT_IsUnion);
-ENUM_SYNC(CXTypeTrait_UTT_HasUniqueObjectRepresentations,
-          clang::UTT_HasUniqueObjectRepresentations);
+ENUM_SYNC(CXTypeTrait_UTT_HasUniqueObjectRepresentations, clang::UTT_HasUniqueObjectRepresentations);
 ENUM_SYNC(CXTypeTrait_UTT_IsTriviallyRelocatable, clang::UTT_IsTriviallyRelocatable);
-ENUM_SYNC(CXTypeTrait_UTT_IsTriviallyEqualityComparable,
-          clang::UTT_IsTriviallyEqualityComparable);
+ENUM_SYNC(CXTypeTrait_UTT_IsTriviallyEqualityComparable, clang::UTT_IsTriviallyEqualityComparable);
 ENUM_SYNC(CXTypeTrait_UTT_IsBoundedArray, clang::UTT_IsBoundedArray);
 ENUM_SYNC(CXTypeTrait_UTT_IsUnboundedArray, clang::UTT_IsUnboundedArray);
-ENUM_SYNC(CXTypeTrait_UTT_IsNullPointer, clang::UTT_IsNullPointer);
 ENUM_SYNC(CXTypeTrait_UTT_IsScopedEnum, clang::UTT_IsScopedEnum);
 ENUM_SYNC(CXTypeTrait_UTT_IsReferenceable, clang::UTT_IsReferenceable);
 ENUM_SYNC(CXTypeTrait_UTT_CanPassInRegs, clang::UTT_CanPassInRegs);
+ENUM_SYNC(CXTypeTrait_UTT_IsBitwiseCloneable, clang::UTT_IsBitwiseCloneable);
 ENUM_SYNC(CXTypeTrait_UTT_IsArithmetic, clang::UTT_IsArithmetic);
 ENUM_SYNC(CXTypeTrait_UTT_IsFloatingPoint, clang::UTT_IsFloatingPoint);
 ENUM_SYNC(CXTypeTrait_UTT_IsIntegral, clang::UTT_IsIntegral);
@@ -1378,22 +1385,28 @@ ENUM_SYNC(CXTypeTrait_UTT_IsConst, clang::UTT_IsConst);
 ENUM_SYNC(CXTypeTrait_UTT_IsVolatile, clang::UTT_IsVolatile);
 ENUM_SYNC(CXTypeTrait_UTT_IsSigned, clang::UTT_IsSigned);
 ENUM_SYNC(CXTypeTrait_UTT_IsUnsigned, clang::UTT_IsUnsigned);
+ENUM_SYNC(CXTypeTrait_UTT_IsIntangibleType, clang::UTT_IsIntangibleType);
+ENUM_SYNC(CXTypeTrait_UTT_IsTypedResourceElementCompatible, clang::UTT_IsTypedResourceElementCompatible);
 ENUM_SYNC(CXTypeTrait_BTT_TypeCompatible, clang::BTT_TypeCompatible);
 ENUM_SYNC(CXTypeTrait_BTT_IsNothrowAssignable, clang::BTT_IsNothrowAssignable);
 ENUM_SYNC(CXTypeTrait_BTT_IsAssignable, clang::BTT_IsAssignable);
+ENUM_SYNC(CXTypeTrait_BTT_IsVirtualBaseOf, clang::BTT_IsVirtualBaseOf);
 ENUM_SYNC(CXTypeTrait_BTT_IsBaseOf, clang::BTT_IsBaseOf);
 ENUM_SYNC(CXTypeTrait_BTT_IsConvertibleTo, clang::BTT_IsConvertibleTo);
 ENUM_SYNC(CXTypeTrait_BTT_IsTriviallyAssignable, clang::BTT_IsTriviallyAssignable);
+ENUM_SYNC(CXTypeTrait_BTT_IsLayoutCompatible, clang::BTT_IsLayoutCompatible);
+ENUM_SYNC(CXTypeTrait_BTT_IsPointerInterconvertibleBaseOf, clang::BTT_IsPointerInterconvertibleBaseOf);
 ENUM_SYNC(CXTypeTrait_BTT_ReferenceBindsToTemporary, clang::BTT_ReferenceBindsToTemporary);
-ENUM_SYNC(CXTypeTrait_BTT_ReferenceConstructsFromTemporary,
-          clang::BTT_ReferenceConstructsFromTemporary);
+ENUM_SYNC(CXTypeTrait_BTT_ReferenceConstructsFromTemporary, clang::BTT_ReferenceConstructsFromTemporary);
+ENUM_SYNC(CXTypeTrait_BTT_ReferenceConvertsFromTemporary, clang::BTT_ReferenceConvertsFromTemporary);
+ENUM_SYNC(CXTypeTrait_BTT_IsDeducible, clang::BTT_IsDeducible);
 ENUM_SYNC(CXTypeTrait_BTT_IsSame, clang::BTT_IsSame);
 ENUM_SYNC(CXTypeTrait_BTT_IsConvertible, clang::BTT_IsConvertible);
+ENUM_SYNC(CXTypeTrait_BTT_IsNothrowConvertible, clang::BTT_IsNothrowConvertible);
+ENUM_SYNC(CXTypeTrait_BTT_IsScalarizedLayoutCompatible, clang::BTT_IsScalarizedLayoutCompatible);
 ENUM_SYNC(CXTypeTrait_TT_IsConstructible, clang::TT_IsConstructible);
 ENUM_SYNC(CXTypeTrait_TT_IsNothrowConstructible, clang::TT_IsNothrowConstructible);
 ENUM_SYNC(CXTypeTrait_TT_IsTriviallyConstructible, clang::TT_IsTriviallyConstructible);
-
-// clang/AST/ASTContext.h: enum clang::ASTContext::GetBuiltinTypeError
 ENUM_SYNC(CXGetBuiltinTypeError_GE_None, clang::ASTContext::GE_None);
 ENUM_SYNC(CXGetBuiltinTypeError_GE_Missing_type, clang::ASTContext::GE_Missing_type);
 ENUM_SYNC(CXGetBuiltinTypeError_GE_Missing_stdio, clang::ASTContext::GE_Missing_stdio);
@@ -1473,7 +1486,6 @@ ENUM_SYNC(CXCommentKind_ParamCommandComment,
 // clang/AST/TemplateName.h: enum class clang::TemplateName::Qualified
 ENUM_SYNC(CXTemplateName_Qualified_None, clang::TemplateName::Qualified::None);
 ENUM_SYNC(CXTemplateName_Qualified_AsWritten, clang::TemplateName::Qualified::AsWritten);
-ENUM_SYNC(CXTemplateName_Qualified_Fully, clang::TemplateName::Qualified::Fully);
 
 // CXCaptureDiagsKind is synced in lib/Frontend/CXASTUnit.cpp instead: clang/Frontend/
 // ASTUnit.h includes clang-c/Index.h, whose declarations collide with this library's own
@@ -1568,14 +1580,14 @@ ENUM_SYNC(CXObjCInstanceTypeFamily_OIT_Singleton, clang::OIT_Singleton);
 ENUM_SYNC(CXObjCInstanceTypeFamily_OIT_Init, clang::OIT_Init);
 ENUM_SYNC(CXObjCInstanceTypeFamily_OIT_ReturnsSelf, clang::OIT_ReturnsSelf);
 
-// clang/Sema/Sema.h: enum Sema::CXXSpecialMember
-ENUM_SYNC(CXCXXSpecialMember_CXXDefaultConstructor, clang::Sema::CXXDefaultConstructor);
-ENUM_SYNC(CXCXXSpecialMember_CXXCopyConstructor, clang::Sema::CXXCopyConstructor);
-ENUM_SYNC(CXCXXSpecialMember_CXXMoveConstructor, clang::Sema::CXXMoveConstructor);
-ENUM_SYNC(CXCXXSpecialMember_CXXCopyAssignment, clang::Sema::CXXCopyAssignment);
-ENUM_SYNC(CXCXXSpecialMember_CXXMoveAssignment, clang::Sema::CXXMoveAssignment);
-ENUM_SYNC(CXCXXSpecialMember_CXXDestructor, clang::Sema::CXXDestructor);
-ENUM_SYNC(CXCXXSpecialMember_CXXInvalid, clang::Sema::CXXInvalid);
+// clang/Sema/Sema.h: enum class CXXSpecialMemberKind
+ENUM_SYNC(CXCXXSpecialMember_CXXDefaultConstructor, clang::CXXSpecialMemberKind::DefaultConstructor);
+ENUM_SYNC(CXCXXSpecialMember_CXXCopyConstructor, clang::CXXSpecialMemberKind::CopyConstructor);
+ENUM_SYNC(CXCXXSpecialMember_CXXMoveConstructor, clang::CXXSpecialMemberKind::MoveConstructor);
+ENUM_SYNC(CXCXXSpecialMember_CXXCopyAssignment, clang::CXXSpecialMemberKind::CopyAssignment);
+ENUM_SYNC(CXCXXSpecialMember_CXXMoveAssignment, clang::CXXSpecialMemberKind::MoveAssignment);
+ENUM_SYNC(CXCXXSpecialMember_CXXDestructor, clang::CXXSpecialMemberKind::Destructor);
+ENUM_SYNC(CXCXXSpecialMember_CXXInvalid, clang::CXXSpecialMemberKind::Invalid);
 
 // clang/Sema/Sema.h: enum Sema::SpecialMemberOverloadResult::Kind
 ENUM_SYNC(CXSpecialMemberOverloadResultKind_NoMemberOrDeleted,
@@ -1666,24 +1678,24 @@ ENUM_SYNC(CXAssignConvertType_Incompatible, clang::Sema::Incompatible);
 ENUM_SYNC(CXAllowFoldKind_NoFold, clang::Sema::NoFold);
 ENUM_SYNC(CXAllowFoldKind_AllowFold, clang::Sema::AllowFold);
 
-// clang/Sema/Sema.h: enum Sema::AssignmentAction
-ENUM_SYNC(CXAssignmentAction_AA_Assigning, clang::Sema::AA_Assigning);
-ENUM_SYNC(CXAssignmentAction_AA_Passing, clang::Sema::AA_Passing);
-ENUM_SYNC(CXAssignmentAction_AA_Returning, clang::Sema::AA_Returning);
-ENUM_SYNC(CXAssignmentAction_AA_Converting, clang::Sema::AA_Converting);
-ENUM_SYNC(CXAssignmentAction_AA_Initializing, clang::Sema::AA_Initializing);
-ENUM_SYNC(CXAssignmentAction_AA_Sending, clang::Sema::AA_Sending);
-ENUM_SYNC(CXAssignmentAction_AA_Casting, clang::Sema::AA_Casting);
-ENUM_SYNC(CXAssignmentAction_AA_Passing_CFAudited, clang::Sema::AA_Passing_CFAudited);
+// clang/Sema/Sema.h: enum class AssignmentAction
+ENUM_SYNC(CXAssignmentAction_AA_Assigning, clang::AssignmentAction::Assigning);
+ENUM_SYNC(CXAssignmentAction_AA_Passing, clang::AssignmentAction::Passing);
+ENUM_SYNC(CXAssignmentAction_AA_Returning, clang::AssignmentAction::Returning);
+ENUM_SYNC(CXAssignmentAction_AA_Converting, clang::AssignmentAction::Converting);
+ENUM_SYNC(CXAssignmentAction_AA_Initializing, clang::AssignmentAction::Initializing);
+ENUM_SYNC(CXAssignmentAction_AA_Sending, clang::AssignmentAction::Sending);
+ENUM_SYNC(CXAssignmentAction_AA_Casting, clang::AssignmentAction::Casting);
+ENUM_SYNC(CXAssignmentAction_AA_Passing_CFAudited, clang::AssignmentAction::Passing_CFAudited);
 
 // clang/Sema/Sema.h: enum Sema::CheckedConversionKind
 ENUM_SYNC(CXCheckedConversionKind_CCK_ImplicitConversion,
-          clang::Sema::CCK_ImplicitConversion);
-ENUM_SYNC(CXCheckedConversionKind_CCK_CStyleCast, clang::Sema::CCK_CStyleCast);
-ENUM_SYNC(CXCheckedConversionKind_CCK_FunctionalCast, clang::Sema::CCK_FunctionalCast);
-ENUM_SYNC(CXCheckedConversionKind_CCK_OtherCast, clang::Sema::CCK_OtherCast);
+          clang::CheckedConversionKind::Implicit);
+ENUM_SYNC(CXCheckedConversionKind_CCK_CStyleCast, clang::CheckedConversionKind::CStyleCast);
+ENUM_SYNC(CXCheckedConversionKind_CCK_FunctionalCast, clang::CheckedConversionKind::FunctionalCast);
+ENUM_SYNC(CXCheckedConversionKind_CCK_OtherCast, clang::CheckedConversionKind::OtherCast);
 ENUM_SYNC(CXCheckedConversionKind_CCK_ForBuiltinOverloadedOp,
-          clang::Sema::CCK_ForBuiltinOverloadedOp);
+          clang::CheckedConversionKind::ForBuiltinOverloadedOp);
 
 // clang/Sema/Sema.h: enum Sema::ReferenceCompareResult
 ENUM_SYNC(CXReferenceCompareResult_Ref_Incompatible, clang::Sema::Ref_Incompatible);
@@ -1706,9 +1718,14 @@ ENUM_SYNC(CXReferenceConversions_ObjCLifetime,
 
 // clang/Sema/Overload.h: enum ImplicitConversionRank
 ENUM_SYNC(CXImplicitConversionRank_ICR_Exact_Match, clang::ICR_Exact_Match);
+ENUM_SYNC(CXImplicitConversionRank_ICR_HLSL_Scalar_Widening, clang::ICR_HLSL_Scalar_Widening);
 ENUM_SYNC(CXImplicitConversionRank_ICR_Promotion, clang::ICR_Promotion);
+ENUM_SYNC(CXImplicitConversionRank_ICR_HLSL_Scalar_Widening_Promotion,
+          clang::ICR_HLSL_Scalar_Widening_Promotion);
 ENUM_SYNC(CXImplicitConversionRank_ICR_Conversion, clang::ICR_Conversion);
 ENUM_SYNC(CXImplicitConversionRank_ICR_OCL_Scalar_Widening, clang::ICR_OCL_Scalar_Widening);
+ENUM_SYNC(CXImplicitConversionRank_ICR_HLSL_Scalar_Widening_Conversion,
+          clang::ICR_HLSL_Scalar_Widening_Conversion);
 ENUM_SYNC(CXImplicitConversionRank_ICR_Complex_Real_Conversion,
           clang::ICR_Complex_Real_Conversion);
 ENUM_SYNC(CXImplicitConversionRank_ICR_Writeback_Conversion,
@@ -1716,6 +1733,12 @@ ENUM_SYNC(CXImplicitConversionRank_ICR_Writeback_Conversion,
 ENUM_SYNC(CXImplicitConversionRank_ICR_C_Conversion, clang::ICR_C_Conversion);
 ENUM_SYNC(CXImplicitConversionRank_ICR_C_Conversion_Extension,
           clang::ICR_C_Conversion_Extension);
+ENUM_SYNC(CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction,
+          clang::ICR_HLSL_Dimension_Reduction);
+ENUM_SYNC(CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction_Promotion,
+          clang::ICR_HLSL_Dimension_Reduction_Promotion);
+ENUM_SYNC(CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction_Conversion,
+          clang::ICR_HLSL_Dimension_Reduction_Conversion);
 
 // clang/Sema/Sema.h: enum Sema::VarArgKind
 ENUM_SYNC(CXVarArgKind_VAK_Valid, clang::Sema::VAK_Valid);
@@ -1728,6 +1751,7 @@ ENUM_SYNC(CXVarArgKind_VAK_Invalid, clang::Sema::VAK_Invalid);
 ENUM_SYNC(CXCCEKind_CCEK_CaseValue, clang::Sema::CCEK_CaseValue);
 ENUM_SYNC(CXCCEKind_CCEK_Enumerator, clang::Sema::CCEK_Enumerator);
 ENUM_SYNC(CXCCEKind_CCEK_TemplateArg, clang::Sema::CCEK_TemplateArg);
+ENUM_SYNC(CXCCEKind_CCEK_InjectedTTP, clang::Sema::CCEK_InjectedTTP);
 ENUM_SYNC(CXCCEKind_CCEK_ArrayBound, clang::Sema::CCEK_ArrayBound);
 ENUM_SYNC(CXCCEKind_CCEK_ExplicitBool, clang::Sema::CCEK_ExplicitBool);
 ENUM_SYNC(CXCCEKind_CCEK_Noexcept, clang::Sema::CCEK_Noexcept);
@@ -1740,13 +1764,13 @@ ENUM_SYNC(CXAllowedExplicit_None, clang::Sema::AllowedExplicit::None);
 ENUM_SYNC(CXAllowedExplicit_Conversions, clang::Sema::AllowedExplicit::Conversions);
 ENUM_SYNC(CXAllowedExplicit_All, clang::Sema::AllowedExplicit::All);
 
-ENUM_SYNC(CXObjCLiteralKind_LK_Array, clang::Sema::LK_Array);
-ENUM_SYNC(CXObjCLiteralKind_LK_Dictionary, clang::Sema::LK_Dictionary);
-ENUM_SYNC(CXObjCLiteralKind_LK_Numeric, clang::Sema::LK_Numeric);
-ENUM_SYNC(CXObjCLiteralKind_LK_Boxed, clang::Sema::LK_Boxed);
-ENUM_SYNC(CXObjCLiteralKind_LK_String, clang::Sema::LK_String);
-ENUM_SYNC(CXObjCLiteralKind_LK_Block, clang::Sema::LK_Block);
-ENUM_SYNC(CXObjCLiteralKind_LK_None, clang::Sema::LK_None);
+ENUM_SYNC(CXObjCLiteralKind_LK_Array, clang::SemaObjC::LK_Array);
+ENUM_SYNC(CXObjCLiteralKind_LK_Dictionary, clang::SemaObjC::LK_Dictionary);
+ENUM_SYNC(CXObjCLiteralKind_LK_Numeric, clang::SemaObjC::LK_Numeric);
+ENUM_SYNC(CXObjCLiteralKind_LK_Boxed, clang::SemaObjC::LK_Boxed);
+ENUM_SYNC(CXObjCLiteralKind_LK_String, clang::SemaObjC::LK_String);
+ENUM_SYNC(CXObjCLiteralKind_LK_Block, clang::SemaObjC::LK_Block);
+ENUM_SYNC(CXObjCLiteralKind_LK_None, clang::SemaObjC::LK_None);
 
 // clang/Sema/Sema.h: enum Sema::TemplateParameterListEqualKind
 ENUM_SYNC(CXTemplateParameterListEqualKind_TPL_TemplateMatch,
@@ -1758,37 +1782,43 @@ ENUM_SYNC(CXTemplateParameterListEqualKind_TPL_TemplateTemplateArgumentMatch,
 ENUM_SYNC(CXTemplateParameterListEqualKind_TPL_TemplateParamsEquivalent,
           clang::Sema::TPL_TemplateParamsEquivalent);
 
-// clang/Sema/Sema.h: enum Sema::TemplateDeductionResult
-ENUM_SYNC(CXTemplateDeductionResult_TDK_Success, clang::Sema::TDK_Success);
-ENUM_SYNC(CXTemplateDeductionResult_TDK_Invalid, clang::Sema::TDK_Invalid);
+// clang/Sema/Sema.h: enum class clang::TemplateDeductionResult
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Success, clang::TemplateDeductionResult::Success);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Invalid, clang::TemplateDeductionResult::Invalid);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_InstantiationDepth,
-          clang::Sema::TDK_InstantiationDepth);
-ENUM_SYNC(CXTemplateDeductionResult_TDK_Incomplete, clang::Sema::TDK_Incomplete);
-ENUM_SYNC(CXTemplateDeductionResult_TDK_IncompletePack, clang::Sema::TDK_IncompletePack);
-ENUM_SYNC(CXTemplateDeductionResult_TDK_Inconsistent, clang::Sema::TDK_Inconsistent);
-ENUM_SYNC(CXTemplateDeductionResult_TDK_Underqualified, clang::Sema::TDK_Underqualified);
+          clang::TemplateDeductionResult::InstantiationDepth);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Incomplete,
+          clang::TemplateDeductionResult::Incomplete);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_IncompletePack,
+          clang::TemplateDeductionResult::IncompletePack);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Inconsistent,
+          clang::TemplateDeductionResult::Inconsistent);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_Underqualified,
+          clang::TemplateDeductionResult::Underqualified);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_SubstitutionFailure,
-          clang::Sema::TDK_SubstitutionFailure);
-ENUM_SYNC(CXTemplateDeductionResult_TDK_DeducedMismatch, clang::Sema::TDK_DeducedMismatch);
+          clang::TemplateDeductionResult::SubstitutionFailure);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_DeducedMismatch,
+          clang::TemplateDeductionResult::DeducedMismatch);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_DeducedMismatchNested,
-          clang::Sema::TDK_DeducedMismatchNested);
+          clang::TemplateDeductionResult::DeducedMismatchNested);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_NonDeducedMismatch,
-          clang::Sema::TDK_NonDeducedMismatch);
+          clang::TemplateDeductionResult::NonDeducedMismatch);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_TooManyArguments,
-          clang::Sema::TDK_TooManyArguments);
-ENUM_SYNC(CXTemplateDeductionResult_TDK_TooFewArguments, clang::Sema::TDK_TooFewArguments);
+          clang::TemplateDeductionResult::TooManyArguments);
+ENUM_SYNC(CXTemplateDeductionResult_TDK_TooFewArguments,
+          clang::TemplateDeductionResult::TooFewArguments);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_InvalidExplicitArguments,
-          clang::Sema::TDK_InvalidExplicitArguments);
+          clang::TemplateDeductionResult::InvalidExplicitArguments);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_NonDependentConversionFailure,
-          clang::Sema::TDK_NonDependentConversionFailure);
+          clang::TemplateDeductionResult::NonDependentConversionFailure);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_ConstraintsNotSatisfied,
-          clang::Sema::TDK_ConstraintsNotSatisfied);
+          clang::TemplateDeductionResult::ConstraintsNotSatisfied);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_MiscellaneousDeductionFailure,
-          clang::Sema::TDK_MiscellaneousDeductionFailure);
+          clang::TemplateDeductionResult::MiscellaneousDeductionFailure);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_CUDATargetMismatch,
-          clang::Sema::TDK_CUDATargetMismatch);
+          clang::TemplateDeductionResult::CUDATargetMismatch);
 ENUM_SYNC(CXTemplateDeductionResult_TDK_AlreadyDiagnosed,
-          clang::Sema::TDK_AlreadyDiagnosed);
+          clang::TemplateDeductionResult::AlreadyDiagnosed);
 
 // clang/Sema/Sema.h: enum class Sema::ConditionKind
 ENUM_SYNC(CXConditionKind_Boolean, clang::Sema::ConditionKind::Boolean);
@@ -1805,6 +1835,7 @@ ENUM_SYNC(CXFormatStringType_FST_Kprintf, clang::Sema::FST_Kprintf);
 ENUM_SYNC(CXFormatStringType_FST_FreeBSDKPrintf, clang::Sema::FST_FreeBSDKPrintf);
 ENUM_SYNC(CXFormatStringType_FST_OSTrace, clang::Sema::FST_OSTrace);
 ENUM_SYNC(CXFormatStringType_FST_OSLog, clang::Sema::FST_OSLog);
+ENUM_SYNC(CXFormatStringType_FST_Syslog, clang::Sema::FST_Syslog);
 ENUM_SYNC(CXFormatStringType_FST_Unknown, clang::Sema::FST_Unknown);
 
 // clang/Sema/Overload.h: enum OverloadCandidateRewriteKind
@@ -1881,22 +1912,25 @@ ENUM_SYNC(CXExpressionKind_EK_Decltype,
           clang::Sema::ExpressionEvaluationContextRecord::EK_Decltype);
 ENUM_SYNC(CXExpressionKind_EK_TemplateArgument,
           clang::Sema::ExpressionEvaluationContextRecord::EK_TemplateArgument);
+ENUM_SYNC(CXExpressionKind_EK_AttrArgument,
+          clang::Sema::ExpressionEvaluationContextRecord::EK_AttrArgument);
 ENUM_SYNC(CXExpressionKind_EK_Other,
           clang::Sema::ExpressionEvaluationContextRecord::EK_Other);
 
-// clang/Sema/Sema.h: enum Sema::CUDAFunctionTarget
-ENUM_SYNC(CXCUDAFunctionTarget_CFT_Device, clang::Sema::CFT_Device);
-ENUM_SYNC(CXCUDAFunctionTarget_CFT_Global, clang::Sema::CFT_Global);
-ENUM_SYNC(CXCUDAFunctionTarget_CFT_Host, clang::Sema::CFT_Host);
-ENUM_SYNC(CXCUDAFunctionTarget_CFT_HostDevice, clang::Sema::CFT_HostDevice);
-ENUM_SYNC(CXCUDAFunctionTarget_CFT_InvalidTarget, clang::Sema::CFT_InvalidTarget);
+// clang/Basic/Cuda.h: enum class CUDAFunctionTarget
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_Device, clang::CUDAFunctionTarget::Device);
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_Global, clang::CUDAFunctionTarget::Global);
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_Host, clang::CUDAFunctionTarget::Host);
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_HostDevice, clang::CUDAFunctionTarget::HostDevice);
+ENUM_SYNC(CXCUDAFunctionTarget_CFT_InvalidTarget,
+          clang::CUDAFunctionTarget::InvalidTarget);
 
-// clang/Sema/Sema.h: enum Sema::CUDAFunctionPreference
-ENUM_SYNC(CXCUDAFunctionPreference_CFP_Never, clang::Sema::CFP_Never);
-ENUM_SYNC(CXCUDAFunctionPreference_CFP_WrongSide, clang::Sema::CFP_WrongSide);
-ENUM_SYNC(CXCUDAFunctionPreference_CFP_HostDevice, clang::Sema::CFP_HostDevice);
-ENUM_SYNC(CXCUDAFunctionPreference_CFP_SameSide, clang::Sema::CFP_SameSide);
-ENUM_SYNC(CXCUDAFunctionPreference_CFP_Native, clang::Sema::CFP_Native);
+// clang/Sema/SemaCUDA.h: enum SemaCUDA::CUDAFunctionPreference
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_Never, clang::SemaCUDA::CFP_Never);
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_WrongSide, clang::SemaCUDA::CFP_WrongSide);
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_HostDevice, clang::SemaCUDA::CFP_HostDevice);
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_SameSide, clang::SemaCUDA::CFP_SameSide);
+ENUM_SYNC(CXCUDAFunctionPreference_CFP_Native, clang::SemaCUDA::CFP_Native);
 
 // clang/Sema/Overload.h: enum OverloadingResult
 ENUM_SYNC(CXOverloadingResult_OR_Success, clang::OR_Success);
@@ -2075,11 +2109,6 @@ ENUM_SYNC(CXObjCIvarDecl_Package, clang::ObjCIvarDecl::Package);
 ENUM_SYNC(CXCorrectTypoKind_CTK_NonError, clang::Sema::CTK_NonError);
 ENUM_SYNC(CXCorrectTypoKind_CTK_ErrorRecovery, clang::Sema::CTK_ErrorRecovery);
 
-// clang/Parse/Parser.h: enum Parser::SkipUntilFlags
-ENUM_SYNC(CXSkipUntilFlags_StopAtSemi, clang::Parser::StopAtSemi);
-ENUM_SYNC(CXSkipUntilFlags_StopBeforeMatch, clang::Parser::StopBeforeMatch);
-ENUM_SYNC(CXSkipUntilFlags_StopAtCodeCompletion, clang::Parser::StopAtCodeCompletion);
-
 // clang/AST/ASTDumperUtils.h: enum clang::ASTDumpOutputFormat
 ENUM_SYNC(CXASTDumpOutputFormat_ADOF_Default, clang::ADOF_Default);
 ENUM_SYNC(CXASTDumpOutputFormat_ADOF_JSON, clang::ADOF_JSON);
@@ -2126,6 +2155,7 @@ ENUM_SYNC(CXBackendAction_Backend_EmitMCNull, clang::Backend_EmitMCNull);
 ENUM_SYNC(CXBackendAction_Backend_EmitObj, clang::Backend_EmitObj);
 // clang/Format/Format.h: enum FormatStyle::LanguageKind : int8_t
 ENUM_SYNC(CXLanguageKind_LK_None, clang::format::FormatStyle::LK_None);
+ENUM_SYNC(CXLanguageKind_LK_C, clang::format::FormatStyle::LK_C);
 ENUM_SYNC(CXLanguageKind_LK_Cpp, clang::format::FormatStyle::LK_Cpp);
 ENUM_SYNC(CXLanguageKind_LK_CSharp, clang::format::FormatStyle::LK_CSharp);
 ENUM_SYNC(CXLanguageKind_LK_Java, clang::format::FormatStyle::LK_Java);
@@ -2184,7 +2214,7 @@ ENUM_SYNC(CXScanningOutputFormat_Full,
 ENUM_SYNC(CXScanningOutputFormat_P1689,
           clang::tooling::dependencies::ScanningOutputFormat::P1689);
 // ... enum class dependencies::ScanningOptimizations, a bitmask enum. `Default` aliases
-// `All` and LLVM_MARK_AS_BITMASK_ENUM adds an alias of `SystemWarnings`; neither is
+// `All` and LLVM_MARK_AS_BITMASK_ENUM adds an alias of `Macros`; neither is
 // mirrored, so neither is synced.
 ENUM_SYNC(CXScanningOptimizations_None,
           clang::tooling::dependencies::ScanningOptimizations::None);
@@ -2192,6 +2222,10 @@ ENUM_SYNC(CXScanningOptimizations_HeaderSearch,
           clang::tooling::dependencies::ScanningOptimizations::HeaderSearch);
 ENUM_SYNC(CXScanningOptimizations_SystemWarnings,
           clang::tooling::dependencies::ScanningOptimizations::SystemWarnings);
+ENUM_SYNC(CXScanningOptimizations_VFS,
+          clang::tooling::dependencies::ScanningOptimizations::VFS);
+ENUM_SYNC(CXScanningOptimizations_Macros,
+          clang::tooling::dependencies::ScanningOptimizations::Macros);
 ENUM_SYNC(CXScanningOptimizations_All,
           clang::tooling::dependencies::ScanningOptimizations::All);
 // clang/AST/ASTImportError.h: enum clang::ASTImportError::ErrorKind
@@ -2314,6 +2348,7 @@ ENUM_SYNC(CXActionKind_DumpTokens, clang::frontend::DumpTokens);
 ENUM_SYNC(CXActionKind_EmitAssembly, clang::frontend::EmitAssembly);
 ENUM_SYNC(CXActionKind_EmitBC, clang::frontend::EmitBC);
 ENUM_SYNC(CXActionKind_EmitHTML, clang::frontend::EmitHTML);
+ENUM_SYNC(CXActionKind_EmitCIR, clang::frontend::EmitCIR);
 ENUM_SYNC(CXActionKind_EmitLLVM, clang::frontend::EmitLLVM);
 ENUM_SYNC(CXActionKind_EmitLLVMOnly, clang::frontend::EmitLLVMOnly);
 ENUM_SYNC(CXActionKind_EmitCodeGenOnly, clang::frontend::EmitCodeGenOnly);
@@ -2322,6 +2357,8 @@ ENUM_SYNC(CXActionKind_ExtractAPI, clang::frontend::ExtractAPI);
 ENUM_SYNC(CXActionKind_FixIt, clang::frontend::FixIt);
 ENUM_SYNC(CXActionKind_GenerateModule, clang::frontend::GenerateModule);
 ENUM_SYNC(CXActionKind_GenerateModuleInterface, clang::frontend::GenerateModuleInterface);
+ENUM_SYNC(CXActionKind_GenerateReducedModuleInterface,
+          clang::frontend::GenerateReducedModuleInterface);
 ENUM_SYNC(CXActionKind_GenerateHeaderUnit, clang::frontend::GenerateHeaderUnit);
 ENUM_SYNC(CXActionKind_GeneratePCH, clang::frontend::GeneratePCH);
 ENUM_SYNC(CXActionKind_GenerateInterfaceStubs, clang::frontend::GenerateInterfaceStubs);
@@ -2345,6 +2382,7 @@ ENUM_SYNC(CXActionKind_PrintDependencyDirectivesSourceMinimizerOutput,
 // clang/Basic/LangStandard.h: enum class Language : uint8_t
 ENUM_SYNC(CXLanguage_Unknown, clang::Language::Unknown);
 ENUM_SYNC(CXLanguage_Asm, clang::Language::Asm);
+ENUM_SYNC(CXLanguage_CIR, clang::Language::CIR);
 ENUM_SYNC(CXLanguage_LLVM_IR, clang::Language::LLVM_IR);
 ENUM_SYNC(CXLanguage_C, clang::Language::C);
 ENUM_SYNC(CXLanguage_CXX, clang::Language::CXX);
@@ -2353,7 +2391,6 @@ ENUM_SYNC(CXLanguage_ObjCXX, clang::Language::ObjCXX);
 ENUM_SYNC(CXLanguage_OpenCL, clang::Language::OpenCL);
 ENUM_SYNC(CXLanguage_OpenCLCXX, clang::Language::OpenCLCXX);
 ENUM_SYNC(CXLanguage_CUDA, clang::Language::CUDA);
-ENUM_SYNC(CXLanguage_RenderScript, clang::Language::RenderScript);
 ENUM_SYNC(CXLanguage_HIP, clang::Language::HIP);
 ENUM_SYNC(CXLanguage_HLSL, clang::Language::HLSL);
 // clang/Frontend/FrontendOptions.h: enum clang::InputKind::Format
@@ -2381,6 +2418,8 @@ ENUM_SYNC(CXLangStandardKind_lang_c17, clang::LangStandard::lang_c17);
 ENUM_SYNC(CXLangStandardKind_lang_gnu17, clang::LangStandard::lang_gnu17);
 ENUM_SYNC(CXLangStandardKind_lang_c23, clang::LangStandard::lang_c23);
 ENUM_SYNC(CXLangStandardKind_lang_gnu23, clang::LangStandard::lang_gnu23);
+ENUM_SYNC(CXLangStandardKind_lang_c2y, clang::LangStandard::lang_c2y);
+ENUM_SYNC(CXLangStandardKind_lang_gnu2y, clang::LangStandard::lang_gnu2y);
 ENUM_SYNC(CXLangStandardKind_lang_cxx98, clang::LangStandard::lang_cxx98);
 ENUM_SYNC(CXLangStandardKind_lang_gnucxx98, clang::LangStandard::lang_gnucxx98);
 ENUM_SYNC(CXLangStandardKind_lang_cxx11, clang::LangStandard::lang_cxx11);
@@ -2409,6 +2448,7 @@ ENUM_SYNC(CXLangStandardKind_lang_hlsl2017, clang::LangStandard::lang_hlsl2017);
 ENUM_SYNC(CXLangStandardKind_lang_hlsl2018, clang::LangStandard::lang_hlsl2018);
 ENUM_SYNC(CXLangStandardKind_lang_hlsl2021, clang::LangStandard::lang_hlsl2021);
 ENUM_SYNC(CXLangStandardKind_lang_hlsl202x, clang::LangStandard::lang_hlsl202x);
+ENUM_SYNC(CXLangStandardKind_lang_hlsl202y, clang::LangStandard::lang_hlsl202y);
 ENUM_SYNC(CXLangStandardKind_lang_unspecified, clang::LangStandard::lang_unspecified);
 // llvm/Frontend/Debug/Options.h: enum llvm::codegenoptions::DebugInfoKind
 ENUM_SYNC(CXDebugInfoKind_NoDebugInfo, llvm::codegenoptions::NoDebugInfo);
@@ -2444,7 +2484,7 @@ ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_Pragma,
 ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_ContextSensitiveKeyword,
           clang::AttributeCommonInfo::AS_ContextSensitiveKeyword);
 ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_HLSLSemantic,
-          clang::AttributeCommonInfo::AS_HLSLSemantic);
+          clang::AttributeCommonInfo::AS_HLSLAnnotation);
 ENUM_SYNC(CXAttributeCommonInfoSyntax_AS_Implicit,
           clang::AttributeCommonInfo::AS_Implicit);
 // clang/Basic/OperatorPrecedence.h: enum clang::prec::Level

@@ -6,14 +6,13 @@ using ClangCompiler: dispose
 
 @testset "FileManager" begin
     fm = CC.FileManager()
-    @test fm.ptr != C_NULL
 
     @testset "FileEntry" begin
         p = joinpath(@__DIR__, "..", "cxx", "main.cpp") |> normpath
         f = CC.getFileEntry(fm, p)
-        @test f.ptr != C_NULL
         @test CC.real_path_name(f) == p
         @test !CC.isNamedPipe(f)
+        @test CC.getSize(f) > 0
         # the name is asked of the ref, not the entry: `FileEntry::getName` forwards to
         # whichever ref touched the file last, so it answers about lookup history
         ref = CC.getFileRef(fm, p)
@@ -27,10 +26,7 @@ end
 
 @testset "SourceManager" begin
     fm = CC.FileManager()
-    @test fm.ptr != C_NULL
-
     sm = CC.SourceManager(fm)
-    @test sm.ptr != C_NULL
 
     code = """
     int x;
@@ -39,14 +35,15 @@ end
     buffer = CC.get_buffer(code)
 
     fid = CC.FileID(sm, buffer)
-    @test fid.ptr != C_NULL
+    @test CC.isValid(fid)
 
     CC.setMainFileID(sm, fid)
 
     fid2 = CC.getMainFileID(sm)
-    @test fid2.ptr != C_NULL
-
+    @test CC.isValid(fid2)
     @test CC.getHashValue(fid) == CC.getHashValue(fid2)
+    @test occursin("int x;", CC.getBufferData(sm, fid2))
+    @test occursin("int y;", CC.getBufferData(sm, fid2))
 
     dispose(fid)
     dispose(fid2)

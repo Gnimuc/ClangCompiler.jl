@@ -53,6 +53,7 @@ typedef enum {
   CXValue_Bool = 0,
   CXValue_Char_S,
   CXValue_SChar,
+  CXValue_Char_U,
   CXValue_UChar,
   CXValue_Short,
   CXValue_UShort,

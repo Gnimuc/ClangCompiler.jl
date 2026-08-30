@@ -54,10 +54,10 @@ CXStmt clang_ExprMutationAnalyzer_findPointeeMutation(CXExprMutationAnalyzer EMA
 CXStmt clang_ExprMutationAnalyzer_findPointeeMutationFromDecl(CXExprMutationAnalyzer EMA,
                                                               CXDecl Dec);
 
-// Static clang::ExprMutationAnalyzer::isUnevaluated — whether Smt sits in an unevaluated
-// operand of Stm (a sizeof, decltype, noexcept or typeid operand), where a write would
-// never actually happen. Needs no analyzer object; none of the three arguments may be
-// NULL.
+// Static clang::ExprMutationAnalyzer::isUnevaluated — whether Smt is an unevaluated
+// operand (of a sizeof, decltype, noexcept or typeid), where a write would never actually
+// happen. Needs no analyzer object. LLVM 20 dropped the enclosing-statement parameter, so
+// Stm is accepted and ignored. Neither Smt nor Context may be NULL.
 bool clang_ExprMutationAnalyzer_isUnevaluated(CXStmt Smt, CXStmt Stm,
                                               CXASTContext Context);
 

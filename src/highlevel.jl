@@ -43,7 +43,7 @@ from `parse` itself.
 top_level_decls(x::CxxInterpreter) = collect(decls_in(castToDeclContext(translation_unit(x))))
 
 """
-    find_decl(x::CxxInterpreter, name::AbstractString) -> resolved decl, or `nothing`
+    find_decl(x, name::AbstractString) -> resolved decl, or `nothing`
 
 Look `name` up the way C++ would at file scope and return the single declaration it names,
 resolved to its concrete class. `name` may be qualified (`"app::widget::size"`).
@@ -57,7 +57,7 @@ parse(I, "namespace app { int twice(int v) { return 2*v; } }")
 fd = find_decl(I, "app::twice")     # a FunctionDecl, not a NamedDecl
 ```
 """
-function find_decl(x::CxxInterpreter, name::AbstractString)
+function find_decl(x::Union{CxxInterpreter,IncrementalParser}, name::AbstractString)
     finder = DeclFinder(x)
     try
         finder(x, String(name)) || return nothing
@@ -68,12 +68,12 @@ function find_decl(x::CxxInterpreter, name::AbstractString)
 end
 
 """
-    find_decls(x::CxxInterpreter, name::AbstractString) -> Vector
+    find_decls(x, name::AbstractString) -> Vector
 
 Every declaration `name` resolves to, each resolved to its concrete class — an overload set
 comes back whole. Empty when the name is not found.
 """
-function find_decls(x::CxxInterpreter, name::AbstractString)
+function find_decls(x::Union{CxxInterpreter,IncrementalParser}, name::AbstractString)
     finder = DeclFinder(x)
     try
         finder(x, String(name)) || return []

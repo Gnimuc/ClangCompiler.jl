@@ -7,7 +7,7 @@ monolithic `LLVM` + `clang-cpp` shared libs). Format C++ with clang-format (LLVM
 ColumnLimit 92 — narrower than the Julia code's 120), but always pass
 `--sort-includes=false`: reordering the includes in a CX header changes the order the
 binding generator walks declarations, and one moved `#include` rewrites ~8,000 lines of
-`lib/18/LibClangEx.jl` for no semantic gain.
+`lib/20/LibClangEx.jl` for no semantic gain.
 
 ## The governing axiom
 
@@ -358,7 +358,12 @@ new code by:
 
 `upstream/` holds verbatim copies of Clang headers edited ONLY to change member access
 (inserting `public:`/`private:`) so wrappers can reach private members (currently
-`Interpreter::IncrParser` and `IncrementalParser::P`). It's on the include path as
+`Interpreter::IncrParser` and `IncrementalParser::P`). It is not the only route to a
+private member: `CXCompilerInstance.cpp` reads `CompilerInstance::FrontendTimer` through an
+explicit instantiation, whose template arguments are exempt from access checking. That form
+copies no header and alters no class, so it carries none of the ODR/layout risk below —
+prefer it when a single member is all a wrapper needs, and reserve `upstream/` for cases
+that need a whole private class. It's on the include path as
 `CLANG_SRC`, so `#include "Interpreter/Interpreter.h"` gets the hacked copy while
 `#include "clang/Interpreter/Interpreter.h"` gets the real one — CXInterpreter.cpp uses
 the hacked copies, CXValue.cpp the real header; this ODR tightrope is safe only because
@@ -382,7 +387,7 @@ are never installed.
    types have both; the Orc refs get by on prologue-only); a new helper macro (X-macro
    tables etc.) must go in `output_ignorelist` in gen/option.toml or it becomes a junk
    binding.
-3. Commit the header, .cpp, CMakeLists, and regenerated `lib/18/LibClangEx.jl` together —
+3. Commit the header, .cpp, CMakeLists, and regenerated `lib/20/LibClangEx.jl` together —
    deterministic symbol mode keeps the lib diff minimal. The `bindings` CI job reruns the
    generator and fails on any diff under `lib/`, and the test suite enforces the rest:
    test/abi.jl (every binding's symbol resolves), test/lint.jl (layout/guards/CMake

@@ -98,9 +98,9 @@ using Test
     CC.Report(engine, CC.SourceLocation(), err_id)
     @test CC.hasErrorOccurred(engine)
     @test CC.getNumErrors(engine) == 1
-    # custom errors are unrecoverable but not "uncompilable" (they have no default error mapping)
+    # a custom Error is a real error, not a -Werror upgrade, so it is uncompilable
     @test CC.hasUnrecoverableErrorOccurred(engine)
-    @test !CC.hasUncompilableErrorOccurred(engine)
+    @test CC.hasUncompilableErrorOccurred(engine)
     @test !CC.hasFatalErrorOccurred(engine)
 
     # suppression blocks both emission and counting
@@ -126,7 +126,14 @@ using Test
     @test !CC.hasErrorOccurred(engine)
     @test CC.getNumErrors(engine) == 0
     @test CC.getNumWarnings(engine) == 0
+    # in-flight tracks the builder, not the engine: true only while one is live, and `Clear`
+    # is a no-op that cannot cancel it -- emitting is what ends it
+    @test !CC.isDiagnosticInFlight(engine)
+    inflight = CC.DiagnosticBuilder(engine, CC.SourceLocation(), warn_id)
+    @test CC.isDiagnosticInFlight(engine)
     CC.Clear(engine)
+    @test CC.isDiagnosticInFlight(engine)
+    CC.dispose(inflight)
     @test !CC.isDiagnosticInFlight(engine)
 
     # replacing the owned client: the engine deletes the old one and adopts the new one
@@ -139,10 +146,8 @@ using Test
     I = CC.create_interpreter(String[])
     CC.parse(I, "int diag_probe = 1;")
     ci_engine = CC.getDiagnostics(CC.get_instance(I))
-    @test ci_engine isa CC.DiagnosticsEngine
     @test CC.hasSourceManager(ci_engine)
     src_mgr = CC.getSourceManager(ci_engine)
-    @test src_mgr isa CC.SourceManager
     @test src_mgr.ptr != C_NULL
 
     CC.setSourceManager(engine, src_mgr)
@@ -200,7 +205,9 @@ end
     # showing a large overload set permanently lowers the cap; a small one leaves it alone
     CC.setShowOverloads(engine, CC.CXOverloadsShown_Ovl_Best)
     ncand = CC.getNumOverloadCandidatesToShow(engine)
-    @test ncand isa Integer
+    # clang's default cap for "show the best" is 32; showing fewer than that leaves it
+    # alone, and showing more than four permanently lowers it to 4
+    @test ncand == 32
     @test CC.overloadCandidatesShown(engine, 2) === nothing
     @test CC.getNumOverloadCandidatesToShow(engine) == ncand
     CC.overloadCandidatesShown(engine, 5)
@@ -233,7 +240,7 @@ end
     CC.parse(I, "int stored_diag_probe = 1;")
     sm = CC.getSourceManager(get_instance(I))
     f = DeclFinder(I)
-    @test f(I, "stored_diag_probe") isa Bool
+    @test f(I, "stored_diag_probe")
     loc = CC.getLocation(get_decl(f))
     @test CC.isValid(loc)
     @test CC.setLocation(sd, loc, sm) === nothing
@@ -262,7 +269,7 @@ end
     CC.parse(I, "int fixit_probe = 1;")
     sm = CC.getSourceManager(get_instance(I))
     f = DeclFinder(I)
-    @test f(I, "fixit_probe") isa Bool
+    @test f(I, "fixit_probe")
     loc = CC.getLocation(get_decl(f))
     @test CC.isValid(loc)
     span = CC.SourceRange(loc, loc)
@@ -362,7 +369,7 @@ end
     CC.parse(I, "int diag_probe = 1;")
     sm = CC.getSourceManager(get_instance(I))
     f = DeclFinder(I)
-    @test f(I, "diag_probe") isa Bool
+    @test f(I, "diag_probe")
     probe = get_decl(f)
     loc = CC.getLocation(probe)
     @test CC.isValid(loc)

@@ -20,7 +20,7 @@ using Test
     @test !(CC.isSubscriptPointerArithmetic(lo))
     @test !(CC.isNoBuiltinFunc(lo, "memcpy"))
     @test !(CC.assumeFunctionsAreConvergent(lo))
-    @test CC.getOpenCLCompatibleVersion(lo) isa Int
+    @test CC.getOpenCLCompatibleVersion(lo) == 0
     @test !isempty(CC.getOpenCLVersionString(lo))
     @test CC.requiresStrictPrototypes(lo) == true
     @test CC.implicitFunctionsAllowed(lo) == false
@@ -62,7 +62,7 @@ using Test
     # ---- tok::TokenKind queries via the raw kind ----
     tid = CC.getTokenID(ii)                # a plain identifier
     @test CC.isAnyIdentifier(tid) == true
-    @test CC.getTokenName(tid) isa String
+    @test CC.getTokenName(tid) == "identifier"
     @test CC.isLiteral(tid) == false
     @test CC.isStringLiteral(tid) == false
     @test CC.isAnnotation(tid) == false
@@ -212,16 +212,19 @@ end
     @test CC.isCPlusPlusOperatorKeyword(ii) == false
 
     # ---- packed ObjC / interesting-identifier / builtin field ----
-    # a plain identifier in a freshly built table is none of the three
-    @test CC.getObjCOrBuiltinID(ii) == 0
+    # LLVM 20 stores "none of the three" as NotInterestingIdentifier (65534);
+    # the three decoded accessors still report 0.
+    @test CC.getObjCOrBuiltinID(ii) == 65534
     @test CC.getObjCKeywordID(ii) == 0                 # tok::objc_not_keyword
-    @test CC.getInterestingIdentifierID(ii) == 0       # tok::not_interesting
+    @test CC.getInterestingIdentifierID(ii) == 0       # tok::not_notable
     @test CC.getBuiltinID(ii) == 0
 
     kw = get(it, "int")                                # keywords are added on create
-    @test CC.getObjCOrBuiltinID(kw) isa Int
-    @test CC.getObjCKeywordID(kw) isa Int
-    @test CC.getInterestingIdentifierID(kw) isa Int
+    # `int` is a keyword, not an ObjC keyword / notable identifier / builtin, so the packed
+    # field still holds the "none of the three" sentinel the fresh identifier above has
+    @test CC.getObjCOrBuiltinID(kw) == 65534
+    @test CC.getObjCKeywordID(kw) == 0
+    @test CC.getInterestingIdentifierID(kw) == 0
     @test CC.hasRevertedTokenIDToIdentifier(kw) == false
     @test CC.getNameStart(kw) == "int"
 
@@ -259,7 +262,6 @@ end
 
     # ---- getOwn interns exactly like get, minus the external-source lookup ----
     own = CC.getOwn(it, "idii_mutator_probe")
-    @test own isa CC.IdentifierInfo
     @test own.ptr == ii.ptr
     fresh = CC.getOwn(it, "idii_own_only")
     @test CC.getNameStart(fresh) == "idii_own_only"
@@ -281,13 +283,12 @@ end
     @test_throws AssertionError CC.revertIdentifierToTokenID(kw, kwid)
 
     # ---- the three regions of the packed ObjCOrBuiltinID field ----
-    @test CC.getObjCOrBuiltinID(ii) == 0
+    @test CC.getObjCOrBuiltinID(ii) == 65534
     @test CC.getBuiltinID(ii) == 0
     @test CC.getInterestingIdentifierID(ii) == 0
     @test CC.getObjCKeywordID(ii) == 0
 
     maxb = CC.getMaxBuiltinID()
-    @test maxb isa Integer
     @test maxb > 0
     CC.setBuiltinID(ii, 1)
     @test CC.getBuiltinID(ii) == 1
@@ -298,10 +299,9 @@ end
     @test_throws AssertionError CC.setBuiltinID(ii, maxb + 1)
     @test CC.clearBuiltinID(ii) === nothing
     @test CC.getBuiltinID(ii) == 0
-    @test CC.getObjCOrBuiltinID(ii) == 0
+    @test CC.getObjCOrBuiltinID(ii) == 65534
 
     maxi = CC.getMaxInterestingIdentifierID()
-    @test maxi isa Integer
     @test maxi > 0
     CC.setInterestingIdentifierID(ii, 1)
     @test CC.getInterestingIdentifierID(ii) == 1
@@ -359,8 +359,9 @@ end
     nul = CC.Selector()
     @test CC.isNull(nul) == true
     @test CC.getNumArgs(nul) == 0
-    @test CC.isKeywordSelector(nul) isa Bool
-    @test CC.isUnarySelector(nul) isa Bool
+    # the two predicates are a partition on any selector, the null one included — a pair
+    # wired to the same query fails this. Polarities of real selectors are pinned below.
+    @test CC.isKeywordSelector(nul) != CC.isUnarySelector(nul)
     @test !isempty(CC.getAsString(nul))
     @test CC.getNameForSlot(nul, 0) == ""
     @test CC.getIdentifierInfoForSlot(nul, 0).ptr == C_NULL

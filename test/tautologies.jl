@@ -341,9 +341,9 @@ end
 
 function main()
     self_check()
-    ccalls = ccall_returns(joinpath(ROOT, "lib", "18", "LibClangEx.jl"))
+    ccalls = ccall_returns(joinpath(ROOT, "lib", "20", "LibClangEx.jl"))
     rets = wrapper_returns(API, ccalls)
-    isempty(ccalls) && (println("no ccalls parsed — is lib/18/LibClangEx.jl present?"); return 2)
+    isempty(ccalls) && (println("no ccalls parsed — is lib/20/LibClangEx.jl present?"); return 2)
 
     hits = Tuple{String,Int,String,String}[]
     bare = Tuple{String,Int,String,String}[]
@@ -406,7 +406,7 @@ function main()
 
     if !isempty(hits)
         nf = report(hits)
-        println("`@test ... isa ...` assertions that cannot fail: $(length(hits)) across $nf files\n")
+        println("isa assertions that cannot fail: $(length(hits)) across $nf files\n")
         println("Each restates the wrapper's own return expression. Assert what Clang decided")
         println("instead: a value, a round trip, or a relationship the shim could get wrong.")
         println("If the value genuinely is not assertable -- the host decides it, it varies across")

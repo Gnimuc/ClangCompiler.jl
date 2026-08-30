@@ -38,7 +38,7 @@ using Test
 
     # Installing it is the adoption: the instance now owns the consumer, hasASTConsumer
     # flips, and disposing the instance is what frees it.
-    @test CC.setASTConsumer(ci, csr) === nothing
+    CC.setASTConsumer(ci, csr)
     @test CC.hasASTConsumer(ci) == true
     @test CC.getASTConsumer(ci).ptr == csr.ptr
 

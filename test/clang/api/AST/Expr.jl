@@ -182,15 +182,20 @@ end
 
     # ---- Expr base predicates (any expression node) --------------------------
     anyexpr = first(filter(n -> n isa CC.AbstractExpr, nodes))
-    @test CC.getType(anyexpr) isa CC.QualType
-    @test CC.getValueKind(anyexpr) isa CC.LibClangEx.CXExprValueKind
+    il = first_of(CC.IntegerLiteral)
+    @test il !== nothing
+    @test CC.get_name(CC.getType(il)) == "int"
     @test !(CC.isLValue(anyexpr))
     @test CC.isPRValue(anyexpr)
     @test !(CC.isXValue(anyexpr))
     @test !(CC.isGLValue(anyexpr))
     @test !CC.is_null_handle(CC.IgnoreImpCasts(anyexpr))
     @test !CC.is_null_handle(CC.IgnoreCasts(anyexpr))
-    @test CC.IgnoreParens(anyexpr) isa CC.Expr_
+    # IgnoreParens is identity off a paren and a real unwrap on `(n + 1)`
+    @test CC.IgnoreParens(il).ptr == il.ptr
+    paren = first_of(CC.ParenExpr)
+    @test paren !== nothing
+    @test CC.IgnoreParens(paren).ptr != paren.ptr
     @test !CC.is_null_handle(CC.IgnoreParenCasts(anyexpr))
     @test !CC.is_null_handle(CC.IgnoreParenImpCasts(anyexpr))
     @test !(CC.containsErrors(anyexpr))
@@ -238,8 +243,8 @@ end
     # ---- CharacterLiteral ----------------------------------------------------
     chl = first_of(CC.CharacterLiteral)
     @test chl !== nothing
-    @test CC.getValue(chl) isa Integer
-    @test CC.getKind(chl) isa CC.LibClangEx.CXCharacterLiteralKind
+    @test CC.getValue(chl) == UInt32('a')
+    @test CC.getKind(chl) == CC.LibClangEx.CXCharacterLiteralKind_Ascii
     @test !CC.is_null_handle(CC.getLocation(chl))
 
     # ---- StringLiteral -------------------------------------------------------
@@ -296,18 +301,19 @@ end
     @test !CC.is_null_handle(CC.getRBracketLoc(ase))
 
     # ---- CallExpr ------------------------------------------------------------
-    ce = first_of(CC.CallExpr)
+    # `helper(a, b)` is the two-argument call; reading only index 0 cannot tell a
+    # working accessor from one that ignores its index.
+    ce = first(n for n in byT(CC.CallExpr) if CC.getNumArgs(n) == 2)
     @test ce !== nothing
     @test CC.getCallee(ce) isa CC.Expr_
     @test !CC.is_null_handle(CC.getCalleeDecl(ce))
     @test !CC.is_null_handle(CC.getDirectCallee(ce))
-    nargs = CC.getNumArgs(ce)
-    @test nargs isa Integer
-    @test CC.getArg(ce, 0) isa CC.Expr_
+    @test CC.getNumArgs(ce) == 2
+    @test CC.getArg(ce, 0).ptr != CC.getArg(ce, 1).ptr
     # Upstream's bound assertion is compiled into the release library, so one past the end
     # aborts the process. The gate turning that into a Julia error is the only reason a caller
     # can be wrong here without taking the session down.
-    @test_throws AssertionError CC.getArg(ce, nargs)
+    @test_throws AssertionError CC.getArg(ce, 2)
     @test !CC.is_null_handle(CC.getRParenLoc(ce))
     @test !(CC.usesADL(ce))
     @test CC.hasStoredFPFeatures(ce) == false
@@ -346,7 +352,7 @@ end
     # CStyleCastExpr is an ExplicitCastExpr — covers getTypeAsWritten + own locs
     csc = first_of(CC.CStyleCastExpr)
     @test csc !== nothing
-    @test CC.getTypeAsWritten(csc) isa CC.QualType
+    @test CC.getAsString(CC.getTypeAsWritten(csc)) in ("int", "double")
     @test !CC.is_null_handle(CC.getLParenLoc(csc))
     @test !CC.is_null_handle(CC.getRParenLoc(csc))
 
@@ -383,7 +389,7 @@ end
     ile = first_of(CC.InitListExpr)
     @test ile !== nothing
     @test CC.getNumInits(ile) == 3
-    @test CC.getInit(ile, 0) isa CC.Expr_
+    @test CC.getInit(ile, 0).ptr != CC.getInit(ile, 1).ptr
     @test_throws AssertionError CC.getInit(ile, CC.getNumInits(ile))  # the restated clang assert (Invariant 3)
     @test CC.isSemanticForm(ile)
     @test CC.getSyntacticForm(ile) isa CC.InitListExpr
@@ -450,7 +456,7 @@ end
     @test se !== nothing
     @test !CC.is_null_handle(CC.getLParenLoc(se))
     @test !CC.is_null_handle(CC.getRParenLoc(se))
-    @test CC.getTemplateDepth(se) isa Integer
+    @test CC.getTemplateDepth(se) == 0          # GNU statement-expression in a non-template
     @test CC.getSubStmt(se) isa CC.CompoundStmt
 
     # ---- CompoundLiteralExpr ((PointT){1,2}) ---------------------------------
@@ -499,6 +505,8 @@ end
     I = create_interpreter(["-std=c++20"])
     CC.parse(I, """
                 struct ExprCoreRec { int a; int b; };
+                constexpr const char exprcore_buf[] = "abc";
+                constexpr const char *exprcore_ptr = exprcore_buf;
                 int exprcore_callee(int x) { return x; }
                 int exprcore_use(int n) {
                     int arr[3] = {1, 2, 3};
@@ -507,7 +515,7 @@ end
                     int *p = nullptr;
                     ExprCoreRec r{.a = 1, .b = 2};
                     int q = exprcore_callee(n) + arr[1] + r.a;
-                    return q + (n ? 1 : 0) + (int)d + (p == nullptr);
+                    return q + (n ? 1 : 0) + (int)d + (p == nullptr) + (int)s[0];
                 }
                 """)
     ctx = CC.get_ast_context(I)
@@ -563,16 +571,27 @@ end
     lv.ptr == C_NULL || dispose(lv)
 
     ok_sz, sz = CC.tryEvaluateObjectSize(il, ctx, 0)
-    @test ok_sz isa Bool && sz isa UInt64
+    @test ok_sz == false
+    @test sz == 0
     ok_len, slen = CC.tryEvaluateStrLen(il, ctx)
-    @test ok_len isa Bool && slen isa UInt64
+    @test ok_len == false
+    @test slen == 0
+    # both evaluators need a constant address. The initializer of
+    # `constexpr const char *exprcore_ptr = exprcore_buf` is that pointer.
+    @test lookup(I, "exprcore_ptr")
+    ptr_init = CC.getInit(CC.VarDecl(get_decl(lookup)))
+    ok_slen, slen_ok = CC.tryEvaluateStrLen(ptr_init, ctx)
+    @test ok_slen
+    @test slen_ok == 3
+    ok_osz, osz = CC.tryEvaluateObjectSize(ptr_init, ctx, 0)
+    @test ok_osz
+    @test osz == 4
 
     # nullptr classification
     nps = filter(n -> n isa CC.CXXNullPtrLiteralExpr, nodes)
-    if !isempty(nps)
-        @test CC.isNullPointerConstant(first(nps), ctx, LX.CXExpr_NPC_NeverValueDependent) isa
-              LX.CXExpr_NullPointerConstantKind
-    end
+    @test !isempty(nps)
+    @test CC.isNullPointerConstant(first(nps), ctx, LX.CXExpr_NPC_NeverValueDependent) ==
+          LX.CXExpr_NPCK_CXX11_nullptr
 
     # ---- CallExpr -----------------------------------------------------------
     ces = filter(n -> n isa CC.CallExpr, nodes)
@@ -665,36 +684,30 @@ end
         syn.ptr == C_NULL && continue
         append!(dies, filter(m -> m isa CC.DesignatedInitExpr, CC.subtree(syn)))
     end
-    if !isempty(dies)
-        die = first(dies)
-        @test CC.size(die) >= 1
-        @test CC.getNumSubExprs(die) >= 1
-        @test CC.getInit(die) isa CC.Expr_
-        @test !CC.is_null_handle(CC.getSubExpr(die, 0))
-        @test !(CC.isDirectInit(die))
-        @test !(CC.usesGNUSyntax(die))
-        @test !CC.is_null_handle(CC.getEqualOrColonLoc(die))
-        @test !CC.is_null_handle(CC.getBeginLoc(CC.getDesignatorsSourceRange(die)))
+    @test !isempty(dies)
+    die = first(dies)
+    @test CC.size(die) >= 1
+    @test CC.getNumSubExprs(die) >= 1
+    @test CC.getInit(die) isa CC.Expr_
+    @test !CC.is_null_handle(CC.getSubExpr(die, 0))
+    @test !(CC.isDirectInit(die))
+    @test !(CC.usesGNUSyntax(die))
+    @test !CC.is_null_handle(CC.getEqualOrColonLoc(die))
+    @test !CC.is_null_handle(CC.getBeginLoc(CC.getDesignatorsSourceRange(die)))
 
-        d = CC.getDesignator(die, 0)
-        @test d isa CC.Designator
-        @test CC.isFieldDesignator(d)
-        @test !(CC.isArrayDesignator(d))
-        @test !(CC.isArrayRangeDesignator(d))
-        @test !CC.is_null_handle(CC.getBeginLoc(d))
-        @test !CC.is_null_handle(CC.getEndLoc(d))
-        if CC.isFieldDesignator(d)
-            @test !CC.is_null_handle(CC.getFieldName(d))
-            @test !CC.is_null_handle(CC.getFieldDecl(d))
-            @test !CC.is_null_handle(CC.getDotLoc(d))
-            @test !CC.is_null_handle(CC.getFieldLoc(d))
-        elseif CC.isArrayDesignator(d) || CC.isArrayRangeDesignator(d)
-            @test CC.getArrayIndex(d) isa Unsigned
-            @test !CC.is_null_handle(CC.getLBracketLoc(d))
-            @test !CC.is_null_handle(CC.getRBracketLoc(d))
-            @test CC.getArrayIndex(die, d) isa CC.Expr_
-        end
-    end
+    d = CC.getDesignator(die, 0)
+    @test d isa CC.Designator
+    @test CC.isFieldDesignator(d)
+    @test !(CC.isArrayDesignator(d))
+    @test !(CC.isArrayRangeDesignator(d))
+    @test !CC.is_null_handle(CC.getBeginLoc(d))
+    @test !CC.is_null_handle(CC.getEndLoc(d))
+    @test !CC.is_null_handle(CC.getFieldName(d))
+    @test !CC.is_null_handle(CC.getFieldDecl(d))
+    @test !CC.is_null_handle(CC.getDotLoc(d))
+    @test !CC.is_null_handle(CC.getFieldLoc(d))
+    # array / range designators are built by CreateArrayDesignator below, not by
+    # C++20 designated-init (which only writes `.field`)
 
     dispose(lookup)
     dispose(I)
@@ -725,7 +738,6 @@ end
     # AtomicExpr — __atomic_load_n(p, seq_cst)
     ae = pick(CC.AtomicExpr)
     @test ae isa CC.AtomicExpr
-    @test CC.getOp(ae) >= 0
     @test occursin("atomic_load", CC.getOpAsString(ae))
     @test CC.getNumSubExprs(ae) >= 2
     @test !CC.is_null_handle(CC.getSubExpr(ae, 0))
@@ -766,7 +778,6 @@ end
     # ExtVectorElementExpr — v.x selects one component
     eve = pick(CC.ExtVectorElementExpr)
     @test eve isa CC.ExtVectorElementExpr
-    @test CC.getBase(eve) isa CC.Expr_
     @test CC.getBase(eve).ptr != C_NULL
     @test CC.getNumElements(eve) == 1
 
@@ -881,7 +892,6 @@ end
     mfd = CC.FunctionDecl(get_decl(lm))
     mse = first(filter(n -> n isa CC.MatrixSubscriptExpr, CC.subtree(CC.getBody(mfd))))
     @test !(CC.isIncomplete(mse))
-    @test CC.getBase(mse) isa CC.Expr_
     @test CC.getBase(mse).ptr != C_NULL
     @test !CC.is_null_handle(CC.getRowIdx(mse))
     @test CC.getRowIdx(mse).ptr != C_NULL
@@ -978,7 +988,6 @@ end
     # AtomicExpr — __atomic_load_n(p, seq_cst): ptr/order slots are always present
     ae = pick(CC.AtomicExpr)
     @test ae isa CC.AtomicExpr
-    @test CC.getPtr(ae) isa CC.Expr_
     @test CC.getPtr(ae).ptr != C_NULL
     @test !CC.is_null_handle(CC.getOrder(ae))
     @test CC.getOrder(ae).ptr != C_NULL
@@ -1031,7 +1040,6 @@ end
         end
     end
     @test poe isa CC.PseudoObjectExpr
-    @test CC.getSyntacticForm(poe) isa CC.Expr_
     @test CC.getSyntacticForm(poe).ptr != C_NULL
     @test CC.getNumSemanticExprs(poe) >= 1
     @test 0 <= CC.getResultExprIndex(poe) < CC.getNumSemanticExprs(poe)
@@ -1082,11 +1090,10 @@ end
         nc = CC.getNumComponents(oe)
         ne = CC.getNumExpressions(oe)
         @test nc >= 1
-        @test ne isa Integer
+        @test ne >= 0
         @test CC.isValid(CC.getOperatorLoc(oe))
         @test CC.isValid(CC.getRParenLoc(oe))
         tsi = CC.getTypeSourceInfo(oe)
-        @test tsi isa CC.TypeSourceInfo
         @test tsi.ptr != C_NULL
         for i = 0:(nc - 1)
             comp = CC.getComponent(oe, i)
@@ -1111,7 +1118,6 @@ end
                 j = CC.getArrayExprIndex(comp)
                 @test j < ne
                 ix = CC.getIndexExpr(oe, j)
-                @test ix isa CC.Expr_
                 @test ix.ptr != C_NULL
             elseif k == CC.LibClangEx.CXOffsetOfNode_Kind_Base
                 saw_base = true
@@ -1124,6 +1130,9 @@ end
     @test saw_field
     @test saw_array
     @test saw_base
+    # field-only `offsetof(inner, d)` has no index expression; `s[2].d` has one.
+    @test any(oe -> CC.getNumExpressions(oe) == 0, offs)
+    @test any(oe -> CC.getNumExpressions(oe) >= 1, offs)
 
     # ExtVectorElementExpr — v.x, v.xxyy (duplicates), pv->y (arrow), q.x
     eves = filter(n -> n isa CC.ExtVectorElementExpr, nodes)
@@ -1142,11 +1151,10 @@ end
     @test !CC.is_null_handle(CC.IgnoreConversionOperatorSingleStep(il))
     @test CC.IgnoreConversionOperatorSingleStep(il).ptr == il.ptr
     mces = filter(n -> n isa CC.CXXMemberCallExpr, nodes)
-    if !isempty(mces)
-        inner = CC.IgnoreConversionOperatorSingleStep(first(mces))
-        @test inner isa CC.Expr_
-        @test inner.ptr != C_NULL
-    end
+    @test !isempty(mces)
+    inner = CC.IgnoreConversionOperatorSingleStep(first(mces))
+    @test inner.ptr != first(mces).ptr
+    @test inner.ptr != C_NULL
 
     CC.dispose(lookup)
     CC.dispose(I)
@@ -1221,8 +1229,6 @@ end
     @test sve isa CC.ShuffleVectorExpr
     bloc = CC.getBuiltinLoc(sve)
     rloc = CC.getRParenLoc(sve)
-    @test bloc isa CC.SourceLocation
-    @test rloc isa CC.SourceLocation
     CC.setBuiltinLoc(sve, rloc)
     @test CC.getBuiltinLoc(sve).ptr == rloc.ptr
     CC.setBuiltinLoc(sve, bloc)
@@ -1399,7 +1405,6 @@ end
     @test !isempty(dies)
     d0 = CC.getDesignator(first(dies), 0)
     rng = CC.getSourceRange(d0)
-    @test rng isa CC.SourceRange
     @test rng.begin_loc.ptr == CC.getBeginLoc(d0).ptr
     @test rng.end_loc.ptr == CC.getEndLoc(d0).ptr
 
@@ -1408,7 +1413,7 @@ end
 end
 
 @testset "expr tail: paren/unary/subscript/binary setters, char-literal print, atomic scope" begin
-    I = create_interpreter(String[])
+    I = create_interpreter(["-std=gnu++20"])
     CC.parse(I, """
                 #ifndef __MEMORY_SCOPE_SYSTEM
                 #define __MEMORY_SCOPE_SYSTEM 0
@@ -1505,21 +1510,18 @@ end
     ae = pick(CC.AtomicExpr)
     @test ae isa CC.AtomicExpr
     @test CC.hasScopeModel(ae)
-    if CC.hasScopeModel(ae)
-        @test !CC.is_null_handle(CC.getScope(ae))
-    end
+    @test !CC.is_null_handle(CC.getScope(ae))
 
     # ---- GenericSelectionExpr: the controlling type of a type predicate ------
-    # `_Generic` with a type operand is a clang extension; skip where unavailable.
+    # `_Generic` with a type operand is a clang extension, enabled under GNU C++.
     CC.parse(I, "int cc_wl16_tg() { return _Generic(int, int: 1, default: 2); }")
-    if lookup(I, "cc_wl16_tg")
-        tfd = CC.FunctionDecl(get_decl(lookup))
-        tnodes = CC.subtree(CC.getBody(tfd))
-        ti = findfirst(n -> n isa CC.GenericSelectionExpr && CC.isTypePredicate(n), tnodes)
-        if ti !== nothing
-            @test !CC.is_null_handle(CC.getControllingType(tnodes[ti]))
-        end
-    end
+    @test lookup(I, "cc_wl16_tg")
+    tfd = CC.FunctionDecl(get_decl(lookup))
+    tnodes = CC.subtree(CC.getBody(tfd))
+    gse_ty = first(n for n in tnodes if n isa CC.GenericSelectionExpr && CC.isTypePredicate(n))
+    @test CC.isTypePredicate(gse_ty)
+    @test !CC.is_null_handle(CC.getControllingType(gse_ty))
+    @test CC.getAsString(CC.getType(CC.getControllingType(gse_ty))) == "int"
 
     dispose(lookup)
     dispose(I)
@@ -1557,10 +1559,14 @@ end
     CC.setCallee(call, callee)
     @test CC.getCallee(call).ptr == callee.ptr
     a0 = CC.getArg(call, 0)
+    a1 = CC.getArg(call, 1)
     CC.setArg(call, 0, a0)
     @test CC.getArg(call, 0).ptr == a0.ptr
+    @test a1.ptr != a0.ptr
+    @test CC.getStmtClassName(CC.resolve(a1)) == "IntegerLiteral"
     # the index precondition restated from CallExpr::setArg's assert
     @test_throws AssertionError CC.setArg(call, CC.getNumArgs(call), a0)
+    @test_throws AssertionError CC.getArg(call, 2)
 
     # ---- MemberExpr: base / member decl / arrow / candidate flag ----
     me = first(filter(n -> n isa CC.MemberExpr, nodes))
@@ -1830,7 +1836,6 @@ end
     @test !isempty(diues)
     diue = first(diues)
     diue_base = CC.getBase(diue)
-    @test diue_base isa CC.Expr_
     @test diue_base.ptr != C_NULL
     diue_upd = CC.getUpdater(diue)
     @test diue_upd isa CC.InitListExpr
@@ -1882,7 +1887,6 @@ end
     # ---- ConvertVectorExpr ---------------------------------------------------
     cve = first(filter(n -> n isa CC.ConvertVectorExpr, nodes))
     cve_tsi = CC.getTypeSourceInfo(cve)
-    @test cve_tsi isa CC.TypeSourceInfo
     CC.setTypeSourceInfo(cve, cve_tsi)
     @test CC.getTypeSourceInfo(cve).ptr == cve_tsi.ptr
 
@@ -2039,7 +2043,8 @@ end
                     int arr[3] = {1, 2, 3};
                     cc_m_pt p = {.x = 4, .y = 5};
                     unsigned long off = __builtin_offsetof(cc_m_outer, s[2].d);
-                    return local + cast + arr[0] + p.x + (double)off;
+                    int k = cc_m_double(3);
+                    return local + cast + arr[0] + p.x + (double)off + k;
                 }
                 const char *cc_m_file(void) { return __builtin_FILE(); }
                 """)
@@ -2117,14 +2122,13 @@ end
 
     # ---- CallExpr::setADLCallKind ------------------------------------------
     calls = filter(n -> n isa CC.CallExpr, nodes)
-    if !isempty(calls)
-        call = first(calls)
-        adl = CC.usesADL(call)
-        CC.setADLCallKind(call, !adl)
-        @test CC.usesADL(call) == !adl
-        CC.setADLCallKind(call, adl)
-        @test CC.usesADL(call) == adl
-    end
+    @test !isempty(calls)
+    call = first(calls)
+    adl = CC.usesADL(call)
+    CC.setADLCallKind(call, !adl)
+    @test CC.usesADL(call) == !adl
+    CC.setADLCallKind(call, adl)
+    @test CC.usesADL(call) == adl
 
     # ---- OffsetOfExpr setters ----------------------------------------------
     oe = first(filter(n -> n isa CC.OffsetOfExpr, nodes))
@@ -2151,46 +2155,43 @@ end
     init0 = CC.getInit(ile, 0)
     init1 = CC.getInit(ile, 1)
     displaced = CC.updateInit(ile, ctx, 0, init1)
-    @test displaced isa CC.Expr_
     @test displaced.ptr == init0.ptr
     @test CC.getInit(ile, 0).ptr == init1.ptr
     CC.updateInit(ile, ctx, 0, init0)
     @test CC.getInit(ile, 0).ptr == init0.ptr
-    # markError is asserted on the semantic form only; both branches are covered because
-    # which form `subtree` reaches is a Sema detail.
-    if CC.isSemanticForm(ile)
-        CC.markError(ile)
-        @test CC.containsErrors(ile)
-    else
-        @test_throws AssertionError CC.markError(ile)
-    end
+    # markError is asserted on the semantic form only. Designated `{.x=4,.y=5}`
+    # is the list that carries a distinct syntactic form.
+    ile_des = first(n for n in nodes if n isa CC.InitListExpr && CC.getSyntacticForm(n).ptr != C_NULL)
+    @test CC.isSemanticForm(ile_des)
+    CC.markError(ile_des)
+    @test CC.containsErrors(ile_des)
+    @test_throws AssertionError CC.markError(CC.getSyntacticForm(ile_des))
 
     # ---- DesignatedInitExpr setters ----------------------------------------
     # the designators live on the syntactic form, which `subtree` does not walk
     dies = CC.DesignatedInitExpr[]
     for n in filter(x -> x isa CC.InitListExpr, nodes)
-        syn = CC.getSyntacticForm(n)
-        syn.ptr == C_NULL && continue
-        append!(dies, filter(m -> m isa CC.DesignatedInitExpr, CC.subtree(syn)))
+        synf = CC.getSyntacticForm(n)
+        synf.ptr == C_NULL && continue
+        append!(dies, filter(m -> m isa CC.DesignatedInitExpr, CC.subtree(synf)))
     end
-    if !isempty(dies)
-        die = first(dies)
-        eloc = CC.getEqualOrColonLoc(die)
-        CC.setEqualOrColonLoc(die, eloc)
-        @test CC.getEqualOrColonLoc(die).ptr == eloc.ptr
-        gnu = CC.usesGNUSyntax(die)
-        CC.setGNUSyntax(die, !gnu)
-        @test CC.usesGNUSyntax(die) == !gnu
-        CC.setGNUSyntax(die, gnu)
-        @test CC.usesGNUSyntax(die) == gnu
-        dinit = CC.getInit(die)
-        CC.setInit(die, dinit)
-        @test CC.getInit(die).ptr == dinit.ptr
-        sub0 = CC.getSubExpr(die, 0)
-        CC.setSubExpr(die, 0, sub0)
-        @test CC.getSubExpr(die, 0).ptr == sub0.ptr
-        @test_throws AssertionError CC.setSubExpr(die, CC.getNumSubExprs(die), sub0)
-    end
+    @test !isempty(dies)
+    die = first(dies)
+    eloc = CC.getEqualOrColonLoc(die)
+    CC.setEqualOrColonLoc(die, eloc)
+    @test CC.getEqualOrColonLoc(die).ptr == eloc.ptr
+    gnu = CC.usesGNUSyntax(die)
+    CC.setGNUSyntax(die, !gnu)
+    @test CC.usesGNUSyntax(die) == !gnu
+    CC.setGNUSyntax(die, gnu)
+    @test CC.usesGNUSyntax(die) == gnu
+    dinit = CC.getInit(die)
+    CC.setInit(die, dinit)
+    @test CC.getInit(die).ptr == dinit.ptr
+    sub0 = CC.getSubExpr(die, 0)
+    CC.setSubExpr(die, 0, sub0)
+    @test CC.getSubExpr(die, 0).ptr == sub0.ptr
+    @test_throws AssertionError CC.setSubExpr(die, CC.getNumSubExprs(die), sub0)
 
     # ---- SourceLocExpr::EvaluateInContext ----------------------------------
     @test lookup(I, "cc_m_file")
@@ -2424,7 +2425,6 @@ end
     fls = filter(n -> n isa CC.FloatingLiteral, nodes)
     @test !isempty(fls)
     sems = [CC.getRawSemantics(fl) for fl in fls]
-    @test all(s -> s isa Integer, sems)
     # 2.5f/3.0f are IEEE single and 1.25/2.0 IEEE double on every target, so the body
     # always carries at least two distinct raw semantics
     @test length(unique(sems)) >= 2
@@ -2445,11 +2445,8 @@ end
     il = pick(CC.IntegerLiteral)
     @test il isa CC.IntegerLiteral
     fp = CC.EvaluateAsFixedPoint(il, ctx)
-    @test fp isa CC.APValue
-    if fp.ptr != C_NULL
-        @test CC.isFixedPoint(fp)
-        dispose(fp)
-    end
+    # a plain integer is not a fixed-point value; clang hands back a null APValue
+    @test CC.is_null_handle(fp)
 
     # ---- ImaginaryLiteral: operand round-trip -------------------------------
     imag = pick(CC.ImaginaryLiteral)
@@ -2463,7 +2460,6 @@ end
     call = pick(CC.CallExpr)
     @test call isa CC.CallExpr
     nraw = CC.getNumRawSubExprs(call)
-    @test nraw isa Integer
     @test nraw >= CC.getNumArgs(call) + 1
     @test !CC.is_null_handle(CC.getRawSubExpr(call, 0))
     @test CC.getRawSubExpr(call, 0).ptr == CC.getCallee(call).ptr
@@ -2503,15 +2499,13 @@ end
     # ---- ConstantExpr: re-cache the folded result ---------------------------
     cst = pick(CC.ConstantExpr)
     @test cst isa CC.ConstantExpr
-    if CC.hasAPValueResult(cst)
-        v = CC.getAPValueResult(cst)
-        @test v isa CC.APValue
-        @test v.ptr != C_NULL
-        vkind = CC.getResultAPValueKind(cst)
-        CC.SetResult(cst, v, ctx)
-        @test CC.getResultAPValueKind(cst) == vkind
-        dispose(v)
-    end
+    @test CC.hasAPValueResult(cst)
+    v = CC.getAPValueResult(cst)
+    @test v.ptr != C_NULL
+    vkind = CC.getResultAPValueKind(cst)
+    CC.SetResult(cst, v, ctx)
+    @test CC.getResultAPValueKind(cst) == vkind
+    dispose(v)
 
     # ---- Designator::setFieldDecl -------------------------------------------
     # the designators live on the syntactic form, which `subtree` does not walk
@@ -2525,10 +2519,9 @@ end
     d0 = CC.getDesignator(first(dies), 0)
     @test CC.isFieldDesignator(d0)
     dfd = CC.getFieldDecl(d0)
-    if dfd.ptr != C_NULL
-        CC.setFieldDecl(d0, dfd)
-        @test CC.getFieldDecl(d0).ptr == dfd.ptr
-    end
+    @test dfd.ptr != C_NULL
+    CC.setFieldDecl(d0, dfd)
+    @test CC.getFieldDecl(d0).ptr == dfd.ptr
 
     dispose(f)
     dispose(I)
@@ -2616,11 +2609,11 @@ end
     # ---- Expr::isFlexibleArrayMemberLike ------------------------------------
     @test !isempty(mes)
     fam_like = [CC.isFlexibleArrayMemberLike(m, ctx, LX.CXStrictFlexArraysLevelKind_IncompleteOnly) for m in mes]
-    @test all(v -> v isa Bool, fam_like)
-    # `f->data` has incomplete array type, so it is flexible-array-like at every level
+    # `f->data` has incomplete array type; `p.x` / `f->n` do not
     @test any(fam_like)
-    @test all(m -> CC.isFlexibleArrayMemberLike(m, ctx, LX.CXStrictFlexArraysLevelKind_ZeroOrIncomplete, true) isa Bool,
-              mes)
+    @test any(!, fam_like)
+    @test any(m -> CC.isFlexibleArrayMemberLike(m, ctx, LX.CXStrictFlexArraysLevelKind_ZeroOrIncomplete, true), mes)
+    @test any(m -> !CC.isFlexibleArrayMemberLike(m, ctx, LX.CXStrictFlexArraysLevelKind_ZeroOrIncomplete, true), mes)
     # an expression whose type is not an array is never one, whatever the level
     @test !CC.isFlexibleArrayMemberLike(il, ctx, LX.CXStrictFlexArraysLevelKind_Default)
 
@@ -2647,12 +2640,8 @@ end
 
     # ---- the remaining deserialization shells -------------------------------
     # Only what the shell factory itself stores may be read; everything else is uninitialized.
-    cee = CC.CallExpr(ctx, 2, false)
-    @test cee isa CC.CallExpr
-    @test cee.ptr != C_NULL
-    @test CC.getNumArgs(cee) == 2
-    @test CC.getStmtClassName(cee) == "CallExpr"
-
+    # CallExpr::CreateEmpty is exercised with shrinkNumArgs / setNumArgsUnsafe in the
+    # constant-evaluation testset below; the rest of the family is here.
     mee = CC.MemberExpr(ctx, false, false, false, 0)
     @test mee isa CC.MemberExpr
     @test CC.getStmtClassName(mee) == "MemberExpr"
@@ -2787,7 +2776,6 @@ end
 
     # ---- SYCLUniqueStableNameExpr -------------------------------------------
     tsi = CC.getTrivialTypeSourceInfo(ctx, CC.getType(dre), loc)
-    @test tsi isa CC.TypeSourceInfo
     sycl = CC.SYCLUniqueStableNameExpr(ctx, loc, loc, loc, tsi)
     @test sycl isa CC.SYCLUniqueStableNameExpr
     @test CC.getStmtClassName(sycl) == "SYCLUniqueStableNameExpr"
@@ -2847,16 +2835,15 @@ end
     @test CC.getAssocType(gse, 1).ptr == C_NULL     # `default:` has no written type
     @test_throws AssertionError CC.getAssocType(gse, na)
     sel = [CC.isAssocSelected(gse, i) for i = 0:(na - 1)]
-    @test all(s -> s isa Bool, sel)
     @test count(identity, sel) == 1
     @test sel[CC.getResultIndex(gse) + 1]
+    @test !sel[2 - CC.getResultIndex(gse)]     # the unselected association
     @test_throws AssertionError CC.isAssocSelected(gse, na)
 
     # ---- the extent of a written nested-name-specifier -----------------------
     dres = filter(n -> n isa CC.DeclRefExpr, nodes)
     qdre = first(d for d in dres if CC.hasQualifier(d))
     qr = CC.getQualifierRange(qdre)
-    @test qr isa CC.SourceRange
     @test CC.isValid(qr.begin_loc)
     @test CC.isValid(qr.end_loc)
     udre = first(d for d in dres if !CC.hasQualifier(d))
@@ -2894,7 +2881,6 @@ end
     # only the value the node was allocated with may be written back
     bo = first(n for n in nodes if n isa CC.BinaryOperator)
     hs = CC.hasStoredFPFeatures(bo)
-    @test hs isa Bool
     CC.setHasStoredFPFeatures(bo, hs)
     @test CC.hasStoredFPFeatures(bo) == hs
 
@@ -2993,20 +2979,17 @@ end
     # ---- Expr::EvalResult::isGlobalLValue ------------------------------------
     lres = CC.EvalResult()
     ok_l = CC.EvaluateAsLValue(dre, ctx, lres, false)
-    @test ok_l isa Bool
-    if ok_l
-        # isGlobalLValue asserts on this, so it is checked before the call
-        @test CC.isLValue(CC.getVal(lres))
-        @test CC.isGlobalLValue(lres)
-    end
+    @test ok_l
+    # isGlobalLValue asserts on this, so it is checked before the call
+    @test CC.isLValue(CC.getVal(lres))
+    @test CC.isGlobalLValue(lres)
 
     # ---- Expr::EvaluateCharRangeAsString -------------------------------------
     sres = CC.EvalResult()
     ok_s, text = CC.EvaluateCharRangeAsString(ptr_e, size_e, ptr_e, ctx, sres)
-    @test ok_s isa Bool
-    @test text isa String
+    @test ok_s
     # exprs_len code units read out of exprs_buf spell its contents
-    @test !ok_s || text == "hello"
+    @test text == "hello"
     @test !(CC.hasSideEffects(sres))
 
     dispose(rres)

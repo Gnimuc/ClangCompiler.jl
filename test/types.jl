@@ -110,58 +110,58 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     # -- sugar/identity carriers --
     elab = rty("tmv_rec")
     @test elab isa CC.ElaboratedType
-    @test CC.clty_to_jlty(elab) isa CC.ElaboratedType              # @42
+    @test CC.clty_to_jlty(elab) == elab                           # @42 identity mapping
     tdty = unwrap(rty("tmv_td"))
     @test tdty isa CC.TypedefType
-    @test CC.clty_to_jlty(tdty) isa CC.TypedefType                 # @43
+    @test CC.clty_to_jlty(tdty) == tdty                           # @43
     usty = unwrap(rty("tmv_using"))
     @test usty isa CC.UsingType
-    @test CC.clty_to_jlty(usty) isa CC.UsingType                   # @44
+    @test CC.clty_to_jlty(usty) == usty                           # @44
     pty = rty("tmv_ptr")
     @test pty isa CC.PointerType
-    @test CC.clty_to_jlty(pty) isa CC.PointerType                  # @45
+    @test CC.clty_to_jlty(pty) == pty                             # @45
 
     # -- TagType family --
     rrt = unwrap(rty("tmv_rec"))
     @test rrt isa CC.RecordType
-    @test CC.clty_to_jlty(CC.TagType(rrt)) isa CC.RecordType   # @48 -> resolve@135 -> @49
-    @test CC.clty_to_jlty(rrt) isa CC.RecordType                   # @49
+    @test CC.clty_to_jlty(CC.TagType(rrt)) == rrt                 # @48 -> resolve@135 -> @49
+    @test CC.clty_to_jlty(rrt) == rrt                             # @49
     ety = unwrap(rty("tmv_ev"))
     @test ety isa CC.EnumType
-    @test CC.clty_to_jlty(ety) isa CC.EnumType                     # @50
-    @test CC.resolve(CC.TagType(ety)) isa CC.EnumType          # resolve@135 (enum branch)
+    @test CC.clty_to_jlty(ety) == ety                             # @50
+    @test CC.resolve(CC.TagType(ety)) == ety                      # resolve@135 (enum branch)
 
     # -- FunctionType family --
     f(I, "tmv_fn")
     fd = CC.FunctionDecl(get_decl(f))
     fpt = CC.resolve(CC.getTypePtr(CC.getType(fd)))
     @test fpt isa CC.FunctionProtoType
-    @test CC.clty_to_jlty(CC.FunctionType(fpt)) isa CC.FunctionProtoType  # @53
-    @test CC.clty_to_jlty(fpt) isa CC.FunctionProtoType            # @54
+    @test CC.clty_to_jlty(CC.FunctionType(fpt)) == fpt            # @53
+    @test CC.clty_to_jlty(fpt) == fpt                             # @54
     fnp_qt = CC.getFunctionNoProtoType(ctx, CC.get_qual_type(CC.IntTy(ctx)))
     fnpty = CC.resolve(CC.getTypePtr(fnp_qt))
     @test fnpty isa CC.FunctionNoProtoType
-    @test CC.clty_to_jlty(fnpty) isa CC.FunctionNoProtoType        # @55
-    @test CC.clty_to_jlty(CC.FunctionType(fnpty)) isa CC.FunctionNoProtoType
+    @test CC.clty_to_jlty(fnpty) == fnpty                         # @55
+    @test CC.clty_to_jlty(CC.FunctionType(fnpty)) == fnpty
 
     # -- ReferenceType family --
     lref = rty("tmv_lref")
     @test lref isa CC.LValueReferenceType
-    @test CC.clty_to_jlty(CC.ReferenceType(lref)) isa CC.LValueReferenceType  # @58 -> resolve@147 -> @59
-    @test CC.clty_to_jlty(lref) isa CC.LValueReferenceType         # @59
+    @test CC.clty_to_jlty(CC.ReferenceType(lref)) == lref         # @58 -> resolve@147 -> @59
+    @test CC.clty_to_jlty(lref) == lref                           # @59
     rref = rty("tmv_rref")
     @test rref isa CC.RValueReferenceType
-    @test CC.clty_to_jlty(rref) isa CC.RValueReferenceType         # @60
-    @test CC.resolve(CC.ReferenceType(rref)) isa CC.RValueReferenceType
+    @test CC.clty_to_jlty(rref) == rref                           # @60
+    @test CC.resolve(CC.ReferenceType(rref)) == rref
 
     # -- ArrayType family --
     aty = rty("tmv_arr")
     @test aty isa CC.ConstantArrayType
-    @test CC.clty_to_jlty(CC.ArrayType(aty)) isa CC.ConstantArrayType  # @63 -> resolve@153 -> @64
-    @test CC.clty_to_jlty(aty) isa CC.ConstantArrayType            # @64
+    @test CC.clty_to_jlty(CC.ArrayType(aty)) == aty               # @63 -> resolve@153 -> @64
+    @test CC.clty_to_jlty(aty) == aty                             # @64
     ity = rty("tmv_iarr")
     @test ity isa CC.IncompleteArrayType
-    @test CC.clty_to_jlty(ity) isa CC.IncompleteArrayType          # @65
+    @test CC.clty_to_jlty(ity) == ity                             # @65
 
     # VariableArrayType (VLA in a function body)
     f(I, "tmv_vla")
@@ -179,14 +179,14 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
         end
     end
     @test vaty isa CC.VariableArrayType
-    @test CC.clty_to_jlty(vaty) isa CC.VariableArrayType           # @66
+    @test CC.clty_to_jlty(vaty) == vaty                           # @66
 
     # DependentSizedArrayType (template pattern TmvS2 field a)
     f(I, "TmvS2")
     p2 = CC.getTemplatedDecl(CC.resolve(get_decl(f)))
     dsaty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(p2)))))
     @test dsaty isa CC.DependentSizedArrayType
-    @test CC.clty_to_jlty(dsaty) isa CC.DependentSizedArrayType    # @67
+    @test CC.clty_to_jlty(dsaty) == dsaty                         # @67
 
     # -- template-related carriers --
     # TemplateTypeParmType (pattern field of TmvTempl)
@@ -198,32 +198,32 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
         ft isa CC.TemplateTypeParmType && (ttpt = ft)
     end
     @test ttpt isa CC.TemplateTypeParmType
-    @test CC.clty_to_jlty(ttpt) isa CC.TemplateTypeParmType        # @70
+    @test CC.clty_to_jlty(ttpt) == ttpt                           # @70
 
     # TemplateSpecializationType + SubstTemplateTypeParmType (instantiated field of TmvTempl<int>)
     tst = unwrap(rty("tmv_si"))
     @test tst isa CC.TemplateSpecializationType
-    @test CC.clty_to_jlty(tst) isa CC.TemplateSpecializationType   # @73
+    @test CC.clty_to_jlty(tst) == tst                             # @73
     srt = CC.resolve(CC.getTypePtr(CC.desugar(tst)))
     @test srt isa CC.RecordType
     sfld = first(CC.getFields(CC.getDecl(srt)))
     sttp = CC.resolve(CC.getTypePtr(CC.getType(sfld)))
     @test sttp isa CC.SubstTemplateTypeParmType
-    @test CC.clty_to_jlty(sttp) isa CC.SubstTemplateTypeParmType   # @71
+    @test CC.clty_to_jlty(sttp) == sttp                           # @71
 
     # DependentNameType (template pattern TmvS3 field v)
     f(I, "TmvS3")
     p3 = CC.getTemplatedDecl(CC.resolve(get_decl(f)))
     dnty = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(p3)))))
     @test dnty isa CC.DependentNameType
-    @test CC.clty_to_jlty(dnty) isa CC.DependentNameType           # @74
+    @test CC.clty_to_jlty(dnty) == dnty                           # @74
 
     # DependentTemplateSpecializationType (template pattern TmvS4 field w)
     f(I, "TmvS4")
     p4 = CC.getTemplatedDecl(CC.resolve(get_decl(f)))
     dtst = CC.resolve(CC.getTypePtr(CC.getType(first(CC.getFields(p4)))))
     @test dtst isa CC.DependentTemplateSpecializationType
-    @test CC.clty_to_jlty(dtst) isa CC.DependentTemplateSpecializationType  # @75
+    @test CC.clty_to_jlty(dtst) == dtst                           # @75
 
     # SubstTemplateTypeParmPackType: instantiating TmvHold<int,double> substitutes Ts
     # into the pack expansion TmvList<Ts, Us>... of the member template tmv_mf while
@@ -247,7 +247,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test pat_t isa CC.TemplateSpecializationType
     spp = CC.resolve(CC.getTypePtr(CC.getAsType(CC.getArg(pat_t, 0))))
     @test spp isa CC.SubstTemplateTypeParmPackType
-    @test CC.clty_to_jlty(spp) isa CC.SubstTemplateTypeParmPackType  # @72
+    @test CC.clty_to_jlty(spp) == spp                             # @72
     dispose(ptl)
     dispose(tl)
 

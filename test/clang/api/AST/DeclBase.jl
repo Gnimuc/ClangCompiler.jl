@@ -24,7 +24,7 @@ using Test
     @test CC.isFileContextDecl(g) == false
     @test !(CC.isFunctionPointerType(g))
     @test CC.isLocalExternDecl(g) == false
-    @test CC.getAccessUnsafe(g) isa CC.LibClangEx.CXAccessSpecifier
+    @test CC.getAccessUnsafe(g) == CC.LibClangEx.CXAccessSpecifier_AS_none
     @test !(CC.isUsed(g))
     @test !(CC.isReferenced(g))
     @test !(CC.isThisDeclarationReferenced(g))
@@ -42,10 +42,10 @@ using Test
     @test CC.isDeprecated(g) == false
     @test CC.isUnavailable(g) == false
     @test !(CC.isWeakImported(g))
-    @test CC.canBeWeakImported(g) isa Tuple{Bool,Bool}
+    @test CC.canBeWeakImported(g) == (false, true)
     @test CC.getVersionIntroduced(g) === nothing
     @test !(CC.hasOwningModule(g))
-    @test CC.getModuleOwnershipKind(g) isa CC.LibClangEx.CXDecl_ModuleOwnershipKind
+    @test CC.getModuleOwnershipKind(g) == CC.LibClangEx.CXDecl_Unowned
     @test CC.isUnconditionallyVisible(g)
     @test CC.isReachable(g)
     @test !(CC.isModulePrivate(g))
@@ -55,7 +55,7 @@ using Test
 
     # body + redeclaration chain
     @test CC.hasBody(g)
-    @test CC.getBody(g) isa CC.Stmt
+    @test CC.resolve(CC.getBody(g)) isa CC.CompoundStmt
     n = CC.getNumRedecls(g)
     @test n >= 1
     @test length(CC.getRedecls(g)) == n
@@ -72,7 +72,7 @@ using Test
     # DeclContext side: the enclosing namespace
     dc = CC.getDeclContext(g)
     @test CC.classof(CC.castFromDeclContext(dc))
-    @test CC.getDeclKind(dc) isa CC.LibClangEx.CXDeclKind
+    @test CC.getDeclKind(dc) == CC.LibClangEx.CXDeclKind_Namespace
     @test CC.isNamespace(dc)
     @test CC.decls_empty(dc) == false
     @test CC.Encloses(dc, dc)
@@ -108,7 +108,6 @@ using Test
 
     # DeclarationNameTable: identifiers round-trip, operator names classify
     tbl = CC.getDeclarationNames(CC.getASTContext(nd))
-    @test tbl isa CC.DeclarationNameTable
     @test CC.getIdentifier(tbl, CC.getIdentifier(nd)) == name
     op = CC.getCXXOperatorName(tbl, CC.LibClangEx.CXOverloadedOperatorKind_OO_Plus)
     @test CC.getNameKind(op) == CC.LibClangEx.CXDeclarationName_CXXOperatorName
@@ -152,7 +151,6 @@ end
 
     # deserialization identity of a decl parsed from source
     @test CC.isFromASTFile(nd) == false
-    @test CC.isDiscardedInGlobalModuleFragment(nd) == false
     @test !(CC.shouldSkipCheckingODR(nd))
     @test CC.getGlobalID(nd) == 0
     @test CC.getOwningModuleID(nd) == 0
@@ -180,9 +178,8 @@ end
     n_noload = CC.getNumNoloadLookupResults(ns, name)
     @test n_noload >= 1
     res = CC.noload_lookup(ns, name)
-    @test res isa Vector{CC.NamedDecl}
     @test length(res) == n_noload
-    @test all(d -> d.ptr != C_NULL, res)
+    @test any(d -> CC.getDeclName(d) == name, res)
 
     # external-storage flags: writing back the default leaves them off
     CC.setHasExternalLexicalStorage(ns, false)
@@ -236,11 +233,8 @@ end
     # the DeclContext corners that bypass the cached lookup table
     dc = CC.getDeclContext(ga)
     @test !CC.is_null_handle(CC.noload_decls_begin(dc))
-    @test CC.noload_decls_begin(dc).ptr != C_NULL
     gname = CC.getDeclName(ga)
     uncached = CC.localUncachedLookup(dc, gname)
-    @test uncached isa Vector{CC.NamedDecl}
-    @test all(d -> d.ptr != C_NULL, uncached)
     @test any(d -> CC.getDeclName(d) == gname, uncached)
     prim = CC.getPrimaryContext(dc)
     CC.setMustBuildLookupTable(prim)
@@ -275,7 +269,6 @@ end
 
     # NestedNameSpecifier static builders, all interned in the context's arena
     g = CC.GlobalSpecifier(ctx)
-    @test g isa CC.NestedNameSpecifier
     @test CC.getKind(g) == CC.LibClangEx.CXNestedNameSpecifierKind_Global
     sup = CC.SuperSpecifier(ctx, rd)
     @test CC.getKind(sup) == CC.LibClangEx.CXNestedNameSpecifierKind_Super
@@ -350,21 +343,17 @@ end
 
     # lookups(): one entry per name, every entry a usable lookup key
     names = CC.getLookupNames(dc)
-    @test names isa Vector{CC.DeclarationName}
     @test length(names) == CC.getNumLookupNames(dc)
-    @test all(n -> n.ptr != C_NULL, names)
     @test "lookup_probe" in [CC.getAsString(n) for n in names]
 
     # noload_lookups(): the same walk restricted to what is already loaded
     nol = CC.getNoloadLookupNames(prim, true)
-    @test nol isa Vector{CC.DeclarationName}
     @test length(nol) == CC.getNumNoloadLookupNames(prim, true)
     @test length(nol) <= length(names)
 
     # lookupSingleResult: the unique declaration behind a name, and nothing for a
     # name this context does not declare
     single = CC.lookupSingleResult(dc, CC.getDeclName(lp))
-    @test single.ptr != C_NULL
     @test CC.getName(single) == "lookup_probe"
     @test f(I, "declbase_k2::elsewhere")
     other = CC.getDeclName(get_decl(f))
@@ -510,6 +499,9 @@ const OBJC_ARGS = ["-x", "objective-c++", "-fobjc-runtime=macosx"]
     # surface, and some of them carry preconditions a blind sweep would walk into.
     stamped = Tuple{Symbol,Any,Any}[]
     for nm in names(CC; all=true)
+        # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; they alias
+        # the real carrier types and are not the stamped `isFoo`/`Foo` surface.
+        occursin('#', String(nm)) && continue
         isdefined(CC, nm) || continue
         v = getproperty(CC, nm)
         v isa Type && v !== CC.Decl || continue
@@ -540,7 +532,6 @@ const OBJC_ARGS = ["-x", "objective-c++", "-fobjc-runtime=macosx"]
         nmatch = 0
         for (nm, v, p) in stamped
             hit = p(base)
-            @test hit isa Bool
             absT = isdefined(CC, Symbol("Abstract", nm)) ? getproperty(CC, Symbol("Abstract", nm)) : nothing
             if hit
                 # predicate, cast and the Julia abstract are three spellings of one

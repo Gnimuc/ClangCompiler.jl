@@ -220,19 +220,20 @@ clang_DiagnosticsEngine_getDiagnosticLevel(CXDiagnosticsEngine DE, unsigned Diag
 void clang_DiagnosticsEngine_Report(CXDiagnosticsEngine DE, CXSourceLocation_ Loc,
                                     unsigned DiagID);
 
+// LLVM 20 moved in-flight state onto DiagnosticBuilder; reconstructed from
+// builders created through clang_DiagnosticBuilder_create.
 bool clang_DiagnosticsEngine_isDiagnosticInFlight(CXDiagnosticsEngine DE);
 
-// Queues DiagID to be reported as soon as the next diagnostic finishes emitting, with
-// Arg1/Arg2/Arg3 copied into the engine as its %0/%1/%2 arguments. Only one delayed
-// diagnostic fits at a time: a second call before the queued one has been reported is
-// silently dropped, and a force-emitted diagnostic does not flush the queue.
+// LLVM 20 dropped SetDelayedDiagnostic; this is a no-op kept so the C name stays.
 void clang_DiagnosticsEngine_SetDelayedDiagnostic(CXDiagnosticsEngine DE, unsigned DiagID,
                                                   const char *Arg1, const char *Arg2,
                                                   const char *Arg3);
 
+// LLVM 20 dropped DiagnosticsEngine::Clear; this is a no-op kept so the C name stays.
+// Cancelling an in-flight diagnostic would need DiagnosticBuilder's protected Clear(),
+// so there is no way to cancel one through this API: a builder always emits on dispose.
 void clang_DiagnosticsEngine_Clear(CXDiagnosticsEngine DE);
 
-// Borrowed pointer into the engine's flag-value storage.
 const char *clang_DiagnosticsEngine_getFlagValue(CXDiagnosticsEngine DE);
 
 CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
@@ -402,11 +403,10 @@ void clang_StreamingDiagnostic_AddSourceRange(CXStreamingDiagnostic SD, CXSource
 void clang_StreamingDiagnostic_AddFixItHint(CXStreamingDiagnostic SD, CXFixItHint Hint);
 
 // Diagnostic
-// A Diagnostic is a by-value view onto whatever DE currently has in flight, so it is
-// heap-boxed here and released with clang_Diagnostic_dispose. Every accessor reads through
-// to DE, so a Diagnostic must not outlive it. With nothing in flight the counts read back
-// as whatever the last diagnostic left behind and clang_Diagnostic_getID reports the
-// not-in-flight sentinel (~0u).
+// When a builder is in flight on DE this is a view of that builder; otherwise an idle
+// diagnostic whose id is the not-in-flight sentinel. The view borrows the builder's
+// argument storage, which returns to DE's allocator once the builder is disposed, so
+// dispose the view first.
 CXDiagnostic_ clang_Diagnostic_create(CXDiagnosticsEngine DE);
 
 // Borrowed: the engine the view reads through, never disposed through this handle.

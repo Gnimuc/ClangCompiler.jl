@@ -302,7 +302,6 @@ Class g_cls;
     @test category isa CC.ObjCCategoryDecl
     @test CC.getClassInterface(category).ptr == base.ptr
     catmeth = CC.getMethod(category, "catMethod", ctx)
-    @test !CC.is_null_handle(catmeth)
     @test CC.getCategory(catmeth).ptr == category.ptr
     @test CC.getClassInterface(catmeth).ptr == base.ptr
     @test CC.IsClassExtension(category) == false
@@ -382,7 +381,6 @@ Class g_cls;
     # ---- designated initializer ------------------------------------------------------------------
     impl_iface = only(filter(d -> d isa CC.ObjCInterfaceDecl && CC.getNameAsString(d) == "Impl", top))
     init = CC.getMethod(impl_iface, "initWithValue:", ctx)
-    @test !CC.is_null_handle(init)
     @test CC.isThisDeclarationADesignatedInitializer(init) == true
     @test CC.isThisDeclarationADesignatedInitializer(add) == false
     # `isDefined` is a program-wide question, not a per-declaration one: Sema sets it along
@@ -486,7 +484,6 @@ end
     # ObjCTypeParamType: `- (T)item` inside a generic interface returns the parameter itself.
     gen = lookup("Gen")
     item = CC.getMethod(gen, "item", ctx)
-    @test !CC.is_null_handle(item)
     tpt = CC.resolve(CC.getTypePtr(CC.getReturnType(item)))
     @test tpt isa CC.ObjCTypeParamType
     @test CC.getNameAsString(CC.getDecl(tpt)) == "T"
@@ -552,7 +549,8 @@ end
 
     # An interface with no availability attribute at all: every version reads as absent
     # rather than as version 0, which is a legal written value.
-    @test isempty(filter(a -> a isa CC.AvailabilityAttr, map(CC.resolve, CC.getAttrs(lookup("Base")))))
+    base_avails = filter(a -> a isa CC.AvailabilityAttr, map(CC.resolve, CC.getAttrs(lookup("Base"))))
+    @test isempty(base_avails)
 
     dispose(I)
 end

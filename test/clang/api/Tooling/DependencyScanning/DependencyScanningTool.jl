@@ -31,15 +31,12 @@ end
     svc = CC.DependencyScanningService(CC.CXScanningMode_DependencyDirectivesScan, CC.CXScanningOutputFormat_Make)
     tool = CC.DependencyScanningTool(svc)
 
-    ok, out = CC.getDependencyFile(tool, ["clang", "-c", "-x", "c", src], dir)
-    if ok
-        # the Make-format dependency file names the translation unit and everything it read
-        @test occursin(basename(src), out)
-        @test occursin(basename(hdr), out)
-    else
-        # a scan that could not run in this environment must still say why
-        @test !isempty(out)
-    end
+    # `-nostdinc` keeps the scanner off the host's headers; `-I dir` is how the
+    # local include resolves, so a scan that ignored either flag cannot name both files.
+    ok, out = CC.getDependencyFile(tool, ["clang", "-nostdinc", "-c", "-x", "c", "-I", dir, src], dir)
+    @test ok
+    @test occursin(basename(src), out)
+    @test occursin(basename(hdr), out)
 
     # the failing half of the partition: a source that does not exist cannot be scanned, and
     # the error is reported rather than swallowed

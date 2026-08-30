@@ -36,6 +36,13 @@ function ConstantArrayType(x::AbstractType)
     return ConstantArrayType(p)
 end
 
+function ArrayParameterType(x::AbstractType)
+    @check_ptrs x
+    p = clang_Type_castToArrayParameterType(x)
+    p == C_NULL && _cast_failed(ArrayParameterType, x)
+    return ArrayParameterType(p)
+end
+
 function DependentSizedArrayType(x::AbstractType)
     @check_ptrs x
     p = clang_Type_castToDependentSizedArrayType(x)
@@ -83,6 +90,20 @@ function BlockPointerType(x::AbstractType)
     p = clang_Type_castToBlockPointerType(x)
     p == C_NULL && _cast_failed(BlockPointerType, x)
     return BlockPointerType(p)
+end
+
+function BoundsAttributedType(x::AbstractType)
+    @check_ptrs x
+    p = clang_Type_castToBoundsAttributedType(x)
+    p == C_NULL && _cast_failed(BoundsAttributedType, x)
+    return BoundsAttributedType(p)
+end
+
+function CountAttributedType(x::AbstractType)
+    @check_ptrs x
+    p = clang_Type_castToCountAttributedType(x)
+    p == C_NULL && _cast_failed(CountAttributedType, x)
+    return CountAttributedType(p)
 end
 
 function BuiltinType(x::AbstractType)
@@ -197,6 +218,13 @@ function FunctionProtoType(x::AbstractType)
     return FunctionProtoType(p)
 end
 
+function HLSLAttributedResourceType(x::AbstractType)
+    @check_ptrs x
+    p = clang_Type_castToHLSLAttributedResourceType(x)
+    p == C_NULL && _cast_failed(HLSLAttributedResourceType, x)
+    return HLSLAttributedResourceType(p)
+end
+
 function InjectedClassNameType(x::AbstractType)
     @check_ptrs x
     p = clang_Type_castToInjectedClassNameType(x)
@@ -272,6 +300,13 @@ function PackExpansionType(x::AbstractType)
     p = clang_Type_castToPackExpansionType(x)
     p == C_NULL && _cast_failed(PackExpansionType, x)
     return PackExpansionType(p)
+end
+
+function PackIndexingType(x::AbstractType)
+    @check_ptrs x
+    p = clang_Type_castToPackIndexingType(x)
+    p == C_NULL && _cast_failed(PackIndexingType, x)
+    return PackIndexingType(p)
 end
 
 function ParenType(x::AbstractType)

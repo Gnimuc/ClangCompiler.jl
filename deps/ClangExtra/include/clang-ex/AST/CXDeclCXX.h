@@ -536,7 +536,8 @@ void clang_CXXRecordDecl_setImplicitMoveAssignmentIsDeleted(CXCXXRecordDecl CXXR
 void clang_CXXRecordDecl_removeConversion(CXCXXRecordDecl CXXRD, CXNamedDecl Old);
 
 // The flag only ever goes from false to true; the class exposes no way to clear it.
-void clang_CXXRecordDecl_markEmpty(CXCXXRecordDecl CXXRD);
+// markEmpty: LLVM 20 dropped CXXRecordDecl::markEmpty; Empty is private on
+// DefinitionData.
 
 // Sets the trivial-for-call bit for the copy constructor, the move constructor and the
 // destructor at once, as clang's own setter does.

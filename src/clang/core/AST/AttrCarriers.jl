@@ -12,11 +12,27 @@ struct AddressSpaceAttr <: AbstractAddressSpaceAttr
 end
 
 """
+    struct AllocatingAttr <: AbstractAllocatingAttr
+Hold a pointer to a `clang::AllocatingAttr` object.
+"""
+struct AllocatingAttr <: AbstractAllocatingAttr
+    ptr::CXAllocatingAttr
+end
+
+"""
     struct AnnotateTypeAttr <: AbstractAnnotateTypeAttr
 Hold a pointer to a `clang::AnnotateTypeAttr` object.
 """
 struct AnnotateTypeAttr <: AbstractAnnotateTypeAttr
     ptr::CXAnnotateTypeAttr
+end
+
+"""
+    struct ArmAgnosticAttr <: AbstractArmAgnosticAttr
+Hold a pointer to a `clang::ArmAgnosticAttr` object.
+"""
+struct ArmAgnosticAttr <: AbstractArmAgnosticAttr
+    ptr::CXArmAgnosticAttr
 end
 
 """
@@ -84,11 +100,27 @@ struct BTFTypeTagAttr <: AbstractBTFTypeTagAttr
 end
 
 """
+    struct BlockingAttr <: AbstractBlockingAttr
+Hold a pointer to a `clang::BlockingAttr` object.
+"""
+struct BlockingAttr <: AbstractBlockingAttr
+    ptr::CXBlockingAttr
+end
+
+"""
     struct CmseNSCallAttr <: AbstractCmseNSCallAttr
 Hold a pointer to a `clang::CmseNSCallAttr` object.
 """
 struct CmseNSCallAttr <: AbstractCmseNSCallAttr
     ptr::CXCmseNSCallAttr
+end
+
+"""
+    struct HLSLContainedTypeAttr <: AbstractHLSLContainedTypeAttr
+Hold a pointer to a `clang::HLSLContainedTypeAttr` object.
+"""
+struct HLSLContainedTypeAttr <: AbstractHLSLContainedTypeAttr
+    ptr::CXHLSLContainedTypeAttr
 end
 
 """
@@ -100,11 +132,27 @@ struct HLSLGroupSharedAddressSpaceAttr <: AbstractHLSLGroupSharedAddressSpaceAtt
 end
 
 """
-    struct HLSLParamModifierAttr <: AbstractHLSLParamModifierAttr
-Hold a pointer to a `clang::HLSLParamModifierAttr` object.
+    struct HLSLROVAttr <: AbstractHLSLROVAttr
+Hold a pointer to a `clang::HLSLROVAttr` object.
 """
-struct HLSLParamModifierAttr <: AbstractHLSLParamModifierAttr
-    ptr::CXHLSLParamModifierAttr
+struct HLSLROVAttr <: AbstractHLSLROVAttr
+    ptr::CXHLSLROVAttr
+end
+
+"""
+    struct HLSLRawBufferAttr <: AbstractHLSLRawBufferAttr
+Hold a pointer to a `clang::HLSLRawBufferAttr` object.
+"""
+struct HLSLRawBufferAttr <: AbstractHLSLRawBufferAttr
+    ptr::CXHLSLRawBufferAttr
+end
+
+"""
+    struct HLSLResourceClassAttr <: AbstractHLSLResourceClassAttr
+Hold a pointer to a `clang::HLSLResourceClassAttr` object.
+"""
+struct HLSLResourceClassAttr <: AbstractHLSLResourceClassAttr
+    ptr::CXHLSLResourceClassAttr
 end
 
 """
@@ -113,6 +161,22 @@ Hold a pointer to a `clang::NoDerefAttr` object.
 """
 struct NoDerefAttr <: AbstractNoDerefAttr
     ptr::CXNoDerefAttr
+end
+
+"""
+    struct NonAllocatingAttr <: AbstractNonAllocatingAttr
+Hold a pointer to a `clang::NonAllocatingAttr` object.
+"""
+struct NonAllocatingAttr <: AbstractNonAllocatingAttr
+    ptr::CXNonAllocatingAttr
+end
+
+"""
+    struct NonBlockingAttr <: AbstractNonBlockingAttr
+Hold a pointer to a `clang::NonBlockingAttr` object.
+"""
+struct NonBlockingAttr <: AbstractNonBlockingAttr
+    ptr::CXNonBlockingAttr
 end
 
 """
@@ -236,14 +300,6 @@ struct TypeNullUnspecifiedAttr <: AbstractTypeNullUnspecifiedAttr
 end
 
 """
-    struct TypeNullableAttr <: AbstractTypeNullableAttr
-Hold a pointer to a `clang::TypeNullableAttr` object.
-"""
-struct TypeNullableAttr <: AbstractTypeNullableAttr
-    ptr::CXTypeNullableAttr
-end
-
-"""
     struct TypeNullableResultAttr <: AbstractTypeNullableResultAttr
 Hold a pointer to a `clang::TypeNullableResultAttr` object.
 """
@@ -268,6 +324,14 @@ struct WebAssemblyFuncrefAttr <: AbstractWebAssemblyFuncrefAttr
 end
 
 """
+    struct CXXAssumeAttr <: AbstractCXXAssumeAttr
+Hold a pointer to a `clang::CXXAssumeAttr` object.
+"""
+struct CXXAssumeAttr <: AbstractCXXAssumeAttr
+    ptr::CXCXXAssumeAttr
+end
+
+"""
     struct CodeAlignAttr <: AbstractCodeAlignAttr
 Hold a pointer to a `clang::CodeAlignAttr` object.
 """
@@ -281,6 +345,22 @@ Hold a pointer to a `clang::FallThroughAttr` object.
 """
 struct FallThroughAttr <: AbstractFallThroughAttr
     ptr::CXFallThroughAttr
+end
+
+"""
+    struct HLSLControlFlowHintAttr <: AbstractHLSLControlFlowHintAttr
+Hold a pointer to a `clang::HLSLControlFlowHintAttr` object.
+"""
+struct HLSLControlFlowHintAttr <: AbstractHLSLControlFlowHintAttr
+    ptr::CXHLSLControlFlowHintAttr
+end
+
+"""
+    struct HLSLLoopHintAttr <: AbstractHLSLLoopHintAttr
+Hold a pointer to a `clang::HLSLLoopHintAttr` object.
+"""
+struct HLSLLoopHintAttr <: AbstractHLSLLoopHintAttr
+    ptr::CXHLSLLoopHintAttr
 end
 
 """
@@ -396,6 +476,22 @@ struct CDeclAttr <: AbstractCDeclAttr
 end
 
 """
+    struct CountedByAttr <: AbstractCountedByAttr
+Hold a pointer to a `clang::CountedByAttr` object.
+"""
+struct CountedByAttr <: AbstractCountedByAttr
+    ptr::CXCountedByAttr
+end
+
+"""
+    struct CountedByOrNullAttr <: AbstractCountedByOrNullAttr
+Hold a pointer to a `clang::CountedByOrNullAttr` object.
+"""
+struct CountedByOrNullAttr <: AbstractCountedByOrNullAttr
+    ptr::CXCountedByOrNullAttr
+end
+
+"""
     struct FastCallAttr <: AbstractFastCallAttr
 Hold a pointer to a `clang::FastCallAttr` object.
 """
@@ -417,6 +513,14 @@ Hold a pointer to a `clang::LifetimeBoundAttr` object.
 """
 struct LifetimeBoundAttr <: AbstractLifetimeBoundAttr
     ptr::CXLifetimeBoundAttr
+end
+
+"""
+    struct LifetimeCaptureByAttr <: AbstractLifetimeCaptureByAttr
+Hold a pointer to a `clang::LifetimeCaptureByAttr` object.
+"""
+struct LifetimeCaptureByAttr <: AbstractLifetimeCaptureByAttr
+    ptr::CXLifetimeCaptureByAttr
 end
 
 """
@@ -484,11 +588,43 @@ struct PreserveMostAttr <: AbstractPreserveMostAttr
 end
 
 """
+    struct PreserveNoneAttr <: AbstractPreserveNoneAttr
+Hold a pointer to a `clang::PreserveNoneAttr` object.
+"""
+struct PreserveNoneAttr <: AbstractPreserveNoneAttr
+    ptr::CXPreserveNoneAttr
+end
+
+"""
+    struct RISCVVectorCCAttr <: AbstractRISCVVectorCCAttr
+Hold a pointer to a `clang::RISCVVectorCCAttr` object.
+"""
+struct RISCVVectorCCAttr <: AbstractRISCVVectorCCAttr
+    ptr::CXRISCVVectorCCAttr
+end
+
+"""
     struct RegCallAttr <: AbstractRegCallAttr
 Hold a pointer to a `clang::RegCallAttr` object.
 """
 struct RegCallAttr <: AbstractRegCallAttr
     ptr::CXRegCallAttr
+end
+
+"""
+    struct SizedByAttr <: AbstractSizedByAttr
+Hold a pointer to a `clang::SizedByAttr` object.
+"""
+struct SizedByAttr <: AbstractSizedByAttr
+    ptr::CXSizedByAttr
+end
+
+"""
+    struct SizedByOrNullAttr <: AbstractSizedByOrNullAttr
+Hold a pointer to a `clang::SizedByOrNullAttr` object.
+"""
+struct SizedByOrNullAttr <: AbstractSizedByOrNullAttr
+    ptr::CXSizedByOrNullAttr
 end
 
 """
@@ -505,6 +641,14 @@ Hold a pointer to a `clang::SwiftAsyncCallAttr` object.
 """
 struct SwiftAsyncCallAttr <: AbstractSwiftAsyncCallAttr
     ptr::CXSwiftAsyncCallAttr
+end
+
+"""
+    struct SwiftAttrAttr <: AbstractSwiftAttrAttr
+Hold a pointer to a `clang::SwiftAttrAttr` object.
+"""
+struct SwiftAttrAttr <: AbstractSwiftAttrAttr
+    ptr::CXSwiftAttrAttr
 end
 
 """
@@ -532,11 +676,35 @@ struct ThisCallAttr <: AbstractThisCallAttr
 end
 
 """
+    struct TypeNullableAttr <: AbstractTypeNullableAttr
+Hold a pointer to a `clang::TypeNullableAttr` object.
+"""
+struct TypeNullableAttr <: AbstractTypeNullableAttr
+    ptr::CXTypeNullableAttr
+end
+
+"""
     struct VectorCallAttr <: AbstractVectorCallAttr
 Hold a pointer to a `clang::VectorCallAttr` object.
 """
 struct VectorCallAttr <: AbstractVectorCallAttr
     ptr::CXVectorCallAttr
+end
+
+"""
+    struct AnnotateAttr <: AbstractAnnotateAttr
+Hold a pointer to a `clang::AnnotateAttr` object.
+"""
+struct AnnotateAttr <: AbstractAnnotateAttr
+    ptr::CXAnnotateAttr
+end
+
+"""
+    struct HLSLParamModifierAttr <: AbstractHLSLParamModifierAttr
+Hold a pointer to a `clang::HLSLParamModifierAttr` object.
+"""
+struct HLSLParamModifierAttr <: AbstractHLSLParamModifierAttr
+    ptr::CXHLSLParamModifierAttr
 end
 
 """
@@ -569,14 +737,6 @@ Hold a pointer to a `clang::SwiftIndirectResultAttr` object.
 """
 struct SwiftIndirectResultAttr <: AbstractSwiftIndirectResultAttr
     ptr::CXSwiftIndirectResultAttr
-end
-
-"""
-    struct AnnotateAttr <: AbstractAnnotateAttr
-Hold a pointer to a `clang::AnnotateAttr` object.
-"""
-struct AnnotateAttr <: AbstractAnnotateAttr
-    ptr::CXAnnotateAttr
 end
 
 """
@@ -644,11 +804,27 @@ struct UseHandleAttr <: AbstractUseHandleAttr
 end
 
 """
+    struct HLSLPackOffsetAttr <: AbstractHLSLPackOffsetAttr
+Hold a pointer to a `clang::HLSLPackOffsetAttr` object.
+"""
+struct HLSLPackOffsetAttr <: AbstractHLSLPackOffsetAttr
+    ptr::CXHLSLPackOffsetAttr
+end
+
+"""
     struct HLSLSV_DispatchThreadIDAttr <: AbstractHLSLSV_DispatchThreadIDAttr
 Hold a pointer to a `clang::HLSLSV_DispatchThreadIDAttr` object.
 """
 struct HLSLSV_DispatchThreadIDAttr <: AbstractHLSLSV_DispatchThreadIDAttr
     ptr::CXHLSLSV_DispatchThreadIDAttr
+end
+
+"""
+    struct HLSLSV_GroupIDAttr <: AbstractHLSLSV_GroupIDAttr
+Hold a pointer to a `clang::HLSLSV_GroupIDAttr` object.
+"""
+struct HLSLSV_GroupIDAttr <: AbstractHLSLSV_GroupIDAttr
+    ptr::CXHLSLSV_GroupIDAttr
 end
 
 """
@@ -660,11 +836,27 @@ struct HLSLSV_GroupIndexAttr <: AbstractHLSLSV_GroupIndexAttr
 end
 
 """
+    struct HLSLSV_GroupThreadIDAttr <: AbstractHLSLSV_GroupThreadIDAttr
+Hold a pointer to a `clang::HLSLSV_GroupThreadIDAttr` object.
+"""
+struct HLSLSV_GroupThreadIDAttr <: AbstractHLSLSV_GroupThreadIDAttr
+    ptr::CXHLSLSV_GroupThreadIDAttr
+end
+
+"""
     struct AMDGPUFlatWorkGroupSizeAttr <: AbstractAMDGPUFlatWorkGroupSizeAttr
 Hold a pointer to a `clang::AMDGPUFlatWorkGroupSizeAttr` object.
 """
 struct AMDGPUFlatWorkGroupSizeAttr <: AbstractAMDGPUFlatWorkGroupSizeAttr
     ptr::CXAMDGPUFlatWorkGroupSizeAttr
+end
+
+"""
+    struct AMDGPUMaxNumWorkGroupsAttr <: AbstractAMDGPUMaxNumWorkGroupsAttr
+Hold a pointer to a `clang::AMDGPUMaxNumWorkGroupsAttr` object.
+"""
+struct AMDGPUMaxNumWorkGroupsAttr <: AbstractAMDGPUMaxNumWorkGroupsAttr
+    ptr::CXAMDGPUMaxNumWorkGroupsAttr
 end
 
 """
@@ -900,14 +1092,6 @@ struct AssumeAlignedAttr <: AbstractAssumeAlignedAttr
 end
 
 """
-    struct AssumptionAttr <: AbstractAssumptionAttr
-Hold a pointer to a `clang::AssumptionAttr` object.
-"""
-struct AssumptionAttr <: AbstractAssumptionAttr
-    ptr::CXAssumptionAttr
-end
-
-"""
     struct AvailabilityAttr <: AbstractAvailabilityAttr
 Hold a pointer to a `clang::AvailabilityAttr` object.
 """
@@ -921,6 +1105,14 @@ Hold a pointer to a `clang::AvailableOnlyInDefaultEvalMethodAttr` object.
 """
 struct AvailableOnlyInDefaultEvalMethodAttr <: AbstractAvailableOnlyInDefaultEvalMethodAttr
     ptr::CXAvailableOnlyInDefaultEvalMethodAttr
+end
+
+"""
+    struct BPFFastCallAttr <: AbstractBPFFastCallAttr
+Hold a pointer to a `clang::BPFFastCallAttr` object.
+"""
+struct BPFFastCallAttr <: AbstractBPFFastCallAttr
+    ptr::CXBPFFastCallAttr
 end
 
 """
@@ -1076,6 +1268,14 @@ struct CUDAGlobalAttr <: AbstractCUDAGlobalAttr
 end
 
 """
+    struct CUDAGridConstantAttr <: AbstractCUDAGridConstantAttr
+Hold a pointer to a `clang::CUDAGridConstantAttr` object.
+"""
+struct CUDAGridConstantAttr <: AbstractCUDAGridConstantAttr
+    ptr::CXCUDAGridConstantAttr
+end
+
+"""
     struct CUDAHostAttr <: AbstractCUDAHostAttr
 Hold a pointer to a `clang::CUDAHostAttr` object.
 """
@@ -1153,6 +1353,14 @@ Hold a pointer to a `clang::CleanupAttr` object.
 """
 struct CleanupAttr <: AbstractCleanupAttr
     ptr::CXCleanupAttr
+end
+
+"""
+    struct ClspvLibclcBuiltinAttr <: AbstractClspvLibclcBuiltinAttr
+Hold a pointer to a `clang::ClspvLibclcBuiltinAttr` object.
+"""
+struct ClspvLibclcBuiltinAttr <: AbstractClspvLibclcBuiltinAttr
+    ptr::CXClspvLibclcBuiltinAttr
 end
 
 """
@@ -1252,6 +1460,22 @@ struct ConvergentAttr <: AbstractConvergentAttr
 end
 
 """
+    struct CoroAwaitElidableAttr <: AbstractCoroAwaitElidableAttr
+Hold a pointer to a `clang::CoroAwaitElidableAttr` object.
+"""
+struct CoroAwaitElidableAttr <: AbstractCoroAwaitElidableAttr
+    ptr::CXCoroAwaitElidableAttr
+end
+
+"""
+    struct CoroAwaitElidableArgumentAttr <: AbstractCoroAwaitElidableArgumentAttr
+Hold a pointer to a `clang::CoroAwaitElidableArgumentAttr` object.
+"""
+struct CoroAwaitElidableArgumentAttr <: AbstractCoroAwaitElidableArgumentAttr
+    ptr::CXCoroAwaitElidableArgumentAttr
+end
+
+"""
     struct CoroDisableLifetimeBoundAttr <: AbstractCoroDisableLifetimeBoundAttr
 Hold a pointer to a `clang::CoroDisableLifetimeBoundAttr` object.
 """
@@ -1289,14 +1513,6 @@ Hold a pointer to a `clang::CoroWrapperAttr` object.
 """
 struct CoroWrapperAttr <: AbstractCoroWrapperAttr
     ptr::CXCoroWrapperAttr
-end
-
-"""
-    struct CountedByAttr <: AbstractCountedByAttr
-Hold a pointer to a `clang::CountedByAttr` object.
-"""
-struct CountedByAttr <: AbstractCountedByAttr
-    ptr::CXCountedByAttr
 end
 
 """
@@ -1444,6 +1660,14 @@ struct ExclusiveTrylockFunctionAttr <: AbstractExclusiveTrylockFunctionAttr
 end
 
 """
+    struct ExplicitInitAttr <: AbstractExplicitInitAttr
+Hold a pointer to a `clang::ExplicitInitAttr` object.
+"""
+struct ExplicitInitAttr <: AbstractExplicitInitAttr
+    ptr::CXExplicitInitAttr
+end
+
+"""
     struct ExternalSourceSymbolAttr <: AbstractExternalSourceSymbolAttr
 Hold a pointer to a `clang::ExternalSourceSymbolAttr` object.
 """
@@ -1564,11 +1788,27 @@ struct HLSLShaderAttr <: AbstractHLSLShaderAttr
 end
 
 """
+    struct HLSLWaveSizeAttr <: AbstractHLSLWaveSizeAttr
+Hold a pointer to a `clang::HLSLWaveSizeAttr` object.
+"""
+struct HLSLWaveSizeAttr <: AbstractHLSLWaveSizeAttr
+    ptr::CXHLSLWaveSizeAttr
+end
+
+"""
     struct HotAttr <: AbstractHotAttr
 Hold a pointer to a `clang::HotAttr` object.
 """
 struct HotAttr <: AbstractHotAttr
     ptr::CXHotAttr
+end
+
+"""
+    struct HybridPatchableAttr <: AbstractHybridPatchableAttr
+Hold a pointer to a `clang::HybridPatchableAttr` object.
+"""
+struct HybridPatchableAttr <: AbstractHybridPatchableAttr
+    ptr::CXHybridPatchableAttr
 end
 
 """
@@ -1868,6 +2108,14 @@ struct NoCommonAttr <: AbstractNoCommonAttr
 end
 
 """
+    struct NoConvergentAttr <: AbstractNoConvergentAttr
+Hold a pointer to a `clang::NoConvergentAttr` object.
+"""
+struct NoConvergentAttr <: AbstractNoConvergentAttr
+    ptr::CXNoConvergentAttr
+end
+
+"""
     struct NoDebugAttr <: AbstractNoDebugAttr
 Hold a pointer to a `clang::NoDebugAttr` object.
 """
@@ -1948,6 +2196,14 @@ struct NoSanitizeAttr <: AbstractNoSanitizeAttr
 end
 
 """
+    struct NoSpecializationsAttr <: AbstractNoSpecializationsAttr
+Hold a pointer to a `clang::NoSpecializationsAttr` object.
+"""
+struct NoSpecializationsAttr <: AbstractNoSpecializationsAttr
+    ptr::CXNoSpecializationsAttr
+end
+
+"""
     struct NoSpeculativeLoadHardeningAttr <: AbstractNoSpeculativeLoadHardeningAttr
 Hold a pointer to a `clang::NoSpeculativeLoadHardeningAttr` object.
 """
@@ -1988,6 +2244,14 @@ struct NoThrowAttr <: AbstractNoThrowAttr
 end
 
 """
+    struct NoTrivialAutoVarInitAttr <: AbstractNoTrivialAutoVarInitAttr
+Hold a pointer to a `clang::NoTrivialAutoVarInitAttr` object.
+"""
+struct NoTrivialAutoVarInitAttr <: AbstractNoTrivialAutoVarInitAttr
+    ptr::CXNoTrivialAutoVarInitAttr
+end
+
+"""
     struct NoUniqueAddressAttr <: AbstractNoUniqueAddressAttr
 Hold a pointer to a `clang::NoUniqueAddressAttr` object.
 """
@@ -2017,6 +2281,14 @@ Hold a pointer to a `clang::OMPAllocateDeclAttr` object.
 """
 struct OMPAllocateDeclAttr <: AbstractOMPAllocateDeclAttr
     ptr::CXOMPAllocateDeclAttr
+end
+
+"""
+    struct OMPAssumeAttr <: AbstractOMPAssumeAttr
+Hold a pointer to a `clang::OMPAssumeAttr` object.
+"""
+struct OMPAssumeAttr <: AbstractOMPAssumeAttr
+    ptr::CXOMPAssumeAttr
 end
 
 """
@@ -2476,6 +2748,14 @@ struct SYCLKernelAttr <: AbstractSYCLKernelAttr
 end
 
 """
+    struct SYCLKernelEntryPointAttr <: AbstractSYCLKernelEntryPointAttr
+Hold a pointer to a `clang::SYCLKernelEntryPointAttr` object.
+"""
+struct SYCLKernelEntryPointAttr <: AbstractSYCLKernelEntryPointAttr
+    ptr::CXSYCLKernelEntryPointAttr
+end
+
+"""
     struct SYCLSpecialClassAttr <: AbstractSYCLSpecialClassAttr
 Hold a pointer to a `clang::SYCLSpecialClassAttr` object.
 """
@@ -2585,14 +2865,6 @@ Hold a pointer to a `clang::SwiftAsyncNameAttr` object.
 """
 struct SwiftAsyncNameAttr <: AbstractSwiftAsyncNameAttr
     ptr::CXSwiftAsyncNameAttr
-end
-
-"""
-    struct SwiftAttrAttr <: AbstractSwiftAttrAttr
-Hold a pointer to a `clang::SwiftAttrAttr` object.
-"""
-struct SwiftAttrAttr <: AbstractSwiftAttrAttr
-    ptr::CXSwiftAttrAttr
 end
 
 """
@@ -2793,6 +3065,14 @@ Hold a pointer to a `clang::UuidAttr` object.
 """
 struct UuidAttr <: AbstractUuidAttr
     ptr::CXUuidAttr
+end
+
+"""
+    struct VTablePointerAuthenticationAttr <: AbstractVTablePointerAuthenticationAttr
+Hold a pointer to a `clang::VTablePointerAuthenticationAttr` object.
+"""
+struct VTablePointerAuthenticationAttr <: AbstractVTablePointerAuthenticationAttr
+    ptr::CXVTablePointerAuthenticationAttr
 end
 
 """
@@ -3129,14 +3409,6 @@ Hold a pointer to a `clang::OverloadableAttr` object.
 """
 struct OverloadableAttr <: AbstractOverloadableAttr
     ptr::CXOverloadableAttr
-end
-
-"""
-    struct RenderScriptKernelAttr <: AbstractRenderScriptKernelAttr
-Hold a pointer to a `clang::RenderScriptKernelAttr` object.
-"""
-struct RenderScriptKernelAttr <: AbstractRenderScriptKernelAttr
-    ptr::CXRenderScriptKernelAttr
 end
 
 """

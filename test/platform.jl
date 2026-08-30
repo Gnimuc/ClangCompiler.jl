@@ -63,14 +63,11 @@ end
     env = J.get_default_env(; is_cxx=true)
     host_triple = J.__triplet(env.platform)
     dirs = J.get_system_dirs(host_triple, J.GCC_MIN_VER, true)
-    @test dirs isa Vector{String}
     @test !isempty(dirs)
     @test all(isdir, dirs)
 
     adir = J.get_pkg_artifact_dir(CC.libclangex_jll, host_triple)
-    @test adir isa String
     @test isdir(adir)
     idir = J.get_pkg_include_dir(CC.libclangex_jll, host_triple)
-    @test idir isa String
-    @test !isempty(idir)
+    @test isdir(idir)
 end

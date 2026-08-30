@@ -1,6 +1,7 @@
 #include "clang-ex/CodeGen/CXObjectFilePCHContainerOperations.h"
 #include "utils.h"
-#include "clang/CodeGen/ObjectFilePCHContainerOperations.h"
+#include "clang/CodeGen/ObjectFilePCHContainerWriter.h"
+#include "clang/Serialization/ObjectFilePCHContainerReader.h"
 #include "clang/Serialization/PCHContainerOperations.h"
 #include <memory>
 

@@ -34,11 +34,10 @@ using Test
     @test CC.is_null_handle(CC.getTemplateParamParent(sc))
 
     # getLookupEntity is getEntity without the template-parameter-scope masking, so the
-    # two agree on every scope that is not a template parameter scope.
-    @test !CC.is_null_handle(CC.getLookupEntity(sc))
-    if !CC.isTemplateParamScope(sc)
-        @test CC.getLookupEntity(sc).ptr == CC.getEntity(sc).ptr
-    end
+    # two agree on every scope that is not a template parameter scope. A translation-unit
+    # rest is never a template-parameter scope.
+    @test !CC.isTemplateParamScope(sc)
+    @test CC.getLookupEntity(sc).ptr == CC.getEntity(sc).ptr
 
     scope_decls = CC.getDecls(sc)
     @test scope_decls isa Vector{CC.Decl}
@@ -64,15 +63,12 @@ using Test
 
     found = CC.LookupQualifiedName(sema, r, tu)
     @test found
-    if found
-        nd = CC.getResult(r)
-        @test nd isa CC.NamedDecl
-        # AllowHidden starts false and this is not an external redeclaration lookup,
-        # so nothing hidden is visible through it yet
-        @test !CC.isHiddenDeclarationVisible(r, nd)
-        @test CC.setAllowHidden(r, true) === nothing
-        @test CC.isHiddenDeclarationVisible(r, nd)
-    end
+    nd = CC.getResult(r)
+    # AllowHidden starts false and this is not an external redeclaration lookup,
+    # so nothing hidden is visible through it yet
+    @test !CC.isHiddenDeclarationVisible(r, nd)
+    @test CC.setAllowHidden(r, true) === nothing
+    @test CC.isHiddenDeclarationVisible(r, nd)
 
     CC.suppressDiagnostics(r)
     @test CC.isSuppressingAccessDiagnostics(r)
@@ -114,13 +110,13 @@ end
     @test !(CC.isControlScope(sc))
 
     # containedInPrototypeScope starts its walk at this scope, so a prototype scope is
-    # always contained in one.
-    @test !CC.isFunctionPrototypeScope(sc) || CC.containedInPrototypeScope(sc)
+    # always contained in one. A translation-unit rest is not a prototype scope.
+    @test !CC.isFunctionPrototypeScope(sc)
+    @test !CC.containedInPrototypeScope(sc)
     # isInCXXInlineMethodScope answers through the enclosing function scope, so it is
-    # false whenever there is none.
-    if CC.getFnParent(sc).ptr == C_NULL
-        @test !CC.isInCXXInlineMethodScope(sc)
-    end
+    # false whenever there is none. A translation-unit rest has no function parent.
+    @test CC.is_null_handle(CC.getFnParent(sc))
+    @test !CC.isInCXXInlineMethodScope(sc)
 
     # --- LookupResult: the "dependent bases left unsearched" flavour of not-found ---
     dn = CC.DeclarationName(CC.getIdentifierInfo(pp, "scope_flag_fn"))
@@ -134,7 +130,6 @@ end
     # --- LookupResult: name info round-trip ---
     r1 = CC.LookupResult(sema, dn, loc, CC.CXLookupNameKind_LookupOrdinaryName)
     ni = CC.getLookupNameInfo(r1)
-    @test ni isa CC.DeclarationNameInfo
     # the create shim builds the name info out of the name and location handed to it
     @test CC.getName(ni).ptr == dn.ptr
     @test CC.getLoc(ni).ptr == CC.getNameLoc(r1).ptr
@@ -152,23 +147,21 @@ end
     r2 = CC.LookupResult(sema, dn, loc, CC.CXLookupNameKind_LookupOrdinaryName)
     found = CC.LookupQualifiedName(sema, r2, tu)
     @test found
-    if found
-        nd = CC.getResult(r2)
-        r3 = CC.LookupResult(sema, dn, loc, CC.CXLookupNameKind_LookupOrdinaryName)
-        @test CC.empty(r3)
-        CC.addDecl(r3, nd)
-        @test !CC.empty(r3)
-        @test CC.getNum(r3) == 1
-        @test CC.getResultKind(r3) == CC.CXLookupResultKind_Found
-        @test CC.getResult(r3).ptr == nd.ptr
+    nd = CC.getResult(r2)
+    r3 = CC.LookupResult(sema, dn, loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    @test CC.empty(r3)
+    CC.addDecl(r3, nd)
+    @test !CC.empty(r3)
+    @test CC.getNum(r3) == 1
+    @test CC.getResultKind(r3) == CC.CXLookupResultKind_Found
+    @test CC.getResult(r3).ptr == nd.ptr
 
-        r4 = CC.LookupResult(sema, dn, loc, CC.CXLookupNameKind_LookupOrdinaryName)
-        CC.addAllDecls(r4, r3)
-        @test CC.getNum(r4) == CC.getNum(r3)
-        @test CC.getResult(r4).ptr == nd.ptr
-        CC.dispose(r4)
-        CC.dispose(r3)
-    end
+    r4 = CC.LookupResult(sema, dn, loc, CC.CXLookupNameKind_LookupOrdinaryName)
+    CC.addAllDecls(r4, r3)
+    @test CC.getNum(r4) == CC.getNum(r3)
+    @test CC.getResult(r4).ptr == nd.ptr
+    CC.dispose(r4)
+    CC.dispose(r3)
     CC.dispose(r2)
 
     # --- LookupResult: naming class and base object type ---
@@ -222,26 +215,16 @@ end
     @test !(CC.isOpenMPOrderClauseScope(sc))
     @test !(CC.isOpenMPLoopScope(sc))
 
-    # Microsoft mangling numbering. getMSLastManglingNumber falls back to 1 when the scope
-    # has no mangling parent, which is the only value this test can pin down on every host.
-    ms_parent = CC.getMSLastManglingParent(sc)
-    @test ms_parent isa CC.Scope
-    @test CC.getMSCurManglingNumber(sc) isa Integer  # shape-only: varies with what the incremental parser has already mangled into this scope
-    if ms_parent.ptr == C_NULL
-        @test CC.getMSLastManglingNumber(sc) == 1
-    else
-        @test CC.getMSLastManglingNumber(sc) isa Integer  # shape-only: varies with what the incremental parser has already mangled into this scope
-    end
+    # Microsoft mangling numbering. A translation-unit rest is not a function, class or
+    # block scope, so it has no mangling parent and both numbers fall back to 1.
+    @test CC.is_null_handle(CC.getMSLastManglingParent(sc))
+    @test CC.getMSLastManglingNumber(sc) == 1
+    @test CC.getMSCurManglingNumber(sc) == 1
 
-    # Contains compares scope depths, so a scope never contains itself and a parent always
-    # contains its child. Whether the resting scope has a parent at all is a host decision.
+    # Contains compares scope depths, so a scope never contains itself. A translation-unit
+    # rest has no parent; the parent/child polarity is asserted on free-standing scopes.
     @test !CC.Contains(sc, sc)
-    parent = CC.getParent(sc)
-    @test parent isa CC.Scope
-    if parent.ptr != C_NULL
-        @test CC.Contains(parent, sc)
-        @test !CC.Contains(sc, parent)
-    end
+    @test CC.is_null_handle(CC.getParent(sc))
 
     # A parsed using-directive is filed in the translation-unit DeclContext, not in the
     # scope the parser comes to rest in, so this scope carries none. The populated case is
@@ -272,7 +255,6 @@ end
 
     CC.setContextRange(r, CC.SourceRange(loc, loc))
     cr = CC.getContextRange(r)
-    @test cr isa CC.SourceRange
     @test cr.begin_loc.ptr == loc.ptr
     @test cr.end_loc.ptr == loc.ptr
     CC.dispose(r)
@@ -296,7 +278,6 @@ end
 
     r = CC.LookupResult(sema, CC.DeclarationName(CC.getIdentifierInfo(pp, "lookup_filter_fn")), loc,
                         CC.CXLookupNameKind_LookupOrdinaryName)
-    @test !CC.is_null_handle(CC.getSema(r))
     @test CC.getSema(r).ptr == sema.ptr
 
     # suppressAccessDiagnostics turns off only the access half; suppressDiagnostics both.
@@ -317,11 +298,8 @@ end
     nd = first(CC.getResults(r))
     @test CC.isAvailableForLookup(sema, nd)
     acc = CC.getAcceptableDecl(r, nd)
-    @test acc isa CC.NamedDecl
-    if CC.isAvailableForLookup(sema, nd)
-        # an available decl is accepted as itself, with no redeclaration search
-        @test acc.ptr == nd.ptr
-    end
+    # an available decl is accepted as itself, with no redeclaration search
+    @test acc.ptr == nd.ptr
 
     # A full pass over the filter sees exactly the declarations the lookup holds.
     f = CC.makeFilter(r)
@@ -397,7 +375,6 @@ end
     @test !CC.IsXLStack(packed)
 
     encoding = CC.getRawEncoding(packed)
-    @test encoding isa Integer
     decoded = CC.AlignPackInfo(encoding)
     @test decoded isa CC.AlignPackInfo
     @test CC.IsPackAttr(decoded)
@@ -524,7 +501,7 @@ end
     @test s isa CC.Scope
     @test CC.getFlags(s) == fn_flags
     @test CC.isFunctionScope(s)
-    @test CC.getDepth(s) isa Integer
+    @test CC.getDepth(s) == 0
     CC.setFlags(s, decl_flags)
     @test CC.getFlags(s) == decl_flags
     @test !CC.isFunctionScope(s)
@@ -562,8 +539,8 @@ end
 
     # --- The mangling number and its parent's move together, so the two calls cancel ---
     ms0 = CC.getMSCurManglingNumber(s)
-    @test ms0 isa Integer
     CC.incrementMSManglingNumber(s)
+    @test CC.getMSCurManglingNumber(s) == ms0 + 1
     CC.decrementMSManglingNumber(s)
     @test CC.getMSCurManglingNumber(s) == ms0
 
@@ -571,9 +548,13 @@ end
     @test_throws AssertionError CC.getNextFunctionPrototypeIndex(s)
     proto = CC.Scope(s, UInt32(CC.CXScopeFlags_FunctionPrototypeScope) | decl_flags, diag)
     @test CC.isFunctionPrototypeScope(proto)
+    @test CC.getDepth(proto) == 1
+    # Contains compares depths: a parent contains its child and never the reverse.
+    @test CC.Contains(s, proto)
+    @test !CC.Contains(proto, s)
     i0 = CC.getNextFunctionPrototypeIndex(proto)
-    @test i0 isa Integer
-    @test CC.getNextFunctionPrototypeIndex(proto) == i0 + 1
+    @test i0 == 0
+    @test CC.getNextFunctionPrototypeIndex(proto) == 1
 
     # The depth counts the prototype scopes enclosing a scope, itself included, so the
     # three scopes here sit at three different values. Without a nested one the suite only
@@ -621,10 +602,10 @@ end
     dispose(inst)
 
     # --- Acceptability, the Julia spelling shared by LookupResult and Sema ---
-    @test CC.isAcceptable(sema, fd) isa Bool
-    @test CC.isAcceptable(sema, fd, true) isa Bool
     @test CC.isAcceptable(sema, fd) == CC.isVisible(sema, fd)
     @test CC.isAcceptable(sema, fd, true) == CC.isReachable(sema, fd)
+    @test CC.isVisible(sema, fd)
+    @test CC.isReachable(sema, fd)
 
     dispose(f)
     dispose(I)

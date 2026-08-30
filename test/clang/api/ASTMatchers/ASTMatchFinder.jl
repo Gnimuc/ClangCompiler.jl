@@ -14,7 +14,6 @@ using Test
     # injected-class-name Clang synthesises inside every C++ class, which carries
     # the same name and would otherwise match too.
     m = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCMFTag\"), unless(isImplicit())).bind(\"r\")", err)
-    @test !CC.is_null_handle(m)
 
     mf = CC.MatchFinder()
     @test CC.addDynamicMatcher(mf, m)
@@ -29,7 +28,6 @@ using Test
     # The match names the same declaration ordinary name lookup finds.
     bn = CC.getMatch(mf, 0)
     d = CC.getNodeAsDecl(bn, "r")
-    @test !CC.is_null_handle(d)
     f = DeclFinder(I)
     @test f(I, "CCMFTag")
     @test CC.decl_id(d) == CC.decl_id(get_decl(f))
@@ -99,7 +97,6 @@ end
     @test CC.matchAST(mfs, ctx) >= 1
     bs = CC.getMatch(mfs, 0)
     s = CC.getNodeAsStmt(bs, "s")
-    @test !CC.is_null_handle(s)
 
     mstmt2 = CC.parseMatcherExpression("declStmt()", err)
     mfs2 = CC.MatchFinder()

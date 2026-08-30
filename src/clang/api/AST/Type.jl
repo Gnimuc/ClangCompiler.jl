@@ -50,8 +50,15 @@ Return the kind of cleanup objects of this type require, or
 """
 isDestructedType(x::QualType) = clang_QualType_isDestructedType(x)
 
-isMoreQualifiedThan(x::QualType, other::QualType) = clang_QualType_isMoreQualifiedThan(x, other)
-isAtLeastAsQualifiedAs(x::QualType, other::QualType) = clang_QualType_isAtLeastAsQualifiedAs(x, other)
+function isMoreQualifiedThan(x::QualType, other::QualType, ctx::ASTContext)
+    @check_ptrs ctx
+    return clang_QualType_isMoreQualifiedThan(x, other, ctx)
+end
+
+function isAtLeastAsQualifiedAs(x::QualType, other::QualType, ctx::ASTContext)
+    @check_ptrs ctx
+    return clang_QualType_isAtLeastAsQualifiedAs(x, other, ctx)
+end
 
 getNonReferenceType(x::QualType) = QualType(clang_QualType_getNonReferenceType(x))
 IgnoreParens(x::QualType) = QualType(clang_QualType_IgnoreParens(x))
@@ -2401,11 +2408,14 @@ a type's own qualifiers.
 hasQualifiers(quals::Integer) = clang_Qualifiers_hasQualifiers(quals)
 
 """
-    compatiblyIncludes(quals::Integer, other::Integer) -> Bool
+    compatiblyIncludes(quals::Integer, other::Integer, ctx::ASTContext) -> Bool
 Return whether an object qualified with `other` can be used safely where `quals`
 is expected: CVR qualifiers may subset, ObjC lifetime must match exactly.
 """
-compatiblyIncludes(quals::Integer, other::Integer) = clang_Qualifiers_compatiblyIncludes(quals, other)
+function compatiblyIncludes(quals::Integer, other::Integer, ctx::ASTContext)
+    @check_ptrs ctx
+    return clang_Qualifiers_compatiblyIncludes(quals, other, ctx)
+end
 
 """
     isStrictSupersetOf(quals::Integer, other::Integer) -> Bool
@@ -2566,11 +2576,6 @@ is not carried across the boundary.
 function isConstantStorage(x::QualType, ctx::ASTContext, exclude_ctor::Bool, exclude_dtor::Bool)
     @check_ptrs ctx
     return clang_QualType_isConstantStorage(x, ctx, exclude_ctor, exclude_dtor)
-end
-
-function isTriviallyEqualityComparableType(x::QualType, ctx::ASTContext)
-    @check_ptrs ctx
-    return clang_QualType_isTriviallyEqualityComparableType(x, ctx)
 end
 
 # Type -- literal/layout classification, the builtin-kind probe and the contained-auto probe
@@ -3051,15 +3056,16 @@ function getAddressSpaceAttributePrintValue(quals::Integer)
 end
 
 """
-    isAddressSpaceSupersetOf(a::CXLangAS, b::CXLangAS) -> Bool
+    isAddressSpaceSupersetOf(a::CXLangAS, b::CXLangAS, ctx::ASTContext) -> Bool
 Return whether address space `a` is equal to or a superset of `b` — every space is a
 superset of itself, `opencl_generic` covers all but `opencl_constant`, and the pointer-size
 spaces are equivalent to the default one.
 
 This is the static two-`LangAS` form; it takes no `Qualifiers` receiver.
 """
-function isAddressSpaceSupersetOf(a::CXLangAS, b::CXLangAS)
-    return clang_Qualifiers_isAddressSpaceSupersetOf(a, b)
+function isAddressSpaceSupersetOf(a::CXLangAS, b::CXLangAS, ctx::ASTContext)
+    @check_ptrs ctx
+    return clang_Qualifiers_isAddressSpaceSupersetOf(a, b, ctx)
 end
 
 """
@@ -3539,7 +3545,7 @@ function getSplitDesugaredType(x::QualType)
 end
 
 """
-    isAddressSpaceOverlapping(x::QualType, other::QualType) -> Bool
+    isAddressSpaceOverlapping(x::QualType, other::QualType, ctx::ASTContext) -> Bool
 Return whether the address spaces of `x` and `other` overlap in the OpenCL sense: identical
 spaces always overlap, and `__generic` overlaps every space but `__constant`.
 
@@ -3547,10 +3553,11 @@ spaces always overlap, and `__generic` overlaps every space but `__constant`.
 of which reaches its type through `getCommonPtr` and asserts it is non-null; the
 precondition is restated here.
 """
-function isAddressSpaceOverlapping(x::QualType, other::QualType)
+function isAddressSpaceOverlapping(x::QualType, other::QualType, ctx::ASTContext)
     @assert !isNull(x) "QualType must be non-null"
     @assert !isNull(other) "QualType must be non-null"
-    return clang_QualType_isAddressSpaceOverlapping(x, other)
+    @check_ptrs ctx
+    return clang_QualType_isAddressSpaceOverlapping(x, other, ctx)
 end
 
 """

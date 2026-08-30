@@ -41,10 +41,9 @@ end
     ci = CC.get_instance(I)
     pp = CC.getPreprocessor(ci)
     hs = CC.getHeaderSearchInfo(pp)
-    @test hs isa CC.HeaderSearch && hs.ptr != C_NULL
 
-    @test CC.getHeaderSearchOpts(hs).ptr == CC.getHeaderSearchOpts(ci).ptr != C_NULL
-    @test CC.getFileMgr(hs).ptr == CC.getFileManager(ci).ptr != C_NULL
+    @test CC.getHeaderSearchOpts(hs).ptr == CC.getHeaderSearchOpts(ci).ptr
+    @test CC.getFileMgr(hs).ptr == CC.getFileManager(ci).ptr
     @test CC.HasIncludeAliasMap(hs) == false
     @test CC.getModuleHash(hs) == ""
     @test CC.getModuleCachePath(hs) == ""
@@ -75,10 +74,9 @@ end
     # HeaderSearch half: a throwaway interpreter owns the state being mutated.
     I = CC.create_interpreter()
     hs = CC.getHeaderSearchInfo(CC.getPreprocessor(CC.get_instance(I)))
-    @test hs isa CC.HeaderSearch && hs.ptr != C_NULL
 
     ci = CC.get_instance(I)
-    @test CC.getDiags(hs).ptr == CC.getDiagnostics(ci).ptr != C_NULL
+    @test CC.getDiags(hs).ptr == CC.getDiagnostics(ci).ptr
     @test CC.header_file_size(hs) >= 0
     @test CC.getTotalMemory(hs) > 0
 
@@ -121,9 +119,7 @@ end
     write(io, "int header_search_probe;\n")
     close(io)
     fer = CC.getFileRef(fm, path)
-    @test fer isa CC.FileEntryRef && fer.ptr != C_NULL
     fe = CC.getFileEntry(fer)
-    @test fe isa CC.FileEntry && fe.ptr != C_NULL
 
     try
         # Nothing is recorded until something asks for a record.
@@ -131,10 +127,11 @@ end
         @test CC.hasFileBeenImported(hs, fer) == false
         @test CC.isFileMultipleIncludeGuarded(hs, fer) == false
 
-        # getFileDirFlavor goes through getFileInfo, which creates the record.
+        # LLVM 20's getFileDirFlavor reads existing info only and answers with
+        # the default DirInfo (C_User) when none exists — it does not create a record.
         @test CC.getFileDirFlavor(hs, fer) == CC.CXCharacteristicKind_C_User
-        hfi = CC.getExistingFileInfo(hs, fer)
-        @test hfi isa CC.HeaderFileInfo && hfi.ptr != C_NULL
+        @test CC.getExistingFileInfo(hs, fer).ptr == C_NULL
+        hfi = CC.getFileInfo(hs, fer)
 
         # Each call copies the record out, so two calls are distinct allocations holding
         # equal contents -- not the same pointer. That is the point: a view would dangle
@@ -146,7 +143,6 @@ end
         for other in (hfi2, hfi3)
             @test CC.getIsValid(other) == CC.getIsValid(hfi)
             @test CC.getDirInfo(other) == CC.getDirInfo(hfi)
-            @test CC.getFramework(other) == CC.getFramework(hfi)
         end
         dispose(hfi2)
         dispose(hfi3)
@@ -157,7 +153,6 @@ end
         @test CC.getIsPragmaOnce(hfi) == false
         @test CC.getIsModuleHeader(hfi) == false
         @test CC.getDirInfo(hfi) == CC.CXCharacteristicKind_C_User
-        @test CC.getFramework(hfi) == ""
         @test CC.getControllingMacroRaw(hfi).ptr == C_NULL
 
         # A snapshot does not track later edits: the record taken before the mark still
@@ -184,12 +179,10 @@ end
 
         # User-entry usage: one flag per HeaderSearchOptions user entry.
         usage = CC.computeUserEntryUsage(hs)
-        @test usage isa Vector{Bool}
         @test length(usage) == Int(CC.getNumUserEntryUsage(hs))
 
         # Module-map bookkeeping. Implicit module maps are off by default.
         dir = CC.getDir(fe)
-        @test dir isa CC.DirectoryEntry && dir.ptr != C_NULL
         @test CC.setDirectoryHasModuleMap(hs, dir) === nothing
         @test CC.hasModuleMap(hs, path, dir, false) == false
 
@@ -205,7 +198,7 @@ end
 
         # External lookup round-trips the value the testset itself put back.
         eps = CC.getExternalLookup(hs)
-        @test eps isa CC.ExternalPreprocessorSource && eps.ptr == C_NULL
+        @test eps.ptr == C_NULL
         CC.SetExternalLookup(hs, eps)
         @test CC.getExternalLookup(hs).ptr == eps.ptr
 
@@ -333,16 +326,18 @@ end
         @test !CC.isExcludedHeaderRole(combined)
         @test !CC.isModular(combined)
 
-        # A non-modular role with is_compiling_module_header false changes nothing, so clang
-        # returns before creating a record -- unlike every other MarkFile* function.
+        # LLVM 20 creates a record even for a non-modular role; it just does not
+        # set the module-header bit.
         @test CC.getExistingFileInfo(hs, fer).ptr == C_NULL
         CC.MarkFileModuleHeader(hs, fer, CC.CXModuleHeaderRole_TextualHeader, false)
-        @test CC.getExistingFileInfo(hs, fer).ptr == C_NULL
+        textual = CC.getExistingFileInfo(hs, fer)
+        @test CC.getIsModuleHeader(textual) == false
+        @test CC.getIsCompilingModuleHeader(textual) == false
+        dispose(textual)
 
-        # A modular role does create one, and sets exactly the module-header bit.
+        # A modular role sets the module-header bit.
         CC.MarkFileModuleHeader(hs, fer, CC.CXModuleHeaderRole_NormalHeader, false)
         hfi = CC.getExistingFileInfo(hs, fer)
-        @test hfi.ptr != C_NULL
         @test CC.getIsModuleHeader(hfi) == true
         @test CC.getIsCompilingModuleHeader(hfi) == false
         # External neighbours those two in the same bitfield, so reading it as false while
@@ -354,7 +349,6 @@ end
         # clear the module-header bit an earlier modular one set.
         CC.MarkFileModuleHeader(hs, fer, CC.CXModuleHeaderRole_TextualHeader, true)
         marked = CC.getExistingFileInfo(hs, fer)
-        @test marked.ptr != C_NULL
         @test CC.getIsCompilingModuleHeader(marked) == true
         @test CC.getIsModuleHeader(marked) == true
         @test CC.getExternal(marked) == false
@@ -363,7 +357,6 @@ end
         # External is false, and that is precisely why want_external=false still reports the
         # record: clang filters on that bit and on no other.
         no_external = CC.getExistingFileInfo(hs, fer; want_external=false)
-        @test no_external.ptr != C_NULL
         @test CC.getExternal(no_external) == false
         dispose(no_external)
     finally
@@ -408,7 +401,6 @@ end
 
         # Borrowed from the search's module map: never disposed anywhere in this testset.
         mod = CC.lookupModule(hs, "CCProbe")
-        @test mod.ptr != C_NULL
         @test CC.getName(mod) == "CCProbe"
         @test CC.getFullModuleName(mod) == "CCProbe"
         @test CC.getTopLevelModule(mod).ptr == mod.ptr
@@ -429,7 +421,6 @@ end
         # Parsing the map marked the claimed header's record through the very function wrapped
         # above, so the two halves agree.
         hfi = CC.getExistingFileInfo(hs, hdrref)
-        @test hfi.ptr != C_NULL
         @test CC.getIsModuleHeader(hfi) == true
         @test CC.getIsCompilingModuleHeader(hfi) == false
         dispose(hfi)

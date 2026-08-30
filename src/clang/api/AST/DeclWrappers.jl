@@ -18,6 +18,18 @@ function TranslationUnitDecl(x::AbstractDecl)
     return TranslationUnitDecl(p)
 end
 
+function isTopLevelStmtDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isTopLevelStmtDecl(x)
+end
+
+function TopLevelStmtDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToTopLevelStmtDecl(x)
+    p == C_NULL && _cast_failed(TopLevelStmtDecl, x)
+    return TopLevelStmtDecl(p)
+end
+
 function isRequiresExprBodyDecl(x::AbstractDecl)
     @check_ptrs x
     return clang_Decl_isRequiresExprBodyDecl(x)
@@ -28,6 +40,18 @@ function RequiresExprBodyDecl(x::AbstractDecl)
     p = clang_Decl_castToRequiresExprBodyDecl(x)
     p == C_NULL && _cast_failed(RequiresExprBodyDecl, x)
     return RequiresExprBodyDecl(p)
+end
+
+function isOutlinedFunctionDecl(x::AbstractDecl)
+    @check_ptrs x
+    return clang_Decl_isOutlinedFunctionDecl(x)
+end
+
+function OutlinedFunctionDecl(x::AbstractDecl)
+    @check_ptrs x
+    p = clang_Decl_castToOutlinedFunctionDecl(x)
+    p == C_NULL && _cast_failed(OutlinedFunctionDecl, x)
+    return OutlinedFunctionDecl(p)
 end
 
 function isLinkageSpecDecl(x::AbstractDecl)
@@ -88,18 +112,6 @@ function BlockDecl(x::AbstractDecl)
     p = clang_Decl_castToBlockDecl(x)
     p == C_NULL && _cast_failed(BlockDecl, x)
     return BlockDecl(p)
-end
-
-function isTopLevelStmtDecl(x::AbstractDecl)
-    @check_ptrs x
-    return clang_Decl_isTopLevelStmtDecl(x)
-end
-
-function TopLevelStmtDecl(x::AbstractDecl)
-    @check_ptrs x
-    p = clang_Decl_castToTopLevelStmtDecl(x)
-    p == C_NULL && _cast_failed(TopLevelStmtDecl, x)
-    return TopLevelStmtDecl(p)
 end
 
 function isStaticAssertDecl(x::AbstractDecl)

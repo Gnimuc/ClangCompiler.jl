@@ -53,6 +53,7 @@ end
     int use_explicit() { auto l = [](int a) -> int { return a; }; return l(1); }
     Pt make_pt(int v) { return Pt(v); }
     int *make_new() { return new int(3); }
+    int *make_new_arr() { return new int[4]; }
     """
     CC.parse(I, src)
 
@@ -101,18 +102,14 @@ end
         @test r.end_loc.ptr != C_NULL
     end
     @test CC.getNumArgs(ce) == 1
-    if ce isa CC.CXXTemporaryObjectExpr
-        let tsi = CC.getTypeSourceInfo(ce)
-            @test tsi isa CC.TypeSourceInfo
-            @test tsi.ptr != C_NULL
-            @test CC.getAsString(CC.getType(tsi)) == "struct Pt" || CC.getAsString(CC.getType(tsi)) == "Pt"
-        end
-    end
+    @test ce isa CC.CXXConstructExpr
 
     @test f(I, "make_new")
     fn3 = CC.FunctionDecl(get_decl(f))
     ne = find_node(CC.CXXNewExpr, CC.resolve(CC.getBody(fn3)))
     @test ne isa CC.CXXNewExpr
+    @test CC.isArray(ne) == false
+    @test CC.is_null_handle(CC.getArraySize(ne))
     @test CC.getNumPlacementArgs(ne) == 0
     let r = CC.getDirectInitRange(ne)
         @test CC.isValid(r)
@@ -123,6 +120,13 @@ end
         @test !CC.isValid(r)
         @test CC.is_null_handle(r.begin_loc)
     end
+
+    @test f(I, "make_new_arr")
+    fn4 = CC.FunctionDecl(get_decl(f))
+    nea = find_node(CC.CXXNewExpr, CC.resolve(CC.getBody(fn4)))
+    @test nea isa CC.CXXNewExpr
+    @test CC.isArray(nea) == true
+    @test CC.getArraySize(nea).ptr != C_NULL
 
     dispose(f)
     dispose(I)
@@ -137,6 +141,7 @@ end
     double cc_cast(int x) { return static_cast<double>(x); }
     void cc_throw() { throw 42; }
     bool cc_trait() { return __is_trivial(int); }
+    bool cc_same() { return __is_same(int, double); }
     int cc_use_default() { return cc_def_arg(); }
     int cc_temp() { return CCTmp().v; }
     int cc_agg() { return CCAgg{1}.b; }
@@ -169,84 +174,76 @@ end
     # CXXNamedCastExpr: cast keyword spelling + angle-bracket range
     sc = find_node(CC.CXXStaticCastExpr, fn_body("cc_cast"))
     @test sc isa CC.CXXStaticCastExpr
-    if sc !== nothing
-        @test CC.getCastName(sc) == "static_cast"
-        let ab = CC.getAngleBrackets(sc)
-            @test CC.isValid(ab)
-            @test ab.begin_loc.ptr != C_NULL
-            @test ab.end_loc.ptr != C_NULL
-        end
+    @test CC.getCastName(sc) == "static_cast"
+    let ab = CC.getAngleBrackets(sc)
+        @test CC.isValid(ab)
+        @test ab.begin_loc.ptr != C_NULL
+        @test ab.end_loc.ptr != C_NULL
     end
 
     # CXXThrowExpr
     th = find_node(CC.CXXThrowExpr, fn_body("cc_throw"))
     @test th isa CC.CXXThrowExpr
-    if th !== nothing
-        @test !CC.is_null_handle(CC.getThrowLoc(th))
-        sub = CC.getSubExpr(th)
-        @test CC.getStmtClassName(sub) == "IntegerLiteral"
-        @test sub.ptr != C_NULL          # `throw 42;` has an operand
-    end
+    @test !CC.is_null_handle(CC.getThrowLoc(th))
+    sub = CC.getSubExpr(th)
+    @test CC.getStmtClassName(sub) == "IntegerLiteral"
+    @test sub.ptr != C_NULL          # `throw 42;` has an operand
 
     # TypeTraitExpr
     tt = find_node(CC.TypeTraitExpr, fn_body("cc_trait"))
     @test tt isa CC.TypeTraitExpr
-    if tt !== nothing
-        @test CC.getNumArgs(tt) == 1
-        @test CC.getValue(tt) == true
-        arg = CC.getArg(tt, 0)
-        @test arg isa CC.TypeSourceInfo
-        @test arg.ptr != C_NULL
-        @test CC.getAsString(CC.getType(arg)) == "int"
-        @test_throws AssertionError CC.getArg(tt, 1)   # Invariant 3: bounds
-    end
+    @test CC.getNumArgs(tt) == 1
+    @test CC.getValue(tt) == true
+    arg = CC.getArg(tt, 0)
+    @test arg.ptr != C_NULL
+    @test CC.getAsString(CC.getType(arg)) == "int"
+    @test_throws AssertionError CC.getArg(tt, 1)   # Invariant 3: bounds
+
+    # two-argument trait: reading only index 0 cannot tell a working accessor from
+    # one that ignores its index
+    tt2 = find_node(CC.TypeTraitExpr, fn_body("cc_same"))
+    @test tt2 isa CC.TypeTraitExpr
+    @test CC.getNumArgs(tt2) == 2
+    @test CC.getValue(tt2) == false
+    @test CC.getAsString(CC.getType(CC.getArg(tt2, 0))) == "int"
+    @test CC.getAsString(CC.getType(CC.getArg(tt2, 1))) == "double"
+    @test_throws AssertionError CC.getArg(tt2, 2)
 
     # CXXDefaultArgExpr
     da = find_node(CC.CXXDefaultArgExpr, fn_body("cc_use_default"))
     @test da isa CC.CXXDefaultArgExpr
-    if da !== nothing
-        p = CC.getParam(da)
-        @test p isa CC.ParmVarDecl
-        @test p.ptr != C_NULL
-        @test CC.get_name(p) == "a"
-        @test CC.getExpr(da).ptr != C_NULL
-    end
+    p = CC.getParam(da)
+    @test p isa CC.ParmVarDecl
+    @test CC.get_name(p) == "a"
+    @test CC.getExpr(da).ptr != C_NULL
 
     # CXXBindTemporaryExpr / ExprWithCleanups
     tmpb = fn_body("cc_temp")
     bt = find_node(CC.CXXBindTemporaryExpr, tmpb)
     @test bt isa CC.CXXBindTemporaryExpr
-    if bt !== nothing
-        @test CC.getSubExpr(bt).ptr != C_NULL
-    end
+    @test CC.getSubExpr(bt).ptr != C_NULL
     ewc = find_node(CC.ExprWithCleanups, tmpb)
-    if ewc !== nothing
-        @test CC.getNumObjects(ewc) == 0
-        @test CC.cleanupsHaveSideEffects(ewc)
-    end
+    @test ewc isa CC.ExprWithCleanups
+    @test CC.getNumObjects(ewc) == 0
+    @test CC.cleanupsHaveSideEffects(ewc)
 
     # CXXDefaultInitExpr (aggregate init filling in the default member initializer)
     di = find_node(CC.CXXDefaultInitExpr, fn_body("cc_agg"))
-    if di !== nothing
-        fd = CC.getField(di)
-        @test fd isa CC.FieldDecl
-        @test CC.get_name(fd) == "b"
-        @test CC.getExpr(di).ptr != C_NULL
-    end
+    @test di isa CC.CXXDefaultInitExpr
+    fd = CC.getField(di)
+    @test fd isa CC.FieldDecl
+    @test CC.get_name(fd) == "b"
+    @test CC.getExpr(di).ptr != C_NULL
 
     # SizeOfPackExpr / CXXFoldExpr live in uninstantiated template bodies
     sp = find_node(CC.SizeOfPackExpr, tpl_body("cc_pack"))
     @test sp isa CC.SizeOfPackExpr
-    if sp !== nothing
-        @test CC.getPack(sp).ptr != C_NULL
-        @test !(CC.isPartiallySubstituted(sp))
-    end
+    @test CC.getPack(sp).ptr != C_NULL
+    @test !(CC.isPartiallySubstituted(sp))
 
     fe = find_node(CC.CXXFoldExpr, tpl_body("cc_fold"))
     @test fe isa CC.CXXFoldExpr
-    if fe !== nothing
-        @test CC.getPattern(fe).ptr != C_NULL
-    end
+    @test CC.getPattern(fe).ptr != C_NULL
 
     CC.dispose(f)
     CC.dispose(I)
@@ -499,60 +496,50 @@ end
     # CXXOperatorCallExpr: assignment vs comparison classification
     oa = find_node(CC.CXXOperatorCallExpr, fn_body("ccd_assign"))
     @test oa isa CC.CXXOperatorCallExpr
-    if oa !== nothing
-        @test CC.isAssignmentOp(oa) == true
-        @test CC.isComparisonOp(oa) == false
-    end
+    @test CC.isAssignmentOp(oa) == true
+    @test CC.isComparisonOp(oa) == false
+    @test CC.getNumArgs(oa) == 2
+    @test CC.getArg(oa, 0).ptr != CC.getArg(oa, 1).ptr
     oc = find_node(CC.CXXOperatorCallExpr, fn_body("ccd_cmp"))
     @test oc isa CC.CXXOperatorCallExpr
-    if oc !== nothing
-        @test CC.isComparisonOp(oc) == true
-        @test CC.isAssignmentOp(oc) == false
-    end
+    @test CC.isComparisonOp(oc) == true
+    @test CC.isAssignmentOp(oc) == false
 
     # CXXMemberCallExpr: the type of the object the member function is called on
     mc = find_node(CC.CXXMemberCallExpr, fn_body("ccd_mcall"))
     @test mc isa CC.CXXMemberCallExpr
-    if mc !== nothing
-        ot = CC.getObjectType(mc)
-        @test ot.ptr != C_NULL
-        @test CC.getAsString(ot) == "const struct CCS3" || CC.getAsString(ot) == "struct CCS3"
-    end
+    ot = CC.getObjectType(mc)
+    @test ot.ptr != C_NULL
+    @test CC.getAsString(ot) in ("const struct CCS3", "struct CCS3")
 
-    # CXXThrowExpr: NRVO scope flag (host-decided; assert shape only)
+    # CXXThrowExpr: NRVO scope flag — `throw 42;` does not throw a named local
     th = find_node(CC.CXXThrowExpr, fn_body("ccd_throw"))
     @test th isa CC.CXXThrowExpr
-    if th !== nothing
-        @test !(CC.isThrownVariableInScope(th))
-    end
+    @test !(CC.isThrownVariableInScope(th))
 
     # SizeOfPackExpr: source locations + the value-dependent precondition guard
     sp = find_node(CC.SizeOfPackExpr, tpl_body("ccd_pack"))
     @test sp isa CC.SizeOfPackExpr
-    if sp !== nothing
-        @test !CC.is_null_handle(CC.getOperatorLoc(sp))
-        @test !CC.is_null_handle(CC.getPackLoc(sp))
-        @test !CC.is_null_handle(CC.getRParenLoc(sp))
-        # uninstantiated => value-dependent => getPackLength precondition fires
-        @test CC.isValueDependent(sp) == true
-        @test_throws AssertionError CC.getPackLength(sp)
-    end
+    @test !CC.is_null_handle(CC.getOperatorLoc(sp))
+    @test !CC.is_null_handle(CC.getPackLoc(sp))
+    @test !CC.is_null_handle(CC.getRParenLoc(sp))
+    # uninstantiated => value-dependent => getPackLength precondition fires
+    @test CC.isValueDependent(sp) == true
+    @test_throws AssertionError CC.getPackLength(sp)
 
     # CXXFoldExpr: `(0 + ... + ts)` is a binary left fold (init `0` op ... op pack `ts`)
     fe = find_node(CC.CXXFoldExpr, tpl_body("ccd_fold"))
     @test fe isa CC.CXXFoldExpr
-    if fe !== nothing
-        @test CC.isLeftFold(fe) == true
-        @test CC.isRightFold(fe) == false
-        @test CC.getOperator(fe) == CC.LibClangEx.CXBinaryOperatorKind_BO_Add
-        @test CC.is_null_handle(CC.getCallee(fe))
-        @test CC.getLHS(fe).ptr != C_NULL          # init operand `0`
-        @test CC.getRHS(fe).ptr != C_NULL          # pattern operand `ts`
-        @test CC.getInit(fe).ptr != C_NULL         # left fold => init is the LHS
-        @test !CC.is_null_handle(CC.getLParenLoc(fe))
-        @test !CC.is_null_handle(CC.getRParenLoc(fe))
-        @test !CC.is_null_handle(CC.getEllipsisLoc(fe))
-    end
+    @test CC.isLeftFold(fe) == true
+    @test CC.isRightFold(fe) == false
+    @test CC.getOperator(fe) == CC.LibClangEx.CXBinaryOperatorKind_BO_Add
+    @test CC.is_null_handle(CC.getCallee(fe))
+    @test CC.getLHS(fe).ptr != C_NULL          # init operand `0`
+    @test CC.getRHS(fe).ptr != C_NULL          # pattern operand `ts`
+    @test CC.getInit(fe).ptr != C_NULL         # left fold => init is the LHS
+    @test !CC.is_null_handle(CC.getLParenLoc(fe))
+    @test !CC.is_null_handle(CC.getRParenLoc(fe))
+    @test !CC.is_null_handle(CC.getEllipsisLoc(fe))
 
     CC.dispose(f)
     CC.dispose(I)
@@ -596,93 +583,65 @@ end
     # CXXDefaultArgExpr: rewritten-init flag + the context the default was used in
     da = find_node(CC.CXXDefaultArgExpr, fn_body("ex_use_default"))
     @test da isa CC.CXXDefaultArgExpr
-    if da !== nothing
-        @test !(CC.hasRewrittenInit(da))
-        rw = CC.getRewrittenExpr(da)
-        @test rw.ptr == C_NULL
-        @test (rw.ptr != C_NULL) == CC.hasRewrittenInit(da)
-        uc = CC.getUsedContext(da)
-        @test uc.ptr != C_NULL
-    end
+    @test !(CC.hasRewrittenInit(da))
+    @test CC.getRewrittenExpr(da).ptr == C_NULL
+    @test CC.getUsedContext(da).ptr != C_NULL
 
     # CXXDefaultInitExpr: getRewrittenExpr is assert-guarded (Invariant 3)
     di = find_node(CC.CXXDefaultInitExpr, fn_body("ex_agg"))
     @test di isa CC.CXXDefaultInitExpr
-    if di !== nothing
-        @test CC.hasRewrittenInit(di)
-        @test !CC.is_null_handle(CC.getUsedContext(di))
-        @test CC.getUsedContext(di).ptr != C_NULL
-        if CC.hasRewrittenInit(di)
-            @test CC.getRewrittenExpr(di).ptr != C_NULL
-        else
-            @test_throws AssertionError CC.getRewrittenExpr(di)
-        end
-    end
+    @test CC.hasRewrittenInit(di)
+    @test CC.getUsedContext(di).ptr != C_NULL
+    @test CC.getRewrittenExpr(di).ptr != C_NULL
 
     # CXXBindTemporaryExpr -> CXXTemporary -> the destructor it will run
     bt = find_node(CC.CXXBindTemporaryExpr, fn_body("ex_bind_temp"))
     @test bt isa CC.CXXBindTemporaryExpr
-    if bt !== nothing
-        tmp = CC.getTemporary(bt)
-        @test tmp.ptr != C_NULL
-        dtor = CC.getDestructor(tmp)
-        @test dtor.ptr != C_NULL
-        @test CC.getNameAsString(dtor) == "~EXTmp"
-    end
+    tmp = CC.getTemporary(bt)
+    @test tmp.ptr != C_NULL
+    dtor = CC.getDestructor(tmp)
+    @test dtor.ptr != C_NULL
+    @test CC.getNameAsString(dtor) == "~EXTmp"
 
     # CXXFunctionalCastExpr: `double(x)` is paren-written, not list-initialized
     fc = find_node(CC.CXXFunctionalCastExpr, fn_body("ex_functional"))
     @test fc isa CC.CXXFunctionalCastExpr
-    if fc !== nothing
-        @test CC.isListInitialization(fc) == false
-        @test !CC.is_null_handle(CC.getLParenLoc(fc))
-        @test !CC.is_null_handle(CC.getRParenLoc(fc))
-        @test CC.getLParenLoc(fc).ptr != C_NULL
-    end
+    @test CC.isListInitialization(fc) == false
+    @test !CC.is_null_handle(CC.getLParenLoc(fc))
+    @test CC.getLParenLoc(fc).ptr != C_NULL
 
     # CXXDynamicCastExpr: a downcast to a reachable derived class is not always null
     dc = find_node(CC.CXXDynamicCastExpr, fn_body("ex_dyn"))
     @test dc isa CC.CXXDynamicCastExpr
-    if dc !== nothing
-        @test CC.isAlwaysNull(dc) == false
-    end
+    @test CC.isAlwaysNull(dc) == false
 
     # MaterializeTemporaryExpr: a temporary bound to a const-ref parameter
     mt = find_node(CC.MaterializeTemporaryExpr, fn_body("ex_materialize"))
     @test mt isa CC.MaterializeTemporaryExpr
-    if mt !== nothing
-        @test CC.getStorageDuration(mt) == CC.LibClangEx.CXStorageDuration_SD_FullExpression
-    end
+    @test CC.getStorageDuration(mt) == CC.LibClangEx.CXStorageDuration_SD_FullExpression
 
     # ArrayTypeTraitExpr: __array_rank has no dimension operand
     ar = find_node(CC.ArrayTypeTraitExpr, fn_body("ex_array_rank"))
     @test ar isa CC.ArrayTypeTraitExpr
-    if ar !== nothing
-        @test CC.getTrait(ar) == CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayRank
-        @test !CC.is_null_handle(CC.getQueriedType(ar))
-        @test CC.getValue(ar) == 2
-        @test CC.getDimensionExpression(ar).ptr == C_NULL
-    end
+    @test CC.getTrait(ar) == CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayRank
+    @test CC.getValue(ar) == 2
+    @test CC.getDimensionExpression(ar).ptr == C_NULL
 
     # ArrayTypeTraitExpr: __array_extent carries one
     ae = find_node(CC.ArrayTypeTraitExpr, fn_body("ex_array_extent"))
     @test ae isa CC.ArrayTypeTraitExpr
-    if ae !== nothing
-        @test CC.getTrait(ae) == CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayExtent
-        @test CC.getValue(ae) == 4
-        dim = CC.getDimensionExpression(ae)
-        @test dim.ptr != C_NULL
-        @test CC.getStmtClassName(dim) == "IntegerLiteral"
-    end
+    @test CC.getTrait(ae) == CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayExtent
+    @test CC.getValue(ae) == 4
+    dim = CC.getDimensionExpression(ae)
+    @test dim.ptr != C_NULL
+    @test CC.getStmtClassName(dim) == "IntegerLiteral"
 
     # ExpressionTraitExpr: a named parameter is an lvalue
     et = find_node(CC.ExpressionTraitExpr, fn_body("ex_lvalue_expr"))
     @test et isa CC.ExpressionTraitExpr
-    if et !== nothing
-        @test CC.getTrait(et) == CC.LibClangEx.CXExpressionTrait_ET_IsLValueExpr
-        @test CC.getValue(et) == true
-        @test CC.getQueriedExpression(et).ptr != C_NULL
-    end
+    @test CC.getTrait(et) == CC.LibClangEx.CXExpressionTrait_ET_IsLValueExpr
+    @test CC.getValue(et) == true
+    @test CC.getQueriedExpression(et).ptr != C_NULL
 
     CC.dispose(f)
     CC.dispose(I)
@@ -868,69 +827,49 @@ end
     # CXXOperatorCallExpr: `a == b` on a non-member operator== is written infix
     oc = find_node(CC.CXXOperatorCallExpr, fn_body("g_infix"))
     @test oc isa CC.CXXOperatorCallExpr
-    if oc !== nothing
-        @test CC.isInfixBinaryOp(oc) == true
-    end
+    @test CC.isInfixBinaryOp(oc) == true
 
     # CXXRewrittenBinaryOperator: C++20 rewrites `a != b` into `!(a == b)`, so the
     # rewritten node is a comparison and never an assignment
     rb = find_node(CC.CXXRewrittenBinaryOperator, fn_body("g_rewritten"))
     @test rb isa CC.CXXRewrittenBinaryOperator
-    if rb !== nothing
-        @test CC.getOpcode(rb) == CC.LibClangEx.CXBinaryOperatorKind_BO_NE
-        @test CC.isComparisonOp(rb) == true
-        @test CC.isAssignmentOp(rb) == false
-        @test !CC.is_null_handle(CC.getOperatorLoc(rb))
-        @test CC.getOperatorLoc(rb).ptr != C_NULL
-    end
+    @test CC.getOpcode(rb) == CC.LibClangEx.CXBinaryOperatorKind_BO_NE
+    @test CC.isComparisonOp(rb) == true
+    @test CC.isAssignmentOp(rb) == false
+    @test CC.getOperatorLoc(rb).ptr != C_NULL
 
     # CXXDefaultArgExpr: a plain default argument has no rewritten form, so the
     # adjusted accessor is assert-guarded (Invariant 3)
     dp = find_node(CC.CXXDefaultArgExpr, fn_body("g_use_plain"))
     @test dp isa CC.CXXDefaultArgExpr
-    if dp !== nothing
-        @test !CC.is_null_handle(CC.getUsedLocation(dp))
-        @test CC.getUsedLocation(dp).ptr != C_NULL
-        if CC.hasRewrittenInit(dp)
-            @test CC.getAdjustedRewrittenExpr(dp).ptr != C_NULL
-        else
-            @test_throws AssertionError CC.getAdjustedRewrittenExpr(dp)
-        end
-    end
+    @test CC.getUsedLocation(dp).ptr != C_NULL
+    @test !CC.hasRewrittenInit(dp)
+    @test_throws AssertionError CC.getAdjustedRewrittenExpr(dp)
 
     # CXXDefaultArgExpr: a default argument holding an immediate call does
     da = find_node(CC.CXXDefaultArgExpr, fn_body("g_use_imm"))
     @test da isa CC.CXXDefaultArgExpr
-    if da !== nothing && CC.hasRewrittenInit(da)
-        adj = CC.getAdjustedRewrittenExpr(da)
-        @test CC.getStmtClassName(adj) == "ConstantExpr"
-        @test adj.ptr != C_NULL
-    end
+    @test CC.hasRewrittenInit(da)
+    adj = CC.getAdjustedRewrittenExpr(da)
+    @test CC.getStmtClassName(adj) == "ConstantExpr"
+    @test adj.ptr != C_NULL
 
     # CXXDefaultInitExpr: the location the in-class initializer was used at
     di = find_node(CC.CXXDefaultInitExpr, fn_body("g_agg"))
     @test di isa CC.CXXDefaultInitExpr
-    if di !== nothing
-        @test !CC.is_null_handle(CC.getUsedLocation(di))
-        @test CC.getUsedLocation(di).ptr != C_NULL
-    end
+    @test CC.getUsedLocation(di).ptr != C_NULL
 
     # UserDefinedLiteral: the ud-suffix location
     udl = find_node(CC.UserDefinedLiteral, fn_body("g_udl"))
     @test udl isa CC.UserDefinedLiteral
-    if udl !== nothing
-        @test !CC.is_null_handle(CC.getUDSuffixLoc(udl))
-        @test CC.getUDSuffixLoc(udl).ptr != C_NULL
-    end
+    @test CC.getUDSuffixLoc(udl).ptr != C_NULL
 
     # ArrayTypeTraitExpr: the queried type is reachable through its TypeSourceInfo
     at = find_node(CC.ArrayTypeTraitExpr, fn_body("g_rank"))
     @test at isa CC.ArrayTypeTraitExpr
-    if at !== nothing
-        tsi = CC.getQueriedTypeSourceInfo(at)
-        @test tsi.ptr != C_NULL
-        @test CC.getAsString(CC.getType(tsi)) == "int[3][4]"
-    end
+    tsi = CC.getQueriedTypeSourceInfo(at)
+    @test tsi.ptr != C_NULL
+    @test CC.getAsString(CC.getType(tsi)) == "int[3][4]"
 
     # MaterializeTemporaryExpr: a namespace-scope const reference extends the
     # temporary's lifetime, so the state holds a LifetimeExtendedTemporaryDecl
@@ -938,37 +877,29 @@ end
     ginit = CC.resolve(CC.getInit(CC.VarDecl(get_decl(f))))
     mt = find_node(CC.MaterializeTemporaryExpr, ginit)
     @test mt isa CC.MaterializeTemporaryExpr
-    if mt !== nothing
-        letd = CC.getLifetimeExtendedTemporaryDecl(mt)
-        @test letd.ptr != C_NULL
-        @test CC.isUsableInConstantExpressions(mt, ctx)
-        v = CC.getOrCreateValue(mt, true)
-        @test v.ptr != C_NULL
-    end
+    letd = CC.getLifetimeExtendedTemporaryDecl(mt)
+    @test letd.ptr != C_NULL
+    @test CC.isUsableInConstantExpressions(mt, ctx)
+    v = CC.getOrCreateValue(mt, true)
+    @test v.ptr != C_NULL
 
     # PackExpansionExpr / CXXFoldExpr: an uninstantiated template body knows no
     # expansion count, so the C++ optional comes back disengaged
     pe = find_node(CC.PackExpansionExpr, tpl_body("g_pexp"))
     @test pe isa CC.PackExpansionExpr
-    if pe !== nothing
-        @test CC.getNumExpansions(pe) === nothing
-    end
+    @test CC.getNumExpansions(pe) === nothing
 
     fe = find_node(CC.CXXFoldExpr, tpl_body("g_fold"))
     @test fe isa CC.CXXFoldExpr
-    if fe !== nothing
-        @test CC.getNumExpansions(fe) === nothing
-    end
+    @test CC.getNumExpansions(fe) === nothing
 
     # CXXUnresolvedConstructExpr: the dependent `T(a)` names its type through a
     # TypeSourceInfo
     uc = find_node(CC.CXXUnresolvedConstructExpr, tpl_body("g_uctor"))
     @test uc isa CC.CXXUnresolvedConstructExpr
-    if uc !== nothing
-        utsi = CC.getTypeSourceInfo(uc)
-        @test utsi.ptr != C_NULL
-        @test CC.getAsString(CC.getType(utsi)) == "T"
-    end
+    utsi = CC.getTypeSourceInfo(uc)
+    @test utsi.ptr != C_NULL
+    @test CC.getAsString(CC.getType(utsi)) == "T"
 
     dispose(f)
     dispose(I)
@@ -1020,10 +951,13 @@ end
     croot = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(g))))
     ca = find_node(CC.CoawaitExpr, croot)
     @test ca isa CC.CoawaitExpr
-    if ca !== nothing
-        @test !(CC.isImplicit(ca))
-        @test !CC.is_null_handle(CC.getOpaqueValue(ca))
-    end
+    @test !(CC.isImplicit(ca))
+    @test !CC.is_null_handle(CC.getOpaqueValue(ca))
+    before = CC.isImplicit(ca)
+    CC.setIsImplicit(ca, !before)
+    @test CC.isImplicit(ca) == !before
+    CC.setIsImplicit(ca, before)
+    @test CC.isImplicit(ca) == before
 
     # DependentCoawaitExpr: `co_await a` on a dependent operand keeps the operand
     # and the operator co_await lookup side by side
@@ -1032,15 +966,11 @@ end
     tbody = CC.resolve(CC.getBody(CC.FunctionDecl(CC.getTemplatedDecl(tftd))))
     dca = find_node(CC.DependentCoawaitExpr, tbody)
     @test dca isa CC.DependentCoawaitExpr
-    if dca !== nothing
-        @test !CC.is_null_handle(CC.getOperand(dca))
-        @test CC.getOperand(dca).ptr != C_NULL
-        lookup = CC.getOperatorCoawaitLookup(dca)
-        @test lookup.ptr != C_NULL
-        @test CC.getAsString(CC.getName(lookup)) == "operator co_await"
-        @test !CC.is_null_handle(CC.getKeywordLoc(dca))
-        @test CC.getKeywordLoc(dca).ptr != C_NULL
-    end
+    @test CC.getOperand(dca).ptr != C_NULL
+    lookup = CC.getOperatorCoawaitLookup(dca)
+    @test lookup.ptr != C_NULL
+    @test CC.getAsString(CC.getName(lookup)) == "operator co_await"
+    @test CC.getKeywordLoc(dca).ptr != C_NULL
 
     dispose(g)
     dispose(J)
@@ -1238,11 +1168,8 @@ end
     @test ule isa CC.UnresolvedLookupExpr
     ndecls = CC.getNumDecls(ule)
     @test ndecls >= 2                       # cci_oo(int) and cci_oo(double)
-    for i = 0:(ndecls - 1)
-        @test CC.getDecl(ule, i) isa CC.NamedDecl
-        @test CC.getDecl(ule, i).ptr != C_NULL
-        @test CC.getDeclAccess(ule, i) isa CC.LibClangEx.CXAccessSpecifier
-    end
+    @test CC.getDecl(ule, 0).ptr != CC.getDecl(ule, 1).ptr
+    @test CC.getDeclAccess(ule, 0) == CC.LibClangEx.CXAccessSpecifier_AS_none
     @test_throws AssertionError CC.getDecl(ule, ndecls)
     @test_throws AssertionError CC.getDeclAccess(ule, ndecls)
     # no explicit template argument list -> getTemplateArgs() is NULL upstream, so
@@ -1300,6 +1227,7 @@ end
     struct JEq { int v; bool operator==(const JEq &) const; };
     bool j_rewritten(JEq a, JEq b) { return a != b; }
     template <class T> auto j_uctor(T a) { return T(a); }
+    template <class T> auto j_uctor2(T a, T b) { return T(a, b); }
     """)
 
     function fn_body(name)
@@ -1315,66 +1243,62 @@ end
     # ---- CXXParenListInitExpr: `JAgg p(1)` fills `b` from its default initializer --
     pl = find_node(CC.CXXParenListInitExpr, fn_body("j_paren"))
     @test pl isa CC.CXXParenListInitExpr
-    if pl isa CC.CXXParenListInitExpr
-        n = CC.getNumInitExprs(pl)
-        @test n >= 1
-        nu = CC.getNumUserSpecifiedInitExprs(pl)
-        @test nu <= n
-        @test !CC.is_null_handle(CC.getInitExpr(pl, 0))
-        @test CC.getInitExpr(pl, 0).ptr != C_NULL
-        @test !CC.is_null_handle(CC.getInitLoc(pl))
-        if nu > 0
-            @test CC.getUserSpecifiedInitExpr(pl, 0).ptr == CC.getInitExpr(pl, 0).ptr
-        end
-        # a struct initializer engages neither arm of ArrayFillerOrUnionFieldInit
-        @test CC.getArrayFiller(pl) isa CC.Expr_
-        @test CC.getArrayFiller(pl).ptr == C_NULL
-        @test CC.is_null_handle(CC.getInitializedFieldInUnion(pl))
-        @test CC.getInitializedFieldInUnion(pl).ptr == C_NULL
-        # both index accessors restate Clang's bounds precondition
-        @test_throws AssertionError CC.getInitExpr(pl, n)
-        @test_throws AssertionError CC.getUserSpecifiedInitExpr(pl, -1)
-    end
+    n = CC.getNumInitExprs(pl)
+    @test n >= 1
+    nu = CC.getNumUserSpecifiedInitExprs(pl)
+    @test nu == 1
+    @test nu <= n
+    @test CC.getInitExpr(pl, 0).ptr != C_NULL
+    @test CC.getUserSpecifiedInitExpr(pl, 0).ptr == CC.getInitExpr(pl, 0).ptr
+    @test CC.getArrayFiller(pl).ptr == C_NULL
+    @test CC.is_null_handle(CC.getInitializedFieldInUnion(pl))
+    @test_throws AssertionError CC.getInitExpr(pl, n)
+    @test_throws AssertionError CC.getUserSpecifiedInitExpr(pl, -1)
+    # writing the array-filler arm disengages the union-field arm
+    e0 = CC.getInitExpr(pl, 0)
+    CC.setArrayFiller(pl, e0)
+    @test CC.getArrayFiller(pl).ptr == e0.ptr
+    @test CC.getInitializedFieldInUnion(pl).ptr == C_NULL
 
-    # ---- the union arm of the same PointerUnion, when the host built one -----------
+    # ---- the union arm of the same PointerUnion ------------------------------------
     ul = find_node(CC.CXXParenListInitExpr, fn_body("j_union"))
-    if ul isa CC.CXXParenListInitExpr
-        fd = CC.getInitializedFieldInUnion(ul)
-        @test fd isa CC.FieldDecl
-        if fd.ptr != C_NULL
-            @test CC.get_name(fd) == "a"
-            @test CC.getArrayFiller(ul).ptr == C_NULL
-        end
-    end
+    @test ul isa CC.CXXParenListInitExpr
+    fd = CC.getInitializedFieldInUnion(ul)
+    @test fd isa CC.FieldDecl
+    @test CC.get_name(fd) == "a"
+    @test CC.getArrayFiller(ul).ptr == C_NULL
+    CC.setInitializedFieldInUnion(ul, fd)
+    @test CC.getInitializedFieldInUnion(ul).ptr == fd.ptr
 
     # ---- CXXRewrittenBinaryOperator::getOpcodeStr spells the WRITTEN operator ------
     rb = find_node(CC.CXXRewrittenBinaryOperator, fn_body("j_rewritten"))
     @test rb isa CC.CXXRewrittenBinaryOperator
-    if rb isa CC.CXXRewrittenBinaryOperator
-        @test CC.getOpcodeStr(rb) == "!="
-    end
+    @test CC.getOpcodeStr(rb) == "!="
 
     # ---- CXXUnresolvedConstructExpr setters, round-tripped against the getters -----
     uc = find_node(CC.CXXUnresolvedConstructExpr, tpl_body("j_uctor"))
     @test uc isa CC.CXXUnresolvedConstructExpr
-    if uc isa CC.CXXUnresolvedConstructExpr
-        lp = CC.getLParenLoc(uc)
-        rp = CC.getRParenLoc(uc)
-        CC.setLParenLoc(uc, rp)
-        @test CC.getLParenLoc(uc).ptr == rp.ptr
-        CC.setLParenLoc(uc, lp)
-        @test CC.getLParenLoc(uc).ptr == lp.ptr
-        CC.setRParenLoc(uc, rp)
-        @test CC.getRParenLoc(uc).ptr == rp.ptr
-        na = CC.getNumArgs(uc)
-        @test na >= 1
-        if na >= 1
-            a0 = CC.getArg(uc, 0)
-            CC.setArg(uc, 0, a0)
-            @test CC.getArg(uc, 0).ptr == a0.ptr
-            @test_throws AssertionError CC.setArg(uc, na, a0)
-        end
-    end
+    lp = CC.getLParenLoc(uc)
+    rp = CC.getRParenLoc(uc)
+    CC.setLParenLoc(uc, rp)
+    @test CC.getLParenLoc(uc).ptr == rp.ptr
+    CC.setLParenLoc(uc, lp)
+    @test CC.getLParenLoc(uc).ptr == lp.ptr
+    CC.setRParenLoc(uc, rp)
+    @test CC.getRParenLoc(uc).ptr == rp.ptr
+    @test CC.getNumArgs(uc) == 1
+    a0 = CC.getArg(uc, 0)
+    CC.setArg(uc, 0, a0)
+    @test CC.getArg(uc, 0).ptr == a0.ptr
+    @test_throws AssertionError CC.setArg(uc, 1, a0)
+
+    # two-argument T(a, b): reading only index 0 cannot tell a working accessor from
+    # one that ignores its index
+    uc2 = find_node(CC.CXXUnresolvedConstructExpr, tpl_body("j_uctor2"))
+    @test uc2 isa CC.CXXUnresolvedConstructExpr
+    @test CC.getNumArgs(uc2) == 2
+    @test CC.getArg(uc2, 0).ptr != CC.getArg(uc2, 1).ptr
+    @test_throws AssertionError CC.getArg(uc2, 2)
     dispose(f)
     dispose(I)
 
@@ -1401,29 +1325,21 @@ end
 
     pr = find_node(CC.MSPropertyRefExpr, ms_body("jms_read"))
     @test pr isa CC.MSPropertyRefExpr
-    if pr isa CC.MSPropertyRefExpr
-        @test CC.isArrow(pr) == true          # written `p->x`, not `p.x`
-        @test CC.isImplicitAccess(pr) == false
-        @test !CC.is_null_handle(CC.getBaseExpr(pr))
-        @test CC.getBaseExpr(pr).ptr != C_NULL
-        pd = CC.getPropertyDecl(pr)
-        @test pd isa CC.MSPropertyDecl
-        @test CC.get_name(pd) == "x"
-        @test !CC.is_null_handle(CC.getMemberLoc(pr))
-    end
+    @test CC.isArrow(pr) == true          # written `p->x`, not `p.x`
+    @test CC.isImplicitAccess(pr) == false
+    @test CC.getBaseExpr(pr).ptr != C_NULL
+    pd = CC.getPropertyDecl(pr)
+    @test pd isa CC.MSPropertyDecl
+    @test CC.get_name(pd) == "x"
+    @test !CC.is_null_handle(CC.getMemberLoc(pr))
 
     ps = find_node(CC.MSPropertySubscriptExpr, ms_body("jms_sub"))
     @test ps isa CC.MSPropertySubscriptExpr
-    if ps isa CC.MSPropertySubscriptExpr
-        @test CC.getBase(ps) isa CC.Expr_
-        @test CC.getBase(ps).ptr != C_NULL
-        @test !CC.is_null_handle(CC.getIdx(ps))
-        @test CC.getIdx(ps).ptr != C_NULL
-        rbl = CC.getRBracketLoc(ps)
-        @test rbl isa CC.SourceLocation
-        CC.setRBracketLoc(ps, rbl)
-        @test CC.getRBracketLoc(ps).ptr == rbl.ptr
-    end
+    @test CC.getBase(ps).ptr != C_NULL
+    @test CC.getIdx(ps).ptr != C_NULL
+    rbl = CC.getRBracketLoc(ps)
+    CC.setRBracketLoc(ps, rbl)
+    @test CC.getRBracketLoc(ps).ptr == rbl.ptr
     dispose(fms)
     dispose(Ims)
 end
@@ -1464,32 +1380,25 @@ end
 
     ut = find_node(CC.CXXUuidofExpr, ms_body("jk_uuid_type"))
     @test ut isa CC.CXXUuidofExpr
-    if ut isa CC.CXXUuidofExpr
-        @test CC.isTypeOperand(ut) == true
-        @test !CC.is_null_handle(CC.getTypeOperandSourceInfo(ut))
-        @test CC.getTypeOperandSourceInfo(ut).ptr != C_NULL
-        @test !CC.is_null_handle(CC.getTypeOperand(ut, ctx_ms))
-        @test CC.getTypeOperand(ut, ctx_ms).ptr != C_NULL
-        @test_throws AssertionError CC.getExprOperand(ut)          # Invariant 3
-        gd = CC.getGuidDecl(ut)
-        @test gd isa CC.MSGuidDecl
-        @test gd.ptr != C_NULL
-        r = CC.getSourceRange(ut)
-        CC.setSourceRange(ut, r)
-        @test CC.getSourceRange(ut).begin_loc.ptr == r.begin_loc.ptr
-        @test CC.getSourceRange(ut).end_loc.ptr == r.end_loc.ptr
-    end
+    @test CC.isTypeOperand(ut) == true
+    @test CC.getTypeOperandSourceInfo(ut).ptr != C_NULL
+    @test CC.getTypeOperand(ut, ctx_ms).ptr != C_NULL
+    @test_throws AssertionError CC.getExprOperand(ut)          # Invariant 3
+    gd = CC.getGuidDecl(ut)
+    @test gd isa CC.MSGuidDecl
+    @test gd.ptr != C_NULL
+    r = CC.getSourceRange(ut)
+    CC.setSourceRange(ut, r)
+    @test CC.getSourceRange(ut).begin_loc.ptr == r.begin_loc.ptr
+    @test CC.getSourceRange(ut).end_loc.ptr == r.end_loc.ptr
 
     ue = find_node(CC.CXXUuidofExpr, ms_body("jk_uuid_expr"))
     @test ue isa CC.CXXUuidofExpr
-    if ue isa CC.CXXUuidofExpr
-        @test CC.isTypeOperand(ue) == false
-        @test !CC.is_null_handle(CC.getExprOperand(ue))
-        @test CC.getExprOperand(ue).ptr != C_NULL
-        @test !CC.is_null_handle(CC.getGuidDecl(ue))
-        @test_throws AssertionError CC.getTypeOperandSourceInfo(ue)  # Invariant 3
-        @test_throws AssertionError CC.getTypeOperand(ue, ctx_ms)    # Invariant 3
-    end
+    @test CC.isTypeOperand(ue) == false
+    @test CC.getExprOperand(ue).ptr != C_NULL
+    @test !CC.is_null_handle(CC.getGuidDecl(ue))
+    @test_throws AssertionError CC.getTypeOperandSourceInfo(ue)  # Invariant 3
+    @test_throws AssertionError CC.getTypeOperand(ue, ctx_ms)    # Invariant 3
     dispose(fms)
     dispose(Ims)
 
@@ -1513,114 +1422,60 @@ end
     # CXXBindTemporaryExpr / CXXTemporary: both halves of `JKT();`
     bt = find_node(CC.CXXBindTemporaryExpr, fn_body("jk_bind"))
     @test bt isa CC.CXXBindTemporaryExpr
-    if bt isa CC.CXXBindTemporaryExpr
-        tmp = CC.getTemporary(bt)
-        sub = CC.getSubExpr(bt)
-        CC.setTemporary(bt, tmp)
-        @test CC.getTemporary(bt).ptr == tmp.ptr
-        CC.setSubExpr(bt, sub)
-        @test CC.getSubExpr(bt).ptr == sub.ptr
-        dtor = CC.getDestructor(tmp)
-        @test dtor isa CC.CXXDestructorDecl
-        if dtor.ptr != C_NULL
-            t2 = CC.CXXTemporary(ctx, dtor)
-            @test t2 isa CC.CXXTemporary
-            @test t2.ptr != C_NULL
-            @test CC.getDestructor(t2).ptr == dtor.ptr
-            CC.setDestructor(t2, dtor)
-            @test CC.getDestructor(t2).ptr == dtor.ptr
-        end
-    end
+    tmp = CC.getTemporary(bt)
+    sub = CC.getSubExpr(bt)
+    CC.setTemporary(bt, tmp)
+    @test CC.getTemporary(bt).ptr == tmp.ptr
+    CC.setSubExpr(bt, sub)
+    @test CC.getSubExpr(bt).ptr == sub.ptr
+    dtor = CC.getDestructor(tmp)
+    @test dtor isa CC.CXXDestructorDecl
+    @test dtor.ptr != C_NULL
+    t2 = CC.CXXTemporary(ctx, dtor)
+    @test CC.getDestructor(t2).ptr == dtor.ptr
+    CC.setDestructor(t2, dtor)
+    @test CC.getDestructor(t2).ptr == dtor.ptr
 
     # CXXNewExpr: the allocation/deallocation function slots
     ne = find_node(CC.CXXNewExpr, fn_body("jk_new"))
     @test ne isa CC.CXXNewExpr
-    if ne isa CC.CXXNewExpr
-        on = CC.getOperatorNew(ne)
-        @test on isa CC.FunctionDecl
-        if on.ptr != C_NULL
-            CC.setOperatorNew(ne, on)
-            @test CC.getOperatorNew(ne).ptr == on.ptr
-        end
-        od = CC.getOperatorDelete(ne)
-        @test od isa CC.FunctionDecl
-        if od.ptr != C_NULL
-            CC.setOperatorDelete(ne, od)
-            @test CC.getOperatorDelete(ne).ptr == od.ptr
-        end
+    on = CC.getOperatorNew(ne)
+    @test on isa CC.FunctionDecl
+    @test on.ptr != C_NULL
+    CC.setOperatorNew(ne, on)
+    @test CC.getOperatorNew(ne).ptr == on.ptr
+    od = CC.getOperatorDelete(ne)
+    @test od isa CC.FunctionDecl
+    @test od.ptr != C_NULL
+    CC.setOperatorDelete(ne, od)
+    @test CC.getOperatorDelete(ne).ptr == od.ptr
 
-        # CXXThisExpr::Create - built from the `new` expression's own type and location
-        loc = CC.getBeginLoc(ne)
-        ty = CC.getType(ne)
-        th = CC.CXXThisExpr(ctx, loc, ty, true)
-        @test th isa CC.CXXThisExpr
-        @test th.ptr != C_NULL
-        @test CC.isImplicit(th) == true
-        @test CC.getLocation(th).ptr == loc.ptr
-        CC.setImplicit(th, false)
-        @test CC.isImplicit(th) == false
-        # CreateEmpty yields an uninitialized shell; only its identity is defined
-        th2 = CC.CXXThisExpr(ctx)
-        @test th2 isa CC.CXXThisExpr
-        @test th2.ptr != C_NULL
-    end
+    # CXXThisExpr::Create - built from the `new` expression's own type and location
+    loc = CC.getBeginLoc(ne)
+    ty = CC.getType(ne)
+    th = CC.CXXThisExpr(ctx, loc, ty, true)
+    @test CC.isImplicit(th) == true
+    @test CC.getLocation(th).ptr == loc.ptr
+    CC.setImplicit(th, false)
+    @test CC.isImplicit(th) == false
+    # CreateEmpty yields an uninitialized shell; only its identity is defined
+    th2 = CC.CXXThisExpr(ctx)
+    @test CC.getStmtClassName(th2) == "CXXThisExpr"
 
     # CXXFunctionalCastExpr: the paren locations, which also drive isListInitialization
     fc = find_node(CC.CXXFunctionalCastExpr, fn_body("jk_fcast"))
     @test fc isa CC.CXXFunctionalCastExpr
-    if fc isa CC.CXXFunctionalCastExpr
-        lp = CC.getLParenLoc(fc)
-        rp = CC.getRParenLoc(fc)
-        CC.setLParenLoc(fc, rp)
-        @test CC.getLParenLoc(fc).ptr == rp.ptr
-        CC.setLParenLoc(fc, lp)
-        @test CC.getLParenLoc(fc).ptr == lp.ptr
-        @test !(CC.isListInitialization(fc))
-        CC.setRParenLoc(fc, rp)
-        @test CC.getRParenLoc(fc).ptr == rp.ptr
-    end
+    lp = CC.getLParenLoc(fc)
+    rp = CC.getRParenLoc(fc)
+    CC.setLParenLoc(fc, rp)
+    @test CC.getLParenLoc(fc).ptr == rp.ptr
+    CC.setLParenLoc(fc, lp)
+    @test CC.getLParenLoc(fc).ptr == lp.ptr
+    @test !(CC.isListInitialization(fc))
+    CC.setRParenLoc(fc, rp)
+    @test CC.getRParenLoc(fc).ptr == rp.ptr
     dispose(f)
     dispose(I)
-
-    # ---- C++20: writing either arm of the CXXParenListInitExpr PointerUnion -------
-    I20 = create_interpreter(["-std=c++20"])
-    f20 = DeclFinder(I20)
-    CC.parse(I20, """
-    struct KAgg { int a; int b = 5; };
-    KAgg k_paren() { KAgg p(1); return p; }
-    union KUni { int a; double b; };
-    KUni k_union() { KUni u(3); return u; }
-    """)
-
-    function body20(name)
-        @test f20(I20, name)
-        return CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f20))))
-    end
-
-    ul = find_node(CC.CXXParenListInitExpr, body20("k_union"))
-    @test ul isa CC.CXXParenListInitExpr
-    if ul isa CC.CXXParenListInitExpr
-        fd = CC.getInitializedFieldInUnion(ul)
-        @test fd isa CC.FieldDecl
-        if fd.ptr != C_NULL
-            CC.setInitializedFieldInUnion(ul, fd)
-            @test CC.getInitializedFieldInUnion(ul).ptr == fd.ptr
-            @test CC.getArrayFiller(ul).ptr == C_NULL
-        end
-    end
-
-    pl = find_node(CC.CXXParenListInitExpr, body20("k_paren"))
-    @test pl isa CC.CXXParenListInitExpr
-    if pl isa CC.CXXParenListInitExpr && CC.getNumInitExprs(pl) > 0
-        # a struct initializer engages neither arm; writing one arm disengages the other
-        @test CC.getArrayFiller(pl).ptr == C_NULL
-        e0 = CC.getInitExpr(pl, 0)
-        CC.setArrayFiller(pl, e0)
-        @test CC.getArrayFiller(pl).ptr == e0.ptr
-        @test CC.getInitializedFieldInUnion(pl).ptr == C_NULL
-    end
-    dispose(f20)
-    dispose(I20)
 end
 
 @testset "ExprCXX-l: name info / qualifier extents / node synthesis" begin
@@ -1667,13 +1522,12 @@ end
     @test param isa CC.ParmVarDecl
     @test CC.hasDefaultArg(param) == true
     defarg = CC.getDefaultArg(param)
-    @test defarg isa CC.Expr_
     intty = CC.getType(defarg)
     loc = CC.getBeginLoc(defarg)
 
     @test f(I, "ll_rewritten")
     boolty = CC.getReturnType(CC.FunctionDecl(get_decl(f)))
-    @test boolty isa CC.QualType
+    @test CC.get_name(boolty) in ("bool", "_Bool")
 
     @test f(I, "LLAgg")
     agg = CC.CXXRecordDecl(get_decl(f))
@@ -1728,6 +1582,7 @@ end
     @test CC.getField(die).ptr == fld_b.ptr
     @test CC.getUsedContext(die).ptr == aggdc.ptr
     @test CC.hasRewrittenInit(die) == false
+    @test_throws AssertionError CC.getRewrittenExpr(die)
     @test CC.hasInClassInitializer(fld_a) == false
     @test_throws AssertionError CC.CXXDefaultInitExpr(ctx, loc, fld_a, aggdc, nothing)
 
@@ -1735,14 +1590,11 @@ end
     @test f(I, "LLDtor")
     dtor = CC.getDestructor(CC.CXXRecordDecl(get_decl(f)))
     @test dtor isa CC.CXXDestructorDecl
-    if dtor.ptr != C_NULL
-        tmp = CC.CXXTemporary(ctx, dtor)
-        bte = CC.CXXBindTemporaryExpr(ctx, tmp, blit)
-        @test bte isa CC.CXXBindTemporaryExpr
-        @test bte.ptr != C_NULL
-        @test CC.getTemporary(bte).ptr == tmp.ptr
-        @test CC.getSubExpr(bte).ptr == blit.ptr
-    end
+    @test dtor.ptr != C_NULL
+    tmp = CC.CXXTemporary(ctx, dtor)
+    bte = CC.CXXBindTemporaryExpr(ctx, tmp, blit)
+    @test CC.getTemporary(bte).ptr == tmp.ptr
+    @test CC.getSubExpr(bte).ptr == blit.ptr
 
     # ---- LambdaExpr explicit template parameters: `[]<class T>(T x)` -------------
     le = _find_node(CC.LambdaExpr, fn_body("ll_lambda"))
@@ -1751,7 +1603,6 @@ end
     n = CC.getNumExplicitTemplateParameters(le)
     @test n == 1
     p0 = CC.getExplicitTemplateParameter(le, 0)
-    @test p0 isa CC.NamedDecl
     @test CC.get_name(p0) == "T"
     @test_throws AssertionError CC.getExplicitTemplateParameter(le, n)
 
@@ -1769,7 +1620,6 @@ end
     ule = _find_node(CC.UnresolvedLookupExpr, tpl_body("ll_ule"))
     @test ule isa CC.UnresolvedLookupExpr
     ni = CC.getNameInfo(ule)
-    @test ni isa CC.DeclarationNameInfo
     @test ni.ptr != C_NULL
     @test CC.getAsString(ni) == "ll_oo"
     @test CC.getLoc(ni).ptr == CC.getNameLoc(ule).ptr
@@ -1783,22 +1633,18 @@ end
     dre = _find_node(CC.DependentScopeDeclRefExpr, tpl_body("ll_dref"))
     @test dre isa CC.DependentScopeDeclRefExpr
     ni2 = CC.getNameInfo(dre)
-    @test ni2 isa CC.DeclarationNameInfo
     @test CC.getAsString(ni2) == "value"
     dispose(ni2)
     qr2 = CC.getQualifierRange(dre)
-    @test qr2 isa CC.SourceRange
     @test qr2.begin_loc.ptr != C_NULL
 
     # ---- CXXDependentScopeMemberExpr: `t.LLEq::v` --------------------------------
     dme = _find_node(CC.CXXDependentScopeMemberExpr, tpl_body("ll_dmem"))
     @test dme isa CC.CXXDependentScopeMemberExpr
     ni3 = CC.getMemberNameInfo(dme)
-    @test ni3 isa CC.DeclarationNameInfo
     @test CC.getAsString(ni3) == "v"
     dispose(ni3)
     qr3 = CC.getQualifierRange(dme)
-    @test qr3 isa CC.SourceRange
     @test qr3.begin_loc.ptr != C_NULL
 
     dispose(f)
@@ -1953,7 +1799,6 @@ end
     @test CC.getParameterPackLocation(snp).ptr == loc.ptr
     @test CC.getParameterPack(snp).ptr == nttp.ptr
     pack = CC.getArgumentPack(snp)
-    @test pack isa CC.TemplateArgument
     @test CC.getKind(pack) == CC.LibClangEx.CXTemplateArgument_Pack
     dispose(pack)
     dispose(ta)
@@ -2032,81 +1877,47 @@ end
     # ---- TypeTraitExpr::getTrait: which trait `__is_trivial(int)` spells -----------
     tt = _find_node(CC.TypeTraitExpr, fn_body("oo_trait"))
     @test tt isa CC.TypeTraitExpr
-    if tt !== nothing
-        @test CC.getTrait(tt) == CC.LibClangEx.CXTypeTrait_UTT_IsTrivial
-        @test CC.getNumArgs(tt) == 1
-    end
+    @test CC.getTrait(tt) == CC.LibClangEx.CXTypeTrait_UTT_IsTrivial
+    @test CC.getNumArgs(tt) == 1
 
     # ---- LambdaExpr: `[a]` is one explicit capture, `[=]` captures implicitly ------
     le = _find_node(CC.LambdaExpr, fn_body("oo_lambda"))
     @test le isa CC.LambdaExpr
-    if le !== nothing
-        @test CC.getNumExplicitCaptures(le) == 1
-        @test CC.getNumCaptures(le) >= CC.getNumExplicitCaptures(le)
-    end
+    @test CC.getNumExplicitCaptures(le) == 1
+    @test CC.getNumCaptures(le) >= CC.getNumExplicitCaptures(le)
     le2 = _find_node(CC.LambdaExpr, fn_body("oo_lambda2"))
     @test le2 isa CC.LambdaExpr
-    if le2 !== nothing
-        @test CC.getNumExplicitCaptures(le2) == 0
-        @test CC.getNumCaptures(le2) >= CC.getNumExplicitCaptures(le2)
-    end
+    @test CC.getNumExplicitCaptures(le2) == 0
+    @test CC.getNumCaptures(le2) >= CC.getNumExplicitCaptures(le2)
 
     # ---- UnresolvedMemberExpr: the member half of the OverloadExpr name -----------
     ume = _find_node(CC.UnresolvedMemberExpr, tpl_body("oo_gg"))
     @test ume isa CC.UnresolvedMemberExpr
-    if ume !== nothing
-        mn = CC.getMemberName(ume)
-        @test CC.getAsString(mn) == "m"
-        @test mn.ptr == CC.getName(ume).ptr          # forwards to OverloadExpr::getName
-        @test CC.getMemberLoc(ume).ptr == CC.getNameLoc(ume).ptr
-        mni = CC.getMemberNameInfo(ume)
-        @test mni isa CC.DeclarationNameInfo
-        @test mni.ptr != C_NULL
-        @test CC.getAsString(mni) == "m"
-        dispose(mni)
-    end
+    mn = CC.getMemberName(ume)
+    @test CC.getAsString(mn) == "m"
+    @test mn.ptr == CC.getName(ume).ptr          # forwards to OverloadExpr::getName
+    @test CC.getMemberLoc(ume).ptr == CC.getNameLoc(ume).ptr
+    mni = CC.getMemberNameInfo(ume)
+    @test CC.getAsString(mni) == "m"
+    dispose(mni)
 
     # ---- SizeOfPackExpr partial arguments: an unsubstituted pack has none, and
     # clang's accessor would read storage that was never allocated -----------------
     sp = _find_node(CC.SizeOfPackExpr, tpl_body("oo_pack"))
     @test sp isa CC.SizeOfPackExpr
-    if sp !== nothing
-        @test !(CC.isPartiallySubstituted(sp))
-        if CC.isPartiallySubstituted(sp)
-            n = CC.getNumPartialArguments(sp)
-            @test n > 0
-            ta = CC.getPartialArgument(sp, 0)
-            @test ta isa CC.TemplateArgument
-            @test ta.ptr != C_NULL
-            dispose(ta)
-            @test_throws AssertionError CC.getPartialArgument(sp, n)
-        else
-            @test_throws AssertionError CC.getNumPartialArguments(sp)
-            @test_throws AssertionError CC.getPartialArgument(sp, 0)
-        end
-    end
+    @test !(CC.isPartiallySubstituted(sp))
+    @test_throws AssertionError CC.getNumPartialArguments(sp)
+    @test_throws AssertionError CC.getPartialArgument(sp, 0)
 
-    # ---- ExprWithCleanups objects: the union arm is picked by the discriminator ----
+    # ---- ExprWithCleanups objects: a parsed `OOTmp().v` records no extra objects ----
     ewc = _find_node(CC.ExprWithCleanups, fn_body("oo_temp"))
     @test ewc isa CC.ExprWithCleanups
-    if ewc !== nothing
-        n = CC.getNumObjects(ewc)
-        @test n == 0
-        for i = 0:(n - 1)
-            isblk = CC.objectIsBlockDecl(ewc, i)
-            @test isblk == false
-            obj = CC.getObject(ewc, i)
-            @test isblk ? obj isa CC.BlockDecl : obj isa CC.CompoundLiteralExpr
-            @test obj.ptr != C_NULL
-        end
-        @test_throws AssertionError CC.objectIsBlockDecl(ewc, n)
-        @test_throws AssertionError CC.getObject(ewc, n)
-    end
+    @test CC.getNumObjects(ewc) == 0
+    @test_throws AssertionError CC.objectIsBlockDecl(ewc, 0)
+    @test_throws AssertionError CC.getObject(ewc, 0)
 
     # the deserialization shell reserves its cleanup-object slots but fills none in
     shell = CC.ExprWithCleanups(ctx, 2)
-    @test shell isa CC.ExprWithCleanups
-    @test shell.ptr != C_NULL
     @test CC.getNumObjects(shell) == 2
 
     # ---- CXXPseudoDestructorExpr::setDestroyedType: naming the type by identifier
@@ -2114,88 +1925,28 @@ end
     # identifier/location pair instead ---------------------------------------------
     pd = _find_node(CC.CXXPseudoDestructorExpr, fn_body("oo_pd"))
     @test pd isa CC.CXXPseudoDestructorExpr
-    if pd !== nothing
-        @test f(I, "OOInt")
-        ii = CC.getIdentifier(get_decl(f))
-        @test ii isa CC.IdentifierInfo
-        @test CC.isStr(ii, "OOInt")
-        loc = CC.getBeginLoc(pd)
-        CC.setDestroyedType(pd, ii, loc)
-        @test CC.getDestroyedTypeIdentifier(pd).ptr == ii.ptr
-        @test CC.getDestroyedTypeLoc(pd).ptr == loc.ptr
-        @test CC.getDestroyedTypeInfo(pd).ptr == C_NULL
-    end
+    @test f(I, "OOInt")
+    ii = CC.getIdentifier(get_decl(f))
+    @test CC.isStr(ii, "OOInt")
+    loc = CC.getBeginLoc(pd)
+    CC.setDestroyedType(pd, ii, loc)
+    @test CC.getDestroyedTypeIdentifier(pd).ptr == ii.ptr
+    @test CC.getDestroyedTypeLoc(pd).ptr == loc.ptr
+    @test CC.getDestroyedTypeInfo(pd).ptr == C_NULL
 
     # ---- MaterializeTemporaryExpr::setExtendingDecl -------------------------------
     @test f(I, "oo_ref")
     ref_init = CC.resolve(CC.getInit(CC.VarDecl(get_decl(f))))
     mt = _find_node(CC.MaterializeTemporaryExpr, ref_init)
     @test mt isa CC.MaterializeTemporaryExpr
-    if mt !== nothing
-        @test f(I, "oo_other")
-        other = CC.VarDecl(get_decl(f))
-        CC.setExtendingDecl(mt, other, 7)
-        @test CC.getExtendingDecl(mt).ptr == other.ptr
-        @test CC.getManglingNumber(mt) == 7
-    end
+    @test f(I, "oo_other")
+    other = CC.VarDecl(get_decl(f))
+    CC.setExtendingDecl(mt, other, 7)
+    @test CC.getExtendingDecl(mt).ptr == other.ptr
+    @test CC.getManglingNumber(mt) == 7
 
     dispose(f)
     dispose(I)
-
-    # ---- CoawaitExpr::setIsImplicit; coroutines need a promise type, so the
-    # awaitable machinery is spelled out --------------------------------------------
-    J = create_interpreter(["-std=c++20"])
-    g = DeclFinder(J)
-    CC.parse(J, """
-    namespace std {
-    template <class Ret, class... Args> struct coroutine_traits {
-        using promise_type = typename Ret::promise_type;
-    };
-    template <class Promise = void> struct coroutine_handle;
-    template <> struct coroutine_handle<void> {
-        static coroutine_handle from_address(void *) noexcept { return {}; }
-    };
-    template <class Promise> struct coroutine_handle {
-        operator coroutine_handle<>() const noexcept { return {}; }
-        static coroutine_handle from_address(void *) noexcept { return {}; }
-        static coroutine_handle from_promise(Promise &) noexcept { return {}; }
-    };
-    struct suspend_always {
-        bool await_ready() const noexcept { return false; }
-        void await_suspend(coroutine_handle<>) const noexcept {}
-        void await_resume() const noexcept {}
-    };
-    }
-    struct ootask {
-        struct promise_type {
-            ootask get_return_object() { return {}; }
-            std::suspend_always initial_suspend() noexcept { return {}; }
-            std::suspend_always final_suspend() noexcept { return {}; }
-            void return_void() noexcept {}
-            void unhandled_exception() noexcept {}
-        };
-    };
-    ootask oo_coro() {
-        co_await std::suspend_always{};
-        co_return;
-    }
-    """)
-
-    @test g(J, "oo_coro")
-    croot = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(g))))
-    ca = _find_node(CC.CoawaitExpr, croot)
-    @test ca isa CC.CoawaitExpr
-    if ca !== nothing
-        before = CC.isImplicit(ca)
-        @test before == false
-        CC.setIsImplicit(ca, !before)
-        @test CC.isImplicit(ca) == !before
-        CC.setIsImplicit(ca, before)
-        @test CC.isImplicit(ca) == before
-    end
-
-    dispose(g)
-    dispose(J)
 end
 
 @testset "ExprCXX factories: call/construct/new/trait builders and deserialization shells" begin
@@ -2231,6 +1982,7 @@ end
     @test CC.getOperatorLoc(oce).ptr == loc.ptr
     @test CC.getNumArgs(oce) == 2
     @test CC.getArg(oce, 0).ptr == op.ptr
+    @test CC.getArg(oce, 1).ptr == op.ptr
     @test CC.getCallee(oce).ptr == op.ptr
 
     mce = CC.CXXMemberCallExpr(ctx, op, [op], intty, vk, loc, 0, 0)
@@ -2432,6 +2184,7 @@ end
     namespace nq_ns { int nq_fn(int); int nq_fn(double); }
     struct NQBase { int qm; };
     template <class T> int nq_dsme(T t) { return t.NQBase::qm; }
+    int nq_qual(NQBase t) { return t.NQBase::qm; }
     template <class T> int nq_dsdref() { return T::value; }
     template <class T> int nq_ule(T t) { return nq_ns::nq_fn(t); }
     typedef int NQInt;
@@ -2452,7 +2205,6 @@ end
     @test ql.ptr != C_NULL
     @test CC.hasQualifier(ql) == true
     nns = CC.getNestedNameSpecifier(ql)
-    @test nns isa CC.NestedNameSpecifier
     @test nns.ptr == CC.getQualifier(dsme).ptr   # the same specifier, now with locations
     let sr = CC.getSourceRange(ql)
         @test CC.isValid(sr)
@@ -2483,78 +2235,58 @@ end
     @test !CC.isValid(CC.getSourceRange(pre).begin_loc)
     CC.dispose(pre)
 
-    # getTypeLoc is defined only for the two type-naming kinds, and which kind clang records
-    # for a qualifier inside an uninstantiated template is its business — so branch on the
-    # kind actually present and check that the wrapper's gate agrees with it either way.
+    # In an uninstantiated template, `NQBase::` is recorded as Identifier, so
+    # getTypeLoc's type-naming gate rejects it. A resolved `t.NQBase::qm` records
+    # TypeSpec on the specifier itself.
     kq = CC.getKind(nns)
-    @test kq isa CC.LibClangEx.CXNestedNameSpecifierKind
-    if kq == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec ||
-       kq == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpecWithTemplate
-        tl = CC.getTypeLoc(ql)
-        @test tl isa CC.TypeLoc
-        @test tl.ptr != C_NULL
-        @test CC.isNull(tl) == false
-        @test CC.getAsString(CC.getType(tl)) == "struct NQBase" || CC.getAsString(CC.getType(tl)) == "NQBase"
-        CC.dispose(tl)
-    else
-        @test_throws AssertionError CC.getTypeLoc(ql)
-    end
+    @test kq == CC.LibClangEx.CXNestedNameSpecifierKind_Identifier
+    @test_throws AssertionError CC.getTypeLoc(ql)
     CC.dispose(ql)
+
+    @test f(I, "nq_qual")
+    me = _find_node(CC.MemberExpr, CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(f)))))
+    @test me isa CC.MemberExpr
+    @test CC.hasQualifier(me)
+    @test CC.getKind(CC.getQualifier(me)) == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec
 
     # ---- a dependent `T::` qualifier is always written ----
     ds = _find_node(CC.DependentScopeDeclRefExpr, tpl_body("nq_dsdref"))
     @test ds isa CC.DependentScopeDeclRefExpr
-    if ds isa CC.DependentScopeDeclRefExpr
-        dql = CC.getQualifierLoc(ds)
-        @test dql isa CC.NestedNameSpecifierLoc
-        @test CC.hasQualifier(dql) == true
-        @test CC.getNestedNameSpecifier(dql).ptr == CC.getQualifier(ds).ptr
-        let lsr = CC.getLocalSourceRange(dql)
-            @test CC.isValid(lsr)
-            @test lsr.begin_loc.ptr != C_NULL
-        end
-        CC.dispose(dql)
+    dql = CC.getQualifierLoc(ds)
+    @test CC.hasQualifier(dql) == true
+    @test CC.getNestedNameSpecifier(dql).ptr == CC.getQualifier(ds).ptr
+    let lsr = CC.getLocalSourceRange(dql)
+        @test CC.isValid(lsr)
+        @test lsr.begin_loc.ptr != C_NULL
     end
+    CC.dispose(dql)
 
     # ---- a namespace qualifier names no type, so getTypeLoc rejects it ----
     ule = _find_node(CC.UnresolvedLookupExpr, tpl_body("nq_ule"))
     @test ule isa CC.UnresolvedLookupExpr
-    if ule isa CC.UnresolvedLookupExpr
-        # the OverloadExpr-declared accessor, reached from the subclass carrier
-        uql = CC.getQualifierLoc(ule)
-        @test uql isa CC.NestedNameSpecifierLoc
-        @test CC.hasQualifier(uql) == true
-        ku = CC.getKind(CC.getNestedNameSpecifier(uql))
-        @test ku isa CC.LibClangEx.CXNestedNameSpecifierKind
-        @test ku != CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec
-        @test ku != CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpecWithTemplate
-        @test_throws AssertionError CC.getTypeLoc(uql)
-        CC.dispose(uql)
-    end
+    # the OverloadExpr-declared accessor, reached from the subclass carrier
+    uql = CC.getQualifierLoc(ule)
+    @test CC.hasQualifier(uql) == true
+    ku = CC.getKind(CC.getNestedNameSpecifier(uql))
+    @test ku != CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec
+    @test ku != CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpecWithTemplate
+    @test_throws AssertionError CC.getTypeLoc(uql)
+    CC.dispose(uql)
 
     # ---- the pseudo-destructor's own hasQualifier and its location box agree ----
     @test f(I, "nq_pdtor")
     pbody = CC.resolve(CC.getBody(CC.FunctionDecl(first(CC.get_decls(f)))))
     pd = _find_node(CC.CXXPseudoDestructorExpr, pbody)
     @test pd isa CC.CXXPseudoDestructorExpr
-    if pd isa CC.CXXPseudoDestructorExpr
-        pql = CC.getQualifierLoc(pd)
-        @test pql isa CC.NestedNameSpecifierLoc
-        @test CC.hasQualifier(pql) == CC.hasQualifier(pd)
-        let sr = CC.getSourceRange(pql)
-            @test !CC.isValid(sr)
-            @test CC.is_null_handle(sr.begin_loc)
-        end
-        if CC.hasQualifier(pql)
-            let lsr = CC.getLocalSourceRange(pql)
-                @test CC.isValid(lsr)
-                @test lsr.begin_loc.ptr != C_NULL
-            end
-        else
-            @test_throws AssertionError CC.getLocalSourceRange(pql)
-        end
-        CC.dispose(pql)
+    pql = CC.getQualifierLoc(pd)
+    @test CC.hasQualifier(pql) == CC.hasQualifier(pd)
+    @test !CC.hasQualifier(pd)     # `p->NQInt::~NQInt()` stores the name in the scope type
+    let sr = CC.getSourceRange(pql)
+        @test !CC.isValid(sr)
+        @test CC.is_null_handle(sr.begin_loc)
     end
+    @test_throws AssertionError CC.getLocalSourceRange(pql)
+    CC.dispose(pql)
 
     dispose(f)
     dispose(I)
@@ -2574,21 +2306,18 @@ end
     msb = CC.resolve(CC.getBody(CC.FunctionDecl(first(CC.get_decls(fms)))))
     mp = _find_node(CC.MSPropertyRefExpr, msb)
     @test mp isa CC.MSPropertyRefExpr
-    if mp isa CC.MSPropertyRefExpr
-        mql = CC.getQualifierLoc(mp)
-        @test mql isa CC.NestedNameSpecifierLoc
-        @test mql.ptr != C_NULL
-        @test CC.hasQualifier(mql) == false          # `p->x` is written unqualified
-        @test CC.is_null_handle(CC.getBeginLoc(mql))
-        @test CC.is_null_handle(CC.getEndLoc(mql))
-        @test_throws AssertionError CC.getLocalBeginLoc(mql)
-        @test_throws AssertionError CC.getLocalEndLoc(mql)
-        @test_throws AssertionError CC.getTypeLoc(mql)
-        mpre = CC.getPrefix(mql)                     # an empty prefix walk terminates
-        @test CC.hasQualifier(mpre) == false
-        CC.dispose(mpre)
-        CC.dispose(mql)
-    end
+    mql = CC.getQualifierLoc(mp)
+    @test mql.ptr != C_NULL
+    @test CC.hasQualifier(mql) == false          # `p->x` is written unqualified
+    @test CC.is_null_handle(CC.getBeginLoc(mql))
+    @test CC.is_null_handle(CC.getEndLoc(mql))
+    @test_throws AssertionError CC.getLocalBeginLoc(mql)
+    @test_throws AssertionError CC.getLocalEndLoc(mql)
+    @test_throws AssertionError CC.getTypeLoc(mql)
+    mpre = CC.getPrefix(mql)                     # an empty prefix walk terminates
+    @test CC.hasQualifier(mpre) == false
+    CC.dispose(mpre)
+    CC.dispose(mql)
 
     dispose(fms)
     dispose(Ims)
@@ -2716,6 +2445,14 @@ end
     @test Int(CC.getNumDecls(built5)) == nt
     @test CC.hasExplicitTemplateArgs(built5) == true
     @test Int(CC.getNumTemplateArgs(built5)) == Int(CC.size(li3))
+
+    # the two dependence flags are independent: same operands, only the new one flipped
+    built5a = CC.UnresolvedLookupExpr(ctx, nothing, q5, CC.getTemplateKeywordLoc(ule_t), ni5, true, li3, decls_t,
+                                      accs_t, false, false)
+    built5b = CC.UnresolvedLookupExpr(ctx, nothing, q5, CC.getTemplateKeywordLoc(ule_t), ni5, true, li3, decls_t,
+                                      accs_t, false, true)
+    @test CC.isInstantiationDependent(built5b)
+    @test CC.isInstantiationDependent(built5a) != CC.isInstantiationDependent(built5b)
     CC.dispose(ni5)
     CC.dispose(q5)
     CC.dispose(li3)

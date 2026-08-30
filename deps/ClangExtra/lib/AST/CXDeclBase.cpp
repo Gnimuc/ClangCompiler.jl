@@ -367,11 +367,16 @@ bool clang_Decl_isInAnotherModuleUnit(CXDecl D) {
 }
 
 bool clang_Decl_isDiscardedInGlobalModuleFragment(CXDecl D) {
-  return reinterpret_cast<clang::Decl *>(D)->isDiscardedInGlobalModuleFragment();
+  (void)D;
+  // Always false in the pinned LLVM: clang does not implement discarding
+  // declarations in the global module fragment ([module.global.frag]p3,4).
+  return false;
 }
 
 bool clang_Decl_shouldSkipCheckingODR(CXDecl D) {
-  return reinterpret_cast<clang::Decl *>(D)->shouldSkipCheckingODR();
+  auto *Decl = reinterpret_cast<clang::Decl *>(D);
+  return Decl->getASTContext().getLangOpts().SkipODRCheckInGMF &&
+         (Decl->isFromGlobalModule() || Decl->isFromHeaderUnit());
 }
 
 bool clang_Decl_hasDefiningAttr(CXDecl D) {
@@ -428,7 +433,8 @@ bool clang_Decl_isFromASTFile(CXDecl D) {
 }
 
 unsigned clang_Decl_getGlobalID(CXDecl D) {
-  return reinterpret_cast<clang::Decl *>(D)->getGlobalID();
+  return static_cast<unsigned>(
+      reinterpret_cast<clang::Decl *>(D)->getGlobalID().getRawValue());
 }
 
 unsigned clang_Decl_getOwningModuleID(CXDecl D) {
@@ -452,7 +458,9 @@ CXModule_ clang_Decl_getOwningModule(CXDecl D) {
 }
 
 CXModule_ clang_Decl_getOwningModuleForLinkage(CXDecl D, bool IgnoreLinkage) {
-  return reinterpret_cast<CXModule_>(reinterpret_cast<clang::Decl *>(D)->getOwningModuleForLinkage(IgnoreLinkage));
+  (void)IgnoreLinkage;
+  return reinterpret_cast<CXModule_>(
+      reinterpret_cast<clang::Decl *>(D)->getOwningModuleForLinkage());
 }
 
 bool clang_Decl_isUnconditionallyVisible(CXDecl D) {

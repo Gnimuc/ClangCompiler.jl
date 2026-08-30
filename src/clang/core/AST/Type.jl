@@ -63,6 +63,14 @@ struct ConstantArrayType <: AbstractConstantArrayType
 end
 
 """
+    struct ArrayParameterType <: AbstractArrayParameterType
+Hold a pointer to a `clang::ArrayParameterType` object.
+"""
+struct ArrayParameterType <: AbstractArrayParameterType
+    ptr::CXArrayParameterType
+end
+
+"""
     struct IncompleteArrayType <: AbstractIncompleteArrayType
 Hold a pointer to a `clang::IncompleteArrayType` object.
 """
@@ -727,4 +735,36 @@ Hold a pointer to a `clang::PipeType` object.
 """
 struct PipeType <: AbstractPipeType
     ptr::CXPipeType
+end
+
+"""
+    struct BoundsAttributedType <: AbstractBoundsAttributedType
+Hold a pointer to a `clang::BoundsAttributedType` object.
+"""
+struct BoundsAttributedType <: AbstractBoundsAttributedType
+    ptr::CXBoundsAttributedType
+end
+
+"""
+    struct CountAttributedType <: AbstractCountAttributedType
+Hold a pointer to a `clang::CountAttributedType` object.
+"""
+struct CountAttributedType <: AbstractCountAttributedType
+    ptr::CXCountAttributedType
+end
+
+"""
+    struct HLSLAttributedResourceType <: AbstractHLSLAttributedResourceType
+Hold a pointer to a `clang::HLSLAttributedResourceType` object.
+"""
+struct HLSLAttributedResourceType <: AbstractHLSLAttributedResourceType
+    ptr::CXHLSLAttributedResourceType
+end
+
+"""
+    struct PackIndexingType <: AbstractPackIndexingType
+Hold a pointer to a `clang::PackIndexingType` object.
+"""
+struct PackIndexingType <: AbstractPackIndexingType
+    ptr::CXPackIndexingType
 end

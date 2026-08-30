@@ -25,7 +25,9 @@ typedef enum CXModuleKind {
 // heap-allocates a clang::Module. When Parent is non-NULL the new module is
 // registered as a submodule of Parent, which then owns it — call
 // clang_Module_dispose only on parentless modules (disposing a module also
-// deletes all of its submodules).
+// deletes all of its submodules). LLVM 20 hid the constructor behind
+// ModuleConstructorTag (private to ModuleMap); the tag is an empty access
+// token and is reconstructed here.
 CXModule_ clang_Module_create(const char *Name, CXSourceLocation_ DefinitionLoc,
                              CXModule_ Parent, bool IsFramework, bool IsExplicit,
                              unsigned VisibilityID);
@@ -123,7 +125,8 @@ void clang_Module_markUnavailable(CXModule_ M, bool Unimportable);
 CXModule_ clang_Module_findSubmodule(CXModule_ M, const char *Name);
 
 // returns NULL when no submodule has that name and none can be inferred; an inferred
-// submodule is owned by M.
+// submodule is owned by M. LLVM 20 moved inference onto ModuleMap, so this is a
+// lookup of already-attached submodules for a module that has no map.
 CXModule_ clang_Module_findOrInferSubmodule(CXModule_ M, const char *Name);
 // asserts that M is a C++20 named module unit (clang_Module_isNamedModuleUnit);
 // returns NULL when M has no global module fragment.

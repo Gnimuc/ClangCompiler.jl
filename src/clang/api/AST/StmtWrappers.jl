@@ -282,6 +282,18 @@ function ParenExpr(x::AbstractStmt)
     return ParenExpr(p)
 end
 
+function isPackIndexingExpr(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isPackIndexingExpr(x)
+end
+
+function PackIndexingExpr(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToPackIndexingExpr(x)
+    p == C_NULL && _cast_failed(PackIndexingExpr, x)
+    return PackIndexingExpr(p)
+end
+
 function isPackExpansionExpr(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isPackExpansionExpr(x)
@@ -328,6 +340,18 @@ function UnresolvedLookupExpr(x::AbstractStmt)
     p = clang_Stmt_castToUnresolvedLookupExpr(x)
     p == C_NULL && _cast_failed(UnresolvedLookupExpr, x)
     return UnresolvedLookupExpr(p)
+end
+
+function isOpenACCAsteriskSizeExpr(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCAsteriskSizeExpr(x)
+end
+
+function OpenACCAsteriskSizeExpr(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCAsteriskSizeExpr(x)
+    p == C_NULL && _cast_failed(OpenACCAsteriskSizeExpr, x)
+    return OpenACCAsteriskSizeExpr(p)
 end
 
 function isOpaqueValueExpr(x::AbstractStmt)
@@ -558,18 +582,6 @@ function OMPArrayShapingExpr(x::AbstractStmt)
     return OMPArrayShapingExpr(p)
 end
 
-function isOMPArraySectionExpr(x::AbstractStmt)
-    @check_ptrs x
-    return clang_Stmt_isOMPArraySectionExpr(x)
-end
-
-function OMPArraySectionExpr(x::AbstractStmt)
-    @check_ptrs x
-    p = clang_Stmt_castToOMPArraySectionExpr(x)
-    p == C_NULL && _cast_failed(OMPArraySectionExpr, x)
-    return OMPArraySectionExpr(p)
-end
-
 function isNoInitExpr(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isNoInitExpr(x)
@@ -702,6 +714,18 @@ function ImaginaryLiteral(x::AbstractStmt)
     return ImaginaryLiteral(p)
 end
 
+function isHLSLOutArgExpr(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isHLSLOutArgExpr(x)
+end
+
+function HLSLOutArgExpr(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToHLSLOutArgExpr(x)
+    p == C_NULL && _cast_failed(HLSLOutArgExpr, x)
+    return HLSLOutArgExpr(p)
+end
+
 function isGenericSelectionExpr(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isGenericSelectionExpr(x)
@@ -820,6 +844,18 @@ function ExpressionTraitExpr(x::AbstractStmt)
     p = clang_Stmt_castToExpressionTraitExpr(x)
     p == C_NULL && _cast_failed(ExpressionTraitExpr, x)
     return ExpressionTraitExpr(p)
+end
+
+function isEmbedExpr(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isEmbedExpr(x)
+end
+
+function EmbedExpr(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToEmbedExpr(x)
+    p == C_NULL && _cast_failed(EmbedExpr, x)
+    return EmbedExpr(p)
 end
 
 function isDesignatedInitUpdateExpr(x::AbstractStmt)
@@ -1554,6 +1590,18 @@ function ArraySubscriptExpr(x::AbstractStmt)
     return ArraySubscriptExpr(p)
 end
 
+function isArraySectionExpr(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isArraySectionExpr(x)
+end
+
+function ArraySectionExpr(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToArraySectionExpr(x)
+    p == C_NULL && _cast_failed(ArraySectionExpr, x)
+    return ArraySectionExpr(p)
+end
+
 function isArrayInitLoopExpr(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isArrayInitLoopExpr(x)
@@ -1679,6 +1727,18 @@ function CaseStmt(x::AbstractStmt)
     return CaseStmt(p)
 end
 
+function isSYCLKernelCallStmt(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isSYCLKernelCallStmt(x)
+end
+
+function SYCLKernelCallStmt(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToSYCLKernelCallStmt(x)
+    p == C_NULL && _cast_failed(SYCLKernelCallStmt, x)
+    return SYCLKernelCallStmt(p)
+end
+
 function isSEHTryStmt(x::AbstractStmt)
     @check_ptrs x
     return clang_Stmt_isSEHTryStmt(x)
@@ -1737,6 +1797,174 @@ function ReturnStmt(x::AbstractStmt)
     p = clang_Stmt_castToReturnStmt(x)
     p == C_NULL && _cast_failed(ReturnStmt, x)
     return ReturnStmt(p)
+end
+
+function isOpenACCConstructStmt(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCConstructStmt(x)
+end
+
+function OpenACCConstructStmt(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCConstructStmt(x)
+    p == C_NULL && _cast_failed(OpenACCConstructStmt, x)
+    return OpenACCConstructStmt(p)
+end
+
+function isOpenACCWaitConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCWaitConstruct(x)
+end
+
+function OpenACCWaitConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCWaitConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCWaitConstruct, x)
+    return OpenACCWaitConstruct(p)
+end
+
+function isOpenACCUpdateConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCUpdateConstruct(x)
+end
+
+function OpenACCUpdateConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCUpdateConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCUpdateConstruct, x)
+    return OpenACCUpdateConstruct(p)
+end
+
+function isOpenACCShutdownConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCShutdownConstruct(x)
+end
+
+function OpenACCShutdownConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCShutdownConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCShutdownConstruct, x)
+    return OpenACCShutdownConstruct(p)
+end
+
+function isOpenACCSetConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCSetConstruct(x)
+end
+
+function OpenACCSetConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCSetConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCSetConstruct, x)
+    return OpenACCSetConstruct(p)
+end
+
+function isOpenACCInitConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCInitConstruct(x)
+end
+
+function OpenACCInitConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCInitConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCInitConstruct, x)
+    return OpenACCInitConstruct(p)
+end
+
+function isOpenACCExitDataConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCExitDataConstruct(x)
+end
+
+function OpenACCExitDataConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCExitDataConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCExitDataConstruct, x)
+    return OpenACCExitDataConstruct(p)
+end
+
+function isOpenACCEnterDataConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCEnterDataConstruct(x)
+end
+
+function OpenACCEnterDataConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCEnterDataConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCEnterDataConstruct, x)
+    return OpenACCEnterDataConstruct(p)
+end
+
+function isOpenACCAssociatedStmtConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCAssociatedStmtConstruct(x)
+end
+
+function OpenACCAssociatedStmtConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCAssociatedStmtConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCAssociatedStmtConstruct, x)
+    return OpenACCAssociatedStmtConstruct(p)
+end
+
+function isOpenACCLoopConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCLoopConstruct(x)
+end
+
+function OpenACCLoopConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCLoopConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCLoopConstruct, x)
+    return OpenACCLoopConstruct(p)
+end
+
+function isOpenACCHostDataConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCHostDataConstruct(x)
+end
+
+function OpenACCHostDataConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCHostDataConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCHostDataConstruct, x)
+    return OpenACCHostDataConstruct(p)
+end
+
+function isOpenACCDataConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCDataConstruct(x)
+end
+
+function OpenACCDataConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCDataConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCDataConstruct, x)
+    return OpenACCDataConstruct(p)
+end
+
+function isOpenACCComputeConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCComputeConstruct(x)
+end
+
+function OpenACCComputeConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCComputeConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCComputeConstruct, x)
+    return OpenACCComputeConstruct(p)
+end
+
+function isOpenACCCombinedConstruct(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOpenACCCombinedConstruct(x)
+end
+
+function OpenACCCombinedConstruct(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOpenACCCombinedConstruct(x)
+    p == C_NULL && _cast_failed(OpenACCCombinedConstruct, x)
+    return OpenACCCombinedConstruct(p)
 end
 
 function isObjCForCollectionStmt(x::AbstractStmt)
@@ -2193,6 +2421,30 @@ function OMPTileDirective(x::AbstractStmt)
     p = clang_Stmt_castToOMPTileDirective(x)
     p == C_NULL && _cast_failed(OMPTileDirective, x)
     return OMPTileDirective(p)
+end
+
+function isOMPReverseDirective(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOMPReverseDirective(x)
+end
+
+function OMPReverseDirective(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOMPReverseDirective(x)
+    p == C_NULL && _cast_failed(OMPReverseDirective, x)
+    return OMPReverseDirective(p)
+end
+
+function isOMPInterchangeDirective(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOMPInterchangeDirective(x)
+end
+
+function OMPInterchangeDirective(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOMPInterchangeDirective(x)
+    p == C_NULL && _cast_failed(OMPInterchangeDirective, x)
+    return OMPInterchangeDirective(p)
 end
 
 function isOMPLoopDirective(x::AbstractStmt)
@@ -2733,6 +2985,18 @@ function OMPAtomicDirective(x::AbstractStmt)
     p = clang_Stmt_castToOMPAtomicDirective(x)
     p == C_NULL && _cast_failed(OMPAtomicDirective, x)
     return OMPAtomicDirective(p)
+end
+
+function isOMPAssumeDirective(x::AbstractStmt)
+    @check_ptrs x
+    return clang_Stmt_isOMPAssumeDirective(x)
+end
+
+function OMPAssumeDirective(x::AbstractStmt)
+    @check_ptrs x
+    p = clang_Stmt_castToOMPAssumeDirective(x)
+    p == C_NULL && _cast_failed(OMPAssumeDirective, x)
+    return OMPAssumeDirective(p)
 end
 
 function isOMPCanonicalLoop(x::AbstractStmt)
