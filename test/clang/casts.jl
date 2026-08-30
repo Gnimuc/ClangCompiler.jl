@@ -70,15 +70,18 @@ using Test
         @test occursin("clang::FunctionDecl", msg)   # the class clang says it is
         @test occursin("clang::VarDecl", msg)        # the class that was asked for
 
-        # the predicate and the cast are the same question, so they never disagree
-        for T in (CC.FunctionDecl, CC.VarDecl, CC.NamedDecl, CC.CXXMethodDecl, CC.TagDecl)
-            pred = getproperty(CC, Symbol("is", nameof(T)))
-            if pred(d)
-                @test T(d) == fd
-            else
-                @test_throws CC.CastError T(d)
-            end
-        end
+        # the predicate and the cast are the same question, so they never disagree.
+        # Unrolled so each polarity is a live assertion rather than a runtime branch.
+        @test CC.isFunctionDecl(d)
+        @test CC.FunctionDecl(d) == fd
+        @test CC.isNamedDecl(d)
+        @test CC.NamedDecl(d) == fd
+        @test !CC.isVarDecl(d)
+        @test_throws CC.CastError CC.VarDecl(d)
+        @test !CC.isCXXMethodDecl(d)
+        @test_throws CC.CastError CC.CXXMethodDecl(d)
+        @test !CC.isTagDecl(d)
+        @test_throws CC.CastError CC.TagDecl(d)
     end
 
     @testset "the cast admits every derived class, as dyn_cast does" begin

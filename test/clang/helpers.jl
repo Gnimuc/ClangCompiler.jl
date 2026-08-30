@@ -20,8 +20,8 @@ using Test
 
     # ---- src/clang/frontend.jl ----
     ctx = CC.get_ast_context(ci)
-    @test ctx isa CC.ASTContext
-    @test CC.print_stats_all(ci) === nothing  # also runs print_stats_options/print_stats_modules
+    @test ctx.ptr == CC.getASTContext(ci).ptr
+    CC.print_stats_all(ci)  # also runs print_stats_options/print_stats_modules
 
     # ---- src/clang/lex.jl ----
     pp = CC.getPreprocessor(ci)
@@ -29,7 +29,7 @@ using Test
 
     # ---- src/clang/parse.jl ----
     parser = CC.get_parser(I)
-    @test CC.get_target(parser) isa CC.TargetInfo
+    @test CC.get_target(parser).ptr == CC.getTarget(ci).ptr
 
     # ---- reach a FunctionDecl ----
     f = DeclFinder(I)
@@ -37,19 +37,24 @@ using Test
     fd = CC.FunctionDecl(get_decl(f))
 
     # ---- src/clang/sema.jl: LookupResult predicates on the finder's populated result ----
+    # DeclFinder uses LookupOrdinaryName, so these two flags stay off; the setters
+    # that flip them (and the class-member lookup that would turn is_class_lookup
+    # on) live in test/clang/api/Sema/Lookup.jl.
     lr = f.result
-    @test CC.is_template_name(lr) isa Bool
+    @test CC.is_template_name(lr) == false
     @test CC.is_ambiguous(lr) == false
     @test CC.is_overloaded(lr) == false
-    @test CC.is_class_lookup(lr) isa Bool
+    @test CC.is_class_lookup(lr) == false
 
     # ---- src/clang/ast.jl: Decl helpers ----
-    @test CC.get_ast_context(fd) isa CC.ASTContext           # AbstractDecl method
-    @test CC.get_ast_context(CC.castToDeclContext(fd)) isa CC.ASTContext  # DeclContext method
-    @test CC.get_begin_loc(fd) isa CC.SourceLocation
-    @test CC.get_end_loc(fd) isa CC.SourceLocation
+    # both overloads must reach the same context the interpreter built; a neighbouring
+    # getter returning a well-typed empty carrier would satisfy `isa` and fail this
+    @test CC.get_ast_context(fd).ptr == ctx.ptr
+    @test CC.get_ast_context(CC.castToDeclContext(fd)).ptr == ctx.ptr
     loc = CC.get_loc(fd)
-    @test loc isa CC.SourceLocation
+    @test CC.isValid(CC.get_begin_loc(fd))
+    @test CC.isValid(CC.get_end_loc(fd))
+    @test CC.isValid(loc)
 
     # DeclarationName helpers
     dn = CC.getDeclName(fd)
@@ -58,49 +63,46 @@ using Test
     @test CC.is_empty(CC.DeclarationName()) == true
 
     # ---- src/clang/decl.jl ----
-    @test CC.get_decl_kind(fd) isa CC.CXDeclKind
     @test CC.get_decl_kind_name(fd) == "Function"
 
     # ---- src/clang/stmt.jl ----
     body = CC.getBody(fd)
-    @test CC.get_stmt_class(body) isa CC.CXStmtClass
     @test CC.get_stmt_class_name(body) == "CompoundStmt"
-    @test CC.dump_ast(body) === nothing  # writes the AST dump to stderr
+    CC.dump_ast(body)  # writes the AST dump to stderr
 
     # ---- src/clang/ast.jl: ASTContext helpers ----
     it = CC.get_identifier_table(ctx)
-    @test it isa CC.IdentifierTable
-    @test CC.get_name(it, "covhelp_fn") isa CC.IdentifierInfo  # basic.jl get_name(::IdentifierTable, s)
+    @test it.ptr == CC.getIdents(ctx).ptr
+    @test CC.getName(CC.get_name(it, "covhelp_fn")) == "covhelp_fn"
 
     qt_int = CC.get_qual_type(CC.IntTy(ctx))
-    @test CC.get_pointer_type(ctx, qt_int) isa CC.QualType
-    @test CC.get_lvalue_reference_type(ctx, qt_int) isa CC.QualType
-    sz = CC.size_of(ctx, qt_int)
-    @test sz isa Int && sz > 0
+    @test CC.get_name(CC.get_pointer_type(ctx, qt_int)) == "int *"
+    @test CC.get_name(CC.get_lvalue_reference_type(ctx, qt_int)) == "int &"
+    @test CC.size_of(ctx, qt_int) > 0
 
     @test f(I, "CovHelpRec")
     rd = CC.CXXRecordDecl(get_tag(f))
-    @test CC.get_decl_type(ctx, rd) isa CC.QualType
-    @test CC.get_decl_type(ctx, rd, rd) isa CC.QualType  # prev's TypeForDecl set by the call above
+    @test CC.get_name(CC.get_decl_type(ctx, rd)) == "struct CovHelpRec"
+    @test CC.get_name(CC.get_decl_type(ctx, rd, rd)) == "struct CovHelpRec"  # prev's TypeForDecl set by the call above
 
     # dump(::CXXScopeSpec) via a populated scope spec
     dss = CC.CXXScopeSpec()
     tail = CC.parse_cxx_scope_spec(I, dss, "CovHelpNS::CovHelpInner")
-    @test tail isa AbstractString
+    @test tail == "CovHelpInner"
     @test CC.isValid(dss)
-    @test CC.dump(dss) === nothing  # writes to stderr
+    CC.dump(dss)  # writes to stderr
     dispose(dss)
 
     # ---- src/clang/basic.jl ----
     sm = CC.getSourceManager(ci)
     fid = CC.getMainFileID(sm)
-    @test CC.value(fid) isa Int
+    @test CC.value(fid) != 0  # shape-only: the host decides the FileID encoding; zero is the invalid id
     dispose(fid)
-    @test CC.value(loc) isa Integer
+    @test CC.value(loc) != 0  # shape-only: the host decides the location encoding; zero is the invalid loc
     sr = CC.getSourceRange(fd)
-    @test CC.get_begin_loc(sr) isa CC.SourceLocation
-    @test CC.get_end_loc(sr) isa CC.SourceLocation
-    @test CC.get_main_file_end_loc(sm) isa CC.SourceLocation
+    @test CC.isValid(CC.get_begin_loc(sr))
+    @test CC.isValid(CC.get_end_loc(sr))
+    @test CC.isValid(CC.get_main_file_end_loc(sm))
 
     # ---- src/clang/utils.jl: get_string(Ptr{CXStringSet}) NULL path (fully controlled) ----
     @test CC.get_string(Ptr{CC.CXStringSet}(C_NULL)) == String[]
@@ -110,8 +112,8 @@ using Test
     # itself calls HandleTranslationUnit on it, so one extra call is a benign finalize.
     sema = CC.get_sema(I)
     cg = CC.getCodeGen(I.interp)
-    @test CC.processWeakTopLevelDecls(sema, cg) === nothing  # no #pragma weak decls -> no-op
-    @test CC.HandleTranslationUnit(cg, ctx) === nothing
+    CC.processWeakTopLevelDecls(sema, cg)  # no #pragma weak decls -> no-op
+    CC.HandleTranslationUnit(cg, ctx)
 
     dispose(f)
     dispose(I)
@@ -121,12 +123,12 @@ using Test
     ft = CC.LLVM.FunctionType(CC.LLVM.VoidType())
     mod1 = CC.LLVM.Module("covhelp_mod1")
     CC.LLVM.Function(mod1, "covhelp_llfn", ft)
-    @test CC.lookup_function(mod1, "covhelp_llfn") isa CC.LLVM.Function
+    @test CC.LLVM.name(CC.lookup_function(mod1, "covhelp_llfn")) == "covhelp_llfn"
 
     mod2 = CC.LLVM.Module("covhelp_mod2")
     CC.LLVM.Function(mod2, "covhelp_llfn2", ft)
     ee = CC.LLVM.Interpreter(mod2)  # takes ownership of mod2
-    @test CC.link_crt(ee) === nothing  # no static ctors -> no-op
+    CC.link_crt(ee)  # no static ctors -> no-op
     CC.LLVM.dispose(ee)
     CC.LLVM.dispose(mod1)
     CC.LLVM.dispose(llctx)
@@ -160,7 +162,7 @@ end
     CC.LLVM.ret!(builder)
     CC.LLVM.dispose(builder)
     ee = CC.LLVM.Interpreter(mod)
-    @test CC.lookup_function(ee, "chf_llfn") isa CC.LLVM.Function
+    @test CC.LLVM.name(CC.lookup_function(ee, "chf_llfn")) == "chf_llfn"
     CC.LLVM.dispose(ee)
     CC.LLVM.dispose(llctx)
 end

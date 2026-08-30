@@ -30,7 +30,8 @@ const CC = ClangCompiler
     CC.createSourceManager(instance)
 
     entry = CC.getFileEntry(instance, src)
-    @test entry.ptr != C_NULL
+    @test CC.real_path_name(entry) == src
+    @test CC.getSize(entry) > 0
 
     CC.createPreprocessor(instance)
     redirect_stdio(; stderr=devnull) do
