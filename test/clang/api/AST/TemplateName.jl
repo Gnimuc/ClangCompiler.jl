@@ -15,11 +15,11 @@ using Test
     @test t0 isa CC.TemplateSpecializationType
 
     tn = CC.getTemplateName(t0)
-    @test tn isa CC.TemplateName
     @test CC.get_name(t0) == "CtnBox"
     @test CC.isNull(tn) == false
-    @test CC.getKind(tn) isa CC.LibClangEx.CXTemplateName_NameKind
-    @test CC.getUnderlying(tn) isa CC.TemplateName
+    # `CtnBox<int>` is written without a nested-name-specifier, but the elaborated
+    # sugar still stores the name as a QualifiedTemplateName.
+    @test CC.getKind(tn) == CC.LibClangEx.CXTemplateName_QualifiedTemplate
     @test CC.isDependent(tn) == false
     @test !(CC.isInstantiationDependent(tn))
     @test CC.containsUnexpandedParameterPack(tn) == false
@@ -35,8 +35,12 @@ end
     I = create_interpreter(String[])
     src = """
     namespace TnNS { template <typename T> struct TnBox { T v; }; }
+    template <typename T> struct TnAlt { T v; };
     template <template <typename> class TT> struct TnHolder { TT<int> m; };
+    template <template <typename> class TT, template <typename> class UU>
+    struct TnHolder2 { TT<int> m; UU<int> n; };
     TnHolder<TnNS::TnBox> tn_qual_v;
+    TnHolder2<TnNS::TnBox, TnAlt> tn_two;
     template <typename T> TnHolder<T::template Inner> tn_dep_probe();
     """
     CC.parse(I, src)
@@ -68,14 +72,10 @@ end
           "TnNS::TnBox"
 
     qtn = CC.getAsQualifiedTemplateName(tn_q)
-    @test qtn isa CC.QualifiedTemplateName
-    @test qtn.ptr != C_NULL
     @test !(CC.hasTemplateKeyword(qtn))
     nns = CC.getQualifier(qtn)
-    @test nns isa CC.NestedNameSpecifier
-    @test CC.getName(nns) isa AbstractString
+    @test CC.getName(nns) == "TnNS::"
     und = CC.getUnderlyingTemplate(qtn)
-    @test und isa CC.TemplateName
     @test CC.getKind(und) == CC.LibClangEx.CXTemplateName_Template
 
     # The getAs* family is total: every other arm answers with a NULL carrier.
@@ -89,7 +89,7 @@ end
     # Inside the instantiation, TT<int> became TnNS::TnBox<int> through a substituted
     # template template parameter.
     rd = CC.getAsCXXRecordDecl(outer)
-    @test rd isa CC.CXXRecordDecl
+    @test !CC.is_null_handle(rd)
     flds = CC.getFields(rd)
     @test length(flds) == 1
     ftst = tst_of(CC.getType(flds[1]))
@@ -97,14 +97,28 @@ end
     tn_s = CC.getTemplateName(ftst)
     @test CC.getKind(tn_s) == CC.LibClangEx.CXTemplateName_SubstTemplateTemplateParm
     sub = CC.getAsSubstTemplateTemplateParm(tn_s)
-    @test sub isa CC.SubstTemplateTemplateParmStorage
-    @test sub.ptr != C_NULL
     # the substitution stands in for the first (and only) template template parameter
     @test Int(CC.getIndex(sub)) == 0
-    @test !CC.is_null_handle(CC.getAssociatedDecl(sub))
+    @test CC.getName(CC.NamedDecl(CC.getAssociatedDecl(sub))) == "TnHolder"
     repl = CC.getReplacement(sub)
-    @test repl isa CC.TemplateName
     @test CC.isNull(repl) == false
+
+    # two template template parameters so getIndex cannot ignore its subject
+    @test f(I, "tn_two")
+    two = tst_of(CC.getType(CC.VarDecl(get_decl(f))))
+    @test two isa CC.TemplateSpecializationType
+    two_rd = CC.getAsCXXRecordDecl(two)
+    @test !CC.is_null_handle(two_rd)
+    two_flds = CC.getFields(two_rd)
+    @test length(two_flds) == 2
+    idx = Int[]
+    for fld in two_flds
+        ft = tst_of(CC.getType(fld))
+        @test ft isa CC.TemplateSpecializationType
+        st = CC.getAsSubstTemplateTemplateParm(CC.getTemplateName(ft))
+        push!(idx, Int(CC.getIndex(st)))
+    end
+    @test sort(idx) == [0, 1]
 
     # "T::template Inner" as a template template argument is a DependentTemplateName.
     @test f(I, "tn_dep_probe")
@@ -118,8 +132,6 @@ end
     @test CC.getKind(tn_d) == CC.LibClangEx.CXTemplateName_DependentTemplate
     @test CC.getDependence(tn_d) != 0
     dtn = CC.getAsDependentTemplateName(tn_d)
-    @test dtn isa CC.DependentTemplateName
-    @test dtn.ptr != C_NULL
     @test !CC.is_null_handle(CC.getQualifier(dtn))
     @test CC.isIdentifier(dtn)
     @test CC.isOverloadedOperator(dtn) == false
