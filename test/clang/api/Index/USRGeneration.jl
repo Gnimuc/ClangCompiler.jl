@@ -8,7 +8,6 @@ using Test
     @test CC.getUSRSpacePrefix() == "c:"
 
     ivar = CC.generateUSRForObjCIvar("myIvar")
-    @test ivar isa String
     @test occursin("myIvar", ivar)
 
     @test occursin("kFoo", CC.generateUSRForEnumConstant("kFoo"))
@@ -43,7 +42,6 @@ using Test
     @test f(I, "usr_probe_fn")
     d = CC.get_decl(f)
     usr = CC.generateUSRForDecl(d)
-    @test usr isa String
     @test startswith(usr, "c:")
     @test occursin("usr_probe_fn", usr)
     @test CC.generateUSRForDecl(d) == usr    # deterministic
@@ -51,7 +49,7 @@ using Test
     ctx = CC.get_ast_context(I)
     qt = CC.getCanonicalTypeInternal(CC.jlty_to_clty(Cint, ctx))
     tusr = CC.generateUSRForType(qt, ctx)
-    @test tusr isa String
+    @test startswith(tusr, "c:")
     @test CC.generateUSRForType(qt, ctx) == tusr    # deterministic
 
     CC.dispose(f)

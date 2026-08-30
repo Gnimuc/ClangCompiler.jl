@@ -37,6 +37,7 @@ end
     args = CC.getArguments(cmd)
     @test length(args) == CC.getNumArguments(cmd)
     @test args[1] == CC.getArgument(cmd, 0)
+    @test args[2] == CC.getArgument(cmd, 1)
     @test "-cc1" in args
     @test "-fsyntax-only" in args
     @test src in args
@@ -81,7 +82,9 @@ end
     # The tool that built it, folded in through getCreator.
     tool = CC.getCreator(cmd)
     @test CC.getName(tool) == "clang"
-    @test !isempty(CC.getShortName(tool))
+    # the diagnostic name is not the internal name, so a shim returning either
+    # field for both still fails one of these
+    @test CC.getShortName(tool) == "clang frontend"
     @test !CC.isLinkJob(tool)
     # the toolchain reached through the tool is the one the compilation was built for
     @test CC.getTripleString(CC.getToolChain(tool)) == CC.getTripleString(CC.getDefaultToolChain(comp))

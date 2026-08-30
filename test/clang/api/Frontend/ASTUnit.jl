@@ -38,11 +38,13 @@ using Test
     # ASTUnit::create leaves this at its default; only the LoadFrom* entry points set it
     @test CC.getOnlyLocalDecls(au) == false
 
-    owns = CC.getOwnsRemappedFileBuffers(au)
-    @test owns isa Bool
-    @test CC.setOwnsRemappedFileBuffers(au, !owns) === nothing
-    @test CC.getOwnsRemappedFileBuffers(au) == !owns
-    CC.setOwnsRemappedFileBuffers(au, owns)
+    # ASTUnit::create defaults this to true; the round-trip is what separates a getter
+    # stuck at the default from one that actually writes
+    @test CC.getOwnsRemappedFileBuffers(au) == true
+    @test CC.setOwnsRemappedFileBuffers(au, false) === nothing
+    @test CC.getOwnsRemappedFileBuffers(au) == false
+    CC.setOwnsRemappedFileBuffers(au, true)
+    @test CC.getOwnsRemappedFileBuffers(au) == true
 
     # No frontend input and no main file registered, so both names come back empty.
     @test isempty(CC.getMainFileName(au))

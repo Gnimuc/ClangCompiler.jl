@@ -15,8 +15,6 @@ using Test
     @test CC.getKind(ta_null) == CC.CXTemplateArgument_NullPtr
 
     ml = CC.MultiLevelTemplateArgumentList()
-    @test ml isa CC.MultiLevelTemplateArgumentList
-    @test ml.ptr != C_NULL
 
     # a fresh list substitutes nothing and defaults to the specialization kind
     @test CC.getNumLevels(ml) == 0
@@ -40,8 +38,6 @@ using Test
 
     # the associated decl is stored canonicalised, and the Final bit round-trips
     assoc = CC.getAssociatedDecl(ml, 0)
-    @test assoc isa CC.Decl
-    @test assoc.ptr != C_NULL
     @test CC.getDeclKindName(assoc) == "TranslationUnit"
     @test CC.isAssociatedDeclFinal(ml, 0) == true
 

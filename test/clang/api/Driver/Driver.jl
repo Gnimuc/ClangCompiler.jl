@@ -11,7 +11,6 @@ using Test
 
 @testset "Driver resources path" begin
     path = CC.GetResourcesPath(Libdl.dlpath(CC.libclangex))
-    @test path isa String
     @test !isempty(path)
     @test occursin("clang", path)
 end
@@ -22,23 +21,21 @@ end
     exe = joinpath("usr", "bin", "clang")
     triple = "x86_64-unknown-linux-gnu"
     drv = CC.Driver(exe, triple, diags)
-    @test drv isa CC.Driver
 
     # Nothing here is host-decided: the triple and the executable path are the two the
-    # driver was constructed with, and every derived path follows from them. `isa String`
-    # held equally for an accessor returning a sibling member -- the sysroot and the
-    # resource dir are both strings, and only one of them is empty.
+    # driver was constructed with, and every derived path follows from them. LLVM 20
+    # dropped the separate InstalledDir override, so Dir and InstalledDir are the same
+    # member -- both the dirname of the executable, until setInstalledDir moves it.
     @test CC.getTargetTriple(drv) == triple
     @test CC.getClangProgramPath(drv) == exe
     @test CC.getInstalledDir(drv) == dirname(exe)
-    @test CC.getDir(drv) isa String
+    @test CC.getDir(drv) == dirname(exe)
     @test occursin("clang", CC.getResourceDir(drv))
     # no --sysroot and no -isysroot were passed, so these stay at their empty defaults
     @test isempty(CC.getSysRoot(drv))
     @test isempty(CC.getDyldPrefix(drv))
 
     old = CC.getCheckInputsExist(drv)
-    @test old isa Bool
     CC.setCheckInputsExist(drv, !old)
     @test CC.getCheckInputsExist(drv) == !old
     CC.setCheckInputsExist(drv, old)
@@ -54,19 +51,24 @@ end
     diags = CC.DiagnosticsEngine()
     drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
 
-    modes = [CC.CCCIsCXX(drv), CC.CCCIsCPP(drv), CC.CCCIsCC(drv), CC.IsCLMode(drv), CC.IsFlangMode(drv),
-             CC.IsDXCMode(drv)]
-    @test all(m -> m isa Bool, modes)
-    # Driver::Mode is a single enum, so at most one predicate can be true.
-    @test count(modes) <= 1
+    # Driver::Mode starts at GCCMode and only argument processing consults the
+    # executable name, so a driver that has not built a compilation is a gcc driver
+    # and none of the others. A predicate stuck on false, or swapped with a sibling,
+    # fails one of these.
+    @test CC.CCCIsCC(drv)
+    @test !CC.CCCIsCXX(drv)
+    @test !CC.CCCIsCPP(drv)
+    @test !CC.IsCLMode(drv)
+    @test !CC.IsFlangMode(drv)
+    @test !CC.IsDXCMode(drv)
 
     # -ccc-gcc-name was not passed, so this is the empty default
     @test isempty(CC.getCCCGenericGCCName(drv))
-    @test !CC.is_null_handle(CC.getDiags(drv))
+    @test CC.getDiags(drv).ptr == diags.ptr
 
-    img = CC.getDefaultImageName(drv)
-    @test img isa String
-    @test !isempty(img)
+    # the image name is derived from the triple the driver was constructed with, not
+    # from the host: a linux triple is `a.out` even on Windows
+    @test CC.getDefaultImageName(drv) == "a.out"
 
     # getLTOMode is deliberately NOT called here: Driver::LTOMode and OffloadLTOMode
     # have no default initializer and are assigned only by setLTOMode during
@@ -74,7 +76,7 @@ end
     # is undefined behaviour (it returned a value outside the enum on Linux CI).
 
     old_title = CC.getTitle(drv)
-    @test old_title isa String
+    @test !isempty(old_title)
     CC.setTitle(drv, "clangcompiler test driver")
     @test CC.getTitle(drv) == "clangcompiler test driver"
     CC.setTitle(drv, old_title)
@@ -90,12 +92,9 @@ end
     drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
 
     # No command line has been processed, so no configuration file was loaded.
-    cfgs = CC.getConfigFiles(drv)
-    @test cfgs isa Vector{String}
-    @test isempty(cfgs)
+    @test isempty(CC.getConfigFiles(drv))
 
     probe = CC.getProbePrecompiled(drv)
-    @test probe isa Bool
     CC.setProbePrecompiled(drv, !probe)
     @test CC.getProbePrecompiled(drv) == !probe
     CC.setProbePrecompiled(drv, probe)
@@ -109,15 +108,21 @@ end
 
     CC.setInstalledDir(drv, "usr/lib/llvm/bin")
     @test CC.getInstalledDir(drv) == "usr/lib/llvm/bin"
+    # LLVM 20 dropped InstalledDir: the setter writes Dir, so getDir moves with it.
+    @test CC.getDir(drv) == "usr/lib/llvm/bin"
 
-    flags = [CC.isSaveTempsEnabled(drv), CC.isSaveTempsObj(drv), CC.embedBitcodeEnabled(drv),
-             CC.embedBitcodeInObject(drv), CC.embedBitcodeMarkerOnly(drv), CC.offloadHostOnly(drv),
-             CC.offloadDeviceOnly(drv), CC.hasHeaderMode(drv)]
-    @test all(v -> v isa Bool, flags)
-    # Driver::Offload is a single enum, so host-only and device-only exclude each
-    # other; the two BitcodeEmbed spellings exclude each other the same way.
-    @test !(CC.offloadHostOnly(drv) && CC.offloadDeviceOnly(drv))
-    @test !(CC.embedBitcodeInObject(drv) && CC.embedBitcodeMarkerOnly(drv))
+    # Each of these is the constructor default (`SaveTempsNone`, `EmbedNone`,
+    # `OffloadHostDevice`, `HeaderMode_None`). A predicate stuck at true, or a shim
+    # reading a neighbouring member that the constructor also zeroed, still passes
+    # here -- the true polarities live in the LTO / header-unit testsets below.
+    @test !CC.isSaveTempsEnabled(drv)
+    @test !CC.isSaveTempsObj(drv)
+    @test !CC.embedBitcodeEnabled(drv)
+    @test !CC.embedBitcodeInObject(drv)
+    @test !CC.embedBitcodeMarkerOnly(drv)
+    @test !CC.offloadHostOnly(drv)
+    @test !CC.offloadDeviceOnly(drv)
+    @test !CC.hasHeaderMode(drv)
 
     # The driver holds a reference to the engine: dispose it first.
     CC.dispose(drv)
@@ -134,26 +139,52 @@ end
     # look trustworthy. Processing arguments first is what gives the two calls a meaning,
     # and -flto is what separates them -- a predicate stuck at either answer fails here.
     CC.setCheckInputsExist(drv, false)
-    CC.BuildCompilation(drv, ["clang", "-fsyntax-only", "lto-probe.cpp"])
+    syn_comp = CC.BuildCompilation(drv, ["clang", "-fsyntax-only", "lto-probe.cpp"])
     @test CC.isUsingLTO(drv) == false
 
-    lto_drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", CC.DiagnosticsEngine())
+    lto_diags = CC.DiagnosticsEngine()
+    lto_drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", lto_diags)
     CC.setCheckInputsExist(lto_drv, false)
-    CC.BuildCompilation(lto_drv, ["clang", "-flto", "-c", "lto-probe.cpp"])
+    lto_comp = CC.BuildCompilation(lto_drv, ["clang", "-flto", "-c", "lto-probe.cpp"])
     @test CC.isUsingLTO(lto_drv) == true
+    # plain `-flto` is full LTO; `-flto=thin` would be the other kind, so a shim
+    # that only flipped the "using LTO" bit without recording the kind fails here
+    @test CC.getLTOMode(lto_drv) == CC.CXLTOKind_LTOK_Full
     # the offload query reads a separate mode that -flto alone does not set
     @test CC.isUsingLTO(lto_drv, true) == false
+    @test CC.getLTOMode(lto_drv, true) == CC.CXLTOKind_LTOK_None
+    CC.dispose(lto_comp)
+    CC.dispose(lto_drv)
+    CC.dispose(lto_diags)
 
-    # Both create their entry on disk and hand ownership to the caller.
+    # `-save-temps` and `-fembed-bitcode` are the true polarities of the constructor
+    # defaults asserted in the flags testset: a predicate stuck at false fails here.
+    save_diags = CC.DiagnosticsEngine()
+    save_drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", save_diags)
+    CC.setCheckInputsExist(save_drv, false)
+    save_comp = CC.BuildCompilation(save_drv,
+                                    ["clang", "-save-temps", "-fembed-bitcode", "-c", "lto-probe.cpp"])
+    @test CC.isSaveTempsEnabled(save_drv)
+    @test !CC.isSaveTempsObj(save_drv)
+    @test CC.embedBitcodeEnabled(save_drv)
+    @test CC.embedBitcodeInObject(save_drv)
+    @test !CC.embedBitcodeMarkerOnly(save_drv)
+    CC.dispose(save_comp)
+    CC.dispose(save_drv)
+    CC.dispose(save_diags)
+
+    # Both create their entry on disk and hand ownership to the caller. The name
+    # carries the prefix and suffix the caller chose.
     tmpfile = CC.GetTemporaryPath(drv, "clangcompiler", "tmp")
-    @test tmpfile isa String
-    @test !isempty(tmpfile)
-    isempty(tmpfile) || rm(tmpfile; force=true)
+    @test isfile(tmpfile)
+    @test occursin("clangcompiler", tmpfile)
+    @test endswith(tmpfile, ".tmp")
+    rm(tmpfile; force=true)
 
     tmpdir = CC.GetTemporaryDirectory(drv, "clangcompiler")
-    @test tmpdir isa String
-    @test !isempty(tmpdir)
-    isempty(tmpdir) || rm(tmpdir; force=true, recursive=true)
+    @test isdir(tmpdir)
+    @test occursin("clangcompiler", tmpdir)
+    rm(tmpdir; force=true, recursive=true)
 
     v = CC.GetReleaseVersion("10.3.5")
     @test v !== nothing
@@ -167,16 +198,15 @@ end
 
     # The digit-group overload is the stricter one: it rejects the trailing characters
     # the four-value form tolerates, and agrees with it whenever it succeeds.
-    groups = CC.GetReleaseVersionDigits("10.3.5", 3)
-    @test groups === nothing || groups == [10, 3, 5]
+    @test CC.GetReleaseVersionDigits("10.3.5", 3) == [10, 3, 5]
     @test CC.GetReleaseVersionDigits("10.3.5extrastuff", 3) === nothing
 
     cache = CC.getDefaultModuleCachePath()
-    @test cache isa String
     # Empty only when the platform provides no cache directory at all.
     @test isempty(cache) || isabspath(cache)
 
-    # The driver holds a reference to the engine: dispose it first.
+    # The compilation's destructor reads the driver, and the driver holds the engine.
+    CC.dispose(syn_comp)
     CC.dispose(drv)
     CC.dispose(diags)
 end
@@ -191,13 +221,12 @@ end
 
     src = "clangcompiler-driver-test.cpp"
     comp = CC.BuildCompilation(drv, ["clang", "-fsyntax-only", src])
-    @test comp isa CC.Compilation
     # a plain -fsyntax-only compilation: not a diagnostic re-run, no offloading, and the
     # sysroot it reports is the driver's own
     @test CC.isForDiagnostics(comp) == false
     @test Int(CC.getActiveOffloadKinds(comp)) == 0
     @test CC.getSysRoot(comp) == CC.getSysRoot(drv)
-    @test CC.getTempFiles(comp) isa Vector{String}
+    @test isempty(CC.getTempFiles(comp))
 
     # setContainsError only ever sets the bit, so this round trip is one-way.
     @test CC.containsError(comp) == false
@@ -208,7 +237,6 @@ end
     @test CC.getTargetTriple(CC.getDriver(comp)) == CC.getTargetTriple(drv)
 
     tc = CC.getDefaultToolChain(comp)
-    @test tc isa CC.ToolChain
     @test occursin("x86_64", CC.getTripleString(tc))
     # both are read out of the triple the driver was pinned to, so they are the two
     # components of it and not each other
@@ -226,16 +254,15 @@ end
     @test occursin("ld", CC.GetProgramPath(drv, "ld", tc))
 
     banner = CC.PrintVersion(drv, comp)
-    @test banner isa String
-    @test !isempty(banner)
+    @test occursin("clang", banner)
 
     # Arguments have now been processed, so the accessors reading Driver::LTOMode and the
     # config-file list are defined -- on a driver that never built a compilation
-    # getLTOMode has been observed returning a value outside its own enum.
-    @test CC.getLTOMode(drv) in
-          (CC.CXLTOKind_LTOK_None, CC.CXLTOKind_LTOK_Full, CC.CXLTOKind_LTOK_Thin, CC.CXLTOKind_LTOK_Unknown)
-    @test CC.getLTOMode(drv, true) isa CC.CXLTOKind
-    @test CC.getConfigFiles(drv) isa Vector{String}
+    # getLTOMode has been observed returning a value outside its own enum. `-fsyntax-only`
+    # leaves both modes at none; the `-flto` compilation above is the other half.
+    @test CC.getLTOMode(drv) == CC.CXLTOKind_LTOK_None
+    @test CC.getLTOMode(drv, true) == CC.CXLTOKind_LTOK_None
+    @test isempty(CC.getConfigFiles(drv))
 
     # A compile-and-link line plans an intermediate object file, which the driver registers
     # as a temporary and the compilation's destructor removes again. A Driver is built for
@@ -245,7 +272,9 @@ end
     CC.setCheckInputsExist(drv2, false)
     out = joinpath(tempdir(), "clangcompiler-driver-test.out")
     link = CC.BuildCompilation(drv2, ["clang", src, "-o", out])
-    @test CC.getTempFiles(link) isa Vector{String}
+    # a compile-and-link line registers the intermediate object as a temporary,
+    # which is the partition the empty syntax-only list above needs
+    @test !isempty(CC.getTempFiles(link))
     CC.dispose(link)
     CC.dispose(drv2)
     CC.dispose(diags2)
@@ -264,12 +293,11 @@ end
     drv = CC.Driver(exe, "x86_64-unknown-linux-gnu", diags)
 
     # The name is the stem the driver was invoked as, so it round-trips what was passed.
-    name = CC.getName(drv)
-    @test name isa String
-    @test occursin("clang", name)
+    @test CC.getName(drv) == "clang"
 
     for d in (CC.getSystemConfigDir(drv), CC.getUserConfigDir(drv))
-        @test d isa String   # both may legitimately be empty on a bare Driver
+        # either may be empty on a bare Driver; a present one is an absolute path
+        @test isempty(d) || isabspath(d)
     end
 
     # PrefixDirs is filled while a command line is processed -- both the -B options and
@@ -300,7 +328,6 @@ end
     n = CC.getNumPrefixDirs(drv2)
     @test n >= length(prefixes)
     dirs = CC.getPrefixDirs(drv2)
-    @test dirs isa Vector{String}
     @test length(dirs) == n
     @test issubset(prefixes, dirs)
     for i = 0:(n - 1)
@@ -319,7 +346,6 @@ end
     diags = CC.DiagnosticsEngine()
     drv = CC.Driver(joinpath("usr", "bin", "clang"), "x86_64-unknown-linux-gnu", diags)
     comp = CC.BuildCompilation(drv, ["clang", "-c", "cctemp_probe.cpp"])
-    @test comp isa CC.Compilation
 
     before = length(CC.getTempFiles(comp))
     path = CC.CreateTempFile(drv, comp, "cctest", "o")

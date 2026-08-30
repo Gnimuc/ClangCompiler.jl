@@ -117,11 +117,10 @@ end
 
         act = CC.LLVMOnlyAction(lctx)
         ti = CC.ToolInvocation(["clang-tool", "-std=c++17", src], act, fm)
-        @test ti.ptr != C_NULL
         buf = CC.TextDiagnosticBuffer()
-        @test CC.setDiagnosticConsumer(ti, buf) === nothing
+        CC.setDiagnosticConsumer(ti, buf)
         opts = CC.DiagnosticOptions()
-        @test CC.setDiagnosticOptions(ti, opts) === nothing
+        CC.setDiagnosticOptions(ti, opts)
         @test CC.run(ti) == true
         @test Base.size(buf, TOOLING_ERR) == 0
         # disposing the invocation deletes the action it adopted, so `act` must not be
@@ -162,7 +161,6 @@ end
     ct_a, ct_b = joinpath(ct_dir, "cta.cc"), joinpath(ct_dir, "ctb.cc")
     db = CC.FixedCompilationDatabase(ct_dir, String[])
     tool = CC.ClangTool(db, [ct_a, ct_b])
-    @test tool.ptr != C_NULL
 
     # the source paths are copied into the tool and read back in order
     @test CC.getNumSourcePaths(tool) == 2
@@ -170,12 +168,12 @@ end
     @test CC.getSourcePath(tool, 1) == ct_b
     @test_throws AssertionError CC.getSourcePath(tool, 2)
     @test !CC.is_null_handle(CC.getFiles(tool))
-    @test CC.setPrintErrorMessage(tool, false) === nothing
+    CC.setPrintErrorMessage(tool, false)
 
     # the adjuster chain accepts an append and a clear; both are copies, so the handle stays
     adj = CC.getInsertArgumentAdjuster("-DCT_UNUSED=1")
-    @test CC.appendArgumentsAdjuster(tool, adj) === nothing
-    @test CC.clearArgumentsAdjusters(tool) === nothing
+    CC.appendArgumentsAdjuster(tool, adj)
+    CC.clearArgumentsAdjusters(tool)
     @test CC.adjust(adj, ["clang++"], "x.cc") == ["clang++", "-DCT_UNUSED=1"]
     dispose(adj)
 

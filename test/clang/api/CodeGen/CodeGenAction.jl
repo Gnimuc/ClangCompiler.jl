@@ -13,9 +13,13 @@ using Test
     llvm_ctx = CC.LLVM.Context()
     for T in (CC.EmitAssemblyAction, CC.EmitBCAction, CC.EmitLLVMAction, CC.EmitCodeGenOnlyAction, CC.EmitObjAction)
         act = T(llvm_ctx)
-        @test act isa T
-        @test act.ptr != C_NULL
-        dispose(act)
+        try
+            # CreateASTConsumer has not run, so the action has no generator yet — the
+            # same lifecycle the LLVMOnlyAction testset asserts, for every emit flavour.
+            @test CC.getCodeGenerator(act) === nothing
+        finally
+            dispose(act)
+        end
     end
     CC.LLVM.dispose(llvm_ctx)
 end

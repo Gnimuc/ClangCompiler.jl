@@ -19,7 +19,6 @@ using Test
     qt_double = CC.getType(CC.VarDecl(get_decl(f)))
 
     v = CC.createValueFromType(I.interp, qt_int)
-    @test v isa CC.Value
     @test CC.isValid(v)
     @test CC.getKind(v) == CC.LibClangEx.CXValue_Int
     @test CC.getType(v) == qt_int.ptr   # opaque encoding round-trip
@@ -34,7 +33,6 @@ using ClangCompiler: get_tag
 @testset "coverage tail: value-interp" begin
     @testset "value kind and primitive round-trips" begin
         v = CC.create_value()
-        @test v isa CC.Value
         @test !(CC.isManuallyAlloc(v))
         @test CC.hasValue(v) == false
         @test CC.isVoid(v) == false
@@ -121,12 +119,10 @@ using ClangCompiler: get_tag
         I = create_interpreter(String[])
         # a declaration-only increment produces no result value
         v = CC.ParseAndExecute(I.interp, "extern \"C\" int vi_pae_fn() { return 42; }")
-        @test v isa CC.Value
         @test CC.hasValue(v) == false
         dispose(v)
         # a top-level expression increment captures its value
         v2 = CC.ParseAndExecute(I.interp, "vi_pae_fn()")
-        @test v2 isa CC.Value
         @test CC.hasValue(v2) == true
         @test CC.getKind(v2) == CC.LibClangEx.CXValue_Int
         @test CC.getInt(v2) == Int32(42)
@@ -135,13 +131,11 @@ using ClangCompiler: get_tag
         # the linker-level name carries the platform global prefix (Mach-O: "_")
         lname = (Sys.isapple() ? "_" : "") * "vi_pae_fn"
         addr = CC.get_symbol_address_from_linker_name(I, lname)
-        @test addr isa UInt64
         @test addr != 0
         @test addr == CC.getSymbolAddress(I.interp, "vi_pae_fn")
 
         # wrapping the raw handle yields a second view on the same interpreter
         I2 = CC.CxxInterpreter(I.interp.ptr)
-        @test I2 isa CC.CxxInterpreter
         @test I2.interp.ptr == I.interp.ptr
 
         dispose(I)
@@ -152,19 +146,15 @@ using ClangCompiler: get_tag
         CC.compile(I, "extern \"C\" int vi_cg_add(int a, int b) { return a + b; }")
         cg = CC.getCodeGen(I.interp)
         mod = CC.get_llvm_module(cg)
-        @test mod isa CC.LLVM.Module
         @test mod.ref != C_NULL
         d = CC.get_decl(cg, "vi_cg_add")
-        @test d isa CC.Decl
-        @test d.ptr != C_NULL
+        @test CC.getDeclKindName(d) == "Function"
         # mimic the incremental parser: release the current module, start a fresh one
         llvm_ctx = CC.LLVM.context(mod)
         released = CC.release_llvm_module(cg)
-        @test released isa CC.LLVM.Module
         @test released.ref == mod.ref
         started = CC.start_llvm_module(cg, llvm_ctx, "vi_cg_started")
-        @test started isa CC.LLVM.Module
-        @test started.ref != C_NULL
+        @test CC.LLVM.name(started) == "vi_cg_started"
         CC.LLVM.dispose(released)  # release transfers ownership to us
         dispose(I)
     end
@@ -175,17 +165,15 @@ using ClangCompiler: get_tag
         CC.SetCudaSDK(builder, "/nonexistent-vi-cuda-sdk")
         CC.SetOffloadArch(builder, "sm_80")
         host = CC.CreateCudaHost(builder)
-        @test host isa CC.CompilerInstance
         dev = CC.CreateCudaDevice(builder)
-        @test dev isa CC.CompilerInstance
-        if host.ptr != C_NULL && dev.ptr != C_NULL
-            # adopts both instances (freed on failure too) — never dispose them below
+        # without a CUDA SDK both handles are typically NULL; createWithCUDA adopts
+        # non-null ones, so dispose whichever side still owns them
+        if !CC.is_null_handle(host) && !CC.is_null_handle(dev)
             interp = CC.createWithCUDA(host, dev)
-            @test interp isa CC.Interpreter  # NULL handle without a real CUDA SDK
-            interp.ptr != C_NULL && dispose(interp)
+            !CC.is_null_handle(interp) && dispose(interp)
         else
-            host.ptr != C_NULL && dispose(host)
-            dev.ptr != C_NULL && dispose(dev)
+            !CC.is_null_handle(host) && dispose(host)
+            !CC.is_null_handle(dev) && dispose(dev)
         end
         dispose(builder)
     end
@@ -204,12 +192,9 @@ using ClangCompiler: get_tag
             invok = CC.create_compiler_invocation_from_cmd(src, args, diag)
             CC.setInvocation(instance, invok)  # adopts invok — no dispose
             act = CC.LLVMOnlyAction(llvm_ctx)
-            @test act isa CC.LLVMOnlyAction
-            @test act.ptr != C_NULL
             @test CC.ExecuteAction(instance, act) == true
             m = CC.takeModule(act)
-            @test m isa CC.LLVM.Module
-            @test m.ref != C_NULL
+            @test occursin("vi_act_fn", string(CC.LLVM.name.(collect(CC.LLVM.functions(m)))))
             CC.LLVM.dispose(m)  # takeModule transfers ownership to us
             dispose(act)
             dispose(instance)
@@ -226,10 +211,8 @@ end
     qt = CC.getType(CC.VarDecl(get_decl(f)))
 
     v = CC.createValueFromType(I.interp, qt)
-    @test !CC.is_null_handle(CC.getInterpreter(v))
     @test CC.getInterpreter(v).ptr == I.interp.ptr
-    @test !CC.is_null_handle(CC.getASTContext(v))
-    @test CC.getASTContext(v).ptr != C_NULL
+    @test CC.getASTContext(v).ptr == CC.getASTContext(I.interp).ptr
 
     # clang 18 ships placeholder bodies for these three, so only the shape is stable
     @test !isempty(CC.print(v))
@@ -254,7 +237,6 @@ end
 @testset "default-constructed value carries no interpreter" begin
     v = CC.create_value()
     @test CC.is_null_handle(CC.getInterpreter(v))
-    @test CC.getInterpreter(v).ptr == C_NULL
     @test_throws AssertionError CC.getASTContext(v)
     dispose(v)
 end

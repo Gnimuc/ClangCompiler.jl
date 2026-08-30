@@ -24,16 +24,13 @@ using Test
 
     @test f(I, "semaDedSeven")
     seven = CC.getInit(CC.VarDecl(get_decl(f)))
-    @test seven isa CC.Expr_
 
     int_ty = CC.get_qual_type(CC.jlty_to_clty(Int32, ctx))
     ptr_ty = CC.getPointerType(ctx, int_ty)
 
     # --- the deduction report box, before anything has been deduced into it ---
     info = CC.TemplateDeductionInfo(loc)
-    @test info isa CC.TemplateDeductionInfo
-    @test info.ptr != C_NULL
-    @test !CC.is_null_handle(CC.getLocation(info))
+    @test CC.getLocation(info).ptr == loc.ptr
     @test CC.getDeducedDepth(info) == 0
     @test Int(CC.getNumExplicitArgs(info)) == 0
     @test !(CC.hasSFINAEDiagnostic(info))
@@ -54,8 +51,6 @@ using Test
     # `SemaDedBox<int *>` matches the `SemaDedBox<T *>` pattern with T = int
     @test CC.DeduceTemplateArguments(sema, partial, ptr_args, info) == CC.CXTemplateDeductionResult_TDK_Success
     deduced = CC.takeSugared(info)
-    @test deduced isa CC.TemplateArgumentList
-    @test deduced.ptr != C_NULL
     @test size(deduced) == 1
     # the take* accessors transfer the list out of the report
     @test CC.takeSugared(info).ptr == C_NULL
@@ -75,7 +70,6 @@ using Test
     info3 = CC.TemplateDeductionInfo(loc)
     kind, deduced_ty = CC.DeduceAutoType(sema, auto_tl, seven, info3)
     @test kind == CC.CXTemplateDeductionResult_TDK_Success
-    @test deduced_ty isa CC.QualType
     @test CC.isIntegerType(CC.getTypePtr(deduced_ty))
 
     # the wrapper restates clang's own precondition: no `auto`, no deduction
@@ -88,7 +82,6 @@ using Test
 
     # --- template parameter list comparison; Complain=false is a pure query ---
     box_params = CC.getTemplateParameters(ctd)
-    @test box_params isa CC.TemplateParameterList
     @test CC.TemplateParameterListsAreEqual(sema, box_params, box_params, false,
                                             CC.CXTemplateParameterListEqualKind_TPL_TemplateMatch, loc)
     # Clang compares parameter KINDS and arity, not names -- so `SemaDedPair`'s list, which
@@ -109,22 +102,23 @@ using Test
     @test f(I, "SemaDedRec")
     rec = CC.CXXRecordDecl(get_decl(f))
     fld = first(CC.getFields(rec))
-    @test fld isa CC.FieldDecl
-    @test CC.ConvertMemberDefaultInitExpression(sema, fld, seven, loc) isa Union{Nothing,CC.Expr_}
+    converted_fld = CC.ConvertMemberDefaultInitExpression(sema, fld, seven, loc)
+    @test converted_fld !== nothing
+    @test CC.isIntegerType(CC.getTypePtr(CC.getType(converted_fld)))
 
     @test f(I, "semaDedFn")
     fn = CC.FunctionDecl(get_decl(f))
     @test CC.getNumParams(fn) == 1
     param = CC.getParamDecl(fn, 0)
-    @test CC.ConvertParamDefaultArgument(sema, param, seven, loc) isa Union{Nothing,CC.Expr_}
+    converted_param = CC.ConvertParamDefaultArgument(sema, param, seven, loc)
+    @test converted_param !== nothing
+    @test CC.isIntegerType(CC.getTypePtr(CC.getType(converted_param)))
 
     # --- declaration groups ---
     dg = CC.ConvertDeclToDeclGroup(sema, rec)
-    @test dg isa CC.DeclGroupRef
     @test dg.ptr != C_NULL
     dg2 = CC.ConvertDeclToDeclGroup(sema, fn, rec)
-    @test dg2 isa CC.DeclGroupRef
-    @test dg2.ptr != C_NULL
+    @test dg2.ptr != dg.ptr
 
     CC.dispose(info)
     dispose(I)
