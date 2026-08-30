@@ -1,11 +1,9 @@
 using ClangCompiler
 import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose
-using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
+using ClangCompiler: DeclFinder, get_decl
 using Test
 
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_instance
-using Libdl
 # Frontend/infra tail: the deferred wrappers that must never run against the live
 # interpreter's state. Every testset builds throwaway objects (fresh CompilerInstance,
 # builder, options, managers) and disposes them in reverse-dependency order; interpreters
@@ -82,7 +80,7 @@ end
     # manglers, so only their shape is asserted.
     mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
     @test CC.isAux(mc) == false
-    @test CC.startNewFunction(mc) === nothing
+    CC.startNewFunction(mc)
 
     @test f(I, "pv_int")
     vd_int = CC.VarDecl(get_decl(f))
@@ -118,7 +116,7 @@ end
     @test f(I, "mangle_fn")
     fn_nd = get_decl(f)
     @test CC.isUniqueInternalLinkageDecl(mc, fn_nd) == false
-    @test CC.needsUniqueInternalLinkageNames(mc) === nothing
+    CC.needsUniqueInternalLinkageNames(mc)
     # An externally visible function never needs a uniqued name; the flag the call
     # above sets is what makes the Itanium mangler answer the query at all.
     @test !(CC.isUniqueInternalLinkageDecl(mc, fn_nd))

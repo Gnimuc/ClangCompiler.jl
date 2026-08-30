@@ -104,7 +104,16 @@ end
         isdefined(CC, nm) || continue
         v = getproperty(CC, nm)
         if v isa Function && !(v isa Type) && startswith(String(nm), "is") && hasmethod(v, Tuple{CC.Stmt})
-            @test v(body) isa Bool
+            # Pair each `isFoo` with the carrier of the same name: a predicate wired to
+            # another classof still returns Bool, so `isa Bool` cannot see it.
+            cls = String(nm)[3:end]
+            type_nm = cls == "Expr" ? :Expr_ : Symbol(cls)
+            if isdefined(CC, type_nm)
+                T = getproperty(CC, type_nm)
+                if T isa Type && T <: CC.AbstractStmt
+                    @test v(body) == (r isa T)
+                end
+            end
             npred += 1
         elseif v isa Type &&
                v != CC.Stmt &&
@@ -151,6 +160,7 @@ end
         int x;
         Vec() : x(0) {}
         Vec(int v) : x(v) {}
+        Vec(int a, int b) : x(a + b) {}
         Vec operator+(const Vec& o) const { return Vec(x + o.x); }
         int get() const { return x; }
         Vec* self() { return this; }
@@ -183,6 +193,7 @@ end
         Vec b = Vec(2);
         const Vec& r = Vec(3);
         Vec c = a + b;
+        Vec two(1, 2);
         int g = c.get();
         int gg = Vec().get();
         Vec* p = new Vec(4);
@@ -190,10 +201,11 @@ end
         delete p;
         delete[] arr;
         bool flag = true;
+        bool off = false;
         int s = static_cast<int>(c.x);
-        auto lam = [g](int z) { return z + g; };
+        auto lam = [g, n](int z) { return z + g + n; };
         int lr = lam(5);
-        return Vec(g + s + lr + (flag ? 1 : 0));
+        return Vec(g + s + lr + two.x + (flag ? 1 : 0) + (off ? 1 : 0));
     }
     """)
 
@@ -237,8 +249,6 @@ end
     sr = CC.getSourceRange(body)
     @test sr.begin_loc.ptr == CC.getBeginLoc(body).ptr
     @test sr.end_loc.ptr == CC.getEndLoc(body).ptr
-    @test !CC.is_null_handle(sr.begin_loc)
-    @test !CC.is_null_handle(sr.end_loc)
     @test CC.getNumChildren(body) == 11
     @test length(CC.getChildren(body)) == 11
 
@@ -250,9 +260,8 @@ end
     @test_throws CC.CastError CC.IfStmt(body)              # and it names both classes
 
     # CompoundStmt accessors
-    @test length(body) isa Integer
-    @test !CC.is_null_handle(CC.body_front(body))
-    @test !CC.is_null_handle(CC.body_back(body))
+    @test length(body) == 11
+    @test CC.body_front(body).ptr != CC.body_back(body).ptr
     @test !CC.is_null_handle(CC.getLBracLoc(body))
     @test !CC.is_null_handle(CC.getRBracLoc(body))
     @test !(CC.body_empty(body))
@@ -272,24 +281,30 @@ end
     # ================= IfStmt =================
     ifs = pick(CC.IfStmt)
     @test !isempty(ifs)
-    ifi = first(ifs)
-    @test !CC.is_null_handle(CC.getCond(ifi))
-    @test !CC.is_null_handle(CC.getThen(ifi))
-    @test CC.is_null_handle(CC.getElse(ifi))
-    @test CC.is_null_handle(CC.getInit(ifi))
-    @test CC.is_null_handle(CC.getConditionVariable(ifi))
-    @test !(CC.hasElseStorage(ifi))
-    @test !(CC.hasInitStorage(ifi))
-    @test !(CC.hasVarStorage(ifi))
-    @test !CC.is_null_handle(CC.getIfLoc(ifi))
-    @test CC.is_null_handle(CC.getElseLoc(ifi))
-    @test !(CC.isConsteval(ifi))
-    @test !(CC.isNonNegatedConsteval(ifi))
-    @test !(CC.isNegatedConsteval(ifi))
-    @test !(CC.isConstexpr(ifi))
-    @test !(CC.isObjCAvailabilityCheck(ifi))
-    @test !CC.is_null_handle(CC.getLParenLoc(ifi))
-    @test !CC.is_null_handle(CC.getRParenLoc(ifi))
+    noelse = first(i for i in ifs if !CC.hasElseStorage(i))
+    withelse = first(i for i in ifs if CC.hasElseStorage(i))
+    @test !CC.is_null_handle(CC.getCond(noelse))
+    @test !CC.is_null_handle(CC.getThen(noelse))
+    @test CC.is_null_handle(CC.getElse(noelse))
+    @test CC.is_null_handle(CC.getInit(noelse))
+    @test CC.is_null_handle(CC.getConditionVariable(noelse))
+    @test !(CC.hasElseStorage(noelse))
+    @test !(CC.hasInitStorage(noelse))
+    @test !(CC.hasVarStorage(noelse))
+    @test !CC.is_null_handle(CC.getIfLoc(noelse))
+    @test CC.is_null_handle(CC.getElseLoc(noelse))
+    @test !CC.is_null_handle(CC.getElse(withelse))
+    @test CC.getThen(withelse).ptr != CC.getElse(withelse).ptr
+    @test !CC.is_null_handle(CC.getElseLoc(withelse))
+    @test CC.hasInitStorage(withelse)                   # `if (int iv = n; iv > 0)`
+    @test !CC.hasVarStorage(withelse)                   # the condition-variable slot, not the init
+    @test !(CC.isConsteval(noelse))
+    @test !(CC.isNonNegatedConsteval(noelse))
+    @test !(CC.isNegatedConsteval(noelse))
+    @test !(CC.isConstexpr(noelse))
+    @test !(CC.isObjCAvailabilityCheck(noelse))
+    @test !CC.is_null_handle(CC.getLParenLoc(noelse))
+    @test !CC.is_null_handle(CC.getRParenLoc(noelse))
 
     # ================= SwitchStmt / SwitchCase / CaseStmt / DefaultStmt =================
     sw = first(pick(CC.SwitchStmt))
@@ -382,18 +397,20 @@ end
     # CXXConstructExpr (covers CXXTemporaryObjectExpr too)
     ces = pick(CC.AbstractCXXConstructExpr)
     @test !isempty(ces)
-    ce = first(ces)
-    @test !CC.is_null_handle(CC.getConstructor(ce))
-    @test CC.getNumArgs(ce) == 1
-    CC.getNumArgs(ce) > 0 && (@test CC.getArg(ce, 0) isa CC.Expr_)
-    @test !(CC.isElidable(ce))
-    @test !CC.is_null_handle(CC.getLocation(ce))
-    @test CC.hadMultipleCandidates(ce)
-    @test !(CC.isListInitialization(ce))
-    @test !(CC.isStdInitListInitialization(ce))
-    @test !(CC.requiresZeroInitialization(ce))
-    @test !(CC.isImmediateEscalating(ce))
-    @test CC.getConstructionKind(ce) == LibClangEx.CXCXXConstructionKind_Complete
+    one = first(c for c in ces if CC.getNumArgs(c) == 1)
+    two = first(c for c in ces if CC.getNumArgs(c) == 2)          # `Vec(int, int)`
+    @test !CC.is_null_handle(CC.getConstructor(one))
+    @test CC.getArg(one, 0).ptr != C_NULL
+    @test CC.getArg(two, 0).ptr != CC.getArg(two, 1).ptr
+    @test_throws AssertionError CC.getArg(one, CC.getNumArgs(one))
+    @test !(CC.isElidable(one))
+    @test !CC.is_null_handle(CC.getLocation(one))
+    @test CC.hadMultipleCandidates(one)
+    @test !(CC.isListInitialization(one))
+    @test !(CC.isStdInitListInitialization(one))
+    @test !(CC.requiresZeroInitialization(one))
+    @test !(CC.isImmediateEscalating(one))
+    @test CC.getConstructionKind(one) == LibClangEx.CXCXXConstructionKind_Complete
     # CXXTemporaryObjectExpr specifically present (from zero-arg `Vec()`)
     @test !isempty(pick(CC.CXXTemporaryObjectExpr))
 
@@ -408,28 +425,27 @@ end
     @test CC.getOperator(oce) == LibClangEx.CXOverloadedOperatorKind_OO_Plus
     @test !CC.is_null_handle(CC.getOperatorLoc(oce))
 
-    # CXXBoolLiteralExpr — true
-    ble = first(pick(CC.CXXBoolLiteralExpr))
-    @test CC.getValue(ble) isa Bool
-    @test !CC.is_null_handle(CC.getLocation(ble))
+    # CXXBoolLiteralExpr — `true` and `false` so a stuck polarity cannot hide
+    bles = pick(CC.CXXBoolLiteralExpr)
+    @test Set(CC.getValue(b) for b in bles) == Set([true, false])
+    @test !CC.is_null_handle(CC.getLocation(first(bles)))
 
-    # LambdaExpr — [g](int z){...}
+    # LambdaExpr — [g, n](int z){...}
     le = first(pick(CC.LambdaExpr))
     @test !CC.is_null_handle(CC.getCallOperator(le))
     @test !CC.is_null_handle(CC.getLambdaClass(le))
     @test CC.getBody(le) isa CC.Stmt
     @test !(CC.isMutable(le))
-    @test CC.getNumCaptures(le) == 1
+    @test CC.getNumCaptures(le) == 2
     @test !(CC.isGenericLambda(le))
-    @test CC.getNumCaptures(le) >= 1
-    cap = CC.getCapture(le, 0)
-    @test cap isa CC.LambdaCapture
-    @test CC.getCaptureKind(cap) == LibClangEx.CXLambdaCaptureKind_LCK_ByCopy
-    @test !(CC.capturesThis(cap))
-    @test CC.capturesVariable(cap)
-    @test !(CC.capturesVLAType(cap))
-    CC.capturesVariable(cap) &&
-        (@test CC.getCapturedVar(cap) isa CC.ValueDecl && get_name(CC.getCapturedVar(cap)) == "g")
+    cap0, cap1 = CC.getCapture(le, 0), CC.getCapture(le, 1)
+    @test cap0 isa CC.LambdaCapture
+    @test CC.getCaptureKind(cap0) == LibClangEx.CXLambdaCaptureKind_LCK_ByCopy
+    @test !(CC.capturesThis(cap0))
+    @test CC.capturesVariable(cap0) && CC.capturesVariable(cap1)
+    @test !(CC.capturesVLAType(cap0))
+    names = Set((get_name(CC.getCapturedVar(cap0)), get_name(CC.getCapturedVar(cap1))))
+    @test names == Set(["g", "n"])
 
     # CXXNewExpr — new Vec(4) and new int[n]
     news = pick(CC.CXXNewExpr)
@@ -457,11 +473,11 @@ end
     # CXXDeleteExpr — delete p; delete[] arr;
     dels = pick(CC.CXXDeleteExpr)
     @test length(dels) >= 2
+    @test any(CC.isArrayForm, dels) && any(d -> !CC.isArrayForm(d), dels)
     for de in dels
         @test !CC.is_null_handle(CC.getArgument(de))
         @test CC.isArrayForm(de) == CC.isArrayFormAsWritten(de)
         @test !(CC.isGlobalDelete(de))
-        @test CC.isArrayFormAsWritten(de) in (true, false)
         @test CC.doesUsualArrayDeleteWantSize(de) == false
         @test !CC.is_null_handle(CC.getDestroyedType(de))
         @test !CC.is_null_handle(CC.getOperatorDelete(de))
@@ -531,7 +547,6 @@ end
     cif = findif("indc_f")
     @test cif isa CC.IfStmt
     kept = CC.getNondiscardedCase(cif, ctx)
-    @test kept isa CC.Stmt
     @test kept.ptr != C_NULL
     @test CC.resolve(kept) isa CC.CompoundStmt
 
@@ -544,51 +559,7 @@ end
     dispose(I)
 end
 
-@testset "GCCAsmStmt tail: operands, labels and asm-goto" begin
-    I = CC.create_interpreter(String[])
-    f = CC.DeclFinder(I)
-
-    # GCCAsmStmt. Inline-asm acceptance is target-dependent, so both blocks below
-    # only assert once the statement actually parsed and was found on this host.
-    findasm = function (name)
-        f(I, name) || return nothing
-        body = CC.getBody(CC.FunctionDecl(CC.get_decl(f)))
-        body.ptr == C_NULL && return nothing
-        for c in CC.children(body)
-            r = CC.resolve(c)
-            r isa CC.GCCAsmStmt && return r
-        end
-        return nothing
-    end
-
-    CC.parse(I, "void asmHost(int a, int b) { asm(\"\" : \"=r\"(b) : [in] \"r\"(a)); }")
-    asm = findasm("asmHost")
-    if asm !== nothing
-        @test !CC.is_null_handle(CC.getRParenLoc(asm))
-        @test CC.getNumLabels(asm) == 0
-        @test CC.getNamedOperand(asm, "nosuchoperand") == -1
-        @test CC.getNamedOperand(asm, "in") >= 0
-        if CC.getNumInputs(asm) > 0
-            e = CC.getInputExpr(asm, 0)
-            CC.setInputExpr(asm, 0, e)  # identity write-back round-trip
-            @test CC.getInputExpr(asm, 0).ptr == e.ptr
-        end
-    end
-
-    CC.parse(I, "void asmGotoHost() { asm goto (\"\" : : : : Done); Done: ; }")
-    gasm = findasm("asmGotoHost")
-    if gasm !== nothing && CC.isAsmGoto(gasm)
-        @test CC.getNumLabels(gasm) == 1
-        @test !CC.is_null_handle(CC.getLabelExpr(gasm, 0))
-        @test CC.getLabelExpr(gasm, 0).ptr != C_NULL
-        @test CC.getLabelName(gasm, 0) == "Done"
-    end
-
-    CC.dispose(f)
-    CC.dispose(I)
-end
-
-@testset "Stmt subclass tail: getExprStmt / getStmtExprResult / NRVO / indirect goto" begin
+@testset "Stmt subclass tail: getExprStmt / getStmtExprResult / NRVO" begin
     I = CC.create_interpreter()
     CC.compile(I, """
                   int stmt_tail_probe(int n) {
@@ -624,65 +595,14 @@ end
     # ValueStmt::getExprStmt -- a bare expression statement returns itself
     e = first(filter(n -> n isa CC.AbstractExpr, nodes))
     es = CC.getExprStmt(e)
-    @test es isa CC.Expr_
     @test es.ptr == e.ptr
-
-    # IndirectGotoStmt -- computed goto / labels-as-values are GNU extensions, so
-    # only assert once the host dialect accepted the statement and it was found.
-    CC.parse(I, """
-                int stmt_tail_goto(int n) {
-                    int local = n;
-                    goto *&&done;
-                done:
-                    return local;
-                }
-                """)
-    igs = nothing
-    if f(I, "stmt_tail_goto")
-        gbody = CC.getBody(CC.FunctionDecl(CC.get_decl(f)))
-        if gbody.ptr != C_NULL
-            gstack = CC.AbstractStmt[CC.resolve(gbody)]
-            while !isempty(gstack)
-                nd = pop!(gstack)
-                if nd isa CC.IndirectGotoStmt
-                    igs = nd
-                    break
-                end
-                append!(gstack, CC.children(nd))
-            end
-        end
-    end
-    if igs !== nothing
-        @test CC.getTarget(igs) isa CC.Expr_
-        @test CC.getTarget(igs).ptr != C_NULL
-        tgt_lbl = CC.getConstantTarget(igs)
-        @test tgt_lbl isa CC.LabelDecl
-        @test !CC.is_null_handle(tgt_lbl)
-        @test get_name(tgt_lbl) == "done"
-    end
 
     CC.dispose(f)
     CC.dispose(I)
 end
 
-@testset "Stmt SEH/Captured/condition-variable payload accessors" begin
-    # --- condition-variable DeclStmts (plain C++) ---
-    Icv = create_interpreter()
-    CC.parse(Icv, "void cv_fn(int n){ while (int w = n) { --n; } for (int i = 0; int c = n - i; ++i) {} }")
-    fcv = DeclFinder(Icv)
-    @test fcv(Icv, "cv_fn")
-    cfd = CC.FunctionDecl(get_decl(fcv))
-    cnodes = CC.subtree(CC.resolve(CC.getBody(cfd)))
-    ws = cnodes[findfirst(n -> n isa CC.WhileStmt, cnodes)]
-    fs = cnodes[findfirst(n -> n isa CC.ForStmt, cnodes)]
-    @test !CC.is_null_handle(CC.getConditionVariableDeclStmt(ws))
-    @test CC.getConditionVariableDeclStmt(ws).ptr != C_NULL         # while (int w = n)
-    @test !CC.is_null_handle(CC.getConditionVariableDeclStmt(fs))
-    @test CC.getConditionVariableDeclStmt(fs).ptr != C_NULL         # for (...; int c = ...; ...)
-    dispose(fcv)
-    dispose(Icv)
-
-    # --- SEH statements (Microsoft extensions; parse-only, no codegen) ---
+@testset "Stmt SEH payload accessors" begin
+    # SEH statements (Microsoft extensions; parse-only, no codegen)
     Iseh = create_interpreter(["-fms-extensions"])
     CC.parse(Iseh, "void seh_fn(){ __try { __leave; } __except(1) { } __try { } __finally { } }")
     fseh = DeclFinder(Iseh)
@@ -700,20 +620,16 @@ end
 
     tryX = first(filter(t -> CC.getExceptHandler(t).ptr != C_NULL, tries))   # __except form
     tryF = first(filter(t -> CC.getFinallyHandler(t).ptr != C_NULL, tries))  # __finally form
-    @test !(CC.getIsCXXTry(tryX))
     @test !CC.getIsCXXTry(tryX)                                     # __try, not C++ try
     @test !CC.is_null_handle(CC.getTryLoc(tryX))
     @test CC.getTryBlock(tryX) isa CC.CompoundStmt
-    @test CC.getHandler(tryX) isa CC.Stmt
-    @test !CC.is_null_handle(CC.getExceptHandler(tryX))
-    @test CC.getExceptHandler(tryX).ptr != C_NULL
+    @test CC.getHandler(tryX).ptr == CC.getExceptHandler(tryX).ptr
     @test CC.getFinallyHandler(tryX).ptr == C_NULL
-    @test !CC.is_null_handle(CC.getFinallyHandler(tryF))
     @test CC.getFinallyHandler(tryF).ptr != C_NULL
+    @test CC.getExceptHandler(tryF).ptr == C_NULL
 
     ex = excepts[1]
     @test !CC.is_null_handle(CC.getExceptLoc(ex))
-    @test !CC.is_null_handle(CC.getFilterExpr(ex))
     @test CC.getFilterExpr(ex).ptr != C_NULL
     @test CC.getBlock(ex) isa CC.CompoundStmt
 
@@ -721,34 +637,12 @@ end
     @test !CC.is_null_handle(CC.getFinallyLoc(fin))
     @test CC.getBlock(fin) isa CC.CompoundStmt
 
-    @test !CC.is_null_handle(CC.getLeaveLoc(leaves[1]))
+    leaveloc = CC.getLeaveLoc(leaves[1])
+    @test leaveloc.ptr != C_NULL
+    CC.setLeaveLoc(leaves[1], leaveloc)
+    @test CC.getLeaveLoc(leaves[1]).ptr == leaveloc.ptr
     dispose(fseh)
     dispose(Iseh)
-
-    # --- CapturedStmt (OpenMP region; parse-only) ---
-    Iomp = create_interpreter(["-fopenmp"])
-    CC.parse(Iomp, "void omp_fn(int n){\n#pragma omp parallel\n{ int x = n; }\n}")
-    fomp = DeclFinder(Iomp)
-    @test fomp(Iomp, "omp_fn")
-    ofd = CC.FunctionDecl(get_decl(fomp))
-    cs = nothing
-    for n in CC.subtree(CC.resolve(CC.getBody(ofd)))
-        n isa CC.CapturedStmt && (cs=n; break)
-    end
-    @test cs isa CC.CapturedStmt
-    @test !CC.is_null_handle(CC.getCapturedStmt(cs))
-    @test CC.getCapturedStmt(cs).ptr != C_NULL
-    @test !CC.is_null_handle(CC.getCapturedDecl(cs))
-    @test CC.getCapturedDecl(cs).ptr != C_NULL
-    @test !CC.is_null_handle(CC.getCapturedRecordDecl(cs))
-    @test CC.getCapturedRecordDecl(cs).ptr != C_NULL
-    @test CC.capture_size(cs) == 1
-    @test CC.capture_size(cs) >= 1                                  # captures n
-    paramN = CC.getParamDecl(ofd, 0)                               # the `int n` ParmVarDecl
-    @test CC.capturesVariable(cs, paramN)
-    @test CC.capturesVariable(cs, paramN)                          # n is captured
-    dispose(fomp)
-    dispose(Iomp)
 end
 
 @testset "AsmStmt/GCCAsmStmt operand literals + AttributedStmt attrs" begin
@@ -769,35 +663,47 @@ end
     end
 
     # A "+" (read/write) output, a named input and a clobber exercise every new
-    # operand accessor.
-    CC.parse(I, "void asmRW(int a, int b) { asm(\"\" : \"+r\"(b) : [in] \"r\"(a) : \"memory\"); }")
+    # operand accessor. `volatile` is the stuck-polarity counterpart of isSimple.
+    CC.parse(I, "void asmRW(int a, int b) { asm volatile(\"\" : \"+r\"(b) : [in] \"r\"(a) : \"memory\"); }")
     a = findasm("asmRW")
     if a !== nothing
-        @test CC.isOutputPlusConstraint(a, 0)
+        @test !CC.isSimple(a)
+        @test CC.isVolatile(a)
+        simple, vol = CC.isSimple(a), CC.isVolatile(a)
+        CC.setSimple(a, simple)
+        @test CC.isSimple(a) == simple
+        CC.setVolatile(a, vol)
+        @test CC.isVolatile(a) == vol
         @test CC.isOutputPlusConstraint(a, 0)
         @test CC.getNumPlusOperands(a) == 1
-        @test !CC.is_null_handle(CC.getOutputConstraintLiteral(a, 0))
         @test CC.getOutputConstraintLiteral(a, 0).ptr != C_NULL
-        @test CC.is_null_handle(CC.getOutputIdentifier(a, 0))
         @test CC.getOutputIdentifier(a, 0).ptr == C_NULL              # output has no [name]
-        if CC.getNumInputs(a) > 0
-            @test !CC.is_null_handle(CC.getInputIdentifier(a, 0))
-            @test CC.getInputIdentifier(a, 0).ptr != C_NULL           # named [in]
-            @test !CC.is_null_handle(CC.getInputConstraintLiteral(a, 0))
-            @test CC.getInputConstraintLiteral(a, 0).ptr != C_NULL
-        end
-        if CC.getNumClobbers(a) > 0
-            @test !CC.is_null_handle(CC.getClobberStringLiteral(a, 0))
-            @test CC.getClobberStringLiteral(a, 0).ptr != C_NULL
-        end
+        @test CC.getNumInputs(a) == 1
+        @test CC.getInputIdentifier(a, 0).ptr != C_NULL               # named [in]
+        @test CC.getInputConstraintLiteral(a, 0).ptr != C_NULL
+        @test CC.getNamedOperand(a, "in") >= 0
+        @test CC.getNamedOperand(a, "nosuchoperand") == -1
+        e = CC.getInputExpr(a, 0)
+        CC.setInputExpr(a, 0, e)
+        @test CC.getInputExpr(a, 0).ptr == e.ptr
+        @test CC.getNumClobbers(a) == 1
+        @test CC.getClobberStringLiteral(a, 0).ptr != C_NULL
+        @test CC.getNumLabels(a) == 0
+        asmloc = CC.getAsmLoc(a)
+        CC.setAsmLoc(a, asmloc)
+        @test CC.getAsmLoc(a).ptr == asmloc.ptr
+        rparen = CC.getRParenLoc(a)
+        CC.setRParenLoc(a, rparen)
+        @test CC.getRParenLoc(a).ptr == rparen.ptr
     end
 
     CC.parse(I, "void asmGotoLbl() { asm goto (\"\" : : : : Done); Done: ; }")
     g = findasm("asmGotoLbl")
     if g !== nothing && CC.isAsmGoto(g)
         @test CC.getNumLabels(g) == 1
-        @test !CC.is_null_handle(CC.getLabelIdentifier(g, 0))
-        @test CC.getLabelIdentifier(g, 0).ptr != C_NULL              # label `Done`
+        @test CC.getLabelName(g, 0) == "Done"
+        @test CC.getLabelExpr(g, 0).ptr != C_NULL
+        @test CC.getLabelIdentifier(g, 0).ptr != C_NULL
     end
 
     # AttributedStmt: a statement-level attribute wraps its substatement.
@@ -859,14 +765,12 @@ end
 
     # Stmt: pretty printing goes through the context's own PrintingPolicy
     pp = CC.printPretty(body, ctx)
-    @test pp isa String
     @test occursin("switch", pp)
     @test occursin("return", pp)
     @test !isempty(CC.printPretty(body, ctx, 2))
 
     # printJson is the pretty-printed text, escaped (and optionally quoted)
     js = CC.printJson(body, ctx)
-    @test js isa String
     @test occursin("return", js)
     @test !isempty(CC.printJson(body, ctx, false))
 
@@ -884,26 +788,21 @@ end
     # Stmt: the body holds four statements, so it is not a no-op container and
     # IgnoreContainers hands it back unchanged.
     kept = CC.IgnoreContainers(body)
-    @test kept isa CC.Stmt
     @test kept.ptr == body.ptr
     @test CC.IgnoreContainers(body, true).ptr == body.ptr
 
     ls = only(pick(CC.LabelStmt))
     stripped = CC.stripLabelLikeStatements(ls)
-    @test stripped isa CC.Stmt
     @test stripped.ptr == CC.getSubStmt(ls).ptr
     @test CC.resolve(stripped) isa CC.NullStmt
 
     # Stmt: nothing in this function carries [[likely]]/[[unlikely]]
     @test CC.getLikelihood(body) == LibClangEx.CXLikelihood_LH_None
-    @test CC.getLikelihood(body) == CC.LibClangEx.CXLikelihood_LH_None
     @test CC.is_null_handle(CC.getLikelihoodAttr(body))
-    @test CC.getLikelihoodAttr(body).ptr == C_NULL
 
     # DeclStmt: the group behind `int acc = 0;`
     ds = only(pick(CC.DeclStmt))
     dg = CC.getDeclGroup(ds)
-    @test dg isa CC.DeclGroupRef
     @test !CC.isNull(dg)
     @test CC.isSingleDecl(dg) == CC.isSingleDecl(ds)
 
@@ -955,28 +854,6 @@ end
     @test rv.ptr != C_NULL
     CC.setRetValue(ret, rv)
     @test CC.getRetValue(ret).ptr == rv.ptr
-
-    # A GNU `case LHS ... RHS:` is the one shape setRHS accepts. Acceptance of the
-    # extension is a host/driver decision, so assert only once it actually parsed.
-    CC.parse(I, "int stmtRangeProbe(int n) { switch (n) { case 2 ... 4: return 1; } return 0; }")
-    if f(I, "stmtRangeProbe")
-        rbody = CC.getBody(CC.FunctionDecl(get_decl(f)))
-        if rbody.ptr != C_NULL
-            rng = nothing
-            for node in CC.subtree(CC.resolve(rbody))
-                if node isa CC.CaseStmt && CC.caseStmtIsGNURange(node)
-                    rng = node
-                    break
-                end
-            end
-            if rng !== nothing
-                rrhs = CC.getRHS(rng)
-                @test rrhs.ptr != C_NULL
-                CC.setRHS(rng, rrhs)
-                @test CC.getRHS(rng).ptr == rrhs.ptr
-            end
-        end
-    end
 
     dispose(f)
     dispose(I)
@@ -1104,11 +981,7 @@ end
     # CompoundStmt: the trailing FPOptionsOverride slot exists only when the body
     # changed the floating-point options, and getStoredFPFeatures asserts on it.
     @test CC.hasStoredFPFeatures(body) == false
-    if CC.hasStoredFPFeatures(body)
-        @test CC.getStoredFPFeatures(body) != 0
-    else
-        @test_throws AssertionError CC.getStoredFPFeatures(body)
-    end
+    @test_throws AssertionError CC.getStoredFPFeatures(body)
 
     # A `#pragma clang fp` inside a body is what allocates that slot. Acceptance of
     # the pragma is a host/driver decision, so assert only once it actually parsed.
@@ -1118,20 +991,14 @@ end
                  return a * b + c;
              }
              """)
-    if f(I, "stmtFPProbe")
-        fpbody = CC.getBody(CC.FunctionDecl(get_decl(f)))
-        if fpbody.ptr != C_NULL
-            fpcs = CC.resolve(fpbody)
-            if fpcs isa CC.CompoundStmt && CC.hasStoredFPFeatures(fpcs)
-                fpv = CC.getStoredFPFeatures(fpcs)
-                @test fpv != 0
-                # The slot exists exactly when the override mask is nonzero, and that
-                # mask is the low half of the encoding.
-                @test fpv != 0
-                @test CC.getStoredFPFeatures(fpcs) == fpv
-            end
-        end
-    end
+    @test f(I, "stmtFPProbe")
+    fpbody = CC.getBody(CC.FunctionDecl(get_decl(f)))
+    fpcs = CC.resolve(fpbody)
+    @test fpcs isa CC.CompoundStmt
+    @test CC.hasStoredFPFeatures(fpcs)
+    fpv = CC.getStoredFPFeatures(fpcs)
+    @test fpv != 0
+    @test CC.getStoredFPFeatures(fpcs) == fpv
 
     dispose(f)
     dispose(I)
@@ -1149,9 +1016,19 @@ end
         nd isa CC.CapturedStmt && (cs=nd; break)
     end
     @test cs isa CC.CapturedStmt
+    @test CC.getCapturedStmt(cs).ptr != C_NULL
+    cd = CC.getCapturedDecl(cs)
+    @test cd.ptr != C_NULL
+    CC.setCapturedDecl(cs, cd)
+    @test CC.getCapturedDecl(cs).ptr == cd.ptr
+    crd = CC.getCapturedRecordDecl(cs)
+    @test crd.ptr != C_NULL
+    CC.setCapturedRecordDecl(cs, crd)
+    @test CC.getCapturedRecordDecl(cs).ptr == crd.ptr
+    paramN = CC.getParamDecl(ofd, 0)
+    @test CC.capturesVariable(cs, paramN)
 
     # region kind, written back with the value the test itself read
-    @test CC.getCapturedRegionKind(cs) == LibClangEx.CXCapturedRegionKind_CR_OpenMP
     @test CC.getCapturedRegionKind(cs) == LibClangEx.CXCapturedRegionKind_CR_OpenMP
     CC.setCapturedRegionKind(cs, CC.getCapturedRegionKind(cs))
     @test CC.getCapturedRegionKind(cs) == LibClangEx.CXCapturedRegionKind_CR_OpenMP
@@ -1159,28 +1036,22 @@ end
     ncaps = CC.capture_size(cs)
     @test ncaps >= 2                                            # n and m are captured
     caps = [CC.getCapture(cs, i) for i = 0:(ncaps - 1)]
-    @test all(c -> c isa CC.CapturedStmtCapture, caps)
     @test all(c -> c.ptr != C_NULL, caps)
     @test_throws AssertionError CC.getCapture(cs, ncaps)
 
     for c in caps
-        @test CC.getCaptureKind(c) isa LibClangEx.CXVariableCaptureKind
         @test !CC.is_null_handle(CC.getLocation(c))
         # the four forms partition the capture kinds: exactly one of them holds
         forms = [CC.capturesThis(c), CC.capturesVariable(c), CC.capturesVariableByCopy(c),
                  CC.capturesVariableArrayType(c)]
         @test count(forms) == 1
-        @test count(forms) == 1
     end
 
     varcaps = filter(c -> CC.capturesVariable(c) || CC.capturesVariableByCopy(c), caps)
     @test length(varcaps) >= 2
-    @test all(c -> CC.getCapturedVar(c) isa CC.VarDecl, varcaps)
-    @test all(c -> CC.getCapturedVar(c).ptr != C_NULL, varcaps)
     @test issubset(Set(["n", "m"]), Set(get_name(CC.getCapturedVar(c)) for c in varcaps))
 
     inits = [CC.getCaptureInit(cs, i) for i = 0:(ncaps - 1)]
-    @test all(e -> e isa CC.Expr_, inits)
     @test any(e -> e.ptr != C_NULL, inits)
     @test_throws AssertionError CC.getCaptureInit(cs, ncaps)
     dispose(fomp)
@@ -1195,6 +1066,7 @@ end
                  if (n > 0) goto loop;
                  void *tgt = &&loop;
                  if (n < -1) goto *tgt;
+                 goto *&&done;
              done:
                  ;
              }
@@ -1233,7 +1105,9 @@ end
     CC.setLabelLoc(gs, ll)
     @test CC.getLabelLoc(gs).ptr == ll.ptr
 
-    igs = only(filter(x -> x isa CC.IndirectGotoStmt, nodes))
+    igs_all = [x for x in nodes if x isa CC.IndirectGotoStmt]
+    @test length(igs_all) == 2
+    igs = igs_all[1]
     igl = CC.getGotoLoc(igs)
     CC.setGotoLoc(igs, igl)
     @test CC.getGotoLoc(igs).ptr == igl.ptr
@@ -1241,14 +1115,19 @@ end
     CC.setStarLoc(igs, sl)
     @test CC.getStarLoc(igs).ptr == sl.ptr
     tgt = CC.getTarget(igs)
-    @test tgt isa CC.Expr_
+    @test tgt.ptr != C_NULL
     CC.setTarget(igs, tgt)
     @test CC.getTarget(igs).ptr == tgt.ptr
+    # `goto *tgt` is not a constant label; `goto *&&done` is
+    const_tgts = [CC.getConstantTarget(g) for g in igs_all]
+    @test count(CC.is_null_handle, const_tgts) == 1
+    named = only(t for t in const_tgts if !CC.is_null_handle(t))
+    @test get_name(named) == "done"
     dispose(f)
     dispose(I)
 end
 
-@testset "Stmt condition-variable / statement-kind / asm / SEH / captured setters" begin
+@testset "Stmt condition-variable / statement-kind setters" begin
     I = create_interpreter()
     CC.parse(I, """
              int stmtMutatorProbe(int n) {
@@ -1288,7 +1167,6 @@ end
           [CC.LibClangEx.CXIfStatementKind_Ordinary, CC.LibClangEx.CXIfStatementKind_Constexpr,
            CC.LibClangEx.CXIfStatementKind_Ordinary]
     @test length(filter(i -> CC.getStatementKind(i) == CC.LibClangEx.CXIfStatementKind_Constexpr, ifs)) == 1
-    @test length(filter(i -> CC.getStatementKind(i) == CC.LibClangEx.CXIfStatementKind_Constexpr, ifs)) == 1
     withvar = only(filter(CC.hasVarStorage, ifs))
     kind = CC.getStatementKind(withvar)
     @test kind == CC.LibClangEx.CXIfStatementKind_Ordinary
@@ -1306,7 +1184,6 @@ end
 
     # --- DeclStmt: the decl group of the condition variable ---
     dg = CC.getDeclGroup(ifcv)
-    @test dg isa CC.DeclGroupRef
     @test dg.ptr != C_NULL
     CC.setDeclGroup(ifcv, dg)
     @test CC.getDeclGroup(ifcv).ptr == dg.ptr
@@ -1341,11 +1218,14 @@ end
     @test !isempty(plain)
     @test_throws AssertionError CC.setEllipsisLoc(plain[1], caseloc)
     gnu = filter(CC.caseStmtIsGNURange, cases)   # `case 2 ... 4` is a GNU extension
-    if !isempty(gnu)
-        ell = CC.getEllipsisLoc(gnu[1])
-        CC.setEllipsisLoc(gnu[1], ell)
-        @test CC.getEllipsisLoc(gnu[1]).ptr == ell.ptr
-    end
+    @test !isempty(gnu)
+    ell = CC.getEllipsisLoc(gnu[1])
+    CC.setEllipsisLoc(gnu[1], ell)
+    @test CC.getEllipsisLoc(gnu[1]).ptr == ell.ptr
+    rrhs = CC.getRHS(gnu[1])
+    @test rrhs.ptr != C_NULL
+    CC.setRHS(gnu[1], rrhs)
+    @test CC.getRHS(gnu[1]).ptr == rrhs.ptr
 
     df = only(pick(CC.DefaultStmt))
     defloc = CC.getDefaultLoc(df)
@@ -1374,72 +1254,6 @@ end
     @test CC.getReturnLoc(rs).ptr == retloc.ptr
     dispose(f)
     dispose(I)
-
-    # --- AsmStmt / GCCAsmStmt (inline-asm acceptance is target-dependent, so the
-    # assertions run only once the statement actually materialised) ---
-    Iasm = create_interpreter()
-    CC.parse(Iasm, "void asmMutator(int a) { asm volatile(\"\" : : \"r\"(a)); }")
-    fasm = DeclFinder(Iasm)
-    asmstmt = nothing
-    if fasm(Iasm, "asmMutator")
-        afd = CC.FunctionDecl(get_decl(fasm))
-        for n in CC.subtree(CC.resolve(CC.getBody(afd)))
-            n isa CC.GCCAsmStmt && (asmstmt=n; break)
-        end
-    end
-    if asmstmt !== nothing
-        asmloc = CC.getAsmLoc(asmstmt)
-        CC.setAsmLoc(asmstmt, asmloc)
-        @test CC.getAsmLoc(asmstmt).ptr == asmloc.ptr
-        simple = CC.isSimple(asmstmt)
-        @test simple isa Bool
-        CC.setSimple(asmstmt, simple)
-        @test CC.isSimple(asmstmt) == simple
-        vol = CC.isVolatile(asmstmt)
-        @test vol isa Bool
-        CC.setVolatile(asmstmt, vol)
-        @test CC.isVolatile(asmstmt) == vol
-        rparen = CC.getRParenLoc(asmstmt)
-        CC.setRParenLoc(asmstmt, rparen)
-        @test CC.getRParenLoc(asmstmt).ptr == rparen.ptr
-    end
-    dispose(fasm)
-    dispose(Iasm)
-
-    # --- SEHLeaveStmt (Microsoft extensions; parse-only, no codegen) ---
-    Iseh = create_interpreter(["-fms-extensions"])
-    CC.parse(Iseh, "void sehMutator(){ __try { __leave; } __except(1) { } }")
-    fseh = DeclFinder(Iseh)
-    @test fseh(Iseh, "sehMutator")
-    sfd = CC.FunctionDecl(get_decl(fseh))
-    lv = only(filter(n -> n isa CC.SEHLeaveStmt, CC.subtree(CC.resolve(CC.getBody(sfd)))))
-    leaveloc = CC.getLeaveLoc(lv)
-    CC.setLeaveLoc(lv, leaveloc)
-    @test CC.getLeaveLoc(lv).ptr == leaveloc.ptr
-    dispose(fseh)
-    dispose(Iseh)
-
-    # --- CapturedStmt (OpenMP region; parse-only) ---
-    Iomp = create_interpreter(["-fopenmp"])
-    CC.parse(Iomp, "void ompMutator(int n){\n#pragma omp parallel\n{ int x = n; }\n}")
-    fomp = DeclFinder(Iomp)
-    @test fomp(Iomp, "ompMutator")
-    ofd = CC.FunctionDecl(get_decl(fomp))
-    cs = nothing
-    for n in CC.subtree(CC.resolve(CC.getBody(ofd)))
-        n isa CC.CapturedStmt && (cs=n; break)
-    end
-    @test cs isa CC.CapturedStmt
-    cd = CC.getCapturedDecl(cs)
-    @test cd.ptr != C_NULL
-    CC.setCapturedDecl(cs, cd)
-    @test CC.getCapturedDecl(cs).ptr == cd.ptr
-    crd = CC.getCapturedRecordDecl(cs)
-    @test crd.ptr != C_NULL
-    CC.setCapturedRecordDecl(cs, crd)
-    @test CC.getCapturedRecordDecl(cs).ptr == crd.ptr
-    dispose(fomp)
-    dispose(Iomp)
 end
 
 @testset "Stmt factories (Create/CreateEmpty) + condition-variable setters" begin
@@ -1690,7 +1504,6 @@ end
 
     # Stmt::printPrettyControlled — the brace-wrapping variant of printPretty.
     ctrl = CC.printPrettyControlled(CC.getThen(ifs), ctx)
-    @test ctrl isa String
     @test !isempty(ctrl)
     @test occursin("acc", ctrl)
     @test !isempty(CC.printPrettyControlled(CC.getThen(ifs), ctx, 2))
@@ -1699,7 +1512,6 @@ end
     # profiles (hence their hashes) must agree, and a node hashes stably against itself.
     h_then = CC.getProfileHash(CC.getThen(ifs), ctx)
     h_else = CC.getProfileHash(CC.getElse(ifs), ctx)
-    @test h_then isa Integer
     @test h_then == h_else
     @test CC.getProfileHash(body, ctx) == CC.getProfileHash(body, ctx)
     h_canon = CC.getProfileHash(body, ctx, true)
@@ -1817,9 +1629,10 @@ end
         @test length(pieces) == n
         @test all(p -> p.ptr != C_NULL, pieces)
         @test all(p -> CC.isString(p) != CC.isOperand(p), pieces)
-        @test all(p -> CC.getString(p) isa String, pieces)
+        @test any(p -> CC.isString(p) && occursin("nop", CC.getString(p)), pieces)
         ops = filter(CC.isOperand, pieces)
         @test length(ops) == 1                  # the single `%0` reference
+        @test CC.getString(ops[1]) == "0"        # the operand number; the `%` is the piece kind
         @test CC.getOperandNo(ops[1]) == 0
         op_r = CC.getRange(ops[1])
         @test op_r isa CC.SourceRange
@@ -1884,7 +1697,8 @@ end
     decls = CC.getDecls(ds)
     @test CC.getNumDecls(ds) == length(decls) == 2
     @test [CC.getDecl(ds, i).ptr for i = 0:(length(decls) - 1)] == [d.ptr for d in decls]
-    @test CC.getDecl(ds, 0) isa CC.Decl
+    @test CC.getNameAsString(CC.resolve(CC.getDecl(ds, 0))) == "a"
+    @test CC.getNameAsString(CC.resolve(CC.getDecl(ds, 1))) == "b"
     @test_throws AssertionError CC.getDecl(ds, CC.getNumDecls(ds))
     @test_throws AssertionError CC.getDecl(ds, -1)
 
@@ -1900,7 +1714,6 @@ end
     ifs = filter(s -> s isa CC.IfStmt, kids)
     @test length(ifs) == 2
     h1, h2 = CC.getODRHash(ifs[1]), CC.getODRHash(ifs[2])
-    @test h1 isa Integer
     @test h1 == h2
     @test CC.getODRHash(body) == CC.getODRHash(body)
 
@@ -1934,7 +1747,6 @@ end
     loc = CC.getLocation(vd)
     id = CC.getIdentifier(vd)
     init = CC.getInit(vd)
-    @test init isa CC.Expr_
     @test init.ptr != C_NULL
 
     # --- CapturedStmt::Capture boxes (owned; the statement copies them) ---
@@ -2004,13 +1816,10 @@ end
 end
 
 @testset "Stmt likelihood overloads (attribute list, branch pair, conflict)" begin
-    I = create_interpreter()
+    I = create_interpreter(["-std=c++20"])
     f = DeclFinder(I)
     LH = CC.LibClangEx
 
-    # [[likely]]/[[unlikely]] are C++20 spellings clang also accepts in earlier modes, so
-    # whether the attributes survive the parse is a host decision -- every assertion that
-    # depends on one being recognised is guarded below.
     CC.parse(I, """
              int likelihoodProbe(int n) {
                  if (n > 0) [[likely]] { return 1; }
@@ -2019,6 +1828,10 @@ end
              int plainBranchProbe(int n) {
                  if (n > 0) { return 1; }
                  else { return 2; }
+             }
+             int conflictBranchProbe(int n) {
+                 if (n > 0) [[likely]] { return 1; }
+                 else [[likely]] { return 2; }
              }
              """)
 
@@ -2033,7 +1846,6 @@ end
     end
 
     # The attribute-list overload of Stmt::getLikelihood: an empty list carries nothing.
-    @test CC.getLikelihood(CC.Attr[]) isa LH.CXLikelihood
     @test CC.getLikelihood(CC.Attr[]) == LH.CXLikelihood_LH_None
 
     plain = findif("plainBranchProbe")
@@ -2043,31 +1855,28 @@ end
     @test CC.getLikelihood(pthen, pelse) == LH.CXLikelihood_LH_None
     pc, pta, pea = CC.determineLikelihoodConflict(pthen, pelse)
     @test pc == false
-    @test pta isa CC.Attr
     @test pta.ptr == C_NULL
-    @test pea isa CC.Attr
     @test pea.ptr == C_NULL
 
     lif = findif("likelihoodProbe")
     @test lif isa CC.IfStmt
     lthen, lelse = CC.getThen(lif), CC.getElse(lif)
-    @test CC.getLikelihood(lthen, lelse) in (LH.CXLikelihood_LH_None, LH.CXLikelihood_LH_Likely)
+    @test CC.getLikelihood(lthen) == LH.CXLikelihood_LH_Likely
+    @test CC.getLikelihood(lelse) == LH.CXLikelihood_LH_Unlikely
+    @test CC.getLikelihood(lthen, lelse) == LH.CXLikelihood_LH_Likely
     c, ta, ea = CC.determineLikelihoodConflict(lthen, lelse)
-    @test c isa Bool
-    @test ta isa CC.Attr
-    @test ea isa CC.Attr
-    if c
-        # A reported conflict comes with both conflicting attributes.
-        @test ta.ptr != C_NULL
-        @test ea.ptr != C_NULL
-    end
-    if CC.getLikelihood(lthen) == LH.CXLikelihood_LH_Likely
-        athen = CC.resolve(lthen)
-        @test athen isa CC.AttributedStmt
-        # The list overload and the statement overload agree on the same attributes.
-        @test CC.getLikelihood(CC.getAttrs(athen)) == CC.getLikelihood(athen)
-        @test CC.getLikelihood(CC.getAttrs(athen)) == LH.CXLikelihood_LH_Likely
-    end
+    @test !c                                    # complementary, not a conflict
+    @test ta.ptr == C_NULL && ea.ptr == C_NULL
+    cif = findif("conflictBranchProbe")
+    @test cif isa CC.IfStmt
+    cc, cta, cea = CC.determineLikelihoodConflict(CC.getThen(cif), CC.getElse(cif))
+    @test cc                                    # both branches [[likely]]
+    @test cta.ptr != C_NULL && cea.ptr != C_NULL
+    athen = CC.resolve(lthen)
+    @test athen isa CC.AttributedStmt
+    # The list overload and the statement overload agree on the same attributes.
+    @test CC.getLikelihood(CC.getAttrs(athen)) == CC.getLikelihood(athen)
+    @test CC.getLikelihood(CC.getAttrs(athen)) == LH.CXLikelihood_LH_Likely
 
     dispose(f)
     dispose(I)
