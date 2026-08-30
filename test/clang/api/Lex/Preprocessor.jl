@@ -13,16 +13,16 @@ using Test
     I = create_interpreter(["-include", "cstddef"])
     ppo = CC.getPreprocessorOpts(get_instance(I))
     incs = CC.getIncludes(ppo)
-    @test incs isa Vector{String}
     @test "cstddef" in incs
     dispose(I)
 end
 
 @testset "preprocessor state, counters and backtracking" begin
     I = create_interpreter(["-include", "cstddef"])
-    pp = CC.getPreprocessor(get_instance(I))
+    ci = get_instance(I)
+    pp = CC.getPreprocessor(ci)
 
-    @test !CC.is_null_handle(CC.getPreprocessorOpts(pp))
+    @test CC.getPreprocessorOpts(pp).ptr == CC.getPreprocessorOpts(ci).ptr
     # this interpreter was handed `-include cstddef`, so directives were seen
     @test CC.getNumDirectives(pp) > 0
     @test CC.isParsingIfOrElifDirective(pp) == false
@@ -49,7 +49,6 @@ end
     # -Wmax-tokens override round-trip
     old_max = CC.getMaxTokens(pp)
     old_loc = CC.getMaxTokensOverrideLoc(pp)
-    @test old_loc isa CC.SourceLocation
     CC.overrideMaxTokens(pp, 4096, CC.SourceLocation())
     @test CC.getMaxTokens(pp) == 4096
     CC.overrideMaxTokens(pp, old_max, old_loc)
@@ -57,14 +56,12 @@ end
 
     # macro lookup at a location; the invalid-location precondition is guarded in Julia
     ii = CC.getIdentifierInfo(pp, "__cplusplus")
-    @test ii isa CC.IdentifierInfo
     @test_throws AssertionError CC.getMacroInfoAtLoc(pp, ii, CC.SourceLocation())
     sm = CC.getSourceManager(pp)
     fid = CC.getPredefinesFileID(pp)
     loc = CC.getLocForStartOfFile(sm, fid)
-    if CC.isValid(loc)
-        @test CC.is_null_handle(CC.getMacroInfoAtLoc(pp, ii, loc))
-    end
+    @test CC.isValid(loc)
+    @test CC.is_null_handle(CC.getMacroInfoAtLoc(pp, ii, loc))
     CC.dispose(fid)
 
     # the named-module name is only reachable from inside a named module
@@ -97,7 +94,6 @@ end
 
     # missing-#include suppression round-trip
     old_suppress = CC.GetSuppressIncludeNotFoundError(pp)
-    @test old_suppress isa Bool
     CC.SetSuppressIncludeNotFoundError(pp, !old_suppress)
     @test CC.GetSuppressIncludeNotFoundError(pp) == !old_suppress
     CC.SetSuppressIncludeNotFoundError(pp, old_suppress)
@@ -121,30 +117,36 @@ end
     sm = CC.getSourceManager(pp)
     fid = CC.getPredefinesFileID(pp)
     loc = CC.getLocForStartOfFile(sm, fid)
-    if CC.isValid(loc)
-        tok = CC.Token()
-        @test !(CC.getRawToken(pp, loc, tok))
-        @test !CC.is_null_handle(CC.getLocForEndOfToken(pp, loc))
-        @test !CC.is_null_handle(CC.getLocForEndOfToken(pp, loc, 1))
-        dispose(tok)
-    end
+    @test CC.isValid(loc)
+    tok = CC.Token()
+    @test !(CC.getRawToken(pp, loc, tok))
+    @test CC.isValid(CC.getLocForEndOfToken(pp, loc))
+    @test CC.isValid(CC.getLocForEndOfToken(pp, loc, 1))
+    dispose(tok)
     CC.dispose(fid)
     dispose(I)
 
-    # manual lexing consumes the live token stream: run it on a throwaway interpreter,
-    # inside a backtracking scope that rewinds, and dispose immediately afterwards
+    # manual lexing consumes the live token stream: a known buffer so the three Lex*
+    # entry points are distinguished by spelling rather than by an unassertable kind
     J = create_interpreter()
-    ppj = CC.getPreprocessor(get_instance(J))
+    jci = get_instance(J)
+    ppj = CC.getPreprocessor(jci)
+    jfid = CC.FileID(CC.getSourceManager(jci), CC.get_buffer("int lex_probe = 1;"))
+    CC.begin_diag(jci)
+    CC.EnterSourceFile(ppj, jfid)
     tok = CC.Token()
     CC.EnableBacktrackAtThisPos(ppj)
     CC.LexNonComment(ppj, tok)
-    @test CC.getKind(tok) isa Integer
+    @test CC.getSpelling(ppj, tok) == "int"
     CC.LexUnexpandedToken(ppj, tok)
-    @test CC.getKind(tok) isa Integer
+    @test CC.getSpelling(ppj, tok) == "lex_probe"
     CC.LexUnexpandedNonComment(ppj, tok)
-    @test CC.getKind(tok) isa Integer
+    @test CC.getSpelling(ppj, tok) == "="
     CC.Backtrack(ppj)
     dispose(tok)
+    CC.EndSourceFile(ppj)
+    CC.end_diag(jci)
+    dispose(jfid)
     dispose(J)
 end
 
@@ -175,38 +177,36 @@ end
     sm = CC.getSourceManager(pp)
     fid = CC.getPredefinesFileID(pp)
     loc = CC.getLocForStartOfFile(sm, fid)
+    @test CC.isValid(loc)
 
     # pragma-assume-nonnull location round-trips through the setter
     old_nonnull = CC.getPragmaAssumeNonNullLoc(pp)
     @test CC.isValid(old_nonnull) == false
-    if CC.isValid(loc)
-        CC.setPragmaAssumeNonNullLoc(pp, loc)
-        @test CC.isValid(CC.getPragmaAssumeNonNullLoc(pp)) == true
-        CC.setPragmaAssumeNonNullLoc(pp, old_nonnull)
-        @test CC.isValid(CC.getPragmaAssumeNonNullLoc(pp)) == false
+    CC.setPragmaAssumeNonNullLoc(pp, loc)
+    @test CC.isValid(CC.getPragmaAssumeNonNullLoc(pp)) == true
+    CC.setPragmaAssumeNonNullLoc(pp, old_nonnull)
+    @test CC.isValid(CC.getPragmaAssumeNonNullLoc(pp)) == false
 
-        # code-completion token range round-trips through the setter
-        CC.setCodeCompletionTokenRange(pp, loc, loc)
-        rng = CC.getCodeCompletionTokenRange(pp)
-        @test rng isa CC.SourceRange
-        @test CC.isValid(rng.begin_loc) == true
+    # code-completion token range round-trips through the setter
+    CC.setCodeCompletionTokenRange(pp, loc, loc)
+    rng = CC.getCodeCompletionTokenRange(pp)
+    @test CC.isValid(rng.begin_loc) == true
 
-        # advancing to the first character of the predefines token stays a valid location
-        @test !CC.is_null_handle(CC.AdvanceToTokenCharacter(pp, loc, 0))
-        # clang walks the token with `isObviouslySimpleCharacter`, which is true of a NUL,
-        # so an index past the token reads off the end of the buffer rather than stopping.
-        # The length is measured and the index refused.
-        tok_len = CC.MeasureTokenLength(loc, CC.getSourceManager(pp), CC.getLangOpts(pp))
-        @test tok_len isa Integer
-        @test !CC.is_null_handle(CC.AdvanceToTokenCharacter(pp, loc, tok_len))
-        @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, loc, tok_len + 1)
-        @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, loc, -1)
-        @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, CC.SourceLocation(), 0)
+    # advancing to the first character of the predefines token stays a valid location
+    @test CC.isValid(CC.AdvanceToTokenCharacter(pp, loc, 0))
+    # clang walks the token with `isObviouslySimpleCharacter`, which is true of a NUL,
+    # so an index past the token reads off the end of the buffer rather than stopping.
+    # The length is measured and the index refused.
+    tok_len = CC.MeasureTokenLength(loc, CC.getSourceManager(pp), CC.getLangOpts(pp))
+    @test tok_len > 0
+    @test CC.isValid(CC.AdvanceToTokenCharacter(pp, loc, tok_len))
+    @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, loc, tok_len + 1)
+    @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, loc, -1)
+    @test_throws AssertionError CC.AdvanceToTokenCharacter(pp, CC.SourceLocation(), 0)
 
-        # a location in the predefines buffer is outside any module → borrowed NULL carrier
-        @test CC.is_null_handle(CC.getModuleForLocation(pp, loc, false))
-        @test CC.is_null_handle(CC.getModuleForLocation(pp, loc, true))
-    end
+    # a location in the predefines buffer is outside any module → borrowed NULL carrier
+    @test CC.is_null_handle(CC.getModuleForLocation(pp, loc, false))
+    @test CC.is_null_handle(CC.getModuleForLocation(pp, loc, true))
 
     # macro-loc forwarders reject a non-macro location before the ccall
     @test_throws AssertionError CC.getImmediateMacroName(pp, CC.SourceLocation())
@@ -223,10 +223,9 @@ end
 
     # arena-allocated MacroInfo: borrowed (never disposed), marked used with no read-back getter
     mi = CC.AllocateMacroInfo(pp)
-    @test mi isa CC.MacroInfo
     @test CC.markMacroAsUsed(pp, mi) === nothing
     mi2 = CC.AllocateMacroInfo(pp, CC.SourceLocation())
-    @test mi2 isa CC.MacroInfo
+    @test mi2.ptr != mi.ptr
 
     # plain flag/counter/state setters: they return nothing and must not throw
     @test CC.setPreprocessToken(pp, true) === nothing
@@ -245,18 +244,16 @@ end
     sm = CC.getSourceManager(pp)
     fid = CC.getPredefinesFileID(pp)
     loc = CC.getLocForStartOfFile(sm, fid)
-    if CC.isValid(loc)
-        @test !(CC.isSafeBufferOptOut(pp, sm, loc))
-        # a stray exit while not inside any region is reported as invalid, leaving no state
-        @test CC.enterOrExitSafeBufferOptOutRegion(pp, false, loc) == true
-        end_loc = CC.getLocForEndOfToken(pp, loc)
-        if CC.isValid(end_loc)
-            @test CC.enterOrExitSafeBufferOptOutRegion(pp, true, loc) == false
-            @test CC.isPPInSafeBufferOptOutRegion(pp) == true
-            @test CC.enterOrExitSafeBufferOptOutRegion(pp, false, end_loc) == false
-            @test CC.isPPInSafeBufferOptOutRegion(pp) == false
-        end
-    end
+    @test CC.isValid(loc)
+    @test !(CC.isSafeBufferOptOut(pp, sm, loc))
+    # a stray exit while not inside any region is reported as invalid, leaving no state
+    @test CC.enterOrExitSafeBufferOptOutRegion(pp, false, loc) == true
+    end_loc = CC.getLocForEndOfToken(pp, loc)
+    @test CC.isValid(end_loc)
+    @test CC.enterOrExitSafeBufferOptOutRegion(pp, true, loc) == false
+    @test CC.isPPInSafeBufferOptOutRegion(pp) == true
+    @test CC.enterOrExitSafeBufferOptOutRegion(pp, false, end_loc) == false
+    @test CC.isPPInSafeBufferOptOutRegion(pp) == false
     CC.dispose(fid)
 
     # IgnorePragmas rewires the pragma handlers; keep it last, the interpreter is a throwaway
@@ -288,7 +285,6 @@ end
     close(io)
     fm = CC.getFileManager(pp)
     ref = CC.getFileRef(fm, path)
-    @test ref isa CC.FileEntryRef
     @test CC.alreadyIncluded(pp, ref) == false
     @test CC.markIncluded(pp, ref) == true
     @test CC.alreadyIncluded(pp, ref) == true
@@ -308,23 +304,22 @@ end
     # #pragma clang arc_cf_code_audited: inactive, then active, then ended by an invalid loc
     @test CC.is_null_handle(CC.getPragmaARCCFCodeAuditedIdent(pp))
     @test CC.isValid(CC.getPragmaARCCFCodeAuditedLoc(pp)) == false
-    if CC.isValid(loc)
-        CC.setPragmaARCCFCodeAuditedInfo(pp, ii, loc)
-        @test CC.getPragmaARCCFCodeAuditedIdent(pp).ptr == ii.ptr
-        @test CC.isValid(CC.getPragmaARCCFCodeAuditedLoc(pp)) == true
-        CC.setPragmaARCCFCodeAuditedInfo(pp, ii, CC.SourceLocation())
-        @test CC.isValid(CC.getPragmaARCCFCodeAuditedLoc(pp)) == false
+    @test CC.isValid(loc)
+    CC.setPragmaARCCFCodeAuditedInfo(pp, ii, loc)
+    @test CC.getPragmaARCCFCodeAuditedIdent(pp).ptr == ii.ptr
+    @test CC.isValid(CC.getPragmaARCCFCodeAuditedLoc(pp)) == true
+    CC.setPragmaARCCFCodeAuditedInfo(pp, ii, CC.SourceLocation())
+    @test CC.isValid(CC.getPragmaARCCFCodeAuditedLoc(pp)) == false
 
-        # the preamble-recorded assume_nonnull location round-trips through its setter
-        @test CC.isValid(CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp)) == false
-        CC.setPreambleRecordedPragmaAssumeNonNullLoc(pp, loc)
-        @test CC.isValid(CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp)) == true
-        CC.setPreambleRecordedPragmaAssumeNonNullLoc(pp, CC.SourceLocation())
-        @test CC.isValid(CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp)) == false
+    # the preamble-recorded assume_nonnull location round-trips through its setter
+    @test CC.isValid(CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp)) == false
+    CC.setPreambleRecordedPragmaAssumeNonNullLoc(pp, loc)
+    @test CC.isValid(CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp)) == true
+    CC.setPreambleRecordedPragmaAssumeNonNullLoc(pp, CC.SourceLocation())
+    @test CC.isValid(CC.getPreambleRecordedPragmaAssumeNonNullLoc(pp)) == false
 
-        # splitting the first character off a real token yields a location carrier
-        @test !CC.is_null_handle(CC.SplitToken(pp, loc, 1))
-    end
+    # splitting the first character off a real token yields a location
+    @test CC.isValid(CC.SplitToken(pp, loc, 1))
     @test_throws AssertionError CC.SplitToken(pp, CC.SourceLocation(), 1)
 
     # scratch-buffer token: CreateString sets the token's location and length
@@ -335,35 +330,31 @@ end
     @test CC.getSpelling(pp, scratch) == "hello"
     # no tokens are cached outside a backtracking scope
     @test CC.IsPreviousCachedToken(pp, scratch) == false
-    if CC.isValid(loc)
-        @test_throws AssertionError CC.CreateString(pp, "hello", scratch, loc)
-    end
+    @test_throws AssertionError CC.CreateString(pp, "hello", scratch, loc)
     dispose(scratch)
 
-    # relex the predefines buffer for a raw identifier and a one-digit numeric constant
-    tok = CC.Token()
-    saw_ident = false
-    saw_digit = false
-    if CC.isValid(loc)
-        cur = loc
-        for _ = 1:400
-            (CC.isValid(cur) && !(saw_ident && saw_digit)) || break
-            CC.getRawToken(pp, cur, tok, true) && break
-            CC.getLength(tok) == 0 && break
-            if !saw_ident && CC.is_raw_identifier(tok)
-                found = CC.LookUpIdentifierInfo(pp, tok)
-                @test found isa CC.IdentifierInfo
-                @test found.ptr == CC.getIdentifierInfo(tok).ptr
-                @test CC.TypoCorrectToken(pp, tok) === nothing
-                saw_ident = true
-            elseif !saw_digit && CC.is_numeric_constant(tok) && CC.getLength(tok) == 1
-                @test CC.getSpellingOfSingleCharacterNumericConstant(pp, tok) isa Char
-                saw_digit = true
-            end
-            cur = CC.getLocForEndOfToken(pp, CC.getLocation(tok))
-        end
-    end
-    dispose(tok)
+    # relex known tokens rather than hoping the predefines buffer contains both shapes
+    ident_fid = CC.FileID(sm, CC.get_buffer("pp_lookup_ident"))
+    ident_tok = CC.Token()
+    @test CC.getRawToken(pp, CC.getLocForStartOfFile(sm, ident_fid), ident_tok, false) == false
+    @test CC.is_raw_identifier(ident_tok)
+    found = CC.LookUpIdentifierInfo(pp, ident_tok)
+    @test CC.getName(found) == "pp_lookup_ident"
+    @test found.ptr == CC.getIdentifierInfo(ident_tok).ptr
+    @test CC.TypoCorrectToken(pp, ident_tok) === nothing
+    dispose(ident_tok)
+    dispose(ident_fid)
+
+    digit_fid = CC.FileID(sm, CC.get_buffer("7"))
+    digit_tok = CC.Token()
+    @test CC.getRawToken(pp, CC.getLocForStartOfFile(sm, digit_fid), digit_tok, false) == false
+    @test CC.is_numeric_constant(digit_tok)
+    @test CC.getLength(digit_tok) == 1
+    @test CC.getSpelling(pp, digit_tok) == "7"
+    # the source spelling is the digit; this helper returns the numeric value as a Char
+    @test CC.getSpellingOfSingleCharacterNumericConstant(pp, digit_tok) == Char(7)
+    dispose(digit_tok)
+    dispose(digit_fid)
 
     # a blank token satisfies none of the three token preconditions
     blank = CC.Token()
@@ -376,17 +367,14 @@ end
     # and the TU-wide method is the observable gate for the asserting current-method getter
     unset = CC.LibClangEx.CXFPEvalMethodKind_FEM_UnsetOnCommandLine
     tu_fem = CC.getTUFPEvalMethod(pp)
-    @test tu_fem isa CC.LibClangEx.CXFPEvalMethodKind
-    if tu_fem != unset
-        cur_fem = CC.getCurrentFPEvalMethod(pp)
-        @test cur_fem isa CC.LibClangEx.CXFPEvalMethodKind
-        CC.setTUFPEvalMethod(pp, tu_fem)
-        @test CC.getTUFPEvalMethod(pp) == tu_fem
-        CC.setCurrentFPEvalMethod(pp, CC.SourceLocation(), cur_fem)
-        @test CC.getCurrentFPEvalMethod(pp) == cur_fem
-    else
-        @test_throws AssertionError CC.getCurrentFPEvalMethod(pp)
-    end
+    # Preprocessor::Initialize sets the TU method from the target, so it is never unset
+    @test tu_fem != unset
+    cur_fem = CC.getCurrentFPEvalMethod(pp)
+    @test cur_fem == tu_fem
+    CC.setTUFPEvalMethod(pp, tu_fem)
+    @test CC.getTUFPEvalMethod(pp) == tu_fem
+    CC.setCurrentFPEvalMethod(pp, CC.SourceLocation(), cur_fem)
+    @test CC.getCurrentFPEvalMethod(pp) == cur_fem
     @test_throws AssertionError CC.setTUFPEvalMethod(pp, unset)
     @test_throws AssertionError CC.setCurrentFPEvalMethod(pp, CC.SourceLocation(), unset)
 
@@ -413,25 +401,26 @@ end
 
     # the diagnostics engine is borrowed: reinstalling the one already in use is a no-op
     diags = CC.getDiagnostics(pp)
-    @test diags isa CC.DiagnosticsEngine
     @test CC.setDiagnostics(pp, diags) === nothing
     @test CC.getDiagnostics(pp).ptr == diags.ptr
 
-    # lexer handles: which one is current is host/driver decided, so only shape is asserted
+    # push a file so a file lexer is current, then both handles name that lexer
+    ci = get_instance(I)
+    lex_fid = CC.FileID(CC.getSourceManager(ci), CC.get_buffer("int lexer_cur = 1;"))
+    CC.begin_diag(ci)
+    CC.EnterSourceFile(pp, lex_fid)
     lexer = CC.getCurrentLexer(pp)
-    @test lexer isa CC.PreprocessorLexer
     file_lexer = CC.getCurrentFileLexer(pp)
-    @test file_lexer isa CC.PreprocessorLexer
-    if lexer.ptr != C_NULL
-        @test CC.isCurrentLexer(pp, lexer) == true
-    end
-    if file_lexer.ptr != C_NULL
-        @test CC.isCurrentLexer(pp, file_lexer)
-    end
+    @test !CC.is_null_handle(lexer)
+    @test file_lexer.ptr == lexer.ptr
+    @test CC.isCurrentLexer(pp, lexer)
+    @test CC.isCurrentLexer(pp, file_lexer)
+    CC.EndSourceFile(pp)
+    CC.end_diag(ci)
+    dispose(lex_fid)
 
     # macro annotation tables are write-only through the C API: assert they do not throw
     ii = CC.getIdentifierInfo(pp, "pp_batch_annotated")
-    @test ii isa CC.IdentifierInfo
     @test CC.addMacroDeprecationMsg(pp, ii, "deprecated by the batch test", CC.SourceLocation()) === nothing
     @test CC.addRestrictExpansionMsg(pp, ii, "restricted by the batch test", CC.SourceLocation()) === nothing
     @test CC.addFinalLoc(pp, ii, CC.SourceLocation()) === nothing
@@ -447,10 +436,9 @@ end
     @test_throws AssertionError CC.ReplaceLastTokenWithAnnotation(pp, blank)
     dispose(blank)
 
-    # __FILE__ path processing is static and its separators are host-decided: shape only
+    # __FILE__ path processing keeps the basename; separators are host-decided
     processed = CC.processPathForFileMacro(joinpath("pp", "batch", "file.h"), CC.getLangOpts(pp), CC.getTargetInfo(pp))
-    @test processed isa String
-    @test !isempty(processed)
+    @test endswith(processed, "file.h")
 
     # backtracking is not enabled here, so the rewind is rejected before the ccall
     @test CC.isBacktrackEnabled(pp) == false
@@ -459,19 +447,25 @@ end
 
     # peeking, re-injecting and rewinding all touch the live token stream
     J = create_interpreter()
-    ppj = CC.getPreprocessor(get_instance(J))
+    jci = get_instance(J)
+    ppj = CC.getPreprocessor(jci)
+    jfid = CC.FileID(CC.getSourceManager(jci), CC.get_buffer("int look_a look_b;"))
+    CC.begin_diag(jci)
+    CC.EnterSourceFile(ppj, jfid)
     tok = CC.Token()
     CC.EnableBacktrackAtThisPos(ppj)
     @test CC.LookAhead(ppj, 0, tok) === nothing
+    @test CC.getSpelling(ppj, tok) == "int"
     first_kind = CC.getKind(tok)
-    @test first_kind isa Integer
     @test CC.LookAhead(ppj, 1, tok) === nothing
-    @test CC.getKind(tok) isa Integer
+    @test CC.getSpelling(ppj, tok) == "look_a"
+    @test CC.getKind(tok) != first_kind
 
     # LookAhead consumes nothing: the next Lex hands back the token peeked at index 0
     CC.Lex(ppj, tok)
     @test CC.getKind(tok) == first_kind
-    @test !CC.is_null_handle(CC.getLastCachedTokenLocation(ppj))
+    @test CC.getSpelling(ppj, tok) == "int"
+    @test CC.isValid(CC.getLastCachedTokenLocation(ppj))
 
     # re-inject the token just consumed, lex it again, then rewind the whole scope
     @test CC.EnterToken(ppj, tok, true) === nothing
@@ -480,6 +474,9 @@ end
     @test CC.RevertCachedTokens(ppj, 1) === nothing
     CC.Backtrack(ppj)
     dispose(tok)
+    CC.EndSourceFile(ppj)
+    CC.end_diag(jci)
+    dispose(jfid)
     dispose(J)
 
     # the code-completion point truncates a real file and is one-shot: another throwaway
@@ -489,17 +486,14 @@ end
     write(io, "int pp_batch_cc_a;\nint pp_batch_cc_b;\n")
     close(io)
     ref = CC.getFileRef(CC.getFileManager(ppk), path)
-    @test ref isa CC.FileEntryRef
     @test CC.isCodeCompletionEnabled(ppk) == false
     @test_throws AssertionError CC.SetCodeCompletionPoint(ppk, ref, 0, 1)
     @test_throws AssertionError CC.SetCodeCompletionPoint(ppk, ref, 1, 0)
     failed = CC.SetCodeCompletionPoint(ppk, ref, 2, 1)
-    @test failed isa Bool
-    if !failed
-        @test CC.isCodeCompletionEnabled(ppk) == true
-        # the point is one-shot; Clang asserts on a second one and the wrapper restates it
-        @test_throws AssertionError CC.SetCodeCompletionPoint(ppk, ref, 1, 1)
-    end
+    @test failed == false
+    @test CC.isCodeCompletionEnabled(ppk) == true
+    # the point is one-shot; Clang asserts on a second one and the wrapper restates it
+    @test_throws AssertionError CC.SetCodeCompletionPoint(ppk, ref, 1, 1)
     dispose(ref)
     dispose(K)
     rm(path; force=true)
@@ -514,10 +508,8 @@ end
 
     # the macro history table always holds the builtin macros Clang registers itself
     n = CC.getNumMacros(pp)
-    @test n isa Integer
     @test n > 0
     macro_names = CC.getMacros(pp)
-    @test macro_names isa Vector{CC.IdentifierInfo}
     @test length(macro_names) == n
     spellings = [CC.getNameStart(ii) for ii in macro_names]
     @test all(!isempty, spellings)
@@ -529,7 +521,6 @@ end
     file_ii = CC.getIdentifierInfo(pp, "__FILE__")
     @test CC.hasMacroDefinition(file_ii) == true
     md = CC.getLocalMacroDirective(pp, file_ii)
-    @test md isa CC.MacroDirective
     @test md.ptr != C_NULL
     @test CC.getLocalMacroDirectiveHistory(pp, file_ii).ptr != C_NULL
     # a name that never was a macro has neither
@@ -549,9 +540,7 @@ end
 
     # which headers the driver actually pulled in is host-decided: assert the shape only
     nfiles = CC.getNumIncludedFiles(pp)
-    @test nfiles isa Integer
     included = CC.getIncludedFiles(pp)
-    @test included isa Vector{CC.FileEntry}
     @test length(included) == nfiles
 
     # module queries run against a throwaway module this testset owns; the visibility id is
@@ -559,7 +548,6 @@ end
     m = CC.Module_("pp_batch_g"; visibility_id=4096)
     @test CC.isModuleMapModule(m) == true
     @test CC.isMacroDefinedInLocalModule(pp, file_ii, m) == false
-    @test CC.getModuleImportLoc(pp, m) isa CC.SourceLocation
     @test CC.isValid(CC.getModuleImportLoc(pp, m)) == false
     @test (CC.markClangModuleAsAffecting(pp, m); true)
 
@@ -585,7 +573,6 @@ end
     @test CC.getPreprocessingRecord(ppj).ptr == C_NULL
     @test (CC.createPreprocessingRecord(ppj); true)
     rec = CC.getPreprocessingRecord(ppj)
-    @test rec isa CC.PreprocessingRecord
     @test rec.ptr != C_NULL
     dispose(J)
 end
@@ -600,20 +587,16 @@ end
 
     # interior references the preprocessor always owns
     @test !CC.is_null_handle(CC.getBuiltinInfo(pp))
-    @test CC.getBuiltinInfo(pp).ptr != C_NULL
     @test !CC.is_null_handle(CC.getModuleLoader(pp))
-    @test CC.getModuleLoader(pp).ptr != C_NULL
 
     # the external macro source is borrowed, so reinstalling whatever is already attached
     # (a NULL carrier when no AST file was loaded) is a no-op round-trip
     src = CC.getExternalSource(pp)
-    @test src isa CC.ExternalPreprocessorSource
     @test CC.setExternalSource(pp, src) === nothing
     @test CC.getExternalSource(pp).ptr == src.ptr
 
     # same shape for the empty-line handler slot
     handler = CC.getEmptylineHandler(pp)
-    @test handler isa CC.EmptylineHandler
     @test CC.setEmptylineHandler(pp, handler) === nothing
     @test CC.getEmptylineHandler(pp).ptr == handler.ptr
 
@@ -632,9 +615,7 @@ end
     @test CC.hasMacroDefinition(ii) == false
     @test CC.isMacroDefinitionAmbiguous(pp, ii) == false
     mi = CC.AllocateMacroInfo(pp, loc)
-    @test mi isa CC.MacroInfo
     md = CC.appendDefMacroDirective(pp, ii, mi, loc)
-    @test md isa CC.MacroDirective
     @test md.ptr != C_NULL
     @test CC.hasMacroDefinition(ii) == true
     @test CC.isMacroDefined(pp, "PP_BATCH_AUTHORED") == true
@@ -661,7 +642,6 @@ end
     write(io, "pp_batch_probe_ident\n")
     close(io)
     ref = CC.getFileRef(CC.getFileManager(pp), path)
-    @test ref isa CC.FileEntryRef
     probe_fid = CC.FileID(sm, ref)
     probe_loc = CC.getLocForStartOfFile(sm, probe_fid)
     tok = CC.Token()
@@ -669,7 +649,6 @@ end
     @test CC.getRawToken(pp, probe_loc, tok, false) == false
     @test CC.is_raw_identifier(tok) == true
     probe_ii = CC.LookUpIdentifierInfo(pp, tok)
-    @test probe_ii isa CC.IdentifierInfo
     @test CC.getIdentifierInfo(tok).ptr == probe_ii.ptr
     @test CC.emitMacroExpansionWarnings(pp, tok) === nothing
     @test CC.emitMacroExpansionWarnings(pp, tok, true) === nothing
@@ -680,7 +659,6 @@ end
 
     # a preprocessing record registers itself on the callback chain, so the chain is
     # non-empty afterwards; the installation cannot be undone, so it runs last
-    @test !CC.is_null_handle(CC.getPPCallbacks(pp))
     @test (CC.createPreprocessingRecord(pp); true)
     @test CC.getPPCallbacks(pp).ptr != C_NULL
 
@@ -696,15 +674,12 @@ end
 
     # the submodule build stack is empty outside a `#pragma clang module build`
     n_subs = CC.getNumBuildingSubmodules(pp)
-    @test n_subs isa Integer
+    @test n_subs == 0
     subs = CC.getBuildingSubmodules(pp)
-    @test subs isa Vector
-    @test length(subs) == n_subs
+    @test isempty(subs)
 
     # affecting modules read back exactly what markClangModuleAsAffecting recorded
     n_aff = CC.getNumAffectingClangModules(pp)
-    @test n_aff isa Integer
-    @test CC.getAffectingClangModules(pp) isa Vector{CC.Module_}
     m = CC.Module_("pp_affecting_module"; visibility_id=4098)
     @test CC.isModuleMapModule(m) == true
     CC.markClangModuleAsAffecting(pp, m)
@@ -717,10 +692,9 @@ end
     # back is deliberately inert while the store is neither recording nor replaying
     @test CC.isRecordingPreamble(pp) == false
     n_cond = CC.getNumPreambleConditionals(pp)
-    @test n_cond isa Integer
+    @test n_cond == 0
     stack = CC.getPreambleConditionalStack(pp)
-    @test stack isa Vector
-    @test length(stack) == n_cond
+    @test isempty(stack)
     @test CC.hasRecordedPreamble(pp) == (n_cond > 0)
     CC.setRecordedPreambleConditionalStack(pp, stack)
     @test CC.getNumPreambleConditionals(pp) == n_cond
@@ -736,7 +710,6 @@ end
     # creating Sema installs it as the preprocessor's code-completion handler, and only the
     # detach half of that pairing is wrapped, so this is a one-way transition
     @test !CC.is_null_handle(CC.getCodeCompletionHandler(pp))
-    @test CC.getCodeCompletionHandler(pp).ptr != C_NULL
     CC.clearCodeCompletionHandler(pp)
     @test CC.getCodeCompletionHandler(pp).ptr == C_NULL
 
@@ -764,8 +737,6 @@ end
     # registering one makes it retrievable and puts it in the leaf list for that name
     mi = CC.AllocateMacroInfo(pp, main_loc)
     mm, is_new = CC.addModuleMacro(pp, m, mii, mi)
-    @test mm isa CC.ModuleMacro
-    @test mm.ptr != C_NULL
     @test is_new == true
     # an identical registration folds onto the node that already exists
     mm2, is_new2 = CC.addModuleMacro(pp, m, mii, mi)
@@ -773,7 +744,6 @@ end
     @test is_new2 == false
     @test CC.getModuleMacro(pp, m, mii).ptr == mm.ptr
     leaves = CC.getLeafModuleMacros(pp, mii)
-    @test leaves isa Vector{CC.ModuleMacro}
     @test length(leaves) == CC.getNumLeafModuleMacros(pp, mii)
     @test mm.ptr in [l.ptr for l in leaves]
 
@@ -782,10 +752,10 @@ end
     # node, so assert what is invariant — whatever comes back is a leaf for this name.
     mi2 = CC.AllocateMacroInfo(pp, main_loc)
     mm3, is_new3 = CC.addModuleMacro(pp, m, mii, mi2, [mm])
-    @test is_new3 isa Bool
-    @test mm3 isa CC.ModuleMacro
-    @test mm3.ptr != C_NULL
+    # clang uniques ModuleMacros on the (module, name, macro, overrides) tuple, so
+    # whether this is a new node is its decision; the leaf list still names it
     @test mm3.ptr in [l.ptr for l in CC.getLeafModuleMacros(pp, mii)]
+    @test is_new3 == (mm3.ptr != mm.ptr)
 
     # macro annotations: each reader stays disengaged until its own recorder has run. The
     # identifier flag and the annotation entry are set together, as Clang's pragma handlers
@@ -794,7 +764,7 @@ end
     CC.setIsDeprecatedMacro(aii, true)
     CC.addMacroDeprecationMsg(pp, aii, "use PP_OTHER instead", main_loc)
     dep_loc = CC.getMacroDeprecationLoc(pp, aii)
-    @test dep_loc isa CC.SourceLocation
+    @test dep_loc !== nothing
     @test CC.isValid(dep_loc) == true
     @test CC.getMacroDeprecationMsg(pp, aii) == "use PP_OTHER instead"
     # the entry exists now, but carries no restrict-expansion and no final annotation yet
@@ -803,9 +773,13 @@ end
     @test CC.getMacroFinalAnnotationLoc(pp, aii) === nothing
     CC.addRestrictExpansionMsg(pp, aii, "not outside this header", main_loc)
     CC.addFinalLoc(pp, aii, main_loc)
-    @test !CC.is_null_handle(CC.getMacroRestrictExpansionLoc(pp, aii))
+    rloc = CC.getMacroRestrictExpansionLoc(pp, aii)
+    @test rloc !== nothing
+    @test CC.isValid(rloc)
     @test CC.getMacroRestrictExpansionMsg(pp, aii) == "not outside this header"
-    @test !CC.is_null_handle(CC.getMacroFinalAnnotationLoc(pp, aii))
+    floc = CC.getMacroFinalAnnotationLoc(pp, aii)
+    @test floc !== nothing
+    @test CC.isValid(floc)
     # an identifier that was never annotated is rejected before the unguarded lookup runs
     plain = CC.getIdentifierInfo(pp, "PP_UNANNOTATED_MACRO_PROBE")
     @test_throws AssertionError CC.getMacroDeprecationLoc(pp, plain)
@@ -830,15 +804,15 @@ end
     # nothing at a main-file location sits in an unimported module, but which module maps
     # the host loaded decides the answer: assert the shape only
     hdr = CC.getHeaderToIncludeForDiagnostics(pp, main_loc, main_loc)
-    @test hdr === nothing || hdr isa CC.FileEntryRef
+    # shape-only: the host decides it — which module maps the driver loaded
+    @test hdr === nothing || !isempty(CC.getName(hdr))
     hdr === nothing || dispose(hdr)
 
-    # a hand-built module has no module map behind it, so its availability is host-decided;
-    # the failing branch reports through the diagnostics engine, hence the stderr redirect
+    # a hand-built module has no module map behind it, so its availability is never set
     avail = redirect_stderr(devnull) do
         return CC.checkModuleIsAvailable(CC.getLangOpts(pp), CC.getTargetInfo(pp), m, CC.getDiagnostics(pp))
     end
-    @test avail isa Bool
+    @test avail isa Bool  # shape-only: nothing decides it — never set on a module built without a module map
 
     dispose(fid)
     # the preprocessor holds borrowed pointers to the module: it must die first

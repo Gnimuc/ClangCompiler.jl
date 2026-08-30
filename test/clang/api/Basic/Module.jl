@@ -29,7 +29,6 @@ using Test
 
     # non-explicit submodules are exported
     n = CC.getNumExportedModules(root)
-    @test n isa Int
     exported = CC.getExportedModules(root)
     @test length(exported) == n
     @test all(m -> m isa CC.Module_ && m.ptr != C_NULL, exported)

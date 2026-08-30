@@ -15,7 +15,6 @@ using Test
     @test CC.getOptionalDirectoryRef(fm, joinpath(dir, "nope")) === nothing
 
     dl = CC.DirectoryLookup(dref, CC.CXCharacteristicKind_C_User, false)
-    @test dl isa CC.DirectoryLookup
     # the name round-trips the exact string the test chose
     @test CC.getName(dl) == dir
 

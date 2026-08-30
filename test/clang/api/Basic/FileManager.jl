@@ -24,7 +24,6 @@ using Test
     @test de.ptr != C_NULL
 
     fer = CC.getFileRef(fm, file)
-    @test fer isa CC.FileEntryRef
     @test occursin("FileManager", CC.getName(fer))   # the name is the ref's, not the entry's
 
     # A virtual file is never touched on disk, so the manager hands back exactly what it was
@@ -32,7 +31,6 @@ using Test
     # prebuilt clang-cpp have to agree on. A size past 2^32 is the one that would show a mingw
     # `off_t` narrowing, so it is the one asserted.
     vfer = CC.getVirtualFileRef(fm, joinpath(@__DIR__, "no_such_file.h"), 5_000_000_000, 987654321)
-    @test vfer isa CC.FileEntryRef
     @test occursin("no_such_file.h", CC.getName(vfer))
     vfe = CC.getFileEntry(vfer)
     @test CC.getSize(vfe) == 5_000_000_000
@@ -79,7 +77,6 @@ end
     write(path, "int fmref = 1;\n")
 
     r1 = CC.getOptionalFileRef(fm, path)
-    @test r1 isa CC.FileEntryRef
     # the name round-trips the path the lookup was given
     @test CC.getName(r1) == path
     # the file's size is the bytes actually written
@@ -126,9 +123,15 @@ end
     @test again.path == abs_in.path
     @test again.changed == false
 
+    # a default-constructed FileManager has no working directory, so FixupRelativePath
+    # leaves a relative path alone — which is the other polarity from makeAbsolutePath
+    # above, where the same input becomes absolute
     fixed = CC.FixupRelativePath(fm, "some/relative/file.cpp")
-    @test fixed.path isa String   # shape-only: the working directory decides whether this
-    @test fixed.changed isa Bool  # rewrites at all, and to what
+    @test fixed.path == "some/relative/file.cpp"
+    @test fixed.changed == false
+    abs_fixed = CC.FixupRelativePath(fm, abs_in.path)
+    @test abs_fixed.path == abs_in.path
+    @test abs_fixed.changed == false
 
     # the canonical name is a copy, so it survives the reference it came from
     canon = CC.getCanonicalName(fm, r1)

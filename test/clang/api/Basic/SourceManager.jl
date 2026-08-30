@@ -16,7 +16,7 @@ using Test
 
     # reach a NamedDecl / SourceLocation / SourceRange
     f = DeclFinder(I)
-    @test f(I, "add_two") isa Bool
+    @test f(I, "add_two")
     d = get_decl(f)
     fd = CC.FunctionDecl(d)
     loc = CC.getLocation(fd)
@@ -33,18 +33,17 @@ using Test
     # undefined variable, so any call throws UndefVarError.
 
     # ---- SourceLocation.jl ----
-    @test CC.getHashValue(fid) isa Integer
+    # a live FileID is not the null id, whose hash is 0
+    @test CC.getHashValue(fid) != 0
     inv = CC.SourceLocation()
-    @test inv isa CC.SourceLocation
-    @test CC.isFileID(loc) isa Bool
-    @test CC.isMacroID(loc) isa Bool
+    # `add_two` is written in the increment, not produced by a macro
+    @test CC.isFileID(loc)
+    @test !CC.isMacroID(loc)
     @test CC.isValid(loc)
     @test CC.isInvalid(inv)
-    @test CC.getHashValue(loc) isa Integer
+    @test CC.getHashValue(loc) != 0
     b = CC.getBeginLoc(sr)
     e = CC.getEndLoc(sr)
-    @test b isa CC.SourceLocation
-    @test e isa CC.SourceLocation
     @test CC.isPairOfFileLocations(b, e)
     @test !CC.is_null_handle(CC.getLocWithOffset(loc, 3))
     @test !isempty(CC.printToString(loc, sm))
@@ -57,7 +56,7 @@ using Test
     ii = get(it, "add_two")
     @test ii isa CC.IdentifierInfo
     ii2 = CC.getIdentifier(fd)
-    @test CC.getName(ii2) isa String
+    @test CC.getName(ii2) == "add_two"
 
     # ---- DiagnosticOptions.jl ----
     dopts = CC.DiagnosticOptions()
@@ -141,7 +140,6 @@ end
 
     # FileID queries + decomposition round-trips
     fid, off = CC.getDecomposedLoc(sm, loc)
-    @test fid isa CC.FileID
     fid2 = CC.getFileID(sm, loc)
     @test CC.getHashValue(fid2) == CC.getHashValue(fid)
     @test CC.getFileOffset(sm, loc) == off
@@ -160,7 +158,6 @@ end
     @test inside
     @test rel == off
     raw = CC.getRawEncoding(loc)
-    @test raw isa Integer
     @test CC.getRawEncoding(CC.getFromRawEncoding(raw)) == raw
     loc2 = CC.getComposedLoc(sm, fid, off)
     @test CC.getRawEncoding(loc2) == raw
@@ -169,9 +166,10 @@ end
     # buffer access
     data = CC.getBufferData(sm, fid)
     @test occursin("sm_batch_fn", data)
-    @test CC.getCharacterData(sm, loc) isa String
-    @test CC.getBufferName(sm, loc) isa String
-    @test CC.getFilename(sm, loc) isa String
+    @test startswith(CC.getCharacterData(sm, loc), "sm_batch_fn")
+    @test !isempty(CC.getBufferName(sm, loc))
+    # the increment is a memory buffer, so there is no on-disk filename
+    @test CC.getFilename(sm, loc) == ""
 
     # line/column decomposition
     line = CC.getSpellingLineNumber(sm, loc)
@@ -188,13 +186,10 @@ end
 
     presumed = CC.getPresumedLoc(sm, loc)
     @test presumed !== nothing
-    if presumed !== nothing
-        fname, pline, pcol, ploc = presumed
-        @test fname isa String
-        @test pline == CC.getPresumedLineNumber(sm, loc)
-        @test pcol == CC.getPresumedColumnNumber(sm, loc)
-        @test ploc isa CC.SourceLocation
-    end
+    fname, pline, pcol, _ = presumed
+    @test fname == CC.getBufferName(sm, loc)
+    @test pline == CC.getPresumedLineNumber(sm, loc)
+    @test pcol == CC.getPresumedColumnNumber(sm, loc)
 
     # navigation on a file location is the identity
     @test CC.getRawEncoding(CC.getSpellingLoc(sm, loc)) == raw
@@ -202,8 +197,9 @@ end
     @test CC.getRawEncoding(CC.getFileLoc(sm, loc)) == raw
     @test CC.getRawEncoding(CC.getImmediateSpellingLoc(sm, loc)) == raw
     rng, is_tok = CC.getExpansionRange(sm, loc)
-    @test rng isa CC.SourceRange
-    @test is_tok isa Bool
+    # a file location's expansion range is a token range of itself
+    @test is_tok
+    @test CC.getRawEncoding(CC.getBeginLoc(rng)) == raw
 
     # predicates on a plain user location
     @test !CC.isInSystemHeader(sm, loc)
@@ -240,17 +236,17 @@ end
         spelling = CC.getSpellingLoc(sm, mloc)
         @test CC.isFileID(spelling)
         @test CC.getRawEncoding(CC.getExpansionLoc(sm, mloc)) != CC.getRawEncoding(mloc)
-        arg, argstart = CC.isMacroArgExpansion(sm, mloc)
-        @test arg isa Bool
-        @test argstart isa CC.SourceLocation
-        @test CC.isMacroBodyExpansion(sm, mloc) == !arg
-        st, mb = CC.isAtStartOfImmediateMacroExpansion(sm, mloc)
-        @test st isa Bool
-        en, me = CC.isAtEndOfImmediateMacroExpansion(sm, mloc)
-        @test en isa Bool
-        irng, itok = CC.getImmediateExpansionRange(sm, mloc)
-        @test irng isa CC.SourceRange
-        @test itok isa Bool
+        arg, _ = CC.isMacroArgExpansion(sm, mloc)
+        # the walk hits the outermost expansion of SM_BATCH_TWICE first — a body
+        # expansion at its start, not its end, and not a macro-argument expansion
+        @test !arg
+        @test CC.isMacroBodyExpansion(sm, mloc)
+        st, _ = CC.isAtStartOfImmediateMacroExpansion(sm, mloc)
+        @test st
+        en, _ = CC.isAtEndOfImmediateMacroExpansion(sm, mloc)
+        @test !en
+        _, itok = CC.getImmediateExpansionRange(sm, mloc)
+        @test itok
         @test CC.isValid(CC.getImmediateMacroCallerLoc(sm, mloc))
         @test CC.isValid(CC.getTopMacroCallerLoc(sm, mloc))
         @test !CC.isInSystemMacro(sm, mloc)
@@ -333,13 +329,12 @@ end
 
     # the line table is materialised on demand by getLineTableFilenameID
     fnid = CC.getLineTableFilenameID(sm, "sm-batch-b.h")
-    @test fnid isa Integer
     @test CC.getLineTableFilenameID(sm, "sm-batch-b.h") == fnid
+    @test CC.getLineTableFilenameID(sm, "sm-batch-b-other.h") != fnid
     @test CC.hasLineTable(sm)
 
     # ---- SourceManager: preamble and SLoc address-space predicates ----
     preamble = CC.getPreambleFileID(sm)
-    @test preamble isa CC.FileID
     @test CC.getHashValue(preamble) == 0    # no preamble was ever set on this manager
     CC.dispose(preamble)
 
@@ -348,8 +343,8 @@ end
     @test !(CC.isLoadedSourceLocation(sm, startloc))
     @test CC.isLocalSourceLocation(sm, startloc)
     @test CC.isLoadedSourceLocation(sm, startloc) != CC.isLocalSourceLocation(sm, startloc)
-    @test CC.getBufferDataOrNone(sm, mainid) isa Union{String,Nothing}
-    @test CC.getNonBuiltinFilenameForID(sm, mainid) isa Union{String,Nothing}
+    @test CC.getBufferDataOrNone(sm, mainid) !== nothing
+    @test CC.getNonBuiltinFilenameForID(sm, mainid) == "<<< inputs >>>"
     CC.dispose(mainid)
 
     # ---- SourceManager: a real on-disk file ----
@@ -429,7 +424,8 @@ end
 
     entry, invalid = CC.getSLocEntry(sm, mainid)
     @test entry isa CC.SLocEntry
-    @test invalid isa Bool
+    # a live FileID is not the invalid/sentinel slot that would return local entry 0
+    @test !invalid
     # every local entry sits below the offset the manager would hand out next
     @test CC.getOffset(entry) < CC.getNextLocalOffset(sm)
 
@@ -470,7 +466,6 @@ end
     @test CC.is_null_handle(CC.getExpansionLocStart(ei))
     @test CC.is_null_handle(CC.getExpansionLocEnd(ei))
     @test CC.isExpansionTokenRange(ei)
-    @test CC.isMacroArgExpansion(ei) isa Bool
     @test !(CC.isMacroBodyExpansion(ei))
     @test !(CC.isFunctionMacroExpansion(ei))
     # a macro-argument expansion records an invalid end location and a macro-body expansion
@@ -500,7 +495,6 @@ end
     @test !CC.isInvalid(mainid)
 
     sentinel = CC.getSentinel()
-    @test sentinel isa CC.FileID
     # the sentinel is FileID::get(-1): it compares valid and is not the null FileID
     @test CC.isValid(sentinel)
     @test !CC.isInvalid(sentinel)
@@ -519,34 +513,37 @@ end
     @test CC.setOverridenFilesKeepOriginalName(sm, true) === nothing
     @test CC.getDataStructureSizes(sm) > 0
     malloc_bytes, mmap_bytes = CC.getMemoryBufferSizes(sm)
-    @test malloc_bytes isa Integer
-    @test mmap_bytes isa Integer
+    # a parsed increment occupies some buffer memory; which half is malloc vs mmap is the
+    # loader's choice, but the sum is not zero
+    @test malloc_bytes + mmap_bytes > 0
 
-    # writing the count back needs `force`, since Clang asserts the slot is still zero
+    # writing a non-zero count needs `force` once the slot is occupied — Clang asserts the
+    # slot is still zero without it. The interpreter starts at 0, so occupy it first.
     n = CC.getNumCreatedFIDsForFileID(sm, mainid)
-    @test CC.setNumCreatedFIDsForFileID(sm, mainid, n, true) === nothing
+    CC.setNumCreatedFIDsForFileID(sm, mainid, n + 3, true)
+    @test CC.getNumCreatedFIDsForFileID(sm, mainid) == n + 3
+    @test_throws AssertionError CC.setNumCreatedFIDsForFileID(sm, mainid, n)
+    CC.setNumCreatedFIDsForFileID(sm, mainid, n, true)
     @test CC.getNumCreatedFIDsForFileID(sm, mainid) == n
-    if n != 0
-        @test_throws AssertionError CC.setNumCreatedFIDsForFileID(sm, mainid, n)
-    end
 
     # ---- SourceManager: the SLoc address space ----
     startloc = CC.getLocForStartOfFile(sm, mainid)
     endloc = CC.getLocForEndOfFile(sm, mainid)
-    same, offset = CC.isInSameSLocAddrSpace(sm, startloc, endloc)
+    same, _ = CC.isInSameSLocAddrSpace(sm, startloc, endloc)
     # both ends of one local file are necessarily in the same half of the address space
     @test same
-    @test offset isa Integer
+    later = CC.getLocWithOffset(startloc, 4)
+    same2, offset = CC.isInSameSLocAddrSpace(sm, startloc, later)
+    @test same2
+    @test offset == 4
 
     # ---- SourceManager: the loaded SLocEntry table ----
+    # nothing was loaded from an AST file, so the loaded half is empty and every index is
+    # out of range — including 0, which is what a swallowed size would still accept
     nloaded = Int(CC.loaded_sloc_entry_size(sm))
-    @test nloaded isa Integer
+    @test nloaded == 0
     @test_throws AssertionError CC.getLoadedSLocEntry(sm, nloaded)
-    if nloaded > 0
-        loaded, loaded_invalid = CC.getLoadedSLocEntry(sm, 0)
-        @test loaded isa CC.SLocEntry
-        @test loaded_invalid isa Bool
-    end
+    @test_throws AssertionError CC.getLoadedSLocEntry(sm, 0)
 
     # ---- SourceManager: buffer data that has already been loaded ----
     data = CC.getBufferDataIfLoaded(sm, mainid)
@@ -566,16 +563,10 @@ end
     @test CC.isBufferLoaded(cc)
     @test CC.getSizeBytesMapped(cc) isa Integer  # shape-only: the host decides it — whether a buffer is mmap'd rather than read into malloc'd memory is the loader's choice
     ccdata = CC.getBufferDataIfLoaded(cc)
-    @test ccdata === nothing || ccdata isa String
-    if CC.isBufferLoaded(cc)
-        @test CC.getSize(cc) isa Integer
-        @test CC.getSize(cc) == ncodeunits(ccdata)
-        @test CC.getMemoryBufferKind(cc) isa CC.CXBufferKind
-    else
-        # both accessors read the buffer unconditionally, so the wrappers must reject this
-        @test_throws AssertionError CC.getSize(cc)
-        @test_throws AssertionError CC.getMemoryBufferKind(cc)
-    end
+    @test ccdata !== nothing
+    @test CC.getSize(cc) == ncodeunits(ccdata)
+    # the interpreter's increment is a heap buffer, not an mmap of a file
+    @test CC.getMemoryBufferKind(cc) == CC.CXBufferKind_MemoryBuffer_Malloc
 
     # ---- SrcMgr::ContentCache: byte order marks Clang cannot handle ----
     @test CC.getInvalidBOM("plain ASCII source text") === nothing
@@ -617,7 +608,6 @@ end
 
     # ---- SourceManager: a location that lives in this TU, not in a loaded module ----
     imploc, modname = CC.getModuleImportLoc(sm, startloc)
-    @test imploc isa CC.SourceLocation
     @test CC.isInvalid(imploc)
     @test modname == ""
 
@@ -653,7 +643,6 @@ end
 
     # ---- SourceManager: a line note rewrites the presumed filename ----
     fnid = CC.getLineTableFilenameID(sm, "sme-line-note.h")
-    @test fnid isa Integer
     @test CC.AddLineNote(sm, floc, 100, fnid, false, false, CC.CXCharacteristicKind_C_User) === nothing
     @test CC.hasLineTable(sm)
     presumed = CC.getPresumedLoc(sm, floc)
@@ -693,6 +682,8 @@ end
     expentry, _ = CC.getSLocEntry(sm, expid)
     @test CC.isExpansion(expentry)
     ei = CC.getExpansion(expentry)
+    @test CC.isMacroArgExpansion(ei)
+    @test !CC.isMacroBodyExpansion(ei)
     r, is_token = CC.getExpansionLocRange(ei)
     @test r isa CC.SourceRange
     @test is_token == CC.isExpansionTokenRange(ei)
@@ -728,7 +719,7 @@ end
     sm = CC.getSourceManager(ci)
 
     f = DeclFinder(I)
-    @test f(I, "fsl_probe") isa Bool
+    @test f(I, "fsl_probe")
     loc = CC.getLocation(get_decl(f))
     @test CC.isValid(loc)
     later = CC.getLocWithOffset(loc, 4)
@@ -746,7 +737,10 @@ end
     expid = CC.getFileID(sm, charexp)
     expentry, _ = CC.getSLocEntry(sm, expid)
     @test CC.isExpansion(expentry)
-    @test !CC.isExpansionTokenRange(CC.getExpansion(expentry))
+    ei = CC.getExpansion(expentry)
+    @test !CC.isExpansionTokenRange(ei)
+    @test CC.isMacroBodyExpansion(ei)
+    @test !CC.isMacroArgExpansion(ei)
     CC.dispose(expid)
 
     # ---- SourceManager: same-translation-unit questions on decomposed locations ----
@@ -756,9 +750,9 @@ end
     # the walk rewrites lid/rid in place, so both are read back through the returned offsets
     same, before, loff2, roff2 = CC.isInTheSameTranslationUnit(sm, lid, loff, rid, roff)
     @test same
-    @test before isa Bool
-    @test loff2 isa Integer
-    @test roff2 isa Integer
+    @test before
+    @test loff2 == loff
+    @test roff2 == roff
     @test CC.isValid(lid)
     @test CC.isValid(rid)
     CC.dispose(lid)
@@ -769,7 +763,6 @@ end
     @test CC.hasManager(fsl)
     @test CC.getManager(fsl).ptr == sm.ptr
     fid = CC.getFileID(fsl)
-    @test fid isa CC.FileID
     @test CC.isValid(fid)
     CC.dispose(fid)
     @test CC.getFileOffset(fsl) == CC.getFileOffset(sm, loc)
@@ -780,7 +773,7 @@ end
     @test CC.getSpellingLoc(fsl).loc.ptr == CC.getSpellingLoc(sm, loc).ptr
     @test CC.getSpellingLoc(fsl).src_mgr.ptr == sm.ptr
     @test CC.getFileLoc(fsl).loc.ptr == CC.getFileLoc(sm, loc).ptr
-    @test CC.isInSystemHeader(fsl) isa Bool
+    @test !CC.isInSystemHeader(fsl)
     @test CC.isBeforeInTranslationUnitThan(fsl, later)
     later_fsl = CC.FullSourceLoc(later, sm)
     @test CC.isBeforeInTranslationUnitThan(fsl, later_fsl)
@@ -851,7 +844,7 @@ end
     sm = CC.getSourceManager(ci)
 
     f = DeclFinder(I)
-    @test f(I, "sloc_extra_probe") isa Bool
+    @test f(I, "sloc_extra_probe")
     loc = CC.getLocation(get_decl(f))
     @test CC.isValid(loc)
 
@@ -879,13 +872,13 @@ end
     @test caller.loc.ptr == CC.getImmediateMacroCallerLoc(sm, loc).ptr
 
     is_arg, arg_start = CC.isMacroArgExpansion(fsl)
-    @test is_arg isa Bool
+    @test !is_arg
     @test arg_start isa CC.FullSourceLoc
     @test arg_start.src_mgr.ptr == sm.ptr
 
     import_loc, module_name = CC.getModuleImportLoc(fsl)
     @test import_loc isa CC.FullSourceLoc
-    @test module_name isa String
+    @test module_name == ""
 
     loc_ref = CC.getFileEntryRef(fsl)
     @test loc_ref === nothing || loc_ref isa CC.FileEntryRef
@@ -960,17 +953,19 @@ end
         @test cache isa CC.ContentCache
         @test CC.hasFileInfo(old, e)         # every key is a file the manager knows about
         @test !(CC.isBufferLoaded(cache))
+        # both accessors read the buffer unconditionally, so the wrappers must reject this
+        @test_throws AssertionError CC.getSize(cache)
+        @test_throws AssertionError CC.getMemoryBufferKind(cache)
     end
 
     @test !CC.isFileOverridden(old, entry)
     @test_throws AssertionError CC.bypassFileContentsOverride(old, ref)
     ov = CC.LLVM.MemoryBuffer(Vector{UInt8}(codeunits("int overridden_probe;")), "override", true)
     CC.overrideFileContents(old, ref, ov)    # consumes ov: do not dispose the buffer
-    if CC.isFileOverridden(old, entry)
-        bypass = CC.bypassFileContentsOverride(old, ref)
-        @test bypass === nothing || bypass isa CC.FileEntryRef
-        bypass !== nothing && CC.dispose(bypass)
-    end
+    @test CC.isFileOverridden(old, entry)
+    bypass = CC.bypassFileContentsOverride(old, ref)
+    @test bypass isa CC.FileEntryRef
+    CC.dispose(bypass)
 
     CC.dispose(fid)
     CC.dispose(ref)
@@ -999,7 +994,6 @@ end
     # ---- SourceManagerForFile: a manager, file manager and engine for one buffer ----
     smf = CC.SourceManagerForFile("smf-probe.cc", "int smf_probe = 3;\nint smf_probe2 = 4;\n")
     smf_sm = CC.getSourceManager(smf)
-    @test smf_sm isa CC.SourceManager
     smf_fid = CC.getMainFileID(smf_sm)
     @test CC.isValid(smf_fid)
     @test occursin("smf_probe", CC.getBufferData(smf_sm, smf_fid))

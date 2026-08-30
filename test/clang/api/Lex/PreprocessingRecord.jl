@@ -11,11 +11,8 @@ using Test
     pp = CC.getPreprocessor(get_instance(I))
     CC.createPreprocessingRecord(pp)
     rec = CC.getPreprocessingRecord(pp)
-    @test rec isa CC.PreprocessingRecord
-    @test rec.ptr != C_NULL
 
     # the record was constructed with the preprocessor's own source manager
-    @test !CC.is_null_handle(CC.getSourceManager(rec))
     @test CC.getSourceManager(rec).ptr == CC.getSourceManager(pp).ptr
 
     # the predefines were preprocessed before the record existed, so it starts empty
@@ -41,13 +38,10 @@ using Test
                 """)
 
     n = CC.getNumPreprocessedEntities(rec)
-    @test n isa Integer
     @test n ≥ 3
     ents = CC.getPreprocessedEntities(rec)
     @test length(ents) == n
-    @test all(e -> e isa CC.PreprocessedEntity && e.ptr != C_NULL, ents)
     @test all(e -> !CC.isInvalid(e), ents)
-    @test all(e -> CC.getKind(e) isa CC.LibClangEx.CXPreprocessedEntityKind, ents)
     @test all(e -> CC.isValid(CC.getSourceRange(e).begin_loc), ents)
     @test_throws AssertionError CC.getPreprocessedEntity(rec, n)
 
@@ -70,8 +64,6 @@ using Test
     @test inc_ent !== nothing
 
     def = CC.MacroDefinitionRecord(def_ent)
-    @test def.ptr != C_NULL
-    @test CC.getName(def) isa CC.IdentifierInfo
     @test CC.getName(CC.getName(def)) == "CC_PPREC_OBJ"
     @test CC.isValid(CC.getLocation(def))
     # the PreprocessedEntity casts are dyn_cast: a wrong one yields a NULL carrier, not a lie
@@ -79,13 +71,10 @@ using Test
     @test CC.InclusionDirective(def_ent).ptr == C_NULL
 
     exp = CC.MacroExpansion(exp_ent)
-    @test exp.ptr != C_NULL
     @test CC.isBuiltinMacro(exp) == false
-    @test CC.getName(exp) isa CC.IdentifierInfo
     @test CC.getDefinition(exp).ptr == def.ptr
 
     inc = CC.InclusionDirective(inc_ent)
-    @test inc.ptr != C_NULL
     @test CC.getFileName(inc) == hdr_spelling
     @test CC.wasInQuotes(inc) == true
     @test CC.importedModule(inc) == false
@@ -97,14 +86,12 @@ using Test
     @test ns ≥ 1
     ranges = CC.getSkippedRanges(rec)
     @test length(ranges) == ns
-    @test all(r -> r isa CC.SourceRange, ranges)
     @test all(r -> CC.isValid(r.begin_loc) && CC.isValid(r.end_loc), ranges)
     @test_throws AssertionError CC.getSkippedRange(rec, ns)
 
     # the record indexes its definitions by the MacroInfo the preprocessor still holds
     ii = CC.getIdentifierInfo(pp, "CC_PPREC_OBJ")
     mi = CC.getMacroInfo(pp, ii)
-    @test mi.ptr != C_NULL
     @test CC.findMacroDefinition(rec, mi).ptr == def.ptr
     # a macro defined before the record existed was never registered with it
     mi_pre = CC.getMacroInfo(pp, CC.getIdentifierInfo(pp, "__cplusplus"))

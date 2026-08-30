@@ -20,8 +20,6 @@ using Test
     fid = CC.FileID(sm, fid_buf)  # the source manager takes ownership of this buffer
     lex_buf = CC.LLVM.MemoryBuffer(Vector{UInt8}(codeunits(code)), "lexbuf", true)
     lex = CC.Lexer(fid, lex_buf, sm, lang_opts)
-    @test lex isa CC.Lexer
-    @test lex.ptr != C_NULL
 
     # the buffer comes back byte for byte, and its length is the bound `seek` is checked against
     @test CC.getBufferLength(lex) == ncodeunits(code)
