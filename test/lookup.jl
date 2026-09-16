@@ -1,6 +1,6 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: create_interpreter, dispose
+using ClangCompiler: create_interpreter, create_parser, dispose
 using ClangCompiler: DeclFinder, get_decl, get_decls
 using Test
 
@@ -63,4 +63,29 @@ end
 
     dispose(f)
     dispose(I)
+end
+
+@testset "Lookup | IncrementalParser C" begin
+    # The reason DeclFinder is no longer interpreter-only: C lookup does not
+    # cross clang's increment chain, so the C RepliBuild session is a parser.
+    p = create_parser(; language=:c)
+    CC.parse(p, "int twice(int v) { return 2 * v; }")
+    f = DeclFinder(p)
+    @test f(p, "twice")
+    d = get_decl(f)
+    @test d isa CC.FunctionDecl
+    @test CC.getName(d) == "twice"
+    @test !f(p, "no_such_symbol_xyz")
+    dispose(f)
+    dispose(p)
+end
+
+@testset "Lookup | IncrementalParser C++ qualified" begin
+    p = create_parser(; language=:cxx)
+    CC.parse(p, "namespace app { int twice(int v) { return 2 * v; } }")
+    f = DeclFinder(p)
+    @test f(p, "app::twice")
+    @test CC.getName(get_decl(f)) == "twice"
+    dispose(f)
+    dispose(p)
 end

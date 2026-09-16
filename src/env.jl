@@ -40,3 +40,28 @@ function get_default_args(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=not
     # pushfirst!(default_args, clang_bin)  # Argv0
     return default_args
 end
+
+"""
+    get_runtime_libs(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing) -> Vector{String}
+
+Library directories from the same GCC shard [`get_default_args`](@ref) uses for
+`-isystem` paths: `libstdc++`, `libgcc_s`, crt. Only directories that exist on
+the installed shard are returned.
+"""
+function get_runtime_libs(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
+    env = triple === nothing ? JLLEnvs.get_default_env(; version, is_cxx) :
+          JLLEnvs.get_default_env(String(triple); version, is_cxx)
+    return JLLEnvs.get_system_libdirs(env)
+end
+
+"""
+    get_link_flags(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing) -> Vector{String}
+
+`-L` flags for [`get_runtime_libs`](@ref), plus `-lstdc++` when `is_cxx`.
+These are linker flags, not the frontend args [`get_default_args`](@ref) returns.
+"""
+function get_link_flags(; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
+    flags = ["-L" * dir for dir in get_runtime_libs(; is_cxx, version, triple)]
+    is_cxx && push!(flags, "-lstdc++")
+    return flags
+end

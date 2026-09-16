@@ -20,11 +20,27 @@ function dispose(x::DeclFinder)
     dispose(x.result)
 end
 
-function DeclFinder(i::CxxInterpreter, kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
-    ci, sema = get_instance(i), get_sema(i)
-    loc = get_main_file_begin_loc(getSourceManager(ci))  # used as a fake loc
+"""
+    DeclFinder(sema, source_mgr, kind=CXLookupNameKind_LookupOrdinaryName) -> DeclFinder
+Build a finder from the two pieces lookup actually needs: a `Sema` and the
+`SourceManager` that supplies a fake location for the `LookupResult`.
+
+[`DeclFinder(::CxxInterpreter)`](@ref) and [`DeclFinder(::IncrementalParser)`](@ref)
+are this constructor plus the accessors those drivers already expose.
+"""
+function DeclFinder(sema::AbstractSema, source_mgr::SourceManager,
+                    kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
+    loc = get_main_file_begin_loc(source_mgr)  # used as a fake loc
     result = LookupResult(sema, DeclarationName(), loc, kind)
     return DeclFinder(result, kind)
+end
+
+function DeclFinder(i::CxxInterpreter, kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
+    return DeclFinder(get_sema(i), getSourceManager(get_instance(i)), kind)
+end
+
+function DeclFinder(p::IncrementalParser, kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
+    return DeclFinder(get_sema(p), getSourceManager(get_instance(p)), kind)
 end
 
 """
@@ -115,19 +131,31 @@ function diagnose_declname(code::AbstractString, type_name::AbstractString, nns:
     return s
 end
 
-function (x::DeclFinder)(i::CxxInterpreter, code::String)
+function (x::DeclFinder)(session::Union{CxxInterpreter,IncrementalParser}, code::String)
     reset(x)
-    sema, parser = get_sema(i), get_parser(i)
-    type_name = parse_cxx_scope_spec(i, x.spec, code)
+    sema, parser = get_sema(session), get_parser(session)
+    ctx = get_ast_context(session)
+    # C / Objective-C have no nested-name-specifier. Driving the C++ annotator there
+    # is wasted work and can refuse a plain identifier; lookup is just the name.
+    if !_session_has_cxx_nns(session)
+        setLookupName(x.result, DeclarationName(get_name(ctx, code)))
+        LookupName(sema, x.result, getCurScope(parser), true)
+        resolveKind(x.result)
+        return !is_empty(x.result)
+    end
+    type_name = parse_cxx_scope_spec(session, x.spec, code)
     if isValid(x.spec)
         nns = getName(getScopeRep(x.spec))
         declname = diagnose_declname(code, type_name, nns)
-        setLookupName(x.result, DeclarationName(get_name(get_ast_context(i), declname)))
+        setLookupName(x.result, DeclarationName(get_name(ctx, declname)))
         LookupParsedName(sema, x.result, getCurScope(parser), x.spec, true, true)
     else
-        setLookupName(x.result, DeclarationName(get_name(get_ast_context(i), code)))
+        setLookupName(x.result, DeclarationName(get_name(ctx, code)))
         LookupName(sema, x.result, getCurScope(parser), true)
     end
     resolveKind(x.result)
     return !is_empty(x.result)
 end
+
+_session_has_cxx_nns(::CxxInterpreter) = true
+_session_has_cxx_nns(p::IncrementalParser) = is_cxx_language(p.language)

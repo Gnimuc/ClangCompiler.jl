@@ -75,6 +75,7 @@ contents read in, which also makes its diagnostics point at the real path:
 
 ```julia
 gen = create_irgenerator(read(path, String); filename=path)
+gen = create_irgenerator(path; from_file=true)
 ```
 
 `:objc` and `:objcxx` take their Objective-C runtime from the target, and only Darwin's is the
@@ -112,7 +113,13 @@ Release it with `dispose`.
 function create_irgenerator(code::AbstractString; args=String[], language::Symbol=:cxx,
                             filename::AbstractString=SOURCE_NAMES[check_language(language)],
                             version=JLLEnvs.GCC_MIN_VER, triple=nothing,
-                            diag_consumer::Union{Nothing,AbstractDiagnosticConsumer}=nothing, show_colors::Bool=false)
+                            diag_consumer::Union{Nothing,AbstractDiagnosticConsumer}=nothing, show_colors::Bool=false,
+                            from_file::Bool=false)
+    if from_file
+        path = String(code)
+        return create_irgenerator(read(path, String); args, language, filename=path, version, triple, diag_consumer,
+                                  show_colors, from_file=false)
+    end
     check_language(language)
     # Codegen asks the target registry for the target machine the module is emitted against,
     # so an uninitialised registry fails inside the backend rather than here.

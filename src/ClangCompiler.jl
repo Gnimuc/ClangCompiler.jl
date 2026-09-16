@@ -37,7 +37,7 @@ include("platform/JLLEnvs.jl")
 using .JLLEnvs
 
 include("env.jl")
-public get_compiler_flags, get_default_args
+public get_compiler_flags, get_default_args, get_runtime_libs, get_link_flags
 
 # clang
 #
@@ -156,5 +156,14 @@ include("utils.jl")
 
 include("template.jl")
 public specialize
+
+# Downstream (RepliBuild) asked for a layout / ABI façade. These names promise a
+# named-tuple shape over clang's own answers — size, bit offsets, enumerator
+# values, Itanium slots — not TableGen ordinals, so they can keep that promise
+# across an LLVM major bump. `function_abi` is deliberately absent: it needs a
+# CodeGenModule the parser does not have.
+include("abi.jl")
+public record_layout, enum_info, vtable_info, api_decls
+public is_exported, is_nothrow, comments, expanded_macro, macro_text
 
 end

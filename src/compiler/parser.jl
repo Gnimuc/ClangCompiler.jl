@@ -20,6 +20,7 @@ struct IncrementalParser <: AbstractIncrementalParser
     instance::CompilerInstance
     parser::Parser
     language::Symbol
+    macros::Union{Nothing,MacroExpansionContext}
 end
 
 """
@@ -60,7 +61,8 @@ turns the flag on.
 
 Release it with `dispose`.
 """
-function create_parser(args=String[]; language::Symbol=:cxx, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
+function create_parser(args=String[]; language::Symbol=:cxx, version=JLLEnvs.GCC_MIN_VER, triple=nothing,
+                       record_macros::Bool=false)
     check_language(language)
     is_cxx = is_cxx_language(language)
     default_args = get_default_args(; is_cxx, version, triple)
@@ -110,6 +112,8 @@ function create_parser(args=String[]; language::Symbol=:cxx, version=JLLEnvs.GCC
     # directly, but system headers do — mingw's libstdc++ reaches `__builtin_unreachable`
     # from `<cstdint>`, which is how its absence first showed up.
     initializeBuiltins(pp)
+    # Must be after createPreprocessor and before the first lex (`EnterMainSourceFile`).
+    macros = _maybe_record_macros(ci, record_macros)
     # `createDiagnostics` installed a TextDiagnosticPrinter, and a printer with no LangOpts
     # dereferences null the first time it renders a caret -- so this is not optional and not
     # only about errors: an ordinary warning kills the process too. Nothing showed it while
@@ -126,12 +130,14 @@ function create_parser(args=String[]; language::Symbol=:cxx, version=JLLEnvs.GCC
     # effect nor fails cleanly. `-D` never showed it, because a macro definition leaves nothing
     # to parse. With no `-include` this drains nothing and costs one lookahead.
     _parse_to_marker!(AbstractDecl[], parser)
-    return IncrementalParser(ci, parser, language)
+    return IncrementalParser(ci, parser, language, macros)
 end
 
 function dispose(x::IncrementalParser)
     dispose(x.parser)                          # before the instance that owns everything else
-    return dispose(x.instance)
+    dispose(x.instance)
+    x.macros === nothing || dispose(x.macros)
+    return nothing
 end
 
 get_instance(x::IncrementalParser) = x.instance

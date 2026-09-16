@@ -97,6 +97,20 @@ end
     @test occursin("@irg_nowhere", text)
 end
 
+@testset "IRGenerator | from_file reads the path" begin
+    mktempdir() do dir
+        path = joinpath(dir, "irg_disk.c")
+        write(path, "extern int irg_from_file(void) { return 4; }\n")
+        text = irgen_text(path; from_file=true, language=:c)
+        @test occursin("@irg_from_file", text)
+        gen = create_irgenerator(path; from_file=true, language=:c)
+        mod = take_module(gen)
+        @test LLVM.name(mod) == path
+        LLVM.dispose(mod)
+        dispose(gen)
+    end
+end
+
 @testset "IRGenerator | the flags reach clang" begin
     # -O2 versus the default is the optimiser answering: the stack slots a plain frontend
     # emits for the parameters are gone once mem2reg has run.

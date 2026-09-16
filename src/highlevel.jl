@@ -26,6 +26,14 @@ execute.
 translation_unit(x::CxxInterpreter) = getTranslationUnitDecl(get_ast_context(x))
 
 """
+    translation_unit(x::IncrementalParser) -> TranslationUnitDecl
+
+Return the one translation unit this parser never replaces. Every increment is
+visible under this node — that is the reason the parser exists.
+"""
+translation_unit(x::IncrementalParser) = getTranslationUnitDecl(get_ast_context(x))
+
+"""
     top_level_decls(x::CxxInterpreter) -> Vector
 
 Return the declarations written directly at file scope in the **most recent** increment, each
@@ -41,6 +49,15 @@ per increment, or use [`IncrementalParser`](@ref), which returns each increment'
 from `parse` itself.
 """
 top_level_decls(x::CxxInterpreter) = collect(decls_in(castToDeclContext(translation_unit(x))))
+
+"""
+    top_level_decls(x::IncrementalParser) -> Vector
+
+Return the declarations written directly at file scope in the one translation
+unit, each resolved to its concrete class. Unlike the interpreter form, a
+second [`parse`](@ref) *does* add to what an earlier call reported.
+"""
+top_level_decls(x::IncrementalParser) = collect(decls_in(castToDeclContext(translation_unit(x))))
 
 """
     find_decl(x::CxxInterpreter, name::AbstractString) -> resolved decl, or `nothing`
@@ -68,6 +85,30 @@ function find_decl(x::CxxInterpreter, name::AbstractString)
 end
 
 """
+    find_decl(x::IncrementalParser, name::AbstractString) -> resolved decl, or `nothing`
+
+Look `name` up at file scope of the one translation unit. C names are
+unqualified identifiers; C++ names may be qualified, as with the interpreter
+form.
+"""
+function find_decl(x::IncrementalParser, name::AbstractString)
+    d = _find_decl(x, name, CXLookupNameKind_LookupOrdinaryName)
+    d === nothing || return d
+    # C tag names (`struct S`) live in a separate namespace; ordinary lookup misses them.
+    return _find_decl(x, name, CXLookupNameKind_LookupTagName)
+end
+
+function _find_decl(session, name::AbstractString, kind)
+    finder = DeclFinder(session, kind)
+    try
+        finder(session, String(name)) || return nothing
+        return resolve(get_decl(finder))
+    finally
+        dispose(finder)
+    end
+end
+
+"""
     find_decls(x::CxxInterpreter, name::AbstractString) -> Vector
 
 Every declaration `name` resolves to, each resolved to its concrete class — an overload set
@@ -83,6 +124,22 @@ function find_decls(x::CxxInterpreter, name::AbstractString)
     end
 end
 
+function find_decls(x::IncrementalParser, name::AbstractString)
+    ds = _find_decls(x, name, CXLookupNameKind_LookupOrdinaryName)
+    isempty(ds) || return ds
+    return _find_decls(x, name, CXLookupNameKind_LookupTagName)
+end
+
+function _find_decls(session, name::AbstractString, kind)
+    finder = DeclFinder(session, kind)
+    try
+        finder(session, String(name)) || return []
+        return [resolve(d) for d in get_decls(finder)]
+    finally
+        dispose(finder)
+    end
+end
+
 """
     source_location(x::CxxInterpreter, node) -> (; file, line, column)
 
@@ -92,7 +149,20 @@ Code handed to [`parse`](@ref) has no file behind it, so `file` is the name clan
 in-memory buffer (`"input_line_1"` and so on) rather than a path.
 """
 function source_location(x::CxxInterpreter, loc::SourceLocation)
-    sm = getSourceManager(get_instance(x))
+    return _source_location(getSourceManager(get_instance(x)), loc)
+end
+
+source_location(x::CxxInterpreter, node::AbstractDecl) = source_location(x, getBeginLoc(node))
+source_location(x::CxxInterpreter, node::AbstractStmt) = source_location(x, getBeginLoc(node))
+
+function source_location(x::IncrementalParser, loc::SourceLocation)
+    return _source_location(getSourceManager(get_instance(x)), loc)
+end
+
+source_location(x::IncrementalParser, node::AbstractDecl) = source_location(x, getBeginLoc(node))
+source_location(x::IncrementalParser, node::AbstractStmt) = source_location(x, getBeginLoc(node))
+
+function _source_location(sm::SourceManager, loc::SourceLocation)
     presumed = getPresumedLoc(sm, loc)
     # The presumed location is the one `#line` directives can move, which is what a diagnostic
     # would print. It is unavailable for an invalid location, and then the spelling -- where the
@@ -102,9 +172,6 @@ function source_location(x::CxxInterpreter, loc::SourceLocation)
     file, line, column, _ = presumed
     return (; file=file, line=Int(line), column=Int(column))
 end
-
-source_location(x::CxxInterpreter, node::AbstractDecl) = source_location(x, getBeginLoc(node))
-source_location(x::CxxInterpreter, node::AbstractStmt) = source_location(x, getBeginLoc(node))
 
 """
     definition(x) -> resolved decl, or `nothing`
@@ -223,10 +290,27 @@ Builds and disposes a `MangleContext` per call. To mangle many declarations, mak
 [`createMangleContext`](@ref) and call [`mangleName`](@ref) directly.
 """
 function mangled_name(x::CxxInterpreter, d::MANGLEABLE_DECL)
-    @check_ptrs d
-    ctx = get_ast_context(x)
+    return mangled_name(get_ast_context(x), d)
+end
+
+function mangled_name(x::IncrementalParser, d::MANGLEABLE_DECL)
+    return mangled_name(get_ast_context(x), d)
+end
+
+"""
+    mangled_name(ctx::ASTContext, d) -> String
+
+The linker symbol `d` would be emitted under, for the target `ctx` was configured with.
+
+The interpreter and parser methods are this plus the context those sessions already hold.
+"""
+function mangled_name(ctx::ASTContext, d::MANGLEABLE_DECL)
+    @check_ptrs ctx d
     mc = createMangleContext(ctx, getTargetInfo(ctx))
     try
+        # C (and `extern "C"`) names are not mangled. clang's Itanium `mangleName` still
+        # emits a `_Z` spelling for those; the linker symbol is the identifier.
+        shouldMangleDeclName(mc, d) || return getNameAsString(d)
         return mangleName(mc, d)
     finally
         dispose(mc)

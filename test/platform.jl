@@ -67,6 +67,21 @@ end
     @test !isempty(dirs)
     @test all(isdir, dirs)
 
+    libs = CC.get_runtime_libs(; is_cxx=true)
+    @test libs isa Vector{String}
+    @test !isempty(libs)
+    @test all(isdir, libs)
+    flags = CC.get_link_flags(; is_cxx=true)
+    @test any(f -> startswith(f, "-L"), flags)
+    @test "-lstdc++" in flags
+
+    for triple in ("x86_64-w64-mingw32", "x86_64-linux-gnu", "x86_64-linux-musl", "armv7l-linux-gnueabihf")
+        env = J.get_default_env(triple; is_cxx=true)
+        fake = String[]
+        J.get_system_libdirs!(env, "cefp-prefix", fake)
+        @test fake isa Vector{String}
+    end
+
     adir = J.get_pkg_artifact_dir(CC.libclangex_jll, host_triple)
     @test adir isa String
     @test isdir(adir)

@@ -3,9 +3,11 @@
 """
 struct CxxInterpreter <: AbstractCxxInterpreter
     interp::Interpreter
+    macros::Union{Nothing,MacroExpansionContext}
 end
 
-CxxInterpreter(x::CXInterpreter) = CxxInterpreter(Interpreter(x))
+CxxInterpreter(x::Interpreter) = CxxInterpreter(x, nothing)
+CxxInterpreter(x::CXInterpreter) = CxxInterpreter(Interpreter(x), nothing)
 
 """
     create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
@@ -35,7 +37,8 @@ For parsing rather than executing, use [`create_parser`](@ref): it drives the sa
 `Parser` over ONE translation unit it never replaces, which is the whole difference, and
 works in C, C++, Objective-C and Objective-C++.
 """
-function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
+function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing,
+                            record_macros::Bool=false)
     LLVM.InitializeNativeTarget()
     LLVM.InitializeAllTargetInfos()
     LLVM.InitializeAllTargetMCs()
@@ -47,7 +50,8 @@ function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_
     @check_ptrs ci
     I = Interpreter(ci)
     dispose(builder)
-    return CxxInterpreter(I)
+    macros = _maybe_record_macros(getCompilerInstance(I), record_macros)
+    return CxxInterpreter(I, macros)
 end
 
 """
@@ -56,7 +60,11 @@ Release the interpreter and everything it owns — the `CompilerInstance`, the A
 with any code compiled into it. Every pointer obtained from it, including function pointers
 from [`get_function_pointer`](@ref) and any decl carrier, dangles afterwards.
 """
-dispose(x::CxxInterpreter) = dispose(x.interp)
+function dispose(x::CxxInterpreter)
+    dispose(x.interp)
+    x.macros === nothing || dispose(x.macros)
+    return nothing
+end
 
 """
     get_instance(x::CxxInterpreter) -> CompilerInstance

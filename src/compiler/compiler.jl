@@ -36,8 +36,8 @@ module this JIT cannot run — it emits for the host — so leave `triple` alone
 
 Release it with `dispose`.
 """
-function create_compiler(code::AbstractString; link_process::Bool=true, kwargs...)
-    irgen = create_irgenerator(code; kwargs...)
+function create_compiler(code::AbstractString; link_process::Bool=true, from_file::Bool=false, kwargs...)
+    irgen = create_irgenerator(code; from_file, kwargs...)
     jit = nothing
     try
         jit = LLVM.LLJIT()

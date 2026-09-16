@@ -1,6 +1,6 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl
+using ClangCompiler: create_interpreter, create_parser, dispose, DeclFinder, get_decl
 using ClangCompiler: translation_unit, top_level_decls, find_decl, find_decls, source_location
 using Test
 
@@ -289,4 +289,38 @@ end
     end
 
     dispose(I)
+end
+
+@testset "high-level parser helpers" begin
+    # The same helpers on IncrementalParser, which is the C-capable AST driver.
+    # A C function's mangled name is the identifier itself — that is clang's
+    # answer, not this wrapper's, and it is what a later increment can still see.
+    p = create_parser(; language=:c)
+    CC.parse(p, """
+        int hl_c_first;
+        int hl_twice(int v) { return 2 * v; }
+        struct HlPoint { int x; int y; };
+        """)
+    @test find_decl(p, "hl_twice") isa CC.FunctionDecl
+    @test find_decl(p, "HlPoint") isa CC.RecordDecl
+    @test find_decl(p, "hl_nope") === nothing
+    @test CC.mangled_name(p, find_decl(p, "hl_twice")) == "hl_twice"
+    @test CC.mangled_name(CC.get_ast_context(p), find_decl(p, "hl_twice")) == "hl_twice"
+
+    names = [CC.decl_name(d) for d in top_level_decls(p) if d isa CC.AbstractNamedDecl]
+    @test "hl_c_first" in names
+    @test "hl_twice" in names
+    @test "HlPoint" in names
+
+    # the one TU spans increments — the reason this driver exists
+    CC.parse(p, "int hl_c_second;")
+    later = [CC.decl_name(d) for d in top_level_decls(p) if d isa CC.AbstractNamedDecl]
+    @test "hl_c_first" in later
+    @test "hl_c_second" in later
+
+    loc = source_location(p, find_decl(p, "hl_twice"))
+    @test loc.line >= 1
+    @test startswith(loc.file, "input_line") || loc.file == "<<< inputs >>>"
+
+    dispose(p)
 end

@@ -29,28 +29,78 @@ function get_default_env(triple::AbstractString; version::VersionNumber=GCC_MIN_
     return get_env(p; version=v, is_cxx)
 end
 
-function get_system_includes(env::AbstractJLLEnv=get_default_env())
+function _ensure_gcc_prefix(env::AbstractJLLEnv)
     gcc_info = get_environment_info(env.platform, env.gcc_version)
-
-    # download shards
     if haskey(ENV, "JULIA_CLANG_SHARDS_URL") && !isempty(get(ENV, "JULIA_CLANG_SHARDS_URL", ""))
         @info "Downloading artifact($(gcc_info.id))"
     end
-
     name = get_gcc_shard_key(env.platform, env.gcc_version)
     Artifacts.ensure_artifact_installed(name, JLL_ENV_SHARDS[name][], ARTIFACT_TOML_PATH[])
+    return artifact_path(Base.SHA1(gcc_info.id))
+end
 
-    # -isystem paths
-    gcc_prefix = artifact_path(Base.SHA1(gcc_info.id))
-
+function get_system_includes(env::AbstractJLLEnv=get_default_env())
+    gcc_prefix = _ensure_gcc_prefix(env)
     isys = String[]
     get_system_includes!(env, gcc_prefix, isys)
-
     for dir in isys
         @assert isdir(dir) "failed to setup environment due to missing dir: $dir, please file an issue."
     end
-
     return normpath.(isys)
+end
+
+"""
+    get_system_libdirs(env::AbstractJLLEnv=get_default_env()) -> Vector{String}
+
+Library directories of the GCC shard used for `env` — the counterpart of
+[`get_system_includes`](@ref). Only directories that exist are returned.
+"""
+function get_system_libdirs(env::AbstractJLLEnv=get_default_env())
+    gcc_prefix = _ensure_gcc_prefix(env)
+    libs = String[]
+    get_system_libdirs!(env, gcc_prefix, libs)
+    return unique!(normpath.(libs))
+end
+
+function get_system_libdirs!(env::MacEnv, prefix::String, libs::Vector{String})
+    triple = __triplet(env.platform)
+    for dir in (joinpath(prefix, triple, "lib"), joinpath(prefix, triple, "sys-root", "usr", "lib"),
+                joinpath(prefix, "lib"))
+        isdir(dir) && push!(libs, dir)
+    end
+    return libs
+end
+
+function get_system_libdirs!(env::WindowsEnv, prefix::String, libs::Vector{String})
+    triple = __triplet(env.platform)
+    version = env.gcc_version
+    for dir in (joinpath(prefix, triple, "lib"), joinpath(prefix, "lib", "gcc", triple, string(version)),
+                joinpath(prefix, triple, "sys-root", "lib"))
+        isdir(dir) && push!(libs, dir)
+    end
+    return libs
+end
+
+function get_system_libdirs!(env::Union{GnuEnv,MuslEnv}, prefix::String, libs::Vector{String})
+    triple = __triplet(env.platform)
+    version = env.gcc_version
+    for dir in (joinpath(prefix, triple, "lib"), joinpath(prefix, triple, "lib64"),
+                joinpath(prefix, "lib", "gcc", triple, string(version)),
+                joinpath(prefix, triple, "sys-root", "lib"), joinpath(prefix, triple, "sys-root", "usr", "lib"),
+                joinpath(prefix, triple, "sys-root", "usr", "lib64"))
+        isdir(dir) && push!(libs, dir)
+    end
+    return libs
+end
+
+function get_system_libdirs!(env::ArmEnv, prefix::String, libs::Vector{String})
+    t = env.platform == Platform("armv7l", "linux") ? "arm-linux-gnueabihf" : "arm-linux-musleabihf"
+    version = env.gcc_version
+    for dir in (joinpath(prefix, t, "lib"), joinpath(prefix, "lib", "gcc", t, string(version)),
+                joinpath(prefix, t, "sys-root", "usr", "lib"))
+        isdir(dir) && push!(libs, dir)
+    end
+    return libs
 end
 
 function get_system_includes!(env::MacEnv, prefix::String, isys::Vector{String})

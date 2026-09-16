@@ -23,3 +23,15 @@ function check_language(language::Symbol)
         throw(ArgumentError("language must be one of $(keys(SOURCE_LANGUAGES)), got :$language"))
     return language
 end
+
+"""
+Register a [`MacroExpansionContext`](@ref) on `ci`'s preprocessor when
+`record_macros` is true. The context is caller-owned; dispose it after the
+instance that holds the preprocessor.
+"""
+function _maybe_record_macros(ci::CompilerInstance, record_macros::Bool)
+    record_macros || return nothing
+    mec = MacroExpansionContext(getLangOpts(ci))
+    registerForPreprocessor(mec, getPreprocessor(ci))
+    return mec
+end
