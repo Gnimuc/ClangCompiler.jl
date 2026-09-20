@@ -12,7 +12,6 @@ using Test
     # One match binding two nodes of different families: the variable itself and
     # its type.
     m = CC.parseMatcherExpression("varDecl(hasName(\"ccbn_var\"), hasType(qualType().bind(\"t\"))).bind(\"v\")", err)
-    @test !CC.is_null_handle(m)
 
     mf = CC.MatchFinder()
     @test CC.addDynamicMatcher(mf, m)
@@ -28,12 +27,11 @@ using Test
     # The four accessors are the discriminator: the right family answers, the
     # wrong one is NULL, and so is an id nothing was bound to.
     d = CC.getNodeAsDecl(bn, "v")
-    @test !CC.is_null_handle(d)
+    @test CC.getName(CC.resolve(d)) == "ccbn_var"
     @test CC.is_null_handle(CC.getNodeAsStmt(bn, "v"))
     @test CC.is_null_handle(CC.getNodeAsQualType(bn, "v"))
 
     t = CC.getNodeAsQualType(bn, "t")
-    @test !CC.is_null_handle(t)
     @test CC.getAsString(t) == "int"
     @test CC.is_null_handle(CC.getNodeAsDecl(bn, "t"))
 
@@ -59,7 +57,6 @@ end
     err = CC.MatcherDiagnostics()
 
     m = CC.parseMatcherExpression("typeLoc().bind(\"tl\")", err)
-    @test !CC.is_null_handle(m)
     mf = CC.MatchFinder()
     @test CC.addDynamicMatcher(mf, m)
     @test CC.matchAST(mf, ctx) >= 1

@@ -17,7 +17,6 @@ using Test
         @assert f(I, "rcs_fn")
         fd = CC.getAsFunction(CC.get_decl(f))
         cfg = CC.buildCFG(fd, CC.getBody(fd), CC.get_ast_context(I))
-        @test cfg.ptr != C_NULL
         try
             entry = CC.getEntry(cfg)
             exit_ = CC.getExit(cfg)

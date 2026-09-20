@@ -13,7 +13,7 @@ using Test
     sm = CC.getSourceManager(ci)
 
     f = DeclFinder(I)
-    @test f(I, "presumed_probe") isa Bool
+    @test f(I, "presumed_probe")
     fd = CC.FunctionDecl(get_decl(f))
     loc = CC.getLocation(fd)
     sr = CC.getSourceRange(fd)
@@ -23,30 +23,20 @@ using Test
     @test ploc isa CC.PresumedLoc
     @test CC.isValid(ploc)
     @test CC.isInvalid(ploc) == !CC.isValid(ploc)
-    if CC.isValid(ploc)
-        @test CC.getFilename(ploc) isa String
-        # No target chooses these: the source is one line, so the presumed line is 1 and
-        # the column is where the name is written. They differ, which is the only reason
-        # the two accessors are separable at all -- `isa Integer` held for both.
-        # PresumedLoc is the #line-aware view and no #line is in play, so it has to agree
-        # with the source manager's own spelling numbers for the same location.
-        @test CC.getLine(ploc) == 1
-        @test CC.getColumn(ploc) > 1
-        @test CC.getLine(ploc) == CC.getSpellingLineNumber(sm, loc)
-        @test CC.getColumn(ploc) == CC.getSpellingColumnNumber(sm, loc)
-        @test !CC.is_null_handle(CC.getIncludeLoc(ploc))
-        pfid = CC.getFileID(ploc)
-        @test pfid isa CC.FileID
-        @test CC.isValid(pfid)
-        CC.dispose(pfid)
-    else
-        # every accessor asserts isValid(), so the wrappers must reject this object
-        @test_throws AssertionError CC.getFilename(ploc)
-        @test_throws AssertionError CC.getFileID(ploc)
-        @test_throws AssertionError CC.getLine(ploc)
-        @test_throws AssertionError CC.getColumn(ploc)
-        @test_throws AssertionError CC.getIncludeLoc(ploc)
-    end
+    @test CC.getFilename(ploc) == CC.getBufferName(sm, loc)
+    # No target chooses these: the source is one line, so the presumed line is 1 and
+    # the column is where the name is written. They differ, which is the only reason
+    # the two accessors are separable at all -- `isa Integer` held for both.
+    # PresumedLoc is the #line-aware view and no #line is in play, so it has to agree
+    # with the source manager's own spelling numbers for the same location.
+    @test CC.getLine(ploc) == 1
+    @test CC.getColumn(ploc) > 1
+    @test CC.getLine(ploc) == CC.getSpellingLineNumber(sm, loc)
+    @test CC.getColumn(ploc) == CC.getSpellingColumnNumber(sm, loc)
+    @test !CC.is_null_handle(CC.getIncludeLoc(ploc))
+    pfid = CC.getFileID(ploc)
+    @test CC.isValid(pfid)
+    CC.dispose(pfid)
     CC.dispose(ploc)
 
     ploc2 = CC.PresumedLoc(sm, loc; use_line_directives=false)

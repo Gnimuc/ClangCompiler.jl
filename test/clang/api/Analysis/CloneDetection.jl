@@ -68,9 +68,9 @@ using Test
                     # every clone the detector reports is non-empty and carries a real
                     # containing declaration
                     @test !isempty(rec.stmts)
-                    @test !CC.is_null_handle(rec.decl)
-                    @test all(s -> !CC.is_null_handle(s), rec.stmts)
-                    @test !CC.is_null_handle(rec.range.begin_loc)
+                    @test CC.getName(CC.resolve(rec.decl)) in ("clone_a", "clone_b")
+                    @test all(s -> CC.resolve(s) isa CC.AbstractStmt, rec.stmts)
+                    @test CC.isValid(rec.range)
                     # a clone always contains itself
                     @test CC.cloneContains(cd, g, i, g, i)
                     push!(decls, UInt(rec.decl.ptr))

@@ -55,7 +55,7 @@ end
     dispose(diag)
 end
 
-@testset "coverage tail: CompilerInstance pipeline" begin
+@testset "CompilerInvocation | standalone instance pipeline" begin
     # A donor interpreter lends its ASTConsumer to the standalone pipeline
     # instance below (there is no consumer factory in the C API). The
     # donation double-owns the consumer, so exactly one owner may be
@@ -175,7 +175,7 @@ end
     dispose(SI)
 end
 
-@testset "coverage tail: ExecuteAction" begin
+@testset "CompilerInvocation | ExecuteAction" begin
     CC.LLVM.InitializeNativeTarget()
     CC.LLVM.InitializeAllTargetInfos()
     CC.LLVM.InitializeAllTargetMCs()

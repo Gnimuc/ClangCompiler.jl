@@ -28,7 +28,6 @@ using Test
 
     # the context's own policy is borrowed, and an owned copy of it starts out equal
     ctx_policy = CC.getPrintingPolicy(ctx)
-    @test ctx_policy isa CC.PrintingPolicy
     owned = CC.PrintingPolicy(ctx_policy)
     @test CC.getSuppressTagKeyword(owned) == CC.getSuppressTagKeyword(ctx_policy)
     @test CC.getSuppressScope(owned) == CC.getSuppressScope(ctx_policy)

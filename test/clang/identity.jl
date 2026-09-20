@@ -97,7 +97,7 @@ int id_fn(int a) { return a + 1; }
         # location have different addresses. Equality by pointer would report them unequal
         # for values that are equal, which is why the TypeLoc hierarchy has no such method.
         tsi = CC.getTypeSourceInfo(first(CC.getFields(rec)))
-        CC.is_null_handle(tsi) && return
+        @assert !CC.is_null_handle(tsi)
         a = CC.getTypeLoc(tsi)
         b = CC.getTypeLoc(tsi)
         # two boxes of one location, at different addresses: the fact that rules the

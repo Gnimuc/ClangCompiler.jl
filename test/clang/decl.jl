@@ -91,7 +91,6 @@ end
     @test f(I, "N")
     nsdc = CC.castToDeclContext(get_decl(f))    # NamespaceDecl -> DeclContext pivot
     ds = CC.decls(nsdc)
-    @test all(d -> d isa CC.AbstractDecl, ds)
     @test !any(d -> isabstracttype(typeof(d)), ds)          # every node resolved
     names = [CC.getDeclKindName(d) for d in ds]
     # recurses into the nested record: S, then S's members (x, m), plus g.
@@ -189,21 +188,16 @@ end
     @test any(d -> d isa CC.NamespaceDecl, via_iter)
     @test any(d -> d isa CC.FunctionDecl, via_iter)
     @test !all(d -> typeof(d) === CC.Decl, via_iter)
-    ns = nothing
-    for d in DeclIterator(tu)
-        d isa CC.NamespaceDecl && (ns=d; break)
-    end
-    @test ns !== nothing
-    if ns !== nothing
-        up = collect(CC.parents(CC.castToDeclContext(ns)))
-        @test !isempty(up)
-        @test last(up).ptr == tu_dc.ptr            # the walk terminates at the TU
-        @test allunique(dc.ptr for dc in up)
-        # the translation unit has no parent, so the chain from it is empty
-        @test isempty(collect(CC.parents(tu_dc)))
-        @test isempty(collect(CC.lexical_parents(tu_dc)))
-    end
+    ns = first(d for d in DeclIterator(tu) if d isa CC.NamespaceDecl)
+    up = collect(CC.parents(CC.castToDeclContext(ns)))
+    @test !isempty(up)
+    @test last(up).ptr == tu_dc.ptr            # the walk terminates at the TU
+    @test allunique(dc.ptr for dc in up)
+    # the translation unit has no parent, so the chain from it is empty
+    @test isempty(collect(CC.parents(tu_dc)))
+    @test isempty(collect(CC.lexical_parents(tu_dc)))
 
+    dispose(f)
     dispose(I)
 end
 
@@ -235,33 +229,26 @@ end
     # --- macro_history walks the #define/#undef chain, most recent first ---
     ii = CC.getIdentifierInfo(pp, "CHAIN_M")
     md = CC.getLocalMacroDirective(pp, ii)
-    if !CC.is_null_handle(md)
-        hist = collect(CC.macro_history(md))
-        @test length(hist) >= 2          # the redefinition, then the #undef, then the first
-        @test hist[1].ptr == md.ptr
-        @test allunique(d.ptr for d in hist)
-        @test CC.is_null_handle(CC.getPrevious(last(hist)))
-    end
+    @test !CC.is_null_handle(md)
+    hist = collect(CC.macro_history(md))
+    @test length(hist) >= 2          # the redefinition, then the #undef, then the first
+    @test hist[1].ptr == md.ptr
+    @test allunique(d.ptr for d in hist)
+    @test CC.is_null_handle(CC.getPrevious(last(hist)))
 
     # --- qualifiers walks a nested-name-specifier outward ---
     # The out-of-line definition `int chainQ::R::m` is a top-level Var whose declarator
     # carries the qualifier. Its kind establishes the class, so the carrier is sound.
     tu_dc = CC.castToDeclContext(CC.getTranslationUnitDecl(ctx))
-    vd = nothing
-    for d in CC.decls_in(tu_dc)
-        CC.getDeclKindName(d) == "Var" && (vd=CC.VarDecl(d); break)
-    end
-    @test vd !== nothing
-    if vd !== nothing
-        nns = CC.getQualifier(vd)
-        if !CC.is_null_handle(nns)
-            quals = collect(CC.qualifiers(nns))
-            @test !isempty(quals)
-            @test quals[1].ptr == nns.ptr
-            @test allunique(q.ptr for q in quals)
-            @test CC.is_null_handle(CC.getPrefix(last(quals)))
-        end
-    end
+    vd = CC.VarDecl(first(d for d in CC.decls_in(tu_dc) if CC.getDeclKindName(d) == "Var"))
+    @test CC.getName(vd) == "m"
+    nns = CC.getQualifier(vd)
+    @test !CC.is_null_handle(nns)
+    quals = collect(CC.qualifiers(nns))
+    @test !isempty(quals)
+    @test quals[1].ptr == nns.ptr
+    @test allunique(q.ptr for q in quals)
+    @test CC.is_null_handle(CC.getPrefix(last(quals)))
 
     dispose(I)
 end
@@ -306,15 +293,9 @@ end
 
     # A decl that is not a context has no route at all: the union admits exactly the classes
     # clang marks DECL_CONTEXT, so the misuse is a dispatch failure and never reaches clang.
-    vd = nothing
-    for d in CC.decls(CC.castToDeclContext(tu))
-        d isa CC.VarDecl && (vd = d)
-    end
-    @test vd !== nothing
-    if vd !== nothing
-        @test !(vd isa CC.AbstractDeclContextDecl)
-        @test !applicable(Base.unsafe_convert, CC.LibClangEx.CXDeclContext, vd)
-    end
+    vd = first(d for d in CC.decls(CC.castToDeclContext(tu)) if d isa CC.VarDecl)
+    @test !(vd isa CC.AbstractDeclContextDecl)
+    @test !applicable(Base.unsafe_convert, CC.LibClangEx.CXDeclContext, vd)
 
     dispose(I)
 end

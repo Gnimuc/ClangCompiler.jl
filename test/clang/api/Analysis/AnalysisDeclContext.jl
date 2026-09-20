@@ -48,7 +48,6 @@ using Test
             @test !CC.getAddInitializers(adc)
 
             cfg = CC.getCFG(adc)
-            @test !CC.is_null_handle(cfg)
             @test CC.isCFGBuilt(adc)
             # the graph is cached, not rebuilt
             @test CC.getCFG(adc).ptr == cfg.ptr
@@ -64,7 +63,6 @@ using Test
 
             # the reachability analysis is borrowed and cached too
             ra = CC.getCFGReachablityAnalysis(adc)
-            @test !CC.is_null_handle(ra)
             @test CC.getCFGReachablityAnalysis(adc).ptr == ra.ptr
             @test CC.isReachable(ra, CC.getEntry(cfg), CC.getExit(cfg))
             @test !CC.isReachable(ra, CC.getExit(cfg), CC.getEntry(cfg))
@@ -72,7 +70,6 @@ using Test
             # CFGStmtMap: every block-level statement lands in a block of this graph, and a
             # terminator lands in the block it terminates
             m = CC.getCFGStmtMap(adc)
-            @test !CC.is_null_handle(m)
             @test CC.getCFGStmtMap(adc).ptr == m.ptr
             mapped_stmts = 0
             mapped_terminators = 0
@@ -87,7 +84,6 @@ using Test
                     CC.getElementKind(b, j) == CC.LibClangEx.CXCFGElementKind_Statement || continue
                     s = CC.getElementStmt(b, j)
                     landed = CC.getBlock(m, s)
-                    @test !CC.is_null_handle(landed)
                     @test CC.getParent(landed).ptr == cfg.ptr
                     mapped_stmts += 1
                 end
@@ -136,17 +132,13 @@ using Test
             # the ignore-* walks never stop on the node kind they promise to skip
             for s in CC.getBlockStmts(cfg)
                 p = CC.getParentIgnoreParens(pm, s)
-                CC.is_null_handle(p) || @test !(CC.resolve(p) isa CC.AbstractParenExpr)
+                @test CC.is_null_handle(p) || !(CC.resolve(p) isa CC.AbstractParenExpr)
                 p = CC.getParentIgnoreParenCasts(pm, s)
-                if !CC.is_null_handle(p)
-                    r = CC.resolve(p)
-                    @test !(r isa CC.AbstractParenExpr) && !(r isa CC.AbstractCastExpr)
-                end
+                @test CC.is_null_handle(p) ||
+                      (!(CC.resolve(p) isa CC.AbstractParenExpr) && !(CC.resolve(p) isa CC.AbstractCastExpr))
                 p = CC.getParentIgnoreParenImpCasts(pm, s)
-                if !CC.is_null_handle(p)
-                    r = CC.resolve(p)
-                    @test !(r isa CC.AbstractParenExpr) && !(r isa CC.AbstractImplicitCastExpr)
-                end
+                @test CC.is_null_handle(p) ||
+                      (!(CC.resolve(p) isa CC.AbstractParenExpr) && !(CC.resolve(p) isa CC.AbstractImplicitCastExpr))
             end
 
             # an operand of an implicit cast: the cast is its parent, and the ignore-* walk
@@ -217,10 +209,8 @@ using Test
             @test !CC.isCFGBuilt(forced)
             CC.registerForcedBlockExpression(forced, target)
             fcfg = CC.getCFG(forced)
-            @test !CC.is_null_handle(fcfg)
             fmap = CC.getCFGStmtMap(forced)
             landed = CC.getBlock(fmap, target)
-            @test !CC.is_null_handle(landed)
             @test CC.getParent(landed).ptr == fcfg.ptr
         finally
             CC.dispose(forced)
@@ -269,7 +259,6 @@ end
         adc = CC.AnalysisDeclContext(fd)
         try
             cfg = CC.getCFG(adc)
-            @test !CC.is_null_handle(cfg)
             pm = CC.getParentMap(adc)
 
             direct = 0
@@ -289,7 +278,7 @@ end
                     @test CC.resolve(CC.getParent(pm, cond)) isa CC.AbstractParenExpr
                     # the outermost paren of that chain is the if's own operand
                     outer = CC.getOuterParenParent(pm, CC.getParent(pm, cond))
-                    @test CC.is_null_handle(outer) || CC.resolve(outer) isa CC.AbstractParenExpr
+                    @test CC.resolve(outer) isa CC.AbstractParenExpr
                 end
             end
             @test direct == 1
@@ -351,7 +340,6 @@ end
             @test CC.getContext(mgr, other).ptr != adc.ptr
 
             cfg = CC.getCFG(adc)
-            @test !CC.is_null_handle(cfg)
             found_dtor = false
             found_loop_exit = false
             for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
@@ -409,7 +397,6 @@ end
                 @test CC.getAddLoopExit(CC.getCFGBuildOptions(adc))
                 @test CC.getAddScopes(CC.getCFGBuildOptions(adc))
                 cfg = CC.getCFG(adc)
-                @test !CC.is_null_handle(cfg)
                 kinds = Set{CC.LibClangEx.CXCFGElementKind}()
                 for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)
                     b = CC.getBlock(cfg, i)

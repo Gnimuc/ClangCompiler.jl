@@ -7,29 +7,34 @@ using ClangCompiler: dispose
 @testset "Diagnostic" begin
     @testset "Engine" begin
         id = CC.DiagnosticIDs()
-        @test id.ptr != C_NULL
-
         opts = CC.DiagnosticOptions()
-        @test opts.ptr != C_NULL
+        @test CC.getVerifyPrefixes(opts) == String[]
+        CC.addVerifyPrefix(opts, "expected")
+        @test CC.getVerifyPrefixes(opts) == ["expected"]
 
         diag = CC.DiagnosticsEngine(id, opts)
-        @test diag.ptr != C_NULL
+        @test !CC.hasErrorOccurred(diag)
+        @test CC.getNumErrors(diag) == 0
+        @test CC.getNumWarnings(diag) == 0
         dispose(diag)
+        dispose(opts)
+        dispose(id)
     end
 
     @testset "Consumer" begin
         opts = CC.DiagnosticOptions()
-        @test opts.ptr != C_NULL
-
         client = CC.IgnoringDiagConsumer()
-        @test client.ptr != C_NULL
-
         diag = CC.DiagnosticsEngine(opts, client)
-        @test diag.ptr != C_NULL
+        @test CC.getClient(diag).ptr == client.ptr
+        @test CC.ownsClient(diag)
+        @test CC.getNumErrors(CC.getClient(diag)) == 0
+        @test CC.IncludeInDiagnosticCounts(client)
         dispose(diag)
+        dispose(opts)
     end
 
     diag = CC.DiagnosticsEngine()
-    @test diag.ptr != C_NULL
+    @test !CC.hasErrorOccurred(diag)
+    @test CC.getNumErrors(diag) == 0
     dispose(diag)
 end

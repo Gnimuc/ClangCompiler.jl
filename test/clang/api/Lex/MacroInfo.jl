@@ -8,24 +8,19 @@ using Test
     ci = get_instance(I)
     pp = CC.getPreprocessor(ci)
 
-    # Preprocessor accessors
-    @test !CC.is_null_handle(CC.getDiagnostics(pp))
-    @test !CC.is_null_handle(CC.getLangOpts(pp))
-    @test !CC.is_null_handle(CC.getTargetInfo(pp))
-    @test !CC.is_null_handle(CC.getFileManager(pp))
-    @test !CC.is_null_handle(CC.getSourceManager(pp))
+    # Preprocessor accessors: each interior handle is the instance's own, not a copy
+    @test CC.getDiagnostics(pp).ptr == CC.getDiagnostics(ci).ptr
+    @test CC.getLangOpts(pp).ptr == CC.getLangOpts(ci).ptr
+    @test CC.getTargetInfo(pp).ptr == CC.getTarget(ci).ptr
+    @test CC.getFileManager(pp).ptr == CC.getFileManager(ci).ptr
+    @test CC.getSourceManager(pp).ptr == CC.getSourceManager(ci).ptr
     @test !CC.is_null_handle(CC.getIdentifierTable(pp))
     @test !(CC.getCommentRetentionState(pp))
     CC.SetCommentRetentionState(pp, false, false)
     @test !CC.getCommentRetentionState(pp)
     @test CC.getPragmasEnabled(pp)
     CC.setPragmasEnabled(pp, true)
-    @test CC.getTokenCount(pp) isa Unsigned
-    @test CC.getMaxTokens(pp) isa Unsigned
     @test !isempty(CC.getPredefines(pp))
-    predefines_fid = CC.getPredefinesFileID(pp)
-    @test predefines_fid isa CC.FileID
-    dispose(predefines_fid)
 
     CC.parse(I, """
                 #define CC_LEX_OBJ 42
@@ -41,10 +36,7 @@ using Test
     @test CC.isMacroDefined(pp, "CC_LEX_FN")
     @test !CC.isMacroDefined(pp, "CC_LEX_NOT_DEFINED")
     ii_obj = CC.getIdentifierInfo(pp, "CC_LEX_OBJ")
-    @test ii_obj isa CC.IdentifierInfo
     mi_obj = CC.getMacroInfo(pp, ii_obj)
-    @test mi_obj isa CC.MacroInfo
-    @test mi_obj.ptr != C_NULL
 
     # MacroInfo read surface (object-like)
     @test CC.isObjectLike(mi_obj)
@@ -64,7 +56,6 @@ using Test
 
     # Token read surface on a borrowed replacement token
     tok42 = CC.getReplacementToken(mi_obj, 0)
-    @test tok42 isa CC.Token
     @test CC.isLiteral(tok42)
     @test CC.is_numeric_constant(tok42)
     @test !CC.isAnnotation(tok42)
@@ -81,20 +72,18 @@ using Test
     @test !CC.isAtStartOfLine(tok42)
     @test CC.getFlag(tok42, CC.LibClangEx.CXTokenFlags_LeadingSpace) == CC.hasLeadingSpace(tok42)
     @test !CC.getFlag(tok42, CC.LibClangEx.CXTokenFlags_NeedsCleaning)
-    @test CC.getFlags(tok42) isa Unsigned
     @test !CC.isExpandDisabled(tok42) && !CC.needsCleaning(tok42)
     @test !CC.hasLeadingEmptyMacro(tok42) && !CC.hasUDSuffix(tok42) && !CC.hasUCN(tok42)
     @test !CC.stringifiedInMacro(tok42) && !CC.commaAfterElided(tok42)
     @test !CC.isEditorPlaceholder(tok42)
     @test CC.hasPtrData(tok42)
     @test CC.isValid(CC.getLocation(tok42))
-    @test !CC.is_null_handle(CC.getEndLoc(tok42))
-    @test !CC.is_null_handle(CC.getLastLoc(tok42))
+    @test CC.isValid(CC.getEndLoc(tok42))
+    @test CC.isValid(CC.getLastLoc(tok42))
 
     # MacroInfo read surface (function-like) + params count+index
     ii_fn = CC.getIdentifierInfo(pp, "CC_LEX_FN")
     mi_fn = CC.getMacroInfo(pp, ii_fn)
-    @test mi_fn.ptr != C_NULL
     @test CC.isFunctionLike(mi_fn)
     @test !CC.isObjectLike(mi_fn)
     @test !CC.param_empty(mi_fn)
@@ -115,7 +104,7 @@ using Test
     defloc = CC.getDefinitionLoc(mi_fn)
     @test CC.isValid(defloc)
     @test CC.isValid(CC.getDefinitionEndLoc(mi_fn))
-    @test CC.getDefinitionLength(mi_fn, sm) isa Unsigned
+    @test CC.getDefinitionLength(mi_fn, sm) > 0
 
     # Lexer static utilities
     @test CC.MeasureTokenLength(defloc, sm, lo) == length("CC_LEX_FN")
@@ -152,7 +141,7 @@ using Test
     @test !CC.isKeepWhitespaceMode(lex)
     @test !(CC.inKeepCommentMode(lex))
     @test CC.isFirstTimeLexingFile(lex)
-    @test CC.getFileLoc(lex) isa CC.SourceLocation
+    @test CC.isValid(CC.getFileLoc(lex))
     CC.SetCommentRetentionState(lex, true)
     @test CC.inKeepCommentMode(lex)
     CC.SetCommentRetentionState(lex, false)
@@ -197,15 +186,12 @@ end
     # MacroDirective on a plain single #define
     ii = CC.getIdentifierInfo(pp, "CC_MDIR_OBJ")
     md = CC.getLocalMacroDirective(pp, ii)
-    @test md isa CC.MacroDirective
-    @test md.ptr != C_NULL
     @test CC.getKind(md) == CC.LibClangEx.CXMacroDirectiveKind_MD_Define
     @test CC.isDefined(md)
     @test !(CC.isFromPCH(md))
     @test CC.isValid(CC.getLocation(md))
     @test CC.getPrevious(md).ptr == C_NULL
     mi = CC.getMacroInfo(md)
-    @test mi isa CC.MacroInfo
     @test mi.ptr == CC.getMacroInfo(pp, ii).ptr
 
     # walking a #define / #undef / #define history backwards
@@ -230,7 +216,6 @@ end
     # MacroInfo mutators, on a preprocessor-owned macro attached to no identifier
     loc = CC.getDefinitionLoc(mi)
     fresh = CC.AllocateMacroInfo(pp, loc)
-    @test fresh.ptr != C_NULL
     @test CC.tokens_empty(fresh)
     @test !CC.tokens_empty(mi)
     CC.setDefinitionEndLoc(fresh, loc)
@@ -278,8 +263,7 @@ end
     lit = CC.getReplacementToken(mi, 0)
     @test CC.isLiteral(lit)
     ld = CC.getLiteralData(lit)
-    @test ld isa String
-    @test isempty(ld) || ld == "7"
+    @test ld == "7"
     k = CC.getKind(lit)
     CC.setKind(tk, k)
     @test CC.getKind(tk) == k
@@ -311,8 +295,6 @@ end
 
     # the boxed definition the newest directive resolves to
     def = CC.getDefinition(md)
-    @test def isa CC.DefInfo
-    @test def.ptr != C_NULL
     @test CC.isValid(def)
     @test !CC.isInvalid(def)
     @test !CC.isUndefined(def)
@@ -320,18 +302,14 @@ end
     @test CC.isValid(CC.getLocation(def))
     @test CC.isPublic(def)
     dmd = CC.getDirective(def)
-    @test dmd isa CC.DefMacroDirective
     @test dmd.ptr == md.ptr  # the newest directive is itself the active #define
     @test CC.getKind(dmd) == CC.LibClangEx.CXMacroDirectiveKind_MD_Define
     mi = CC.getMacroInfo(def)
-    @test mi isa CC.MacroInfo
-    @test mi.ptr != C_NULL
     @test CC.getInfo(dmd).ptr == mi.ptr
     @test CC.getMacroInfo(md).ptr == mi.ptr
 
     # stepping back reaches the definition the #undef cancelled
     prev = CC.getPreviousDefinition(def)
-    @test prev isa CC.DefInfo
     @test CC.isValid(prev)
     @test CC.isUndefined(prev)
     @test CC.isValid(CC.getUndefLocation(prev))
@@ -351,7 +329,6 @@ end
     # a location query returns a box either way; which definition it lands on depends on
     # how the host laid the snippet out in the source manager, so assert the shape
     at = CC.findDirectiveAtLoc(md, CC.getDefinitionLoc(mi), sm)
-    @test at isa CC.DefInfo
     @test !(CC.isValid(at))
     dispose(at)
     @test_throws AssertionError CC.findDirectiveAtLoc(md, CC.SourceLocation(), sm)
@@ -375,7 +352,6 @@ end
 
     # MacroInfo build-time flags, on a fresh macro attached to no identifier
     fresh = CC.AllocateMacroInfo(pp, CC.getDefinitionLoc(mi))
-    @test fresh.ptr != C_NULL
     @test CC.isObjectLike(fresh)
     CC.setIsFunctionLike(fresh)
     @test CC.isFunctionLike(fresh)

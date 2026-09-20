@@ -7,20 +7,8 @@ const TLX = CC.LibClangEx
 # TypeLoc payload walk: parse declarators, then getTypeLoc -> resolve ->
 # per-class payload accessors. Every non-NULL TypeLoc carrier is an owned heap
 # box (create -> use -> dispose); resolve hits are second boxes disposed
-# independently of their source. Assertions are host-portable: isa/Bool,
-# validity, counts, and same-line written-order of encoded locations.
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, DeclIterator
-# Depth-first search for the first resolved child node whose carrier is `T`.
-if !@isdefined(_find_node)
-    function _find_node(::Type{T}, x) where {T}
-        x isa T && return x
-        for c in CC.children(x)
-            r = _find_node(T, CC.resolve(c))
-            r !== nothing && return r
-        end
-        return nothing
-    end
-end
+# independently of their source. Assertions are host-portable: classof via
+# resolve, validity, counts, and same-line written-order of encoded locations.
 
 @testset "payload accessors" begin
     I = create_interpreter(String[])
@@ -117,7 +105,6 @@ end
     @test CC.getNumParams(fn) == 2
     p0 = CC.getParam(fn, 0)
     p1 = CC.getParam(fn, 1)
-    @test p0 isa CC.ParmVarDecl && p1 isa CC.ParmVarDecl
     @test CC.getName(p0) == "a"
     @test CC.getName(p1) == "b"
     lp = CC.getLParenLoc(fn)
@@ -138,7 +125,6 @@ end
     @test pr isa CC.ParenTypeLoc
     @test CC.isValid(CC.getLParenLoc(pr)) && CC.isValid(CC.getRParenLoc(pr))
     unp = CC.IgnoreParens(pr)
-    @test unp isa CC.TypeLoc
     @test CC.getTypeLocClass(unp) == TLX.CXTypeLocClass_FunctionProto
     CC.dispose(unp)
     CC.dispose(pr)
@@ -152,7 +138,6 @@ end
     q = CC.resolve(tl)
     @test q isa CC.QualifiedTypeLoc
     uq = CC.getUnqualifiedLoc(q)
-    @test uq isa CC.TypeLoc
     @test CC.getTypeLocClass(uq) == TLX.CXTypeLocClass_Builtin
     uq2 = CC.getUnqualifiedLoc(tl)    # base-level qualifier skip on the same box
     @test CC.getTypeLocClass(uq2) == TLX.CXTypeLocClass_Builtin
@@ -201,9 +186,7 @@ end
     at = CC.resolve(tl)
     @test at isa CC.AttributedTypeLoc
     attr = CC.getAttr(at)
-    @test attr isa CC.Attr
-    @test attr.ptr != C_NULL
-    @test !isempty(CC.getSpelling(attr))
+    @test CC.getKind(attr) == TLX.CXAttrKind_TypeNonNull
     mloc = CC.getModifiedLoc(at)
     @test CC.getTypeLocClass(mloc) == TLX.CXTypeLocClass_Pointer
     CC.dispose(mloc)
@@ -221,12 +204,11 @@ end
     @test f(I, "tlp")
     vd = CC.VarDecl(get_decl(f))
     tl = CC.getTypeLoc(CC.getTypeSourceInfo(vd))   # owned box
-    @test tl isa CC.TypeLoc
     @test !CC.isNull(tl)
     @test CC.resolve(CC.getTypePtr(CC.getType(tl))) isa CC.PointerType
     @test CC.isValid((CC.getSourceRange(tl)).begin_loc)
     @test CC.isValid((CC.getSourceRange(tl)).end_loc)
-    @test !CC.is_null_handle(CC.getBeginLoc(tl))
+    @test CC.isValid(CC.getBeginLoc(tl))
 
     nxt = CC.getNextTypeLoc(tl)                     # the pointee (int) loc; owned box
     @test CC.resolve(CC.getTypePtr(CC.getType(nxt))) isa CC.BuiltinType

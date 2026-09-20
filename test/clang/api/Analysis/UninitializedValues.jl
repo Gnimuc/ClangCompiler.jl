@@ -65,7 +65,6 @@ end
             @test !CC.isConstRefUse(r, i)
             # the user expression is a read of `y` inside this body
             u = CC.getUser(r, i)
-            @test !CC.is_null_handle(u)
             @test CC.resolve(u) isa CC.AbstractExpr
             # `Always` needs no guilty branch to justify it
             @test CC.getNumBranches(r, i) == 0
@@ -79,18 +78,12 @@ end
             @test "x" in names
             i = findfirst(==("x"), names) - 1
             k = CC.getKind(r, i)
-            @test k == CC.LibClangEx.CXUninitUseKind_Sometimes || k == CC.LibClangEx.CXUninitUseKind_Maybe
+            @test k == CC.LibClangEx.CXUninitUseKind_Sometimes
             nb = Int(CC.getNumBranches(r, i))
-            # getKind reports Sometimes exactly when it has branches to blame, and Maybe
-            # exactly when it has none
-            if k == CC.LibClangEx.CXUninitUseKind_Sometimes
-                @test nb > 0
-            else
-                @test nb == 0
-            end
+            # getKind reports Sometimes exactly when it has branches to blame
+            @test nb > 0
             for j = 0:(nb - 1)
                 t = CC.getBranchTerminator(r, i, j)
-                @test !CC.is_null_handle(t)
                 @test CC.resolve(t) isa CC.AbstractIfStmt
                 # the guilty output is one of the terminator's two successors
                 @test CC.getBranchOutput(r, i, j) < 2

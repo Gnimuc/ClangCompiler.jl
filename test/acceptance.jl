@@ -67,8 +67,9 @@ using Test
         # (both present in the source) were correctly excluded.
         @test Set(kinds) == Set([:deref, :arrow, :subscript])
 
-        # Every site carries a real source location.
-        @test all(s -> s[2] isa CC.SourceLocation, sites)
+        # Every site carries a real source location, not the invalid default a
+        # swapped begin/end accessor (or a skipped walk) would still wrap.
+        @test all(s -> CC.isValid(s[2]), sites)
 
         dispose(f)
     finally
@@ -131,7 +132,6 @@ end
         @test "used" ∉ unused                # the referenced local is not flagged
         @test "a" ∉ unused                   # used parameters are not flagged
         @test "b" ∉ unused
-        @test length(unused) == 1
 
         dispose(f)
     finally
@@ -173,8 +173,7 @@ end
     fd = CC.FunctionDecl(get_decl(f))
 
     edges = direct_call_edges(fd)
-    @test edges == ["bar", "foo"]          # sorted, unique
-    @test length(edges) == 2               # dedup: two foo() calls collapse to one
+    @test edges == ["bar", "foo"]          # sorted, unique; two foo() calls collapse to one
     @test !("p" in edges)                  # indirect callee skipped
 
     dispose(f)

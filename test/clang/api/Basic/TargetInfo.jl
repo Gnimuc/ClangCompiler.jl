@@ -80,18 +80,25 @@ const PIN = "x86_64-linux-gnu"
     @test CC.getTypeWidth(ti, CC.getIntTypeByWidth(ti, 32, true)) == 32
     @test CC.getTypeAlign(ti, CC.CXTargetInfo_SignedChar) == 8
 
-    # presence/support predicates
+    # presence/support predicates — pinned for x86_64-linux-gnu, including both polarities
+    # so a predicate stuck at one answer fails
     @test CC.hasInt128Type(ti) == true
     @test CC.hasBitIntType(ti) == true
     @test CC.hasLongDoubleType(ti) == true
     @test CC.hasFPReturn(ti) == true
     @test CC.isTLSSupported(ti) == true
     @test CC.isVLASupported(ti) == true
-    for f in (CC.hasLegalHalfType, CC.hasFloat16Type, CC.hasBFloat16Type, CC.hasFullBFloat16Type, CC.hasFloat128Type,
-              CC.hasIbm128Type, CC.hasStrictFP, CC.hasAArch64SVETypes, CC.hasRISCVVTypes, CC.supportsMultiVersioning,
-              CC.supportsIFunc)
-        @test f(ti) isa Bool
-    end
+    @test CC.hasLegalHalfType(ti) == false
+    @test CC.hasFloat16Type(ti) == true
+    @test CC.hasBFloat16Type(ti) == true
+    @test CC.hasFullBFloat16Type(ti) == false
+    @test CC.hasFloat128Type(ti) == true
+    @test CC.hasIbm128Type(ti) == false
+    @test CC.hasStrictFP(ti) == true
+    @test CC.hasAArch64SVETypes(ti) == false
+    @test CC.hasRISCVVTypes(ti) == false
+    @test CC.supportsMultiVersioning(ti) == true
+    @test CC.supportsIFunc(ti) == true
 
     # layout scalars
     @test CC.getSuitableAlign(ti) >= 64
@@ -210,14 +217,12 @@ end
     @test CC.getLargeArrayAlign(ti) isa Cuint
     @test CC.getUnwindWordWidth(ti) in (32, 64)
 
-    # __ibm128: the width is fixed, the mangling only exists where the type does
+    # __ibm128: the width is fixed; x86_64 does not have the type, so the mangling
+    # accessor is gated rather than answered
     @test CC.getIbm128Width(ti) == 128
     @test CC.getIbm128Align(ti) isa Cuint
-    if CC.hasIbm128Type(ti)
-        @test !isempty(CC.getIbm128Mangling(ti))
-    else
-        @test_throws AssertionError CC.getIbm128Mangling(ti)
-    end
+    @test CC.hasIbm128Type(ti) == false
+    @test_throws AssertionError CC.getIbm128Mangling(ti)
 
     # Itanium mangling codes of the other extended floating-point types
     @test !isempty(CC.getLongDoubleMangling(ti))
@@ -239,15 +244,12 @@ end
     @test !CC.isValidClobber(ti, "not_a_register")
     @test_throws AssertionError CC.getNormalizedGCCRegisterName(ti, "not_a_register")
 
-    # normalization needs a register this host's target actually has
-    candidates = ["ax", "eax", "rax", "x0", "r0", "sp"]
-    i = findfirst(r -> CC.isValidGCCRegisterName(ti, r), candidates)
-    if i !== nothing
-        reg = candidates[i]
-        @test CC.isValidClobber(ti, reg)
-        @test !isempty(CC.getNormalizedGCCRegisterName(ti, reg))
-        @test CC.getNormalizedGCCRegisterName(ti, reg, true) == "ax"
-    end
+    # the pinned triple is x86_64, so `rax` is a real register and the unnamed form of it
+    # is `ax` — a target that ignored the `SkipUnnamed` flag would still return `rax`
+    @test CC.isValidGCCRegisterName(ti, "rax")
+    @test CC.isValidClobber(ti, "rax")
+    @test !isempty(CC.getNormalizedGCCRegisterName(ti, "rax"))
+    @test CC.getNormalizedGCCRegisterName(ti, "rax", true) == "ax"
 
     CC.dispose(I)
 end
@@ -268,12 +270,16 @@ end
     @test CC.useFP16ConversionIntrinsics(ti) == false
 
     # ARM CDE coprocessor mask is an 8-bit bitfield, zero away from ARM
-    @test CC.getARMCDECoprocMask(ti) isa Unsigned
     @test CC.getARMCDECoprocMask(ti) <= 0xff
 
     # stack-pointer register names and single-register constraint extraction
     @test !CC.isSPRegName(ti, "not_a_register")
-    @test all(r -> CC.isSPRegName(ti, r) isa Bool, ["sp", "esp", "rsp", "r1", "x31"])
+    # X86 names `esp`/`rsp` as the stack pointer and nothing else in this list
+    @test !CC.isSPRegName(ti, "sp")
+    @test CC.isSPRegName(ti, "esp")
+    @test CC.isSPRegName(ti, "rsp")
+    @test !CC.isSPRegName(ti, "r1")
+    @test !CC.isSPRegName(ti, "x31")
     @test CC.getConstraintRegister(ti, "a", "") == "ax"
     @test CC.getConstraintRegister(ti, "r", "") == ""
     @test isempty(CC.getConstraintRegister(ti, "", ""))
@@ -493,8 +499,8 @@ end
     # optional<LangAS> / optional<unsigned>: `nothing` when the target names none.
     cas = CC.getConstantAddressSpace(ti)
     @test cas === nothing || cas isa CC.CXLangAS
-    dwarf = CC.getDWARFAddressSpace(ti, 0)
-    @test dwarf === nothing || dwarf isa Integer
+    # x86_64 does not remap DWARF address spaces
+    @test CC.getDWARFAddressSpace(ti, 0) === nothing
 
     # Calling conventions: whichever default the target picks, its own checker has to
     # accept it -- that is the invariant Sema relies on when it substitutes the default.
@@ -538,13 +544,14 @@ end
     x86 = CC.TargetInfo(x86_opts, CC.getDiagnostics(x86_ci))  # absorbs x86_opts
     CC.setTarget(x86_ci, x86)  # the instance takes a reference; `x86` stays ours
     @test !CC.validateCPUSpecificCPUDispatch(x86, "definitely-not-a-cpu")
-    for name in ("generic", "pentium_4", "core_2_duo_ssse3")
-        @test CC.validateCPUSpecificCPUDispatch(x86, name)
-        c = CC.CPUSpecificManglingCharacter(x86, name)
-        @test c isa Integer
-        # the character is spliced into a mangled symbol name, so it is printable ASCII
-        @test 0x20 < c < 0x7f
-    end
+    # each cpu_specific variant mangles with a different character, which is the whole
+    # reason the name is an argument
+    @test CC.validateCPUSpecificCPUDispatch(x86, "generic")
+    @test CC.CPUSpecificManglingCharacter(x86, "generic") == Int8('A')
+    @test CC.validateCPUSpecificCPUDispatch(x86, "pentium_4")
+    @test CC.CPUSpecificManglingCharacter(x86, "pentium_4") == Int8('J')
+    @test CC.validateCPUSpecificCPUDispatch(x86, "core_2_duo_ssse3")
+    @test CC.CPUSpecificManglingCharacter(x86, "core_2_duo_ssse3") == Int8('M')
     dispose(x86_ci)
     dispose(x86)
 
@@ -555,24 +562,18 @@ end
     I = CC.create_parser(String[]; triple=PIN)
     ti = CC.getTarget(CC.get_instance(I))
 
-    # Every number here is target-chosen, so what is asserted is the shape and the
-    # relationships the fixed-point model guarantees on any target -- not a value.
+    # pinned for x86_64-linux-gnu: short/plain/long _Accum and _Fract widths (bits)
     accum = [CC.getShortAccumWidth(ti), CC.getAccumWidth(ti), CC.getLongAccumWidth(ti)]
     fract = [CC.getShortFractWidth(ti), CC.getFractWidth(ti), CC.getLongFractWidth(ti)]
-    for w in vcat(accum, fract)
-        @test w isa Integer
-        @test w > 0
-    end
+    @test accum == [16, 32, 64]
+    @test fract == [8, 16, 32]
     # widths are non-decreasing from short to long
     @test issorted(accum)
     @test issorted(fract)
 
     aligns = [CC.getShortAccumAlign(ti), CC.getAccumAlign(ti), CC.getLongAccumAlign(ti), CC.getShortFractAlign(ti),
               CC.getFractAlign(ti), CC.getLongFractAlign(ti)]
-    for a in aligns
-        @test a isa Integer
-        @test a > 0
-    end
+    @test aligns == [16, 32, 64, 8, 16, 32]
 
     # A signed _Accum is a sign bit, its integral bits and its fractional bits, exactly.
     for (w, ibits, scale) in [(CC.getShortAccumWidth(ti), CC.getShortAccumIBits(ti), CC.getShortAccumScale(ti)),
@@ -595,7 +596,7 @@ end
     # scale and integral bits. Whether they gain the sign bit back or pad it away is what
     # doUnsignedFixedPointTypesHavePadding reports.
     padded = CC.doUnsignedFixedPointTypesHavePadding(ti)
-    @test padded isa Bool
+    @test padded == false
     for (w, uibits, uscale) in
         [(CC.getShortAccumWidth(ti), CC.getUnsignedShortAccumIBits(ti), CC.getUnsignedShortAccumScale(ti)),
          (CC.getAccumWidth(ti), CC.getUnsignedAccumIBits(ti), CC.getUnsignedAccumScale(ti)),

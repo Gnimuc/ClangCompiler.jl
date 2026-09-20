@@ -11,11 +11,6 @@ using Test
     record = CC.parseMatcherExpression("cxxRecordDecl()", err)
     expr = CC.parseMatcherExpression("expr()", err)
     qt = CC.parseMatcherExpression("qualType()", err)
-    @test !CC.is_null_handle(decl)
-    @test !CC.is_null_handle(stmt)
-    @test !CC.is_null_handle(record)
-    @test !CC.is_null_handle(expr)
-    @test !CC.is_null_handle(qt)
     @test CC.getNumErrors(err) == 0
 
     # A dynamic matcher is keyed at its node FAMILY, not at the class its name suggests:
@@ -53,7 +48,6 @@ end
     err = CC.MatcherDiagnostics()
 
     base = CC.parseMatcherExpression("cxxRecordDecl(hasName(\"CCDTMTag\"), unless(isImplicit()))", err)
-    @test !CC.is_null_handle(base)
 
     # Unbound, the match carries no ids at all.
     mf0 = CC.MatchFinder()
@@ -64,14 +58,13 @@ end
 
     # tryBind adds the id after the fact, without re-parsing.
     bound = CC.tryBind(base, "b")
-    @test !CC.is_null_handle(bound)
     mf1 = CC.MatchFinder()
     @test CC.addDynamicMatcher(mf1, bound)
     @test CC.matchAST(mf1, ctx) == 1
     bn1 = CC.getMatch(mf1, 0)
     @test CC.getNumBindings(bn1) == 1
     @test CC.getBindingID(bn1, 0) == "b"
-    @test !CC.is_null_handle(CC.getNodeAsDecl(bn1, "b"))
+    @test CC.getName(CC.resolve(CC.getNodeAsDecl(bn1, "b"))) == "CCDTMTag"
     # binding does not change what is matched
     @test CC.getSupportedKind(bound) == CC.getSupportedKind(base)
 
@@ -79,7 +72,6 @@ end
     @test CC.getTraversalKind(base) === nothing
 
     forced = CC.withTraversalKind(base, CC.CXTraversalKind_TK_IgnoreUnlessSpelledInSource)
-    @test !CC.is_null_handle(forced)
     @test CC.getTraversalKind(forced) === CC.CXTraversalKind_TK_IgnoreUnlessSpelledInSource
     # the later call wins over the earlier one
     reforced = CC.withTraversalKind(forced, CC.CXTraversalKind_TK_AsIs)

@@ -139,9 +139,7 @@ using Test
     @test CC.getResults(lr) isa Vector
     @test !CC.is_null_handle(CC.getRepresentativeDecl(lr))
     @test !CC.is_null_handle(CC.getLookupName(lr))
-    if CC.isSingleResult(lr)
-        @test !CC.is_null_handle(CC.getResult(lr))
-    end
+    @test !CC.is_null_handle(CC.getResult(lr))
     @test (CC.dump(lr); true)
     @test (CC.setLookupName(lr, CC.getLookupName(lr)); true)
     @test (CC.clear(lr, CC.CXLookupNameKind_LookupOrdinaryName); true)
@@ -152,8 +150,11 @@ using Test
 
     # ---- Scope (Sema/Scope.jl) ----
     scope = CC.getCurScope(parser)
-    @test CC.getDepth(scope) isa Integer
-    @test CC.getParent(scope) isa CC.Scope
+    # between increments the parser rests at translation-unit scope, whose depth is the
+    # outermost — a getter that ignored the Scope* and returned a neighbouring integer
+    # would still be an Integer and fail this
+    @test CC.getDepth(scope) == 0
+    @test CC.is_null_handle(CC.getParent(scope))  # TU scope is the outermost; no parent
     @test (CC.dump(scope); true)
 
     # ---- CXXScopeSpec (Sema/DeclSpec.jl) via a populated scope spec ----
@@ -172,8 +173,6 @@ using Test
     @test !CC.is_null_handle(CC.getScopeRep(dss))
     bloc = CC.getBeginLoc(dss)
     eloc = CC.getEndLoc(dss)
-    @test bloc isa CC.SourceLocation
-    @test eloc isa CC.SourceLocation
     @test (CC.setBeginLoc(dss, bloc); true)
     @test (CC.setEndLoc(dss, eloc); true)
     sr = CC.SourceRange(bloc, eloc)
@@ -194,29 +193,40 @@ using Test
     @test tok isa CC.Token
     @test CC.NextToken(parser) isa CC.Token  # shape-only: varies with where the incremental parser is resting
 
-    # pure helper functions over the parser context enums
-    @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_Member) isa CC.CXDeclSpecContext
-    @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_File) isa CC.CXDeclSpecContext
-    @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_Block) isa CC.CXDeclSpecContext
-    @test CC.shouldEnterContext(CC.CXDeclSpecContext_DSC_top_level) isa Bool
-    @test CC.shouldEnterContext(CC.CXDeclSpecContext_DSC_normal) isa Bool
+    # pure helper functions over the parser context enums — the mapping is the whole of
+    # the function, so an off-by-one into the wrong arm is a wrong CXDeclSpecContext of
+    # the same type
+    @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_Member) ==
+          CC.CXDeclSpecContext_DSC_class
+    @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_File) ==
+          CC.CXDeclSpecContext_DSC_top_level
+    @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_Block) ==
+          CC.CXDeclSpecContext_DSC_normal
+    @test CC.getDeclSpecContextFromDeclaratorContext(CC.CXDeclaratorContext_TemplateParam) ==
+          CC.CXDeclSpecContext_DSC_template_param
+    @test CC.shouldEnterContext(CC.CXDeclSpecContext_DSC_top_level)
+    @test CC.shouldEnterContext(CC.CXDeclSpecContext_DSC_class)
+    @test !CC.shouldEnterContext(CC.CXDeclSpecContext_DSC_normal)
 
     # ---- Token query surface (Lex/Token.jl) ----
     # a token the parser is actually resting on was written somewhere
     @test CC.isValid(CC.getLocation(tok))
     @test CC.getAnnotationEndLoc(tok) isa CC.SourceLocation
     @test CC.getAnnotationRange(tok) isa CC.SourceRange
-    @test CC.getName(tok) isa String
+    @test CC.getName(tok) isa String  # shape-only: varies with where the incremental parser is resting
     @test CC.getAnnotationValue(tok) isa CC.AnnotationValue  # shape-only: varies with the token kind the parser is resting on
-    @test CC.is_eof(tok) isa Bool
-    @test CC.is_annot_repl_input_end(tok) isa Bool
-    @test CC.is_identifier(tok) isa Bool
-    @test CC.is_coloncolon(tok) isa Bool
-    @test CC.is_annot_cxxscope(tok) isa Bool
-    @test CC.is_annot_typename(tok) isa Bool
-    @test CC.is_annot_template_id(tok) isa Bool
-    @test CC.is_kw_enum(tok) isa Bool
-    @test CC.is_kw_typename(tok) isa Bool
+    # a finished incremental parse leaves the parser on annot_repl_input_end; the rest of
+    # the kind predicates must be false on that token, then true for `identifier` once a
+    # name is pushed below
+    @test !CC.is_eof(tok)
+    @test CC.is_annot_repl_input_end(tok)
+    @test !CC.is_identifier(tok)
+    @test !CC.is_coloncolon(tok)
+    @test !CC.is_annot_cxxscope(tok)
+    @test !CC.is_annot_typename(tok)
+    @test !CC.is_annot_template_id(tok)
+    @test !CC.is_kw_enum(tok)
+    @test !CC.is_kw_typename(tok)
     # getIdentifierInfo aborts on annotation tokens, and a finished incremental parse leaves
     # the parser sitting on annot_repl_input_end. Pushing a one-identifier buffer under the
     # parser and consuming that end-of-input annotation puts a real `identifier` in
@@ -243,15 +253,17 @@ using Test
     @test (CC.DumpLocation(pp, widget_loc); true)
 
     # ---- Parser mutators run LAST (they advance/annotate the live token stream) ----
-    @test CC.TryAnnotateCXXScopeToken(parser, false) isa Bool
-    @test CC.TryAnnotateCXXScopeToken(parser, CC.CXDeclSpecContext_DSC_top_level) isa Bool
-    @test CC.TryAnnotateCXXScopeToken(parser, CC.CXDeclaratorContext_File) isa Bool
-    @test CC.TryAnnotateOptionalCXXScopeToken(parser, false) isa Bool
-    @test CC.TryAnnotateOptionalCXXScopeToken(parser, CC.CXDeclSpecContext_DSC_class) isa Bool
-    @test CC.TryAnnotateOptionalCXXScopeToken(parser, CC.CXDeclaratorContext_Member) isa Bool
-    @test CC.TryAnnotateTypeOrScopeToken(parser) isa Bool  # shape-only: varies with where the incremental parser is resting
+    # TryAnnotate* returns true on error. Sitting on annot_repl_input_end there is nothing
+    # to annotate, so these report no error rather than a well-typed Bool of either polarity.
+    @test CC.TryAnnotateCXXScopeToken(parser, false) == false
+    @test CC.TryAnnotateCXXScopeToken(parser, CC.CXDeclSpecContext_DSC_top_level) == false
+    @test CC.TryAnnotateCXXScopeToken(parser, CC.CXDeclaratorContext_File) == false
+    @test CC.TryAnnotateOptionalCXXScopeToken(parser, false) == false
+    @test CC.TryAnnotateOptionalCXXScopeToken(parser, CC.CXDeclSpecContext_DSC_class) == false
+    @test CC.TryAnnotateOptionalCXXScopeToken(parser, CC.CXDeclaratorContext_Member) == false
+    @test CC.TryAnnotateTypeOrScopeToken(parser) == false
     ss_af = CC.CXXScopeSpec()
-    @test CC.TryAnnotateTypeOrScopeTokenAfterScopeSpec(parser, ss_af) isa Bool  # shape-only: varies with where the incremental parser is resting
+    @test CC.TryAnnotateTypeOrScopeTokenAfterScopeSpec(parser, ss_af) == false
     dispose(ss_af)
     # the location it hands back is the token it consumed, which was a real one
     @test CC.isValid(CC.ConsumeAnyToken(parser))

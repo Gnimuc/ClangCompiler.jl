@@ -7,7 +7,6 @@ using Test
     # Built and queried only -- never given an input, never executed -- so it cannot reach
     # any AST state another testset built.
     act = CC.ExtractAPIAction()
-    @test act.ptr != C_NULL
 
     # ExtractAPIAction overrides CreateASTConsumer, PrepareToExecuteAction,
     # EndSourceFileAction and CreateOutputFile, and no mode predicate, so every answer here

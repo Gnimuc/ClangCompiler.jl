@@ -50,6 +50,33 @@ const SER_LXB = CC.LibClangEx
                                  existing_module_cache_path="/nonexistent/cache") == false
     @test errs() == n2
 
+    # The success half the two failures exist to partition: a PCH this instance just
+    # wrote names the source it was built from, and is acceptable under the options
+    # it was compiled with. A wrapper stuck at the empty / false answers of the
+    # missing-file path fails both.
+    mktempdir() do dir
+        src = joinpath(dir, "ser_input.cpp")
+        write(src, "int ser_value = 1;\n")
+        pch = joinpath(dir, "ser_input.pch")
+
+        ci = CC.CompilerInstance()
+        CC.createDiagnostics(ci)
+        invok = CC.createFromCommandLine(src, ["-std=c++17"], CC.getDiagnostics(ci))
+        CC.setInvocation(ci, invok)
+        CC.setOutputFile(CC.getFrontendOpts(ci), pch)
+        act = CC.GeneratePCHAction()
+        @test CC.ExecuteAction(ci, act) == true
+        dispose(act)
+        @test isfile(pch)
+        @test read(pch, 4) == b"CPCH"
+
+        orig = CC.getOriginalSourceFile(pch, fm, diag)
+        @test basename(orig) == "ser_input.cpp"
+        @test CC.isAcceptableASTFile(pch, fm, CC.getLangOpts(ci), CC.getTargetOpts(ci),
+                                     CC.getPreprocessorOpts(ci))
+        dispose(ci)
+    end
+
     dispose(inv)
     dispose(fm)
     dispose(diag)
