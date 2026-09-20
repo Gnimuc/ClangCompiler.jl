@@ -65,6 +65,14 @@ void clang_CodeGenOptions_setClearASTBeforeBackend(CXCodeGenOptions CGO, unsigne
 unsigned clang_CodeGenOptions_getDisableFree(CXCodeGenOptions CGO);
 void clang_CodeGenOptions_setDisableFree(CXCodeGenOptions CGO, unsigned Value);
 
+// Whether code generation times its passes; -ftime-report sets it. Everything that reads it
+// goes on to read the CompilerInstance's timer group, which only
+// clang_CompilerInstance_createFrontendTimer creates -- clang's own cc1_main makes that call
+// when this is set, and nothing else does. With this set and no timer, generating code
+// dereferences a null timer group. Same one-bit CODEGENOPT shape as above.
+unsigned clang_CodeGenOptions_getTimePasses(CXCodeGenOptions CGO);
+void clang_CodeGenOptions_setTimePasses(CXCodeGenOptions CGO, unsigned Value);
+
 // The -O level (0..3). CodeGenOptions.def declares it AFFECTING_VALUE_CODEGENOPT, i.e. a
 // plain two-bit public member of CodeGenOptionsBase with no generated accessor pair, so
 // this reads and writes it directly. Values above 3 do not fit the bitfield and are

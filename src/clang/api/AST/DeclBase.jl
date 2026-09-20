@@ -956,9 +956,9 @@ function shouldSkipCheckingODR(x::AbstractDecl)
 end
 
 """
-    getGlobalID(x::AbstractDecl) -> UInt32
+    getGlobalID(x::AbstractDecl) -> UInt64
 The global declaration ID recording where `x` was loaded from, or `0` when `x`
-was parsed rather than deserialized.
+was parsed rather than deserialized. The upper 32 bits are the index of the module file.
 """
 function getGlobalID(x::AbstractDecl)
     @check_ptrs x

@@ -44,7 +44,7 @@ CXPragmaCommentDecl clang_PragmaCommentDecl_Create(CXASTContext C, CXTranslation
                                                    CXPragmaMSCommentKind CommentKind,
                                                    const char *Arg);
 
-CXPragmaCommentDecl clang_PragmaCommentDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+CXPragmaCommentDecl clang_PragmaCommentDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                                unsigned ArgSize);
 
 CXPragmaMSCommentKind clang_PragmaCommentDecl_getCommentKind(CXPragmaCommentDecl PCD);
@@ -62,7 +62,7 @@ CXPragmaDetectMismatchDecl clang_PragmaDetectMismatchDecl_Create(CXASTContext C,
                                                                  const char *Value);
 
 CXPragmaDetectMismatchDecl
-clang_PragmaDetectMismatchDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+clang_PragmaDetectMismatchDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                   unsigned NameValueSize);
 
 const char *clang_PragmaDetectMismatchDecl_getName(CXPragmaDetectMismatchDecl PDMD);
@@ -170,7 +170,7 @@ bool clang_NamedDecl_classofKind(CXDeclKind K);
 CXLabelDecl clang_LabelDecl_Create(CXASTContext C, CXDeclContext DC,
                                    CXSourceLocation_ IdentL, CXIdentifierInfo II);
 
-CXLabelDecl clang_LabelDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXLabelDecl clang_LabelDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXLabelStmt clang_LabelDecl_getStmt(CXLabelDecl LD);
 
@@ -210,7 +210,7 @@ CXNamespaceDecl clang_NamespaceDecl_Create(CXASTContext C, CXDeclContext DC, boo
                                            CXSourceLocation_ IdLoc, CXIdentifierInfo Id,
                                            CXNamespaceDecl PrevDecl, bool Nested);
 
-CXNamespaceDecl clang_NamespaceDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXNamespaceDecl clang_NamespaceDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 bool clang_NamespaceDecl_isAnonymousNamespace(CXNamespaceDecl ND);
 
@@ -344,7 +344,7 @@ CXVarDecl clang_VarDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocatio
                                CXSourceLocation_ IdLoc, CXIdentifierInfo Id, CXQualType T,
                                CXTypeSourceInfo TInfo, CXStorageClass S);
 
-CXVarDecl clang_VarDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXVarDecl clang_VarDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceRange_ clang_VarDecl_getSourceRange(CXVarDecl VD);
 
@@ -564,7 +564,7 @@ CXImplicitParamDecl clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext
                                                    CXIdentifierInfo Id, CXQualType T,
                                                    CXImplicitParamKind ParamKind);
 
-CXImplicitParamDecl clang_ImplicitParamDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXImplicitParamDecl clang_ImplicitParamDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXImplicitParamKind clang_ImplicitParamDecl_getParameterKind(CXImplicitParamDecl IPD);
 
@@ -578,7 +578,7 @@ CXParmVarDecl clang_ParmVarDecl_Create(CXASTContext C, CXDeclContext DC,
                                        CXTypeSourceInfo TInfo, CXStorageClass S,
                                        CXExpr DefArg);
 
-CXParmVarDecl clang_ParmVarDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXParmVarDecl clang_ParmVarDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceRange_ clang_ParmVarDecl_getSourceRange(CXParmVarDecl PVD);
 
@@ -687,7 +687,7 @@ CXFunctionDecl clang_FunctionDecl_Create(CXASTContext C, CXDeclContext DC,
                                          CXTypeSourceInfo TInfo, CXStorageClass SC,
                                          bool isInlineSpecified, bool hasWrittenPrototype);
 
-CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // Returns an owned box; release with clang_DeclarationNameInfo_dispose.
 CXDeclarationNameInfo clang_FunctionDecl_getNameInfo(CXFunctionDecl FD);
@@ -918,7 +918,8 @@ unsigned clang_FunctionDecl_getNumParams(CXFunctionDecl FD);
 
 CXParmVarDecl clang_FunctionDecl_getParamDecl(CXFunctionDecl FD, unsigned i);
 
-// setParams (private in clang 18 — only Sema/deserialization may set params)
+// setParams is not wrapped. Of FunctionDecl's two overloads only the one taking an ASTContext
+// is private; setParams(ArrayRef<ParmVarDecl *>) is public.
 
 unsigned clang_FunctionDecl_getMinRequiredArguments(CXFunctionDecl FD);
 
@@ -1059,7 +1060,7 @@ CXFieldDecl clang_FieldDecl_Create(CXASTContext C, CXDeclContext DC,
                                    CXIdentifierInfo I, CXQualType T, CXTypeSourceInfo TInfo,
                                    CXExpr BW, bool Mutable, CXInClassInitStyle InitStyle);
 
-CXFieldDecl clang_FieldDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXFieldDecl clang_FieldDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 unsigned clang_FieldDecl_getFieldIndex(CXFieldDecl FD);
 
@@ -1121,7 +1122,7 @@ CXEnumConstantDecl clang_EnumConstantDecl_Create(CXASTContext C, CXEnumDecl DC,
                                                  CXQualType T, CXExpr E,
                                                  LLVMGenericValueRef V);
 
-CXEnumConstantDecl clang_EnumConstantDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXEnumConstantDecl clang_EnumConstantDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXExpr clang_EnumConstantDecl_getInitExpr(CXEnumConstantDecl ECD);
 
@@ -1179,7 +1180,7 @@ CXIndirectFieldDecl clang_IndirectFieldDecl_Create(CXASTContext C, CXDeclContext
                                                    CXNamedDecl *Chain,
                                                    unsigned ChainSize);
 
-CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // chain
 CXNamedDecl clang_IndirectFieldDecl_getChainElement(CXIndirectFieldDecl IFD, unsigned i);
@@ -1238,7 +1239,7 @@ CXTypedefDecl clang_TypedefDecl_Create(CXASTContext C, CXDeclContext DC,
                                        CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
                                        CXIdentifierInfo Id, CXTypeSourceInfo TInfo);
 
-CXTypedefDecl clang_TypedefDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXTypedefDecl clang_TypedefDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceRange_ clang_TypedefDecl_getSourceRange(CXTypedefDecl TD);
 
@@ -1251,7 +1252,7 @@ CXTypeAliasDecl clang_TypeAliasDecl_Create(CXASTContext C, CXDeclContext DC,
                                            CXSourceLocation_ IdLoc, CXIdentifierInfo Id,
                                            CXTypeSourceInfo TInfo);
 
-CXTypeAliasDecl clang_TypeAliasDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXTypeAliasDecl clang_TypeAliasDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceRange_ clang_TypeAliasDecl_getSourceRange(CXTypeAliasDecl TAD);
 
@@ -1369,7 +1370,7 @@ CXEnumDecl clang_EnumDecl_Create(CXASTContext C, CXDeclContext DC,
                                  CXIdentifierInfo Id, CXEnumDecl PrevDecl, bool IsScoped,
                                  bool IsScopedUsingClassTag, bool IsFixed);
 
-CXEnumDecl clang_EnumDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXEnumDecl clang_EnumDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 void clang_EnumDecl_setScoped(CXEnumDecl ED, bool Scoped);
 
@@ -1465,7 +1466,7 @@ CXRecordDecl clang_RecordDecl_Create(CXASTContext C, CXTagTypeKind TK, CXDeclCon
                                      CXSourceLocation_ StartLoc, CXSourceLocation_ IdLoc,
                                      CXIdentifierInfo Id, CXRecordDecl PrevDecl);
 
-CXRecordDecl clang_RecordDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXRecordDecl clang_RecordDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXRecordDecl clang_RecordDecl_getPreviousDecl(CXRecordDecl RD);
 
@@ -1572,7 +1573,7 @@ CXFileScopeAsmDecl clang_FileScopeAsmDecl_Create(CXASTContext C, CXDeclContext D
                                                  CXSourceLocation_ AsmLoc,
                                                  CXSourceLocation_ RParenLoc);
 
-CXFileScopeAsmDecl clang_FileScopeAsmDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXFileScopeAsmDecl clang_FileScopeAsmDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceLocation_ clang_FileScopeAsmDecl_getAsmLoc(CXFileScopeAsmDecl FSAD);
 
@@ -1592,7 +1593,7 @@ bool clang_FileScopeAsmDecl_classofKind(CXDeclKind K);
 // TopLevelStmtDecl
 CXTopLevelStmtDecl clang_TopLevelStmtDecl_Create(CXASTContext C, CXStmt Statement);
 
-CXTopLevelStmtDecl clang_TopLevelStmtDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXTopLevelStmtDecl clang_TopLevelStmtDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceRange_ clang_TopLevelStmtDecl_getSourceRange(CXTopLevelStmtDecl TLSD);
 
@@ -1611,7 +1612,7 @@ bool clang_TopLevelStmtDecl_classofKind(CXDeclKind K);
 // BlockDecl
 CXBlockDecl clang_BlockDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L);
 
-CXBlockDecl clang_BlockDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXBlockDecl clang_BlockDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceLocation_ clang_BlockDecl_getCaretLocation(CXBlockDecl BD);
 
@@ -1721,7 +1722,7 @@ CXBlockDecl clang_BlockDecl_castFromDeclContext(CXDeclContext DC);
 CXCapturedDecl clang_CapturedDecl_Create(CXASTContext C, CXDeclContext DC,
                                          unsigned NumParams);
 
-CXCapturedDecl clang_CapturedDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+CXCapturedDecl clang_CapturedDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                      unsigned NumParams);
 
 CXStmt clang_CapturedDecl_getBody(CXCapturedDecl CD);
@@ -1758,7 +1759,7 @@ CXImportDecl clang_ImportDecl_CreateImplicit(CXASTContext C, CXDeclContext DC,
                                              CXSourceLocation_ StartLoc, CXModule_ Imported,
                                              CXSourceLocation_ EndLoc);
 
-CXImportDecl clang_ImportDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+CXImportDecl clang_ImportDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                  unsigned NumLocations);
 
 CXModule_ clang_ImportDecl_getImportedModule(CXImportDecl ID);
@@ -1777,7 +1778,7 @@ bool clang_ImportDecl_classofKind(CXDeclKind K);
 CXExportDecl clang_ExportDecl_Create(CXASTContext C, CXDeclContext DC,
                                      CXSourceLocation_ ExportLoc);
 
-CXExportDecl clang_ExportDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXExportDecl clang_ExportDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceLocation_ clang_ExportDecl_getExportLoc(CXExportDecl ED);
 
@@ -1802,7 +1803,7 @@ CXExportDecl clang_ExportDecl_castFromDeclContext(CXDeclContext DC);
 // EmptyDecl
 CXEmptyDecl clang_EmptyDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocation_ L);
 
-CXEmptyDecl clang_EmptyDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXEmptyDecl clang_EmptyDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // The Decl::Kind test behind isa<EmptyDecl> (as above).
 bool clang_EmptyDecl_classofKind(CXDeclKind K);
@@ -1817,7 +1818,7 @@ CXHLSLBufferDecl clang_HLSLBufferDecl_Create(CXASTContext C, CXDeclContext Lexic
                                              CXIdentifierInfo ID, CXSourceLocation_ IDLoc,
                                              CXSourceLocation_ LBrace);
 
-CXHLSLBufferDecl clang_HLSLBufferDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXHLSLBufferDecl clang_HLSLBufferDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXSourceRange_ clang_HLSLBufferDecl_getSourceRange(CXHLSLBufferDecl BD);
 

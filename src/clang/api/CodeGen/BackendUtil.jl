@@ -21,5 +21,6 @@ function EmitBackendOutput(ci::CompilerInstance, m::LLVM.Module, action::CXBacke
     @check_ptrs ci
     @assert hasFileManager(ci) "CompilerInstance has no file manager."
     @assert hasTarget(ci) "CompilerInstance has no target."
+    @assert !getTimePasses(getCodeGenOpts(ci)) || hasFrontendTimer(ci) "with `-ftime-report` the pipeline times itself against the instance's timer group; call `createFrontendTimer(ci)` first"
     return clang_EmitBackendOutput(ci, m, action, output_path)
 end

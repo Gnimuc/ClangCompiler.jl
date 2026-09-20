@@ -80,12 +80,12 @@ through CC1 argument parsing: it is the same static clang's own driver calls.
 
 Leaving `lang_std` at `lang_unspecified` asks clang for the language's own default, and
 that resolution is the one partial step here: it aborts the process for
-`CXLanguage_Unknown` and `CXLanguage_LLVM_IR`, neither of which has a default standard. An
-explicit `lang_std` bypasses it, so any language goes with one.
+`CXLanguage_Unknown`, `CXLanguage_LLVM_IR` and `CXLanguage_CIR`, none of which has a default
+standard. An explicit `lang_std` bypasses it, so any language goes with one.
 """
 function setLangDefaults(x::AbstractLangOptions, lang::CXLanguage, triple::AbstractString, lang_std::CXLangStandardKind=CXLangStandardKind_lang_unspecified)
     @check_ptrs x
-    @assert lang_std != CXLangStandardKind_lang_unspecified || (lang != CXLanguage_Unknown && lang != CXLanguage_LLVM_IR) "no default language standard is defined for $lang"
+    @assert lang_std != CXLangStandardKind_lang_unspecified || !(lang in (CXLanguage_Unknown, CXLanguage_LLVM_IR, CXLanguage_CIR)) "no default language standard is defined for $lang"
     return get_string(clang_LangOptions_setLangDefaults(x, lang, triple, lang_std))
 end
 

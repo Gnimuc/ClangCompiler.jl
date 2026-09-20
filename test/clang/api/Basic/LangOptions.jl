@@ -182,4 +182,5 @@ end
     @test CC.getCPlusPlus(lo2)
     @test_throws AssertionError CC.setLangDefaults(lo2, CC.CXLanguage_Unknown, triple)
     @test_throws AssertionError CC.setLangDefaults(lo2, CC.CXLanguage_LLVM_IR, triple)
+    @test_throws AssertionError CC.setLangDefaults(lo2, CC.CXLanguage_CIR, triple)
 end

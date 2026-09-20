@@ -5077,6 +5077,8 @@ end
     CXCallingConv_CC_AArch64SVEPCS = 19
     CXCallingConv_CC_AMDGPUKernelCall = 20
     CXCallingConv_CC_M68kRTD = 21
+    CXCallingConv_CC_PreserveNone = 22
+    CXCallingConv_CC_RISCVVectorCall = 23
 end
 
 @enum CXIfStatementKind::UInt32 begin
@@ -5099,6 +5101,8 @@ end
     CXParameterABI_SwiftErrorResult = 2
     CXParameterABI_SwiftContext = 3
     CXParameterABI_SwiftAsyncContext = 4
+    CXParameterABI_HLSLOut = 5
+    CXParameterABI_HLSLInOut = 6
 end
 
 @enum CXMSInheritanceModel::UInt32 begin
@@ -11633,6 +11637,9 @@ end
     CXVectorKind_SveFixedLengthPredicate = 7
     CXVectorKind_RVVFixedLengthData = 8
     CXVectorKind_RVVFixedLengthMask = 9
+    CXVectorKind_RVVFixedLengthMask_1 = 10
+    CXVectorKind_RVVFixedLengthMask_2 = 11
+    CXVectorKind_RVVFixedLengthMask_4 = 12
 end
 
 function clang_VectorType_getElementType(T)
@@ -12984,6 +12991,7 @@ end
     CXMSVCMajorVersion_MSVC2019_5 = 1925
     CXMSVCMajorVersion_MSVC2019_8 = 1928
     CXMSVCMajorVersion_MSVC2022_3 = 1933
+    CXMSVCMajorVersion_MSVC2022_9 = 1939
 end
 
 @enum CXFPExceptionModeKind::UInt32 begin
@@ -13251,6 +13259,7 @@ end
     CXTargetInfo_AAPCSABIBuiltinVaList = 6
     CXTargetInfo_SystemZBuiltinVaList = 7
     CXTargetInfo_HexagonBuiltinVaList = 8
+    CXTargetInfo_XtensaABIBuiltinVaList = 9
 end
 
 @enum CXOpenCLTypeKind::UInt8 begin
@@ -13500,8 +13509,8 @@ function clang_TargetInfo_getDefaultAlignForAttributeAligned(TI)
     @ccall libclangex.clang_TargetInfo_getDefaultAlignForAttributeAligned(TI::CXTargetInfo_)::Cuint
 end
 
-function clang_TargetInfo_getMinGlobalAlign(TI, Size)
-    @ccall libclangex.clang_TargetInfo_getMinGlobalAlign(TI::CXTargetInfo_, Size::UInt64)::Cuint
+function clang_TargetInfo_getMinGlobalAlign(TI, Size, HasNonWeakDef)
+    @ccall libclangex.clang_TargetInfo_getMinGlobalAlign(TI::CXTargetInfo_, Size::UInt64, HasNonWeakDef::Bool)::Cuint
 end
 
 function clang_TargetInfo_getNewAlign(TI)
@@ -14308,10 +14317,15 @@ end
 @enum CXBuiltinTemplateKind::UInt32 begin
     CXBuiltinTemplateKind_BTK__make_integer_seq = 0
     CXBuiltinTemplateKind_BTK__type_pack_element = 1
+    CXBuiltinTemplateKind_BTK__builtin_common_type = 2
 end
 
 function clang_Builtin_getFirstTSBuiltinID()
     @ccall libclangex.clang_Builtin_getFirstTSBuiltinID()::Cuint
+end
+
+function clang_BuiltinContext_getNumBuiltins(C)
+    @ccall libclangex.clang_BuiltinContext_getNumBuiltins(C::CXBuiltinContext)::Cuint
 end
 
 function clang_BuiltinContext_getName(C, ID)
@@ -17007,7 +17021,7 @@ function clang_AccessSpecDecl_Create(C, AS, DC, ASLoc, ColonLoc)
 end
 
 function clang_AccessSpecDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_AccessSpecDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXAccessSpecDecl
+    @ccall libclangex.clang_AccessSpecDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXAccessSpecDecl
 end
 
 function clang_CXXBaseSpecifier_getSourceRange(CXXBS)
@@ -17789,7 +17803,7 @@ function clang_CXXRecordDecl_nullFieldOffsetIsZero(CXXRD)
 end
 
 function clang_CXXRecordDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_CXXRecordDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXCXXRecordDecl
+    @ccall libclangex.clang_CXXRecordDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXCXXRecordDecl
 end
 
 function clang_ExplicitSpecifier_getKind(ES)
@@ -17871,7 +17885,7 @@ function clang_CXXDeductionGuideDecl_Create(C, DC, StartLoc, ES, NameInfo, T, TI
 end
 
 function clang_CXXDeductionGuideDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_CXXDeductionGuideDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXCXXDeductionGuideDecl
+    @ccall libclangex.clang_CXXDeductionGuideDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXCXXDeductionGuideDecl
 end
 
 function clang_RequiresExprBodyDecl_Create(C, DC, StartLoc)
@@ -17879,7 +17893,7 @@ function clang_RequiresExprBodyDecl_Create(C, DC, StartLoc)
 end
 
 function clang_RequiresExprBodyDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_RequiresExprBodyDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXRequiresExprBodyDecl
+    @ccall libclangex.clang_RequiresExprBodyDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXRequiresExprBodyDecl
 end
 
 function clang_RequiresExprBodyDecl_castToDeclContext(REBD)
@@ -17895,7 +17909,7 @@ function clang_CXXMethodDecl_Create(C, RD, StartLoc, NameInfo, T, TInfo, SC, Use
 end
 
 function clang_CXXMethodDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_CXXMethodDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXCXXMethodDecl
+    @ccall libclangex.clang_CXXMethodDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXCXXMethodDecl
 end
 
 function clang_CXXMethodDecl_isStatic(CXXMD)
@@ -18187,7 +18201,7 @@ function clang_CXXConstructorDecl_Create(C, RD, StartLoc, NameInfo, T, TInfo, ES
 end
 
 function clang_CXXConstructorDecl_CreateDeserialized(C, ID, AllocKind)
-    @ccall libclangex.clang_CXXConstructorDecl_CreateDeserialized(C::CXASTContext, ID::Cuint, AllocKind::UInt64)::CXCXXConstructorDecl
+    @ccall libclangex.clang_CXXConstructorDecl_CreateDeserialized(C::CXASTContext, ID::UInt64, AllocKind::UInt64)::CXCXXConstructorDecl
 end
 
 function clang_CXXDestructorDecl_getOperatorDelete(DD)
@@ -18207,7 +18221,7 @@ function clang_CXXDestructorDecl_Create(C, RD, StartLoc, NameInfo, T, TInfo, Use
 end
 
 function clang_CXXDestructorDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_CXXDestructorDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXCXXDestructorDecl
+    @ccall libclangex.clang_CXXDestructorDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXCXXDestructorDecl
 end
 
 function clang_CXXDestructorDecl_setOperatorDelete(DD, OD, ThisArg)
@@ -18243,7 +18257,7 @@ function clang_CXXConversionDecl_Create(C, RD, StartLoc, NameInfo, T, TInfo, Use
 end
 
 function clang_CXXConversionDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_CXXConversionDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXCXXConversionDecl
+    @ccall libclangex.clang_CXXConversionDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXCXXConversionDecl
 end
 
 @enum CXLinkageSpecLanguageIDs::UInt32 begin
@@ -18256,7 +18270,7 @@ function clang_LinkageSpecDecl_Create(C, DC, ExternLoc, LangLoc, Lang, HasBraces
 end
 
 function clang_LinkageSpecDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_LinkageSpecDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXLinkageSpecDecl
+    @ccall libclangex.clang_LinkageSpecDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXLinkageSpecDecl
 end
 
 function clang_LinkageSpecDecl_getLanguage(LSD)
@@ -18340,7 +18354,7 @@ function clang_UsingDirectiveDecl_getSourceRange(UDD)
 end
 
 function clang_UsingDirectiveDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_UsingDirectiveDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXUsingDirectiveDecl
+    @ccall libclangex.clang_UsingDirectiveDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXUsingDirectiveDecl
 end
 
 function clang_NamespaceAliasDecl_getCanonicalDecl(NAD)
@@ -18380,7 +18394,7 @@ function clang_NamespaceAliasDecl_getSourceRange(NAD)
 end
 
 function clang_NamespaceAliasDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_NamespaceAliasDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXNamespaceAliasDecl
+    @ccall libclangex.clang_NamespaceAliasDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXNamespaceAliasDecl
 end
 
 function clang_LifetimeExtendedTemporaryDecl_getExtendingDecl(D)
@@ -18416,7 +18430,7 @@ function clang_LifetimeExtendedTemporaryDecl_Create(Temp, EDec, Mangling)
 end
 
 function clang_LifetimeExtendedTemporaryDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_LifetimeExtendedTemporaryDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXLifetimeExtendedTemporaryDecl
+    @ccall libclangex.clang_LifetimeExtendedTemporaryDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXLifetimeExtendedTemporaryDecl
 end
 
 function clang_UsingShadowDecl_getTargetDecl(USD)
@@ -18444,7 +18458,7 @@ function clang_UsingShadowDecl_Create(C, DC, Loc, Name, Introducer, Target)
 end
 
 function clang_UsingShadowDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_UsingShadowDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXUsingShadowDecl
+    @ccall libclangex.clang_UsingShadowDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXUsingShadowDecl
 end
 
 function clang_BaseUsingDecl_shadow_size(BUD)
@@ -18504,7 +18518,7 @@ function clang_UsingDecl_getCanonicalDecl(UD)
 end
 
 function clang_UsingDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_UsingDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXUsingDecl
+    @ccall libclangex.clang_UsingDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXUsingDecl
 end
 
 function clang_ConstructorUsingShadowDecl_getIntroducer(CUSD)
@@ -18540,7 +18554,7 @@ function clang_ConstructorUsingShadowDecl_Create(C, DC, Loc, Using, Target, IsVi
 end
 
 function clang_ConstructorUsingShadowDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_ConstructorUsingShadowDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXConstructorUsingShadowDecl
+    @ccall libclangex.clang_ConstructorUsingShadowDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXConstructorUsingShadowDecl
 end
 
 function clang_UsingEnumDecl_getUsingLoc(UED)
@@ -18596,7 +18610,7 @@ function clang_UsingEnumDecl_Create(C, DC, UsingL, EnumL, NameL, EnumType)
 end
 
 function clang_UsingEnumDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_UsingEnumDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXUsingEnumDecl
+    @ccall libclangex.clang_UsingEnumDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXUsingEnumDecl
 end
 
 function clang_UsingPackDecl_getInstantiatedFromUsingDecl(UPD)
@@ -18624,7 +18638,7 @@ function clang_UsingPackDecl_Create(C, DC, InstantiatedFrom, UsingDecls, NumUsin
 end
 
 function clang_UsingPackDecl_CreateDeserialized(C, ID, NumExpansions)
-    @ccall libclangex.clang_UsingPackDecl_CreateDeserialized(C::CXASTContext, ID::Cuint, NumExpansions::Cuint)::CXUsingPackDecl
+    @ccall libclangex.clang_UsingPackDecl_CreateDeserialized(C::CXASTContext, ID::UInt64, NumExpansions::Cuint)::CXUsingPackDecl
 end
 
 function clang_UnresolvedUsingValueDecl_getUsingLoc(UUVD)
@@ -18668,7 +18682,7 @@ function clang_UnresolvedUsingValueDecl_getCanonicalDecl(UUVD)
 end
 
 function clang_UnresolvedUsingValueDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_UnresolvedUsingValueDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXUnresolvedUsingValueDecl
+    @ccall libclangex.clang_UnresolvedUsingValueDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXUnresolvedUsingValueDecl
 end
 
 function clang_UnresolvedUsingTypenameDecl_getUsingLoc(UUTD)
@@ -18704,7 +18718,7 @@ function clang_UnresolvedUsingTypenameDecl_getCanonicalDecl(UUTD)
 end
 
 function clang_UnresolvedUsingTypenameDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_UnresolvedUsingTypenameDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXUnresolvedUsingTypenameDecl
+    @ccall libclangex.clang_UnresolvedUsingTypenameDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXUnresolvedUsingTypenameDecl
 end
 
 function clang_UnresolvedUsingIfExistsDecl_Create(C, DC, Loc, Name)
@@ -18712,7 +18726,7 @@ function clang_UnresolvedUsingIfExistsDecl_Create(C, DC, Loc, Name)
 end
 
 function clang_UnresolvedUsingIfExistsDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_UnresolvedUsingIfExistsDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXUnresolvedUsingIfExistsDecl
+    @ccall libclangex.clang_UnresolvedUsingIfExistsDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXUnresolvedUsingIfExistsDecl
 end
 
 function clang_StaticAssertDecl_Create(C, DC, StaticAssertLoc, AssertExpr, Message, RParenLoc, Failed)
@@ -18720,7 +18734,7 @@ function clang_StaticAssertDecl_Create(C, DC, StaticAssertLoc, AssertExpr, Messa
 end
 
 function clang_StaticAssertDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_StaticAssertDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXStaticAssertDecl
+    @ccall libclangex.clang_StaticAssertDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXStaticAssertDecl
 end
 
 function clang_StaticAssertDecl_getAssertExpr(SAD)
@@ -18768,7 +18782,7 @@ function clang_BindingDecl_Create(C, DC, IdLoc, Id)
 end
 
 function clang_BindingDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_BindingDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXBindingDecl
+    @ccall libclangex.clang_BindingDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXBindingDecl
 end
 
 function clang_DecompositionDecl_getNumBindings(DD)
@@ -18784,7 +18798,7 @@ function clang_DecompositionDecl_Create(C, DC, StartLoc, LSquareLoc, T, TInfo, S
 end
 
 function clang_DecompositionDecl_CreateDeserialized(C, ID, NumBindings)
-    @ccall libclangex.clang_DecompositionDecl_CreateDeserialized(C::CXASTContext, ID::Cuint, NumBindings::Cuint)::CXDecompositionDecl
+    @ccall libclangex.clang_DecompositionDecl_CreateDeserialized(C::CXASTContext, ID::UInt64, NumBindings::Cuint)::CXDecompositionDecl
 end
 
 function clang_MSPropertyDecl_hasGetter(MPD)
@@ -18808,7 +18822,7 @@ function clang_MSPropertyDecl_Create(C, DC, L, N, T, TInfo, StartL, Getter, Sett
 end
 
 function clang_MSPropertyDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_MSPropertyDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXMSPropertyDecl
+    @ccall libclangex.clang_MSPropertyDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXMSPropertyDecl
 end
 
 function clang_MSGuidDecl_getPart1(GD)
@@ -21079,7 +21093,7 @@ function clang_Decl_isFromASTFile(D)
 end
 
 function clang_Decl_getGlobalID(D)
-    @ccall libclangex.clang_Decl_getGlobalID(D::CXDecl)::Cuint
+    @ccall libclangex.clang_Decl_getGlobalID(D::CXDecl)::UInt64
 end
 
 function clang_Decl_getOwningModuleID(D)
@@ -21551,7 +21565,7 @@ function clang_PragmaCommentDecl_Create(C, DC, CommentLoc, CommentKind, Arg)
 end
 
 function clang_PragmaCommentDecl_CreateDeserialized(C, ID, ArgSize)
-    @ccall libclangex.clang_PragmaCommentDecl_CreateDeserialized(C::CXASTContext, ID::Cuint, ArgSize::Cuint)::CXPragmaCommentDecl
+    @ccall libclangex.clang_PragmaCommentDecl_CreateDeserialized(C::CXASTContext, ID::UInt64, ArgSize::Cuint)::CXPragmaCommentDecl
 end
 
 function clang_PragmaCommentDecl_getCommentKind(PCD)
@@ -21571,7 +21585,7 @@ function clang_PragmaDetectMismatchDecl_Create(C, DC, Loc, Name, Value)
 end
 
 function clang_PragmaDetectMismatchDecl_CreateDeserialized(C, ID, NameValueSize)
-    @ccall libclangex.clang_PragmaDetectMismatchDecl_CreateDeserialized(C::CXASTContext, ID::Cuint, NameValueSize::Cuint)::CXPragmaDetectMismatchDecl
+    @ccall libclangex.clang_PragmaDetectMismatchDecl_CreateDeserialized(C::CXASTContext, ID::UInt64, NameValueSize::Cuint)::CXPragmaDetectMismatchDecl
 end
 
 function clang_PragmaDetectMismatchDecl_getName(PDMD)
@@ -21723,7 +21737,7 @@ function clang_LabelDecl_Create(C, DC, IdentL, II)
 end
 
 function clang_LabelDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_LabelDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXLabelDecl
+    @ccall libclangex.clang_LabelDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXLabelDecl
 end
 
 function clang_LabelDecl_getStmt(LD)
@@ -21775,7 +21789,7 @@ function clang_NamespaceDecl_Create(C, DC, Inline, StartLoc, IdLoc, Id, PrevDecl
 end
 
 function clang_NamespaceDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_NamespaceDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXNamespaceDecl
+    @ccall libclangex.clang_NamespaceDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXNamespaceDecl
 end
 
 function clang_NamespaceDecl_isAnonymousNamespace(ND)
@@ -21974,7 +21988,7 @@ function clang_VarDecl_Create(C, DC, StartLoc, IdLoc, Id, T, TInfo, S)
 end
 
 function clang_VarDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_VarDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXVarDecl
+    @ccall libclangex.clang_VarDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXVarDecl
 end
 
 function clang_VarDecl_getSourceRange(VD)
@@ -22340,7 +22354,7 @@ function clang_ImplicitParamDecl_Create(C, DC, IdLoc, Id, T, ParamKind)
 end
 
 function clang_ImplicitParamDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_ImplicitParamDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXImplicitParamDecl
+    @ccall libclangex.clang_ImplicitParamDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXImplicitParamDecl
 end
 
 function clang_ImplicitParamDecl_getParameterKind(IPD)
@@ -22356,7 +22370,7 @@ function clang_ParmVarDecl_Create(C, DC, StartLoc, IdLoc, Id, T, TInfo, S, DefAr
 end
 
 function clang_ParmVarDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_ParmVarDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXParmVarDecl
+    @ccall libclangex.clang_ParmVarDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXParmVarDecl
 end
 
 function clang_ParmVarDecl_getSourceRange(PVD)
@@ -22513,7 +22527,7 @@ function clang_FunctionDecl_Create(C, DC, StartLoc, NLoc, N, T, TInfo, SC, isInl
 end
 
 function clang_FunctionDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_FunctionDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXFunctionDecl
+    @ccall libclangex.clang_FunctionDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXFunctionDecl
 end
 
 function clang_FunctionDecl_getNameInfo(FD)
@@ -23133,7 +23147,7 @@ function clang_FieldDecl_Create(C, DC, StartLoc, IdLoc, I, T, TInfo, BW, Mutable
 end
 
 function clang_FieldDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_FieldDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXFieldDecl
+    @ccall libclangex.clang_FieldDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXFieldDecl
 end
 
 function clang_FieldDecl_getFieldIndex(FD)
@@ -23241,7 +23255,7 @@ function clang_EnumConstantDecl_Create(C, DC, L, Id, T, E, V)
 end
 
 function clang_EnumConstantDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_EnumConstantDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXEnumConstantDecl
+    @ccall libclangex.clang_EnumConstantDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXEnumConstantDecl
 end
 
 function clang_EnumConstantDecl_getInitExpr(ECD)
@@ -23297,7 +23311,7 @@ function clang_IndirectFieldDecl_Create(C, DC, L, Id, T, Chain, ChainSize)
 end
 
 function clang_IndirectFieldDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_IndirectFieldDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXIndirectFieldDecl
+    @ccall libclangex.clang_IndirectFieldDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXIndirectFieldDecl
 end
 
 function clang_IndirectFieldDecl_getChainElement(IFD, i)
@@ -23389,7 +23403,7 @@ function clang_TypedefDecl_Create(C, DC, StartLoc, IdLoc, Id, TInfo)
 end
 
 function clang_TypedefDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_TypedefDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXTypedefDecl
+    @ccall libclangex.clang_TypedefDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXTypedefDecl
 end
 
 function clang_TypedefDecl_getSourceRange(TD)
@@ -23405,7 +23419,7 @@ function clang_TypeAliasDecl_Create(C, DC, StartLoc, IdLoc, Id, TInfo)
 end
 
 function clang_TypeAliasDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_TypeAliasDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXTypeAliasDecl
+    @ccall libclangex.clang_TypeAliasDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXTypeAliasDecl
 end
 
 function clang_TypeAliasDecl_getSourceRange(TAD)
@@ -23589,7 +23603,7 @@ function clang_EnumDecl_Create(C, DC, StartLoc, IdLoc, Id, PrevDecl, IsScoped, I
 end
 
 function clang_EnumDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_EnumDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXEnumDecl
+    @ccall libclangex.clang_EnumDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXEnumDecl
 end
 
 function clang_EnumDecl_setScoped(ED, Scoped)
@@ -23747,7 +23761,7 @@ function clang_RecordDecl_Create(C, TK, DC, StartLoc, IdLoc, Id, PrevDecl)
 end
 
 function clang_RecordDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_RecordDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXRecordDecl
+    @ccall libclangex.clang_RecordDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXRecordDecl
 end
 
 function clang_RecordDecl_getPreviousDecl(RD)
@@ -23939,7 +23953,7 @@ function clang_FileScopeAsmDecl_Create(C, DC, Str, AsmLoc, RParenLoc)
 end
 
 function clang_FileScopeAsmDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_FileScopeAsmDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXFileScopeAsmDecl
+    @ccall libclangex.clang_FileScopeAsmDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXFileScopeAsmDecl
 end
 
 function clang_FileScopeAsmDecl_getAsmLoc(FSAD)
@@ -23975,7 +23989,7 @@ function clang_TopLevelStmtDecl_Create(C, Statement)
 end
 
 function clang_TopLevelStmtDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_TopLevelStmtDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXTopLevelStmtDecl
+    @ccall libclangex.clang_TopLevelStmtDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXTopLevelStmtDecl
 end
 
 function clang_TopLevelStmtDecl_getSourceRange(TLSD)
@@ -24007,7 +24021,7 @@ function clang_BlockDecl_Create(C, DC, L)
 end
 
 function clang_BlockDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_BlockDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXBlockDecl
+    @ccall libclangex.clang_BlockDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXBlockDecl
 end
 
 function clang_BlockDecl_getCaretLocation(BD)
@@ -24175,7 +24189,7 @@ function clang_CapturedDecl_Create(C, DC, NumParams)
 end
 
 function clang_CapturedDecl_CreateDeserialized(C, ID, NumParams)
-    @ccall libclangex.clang_CapturedDecl_CreateDeserialized(C::CXASTContext, ID::Cuint, NumParams::Cuint)::CXCapturedDecl
+    @ccall libclangex.clang_CapturedDecl_CreateDeserialized(C::CXASTContext, ID::UInt64, NumParams::Cuint)::CXCapturedDecl
 end
 
 function clang_CapturedDecl_getBody(CD)
@@ -24235,7 +24249,7 @@ function clang_ImportDecl_CreateImplicit(C, DC, StartLoc, Imported, EndLoc)
 end
 
 function clang_ImportDecl_CreateDeserialized(C, ID, NumLocations)
-    @ccall libclangex.clang_ImportDecl_CreateDeserialized(C::CXASTContext, ID::Cuint, NumLocations::Cuint)::CXImportDecl
+    @ccall libclangex.clang_ImportDecl_CreateDeserialized(C::CXASTContext, ID::UInt64, NumLocations::Cuint)::CXImportDecl
 end
 
 function clang_ImportDecl_getImportedModule(ID)
@@ -24263,7 +24277,7 @@ function clang_ExportDecl_Create(C, DC, ExportLoc)
 end
 
 function clang_ExportDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_ExportDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXExportDecl
+    @ccall libclangex.clang_ExportDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXExportDecl
 end
 
 function clang_ExportDecl_getExportLoc(ED)
@@ -24307,7 +24321,7 @@ function clang_EmptyDecl_Create(C, DC, L)
 end
 
 function clang_EmptyDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_EmptyDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXEmptyDecl
+    @ccall libclangex.clang_EmptyDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXEmptyDecl
 end
 
 function clang_EmptyDecl_classofKind(K)
@@ -24319,7 +24333,7 @@ function clang_HLSLBufferDecl_Create(C, LexicalParent, CBuffer, KwLoc, ID, IDLoc
 end
 
 function clang_HLSLBufferDecl_CreateDeserialized(C, ID)
-    @ccall libclangex.clang_HLSLBufferDecl_CreateDeserialized(C::CXASTContext, ID::Cuint)::CXHLSLBufferDecl
+    @ccall libclangex.clang_HLSLBufferDecl_CreateDeserialized(C::CXASTContext, ID::UInt64)::CXHLSLBufferDecl
 end
 
 function clang_HLSLBufferDecl_getSourceRange(BD)
@@ -25726,6 +25740,8 @@ end
     CXCastKind_CK_ZeroToOCLOpaqueType = 62
     CXCastKind_CK_AddressSpaceConversion = 63
     CXCastKind_CK_IntToOCLSampler = 64
+    CXCastKind_CK_HLSLVectorTruncation = 65
+    CXCastKind_CK_HLSLArrayRValue = 66
 end
 
 @enum CXBinaryOperatorKind::UInt32 begin
@@ -28760,7 +28776,8 @@ end
     CXTemplateName_DependentTemplate = 4
     CXTemplateName_SubstTemplateTemplateParm = 5
     CXTemplateName_SubstTemplateTemplateParmPack = 6
-    UsingTemplate = 7
+    CXTemplateName_UsingTemplate = 7
+    CXTemplateName_DeducedTemplate = 8
 end
 
 function clang_TemplateName_isNull(TN)
@@ -34851,6 +34868,14 @@ end
 
 function clang_CodeGenOptions_setDisableFree(CGO, Value)
     @ccall libclangex.clang_CodeGenOptions_setDisableFree(CGO::CXCodeGenOptions, Value::Cuint)::Cvoid
+end
+
+function clang_CodeGenOptions_getTimePasses(CGO)
+    @ccall libclangex.clang_CodeGenOptions_getTimePasses(CGO::CXCodeGenOptions)::Cuint
+end
+
+function clang_CodeGenOptions_setTimePasses(CGO, Value)
+    @ccall libclangex.clang_CodeGenOptions_setTimePasses(CGO::CXCodeGenOptions, Value::Cuint)::Cvoid
 end
 
 function clang_CodeGenOptions_getOptimizationLevel(CGO)
@@ -42879,6 +42904,7 @@ end
     CXOverloadCandidateSet_CSK_Operator = 1
     CXOverloadCandidateSet_CSK_InitByUserDefinedConversion = 2
     CXOverloadCandidateSet_CSK_InitByConstructor = 3
+    CXOverloadCandidateSet_CSK_AddressOfOverloadSet = 4
 end
 
 function clang_OverloadCandidateSet_create(Loc, CSK)
@@ -43910,6 +43936,7 @@ end
     CXStringLiteralKind_UTF16 = 3
     CXStringLiteralKind_UTF32 = 4
     CXStringLiteralKind_Unevaluated = 5
+    CXStringLiteralKind_Binary = 6
 end
 
 @enum CXPredefinedIdentKind::UInt32 begin
@@ -49596,8 +49623,8 @@ end
     CXFormatArgumentPassingKind_FAPK_VAList = 2
 end
 
-function clang_Sema_getMoreSpecializedTemplate(S, FT1, FT2, Loc, TPOC, NumCallArguments1, NumCallArguments2, Reversed)
-    @ccall libclangex.clang_Sema_getMoreSpecializedTemplate(S::CXSema, FT1::CXFunctionTemplateDecl, FT2::CXFunctionTemplateDecl, Loc::CXSourceLocation_, TPOC::CXTPOC, NumCallArguments1::Cuint, NumCallArguments2::Cuint, Reversed::Bool)::CXFunctionTemplateDecl
+function clang_Sema_getMoreSpecializedTemplate(S, FT1, FT2, Loc, TPOC, NumCallArguments1, RawObj1Ty, RawObj2Ty, Reversed)
+    @ccall libclangex.clang_Sema_getMoreSpecializedTemplate(S::CXSema, FT1::CXFunctionTemplateDecl, FT2::CXFunctionTemplateDecl, Loc::CXSourceLocation_, TPOC::CXTPOC, NumCallArguments1::Cuint, RawObj1Ty::CXQualType, RawObj2Ty::CXQualType, Reversed::Bool)::CXFunctionTemplateDecl
 end
 
 function clang_Sema_getFormatStringInfo(Format, IsCXXMember, IsVariadic, FormatIdx, FirstDataArg, ArgPassingKind)

@@ -64,10 +64,18 @@ using Test
 
     # ---- src/clang/decl.jl ----
     @test CC.get_decl_kind_name(fd) == "Function"
+    # the kind is read off the node, so a function and a variable answer differently
+    @test CC.get_decl_kind(fd) == CC.LibClangEx.CXDeclKind_Function
+    @test f(I, "covhelp_gv")
+    @test CC.get_decl_kind(get_decl(f)) == CC.LibClangEx.CXDeclKind_Var
 
     # ---- src/clang/stmt.jl ----
     body = CC.getBody(fd)
     @test CC.get_stmt_class_name(body) == "CompoundStmt"
+    @test CC.get_stmt_class(body) == CC.LibClangEx.CXStmtClass_CompoundStmtClass
+    # `int y = x + 1; return y;` -- one class per statement of the body, in source order
+    @test CC.get_stmt_class.(CC.children(body)) ==
+          [CC.LibClangEx.CXStmtClass_DeclStmtClass, CC.LibClangEx.CXStmtClass_ReturnStmtClass]
     CC.dump_ast(body)  # writes the AST dump to stderr
 
     # ---- src/clang/ast.jl: ASTContext helpers ----

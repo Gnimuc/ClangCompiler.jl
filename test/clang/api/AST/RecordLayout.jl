@@ -129,6 +129,8 @@ end
              struct PBPoly { virtual ~PBPoly(); int b; };
              struct PBDerived : PBPoly { int c; };
              struct PBVirt : virtual PBPoly { int d; };
+             struct PBNE { virtual ~PBNE(); };
+             struct PBVirt2 : virtual PBNE { int d; };
              """)
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
@@ -152,13 +154,21 @@ end
     @test CC.getName(CC.NamedDecl(pb)) == "PBPoly"
     @test !CC.isPrimaryBaseVirtual(l_der)
 
-    # a virtual polymorphic base with its own data is not nearly-empty, so Itanium
-    # does not select it as primary: this class introduces its own vptr. That is
-    # the other side of PBDerived above, where a non-virtual polymorphic base is
-    # primary and not virtual.
+    # A virtual base is chosen as primary only when it is nearly empty -- a vptr and no
+    # data. PBPoly carries `b`, so PBVirt introduces its own vptr and has no primary base
+    # at all: `isPrimaryBaseVirtual` is false here for want of a base, not of virtuality.
     l_virt = layout("PBVirt")
     @test CC.is_null_handle(CC.getPrimaryBase(l_virt))
     @test !CC.isPrimaryBaseVirtual(l_virt)
+
+    # PBNE is nearly empty, so the Itanium ABI -- which all three CI targets lay records out
+    # with, mingw included -- shares its vptr. That is the other side of PBDerived: a primary
+    # base in both, virtual in this one alone.
+    l_virt2 = layout("PBVirt2")
+    pb2 = CC.getPrimaryBase(l_virt2)
+    @test !CC.is_null_handle(pb2)
+    @test CC.getName(CC.NamedDecl(pb2)) == "PBNE"
+    @test CC.isPrimaryBaseVirtual(l_virt2)
 
     dispose(f)
     dispose(I)

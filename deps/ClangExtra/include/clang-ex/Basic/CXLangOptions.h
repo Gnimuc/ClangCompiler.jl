@@ -49,7 +49,8 @@ typedef enum CXMSVCMajorVersion {
   CXMSVCMajorVersion_MSVC2019 = 1920,
   CXMSVCMajorVersion_MSVC2019_5 = 1925,
   CXMSVCMajorVersion_MSVC2019_8 = 1928,
-  CXMSVCMajorVersion_MSVC2022_3 = 1933
+  CXMSVCMajorVersion_MSVC2022_3 = 1933,
+  CXMSVCMajorVersion_MSVC2022_9 = 1939
 } CXMSVCMajorVersion;
 
 // Mirror of `clang::LangOptions::FPExceptionModeKind` (clang/Basic/LangOptions.h):

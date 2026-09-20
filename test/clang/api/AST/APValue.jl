@@ -220,7 +220,10 @@ end
     tst2 = tst_of(varof("usett_obj"))
     @test tst2 isa CC.TemplateSpecializationType
     @test CC.getNumArgs(tst2) == 1
-    exercise_targ(CC.getArg(tst2, 0))
+    # `UsesTT<Holder>` passes a template, and that kind is what selects the helper's Template arm
+    tt_arg = CC.getArg(tst2, 0)
+    @test CC.getKind(tt_arg) == CC.LibClangEx.CXTemplateArgument_Template
+    exercise_targ(tt_arg)
 
     # ---------- TemplateArgument (owned constructor paths) ----------
     int_qt = CC.getType(vd_ci)                    # `const int`

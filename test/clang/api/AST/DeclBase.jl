@@ -152,6 +152,8 @@ end
     # deserialization identity of a decl parsed from source
     @test CC.isFromASTFile(nd) == false
     @test !(CC.shouldSkipCheckingODR(nd))
+    # clang 20 has no such method and the shim answers false; the call checks the binding
+    @test CC.isDiscardedInGlobalModuleFragment(nd) == false
     @test CC.getGlobalID(nd) == 0
     @test CC.getOwningModuleID(nd) == 0
 
@@ -172,14 +174,16 @@ end
     @test CC.isObjCContainer(ns) == false
     @test (CC.dumpAsDecl(ns); true)       # writes to stderr
 
-    # no-load lookup: same shape as lookup, which has already built the table
+    # no-load lookup: same shape as lookup, which has already built the table. The namespace
+    # declares `h` once, so a lookup by that name finds that declaration and nothing else.
     name = CC.getDeclName(nd)
-    @test length(CC.lookup(ns, name)) >= 1
+    @test length(CC.lookup(ns, name)) == 1
     n_noload = CC.getNumNoloadLookupResults(ns, name)
-    @test n_noload >= 1
+    @test n_noload == 1
     res = CC.noload_lookup(ns, name)
     @test length(res) == n_noload
-    @test any(d -> CC.getDeclName(d) == name, res)
+    @test all(d -> CC.getDeclName(d) == name, res)
+    @test only(res).ptr == nd.ptr
 
     # external-storage flags: writing back the default leaves them off
     CC.setHasExternalLexicalStorage(ns, false)
@@ -235,7 +239,10 @@ end
     @test !CC.is_null_handle(CC.noload_decls_begin(dc))
     gname = CC.getDeclName(ga)
     uncached = CC.localUncachedLookup(dc, gname)
-    @test any(d -> CC.getDeclName(d) == gname, uncached)
+    # `grouped_a` is declared once, among namespace members that go by other names
+    @test length(uncached) == 1
+    @test all(d -> CC.getDeclName(d) == gname, uncached)
+    @test only(uncached).ptr == ga.ptr
     prim = CC.getPrimaryContext(dc)
     CC.setMustBuildLookupTable(prim)
     @test !isempty(CC.lookup(prim, gname))

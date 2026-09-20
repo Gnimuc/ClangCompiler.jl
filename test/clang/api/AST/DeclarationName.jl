@@ -26,6 +26,9 @@ using Test
     @test CC.getNameKind(dn) == CC.LibClangEx.CXDeclarationName_Identifier
     @test CC.isIdentifier(dn)
     @test CC.isDependentName(dn) == false
+    redirect_stdio(; stderr=devnull) do
+        @test CC.dump(dn) === nothing
+    end
 
     dn_ii = CC.DeclarationName(CC.getIdentifier(fd))
     @test CC.getAsString(dn_ii) == "declnameinfo_probe"

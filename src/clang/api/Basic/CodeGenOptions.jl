@@ -80,6 +80,30 @@ function setDisableFree(x::AbstractCodeGenOptions, value::Bool)
 end
 
 """
+    getTimePasses(x::AbstractCodeGenOptions) -> Bool
+Return whether code generation times its passes, which `-ftime-report` sets.
+
+Everything that reads this flag goes on to read the `CompilerInstance`'s timer group, and
+only [`createFrontendTimer`](@ref) creates that: clang's own `cc1_main` makes that call when
+the flag is set, and nothing else in clang does. So with this `true`, an instance has to be
+given its frontend timer before anything generates code from it.
+"""
+function getTimePasses(x::AbstractCodeGenOptions)
+    @check_ptrs x
+    return clang_CodeGenOptions_getTimePasses(x) != 0
+end
+
+"""
+    setTimePasses(x::AbstractCodeGenOptions, value::Bool)
+Set whether code generation times its passes. See [`getTimePasses`](@ref) for what `true`
+then requires of the instance.
+"""
+function setTimePasses(x::AbstractCodeGenOptions, value::Bool)
+    @check_ptrs x
+    return clang_CodeGenOptions_setTimePasses(x, value)
+end
+
+"""
     getOptimizationLevel(x::AbstractCodeGenOptions) -> Int
 Return the `-O` level, 0 through 3.
 """

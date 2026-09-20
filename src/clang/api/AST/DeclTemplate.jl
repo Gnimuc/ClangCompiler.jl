@@ -312,9 +312,14 @@ end
     getDefaultArgument(x::AbstractNonTypeTemplateParmDecl) -> Expr_
 Return the parameter's default argument expression. The carrier holds NULL when
 `hasDefaultArgument(x)` is false.
+
+That case is answered here rather than by clang: without a default,
+`clang::NonTypeTemplateParmDecl::getDefaultArgument` hands back an empty
+`TemplateArgumentLoc`, and reading the expression out of one asserts on its kind.
 """
 function getDefaultArgument(x::AbstractNonTypeTemplateParmDecl)
     @check_ptrs x
+    hasDefaultArgument(x) || return Expr_(C_NULL)
     return Expr_(clang_NonTypeTemplateParmDecl_getDefaultArgument(x))
 end
 

@@ -146,6 +146,9 @@ end
         end
         dispose(hfi2)
         dispose(hfi3)
+        # clang 20 has no Framework member and the shim answers the empty string; the call
+        # checks the binding still hands back a string the wrapper can take
+        @test CC.getFramework(hfi) == ""
 
         # The exposed fields of the aggregate. IsValid is set by the getFileInfo above.
         @test CC.getIsValid(hfi) == true

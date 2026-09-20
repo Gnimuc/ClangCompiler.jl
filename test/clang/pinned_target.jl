@@ -158,6 +158,21 @@ end
     end
 end
 
+@testset "pinned target | an enumerator clang appended has a name here" begin
+    # `preserve_none` is a calling convention LLVM 20 added at the end of `CallingConv`. A
+    # mirror that stopped at the enumerators of the release it was written against hands that
+    # value to Julia as an enum outside its own range. The attribute is per-target, hence the pin.
+    let I = create_parser(String[]; triple=PIN)
+        CC.parse(I, "__attribute__((preserve_none)) void pin_preserve_none(void);")
+        f = DeclFinder(I)
+        @test f(I, "pin_preserve_none")
+        fnty = CC.resolve(CC.getTypePtr(CC.getCanonicalType(CC.getType(CC.FunctionDecl(get_decl(f))))))
+        @test CC.getCallConv(fnty) == CC.LibClangEx.CXCallingConv_CC_PreserveNone
+        dispose(f)
+        dispose(I)
+    end
+end
+
 # The testsets above pin a target so every runner reads the same answers. This one is the
 # complement: it uses the interpreter the package builds by DEFAULT and asserts what the host's
 # own target says, so each runner exercises its native path rather than a pinned stand-in.

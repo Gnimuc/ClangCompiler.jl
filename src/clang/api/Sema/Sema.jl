@@ -6864,8 +6864,9 @@ end
 Create the implicit declaration of the builtin `id` under the name `ii` with the function
 type `ty`, parented to the translation unit — behind an implicit `extern "C"` block in C++.
 
-`id` is a `clang::Builtin::ID`. LLVM 20's `CreateBuiltin` indexes `BuiltinInfo[id]`,
-so `0` (`Builtin::NotBuiltin`) is not a table entry and is rejected here. `ty` must be
+`id` is a `clang::Builtin::ID` the preprocessor's builtin table has a record for, other than
+`0` (`Builtin::NotBuiltin`, whose record is empty): `CreateBuiltin` reads the record's
+attributes without checking either end of that range. `ty` must be
 a function type, since `clang::FunctionDecl::Create` stores it unchecked and the
 parameters are built from it, so a prototype gives the declaration its `ParmVarDecl`s.
 The declaration is `ASTContext` arena memory.
@@ -6873,7 +6874,7 @@ The declaration is `ASTContext` arena memory.
 function CreateBuiltin(x::AbstractSema, ii::AbstractIdentifierInfo, ty::AbstractQualType, id::Integer, loc::SourceLocation)
     @check_ptrs x ii ty
     @assert isFunctionType(getTypePtr(ty)) "a builtin declaration needs a function type"
-    @assert id != 0 "Builtin::NotBuiltin is not a table entry; pass a real Builtin::ID"
+    @assert 0 < id < getNumBuiltins(getBuiltinInfo(getPreprocessor(x))) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return FunctionDecl(clang_Sema_CreateBuiltin(x, ii, ty, id, loc))
 end
 
@@ -8230,20 +8231,49 @@ end
 """
     getMoreSpecializedTemplate(x::AbstractSema, ft1::AbstractFunctionTemplateDecl,
                                ft2::AbstractFunctionTemplateDecl, loc::SourceLocation,
-                               tpoc::CXTPOC, num_call_arguments1::Integer,
-                               num_call_arguments2::Integer;
+                               tpoc::CXTPOC, num_call_arguments1::Integer;
+                               raw_obj1_ty::QualType=implicit_object_type(ft1),
+                               raw_obj2_ty::QualType=implicit_object_type(ft2),
                                reversed::Bool=false) -> Union{FunctionTemplateDecl,Nothing}
 Return whichever of `ft1` and `ft2` is more specialized under partial ordering, or `nothing`
 when neither is.
 
 `tpoc` says which context the ordering is for. `reversed` selects the reversed-parameter-order
 form, which is defined only for `CXTPOC_TPOC_Call`.
+
+Call-context ordering gives a non-static member function an implicit object parameter, and
+clang forms its type from `raw_obj1_ty` / `raw_obj2_ty`, the class the call found the member
+in. Each defaults to the class the template is a member of, and to a null type for anything
+that is not a non-static member. clang dereferences the one it reads, so a null type is
+refused for the orderings that read it: two non-static members, or an overloaded operator
+other than `()` and `[]` beside a non-static member, unless the member declares its object
+parameter explicitly.
 """
-function getMoreSpecializedTemplate(x::AbstractSema, ft1::AbstractFunctionTemplateDecl, ft2::AbstractFunctionTemplateDecl, loc::SourceLocation, tpoc::CXTPOC, num_call_arguments1::Integer, num_call_arguments2::Integer; reversed::Bool=false)
+function getMoreSpecializedTemplate(x::AbstractSema, ft1::AbstractFunctionTemplateDecl, ft2::AbstractFunctionTemplateDecl, loc::SourceLocation, tpoc::CXTPOC, num_call_arguments1::Integer; raw_obj1_ty::QualType=implicit_object_type(ft1), raw_obj2_ty::QualType=implicit_object_type(ft2), reversed::Bool=false)
     @check_ptrs x ft1 ft2
     @assert !reversed || tpoc == CXTPOC_TPOC_Call "the reversed form is only defined for call-context ordering"
-    p = clang_Sema_getMoreSpecializedTemplate(x, ft1, ft2, loc, tpoc, num_call_arguments1, num_call_arguments2, reversed)
+    if tpoc == CXTPOC_TPOC_Call
+        fd1, fd2 = getTemplatedDecl(ft1), getTemplatedDecl(ft2)
+        nonstatic1, nonstatic2 = is_nonstatic_method(fd1), is_nonstatic_method(fd2)
+        operator = getOverloadedOperator(fd1)
+        adds_object_parameter = (nonstatic1 && nonstatic2) || !(operator in (CXOverloadedOperatorKind_OO_None, CXOverloadedOperatorKind_OO_Call, CXOverloadedOperatorKind_OO_Subscript))
+        if adds_object_parameter
+            @assert !(nonstatic1 && !hasCXXExplicitFunctionObjectParameter(fd1)) || !isNull(raw_obj1_ty) "ordering `ft1` reads `raw_obj1_ty`, which must not be null"
+            @assert !(nonstatic2 && !hasCXXExplicitFunctionObjectParameter(fd2)) || !isNull(raw_obj2_ty) "ordering `ft2` reads `raw_obj2_ty`, which must not be null"
+        end
+    end
+    p = clang_Sema_getMoreSpecializedTemplate(x, ft1, ft2, loc, tpoc, num_call_arguments1, raw_obj1_ty, raw_obj2_ty, reversed)
     return p == C_NULL ? nothing : FunctionTemplateDecl(p)
+end
+
+is_nonstatic_method(fd::AbstractFunctionDecl) = isCXXMethodDecl(fd) && !isStatic(CXXMethodDecl(fd))
+
+# The class a member function template belongs to, as a type: what overload resolution passes
+# for a member it found in its own class. Null for anything that has no implicit object.
+function implicit_object_type(ft::AbstractFunctionTemplateDecl)
+    fd = getTemplatedDecl(ft)
+    is_nonstatic_method(fd) || return QualType(C_NULL)
+    return QualType(getTypeForDecl(getParent(CXXMethodDecl(fd))))
 end
 
 """

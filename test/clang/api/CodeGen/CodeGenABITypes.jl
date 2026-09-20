@@ -21,7 +21,10 @@ const LX = CC.LibClangEx
     ft = LLVM.LLVMType(CC.convertFreeFunctionType(cgm, CC.FunctionDecl(get_decl(f))))
     @test ft isa LLVM.FunctionType
     @test length(LLVM.parameters(ft)) == 2
-    @test LLVM.return_type(ft) isa LLVM.IntegerType
+    # `int` is 32 bits on every target this suite runs on, and the two parameters keep
+    # their source order
+    @test LLVM.width(LLVM.return_type(ft)) == 32
+    @test string(ft) == "i32 (i32, double)"
 
     # the same sret decision CGFunctionInfo reports, seen in the IR type: the aggregate
     # return became a hidden pointer parameter and the function returns void

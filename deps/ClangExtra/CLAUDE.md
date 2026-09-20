@@ -257,6 +257,14 @@ regenerate with the bindings.
 - Every mirrored enum MUST have an ENUM_SYNC table in lib/Basic/CXEnumSync.cpp
   covering every enumerator — a partial mirror silently ships missing enumerators
   and wrong numbering.
+- ENUM_SYNC proves the enumerators a mirror lists have upstream's values. It cannot see one
+  upstream has and the mirror lacks, because nothing names it — and LLVM appends to enums
+  on most bumps. The value then reaches Julia as an enum outside its own range
+  (`<invalid #22>`), which equals no enumerator. The guard for that is the block after
+  `#undef ENUM_SYNC`: one `mirror_is_exhaustive` overload per enum, a `switch` over the
+  *upstream* type with a `case` for every enumerator and no `default`, compiled with
+  `-Wswitch` as an error. An appended enumerator stops the build and names itself. Ten
+  enums have one; give every new mirror one, and an old mirror one when you touch it.
 - CXEnumSync.cpp ends with a single `#undef ENUM_SYNC`; new tables go **before**
   it (appending past it expands `ENUM_SYNC` as an undeclared identifier), and the
   file needs both the new `clang-ex/...` header and the clang header that defines
@@ -398,7 +406,9 @@ are never installed.
    binding.
 3. Commit the header, .cpp, CMakeLists, and regenerated `lib/20/LibClangEx.jl` together —
    deterministic symbol mode keeps the lib diff minimal. The `bindings` CI job reruns the
-   generator and fails on any diff under `lib/`, and the test suite enforces the rest:
+   generator and fails on anything it changes or adds under `lib/` or `src/` (it emits the
+   node-family carriers, wrappers, kind maps and converts there), and the test suite enforces
+   the rest:
    test/abi.jl (every binding's symbol resolves), test/lint.jl (layout/guards/CMake
    parity/collision names, every binding wrapped or stamped, and every
    `clang_*` reference in src/ resolving to a binding).

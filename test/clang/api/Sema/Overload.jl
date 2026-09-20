@@ -293,7 +293,12 @@ end
 
 @testset "Overload | the user-defined arm, narrowing kinds and the candidate-set tail" begin
     I = create_interpreter(String[])
-    CC.parse(I, "int ovl4_target_fn(int a) { return a; }")
+    CC.parse(I, """
+             int ovl4_target_fn(int a) { return a; }
+             const int ovl4_wide = 300;
+             const double ovl4_real = 1.5;
+             int ovl4_var = 1;
+             """)
     sema = CC.get_sema(I)
     ctx = CC.getASTContext(sema)
     sm = CC.getSourceManager(sema)
@@ -316,16 +321,53 @@ end
     @test CC.dump(scs) === nothing
     @test CC.dump(ics) === nothing
 
-    # Narrowing. The destination type only comes back on the constant-narrowing outcome, so
-    # both halves are asserted by shape.
+    # Narrowing, per [dcl.init.list]p7. Only a boolean, integral or floating second
+    # conversion can narrow, so the identity sequence does not, and the constant's type
+    # comes back on the constant-narrowing outcome alone.
     av = CC.IndeterminateValue()
     kind, narrowed = CC.getNarrowingKind(scs, ctx, e, av)
-    @test kind in instances(CC.CXNarrowingKind)
-    # destination type is recorded only on constant-narrowing
-    @test (kind == CC.CXNarrowingKind_NK_Constant_Narrowing) == (narrowed.ptr != C_NULL)
+    @test kind == CC.CXNarrowingKind_NK_Not_Narrowing
+    @test narrowed.ptr == C_NULL
     kind2, narrowed2 = CC.getNarrowingKind(scs, ctx, e, av, true)
-    @test kind2 in instances(CC.CXNarrowingKind)
-    @test (kind2 == CC.CXNarrowingKind_NK_Constant_Narrowing) == (narrowed2.ptr != C_NULL)
+    @test kind2 == CC.CXNarrowingKind_NK_Not_Narrowing
+    @test narrowed2.ptr == C_NULL
+    @test CC.getKind(av) == CC.CXAPValueKind_Indeterminate
+
+    # The sequences Sema computes for three real conversions, one per narrowing outcome.
+    int_ty = CC.get_qual_type(CC.IntTy(ctx))
+    function narrowing(from, to, ignore_float_to_integral=false)
+        conv = CC.ImplicitConversionSequence()
+        CC.TryImplicitConversion(sema, from, to, conv)
+        value = CC.IndeterminateValue()
+        k, ty = CC.getNarrowingKind(CC.getStandard(conv), ctx, from, value, ignore_float_to_integral)
+        constant = nothing
+        if CC.getKind(value) == CC.CXAPValueKind_Int
+            gv = CC.LLVM.GenericValue(CC.getInt(value))
+            constant = convert(Int, gv)
+            CC.LLVM.dispose(gv)
+        end
+        CC.dispose(value)
+        CC.dispose(conv)
+        return k, ty, constant
+    end
+    @test f(I, "ovl4_real")
+    real = CC.getInit(CC.VarDecl(get_decl(f)))
+    # double -> int narrows by type alone, whatever the value
+    @test narrowing(real, int_ty) == (CC.CXNarrowingKind_NK_Type_Narrowing, CC.QualType(C_NULL), nothing)
+    @test f(I, "ovl4_wide")
+    wide = CC.getInit(CC.VarDecl(get_decl(f)))
+    # int -> signed char narrows only for a constant that does not fit, and that outcome
+    # hands back the constant and the type it had
+    @test narrowing(wide, CC.get_qual_type(CC.SignedCharTy(ctx))) ==
+          (CC.CXNarrowingKind_NK_Constant_Narrowing, int_ty, 300)
+    @test f(I, "ovl4_var")
+    var = CC.VarDecl(get_decl(f))
+    var_ref = CC.BuildDeclRefExpr(sema, var, CC.getType(var), CC.CXExprValueKind_VK_LValue, loc)
+    # int -> double from a variable is a narrowing unless the caller asks for the
+    # integral-to-floating direction to be ignored
+    double_ty = CC.get_qual_type(CC.DoubleTy(ctx))
+    @test narrowing(var_ref, double_ty) == (CC.CXNarrowingKind_NK_Variable_Narrowing, CC.QualType(C_NULL), nothing)
+    @test narrowing(var_ref, double_ty, true) == (CC.CXNarrowingKind_NK_Not_Narrowing, CC.QualType(C_NULL), nothing)
     CC.dispose(av)
 
     # The user-defined arm. Switching the kind does not initialise it, so every member is

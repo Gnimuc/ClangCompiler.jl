@@ -19,14 +19,37 @@
 # out-of-line symbol at all — `Decl::getLocation` is `{ return Loc; }` — and a shim compiles its
 # own copy, so it links with nothing exported. Checking exports alone rejects some of the
 # most-used accessors in the API. The rule is: a body visible in the header, OR an exported
-# symbol. Validated against eight methods whose real outcome this branch already knows; see
-# test/skills/candidates.jl.
+# symbol. Validated against eight methods whose real outcome the tree already knows.
 
 using ClangCompiler
 const CC = ClangCompiler
 
 const ROOT = normpath(joinpath(@__DIR__, "..", "..", ".."))
-const ART = expanduser("~/.julia/artifacts/03178ba795d55ba102446a8eaccae5b1667dcc46")
+"""
+    llvm_full_artifact() -> String
+
+The LLVM_full artifact for the LLVM this Julia runs on: the headers the shim is compiled
+against, and the libclang-cpp whose exports decide what links. Found by version rather than
+named by hash, because the hash is a different one for every LLVM and every rebuild of it.
+"""
+function llvm_full_artifact()
+    v = Base.libllvm_version
+    want = "CLANG_VERSION $(v.major).$(v.minor).$(v.patch)"
+    for depot in DEPOT_PATH
+        root = joinpath(depot, "artifacts")
+        isdir(root) || continue
+        for dir in readdir(root; join=true)
+            version_inc = joinpath(dir, "include", "clang", "Basic", "Version.inc")
+            # LLVM_full has the LLVM headers and CMake package as well; Clang_jll has neither
+            isfile(version_inc) && isdir(joinpath(dir, "lib", "cmake", "llvm")) || continue
+            occursin(want, read(version_inc, String)) && return dir
+        end
+    end
+    return error("no LLVM_full artifact for LLVM $v in any depot; " *
+                 "`julia --project=deps deps/build_local.jl` installs the one the shim is built against")
+end
+
+const ART = llvm_full_artifact()
 
 # The headers the wrapper layer actually mirrors, in the order src/clang/api/ is laid out.
 const HEADERS = ["clang/AST/ASTContext.h", "clang/AST/DeclBase.h", "clang/AST/Decl.h",

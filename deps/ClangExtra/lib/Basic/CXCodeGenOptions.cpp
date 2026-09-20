@@ -63,6 +63,14 @@ unsigned clang_CodeGenOptions_getDisableFree(CXCodeGenOptions CGO) {
   return reinterpret_cast<clang::CodeGenOptions *>(CGO)->DisableFree;
 }
 
+unsigned clang_CodeGenOptions_getTimePasses(CXCodeGenOptions CGO) {
+  return reinterpret_cast<clang::CodeGenOptions *>(CGO)->TimePasses;
+}
+
+void clang_CodeGenOptions_setTimePasses(CXCodeGenOptions CGO, unsigned Value) {
+  reinterpret_cast<clang::CodeGenOptions *>(CGO)->TimePasses = Value;
+}
+
 void clang_CodeGenOptions_setDisableFree(CXCodeGenOptions CGO, unsigned Value) {
   reinterpret_cast<clang::CodeGenOptions *>(CGO)->DisableFree = Value;
 }

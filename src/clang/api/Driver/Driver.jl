@@ -263,8 +263,9 @@ end
 
 """
     setInstalledDir(x::AbstractDriver, value::AbstractString)
-Set the path the clang executable was installed in. A non-empty value overrides
-`getInstalledDir`'s fallback to `getDir`.
+Set the path the clang executable was installed in. `clang::Driver` keeps one directory, so
+this is the value `getDir` returns as well, and toolchain lookups read it: an empty `value`
+blanks it rather than restoring a default.
 """
 function setInstalledDir(x::AbstractDriver, value::AbstractString)
     @check_ptrs x

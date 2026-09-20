@@ -1703,13 +1703,12 @@ end
     fd_fpt = CC.FunctionProtoType(CC.getTypePtr(CC.getType(fd)))
     @test CC.getExceptionSpecType(fd_fpt) == CC.CXExceptionSpecificationType_EST_BasicNoexcept
 
-    # ---- the target feature map is entirely host-decided, so only its shape is asserted ----
+    # ---- the host's feature map: which features it holds is the host's, so what is asserted
+    # is what holds of any map; the values are in the pinned-triple testset below ----
     nfeat = CC.getNumFunctionFeatures(ctx, fd)
-    @test nfeat isa Integer  # shape-only: the host decides it (target CPU feature map)
     @test nfeat > 1          # index 0 and 1 have to name distinct features
-    name, enabled = CC.getFunctionFeature(ctx, fd, 0)
+    name, _ = CC.getFunctionFeature(ctx, fd, 0)
     @test !isempty(name)
-    @test enabled isa Bool  # shape-only: the host decides it
     # the map is rebuilt per call, so the same index must name the same feature
     @test CC.getFunctionFeature(ctx, fd, 0)[1] == name
     name1, _ = CC.getFunctionFeature(ctx, fd, 1)
@@ -2014,7 +2013,20 @@ end
 
     # this is what the attribute asked for, not what the target resolved it to: the resolved
     # map expands implied features, so it is strictly larger
-    @test CC.getNumFunctionFeatures(pctx, fd) > n
+    nresolved = CC.getNumFunctionFeatures(pctx, fd)
+    @test nresolved > n
+
+    # the resolved map, name => enabled. Every index names its own feature, so none is lost
+    # to a collision
+    resolved = Dict(CC.getFunctionFeature(pctx, fd, i) for i = 0:(nresolved - 1))
+    @test length(resolved) == nresolved
+    # haswell brings sse2 and bmi2, and nothing in the attribute takes them away
+    @test resolved["sse2"] == true
+    @test resolved["bmi2"] == true
+    # `no-sse3` is applied after `avx2` and switches off everything that implies sse3, so it
+    # takes haswell's avx2 -- and the one the attribute spelled -- down with it
+    @test resolved["sse3"] == false
+    @test resolved["avx2"] == false
 
     # an attribute naming no CPU: the two spellings come back empty rather than absent
     CC.parse(P, """
@@ -2028,6 +2040,10 @@ end
     @test CC.getFilteredFunctionTargetTune(pctx, td2) == ""
     @test CC.getNumFilteredFunctionTargetFeatures(pctx, td2) == 1
     @test CC.getFilteredFunctionTargetFeature(pctx, td2, 0) == "+avx"
+    # the other polarity of sse3: here nothing removes it, and avx implies it
+    resolved2 = Dict(CC.getFunctionFeature(pctx, fd2, i) for i = 0:(CC.getNumFunctionFeatures(pctx, fd2) - 1))
+    @test resolved2["avx"] == true
+    @test resolved2["sse3"] == true
 
     dispose(f)
     dispose(P)

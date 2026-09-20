@@ -7,6 +7,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <memory>
+#include <type_traits>
 
 CXModule_ clang_Module_create(const char *Name, CXSourceLocation_ DefinitionLoc,
                              CXModule_ Parent, bool IsFramework, bool IsExplicit,
@@ -14,6 +15,10 @@ CXModule_ clang_Module_create(const char *Name, CXSourceLocation_ DefinitionLoc,
   // LLVM 20 requires a ModuleConstructorTag whose constructor is private to
   // ModuleMap. The tag is an empty access token with no state; reconstruct it
   // so tests can still allocate synthetic modules independently of a ModuleMap.
+  static_assert(std::is_empty_v<clang::ModuleConstructorTag> &&
+                    std::is_trivially_copyable_v<clang::ModuleConstructorTag>,
+                "the constructor tag is fabricated from zeroed storage, which is sound only "
+                "while it has no state to fabricate");
   alignas(clang::ModuleConstructorTag) unsigned char
       TagStorage[sizeof(clang::ModuleConstructorTag)]{};
   auto &Tag = *reinterpret_cast<clang::ModuleConstructorTag *>(TagStorage);

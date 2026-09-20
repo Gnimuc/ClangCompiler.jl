@@ -289,7 +289,9 @@ end
     # ---- CXXRecordDecl: bases / methods / ctors counts + collections ----
     @test CC.getNumBases(derivedRD) == 2
     @test CC.getNumVBases(diamondRD) == 1
-    @test CC.getNumMethods(baseRD) >= 7  # shape-only: MSVC ABI may add extra destructor variants
+    # four constructors, the destructor, foo, bar, nonvirt, the conversion function, and the
+    # copy assignment operator, which clang declares eagerly because Base is dynamic
+    @test CC.getNumMethods(baseRD) == 10
     @test CC.getNumCtors(baseRD) == 4
 
     bases = CC.getBases(derivedRD)
@@ -423,9 +425,16 @@ end
         @test !(CC.isExplicit(dg))
         @test (!CC.is_null_handle(CC.getCorrespondingConstructor(dg))) == (dg.ptr == dgs[1].ptr)
         @test !CC.is_null_handle(CC.getDeducedTemplate(dg))
-        @test CC.getDeductionCandidateKind(dg) in
-              (LX.CXDeductionCandidate_Normal, LX.CXDeductionCandidate_Copy, LX.CXDeductionCandidate_Aggregate)
     end
+    # Three guides: the one clang derives from the `Wrapper(T)` constructor, the copy
+    # deduction candidate every class template gets, and the written `Wrapper(T) -> Wrapper<T>`.
+    @test length(dgs) == 3
+    copy_dg = only(filter(dg -> CC.getDeductionCandidateKind(dg) == LX.CXDeductionCandidate_Copy, dgs))
+    @test CC.isImplicit(copy_dg)
+    @test CC.is_null_handle(CC.getCorrespondingConstructor(copy_dg))
+    written_dg = only(filter(!CC.isImplicit, dgs))
+    @test CC.getDeductionCandidateKind(written_dg) == LX.CXDeductionCandidate_Normal
+    @test CC.getDeductionCandidateKind(dgs[1]) == LX.CXDeductionCandidate_Normal
 
     dispose(f)
     dispose(I)
@@ -580,6 +589,14 @@ end
         @test CC.getAssertExpr(sad).ptr != C_NULL
         @test CC.getMessage(sad).ptr != C_NULL
         @test !CC.is_null_handle(CC.getRParenLoc(sad))
+        # the declaration runs from the `static_assert` keyword to the closing parenthesis,
+        # with the condition and the message strictly between them
+        sm = CC.getSourceManager(CC.get_sema(I))
+        sad_range = CC.getSourceRange(sad)
+        @test CC.getBeginLoc(sad_range) == CC.getLocation(sad)
+        @test CC.getEndLoc(sad_range) == CC.getRParenLoc(sad)
+        @test CC.isBeforeInTranslationUnit(sm, CC.getBeginLoc(sad_range), CC.getBeginLoc(CC.getAssertExpr(sad)))
+        @test CC.isBeforeInTranslationUnit(sm, CC.getEndLoc(CC.getMessage(sad)), CC.getEndLoc(sad_range))
 
         # --- TopLevelStmtDecl factory + accessors ---
         tls = CC.TopLevelStmtDecl(ctx, CC.getBody(fd))
@@ -1743,24 +1760,30 @@ end
     # The -fms-extensions source is parsed first, before any synthetic node exists: a
     # rejected parse renders diagnostics over the AST, and doing that after hand-built
     # nodes exist has crashed DiagnosticRenderer before.
-    Ims = create_interpreter(["-fms-extensions"])
-    fms = DeclFinder(Ims)
-    CC.parse(Ims, """
+    #
+    # clang takes `_GUID` for the GUID struct only when `Data1` is 32 bits wide. The Windows
+    # spelling is `unsigned long`, which is that wide under LLP64 alone, so the fixture
+    # spells a type that is 32 bits on every target -- and, for the other side, one that
+    # never is.
+    guid_src(data1) = """
     typedef struct _GUID {
-      unsigned long Data1;
+      $data1 Data1;
       unsigned short Data2;
       unsigned short Data3;
       unsigned char Data4[8];
     } GUID;
     struct __declspec(uuid("12345678-9abc-def0-0123-456789abcdef")) LGuid {};
     const GUID *lg_uuid() { return &__uuidof(LGuid); }
-    """)
+    """
+    Ims = create_interpreter(["-fms-extensions"])
+    fms = DeclFinder(Ims)
+    CC.parse(Ims, guid_src("unsigned int"))
     @test fms(Ims, "lg_uuid")
     lgbody = CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fms))))
     ue = _find_node(CC.CXXUuidofExpr, lgbody)
     @test ue isa CC.CXXUuidofExpr
     gd = CC.getGuidDecl(ue)
-    @test gd isa CC.MSGuidDecl
+    @test CC.getDeclKindName(gd) == "MSGuid"
     @test gd.ptr != C_NULL
     @test CC.getPart1(gd) == 0x12345678
     @test CC.getPart2(gd) == 0x9abc
@@ -1768,11 +1791,30 @@ end
     # A memcpy of the last eight UUID bytes, so the integer is byte-order dependent:
     # only its shape and its non-emptiness are host-independent.
     @test CC.getPart4And5AsUint64(gd) != 0
+    # The value is the struct spelled out: one APValue per field, `Data1` first and the
+    # eight trailing bytes as an array.
     apv = CC.getAsAPValue(gd)
-    @test apv isa CC.APValue
     @test apv.ptr != C_NULL
+    @test CC.getKind(apv) == LX.CXAPValueKind_Struct
+    @test CC.getStructNumFields(apv) == 4
+    gv_data1 = CC.LLVM.GenericValue(CC.getInt(CC.getStructField(apv, 0)))
+    @test convert(UInt, gv_data1) == 0x12345678
+    CC.LLVM.dispose(gv_data1)
+    @test CC.getArraySize(CC.getStructField(apv, 3)) == 8
     dispose(fms)
     dispose(Ims)
+
+    # A 64-bit `Data1` is not the GUID shape, so the same UUID has no APValue to give.
+    Iwide = create_interpreter(["-fms-extensions"])
+    fwide = DeclFinder(Iwide)
+    CC.parse(Iwide, guid_src("unsigned long long"))
+    @test fwide(Iwide, "lg_uuid")
+    ue_wide = _find_node(CC.CXXUuidofExpr, CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(fwide)))))
+    gd_wide = CC.getGuidDecl(ue_wide)
+    @test CC.getPart1(gd_wide) == 0x12345678
+    @test CC.getKind(CC.getAsAPValue(gd_wide)) == LX.CXAPValueKind_None
+    dispose(fwide)
+    dispose(Iwide)
 
     I = create_interpreter(String[])
     ctx = CC.get_ast_context(I)
@@ -2173,12 +2215,18 @@ end
     vars, fields, this_field = CC.getCaptureFields(lam)
     @test length(vars) == 1
     @test length(fields) == 1
-    @test vars[1] isa CC.ValueDecl
     @test CC.getName(vars[1]) == "capa"
-    @test fields[1] isa CC.FieldDecl
+    @test CC.getAsString(CC.getType(vars[1])) == "int"
+    # Closure fields are unnamed and laid out in capture order, so `[this, capa]` puts the
+    # object pointer first; each field's type is what tells the two apart.
     @test fields[1].ptr != C_NULL
-    @test this_field isa CC.FieldDecl
+    @test CC.getParent(fields[1]).ptr == lam.ptr
+    @test CC.getAsString(CC.getType(fields[1])) == "int"
+    @test CC.getFieldIndex(fields[1]) == 1
     @test this_field.ptr != C_NULL
+    @test CC.getParent(this_field).ptr == lam.ptr
+    @test CC.getAsString(CC.getType(this_field)) == "struct CapHost *"
+    @test CC.getFieldIndex(this_field) == 0
 
     @test f(I, "CapNone")
     capnone = CC.VarDecl(get_decl(f))
@@ -2416,8 +2464,9 @@ end
 
         most = rec("FOMost")
         n = CC.getNumFinalOverriders(most)
-        @test n >= 2  # shape-only: vtable layout differs between Itanium and MSVC ABI
-        # FOBase declares two virtual functions and each has at least one final overrider.
+        # One row per virtual member function in the hierarchy: FOBase's two, and the
+        # overriding declarations in FOMid and FOMost, each of which is its own final overrider.
+        @test n == 4
         overridden, osub, overrider, rsub, invb = CC.getFinalOverriders(most)
         @test length(overridden) == n
         @test length(osub) == n && length(overrider) == n

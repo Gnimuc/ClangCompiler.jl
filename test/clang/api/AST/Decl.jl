@@ -138,6 +138,14 @@ end
         CC.setBitWidth(fld2, bw)
         @test CC.isBitField(fld2)
         @test CC.getBitWidth(fld2).ptr == bw.ptr
+        # `bw` is the ConstantExpr Sema wrapped `fld`'s width in, so its value reads back
+        @test CC.getBitWidthValue(fld2, ctx) == CC.getBitWidthValue(fld, ctx)
+        # clang reads that value out of the wrapper and never evaluates what it is given, so
+        # the literal inside the wrapper is a width with no value to read
+        bare = CC.FieldDecl(ctx, dc, loc, loc, id, ty, tsi, CC.Expr_(C_NULL), false, LX.CXInClassInitStyle_ICIS_NoInit)
+        CC.setBitWidth(bare, CC.getSubExpr(CC.ConstantExpr(bw)))
+        @test CC.isBitField(bare)
+        @test_throws AssertionError CC.getBitWidthValue(bare, ctx)
 
         # FieldDecl::setInClassInitializer (fresh field w/ in-class-init storage)
         fdi = CC.FieldDecl(ctx, dc, loc, loc, id, ty, tsi, CC.Expr_(C_NULL), false, LX.CXInClassInitStyle_ICIS_CopyInit)
@@ -1158,6 +1166,8 @@ end
     extern int eglob;
     constexpr int cxglob = 2 + 3;
     int gvar = 10;
+    extern int ai_x;
+    int ai_x = 3;
 
     typedef int MyInt;
     using MyAlias = double;
@@ -1195,6 +1205,13 @@ end
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
     getdecl(name) = (@assert f(I, name); get_decl(f))
+
+    # A declaration's range runs from its first token to its last. `before` is strict, so
+    # `before(a, b)` also says the two differ, and `inside(r, loc)` puts `loc` strictly
+    # between the two ends -- which a range built from one location twice cannot satisfy.
+    sm = CC.getSourceManager(CC.get_sema(I))
+    before(a, b) = CC.isBeforeInTranslationUnit(sm, a, b)
+    inside(r, loc) = before(CC.getBeginLoc(r), loc) && before(loc, CC.getEndLoc(r))
 
     # ---------------- VarDecl / ValueDecl / DeclaratorDecl ----------------
     gvar = CC.VarDecl(getdecl("gvar"))
@@ -1248,7 +1265,15 @@ end
     @test CC.getCanonicalDecl(gvar).ptr == gvar.ptr
     @test CC.is_null_handle(CC.getActingDefinition(gvar))
     @test CC.getDefinition(gvar).ptr == gvar.ptr
-    @test CC.getInit(gvar).ptr == CC.getAnyInitializer(gvar).ptr
+    # `getInit` answers for one declaration and `getAnyInitializer` for the whole chain, so
+    # they part ways on the `extern` redeclaration that carries no initializer of its own.
+    ai_def = CC.VarDecl(getdecl("ai_x"))
+    ai_first = CC.VarDecl(CC.getPreviousDecl(ai_def))
+    @test CC.isFirstDecl(ai_first) && ai_first.ptr != ai_def.ptr
+    @test !CC.is_null_handle(CC.getInit(ai_def))
+    @test CC.is_null_handle(CC.getInit(ai_first))
+    @test CC.getAnyInitializer(ai_first).ptr == CC.getInit(ai_def).ptr
+    @test CC.getAnyInitializer(ai_def).ptr == CC.getInit(ai_def).ptr
     @test CC.is_null_handle(CC.getTemplateInstantiationPattern(gvar))
     @test CC.is_null_handle(CC.getInstantiatedFromStaticDataMember(gvar))
     @test CC.is_null_handle(CC.getDescribedVarTemplate(gvar))
@@ -1487,8 +1512,16 @@ end
     rec_named = CC.NamedDecl(getdecl("Point"))
     td_base = CC.TypeDecl(rec_named)
     @test td_base.ptr == rd.ptr
-    @test CC.getTypeForDecl(rec_named).ptr == CC.getTypeForDecl(td_base).ptr
+    # the declaration's type leads back to the declaration
+    @test CC.getAsRecordDecl(CC.getTypeForDecl(td_base)).ptr == rd.ptr
+    @test CC.getAsRecordDecl(CC.getTypeForDecl(rec_named)).ptr == rd.ptr
     @test !CC.is_null_handle(CC.getBeginLoc(td_base))
+    # `getSourceRange` is virtual, so asked of the TypeDecl base it still answers for the
+    # tag: `struct` to the closing brace, with the name between them.
+    td_range = CC.getSourceRange(td_base)
+    @test CC.getBeginLoc(td_range) == CC.getBeginLoc(td_base)
+    @test CC.getEndLoc(td_range) == CC.getEndLoc(CC.getBraceRange(rd))
+    @test inside(td_range, CC.getLocation(td_base))
 
     # ---------------- FieldDecl ----------------
     fields = CC.getFields(rd)
@@ -1532,6 +1565,18 @@ end
 
     bf = fields[2]
     @test CC.getBitWidthValue(bf, ctx) == 3
+    @test_throws AssertionError CC.getBitWidthValue(fields[1], ctx)  # not a bit-field
+
+    # A plain field's range ends at its name; a bit-field's runs on to the width expression,
+    # which leaves the name strictly inside.
+    plain_range = CC.getSourceRange(fields[1])
+    @test CC.getBeginLoc(plain_range) == CC.getBeginLoc(fields[1])
+    @test CC.getEndLoc(plain_range) == CC.getLocation(fields[1])
+    @test before(CC.getBeginLoc(plain_range), CC.getEndLoc(plain_range))
+    bf_range = CC.getSourceRange(bf)
+    @test CC.getBeginLoc(bf_range) == CC.getBeginLoc(bf)
+    @test CC.getEndLoc(bf_range) == CC.getEndLoc(CC.getBitWidth(bf))
+    @test inside(bf_range, CC.getLocation(bf))
 
     # ---------------- EnumDecl / EnumConstantDecl ----------------
     ed = CC.EnumDecl(getdecl("Color"))
@@ -1606,6 +1651,14 @@ end
     @test CC.getEnumConstantDeclValue(neg) == -3
     @test CC.getCanonicalDecl(ec).ptr == ec.ptr
     @test !CC.is_null_handle(CC.getInitExpr(ec))
+    # An enumerator starts at its name. `Green = 5` runs on to the initializer; `Red` has
+    # none, so it is the one declaration here whose range is a single token.
+    ec_range = CC.getSourceRange(ec)
+    @test CC.getBeginLoc(ec_range) == CC.getLocation(ec)
+    @test CC.getEndLoc(ec_range) == CC.getEndLoc(CC.getInitExpr(ec))
+    @test before(CC.getBeginLoc(ec_range), CC.getEndLoc(ec_range))
+    red_range = CC.getSourceRange(enumerators[1])
+    @test CC.getBeginLoc(red_range) == CC.getEndLoc(red_range) == CC.getLocation(enumerators[1])
     # NamedDecl -> EnumConstantDecl cast
     ec_named = CC.NamedDecl(ec)
     @test CC.EnumConstantDecl(ec_named).ptr == ec.ptr
@@ -1621,6 +1674,15 @@ end
     @test CC.isModed(td) == false
     @test CC.getAsString(CC.getUnderlyingType(tad)) == "double"
     @test CC.is_null_handle(CC.getDescribedAliasTemplate(tad))
+    # `typedef int MyInt` names last, so the range ends at the name; `using MyAlias = double`
+    # names first and ends at the aliased type, so the name is strictly inside.
+    td_r = CC.getSourceRange(td)
+    @test CC.getBeginLoc(td_r) == CC.getBeginLoc(td)
+    @test CC.getEndLoc(td_r) == CC.getLocation(td)
+    @test before(CC.getBeginLoc(td_r), CC.getEndLoc(td_r))
+    tad_r = CC.getSourceRange(tad)
+    @test CC.getBeginLoc(tad_r) == CC.getBeginLoc(tad)
+    @test inside(tad_r, CC.getLocation(tad))
 
     # ---------------- NamespaceDecl ----------------
     ns = CC.NamespaceDecl(getdecl("ns"))
@@ -1633,6 +1695,14 @@ end
     @test CC.isAnonymousNamespace(CC.getAnonymousNamespace(ns))
     @test CC.getCanonicalDecl(ns).ptr == ns.ptr
     @test !CC.is_null_handle(CC.getRBraceLoc(ns))
+    # A namespace begins at its first keyword, which the fixture puts a fixed spelling ahead
+    # of the name: `namespace ` for one, `inline namespace ` for the other.
+    @test CC.getLocWithOffset(CC.getBeginLoc(ns), length("namespace ")) == CC.getLocation(ns)
+    @test CC.getLocWithOffset(CC.getBeginLoc(tinl), length("inline namespace ")) == CC.getLocation(tinl)
+    ns_range = CC.getSourceRange(ns)
+    @test CC.getBeginLoc(ns_range) == CC.getBeginLoc(ns)
+    @test CC.getEndLoc(ns_range) == CC.getRBraceLoc(ns)
+    @test inside(ns_range, CC.getLocation(ns))
 
     # ---------------- TranslationUnitDecl ----------------
     tu = CC.getTranslationUnitDecl(gvar)
@@ -1663,6 +1733,11 @@ end
     @test CC.capturesVariable(blk, addend) == true
     @test CC.getName(CC.getParamDecl(blk, 0)) == "q"
     @test length(CC.getParams(blk)) == 1
+    # a block literal runs from its caret to the brace closing its body
+    blk_range = CC.getSourceRange(blk)
+    @test CC.getBeginLoc(blk_range) == CC.getCaretLocation(blk)
+    @test CC.getEndLoc(blk_range) == CC.getEndLoc(CC.getBody(blk))
+    @test before(CC.getBeginLoc(blk_range), CC.getEndLoc(blk_range))
 
     dispose(f)
     dispose(I)
@@ -1726,10 +1801,9 @@ end
         # NamedDecl::getExplicitVisibility — the std::optional surface.
         @test CC.getExplicitVisibility(plain) === nothing
         @test CC.getExplicitVisibility(plain, true) === nothing
-        # The visibility attribute is honoured only on targets that support it
-        # (it is ignored for COFF), so accept either branch of the optional.
-        hidden_vis = CC.getExplicitVisibility(D("dt_tail_hidden", CC.VarDecl))
-        @test hidden_vis === nothing || hidden_vis isa LX.CXVisibility
+        # Sema attaches `visibility("hidden")` on every target, COFF included -- only
+        # `protected` is downgraded where the target lacks it -- so the optional holds Hidden.
+        @test CC.getExplicitVisibility(D("dt_tail_hidden", CC.VarDecl)) == LX.CXVisibility_HiddenVisibility
 
         # FunctionDecl allocation-function info: an ordinary function is not a
         # replaceable global allocation function and requests no alignment.

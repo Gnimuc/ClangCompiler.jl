@@ -263,7 +263,11 @@ end
     # the source writes one `__if_exists` and one `__if_not_exists`, so the predicate has
     # to separate them; one wired to a constant or to the wrong bit gives 0 or 2
     @test count(CC.isIfExists, mses) == 1
+    # each statement starts at its own keyword, and the two keywords sit on different lines
+    @test CC.getRawEncoding(CC.getKeywordLoc(mses[1])) != CC.getRawEncoding(CC.getKeywordLoc(mses[2]))
     for m in mses
+        @test CC.isValid(CC.getKeywordLoc(m))
+        @test CC.getRawEncoding(CC.getKeywordLoc(m)) == CC.getRawEncoding(CC.getBeginLoc(m))
         @test CC.isIfNotExists(m) == !CC.isIfExists(m)
         @test CC.isValid((CC.getQualifierRange(m)).begin_loc)
         @test CC.isValid((CC.getQualifierRange(m)).end_loc)

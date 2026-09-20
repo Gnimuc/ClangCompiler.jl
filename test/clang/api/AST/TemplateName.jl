@@ -102,6 +102,14 @@ end
     @test CC.getName(CC.NamedDecl(CC.getAssociatedDecl(sub))) == "TnHolder"
     repl = CC.getReplacement(sub)
     @test CC.isNull(repl) == false
+    # getUnderlying looks through the substitution to the name that replaced the parameter,
+    # and is the identity on a name that is not a substitution
+    und_s = CC.getUnderlying(tn_s)
+    @test CC.getKind(und_s) != CC.LibClangEx.CXTemplateName_SubstTemplateTemplateParm
+    @test und_s.ptr == repl.ptr
+    @test und_s.ptr != tn_s.ptr
+    @test CC.getAsString(und_s, ctx) == "TnNS::TnBox"
+    @test CC.getUnderlying(tn_q).ptr == tn_q.ptr
 
     # two template template parameters so getIndex cannot ignore its subject
     @test f(I, "tn_two")

@@ -4111,11 +4111,17 @@ typedef enum CXFormatArgumentPassingKind {
 } CXFormatArgumentPassingKind;
 
 // Which of FT1 and FT2 is more specialized, or NULL when neither is. Reversed selects the
-// reversed-parameter-order form, which is defined only for TPOC_Call. LLVM 20 dropped
-// NumCallArguments2; it is accepted and ignored.
+// reversed-parameter-order form, which is defined only for TPOC_Call.
+//
+// RawObj1Ty and RawObj2Ty are the class types the two templates are members of. Under
+// TPOC_Call clang forms a non-static member's implicit object parameter from them, and
+// dereferences them to do it: a null one is undefined behaviour exactly when it is read --
+// two non-static members, or an overloaded operator other than () and [] on FT1 beside a
+// non-static member -- and unread otherwise.
 CXFunctionTemplateDecl clang_Sema_getMoreSpecializedTemplate(
     CXSema S, CXFunctionTemplateDecl FT1, CXFunctionTemplateDecl FT2, CXSourceLocation_ Loc,
-    CXTPOC TPOC, unsigned NumCallArguments1, unsigned NumCallArguments2, bool Reversed);
+    CXTPOC TPOC, unsigned NumCallArguments1, CXQualType RawObj1Ty, CXQualType RawObj2Ty,
+    bool Reversed);
 
 // Decodes a format attribute into the format-string index, the first data argument, and how
 // those arguments are passed. Static: it has no Sema receiver and therefore no reachable

@@ -432,9 +432,8 @@ bool clang_Decl_isFromASTFile(CXDecl D) {
   return reinterpret_cast<clang::Decl *>(D)->isFromASTFile();
 }
 
-unsigned clang_Decl_getGlobalID(CXDecl D) {
-  return static_cast<unsigned>(
-      reinterpret_cast<clang::Decl *>(D)->getGlobalID().getRawValue());
+uint64_t clang_Decl_getGlobalID(CXDecl D) {
+  return reinterpret_cast<clang::Decl *>(D)->getGlobalID().getRawValue();
 }
 
 unsigned clang_Decl_getOwningModuleID(CXDecl D) {

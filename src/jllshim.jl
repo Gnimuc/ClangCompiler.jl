@@ -8,6 +8,14 @@ using Libdl
 import ..ClangCompiler: libclangex
 
 function __init__()
+    if !has_preference("ClangCompiler", "libclangex") && !libclangex_jll.is_available()
+        error("libclangex_jll $(pkgversion(libclangex_jll)) has no build for LLVM " *
+              "$(Base.libllvm_version.major) on this platform. ClangCompiler binds the Clang that " *
+              "matches the LLVM of the running Julia, so it needs a libclangex built against it: " *
+              "either a libclangex_jll release that has one, or a local build, which " *
+              "`julia --project=deps deps/build_local.jl` makes and records in the `libclangex` " *
+              "preference.")
+    end
     if Clang_jll.libclang_cpp_handle == C_NULL
         global libclang_cpp_handle = Libdl.dlopen(Clang_jll.libclang_cpp_path, RTLD_LAZY | RTLD_DEEPBIND)
         if has_preference("ClangCompiler", "libclangex")

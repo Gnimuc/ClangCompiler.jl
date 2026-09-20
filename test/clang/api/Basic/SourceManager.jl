@@ -369,9 +369,9 @@ end
     # ---- Module ----
     root = CC.Module_("SmbTopMod"; visibility_id=3)
     @test CC.getVisibilityID(root) == 3
-    # another bit a synthetic module never had a module map to set, so there is no
-    # answer to read -- only its shape is assertable
-    @test CC.isNamedModuleInterfaceHasInit(root) isa Bool  # shape-only: nothing decides it — never set on a module built without a module map
+    # clang::Module's constructor initialises NamedModuleHasInit(true), and nothing here
+    # writes the bit afterwards
+    @test CC.isNamedModuleInterfaceHasInit(root)
     @test !(CC.isForBuilding(root, langopts))
     @test CC.getASTFile(root) === nothing
     @test CC.addTopHeaderFilename(root, "smb-top.h") === nothing
@@ -385,19 +385,25 @@ end
     found = CC.findOrInferSubmodule(root, "SmbChild")
     @test found.ptr == child.ptr
 
-    # Availability of a HAND-BUILT module is host-decided, and so is the transition:
-    # Module::markUnavailable early-returns unless its needUpdate predicate holds, which
-    # reads both IsAvailable and IsUnimportable — bits a synthetic module never had a
-    # real module map or requirement list to set. Windows CI observed isAvailable still
-    # true after the call while macOS and Linux observed false. Only the shape is
-    # asserted; the call itself still exercises the wrapper.
-    # A synthetic module has no module map, so isAvailable reads bits nothing ever set
-    # (CLAUDE.md records this class); only the shape of it is assertable here.
-    @test CC.isAvailable(root) isa Bool  # shape-only: nothing decides it — reads bits never set on a synthetic module
+    # clang::Module's constructor initialises IsAvailable(true) and IsUnimportable(false)
+    # with or without a module map, so a parentless hand-built module starts available.
+    # Module::markUnavailable early-returns unless its needUpdate predicate holds —
+    # IsAvailable, or !IsUnimportable when asked to make the module unimportable — which it
+    # does from that state, and the walk then clears the bit on the module and on every
+    # submodule the predicate still holds for.
+    #
+    # The two readers are inline in Module.h and so compiled into the shim, while the
+    # constructor and markUnavailable run inside clang-cpp: the reads agree with the writes
+    # only when both sides lay clang::Module out identically. Two SmallVectors of
+    # UnresolvedHeaderDirective, each with one inline element holding a std::optional<off_t>,
+    # sit ahead of these bits, so the width of off_t is part of that layout.
+    @test CC.isAvailable(root)
+    @test !CC.isUnimportable(root)
+    @test CC.isAvailable(child)
     @test CC.markUnavailable(root, true) === nothing
-    # same synthetic-module caveat: the markUnavailable transition is gated on bits a
-    # module built without a module map never had
-    @test CC.isAvailable(root) isa Bool  # shape-only: nothing decides it — reads bits never set on a synthetic module
+    @test !CC.isAvailable(root)
+    @test CC.isUnimportable(root)
+    @test !CC.isAvailable(child)
     CC.dispose(root)
 
     CC.dispose(I)
@@ -546,27 +552,64 @@ end
     @test_throws AssertionError CC.getLoadedSLocEntry(sm, 0)
 
     # ---- SourceManager: buffer data that has already been loaded ----
-    data = CC.getBufferDataIfLoaded(sm, mainid)
-    @test data === nothing || data isa String
+    # the interpreter's main file is an empty buffer, and an empty buffer is still a loaded
+    # one; the file on disk below shows the side that is not
+    @test CC.getBufferDataIfLoaded(sm, mainid) == ""
 
     # ---- SourceManager: the FileEntry behind an SLocEntry ----
     entry, _ = CC.getSLocEntry(sm, mainid)
     @test CC.isFile(entry)
     fe = CC.getFileEntryForSLocEntry(sm, entry)
-    # the interpreter's main file comes from a memory buffer, so it may have no FileEntry
-    @test fe === nothing || fe isa CC.FileEntry
+    # the interpreter remaps its main file onto that buffer, which makes it a virtual file
+    # with a FileEntry of its own -- the one the manager gives for the same FileID
+    @test fe !== nothing
+    @test fe.ptr == CC.getFileEntryForID(sm, mainid).ptr
+    @test CC.getSize(fe) == 0
+    # a parsed increment is a bare memory buffer, and that has none
+    f = DeclFinder(I)
+    @test f(I, "smd_content_cache")
+    inc_id = CC.getFileID(sm, CC.getLocation(get_decl(f)))
+    inc_entry, _ = CC.getSLocEntry(sm, inc_id)
+    @test CC.isFile(inc_entry)
+    @test CC.getFileEntryForSLocEntry(sm, inc_entry) === nothing
+    CC.dispose(inc_id)
+    dispose(f)
 
     # ---- SrcMgr::FileInfo -> SrcMgr::ContentCache ----
     fi = CC.getFile(entry)
     cc = CC.getContentCache(fi)
     @test cc isa CC.ContentCache
     @test CC.isBufferLoaded(cc)
-    @test CC.getSizeBytesMapped(cc) isa Integer  # shape-only: the host decides it — whether a buffer is mmap'd rather than read into malloc'd memory is the loader's choice
     ccdata = CC.getBufferDataIfLoaded(cc)
     @test ccdata !== nothing
     @test CC.getSize(cc) == ncodeunits(ccdata)
+    # the mapped size is the loaded buffer's size, whatever kind of buffer holds it
+    @test CC.getSizeBytesMapped(cc) == ncodeunits(ccdata)
     # the interpreter's increment is a heap buffer, not an mmap of a file
     @test CC.getMemoryBufferKind(cc) == CC.CXBufferKind_MemoryBuffer_Malloc
+
+    # the interpreter's main file is an empty buffer, so both sizes above are zero. A file
+    # on disk tells the two states apart: given a FileID but not read yet it has no buffer
+    # and nothing mapped, and once read the mapped size is the file's byte count
+    text = "int smd_mapped_probe;\n"
+    path, io = mktemp()
+    write(io, text)
+    close(io)
+    ref = CC.getFileRef(CC.getFileManager(sm), path)
+    diskid = CC.getOrCreateFileID(sm, ref)
+    diskentry, _ = CC.getSLocEntry(sm, diskid)
+    diskcc = CC.getContentCache(CC.getFile(diskentry))
+    @test !CC.isBufferLoaded(diskcc)
+    @test CC.getSizeBytesMapped(diskcc) == 0
+    @test CC.getBufferDataIfLoaded(sm, diskid) === nothing
+    @test CC.getBufferDataOrNone(sm, diskid) == text
+    @test CC.isBufferLoaded(diskcc)
+    @test CC.getBufferDataIfLoaded(sm, diskid) == text
+    @test CC.getSizeBytesMapped(diskcc) == ncodeunits(text)
+    @test CC.getSize(diskcc) == ncodeunits(text)
+    CC.dispose(diskid)
+    CC.dispose(ref)
+    rm(path; force=true)
 
     # ---- SrcMgr::ContentCache: byte order marks Clang cannot handle ----
     @test CC.getInvalidBOM("plain ASCII source text") === nothing
@@ -879,9 +922,9 @@ end
     @test import_loc isa CC.FullSourceLoc
     @test module_name == ""
 
-    loc_ref = CC.getFileEntryRef(fsl)
-    @test loc_ref === nothing || loc_ref isa CC.FileEntryRef
-    loc_ref !== nothing && CC.dispose(loc_ref)
+    # the location sits in a parsed increment, a bare memory buffer with no file behind it;
+    # the file on disk under the replay block below shows the other side
+    @test CC.getFileEntryRef(fsl) === nothing
 
     # the file entry reached through the pair is the one the manager gives for the same ID
     fid = CC.getFileID(fsl)
@@ -956,6 +999,13 @@ end
         @test_throws AssertionError CC.getSize(cache)
         @test_throws AssertionError CC.getMemoryBufferKind(cache)
     end
+
+    # a location in a file on disk does name its file, which `fsl` above cannot
+    disk_fsl = CC.FullSourceLoc(CC.getLocForStartOfFile(old, fid), old)
+    disk_ref = CC.getFileEntryRef(disk_fsl)
+    @test disk_ref !== nothing
+    @test CC.getFileEntry(disk_ref).ptr == entry.ptr
+    CC.dispose(disk_ref)
 
     @test !CC.isFileOverridden(old, entry)
     @test_throws AssertionError CC.bypassFileContentsOverride(old, ref)

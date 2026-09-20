@@ -87,7 +87,7 @@ This is the cross-target driver, and the reason there are two of them. A parser 
 TargetMachine and stands up no JIT, so it configures for any triple on any host. An interpreter
 cannot: its JIT emits for the machine it is running on, so a foreign triple is at best a backend
 the host's LLVM was not built with and at worst a teardown the host's unwinder cannot follow.
-Parsing and AST inspection go through here; only §3, which runs code, needs the other one.
+Parsing and AST inspection go through here; only Act 4, which runs code, needs the other one.
 """
 function with_parser(f, triple)
     P = create_parser(String[]; triple=triple)

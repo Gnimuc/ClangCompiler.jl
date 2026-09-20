@@ -30,7 +30,10 @@ typedef enum CXBackendAction {
 // PRECONDITIONS: CI must have a FileManager (clang_CompilerInstance_hasFileManager) and a
 // target (clang_CompilerInstance_hasTarget); OutputPath must be non-NULL unless Action is
 // CXBackendAction_Backend_EmitNothing. False (and a log line) when one of those does not
-// hold or the file cannot be opened.
+// hold or the file cannot be opened. One precondition is NOT checked here: when CI's
+// CodeGenOptions have TimePasses set, CI must have a frontend timer
+// (clang_CompilerInstance_createFrontendTimer), because the pipeline then times itself
+// against CI's timer group and dereferences it.
 //
 // The return value otherwise reports whether the pipeline itself added an error to CI's
 // diagnostics -- the C++ function returns void and says so only through diagnostics.

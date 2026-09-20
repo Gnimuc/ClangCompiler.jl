@@ -571,12 +571,10 @@ end
     @test lv isa CC.APValue
     lv.ptr == C_NULL || dispose(lv)
 
-    ok_sz, sz = CC.tryEvaluateObjectSize(il, ctx, 0)
+    ok_sz, _ = CC.tryEvaluateObjectSize(il, ctx, 0)
     @test ok_sz == false
-    @test sz == 0
-    ok_len, slen = CC.tryEvaluateStrLen(il, ctx)
+    ok_len, _ = CC.tryEvaluateStrLen(il, ctx)
     @test ok_len == false
-    @test slen == 0
     # both evaluators need a constant address. The initializer of
     # `constexpr const char *exprcore_ptr = exprcore_buf` is that pointer.
     @test lookup(I, "exprcore_ptr")
@@ -720,6 +718,7 @@ end
     typedef int cc_v4i __attribute__((ext_vector_type(4)));
     int cc_expr_tail(int *p, int n, cc_v4i v) {
         int a = __atomic_load_n(p, __ATOMIC_SEQ_CST);
+        __atomic_store_n(p, __atomic_load_n(p, __ATOMIC_SEQ_CST), __ATOMIC_SEQ_CST);
         int g = _Generic(n, int: 1, default: 2);
         int c = __builtin_choose_expr(1, 10, 20);
         cc_v4i s = __builtin_shufflevector(v, v, 0, 1, 2, 3);
@@ -745,6 +744,13 @@ end
     @test CC.getSubExpr(ae, 0).ptr != C_NULL
     @test CC.getSubExpr(ae, CC.getNumSubExprs(ae) - 1).ptr != C_NULL
     @test CC.isCmpXChg(ae) == false
+
+    # a load, then a store whose value is a second load: the same builtin is the same
+    # AtomicOp wherever it is written, and another builtin is another
+    atomics = filter(n -> n isa CC.AtomicExpr, nodes)
+    @test CC.getOpAsString.(atomics) == ["__atomic_load_n", "__atomic_store_n", "__atomic_load_n"]
+    @test CC.getOp(atomics[1]) == CC.getOp(atomics[3])
+    @test CC.getOp(atomics[1]) != CC.getOp(atomics[2])
 
     # GenericSelectionExpr — expression-predicated, not result-dependent
     gse = pick(CC.GenericSelectionExpr)
@@ -873,12 +879,48 @@ end
     va_fd = CC.FunctionDecl(get_decl(lookup))
     vnodes = CC.subtree(CC.getBody(va_fd))
     va = first(filter(n -> n isa CC.VAArgExpr, vnodes))
-    @test CC.isMicrosoftABI(va) isa Bool  # shape-only: the target ABI decides this (MSVC vs MinGW)
+    # the flag follows the operand's type, not the target: only a `__builtin_ms_va_list`
+    # operand sets it, and `ap` is a `__builtin_va_list`
+    @test !CC.isMicrosoftABI(va)
     @test !CC.is_null_handle(CC.getWrittenTypeInfo(va))
     @test !CC.is_null_handle(CC.getBuiltinLoc(va))
     @test !CC.is_null_handle(CC.getRParenLoc(va))
 
     dispose(I)
+end
+
+@testset "VAArgExpr::isMicrosoftABI follows the va_list the operand names" begin
+    # `__builtin_ms_va_list` is a distinct type only where the native va_list is not already
+    # `char *`, so the triple is pinned to one where the two differ; see
+    # test/clang/pinned_target.jl.
+    P = CC.create_parser(String[]; triple="x86_64-linux-gnu")
+    CC.parse(P, """
+                int va_sysv_fn(int count, ...) {
+                    __builtin_va_list ap;
+                    __builtin_va_start(ap, count);
+                    int x = __builtin_va_arg(ap, int);
+                    __builtin_va_end(ap);
+                    return x;
+                }
+                __attribute__((ms_abi)) int va_ms_fn(int count, ...) {
+                    __builtin_ms_va_list ap;
+                    __builtin_ms_va_start(ap, count);
+                    int x = __builtin_va_arg(ap, int);
+                    __builtin_ms_va_end(ap);
+                    return x;
+                }
+                """)
+    lookup = DeclFinder(P)
+    va_of = function (name)
+        @test lookup(P, name)
+        body = CC.getBody(CC.FunctionDecl(get_decl(lookup)))
+        return only(filter(n -> n isa CC.VAArgExpr, CC.subtree(body)))
+    end
+    @test !CC.isMicrosoftABI(va_of("va_sysv_fn"))
+    @test CC.isMicrosoftABI(va_of("va_ms_fn"))
+
+    dispose(lookup)
+    dispose(P)
 end
 
 @testset "Expr subclasses: matrix/convertvector/imaginary/block/sourceloc/choose" begin
@@ -1091,7 +1133,8 @@ end
         nc = CC.getNumComponents(oe)
         ne = CC.getNumExpressions(oe)
         @test nc >= 1
-        @test ne >= 0
+        # every array component owns one index expression, and nothing else owns any
+        @test ne == count(i -> CC.getKind(CC.getComponent(oe, i)) == LX.CXOffsetOfNode_Kind_Array, 0:(nc - 1))
         @test CC.isValid(CC.getOperatorLoc(oe))
         @test CC.isValid(CC.getRParenLoc(oe))
         tsi = CC.getTypeSourceInfo(oe)

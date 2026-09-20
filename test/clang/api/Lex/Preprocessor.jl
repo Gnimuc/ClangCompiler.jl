@@ -806,11 +806,21 @@ end
     # the host loaded
     @test CC.getHeaderToIncludeForDiagnostics(pp, main_loc, main_loc) === nothing
 
-    # a hand-built module has no module map behind it, so its availability is never set
-    avail = redirect_stderr(devnull) do
-        return CC.checkModuleIsAvailable(CC.getLangOpts(pp), CC.getTargetInfo(pp), m, CC.getDiagnostics(pp))
+    # the check returns true when it DIAGNOSED the module as unusable. clang::Module's
+    # constructor initialises IsAvailable(true) and nothing above marks `m` unavailable, so
+    # Module::isAvailable answers before it consults a requirement or a missing header
+    langopts, target, diags = CC.getLangOpts(pp), CC.getTargetInfo(pp), CC.getDiagnostics(pp)
+    nerrors = CC.getNumErrors(diags)
+    @test CC.checkModuleIsAvailable(langopts, target, m, diags) == false
+    @test CC.getNumErrors(diags) == nerrors
+    # a feature no language option or target provides: addRequirement marks the module
+    # unavailable, and the same check then reports the unmet requirement through `diags`
+    CC.addRequirement(m, "pp_no_such_feature", true, langopts, target)
+    unusable = redirect_stderr(devnull) do
+        return CC.checkModuleIsAvailable(langopts, target, m, diags)
     end
-    @test avail isa Bool  # shape-only: nothing decides it — never set on a module built without a module map
+    @test unusable == true
+    @test CC.getNumErrors(diags) == nerrors + 1
 
     dispose(fid)
     # the preprocessor holds borrowed pointers to the module: it must die first
