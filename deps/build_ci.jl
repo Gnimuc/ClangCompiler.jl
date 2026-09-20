@@ -41,7 +41,16 @@ if isdir(joinpath(@__DIR__), "..", ".git")
     jll_timestamp = jll_tags["libclangex-v$(library_version)"]
     @info "libclangex_jll timestamp: $(unix2datetime(jll_timestamp))"
 
-    if deps_timestamp > jll_timestamp
+    # The timestamps say nothing about which LLVM the JLL was built for. One with no artifact
+    # for this platform and this Julia's LLVM cannot be used however recent its tag is.
+    using libclangex_jll
+    jll_available = Base.invokelatest(libclangex_jll.is_available)
+    @info "libclangex_jll has a build for LLVM $(Base.libllvm_version.major) here: $(jll_available)"
+
+    if !jll_available
+        @info "The JLL has no build for this LLVM. Building the support library locally."
+        include(joinpath(@__DIR__, "build_local.jl"))
+    elseif deps_timestamp > jll_timestamp
         @info "Wrappers have changed since the last JLL build. Building the support library locally."
         include(joinpath(@__DIR__, "build_local.jl"))
     else

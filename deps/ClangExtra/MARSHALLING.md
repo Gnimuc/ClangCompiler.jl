@@ -423,7 +423,7 @@ Four found so far, each caught by a test run rather than by the compiler:
 
 | method | reads | populated only when | symptom |
 | --- | --- | --- | --- |
-| `Driver::getLTOMode(true)` | `OffloadLTOMode` only | `BuildCompilation` has run `setLTOMode` | enum outside its own range |
+| `Driver::getOffloadLTOMode()` | `OffloadLTOMode` only | `BuildCompilation` has run `setLTOMode` | enum outside its own range |
 | `Preprocessor::PoisonSEHIdentifiers` | nine SEH `IdentifierInfo *` members | `-fborland-extensions` (`LangOpts.Borland`) | segfault |
 | `CXXRecordDecl::nullFieldOffsetIsZero` | the `MSInheritanceAttr` inheritance model | the target uses the Microsoft C++ ABI | segfault |
 | `ASTUnit::getPreprocessor` | `*PP`, an empty `std::shared_ptr` | a parse has installed a preprocessor | SIGABRT — **Windows only** |
@@ -485,9 +485,9 @@ does expose is `BuildCompilation`, the call that writes `LTOMode`, `SaveTemps`,
 
 Be precise about which member: only the *offload* one is uninitialized. `Driver`'s sole
 constructor mem-init list contains `LTOMode(LTOK_None)` but nothing for `OffloadLTOMode`, which
-`setLTOMode` alone writes (`clang/lib/Driver/Driver.cpp:718`, tag julia-18.1.7-4-3-gadfa481dde2a).
-So `getLTOMode()` on a fresh `Driver` reads a defined `LTOK_None`; it is `getLTOMode(true)` that
-reads uninitialized memory. Checking which members a constructor actually initialises is the
+`Driver::setLTOMode` alone writes (`clang/lib/Driver/Driver.cpp`).
+So `getLTOMode()` on a fresh `Driver` reads a defined `LTOK_None`; it is `getOffloadLTOMode()`,
+which the shim reaches as `clang_Driver_getLTOMode(D, true)`, that reads uninitialized memory. Checking which members a constructor actually initialises is the
 whole of this determination — the class having an "unset" phase is not enough. Wrapping *that* (`clang_Driver_BuildCompilation`,
 returning the owned `CXCompilation`) turns the whole family from UB reads into defined
 ones, and the ordering requirement moves into the docstring and the test rather than

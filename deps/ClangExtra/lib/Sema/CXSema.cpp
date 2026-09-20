@@ -5108,14 +5108,15 @@ bool clang_Sema_IsPointerConversion(CXSema S, CXExpr From, CXQualType FromType,
 
 CXFunctionTemplateDecl clang_Sema_getMoreSpecializedTemplate(
     CXSema S, CXFunctionTemplateDecl FT1, CXFunctionTemplateDecl FT2, CXSourceLocation_ Loc,
-    CXTPOC TPOC, unsigned NumCallArguments1, unsigned NumCallArguments2, bool Reversed) {
-  (void)NumCallArguments2;
+    CXTPOC TPOC, unsigned NumCallArguments1, CXQualType RawObj1Ty, CXQualType RawObj2Ty,
+    bool Reversed) {
   return reinterpret_cast<CXFunctionTemplateDecl>(reinterpret_cast<clang::Sema *>(S)->getMoreSpecializedTemplate(
       reinterpret_cast<clang::FunctionTemplateDecl *>(FT1),
       reinterpret_cast<clang::FunctionTemplateDecl *>(FT2),
       clang::SourceLocation::getFromPtrEncoding(Loc),
       clang::TemplatePartialOrderingContext(static_cast<clang::TPOC>(TPOC)),
-      NumCallArguments1, clang::QualType(), clang::QualType(), Reversed));
+      NumCallArguments1, clang::QualType::getFromOpaquePtr(RawObj1Ty),
+      clang::QualType::getFromOpaquePtr(RawObj2Ty), Reversed));
 }
 
 bool clang_Sema_getFormatStringInfo(CXFormatAttr Format, bool IsCXXMember, bool IsVariadic,

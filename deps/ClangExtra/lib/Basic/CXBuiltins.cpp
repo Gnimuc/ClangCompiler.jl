@@ -8,6 +8,31 @@ static clang::Builtin::Context *unwrapBC(CXBuiltinContext C) {
   return reinterpret_cast<clang::Builtin::Context *>(C);
 }
 
+// Explicit instantiation is exempt from access checking ([temp.spec]p6), so the private
+// tables themselves give their sizes, and a member renamed on an LLVM bump is a compile
+// error here rather than a wrong count.
+namespace {
+template <typename Tag, typename Tag::type Member> struct StealMember {
+  friend typename Tag::type get(Tag) { return Member; }
+};
+struct TSRecordsMember {
+  using type = llvm::ArrayRef<clang::Builtin::Info> clang::Builtin::Context::*;
+  friend type get(TSRecordsMember);
+};
+struct AuxTSRecordsMember {
+  using type = llvm::ArrayRef<clang::Builtin::Info> clang::Builtin::Context::*;
+  friend type get(AuxTSRecordsMember);
+};
+template struct StealMember<TSRecordsMember, &clang::Builtin::Context::TSRecords>;
+template struct StealMember<AuxTSRecordsMember, &clang::Builtin::Context::AuxTSRecords>;
+} // namespace
+
+unsigned clang_BuiltinContext_getNumBuiltins(CXBuiltinContext C) {
+  const clang::Builtin::Context *BC = unwrapBC(C);
+  return static_cast<unsigned>(clang::Builtin::FirstTSBuiltin + (BC->*get(TSRecordsMember())).size() +
+                               (BC->*get(AuxTSRecordsMember())).size());
+}
+
 unsigned clang_Builtin_getFirstTSBuiltinID(void) {
   return static_cast<unsigned>(clang::Builtin::FirstTSBuiltin);
 }

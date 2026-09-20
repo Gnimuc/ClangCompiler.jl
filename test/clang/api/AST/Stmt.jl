@@ -97,6 +97,7 @@ end
     @test r isa CC.CompoundStmt
 
     npred = ncast = nmatch = 0
+    preds = Tuple{Function,Type}[]
     for nm in names(CC; all=true)
         # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; they alias
         # the real carrier types and are not the stamped `isFoo`/`Foo` surface.
@@ -104,15 +105,13 @@ end
         isdefined(CC, nm) || continue
         v = getproperty(CC, nm)
         if v isa Function && !(v isa Type) && startswith(String(nm), "is") && hasmethod(v, Tuple{CC.Stmt})
-            # Pair each `isFoo` with the carrier of the same name: a predicate wired to
-            # another classof still returns Bool, so `isa Bool` cannot see it.
-            cls = String(nm)[3:end]
-            type_nm = cls == "Expr" ? :Expr_ : Symbol(cls)
-            if isdefined(CC, type_nm)
-                T = getproperty(CC, type_nm)
-                if T isa Type && T <: CC.AbstractStmt
-                    @test v(body) == (r isa T)
-                end
+            # Pair each `isFoo` with the abstract of the same name: a predicate wired to
+            # another classof still returns Bool, so `isa Bool` cannot see it. The pairs are
+            # held against every class of `ce2_rich` below.
+            abs_nm = Symbol("Abstract", String(nm)[3:end])
+            if isdefined(CC, abs_nm)
+                absT = getproperty(CC, abs_nm)
+                absT isa Type && absT <: CC.AbstractStmt && push!(preds, (v, absT))
             end
             npred += 1
         elseif v isa Type &&
@@ -148,6 +147,34 @@ end
     # StmtNodes.inc names the abstract bases too, so a compound statement matches its own class
     # and every base above it — here `Stmt` itself is excluded above, leaving exactly one
     @test nmatch == count(T -> r isa T, (CC.AbstractCompoundStmt,))
+
+    # One node answers `true` to its own class and its bases and `false` to everything else,
+    # so the pairs are asked of one node per class of a body that holds many. Each node goes
+    # in as a base-typed `Stmt` carrier, so the predicate's answer is clang's classof and the
+    # abstract's is the generated hierarchy -- two sources, held against each other.
+    CC.parse(I, """
+             int ce2_rich(int n, int *p) {
+                 int acc = 0;
+                 for (int i = 0; i < n; ++i) { if (i == 2) continue; acc += p[i]; }
+                 while (n > 0) { --n; }
+                 do { acc++; } while (acc < 3);
+                 switch (n) { case 0: acc = -acc; break; default: ; }
+             again:
+                 acc = n ? (++acc, 1) : (int)sizeof(int);
+                 if (acc > 100) goto again;
+                 return (int)(acc + 1.5f) + ce2_g('a');
+             }
+             """)
+    @test f(I, "ce2_rich")
+    nodes = CC.subtree(CC.getBody(CC.FunctionDecl(get_decl(f))))
+    reps = unique(typeof, nodes)
+    @test length(preds) >= 200
+    @test length(reps) >= 25
+    for n in reps, (pred, absT) in preds
+        @test pred(CC.Stmt(n)) == (n isa absT)
+    end
+    # every class present is among the pairs, so each one contributes a `true` row of its own
+    @test count(((_, absT),) -> any(n -> n isa absT, reps), preds) >= length(reps)
 
     dispose(f)
     dispose(I)
@@ -649,8 +676,8 @@ end
     I = CC.create_interpreter(String[])
     f = CC.DeclFinder(I)
 
-    # Inline-asm acceptance is target-dependent, so assert only once the statement
-    # actually parsed and was located on this host.
+    # The asm text is empty, and `r`, `+r` and the `memory` clobber are constraints every
+    # target accepts, so both statements parse into a GCCAsmStmt whatever the host is.
     findasm = function (name)
         f(I, name) || return nothing
         body = CC.getBody(CC.FunctionDecl(CC.get_decl(f)))
@@ -666,69 +693,59 @@ end
     # operand accessor. `volatile` is the stuck-polarity counterpart of isSimple.
     CC.parse(I, "void asmRW(int a, int b) { asm volatile(\"\" : \"+r\"(b) : [in] \"r\"(a) : \"memory\"); }")
     a = findasm("asmRW")
-    if a !== nothing
-        @test !CC.isSimple(a)
-        @test CC.isVolatile(a)
-        simple, vol = CC.isSimple(a), CC.isVolatile(a)
-        CC.setSimple(a, simple)
-        @test CC.isSimple(a) == simple
-        CC.setVolatile(a, vol)
-        @test CC.isVolatile(a) == vol
-        @test CC.isOutputPlusConstraint(a, 0)
-        @test CC.getNumPlusOperands(a) == 1
-        @test CC.getOutputConstraintLiteral(a, 0).ptr != C_NULL
-        @test CC.getOutputIdentifier(a, 0).ptr == C_NULL              # output has no [name]
-        @test CC.getNumInputs(a) == 1
-        @test CC.getInputIdentifier(a, 0).ptr != C_NULL               # named [in]
-        @test CC.getInputConstraintLiteral(a, 0).ptr != C_NULL
-        @test CC.getNamedOperand(a, "in") >= 0
-        @test CC.getNamedOperand(a, "nosuchoperand") == -1
-        e = CC.getInputExpr(a, 0)
-        CC.setInputExpr(a, 0, e)
-        @test CC.getInputExpr(a, 0).ptr == e.ptr
-        @test CC.getNumClobbers(a) == 1
-        @test CC.getClobberStringLiteral(a, 0).ptr != C_NULL
-        @test CC.getNumLabels(a) == 0
-        asmloc = CC.getAsmLoc(a)
-        CC.setAsmLoc(a, asmloc)
-        @test CC.getAsmLoc(a).ptr == asmloc.ptr
-        rparen = CC.getRParenLoc(a)
-        CC.setRParenLoc(a, rparen)
-        @test CC.getRParenLoc(a).ptr == rparen.ptr
-    end
+    @test a isa CC.GCCAsmStmt
+    @test !CC.isAsmGoto(a)
+    @test !CC.isSimple(a)
+    @test CC.isVolatile(a)
+    simple, vol = CC.isSimple(a), CC.isVolatile(a)
+    CC.setSimple(a, simple)
+    @test CC.isSimple(a) == simple
+    CC.setVolatile(a, vol)
+    @test CC.isVolatile(a) == vol
+    @test CC.isOutputPlusConstraint(a, 0)
+    @test CC.getNumPlusOperands(a) == 1
+    @test CC.getOutputConstraintLiteral(a, 0).ptr != C_NULL
+    @test CC.getOutputIdentifier(a, 0).ptr == C_NULL              # output has no [name]
+    @test CC.getNumInputs(a) == 1
+    @test CC.getInputIdentifier(a, 0).ptr != C_NULL               # named [in]
+    @test CC.getInputConstraintLiteral(a, 0).ptr != C_NULL
+    @test CC.getNamedOperand(a, "in") == 1                        # outputs are numbered first
+    @test CC.getNamedOperand(a, "nosuchoperand") == -1
+    e = CC.getInputExpr(a, 0)
+    CC.setInputExpr(a, 0, e)
+    @test CC.getInputExpr(a, 0).ptr == e.ptr
+    @test CC.getNumClobbers(a) == 1
+    @test CC.getClobberStringLiteral(a, 0).ptr != C_NULL
+    @test CC.getNumLabels(a) == 0
+    asmloc = CC.getAsmLoc(a)
+    CC.setAsmLoc(a, asmloc)
+    @test CC.getAsmLoc(a).ptr == asmloc.ptr
+    rparen = CC.getRParenLoc(a)
+    CC.setRParenLoc(a, rparen)
+    @test CC.getRParenLoc(a).ptr == rparen.ptr
 
     CC.parse(I, "void asmGotoLbl() { asm goto (\"\" : : : : Done); Done: ; }")
     g = findasm("asmGotoLbl")
-    if g !== nothing && CC.isAsmGoto(g)
-        @test CC.getNumLabels(g) == 1
-        @test CC.getLabelName(g, 0) == "Done"
-        @test CC.getLabelExpr(g, 0).ptr != C_NULL
-        @test CC.getLabelIdentifier(g, 0).ptr != C_NULL
-    end
+    @test g isa CC.GCCAsmStmt
+    @test CC.isAsmGoto(g)
+    @test CC.getNumLabels(g) == 1
+    @test CC.getLabelName(g, 0) == "Done"
+    @test CC.getLabelExpr(g, 0).ptr != C_NULL
+    @test CC.getLabelIdentifier(g, 0).ptr != C_NULL
 
     # AttributedStmt: a statement-level attribute wraps its substatement.
     CC.parse(I, "void attrG(); void attrProbe() { [[clang::nomerge]] attrG(); }")
-    astmt = nothing
-    if f(I, "attrProbe")
-        abody = CC.getBody(CC.FunctionDecl(CC.get_decl(f)))
-        if abody.ptr != C_NULL
-            for n in CC.subtree(CC.resolve(abody))
-                if n isa CC.AttributedStmt
-                    astmt = n
-                    break
-                end
-            end
-        end
-    end
-    if astmt !== nothing
-        @test !CC.is_null_handle(CC.getAttrLoc(astmt))
-        na = CC.getNumAttrs(astmt)
-        @test na == 1
-        attrs = CC.getAttrs(astmt)
-        @test length(attrs) == na == 1
-        @test all(x -> x isa CC.Attr, attrs)
-        @test all(x -> x.ptr != C_NULL, attrs)
-    end
+    @test f(I, "attrProbe")
+    abody = CC.getBody(CC.FunctionDecl(CC.get_decl(f)))
+    attributed = filter(n -> n isa CC.AttributedStmt, CC.subtree(CC.resolve(abody)))
+    @test length(attributed) == 1
+    astmt = first(attributed)
+    @test !CC.is_null_handle(CC.getAttrLoc(astmt))
+    na = CC.getNumAttrs(astmt)
+    @test na == 1
+    attrs = CC.getAttrs(astmt)
+    @test length(attrs) == na == 1
+    @test CC.getKind(only(attrs)) == CC.CXAttrKind_NoMerge
 
     CC.dispose(f)
     CC.dispose(I)
@@ -1034,7 +1051,7 @@ end
     @test CC.getCapturedRegionKind(cs) == LibClangEx.CXCapturedRegionKind_CR_OpenMP
 
     ncaps = CC.capture_size(cs)
-    @test ncaps >= 2                                            # n and m are captured
+    @test ncaps == 2                                            # n and m, and nothing else
     caps = [CC.getCapture(cs, i) for i = 0:(ncaps - 1)]
     @test all(c -> c.ptr != C_NULL, caps)
     @test_throws AssertionError CC.getCapture(cs, ncaps)
@@ -1047,12 +1064,12 @@ end
         @test count(forms) == 1
     end
 
-    varcaps = filter(c -> CC.capturesVariable(c) || CC.capturesVariableByCopy(c), caps)
-    @test length(varcaps) >= 2
-    @test issubset(Set(["n", "m"]), Set(get_name(CC.getCapturedVar(c)) for c in varcaps))
+    # the region reads both by reference, in the order it first names them
+    @test all(CC.capturesVariable, caps)
+    @test [get_name(CC.getCapturedVar(c)) for c in caps] == ["n", "m"]
 
     inits = [CC.getCaptureInit(cs, i) for i = 0:(ncaps - 1)]
-    @test any(e -> e.ptr != C_NULL, inits)
+    @test all(e -> e.ptr != C_NULL, inits)
     @test_throws AssertionError CC.getCaptureInit(cs, ncaps)
     dispose(fomp)
     dispose(Iomp)
@@ -1562,8 +1579,8 @@ end
     @test map(a -> a.ptr, CC.getAttrs(made_attr)) == map(a -> a.ptr, attrs)
     @test_throws AssertionError CC.AttributedStmt(ctx, aloc, CC.Attr[], sub)
 
-    # GCCAsmStmt::setAsmString — inline-asm acceptance is target-dependent, so this only
-    # asserts once the statement actually parsed and was located on this host.
+    # GCCAsmStmt::setAsmString — the asm text is empty and `r` is a constraint every target
+    # accepts, so the statement parses into a GCCAsmStmt whatever the host is.
     findasm = function (name, T)
         f(I, name) || return nothing
         b = CC.getBody(CC.FunctionDecl(get_decl(f)))
@@ -1577,12 +1594,11 @@ end
 
     CC.parse(I, "void stmtJAsm(int a) { asm(\"\" : : \"r\"(a)); }")
     gasm = findasm("stmtJAsm", CC.GCCAsmStmt)
-    if gasm !== nothing
-        lit = CC.getAsmString(gasm)
-        @test lit isa CC.StringLiteral
-        CC.setAsmString(gasm, lit)                            # identity write-back
-        @test CC.getAsmString(gasm).ptr == lit.ptr
-    end
+    @test gasm isa CC.GCCAsmStmt
+    lit = CC.getAsmString(gasm)
+    @test CC.getLength(lit) == 0                          # the fixture's asm text is ""
+    CC.setAsmString(gasm, lit)                            # identity write-back
+    @test CC.getAsmString(gasm).ptr == lit.ptr
 
     # MSAsmStmt is deliberately NOT exercised. Parsing `__asm { ... }` through the
     # interpreter fails on this toolchain (no MC asm parser for the host), so the node is
@@ -1601,12 +1617,12 @@ end
     ctx = CC.get_ast_context(I)
     f = DeclFinder(I)
 
-    # Inline-asm acceptance is target-dependent, so the piece assertions below only run
-    # once the statement actually parsed and was found on this host. The asm text is never
-    # assembled here -- CC.parse stops at IR generation -- so `nop %0` only has to survive
-    # Sema's own AnalyzeAsmString check (one operand, one reference to it). The parse also
-    # comes FIRST, before any synthetic node is built, so a host that rejects it cannot
-    # reproduce the DiagnosticRenderer crash a failed parse causes after synthetic AST work.
+    # The asm text is never assembled here -- CC.parse stops at IR generation -- so `nop %0`
+    # only has to survive Sema's own AnalyzeAsmString check (one operand, one reference to
+    # it), and `r` is a constraint every target accepts: the statement parses into a
+    # GCCAsmStmt whatever the host is. The parse also comes FIRST, before any synthetic node
+    # is built, so a rejected parse could not reproduce the DiagnosticRenderer crash a
+    # failed parse causes after synthetic AST work.
     findasm = function (name)
         f(I, name) || return nothing
         body = CC.getBody(CC.FunctionDecl(CC.get_decl(f)))
@@ -1620,30 +1636,27 @@ end
 
     CC.parse(I, "void asmPieces(int a) { asm(\"nop %0\" : : \"r\"(a)); }")
     gasm = findasm("asmPieces")
-    if gasm !== nothing
-        n, diag_id, diag_offs = CC.getNumAsmStringPieces(gasm, ctx)
-        @test n >= 1
-        @test diag_id == 0                      # clang accepted the string at parse time
-        @test diag_offs >= 0
-        pieces = CC.getAsmStringPieces(gasm, ctx)
-        @test length(pieces) == n
-        @test all(p -> p.ptr != C_NULL, pieces)
-        @test all(p -> CC.isString(p) != CC.isOperand(p), pieces)
-        @test any(p -> CC.isString(p) && occursin("nop", CC.getString(p)), pieces)
-        ops = filter(CC.isOperand, pieces)
-        @test length(ops) == 1                  # the single `%0` reference
-        @test CC.getString(ops[1]) == "0"        # the operand number; the `%` is the piece kind
-        @test CC.getOperandNo(ops[1]) == 0
-        op_r = CC.getRange(ops[1])
-        @test op_r isa CC.SourceRange
-        @test !CC.is_null_handle(op_r.begin_loc)
-        @test !CC.is_null_handle(op_r.end_loc)
-        # `%0` carries no modifier letter, so clang reports the NUL it uses for "none" --
-        # the value that separates this accessor from one reading an adjacent byte
-        @test CC.getModifier(ops[1]) == '\0'
-        for p in pieces
-            dispose(p)
-        end
+    @test gasm isa CC.GCCAsmStmt
+    n, diag_id, _ = CC.getNumAsmStringPieces(gasm, ctx)
+    @test n == 2                            # the text `nop ` and the operand `%0`
+    @test diag_id == 0                      # clang accepted the string at parse time
+    pieces = CC.getAsmStringPieces(gasm, ctx)
+    @test length(pieces) == n
+    @test all(p -> p.ptr != C_NULL, pieces)
+    @test all(p -> CC.isString(p) != CC.isOperand(p), pieces)
+    @test any(p -> CC.isString(p) && occursin("nop", CC.getString(p)), pieces)
+    ops = filter(CC.isOperand, pieces)
+    @test length(ops) == 1                  # the single `%0` reference
+    @test CC.getString(ops[1]) == "0"        # the operand number; the `%` is the piece kind
+    @test CC.getOperandNo(ops[1]) == 0
+    op_r = CC.getRange(ops[1])
+    @test !CC.is_null_handle(op_r.begin_loc)
+    @test !CC.is_null_handle(op_r.end_loc)
+    # `%0` carries no modifier letter, so clang reports the NUL it uses for "none" --
+    # the value that separates this accessor from one reading an adjacent byte
+    @test CC.getModifier(ops[1]) == '\0'
+    for p in pieces
+        dispose(p)
     end
 
     # AttributedStmt::CreateEmpty. clang null-fills the attribute slots and leaves AttrLoc
@@ -1864,6 +1877,15 @@ end
     @test CC.getLikelihood(lthen) == LH.CXLikelihood_LH_Likely
     @test CC.getLikelihood(lelse) == LH.CXLikelihood_LH_Unlikely
     @test CC.getLikelihood(lthen, lelse) == LH.CXLikelihood_LH_Likely
+    # each branch hands back the attribute it was written with, and it is the one the
+    # AttributedStmt lists; the IfStmt itself and an unattributed branch carry none
+    lattr, uattr = CC.getLikelihoodAttr(lthen), CC.getLikelihoodAttr(lelse)
+    @test CC.getKind(lattr) == CC.CXAttrKind_Likely
+    @test CC.getKind(uattr) == CC.CXAttrKind_Unlikely
+    @test lattr.ptr == only(CC.getAttrs(CC.resolve(lthen))).ptr
+    @test uattr.ptr == only(CC.getAttrs(CC.resolve(lelse))).ptr
+    @test CC.is_null_handle(CC.getLikelihoodAttr(lif))
+    @test CC.is_null_handle(CC.getLikelihoodAttr(pthen))
     c, ta, ea = CC.determineLikelihoodConflict(lthen, lelse)
     @test !c                                    # complementary, not a conflict
     @test ta.ptr == C_NULL && ea.ptr == C_NULL

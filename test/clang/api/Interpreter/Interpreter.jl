@@ -21,6 +21,7 @@ using Test
         struct FtNontrivial { int y; ~FtNontrivial(); };
         FtNontrivial::~FtNontrivial() {}
         FtTrivial ft_trivial_probe;
+        struct FtForward;
     """)
     f = DeclFinder(I)
     @test f(I, "FtTrivial")
@@ -29,6 +30,9 @@ using Test
     @test f(I, "FtNontrivial")
     nontriv = CC.CXXRecordDecl(get_decl(f))
     @test CC.CompileDtorCall(I.interp, nontriv) != 0
+    # whether a destructor is irrelevant is a question about a definition
+    @test f(I, "FtForward")
+    @test_throws AssertionError CC.CompileDtorCall(I.interp, CC.CXXRecordDecl(get_decl(f)))
     dispose(f)
     dispose(I)
 end

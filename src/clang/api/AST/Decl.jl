@@ -2299,13 +2299,42 @@ function isFunctionOrFunctionTemplate(x::AbstractDecl)
     return clang_Decl_isFunctionOrFunctionTemplate(x)
 end
 
+# `clang::FieldDecl::getBitWidthValue` does not evaluate the width: it casts the width
+# expression to `ConstantExpr` and reads the integer cached in it, asserting all three steps
+# and checking none. Sema wraps every width it accepts that way; a width installed by
+# `setBitWidth`, left dependent by a template, or left unwrapped by a parse error is not.
+function has_cached_bit_width(x::AbstractFieldDecl)
+    width = getBitWidth(x)
+    return isConstantExpr(width) && getResultAPValueKind(ConstantExpr(width)) == CXAPValueKind_Int
+end
+
+"""
+    getBitWidthValue(x::AbstractFieldDecl, ctx::ASTContext) -> Cuint
+Return the width of the bit-field `x`, in bits. `ctx` is unused.
+
+`x` must be a bit-field whose width is a `ConstantExpr` holding an integer result, which is
+what Sema builds for every width it accepts. clang reads the cached value through an
+unchecked cast, so a plain field, a width that is still dependent, and a bare expression
+installed with `setBitWidth` are each undefined behaviour rather than an error.
+"""
 function getBitWidthValue(x::AbstractFieldDecl, ctx::ASTContext)
     @check_ptrs x ctx
+    @assert isBitField(x) "the field must be a bit-field"
+    @assert has_cached_bit_width(x) "the bit width must be a ConstantExpr holding an integer result"
     return clang_FieldDecl_getBitWidthValue(x, ctx)
 end
 
+"""
+    isZeroLengthBitField(x::AbstractFieldDecl, ctx::ASTContext) -> Bool
+Return whether `x` is an unnamed bit-field of width zero. `ctx` is unused.
+
+clang reads the width only of an unnamed bit-field whose width is not value-dependent, and
+reads it as [`getBitWidthValue`](@ref) does, so for such a field the same precondition holds.
+"""
 function isZeroLengthBitField(x::AbstractFieldDecl, ctx::ASTContext)
     @check_ptrs x ctx
+    reads_width = isUnnamedBitfield(x) && !isValueDependent(getBitWidth(x))
+    @assert !reads_width || has_cached_bit_width(x) "the bit width must be a ConstantExpr holding an integer result"
     return clang_FieldDecl_isZeroLengthBitField(x, ctx)
 end
 
@@ -3111,8 +3140,8 @@ function getAssociatedConstraints(x::AbstractFunctionDecl)
     return [Expr_(p) for p in buf]
 end
 
-# NOTE: FunctionDecl::setParams is private in clang 18 (Sema and the
-# deserializer are its only callers), so there is no setParams wrapper.
+# FunctionDecl::setParams has no wrapper. Of its two overloads only the one taking an
+# ASTContext is private; `setParams(ArrayRef<ParmVarDecl *>)` is public and wrappable.
 
 function getMinRequiredExplicitArguments(x::AbstractFunctionDecl)
     @check_ptrs x

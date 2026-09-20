@@ -72,5 +72,15 @@ using Test
     @test_throws AssertionError CC.isConst(bi, 0)
     @test_throws AssertionError CC.isPrintfLike(bi, 0)
 
+    # The table ends where getNumBuiltins says. The target adds its own builtins above the
+    # target-independent ones, the last ID still has a record to name, and the one after it
+    # is refused rather than read out of bounds.
+    nbuiltins = CC.getNumBuiltins(bi)
+    @test nbuiltins > first_ts
+    @test !isempty(CC.getName(bi, nbuiltins - 1))
+    @test CC.isTSBuiltin(bi, nbuiltins - 1)
+    @test_throws AssertionError CC.getName(bi, nbuiltins)
+    @test_throws AssertionError CC.isConst(bi, nbuiltins)
+
     dispose(I)
 end

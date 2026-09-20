@@ -58,20 +58,27 @@ one that has it cannot safely tear down. Pinning downloads that target's GCC sha
 it to one target and one file rather than
 pinning at every site.
 
-**Nothing decides it** — module provenance (`isPartOfFramework`) and a hand-built `Module`'s
-availability, including the `markUnavailable` transition whose gating predicate reads bits a
-synthetic module never had a module map to set. These read uninitialized memory. Pinning a
-triple does not help and would only make the answer look trustworthy; restate the precondition
-instead, or leave the site `# shape-only` with that as its reason.
+**Nothing decides it** — a member with no default initializer, filled in only on some
+configuration path and read before that path ran. The read is of uninitialized memory. Pinning
+a triple does not help and would only make the answer look trustworthy; restate the
+precondition instead, or leave the site `# shape-only` with that as its reason.
 
-Before accepting that, check whether the state can simply be *initialized*. A `Driver`'s LTO
+Before accepting that, read the constructor. A hand-built `Module`'s availability, its
+`isPartOfFramework` and the `markUnavailable` transition were all filed here on the reasoning
+that a synthetic module never had a module map to set those bits — and `clang::Module`'s
+constructor sets every one of them, so each is an ordinary equality that holds on all three
+runners. "Nothing wrote it" is a claim about a constructor's mem-init list, and it is checked
+there, not inferred from how the object came to exist.
+
+Then check whether the state can simply be *initialized*. A `Driver`'s LTO
 mode used to be the worked example here: asked of a driver that never processed arguments it
 is a read of uninitialized memory, and the site was marked accordingly. But `BuildCompilation`
 is what initializes it, so building one first turns the same call into an ordinary assertion —
 `-flto` gives true and `-fsyntax-only` gives false, which is a partition rather than a pin.
 Reaching for the marker is premature whenever a constructor or a setup call the test could
 make would give the field a value. A wrapper whose value comes back outside its own enum (Julia prints
-`<invalid #N>`) is this case — a UB precondition to restate, not a flaky test.
+`<invalid #N>`) is either this case — a UB precondition to restate, not a flaky test — or a
+mirror that lacks an enumerator upstream has since appended, which the enum's header settles.
 
 **The host decides it, and neither of the above applies** — a sysroot, an executable path.
 This is the one that genuinely takes a shape assertion: `isa Bool`, `isa Integer`, or a round

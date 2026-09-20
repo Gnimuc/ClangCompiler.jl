@@ -22,21 +22,32 @@ using Test
 end
 
 @testset "DependencyScanningTool | which headers a translation unit touches" begin
+    # The header sits in a directory of its own and is included with angle brackets, so the
+    # search never looks beside the includer and `-I incdir` is the only route to it.
     dir = mktempdir()
-    hdr = joinpath(dir, "ccdeps_header.h")
+    incdir = joinpath(dir, "inc")
+    mkdir(incdir)
+    hdr = joinpath(incdir, "ccdeps_header.h")
     write(hdr, "#pragma once\nint ccdeps_from_header;\n")
     src = joinpath(dir, "ccdeps_main.c")
-    write(src, "#include \"ccdeps_header.h\"\nint ccdeps_main_marker;\n")
+    write(src, "#include <ccdeps_header.h>\nint ccdeps_main_marker;\n")
 
     svc = CC.DependencyScanningService(CC.CXScanningMode_DependencyDirectivesScan, CC.CXScanningOutputFormat_Make)
     tool = CC.DependencyScanningTool(svc)
 
-    # `-nostdinc` keeps the scanner off the host's headers; `-I dir` is how the
-    # local include resolves, so a scan that ignored either flag cannot name both files.
-    ok, out = CC.getDependencyFile(tool, ["clang", "-nostdinc", "-c", "-x", "c", "-I", dir, src], dir)
+    # `--target` takes the toolchain choice away from the host's default triple, and
+    # `-nostdinc` leaves `-I` as the whole search path. The scan only preprocesses, so the
+    # target needs no backend.
+    base = ["clang", "--target=x86_64-linux-gnu", "-nostdinc", "-c", "-x", "c"]
+    ok, out = CC.getDependencyFile(tool, [base..., "-I", incdir, src], dir)
     @test ok
     @test occursin(basename(src), out)
     @test occursin(basename(hdr), out)
+
+    # the same scan without `-I` cannot find the header, and says which one
+    noinc_ok, noinc_out = CC.getDependencyFile(tool, [base..., src], dir)
+    @test !noinc_ok
+    @test occursin(basename(hdr), noinc_out)
 
     # the failing half of the partition: a source that does not exist cannot be scanned, and
     # the error is reported rather than swallowed

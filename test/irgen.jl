@@ -115,6 +115,13 @@ end
     @test irgen_compiles(guarded; args=["-DIRG_D=7"])
     @test !irgen_compiles(guarded)
 
+    # -ftime-report has code generation time itself against the instance's timer group,
+    # which exists only if something created it. The report goes to stderr on release.
+    timed = redirect_stderr(devnull) do
+        return irgen_text("""extern "C" int irg_t(int a) { return a; }"""; args=["-ftime-report"])
+    end
+    @test occursin("irg_t", timed)
+
     # -Werror promotes this session's warnings. `int f() { }` falls off the end of a
     # non-void function, which is a warning clang has on by default on every target.
     buf = CC.TextDiagnosticBuffer()

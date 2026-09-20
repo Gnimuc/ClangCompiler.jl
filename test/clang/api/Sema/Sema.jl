@@ -835,22 +835,55 @@ end
     @test_throws AssertionError CC.BuildArrayTypeTrait(sema, CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayExtent, loc,
                                                        arr_tsi, CC.Expr_(C_NULL), loc)
 
+    # the literal `8` is a prvalue, so __is_rvalue_expr holds of it and __is_lvalue_expr does not
     et = CC.BuildExpressionTrait(sema, CC.LibClangEx.CXExpressionTrait_ET_IsRValueExpr, loc, eight, loc)
-    @test et === nothing || CC.resolve(et) isa CC.ExpressionTraitExpr
+    @test et !== nothing
+    et = CC.resolve(et)
+    @test et isa CC.ExpressionTraitExpr
+    @test CC.getValue(et) == true
+    @test CC.getQueriedExpression(et).ptr == eight.ptr
+    et_lvalue = CC.BuildExpressionTrait(sema, CC.LibClangEx.CXExpressionTrait_ET_IsLValueExpr, loc, eight, loc)
+    @test et_lvalue !== nothing
+    @test CC.getValue(CC.resolve(et_lvalue)) == false
 
     # --- the remaining node factories ---
-    fold = CC.BuildEmptyCXXFoldExpr(sema, loc, CC.LibClangEx.CXBinaryOperatorKind_BO_LAnd)
-    @test fold === nothing || CC.getType(fold) isa CC.QualType
+    # [temp.variadic]p9: a unary fold over an empty pack is `true` for `&&`, `false` for
+    # `||` and `void()` for `,`
+    fold_and = CC.BuildEmptyCXXFoldExpr(sema, loc, CC.LibClangEx.CXBinaryOperatorKind_BO_LAnd)
+    @test fold_and !== nothing
+    fold_and = CC.resolve(fold_and)
+    @test fold_and isa CC.CXXBoolLiteralExpr
+    @test CC.getValue(fold_and) == true
+    fold_or = CC.BuildEmptyCXXFoldExpr(sema, loc, CC.LibClangEx.CXBinaryOperatorKind_BO_LOr)
+    @test fold_or !== nothing
+    fold_or = CC.resolve(fold_or)
+    @test fold_or isa CC.CXXBoolLiteralExpr
+    @test CC.getValue(fold_or) == false
+    fold_comma = CC.BuildEmptyCXXFoldExpr(sema, loc, CC.LibClangEx.CXBinaryOperatorKind_BO_Comma)
+    @test fold_comma !== nothing
+    @test CC.resolve(fold_comma) isa CC.CXXScalarValueInitExpr
+    @test CC.isVoidType(CC.getTypePtr(CC.getType(fold_comma)))
 
     mte = CC.CreateMaterializeTemporaryExpr(sema, intty, eight, false)
     @test mte isa CC.MaterializeTemporaryExpr
     @test mte.ptr != C_NULL
     @test CC.getSubExpr(mte).ptr == eight.ptr
 
-    # RecoveryExpr construction is gated on LangOptions::RecoveryAST, so both outcomes are
-    # legal and only the discriminated shape is asserted.
+    # RecoveryExpr construction is gated on LangOptions::RecoveryAST. C++ has it on by
+    # default, so the node is built and keeps the subexpression it was handed.
     rec = CC.CreateRecoveryExpr(sema, loc, loc, CC.Expr_[eight])
-    @test rec === nothing || CC.resolve(rec) isa CC.RecoveryExpr
+    @test rec !== nothing
+    rec = CC.resolve(rec)
+    @test rec isa CC.RecoveryExpr
+    @test CC.getNumSubExpressions(rec) == 1
+    @test CC.getSubExpression(rec, 0).ptr == eight.ptr
+    @test CC.CreateRecoveryExpr(sema, loc, loc, CC.Expr_[]) !== nothing
+    # the same call under -fno-recovery-ast builds nothing
+    J = create_interpreter(["-Xclang", "-fno-recovery-ast"])
+    sema_off = CC.get_sema(J)
+    loc_off = CC.get_main_file_begin_loc(CC.getSourceManager(sema_off))
+    @test CC.CreateRecoveryExpr(sema_off, loc_off, loc_off, CC.Expr_[]) === nothing
+    dispose(J)
 
     # --- a static_assert over an already-constant condition, no message (C++17 form) ---
     sad = CC.BuildStaticAssertDeclaration(sema, loc, eight, CC.Expr_(C_NULL), loc)
@@ -861,10 +894,24 @@ end
     targ = CC.TemplateArgument(ctx, gv, intty)
     CC.LLVM.dispose(gv)
     @test CC.getKind(targ) == CC.LibClangEx.CXTemplateArgument_Integral
+    # an integral argument of type `int` comes back as the literal spelling its value
     nttp = CC.BuildExpressionFromNonTypeTemplateArgument(sema, targ, loc)
-    @test nttp === nothing || CC.getType(nttp) isa CC.QualType
+    @test nttp !== nothing
+    nttp_lit = CC.resolve(nttp)
+    @test nttp_lit isa CC.IntegerLiteral
+    @test CC.getType(nttp).ptr == intty.ptr
+    nttp_gv = CC.LLVM.GenericValue(CC.getValue(nttp_lit))
+    @test convert(Int, nttp_gv) == 7
+    CC.LLVM.dispose(nttp_gv)
     # a type argument would reach clang's llvm_unreachable, so the wrapper stops it here
     @test_throws AssertionError CC.BuildExpressionFromNonTypeTemplateArgument(sema, CC.TemplateArgument(intty), loc)
+
+    # any other operator has no value over an empty pack: clang diagnoses the fold and
+    # builds nothing. It runs last because the error stays on the DiagnosticsEngine.
+    fold_add = redirect_stderr(devnull) do
+        return CC.BuildEmptyCXXFoldExpr(sema, loc, CC.LibClangEx.CXBinaryOperatorKind_BO_Add)
+    end
+    @test fold_add === nothing
 
     dispose(f)
     dispose(I)
@@ -2116,6 +2163,7 @@ end
     I = create_interpreter(String[])
     CC.parse(I, """
              struct SemaB4S { int a; };
+             struct SemaB4Incomplete;
              SemaB4S semaB4Obj;
              const int semaB4Eight = 8;
              __builtin_va_list semaB4Args;
@@ -2135,6 +2183,8 @@ end
     obj_vd = CC.VarDecl(get_decl(f))
     @test f(I, "semaB4Args")
     args_vd = CC.VarDecl(get_decl(f))
+    @test f(I, "SemaB4Incomplete")
+    incomplete_ty = CC.getTypeDeclType(ctx, CC.TypeDecl(get_decl(f)))
 
     int_ty = CC.getType(eight)
     int_tsi = CC.getTrivialTypeSourceInfo(ctx, int_ty, loc)
@@ -2164,7 +2214,12 @@ end
 
     # --- __builtin_sycl_unique_stable_name(int) ---
     usn = CC.BuildSYCLUniqueStableNameExpr(sema, loc, loc, loc, int_tsi)
-    @test usn === nothing || CC.resolve(usn) isa CC.SYCLUniqueStableNameExpr
+    @test usn !== nothing
+    usn = CC.resolve(usn)
+    @test usn isa CC.SYCLUniqueStableNameExpr
+    # the expression has type `const char *` whatever type it names
+    @test CC.getAsString(CC.getType(usn)) == "const char *"
+    @test CC.getTypeSourceInfo(usn).ptr == int_tsi.ptr
 
     # --- semaB4Obj.a, built from the resolved field and the access it was found with ---
     rec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(obj_vd)))
@@ -2177,7 +2232,14 @@ end
     dni = CC.DeclarationNameInfo(CC.DeclarationName(CC.getIdentifierInfo(pp, "a")), loc)
     member = CC.BuildFieldReferenceExpr(sema, base, false, loc, ss, field, field,
                                         CC.LibClangEx.CXAccessSpecifier_AS_public, dni)
-    @test member === nothing || CC.resolve(member) isa CC.MemberExpr
+    @test member !== nothing
+    member = CC.resolve(member)
+    @test member isa CC.MemberExpr
+    @test CC.getMemberDecl(member).ptr == field.ptr
+    # the base already has the field's own class type, so it is kept without a conversion
+    @test CC.getBase(member).ptr == base.ptr
+    @test !CC.isArrow(member)
+    @test CC.getAsString(CC.getType(member)) == "int"
 
     # --- (int){8}, whose initializer list is built through the wrapped entry point ---
     init_list = CC.BuildInitList(sema, loc, CC.Expr_[eight], loc)
@@ -2188,7 +2250,11 @@ end
     # --- __builtin_va_arg over a real va_list object; its spelling is target-dependent ---
     va_base = CC.BuildDeclRefExpr(sema, args_vd, CC.getType(args_vd), CC.LibClangEx.CXExprValueKind_VK_LValue, loc)
     va = CC.BuildVAArgExpr(sema, loc, va_base, int_tsi, loc)
-    @test va === nothing || CC.resolve(va) isa CC.VAArgExpr
+    @test va !== nothing
+    va = CC.resolve(va)
+    @test va isa CC.VAArgExpr
+    @test CC.getAsString(CC.getType(va)) == "int"
+    @test CC.getWrittenTypeInfo(va).ptr == int_tsi.ptr
 
     # --- static_cast<int>(8); the cast keyword crosses as its raw tok::TokenKind ---
     static_kind = CC.getTokenID(CC.getIdentifierInfo(pp, "static_cast"))
@@ -2198,26 +2264,63 @@ end
     angles = CC.SourceRange(loc, loc)
     parens = CC.SourceRange(loc, loc)
     named = CC.BuildCXXNamedCast(sema, loc, static_kind, int_tsi, eight, angles, parens)
-    @test named === nothing || CC.resolve(named) isa CC.CXXStaticCastExpr
+    @test named !== nothing
+    named = CC.resolve(named)
+    @test named isa CC.CXXStaticCastExpr
+    @test CC.getCastName(named) == "static_cast"
+    # int to int converts nothing, so the operand is kept under a no-op cast
+    @test CC.getCastKind(named) == CC.CXCastKind_CK_NoOp
+    @test CC.getSubExpr(named).ptr == eight.ptr
+    @test CC.getAsString(CC.getType(named)) == "int"
     # any other keyword reaches clang's llvm_unreachable, so the wrapper rejects it first
     sizeof_kind = CC.getTokenID(CC.getIdentifierInfo(pp, "sizeof"))
     @test_throws AssertionError CC.BuildCXXNamedCast(sema, loc, sizeof_kind, int_tsi, eight, angles, parens)
 
     # --- typeid(int), whose result type the caller supplies ---
     tid = CC.BuildCXXTypeId(sema, int_ty, loc, int_tsi, loc)
-    @test tid === nothing || CC.resolve(tid) isa CC.CXXTypeidExpr
+    @test tid !== nothing
+    tid = CC.resolve(tid)
+    @test tid isa CC.CXXTypeidExpr
+    @test CC.isTypeOperand(tid)
+    @test CC.getTypeOperandSourceInfo(tid).ptr == int_tsi.ptr
+    # clang const-qualifies the result type it is handed
+    @test CC.getAsString(CC.getType(tid)) == "const int"
 
     # --- a declaration template argument re-expressed as `&semaB4Eight` ---
     const_int = CC.getType(eight_vd)
     decl_arg = CC.TemplateArgument(CC.ValueDecl(eight_vd), const_int)
     @test CC.getKind(decl_arg) == CC.CXTemplateArgument_Declaration
     from_decl = CC.BuildExpressionFromDeclTemplateArgument(sema, decl_arg, CC.getPointerType(ctx, const_int), loc)
-    @test from_decl === nothing || from_decl isa CC.Expr_
+    @test from_decl !== nothing
+    from_decl = CC.resolve(from_decl)
+    # a pointer parameter takes the address of the declaration the argument names
+    @test from_decl isa CC.UnaryOperator
+    @test CC.getOpcode(from_decl) == CC.CXUnaryOperatorKind_UO_AddrOf
+    @test CC.getAsString(CC.getType(from_decl)) == "const int *"
+    addressed = CC.resolve(CC.getSubExpr(from_decl))
+    @test addressed isa CC.DeclRefExpr
+    @test CC.getDecl(addressed).ptr == eight_vd.ptr
     # clang asserts on any other argument kind, so the wrapper rejects it first
     type_arg = CC.TemplateArgument(int_ty)
     @test_throws AssertionError CC.BuildExpressionFromDeclTemplateArgument(sema, type_arg, const_int, loc)
     CC.dispose(type_arg)
     CC.dispose(decl_arg)
+
+    # --- what the same builders refuse. Each refusal is diagnosed, and the error stays on
+    # the DiagnosticsEngine, so these run last ---
+    obj_ptr_tsi = CC.getTrivialTypeSourceInfo(ctx, CC.getPointerType(ctx, CC.getType(obj_vd)), loc)
+    incomplete_tsi = CC.getTrivialTypeSourceInfo(ctx, incomplete_ty, loc)
+    va_refused, named_refused, tid_refused = redirect_stderr(devnull) do
+        return (CC.BuildVAArgExpr(sema, loc, eight, int_tsi, loc),
+                CC.BuildCXXNamedCast(sema, loc, static_kind, obj_ptr_tsi, eight, angles, parens),
+                CC.BuildCXXTypeId(sema, int_ty, loc, incomplete_tsi, loc))
+    end
+    # the literal `8` is no va_list on any target
+    @test va_refused === nothing
+    # static_cast converts no integer to `SemaB4S *`
+    @test named_refused === nothing
+    # [expr.typeid]p4: a class type named by typeid has to be complete
+    @test tid_refused === nothing
 
     CC.dispose(dni)
     CC.dispose(ss)
@@ -2616,6 +2719,7 @@ end
              int semaMiscCallee(int n);
              void semaMiscVarArgs(const char *fmt, ...);
              int semaMiscFn(int n) { double d = 1.0; int b = semaMiscCallee(n); return b + (int)d; }
+             namespace SemaMiscNS { void semaMiscNsFn() {} }
              """)
     ctx = CC.get_ast_context(I)
     sema = CC.get_sema(I)
@@ -2650,6 +2754,11 @@ end
     int_ref = first(n for n in nodes if n isa CC.DeclRefExpr && CC.isIntegerType(CC.getTypePtr(CC.getType(n))))
     dbl_ref = first(n for n in nodes if n isa CC.DeclRefExpr && CC.isFloatingType(CC.getTypePtr(CC.getType(n))))
 
+    @assert f(I, "SemaMiscNS") "lookup failed: SemaMiscNS"
+    ns = CC.NamespaceDecl(get_decl(f))
+    @assert f(I, "SemaMiscNS::semaMiscNsFn") "lookup failed: SemaMiscNS::semaMiscNsFn"
+    ns_fd = CC.FunctionDecl(get_decl(f))
+
     # --- Weak top-level declarations (count + index) ---
     nweak = CC.getNumWeakTopLevelDecls(sema)
     @test nweak == 0  # no `#pragma weak` in this translation unit
@@ -2675,10 +2784,16 @@ end
     @test !might_lit
 
     # --- Local-extern context adjustment (a static member, so no Sema receiver) ---
-    tu_adjusted = CC.adjustContextForLocalExternDecl(tu)
-    @test tu_adjusted === nothing || tu_adjusted isa CC.DeclContext
+    # only a function or method is adjusted, so the translation unit is left alone
+    @test CC.adjustContextForLocalExternDecl(tu) === nothing
+    # [basic.link]p7: a block-scope extern belongs to the innermost enclosing namespace, which
+    # for a function at file scope is the translation unit itself
     fn_adjusted = CC.adjustContextForLocalExternDecl(CC.castToDeclContext(fd))
-    @test fn_adjusted === nothing || fn_adjusted isa CC.DeclContext
+    @test fn_adjusted !== nothing
+    @test fn_adjusted.ptr == tu.ptr
+    ns_adjusted = CC.adjustContextForLocalExternDecl(CC.castToDeclContext(ns_fd))
+    @test ns_adjusted !== nothing
+    @test ns_adjusted.ptr == CC.castToDeclContext(ns).ptr
 
     # --- Capture and ADL queries ---
     @test !(CC.NeedToCaptureVariable(sema, global_var, loc))
@@ -3291,6 +3406,7 @@ end
              int sd5_todelete(int);
              template <class U> int sd5_tf(U);
              template <class T> int sd5_pick(T t) { return sd5_tf<int>(t); }
+             template <class T> int sd5_deduce(T t) { return sd5_tf(t); }
              """)
 
     f = DeclFinder(I)
@@ -3338,7 +3454,8 @@ end
     @test comp[3] isa CC.Expr_
     gi_ref = CC.BuildDeclRefExpr(sema, gi, CC.getType(gi), CC.CXExprValueKind_VK_LValue, loc)
     ic = CC.FindCompositePointerType(sema, loc, gi_ref, gi_ref)
-    @test ic === nothing || ic[1] isa CC.QualType
+    # neither operand is pointer-like, so there is no composite pointer type to find
+    @test ic === nothing
 
     # --- mapping a declaration and a context through an empty substitution ---
     ml = CC.MultiLevelTemplateArgumentList()
@@ -3359,12 +3476,24 @@ end
     # --- resolving the overload set the template body leaves unresolved ---
     ovls = filter(n -> n isa CC.AbstractOverloadExpr, CC.subtree(CC.getBody(tfd)))
     @test !isempty(ovls)
+    # `sd5_tf<int>` names exactly one specialization: the `int` specialization of the
+    # template the lookup found, which sits at namespace scope and so has no access
     r = CC.ResolveSingleFunctionTemplateSpecialization(sema, first(ovls))
-    @test r === nothing || r[1] isa CC.FunctionDecl
-    if r !== nothing
-        @test r[2] isa CC.NamedDecl
-        @test r[3] isa CC.CXAccessSpecifier
-    end
+    @test r !== nothing
+    spec, found, access = r
+    @test CC.getNameAsString(spec) == "sd5_tf"
+    @test CC.isFunctionTemplateSpecialization(spec)
+    @test CC.getAsString(CC.getType(CC.getParamDecl(spec, 0))) == "int"
+    @test CC.getDeclKindName(found) == "FunctionTemplate"
+    @test CC.getPrimaryTemplate(spec) == found
+    @test access == CC.CXAccessSpecifier_AS_none
+    # without explicit template arguments the set cannot be resolved ahead of deduction
+    @assert f(I, "sd5_deduce") "lookup failed: sd5_deduce"
+    dfd = CC.getTemplatedDecl(CC.FunctionTemplateDecl(first(d for d in CC.get_decls(f)
+                                                            if CC.getDeclKindName(d) == "FunctionTemplate")))
+    dovls = filter(n -> n isa CC.AbstractOverloadExpr, CC.subtree(CC.getBody(dfd)))
+    @test length(dovls) == 1
+    @test CC.ResolveSingleFunctionTemplateSpecialization(sema, first(dovls)) === nothing
 
     # --- the ARC parameter-type adjustment, which is the identity outside ARC ---
     tsi = CC.getTrivialTypeSourceInfo(ctx, int_ty, loc)
@@ -3471,12 +3600,11 @@ end
                         CC.CXExpressionEvaluationContext_UnevaluatedAbstract))
 
     # --- The optional InitializationContext triple, per record and across the stack ---
-    delayed = CC.getDelayedDefaultInitializationContext(rec)
-    @test delayed === nothing || delayed isa Tuple{CC.SourceLocation,CC.ValueDecl,CC.DeclContext}
-    innermost = CC.InnermostDeclarationWithDelayedImmediateInvocations(sema)
-    @test innermost === nothing || innermost isa Tuple{CC.SourceLocation,CC.ValueDecl,CC.DeclContext}
-    outermost = CC.OutermostDeclarationWithDelayedImmediateInvocations(sema)
-    @test outermost === nothing || outermost isa Tuple{CC.SourceLocation,CC.ValueDecl,CC.DeclContext}
+    # A record carries one only while Sema rebuilds a default argument or a default member
+    # initializer. No parse is in progress here, so no record on the stack has one.
+    @test CC.getDelayedDefaultInitializationContext(rec) === nothing
+    @test CC.InnermostDeclarationWithDelayedImmediateInvocations(sema) === nothing
+    @test CC.OutermostDeclarationWithDelayedImmediateInvocations(sema) === nothing
 
     # --- CUDA host/device classification (defined for a non-CUDA translation unit too) ---
     @test CC.IdentifyCUDATarget(sema, fd) isa CC.CXCUDAFunctionTarget
@@ -3661,9 +3789,12 @@ end
     @test CC.getNumParams(bfd) == 1
     @test CC.isImplicit(bfd)
     @test CC.getBuiltinID(bfd) == 1
-    # a non-function type, and Builtin::NotBuiltin, are rejected before the ccall
+    # a non-function type, Builtin::NotBuiltin, and an ID past the end of the builtin table
+    # are rejected before the ccall
     @test_throws AssertionError CC.CreateBuiltin(sema, ii, int_ty, 1, loc)
     @test_throws AssertionError CC.CreateBuiltin(sema, ii, fnty, 0, loc)
+    past_the_table = CC.getNumBuiltins(CC.getBuiltinInfo(CC.getPreprocessor(sema)))
+    @test_throws AssertionError CC.CreateBuiltin(sema, ii, fnty, past_the_table, loc)
 
     # --- CreateCapturedStmtRecordDecl: the closure record plus its CapturedDecl ---
     crd, cd = CC.CreateCapturedStmtRecordDecl(sema, loc, 2)
@@ -4578,6 +4709,12 @@ end
     CC.parse(I, """
              template <typename A> void po_fn(A);
              template <typename A> void po_fn(A *);
+             struct PoMember {
+                 template <typename A> void po_m(A);
+                 template <typename A> void po_m(A *);
+                 template <typename A> static void po_s(A);
+                 template <typename A> static void po_s(A *);
+             };
              __attribute__((format(printf, 2, 3))) void fmt_fn(int x, const char *f, ...);
              void ovl_one(int);
              """)
@@ -4596,14 +4733,34 @@ end
            if d isa CC.FunctionTemplateDecl]
     @test length(fts) >= 2
     a, b = fts[1], fts[2]
-    w1 = CC.getMoreSpecializedTemplate(sema, a, b, loc, CC.CXTPOC_TPOC_Call, 1, 1)
-    w2 = CC.getMoreSpecializedTemplate(sema, b, a, loc, CC.CXTPOC_TPOC_Call, 1, 1)
+    w1 = CC.getMoreSpecializedTemplate(sema, a, b, loc, CC.CXTPOC_TPOC_Call, 1)
+    w2 = CC.getMoreSpecializedTemplate(sema, b, a, loc, CC.CXTPOC_TPOC_Call, 1)
     @test w1 !== nothing
     @test w2 !== nothing
     @test w1.ptr == w2.ptr
     # the reversed form is only defined for call-context ordering
-    @test_throws AssertionError CC.getMoreSpecializedTemplate(sema, a, b, loc, CC.CXTPOC_TPOC_Other, 1, 1;
+    @test_throws AssertionError CC.getMoreSpecializedTemplate(sema, a, b, loc, CC.CXTPOC_TPOC_Other, 1;
                                                               reversed=true)
+    # A non-static member gets an implicit object parameter in call context, formed from the
+    # class it was found in, which defaults to the class it belongs to. clang dereferences
+    # that type, so a null one is refused exactly where it would be read: a static member
+    # has no object parameter, and orders with or without one.
+    @test f(I, "PoMember")
+    member_templates(name) = [t
+                              for t in (CC.resolve(d) for d in CC.decls(CC.castToDeclContext(CC.CXXRecordDecl(get_decl(f)))))
+                              if t isa CC.FunctionTemplateDecl && CC.getNameAsString(t) == name]
+    m_value, m_pointer = member_templates("po_m")
+    s_value, s_pointer = member_templates("po_s")
+    no_object = CC.QualType(C_NULL)
+    @test CC.getMoreSpecializedTemplate(sema, m_value, m_pointer, loc, CC.CXTPOC_TPOC_Call, 1).ptr == m_pointer.ptr
+    @test CC.getMoreSpecializedTemplate(sema, m_pointer, m_value, loc, CC.CXTPOC_TPOC_Call, 1).ptr == m_pointer.ptr
+    @test_throws AssertionError CC.getMoreSpecializedTemplate(sema, m_value, m_pointer, loc, CC.CXTPOC_TPOC_Call, 1;
+                                                              raw_obj1_ty=no_object)
+    @test_throws AssertionError CC.getMoreSpecializedTemplate(sema, m_value, m_pointer, loc, CC.CXTPOC_TPOC_Call, 1;
+                                                              raw_obj2_ty=no_object)
+    @test CC.getMoreSpecializedTemplate(sema, s_value, s_pointer, loc, CC.CXTPOC_TPOC_Call, 1).ptr == s_pointer.ptr
+    @test CC.getMoreSpecializedTemplate(sema, s_pointer, s_value, loc, CC.CXTPOC_TPOC_Call, 1;
+                                        raw_obj1_ty=no_object, raw_obj2_ty=no_object).ptr == s_pointer.ptr
 
     # the format attribute decodes to the indices actually written in the source
     @test f(I, "fmt_fn")

@@ -2,10 +2,9 @@
 #
 # Every accessor here indexes clang's builtin table without a bounds check, and the ID 0
 # entry (`Builtin::NotBuiltin`) carries null Type and Attributes strings that the predicates
-# walk with `strchr`. So the shared precondition is `id > 0`, restated at every call site
-# below, and the ID has to be one clang produced: `getBuiltinID` on an `IdentifierInfo` or a
-# `FunctionDecl`. [`getFirstTSBuiltinID`](@ref) bounds the target-independent half of the
-# table; above it only clang knows how many entries the target added.
+# walk with `strchr`. So the shared precondition is `0 < id < getNumBuiltins(x)`, restated at
+# every call site below. [`getFirstTSBuiltinID`](@ref) bounds the target-independent half of
+# the table, and [`getNumBuiltins`](@ref) the whole of it, whatever the target added.
 
 """
     getFirstTSBuiltinID() -> Int
@@ -15,12 +14,23 @@ builtin table. Every ID strictly between 0 and this one is in range on any targe
 getFirstTSBuiltinID() = Int(clang_Builtin_getFirstTSBuiltinID())
 
 """
+    getNumBuiltins(x::AbstractBuiltinContext) -> Int
+Return one past the largest builtin ID `x` has a record for: the target-independent
+builtins, then the target's, then the aux target's. `clang::Builtin::Context` has no such
+accessor — its target tables are private — so the shim reads their sizes.
+"""
+function getNumBuiltins(x::AbstractBuiltinContext)
+    @check_ptrs x
+    return Int(clang_BuiltinContext_getNumBuiltins(x))
+end
+
+"""
     getName(x::AbstractBuiltinContext, id::Integer) -> String
 Return the identifier of the builtin, e.g. `"__builtin_abs"`.
 """
 function getName(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return get_string(clang_BuiltinContext_getName(x, id))
 end
 
@@ -30,7 +40,7 @@ Return clang's encoding of the builtin's signature, e.g. `"v."` for a variadic `
 """
 function getTypeString(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return get_string(clang_BuiltinContext_getTypeString(x, id))
 end
 
@@ -41,7 +51,7 @@ empty string for a builtin that belongs to no header.
 """
 function getHeaderName(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return get_string(clang_BuiltinContext_getHeaderName(x, id))
 end
 
@@ -51,7 +61,7 @@ Return whether the ID belongs to a target-specific builtin table.
 """
 function isTSBuiltin(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_isTSBuiltin(x, id)
 end
 
@@ -61,7 +71,7 @@ Return whether the builtin has no side effects and reads no memory.
 """
 function isConst(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_isConst(x, id)
 end
 
@@ -71,7 +81,7 @@ Return whether the builtin is known never to throw.
 """
 function isNoThrow(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_isNoThrow(x, id)
 end
 
@@ -81,7 +91,7 @@ Return whether the builtin is known never to return.
 """
 function isNoReturn(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_isNoReturn(x, id)
 end
 
@@ -92,7 +102,7 @@ rules out reading memory.
 """
 function isPure(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_isPure(x, id)
 end
 
@@ -102,7 +112,7 @@ Return whether this is a libc/libm function spelled with the `__builtin_` prefix
 """
 function isLibFunction(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_isLibFunction(x, id)
 end
 
@@ -113,7 +123,7 @@ Return whether this is a libc/libm function whose signature clang knows a priori
 """
 function isPredefinedLibFunction(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_isPredefinedLibFunction(x, id)
 end
 
@@ -124,7 +134,7 @@ count — the condition under which `-fno-math-errno` lets clang treat it as con
 """
 function isConstWithoutErrnoAndExceptions(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_isConstWithoutErrnoAndExceptions(x, id)
 end
 
@@ -134,7 +144,7 @@ Return whether a pointer appears anywhere in the builtin's signature.
 """
 function hasPtrArgsOrResult(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     return clang_BuiltinContext_hasPtrArgsOrResult(x, id)
 end
 
@@ -145,7 +155,7 @@ Return `(format_index, has_va_list_arg)` when the builtin follows printf's forma
 """
 function isPrintfLike(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     idx = Ref{Cuint}(0)
     valist = Ref{Bool}(false)
     clang_BuiltinContext_isPrintfLike(x, id, idx, valist) || return nothing
@@ -159,7 +169,7 @@ Return `(format_index, has_va_list_arg)` when the builtin follows scanf's format
 """
 function isScanfLike(x::AbstractBuiltinContext, id::Integer)
     @check_ptrs x
-    @assert id > 0 "0 is Builtin::NotBuiltin, which has no record to read"
+    @assert 0 < id < getNumBuiltins(x) "the builtin ID must be above 0 (Builtin::NotBuiltin, whose record is empty) and below getNumBuiltins"
     idx = Ref{Cuint}(0)
     valist = Ref{Bool}(false)
     clang_BuiltinContext_isScanfLike(x, id, idx, valist) || return nothing

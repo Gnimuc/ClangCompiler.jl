@@ -488,7 +488,8 @@ typedef enum CXOverloadCandidateSet_CandidateSetKind {
   CXOverloadCandidateSet_CSK_Normal,
   CXOverloadCandidateSet_CSK_Operator,
   CXOverloadCandidateSet_CSK_InitByUserDefinedConversion,
-  CXOverloadCandidateSet_CSK_InitByConstructor
+  CXOverloadCandidateSet_CSK_InitByConstructor,
+  CXOverloadCandidateSet_CSK_AddressOfOverloadSet
 } CXOverloadCandidateSet_CandidateSetKind;
 
 // An OverloadCandidateSet owns its candidates and the conversion sequences it slab-

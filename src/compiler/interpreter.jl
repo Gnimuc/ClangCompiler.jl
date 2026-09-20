@@ -47,12 +47,27 @@ function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_
     LLVM.InitializeAllAsmPrinters()
     default_args = get_default_args(; is_cxx, version, triple)
     builder = IncrementalCompilerBuilder()
-    SetCompilerArgs(builder, [default_args..., args...])
-    ci = CreateCpp(builder)
-    @check_ptrs ci
-    I = Interpreter(ci)
-    dispose(builder)
+    I = try
+        SetCompilerArgs(builder, [default_args..., args...])
+        ci = CreateCpp(builder)
+        @check_ptrs ci
+        # Under `-ftime-report` code generation times itself against the instance's timer
+        # group and never creates it; clang's own `cc1_main` does that before it runs anything.
+        getTimePasses(getCodeGenOpts(ci)) && !hasFrontendTimer(ci) && createFrontendTimer(ci)
+        Interpreter(ci)
+    finally
+        dispose(builder)
+    end
+    # The instance went to clang with the call, so there is nothing left to release here.
+    I.ptr == C_NULL && throw(ArgumentError(_no_interpreter_message(triple)))
     return CxxInterpreter(I)
+end
+
+function _no_interpreter_message(triple)
+    msg = "clang could not create an interpreter; its reason is on stderr above"
+    triple === nothing && return msg
+    return msg * ". An interpreter stands up a JIT for `triple = \"$triple\"`, which needs a backend " *
+           "this LLVM may not have; `create_parser` takes the same keyword and needs none"
 end
 
 """

@@ -109,7 +109,9 @@ typedef enum CXCallingConv_ {
   CXCallingConv_CC_AArch64VectorCall,
   CXCallingConv_CC_AArch64SVEPCS,
   CXCallingConv_CC_AMDGPUKernelCall,
-  CXCallingConv_CC_M68kRTD
+  CXCallingConv_CC_M68kRTD,
+  CXCallingConv_CC_PreserveNone,
+  CXCallingConv_CC_RISCVVectorCall
 } CXCallingConv_;
 
 // Mirrors clang::IfStatementKind (clang/Basic/Specifiers.h): whether an `if`
@@ -146,7 +148,9 @@ typedef enum CXParameterABI {
   CXParameterABI_SwiftIndirectResult,
   CXParameterABI_SwiftErrorResult,
   CXParameterABI_SwiftContext,
-  CXParameterABI_SwiftAsyncContext
+  CXParameterABI_SwiftAsyncContext,
+  CXParameterABI_HLSLOut,
+  CXParameterABI_HLSLInOut
 } CXParameterABI;
 
 // Mirrors clang::MSInheritanceModel (clang/Basic/Specifiers.h): the Microsoft C++ ABI

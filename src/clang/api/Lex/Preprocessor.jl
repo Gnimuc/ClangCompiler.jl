@@ -1740,8 +1740,8 @@ end
                            m::AbstractModule, diags::AbstractDiagnosticsEngine) -> Bool
 Return `true` when the check FAILED — `m` is not usable — and report a diagnostic naming
 the unmet requirement, the missing header or the shadowing module through `diags`. A module
-built by hand has no module map behind it, so whether it counts as available is
-host-decided.
+is born available, so one built by hand passes the check until something is required of it
+that `lang_opts` and `target` do not provide.
 """
 function checkModuleIsAvailable(lang_opts::AbstractLangOptions, target::AbstractTargetInfo, m::AbstractModule, diags::AbstractDiagnosticsEngine)
     @check_ptrs lang_opts target m diags

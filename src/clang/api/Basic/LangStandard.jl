@@ -213,10 +213,10 @@ languageToString(lang::CXLanguage) = get_string(clang_languageToString(lang))
     getDefaultLanguageStandard(lang::CXLanguage, triple::AbstractString) -> CXLangStandardKind
 Return the standard clang would pick for `lang` on `triple` when no `-std=` is given.
 
-`lang` must be neither `CXLanguage_Unknown` nor `CXLanguage_LLVM_IR`: clang answers both
-with `llvm_unreachable`, which aborts the process rather than returning.
+`lang` must be none of `CXLanguage_Unknown`, `CXLanguage_LLVM_IR` and `CXLanguage_CIR`: clang
+answers all three with `llvm_unreachable`, which aborts the process rather than returning.
 """
 function getDefaultLanguageStandard(lang::CXLanguage, triple::AbstractString)
-    @assert lang != CXLanguage_Unknown && lang != CXLanguage_LLVM_IR "no language standard is defined for $lang"
+    @assert !(lang in (CXLanguage_Unknown, CXLanguage_LLVM_IR, CXLanguage_CIR)) "no language standard is defined for $lang"
     return clang_getDefaultLanguageStandard(lang, triple)
 end

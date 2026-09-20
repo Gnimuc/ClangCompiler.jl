@@ -43,13 +43,17 @@ using Test
 
     @test CC.getModuleInputBufferName() == "<module-includes>"
 
-    # Neither availability nor the transition a failing requirement would drive is an
-    # answer here: markUnavailable reads bits a synthetic module never had a module map
-    # to set. Only the shape is asserted.
+    # A module is born available and importable: the constructor sets both bits. Requiring a
+    # feature this C++ instance has changes neither; requiring one it lacks clears the first
+    # and sets the second.
+    @test CC.isAvailable(root) == true
     @test CC.addRequirement(root, "cplusplus", true, lang_opts, target) === nothing
-    # A synthetic module has no module map, so isAvailable reads bits nothing ever set
-    # (CLAUDE.md records this class); only the shape of it is assertable here.
-    @test CC.isAvailable(root) isa Bool  # shape-only: nothing decides it — reads bits never set on a synthetic module
+    @test CC.isAvailable(root) == true
+    lacking = CC.Module_("MvLacking")
+    CC.addRequirement(lacking, "mv_no_such_feature", true, lang_opts, target)
+    @test CC.isAvailable(lacking) == false
+    @test CC.isUnimportable(lacking) == true
+    CC.dispose(lacking)
 
     text = CC.print(root, 0, false)
     @test text isa String

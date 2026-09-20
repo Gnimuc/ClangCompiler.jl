@@ -28,7 +28,7 @@ CXAccessSpecDecl clang_AccessSpecDecl_Create(CXASTContext C, CXAccessSpecifier A
                                              CXDeclContext DC, CXSourceLocation_ ASLoc,
                                              CXSourceLocation_ ColonLoc);
 
-CXAccessSpecDecl clang_AccessSpecDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXAccessSpecDecl clang_AccessSpecDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // CXXBaseSpecifier
 CXSourceRange_ clang_CXXBaseSpecifier_getSourceRange(CXCXXBaseSpecifier CXXBS);
@@ -593,7 +593,7 @@ CXMSVtorDispMode clang_CXXRecordDecl_getMSVtorDispMode(CXCXXRecordDecl CXXRD);
 // populates, so this segfaults on Itanium. The Julia wrapper asserts both.
 bool clang_CXXRecordDecl_nullFieldOffsetIsZero(CXCXXRecordDecl CXXRD);
 
-CXCXXRecordDecl clang_CXXRecordDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXCXXRecordDecl clang_CXXRecordDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // ExplicitSpecifier
 CXExplicitSpecKind clang_ExplicitSpecifier_getKind(CXExplicitSpecifier ES);
@@ -657,14 +657,14 @@ CXCXXDeductionGuideDecl clang_CXXDeductionGuideDecl_Create(
     CXSourceLocation_ EndLocation, CXCXXConstructorDecl Ctor, CXDeductionCandidate Kind);
 
 CXCXXDeductionGuideDecl clang_CXXDeductionGuideDecl_CreateDeserialized(CXASTContext C,
-                                                                       unsigned ID);
+                                                                       uint64_t ID);
 
 // RequiresExprBodyDecl
 CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_Create(CXASTContext C, CXDeclContext DC,
                                                          CXSourceLocation_ StartLoc);
 
 CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_CreateDeserialized(CXASTContext C,
-                                                                     unsigned ID);
+                                                                     uint64_t ID);
 
 // RequiresExprBodyDecl Cast
 CXDeclContext clang_RequiresExprBodyDecl_castToDeclContext(CXRequiresExprBodyDecl REBD);
@@ -679,7 +679,7 @@ clang_CXXMethodDecl_Create(CXASTContext C, CXCXXRecordDecl RD, CXSourceLocation_
                            bool isInline, CXConstexprSpecKind ConstexprKind,
                            CXSourceLocation_ EndLocation, CXExpr TrailingRequiresClause);
 
-CXCXXMethodDecl clang_CXXMethodDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXCXXMethodDecl clang_CXXMethodDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 bool clang_CXXMethodDecl_isStatic(CXCXXMethodDecl CXXMD);
 
@@ -892,7 +892,7 @@ CXCXXConstructorDecl clang_CXXConstructorDecl_Create(
 // AllocKind is the trailing-object bitmask CXXConstructorDecl serialises with: 0
 // allocates neither the inherited-constructor nor the explicit-specifier tail.
 CXCXXConstructorDecl clang_CXXConstructorDecl_CreateDeserialized(CXASTContext C,
-                                                                 unsigned ID,
+                                                                 uint64_t ID,
                                                                  uint64_t AllocKind);
 
 // CXXDestructorDecl
@@ -911,7 +911,7 @@ CXCXXDestructorDecl clang_CXXDestructorDecl_Create(
     bool isInline, bool isImplicitlyDeclared, CXConstexprSpecKind ConstexprKind,
     CXExpr TrailingRequiresClause);
 
-CXCXXDestructorDecl clang_CXXDestructorDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXCXXDestructorDecl clang_CXXDestructorDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // Records the deallocation function this destructor is paired with. Total: clang stores it
 // on the first declaration and keeps whatever is already there, so the call does nothing
@@ -946,7 +946,7 @@ CXCXXConversionDecl clang_CXXConversionDecl_Create(
     bool isInline, CXExplicitSpecifier ES, CXConstexprSpecKind ConstexprKind,
     CXSourceLocation_ EndLocation, CXExpr TrailingRequiresClause);
 
-CXCXXConversionDecl clang_CXXConversionDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXCXXConversionDecl clang_CXXConversionDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // LinkageSpecDecl
 typedef enum CXLinkageSpecLanguageIDs {
@@ -960,7 +960,7 @@ CXLinkageSpecDecl clang_LinkageSpecDecl_Create(CXASTContext C, CXDeclContext DC,
                                                CXLinkageSpecLanguageIDs Lang,
                                                bool HasBraces);
 
-CXLinkageSpecDecl clang_LinkageSpecDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXLinkageSpecDecl clang_LinkageSpecDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXLinkageSpecLanguageIDs clang_LinkageSpecDecl_getLanguage(CXLinkageSpecDecl LSD);
 
@@ -1010,7 +1010,7 @@ CXSourceLocation_ clang_UsingDirectiveDecl_getIdentLocation(CXUsingDirectiveDecl
 CXSourceRange_ clang_UsingDirectiveDecl_getSourceRange(CXUsingDirectiveDecl UDD);
 
 CXUsingDirectiveDecl clang_UsingDirectiveDecl_CreateDeserialized(CXASTContext C,
-                                                                 unsigned ID);
+                                                                 uint64_t ID);
 
 // NamespaceAliasDecl
 CXNamespaceAliasDecl clang_NamespaceAliasDecl_getCanonicalDecl(CXNamespaceAliasDecl NAD);
@@ -1035,7 +1035,7 @@ CXNamedDecl clang_NamespaceAliasDecl_getAliasedNamespace(CXNamespaceAliasDecl NA
 CXSourceRange_ clang_NamespaceAliasDecl_getSourceRange(CXNamespaceAliasDecl NAD);
 
 CXNamespaceAliasDecl clang_NamespaceAliasDecl_CreateDeserialized(CXASTContext C,
-                                                                 unsigned ID);
+                                                                 uint64_t ID);
 
 // LifetimeExtendedTemporaryDecl
 // The VarDecl (or, for a ctor-initializer, the FieldDecl) that extends the
@@ -1081,7 +1081,7 @@ clang_LifetimeExtendedTemporaryDecl_Create(CXExpr Temp, CXValueDecl EDec,
                                            unsigned Mangling);
 
 CXLifetimeExtendedTemporaryDecl
-clang_LifetimeExtendedTemporaryDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+clang_LifetimeExtendedTemporaryDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // UsingShadowDecl
 CXNamedDecl clang_UsingShadowDecl_getTargetDecl(CXUsingShadowDecl USD);
@@ -1106,7 +1106,7 @@ CXUsingShadowDecl clang_UsingShadowDecl_Create(CXASTContext C, CXDeclContext DC,
                                                CXBaseUsingDecl Introducer,
                                                CXNamedDecl Target);
 
-CXUsingShadowDecl clang_UsingShadowDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXUsingShadowDecl clang_UsingShadowDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // BaseUsingDecl
 // shadows: two-call protocol (shadow_iterator is forward-only).
@@ -1145,7 +1145,7 @@ CXSourceRange_ clang_UsingDecl_getSourceRange(CXUsingDecl UD);
 
 CXUsingDecl clang_UsingDecl_getCanonicalDecl(CXUsingDecl UD);
 
-CXUsingDecl clang_UsingDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXUsingDecl clang_UsingDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // ConstructorUsingShadowDecl
 CXUsingDecl
@@ -1181,7 +1181,7 @@ clang_ConstructorUsingShadowDecl_Create(CXASTContext C, CXDeclContext DC,
                                         CXNamedDecl Target, bool IsVirtual);
 
 CXConstructorUsingShadowDecl
-clang_ConstructorUsingShadowDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+clang_ConstructorUsingShadowDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // UsingEnumDecl
 CXSourceLocation_ clang_UsingEnumDecl_getUsingLoc(CXUsingEnumDecl UED);
@@ -1225,7 +1225,7 @@ CXUsingEnumDecl clang_UsingEnumDecl_Create(CXASTContext C, CXDeclContext DC,
                                            CXSourceLocation_ EnumL, CXSourceLocation_ NameL,
                                            CXTypeSourceInfo EnumType);
 
-CXUsingEnumDecl clang_UsingEnumDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXUsingEnumDecl clang_UsingEnumDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // UsingPackDecl
 CXNamedDecl clang_UsingPackDecl_getInstantiatedFromUsingDecl(CXUsingPackDecl UPD);
@@ -1247,7 +1247,7 @@ CXUsingPackDecl clang_UsingPackDecl_Create(CXASTContext C, CXDeclContext DC,
                                            CXNamedDecl InstantiatedFrom,
                                            CXNamedDecl *UsingDecls, unsigned NumUsingDecls);
 
-CXUsingPackDecl clang_UsingPackDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+CXUsingPackDecl clang_UsingPackDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                        unsigned NumExpansions);
 
 // UnresolvedUsingValueDecl
@@ -1283,7 +1283,7 @@ CXUnresolvedUsingValueDecl
 clang_UnresolvedUsingValueDecl_getCanonicalDecl(CXUnresolvedUsingValueDecl UUVD);
 
 CXUnresolvedUsingValueDecl clang_UnresolvedUsingValueDecl_CreateDeserialized(CXASTContext C,
-                                                                             unsigned ID);
+                                                                             uint64_t ID);
 
 // UnresolvedUsingTypenameDecl
 CXSourceLocation_
@@ -1313,7 +1313,7 @@ CXUnresolvedUsingTypenameDecl
 clang_UnresolvedUsingTypenameDecl_getCanonicalDecl(CXUnresolvedUsingTypenameDecl UUTD);
 
 CXUnresolvedUsingTypenameDecl
-clang_UnresolvedUsingTypenameDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+clang_UnresolvedUsingTypenameDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // UnresolvedUsingIfExistsDecl
 // The whole class: the marker declaration Sema builds when a using-declaration marked
@@ -1324,7 +1324,7 @@ clang_UnresolvedUsingIfExistsDecl_Create(CXASTContext C, CXDeclContext DC,
                                          CXSourceLocation_ Loc, CXDeclarationName Name);
 
 CXUnresolvedUsingIfExistsDecl
-clang_UnresolvedUsingIfExistsDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+clang_UnresolvedUsingIfExistsDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // StaticAssertDecl
 CXStaticAssertDecl clang_StaticAssertDecl_Create(CXASTContext C, CXDeclContext DC,
@@ -1333,7 +1333,7 @@ CXStaticAssertDecl clang_StaticAssertDecl_Create(CXASTContext C, CXDeclContext D
                                                  CXSourceLocation_ RParenLoc,
                                                  bool Failed);
 
-CXStaticAssertDecl clang_StaticAssertDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXStaticAssertDecl clang_StaticAssertDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 CXExpr clang_StaticAssertDecl_getAssertExpr(CXStaticAssertDecl SAD);
 
@@ -1365,7 +1365,7 @@ void clang_BindingDecl_setDecomposedDecl(CXBindingDecl BD, CXValueDecl Decompose
 CXBindingDecl clang_BindingDecl_Create(CXASTContext C, CXDeclContext DC,
                                        CXSourceLocation_ IdLoc, CXIdentifierInfo Id);
 
-CXBindingDecl clang_BindingDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXBindingDecl clang_BindingDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // DecompositionDecl
 // bindings: random-access (the BindingDecl* array is a trailing object).
@@ -1381,7 +1381,7 @@ clang_DecompositionDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocatio
                                CXTypeSourceInfo TInfo, CXStorageClass S,
                                CXBindingDecl *Bindings, unsigned NumBindings);
 
-CXDecompositionDecl clang_DecompositionDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+CXDecompositionDecl clang_DecompositionDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                                unsigned NumBindings);
 
 // MSPropertyDecl
@@ -1404,7 +1404,7 @@ CXMSPropertyDecl clang_MSPropertyDecl_Create(CXASTContext C, CXDeclContext DC,
                                              CXIdentifierInfo Getter,
                                              CXIdentifierInfo Setter);
 
-CXMSPropertyDecl clang_MSPropertyDecl_CreateDeserialized(CXASTContext C, unsigned ID);
+CXMSPropertyDecl clang_MSPropertyDecl_CreateDeserialized(CXASTContext C, uint64_t ID);
 
 // MSGuidDecl
 // printName

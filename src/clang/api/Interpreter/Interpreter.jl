@@ -184,9 +184,13 @@ end
     CompileDtorCall(x::AbstractInterpreter, rd::AbstractCXXRecordDecl) -> UInt64
 Compile the destructor call for the record and return its executor address. Records whose
 destructor is irrelevant (trivial) yield 0, as do failures (logged to stderr).
+
+`rd` must have a definition: clang asks the record whether its destructor is irrelevant
+before anything else, which reads definition data a forward declaration does not have.
 """
 function CompileDtorCall(x::AbstractInterpreter, rd::AbstractCXXRecordDecl)
     @check_ptrs x rd
+    @assert hasDefinition(rd) "the record must have a definition"
     return clang_Interpreter_CompileDtorCall(x, rd)
 end
 

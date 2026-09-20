@@ -1139,6 +1139,7 @@ end
     @test darg.ptr != C_NULL
     CC.removeDefaultArgument(nttp)
     @test !CC.hasDefaultArgument(nttp)
+    @test CC.getDefaultArgument(nttp).ptr == C_NULL   # nothing to read, and no abort reading it
     CC.setDefaultArgument(nttp, darg)
     @test CC.hasDefaultArgument(nttp)
     @test CC.getDefaultArgument(nttp).ptr == darg.ptr
@@ -1785,9 +1786,35 @@ end
     @test vfrom.ptr == CC.getSpecializedTemplateOrPartial(vtsd).ptr
 
     # ---------- candidates of a dependent function-template specialization ----------
-    # A NULL info is refused rather than dereferenced. A non-null one is not reachable
-    # from this snippet: getDependentSpecializationInfo is null on every FunctionDecl
-    # the TU produces, including `friend void tp_free<>(TpH)`.
+    # `friend void tp_free<>(TpH)` cannot pick its specialization while TpH is a parameter,
+    # so inside the class template's pattern the friend carries the info and its candidate
+    # list. Instantiating the holder resolves it, which is why the same friend reached
+    # through TpFriendHolder<int> has no info and a primary template instead.
+    of_kind(kind) = first(d for d in CC.get_decls(f) if CC.getDeclKindName(d) == kind)
+    @test f(I, "tp_free")
+    tp_free_td = CC.FunctionTemplateDecl(of_kind("FunctionTemplate"))
+    @test f(I, "TpFriendHolder")
+    ctd_fh = CC.ClassTemplateDecl(of_kind("ClassTemplate"))
+    function friend_in(rec)
+        friend = only(d for d in CC.decls(CC.castToDeclContext(rec)) if d isa CC.FriendDecl)
+        return CC.FunctionDecl(CC.getFriendDecl(friend))
+    end
+    dep_friend = friend_in(CC.getTemplatedDecl(ctd_fh))
+    @test CC.getTemplatedKind(dep_friend) == K.CXFunctionDecl_TK_DependentFunctionTemplateSpecialization
+    dep_info = CC.getDependentSpecializationInfo(dep_friend)
+    @test !CC.is_null_handle(dep_info)
+    candidates = CC.getCandidates(dep_info)
+    @test [CC.getName(c) for c in candidates] == ["tp_free"]
+    @test only(candidates).ptr == tp_free_td.ptr
+
+    @test f(I, "tp_fh_use")
+    fh_spec = CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(CC.VarDecl(get_decl(f)))))
+    inst_friend = friend_in(fh_spec)
+    @test CC.getTemplatedKind(inst_friend) == K.CXFunctionDecl_TK_FunctionTemplateSpecialization
+    @test CC.is_null_handle(CC.getDependentSpecializationInfo(inst_friend))
+    @test CC.getPrimaryTemplate(inst_friend).ptr == tp_free_td.ptr
+
+    # a NULL info is refused rather than dereferenced
     @test_throws AssertionError CC.getCandidates(CC.DependentFunctionTemplateSpecializationInfo(C_NULL))
 
     # ---------- ImplicitConceptSpecializationDecl, built rather than found ----------

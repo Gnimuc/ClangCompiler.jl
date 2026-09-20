@@ -1517,7 +1517,10 @@ typedef enum CXVectorKind {
   CXVectorKind_SveFixedLengthData,
   CXVectorKind_SveFixedLengthPredicate,
   CXVectorKind_RVVFixedLengthData,
-  CXVectorKind_RVVFixedLengthMask
+  CXVectorKind_RVVFixedLengthMask,
+  CXVectorKind_RVVFixedLengthMask_1,
+  CXVectorKind_RVVFixedLengthMask_2,
+  CXVectorKind_RVVFixedLengthMask_4
 } CXVectorKind;
 
 // VectorType

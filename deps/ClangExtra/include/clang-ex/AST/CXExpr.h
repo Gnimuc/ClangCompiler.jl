@@ -252,7 +252,8 @@ typedef enum CXStringLiteralKind {
   CXStringLiteralKind_UTF8,
   CXStringLiteralKind_UTF16,
   CXStringLiteralKind_UTF32,
-  CXStringLiteralKind_Unevaluated
+  CXStringLiteralKind_Unevaluated,
+  CXStringLiteralKind_Binary
 } CXStringLiteralKind;
 
 // mirrors clang::PredefinedIdentKind (clang/AST/Expr.h; synced by static_assert

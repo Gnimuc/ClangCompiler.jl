@@ -354,6 +354,8 @@ ENUM_SYNC(CXCastKind_CK_BuiltinFnToFnPtr, clang::CK_BuiltinFnToFnPtr);
 ENUM_SYNC(CXCastKind_CK_ZeroToOCLOpaqueType, clang::CK_ZeroToOCLOpaqueType);
 ENUM_SYNC(CXCastKind_CK_AddressSpaceConversion, clang::CK_AddressSpaceConversion);
 ENUM_SYNC(CXCastKind_CK_IntToOCLSampler, clang::CK_IntToOCLSampler);
+ENUM_SYNC(CXCastKind_CK_HLSLVectorTruncation, clang::CK_HLSLVectorTruncation);
+ENUM_SYNC(CXCastKind_CK_HLSLArrayRValue, clang::CK_HLSLArrayRValue);
 
 // clang/AST/OperationKinds.def: enum BinaryOperatorKind
 ENUM_SYNC(CXBinaryOperatorKind_BO_PtrMemD, clang::BO_PtrMemD);
@@ -488,6 +490,8 @@ ENUM_SYNC(CXCallingConv_CC_AArch64VectorCall, clang::CC_AArch64VectorCall);
 ENUM_SYNC(CXCallingConv_CC_AArch64SVEPCS, clang::CC_AArch64SVEPCS);
 ENUM_SYNC(CXCallingConv_CC_AMDGPUKernelCall, clang::CC_AMDGPUKernelCall);
 ENUM_SYNC(CXCallingConv_CC_M68kRTD, clang::CC_M68kRTD);
+ENUM_SYNC(CXCallingConv_CC_PreserveNone, clang::CC_PreserveNone);
+ENUM_SYNC(CXCallingConv_CC_RISCVVectorCall, clang::CC_RISCVVectorCall);
 
 // clang/Basic/ExceptionSpecificationType.h: enum ExceptionSpecificationType (backfill: this mirror previously had NO sync table)
 ENUM_SYNC(CXExceptionSpecificationType_EST_None, clang::EST_None);
@@ -508,6 +512,7 @@ ENUM_SYNC(CXStringLiteralKind_UTF8, clang::StringLiteralKind::UTF8);
 ENUM_SYNC(CXStringLiteralKind_UTF16, clang::StringLiteralKind::UTF16);
 ENUM_SYNC(CXStringLiteralKind_UTF32, clang::StringLiteralKind::UTF32);
 ENUM_SYNC(CXStringLiteralKind_Unevaluated, clang::StringLiteralKind::Unevaluated);
+ENUM_SYNC(CXStringLiteralKind_Binary, clang::StringLiteralKind::Binary);
 ENUM_SYNC(CXPredefinedIdentKind_Func, clang::PredefinedIdentKind::Func);
 ENUM_SYNC(CXPredefinedIdentKind_Function, clang::PredefinedIdentKind::Function);
 ENUM_SYNC(CXPredefinedIdentKind_LFunction, clang::PredefinedIdentKind::LFunction);
@@ -666,6 +671,7 @@ ENUM_SYNC(CXTargetInfo_X86_64ABIBuiltinVaList, clang::TargetInfo::X86_64ABIBuilt
 ENUM_SYNC(CXTargetInfo_AAPCSABIBuiltinVaList, clang::TargetInfo::AAPCSABIBuiltinVaList);
 ENUM_SYNC(CXTargetInfo_SystemZBuiltinVaList, clang::TargetInfo::SystemZBuiltinVaList);
 ENUM_SYNC(CXTargetInfo_HexagonBuiltinVaList, clang::TargetInfo::HexagonBuiltinVaList);
+ENUM_SYNC(CXTargetInfo_XtensaABIBuiltinVaList, clang::TargetInfo::XtensaABIBuiltinVaList);
 
 // clang/Basic/SourceManager.h: enum SrcMgr::CharacteristicKind
 ENUM_SYNC(CXCharacteristicKind_C_User, clang::SrcMgr::C_User);
@@ -986,6 +992,9 @@ ENUM_SYNC(CXVectorKind_SveFixedLengthData, clang::VectorKind::SveFixedLengthData
 ENUM_SYNC(CXVectorKind_SveFixedLengthPredicate, clang::VectorKind::SveFixedLengthPredicate);
 ENUM_SYNC(CXVectorKind_RVVFixedLengthData, clang::VectorKind::RVVFixedLengthData);
 ENUM_SYNC(CXVectorKind_RVVFixedLengthMask, clang::VectorKind::RVVFixedLengthMask);
+ENUM_SYNC(CXVectorKind_RVVFixedLengthMask_1, clang::VectorKind::RVVFixedLengthMask_1);
+ENUM_SYNC(CXVectorKind_RVVFixedLengthMask_2, clang::VectorKind::RVVFixedLengthMask_2);
+ENUM_SYNC(CXVectorKind_RVVFixedLengthMask_4, clang::VectorKind::RVVFixedLengthMask_4);
 
 // clang/AST/Comment.h: enum clang::comments::CommandMarkerKind
 ENUM_SYNC(CXCommandMarkerKind_CMK_Backslash, clang::comments::CMK_Backslash);
@@ -1117,6 +1126,7 @@ ENUM_SYNC(CXVariableCaptureKind_VCK_VLAType, clang::CapturedStmt::VCK_VLAType);
 // clang/Basic/Builtins.h: enum BuiltinTemplateKind : int
 ENUM_SYNC(CXBuiltinTemplateKind_BTK__make_integer_seq, clang::BTK__make_integer_seq);
 ENUM_SYNC(CXBuiltinTemplateKind_BTK__type_pack_element, clang::BTK__type_pack_element);
+ENUM_SYNC(CXBuiltinTemplateKind_BTK__builtin_common_type, clang::BTK__builtin_common_type);
 
 // clang/Basic/Specifiers.h: enum class IfStatementKind : unsigned
 ENUM_SYNC(CXIfStatementKind_Ordinary, clang::IfStatementKind::Ordinary);
@@ -1222,6 +1232,8 @@ ENUM_SYNC(CXParameterABI_SwiftIndirectResult, clang::ParameterABI::SwiftIndirect
 ENUM_SYNC(CXParameterABI_SwiftErrorResult, clang::ParameterABI::SwiftErrorResult);
 ENUM_SYNC(CXParameterABI_SwiftContext, clang::ParameterABI::SwiftContext);
 ENUM_SYNC(CXParameterABI_SwiftAsyncContext, clang::ParameterABI::SwiftAsyncContext);
+ENUM_SYNC(CXParameterABI_HLSLOut, clang::ParameterABI::HLSLOut);
+ENUM_SYNC(CXParameterABI_HLSLInOut, clang::ParameterABI::HLSLInOut);
 
 // clang/Basic/TargetInfo.h: enum class clang::FloatModeKind (a bitmask; the
 // LLVM_MARK_AS_BITMASK_ENUM alias enumerator is omitted from the mirror)
@@ -1483,6 +1495,17 @@ ENUM_SYNC(CXCommentKind_TParamCommandComment,
 ENUM_SYNC(CXCommentKind_ParamCommandComment,
           clang::comments::CommentKind::ParamCommandComment);
 
+// clang/AST/TemplateName.h: enum clang::TemplateName::NameKind
+ENUM_SYNC(CXTemplateName_Template, clang::TemplateName::Template);
+ENUM_SYNC(CXTemplateName_OverloadedTemplate, clang::TemplateName::OverloadedTemplate);
+ENUM_SYNC(CXTemplateName_AssumedTemplate, clang::TemplateName::AssumedTemplate);
+ENUM_SYNC(CXTemplateName_QualifiedTemplate, clang::TemplateName::QualifiedTemplate);
+ENUM_SYNC(CXTemplateName_DependentTemplate, clang::TemplateName::DependentTemplate);
+ENUM_SYNC(CXTemplateName_SubstTemplateTemplateParm, clang::TemplateName::SubstTemplateTemplateParm);
+ENUM_SYNC(CXTemplateName_SubstTemplateTemplateParmPack, clang::TemplateName::SubstTemplateTemplateParmPack);
+ENUM_SYNC(CXTemplateName_UsingTemplate, clang::TemplateName::UsingTemplate);
+ENUM_SYNC(CXTemplateName_DeducedTemplate, clang::TemplateName::DeducedTemplate);
+
 // clang/AST/TemplateName.h: enum class clang::TemplateName::Qualified
 ENUM_SYNC(CXTemplateName_Qualified_None, clang::TemplateName::Qualified::None);
 ENUM_SYNC(CXTemplateName_Qualified_AsWritten, clang::TemplateName::Qualified::AsWritten);
@@ -1504,6 +1527,7 @@ ENUM_SYNC(CXMSVCMajorVersion_MSVC2019, clang::LangOptions::MSVC2019);
 ENUM_SYNC(CXMSVCMajorVersion_MSVC2019_5, clang::LangOptions::MSVC2019_5);
 ENUM_SYNC(CXMSVCMajorVersion_MSVC2019_8, clang::LangOptions::MSVC2019_8);
 ENUM_SYNC(CXMSVCMajorVersion_MSVC2022_3, clang::LangOptions::MSVC2022_3);
+ENUM_SYNC(CXMSVCMajorVersion_MSVC2022_9, clang::LangOptions::MSVC2022_9);
 
 // clang/Basic/LangOptions.h: enum clang::LangOptions::FPExceptionModeKind
 ENUM_SYNC(CXFPExceptionModeKind_FPE_Ignore, clang::LangOptions::FPE_Ignore);
@@ -1634,6 +1658,8 @@ ENUM_SYNC(CXOverloadCandidateSet_CSK_InitByUserDefinedConversion,
           clang::OverloadCandidateSet::CSK_InitByUserDefinedConversion);
 ENUM_SYNC(CXOverloadCandidateSet_CSK_InitByConstructor,
           clang::OverloadCandidateSet::CSK_InitByConstructor);
+ENUM_SYNC(CXOverloadCandidateSet_CSK_AddressOfOverloadSet,
+          clang::OverloadCandidateSet::CSK_AddressOfOverloadSet);
 
 // clang/Sema/Template.h: enum class TemplateSubstitutionKind : char
 ENUM_SYNC(CXTemplateSubstitutionKind_Specialization,
@@ -2653,3 +2679,227 @@ ENUM_SYNC(CXSystemSymbolFilterKind_All,
           clang::index::IndexingOptions::SystemSymbolFilterKind::All);
 
 #undef ENUM_SYNC
+
+// ENUM_SYNC proves that each enumerator a mirror lists has upstream's value. It cannot see an
+// enumerator upstream has and the mirror lacks, because nothing here names it -- and a value
+// without a name reaches Julia as an enum outside its own range. A switch with no default
+// does see it: -Wswitch names the enumerator that has no case, and it is an error below. So
+// each function has to list every enumerator of its enum, and stops compiling on the LLVM
+// bump that adds one.
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wswitch"
+#endif
+namespace {
+[[maybe_unused]] void mirror_is_exhaustive(const clang::CallingConv V) {
+  switch (V) {
+  case clang::CC_C:
+  case clang::CC_X86StdCall:
+  case clang::CC_X86FastCall:
+  case clang::CC_X86ThisCall:
+  case clang::CC_X86VectorCall:
+  case clang::CC_X86Pascal:
+  case clang::CC_Win64:
+  case clang::CC_X86_64SysV:
+  case clang::CC_X86RegCall:
+  case clang::CC_AAPCS:
+  case clang::CC_AAPCS_VFP:
+  case clang::CC_IntelOclBicc:
+  case clang::CC_SpirFunction:
+  case clang::CC_OpenCLKernel:
+  case clang::CC_Swift:
+  case clang::CC_SwiftAsync:
+  case clang::CC_PreserveMost:
+  case clang::CC_PreserveAll:
+  case clang::CC_AArch64VectorCall:
+  case clang::CC_AArch64SVEPCS:
+  case clang::CC_AMDGPUKernelCall:
+  case clang::CC_M68kRTD:
+  case clang::CC_PreserveNone:
+  case clang::CC_RISCVVectorCall:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::ParameterABI V) {
+  switch (V) {
+  case clang::ParameterABI::Ordinary:
+  case clang::ParameterABI::SwiftIndirectResult:
+  case clang::ParameterABI::SwiftErrorResult:
+  case clang::ParameterABI::SwiftContext:
+  case clang::ParameterABI::SwiftAsyncContext:
+  case clang::ParameterABI::HLSLOut:
+  case clang::ParameterABI::HLSLInOut:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::TemplateName::NameKind V) {
+  switch (V) {
+  case clang::TemplateName::Template:
+  case clang::TemplateName::OverloadedTemplate:
+  case clang::TemplateName::AssumedTemplate:
+  case clang::TemplateName::QualifiedTemplate:
+  case clang::TemplateName::DependentTemplate:
+  case clang::TemplateName::SubstTemplateTemplateParm:
+  case clang::TemplateName::SubstTemplateTemplateParmPack:
+  case clang::TemplateName::UsingTemplate:
+  case clang::TemplateName::DeducedTemplate:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::StringLiteralKind V) {
+  switch (V) {
+  case clang::StringLiteralKind::Ordinary:
+  case clang::StringLiteralKind::Wide:
+  case clang::StringLiteralKind::UTF8:
+  case clang::StringLiteralKind::UTF16:
+  case clang::StringLiteralKind::UTF32:
+  case clang::StringLiteralKind::Unevaluated:
+  case clang::StringLiteralKind::Binary:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::BuiltinTemplateKind V) {
+  switch (V) {
+  case clang::BTK__make_integer_seq:
+  case clang::BTK__type_pack_element:
+  case clang::BTK__builtin_common_type:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::VectorKind V) {
+  switch (V) {
+  case clang::VectorKind::Generic:
+  case clang::VectorKind::AltiVecVector:
+  case clang::VectorKind::AltiVecPixel:
+  case clang::VectorKind::AltiVecBool:
+  case clang::VectorKind::Neon:
+  case clang::VectorKind::NeonPoly:
+  case clang::VectorKind::SveFixedLengthData:
+  case clang::VectorKind::SveFixedLengthPredicate:
+  case clang::VectorKind::RVVFixedLengthData:
+  case clang::VectorKind::RVVFixedLengthMask:
+  case clang::VectorKind::RVVFixedLengthMask_1:
+  case clang::VectorKind::RVVFixedLengthMask_2:
+  case clang::VectorKind::RVVFixedLengthMask_4:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::TargetInfo::BuiltinVaListKind V) {
+  switch (V) {
+  case clang::TargetInfo::CharPtrBuiltinVaList:
+  case clang::TargetInfo::VoidPtrBuiltinVaList:
+  case clang::TargetInfo::AArch64ABIBuiltinVaList:
+  case clang::TargetInfo::PNaClABIBuiltinVaList:
+  case clang::TargetInfo::PowerABIBuiltinVaList:
+  case clang::TargetInfo::X86_64ABIBuiltinVaList:
+  case clang::TargetInfo::AAPCSABIBuiltinVaList:
+  case clang::TargetInfo::SystemZBuiltinVaList:
+  case clang::TargetInfo::HexagonBuiltinVaList:
+  case clang::TargetInfo::XtensaABIBuiltinVaList:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::LangOptions::MSVCMajorVersion V) {
+  switch (V) {
+  case clang::LangOptions::MSVC2010:
+  case clang::LangOptions::MSVC2012:
+  case clang::LangOptions::MSVC2013:
+  case clang::LangOptions::MSVC2015:
+  case clang::LangOptions::MSVC2017:
+  case clang::LangOptions::MSVC2017_5:
+  case clang::LangOptions::MSVC2017_7:
+  case clang::LangOptions::MSVC2019:
+  case clang::LangOptions::MSVC2019_5:
+  case clang::LangOptions::MSVC2019_8:
+  case clang::LangOptions::MSVC2022_3:
+  case clang::LangOptions::MSVC2022_9:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::OverloadCandidateSet::CandidateSetKind V) {
+  switch (V) {
+  case clang::OverloadCandidateSet::CSK_Normal:
+  case clang::OverloadCandidateSet::CSK_Operator:
+  case clang::OverloadCandidateSet::CSK_InitByUserDefinedConversion:
+  case clang::OverloadCandidateSet::CSK_InitByConstructor:
+  case clang::OverloadCandidateSet::CSK_AddressOfOverloadSet:
+    break;
+  }
+}
+[[maybe_unused]] void mirror_is_exhaustive(const clang::CastKind V) {
+  switch (V) {
+  case clang::CK_Dependent:
+  case clang::CK_BitCast:
+  case clang::CK_LValueBitCast:
+  case clang::CK_LValueToRValueBitCast:
+  case clang::CK_LValueToRValue:
+  case clang::CK_NoOp:
+  case clang::CK_BaseToDerived:
+  case clang::CK_DerivedToBase:
+  case clang::CK_UncheckedDerivedToBase:
+  case clang::CK_Dynamic:
+  case clang::CK_ToUnion:
+  case clang::CK_ArrayToPointerDecay:
+  case clang::CK_FunctionToPointerDecay:
+  case clang::CK_NullToPointer:
+  case clang::CK_NullToMemberPointer:
+  case clang::CK_BaseToDerivedMemberPointer:
+  case clang::CK_DerivedToBaseMemberPointer:
+  case clang::CK_MemberPointerToBoolean:
+  case clang::CK_ReinterpretMemberPointer:
+  case clang::CK_UserDefinedConversion:
+  case clang::CK_ConstructorConversion:
+  case clang::CK_IntegralToPointer:
+  case clang::CK_PointerToIntegral:
+  case clang::CK_PointerToBoolean:
+  case clang::CK_ToVoid:
+  case clang::CK_MatrixCast:
+  case clang::CK_VectorSplat:
+  case clang::CK_IntegralCast:
+  case clang::CK_IntegralToBoolean:
+  case clang::CK_IntegralToFloating:
+  case clang::CK_FloatingToFixedPoint:
+  case clang::CK_FixedPointToFloating:
+  case clang::CK_FixedPointCast:
+  case clang::CK_FixedPointToIntegral:
+  case clang::CK_IntegralToFixedPoint:
+  case clang::CK_FixedPointToBoolean:
+  case clang::CK_FloatingToIntegral:
+  case clang::CK_FloatingToBoolean:
+  case clang::CK_BooleanToSignedIntegral:
+  case clang::CK_FloatingCast:
+  case clang::CK_CPointerToObjCPointerCast:
+  case clang::CK_BlockPointerToObjCPointerCast:
+  case clang::CK_AnyPointerToBlockPointerCast:
+  case clang::CK_ObjCObjectLValueCast:
+  case clang::CK_FloatingRealToComplex:
+  case clang::CK_FloatingComplexToReal:
+  case clang::CK_FloatingComplexToBoolean:
+  case clang::CK_FloatingComplexCast:
+  case clang::CK_FloatingComplexToIntegralComplex:
+  case clang::CK_IntegralRealToComplex:
+  case clang::CK_IntegralComplexToReal:
+  case clang::CK_IntegralComplexToBoolean:
+  case clang::CK_IntegralComplexCast:
+  case clang::CK_IntegralComplexToFloatingComplex:
+  case clang::CK_ARCProduceObject:
+  case clang::CK_ARCConsumeObject:
+  case clang::CK_ARCReclaimReturnedObject:
+  case clang::CK_ARCExtendBlockObject:
+  case clang::CK_AtomicToNonAtomic:
+  case clang::CK_NonAtomicToAtomic:
+  case clang::CK_CopyAndAutoreleaseBlockObject:
+  case clang::CK_BuiltinFnToFnPtr:
+  case clang::CK_ZeroToOCLOpaqueType:
+  case clang::CK_AddressSpaceConversion:
+  case clang::CK_IntToOCLSampler:
+  case clang::CK_HLSLVectorTruncation:
+  case clang::CK_HLSLArrayRValue:
+    break;
+  }
+}
+} // namespace
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+

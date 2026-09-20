@@ -291,8 +291,8 @@ unsigned clang_TargetInfo_getDefaultAlignForAttributeAligned(CXTargetInfo_ TI) {
   return reinterpret_cast<clang::TargetInfo *>(TI)->getDefaultAlignForAttributeAligned();
 }
 
-unsigned clang_TargetInfo_getMinGlobalAlign(CXTargetInfo_ TI, uint64_t Size) {
-  return reinterpret_cast<clang::TargetInfo *>(TI)->getMinGlobalAlign(Size, false);
+unsigned clang_TargetInfo_getMinGlobalAlign(CXTargetInfo_ TI, uint64_t Size, bool HasNonWeakDef) {
+  return reinterpret_cast<clang::TargetInfo *>(TI)->getMinGlobalAlign(Size, HasNonWeakDef);
 }
 
 unsigned clang_TargetInfo_getNewAlign(CXTargetInfo_ TI) {

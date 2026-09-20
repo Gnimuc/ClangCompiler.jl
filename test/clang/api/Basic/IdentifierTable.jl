@@ -105,17 +105,16 @@ using Test
     @test CC.isExplicitGlobalModule(root) == false
     @test CC.isImplicitGlobalModule(root) == false
     @test CC.isPrivateModule(root) == false
-    # last of the synthetic-module bits: a module built without a module map has no
-    # unimportable reason recorded either, so there is nothing to read back
-    @test CC.isUnimportable(root) isa Bool  # shape-only: nothing decides it — never set on a module built without a module map
-    # A synthetic module has no module map, so isAvailable reads bits nothing ever set.
-    # The value is not the host's answer to a question -- there is no answer, which is
-    # why only the shape is asserted (CLAUDE.md records this class).
-    @test CC.isAvailable(root) isa Bool  # shape-only: nothing decides it — reads bits never set on a synthetic module
+    # the constructor sets both of these, so a module nothing has been required of is
+    # importable and available
+    @test CC.isUnimportable(root) == false
+    @test CC.isAvailable(root) == true
     @test CC.isSubModule(root) == false
-    # framework membership walks to the top-level module, whose framework bits a
-    # synthetic module never had a module map to set — assert the shape, not the value
-    @test CC.isPartOfFramework(root) isa Bool  # shape-only: nothing decides it — walks to a top-level module whose framework bits were never set
+    # framework membership walks the parents for a bit the constructor takes as an argument
+    @test CC.isPartOfFramework(root) == false
+    framework = CC.Module_("TopFramework"; is_framework=true)
+    @test CC.isPartOfFramework(framework) == true
+    CC.dispose(framework)
     @test CC.isSubFramework(root) == false
     @test CC.isModulePartition(root) == false
     @test CC.isModuleImplementation(root) == false

@@ -304,7 +304,7 @@ bool clang_Decl_isFromASTFile(CXDecl D);
 
 // Both IDs live in the words the AST reader writes in front of a deserialized
 // Decl; clang returns 0 for a decl that was parsed instead of deserialized.
-unsigned clang_Decl_getGlobalID(CXDecl D);
+uint64_t clang_Decl_getGlobalID(CXDecl D);
 
 unsigned clang_Decl_getOwningModuleID(CXDecl D);
 

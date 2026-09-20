@@ -60,3 +60,48 @@ end
     LLVM.dispose(lctx)
     dispose(ci)
 end
+
+@testset "EmitBackendOutput under -ftime-report needs the frontend timer" begin
+    # The flag has the pipeline time itself against the instance's timer group, which only
+    # createFrontendTimer creates. A parser generates no code, so nothing has made one.
+    P = ClangCompiler.create_parser(["-ftime-report"])
+    ci = CC.get_instance(P)
+    opts = CC.getCodeGenOpts(ci)
+    @test CC.getTimePasses(opts)
+    @test !CC.hasFrontendTimer(ci)
+    lctx = LLVM.Context()
+    empty = LLVM.Module("beu_timed_empty")
+    out = joinpath(mktempdir(), "timed.ll")
+    @test_throws AssertionError CC.EmitBackendOutput(ci, empty, LX.CXBackendAction_Backend_EmitLL, out)
+    CC.setTimePasses(opts, false)
+    @test !CC.getTimePasses(opts)
+    CC.setTimePasses(opts, true)
+    @test CC.getTimePasses(opts)
+    LLVM.dispose(empty)
+    LLVM.dispose(lctx)
+    dispose(P)
+
+    # An interpreter was given its timer when it was built, so its own module goes through
+    # the timed pipeline. It is left undisposed for the ownership reason given above, which
+    # also means its report is never printed.
+    J = create_interpreter(["-ftime-report"])
+    mod = CC.getModule(CC.parse(J, "extern \"C\" int beu_timed(int a) { return a; }"))
+    @test CC.hasFrontendTimer(CC.get_instance(J))
+    @test CC.EmitBackendOutput(CC.get_instance(J), mod, LX.CXBackendAction_Backend_EmitLL, out)
+    @test occursin("beu_timed", read(out, String))
+end
+
+@testset "the drivers give an instance its timer only under -ftime-report" begin
+    plain = create_interpreter(String[])
+    @test !CC.getTimePasses(CC.getCodeGenOpts(CC.get_instance(plain)))
+    @test !CC.hasFrontendTimer(CC.get_instance(plain))
+    dispose(plain)
+    # the report is written to stderr when the instance is released
+    redirect_stderr(devnull) do
+        timed = create_interpreter(["-ftime-report"])
+        @test CC.getTimePasses(CC.getCodeGenOpts(CC.get_instance(timed)))
+        @test CC.hasFrontendTimer(CC.get_instance(timed))
+        dispose(timed)
+    end
+end
+

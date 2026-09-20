@@ -124,7 +124,9 @@ unsigned clang_IdentifierInfo_getMaxBuiltinID(void) {
   // NotInterestingIdentifier is 65534; IDs must pack strictly below it.
   auto FirstBuiltin =
       static_cast<unsigned>(clang::InterestingIdentifier::NotBuiltin);
-  return 65533u - FirstBuiltin;
+  auto Sentinel =
+      static_cast<unsigned>(clang::InterestingIdentifier::NotInterestingIdentifier);
+  return Sentinel - 1 - FirstBuiltin;
 }
 
 void clang_IdentifierInfo_clearBuiltinID(CXIdentifierInfo II) {

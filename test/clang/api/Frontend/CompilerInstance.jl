@@ -191,7 +191,9 @@ using Test
     @test CC.getActions(parser).ptr == CC.getSema(ci).ptr
     tok = CC.getCurToken(parser)
     @test tok isa CC.Token
-    @test CC.NextToken(parser) isa CC.Token  # shape-only: varies with where the incremental parser is resting
+    # the main file's lexer stays at end-of-input between increments, so one token of
+    # lookahead is the same end-of-input annotation the parser is resting on
+    @test CC.getName(CC.NextToken(parser)) == "annot_repl_input_end"
 
     # pure helper functions over the parser context enums — the mapping is the whole of
     # the function, so an off-by-one into the wrong arm is a wrong CXDeclSpecContext of
@@ -211,9 +213,11 @@ using Test
     # ---- Token query surface (Lex/Token.jl) ----
     # a token the parser is actually resting on was written somewhere
     @test CC.isValid(CC.getLocation(tok))
-    @test CC.getAnnotationEndLoc(tok) isa CC.SourceLocation
-    @test CC.getAnnotationRange(tok) isa CC.SourceRange
-    @test CC.getAnnotationValue(tok) isa CC.AnnotationValue  # shape-only: varies with the token kind the parser is resting on
+    # Preprocessor::HandleEndOfFile forms the end-of-input annotation with its end location
+    # set to its own location and its value set to null
+    @test CC.getAnnotationEndLoc(tok) == CC.getLocation(tok)
+    @test CC.getAnnotationRange(tok) == CC.SourceRange(CC.getLocation(tok), CC.getLocation(tok))
+    @test CC.getAnnotationValue(tok).ptr == C_NULL
     # a finished incremental parse leaves the parser on annot_repl_input_end; the rest of
     # the kind predicates must be false on that token, then true for `identifier` once a
     # name is pushed below
@@ -246,7 +250,9 @@ using Test
     dispose(ident_fid)
 
     # QualType annotation read off a token (Parse/Parser.jl)
-    @test CC.getTypeAnnotation(tok) isa CC.QualType  # shape-only: varies with the token kind the parser is resting on
+    # the drain above stops on the end-of-input annotation, whose value is null, and
+    # Parser::getTypeAnnotation turns a null annotation into a TypeError: a null QualType
+    @test CC.isNull(CC.getTypeAnnotation(tok))
 
     # ---- Preprocessor dump helpers (need a token / a location) ----
     @test (CC.DumpToken(pp, tok); true)
@@ -278,13 +284,17 @@ end
     # CompilerInstance: no plugins are requested, so loading them is a no-op
     ci = CC.get_instance(I)
     @test (CC.LoadRequestedPlugins(ci); true)
-    # -ftime-report was not passed, so there is no timer until one is made -- the half of
-    # the round trip that says the assertion below is the create doing something
-    @test CC.hasFrontendTimer(ci) == false
-    CC.createFrontendTimer(ci)
-    @test CC.hasFrontendTimer(ci)
-
     dispose(I)
+
+    # A bare instance has no timer until one is made -- the half of the round trip that says
+    # the assertion after it is the create doing something. It is a bare instance rather
+    # than the interpreter's because whether a driver makes the timer while standing the
+    # instance up is that driver's decision, not CompilerInstance's.
+    bare = CC.CompilerInstance()
+    @test CC.hasFrontendTimer(bare) == false
+    CC.createFrontendTimer(bare)
+    @test CC.hasFrontendTimer(bare)
+    dispose(bare)
 end
 
 @testset "CompilerInstance module-building flag" begin

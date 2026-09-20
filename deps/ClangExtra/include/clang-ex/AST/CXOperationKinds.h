@@ -71,7 +71,9 @@ typedef enum CXCastKind {
   CXCastKind_CK_BuiltinFnToFnPtr,
   CXCastKind_CK_ZeroToOCLOpaqueType,
   CXCastKind_CK_AddressSpaceConversion,
-  CXCastKind_CK_IntToOCLSampler
+  CXCastKind_CK_IntToOCLSampler,
+  CXCastKind_CK_HLSLVectorTruncation,
+  CXCastKind_CK_HLSLArrayRValue
 } CXCastKind;
 
 // mirrors clang::BinaryOperatorKind (clang/AST/OperationKinds.def order;

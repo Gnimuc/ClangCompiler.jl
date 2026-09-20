@@ -39,7 +39,8 @@ typedef enum CXTargetInfo_BuiltinVaListKind {
   CXTargetInfo_X86_64ABIBuiltinVaList,
   CXTargetInfo_AAPCSABIBuiltinVaList,
   CXTargetInfo_SystemZBuiltinVaList,
-  CXTargetInfo_HexagonBuiltinVaList
+  CXTargetInfo_HexagonBuiltinVaList,
+  CXTargetInfo_XtensaABIBuiltinVaList
 } CXTargetInfo_BuiltinVaListKind;
 
 // Mirrors clang::OpenCLTypeKind (clang/Basic/TargetInfo.h).
@@ -139,7 +140,9 @@ bool clang_TargetInfo_hasFPReturn(CXTargetInfo_ TI);
 bool clang_TargetInfo_hasStrictFP(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getSuitableAlign(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getDefaultAlignForAttributeAligned(CXTargetInfo_ TI);
-unsigned clang_TargetInfo_getMinGlobalAlign(CXTargetInfo_ TI, uint64_t Size);
+// HasNonWeakDef is whether the variable has a definition that is not weak; clang itself
+// passes true when it has no declaration to ask.
+unsigned clang_TargetInfo_getMinGlobalAlign(CXTargetInfo_ TI, uint64_t Size, bool HasNonWeakDef);
 unsigned clang_TargetInfo_getNewAlign(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getWCharWidth(CXTargetInfo_ TI);
 unsigned clang_TargetInfo_getWCharAlign(CXTargetInfo_ TI);

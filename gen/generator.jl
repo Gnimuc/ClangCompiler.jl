@@ -16,13 +16,16 @@ options = load_options(joinpath(@__DIR__, "option.toml"))
 using Pkg: Pkg
 import BinaryBuilderBase: PkgSpec, Prefix, temp_prefix, setup_dependencies, cleanup_dependencies, destdir
 
-const dependencies = PkgSpec[PkgSpec(; name="LLVM_full_jll")]
-
 const libdir = joinpath(@__DIR__, "..", "lib")
 
 cd(@__DIR__) do
     for (llvm_version, julia_version) in ((v"20.1.8", v"1.13"),)
         @info "Generating..." llvm_version julia_version
+        # Pinned: an unversioned spec installs the newest LLVM_full_jll there is, and
+        # `llvm_version` would then name the output directory and nothing else. The version
+        # goes in as a string, which Pkg reads as a spec; handed a `VersionNumber`, Pkg's
+        # `add` under a foreign `julia_version` fails to find the package's source path.
+        dependencies = PkgSpec[PkgSpec(; name="LLVM_full_jll", version=string(llvm_version))]
         temp_prefix() do prefix
             # let prefix = Prefix(mktempdir())
             platform = Pkg.BinaryPlatforms.HostPlatform()

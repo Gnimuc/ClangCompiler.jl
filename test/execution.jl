@@ -27,6 +27,19 @@ const CODE_TEST_EXEC = """
     dispose(I)
 end
 
+@testset "Execution | under -ftime-report" begin
+    # The flag has code generation time itself against the instance's timer group, which
+    # exists only if something created it. The report goes to stderr on release.
+    answer = redirect_stderr(devnull) do
+        I = create_interpreter(["-ftime-report"])
+        compile(I, """extern "C" int timed_answer() { return 41 + 1; }""")
+        r = ccall(get_function_pointer(I, "timed_answer"), Cint, ())
+        dispose(I)
+        return r
+    end
+    @test answer == 42
+end
+
 @testset "Execution | LLJIT" begin
     I = create_interpreter(["-include", "vector"])
     compile(I, CODE_TEST_EXEC)

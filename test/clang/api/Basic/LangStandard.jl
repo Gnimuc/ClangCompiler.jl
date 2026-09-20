@@ -111,4 +111,5 @@ end
     # Neither of these has a default standard; clang answers both with llvm_unreachable.
     @test_throws AssertionError CC.getDefaultLanguageStandard(CC.CXLanguage_Unknown, triple)
     @test_throws AssertionError CC.getDefaultLanguageStandard(CC.CXLanguage_LLVM_IR, triple)
+    @test_throws AssertionError CC.getDefaultLanguageStandard(CC.CXLanguage_CIR, triple)
 end

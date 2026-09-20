@@ -56,7 +56,7 @@ CXPragmaCommentDecl clang_PragmaCommentDecl_Create(CXASTContext C, CXTranslation
       static_cast<clang::PragmaMSCommentKind>(CommentKind), llvm::StringRef(Arg)));
 }
 
-CXPragmaCommentDecl clang_PragmaCommentDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+CXPragmaCommentDecl clang_PragmaCommentDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                                unsigned ArgSize) {
   return reinterpret_cast<CXPragmaCommentDecl>(clang::PragmaCommentDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID), ArgSize));
 }
@@ -87,7 +87,7 @@ CXPragmaDetectMismatchDecl clang_PragmaDetectMismatchDecl_Create(CXASTContext C,
 }
 
 CXPragmaDetectMismatchDecl
-clang_PragmaDetectMismatchDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+clang_PragmaDetectMismatchDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                   unsigned NameValueSize) {
   return reinterpret_cast<CXPragmaDetectMismatchDecl>(clang::PragmaDetectMismatchDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID), NameValueSize));
 }
@@ -284,7 +284,7 @@ CXLabelDecl clang_LabelDecl_Create(CXASTContext C, CXDeclContext DC,
                                   reinterpret_cast<clang::IdentifierInfo *>(II)));
 }
 
-CXLabelDecl clang_LabelDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXLabelDecl clang_LabelDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXLabelDecl>(clang::LabelDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -376,7 +376,7 @@ CXNamespaceDecl clang_NamespaceDecl_Create(CXASTContext C, CXDeclContext DC, boo
       reinterpret_cast<clang::NamespaceDecl *>(PrevDecl), Nested));
 }
 
-CXNamespaceDecl clang_NamespaceDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXNamespaceDecl clang_NamespaceDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXNamespaceDecl>(clang::NamespaceDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -583,7 +583,7 @@ CXVarDecl clang_VarDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocatio
       reinterpret_cast<clang::TypeSourceInfo *>(TInfo), static_cast<clang::StorageClass>(S)));
 }
 
-CXVarDecl clang_VarDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXVarDecl clang_VarDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXVarDecl>(clang::VarDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -999,7 +999,7 @@ CXImplicitParamDecl clang_ImplicitParamDecl_Create(CXASTContext C, CXDeclContext
 }
 
 CXImplicitParamDecl clang_ImplicitParamDecl_CreateDeserialized(CXASTContext C,
-                                                               unsigned ID) {
+                                                               uint64_t ID) {
   return reinterpret_cast<CXImplicitParamDecl>(clang::ImplicitParamDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -1032,7 +1032,7 @@ CXParmVarDecl clang_ParmVarDecl_Create(CXASTContext C, CXDeclContext DC,
       reinterpret_cast<clang::Expr *>(DefArg)));
 }
 
-CXParmVarDecl clang_ParmVarDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXParmVarDecl clang_ParmVarDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXParmVarDecl>(clang::ParmVarDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -1176,7 +1176,7 @@ CXFunctionDecl clang_FunctionDecl_Create(CXASTContext C, CXDeclContext DC,
       /*UsesFPIntrin=*/false, isInlineSpecified, hasWrittenPrototype));
 }
 
-CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXFunctionDecl clang_FunctionDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXFunctionDecl>(clang::FunctionDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -1639,7 +1639,7 @@ unsigned clang_FunctionDecl_getBuiltinID(CXFunctionDecl FD) {
 
 // parameters
 
-// setParams (private in clang 18 — only Sema/deserialization may set params)
+// setParams is not wrapped; see the header.
 
 unsigned clang_FunctionDecl_getMinRequiredExplicitArguments(CXFunctionDecl FD) {
   return reinterpret_cast<clang::FunctionDecl *>(FD)->getMinRequiredExplicitArguments();
@@ -1936,7 +1936,7 @@ CXFieldDecl clang_FieldDecl_Create(CXASTContext C, CXDeclContext DC,
       static_cast<clang::InClassInitStyle>(InitStyle)));
 }
 
-CXFieldDecl clang_FieldDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXFieldDecl clang_FieldDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXFieldDecl>(clang::FieldDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2055,7 +2055,7 @@ CXEnumConstantDecl clang_EnumConstantDecl_Create(CXASTContext C, CXEnumDecl DC,
       llvm::APSInt(reinterpret_cast<llvm::GenericValue *>(V)->IntVal)));
 }
 
-CXEnumConstantDecl clang_EnumConstantDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXEnumConstantDecl clang_EnumConstantDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXEnumConstantDecl>(clang::EnumConstantDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2139,7 +2139,7 @@ CXIndirectFieldDecl clang_IndirectFieldDecl_Create(CXASTContext C, CXDeclContext
 }
 
 CXIndirectFieldDecl clang_IndirectFieldDecl_CreateDeserialized(CXASTContext C,
-                                                               unsigned ID) {
+                                                               uint64_t ID) {
   return reinterpret_cast<CXIndirectFieldDecl>(clang::IndirectFieldDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2253,7 +2253,7 @@ CXTypedefDecl clang_TypedefDecl_Create(CXASTContext C, CXDeclContext DC,
                                     reinterpret_cast<clang::TypeSourceInfo *>(TInfo)));
 }
 
-CXTypedefDecl clang_TypedefDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXTypedefDecl clang_TypedefDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXTypedefDecl>(clang::TypedefDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2281,7 +2281,7 @@ CXTypeAliasDecl clang_TypeAliasDecl_Create(CXASTContext C, CXDeclContext DC,
                                       reinterpret_cast<clang::TypeSourceInfo *>(TInfo)));
 }
 
-CXTypeAliasDecl clang_TypeAliasDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXTypeAliasDecl clang_TypeAliasDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXTypeAliasDecl>(clang::TypeAliasDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2521,7 +2521,7 @@ CXEnumDecl clang_EnumDecl_Create(CXASTContext C, CXDeclContext DC,
       IsScoped, IsScopedUsingClassTag, IsFixed));
 }
 
-CXEnumDecl clang_EnumDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXEnumDecl clang_EnumDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXEnumDecl>(clang::EnumDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2700,7 +2700,7 @@ CXRecordDecl clang_RecordDecl_Create(CXASTContext C, CXTagTypeKind TK, CXDeclCon
       reinterpret_cast<clang::IdentifierInfo *>(Id), reinterpret_cast<clang::RecordDecl *>(PrevDecl)));
 }
 
-CXRecordDecl clang_RecordDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXRecordDecl clang_RecordDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXRecordDecl>(clang::RecordDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2918,7 +2918,7 @@ CXFileScopeAsmDecl clang_FileScopeAsmDecl_Create(CXASTContext C, CXDeclContext D
       clang::SourceLocation::getFromPtrEncoding(RParenLoc)));
 }
 
-CXFileScopeAsmDecl clang_FileScopeAsmDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXFileScopeAsmDecl clang_FileScopeAsmDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXFileScopeAsmDecl>(clang::FileScopeAsmDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2963,7 +2963,7 @@ CXTopLevelStmtDecl clang_TopLevelStmtDecl_Create(CXASTContext C, CXStmt Statemen
 }
 
 CXTopLevelStmtDecl clang_TopLevelStmtDecl_CreateDeserialized(CXASTContext C,
-                                                             unsigned ID) {
+                                                             uint64_t ID) {
   return reinterpret_cast<CXTopLevelStmtDecl>(clang::TopLevelStmtDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -2998,7 +2998,7 @@ CXBlockDecl clang_BlockDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLoc
                                   clang::SourceLocation::getFromPtrEncoding(L)));
 }
 
-CXBlockDecl clang_BlockDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXBlockDecl clang_BlockDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXBlockDecl>(clang::BlockDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -3195,7 +3195,7 @@ CXCapturedDecl clang_CapturedDecl_Create(CXASTContext C, CXDeclContext DC,
                                      reinterpret_cast<clang::DeclContext *>(DC), NumParams));
 }
 
-CXCapturedDecl clang_CapturedDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+CXCapturedDecl clang_CapturedDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                      unsigned NumParams) {
   return reinterpret_cast<CXCapturedDecl>(clang::CapturedDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID),
                                                  NumParams));
@@ -3268,7 +3268,7 @@ CXImportDecl clang_ImportDecl_CreateImplicit(CXASTContext C, CXDeclContext DC,
       clang::SourceLocation::getFromPtrEncoding(EndLoc)));
 }
 
-CXImportDecl clang_ImportDecl_CreateDeserialized(CXASTContext C, unsigned ID,
+CXImportDecl clang_ImportDecl_CreateDeserialized(CXASTContext C, uint64_t ID,
                                                  unsigned NumLocations) {
   return reinterpret_cast<CXImportDecl>(clang::ImportDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID),
                                                NumLocations));
@@ -3306,7 +3306,7 @@ CXExportDecl clang_ExportDecl_Create(CXASTContext C, CXDeclContext DC,
                                    clang::SourceLocation::getFromPtrEncoding(ExportLoc)));
 }
 
-CXExportDecl clang_ExportDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXExportDecl clang_ExportDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXExportDecl>(clang::ExportDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -3358,7 +3358,7 @@ CXEmptyDecl clang_EmptyDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLoc
                                   clang::SourceLocation::getFromPtrEncoding(L)));
 }
 
-CXEmptyDecl clang_EmptyDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXEmptyDecl clang_EmptyDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXEmptyDecl>(clang::EmptyDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
@@ -3379,7 +3379,7 @@ CXHLSLBufferDecl clang_HLSLBufferDecl_Create(CXASTContext C, CXDeclContext Lexic
                                        clang::SourceLocation::getFromPtrEncoding(LBrace)));
 }
 
-CXHLSLBufferDecl clang_HLSLBufferDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
+CXHLSLBufferDecl clang_HLSLBufferDecl_CreateDeserialized(CXASTContext C, uint64_t ID) {
   return reinterpret_cast<CXHLSLBufferDecl>(clang::HLSLBufferDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 

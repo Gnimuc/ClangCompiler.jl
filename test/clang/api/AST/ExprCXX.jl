@@ -2190,6 +2190,8 @@ end
     template <class T> int nq_ule(T t) { return nq_ns::nq_fn(t); }
     typedef int NQInt;
     void nq_pdtor(NQInt *p) { p->NQInt::~NQInt(); }
+    struct NQOv { static int of(int); static int of(double); };
+    template <class T> int nq_tsov(T t) { return NQOv::of(t); }
     """)
 
     function tpl_body(name)
@@ -2273,6 +2275,25 @@ end
     @test ku != CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpecWithTemplate
     @test_throws AssertionError CC.getTypeLoc(uql)
     CC.dispose(uql)
+
+    # ---- a class qualifier names a type, so getTypeLoc answers: `NQOv::of(t)` ----
+    tsov = _find_node(CC.UnresolvedLookupExpr, tpl_body("nq_tsov"))
+    @test tsov isa CC.UnresolvedLookupExpr
+    tql = CC.getQualifierLoc(tsov)
+    tnns = CC.getNestedNameSpecifier(tql)
+    @test CC.getKind(tnns) == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec
+    tl = CC.getTypeLoc(tql)
+    @test !CC.isNull(tl)
+    # the written type is the one the specifier names, and that type is `NQOv`
+    written = CC.getTypePtr(CC.getType(tl))
+    @test written.ptr == CC.getAsType(tnns).ptr
+    @test CC.getNameAsString(CC.getAsCXXRecordDecl(written)) == "NQOv"
+    # `NQOv` is the whole qualifier, so the type starts where the qualifier does and ends
+    # before the `::` that closes it
+    @test CC.getRawEncoding(CC.getBeginLoc(tl)) == CC.getRawEncoding(CC.getBeginLoc(tql))
+    @test CC.getRawEncoding(CC.getEndLoc(tl)) < CC.getRawEncoding(CC.getEndLoc(tql))
+    CC.dispose(tl)
+    CC.dispose(tql)
 
     # ---- the pseudo-destructor's own hasQualifier and its location box agree ----
     @test f(I, "nq_pdtor")

@@ -27,6 +27,9 @@ using Test
     @test CC.isInstantiationDependent(nns_ab) == false
     @test !(CC.containsUnexpandedParameterPack(nns_ab))
     @test !(CC.containsErrors(nns_ab))
+    redirect_stdio(; stderr=devnull) do
+        @test CC.dump(nns_ab) === nothing
+    end
 
     prefix = CC.getPrefix(nns_ab)
     @test CC.getKind(prefix) == CC.LibClangEx.CXNestedNameSpecifierKind_Namespace

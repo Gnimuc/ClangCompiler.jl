@@ -122,42 +122,59 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     @test CC.clty_to_jlty(pty) == pty                             # @45
 
     # -- TagType family --
+    # `==` on type carriers is node identity whatever class either side carries, so a base
+    # carrier handed back unresolved still compares equal. The class the resolve step picked
+    # is clang's classof answer and is asserted on its own, here and in the families below.
     rrt = unwrap(rty("tmv_rec"))
     @test rrt isa CC.RecordType
-    @test CC.clty_to_jlty(CC.TagType(rrt)) == rrt                 # @48 -> resolve@135 -> @49
+    r_tag = CC.clty_to_jlty(CC.TagType(rrt))                      # @48 -> resolve@135 -> @49
+    @test typeof(r_tag) === CC.RecordType
+    @test r_tag == rrt
     @test CC.clty_to_jlty(rrt) == rrt                             # @49
     ety = unwrap(rty("tmv_ev"))
     @test ety isa CC.EnumType
     @test CC.clty_to_jlty(ety) == ety                             # @50
-    @test CC.resolve(CC.TagType(ety)) == ety                      # resolve@135 (enum branch)
+    r_etag = CC.resolve(CC.TagType(ety))                          # resolve@135 (enum branch)
+    @test typeof(r_etag) === CC.EnumType
+    @test r_etag == ety
 
     # -- FunctionType family --
     f(I, "tmv_fn")
     fd = CC.FunctionDecl(get_decl(f))
     fpt = CC.resolve(CC.getTypePtr(CC.getType(fd)))
     @test fpt isa CC.FunctionProtoType
-    @test CC.clty_to_jlty(CC.FunctionType(fpt)) == fpt            # @53
+    r_fpt = CC.clty_to_jlty(CC.FunctionType(fpt))                 # @53
+    @test typeof(r_fpt) === CC.FunctionProtoType
+    @test r_fpt == fpt
     @test CC.clty_to_jlty(fpt) == fpt                             # @54
     fnp_qt = CC.getFunctionNoProtoType(ctx, CC.get_qual_type(CC.IntTy(ctx)))
     fnpty = CC.resolve(CC.getTypePtr(fnp_qt))
     @test fnpty isa CC.FunctionNoProtoType
     @test CC.clty_to_jlty(fnpty) == fnpty                         # @55
-    @test CC.clty_to_jlty(CC.FunctionType(fnpty)) == fnpty
+    r_fnp = CC.clty_to_jlty(CC.FunctionType(fnpty))
+    @test typeof(r_fnp) === CC.FunctionNoProtoType
+    @test r_fnp == fnpty
 
     # -- ReferenceType family --
     lref = rty("tmv_lref")
     @test lref isa CC.LValueReferenceType
-    @test CC.clty_to_jlty(CC.ReferenceType(lref)) == lref         # @58 -> resolve@147 -> @59
+    r_lref = CC.clty_to_jlty(CC.ReferenceType(lref))              # @58 -> resolve@147 -> @59
+    @test typeof(r_lref) === CC.LValueReferenceType
+    @test r_lref == lref
     @test CC.clty_to_jlty(lref) == lref                           # @59
     rref = rty("tmv_rref")
     @test rref isa CC.RValueReferenceType
     @test CC.clty_to_jlty(rref) == rref                           # @60
-    @test CC.resolve(CC.ReferenceType(rref)) == rref
+    r_rref = CC.resolve(CC.ReferenceType(rref))
+    @test typeof(r_rref) === CC.RValueReferenceType
+    @test r_rref == rref
 
     # -- ArrayType family --
     aty = rty("tmv_arr")
     @test aty isa CC.ConstantArrayType
-    @test CC.clty_to_jlty(CC.ArrayType(aty)) == aty               # @63 -> resolve@153 -> @64
+    r_aty = CC.clty_to_jlty(CC.ArrayType(aty))                    # @63 -> resolve@153 -> @64
+    @test typeof(r_aty) === CC.ConstantArrayType
+    @test r_aty == aty
     @test CC.clty_to_jlty(aty) == aty                             # @64
     ity = rty("tmv_iarr")
     @test ity isa CC.IncompleteArrayType

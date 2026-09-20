@@ -124,7 +124,8 @@ bool clang_TemplateTypeParmDecl_isParameterPack(CXTemplateTypeParmDecl D);
 // NonTypeTemplateParmDecl
 bool clang_NonTypeTemplateParmDecl_hasDefaultArgument(CXNonTypeTemplateParmDecl D);
 
-// Null when the parameter has no default argument.
+// The parameter must have a default argument. Without one clang hands back an empty
+// TemplateArgumentLoc, and reading the expression out of that asserts on its kind.
 CXExpr clang_NonTypeTemplateParmDecl_getDefaultArgument(CXNonTypeTemplateParmDecl D);
 
 bool clang_NonTypeTemplateParmDecl_isExpandedParameterPack(CXNonTypeTemplateParmDecl D);

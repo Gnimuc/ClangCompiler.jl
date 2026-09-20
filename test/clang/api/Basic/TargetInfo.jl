@@ -121,11 +121,32 @@ const PIN = "x86_64-linux-gnu"
     @test CC.isValidCPUName(ti, first(cpus))
 
     # optionals (bool + out-param)
-    c = CC.getCPUCacheLineSize(ti)
-    @test c === nothing || c isa Cuint
+    # X86 knows a line size per CPU model. The driver names `x86-64` for this triple; a
+    # target built from bare options names no CPU and has no answer until one is set.
+    @test CC.getCPUCacheLineSize(ti) == 64
+    diag = CC.getDiagnostics(ci)
+    bare_opts = CC.TargetOptions()
+    CC.setTriple(bare_opts, "x86_64-unknown-linux-gnu")
+    bare = CC.TargetInfo(bare_opts, diag)  # absorbs bare_opts
+    @test CC.getCPUCacheLineSize(bare) === nothing
+    @test CC.setCPU(bare, "x86-64")
+    @test CC.getCPUCacheLineSize(bare) == 64
+    dispose(bare)
+
+    # Only AArch64 and RISC-V have a vscale, so X86 has no range whatever the options say.
+    # AArch64 without SVE has none either, until -mvscale-min/-mvscale-max name one.
     lo = CC.getLangOpts(ci)
-    r = CC.getVScaleRange(ti, lo)
-    @test r === nothing || (r isa Tuple{Cuint,Cuint} && r[1] <= r[2])
+    @test CC.getVScaleRange(ti, lo) === nothing
+    V = CC.create_parser(["-Xclang", "-mvscale-min=2", "-Xclang", "-mvscale-max=4"]; triple=PIN)
+    vscale_lo = CC.getLangOpts(CC.get_instance(V))
+    @test CC.getVScaleRange(ti, vscale_lo) === nothing
+    arm_opts = CC.TargetOptions()
+    CC.setTriple(arm_opts, "aarch64-unknown-linux-gnu")
+    arm = CC.TargetInfo(arm_opts, diag)  # absorbs arm_opts
+    @test CC.getVScaleRange(arm, lo) === nothing
+    @test CC.getVScaleRange(arm, vscale_lo) == (2, 4)
+    dispose(arm)
+    CC.dispose(V)
 
     # ABI kinds
     @test CC.getBuiltinVaListKind(ti) isa CC.CXTargetInfo_BuiltinVaListKind
@@ -301,8 +322,13 @@ end
     @test CC.getEHDataRegisterNumber(ti, 0) >= -1
     @test CC.getEHDataRegisterNumber(ti, 1) >= -1
     @test CC.getEHDataRegisterNumber(ti, 99) == -1
-    sect = CC.getStaticInitSectionSpecifier(ti)
-    @test sect === nothing || sect isa String
+    # Linux gives static initializers a section of their own; a COFF target names none
+    @test CC.getStaticInitSectionSpecifier(ti) == ".text.startup"
+    coff_opts = CC.TargetOptions()
+    CC.setTriple(coff_opts, "x86_64-w64-mingw32")
+    coff = CC.TargetInfo(coff_opts, CC.getDiagnostics(ci))  # absorbs coff_opts
+    @test CC.getStaticInitSectionSpecifier(coff) === nothing
+    dispose(coff)
 
     # setjmp/longjmp lowering, over-alignment policy, vtable pointer address space
     @test CC.hasSjLjLowering(ti) == true
@@ -478,6 +504,14 @@ end
     @test CC.validateCpuIs(ti, "atom") == true
     @test CC.validateCPUSpecificCPUDispatch(ti, "generic") == true
     @test CC.validateCpuSupports(ti, "definitely-not-a-feature") == false
+
+    # clang 20 has none of these four, and the shim answers each with a constant. The value is
+    # this repo's own; what the calls check is that each binding still marshals its arguments
+    # and hands back a string the wrapper can take.
+    @test CC.isRenderScriptTarget(ti) == false
+    @test CC.getFeatureDependencies(ti, "sse2") == ""
+    @test CC.multiVersionSortPriority(ti, "sse2") == 0
+    @test CC.multiVersionFeatureCost(ti) == 0
     @test CC.validateCpuIs(ti, "definitely-not-a-cpu") == false
 
     dispose(I)
@@ -497,8 +531,17 @@ end
     @test CC.getOpenCLTypeAddrSpace(ti, CC.CXOpenCLTypeKind_OCLTK_Default) isa CC.CXLangAS
 
     # optional<LangAS> / optional<unsigned>: `nothing` when the target names none.
-    cas = CC.getConstantAddressSpace(ti)
-    @test cas === nothing || cas isa CC.CXLangAS
+    # X86 keeps constants in the default address space. AMDGPU has one for them, target
+    # address space 4, which the out-parameter carries as a LangAS past the named enumerators.
+    @test CC.getConstantAddressSpace(ti) == CC.CXLangAS_Default
+    amd_opts = CC.TargetOptions()
+    CC.setTriple(amd_opts, "amdgcn-amd-amdhsa")
+    amd = CC.TargetInfo(amd_opts, diag)  # absorbs amd_opts
+    amd_cas = CC.getConstantAddressSpace(amd)
+    @test amd_cas !== nothing
+    @test amd_cas != CC.CXLangAS_Default
+    @test CC.getTargetAddressSpace(amd, amd_cas) == 4
+    dispose(amd)
     # x86_64 does not remap DWARF address spaces
     @test CC.getDWARFAddressSpace(ti, 0) === nothing
 
@@ -518,11 +561,14 @@ end
     @test !isempty(CC.getPlatformMinVersion(ti))
     @test CC.getSDKVersion(ti) == "0"
 
-    # Target identity. Both the target ID and the Darwin variant triple are absent on the
-    # ordinary host targets CI runs on, so only the shape is asserted.
+    # Target identity. X86 has no target ID, and a variant triple exists only where
+    # -darwin-target-variant-triple names one, which clang records for any target.
     @test CC.getTargetID(ti) == ""
-    variant = CC.getDarwinTargetVariantTriple(ti)
-    @test variant === nothing || variant isa String
+    @test CC.getDarwinTargetVariantTriple(ti) === nothing
+    zippered = create_parser(["-Xclang", "-darwin-target-variant-triple", "-Xclang", "x86_64-apple-ios13.1-macabi"];
+                             triple=PIN)
+    @test CC.getDarwinTargetVariantTriple(CC.getTarget(get_instance(zippered))) == "x86_64-apple-ios13.1-macabi"
+    dispose(zippered)
     @test CC.hasHIPImageSupport(ti) == true
     @test CC.validateTarget(ti, diag) == true
 

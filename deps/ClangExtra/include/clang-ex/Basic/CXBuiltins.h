@@ -11,7 +11,8 @@ LLVM_CLANG_C_EXTERN_C_BEGIN
 // clang/Basic/Builtins.h: enum BuiltinTemplateKind
 typedef enum CXBuiltinTemplateKind {
   CXBuiltinTemplateKind_BTK__make_integer_seq,
-  CXBuiltinTemplateKind_BTK__type_pack_element
+  CXBuiltinTemplateKind_BTK__type_pack_element,
+  CXBuiltinTemplateKind_BTK__builtin_common_type
 } CXBuiltinTemplateKind;
 
 // clang::Builtin::Context. The class segment spells the handle rather than the bare C++
@@ -33,6 +34,13 @@ typedef enum CXBuiltinTemplateKind {
 unsigned clang_Builtin_getFirstTSBuiltinID(void);
 
 // "__builtin_abs" and friends. Always non-empty for an in-range ID.
+// One past the largest builtin ID C has a record for: the target-independent builtins, then
+// the target's, then the aux target's. Every ID-taking entry point below indexes those
+// tables, and Builtin::Context::getRecord only asserts the range, so an ID at or above this
+// is an out-of-bounds read. Synthesized: the two target tables are private ArrayRefs with no
+// size accessor.
+unsigned clang_BuiltinContext_getNumBuiltins(CXBuiltinContext C);
+
 CXString clang_BuiltinContext_getName(CXBuiltinContext C, unsigned ID);
 
 // The type descriptor string clang encodes the signature in, e.g. "v." for a variadic

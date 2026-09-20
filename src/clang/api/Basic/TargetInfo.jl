@@ -664,9 +664,17 @@ function getNullPointerValue(x::AbstractTargetInfo, addr_space::CXLangAS=CXLangA
     return clang_TargetInfo_getNullPointerValue(x, addr_space)
 end
 
-function getMinGlobalAlign(x::AbstractTargetInfo, size::Integer)
+"""
+    getMinGlobalAlign(x::AbstractTargetInfo, size::Integer, has_non_weak_def::Bool=true) -> Cuint
+Return the minimum alignment, in bits, of a global variable of `size` bits.
+
+`has_non_weak_def` is whether the variable has a definition that is not weak, which a few
+targets align more loosely without. The default is what clang itself passes when it has no
+declaration to ask.
+"""
+function getMinGlobalAlign(x::AbstractTargetInfo, size::Integer, has_non_weak_def::Bool=true)
     @check_ptrs x
-    return clang_TargetInfo_getMinGlobalAlign(x, size)
+    return clang_TargetInfo_getMinGlobalAlign(x, size, has_non_weak_def)
 end
 
 function getIbm128Width(x::AbstractTargetInfo)

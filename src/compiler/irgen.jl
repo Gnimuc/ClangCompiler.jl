@@ -221,6 +221,9 @@ function create_irgenerator(code::AbstractString; args=String[], language::Symbo
         # on disk, and an existing file of that name is shadowed rather than read.
         addRemappedFile(ppopts, name, buffer)
 
+        # Under `-ftime-report` code generation times itself against the instance's timer
+        # group and never creates it; clang's own `cc1_main` does that before it runs anything.
+        getTimePasses(getCodeGenOpts(ci)) && !hasFrontendTimer(ci) && createFrontendTimer(ci)
         act = LLVMOnlyAction(LLVM.context(ts_ctx))
         compiled = ExecuteAction(ci, act)
         if !compiled
