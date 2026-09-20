@@ -219,9 +219,10 @@ end
 
 """
     findOrInferSubmodule(x::AbstractModule, name::AbstractString) -> Module_
-Find the submodule with the given name, inferring one when `x` allows submodule inference.
-The returned carrier holds NULL when there is no such submodule and none can be inferred;
-an inferred submodule is owned by `x` and must never be disposed on its own.
+Find the submodule with the given name; nothing is inferred. Inference moved from
+`clang::Module` to `clang::ModuleMap::findOrInferSubmodule` in this LLVM, and a `Module`
+alone cannot reach its map, so this answers exactly as [`findSubmodule`](@ref) does. The
+returned carrier holds NULL when there is no such submodule.
 """
 function findOrInferSubmodule(x::AbstractModule, name::AbstractString)
     @check_ptrs x

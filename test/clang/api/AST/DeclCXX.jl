@@ -341,7 +341,8 @@ end
     # ---- CXXConstructorDecl / CXXDestructorDecl / CXXConversionDecl via resolve ----
     resolved = [CC.resolve(m) for m in methods]
 
-    @test any(c -> CC.getNumCtorInitializers(c) >= 1, ctors)  # shape-only: implicit base sub-object initializers may vary
+    # Base has no base class and each of its constructors writes exactly `: b(...)`
+    @test all(c -> CC.getNumCtorInitializers(c) == 1, ctors)
     @test any(CC.isDefaultConstructor, ctors)
     @test any(CC.isCopyConstructor, ctors)
     @test any(CC.isMoveConstructor, ctors)
@@ -2546,4 +2547,160 @@ end
     finally
         dispose(I)
     end
+end
+
+@testset "CXXRecordDecl | trait predicates, both polarities" begin
+    src = """
+    struct TrPlain { int p; double q; };
+
+    struct TrBase {
+    public:
+        int b;
+        TrBase() : b(0) {}
+        TrBase(const TrBase& o) : b(o.b) {}
+        TrBase(TrBase&& o) : b(o.b) {}
+        virtual ~TrBase() {}
+        virtual void foo() = 0;
+    protected:
+        int prot;
+    private:
+        int priv;
+    };
+
+    struct TrDerived : public TrBase {
+        int d;
+        TrDerived() : TrBase(), d(0) {}
+        TrDerived(const TrDerived&) = default;
+        ~TrDerived() override {}
+        void foo() override {}
+    };
+
+    struct TrRich {
+        mutable int m;
+        int init = 3;
+        union { int ua; float ub; };
+        TrRich& operator=(const TrRich&);
+        TrRich& operator=(TrRich&&);
+    };
+    struct TrRefHolder { int& r; };
+    struct TrSealed final : TrPlain {};
+    struct TrCtorBase { TrCtorBase(int); TrCtorBase& operator=(int); };
+    struct TrInherits : TrCtorBase { using TrCtorBase::TrCtorBase; using TrCtorBase::operator=; };
+    struct TrNoRet { [[noreturn]] ~TrNoRet(); };
+    struct TrPureOnly { virtual void m() = 0; };
+    struct TrNonConstCopy { TrNonConstCopy(TrNonConstCopy&); TrNonConstCopy& operator=(TrNonConstCopy&); };
+    struct TrNoFields {};
+    template<class T> struct TrDepBase : T {};
+    auto TrLamNone = [](int q) { return q + 1; };
+    auto TrLamCap = [k = 1](int q) { return q + k; };
+
+    struct TrSelfCopy { TrSelfCopy(); template<class T> TrSelfCopy(T); };
+    void tr_use_selfcopy(TrSelfCopy& a) { TrSelfCopy b(a); }
+    """
+    I = create_interpreter(["-std=c++20"])
+    CC.parse(I, src)
+    f = DeclFinder(I)
+    rd(n) = (@assert f(I, n); CC.CXXRecordDecl(get_decl(f)))
+    closure(n) = (@assert f(I, n); CC.getAsCXXRecordDecl(CC.getTypePtr(CC.getType(CC.VarDecl(get_decl(f))))))
+    plain, base, derived = rd("TrPlain"), rd("TrBase"), rd("TrDerived")
+
+    # One row per predicate: what a trivial aggregate, an abstract class with user-provided
+    # special members, and its concrete subclass each answer. The standard decides every
+    # value here, so all three columns read the same on every runner.
+    traits = [(CC.allowConstDefaultInit, false, true, true),
+              (CC.hasConstexprDefaultConstructor, true, false, false),
+              (CC.hasConstexprDestructor, true, false, false),
+              (CC.hasConstexprNonCopyMoveConstructor, true, false, false),
+              (CC.hasIrrelevantDestructor, true, false, false),
+              (CC.hasMoveAssignment, true, false, false),
+              (CC.hasMoveConstructor, true, true, false),
+              (CC.hasNonLiteralTypeFieldsOrBases, false, false, true),
+              (CC.hasNonTrivialCopyAssignment, false, true, true),
+              (CC.hasNonTrivialCopyConstructor, false, true, true),
+              (CC.hasNonTrivialCopyConstructorForCall, false, true, true),
+              (CC.hasNonTrivialDefaultConstructor, false, true, true),
+              (CC.hasNonTrivialDestructor, false, true, true),
+              (CC.hasNonTrivialDestructorForCall, false, true, true),
+              (CC.hasNonTrivialMoveConstructor, false, true, false),
+              (CC.hasNonTrivialMoveConstructorForCall, false, true, false),
+              (CC.hasPrivateFields, false, true, false),
+              (CC.hasProtectedFields, false, true, false),
+              (CC.hasSimpleCopyAssignment, true, false, false),
+              (CC.hasSimpleCopyConstructor, true, false, false),
+              (CC.hasSimpleDestructor, true, false, false),
+              (CC.hasSimpleMoveAssignment, true, false, false),
+              (CC.hasSimpleMoveConstructor, true, false, false),
+              (CC.hasTrivialCopyAssignment, true, false, false),
+              (CC.hasTrivialCopyConstructor, true, false, false),
+              (CC.hasTrivialDefaultConstructor, true, false, false),
+              (CC.hasTrivialDestructor, true, false, false),
+              (CC.hasTrivialMoveAssignment, true, false, false),
+              (CC.hasTrivialMoveConstructor, true, false, false),
+              (CC.hasUserDeclaredCopyConstructor, false, true, true),
+              (CC.hasUserDeclaredMoveConstructor, false, true, false),
+              (CC.hasUserDeclaredMoveOperation, false, true, false),
+              (CC.hasUserProvidedDefaultConstructor, false, true, true),
+              (CC.isAggregate, true, false, false),
+              (CC.isCLike, true, false, false),
+              (CC.isCXX11StandardLayout, true, false, false),
+              (CC.isLiteral, true, false, false),
+              (CC.isPOD, true, false, false),
+              (CC.isStandardLayout, true, false, false),
+              (CC.isStructural, true, false, false),
+              (CC.isTrivial, true, false, false),
+              (CC.isTriviallyCopyConstructible, true, false, false),
+              (CC.isTriviallyCopyable, true, false, false),
+              (CC.mayBeAbstract, false, false, true),
+              (CC.mayBeDynamicClass, false, true, true),
+              (CC.mayBeNonDynamicClass, true, false, false)]
+    for (p, on_plain, on_base, on_derived) in traits
+        @test (p, p(plain), p(base), p(derived)) == (p, on_plain, on_base, on_derived)
+    end
+
+    # The predicates those three classes all answer alike, each against the one class
+    # that answers the other way.
+    rich = rd("TrRich")
+    contrasts = [(CC.hasMutableFields, rich, true),
+                 (CC.hasInClassInitializer, rich, true),
+                 (CC.hasVariantMembers, rich, true),
+                 (CC.hasUserDeclaredCopyAssignment, rich, true),
+                 (CC.hasUserDeclaredMoveAssignment, rich, true),
+                 (CC.hasNonTrivialMoveAssignment, rich, true),
+                 (CC.hasUninitializedReferenceMember, rd("TrRefHolder"), true),
+                 (CC.isEffectivelyFinal, rd("TrSealed"), true),
+                 (CC.hasInheritedConstructor, rd("TrInherits"), true),
+                 (CC.hasInheritedAssignment, rd("TrInherits"), true),
+                 (CC.isAnyDestructorNoReturn, rd("TrNoRet"), true),
+                 (CC.isCapturelessLambda, closure("TrLamNone"), true),
+                 (CC.hasCopyConstructorWithConstParam, rd("TrNonConstCopy"), false),
+                 (CC.hasCopyAssignmentWithConstParam, rd("TrNonConstCopy"), false),
+                 (CC.hasDefaultConstructor, rd("TrNonConstCopy"), false),
+                 (CC.hasDirectFields, rd("TrNoFields"), false)]
+    for (p, other, on_other) in contrasts
+        @test (p, p(plain), p(other)) == (p, !on_other, on_other)
+    end
+    @test !CC.isCapturelessLambda(closure("TrLamCap"))
+
+    @assert f(I, "TrDepBase")
+    pattern = CC.getTemplatedDecl(CC.ClassTemplateDecl(get_decl(f)))
+    @test CC.hasAnyDependentBases(pattern)
+    @test !CC.hasAnyDependentBases(derived)
+
+    # A class of nothing but pure virtuals is what an interface looks like, and is still not
+    # one: clang reserves the answer for `__interface` and the two COM roots.
+    @test !CC.isInterfaceLike(rd("TrPureOnly"))
+    # Both read a dependency kind that only a lambda written inside a template carries.
+    @test !CC.isDependentLambda(closure("TrLamNone"))
+    @test !CC.isNeverDependentLambda(closure("TrLamNone"))
+
+    # Copying a TrSelfCopy deduces `T = TrSelfCopy` for the constructor template, which
+    # declares a constructor taking its own class by value. Overload resolution has to
+    # discard that one, and this predicate is how it recognises it.
+    ctor_template = only(t for t in (CC.resolve(d) for d in CC.decls(CC.castToDeclContext(rd("TrSelfCopy"))))
+                         if t isa CC.FunctionTemplateDecl)
+    deduced = CC.resolve(only(CC.getSpecializations(ctor_template)))
+    @test CC.isSpecializationCopyingObject(deduced)
+    @test !any(CC.isSpecializationCopyingObject, CC.getCtors(base))
+
+    dispose(I)
 end

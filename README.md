@@ -12,6 +12,9 @@ ClangCompiler.jl provides a Julia interface to the Clang C++ API, and can be use
 pkg> add ClangCompiler
 ```
 
+Each release works with exactly one Julia minor version, because the package binds the
+Clang that matches the LLVM that Julia is built on. This one needs Julia 1.13 (LLVM 20).
+
 ## Examples
 
 ### Decl Lookup

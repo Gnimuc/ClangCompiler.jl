@@ -352,7 +352,8 @@ end
     # CStyleCastExpr is an ExplicitCastExpr — covers getTypeAsWritten + own locs
     csc = first_of(CC.CStyleCastExpr)
     @test csc !== nothing
-    @test CC.getAsString(CC.getTypeAsWritten(csc)) in ("int", "double")
+    # the walk is pre-order, and `(double)n` is the first C-style cast the body writes
+    @test CC.getAsString(CC.getTypeAsWritten(csc)) == "double"
     @test !CC.is_null_handle(CC.getLParenLoc(csc))
     @test !CC.is_null_handle(CC.getRParenLoc(csc))
 

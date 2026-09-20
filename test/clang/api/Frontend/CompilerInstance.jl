@@ -213,13 +213,13 @@ using Test
     @test CC.isValid(CC.getLocation(tok))
     @test CC.getAnnotationEndLoc(tok) isa CC.SourceLocation
     @test CC.getAnnotationRange(tok) isa CC.SourceRange
-    @test CC.getName(tok) isa String  # shape-only: varies with where the incremental parser is resting
     @test CC.getAnnotationValue(tok) isa CC.AnnotationValue  # shape-only: varies with the token kind the parser is resting on
     # a finished incremental parse leaves the parser on annot_repl_input_end; the rest of
     # the kind predicates must be false on that token, then true for `identifier` once a
     # name is pushed below
     @test !CC.is_eof(tok)
     @test CC.is_annot_repl_input_end(tok)
+    @test CC.getName(tok) == "annot_repl_input_end"
     @test !CC.is_identifier(tok)
     @test !CC.is_coloncolon(tok)
     @test !CC.is_annot_cxxscope(tok)

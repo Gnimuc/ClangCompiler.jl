@@ -50,12 +50,32 @@ Return the kind of cleanup objects of this type require, or
 """
 isDestructedType(x::QualType) = clang_QualType_isDestructedType(x)
 
+"""
+    isMoreQualifiedThan(x::QualType, other::QualType, ctx::ASTContext) -> Bool
+Return whether `x` carries every qualifier `other` does and at least one more.
+
+`clang::QualType::isMoreQualifiedThan` reads `getQualifiers()` on both operands, each of
+which reaches its type through `getCommonPtr` and asserts it is non-null; the precondition
+is restated here.
+"""
 function isMoreQualifiedThan(x::QualType, other::QualType, ctx::ASTContext)
+    @assert !isNull(x) "QualType must be non-null"
+    @assert !isNull(other) "QualType must be non-null"
     @check_ptrs ctx
     return clang_QualType_isMoreQualifiedThan(x, other, ctx)
 end
 
+"""
+    isAtLeastAsQualifiedAs(x::QualType, other::QualType, ctx::ASTContext) -> Bool
+Return whether `x` carries every qualifier `other` does.
+
+`clang::QualType::isAtLeastAsQualifiedAs` reads `getQualifiers()` on both operands, each of
+which reaches its type through `getCommonPtr` and asserts it is non-null; the precondition
+is restated here.
+"""
 function isAtLeastAsQualifiedAs(x::QualType, other::QualType, ctx::ASTContext)
+    @assert !isNull(x) "QualType must be non-null"
+    @assert !isNull(other) "QualType must be non-null"
     @check_ptrs ctx
     return clang_QualType_isAtLeastAsQualifiedAs(x, other, ctx)
 end

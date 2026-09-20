@@ -10,16 +10,16 @@
 # target triple; everything downstream (the preprocessor's predefined macros, `ASTContext`'s layout
 # engine, the name mangler) reads from it.
 #
-# `create_interpreter` takes that triple as a keyword. Unpinned, the interpreter is configured for
-# the host platform; pass a triple and clang is handed that `--target=` together with the `-isystem`
-# include paths of that platform's GCC shard, so it parses and lays out types as it would there.
+# `create_parser` takes that triple as a keyword. Unpinned, it is configured for the host platform;
+# pass a triple and clang is handed that `--target=` together with the `-isystem` include paths of
+# that platform's GCC shard, so it parses and lays out types as it would there.
 #
-#     create_interpreter(String[])                             # target = this machine
-#     create_interpreter(String[]; triple="x86_64-linux-gnu")  # target = someone else's machine
+#     create_parser(String[])                             # target = this machine
+#     create_parser(String[]; triple="x86_64-linux-gnu")  # target = someone else's machine
 #
-# THE LIMIT, stated up front: only *parsing and AST inspection* cross-target. The JIT underneath
-# still emits code for the host, so a pinned interpreter must never be asked to execute anything.
-# The last act of this script shows exactly where that boundary sits.
+# THE LIMIT, stated up front: only *parsing and AST inspection* cross-target, which is why this is
+# a parser and not an interpreter. An interpreter stands up a JIT, and a JIT emits code for the
+# host. The last act of this script shows exactly where that boundary sits.
 #
 # Why it matters beyond curiosity: every value in the table below is normally decided by whichever
 # machine happens to run your code, which is why so many tests can only assert `isa Integer` about
@@ -262,7 +262,7 @@ end
 # Act 4 -- where cross-targeting stops.
 # -------------------------------------------------------------------------------------------------
 banner("The boundary: parsing crosses targets, execution does not")
-println("The three pinned interpreters above only ever parsed. Nothing they produced was executed,")
+println("The three pinned parsers above only ever parsed. Nothing they produced was executed,")
 println("because the JIT behind `Interpreter` emits for *this* machine -- asking one to run foreign")
 println("code is not a diagnostic, it is a wrong answer or a crash.")
 println("\nSo the numbers below come from actually running compiled code, which means they can only")
@@ -306,13 +306,13 @@ end
 
 banner("The lesson")
 println("""
-An interpreter pinned with `triple=` answers ABI questions about a platform you do not have. Sizes,
+A parser pinned with `triple=` answers ABI questions about a platform you do not have. Sizes,
 alignments, record offsets, which `#ifdef` branch survives and how a name mangles all come from that
 target's `TargetInfo`, so every machine that asks gets the same answer. That is what turns an
 assertion nobody can write -- the value depends on the runner -- into one anybody can:
 
-    I = create_interpreter(String[]; triple="i686-linux-gnu")
-    parse(I, source)
+    P = create_parser(String[]; triple="i686-linux-gnu")
+    parse(P, source)
     getTypeSize(ctx, message_type) == $(ilp32.message_size * 8)   # bits, and true on every CI runner
 
 Keep it to parsing and AST inspection. The moment code has to run, the host is back in charge.""")

@@ -188,6 +188,8 @@ end
             CC.LLVM.dispose(gv)
         elseif k == CC.LibClangEx.CXTemplateArgument_Template
             @test !CC.isNull(CC.getAsTemplate(ta))
+            # `UsesTT<Holder>`: not a pack expansion, so the pattern is the template itself
+            @test CC.getAsString(CC.getAsTemplateOrTemplatePattern(ta), ctx) == "Holder"
         end
     end
 
@@ -256,6 +258,7 @@ end
     ta_decl = CC.TemplateArgument(CC.ValueDecl(vd_gx), CC.getType(vd_gx))
     @test CC.getKind(ta_decl) == CC.LibClangEx.CXTemplateArgument_Declaration
     @test CC.getName(CC.getAsDecl(ta_decl)) == "gx"
+    @test CC.getAsString(CC.getParamTypeForDecl(ta_decl)) == CC.getAsString(CC.getType(vd_gx))
     CC.dispose(ta_decl)
 
     dispose(f)

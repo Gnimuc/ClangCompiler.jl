@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-ClangCompiler.jl is a Julia interface to the Clang C++ API (declaration lookup, AST traversal, parsing, and JIT compilation/execution of C++ code via Clang's incremental interpreter). It requires Julia 1.13+ and is tied to the LLVM version Julia itself is built against (currently LLVM 20 — see `lib/20/`).
+ClangCompiler.jl is a Julia interface to the Clang C++ API (declaration lookup, AST traversal, parsing, and JIT compilation/execution of C++ code via Clang's incremental interpreter). It requires Julia 1.13 and no other minor, because it is tied to the LLVM version Julia itself is built against (LLVM 20 — see `lib/20/`); `julia = "~1.13"` in `Project.toml` keeps a Julia built on another LLVM from resolving a version that cannot load.
 
 ## Commands
 

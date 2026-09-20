@@ -4778,3 +4778,70 @@ end
     dispose(info)
     dispose(I)
 end
+
+@testset "Sema | CheckVectorLogicalOperands reaches clang with either opcode" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    typedef float SemaVecLogic __attribute__((vector_size(16)));
+    SemaVecLogic svl_a, svl_b;
+    SemaVecLogic svl_sum = svl_a + svl_b;
+    """)
+    f = DeclFinder(I)
+    @test f(I, "svl_sum")
+    sema = CC.get_sema(I)
+    loc = CC.get_main_file_begin_loc(CC.getSourceManager(sema))
+    sum_expr = CC.resolve(CC.getInit(CC.VarDecl(get_decl(f))))
+    while !(sum_expr isa CC.AbstractBinaryOperator)
+        sum_expr = CC.resolve(first(CC.children(sum_expr)))
+    end
+    lhs, rhs = CC.getLHS(sum_expr), CC.getRHS(sum_expr)
+
+    # a logical operator over two float vectors yields a vector of as many signed integers,
+    # each as wide as a float, and leaves operands that were already vectors as they were.
+    # The target chooses which integer of that width names the element -- `int`, or `long`
+    # where the two are the same size -- so the spelling is not what is asserted.
+    ctx = CC.get_ast_context(I)
+    vector_of(qt) = CC.resolve(CC.getTypePtr(CC.getCanonicalType(qt)))
+    operand = vector_of(CC.getType(lhs))
+    @test operand isa CC.VectorType
+    for opc in (CC.LibClangEx.CXBinaryOperatorKind_BO_LAnd, CC.LibClangEx.CXBinaryOperatorKind_BO_LOr)
+        ty, lhs_out, rhs_out = CC.CheckVectorLogicalOperands(sema, lhs, rhs, loc, opc)
+        result = vector_of(ty)
+        @test result isa CC.VectorType
+        @test CC.getNumElements(result) == CC.getNumElements(operand) == 4
+        @test CC.isSignedIntegerType(CC.getTypePtr(CC.getElementType(result)))
+        @test CC.getTypeSize(ctx, CC.getElementType(result)) == CC.getTypeSize(ctx, CC.getElementType(operand))
+        @test (lhs_out.ptr, rhs_out.ptr) == (lhs.ptr, rhs.ptr)
+    end
+    @test_throws AssertionError CC.CheckVectorLogicalOperands(sema, lhs, rhs, loc,
+                                                              CC.LibClangEx.CXBinaryOperatorKind_BO_Add)
+
+    dispose(f)
+    dispose(I)
+end
+
+@testset "Sema | isTemplateTemplateParameterAtLeastAsSpecializedAs tells its two templates apart" begin
+    I = create_interpreter(String[])
+    CC.parse(I, """
+    template <template <class> class SemaTTParam> struct SemaTTHost {};
+    template <class T> struct SemaTTOne {};
+    template <class T, class U> struct SemaTTTwo {};
+    """)
+    f = DeclFinder(I)
+    template_named(name) = (@assert f(I, name); CC.resolve(get_decl(f)))
+    sema = CC.get_sema(I)
+    loc = CC.get_main_file_begin_loc(CC.getSourceManager(sema))
+    param = CC.resolve(CC.getParam(CC.getTemplateParameters(template_named("SemaTTHost")), 0))
+    params = CC.getTemplateParameters(param)
+
+    # `template <class> class` accepts a one-parameter template and not a two-parameter
+    # one; an argument passed in the parameter's place would answer the same for both
+    accepts(arg) = redirect_stderr(devnull) do
+        return CC.isTemplateTemplateParameterAtLeastAsSpecializedAs(sema, params, param, arg, loc)
+    end
+    @test accepts(template_named("SemaTTOne"))
+    @test !accepts(template_named("SemaTTTwo"))
+
+    dispose(f)
+    dispose(I)
+end

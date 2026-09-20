@@ -1428,9 +1428,10 @@ end
 
 """
     multiVersionSortPriority(x::AbstractTargetInfo, name::AbstractString) -> Cuint
-Always `0`. LLVM 20 dropped `TargetInfo::multiVersionSortPriority`, so the shim has no method
-to call; the C name is kept so the binding still resolves. There is no priority table left to
-index, so the call is total for every `name`.
+Always `0`. LLVM 20 replaced `TargetInfo::multiVersionSortPriority`, which took one feature
+name, with `getFMVPriority`, which takes a list of them and is not wrapped; the C name is
+kept so the binding still resolves. There is no priority table left to index, so the call is
+total for every `name`.
 """
 function multiVersionSortPriority(x::AbstractTargetInfo, name::AbstractString)
     @check_ptrs x

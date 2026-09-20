@@ -108,7 +108,7 @@ jobs:
   examples:
     # The examples rotted silently once: they referenced `get_compiler_args` and `IRGenerator`,
     # removed years earlier, and every one of them failed at load. Nothing ran them, so nothing
-    # said so. This job runs all six and fails on any of them.
+    # said so. This job runs every script `examples/runall.jl` lists and fails on any of them.
     #
     # One platform is deliberate. These exercise the same parse/JIT path the test suite already
     # covers on all three (test/execution.jl); what is uncovered without this job is not a

@@ -16,6 +16,11 @@ Create a C/C++ interpreter.
 - `args::Vector{String}`: Additional compiler flags.
 - `is_cxx::Bool`: Whether to use the C++ compiler build environment.
 - `version::String`: The compiler version.
+- `triple`: The target to configure clang for; `nothing` takes the host's. An interpreter
+  stands up a JIT for that target, so this is for a target the host can execute. To ask
+  about a foreign one, use [`create_parser`](@ref) with the same keyword: constructing an
+  interpreter fails when the host's LLVM has no backend for the architecture, and where it
+  has one, disposing of the interpreter can crash.
 
 `is_cxx` selects the **build environment** — which shard's system includes are on the search
 path, and whether the C++ ones are excluded — and not the language. Clang's

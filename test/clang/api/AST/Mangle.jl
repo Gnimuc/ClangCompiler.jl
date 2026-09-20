@@ -19,11 +19,23 @@ using Test
     # parameter (e.g. std::vector) would drag in the platform-specific inline
     # namespace (`std` under libstdc++ vs `std::__1` under libc++) and make the
     # string host-dependent.
-    CC.parse(I, "int add(int a, int b) { return a + b; } void ref(int &r) { r = 0; }")
+    CC.parse(I, """
+    int add(int a, int b) { return a + b; }
+    void ref(int &r) { r = 0; }
+    extern "C" int mg_c_linkage(int a) { return a; }
+    """)
+
+    # a mangle context borrows the ASTContext it was made from, and reports through that
+    # context's engine
+    @test CC.getASTContext(mc).ptr == ctx.ptr
+    @test CC.getDiags(mc).ptr == CC.getDiagnostics(ctx).ptr
 
     @test f(I, "add")
     add_nd = get_decl(f)
     @test CC.shouldMangleDeclName(mc, add_nd)
+    @test CC.shouldMangleCXXName(mc, add_nd)
+    @test f(I, "mg_c_linkage")
+    @test !CC.shouldMangleCXXName(mc, get_decl(f))
     @test CC.mangleName(mc, add_nd) == "_Z3addii"
 
     @test f(I, "ref")

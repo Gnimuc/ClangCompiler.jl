@@ -801,12 +801,10 @@ end
     @test_throws AssertionError CC.getLastMacroWithSpelling(pp, CC.SourceLocation(), [0])
     @test_throws AssertionError CC.getLastMacroWithSpelling(pp, main_loc, [file_ii.ptr])
 
-    # nothing at a main-file location sits in an unimported module, but which module maps
-    # the host loaded decides the answer: assert the shape only
-    hdr = CC.getHeaderToIncludeForDiagnostics(pp, main_loc, main_loc)
-    # shape-only: the host decides it — which module maps the driver loaded
-    @test hdr === nothing || !isempty(CC.getName(hdr))
-    hdr === nothing || dispose(hdr)
+    # the search walks up the include stack from a location and stops at the main file, so
+    # a location already in the main file has no header to suggest, whatever module maps
+    # the host loaded
+    @test CC.getHeaderToIncludeForDiagnostics(pp, main_loc, main_loc) === nothing
 
     # a hand-built module has no module map behind it, so its availability is never set
     avail = redirect_stderr(devnull) do
