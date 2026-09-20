@@ -131,6 +131,8 @@ end
         CC.setVirtualAsWritten(fd, true)
         CC.setIsPureVirtual(fd, true)
         @test CC.isPureVirtual(fd)
+        CC.setIsPureVirtual(fd, false)
+        @test !CC.isPureVirtual(fd)
 
         # FieldDecl::setBitWidth
         CC.setBitWidth(fld2, bw)
@@ -156,10 +158,16 @@ end
         # EnumDecl setters
         CC.setScoped(ed, true)
         @test CC.isScoped(ed)
+        CC.setScoped(ed, false)
+        @test !CC.isScoped(ed)
         CC.setScopedUsingClassTag(ed, true)
         @test CC.isScopedUsingClassTag(ed)
+        CC.setScopedUsingClassTag(ed, false)
+        @test !CC.isScopedUsingClassTag(ed)
         CC.setFixed(ed, true)
         @test CC.isFixed(ed)
+        CC.setFixed(ed, false)
+        @test !CC.isFixed(ed)
         CC.setIntegerType(ed, ty2)
         @test CC.getIntegerType(ed).ptr == ty2.ptr
         CC.setPromotionType(ed, ty)
@@ -175,38 +183,68 @@ end
         @test br.begin_loc == loc && br.end_loc == loc2
         CC.setCompleteDefinitionRequired(rd, true)
         @test CC.isCompleteDefinitionRequired(rd)
+        CC.setCompleteDefinitionRequired(rd, false)
+        @test !CC.isCompleteDefinitionRequired(rd)
         CC.setEmbeddedInDeclarator(rd, true)
         @test CC.isEmbeddedInDeclarator(rd)
+        CC.setEmbeddedInDeclarator(rd, false)
+        @test !CC.isEmbeddedInDeclarator(rd)
         CC.setFreeStanding(rd, true)
         @test CC.isFreeStanding(rd)
+        CC.setFreeStanding(rd, false)
+        @test !CC.isFreeStanding(rd)
         CC.setTypedefNameForAnonDecl(rd, tnd)
         @test CC.getTypedefNameForAnonDecl(rd).ptr == tnd.ptr
 
         # RecordDecl flag setters (data() is valid — SFoo is complete)
         CC.setHasFlexibleArrayMember(rd, true)
         @test CC.hasFlexibleArrayMember(rd)
+        CC.setHasFlexibleArrayMember(rd, false)
+        @test !CC.hasFlexibleArrayMember(rd)
         CC.setAnonymousStructOrUnion(rd, true)
         @test CC.isAnonymousStructOrUnion(rd)
+        CC.setAnonymousStructOrUnion(rd, false)
+        @test !CC.isAnonymousStructOrUnion(rd)
         CC.setHasObjectMember(rd, true)
         @test CC.hasObjectMember(rd)
+        CC.setHasObjectMember(rd, false)
+        @test !CC.hasObjectMember(rd)
         CC.setHasVolatileMember(rd, true)
         @test CC.hasVolatileMember(rd)
+        CC.setHasVolatileMember(rd, false)
+        @test !CC.hasVolatileMember(rd)
         CC.setHasLoadedFieldsFromExternalStorage(rd, true)
         @test CC.hasLoadedFieldsFromExternalStorage(rd)
+        CC.setHasLoadedFieldsFromExternalStorage(rd, false)
+        @test !CC.hasLoadedFieldsFromExternalStorage(rd)
         CC.setNonTrivialToPrimitiveDefaultInitialize(rd, true)
         @test CC.isNonTrivialToPrimitiveDefaultInitialize(rd)
+        CC.setNonTrivialToPrimitiveDefaultInitialize(rd, false)
+        @test !CC.isNonTrivialToPrimitiveDefaultInitialize(rd)
         CC.setNonTrivialToPrimitiveCopy(rd, true)
         @test CC.isNonTrivialToPrimitiveCopy(rd)
+        CC.setNonTrivialToPrimitiveCopy(rd, false)
+        @test !CC.isNonTrivialToPrimitiveCopy(rd)
         CC.setNonTrivialToPrimitiveDestroy(rd, true)
         @test CC.isNonTrivialToPrimitiveDestroy(rd)
+        CC.setNonTrivialToPrimitiveDestroy(rd, false)
+        @test !CC.isNonTrivialToPrimitiveDestroy(rd)
         CC.setHasNonTrivialToPrimitiveDefaultInitializeCUnion(rd, true)
         @test CC.hasNonTrivialToPrimitiveDefaultInitializeCUnion(rd)
+        CC.setHasNonTrivialToPrimitiveDefaultInitializeCUnion(rd, false)
+        @test !CC.hasNonTrivialToPrimitiveDefaultInitializeCUnion(rd)
         CC.setHasNonTrivialToPrimitiveDestructCUnion(rd, true)
         @test CC.hasNonTrivialToPrimitiveDestructCUnion(rd)
+        CC.setHasNonTrivialToPrimitiveDestructCUnion(rd, false)
+        @test !CC.hasNonTrivialToPrimitiveDestructCUnion(rd)
         CC.setHasNonTrivialToPrimitiveCopyCUnion(rd, true)
         @test CC.hasNonTrivialToPrimitiveCopyCUnion(rd)
+        CC.setHasNonTrivialToPrimitiveCopyCUnion(rd, false)
+        @test !CC.hasNonTrivialToPrimitiveCopyCUnion(rd)
         CC.setParamDestroyedInCallee(rd, true)
         @test CC.isParamDestroyedInCallee(rd)
+        CC.setParamDestroyedInCallee(rd, false)
+        @test !CC.isParamDestroyedInCallee(rd)
         CC.setArgPassingRestrictions(rd, LX.CXRecordDecl_APK_CannotPassInRegs)
         @test CC.getArgPassingRestrictions(rd) == LX.CXRecordDecl_APK_CannotPassInRegs
         CC.setCapturedRecord(rd)
@@ -214,64 +252,75 @@ end
 
         # BlockDecl (fresh) setters
         bd = CC.BlockDecl(ctx, dc, loc)
-        @test !CC.is_null_handle(bd)
         @test !CC.is_null_handle(CC.BlockDecl(ctx, 1))
         CC.setSignatureAsWritten(bd, ftsi)
         @test CC.getSignatureAsWritten(bd).ptr == ftsi.ptr
         @test (CC.setBody(bd, cs); true)
         CC.setCapturesCXXThis(bd, true)
         @test CC.capturesCXXThis(bd)
+        CC.setCapturesCXXThis(bd, false)
+        @test !CC.capturesCXXThis(bd)
         CC.setBlockMissingReturnType(bd, false)
         @test !CC.blockMissingReturnType(bd)
+        CC.setBlockMissingReturnType(bd, true)
+        @test CC.blockMissingReturnType(bd)
         CC.setIsConversionFromLambda(bd, true)
         @test CC.isConversionFromLambda(bd)
+        CC.setIsConversionFromLambda(bd, false)
+        @test !CC.isConversionFromLambda(bd)
         CC.setDoesNotEscape(bd, true)
         @test CC.doesNotEscape(bd)
+        CC.setDoesNotEscape(bd, false)
+        @test !CC.doesNotEscape(bd)
         CC.setCanAvoidCopyToHeap(bd, true)
         @test CC.canAvoidCopyToHeap(bd)
+        CC.setCanAvoidCopyToHeap(bd, false)
+        @test !CC.canAvoidCopyToHeap(bd)
         CC.setBlockMangling(bd, 7, tu)
         @test CC.getBlockManglingNumber(bd) == 7
 
-        # CapturedDecl (fresh) setters
-        cd = CC.CapturedDecl(ctx, dc, 1)
-        @test !CC.is_null_handle(cd)
+        # CapturedDecl (fresh) setters — two params so getParam/setParam cannot ignore the index
+        cd = CC.CapturedDecl(ctx, dc, 2)
         @test !CC.is_null_handle(CC.CapturedDecl(ctx, 1, 1))
         CC.setNothrow(cd, true)
         @test CC.isNothrow(cd)
+        CC.setNothrow(cd, false)
+        @test !CC.isNothrow(cd)
         CC.setBody(cd, body)
         @test CC.getBody(cd).ptr == body.ptr
         ipd = CC.ImplicitParamDecl(ctx, dc, loc, id, ty, LX.CXImplicitParamKind_CapturedContext)
+        ipd1 = CC.ImplicitParamDecl(ctx, dc, loc, id, ty, LX.CXImplicitParamKind_CapturedContext)
         CC.setParam(cd, 0, ipd)
+        CC.setParam(cd, 1, ipd1)
         @test CC.getParam(cd, 0).ptr == ipd.ptr
-        CC.setContextParam(cd, 0, ipd)
-        @test CC.getContextParam(cd).ptr == ipd.ptr
+        @test CC.getParam(cd, 1).ptr == ipd1.ptr
+        CC.setContextParam(cd, 1, ipd1)
+        @test CC.getContextParam(cd).ptr == ipd1.ptr
+        @test CC.getContextParamPosition(cd) == 1
         # All three index the same trailing parameter array, and clang asserts on each.
         n_cd = CC.getNumParams(cd)
+        @test n_cd == 2
         @test_throws AssertionError CC.getParam(cd, n_cd)
         @test_throws AssertionError CC.setParam(cd, n_cd, ipd)
         @test_throws AssertionError CC.setContextParam(cd, n_cd, ipd)
 
         # ExportDecl (fresh) setter
         exd = CC.ExportDecl(ctx, dc, loc)
-        @test !CC.is_null_handle(exd)
         @test !CC.is_null_handle(CC.ExportDecl(ctx, 1))
         CC.setRBraceLoc(exd, loc2)
         @test CC.getRBraceLoc(exd) == loc2
 
         # FileScopeAsmDecl (needs a StringLiteral)
-        if sl isa CC.StringLiteral
-            fsad = CC.FileScopeAsmDecl(ctx, dc, sl, loc, loc)
-            @test !CC.is_null_handle(fsad)
-            CC.setRParenLoc(fsad, loc2)
-            @test CC.getRParenLoc(fsad) == loc2
-            CC.setAsmString(fsad, sl)
-            @test CC.getAsmString(fsad).ptr == sl.ptr
-        end
+        @test sl isa CC.StringLiteral
+        fsad = CC.FileScopeAsmDecl(ctx, dc, sl, loc, loc)
+        CC.setRParenLoc(fsad, loc2)
+        @test CC.getRParenLoc(fsad) == loc2
+        CC.setAsmString(fsad, sl)
+        @test CC.getAsmString(fsad).ptr == sl.ptr
         @test !CC.is_null_handle(CC.FileScopeAsmDecl(ctx, 1))
 
         # AccessSpecDecl (fresh) setters
         asd = CC.AccessSpecDecl(ctx, LX.CXAccessSpecifier_AS_public, dc, loc, loc)
-        @test !CC.is_null_handle(asd)
         @test !CC.is_null_handle(CC.AccessSpecDecl(ctx, 1))
         CC.setColonLoc(asd, loc2)
         @test CC.getColonLoc(asd) == loc2
@@ -280,7 +329,6 @@ end
 
         # LinkageSpecDecl (fresh) setters
         lsd = CC.LinkageSpecDecl(ctx, dc, loc, loc, LX.CXLinkageSpecDecl_lang_c, true)
-        @test !CC.is_null_handle(lsd)
         @test !CC.is_null_handle(CC.LinkageSpecDecl(ctx, 1))
         CC.setLanguage(lsd, LX.CXLinkageSpecDecl_lang_cxx)
         @test CC.getLanguage(lsd) == LX.CXLinkageSpecDecl_lang_cxx
@@ -300,20 +348,36 @@ end
         @test CC.getTSCSpec(vd) == LX.CXThreadStorageClassSpecifier_TSCS_thread_local
         CC.setConstexpr(vd, true)
         @test CC.isConstexpr(vd)
+        CC.setConstexpr(vd, false)
+        @test !CC.isConstexpr(vd)
         CC.setInitCapture(vd, true)
         @test CC.isInitCapture(vd)
+        CC.setInitCapture(vd, false)
+        @test !CC.isInitCapture(vd)
         CC.setNRVOVariable(vd, true)
         @test CC.isNRVOVariable(vd)
+        CC.setNRVOVariable(vd, false)
+        @test !CC.isNRVOVariable(vd)
         CC.setExceptionVariable(vd, true)
         @test CC.isExceptionVariable(vd)
+        CC.setExceptionVariable(vd, false)
+        @test !CC.isExceptionVariable(vd)
         CC.setCXXForRangeDecl(vd, true)
         @test CC.isCXXForRangeDecl(vd)
+        CC.setCXXForRangeDecl(vd, false)
+        @test !CC.isCXXForRangeDecl(vd)
         CC.setObjCForDecl(vd, true)
         @test CC.isObjCForDecl(vd)
+        CC.setObjCForDecl(vd, false)
+        @test !CC.isObjCForDecl(vd)
         CC.setARCPseudoStrong(vd, true)
         @test CC.isARCPseudoStrong(vd)
+        CC.setARCPseudoStrong(vd, false)
+        @test !CC.isARCPseudoStrong(vd)
         CC.setPreviousDeclInSameBlockScope(vd, true)
         @test CC.isPreviousDeclInSameBlockScope(vd)
+        CC.setPreviousDeclInSameBlockScope(vd, false)
+        @test !CC.isPreviousDeclInSameBlockScope(vd)
         CC.setInlineSpecified(vd)
         @test CC.isInlineSpecified(vd)
         @test (CC.setImplicitlyInline(vd); true)
@@ -327,34 +391,64 @@ end
         # isDeletedAsWritten() == IsDeleted && !isDefaulted, so probe it before setDefaulted
         CC.setDeletedAsWritten(fd, true)
         @test CC.isDeletedAsWritten(fd)
+        CC.setDeletedAsWritten(fd, false)
+        @test !CC.isDeletedAsWritten(fd)
         CC.setTrivial(fd, true)
         @test CC.isTrivial(fd)
+        CC.setTrivial(fd, false)
+        @test !CC.isTrivial(fd)
         CC.setTrivialForCall(fd, true)
         @test CC.isTrivialForCall(fd)
+        CC.setTrivialForCall(fd, false)
+        @test !CC.isTrivialForCall(fd)
         CC.setDefaulted(fd, true)
         @test CC.isDefaulted(fd)
+        CC.setDefaulted(fd, false)
+        @test !CC.isDefaulted(fd)
         CC.setExplicitlyDefaulted(fd, true)
         @test CC.isExplicitlyDefaulted(fd)
+        CC.setExplicitlyDefaulted(fd, false)
+        @test !CC.isExplicitlyDefaulted(fd)
         CC.setHasWrittenPrototype(fd, true)
         @test CC.hasWrittenPrototype(fd)
+        CC.setHasWrittenPrototype(fd, false)
+        @test !CC.hasWrittenPrototype(fd)
         CC.setHasInheritedPrototype(fd, true)
         @test CC.hasInheritedPrototype(fd)
+        CC.setHasInheritedPrototype(fd, false)
+        @test !CC.hasInheritedPrototype(fd)
         CC.setHasImplicitReturnZero(fd, true)
         @test CC.hasImplicitReturnZero(fd)
+        CC.setHasImplicitReturnZero(fd, false)
+        @test !CC.hasImplicitReturnZero(fd)
         CC.setLateTemplateParsed(fd, true)
         @test CC.isLateTemplateParsed(fd)
+        CC.setLateTemplateParsed(fd, false)
+        @test !CC.isLateTemplateParsed(fd)
         CC.setInstantiationIsPending(fd, true)
         @test CC.instantiationIsPending(fd)
+        CC.setInstantiationIsPending(fd, false)
+        @test !CC.instantiationIsPending(fd)
         CC.setUsesSEHTry(fd, true)
         @test CC.usesSEHTry(fd)
+        CC.setUsesSEHTry(fd, false)
+        @test !CC.usesSEHTry(fd)
         CC.setHasSkippedBody(fd, true)
         @test CC.hasSkippedBody(fd)
+        CC.setHasSkippedBody(fd, false)
+        @test !CC.hasSkippedBody(fd)
         CC.setWillHaveBody(fd, true)
         @test CC.willHaveBody(fd)
+        CC.setWillHaveBody(fd, false)
+        @test !CC.willHaveBody(fd)
         CC.setIsMultiVersion(fd, true)
         @test CC.isMultiVersion(fd)
+        CC.setIsMultiVersion(fd, false)
+        @test !CC.isMultiVersion(fd)
         CC.setInlineSpecified(fd, true)
         @test CC.isInlineSpecified(fd)
+        CC.setInlineSpecified(fd, false)
+        @test !CC.isInlineSpecified(fd)
         @test (CC.setImplicitlyInline(fd, true); true)
         @test (CC.setRangeEnd(fd, loc); true)
     finally
@@ -382,7 +476,6 @@ end
     @test sl !== nothing
     loc = CC.getLocation(vd)
     asmdecl = CC.FileScopeAsmDecl(ctx, dc, sl, loc, loc)
-    @test !CC.is_null_handle(asmdecl)
     @test CC.getString(CC.getAsmString(asmdecl)) == "roundtrip_asm"   # was garbage before the fix
     dispose(f)
     dispose(I)
@@ -447,14 +540,12 @@ end
 
     # PragmaCommentDecl: kind and trailing arg round-trip
     pcd = CC.PragmaCommentDecl(ctx, tu, loc, LX.CXPragmaMSCommentKind_PCK_Lib, "libarg")
-    @test !CC.is_null_handle(pcd)
     @test CC.getCommentKind(pcd) == LX.CXPragmaMSCommentKind_PCK_Lib
     @test CC.getArg(pcd) == "libarg"
     @test !CC.is_null_handle(CC.PragmaCommentDecl(ctx, 1, 8))
 
     # PragmaDetectMismatchDecl: name/value round-trip
     pdd = CC.PragmaDetectMismatchDecl(ctx, tu, loc, "pname", "pval")
-    @test !CC.is_null_handle(pdd)
     @test CC.getName(pdd) == "pname"
     @test CC.getValue(pdd) == "pval"
     @test !CC.is_null_handle(CC.PragmaDetectMismatchDecl(ctx, 2, 12))
@@ -478,9 +569,8 @@ end
     for d in CC.decls(dc)
         d isa CC.LinkageSpecDecl && (lsd=d; break)
     end
-    @test !CC.is_null_handle(lsd)
+    @test lsd isa CC.LinkageSpecDecl
     ldc = CC.DeclContext(lsd)
-    @test !CC.is_null_handle(ldc)
     back = CC.LinkageSpecDecl(ldc)
     @test back.ptr == lsd.ptr
 
@@ -489,19 +579,16 @@ end
     for n in CC.subtree(CC.resolve(CC.getBody(CC.FunctionDecl(getdecl("usevm")))))
         n isa CC.MemberExpr && (me=n; break)
     end
-    @test me.ptr != C_NULL
+    @test me isa CC.MemberExpr
     md = CC.CXXMethodDecl(CC.getMemberDecl(me))
     dv = CC.getDevirtualizedMethod(md, CC.getBase(me), false)
-    @test dv.ptr != C_NULL
     @test CC.getName(dv) == "vm"
 
     vbase = CC.CXXRecordDecl(getdecl("VBase"))
     vder = CC.CXXRecordDecl(getdecl("VDer"))
     mib = CC.getCorrespondingMethodInClass(md, vbase, true)
-    @test mib.ptr != C_NULL
     @test CC.getName(mib) == "vm"
     mdd = CC.getCorrespondingMethodDeclaredInClass(md, vder)
-    @test mdd.ptr != C_NULL
     @test CC.getName(mdd) == "vm"
 
     mes = [n for n in CC.subtree(CC.resolve(CC.getBody(CC.FunctionDecl(getdecl("useo"))))) if n isa CC.MemberExpr]
@@ -540,6 +627,7 @@ end
     for ifd in ifds
         n = CC.getChainingSize(ifd)
         @test n == 2
+        @test CC.getChainElement(ifd, 0).ptr != CC.getChainElement(ifd, 1).ptr
         @test CC.getChainElement(ifd, n - 1).ptr == CC.getAnonField(ifd).ptr
         @test_throws AssertionError CC.getChainElement(ifd, n)  # the restated clang assert (Invariant 3)
     end
@@ -648,7 +736,7 @@ using ClangCompiler: get_tag
 
         einit = CC.getInit(vd_g)                       # Expr_ (IntegerLiteral 3)
         il = CC.resolve(einit)
-        @test !CC.is_null_handle(il)
+        @test il isa CC.IntegerLiteral
         gv = CC.getValue(il)                           # LLVMGenericValueRef
 
         gname = CC.getDeclName(vd_g)
@@ -660,9 +748,8 @@ using ClangCompiler: get_tag
 
         # ================= LabelDecl =================
         ls = dkfind(CC.LabelStmt, CC.resolve(CC.getBody(lblfd)))
-        @test !CC.is_null_handle(ls)
+        @test ls isa CC.LabelStmt
         ld = CC.getDecl(ls)
-        @test !CC.is_null_handle(ld)
         @test CC.getStmt(ld).ptr == ls.ptr
         CC.setStmt(ld, ls)
         @test CC.getStmt(ld).ptr == ls.ptr
@@ -682,6 +769,8 @@ using ClangCompiler: get_tag
         @test CC.getAnonymousNamespace(tu).ptr == nsd.ptr
         CC.setInline(nsd, true)
         @test CC.isInline(nsd)
+        CC.setInline(nsd, false)
+        @test !CC.isInline(nsd)
         CC.setAnonymousNamespace(nsd, nsd)
         @test CC.getAnonymousNamespace(nsd).ptr == nsd.ptr
         CC.setLocStart(nsd, gloc)
@@ -707,7 +796,6 @@ using ClangCompiler: get_tag
 
         # ================= VarDecl =================
         es1 = CC.ensureEvaluatedStmt(vd_g)
-        @test !CC.is_null_handle(es1)
         @test CC.getEvaluatedStmt(vd_g).ptr == es1.ptr
         CC.demoteThisDefinitionToDeclaration(vd_g)
         @test CC.isThisDeclarationADemotedDefinition(vd_g)
@@ -733,7 +821,7 @@ using ClangCompiler: get_tag
             sdm_b = CC.VarDecl(d)
             break
         end
-        @test !CC.is_null_handle(sdm_a) && !CC.is_null_handle(sdm_b)
+        @test sdm_a isa CC.VarDecl && sdm_b isa CC.VarDecl
         CC.setInstantiationOfStaticDataMember(sdm_a, sdm_b, LXD.CXTemplateSpecializationKind_TSK_ImplicitInstantiation)
         @test CC.getInstantiatedFromStaticDataMember(sdm_a).ptr == sdm_b.ptr
         CC.setTemplateSpecializationKind(sdm_a, LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization, gloc)
@@ -748,7 +836,7 @@ using ClangCompiler: get_tag
                 break
             end
         end
-        @test !CC.is_null_handle(vtd)
+        @test vtd isa CC.VarTemplateDecl
         vd_f2 = CC.VarDecl(ctx, dc, gloc, gloc, id, qt_int, tsi, LXD.CXStorageClass_SC_None)
         CC.setInstantiationOfStaticDataMember(vd_f2, vtd)  # wraps setDescribedVarTemplate
         @test CC.getDescribedVarTemplate(vd_f2).ptr == vtd.ptr
@@ -770,8 +858,12 @@ using ClangCompiler: get_tag
         @test CC.hasUnparsedDefaultArg(parm_a)
         CC.setHasInheritedDefaultArg(parm_a, true)
         @test CC.hasInheritedDefaultArg(parm_a)
+        CC.setHasInheritedDefaultArg(parm_a, false)
+        @test !CC.hasInheritedDefaultArg(parm_a)
         CC.setKNRPromoted(parm_a, true)
         @test CC.isKNRPromoted(parm_a)
+        CC.setKNRPromoted(parm_a, false)
+        @test !CC.isKNRPromoted(parm_a)
         CC.setScopeInfo(parm_a, 1, 2)
         @test CC.getFunctionScopeDepth(parm_a) == 1
         @test CC.getFunctionScopeIndex(parm_a) == 2
@@ -812,7 +904,7 @@ using ClangCompiler: get_tag
                 break
             end
         end
-        @test !CC.is_null_handle(ftd)
+        @test ftd isa CC.FunctionTemplateDecl
         fd_f6 = mkfd()
         CC.setDescribedFunctionTemplate(fd_f6, ftd)
         @test CC.getDescribedFunctionTemplate(fd_f6).ptr == ftd.ptr
@@ -842,14 +934,11 @@ using ClangCompiler: get_tag
             end
         end
         @test tplh !== nothing
-        if tplh !== nothing
-            @test !CC.is_null_handle(CC.getTemplateParameterList(tplh, 0))
-            @test_throws AssertionError CC.getTemplateParameterList(tplh, CC.getNumTemplateParameterLists(tplh))
-        end
+        @test CC.getName(CC.getParam(CC.getTemplateParameterList(tplh, 0), 0)) == "T"
+        @test_throws AssertionError CC.getTemplateParameterList(tplh, CC.getNumTemplateParameterLists(tplh))
 
         # ================= TypeDecl / TypedefDecl =================
         typ0 = CC.getTypeForDecl(tnd)
-        @test typ0 isa CC.Type_
         CC.setTypeForDecl(tnd, typ0)
         @test CC.getTypeForDecl(tnd) == typ0
         # and the QualType spelling reaches the same node through getTypePtr
@@ -861,8 +950,7 @@ using ClangCompiler: get_tag
         # ================= TagDecl =================
         @assert fnd(I, "DKS")
         td_s = CC.TagDecl(get_tag(fnd))
-        @test !CC.is_null_handle(CC.getDefinition(td_s))
-        @test CC.getDefinition(td_s).ptr != C_NULL
+        @test CC.getName(CC.getDefinition(td_s)) == "DKS"
 
         rec_f = CC.RecordDecl(ctx, LXD.CXTagTypeKind_Struct, dc, gloc, gloc, id)
         CC.startDefinition(rec_f)
@@ -886,20 +974,20 @@ using ClangCompiler: get_tag
 
         # captured-VLA field on a fresh captured record
         vds = dkfind(CC.DeclStmt, CC.resolve(CC.getBody(vlafd)))
-        @test !CC.is_null_handle(vds)
+        @test vds isa CC.DeclStmt
         vla_d = CC.getSingleDecl(vds)
         @test CC.getDeclKindName(vla_d) == "Var"
         vla_vd = CC.VarDecl(vla_d)
         vla_qt = CC.getType(vla_vd)
         vla_ty = CC.resolve(CC.getTypePtr(vla_qt))
-        @test !CC.is_null_handle(vla_ty)
+        @test vla_ty isa CC.VariableArrayType
         rec_f2 = CC.RecordDecl(ctx, LXD.CXTagTypeKind_Struct, dc, gloc, gloc, id)
         CC.setCapturedRecord(rec_f2)
         fld_vla = CC.FieldDecl(ctx, CC.DeclContext(rec_f2), gloc, gloc, id, vla_qt, tsi, CC.Expr_(C_NULL), false,
                                LXD.CXInClassInitStyle_ICIS_NoInit)
         CC.setCapturedVLAType(fld_vla, vla_ty)
         @test CC.hasCapturedVLAType(fld_vla)
-        @test !CC.is_null_handle(CC.getCapturedVLAType(fld_vla))
+        @test CC.getCapturedVLAType(fld_vla).ptr == vla_ty.ptr
 
         # ================= EnumDecl / EnumConstantDecl =================
         ed = CC.getDefinition(CC.EnumDecl(look("DKE")))
@@ -909,7 +997,7 @@ using ClangCompiler: get_tag
         @test CC.getTemplateSpecializationKind(enum_f) == LXD.CXTemplateSpecializationKind_TSK_ExplicitSpecialization
 
         ecd = CC.EnumConstantDecl(ctx, ed, gloc, id, qt_int, CC.Expr_(C_NULL), gv)
-        @test !CC.is_null_handle(ecd)
+        @test CC.getName(ecd) == "dk_gvar"
 
         # ================= CapturedDecl =================
         cd_f = CC.CapturedDecl(ctx, dc, 1)
@@ -929,7 +1017,7 @@ using ClangCompiler: get_tag
 
         # ================= FileScopeAsmDecl =================
         sl = dkfind(CC.StringLiteral, CC.resolve(CC.getInit(vd_cstr)))
-        @test !CC.is_null_handle(sl)
+        @test sl isa CC.StringLiteral
         fsad = CC.FileScopeAsmDecl(ctx, dc, sl, gloc, lloc)
         @test CC.getAsmLoc(fsad) == gloc
         @test !CC.is_null_handle(CC.getSourceRange(fsad).begin_loc)
@@ -937,7 +1025,7 @@ using ClangCompiler: get_tag
         # ================= ImportDecl =================
         # CreateImplicit stores the module pointer without dereferencing it.
         imp1 = CC.ImportDecl(ctx, dc, gloc, CC.Module_(C_NULL), gloc)
-        @test !CC.is_null_handle(imp1)
+        @test CC.is_null_handle(CC.getImportedModule(imp1))
         # A deserialized import is incomplete: no identifier locs, safe getters.
         imp2 = CC.ImportDecl(ctx, 99, 0)
         @test CC.getNumIdentifierLocs(imp2) == 0
@@ -949,8 +1037,8 @@ using ClangCompiler: get_tag
         dif = get_decl(fnd)
         @test CC.getDeclKindName(dif) == "IndirectField"
         ifd = CC.IndirectFieldDecl(dif)
-        @test !CC.is_null_handle(CC.getVarDecl(ifd))
-        @test CC.getVarDecl(ifd).ptr != C_NULL
+        @test CC.getName(ifd) == "dkiu_a"
+        @test CC.getDeclKindName(CC.getVarDecl(ifd)) == "Var"
         @test CC.getCanonicalDecl(ifd).ptr == ifd.ptr
         # base Decl receivers on the plain Decl carrier
         @test !CC.is_null_handle(CC.getBeginLoc(dif))
@@ -965,7 +1053,7 @@ using ClangCompiler: get_tag
                 break
             end
         end
-        @test !CC.is_null_handle(tatd)
+        @test tatd isa CC.TypeAliasTemplateDecl
         tad_f = CC.TypeAliasDecl(ctx, dc, gloc, gloc, id, tsi)
         CC.setDescribedAliasTemplate(tad_f, tatd)
         @test CC.getDescribedAliasTemplate(tad_f).ptr == tatd.ptr
@@ -986,15 +1074,14 @@ using ClangCompiler: get_tag
         flds7 = CC.getFields(p7)
         @test length(flds7) == 2
         pt7 = CC.resolve(CC.getTypePtr(CC.getType(flds7[2])))
-        @test !CC.is_null_handle(pt7)
+        @test pt7 isa CC.PointerType
         inj = CC.resolve(CC.getTypePtr(CC.getPointeeType(pt7)))
         if inj isa CC.ElaboratedType
             inj = CC.resolve(CC.getTypePtr(CC.desugar(inj)))
         end
-        @test !CC.is_null_handle(inj)
+        @test inj isa CC.InjectedClassNameType
         tn = CC.getTemplateName(inj)
-        @test !CC.is_null_handle(CC.getAsTemplateDecl(tn))
-        @test CC.getAsTemplateDecl(tn).ptr != C_NULL
+        @test CC.getName(CC.getAsTemplateDecl(tn)) == "DK7S"
 
         # member template of an instantiated class template -> member specialization
         vd8 = CC.VarDecl(look("dk8_var"))
@@ -1013,10 +1100,8 @@ using ClangCompiler: get_tag
                 break
             end
         end
-        @test vtsd !== nothing
-        if vtsd !== nothing
-            @test !CC.is_null_handle(CC.getTemplateArgs(vtsd))
-        end
+        @test vtsd isa CC.VarTemplateSpecializationDecl
+        @test size(CC.getTemplateArgs(vtsd)) == 1
 
         # ================= ExplicitSpecifier =================
         # clang::ExplicitSpecifier is a trivially-copyable one-word value
@@ -1159,12 +1244,11 @@ end
     @test CC.getInitializingDeclaration(gvar).ptr == gvar.ptr
     @test CC.getNumTemplateParameterLists(gvar) == 0
 
-    @test !CC.is_null_handle(CC.getType(gvar))
+    @test CC.getAsString(CC.getType(gvar)) == "int"
     @test CC.getCanonicalDecl(gvar).ptr == gvar.ptr
     @test CC.is_null_handle(CC.getActingDefinition(gvar))
     @test CC.getDefinition(gvar).ptr == gvar.ptr
-    @test !CC.is_null_handle(CC.getAnyInitializer(gvar))
-    @test !CC.is_null_handle(CC.getInit(gvar))
+    @test CC.getInit(gvar).ptr == CC.getAnyInitializer(gvar).ptr
     @test CC.is_null_handle(CC.getTemplateInstantiationPattern(gvar))
     @test CC.is_null_handle(CC.getInstantiatedFromStaticDataMember(gvar))
     @test CC.is_null_handle(CC.getDescribedVarTemplate(gvar))
@@ -1203,8 +1287,7 @@ end
     @test CC.hasLinkageBeenComputed(gvar) == true
 
     @test CC.getName(gvar) == "gvar"
-    @test !CC.is_null_handle(CC.getIdentifier(gvar))
-    @test !CC.is_null_handle(CC.getDeclName(gvar))
+    @test CC.getName(CC.getIdentifier(gvar)) == "gvar"
     @test CC.getUnderlyingDecl(gvar).ptr == gvar.ptr
     @test CC.getVisibility(gvar) == LX.CXVisibility_DefaultVisibility
     @test CC.getLinkageInternal(gvar) == LX.CXLinkage_External
@@ -1290,7 +1373,7 @@ end
     @test CC.getBuiltinID(add) == 0
     @test CC.getNumParams(add) == 2
     @test CC.getMinRequiredArguments(add) == 2
-    @test CC.getODRHash(add) isa UInt32 && CC.getODRHash(add) != 0
+    @test CC.getODRHash(add) != 0
 
     @test CC.is_null_handle(CC.getExceptionSpecSourceRange(add).begin_loc)
     @test !CC.is_null_handle(CC.getParametersSourceRange(add).begin_loc)
@@ -1298,11 +1381,10 @@ end
     @test !CC.is_null_handle(CC.getSourceRange(add).begin_loc)
     @test !CC.is_null_handle(CC.getNameInfo(add))
     @test CC.getDefinition(add).ptr == add.ptr
-    @test !CC.is_null_handle(CC.getBody(add))
     @test CC.getCanonicalDecl(add).ptr == add.ptr
-    @test !CC.is_null_handle(CC.getReturnType(add))
-    @test !CC.is_null_handle(CC.getDeclaredReturnType(add))
-    @test !CC.is_null_handle(CC.getCallResultType(add))
+    @test CC.getAsString(CC.getReturnType(add)) == "int"
+    @test CC.getAsString(CC.getDeclaredReturnType(add)) == "int"
+    @test CC.getAsString(CC.getCallResultType(add)) == "int"
     @test CC.is_null_handle(CC.getLiteralIdentifier(add))
     @test CC.is_null_handle(CC.getMemberSpecializationInfo(add))
     @test CC.is_null_handle(CC.getDescribedFunctionTemplate(add))
@@ -1313,7 +1395,8 @@ end
     @test CC.is_null_handle(CC.getTemplateSpecializationArgsAsWritten(add))
     @test CC.is_null_handle(CC.getDependentSpecializationInfo(add))
     @test CC.is_null_handle(CC.getPointOfInstantiation(add))
-    @test !CC.is_null_handle(CC.getParamDecl(add, 0))
+    @test CC.getName(CC.getParamDecl(add, 0)) == "a"
+    @test CC.getName(CC.getParamDecl(add, 1)) == "b"
     @test_throws AssertionError CC.getParamDecl(add, CC.getNumParams(add))  # the restated clang assert (Invariant 3)
     @test CC.isVariadic(vfn) == true
     @test !CC.is_null_handle(CC.getEllipsisLoc(vfn))
@@ -1323,6 +1406,7 @@ end
 
     # ---------------- ParmVarDecl ----------------
     p0 = CC.getParamDecl(add, 0)
+    p1 = CC.getParamDecl(add, 1)
     pdef = CC.getParamDecl(wdf, 1)
 
     @test CC.isObjCMethodParameter(p0) == false
@@ -1335,8 +1419,10 @@ end
 
     @test CC.getFunctionScopeDepth(p0) == 0
     @test CC.getFunctionScopeIndex(p0) == 0
+    @test CC.getFunctionScopeIndex(p1) == 1
+    @test CC.getFunctionScopeIndex(pdef) == 1
     @test CC.is_null_handle(CC.getDefaultArgRange(p0).begin_loc)
-    @test !CC.is_null_handle(CC.getOriginalType(p0))
+    @test CC.getAsString(CC.getOriginalType(p0)) == "int"
     @test CC.hasDefaultArg(pdef) == true
     @test !CC.is_null_handle(CC.getDefaultArg(pdef))
 
@@ -1366,7 +1452,7 @@ end
     @test CC.is_null_handle(CC.getPreviousDecl(rd))
     @test CC.getMostRecentDecl(rd).ptr == rd.ptr
     @test CC.getDefinition(rd).ptr == rd.ptr
-    @test !CC.is_null_handle(CC.findFirstNamedDataMember(rd))
+    @test CC.getName(CC.findFirstNamedDataMember(rd)) == "x"
     @test CC.isMsStruct(rd, ctx) == Sys.iswindows()
     # a plain struct is no template specialization, and the cast says which class it is
     @test_throws CC.CastError CC.ClassTemplateSpecializationDecl(rd)
@@ -1387,9 +1473,7 @@ end
     @test CC.isEmbeddedInDeclarator(rd) == false
     @test CC.mayHaveOutOfDateDef(rd) == false
 
-    @test !CC.is_null_handle(CC.DeclContext(rd))
     @test CC.getCanonicalDecl(rd).ptr == rd.ptr
-    @test CC.getDefinition(rd).ptr == rd.ptr
     @test CC.getKindName(rd) == "struct"
     @test CC.getTagKind(rd) == LX.CXTagTypeKind_Struct
     @test CC.is_null_handle(CC.getTypedefNameForAnonDecl(rd))
@@ -1402,11 +1486,9 @@ end
     # NamedDecl -> TypeDecl cast + TypeDecl accessors
     rec_named = CC.NamedDecl(getdecl("Point"))
     td_base = CC.TypeDecl(rec_named)
-    @test !CC.is_null_handle(td_base)
-    @test !CC.is_null_handle(CC.getTypeForDecl(rec_named))
-    @test !CC.is_null_handle(CC.getTypeForDecl(td_base))
+    @test td_base.ptr == rd.ptr
+    @test CC.getTypeForDecl(rec_named).ptr == CC.getTypeForDecl(td_base).ptr
     @test !CC.is_null_handle(CC.getBeginLoc(td_base))
-    @test !CC.is_null_handle(CC.getSourceRange(td_base).begin_loc)
 
     # ---------------- FieldDecl ----------------
     fields = CC.getFields(rd)
@@ -1426,25 +1508,14 @@ end
     @test CC.is_null_handle(CC.getCapturedVLAType(fields[1]))
     @test CC.is_null_handle(CC.getInClassInitializer(fields[1]))
     @test CC.getParent(fields[1]).ptr == rd.ptr
-    @test !CC.is_null_handle(CC.getSourceRange(fields[1]).begin_loc)
     @test CC.isZeroLengthBitField(fields[1], ctx) == false
     @test CC.isZeroSize(fields[1], ctx) == false
 
-    # fields[2]: int y : 3
+    # fields[2]: int y : 3 — polarity against field 1 on bit-width / index
     @test CC.isBitField(fields[2]) == true
-    @test CC.isMutable(fields[2]) == false
-    @test CC.isUnnamedBitfield(fields[2]) == false
-    @test CC.isAnonymousStructOrUnion(fields[2]) == false
-    @test CC.hasCapturedVLAType(fields[2]) == false
-    @test CC.hasInClassInitializer(fields[2]) == false
     @test CC.getFieldIndex(fields[2]) == 1
-    @test CC.getInClassInitStyle(fields[2]) == LX.CXInClassInitStyle_ICIS_NoInit
     @test !CC.is_null_handle(CC.getBitWidth(fields[2]))
-    @test CC.getCanonicalDecl(fields[2]).ptr == fields[2].ptr
-    @test CC.is_null_handle(CC.getCapturedVLAType(fields[2]))
-    @test CC.is_null_handle(CC.getInClassInitializer(fields[2]))
     @test CC.getParent(fields[2]).ptr == rd.ptr
-    @test !CC.is_null_handle(CC.getSourceRange(fields[2]).begin_loc)
     @test CC.isZeroLengthBitField(fields[2], ctx) == false
     @test CC.isZeroSize(fields[2], ctx) == false
 
@@ -1477,18 +1548,18 @@ end
     @test CC.isScoped(sed) == true
     @test CC.getNumNegativeBits(ed) == 0
     @test CC.getNumPositiveBits(ed) == 3
-    @test CC.getODRHash(ed) isa UInt32 && CC.getODRHash(ed) != 0
+    @test CC.getODRHash(ed) != 0
     @test CC.getNumEnumerators(ed) == 3
     @test CC.getCanonicalDecl(ed).ptr == ed.ptr
     @test CC.is_null_handle(CC.getPreviousDecl(ed))
     @test CC.getMostRecentDecl(ed).ptr == ed.ptr
     @test CC.getDefinition(ed).ptr == ed.ptr
-    @test !CC.is_null_handle(CC.getIntegerType(sed))
+    @test CC.getAsString(CC.getIntegerType(sed)) == "long"
     @test CC.is_null_handle(CC.getInstantiatedFromMemberEnum(ed))
     @test !CC.is_null_handle(CC.getIntegerTypeRange(sed).begin_loc)
     @test !CC.is_null_handle(CC.getIntegerTypeSourceInfo(sed))
     @test CC.is_null_handle(CC.getMemberSpecializationInfo(ed))
-    @test !CC.is_null_handle(CC.getPromotionType(ed))
+    @test CC.isIntegerType(CC.getTypePtr(CC.getPromotionType(ed)))
     @test CC.is_null_handle(CC.getTemplateInstantiationPattern(ed))
     @test CC.getTemplateSpecializationKind(ed) == LX.CXTemplateSpecializationKind_TSK_Undeclared
 
@@ -1535,7 +1606,6 @@ end
     @test CC.getEnumConstantDeclValue(neg) == -3
     @test CC.getCanonicalDecl(ec).ptr == ec.ptr
     @test !CC.is_null_handle(CC.getInitExpr(ec))
-    @test !CC.is_null_handle(CC.getSourceRange(ec).begin_loc)
     # NamedDecl -> EnumConstantDecl cast
     ec_named = CC.NamedDecl(ec)
     @test CC.EnumConstantDecl(ec_named).ptr == ec.ptr
@@ -1543,16 +1613,14 @@ end
     # ---------------- TypedefNameDecl / TypedefDecl / TypeAliasDecl ----------------
     td = CC.TypedefDecl(getdecl("MyInt"))
     tad = CC.TypeAliasDecl(getdecl("MyAlias"))
-    @test !CC.is_null_handle(CC.getUnderlyingType(td))
+    @test CC.getAsString(CC.getUnderlyingType(td)) == "int"
     @test CC.getCanonicalDecl(td).ptr == td.ptr
     @test CC.is_null_handle(CC.getAnonDeclWithTypedefName(td))
     @test CC.isTransparentTag(td) == false
     @test !CC.is_null_handle(CC.getTypeSourceInfo(td))
     @test CC.isModed(td) == false
-    @test !CC.is_null_handle(CC.getSourceRange(td).begin_loc)
-    @test !CC.is_null_handle(CC.getUnderlyingType(tad))
+    @test CC.getAsString(CC.getUnderlyingType(tad)) == "double"
     @test CC.is_null_handle(CC.getDescribedAliasTemplate(tad))
-    @test !CC.is_null_handle(CC.getSourceRange(tad).begin_loc)
 
     # ---------------- NamespaceDecl ----------------
     ns = CC.NamespaceDecl(getdecl("ns"))
@@ -1562,15 +1630,13 @@ end
     @test CC.isInline(tinl) == true
     @test CC.isOriginalNamespace(ns) == true
     @test CC.getOriginalNamespace(ns).ptr == ns.ptr
-    @test !CC.is_null_handle(CC.getAnonymousNamespace(ns))
+    @test CC.isAnonymousNamespace(CC.getAnonymousNamespace(ns))
     @test CC.getCanonicalDecl(ns).ptr == ns.ptr
-    @test !CC.is_null_handle(CC.getSourceRange(ns).begin_loc)
-    @test !CC.is_null_handle(CC.getBeginLoc(ns))
     @test !CC.is_null_handle(CC.getRBraceLoc(ns))
 
     # ---------------- TranslationUnitDecl ----------------
     tu = CC.getTranslationUnitDecl(gvar)
-    @test !CC.is_null_handle(CC.getASTContext(tu))
+    @test CC.getASTContext(tu).ptr == ctx.ptr
     @test CC.is_null_handle(CC.getAnonymousNamespace(tu))
 
     # ---------------- BlockDecl (reached via the recursive decl walk) ----------------
@@ -1594,9 +1660,8 @@ end
     @test CC.getNumCaptures(blk) == 1
     @test CC.getNumParams(blk) == 1
     @test !CC.is_null_handle(CC.getSignatureAsWritten(blk))
-    @test !CC.is_null_handle(CC.getSourceRange(blk).begin_loc)
     @test CC.capturesVariable(blk, addend) == true
-    @test !CC.is_null_handle(CC.getParamDecl(blk, 0))
+    @test CC.getName(CC.getParamDecl(blk, 0)) == "q"
     @test length(CC.getParams(blk)) == 1
 
     dispose(f)
@@ -1702,23 +1767,19 @@ end
 
         # TranslationUnitDecl <-> DeclContext
         tu_dc = CC.DeclContext(tu)
-        @test !CC.is_null_handle(tu_dc)
         @test CC.TranslationUnitDecl(tu_dc).ptr == tu.ptr
 
         # NamespaceDecl <-> DeclContext
         nd_dc = CC.DeclContext(nd)
-        @test !CC.is_null_handle(nd_dc)
         @test CC.NamespaceDecl(nd_dc).ptr == nd.ptr
 
         # FunctionDecl <-> DeclContext
         fd_dc = CC.DeclContext(fd)
-        @test !CC.is_null_handle(fd_dc)
         @test CC.FunctionDecl(fd_dc).ptr == fd.ptr
 
         # ExternCContextDecl <-> DeclContext (the AST's singleton extern "C" context)
         ecd = CC.getExternCContextDecl(ctx)
         ecd_dc = CC.DeclContext(ecd)
-        @test !CC.is_null_handle(ecd_dc)
         @test CC.ExternCContextDecl(ecd_dc).ptr == ecd.ptr
     finally
         dispose(f)
@@ -1810,9 +1871,8 @@ end
         end
         host = CC.FunctionDecl(look("hb_host"))
         be = find_node(CC.BlockExpr, CC.resolve(CC.getBody(host)))
-        @test !CC.is_null_handle(be)
+        @test be isa CC.BlockExpr
         blk = CC.getBlockDecl(be)
-        @test blk.ptr != C_NULL
         @test CC.getNumCaptures(blk) >= 1
         @test !(CC.isCaptureNonEscapingByref(blk, 0))
         # `addend` is captured by value, so it is neither an escaping nor a
@@ -1821,14 +1881,10 @@ end
 
         # ---------------- HLSLBufferDecl ----------------
         hb = CC.HLSLBufferDecl(ctx, dc, true, loc, id, loc, loc)
-        @test !CC.is_null_handle(hb)
-        @test hb.ptr != C_NULL
         @test CC.isCBuffer(hb)
         @test CC.getName(hb) == "hb_anchor"
         # KwLoc and LBraceLoc round-trip the locations passed to Create
-        @test !CC.is_null_handle(CC.getLocStart(hb))
         @test CC.getLocStart(hb).ptr == loc.ptr
-        @test !CC.is_null_handle(CC.getLBraceLoc(hb))
         @test CC.getLBraceLoc(hb).ptr == loc.ptr
         # RBraceLoc is default-constructed by Create, so only a value set here is asserted
         @test CC.is_null_handle(CC.getRBraceLoc(hb))
@@ -1843,8 +1899,6 @@ end
 
         # Decl <-> DeclContext pivot: offset-correct in both directions
         hbdc = CC.DeclContext(hb)
-        @test !CC.is_null_handle(hbdc)
-        @test !CC.is_null_handle(CC.HLSLBufferDecl(hbdc))
         @test CC.HLSLBufferDecl(hbdc).ptr == hb.ptr
     finally
         dispose(f)
@@ -1880,8 +1934,6 @@ end
 
         # ---------------- NamespaceDecl::Create ----------------
         ns = CC.NamespaceDecl(ctx, dc, true, loc2, loc, id)
-        @test !CC.is_null_handle(ns)
-        @test ns.ptr != C_NULL
         @test CC.getName(ns) == "dg_anchor"
         @test CC.isInline(ns)
         @test !CC.isNested(ns)
@@ -1913,8 +1965,7 @@ end
         # ---------------- setTemplateParameterListsInfo ----------------
         ctd = CC.ClassTemplateDecl(look("DGTmpl"))
         tpl = CC.getTemplateParameters(ctd)
-        @test !CC.is_null_handle(tpl)
-        @test tpl.ptr != C_NULL
+        @test size(tpl) >= 1
 
         # TagDecl arm, on a freshly created (detached) record
         rec = CC.RecordDecl(ctx, LXG.CXTagTypeKind_Struct, dc, loc, loc, id)
@@ -2057,7 +2108,6 @@ end
         @test CC.getQualifier(fd).ptr != C_NULL
         qr = CC.getQualifierRange(fd)
         @test !CC.is_null_handle(qr.begin_loc)
-        @test qr.begin_loc.ptr != C_NULL
 
         # unqualified declarator: no specifier was written, so the extent is invalid
         @test CC.getQualifier(plain_fd).ptr == C_NULL
@@ -2075,7 +2125,6 @@ end
 
         # ---------------- TagDecl <-> DeclContext pivot ----------------
         rd_dc = CC.DeclContext(plain_rd)
-        @test !CC.is_null_handle(rd_dc)
         @test CC.TagDecl(rd_dc).ptr == plain_rd.ptr
         # `TagDecl(::DeclContext)` crosses the two hierarchies rather than narrowing within
         # one, so unlike the Decl-rooted casts it reports a miss as the NULL carrier: there is

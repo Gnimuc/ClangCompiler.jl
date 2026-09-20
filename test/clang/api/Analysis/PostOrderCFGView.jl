@@ -24,7 +24,6 @@ using Test
         @assert f(I, "po_acyclic")
         fd = CC.getAsFunction(CC.get_decl(f))
         cfg = CC.buildCFG(fd, CC.getBody(fd), ctx)
-        @test cfg.ptr != C_NULL
         try
             rpo = CC.getBlocksInReversePostOrder(cfg)
             n = Int(CC.getNumBlocks(cfg))
@@ -57,7 +56,6 @@ using Test
         @assert f(I, "po_loop")
         lfd = CC.getAsFunction(CC.get_decl(f))
         lcfg = CC.buildCFG(lfd, CC.getBody(lfd), ctx)
-        @test lcfg.ptr != C_NULL
         try
             rpo = CC.getBlocksInReversePostOrder(lcfg)
             @test rpo[1].ptr == CC.getEntry(lcfg).ptr

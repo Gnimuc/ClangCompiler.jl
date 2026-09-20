@@ -42,7 +42,6 @@ end
             # every query below answers "not live" for every variable.
             CC.setAllAlwaysAdd(CC.getCFGBuildOptions(adc))
             cfg = CC.getCFG(adc)
-            @test !CC.is_null_handle(cfg)
             blocks = [CC.getBlock(cfg, i) for i = 0:(Int(CC.getNumBlocks(cfg)) - 1)]
             locals = lv_locals(cfg)
             @test haskey(locals, "a")
@@ -58,8 +57,6 @@ end
             strict = CC.computeLiveness(adc, true)
             relaxed = CC.computeLiveness(adc, false)
             try
-                @test !CC.is_null_handle(strict)
-                @test !CC.is_null_handle(relaxed)
                 @test strict.ptr != relaxed.ptr
 
                 # both arms assign `a` before anything reads it, so killing at assignment

@@ -11,16 +11,11 @@ using Test
 
     int_ptr = CC.getIntPtrType(ctx)
     ptr_ty = CC.getPointerType(ctx, int_ptr)
-    @test int_ptr isa CC.QualType
-    @test int_ptr.ptr != C_NULL
-    @test ptr_ty.ptr != C_NULL
     @test ptr_ty.ptr != int_ptr.ptr
 
     # An ImplicitConversionSequence is a heap-boxed value type; a fresh one carries the
     # private Uninitialized sentinel, so no kind query is legal on it yet.
     ics = CC.ImplicitConversionSequence()
-    @test ics isa CC.ImplicitConversionSequence
-    @test ics.ptr != C_NULL
     @test CC.isInitialized(ics) == false
     @test CC.hasInitializerListContainerType(ics) == false
     @test CC.isInitializerListOfIncompleteArray(ics) == false
@@ -39,8 +34,6 @@ using Test
     @test !CC.isFailure(ics)
 
     scs = CC.getStandard(ics)
-    @test scs isa CC.StandardConversionSequence
-    @test scs.ptr != C_NULL
     @test CC.isIdentityConversion(scs)
     @test CC.getFromType(scs).ptr == int_ptr.ptr
     for i = 0:2
@@ -63,8 +56,6 @@ using Test
     @test CC.isFailure(ics)
     @test CC.getKindRank(ics) == 3
     bad = CC.getBad(ics)
-    @test bad isa CC.BadConversionSequence
-    @test bad.ptr != C_NULL
     @test CC.getFromType(bad).ptr == int_ptr.ptr
     @test CC.getToType(bad).ptr == ptr_ty.ptr
 
@@ -81,10 +72,7 @@ using Test
     # An OverloadCandidateSet is created empty and owns whatever is later added to it.
     loc = CC.get_main_file_begin_loc(sm)
     cs = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Normal)
-    @test cs isa CC.OverloadCandidateSet
-    @test cs.ptr != C_NULL
     @test CC.getKind(cs) == CC.CXOverloadCandidateSet_CSK_Normal
-    @test !CC.is_null_handle(CC.getLocation(cs))
     @test CC.getLocation(cs).ptr == loc.ptr
     @test CC.empty(cs)
     @test size(cs) == 0
@@ -92,7 +80,7 @@ using Test
     CC.clear(cs, CC.CXOverloadCandidateSet_CSK_Operator)
     @test CC.empty(cs)
     @test size(cs) == 0
-    @test CC.getKind(cs) isa CC.CXOverloadCandidateSet_CandidateSetKind
+    @test CC.getKind(cs) == CC.CXOverloadCandidateSet_CSK_Operator
     @test CC.getLocation(cs).ptr == loc.ptr
 
     CC.dispose(cs)
@@ -153,7 +141,6 @@ end
     bad = CC.getBad(ics)
     @test CC.getFailureKind(bad) == CC.CXBadConversionSequence_bad_qualifiers
     @test CC.is_null_handle(CC.getFromExpr(bad))
-    @test CC.getFromExpr(bad).ptr == C_NULL
     CC.setFromExpr(bad, e)
     @test CC.getFromExpr(bad).ptr == e.ptr
     @test CC.getFromType(bad).ptr == CC.getType(e).ptr
@@ -166,8 +153,6 @@ end
     # getNullptrToBool is a static factory: the sequence it returns is a fresh owned box
     # whose standard arm holds exactly the types handed in.
     n2b = CC.getNullptrToBool(int_ptr, bool_ty, true)
-    @test n2b isa CC.ImplicitConversionSequence
-    @test n2b.ptr != C_NULL
     @test CC.isStandard(n2b)
     n2b_scs = CC.getStandard(n2b)
     @test CC.getFromType(n2b_scs).ptr == int_ptr.ptr
@@ -226,8 +211,6 @@ end
     CC.setAmbiguous(ics)
     @test CC.isAmbiguous(ics)
     amb = CC.getAmbiguous(ics)
-    @test amb isa CC.AmbiguousConversionSequence
-    @test amb.ptr != C_NULL
 
     # setAmbiguous constructs an empty conversion set and leaves the from- and to-types
     # indeterminate, so both are written before either is read back.
@@ -239,9 +222,7 @@ end
 
     CC.addConversion(amb, found, fn)
     @test CC.getNumConversions(amb) == 1
-    @test !CC.is_null_handle(CC.getConversionFound(amb, 0))
     @test CC.getConversionFound(amb, 0).ptr == found.ptr
-    @test CC.getConversionFunction(amb, 0) isa CC.FunctionDecl
     @test CC.getConversionFunction(amb, 0).ptr == fn.ptr
     @test_throws AssertionError CC.getConversionFound(amb, 1)
     @test_throws AssertionError CC.getConversionFunction(amb, 1)
@@ -276,8 +257,6 @@ end
 
     cs = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Operator, CC.CXOverloadedOperatorKind_OO_Less, loc,
                                  true)
-    @test cs isa CC.OverloadCandidateSet
-    @test cs.ptr != C_NULL
     @test CC.getKind(cs) == CC.CXOverloadCandidateSet_CSK_Operator
     @test CC.getRewriteInfoOriginalOperator(cs) == CC.CXOverloadedOperatorKind_OO_Less
     @test CC.getRewriteInfoOpLoc(cs).ptr == loc.ptr
@@ -286,8 +265,6 @@ end
     # Candidate storage: the set owns its candidates and the conversion slots it hands out.
     @test CC.empty(cs)
     cand = CC.addCandidate(cs, 2)
-    @test cand isa CC.OverloadCandidate
-    @test cand.ptr != C_NULL
     @test size(cs) == 1
     @test !CC.empty(cs)
     @test CC.getCandidate(cs, 0).ptr == cand.ptr
@@ -304,7 +281,6 @@ end
     # The conversion slots are default-constructed, so the ambiguity scan stops at the first
     # of them until that one is given a kind.
     slot = CC.getConversion(cand, 0)
-    @test slot isa CC.ImplicitConversionSequence
     @test !CC.isInitialized(slot)
     @test !CC.hasAmbiguousConversion(cand)
     CC.setAmbiguous(slot)
@@ -344,12 +320,12 @@ end
     # both halves are asserted by shape.
     av = CC.IndeterminateValue()
     kind, narrowed = CC.getNarrowingKind(scs, ctx, e, av)
-    @test kind isa CC.CXNarrowingKind
     @test kind in instances(CC.CXNarrowingKind)
-    @test narrowed isa CC.QualType
+    # destination type is recorded only on constant-narrowing
+    @test (kind == CC.CXNarrowingKind_NK_Constant_Narrowing) == (narrowed.ptr != C_NULL)
     kind2, narrowed2 = CC.getNarrowingKind(scs, ctx, e, av, true)
     @test kind2 in instances(CC.CXNarrowingKind)
-    @test narrowed2 isa CC.QualType
+    @test (kind2 == CC.CXNarrowingKind_NK_Constant_Narrowing) == (narrowed2.ptr != C_NULL)
     CC.dispose(av)
 
     # The user-defined arm. Switching the kind does not initialise it, so every member is
@@ -357,13 +333,9 @@ end
     @test_throws AssertionError CC.getUserDefined(ics)
     CC.setUserDefined(ics)
     ud = CC.getUserDefined(ics)
-    @test ud isa CC.UserDefinedConversionSequence
-    @test ud.ptr != C_NULL
 
     before = CC.getBefore(ud)
     after = CC.getAfter(ud)
-    @test before isa CC.StandardConversionSequence
-    @test after isa CC.StandardConversionSequence
     @test before.ptr != after.ptr
     CC.setAsIdentityConversion(before)
     CC.setAsIdentityConversion(after)
@@ -380,7 +352,6 @@ end
     CC.setHadMultipleCandidates(ud, false)
     @test CC.getHadMultipleCandidates(ud) == false
     CC.setConversionFunction(ud, fn)
-    @test CC.getConversionFunction(ud) isa CC.FunctionDecl
     @test CC.getConversionFunction(ud).ptr == fn.ptr
 
     @test CC.dump(ud) === nothing
@@ -420,7 +391,6 @@ end
     cs = CC.OverloadCandidateSet(loc, CC.CXOverloadCandidateSet_CSK_Normal)
     slots = CC.allocateConversionSequences(cs, 3)
     @test length(slots) == 3
-    @test all(s -> s isa CC.ImplicitConversionSequence && s.ptr != C_NULL, slots)
     @test allunique(s.ptr for s in slots)
     @test !CC.isInitialized(slots[1])
     @test !CC.isInitialized(slots[3])
@@ -489,11 +459,11 @@ end
     # slots addCandidate leaves uninitialized.
     cand = CC.addCandidate(op, 1)
     res1, best1 = CC.BestViableFunction(op, sema, loc)
-    @test res1 isa CC.CXOverloadingResult
-    @test best1 === nothing || best1 isa CC.OverloadCandidate
-    if res1 == CC.CXOverloadingResult_OR_Success
-        @test best1.ptr == cand.ptr
-    end
+    # addCandidate writes a viable candidate, and a set of one never compares conversion
+    # slots, so resolution succeeds and names that candidate
+    @test res1 == CC.CXOverloadingResult_OR_Success
+    @test best1 !== nothing
+    @test best1.ptr == cand.ptr
 
     # A second candidate makes the two comparable, and comparing them reads conversion
     # sequences that have never been given a kind.
@@ -521,7 +491,6 @@ end
     # An empty set selects nothing, whichever display kind is asked for.
     for k in instances(CC.CXOverloadCandidateDisplayKind)
         sel = CC.CompleteCandidates(cs, sema, k, no_args, loc)
-        @test sel isa Vector{CC.OverloadCandidate}
         @test isempty(sel)
     end
 
@@ -530,9 +499,7 @@ end
     # asserted are exactly the ones that call writes.
     cand = CC.addCandidate(cs, 1)
     @test CC.is_null_handle(CC.getFunction(cand))
-    @test CC.getFunction(cand).ptr == C_NULL
     @test CC.is_null_handle(CC.getSurrogate(cand))
-    @test CC.getSurrogate(cand).ptr == C_NULL
     @test CC.getViable(cand) == true
     @test CC.getBest(cand) == false
     @test CC.getIgnoreObjectArgument(cand) == false

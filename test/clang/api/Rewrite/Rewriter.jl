@@ -12,9 +12,6 @@ using Test
     lo = CC.getLangOpts(ci)
 
     rw = CC.Rewriter(sm, lo)
-    @test rw isa CC.Rewriter
-    @test rw.ptr != C_NULL
-    @test !CC.is_null_handle(CC.getSourceMgr(rw))
     # nothing has been edited yet, so there is no buffer to write back to disk
     @test !(CC.overwriteChangedFiles(rw))
 
@@ -22,20 +19,19 @@ using Test
     @test f(I, "CCRwTag")
     d = get_decl(f)
     r = CC.getSourceRange(d)
-    @test r isa CC.SourceRange
+    @test CC.isValid(r)
+    @test CC.isRewritable(CC.getBeginLoc(r))
+    @test CC.isRewritable(CC.getEndLoc(r))
 
-    if CC.isValid(r) && CC.isRewritable(CC.getBeginLoc(r)) && CC.isRewritable(CC.getEndLoc(r))
-        n = CC.getRangeSize(rw, r)
-        @test n isa Integer
-        @test !isempty(CC.getRewrittenText(rw, r))
+    text = CC.getRewrittenText(rw, r)
+    @test occursin("struct CCRwTag", text)
+    @test occursin("int a;", text)
+    # getRangeSize is the byte length of that rewritten span, not an independent count
+    @test CC.getRangeSize(rw, r) == ncodeunits(text)
 
-        # the Clang convention is inverted: `true` means the edit was rejected
-        failed = CC.InsertTextBefore(rw, CC.getBeginLoc(r), "/*ccrw*/")
-        @test failed isa Bool
-        if failed == false
-            @test occursin("/*ccrw*/", CC.getRewrittenText(rw, r))
-        end
-    end
+    # the Clang convention is inverted: `true` means the edit was rejected
+    @test !CC.InsertTextBefore(rw, CC.getBeginLoc(r), "/*ccrw*/")
+    @test occursin("/*ccrw*/", CC.getRewrittenText(rw, r))
 
     dispose(f)
     dispose(rw)

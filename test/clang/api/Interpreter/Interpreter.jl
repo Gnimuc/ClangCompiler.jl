@@ -28,7 +28,7 @@ using Test
     @test CC.CompileDtorCall(I.interp, triv) == 0  # irrelevant destructor -> null address
     @test f(I, "FtNontrivial")
     nontriv = CC.CXXRecordDecl(get_decl(f))
-    @test CC.CompileDtorCall(I.interp, nontriv) isa UInt64
+    @test CC.CompileDtorCall(I.interp, nontriv) != 0
     dispose(f)
     dispose(I)
 end

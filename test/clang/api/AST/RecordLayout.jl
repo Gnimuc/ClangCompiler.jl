@@ -18,7 +18,6 @@ using Test
     @test f(I, "Plain")
     rd = CC.RecordDecl(get_tag(f))
     lay = CC.getASTRecordLayout(ctx, rd)
-    @test lay isa CC.ASTRecordLayout
     @test CC.getSize(lay) == 16
     @test CC.getAlignment(lay) == 8
     @test CC.getPreferredAlignment(lay) >= 8
@@ -100,7 +99,6 @@ end
     @test CC.getNonVirtualSize(plain) == CC.getSize(plain)
     @test CC.getNonVirtualAlignment(plain) == CC.getAlignment(plain)
     @test CC.getPreferredNVAlignment(plain) >= CC.getNonVirtualAlignment(plain)
-    @test CC.getSizeOfLargestEmptySubobject(plain) >= 0
     @test CC.hasOwnVFPtr(plain) == false
 
     poly = layof("RltPoly")
@@ -149,10 +147,13 @@ end
     @test CC.getName(CC.NamedDecl(pb)) == "PBPoly"
     @test !CC.isPrimaryBaseVirtual(l_der)
 
-    # a virtual base that becomes primary is reported as virtual
+    # a virtual polymorphic base with its own data is not nearly-empty, so Itanium
+    # does not select it as primary: this class introduces its own vptr. That is
+    # the other side of PBDerived above, where a non-virtual polymorphic base is
+    # primary and not virtual.
     l_virt = layout("PBVirt")
-    pbv = CC.getPrimaryBase(l_virt)
-    @test CC.is_null_handle(pbv) || CC.isPrimaryBaseVirtual(l_virt)
+    @test CC.is_null_handle(CC.getPrimaryBase(l_virt))
+    @test !CC.isPrimaryBaseVirtual(l_virt)
 
     dispose(f)
     dispose(I)

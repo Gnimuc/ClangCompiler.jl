@@ -1,7 +1,7 @@
 using ClangCompiler
 import ClangCompiler as CC
 using ClangCompiler: create_interpreter, dispose
-using ClangCompiler: DeclFinder, get_decl, DeclIterator, getDeclKindName
+using ClangCompiler: DeclFinder, get_decl, getDeclKindName
 using Test
 
 @testset "APValue constant evaluation" begin
@@ -13,7 +13,6 @@ using Test
 
     # VarDecl::evaluateValue — borrowed, cached in the VarDecl (never disposed).
     av = CC.evaluateValue(vd)
-    @test av.ptr != C_NULL
     @test CC.isInt(av)
     @test CC.getKind(av) == CC.LibClangEx.CXAPValueKind_Int
     gv = CC.LLVM.GenericValue(CC.getInt(av))
@@ -24,7 +23,6 @@ using Test
     ctx = CC.get_ast_context(I)
     init = CC.getInit(vd)
     av2 = CC.EvaluateAsRValue(init, ctx)
-    @test av2.ptr != C_NULL
     gv2 = CC.LLVM.GenericValue(CC.getInt(av2))
     @test convert(Int, gv2) == 5
     CC.LLVM.dispose(gv2)
@@ -36,7 +34,7 @@ using Test
     @test CC.isCXX11ConstantExpr(init, ctx)
 
     avi = CC.EvaluateAsInt(init, ctx)
-    @test avi.ptr != C_NULL && CC.isInt(avi)
+    @test CC.isInt(avi)
     gvi = CC.LLVM.GenericValue(CC.getInt(avi))
     @test convert(Int, gvi) == 5
     CC.LLVM.dispose(gvi)
@@ -79,24 +77,9 @@ end
     constexpr Pt cpt = {7, 9};
     constexpr int carr[3] = {10, 20, 30};
 
-    // NestedNameSpecifier flavours
-    namespace A { namespace B { struct S {}; } }
-    A::B::S nns_ab;
-    struct Outer { struct Inner {}; };
-    Outer::Inner nns_oi;
-    namespace Shrt = A::B;
-    Shrt::S nns_alias;
-    template<typename T> struct Dep { typename T::foo::type m; };
-
-    // Attr
-    int __attribute__((aligned(16), deprecated)) gattr;
-    int noattr;
-
-    // Mangle / DeclarationName / DeclGroup
+    // DeclGroup / TemplateArgument specialisations
     int add(int a, int b) { return a + b; }
     const char *g_str = "hello";
-
-    // TemplateArgument specialisations
     template<typename T, int N> struct STempl { T x; };
     STempl<int,3> stempl_obj;
     template<class> struct Holder {};
@@ -116,7 +99,6 @@ end
     # ---------- APValue ----------
     vd_ci = varof("ci")
     av_int = CC.evaluateValue(vd_ci)
-    @test av_int.ptr != C_NULL
     @test CC.getKind(av_int) == CC.LibClangEx.CXAPValueKind_Int
     @test CC.isInt(av_int)
     @test !CC.isFloat(av_int)
@@ -136,14 +118,12 @@ end
 
     vd_carr = varof("carr")
     av_arr = CC.evaluateValue(vd_carr)
-    @test av_arr.ptr != C_NULL
     @test CC.isArray(av_arr)
     @test CC.getKind(av_arr) == CC.LibClangEx.CXAPValueKind_Array
     @test CC.getArraySize(av_arr) == 3
     @test CC.getArrayInitializedElts(av_arr) == 3
     for (i, expected) in enumerate([10, 20, 30])
         elt = CC.getArrayInitializedElt(av_arr, i - 1)
-        @test elt.ptr != C_NULL
         @test CC.isInt(elt)
         gv_elt = CC.LLVM.GenericValue(CC.getInt(elt))
         @test convert(Int, gv_elt) == expected
@@ -152,20 +132,17 @@ end
 
     vd_cpt = varof("cpt")
     av_struct = CC.evaluateValue(vd_cpt)
-    @test av_struct.ptr != C_NULL
     @test CC.isStruct(av_struct)
     @test CC.getKind(av_struct) == CC.LibClangEx.CXAPValueKind_Struct
     @test CC.getStructNumFields(av_struct) == 2
     @test CC.getStructNumBases(av_struct) == 0
     fld0 = CC.getStructField(av_struct, 0)
-    @test fld0.ptr != C_NULL
     @test CC.isInt(fld0)
     gv_f0 = CC.LLVM.GenericValue(CC.getInt(fld0))
     @test convert(Int, gv_f0) == 7
     CC.LLVM.dispose(gv_f0)
 
     fld1 = CC.getStructField(av_struct, 1)
-    @test fld1.ptr != C_NULL
     @test CC.isInt(fld1)
     gv_f1 = CC.LLVM.GenericValue(CC.getInt(fld1))
     @test convert(Int, gv_f1) == 9
@@ -173,94 +150,12 @@ end
 
     # APValue::dispose on an owned value (EvaluateAsRValue result).
     av_owned = CC.EvaluateAsRValue(CC.getInit(vd_ci), ctx)
-    @test av_owned.ptr != C_NULL
+    @test CC.isInt(av_owned)
     CC.dispose(av_owned)
 
-    # ---------- NestedNameSpecifier ----------
-    exercise_nns(nns; is_dep::Bool=false, expected_kind=nothing, expected_name::Union{String,Nothing}=nothing) = begin
-        @test nns isa CC.NestedNameSpecifier
-        if expected_kind !== nothing
-            @test CC.getKind(nns) == expected_kind
-        end
-        @test CC.isDependent(nns) == is_dep
-        @test CC.isInstantiationDependent(nns) == is_dep
-        @test !(CC.containsUnexpandedParameterPack(nns))
-        @test !(CC.containsErrors(nns))
-        if expected_name !== nothing
-            @test CC.getName(nns) == expected_name
-        end
-        CC.dump(nns)
-        k = CC.getKind(nns)
-        if k == CC.LibClangEx.CXNestedNameSpecifierKind_Namespace
-            @test !CC.is_null_handle(CC.getAsNamespace(nns))
-        elseif k == CC.LibClangEx.CXNestedNameSpecifierKind_NamespaceAlias
-            @test !CC.is_null_handle(CC.getAsNamespaceAlias(nns))
-        elseif k == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec ||
-               k == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpecWithTemplate
-            @test !CC.is_null_handle(CC.getAsType(nns))
-            @test !CC.is_null_handle(CC.getAsRecordDecl(nns))
-        elseif k == CC.LibClangEx.CXNestedNameSpecifierKind_Identifier
-            @test !CC.is_null_handle(CC.getAsIdentifier(nns))
-        end
-    end
-
-    ety_ab = CC.resolve(CC.getTypePtr(CC.getType(varof("nns_ab"))))
-    @test ety_ab isa CC.ElaboratedType
-    nns_ab = CC.getQualifier(ety_ab)               # Namespace (B), prefix Namespace (A)
-    exercise_nns(nns_ab; is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Namespace,
-                 expected_name="A::B::")
-    exercise_nns(CC.getPrefix(nns_ab); is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Namespace,
-                 expected_name="A::")
-
-    ety_oi = CC.resolve(CC.getTypePtr(CC.getType(varof("nns_oi"))))
-    exercise_nns(CC.getQualifier(ety_oi); is_dep=false, expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec,
-                 expected_name="struct Outer::")
-
-    ety_al = CC.resolve(CC.getTypePtr(CC.getType(varof("nns_alias"))))
-    exercise_nns(CC.getQualifier(ety_al); is_dep=false,
-                 expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_NamespaceAlias, expected_name="Shrt::")
-
-    # Dependent identifier NNS from `typename T::foo::type`.
-    @test f(I, "Dep")
-    ctd = CC.ClassTemplateDecl(get_decl(f))
-    patt = CC.getTemplatedDecl(ctd)
-    for fld in CC.getFields(patt)
-        dnt = CC.resolve(CC.getTypePtr(CC.getType(fld)))
-        if dnt isa CC.DependentNameType
-            exercise_nns(CC.getQualifier(dnt); is_dep=true,
-                         expected_kind=CC.LibClangEx.CXNestedNameSpecifierKind_Identifier, expected_name="T::foo::")
-        end
-    end
-
-    # ---------- Attr ----------
-    @test f(I, "gattr")
-    attrs = CC.getAttrs(get_decl(f))
-    @test length(attrs) == 2
-    @test [CC.getKind(a) for a in attrs] == [CC.LibClangEx.CXAttrKind_Aligned, CC.LibClangEx.CXAttrKind_Deprecated]
-    @test [CC.getSpelling(a) for a in attrs] == ["aligned", "deprecated"]
-    for a in attrs
-        @test !CC.is_null_handle(CC.getLocation(a))
-        @test !(CC.isImplicit(a))
-        @test !(CC.isInherited(a))
-        @test !(CC.isPackExpansion(a))
-    end
-
-    # ---------- MangleContext ----------
+    # shouldMangleStringLiteral is not covered by Mangle.jl; a narrow string literal
+    # is never mangled on any C++ ABI.
     mc = CC.createMangleContext(ctx, CC.getTargetInfo(ctx))
-    @test mc isa CC.MangleContext
-    @test CC.getKind(mc) == CC.LibClangEx.CXMangleContext_MK_Itanium
-    @test !CC.is_null_handle(CC.getASTContext(mc))
-    @test !CC.is_null_handle(CC.getDiags(mc))
-    @test f(I, "add")
-    add_nd = get_decl(f)
-    @test CC.shouldMangleDeclName(mc, add_nd) == true
-    @test CC.shouldMangleCXXName(mc, add_nd) == true
-    @test CC.mangleName(mc, add_nd) == "_Z3addii"
-    @test f(I, "Pt")
-    pt_nd = get_decl(f)
-    @test CC.getAnonymousStructId(mc, pt_nd) == 0
-
-    # ---------- StringLiteral for shouldMangleStringLiteral ----------
     vd_str = varof("g_str")
     sl = nothing
     for n in CC.subtree(CC.resolve(CC.getInit(vd_str)))
@@ -269,44 +164,16 @@ end
     @test sl isa CC.StringLiteral
     @test !CC.shouldMangleStringLiteral(mc, sl)
 
-    # ---------- DeclarationName ----------
-    dn_empty = CC.DeclarationName()
-    @test CC.isEmpty(dn_empty)
-    @test isempty(CC.getAsString(dn_empty))
-    CC.dump(dn_empty)
-
-    dn_add = CC.getDeclName(add_nd)
-    @test dn_add isa CC.DeclarationName
-    @test !CC.isEmpty(dn_add)
-    @test CC.getAsString(dn_add) == "add"
-    CC.dump(dn_add)
-
-    ii = CC.getIdentifier(add_nd)
-    dn_ii = CC.DeclarationName(ii)
-    @test CC.getAsString(dn_ii) == "add"
-
-    # ---------- DeclarationNameInfo ----------
-    loc = CC.getLocation(add_nd)
-    dni = CC.DeclarationNameInfo(dn_add, loc)
-    @test dni isa CC.DeclarationNameInfo
-    @test CC.getName(dni) isa CC.DeclarationName
-    @test !CC.is_null_handle(CC.getLoc(dni))
-    @test !CC.is_null_handle(CC.getBeginLoc(dni))
-    @test !CC.is_null_handle(CC.getEndLoc(dni))
-    @test CC.getAsString(dni) == "add"
-    CC.dispose(dni)
-
     # ---------- DeclGroupRef ----------
     @test f(I, "add")
     dgr = CC.DeclGroupRef(CC.Decl(get_decl(f)))   # DeclGroupRef(x::Decl) wants the exact Decl carrier
     @test !CC.isNull(dgr)
     @test CC.isSingleDecl(dgr)
     @test !CC.isDeclGroup(dgr)
-    @test !CC.is_null_handle(CC.getSingleDecl(dgr))
+    @test CC.getName(CC.NamedDecl(CC.getSingleDecl(dgr))) == "add"
 
     # ---------- TemplateArgument (real specialisation args) ----------
     exercise_targ(ta) = begin
-        @test ta isa CC.TemplateArgument
         k = CC.getKind(ta)
         @test k != CC.LibClangEx.CXTemplateArgument_Null
         @test !(CC.isNull(ta))
@@ -314,15 +181,13 @@ end
         @test !(CC.isInstantiationDependent(ta))
         CC.dump(ta)
         if k == CC.LibClangEx.CXTemplateArgument_Type
-            @test !CC.is_null_handle(CC.getAsType(ta))
+            @test occursin("int", CC.getAsString(CC.getAsType(ta)))
         elseif k == CC.LibClangEx.CXTemplateArgument_Integral
-            @test !CC.is_null_handle(CC.getIntegralType(ta))
             gv = CC.LLVM.GenericValue(CC.getAsIntegral(ta))
             @test convert(Int, gv) == 3
             CC.LLVM.dispose(gv)
         elseif k == CC.LibClangEx.CXTemplateArgument_Template
-            @test !CC.is_null_handle(CC.getAsTemplate(ta))
-            @test !CC.is_null_handle(CC.getAsTemplateOrTemplatePattern(ta))
+            @test !CC.isNull(CC.getAsTemplate(ta))
         end
     end
 
@@ -351,18 +216,16 @@ end
     @test CC.LibClangEx.CXTemplateArgument_Type in kinds
 
     tst2 = tst_of(varof("usett_obj"))
-    if tst2 isa CC.TemplateSpecializationType
-        for i = 0:(CC.getNumArgs(tst2) - 1)
-            exercise_targ(CC.getArg(tst2, i))
-        end
-    end
+    @test tst2 isa CC.TemplateSpecializationType
+    @test CC.getNumArgs(tst2) == 1
+    exercise_targ(CC.getArg(tst2, 0))
 
     # ---------- TemplateArgument (owned constructor paths) ----------
     int_qt = CC.getType(vd_ci)                    # `const int`
 
     ta_type = CC.TemplateArgument(int_qt)
     @test CC.getKind(ta_type) == CC.LibClangEx.CXTemplateArgument_Type
-    @test !CC.is_null_handle(CC.getAsType(ta_type))
+    @test occursin("int", CC.getAsString(CC.getAsType(ta_type)))
     @test !(CC.isNull(ta_type))
     @test !(CC.isDependent(ta_type))
     @test !(CC.isInstantiationDependent(ta_type))
@@ -375,9 +238,8 @@ end
     gv_back = CC.LLVM.GenericValue(CC.getAsIntegral(ta_int))
     @test convert(Int, gv_back) == 5
     CC.LLVM.dispose(gv_back)
-    @test !CC.is_null_handle(CC.getIntegralType(ta_int))
     CC.setIntegralType(ta_int, int_qt)
-    @test !CC.is_null_handle(CC.getIntegralType(ta_int))
+    @test occursin("int", CC.getAsString(CC.getIntegralType(ta_int)))
     CC.dispose(ta_int)
     CC.LLVM.dispose(gv_i)
 
@@ -385,7 +247,7 @@ end
     ptr_qt = CC.getType(vd_str)                   # const char *
     ta_null = CC.TemplateArgument(ptr_qt, true)
     @test CC.getKind(ta_null) == CC.LibClangEx.CXTemplateArgument_NullPtr
-    @test !CC.is_null_handle(CC.getNullPtrType(ta_null))
+    @test occursin("char", CC.getAsString(CC.getNullPtrType(ta_null)))
     CC.dispose(ta_null)
 
     # Declaration, via constructFromValueDecl on the `gx` global.
@@ -393,8 +255,7 @@ end
     vd_gx = CC.VarDecl(get_decl(f))
     ta_decl = CC.TemplateArgument(CC.ValueDecl(vd_gx), CC.getType(vd_gx))
     @test CC.getKind(ta_decl) == CC.LibClangEx.CXTemplateArgument_Declaration
-    @test !CC.is_null_handle(CC.getAsDecl(ta_decl))
-    @test !CC.is_null_handle(CC.getParamTypeForDecl(ta_decl))
+    @test CC.getName(CC.getAsDecl(ta_decl)) == "gx"
     CC.dispose(ta_decl)
 
     dispose(f)
@@ -466,8 +327,7 @@ end
     # Member-pointer payload.
     v_mp = valueof("pv_memptr")
     @test CC.isMemberPointer(v_mp)
-    @test !CC.is_null_handle(CC.getMemberPointerDecl(v_mp))
-    @test CC.getMemberPointerDecl(v_mp).ptr != C_NULL
+    @test CC.getName(CC.getMemberPointerDecl(v_mp)) == "m"
     @test !CC.isMemberPointerToDerivedMember(v_mp)
 
     # No portable source produces an AddrLabelDiff value, so the address-of-label
@@ -511,8 +371,6 @@ end
     @test CC.isLValue(v_ptr)
     @test !CC.isLValueBaseNull(v_ptr)
     base_vd = CC.getLValueBaseAsValueDecl(v_ptr)
-    @test base_vd isa CC.ValueDecl
-    @test base_vd.ptr != C_NULL
     @test CC.getName(base_vd) == "rv_arr"
     @test CC.getLValueBaseAsExpr(v_ptr).ptr == C_NULL
     @test CC.getLValueBaseType(v_ptr).ptr != C_NULL
@@ -546,7 +404,6 @@ end
     @test !(CC.isMemberPointerToDerivedMember(v_mpd))
     @test CC.getMemberPointerPathSize(v_mpd) == 1
     @test CC.getName(CC.getMemberPointerPathEntry(v_mpd, 0)) == "RvD"
-    @test CC.getMemberPointerPathEntry(v_mpd, 0).ptr != C_NULL
 
     # toIntegralConstant: the integer path ignores src_ty, the null-pointer path runs
     # it through the target's null pointer value, and a based lvalue has no integral form.
@@ -579,7 +436,6 @@ end
     a0 = CC.TemplateArgument(CC.getType(vd_int))
     a1 = CC.TemplateArgument(CC.getType(vardecl("rv_arr")))
     pack = CC.CreatePackCopy(ctx, [a0, a1])
-    @test pack isa CC.TemplateArgument
     @test CC.getKind(pack) == CC.LibClangEx.CXTemplateArgument_Pack
     @test CC.pack_size(pack) == 2
     @test CC.getKind(CC.getPackElement(pack, 0)) == CC.LibClangEx.CXTemplateArgument_Type
@@ -609,7 +465,6 @@ end
     parg = CC.getArg(fty, 0)
     @test CC.isPackExpansion(parg)
     patt = CC.getPackExpansionPattern(parg)
-    @test patt isa CC.TemplateArgument
     @test CC.getKind(patt) == CC.LibClangEx.CXTemplateArgument_Type
     dispose(patt)
 
@@ -649,7 +504,6 @@ end
     ttp = CC.TemplateTemplateParmDecl(CC.getParam(CC.getTemplateParameters(holder), 0))
     @test CC.hasDefaultArgument(ttp)
     tal = CC.getDefaultArgument(ttp)
-    @test tal isa CC.TemplateArgumentLoc
     @test CC.getKind(CC.getArgument(tal)) == CC.LibClangEx.CXTemplateArgument_Template
 
     # getTemplateQualifierLoc is total, so the specifier is a carrier for every kind.
@@ -660,8 +514,6 @@ end
     le = CC.getEndLoc(holder)
     @test lb.ptr != le.ptr
     li = CC.TemplateArgumentListInfo(lb, le)
-    @test li isa CC.TemplateArgumentListInfo
-    @test li.ptr != C_NULL
     @test CC.size(li) == 0
     @test CC.getLAngleLoc(li).ptr == lb.ptr
     @test CC.getRAngleLoc(li).ptr == le.ptr
@@ -677,7 +529,6 @@ end
     CC.addArgument(li, tal)
     @test CC.size(li) == 1
     a0 = CC.getArgument(li, 0)
-    @test a0 isa CC.TemplateArgumentLoc
     @test CC.getKind(CC.getArgument(a0)) == CC.LibClangEx.CXTemplateArgument_Template
     CC.addArgument(li, tal)
     @test CC.size(li) == 2
@@ -685,8 +536,6 @@ end
 
     # ... and the arena-allocated copy reproduces the whole list.
     astli = CC.ASTTemplateArgumentListInfo(ctx, li)
-    @test astli isa CC.ASTTemplateArgumentListInfo
-    @test astli.ptr != C_NULL
     @test CC.getNumTemplateArgs(astli) == 2
     @test CC.getLAngleLoc(astli).ptr == le.ptr
     @test CC.getRAngleLoc(astli).ptr == lb.ptr
@@ -795,7 +644,7 @@ end
     avu = cached("apv_u")
     @test CC.isUnion(avu)
     fld = CC.getUnionField(avu)
-    @test fld.ptr != C_NULL
+    @test CC.getName(fld) == "a"
     before = CC.LLVM.GenericValue(CC.getInt(CC.getUnionValue(avu)))
     @test convert(Int, before) == 7
     CC.LLVM.dispose(before)
@@ -811,8 +660,8 @@ end
     @test CC.hasLValuePath(avpn)
     @test CC.getLValuePathLength(avpn) >= 1
     d = CC.getLValuePathAsBaseOrMember(avpn, 0)
-    @test d isa CC.Decl
     @test CC.getDeclKindName(d) == "Field"
+    @test CC.getName(CC.NamedDecl(d)) == "n"
     @test !CC.isLValuePathBaseOrMemberVirtual(avpn, 0)
     @test CC.getLValuePathEntryProfileHash(avpn, 0) > 0
 
@@ -836,7 +685,7 @@ end
     g = DeclFinder(J)
     @test g(J, "apv_doc_add")
     fc = CC.getCommentForDecl(jctx, get_decl(g), jpp)
-    @test fc isa CC.FullComment
+    @test !CC.is_null_handle(fc)
 
     # child_count is an unsigned C count: widen it before building a range, or a childless
     # node turns `0:(n - 1)` into a 2^32-long loop.

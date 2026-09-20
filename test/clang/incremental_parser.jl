@@ -73,6 +73,7 @@ end
     # An increment that declares nothing is not an error, and is distinguishable from one
     # that failed only through the diagnostics engine.
     added, errs = ip_run(:c, [";"])
+    @test isempty(errs)
     @test isempty(added[1])
 
     @test_throws ArgumentError create_parser(; language=:fortran)
@@ -149,12 +150,12 @@ end
 
     # Sema and the instance are the ones the parse ran against.
     @test CC.get_sema(p).ptr == CC.getSema(CC.get_instance(p)).ptr
-    @test CC.get_parser(p).ptr != C_NULL
+    @test CC.getPreprocessor(CC.get_parser(p)).ptr == CC.getPreprocessor(CC.get_instance(p)).ptr
 
     # Finalising again is redundant rather than unit-ending -- clang already did it at each
     # increment's marker (see the per-increment testset below), and a further call neither
     # errors nor stops the unit being extended.
-    @test CC.ActOnEndOfTranslationUnit(CC.get_sema(p)) === nothing
+    CC.ActOnEndOfTranslationUnit(CC.get_sema(p))
     added = map(CC.resolve, CC.parse(p, "struct Shared ip_after;"))
     @test [CC.getNameAsString(d) for d in added if d isa CC.AbstractNamedDecl] == ["ip_after"]
     dispose(p)

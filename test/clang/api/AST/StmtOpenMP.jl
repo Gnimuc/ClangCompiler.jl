@@ -1,35 +1,37 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, DeclIterator
+using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl
 using Test
-
-# Depth-first search for the first resolved child node whose carrier is `T`.
-if !@isdefined(_find_node)
-    function _find_node(::Type{T}, x) where {T}
-        x isa T && return x
-        for c in CC.children(x)
-            r = _find_node(T, CC.resolve(c))
-            r !== nothing && return r
-        end
-        return nothing
-    end
-end
 
 @testset "OMP directive payload" begin
     I = create_interpreter(["-fopenmp"])
-    CC.parse(I, "void ompf(int n){\n#pragma omp parallel num_threads(4)\n{ int x = n; }\n}")
+    CC.parse(I, """
+    void ompf(int n) {
+    #pragma omp parallel num_threads(4)
+    { int x = n; }
+    #pragma omp barrier
+    }
+    """)
     f = DeclFinder(I)
     @test f(I, "ompf")
     fd = CC.FunctionDecl(get_decl(f))
-    dir = nothing
+    dirs = CC.AbstractOMPExecutableDirective[]
     for n in CC.subtree(CC.resolve(CC.getBody(fd)))
-        n isa CC.AbstractOMPExecutableDirective && (dir=n; break)
+        n isa CC.AbstractOMPExecutableDirective && push!(dirs, n)
     end
-    @test dir isa CC.OMPParallelDirective
-    @test CC.getNumClauses(dir) == 1                        # num_threads(4)
-    @test !CC.isStandaloneDirective(dir)
-    @test CC.hasAssociatedStmt(dir)
-    @test CC.getAssociatedStmt(dir) isa CC.CapturedStmt     # resolved base Stmt*
+    @test length(dirs) == 2
+
+    par = only(d for d in dirs if d isa CC.OMPParallelDirective)
+    @test CC.getNumClauses(par) == 1                        # num_threads(4)
+    @test !CC.isStandaloneDirective(par)
+    @test CC.hasAssociatedStmt(par)
+    @test CC.getAssociatedStmt(par) isa CC.CapturedStmt     # resolve() of the base Stmt*
+
+    bar = only(d for d in dirs if d isa CC.OMPBarrierDirective)
+    @test CC.getNumClauses(bar) == 0
+    @test CC.isStandaloneDirective(bar)
+    @test !CC.hasAssociatedStmt(bar)
+
     dispose(f)
     dispose(I)
 end

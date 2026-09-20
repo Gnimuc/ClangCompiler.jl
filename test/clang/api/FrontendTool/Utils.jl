@@ -109,7 +109,10 @@ end
     # default invocation names.
     @test CC.hasInvocation(ci) == true
     act = CC.CreateFrontendAction(ci)
-    @test !CC.is_null_handle(act)
+    # the default ProgramAction is ParseSyntaxOnly, which is the one action that
+    # offers code completion -- so this is the class clang built, not merely a
+    # non-null handle
+    @test CC.hasCodeCompletionSupport(act) == true
     dispose(act)
     dispose(ci)
 end

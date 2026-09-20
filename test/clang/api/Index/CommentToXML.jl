@@ -25,7 +25,6 @@ using Test
     @test fc.ptr != C_NULL
 
     conv = CC.CommentToXMLConverter()
-    @test conv.ptr != C_NULL
 
     xml = CC.convertCommentToXML(conv, fc, ctx)
     @test !isempty(xml)
@@ -68,7 +67,8 @@ using Test
     end
     htc = find_html_start(fc)
     @test htc !== nothing
-    @test !isempty(CC.convertHTMLTagNodeToText(conv, htc, ctx))
+    tag_text = CC.convertHTMLTagNodeToText(conv, htc, ctx)
+    @test occursin("b", tag_text)
 
     CC.dispose(conv)
     dispose(f)

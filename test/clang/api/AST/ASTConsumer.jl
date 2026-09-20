@@ -1,7 +1,6 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl, get_instance
-using Libdl
+using ClangCompiler: create_interpreter, dispose
 using Test
 
 # Frontend/infra tail: the deferred wrappers that must never run against the live

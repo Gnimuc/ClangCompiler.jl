@@ -162,19 +162,17 @@ end
             CC.getName(d) == "ti_fwd" && (fwd=d; break)
         end
         @test fwd !== nothing
-        if fwd !== nothing
-            # links come back as whatever class each redeclaration is; carrier equality is
-            # the `Decl *` they share, so the cycle check needs no unwrapping
-            seen, cur, steps = Set{CC.AbstractDecl}(), CC.getMostRecentDecl(fwd), 0
-            while !CC.is_null_handle(cur) && steps < 64
-                @test !(cur in seen)             # no cycle
-                push!(seen, cur)
-                cur = CC.getPreviousDecl(cur)
-                steps += 1
-            end
-            @test steps >= 2                     # a declaration and a definition
-            @test steps < 64                     # terminated on its own, not on the bound
+        # links come back as whatever class each redeclaration is; carrier equality is
+        # the `Decl *` they share, so the cycle check needs no unwrapping
+        seen, cur, steps = Set{CC.AbstractDecl}(), CC.getMostRecentDecl(fwd), 0
+        while !CC.is_null_handle(cur) && steps < 64
+            @test !(cur in seen)             # no cycle
+            push!(seen, cur)
+            cur = CC.getPreviousDecl(cur)
+            steps += 1
         end
+        @test steps >= 2                     # a declaration and a definition
+        @test steps < 64                     # terminated on its own, not on the bound
     end
 
     @testset "parameter indices name distinct parameters" begin

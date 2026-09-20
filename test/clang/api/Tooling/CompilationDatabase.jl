@@ -8,7 +8,6 @@ command_line(cc) = String[CC.getCommandLineArg(cc, i) for i = 0:(CC.getNumComman
 
 @testset "CompileCommand | the five fields round-trip" begin
     cc = CC.CompileCommand("/proj", "a.cc", ["clang++", "-Wall", "a.cc"], "a.o")
-    @test cc.ptr != C_NULL
     @test CC.getDirectory(cc) == "/proj"
     @test CC.getFilename(cc) == "a.cc"
     @test CC.getOutput(cc) == "a.o"
@@ -34,7 +33,6 @@ end
 
 @testset "FixedCompilationDatabase | one command line, every file" begin
     db = CC.FixedCompilationDatabase("/proj", ["-Wall", "-std=c++17"])
-    @test db.ptr != C_NULL
 
     cmds = CC.getCompileCommands(db, "sub/a.cc")
     @test CC.getNumCommands(cmds) == 1
