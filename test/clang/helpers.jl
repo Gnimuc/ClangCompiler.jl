@@ -96,9 +96,9 @@ using Test
     # ---- src/clang/basic.jl ----
     sm = CC.getSourceManager(ci)
     fid = CC.getMainFileID(sm)
-    @test CC.value(fid) != 0  # shape-only: the host decides the FileID encoding; zero is the invalid id
+    @test CC.value(fid) != 0  # zero is the invalid id
     dispose(fid)
-    @test CC.value(loc) != 0  # shape-only: the host decides the location encoding; zero is the invalid loc
+    @test CC.value(loc) != 0  # zero is the invalid loc
     sr = CC.getSourceRange(fd)
     @test CC.isValid(CC.get_begin_loc(sr))
     @test CC.isValid(CC.get_end_loc(sr))

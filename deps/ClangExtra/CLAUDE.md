@@ -44,8 +44,10 @@ caller — there isn't one. Keep the shim dumb and total; the type-checking inte
 in Julia.
 
 Corollary for *choosing* what to wrap: read the method in the pinned artifact header before
-adding a shim for it. Two things are only visible there — access (`setParams` looks like
-ordinary API but is private in clang 18, and the shim will not compile) and partiality
+adding a shim for it. Two things are only visible there — access (`Interpreter::getCodeGen`
+reads as ordinary API and is private, so a shim calling it will not compile; and access is
+per overload, so of `FunctionDecl`'s two `setParams` only the one taking an `ASTContext` is
+private) and partiality
 (methods reaching a subobject via `castAs<>`, `->getDecl()`, or `*optional` are UB on the
 wrong input). Wrap the partial ones anyway, but say so in a header comment so the Julia
 wrapper can restate the precondition as an `@assert`; that is Invariant 3 in
@@ -357,8 +359,11 @@ new code by:
 ## upstream/ — private-header hacks
 
 `upstream/` holds verbatim copies of Clang headers edited ONLY to change member access
-(inserting `public:`/`private:`) so wrappers can reach private members (currently
-`Interpreter::IncrParser` and `IncrementalParser::P`). It is not the only route to a
+so wrappers can reach private members. There are four: the data members
+`Interpreter::IncrParser` and `IncrementalParser::P`, reached by inserting
+`public:`/`private:` around them, and the member functions `Interpreter::getCodeGen` and
+`Interpreter::CompileDtorCall`, whose declarations sit above `private:` instead of below
+it. It is not the only route to a
 private member: `CXCompilerInstance.cpp` reads `CompilerInstance::FrontendTimer` through an
 explicit instantiation, whose template arguments are exempt from access checking. That form
 copies no header and alters no class, so it carries none of the ODR/layout risk below —
@@ -367,11 +372,15 @@ that need a whole private class. It's on the include path as
 `CLANG_SRC`, so `#include "Interpreter/Interpreter.h"` gets the hacked copy while
 `#include "clang/Interpreter/Interpreter.h"` gets the real one — CXInterpreter.cpp uses
 the hacked copies, CXValue.cpp the real header; this ODR tightrope is safe only because
-the class layout stays byte-identical. Rules: never reorder/add/remove data members, only
-access-specifier edits (and deleting declarations); `IncrementalParser.h` comes from
-`clang/lib/Interpreter/` in the llvm-project **source tree** (it is not installed in any
-artifact); on an LLVM bump both files must be re-copied and re-hacked, and the Interpreter
-internals changed after 18, so `getCodeGen`/`getParser` will need rework. These headers
+the class layout stays byte-identical. Rules: never reorder/add/remove a data member or a
+virtual function; the only edits are access specifiers, moving a non-virtual member
+function's declaration across one, and deleting declarations. `IncrementalParser.h` comes
+from `clang/lib/Interpreter/` in the llvm-project **source tree** (it is not installed in
+any artifact). On an LLVM bump both files must be re-copied from that release and re-hacked,
+and the shims in `CXInterpreter.cpp` re-pointed, because these internals move every
+release: what `getCodeGen` hangs off and what `getExecutionEngine` returns have both
+changed between majors. Diff the hacked copy against the release's own header afterwards —
+the data members and virtuals must come out identical and in the same order. These headers
 are never installed.
 
 ## After any change here
@@ -397,4 +406,11 @@ are never installed.
    source (build_ci.jl timestamp check), and a ClangCompiler.jl release then requires a
    libclangex_jll rebuild on Yggdrasil + a compat bump in the top-level Project.toml —
    the shim itself carries no version number in this repo (CMake declares none); the
-   Project.toml compat entry is the only reference to the JLL's version.
+   Project.toml compat entry is the only reference to the JLL's version. A change to a
+   function's parameters needs a JLL *minor* bump even though no symbol is added or renamed:
+   the old library still links and reads its arguments from the wrong registers. An LLVM
+   major bump also changes the recipe itself — its `llvm_versions` and `julia_compat`.
+   The recipe must leave `CLANGEX_STATIC_GCC_RUNTIME` off. It exists for local msys2 builds,
+   whose GCC is newer than the runtime DLLs julia ships, so the loader would bind
+   `libclangex.dll` to julia's older copies; BinaryBuilder's GCC is older than julia's, which
+   is the direction that works.

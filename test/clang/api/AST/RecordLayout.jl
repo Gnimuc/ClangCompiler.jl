@@ -86,6 +86,8 @@ end
     struct RltPlain { int a; char b; };
     struct RltVB1 { int a; };
     struct RltV : virtual RltVB1 { int d; };
+    struct RltEmpty {};
+    struct RltOverEmpty : RltEmpty { int a; };
     """)
     f = DeclFinder(I)
     layof(name) = begin
@@ -100,6 +102,9 @@ end
     @test CC.getNonVirtualAlignment(plain) == CC.getAlignment(plain)
     @test CC.getPreferredNVAlignment(plain) >= CC.getNonVirtualAlignment(plain)
     @test CC.hasOwnVFPtr(plain) == false
+    # no empty subobject anywhere in RltPlain; RltOverEmpty has one, and an empty class is one char
+    @test CC.getSizeOfLargestEmptySubobject(plain) == 0
+    @test CC.getSizeOfLargestEmptySubobject(layof("RltOverEmpty")) == 1
 
     poly = layof("RltPoly")
     @test CC.hasOwnVFPtr(poly) == true

@@ -49,11 +49,13 @@ Reaching for `# shape-only` is almost always premature. Ask what decides the val
 because two of the three answers are assertable and only one is not.
 
 **The target decides it** — sizes and alignments, ABI-specific layout offsets, mangled names,
-endianness, integer widths. These are *not* unassertable, only unpinned. Build the interpreter
-with `create_interpreter(...; triple="x86_64-linux-gnu")` and every one becomes an equality
-that reads the same on all three runners; `test/clang/pinned_target.jl` is the worked example.
-Only parsing and AST inspection can cross-target — the JIT still emits for the host — and
-pinning downloads that target's GCC shard, so keep it to one target and one file rather than
+endianness, integer widths. These are *not* unassertable, only unpinned. Build a parser with
+`create_parser(...; triple="x86_64-linux-gnu")` and every one becomes an equality that reads
+the same on all three runners; `test/clang/pinned_target.jl` is the worked example. It is a
+parser and not an interpreter because only parsing and AST inspection can cross-target: an
+interpreter stands up a JIT, which a host whose LLVM lacks that backend cannot construct and
+one that has it cannot safely tear down. Pinning downloads that target's GCC shard, so keep
+it to one target and one file rather than
 pinning at every site.
 
 **Nothing decides it** — module provenance (`isPartOfFramework`) and a hand-built `Module`'s

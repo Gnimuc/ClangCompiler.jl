@@ -828,9 +828,8 @@ end
     @test CC.getNumWarnings(engine2) == 0
     b2 = CC.DiagnosticBuilder(engine2, loc, plain_id)
     CC.dispose(b2)
-    # the plain diagnostic always lands; whether clang flushes the queued one alongside it
-    # is its own business, so only the growth is asserted
-    @test CC.getNumWarnings(engine2) > 0
+    # nothing was queued, so the plain diagnostic is the only warning there is
+    @test CC.getNumWarnings(engine2) == 1
 
     CC.dispose(engine2)                 # the adopted ids/opts/client go with it
     CC.dispose(engine)

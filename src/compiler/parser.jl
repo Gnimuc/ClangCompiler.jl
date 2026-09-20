@@ -40,10 +40,10 @@ appended after `args`, so an `-x` of your own is overridden rather than honoured
 platform's shard rather than from the machine asking, so `long` reads as 32 bits under
 `x86_64-w64-mingw32` and 64 under `x86_64-linux-gnu` whatever the host, and the
 target-specific builtins follow too (`__builtin_ia32_*` for x86, `__builtin_neon_*` for
-AArch64). This is the natural home for cross-parsing: `create_interpreter` accepts a triple
-as well, but its JIT still emits for the host, so only its parsing half ever crossed —
-nothing here executes, so there is no half that does not. Pinning downloads that target's
-GCC shard on first use.
+AArch64). This is the home for cross-parsing: `create_interpreter` accepts a triple as
+well, but it stands up a JIT for that target, which the host may have no backend for and
+cannot safely tear down when it does. Nothing here executes, so there is no JIT to stand
+up. Pinning downloads that target's GCC shard on first use.
 
 One flag is worth *passing* for `:objc`/`:objcxx`: `-fobjc-runtime=macosx`. Clang picks the
 Objective-C runtime from the target, and only Darwin's is the non-fragile ABI — everywhere else

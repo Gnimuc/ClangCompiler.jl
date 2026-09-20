@@ -88,6 +88,14 @@ using Test
     @test !CC.isObjectLike(mi_fn)
     @test !CC.param_empty(mi_fn)
     @test CC.getNumParams(mi_fn) == 2
+    # `getFlags` is the whole bitset `getFlag` reads one bit of: the `+` of `a + b` was
+    # written after a space, and the `42` heading its replacement list records none
+    plus = CC.getReplacementToken(mi_fn, 1)
+    leading_space = UInt(CC.LibClangEx.CXTokenFlags_LeadingSpace)
+    @test CC.getSpelling(pp, plus) == "+"
+    @test CC.hasLeadingSpace(plus)
+    @test (CC.getFlags(plus) & leading_space) == leading_space
+    @test (CC.getFlags(tok42) & leading_space) == 0
     pa = CC.getParam(mi_fn, 0)
     pb = CC.getParam(mi_fn, 1)
     @test CC.getName(pa) == "a"

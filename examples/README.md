@@ -58,9 +58,9 @@ The sizes it reports are re-derived a second way, by JIT-compiling `sizeof`, as 
 check.
 
 **[06_cross_target.jl](06_cross_target.jl)** — ABI answers about a machine you are not running
-on. Pass a triple to `create_interpreter` and clang parses and lays out types as it would over
-there. States its own limit up front: only parsing and AST inspection cross-target, because the
-JIT still emits for the host. First run downloads that target's GCC shard.
+on. Pass a triple to `create_parser` and clang parses and lays out types as it would over
+there. States its own limit up front: only parsing and AST inspection cross-target, because an
+interpreter's JIT emits for the host. First run downloads that target's GCC shard.
 
 **[07_julia_embedding.jl](07_julia_embedding.jl)** — the return trip. 01 had Julia call C++; here
 the C++ includes `<julia.h>` and calls back into the session that is compiling it: mutating a

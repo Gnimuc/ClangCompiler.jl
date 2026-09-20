@@ -38,6 +38,7 @@ using Test
     @test CC.getKind(nns_oi) == CC.LibClangEx.CXNestedNameSpecifierKind_TypeSpec
     @test CC.getName(nns_oi) == "struct Outer::"
     @test CC.getName(CC.getAsRecordDecl(nns_oi)) == "Outer"
+    @test CC.getAsString(CC.QualType(CC.getAsType(nns_oi))) == "struct Outer"
 
     ety_al = CC.resolve(CC.getTypePtr(CC.getType(varof("nns_alias"))))
     nns_al = CC.getQualifier(ety_al)

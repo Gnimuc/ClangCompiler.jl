@@ -832,8 +832,9 @@ Open the diagnostic `diag_id` at `loc` on `x` and leave it in flight. The argume
 fix-it hints added to the builder land in the engine's own storage, where a `Diagnostic` reads
 them back.
 
-`clang::DiagnosticsEngine::Report` asserts that no other diagnostic is already in flight, so
-that is restated here.
+One builder per engine at a time: [`Diagnostic`](@ref) reads the in-flight diagnostic back
+through the engine, which identifies it only while a single builder is open, so a second
+`Report` before the first is disposed is refused here.
 
 This function allocates and one should call `dispose` to release the resources after using this
 object — disposal also emits the diagnostic to the engine's client.
@@ -1128,12 +1129,8 @@ end
 """
     SetDelayedDiagnostic(x::AbstractDiagnosticsEngine, diag_id::Integer, arg1::AbstractString="",
                          arg2::AbstractString="", arg3::AbstractString="")
-Queue `diag_id` to be reported as soon as the next diagnostic on `x` finishes emitting, with
-`arg1`/`arg2`/`arg3` copied into the engine as its `%0`/`%1`/`%2` arguments.
-
-Only one delayed diagnostic fits at a time: a second call before the queued one has been
-reported is silently dropped, and a diagnostic emitted through `setForceEmit` does not flush
-the queue.
+No-op. `clang::DiagnosticsEngine` has no `SetDelayedDiagnostic` in this LLVM, so nothing is
+queued and `diag_id` is never reported; the arguments are validated and discarded.
 """
 function SetDelayedDiagnostic(x::AbstractDiagnosticsEngine, diag_id::Integer, arg1::AbstractString="", arg2::AbstractString="", arg3::AbstractString="")
     @check_ptrs x
@@ -1146,9 +1143,6 @@ end
     setForceEmit(x::AbstractDiagnosticBuilder) -> AbstractDiagnosticBuilder
 Mark the diagnostic for unconditional emission, bypassing the severity mapping that would
 otherwise suppress it, and return `x` so the call chains the way the C++ method does.
-
-Forcing emission also skips the delayed-diagnostic flush, so anything queued with
-`SetDelayedDiagnostic` stays queued.
 """
 function setForceEmit(x::AbstractDiagnosticBuilder)
     @check_ptrs x

@@ -1019,6 +1019,12 @@ end
     @test !CC.isMoreQualifiedThan(plain, cqual, ctx)
     @test CC.isAtLeastAsQualifiedAs(cqual, plain, ctx)
     @test CC.isAtLeastAsQualifiedAs(plain, plain, ctx)
+    @test !CC.isAtLeastAsQualifiedAs(plain, cqual, ctx)
+    # both read the qualifiers of both operands, which a null QualType does not have
+    @test_throws AssertionError CC.isMoreQualifiedThan(CC.QualType(C_NULL), plain, ctx)
+    @test_throws AssertionError CC.isMoreQualifiedThan(plain, CC.QualType(C_NULL), ctx)
+    @test_throws AssertionError CC.isAtLeastAsQualifiedAs(CC.QualType(C_NULL), plain, ctx)
+    @test_throws AssertionError CC.isAtLeastAsQualifiedAs(plain, CC.QualType(C_NULL), ctx)
 
     # reference stripping / paren stripping are identities on a plain int
     @test CC.getNonReferenceType(qtof("qt_ref")).ptr == plain.ptr

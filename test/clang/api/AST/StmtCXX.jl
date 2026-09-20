@@ -189,6 +189,17 @@ end
         co_await std::suspend_always{};
         co_return;
     }
+    struct converted_task {
+        converted_task(int) {}
+        struct promise_type {
+            int get_return_object() { return 0; }
+            std::suspend_always initial_suspend() noexcept { return {}; }
+            std::suspend_always final_suspend() noexcept { return {}; }
+            void return_void() noexcept {}
+            void unhandled_exception() noexcept {}
+        };
+    };
+    converted_task coro_converted() { co_return; }
     """)
     cfinder = DeclFinder(J)
     @test cfinder(J, "coro")
@@ -205,6 +216,14 @@ end
     @test CC.getAllocate(cbs).ptr != CC.getDeallocate(cbs).ptr
     @test CC.getExceptionHandler(cbs).ptr != CC.getBody(cbs).ptr
     @test CC.getReturnStmt(cbs).ptr != CC.getBody(cbs).ptr
+    # the promise declares `return_void`, so flowing off the end is an implicit `co_return;`
+    @test CC.resolve(CC.getFallthroughHandler(cbs)) isa CC.CoreturnStmt
+    # `get_return_object` already returns a `task`, so it is returned directly and no
+    # variable holds it; `coro_converted` gets an `int` to convert, and has to keep it
+    @test CC.getResultDecl(cbs).ptr == C_NULL
+    @test cfinder(J, "coro_converted")
+    converted = _stmtcxx_find_node(CC.CoroutineBodyStmt, CC.resolve(CC.getBody(CC.FunctionDecl(get_decl(cfinder)))))
+    @test CC.resolve(CC.getResultDecl(converted)) isa CC.DeclStmt
 
     n = CC.getNumChildrenExclBody(cbs)
     @test n >= 2

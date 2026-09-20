@@ -217,10 +217,11 @@ round trip:
 CI runs macOS, Linux and Windows on x86_64, and an assertion on something the *runner* decides —
 an integer width, a mangled name, a layout offset — passes locally and reddens on a platform you
 never ran. Most of those are not unassertable, only unpinned: build with
-`create_interpreter(...; triple="x86_64-linux-gnu")` and every one becomes an equality that reads
-the same everywhere. `test/clang/pinned_target.jl` is the worked example. Only parsing and AST
-inspection cross-target — the JIT still emits for the host — and pinning downloads that target's
-GCC shard, so keep it to one target in one file rather than pinning at every site.
+`create_parser(...; triple="x86_64-linux-gnu")` and every one becomes an equality that reads
+the same everywhere. `test/clang/pinned_target.jl` is the worked example. It is a parser because
+only parsing and AST inspection cross-target — an interpreter's JIT emits for the host — and
+pinning downloads that target's GCC shard, so keep it to one target in one file rather than
+pinning at every site.
 
 ## Tests
 

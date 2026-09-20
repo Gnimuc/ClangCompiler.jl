@@ -625,6 +625,7 @@ end
     @test ar isa CC.ArrayTypeTraitExpr
     @test CC.getTrait(ar) == CC.LibClangEx.CXArrayTypeTrait_ATT_ArrayRank
     @test CC.getValue(ar) == 2
+    @test CC.getAsString(CC.getQueriedType(ar)) == "int[3][4]"
     @test CC.getDimensionExpression(ar).ptr == C_NULL
 
     # ArrayTypeTraitExpr: __array_extent carries one
