@@ -22,6 +22,22 @@ struct RequiresExpr <: AbstractRequiresExpr
 end
 
 """
+    struct PackIndexingExpr <: AbstractPackIndexingExpr
+Hold a pointer to a `clang::PackIndexingExpr` object.
+"""
+struct PackIndexingExpr <: AbstractPackIndexingExpr
+    ptr::CXPackIndexingExpr
+end
+
+"""
+    struct OpenACCAsteriskSizeExpr <: AbstractOpenACCAsteriskSizeExpr
+Hold a pointer to a `clang::OpenACCAsteriskSizeExpr` object.
+"""
+struct OpenACCAsteriskSizeExpr <: AbstractOpenACCAsteriskSizeExpr
+    ptr::CXOpenACCAsteriskSizeExpr
+end
+
+"""
     struct OffsetOfExpr <: AbstractOffsetOfExpr
 Hold a pointer to a `clang::OffsetOfExpr` object.
 """
@@ -166,11 +182,11 @@ struct OMPArrayShapingExpr <: AbstractOMPArrayShapingExpr
 end
 
 """
-    struct OMPArraySectionExpr <: AbstractOMPArraySectionExpr
-Hold a pointer to a `clang::OMPArraySectionExpr` object.
+    struct HLSLOutArgExpr <: AbstractHLSLOutArgExpr
+Hold a pointer to a `clang::HLSLOutArgExpr` object.
 """
-struct OMPArraySectionExpr <: AbstractOMPArraySectionExpr
-    ptr::CXOMPArraySectionExpr
+struct HLSLOutArgExpr <: AbstractHLSLOutArgExpr
+    ptr::CXHLSLOutArgExpr
 end
 
 """
@@ -179,6 +195,14 @@ Hold a pointer to a `clang::ExprWithCleanups` object.
 """
 struct ExprWithCleanups <: AbstractExprWithCleanups
     ptr::CXExprWithCleanups
+end
+
+"""
+    struct EmbedExpr <: AbstractEmbedExpr
+Hold a pointer to a `clang::EmbedExpr` object.
+"""
+struct EmbedExpr <: AbstractEmbedExpr
+    ptr::CXEmbedExpr
 end
 
 """
@@ -211,6 +235,134 @@ Hold a pointer to a `clang::CXXParenListInitExpr` object.
 """
 struct CXXParenListInitExpr <: AbstractCXXParenListInitExpr
     ptr::CXCXXParenListInitExpr
+end
+
+"""
+    struct ArraySectionExpr <: AbstractArraySectionExpr
+Hold a pointer to a `clang::ArraySectionExpr` object.
+"""
+struct ArraySectionExpr <: AbstractArraySectionExpr
+    ptr::CXArraySectionExpr
+end
+
+"""
+    struct SYCLKernelCallStmt <: AbstractSYCLKernelCallStmt
+Hold a pointer to a `clang::SYCLKernelCallStmt` object.
+"""
+struct SYCLKernelCallStmt <: AbstractSYCLKernelCallStmt
+    ptr::CXSYCLKernelCallStmt
+end
+
+"""
+    struct OpenACCConstructStmt <: AbstractOpenACCConstructStmt
+Hold a pointer to a `clang::OpenACCConstructStmt` object.
+"""
+struct OpenACCConstructStmt <: AbstractOpenACCConstructStmt
+    ptr::CXOpenACCConstructStmt
+end
+
+"""
+    struct OpenACCWaitConstruct <: AbstractOpenACCWaitConstruct
+Hold a pointer to a `clang::OpenACCWaitConstruct` object.
+"""
+struct OpenACCWaitConstruct <: AbstractOpenACCWaitConstruct
+    ptr::CXOpenACCWaitConstruct
+end
+
+"""
+    struct OpenACCUpdateConstruct <: AbstractOpenACCUpdateConstruct
+Hold a pointer to a `clang::OpenACCUpdateConstruct` object.
+"""
+struct OpenACCUpdateConstruct <: AbstractOpenACCUpdateConstruct
+    ptr::CXOpenACCUpdateConstruct
+end
+
+"""
+    struct OpenACCShutdownConstruct <: AbstractOpenACCShutdownConstruct
+Hold a pointer to a `clang::OpenACCShutdownConstruct` object.
+"""
+struct OpenACCShutdownConstruct <: AbstractOpenACCShutdownConstruct
+    ptr::CXOpenACCShutdownConstruct
+end
+
+"""
+    struct OpenACCSetConstruct <: AbstractOpenACCSetConstruct
+Hold a pointer to a `clang::OpenACCSetConstruct` object.
+"""
+struct OpenACCSetConstruct <: AbstractOpenACCSetConstruct
+    ptr::CXOpenACCSetConstruct
+end
+
+"""
+    struct OpenACCInitConstruct <: AbstractOpenACCInitConstruct
+Hold a pointer to a `clang::OpenACCInitConstruct` object.
+"""
+struct OpenACCInitConstruct <: AbstractOpenACCInitConstruct
+    ptr::CXOpenACCInitConstruct
+end
+
+"""
+    struct OpenACCExitDataConstruct <: AbstractOpenACCExitDataConstruct
+Hold a pointer to a `clang::OpenACCExitDataConstruct` object.
+"""
+struct OpenACCExitDataConstruct <: AbstractOpenACCExitDataConstruct
+    ptr::CXOpenACCExitDataConstruct
+end
+
+"""
+    struct OpenACCEnterDataConstruct <: AbstractOpenACCEnterDataConstruct
+Hold a pointer to a `clang::OpenACCEnterDataConstruct` object.
+"""
+struct OpenACCEnterDataConstruct <: AbstractOpenACCEnterDataConstruct
+    ptr::CXOpenACCEnterDataConstruct
+end
+
+"""
+    struct OpenACCAssociatedStmtConstruct <: AbstractOpenACCAssociatedStmtConstruct
+Hold a pointer to a `clang::OpenACCAssociatedStmtConstruct` object.
+"""
+struct OpenACCAssociatedStmtConstruct <: AbstractOpenACCAssociatedStmtConstruct
+    ptr::CXOpenACCAssociatedStmtConstruct
+end
+
+"""
+    struct OpenACCLoopConstruct <: AbstractOpenACCLoopConstruct
+Hold a pointer to a `clang::OpenACCLoopConstruct` object.
+"""
+struct OpenACCLoopConstruct <: AbstractOpenACCLoopConstruct
+    ptr::CXOpenACCLoopConstruct
+end
+
+"""
+    struct OpenACCHostDataConstruct <: AbstractOpenACCHostDataConstruct
+Hold a pointer to a `clang::OpenACCHostDataConstruct` object.
+"""
+struct OpenACCHostDataConstruct <: AbstractOpenACCHostDataConstruct
+    ptr::CXOpenACCHostDataConstruct
+end
+
+"""
+    struct OpenACCDataConstruct <: AbstractOpenACCDataConstruct
+Hold a pointer to a `clang::OpenACCDataConstruct` object.
+"""
+struct OpenACCDataConstruct <: AbstractOpenACCDataConstruct
+    ptr::CXOpenACCDataConstruct
+end
+
+"""
+    struct OpenACCComputeConstruct <: AbstractOpenACCComputeConstruct
+Hold a pointer to a `clang::OpenACCComputeConstruct` object.
+"""
+struct OpenACCComputeConstruct <: AbstractOpenACCComputeConstruct
+    ptr::CXOpenACCComputeConstruct
+end
+
+"""
+    struct OpenACCCombinedConstruct <: AbstractOpenACCCombinedConstruct
+Hold a pointer to a `clang::OpenACCCombinedConstruct` object.
+"""
+struct OpenACCCombinedConstruct <: AbstractOpenACCCombinedConstruct
+    ptr::CXOpenACCCombinedConstruct
 end
 
 """
@@ -515,6 +667,22 @@ Hold a pointer to a `clang::OMPTileDirective` object.
 """
 struct OMPTileDirective <: AbstractOMPTileDirective
     ptr::CXOMPTileDirective
+end
+
+"""
+    struct OMPReverseDirective <: AbstractOMPReverseDirective
+Hold a pointer to a `clang::OMPReverseDirective` object.
+"""
+struct OMPReverseDirective <: AbstractOMPReverseDirective
+    ptr::CXOMPReverseDirective
+end
+
+"""
+    struct OMPInterchangeDirective <: AbstractOMPInterchangeDirective
+Hold a pointer to a `clang::OMPInterchangeDirective` object.
+"""
+struct OMPInterchangeDirective <: AbstractOMPInterchangeDirective
+    ptr::CXOMPInterchangeDirective
 end
 
 """
@@ -875,6 +1043,14 @@ Hold a pointer to a `clang::OMPAtomicDirective` object.
 """
 struct OMPAtomicDirective <: AbstractOMPAtomicDirective
     ptr::CXOMPAtomicDirective
+end
+
+"""
+    struct OMPAssumeDirective <: AbstractOMPAssumeDirective
+Hold a pointer to a `clang::OMPAssumeDirective` object.
+"""
+struct OMPAssumeDirective <: AbstractOMPAssumeDirective
+    ptr::CXOMPAssumeDirective
 end
 
 """

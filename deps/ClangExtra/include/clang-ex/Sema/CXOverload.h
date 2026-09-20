@@ -13,13 +13,19 @@ LLVM_CLANG_C_EXTERN_C_BEGIN
 // better conversion sequences.
 typedef enum CXImplicitConversionRank {
   CXImplicitConversionRank_ICR_Exact_Match = 0,
+  CXImplicitConversionRank_ICR_HLSL_Scalar_Widening,
   CXImplicitConversionRank_ICR_Promotion,
+  CXImplicitConversionRank_ICR_HLSL_Scalar_Widening_Promotion,
   CXImplicitConversionRank_ICR_Conversion,
   CXImplicitConversionRank_ICR_OCL_Scalar_Widening,
+  CXImplicitConversionRank_ICR_HLSL_Scalar_Widening_Conversion,
   CXImplicitConversionRank_ICR_Complex_Real_Conversion,
   CXImplicitConversionRank_ICR_Writeback_Conversion,
   CXImplicitConversionRank_ICR_C_Conversion,
-  CXImplicitConversionRank_ICR_C_Conversion_Extension
+  CXImplicitConversionRank_ICR_C_Conversion_Extension,
+  CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction,
+  CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction_Promotion,
+  CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction_Conversion
 } CXImplicitConversionRank;
 
 // NarrowingKind -- the kind of narrowing a standard conversion sequence performs, per

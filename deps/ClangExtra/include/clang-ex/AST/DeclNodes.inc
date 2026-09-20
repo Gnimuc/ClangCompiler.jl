@@ -24,11 +24,23 @@
 TRANSLATIONUNIT(TranslationUnit, Decl)
 #undef TRANSLATIONUNIT
 
+#ifndef TOPLEVELSTMT
+#  define TOPLEVELSTMT(Type, Base) DECL(Type, Base)
+#endif
+TOPLEVELSTMT(TopLevelStmt, Decl)
+#undef TOPLEVELSTMT
+
 #ifndef REQUIRESEXPRBODY
 #  define REQUIRESEXPRBODY(Type, Base) DECL(Type, Base)
 #endif
 REQUIRESEXPRBODY(RequiresExprBody, Decl)
 #undef REQUIRESEXPRBODY
+
+#ifndef OUTLINEDFUNCTION
+#  define OUTLINEDFUNCTION(Type, Base) DECL(Type, Base)
+#endif
+OUTLINEDFUNCTION(OutlinedFunction, Decl)
+#undef OUTLINEDFUNCTION
 
 #ifndef LINKAGESPEC
 #  define LINKAGESPEC(Type, Base) DECL(Type, Base)
@@ -59,12 +71,6 @@ CAPTURED(Captured, Decl)
 #endif
 BLOCK(Block, Decl)
 #undef BLOCK
-
-#ifndef TOPLEVELSTMT
-#  define TOPLEVELSTMT(Type, Base) DECL(Type, Base)
-#endif
-TOPLEVELSTMT(TopLevelStmt, Decl)
-#undef TOPLEVELSTMT
 
 #ifndef STATICASSERT
 #  define STATICASSERT(Type, Base) DECL(Type, Base)
@@ -679,11 +685,13 @@ DECL_CONTEXT(ObjCImplementation)
 DECL_CONTEXT(ObjCInterface)
 DECL_CONTEXT(ObjCProtocol)
 DECL_CONTEXT(ObjCMethod)
+DECL_CONTEXT(OutlinedFunction)
 DECL_CONTEXT(RequiresExprBody)
 DECL_CONTEXT(Enum)
 DECL_CONTEXT(Record)
 DECL_CONTEXT(CXXRecord)
 DECL_CONTEXT(ClassTemplateSpecialization)
 DECL_CONTEXT(ClassTemplatePartialSpecialization)
+DECL_CONTEXT(TopLevelStmt)
 DECL_CONTEXT(TranslationUnit)
 #undef DECL_CONTEXT

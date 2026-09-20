@@ -2,9 +2,29 @@
 #include "utils.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceManager.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallString.h"
 
+#include <limits>
 #include <memory>
+#include <mutex>
+#include <string>
+
+// clang keeps in-flight diagnostic state on the DiagnosticBuilder, so the engine-level
+// predicates answer from the builders this C API created. The key is the builder because
+// this library owns every one of them and deletes it in clang_DiagnosticBuilder_dispose:
+// no entry can outlive an object whose lifetime this library controls, which bounds the
+// map by the number of live builders and keeps a freed pointer out of the key.
+static llvm::DenseMap<clang::DiagnosticBuilder *, clang::DiagnosticsEngine *> InFlight;
+static std::mutex InFlightMutex;
+
+// Returns the live builder reporting to Engine, or nullptr. Callers hold InFlightMutex.
+static clang::DiagnosticBuilder *lookupInFlight(clang::DiagnosticsEngine *Engine) {
+  for (const auto &Entry : InFlight)
+    if (Entry.second == Engine)
+      return Entry.first;
+  return nullptr;
+}
 
 // DiagnosticConsumer
 unsigned clang_DiagnosticConsumer_getNumErrors(CXDiagnosticConsumer DC) {
@@ -361,22 +381,42 @@ void clang_DiagnosticsEngine_Report(CXDiagnosticsEngine DE, CXSourceLocation_ Lo
 }
 
 bool clang_DiagnosticsEngine_isDiagnosticInFlight(CXDiagnosticsEngine DE) {
-  return reinterpret_cast<clang::DiagnosticsEngine *>(DE)->isDiagnosticInFlight();
+  std::lock_guard<std::mutex> Lock(InFlightMutex);
+  return lookupInFlight(reinterpret_cast<clang::DiagnosticsEngine *>(DE)) != nullptr;
 }
 
-void clang_DiagnosticsEngine_SetDelayedDiagnostic(CXDiagnosticsEngine DE, unsigned DiagID,
-                                                  const char *Arg1, const char *Arg2,
-                                                  const char *Arg3) {
-  reinterpret_cast<clang::DiagnosticsEngine *>(DE)->SetDelayedDiagnostic(DiagID, Arg1, Arg2,
-                                                                    Arg3);
+void clang_DiagnosticsEngine_SetDelayedDiagnostic(CXDiagnosticsEngine DE,
+                                                  unsigned DiagID, const char *Arg1,
+                                                  const char *Arg2, const char *Arg3) {
+  (void)DE;
+  (void)DiagID;
+  (void)Arg1;
+  (void)Arg2;
+  (void)Arg3;
+  // LLVM 20 dropped DiagnosticsEngine::SetDelayedDiagnostic.
 }
 
 void clang_DiagnosticsEngine_Clear(CXDiagnosticsEngine DE) {
-  reinterpret_cast<clang::DiagnosticsEngine *>(DE)->Clear();
+  (void)DE;
+  // LLVM 20 dropped DiagnosticsEngine::Clear (the in-flight id lived on the
+  // engine). Cancelling an in-flight DiagnosticBuilder would require its
+  // protected Clear(); the Julia caller hits this with nothing in flight.
 }
 
 const char *clang_DiagnosticsEngine_getFlagValue(CXDiagnosticsEngine DE) {
-  return reinterpret_cast<clang::DiagnosticsEngine *>(DE)->getFlagValue().data();
+  // Thread-local: the caller reads the returned pointer after this function has released
+  // InFlightMutex, so one shared buffer could be overwritten under it.
+  static thread_local std::string Scratch;
+  auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
+  std::lock_guard<std::mutex> Lock(InFlightMutex);
+  auto *Builder = lookupInFlight(Engine);
+  if (!Builder) {
+    Scratch.clear();
+    return Scratch.c_str();
+  }
+  clang::Diagnostic Info(Engine, *Builder);
+  Scratch = Info.getFlagValue().str();
+  return Scratch.c_str();
 }
 
 CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
@@ -403,6 +443,14 @@ CXDiagnosticsEngine clang_DiagnosticsEngine_create(CXDiagnosticIDs ID,
 }
 
 void clang_DiagnosticsEngine_dispose(CXDiagnosticsEngine DE) {
+  {
+    // A builder outliving its engine would leave this address behind as a value, and a
+    // later engine allocated over it would then answer as though that builder were its own.
+    std::lock_guard<std::mutex> Lock(InFlightMutex);
+    auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
+    while (auto *Builder = lookupInFlight(Engine))
+      InFlight.erase(Builder);
+  }
   // Balances the Retain in clang_DiagnosticsEngine_create; the last Release deletes.
   reinterpret_cast<clang::DiagnosticsEngine *>(DE)->Release();
 }
@@ -608,14 +656,24 @@ void clang_FixItHint_dispose(CXFixItHint H) { delete reinterpret_cast<clang::Fix
 // DiagnosticBuilder
 CXDiagnosticBuilder clang_DiagnosticBuilder_create(CXDiagnosticsEngine DE,
                                                    CXSourceLocation_ Loc, unsigned DiagID) {
+  auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
   auto DB = std::make_unique<clang::DiagnosticBuilder>(
-      reinterpret_cast<clang::DiagnosticsEngine *>(DE)->Report(
-          clang::SourceLocation::getFromPtrEncoding(Loc), DiagID));
+      Engine->Report(clang::SourceLocation::getFromPtrEncoding(Loc), DiagID));
+  {
+    std::lock_guard<std::mutex> Lock(InFlightMutex);
+    InFlight[DB.get()] = Engine;
+  }
   return reinterpret_cast<CXDiagnosticBuilder>(DB.release());
 }
 
 void clang_DiagnosticBuilder_dispose(CXDiagnosticBuilder DB) {
-  delete reinterpret_cast<clang::DiagnosticBuilder *>(DB);
+  auto *B = reinterpret_cast<clang::DiagnosticBuilder *>(DB);
+  {
+    std::lock_guard<std::mutex> Lock(InFlightMutex);
+    InFlight.erase(B);
+  }
+  // Outside the lock: ~DiagnosticBuilder emits to the client, which can re-enter this API.
+  delete B;
 }
 
 CXDiagnosticBuilder clang_DiagnosticBuilder_setForceEmit(CXDiagnosticBuilder DB) {
@@ -653,8 +711,15 @@ void clang_StreamingDiagnostic_AddFixItHint(CXStreamingDiagnostic SD, CXFixItHin
 
 // Diagnostic
 CXDiagnostic_ clang_Diagnostic_create(CXDiagnosticsEngine DE) {
-  auto D = std::make_unique<clang::Diagnostic>(reinterpret_cast<clang::DiagnosticsEngine *>(DE));
-  return reinterpret_cast<CXDiagnostic_>(D.release());
+  auto *Engine = reinterpret_cast<clang::DiagnosticsEngine *>(DE);
+  std::lock_guard<std::mutex> Lock(InFlightMutex);
+  if (auto *Builder = lookupInFlight(Engine)) {
+    return reinterpret_cast<CXDiagnostic_>(new clang::Diagnostic(Engine, *Builder));
+  }
+  static clang::DiagnosticStorage EmptyStorage;
+  return reinterpret_cast<CXDiagnostic_>(new clang::Diagnostic(
+      Engine, clang::SourceLocation(), std::numeric_limits<unsigned>::max(),
+      EmptyStorage, llvm::StringRef()));
 }
 
 CXDiagnosticsEngine clang_Diagnostic_getDiags(CXDiagnostic_ D) {

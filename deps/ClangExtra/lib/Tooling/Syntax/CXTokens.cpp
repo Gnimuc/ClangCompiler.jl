@@ -120,9 +120,14 @@ CXSyntaxTokenList clang_syntax_TokenBuffer_spelledTokens(CXTokenBuffer TB, CXFil
 
 CXSyntaxToken clang_syntax_TokenBuffer_spelledTokenAt(CXTokenBuffer TB,
                                                       CXSourceLocation_ Loc) {
+  // LLVM 20 dropped spelledTokenAt; spelledTokenContaining is the remaining
+  // location lookup. Keep the C API's "starts exactly at Loc" by rejecting a
+  // containing token whose start is elsewhere.
+  auto SL = clang::SourceLocation::getFromPtrEncoding(Loc);
   const SyntaxToken *T =
-      reinterpret_cast<clang::syntax::TokenBuffer *>(TB)->spelledTokenAt(
-          clang::SourceLocation::getFromPtrEncoding(Loc));
+      reinterpret_cast<clang::syntax::TokenBuffer *>(TB)->spelledTokenContaining(SL);
+  if (!T || T->location() != SL)
+    return nullptr;
   return reinterpret_cast<CXSyntaxToken>(const_cast<SyntaxToken *>(T));
 }
 

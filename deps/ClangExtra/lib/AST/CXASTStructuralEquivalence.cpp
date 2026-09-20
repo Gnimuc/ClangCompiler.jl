@@ -20,7 +20,7 @@ namespace {
 // after LLVM 18 -- inside this translation unit. Declaration order is load-bearing: the set
 // is a member initialised before the context that binds to it.
 struct StructuralEquivalenceBox {
-  llvm::DenseSet<std::pair<clang::Decl *, clang::Decl *>> NonEquivalentDecls;
+  clang::StructuralEquivalenceContext::NonEquivalentDeclSet NonEquivalentDecls;
   clang::StructuralEquivalenceContext Context;
 
   StructuralEquivalenceBox(clang::ASTContext &FromCtx, clang::ASTContext &ToCtx,

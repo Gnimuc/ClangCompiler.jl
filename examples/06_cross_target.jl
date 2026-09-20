@@ -31,7 +31,7 @@
 # =================================================================================================
 
 using ClangCompiler
-using ClangCompiler: create_interpreter, dispose
+using ClangCompiler: create_interpreter, create_parser, dispose
 import ClangCompiler as CC
 
 # -------------------------------------------------------------------------------------------------
@@ -79,6 +79,24 @@ const TARGETS = [("host", nothing, "whatever machine you are on"),
                  ("x86_64-linux-gnu", "x86_64-linux-gnu", "LP64 ELF, Itanium C++ ABI"),
                  ("x86_64-w64-mingw32", "x86_64-w64-mingw32", "LLP64 Windows, 64-bit"),
                  ("i686-linux-gnu", "i686-linux-gnu", "ILP32 ELF, 32-bit")]
+
+"""
+Run `f` on a parser for `triple` and dispose of it afterwards, whatever `f` does.
+
+This is the cross-target driver, and the reason there are two of them. A parser needs no
+TargetMachine and stands up no JIT, so it configures for any triple on any host. An interpreter
+cannot: its JIT emits for the machine it is running on, so a foreign triple is at best a backend
+the host's LLVM was not built with and at worst a teardown the host's unwinder cannot follow.
+Parsing and AST inspection go through here; only §3, which runs code, needs the other one.
+"""
+function with_parser(f, triple)
+    P = create_parser(String[]; triple=triple)
+    try
+        return f(P)
+    finally
+        dispose(P)
+    end
+end
 
 """
 Run `f` on an interpreter for `triple` and dispose of it afterwards, whatever `f` does.
@@ -177,9 +195,9 @@ println("(A pinned triple downloads that target's GCC shard the first time -- th
 
 results = map(TARGETS) do (name, triple, note)
     print("  building clang for ", rpad(name, COL_W), "... ")
-    facts = with_interpreter(triple) do I
-        CC.parse(I, SOURCE)   # parse only: no code is generated, so a foreign target is fine
-        return abi_facts(I)
+    facts = with_parser(triple) do P
+        CC.parse(P, SOURCE)   # parse only: no code is generated, so a foreign target is fine
+        return abi_facts(P)
     end
     println("ok -> ", rpad(facts.clang_triple, 26), "(", note, ")")
     return facts

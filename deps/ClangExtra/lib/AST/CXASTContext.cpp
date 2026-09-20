@@ -1215,11 +1215,11 @@ CXTemplateArgument clang_ASTContext_getInjectedTemplateArg(CXASTContext Ctx,
 void clang_ASTContext_getInjectedTemplateArgs(CXASTContext Ctx,
                                               CXTemplateParameterList Params,
                                               CXTemplateArgument *Buf) {
-  llvm::SmallVector<clang::TemplateArgument, 4> Args;
-  reinterpret_cast<clang::ASTContext *>(Ctx)->getInjectedTemplateArgs(
-      reinterpret_cast<clang::TemplateParameterList *>(Params), Args);
+  auto Args = reinterpret_cast<clang::TemplateParameterList *>(Params)->getInjectedTemplateArgs(
+      *reinterpret_cast<clang::ASTContext *>(Ctx));
   for (unsigned I = 0; I < Args.size(); ++I)
-    Buf[I] = reinterpret_cast<CXTemplateArgument>(std::make_unique<clang::TemplateArgument>(Args[I]).release());
+    Buf[I] = reinterpret_cast<CXTemplateArgument>(
+        std::make_unique<clang::TemplateArgument>(Args[I]).release());
 }
 // getPackExpansionType
 // getObjCInterfaceType
@@ -1974,7 +1974,7 @@ unsigned clang_ASTContext_getTargetDefaultAlignForAttributeAligned(CXASTContext 
 
 unsigned clang_ASTContext_getAlignOfGlobalVar(CXASTContext Ctx, CXQualType T) {
   return reinterpret_cast<clang::ASTContext *>(Ctx)->getAlignOfGlobalVar(
-      clang::QualType::getFromOpaquePtr(T));
+      clang::QualType::getFromOpaquePtr(T), nullptr);
 }
 
 void clang_ASTContext_getTypeInfo(CXASTContext Ctx, CXQualType T, uint64_t *Width,
@@ -2062,7 +2062,7 @@ int64_t clang_ASTContext_getDeclAlign(CXASTContext Ctx, CXDecl D, bool ForAligno
 
 int64_t clang_ASTContext_getAlignOfGlobalVarInChars(CXASTContext Ctx, CXQualType T) {
   return reinterpret_cast<clang::ASTContext *>(Ctx)
-      ->getAlignOfGlobalVarInChars(clang::QualType::getFromOpaquePtr(T))
+      ->getAlignOfGlobalVarInChars(clang::QualType::getFromOpaquePtr(T), nullptr)
       .getQuantity();
 }
 

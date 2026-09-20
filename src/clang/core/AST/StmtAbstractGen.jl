@@ -129,6 +129,12 @@ Supertype for `ParenExpr`s.
 abstract type AbstractParenExpr <: AbstractExpr end
 
 """
+    abstract type AbstractPackIndexingExpr <: AbstractExpr
+Supertype for `PackIndexingExpr`s.
+"""
+abstract type AbstractPackIndexingExpr <: AbstractExpr end
+
+"""
     abstract type AbstractPackExpansionExpr <: AbstractExpr
 Supertype for `PackExpansionExpr`s.
 """
@@ -145,6 +151,12 @@ abstract type AbstractUnresolvedMemberExpr <: AbstractOverloadExpr end
 Supertype for `UnresolvedLookupExpr`s.
 """
 abstract type AbstractUnresolvedLookupExpr <: AbstractOverloadExpr end
+
+"""
+    abstract type AbstractOpenACCAsteriskSizeExpr <: AbstractExpr
+Supertype for `OpenACCAsteriskSizeExpr`s.
+"""
+abstract type AbstractOpenACCAsteriskSizeExpr <: AbstractExpr end
 
 """
     abstract type AbstractOpaqueValueExpr <: AbstractExpr
@@ -261,12 +273,6 @@ Supertype for `OMPArrayShapingExpr`s.
 abstract type AbstractOMPArrayShapingExpr <: AbstractExpr end
 
 """
-    abstract type AbstractOMPArraySectionExpr <: AbstractExpr
-Supertype for `OMPArraySectionExpr`s.
-"""
-abstract type AbstractOMPArraySectionExpr <: AbstractExpr end
-
-"""
     abstract type AbstractNoInitExpr <: AbstractExpr
 Supertype for `NoInitExpr`s.
 """
@@ -333,6 +339,12 @@ Supertype for `ImaginaryLiteral`s.
 abstract type AbstractImaginaryLiteral <: AbstractExpr end
 
 """
+    abstract type AbstractHLSLOutArgExpr <: AbstractExpr
+Supertype for `HLSLOutArgExpr`s.
+"""
+abstract type AbstractHLSLOutArgExpr <: AbstractExpr end
+
+"""
     abstract type AbstractGenericSelectionExpr <: AbstractExpr
 Supertype for `GenericSelectionExpr`s.
 """
@@ -391,6 +403,12 @@ abstract type AbstractExtVectorElementExpr <: AbstractExpr end
 Supertype for `ExpressionTraitExpr`s.
 """
 abstract type AbstractExpressionTraitExpr <: AbstractExpr end
+
+"""
+    abstract type AbstractEmbedExpr <: AbstractExpr
+Supertype for `EmbedExpr`s.
+"""
+abstract type AbstractEmbedExpr <: AbstractExpr end
 
 """
     abstract type AbstractDesignatedInitUpdateExpr <: AbstractExpr
@@ -717,6 +735,12 @@ Supertype for `ArraySubscriptExpr`s.
 abstract type AbstractArraySubscriptExpr <: AbstractExpr end
 
 """
+    abstract type AbstractArraySectionExpr <: AbstractExpr
+Supertype for `ArraySectionExpr`s.
+"""
+abstract type AbstractArraySectionExpr <: AbstractExpr end
+
+"""
     abstract type AbstractArrayInitLoopExpr <: AbstractExpr
 Supertype for `ArrayInitLoopExpr`s.
 """
@@ -771,6 +795,12 @@ Supertype for `CaseStmt`s.
 abstract type AbstractCaseStmt <: AbstractSwitchCase end
 
 """
+    abstract type AbstractSYCLKernelCallStmt <: AbstractStmt
+Supertype for `SYCLKernelCallStmt`s.
+"""
+abstract type AbstractSYCLKernelCallStmt <: AbstractStmt end
+
+"""
     abstract type AbstractSEHTryStmt <: AbstractStmt
 Supertype for `SEHTryStmt`s.
 """
@@ -799,6 +829,90 @@ abstract type AbstractSEHExceptStmt <: AbstractStmt end
 Supertype for `ReturnStmt`s.
 """
 abstract type AbstractReturnStmt <: AbstractStmt end
+
+"""
+    abstract type AbstractOpenACCConstructStmt <: AbstractStmt
+Supertype for `OpenACCConstructStmt`s.
+"""
+abstract type AbstractOpenACCConstructStmt <: AbstractStmt end
+
+"""
+    abstract type AbstractOpenACCWaitConstruct <: AbstractOpenACCConstructStmt
+Supertype for `OpenACCWaitConstruct`s.
+"""
+abstract type AbstractOpenACCWaitConstruct <: AbstractOpenACCConstructStmt end
+
+"""
+    abstract type AbstractOpenACCUpdateConstruct <: AbstractOpenACCConstructStmt
+Supertype for `OpenACCUpdateConstruct`s.
+"""
+abstract type AbstractOpenACCUpdateConstruct <: AbstractOpenACCConstructStmt end
+
+"""
+    abstract type AbstractOpenACCShutdownConstruct <: AbstractOpenACCConstructStmt
+Supertype for `OpenACCShutdownConstruct`s.
+"""
+abstract type AbstractOpenACCShutdownConstruct <: AbstractOpenACCConstructStmt end
+
+"""
+    abstract type AbstractOpenACCSetConstruct <: AbstractOpenACCConstructStmt
+Supertype for `OpenACCSetConstruct`s.
+"""
+abstract type AbstractOpenACCSetConstruct <: AbstractOpenACCConstructStmt end
+
+"""
+    abstract type AbstractOpenACCInitConstruct <: AbstractOpenACCConstructStmt
+Supertype for `OpenACCInitConstruct`s.
+"""
+abstract type AbstractOpenACCInitConstruct <: AbstractOpenACCConstructStmt end
+
+"""
+    abstract type AbstractOpenACCExitDataConstruct <: AbstractOpenACCConstructStmt
+Supertype for `OpenACCExitDataConstruct`s.
+"""
+abstract type AbstractOpenACCExitDataConstruct <: AbstractOpenACCConstructStmt end
+
+"""
+    abstract type AbstractOpenACCEnterDataConstruct <: AbstractOpenACCConstructStmt
+Supertype for `OpenACCEnterDataConstruct`s.
+"""
+abstract type AbstractOpenACCEnterDataConstruct <: AbstractOpenACCConstructStmt end
+
+"""
+    abstract type AbstractOpenACCAssociatedStmtConstruct <: AbstractOpenACCConstructStmt
+Supertype for `OpenACCAssociatedStmtConstruct`s.
+"""
+abstract type AbstractOpenACCAssociatedStmtConstruct <: AbstractOpenACCConstructStmt end
+
+"""
+    abstract type AbstractOpenACCLoopConstruct <: AbstractOpenACCAssociatedStmtConstruct
+Supertype for `OpenACCLoopConstruct`s.
+"""
+abstract type AbstractOpenACCLoopConstruct <: AbstractOpenACCAssociatedStmtConstruct end
+
+"""
+    abstract type AbstractOpenACCHostDataConstruct <: AbstractOpenACCAssociatedStmtConstruct
+Supertype for `OpenACCHostDataConstruct`s.
+"""
+abstract type AbstractOpenACCHostDataConstruct <: AbstractOpenACCAssociatedStmtConstruct end
+
+"""
+    abstract type AbstractOpenACCDataConstruct <: AbstractOpenACCAssociatedStmtConstruct
+Supertype for `OpenACCDataConstruct`s.
+"""
+abstract type AbstractOpenACCDataConstruct <: AbstractOpenACCAssociatedStmtConstruct end
+
+"""
+    abstract type AbstractOpenACCComputeConstruct <: AbstractOpenACCAssociatedStmtConstruct
+Supertype for `OpenACCComputeConstruct`s.
+"""
+abstract type AbstractOpenACCComputeConstruct <: AbstractOpenACCAssociatedStmtConstruct end
+
+"""
+    abstract type AbstractOpenACCCombinedConstruct <: AbstractOpenACCAssociatedStmtConstruct
+Supertype for `OpenACCCombinedConstruct`s.
+"""
+abstract type AbstractOpenACCCombinedConstruct <: AbstractOpenACCAssociatedStmtConstruct end
 
 """
     abstract type AbstractObjCForCollectionStmt <: AbstractStmt
@@ -1027,6 +1141,18 @@ abstract type AbstractOMPUnrollDirective <: AbstractOMPLoopTransformationDirecti
 Supertype for `OMPTileDirective`s.
 """
 abstract type AbstractOMPTileDirective <: AbstractOMPLoopTransformationDirective end
+
+"""
+    abstract type AbstractOMPReverseDirective <: AbstractOMPLoopTransformationDirective
+Supertype for `OMPReverseDirective`s.
+"""
+abstract type AbstractOMPReverseDirective <: AbstractOMPLoopTransformationDirective end
+
+"""
+    abstract type AbstractOMPInterchangeDirective <: AbstractOMPLoopTransformationDirective
+Supertype for `OMPInterchangeDirective`s.
+"""
+abstract type AbstractOMPInterchangeDirective <: AbstractOMPLoopTransformationDirective end
 
 """
     abstract type AbstractOMPLoopDirective <: AbstractOMPLoopBasedDirective
@@ -1297,6 +1423,12 @@ abstract type AbstractOMPBarrierDirective <: AbstractOMPExecutableDirective end
 Supertype for `OMPAtomicDirective`s.
 """
 abstract type AbstractOMPAtomicDirective <: AbstractOMPExecutableDirective end
+
+"""
+    abstract type AbstractOMPAssumeDirective <: AbstractOMPExecutableDirective
+Supertype for `OMPAssumeDirective`s.
+"""
+abstract type AbstractOMPAssumeDirective <: AbstractOMPExecutableDirective end
 
 """
     abstract type AbstractOMPCanonicalLoop <: AbstractStmt

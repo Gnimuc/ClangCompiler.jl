@@ -250,8 +250,8 @@ CXDecl clang_VarTemplateSpecializationDecl_getSpecializedTemplateOrPartial(
 bool clang_VarTemplateSpecializationDecl_specializedOnPartial(
     CXVarTemplateSpecializationDecl D);
 
-CXSourceLocation_
-clang_VarTemplateSpecializationDecl_getExternLoc(CXVarTemplateSpecializationDecl D);
+CXSourceLocation_ clang_VarTemplateSpecializationDecl_getExternLoc(
+    CXVarTemplateSpecializationDecl D);
 
 CXSourceLocation_ clang_VarTemplateSpecializationDecl_getTemplateKeywordLoc(
     CXVarTemplateSpecializationDecl D);
@@ -282,10 +282,6 @@ bool clang_ClassTemplateSpecializationDecl_isClassScopeExplicitSpecialization(
 CXTemplateArgumentList clang_ClassTemplateSpecializationDecl_getTemplateInstantiationArgs(
     CXClassTemplateSpecializationDecl D);
 
-// Null when the specialization type was not written by the user.
-CXTypeSourceInfo
-clang_ClassTemplateSpecializationDecl_getTypeAsWritten(CXClassTemplateSpecializationDecl D);
-
 CXSourceLocation_
 clang_ClassTemplateSpecializationDecl_getExternLoc(CXClassTemplateSpecializationDecl D);
 
@@ -304,9 +300,7 @@ bool clang_VarTemplateSpecializationDecl_isClassScopeExplicitSpecialization(
 CXTemplateArgumentList clang_VarTemplateSpecializationDecl_getTemplateInstantiationArgs(
     CXVarTemplateSpecializationDecl D);
 
-// Null when the specialization type was not written by the user.
-CXTypeSourceInfo
-clang_VarTemplateSpecializationDecl_getTypeAsWritten(CXVarTemplateSpecializationDecl D);
+// getTypeAsWritten
 
 CXSourceRange_
 clang_VarTemplateSpecializationDecl_getSourceRange(CXVarTemplateSpecializationDecl D);
@@ -708,8 +702,6 @@ void clang_ClassTemplateSpecializationDecl_setSpecializationKind(
 void clang_ClassTemplateSpecializationDecl_setPointOfInstantiation(
     CXClassTemplateSpecializationDecl D, CXSourceLocation_ Loc);
 
-// Allocates the explicit-specialization info block in the ASTContext on first use;
-// any location, including an invalid one, is accepted.
 void clang_ClassTemplateSpecializationDecl_setExternLoc(CXClassTemplateSpecializationDecl D,
                                                         CXSourceLocation_ Loc);
 
@@ -726,8 +718,6 @@ void clang_VarTemplateSpecializationDecl_setSpecializationKind(
 void clang_VarTemplateSpecializationDecl_setPointOfInstantiation(
     CXVarTemplateSpecializationDecl D, CXSourceLocation_ Loc);
 
-// Allocates the explicit-specialization info block in the ASTContext on first use;
-// any location, including an invalid one, is accepted.
 void clang_VarTemplateSpecializationDecl_setExternLoc(CXVarTemplateSpecializationDecl D,
                                                       CXSourceLocation_ Loc);
 
@@ -783,11 +773,7 @@ CXSourceRange_ clang_TemplateTemplateParmDecl_getSourceRange(CXTemplateTemplateP
 // Always an invalid range: a builtin template declaration has no written source.
 CXSourceRange_ clang_BuiltinTemplateDecl_getSourceRange(CXBuiltinTemplateDecl D);
 
-// ClassTemplateSpecializationDecl
-// Records the specialization type as written by the user; allocates the
-// explicit-specialization info block in the ASTContext on first use.
-void clang_ClassTemplateSpecializationDecl_setTypeAsWritten(
-    CXClassTemplateSpecializationDecl D, CXTypeSourceInfo T);
+// setTypeAsWritten
 
 // ClassTemplatePartialSpecializationDecl
 // Count for the getAssociatedConstraints fill below; the count is exact and no slot
@@ -819,11 +805,7 @@ CXClassTemplatePartialSpecializationDecl
 clang_ClassTemplateDecl_findPartialSpecInstantiatedFromMember(
     CXClassTemplateDecl CTD, CXClassTemplatePartialSpecializationDecl D);
 
-// VarTemplateSpecializationDecl
-// Records the specialization type as written by the user; allocates the
-// explicit-specialization info block in the ASTContext on first use.
-void clang_VarTemplateSpecializationDecl_setTypeAsWritten(CXVarTemplateSpecializationDecl D,
-                                                          CXTypeSourceInfo T);
+// setTypeAsWritten
 
 // VarTemplatePartialSpecializationDecl
 // Count for the getAssociatedConstraints fill below; the count is exact and no slot

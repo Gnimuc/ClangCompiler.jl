@@ -14,6 +14,7 @@ LLVM_CLANG_C_EXTERN_C_BEGIN
 typedef enum CXLanguage : unsigned char {
   CXLanguage_Unknown,
   CXLanguage_Asm,
+  CXLanguage_CIR,
   CXLanguage_LLVM_IR,
   CXLanguage_C,
   CXLanguage_CXX,
@@ -22,7 +23,6 @@ typedef enum CXLanguage : unsigned char {
   CXLanguage_OpenCL,
   CXLanguage_OpenCLCXX,
   CXLanguage_CUDA,
-  CXLanguage_RenderScript,
   CXLanguage_HIP,
   CXLanguage_HLSL
 } CXLanguage;
@@ -45,6 +45,8 @@ typedef enum CXLangStandardKind {
   CXLangStandardKind_lang_gnu17,
   CXLangStandardKind_lang_c23,
   CXLangStandardKind_lang_gnu23,
+  CXLangStandardKind_lang_c2y,
+  CXLangStandardKind_lang_gnu2y,
   CXLangStandardKind_lang_cxx98,
   CXLangStandardKind_lang_gnucxx98,
   CXLangStandardKind_lang_cxx11,
@@ -73,6 +75,7 @@ typedef enum CXLangStandardKind {
   CXLangStandardKind_lang_hlsl2018,
   CXLangStandardKind_lang_hlsl2021,
   CXLangStandardKind_lang_hlsl202x,
+  CXLangStandardKind_lang_hlsl202y,
   CXLangStandardKind_lang_unspecified
 } CXLangStandardKind;
 

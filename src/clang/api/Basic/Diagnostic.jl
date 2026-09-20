@@ -422,6 +422,13 @@ function isDiagnosticInFlight(x::AbstractDiagnosticsEngine)
     return clang_DiagnosticsEngine_isDiagnosticInFlight(x)
 end
 
+"""
+    Clear(x::AbstractDiagnosticsEngine)
+No-op. `clang::DiagnosticsEngine` has no `Clear` in this LLVM — the in-flight diagnostic
+lives on `clang::DiagnosticBuilder`, whose own `Clear` is protected — so nothing here can
+cancel one. A builder emits when it is disposed, and [`isDiagnosticInFlight`](@ref) keeps
+reporting it until then; the C entry point is kept only so the name stays.
+"""
 function Clear(x::AbstractDiagnosticsEngine)
     @check_ptrs x
     return clang_DiagnosticsEngine_Clear(x)
@@ -905,6 +912,11 @@ Return a view onto the diagnostic `x` currently has in flight. It reads straight
 engine, so it must not outlive it and its accessors describe whichever diagnostic is open when
 they are called.
 
+When a diagnostic is in flight the view also borrows the builder's argument storage, which
+`clang::StreamingDiagnostic` hands back to the engine's allocator when the builder is
+destroyed, and the allocator recycles it -- so `dispose` the view before disposing the
+builder it was taken from.
+
 This function allocates and one should call `dispose` to release the resources after using this
 object.
 """
@@ -1148,8 +1160,9 @@ end
     addFlagValue(x::AbstractDiagnosticBuilder, val::AbstractString)
 Set the flag value a renderer prints next to the message, which `getFlagValue` reads back.
 
-The value is stored on the engine rather than on the builder, and opening the next
-diagnostic on that engine clears it.
+The value is stored on the builder, so it lives exactly as long as `x` does. `getFlagValue`
+asks the engine, which answers by finding the builder reporting to it, and reads back `""`
+once no builder created through [`DiagnosticBuilder`](@ref) is live on that engine.
 """
 function addFlagValue(x::AbstractDiagnosticBuilder, val::AbstractString)
     @check_ptrs x

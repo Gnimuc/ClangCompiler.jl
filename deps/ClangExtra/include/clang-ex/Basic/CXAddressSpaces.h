@@ -27,6 +27,7 @@ typedef enum CXLangAS : unsigned {
   CXLangAS_ptr32_uptr,
   CXLangAS_ptr64,
   CXLangAS_hlsl_groupshared,
+  CXLangAS_hlsl_constant,
   CXLangAS_wasm_funcref,
   CXLangAS_FirstTargetAddressSpace
 } CXLangAS;

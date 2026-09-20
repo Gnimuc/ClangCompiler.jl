@@ -98,9 +98,9 @@ using Test
     CC.Report(engine, CC.SourceLocation(), err_id)
     @test CC.hasErrorOccurred(engine)
     @test CC.getNumErrors(engine) == 1
-    # custom errors are unrecoverable but not "uncompilable" (they have no default error mapping)
+    # a custom Error is a real error, not a -Werror upgrade, so it is uncompilable
     @test CC.hasUnrecoverableErrorOccurred(engine)
-    @test !CC.hasUncompilableErrorOccurred(engine)
+    @test CC.hasUncompilableErrorOccurred(engine)
     @test !CC.hasFatalErrorOccurred(engine)
 
     # suppression blocks both emission and counting
@@ -126,7 +126,14 @@ using Test
     @test !CC.hasErrorOccurred(engine)
     @test CC.getNumErrors(engine) == 0
     @test CC.getNumWarnings(engine) == 0
+    # in-flight tracks the builder, not the engine: true only while one is live, and `Clear`
+    # is a no-op that cannot cancel it -- emitting is what ends it
+    @test !CC.isDiagnosticInFlight(engine)
+    inflight = CC.DiagnosticBuilder(engine, CC.SourceLocation(), warn_id)
+    @test CC.isDiagnosticInFlight(engine)
     CC.Clear(engine)
+    @test CC.isDiagnosticInFlight(engine)
+    CC.dispose(inflight)
     @test !CC.isDiagnosticInFlight(engine)
 
     # replacing the owned client: the engine deletes the old one and adopts the new one

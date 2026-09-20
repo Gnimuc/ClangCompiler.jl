@@ -1723,12 +1723,14 @@ CXCXXDependentScopeMemberExpr clang_CXXDependentScopeMemberExpr_Create(
 // UnresolvedLookupExpr (cont.)
 // Build the unresolved lookup of an overload set in Context's arena. NamingClass is the
 // class the lookup ran in and is NULL for a namespace-scope set, QualifierLoc the written
-// `::`-qualification, RequiresADL whether argument-dependent lookup still has to run and
-// Overloaded whether the name resolved to more than one declaration. The lookup results
-// cross as the parallel component arrays Decls/Accesses of MARSHALLING.md section 11, read
-// in lockstep against NumDecls; clang copies them into the node's trailing storage, so
-// neither buffer need outlive the call. PRECONDITION: NumDecls >= 1 - an overload set with
-// no results has no meaning. Arena-allocated: there is no dispose.
+// `::`-qualification and RequiresADL whether argument-dependent lookup still has to run.
+// LLVM 20 dropped the Overloaded parameter; it is accepted and ignored, and
+// clang_UnresolvedLookupExpr_isOverloaded reports getNumDecls() > 1, not a stored bit.
+// The lookup results cross as the parallel component
+// arrays Decls/Accesses of MARSHALLING.md section 11, read in lockstep against NumDecls;
+// clang copies them into the node's trailing storage, so neither buffer need outlive the
+// call. PRECONDITION: NumDecls >= 1 - an overload set with no results has no meaning.
+// Arena-allocated: there is no dispose.
 CXUnresolvedLookupExpr
 clang_UnresolvedLookupExpr_Create(CXASTContext Context, CXCXXRecordDecl NamingClass,
                                   CXNestedNameSpecifierLoc QualifierLoc,
@@ -1738,15 +1740,18 @@ clang_UnresolvedLookupExpr_Create(CXASTContext Context, CXCXXRecordDecl NamingCl
 
 // The same overload set written with an explicit template argument list, e.g. `f<int>`.
 // TemplateKWLoc is the `template` keyword, TemplateArgs the written `<...>` (NULL when the
-// keyword appears without one) and KnownDependent whether any canonicalized argument is
-// dependent, which selects the node's type. Lookup results and NumDecls cross exactly as in
-// clang_UnresolvedLookupExpr_Create. Arena-allocated: there is no dispose.
+// keyword appears without one), KnownDependent whether any canonicalized argument is
+// dependent, which selects the node's type, and KnownInstantiationDependent whether the
+// node is instantiation-dependent without being dependent. Lookup results and NumDecls
+// cross exactly as in clang_UnresolvedLookupExpr_Create. Arena-allocated: there is no
+// dispose.
 CXUnresolvedLookupExpr clang_UnresolvedLookupExpr_CreateWithTemplateArgs(
     CXASTContext Context, CXCXXRecordDecl NamingClass,
     CXNestedNameSpecifierLoc QualifierLoc, CXSourceLocation_ TemplateKWLoc,
     CXDeclarationNameInfo NameInfo, bool RequiresADL,
     CXTemplateArgumentListInfo TemplateArgs, const CXNamedDecl *Decls,
-    const CXAccessSpecifier *Accesses, unsigned NumDecls, bool KnownDependent);
+    const CXAccessSpecifier *Accesses, unsigned NumDecls, bool KnownDependent,
+    bool KnownInstantiationDependent);
 
 // UnresolvedMemberExpr (cont.)
 // Build the unresolved member access `Base.m` / `Base->m` in Context's arena, where m named

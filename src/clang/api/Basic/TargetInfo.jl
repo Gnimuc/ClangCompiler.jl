@@ -1322,7 +1322,9 @@ end
 
 """
     isRenderScriptTarget(x::AbstractTargetInfo) -> Bool
-Whether this target is a RenderScript one.
+Always `false`. LLVM 20 dropped `Language::RenderScript` and
+`TargetInfo::isRenderScriptTarget`, so the shim has no method to call; the C name is kept so
+the binding still resolves.
 """
 function isRenderScriptTarget(x::AbstractTargetInfo)
     @check_ptrs x
@@ -1387,8 +1389,9 @@ end
 
 """
     getFeatureDependencies(x::AbstractTargetInfo, feature::AbstractString) -> String
-Return the features `feature` depends on for this target, or the empty string when it has
-none — which is also what every target that does not model feature dependencies returns.
+Always `""`. LLVM 20 dropped `TargetInfo::getFeatureDependencies`, so the shim has no method
+to call and answers with the empty string for every `feature`; the C name is kept so the
+binding still resolves.
 """
 function getFeatureDependencies(x::AbstractTargetInfo, feature::AbstractString)
     @check_ptrs x
@@ -1425,24 +1428,19 @@ end
 
 """
     multiVersionSortPriority(x::AbstractTargetInfo, name::AbstractString) -> Cuint
-Return the target-specific priority of the CPU or feature `name`, used to order function
-multiversioning resolvers.
-
-On a target that supports multiversioning, `name` must be one that target has already
-accepted: the x86 implementation looks `name` up in a priority table and reads past its end
-for an unknown one. Targets without multiversioning support run the total base
-implementation and are exempt from the check.
+Always `0`. LLVM 20 dropped `TargetInfo::multiVersionSortPriority`, so the shim has no method
+to call; the C name is kept so the binding still resolves. There is no priority table left to
+index, so the call is total for every `name`.
 """
 function multiVersionSortPriority(x::AbstractTargetInfo, name::AbstractString)
     @check_ptrs x
-    known = isValidCPUName(x, name) || validateCpuSupports(x, name)
-    @assert !supportsMultiVersioning(x) || known "`name` must be a CPU or feature this target knows"
     return clang_TargetInfo_multiVersionSortPriority(x, name)
 end
 
 """
     multiVersionFeatureCost(x::AbstractTargetInfo) -> Cuint
-Return the target-specific cost a feature adds when sorting multiversioning resolvers.
+Always `0`. LLVM 20 dropped `TargetInfo::multiVersionFeatureCost`, so the shim has no method
+to call; the C name is kept so the binding still resolves.
 """
 function multiVersionFeatureCost(x::AbstractTargetInfo)
     @check_ptrs x

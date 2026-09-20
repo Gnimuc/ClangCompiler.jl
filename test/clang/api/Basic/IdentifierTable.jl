@@ -212,10 +212,11 @@ end
     @test CC.isCPlusPlusOperatorKeyword(ii) == false
 
     # ---- packed ObjC / interesting-identifier / builtin field ----
-    # a plain identifier in a freshly built table is none of the three
-    @test CC.getObjCOrBuiltinID(ii) == 0
+    # LLVM 20 stores "none of the three" as NotInterestingIdentifier (65534);
+    # the three decoded accessors still report 0.
+    @test CC.getObjCOrBuiltinID(ii) == 65534
     @test CC.getObjCKeywordID(ii) == 0                 # tok::objc_not_keyword
-    @test CC.getInterestingIdentifierID(ii) == 0       # tok::not_interesting
+    @test CC.getInterestingIdentifierID(ii) == 0       # tok::not_notable
     @test CC.getBuiltinID(ii) == 0
 
     kw = get(it, "int")                                # keywords are added on create
@@ -281,7 +282,7 @@ end
     @test_throws AssertionError CC.revertIdentifierToTokenID(kw, kwid)
 
     # ---- the three regions of the packed ObjCOrBuiltinID field ----
-    @test CC.getObjCOrBuiltinID(ii) == 0
+    @test CC.getObjCOrBuiltinID(ii) == 65534
     @test CC.getBuiltinID(ii) == 0
     @test CC.getInterestingIdentifierID(ii) == 0
     @test CC.getObjCKeywordID(ii) == 0
@@ -298,7 +299,7 @@ end
     @test_throws AssertionError CC.setBuiltinID(ii, maxb + 1)
     @test CC.clearBuiltinID(ii) === nothing
     @test CC.getBuiltinID(ii) == 0
-    @test CC.getObjCOrBuiltinID(ii) == 0
+    @test CC.getObjCOrBuiltinID(ii) == 65534
 
     maxi = CC.getMaxInterestingIdentifierID()
     @test maxi isa Integer

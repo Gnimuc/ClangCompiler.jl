@@ -36,10 +36,10 @@ For parsing rather than executing, use [`create_parser`](@ref): it drives the sa
 works in C, C++, Objective-C and Objective-C++.
 """
 function create_interpreter(args=String[]; is_cxx=true, version=JLLEnvs.GCC_MIN_VER, triple=nothing)
-    LLVM.InitializeNativeTarget()
     LLVM.InitializeAllTargetInfos()
+    LLVM.InitializeAllTargets()
     LLVM.InitializeAllTargetMCs()
-    LLVM.InitializeNativeAsmPrinter()
+    LLVM.InitializeAllAsmPrinters()
     default_args = get_default_args(; is_cxx, version, triple)
     builder = IncrementalCompilerBuilder()
     SetCompilerArgs(builder, [default_args..., args...])
@@ -98,8 +98,9 @@ get_codegen_module(x::CxxInterpreter) = CGM(getCodeGen(x.interp))
 """
     get_parser(x::CxxInterpreter) -> Parser
 The `clang::Parser` behind `x`. Borrowed; same caveat as [`get_instance`](@ref), and one more:
-reaching it goes through clang's *private* `Interpreter::IncrParser` via an access-edited copy
-of the header, so this accessor is expected to need rework at the next LLVM bump.
+reaching it goes through clang's private `Interpreter::IncrParser` / `IncrementalParser::P`
+via an access-edited copy of the LLVM 20 headers. `getCodeGen` is a private method on
+`Interpreter` itself in this version, hacked public the same way.
 """
 get_parser(x::CxxInterpreter) = getParser(x.interp)
 """

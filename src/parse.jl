@@ -60,7 +60,14 @@ For `std::`, it will extract `std::` and return "".
 For `std`, it will extract nothing and return "std". (`std` is used as an identifier)
 """
 function parse_cxx_scope_spec(x::AbstractInterpreter, ss::CXXScopeSpec, code::AbstractString)
-    ci, p = getCompilerInstance(x), getParser(x)
+    return parse_cxx_scope_spec(getCompilerInstance(x), getParser(x), ss, code)
+end
+
+function parse_cxx_scope_spec(x::IncrementalParser, ss::CXXScopeSpec, code::AbstractString)
+    return parse_cxx_scope_spec(get_instance(x), get_parser(x), ss, code)
+end
+
+function parse_cxx_scope_spec(ci::CompilerInstance, p::Parser, ss::CXXScopeSpec, code::AbstractString)
     src_mgr, pp, sema = getSourceManager(ci), getPreprocessor(p), getSema(p)
     begin_diag(ci)
     fid = FileID(src_mgr, get_buffer(code))

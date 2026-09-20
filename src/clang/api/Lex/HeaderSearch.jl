@@ -233,8 +233,8 @@ end
     getFileDirFlavor(x::AbstractHeaderSearch, file::AbstractFileEntryRef) -> CXCharacteristicKind
 Return whether `file` is a normal header, a system header, or a C++-friendly system header.
 
-This goes through `HeaderSearch::getFileInfo`, so it *creates* the `HeaderFileInfo` record
-for `file` when there is none yet.
+LLVM 20 reads an existing `HeaderFileInfo` only; if none has been filled in it returns the
+default `DirInfo` (`C_User`) without creating a record.
 """
 function getFileDirFlavor(x::AbstractHeaderSearch, file::AbstractFileEntryRef)
     @check_ptrs x file
@@ -607,8 +607,8 @@ dispose(x::HeaderFileInfo) = clang_HeaderFileInfo_dispose(x)
                         want_external::Bool=true) -> HeaderFileInfo
 Return the `HeaderFileInfo` record for `file` if one has ever been filled in, or a carrier
 holding `NULL` when the header has not been seen. Unlike `getFileInfo` this never creates a
-record. With `want_external=false` a record supplied by an external source is reported as
-absent.
+record. With `want_external=false` this is `getExistingLocalFileInfo`: a record supplied
+only by an external source is reported as absent.
 
 Like `getFileInfo` this hands back an owned snapshot rather than a view into the search.
 
@@ -741,8 +741,8 @@ end
 
 """
     getFramework(x::AbstractHeaderFileInfo) -> String
-Return the name of the framework the header came from, or an empty string when it did not
-come from a framework include.
+Always `""`. LLVM 20 dropped the `HeaderFileInfo::Framework` field, so the shim has no member
+to read; the C name is kept so the binding still resolves.
 """
 function getFramework(x::AbstractHeaderFileInfo)
     @check_ptrs x

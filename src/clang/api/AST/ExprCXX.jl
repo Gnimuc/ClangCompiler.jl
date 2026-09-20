@@ -3723,8 +3723,10 @@ end
                          decls, accesses) -> UnresolvedLookupExpr
 Build the unresolved lookup of an overload set in `ctx`'s arena. `naming_class` is the class the
 lookup ran in — pass `nothing` for a namespace-scope set — `requires_adl` records that
-argument-dependent lookup still has to run and `overloaded` that the name resolved to more than one
-declaration. `decls` and `accesses` are the lookup results, read in lockstep and copied into the
+argument-dependent lookup still has to run. `overloaded` is accepted and ignored: LLVM 20 dropped
+it from `UnresolvedLookupExpr::Create`, and `isOverloaded` reports `getNumDecls() > 1` rather than
+a stored bit.
+`decls` and `accesses` are the lookup results, read in lockstep and copied into the
 node's trailing storage, so neither need outlive the call. The node is arena-allocated: there is no
 `dispose`.
 """
@@ -3744,14 +3746,17 @@ end
     UnresolvedLookupExpr(ctx::ASTContext, naming_class, qualifier_loc::NestedNameSpecifierLoc,
                          template_kw_loc::SourceLocation, name_info::DeclarationNameInfo,
                          requires_adl::Bool, template_args, decls, accesses,
-                         known_dependent::Bool) -> UnresolvedLookupExpr
+                         known_dependent::Bool,
+                         known_instantiation_dependent::Bool=known_dependent) -> UnresolvedLookupExpr
 Build the same overload set written with an explicit template argument list, e.g. `f<int>`.
 `template_kw_loc` is the `template` keyword, `template_args` the written `<...>` (pass `nothing`
-when the keyword appears without one) and `known_dependent` whether any canonicalized argument is
-dependent, which selects the node's type. `decls`, `accesses` and the ownership rules are those of
-the non-templated form.
+when the keyword appears without one), `known_dependent` whether any canonicalized argument is
+dependent, which selects the node's type, and `known_instantiation_dependent` whether the node is
+instantiation-dependent without being dependent; it defaults to `known_dependent`, since a
+dependent node is instantiation-dependent too. `decls`, `accesses` and the ownership rules are
+those of the non-templated form.
 """
-function UnresolvedLookupExpr(ctx::ASTContext, naming_class::Union{AbstractCXXRecordDecl,Nothing}, qualifier_loc::NestedNameSpecifierLoc, template_kw_loc::SourceLocation, name_info::DeclarationNameInfo, requires_adl::Bool, template_args::Union{TemplateArgumentListInfo,Nothing}, decls::AbstractVector{<:AbstractNamedDecl}, accesses::AbstractVector{CXAccessSpecifier}, known_dependent::Bool)
+function UnresolvedLookupExpr(ctx::ASTContext, naming_class::Union{AbstractCXXRecordDecl,Nothing}, qualifier_loc::NestedNameSpecifierLoc, template_kw_loc::SourceLocation, name_info::DeclarationNameInfo, requires_adl::Bool, template_args::Union{TemplateArgumentListInfo,Nothing}, decls::AbstractVector{<:AbstractNamedDecl}, accesses::AbstractVector{CXAccessSpecifier}, known_dependent::Bool, known_instantiation_dependent::Bool=known_dependent)
     @check_ptrs ctx qualifier_loc name_info
     @assert length(decls) == length(accesses) "decls and accesses must have the same length"
     @assert !isempty(decls) "an unresolved lookup must name at least one declaration"
@@ -3760,7 +3765,7 @@ function UnresolvedLookupExpr(ctx::ASTContext, naming_class::Union{AbstractCXXRe
     args = template_args === nothing ? CXTemplateArgumentListInfo(C_NULL) : Base.unsafe_convert(CXTemplateArgumentListInfo, template_args)
     dbuf = CXNamedDecl[Base.unsafe_convert(CXNamedDecl, d) for d in decls]
     abuf = collect(accesses)
-    p = clang_UnresolvedLookupExpr_CreateWithTemplateArgs(ctx, nc, qualifier_loc, template_kw_loc, name_info, requires_adl, args, dbuf, abuf, length(dbuf), known_dependent)
+    p = clang_UnresolvedLookupExpr_CreateWithTemplateArgs(ctx, nc, qualifier_loc, template_kw_loc, name_info, requires_adl, args, dbuf, abuf, length(dbuf), known_dependent, known_instantiation_dependent)
     return UnresolvedLookupExpr(p)
 end
 

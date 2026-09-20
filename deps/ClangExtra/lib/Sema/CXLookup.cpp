@@ -1,5 +1,6 @@
 #include "clang-ex/Sema/CXLookup.h"
 #include "clang/Sema/Lookup.h"
+#include "clang/Sema/Redeclaration.h"
 #include <iterator>
 #include "clang/AST/DeclCXX.h"
 #include <memory>
@@ -300,7 +301,7 @@ CXRedeclarationKind clang_LookupResult_redeclarationKind(CXLookupResult LR) {
 
 void clang_LookupResult_setRedeclarationKind(CXLookupResult LR, CXRedeclarationKind RK) {
   reinterpret_cast<clang::LookupResult *>(LR)->setRedeclarationKind(
-      static_cast<clang::Sema::RedeclarationKind>(RK));
+      static_cast<RedeclarationKind>(RK));
 }
 
 CXString clang_LookupResult_printToString(CXLookupResult LR) {

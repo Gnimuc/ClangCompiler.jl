@@ -280,9 +280,8 @@ void clang_CXXRecordDecl_removeConversion(CXCXXRecordDecl CXXRD, CXNamedDecl Old
       reinterpret_cast<clang::NamedDecl *>(Old));
 }
 
-void clang_CXXRecordDecl_markEmpty(CXCXXRecordDecl CXXRD) {
-  reinterpret_cast<clang::CXXRecordDecl *>(CXXRD)->markEmpty();
-}
+// markEmpty: LLVM 20 dropped CXXRecordDecl::markEmpty; Empty is private on
+// DefinitionData.
 
 void clang_CXXRecordDecl_setHasTrivialSpecialMemberForCall(CXCXXRecordDecl CXXRD) {
   reinterpret_cast<clang::CXXRecordDecl *>(CXXRD)->setHasTrivialSpecialMemberForCall();
@@ -337,7 +336,7 @@ bool clang_CXXRecordDecl_nullFieldOffsetIsZero(CXCXXRecordDecl CXXRD) {
 }
 
 CXCXXRecordDecl clang_CXXRecordDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXCXXRecordDecl>(clang::CXXRecordDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXCXXRecordDecl>(clang::CXXRecordDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // AccessSpecDecl
@@ -378,8 +377,7 @@ CXAccessSpecDecl clang_AccessSpecDecl_Create(CXASTContext C, CXAccessSpecifier A
 }
 
 CXAccessSpecDecl clang_AccessSpecDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXAccessSpecDecl>(clang::AccessSpecDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                   ID));
+  return reinterpret_cast<CXAccessSpecDecl>(clang::AccessSpecDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // CXXBaseSpecifier
@@ -1081,8 +1079,7 @@ CXCXXDeductionGuideDecl clang_CXXDeductionGuideDecl_Create(
 
 CXCXXDeductionGuideDecl clang_CXXDeductionGuideDecl_CreateDeserialized(CXASTContext C,
                                                                        unsigned ID) {
-  return reinterpret_cast<CXCXXDeductionGuideDecl>(clang::CXXDeductionGuideDecl::CreateDeserialized(
-      *reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXCXXDeductionGuideDecl>(clang::CXXDeductionGuideDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // RequiresExprBodyDecl
@@ -1095,8 +1092,7 @@ CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_Create(CXASTContext C, CXDeclC
 
 CXRequiresExprBodyDecl clang_RequiresExprBodyDecl_CreateDeserialized(CXASTContext C,
                                                                      unsigned ID) {
-  return reinterpret_cast<CXRequiresExprBodyDecl>(clang::RequiresExprBodyDecl::CreateDeserialized(
-      *reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXRequiresExprBodyDecl>(clang::RequiresExprBodyDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // RequiresExprBodyDecl Cast
@@ -1129,7 +1125,7 @@ clang_CXXMethodDecl_Create(CXASTContext C, CXCXXRecordDecl RD, CXSourceLocation_
 }
 
 CXCXXMethodDecl clang_CXXMethodDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXCXXMethodDecl>(clang::CXXMethodDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXCXXMethodDecl>(clang::CXXMethodDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 bool clang_CXXMethodDecl_isStatic(CXCXXMethodDecl CXXMD) {
@@ -1487,8 +1483,7 @@ CXCXXConstructorDecl clang_CXXConstructorDecl_Create(
 CXCXXConstructorDecl clang_CXXConstructorDecl_CreateDeserialized(CXASTContext C,
                                                                  unsigned ID,
                                                                  uint64_t AllocKind) {
-  return reinterpret_cast<CXCXXConstructorDecl>(clang::CXXConstructorDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                       ID, AllocKind));
+  return reinterpret_cast<CXCXXConstructorDecl>(clang::CXXConstructorDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID), AllocKind));
 }
 
 // CXXDestructorDecl
@@ -1522,8 +1517,7 @@ CXCXXDestructorDecl clang_CXXDestructorDecl_Create(
 
 CXCXXDestructorDecl clang_CXXDestructorDecl_CreateDeserialized(CXASTContext C,
                                                                unsigned ID) {
-  return reinterpret_cast<CXCXXDestructorDecl>(clang::CXXDestructorDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                      ID));
+  return reinterpret_cast<CXCXXDestructorDecl>(clang::CXXDestructorDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 void clang_CXXDestructorDecl_setOperatorDelete(CXCXXDestructorDecl DD, CXFunctionDecl OD,
@@ -1578,8 +1572,7 @@ CXCXXConversionDecl clang_CXXConversionDecl_Create(
 
 CXCXXConversionDecl clang_CXXConversionDecl_CreateDeserialized(CXASTContext C,
                                                                unsigned ID) {
-  return reinterpret_cast<CXCXXConversionDecl>(clang::CXXConversionDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                      ID));
+  return reinterpret_cast<CXCXXConversionDecl>(clang::CXXConversionDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // LinkageSpecDecl
@@ -1596,8 +1589,7 @@ CXLinkageSpecDecl clang_LinkageSpecDecl_Create(CXASTContext C, CXDeclContext DC,
 }
 
 CXLinkageSpecDecl clang_LinkageSpecDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXLinkageSpecDecl>(clang::LinkageSpecDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                    ID));
+  return reinterpret_cast<CXLinkageSpecDecl>(clang::LinkageSpecDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 CXLinkageSpecLanguageIDs clang_LinkageSpecDecl_getLanguage(CXLinkageSpecDecl LSD) {
@@ -1699,8 +1691,7 @@ CXSourceRange_ clang_UsingDirectiveDecl_getSourceRange(CXUsingDirectiveDecl UDD)
 
 CXUsingDirectiveDecl clang_UsingDirectiveDecl_CreateDeserialized(CXASTContext C,
                                                                  unsigned ID) {
-  return reinterpret_cast<CXUsingDirectiveDecl>(clang::UsingDirectiveDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                       ID));
+  return reinterpret_cast<CXUsingDirectiveDecl>(clang::UsingDirectiveDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // NamespaceAliasDecl
@@ -1745,8 +1736,7 @@ CXSourceRange_ clang_NamespaceAliasDecl_getSourceRange(CXNamespaceAliasDecl NAD)
 
 CXNamespaceAliasDecl clang_NamespaceAliasDecl_CreateDeserialized(CXASTContext C,
                                                                  unsigned ID) {
-  return reinterpret_cast<CXNamespaceAliasDecl>(clang::NamespaceAliasDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                       ID));
+  return reinterpret_cast<CXNamespaceAliasDecl>(clang::NamespaceAliasDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // LifetimeExtendedTemporaryDecl
@@ -1797,8 +1787,7 @@ clang_LifetimeExtendedTemporaryDecl_Create(CXExpr Temp, CXValueDecl EDec,
 
 CXLifetimeExtendedTemporaryDecl
 clang_LifetimeExtendedTemporaryDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXLifetimeExtendedTemporaryDecl>(clang::LifetimeExtendedTemporaryDecl::CreateDeserialized(
-      *reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXLifetimeExtendedTemporaryDecl>(clang::LifetimeExtendedTemporaryDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // UsingShadowDecl
@@ -1837,8 +1826,7 @@ CXUsingShadowDecl clang_UsingShadowDecl_Create(CXASTContext C, CXDeclContext DC,
 }
 
 CXUsingShadowDecl clang_UsingShadowDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXUsingShadowDecl>(clang::UsingShadowDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                    ID));
+  return reinterpret_cast<CXUsingShadowDecl>(clang::UsingShadowDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // BaseUsingDecl
@@ -1857,8 +1845,7 @@ CXStaticAssertDecl clang_StaticAssertDecl_Create(CXASTContext C, CXDeclContext D
 
 CXStaticAssertDecl clang_StaticAssertDecl_CreateDeserialized(CXASTContext C,
                                                              unsigned ID) {
-  return reinterpret_cast<CXStaticAssertDecl>(clang::StaticAssertDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                     ID));
+  return reinterpret_cast<CXStaticAssertDecl>(clang::StaticAssertDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 CXExpr clang_StaticAssertDecl_getAssertExpr(CXStaticAssertDecl SAD) {
@@ -1951,7 +1938,7 @@ CXUsingDecl clang_UsingDecl_getCanonicalDecl(CXUsingDecl UD) {
 }
 
 CXUsingDecl clang_UsingDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXUsingDecl>(clang::UsingDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXUsingDecl>(clang::UsingDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // ConstructorUsingShadowDecl
@@ -2007,8 +1994,7 @@ clang_ConstructorUsingShadowDecl_Create(CXASTContext C, CXDeclContext DC,
 
 CXConstructorUsingShadowDecl
 clang_ConstructorUsingShadowDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXConstructorUsingShadowDecl>(clang::ConstructorUsingShadowDecl::CreateDeserialized(
-      *reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXConstructorUsingShadowDecl>(clang::ConstructorUsingShadowDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // UsingEnumDecl
@@ -2082,7 +2068,7 @@ CXUsingEnumDecl clang_UsingEnumDecl_Create(CXASTContext C, CXDeclContext DC,
 }
 
 CXUsingEnumDecl clang_UsingEnumDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXUsingEnumDecl>(clang::UsingEnumDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXUsingEnumDecl>(clang::UsingEnumDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // UsingPackDecl
@@ -2124,7 +2110,7 @@ CXUsingPackDecl clang_UsingPackDecl_Create(CXASTContext C, CXDeclContext DC,
 
 CXUsingPackDecl clang_UsingPackDecl_CreateDeserialized(CXASTContext C, unsigned ID,
                                                        unsigned NumExpansions) {
-  return reinterpret_cast<CXUsingPackDecl>(clang::UsingPackDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), ID,
+  return reinterpret_cast<CXUsingPackDecl>(clang::UsingPackDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID),
                                                   NumExpansions));
 }
 
@@ -2190,8 +2176,7 @@ clang_UnresolvedUsingValueDecl_getCanonicalDecl(CXUnresolvedUsingValueDecl UUVD)
 
 CXUnresolvedUsingValueDecl clang_UnresolvedUsingValueDecl_CreateDeserialized(CXASTContext C,
                                                                              unsigned ID) {
-  return reinterpret_cast<CXUnresolvedUsingValueDecl>(clang::UnresolvedUsingValueDecl::CreateDeserialized(
-      *reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXUnresolvedUsingValueDecl>(clang::UnresolvedUsingValueDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // UnresolvedUsingTypenameDecl
@@ -2246,8 +2231,7 @@ clang_UnresolvedUsingTypenameDecl_getCanonicalDecl(CXUnresolvedUsingTypenameDecl
 
 CXUnresolvedUsingTypenameDecl
 clang_UnresolvedUsingTypenameDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXUnresolvedUsingTypenameDecl>(clang::UnresolvedUsingTypenameDecl::CreateDeserialized(
-      *reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXUnresolvedUsingTypenameDecl>(clang::UnresolvedUsingTypenameDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // UnresolvedUsingIfExistsDecl
@@ -2262,8 +2246,7 @@ clang_UnresolvedUsingIfExistsDecl_Create(CXASTContext C, CXDeclContext DC,
 
 CXUnresolvedUsingIfExistsDecl
 clang_UnresolvedUsingIfExistsDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXUnresolvedUsingIfExistsDecl>(clang::UnresolvedUsingIfExistsDecl::CreateDeserialized(
-      *reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXUnresolvedUsingIfExistsDecl>(clang::UnresolvedUsingIfExistsDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // BindingDecl
@@ -2299,7 +2282,7 @@ CXBindingDecl clang_BindingDecl_Create(CXASTContext C, CXDeclContext DC,
 }
 
 CXBindingDecl clang_BindingDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXBindingDecl>(clang::BindingDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), ID));
+  return reinterpret_cast<CXBindingDecl>(clang::BindingDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // DecompositionDecl
@@ -2330,8 +2313,7 @@ clang_DecompositionDecl_Create(CXASTContext C, CXDeclContext DC, CXSourceLocatio
 
 CXDecompositionDecl clang_DecompositionDecl_CreateDeserialized(CXASTContext C, unsigned ID,
                                                                unsigned NumBindings) {
-  return reinterpret_cast<CXDecompositionDecl>(clang::DecompositionDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                      ID, NumBindings));
+  return reinterpret_cast<CXDecompositionDecl>(clang::DecompositionDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID), NumBindings));
 }
 
 // MSPropertyDecl
@@ -2368,8 +2350,7 @@ CXMSPropertyDecl clang_MSPropertyDecl_Create(CXASTContext C, CXDeclContext DC,
 }
 
 CXMSPropertyDecl clang_MSPropertyDecl_CreateDeserialized(CXASTContext C, unsigned ID) {
-  return reinterpret_cast<CXMSPropertyDecl>(clang::MSPropertyDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C),
-                                                   ID));
+  return reinterpret_cast<CXMSPropertyDecl>(clang::MSPropertyDecl::CreateDeserialized(*reinterpret_cast<clang::ASTContext *>(C), clang::GlobalDeclID(ID)));
 }
 
 // MSGuidDecl

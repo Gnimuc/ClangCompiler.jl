@@ -20,7 +20,8 @@ function dispose(x::DeclFinder)
     dispose(x.result)
 end
 
-function DeclFinder(i::CxxInterpreter, kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
+function DeclFinder(i::Union{CxxInterpreter,IncrementalParser},
+                    kind::CXLookupNameKind=CXLookupNameKind_LookupOrdinaryName)
     ci, sema = get_instance(i), get_sema(i)
     loc = get_main_file_begin_loc(getSourceManager(ci))  # used as a fake loc
     result = LookupResult(sema, DeclarationName(), loc, kind)
@@ -115,7 +116,7 @@ function diagnose_declname(code::AbstractString, type_name::AbstractString, nns:
     return s
 end
 
-function (x::DeclFinder)(i::CxxInterpreter, code::String)
+function (x::DeclFinder)(i::Union{CxxInterpreter,IncrementalParser}, code::String)
     reset(x)
     sema, parser = get_sema(i), get_parser(i)
     type_name = parse_cxx_scope_spec(i, x.spec, code)
